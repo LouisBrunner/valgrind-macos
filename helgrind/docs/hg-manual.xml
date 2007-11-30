@@ -1228,24 +1228,26 @@ Helgrind:</para>
     </listitem>
   </varlistentry>
 
-  <varlistentry id="opt.tc-sanity-flags" xreflabel="--tc-sanity-flags">
+  <varlistentry id="opt.hg-sanity-flags" xreflabel="--hg-sanity-flags">
     <term>
-      <option><![CDATA[--tc-sanity-flags=<XXXXX> (X = 0|1) [00000]
+      <option><![CDATA[--hg-sanity-flags=<XXXXXX> (X = 0|1) [000000]
       ]]></option>
     </term>
     <listitem>
       <para>Run extensive sanity checks on Helgrind's internal
         data structures at events defined by the bitstring, as
         follows:</para>
-      <para><computeroutput>10000 </computeroutput>after changes to
+      <para><computeroutput>100000 </computeroutput>at every query
+        to the happens-before graph</para>
+      <para><computeroutput>010000 </computeroutput>after changes to
         the lock order acquisition graph</para>
-      <para><computeroutput>01000 </computeroutput>after every client
+      <para><computeroutput>001000 </computeroutput>after every client
         memory access (NB: not currently used)</para>
-      <para><computeroutput>00100 </computeroutput>after every client
+      <para><computeroutput>000100 </computeroutput>after every client
         memory range permission setting of 256 bytes or greater</para>
-      <para><computeroutput>00010 </computeroutput>after every client
+      <para><computeroutput>000010 </computeroutput>after every client
         lock or unlock event</para>
-      <para><computeroutput>00001 </computeroutput>after every client
+      <para><computeroutput>000001 </computeroutput>after every client
         thread creation or joinage event</para>
       <para>Note these will make Helgrind run very slowly, often to
         the point of being completely unusable.</para>

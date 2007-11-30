@@ -913,8 +913,8 @@ PTH_FUNC(int, semZuinitZAZa, sem_t* sem, int pshared, unsigned long value)
    CALL_FN_W_WWW(ret, fn, sem,pshared,value);
 
    if (ret == 0) {
-      /* Probably overly paranoid, but still ... */
-      DO_CREQ_v_W(_VG_USERREQ__HG_POSIX_SEM_ZAPSTACK, sem_t*,sem);
+      DO_CREQ_v_WW(_VG_USERREQ__HG_POSIX_SEM_INIT_POST,
+                   sem_t*, sem, unsigned long, value);
    } else {
       DO_PthAPIerror( "sem_init", errno );
    }
@@ -941,7 +941,7 @@ PTH_FUNC(int, semZudestroyZAZa, sem_t* sem)
       fflush(stderr);
    }
 
-   DO_CREQ_v_W(_VG_USERREQ__HG_POSIX_SEM_ZAPSTACK, sem_t*,sem);
+   DO_CREQ_v_W(_VG_USERREQ__HG_POSIX_SEM_DESTROY_PRE, sem_t*, sem);
 
    CALL_FN_W_W(ret, fn, sem);
 
@@ -975,7 +975,7 @@ static int sem_wait_WRK(sem_t* sem)
    CALL_FN_W_W(ret, fn, sem);
 
    if (ret == 0) {
-      DO_CREQ_v_W(_VG_USERREQ__HG_POSIX_SEMWAIT_POST, sem_t*,sem);
+      DO_CREQ_v_W(_VG_USERREQ__HG_POSIX_SEM_WAIT_POST, sem_t*,sem);
    } else {
       DO_PthAPIerror( "sem_wait", errno );
    }
@@ -1010,7 +1010,7 @@ static int sem_post_WRK(sem_t* sem)
       fflush(stderr);
    }
 
-   DO_CREQ_v_W(_VG_USERREQ__HG_POSIX_SEMPOST_PRE, sem_t*,sem);
+   DO_CREQ_v_W(_VG_USERREQ__HG_POSIX_SEM_POST_PRE, sem_t*,sem);
 
    CALL_FN_W_W(ret, fn, sem);
 

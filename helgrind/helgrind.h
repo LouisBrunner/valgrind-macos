@@ -88,9 +88,10 @@ typedef
       _VG_USERREQ__HG_PTHREAD_RWLOCK_LOCK_POST,   /* pth_rwlk_t*, long isW */
       _VG_USERREQ__HG_PTHREAD_RWLOCK_UNLOCK_PRE,  /* pth_rwlk_t* */
       _VG_USERREQ__HG_PTHREAD_RWLOCK_UNLOCK_POST, /* pth_rwlk_t* */
-      _VG_USERREQ__HG_POSIX_SEMPOST_PRE,          /* sem_t* */
-      _VG_USERREQ__HG_POSIX_SEMWAIT_POST,         /* sem_t* */
-      _VG_USERREQ__HG_POSIX_SEM_ZAPSTACK,         /* sem_t* */
+      _VG_USERREQ__HG_POSIX_SEM_INIT_POST,        /* sem_t*, ulong value */
+      _VG_USERREQ__HG_POSIX_SEM_DESTROY_PRE,      /* sem_t* */
+      _VG_USERREQ__HG_POSIX_SEM_POST_PRE,         /* sem_t* */
+      _VG_USERREQ__HG_POSIX_SEM_WAIT_POST,        /* sem_t* */
       _VG_USERREQ__HG_GET_MY_SEGMENT              /* -> Segment* */
    } Vg_TCheckClientRequest;
 

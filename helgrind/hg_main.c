@@ -59,22 +59,11 @@
 /*---                                                          ---*/
 /*----------------------------------------------------------------*/
 
-/* Note there are a whole bunch of ugly double casts of the form
-   (Word*)(HChar*)&p.  These placate gcc at -O2.  The obvious form
-   (Word*)&p causes gcc to complain that 'dereferencing a type-punned
-   pointer ill break strict-aliasing rules'.  It stops complaining
-   when the intermediate HChar* type is inserted.
-
-   HChar is the same as plain 'char' (see
-   VEX/pub/libvex_basictypes.h).  The ANSI C standard says "An object
-   shall have its stored value accessed only by an lvalue that has one
-   of the following types: [..] A character type."
-
-   (http://gcc.gnu.org/ml/gcc/1999-09n/msg00419.html)
-
-   Hence it would appear that casting via an intermediate char* type
-   is a standards-compliant (== future-proof) way to circumvent the
-   aliasing rules in places where it is convenient to do so.
+/* Note this needs to be compiled with -fno-strict-aliasing, since it
+   contains a whole bunch of calls to lookupFM etc which cast between
+   Word and pointer types.  gcc rightly complains this breaks ANSI C
+   strict aliasing rules, at -O2.  No complaints at -O, but -O2 gives
+   worthwhile performance benefits over -O.
 */
 
 // FIXME what is supposed to happen to locks in memory which
@@ -111,6 +100,7 @@
 #define SCE_BIGRANGE (1<<2)  // Sanity check at big mem range events
 #define SCE_ACCESS   (1<<3)  // Sanity check at mem accesses
 #define SCE_LAOG     (1<<4)  // Sanity check at significant LAOG events
+#define SCE_HBEFORE  (1<<5)  // Crosscheck VTS vs Explicit h-before-graph
 
 #define SCE_BIGRANGE_T 256  // big mem range minimum size
 
@@ -139,7 +129,8 @@ static void all__sanity_check ( Char* who ); /* fwds */
 
 // 0 = no segments at all
 // 1 = segments at thread create/join
-// 2 = as 1 + segments at condition variable signal/broadcast/wait too
+// 2 = as 1 + segments at condition variable signal/broadcast/wait
+//          + segments at sem_wait/sem_post
 static Int clo_happens_before = 2;  /* default setting */
 
 /* Generate .vcg output of the happens-before graph?
@@ -2156,7 +2147,7 @@ static Bool happens_before ( SegmentID segid1, SegmentID segid2 )
    tl_assert(seg2->vts);
 
    hbV = cmpGEQ_VTS( seg2->vts, seg1->vts );
-   if (0) {
+   if (clo_sanity_flags & SCE_HBEFORE) {
       /* Crosscheck the vector-timestamp comparison result against that
          obtained from the explicit graph approach.  Can be very
          slow. */
@@ -6326,7 +6317,7 @@ static void evh__HG_PTHREAD_RWLOCK_UNLOCK_POST ( ThreadId tid, void* rwl )
 
 /* --------------- events to do with semaphores --------------- */
 
-/* This is similar but not identical the handling for condition
+/* This is similar to but not identical to the handling for condition
    variables. */
 
 /* For each semaphore, we maintain a stack of Segments.  When a 'post'
@@ -6348,6 +6339,15 @@ static void evh__HG_PTHREAD_RWLOCK_UNLOCK_POST ( ThreadId tid, void* rwl )
    twice on S.  T3 cannot complete its waits without both T1 and T2
    posting.  The above mechanism will ensure that T3 acquires
    dependencies on both T1 and T2.
+
+   When a semaphore is initialised with value N, the initialising
+   thread starts a new segment, the semaphore's stack is emptied out,
+   and the old segment is pushed on the stack N times.  This allows up
+   to N waits on the semaphore to acquire a dependency on the
+   initialisation point, which AFAICS is the correct behaviour.
+
+   We don't emit an error for DESTROY_PRE on a semaphore we don't know
+   about.  We should.
 */
 
 /* sem_t* -> XArray* Segment* */
@@ -6396,17 +6396,16 @@ static Segment* mb_pop_Segment_for_sem ( void* sem ) {
    }
 }
 
-static void evh__HG_POSIX_SEM_ZAPSTACK ( ThreadId tid, void* sem )
+static void evh__HG_POSIX_SEM_DESTROY_PRE ( ThreadId tid, void* sem )
 {
    Segment* seg;
 
-   /* Empty out the semaphore's segment stack.  Occurs at
-      sem_init and sem_destroy time. */
    if (SHOW_EVENTS >= 1)
-      VG_(printf)("evh__HG_POSIX_SEM_ZAPSTACK(ctid=%d, sem=%p)\n", 
+      VG_(printf)("evh__HG_POSIX_SEM_DESTROY_PRE(ctid=%d, sem=%p)\n", 
                   (Int)tid, (void*)sem );
 
-   /* This is stupid, but at least it's easy. */
+   /* Empty out the semaphore's segment stack.  This way of doing it
+      is stupid, but at least it's easy. */
    do {
      seg = mb_pop_Segment_for_sem( sem );
    } while (seg);
@@ -6414,7 +6413,56 @@ static void evh__HG_POSIX_SEM_ZAPSTACK ( ThreadId tid, void* sem )
    tl_assert(!seg);
 }
 
-static void evh__HG_POSIX_SEMPOST_PRE ( ThreadId tid, void* sem )
+static 
+void evh__HG_POSIX_SEM_INIT_POST ( ThreadId tid, void* sem, UWord value )
+{
+   Segment* seg;
+
+   if (SHOW_EVENTS >= 1)
+      VG_(printf)("evh__HG_POSIX_SEM_INIT_POST(ctid=%d, sem=%p, value=%lu)\n", 
+                  (Int)tid, (void*)sem, value );
+
+   /* Empty out the semaphore's segment stack.  This way of doing it
+      is stupid, but at least it's easy. */
+   do {
+     seg = mb_pop_Segment_for_sem( sem );
+   } while (seg);
+   tl_assert(!seg);
+
+   /* Now create a new segment for the thread, and push the old
+      segment on the stack 'value' times.  Skip this if the initial
+      value is zero -- no point in creating unnecessary segments. */
+   if (value > 0) {
+      /* create a new segment ... */
+      SegmentID new_segid = 0; /* bogus */
+      Segment*  new_seg   = NULL;
+      Thread*   thr       = map_threads_maybe_lookup( tid );
+      tl_assert(thr); /* cannot fail - Thread* must already exist */
+
+      evhH__start_new_segment_for_thread( &new_segid, &new_seg, thr );
+      tl_assert( is_sane_SegmentID(new_segid) );
+      tl_assert( is_sane_Segment(new_seg) );
+      tl_assert( new_seg->thr == thr );
+      tl_assert( is_sane_Segment(new_seg->prev) );
+      tl_assert( new_seg->prev->vts );
+      new_seg->vts = tick_VTS( new_seg->thr, new_seg->prev->vts );
+
+      if (value > 10000) {
+         /* If we don't do this, the following while loop runs us out
+            of memory for stupid initial values of 'sem'. */
+         record_error_Misc(
+            thr, "sem_init: initial value exceeds 10000; using 10000" );
+         value = 10000;
+      }
+
+      while (value > 0) {
+         push_Segment_for_sem( sem, new_seg->prev );
+         value--;
+      }
+   }
+}
+
+static void evh__HG_POSIX_SEM_POST_PRE ( ThreadId tid, void* sem )
 {
    /* 'tid' has posted on 'sem'.  Start a new segment for this thread,
       and push the old segment on a stack of segments associated with
@@ -6428,7 +6476,7 @@ static void evh__HG_POSIX_SEMPOST_PRE ( ThreadId tid, void* sem )
    Segment*  new_seg;
 
    if (SHOW_EVENTS >= 1)
-      VG_(printf)("evh__HG_POSIX_SEMPOST_PRE(ctid=%d, sem=%p)\n", 
+      VG_(printf)("evh__HG_POSIX_SEM_POST_PRE(ctid=%d, sem=%p)\n", 
                   (Int)tid, (void*)sem );
 
    thr = map_threads_maybe_lookup( tid );
@@ -6453,7 +6501,7 @@ static void evh__HG_POSIX_SEMPOST_PRE ( ThreadId tid, void* sem )
    }
 }
 
-static void evh__HG_POSIX_SEMWAIT_POST ( ThreadId tid, void* sem )
+static void evh__HG_POSIX_SEM_WAIT_POST ( ThreadId tid, void* sem )
 {
    /* A sem_wait(sem) completed successfully.  Start a new segment for
       this thread.  Pop the posting-segment for the 'sem' in the
@@ -6466,7 +6514,7 @@ static void evh__HG_POSIX_SEMWAIT_POST ( ThreadId tid, void* sem )
    Segment*  posting_seg;
 
    if (SHOW_EVENTS >= 1)
-      VG_(printf)("evh__HG_POSIX_SEMWAIT_POST(ctid=%d, sem=%p)\n", 
+      VG_(printf)("evh__HG_POSIX_SEM_WAIT_POST(ctid=%d, sem=%p)\n", 
                   (Int)tid, (void*)sem );
 
    thr = map_threads_maybe_lookup( tid );
@@ -7620,16 +7668,20 @@ Bool hg_handle_client_request ( ThreadId tid, UWord* args, UWord* ret)
          evh__HG_PTHREAD_RWLOCK_UNLOCK_POST( tid, (void*)args[1] );
          break;
 
-      case _VG_USERREQ__HG_POSIX_SEMPOST_PRE: /* sem_t* */
-         evh__HG_POSIX_SEMPOST_PRE( tid, (void*)args[1] );
+      case _VG_USERREQ__HG_POSIX_SEM_INIT_POST: /* sem_t*, unsigned long */
+         evh__HG_POSIX_SEM_INIT_POST( tid, (void*)args[1], args[2] );
          break;
 
-      case _VG_USERREQ__HG_POSIX_SEMWAIT_POST: /* sem_t* */
-         evh__HG_POSIX_SEMWAIT_POST( tid, (void*)args[1] );
+      case _VG_USERREQ__HG_POSIX_SEM_DESTROY_PRE: /* sem_t* */
+         evh__HG_POSIX_SEM_DESTROY_PRE( tid, (void*)args[1] );
          break;
 
-      case _VG_USERREQ__HG_POSIX_SEM_ZAPSTACK: /* sem_t* */
-         evh__HG_POSIX_SEM_ZAPSTACK( tid, (void*)args[1] );
+      case _VG_USERREQ__HG_POSIX_SEM_POST_PRE: /* sem_t* */
+         evh__HG_POSIX_SEM_POST_PRE( tid, (void*)args[1] );
+         break;
+
+      case _VG_USERREQ__HG_POSIX_SEM_WAIT_POST: /* sem_t* */
+         evh__HG_POSIX_SEM_WAIT_POST( tid, (void*)args[1] );
          break;
 
       case _VG_USERREQ__HG_GET_MY_SEGMENT: { // -> Segment*
@@ -8498,21 +8550,21 @@ static Bool hg_process_cmd_line_option ( Char* arg )
    }
    else VG_BNUM_CLO(arg, "--trace-level", clo_trace_level, 0, 2)
 
-   /* "stuvw" --> stuvw (binary) */
-   else if (VG_CLO_STREQN(18, arg, "--tc-sanity-flags=")) {
+   /* "stuvwx" --> stuvwx (binary) */
+   else if (VG_CLO_STREQN(18, arg, "--hg-sanity-flags=")) {
       Int j;
       Char* opt = & arg[18];
    
-      if (5 != VG_(strlen)(opt)) {
+      if (6 != VG_(strlen)(opt)) {
          VG_(message)(Vg_UserMsg, 
-                      "--tc-sanity-flags argument must have 5 digits");
+                      "--hg-sanity-flags argument must have 6 digits");
          return False;
       }
-      for (j = 0; j < 5; j++) {
+      for (j = 0; j < 6; j++) {
          if      ('0' == opt[j]) { /* do nothing */ }
-         else if ('1' == opt[j]) clo_sanity_flags |= (1 << (5-1-j));
+         else if ('1' == opt[j]) clo_sanity_flags |= (1 << (6-1-j));
          else {
-            VG_(message)(Vg_UserMsg, "--tc-sanity-flags argument can "
+            VG_(message)(Vg_UserMsg, "--hg-sanity-flags argument can "
                                      "only contain 0s and 1s");
             return False;
          }
@@ -8544,16 +8596,17 @@ static void hg_print_debug_usage ( void )
                "in .vcg format [no]\n");
    VG_(printf)("    --cmp-race-err-addrs=no|yes  are data addresses in "
                "race errors significant? [no]\n");
-   VG_(printf)("    --tc-sanity-flags=<XXXXX> sanity check "
-               "  at events (X = 0|1) [00000]\n");
-   VG_(printf)("    --tc-sanity-flags values:\n");
-   VG_(printf)("       10000   after changes to "
+   VG_(printf)("    --hg-sanity-flags=<XXXXXX> sanity check "
+               "  at events (X = 0|1) [000000]\n");
+   VG_(printf)("    --hg-sanity-flags values:\n");
+   VG_(printf)("       100000   crosscheck happens-before-graph searches\n");
+   VG_(printf)("       010000   after changes to "
                "lock-order-acquisition-graph\n");
-   VG_(printf)("       01000   at memory accesses (NB: not curently used)\n");
-   VG_(printf)("       00100   at mem permission setting for "
+   VG_(printf)("       001000   at memory accesses (NB: not currently used)\n");
+   VG_(printf)("       000100   at mem permission setting for "
                "ranges >= %d bytes\n", SCE_BIGRANGE_T);
-   VG_(printf)("       00010   at lock/unlock events\n");
-   VG_(printf)("       00001   at thread create/join events\n");
+   VG_(printf)("       000010   at lock/unlock events\n");
+   VG_(printf)("       000001   at thread create/join events\n");
 }
 
 static void hg_post_clo_init ( void )

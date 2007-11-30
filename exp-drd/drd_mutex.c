@@ -26,7 +26,7 @@
 #include "drd_error.h"
 #include "drd_mutex.h"
 #include "drd_suppression.h"
-#include "pthread_object_size.h"
+#include "priv_drd_clientreq.h"
 #include "pub_tool_errormgr.h"    // VG_(maybe_record_error)()
 #include "pub_tool_libcassert.h"  // tl_assert()
 #include "pub_tool_libcprint.h"   // VG_(printf)()
@@ -40,6 +40,7 @@ struct mutex_info
 {
   Addr        mutex;           // Pointer to client mutex.
   SizeT       size;            // Size in bytes of client-side object.
+  MutexT      mutex_type;      // pthread_mutex_t or pthread_spinlock_t.
   int         recursion_count; // 0 if free, >= 1 if locked.
   DrdThreadId owner;           // owner if locked, last owner if free.
   VectorClock vc;              // vector clock associated with last unlock.
@@ -64,30 +65,47 @@ void mutex_set_trace(const Bool trace_mutex)
 static
 void mutex_initialize(struct mutex_info* const p,
                       const Addr mutex,
-                      const SizeT size)
+                      const SizeT size,
+                      const MutexT mutex_type)
 {
   tl_assert(mutex != 0);
   tl_assert(size > 0);
+  tl_assert(mutex_type == mutex_type_mutex
+            || mutex_type == mutex_type_spinlock);
 
   p->mutex           = mutex;
   p->size            = size;
+  p->mutex_type      = mutex_type;
   p->recursion_count = 0;
   p->owner           = DRD_INVALID_THREADID;
   vc_init(&p->vc, 0, 0);
 }
 
 static
-struct mutex_info* mutex_get_or_allocate(const Addr mutex, const SizeT size)
+struct mutex_info*
+mutex_get_or_allocate(const Addr mutex,
+                      const SizeT size,
+                      const MutexT mutex_type)
 {
   int i;
+
+  tl_assert(mutex_type == mutex_type_mutex
+            || mutex_type == mutex_type_spinlock);
+
   for (i = 0; i < sizeof(s_mutex)/sizeof(s_mutex[0]); i++)
+  {
     if (s_mutex[i].mutex == mutex)
+    {
+      tl_assert(s_mutex[i].mutex_type == mutex_type);
+      tl_assert(s_mutex[i].size == size);
       return &s_mutex[i];
+    }
+  }
   for (i = 0; i < sizeof(s_mutex)/sizeof(s_mutex[0]); i++)
   {
     if (s_mutex[i].mutex == 0)
     {
-      mutex_initialize(&s_mutex[i], mutex, size);
+      mutex_initialize(&s_mutex[i], mutex, size, mutex_type);
       drd_start_suppression(mutex, mutex + size,
                             mutex_get_typename(&s_mutex[i]));
       return &s_mutex[i];
@@ -97,12 +115,15 @@ struct mutex_info* mutex_get_or_allocate(const Addr mutex, const SizeT size)
   return 0;
 }
 
-struct mutex_info* mutex_init(const Addr mutex, const SizeT size)
+struct mutex_info*
+mutex_init(const Addr mutex, const SizeT size, const MutexT mutex_type)
 {
   struct mutex_info* mutex_p;
 
   tl_assert(mutex_get(mutex) == 0);
-  mutex_p = mutex_get_or_allocate(mutex, size);
+  tl_assert(mutex_type == mutex_type_mutex
+            || mutex_type == mutex_type_spinlock);
+  mutex_p = mutex_get_or_allocate(mutex, size, mutex_type);
 
   if (s_trace_mutex)
   {
@@ -151,10 +172,10 @@ struct mutex_info* mutex_get(const Addr mutex)
  * Note: this function must be called after pthread_mutex_lock() has been
  * called, or a race condition is triggered !
  */
-int mutex_lock(const Addr mutex, const SizeT size)
+int mutex_lock(const Addr mutex, const SizeT size, MutexT mutex_type)
 {
   const DrdThreadId drd_tid = VgThreadIdToDrdThreadId(VG_(get_running_tid)());
-  struct mutex_info* const p = mutex_get_or_allocate(mutex, size);
+  struct mutex_info* const p = mutex_get_or_allocate(mutex, size, mutex_type);
   const DrdThreadId last_owner = p->owner;
 
   if (s_trace_mutex)
@@ -170,7 +191,12 @@ int mutex_lock(const Addr mutex, const SizeT size)
                  p ? p->owner : VG_INVALID_THREADID);
   }
 
-  if (p->recursion_count >= 1 && p->size == PTHREAD_SPINLOCK_SIZE)
+  tl_assert(mutex_type == mutex_type_mutex
+            || mutex_type == mutex_type_spinlock);
+  tl_assert(p->mutex_type == mutex_type);
+  tl_assert(p->size == size);
+
+  if (p->recursion_count >= 1 && mutex_type == mutex_type_spinlock)
   {
     // TO DO: tell the user in a more friendly way that it is not allowed to
     // lock spinlocks recursively.
@@ -211,7 +237,7 @@ int mutex_lock(const Addr mutex, const SizeT size)
  * @param tid ThreadId of the thread calling pthread_mutex_unlock().
  * @param vc Pointer to the current vector clock of thread tid.
  */
-int mutex_unlock(const Addr mutex)
+int mutex_unlock(const Addr mutex, const MutexT mutex_type)
 {
   const DrdThreadId drd_tid = VgThreadIdToDrdThreadId(VG_(get_running_tid)());
   const ThreadId vg_tid = DrdThreadIdToVgThreadId(drd_tid);
@@ -230,7 +256,11 @@ int mutex_unlock(const Addr mutex)
   }
 
   tl_assert(p);
+  tl_assert(p->mutex_type == mutex_type);
   tl_assert(p->owner != DRD_INVALID_THREADID);
+  tl_assert(mutex_type == mutex_type_mutex
+            || mutex_type == mutex_type_spinlock);
+
   if (p->owner != drd_tid)
   {
     MutexErrInfo MEI = { p->mutex, p->recursion_count, p->owner };
@@ -257,11 +287,12 @@ int mutex_unlock(const Addr mutex)
 const char* mutex_get_typename(struct mutex_info* const p)
 {
   tl_assert(p);
-  switch (p->size)
+
+  switch (p->mutex_type)
   {
-  case PTHREAD_MUTEX_SIZE:
+  case mutex_type_mutex:
     return "mutex";
-  case PTHREAD_SPINLOCK_SIZE:
+  case mutex_type_spinlock:
     return "spinlock";
   default:
     tl_assert(0);

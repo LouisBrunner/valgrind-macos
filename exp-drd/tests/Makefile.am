@@ -57,4 +57,4 @@ pth_detached_SOURCES  = pth_detached.c
 pth_detached_LDADD    = -lpthread
 
 sigalrm_SOURCES       = sigalrm.c
-sigalrm_LDADD         = -lpthread -lrt
+sigalrm_LDADD         = -lpthread

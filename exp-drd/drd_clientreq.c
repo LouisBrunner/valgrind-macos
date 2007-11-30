@@ -4,7 +4,7 @@
 #include "drd_suppression.h"      // drd_start_suppression()
 #include "drd_thread.h"
 #include "drd_track.h"
-#include "pthread_object_size.h"
+#include "priv_drd_clientreq.h"
 #include "pub_core_tooliface.h"   // VG_TRACK()
 #include "pub_tool_basics.h"      // Bool
 #include "pub_tool_libcassert.h"
@@ -20,24 +20,26 @@ static void drd_spin_init_or_unlock(const Addr spinlock, const SizeT size)
    struct mutex_info* mutex_p = mutex_get(spinlock);
    if (mutex_p)
    {
-      mutex_unlock(spinlock);
+      mutex_unlock(spinlock, mutex_type_spinlock);
    }
    else
    {
-      mutex_init(spinlock, size);
+      mutex_init(spinlock, size, mutex_type_spinlock);
    }
 }
 
-static void drd_pre_cond_wait(const Addr cond, const Addr mutex)
+static void drd_pre_cond_wait(const Addr cond, const SizeT cond_size,
+                              const Addr mutex)
 {
-   mutex_unlock(mutex);
-   cond_pre_wait(cond, mutex);
+   mutex_unlock(mutex, mutex_type_mutex);
+   cond_pre_wait(cond, cond_size, mutex);
 }
 
-static void drd_post_cond_wait(const Addr cond, const Addr mutex)
+static void drd_post_cond_wait(const Addr cond, const Addr mutex,
+                               const SizeT size)
 {
    cond_post_wait(cond);
-   mutex_lock(mutex, PTHREAD_MUTEX_SIZE);
+   mutex_lock(mutex, size, mutex_type_mutex);
 }
 
 static void drd_pre_cond_signal(const Addr cond)
@@ -105,7 +107,7 @@ static Bool drd_handle_client_request(ThreadId tid, UWord* arg, UWord* ret)
       break;
 
    case VG_USERREQ__PRE_MUTEX_INIT:
-      drd_pre_mutex_init(arg[1], arg[2]);
+      drd_pre_mutex_init(arg[1], arg[2], arg[3]);
       break;
 
    case VG_USERREQ__POST_MUTEX_DESTROY:
@@ -113,15 +115,15 @@ static Bool drd_handle_client_request(ThreadId tid, UWord* arg, UWord* ret)
       break;
 
    case VG_USERREQ__PRE_PTHREAD_MUTEX_LOCK:
-      drd_pre_mutex_lock(thread_get_running_tid(), arg[1], arg[2]);
+      drd_pre_mutex_lock(thread_get_running_tid(), arg[1], arg[2], arg[3]);
       break;
 
    case VG_USERREQ__POST_PTHREAD_MUTEX_LOCK:
-      drd_post_mutex_lock(thread_get_running_tid(), arg[1], arg[2]);
+      drd_post_mutex_lock(thread_get_running_tid(), arg[1], arg[2], arg[3]);
       break;
 
    case VG_USERREQ__PRE_PTHREAD_MUTEX_UNLOCK:
-      drd_pre_mutex_unlock(thread_get_running_tid(), arg[1]);
+      drd_pre_mutex_unlock(thread_get_running_tid(), arg[1], arg[3]);
       break;
 
    case VG_USERREQ__SPIN_INIT_OR_UNLOCK:
@@ -133,15 +135,16 @@ static Bool drd_handle_client_request(ThreadId tid, UWord* arg, UWord* ret)
       break;
 
    case VG_USERREQ__PRE_PTHREAD_COND_DESTROY:
-      drd_pre_cond_destroy(arg[1], arg[2]);
+      drd_pre_cond_destroy(arg[1]);
       break;
 
    case VG_USERREQ__PRE_PTHREAD_COND_WAIT:
-      drd_pre_cond_wait(arg[1], arg[2]);
+      drd_pre_cond_wait(arg[1]/*cond*/, arg[2]/*cond_size*/, arg[3]/*mutex*/);
       break;
 
    case VG_USERREQ__POST_PTHREAD_COND_WAIT:
-      drd_post_cond_wait(arg[1], arg[2]);
+      drd_post_cond_wait(arg[1]/*cond*/, arg[3]/*mutex*/,
+                         arg[4]/*mutex_size*/);
       break;
 
    case VG_USERREQ__PRE_PTHREAD_COND_SIGNAL:

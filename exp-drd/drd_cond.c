@@ -27,7 +27,6 @@
 #include "drd_error.h"
 #include "drd_mutex.h"
 #include "drd_suppression.h"
-#include "pthread_object_size.h"
 #include "pub_tool_errormgr.h"    // VG_(maybe_record_error)()
 #include "pub_tool_libcassert.h"  // tl_assert()
 #include "pub_tool_libcprint.h"   // VG_(printf)()
@@ -46,29 +45,37 @@ void cond_set_trace(const Bool trace_cond)
 }
 
 static
-void cond_initialize(struct cond_info* const p, const Addr cond)
+void cond_initialize(struct cond_info* const p, const Addr cond,
+                     const SizeT size)
 {
   tl_assert(cond != 0);
 
   p->cond         = cond;
+  p->size         = size;
   p->waiter_count = 0;
   p->mutex        = 0;
 }
 
-static struct cond_info* cond_get_or_allocate(const Addr cond)
+static struct cond_info*
+cond_get_or_allocate(const Addr cond, const SizeT size)
 {
   int i;
   for (i = 0; i < sizeof(s_cond)/sizeof(s_cond[0]); i++)
+  {
     if (s_cond[i].cond == cond)
+    {
+      tl_assert(s_cond[i].size == size);
       return &s_cond[i];
+    }
+  }
   for (i = 0; i < sizeof(s_cond)/sizeof(s_cond[0]); i++)
   {
     if (s_cond[i].cond == 0)
     {
-      cond_initialize(&s_cond[i], cond);
+      cond_initialize(&s_cond[i], cond, size);
       /* TO DO: replace the constant below by a symbolic constant referring */
       /* to sizeof(pthread_cond_t).                                        */
-      drd_start_suppression(cond, cond + PTHREAD_COND_SIZE, "cond");
+      drd_start_suppression(cond, cond + size, "cond");
       return &s_cond[i];
     }
   }
@@ -76,7 +83,7 @@ static struct cond_info* cond_get_or_allocate(const Addr cond)
   return 0;
 }
 
-void cond_init(const Addr cond)
+void cond_init(const Addr cond, const SizeT size)
 {
   if (s_trace_cond)
   {
@@ -85,7 +92,8 @@ void cond_init(const Addr cond)
                                VG_(clo_backtrace_size));
   }
   tl_assert(cond_get(cond) == 0);
-  cond_get_or_allocate(cond);
+  tl_assert(size > 0);
+  cond_get_or_allocate(cond, size);
 }
 
 void cond_destroy(struct cond_info* const p)
@@ -100,7 +108,7 @@ void cond_destroy(struct cond_info* const p)
   // TO DO: print a proper error message if waiter_count != 0.
   tl_assert(p->waiter_count == 0);
 
-  drd_finish_suppression(p->cond, p->cond + PTHREAD_COND_SIZE);
+  drd_finish_suppression(p->cond, p->cond + p->size);
 
   p->cond         = 0;
   p->waiter_count = 0;
@@ -116,11 +124,11 @@ struct cond_info* cond_get(const Addr cond)
   return 0;
 }
 
-int cond_pre_wait(const Addr cond, const Addr mutex)
+int cond_pre_wait(const Addr cond, const SizeT cond_size, const Addr mutex)
 {
   struct cond_info* p;
 
-  p = cond_get_or_allocate(cond);
+  p = cond_get_or_allocate(cond, cond_size);
   if (p->waiter_count == 0)
   {
     p->mutex = mutex;
@@ -194,7 +202,7 @@ void cond_stop_using_mem(const Addr a1, const Addr a2)
   {
     if (a1 <= s_cond[i].cond && s_cond[i].cond < a2)
     {
-      tl_assert(s_cond[i].cond + PTHREAD_COND_SIZE <= a2);
+      tl_assert(s_cond[i].cond + s_cond[i].size <= a2);
       cond_destroy(&s_cond[i]);
     }
   }

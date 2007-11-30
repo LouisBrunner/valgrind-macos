@@ -27,7 +27,6 @@
 #include "drd_segment.h"
 #include "drd_suppression.h"
 #include "drd_thread.h"
-#include "pthread_object_size.h"
 #include "pub_core_options.h"     // VG_(clo_backtrace_size)
 #include "pub_tool_basics.h"      // Addr, SizeT
 #include "pub_tool_errormgr.h"    // VG_(unique_error)()

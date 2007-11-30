@@ -34,7 +34,7 @@
 #include "drd_thread.h"
 #include "drd_track.h"
 #include "drd_vc.h"
-#include "pthread_object_size.h"
+#include "priv_drd_clientreq.h"
 #include "pub_core_mallocfree.h"
 #include "pub_core_options.h"
 #include "pub_tool_vki.h"
@@ -469,12 +469,12 @@ static void drd_thread_finished(ThreadId tid)
    thread_finished(drd_tid);
 }
 
-void drd_pre_mutex_init(Addr mutex, SizeT size)
+void drd_pre_mutex_init(Addr mutex, SizeT size, MutexT mutex_type)
 {
-   mutex_init(mutex, size);
+   mutex_init(mutex, size, mutex_type);
 }
 
-void drd_post_mutex_destroy(Addr mutex, SizeT size)
+void drd_post_mutex_destroy(Addr mutex, MutexT mutex_type)
 {
    struct mutex_info* p;
 
@@ -490,29 +490,32 @@ void drd_post_mutex_destroy(Addr mutex, SizeT size)
 
 void drd_pre_mutex_lock(const DrdThreadId drd_tid,
                         const Addr mutex,
-                        const SizeT size)
+                        const SizeT size,
+                        const MutexT mutex_type)
 {
    if (mutex_get(mutex) == 0)
    {
-      mutex_init(mutex, size);
+      mutex_init(mutex, size, mutex_type);
    }
 }
 
 void drd_post_mutex_lock(const DrdThreadId drd_tid,
                          const Addr mutex,
-                         const SizeT size)
+                         const SizeT size,
+                         const MutexT mutex_type)
 {
-   mutex_lock(mutex, size);
+   mutex_lock(mutex, size, mutex_type);
 }
 
-void drd_pre_mutex_unlock(const DrdThreadId drd_tid, Addr mutex)
+void drd_pre_mutex_unlock(const DrdThreadId drd_tid,
+                          const Addr mutex,
+                          const MutexT mutex_type)
 {
-   mutex_unlock(mutex);
+   mutex_unlock(mutex, mutex_type);
 }
 
 void drd_post_cond_init(Addr cond, SizeT s)
 {
-   tl_assert(s == PTHREAD_COND_SIZE);
    if (cond_get(cond))
    {
       CondErrInfo cei = { .cond = cond };
@@ -522,14 +525,13 @@ void drd_post_cond_init(Addr cond, SizeT s)
                               "initialized twice",
                               &cei);
    }
-   cond_init(cond);
+   cond_init(cond, s);
 }
 
-void drd_pre_cond_destroy(Addr cond, SizeT s)
+void drd_pre_cond_destroy(Addr cond)
 {
    struct cond_info* cond_p;
 
-   tl_assert(s == PTHREAD_COND_SIZE);
    cond_p = cond_get(cond);
    if (cond_p)
    {

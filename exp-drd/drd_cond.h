@@ -38,17 +38,18 @@
 
 struct cond_info
 {
-  Addr cond;  // Pointer to client condition variable.
-  int  waiter_count;
-  Addr mutex; // Client mutex specified in pthread_cond_wait() call, and null
+  Addr  cond;  // Pointer to client condition variable.
+  SizeT size;  // sizeof(pthread_cond_t)
+  int   waiter_count;
+  Addr  mutex; // Client mutex specified in pthread_cond_wait() call, and null
               // if no client threads are currently waiting on this cond.var.
 };
 
 void cond_set_trace(const Bool trace_cond);
-void cond_init(const Addr cond);
+void cond_init(const Addr cond, const SizeT size);
 void cond_destroy(struct cond_info* const p);
 struct cond_info* cond_get(Addr const mutex);
-int cond_pre_wait(const Addr cond, const Addr mutex);
+int cond_pre_wait(const Addr cond, const SizeT cond_size, const Addr mutex);
 int cond_post_wait(const Addr cond);
 void cond_pre_signal(Addr const cond);
 void cond_pre_broadcast(Addr const cond);

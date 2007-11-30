@@ -56,7 +56,6 @@
 #include "pub_core_debuginfo.h"  // Needed for pub_core_redir.h
 #include "pub_core_redir.h"      // For VG_NOTIFY_ON_LOAD
 #include "pub_tool_threadstate.h"// VG_N_THREADS
-#include "pthread_object_size.h" // PTHREAD_MUTEX_SIZE etc.
 
 
 // Defines.
@@ -164,10 +163,6 @@ static void vg_set_main_thread_state(void)
 
    VALGRIND_DO_CLIENT_REQUEST(res, -1, VG_USERREQ__DRD_SUPPRESS_CURRENT_STACK,
                               0, 0, 0, 0, 0);
-
-   // Sanity checks.
-   assert(sizeof(pthread_mutex_t)    == PTHREAD_MUTEX_SIZE);
-   assert(sizeof(pthread_spinlock_t) == PTHREAD_SPINLOCK_SIZE);
 
    // Make sure that DRD knows about the main thread's POSIX thread ID.
    VALGRIND_DO_CLIENT_REQUEST(res, -1, VG_USERREQ__SET_PTHREADID,
@@ -281,7 +276,7 @@ PTH_FUNC(int, pthreadZumutexZuinit,
    OrigFn fn;
    VALGRIND_GET_ORIG_FN(fn);
    VALGRIND_DO_CLIENT_REQUEST(res, -1, VG_USERREQ__PRE_MUTEX_INIT,
-                              mutex, sizeof(*mutex), 0, 0, 0);
+                              mutex, sizeof(*mutex), mutex_type_mutex, 0, 0);
    CALL_FN_W_WW(ret, fn, mutex, attr);
    return ret;
 }
@@ -296,7 +291,7 @@ PTH_FUNC(int, pthreadZumutexZudestroy,
    VALGRIND_GET_ORIG_FN(fn);
    CALL_FN_W_W(ret, fn, mutex);
    VALGRIND_DO_CLIENT_REQUEST(res, -1, VG_USERREQ__POST_MUTEX_DESTROY,
-                              mutex, sizeof(*mutex), 0, 0, 0);
+                              mutex, mutex_type_mutex, 0, 0, 0);
    return ret;
 }
 
@@ -309,7 +304,7 @@ PTH_FUNC(int, pthreadZumutexZulock, // pthread_mutex_lock
    OrigFn fn;
    VALGRIND_GET_ORIG_FN(fn);
    VALGRIND_DO_CLIENT_REQUEST(res, 0, VG_USERREQ__PRE_PTHREAD_MUTEX_LOCK,
-                              mutex, sizeof(*mutex), 0, 0, 0);
+                              mutex, sizeof(*mutex), mutex_type_mutex, 0, 0);
 #if 1
    // The only purpose of the system call below is to make drd work on AMD64
    // systems. Without this system call, clients crash (SIGSEGV) in
@@ -319,7 +314,7 @@ PTH_FUNC(int, pthreadZumutexZulock, // pthread_mutex_lock
    CALL_FN_W_W(ret, fn, mutex);
    if (ret == 0)
       VALGRIND_DO_CLIENT_REQUEST(res, 0, VG_USERREQ__POST_PTHREAD_MUTEX_LOCK,
-                                 mutex, sizeof(*mutex), 0, 0, 0);
+                                mutex, sizeof(*mutex), mutex_type_mutex, 0, 0);
    return ret;
 }
 
@@ -335,7 +330,7 @@ PTH_FUNC(int, pthreadZumutexZutrylock, // pthread_mutex_trylock
    if (ret == 0)
    {
       VALGRIND_DO_CLIENT_REQUEST(res, -1, VG_USERREQ__POST_PTHREAD_MUTEX_LOCK,
-                                 mutex, sizeof(*mutex), 0, 0, 0);
+                                mutex, sizeof(*mutex), mutex_type_mutex, 0, 0);
    }
    return ret;
 }
@@ -350,7 +345,7 @@ PTH_FUNC(int, pthreadZumutexZuunlock, // pthread_mutex_unlock
    VALGRIND_GET_ORIG_FN(fn);
    VALGRIND_DO_CLIENT_REQUEST(res, -1,
                               VG_USERREQ__PRE_PTHREAD_MUTEX_UNLOCK,
-                              mutex, sizeof(*mutex), 0, 0, 0);
+                              mutex, sizeof(*mutex), mutex_type_mutex, 0, 0);
    CALL_FN_W_W(ret, fn, mutex);
    return ret;
 }
@@ -379,7 +374,7 @@ PTH_FUNC(int, pthreadZucondZudestroyZAZa, // pthread_cond_destroy@*
    OrigFn fn;
    VALGRIND_GET_ORIG_FN(fn);
    VALGRIND_DO_CLIENT_REQUEST(res, -1, VG_USERREQ__PRE_PTHREAD_COND_DESTROY,
-                              cond, sizeof(*cond), 0, 0, 0);
+                              cond, 0, 0, 0, 0);
    CALL_FN_W_W(ret, fn, cond);
    return ret;
 }
@@ -394,10 +389,10 @@ PTH_FUNC(int, pthreadZucondZuwaitZAZa, // pthread_cond_wait@*
    OrigFn fn;
    VALGRIND_GET_ORIG_FN(fn);
    VALGRIND_DO_CLIENT_REQUEST(res, -1, VG_USERREQ__PRE_PTHREAD_COND_WAIT,
-                              cond, mutex, 0, 0, 0);
+                              cond, sizeof(*cond), mutex, sizeof(*mutex), 0);
    CALL_FN_W_WW(ret, fn, cond, mutex);
    VALGRIND_DO_CLIENT_REQUEST(res, -1, VG_USERREQ__POST_PTHREAD_COND_WAIT,
-                              cond, mutex, 0, 0, 0);
+                              cond, sizeof(*cond), mutex, sizeof(*mutex), 0);
    return ret;
 }
 
@@ -412,10 +407,10 @@ PTH_FUNC(int, pthreadZucondZutimedwaitZAZa, // pthread_cond_timedwait@*
    OrigFn fn;
    VALGRIND_GET_ORIG_FN(fn);
    VALGRIND_DO_CLIENT_REQUEST(res, -1, VG_USERREQ__PRE_PTHREAD_COND_WAIT,
-                              cond, mutex, 0, 0, 0);
+                              cond, sizeof(*cond), mutex, sizeof(*mutex), 0);
    CALL_FN_W_WWW(ret, fn, cond, mutex, abstime);
    VALGRIND_DO_CLIENT_REQUEST(res, -1, VG_USERREQ__POST_PTHREAD_COND_WAIT,
-                              cond, mutex, 0, 0, 0);
+                              cond, sizeof(*cond), mutex, sizeof(*mutex), 0);
    return ret;
 }
 
@@ -458,7 +453,8 @@ PTH_FUNC(int, pthreadZuspinZuinit, // pthread_spin_init
    OrigFn fn;
    VALGRIND_GET_ORIG_FN(fn);
    VALGRIND_DO_CLIENT_REQUEST(res, -1, VG_USERREQ__SPIN_INIT_OR_UNLOCK,
-                              spinlock, sizeof(*spinlock), 0, 0, 0);
+                              spinlock, sizeof(*spinlock),
+                              mutex_type_spinlock, 0, 0);
    CALL_FN_W_WW(ret, fn, spinlock, pshared);
    return ret;
 }
@@ -473,7 +469,7 @@ PTH_FUNC(int, pthreadZuspinZudestroy, // pthread_spin_destroy
    VALGRIND_GET_ORIG_FN(fn);
    CALL_FN_W_W(ret, fn, spinlock);
    VALGRIND_DO_CLIENT_REQUEST(res, -1, VG_USERREQ__POST_MUTEX_DESTROY,
-                              spinlock, sizeof(*spinlock), 0, 0, 0);
+                              spinlock, mutex_type_spinlock, 0, 0, 0);
    return ret;
 }
 
@@ -489,7 +485,8 @@ PTH_FUNC(int, pthreadZuspinZulock, // pthread_spin_lock
    if (ret == 0)
    {
       VALGRIND_DO_CLIENT_REQUEST(res, -1, VG_USERREQ__POST_PTHREAD_MUTEX_LOCK,
-                                 spinlock, sizeof(*spinlock), 0, 0, 0);
+                                 spinlock, sizeof(*spinlock),
+                                 mutex_type_spinlock, 0, 0);
    }
    return ret;
 }
@@ -506,7 +503,8 @@ PTH_FUNC(int, pthreadZuspinZutrylock, // pthread_spin_trylock
    if (ret == 0)
    {
       VALGRIND_DO_CLIENT_REQUEST(res, -1, VG_USERREQ__POST_PTHREAD_MUTEX_LOCK,
-                                 spinlock, sizeof(*spinlock), 0, 0, 0);
+                                 spinlock, sizeof(*spinlock),
+                                 mutex_type_spinlock, 0, 0);
    }
    return ret;
 }
@@ -520,7 +518,8 @@ PTH_FUNC(int, pthreadZuspinZuunlock, // pthread_spin_unlock
    OrigFn fn;
    VALGRIND_GET_ORIG_FN(fn);
    VALGRIND_DO_CLIENT_REQUEST(res, -1, VG_USERREQ__SPIN_INIT_OR_UNLOCK,
-                              spinlock, sizeof(*spinlock), 0, 0, 0);
+                              spinlock, sizeof(*spinlock),
+                              mutex_type_spinlock, 0, 0);
    CALL_FN_W_W(ret, fn, spinlock);
    return ret;
 }

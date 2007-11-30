@@ -30,20 +30,22 @@
 #define __MUTEX_H
 
 
-#include "pub_tool_basics.h"      // Addr, SizeT
-#include "drd_vc.h"
+#include "drd_clientreq.h"        // MutexT
 #include "drd_thread.h"           // DrdThreadId
+#include "drd_vc.h"
+#include "pub_tool_basics.h"      // Addr, SizeT
 
 
 struct mutex_info;
 
 
 void mutex_set_trace(const Bool trace_mutex);
-struct mutex_info* mutex_init(const Addr mutex, const SizeT size);
+struct mutex_info* mutex_init(const Addr mutex, const SizeT size,
+                              const MutexT mutex_type);
 void mutex_destroy(struct mutex_info* const p);
 struct mutex_info* mutex_get(const Addr mutex);
-int mutex_lock(const Addr mutex, const SizeT size);
-int mutex_unlock(const Addr mutex);
+int mutex_lock(const Addr mutex, const SizeT size, const MutexT mutex_type);
+int mutex_unlock(const Addr mutex, const MutexT mutex_type);
 const char* mutex_get_typename(struct mutex_info* const p);
 Bool mutex_is_locked_by(const Addr mutex, const DrdThreadId tid);
 const VectorClock* mutex_get_last_vc(const Addr mutex);

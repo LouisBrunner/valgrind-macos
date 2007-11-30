@@ -54,16 +54,16 @@ enum {
 
   /* To notify the core of a pthread_mutex_init call */
   VG_USERREQ__PRE_MUTEX_INIT,
-  /* args: Addr, SizeT */
+  /* args: Addr, MutexT */
   /* To notify the core of a pthread_mutex_destroy call */
   VG_USERREQ__POST_MUTEX_DESTROY,
-  /* args: Addr, SizeT */
+  /* args: Addr, SizeT, MutexT */
   /* To notify the core of pthread_mutex_lock calls */
   VG_USERREQ__PRE_PTHREAD_MUTEX_LOCK,
-  /* args: Addr, SizeT */
+  /* args: Addr, SizeT, MutexT */
   /* To notify the core of pthread_mutex_lock calls */
   VG_USERREQ__POST_PTHREAD_MUTEX_LOCK,
-  /* args: Addr, SizeT */
+  /* args: Addr, SizeT, MutexT */
   /* To notify the core of pthread_mutex_unlock calls */
   VG_USERREQ__PRE_PTHREAD_MUTEX_UNLOCK,
   /* args: Addr */
@@ -73,14 +73,14 @@ enum {
 
   /* To notify the core of a pthread_cond_init call */
   VG_USERREQ__POST_PTHREAD_COND_INIT,
-  /* args: Addr, SizeT */
+  /* args: Addr */
   /* To notify the core of a pthread_cond_destroy call */
   VG_USERREQ__PRE_PTHREAD_COND_DESTROY,
-  /* args: Addr, SizeT */
+  /* args: Addr cond, SizeT cond_size, Addr mutex, SizeT mutex_size */
   VG_USERREQ__PRE_PTHREAD_COND_WAIT,
-  /* args: Addr cond, Addr mutex */
+  /* args: Addr cond, SizeT cond_size, Addr mutex, SizeT mutex_size */
   VG_USERREQ__POST_PTHREAD_COND_WAIT,
-  /* args: Addr cond, Addr mutex */
+  /* args: Addr cond, SizeT cond_size, Addr mutex, SizeT mutex_size */
   VG_USERREQ__PRE_PTHREAD_COND_SIGNAL,
   /* args: Addr cond */
   VG_USERREQ__PRE_PTHREAD_COND_BROADCAST,
@@ -88,7 +88,11 @@ enum {
 
 };
 
-void drd_clientreq_init(void);
+typedef enum
+{
+   mutex_type_mutex = 1,
+   mutex_type_spinlock = 2,
+} MutexT;
 
 
 #endif //  __DRD_CLIENTREQ_H

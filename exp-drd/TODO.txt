@@ -19,7 +19,6 @@ Data-race detection algorithm
   AMD64).
 - Change s_threadinfo[] from an array into an OSet or VgHashTable, in order to
   make ThreadId <> DrdThreadId <> pthread_t conversions faster.
-- Write a configure test that figures out sizeof(pthread_mutex_t) etc.
 - [AMD64] Find out why removing 'write(1, "", 0)' in drd_preloaded.c triggers
   a crash on AMD64. Is this a drd or a VEX bug ?
 - Reintroduce the const keyword in the function declarations of the OSet

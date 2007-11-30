@@ -79,6 +79,20 @@ DRD_SOURCES_COMMON =    \
   drd_thread.c          \
   drd_vc.c
 
+noinst_HEADERS = drd_bitmap.h \
+		 drd_mutex.h \
+		 drd_vc.h \
+		 drd_clientreq.h \
+		 drd_segment.h \
+		 priv_drd_clientreq.h \
+		 drd_cond.h \
+		 drd_suppression.h \
+		 pub_drd_bitmap.h \
+		 drd_error.h \
+		 drd_thread.h \
+		 drd_malloc_wrappers.h \
+		 drd_track.h
+
 AM_CFLAGS_X86_LINUX   += -I$(top_srcdir)/coregrind
 AM_CFLAGS_AMD64_LINUX += -I$(top_srcdir)/coregrind
 AM_CFLAGS_PPC32_LINUX += -I$(top_srcdir)/coregrind

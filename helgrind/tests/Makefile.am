@@ -81,7 +81,9 @@ EXTRA_DIST = $(noinst_SCRIPTS) \
 		tc22_exit_w_lock.stderr.exp-glibc25-x86 \
 	tc23_bogus_condwait.vgtest tc23_bogus_condwait.stdout.exp \
 		tc23_bogus_condwait.stderr.exp-glibc25-amd64 \
-		tc23_bogus_condwait.stderr.exp-glibc25-x86
+		tc23_bogus_condwait.stderr.exp-glibc25-x86 \
+	tc24_nonzero_sem.vgtest tc24_nonzero_sem.stdout.exp \
+		tc24_nonzero_sem.stderr.exp-glibc25-amd64
 
 check_PROGRAMS = \
 	hg01_all_ok \
@@ -112,7 +114,8 @@ check_PROGRAMS = \
 	tc20_verifywrap \
 	tc21_pthonce \
 	tc22_exit_w_lock \
-	tc23_bogus_condwait
+	tc23_bogus_condwait \
+	tc24_nonzero_sem
 
 AM_CPPFLAGS = -I$(top_srcdir) -I$(top_srcdir)/include \
                 -I$(top_srcdir)/coregrind -I$(top_builddir)/include \

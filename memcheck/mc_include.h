@@ -255,7 +255,7 @@ extern Bool MC_(record_leak_error)            ( ThreadId tid,
 extern Bool MC_(clo_partial_loads_ok);
 
 /* Max volume of the freed blocks queue. */
-extern SSizeT MC_(clo_freelist_vol);
+extern Long MC_(clo_freelist_vol);
 
 /* Do leak check at exit?  default: NO */
 extern LeakCheckMode MC_(clo_leak_check);

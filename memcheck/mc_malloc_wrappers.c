@@ -71,22 +71,27 @@ VgHashTable MC_(mempool_list) = NULL;
 /* Records blocks after freeing. */
 static MC_Chunk* freed_list_start  = NULL;
 static MC_Chunk* freed_list_end    = NULL;
-static SSizeT    freed_list_volume = 0;
+static Long      freed_list_volume = 0;
 
 /* Put a shadow chunk on the freed blocks queue, possibly freeing up
    some of the oldest blocks in the queue at the same time. */
 static void add_to_freed_queue ( MC_Chunk* mc )
 {
+   const Bool show = False;
+
    /* Put it at the end of the freed list */
    if (freed_list_end == NULL) {
       tl_assert(freed_list_start == NULL);
       freed_list_end    = freed_list_start = mc;
-      freed_list_volume = mc->szB;
+      freed_list_volume = (Long)mc->szB;
    } else {
       tl_assert(freed_list_end->next == NULL);
       freed_list_end->next = mc;
       freed_list_end       = mc;
-      freed_list_volume += mc->szB;
+      freed_list_volume += (Long)mc->szB;
+      if (show)
+         VG_(printf)("mc_freelist: acquire: volume now %lld\n", 
+                     freed_list_volume);
    }
    mc->next = NULL;
 
@@ -100,8 +105,10 @@ static void add_to_freed_queue ( MC_Chunk* mc )
       tl_assert(freed_list_end != NULL);
 
       mc1 = freed_list_start;
-      freed_list_volume -= mc1->szB;
-      /* VG_(printf)("volume now %d\n", freed_list_volume); */
+      freed_list_volume -= (Long)mc1->szB;
+      if (show)
+         VG_(printf)("mc_freelist: discard: volume now %lld\n", 
+                     freed_list_volume);
       tl_assert(freed_list_volume >= 0);
 
       if (freed_list_start == freed_list_end) {
@@ -174,7 +181,6 @@ static Bool complain_about_silly_args2(SizeT n, SizeT sizeB)
 }
 
 /* Allocate memory and note change in memory available */
-__inline__
 void* MC_(new_block) ( ThreadId tid,
                         Addr p, SizeT szB, SizeT alignB, UInt rzB,
                         Bool is_zeroed, MC_AllocKind kind, VgHashTable table)
@@ -278,7 +284,6 @@ void die_and_free_mem ( ThreadId tid, MC_Chunk* mc, SizeT rzB )
    }
 }
 
-__inline__
 void MC_(handle_free) ( ThreadId tid, Addr p, UInt rzB, MC_AllocKind kind )
 {
    MC_Chunk* mc;

@@ -122,7 +122,7 @@ the following problems:</para>
 
   <varlistentry id="opt.freelist-vol" xreflabel="--freelist-vol">
     <term>
-      <option><![CDATA[--freelist-vol=<number> [default: 5000000] ]]></option>
+      <option><![CDATA[--freelist-vol=<number> [default: 10000000] ]]></option>
     </term>
     <listitem>
       <para>When the client program releases memory using
@@ -137,7 +137,7 @@ the following problems:</para>
       have been freed.</para>
 
       <para>This flag specifies the maximum total size, in bytes, of the
-      blocks in the queue.  The default value is five million bytes.
+      blocks in the queue.  The default value is ten million bytes.
       Increasing this increases the total amount of memory used by
       <constant>memcheck</constant> but may detect invalid uses of freed
       blocks which would otherwise go undetected.</para>

@@ -4367,7 +4367,7 @@ static Bool mc_expensive_sanity_check ( void )
 /*------------------------------------------------------------*/
 
 Bool          MC_(clo_partial_loads_ok)       = False;
-SSizeT        MC_(clo_freelist_vol)           = 5000000;
+Long          MC_(clo_freelist_vol)           = 10*1000*1000LL;
 LeakCheckMode MC_(clo_leak_check)             = LC_Summary;
 VgRes         MC_(clo_leak_resolution)        = Vg_LowRes;
 Bool          MC_(clo_show_reachable)         = False;
@@ -4382,7 +4382,8 @@ static Bool mc_process_cmd_line_options(Char* arg)
 
    else VG_BOOL_CLO(arg, "--undef-value-errors",    MC_(clo_undef_value_errors))
    
-   else VG_BNUM_CLO(arg, "--freelist-vol",  MC_(clo_freelist_vol), 0, 1000000000)
+   else VG_BNUM_CLO(arg, "--freelist-vol",  MC_(clo_freelist_vol), 
+                                            0, 10*1000*1000*1000LL)
    
    else if (VG_CLO_STREQ(arg, "--leak-check=no"))
       MC_(clo_leak_check) = LC_Off;
@@ -4442,7 +4443,7 @@ static void mc_print_usage(void)
 "    --show-reachable=no|yes          show reachable blocks in leak check? [no]\n"
 "    --undef-value-errors=no|yes      check for undefined value errors [yes]\n"
 "    --partial-loads-ok=no|yes        too hard to explain here; see manual [no]\n"
-"    --freelist-vol=<number>          volume of freed blocks queue [5000000]\n"
+"    --freelist-vol=<number>          volume of freed blocks queue [10000000]\n"
 "    --workaround-gcc296-bugs=no|yes  self explanatory [no]\n"
 "    --ignore-ranges=0xPP-0xQQ[,0xRR-0xSS]   assume given addresses are OK\n"
    );

@@ -23,15 +23,16 @@
 */
 
 
+#include "drd_error.h"
+#include "drd_segment.h"
+#include "drd_thread.h"
 #include "pub_tool_basics.h"      // Addr, SizeT
 #include "pub_tool_errormgr.h"    // VG_(unique_error)()
 #include "pub_tool_libcassert.h"  // tl_assert()
 #include "pub_tool_libcbase.h"    // VG_(strlen)()
 #include "pub_tool_libcprint.h"   // VG_(printf)()
 #include "pub_tool_mallocfree.h"  // VG_(malloc)(), VG_(free)()
-#include "drd_error.h"
-#include "drd_segment.h"
-#include "drd_thread.h"
+#include "pub_tool_threadstate.h" // VG_INVALID_THREADID
 
 
 // Local variables.
@@ -52,6 +53,7 @@ void sg_init(Segment* const sg,
              DrdThreadId const created)
 {
   Segment* creator_sg;
+  ThreadId vg_created = DrdThreadIdToVgThreadId(created);
 
   tl_assert(sg);
   tl_assert(creator == DRD_INVALID_THREADID || IsValidDrdThreadId(creator));
@@ -62,7 +64,10 @@ void sg_init(Segment* const sg,
   sg->next = 0;
   sg->prev = 0;
 
-  sg->stacktrace = VG_(record_ExeContext)(created, 0);
+  if (vg_created != VG_INVALID_THREADID)
+    sg->stacktrace = VG_(record_ExeContext)(vg_created, 0);
+  else
+    sg->stacktrace = 0;
 
   if (creator_sg)
     vc_copy(&sg->vc, &creator_sg->vc);

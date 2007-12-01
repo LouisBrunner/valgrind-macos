@@ -198,10 +198,6 @@ PTH_FUNC(int, pthreadZucreateZAZa, // pthread_create@*
       {
          assert(0);
       }
-#if 0
-      printf("[%ld] Requested detach state for new thread: %d\n",
-             pthread_self(), vgargs.detachstate);
-#endif
    }
    assert(vgargs.detachstate == PTHREAD_CREATE_JOINABLE
           || vgargs.detachstate == PTHREAD_CREATE_DETACHED);
@@ -224,9 +220,12 @@ PTH_FUNC(int, pthreadZucreateZAZa, // pthread_create@*
    // in this file (vg_preloaded.c) would be called instead of those in
    // libpthread.so. This loop is necessary because vgargs is allocated on the
    // stack, and the created thread reads it.
-   while (! vgargs.wrapper_started)
+   if (ret == 0)
    {
-      sched_yield();
+      while (! vgargs.wrapper_started)
+      {
+         sched_yield();
+      }
    }
 #endif
    return ret;

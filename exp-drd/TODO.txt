@@ -4,6 +4,7 @@ Last updated February 22, 2006
 
 Data-race detection algorithm
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+- Implement glibc version detection in drd_main.c.
 - Implement segment merging, such that the number of segments per thread
   remains limited even when there is no synchronization between threads.
 - Find out why a race is reported on std::string::string(std::string const&)

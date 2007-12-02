@@ -152,11 +152,19 @@ the following problems:</para>
       <para>When enabled, assume that reads and writes some small
       distance below the stack pointer are due to bugs in gcc 2.96, and
       does not report them.  The "small distance" is 256 bytes by
-      default.  Note that gcc 2.96 is the default compiler on some older
+      default.  Note that gcc 2.96 is the default compiler on some ancient
       Linux distributions (RedHat 7.X) and so you may need to use this
       flag.  Do not use it if you do not have to, as it can cause real
       errors to be overlooked.  A better alternative is to use a more
       recent gcc/g++ in which this bug is fixed.</para>
+
+      <para>You may also need to use this flag when working with
+      gcc/g++ 3.X or 4.X on 32-bit PowerPC Linux.  This is because
+      gcc/g++ generates code which occasionally accesses below the
+      stack pointer, particularly for floating-point to/from integer
+      conversions.  This is in violation of the 32-bit PowerPC ELF
+      specification, which makes no provision for locations below the
+      stack pointer to be accessible.</para>
     </listitem>
   </varlistentry>
 
@@ -195,6 +203,39 @@ the following problems:</para>
       <varname>no</varname> if you don't like seeing undefined value
       errors; it also has the side effect of speeding
       <constant>memcheck</constant> up somewhat.
+      </para>
+    </listitem>
+  </varlistentry>
+
+  <varlistentry id="opt.malloc-fill" xreflabel="--malloc-fill">
+    <term>
+      <option><![CDATA[--malloc-fill=<hexnumber> ]]></option>
+    </term>
+    <listitem>
+      <para>Fills blocks allocated
+      by <computeroutput>malloc</computeroutput>,
+         <computeroutput>new</computeroutput>, etc, but not
+      by <computeroutput>calloc</computeroutput>, with the specified
+      byte.  This can be useful when trying to shake out obscure
+      memory corruption problems.  The allocated area is still
+      regarded by Memcheck as undefined -- this flag only affects its
+      contents.
+      </para>
+    </listitem>
+  </varlistentry>
+
+  <varlistentry id="opt.free-fill" xreflabel="--free-fill">
+    <term>
+      <option><![CDATA[--free-fill=<hexnumber> ]]></option>
+    </term>
+    <listitem>
+      <para>Fills blocks freed
+      by <computeroutput>free</computeroutput>,
+         <computeroutput>delete</computeroutput>, etc, with the
+      specified byte.  This can be useful when trying to shake out
+      obscure memory corruption problems.  The freed area is still
+      regarded by Memcheck as not valid for access -- this flag only
+      affects its contents.
       </para>
     </listitem>
   </varlistentry>

@@ -13,7 +13,7 @@ other improvements.
 Tom Hughes, tom@valgrind.org
 
 Tom did a vast number of bug fixes, and helped out with support for
-more recent Linux/glibc versions.
+more recent Linux/glibc versions, and set up the present build system.
 
 Nicholas Nethercote, njn@valgrind.org
 
@@ -39,8 +39,8 @@ Keeper of the very excellent http://www.valgrind.org.
 Julian Seward, julian@valgrind.org
 
 Julian was the original designer and author of Valgrind, created the
-dynamic translation framework, wrote Memcheck and Addrcheck, and did
-lots of other things.
+dynamic translation framework, wrote Memcheck and 3.3.X Helgrind, and
+did lots of other things.
 
 Robert Walsh, rjwalsh@valgrind.org
 
@@ -52,7 +52,8 @@ Josef Weidendorfer, Josef.Weidendorfer@gmx.de.
 
 Josef wrote Callgrind and the associated KCachegrind GUI.
 
-
+Omega was written by Bryan Meredith and is maintained by Rich Coe.
+DRD was written by and is maintained by Bart Van Assche.
 
 Frederic Gobry helped with autoconf and automake.  Daniel Berlin
 modified readelf's dwarf2 source line reader, written by Nick Clifton,

@@ -1,81 +1,126 @@
-Release 3.3.0 (XX XXX 2007)
-~~~~~~~~~~~~~~~~~~~~~~~~~~~
-3.3.0 is a feature release with ...
 
-XXX: AIX support (ppc32 and ppc64?)
+Release 3.3.0 (7 December 2007)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-XXX:
-* modestly restructured/rationalised documentation
-* support for latest toolchains/libs: gcc-4.3, glibc-2.7
-* many bugs fixed, as usual
-* scalability improvements (for v. large programs); some modest
-  performance improvements
+3.3.0 is a feature release with many significant improvements and the
+usual collection of bug fixes.  This release supports X86/Linux,
+AMD64/Linux, PPC32/Linux and PPC64/Linux.  Support for recent distros
+(using gcc 4.3, glibc 2.6 and 2.7) has been added.
 
-Several large improvements to existing tools have been implemented.
+The main excitement in 3.3.0 is new and improved tools.  Helgrind
+works again, Massif has been completely overhauled and much improved,
+Cachegrind now does branch-misprediction profiling, and a new category
+of experimental tools has been created, containing two new tools:
+Omega and DRD.  There are many other smaller improvements.  In detail:
 
-- Helgrind has been completely overhauled and now works for the first time
-  since Valgrind 2.2.0.  [XXX: ...]
+- Helgrind has been completely overhauled and works for the first time
+  since Valgrind 2.2.0.  Supported functionality is: detection of
+  misuses of the POSIX PThreads API, detection of potential deadlocks
+  resulting from cyclic lock dependencies, and detection of data
+  races.  Compared to the 2.2.0 Helgrind, the race detection algorithm
+  has some significant improvements aimed at reducing the false error
+  rate.  Handling of various kinds of corner cases has been improved.
+  Efforts have been made to make the error messages easier to
+  understand.  Extensive documentation is provided.
 
-- Massif has been completely overhauled.  Instead of measuring space-time
-  usage -- which wasn't always useful and many people found confusing -- it
-  now measures space usage at various points in the execution, including the
-  point of peak memory allocation.  Its output format has also changed:
-  instead of producing PostScript graphs and HTML text, it produces a single
-  text output (via the new 'ms_print' script) that contains both a graph and
-  the old textual information, but in a more compact and readable form.
-  Finally, the new version should be more reliable than the old one, as it
-  has been tested more thoroughly.
+- Massif has been completely overhauled.  Instead of measuring
+  space-time usage -- which wasn't always useful and many people found
+  confusing -- it now measures space usage at various points in the
+  execution, including the point of peak memory allocation.  Its
+  output format has also changed: instead of producing PostScript
+  graphs and HTML text, it produces a single text output (via the new
+  'ms_print' script) that contains both a graph and the old textual
+  information, but in a more compact and readable form.  Finally, the
+  new version should be more reliable than the old one, as it has been
+  tested more thoroughly.
 
 - Cachegrind has been extended to do branch-misprediction profiling.
   Both conditional and indirect branches are profiled.  The default
   behaviour of Cachegrind is unchanged.  To use the new functionality,
   give the option --branch-sim=yes.
 
-Two new tools have also been added.  These are "experimental tools", which
-means that they may not work as well as the standard tools, but they are
-included because some people will find them useful.  The notion of
-experimental tools was added in order to provide a way for tools to get
-wider exposure among Valgrind users.  These tools have a "exp-" prefix
-attached to their names to indicate their experimental nature.
+- A new category of "experimental tools" has been created.  Such tools
+  may not work as well as the standard tools, but are included because
+  some people will find them useful, and because exposure to a wider
+  user group provides tool authors with more end-user feedback.  These
+  tools have a "exp-" prefix attached to their names to indicate their
+  experimental nature.  Currently there are two experimental tools:
 
-- exp-Omega [XXX ...]
+  * exp-Omega: an instantaneous leak detector.  See
+    exp-omega/docs/omega_introduction.txt.
 
-- exp-DRD [XXX ...]
+  * exp-DRD: a data race detector based on the happens-before
+    relation.  See exp-drd/TODO.txt.
 
-Other user-visible changes:
+- Scalability improvements for very large programs, particularly those
+  which have a million or more malloc'd blocks in use at once.  These
+  improvements mostly affect Memcheck.  Memcheck is also up to 10%
+  faster for all programs, with x86-linux seeing the largest
+  improvement.
 
-- The --log-file-exactly and --log-file-qualifier options have been removed.
-  To make up for this --log-file option has been made more powerful and
-  flexible;  it can now accept a %p format specifier, which is replaced with
-  the process ID, and the a %q{FOO} format specifier, which is replaced with
-  the contents of the environment variable $FOO.
+- Works well on the latest Linux distros.  Has been tested on Fedora
+  Core 8 (x86, amd64, ppc32, ppc64) and openSUSE 10.3.  glibc 2.6 and
+  2.7 are supported.  gcc-4.3 (in its current pre-release state) is
+  supported.  At the same time, 3.3.0 retains support for older
+  distros.
 
-- [XXX: --child-silent-after-fork...]
+- The documentation has been modestly reorganised with the aim of
+  making it easier to find information on common-usage scenarios.
+  Some advanced material has been moved into a new chapter in the main
+  manual, so as to unclutter the main flow, and other tidying up has
+  been done.
 
-- There are new --cachegrind-out-file, --callgrind-out-file and
-  --massif-out-file options, which control the names of the output files
-  produced by Cachegrind, Callgrind and Massif.  They accept the same %p and
-  %q format specifiers that --log-file accepts.  --callgrind-out-file
-  replaces Callgrind's old --base option.
+- There is experimental support for AIX 5.3, both 32-bit and 64-bit
+  processes.  You need to be running a 64-bit kernel to use Valgrind
+  on a 64-bit executable.
 
-- Cachegrind's 'cg_annotate' script no longer uses the --<pid> option to
-  specify the output file.  Instead, the first non-option argument is taken
-  to be the name of the output file, and any subsequent non-option arguments
-  are taken to be the names of source files to be annotated.  This change
-  was necessary due to the addition of the --cachegrind-out-file option.
-  'callgrind_annotate' already had this behaviour.
+- There have been some changes to command line options, which may
+  affect you:
 
-- Cachegrind now uses directory names where possible in its output files.
-  This means that the -I option to 'cg_annotate' should not be needed in
-  most cases.  It also means it can correctly handle the case where two
-  source files in different directories have the same name.
-  The same is true for Callgrind and callgrind_annotate, respectively.
-  The benefits also apply to KCachegrind, without any further change
-  (ie. in most cases there is no configuration of source directories needed).
+  * --log-file-exactly and 
+    --log-file-qualifier options have been removed.
 
-- A new suppression kind has been introduced: "Jump".  This is for
-  suppressing jump-to-invalid-address errors.  Previously you had to use an
-  "Addr1" suppression, which didn't make much sense.
+    To make up for this --log-file option has been made more powerful.
+    It now accepts a %p format specifier, which is replaced with the
+    process ID, and a %q{FOO} format specifier, which is replaced with
+    the contents of the environment variable FOO.
+
+  * --child-silent-after-fork=yes|no [no]
+
+    Causes Valgrind to not show any debugging or logging output for
+    the child process resulting from a fork() call.  This can make the
+    output less confusing (although more misleading) when dealing with
+    processes that create children.
+
+  * --cachegrind-out-file, --callgrind-out-file and --massif-out-file
+
+    These control the names of the output files produced by
+    Cachegrind, Callgrind and Massif.  They accept the same %p and %q
+    format specifiers that --log-file accepts.  --callgrind-out-file
+    replaces Callgrind's old --base option.
+
+  * Cachegrind's 'cg_annotate' script no longer uses the --<pid>
+    option to specify the output file.  Instead, the first non-option
+    argument is taken to be the name of the output file, and any
+    subsequent non-option arguments are taken to be the names of
+    source files to be annotated.
+
+  * Cachegrind and Callgrind now use directory names where possible in
+    their output files.  This means that the -I option to
+    'cg_annotate' and 'callgrind_annotate' should not be needed in
+    most cases.  It also means they can correctly handle the case
+    where two source files in different directories have the same
+    name.
+
+- Memcheck offers a new suppression kind: "Jump".  This is for
+  suppressing jump-to-invalid-address errors.  Previously you had to
+  use an "Addr1" suppression, which didn't make much sense.
+
+- Memcheck has new flags --malloc-fill=<hexnum> and
+  --free-fill=<hexnum> which free malloc'd / free'd areas with the
+  specified byte.  This can help shake out obscure memory corruption
+  problems.  The definedness and addressibility of these areas is
+  unchanged -- only the contents are affected.
 
 - The behaviour of Memcheck's client requests VALGRIND_GET_VBITS and
   VALGRIND_SET_VBITS have changed slightly.  They no longer issue
@@ -88,16 +133,94 @@ Other user-visible changes:
   traces.  Second, a new option --trace-superblocks has been added, which
   shows the addresses of superblocks (code blocks) as they are executed.
 
+- The following bugs have been fixed.  Note that "n-i-bz" stands for
+  "not in bugzilla" -- that is, a bug that was reported to us but
+  never got a bugzilla entry.  We encourage you to file bugs in
+  bugzilla (http://bugs.kde.org/enter_valgrind_bug.cgi) rather than
+  mailing the developers (or mailing lists) directly.
+
+  n-i-bz  x86_linux_REDIR_FOR_index() broken
+  n-i-bz  guest-amd64/toIR.c:2512 (dis_op2_E_G): Assertion `0' failed.
+  n-i-bz  Support x86 INT insn (INT (0xCD) 0x40 - 0x43)
+  n-i-bz  Add sys_utimensat system call for Linux x86 platform
+   79844  Helgrind complains about race condition which does not exist
+   82871  Massif output function names too short
+   89061  Massif: ms_main.c:485 (get_XCon): Assertion `xpt->max_chi...'
+   92615  Write output from Massif at crash
+   95483  massif feature request: include peak allocation in report
+  112163  MASSIF crashed with signal 7 (SIGBUS) after running 2 days
+  119404  problems running setuid executables (partial fix)
+  121629  add instruction-counting mode for timing
+  127371  java vm giving unhandled instruction bytes: 0x26 0x2E 0x64 0x65
+  129937  ==150380
+  129576  Massif loses track of memory, incorrect graphs
+  132132  massif --format=html output does not do html entity escaping
+  132950  Heap alloc/usage summary
+  133962  unhandled instruction bytes: 0xF2 0x4C 0xF 0x10
+  134990  use -fno-stack-protector if possible
+  136382  ==134990
+  137396  I would really like helgrind to work again...
+  137714  x86/amd64->IR: 0x66 0xF 0xF7 0xC6 (maskmovq, maskmovdq)
+  141631  Massif: percentages don't add up correctly
+  142706  massif numbers don't seem to add up
+  143062  massif crashes on app exit with signal 8 SIGFPE
+  144453  (get_XCon): Assertion 'xpt->max_children != 0' failed.
+  145559  valgrind aborts when malloc_stats is called
+  145609  valgrind aborts all runs with 'repeated section!'
+  145622  --db-attach broken again on x86-64
+  145837  ==149519
+  145887  PPC32: getitimer() system call is not supported
+  146252  ==150678
+  146456  (update_XCon): Assertion 'xpt->curr_space >= -space_delta'...
+  146701  ==134990
+  146781  Adding support for private futexes
+  147325  valgrind internal error on syscall (SYS_io_destroy, 0)
+  147498  amd64->IR: 0xF0 0xF 0xB0 0xF (lock cmpxchg %cl,(%rdi))
+  147628  SALC opcode 0xd6 unimplemented
+  147825  crash on amd64-linux with gcc 4.2 and glibc 2.6 (CFI)
+  148174  Incorrect type of freed_list_volume causes assertion [...]
+  148447  x86_64 : new NOP codes: 66 66 66 66 2e 0f 1f
+  149182  PPC Trap instructions not implemented in valgrind
+  149504  Assertion hit on alloc_xpt->curr_space >= -space_delta
+  149519  ppc32: V aborts with SIGSEGV on execution of a signal handler
+  149892  ==137714
+  150044  SEGV during stack deregister
+  150380  dwarf/gcc interoperation (dwarf3 read problems)
+  150408  ==148447
+  150678  guest-amd64/toIR.c:3741 (dis_Grp5): Assertion `sz == 4' failed
+  151209  V unable to execute programs for users with UID > 2^16
+  151938  help on --db-command= misleading
+  152022  subw $0x28, %%sp causes assertion failure in memcheck
+  152357  inb and outb not recognized in 64-bit mode
+  152501  vex x86->IR: 0x27 0x66 0x89 0x45 (daa) 
+  152818  vex x86->IR: 0xF3 0xAC 0xFC 0x9C (rep lodsb)
+
 Developer-visible changes:
 
-- New debugging command line options: --debug-dump, --trace-symtab-patt...
+- The names of some functions and types within the Vex IR have
+  changed.  Run 'svn log -r1689 VEX/pub/libvex_ir.h' for full details.
+  Any existing standalone tools will have to be updated to reflect
+  these changes.  The new names should be clearer.  The file
+  VEX/pub/libvex_ir.h is also much better commented.
 
-- The names of some functions and types within the Vex IR have changed.
-  (Run 'svn log -r1689 VEX/pub/libvex_ir.h' for full details.)
-  So any existing tools will have to be updated to reflect these
-  changes.  The new names should be clearer.  The file
-  VEX/pub/libvex_ir.h is also much better commented, and serves as the
-  best documentation about Vex.
+- A number of new debugging command line options have been added.
+  These are mostly of use for debugging the symbol table and line
+  number readers:
+
+  --trace-symtab-patt=<patt> limit debuginfo tracing to obj name <patt>
+  --trace-cfi=no|yes        show call-frame-info details? [no]
+  --debug-dump=syms         mimic /usr/bin/readelf --syms
+  --debug-dump=line         mimic /usr/bin/readelf --debug-dump=line
+  --debug-dump=frames       mimic /usr/bin/readelf --debug-dump=frames
+  --sym-offsets=yes|no      show syms in form 'name+offset' ? [no]
+
+- Internally, the code base has been further factorised and
+  abstractified, particularly with respect to support for non-Linux
+  OSs.
+
+(3.3.0RC1: XX Dec 2007, vex rXXXX, valgrind rXXXX).
+(3.3.0:    XX Dec 2006, vex rXXXX, valgrind rXXXX).
+
 
 
 Release 3.2.3 (29 Jan 2007)

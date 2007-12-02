@@ -21,8 +21,8 @@ Dirk Mueller contributed the malloc-free mismatch checking stuff
 and other bits and pieces, and acted as our KDE liaison.
 
 Julian Seward was the original founder, designer and author, created
-the dynamic translation frameworks, wrote Memcheck and Addrcheck, and
-did lots of other things.
+the dynamic translation frameworks, wrote Memcheck and 3.3.X Helgrind,
+and did lots of other things.
 
 Robert Walsh added file descriptor leakage checking, new library
 interception machinery, support for client allocation pools, and minor
@@ -37,6 +37,9 @@ Clifton, for use in Valgrind.
 
 Michael Matz and Simon Hausmann modified the GNU binutils
 demangler(s) for use in Valgrind.
+
+Omega was written by Bryan Meredith and is maintained by Rich Coe.
+DRD was written by and is maintained by Bart Van Assche.
 
 And lots and lots of other people sent bug reports, patches, and very 
 helpful feedback.  Thank you all.

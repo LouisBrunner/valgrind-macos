@@ -218,8 +218,8 @@ Developer-visible changes:
   abstractified, particularly with respect to support for non-Linux
   OSs.
 
-(3.3.0RC1: XX Dec 2007, vex rXXXX, valgrind rXXXX).
-(3.3.0:    XX Dec 2006, vex rXXXX, valgrind rXXXX).
+(3.3.0.RC1: 2 Dec 2007, vex r1803, valgrind r7268).
+(3.3.0:     X Dec 2006, vex rXXXX, valgrind rXXXX).
 
 
 

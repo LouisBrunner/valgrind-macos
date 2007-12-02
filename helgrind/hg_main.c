@@ -66,12 +66,13 @@
    worthwhile performance benefits over -O.
 */
 
+// FIXME catch sync signals (SEGV, basically) and unlock BHL,
+// if held.  Otherwise a LOCK-prefixed insn which segfaults 
+// gets Helgrind into a total muddle as the BHL will not be
+// released after the insn.
+
 // FIXME what is supposed to happen to locks in memory which
 // is relocated as a result of client realloc?
-
-// FIXME some kind of ownership recycling problem in
-// init_thread_specific_state() for programs which use the same thread
-// slot more than once?
 
 // FIXME put referencing ThreadId into Thread and get
 // rid of the slow reverse mapping function.

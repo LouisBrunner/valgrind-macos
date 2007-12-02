@@ -386,7 +386,7 @@ AvlNode* avl_find_node ( AvlNode* t, Word k, Word(*kCmp)(Word,Word) )
       while (True) {
          if (t == NULL) return NULL;
          cmpres = kCmp(t->key, k);
-         if (cmpres > 0) t = t->child[0];  else
+         if (cmpres > 0) t = t->child[0]; else
          if (cmpres < 0) t = t->child[1]; else
          return t;
       }
@@ -399,7 +399,7 @@ AvlNode* avl_find_node ( AvlNode* t, Word k, Word(*kCmp)(Word,Word) )
          cmpres = ((Word)t->key) - ((Word)k);
          if (cmpres == 0) return t; /* unlikely ==> predictable */
          cmpresU = (UWord)cmpres;
-         cmpresU >>=/*unsigned*/ (8 * sizeof(cmpres) - 1);
+         cmpresU >>=/*unsigned*/ (8 * sizeof(cmpresU) - 1);
          t = t->child[cmpresU];
       }
    }

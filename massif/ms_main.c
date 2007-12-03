@@ -52,6 +52,9 @@
 // - Options like --alloc-fn='operator new(unsigned, std::nothrow_t const&amp;)'
 //   don't work in a .valgrindrc file or in $VALGRIND_OPTS. 
 //   m_commandline.c:add_args_from_string() needs to respect single quotes.
+// - With --stack=yes, want to add a stack trace for detailed snapshots so
+//   it's clear where/why the peak is occurring. (Mattieu Castet)  Also,
+//   possibly useful even with --stack=no? (Andi Yin)
 //
 // Performance:
 // - To run the benchmarks:

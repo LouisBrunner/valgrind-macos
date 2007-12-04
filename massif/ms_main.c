@@ -465,6 +465,9 @@ static void ms_print_debug_usage(void)
 //   |   v   v    |
 //  child1   child2
 //
+// (Note that malformed stack traces can lead to difficulties.  See the
+// comment at the bottom of get_XCon.)
+//
 // XTrees and XPts are mirrored by SXTrees and SXPts, where the 'S' is short
 // for "saved".  When the XTree is duplicated for a snapshot, we duplicate
 // it as an SXTree, which is similar but omits some things it does not need,
@@ -612,7 +615,7 @@ static Int SXPt_revcmp_szB(void* n1, void* n2)
 static SXPt* dup_XTree(XPt* xpt, SizeT total_szB)
 {
    Int  i, n_sig_children, n_insig_children, n_child_sxpts;
-   SizeT insig_children_szB, sig_child_threshold_szB;
+   SizeT sig_child_threshold_szB;
    SXPt* sxpt;
 
    // Number of XPt children  Action for SXPT
@@ -657,21 +660,23 @@ static SXPt* dup_XTree(XPt* xpt, SizeT total_szB)
    // Create the SXPt's children.
    if (n_child_sxpts > 0) {
       Int j;
-      SizeT sig_children_szB = 0;
+      SizeT sig_children_szB = 0, insig_children_szB = 0;
       sxpt->Sig.children = VG_(malloc)(n_child_sxpts * sizeof(SXPt*));
 
-      // Duplicate the significant children.
+      // Duplicate the significant children.  (Nb: sig_children_szB +
+      // insig_children_szB doesn't necessarily equal xpt->szB.)
       j = 0;
       for (i = 0; i < xpt->n_children; i++) {
          if (xpt->children[i]->szB >= sig_child_threshold_szB) {
             sxpt->Sig.children[j++] = dup_XTree(xpt->children[i], total_szB);
-            sig_children_szB += xpt->children[i]->szB;
+            sig_children_szB   += xpt->children[i]->szB;
+         } else {
+            insig_children_szB += xpt->children[i]->szB;
          }
       }
 
       // Create the SXPt for the insignificant children, if any, and put it
       // in the last child entry.
-      insig_children_szB = sxpt->szB - sig_children_szB;
       if (n_insig_children > 0) {
          // Nb: We 'n_sxpt_allocs' here because creating an Insig SXPt
          // doesn't involve a call to dup_XTree().
@@ -719,8 +724,6 @@ static void free_SXTree(SXPt* sxpt)
 // ms_expensive_sanity_check.
 static void sanity_check_XTree(XPt* xpt, XPt* parent)
 {
-   Int i;
-
    tl_assert(xpt != NULL);
 
    // Check back-pointer.
@@ -730,16 +733,8 @@ static void sanity_check_XTree(XPt* xpt, XPt* parent)
    // Check children counts look sane.
    tl_assert(xpt->n_children <= xpt->max_children);
 
-   // Check the sum of any children szBs equals the XPt's szB.  Check the
-   // children at the same time.
-   if (xpt->n_children > 0) {
-      SizeT children_sum_szB = 0;
-      for (i = 0; i < xpt->n_children; i++) {
-         sanity_check_XTree(xpt->children[i], xpt);
-         children_sum_szB += xpt->children[i]->szB;
-      }
-      tl_assert(children_sum_szB == xpt->szB);
-   }
+   // Unfortunately, xpt's size is not necessarily equal to the sum of xpt's
+   // children's sizes.  See comment at the bottom of get_XCon.
 }
 
 // Sanity checking:  we check SXTrees (which are in snapshots) after
@@ -756,12 +751,9 @@ static void sanity_check_SXTree(SXPt* sxpt)
    switch (sxpt->tag) {
     case SigSXPt: {
       if (sxpt->Sig.n_children > 0) {
-         SizeT children_sum_szB = 0;
          for (i = 0; i < sxpt->Sig.n_children; i++) {
             sanity_check_SXTree(sxpt->Sig.children[i]);
-            children_sum_szB += sxpt->Sig.children[i]->szB; 
          }
-         tl_assert(children_sum_szB == sxpt->szB);
       }
       break;
     }
@@ -893,7 +885,45 @@ static XPt* get_XCon( ThreadId tid, Bool is_custom_alloc )
          }
       }
    }
-   tl_assert(0 == xpt->n_children); // Must be bottom-XPt
+
+   // [Note: several comments refer to this comment.  Do not delete it
+   // without updating them.]
+   //
+   // A complication... If all stack traces were well-formed, then the
+   // returned xpt would always be a bottom-XPt.  As a consequence, an XPt's
+   // size would always be equal to the sum of its children's sizes, which
+   // is an excellent sanity check.  
+   //
+   // Unfortunately, stack traces occasionally are malformed, ie. truncated.
+   // This allows a stack trace to be a sub-trace of another, eg. a/b/c is a
+   // sub-trace of a/b/c/d.  So we can't assume this xpt is a bottom-XPt;
+   // nor can we do sanity check an XPt's size against its children's sizes.
+   // This is annoying, but must be dealt with.  (Older versions of Massif
+   // had this assertion in, and it was reported to fail by real users a
+   // couple of times.)  Even more annoyingly, I can't come up with a simple
+   // test case that exhibit such a malformed stack trace, so I can't
+   // regression test it.  Sigh.
+   //
+   // However, we can print a warning, so that if it happens (unexpectedly)
+   // in existing regression tests we'll know.  Also, it warns users that
+   // the output snapshots may not add up the way they might expect.
+   //
+   //tl_assert(0 == xpt->n_children); // Must be bottom-XPt
+   if (0 != xpt->n_children) {
+      static Int n_moans = 0;
+      if (n_moans < 3) {
+         VG_(message)(Vg_UserMsg,
+            "Warning: Malformed stack trace detected.  In Massif's output,");
+         VG_(message)(Vg_UserMsg,
+            "Warning:   the size of an entry's child entries may not sum up");
+         VG_(message)(Vg_UserMsg,
+            "Warning:   to the entry's size as they normally do.");
+         n_moans++;
+         if (3 == n_moans)
+            VG_(message)(Vg_UserMsg,
+               "Warning: (And Massif now won't warn about this again.)");
+      }
+   }
    return xpt;
 }
 
@@ -902,7 +932,6 @@ static void update_XCon(XPt* xpt, SSizeT space_delta)
 {
    tl_assert(True == clo_heap);
    tl_assert(NULL != xpt);
-   tl_assert(0    == xpt->n_children);    // must be bottom-XPt
 
    if (0 == space_delta)
       return;
@@ -1925,11 +1954,12 @@ static void pp_snapshot_SXPt(Int fd, SXPt* sxpt, Int depth, Char* depth_str,
          // Ok, print the child.
          pp_snapshot_SXPt(fd, child, depth+1, depth_str, depth_str_len,
             snapshot_heap_szB, snapshot_total_szB);
-
-         // Unindent.
-         depth_str[depth+0] = '\0';
-         depth_str[depth+1] = '\0';
       }
+
+      // Unindent.
+      depth_str[depth+0] = '\0';
+      depth_str[depth+1] = '\0';
+
       // There should be 0 or 1 Insig children SXPts.
       tl_assert(n_insig_children_sxpts <= 1);
       break;

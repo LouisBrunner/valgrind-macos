@@ -915,13 +915,13 @@ static XPt* get_XCon( ThreadId tid, Bool is_custom_alloc )
          VG_(message)(Vg_UserMsg,
             "Warning: Malformed stack trace detected.  In Massif's output,");
          VG_(message)(Vg_UserMsg,
-            "Warning:   the size of an entry's child entries may not sum up");
+            "         the size of an entry's child entries may not sum up");
          VG_(message)(Vg_UserMsg,
-            "Warning:   to the entry's size as they normally do.");
+            "         to the entry's size as they normally do.");
          n_moans++;
          if (3 == n_moans)
             VG_(message)(Vg_UserMsg,
-               "Warning: (And Massif now won't warn about this again.)");
+               "         (And Massif now won't warn about this again.)");
       }
    }
    return xpt;

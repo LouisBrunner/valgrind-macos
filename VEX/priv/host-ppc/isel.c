@@ -2552,6 +2552,23 @@ static void iselInt64Expr_wrk ( HReg* rHi, HReg* rLo,
    vassert(e);
    vassert(typeOfIRExpr(env->type_env,e) == Ity_I64);
 
+   /* 64-bit load */
+   if (e->tag == Iex_Load) {
+      HReg tLo    = newVRegI(env);
+      HReg tHi    = newVRegI(env);
+      HReg r_addr = iselWordExpr_R(env, e->Iex.Load.addr);
+      vassert(!env->mode64);
+      addInstr(env, PPCInstr_Load( 4/*byte-load*/,
+                                   tHi, PPCAMode_IR( 0, r_addr ), 
+                                   False/*32-bit insn please*/) );
+      addInstr(env, PPCInstr_Load( 4/*byte-load*/, 
+                                   tLo, PPCAMode_IR( 4, r_addr ), 
+                                   False/*32-bit insn please*/) );
+      *rHi = tHi;
+      *rLo = tLo;
+      return;
+   }
+
    /* 64-bit literal */
    if (e->tag == Iex_Const) {
       ULong w64 = e->Iex.Const.con->Ico.U64;
@@ -3668,7 +3685,6 @@ static void iselStmt ( ISelEnv* env, IRStmt* stmt )
 
    /* --------- STORE --------- */
    case Ist_Store: {
-      PPCAMode* am_addr;
       IRType    tya = typeOfIRExpr(env->type_env, stmt->Ist.Store.addr);
       IRType    tyd = typeOfIRExpr(env->type_env, stmt->Ist.Store.data);
       IREndness end = stmt->Ist.Store.end;
@@ -3678,30 +3694,54 @@ static void iselStmt ( ISelEnv* env, IRStmt* stmt )
            ( mode64 && (tya != Ity_I64)) )
          goto stmt_fail;
 
-      am_addr = iselWordExpr_AMode(env, stmt->Ist.Store.addr, tyd/*of xfer*/);
       if (tyd == Ity_I8 || tyd == Ity_I16 || tyd == Ity_I32 ||
           (mode64 && (tyd == Ity_I64))) {
+         PPCAMode* am_addr
+            = iselWordExpr_AMode(env, stmt->Ist.Store.addr, tyd/*of xfer*/);
          HReg r_src = iselWordExpr_R(env, stmt->Ist.Store.data);
          addInstr(env, PPCInstr_Store( toUChar(sizeofIRType(tyd)), 
-                                         am_addr, r_src, mode64 ));
+                                       am_addr, r_src, mode64 ));
          return;
       }
       if (tyd == Ity_F64) {
+         PPCAMode* am_addr
+            = iselWordExpr_AMode(env, stmt->Ist.Store.addr, tyd/*of xfer*/);
          HReg fr_src = iselDblExpr(env, stmt->Ist.Store.data);
          addInstr(env,
                   PPCInstr_FpLdSt(False/*store*/, 8, fr_src, am_addr));
          return;
       }
       if (tyd == Ity_F32) {
+         PPCAMode* am_addr
+            = iselWordExpr_AMode(env, stmt->Ist.Store.addr, tyd/*of xfer*/);
          HReg fr_src = iselFltExpr(env, stmt->Ist.Store.data);
          addInstr(env,
                   PPCInstr_FpLdSt(False/*store*/, 4, fr_src, am_addr));
          return;
       }
       if (tyd == Ity_V128) {
+         PPCAMode* am_addr
+            = iselWordExpr_AMode(env, stmt->Ist.Store.addr, tyd/*of xfer*/);
          HReg v_src = iselVecExpr(env, stmt->Ist.Store.data);
          addInstr(env,
                   PPCInstr_AvLdSt(False/*store*/, 16, v_src, am_addr));
+         return;
+      }
+      if (tyd == Ity_I64 && !mode64) {
+         /* Just calculate the address in the register.  Life is too
+            short to arse around trying and possibly failing to adjust
+            the offset in a 'reg+offset' style amode. */
+         HReg rHi32, rLo32;
+         HReg r_addr = iselWordExpr_R(env, stmt->Ist.Store.addr);
+         iselInt64Expr( &rHi32, &rLo32, env, stmt->Ist.Store.data );
+         addInstr(env, PPCInstr_Store( 4/*byte-store*/,
+                                       PPCAMode_IR( 0, r_addr ), 
+                                       rHi32,
+                                       False/*32-bit insn please*/) );
+         addInstr(env, PPCInstr_Store( 4/*byte-store*/, 
+                                       PPCAMode_IR( 4, r_addr ), 
+                                       rLo32,
+                                       False/*32-bit insn please*/) );
          return;
       }
       break;

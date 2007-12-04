@@ -40,7 +40,7 @@ U8 build(int size, U1 byte)
    U8 mask = 0;
    U8 shres;
    U8 res = 0xffffffffffffffffULL, res2;
-   VALGRIND_MAKE_WRITABLE(&res, 8);
+   VALGRIND_MAKE_MEM_UNDEFINED(&res, 8);
    assert(1 == size || 2 == size || 4 == size || 8 == size);
 
    for (i = 0; i < size; i++) {
@@ -55,7 +55,7 @@ U8 build(int size, U1 byte)
    
    VALGRIND_GET_VBITS(&res, &shres, 8);
    res2 = res;
-   VALGRIND_MAKE_READABLE(&res2, 8);      // avoid the 'undefined' warning
+   VALGRIND_MAKE_MEM_DEFINED(&res2, 8);      // avoid the 'undefined' warning
    assert(res2 == shres);
    return res;
 }
@@ -63,7 +63,7 @@ U8 build(int size, U1 byte)
 U1 make_defined ( U1 x )
 {
    volatile U1 xx = x;
-   VALGRIND_MAKE_READABLE(&xx, 1);
+   VALGRIND_MAKE_MEM_DEFINED(&xx, 1);
    return xx;
 }
 

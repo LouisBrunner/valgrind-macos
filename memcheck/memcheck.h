@@ -131,18 +131,6 @@ typedef
     _qzz_res;                                                    \
    }))
 
-/* This is the old name for VALGRIND_MAKE_MEM_NOACCESS.  Deprecated. */
-#define VALGRIND_MAKE_NOACCESS(_qzz_addr,_qzz_len)               \
-   VALGRIND_MAKE_MEM_NOACCESS(_qzz_addr,_qzz_len)
-
-/* This is the old name for VALGRIND_MAKE_MEM_UNDEFINED.  Deprecated. */
-#define VALGRIND_MAKE_WRITABLE(_qzz_addr,_qzz_len)               \
-   VALGRIND_MAKE_MEM_UNDEFINED(_qzz_addr,_qzz_len)
-
-/* This is the old name for VALGRIND_MAKE_MEM_DEFINED.  Deprecated. */
-#define VALGRIND_MAKE_READABLE(_qzz_addr,_qzz_len)               \
-   VALGRIND_MAKE_MEM_DEFINED(_qzz_addr,_qzz_len)
-
 /* Similar to VALGRIND_MAKE_MEM_DEFINED except that addressability is
    not altered: bytes which are addressable are marked as defined,
    but those which are not addressable are left unchanged. */
@@ -213,18 +201,6 @@ typedef
    VALGRIND_CHECK_MEM_IS_DEFINED(                                \
       (volatile unsigned char *)&(__lvalue),                     \
                       (unsigned int)(sizeof (__lvalue)))
-
-/* This is the old name for VALGRIND_CHECK_MEM_IS_ADDRESSABLE.  Deprecated. */
-#define VALGRIND_CHECK_WRITABLE(_qzz_addr,_qzz_len)              \
-   VALGRIND_CHECK_MEM_IS_ADDRESSABLE(_qzz_addr,_qzz_len)
-
-/* This is the old name for VALGRIND_CHECK_MEM_IS_DEFINED.  Deprecated. */
-#define VALGRIND_CHECK_READABLE(_qzz_addr,_qzz_len)              \
-   VALGRIND_CHECK_MEM_IS_DEFINED(_qzz_addr,_qzz_len)
-
-/* This is the old name for VALGRIND_CHECK_VALUE_IS_DEFINED.  Deprecated. */
-#define VALGRIND_CHECK_DEFINED(__lvalue)                         \
-   VALGRIND_CHECK_VALUE_IS_DEFINED(__lvalue)
 
 
 /* Do a memory leak check mid-execution.  */

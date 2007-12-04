@@ -128,6 +128,16 @@ Omega and DRD.  There are many other smaller improvements.  In detail:
   they just return 3 (as before).  Also, SET_VBITS doesn't report
   definedness errors if any of the V bits are undefined.
 
+- The following Memcheck client requests have been removed:
+    VALGRIND_MAKE_NOACCESS
+    VALGRIND_MAKE_WRITABLE
+    VALGRIND_MAKE_READABLE
+    VALGRIND_CHECK_WRITABLE
+    VALGRIND_CHECK_READABLE
+    VALGRIND_CHECK_DEFINED
+  They were deprecated in 3.2.0, when equivalent but better-named client
+  requests were added.  See the 3.2.0 release notes for more details.
+
 - The behaviour of the tool Lackey has changed slightly.  First, the output
   from --trace-mem has been made more compact, to reduce the size of the
   traces.  Second, a new option --trace-superblocks has been added, which

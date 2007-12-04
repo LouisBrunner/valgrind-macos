@@ -4,13 +4,13 @@
 [ <!ENTITY % cl-entities SYSTEM "cl-entities.xml"> %cl-entities; ]>
 
 <chapter id="cl-manual" xreflabel="Callgrind Manual">
-<title>Callgrind: a heavyweight profiler</title>
+<title>Callgrind: a call graph profiler</title>
 
 
 <sect1 id="cl-manual.use" xreflabel="Overview">
 <title>Overview</title>
 
-<para>Callgrind is profiling tool that can
+<para>Callgrind is a profiling tool that can
 construct a call graph for a program's run.
 By default, the collected data consists of
 the number of instructions executed, their relationship
@@ -65,7 +65,7 @@ command line.</para>
 
 <para>Cachegrind collects flat profile data: event counts (data reads,
 cache misses, etc.) are attributed directly to the function they
-occurred in.  This simple cost attribution mechanism is sometimes
+occurred in.  This cost attribution mechanism is
 called <emphasis>self</emphasis> or <emphasis>exclusive</emphasis>
 attribution.</para>
 
@@ -115,7 +115,7 @@ on heuristics to detect calls and returns.</para>
   (the -g flag), but with optimization turned on.</para>
 
   <para>To start a profile run for a program, execute:
-  <screen>callgrind [callgrind options] your-program [program options]</screen>
+  <screen>valgrind --tool=callgrind [callgrind options] your-program [program options]</screen>
   </para>
 
   <para>While the simulation is running, you can observe execution with
@@ -277,16 +277,17 @@ callgrind.out.<emphasis>pid</emphasis>.<emphasis>part</emphasis>-<emphasis>threa
     </listitem>
 
     <listitem>
-      <para><command>Dumping at enter/leave of all functions whose name
-      starts with</command> <emphasis>funcprefix</emphasis>.  Use the
-      option <option><xref linkend="opt.dump-before"/>=funcprefix</option>
-      and <option><xref linkend="opt.dump-after"/>=funcprefix</option>.
+      <para><command>Dumping at enter/leave of specified functions.</command>
+      Use the
+      option <option><xref linkend="opt.dump-before"/>=function</option>
+      and <option><xref linkend="opt.dump-after"/>=function</option>.
       To zero cost counters before entering a function, use
-      <option><xref linkend="opt.zero-before"/>=funcprefix</option>.
-      The prefix method for specifying function names was chosen to
-      ease the use with C++: you don't have to specify full
-      signatures.</para> <para>You can specify these options multiple
-      times for different function prefixes.</para>
+      <option><xref linkend="opt.zero-before"/>=function</option>.</para>
+      <para>You can specify these options multiple times for different
+      functions. Function specifications support wildcards: eg. use
+      <option><xref linkend="opt.dump-before"/>='foo*'</option> to
+      generate dumps before entering any function starting with 
+      <emphasis>foo</emphasis>.</para>
     </listitem>
 
     <listitem>
@@ -344,17 +345,15 @@ callgrind.out.<emphasis>pid</emphasis>.<emphasis>part</emphasis>-<emphasis>threa
   <para>In addition to enabling instrumentation, you must also enable
   event collection for the parts of your program you are interested in.
   By default, event collection is enabled everywhere.
-  You can limit collection to specific function(s)
+  You can limit collection to a specific function
   by using 
-  <option><xref linkend="opt.toggle-collect"/>=funcprefix</option>. 
+  <option><xref linkend="opt.toggle-collect"/>=function</option>. 
   This will toggle the collection state on entering and leaving
   the specified functions.
   When this option is in effect, the default collection state
   at program start is "off".  Only events happening while running
-  inside of functions starting with <emphasis>funcprefix</emphasis> will
-  be collected. Recursive
-  calls of functions with <emphasis>funcprefix</emphasis> do not trigger
-  any action.</para>
+  inside of the given function will be collected. Recursive
+  calls of the given function do not trigger any action.</para>
 
   <para>It is important to note that with instrumentation switched off, the
   cache simulator cannot see any memory access events, and thus, any
@@ -441,7 +440,7 @@ callgrind.out.<emphasis>pid</emphasis>.<emphasis>part</emphasis>-<emphasis>threa
   also skips any call information from and to an ignored function, and thus can
   break a cycle. Candidates for this typically are dispatcher functions in event
   driven code. The option to ignore calls to a function is
-  <option><xref linkend="opt.fn-skip"/>=funcprefix</option>. Aside from
+  <option><xref linkend="opt.fn-skip"/>=function</option>. Aside from
   possibly breaking cycles, this is used in Callgrind to skip
   trampoline functions in the PLT sections
   for calls to functions in shared libraries. You can see the difference
@@ -451,22 +450,22 @@ callgrind.out.<emphasis>pid</emphasis>.<emphasis>part</emphasis>-<emphasis>threa
 
   <para>If you have a recursive function, you can distinguish the first
   10 recursion levels by specifying
-  <option><xref linkend="opt.fn-recursion-num"/>=funcprefix</option>.  
+  <option><xref linkend="opt.separate-recs-num"/>=function</option>.  
   Or for all functions with 
-  <option><xref linkend="opt.fn-recursion"/>=10</option>, but this will 
+  <option><xref linkend="opt.separate-recs"/>=10</option>, but this will 
   give you much bigger profile data files.  In the profile data, you will see
   the recursion levels of "func" as the different functions with names
   "func", "func'2", "func'3" and so on.</para>
 
   <para>If you have call chains "A &gt; B &gt; C" and "A &gt; C &gt; B"
   in your program, you usually get a "false" cycle "B &lt;&gt; C". Use 
-  <option><xref linkend="opt.fn-caller-num"/>=B</option> 
-  <option><xref linkend="opt.fn-caller-num"/>=C</option>,
+  <option><xref linkend="opt.separate-callers-num"/>=B</option> 
+  <option><xref linkend="opt.separate-callers-num"/>=C</option>,
   and functions "B" and "C" will be treated as different functions 
   depending on the direct caller. Using the apostrophe for appending 
   this "context" to the function name, you get "A &gt; B'A &gt; C'B" 
   and "A &gt; C'A &gt; B'C", and there will be no cycle. Use 
-  <option><xref linkend="opt.fn-caller"/>=3</option> to get a 2-caller 
+  <option><xref linkend="opt.separate-callers"/>=2</option> to get a 2-caller 
   dependency for all functions.  Note that doing this will increase
   the size of profile data files.</para>
 
@@ -479,9 +478,20 @@ callgrind.out.<emphasis>pid</emphasis>.<emphasis>part</emphasis>-<emphasis>threa
 <title>Command line option reference</title>
 
 <para>
-In the following, options are grouped into classes, in same order as
-the output as <computeroutput>callgrind --help</computeroutput>.
+In the following, options are grouped into classes, in the same order as
+the output of <computeroutput>callgrind --help</computeroutput>.
 </para>
+<para>
+Some options allow the specification of a function/symbol name, such as
+<option><xref linkend="opt.dump-before"/>=function</option>, or
+<option><xref linkend="opt.fn-skip"/>=function</option>. All these options
+can be specified multiple times for different functions.
+In addition, the function specifications actually are patterns by supporting
+the use of wildcards '*' (zero or more arbitrary characters) and '?'
+(exactly one arbitrary character), similar to file name globbing in the
+shell. This feature is important especially for C++, as without wildcard
+usage, the function would have to be specified in full extent, including
+parameter signature. </para>
 
 <sect2 id="cl-manual.options.misc" 
        xreflabel="Miscellaneous options">
@@ -626,28 +636,28 @@ be executed. For interactive control use
 
   <varlistentry id="opt.dump-before" xreflabel="--dump-before">
     <term>
-      <option><![CDATA[--dump-before=<prefix> ]]></option>
+      <option><![CDATA[--dump-before=<function> ]]></option>
     </term>
     <listitem>
-      <para>Dump when entering a function starting with &lt;prefix&gt;</para>
+      <para>Dump when entering &lt;function&gt;</para>
     </listitem>
   </varlistentry>
 
   <varlistentry id="opt.zero-before" xreflabel="--zero-before">
     <term>
-      <option><![CDATA[--zero-before=<prefix> ]]></option>
+      <option><![CDATA[--zero-before=<function> ]]></option>
     </term>
     <listitem>
-      <para>Zero all costs when entering a function starting with &lt;prefix&gt;</para>
+      <para>Zero all costs when entering &lt;function&gt;</para>
     </listitem>
   </varlistentry>
 
   <varlistentry id="opt.dump-after" xreflabel="--dump-after">
     <term>
-      <option><![CDATA[--dump-after=<prefix> ]]></option>
+      <option><![CDATA[--dump-after=<function> ]]></option>
     </term>
     <listitem>
-      <para>Dump when leaving a function starting with &lt;prefix&gt;</para>
+      <para>Dump when leaving &lt;function&gt;</para>
     </listitem>
   </varlistentry>
 
@@ -735,12 +745,10 @@ Also see <xref linkend="cl-manual.limits"/>.</para>
 
   <varlistentry id="opt.toggle-collect" xreflabel="--toggle-collect">
     <term>
-      <option><![CDATA[--toggle-collect=<prefix> ]]></option>
+      <option><![CDATA[--toggle-collect=<function> ]]></option>
     </term>
     <listitem>
-      <para>Toggle collection on entry/exit of a function whose name
-      starts with
-      &lt;prefix&gt;.</para>
+      <para>Toggle collection on entry/exit of &lt;function&gt;.</para>
     </listitem>
   </varlistentry>
 
@@ -784,9 +792,9 @@ Also see <xref linkend="cl-manual.cycles"/>.</para>
     </listitem>
   </varlistentry>
 
-  <varlistentry id="opt.fn-recursion" xreflabel="--fn-recursion">
+  <varlistentry id="opt.separate-recs" xreflabel="--separate-recs">
     <term>
-      <option><![CDATA[--fn-recursion=<level> [default: 2] ]]></option>
+      <option><![CDATA[--separate-recs=<level> [default: 2] ]]></option>
     </term>
     <listitem>
       <para>Separate function recursions by at most &lt;level&gt; levels.
@@ -794,9 +802,9 @@ Also see <xref linkend="cl-manual.cycles"/>.</para>
     </listitem>
   </varlistentry>
 
-  <varlistentry id="opt.fn-caller" xreflabel="--fn-caller">
+  <varlistentry id="opt.separate-callers" xreflabel="--separate-callers">
     <term>
-      <option><![CDATA[--fn-caller=<callers> [default: 0] ]]></option>
+      <option><![CDATA[--separate-callers=<callers> [default: 0] ]]></option>
     </term>
     <listitem>
       <para>Separate contexts by at most &lt;callers&gt; functions in the
@@ -844,9 +852,9 @@ Also see <xref linkend="cl-manual.cycles"/>.</para>
     </listitem>
   </varlistentry>
   
-  <varlistentry id="opt.fn-recursion-num" xreflabel="--fn-recursion10">
+  <varlistentry id="opt.separate-recs-num" xreflabel="--separate-recs10">
     <term>
-      <option><![CDATA[--fn-recursion<number>=<function> ]]></option>
+      <option><![CDATA[--separate-recs<number>=<function> ]]></option>
     </term>
     <listitem>
       <para>Separate &lt;number&gt; recursions for &lt;function&gt;.
@@ -854,9 +862,9 @@ Also see <xref linkend="cl-manual.cycles"/>.</para>
     </listitem>
   </varlistentry>
 
-  <varlistentry id="opt.fn-caller-num" xreflabel="--fn-caller2">
+  <varlistentry id="opt.separate-callers-num" xreflabel="--separate-callers2">
     <term>
-      <option><![CDATA[--fn-caller<number>=<function> ]]></option>
+      <option><![CDATA[--separate-callers<number>=<function> ]]></option>
     </term>
     <listitem>
       <para>Separate &lt;number&gt; callers for &lt;function&gt;.

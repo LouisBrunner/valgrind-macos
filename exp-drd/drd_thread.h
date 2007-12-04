@@ -70,7 +70,9 @@ void thread_set_name(const DrdThreadId tid, const char* const name);
 void thread_set_name_fmt(const DrdThreadId tid, const char* const name,
                          const UWord arg);
 DrdThreadId thread_get_running_tid(void);
-void thread_set_running_tid(const DrdThreadId tid);
+void thread_set_vg_running_tid(const ThreadId vg_tid);
+void thread_set_running_tid(const ThreadId vg_tid,
+                            const DrdThreadId drd_tid);
 Segment* thread_get_segment(const DrdThreadId tid);
 void thread_new_segment(const DrdThreadId tid);
 VectorClock* thread_get_vc(const DrdThreadId tid);

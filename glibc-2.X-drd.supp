@@ -20,29 +20,29 @@
    fun:exit
 }
 {
-   dl
+   dl-2.6.*
    exp-drd:ConflictingAccess
-   obj:/lib64/ld-2.6.1.so
+   obj:/lib*/ld-*.so
    fun:exit
 }
 {
-   dl-2.6.1
+   dl-2.6.*
    exp-drd:ConflictingAccess
-   obj:/lib64/ld-2.6.1.so
-   obj:/lib64/ld-2.6.1.so
-   obj:/lib64/ld-2.6.1.so
+   obj:/lib*/ld-*.so
+   obj:/lib*/ld-*.so
+   obj:/lib*/ld-*.so
 }
 {
    libc
    exp-drd:ConflictingAccess
    fun:__libc_enable_asynccancel
-   obj:/lib/libc-*
+   obj:/lib*/libc-*
 }
 {
    libc
    exp-drd:ConflictingAccess
    fun:__libc_disable_asynccancel
-   obj:/lib/libc-*
+   obj:/lib*/libc-*
 }
 {
    librt
@@ -78,14 +78,14 @@
 {
    pthread
    exp-drd:ConflictingAccess
-   obj:/lib64/libpthread-2.6.1.so
+   obj:/lib*/libpthread-*.so
    fun:start_thread
    fun:clone
 }
 {
    pthread
    exp-drd:ConflictingAccess
-   obj:/lib64/libc-2.6.1.so
+   obj:/lib*/libc-*.so
    fun:__libc_thread_freeres
    fun:start_thread
    fun:clone
@@ -93,8 +93,8 @@
 {
    pthread
    exp-drd:ConflictingAccess
-   obj:/lib64/libc-2.6.1.so
-   obj:/lib64/libc-2.6.1.so
+   obj:/lib*/libc-*.so
+   obj:/lib*/libc-*.so
    fun:__libc_thread_freeres
    fun:start_thread
    fun:clone
@@ -157,6 +157,14 @@
 {
    pthread
    exp-drd:ConflictingAccess
+   fun:free_stacks
+   fun:__deallocate_stack
+   fun:pthread_join
+   fun:pthread_join
+}
+{
+   pthread
+   exp-drd:ConflictingAccess
    fun:__free_tcb
 }
 {
@@ -193,7 +201,7 @@
    pthread
    exp-drd:ConflictingAccess
    fun:sigcancel_handler
-   obj:/lib/libpthread-*
+   obj:/lib*/libpthread-*
 }
 {
    pthread-unwind
@@ -201,7 +209,7 @@
    fun:_Unwind_ForcedUnwind
    fun:__pthread_unwind
    fun:sigcancel_handler
-   obj:/lib/libpthread-*
+   obj:/lib*/libpthread-*
 }
 {
    pthread-unwind

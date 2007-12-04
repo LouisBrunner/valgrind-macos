@@ -4,13 +4,16 @@ Last updated February 22, 2006
 
 Data-race detection algorithm
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-- Implement glibc version detection in drd_main.c.
+- Rename drd_preloaded.c into drd_intercepts.c.
+- Propose on the Valgrind developers mailing list to add scripts
+  "run-in-place" and "debug-in-place".
 - Implement segment merging, such that the number of segments per thread
   remains limited even when there is no synchronization between threads.
 - Find out why a race is reported on std::string::string(std::string const&)
   (stc test case 16).
 - Make sure that drd supports more than 256 mutexes.
 - Performance testing and tuning.
+- pthread semaphore support.
 - pthread rwlock state tracking and support.
 - pthread barrier state tracking and support.
 - mutexes: support for pthread_mutex_timedlock() (recently added to the POSIX
@@ -42,15 +45,12 @@ Documentation
 
 Known bugs
 ~~~~~~~~~~
-- Gets killed by the OOM handler for some applications, e.g. knode and
-  OpenOffice.
-- [AMD64] Reports "Allocation context: unknown" for BSS symbols on AMD64
-  (works fine on X86). This is a bug in Valgrind's debug info reader
-  -- VG_(find_seginfo)() returns NULL for BSS symbols on AMD64. Not yet in
+- Gets killed by the OOM handler for realistically sized applications,
+  e.g. knode and OpenOffice.
+- [x86_64] Reports "Allocation context: unknown" for BSS symbols on AMD64
+  (works fine on i386). This is a bug in Valgrind's debug info reader
+  -- VG_(find_seginfo)() returns NULL for BSS symbols on x86_64. Not yet in
   the KDE bug tracking system.
-- False positives are reported when a signal is sent via pthread_kill() from
-  one thread to another (bug 152728).
-- Crashes (cause not known): VALGRIND_LIB=$PWD/.in_place coregrind/valgrind --tool=exp-drd --trace-mem=yes /bin/ls
 
 Known performance issues:
 - According to cachegrind, VG_(OSet_Next)() is taking up most CPU cycles.

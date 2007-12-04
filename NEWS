@@ -1,7 +1,6 @@
 
 Release 3.3.0 (7 December 2007)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
 3.3.0 is a feature release with many significant improvements and the
 usual collection of bug fixes.  This release supports X86/Linux,
 AMD64/Linux, PPC32/Linux and PPC64/Linux.  Support for recent distros
@@ -50,7 +49,7 @@ Omega and DRD.  There are many other smaller improvements.  In detail:
     exp-omega/docs/omega_introduction.txt.
 
   * exp-DRD: a data race detector based on the happens-before
-    relation.  See exp-drd/TODO.txt.
+    relation.  See exp-drd/docs/README.txt.
 
 - Scalability improvements for very large programs, particularly those
   which have a million or more malloc'd blocks in use at once.  These

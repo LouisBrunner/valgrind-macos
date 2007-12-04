@@ -74,23 +74,6 @@ static Bool drd_print_stats = False;
 static Bool drd_trace_mem = False;
 static Bool drd_trace_fork_join = False;
 static Addr drd_trace_address = 0;
-#if 0
-// Note: using the information below for suppressing data races is only
-// possible when the client and the shared libraries it uses contain
-// debug information. Not every Linux distribution includes debug information
-// in shared libraries.
-static const SuppressedSymbol s_suppressed_symbols[] =
-  {
-    { "ld-linux.so.2",   "_rtld_local"           },
-    { "libpthread.so.0", "__nptl_nthreads"       },
-    { "libpthread.so.0", "stack_cache"           },
-    { "libpthread.so.0", "stack_cache_actsize"   },
-    { "libpthread.so.0", "stack_cache_lock"      },
-    { "libpthread.so.0", "stack_used"            },
-    { "libpthread.so.0", "libgcc_s_forcedunwind" },
-    { "libpthread.so.0", "libgcc_s_getcfa"       },
-  };
-#endif
 
 
 //
@@ -155,6 +138,8 @@ VG_REGPARM(2) void drd_trace_load(Addr addr, SizeT size)
 {
    Segment* sg;
 
+   thread_set_vg_running_tid(VG_(get_running_tid)());
+
    if (! thread_is_recording(thread_get_running_tid()))
       return;
 
@@ -194,6 +179,8 @@ static
 VG_REGPARM(2) void drd_trace_store(Addr addr, SizeT size)
 {
    Segment* sg;
+
+   thread_set_vg_running_tid(VG_(get_running_tid)());
 
    if (! thread_is_recording(thread_get_running_tid()))
       return;
@@ -237,29 +224,7 @@ static void drd_pre_mem_read(const CorePart part,
                              const Addr a,
                              const SizeT size)
 {
-   const ThreadId running_tid = VG_(get_running_tid)();
-
-   if (size == 0)
-      return;
-
-   if (tid != running_tid)
-   {
-      if (VgThreadIdToDrdThreadId(tid) != DRD_INVALID_THREADID)
-      {
-         drd_set_running_tid(tid);
-         drd_trace_load(a, size);
-         drd_set_running_tid(running_tid);
-      }
-      else
-      {
-         VG_(message)(Vg_DebugMsg,
-                      "drd_pre_mem_read() was called before"
-                      " drd_post_thread_create() for thread ID %d",
-                      tid);
-         tl_assert(0);
-      }
-   }
-   else
+   if (size > 0)
    {
       drd_trace_load(a, size);
    }
@@ -270,31 +235,7 @@ static void drd_post_mem_write(const CorePart part,
                                const Addr a,
                                const SizeT size)
 {
-   const ThreadId running_tid = VG_(get_running_tid)();
-
-   if (size == 0)
-      return;
-
-   if (tid != running_tid)
-   {
-      if (VgThreadIdToDrdThreadId(tid) != DRD_INVALID_THREADID)
-      {
-         drd_set_running_tid(tid);
-         drd_trace_store(a, size);
-         drd_set_running_tid(running_tid);
-      }
-      else
-      {
-#if 1
-         VG_(message)(Vg_DebugMsg,
-                      "drd_pre_mem_write() was called before"
-                      " drd_post_thread_create() for thread ID %d",
-                      tid);
-         tl_assert(0);
-#endif
-      }
-   }
-   else
+   if (size > 0)
    {
       drd_trace_store(a, size);
    }
@@ -302,6 +243,8 @@ static void drd_post_mem_write(const CorePart part,
 
 static void drd_start_using_mem(const Addr a1, const Addr a2)
 {
+   thread_set_vg_running_tid(VG_(get_running_tid)());
+
    if (a1 <= drd_trace_address && drd_trace_address < a2
        && thread_is_recording(thread_get_running_tid()))
    {
@@ -354,9 +297,7 @@ static void drd_start_using_mem_stack(const Addr a, const SizeT len)
 /* Assumption: stacks grow downward.                                       */
 static void drd_stop_using_mem_stack(const Addr a, const SizeT len)
 {
-#if 0
-   VG_(message)(Vg_DebugMsg, "stop_using_mem_stack(0x%lx, %ld)", a, len);
-#endif
+   thread_set_vg_running_tid(VG_(get_running_tid)());
    thread_set_stack_min(thread_get_running_tid(),
                         a + len - VG_STACK_REDZONE_SZB);
    drd_stop_using_mem(a - VG_STACK_REDZONE_SZB,
@@ -384,11 +325,7 @@ void drd_pre_thread_create(const ThreadId creator, const ThreadId created)
    // Hack: compensation for code missing in coregrind/m_main.c.
    if (created == 1)
    {
-      extern ThreadId VG_(running_tid);
-      tl_assert(VG_(running_tid) == VG_INVALID_THREADID);
-      VG_(running_tid) = 1;
-      drd_start_client_code(VG_(running_tid), 0);
-      VG_(running_tid) = VG_INVALID_THREADID;
+      thread_set_running_tid(1, 1);
    }
 #endif
    if (IsValidDrdThreadId(drd_creator))
@@ -559,10 +496,7 @@ void drd_post_clo_init(void)
 #  if defined(VGP_x86_linux) || defined(VGP_amd64_linux)
    /* fine */
 #  else
-   VG_(printf)("\nDRD currently only works on x86-linux and amd64-linux.\n");
-   VG_(printf)("At the very least you need to set PTHREAD_{MUTEX,COND}_SIZE\n");
-   VG_(printf)("in pthread_object_size.h to correct values.  Sorry.\n\n");
-   VG_(exit)(0);
+   VG_(printf)("\nWARNING: DRD has only been tested on x86-linux and amd64-linux.\n\n");
 #  endif
 }
 
@@ -696,21 +630,21 @@ IRSB* drd_instrument(VgCallbackClosure* const closure,
    return bb;
 }
 
-static void drd_set_running_tid(const ThreadId tid)
+static void drd_set_running_tid(const ThreadId vg_tid)
 {
-   static ThreadId s_last_tid = VG_INVALID_THREADID;
-   if (tid != s_last_tid)
+   static ThreadId s_last_vg_tid = VG_INVALID_THREADID;
+   if (vg_tid != s_last_vg_tid)
    {
-      const DrdThreadId drd_tid = VgThreadIdToDrdThreadId(tid);
+      const DrdThreadId drd_tid = VgThreadIdToDrdThreadId(vg_tid);
       tl_assert(drd_tid != DRD_INVALID_THREADID);
-      s_last_tid = tid;
+      s_last_vg_tid = vg_tid;
       if (drd_trace_fork_join)
       {
          VG_(message)(Vg_DebugMsg,
                       "drd_track_thread_run tid = %d / drd tid %d",
-                      tid, drd_tid);
+                      vg_tid, drd_tid);
       }
-      thread_set_running_tid(drd_tid);
+      thread_set_running_tid(vg_tid, drd_tid);
    }
 }
 
@@ -766,7 +700,7 @@ static void drd_load_suppression_file(void)
       static const Char drd_supp[] = "glibc-2.X-drd.supp";
       const Int len = VG_(strlen)(VG_(libdir)) + 1 + sizeof(drd_supp);
       Char* const buf = VG_(arena_malloc)(VG_AR_CORE, len);
-      VG_(sprintf)(buf, "%s/%s", VG_(libdir), drd_supp);
+      VG_(snprintf)(buf, len, "%s/%s", VG_(libdir), drd_supp);
       VG_(clo_suppressions)[VG_(clo_n_suppressions)] = buf;
       VG_(clo_n_suppressions)++;
    }

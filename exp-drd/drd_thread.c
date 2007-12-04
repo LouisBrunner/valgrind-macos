@@ -84,7 +84,8 @@ static ULong s_report_races_count;
 static ULong s_update_danger_set_count;
 static ULong s_danger_set_bitmap_creation_count;
 static ULong s_danger_set_bitmap2_creation_count;
-static DrdThreadId s_running_tid = DRD_INVALID_THREADID;
+static ThreadId    s_vg_running_tid  = VG_INVALID_THREADID;
+static DrdThreadId s_drd_running_tid = DRD_INVALID_THREADID;
 static ThreadInfo s_threadinfo[DRD_N_THREADS];
 static struct bitmap* s_danger_set;
 
@@ -420,17 +421,49 @@ void thread_set_name_fmt(const DrdThreadId tid, const char* const fmt,
                  fmt, arg);
    s_threadinfo[tid].name[sizeof(s_threadinfo[tid].name) - 1] = 0;
 }
+
 DrdThreadId thread_get_running_tid(void)
 {
-   tl_assert(s_running_tid != DRD_INVALID_THREADID);
-   return s_running_tid;
+   // HACK. To do: remove the if-statement and keep the assert.
+   if (VG_(get_running_tid)() != VG_INVALID_THREADID)
+      tl_assert(VG_(get_running_tid)() == s_vg_running_tid);
+   tl_assert(s_drd_running_tid != DRD_INVALID_THREADID);
+   return s_drd_running_tid;
 }
 
-void thread_set_running_tid(const DrdThreadId tid)
+void thread_set_vg_running_tid(const ThreadId vg_tid)
 {
-   s_running_tid = tid;
-   thread_update_danger_set(tid);
-   s_context_switch_count++;
+   // HACK. To do: uncomment the line below.
+   // tl_assert(vg_tid != VG_INVALID_THREADID);
+
+   if (vg_tid != s_vg_running_tid)
+   {
+      thread_set_running_tid(vg_tid, VgThreadIdToDrdThreadId(vg_tid));
+   }
+
+   tl_assert(s_vg_running_tid != VG_INVALID_THREADID);
+   tl_assert(s_drd_running_tid != DRD_INVALID_THREADID);
+}
+
+void thread_set_running_tid(const ThreadId vg_tid, const DrdThreadId drd_tid)
+{
+   // HACK. To do: remove the next two lines.
+   if (vg_tid == VG_INVALID_THREADID)
+      return;
+
+   tl_assert(vg_tid != VG_INVALID_THREADID);
+   tl_assert(drd_tid != DRD_INVALID_THREADID);
+   
+   if (vg_tid != s_vg_running_tid)
+   {
+      s_vg_running_tid = vg_tid;
+      s_drd_running_tid = drd_tid;
+      thread_update_danger_set(drd_tid);
+      s_context_switch_count++;
+   }
+
+   tl_assert(s_vg_running_tid != VG_INVALID_THREADID);
+   tl_assert(s_drd_running_tid != DRD_INVALID_THREADID);
 }
 
 /**
@@ -640,7 +673,7 @@ void thread_combine_vc(DrdThreadId joiner, DrdThreadId joinee)
    vc_combine(&s_threadinfo[joiner].last->vc, &s_threadinfo[joinee].last->vc);
    thread_discard_ordered_segments();
 
-   if (joiner == s_running_tid)
+   if (joiner == s_drd_running_tid)
    {
       thread_update_danger_set(joiner);
    }
@@ -668,7 +701,7 @@ void thread_stop_using_mem(const Addr a1, const Addr a2)
       for (p = s_threadinfo[i].first; p; p = p->next)
       {
          if (other_user == DRD_INVALID_THREADID
-             && i != s_running_tid
+             && i != s_drd_running_tid
              && bm_has_any_access(p->bm, a1, a2))
          {
             other_user = i;
@@ -939,7 +972,7 @@ static void thread_update_danger_set(const DrdThreadId tid)
 
    tl_assert(0 <= tid && tid < DRD_N_THREADS
              && tid != DRD_INVALID_THREADID);
-   tl_assert(tid == s_running_tid);
+   tl_assert(tid == s_drd_running_tid);
 
    s_update_danger_set_count++;
    s_danger_set_bitmap_creation_count  -= bm_get_bitmap_creation_count();

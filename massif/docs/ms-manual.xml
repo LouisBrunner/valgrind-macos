@@ -427,7 +427,36 @@ of the 8,000B asked for by line 5, half of it was due to a call from line
 point in the program into a single tree, which gives a complete picture of
 how and why all heap memory was allocated.</para>
 
-<para>The final part of the output is similar:</para>
+<para>Note that the tree entries correspond not to functions, but to
+individual code locations.  For example, if function <function>A</function>
+calls <function>malloc</function>, and function <function>B</function> calls
+<function>A</function> twice, once on line 10 and once on line 11, then
+the two calls will result in two distinct stack traces in the tree.  In
+contrast, if <function>B</function> calls <function>A</function> repeatedly
+from line 15 (e.g. due to a loop), then each of those calls will be
+represented by the same stack trace in the tree.</para>
+
+<para>Note also that tree entry with children in the example satisfies an
+invariant: the entry's size is equal to the sum of its children's sizes.
+For example, the first entry has size 20,000B, and its children have sizes
+10,000B, 8,000B, and 2,000B.  In general, this invariant almost always
+holds.  However, in rare circumstances stack traces can be malformed, in
+which case a stack trace can be a sub-trace of another stack trace.  This
+means that some entries in the tree may not satisfy the invariant -- the
+entry's size will be greater than the sum of its children's sizes.  Massif
+can sometimes detect when this happens;  if it does, it issues a
+warning:</para>
+
+<screen><![CDATA[
+Warning: Malformed stack trace detected.  In Massif's output,
+         the size of an entry's child entries may not sum up
+         to the entry's size as they normally do.
+]]></screen>
+
+<para>However, Massif does not detect and warn about every such occurrence.
+Fortunately, malformed stack traces are rare in practice.</para>
+
+<para>Returning now to ms_print's output, the final part is similar:</para>
 
 <screen><![CDATA[
 --------------------------------------------------------------------------------

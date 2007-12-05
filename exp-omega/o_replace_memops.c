@@ -37,7 +37,7 @@
 #include <stdio.h>
 #include "pub_tool_basics.h"
 #include "valgrind.h"
-#include "omega.h"
+#include "exp-omega.h"
 
 /* ---------------------------------------------------------------------
    We have our own versions of these functions so that we can correctly

@@ -130,7 +130,7 @@ exp_omega_ppc64_aix5_LDFLAGS      = $(TOOL_LDFLAGS_PPC64_AIX5)
 
 oincludedir = $(includedir)/valgrind
 
-oinclude_HEADERS = omega.h
+oinclude_HEADERS = exp-omega.h
 
 noinst_HEADERS =
 

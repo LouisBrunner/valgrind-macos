@@ -63,7 +63,7 @@
 
 #include "libvex_guest_offsets.h"
 
-#include "omega.h"
+#include "exp-omega.h"
 
 /*
 ** A little sanity in a mad, mad world.

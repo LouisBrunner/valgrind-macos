@@ -3715,6 +3715,15 @@ VALGRIND_PRINTF_BACKTRACE(const char *format, ...)
      Word f(Word tid, Word arg1, Word arg2)
 
    where "Word" is a word-sized type.
+
+   Note that these client requests are not entirely reliable.  For example,
+   if you call a function with them that subsequently calls printf(),
+   there's a high chance Valgrind will crash.  Generally, your prospects of
+   these working are made higher if the called function does not refer to
+   any global variables, and does not refer to any libc or other functions
+   (printf et al).  Any kind of entanglement with libc or dynamic linking is
+   likely to have a bad outcome, for tricky reasons which we've grappled
+   with a lot in the past.
 */
 #define VALGRIND_NON_SIMD_CALL0(_qyy_fn)                          \
    __extension__                                                  \

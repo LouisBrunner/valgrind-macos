@@ -200,7 +200,14 @@ tool-specific macros).</para>
     client programs.</para> 
 
     <para><command>Warning:</command> Only use these if you
-    <emphasis>really</emphasis> know what you are doing.</para>
+    <emphasis>really</emphasis> know what you are doing.  They aren't 
+    entirely reliable, and can cause Valgrind to crash.
+    Generally, your prospects of these working are made higher if the called
+    function does not refer to any global variables, and does not refer to any
+    libc or other functions (printf et al).  Any kind of entanglement with libc
+    or dynamic linking is likely to have a bad outcome, for tricky reasons
+    which we've grappled with a lot in the past.
+    </para>
    </listitem>
   </varlistentry>
 

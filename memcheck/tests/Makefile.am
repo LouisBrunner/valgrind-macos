@@ -67,7 +67,8 @@ EXTRA_DIST = $(noinst_SCRIPTS) \
 	long_namespace_xml.vgtest long_namespace_xml.stdout.exp \
 	long_namespace_xml.stderr.exp \
 	malloc_free_fill.vgtest malloc_free_fill.stdout.exp \
-	malloc_free_fill.stderr.exp \
+	malloc_free_fill.stderr.exp-glibc25-amd64 \
+	malloc_free_fill.stderr.exp-glibc25-x86 \
 	malloc_usable.stderr.exp malloc_usable.vgtest \
 	malloc1.stderr.exp malloc1.vgtest \
 	malloc2.stderr.exp malloc2.vgtest \

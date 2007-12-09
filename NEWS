@@ -185,6 +185,7 @@ Omega and DRD.  There are many other smaller improvements.  In detail:
   146781  Adding support for private futexes
   147325  valgrind internal error on syscall (SYS_io_destroy, 0)
   147498  amd64->IR: 0xF0 0xF 0xB0 0xF (lock cmpxchg %cl,(%rdi))
+  147545  Memcheck: mc_main.c:817 (get_sec_vbits8): Assertion 'n' failed.
   147628  SALC opcode 0xd6 unimplemented
   147825  crash on amd64-linux with gcc 4.2 and glibc 2.6 (CFI)
   148174  Incorrect type of freed_list_volume causes assertion [...]

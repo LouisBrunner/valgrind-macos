@@ -21,8 +21,11 @@ hours of frustrating bug-hunting, making your programs more stable. You can
 also perform detailed profiling, to speed up and reduce memory use of your
 programs.
 
-The Valgrind distribution currently includes four tools: a memory error
-detector, a thread error detector, a cache profiler and a heap profiler.
+The Valgrind distribution currently includes five production grade
+tools: a memory error detector, a thread error detector, a cache
+profiler, a call graph profiler and a heap profiler.  Experimental
+tools are also included.  They are distinguished by the "exp-" prefix
+on their names.
 
 To give you an idea of what Valgrind tools do, when a program is run
 under the supervision of Memcheck, the memory error detector tool, all

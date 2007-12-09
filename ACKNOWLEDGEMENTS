@@ -60,6 +60,9 @@ modified readelf's dwarf2 source line reader, written by Nick Clifton,
 for use in Valgrind.  Michael Matz and Simon Hausmann modified the GNU
 binutils demangler(s) for use in Valgrind.
 
+David Woodhouse and Tom Hughes have helped out with test and build
+machines over the course of many releases.
+
 Many, many people sent bug reports, patches, and helpful feedback.
 
 Development of Valgrind was supported in part by the Tri-Lab Partners

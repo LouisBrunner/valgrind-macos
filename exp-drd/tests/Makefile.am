@@ -12,6 +12,7 @@ noinst_SCRIPTS =                                          \
 EXTRA_DIST = $(noinst_SCRIPTS)                                  \
 	fp_race.vgtest                                          \
 	fp_race.stdout.exp fp_race.stderr.exp                   \
+	fp_race.stderr.exp2                                     \
 	fp_race2.vgtest                                         \
 	fp_race2.stdout.exp fp_race2.stderr.exp                 \
 	pth_broadcast.vgtest                                    \

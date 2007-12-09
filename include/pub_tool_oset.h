@@ -72,7 +72,7 @@
 
 typedef struct _OSet     OSet;
 
-// - Cmp: returns -1, 0 or 1 if key is <=, == or >= elem.
+// - Cmp: returns -1, 0 or 1 if key is <, == or > elem.
 // - Alloc: allocates a chunk of memory.
 // - Free: frees a chunk of memory allocated with Alloc.
 

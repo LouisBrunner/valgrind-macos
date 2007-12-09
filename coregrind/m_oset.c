@@ -175,7 +175,17 @@ void* fast_key_of_node(AvlNode* n)
 // Compare the first word of each element.  Inlining is *crucial*.
 static inline Word fast_cmp(void* k, AvlNode* n)
 {
-   return ( *(Word*)k - *(Word*)elem_of_node(n) );
+   Word w1 = *(Word*)k;
+   Word w2 = *(Word*)elem_of_node(n);
+   // In previous versions, we tried to do this faster by doing
+   // "return w1 - w2".  But it didn't work reliably, because the
+   // complete result of subtracting two N-bit numbers is an N+1-bit
+   // number, and what the caller is interested in is the sign of
+   // the complete N+1-bit result.  The branching version is slightly
+   // slower, but safer and easier to understand.
+   if (w1 > w2) return  1;
+   if (w1 < w2) return -1;
+   return 0;
 }
 
 // Compare a key and an element.  Inlining is *crucial*.
@@ -490,22 +500,23 @@ static AvlNode* avl_lookup(AvlTree* t, void* k)
       while (True) {
          if (curr == NULL) return NULL;
          cmpres = slow_cmp(t, k, curr);
-         if (cmpres < 0) curr = curr->left;  else
-         if (cmpres > 0) curr = curr->right; else
-         return curr;
+         if      (cmpres < 0) curr = curr->left;
+         else if (cmpres > 0) curr = curr->right;
+         else return curr;
       }
    } else {
       // Fast-track special case.  We use the no-check version of
       // elem_of_node because it saves about 10% on lookup time.  This
       // shouldn't be very dangerous because each node will have been
       // checked on insertion.
-      Word kk = *(Word*)k;
+      Word w1 = *(Word*)k;
+      Word w2;
       while (True) {
          if (curr == NULL) return NULL;
-         cmpres = kk - *(Word*)elem_of_node_no_check(curr);
-         if (cmpres < 0) curr = curr->left;  else
-         if (cmpres > 0) curr = curr->right; else
-         return curr;
+         w2 = *(Word*)elem_of_node_no_check(curr);
+         if      (w1 < w2) curr = curr->left;
+         else if (w1 > w2) curr = curr->right;
+         else return curr;
       }
    }
 }

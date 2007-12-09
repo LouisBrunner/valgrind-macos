@@ -142,6 +142,15 @@ static Word size_avl_nonNull ( AvlNode* nd )
             + (nd->child[1] ? size_avl_nonNull(nd->child[1]) : 0);
 }
 
+/* Signedly compare w1 and w2.  If w1 < w2, produce a negative number;
+   if w1 > w2 produce a positive number, and if w1 == w2 produce
+   zero. */
+static inline Word cmp_signed_Words ( Word w1, Word w2 ) {
+   if (w1 < w2) return -1;
+   if (w1 > w2) return 1;
+   return 0;
+}
+
 /* Insert element a into the AVL tree t.  Returns True if the depth of
    the tree has grown.  If element with that key is already present,
    just copy a->val to existing node, first returning old ->val field
@@ -169,7 +178,8 @@ Bool avl_insert_wrk ( AvlNode**         rootp,
    }
 
    cmpres = kCmp ? /*boxed*/   kCmp( (*rootp)->key, a->key )
-                 : /*unboxed*/ ((Word)(*rootp)->key) - ((Word)a->key);
+                 : /*unboxed*/ cmp_signed_Words( (Word)(*rootp)->key,
+                                                 (Word)a->key );
 
    if (cmpres > 0) {
       /* insert into the left subtree */
@@ -257,7 +267,8 @@ Bool avl_remove_wrk ( AvlNode** rootp,
    Bool ch;
    Word cmpres;
    cmpres = kCmp ? /*boxed*/   kCmp( (*rootp)->key, a->key )
-                 : /*unboxed*/ ((Word)(*rootp)->key) - ((Word)a->key);
+                 : /*unboxed*/ cmp_signed_Words( (Word)(*rootp)->key,
+                                                 (Word)a->key );
 
    if (cmpres > 0){
       /* remove from the left subtree */
@@ -382,23 +393,23 @@ AvlNode* avl_find_node ( AvlNode* t, Word k, Word(*kCmp)(Word,Word) )
 {
    if (kCmp) {
       /* Boxed comparisons */
-      Word cmpres;
+      Word cmpresS;
       while (True) {
          if (t == NULL) return NULL;
-         cmpres = kCmp(t->key, k);
-         if (cmpres > 0) t = t->child[0]; else
-         if (cmpres < 0) t = t->child[1]; else
+         cmpresS = kCmp(t->key, k);
+         if (cmpresS > 0) t = t->child[0]; else
+         if (cmpresS < 0) t = t->child[1]; else
          return t;
       }
    } else {
       /* Unboxed comparisons */
-      Word  cmpres; /* signed */
+      Word  cmpresS; /* signed */
       UWord cmpresU; /* unsigned */
       while (True) {
          if (t == NULL) return NULL; /* unlikely ==> predictable */
-         cmpres = ((Word)t->key) - ((Word)k);
-         if (cmpres == 0) return t; /* unlikely ==> predictable */
-         cmpresU = (UWord)cmpres;
+         cmpresS = cmp_signed_Words( (Word)t->key, (Word)k );
+         if (cmpresS == 0) return t; /* unlikely ==> predictable */
+         cmpresU = (UWord)cmpresS;
          cmpresU >>=/*unsigned*/ (8 * sizeof(cmpresU) - 1);
          t = t->child[cmpresU];
       }

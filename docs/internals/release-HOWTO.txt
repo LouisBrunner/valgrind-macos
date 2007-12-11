@@ -134,20 +134,20 @@ For the official release:
   branches too.  Useful examples:
 
     cd valgrind
-    svn copy trunk tags/VALGRIND_3_1_0
-    svn copy trunk branches/VALGRIND_3_1_BRANCH
+    svn copy trunk tags/VALGRIND_3_3_0
+    svn copy trunk branches/VALGRIND_3_3_BRANCH
 
     cd vex
-    svn copy trunk tags/VEX_3_1_0
-    svn copy trunk branches/VEX_3_1_BRANCH
+    svn copy trunk tags/VEX_3_3_0
+    svn copy trunk branches/VEX_3_3_BRANCH
 
     cd valgrind
-    cd VALGRIND_3_1_0
+    cd tags/VALGRIND_3_3_0
     svn propset svn:externals \
-       "VEX svn://svn.valgrind.org/vex/tags/VEX_3_1_0" .
-    cd VALGRIND_3_1_BRANCH
+       "VEX svn://svn.valgrind.org/vex/tags/VEX_3_3_0" .
+    cd branches/VALGRIND_3_3_BRANCH
     svn propset svn:externals \
-       "VEX svn://svn.valgrind.org/vex/branches/VEX_3_1_BRANCH" .
+       "VEX svn://svn.valgrind.org/vex/branches/VEX_3_3_BRANCH" .
 
 - Update website: 
   - Put the tarball up.

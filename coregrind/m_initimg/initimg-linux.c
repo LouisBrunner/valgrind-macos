@@ -44,6 +44,7 @@
 #include "pub_core_machine.h"
 #include "pub_core_ume.h"
 #include "pub_core_options.h"
+#include "pub_core_syscall.h"
 #include "pub_core_tooliface.h"       /* VG_TRACK */
 #include "pub_core_threadstate.h"     /* ThreadArchState */
 #include "pub_core_initimg.h"         /* self */
@@ -572,19 +573,32 @@ Addr setup_client_stack( void*  init_sp,
 
      /* Create a shrinkable reservation followed by an anonymous
         segment.  Together these constitute a growdown stack. */
+     res = VG_(mk_SysRes_Error)(0);
      ok = VG_(am_create_reservation)(
              resvn_start,
              resvn_size -inner_HACK,
              SmUpper, 
              anon_size +inner_HACK
           );
+     if (ok) {
+        /* allocate a stack - mmap enough space for the stack */
+        res = VG_(am_mmap_anon_fixed_client)(
+                 anon_start -inner_HACK,
+                 anon_size +inner_HACK,
+	         VKI_PROT_READ|VKI_PROT_WRITE|VKI_PROT_EXEC
+	      );
+     }
+     if ((!ok) || res.isError) {
+        /* Allocation of the stack failed.  We have to stop. */
+        VG_(printf)("valgrind: "
+                    "I failed to allocate space for the application's stack.\n");
+        VG_(printf)("valgrind: "
+                    "This may be the result of a very large --max-stackframe=\n");
+        VG_(printf)("valgrind: setting.  Cannot continue.  Sorry.\n\n");
+        VG_(exit)(0);
+     }
+
      vg_assert(ok);
-     /* allocate a stack - mmap enough space for the stack */
-     res = VG_(am_mmap_anon_fixed_client)(
-              anon_start -inner_HACK,
-              anon_size +inner_HACK,
-	      VKI_PROT_READ|VKI_PROT_WRITE|VKI_PROT_EXEC
-	   );
      vg_assert(!res.isError); 
    }
 

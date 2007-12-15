@@ -244,7 +244,8 @@ static void usage_NORETURN ( Bool debug_help )
 
 
 /* Peer at previously set up VG_(args_for_valgrind) and extract any
-   request for help and also the tool name. */
+   request for help and also the tool name, and also set up
+   VG_(clo_max_stackframe). */
 
 static void get_helprequest_and_toolname ( Int* need_help, HChar** tool )
 {
@@ -276,7 +277,13 @@ static void get_helprequest_and_toolname ( Int* need_help, HChar** tool )
       // here.
       } else if (VG_CLO_STREQN(7, str, "--tool=")) {
          *tool = &str[7];
-      }
+
+      // Set up VG_(clo_max_stackframe).  This is needed by
+      // VG_(ii_create_image), which happens before
+      // process_command_line_options().
+      } else VG_NUM_CLO (str, "--max-stackframe",
+                              VG_(clo_max_stackframe));
+
    }
 }
 
@@ -368,6 +375,9 @@ static Bool process_cmd_line_options( UInt* client_auxv, const char* toolname )
       else VG_BOOL_CLO(arg, "--error-limit",      VG_(clo_error_limit))
       else VG_NUM_CLO (arg, "--error-exitcode",   VG_(clo_error_exitcode))
       else VG_BOOL_CLO(arg, "--show-emwarns",     VG_(clo_show_emwarns))
+      /* Already done in get_helprequest_and_toolname, but we need to
+         redundantly handle it again, so the flag does not get
+         rejected as invalid. */
       else VG_NUM_CLO (arg, "--max-stackframe",   VG_(clo_max_stackframe))
       else VG_BOOL_CLO(arg, "--run-libc-freeres", VG_(clo_run_libc_freeres))
       else VG_BOOL_CLO(arg, "--show-below-main",  VG_(clo_show_below_main))

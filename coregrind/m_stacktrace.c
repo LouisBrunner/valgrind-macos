@@ -97,11 +97,9 @@ UInt VG_(get_StackTrace2) ( ThreadId tid_if_known,
    /* Assertion broken before main() is reached in pthreaded programs;  the
     * offending stack traces only have one item.  --njn, 2002-aug-16 */
    /* vg_assert(fp_min <= fp_max);*/
-
-   if (fp_min + VG_(clo_max_stackframe) <= fp_max) {
-      /* If the stack is ridiculously big, don't poke around ... but
-         don't bomb out either.  Needed to make John Regehr's
-         user-space threads package work. JRS 20021001 */
+   if (fp_min + 512 >= fp_max) {
+      /* If the stack limits look bogus, don't poke around ... but
+         don't bomb out either. */
       ips[0] = ip;
       return 1;
    } 

@@ -859,13 +859,25 @@ IIFinaliseImageInfo VG_(ii_create_image)( IICreateImageInfo iicii )
    //   p: fix_environment() [for 'env']
    //--------------------------------------------------------------
    {
+      /* When allocating space for the client stack on Linux, take
+         notice of the --max-stackframe value.  This makes it possible
+         to run programs with very large (primary) stack requirements
+         simply by specifying --max-stackframe. */
       void* init_sp = iicii.argv - 1;
       SizeT m1  = 1024 * 1024;
       SizeT m16 = 16 * m1;
+      SizeT msf = VG_(clo_max_stackframe) + m1;
       VG_(debugLog)(1, "initimg", "Setup client stack\n");
+      /* For the max stack size, use the client's stack rlimit, but
+         clamp it to between 1M and 16M. */
       iifii.clstack_max_size = (SizeT)VG_(client_rlimit_stack).rlim_cur;
       if (iifii.clstack_max_size < m1)  iifii.clstack_max_size = m1;
       if (iifii.clstack_max_size > m16) iifii.clstack_max_size = m16;
+      /* However, if --max-stackframe= is specified, and the given
+         value (+ 1 M for spare) exceeds the current setting, use the
+         max-stackframe input instead. */
+
+      if (iifii.clstack_max_size < msf) iifii.clstack_max_size = msf;
       iifii.clstack_max_size = VG_PGROUNDUP(iifii.clstack_max_size);
 
       iifii.initial_client_SP
@@ -877,11 +889,15 @@ IIFinaliseImageInfo VG_(ii_create_image)( IICreateImageInfo iicii )
 
       VG_(debugLog)(2, "initimg",
                        "Client info: "
-                       "initial_IP=%p initial_SP=%p initial_TOC=%p brk_base=%p\n",
+                       "initial_IP=%p initial_TOC=%p brk_base=%p\n",
                        (void*)(iifii.initial_client_IP), 
-                       (void*)(iifii.initial_client_SP),
                        (void*)(iifii.initial_client_TOC),
                        (void*)VG_(brk_base) );
+      VG_(debugLog)(2, "initimg",
+                       "Client info: "
+                       "initial_SP=%p max_stack_size=%ld\n",
+                       (void*)(iifii.initial_client_SP),
+                       (SizeT)iifii.clstack_max_size );
    }
 
    //--------------------------------------------------------------

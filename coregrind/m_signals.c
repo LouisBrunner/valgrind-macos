@@ -1289,6 +1289,23 @@ static void default_action(const vki_siginfo_t *info, ThreadId tid)
       if (tid != VG_INVALID_THREADID) {
          VG_(get_and_pp_StackTrace)(tid, VG_(clo_backtrace_size));
       }
+
+      if (sigNo == VKI_SIGSEGV 
+          && info && info->si_code > VKI_SI_USER 
+          && info->si_code == VKI_SEGV_MAPERR) {
+         VG_(message)(Vg_UserMsg, " If you believe this happened as a "
+                                  "result of a stack overflow in your");
+         VG_(message)(Vg_UserMsg, " program's main thread (unlikely but"
+                                  " possible), you can try to increase");
+         VG_(message)(Vg_UserMsg, " the size of the main thread stack"
+                                  " using the --main-stacksize= flag.");
+         // FIXME: assumes main ThreadId == 1
+         if (VG_(is_valid_tid)(1)) {
+            VG_(message)(Vg_UserMsg, 
+               " The main thread stack size used in this run was %d.",
+               (Int)VG_(threads)[1].client_stack_szB);
+         }
+      }
    }
 
    if (VG_(is_action_requested)( "Attach to debugger", & VG_(clo_db_attach) )) {

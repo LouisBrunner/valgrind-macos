@@ -1046,6 +1046,60 @@ that can report errors, e.g. Memcheck, but not Cachegrind.</para>
     </listitem>
   </varlistentry>
 
+  <varlistentry id="opt.main-stacksize" xreflabel="--main-stacksize">
+    <term>
+      <option><![CDATA[--main-stacksize=<number>
+               [default: use current 'ulimit' value] ]]></option>
+    </term>
+    <listitem>
+      <para>Specifies the size of the main thread's stack.</para>
+
+      <para>To simplify its memory management, Valgrind reserves all
+      required space for the main thread's stack at startup.  That
+      means it needs to know the required stack size at
+      startup.</para>
+
+      <para>By default, Valgrind uses the current "ulimit" value for
+      the stack size, or 16 MB, whichever is lower.  In many cases
+      this gives a stack size in the range 8 to 16 MB, which almost
+      never overflows for most applications.</para>
+
+      <para>If you need a larger total stack size,
+      use <option>--main-stacksize</option> to specify it.  Only set
+      it as high as you need, since reserving far more space than you
+      need (that is, hundreds of megabytes more than you need)
+      constrains Valgrind's memory allocators and may reduce the total
+      amount of memory that Valgrind can use.  This is only really of
+      significance on 32-bit machines.</para>
+
+      <para>On Linux, you may request a stack of size up to 2GB.
+      Valgrind will stop with a diagnostic message if the stack cannot
+      be allocated.  On AIX5 the allowed stack size is restricted to
+      128MB.</para>
+
+      <para><option>--main-stacksize</option> only affects the stack
+      size for the program's initial thread.  It has no bearing on the
+      size of thread stacks, as Valgrind does not allocate
+      those.</para>
+
+      <para>You may need to use both <option>--main-stacksize</option>
+      and <option>--max-stackframe</option> together.  It is important
+      to understand that <option>--main-stacksize</option> sets the
+      maximum total stack size,
+      whilst <option>--max-stackframe</option> specifies the largest
+      size of any one stack frame.  You will have to work out
+      the <option>--main-stacksize</option> value for yourself
+      (usually, if your applications segfaults).  But Valgrind will
+      tell you the needed <option>--max-stackframe</option> size, if
+      necessary.</para>
+
+      <para>As discussed further in the description
+      of <option>--max-stackframe</option>, a requirement for a large
+      stack is a sign of potential portability problems.  You are best
+      advised to place all large data in heap-allocated memory.</para>
+    </listitem>
+  </varlistentry>
+
 </variablelist>
 <!-- end of xi:include in the manpage -->
 

@@ -593,7 +593,7 @@ Addr setup_client_stack( void*  init_sp,
         VG_(printf)("valgrind: "
                     "I failed to allocate space for the application's stack.\n");
         VG_(printf)("valgrind: "
-                    "This may be the result of a very large --max-stackframe=\n");
+                    "This may be the result of a very large --main-stacksize=\n");
         VG_(printf)("valgrind: setting.  Cannot continue.  Sorry.\n\n");
         VG_(exit)(0);
      }
@@ -874,25 +874,28 @@ IIFinaliseImageInfo VG_(ii_create_image)( IICreateImageInfo iicii )
    //--------------------------------------------------------------
    {
       /* When allocating space for the client stack on Linux, take
-         notice of the --max-stackframe value.  This makes it possible
+         notice of the --main-stacksize value.  This makes it possible
          to run programs with very large (primary) stack requirements
-         simply by specifying --max-stackframe. */
+         simply by specifying --main-stacksize. */
+      /* Logic is as follows:
+         - by default, use the client's current stack rlimit
+         - if that exceeds 16M, clamp to 16M
+         - if a larger --main-stacksize value is specified, use that instead
+         - in all situations, the minimum allowed stack size is 1M
+      */
       void* init_sp = iicii.argv - 1;
       SizeT m1  = 1024 * 1024;
       SizeT m16 = 16 * m1;
-      SizeT msf = VG_(clo_max_stackframe) + m1;
-      VG_(debugLog)(1, "initimg", "Setup client stack\n");
-      /* For the max stack size, use the client's stack rlimit, but
-         clamp it to between 1M and 16M. */
-      iifii.clstack_max_size = (SizeT)VG_(client_rlimit_stack).rlim_cur;
-      if (iifii.clstack_max_size < m1)  iifii.clstack_max_size = m1;
-      if (iifii.clstack_max_size > m16) iifii.clstack_max_size = m16;
-      /* However, if --max-stackframe= is specified, and the given
-         value (+ 1 M for spare) exceeds the current setting, use the
-         max-stackframe input instead. */
+      SizeT szB = (SizeT)VG_(client_rlimit_stack).rlim_cur;
+      if (szB < m1) szB = m1;
+      if (szB > m16) szB = m16;
+      if (VG_(clo_main_stacksize) > 0) szB = VG_(clo_main_stacksize);
+      if (szB < m1) szB = m1;
+      szB = VG_PGROUNDUP(szB);
+      VG_(debugLog)(1, "initimg",
+                       "Setup client stack: size will be %ld\n", szB);
 
-      if (iifii.clstack_max_size < msf) iifii.clstack_max_size = msf;
-      iifii.clstack_max_size = VG_PGROUNDUP(iifii.clstack_max_size);
+      iifii.clstack_max_size = szB;
 
       iifii.initial_client_SP
          = setup_client_stack( init_sp, env, 

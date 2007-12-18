@@ -157,6 +157,9 @@ extern Bool VG_(clo_show_emwarns);
    consider a stack switch to have happened?  Default: 2000000 bytes
    NB: must be host-word-sized to be correct (hence Word). */
 extern Word VG_(clo_max_stackframe);
+/* How large should Valgrind allow the primary thread's guest stack to
+   be? */
+extern Word VG_(clo_main_stacksize);
 
 /* Delay startup to allow GDB to be attached?  Default: NO */
 extern Bool VG_(clo_wait_for_gdb);

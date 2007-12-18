@@ -466,6 +466,14 @@ ThreadId VG_(scheduler_init_phase1) ( void )
 
    tid_main = VG_(alloc_ThreadState)();
 
+   /* Bleh.  Unfortunately there are various places in the system that
+      assume that the main thread has a ThreadId of 1.
+      - Helgrind (possibly)
+      - stack overflow message in default_action() in m_signals.c
+      - definitely a lot more places
+   */
+   vg_assert(tid_main == 1);
+
    return tid_main;
 }
 

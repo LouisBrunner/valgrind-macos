@@ -40,6 +40,8 @@ usage: valgrind [options] prog-and-args
     --input-fd=<number>       file descriptor for input [0=stdin]
     --max-stackframe=<number> assume stack switch for SP changes larger
                               than <number> bytes [2000000]
+    --main-stacksize=<number> set size of main thread's stack (in bytes)
+                              [use current 'ulimit' value]
 
   user options for Nulgrind:
     (none)

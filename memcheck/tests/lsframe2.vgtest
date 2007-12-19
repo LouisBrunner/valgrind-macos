@@ -1,0 +1,2 @@
+prog: lsframe2
+vgopts: --main-stacksize=68500000

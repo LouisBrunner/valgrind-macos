@@ -1,0 +1,2 @@
+prog: lsframe1
+vgopts: --main-stacksize=67200000 --max-stackframe=67200000

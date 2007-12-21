@@ -344,7 +344,7 @@ struct rt_sigframe
    bits of sigcontext at the moment.
 */
 static 
-void synth_ucontext(ThreadId tid, const vki_siginfo_t *si, 
+void synth_ucontext(ThreadId tid, const vki_siginfo_t *si, Int trapno,
                     const vki_sigset_t *set, 
                     struct vki_ucontext *uc, struct _vki_fpstate *fpstate)
 {
@@ -381,7 +381,7 @@ void synth_ucontext(ThreadId tid, const vki_siginfo_t *si,
    sc->eflags = LibVEX_GuestX86_get_eflags(&tst->arch.vex);
    SC2(ss,SS);
    /* XXX esp_at_signal */
-   /* XXX trapno */
+   sc->trapno = trapno;
    /* XXX err */
 #  undef SC2
 
@@ -456,6 +456,7 @@ static void build_vg_sigframe(struct vg_sigframe *frame,
 static Addr build_sigframe(ThreadState *tst,
 			   Addr esp_top_of_frame,
 			   const vki_siginfo_t *siginfo,
+                           const struct vki_ucontext *siguc,
 			   void *handler, UInt flags,
 			   const vki_sigset_t *mask,
 			   void *restorer)
@@ -463,6 +464,7 @@ static Addr build_sigframe(ThreadState *tst,
    struct sigframe *frame;
    Addr esp = esp_top_of_frame;
    Int	sigNo = siginfo->si_signo;
+   Int trapno;
    struct vki_ucontext uc;
 
    vg_assert((flags & VKI_SA_SIGINFO) == 0);
@@ -485,7 +487,12 @@ static Addr build_sigframe(ThreadState *tst,
    else
       frame->retaddr = (Addr)&VG_(x86_linux_SUBST_FOR_sigreturn);
 
-   synth_ucontext(tst->tid, siginfo, mask, &uc, &frame->fpstate);
+   if (siguc)
+      trapno = siguc->uc_mcontext.trapno;
+   else
+      trapno = 0;
+
+   synth_ucontext(tst->tid, siginfo, trapno, mask, &uc, &frame->fpstate);
 
    VG_(memcpy)(&frame->sigContext, &uc.uc_mcontext, 
 	       sizeof(struct vki_sigcontext));
@@ -503,6 +510,7 @@ static Addr build_sigframe(ThreadState *tst,
 static Addr build_rt_sigframe(ThreadState *tst,
 			      Addr esp_top_of_frame,
 			      const vki_siginfo_t *siginfo,
+                              const struct vki_ucontext *siguc,
 			      void *handler, UInt flags,
 			      const vki_sigset_t *mask,
 			      void *restorer)
@@ -510,6 +518,7 @@ static Addr build_rt_sigframe(ThreadState *tst,
    struct rt_sigframe *frame;
    Addr esp = esp_top_of_frame;
    Int	sigNo = siginfo->si_signo;
+   Int trapno;
 
    vg_assert((flags & VKI_SA_SIGINFO) != 0);
 
@@ -531,6 +540,11 @@ static Addr build_rt_sigframe(ThreadState *tst,
    else
       frame->retaddr = (Addr)&VG_(x86_linux_SUBST_FOR_rt_sigreturn);
 
+   if (siguc)
+      trapno = siguc->uc_mcontext.trapno;
+   else
+      trapno = 0;
+
    frame->psigInfo = (Addr)&frame->sigInfo;
    frame->puContext = (Addr)&frame->uContext;
    VG_(memcpy)(&frame->sigInfo, siginfo, sizeof(vki_siginfo_t));
@@ -540,7 +554,7 @@ static Addr build_rt_sigframe(ThreadState *tst,
       frame->sigInfo._sifields._sigfault._addr 
          = (void*)tst->arch.vex.guest_EIP;
 
-   synth_ucontext(tst->tid, siginfo, mask, &frame->uContext, &frame->fpstate);
+   synth_ucontext(tst->tid, siginfo, trapno, mask, &frame->uContext, &frame->fpstate);
 
    VG_TRACK( post_mem_write,  Vg_CoreSignal, tst->tid, 
              esp, offsetof(struct rt_sigframe, vg) );
@@ -555,6 +569,7 @@ static Addr build_rt_sigframe(ThreadState *tst,
 void VG_(sigframe_create)( ThreadId tid, 
                            Addr esp_top_of_frame,
                            const vki_siginfo_t *siginfo,
+                           const struct vki_ucontext *siguc,
                            void *handler, 
                            UInt flags,
                            const vki_sigset_t *mask,
@@ -564,11 +579,11 @@ void VG_(sigframe_create)( ThreadId tid,
    ThreadState* tst = VG_(get_ThreadState)(tid);
 
    if (flags & VKI_SA_SIGINFO)
-      esp = build_rt_sigframe(tst, esp_top_of_frame, siginfo, 
+      esp = build_rt_sigframe(tst, esp_top_of_frame, siginfo, siguc,
                                    handler, flags, mask, restorer);
    else
-      esp = build_sigframe(tst, esp_top_of_frame, 
-                                siginfo, handler, flags, mask, restorer);
+      esp = build_sigframe(tst, esp_top_of_frame, siginfo, siguc,
+                                handler, flags, mask, restorer);
 
    /* Set the thread so it will next run the handler. */
    /* tst->m_esp  = esp;  also notify the tool we've updated ESP */

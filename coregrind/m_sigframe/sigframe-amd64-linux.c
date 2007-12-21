@@ -320,7 +320,7 @@ struct rt_sigframe
    bits of sigcontext at the moment.
 */
 static 
-void synth_ucontext(ThreadId tid, const vki_siginfo_t *si, 
+void synth_ucontext(ThreadId tid, const vki_siginfo_t *si, Int trapno,
                     const vki_sigset_t *set, 
                     struct vki_ucontext *uc, struct _vki_fpstate *fpstate)
 {
@@ -361,7 +361,7 @@ void synth_ucontext(ThreadId tid, const vki_siginfo_t *si,
    // FIXME: SC2(gs,GS);
    // FIXME: SC2(fs,FS);
    /* XXX err */
-   /* XXX trapno */
+   sc->trapno = trapno;
 #  undef SC2
 
    sc->cr2 = (UWord)si->_sifields._sigfault._addr;
@@ -435,6 +435,7 @@ static void build_vg_sigframe(struct vg_sigframe *frame,
 static Addr build_rt_sigframe(ThreadState *tst,
 			      Addr rsp_top_of_frame,
 			      const vki_siginfo_t *siginfo,
+                              const struct vki_ucontext *siguc,
 			      void *handler, UInt flags,
 			      const vki_sigset_t *mask,
 			      void *restorer)
@@ -442,6 +443,7 @@ static Addr build_rt_sigframe(ThreadState *tst,
    struct rt_sigframe *frame;
    Addr rsp = rsp_top_of_frame;
    Int	sigNo = siginfo->si_signo;
+   Int trapno;
 
    rsp -= sizeof(*frame);
    rsp = VG_ROUNDDN(rsp, 16);
@@ -459,6 +461,11 @@ static Addr build_rt_sigframe(ThreadState *tst,
    else
       frame->retaddr = (Addr)&VG_(amd64_linux_SUBST_FOR_rt_sigreturn);
 
+   if (siguc)
+      trapno = siguc->uc_mcontext.trapno;
+   else
+      trapno = 0;
+
    VG_(memcpy)(&frame->sigInfo, siginfo, sizeof(vki_siginfo_t));
 
    /* SIGILL defines addr to be the faulting address */
@@ -466,7 +473,7 @@ static Addr build_rt_sigframe(ThreadState *tst,
       frame->sigInfo._sifields._sigfault._addr 
          = (void*)tst->arch.vex.guest_RIP;
 
-   synth_ucontext(tst->tid, siginfo, mask, &frame->uContext, &frame->fpstate);
+   synth_ucontext(tst->tid, siginfo, trapno, mask, &frame->uContext, &frame->fpstate);
 
    VG_TRACK( post_mem_write,  Vg_CoreSignal, tst->tid, 
              rsp, offsetof(struct rt_sigframe, vg) );
@@ -480,6 +487,7 @@ static Addr build_rt_sigframe(ThreadState *tst,
 void VG_(sigframe_create)( ThreadId tid, 
                             Addr rsp_top_of_frame,
                             const vki_siginfo_t *siginfo,
+                            const struct vki_ucontext *siguc,
                             void *handler, 
                             UInt flags,
                             const vki_sigset_t *mask,
@@ -489,7 +497,7 @@ void VG_(sigframe_create)( ThreadId tid,
    struct rt_sigframe *frame;
    ThreadState* tst = VG_(get_ThreadState)(tid);
 
-   rsp = build_rt_sigframe(tst, rsp_top_of_frame, siginfo, 
+   rsp = build_rt_sigframe(tst, rsp_top_of_frame, siginfo, siguc,
                                 handler, flags, mask, restorer);
    frame = (struct rt_sigframe *)rsp;
 

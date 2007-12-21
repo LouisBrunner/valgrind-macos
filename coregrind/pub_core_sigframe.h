@@ -47,6 +47,7 @@ extern
 void VG_(sigframe_create) ( ThreadId tid, 
                             Addr sp_top_of_frame,
                             const vki_siginfo_t *siginfo,
+                            const struct vki_ucontext *uc,
                             void *handler, 
                             UInt flags,
                             const vki_sigset_t *mask,

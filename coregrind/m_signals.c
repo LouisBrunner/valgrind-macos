@@ -1275,7 +1275,7 @@ static void default_action(const vki_siginfo_t *info, ThreadId tid)
 	    case VKI_BUS_OBJERR: event = "Hardware error"; break;
 	    }
 	    break;
-	 }
+	 } /* switch (sigNo) */
 
 	 if (event != NULL) {
 	    if (haveaddr)
@@ -1285,11 +1285,17 @@ static void default_action(const vki_siginfo_t *info, ThreadId tid)
 	       VG_(message)(Vg_UserMsg, " %s", event);
 	 }
       }
-
-      if (tid != VG_INVALID_THREADID) {
-         VG_(get_and_pp_StackTrace)(tid, VG_(clo_backtrace_size));
+      /* Print a stack trace.  Be cautious if the thread's SP is in an
+         obviously stupid place (not mapped readable) that would
+         likely cause a segfault. */
+      if (VG_(is_valid_tid)(tid)) {
+         ExeContext* ec = VG_(am_is_valid_for_client)
+                             (VG_(get_SP)(tid), sizeof(Addr), VKI_PROT_READ)
+                        ? VG_(record_ExeContext)( tid, 0/*first_ip_delta*/ )
+                      : VG_(record_depth_1_ExeContext)( tid );
+         vg_assert(ec);
+         VG_(pp_ExeContext)( ec );
       }
-
       if (sigNo == VKI_SIGSEGV 
           && info && info->si_code > VKI_SI_USER 
           && info->si_code == VKI_SEGV_MAPERR) {

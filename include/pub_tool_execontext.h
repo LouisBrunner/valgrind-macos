@@ -57,6 +57,15 @@ typedef
 extern 
 ExeContext* VG_(record_ExeContext) ( ThreadId tid, Word first_ip_delta );
 
+// Trivial version of VG_(record_ExeContext), which just records the
+// thread's current program counter but does not do any stack
+// unwinding.  This is useful in some rare cases when we suspect the
+// stack might be outside mapped storage, and so unwinding
+// might cause a segfault.  In this case we can at least safely
+// produce a one-element stack trace, which is better than nothing.
+extern
+ExeContext* VG_(record_depth_1_ExeContext)( ThreadId tid );
+
 // Apply a function to every element in the ExeContext.  The parameter 'n'
 // gives the index of the passed ip.  Doesn't go below main() unless
 // --show-below-main=yes is set.

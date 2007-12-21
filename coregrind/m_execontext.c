@@ -30,12 +30,15 @@
 
 #include "pub_core_basics.h"
 #include "pub_core_debuglog.h"
-#include "pub_core_execontext.h"    // self
 #include "pub_core_libcassert.h"
 #include "pub_core_libcprint.h"     // For VG_(message)()
 #include "pub_core_mallocfree.h"
 #include "pub_core_options.h"
 #include "pub_core_stacktrace.h"
+#include "pub_core_machine.h"       // VG_(get_IP)
+#include "pub_core_vki.h"           // To keep pub_core_threadstate.h happy
+#include "pub_core_threadstate.h"   // VG_(is_valid_tid)
+#include "pub_core_execontext.h"    // self
 
 /*------------------------------------------------------------*/
 /*--- Low-level ExeContext storage.                        ---*/
@@ -277,7 +280,8 @@ static void resize_ec_htab ( void )
    ec_htab_size_idx++;
 }
 
-ExeContext* VG_(record_ExeContext) ( ThreadId tid, Word first_ip_delta )
+static ExeContext* record_ExeContext_wrk ( ThreadId tid, Word first_ip_delta,
+                                           Bool first_ip_only )
 {
    Int         i;
    Addr        ips[VG_DEEPEST_BACKTRACE];
@@ -297,8 +301,15 @@ ExeContext* VG_(record_ExeContext) ( ThreadId tid, Word first_ip_delta )
    vg_assert(VG_(clo_backtrace_size) >= 1 &&
              VG_(clo_backtrace_size) <= VG_DEEPEST_BACKTRACE);
 
-   n_ips = VG_(get_StackTrace)( tid, ips, VG_(clo_backtrace_size),
-                                first_ip_delta );
+   if (first_ip_only) {
+      vg_assert(VG_(is_valid_tid)(tid));
+      n_ips = 1;
+      ips[0] = VG_(get_IP)(tid);
+   } else {
+      n_ips = VG_(get_StackTrace)( tid, ips, VG_(clo_backtrace_size),
+                                   first_ip_delta );
+   }
+
    tl_assert(n_ips >= 1 && n_ips <= VG_(clo_backtrace_size));
 
    /* Now figure out if we've seen this one before.  First hash it so
@@ -377,6 +388,17 @@ ExeContext* VG_(record_ExeContext) ( ThreadId tid, Word first_ip_delta )
 
    return new_ec;
 }
+
+ExeContext* VG_(record_ExeContext)( ThreadId tid, Word first_ip_delta ) {
+   return record_ExeContext_wrk( tid, first_ip_delta,
+                                      False/*!first_ip_only*/ );
+}
+
+ExeContext* VG_(record_depth_1_ExeContext)( ThreadId tid ) {
+   return record_ExeContext_wrk( tid, 0/*first_ip_delta*/,
+                                      True/*first_ip_only*/ );
+}
+
 
 StackTrace VG_(extract_StackTrace) ( ExeContext* e )
 {                                  

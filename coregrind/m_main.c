@@ -1470,12 +1470,14 @@ Int valgrind_main ( Int argc, HChar **argv, HChar **envp )
 #       error "Uknown platform"
 #     endif
 
+      /* NOTE: this call reads VG_(clo_max_stackframe). */
       the_iifii = VG_(ii_create_image)( the_iicii );
 
 #     if defined(VGO_aix5)
       /* Tell aspacem where the initial client stack is, so that it
          can later produce a faked-up NSegment in response to
          VG_(am_find_nsegment) for that address range, if asked. */
+      /* NOTE: this call reads VG_(clo_max_stackframe). */
       VG_(am_aix5_set_initial_client_sp)( the_iifii.initial_client_SP );
       /* Now have a look at said fake segment, so we can find out
          the size of it. */
@@ -1484,7 +1486,7 @@ Int valgrind_main ( Int argc, HChar **argv, HChar **envp )
            = VG_(am_find_nsegment)( the_iifii.initial_client_SP );
         vg_assert(seg);
         sz = seg->end - seg->start + 1;
-        vg_assert(sz >= 0 && sz <= 64*1024*1024); /* stay sane */
+        vg_assert(sz >= 0 && sz <= (256+1)*1024*1024); /* stay sane */
         the_iifii.clstack_max_size = sz;
       }
 #     endif

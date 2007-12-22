@@ -292,6 +292,7 @@ struct vki_sigaction {
 #define VKI_SEGV_MAPERR 50
 
 #define VKI_TRAP_TRACE 61
+#define VKI_TRAP_BRKPT 60
 #define VKI_BUS_OBJERR 3
 #define VKI_BUS_ADRERR 2
 #define VKI_BUS_ADRALN 1

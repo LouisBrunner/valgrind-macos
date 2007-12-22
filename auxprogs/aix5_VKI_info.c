@@ -268,6 +268,7 @@ int main ( void )
    printf("#define VKI_SEGV_MAPERR %d\n", SEGV_MAPERR);
    printf("\n");
    printf("#define VKI_TRAP_TRACE %d\n", TRAP_TRACE);
+   printf("#define VKI_TRAP_BRKPT %d\n", TRAP_BRKPT);
    printf("#define VKI_BUS_OBJERR %d\n", BUS_OBJERR);
    printf("#define VKI_BUS_ADRERR %d\n", BUS_ADRERR);
    printf("#define VKI_BUS_ADRALN %d\n", BUS_ADRALN);

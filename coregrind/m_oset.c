@@ -189,7 +189,7 @@ static inline Word fast_cmp(void* k, AvlNode* n)
 }
 
 // Compare a key and an element.  Inlining is *crucial*.
-static inline Word slow_cmp(AvlTree* t, void* k, AvlNode* n)
+static inline Word slow_cmp(const AvlTree* t, const void* k, const AvlNode* n)
 {
    return t->cmp(k, elem_of_node(n));
 }
@@ -490,7 +490,7 @@ void VG_(OSetWord_Insert)(AvlTree* t, Word val)
 /*--------------------------------------------------------------------*/
 
 // Find the *node* in t matching k, or NULL if not found.
-static AvlNode* avl_lookup(AvlTree* t, void* k)
+static AvlNode* avl_lookup(const AvlTree* t, const void* k)
 {
    Word     cmpres;
    AvlNode* curr = t->root;
@@ -522,7 +522,7 @@ static AvlNode* avl_lookup(AvlTree* t, void* k)
 }
 
 // Find the *element* in t matching k, or NULL if not found.
-void* VG_(OSetGen_Lookup)(AvlTree* t, void* k)
+void* VG_(OSetGen_Lookup)(const AvlTree* t, const void* k)
 {
    AvlNode* n;
    vg_assert(t);
@@ -532,7 +532,7 @@ void* VG_(OSetGen_Lookup)(AvlTree* t, void* k)
 
 // Find the *element* in t matching k, or NULL if not found;  use the given
 // comparison function rather than the standard one.
-void* VG_(OSetGen_LookupWithCmp)(AvlTree* t, void* k, OSetCmp_t cmp)
+void* VG_(OSetGen_LookupWithCmp)(AvlTree* t, const void* k, OSetCmp_t cmp)
 {
    // Save the normal one to the side, then restore once we're done.
    void* e;
@@ -546,7 +546,7 @@ void* VG_(OSetGen_LookupWithCmp)(AvlTree* t, void* k, OSetCmp_t cmp)
 }
 
 // Is there an element matching k?
-Bool VG_(OSetGen_Contains)(AvlTree* t, void* k)
+Bool VG_(OSetGen_Contains)(const AvlTree* t, const void* k)
 {
    return (NULL != VG_(OSetGen_Lookup)(t, k));
 }
@@ -775,7 +775,7 @@ Bool VG_(OSetWord_Next)(AvlTree* t, Word* val)
 /*--- Miscellaneous operations                                     ---*/
 /*--------------------------------------------------------------------*/
 
-Int VG_(OSetGen_Size)(AvlTree* t)
+Int VG_(OSetGen_Size)(const AvlTree* t)
 {
    vg_assert(t);
    return t->nElems;

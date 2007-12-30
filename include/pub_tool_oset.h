@@ -76,7 +76,7 @@ typedef struct _OSet     OSet;
 // - Alloc: allocates a chunk of memory.
 // - Free: frees a chunk of memory allocated with Alloc.
 
-typedef Word  (*OSetCmp_t)         ( void* key, void* elem );
+typedef Word  (*OSetCmp_t)         ( const void* key, const void* elem );
 typedef void* (*OSetAlloc_t)       ( SizeT szB );
 typedef void  (*OSetFree_t)        ( void* p );
 
@@ -234,11 +234,11 @@ extern void  VG_(OSetGen_FreeNode)  ( OSet* os, void* elem );
 //   they will return NULL if VG_(OSetGen_Next)() is called without an
 //   intervening call to VG_(OSetGen_ResetIter)().
 
-extern Int   VG_(OSetGen_Size)         ( OSet* os );
+extern Int   VG_(OSetGen_Size)         ( const OSet* os );
 extern void  VG_(OSetGen_Insert)       ( OSet* os, void* elem );
-extern Bool  VG_(OSetGen_Contains)     ( OSet* os, void* key  );
-extern void* VG_(OSetGen_Lookup)       ( OSet* os, void* key  );
-extern void* VG_(OSetGen_LookupWithCmp)( OSet* os, void* key, OSetCmp_t cmp );
+extern Bool  VG_(OSetGen_Contains)     ( const OSet* os, const void* key  );
+extern void* VG_(OSetGen_Lookup)       ( const OSet* os, const void* key  );
+extern void* VG_(OSetGen_LookupWithCmp)( OSet* os, const void* key, OSetCmp_t cmp );
 extern void* VG_(OSetGen_Remove)       ( OSet* os, void* key  );
 extern void  VG_(OSetGen_ResetIter)    ( OSet* os );
 extern void* VG_(OSetGen_Next)         ( OSet* os );

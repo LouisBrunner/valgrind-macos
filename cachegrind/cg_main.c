@@ -112,7 +112,7 @@ typedef struct {
 } LineCC;
 
 // First compare file, then fn, then line.
-static Word cmp_CodeLoc_LineCC(void *vloc, void *vcc)
+static Word cmp_CodeLoc_LineCC(const void *vloc, const void *vcc)
 {
    Word res;
    CodeLoc* a = (CodeLoc*)vloc;
@@ -182,7 +182,7 @@ static Int  no_debugs           = 0;
 /*--- String table operations                              ---*/
 /*------------------------------------------------------------*/
 
-static Word stringCmp( void* key, void* elem )
+static Word stringCmp( const void* key, const void* elem )
 {
    return VG_(strcmp)(*(Char**)key, *(Char**)elem);
 }

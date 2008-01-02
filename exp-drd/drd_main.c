@@ -321,13 +321,6 @@ void drd_pre_thread_create(const ThreadId creator, const ThreadId created)
    const DrdThreadId drd_creator = VgThreadIdToDrdThreadId(creator);
    tl_assert(created != VG_INVALID_THREADID);
    thread_pre_create(drd_creator, created);
-#if 1
-   // Hack: compensation for code missing in coregrind/m_main.c.
-   if (created == 1)
-   {
-      thread_set_running_tid(1, 1);
-   }
-#endif
    if (IsValidDrdThreadId(drd_creator))
    {
       thread_new_segment(drd_creator);

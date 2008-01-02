@@ -424,17 +424,14 @@ void thread_set_name_fmt(const DrdThreadId tid, const char* const fmt,
 
 DrdThreadId thread_get_running_tid(void)
 {
-   // HACK. To do: remove the if-statement and keep the assert.
-   if (VG_(get_running_tid)() != VG_INVALID_THREADID)
-      tl_assert(VG_(get_running_tid)() == s_vg_running_tid);
+   tl_assert(VG_(get_running_tid)() == s_vg_running_tid);
    tl_assert(s_drd_running_tid != DRD_INVALID_THREADID);
    return s_drd_running_tid;
 }
 
 void thread_set_vg_running_tid(const ThreadId vg_tid)
 {
-   // HACK. To do: uncomment the line below.
-   // tl_assert(vg_tid != VG_INVALID_THREADID);
+   tl_assert(vg_tid != VG_INVALID_THREADID);
 
    if (vg_tid != s_vg_running_tid)
    {
@@ -447,10 +444,6 @@ void thread_set_vg_running_tid(const ThreadId vg_tid)
 
 void thread_set_running_tid(const ThreadId vg_tid, const DrdThreadId drd_tid)
 {
-   // HACK. To do: remove the next two lines.
-   if (vg_tid == VG_INVALID_THREADID)
-      return;
-
    tl_assert(vg_tid != VG_INVALID_THREADID);
    tl_assert(drd_tid != DRD_INVALID_THREADID);
    

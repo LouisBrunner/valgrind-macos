@@ -1763,6 +1763,12 @@ Int valgrind_main ( Int argc, HChar **argv, HChar **envp )
    { Addr*     seg_starts;
      Int       n_seg_starts;
 
+     /* Mark the main thread as running while we tell the tool about
+        the client memory so that the tool can associate that memory
+        with the main thread. */
+     tl_assert(VG_(running_tid) == VG_INVALID_THREADID);
+     VG_(running_tid) = tid_main;
+
      seg_starts = get_seg_starts( &n_seg_starts );
      vg_assert(seg_starts && n_seg_starts >= 0);
 
@@ -1821,6 +1827,10 @@ Int valgrind_main ( Int argc, HChar **argv, HChar **envp )
                False, /* readable? */
                False, /* writable? */
                True   /* executable? */ );
+
+     /* Clear the running thread indicator */
+     VG_(running_tid) = VG_INVALID_THREADID;
+     tl_assert(VG_(running_tid) == VG_INVALID_THREADID);
    }
 
    //--------------------------------------------------------------

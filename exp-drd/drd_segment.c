@@ -64,7 +64,7 @@ void sg_init(Segment* const sg,
   sg->next = 0;
   sg->prev = 0;
 
-  if (vg_created != VG_INVALID_THREADID)
+  if (vg_created != VG_INVALID_THREADID && VG_(get_SP)(vg_created) != 0)
     sg->stacktrace = VG_(record_ExeContext)(vg_created, 0);
   else
     sg->stacktrace = 0;

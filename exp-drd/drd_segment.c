@@ -31,6 +31,7 @@
 #include "pub_tool_libcassert.h"  // tl_assert()
 #include "pub_tool_libcbase.h"    // VG_(strlen)()
 #include "pub_tool_libcprint.h"   // VG_(printf)()
+#include "pub_tool_machine.h"     // VG_(get_SP)()
 #include "pub_tool_mallocfree.h"  // VG_(malloc)(), VG_(free)()
 #include "pub_tool_threadstate.h" // VG_INVALID_THREADID
 

@@ -7135,6 +7135,95 @@ static IRExpr* mk64from16s ( IRTemp t3, IRTemp t2,
    );
 }
 
+/* Generate IR to set the guest %EFLAGS from the pushfl-format image
+   in the given 32-bit temporary.  The flags that are set are: O S Z A
+   C P D ID AC.
+
+   In all cases, code to set AC is generated.  However, VEX actually
+   ignores the AC value and so can optionally emit an emulation
+   warning when it is enabled.  In this routine, an emulation warning
+   is only emitted if emit_AC_emwarn is True, in which case
+   next_insn_EIP must be correct (this allows for correct code
+   generation for popfl/popfw).  If emit_AC_emwarn is False,
+   next_insn_EIP is unimportant (this allows for easy if kludgey code
+   generation for IRET.) */
+
+static 
+void set_EFLAGS_from_value ( IRTemp t1, 
+                             Bool   emit_AC_emwarn,
+                             Addr32 next_insn_EIP )
+{
+   vassert(typeOfIRTemp(irsb->tyenv,t1) == Ity_I32);
+
+   /* t1 is the flag word.  Mask out everything except OSZACP and set
+      the flags thunk to X86G_CC_OP_COPY. */
+   stmt( IRStmt_Put( OFFB_CC_OP,   mkU32(X86G_CC_OP_COPY) ));
+   stmt( IRStmt_Put( OFFB_CC_DEP2, mkU32(0) ));
+   stmt( IRStmt_Put( OFFB_CC_DEP1, 
+                     binop(Iop_And32,
+                           mkexpr(t1), 
+                           mkU32( X86G_CC_MASK_C | X86G_CC_MASK_P 
+                                  | X86G_CC_MASK_A | X86G_CC_MASK_Z 
+                                  | X86G_CC_MASK_S| X86G_CC_MASK_O )
+                          )
+                    )
+       );
+   /* Set NDEP even though it isn't used.  This makes redundant-PUT
+      elimination of previous stores to this field work better. */
+   stmt( IRStmt_Put( OFFB_CC_NDEP, mkU32(0) ));
+
+   /* Also need to set the D flag, which is held in bit 10 of t1.
+      If zero, put 1 in OFFB_DFLAG, else -1 in OFFB_DFLAG. */
+   stmt( IRStmt_Put( 
+            OFFB_DFLAG,
+            IRExpr_Mux0X( 
+               unop(Iop_32to8,
+                    binop(Iop_And32, 
+                          binop(Iop_Shr32, mkexpr(t1), mkU8(10)), 
+                          mkU32(1))),
+               mkU32(1), 
+               mkU32(0xFFFFFFFF))) 
+       );
+
+   /* Set the ID flag */
+   stmt( IRStmt_Put( 
+            OFFB_IDFLAG,
+            IRExpr_Mux0X( 
+               unop(Iop_32to8,
+                    binop(Iop_And32, 
+                          binop(Iop_Shr32, mkexpr(t1), mkU8(21)), 
+                          mkU32(1))),
+               mkU32(0), 
+               mkU32(1))) 
+       );
+
+   /* And set the AC flag.  If setting it 1 to, possibly emit an
+      emulation warning. */
+   stmt( IRStmt_Put( 
+            OFFB_ACFLAG,
+            IRExpr_Mux0X( 
+               unop(Iop_32to8,
+                    binop(Iop_And32, 
+                          binop(Iop_Shr32, mkexpr(t1), mkU8(18)), 
+                          mkU32(1))),
+               mkU32(0), 
+               mkU32(1))) 
+       );
+
+   if (emit_AC_emwarn) {
+      put_emwarn( mkU32(EmWarn_X86_acFlag) );
+      stmt( 
+         IRStmt_Exit(
+            binop( Iop_CmpNE32, 
+                   binop(Iop_And32, mkexpr(t1), mkU32(1<<18)), 
+                   mkU32(0) ),
+            Ijk_EmWarn,
+            IRConst_U32( next_insn_EIP )
+         )
+      );
+   }
+}
+
 
 /* Helper for deciding whether a given insn (starting at the opcode
    byte) may validly be used with a LOCK prefix.  The following insns
@@ -11124,7 +11213,32 @@ DisResult disInstr_X86_WRK (
       dres.whatNext = Dis_StopHere;
       DIP("ret\n");
       break;
-      
+
+   case 0xCF: /* IRET */
+      /* Note, this is an extremely kludgey and limited implementation
+         of iret.  All it really does is: 
+            popl %EIP; popl %CS; popl %EFLAGS.
+         %CS is set but ignored (as it is in (eg) popw %cs)". */
+      t1 = newTemp(Ity_I32); /* ESP */
+      t2 = newTemp(Ity_I32); /* new EIP */
+      t3 = newTemp(Ity_I32); /* new CS */
+      t4 = newTemp(Ity_I32); /* new EFLAGS */
+      assign(t1, getIReg(4,R_ESP));
+      assign(t2, loadLE(Ity_I32, binop(Iop_Add32,mkexpr(t1),mkU32(0) )));
+      assign(t3, loadLE(Ity_I32, binop(Iop_Add32,mkexpr(t1),mkU32(4) )));
+      assign(t4, loadLE(Ity_I32, binop(Iop_Add32,mkexpr(t1),mkU32(8) )));
+      /* Get stuff off stack */
+      putIReg(4, R_ESP,binop(Iop_Add32, mkexpr(t1), mkU32(12)));
+      /* set %CS (which is ignored anyway) */
+      putSReg( R_CS, unop(Iop_32to16, mkexpr(t3)) );
+      /* set %EFLAGS */
+      set_EFLAGS_from_value( t4, False/*!emit_AC_emwarn*/, 0/*unused*/ );
+      /* goto new EIP value */
+      jmp_treg(Ijk_Ret,t2);
+      dres.whatNext = Dis_StopHere;
+      DIP("iret (very kludgey)\n");
+      break;
+
    case 0xE8: /* CALL J4 */
       d32 = getUDisp32(delta); delta += 4;
       d32 += (guest_EIP_bbstart+delta); 
@@ -11864,71 +11978,11 @@ DisResult disInstr_X86_WRK (
       assign(t2, getIReg(4, R_ESP));
       assign(t1, widenUto32(loadLE(szToITy(sz),mkexpr(t2))));
       putIReg(4, R_ESP, binop(Iop_Add32, mkexpr(t2), mkU32(sz)));
-      /* t1 is the flag word.  Mask out everything except OSZACP and 
-         set the flags thunk to X86G_CC_OP_COPY. */
-      stmt( IRStmt_Put( OFFB_CC_OP,   mkU32(X86G_CC_OP_COPY) ));
-      stmt( IRStmt_Put( OFFB_CC_DEP2, mkU32(0) ));
-      stmt( IRStmt_Put( OFFB_CC_DEP1, 
-                        binop(Iop_And32,
-                              mkexpr(t1), 
-                              mkU32( X86G_CC_MASK_C | X86G_CC_MASK_P 
-                                     | X86G_CC_MASK_A | X86G_CC_MASK_Z 
-                                     | X86G_CC_MASK_S| X86G_CC_MASK_O )
-                             )
-                       )
-          );
-      /* Set NDEP even though it isn't used.  This makes redundant-PUT
-         elimination of previous stores to this field work better. */
-      stmt( IRStmt_Put( OFFB_CC_NDEP, mkU32(0) ));
 
-      /* Also need to set the D flag, which is held in bit 10 of t1.
-         If zero, put 1 in OFFB_DFLAG, else -1 in OFFB_DFLAG. */
-      stmt( IRStmt_Put( 
-               OFFB_DFLAG,
-               IRExpr_Mux0X( 
-                  unop(Iop_32to8,
-                       binop(Iop_And32, 
-                             binop(Iop_Shr32, mkexpr(t1), mkU8(10)), 
-                             mkU32(1))),
-                  mkU32(1), 
-                  mkU32(0xFFFFFFFF))) 
-          );
-
-      /* Set the ID flag */
-      stmt( IRStmt_Put( 
-               OFFB_IDFLAG,
-               IRExpr_Mux0X( 
-                  unop(Iop_32to8,
-                       binop(Iop_And32, 
-                             binop(Iop_Shr32, mkexpr(t1), mkU8(21)), 
-                             mkU32(1))),
-                  mkU32(0), 
-                  mkU32(1))) 
-          );
-
-      /* And set the AC flag.  If setting it 1 to, emit an emulation
-         warning. */
-      stmt( IRStmt_Put( 
-               OFFB_ACFLAG,
-               IRExpr_Mux0X( 
-                  unop(Iop_32to8,
-                       binop(Iop_And32, 
-                             binop(Iop_Shr32, mkexpr(t1), mkU8(18)), 
-                             mkU32(1))),
-                  mkU32(0), 
-                  mkU32(1))) 
-          );
-
-      put_emwarn( mkU32(EmWarn_X86_acFlag) );
-      stmt( 
-         IRStmt_Exit(
-            binop( Iop_CmpNE32, 
-                   binop(Iop_And32, mkexpr(t1), mkU32(1<<18)), 
-                   mkU32(0) ),
-            Ijk_EmWarn,
-            IRConst_U32( ((Addr32)guest_EIP_bbstart)+delta)
-         )
-      );
+      /* Generate IR to set %EFLAGS{O,S,Z,A,C,P,D,ID,AC} from the
+	 value in t1. */
+      set_EFLAGS_from_value( t1, True/*emit_AC_emwarn*/,
+                                 ((Addr32)guest_EIP_bbstart)+delta );
 
       DIP("popf%c\n", nameISize(sz));
       break;

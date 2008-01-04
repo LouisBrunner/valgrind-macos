@@ -347,10 +347,10 @@ static Char *blockToStr(void *p)
    return buf;
 }
 
-static Word blockCmp(void* vkey, void* velem)
+static Word blockCmp(const void* vkey, const void* velem)
 {
-   Addr   key  = *(Addr*)vkey;
-   Block* elem = (Block*)velem;
+   Addr   key  = *(const Addr*)vkey;
+   const Block* elem = (const Block*)velem;
 
    assert(elem->first <= elem->last);
    if (key < elem->first) return -1;

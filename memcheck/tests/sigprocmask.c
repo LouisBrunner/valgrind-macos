@@ -11,9 +11,9 @@
 
 int main(void)
 {
-   int x[6], *s, *os, i;
-
 #if defined(__NR_sigprocmask) && !defined(__powerpc64__) && !defined(_AIX)
+
+   int x[6], *s, *os, i;
 
    x[0] = 0x11111111;
    x[1] = 0x89abcdef;

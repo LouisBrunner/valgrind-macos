@@ -35,8 +35,6 @@
 #include "drd_track.h"
 #include "drd_vc.h"
 #include "priv_drd_clientreq.h"
-#include "pub_core_mallocfree.h"
-#include "pub_core_options.h"
 #include "pub_tool_vki.h"
 #include "pub_tool_basics.h"
 #include "pub_tool_debuginfo.h"   // VG_(describe_IP)()
@@ -152,8 +150,7 @@ VG_REGPARM(2) void drd_trace_load(Addr addr, SizeT size)
                    thread_get_name(thread_get_running_tid()),
                    VG_(get_running_tid)(),
                    thread_get_running_tid());
-      VG_(get_and_pp_StackTrace)(VG_(get_running_tid)(),
-                                 VG_(clo_backtrace_size));
+      VG_(get_and_pp_StackTrace)(VG_(get_running_tid)(), 12);
       tl_assert(DrdThreadIdToVgThreadId(thread_get_running_tid())
                 == VG_(get_running_tid)());
    }
@@ -195,8 +192,7 @@ VG_REGPARM(2) void drd_trace_store(Addr addr, SizeT size)
                    VG_(get_running_tid)(),
                    thread_get_running_tid(),
                    addr - thread_get_stack_min(thread_get_running_tid()));
-      VG_(get_and_pp_StackTrace)(VG_(get_running_tid)(),
-                                 VG_(clo_backtrace_size));
+      VG_(get_and_pp_StackTrace)(VG_(get_running_tid)(), 12);
       tl_assert(DrdThreadIdToVgThreadId(thread_get_running_tid())
                 == VG_(get_running_tid)());
    }
@@ -251,8 +247,7 @@ static void drd_start_using_mem(const Addr a1, const Addr a2)
       VG_(message)(Vg_UserMsg, "start 0x%lx size %ld %s (tracing 0x%lx)",
                    a1, a2 - a1, thread_get_name(thread_get_running_tid()),
                    drd_trace_address);
-      VG_(get_and_pp_StackTrace)(VG_(get_running_tid)(),
-                                 VG_(clo_backtrace_size));
+      VG_(get_and_pp_StackTrace)(VG_(get_running_tid)(), 12);
    }
 }
 
@@ -264,8 +259,7 @@ static void drd_stop_using_mem(const Addr a1, const Addr a2)
       VG_(message)(Vg_UserMsg, "end   0x%lx size %ld %s (tracing 0x%lx)",
                    a1, a2 - a1, thread_get_name(thread_get_running_tid()),
                    drd_trace_address);
-      VG_(get_and_pp_StackTrace)(VG_(get_running_tid)(),
-                                 VG_(clo_backtrace_size));
+      VG_(get_and_pp_StackTrace)(VG_(get_running_tid)(), 12);
    }
    thread_stop_using_mem(a1, a2);
    mutex_stop_using_mem(a1, a2);
@@ -684,21 +678,6 @@ void drd_fini(Int exitcode)
    }
 }
 
-static void drd_load_suppression_file(void)
-{
-   tl_assert(VG_(clo_n_suppressions) < VG_CLO_MAX_SFILES - 1);
-   {
-      /* If we haven't reached the max number of suppression files, load
-         the drd suppression patterns file. */
-      static const Char drd_supp[] = "glibc-2.X-drd.supp";
-      const Int len = VG_(strlen)(VG_(libdir)) + 1 + sizeof(drd_supp);
-      Char* const buf = VG_(arena_malloc)(VG_AR_CORE, len);
-      VG_(snprintf)(buf, len, "%s/%s", VG_(libdir), drd_supp);
-      VG_(clo_suppressions)[VG_(clo_n_suppressions)] = buf;
-      VG_(clo_n_suppressions)++;
-   }
-}
-
 static
 void drd_pre_clo_init(void)
 {
@@ -742,8 +721,6 @@ void drd_pre_clo_init(void)
    drd_clientreq_init();
 
    drd_suppression_init();
-
-   drd_load_suppression_file();
 }
 
 

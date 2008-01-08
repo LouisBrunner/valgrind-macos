@@ -659,6 +659,8 @@ Bool VG_(get_objname) ( Addr a, Char* buf, Int nbuf )
 {
    Int used;
    SegInfo* si;
+   const NSegment *seg;
+   HChar* filename;
 
    vg_assert(nbuf > 0);
    for (si = segInfo_list; si != NULL; si = si->next) {
@@ -679,6 +681,12 @@ Bool VG_(get_objname) ( Addr a, Char* buf, Int nbuf )
          buf[nbuf-1] = 0;
          return True;
       }
+   }
+   if ((seg = VG_(am_find_nsegment(a))) != NULL &&
+       (filename = VG_(am_get_filename)(seg)) != NULL)
+   {
+      VG_(strncpy_safely)(buf, filename, nbuf);
+      return True;
    }
    return False;
 }

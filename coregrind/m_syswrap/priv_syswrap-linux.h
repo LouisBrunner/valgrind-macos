@@ -220,6 +220,9 @@ DECL_TEMPLATE(linux, sys_rt_sigtimedwait);
 DECL_TEMPLATE(linux, sys_rt_sigqueueinfo);
 DECL_TEMPLATE(linux, sys_rt_sigsuspend);
 
+// Linux-specific?
+DECL_TEMPLATE(linux, sys_sync_file_range);
+
 /* ---------------------------------------------------------------------
    Wrappers for sockets and ipc-ery.  These are split into standalone
    procedures because x86-linux hides them inside multiplexors

@@ -582,7 +582,10 @@ PRE(sys_llseek)
                  unsigned int, fd, unsigned long, offset_high,
                  unsigned long, offset_low, vki_loff_t *, result,
                  unsigned int, whence);
-   PRE_MEM_WRITE( "llseek(result)", ARG4, sizeof(vki_loff_t));
+   if (!ML_(fd_allowed)(ARG1, "llseek", tid, False))
+      SET_STATUS_Failure( VKI_EBADF );
+   else
+      PRE_MEM_WRITE( "llseek(result)", ARG4, sizeof(vki_loff_t));
 }
 POST(sys_llseek)
 {

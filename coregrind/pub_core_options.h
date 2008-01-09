@@ -131,8 +131,6 @@ extern Bool  VG_(clo_trace_pthreads);
 /* Display gory details for the k'th most popular error.  default:
    Infinity. */
 extern Int   VG_(clo_dump_error);
-/* Number of parents of a backtrace.  Default: 8.  */
-extern Int   VG_(clo_backtrace_size);
 /* Engage miscellaneous weird hacks needed for some progs. */
 extern Char* VG_(clo_sim_hints);
 /* Show symbols in the form 'name+offset' ?  Default: NO */

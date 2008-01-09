@@ -116,6 +116,9 @@ extern HChar* VG_(clo_xml_user_comment);
    less aggressively if that is needed (callgrind needs this). */
 extern VexControl VG_(clo_vex_control);
 
+/* Number of parents of a backtrace.  Default: 8.  */
+extern Int   VG_(clo_backtrace_size);
+
 /* Call this if a recognised option was bad for some reason.  Note:
    don't use it just because an option was unrecognised -- return
    'False' from VG_(tdict).tool_process_cmd_line_option) to indicate

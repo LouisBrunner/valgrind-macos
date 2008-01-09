@@ -97,7 +97,7 @@ for logfile in old new ; do
    \
    runcmd $logfile \
           "Running regression tests         " \
-          "cd valgrind && make regtest"
+          "cd valgrind && make all-regtest"
 
    # Grab some indicative text for the short log file -- if the regtests
    # succeeded, show their results.  If we didn't make it that far, show the

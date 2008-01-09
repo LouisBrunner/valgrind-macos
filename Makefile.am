@@ -70,6 +70,8 @@ regtest: check
 	@PERL@ tests/vg_regtest $(TOOLS)
 exp-regtest: check
 	@PERL@ tests/vg_regtest $(EXP_TOOLS)
+all-regtest: check
+	@PERL@ tests/vg_regtest $(TOOLS) $(EXP_TOOLS)
 
 ## Preprend @PERL@ because tests/vg_per isn't executable
 perf: check

@@ -1,0 +1,26 @@
+
+---------- Legend --------------------------------------------------
+
+n-i-bz  = not in bugzilla
+pending = is scheduled to be fixed (or at least considered) on this branch
+wontfix = will not fix on this branch
+many    = fix composed of many commits
+WF      = waiting for feedback from bug reporter
+
+PRI: 33  = fix this for 3.3.1
+     Vfd = fix has been verified on 3.3.X branch
+
+
+---------- Bugs reported after (in) 3.3.0 --------------------------
+
+TRUNK   33BRANCH  PRI    BUG#  WHAT
+
+r7299   pending    33  n-i-bz  stupid sizeof bug in Helgrind
+r7322   pending    33  n-i-bz  check fd on sys_llseek
+r7323   pending    33  n-i-bz  update syscall lists to kernel 2.6.23.1
+r7324   pending    33  n-i-bz  support sys_sync_file_range
+
+vx1807  pending    33  155011  vex x86->IR: 0xCF (iret)
+
+pending pending    33  155091  Warning [...] unhandled DW_OP_ opcode 0x23
+                               (patch proposed, waiting for feedback)

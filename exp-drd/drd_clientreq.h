@@ -52,29 +52,29 @@ enum {
   VG_USERREQ__POST_THREAD_JOIN,
   /* args: pthread_t (joinee) */
 
-  /* To notify the core of a pthread_mutex_init call */
+  /* to notify the drd tool of a pthread_mutex_init call. */
   VG_USERREQ__PRE_MUTEX_INIT,
   /* args: Addr, MutexT */
-  /* To notify the core of a pthread_mutex_destroy call */
+  /* to notify the drd tool of a pthread_mutex_destroy call. */
   VG_USERREQ__POST_MUTEX_DESTROY,
   /* args: Addr, SizeT, MutexT */
-  /* To notify the core of pthread_mutex_lock calls */
+  /* to notify the drd tool of pthread_mutex_lock calls */
   VG_USERREQ__PRE_PTHREAD_MUTEX_LOCK,
   /* args: Addr, SizeT, MutexT */
-  /* To notify the core of pthread_mutex_lock calls */
+  /* to notify the drd tool of pthread_mutex_lock calls */
   VG_USERREQ__POST_PTHREAD_MUTEX_LOCK,
   /* args: Addr, SizeT, MutexT */
-  /* To notify the core of pthread_mutex_unlock calls */
+  /* to notify the drd tool of pthread_mutex_unlock calls */
   VG_USERREQ__PRE_PTHREAD_MUTEX_UNLOCK,
   /* args: Addr */
   VG_USERREQ__SPIN_INIT_OR_UNLOCK,
   /* args: Addr spinlock, SizeT size */
 
 
-  /* To notify the core of a pthread_cond_init call */
+  /* to notify the drd tool of a pthread_cond_init call. */
   VG_USERREQ__POST_PTHREAD_COND_INIT,
   /* args: Addr */
-  /* To notify the core of a pthread_cond_destroy call */
+  /* to notify the drd tool of a pthread_cond_destroy call. */
   VG_USERREQ__PRE_PTHREAD_COND_DESTROY,
   /* args: Addr cond, SizeT cond_size, Addr mutex, SizeT mutex_size */
   VG_USERREQ__PRE_PTHREAD_COND_WAIT,
@@ -85,6 +85,35 @@ enum {
   /* args: Addr cond */
   VG_USERREQ__PRE_PTHREAD_COND_BROADCAST,
   /* args: Addr cond */
+
+  /* To notify the drd tool of a sem_init call. */
+  VG_USERREQ__SEM_INIT,
+  /* args: Addr sem, SizeT sem_size, Word pshared, Word value */
+  /* To notify the drd tool of a sem_destroy call. */
+  VG_USERREQ__SEM_DESTROY,
+  /* args: Addr sem */
+  /* To notify the drd tool of a sem_wait call. */
+  VG_USERREQ__POST_SEM_WAIT,
+  /* args: Addr sem, SizeT sem_size */
+  /* To notify the drd tool before a sem_post call. */
+  VG_USERREQ__PRE_SEM_POST,
+  /* args: Addr sem, SizeT sem_size */
+  /* To notify the drd tool after a sem_post call. */
+  VG_USERREQ__POST_SEM_POST,
+  /* args: Addr sem, SizeT sem_size */
+
+  /* To notify the drd tool of a pthread_barrier_init call. */
+  VG_USERREQ__BARRIER_INIT,
+  /* args: Addr barrier, SizeT barrier_size, Word count */
+  /* To notify the drd tool of a pthread_barrier_destroy call. */
+  VG_USERREQ__BARRIER_DESTROY,
+  /* args: Addr barrier */
+  /* To notify the drd tool of a pthread_barrier_wait call. */
+  VG_USERREQ__PRE_BARRIER_WAIT,
+  /* args: Addr barrier */
+  /* To notify the drd tool of a pthread_barrier_wait call. */
+  VG_USERREQ__POST_BARRIER_WAIT,
+  /* args: Addr barrier, Word has_waited */
 
 };
 

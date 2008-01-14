@@ -1,7 +1,7 @@
 /*
   This file is part of drd, a data race detector.
 
-  Copyright (C) 2006-2007 Bart Van Assche
+  Copyright (C) 2006-2008 Bart Van Assche
   bart.vanassche@gmail.com
 
   This program is free software; you can redistribute it and/or
@@ -31,8 +31,8 @@
 #include "pub_tool_libcassert.h"  // tl_assert()
 #include "pub_tool_libcprint.h"   // VG_(printf)()
 #include "pub_tool_machine.h"     // VG_(get_IP)()
+#include "pub_tool_options.h"     // VG_(clo_backtrace_size)
 #include "pub_tool_threadstate.h" // VG_(get_running_tid)()
-#include "pub_core_options.h"     // VG_(clo_backtrace_size)
 
 
 static struct cond_info s_cond[256];
@@ -194,6 +194,9 @@ void cond_pre_broadcast(Addr const cond)
 {
   cond_pre_signal(cond);
 }
+
+void cond_thread_delete(const DrdThreadId tid)
+{ }
 
 void cond_stop_using_mem(const Addr a1, const Addr a2)
 {

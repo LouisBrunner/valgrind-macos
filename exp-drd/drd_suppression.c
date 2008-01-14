@@ -1,7 +1,7 @@
 /*
   This file is part of drd, a data race detector.
 
-  Copyright (C) 2006-2007 Bart Van Assche
+  Copyright (C) 2006-2008 Bart Van Assche
   bart.vanassche@gmail.com
 
   This program is free software; you can redistribute it and/or
@@ -24,12 +24,11 @@
 
 
 #include "drd_suppression.h"
-#include "pub_core_libcassert.h"
-#include "pub_core_libcprint.h"
-#include "pub_core_options.h"     // VG_(clo_backtrace_size)
 #include "pub_drd_bitmap.h"
+#include "pub_tool_libcassert.h"  // tl_assert()
 #include "pub_tool_stacktrace.h"  // VG_(get_and_pp_StackTrace)()
 #include "pub_tool_threadstate.h" // VG_(get_running_tid)()
+#include "pub_tool_libcprint.h"   // Vg_DebugMsg
 
 
 // Local variables.
@@ -72,16 +71,14 @@ void drd_finish_suppression(const Addr a1, const Addr a2)
   {
     VG_(message)(Vg_DebugMsg, "finish suppression of 0x%lx sz %ld",
                  a1, a2 - a1);
-    VG_(get_and_pp_StackTrace)(VG_(get_running_tid)(),
-                               VG_(clo_backtrace_size));   
+    VG_(get_and_pp_StackTrace)(VG_(get_running_tid)(), 12);   
   }
 
   tl_assert(a1 < a2);
   if (! drd_is_suppressed(a1, a2))
   {
      VG_(message)(Vg_DebugMsg, "?? not suppressed ??");
-     VG_(get_and_pp_StackTrace)(VG_(get_running_tid)(),
-                                VG_(clo_backtrace_size));   
+     VG_(get_and_pp_StackTrace)(VG_(get_running_tid)(), 12);
      tl_assert(False);
   }
   bm_clear(s_suppressed, a1, a2);
@@ -119,7 +116,6 @@ void drd_suppression_stop_using_mem(const Addr a1, const Addr a2)
         VG_(message)(Vg_DebugMsg,
                      "stop_using_mem(0x%lx, %ld) finish suppression of 0x%lx",
                      a1, a2 - a1, b);
-        //VG_(get_and_pp_StackTrace)(VG_(get_running_tid)(), VG_(clo_backtrace_size));   
       }
     }
   }

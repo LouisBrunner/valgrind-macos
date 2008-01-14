@@ -1,11 +1,36 @@
+/*
+  This file is part of drd, a data race detector.
+
+  Copyright (C) 2006-2008 Bart Van Assche
+  bart.vanassche@gmail.com
+
+  This program is free software; you can redistribute it and/or
+  modify it under the terms of the GNU General Public License as
+  published by the Free Software Foundation; either version 2 of the
+  License, or (at your option) any later version.
+
+  This program is distributed in the hope that it will be useful, but
+  WITHOUT ANY WARRANTY; without even the implied warranty of
+  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+  General Public License for more details.
+
+  You should have received a copy of the GNU General Public License
+  along with this program; if not, write to the Free Software
+  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
+  02111-1307, USA.
+
+  The GNU General Public License is contained in the file COPYING.
+*/
+
+
 #include "drd_clientreq.h"
 #include "drd_cond.h"
 #include "drd_mutex.h"
+#include "drd_semaphore.h"
 #include "drd_suppression.h"      // drd_start_suppression()
 #include "drd_thread.h"
 #include "drd_track.h"
 #include "priv_drd_clientreq.h"
-#include "pub_core_tooliface.h"   // VG_TRACK()
 #include "pub_tool_basics.h"      // Bool
 #include "pub_tool_libcassert.h"
 #include "pub_tool_libcassert.h"  // tl_assert()
@@ -153,6 +178,42 @@ static Bool drd_handle_client_request(ThreadId tid, UWord* arg, UWord* ret)
 
    case VG_USERREQ__PRE_PTHREAD_COND_BROADCAST:
       drd_pre_cond_broadcast(arg[1]);
+      break;
+
+   case VG_USERREQ__SEM_INIT:
+      drd_semaphore_init(arg[1], arg[2], arg[3], arg[4]);
+      break;
+
+   case VG_USERREQ__SEM_DESTROY:
+      drd_semaphore_destroy(arg[1]);
+      break;
+
+   case VG_USERREQ__POST_SEM_WAIT:
+      drd_semaphore_post_wait(thread_get_running_tid(), arg[1], arg[2]);
+      break;
+
+   case VG_USERREQ__PRE_SEM_POST:
+      drd_semaphore_pre_post(thread_get_running_tid(), arg[1], arg[2]);
+      break;
+
+   case VG_USERREQ__POST_SEM_POST:
+      drd_semaphore_post_post(thread_get_running_tid(), arg[1], arg[2]);
+      break;
+
+   case VG_USERREQ__BARRIER_INIT:
+      drd_barrier_init(arg[1], arg[2], arg[3]);
+      break;
+
+   case VG_USERREQ__BARRIER_DESTROY:
+      drd_barrier_destroy(arg[1]);
+      break;
+
+   case VG_USERREQ__PRE_BARRIER_WAIT:
+      drd_barrier_pre_wait(thread_get_running_tid(), arg[1]);
+      break;
+
+   case VG_USERREQ__POST_BARRIER_WAIT:
+      drd_barrier_post_wait(thread_get_running_tid(), arg[1], arg[2]);
       break;
 
    default:

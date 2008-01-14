@@ -1,7 +1,7 @@
 /*
   This file is part of drd, a data race detector.
 
-  Copyright (C) 2006-2007 Bart Van Assche
+  Copyright (C) 2006-2008 Bart Van Assche
   bart.vanassche@gmail.com
 
   This program is free software; you can redistribute it and/or
@@ -75,13 +75,6 @@
 #define UWORD_HIGHEST_ADDRESS(a) ((a) | (BITS_PER_UWORD - 1))
 
 
-// Local functions.
-
-// Similar to const_cast<> in C++.
-static __inline__ OSet* const_to_non_const_oset(const OSet* os)
-{ return (OSet*)os; }
-
-
 // Local constants.
 
 static ULong s_bitmap2_creation_count;
@@ -134,7 +127,7 @@ static __inline__
 struct bitmap2* bm_lookup(const struct bitmap* const bm, const Addr a)
 {
   const UWord a1 = a >> ADDR0_BITS;
-  return VG_(OSetGen_Lookup)(const_to_non_const_oset(bm->oset), (void*)&a1);
+  return VG_(OSetGen_Lookup)(bm->oset, &a1);
 }
 
 static __inline__
@@ -155,7 +148,7 @@ static __inline__
 struct bitmap2* bm2_lookup_or_insert(const struct bitmap* const bm,
                                      const UWord a1)
 {
-   struct bitmap2* p2 = VG_(OSetGen_Lookup)(const_to_non_const_oset(bm->oset), (void*)&a1);
+   struct bitmap2* p2 = VG_(OSetGen_Lookup)(bm->oset, &a1);
    if (p2 == 0)
    {
       p2 = bm2_insert(bm, a1);

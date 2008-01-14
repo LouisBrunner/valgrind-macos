@@ -1,0 +1,18 @@
+
+Conflicting load by main at 0x........ size 8
+   at 0x........: main (sem_as_mutex.c:?)
+Allocation context: s_d3 (offset 0, size 8) in sem_as_mutex, NONE:BSS
+Other segment start (thread_func)
+   (thread finished, call stack no longer available)
+Other segment end (thread_func)
+   (thread finished, call stack no longer available)
+
+Conflicting store by main at 0x........ size 8
+   at 0x........: main (sem_as_mutex.c:?)
+Allocation context: s_d3 (offset 0, size 8) in sem_as_mutex, NONE:BSS
+Other segment start (thread_func)
+   (thread finished, call stack no longer available)
+Other segment end (thread_func)
+   (thread finished, call stack no longer available)
+
+ERROR SUMMARY: 2 errors from 2 contexts (suppressed: 0 from 0)

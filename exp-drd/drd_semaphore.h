@@ -23,36 +23,34 @@
 */
 
 
-// Mutex state information: owner thread and recursion count.
+// Semaphore state information: owner thread and recursion count.
 
 
-#ifndef __MUTEX_H
-#define __MUTEX_H
+#ifndef __SEMAPHORE_H
+#define __SEMAPHORE_H
 
 
-#include "drd_clientreq.h"        // MutexT
 #include "drd_thread.h"           // DrdThreadId
 #include "drd_vc.h"
 #include "pub_tool_basics.h"      // Addr, SizeT
 
 
-struct mutex_info;
+struct semaphore_info;
 
 
-void mutex_set_trace(const Bool trace_mutex);
-struct mutex_info* mutex_init(const Addr mutex, const SizeT size,
-                              const MutexT mutex_type);
-void mutex_destroy(struct mutex_info* const p);
-struct mutex_info* mutex_get(const Addr mutex);
-int mutex_lock(const Addr mutex, const SizeT size, const MutexT mutex_type);
-int mutex_unlock(const Addr mutex, const MutexT mutex_type);
-const char* mutex_get_typename(struct mutex_info* const p);
-Bool mutex_is_locked_by(const Addr mutex, const DrdThreadId tid);
-const VectorClock* mutex_get_last_vc(const Addr mutex);
-int mutex_get_recursion_count(const Addr mutex);
-void mutex_thread_delete(const DrdThreadId threadid);
-void mutex_stop_using_mem(const Addr a1, const Addr a2);
-ULong get_mutex_lock_count(void);
+void semaphore_set_trace(const Bool trace_semaphore);
+struct semaphore_info* semaphore_init(const Addr semaphore, const SizeT size,
+                                      const Word pshared, const UWord value);
+void semaphore_destroy(struct semaphore_info* const p);
+struct semaphore_info* semaphore_get(const Addr semaphore);
+void semaphore_post_wait(const DrdThreadId tid, const Addr semaphore,
+                         const SizeT size);
+void semaphore_pre_post(const DrdThreadId tid, const Addr semaphore,
+                        const SizeT size);
+void semaphore_post_post(const DrdThreadId tid, const Addr semaphore,
+                         const SizeT size);
+void semaphore_thread_delete(const DrdThreadId tid);
+void semaphore_stop_using_mem(const Addr a1, const Addr a2);
 
 
-#endif /* __MUTEX_H */
+#endif /* __SEMAPHORE_H */

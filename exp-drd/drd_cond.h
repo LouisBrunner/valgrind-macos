@@ -1,7 +1,7 @@
 /*
   This file is part of drd, a data race detector.
 
-  Copyright (C) 2006-2007 Bart Van Assche
+  Copyright (C) 2006-2008 Bart Van Assche
   bart.vanassche@gmail.com
 
   This program is free software; you can redistribute it and/or
@@ -48,11 +48,12 @@ struct cond_info
 void cond_set_trace(const Bool trace_cond);
 void cond_init(const Addr cond, const SizeT size);
 void cond_destroy(struct cond_info* const p);
-struct cond_info* cond_get(Addr const mutex);
+struct cond_info* cond_get(const Addr mutex);
 int cond_pre_wait(const Addr cond, const SizeT cond_size, const Addr mutex);
 int cond_post_wait(const Addr cond);
-void cond_pre_signal(Addr const cond);
-void cond_pre_broadcast(Addr const cond);
+void cond_pre_signal(const Addr cond);
+void cond_pre_broadcast(const Addr cond);
+void cond_thread_delete(const DrdThreadId tid);
 void cond_stop_using_mem(const Addr a1, const Addr a2);
 
 

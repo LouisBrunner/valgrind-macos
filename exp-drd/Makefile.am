@@ -67,6 +67,7 @@ vgpreload_exp_drd_ppc64_aix5_so_LDFLAGS      = $(PRELOAD_LDFLAGS_PPC64_AIX5)
 
 
 DRD_SOURCES_COMMON =    \
+  drd_barrier.c         \
   drd_bitmap.c          \
   drd_clientreq.c       \
   drd_cond.c            \
@@ -75,23 +76,27 @@ DRD_SOURCES_COMMON =    \
   drd_malloc_wrappers.c \
   drd_mutex.c           \
   drd_segment.c         \
+  drd_semaphore.c       \
   drd_suppression.c     \
   drd_thread.c          \
   drd_vc.c
 
-noinst_HEADERS = drd_bitmap.h \
-		 drd_mutex.h \
-		 drd_vc.h \
-		 drd_clientreq.h \
-		 drd_segment.h \
-		 priv_drd_clientreq.h \
-		 drd_cond.h \
-		 drd_suppression.h \
-		 pub_drd_bitmap.h \
-		 drd_error.h \
-		 drd_thread.h \
-		 drd_malloc_wrappers.h \
-		 drd_track.h
+noinst_HEADERS =        \
+  drd_barrier.h         \
+  drd_bitmap.h          \
+  drd_clientreq.h       \
+  drd_cond.h            \
+  drd_error.h           \
+  drd_malloc_wrappers.h \
+  drd_mutex.h           \
+  drd_segment.h         \
+  drd_semaphore.h       \
+  drd_suppression.h     \
+  drd_thread.h          \
+  drd_track.h           \
+  drd_vc.h              \
+  priv_drd_clientreq.h  \
+  pub_drd_bitmap.h
 
 AM_CFLAGS_X86_LINUX   += -I$(top_srcdir)/coregrind
 AM_CFLAGS_AMD64_LINUX += -I$(top_srcdir)/coregrind
@@ -141,13 +146,3 @@ exp_drd_ppc64_aix5_CFLAGS       = $(AM_CFLAGS_PPC64_AIX5)
 exp_drd_ppc64_aix5_DEPENDENCIES = $(COREGRIND_LIBS_PPC64_AIX5)
 exp_drd_ppc64_aix5_LDADD        = $(TOOL_LDADD_PPC64_AIX5)
 exp_drd_ppc64_aix5_LDFLAGS      = $(TOOL_LDFLAGS_PPC64_AIX5)
-
-
-#all-local:
-#	for f in $(noinst_PROGRAMS); do \
-#	  p=`echo $$f | sed -e 's/^[^-]*-[^-]*-//' -e 's/\..*$$//'`; \
-#	  n=`echo $$f | sed -e 's/^\([^-]*-[^-]*\)-[^-]*-[^-]*/\1/'`; \
-#	  mkdir -p $(inplacedir)/$$p; \
-#	  rm -f $(inplacedir)/$$p/$$n; \
-#	  ln -f -s ../../$(subdir)/$$f $(inplacedir)/$$p/$$n; \
-#	done

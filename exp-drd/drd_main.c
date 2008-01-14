@@ -1,7 +1,7 @@
 /*
   This file is part of drd, a data race detector.
 
-  Copyright (C) 2006-2007 Bart Van Assche
+  Copyright (C) 2006-2008 Bart Van Assche
   bart.vanassche@gmail.com
 
   This program is free software; you can redistribute it and/or
@@ -23,40 +23,31 @@
 */
 
 
-#include "pub_drd_bitmap.h"
+#include "drd_barrier.h"
 #include "drd_clientreq.h"
 #include "drd_cond.h"
 #include "drd_error.h"
 #include "drd_malloc_wrappers.h"
 #include "drd_mutex.h"
 #include "drd_segment.h"
+#include "drd_semaphore.h"
 #include "drd_suppression.h"
 #include "drd_thread.h"
 #include "drd_track.h"
 #include "drd_vc.h"
 #include "priv_drd_clientreq.h"
-#include "pub_tool_vki.h"
+#include "pub_drd_bitmap.h"
 #include "pub_tool_basics.h"
 #include "pub_tool_debuginfo.h"   // VG_(describe_IP)()
 #include "pub_tool_libcassert.h"  // tl_assert()
 #include "pub_tool_libcbase.h"    // VG_(strcmp)
 #include "pub_tool_libcprint.h"   // VG_(printf)
+#include "pub_tool_vki.h"         // Must be included before pub_tool_libcproc
 #include "pub_tool_libcproc.h"
 #include "pub_tool_machine.h"
 #include "pub_tool_options.h"     // command line options
 #include "pub_tool_threadstate.h" // VG_(get_running_tid)
 #include "pub_tool_tooliface.h"
-
-
-// Type definitions.
-
-#if 0
-typedef struct 
-{
-  const Char* const soname;
-  const Char* const symbol;
-} SuppressedSymbol;
-#endif
 
 
 // Function declarations.
@@ -69,8 +60,8 @@ static void drd_set_running_tid(const ThreadId tid);
 // Local variables.
 
 static Bool drd_print_stats = False;
-static Bool drd_trace_mem = False;
 static Bool drd_trace_fork_join = False;
+static Bool drd_trace_mem = False;
 static Addr drd_trace_address = 0;
 
 
@@ -80,6 +71,7 @@ static Addr drd_trace_address = 0;
 
 static Bool drd_process_cmd_line_option(Char* arg)
 {
+   Bool trace_barrier     = False;
    Bool trace_cond        = False;
    Bool trace_mutex       = False;
    Bool trace_segment     = False;
@@ -87,6 +79,7 @@ static Bool drd_process_cmd_line_option(Char* arg)
    Char* trace_address    = 0;
 
    VG_BOOL_CLO     (arg, "--drd-stats",         drd_print_stats)
+   else VG_BOOL_CLO(arg, "--trace-barrier",     trace_barrier)
    else VG_BOOL_CLO(arg, "--trace-cond",        trace_cond)
    else VG_BOOL_CLO(arg, "--trace-fork-join",   drd_trace_fork_join)
    else VG_BOOL_CLO(arg, "--trace-mem",         drd_trace_mem)
@@ -99,6 +92,8 @@ static Bool drd_process_cmd_line_option(Char* arg)
 
    if (trace_address)
       drd_trace_address = VG_(strtoll16)(trace_address, 0);
+   if (trace_barrier)
+      barrier_set_trace(trace_barrier);
    if (trace_cond)
       cond_set_trace(trace_cond);
    if (trace_mutex)
@@ -150,7 +145,8 @@ VG_REGPARM(2) void drd_trace_load(Addr addr, SizeT size)
                    thread_get_name(thread_get_running_tid()),
                    VG_(get_running_tid)(),
                    thread_get_running_tid());
-      VG_(get_and_pp_StackTrace)(VG_(get_running_tid)(), 12);
+      VG_(get_and_pp_StackTrace)(VG_(get_running_tid)(),
+                                 VG_(clo_backtrace_size));
       tl_assert(DrdThreadIdToVgThreadId(thread_get_running_tid())
                 == VG_(get_running_tid)());
    }
@@ -192,7 +188,8 @@ VG_REGPARM(2) void drd_trace_store(Addr addr, SizeT size)
                    VG_(get_running_tid)(),
                    thread_get_running_tid(),
                    addr - thread_get_stack_min(thread_get_running_tid()));
-      VG_(get_and_pp_StackTrace)(VG_(get_running_tid)(), 12);
+      VG_(get_and_pp_StackTrace)(VG_(get_running_tid)(),
+                                 VG_(clo_backtrace_size));
       tl_assert(DrdThreadIdToVgThreadId(thread_get_running_tid())
                 == VG_(get_running_tid)());
    }
@@ -247,7 +244,8 @@ static void drd_start_using_mem(const Addr a1, const Addr a2)
       VG_(message)(Vg_UserMsg, "start 0x%lx size %ld %s (tracing 0x%lx)",
                    a1, a2 - a1, thread_get_name(thread_get_running_tid()),
                    drd_trace_address);
-      VG_(get_and_pp_StackTrace)(VG_(get_running_tid)(), 12);
+      VG_(get_and_pp_StackTrace)(VG_(get_running_tid)(),
+                                 VG_(clo_backtrace_size));
    }
 }
 
@@ -259,11 +257,14 @@ static void drd_stop_using_mem(const Addr a1, const Addr a2)
       VG_(message)(Vg_UserMsg, "end   0x%lx size %ld %s (tracing 0x%lx)",
                    a1, a2 - a1, thread_get_name(thread_get_running_tid()),
                    drd_trace_address);
-      VG_(get_and_pp_StackTrace)(VG_(get_running_tid)(), 12);
+      VG_(get_and_pp_StackTrace)(VG_(get_running_tid)(),
+                                 VG_(clo_backtrace_size));
    }
    thread_stop_using_mem(a1, a2);
    mutex_stop_using_mem(a1, a2);
    cond_stop_using_mem(a1, a2);
+   semaphore_stop_using_mem(a1, a2);
+   barrier_stop_using_mem(a1, a2);
    drd_suppression_stop_using_mem(a1, a2);
 }
 
@@ -373,12 +374,19 @@ void drd_post_thread_join(DrdThreadId drd_joiner, DrdThreadId drd_joinee)
 
    thread_delete(drd_joinee);
    mutex_thread_delete(drd_joinee);
+   cond_thread_delete(drd_joinee);
+   semaphore_thread_delete(drd_joinee);
+   barrier_thread_delete(drd_joinee);
 }
 
 /* Called after a thread has performed its last memory access. */
 static void drd_thread_finished(ThreadId tid)
 {
-   const DrdThreadId drd_tid = VgThreadIdToDrdThreadId(tid);
+   DrdThreadId drd_tid;
+
+   drd_set_running_tid(tid);
+
+   drd_tid = VgThreadIdToDrdThreadId(tid);
    if (drd_trace_fork_join)
    {
       VG_(message)(Vg_DebugMsg,
@@ -403,6 +411,7 @@ void drd_post_mutex_destroy(Addr mutex, MutexT mutex_type)
    struct mutex_info* p;
 
    p = mutex_get(mutex);
+   tl_assert(p);
    if (p)
    {
       // TO DO: report an error in case the recursion count is not zero
@@ -470,6 +479,70 @@ void drd_pre_cond_destroy(Addr cond)
                               "destroy requested but not initialized",
                               &cei);
    }
+}
+
+void drd_semaphore_init(const Addr semaphore, const SizeT size,
+                        const Word pshared, const Word value)
+{
+   semaphore_init(semaphore, size, pshared, value);
+}
+
+void drd_semaphore_destroy(const Addr semaphore)
+{
+   struct semaphore_info* p;
+
+   p = semaphore_get(semaphore);
+   tl_assert(p);
+   if (p)
+   {
+      semaphore_destroy(p);
+   }
+}
+
+void drd_semaphore_post_wait(const DrdThreadId tid, const Addr semaphore,
+                             const SizeT size)
+{
+   semaphore_post_wait(tid, semaphore, size);
+}
+
+void drd_semaphore_pre_post(const DrdThreadId tid, const Addr semaphore,
+                            const SizeT size)
+{
+   semaphore_pre_post(tid, semaphore, size);
+}
+
+void drd_semaphore_post_post(const DrdThreadId tid, const Addr semaphore,
+                             const SizeT size)
+{
+   semaphore_post_post(tid, semaphore, size);
+}
+
+
+void drd_barrier_init(const Addr barrier, const SizeT size, const Word count)
+{
+   barrier_init(barrier, size, count);
+}
+
+void drd_barrier_destroy(const Addr barrier)
+{
+   struct barrier_info* p;
+
+   p = barrier_get(barrier);
+   if (p)
+   {
+      barrier_destroy(p);
+   }
+}
+
+void drd_barrier_pre_wait(const DrdThreadId tid, const Addr barrier)
+{
+   barrier_pre_wait(tid, barrier);
+}
+
+void drd_barrier_post_wait(const DrdThreadId tid, const Addr barrier,
+                           const Bool waited)
+{
+   barrier_post_wait(tid, barrier, waited);
 }
 
 
@@ -686,7 +759,7 @@ void drd_pre_clo_init(void)
    VG_(details_name)            ("exp-drd");
    VG_(details_version)         (NULL);
    VG_(details_description)     ("a data race detector");
-   VG_(details_copyright_author)("Copyright (C) 2006-2007, and GNU GPL'd,"
+   VG_(details_copyright_author)("Copyright (C) 2006-2008, and GNU GPL'd,"
                                  " by Bart Van Assche.");
    VG_(details_bug_reports_to)  (VG_BUGS_TO);
 

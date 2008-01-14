@@ -22,9 +22,32 @@
   The GNU General Public License is contained in the file COPYING.
 */
 
-#ifndef __PRIV_DRD_CLIENTREQ_H
-#define __PRIV_DRD_CLIENTREQ_H
 
-void drd_clientreq_init(void);
+// Barrier state information.
 
-#endif /* __PRIV_DRD_CLIENTREQ_H */
+
+#ifndef __BARRIER_H
+#define __BARRIER_H
+
+
+#include "drd_thread.h"           // DrdThreadId
+#include "drd_vc.h"
+#include "pub_tool_basics.h"      // Addr, SizeT
+
+
+struct barrier_info;
+
+
+void barrier_set_trace(const Bool trace_barrier);
+struct barrier_info* barrier_init(const Addr barrier, const SizeT size,
+                                  const Word count);
+void barrier_destroy(struct barrier_info* const p);
+struct barrier_info* barrier_get(const Addr barrier);
+void barrier_pre_wait(const DrdThreadId tid, const Addr barrier);
+void barrier_post_wait(const DrdThreadId tid, const Addr barrier,
+                       const Bool waited);
+void barrier_thread_delete(const DrdThreadId threadid);
+void barrier_stop_using_mem(const Addr a1, const Addr a2);
+
+
+#endif /* __BARRIER_H */

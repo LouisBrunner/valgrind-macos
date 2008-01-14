@@ -1,7 +1,7 @@
 /*
   This file is part of drd, a data race detector.
 
-  Copyright (C) 2006-2007 Bart Van Assche
+  Copyright (C) 2006-2008 Bart Van Assche
   bart.vanassche@gmail.com
 
   This program is free software; you can redistribute it and/or
@@ -27,7 +27,6 @@
 #include "drd_segment.h"
 #include "drd_suppression.h"
 #include "drd_thread.h"
-#include "pub_core_options.h"     // VG_(clo_backtrace_size)
 #include "pub_tool_basics.h"      // Addr, SizeT
 #include "pub_tool_errormgr.h"    // VG_(unique_error)()
 #include "pub_tool_libcassert.h"  // tl_assert()
@@ -35,6 +34,7 @@
 #include "pub_tool_libcprint.h"   // VG_(printf)()
 #include "pub_tool_machine.h"
 #include "pub_tool_mallocfree.h"  // VG_(malloc)(), VG_(free)()
+#include "pub_tool_options.h"     // VG_(clo_backtrace_size)
 #include "pub_tool_threadstate.h" // VG_(get_pthread_id)()
 
 

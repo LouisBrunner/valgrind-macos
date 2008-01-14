@@ -1,12 +1,12 @@
 
 /*--------------------------------------------------------------------*/
-/*--- Client-space code for drd.                   drd_preloaded.c ---*/
+/*--- Client-space code for drd.                  drd_intercepts.c ---*/
 /*--------------------------------------------------------------------*/
 
 /*
   This file is part of drd, a data race detector.
 
-  Copyright (C) 2006-2007 Bart Van Assche
+  Copyright (C) 2006-2008 Bart Van Assche
   bart.vanassche@gmail.com
 
   This program is free software; you can redistribute it and/or
@@ -47,15 +47,12 @@
 
 #include <assert.h>
 #include <inttypes.h> // uintptr_t
+#include <pthread.h>
+#include <semaphore.h>
 #include <stdio.h>
 #include <unistd.h>
-#include <pthread.h>
 #include "drd_clientreq.h"
-#include "pub_core_basics.h"
-#include "pub_core_clreq.h"
-#include "pub_core_debuginfo.h"  // Needed for pub_core_redir.h
-#include "pub_core_redir.h"      // For VG_NOTIFY_ON_LOAD
-#include "pub_tool_threadstate.h"// VG_N_THREADS
+#include "pub_tool_redir.h"
 
 
 // Defines.
@@ -122,9 +119,6 @@ static void vg_set_joinable(const pthread_t tid, const int joinable)
 {
    int res;
    assert(joinable == 0 || joinable == 1);
-#if 0
-   printf("vg_set_joinable(%ld, %d)\n", tid, joinable);
-#endif
    VALGRIND_DO_CLIENT_REQUEST(res, 0, VG_USERREQ__SET_JOINABLE,
                               tid, joinable, 0, 0, 0);
 }
@@ -217,7 +211,7 @@ PTH_FUNC(int, pthreadZucreateZAZa, // pthread_create@*
 #else
    // Yes, you see it correctly, busy waiting ... The problem is that
    // POSIX threads functions cannot be called here -- the functions defined
-   // in this file (vg_preloaded.c) would be called instead of those in
+   // in this file (drd_intercepts.c) would be called instead of those in
    // libpthread.so. This loop is necessary because vgargs is allocated on the
    // stack, and the created thread reads it.
    if (ret == 0)
@@ -326,6 +320,24 @@ PTH_FUNC(int, pthreadZumutexZutrylock, // pthread_mutex_trylock
    OrigFn fn;
    VALGRIND_GET_ORIG_FN(fn);
    CALL_FN_W_W(ret, fn, mutex);
+   if (ret == 0)
+   {
+      VALGRIND_DO_CLIENT_REQUEST(res, -1, VG_USERREQ__POST_PTHREAD_MUTEX_LOCK,
+                                mutex, sizeof(*mutex), mutex_type_mutex, 0, 0);
+   }
+   return ret;
+}
+
+// pthread_mutex_timedlock
+PTH_FUNC(int, pthreadZumutexZutimedlock, // pthread_mutex_timedlock
+              pthread_mutex_t *mutex,
+              const struct timespec *abs_timeout)
+{
+   int   ret;
+   int   res;
+   OrigFn fn;
+   VALGRIND_GET_ORIG_FN(fn);
+   CALL_FN_W_WW(ret, fn, mutex, abs_timeout);
    if (ret == 0)
    {
       VALGRIND_DO_CLIENT_REQUEST(res, -1, VG_USERREQ__POST_PTHREAD_MUTEX_LOCK,
@@ -522,6 +534,271 @@ PTH_FUNC(int, pthreadZuspinZuunlock, // pthread_spin_unlock
    CALL_FN_W_W(ret, fn, spinlock);
    return ret;
 }
+
+// pthread_barrier_init
+PTH_FUNC(int, pthreadZubarrierZuinit, // pthread_barrier_init
+              pthread_barrier_t* barrier,
+              const pthread_barrierattr_t* attr,
+              unsigned count)
+{
+   int   ret;
+   int   res;
+   OrigFn fn;
+   VALGRIND_GET_ORIG_FN(fn);
+   VALGRIND_DO_CLIENT_REQUEST(res, -1, VG_USERREQ__BARRIER_INIT,
+                              barrier, sizeof(*barrier),
+                              count, 0, 0);
+   CALL_FN_W_WWW(ret, fn, barrier, attr, count);
+   return ret;
+}
+
+// pthread_barrier_destroy
+PTH_FUNC(int, pthreadZubarrierZudestroy, // pthread_barrier_destroy
+              pthread_barrier_t* barrier)
+{
+   int   ret;
+   int   res;
+   OrigFn fn;
+   VALGRIND_GET_ORIG_FN(fn);
+   CALL_FN_W_W(ret, fn, barrier);
+   VALGRIND_DO_CLIENT_REQUEST(res, -1, VG_USERREQ__BARRIER_DESTROY,
+                              barrier, 0, 0, 0, 0);
+   return ret;
+}
+
+// pthread_barrier_wait
+PTH_FUNC(int, pthreadZubarrierZuwait, // pthread_barrier_wait
+              pthread_barrier_t* barrier)
+{
+   int   ret;
+   int   res;
+   OrigFn fn;
+   VALGRIND_GET_ORIG_FN(fn);
+   VALGRIND_DO_CLIENT_REQUEST(res, -1, VG_USERREQ__PRE_BARRIER_WAIT,
+                              barrier, 0, 0, 0, 0);
+   CALL_FN_W_W(ret, fn, barrier);
+   VALGRIND_DO_CLIENT_REQUEST(res, -1, VG_USERREQ__POST_BARRIER_WAIT,
+                              barrier,
+                              ret == 0 || ret == PTHREAD_BARRIER_SERIAL_THREAD,
+                              0, 0, 0);
+   return ret;
+}
+
+
+// From glibc 2.0 linuxthreads/sysdeps/pthread/cmpxchg/semaphorebits.h
+typedef struct { long int sem_status; } sem_t_glibc_2_0;
+
+// sem_init
+PTH_FUNC(int, sem_initZAGLIBCZu2Zd0, // sem_init@GLIBC_2.0
+              sem_t_glibc_2_0 *sem,
+              int pshared,
+              unsigned int value)
+{
+   int   ret;
+   int   res;
+   OrigFn fn;
+   VALGRIND_GET_ORIG_FN(fn);
+   CALL_FN_W_WWW(ret, fn, sem, pshared, value);
+   if (ret == 0)
+   {
+      VALGRIND_DO_CLIENT_REQUEST(res, -1, VG_USERREQ__SEM_INIT,
+                                 sem, sizeof(*sem),
+                                 pshared, value, 0);
+   }
+   return ret;
+}
+
+PTH_FUNC(int, sem_initZa, // sem_init*
+              sem_t *sem,
+              int pshared,
+              unsigned int value)
+{
+   int   ret;
+   int   res;
+   OrigFn fn;
+   VALGRIND_GET_ORIG_FN(fn);
+   CALL_FN_W_WWW(ret, fn, sem, pshared, value);
+   if (ret == 0)
+   {
+      VALGRIND_DO_CLIENT_REQUEST(res, -1, VG_USERREQ__SEM_INIT,
+                                 sem, sizeof(*sem),
+                                 pshared, value, 0);
+   }
+   return ret;
+}
+
+// sem_destroy
+PTH_FUNC(int, sem_destroyZAGLIBCZu2Zd0, // sem_destroy@GLIBC_2.0
+              sem_t_glibc_2_0 *sem)
+{
+   int   ret;
+   int   res;
+   OrigFn fn;
+   VALGRIND_GET_ORIG_FN(fn);
+   CALL_FN_W_W(ret, fn, sem);
+   if (ret == 0)
+   {
+      VALGRIND_DO_CLIENT_REQUEST(res, -1, VG_USERREQ__SEM_DESTROY,
+                                 sem, 0, 0, 0, 0);
+   }
+   return ret;
+}
+
+PTH_FUNC(int, sem_destroyZa, // sem_destroy*
+              sem_t *sem)
+{
+   int   ret;
+   int   res;
+   OrigFn fn;
+   VALGRIND_GET_ORIG_FN(fn);
+   CALL_FN_W_W(ret, fn, sem);
+   if (ret == 0)
+   {
+      VALGRIND_DO_CLIENT_REQUEST(res, -1, VG_USERREQ__SEM_DESTROY,
+                                 sem, 0, 0, 0, 0);
+   }
+   return ret;
+}
+
+// sem_wait
+PTH_FUNC(int, sem_waitZAGLIBCZu2Zd0, // sem_wait@GLIBC_2.0
+              sem_t_glibc_2_0 *sem)
+{
+   int   ret;
+   int   res;
+   OrigFn fn;
+   VALGRIND_GET_ORIG_FN(fn);
+   CALL_FN_W_W(ret, fn, sem);
+   if (ret == 0)
+   {
+      VALGRIND_DO_CLIENT_REQUEST(res, -1, VG_USERREQ__POST_SEM_WAIT,
+                                 sem, sizeof(*sem), 0, 0, 0);
+   }
+   return ret;
+}
+
+PTH_FUNC(int, sem_waitZa, // sem_wait*
+              sem_t *sem)
+{
+   int   ret;
+   int   res;
+   OrigFn fn;
+   VALGRIND_GET_ORIG_FN(fn);
+   CALL_FN_W_W(ret, fn, sem);
+   if (ret == 0)
+   {
+      VALGRIND_DO_CLIENT_REQUEST(res, -1, VG_USERREQ__POST_SEM_WAIT,
+                                 sem, sizeof(*sem), 0, 0, 0);
+   }
+   return ret;
+}
+
+// sem_trywait
+PTH_FUNC(int, sem_trywaitZAGLIBCZu2Zd0, // sem_trywait@GLIBC_2.0
+              sem_t_glibc_2_0 *sem)
+{
+   int   ret;
+   int   res;
+   OrigFn fn;
+   VALGRIND_GET_ORIG_FN(fn);
+   CALL_FN_W_W(ret, fn, sem);
+   if (ret == 0)
+   {
+      VALGRIND_DO_CLIENT_REQUEST(res, -1, VG_USERREQ__POST_SEM_WAIT,
+                                 sem, sizeof(*sem), 0, 0, 0);
+   }
+   return ret;
+}
+
+PTH_FUNC(int, sem_trywaitZa, // sem_trywait*
+              sem_t *sem)
+{
+   int   ret;
+   int   res;
+   OrigFn fn;
+   VALGRIND_GET_ORIG_FN(fn);
+   CALL_FN_W_W(ret, fn, sem);
+   if (ret == 0)
+   {
+      VALGRIND_DO_CLIENT_REQUEST(res, -1, VG_USERREQ__POST_SEM_WAIT,
+                                 sem, sizeof(*sem), 0, 0, 0);
+   }
+   return ret;
+}
+
+// sem_timedwait
+PTH_FUNC(int, sem_timedwait, // sem_timedwait
+              sem_t *sem, const struct timespec *abs_timeout)
+{
+   int   ret;
+   int   res;
+   OrigFn fn;
+   VALGRIND_GET_ORIG_FN(fn);
+   CALL_FN_W_WW(ret, fn, sem, abs_timeout);
+   if (ret == 0)
+   {
+      VALGRIND_DO_CLIENT_REQUEST(res, -1, VG_USERREQ__POST_SEM_WAIT,
+                                 sem, sizeof(*sem), 0, 0, 0);
+   }
+   return ret;
+}
+
+// sem_post
+PTH_FUNC(int, sem_postZAGLIBCZu2Zd0, // sem_post@GLIBC_2.0
+              sem_t_glibc_2_0 *sem)
+{
+   int   ret;
+   int   res;
+   OrigFn fn;
+   VALGRIND_GET_ORIG_FN(fn);
+   VALGRIND_DO_CLIENT_REQUEST(res, -1, VG_USERREQ__PRE_SEM_POST,
+                              sem, sizeof(*sem), 0, 0, 0);
+   CALL_FN_W_W(ret, fn, sem);
+   assert(ret == 0);
+   if (ret == 0)
+   {
+      VALGRIND_DO_CLIENT_REQUEST(res, -1, VG_USERREQ__POST_SEM_POST,
+                                 sem, sizeof(*sem), 0, 0, 0);
+   }
+   return ret;
+}
+
+PTH_FUNC(int, sem_postZa, // sem_post*
+              sem_t *sem)
+{
+   int   ret;
+   int   res;
+   OrigFn fn;
+   VALGRIND_GET_ORIG_FN(fn);
+   VALGRIND_DO_CLIENT_REQUEST(res, -1, VG_USERREQ__PRE_SEM_POST,
+                              sem, sizeof(*sem), 0, 0, 0);
+   CALL_FN_W_W(ret, fn, sem);
+   assert(ret == 0);
+   if (ret == 0)
+   {
+      VALGRIND_DO_CLIENT_REQUEST(res, -1, VG_USERREQ__POST_SEM_POST,
+                                 sem, sizeof(*sem), 0, 0, 0);
+   }
+   return ret;
+}
+
+/*
+pthread_rwlock_destroy
+pthread_rwlock_init
+pthread_rwlock_rdlock
+pthread_rwlock_timedrdlock
+pthread_rwlock_timedwrlock
+pthread_rwlock_tryrdlock
+pthread_rwlock_trywrlock
+pthread_rwlock_unlock
+pthread_rwlock_wrlock
+pthread_rwlockattr_destroy
+pthread_rwlockattr_getkind_np
+pthread_rwlockattr_getpshared
+pthread_rwlockattr_init
+pthread_rwlockattr_setkind_np
+pthread_rwlockattr_setpshared
+ */
 
 /*
  * Local variables:

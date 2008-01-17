@@ -53,6 +53,24 @@
 #include "pub_tool_libcassert.h"
 #include "pub_tool_libcbase.h"
 
+
+#ifdef HG_WORDFM_STANDALONE  // standalone compilation
+// Standalone mode (for testing). 
+// On x86_64 compile like this: 
+//   gcc -m64 hg_wordfm.c -I../include -I../VEX/pub
+//       -DVGA_amd64=1 -DHG_WORDFM_STANDALONE -g -O -Wall
+# include <assert.h>
+# include <string.h>
+# include <stdio.h>
+# include <stdlib.h>
+
+# undef  tl_assert
+# define tl_assert assert
+# define vgPlain_memset memset
+
+#endif /* def HG_WORDFM_STANDALONE */
+
+
 #define HG_(str) VGAPPEND(vgHelgrind_,str)
 #include "hg_wordfm.h"
 
@@ -628,8 +646,59 @@ void HG_(initIterFM) ( WordFM* fm )
       stackPush(fm, fm->root, 1);
 }
 
+// set up FM for iteration 
+// so that the first key subsequently produced by HG_(nextIterFM) is
+// the smallest key in the map >= start_at.
+void HG_(initIterAtFM) ( WordFM* fm, Word start_at )
+{
+   Int     i;
+   AvlNode *n, *t;
+   Word    cmpresS; /* signed */
+   UWord   cmpresU; /* unsigned */
+
+   tl_assert(fm);
+   stackClear(fm);
+
+   if (!fm->root) 
+      return;
+
+   n = NULL;
+   // We need to do regular search and fill in the stack. 
+   t = fm->root;
+
+   while (True) {
+      if (t == NULL) return;
+
+      cmpresS 
+         = fm->kCmp ? /*boxed*/   fm->kCmp( t->key, start_at )
+                    : /*unboxed*/ cmp_signed_Words( t->key, start_at );
+
+      if (cmpresS == 0) {
+         // We found the exact key -- we are done. 
+         // The iteration should start with this node.
+         stackPush(fm, t, 2);
+         // The stack now looks like {2, 2, ... ,2, 2}
+         return;
+      }
+      cmpresU = (UWord)cmpresS;
+      cmpresU >>=/*unsigned*/ (8 * sizeof(cmpresU) - 1);
+      if (!cmpresU) {
+         // Push this node only if we go to the left child. 
+         stackPush(fm, t, 2);
+      }
+      t = t->child[cmpresU];
+   }
+   if (stackPop(fm, &n, &i)) {
+      // If we've pushed something to stack and did not find the exact key, 
+      // we must fix the top element of stack. 
+      tl_assert(i == 2);
+      stackPush(fm, n, 3);
+      // the stack looks like {2, 2, ..., 2, 3}
+   }
+}
+
 // get next key/val pair.  Will tl_assert if fm has been modified
-// or looked up in since initIterFM was called.
+// or looked up in since initIter{,At}FM was called.
 Bool HG_(nextIterFM) ( WordFM* fm, /*OUT*/Word* pKey, /*OUT*/Word* pVal )
 {
    Int i = 0;
@@ -839,6 +908,119 @@ void HG_(doneIterBag)( WordBag* bag )
 //---             end WordBag (unboxed words only)               ---//
 //---                       Implementation                       ---//
 //------------------------------------------------------------------//
+
+
+#ifdef HG_WORDFM_STANDALONE
+
+//------------------------------------------------------------------//
+//---                      Simple test driver.                   ---//
+//------------------------------------------------------------------//
+
+// We create a map with N values {1, 3, 5, ..., (N*2-1)}
+// and do some trivial stuff with it. 
+
+
+// Return the number of elements in range [beg, end). 
+// Just lookup for each element in range and count. 
+int search_all_elements_in_range_1(WordFM *map, long beg, long end)
+{
+   int n_found = 0;
+   int i;
+   for(i = beg; i < end; i++) {
+      Word key, val;
+      if(HG_(lookupFM)(map, &key, &val, (Word)i)){
+         n_found++;
+         assert(key == -val);
+         assert(key == (Word)i);
+      }
+   }
+   return n_found;
+}
+
+// Return the number of elements in range [beg, end). 
+// Start with the largest element 'e' such that 'e <= beg' 
+// and iterate until 'e < end'. 
+int search_all_elements_in_range_2(WordFM *map, long beg, long end)
+{
+   int n_found = 0;
+   Word key, val;
+   HG_(initIterAtFM)(map, beg);
+   while(HG_(nextIterFM)(map, &key, &val) && (int)key < end) {
+      assert(key == -val);
+      n_found++;
+   }
+   HG_(doneIterFM)(map);
+   return n_found;
+}
+
+int main(void)
+{
+   int i, n = 10;
+   Word key, val;
+   int beg, end;
+
+   printf("Create the map, n=%d\n", n);
+   WordFM *map = HG_(newFM)(malloc, free, NULL/*unboxed Word cmp*/);
+
+   printf("Add keys: ");
+   for(i = 0; i < n; i++) {
+      long val = i * 2 + 1; // 1, 3, 5, ... (n*2-1)
+      printf("%ld ", val);
+      HG_(addToFM)(map, val, -val);
+   }
+   assert(HG_(sizeFM)(map) == n);
+   printf("\n");
+   printf("Iterate elements, size=%d\n", (int)HG_(sizeFM)(map));
+   HG_(initIterFM)(map);
+
+   while(HG_(nextIterFM(map, &key, &val))){
+   //   int j;
+   //   printf("Stack k=%d\n", (int)key);
+   //   for(j = map->stackTop-1; j >= 0; j--) {
+   //      printf("\t[%d]: k=%d s=%d\n", j,
+   //             (int)map->nodeStack[j]->key, (int)map->numStack[j]);
+   //   }
+      assert(key == -val);
+   }
+   HG_(doneIterFM)(map);
+
+   printf("Test initIterAtFM\n");
+   for(beg = 0; beg <= n*2; beg++) {
+      HG_(initIterAtFM)(map, (Word)beg);
+      int prev = -1; 
+      printf("StartWith: %d: ", beg);
+      int n_iter = 0;
+
+      while(HG_(nextIterFM(map, &key, &val))) {
+         printf("%d ", (int)key);
+         assert(key == -val);
+         if(prev > 0) assert(prev + 2 == (int)key);
+         prev = (int)key;
+         n_iter++;
+      }
+      HG_(doneIterFM)(map);
+
+      printf("\ntotal: %d\n", n_iter);
+      if      (beg < 1   ) assert(n_iter == n);
+      else if (beg >= n*2) assert(n_iter == 0);
+      else                 assert(n_iter == (n - beg/2));
+   }
+
+   printf("Compare search_all_elements_in_range_[12]\n");
+   for (beg = 0; beg <= n*2; beg++) {
+      for (end = 0; end <= n*2; end++) {
+         assert(   search_all_elements_in_range_1(map, beg, end) 
+                == search_all_elements_in_range_2(map, beg, end));
+      }
+   }
+
+   printf("Delete the map\n");
+   HG_(deleteFM)(map, NULL, NULL);
+   printf("Ok!\n");
+   return 0;
+}
+
+#endif
 
 /*--------------------------------------------------------------------*/
 /*--- end                                              hg_wordfm.c ---*/

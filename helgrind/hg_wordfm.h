@@ -87,8 +87,13 @@ Word HG_(sizeFM) ( WordFM* fm );
 // set up FM for iteration
 void HG_(initIterFM) ( WordFM* fm );
 
+// set up FM for iteration 
+// so that the first key subsequently produced by HG_(nextIterFM) is
+// the smallest key in the map >= start_at.
+void HG_(initIterAtFM) ( WordFM* fm, Word start_at );
+
 // get next key/val pair.  Will assert if fm has been modified
-// or looked up in since initIterFM was called.
+// or looked up in since initIterFM/initIterWithStartFM was called.
 Bool HG_(nextIterFM) ( WordFM* fm,
                        /*OUT*/Word* pKey, /*OUT*/Word* pVal );
 

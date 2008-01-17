@@ -4947,13 +4947,14 @@ static void shadow_mem_make_NoAccess ( Thread* thr, Addr aIN, SizeT len )
                (void*)firstA, (UWord)len, (void*)lastA);
    locksToDelete = HG_(emptyWS)( univ_lsets );
    
-   /* FIXME: don't iterate over the complete lock set */
-   HG_(initIterFM)( map_locks );
-   while (HG_(nextIterFM)( map_locks,
-                           (Word*)&gla, (Word*)&lk )) {
+   /* Iterate over all locks in the range firstA .. lastA inclusive. */
+   HG_(initIterAtFM)( map_locks, firstA );
+   while (HG_(nextIterFM)( map_locks, (Word*)&gla, (Word*)&lk )
+          && gla <= lastA) {
       tl_assert(is_sane_LockN(lk));
-      if (gla < firstA || gla > lastA)
-         continue;
+      tl_assert(gla >= firstA);
+      tl_assert(gla <= lastA);
+
       locksToDelete = HG_(addToWS)( univ_lsets, locksToDelete, (Word)lk );
       /* If the lock is held, we must remove it from the currlock sets
          of all threads that hold it.  Also take the opportunity to

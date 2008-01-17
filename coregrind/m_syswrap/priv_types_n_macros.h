@@ -87,8 +87,8 @@ typedef
       Int o_arg4;
       Int o_arg5;
       Int o_arg6;
-      Int o_arg8;
       Int o_arg7;
+      Int o_arg8;
       Int o_retval;
    }
    SyscallArgLayout;

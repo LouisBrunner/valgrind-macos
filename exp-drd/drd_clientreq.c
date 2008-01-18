@@ -197,7 +197,7 @@ static Bool drd_handle_client_request(ThreadId tid, UWord* arg, UWord* ret)
       break;
 
    case VG_USERREQ__POST_SEM_POST:
-      drd_semaphore_post_post(thread_get_running_tid(), arg[1], arg[2]);
+      drd_semaphore_post_post(thread_get_running_tid(), arg[1], arg[2], arg[3]);
       break;
 
    case VG_USERREQ__BARRIER_INIT:

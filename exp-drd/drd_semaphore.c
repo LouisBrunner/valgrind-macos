@@ -161,13 +161,16 @@ void semaphore_pre_post(const DrdThreadId tid, const Addr semaphore,
 
 /** Called after sem_post() finished successfully. */
 void semaphore_post_post(const DrdThreadId tid, const Addr semaphore,
-                         const SizeT size)
+                         const SizeT size, const Bool waited)
 {
-  struct semaphore_info* p;
+  if (waited)
+  {
+    struct semaphore_info* p;
 
-  p = semaphore_get_or_allocate(semaphore, size);
-  thread_new_segment(tid);
-  vc_copy(&p->vc, thread_get_vc(tid));
+    p = semaphore_get_or_allocate(semaphore, size);
+    thread_new_segment(tid);
+    vc_copy(&p->vc, thread_get_vc(tid));
+  }
 }
 
 void semaphore_thread_delete(const DrdThreadId threadid)

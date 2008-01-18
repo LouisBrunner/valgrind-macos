@@ -100,7 +100,7 @@ enum {
   /* args: Addr sem, SizeT sem_size */
   /* To notify the drd tool after a sem_post call. */
   VG_USERREQ__POST_SEM_POST,
-  /* args: Addr sem, SizeT sem_size */
+  /* args: Addr sem, SizeT sem_size, Bool waited */
 
   /* To notify the drd tool of a pthread_barrier_init call. */
   VG_USERREQ__BARRIER_INIT,

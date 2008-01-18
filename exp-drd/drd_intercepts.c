@@ -773,12 +773,8 @@ PTH_FUNC(int, sem_postZa, // sem_post*
    VALGRIND_DO_CLIENT_REQUEST(res, -1, VG_USERREQ__PRE_SEM_POST,
                               sem, sizeof(*sem), 0, 0, 0);
    CALL_FN_W_W(ret, fn, sem);
-   assert(ret == 0);
-   if (ret == 0)
-   {
-      VALGRIND_DO_CLIENT_REQUEST(res, -1, VG_USERREQ__POST_SEM_POST,
-                                 sem, sizeof(*sem), 0, 0, 0);
-   }
+   VALGRIND_DO_CLIENT_REQUEST(res, -1, VG_USERREQ__POST_SEM_POST,
+                              sem, sizeof(*sem), ret == 0, 0, 0);
    return ret;
 }
 

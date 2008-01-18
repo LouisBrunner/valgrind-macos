@@ -45,7 +45,7 @@ void drd_semaphore_post_wait(const DrdThreadId tid, const Addr semaphore,
 void drd_semaphore_pre_post(const DrdThreadId tid, const Addr semaphore,
                             const SizeT size);
 void drd_semaphore_post_post(const DrdThreadId tid, const Addr semaphore,
-                             const SizeT size);
+                             const SizeT size, const Bool waited);
 
 void drd_barrier_init(const Addr barrier, const SizeT size, const Word count);
 void drd_barrier_destroy(const Addr barrier);

@@ -512,9 +512,9 @@ void drd_semaphore_pre_post(const DrdThreadId tid, const Addr semaphore,
 }
 
 void drd_semaphore_post_post(const DrdThreadId tid, const Addr semaphore,
-                             const SizeT size)
+                             const SizeT size, const Bool waited)
 {
-   semaphore_post_post(tid, semaphore, size);
+   semaphore_post_post(tid, semaphore, size, waited);
 }
 
 

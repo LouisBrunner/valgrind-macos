@@ -48,7 +48,7 @@ void semaphore_post_wait(const DrdThreadId tid, const Addr semaphore,
 void semaphore_pre_post(const DrdThreadId tid, const Addr semaphore,
                         const SizeT size);
 void semaphore_post_post(const DrdThreadId tid, const Addr semaphore,
-                         const SizeT size);
+                         const SizeT size, const Bool waited);
 void semaphore_thread_delete(const DrdThreadId tid);
 void semaphore_stop_using_mem(const Addr a1, const Addr a2);
 

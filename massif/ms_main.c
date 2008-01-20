@@ -774,6 +774,11 @@ static void sanity_check_SXTree(SXPt* sxpt)
 #define MAX_OVERESTIMATE   50
 #define MAX_IPS            (MAX_DEPTH + MAX_OVERESTIMATE)
 
+// This is used for various buffers which can hold function names/IP
+// description.  Some C++ names can get really long so 1024 isn't big
+// enough.
+#define BUF_LEN   2048
+
 // Get the stack trace for an XCon, filtering out uninteresting entries:
 // alloc-fns and entries above alloc-fns, and entries below main-or-below-main.
 //   Eg:       alloc-fn1 / alloc-fn2 / a / b / main / (below main) / c
@@ -783,7 +788,6 @@ static void sanity_check_SXTree(SXPt* sxpt)
 static
 Int get_IPs( ThreadId tid, Bool is_custom_alloc, Addr ips[])
 {
-   #define BUF_LEN   1024
    Char buf[BUF_LEN];
    Int n_ips, i, n_alloc_fns_removed;
    Int overestimate;
@@ -1863,13 +1867,25 @@ IRSB* ms_instrument ( VgCallbackClosure* closure,
 // The output file name.  Controlled by --massif-out-file.
 static Char* massif_out_file = NULL;
 
-#define FP_BUF_SIZE     1024
-Char FP_buf[FP_BUF_SIZE];
+Char FP_buf[BUF_LEN];
 
 // XXX: implement f{,n}printf in m_libcprint.c eventually, and use it here.
 // Then change Cachegrind to use it too.
 #define FP(format, args...) ({ \
-   VG_(snprintf)(FP_buf, FP_BUF_SIZE, format, ##args); \
+   VG_(snprintf)(FP_buf, BUF_LEN, format, ##args); \
+   FP_buf[BUF_LEN-1] = '\0';  /* Make sure the string is terminated. */ \
+   VG_(write)(fd, (void*)FP_buf, VG_(strlen)(FP_buf)); \
+})
+
+// Same as FP, but guarantees a '\n' at the end.  (At one point we were
+// truncating without adding the '\n', which caused bug #155929.)
+#define FPn(format, args...) ({ \
+   VG_(snprintf)(FP_buf, BUF_LEN, format, ##args); \
+   FP_buf[BUF_LEN-5] = '.';   /* "..." at the end make the truncation */ \
+   FP_buf[BUF_LEN-4] = '.';   /*  more obvious */ \
+   FP_buf[BUF_LEN-3] = '.'; \
+   FP_buf[BUF_LEN-2] = '\n';  /* Make sure the last char is a newline. */ \
+   FP_buf[BUF_LEN-1] = '\0';  /* Make sure the string is terminated. */ \
    VG_(write)(fd, (void*)FP_buf, VG_(strlen)(FP_buf)); \
 })
 
@@ -1892,7 +1908,6 @@ static void pp_snapshot_SXPt(Int fd, SXPt* sxpt, Int depth, Char* depth_str,
                             Int depth_str_len,
                             SizeT snapshot_heap_szB, SizeT snapshot_total_szB)
 {
-   #define BUF_LEN   1024
    Int   i, n_insig_children_sxpts;
    Char* perc;
    Char  ip_desc_array[BUF_LEN];
@@ -1925,7 +1940,10 @@ static void pp_snapshot_SXPt(Int fd, SXPt* sxpt, Int depth, Char* depth_str,
          ip_desc = VG_(describe_IP)(sxpt->Sig.ip-1, ip_desc, BUF_LEN);
       }
       perc = make_perc(sxpt->szB, snapshot_total_szB);
-      FP("%sn%d: %lu %s\n",
+      // Nb: we deliberately use 'FPn', not 'FP'.  So if the ip_desc is
+      // too long (eg. due to a long C++ function name), it'll get
+      // truncated, but the '\n' is still there so its a valid file.
+      FPn("%sn%d: %lu %s\n",     
          depth_str, sxpt->Sig.n_children, sxpt->szB, ip_desc);
 
       // Indent.

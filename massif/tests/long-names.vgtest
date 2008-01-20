@@ -1,0 +1,4 @@
+prog: long-names
+vgopts: --stacks=no --time-unit=B --heap-admin=0 --massif-out-file=massif.out --detailed-freq=3
+post: perl ../../massif/ms_print massif.out | ../../tests/filter_addresses
+cleanup: rm massif.out

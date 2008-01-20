@@ -19,6 +19,7 @@ EXTRA_DIST = $(noinst_SCRIPTS) \
         culling2.stderr.exp culling2.vgtest \
 	custom_alloc.post.exp custom_alloc.stderr.exp custom_alloc.vgtest
 	ignoring.post.exp ignoring.stderr.exp ignoring.vgtest \
+	long-names.post.exp long-names.stderr.exp long-names.vgtest \
 	long-time.post.exp long-time.stderr.exp long-time.vgtest \
 	new-cpp.post.exp new-cpp.stderr.exp new-cpp.vgtest \
 	no-stack-no-heap.post.exp no-stack-no-heap.stderr.exp no-stack-no-heap.vgtest \
@@ -54,6 +55,7 @@ check_PROGRAMS = \
 	deep \
 	ignoring \
 	insig \
+	long-names \
 	long-time \
 	new-cpp \
 	null \

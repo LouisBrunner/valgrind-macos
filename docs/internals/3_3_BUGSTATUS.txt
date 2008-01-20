@@ -24,3 +24,6 @@ vx1807  pending    33  155011  vex x86->IR: 0xCF (iret)
 
 pending pending    33  155091  Warning [...] unhandled DW_OP_ opcode 0x23
                                (patch proposed, waiting for feedback)
+
+r7355   7356       33  155929  ms_print fails on massif outputs 
+                               containing long lines

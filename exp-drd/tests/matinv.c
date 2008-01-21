@@ -6,11 +6,11 @@
  */
 
 
+#define _GNU_SOURCE
+
 /***********************/
 /* Include directives. */
 /***********************/
-
-#define _GNU_SOURCE
 
 #include <assert.h>
 #include <math.h>

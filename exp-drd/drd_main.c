@@ -401,24 +401,15 @@ static void drd_thread_finished(ThreadId tid)
    thread_finished(drd_tid);
 }
 
-void drd_pre_mutex_init(Addr mutex, SizeT size, MutexT mutex_type)
+void drd_pre_mutex_init(const Addr mutex, const SizeT size,
+			const MutexT mutex_type)
 {
    mutex_init(mutex, size, mutex_type);
 }
 
-void drd_post_mutex_destroy(Addr mutex, MutexT mutex_type)
+void drd_post_mutex_destroy(const Addr mutex, const MutexT mutex_type)
 {
-   struct mutex_info* p;
-
-   p = mutex_get(mutex);
-   tl_assert(p);
-   if (p)
-   {
-      // TO DO: report an error in case the recursion count is not zero
-      // before asserting.
-      tl_assert(mutex_get_recursion_count(mutex) == 0);
-      mutex_destroy(p);
-   }
+   mutex_post_destroy(mutex);
 }
 
 void drd_pre_mutex_lock(const DrdThreadId drd_tid,
@@ -562,11 +553,11 @@ void drd_post_clo_init(void)
 
 static
 IRSB* drd_instrument(VgCallbackClosure* const closure,
-		     IRSB* const bb_in,
-		     VexGuestLayout* const layout,
-		     VexGuestExtents* const vge, 
-		     IRType const gWordTy,
-		     IRType const hWordTy)
+                     IRSB* const bb_in,
+                     VexGuestLayout* const layout,
+                     VexGuestExtents* const vge, 
+                     IRType const gWordTy,
+                     IRType const hWordTy)
 {
    IRDirty* di;
    Int      i;

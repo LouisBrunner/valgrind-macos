@@ -17,6 +17,8 @@ EXTRA_DIST = $(noinst_SCRIPTS)                                  \
 	fp_race2.stdout.exp fp_race2.stderr.exp                 \
 	matinv.vgtest                                           \
 	matinv.stdout.exp matinv.stderr.exp                     \
+	pth_barrier.vgtest                                      \
+	pth_barrier.stdout.exp pth_barrier.stderr.exp           \
 	pth_broadcast.vgtest                                    \
 	pth_broadcast.stdout.exp pth_broadcast.stderr.exp       \
 	pth_cond_race.vgtest                                    \
@@ -48,6 +50,7 @@ AM_CXXFLAGS = $(AM_CFLAGS)
 check_PROGRAMS =   \
   fp_race          \
   matinv           \
+  pth_barrier      \
   pth_broadcast    \
   pth_cond_race    \
   pth_create_chain \
@@ -62,6 +65,9 @@ fp_race_LDADD            = -lpthread
 
 matinv_SOURCES           = matinv.c
 matinv_LDADD             = -lpthread -lm
+
+pth_barrier_SOURCES      = pth_barrier.c
+pth_barrier_LDADD        = -lpthread
 
 pth_broadcast_SOURCES    = pth_broadcast.c
 pth_broadcast_LDADD      = -lpthread

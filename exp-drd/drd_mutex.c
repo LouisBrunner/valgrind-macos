@@ -47,6 +47,11 @@ struct mutex_info
 };
 
 
+// Local functions.
+
+static void mutex_destroy(struct mutex_info* const p);
+
+
 // Local variables.
 
 static Bool s_trace_mutex;
@@ -120,11 +125,6 @@ mutex_init(const Addr mutex, const SizeT size, const MutexT mutex_type)
 {
   struct mutex_info* mutex_p;
 
-  tl_assert(mutex_get(mutex) == 0);
-  tl_assert(mutex_type == mutex_type_mutex
-            || mutex_type == mutex_type_spinlock);
-  mutex_p = mutex_get_or_allocate(mutex, size, mutex_type);
-
   if (s_trace_mutex)
   {
     const ThreadId vg_tid = VG_(get_running_tid)();
@@ -132,14 +132,31 @@ mutex_init(const Addr mutex, const SizeT size, const MutexT mutex_type)
     VG_(message)(Vg_DebugMsg,
                  "drd_post_mutex_init  tid = %d/%d, %s 0x%lx",
                  vg_tid, drd_tid,
-                 mutex_get_typename(mutex_p),
+                 mutex_type_name(mutex_type),
                  mutex);
   }
+
+  tl_assert(mutex_type == mutex_type_mutex
+            || mutex_type == mutex_type_spinlock);
+  mutex_p = mutex_get(mutex);
+  if (mutex_p)
+  {
+    const ThreadId vg_tid = VG_(get_running_tid)();
+    MutexErrInfo MEI
+      = { mutex_p->mutex, mutex_p->recursion_count, mutex_p->owner };
+    VG_(maybe_record_error)(vg_tid,
+                            MutexErr,
+                            VG_(get_IP)(vg_tid),
+                            "Mutex reinitialization",
+                            &MEI);
+    mutex_destroy(mutex_p);
+  }
+  mutex_p = mutex_get_or_allocate(mutex, size, mutex_type);
 
   return mutex_p;
 }
 
-void mutex_destroy(struct mutex_info* const p)
+static void mutex_destroy(struct mutex_info* const p)
 {
   if (s_trace_mutex)
   {
@@ -156,6 +173,33 @@ void mutex_destroy(struct mutex_info* const p)
 
   vc_cleanup(&p->vc);
   p->mutex = 0;
+}
+
+void mutex_pre_destroy(struct mutex_info* const p)
+{
+   return mutex_destroy(p);
+}
+
+void mutex_post_destroy(const Addr mutex)
+{
+   struct mutex_info* p;
+
+   p = mutex_get(mutex);
+   tl_assert(p);
+   if (p)
+   {
+      if (mutex_get_recursion_count(mutex) > 0)
+      {
+	 const ThreadId vg_tid = VG_(get_running_tid)();
+         MutexErrInfo MEI = { p->mutex, p->recursion_count, p->owner };
+         VG_(maybe_record_error)(vg_tid,
+                                 MutexErr,
+                                 VG_(get_IP)(vg_tid),
+                                 "Destroying locked mutex",
+                                 &MEI);
+      }
+      mutex_pre_destroy(p);
+   }
 }
 
 struct mutex_info* mutex_get(const Addr mutex)
@@ -215,7 +259,7 @@ int mutex_lock(const Addr mutex, const SizeT size, MutexT mutex_type)
                  " simultaneously by two threads (recursion count %d,"
                  " owners %d and %d) !",
                  p->mutex, p->recursion_count, p->owner, drd_tid);
-    tl_assert(0);
+    p->owner = drd_tid;
   }
   p->recursion_count++;
 
@@ -271,7 +315,18 @@ int mutex_unlock(const Addr mutex, const MutexT mutex_type)
                             &MEI);
   }
   p->recursion_count--;
-  tl_assert(p->recursion_count >= 0);
+  if (p->recursion_count < 0)
+  {
+    MutexErrInfo MEI
+      = { p->mutex, p->recursion_count, p->owner };
+    VG_(maybe_record_error)(vg_tid,
+                            MutexErr,
+                            VG_(get_IP)(vg_tid),
+                            "Attempt to unlock a mutex that is not locked",
+                            &MEI);
+    p->recursion_count = 0;
+  }
+
   if (p->recursion_count == 0)
   {
     /* This pthread_mutex_unlock() call really unlocks the mutex. Save the */
@@ -288,7 +343,12 @@ const char* mutex_get_typename(struct mutex_info* const p)
 {
   tl_assert(p);
 
-  switch (p->mutex_type)
+  return mutex_type_name(p->mutex_type);
+}
+
+const char* mutex_type_name(const MutexT mt)
+{
+  switch (mt)
   {
   case mutex_type_mutex:
     return "mutex";
@@ -360,3 +420,10 @@ ULong get_mutex_lock_count(void)
 {
   return s_mutex_lock_count;
 }
+
+
+/*
+ * Local variables:
+ * c-basic-offset: 3
+ * End:
+ */

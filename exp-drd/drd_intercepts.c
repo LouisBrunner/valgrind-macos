@@ -165,7 +165,7 @@ static void vg_set_main_thread_state(void)
 }
 
 // pthread_create
-PTH_FUNC(int, pthreadZucreateZAZa, // pthread_create@*
+PTH_FUNC(int, pthreadZucreateZa, // pthread_create*
               pthread_t *thread, const pthread_attr_t *attr,
               void *(*start) (void *), void *arg)
 {
@@ -362,7 +362,7 @@ PTH_FUNC(int, pthreadZumutexZuunlock, // pthread_mutex_unlock
 }
 
 // pthread_cond_init
-PTH_FUNC(int, pthreadZucondZuinitZAZa, // pthread_cond_init@*
+PTH_FUNC(int, pthreadZucondZuinitZa, // pthread_cond_init*
               pthread_cond_t* cond,
               const pthread_condattr_t* attr)
 {
@@ -377,7 +377,7 @@ PTH_FUNC(int, pthreadZucondZuinitZAZa, // pthread_cond_init@*
 }
 
 // pthread_cond_destroy
-PTH_FUNC(int, pthreadZucondZudestroyZAZa, // pthread_cond_destroy@*
+PTH_FUNC(int, pthreadZucondZudestroyZa, // pthread_cond_destroy*
               pthread_cond_t* cond)
 {
    int ret;
@@ -391,7 +391,7 @@ PTH_FUNC(int, pthreadZucondZudestroyZAZa, // pthread_cond_destroy@*
 }
 
 // pthread_cond_wait
-PTH_FUNC(int, pthreadZucondZuwaitZAZa, // pthread_cond_wait@*
+PTH_FUNC(int, pthreadZucondZuwaitZa, // pthread_cond_wait*
               pthread_cond_t *cond,
               pthread_mutex_t *mutex)
 {
@@ -408,7 +408,7 @@ PTH_FUNC(int, pthreadZucondZuwaitZAZa, // pthread_cond_wait@*
 }
 
 // pthread_cond_timedwait
-PTH_FUNC(int, pthreadZucondZutimedwaitZAZa, // pthread_cond_timedwait@*
+PTH_FUNC(int, pthreadZucondZutimedwaitZa, // pthread_cond_timedwait*
               pthread_cond_t *cond,
               pthread_mutex_t *mutex,
               const struct timespec* abstime)
@@ -426,7 +426,7 @@ PTH_FUNC(int, pthreadZucondZutimedwaitZAZa, // pthread_cond_timedwait@*
 }
 
 // pthread_cond_signal
-PTH_FUNC(int, pthreadZucondZusignalZAZa, // pthread_cond_signal@*
+PTH_FUNC(int, pthreadZucondZusignalZa, // pthread_cond_signal*
               pthread_cond_t* cond)
 {
    int   ret;
@@ -440,7 +440,7 @@ PTH_FUNC(int, pthreadZucondZusignalZAZa, // pthread_cond_signal@*
 }
 
 // pthread_cond_broadcast
-PTH_FUNC(int, pthreadZucondZubroadcastZAZa, // pthread_cond_broadcast@*
+PTH_FUNC(int, pthreadZucondZubroadcastZa, // pthread_cond_broadcast*
               pthread_cond_t* cond)
 {
    int   ret;

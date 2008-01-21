@@ -42,11 +42,13 @@ struct mutex_info;
 void mutex_set_trace(const Bool trace_mutex);
 struct mutex_info* mutex_init(const Addr mutex, const SizeT size,
                               const MutexT mutex_type);
-void mutex_destroy(struct mutex_info* const p);
+void mutex_pre_destroy(struct mutex_info* const p);
+void mutex_post_destroy(const Addr mutex);
 struct mutex_info* mutex_get(const Addr mutex);
 int mutex_lock(const Addr mutex, const SizeT size, const MutexT mutex_type);
 int mutex_unlock(const Addr mutex, const MutexT mutex_type);
 const char* mutex_get_typename(struct mutex_info* const p);
+const char* mutex_type_name(const MutexT mt);
 Bool mutex_is_locked_by(const Addr mutex, const DrdThreadId tid);
 const VectorClock* mutex_get_last_vc(const Addr mutex);
 int mutex_get_recursion_count(const Addr mutex);

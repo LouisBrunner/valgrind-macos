@@ -5,7 +5,6 @@ Last updated February 22, 2006
 Data-race detection algorithm
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 - pthread rwlock state tracking and support.
-- Fix Fedora 7 / Fedora 8 pth_cond_race regression test failure.
 - Implement segment merging, such that the number of segments per thread
   remains limited even when there is no synchronization between threads.
 - Find out why a race is reported on std::string::string(std::string const&)
@@ -13,6 +12,8 @@ Data-race detection algorithm
 - Eliminate the upper bounds on the number of mutexes, condition variables,
   semaphores and barriers by converting arrays into OSet's.
 - Add a regression test for pthread_mutex_timedlock().
+- Find a way for suppressing races on _IO_2_1_stdout (this race is triggered
+  by calling printf() from more than one thread).
 - Performance testing and tuning.
 - testing on PPC and AIX (current implementation is only tested on X86 and
   AMD64).
@@ -40,6 +41,9 @@ Known bugs
 ~~~~~~~~~~
 - Gets killed by the OOM handler for realistically sized applications,
   e.g. knode and OpenOffice.
+- When pthread_barrier_wait() is called, some real races are suppressed.
+- Does not work with a glibc library compiled with linuxthreads -- NPTL is
+  required for proper operation.
 - [x86_64] Reports "Allocation context: unknown" for BSS symbols on AMD64
   (works fine on i386). This is a bug in Valgrind's debug info reader
   -- VG_(find_seginfo)() returns NULL for BSS symbols on x86_64. Not yet in

@@ -27,3 +27,5 @@ pending pending    33  155091  Warning [...] unhandled DW_OP_ opcode 0x23
 
 r7355   7356       33  155929  ms_print fails on massif outputs 
                                containing long lines
+
+r7361   7362       33  n-i-bz  ms_print broken for --time-unit=ms

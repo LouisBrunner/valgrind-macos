@@ -589,10 +589,10 @@ sub read_input_file()
     #-------------------------------------------------------------------------
     my ($y_label, $y_unit) = B_max_label($peak_mem_total_szB);
     my ($x_label, $x_unit);
-    if    ($time_unit eq "i") { ($x_label, $x_unit) = i_max_label($end_time) }
-    elsif ($time_unit eq "s") { ($x_label, $x_unit) = t_max_label($end_time) }
-    elsif ($time_unit eq "B") { ($x_label, $x_unit) = B_max_label($end_time) }
-    else                      { die "bad time_unit: $time_unit\n"; }
+    if    ($time_unit eq "i")  { ($x_label, $x_unit) = i_max_label($end_time) }
+    elsif ($time_unit eq "ms") { ($x_label, $x_unit) = t_max_label($end_time) }
+    elsif ($time_unit eq "B")  { ($x_label, $x_unit) = B_max_label($end_time) }
+    else                       { die "bad time_unit: $time_unit\n"; }
 
     printf("    %2s\n", $y_unit);
     for ($y = $graph_y; $y >= 0; $y--) {

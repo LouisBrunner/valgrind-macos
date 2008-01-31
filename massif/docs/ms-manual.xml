@@ -735,7 +735,7 @@ operator new[](unsigned long, std::nothrow_t const&)
 <sect1 id="ms-manual.fileformat" xreflabel="fileformat">
 <title>Massif's output file format</title>
 <para>Massif's file format is plain text (i.e. not binary) and deliberately
-easy to read for both humands and machines.  Nonetheless, the exact format
+easy to read for both humans and machines.  Nonetheless, the exact format
 is not described here.  This is because the format is currently very
 Massif-specific.  We plan to make the format more general, and thus suitable
 for possible use with other tools.  Once this has been done, the format will

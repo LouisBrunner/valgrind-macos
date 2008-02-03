@@ -18,7 +18,7 @@ EXTRA_DIST = $(noinst_SCRIPTS)                                  \
 	matinv.vgtest                                           \
 	matinv.stdout.exp matinv.stderr.exp                     \
 	pth_barrier.vgtest                                      \
-	pth_barrier.stdout.exp pth_barrier.stderr.exp           \
+	pth_barrier.stderr.exp                                  \
 	pth_broadcast.vgtest                                    \
 	pth_broadcast.stdout.exp pth_broadcast.stderr.exp       \
 	pth_cond_race.vgtest                                    \
@@ -32,14 +32,13 @@ EXTRA_DIST = $(noinst_SCRIPTS)                                  \
 	pth_detached2.vgtest                                    \
 	pth_detached2.stdout.exp pth_detached2.stderr.exp       \
 	sem_as_mutex.vgtest                                     \
-	sem_as_mutex.stdout.exp sem_as_mutex.stderr.exp         \
-	sem_as_mutex.stderr.exp2                                \
+	sem_as_mutex.stderr.exp sem_as_mutex.stderr.exp2        \
 	sem_as_mutex2.vgtest                                    \
-	sem_as_mutex2.stdout.exp sem_as_mutex2.stderr.exp       \
+	sem_as_mutex2.stderr.exp                                \
 	tc17_sembar.vgtest                                      \
-	tc17_sembar.stdout.exp tc17_sembar.stderr.exp           \
+	tc17_sembar.stderr.exp                                  \
 	tc18_semabuse.vgtest                                    \
-	tc18_semabuse.stdout.exp tc18_semabuse.stderr.exp       \
+	tc18_semabuse.stderr.exp                                \
 	sigalrm.vgtest                                          \
 	sigalrm.stdout.exp sigalrm.stderr.exp
 

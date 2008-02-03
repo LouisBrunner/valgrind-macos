@@ -123,8 +123,8 @@ top-level directory <computeroutput>valgrind/</computeroutput>.</para>
   <listitem>
    <para>Edit <filename>Makefile.am</filename>, adding the new directory
    <filename>foobar</filename> to the
-   <computeroutput>TOOLS</computeroutput> and
-   <computeroutput>SUBDIRS</computeroutput>variables.</para>
+   <computeroutput>TOOLS</computeroutput> or
+   <computeroutput>EXP_TOOLS</computeroutput>variables.</para>
   </listitem>
 
   <listitem>

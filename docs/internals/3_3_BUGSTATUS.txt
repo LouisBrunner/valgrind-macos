@@ -20,9 +20,14 @@ r7322   pending    33  n-i-bz  check fd on sys_llseek
 r7323   pending    33  n-i-bz  update syscall lists to kernel 2.6.23.1
 r7324   pending    33  n-i-bz  support sys_sync_file_range
 
+r7334   pending    33  n-i-bz  handle sys_sysinfo, sys_getresuid,
+                               sys_getresgid on ppc64-linux
+
+r7350   pending    33  n-i-bz  intercept memcpy in 64-bit ld.so's
+
 vx1807  pending    33  155011  vex x86->IR: 0xCF (iret)
 
-pending pending    33  155091  Warning [...] unhandled DW_OP_ opcode 0x23
+r7347   pending    33  155091  Warning [...] unhandled DW_OP_ opcode 0x23
                                (patch proposed, waiting for feedback)
 
 r7355   7356       33  155929  ms_print fails on massif outputs 

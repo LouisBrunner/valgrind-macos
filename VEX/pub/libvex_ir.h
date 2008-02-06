@@ -658,7 +658,7 @@ typedef
       Iop_QSub8Sx8, Iop_QSub16Sx4,
 
       /* MULTIPLICATION (normal / high half of signed/unsigned) */
-      Iop_Mul16x4,
+      Iop_Mul16x4, Iop_Mul32x2,
       Iop_MulHi16Ux4,
       Iop_MulHi16Sx4,
 
@@ -677,7 +677,7 @@ typedef
       Iop_CmpGT8Sx8, Iop_CmpGT16Sx4, Iop_CmpGT32Sx2,
 
       /* VECTOR x SCALAR SHIFT (shift amt :: Ity_I8) */
-                   Iop_ShlN16x4, Iop_ShlN32x2,
+      Iop_ShlN8x8, Iop_ShlN16x4, Iop_ShlN32x2,
                    Iop_ShrN16x4, Iop_ShrN32x2,
       Iop_SarN8x8, Iop_SarN16x4, Iop_SarN32x2,
 
@@ -691,6 +691,19 @@ typedef
          arg. */
       Iop_InterleaveHI8x8, Iop_InterleaveHI16x4, Iop_InterleaveHI32x2,
       Iop_InterleaveLO8x8, Iop_InterleaveLO16x4, Iop_InterleaveLO32x2,
+
+      /* CONCATENATION -- build a new value by concatenating either
+         the even or odd lanes of both operands.  Note that
+         Cat{Odd,Even}Lanes32x2 are identical to Interleave{HI,LO}32x2
+         and so are omitted. */
+      Iop_CatOddLanes16x4, Iop_CatEvenLanes16x4,
+
+      /* PERMUTING -- copy src bytes to dst,
+         as indexed by control vector bytes:
+            for i in 0 .. 7 . result[i] = argL[ argR[i] ] 
+         argR[i] values may only be in the range 0 .. 7, else behaviour
+         is undefined. */
+      Iop_Perm8x8,
 
       /* ------------------ 128-bit SIMD FP. ------------------ */
 

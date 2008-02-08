@@ -39,6 +39,7 @@
 extern UWord VG_(register_stack)   ( Addr start, Addr end );
 extern void  VG_(deregister_stack) ( UWord id );
 extern void  VG_(change_stack)     ( UWord id, Addr start, Addr end );
+extern void  VG_(stack_limits)     ( Addr SP, Addr *start, Addr *end );
 
 extern VG_REGPARM(2)
        void  VG_(unknown_SP_update) ( Addr old_SP, Addr new_SP );

@@ -398,6 +398,7 @@ UInt VG_(get_StackTrace) ( ThreadId tid, StackTrace ips, UInt n_ips,
    Addr sp                 = VG_(get_SP)(tid);
    Addr lr                 = VG_(get_LR)(tid);
    Addr stack_highest_word = VG_(threads)[tid].client_stack_highest_word;
+   Addr stack_lowest_word  = 0;
 
 #  if defined(VGP_x86_linux)
    /* Nasty little hack to deal with syscalls - if libc is using its
@@ -425,6 +426,9 @@ UInt VG_(get_StackTrace) ( ThreadId tid, StackTrace ips, UInt n_ips,
       sp += sizeof(Addr);
    }
 #  endif
+
+   /* See if we can get a better idea of the stack limits */
+   VG_(stack_limits)(sp, &stack_lowest_word, &stack_highest_word);
 
    /* Take into account the first_ip_delta. */
    vg_assert( sizeof(Addr) == sizeof(Word) );

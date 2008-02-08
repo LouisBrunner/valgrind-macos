@@ -195,6 +195,20 @@ void VG_(change_stack)(UWord id, Addr start, Addr end)
    }
 }
 
+/*
+ * Find the bounds of the stack (if any) which includes the
+ * specified stack pointer.
+ */
+void VG_(stack_limits)(Addr SP, Addr *start, Addr *end )
+{
+   Stack* stack = find_stack_by_addr(SP);
+
+   if (stack) {
+      *start = stack->start;
+      *end = stack->end;
+   }
+}
+
 /* This function gets called if new_mem_stack and/or die_mem_stack are
    tracked by the tool, and one of the specialised cases
    (eg. new_mem_stack_4) isn't used in preference.  

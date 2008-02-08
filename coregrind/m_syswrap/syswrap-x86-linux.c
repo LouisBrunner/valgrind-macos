@@ -270,6 +270,8 @@ static SysRes do_clone ( ThreadId ptid,
       ctst->client_stack_highest_word = (Addr)VG_PGROUNDUP(esp);
       ctst->client_stack_szB = ctst->client_stack_highest_word - seg->start;
 
+      VG_(register_stack)(seg->start, ctst->client_stack_highest_word);
+
       if (debug)
 	 VG_(printf)("tid %d: guessed client stack range %p-%p\n",
 		     ctid, seg->start, VG_PGROUNDUP(esp));

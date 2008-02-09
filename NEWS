@@ -1,4 +1,10 @@
 
+Release 3.4.0 (???)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Changes include:
+- SSE3 insns now supported.  Changed CPUID output to be Core-2, so now it
+  claims to be a Core 2 E6600.
+
 Release 3.3.0 (7 December 2007)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 3.3.0 is a feature release with many significant improvements and the

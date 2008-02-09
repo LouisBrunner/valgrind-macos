@@ -2075,37 +2075,114 @@ void x86g_dirtyhelper_CPUID_sse1 ( VexGuestX86State* st )
    }
 }
 
-/* Claim to be the following SSE2-capable CPU:
+/* Claim to be the following SSSE3-capable CPU (2 x ...):
    vendor_id       : GenuineIntel
-   cpu family      : 15
-   model           : 2
-   model name      : Intel(R) Pentium(R) 4 CPU 2.40GHz
-   stepping        : 7
-   cpu MHz         : 2394.234
-   cache size      : 512 KB
+   cpu family      : 6
+   model           : 15
+   model name      : Intel(R) Core(TM)2 CPU 6600 @ 2.40GHz
+   stepping        : 6
+   cpu MHz         : 2394.000
+   cache size      : 4096 KB
+   physical id     : 0
+   siblings        : 2
+   core id         : 0
+   cpu cores       : 2
+   fpu             : yes
+   fpu_exception   : yes
+   cpuid level     : 10
+   wp              : yes
+   flags           : fpu vme de pse tsc msr pae mce cx8 apic sep
+                     mtrr pge mca cmov pat pse36 clflush dts acpi
+                     mmx fxsr sse sse2 ss ht tm syscall nx lm
+                     constant_tsc pni monitor ds_cpl vmx est tm2
+                     cx16 xtpr lahf_lm
+   bogomips        : 4798.78
+   clflush size    : 64
+   cache_alignment : 64
+   address sizes   : 36 bits physical, 48 bits virtual
+   power management:
 */
 void x86g_dirtyhelper_CPUID_sse2 ( VexGuestX86State* st )
 {
+#  define SET_ABCD(_a,_b,_c,_d)               \
+      do { st->guest_EAX = (UInt)(_a);        \
+           st->guest_EBX = (UInt)(_b);        \
+           st->guest_ECX = (UInt)(_c);        \
+           st->guest_EDX = (UInt)(_d);        \
+      } while (0)
+
    switch (st->guest_EAX) {
-      case 0: 
-         st->guest_EAX = 0x00000002;
-         st->guest_EBX = 0x756e6547;
-         st->guest_ECX = 0x6c65746e;
-         st->guest_EDX = 0x49656e69;
+      case 0x00000000:
+         SET_ABCD(0x0000000a, 0x756e6547, 0x6c65746e, 0x49656e69);
          break;
-      case 1: 
-         st->guest_EAX = 0x00000f27;
-         st->guest_EBX = 0x00010809;
-         st->guest_ECX = 0x00004400;
-         st->guest_EDX = 0xbfebfbff;
+      case 0x00000001:
+         SET_ABCD(0x000006f6, 0x00020800, 0x0000e3bd, 0xbfebfbff);
          break;
-      default:
-         st->guest_EAX = 0x665b5101;
-         st->guest_EBX = 0x00000000;
-         st->guest_ECX = 0x00000000;
-         st->guest_EDX = 0x007b7040;
+      case 0x00000002:
+         SET_ABCD(0x05b0b101, 0x005657f0, 0x00000000, 0x2cb43049);
+         break;
+      case 0x00000003:
+         SET_ABCD(0x00000000, 0x00000000, 0x00000000, 0x00000000);
+         break;
+      case 0x00000004:
+         SET_ABCD(0x00000000, 0x00000000, 0x00000000, 0x00000000);
+         break;
+      case 0x00000005:
+         SET_ABCD(0x00000040, 0x00000040, 0x00000003, 0x00000020);
+         break;
+      case 0x00000006:
+         SET_ABCD(0x00000001, 0x00000002, 0x00000001, 0x00000000);
+         break;
+      case 0x00000007:
+         SET_ABCD(0x00000000, 0x00000000, 0x00000000, 0x00000000);
+         break;
+      case 0x00000008:
+         SET_ABCD(0x00000400, 0x00000000, 0x00000000, 0x00000000);
+         break;
+      case 0x00000009:
+         SET_ABCD(0x00000000, 0x00000000, 0x00000000, 0x00000000);
+         break;
+      case 0x0000000a:
+         SET_ABCD(0x07280202, 0x00000000, 0x00000000, 0x00000000);
+         break;
+      case 0x80000000:
+         SET_ABCD(0x80000008, 0x00000000, 0x00000000, 0x00000000);
+         break;
+      case 0x80000001:
+         SET_ABCD(0x00000000, 0x00000000, 0x00000001, 0x20100000);
+         break;
+      case 0x80000002:
+         SET_ABCD(0x65746e49, 0x2952286c, 0x726f4320, 0x4d542865);
+         break;
+      case 0x80000003:
+         SET_ABCD(0x43203229, 0x20205550, 0x20202020, 0x20202020);
+         break;
+      case 0x80000004:
+         SET_ABCD(0x30303636, 0x20402020, 0x30342e32, 0x007a4847);
+         break;
+      case 0x80000005:
+         SET_ABCD(0x00000000, 0x00000000, 0x00000000, 0x00000000);
+         break;
+      case 0x80000006:
+         SET_ABCD(0x00000000, 0x00000000, 0x10008040, 0x00000000);
+         break;
+      case 0x80000007:
+         SET_ABCD(0x00000000, 0x00000000, 0x00000000, 0x00000000);
+         break;
+      case 0x80000008:
+         SET_ABCD(0x00003024, 0x00000000, 0x00000000, 0x00000000);
+         break;
+      case 0x80860000:
+         SET_ABCD(0x07280202, 0x00000000, 0x00000000, 0x00000000);
+         break;
+      case 0xc0000000:
+         SET_ABCD(0x07280202, 0x00000000, 0x00000000, 0x00000000);
+         break;
+      default:         
+         SET_ABCD(0x00000000, 0x00000000, 0x00000000, 0x00000000); 
          break;
    }
+#  undef SET_ABCD
 }
 
 

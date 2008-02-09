@@ -8467,6 +8467,23 @@ static IRExpr* dis_PALIGNR_XMM_helper ( IRTemp hi64,
       );
 }
 
+/* Generate a SIGSEGV followed by a restart of the current instruction
+   if effective_addr is not 16-aligned.  This is required behaviour
+   for some SSE3 instructions and all 128-bit SSSE3 instructions.
+   This assumes that guest_RIP_curr_instr is set correctly! */
+static void gen_SEGV_if_not_16_aligned ( IRTemp effective_addr )
+{
+   stmt(
+      IRStmt_Exit(
+         binop(Iop_CmpNE64,
+               binop(Iop_And64,mkexpr(effective_addr),mkU64(0xF)),
+               mkU64(0)),
+         Ijk_SigSEGV,
+         IRConst_U64(guest_RIP_curr_instr)
+      )
+   );
+}
+
 
 /* Helper for deciding whether a given insn (starting at the opcode
    byte) may validly be used with a LOCK prefix.  The following insns
@@ -12693,7 +12710,7 @@ DisResult disInstr_AMD64_WRK (
                                   nameXMMReg(gregOfRexRM(pfx,modrm)));
       } else {
          addr = disAMode ( &alen, pfx, delta+3, dis_buf, 0 );
-         /* FIXME: generate trap if addr is not 16-aligned */
+         gen_SEGV_if_not_16_aligned( addr );
          assign( sV, loadLE(Ity_V128, mkexpr(addr)) );
          delta += 3+alen;
          DIP("pmaddubsw %s,%s\n", dis_buf,
@@ -12846,7 +12863,7 @@ DisResult disInstr_AMD64_WRK (
          delta += 3+1;
       } else {
          addr = disAMode ( &alen, pfx, delta+3, dis_buf, 0 );
-         /* FIXME: generate trap if addr is not 16-aligned */
+         gen_SEGV_if_not_16_aligned( addr );
          assign( sV, loadLE(Ity_V128, mkexpr(addr)) );
          DIP("ph%s %s,%s\n", str, dis_buf,
                              nameXMMReg(gregOfRexRM(pfx,modrm)));
@@ -12931,7 +12948,7 @@ DisResult disInstr_AMD64_WRK (
                                  nameXMMReg(gregOfRexRM(pfx,modrm)));
       } else {
          addr = disAMode ( &alen, pfx, delta+3, dis_buf, 0 );
-         /* FIXME: generate trap if addr is not 16-aligned */
+         gen_SEGV_if_not_16_aligned( addr );
          assign( sV, loadLE(Ity_V128, mkexpr(addr)) );
          delta += 3+alen;
          DIP("pmulhrsw %s,%s\n", dis_buf,
@@ -13029,7 +13046,7 @@ DisResult disInstr_AMD64_WRK (
                                      nameXMMReg(gregOfRexRM(pfx,modrm)));
       } else {
          addr = disAMode ( &alen, pfx, delta+3, dis_buf, 0 );
-         /* FIXME: generate trap if addr is not 16-aligned */
+         gen_SEGV_if_not_16_aligned( addr );
          assign( sV, loadLE(Ity_V128, mkexpr(addr)) );
          delta += 3+alen;
          DIP("psign%s %s,%s\n", str, dis_buf,
@@ -13121,7 +13138,7 @@ DisResult disInstr_AMD64_WRK (
                                     nameXMMReg(gregOfRexRM(pfx,modrm)));
       } else {
          addr = disAMode ( &alen, pfx, delta+3, dis_buf, 0 );
-         /* FIXME: generate trap if addr is not 16-aligned */
+         gen_SEGV_if_not_16_aligned( addr );
          assign( sV, loadLE(Ity_V128, mkexpr(addr)) );
          delta += 3+alen;
          DIP("pabs%s %s,%s\n", str, dis_buf,
@@ -13220,7 +13237,7 @@ DisResult disInstr_AMD64_WRK (
                                     nameXMMReg(gregOfRexRM(pfx,modrm)));
       } else {
          addr = disAMode ( &alen, pfx, delta+3, dis_buf, 0 );
-         /* FIXME: generate trap if addr is not 16-aligned */
+         gen_SEGV_if_not_16_aligned( addr );
          assign( sV, loadLE(Ity_V128, mkexpr(addr)) );
          d64 = (Long)insn[3+alen];
          delta += 3+alen+1;
@@ -13240,7 +13257,7 @@ DisResult disInstr_AMD64_WRK (
       }
       else if (d64 >= 1 && d64 <= 7) {
          assign( rHi, dis_PALIGNR_XMM_helper(dLo, sHi, d64) );
-	 assign( rLo, dis_PALIGNR_XMM_helper(sHi, sLo, d64) );
+         assign( rLo, dis_PALIGNR_XMM_helper(sHi, sLo, d64) );
       }
       else if (d64 == 8) {
          assign( rHi, mkexpr(dLo) );
@@ -13248,7 +13265,7 @@ DisResult disInstr_AMD64_WRK (
       }
       else if (d64 >= 9 && d64 <= 15) {
          assign( rHi, dis_PALIGNR_XMM_helper(dHi, dLo, d64-8) );
-	 assign( rLo, dis_PALIGNR_XMM_helper(dLo, sHi, d64-8) );
+         assign( rLo, dis_PALIGNR_XMM_helper(dLo, sHi, d64-8) );
       }
       else if (d64 == 16) {
          assign( rHi, mkexpr(dHi) );
@@ -13256,7 +13273,7 @@ DisResult disInstr_AMD64_WRK (
       }
       else if (d64 >= 17 && d64 <= 23) {
          assign( rHi, binop(Iop_Shr64, mkexpr(dHi), mkU8(8*(d64-16))) );
-	 assign( rLo, dis_PALIGNR_XMM_helper(dHi, dLo, d64-16) );
+         assign( rLo, dis_PALIGNR_XMM_helper(dHi, dLo, d64-16) );
       }
       else if (d64 == 24) {
          assign( rHi, mkU64(0) );
@@ -13313,7 +13330,7 @@ DisResult disInstr_AMD64_WRK (
                Iop_Perm8x8,
                mkexpr(dV),
                binop(Iop_And64, mkexpr(sV), mkU64(0x0707070707070707ULL))
-	    ),
+            ),
             /* mask off lanes which have (index & 0x80) == 0x80 */
             unop(Iop_Not64, binop(Iop_SarN8x8, mkexpr(sV), mkU8(7)))
          )
@@ -13353,7 +13370,7 @@ DisResult disInstr_AMD64_WRK (
                                nameXMMReg(gregOfRexRM(pfx,modrm)));
       } else {
          addr = disAMode ( &alen, pfx, delta+3, dis_buf, 0 );
-         /* FIXME: generate trap if addr is not 16-aligned */
+         gen_SEGV_if_not_16_aligned( addr );
          assign( sV, loadLE(Ity_V128, mkexpr(addr)) );
          delta += 3+alen;
          DIP("pshufb %s,%s\n", dis_buf,

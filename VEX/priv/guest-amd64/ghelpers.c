@@ -1758,27 +1758,32 @@ void amd64g_dirtyhelper_FSTENV ( /*IN*/VexGuestAMD64State* vex_state,
 /*--- Misc integer helpers, including rotates and CPUID.      ---*/
 /*---------------------------------------------------------------*/
 
-/* Claim to be the following CPU:
-   vendor_id       : AuthenticAMD
-   cpu family      : 15
-   model           : 12
-   model name      : AMD Athlon(tm) 64 Processor 3200+
-   stepping        : 0
-   cpu MHz         : 2202.917
-   cache size      : 512 KB
+/* Claim to be the following CPU (2 x ...):
+   vendor_id       : GenuineIntel
+   cpu family      : 6
+   model           : 15
+   model name      : Intel(R) Core(TM)2 CPU 6600 @ 2.40GHz
+   stepping        : 6
+   cpu MHz         : 2394.000
+   cache size      : 4096 KB
+   physical id     : 0
+   siblings        : 2
+   core id         : 0
+   cpu cores       : 2
    fpu             : yes
    fpu_exception   : yes
-   cpuid level     : 1
+   cpuid level     : 10
    wp              : yes
-   flags           : fpu vme de pse tsc msr pae mce cx8 apic sep mtrr 
-                     pge mca cmov pat pse36 clflush mmx fxsr sse sse2 
-                     pni syscall nx mmxext lm 3dnowext 3dnow
-   bogomips        : 4308.99
-   TLB size        : 1088 4K pages
+   flags           : fpu vme de pse tsc msr pae mce cx8 apic sep
+                     mtrr pge mca cmov pat pse36 clflush dts acpi
+                     mmx fxsr sse sse2 ss ht tm syscall nx lm
+                     constant_tsc pni monitor ds_cpl vmx est tm2
+                     cx16 xtpr lahf_lm
+   bogomips        : 4798.78
    clflush size    : 64
    cache_alignment : 64
-   address sizes   : 40 bits physical, 48 bits virtual
-   power management: ts fid vid ttp
+   address sizes   : 36 bits physical, 48 bits virtual
+   power management:
 */
 void amd64g_dirtyhelper_CPUID ( VexGuestAMD64State* st )
 {
@@ -1790,38 +1795,71 @@ void amd64g_dirtyhelper_CPUID ( VexGuestAMD64State* st )
       } while (0)
 
    switch (0xFFFFFFFF & st->guest_RAX) {
-      case 0x0: 
-         SET_ABCD(0x00000001, 0x68747541, 0x444d4163, 0x69746e65); 
+      case 0x00000000:
+         SET_ABCD(0x0000000a, 0x756e6547, 0x6c65746e, 0x49656e69);
          break;
-      case 0x1: 
-         SET_ABCD(0x00000fc0, 0x00000800, 0x00000000, 0x078bfbff); 
+      case 0x00000001:
+         SET_ABCD(0x000006f6, 0x00020800, 0x0000e3bd, 0xbfebfbff);
          break;
-      case 0x80000000: 
-         SET_ABCD(0x80000018, 0x68747541, 0x444d4163, 0x69746e65); 
+      case 0x00000002:
+         SET_ABCD(0x05b0b101, 0x005657f0, 0x00000000, 0x2cb43049);
          break;
-      case 0x80000001: 
-         SET_ABCD(0x00000fc0, 0x0000010a, 0x00000000, 0xe1d3fbff); 
+      case 0x00000003:
+         SET_ABCD(0x00000000, 0x00000000, 0x00000000, 0x00000000);
          break;
-      case 0x80000002: 
-         SET_ABCD(0x20444d41, 0x6c687441, 0x74286e6f, 0x3620296d); 
+      case 0x00000004:
+         SET_ABCD(0x04000121, 0x01c0003f, 0x0000003f, 0x00000001);
          break;
-      case 0x80000003: 
-         SET_ABCD(0x72502034, 0x7365636f, 0x20726f73, 0x30303233); 
+      case 0x00000005:
+         SET_ABCD(0x00000040, 0x00000040, 0x00000003, 0x00000020);
          break;
-      case 0x80000004: 
-         SET_ABCD(0x0000002b, 0x00000000, 0x00000000, 0x00000000); 
+      case 0x00000006:
+         SET_ABCD(0x00000001, 0x00000002, 0x00000001, 0x00000000);
          break;
-      case 0x80000005: 
-         SET_ABCD(0xff08ff08, 0xff20ff20, 0x40020140, 0x40020140); 
+      case 0x00000007:
+         SET_ABCD(0x00000000, 0x00000000, 0x00000000, 0x00000000);
          break;
-      case 0x80000006: 
-         SET_ABCD(0x00000000, 0x42004200, 0x02008140, 0x00000000); 
+      case 0x00000008:
+         SET_ABCD(0x00000400, 0x00000000, 0x00000000, 0x00000000);
          break;
-      case 0x80000007: 
-         SET_ABCD(0x00000000, 0x00000000, 0x00000000, 0x0000000f); 
+      case 0x00000009:
+         SET_ABCD(0x00000000, 0x00000000, 0x00000000, 0x00000000);
          break;
-      case 0x80000008: 
-         SET_ABCD(0x00003028, 0x00000000, 0x00000000, 0x00000000); 
+      case 0x0000000a:
+         SET_ABCD(0x07280202, 0x00000000, 0x00000000, 0x00000000);
+         break;
+      case 0x80000000:
+         SET_ABCD(0x80000008, 0x00000000, 0x00000000, 0x00000000);
+         break;
+      case 0x80000001:
+         SET_ABCD(0x00000000, 0x00000000, 0x00000001, 0x20100800);
+         break;
+      case 0x80000002:
+         SET_ABCD(0x65746e49, 0x2952286c, 0x726f4320, 0x4d542865);
+         break;
+      case 0x80000003:
+         SET_ABCD(0x43203229, 0x20205550, 0x20202020, 0x20202020);
+         break;
+      case 0x80000004:
+         SET_ABCD(0x30303636, 0x20402020, 0x30342e32, 0x007a4847);
+         break;
+      case 0x80000005:
+         SET_ABCD(0x00000000, 0x00000000, 0x00000000, 0x00000000);
+         break;
+      case 0x80000006:
+         SET_ABCD(0x00000000, 0x00000000, 0x10008040, 0x00000000);
+         break;
+      case 0x80000007:
+         SET_ABCD(0x00000000, 0x00000000, 0x00000000, 0x00000000);
+         break;
+      case 0x80000008:
+         SET_ABCD(0x00003024, 0x00000000, 0x00000000, 0x00000000);
+         break;
+      case 0x80860000:
+         SET_ABCD(0x07280202, 0x00000000, 0x00000000, 0x00000000);
+         break;
+      case 0xc0000000:
+         SET_ABCD(0x07280202, 0x00000000, 0x00000000, 0x00000000);
          break;
       default:         
          SET_ABCD(0x00000000, 0x00000000, 0x00000000, 0x00000000); 

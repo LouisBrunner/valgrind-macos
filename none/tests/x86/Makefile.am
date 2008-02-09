@@ -5,7 +5,7 @@ CLEANFILES = $(addsuffix .c,$(INSN_TESTS))
 INSN_TESTS = insn_basic insn_fpu insn_cmov insn_mmx insn_mmxext \
 		insn_sse insn_sse2
 if BUILD_SSE3_TESTS
- INSN_TESTS += insn_sse3
+ INSN_TESTS += insn_sse3 insn_ssse3
 endif
 
 # Explicitly include insn_sse3 even if ! BUILD_SSE3_TESTS, 
@@ -35,6 +35,7 @@ EXTRA_DIST = $(noinst_SCRIPTS) \
 	$(addsuffix .stdout.exp,$(INSN_TESTS)) \
 	$(addsuffix .vgtest,$(INSN_TESTS)) \
 	insn_sse3.stdout.exp insn_sse3.stderr.exp insn_sse3.vgtest \
+	insn_ssse3.stdout.exp insn_ssse3.stderr.exp insn_ssse3.vgtest \
 	jcxz.stdout.exp jcxz.stderr.exp jcxz.vgtest \
 	lahf.stdout.exp lahf.stderr.exp lahf.vgtest \
 	looper.stderr.exp looper.stdout.exp looper.vgtest \
@@ -44,6 +45,8 @@ EXTRA_DIST = $(noinst_SCRIPTS) \
 	seg_override.stderr.exp seg_override.stdout.exp seg_override.vgtest \
 	sigcontext.stdout.exp sigcontext.stderr.exp sigcontext.vgtest \
 	smc1.stderr.exp smc1.stdout.exp smc1.vgtest \
+	ssse3_misaligned.stderr.exp ssse3_misaligned.stdout.exp \
+	ssse3_misaligned.vgtest \
 	yield.stderr.exp yield.stdout.exp yield.disabled
 
 check_PROGRAMS = \
@@ -58,7 +61,7 @@ check_PROGRAMS = \
 	getseg incdec_alt $(INSN_TESTS) \
 	jcxz \
 	lahf looper movx int pushpopseg sbbmisc \
-	seg_override sigcontext smc1 yield
+	seg_override sigcontext smc1 ssse3_misaligned yield
 
 AM_CFLAGS    = $(WERROR) -Winline -Wall -Wshadow \
 		@FLAG_M32@ -g -I$(top_srcdir)/include \

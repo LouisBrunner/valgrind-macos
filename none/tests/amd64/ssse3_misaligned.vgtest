@@ -1,0 +1,3 @@
+prog: ssse3_misaligned
+prereq: ../../../tests/cputest amd64-sse3
+vgopts: -q

@@ -5,7 +5,10 @@ CLEANFILES = $(addsuffix .c,$(INSN_TESTS))
 INSN_TESTS = insn_basic insn_fpu insn_cmov insn_mmx insn_mmxext \
 		insn_sse insn_sse2
 if BUILD_SSE3_TESTS
- INSN_TESTS += insn_sse3 insn_ssse3
+ INSN_TESTS += insn_sse3
+endif
+if BUILD_SSSE3_TESTS
+ INSN_TESTS += insn_ssse3 ssse3_misaligned
 endif
 
 # Explicitly include insn_sse3 even if ! BUILD_SSE3_TESTS, 
@@ -61,7 +64,7 @@ check_PROGRAMS = \
 	getseg incdec_alt $(INSN_TESTS) \
 	jcxz \
 	lahf looper movx int pushpopseg sbbmisc \
-	seg_override sigcontext smc1 ssse3_misaligned yield
+	seg_override sigcontext smc1 yield
 
 AM_CFLAGS    = $(WERROR) -Winline -Wall -Wshadow \
 		@FLAG_M32@ -g -I$(top_srcdir)/include \

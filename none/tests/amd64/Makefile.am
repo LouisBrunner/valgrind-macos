@@ -7,6 +7,9 @@ INSN_TESTS = insn_basic insn_mmx insn_sse insn_sse2 insn_fpu
 if BUILD_SSE3_TESTS
  INSN_TESTS += insn_sse3 insn_ssse3
 endif
+if BUILD_SSSE3_TESTS
+ INSN_TESTS += insn_ssse3 ssse3_misaligned
+endif
 
 # Explicitly include insn_sse3 even if ! BUILD_SSE3_TESTS, 
 # to avoid packaging screwups if 'make dist' is run on a machine
@@ -48,7 +51,7 @@ check_PROGRAMS = \
 	faultstatus fcmovnu fxtract $(INSN_TESTS) looper jrcxz \
 	rcl-amd64 \
 	redundantRexW \
-	smc1 shrld ssse3_misaligned \
+	smc1 shrld \
 	nibz_bennee_mmap \
 	slahf-amd64
 

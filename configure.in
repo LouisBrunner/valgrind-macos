@@ -832,6 +832,28 @@ AC_MSG_RESULT([no])
 AM_CONDITIONAL(BUILD_SSE3_TESTS, test x$ac_have_as_sse3 = xyes)
 
 
+# Ditto for SSSE3 instructions (note extra S)
+# Note, this doesn't generate a C-level symbol.  It generates a
+# automake-level symbol (BUILD_SSSE3_TESTS), used in test Makefile.am's
+AC_MSG_CHECKING([if x86/amd64 assembler speaks SSSE3])
+
+AC_TRY_COMPILE(, [
+  do { long long int x; 
+   __asm__ __volatile__(
+      "pabsb (%0),%%xmm7" : : "r"(&x) : "xmm7" ); }
+  while (0)
+],
+[
+ac_have_as_ssse3=yes
+AC_MSG_RESULT([yes])
+], [
+ac_have_as_ssse3=no
+AC_MSG_RESULT([no])
+])
+
+AM_CONDITIONAL(BUILD_SSSE3_TESTS, test x$ac_have_as_ssse3 = xyes)
+
+
 # Check for TLS support in the compiler and linker
 AC_CACHE_CHECK([for TLS support], vg_cv_tls,
 	       [AC_ARG_ENABLE(tls, [  --enable-tls            platform supports TLS],

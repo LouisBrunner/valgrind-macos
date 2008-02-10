@@ -67,11 +67,11 @@ default.supp: $(SUPP_FILES)
 
 ## Preprend @PERL@ because tests/vg_regtest isn't executable
 regtest: check
+	@PERL@ tests/vg_regtest $(TOOLS) $(EXP_TOOLS)
+nonexp-regtest: check
 	@PERL@ tests/vg_regtest $(TOOLS)
 exp-regtest: check
 	@PERL@ tests/vg_regtest $(EXP_TOOLS)
-all-regtest: check
-	@PERL@ tests/vg_regtest $(TOOLS) $(EXP_TOOLS)
 
 ## Preprend @PERL@ because tests/vg_per isn't executable
 perf: check

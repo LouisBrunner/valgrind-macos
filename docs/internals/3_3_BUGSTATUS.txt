@@ -13,6 +13,15 @@ PRI: 33  = fix this for 3.3.1
 
 ---------- Bugs reported after (in) 3.3.0 --------------------------
 
+Core2/ssse3 support in the trunk: vx1808, vx1809, vx1810, 
+                                  r7384, r7385, r7387, r7389.
+
+Consider potential space/time effects of r7383 (see reply to
+the commit message).
+
+Either back out r7353, or fix the resulting signedness problem
+properly (see replies to the commit message).
+
 TRUNK   33BRANCH  PRI    BUG#  WHAT
 
 r7299   pending    33  n-i-bz  stupid sizeof bug in Helgrind
@@ -30,7 +39,7 @@ vx1807  pending    33  155011  vex x86->IR: 0xCF (iret)
 r7347   pending    33  155091  Warning [...] unhandled DW_OP_ opcode 0x23
                                (patch proposed, waiting for feedback)
 
-r7355   7356       33  155929  ms_print fails on massif outputs 
+r7355   r7356      33  155929  ms_print fails on massif outputs 
                                containing long lines
 
-r7361   7362       33  n-i-bz  ms_print broken for --time-unit=ms
+r7361   r7362      33  n-i-bz  ms_print broken for --time-unit=ms

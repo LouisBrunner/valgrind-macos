@@ -5,10 +5,10 @@ CLEANFILES = $(addsuffix .c,$(INSN_TESTS))
 
 INSN_TESTS = insn_basic insn_mmx insn_sse insn_sse2 insn_fpu
 if BUILD_SSE3_TESTS
- INSN_TESTS += insn_sse3 insn_ssse3
+ INSN_TESTS += insn_sse3
 endif
 if BUILD_SSSE3_TESTS
- INSN_TESTS += insn_ssse3 ssse3_misaligned
+ INSN_TESTS += insn_ssse3
 endif
 
 # Explicitly include insn_sse3 even if ! BUILD_SSE3_TESTS, 
@@ -41,9 +41,9 @@ EXTRA_DIST = $(noinst_SCRIPTS) \
 	shrld.stderr.exp shrld.stdout.exp shrld.vgtest \
 	ssse3_misaligned.stderr.exp ssse3_misaligned.stdout.exp \
 	ssse3_misaligned.vgtest \
+	ssse3_misaligned.c \
 	slahf-amd64.stderr.exp slahf-amd64.stdout.exp \
 	slahf-amd64.vgtest
-
 
 check_PROGRAMS = \
 	bug127521-64 bug132813-amd64 bug137714-amd64 bug132918 \
@@ -54,6 +54,9 @@ check_PROGRAMS = \
 	smc1 shrld \
 	nibz_bennee_mmap \
 	slahf-amd64
+if BUILD_SSSE3_TESTS
+ check_PROGRAMS += ssse3_misaligned
+endif
 
 AM_CFLAGS   = $(WERROR) -Winline -Wall -Wshadow -g -I$(top_srcdir)/include
 		@FLAG_M64@

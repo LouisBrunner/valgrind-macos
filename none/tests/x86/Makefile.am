@@ -8,7 +8,7 @@ if BUILD_SSE3_TESTS
  INSN_TESTS += insn_sse3
 endif
 if BUILD_SSSE3_TESTS
- INSN_TESTS += insn_ssse3 ssse3_misaligned
+ INSN_TESTS += insn_ssse3
 endif
 
 # Explicitly include insn_sse3 even if ! BUILD_SSE3_TESTS, 
@@ -50,6 +50,7 @@ EXTRA_DIST = $(noinst_SCRIPTS) \
 	smc1.stderr.exp smc1.stdout.exp smc1.vgtest \
 	ssse3_misaligned.stderr.exp ssse3_misaligned.stdout.exp \
 	ssse3_misaligned.vgtest \
+	ssse3_misaligned.c \
 	yield.stderr.exp yield.stdout.exp yield.disabled
 
 check_PROGRAMS = \
@@ -65,6 +66,9 @@ check_PROGRAMS = \
 	jcxz \
 	lahf looper movx int pushpopseg sbbmisc \
 	seg_override sigcontext smc1 yield
+if BUILD_SSSE3_TESTS
+ check_PROGRAMS += ssse3_misaligned
+endif
 
 AM_CFLAGS    = $(WERROR) -Winline -Wall -Wshadow \
 		@FLAG_M32@ -g -I$(top_srcdir)/include \

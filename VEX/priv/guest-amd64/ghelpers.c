@@ -1807,9 +1807,19 @@ void amd64g_dirtyhelper_CPUID ( VexGuestAMD64State* st )
       case 0x00000003:
          SET_ABCD(0x00000000, 0x00000000, 0x00000000, 0x00000000);
          break;
-      case 0x00000004:
-         SET_ABCD(0x04000121, 0x01c0003f, 0x0000003f, 0x00000001);
+      case 0x00000004: {
+         switch (0xFFFFFFFF & st->guest_RCX) {
+            case 0x00000000: SET_ABCD(0x04000121, 0x01c0003f,
+                                      0x0000003f, 0x00000001); break;
+            case 0x00000001: SET_ABCD(0x04000122, 0x01c0003f,
+                                      0x0000003f, 0x00000001); break;
+            case 0x00000002: SET_ABCD(0x04004143, 0x03c0003f,
+                                      0x00000fff, 0x00000001); break;
+            default:         SET_ABCD(0x00000000, 0x00000000,
+                                      0x00000000, 0x00000000); break;
+         }
          break;
+      }
       case 0x00000005:
          SET_ABCD(0x00000040, 0x00000040, 0x00000003, 0x00000020);
          break;
@@ -1826,6 +1836,7 @@ void amd64g_dirtyhelper_CPUID ( VexGuestAMD64State* st )
          SET_ABCD(0x00000000, 0x00000000, 0x00000000, 0x00000000);
          break;
       case 0x0000000a:
+      unhandled_eax_value:
          SET_ABCD(0x07280202, 0x00000000, 0x00000000, 0x00000000);
          break;
       case 0x80000000:
@@ -1855,15 +1866,8 @@ void amd64g_dirtyhelper_CPUID ( VexGuestAMD64State* st )
       case 0x80000008:
          SET_ABCD(0x00003024, 0x00000000, 0x00000000, 0x00000000);
          break;
-      case 0x80860000:
-         SET_ABCD(0x07280202, 0x00000000, 0x00000000, 0x00000000);
-         break;
-      case 0xc0000000:
-         SET_ABCD(0x07280202, 0x00000000, 0x00000000, 0x00000000);
-         break;
       default:         
-         SET_ABCD(0x00000000, 0x00000000, 0x00000000, 0x00000000); 
-         break;
+         goto unhandled_eax_value;
    }
 #  undef SET_ABCD
 }

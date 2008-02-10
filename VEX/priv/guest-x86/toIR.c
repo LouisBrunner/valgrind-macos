@@ -13907,7 +13907,7 @@ DisResult disInstr_X86_WRK (
          d->fxState[1].fx     = Ifx_Write;
          d->fxState[1].offset = OFFB_EBX;
          d->fxState[1].size   = 4;
-         d->fxState[2].fx     = Ifx_Write;
+         d->fxState[2].fx     = Ifx_Modify;
          d->fxState[2].offset = OFFB_ECX;
          d->fxState[2].size   = 4;
          d->fxState[3].fx     = Ifx_Write;

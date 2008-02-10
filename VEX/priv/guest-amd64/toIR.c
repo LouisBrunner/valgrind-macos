@@ -15337,7 +15337,7 @@ DisResult disInstr_AMD64_WRK (
          d->fxState[1].fx     = Ifx_Write;
          d->fxState[1].offset = OFFB_RBX;
          d->fxState[1].size   = 8;
-         d->fxState[2].fx     = Ifx_Write;
+         d->fxState[2].fx     = Ifx_Modify;
          d->fxState[2].offset = OFFB_RCX;
          d->fxState[2].size   = 8;
          d->fxState[3].fx     = Ifx_Write;

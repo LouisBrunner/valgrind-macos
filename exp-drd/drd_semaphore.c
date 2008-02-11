@@ -156,6 +156,8 @@ void semaphore_pre_post(const DrdThreadId tid, const Addr semaphore,
   if (p->value == 1)
   {
     p->last_sem_post_tid = tid;
+    thread_new_segment(tid);
+    vc_copy(&p->vc, thread_get_vc(tid));
   }
 }
 
@@ -163,14 +165,12 @@ void semaphore_pre_post(const DrdThreadId tid, const Addr semaphore,
 void semaphore_post_post(const DrdThreadId tid, const Addr semaphore,
                          const SizeT size, const Bool waited)
 {
-  if (waited)
-  {
-    struct semaphore_info* p;
-
-    p = semaphore_get_or_allocate(semaphore, size);
-    thread_new_segment(tid);
-    vc_copy(&p->vc, thread_get_vc(tid));
-  }
+  /* Note: it is hard to implement the sem_post() wrapper correctly if */
+  /* sem_post() can return an error code. The reason is that this would */
+  /* require to detect whether sem_post() will fail before sem_post is */
+  /* called -- p->vc may only be modified if the sem_post() call will */
+  /* succeed. */
+  tl_assert(waited);
 }
 
 void semaphore_thread_delete(const DrdThreadId threadid)

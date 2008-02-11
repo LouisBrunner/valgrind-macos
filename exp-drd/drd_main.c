@@ -91,7 +91,13 @@ static Bool drd_process_cmd_line_option(Char* arg)
       return False;
 
    if (trace_address)
+   {
       drd_trace_address = VG_(strtoll16)(trace_address, 0);
+#if 0
+      VG_(message)(Vg_DebugMsg, "Tracing address %s <> 0x%x\n",
+                   trace_address, drd_trace_address);
+#endif
+   }
    if (trace_barrier)
       barrier_set_trace(trace_barrier);
    if (trace_cond)

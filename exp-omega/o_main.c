@@ -8,13 +8,13 @@
   This file is part of Omega, a Valgrind tool for detecting memory
   leaks as they occur.
 
-  Copyright (C) 2006-2007 Bryan "Brain Murders" Meredith 
+  Copyright (C) 2006-2008 Bryan "Brain Murders" Meredith 
   (A note of personal thanks to my employers at Apertio (www.apertio.com)
   for allowing the use of their time, equipment for 64bit testing and
   providing moral support.)
 
   Partly based upon other Valgrind tools
-  Copyright (C) 2000-2007 Julian Seward, Nicholas Nethercote et al.
+  Copyright (C) 2000-2008 Julian Seward, Nicholas Nethercote et al.
   jseward@acm.org
   njn@valgrind.org
 
@@ -3541,7 +3541,7 @@ static void o_pre_clo_init(void)
   VG_(details_name)            ("exp-omega");
   VG_(details_version)         ("RC1");
   VG_(details_description)     ("an instant memory leak detector");
-  VG_(details_copyright_author)("Copyright (C) 2006-2007, and GNU GPL'd, "
+  VG_(details_copyright_author)("Copyright (C) 2006-2008, and GNU GPL'd, "
                                 "by Bryan Meredith.");
   VG_(details_bug_reports_to)  ("richard.coe@med.ge.com");
   

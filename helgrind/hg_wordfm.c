@@ -9,13 +9,13 @@
    This file is part of Helgrind, a Valgrind tool for detecting errors
    in threaded programs.
 
-   Copyright (C) 2007-2007 Julian Seward
+   Copyright (C) 2007-2008 Julian Seward
       jseward@acm.org
 
    This code is based on previous work by Nicholas Nethercote
    (coregrind/m_oset.c) which is
 
-   Copyright (C) 2005-2007 Nicholas Nethercote
+   Copyright (C) 2005-2008 Nicholas Nethercote
        njn@valgrind.org
 
    which in turn was derived partially from:

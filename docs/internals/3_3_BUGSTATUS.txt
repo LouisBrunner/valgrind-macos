@@ -43,3 +43,5 @@ r7355   r7356      33  155929  ms_print fails on massif outputs
                                containing long lines
 
 r7361   r7362      33  n-i-bz  ms_print broken for --time-unit=ms
+
+r7399   pending    33  157665  valgrind fails on shmdt(0) after shmat to 0

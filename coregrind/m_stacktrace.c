@@ -38,6 +38,7 @@
 #include "pub_core_libcprint.h"
 #include "pub_core_machine.h"
 #include "pub_core_options.h"
+#include "pub_core_stacks.h"        // VG_(stack_limits)
 #include "pub_core_stacktrace.h"
 #include "pub_core_xarray.h"
 #include "pub_core_clientstate.h"   // VG_(client__dl_sysinfo_int80)

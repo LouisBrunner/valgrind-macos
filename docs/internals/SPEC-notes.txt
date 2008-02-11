@@ -1,0 +1,43 @@
+From Vince Weaver:
+
+I've been running the SPEC CPU 2006 benchmarks under valgrind (doing some
+work on my BBV generating plugin).
+
+There are two benchmarks that have issues, and I thought I'd share them
+here for future reference.
+
+1). zeusmp - does not run
+
+    It has a 1GB data segment, which valgrind cannot handle on a 32-bit
+    CPU.
+
+2). dealII - runs forever, never ending
+
+    It took a while, but I tracked this down to a 64bit/80bit
+    floating point issue.
+
+    The code in the QGauss<1>::QGauss() function has some code like this:
+
+    const long double tolerance = std::max (static_cast<long double>
+       (std::numeric_limits<double>::epsilon() / 100),
+       static_cast<long double>(std::numeric_limits<long
+       double>::epsilon() *5));
+
+     do {
+       ....
+       various fp operations
+       ....
+     } while (abs(p1/pp) > tolerance);
+
+
+     The tolerance in this case is being set to ~2.22e-18, but the
+     abs(p1/pp) value never gets below ~2.586e-17 under valgrind.
+
+     [This is because Valgrind only uses 64-bit FP values on x86, not 80-bit
+     values.]
+
+     This is similar to an issue that happens with the "art"
+     benchmark on SPEC CPU 2000, but in the "art" case it only
+     makes the code take longer to finish; this "dealII" problem
+     makes the benchmark loop forever.
+

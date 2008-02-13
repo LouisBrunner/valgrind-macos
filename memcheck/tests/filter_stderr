@@ -13,4 +13,7 @@ sed "/^Memcheck, a memory error detector/ , /./ d" |
 # Anonymise line numbers in mc_replace_strmem.c
 sed "s/mc_replace_strmem.c:[0-9]*/mc_replace_strmem.c:.../"  |
 
+# Remove the size in "The main thread stack size..." message.
+sed "s/The main thread stack size used in this run was [0-9]*/The main thread stack size used in this run was .../" |
+
 $dir/../../tests/filter_test_paths

@@ -59,43 +59,48 @@
 
 typedef  struct _WordFM  WordFM; /* opaque */
 
-/* Allocate and initialise a WordFM */
+/* Allocate and initialise a WordFM.  If kCmp is non-NULL, elements in
+   the set are ordered according to the ordering specified by kCmp,
+   which becomes obvious if you use VG_(initIterFM),
+   VG_(initIterAtFM), VG_(nextIterFM), VG_(doneIterFM) to iterate over
+   sections of the map, or the whole thing. */
 WordFM* HG_(newFM) ( void* (*alloc_nofail)( SizeT ),
                      void  (*dealloc)(void*),
-                     Word  (*kCmp)(Word,Word) );
+                     Word  (*kCmp)(UWord,UWord) );
 
 /* Free up the FM.  If kFin is non-NULL, it is applied to keys
    before the FM is deleted; ditto with vFin for vals. */
-void HG_(deleteFM) ( WordFM*, void(*kFin)(Word), void(*vFin)(Word) );
+void HG_(deleteFM) ( WordFM*, void(*kFin)(UWord), void(*vFin)(UWord) );
 
 /* Add (k,v) to fm.  If a binding for k already exists, it is updated
    to map to this new v.  In that case we should really return the
    previous v so that caller can finalise it.  Oh well. */
-void HG_(addToFM) ( WordFM* fm, Word k, Word v );
+void HG_(addToFM) ( WordFM* fm, UWord k, UWord v );
 
 // Delete key from fm, returning associated key and val if found
 Bool HG_(delFromFM) ( WordFM* fm,
-                      /*OUT*/Word* oldK, /*OUT*/Word* oldV, Word key );
+                      /*OUT*/UWord* oldK, /*OUT*/UWord* oldV, UWord key );
 
 // Look up in fm, assigning found key & val at spec'd addresses
 Bool HG_(lookupFM) ( WordFM* fm, 
-                     /*OUT*/Word* keyP, /*OUT*/Word* valP, Word key );
+                     /*OUT*/UWord* keyP, /*OUT*/UWord* valP, UWord key );
 
 // How many elements are there in fm?
-Word HG_(sizeFM) ( WordFM* fm );
+UWord HG_(sizeFM) ( WordFM* fm );
 
 // set up FM for iteration
 void HG_(initIterFM) ( WordFM* fm );
 
-// set up FM for iteration 
-// so that the first key subsequently produced by HG_(nextIterFM) is
-// the smallest key in the map >= start_at.
-void HG_(initIterAtFM) ( WordFM* fm, Word start_at );
+// set up FM for iteration so that the first key subsequently produced
+// by HG_(nextIterFM) is the smallest key in the map >= start_at.
+// Naturally ">=" is defined by the comparison function supplied to
+// HG_(newFM), as documented above.
+void HG_(initIterAtFM) ( WordFM* fm, UWord start_at );
 
 // get next key/val pair.  Will assert if fm has been modified
 // or looked up in since initIterFM/initIterWithStartFM was called.
 Bool HG_(nextIterFM) ( WordFM* fm,
-                       /*OUT*/Word* pKey, /*OUT*/Word* pVal );
+                       /*OUT*/UWord* pKey, /*OUT*/UWord* pVal );
 
 // clear the I'm iterating flag
 void HG_(doneIterFM) ( WordFM* fm );
@@ -107,7 +112,7 @@ void HG_(doneIterFM) ( WordFM* fm );
 // could not allocate memory, in which case the copy is abandoned
 // and NULL is returned.  Ditto with dopyV for values.
 WordFM* HG_(dopyFM) ( WordFM* fm,
-                      Word(*dopyK)(Word), Word(*dopyV)(Word) );
+                      UWord(*dopyK)(UWord), UWord(*dopyV)(UWord) );
 
 //------------------------------------------------------------------//
 //---                         end WordFM                         ---//
@@ -129,13 +134,13 @@ WordBag* HG_(newBag) ( void* (*alloc_nofail)( SizeT ),
 void HG_(deleteBag) ( WordBag* );
 
 /* Add a word. */
-void HG_(addToBag)( WordBag*, Word );
+void HG_(addToBag)( WordBag*, UWord );
 
 /* Find out how many times the given word exists in the bag. */
-Word HG_(elemBag) ( WordBag*, Word );
+UWord HG_(elemBag) ( WordBag*, UWord );
 
 /* Delete a word from the bag. */
-Bool HG_(delFromBag)( WordBag*, Word );
+Bool HG_(delFromBag)( WordBag*, UWord );
 
 /* Is the bag empty? */
 Bool HG_(isEmptyBag)( WordBag* );
@@ -144,15 +149,15 @@ Bool HG_(isEmptyBag)( WordBag* );
 Bool HG_(isSingletonTotalBag)( WordBag* );
 
 /* Return an arbitrary element from the bag. */
-Word HG_(anyElementOfBag)( WordBag* );
+UWord HG_(anyElementOfBag)( WordBag* );
 
 /* How many different / total elements are in the bag? */
-Word HG_(sizeUniqueBag)( WordBag* ); /* fast */
-Word HG_(sizeTotalBag)( WordBag* );  /* warning: slow */
+UWord HG_(sizeUniqueBag)( WordBag* ); /* fast */
+UWord HG_(sizeTotalBag)( WordBag* );  /* warning: slow */
 
 /* Iterating over the elements of a bag. */
 void HG_(initIterBag)( WordBag* );
-Bool HG_(nextIterBag)( WordBag*, /*OUT*/Word* pVal, /*OUT*/Word* pCount );
+Bool HG_(nextIterBag)( WordBag*, /*OUT*/UWord* pVal, /*OUT*/UWord* pCount );
 void HG_(doneIterBag)( WordBag* );
 
 //------------------------------------------------------------------//

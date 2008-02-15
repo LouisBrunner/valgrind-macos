@@ -82,8 +82,8 @@
 /* One element of the AVL tree */
 typedef
    struct _AvlNode {
-      Word key;
-      Word val;
+      UWord key;
+      UWord val;
       struct _AvlNode* child[2]; /* [0] is left subtree, [1] is right */
       Char balance; /* do not make this unsigned */
    }
@@ -91,7 +91,7 @@ typedef
 
 typedef 
    struct {
-      Word w;
+      UWord w;
       Bool b;
    }
    MaybeWord;
@@ -102,14 +102,14 @@ struct _WordFM {
    AvlNode* root;
    void*    (*alloc_nofail)( SizeT );
    void     (*dealloc)(void*);
-   Word     (*kCmp)(Word,Word);
+   Word     (*kCmp)(UWord,UWord);
    AvlNode* nodeStack[WFM_STKMAX]; // Iterator node stack
    Int      numStack[WFM_STKMAX];  // Iterator num stack
    Int      stackTop;              // Iterator stack pointer, one past end
 }; 
 
 /* forward */
-static Bool avl_removeroot_wrk(AvlNode** t, Word(*kCmp)(Word,Word));
+static Bool avl_removeroot_wrk(AvlNode** t, Word(*kCmp)(UWord,UWord));
 
 /* Swing to the left.  Warning: no balance maintainance. */
 static void avl_swl ( AvlNode** root )
@@ -154,16 +154,16 @@ static void avl_nasty ( AvlNode* root )
 }
 
 /* Find size of a non-NULL tree. */
-static Word size_avl_nonNull ( AvlNode* nd )
+static UWord size_avl_nonNull ( AvlNode* nd )
 {
    return 1 + (nd->child[0] ? size_avl_nonNull(nd->child[0]) : 0)
             + (nd->child[1] ? size_avl_nonNull(nd->child[1]) : 0);
 }
 
-/* Signedly compare w1 and w2.  If w1 < w2, produce a negative number;
-   if w1 > w2 produce a positive number, and if w1 == w2 produce
-   zero. */
-static inline Word cmp_signed_Words ( Word w1, Word w2 ) {
+/* Unsignedly compare w1 and w2.  If w1 < w2, produce a negative
+   number; if w1 > w2 produce a positive number, and if w1 == w2
+   produce zero. */
+static inline Word cmp_unsigned_Words ( UWord w1, UWord w2 ) {
    if (w1 < w2) return -1;
    if (w1 > w2) return 1;
    return 0;
@@ -179,7 +179,7 @@ static
 Bool avl_insert_wrk ( AvlNode**         rootp, 
                       /*OUT*/MaybeWord* oldV,
                       AvlNode*          a, 
-                      Word              (*kCmp)(Word,Word) )
+                      Word              (*kCmp)(UWord,UWord) )
 {
    Word cmpres;
 
@@ -196,8 +196,8 @@ Bool avl_insert_wrk ( AvlNode**         rootp,
    }
 
    cmpres = kCmp ? /*boxed*/   kCmp( (*rootp)->key, a->key )
-                 : /*unboxed*/ cmp_signed_Words( (Word)(*rootp)->key,
-                                                 (Word)a->key );
+                 : /*unboxed*/ cmp_unsigned_Words( (UWord)(*rootp)->key,
+                                                   (UWord)a->key );
 
    if (cmpres > 0) {
       /* insert into the left subtree */
@@ -280,13 +280,13 @@ Bool avl_insert_wrk ( AvlNode**         rootp,
 static
 Bool avl_remove_wrk ( AvlNode** rootp, 
                       AvlNode*  a, 
-                      Word(*kCmp)(Word,Word) )
+                      Word(*kCmp)(UWord,UWord) )
 {
    Bool ch;
    Word cmpres;
    cmpres = kCmp ? /*boxed*/   kCmp( (*rootp)->key, a->key )
-                 : /*unboxed*/ cmp_signed_Words( (Word)(*rootp)->key,
-                                                 (Word)a->key );
+                 : /*unboxed*/ cmp_unsigned_Words( (UWord)(*rootp)->key,
+                                                   (UWord)a->key );
 
    if (cmpres > 0){
       /* remove from the left subtree */
@@ -372,7 +372,7 @@ Bool avl_remove_wrk ( AvlNode** rootp,
  */
 static 
 Bool avl_removeroot_wrk ( AvlNode** rootp, 
-                          Word(*kCmp)(Word,Word) )
+                          Word(*kCmp)(UWord,UWord) )
 {
    Bool     ch;
    AvlNode* a;
@@ -407,7 +407,7 @@ Bool avl_removeroot_wrk ( AvlNode** rootp,
 }
 
 static 
-AvlNode* avl_find_node ( AvlNode* t, Word k, Word(*kCmp)(Word,Word) )
+AvlNode* avl_find_node ( AvlNode* t, Word k, Word(*kCmp)(UWord,UWord) )
 {
    if (kCmp) {
       /* Boxed comparisons */
@@ -425,7 +425,7 @@ AvlNode* avl_find_node ( AvlNode* t, Word k, Word(*kCmp)(Word,Word) )
       UWord cmpresU; /* unsigned */
       while (True) {
          if (t == NULL) return NULL; /* unlikely ==> predictable */
-         cmpresS = cmp_signed_Words( (Word)t->key, (Word)k );
+         cmpresS = cmp_unsigned_Words( (UWord)t->key, (UWord)k );
          if (cmpresS == 0) return t; /* unlikely ==> predictable */
          cmpresU = (UWord)cmpresS;
          cmpresU >>=/*unsigned*/ (8 * sizeof(cmpresU) - 1);
@@ -476,8 +476,8 @@ static inline Bool stackPop(WordFM* fm, AvlNode** n, Int* i)
 
 static 
 AvlNode* avl_dopy ( AvlNode* nd, 
-                    Word(*dopyK)(Word), 
-                    Word(*dopyV)(Word),
+                    UWord(*dopyK)(UWord), 
+                    UWord(*dopyV)(UWord),
                     void*(alloc_nofail)(SizeT) )
 {
    AvlNode* nyu;
@@ -529,7 +529,7 @@ AvlNode* avl_dopy ( AvlNode* nd,
 static void initFM ( WordFM* fm,
                      void*   (*alloc_nofail)( SizeT ),
                      void    (*dealloc)(void*),
-                     Word    (*kCmp)(Word,Word) )
+                     Word    (*kCmp)(UWord,UWord) )
 {
    fm->root         = 0;
    fm->kCmp         = kCmp;
@@ -540,10 +540,14 @@ static void initFM ( WordFM* fm,
 
 /* --- Public interface functions --- */
 
-/* Allocate and Initialise a WordFM. */
+/* Allocate and initialise a WordFM.  If kCmp is non-NULL, elements in
+   the set are ordered according to the ordering specified by kCmp,
+   which becomes obvious if you use VG_(initIterFM),
+   VG_(initIterAtFM), VG_(nextIterFM), VG_(doneIterFM) to iterate over
+   sections of the map, or the whole thing. */
 WordFM* HG_(newFM) ( void* (*alloc_nofail)( SizeT ),
                      void  (*dealloc)(void*),
-                     Word  (*kCmp)(Word,Word) )
+                     Word  (*kCmp)(UWord,UWord) )
 {
    WordFM* fm = alloc_nofail(sizeof(WordFM));
    tl_assert(fm);
@@ -552,8 +556,8 @@ WordFM* HG_(newFM) ( void* (*alloc_nofail)( SizeT ),
 }
 
 static void avl_free ( AvlNode* nd, 
-                       void(*kFin)(Word),
-                       void(*vFin)(Word),
+                       void(*kFin)(UWord),
+                       void(*vFin)(UWord),
                        void(*dealloc)(void*) )
 {
    if (!nd)
@@ -572,7 +576,7 @@ static void avl_free ( AvlNode* nd,
 
 /* Free up the FM.  If kFin is non-NULL, it is applied to keys
    before the FM is deleted; ditto with vFin for vals. */
-void HG_(deleteFM) ( WordFM* fm, void(*kFin)(Word), void(*vFin)(Word) )
+void HG_(deleteFM) ( WordFM* fm, void(*kFin)(UWord), void(*vFin)(UWord) )
 {
    void(*dealloc)(void*) = fm->dealloc;
    avl_free( fm->root, kFin, vFin, dealloc );
@@ -581,7 +585,7 @@ void HG_(deleteFM) ( WordFM* fm, void(*kFin)(Word), void(*vFin)(Word) )
 }
 
 /* Add (k,v) to fm. */
-void HG_(addToFM) ( WordFM* fm, Word k, Word v )
+void HG_(addToFM) ( WordFM* fm, UWord k, UWord v )
 {
    MaybeWord oldV;
    AvlNode* node;
@@ -599,7 +603,7 @@ void HG_(addToFM) ( WordFM* fm, Word k, Word v )
 
 // Delete key from fm, returning associated key and val if found
 Bool HG_(delFromFM) ( WordFM* fm,
-                      /*OUT*/Word* oldK, /*OUT*/Word* oldV, Word key )
+                      /*OUT*/UWord* oldK, /*OUT*/UWord* oldV, UWord key )
 {
    AvlNode* node = avl_find_node( fm->root, key, fm->kCmp );
    if (node) {
@@ -617,7 +621,7 @@ Bool HG_(delFromFM) ( WordFM* fm,
 
 // Look up in fm, assigning found key & val at spec'd addresses
 Bool HG_(lookupFM) ( WordFM* fm, 
-                     /*OUT*/Word* keyP, /*OUT*/Word* valP, Word key )
+                     /*OUT*/UWord* keyP, /*OUT*/UWord* valP, UWord key )
 {
    AvlNode* node = avl_find_node( fm->root, key, fm->kCmp );
    if (node) {
@@ -631,7 +635,7 @@ Bool HG_(lookupFM) ( WordFM* fm,
    }
 }
 
-Word HG_(sizeFM) ( WordFM* fm )
+UWord HG_(sizeFM) ( WordFM* fm )
 {
    // Hmm, this is a bad way to do this
    return fm->root ? size_avl_nonNull( fm->root ) : 0;
@@ -646,10 +650,11 @@ void HG_(initIterFM) ( WordFM* fm )
       stackPush(fm, fm->root, 1);
 }
 
-// set up FM for iteration 
-// so that the first key subsequently produced by HG_(nextIterFM) is
-// the smallest key in the map >= start_at.
-void HG_(initIterAtFM) ( WordFM* fm, Word start_at )
+// set up FM for iteration so that the first key subsequently produced
+// by HG_(nextIterFM) is the smallest key in the map >= start_at.
+// Naturally ">=" is defined by the comparison function supplied to
+// HG_(newFM), as documented above.
+void HG_(initIterAtFM) ( WordFM* fm, UWord start_at )
 {
    Int     i;
    AvlNode *n, *t;
@@ -671,7 +676,7 @@ void HG_(initIterAtFM) ( WordFM* fm, Word start_at )
 
       cmpresS 
          = fm->kCmp ? /*boxed*/   fm->kCmp( t->key, start_at )
-                    : /*unboxed*/ cmp_signed_Words( t->key, start_at );
+                    : /*unboxed*/ cmp_unsigned_Words( t->key, start_at );
 
       if (cmpresS == 0) {
          // We found the exact key -- we are done. 
@@ -699,7 +704,7 @@ void HG_(initIterAtFM) ( WordFM* fm, Word start_at )
 
 // get next key/val pair.  Will tl_assert if fm has been modified
 // or looked up in since initIter{,At}FM was called.
-Bool HG_(nextIterFM) ( WordFM* fm, /*OUT*/Word* pKey, /*OUT*/Word* pVal )
+Bool HG_(nextIterFM) ( WordFM* fm, /*OUT*/UWord* pKey, /*OUT*/UWord* pVal )
 {
    Int i = 0;
    AvlNode* n = NULL;
@@ -740,7 +745,7 @@ void HG_(doneIterFM) ( WordFM* fm )
 {
 }
 
-WordFM* HG_(dopyFM) ( WordFM* fm, Word(*dopyK)(Word), Word(*dopyV)(Word) )
+WordFM* HG_(dopyFM) ( WordFM* fm, UWord(*dopyK)(UWord), UWord(*dopyV)(UWord) )
 {
    WordFM* nyu; 
 
@@ -796,9 +801,9 @@ void HG_(deleteBag) ( WordBag* bag )
    dealloc(bag);
 }
 
-void HG_(addToBag)( WordBag* bag, Word w )
+void HG_(addToBag)( WordBag* bag, UWord w )
 {
-   Word key, count;
+   UWord key, count;
    if (HG_(lookupFM)(bag->fm, &key, &count, w)) {
       tl_assert(key == w);
       tl_assert(count >= 1);
@@ -808,9 +813,9 @@ void HG_(addToBag)( WordBag* bag, Word w )
    }
 }
 
-Word HG_(elemBag) ( WordBag* bag, Word w )
+UWord HG_(elemBag) ( WordBag* bag, UWord w )
 {
-   Word key, count;
+   UWord key, count;
    if (HG_(lookupFM)( bag->fm, &key, &count, w)) {
       tl_assert(key == w);
       tl_assert(count >= 1);
@@ -820,15 +825,15 @@ Word HG_(elemBag) ( WordBag* bag, Word w )
    }
 }
 
-Word HG_(sizeUniqueBag) ( WordBag* bag )
+UWord HG_(sizeUniqueBag) ( WordBag* bag )
 {
    return HG_(sizeFM)( bag->fm );
 }
 
-static Word sizeTotalBag_wrk ( AvlNode* nd )
+static UWord sizeTotalBag_wrk ( AvlNode* nd )
 {
    /* unchecked pre: nd is non-NULL */
-   Word w = nd->val;
+   UWord w = nd->val;
    tl_assert(w >= 1);
    if (nd->child[0])
       w += sizeTotalBag_wrk(nd->child[0]);
@@ -836,7 +841,7 @@ static Word sizeTotalBag_wrk ( AvlNode* nd )
       w += sizeTotalBag_wrk(nd->child[1]);
    return w;
 }
-Word HG_(sizeTotalBag)( WordBag* bag )
+UWord HG_(sizeTotalBag)( WordBag* bag )
 {
    if (bag->fm->root)
       return sizeTotalBag_wrk(bag->fm->root);
@@ -844,9 +849,9 @@ Word HG_(sizeTotalBag)( WordBag* bag )
       return 0;
 }
 
-Bool HG_(delFromBag)( WordBag* bag, Word w )
+Bool HG_(delFromBag)( WordBag* bag, UWord w )
 {
-   Word key, count;
+   UWord key, count;
    if (HG_(lookupFM)(bag->fm, &key, &count, w)) {
       tl_assert(key == w);
       tl_assert(count >= 1);
@@ -879,7 +884,7 @@ Bool HG_(isSingletonTotalBag)( WordBag* bag )
    return nd->val == 1;
 }
 
-Word HG_(anyElementOfBag)( WordBag* bag )
+UWord HG_(anyElementOfBag)( WordBag* bag )
 {
    /* Return an arbitrarily chosen element in the bag.  We might as
       well return the one at the root of the underlying AVL tree. */
@@ -894,7 +899,7 @@ void HG_(initIterBag)( WordBag* bag )
    HG_(initIterFM)(bag->fm);
 }
 
-Bool HG_(nextIterBag)( WordBag* bag, /*OUT*/Word* pVal, /*OUT*/Word* pCount )
+Bool HG_(nextIterBag)( WordBag* bag, /*OUT*/UWord* pVal, /*OUT*/UWord* pCount )
 {
    return HG_(nextIterFM)( bag->fm, pVal, pCount );
 }
@@ -924,14 +929,14 @@ void HG_(doneIterBag)( WordBag* bag )
 // Just lookup for each element in range and count. 
 int search_all_elements_in_range_1(WordFM *map, long beg, long end)
 {
-   int n_found = 0;
-   int i;
-   for(i = beg; i < end; i++) {
-      Word key, val;
-      if(HG_(lookupFM)(map, &key, &val, (Word)i)){
+   long n_found = 0;
+   long i;
+   for (i = beg; i < end; i++) {
+      UWord key, val;
+      if (HG_(lookupFM)(map, &key, &val, (Word)i)) {
          n_found++;
          assert(key == -val);
-         assert(key == (Word)i);
+         assert(key == (UWord)i);
       }
    }
    return n_found;
@@ -943,9 +948,9 @@ int search_all_elements_in_range_1(WordFM *map, long beg, long end)
 int search_all_elements_in_range_2(WordFM *map, long beg, long end)
 {
    int n_found = 0;
-   Word key, val;
+   UWord key, val;
    HG_(initIterAtFM)(map, beg);
-   while(HG_(nextIterFM)(map, &key, &val) && (int)key < end) {
+   while (HG_(nextIterFM)(map, &key, &val) && (long)key < end) {
       assert(key == -val);
       n_found++;
    }
@@ -955,11 +960,11 @@ int search_all_elements_in_range_2(WordFM *map, long beg, long end)
 
 int main(void)
 {
-   int i, n = 10;
-   Word key, val;
-   int beg, end;
+   long i, n = 10;
+   UWord key, val;
+   long beg, end;
 
-   printf("Create the map, n=%d\n", n);
+   printf("Create the map, n=%ld\n", n);
    WordFM *map = HG_(newFM)(malloc, free, NULL/*unboxed Word cmp*/);
 
    printf("Add keys: ");
@@ -968,12 +973,12 @@ int main(void)
       printf("%ld ", val);
       HG_(addToFM)(map, val, -val);
    }
-   assert(HG_(sizeFM)(map) == n);
+   assert(HG_(sizeFM)(map) == (UWord)n);
    printf("\n");
    printf("Iterate elements, size=%d\n", (int)HG_(sizeFM)(map));
    HG_(initIterFM)(map);
 
-   while(HG_(nextIterFM(map, &key, &val))){
+   while (HG_(nextIterFM(map, &key, &val))) {
    //   int j;
    //   printf("Stack k=%d\n", (int)key);
    //   for(j = map->stackTop-1; j >= 0; j--) {
@@ -988,7 +993,7 @@ int main(void)
    for(beg = 0; beg <= n*2; beg++) {
       HG_(initIterAtFM)(map, (Word)beg);
       int prev = -1; 
-      printf("StartWith: %d: ", beg);
+      printf("StartWith: %ld: ", beg);
       int n_iter = 0;
 
       while(HG_(nextIterFM(map, &key, &val))) {

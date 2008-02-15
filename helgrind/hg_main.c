@@ -2516,7 +2516,7 @@ static void threads__sanity_check ( Char* who )
    Char*     how = "no error";
    Thread*   thr;
    WordSetID wsA, wsW;
-   Word*     ls_words;
+   UWord*    ls_words;
    Word      ls_size, i;
    Lock*     lk;
    Segment*  seg;
@@ -2676,7 +2676,7 @@ static void shmem__sanity_check ( Char* who )
    Word    smga;
    SecMap* sm;
    Word    i, j, ws_size, n_valid_tags;
-   Word*   ws_words;
+   UWord*  ws_words;
    Addr*   valid_tags;
    HG_(initIterFM)( map_shmem );
    // for sm in SecMaps {
@@ -6614,7 +6614,7 @@ typedef
    }
    LAOGLinkExposition;
 
-static Word cmp_LAOGLinkExposition ( Word llx1W, Word llx2W ) {
+static Word cmp_LAOGLinkExposition ( UWord llx1W, UWord llx2W ) {
    /* Compare LAOGLinkExposition*s by (src_ga,dst_ga) field pair. */
    LAOGLinkExposition* llx1 = (LAOGLinkExposition*)llx1W;
    LAOGLinkExposition* llx2 = (LAOGLinkExposition*)llx2W;
@@ -6631,7 +6631,7 @@ static WordFM* laog_exposition = NULL; /* WordFM LAOGLinkExposition* NULL */
 
 static void laog__show ( Char* who ) {
    Word i, ws_size;
-   Word* ws_words;
+   UWord* ws_words;
    Lock* me;
    LAOGLinks* links;
    VG_(printf)("laog (requested by %s) {\n", who);
@@ -6791,7 +6791,7 @@ static WordSetID /* in univ_laog */ laog__preds ( Lock* lk ) {
 __attribute__((noinline))
 static void laog__sanity_check ( Char* who ) {
    Word i, ws_size;
-   Word* ws_words;
+   UWord* ws_words;
    Lock* me;
    LAOGLinks* links;
    if ( !laog )
@@ -6845,7 +6845,7 @@ Lock* laog__do_dfs_from_to ( Lock* src, WordSetID dsts /* univ_lsets */ )
    Lock*     here;
    WordSetID succs;
    Word      succs_size;
-   Word*     succs_words;
+   UWord*    succs_words;
    //laog__sanity_check();
 
    /* If the destination set is empty, we can never get there from
@@ -6897,7 +6897,7 @@ static void laog__pre_thread_acquires_lock (
                Lock*   lk
             )
 {
-   Word*    ls_words;
+   UWord*   ls_words;
    Word     ls_size, i;
    Lock*    other;
 
@@ -6982,7 +6982,7 @@ static void laog__handle_one_lock_deletion ( Lock* lk )
 {
    WordSetID preds, succs;
    Word preds_size, succs_size, i, j;
-   Word *preds_words, *succs_words;
+   UWord *preds_words, *succs_words;
 
    preds = laog__preds( lk );
    succs = laog__succs( lk );
@@ -7012,8 +7012,8 @@ static void laog__handle_lock_deletions (
                WordSetID /* in univ_laog */ locksToDelete
             )
 {
-   Word  i, ws_size;
-   Word* ws_words;
+   Word   i, ws_size;
+   UWord* ws_words;
 
    if (!laog)
       laog = HG_(newFM)( hg_zalloc, hg_free, NULL/*unboxedcmp*/ );
@@ -7716,7 +7716,7 @@ Bool hg_handle_client_request ( ThreadId tid, UWord* args, UWord* ret)
 /* maps (by value) strings to a copy of them in ARENA_TOOL */
 static UWord stats__string_table_queries = 0;
 static WordFM* string_table = NULL;
-static Word string_table_cmp ( Word s1, Word s2 ) {
+static Word string_table_cmp ( UWord s1, UWord s2 ) {
    return (Word)VG_(strcmp)( (HChar*)s1, (HChar*)s2 );
 }
 static HChar* string_table_strdup ( HChar* str ) {
@@ -7744,7 +7744,7 @@ static HChar* string_table_strdup ( HChar* str ) {
 /* maps from Lock .unique fields to LockP*s */
 static UWord stats__ga_LockN_to_P_queries = 0;
 static WordFM* yaWFM = NULL;
-static Word lock_unique_cmp ( Word lk1W, Word lk2W )
+static Word lock_unique_cmp ( UWord lk1W, UWord lk2W )
 {
    Lock* lk1 = (Lock*)lk1W;
    Lock* lk2 = (Lock*)lk2W;
@@ -8084,8 +8084,8 @@ static Int cmp_Thread_by_errmsg_index ( void* thr1V, void* thr2V ) {
 static XArray* /* of Thread* */ get_sorted_thread_set ( WordSetID tset )
 {
    XArray* xa;
-   Word*   ts_words;
-   Word    ts_size, i;
+   UWord*  ts_words;
+   UWord   ts_size, i;
    xa = VG_(newXA)( hg_zalloc, hg_free, sizeof(Thread*) );
    tl_assert(xa);
    HG_(getPayloadWS)( &ts_words, &ts_size, univ_tsets, tset );

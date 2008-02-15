@@ -83,6 +83,25 @@ Int main ( void )
 
   printf("#define OFFSET_x86_EIP %3d\n", 
          offsetof(VexGuestX86State,guest_EIP));
+
+  printf("#define OFFSET_x86_CS %3d\n",
+         offsetof(VexGuestX86State,guest_CS));
+
+  printf("#define OFFSET_x86_DS %3d\n",
+         offsetof(VexGuestX86State,guest_DS));
+
+  printf("#define OFFSET_x86_ES %3d\n",
+         offsetof(VexGuestX86State,guest_ES));
+
+  printf("#define OFFSET_x86_FS %3d\n",
+         offsetof(VexGuestX86State,guest_FS));
+
+  printf("#define OFFSET_x86_GS %3d\n",
+         offsetof(VexGuestX86State,guest_GS));
+
+  printf("#define OFFSET_x86_SS %3d\n",
+         offsetof(VexGuestX86State,guest_SS));
+
   printf("\n");
 
   // amd64

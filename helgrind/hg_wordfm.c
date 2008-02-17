@@ -544,7 +544,9 @@ static void initFM ( WordFM* fm,
    the set are ordered according to the ordering specified by kCmp,
    which becomes obvious if you use VG_(initIterFM),
    VG_(initIterAtFM), VG_(nextIterFM), VG_(doneIterFM) to iterate over
-   sections of the map, or the whole thing. */
+   sections of the map, or the whole thing.  If kCmp is NULL then the
+   ordering used is unsigned word ordering (UWord) on the key
+   values. */
 WordFM* HG_(newFM) ( void* (*alloc_nofail)( SizeT ),
                      void  (*dealloc)(void*),
                      Word  (*kCmp)(UWord,UWord) )

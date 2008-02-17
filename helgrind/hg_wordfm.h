@@ -57,13 +57,25 @@
 //---                      Public interface                      ---//
 //------------------------------------------------------------------//
 
+/* As of r7409 (15 Feb 08), all these word-based abstractions (WordFM,
+   WordSet, WordBag) now operate on unsigned words (UWord), whereas
+   they previously operated on signed words (Word).  This became a
+   problem, when using unboxed comparisons (when kCmp == NULL), with
+   the introduction of HG_(initIterAtFM), which allows iteration over
+   parts of mappings.  Iterating over a mapping in increasing order of
+   signed Word keys is not what callers expect when iterating through
+   maps whose keys represent addresses (Addr) since Addr is unsigned,
+   and causes logical problems and assertion failures. */
+
 typedef  struct _WordFM  WordFM; /* opaque */
 
 /* Allocate and initialise a WordFM.  If kCmp is non-NULL, elements in
    the set are ordered according to the ordering specified by kCmp,
    which becomes obvious if you use VG_(initIterFM),
    VG_(initIterAtFM), VG_(nextIterFM), VG_(doneIterFM) to iterate over
-   sections of the map, or the whole thing. */
+   sections of the map, or the whole thing.  If kCmp is NULL then the
+   ordering used is unsigned word ordering (UWord) on the key
+   values. */
 WordFM* HG_(newFM) ( void* (*alloc_nofail)( SizeT ),
                      void  (*dealloc)(void*),
                      Word  (*kCmp)(UWord,UWord) );

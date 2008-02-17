@@ -1,40 +1,43 @@
-Last updated February 22, 2006
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Last updated February 17, 2008
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 
 Data-race detection algorithm
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 - pthread rwlock state tracking and support.
+- Eliminate the upper bounds on the number of mutexes, condition variables,
+  semaphores, barriers and threads by converting arrays into OSet's.
 - Implement segment merging, such that the number of segments per thread
   remains limited even when there is no synchronization between threads.
+- Discuss on the Valgrind mailing list how to make it possible to call
+  POSIX thread synchronization primitives from client code (drd_intercepts.c)
+  without triggering Valgrind's redirection mechanism.
 - Find out why a race is reported on std::string::string(std::string const&)
   (stc test case 16).
-- Eliminate the upper bounds on the number of mutexes, condition variables,
-  semaphores and barriers by converting arrays into OSet's.
 - Add a regression test for pthread_mutex_timedlock().
 - Find a way for suppressing races on _IO_2_1_stdout (this race is triggered
   by calling printf() from more than one thread).
 - Performance testing and tuning.
 - testing on PPC and AIX (current implementation is only tested on X86 and
   AMD64).
-- Change s_threadinfo[] from an array into an OSet or VgHashTable, in order to
-  make ThreadId <> DrdThreadId <> pthread_t conversions faster.
 - [AMD64] Find out why removing 'write(1, "", 0)' in drd_intercepts.c triggers
-  a crash on AMD64. Is this a drd or a VEX bug ?
+  a crash on AMD64. Is this an exp-drd or a VEX bug ?
+- On x86 and amd64 platforms, add support for implicit locking arising from
+  the use of the LOCK instruction prefix.
+
 
 Testing
 ~~~~~~~
 - testing with more complex multithreaded test programs.
-- test drd's performance with the SPLASH-2 software, e.g. fft
+- test exp-drd's performance with the SPLASH-2 software, e.g. fft
   (http://www-flash.stanford.edu/apps/SPLASH/).
-- Add helgrind's unit tests to drd's unit test set by adding soft links
-  under drd/tests to the respective helgrind unit tests.
+- Add more Helgrind regression tests to exp-drd's regression test set by adding
+  soft links under exp-drd/tests to the respective Helgrind unit tests.
 
 
 Documentation
 ~~~~~~~~~~~~~
-- Document how to use the tool.
-- Document the code.
+- Document the command-line options of the exp-drd tool.
 
 
 Known bugs

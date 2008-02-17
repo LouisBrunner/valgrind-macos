@@ -165,12 +165,15 @@ void semaphore_pre_post(const DrdThreadId tid, const Addr semaphore,
 void semaphore_post_post(const DrdThreadId tid, const Addr semaphore,
                          const SizeT size, const Bool waited)
 {
-  /* Note: it is hard to implement the sem_post() wrapper correctly if */
-  /* sem_post() can return an error code. The reason is that this would */
-  /* require to detect whether sem_post() will fail before sem_post is */
-  /* called -- p->vc may only be modified if the sem_post() call will */
-  /* succeed. */
-  tl_assert(waited);
+  /* Note: it is hard to implement the sem_post() wrapper correctly in     */
+  /* case sem_post() returns an error code. This is because handling this  */
+  /* case correctly requires restoring the vector clock associated with    */
+  /* the semaphore to its original value here. In order to do that without */
+  /* introducing a race condition, extra locking has to be added around    */
+  /* each semaphore call. Such extra locking would have to be added in     */
+  /* drd_intercepts.c. However, it is hard to implement synchronization    */
+  /* in drd_intercepts.c in a portable way without calling already         */
+  /* redirected functions.                                                 */
 }
 
 void semaphore_thread_delete(const DrdThreadId threadid)

@@ -14,22 +14,26 @@ set of memory locations. Data is exchanged between threads by writing
 to and reading from the shared memory. Since the invention of the
 multithreading concept, there is an ongoing debate about which way to
 model concurrent activities is better -- shared memory programming or
-message passing [Ousterhout 1996]. This debate exists because each
-model has significant advantages and disadvantages. While shared
-memory programming relieves the programmer from writing code for the
-exchange of data between concurrent activities and while shared memory
-programming has a performance advantage over message passing, shared
-memory programming is error prone. Shared memory programs can exhibit
-data races and/or deadlocks. Data races are harmful because these may
-lead to unpredictable results and nondeterministic behavior in
-multithreaded programs. There are two ways to detect data races and
-deadlocks: static analysis and runtime detection by a tool. Since
-there do not yet exist any tools that can carry out static analysis of
-data races or deadlocks, the only option to statically detect such
-anomolies is source reading by a human. It takes a huge effort however
-to detect all possible data races or deadlocks via source
-reading. This is why tools for detecting data races and deadlocks at
-runtime are essential.
+message passing. This debate exists because each model has significant
+advantages and disadvantages. While shared memory programming relieves
+the programmer from writing code for the exchange of data between
+concurrent activities and while shared memory programming has a
+performance advantage over message passing, shared memory programming
+is error prone. Shared memory programs can exhibit data races and/or
+deadlocks. Data races are harmful because these may lead to
+unpredictable results and nondeterministic behavior in multithreaded
+programs. There are two ways to detect data races and deadlocks:
+static analysis and runtime detection by a tool. Since there do not
+yet exist any tools that can carry out static analysis of data races
+or deadlocks, the only option to statically detect such anomalies is
+source reading by a human. It takes a huge effort however to detect
+all possible data races or deadlocks via source reading. This is why
+tools for detecting data races and deadlocks at runtime are essential.
+
+The de facto standard library for multithreading on Unix systems is
+the POSIX threads library, also known as pthreads. The exp-drd tool
+has been developed for multithreaded software that uses the POSIX
+threads library.
 
 
 Data Races
@@ -115,8 +119,95 @@ version 3.3.0 exp-drd runs significantly faster on several regression
 tests than Helgrind.
 
 
+Programming with Threads
+------------------------
+
+The difficulties with shared memory programming are well known and
+have been outlined in more than one paper [Ousterhout 1996, Lee
+2006]. It is possible however to develop and to debug multithreaded
+shared memory software with a reasonable effort, even for large
+applications (more than one million lines of code). In what follows an
+approach is explained that has proven to work in practice. Before you
+decide to use another approach, make sure you understand very well the
+consequences of doing so.
+
+1. Use of synchronization calls.
+
+Do not call synchronization functions directly but use objects that
+encapsulate the mutex, Mesa monitor and reader/writer locking policies.
+Never use POSIX condition variables directly, since direct use of 
+condition variables can easily introduce race conditions. And never
+lock or unlock mutexes explicitly -- use scoped locking instead.
+
+2. Data hiding.
+
+It is very important in multithreaded software to hide data that is
+shared over threads. Make sure that all shared data is declared as
+private data members of a class (not public, not protected). Design
+the classes that contain shared data such that the number of data
+members and the number of member functions is relatively small. Define
+accessor functions as needed for querying and modifying member
+data. Declare the associated locking objects also as private data
+members, and document which locking object protects which data
+members. Make sure that the query functions return a copy of data
+members instead of a reference -- returning a reference would violate
+data hiding anyway. This approach has a big advantage, namely that
+correct use of a locking policy can be verified by reviewing one class
+at a time.
+ 
+3. Modularity and hierarchy.
+
+For multithreaded software it is even more important than for single
+threaded software that the software has a modular structure and that
+there exists a hierarchy between modules. This way every call of a
+function to another function can be classified as either a regular
+function call (a call from a higher level to a lower level), a
+callback (a call from a lower level to a higher level) or a recursive
+function call.
+
+4. Avoiding deadlocks.
+
+Deadlocks can be nasty to solve since some deadlocks are very hard to
+reproduce.  Prevent deadlocks instead of waiting until one pops
+up. Preventing deadlocks is possible by making sure that whenever two
+or more mutexes are locked simultaneously, these mutexes are always
+locked in the same order. One way to ensure this is by assigning each
+mutex a locking order and by verifying the locking order at runtime.
+This reduces the complexity of testing for absence of deadlocks from a
+multithreaded to a single-threaded problem, which is a huge win. In
+order to verify a locking order policy at run time, one can either use
+a threading library with built-in support for verifying such a policy
+or one can use a tool that verifies the locking order.
+
+Make sure that no mutexes are locked while invoking a callback
+(calling a function from a higher level module) -- invoking a
+callback while a mutex is locked is a well known way to trigger
+a deadlock.
+
+5. Real-time software
+
+Software with hard real-time constraints is a special case. There
+exist real-time applications that must be able to generate a response
+within e.g. 1 ms after a certain input has been received. The proper
+way to implement time-critical paths is not to call any function in
+that path for which it is not known how long the function call will
+take. Exmples for Linux of actions with an unknown call time are:
+- Locking a mutex.
+- Dynamic memory allocation via e.g. malloc() since malloc() internally
+uses mutexes.
+- File I/O, since file I/O uses several resources that are shared over
+threads and even over processes.
+
+An approach that has proven to work for interthread communication
+between real-time threads is the use of preallocated fixed size
+message queueus, and to lock any data needed by any real-time thread
+in memory (mlock()).  Avoid mutexes with priority inheritance -- see
+also [Yodaiken 2004] for more information.
+
+
 How to use DRD
 --------------
+
 To use this tool, specify --tool=drd on the Valgrind command line.
 
 
@@ -133,8 +224,42 @@ The following may be expected in future versions of DRD:
 * Elimination of several artificial limitations.
 
 
+Acknowledgements
+----------------
+
+The exp-drd tool is built on top of the Valgrind core and VEX, which
+proved to be an excellent infrastructure for building such a tool.
+
+During 2006, the early versions of drd were improved via helpful
+feedback of Julian Seward and Nicholas Nethercote.  Any bugs are my
+responsibility of course.
+
+Some of the regression tests used to test exp-drd were developed by
+Julian Seward as regression tests for the Helgrind tool.
+
+I would also like to thank Michiel Ronsse for introducing me a long
+time ago to vector clocks and the JiTI and DIOTA projects.
+
+
 References
 ----------
+
+[Hansen 1972]
+  Per Brinch Hansen
+  A Comparison of Two Synchronizing Concepts.
+  Acta Informatica, 1 3(1972), pp. 190--199.
+
+[Dijkstra 1974]
+  Edsger W. Dijkstra.
+  Over seinpalen (About Semaphores).
+  Circulated privately (never published), 1974.
+  http://www.cs.utexas.edu/users/EWD/transcriptions/EWD00xx/EWD74.html
+
+[Hoare 1974]
+  C. A. R. Hoare.
+  Monitors: an operating system structuring concept
+  Communications of the ACM, October 1974, Vol. 17 No. 10, 1974.
+  http://www.cs.wisc.edu/~remzi/Classes/736/Fall2003/Papers/hoare-monitors.pdf
 
 [Lamport 1978]
   Leslie Lamport.
@@ -142,6 +267,22 @@ References
   Communications of the ACM archive, Volume 21, Issue 7, 1978.
   http://research.microsoft.com/users/lamport/pubs/time-clocks.pdf
   http://portal.acm.org/citation.cfm?id=359563
+
+[Accetta 1986]
+  Mike Accetta, Robert Baron, William Bolosky, David Golub, Richard Rashid,
+  Avadis Tevanian and Michael Young.
+  Mach: A New Kernel Foundation For UNIX Development.
+  USENIX 1986 (Atlanta. Ga., June 9-13), pp. 93-112, 1986.
+  http://www.fsl.cs.sunysb.edu/~gopalan/seminar/papers/mach.pdf
+
+[Young 1987]
+  Michael Young, Avadis Tevanian, Richard Rashid, David Golub,
+  Jeffrey Eppinger, Jonathan Chew, William Bolosky, David Black, Robert Baron.
+  The duality of memory and communication in the implementation of a
+  multiprocessor operating system.
+  ACM Symposium on Operating Systems Principles, pp. 63-76, 1987.
+  http://csalpha.ist.unomaha.edu/~stanw/papers/csci8550/87-duality.pdf
+  http://portal.acm.org/citation.cfm?id=41457.37507
 
 [Netzer 1992]
   Robert H. B. Netzer and Barton P. Miller.
@@ -186,12 +327,19 @@ References
   Lecture Notes in Computer Science, pp. 82-89, 2004.
   http://escher.elis.ugent.be/publ/Edocs/DOC/P104_076.pdf
 
+[Yodaiken 2004]
+  Victor Yodaiken.
+  Against Priority Inheritance.
+  FSMLabs Technical Report, 2004.
+  http://www.yodaiken.com/papers/inherit.pdf
+
 [Banerjee 2006a]
   Utpal Banerjee, Brian Bliss, Zhiqiang Ma, Paul Petersen.
   Unraveling Data Race Detection in the Intel® Thread Checker.
   First Workshop on Software Tools for Multi-core Systems (STMCS), in
   conjunction with IEEE/ACM International Symposium on Code Generation and
   Optimization (CGO), March 26, 2006, Manhattan, New York, NY.
+  http://www.isi.edu/~kintali/stmcs06/UnravelingDataRace.pdf
 
 [Banerjee 2006b]
   Utpal Banerjee, Brian Bliss, Zhiqiang Ma, Paul Petersen.
@@ -200,6 +348,13 @@ References
   and debugging, Portland, Maine, USA, pp. 69-78, 2006.
   http://www.cs.ucsb.edu/~tiwari/papers/threadchecker06
   http://portal.acm.org/citation.cfm?id=1147416
+
+[Lee 2006]
+  Edward A. Lee.
+  The Problem with Threads.
+  IEEE Computer, Volume 39, Issue 5 (May 2006), pp. 33-42, 2006.
+  http://www.eecs.berkeley.edu/Pubs/TechRpts/2006/EECS-2006-1.pdf
+  http://portal.acm.org/citation.cfm?id=1137232.1137289
 
 [Lu 2006]
   Shan Lu, Joseph Tucek, Feng Qin, Yuanyuan Zhou.
@@ -220,7 +375,7 @@ References
 
 [Müehlenfeld 2007]
   Arndt Müehlenfeld, Franz Wotawa.
-  Fault detection in multi-threaded c++ server applications.
+  Fault Detection in Multi-threaded C++ Server Applications.
   Proceedings of the 12th ACM SIGPLAN symposium on Principles and practice of
   parallel programming, San Jose, California, USA, poster session,
   pp. 142-143, 2007.

@@ -239,7 +239,7 @@ extern void  VG_(OSetGen_Insert)       ( OSet* os, void* elem );
 extern Bool  VG_(OSetGen_Contains)     ( const OSet* os, const void* key  );
 extern void* VG_(OSetGen_Lookup)       ( const OSet* os, const void* key  );
 extern void* VG_(OSetGen_LookupWithCmp)( OSet* os, const void* key, OSetCmp_t cmp );
-extern void* VG_(OSetGen_Remove)       ( OSet* os, void* key  );
+extern void* VG_(OSetGen_Remove)       ( OSet* os, const void* key  );
 extern void  VG_(OSetGen_ResetIter)    ( OSet* os );
 extern void* VG_(OSetGen_Next)         ( OSet* os );
 

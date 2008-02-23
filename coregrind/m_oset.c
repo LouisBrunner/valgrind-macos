@@ -684,7 +684,7 @@ static Bool avl_removeroot(AvlTree* t)
 }
 
 // Remove and return the element matching the key 'k', or NULL if not present.
-void* VG_(OSetGen_Remove)(AvlTree* t, void* k)
+void* VG_(OSetGen_Remove)(AvlTree* t, const void* k)
 {
    // Have to find the node first, then remove it.
    AvlNode* n = avl_lookup(t, k);

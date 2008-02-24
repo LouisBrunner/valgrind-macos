@@ -336,7 +336,6 @@ void bm_clear_all(const struct bitmap* const bm)
    }
 }
 
-#if 1
 // New and fast implementation.
 void bm_clear(const struct bitmap* const bm,
               const Addr a1,
@@ -391,43 +390,6 @@ void bm_clear(const struct bitmap* const bm,
       }
    }
 }
-#else
-// Old and slow implementation
-void bm_clear(const struct bitmap* const bm,
-              const Addr a1,
-              const Addr a2)
-{
-   Addr b, b_next, c;
-
-   tl_assert(bm);
-   tl_assert(a1);
-   tl_assert(a1 <= a2);
-
-   for (b = a1; b < a2; b = b_next)
-   {
-      struct bitmap2* const p2 = bm_lookup(bm, b);
-
-      b_next = (b & ~ADDR0_MASK) + ADDR0_COUNT;
-      if (b_next > a2)
-      {
-         b_next = a2;
-      }
-
-      if (p2)
-      {
-         for (c = b; c < b_next; c++)
-         {
-            const UWord c0 = c & ADDR0_MASK;
-
-            p2->bm1.bm0_r[c0 / (8*sizeof(UWord))]
-               &= ~(1UL << (c0 % (8*sizeof(UWord))));
-            p2->bm1.bm0_w[c0 / (8*sizeof(UWord))]
-               &= ~(1UL << (c0 % (8*sizeof(UWord))));
-         }
-      }
-   }
-}
-#endif
 
 static
 __inline__
@@ -567,96 +529,6 @@ int bm_has_races(const struct bitmap* const lhs,
    }
    return 0;
 }
-
-#ifdef OLD_RACE_DETECTION_ALGORITHM
-/**
- * Report RW / WR / WW patterns between lhs and rhs.
- * @param tid1 Thread ID of lhs.
- * @param tid2 Thread ID of rhs.
- * @param lhs First bitmap.
- * @param rhs Bitmap to be compared with lhs.
- * @return Number of reported ranges with data races.
- */
-void bm_report_races(const ThreadId tid1,
-                     const ThreadId tid2,
-                     const struct bitmap* const lhs,
-                     const struct bitmap* const rhs)
-{
-   Addr     range_begin  = 0;
-   Addr     range_end    = 0;
-   UWord range_access = 0;
-
-   VG_(message)(Vg_UserMsg, "Data addresses accessed by both segments:");
-
-   VG_(OSetGen_ResetIter)(lhs->oset);
-   VG_(OSetGen_ResetIter)(rhs->oset);
-
-   for (;;)
-   {
-      const struct bitmap2* bm2l = VG_(OSetGen_Next)(lhs->oset);
-      const struct bitmap2* bm2r = VG_(OSetGen_Next)(rhs->oset);
-      const struct bitmap1* bm1l;
-      const struct bitmap1* bm1r;
-      unsigned k;
-
-      while (bm2l && bm2r && bm2l->addr != bm2r->addr)
-      {
-         if (bm2l->addr < bm2r->addr)
-            bm2l = VG_(OSetGen_Next)(lhs->oset);
-         else
-            bm2r = VG_(OSetGen_Next)(rhs->oset);
-      }
-      if (bm2l == 0 || bm2r == 0)
-         break;
-
-      bm1l = &bm2l->bm1;
-      bm1r = &bm2r->bm1;
-
-      for (k = 0; k < BITMAP1_UWORD_COUNT; k++)
-      {
-         unsigned b;
-         for (b = 0; b < BITS_PER_UWORD; b++)
-         {
-            UWord const access
-               = ((bm1l->bm0_r[k] & bm0_mask(b)) ? LHS_R : 0)
-               | ((bm1l->bm0_w[k] & bm0_mask(b)) ? LHS_W : 0)
-               | ((bm1r->bm0_r[k] & bm0_mask(b)) ? RHS_R : 0)
-               | ((bm1r->bm0_w[k] & bm0_mask(b)) ? RHS_W : 0);
-            Addr const a = MAKE_ADDRESS(bm2l->addr, k * BITS_PER_UWORD | b);
-            if (access == range_access)
-               range_end = a + 1;
-            else
-            {
-               tl_assert(range_begin < range_end);
-               if (HAS_RACE(range_access)
-                   && ! drd_is_suppressed(range_begin, range_end))
-               {
-                  DataRaceInfo dri;
-                  dri.tid1         = tid1;
-                  dri.tid2         = tid2;
-                  dri.range_begin  = range_begin;
-                  dri.range_end    = range_end;
-                  dri.range_access = range_access;
-                  tl_assert(dri.range_begin < dri.range_end);
-#if 0
-                  VG_(maybe_record_error)(tid1,
-                                          DataRaceErr,
-                                          VG_(get_IP)(tid1), // where
-                                          "data race",
-                                          &dri);
-#else
-                  drd_report_data_race(&dri);
-#endif
-               }
-               range_access = access;
-               range_begin  = a;
-               range_end    = a + 1;
-            }
-         }
-      }
-   }
-}
-#endif
 
 void bm_print(const struct bitmap* const bm)
 {

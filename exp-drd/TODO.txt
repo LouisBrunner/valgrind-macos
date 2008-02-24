@@ -15,8 +15,12 @@ Data-race detection algorithm
 - Find out why a race is reported on std::string::string(std::string const&)
   (stc test case 16).
 - Add a regression test for pthread_mutex_timedlock().
-- Find a way for suppressing races on _IO_2_1_stdout (this race is triggered
-  by calling printf() from more than one thread).
+- Find a way for suppressing races reported on _IO_2_1_stdout. This race is
+  triggered by calling printf() from more than one thread. An example:
+  ./vg-in-place --tool=exp-drd exp-drd/tests/pth_barrier 2 1
+- Add support for objects that are shared over threads and that use reference
+  counting, e.g. std::string -- no races should be reported on the reference
+  count.
 - Performance testing and tuning.
 - testing on PPC and AIX (current implementation is only tested on X86 and
   AMD64).
@@ -38,6 +42,9 @@ Testing
 Documentation
 ~~~~~~~~~~~~~
 - Document the command-line options of the exp-drd tool.
+- Explain that happens-before race detectors are also suited for certain
+  classes of programs that do not follow a locking discipline
+  (e.g. exp-drd/test/matinv.c).
 
 
 Known bugs
@@ -51,6 +58,9 @@ Known bugs
   (works fine on i386). This is a bug in Valgrind's debug info reader
   -- VG_(find_seginfo)() returns NULL for BSS symbols on x86_64. Not yet in
   the KDE bug tracking system.
+- --trace-mem=yes can cause crashes. This might be caused by the code that
+  prints backtraces. An example (AMD64):
+  ./vg-in-place --tool=exp-drd --trace-mem=yes exp-drd/tests/pth_barrier 2 2 1
 
 Known performance issues:
 - According to cachegrind, VG_(OSet_Next)() is taking up most CPU cycles.

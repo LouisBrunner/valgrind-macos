@@ -39,6 +39,8 @@ static int s_silent;
 /* Function definitions. */
 /*************************/
 
+/** Single thread, which touches p->iterations elements of array p->array.
+ * Each modification of an element of p->array is a data race. */
 static void* threadfunc(struct threadinfo* p)
 {
   int i;
@@ -58,7 +60,7 @@ static void* threadfunc(struct threadinfo* p)
   return 0;
 }
 
-/** Multithreaded Gauss-Jordan algorithm. */
+/** Actual test, consisting of nthread threads. */
 static void barriers_and_races(const int nthread, const int iterations)
 {
   int i;
@@ -68,6 +70,9 @@ static void barriers_and_races(const int nthread, const int iterations)
 
   t = malloc(nthread * sizeof(struct threadinfo));
   array = malloc(iterations * sizeof(array[0]));
+
+  if (! s_silent)
+    printf("&array[0] = %p\n", array);
 
   pthread_barrier_init(&b, 0, nthread);
 
@@ -95,9 +100,9 @@ int main(int argc, char** argv)
   int nthread;
   int iterations;
 
-  nthread = (argc > 1) ? atoi(argv[1]) : 2;
+  nthread    = (argc > 1) ? atoi(argv[1]) : 2;
   iterations = (argc > 2) ? atoi(argv[2]) : 3;
-  s_silent = (argc > 3) ? atoi(argv[3]) : 0;
+  s_silent   = (argc > 3) ? atoi(argv[3]) : 0;
 
   barriers_and_races(nthread, iterations);
 

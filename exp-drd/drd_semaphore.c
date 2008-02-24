@@ -157,7 +157,7 @@ void semaphore_pre_post(const DrdThreadId tid, const Addr semaphore,
   {
     p->last_sem_post_tid = tid;
     thread_new_segment(tid);
-    vc_copy(&p->vc, thread_get_vc(tid));
+    vc_assign(&p->vc, thread_get_vc(tid));
   }
 }
 

@@ -313,8 +313,8 @@ int main(int argc, char** argv)
   double ratio;
 
   matrix_size = (argc > 1) ? atoi(argv[1]) : 3;
-  s_nthread = (argc > 2) ? atoi(argv[2]) : 3;
-  silent = (argc > 3) ? atoi(argv[3]) : 0;
+  s_nthread   = (argc > 2) ? atoi(argv[2]) : 3;
+  silent      = (argc > 3) ? atoi(argv[3]) : 0;
 
   eps = epsilon();
   a = new_matrix(matrix_size, matrix_size);

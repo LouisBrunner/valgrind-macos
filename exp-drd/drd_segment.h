@@ -48,14 +48,14 @@ typedef struct segment
 } Segment;
 
 void sg_init(Segment* const sg,
-             ThreadId const creator,
-             ThreadId const created);
+             const ThreadId creator,
+             const ThreadId created);
 void sg_cleanup(Segment* const sg);
-Segment* sg_new(ThreadId const creator, ThreadId const created);
+Segment* sg_new(const ThreadId creator, const ThreadId created);
 void sg_delete(Segment* const sg);
 void sg_print(const Segment* const sg);
 Bool sg_get_trace(void);
-void sg_set_trace(Bool const trace_segment);
+void sg_set_trace(const Bool trace_segment);
 ULong sg_get_segments_created_count(void);
 ULong sg_get_max_segments_alive_count(void);
 

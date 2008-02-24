@@ -38,31 +38,34 @@
 
 // Type definitions.
 
-struct barrier_thread_info
-{
-  UWord       tid;           // A DrdThreadId
-  Word        iteration;     // barrier number corresponding to ongoing
-                             // pthread_barrier() call modulo two.
-  VectorClock vc[2];         // vector clocks corresponding to the last two
-                             // pthread_barrier() calls.
-};
-
+/* Information associated with a client-side pthread_barrier_t object. */
 struct barrier_info
 {
   Addr  barrier;             // Client address of barrier.
   SizeT size;                // Size in bytes of client-side object.
   Word  count;               // Participant count in a barrier wait.
-  Word  iteration;           // barrier number corresponding to ongoing
-                             // pthread_barrier() call modulo two.
-  Word  participants;        // Number of participants that still have to join
-                             // the most recent barrier.
-  OSet* oset;                // Information about specific threads.
+  Word  pre_iteration;       // pthread_barrier_wait() call count modulo two.
+  Word  post_iteration;      // pthread_barrier_wait() call count modulo two.
+  Word  pre_waiters_left;    // number of waiters left for a complete barrier.
+  Word  post_waiters_left;   // number of waiters left for a complete barrier.
+  OSet* oset;                // Thread-specific barrier information.
+};
+
+/* Information associated with one thread participating in a barrier. */
+struct barrier_thread_info
+{
+  UWord       tid;           // A DrdThreadId
+  Word        iteration;     // iteration of last pthread_barrier_wait()
+                             // call thread tid participated in.
+  VectorClock vc[2];         // vector clocks corresponding to the last two
+                             // pthread_barrier() calls by thread tid.
 };
 
 
 // Local variables.
 
 static Bool s_trace_barrier = False;
+/* To do: eliminate the upper limit on the number of barriers (4). */
 struct barrier_info s_barrier[4];
 
 
@@ -73,6 +76,8 @@ void barrier_set_trace(const Bool trace_barrier)
   s_trace_barrier = trace_barrier;
 }
 
+/** Initialize the structure *p with the specified thread ID and iteration
+ *  information. */
 static void barrier_thread_initialize(struct barrier_thread_info* const p,
                                       const DrdThreadId tid,
                                       const Word iteration)
@@ -83,12 +88,15 @@ static void barrier_thread_initialize(struct barrier_thread_info* const p,
   vc_init(&p->vc[1], 0, 0);
 }
 
+/** Deallocate the memory that was allocated in barrier_thread_initialize(). */
 static void barrier_thread_destroy(struct barrier_thread_info* const p)
 {
   vc_cleanup(&p->vc[0]);
   vc_cleanup(&p->vc[1]);
 }
 
+/** Initialize the structure *p with the specified client-side barrier address,
+ *  barrier object size and number of participants in each barrier. */
 static
 void barrier_initialize(struct barrier_info* const p,
                         const Addr barrier,
@@ -99,17 +107,20 @@ void barrier_initialize(struct barrier_info* const p,
   tl_assert(size > 0);
   tl_assert(count > 0);
 
-  p->barrier = barrier;
-  p->size    = size;
-  p->count   = count;
-  p->iteration = 0;
-  p->participants = count;
+  p->barrier           = barrier;
+  p->size              = size;
+  p->count             = count;
+  p->pre_iteration     = 0;
+  p->post_iteration    = 0;
+  p->pre_waiters_left  = count;
+  p->post_waiters_left = count;
   tl_assert(sizeof(((struct barrier_thread_info*)0)->tid) == sizeof(Word));
   tl_assert(sizeof(((struct barrier_thread_info*)0)->tid)
             >= sizeof(DrdThreadId));
   p->oset = VG_(OSetGen_Create)(0, 0, VG_(malloc), VG_(free));
 }
 
+/** Deallocate the memory allocated by barrier_initialize() and in p->oset. */
 void barrier_destroy(struct barrier_info* const p)
 {
   struct barrier_thread_info* q;
@@ -124,13 +135,17 @@ void barrier_destroy(struct barrier_info* const p)
     barrier_thread_destroy(q);
   }
   VG_(OSetGen_Destroy)(p->oset);
-  p->barrier = 0;
-  p->size = 0;
-  p->count = 0;
-  p->iteration = 0;
-  p->participants = 0;
+  p->barrier           = 0;
+  p->size              = 0;
+  p->count             = 0;
+  p->pre_iteration     = 0;
+  p->post_iteration    = 0;
+  p->pre_waiters_left  = 0;
+  p->post_waiters_left = 0;
 }
 
+/** Look up the client-side barrier address barrier in s_barrier[]. If not
+ *  found, add it. */
 static
 struct barrier_info*
 barrier_get_or_allocate(const Addr barrier, const SizeT size, const Word count)
@@ -158,6 +173,8 @@ barrier_get_or_allocate(const Addr barrier, const SizeT size, const Word count)
   return 0;
 }
 
+/** Initialize a barrier with client address barrier, client size size, and
+ *  where count threads participate in each barrier. */
 struct barrier_info*
 barrier_init(const Addr barrier, const SizeT size, const Word count)
 {
@@ -165,6 +182,8 @@ barrier_init(const Addr barrier, const SizeT size, const Word count)
   return barrier_get_or_allocate(barrier, size, count);
 }
 
+/** Look up the address of the information associated with the client-side
+ *  barrier object. */
 struct barrier_info* barrier_get(const Addr barrier)
 {
   int i;
@@ -186,26 +205,26 @@ void barrier_pre_wait(const DrdThreadId tid, const Addr barrier)
   if (s_trace_barrier)
   {
     VG_(message)(Vg_DebugMsg,
-                 "[%d] barrier_pre_wait(%p) iteration %d / left %d/%d",
-                 tid, barrier, p->iteration, p->participants, p->count);
+                 "[%d] barrier_pre_wait(%p) iteration %d",
+                 tid, barrier, p->pre_iteration);
   }
 
-  if (--p->participants <= 0)
-  {
-    p->iteration    = ! p->iteration;
-    p->participants = p->count;
-  }
   q = VG_(OSetGen_Lookup)(p->oset, &word_tid);
   if (q == 0)
   {
     q = VG_(OSetGen_AllocNode)(p->oset, sizeof(*q));
-    barrier_thread_initialize(q, tid, p->iteration);
-    tl_assert(q->tid == tid);
+    barrier_thread_initialize(q, tid, p->pre_iteration);
     VG_(OSetGen_Insert)(p->oset, q);
     tl_assert(VG_(OSetGen_Lookup)(p->oset, &word_tid) == q);
   }
-  tl_assert(VG_(OSetGen_Lookup)(p->oset, &word_tid) == q);
-  vc_copy(&q->vc[p->iteration], &thread_get_segment(tid)->vc);
+  vc_assign(&q->vc[p->pre_iteration], &thread_get_segment(tid)->vc);
+  tl_assert(q->vc[p->pre_iteration].size > 0);
+
+  if (--p->pre_waiters_left <= 0)
+  {
+    p->pre_iteration    = 1 - p->pre_iteration;
+    p->pre_waiters_left = p->count;
+  }
 }
 
 void barrier_post_wait(const DrdThreadId tid, const Addr barrier,
@@ -213,10 +232,12 @@ void barrier_post_wait(const DrdThreadId tid, const Addr barrier,
 {
   struct barrier_info* const p = barrier_get(barrier);
 
+  tl_assert(p);
+
   if (s_trace_barrier)
   {
     VG_(message)(Vg_DebugMsg, "[%d] barrier_post_wait(%p) iteration %d",
-                 tid, barrier, p ? 1 - p->iteration : -1);
+                 tid, barrier, p->post_iteration);
   }
 
   if (waited)
@@ -225,7 +246,6 @@ void barrier_post_wait(const DrdThreadId tid, const Addr barrier,
     struct barrier_thread_info* q;
     struct barrier_thread_info* r;
 
-    tl_assert(p);
     q = VG_(OSetGen_Lookup)(p->oset, &word_tid);
     tl_assert(q);
     VG_(OSetGen_ResetIter)(p->oset);
@@ -236,33 +256,48 @@ void barrier_post_wait(const DrdThreadId tid, const Addr barrier,
         if (s_trace_barrier)
         {
           VG_(message)(Vg_DebugMsg,
-                       "[%d] barrier_post_wait: combining vc of thread %d",
-                       tid, r->tid);
+                       "[%d] barrier_post_wait: combining vc of thread %d, "
+                       "iteration %d",
+                       tid, r->tid, p->post_iteration);
+          vc_print(&thread_get_segment(tid)->vc);
+          VG_(printf)(", ");
+          vc_print(&r->vc[p->post_iteration]);
+          VG_(printf)(" -> ");
         }
-        thread_combine_vc2(tid, &r->vc[1 - q->iteration]);
+        thread_combine_vc2(tid, &r->vc[p->post_iteration]);
+        if (s_trace_barrier)
+        {
+          vc_print(&thread_get_segment(tid)->vc);
+          VG_(printf)("\n");
+        }
       }
+    }
+
+    thread_new_segment(tid);
+
+    if (--p->post_waiters_left <= 0)
+    {
+      p->post_iteration    = 1 - p->post_iteration;
+      p->post_waiters_left = p->count;
     }
   }
 }
 
-/**
- * Call this function when thread threadid stops to exist, such that the
- * "last owner" field can be cleared if it still refers to that thread.
- */
+/** Call this function when thread tid stops to exist. */
 void barrier_thread_delete(const DrdThreadId tid)
 {
   int i;
-  struct barrier_thread_info* q;
 
   for (i = 0; i < sizeof(s_barrier)/sizeof(s_barrier[0]); i++)
   {
     struct barrier_info* const p = &s_barrier[i];
     if (p->barrier)
     {
-      VG_(OSetGen_ResetIter)(p->oset);
-      for ( ; (q = VG_(OSetGen_Next)(p->oset)) != 0; )
-      {
-      }
+      struct barrier_thread_info* q;
+      const UWord word_tid = tid;
+      q = VG_(OSetGen_Remove)(p->oset, &word_tid);
+      barrier_thread_destroy(q);
+      VG_(OSetGen_FreeNode)(p->oset, q);
     }
   }
 }

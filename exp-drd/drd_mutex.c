@@ -332,7 +332,7 @@ int mutex_unlock(const Addr mutex, const MutexT mutex_type)
     /* This pthread_mutex_unlock() call really unlocks the mutex. Save the */
     /* current vector clock of the thread such that it is available when  */
     /* this mutex is locked again.                                        */
-    vc_copy(&p->vc, vc);
+    vc_assign(&p->vc, vc);
 
     thread_new_segment(drd_tid);
   }
@@ -385,18 +385,18 @@ int mutex_get_recursion_count(const Addr mutex)
 }
 
 /**
- * Call this function when thread threadid stops to exist, such that the
+ * Call this function when thread tid stops to exist, such that the
  * "last owner" field can be cleared if it still refers to that thread.
  * TO DO: print an error message if a thread exits while it still has some
  * mutexes locked.
  */
-void mutex_thread_delete(const DrdThreadId threadid)
+void mutex_thread_delete(const DrdThreadId tid)
 {
   int i;
   for (i = 0; i < sizeof(s_mutex)/sizeof(s_mutex[0]); i++)
   {
     struct mutex_info* const p = &s_mutex[i];
-    if (p->mutex && p->owner == threadid)
+    if (p->mutex && p->owner == tid)
     {
       p->owner = VG_INVALID_THREADID;
     }

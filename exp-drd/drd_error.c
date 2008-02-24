@@ -217,36 +217,6 @@ Char* describe_addr_text(Addr const a, SizeT const len, AddrInfo* const ai,
    return buf;
 }
 
-#ifdef OLD_RACE_DETECTION_ALGORITHM
-void drd_report_data_race(const DataRaceInfo* const dri)
-{
-   AddrInfo ai;
-   Char descr[256];
-
-   tl_assert(dri);
-   tl_assert(dri->range_begin < dri->range_end);
-   describe_addr_text(dri->range_begin, dri->range_end - dri->range_begin,
-                      &ai, descr, sizeof(descr));
-   VG_(message)(Vg_UserMsg,
-                "0x%08lx sz %ld %c %c (%s)",
-                dri->range_begin,
-                dri->range_end - dri->range_begin,
-                dri->range_access & LHS_W ? 'W' : 'R',
-                dri->range_access & RHS_W ? 'W' : 'R',
-                descr);
-   if (ai.akind == eMallocd && ai.lastchange)
-   {
-      VG_(message)(Vg_UserMsg, "Allocation context:");
-      VG_(pp_ExeContext)(ai.lastchange);
-   }
-   // Note: for stack and heap variables suppression should be
-   // stopped automatically as soon as the specified memory
-   // range has been freed.
-   tl_assert(dri->range_begin < dri->range_end);
-   drd_start_suppression(dri->range_begin, dri->range_end, "detected race");
-}
-#endif
-
 static
 void drd_report_data_race2(Error* const err, const DataRaceErrInfo* const dri)
 {

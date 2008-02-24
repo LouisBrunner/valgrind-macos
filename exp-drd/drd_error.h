@@ -72,17 +72,6 @@ struct {                      // Used by:
 }
    AddrInfo;
 
-#ifdef OLD_RACE_DETECTION_ALGORITHM
-/* Records info about a data race. */
-typedef struct {
-   ThreadId tid1;      // Thread ID of first thread involved in the data race.
-   ThreadId tid2;      // Thread ID of second thread involved in the data race.
-   Addr     range_begin;  // Start address of range involved.
-   Addr     range_end;    // Last address (exclusive) of range involved.
-   UInt     range_access; // How the range was accessed (LHS_[RW] | RHS_[RW]).
-} DataRaceInfo;
-#endif
-
 typedef struct {
    ThreadId      tid;         // Thread ID of the running thread.
    Addr          addr;        // Conflicting address in current thread.
@@ -108,10 +97,6 @@ typedef struct {
 void describe_addr(Addr const a, SizeT const len, AddrInfo* const ai);
 Char* describe_addr_text(Addr const a, SizeT const len, AddrInfo* const ai,
                          Char* const buf, UInt const n_buf);
-#ifdef OLD_RACE_DETECTION_ALGORITHM
-void drd_report_data_race(const DataRaceInfo* const dri);
-#endif
-//void drd_report_data_race2(const DataRaceErrInfo* const dri);
 void drd_register_error_handlers(void);
 
 

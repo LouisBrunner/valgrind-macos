@@ -73,6 +73,8 @@ static Bool drd_process_cmd_line_option(Char* arg)
 {
    Bool trace_barrier     = False;
    Bool trace_cond        = False;
+   Bool trace_csw         = False;
+   Bool trace_danger_set  = False;
    Bool trace_mutex       = False;
    Bool trace_segment     = False;
    Bool trace_suppression = False;
@@ -81,6 +83,8 @@ static Bool drd_process_cmd_line_option(Char* arg)
    VG_BOOL_CLO     (arg, "--drd-stats",         drd_print_stats)
    else VG_BOOL_CLO(arg, "--trace-barrier",     trace_barrier)
    else VG_BOOL_CLO(arg, "--trace-cond",        trace_cond)
+   else VG_BOOL_CLO(arg, "--trace-csw",         trace_csw)
+   else VG_BOOL_CLO(arg, "--trace-danger-set",  trace_danger_set)
    else VG_BOOL_CLO(arg, "--trace-fork-join",   drd_trace_fork_join)
    else VG_BOOL_CLO(arg, "--trace-mem",         drd_trace_mem)
    else VG_BOOL_CLO(arg, "--trace-mutex",       trace_mutex)
@@ -93,15 +97,15 @@ static Bool drd_process_cmd_line_option(Char* arg)
    if (trace_address)
    {
       drd_trace_address = VG_(strtoll16)(trace_address, 0);
-#if 0
-      VG_(message)(Vg_DebugMsg, "Tracing address %s <> 0x%x\n",
-                   trace_address, drd_trace_address);
-#endif
    }
    if (trace_barrier)
       barrier_set_trace(trace_barrier);
    if (trace_cond)
       cond_set_trace(trace_cond);
+   if (trace_csw)
+      thread_trace_context_switches(trace_csw);
+   if (trace_danger_set)
+      thread_trace_danger_set(trace_danger_set);
    if (trace_mutex)
       mutex_set_trace(trace_mutex);
    if (trace_segment)
@@ -714,9 +718,6 @@ static
 void drd_fini(Int exitcode)
 {
    // thread_print_all();
-#ifdef OLD_RACE_DETECTION_ALGORITHM
-   thread_report_all_races();
-#endif
    if (VG_(clo_verbosity) > 1 || drd_print_stats)
    {
       VG_(message)(Vg_DebugMsg,
@@ -724,11 +725,6 @@ void drd_fini(Int exitcode)
                    " / %lld updates of the danger set",
                    thread_get_context_switch_count(),
                    thread_get_update_danger_set_count());
-#ifdef OLD_RACE_DETECTION_ALGORITHM
-      VG_(message)(Vg_DebugMsg,
-                   " analysis: %lld data race analysis points",
-                   thread_get_report_races_count());
-#endif
       VG_(message)(Vg_DebugMsg,
                    " segments: %lld total, %lld max, %lld discard points",
                    sg_get_segments_created_count(),

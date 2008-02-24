@@ -45,6 +45,8 @@ typedef UInt DrdThreadId;
 typedef UWord PThreadId;
 
 
+void thread_trace_context_switches(const Bool t);
+void thread_trace_danger_set(const Bool t);
 Bool IsValidDrdThreadId(const DrdThreadId tid);
 
 DrdThreadId VgThreadIdToDrdThreadId(const ThreadId tid);

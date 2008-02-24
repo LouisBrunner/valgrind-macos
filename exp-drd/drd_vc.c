@@ -58,13 +58,19 @@ void vc_cleanup(VectorClock* const vc)
   vc_reserve(vc, 0);
 }
 
-/**
- * Copy constructor -- initializes 'new'.
- */
+/** Copy constructor -- initializes *new. */
 void vc_copy(VectorClock* const new,
              const VectorClock* const rhs)
 {
   vc_init(new, rhs->vc, rhs->size);
+}
+
+/** Assignment operator -- *lhs is already a valid vector clock. */
+void vc_assign(VectorClock* const lhs,
+               const VectorClock* const rhs)
+{
+  vc_cleanup(lhs);
+  vc_copy(lhs, rhs);
 }
 
 void vc_increment(VectorClock* const vc, ThreadId const threadid)

@@ -67,6 +67,8 @@ void vc_init(VectorClock* const vc,
 void vc_cleanup(VectorClock* const vc);
 void vc_copy(VectorClock* const new,
              const VectorClock* const rhs);
+void vc_assign(VectorClock* const lhs,
+               const VectorClock* const rhs);
 void vc_increment(VectorClock* const vc, ThreadId const threadid);
 Bool vc_lte(const VectorClock* const vc1,
             const VectorClock* const vc2);

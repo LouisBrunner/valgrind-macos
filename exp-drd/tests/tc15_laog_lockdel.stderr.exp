@@ -1,0 +1,8 @@
+
+Establish order 1 -> 2
+Try order 2 -> 1.  This gives an error.
+Free 2 and re-allocate it.  This gives it a new identity,
+so a second locking sequence 2 -> 1 should now be OK.
+done
+
+ERROR SUMMARY: 0 errors from 0 contexts (suppressed: 0 from 0)

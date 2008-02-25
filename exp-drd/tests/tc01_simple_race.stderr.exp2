@@ -1,15 +1,15 @@
 
-Conflicting load by thread 1 at 0x........ size 1
-   at 0x........: main (tc16_byterace.c:34)
-Allocation context: bytes (offset 4, size 10) in tc16_byterace, NONE:BSS
+Conflicting load by thread 1 at 0x........ size 4
+   at 0x........: main (tc01_simple_race.c:28)
+Allocation context: unknown
 Other segment start (thread 2)
    (thread finished, call stack no longer available)
 Other segment end (thread 2)
    (thread finished, call stack no longer available)
 
-Conflicting store by thread 1 at 0x........ size 1
-   at 0x........: main (tc16_byterace.c:34)
-Allocation context: bytes (offset 4, size 10) in tc16_byterace, NONE:BSS
+Conflicting store by thread 1 at 0x........ size 4
+   at 0x........: main (tc01_simple_race.c:28)
+Allocation context: unknown
 Other segment start (thread 2)
    (thread finished, call stack no longer available)
 Other segment end (thread 2)

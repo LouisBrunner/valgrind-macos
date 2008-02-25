@@ -1,7 +1,7 @@
 
 Conflicting load by thread 1 at 0x........ size 4
    at 0x........: main (tc11_XCHG.c:78)
-Allocation context: unknown
+Allocation context: x (offset 0, size 4) in tc11_XCHG, NONE:BSS
 Other segment start (thread 2)
    (thread finished, call stack no longer available)
 Other segment end (thread 2)
@@ -9,7 +9,7 @@ Other segment end (thread 2)
 
 Conflicting store by thread 1 at 0x........ size 4
    at 0x........: main (tc11_XCHG.c:78)
-Allocation context: unknown
+Allocation context: x (offset 0, size 4) in tc11_XCHG, NONE:BSS
 Other segment start (thread 2)
    (thread finished, call stack no longer available)
 Other segment end (thread 2)

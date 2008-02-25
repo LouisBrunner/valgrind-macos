@@ -5,7 +5,7 @@ Conflicting store by thread 3 at 0x........ size 4
    by 0x........: vg_thread_wrapper (drd_intercepts.c:?)
    by 0x........: start_thread (in libpthread-?.?.so)
    by 0x........: clone (in /...libc...)
-Allocation context: shared (offset 4, size 8) in hg03_inherit, NONE:BSS
+Allocation context: unknown
 Other segment start (thread 1)
    at 0x........: pthread_join (drd_intercepts.c:?)
    by 0x........: main (hg03_inherit.c:49)
@@ -19,7 +19,7 @@ Conflicting store by thread 3 at 0x........ size 4
    by 0x........: vg_thread_wrapper (drd_intercepts.c:?)
    by 0x........: start_thread (in libpthread-?.?.so)
    by 0x........: clone (in /...libc...)
-Allocation context: shared (offset 4, size 8) in hg03_inherit, NONE:BSS
+Allocation context: unknown
 Other segment start (thread 1)
    at 0x........: pthread_join (drd_intercepts.c:?)
    by 0x........: main (hg03_inherit.c:49)

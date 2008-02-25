@@ -262,9 +262,9 @@ static void drd_tool_error_pp(Error* const e)
       VG_(message)(Vg_UserMsg,
                    "%s / mutex 0x%lx (recursion count %d, owner %d)",
                    VG_(get_error_string)(e),
-                   p->mutex,
-                   p->recursion_count,
-                   p->owner);
+                   p ? p->mutex : 0,
+                   p ? p->recursion_count : 0,
+                   p ? p->owner : DRD_INVALID_THREADID);
       VG_(pp_ExeContext)(VG_(get_error_where)(e));
       break;
    }

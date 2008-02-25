@@ -790,6 +790,7 @@ PTH_FUNC(int, pthreadZurwlockZudestroy, // pthread_rwlock_destroy
 }
 
 
+// pthread_rwlock_wrlock
 PTH_FUNC(int, pthreadZurwlockZuwrlock, // pthread_rwlock_wrlock
 	 pthread_rwlock_t* rwlock)
 {
@@ -800,8 +801,9 @@ PTH_FUNC(int, pthreadZurwlockZuwrlock, // pthread_rwlock_wrlock
       fprintf(stderr, "<< pthread_rwl_wlk %p", rwlock); fflush(stderr);
    }
 
-   DO_CREQ_v_WW(_VG_USERREQ__HG_PTHREAD_RWLOCK_LOCK_PRE,
-                pthread_rwlock_t*,rwlock, long,1/*isW*/);
+   DO_CREQ_v_WWW(_VG_USERREQ__HG_PTHREAD_RWLOCK_LOCK_PRE,
+                 pthread_rwlock_t*,rwlock, 
+                 long,1/*isW*/, long,0/*!isTryLock*/);
 
    CALL_FN_W_W(ret, fn, rwlock);
 
@@ -819,6 +821,7 @@ PTH_FUNC(int, pthreadZurwlockZuwrlock, // pthread_rwlock_wrlock
 }
 
 
+// pthread_rwlock_rdlock
 PTH_FUNC(int, pthreadZurwlockZurdlock, // pthread_rwlock_rdlock
 	 pthread_rwlock_t* rwlock)
 {
@@ -829,8 +832,9 @@ PTH_FUNC(int, pthreadZurwlockZurdlock, // pthread_rwlock_rdlock
       fprintf(stderr, "<< pthread_rwl_rlk %p", rwlock); fflush(stderr);
    }
 
-   DO_CREQ_v_WW(_VG_USERREQ__HG_PTHREAD_RWLOCK_LOCK_PRE,
-                pthread_rwlock_t*,rwlock, long,0/*!isW*/);
+   DO_CREQ_v_WWW(_VG_USERREQ__HG_PTHREAD_RWLOCK_LOCK_PRE,
+                 pthread_rwlock_t*,rwlock,
+                 long,0/*!isW*/, long,0/*!isTryLock*/);
 
    CALL_FN_W_W(ret, fn, rwlock);
 
@@ -848,6 +852,81 @@ PTH_FUNC(int, pthreadZurwlockZurdlock, // pthread_rwlock_rdlock
 }
 
 
+// pthread_rwlock_trywrlock
+PTH_FUNC(int, pthreadZurwlockZutrywrlock, // pthread_rwlock_trywrlock
+	 pthread_rwlock_t* rwlock)
+{
+   int    ret;
+   OrigFn fn;
+   VALGRIND_GET_ORIG_FN(fn);
+   if (TRACE_PTH_FNS) {
+      fprintf(stderr, "<< pthread_rwl_trywlk %p", rwlock); fflush(stderr);
+   }
+
+   DO_CREQ_v_WWW(_VG_USERREQ__HG_PTHREAD_RWLOCK_LOCK_PRE,
+                 pthread_rwlock_t*,rwlock, 
+                 long,1/*isW*/, long,1/*isTryLock*/);
+
+   CALL_FN_W_W(ret, fn, rwlock);
+
+   /* There's a hole here: libpthread now knows the lock is locked,
+      but the tool doesn't, so some other thread could run and detect
+      that the lock has been acquired by someone (this thread).  Does
+      this matter?  Not sure, but I don't think so. */
+
+   if (ret == 0 /*success*/) {
+      DO_CREQ_v_WW(_VG_USERREQ__HG_PTHREAD_RWLOCK_LOCK_POST,
+                   pthread_rwlock_t*,rwlock, long,1/*isW*/);
+   } else { 
+      if (ret != EBUSY)
+         DO_PthAPIerror( "pthread_rwlock_trywrlock", ret );
+   }
+
+   if (TRACE_PTH_FNS) {
+      fprintf(stderr, " :: rwl_trywlk -> %d >>\n", ret);
+   }
+   return ret;
+}
+
+
+// pthread_rwlock_tryrdlock
+PTH_FUNC(int, pthreadZurwlockZutryrdlock, // pthread_rwlock_tryrdlock
+	 pthread_rwlock_t* rwlock)
+{
+   int    ret;
+   OrigFn fn;
+   VALGRIND_GET_ORIG_FN(fn);
+   if (TRACE_PTH_FNS) {
+      fprintf(stderr, "<< pthread_rwl_tryrlk %p", rwlock); fflush(stderr);
+   }
+
+   DO_CREQ_v_WWW(_VG_USERREQ__HG_PTHREAD_RWLOCK_LOCK_PRE,
+                 pthread_rwlock_t*,rwlock, 
+                 long,0/*!isW*/, long,1/*isTryLock*/);
+
+   CALL_FN_W_W(ret, fn, rwlock);
+
+   /* There's a hole here: libpthread now knows the lock is locked,
+      but the tool doesn't, so some other thread could run and detect
+      that the lock has been acquired by someone (this thread).  Does
+      this matter?  Not sure, but I don't think so. */
+
+   if (ret == 0 /*success*/) {
+      DO_CREQ_v_WW(_VG_USERREQ__HG_PTHREAD_RWLOCK_LOCK_POST,
+                   pthread_rwlock_t*,rwlock, long,0/*!isW*/);
+   } else { 
+      if (ret != EBUSY)
+         DO_PthAPIerror( "pthread_rwlock_tryrdlock", ret );
+   }
+
+   if (TRACE_PTH_FNS) {
+      fprintf(stderr, " :: rwl_tryrlk -> %d >>\n", ret);
+   }
+   return ret;
+}
+
+
+// pthread_rwlock_unlock
 PTH_FUNC(int, pthreadZurwlockZuunlock, // pthread_rwlock_unlock
 	 pthread_rwlock_t* rwlock)
 {
@@ -1155,8 +1234,9 @@ QT4_FUNC(void, ZuZZN14QReadWriteLock11lockForReadEv,
       fflush(stderr);
    }
 
-   DO_CREQ_v_WW(_VG_USERREQ__HG_PTHREAD_RWLOCK_LOCK_PRE,
-                void*,self, long,0/*!isW*/);
+   DO_CREQ_v_WWW(_VG_USERREQ__HG_PTHREAD_RWLOCK_LOCK_PRE,
+                 void*,self,
+                 long,0/*!isW*/, long,0/*!isTryLock*/);
 
    CALL_FN_v_W(fn, self);
 
@@ -1181,8 +1261,9 @@ QT4_FUNC(void, ZuZZN14QReadWriteLock12lockForWriteEv,
       fflush(stderr);
    }
 
-   DO_CREQ_v_WW(_VG_USERREQ__HG_PTHREAD_RWLOCK_LOCK_PRE,
-                void*,self, long,1/*isW*/);
+   DO_CREQ_v_WWW(_VG_USERREQ__HG_PTHREAD_RWLOCK_LOCK_PRE,
+                 void*,self,
+                 long,1/*isW*/, long,0/*!isTryLock*/);
 
    CALL_FN_v_W(fn, self);
 

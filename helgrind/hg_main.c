@@ -6245,7 +6245,9 @@ void evh__HG_PTHREAD_RWLOCK_DESTROY_PRE( ThreadId tid, void* rwl )
 }
 
 static 
-void evh__HG_PTHREAD_RWLOCK_LOCK_PRE ( ThreadId tid, void* rwl, Word isW )
+void evh__HG_PTHREAD_RWLOCK_LOCK_PRE ( ThreadId tid,
+                                       void* rwl,
+                                       Word isW, Word isTryLock )
 {
    /* Just check the rwl is sane; nothing else to do. */
    // 'rwl' may be invalid - not checked by wrapper
@@ -6256,6 +6258,7 @@ void evh__HG_PTHREAD_RWLOCK_LOCK_PRE ( ThreadId tid, void* rwl, Word isW )
                   (Int)tid, (Int)isW, (void*)rwl );
 
    tl_assert(isW == 0 || isW == 1); /* assured us by wrapper */
+   tl_assert(isTryLock == 0 || isTryLock == 1); /* assured us by wrapper */
    thr = map_threads_maybe_lookup( tid );
    tl_assert(thr); /* cannot fail - Thread* must already exist */
 
@@ -7652,9 +7655,10 @@ Bool hg_handle_client_request ( ThreadId tid, UWord* args, UWord* ret)
          evh__HG_PTHREAD_RWLOCK_DESTROY_PRE( tid, (void*)args[1] );
          break;
 
-      /* rwlock=arg[1], isW=arg[2] */
+      /* rwlock=arg[1], isW=arg[2], isTryLock=arg[3] */
       case _VG_USERREQ__HG_PTHREAD_RWLOCK_LOCK_PRE:
-         evh__HG_PTHREAD_RWLOCK_LOCK_PRE( tid, (void*)args[1], args[2] );
+         evh__HG_PTHREAD_RWLOCK_LOCK_PRE( tid, (void*)args[1],
+                                               args[2], args[3] );
          break;
 
       /* rwlock=arg[1], isW=arg[2] */

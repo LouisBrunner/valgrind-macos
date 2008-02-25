@@ -110,6 +110,16 @@ mutex_get_or_allocate(const Addr mutex,
   {
     if (s_mutex[i].mutex == 0)
     {
+      if (drd_is_any_suppressed(mutex, mutex + size))
+      {
+         MutexErrInfo MEI = { 0, 0, 0 };
+         VG_(maybe_record_error)(VG_(get_running_tid)(),
+                                 MutexErr,
+                                 VG_(get_IP)(VG_(get_running_tid)()),
+                                 "Not a mutex",
+                                 &MEI);
+         return 0;
+      }
       mutex_initialize(&s_mutex[i], mutex, size, mutex_type);
       drd_start_suppression(mutex, mutex + size,
                             mutex_get_typename(&s_mutex[i]));
@@ -220,7 +230,6 @@ int mutex_lock(const Addr mutex, const SizeT size, MutexT mutex_type)
 {
   const DrdThreadId drd_tid = VgThreadIdToDrdThreadId(VG_(get_running_tid)());
   struct mutex_info* const p = mutex_get_or_allocate(mutex, size, mutex_type);
-  const DrdThreadId last_owner = p->owner;
 
   if (s_trace_mutex)
   {
@@ -233,6 +242,17 @@ int mutex_lock(const Addr mutex, const SizeT size, MutexT mutex_type)
                  mutex,
                  p ? p->recursion_count : 0,
                  p ? p->owner : VG_INVALID_THREADID);
+  }
+
+  if (p == 0)
+  {
+     MutexErrInfo MEI = { 0, 0, 0 };
+     VG_(maybe_record_error)(VG_(get_running_tid)(),
+                             MutexErr,
+                             VG_(get_IP)(VG_(get_running_tid)()),
+                             "Not a mutex",
+                             &MEI);
+     return 0;
   }
 
   tl_assert(mutex_type == mutex_type_mutex
@@ -265,6 +285,8 @@ int mutex_lock(const Addr mutex, const SizeT size, MutexT mutex_type)
 
   if (p->recursion_count == 1)
   {
+     const DrdThreadId last_owner = p->owner;
+
     if (last_owner != drd_tid && last_owner != DRD_INVALID_THREADID)
       thread_combine_vc2(drd_tid, mutex_get_last_vc(mutex));
     thread_new_segment(drd_tid);
@@ -297,6 +319,17 @@ int mutex_unlock(const Addr mutex, const MutexT mutex_type)
                  mutex,
                  p->recursion_count,
                  p->owner);
+  }
+
+  if (p == 0 || p->owner == DRD_INVALID_THREADID)
+  {
+     MutexErrInfo MEI = { 0, 0, 0 };
+     VG_(maybe_record_error)(vg_tid,
+                             MutexErr,
+                             VG_(get_IP)(vg_tid),
+                             "Not a mutex",
+                             &MEI);
+     return 0;
   }
 
   tl_assert(p);
@@ -363,7 +396,6 @@ const char* mutex_type_name(const MutexT mt)
 Bool mutex_is_locked_by(const Addr mutex, const DrdThreadId tid)
 {
   struct mutex_info* const p = mutex_get(mutex);
-  tl_assert(p);
   if (p)
   {
     return (p->recursion_count > 0 && p->owner == tid);

@@ -62,7 +62,7 @@ EXTRA_DIST = $(noinst_SCRIPTS)                                  \
         tc10_rec_lock.vgtest                                    \
         tc10_rec_lock.stderr.exp                                \
         tc11_XCHG.vgtest                                        \
-        tc11_XCHG.stderr.exp tc11_XCHG.stderr.exp               \
+        tc11_XCHG.stderr.exp tc11_XCHG.stdout.exp               \
         tc12_rwl_trivial.vgtest                                 \
         tc12_rwl_trivial.stderr.exp                             \
         tc13_laog1.vgtest                                       \

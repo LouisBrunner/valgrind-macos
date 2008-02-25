@@ -56,13 +56,13 @@ EXTRA_DIST = $(noinst_SCRIPTS)                                  \
         tc04_free_lock.vgtest                                   \
         tc04_free_lock.stderr.exp                               \
         tc07_hbl1.vgtest                                        \
-        tc07_hbl1.stderr.exp                                    \
+        tc07_hbl1.stderr.exp tc07_hbl1.stdout.exp               \
         tc09_bad_unlock.vgtest                                  \
         tc09_bad_unlock.stderr.exp                              \
         tc10_rec_lock.vgtest                                    \
         tc10_rec_lock.stderr.exp                                \
         tc11_XCHG.vgtest                                        \
-        tc11_XCHG.stderr.exp                                    \
+        tc11_XCHG.stderr.exp tc11_XCHG.stderr.exp               \
         tc12_rwl_trivial.vgtest                                 \
         tc12_rwl_trivial.stderr.exp                             \
         tc13_laog1.vgtest                                       \
@@ -80,7 +80,7 @@ EXTRA_DIST = $(noinst_SCRIPTS)                                  \
         tc20_verifywrap.vgtest                                  \
         tc20_verifywrap.stderr.exp                              \
         tc21_pthonce.vgtest                                     \
-        tc21_pthonce.stderr.exp                                 \
+        tc21_pthonce.stderr.exp tc21_pthonce.stdout.exp         \
         tc22_exit_w_lock.vgtest                                 \
         tc22_exit_w_lock.stderr.exp                             \
         tc23_bogus_condwait.vgtest                              \

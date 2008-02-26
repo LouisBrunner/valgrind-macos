@@ -5,9 +5,13 @@ SUBDIRS = .
 
 DIST_SUBDIRS = .
 
-noinst_SCRIPTS =                                          \
-        filter_cmdline0 filter_linenos                    \
-        filter_fdleak filter_none_discards filter_stderr
+noinst_SCRIPTS =		\
+	filter_cmdline0		\
+	filter_error_summary	\
+	filter_fdleak		\
+	filter_linenos		\
+	filter_none_discards	\
+	filter_stderr
 
 EXTRA_DIST = $(noinst_SCRIPTS)                                  \
 	fp_race.vgtest                                          \
@@ -21,8 +25,10 @@ EXTRA_DIST = $(noinst_SCRIPTS)                                  \
         hg02_deadlock.stderr.exp                                \
         hg03_inherit.vgtest                                     \
         hg03_inherit.stderr.exp                                 \
+	hg03_inherit.stderr.exp2				\
         hg04_race.vgtest                                        \
         hg04_race.stderr.exp                                    \
+	hg04_race.stderr.exp2					\
         hg05_race2.vgtest                                       \
         hg05_race2.stderr.exp                                   \
         hg06_readshared.vgtest                                  \
@@ -49,6 +55,7 @@ EXTRA_DIST = $(noinst_SCRIPTS)                                  \
 	sem_as_mutex2.stderr.exp                                \
         tc01_simple_race.vgtest                                 \
         tc01_simple_race.stderr.exp                             \
+	tc01_simple_race.stderr.exp2				\
         tc02_simple_tls.vgtest                                  \
         tc02_simple_tls.stderr.exp                              \
         tc03_re_excl.vgtest                                     \
@@ -57,12 +64,14 @@ EXTRA_DIST = $(noinst_SCRIPTS)                                  \
         tc04_free_lock.stderr.exp                               \
         tc07_hbl1.vgtest                                        \
         tc07_hbl1.stderr.exp tc07_hbl1.stdout.exp               \
+	tc07_hbl1.stderr.exp2					\
         tc09_bad_unlock.vgtest                                  \
         tc09_bad_unlock.stderr.exp                              \
         tc10_rec_lock.vgtest                                    \
         tc10_rec_lock.stderr.exp                                \
         tc11_XCHG.vgtest                                        \
         tc11_XCHG.stderr.exp tc11_XCHG.stdout.exp               \
+	tc11_XCHG.stderr.exp2					\
         tc12_rwl_trivial.vgtest                                 \
         tc12_rwl_trivial.stderr.exp                             \
         tc13_laog1.vgtest                                       \
@@ -71,6 +80,7 @@ EXTRA_DIST = $(noinst_SCRIPTS)                                  \
         tc15_laog_lockdel.stderr.exp                            \
         tc16_byterace.vgtest                                    \
         tc16_byterace.stderr.exp                                \
+	tc16_byterace.stderr.exp2				\
         tc17_sembar.vgtest                                      \
         tc17_sembar.stderr.exp                                  \
         tc18_semabuse.vgtest                                    \
@@ -79,10 +89,12 @@ EXTRA_DIST = $(noinst_SCRIPTS)                                  \
         tc19_shadowmem.stderr.exp                               \
         tc20_verifywrap.vgtest                                  \
         tc20_verifywrap.stderr.exp                              \
+	tc20_verifywrap.stderr.exp2				\
         tc21_pthonce.vgtest                                     \
         tc21_pthonce.stderr.exp tc21_pthonce.stdout.exp         \
         tc22_exit_w_lock.vgtest                                 \
         tc22_exit_w_lock.stderr.exp                             \
+	tc22_exit_w_lock.stderr.exp-32bit			\
         tc23_bogus_condwait.vgtest                              \
         tc23_bogus_condwait.stderr.exp                          \
         tc24_nonzero_sem.vgtest                                 \

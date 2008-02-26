@@ -135,8 +135,6 @@ check_PROGRAMS =      \
   tc04_free_lock      \
   tc05_simple_race    \
   tc06_two_races      \
-  tc07_hbl1           \
-  tc08_hbl2           \
   tc09_bad_unlock     \
   tc10_rec_lock       \
   tc11_XCHG           \
@@ -153,6 +151,8 @@ check_PROGRAMS =      \
   tc23_bogus_condwait \
   tc24_nonzero_sem
 
+#  tc07_hbl1 -- requires bus locking support.
+#  tc08_hbl2 -- requires bus locking support.
 #  tc14_laog_dinphils  -- hangs.
 
 

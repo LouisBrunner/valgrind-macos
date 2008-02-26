@@ -1,0 +1,2 @@
+prog: tc05_simple_race
+stderr_filter: filter_error_summary

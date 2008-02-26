@@ -1,0 +1,2 @@
+prog: tc06_two_races
+stderr_filter: filter_error_summary

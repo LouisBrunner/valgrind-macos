@@ -19,24 +19,25 @@ EXTRA_DIST = $(noinst_SCRIPTS)                                  \
 	fp_race.stderr.exp2                                     \
 	fp_race2.vgtest                                         \
 	fp_race2.stdout.exp fp_race2.stderr.exp                 \
-        hg01_all_ok.vgtest                                      \
-        hg01_all_ok.stderr.exp                                  \
-        hg02_deadlock.vgtest                                    \
-        hg02_deadlock.stderr.exp                                \
-        hg03_inherit.vgtest                                     \
-        hg03_inherit.stderr.exp                                 \
+	hg01_all_ok.vgtest                                      \
+	hg01_all_ok.stderr.exp                                  \
+	hg02_deadlock.vgtest                                    \
+	hg02_deadlock.stderr.exp                                \
+	hg03_inherit.vgtest                                     \
+	hg03_inherit.stderr.exp                                 \
 	hg03_inherit.stderr.exp2				\
-        hg04_race.vgtest                                        \
-        hg04_race.stderr.exp                                    \
+	hg04_race.vgtest                                        \
+	hg04_race.stderr.exp                                    \
 	hg04_race.stderr.exp2					\
-        hg05_race2.vgtest                                       \
-        hg05_race2.stderr.exp                                   \
-        hg06_readshared.vgtest                                  \
-        hg06_readshared.stderr.exp                              \
+	hg05_race2.vgtest                                       \
+	hg05_race2.stderr.exp                                   \
+	hg06_readshared.vgtest                                  \
+	hg06_readshared.stderr.exp                              \
 	matinv.vgtest                                           \
 	matinv.stdout.exp matinv.stderr.exp                     \
-	pth_barrier.vgtest                                      \
-	pth_barrier.stderr.exp                                  \
+	pth_barrier.vgtest  pth_barrier.stderr.exp              \
+	pth_barrier2.vgtest pth_barrier2.stderr.exp             \
+	pth_barrier3.vgtest pth_barrier3.stderr.exp             \
 	pth_broadcast.vgtest                                    \
 	pth_broadcast.stdout.exp pth_broadcast.stderr.exp       \
 	pth_cond_race.vgtest                                    \
@@ -53,52 +54,58 @@ EXTRA_DIST = $(noinst_SCRIPTS)                                  \
 	sem_as_mutex.stderr.exp sem_as_mutex.stderr.exp2        \
 	sem_as_mutex2.vgtest                                    \
 	sem_as_mutex2.stderr.exp                                \
-        tc01_simple_race.vgtest                                 \
-        tc01_simple_race.stderr.exp                             \
+	tc01_simple_race.vgtest                                 \
+	tc01_simple_race.stderr.exp                             \
 	tc01_simple_race.stderr.exp2				\
-        tc02_simple_tls.vgtest                                  \
-        tc02_simple_tls.stderr.exp                              \
-        tc03_re_excl.vgtest                                     \
-        tc03_re_excl.stderr.exp                                 \
-        tc04_free_lock.vgtest                                   \
-        tc04_free_lock.stderr.exp                               \
-        tc07_hbl1.vgtest                                        \
-        tc07_hbl1.stderr.exp tc07_hbl1.stdout.exp               \
+	tc02_simple_tls.vgtest                                  \
+	tc02_simple_tls.stderr.exp                              \
+	tc03_re_excl.vgtest                                     \
+	tc03_re_excl.stderr.exp                                 \
+	tc04_free_lock.vgtest                                   \
+	tc04_free_lock.stderr.exp                               \
+	tc05_simple_race.vgtest                                 \
+	tc05_simple_race.stderr.exp                             \
+	tc06_two_races.vgtest                                   \
+	tc06_two_races.stderr.exp                               \
+	tc07_hbl1.vgtest                                        \
+	tc07_hbl1.stderr.exp tc07_hbl1.stdout.exp               \
 	tc07_hbl1.stderr.exp2					\
-        tc09_bad_unlock.vgtest                                  \
-        tc09_bad_unlock.stderr.exp                              \
-        tc10_rec_lock.vgtest                                    \
-        tc10_rec_lock.stderr.exp                                \
-        tc11_XCHG.vgtest                                        \
-        tc11_XCHG.stderr.exp tc11_XCHG.stdout.exp               \
+	tc08_hbl2.vgtest					\
+	tc08_hbl2.stderr.exp					\
+	tc09_bad_unlock.vgtest                                  \
+	tc09_bad_unlock.stderr.exp                              \
+	tc10_rec_lock.vgtest                                    \
+	tc10_rec_lock.stderr.exp                                \
+	tc11_XCHG.vgtest                                        \
+	tc11_XCHG.stderr.exp tc11_XCHG.stdout.exp               \
 	tc11_XCHG.stderr.exp2					\
-        tc12_rwl_trivial.vgtest                                 \
-        tc12_rwl_trivial.stderr.exp                             \
-        tc13_laog1.vgtest                                       \
-        tc13_laog1.stderr.exp                                   \
-        tc15_laog_lockdel.vgtest                                \
-        tc15_laog_lockdel.stderr.exp                            \
-        tc16_byterace.vgtest                                    \
-        tc16_byterace.stderr.exp                                \
+	tc12_rwl_trivial.vgtest                                 \
+	tc12_rwl_trivial.stderr.exp                             \
+	tc13_laog1.vgtest                                       \
+	tc13_laog1.stderr.exp                                   \
+	tc15_laog_lockdel.vgtest                                \
+	tc15_laog_lockdel.stderr.exp                            \
+	tc16_byterace.vgtest                                    \
+	tc16_byterace.stderr.exp                                \
 	tc16_byterace.stderr.exp2				\
-        tc17_sembar.vgtest                                      \
-        tc17_sembar.stderr.exp                                  \
-        tc18_semabuse.vgtest                                    \
-        tc18_semabuse.stderr.exp                                \
-        tc19_shadowmem.vgtest                                   \
-        tc19_shadowmem.stderr.exp                               \
-        tc20_verifywrap.vgtest                                  \
-        tc20_verifywrap.stderr.exp                              \
+	tc17_sembar.vgtest                                      \
+	tc17_sembar.stderr.exp                                  \
+	tc18_semabuse.vgtest                                    \
+	tc18_semabuse.stderr.exp                                \
+	tc19_shadowmem.vgtest                                   \
+	tc19_shadowmem.stderr.exp                               \
+	tc20_verifywrap.vgtest                                  \
+	tc20_verifywrap.stderr.exp                              \
 	tc20_verifywrap.stderr.exp2				\
-        tc21_pthonce.vgtest                                     \
-        tc21_pthonce.stderr.exp tc21_pthonce.stdout.exp         \
-        tc22_exit_w_lock.vgtest                                 \
-        tc22_exit_w_lock.stderr.exp                             \
+	tc21_pthonce.vgtest                                     \
+	tc21_pthonce.stderr.exp tc21_pthonce.stdout.exp         \
+	tc22_exit_w_lock.vgtest                                 \
+	tc22_exit_w_lock.stderr.exp                             \
 	tc22_exit_w_lock.stderr.exp-32bit			\
-        tc23_bogus_condwait.vgtest                              \
-        tc23_bogus_condwait.stderr.exp                          \
-        tc24_nonzero_sem.vgtest                                 \
-        tc24_nonzero_sem.stderr.exp                             \
+	tc23_bogus_condwait.vgtest                              \
+	tc23_bogus_condwait.stderr.exp                          \
+	tc24_nonzero_sem.vgtest                                 \
+	tc24_nonzero_sem.stderr.exp                             \
 	sigalrm.vgtest                                          \
 	sigalrm.stdout.exp sigalrm.stderr.exp
 
@@ -126,7 +133,10 @@ check_PROGRAMS =      \
   tc02_simple_tls     \
   tc03_re_excl        \
   tc04_free_lock      \
+  tc05_simple_race    \
+  tc06_two_races      \
   tc07_hbl1           \
+  tc08_hbl2           \
   tc09_bad_unlock     \
   tc10_rec_lock       \
   tc11_XCHG           \
@@ -143,9 +153,6 @@ check_PROGRAMS =      \
   tc23_bogus_condwait \
   tc24_nonzero_sem
 
-#  tc05_simple_race    -- result depends on scheduler.
-#  tc06_two_races      -- result depends on scheduler.
-#  tc08_hbl2           -- result depends on scheduler.
 #  tc14_laog_dinphils  -- hangs.
 
 
@@ -206,8 +213,17 @@ tc03_re_excl_LDADD          = -lpthread
 tc04_free_lock_SOURCES      = ../../helgrind/tests/tc04_free_lock.c
 tc04_free_lock_LDADD        = -lpthread
 
+tc05_simple_race_SOURCES    = ../../helgrind/tests/tc05_simple_race.c
+tc05_simple_race_LDADD      = -lpthread
+
+tc06_two_races_SOURCES      = ../../helgrind/tests/tc06_two_races.c
+tc06_two_races_LDADD        = -lpthread
+
 tc07_hbl1_SOURCES           = ../../helgrind/tests/tc07_hbl1.c
 tc07_hbl1_LDADD             = -lpthread
+
+tc08_hbl2_SOURCES           = ../../helgrind/tests/tc08_hbl2.c
+tc08_hbl2_LDADD             = -lpthread
 
 tc09_bad_unlock_SOURCES     = ../../helgrind/tests/tc09_bad_unlock.c
 tc09_bad_unlock_LDADD       = -lpthread

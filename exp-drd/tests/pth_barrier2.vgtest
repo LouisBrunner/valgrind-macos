@@ -1,0 +1,3 @@
+prog: pth_barrier
+args: 2 32 1
+stderr_filter: filter_error_summary

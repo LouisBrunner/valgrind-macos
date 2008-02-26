@@ -51,7 +51,6 @@ Known bugs
 ~~~~~~~~~~
 - Gets killed by the OOM handler for realistically sized applications,
   e.g. knode and OpenOffice.
-- When pthread_barrier_wait() is called, some real races are suppressed.
 - Does not work with a glibc library compiled with linuxthreads -- NPTL is
   required for proper operation.
 - [x86_64] Reports "Allocation context: unknown" for BSS symbols on AMD64

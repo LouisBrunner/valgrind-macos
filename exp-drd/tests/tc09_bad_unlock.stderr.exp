@@ -13,7 +13,7 @@ Mutex not unlocked by owner thread / mutex 0x........ (recursion count 1, owner 
    by 0x........: clone (in /...libc...)
 
 Thread 1:
-Not a mutex / mutex 0x........ (recursion count 0, owner 0)
+Not a mutex
    at 0x........: pthread_mutex_unlock (drd_intercepts.c:?)
    by 0x........: nearly_main (tc09_bad_unlock.c:41)
    by 0x........: main (tc09_bad_unlock.c:49)
@@ -32,7 +32,7 @@ Mutex not unlocked by owner thread / mutex 0x........ (recursion count 1, owner 
    by 0x........: clone (in /...libc...)
 
 Thread 1:
-Not a mutex / mutex 0x........ (recursion count 0, owner 0)
+Not a mutex
    at 0x........: pthread_mutex_unlock (drd_intercepts.c:?)
    by 0x........: nearly_main (tc09_bad_unlock.c:41)
    by 0x........: main (tc09_bad_unlock.c:50)

@@ -1,2 +1,0 @@
-prog: tc08_hbl2
-stderr_filter: filter_error_summary

@@ -112,12 +112,12 @@ mutex_get_or_allocate(const Addr mutex,
     {
       if (drd_is_any_suppressed(mutex, mutex + size))
       {
-         MutexErrInfo MEI = { 0, 0, 0 };
+         GenericErrInfo GEI;
          VG_(maybe_record_error)(VG_(get_running_tid)(),
-                                 MutexErr,
+                                 GenericErr,
                                  VG_(get_IP)(VG_(get_running_tid)()),
                                  "Not a mutex",
-                                 &MEI);
+                                 &GEI);
          return 0;
       }
       mutex_initialize(&s_mutex[i], mutex, size, mutex_type);
@@ -246,12 +246,12 @@ int mutex_lock(const Addr mutex, const SizeT size, MutexT mutex_type)
 
   if (p == 0)
   {
-     MutexErrInfo MEI = { 0, 0, 0 };
+     GenericErrInfo GEI;
      VG_(maybe_record_error)(VG_(get_running_tid)(),
-                             MutexErr,
+                             GenericErr,
                              VG_(get_IP)(VG_(get_running_tid)()),
                              "Not a mutex",
-                             &MEI);
+                             &GEI);
      return 0;
   }
 
@@ -323,12 +323,12 @@ int mutex_unlock(const Addr mutex, const MutexT mutex_type)
 
   if (p == 0 || p->owner == DRD_INVALID_THREADID)
   {
-     MutexErrInfo MEI = { 0, 0, 0 };
+     GenericErrInfo GEI;
      VG_(maybe_record_error)(vg_tid,
-                             MutexErr,
+                             GenericErr,
                              VG_(get_IP)(vg_tid),
                              "Not a mutex",
-                             &MEI);
+                             &GEI);
      return 0;
   }
 

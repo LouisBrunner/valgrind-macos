@@ -20,14 +20,14 @@ Destroying locked mutex / mutex 0x........ (recursion count 1, owner 1)
    at 0x........: pthread_mutex_destroy (drd_intercepts.c:?)
    by 0x........: main (tc20_verifywrap.c:102)
 
-Not a mutex / mutex 0x........ (recursion count 0, owner 0)
+Not a mutex
    at 0x........: pthread_mutex_unlock (drd_intercepts.c:?)
    by 0x........: main (tc20_verifywrap.c:125)
 
 ---------------- pthread_cond_wait et al ----------------
 
 
-Not a mutex / mutex 0x........ (recursion count 0, owner 0)
+Not a mutex
    at 0x........: pthread_cond_wait* (drd_intercepts.c:?)
    by 0x........: main (tc20_verifywrap.c:147)
 

@@ -40,7 +40,8 @@ typedef enum {
    DataRaceErr    = 1,
    MutexErr       = 2,
    CondRaceErr    = 3,
-   CondErr = 4,
+   CondErr        = 4,
+   GenericErr     = 5,
 } DrdErrorKind;
 
 /* The classification of a faulting address. */
@@ -93,6 +94,9 @@ typedef struct {
 typedef struct {
    Addr cond;
 } CondErrInfo;
+
+typedef struct {
+} GenericErrInfo;
 
 void describe_addr(Addr const a, SizeT const len, AddrInfo* const ai);
 Char* describe_addr_text(Addr const a, SizeT const len, AddrInfo* const ai,

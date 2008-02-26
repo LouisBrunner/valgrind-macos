@@ -52,8 +52,12 @@
 
 // Function declarations.
 
+static void instrument_memory_bus_event(IRSB* const bb,
+                                        const IRMBusEvent event);
 static void drd_start_client_code(const ThreadId tid, const ULong bbs_done);
 static void drd_set_running_tid(const ThreadId tid);
+static void evh__bus_lock(void);
+static void evh__bus_unlock(void);
 
 
 
@@ -586,7 +590,8 @@ IRSB* drd_instrument(VgCallbackClosure* const closure,
    for (i = 0; i < bb_in->stmts_used; i++)
    {
       IRStmt* const st = bb_in->stmts[i];
-      if (!st || st->tag == Ist_NoOp)
+      tl_assert(st);
+      if (st->tag == Ist_NoOp)
          continue;
 
       switch (st->tag)
@@ -607,6 +612,11 @@ IRSB* drd_instrument(VgCallbackClosure* const closure,
                   )
                )
             );
+         break;
+
+      case Ist_MBE:
+         instrument_memory_bus_event(bb, st->Ist.MBE.event);
+         addStmtToIRSB(bb, st);
          break;
 
       case Ist_Store:
@@ -689,6 +699,47 @@ IRSB* drd_instrument(VgCallbackClosure* const closure,
    }
 
    return bb;
+}
+
+/* Based on the function with the same name in Helgrind's hg_main.c */
+static void instrument_memory_bus_event(IRSB* const bb,
+                                        const IRMBusEvent const event)
+{
+   switch (event)
+   {
+   case Imbe_Fence:
+      break; /* not interesting */
+   case Imbe_BusLock:
+      addStmtToIRSB(bb,
+         IRStmt_Dirty(unsafeIRDirty_0_N(0/*regparms*/, "evh__bus_lock",
+                  VG_(fnptr_to_fnentry)(&evh__bus_lock), mkIRExprVec_0())
+                      ));
+      break;
+   case Imbe_BusUnlock:
+      addStmtToIRSB(bb,
+         IRStmt_Dirty(unsafeIRDirty_0_N(0/*regparms*/, "evh__bus_unlock",
+                  VG_(fnptr_to_fnentry)(&evh__bus_unlock), mkIRExprVec_0())
+                      ));
+      break;
+   default:
+      tl_assert(0);
+   }
+}
+
+/** Locking the memory bus is a way to serialize store operations.
+ *  What the lwarx / stwcx instructions do on PowerPC is to detect whether
+ *  any other CPU has invalidated the cache line in which the location
+ *  specified by lwarx resides has been invalidated at the time the stwcx
+ *  instruction is executed.
+ */
+static void evh__bus_lock(void)
+{
+   /* To do: implement this function. */
+}
+
+static void evh__bus_unlock(void)
+{
+   /* To do: implement this function. */
 }
 
 static void drd_set_running_tid(const ThreadId vg_tid)

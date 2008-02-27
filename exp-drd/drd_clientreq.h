@@ -76,11 +76,11 @@ enum {
   /* args: Addr */
   /* to notify the drd tool of a pthread_cond_destroy call. */
   VG_USERREQ__PRE_PTHREAD_COND_DESTROY,
-  /* args: Addr cond, SizeT cond_size, Addr mutex, SizeT mutex_size */
+  /* args: Addr cond, SizeT cond_size, Addr mutex, SizeT mutex_size, MutexT mt */
   VG_USERREQ__PRE_PTHREAD_COND_WAIT,
-  /* args: Addr cond, SizeT cond_size, Addr mutex, SizeT mutex_size */
+  /* args: Addr cond, SizeT cond_size, Addr mutex, MutexT mt */
   VG_USERREQ__POST_PTHREAD_COND_WAIT,
-  /* args: Addr cond, SizeT cond_size, Addr mutex, SizeT mutex_size */
+  /* args: Addr cond, Addr mutex, SizeT mutex_size, MutexT mt */
   VG_USERREQ__PRE_PTHREAD_COND_SIGNAL,
   /* args: Addr cond */
   VG_USERREQ__PRE_PTHREAD_COND_BROADCAST,
@@ -119,8 +119,10 @@ enum {
 
 typedef enum
 {
-   mutex_type_mutex = 1,
-   mutex_type_spinlock = 2,
+   mutex_type_recursive_mutex  = 1,
+   mutex_type_errorcheck_mutex = 2,
+   mutex_type_default_mutex    = 3,
+   mutex_type_spinlock         = 4,
 } MutexT;
 
 

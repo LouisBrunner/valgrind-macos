@@ -50,6 +50,7 @@ EXTRA_DIST = $(noinst_SCRIPTS)                                  \
 	pth_detached.stdout.exp pth_detached.stderr.exp         \
 	pth_detached2.vgtest                                    \
 	pth_detached2.stdout.exp pth_detached2.stderr.exp       \
+	recursive_mutex.vgtest recursive_mutex.stderr.exp	\
 	sem_as_mutex.vgtest                                     \
 	sem_as_mutex.stderr.exp sem_as_mutex.stderr.exp2        \
 	sem_as_mutex2.vgtest                                    \
@@ -128,6 +129,7 @@ check_PROGRAMS =      \
   pth_create_chain    \
   pth_detached        \
   sem_as_mutex        \
+  recursive_mutex     \
   sigalrm             \
   tc01_simple_race    \
   tc02_simple_tls     \
@@ -195,6 +197,9 @@ pth_create_chain_LDADD      = -lpthread
 pth_detached_SOURCES        = pth_detached.c
 pth_detached_LDADD          = -lpthread
 
+recursive_mutex_SOURCES     = recursive_mutex.c
+recursive_mutex_LDADD       = -lpthread
+
 sem_as_mutex_SOURCES        = sem_as_mutex.c
 sem_as_mutex_LDADD          = -lpthread
 
@@ -219,11 +224,11 @@ tc05_simple_race_LDADD      = -lpthread
 tc06_two_races_SOURCES      = ../../helgrind/tests/tc06_two_races.c
 tc06_two_races_LDADD        = -lpthread
 
-tc07_hbl1_SOURCES           = ../../helgrind/tests/tc07_hbl1.c
-tc07_hbl1_LDADD             = -lpthread
+# tc07_hbl1_SOURCES           = ../../helgrind/tests/tc07_hbl1.c
+# tc07_hbl1_LDADD             = -lpthread
 
-tc08_hbl2_SOURCES           = ../../helgrind/tests/tc08_hbl2.c
-tc08_hbl2_LDADD             = -lpthread
+# tc08_hbl2_SOURCES           = ../../helgrind/tests/tc08_hbl2.c
+# tc08_hbl2_LDADD             = -lpthread
 
 tc09_bad_unlock_SOURCES     = ../../helgrind/tests/tc09_bad_unlock.c
 tc09_bad_unlock_LDADD       = -lpthread

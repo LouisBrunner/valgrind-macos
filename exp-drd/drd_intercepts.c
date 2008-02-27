@@ -85,6 +85,40 @@ static int vg_main_thread_state_is_set = 0;
 
 // Function definitions.
 
+static MutexT pthread_to_drd_mutex_type(const int kind)
+{
+   switch (kind)
+   {
+   /* PTHREAD_MUTEX_RECURSIVE_NP */
+   case PTHREAD_MUTEX_RECURSIVE:
+      return mutex_type_recursive_mutex;
+   /* PTHREAD_MUTEX_ERRORCHECK_NP */
+   case PTHREAD_MUTEX_ERRORCHECK:
+      return mutex_type_errorcheck_mutex;
+   /* PTHREAD_MUTEX_TIMED_NP */
+   /* PTHREAD_MUTEX_NORMAL */
+   case PTHREAD_MUTEX_DEFAULT:
+   case PTHREAD_MUTEX_ADAPTIVE_NP:
+      return mutex_type_default_mutex;
+#if 0
+   case -1:
+      printf("Warning: changed mutex type from -1 into %d\n",
+             mutex_type_default_mutex);
+      return mutex_type_default_mutex;
+#endif
+   }
+#if 0
+   printf("mutex->__data.__kind = %d\n", kind);
+   assert(0);
+#endif
+   return mutex_type_default_mutex;
+}
+
+static MutexT mutex_type(pthread_mutex_t* mutex)
+{
+   return pthread_to_drd_mutex_type(mutex->__data.__kind);
+}
+
 static void vg_start_suppression(const void* const p, size_t const size)
 {
    int res;
@@ -267,9 +301,13 @@ PTH_FUNC(int, pthreadZumutexZuinit,
    int ret;
    int res;
    OrigFn fn;
+   int mt = PTHREAD_MUTEX_DEFAULT;
    VALGRIND_GET_ORIG_FN(fn);
+   if (attr)
+      pthread_mutexattr_gettype(attr, &mt);
    VALGRIND_DO_CLIENT_REQUEST(res, -1, VG_USERREQ__PRE_MUTEX_INIT,
-                              mutex, sizeof(*mutex), mutex_type_mutex, 0, 0);
+                              mutex, sizeof(*mutex),
+                              pthread_to_drd_mutex_type(mt), 0, 0);
    CALL_FN_W_WW(ret, fn, mutex, attr);
    return ret;
 }
@@ -284,7 +322,7 @@ PTH_FUNC(int, pthreadZumutexZudestroy,
    VALGRIND_GET_ORIG_FN(fn);
    CALL_FN_W_W(ret, fn, mutex);
    VALGRIND_DO_CLIENT_REQUEST(res, -1, VG_USERREQ__POST_MUTEX_DESTROY,
-                              mutex, mutex_type_mutex, 0, 0, 0);
+                              mutex, mutex_type(mutex), 0, 0, 0);
    return ret;
 }
 
@@ -297,7 +335,7 @@ PTH_FUNC(int, pthreadZumutexZulock, // pthread_mutex_lock
    OrigFn fn;
    VALGRIND_GET_ORIG_FN(fn);
    VALGRIND_DO_CLIENT_REQUEST(res, 0, VG_USERREQ__PRE_PTHREAD_MUTEX_LOCK,
-                              mutex, sizeof(*mutex), mutex_type_mutex, 0, 0);
+                              mutex, sizeof(*mutex), mutex_type(mutex), 0, 0);
 #if 1
    // The only purpose of the system call below is to make drd work on AMD64
    // systems. Without this system call, clients crash (SIGSEGV) in
@@ -307,7 +345,7 @@ PTH_FUNC(int, pthreadZumutexZulock, // pthread_mutex_lock
    CALL_FN_W_W(ret, fn, mutex);
    if (ret == 0)
       VALGRIND_DO_CLIENT_REQUEST(res, 0, VG_USERREQ__POST_PTHREAD_MUTEX_LOCK,
-                                mutex, sizeof(*mutex), mutex_type_mutex, 0, 0);
+                                mutex, sizeof(*mutex), mutex_type(mutex), 0, 0);
    return ret;
 }
 
@@ -323,7 +361,7 @@ PTH_FUNC(int, pthreadZumutexZutrylock, // pthread_mutex_trylock
    if (ret == 0)
    {
       VALGRIND_DO_CLIENT_REQUEST(res, -1, VG_USERREQ__POST_PTHREAD_MUTEX_LOCK,
-                                mutex, sizeof(*mutex), mutex_type_mutex, 0, 0);
+                                mutex, sizeof(*mutex), mutex_type(mutex), 0, 0);
    }
    return ret;
 }
@@ -341,7 +379,7 @@ PTH_FUNC(int, pthreadZumutexZutimedlock, // pthread_mutex_timedlock
    if (ret == 0)
    {
       VALGRIND_DO_CLIENT_REQUEST(res, -1, VG_USERREQ__POST_PTHREAD_MUTEX_LOCK,
-                                mutex, sizeof(*mutex), mutex_type_mutex, 0, 0);
+                                mutex, sizeof(*mutex), mutex_type(mutex), 0, 0);
    }
    return ret;
 }
@@ -356,7 +394,7 @@ PTH_FUNC(int, pthreadZumutexZuunlock, // pthread_mutex_unlock
    VALGRIND_GET_ORIG_FN(fn);
    VALGRIND_DO_CLIENT_REQUEST(res, -1,
                               VG_USERREQ__PRE_PTHREAD_MUTEX_UNLOCK,
-                              mutex, sizeof(*mutex), mutex_type_mutex, 0, 0);
+                              mutex, sizeof(*mutex), mutex_type(mutex), 0, 0);
    CALL_FN_W_W(ret, fn, mutex);
    return ret;
 }
@@ -400,10 +438,10 @@ PTH_FUNC(int, pthreadZucondZuwaitZa, // pthread_cond_wait*
    OrigFn fn;
    VALGRIND_GET_ORIG_FN(fn);
    VALGRIND_DO_CLIENT_REQUEST(res, -1, VG_USERREQ__PRE_PTHREAD_COND_WAIT,
-                              cond, sizeof(*cond), mutex, sizeof(*mutex), 0);
+                              cond, sizeof(*cond), mutex, mutex_type(mutex), 0);
    CALL_FN_W_WW(ret, fn, cond, mutex);
    VALGRIND_DO_CLIENT_REQUEST(res, -1, VG_USERREQ__POST_PTHREAD_COND_WAIT,
-                              cond, sizeof(*cond), mutex, sizeof(*mutex), 0);
+                              cond, mutex, sizeof(*mutex), mutex_type(mutex), 0);
    return ret;
 }
 
@@ -418,10 +456,10 @@ PTH_FUNC(int, pthreadZucondZutimedwaitZa, // pthread_cond_timedwait*
    OrigFn fn;
    VALGRIND_GET_ORIG_FN(fn);
    VALGRIND_DO_CLIENT_REQUEST(res, -1, VG_USERREQ__PRE_PTHREAD_COND_WAIT,
-                              cond, sizeof(*cond), mutex, sizeof(*mutex), 0);
+                              cond, sizeof(*cond), mutex, mutex_type(mutex), 0);
    CALL_FN_W_WWW(ret, fn, cond, mutex, abstime);
    VALGRIND_DO_CLIENT_REQUEST(res, -1, VG_USERREQ__POST_PTHREAD_COND_WAIT,
-                              cond, sizeof(*cond), mutex, sizeof(*mutex), 0);
+                              cond, mutex, sizeof(*mutex), mutex_type(mutex), 0);
    return ret;
 }
 

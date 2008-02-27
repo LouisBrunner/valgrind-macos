@@ -1,11 +1,11 @@
 
-Attempt to unlock a mutex that is not locked / mutex 0x........ (recursion count -1, owner 1)
+Attempt to unlock a mutex that is not locked: address 0x........, recursion count -1, owner 1.
    at 0x........: pthread_mutex_unlock (drd_intercepts.c:?)
    by 0x........: nearly_main (tc09_bad_unlock.c:27)
    by 0x........: main (tc09_bad_unlock.c:49)
 
 Thread 2:
-Mutex not unlocked by owner thread / mutex 0x........ (recursion count 1, owner 1)
+Mutex not unlocked by owner thread: address 0x........, recursion count 1, owner 1.
    at 0x........: pthread_mutex_unlock (drd_intercepts.c:?)
    by 0x........: child_fn (tc09_bad_unlock.c:11)
    by 0x........: vg_thread_wrapper (drd_intercepts.c:?)
@@ -18,13 +18,13 @@ Not a mutex
    by 0x........: nearly_main (tc09_bad_unlock.c:41)
    by 0x........: main (tc09_bad_unlock.c:49)
 
-Attempt to unlock a mutex that is not locked / mutex 0x........ (recursion count -1, owner 1)
+Attempt to unlock a mutex that is not locked: address 0x........, recursion count -1, owner 1.
    at 0x........: pthread_mutex_unlock (drd_intercepts.c:?)
    by 0x........: nearly_main (tc09_bad_unlock.c:27)
    by 0x........: main (tc09_bad_unlock.c:50)
 
 Thread 2:
-Mutex not unlocked by owner thread / mutex 0x........ (recursion count 1, owner 1)
+Mutex not unlocked by owner thread: address 0x........, recursion count 1, owner 1.
    at 0x........: pthread_mutex_unlock (drd_intercepts.c:?)
    by 0x........: child_fn (tc09_bad_unlock.c:11)
    by 0x........: vg_thread_wrapper (drd_intercepts.c:?)

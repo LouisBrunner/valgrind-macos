@@ -1,3 +1,18 @@
 
+Destroying locked mutex: address 0x........, recursion count 1, owner 1.
+   at 0x........: free (vg_replace_malloc.c:...)
+   by 0x........: main (tc04_free_lock.c:24)
 
-ERROR SUMMARY: 0 errors from 0 contexts (suppressed: 0 from 0)
+Destroying locked mutex: address 0x........, recursion count 1, owner 1.
+   at 0x........: bar (tc04_free_lock.c:40)
+   by 0x........: main (tc04_free_lock.c:26)
+
+Destroying locked mutex: address 0x........, recursion count 1, owner 1.
+   at 0x........: foo (tc04_free_lock.c:49)
+   by 0x........: main (tc04_free_lock.c:27)
+
+Destroying locked mutex: address 0x........, recursion count 1, owner 1.
+   at 0x........: bar (tc04_free_lock.c:40)
+   by 0x........: main (tc04_free_lock.c:28)
+
+ERROR SUMMARY: 4 errors from 4 contexts (suppressed: 0 from 0)

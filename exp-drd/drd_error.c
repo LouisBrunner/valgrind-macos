@@ -261,7 +261,7 @@ static void drd_tool_error_pp(Error* const e)
       MutexErrInfo* p = (MutexErrInfo*)(VG_(get_error_extra)(e));
       tl_assert(p);
       VG_(message)(Vg_UserMsg,
-                   "%s / mutex 0x%lx (recursion count %d, owner %d)",
+                   "%s: address 0x%lx, recursion count %d, owner %d.",
                    VG_(get_error_string)(e),
                    p->mutex,
                    p->recursion_count,

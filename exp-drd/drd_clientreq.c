@@ -54,17 +54,17 @@ static void drd_spin_init_or_unlock(const Addr spinlock, const SizeT size)
 }
 
 static void drd_pre_cond_wait(const Addr cond, const SizeT cond_size,
-                              const Addr mutex)
+                              const Addr mutex, const MutexT mutex_type)
 {
-   mutex_unlock(mutex, mutex_type_mutex);
+   mutex_unlock(mutex, mutex_type);
    cond_pre_wait(cond, cond_size, mutex);
 }
 
 static void drd_post_cond_wait(const Addr cond, const Addr mutex,
-                               const SizeT size)
+                               const SizeT size, const MutexT mutex_type)
 {
    cond_post_wait(cond);
-   mutex_lock(mutex, size, mutex_type_mutex);
+   mutex_lock(mutex, size, mutex_type);
 }
 
 static void drd_pre_cond_signal(const Addr cond)
@@ -164,12 +164,13 @@ static Bool drd_handle_client_request(ThreadId tid, UWord* arg, UWord* ret)
       break;
 
    case VG_USERREQ__PRE_PTHREAD_COND_WAIT:
-      drd_pre_cond_wait(arg[1]/*cond*/, arg[2]/*cond_size*/, arg[3]/*mutex*/);
+      drd_pre_cond_wait(arg[1]/*cond*/,  arg[2]/*cond_size*/,
+                        arg[3]/*mutex*/, arg[4]/*mutex_type*/);
       break;
 
    case VG_USERREQ__POST_PTHREAD_COND_WAIT:
-      drd_post_cond_wait(arg[1]/*cond*/, arg[3]/*mutex*/,
-                         arg[4]/*mutex_size*/);
+      drd_post_cond_wait(arg[1]/*cond*/, arg[2]/*mutex*/,
+                         arg[3]/*mutex_size*/, arg[4]/*mutex_type*/);
       break;
 
    case VG_USERREQ__PRE_PTHREAD_COND_SIGNAL:

@@ -49,6 +49,7 @@ struct mutex_info
 
 // Local functions.
 
+static Bool mutex_is_locked(struct mutex_info* const p);
 static void mutex_destroy(struct mutex_info* const p);
 
 
@@ -75,8 +76,10 @@ void mutex_initialize(struct mutex_info* const p,
 {
   tl_assert(mutex != 0);
   tl_assert(size > 0);
+#if 0
   tl_assert(mutex_type == mutex_type_mutex
             || mutex_type == mutex_type_spinlock);
+#endif
 
   p->mutex           = mutex;
   p->size            = size;
@@ -94,13 +97,20 @@ mutex_get_or_allocate(const Addr mutex,
 {
   int i;
 
+#if 0
   tl_assert(mutex_type == mutex_type_mutex
             || mutex_type == mutex_type_spinlock);
+#endif
 
   for (i = 0; i < sizeof(s_mutex)/sizeof(s_mutex[0]); i++)
   {
     if (s_mutex[i].mutex == mutex)
     {
+      if (s_mutex[i].mutex_type != mutex_type)
+      {
+        VG_(message)(Vg_DebugMsg, "??? mutex %p: type changed from %d into %d",
+	             s_mutex[i].mutex, s_mutex[i].mutex_type, mutex_type);
+      }
       tl_assert(s_mutex[i].mutex_type == mutex_type);
       tl_assert(s_mutex[i].size == size);
       return &s_mutex[i];
@@ -146,8 +156,11 @@ mutex_init(const Addr mutex, const SizeT size, const MutexT mutex_type)
                  mutex);
   }
 
+#if 0
   tl_assert(mutex_type == mutex_type_mutex
             || mutex_type == mutex_type_spinlock);
+#endif
+
   mutex_p = mutex_get(mutex);
   if (mutex_p)
   {
@@ -177,6 +190,16 @@ static void mutex_destroy(struct mutex_info* const p)
                  vg_tid, drd_tid,
                  mutex_get_typename(p),
                  p->mutex);
+  }
+
+  if (mutex_is_locked(p))
+  {
+    MutexErrInfo MEI = { p->mutex, p->recursion_count, p->owner };
+    VG_(maybe_record_error)(VG_(get_running_tid)(),
+                            MutexErr,
+                            VG_(get_IP)(VG_(get_running_tid)()),
+                            "Destroying locked mutex",
+                            &MEI);
   }
 
   drd_finish_suppression(p->mutex, p->mutex + p->size);
@@ -255,8 +278,11 @@ int mutex_lock(const Addr mutex, const SizeT size, MutexT mutex_type)
      return 0;
   }
 
+#if 0
   tl_assert(mutex_type == mutex_type_mutex
             || mutex_type == mutex_type_spinlock);
+#endif
+
   tl_assert(p->mutex_type == mutex_type);
   tl_assert(p->size == size);
 
@@ -321,7 +347,7 @@ int mutex_unlock(const Addr mutex, const MutexT mutex_type)
                  p->owner);
   }
 
-  if (p == 0 || p->owner == DRD_INVALID_THREADID)
+  if (p == 0)
   {
      GenericErrInfo GEI;
      VG_(maybe_record_error)(vg_tid,
@@ -332,11 +358,29 @@ int mutex_unlock(const Addr mutex, const MutexT mutex_type)
      return 0;
   }
 
+  if (p->owner == DRD_INVALID_THREADID)
+  {
+    MutexErrInfo MEI = { p->mutex, p->recursion_count, p->owner };
+    VG_(maybe_record_error)(vg_tid,
+                            MutexErr,
+                            VG_(get_IP)(vg_tid),
+                            "Mutex not locked",
+                            &MEI);
+     return 0;
+  }
+
   tl_assert(p);
+  if (p->mutex_type != mutex_type)
+  {
+    VG_(message)(Vg_DebugMsg, "??? mutex %p: type changed from %d into %d",
+	         p->mutex, p->mutex_type, mutex_type);
+  }
   tl_assert(p->mutex_type == mutex_type);
   tl_assert(p->owner != DRD_INVALID_THREADID);
+#if 0
   tl_assert(mutex_type == mutex_type_mutex
             || mutex_type == mutex_type_spinlock);
+#endif
 
   if (p->owner != drd_tid)
   {
@@ -383,7 +427,11 @@ const char* mutex_type_name(const MutexT mt)
 {
   switch (mt)
   {
-  case mutex_type_mutex:
+  case mutex_type_recursive_mutex:
+    return "recursive mutex";
+  case mutex_type_errorcheck_mutex:
+    return "error checking mutex";
+  case mutex_type_default_mutex:
     return "mutex";
   case mutex_type_spinlock:
     return "spinlock";
@@ -391,6 +439,13 @@ const char* mutex_type_name(const MutexT mt)
     tl_assert(0);
   }
   return "?";
+}
+
+/** Return true if the specified mutex is locked by any thread. */
+static Bool mutex_is_locked(struct mutex_info* const p)
+{
+  tl_assert(p);
+  return (p->recursion_count > 0);
 }
 
 Bool mutex_is_locked_by(const Addr mutex, const DrdThreadId tid)
@@ -419,8 +474,6 @@ int mutex_get_recursion_count(const Addr mutex)
 /**
  * Call this function when thread tid stops to exist, such that the
  * "last owner" field can be cleared if it still refers to that thread.
- * TO DO: print an error message if a thread exits while it still has some
- * mutexes locked.
  */
 void mutex_thread_delete(const DrdThreadId tid)
 {
@@ -428,8 +481,15 @@ void mutex_thread_delete(const DrdThreadId tid)
   for (i = 0; i < sizeof(s_mutex)/sizeof(s_mutex[0]); i++)
   {
     struct mutex_info* const p = &s_mutex[i];
-    if (p->mutex && p->owner == tid)
+    if (p->mutex && p->owner == tid && p->recursion_count > 0)
     {
+      MutexErrInfo MEI
+        = { p->mutex, p->recursion_count, p->owner };
+      VG_(maybe_record_error)(VG_(get_running_tid)(),
+                              MutexErr,
+                              VG_(get_IP)(VG_(get_running_tid)()),
+                              "Mutex still locked at thread exit",
+                              &MEI);
       p->owner = VG_INVALID_THREADID;
     }
   }

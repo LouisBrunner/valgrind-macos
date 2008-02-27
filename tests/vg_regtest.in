@@ -61,17 +61,17 @@
 # Note that filters are necessary for stderr results to filter out things that
 # always change, eg. process id numbers.
 #
-# Expected stdout (filtered) is kept in <test>.stdout.exp[0-9]* (can be more
+# Expected stdout (filtered) is kept in <test>.stdout.exp* (can be more
 # than one expected output).  It can be missing if it would be empty.  Expected
 # stderr (filtered) is kept in <test>.stderr.exp*.   There must be at least
 # one stderr.exp* file.
 #
 # The prerequisite command, if present, must return 0 otherwise the test is
 # skipped.  The post-test command, if present, must return 0 and its stdout
-# must match the expected stdout which is kept in <test>.post.exp[0-9]*.
+# must match the expected stdout which is kept in <test>.post.exp*.
 #
 # If results don't match, the output can be found in <test>.std<strm>.out,
-# and the diff between expected and actual in <test>.std<strm>.diff[0-9]*.
+# and the diff between expected and actual in <test>.std<strm>.diff*.
 #
 # Sometimes it is useful to run all the tests at a high sanity check
 # level or with arbitrary other flags.  To make this simple, extra 

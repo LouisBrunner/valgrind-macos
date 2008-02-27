@@ -241,8 +241,8 @@ int main ( void )
    memset(&s1, 0x55, sizeof(s1));
    r= sem_wait(&s1); /* assert(r != 0); */
 
-   /* this really ought to fail, but it doesn't. */
-   r= sem_post(&s1); assert(!r);
+   /* this only fails with glibc 2.7 or later. */
+   r= sem_post(&s1);
    fprintf(stderr, "\nFIXME: can't figure out how to verify wrap of "
                    "sem_post\n\n");
 

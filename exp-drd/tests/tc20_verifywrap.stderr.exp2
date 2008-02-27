@@ -16,18 +16,22 @@ Other segment end (thread 2)
 ---------------- pthread_mutex_lock et al ----------------
 
 
-Destroying locked mutex / mutex 0x........ (recursion count 1, owner 1)
+Destroying locked mutex: address 0x........, recursion count 1, owner 1.
    at 0x........: pthread_mutex_destroy (drd_intercepts.c:?)
    by 0x........: main (tc20_verifywrap.c:102)
 
-Not a mutex
+Destroying locked mutex: address 0x........, recursion count 1, owner 1.
+   at 0x........: pthread_mutex_destroy (drd_intercepts.c:?)
+   by 0x........: main (tc20_verifywrap.c:102)
+
+Mutex not locked: address 0x........, recursion count 0, owner 0.
    at 0x........: pthread_mutex_unlock (drd_intercepts.c:?)
    by 0x........: main (tc20_verifywrap.c:125)
 
 ---------------- pthread_cond_wait et al ----------------
 
 
-Not a mutex
+Mutex not locked: address 0x........, recursion count 0, owner 0.
    at 0x........: pthread_cond_wait* (drd_intercepts.c:?)
    by 0x........: main (tc20_verifywrap.c:147)
 
@@ -60,4 +64,7 @@ FIXME: can't figure out how to verify wrap of sem_post
 ------------ dealloc of mem holding locks ------------
 
 
-ERROR SUMMARY: 4 errors from 4 contexts (suppressed: 0 from 0)
+Destroying locked mutex: address 0x........, recursion count 1, owner 1.
+   at 0x........: main (tc20_verifywrap.c:262)
+
+ERROR SUMMARY: 6 errors from 6 contexts (suppressed: 0 from 0)

@@ -1,5 +1,5 @@
-/** Initialize a recursive mutex and lock it twice.
- *  No error messages may be printed.
+/** Initialize several kinds of mutexes and lock each mutex twice.
+ *  Note: locking a regular mutex twice causes a deadlock.
  */
 
 #define _GNU_SOURCE
@@ -17,6 +17,9 @@ static void lock_twice(pthread_mutex_t* const p)
 
 int main(int argc, char** argv)
 {
+  /* Let the program abort after 3 seconds instead of leaving it deadlocked. */
+  alarm(3);
+
   {
     pthread_mutex_t m = PTHREAD_RECURSIVE_MUTEX_INITIALIZER_NP;
 
@@ -51,7 +54,9 @@ int main(int argc, char** argv)
     pthread_mutex_t m = PTHREAD_MUTEX_INITIALIZER;
 
     printf("Non-recursive mutex.\n");
+    fflush(stdout);
     lock_twice(&m);
   } 
+  printf("Done.\n");
   return 0;
 }

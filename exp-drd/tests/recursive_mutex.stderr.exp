@@ -1,0 +1,17 @@
+
+Recursive locking not allowed: address 0x........, recursion count 1, owner 1.
+   at 0x........: pthread_mutex_lock (drd_intercepts.c:?)
+   by 0x........: lock_twice (recursive_mutex.c:?)
+   by 0x........: main (recursive_mutex.c:?)
+
+Attempt to unlock a mutex that is not locked: address 0x........, recursion count -1, owner 1.
+   at 0x........: pthread_mutex_unlock (drd_intercepts.c:?)
+   by 0x........: lock_twice (recursive_mutex.c:?)
+   by 0x........: main (recursive_mutex.c:?)
+
+Recursive locking not allowed: address 0x........, recursion count 1, owner 1.
+   at 0x........: pthread_mutex_lock (drd_intercepts.c:?)
+   by 0x........: lock_twice (recursive_mutex.c:?)
+   by 0x........: main (recursive_mutex.c:?)
+
+ERROR SUMMARY: 3 errors from 3 contexts (suppressed: 0 from 0)

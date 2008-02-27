@@ -1,0 +1,4 @@
+Recursive mutex (statically initialized).
+Recursive mutex (initialized via mutex attributes).
+Error checking mutex.
+Non-recursive mutex.

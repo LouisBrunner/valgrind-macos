@@ -431,10 +431,7 @@ void drd_pre_mutex_lock(const DrdThreadId drd_tid,
                         const SizeT size,
                         const MutexT mutex_type)
 {
-   if (mutex_get(mutex) == 0)
-   {
-      mutex_init(mutex, size, mutex_type);
-   }
+   mutex_pre_lock(mutex, size, mutex_type);
 }
 
 void drd_post_mutex_lock(const DrdThreadId drd_tid,
@@ -442,7 +439,7 @@ void drd_post_mutex_lock(const DrdThreadId drd_tid,
                          const SizeT size,
                          const MutexT mutex_type)
 {
-   mutex_lock(mutex, size, mutex_type);
+   mutex_post_lock(mutex, size, mutex_type);
 }
 
 void drd_pre_mutex_unlock(const DrdThreadId drd_tid,

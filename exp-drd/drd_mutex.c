@@ -244,12 +244,40 @@ struct mutex_info* mutex_get(const Addr mutex)
   return 0;
 }
 
+/** Called before pthread_mutex_lock() is invoked. If a data structure for
+ *  the client-side object was not yet created, do this now. Also check whether
+ *  an attempt is made to lock recursively a synchronization object that must
+ *  not be locked recursively.
+ */
+void mutex_pre_lock(const Addr mutex, const SizeT size, MutexT mutex_type)
+{
+  struct mutex_info* p = mutex_get(mutex);
+  if (p == 0)
+  {
+    mutex_init(mutex, size, mutex_type);
+    p = mutex_get(mutex);
+  }
+  tl_assert(p);
+
+  if (p->owner == thread_get_running_tid()
+      && p->recursion_count >= 1
+      && mutex_type != mutex_type_recursive_mutex)
+  {
+    MutexErrInfo MEI = { p->mutex, p->recursion_count, p->owner };
+    VG_(maybe_record_error)(VG_(get_running_tid)(),
+                            MutexErr,
+                            VG_(get_IP)(VG_(get_running_tid)()),
+                            "Recursive locking not allowed",
+                            &MEI);
+  }
+}
+
 /**
  * Update mutex_info state when locking the pthread_mutex_t mutex.
  * Note: this function must be called after pthread_mutex_lock() has been
  * called, or a race condition is triggered !
  */
-int mutex_lock(const Addr mutex, const SizeT size, MutexT mutex_type)
+int mutex_post_lock(const Addr mutex, const SizeT size, MutexT mutex_type)
 {
   const DrdThreadId drd_tid = VgThreadIdToDrdThreadId(VG_(get_running_tid)());
   struct mutex_info* const p = mutex_get_or_allocate(mutex, size, mutex_type);
@@ -285,13 +313,6 @@ int mutex_lock(const Addr mutex, const SizeT size, MutexT mutex_type)
 
   tl_assert(p->mutex_type == mutex_type);
   tl_assert(p->size == size);
-
-  if (p->recursion_count >= 1 && mutex_type == mutex_type_spinlock)
-  {
-    // TO DO: tell the user in a more friendly way that it is not allowed to
-    // lock spinlocks recursively.
-    tl_assert(0);
-  }
 
   if (p->recursion_count == 0)
   {

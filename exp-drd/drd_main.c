@@ -25,6 +25,7 @@
 
 #include "drd_barrier.h"
 #include "drd_clientreq.h"
+#include "drd_clientobj.h"
 #include "drd_cond.h"
 #include "drd_error.h"
 #include "drd_malloc_wrappers.h"
@@ -275,7 +276,7 @@ static void drd_stop_using_mem(const Addr a1, const Addr a2)
                                  VG_(clo_backtrace_size));
    }
    thread_stop_using_mem(a1, a2);
-   mutex_stop_using_mem(a1, a2);
+   drd_clientobj_stop_using_mem(a1, a2);
    cond_stop_using_mem(a1, a2);
    semaphore_stop_using_mem(a1, a2);
    barrier_stop_using_mem(a1, a2);
@@ -835,6 +836,8 @@ void drd_pre_clo_init(void)
    drd_clientreq_init();
 
    drd_suppression_init();
+
+   drd_clientobj_init();
 }
 
 

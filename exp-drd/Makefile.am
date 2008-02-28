@@ -69,6 +69,7 @@ vgpreload_exp_drd_ppc64_aix5_so_LDFLAGS      = $(PRELOAD_LDFLAGS_PPC64_AIX5)
 DRD_SOURCES_COMMON =    \
   drd_barrier.c         \
   drd_bitmap.c          \
+  drd_clientobj.c       \
   drd_clientreq.c       \
   drd_cond.c            \
   drd_error.c           \
@@ -84,6 +85,7 @@ DRD_SOURCES_COMMON =    \
 noinst_HEADERS =        \
   drd_barrier.h         \
   drd_bitmap.h          \
+  drd_clientobj.h       \
   drd_clientreq.h       \
   drd_cond.h            \
   drd_error.h           \

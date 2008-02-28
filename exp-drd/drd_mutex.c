@@ -23,28 +23,15 @@
 */
 
 
+#include "drd_clientobj.h"
 #include "drd_error.h"
 #include "drd_mutex.h"
-#include "drd_suppression.h"
 #include "priv_drd_clientreq.h"
 #include "pub_tool_errormgr.h"    // VG_(maybe_record_error)()
 #include "pub_tool_libcassert.h"  // tl_assert()
-#include "pub_tool_libcprint.h"   // VG_(printf)()
+#include "pub_tool_libcprint.h"   // VG_(message)()
 #include "pub_tool_machine.h"     // VG_(get_IP)()
 #include "pub_tool_threadstate.h" // VG_(get_running_tid)()
-
-
-// Type definitions.
-
-struct mutex_info
-{
-  Addr        mutex;           // Pointer to client mutex.
-  SizeT       size;            // Size in bytes of client-side object.
-  MutexT      mutex_type;      // pthread_mutex_t or pthread_spinlock_t.
-  int         recursion_count; // 0 if free, >= 1 if locked.
-  DrdThreadId owner;           // owner if locked, last owner if free.
-  VectorClock vc;              // vector clock associated with last unlock.
-};
 
 
 // Local functions.
@@ -57,7 +44,6 @@ static void mutex_destroy(struct mutex_info* const p);
 
 static Bool s_trace_mutex;
 static ULong s_mutex_lock_count;
-struct mutex_info s_mutex[256];
 
 
 // Function definitions.
@@ -76,13 +62,10 @@ void mutex_initialize(struct mutex_info* const p,
 {
   tl_assert(mutex != 0);
   tl_assert(size > 0);
-#if 0
-  tl_assert(mutex_type == mutex_type_mutex
-            || mutex_type == mutex_type_spinlock);
-#endif
 
-  p->mutex           = mutex;
-  p->size            = size;
+  tl_assert(p->a1 == mutex);
+  tl_assert(p->a2 == mutex + size);
+  p->cleanup         = (void(*)(DrdClientobj*))&mutex_destroy;
   p->mutex_type      = mutex_type;
   p->recursion_count = 0;
   p->owner           = DRD_INVALID_THREADID;
@@ -95,49 +78,31 @@ mutex_get_or_allocate(const Addr mutex,
                       const SizeT size,
                       const MutexT mutex_type)
 {
-  int i;
+  struct mutex_info* p;
 
-#if 0
-  tl_assert(mutex_type == mutex_type_mutex
-            || mutex_type == mutex_type_spinlock);
-#endif
+  tl_assert(offsetof(DrdClientobj, mutex) == 0);
+  p = &drd_clientobj_get(mutex, ClientMutex)->mutex;
+  if (p)
+  {
+    tl_assert(p->mutex_type == mutex_type);
+    tl_assert(p->a2 - p->a1 == size);
+    return p;
+  }
 
-  for (i = 0; i < sizeof(s_mutex)/sizeof(s_mutex[0]); i++)
+  if (drd_clientobj_present(mutex, mutex + size))
   {
-    if (s_mutex[i].mutex == mutex)
-    {
-      if (s_mutex[i].mutex_type != mutex_type)
-      {
-        VG_(message)(Vg_DebugMsg, "??? mutex %p: type changed from %d into %d",
-	             s_mutex[i].mutex, s_mutex[i].mutex_type, mutex_type);
-      }
-      tl_assert(s_mutex[i].mutex_type == mutex_type);
-      tl_assert(s_mutex[i].size == size);
-      return &s_mutex[i];
-    }
+     GenericErrInfo GEI;
+     VG_(maybe_record_error)(VG_(get_running_tid)(),
+                             GenericErr,
+                             VG_(get_IP)(VG_(get_running_tid)()),
+                             "Not a mutex",
+                             &GEI);
+     return 0;
   }
-  for (i = 0; i < sizeof(s_mutex)/sizeof(s_mutex[0]); i++)
-  {
-    if (s_mutex[i].mutex == 0)
-    {
-      if (drd_is_any_suppressed(mutex, mutex + size))
-      {
-         GenericErrInfo GEI;
-         VG_(maybe_record_error)(VG_(get_running_tid)(),
-                                 GenericErr,
-                                 VG_(get_IP)(VG_(get_running_tid)()),
-                                 "Not a mutex",
-                                 &GEI);
-         return 0;
-      }
-      mutex_initialize(&s_mutex[i], mutex, size, mutex_type);
-      drd_start_suppression(mutex, mutex + size,
-                            mutex_get_typename(&s_mutex[i]));
-      return &s_mutex[i];
-    }
-  }
-  tl_assert(0);
-  return 0;
+
+  p = &drd_clientobj_add(mutex, mutex + size, ClientMutex)->mutex;
+  mutex_initialize(p, mutex, size, mutex_type);
+  return p;
 }
 
 struct mutex_info*
@@ -156,17 +121,12 @@ mutex_init(const Addr mutex, const SizeT size, const MutexT mutex_type)
                  mutex);
   }
 
-#if 0
-  tl_assert(mutex_type == mutex_type_mutex
-            || mutex_type == mutex_type_spinlock);
-#endif
-
   mutex_p = mutex_get(mutex);
   if (mutex_p)
   {
     const ThreadId vg_tid = VG_(get_running_tid)();
     MutexErrInfo MEI
-      = { mutex_p->mutex, mutex_p->recursion_count, mutex_p->owner };
+      = { mutex_p->a1, mutex_p->recursion_count, mutex_p->owner };
     VG_(maybe_record_error)(vg_tid,
                             MutexErr,
                             VG_(get_IP)(vg_tid),
@@ -189,12 +149,12 @@ static void mutex_destroy(struct mutex_info* const p)
                  "drd_pre_mutex_destroy tid = %d/%d, %s 0x%lx",
                  vg_tid, drd_tid,
                  mutex_get_typename(p),
-                 p->mutex);
+                 p->a1);
   }
 
   if (mutex_is_locked(p))
   {
-    MutexErrInfo MEI = { p->mutex, p->recursion_count, p->owner };
+    MutexErrInfo MEI = { p->a1, p->recursion_count, p->owner };
     VG_(maybe_record_error)(VG_(get_running_tid)(),
                             MutexErr,
                             VG_(get_IP)(VG_(get_running_tid)()),
@@ -202,10 +162,7 @@ static void mutex_destroy(struct mutex_info* const p)
                             &MEI);
   }
 
-  drd_finish_suppression(p->mutex, p->mutex + p->size);
-
-  vc_cleanup(&p->vc);
-  p->mutex = 0;
+  drd_clientobj_remove(p->a1);
 }
 
 void mutex_pre_destroy(struct mutex_info* const p)
@@ -224,7 +181,7 @@ void mutex_post_destroy(const Addr mutex)
       if (mutex_get_recursion_count(mutex) > 0)
       {
 	 const ThreadId vg_tid = VG_(get_running_tid)();
-         MutexErrInfo MEI = { p->mutex, p->recursion_count, p->owner };
+         MutexErrInfo MEI = { p->a1, p->recursion_count, p->owner };
          VG_(maybe_record_error)(vg_tid,
                                  MutexErr,
                                  VG_(get_IP)(vg_tid),
@@ -237,11 +194,8 @@ void mutex_post_destroy(const Addr mutex)
 
 struct mutex_info* mutex_get(const Addr mutex)
 {
-  int i;
-  for (i = 0; i < sizeof(s_mutex)/sizeof(s_mutex[0]); i++)
-    if (s_mutex[i].mutex == mutex)
-      return &s_mutex[i];
-  return 0;
+  tl_assert(offsetof(DrdClientobj, mutex) == 0);
+  return &drd_clientobj_get(mutex, ClientMutex)->mutex;
 }
 
 /** Called before pthread_mutex_lock() is invoked. If a data structure for
@@ -266,7 +220,7 @@ void mutex_pre_lock(const Addr mutex, const SizeT size, MutexT mutex_type)
       && p->recursion_count >= 1
       && mutex_type != mutex_type_recursive_mutex)
   {
-    MutexErrInfo MEI = { p->mutex, p->recursion_count, p->owner };
+    MutexErrInfo MEI = { p->a1, p->recursion_count, p->owner };
     VG_(maybe_record_error)(VG_(get_running_tid)(),
                             MutexErr,
                             VG_(get_IP)(VG_(get_running_tid)()),
@@ -325,7 +279,7 @@ int mutex_post_lock(const Addr mutex, const SizeT size, MutexT mutex_type)
 #endif
 
   tl_assert(p->mutex_type == mutex_type);
-  tl_assert(p->size == size);
+  tl_assert(p->a2 - p->a1 == size);
 
   if (p->recursion_count == 0)
   {
@@ -338,7 +292,7 @@ int mutex_post_lock(const Addr mutex, const SizeT size, MutexT mutex_type)
                  "The impossible happened: mutex 0x%lx is locked"
                  " simultaneously by two threads (recursion count %d,"
                  " owners %d and %d) !",
-                 p->mutex, p->recursion_count, p->owner, drd_tid);
+                 p->a1, p->recursion_count, p->owner, drd_tid);
     p->owner = drd_tid;
   }
   p->recursion_count++;
@@ -404,7 +358,7 @@ int mutex_unlock(const Addr mutex, const MutexT mutex_type)
 
   if (p->owner == DRD_INVALID_THREADID)
   {
-    MutexErrInfo MEI = { p->mutex, p->recursion_count, p->owner };
+    MutexErrInfo MEI = { p->a1, p->recursion_count, p->owner };
     VG_(maybe_record_error)(vg_tid,
                             MutexErr,
                             VG_(get_IP)(vg_tid),
@@ -417,7 +371,7 @@ int mutex_unlock(const Addr mutex, const MutexT mutex_type)
   if (p->mutex_type != mutex_type)
   {
     VG_(message)(Vg_DebugMsg, "??? mutex %p: type changed from %d into %d",
-	         p->mutex, p->mutex_type, mutex_type);
+	         p->a1, p->mutex_type, mutex_type);
   }
   tl_assert(p->mutex_type == mutex_type);
   tl_assert(p->owner != DRD_INVALID_THREADID);
@@ -428,7 +382,7 @@ int mutex_unlock(const Addr mutex, const MutexT mutex_type)
 
   if (p->owner != drd_tid)
   {
-    MutexErrInfo MEI = { p->mutex, p->recursion_count, p->owner };
+    MutexErrInfo MEI = { p->a1, p->recursion_count, p->owner };
     VG_(maybe_record_error)(vg_tid,
                             MutexErr,
                             VG_(get_IP)(vg_tid),
@@ -439,7 +393,7 @@ int mutex_unlock(const Addr mutex, const MutexT mutex_type)
   if (p->recursion_count < 0)
   {
     MutexErrInfo MEI
-      = { p->mutex, p->recursion_count, p->owner };
+      = { p->a1, p->recursion_count, p->owner };
     VG_(maybe_record_error)(vg_tid,
                             MutexErr,
                             VG_(get_IP)(vg_tid),
@@ -523,33 +477,21 @@ int mutex_get_recursion_count(const Addr mutex)
  */
 void mutex_thread_delete(const DrdThreadId tid)
 {
-  int i;
-  for (i = 0; i < sizeof(s_mutex)/sizeof(s_mutex[0]); i++)
+  struct mutex_info* p;
+
+  drd_clientobj_resetiter();
+  for ( ; (p = &drd_clientobj_next(ClientMutex)->mutex) != 0; )
   {
-    struct mutex_info* const p = &s_mutex[i];
-    if (p->mutex && p->owner == tid && p->recursion_count > 0)
+    if (p->owner == tid && p->recursion_count > 0)
     {
       MutexErrInfo MEI
-        = { p->mutex, p->recursion_count, p->owner };
+        = { p->a1, p->recursion_count, p->owner };
       VG_(maybe_record_error)(VG_(get_running_tid)(),
                               MutexErr,
                               VG_(get_IP)(VG_(get_running_tid)()),
                               "Mutex still locked at thread exit",
                               &MEI);
       p->owner = VG_INVALID_THREADID;
-    }
-  }
-}
-
-void mutex_stop_using_mem(const Addr a1, const Addr a2)
-{
-  unsigned i;
-  for (i = 0; i < sizeof(s_mutex)/sizeof(s_mutex[0]); i++)
-  {
-    if (a1 <= s_mutex[i].mutex && s_mutex[i].mutex < a2)
-    {
-      tl_assert(s_mutex[i].mutex + s_mutex[i].size <= a2);
-      mutex_destroy(&s_mutex[i]);
     }
   }
 }

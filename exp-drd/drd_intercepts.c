@@ -116,7 +116,17 @@ static MutexT pthread_to_drd_mutex_type(const int kind)
 
 static MutexT mutex_type(pthread_mutex_t* mutex)
 {
-   return pthread_to_drd_mutex_type(mutex->__data.__kind);
+#if defined(_PTHREAD_DESCR_DEFINED)
+   // Linuxthreads.
+   const int kind = mutex->__m_kind;
+#elif defined(__SIZEOF_PTHREAD_MUTEX_T)
+   // NPTL.
+   const int kind = mutex->__data.__kind;
+#else
+   // Another POSIX threads implementation. Regression tests will fail.
+   const int kind = PTHREAD_MUTEX_DEFAULT;
+#endif
+   return pthread_to_drd_mutex_type(kind);
 }
 
 static void vg_start_suppression(const void* const p, size_t const size)

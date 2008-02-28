@@ -119,6 +119,7 @@ enum {
 
 typedef enum
 {
+   mutex_type_invalid_mutex    = 0,
    mutex_type_recursive_mutex  = 1,
    mutex_type_errorcheck_mutex = 2,
    mutex_type_default_mutex    = 3,

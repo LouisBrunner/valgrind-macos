@@ -251,12 +251,15 @@ struct mutex_info* mutex_get(const Addr mutex)
  */
 void mutex_pre_lock(const Addr mutex, const SizeT size, MutexT mutex_type)
 {
-  struct mutex_info* p = mutex_get(mutex);
+  struct mutex_info* p;
+
+  p = mutex_get(mutex);
   if (p == 0)
   {
     mutex_init(mutex, size, mutex_type);
     p = mutex_get(mutex);
   }
+
   tl_assert(p);
 
   if (p->owner == thread_get_running_tid()
@@ -293,6 +296,16 @@ int mutex_post_lock(const Addr mutex, const SizeT size, MutexT mutex_type)
                  mutex,
                  p ? p->recursion_count : 0,
                  p ? p->owner : VG_INVALID_THREADID);
+  }
+
+  if (mutex_type == mutex_type_invalid_mutex)
+  {
+    GenericErrInfo GEI;
+    VG_(maybe_record_error)(VG_(get_running_tid)(),
+                            GenericErr,
+                            VG_(get_IP)(VG_(get_running_tid)()),
+                            "Invalid mutex",
+                            &GEI);
   }
 
   if (p == 0)
@@ -366,6 +379,16 @@ int mutex_unlock(const Addr mutex, const MutexT mutex_type)
                  mutex,
                  p->recursion_count,
                  p->owner);
+  }
+
+  if (mutex_type == mutex_type_invalid_mutex)
+  {
+    GenericErrInfo GEI;
+    VG_(maybe_record_error)(VG_(get_running_tid)(),
+                            GenericErr,
+                            VG_(get_IP)(VG_(get_running_tid)()),
+                            "Invalid mutex",
+                            &GEI);
   }
 
   if (p == 0)
@@ -448,6 +471,8 @@ const char* mutex_type_name(const MutexT mt)
 {
   switch (mt)
   {
+  case mutex_type_invalid_mutex:
+    return "invalid mutex";
   case mutex_type_recursive_mutex:
     return "recursive mutex";
   case mutex_type_errorcheck_mutex:

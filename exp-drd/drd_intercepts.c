@@ -100,18 +100,8 @@ static MutexT pthread_to_drd_mutex_type(const int kind)
    case PTHREAD_MUTEX_DEFAULT:
    case PTHREAD_MUTEX_ADAPTIVE_NP:
       return mutex_type_default_mutex;
-#if 0
-   case -1:
-      printf("Warning: changed mutex type from -1 into %d\n",
-             mutex_type_default_mutex);
-      return mutex_type_default_mutex;
-#endif
    }
-#if 0
-   printf("mutex->__data.__kind = %d\n", kind);
-   assert(0);
-#endif
-   return mutex_type_default_mutex;
+   return mutex_type_invalid_mutex;
 }
 
 static MutexT mutex_type(pthread_mutex_t* mutex)

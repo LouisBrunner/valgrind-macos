@@ -20,10 +20,6 @@ Destroying locked mutex: address 0x........, recursion count 1, owner 1.
    at 0x........: pthread_mutex_destroy (drd_intercepts.c:?)
    by 0x........: main (tc20_verifywrap.c:102)
 
-Destroying locked mutex: address 0x........, recursion count 1, owner 1.
-   at 0x........: pthread_mutex_destroy (drd_intercepts.c:?)
-   by 0x........: main (tc20_verifywrap.c:102)
-
 Invalid mutex
    at 0x........: pthread_mutex_unlock (drd_intercepts.c:?)
    by 0x........: main (tc20_verifywrap.c:125)
@@ -71,4 +67,4 @@ FIXME: can't figure out how to verify wrap of sem_post
 Destroying locked mutex: address 0x........, recursion count 1, owner 1.
    at 0x........: main (tc20_verifywrap.c:261)
 
-ERROR SUMMARY: 7 errors from 7 contexts (suppressed: 0 from 0)
+ERROR SUMMARY: 6 errors from 6 contexts (suppressed: 0 from 0)

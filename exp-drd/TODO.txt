@@ -8,7 +8,7 @@ Data-race detection algorithm
 - Print an error message when memory is freed that contains a locked
   reader-writer synchronization object.
 - Print an error message when a semaphore is freed that is being waited upon.
-- Eliminate the upper bounds on the number of mutexes, condition variables,
+- Eliminate the upper bounds on the number of condition variables,
   semaphores, barriers and threads by converting arrays into OSet's.
 - Implement segment merging, such that the number of segments per thread
   remains limited even when there is no synchronization between threads.
@@ -40,8 +40,6 @@ Testing
 - testing with more complex multithreaded test programs.
 - test exp-drd's performance with the SPLASH-2 software, e.g. fft
   (http://www-flash.stanford.edu/apps/SPLASH/).
-- Add more Helgrind regression tests to exp-drd's regression test set by adding
-  soft links under exp-drd/tests to the respective Helgrind unit tests.
 
 
 Documentation
@@ -67,6 +65,7 @@ Known bugs
   -- VG_(find_seginfo)() returns NULL for BSS symbols on x86_64. Not yet in
   the KDE bug tracking system.
 - tc04_free_lock fails on AMD64 + openSUSE 10.3 (free() locked mutex).
+- tc09_bad_unlock: the 'Mutex reinitialization' message should not be printed.
 - --trace-mem=yes can cause crashes. This might be caused by the code that
   prints backtraces. An example (AMD64):
   ./vg-in-place --tool=exp-drd --trace-mem=yes exp-drd/tests/pth_barrier 2 2 1

@@ -283,23 +283,13 @@ static void drd_stop_using_mem(const Addr a1, const Addr a2)
    drd_suppression_stop_using_mem(a1, a2);
 }
 
-static VG_REGPARM(2)
-     void drd_make_stack_uninit(const Addr base, const UWord len)
-{
-#if 0
-   VG_(message)(Vg_DebugMsg, "make_stack_uninit(0x%lx, %ld)", base, len);
-#endif
-   drd_stop_using_mem(base, base + len);
-}
-
 /* Called by the core when the stack of a thread grows, to indicate that */
 /* the addresses in range [ a, a + len [ may now be used by the client.  */
 /* Assumption: stacks grow downward.                                     */
 static void drd_start_using_mem_stack(const Addr a, const SizeT len)
 {
    thread_set_stack_min(thread_get_running_tid(), a - VG_STACK_REDZONE_SZB);
-   drd_start_using_mem(a - VG_STACK_REDZONE_SZB,
-                       a - VG_STACK_REDZONE_SZB + len);
+   drd_start_using_mem(a, a + len);
 }
 
 /* Called by the core when the stack of a thread shrinks, to indicate that */
@@ -310,8 +300,7 @@ static void drd_stop_using_mem_stack(const Addr a, const SizeT len)
    thread_set_vg_running_tid(VG_(get_running_tid)());
    thread_set_stack_min(thread_get_running_tid(),
                         a + len - VG_STACK_REDZONE_SZB);
-   drd_stop_using_mem(a - VG_STACK_REDZONE_SZB,
-                      a + len - VG_STACK_REDZONE_SZB);
+   drd_stop_using_mem(a, a + len);
 }
 
 static void drd_start_using_mem_mmap(Addr a, SizeT len,
@@ -596,20 +585,6 @@ IRSB* drd_instrument(VgCallbackClosure* const closure,
       {
       case Ist_IMark:
          instrument = VG_(seginfo_sect_kind)(st->Ist.IMark.addr) != Vg_SectPLT;
-         break;
-
-      case Ist_AbiHint:
-         addStmtToIRSB(bb,
-            IRStmt_Dirty(
-               unsafeIRDirty_0_N(
-                  /*regparms*/2,
-                  "drd_make_stack_uninit",
-                  VG_(fnptr_to_fnentry)(drd_make_stack_uninit),
-                  mkIRExprVec_2(st->Ist.AbiHint.base,
-                                mkIRExpr_HWord((UInt)st->Ist.AbiHint.len))
-                  )
-               )
-            );
          break;
 
       case Ist_MBE:

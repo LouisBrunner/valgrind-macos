@@ -42,7 +42,6 @@ struct mutex_info;
 void mutex_set_trace(const Bool trace_mutex);
 struct mutex_info* mutex_init(const Addr mutex, const SizeT size,
                               const MutexT mutex_type);
-void mutex_pre_destroy(struct mutex_info* const p);
 void mutex_post_destroy(const Addr mutex);
 struct mutex_info* mutex_get(const Addr mutex);
 void mutex_pre_lock(const Addr mutex, const SizeT size, const MutexT mutex_type);

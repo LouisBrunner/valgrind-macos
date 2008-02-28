@@ -36,6 +36,7 @@
 
 // Local functions.
 
+static void mutex_cleanup(struct mutex_info* p);
 static Bool mutex_is_locked(struct mutex_info* const p);
 static void mutex_destroy(struct mutex_info* const p);
 
@@ -65,11 +66,27 @@ void mutex_initialize(struct mutex_info* const p,
 
   tl_assert(p->a1 == mutex);
   tl_assert(p->a2 == mutex + size);
-  p->cleanup         = (void(*)(DrdClientobj*))&mutex_destroy;
+  p->cleanup         = (void(*)(DrdClientobj*))&mutex_cleanup;
   p->mutex_type      = mutex_type;
   p->recursion_count = 0;
   p->owner           = DRD_INVALID_THREADID;
   vc_init(&p->vc, 0, 0);
+}
+
+/** Deallocate the memory that was allocated by mutex_initialize(). */
+static void mutex_cleanup(struct mutex_info* p)
+{
+  if (mutex_is_locked(p))
+  {
+    MutexErrInfo MEI = { p->a1, p->recursion_count, p->owner };
+    VG_(maybe_record_error)(VG_(get_running_tid)(),
+                            MutexErr,
+                            VG_(get_IP)(VG_(get_running_tid)()),
+                            "Destroying locked mutex",
+                            &MEI);
+  }
+
+  vc_cleanup(&p->vc);
 }
 
 static
@@ -152,24 +169,10 @@ static void mutex_destroy(struct mutex_info* const p)
                  p->a1);
   }
 
-  if (mutex_is_locked(p))
-  {
-    MutexErrInfo MEI = { p->a1, p->recursion_count, p->owner };
-    VG_(maybe_record_error)(VG_(get_running_tid)(),
-                            MutexErr,
-                            VG_(get_IP)(VG_(get_running_tid)()),
-                            "Destroying locked mutex",
-                            &MEI);
-  }
-
   drd_clientobj_remove(p->a1);
 }
 
-void mutex_pre_destroy(struct mutex_info* const p)
-{
-   return mutex_destroy(p);
-}
-
+/** Called after pthread_mutex_destroy(). */
 void mutex_post_destroy(const Addr mutex)
 {
    struct mutex_info* p;
@@ -178,17 +181,7 @@ void mutex_post_destroy(const Addr mutex)
    tl_assert(p);
    if (p)
    {
-      if (mutex_get_recursion_count(mutex) > 0)
-      {
-	 const ThreadId vg_tid = VG_(get_running_tid)();
-         MutexErrInfo MEI = { p->a1, p->recursion_count, p->owner };
-         VG_(maybe_record_error)(vg_tid,
-                                 MutexErr,
-                                 VG_(get_IP)(vg_tid),
-                                 "Destroying locked mutex",
-                                 &MEI);
-      }
-      mutex_pre_destroy(p);
+      mutex_destroy(p);
    }
 }
 

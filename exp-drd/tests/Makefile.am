@@ -68,11 +68,6 @@ EXTRA_DIST = $(noinst_SCRIPTS)                                  \
 	tc05_simple_race.stderr.exp                             \
 	tc06_two_races.vgtest                                   \
 	tc06_two_races.stderr.exp                               \
-	tc07_hbl1.vgtest                                        \
-	tc07_hbl1.stderr.exp tc07_hbl1.stdout.exp               \
-	tc07_hbl1.stderr.exp2					\
-	tc08_hbl2.vgtest					\
-	tc08_hbl2.stderr.exp					\
 	tc09_bad_unlock.vgtest                                  \
 	tc09_bad_unlock.stderr.exp                              \
 	tc10_rec_lock.vgtest                                    \
@@ -101,14 +96,20 @@ EXTRA_DIST = $(noinst_SCRIPTS)                                  \
 	tc21_pthonce.vgtest                                     \
 	tc21_pthonce.stderr.exp tc21_pthonce.stdout.exp         \
 	tc22_exit_w_lock.vgtest                                 \
-	tc22_exit_w_lock.stderr.exp                             \
 	tc22_exit_w_lock.stderr.exp-32bit			\
+	tc22_exit_w_lock.stderr.exp-64bit                       \
 	tc23_bogus_condwait.vgtest                              \
 	tc23_bogus_condwait.stderr.exp                          \
 	tc24_nonzero_sem.vgtest                                 \
 	tc24_nonzero_sem.stderr.exp                             \
 	sigalrm.vgtest                                          \
 	sigalrm.stdout.exp sigalrm.stderr.exp
+
+#	tc07_hbl1.vgtest
+#	tc07_hbl1.stderr.exp tc07_hbl1.stdout.exp
+#	tc07_hbl1.stderr.exp
+#	tc08_hbl2.vgtest
+#	tc08_hbl2.stderr.exp
 
 AM_CFLAGS   = $(WERROR) -Winline -Wall -Wshadow -g $(AM_FLAG_M3264_PRI)
 AM_CPPFLAGS = -I$(top_srcdir) -I$(top_srcdir)/include -I$(top_builddir)/include

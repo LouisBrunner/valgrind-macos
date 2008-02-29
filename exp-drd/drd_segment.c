@@ -85,7 +85,7 @@ void sg_init(Segment* const sg,
                   creator);
     vc_snprint(msg + VG_(strlen)(msg), sizeof(msg) - VG_(strlen)(msg),
                &sg->vc);
-    VG_(message)(Vg_DebugMsg, "%s", msg);
+    VG_(message)(Vg_UserMsg, "%s", msg);
   }
 }
 
@@ -122,7 +122,7 @@ void sg_delete(Segment* const sg)
                     "Discarding the segment with vector clock ");
       vc_snprint(msg + VG_(strlen)(msg), sizeof(msg) - VG_(strlen)(msg),
                  &sg->vc);
-      VG_(message)(Vg_DebugMsg, "%s", msg);
+      VG_(message)(Vg_UserMsg, "%s", msg);
    }
 #endif
 

@@ -104,6 +104,11 @@ drd_clientobj_add(const Addr a1, const Addr a2, const ObjType t)
   tl_assert(a1 < a2 && a1 + 4096 > a2);
   tl_assert(! drd_clientobj_present(a1, a2));
   tl_assert(VG_(OSetGen_Lookup)(s_clientobj, &a1) == 0);
+#if 0
+    VG_(message)(Vg_DebugMsg,
+                 "registering client obj [0x%lx,0x%lx[ of type %d",
+                 a1, a2, t);
+#endif
   p = VG_(OSetGen_AllocNode)(s_clientobj, sizeof(*p));
   VG_(memset)(p, 0, sizeof(*p));
   p->any.a1   = a1;
@@ -123,8 +128,8 @@ Bool drd_clientobj_remove(const Addr addr)
   if (p)
   {
 #if 0
-    VG_(message)(Vg_DebugMsg, "removing client obj [%p,%p[\n",
-                 p->any.a1, p->any.a2);
+    VG_(message)(Vg_DebugMsg, "removing client obj [0x%lx,0x%lx[ of type %d",
+                 p->any.a1, p->any.a2, p->any.type);
 #endif
     tl_assert(VG_(OSetGen_Lookup)(s_clientobj, &addr) == 0);
     drd_finish_suppression(p->any.a1, p->any.a2);
@@ -138,15 +143,37 @@ Bool drd_clientobj_remove(const Addr addr)
 
 void drd_clientobj_stop_using_mem(const Addr a1, const Addr a2)
 {
+  Addr removed_at;
   DrdClientobj* p;
+
+#if 0
+    VG_(message)(Vg_DebugMsg, "drd_clientobj_stop_using_mem [0x%lx,0x%lx[",
+                 a1, a2);
+#endif
   tl_assert(s_clientobj);
   VG_(OSetGen_ResetIter)(s_clientobj);
-  for ( ; (p = VG_(OSetGen_Next)(s_clientobj)) != 0; )
+  p = VG_(OSetGen_Next)(s_clientobj);
+  for ( ; p != 0; )
   {
     if ((a1 <= p->any.a1 && p->any.a1 < a2)
         || (a1 < p->any.a2 && p->any.a2 <= a2))
     {
+#if 0
+      VG_(message)(Vg_DebugMsg, "drd_clientobj_stop_using_mem [0x%lx,0x%lx[",
+                   a1, a2);
+#endif
+      removed_at = p->any.a1;
       drd_clientobj_remove(p->any.a1);
+      /* The above call removes an element from the oset and hence invalidates */
+      /* the iterator. Set the iterator back.                                  */
+      VG_(OSetGen_ResetIter)(s_clientobj);
+      while ((p = VG_(OSetGen_Next)(s_clientobj)) != 0
+             && p->any.a1 <= removed_at)
+      { }
+    }
+    else
+    {
+      p = VG_(OSetGen_Next)(s_clientobj);
     }
   }
 }

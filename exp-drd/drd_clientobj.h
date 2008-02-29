@@ -39,7 +39,7 @@ union drd_clientobj;
 
 // Type definitions.
 
-typedef enum { ClientMutex, } ObjType;
+typedef enum { ClientMutex = 1, } ObjType;
 
 struct any
 {

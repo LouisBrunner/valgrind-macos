@@ -76,6 +76,17 @@ void mutex_initialize(struct mutex_info* const p,
 /** Deallocate the memory that was allocated by mutex_initialize(). */
 static void mutex_cleanup(struct mutex_info* p)
 {
+  if (s_trace_mutex)
+  {
+    const ThreadId vg_tid = VG_(get_running_tid)();
+    const DrdThreadId drd_tid = VgThreadIdToDrdThreadId(vg_tid);
+    VG_(message)(Vg_DebugMsg,
+                 "drd_pre_mutex_destroy tid = %d/%d, %s 0x%lx",
+                 vg_tid, drd_tid,
+                 mutex_get_typename(p),
+                 p->a1);
+  }
+
   if (mutex_is_locked(p))
   {
     MutexErrInfo MEI = { p->a1, p->recursion_count, p->owner };
@@ -149,7 +160,7 @@ mutex_init(const Addr mutex, const SizeT size, const MutexT mutex_type)
                             VG_(get_IP)(vg_tid),
                             "Mutex reinitialization",
                             &MEI);
-    mutex_destroy(mutex_p);
+    return mutex_p;
   }
   mutex_p = mutex_get_or_allocate(mutex, size, mutex_type);
 
@@ -158,17 +169,6 @@ mutex_init(const Addr mutex, const SizeT size, const MutexT mutex_type)
 
 static void mutex_destroy(struct mutex_info* const p)
 {
-  if (s_trace_mutex)
-  {
-    const ThreadId vg_tid = VG_(get_running_tid)();
-    const DrdThreadId drd_tid = VgThreadIdToDrdThreadId(vg_tid);
-    VG_(message)(Vg_DebugMsg,
-                 "drd_pre_mutex_destroy tid = %d/%d, %s 0x%lx",
-                 vg_tid, drd_tid,
-                 mutex_get_typename(p),
-                 p->a1);
-  }
-
   drd_clientobj_remove(p->a1);
 }
 
@@ -306,18 +306,19 @@ int mutex_post_lock(const Addr mutex, const SizeT size, MutexT mutex_type)
  * Update mutex_info state when unlocking the pthread_mutex_t mutex.
  * Note: this function must be called before pthread_mutex_unlock() is called,
  * or a race condition is triggered !
+ * @return New value of the mutex recursion count.
  * @param mutex Pointer to pthread_mutex_t data structure in the client space.
  * @param tid ThreadId of the thread calling pthread_mutex_unlock().
  * @param vc Pointer to the current vector clock of thread tid.
  */
 int mutex_unlock(const Addr mutex, const MutexT mutex_type)
 {
-  const DrdThreadId drd_tid = VgThreadIdToDrdThreadId(VG_(get_running_tid)());
-  const ThreadId vg_tid = DrdThreadIdToVgThreadId(drd_tid);
+  const DrdThreadId drd_tid = thread_get_running_tid();
+  const ThreadId vg_tid = VG_(get_running_tid)();
   const VectorClock* const vc = thread_get_vc(drd_tid);
   struct mutex_info* const p = mutex_get(mutex);
 
-  if (s_trace_mutex)
+  if (s_trace_mutex && p != 0)
   {
     VG_(message)(Vg_DebugMsg,
                  "drd_pre_mutex_unlock tid = %d/%d, %s 0x%lx rc %d",
@@ -368,10 +369,6 @@ int mutex_unlock(const Addr mutex, const MutexT mutex_type)
   }
   tl_assert(p->mutex_type == mutex_type);
   tl_assert(p->owner != DRD_INVALID_THREADID);
-#if 0
-  tl_assert(mutex_type == mutex_type_mutex
-            || mutex_type == mutex_type_spinlock);
-#endif
 
   if (p->owner != drd_tid)
   {

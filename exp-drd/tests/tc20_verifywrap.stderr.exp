@@ -21,6 +21,18 @@ Destroying locked mutex: address 0x........, recursion count 1, owner 1.
    by 0x........: main (tc20_verifywrap.c:102)
 
 Invalid mutex
+   at 0x........: pthread_mutex_lock (drd_intercepts.c:?)
+   by 0x........: main (tc20_verifywrap.c:108)
+
+Invalid mutex
+   at 0x........: pthread_mutex_trylock (drd_intercepts.c:?)
+   by 0x........: main (tc20_verifywrap.c:116)
+
+Invalid mutex
+   at 0x........: pthread_mutex_timedlock (drd_intercepts.c:?)
+   by 0x........: main (tc20_verifywrap.c:121)
+
+Invalid mutex
    at 0x........: pthread_mutex_unlock (drd_intercepts.c:?)
    by 0x........: main (tc20_verifywrap.c:125)
 
@@ -41,6 +53,10 @@ FIXME: can't figure out how to verify wrap of pthread_cond_signal
 FIXME: can't figure out how to verify wrap of pthread_broadcast_signal
 
 
+Mutex not locked: address 0x........, recursion count 0, owner 0.
+   at 0x........: pthread_cond_timedwait* (drd_intercepts.c:?)
+   by 0x........: main (tc20_verifywrap.c:165)
+
 ---------------- pthread_rwlock_* ----------------
 
 (1) no error on next line
@@ -58,13 +74,14 @@ FIXME: can't figure out how to verify wrap of pthread_broadcast_signal
 FIXME: can't figure out how to verify wrap of sem_destroy
 
 
+Invalid semaphore 0x........
+   at 0x........: sem_wait* (drd_intercepts.c:?)
+   by 0x........: main (tc20_verifywrap.c:242)
+
 FIXME: can't figure out how to verify wrap of sem_post
 
 
 ------------ dealloc of mem holding locks ------------
 
 
-Destroying locked mutex: address 0x........, recursion count 1, owner 1.
-   at 0x........: main (tc20_verifywrap.c:261)
-
-ERROR SUMMARY: 6 errors from 6 contexts (suppressed: 0 from 0)
+ERROR SUMMARY: 10 errors from 10 contexts (suppressed: 0 from 0)

@@ -27,23 +27,16 @@
 // call.
 
 
-#ifndef __COND_H
-#define __COND_H
+#ifndef __DRD_COND_H
+#define __DRD_COND_H
 
 
-#include "pub_tool_basics.h"      // Addr, SizeT
-#include "drd_vc.h"
-#include "drd_thread.h"           // DrdThreadId
+#include "drd_thread.h"      // DrdThreadid
+#include "pub_tool_basics.h" // Addr, SizeT
 
 
-struct cond_info
-{
-  Addr  cond;  // Pointer to client condition variable.
-  SizeT size;  // sizeof(pthread_cond_t)
-  int   waiter_count;
-  Addr  mutex; // Client mutex specified in pthread_cond_wait() call, and null
-              // if no client threads are currently waiting on this cond.var.
-};
+struct cond_info;
+
 
 void cond_set_trace(const Bool trace_cond);
 void cond_init(const Addr cond, const SizeT size);
@@ -54,7 +47,6 @@ int cond_post_wait(const Addr cond);
 void cond_pre_signal(const Addr cond);
 void cond_pre_broadcast(const Addr cond);
 void cond_thread_delete(const DrdThreadId tid);
-void cond_stop_using_mem(const Addr a1, const Addr a2);
 
 
-#endif /* __COND_H */
+#endif /* __DRD_COND_H */

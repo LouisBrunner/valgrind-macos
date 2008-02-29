@@ -26,8 +26,8 @@
 // Barrier state information.
 
 
-#ifndef __BARRIER_H
-#define __BARRIER_H
+#ifndef __DRD_BARRIER_H
+#define __DRD_BARRIER_H
 
 
 #include "drd_thread.h"           // DrdThreadId
@@ -50,4 +50,4 @@ void barrier_thread_delete(const DrdThreadId threadid);
 void barrier_stop_using_mem(const Addr a1, const Addr a2);
 
 
-#endif /* __BARRIER_H */
+#endif /* __DRD_BARRIER_H */

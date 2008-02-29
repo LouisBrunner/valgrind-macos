@@ -93,8 +93,11 @@ enum {
   VG_USERREQ__SEM_DESTROY,
   /* args: Addr sem */
   /* To notify the drd tool of a sem_wait call. */
-  VG_USERREQ__POST_SEM_WAIT,
+  VG_USERREQ__PRE_SEM_WAIT,
   /* args: Addr sem, SizeT sem_size */
+  /* To notify the drd tool of a sem_wait call. */
+  VG_USERREQ__POST_SEM_WAIT,
+  /* args: Addr sem, Bool waited */
   /* To notify the drd tool before a sem_post call. */
   VG_USERREQ__PRE_SEM_POST,
   /* args: Addr sem, SizeT sem_size */

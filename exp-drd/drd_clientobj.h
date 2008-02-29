@@ -30,6 +30,7 @@
 #include "drd_clientreq.h"   /* MutexT */
 #include "drd_thread.h"      /* DrdThreadId */
 #include "pub_tool_basics.h"
+#include "pub_tool_oset.h"
 
 
 // Forward declarations.
@@ -39,7 +40,12 @@ union drd_clientobj;
 
 // Type definitions.
 
-typedef enum { ClientMutex = 1, } ObjType;
+typedef enum {
+  ClientMutex     = 1,
+  ClientCondvar   = 2,
+  ClientSemaphore = 3,
+  ClientBarrier   = 4,
+} ObjType;
 
 struct any
 {
@@ -61,10 +67,50 @@ struct mutex_info
   VectorClock vc;              // vector clock associated with last unlock.
 };
 
+struct cond_info
+{
+  Addr    a1;
+  Addr    a2;
+  ObjType type;
+  void    (*cleanup)(union drd_clientobj*);
+  int     waiter_count;
+  Addr    mutex; // Client mutex specified in pthread_cond_wait() call, and null
+                 // if no client threads are currently waiting on this cond.var.
+};
+
+struct semaphore_info
+{
+  Addr        a1;
+  Addr        a2;
+  ObjType     type;
+  void        (*cleanup)(union drd_clientobj*);
+  UWord       value;             // Semaphore value.
+  UWord       waiters;           // Number of threads inside sem_wait().
+  DrdThreadId last_sem_post_tid; // Thread ID associated with last sem_post().
+  VectorClock vc;                // Vector clock of last sem_post() call.
+};
+
+struct barrier_info
+{
+  Addr    a1;
+  Addr    a2;
+  ObjType type;
+  void    (*cleanup)(union drd_clientobj*);
+  Word     count;               // Participant count in a barrier wait.
+  Word     pre_iteration;       // pthread_barrier_wait() call count modulo two.
+  Word     post_iteration;      // pthread_barrier_wait() call count modulo two.
+  Word     pre_waiters_left;    // number of waiters left for a complete barrier.
+  Word     post_waiters_left;   // number of waiters left for a complete barrier.
+  OSet*    oset;                // Thread-specific barrier information.
+};
+
 typedef union drd_clientobj
 {
-  struct any        any;
-  struct mutex_info mutex;
+  struct any            any;
+  struct mutex_info     mutex;
+  struct cond_info      cond;
+  struct semaphore_info semaphore;
+  struct barrier_info   barrier;
 } DrdClientobj;
 
 
@@ -75,7 +121,7 @@ void drd_clientobj_cleanup(void);
 DrdClientobj* drd_clientobj_get(const Addr addr, const ObjType t);
 Bool drd_clientobj_present(const Addr a1, const Addr a2);
 DrdClientobj* drd_clientobj_add(const Addr a1, const Addr a2, const ObjType t);
-Bool drd_clientobj_remove(const Addr addr);
+Bool drd_clientobj_remove(const Addr addr, const ObjType t);
 void drd_clientobj_stop_using_mem(const Addr a1, const Addr a2);
 void drd_clientobj_resetiter(void);
 DrdClientobj* drd_clientobj_next(const ObjType t);

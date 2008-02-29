@@ -82,6 +82,7 @@ static Bool drd_process_cmd_line_option(Char* arg)
    Bool trace_danger_set  = False;
    Bool trace_mutex       = False;
    Bool trace_segment     = False;
+   Bool trace_semaphore   = False;
    Bool trace_suppression = False;
    Char* trace_address    = 0;
 
@@ -94,6 +95,7 @@ static Bool drd_process_cmd_line_option(Char* arg)
    else VG_BOOL_CLO(arg, "--trace-mem",         drd_trace_mem)
    else VG_BOOL_CLO(arg, "--trace-mutex",       trace_mutex)
    else VG_BOOL_CLO(arg, "--trace-segment",     trace_segment)
+   else VG_BOOL_CLO(arg, "--trace-semaphore",   trace_semaphore)
    else VG_BOOL_CLO(arg, "--trace-suppression", trace_suppression)
    else VG_STR_CLO (arg, "--trace-address",     trace_address)
    else
@@ -115,6 +117,8 @@ static Bool drd_process_cmd_line_option(Char* arg)
       mutex_set_trace(trace_mutex);
    if (trace_segment)
       sg_set_trace(trace_segment);
+   if (trace_semaphore)
+      semaphore_set_trace(trace_semaphore);
    if (trace_suppression)
       suppression_set_trace(trace_suppression);
 
@@ -277,9 +281,6 @@ static void drd_stop_using_mem(const Addr a1, const Addr a2)
    }
    thread_stop_using_mem(a1, a2);
    drd_clientobj_stop_using_mem(a1, a2);
-   cond_stop_using_mem(a1, a2);
-   semaphore_stop_using_mem(a1, a2);
-   barrier_stop_using_mem(a1, a2);
    drd_suppression_stop_using_mem(a1, a2);
 }
 
@@ -491,10 +492,16 @@ void drd_semaphore_destroy(const Addr semaphore)
    }
 }
 
-void drd_semaphore_post_wait(const DrdThreadId tid, const Addr semaphore,
-                             const SizeT size)
+void drd_semaphore_pre_wait(const DrdThreadId tid, const Addr semaphore,
+                            const SizeT size)
 {
-   semaphore_post_wait(tid, semaphore, size);
+   semaphore_pre_wait(semaphore, size);
+}
+
+void drd_semaphore_post_wait(const DrdThreadId tid, const Addr semaphore,
+                             const Bool waited)
+{
+   semaphore_post_wait(tid, semaphore, waited);
 }
 
 void drd_semaphore_pre_post(const DrdThreadId tid, const Addr semaphore,

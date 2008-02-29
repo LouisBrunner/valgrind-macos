@@ -8,8 +8,6 @@ Data-race detection algorithm
 - Print an error message when memory is freed that contains a locked
   reader-writer synchronization object.
 - Print an error message when a semaphore is freed that is being waited upon.
-- Eliminate the upper bounds on the number of condition variables,
-  semaphores, barriers and threads by converting arrays into OSet's.
 - Implement segment merging, such that the number of segments per thread
   remains limited even when there is no synchronization between threads.
 - Add locking order checking.
@@ -33,6 +31,9 @@ Data-race detection algorithm
   a crash on AMD64. Is this an exp-drd or a VEX bug ?
 - On x86 and amd64 platforms, add support for implicit locking arising from
   the use of the LOCK instruction prefix.
+- Add test programs for freeing memory that contains a condition variable /
+  destroying a condition variable being waited upon.
+- Convert the array in drd_thread.c with thread information into an OSet.
 
 
 Testing

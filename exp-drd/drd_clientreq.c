@@ -189,6 +189,10 @@ static Bool drd_handle_client_request(ThreadId tid, UWord* arg, UWord* ret)
       drd_semaphore_destroy(arg[1]);
       break;
 
+   case VG_USERREQ__PRE_SEM_WAIT:
+      drd_semaphore_pre_wait(thread_get_running_tid(), arg[1], arg[2]);
+      break;
+
    case VG_USERREQ__POST_SEM_WAIT:
       drd_semaphore_post_wait(thread_get_running_tid(), arg[1], arg[2]);
       break;

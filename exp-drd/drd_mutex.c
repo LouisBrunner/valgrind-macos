@@ -169,7 +169,7 @@ mutex_init(const Addr mutex, const SizeT size, const MutexT mutex_type)
 
 static void mutex_destroy(struct mutex_info* const p)
 {
-  drd_clientobj_remove(p->a1);
+  drd_clientobj_remove(p->a1, ClientMutex);
 }
 
 /** Called after pthread_mutex_destroy(). */

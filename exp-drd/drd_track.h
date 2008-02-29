@@ -40,8 +40,10 @@ void drd_pre_cond_destroy(Addr cond);
 void drd_semaphore_init(const Addr semaphore, const SizeT size,
                         const Word pshared, const Word value);
 void drd_semaphore_destroy(const Addr semaphore);
+void drd_semaphore_pre_wait(const DrdThreadId tid, const Addr semaphore,
+                            const SizeT size);
 void drd_semaphore_post_wait(const DrdThreadId tid, const Addr semaphore,
-                             const SizeT size);
+                             const Bool waited);
 void drd_semaphore_pre_post(const DrdThreadId tid, const Addr semaphore,
                             const SizeT size);
 void drd_semaphore_post_post(const DrdThreadId tid, const Addr semaphore,

@@ -23,6 +23,7 @@
 */
 
 
+#include "drd_clientobj.h"
 #include "drd_error.h"
 #include "drd_semaphore.h"
 #include "drd_suppression.h"
@@ -34,22 +35,14 @@
 #include "pub_tool_threadstate.h" // VG_(get_running_tid)()
 
 
-// Type definitions.
+// Local functions.
 
-struct semaphore_info
-{
-  Addr        semaphore;         // Pointer to client semaphore.
-  SizeT       size;              // Size in bytes of client-side object.
-  UWord       value;             // Semaphore value.
-  DrdThreadId last_sem_post_tid; // Thread ID associated with last sem_post().
-  VectorClock vc;                // Vector clock of last sem_post() call.
-};
+static void semaphore_cleanup(struct semaphore_info* p);
 
 
 // Local variables.
 
 static Bool s_trace_semaphore;
-struct semaphore_info s_semaphore[256];
 
 
 // Function definitions.
@@ -67,41 +60,55 @@ void semaphore_initialize(struct semaphore_info* const p,
 {
   tl_assert(semaphore != 0);
   tl_assert(size > 0);
+  tl_assert(p->a1 == semaphore);
+  tl_assert(p->a2 - p->a1 == size);
+  tl_assert(p->type == ClientSemaphore);
 
-  p->semaphore = semaphore;
-  p->size      = size;
+  p->cleanup   = (void(*)(DrdClientobj*))semaphore_cleanup;
   p->value     = value;
+  p->waiters   = 0;
   p->last_sem_post_tid = DRD_INVALID_THREADID;
   vc_init(&p->vc, 0, 0);
+}
+
+/** Free the memory that was allocated by semaphore_initialize(). Called by
+ *  drd_clientobj_remove().
+ */
+static void semaphore_cleanup(struct semaphore_info* p)
+{
+  if (p->waiters > 0)
+  {
+    VG_(message)(Vg_UserMsg, "Error: destroying semaphore while %d threads are"
+                 "still waiting on the semaphore.\n", p->waiters);
+  }
+  vc_cleanup(&p->vc);
 }
 
 static
 struct semaphore_info*
 semaphore_get_or_allocate(const Addr semaphore, const SizeT size)
 {
-  int i;
+  struct semaphore_info *p;
 
-  for (i = 0; i < sizeof(s_semaphore)/sizeof(s_semaphore[0]); i++)
+  tl_assert(offsetof(DrdClientobj, semaphore) == 0);
+  p = &drd_clientobj_get(semaphore, ClientSemaphore)->semaphore;
+  if (p == 0)
   {
-    if (s_semaphore[i].semaphore == semaphore)
-    {
-      tl_assert(s_semaphore[i].size == size);
-      return &s_semaphore[i];
-    }
+    tl_assert(offsetof(DrdClientobj, semaphore) == 0);
+    p = &drd_clientobj_add(semaphore, semaphore + size,
+                           ClientSemaphore)->semaphore;
+    semaphore_initialize(p, semaphore, size, 0);
   }
-  for (i = 0; i < sizeof(s_semaphore)/sizeof(s_semaphore[0]); i++)
-  {
-    if (s_semaphore[i].semaphore == 0)
-    {
-      semaphore_initialize(&s_semaphore[i], semaphore, size, 0);
-      drd_start_suppression(semaphore, semaphore + size, "semaphore");
-      return &s_semaphore[i];
-    }
-  }
-  tl_assert(0);
-  return 0;
+  return p;
 }
 
+struct semaphore_info* semaphore_get(const Addr semaphore)
+{
+  tl_assert(offsetof(DrdClientobj, semaphore) == 0);
+  return &drd_clientobj_get(semaphore, ClientSemaphore)->semaphore;
+}
+
+/** Called before sem_init(). */
 struct semaphore_info* semaphore_init(const Addr semaphore, const SizeT size,
                                       const Word pshared, const UWord value)
 {
@@ -113,31 +120,51 @@ struct semaphore_info* semaphore_init(const Addr semaphore, const SizeT size,
   return p;
 }
 
+/** Called after sem_destroy(). */
 void semaphore_destroy(struct semaphore_info* const p)
 {
-  drd_finish_suppression(p->semaphore, p->semaphore + p->size);
-
-  vc_cleanup(&p->vc);
-  p->semaphore = 0;
+  drd_clientobj_remove(p->a1, ClientSemaphore);
 }
 
-struct semaphore_info* semaphore_get(const Addr semaphore)
-{
-  int i;
-  for (i = 0; i < sizeof(s_semaphore)/sizeof(s_semaphore[0]); i++)
-    if (s_semaphore[i].semaphore == semaphore)
-      return &s_semaphore[i];
-  return 0;
-}
-
-/** Called after sem_wait() finished successfully. */
-void semaphore_post_wait(const DrdThreadId tid, const Addr semaphore,
-                         const SizeT size)
+/** Called before sem_wait(). */
+void semaphore_pre_wait(const Addr semaphore, const SizeT size)
 {
   struct semaphore_info* p;
 
   p = semaphore_get_or_allocate(semaphore, size);
+  if (s_trace_semaphore)
+  {
+    VG_(message)(Vg_UserMsg, "semaphore_pre_wait(0x%lx, %d)", semaphore, size);
+  }
+  tl_assert(p);
+  tl_assert(p->waiters >= 0);
+  p->waiters++;
+  tl_assert(p->waiters > 0);
+}
+
+/** Called after sem_wait() finished.
+ *  @note Do not rely on the value of 'waited' -- some glibc versions do
+ *        not set it correctly.
+ */
+void semaphore_post_wait(const DrdThreadId tid, const Addr semaphore,
+                         const Bool waited)
+{
+  struct semaphore_info* p;
+
+  p = semaphore_get(semaphore);
+  if (s_trace_semaphore)
+  {
+    VG_(message)(Vg_UserMsg, "semaphore_post_wait(0x%lx, %d)", semaphore);
+  }
+  tl_assert(p->waiters > 0);
+  p->waiters--;
+  tl_assert(p->waiters >= 0);
   tl_assert(p->value >= 0);
+  if (p->value == 0)
+  {
+    VG_(message)(Vg_UserMsg, "Invalid semaphore 0x%lx", semaphore);
+    return;
+  }
   p->value--;
   tl_assert(p->value >= 0);
   if (p->last_sem_post_tid != tid)
@@ -178,16 +205,3 @@ void semaphore_post_post(const DrdThreadId tid, const Addr semaphore,
 
 void semaphore_thread_delete(const DrdThreadId threadid)
 { }
-
-void semaphore_stop_using_mem(const Addr a1, const Addr a2)
-{
-  unsigned i;
-  for (i = 0; i < sizeof(s_semaphore)/sizeof(s_semaphore[0]); i++)
-  {
-    if (a1 <= s_semaphore[i].semaphore && s_semaphore[i].semaphore < a2)
-    {
-      tl_assert(s_semaphore[i].semaphore + s_semaphore[i].size <= a2);
-      semaphore_destroy(&s_semaphore[i]);
-    }
-  }
-}

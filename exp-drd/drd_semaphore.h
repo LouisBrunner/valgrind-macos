@@ -26,8 +26,8 @@
 // Semaphore state information: owner thread and recursion count.
 
 
-#ifndef __SEMAPHORE_H
-#define __SEMAPHORE_H
+#ifndef __DRD_SEMAPHORE_H
+#define __DRD_SEMAPHORE_H
 
 
 #include "drd_thread.h"           // DrdThreadId
@@ -43,14 +43,14 @@ struct semaphore_info* semaphore_init(const Addr semaphore, const SizeT size,
                                       const Word pshared, const UWord value);
 void semaphore_destroy(struct semaphore_info* const p);
 struct semaphore_info* semaphore_get(const Addr semaphore);
+void semaphore_pre_wait(const Addr semaphore, const SizeT size);
 void semaphore_post_wait(const DrdThreadId tid, const Addr semaphore,
-                         const SizeT size);
+                         const Bool waited);
 void semaphore_pre_post(const DrdThreadId tid, const Addr semaphore,
                         const SizeT size);
 void semaphore_post_post(const DrdThreadId tid, const Addr semaphore,
                          const SizeT size, const Bool waited);
 void semaphore_thread_delete(const DrdThreadId tid);
-void semaphore_stop_using_mem(const Addr a1, const Addr a2);
 
 
-#endif /* __SEMAPHORE_H */
+#endif /* __DRD_SEMAPHORE_H */

@@ -24,6 +24,7 @@
 
 
 #include "drd_barrier.h"
+#include "drd_clientobj.h"
 #include "drd_error.h"
 #include "drd_suppression.h"
 #include "priv_drd_clientreq.h"
@@ -38,19 +39,6 @@
 
 // Type definitions.
 
-/* Information associated with a client-side pthread_barrier_t object. */
-struct barrier_info
-{
-  Addr  barrier;             // Client address of barrier.
-  SizeT size;                // Size in bytes of client-side object.
-  Word  count;               // Participant count in a barrier wait.
-  Word  pre_iteration;       // pthread_barrier_wait() call count modulo two.
-  Word  post_iteration;      // pthread_barrier_wait() call count modulo two.
-  Word  pre_waiters_left;    // number of waiters left for a complete barrier.
-  Word  post_waiters_left;   // number of waiters left for a complete barrier.
-  OSet* oset;                // Thread-specific barrier information.
-};
-
 /* Information associated with one thread participating in a barrier. */
 struct barrier_thread_info
 {
@@ -62,11 +50,14 @@ struct barrier_thread_info
 };
 
 
+// Local functions.
+
+void barrier_cleanup(struct barrier_info* p);
+
+
 // Local variables.
 
 static Bool s_trace_barrier = False;
-/* To do: eliminate the upper limit on the number of barriers (4). */
-struct barrier_info s_barrier[4];
 
 
 // Function definitions.
@@ -106,9 +97,10 @@ void barrier_initialize(struct barrier_info* const p,
   tl_assert(barrier != 0);
   tl_assert(size > 0);
   tl_assert(count > 0);
+  tl_assert(p->a1 == barrier);
+  tl_assert(p->a2 - p->a1 == size);
 
-  p->barrier           = barrier;
-  p->size              = size;
+  p->cleanup           = (void(*)(DrdClientobj*))barrier_cleanup;
   p->count             = count;
   p->pre_iteration     = 0;
   p->post_iteration    = 0;
@@ -120,14 +112,20 @@ void barrier_initialize(struct barrier_info* const p,
   p->oset = VG_(OSetGen_Create)(0, 0, VG_(malloc), VG_(free));
 }
 
-/** Deallocate the memory allocated by barrier_initialize() and in p->oset. */
-void barrier_destroy(struct barrier_info* const p)
+/** Deallocate the memory allocated by barrier_initialize() and in p->oset. 
+ *  Called by drd_clientobj_destroy().
+ */
+void barrier_cleanup(struct barrier_info* p)
 {
   struct barrier_thread_info* q;
 
   tl_assert(p);
 
-  drd_finish_suppression(p->barrier, p->barrier + p->size);
+  if (p->pre_waiters_left != p->count || p->post_waiters_left != p->count)
+  {
+    VG_(message)(Vg_UserMsg, "Destruction of barrier 0x%lx being waited upon",
+                 p->a1);
+  }
 
   VG_(OSetGen_ResetIter)(p->oset);
   for ( ; (q = VG_(OSetGen_Next)(p->oset)) != 0; )
@@ -135,13 +133,6 @@ void barrier_destroy(struct barrier_info* const p)
     barrier_thread_destroy(q);
   }
   VG_(OSetGen_Destroy)(p->oset);
-  p->barrier           = 0;
-  p->size              = 0;
-  p->count             = 0;
-  p->pre_iteration     = 0;
-  p->post_iteration    = 0;
-  p->pre_waiters_left  = 0;
-  p->post_waiters_left = 0;
 }
 
 /** Look up the client-side barrier address barrier in s_barrier[]. If not
@@ -150,31 +141,30 @@ static
 struct barrier_info*
 barrier_get_or_allocate(const Addr barrier, const SizeT size, const Word count)
 {
-  int i;
+  struct barrier_info *p;
 
-  for (i = 0; i < sizeof(s_barrier)/sizeof(s_barrier[0]); i++)
+  tl_assert(offsetof(DrdClientobj, barrier) == 0);
+  p = &drd_clientobj_get(barrier, ClientBarrier)->barrier;
+  if (p == 0)
   {
-    if (s_barrier[i].barrier == barrier)
-    {
-      tl_assert(s_barrier[i].size == size);
-      return &s_barrier[i];
-    }
+    p = &drd_clientobj_add(barrier, barrier + size, ClientBarrier)->barrier;
+    barrier_initialize(p, barrier, size, count);
   }
-  for (i = 0; i < sizeof(s_barrier)/sizeof(s_barrier[0]); i++)
-  {
-    if (s_barrier[i].barrier == 0)
-    {
-      barrier_initialize(&s_barrier[i], barrier, size, count);
-      drd_start_suppression(barrier, barrier + size, "barrier");
-      return &s_barrier[i];
-    }
-  }
-  tl_assert(0);
-  return 0;
+  return p;
+}
+
+/** Look up the address of the information associated with the client-side
+ *  barrier object. */
+struct barrier_info* barrier_get(const Addr barrier)
+{
+  tl_assert(offsetof(DrdClientobj, barrier) == 0);
+  return &drd_clientobj_get(barrier, ClientBarrier)->barrier;
 }
 
 /** Initialize a barrier with client address barrier, client size size, and
- *  where count threads participate in each barrier. */
+ *  where count threads participate in each barrier.
+ *  Called before pthread_barrier_init().
+ */
 struct barrier_info*
 barrier_init(const Addr barrier, const SizeT size, const Word count)
 {
@@ -182,17 +172,14 @@ barrier_init(const Addr barrier, const SizeT size, const Word count)
   return barrier_get_or_allocate(barrier, size, count);
 }
 
-/** Look up the address of the information associated with the client-side
- *  barrier object. */
-struct barrier_info* barrier_get(const Addr barrier)
+/** Called after pthread_barrier_destroy(). */
+void barrier_destroy(struct barrier_info* const p)
 {
-  int i;
-  for (i = 0; i < sizeof(s_barrier)/sizeof(s_barrier[0]); i++)
-    if (s_barrier[i].barrier == barrier)
-      return &s_barrier[i];
-  return 0;
+  tl_assert(p);
+  drd_clientobj_remove(p->a1, ClientBarrier);
 }
 
+/** Called before pthread_barrier_wait(). */
 void barrier_pre_wait(const DrdThreadId tid, const Addr barrier)
 {
   struct barrier_info* p;
@@ -227,6 +214,7 @@ void barrier_pre_wait(const DrdThreadId tid, const Addr barrier)
   }
 }
 
+/** Called after pthread_barrier_wait(). */
 void barrier_post_wait(const DrdThreadId tid, const Addr barrier,
                        const Bool waited)
 {
@@ -286,31 +274,15 @@ void barrier_post_wait(const DrdThreadId tid, const Addr barrier,
 /** Call this function when thread tid stops to exist. */
 void barrier_thread_delete(const DrdThreadId tid)
 {
-  int i;
+  struct barrier_info* p;
 
-  for (i = 0; i < sizeof(s_barrier)/sizeof(s_barrier[0]); i++)
+  drd_clientobj_resetiter();
+  for ( ; (p = &drd_clientobj_next(ClientBarrier)->barrier) != 0; )
   {
-    struct barrier_info* const p = &s_barrier[i];
-    if (p->barrier)
-    {
-      struct barrier_thread_info* q;
-      const UWord word_tid = tid;
-      q = VG_(OSetGen_Remove)(p->oset, &word_tid);
-      barrier_thread_destroy(q);
-      VG_(OSetGen_FreeNode)(p->oset, q);
-    }
-  }
-}
-
-void barrier_stop_using_mem(const Addr a1, const Addr a2)
-{
-  unsigned i;
-  for (i = 0; i < sizeof(s_barrier)/sizeof(s_barrier[0]); i++)
-  {
-    if (a1 <= s_barrier[i].barrier && s_barrier[i].barrier < a2)
-    {
-      tl_assert(s_barrier[i].barrier + s_barrier[i].size <= a2);
-      barrier_destroy(&s_barrier[i]);
-    }
+    struct barrier_thread_info* q;
+    const UWord word_tid = tid;
+    q = VG_(OSetGen_Remove)(p->oset, &word_tid);
+    barrier_thread_destroy(q);
+    VG_(OSetGen_FreeNode)(p->oset, q);
   }
 }

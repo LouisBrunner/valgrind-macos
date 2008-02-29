@@ -120,10 +120,12 @@ drd_clientobj_add(const Addr a1, const Addr a2, const ObjType t)
   return p;
 }
 
-Bool drd_clientobj_remove(const Addr addr)
+Bool drd_clientobj_remove(const Addr addr, const ObjType t)
 {
   DrdClientobj* p;
 
+  p = VG_(OSetGen_Lookup)(s_clientobj, &addr);
+  tl_assert(p->any.type == t);
   p = VG_(OSetGen_Remove)(s_clientobj, &addr);
   if (p)
   {
@@ -163,7 +165,7 @@ void drd_clientobj_stop_using_mem(const Addr a1, const Addr a2)
                    a1, a2);
 #endif
       removed_at = p->any.a1;
-      drd_clientobj_remove(p->any.a1);
+      drd_clientobj_remove(p->any.a1, p->any.type);
       /* The above call removes an element from the oset and hence invalidates */
       /* the iterator. Set the iterator back.                                  */
       VG_(OSetGen_ResetIter)(s_clientobj);

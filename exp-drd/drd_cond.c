@@ -77,10 +77,16 @@ static void cond_cleanup(struct cond_info* p)
   {
     struct mutex_info* q;
     q = &drd_clientobj_get(p->mutex, ClientMutex)->mutex;
-    VG_(message)(Vg_UserMsg,
-                 "Error: destroying condition variable 0x%lx while thread %d"
-                 " is waiting on it.\n",
-                 p->a1, q ? q->owner : -1);
+    tl_assert(q);
+    {
+      CondDestrErrInfo cde = { p->a1, q->a1, q->owner };
+      VG_(maybe_record_error)(VG_(get_running_tid)(),
+                              CondDestrErr,
+                              VG_(get_IP)(VG_(get_running_tid)()),
+                              "Destroying condition variable that is being"
+                              " waited upon",
+                              &cde);
+    }
   }
 }
 
@@ -110,8 +116,11 @@ void cond_init(const Addr cond, const SizeT size)
 {
   if (s_trace_cond)
   {
-    VG_(message)(Vg_UserMsg, "Initializing condition variable 0x%lx", cond);
-    VG_(get_and_pp_StackTrace)(VG_(get_running_tid)(), VG_(clo_backtrace_size));
+    VG_(message)(Vg_UserMsg,
+                 "[%d/%d] cond_init 0x%lx",
+                 VG_(get_running_tid)(),
+                 thread_get_running_tid(),
+                 cond);
   }
   tl_assert(cond_get(cond) == 0);
   tl_assert(size > 0);
@@ -123,8 +132,11 @@ void cond_destroy(struct cond_info* const p)
 {
   if (s_trace_cond)
   {
-    VG_(message)(Vg_UserMsg, "Destroying condition variable 0x%lx", p->a1);
-    VG_(get_and_pp_StackTrace)(VG_(get_running_tid)(), VG_(clo_backtrace_size));
+    VG_(message)(Vg_UserMsg,
+                 "[%d/%d] cond_destroy 0x%lx",
+                 VG_(get_running_tid)(),
+                 thread_get_running_tid(),
+                 p->a1);
   }
 
   // TO DO: print a proper error message if waiter_count != 0.
@@ -138,7 +150,18 @@ int cond_pre_wait(const Addr cond, const SizeT cond_size, const Addr mutex)
 {
   struct cond_info* p;
 
+  if (s_trace_cond)
+  {
+    VG_(message)(Vg_UserMsg,
+                 "[%d/%d] cond_pre_wait 0x%lx",
+                 VG_(get_running_tid)(),
+                 thread_get_running_tid(),
+                 cond);
+  }
+
   p = cond_get_or_allocate(cond, cond_size);
+  tl_assert(p);
+
   if (p->waiter_count == 0)
   {
     p->mutex = mutex;
@@ -158,6 +181,15 @@ int cond_post_wait(const Addr cond)
 {
   struct cond_info* p;
 
+  if (s_trace_cond)
+  {
+    VG_(message)(Vg_UserMsg,
+                 "[%d/%d] cond_post_wait 0x%lx",
+                 VG_(get_running_tid)(),
+                 thread_get_running_tid(),
+                 cond);
+  }
+
   p = cond_get(cond);
   tl_assert(p);
   tl_assert(p->waiter_count > 0);
@@ -169,12 +201,12 @@ int cond_post_wait(const Addr cond)
   return p->waiter_count;
 }
 
-/** Called before pthread_cond_signal(). */
-void cond_pre_signal(Addr const cond)
+static void cond_signal(Addr const cond)
 {
   const ThreadId vg_tid = VG_(get_running_tid)();
   const DrdThreadId drd_tid = VgThreadIdToDrdThreadId(vg_tid);
   struct cond_info* const cond_p = cond_get(cond);
+
   if (cond_p && cond_p->waiter_count > 0)
   {
     if (! mutex_is_locked_by(cond_p->mutex, drd_tid))
@@ -196,10 +228,34 @@ void cond_pre_signal(Addr const cond)
   }
 }
 
+/** Called before pthread_cond_signal(). */
+void cond_pre_signal(Addr const cond)
+{
+  if (s_trace_cond)
+  {
+    VG_(message)(Vg_UserMsg,
+                 "[%d/%d] cond_signal 0x%lx",
+                 VG_(get_running_tid)(),
+                 thread_get_running_tid(),
+                 cond);
+  }
+
+  cond_signal(cond);
+}
+
 /** Called before pthread_cond_broadcast(). */
 void cond_pre_broadcast(Addr const cond)
 {
-  cond_pre_signal(cond);
+  if (s_trace_cond)
+  {
+    VG_(message)(Vg_UserMsg,
+                 "[%d/%d] cond_broadcast 0x%lx",
+                 VG_(get_running_tid)(),
+                 thread_get_running_tid(),
+                 cond);
+  }
+
+  cond_signal(cond);
 }
 
 /** Called after pthread_cond_destroy(). */

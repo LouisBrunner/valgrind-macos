@@ -1,3 +1,6 @@
 
+Invalid semaphore 0x........
+   at 0x........: sem_wait* (drd_intercepts.c:?)
+   by 0x........: main (tc18_semabuse.c:34)
 
-ERROR SUMMARY: 0 errors from 0 contexts (suppressed: 0 from 0)
+ERROR SUMMARY: 1 errors from 1 contexts (suppressed: 0 from 0)

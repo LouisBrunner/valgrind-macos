@@ -269,22 +269,50 @@ static void drd_tool_error_pp(Error* const e)
       VG_(pp_ExeContext)(VG_(get_error_where)(e));
       break;
    }
-   case CondRaceErr: {
-      CondRaceErrInfo* cei = (CondRaceErrInfo*)(VG_(get_error_extra)(e));
-      VG_(message)(Vg_UserMsg,
-                   "Race condition: condition variable 0x%lx has been signalled"
-                   " but the associated mutex 0x%lx is not locked by the"
-                   " signalling thread",
-                   cei->cond, cei->mutex);
-      VG_(pp_ExeContext)(VG_(get_error_where)(e));
-      break;
-   }
    case CondErr: {
       CondErrInfo* cdei =(CondErrInfo*)(VG_(get_error_extra)(e));
       VG_(message)(Vg_UserMsg,
                    "cond 0x%lx: %s",
                    cdei->cond,
                    VG_(get_error_string)(e));
+      VG_(pp_ExeContext)(VG_(get_error_where)(e));
+      break;
+   }
+   case CondRaceErr: {
+      CondRaceErrInfo* cei = (CondRaceErrInfo*)(VG_(get_error_extra)(e));
+      VG_(message)(Vg_UserMsg,
+                   "Race condition: condition variable 0x%lx has been"
+                   " signalled but the associated mutex 0x%lx is not locked"
+                   " by the signalling thread",
+                   cei->cond, cei->mutex);
+      VG_(pp_ExeContext)(VG_(get_error_where)(e));
+      break;
+   }
+   case CondDestrErr: {
+      CondDestrErrInfo* cdi = (CondDestrErrInfo*)(VG_(get_error_extra)(e));
+      VG_(message)(Vg_UserMsg,
+                   "%s: cond 0x%lx, mutex 0x%lx locked by thread %d",
+                   cdi->cond, cdi->mutex, cdi->tid);
+      VG_(pp_ExeContext)(VG_(get_error_where)(e));
+      break;
+   }
+   case SemaphoreErr: {
+      SemaphoreErrInfo* sei =(SemaphoreErrInfo*)(VG_(get_error_extra)(e));
+      tl_assert(sei);
+      VG_(message)(Vg_UserMsg,
+                   "%s 0x%lx",
+                   VG_(get_error_string)(e),
+                   sei->semaphore);
+      VG_(pp_ExeContext)(VG_(get_error_where)(e));
+      break;
+   }
+   case BarrierErr: {
+      BarrierErrInfo* sei =(BarrierErrInfo*)(VG_(get_error_extra)(e));
+      tl_assert(sei);
+      VG_(message)(Vg_UserMsg,
+                   "%s: barrier 0x%lx",
+                   VG_(get_error_string)(e),
+                   sei->barrier);
       VG_(pp_ExeContext)(VG_(get_error_where)(e));
       break;
    }
@@ -311,10 +339,16 @@ static UInt drd_tool_error_update_extra(Error* e)
       return sizeof(DataRaceErrInfo);
    case MutexErr:
       return sizeof(MutexErrInfo);
-   case CondRaceErr:
-      return sizeof(CondRaceErrInfo);
    case CondErr:
       return sizeof(CondErrInfo);
+   case CondRaceErr:
+      return sizeof(CondRaceErrInfo);
+   case CondDestrErr:
+      return sizeof(CondDestrErrInfo);
+   case SemaphoreErr:
+      return sizeof(SemaphoreErrInfo);
+   case BarrierErr:
+      return sizeof(BarrierErrInfo);
    case GenericErr:
       return sizeof(GenericErrInfo);
    default:

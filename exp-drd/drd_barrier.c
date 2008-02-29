@@ -123,8 +123,13 @@ void barrier_cleanup(struct barrier_info* p)
 
   if (p->pre_waiters_left != p->count || p->post_waiters_left != p->count)
   {
-    VG_(message)(Vg_UserMsg, "Destruction of barrier 0x%lx being waited upon",
-                 p->a1);
+    BarrierErrInfo bei = { p->a1 };
+    VG_(maybe_record_error)(VG_(get_running_tid)(),
+                            BarrierErr,
+                            VG_(get_IP)(VG_(get_running_tid)()),
+                            "Destruction of barrier that is being waited"
+                            " upon",
+                            &bei);
   }
 
   VG_(OSetGen_ResetIter)(p->oset);
@@ -168,6 +173,14 @@ struct barrier_info* barrier_get(const Addr barrier)
 struct barrier_info*
 barrier_init(const Addr barrier, const SizeT size, const Word count)
 {
+  if (s_trace_barrier)
+  {
+    VG_(message)(Vg_UserMsg,
+                 "[%d/%d] barrier_init 0x%lx",
+                 VG_(get_running_tid)(),
+                 thread_get_running_tid(),
+                 barrier);
+  }
   tl_assert(barrier_get(barrier) == 0);
   return barrier_get_or_allocate(barrier, size, count);
 }
@@ -175,6 +188,14 @@ barrier_init(const Addr barrier, const SizeT size, const Word count)
 /** Called after pthread_barrier_destroy(). */
 void barrier_destroy(struct barrier_info* const p)
 {
+  if (s_trace_barrier)
+  {
+    VG_(message)(Vg_UserMsg,
+                 "[%d/%d] barrier_destroy 0x%lx",
+                 VG_(get_running_tid)(),
+                 thread_get_running_tid(),
+                 p->a1);
+  }
   tl_assert(p);
   drd_clientobj_remove(p->a1, ClientBarrier);
 }
@@ -191,9 +212,12 @@ void barrier_pre_wait(const DrdThreadId tid, const Addr barrier)
 
   if (s_trace_barrier)
   {
-    VG_(message)(Vg_DebugMsg,
-                 "[%d] barrier_pre_wait(%p) iteration %d",
-                 tid, barrier, p->pre_iteration);
+    VG_(message)(Vg_UserMsg,
+                 "[%d/%d] barrier_pre_wait 0x%lx iteration %d",
+                 VG_(get_running_tid)(),
+                 thread_get_running_tid(),
+                 barrier,
+                 p->pre_iteration);
   }
 
   q = VG_(OSetGen_Lookup)(p->oset, &word_tid);
@@ -218,14 +242,19 @@ void barrier_pre_wait(const DrdThreadId tid, const Addr barrier)
 void barrier_post_wait(const DrdThreadId tid, const Addr barrier,
                        const Bool waited)
 {
-  struct barrier_info* const p = barrier_get(barrier);
+  struct barrier_info* p;
 
+  p = barrier_get(barrier);
   tl_assert(p);
 
   if (s_trace_barrier)
   {
-    VG_(message)(Vg_DebugMsg, "[%d] barrier_post_wait(%p) iteration %d",
-                 tid, barrier, p->post_iteration);
+    VG_(message)(Vg_UserMsg,
+                 "[%d/%d] barrier_post_wait 0x%lx iteration %d",
+                 VG_(get_running_tid)(),
+                 tid,
+                 barrier,
+                 p->post_iteration);
   }
 
   if (waited)
@@ -241,23 +270,7 @@ void barrier_post_wait(const DrdThreadId tid, const Addr barrier,
     {
       if (r != q)
       {
-        if (s_trace_barrier)
-        {
-          VG_(message)(Vg_DebugMsg,
-                       "[%d] barrier_post_wait: combining vc of thread %d, "
-                       "iteration %d",
-                       tid, r->tid, p->post_iteration);
-          vc_print(&thread_get_segment(tid)->vc);
-          VG_(printf)(", ");
-          vc_print(&r->vc[p->post_iteration]);
-          VG_(printf)(" -> ");
-        }
         thread_combine_vc2(tid, &r->vc[p->post_iteration]);
-        if (s_trace_barrier)
-        {
-          vc_print(&thread_get_segment(tid)->vc);
-          VG_(printf)("\n");
-        }
       }
     }
 

@@ -63,7 +63,7 @@ enum {
   /* args: Addr, SizeT, MutexT */
   /* to notify the drd tool of pthread_mutex_lock calls */
   VG_USERREQ__POST_PTHREAD_MUTEX_LOCK,
-  /* args: Addr, SizeT, MutexT */
+  /* args: Addr, SizeT, MutexT, Bool */
   /* to notify the drd tool of pthread_mutex_unlock calls */
   VG_USERREQ__PRE_PTHREAD_MUTEX_UNLOCK,
   /* args: Addr */
@@ -76,11 +76,11 @@ enum {
   /* args: Addr */
   /* to notify the drd tool of a pthread_cond_destroy call. */
   VG_USERREQ__PRE_PTHREAD_COND_DESTROY,
-  /* args: Addr cond, SizeT cond_size, Addr mutex, SizeT mutex_size, MutexT mt */
+  /* args: Addr cond, SizeT cond_size, Addr mutex, SizeT mutex_size,MutexT mt*/
   VG_USERREQ__PRE_PTHREAD_COND_WAIT,
   /* args: Addr cond, SizeT cond_size, Addr mutex, MutexT mt */
   VG_USERREQ__POST_PTHREAD_COND_WAIT,
-  /* args: Addr cond, Addr mutex, SizeT mutex_size, MutexT mt */
+  /* args: Addr cond, Addr mutex, SizeT mutex_size, MutexT mt, Bool took_lock*/
   VG_USERREQ__PRE_PTHREAD_COND_SIGNAL,
   /* args: Addr cond */
   VG_USERREQ__PRE_PTHREAD_COND_BROADCAST,

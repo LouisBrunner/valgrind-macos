@@ -39,9 +39,12 @@
 typedef enum {
    DataRaceErr    = 1,
    MutexErr       = 2,
-   CondRaceErr    = 3,
-   CondErr        = 4,
-   GenericErr     = 5,
+   CondErr        = 3,
+   CondRaceErr    = 4,
+   CondDestrErr   = 5,
+   SemaphoreErr   = 6,
+   BarrierErr     = 7,
+   GenericErr     = 8,
 } DrdErrorKind;
 
 /* The classification of a faulting address. */
@@ -88,12 +91,26 @@ typedef struct {
 
 typedef struct {
    Addr cond;
+} CondErrInfo;
+
+typedef struct {
+   Addr cond;
    Addr mutex;
 } CondRaceErrInfo;
 
 typedef struct {
-   Addr cond;
-} CondErrInfo;
+   Addr        cond;
+   Addr        mutex;
+   DrdThreadId tid;
+} CondDestrErrInfo;
+
+typedef struct {
+   Addr semaphore;
+} SemaphoreErrInfo;
+
+typedef struct {
+   Addr barrier;
+} BarrierErrInfo;
 
 typedef struct {
 } GenericErrInfo;

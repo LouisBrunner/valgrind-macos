@@ -78,8 +78,13 @@ static void semaphore_cleanup(struct semaphore_info* p)
 {
   if (p->waiters > 0)
   {
-    VG_(message)(Vg_UserMsg, "Error: destroying semaphore while %d threads are"
-                 "still waiting on the semaphore.\n", p->waiters);
+    SemaphoreErrInfo sei = { p->a1 };
+    VG_(maybe_record_error)(VG_(get_running_tid)(),
+                            SemaphoreErr,
+                            VG_(get_IP)(VG_(get_running_tid)()),
+                            "Destruction of semaphore that is being waited"
+                            " upon",
+                            &sei);
   }
   vc_cleanup(&p->vc);
 }
@@ -114,6 +119,14 @@ struct semaphore_info* semaphore_init(const Addr semaphore, const SizeT size,
 {
   struct semaphore_info* p;
 
+  if (s_trace_semaphore)
+  {
+    VG_(message)(Vg_UserMsg,
+                 "[%d/%d] semaphore_init 0x%lx",
+                 VG_(get_running_tid)(),
+                 thread_get_running_tid(),
+                 semaphore);
+  }
   tl_assert(semaphore_get(semaphore) == 0);
   p = semaphore_get_or_allocate(semaphore, size);
   p->value = value;
@@ -123,6 +136,17 @@ struct semaphore_info* semaphore_init(const Addr semaphore, const SizeT size,
 /** Called after sem_destroy(). */
 void semaphore_destroy(struct semaphore_info* const p)
 {
+  tl_assert(p);
+
+  if (s_trace_semaphore)
+  {
+    VG_(message)(Vg_UserMsg,
+                 "[%d/%d] semaphore_destroy 0x%lx",
+                 VG_(get_running_tid)(),
+                 thread_get_running_tid(),
+                 p->a1);
+  }
+
   drd_clientobj_remove(p->a1, ClientSemaphore);
 }
 
@@ -134,7 +158,11 @@ void semaphore_pre_wait(const Addr semaphore, const SizeT size)
   p = semaphore_get_or_allocate(semaphore, size);
   if (s_trace_semaphore)
   {
-    VG_(message)(Vg_UserMsg, "semaphore_pre_wait(0x%lx, %d)", semaphore, size);
+    VG_(message)(Vg_UserMsg,
+                 "[%d/%d] semaphore_pre_wait 0x%lx",
+                 VG_(get_running_tid)(),
+                 thread_get_running_tid(),
+                 semaphore);
   }
   tl_assert(p);
   tl_assert(p->waiters >= 0);
@@ -154,7 +182,11 @@ void semaphore_post_wait(const DrdThreadId tid, const Addr semaphore,
   p = semaphore_get(semaphore);
   if (s_trace_semaphore)
   {
-    VG_(message)(Vg_UserMsg, "semaphore_post_wait(0x%lx, %d)", semaphore);
+    VG_(message)(Vg_UserMsg,
+                 "[%d/%d] semaphore_post_wait 0x%lx",
+                 VG_(get_running_tid)(),
+                 thread_get_running_tid(),
+                 semaphore);
   }
   tl_assert(p->waiters > 0);
   p->waiters--;
@@ -162,7 +194,12 @@ void semaphore_post_wait(const DrdThreadId tid, const Addr semaphore,
   tl_assert(p->value >= 0);
   if (p->value == 0)
   {
-    VG_(message)(Vg_UserMsg, "Invalid semaphore 0x%lx", semaphore);
+    SemaphoreErrInfo sei = { semaphore };
+    VG_(maybe_record_error)(VG_(get_running_tid)(),
+                            SemaphoreErr,
+                            VG_(get_IP)(VG_(get_running_tid)()),
+                            "Invalid semaphore",
+                            &sei);
     return;
   }
   p->value--;
@@ -178,6 +215,14 @@ void semaphore_pre_post(const DrdThreadId tid, const Addr semaphore,
 {
   struct semaphore_info* p;
 
+  if (s_trace_semaphore)
+  {
+    VG_(message)(Vg_UserMsg,
+                 "[%d/%d] semaphore_post 0x%lx",
+                 VG_(get_running_tid)(),
+                 thread_get_running_tid(),
+                 semaphore);
+  }
   p = semaphore_get_or_allocate(semaphore, size);
   p->value++;
   if (p->value == 1)

@@ -1,0 +1,2 @@
+prog: tc20_verifywrap
+vgopts: --trace-mutex=yes --trace-cond=yes --trace-semaphore=yes

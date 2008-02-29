@@ -91,8 +91,9 @@ EXTRA_DIST = $(noinst_SCRIPTS)                                  \
 	tc19_shadowmem.vgtest                                   \
 	tc19_shadowmem.stderr.exp                               \
 	tc20_verifywrap.vgtest                                  \
-	tc20_verifywrap.stderr.exp                              \
-	tc20_verifywrap.stderr.exp2				\
+	tc20_verifywrap.stderr.exp tc20_verifywrap.stderr.exp2	\
+	tc20_verifywrap2.vgtest                                 \
+	tc20_verifywrap2.stderr.exp tc20_verifywrap2.stderr.exp2\
 	tc21_pthonce.vgtest                                     \
 	tc21_pthonce.stderr.exp tc21_pthonce.stdout.exp         \
 	tc22_exit_w_lock.vgtest                                 \

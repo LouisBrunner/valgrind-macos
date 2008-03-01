@@ -110,28 +110,41 @@
    pthread
    exp-drd:ConflictingAccess
    fun:pthread_create@@GLIBC_*
-   fun:pthread_create@*
+   fun:pthread_create*
+}
+{
+   pthread
+   exp-drd:ConflictingAccess
+   fun:pthread_mutex_lock
+   fun:pthread_mutex_lock
 }
 {
    pthread
    exp-drd:ConflictingAccess
    fun:clone
    fun:pthread_create@@GLIBC_*
-   fun:pthread_create@*
+   fun:pthread_create*
 }
 {
    pthread
    exp-drd:ConflictingAccess
    fun:do_clone
    fun:pthread_create@@GLIBC_*
-   fun:pthread_create@*
+   fun:pthread_create*
 }
 {
    pthread
    exp-drd:ConflictingAccess
    fun:memset
    fun:pthread_create@@GLIBC_*
-   fun:pthread_create@*
+   fun:pthread_create*
+}
+{
+   pthread
+   exp-drd:ConflictingAccess
+   fun:_dl_allocate_tls_init
+   fun:pthread_create@@GLIBC_*
+   fun:pthread_create*
 }
 {
    pthread
@@ -139,18 +152,25 @@
    fun:memset
    fun:_dl_allocate_tls_init
    fun:pthread_create@@GLIBC_*
-   fun:pthread_create@*
+   fun:pthread_create*
 }
 {
    pthread
    exp-drd:ConflictingAccess
    fun:mempcpy
    fun:pthread_create@@GLIBC_*
-   fun:pthread_create@*
+   fun:pthread_create*
 }
 {
    pthread
    exp-drd:ConflictingAccess
+   fun:pthread_join
+   fun:pthread_join
+}
+{
+   pthread
+   exp-drd:ConflictingAccess
+   fun:__deallocate_stack
    fun:pthread_join
    fun:pthread_join
 }

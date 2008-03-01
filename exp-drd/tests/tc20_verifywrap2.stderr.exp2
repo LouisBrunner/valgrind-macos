@@ -5,9 +5,6 @@
 
 ---------------- pthread_create/join ----------------
 
-[1/1] mutex_init      recursive mutex 0x........
-[1/1] post_mutex_lock recursive mutex 0x........ rc 0 owner 0
-[1/1] mutex_unlock    recursive mutex 0x........ rc 1
 Conflicting store by thread 1 at 0x........ size 2
    at 0x........: main (tc20_verifywrap.c:78)
 Allocation context: unknown
@@ -115,7 +112,8 @@ FIXME: can't figure out how to verify wrap of sem_post
 [1/1] mutex_destroy   error checking mutex 0x........
 [1/1] mutex_destroy   invalid mutex 0x........
 [1/1] mutex_destroy   invalid mutex 0x........
-[1/1] post_mutex_lock recursive mutex 0x........ rc 0 owner 1
+[1/1] mutex_init      recursive mutex 0x........
+[1/1] post_mutex_lock recursive mutex 0x........ rc 0 owner 0
 [1/1] mutex_unlock    recursive mutex 0x........ rc 1
 [1/1] post_mutex_lock recursive mutex 0x........ rc 0 owner 1
 [1/1] mutex_unlock    recursive mutex 0x........ rc 1

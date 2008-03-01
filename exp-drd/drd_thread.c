@@ -63,7 +63,6 @@ typedef struct
    /// If true, indicates that there is a corresponding POSIX thread ID and
    /// a corresponding OS thread that is detached.
    Bool      detached_posix_thread;
-   Bool      is_recording;
 } ThreadInfo;
 
 
@@ -155,7 +154,6 @@ DrdThreadId VgThreadIdToNewDrdThreadId(const ThreadId tid)
          VG_(snprintf)(s_threadinfo[i].name, sizeof(s_threadinfo[i].name),
                        "thread %d", tid);
          s_threadinfo[i].name[sizeof(s_threadinfo[i].name) - 1] = 0;
-         s_threadinfo[i].is_recording  = True;
          if (s_threadinfo[i].first != 0)
             VG_(printf)("drd thread id = %d\n", i);
          tl_assert(s_threadinfo[i].first == 0);
@@ -721,26 +719,6 @@ void thread_stop_using_mem(const Addr a1, const Addr a2)
    {
       thread_update_danger_set(thread_get_running_tid());
    }
-}
-
-void thread_start_recording(const DrdThreadId tid)
-{
-   tl_assert(0 <= tid && tid < DRD_N_THREADS && tid != DRD_INVALID_THREADID);
-   tl_assert(! s_threadinfo[tid].is_recording);
-   s_threadinfo[tid].is_recording = True;
-}
-
-void thread_stop_recording(const DrdThreadId tid)
-{
-   tl_assert(0 <= tid && tid < DRD_N_THREADS && tid != DRD_INVALID_THREADID);
-   tl_assert(s_threadinfo[tid].is_recording);
-   s_threadinfo[tid].is_recording = False;
-}
-
-Bool thread_is_recording(const DrdThreadId tid)
-{
-   tl_assert(0 <= tid && tid < DRD_N_THREADS && tid != DRD_INVALID_THREADID);
-   return s_threadinfo[tid].is_recording;
 }
 
 void thread_print_all(void)

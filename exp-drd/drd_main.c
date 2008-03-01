@@ -150,10 +150,8 @@ VG_REGPARM(2) void drd_trace_load(Addr addr, SizeT size)
 {
    Segment* sg;
 
-   thread_set_vg_running_tid(VG_(get_running_tid)());
-
-   if (! thread_is_recording(thread_get_running_tid()))
-      return;
+   tl_assert(thread_get_running_tid()
+             == VgThreadIdToDrdThreadId(VG_(get_running_tid())));
 
 #if 1
    if (drd_trace_mem || (addr == drd_trace_address))
@@ -192,10 +190,8 @@ VG_REGPARM(2) void drd_trace_store(Addr addr, SizeT size)
 {
    Segment* sg;
 
-   thread_set_vg_running_tid(VG_(get_running_tid)());
-
-   if (! thread_is_recording(thread_get_running_tid()))
-      return;
+   tl_assert(thread_get_running_tid()
+             == VgThreadIdToDrdThreadId(VG_(get_running_tid())));
 
 #if 1
    if (drd_trace_mem || (addr == drd_trace_address))
@@ -242,23 +238,50 @@ static void drd_pre_mem_read(const CorePart part,
    }
 }
 
+static void drd_pre_mem_read_asciiz(const CorePart part,
+                                    const ThreadId tid,
+                                    Char* const s,
+                                    const Addr a)
+{
+   const char* p = (void*)a;
+   SizeT size = 0;
+
+   /* Note: the expression '*p' reads client memory and may crash if the */
+   /* client provided an invalid pointer !                               */
+   while (*p)
+   {
+      p++;
+      size++;
+   }
+   // To do: find out what a reasonable upper limit on 'size' is.
+   tl_assert(size < 4096);
+   if (size > 0)
+   {
+      drd_trace_load(a, size);
+   }
+}
+
 static void drd_post_mem_write(const CorePart part,
                                const ThreadId tid,
                                const Addr a,
                                const SizeT size)
 {
+   thread_set_vg_running_tid(VG_(get_running_tid)());
    if (size > 0)
    {
       drd_trace_store(a, size);
    }
 }
 
-static void drd_start_using_mem(const Addr a1, const Addr a2)
+static void drd_start_using_mem(const Addr a1, const SizeT len)
 {
+   const Addr a2 = a1 + len;
+
+   tl_assert(a1 < a2);
+
    thread_set_vg_running_tid(VG_(get_running_tid)());
 
-   if (a1 <= drd_trace_address && drd_trace_address < a2
-       && thread_is_recording(thread_get_running_tid()))
+   if (a1 <= drd_trace_address && drd_trace_address < a2)
    {
       VG_(message)(Vg_UserMsg, "start 0x%lx size %ld %s (tracing 0x%lx)",
                    a1, a2 - a1, thread_get_name(thread_get_running_tid()),
@@ -268,10 +291,13 @@ static void drd_start_using_mem(const Addr a1, const Addr a2)
    }
 }
 
-static void drd_stop_using_mem(const Addr a1, const Addr a2)
+static void drd_stop_using_mem(const Addr a1, const SizeT len)
 {
-   if (a1 <= drd_trace_address && drd_trace_address < a2
-       && thread_is_recording(thread_get_running_tid()))
+   const Addr a2 = a1 + len;
+
+   tl_assert(a1 < a2);
+
+   if (a1 <= drd_trace_address && drd_trace_address < a2)
    {
       VG_(message)(Vg_UserMsg, "end   0x%lx size %ld %s (tracing 0x%lx)",
                    a1, a2 - a1, thread_get_name(thread_get_running_tid()),
@@ -284,13 +310,20 @@ static void drd_stop_using_mem(const Addr a1, const Addr a2)
    drd_suppression_stop_using_mem(a1, a2);
 }
 
+static
+void drd_start_using_mem_w_perms(const Addr a, const SizeT len,
+                                 const Bool rr, const Bool ww, const Bool xx)
+{
+   drd_start_using_mem(a, len);
+}
+
 /* Called by the core when the stack of a thread grows, to indicate that */
 /* the addresses in range [ a, a + len [ may now be used by the client.  */
 /* Assumption: stacks grow downward.                                     */
 static void drd_start_using_mem_stack(const Addr a, const SizeT len)
 {
    thread_set_stack_min(thread_get_running_tid(), a - VG_STACK_REDZONE_SZB);
-   drd_start_using_mem(a, a + len);
+   drd_start_using_mem(a, len);
 }
 
 /* Called by the core when the stack of a thread shrinks, to indicate that */
@@ -301,18 +334,17 @@ static void drd_stop_using_mem_stack(const Addr a, const SizeT len)
    thread_set_vg_running_tid(VG_(get_running_tid)());
    thread_set_stack_min(thread_get_running_tid(),
                         a + len - VG_STACK_REDZONE_SZB);
-   drd_stop_using_mem(a, a + len);
+   drd_stop_using_mem(a, len);
 }
 
-static void drd_start_using_mem_mmap(Addr a, SizeT len,
-                                     Bool rr, Bool ww, Bool xx)
+static void drd_start_using_mem_stack_signal(const Addr a, const SizeT len)
 {
-   drd_start_using_mem(a, a + len);
+   drd_start_using_mem(a, len);
 }
 
-static void drd_stop_using_mem_munmap(Addr a, SizeT len)
+static void drd_stop_using_mem_stack_signal(Addr a, SizeT len)
 {
-   drd_stop_using_mem(a, a + len);
+   drd_stop_using_mem(a, len);
 }
 
 static
@@ -797,15 +829,22 @@ void drd_pre_clo_init(void)
                                    drd_print_usage,
                                    drd_print_debug_usage);
 
+   // Error handling.
    drd_register_error_handlers();
 
    // Core event tracking.
    VG_(track_pre_mem_read)         (drd_pre_mem_read);
+   VG_(track_pre_mem_read_asciiz)  (drd_pre_mem_read_asciiz);
    VG_(track_post_mem_write)       (drd_post_mem_write);
+   VG_(track_new_mem_brk)          (drd_start_using_mem);
+   VG_(track_new_mem_mmap)         (drd_start_using_mem_w_perms);
    VG_(track_new_mem_stack)        (drd_start_using_mem_stack);
+   VG_(track_new_mem_stack_signal) (drd_start_using_mem_stack_signal);
+   VG_(track_new_mem_startup)      (drd_start_using_mem_w_perms);
+   VG_(track_die_mem_brk)          (drd_stop_using_mem);
+   VG_(track_die_mem_munmap)       (drd_stop_using_mem);
    VG_(track_die_mem_stack)        (drd_stop_using_mem_stack);
-   VG_(track_new_mem_mmap)         (drd_start_using_mem_mmap);
-   VG_(track_die_mem_munmap)       (drd_stop_using_mem_munmap);
+   VG_(track_die_mem_stack_signal) (drd_stop_using_mem_stack_signal);
    VG_(track_start_client_code)    (drd_start_client_code);
    VG_(track_pre_thread_ll_create) (drd_pre_thread_create);
    VG_(track_pre_thread_first_insn)(drd_post_thread_create);

@@ -16,26 +16,17 @@ enum {
   /* To tell the drd tool to suppress data race detection on the specified */
   /* address range. */
   VG_USERREQ__DRD_START_SUPPRESSION,
-  /* args: start address, size in bytes */
+  /* args: start address, end address */
   /* To tell the drd tool no longer to suppress data race detection on the */
   /* specified address range. */
   VG_USERREQ__DRD_FINISH_SUPPRESSION,
-  /* args: start address, size in bytes */
+  /* args: start address, end address */
   /* Ask drd to suppress data race reports on all currently allocated stack */
   /* data of the current thread.                                            */
   VG_USERREQ__DRD_SUPPRESS_CURRENT_STACK,
   /* args: none */
   /* To ask the drd tool to start a new segment in the specified thread. */
   VG_USERREQ__DRD_START_NEW_SEGMENT,
-  /* args: POSIX thread ID. */
-
-  /* To tell the drd tool to start again recording memory accesses for the */
-  /* specified thread. */
-  VG_USERREQ__DRD_START_RECORDING,
-  /* args: POSIX thread ID. */
-  /* To tell the drd tool to stop recording memory accesses for the */
-  /* specified thread. */
-  VG_USERREQ__DRD_STOP_RECORDING,
   /* args: POSIX thread ID. */
 
   /* Tell the core the pthread_t of the running thread */

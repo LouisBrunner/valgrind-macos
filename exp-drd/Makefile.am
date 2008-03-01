@@ -28,42 +28,47 @@ vgpreload_exp_drd_x86_linux_so_CFLAGS       = $(AM_CFLAGS_X86_LINUX) $(AM_CFLAGS
 vgpreload_exp_drd_x86_linux_so_CCASFLAGS    = $(AM_CCASFLAGS_X86_LINUX)
 vgpreload_exp_drd_x86_linux_so_DEPENDENCIES = $(LIBREPLACEMALLOC_X86_LINUX)
 vgpreload_exp_drd_x86_linux_so_LDFLAGS      = $(PRELOAD_LDFLAGS_X86_LINUX)\
-                                          $(LIBREPLACEMALLOC_LDFLAGS_X86_LINUX)
+                                        $(LIBREPLACEMALLOC_LDFLAGS_X86_LINUX)
 
 vgpreload_exp_drd_amd64_linux_so_SOURCES      = $(VGPRELOAD_DRD_SOURCES_COMMON)
 vgpreload_exp_drd_amd64_linux_so_CPPFLAGS     = $(AM_CPPFLAGS_AMD64_LINUX)
 vgpreload_exp_drd_amd64_linux_so_CFLAGS       = $(AM_CFLAGS_AMD64_LINUX) $(AM_CFLAGS_PIC)
 vgpreload_exp_drd_amd64_linux_so_CCASFLAGS    = $(AM_CCASFLAGS_AMD64_LINUX)
 vgpreload_exp_drd_amd64_linux_so_DEPENDENCIES =
-vgpreload_exp_drd_amd64_linux_so_LDFLAGS      = $(PRELOAD_LDFLAGS_AMD64_LINUX)
+vgpreload_exp_drd_amd64_linux_so_LDFLAGS      = $(PRELOAD_LDFLAGS_AMD64_LINUX)\
+                                        $(LIBREPLACEMALLOC_LDFLAGS_AMD64_LINUX)
 
 vgpreload_exp_drd_ppc32_linux_so_SOURCES      = $(VGPRELOAD_DRD_SOURCES_COMMON)
 vgpreload_exp_drd_ppc32_linux_so_CPPFLAGS     = $(AM_CPPFLAGS_PPC32_LINUX)
 vgpreload_exp_drd_ppc32_linux_so_CFLAGS       = $(AM_CFLAGS_PPC32_LINUX) $(AM_CFLAGS_PIC)
 vgpreload_exp_drd_ppc32_linux_so_CCASFLAGS    = $(AM_CCASFLAGS_PPC32_LINUX)
 vgpreload_exp_drd_ppc32_linux_so_DEPENDENCIES =
-vgpreload_exp_drd_ppc32_linux_so_LDFLAGS      = $(PRELOAD_LDFLAGS_PPC32_LINUX)
+vgpreload_exp_drd_ppc32_linux_so_LDFLAGS      = $(PRELOAD_LDFLAGS_PPC32_LINUX)\
+                                        $(LIBREPLACEMALLOC_LDFLAGS_PPC32_LINUX)
 
 vgpreload_exp_drd_ppc64_linux_so_SOURCES      = $(VGPRELOAD_DRD_SOURCES_COMMON)
 vgpreload_exp_drd_ppc64_linux_so_CPPFLAGS     = $(AM_CPPFLAGS_PPC64_LINUX)
 vgpreload_exp_drd_ppc64_linux_so_CFLAGS       = $(AM_CFLAGS_PPC64_LINUX) $(AM_CFLAGS_PIC)
 vgpreload_exp_drd_ppc64_linux_so_CCASFLAGS    = $(AM_CCASFLAGS_PPC64_LINUX)
 vgpreload_exp_drd_ppc64_linux_so_DEPENDENCIES =
-vgpreload_exp_drd_ppc64_linux_so_LDFLAGS      = $(PRELOAD_LDFLAGS_PPC64_LINUX)
+vgpreload_exp_drd_ppc64_linux_so_LDFLAGS      = $(PRELOAD_LDFLAGS_PPC64_LINUX)\
+                                        $(LIBREPLACEMALLOC_LDFLAGS_PPC64_LINUX)
 
 vgpreload_exp_drd_ppc32_aix5_so_SOURCES      = $(VGPRELOAD_DRD_SOURCES_COMMON)
 vgpreload_exp_drd_ppc32_aix5_so_CPPFLAGS     = $(AM_CPPFLAGS_PPC32_AIX5)
 vgpreload_exp_drd_ppc32_aix5_so_CFLAGS       = $(AM_CFLAGS_PPC32_AIX5) $(AM_CFLAGS_PIC)
 vgpreload_exp_drd_ppc32_aix5_so_CCASFLAGS    = $(AM_CCASFLAGS_PPC32_AIX5)
 vgpreload_exp_drd_ppc32_aix5_so_DEPENDENCIES =
-vgpreload_exp_drd_ppc32_aix5_so_LDFLAGS      = $(PRELOAD_LDFLAGS_PPC32_AIX5)
+vgpreload_exp_drd_ppc32_aix5_so_LDFLAGS      = $(PRELOAD_LDFLAGS_PPC32_AIX5)\
+                                        $(LIBREPLACEMALLOC_LDFLAGS_PPC32_AIX5)
 
 vgpreload_exp_drd_ppc64_aix5_so_SOURCES      = $(VGPRELOAD_DRD_SOURCES_COMMON)
 vgpreload_exp_drd_ppc64_aix5_so_CPPFLAGS     = $(AM_CPPFLAGS_PPC64_AIX5)
 vgpreload_exp_drd_ppc64_aix5_so_CFLAGS       = $(AM_CFLAGS_PPC64_AIX5) $(AM_CFLAGS_PIC)
 vgpreload_exp_drd_ppc64_aix5_so_CCASFLAGS    = $(AM_CCASFLAGS_PPC64_AIX5)
 vgpreload_exp_drd_ppc64_aix5_so_DEPENDENCIES =
-vgpreload_exp_drd_ppc64_aix5_so_LDFLAGS      = $(PRELOAD_LDFLAGS_PPC64_AIX5)
+vgpreload_exp_drd_ppc64_aix5_so_LDFLAGS      = $(PRELOAD_LDFLAGS_PPC64_AIX5)\
+                                        $(LIBREPLACEMALLOC_LDFLAGS_PPC64_AIX5)
 
 
 DRD_SOURCES_COMMON =    \

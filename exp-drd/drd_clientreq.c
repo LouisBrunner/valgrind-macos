@@ -94,11 +94,11 @@ static Bool drd_handle_client_request(ThreadId tid, UWord* arg, UWord* ret)
       break;
 
    case VG_USERREQ__DRD_START_SUPPRESSION:
-      drd_start_suppression(arg[1], arg[1] + arg[2], "client");
+      drd_start_suppression(arg[1], arg[2], "client");
       break;
 
    case VG_USERREQ__DRD_FINISH_SUPPRESSION:
-      drd_finish_suppression(arg[1], arg[1] + arg[2]);
+      drd_finish_suppression(arg[1], arg[2]);
       break;
 
    case VG_USERREQ__DRD_SUPPRESS_CURRENT_STACK:
@@ -108,14 +108,6 @@ static Bool drd_handle_client_request(ThreadId tid, UWord* arg, UWord* ret)
 
    case VG_USERREQ__DRD_START_NEW_SEGMENT:
       thread_new_segment(PtThreadIdToDrdThreadId(arg[1]));
-      break;
-
-   case VG_USERREQ__DRD_START_RECORDING:
-      thread_start_recording(PtThreadIdToDrdThreadId(arg[1]));
-      break;
-
-   case VG_USERREQ__DRD_STOP_RECORDING:
-      thread_stop_recording(PtThreadIdToDrdThreadId(arg[1]));
       break;
 
    case VG_USERREQ__SET_PTHREADID:

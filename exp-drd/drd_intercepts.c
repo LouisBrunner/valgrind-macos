@@ -40,7 +40,8 @@
    originates from Valgrind.
    ------------------------------------------------------------------ */
 
-// Make sure pthread_spinlock_t is available on glibc 2.3.2 systems.
+// Make sure pthread_spinlock_t is available when compiling with older glibc
+// versions (2.3 or before).
 #ifndef _GNU_SOURCE
 #define _GNU_SOURCE
 #endif
@@ -125,30 +126,7 @@ static void vg_start_suppression(const void* const p, size_t const size)
 {
    int res;
    VALGRIND_DO_CLIENT_REQUEST(res, 0, VG_USERREQ__DRD_START_SUPPRESSION,
-                              p, size, 0, 0, 0);
-}
-
-#if 0
-static void vg_finish_suppression(const void* const p, size_t const size)
-{
-   int res;
-   VALGRIND_DO_CLIENT_REQUEST(res, 0, VG_USERREQ__DRD_FINISH_SUPPRESSION,
-                              p, size, 0, 0, 0);
-}
-#endif
-
-static void vg_start_recording(void)
-{
-   int res;
-   VALGRIND_DO_CLIENT_REQUEST(res, 0, VG_USERREQ__DRD_START_RECORDING,
-                              pthread_self(), 0, 0, 0, 0);
-}
-
-static void vg_stop_recording(void)
-{
-   int res;
-   VALGRIND_DO_CLIENT_REQUEST(res, 0, VG_USERREQ__DRD_STOP_RECORDING,
-                              pthread_self(), 0, 0, 0, 0);
+                              p, (char*)p + size, 0, 0, 0);
 }
 
 static void vg_set_joinable(const pthread_t tid, const int joinable)
@@ -249,9 +227,7 @@ PTH_FUNC(int, pthreadZucreateZa, // pthread_create*
    pthread_cond_init(&vgargs.cond, 0);
    pthread_mutex_lock(&vgargs.mutex);
 #endif
-   vg_stop_recording();
    CALL_FN_W_WWWW(ret, fn, thread, attr, vg_thread_wrapper, &vgargs);
-   vg_start_recording();
 #if 0
    pthread_cond_wait(&vgargs.cond, &vgargs.mutex);
    pthread_mutex_unlock(&vgargs.mutex);

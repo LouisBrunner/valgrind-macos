@@ -16,6 +16,10 @@ Other segment end (thread 2)
 ---------------- pthread_mutex_lock et al ----------------
 
 
+Invalid mutex
+   at 0x........: pthread_mutex_init (drd_intercepts.c:?)
+   by 0x........: main (tc20_verifywrap.c:92)
+
 Destroying locked mutex: address 0x........, recursion count 1, owner 1.
    at 0x........: pthread_mutex_destroy (drd_intercepts.c:?)
    by 0x........: main (tc20_verifywrap.c:102)
@@ -33,10 +37,6 @@ Invalid mutex
    by 0x........: main (tc20_verifywrap.c:121)
 
 Invalid mutex
-   at 0x........: pthread_mutex_unlock (drd_intercepts.c:?)
-   by 0x........: main (tc20_verifywrap.c:125)
-
-Mutex not locked: address 0x........, recursion count 0, owner 0.
    at 0x........: pthread_mutex_unlock (drd_intercepts.c:?)
    by 0x........: main (tc20_verifywrap.c:125)
 

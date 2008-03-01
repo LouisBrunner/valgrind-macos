@@ -50,6 +50,7 @@
 #include <pthread.h>
 #include <semaphore.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <unistd.h>
 #include "drd_clientreq.h"
 #include "pub_tool_redir.h"
@@ -81,6 +82,7 @@ typedef struct
 // Local variables.
 
 static int vg_main_thread_state_is_set = 0;
+static pid_t vg_main_thread_pid;
 
 
 // Function definitions.
@@ -160,6 +162,17 @@ static void vg_set_joinable(const pthread_t tid, const int joinable)
 static void* vg_thread_wrapper(void* arg)
 {
    int res;
+
+   if (getpid() != vg_main_thread_pid)
+   {
+      fprintf(stderr,
+	      "Detected the linuxthreads threading library.\n"
+	      "Sorry, but DRD does not support linuxthreads.\n"
+	      "Please try to run DRD on a system with NPTL instead.\n"
+	      "Giving up.\n");
+      abort();
+   }
+
    VALGRIND_DO_CLIENT_REQUEST(res, 0, VG_USERREQ__DRD_SUPPRESS_CURRENT_STACK,
                               0, 0, 0, 0, 0);
 
@@ -188,6 +201,8 @@ static void* vg_thread_wrapper(void* arg)
 static void vg_set_main_thread_state(void)
 {
    int res;
+
+   vg_main_thread_pid = getpid();
 
    VALGRIND_DO_CLIENT_REQUEST(res, -1, VG_USERREQ__DRD_SUPPRESS_CURRENT_STACK,
                               0, 0, 0, 0, 0);

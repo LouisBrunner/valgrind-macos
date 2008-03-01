@@ -191,16 +191,6 @@
    pthread
    exp-drd:ConflictingAccess
    fun:__deallocate_stack
-   fun:__free_tcb
-   fun:start_thread
-   fun:clone
-}
-{
-   pthread stack_cache_lock
-   exp-drd:ConflictingAccess
-   fun:__deallocate_stack
-   fun:start_thread
-   fun:clone
 }
 {
    pthread

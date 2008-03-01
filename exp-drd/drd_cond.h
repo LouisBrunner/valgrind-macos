@@ -39,9 +39,8 @@ struct cond_info;
 
 
 void cond_set_trace(const Bool trace_cond);
-void cond_init(const Addr cond, const SizeT size);
-void cond_destroy(struct cond_info* const p);
-struct cond_info* cond_get(const Addr mutex);
+void cond_pre_init(const Addr cond, const SizeT size);
+void cond_post_destroy(const Addr cond);
 int cond_pre_wait(const Addr cond, const SizeT cond_size, const Addr mutex);
 int cond_post_wait(const Addr cond);
 void cond_pre_signal(const Addr cond);

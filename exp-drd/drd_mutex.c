@@ -38,7 +38,6 @@
 
 static void mutex_cleanup(struct mutex_info* p);
 static Bool mutex_is_locked(struct mutex_info* const p);
-static void mutex_destroy(struct mutex_info* const p);
 
 
 // Local variables.
@@ -108,7 +107,7 @@ mutex_get_or_allocate(const Addr mutex,
   struct mutex_info* p;
 
   tl_assert(offsetof(DrdClientobj, mutex) == 0);
-  p = &drd_clientobj_get(mutex, ClientMutex)->mutex;
+  p = &clientobj_get(mutex, ClientMutex)->mutex;
   if (p)
   {
     tl_assert(p->mutex_type == mutex_type);
@@ -116,7 +115,7 @@ mutex_get_or_allocate(const Addr mutex,
     return p;
   }
 
-  if (drd_clientobj_present(mutex, mutex + size))
+  if (clientobj_present(mutex, mutex + size))
   {
      GenericErrInfo GEI;
      VG_(maybe_record_error)(VG_(get_running_tid)(),
@@ -127,7 +126,7 @@ mutex_get_or_allocate(const Addr mutex,
      return 0;
   }
 
-  p = &drd_clientobj_add(mutex, mutex + size, ClientMutex)->mutex;
+  p = &clientobj_add(mutex, mutex + size, ClientMutex)->mutex;
   mutex_initialize(p, mutex, size, mutex_type);
   return p;
 }
@@ -135,7 +134,7 @@ mutex_get_or_allocate(const Addr mutex,
 struct mutex_info* mutex_get(const Addr mutex)
 {
   tl_assert(offsetof(DrdClientobj, mutex) == 0);
-  return &drd_clientobj_get(mutex, ClientMutex)->mutex;
+  return &clientobj_get(mutex, ClientMutex)->mutex;
 }
 
 struct mutex_info*
@@ -171,22 +170,24 @@ mutex_init(const Addr mutex, const SizeT size, const MutexT mutex_type)
   return mutex_p;
 }
 
-static void mutex_destroy(struct mutex_info* const p)
-{
-  drd_clientobj_remove(p->a1, ClientMutex);
-}
-
 /** Called after pthread_mutex_destroy(). */
 void mutex_post_destroy(const Addr mutex)
 {
-   struct mutex_info* p;
+  struct mutex_info* p;
 
-   p = mutex_get(mutex);
-   tl_assert(p);
-   if (p)
-   {
-      mutex_destroy(p);
-   }
+  p = mutex_get(mutex);
+  if (p == 0)
+  {
+    GenericErrInfo GEI;
+    VG_(maybe_record_error)(VG_(get_running_tid)(),
+                            GenericErr,
+                            VG_(get_IP)(VG_(get_running_tid)()),
+                            "Not a mutex",
+                            &GEI);
+    return;
+  }
+
+  clientobj_remove(mutex, ClientMutex);
 }
 
 /** Called before pthread_mutex_lock() is invoked. If a data structure for
@@ -466,8 +467,8 @@ void mutex_thread_delete(const DrdThreadId tid)
 {
   struct mutex_info* p;
 
-  drd_clientobj_resetiter();
-  for ( ; (p = &drd_clientobj_next(ClientMutex)->mutex) != 0; )
+  clientobj_resetiter();
+  for ( ; (p = &clientobj_next(ClientMutex)->mutex) != 0; )
   {
     if (p->owner == tid && p->recursion_count > 0)
     {

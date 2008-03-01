@@ -116,14 +116,15 @@ typedef union drd_clientobj
 
 // Function declarations.
 
-void drd_clientobj_init(void);
-void drd_clientobj_cleanup(void);
-DrdClientobj* drd_clientobj_get(const Addr addr, const ObjType t);
-Bool drd_clientobj_present(const Addr a1, const Addr a2);
-DrdClientobj* drd_clientobj_add(const Addr a1, const Addr a2, const ObjType t);
-Bool drd_clientobj_remove(const Addr addr, const ObjType t);
-void drd_clientobj_stop_using_mem(const Addr a1, const Addr a2);
-void drd_clientobj_resetiter(void);
-DrdClientobj* drd_clientobj_next(const ObjType t);
+void clientobj_set_trace(const Bool trace);
+void clientobj_init(void);
+void clientobj_cleanup(void);
+DrdClientobj* clientobj_get(const Addr addr, const ObjType t);
+Bool clientobj_present(const Addr a1, const Addr a2);
+DrdClientobj* clientobj_add(const Addr a1, const Addr a2, const ObjType t);
+Bool clientobj_remove(const Addr addr, const ObjType t);
+void clientobj_stop_using_mem(const Addr a1, const Addr a2);
+void clientobj_resetiter(void);
+DrdClientobj* clientobj_next(const ObjType t);
 
 #endif /* __DRD_CLIENTOBJ_H */

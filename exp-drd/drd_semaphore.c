@@ -72,7 +72,7 @@ void semaphore_initialize(struct semaphore_info* const p,
 }
 
 /** Free the memory that was allocated by semaphore_initialize(). Called by
- *  drd_clientobj_remove().
+ *  clientobj_remove().
  */
 static void semaphore_cleanup(struct semaphore_info* p)
 {
@@ -96,21 +96,21 @@ semaphore_get_or_allocate(const Addr semaphore, const SizeT size)
   struct semaphore_info *p;
 
   tl_assert(offsetof(DrdClientobj, semaphore) == 0);
-  p = &drd_clientobj_get(semaphore, ClientSemaphore)->semaphore;
+  p = &clientobj_get(semaphore, ClientSemaphore)->semaphore;
   if (p == 0)
   {
     tl_assert(offsetof(DrdClientobj, semaphore) == 0);
-    p = &drd_clientobj_add(semaphore, semaphore + size,
+    p = &clientobj_add(semaphore, semaphore + size,
                            ClientSemaphore)->semaphore;
     semaphore_initialize(p, semaphore, size, 0);
   }
   return p;
 }
 
-struct semaphore_info* semaphore_get(const Addr semaphore)
+static struct semaphore_info* semaphore_get(const Addr semaphore)
 {
   tl_assert(offsetof(DrdClientobj, semaphore) == 0);
-  return &drd_clientobj_get(semaphore, ClientSemaphore)->semaphore;
+  return &clientobj_get(semaphore, ClientSemaphore)->semaphore;
 }
 
 /** Called before sem_init(). */
@@ -134,9 +134,9 @@ struct semaphore_info* semaphore_init(const Addr semaphore, const SizeT size,
 }
 
 /** Called after sem_destroy(). */
-void semaphore_destroy(struct semaphore_info* const p)
+void semaphore_destroy(const Addr semaphore)
 {
-  tl_assert(p);
+  struct semaphore_info* p;
 
   if (s_trace_semaphore)
   {
@@ -144,10 +144,23 @@ void semaphore_destroy(struct semaphore_info* const p)
                  "[%d/%d] semaphore_destroy 0x%lx",
                  VG_(get_running_tid)(),
                  thread_get_running_tid(),
-                 p->a1);
+                 semaphore);
   }
 
-  drd_clientobj_remove(p->a1, ClientSemaphore);
+  p = semaphore_get(semaphore);
+
+  if (p == 0)
+  {
+    GenericErrInfo GEI;
+    VG_(maybe_record_error)(VG_(get_running_tid)(),
+                            GenericErr,
+                            VG_(get_IP)(VG_(get_running_tid)()),
+                            "Not a semaphore",
+                            &GEI);
+    return;
+  }
+
+  clientobj_remove(semaphore, ClientSemaphore);
 }
 
 /** Called before sem_wait(). */

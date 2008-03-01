@@ -113,7 +113,7 @@ void barrier_initialize(struct barrier_info* const p,
 }
 
 /** Deallocate the memory allocated by barrier_initialize() and in p->oset. 
- *  Called by drd_clientobj_destroy().
+ *  Called by clientobj_destroy().
  */
 void barrier_cleanup(struct barrier_info* p)
 {
@@ -149,10 +149,10 @@ barrier_get_or_allocate(const Addr barrier, const SizeT size, const Word count)
   struct barrier_info *p;
 
   tl_assert(offsetof(DrdClientobj, barrier) == 0);
-  p = &drd_clientobj_get(barrier, ClientBarrier)->barrier;
+  p = &clientobj_get(barrier, ClientBarrier)->barrier;
   if (p == 0)
   {
-    p = &drd_clientobj_add(barrier, barrier + size, ClientBarrier)->barrier;
+    p = &clientobj_add(barrier, barrier + size, ClientBarrier)->barrier;
     barrier_initialize(p, barrier, size, count);
   }
   return p;
@@ -160,10 +160,10 @@ barrier_get_or_allocate(const Addr barrier, const SizeT size, const Word count)
 
 /** Look up the address of the information associated with the client-side
  *  barrier object. */
-struct barrier_info* barrier_get(const Addr barrier)
+static struct barrier_info* barrier_get(const Addr barrier)
 {
   tl_assert(offsetof(DrdClientobj, barrier) == 0);
-  return &drd_clientobj_get(barrier, ClientBarrier)->barrier;
+  return &clientobj_get(barrier, ClientBarrier)->barrier;
 }
 
 /** Initialize a barrier with client address barrier, client size size, and
@@ -186,18 +186,32 @@ barrier_init(const Addr barrier, const SizeT size, const Word count)
 }
 
 /** Called after pthread_barrier_destroy(). */
-void barrier_destroy(struct barrier_info* const p)
+void barrier_destroy(const Addr barrier)
 {
+  struct barrier_info* p;
+
   if (s_trace_barrier)
   {
     VG_(message)(Vg_UserMsg,
                  "[%d/%d] barrier_destroy 0x%lx",
                  VG_(get_running_tid)(),
                  thread_get_running_tid(),
-                 p->a1);
+                 barrier);
   }
-  tl_assert(p);
-  drd_clientobj_remove(p->a1, ClientBarrier);
+
+  p = barrier_get(barrier);
+  if (p == 0)
+  {
+    GenericErrInfo GEI;
+    VG_(maybe_record_error)(VG_(get_running_tid)(),
+                            GenericErr,
+                            VG_(get_IP)(VG_(get_running_tid)()),
+                            "Not a barrier",
+                            &GEI);
+    return;
+  }
+
+  clientobj_remove(p->a1, ClientBarrier);
 }
 
 /** Called before pthread_barrier_wait(). */
@@ -289,8 +303,8 @@ void barrier_thread_delete(const DrdThreadId tid)
 {
   struct barrier_info* p;
 
-  drd_clientobj_resetiter();
-  for ( ; (p = &drd_clientobj_next(ClientBarrier)->barrier) != 0; )
+  clientobj_resetiter();
+  for ( ; (p = &clientobj_next(ClientBarrier)->barrier) != 0; )
   {
     struct barrier_thread_info* q;
     const UWord word_tid = tid;

@@ -68,7 +68,7 @@ void cond_initialize(struct cond_info* const p, const Addr cond,
 }
 
 /** Free the memory that was allocated by cond_initialize(). Called by
- *  drd_clientobj_remove().
+ *  clientobj_remove().
  */
 static void cond_cleanup(struct cond_info* p)
 {
@@ -76,7 +76,7 @@ static void cond_cleanup(struct cond_info* p)
   if (p->mutex)
   {
     struct mutex_info* q;
-    q = &drd_clientobj_get(p->mutex, ClientMutex)->mutex;
+    q = &clientobj_get(p->mutex, ClientMutex)->mutex;
     tl_assert(q);
     {
       CondDestrErrInfo cde = { p->a1, q->a1, q->owner };
@@ -96,24 +96,26 @@ cond_get_or_allocate(const Addr cond, const SizeT size)
   struct cond_info *p;
 
   tl_assert(offsetof(DrdClientobj, cond) == 0);
-  p = &drd_clientobj_get(cond, ClientCondvar)->cond;
+  p = &clientobj_get(cond, ClientCondvar)->cond;
   if (p == 0)
   {
-    p = &drd_clientobj_add(cond, cond + size, ClientCondvar)->cond;
+    p = &clientobj_add(cond, cond + size, ClientCondvar)->cond;
     cond_initialize(p, cond, size);
   }
   return p;
 }
 
-struct cond_info* cond_get(const Addr cond)
+static struct cond_info* cond_get(const Addr cond)
 {
   tl_assert(offsetof(DrdClientobj, cond) == 0);
-  return &drd_clientobj_get(cond, ClientCondvar)->cond;
+  return &clientobj_get(cond, ClientCondvar)->cond;
 }
 
 /** Called before pthread_cond_init(). */
-void cond_init(const Addr cond, const SizeT size)
+void cond_pre_init(const Addr cond, const SizeT size)
 {
+  struct cond_info* p;
+
   if (s_trace_cond)
   {
     VG_(message)(Vg_UserMsg,
@@ -122,27 +124,62 @@ void cond_init(const Addr cond, const SizeT size)
                  thread_get_running_tid(),
                  cond);
   }
-  tl_assert(cond_get(cond) == 0);
+
   tl_assert(size > 0);
-  cond_get_or_allocate(cond, size);
+
+  p = cond_get(cond);
+
+  if (p)
+  {
+    CondErrInfo cei = { .cond = cond };
+    VG_(maybe_record_error)(VG_(get_running_tid)(),
+                            CondErr,
+                            VG_(get_IP)(VG_(get_running_tid)()),
+                            "initialized twice",
+                            &cei);
+  }
+
+  p = cond_get_or_allocate(cond, size);
 }
 
 /** Called after pthread_cond_destroy(). */
-void cond_destroy(struct cond_info* const p)
+void cond_post_destroy(const Addr cond)
 {
+  struct cond_info* p;
+
   if (s_trace_cond)
   {
     VG_(message)(Vg_UserMsg,
                  "[%d/%d] cond_destroy 0x%lx",
                  VG_(get_running_tid)(),
                  thread_get_running_tid(),
-                 p->a1);
+                 cond);
   }
 
-  // TO DO: print a proper error message if waiter_count != 0.
-  tl_assert(p->waiter_count == 0);
+  p = cond_get(cond);
+  if (p == 0)
+  {
+    CondErrInfo cei = { .cond = cond };
+    VG_(maybe_record_error)(VG_(get_running_tid)(),
+                            CondErr,
+                            VG_(get_IP)(VG_(get_running_tid)()),
+                            "not a condition variable",
+                            &cei);
+    return;
+  }
 
-  drd_clientobj_remove(p->a1, ClientCondvar);
+  if (p->waiter_count != 0)
+  {
+    CondErrInfo cei = { .cond = cond };
+    VG_(maybe_record_error)(VG_(get_running_tid)(),
+                            CondErr,
+                            VG_(get_IP)(VG_(get_running_tid)()),
+                            "destruction of condition variable being waited"
+                            " upon",
+                            &cei);
+  }
+
+  clientobj_remove(p->a1, ClientCondvar);
 }
 
 /** Called before pthread_cond_wait(). */

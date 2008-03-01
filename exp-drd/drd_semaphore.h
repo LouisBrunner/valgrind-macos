@@ -41,8 +41,7 @@ struct semaphore_info;
 void semaphore_set_trace(const Bool trace_semaphore);
 struct semaphore_info* semaphore_init(const Addr semaphore, const SizeT size,
                                       const Word pshared, const UWord value);
-void semaphore_destroy(struct semaphore_info* const p);
-struct semaphore_info* semaphore_get(const Addr semaphore);
+void semaphore_destroy(const Addr semaphore);
 void semaphore_pre_wait(const Addr semaphore, const SizeT size);
 void semaphore_post_wait(const DrdThreadId tid, const Addr semaphore,
                          const Bool waited);

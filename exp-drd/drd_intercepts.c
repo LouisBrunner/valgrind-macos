@@ -395,9 +395,9 @@ PTH_FUNC(int, pthreadZucondZuinitZa, // pthread_cond_init*
    int res;
    OrigFn fn;
    VALGRIND_GET_ORIG_FN(fn);
-   CALL_FN_W_WW(ret, fn, cond, attr);
-   VALGRIND_DO_CLIENT_REQUEST(res, -1, VG_USERREQ__POST_PTHREAD_COND_INIT,
+   VALGRIND_DO_CLIENT_REQUEST(res, -1, VG_USERREQ__PRE_PTHREAD_COND_INIT,
                               cond, sizeof(*cond), 0, 0, 0);
+   CALL_FN_W_WW(ret, fn, cond, attr);
    return ret;
 }
 
@@ -409,9 +409,9 @@ PTH_FUNC(int, pthreadZucondZudestroyZa, // pthread_cond_destroy*
    int res;
    OrigFn fn;
    VALGRIND_GET_ORIG_FN(fn);
-   VALGRIND_DO_CLIENT_REQUEST(res, -1, VG_USERREQ__PRE_PTHREAD_COND_DESTROY,
-                              cond, 0, 0, 0, 0);
    CALL_FN_W_W(ret, fn, cond);
+   VALGRIND_DO_CLIENT_REQUEST(res, -1, VG_USERREQ__POST_PTHREAD_COND_DESTROY,
+                              cond, 0, 0, 0, 0);
    return ret;
 }
 

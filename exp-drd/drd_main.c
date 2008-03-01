@@ -47,7 +47,7 @@
 #include "pub_tool_libcproc.h"
 #include "pub_tool_machine.h"
 #include "pub_tool_options.h"     // command line options
-#include "pub_tool_threadstate.h" // VG_(get_running_tid)
+#include "pub_tool_threadstate.h" // VG_(get_running_tid)()
 #include "pub_tool_tooliface.h"
 
 
@@ -77,6 +77,7 @@ static Addr drd_trace_address = 0;
 static Bool drd_process_cmd_line_option(Char* arg)
 {
    Bool trace_barrier     = False;
+   Bool trace_clientobj   = False;
    Bool trace_cond        = False;
    Bool trace_csw         = False;
    Bool trace_danger_set  = False;
@@ -88,6 +89,7 @@ static Bool drd_process_cmd_line_option(Char* arg)
 
    VG_BOOL_CLO     (arg, "--drd-stats",         drd_print_stats)
    else VG_BOOL_CLO(arg, "--trace-barrier",     trace_barrier)
+   else VG_BOOL_CLO(arg, "--trace-clientobj",   trace_clientobj)
    else VG_BOOL_CLO(arg, "--trace-cond",        trace_cond)
    else VG_BOOL_CLO(arg, "--trace-csw",         trace_csw)
    else VG_BOOL_CLO(arg, "--trace-danger-set",  trace_danger_set)
@@ -107,6 +109,8 @@ static Bool drd_process_cmd_line_option(Char* arg)
    }
    if (trace_barrier)
       barrier_set_trace(trace_barrier);
+   if (trace_clientobj)
+      clientobj_set_trace(trace_clientobj);
    if (trace_cond)
       cond_set_trace(trace_cond);
    if (trace_csw)
@@ -306,7 +310,7 @@ static void drd_stop_using_mem(const Addr a1, const SizeT len)
                                  VG_(clo_backtrace_size));
    }
    thread_stop_using_mem(a1, a2);
-   drd_clientobj_stop_using_mem(a1, a2);
+   clientobj_stop_using_mem(a1, a2);
    drd_suppression_stop_using_mem(a1, a2);
 }
 
@@ -473,38 +477,14 @@ void drd_pre_mutex_unlock(const DrdThreadId drd_tid,
    mutex_unlock(mutex, mutex_type);
 }
 
-void drd_post_cond_init(Addr cond, SizeT s)
+void drd_pre_cond_init(Addr cond, SizeT s)
 {
-   if (cond_get(cond))
-   {
-      CondErrInfo cei = { .cond = cond };
-      VG_(maybe_record_error)(VG_(get_running_tid)(),
-                              CondErr,
-                              VG_(get_IP)(VG_(get_running_tid)()),
-                              "initialized twice",
-                              &cei);
-   }
-   cond_init(cond, s);
+   cond_pre_init(cond, s);
 }
 
-void drd_pre_cond_destroy(Addr cond)
+void drd_post_cond_destroy(Addr cond)
 {
-   struct cond_info* cond_p;
-
-   cond_p = cond_get(cond);
-   if (cond_p)
-   {
-      cond_destroy(cond_p);
-   }
-   else
-   {
-      CondErrInfo cei = { .cond = cond };
-      VG_(maybe_record_error)(VG_(get_running_tid)(),
-                              CondErr,
-                              VG_(get_IP)(VG_(get_running_tid)()),
-                              "destroy requested but not initialized",
-                              &cei);
-   }
+   cond_post_destroy(cond);
 }
 
 void drd_semaphore_init(const Addr semaphore, const SizeT size,
@@ -515,14 +495,7 @@ void drd_semaphore_init(const Addr semaphore, const SizeT size,
 
 void drd_semaphore_destroy(const Addr semaphore)
 {
-   struct semaphore_info* p;
-
-   p = semaphore_get(semaphore);
-   tl_assert(p);
-   if (p)
-   {
-      semaphore_destroy(p);
-   }
+   semaphore_destroy(semaphore);
 }
 
 void drd_semaphore_pre_wait(const DrdThreadId tid, const Addr semaphore,
@@ -557,13 +530,7 @@ void drd_barrier_init(const Addr barrier, const SizeT size, const Word count)
 
 void drd_barrier_destroy(const Addr barrier)
 {
-   struct barrier_info* p;
-
-   p = barrier_get(barrier);
-   if (p)
-   {
-      barrier_destroy(p);
-   }
+   barrier_destroy(barrier);
 }
 
 void drd_barrier_pre_wait(const DrdThreadId tid, const Addr barrier)
@@ -859,7 +826,7 @@ void drd_pre_clo_init(void)
 
    drd_suppression_init();
 
-   drd_clientobj_init();
+   clientobj_init();
 }
 
 

@@ -149,12 +149,12 @@ static Bool drd_handle_client_request(ThreadId tid, UWord* arg, UWord* ret)
       drd_spin_init_or_unlock(arg[1], arg[2]);
       break;
 
-   case VG_USERREQ__POST_PTHREAD_COND_INIT:
-      drd_post_cond_init(arg[1], arg[2]);
+   case VG_USERREQ__PRE_PTHREAD_COND_INIT:
+      drd_pre_cond_init(arg[1], arg[2]);
       break;
 
-   case VG_USERREQ__PRE_PTHREAD_COND_DESTROY:
-      drd_pre_cond_destroy(arg[1]);
+   case VG_USERREQ__POST_PTHREAD_COND_DESTROY:
+      drd_post_cond_destroy(arg[1]);
       break;
 
    case VG_USERREQ__PRE_PTHREAD_COND_WAIT:

@@ -28,20 +28,29 @@
 #include "pub_tool_basics.h"
 #include "pub_tool_libcassert.h"
 #include "pub_tool_libcbase.h"
-#include "pub_tool_libcprint.h"  // VG_(message)()
+#include "pub_tool_libcprint.h"   // VG_(message)()
 #include "pub_tool_mallocfree.h"
+#include "pub_tool_options.h"     // VG_(clo_backtrace_size)
 #include "pub_tool_oset.h"
+#include "pub_tool_stacktrace.h"
+#include "pub_tool_threadstate.h" // VG_(get_running_tid)()
 
 
 // Local variables.
 
 static OSet* s_clientobj;
+static Bool s_trace_clientobj;
 
 
 // Function definitions.
 
+void clientobj_set_trace(const Bool trace)
+{
+  s_trace_clientobj = trace;
+}
+
 /** Initialize the client object set. */
-void drd_clientobj_init(void)
+void clientobj_init(void)
 {
   tl_assert(s_clientobj == 0);
   s_clientobj = VG_(OSetGen_Create)(0, 0, VG_(malloc), VG_(free));
@@ -51,7 +60,7 @@ void drd_clientobj_init(void)
 /** Free the memory allocated for the client object set.
  *  @pre Client object set is empty.
  */
-void drd_clientobj_cleanup(void)
+void clientobj_cleanup(void)
 {
   tl_assert(s_clientobj);
   tl_assert(VG_(OSetGen_Size)(s_clientobj) == 0);
@@ -63,7 +72,7 @@ void drd_clientobj_cleanup(void)
  *  and that has object type t. Return 0 if there is no client object in the
  *  set with the specified start address.
  */
-DrdClientobj* drd_clientobj_get(const Addr addr, const ObjType t)
+DrdClientobj* clientobj_get(const Addr addr, const ObjType t)
 {
   DrdClientobj* p;
   p = VG_(OSetGen_Lookup)(s_clientobj, &addr);
@@ -75,7 +84,7 @@ DrdClientobj* drd_clientobj_get(const Addr addr, const ObjType t)
 /** Return true if and only if the address range of any client object overlaps
  *  with the specified address range.
  */
-Bool drd_clientobj_present(const Addr a1, const Addr a2)
+Bool clientobj_present(const Addr a1, const Addr a2)
 {
   DrdClientobj *p;
 
@@ -97,13 +106,18 @@ Bool drd_clientobj_present(const Addr a1, const Addr a2)
  *  @pre No other client object is present in the address range [addr,addr+size[.
  */
 DrdClientobj*
-drd_clientobj_add(const Addr a1, const Addr a2, const ObjType t)
+clientobj_add(const Addr a1, const Addr a2, const ObjType t)
 {
   DrdClientobj* p;
 
   tl_assert(a1 < a2 && a1 + 4096 > a2);
-  tl_assert(! drd_clientobj_present(a1, a2));
+  tl_assert(! clientobj_present(a1, a2));
   tl_assert(VG_(OSetGen_Lookup)(s_clientobj, &a1) == 0);
+
+  if (s_trace_clientobj)
+  {
+    VG_(message)(Vg_UserMsg, "Adding client object 0x%lx of type %d", a1, t);
+  }
 
   p = VG_(OSetGen_AllocNode)(s_clientobj, sizeof(*p));
   VG_(memset)(p, 0, sizeof(*p));
@@ -116,9 +130,19 @@ drd_clientobj_add(const Addr a1, const Addr a2, const ObjType t)
   return p;
 }
 
-Bool drd_clientobj_remove(const Addr addr, const ObjType t)
+Bool clientobj_remove(const Addr addr, const ObjType t)
 {
   DrdClientobj* p;
+
+  if (s_trace_clientobj)
+  {
+    VG_(message)(Vg_UserMsg, "Removing client object 0x%lx of type %d",
+                 addr, t);
+#if 0
+    VG_(get_and_pp_StackTrace)(VG_(get_running_tid)(),
+                               VG_(clo_backtrace_size));
+#endif
+  }
 
   p = VG_(OSetGen_Lookup)(s_clientobj, &addr);
   tl_assert(p->any.type == t);
@@ -135,7 +159,7 @@ Bool drd_clientobj_remove(const Addr addr, const ObjType t)
   return False;
 }
 
-void drd_clientobj_stop_using_mem(const Addr a1, const Addr a2)
+void clientobj_stop_using_mem(const Addr a1, const Addr a2)
 {
   Addr removed_at;
   DrdClientobj* p;
@@ -149,7 +173,7 @@ void drd_clientobj_stop_using_mem(const Addr a1, const Addr a2)
         || (a1 < p->any.a2 && p->any.a2 <= a2))
     {
       removed_at = p->any.a1;
-      drd_clientobj_remove(p->any.a1, p->any.type);
+      clientobj_remove(p->any.a1, p->any.type);
       /* The above call removes an element from the oset and hence */
       /* invalidates the iterator. Set the iterator back.          */
       VG_(OSetGen_ResetIter)(s_clientobj);
@@ -164,12 +188,12 @@ void drd_clientobj_stop_using_mem(const Addr a1, const Addr a2)
   }
 }
 
-void drd_clientobj_resetiter(void)
+void clientobj_resetiter(void)
 {
   VG_(OSetGen_ResetIter)(s_clientobj);
 }
 
-DrdClientobj* drd_clientobj_next(const ObjType t)
+DrdClientobj* clientobj_next(const ObjType t)
 {
   DrdClientobj* p;
   while ((p = VG_(OSetGen_Next)(s_clientobj)) != 0 && p->any.type != t)

@@ -63,10 +63,10 @@ enum {
 
 
   /* to notify the drd tool of a pthread_cond_init call. */
-  VG_USERREQ__POST_PTHREAD_COND_INIT,
+  VG_USERREQ__PRE_PTHREAD_COND_INIT,
   /* args: Addr */
   /* to notify the drd tool of a pthread_cond_destroy call. */
-  VG_USERREQ__PRE_PTHREAD_COND_DESTROY,
+  VG_USERREQ__POST_PTHREAD_COND_DESTROY,
   /* args: Addr cond, SizeT cond_size, Addr mutex, SizeT mutex_size,MutexT mt*/
   VG_USERREQ__PRE_PTHREAD_COND_WAIT,
   /* args: Addr cond, SizeT cond_size, Addr mutex, MutexT mt */

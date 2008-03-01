@@ -143,7 +143,7 @@ void drd_handle_free(ThreadId tid, Addr p)
    }
    else
    {
-      s_stop_using_mem_callback(mc->data, mc->data + mc->size);
+      s_stop_using_mem_callback(mc->data, mc->size);
       VG_(free)(mc);
    }
 }
@@ -184,7 +184,7 @@ void* drd_realloc(ThreadId tid, void* p_old, SizeT new_size)
    else if (old_size > new_size)
    {
       /* new size is smaller */
-      s_stop_using_mem_callback(mc->data + new_size, mc->data + old_size);
+      s_stop_using_mem_callback(mc->data + new_size, old_size);
       mc->size = new_size;
       mc->where = VG_(record_ExeContext)(tid, 0);
       p_new = p_old;
@@ -202,7 +202,7 @@ void* drd_realloc(ThreadId tid, void* p_old, SizeT new_size)
          VG_(memcpy)((void*)a_new, p_old, mc->size);
 
          /* Free old memory */
-         s_stop_using_mem_callback(mc->data, mc->data + mc->size);
+         s_stop_using_mem_callback(mc->data, mc->size);
          VG_(free)(mc);
 
          // Allocate a new chunk.

@@ -41,8 +41,7 @@ struct barrier_info;
 void barrier_set_trace(const Bool trace_barrier);
 struct barrier_info* barrier_init(const Addr barrier, const SizeT size,
                                   const Word count);
-void barrier_destroy(struct barrier_info* const p);
-struct barrier_info* barrier_get(const Addr barrier);
+void barrier_destroy(const Addr barrier);
 void barrier_pre_wait(const DrdThreadId tid, const Addr barrier);
 void barrier_post_wait(const DrdThreadId tid, const Addr barrier,
                        const Bool waited);

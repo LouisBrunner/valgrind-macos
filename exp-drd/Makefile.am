@@ -100,12 +100,12 @@ noinst_HEADERS =        \
   priv_drd_clientreq.h  \
   pub_drd_bitmap.h
 
-AM_CFLAGS_X86_LINUX   += -I$(top_srcdir)/coregrind
-AM_CFLAGS_AMD64_LINUX += -I$(top_srcdir)/coregrind
-AM_CFLAGS_PPC32_LINUX += -I$(top_srcdir)/coregrind
-AM_CFLAGS_PPC64_LINUX += -I$(top_srcdir)/coregrind
-AM_CFLAGS_PPC32_AIX5  += -I$(top_srcdir)/coregrind
-AM_CFLAGS_PPC64_AIX5  += -I$(top_srcdir)/coregrind
+AM_CFLAGS_X86_LINUX   += -I$(top_srcdir)/coregrind -Wsign-compare
+AM_CFLAGS_AMD64_LINUX += -I$(top_srcdir)/coregrind -Wsign-compare
+AM_CFLAGS_PPC32_LINUX += -I$(top_srcdir)/coregrind -Wsign-compare
+AM_CFLAGS_PPC64_LINUX += -I$(top_srcdir)/coregrind -Wsign-compare
+AM_CFLAGS_PPC32_AIX5  += -I$(top_srcdir)/coregrind -Wsign-compare
+AM_CFLAGS_PPC64_AIX5  += -I$(top_srcdir)/coregrind -Wsign-compare
 
 exp_drd_x86_linux_SOURCES        = $(DRD_SOURCES_COMMON)
 exp_drd_x86_linux_CPPFLAGS       = $(AM_CPPFLAGS_X86_LINUX)

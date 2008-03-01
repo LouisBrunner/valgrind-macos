@@ -543,7 +543,7 @@ VectorClock* thread_get_vc(const DrdThreadId tid)
  */
 static void thread_compute_minimum_vc(VectorClock* vc)
 {
-   int i;
+   unsigned i;
    Bool first;
    Segment* latest_sg;
 
@@ -564,7 +564,7 @@ static void thread_compute_minimum_vc(VectorClock* vc)
 
 static void thread_compute_maximum_vc(VectorClock* vc)
 {
-   int i;
+   unsigned i;
    Bool first;
    Segment* latest_sg;
 
@@ -590,8 +590,8 @@ static void thread_compute_maximum_vc(VectorClock* vc)
  */
 static void thread_discard_ordered_segments(void)
 {
+   unsigned i;
    VectorClock thread_vc_min;
-   int i;
 
    s_discard_ordered_segments_count++;
 

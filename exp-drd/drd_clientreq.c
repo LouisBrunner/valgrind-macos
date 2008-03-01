@@ -60,12 +60,12 @@ static void drd_pre_cond_wait(const Addr cond, const SizeT cond_size,
    cond_pre_wait(cond, cond_size, mutex);
 }
 
-static void drd_post_cond_wait(const Addr cond, const Addr mutex,
-                               const SizeT size, const MutexT mutex_type,
+static void drd_post_cond_wait(const Addr cond,
+                               const Addr mutex,
                                const Bool took_lock)
 {
    cond_post_wait(cond);
-   mutex_post_lock(mutex, size, mutex_type, took_lock);
+   mutex_post_lock(mutex, took_lock);
 }
 
 static void drd_pre_cond_signal(const Addr cond)
@@ -133,16 +133,15 @@ static Bool drd_handle_client_request(ThreadId tid, UWord* arg, UWord* ret)
       break;
 
    case VG_USERREQ__PRE_PTHREAD_MUTEX_LOCK:
-      drd_pre_mutex_lock(thread_get_running_tid(), arg[1], arg[2], arg[3]);
+      drd_pre_mutex_lock(arg[1], arg[2], arg[3]);
       break;
 
    case VG_USERREQ__POST_PTHREAD_MUTEX_LOCK:
-      drd_post_mutex_lock(thread_get_running_tid(),
-                          arg[1], arg[2], arg[3], arg[4]);
+      drd_post_mutex_lock(arg[1], arg[2]);
       break;
 
    case VG_USERREQ__PRE_PTHREAD_MUTEX_UNLOCK:
-      drd_pre_mutex_unlock(thread_get_running_tid(), arg[1], arg[3]);
+      drd_pre_mutex_unlock(arg[1], arg[3]);
       break;
 
    case VG_USERREQ__SPIN_INIT_OR_UNLOCK:
@@ -163,9 +162,7 @@ static Bool drd_handle_client_request(ThreadId tid, UWord* arg, UWord* ret)
       break;
 
    case VG_USERREQ__POST_PTHREAD_COND_WAIT:
-      drd_post_cond_wait(arg[1]/*cond*/, arg[2]/*mutex*/,
-                         arg[3]/*mutex_size*/, arg[4]/*mutex_type*/,
-                         arg[5]/*took_lock*/);
+      drd_post_cond_wait(arg[1]/*cond*/, arg[2]/*mutex*/, arg[3]/*took_lock*/);
       break;
 
    case VG_USERREQ__PRE_PTHREAD_COND_SIGNAL:
@@ -214,6 +211,27 @@ static Bool drd_handle_client_request(ThreadId tid, UWord* arg, UWord* ret)
 
    case VG_USERREQ__POST_BARRIER_WAIT:
       drd_barrier_post_wait(thread_get_running_tid(), arg[1], arg[2]);
+      break;
+
+   case VG_USERREQ__PRE_RWLOCK_INIT:
+      break;
+
+   case VG_USERREQ__POST_RWLOCK_DESTROY:
+      break;
+
+   case VG_USERREQ__PRE_RWLOCK_RDLOCK:
+      break;
+
+   case VG_USERREQ__POST_RWLOCK_RDLOCK:
+      break;
+
+   case VG_USERREQ__PRE_RWLOCK_WRLOCK:
+      break;
+
+   case VG_USERREQ__POST_RWLOCK_WRLOCK:
+      break;
+
+   case VG_USERREQ__POST_RWLOCK_UNLOCK:
       break;
 
    default:

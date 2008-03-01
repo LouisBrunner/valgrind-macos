@@ -137,10 +137,11 @@ struct mutex_info* mutex_get(const Addr mutex)
   return &clientobj_get(mutex, ClientMutex)->mutex;
 }
 
+/** Called before pthread_mutex_init(). */
 struct mutex_info*
 mutex_init(const Addr mutex, const SizeT size, const MutexT mutex_type)
 {
-  struct mutex_info* mutex_p;
+  struct mutex_info* p;
 
   if (s_trace_mutex)
   {
@@ -152,22 +153,33 @@ mutex_init(const Addr mutex, const SizeT size, const MutexT mutex_type)
                  mutex);
   }
 
-  mutex_p = mutex_get(mutex);
-  if (mutex_p)
+  if (mutex_type == mutex_type_invalid_mutex)
+  {
+    GenericErrInfo GEI;
+    VG_(maybe_record_error)(VG_(get_running_tid)(),
+                            GenericErr,
+                            VG_(get_IP)(VG_(get_running_tid)()),
+                            "Invalid mutex",
+                            &GEI);
+    return 0;
+  }
+
+  p = mutex_get(mutex);
+  if (p)
   {
     const ThreadId vg_tid = VG_(get_running_tid)();
     MutexErrInfo MEI
-      = { mutex_p->a1, mutex_p->recursion_count, mutex_p->owner };
+      = { p->a1, p->recursion_count, p->owner };
     VG_(maybe_record_error)(vg_tid,
                             MutexErr,
                             VG_(get_IP)(vg_tid),
                             "Mutex reinitialization",
                             &MEI);
-    return mutex_p;
+    return p;
   }
-  mutex_p = mutex_get_or_allocate(mutex, size, mutex_type);
+  p = mutex_get_or_allocate(mutex, size, mutex_type);
 
-  return mutex_p;
+  return p;
 }
 
 /** Called after pthread_mutex_destroy(). */
@@ -200,10 +212,33 @@ void mutex_pre_lock(const Addr mutex, const SizeT size, MutexT mutex_type)
   struct mutex_info* p;
 
   p = mutex_get(mutex);
+
+  if (s_trace_mutex)
+  {
+    VG_(message)(Vg_UserMsg,
+                 "[%d/%d] pre_mutex_lock  %s 0x%lx rc %d owner %d",
+                 VG_(get_running_tid)(),
+                 thread_get_running_tid(),
+                 p ? mutex_get_typename(p) : "(?)",
+                 mutex,
+                 p ? p->recursion_count : 0,
+                 p ? p->owner : VG_INVALID_THREADID);
+  }
+
+  if (mutex_type == mutex_type_invalid_mutex)
+  {
+    GenericErrInfo GEI;
+    VG_(maybe_record_error)(VG_(get_running_tid)(),
+                            GenericErr,
+                            VG_(get_IP)(VG_(get_running_tid)()),
+                            "Invalid mutex",
+                            &GEI);
+    return;
+  }
+
   if (p == 0)
   {
-    mutex_init(mutex, size, mutex_type);
-    p = mutex_get(mutex);
+    p = mutex_init(mutex, size, mutex_type);
   }
 
   tl_assert(p);
@@ -226,11 +261,12 @@ void mutex_pre_lock(const Addr mutex, const SizeT size, MutexT mutex_type)
  * Note: this function must be called after pthread_mutex_lock() has been
  * called, or a race condition is triggered !
  */
-int mutex_post_lock(const Addr mutex, const SizeT size, MutexT mutex_type,
-                    const Bool took_lock)
+int mutex_post_lock(const Addr mutex, const Bool took_lock)
 {
   const DrdThreadId drd_tid = thread_get_running_tid();
-  struct mutex_info* const p = mutex_get_or_allocate(mutex, size, mutex_type);
+  struct mutex_info* p;
+
+  p = mutex_get(mutex);
 
   if (s_trace_mutex)
   {
@@ -238,38 +274,19 @@ int mutex_post_lock(const Addr mutex, const SizeT size, MutexT mutex_type,
                  "[%d/%d] post_mutex_lock %s 0x%lx rc %d owner %d",
                  VG_(get_running_tid)(),
                  drd_tid,
-                 mutex_get_typename(p),
+                 p ? mutex_get_typename(p) : "(?)",
                  mutex,
                  p ? p->recursion_count : 0,
                  p ? p->owner : VG_INVALID_THREADID);
   }
 
-  if (mutex_type == mutex_type_invalid_mutex)
-  {
-    GenericErrInfo GEI;
-    VG_(maybe_record_error)(VG_(get_running_tid)(),
-                            GenericErr,
-                            VG_(get_IP)(VG_(get_running_tid)()),
-                            "Invalid mutex",
-                            &GEI);
-  }
-
   if (p == 0)
   {
-     GenericErrInfo GEI;
-     VG_(maybe_record_error)(VG_(get_running_tid)(),
-                             GenericErr,
-                             VG_(get_IP)(VG_(get_running_tid)()),
-                             "Not a mutex",
-                             &GEI);
      return 0;
   }
 
   if (! took_lock)
      return p->recursion_count;
-
-  tl_assert(p->mutex_type == mutex_type);
-  tl_assert(p->a2 - p->a1 == size);
 
   if (p->recursion_count == 0)
   {
@@ -335,6 +352,7 @@ int mutex_unlock(const Addr mutex, const MutexT mutex_type)
                             VG_(get_IP)(VG_(get_running_tid)()),
                             "Invalid mutex",
                             &GEI);
+    return 0;
   }
 
   if (p == 0)

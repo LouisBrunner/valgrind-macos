@@ -54,7 +54,7 @@ enum {
   /* args: Addr, SizeT, MutexT */
   /* to notify the drd tool of pthread_mutex_lock calls */
   VG_USERREQ__POST_PTHREAD_MUTEX_LOCK,
-  /* args: Addr, SizeT, MutexT, Bool */
+  /* args: Addr, Bool */
   /* to notify the drd tool of pthread_mutex_unlock calls */
   VG_USERREQ__PRE_PTHREAD_MUTEX_UNLOCK,
   /* args: Addr */
@@ -71,7 +71,7 @@ enum {
   VG_USERREQ__PRE_PTHREAD_COND_WAIT,
   /* args: Addr cond, SizeT cond_size, Addr mutex, MutexT mt */
   VG_USERREQ__POST_PTHREAD_COND_WAIT,
-  /* args: Addr cond, Addr mutex, SizeT mutex_size, MutexT mt, Bool took_lock*/
+  /* args: Addr cond, Addr mutex, Bool took_lock*/
   VG_USERREQ__PRE_PTHREAD_COND_SIGNAL,
   /* args: Addr cond */
   VG_USERREQ__PRE_PTHREAD_COND_BROADCAST,
@@ -108,6 +108,28 @@ enum {
   /* To notify the drd tool of a pthread_barrier_wait call. */
   VG_USERREQ__POST_BARRIER_WAIT,
   /* args: Addr barrier, Word has_waited */
+
+  /* To notify the drd tool of a pthread_rwlock_init call. */
+  VG_USERREQ__PRE_RWLOCK_INIT,
+  /* args: Addr rwlock, SizeT size */
+  /* To notify the drd tool of a pthread_rwlock_destroy call. */
+  VG_USERREQ__POST_RWLOCK_DESTROY,
+  /* args: Addr rwlock, SizeT size */
+  /* To notify the drd tool of a pthread_rwlock_rdlock call. */
+  VG_USERREQ__PRE_RWLOCK_RDLOCK,
+  /* args: Addr rwlock, SizeT size */
+  /* To notify the drd tool of a pthread_rwlock_rdlock call. */
+  VG_USERREQ__POST_RWLOCK_RDLOCK,
+  /* args: Addr rwlock, Bool took_lock */
+  /* To notify the drd tool of a pthread_rwlock_wrlock call. */
+  VG_USERREQ__PRE_RWLOCK_WRLOCK,
+  /* args: Addr rwlock, SizeT size */
+  /* To notify the drd tool of a pthread_rwlock_wrlock call. */
+  VG_USERREQ__POST_RWLOCK_WRLOCK,
+  /* args: Addr rwlock, Bool took_lock */
+  /* To notify the drd tool of a pthread_rwlock_unlock call. */
+  VG_USERREQ__POST_RWLOCK_UNLOCK,
+  /* args: Addr rwlock, Bool unlocked */
 
 };
 

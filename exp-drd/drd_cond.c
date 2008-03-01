@@ -228,7 +228,9 @@ int cond_post_wait(const Addr cond)
   }
 
   p = cond_get(cond);
+  // To do: print a proper error message if the assert below fails.
   tl_assert(p);
+  // To do: print a proper error message if the assert below fails.
   tl_assert(p->waiter_count > 0);
   tl_assert(p->mutex);
   if (--p->waiter_count == 0)

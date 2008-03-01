@@ -12,14 +12,6 @@ Race condition: condition variable 0x........ has been signalled but the associa
    by 0x........: clone (in /...libc...)
 
 Thread 1:
-Not a mutex
-   at 0x........: pthread_cond_wait* (drd_intercepts.c:?)
-   by 0x........: main (tc23_bogus_condwait.c:69)
-
-Not a mutex
-   at 0x........: pthread_cond_wait* (drd_intercepts.c:?)
-   by 0x........: main (tc23_bogus_condwait.c:69)
-
 Mutex not locked: address 0x........, recursion count 0, owner 0.
    at 0x........: pthread_cond_wait* (drd_intercepts.c:?)
    by 0x........: main (tc23_bogus_condwait.c:72)
@@ -66,4 +58,4 @@ Mutex not unlocked by owner thread: address 0x........, recursion count 1, owner
    by 0x........: start_thread (in libpthread-?.?.so)
    by 0x........: clone (in /...libc...)
 
-ERROR SUMMARY: 11 errors from 11 contexts (suppressed: 0 from 0)
+ERROR SUMMARY: 9 errors from 9 contexts (suppressed: 0 from 0)

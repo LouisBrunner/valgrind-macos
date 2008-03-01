@@ -684,7 +684,7 @@ IRSB* drd_instrument(VgCallbackClosure* const closure,
 
 /* Based on the function with the same name in Helgrind's hg_main.c */
 static void instrument_memory_bus_event(IRSB* const bb,
-                                        const IRMBusEvent const event)
+                                        const IRMBusEvent event)
 {
    switch (event)
    {

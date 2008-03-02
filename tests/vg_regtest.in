@@ -64,7 +64,8 @@
 # Expected stdout (filtered) is kept in <test>.stdout.exp* (can be more
 # than one expected output).  It can be missing if it would be empty.  Expected
 # stderr (filtered) is kept in <test>.stderr.exp*.   There must be at least
-# one stderr.exp* file.
+# one stderr.exp* file.  Any .exp* file that ends in '~' or '#' is ignored;
+# this is because Emacs creates temporary files of these names.
 #
 # The prerequisite command, if present, must return 0 otherwise the test is
 # skipped.  The post-test command, if present, must return 0 and its stdout
@@ -263,22 +264,27 @@ sub do_diffs($$$$)
     for my $f_exp (@$f_exps) {
         (-r $f_exp) or die "Could not read `$f_exp'\n";
 
-        my $n = "";
-        if ($f_exp =~ /.*\.exp(\d*)/) {
-            $n = $1;
-        } else {
-            $n = "";
-            ($f_exp eq "/dev/null") or die "Unexpected .exp file: $f_exp\n";
-        }
+        # Emacs produces temporary files that end in '~' and '#'.  We ignore
+        # these.
+        if ($f_exp !~ /[~#]$/) {
+            # $n is the (optional) suffix after the ".exp";  we tack it onto
+            # the ".diff" file.
+            my $n = "";
+            if ($f_exp =~ /.*\.exp(.*)$/) {
+                $n = $1;
+            } else {
+                $n = "";
+                ($f_exp eq "/dev/null") or die "Unexpected .exp file: $f_exp\n";
+            }
 
-        #print("diff $f_exp $name.$mid.out > $name.$mid.diff$n\n");
-        mysystem("diff $f_exp $name.$mid.out > $name.$mid.diff$n");
+            mysystem("diff $f_exp $name.$mid.out > $name.$mid.diff$n");
 
-        if (not -s "$name.$mid.diff$n") {
-            # A match;  remove .out and any previously created .diff files.
-            unlink("$name.$mid.out");
-            unlink(<$name.$mid.diff*>);
-            return;
+            if (not -s "$name.$mid.diff$n") {
+                # A match;  remove .out and any previously created .diff files.
+                unlink("$name.$mid.out");
+                unlink(<$name.$mid.diff*>);
+                return;
+            }
         }
     }
     # If we reach here, none of the .exp files matched.

@@ -50,6 +50,8 @@ EXTRA_DIST = $(noinst_SCRIPTS)                                  \
 	recursive_mutex.vgtest recursive_mutex.stderr.exp	\
 	sem_as_mutex.vgtest  sem_as_mutex.stderr.exp            \
 	sem_as_mutex2.vgtest sem_as_mutex2.stderr.exp           \
+	sigalrm.vgtest                                          \
+	sigalrm.stdout.exp sigalrm.stderr.exp                   \
 	tc01_simple_race.vgtest                                 \
 	tc01_simple_race.stderr.exp                             \
 	tc02_simple_tls.vgtest                                  \
@@ -93,8 +95,7 @@ EXTRA_DIST = $(noinst_SCRIPTS)                                  \
 	tc23_bogus_condwait.stderr.exp                          \
 	tc24_nonzero_sem.vgtest                                 \
 	tc24_nonzero_sem.stderr.exp                             \
-	sigalrm.vgtest                                          \
-	sigalrm.stdout.exp sigalrm.stderr.exp
+	trylock.c trylock.stderr.exp
 
 #	tc07_hbl1.vgtest
 #	tc07_hbl1.stderr.exp tc07_hbl1.stdout.exp
@@ -143,7 +144,8 @@ check_PROGRAMS =      \
   tc21_pthonce        \
   tc22_exit_w_lock    \
   tc23_bogus_condwait \
-  tc24_nonzero_sem
+  tc24_nonzero_sem    \
+  trylock
 
 #  tc07_hbl1 -- requires bus locking support.
 #  tc08_hbl2 -- requires bus locking support.
@@ -266,3 +268,6 @@ tc23_bogus_condwait_LDADD   = -lpthread
 
 tc24_nonzero_sem_SOURCES    = ../../helgrind/tests/tc24_nonzero_sem.c
 tc24_nonzero_sem_LDADD      = -lpthread
+
+trylock_SOURCES             = trylock.c
+trylock_LDADD               = -lpthread -lrt

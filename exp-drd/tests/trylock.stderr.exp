@@ -1,0 +1,12 @@
+
+Locking rwlock via pthread_rwlock_wrlock().
+Locking rwlock via pthread_rwlock_trywrlock().
+Locking rwlock via pthread_rwlock_timedwrlock().
+Locking rwlock via pthread_rwlock_rdlock().
+Locking rwlock via pthread_rwlock_tryrdlock().
+Locking rwlock via pthread_rwlock_timedrdlock().
+Locking mutex via pthread_mutex_trylock().
+Locking mutex via pthread_mutex_lock().
+Locking mutex via pthread_mutex_timedlock().
+
+ERROR SUMMARY: 0 errors from 0 contexts (suppressed: 0 from 0)

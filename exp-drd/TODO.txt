@@ -4,26 +4,26 @@ Last updated February 17, 2008
 
 Data-race detection algorithm
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-- pthread rwlock state tracking and support.
-- Print an error message when memory is freed that contains a locked
-  reader-writer synchronization object.
-- Print an error message when a semaphore is freed that is being waited upon.
 - Implement segment merging, such that the number of segments per thread
   remains limited even when there is no synchronization between threads.
 - Add locking order checking.
-- Make sure tc14_laog_dinphils is run during exp-drd regression tests.
 - Discuss on the Valgrind mailing list how to make it possible to call
   POSIX thread synchronization primitives from client code (drd_intercepts.c)
   without triggering Valgrind's redirection mechanism.
+- Discuss on the Valgrind mailing list the modificaiton of tests/vg_regtest
+  such that it ignores files ending in ~ or #.
 - Find out why a race is reported on std::string::string(std::string const&)
   (stc test case 16).
-- Add a regression test for pthread_mutex_timedlock().
-- Find a way for suppressing races reported on _IO_2_1_stdout. This race is
-  triggered by calling printf() from more than one thread. An example:
-  ./vg-in-place --tool=exp-drd exp-drd/tests/pth_barrier 2 1
 - Add support for objects that are shared over threads and that use reference
   counting, e.g. std::string -- no races should be reported on the reference
   count.
+- Add a regression test for pthread_mutex_timedlock().
+- Add test programs for destroying a condition variable / semaphore / barrier
+  being waited upon.
+- Make sure tc14_laog_dinphils is run during exp-drd regression tests.
+- Find a way for suppressing races reported on _IO_2_1_stdout. This race is
+  triggered by calling printf() from more than one thread. An example:
+  ./vg-in-place --tool=exp-drd exp-drd/tests/pth_barrier 2 1
 - Performance testing and tuning.
 - testing on PPC and AIX (current implementation is only tested on X86 and
   AMD64).
@@ -31,9 +31,8 @@ Data-race detection algorithm
   a crash on AMD64. Is this an exp-drd or a VEX bug ?
 - On x86 and amd64 platforms, add support for implicit locking arising from
   the use of the LOCK instruction prefix.
-- Add test programs for destroying a condition variable / semaphore / barrier
-  being waited upon.
 - Convert the array in drd_thread.c with thread information into an OSet.
+- Enable format string checking for DRD during compilation.
 
 
 Testing
@@ -41,6 +40,7 @@ Testing
 - testing with more complex multithreaded test programs.
 - test exp-drd's performance with the SPLASH-2 software, e.g. fft
   (http://www-flash.stanford.edu/apps/SPLASH/).
+- test with Synfig Studio (see also http://bugs.kde.org/show_bug.cgi?id=158555)
 
 
 Documentation
@@ -65,6 +65,5 @@ Known bugs
   (works fine on i386). This is a bug in Valgrind's debug info reader
   -- VG_(find_seginfo)() returns NULL for BSS symbols on x86_64. Not yet in
   the KDE bug tracking system.
-- tc04_free_lock fails on AMD64 + openSUSE 10.3 (free() locked mutex).
 - No error message is printed for tc20_verifywrap when a locked mutex is
   deallocated (mutex was allocated on the stack).

@@ -12,6 +12,7 @@ sed \
 -e "/^exp-drd, a data race detector\.$/d" \
 -e "s/^Allocation context: stack of thread \([0-9]*\), offset -[0-9]*$/Allocation context: stack of thread \1, offset .../" \
 -e "s/^Allocation context: .*$/Allocation context: unknown/" \
+-e "s/(tc20_verifywrap.c:261)/(tc20_verifywrap.c:262)/" \
 -e "/^NOTE: This is an Experimental-Class Valgrind Tool.$/d"  \
 -e "/^Copyright (C) 2006-200., and GNU GPL'd, by Bart Van Assche.$/d" \
 -e "s/\(pthread_create.c:[0-9]*\)/in libpthread-?.?.so/" \

@@ -128,7 +128,7 @@ enum {
   VG_USERREQ__POST_RWLOCK_WRLOCK,
   /* args: Addr rwlock, Bool took_lock */
   /* To notify the drd tool of a pthread_rwlock_unlock call. */
-  VG_USERREQ__POST_RWLOCK_UNLOCK,
+  VG_USERREQ__PRE_RWLOCK_UNLOCK,
   /* args: Addr rwlock, Bool unlocked */
 
 };

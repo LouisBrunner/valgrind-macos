@@ -30,6 +30,7 @@
 #include "drd_suppression.h"      // drd_start_suppression()
 #include "drd_thread.h"
 #include "drd_track.h"
+#include "drd_rwlock.h"
 #include "priv_drd_clientreq.h"
 #include "pub_tool_basics.h"      // Bool
 #include "pub_tool_libcassert.h"
@@ -214,24 +215,31 @@ static Bool drd_handle_client_request(ThreadId tid, UWord* arg, UWord* ret)
       break;
 
    case VG_USERREQ__PRE_RWLOCK_INIT:
+      rwlock_pre_init(arg[1], arg[2]);
       break;
 
    case VG_USERREQ__POST_RWLOCK_DESTROY:
+      rwlock_post_destroy(arg[1]);
       break;
 
    case VG_USERREQ__PRE_RWLOCK_RDLOCK:
+      rwlock_pre_rdlock(arg[1], arg[2]);
       break;
 
    case VG_USERREQ__POST_RWLOCK_RDLOCK:
+      rwlock_post_rdlock(arg[1], arg[2]);
       break;
 
    case VG_USERREQ__PRE_RWLOCK_WRLOCK:
+      rwlock_pre_wrlock(arg[1], arg[2]);
       break;
 
    case VG_USERREQ__POST_RWLOCK_WRLOCK:
+      rwlock_post_wrlock(arg[1], arg[2]);
       break;
 
-   case VG_USERREQ__POST_RWLOCK_UNLOCK:
+   case VG_USERREQ__PRE_RWLOCK_UNLOCK:
+      rwlock_pre_unlock(arg[1]);
       break;
 
    default:

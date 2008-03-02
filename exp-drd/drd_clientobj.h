@@ -45,6 +45,7 @@ typedef enum {
   ClientCondvar   = 2,
   ClientSemaphore = 3,
   ClientBarrier   = 4,
+  ClientRwlock    = 5,
 } ObjType;
 
 struct any
@@ -96,12 +97,21 @@ struct barrier_info
   Addr    a2;
   ObjType type;
   void    (*cleanup)(union drd_clientobj*);
-  Word     count;               // Participant count in a barrier wait.
-  Word     pre_iteration;       // pthread_barrier_wait() call count modulo two.
-  Word     post_iteration;      // pthread_barrier_wait() call count modulo two.
-  Word     pre_waiters_left;    // number of waiters left for a complete barrier.
-  Word     post_waiters_left;   // number of waiters left for a complete barrier.
-  OSet*    oset;                // Thread-specific barrier information.
+  Word     count;             // Participant count in a barrier wait.
+  Word     pre_iteration;     // pthread_barrier_wait() call count modulo two.
+  Word     post_iteration;    // pthread_barrier_wait() call count modulo two.
+  Word     pre_waiters_left;  // number of waiters left for a complete barrier.
+  Word     post_waiters_left; // number of waiters left for a complete barrier.
+  OSet*    oset;              // Thread-specific barrier information.
+};
+
+struct rwlock_info
+{
+  Addr    a1;
+  Addr    a2;
+  ObjType type;
+  void    (*cleanup)(union drd_clientobj*);
+  OSet*   thread_info;
 };
 
 typedef union drd_clientobj
@@ -111,6 +121,7 @@ typedef union drd_clientobj
   struct cond_info      cond;
   struct semaphore_info semaphore;
   struct barrier_info   barrier;
+  struct rwlock_info    rwlock;
 } DrdClientobj;
 
 

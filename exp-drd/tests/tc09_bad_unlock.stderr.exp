@@ -1,11 +1,11 @@
 
-Attempt to unlock a mutex that is not locked: address 0x........, recursion count -1, owner 1.
+Mutex not locked by calling thread: mutex 0x........, recursion count 0, owner 1.
    at 0x........: pthread_mutex_unlock (drd_intercepts.c:?)
    by 0x........: nearly_main (tc09_bad_unlock.c:27)
    by 0x........: main (tc09_bad_unlock.c:49)
 
 Thread 2:
-Mutex not unlocked by owner thread: address 0x........, recursion count 1, owner 1.
+Mutex not locked by calling thread: mutex 0x........, recursion count 1, owner 1.
    at 0x........: pthread_mutex_unlock (drd_intercepts.c:?)
    by 0x........: child_fn (tc09_bad_unlock.c:11)
    by 0x........: vg_thread_wrapper (drd_intercepts.c:?)
@@ -13,18 +13,22 @@ Mutex not unlocked by owner thread: address 0x........, recursion count 1, owner
    by 0x........: clone (in /...libc...)
 
 Thread 1:
-Invalid mutex
+Not a mutex
    at 0x........: pthread_mutex_unlock (drd_intercepts.c:?)
    by 0x........: nearly_main (tc09_bad_unlock.c:41)
    by 0x........: main (tc09_bad_unlock.c:49)
 
-Attempt to unlock a mutex that is not locked: address 0x........, recursion count -1, owner 1.
+Destroying locked mutex: mutex 0x........, recursion count 1, owner 1.
+   at 0x........: nearly_main (tc09_bad_unlock.c:45)
+   by 0x........: main (tc09_bad_unlock.c:49)
+
+Mutex not locked by calling thread: mutex 0x........, recursion count 0, owner 1.
    at 0x........: pthread_mutex_unlock (drd_intercepts.c:?)
    by 0x........: nearly_main (tc09_bad_unlock.c:27)
    by 0x........: main (tc09_bad_unlock.c:50)
 
 Thread 2:
-Mutex not unlocked by owner thread: address 0x........, recursion count 1, owner 1.
+Mutex not locked by calling thread: mutex 0x........, recursion count 1, owner 1.
    at 0x........: pthread_mutex_unlock (drd_intercepts.c:?)
    by 0x........: child_fn (tc09_bad_unlock.c:11)
    by 0x........: vg_thread_wrapper (drd_intercepts.c:?)
@@ -32,9 +36,13 @@ Mutex not unlocked by owner thread: address 0x........, recursion count 1, owner
    by 0x........: clone (in /...libc...)
 
 Thread 1:
-Invalid mutex
+Not a mutex
    at 0x........: pthread_mutex_unlock (drd_intercepts.c:?)
    by 0x........: nearly_main (tc09_bad_unlock.c:41)
    by 0x........: main (tc09_bad_unlock.c:50)
 
-ERROR SUMMARY: 6 errors from 6 contexts (suppressed: 0 from 0)
+Destroying locked mutex: mutex 0x........, recursion count 1, owner 1.
+   at 0x........: nearly_main (tc09_bad_unlock.c:45)
+   by 0x........: main (tc09_bad_unlock.c:50)
+
+ERROR SUMMARY: 8 errors from 8 contexts (suppressed: 0 from 0)

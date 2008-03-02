@@ -30,10 +30,10 @@ source reading by a human. It takes a huge effort however to detect
 all possible data races or deadlocks via source reading. This is why
 tools for detecting data races and deadlocks at runtime are essential.
 
-The de facto standard library for multithreading on Unix systems is
-the POSIX threads library, also known as pthreads. The exp-drd tool
-has been developed for multithreaded software that uses the POSIX
-threads library.
+The de facto standard library for multithreading with the C and C++
+programming languages on Unix systems is the POSIX threads library,
+also known as pthreads. The exp-drd tool has been developed for
+multithreaded software that uses the POSIX threads library.
 
 
 Data Races
@@ -202,7 +202,22 @@ An approach that has proven to work for interthread communication
 between real-time threads is the use of preallocated fixed size
 message queueus, and to lock any data needed by any real-time thread
 in memory (mlock()).  Avoid mutexes with priority inheritance -- see
-also [Yodaiken 2004] for more information.
+also [Yodaiken 2004] for more information. Lock-free data structures
+like circular buffers are well suited for real-time software.
+
+
+Linux and POSIX Threads
+-----------------------
+
+There exist two implementations of the POSIX threads API for
+Linux. These implementations are called LinuxThreads and
+NPTL. LinuxThreads was historically the first POSIX threads
+implementation for Linux. LinuxThreads was compliant to most but not
+all POSIX threads specifications. That is why a new threading library
+for Linux was developed, called the NPTL (Native POSIX Threads
+Library). Most Linux distributions switched from LinuxThreads to NPTL
+around 2004. DRD only supports the NPTL. See also [Shukla 2006] for
+more information.
 
 
 How to use DRD
@@ -372,6 +387,12 @@ References
   improving software dependability, San Jose, California, pp. 34-41, 2006.
   http://iacoma.cs.uiuc.edu/iacoma-papers/asid06.pdf
   http://portal.acm.org/citation.cfm?id=1181309.1181315
+
+[Shukla 2006]
+  Vikram Shukla
+  NPTL -- A rundown of the key differences for developers who need to port
+  July 31, 2006.
+  http://www-128.ibm.com/developerworks/linux/library/l-threading.html?ca=dgr-lnxw07LinuxThreadsAndNPTL
 
 [Müehlenfeld 2007]
   Arndt Müehlenfeld, Franz Wotawa.

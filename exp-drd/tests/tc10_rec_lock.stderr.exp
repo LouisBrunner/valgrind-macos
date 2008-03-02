@@ -6,7 +6,7 @@ before unlock #1
 before unlock #2
 before unlock #3
 before unlock #4
-Attempt to unlock a mutex that is not locked: address 0x........, recursion count -1, owner 1.
+Mutex not locked by calling thread: mutex 0x........, recursion count 0, owner 1.
    at 0x........: pthread_mutex_unlock (drd_intercepts.c:?)
    by 0x........: nearly_main (tc10_rec_lock.c:42)
    by 0x........: main (tc10_rec_lock.c:47)

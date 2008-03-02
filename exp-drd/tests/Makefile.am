@@ -16,7 +16,6 @@ noinst_SCRIPTS =		\
 EXTRA_DIST = $(noinst_SCRIPTS)                                  \
 	fp_race.vgtest                                          \
 	fp_race.stdout.exp fp_race.stderr.exp                   \
-	fp_race.stderr.exp2                                     \
 	fp_race2.vgtest                                         \
 	fp_race2.stdout.exp fp_race2.stderr.exp                 \
 	hg01_all_ok.vgtest                                      \
@@ -25,10 +24,8 @@ EXTRA_DIST = $(noinst_SCRIPTS)                                  \
 	hg02_deadlock.stderr.exp                                \
 	hg03_inherit.vgtest                                     \
 	hg03_inherit.stderr.exp                                 \
-	hg03_inherit.stderr.exp2				\
 	hg04_race.vgtest                                        \
 	hg04_race.stderr.exp                                    \
-	hg04_race.stderr.exp2					\
 	hg05_race2.vgtest                                       \
 	hg05_race2.stderr.exp                                   \
 	hg06_readshared.vgtest                                  \
@@ -51,13 +48,10 @@ EXTRA_DIST = $(noinst_SCRIPTS)                                  \
 	pth_detached2.vgtest                                    \
 	pth_detached2.stdout.exp pth_detached2.stderr.exp       \
 	recursive_mutex.vgtest recursive_mutex.stderr.exp	\
-	sem_as_mutex.vgtest                                     \
-	sem_as_mutex.stderr.exp sem_as_mutex.stderr.exp2        \
-	sem_as_mutex2.vgtest                                    \
-	sem_as_mutex2.stderr.exp                                \
+	sem_as_mutex.vgtest  sem_as_mutex.stderr.exp            \
+	sem_as_mutex2.vgtest sem_as_mutex2.stderr.exp           \
 	tc01_simple_race.vgtest                                 \
 	tc01_simple_race.stderr.exp                             \
-	tc01_simple_race.stderr.exp2				\
 	tc02_simple_tls.vgtest                                  \
 	tc02_simple_tls.stderr.exp                              \
 	tc03_re_excl.vgtest                                     \
@@ -74,7 +68,6 @@ EXTRA_DIST = $(noinst_SCRIPTS)                                  \
 	tc10_rec_lock.stderr.exp                                \
 	tc11_XCHG.vgtest                                        \
 	tc11_XCHG.stderr.exp tc11_XCHG.stdout.exp               \
-	tc11_XCHG.stderr.exp2					\
 	tc12_rwl_trivial.vgtest                                 \
 	tc12_rwl_trivial.stderr.exp                             \
 	tc13_laog1.vgtest                                       \
@@ -83,17 +76,14 @@ EXTRA_DIST = $(noinst_SCRIPTS)                                  \
 	tc15_laog_lockdel.stderr.exp                            \
 	tc16_byterace.vgtest                                    \
 	tc16_byterace.stderr.exp                                \
-	tc16_byterace.stderr.exp2				\
 	tc17_sembar.vgtest                                      \
 	tc17_sembar.stderr.exp                                  \
 	tc18_semabuse.vgtest                                    \
 	tc18_semabuse.stderr.exp                                \
 	tc19_shadowmem.vgtest                                   \
 	tc19_shadowmem.stderr.exp                               \
-	tc20_verifywrap.vgtest                                  \
-	tc20_verifywrap.stderr.exp tc20_verifywrap.stderr.exp2	\
-	tc20_verifywrap2.vgtest                                 \
-	tc20_verifywrap2.stderr.exp tc20_verifywrap2.stderr.exp2\
+	tc20_verifywrap.vgtest  tc20_verifywrap.stderr.exp	\
+	tc20_verifywrap2.vgtest tc20_verifywrap2.stderr.exp     \
 	tc21_pthonce.vgtest                                     \
 	tc21_pthonce.stderr.exp tc21_pthonce.stdout.exp         \
 	tc22_exit_w_lock.vgtest                                 \

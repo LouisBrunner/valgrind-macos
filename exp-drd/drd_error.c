@@ -261,7 +261,7 @@ static void drd_tool_error_pp(Error* const e)
       MutexErrInfo* p = (MutexErrInfo*)(VG_(get_error_extra)(e));
       tl_assert(p);
       VG_(message)(Vg_UserMsg,
-                   "%s: address 0x%lx, recursion count %d, owner %d.",
+                   "%s: mutex 0x%lx, recursion count %d, owner %d.",
                    VG_(get_error_string)(e),
                    p->mutex,
                    p->recursion_count,
@@ -272,7 +272,7 @@ static void drd_tool_error_pp(Error* const e)
    case CondErr: {
       CondErrInfo* cdei =(CondErrInfo*)(VG_(get_error_extra)(e));
       VG_(message)(Vg_UserMsg,
-                   "cond 0x%lx: %s",
+                   "%s: cond 0x%lx",
                    cdei->cond,
                    VG_(get_error_string)(e));
       VG_(pp_ExeContext)(VG_(get_error_where)(e));
@@ -300,7 +300,7 @@ static void drd_tool_error_pp(Error* const e)
       SemaphoreErrInfo* sei =(SemaphoreErrInfo*)(VG_(get_error_extra)(e));
       tl_assert(sei);
       VG_(message)(Vg_UserMsg,
-                   "%s 0x%lx",
+                   "%s: semaphore 0x%lx",
                    VG_(get_error_string)(e),
                    sei->semaphore);
       VG_(pp_ExeContext)(VG_(get_error_where)(e));
@@ -313,6 +313,16 @@ static void drd_tool_error_pp(Error* const e)
                    "%s: barrier 0x%lx",
                    VG_(get_error_string)(e),
                    sei->barrier);
+      VG_(pp_ExeContext)(VG_(get_error_where)(e));
+      break;
+   }
+   case RwlockErr: {
+      RwlockErrInfo* p = (RwlockErrInfo*)(VG_(get_error_extra)(e));
+      tl_assert(p);
+      VG_(message)(Vg_UserMsg,
+                   "%s: rwlock 0x%lx.",
+                   VG_(get_error_string)(e),
+                   p->rwlock);
       VG_(pp_ExeContext)(VG_(get_error_where)(e));
       break;
    }
@@ -349,6 +359,8 @@ static UInt drd_tool_error_update_extra(Error* e)
       return sizeof(SemaphoreErrInfo);
    case BarrierErr:
       return sizeof(BarrierErrInfo);
+   case RwlockErr:
+      return sizeof(RwlockErrInfo);
    case GenericErr:
       return sizeof(GenericErrInfo);
    default:
@@ -387,9 +399,15 @@ static Char* drd_tool_error_name(Error* e)
 {
    switch (VG_(get_error_kind)(e))
    {
-   case DataRaceErr: return "ConflictingAccess";
-   case MutexErr:    return "MutexErr";
-   case CondRaceErr: return "CondRaceErr";
+   case DataRaceErr:  return "DataRaceErr";
+   case MutexErr:     return "MutexErr";
+   case CondErr:      return "CondErr";
+   case CondRaceErr:  return "CondRaceErr";
+   case CondDestrErr: return "CondDestrErr";
+   case SemaphoreErr: return "SemaphoreErr";
+   case BarrierErr:   return "BarrierErr";
+   case RwlockErr:    return "RwlockErr";
+   case GenericErr:   return "GenericErr";
    default:
       tl_assert(0);
    }

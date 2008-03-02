@@ -143,11 +143,23 @@ static void* vg_thread_wrapper(void* arg)
 
    if (getpid() != vg_main_thread_pid)
    {
-      fprintf(stderr,
-	      "Detected the linuxthreads threading library.\n"
-	      "Sorry, but DRD does not support linuxthreads.\n"
-	      "Please try to run DRD on a system with NPTL instead.\n"
-	      "Giving up.\n");
+      if (getenv("LD_ASSUME_KERNEL"))
+      {
+         fprintf(stderr,
+"Detected the LinuxThreads threading library. Sorry, but DRD only supports\n"
+"the newer NPTL (Native POSIX Threads Library). Please try to rerun DRD\n"
+"after having unset the environment variable LD_ASSUME_KERNEL. Giving up.\n"
+                 );
+      }
+      else
+      {
+         fprintf(stderr,
+"Detected the LinuxThreads threading library. Sorry, but DRD only supports\n"
+"the newer NPTL (Native POSIX Threads Library). Please try to rerun DRD\n"
+"after having upgraded to a newer version of your Linux distribution.\n"
+"Giving up.\n"
+                 );
+      }
       abort();
    }
 
@@ -940,7 +952,7 @@ PTH_FUNC(int,
    OrigFn fn;
    VALGRIND_GET_ORIG_FN(fn);
    CALL_FN_W_W(ret, fn, rwlock);
-   VALGRIND_DO_CLIENT_REQUEST(res, -1, VG_USERREQ__POST_RWLOCK_UNLOCK,
+   VALGRIND_DO_CLIENT_REQUEST(res, -1, VG_USERREQ__PRE_RWLOCK_UNLOCK,
                               rwlock, ret == 0, 0, 0, 0);
    return ret;
 }

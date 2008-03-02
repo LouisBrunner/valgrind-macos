@@ -44,7 +44,8 @@ typedef enum {
    CondDestrErr   = 5,
    SemaphoreErr   = 6,
    BarrierErr     = 7,
-   GenericErr     = 8,
+   RwlockErr      = 8,
+   GenericErr     = 9,
 } DrdErrorKind;
 
 /* The classification of a faulting address. */
@@ -111,6 +112,10 @@ typedef struct {
 typedef struct {
    Addr barrier;
 } BarrierErrInfo;
+
+typedef struct {
+   Addr rwlock;
+} RwlockErrInfo;
 
 typedef struct {
 } GenericErrInfo;

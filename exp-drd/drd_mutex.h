@@ -26,8 +26,8 @@
 // Mutex state information: owner thread and recursion count.
 
 
-#ifndef __MUTEX_H
-#define __MUTEX_H
+#ifndef __DRD_MUTEX_H
+#define __DRD_MUTEX_H
 
 
 #include "drd_clientreq.h"        // MutexT
@@ -46,8 +46,8 @@ void mutex_post_destroy(const Addr mutex);
 struct mutex_info* mutex_get(const Addr mutex);
 void mutex_pre_lock(const Addr mutex, const SizeT size,
                     const MutexT mutex_type);
-int mutex_post_lock(const Addr mutex, const Bool took_lock);
-int mutex_unlock(const Addr mutex, const MutexT mutex_type);
+void mutex_post_lock(const Addr mutex, const Bool took_lock);
+void mutex_unlock(const Addr mutex, const MutexT mutex_type);
 const char* mutex_get_typename(struct mutex_info* const p);
 const char* mutex_type_name(const MutexT mt);
 Bool mutex_is_locked_by(const Addr mutex, const DrdThreadId tid);
@@ -57,4 +57,4 @@ void mutex_thread_delete(const DrdThreadId tid);
 ULong get_mutex_lock_count(void);
 
 
-#endif /* __MUTEX_H */
+#endif /* __DRD_MUTEX_H */

@@ -153,7 +153,7 @@ typedef
       UChar* region_start_img;
       UWord  region_szB;
       UWord  region_next;
-      __attribute__((noreturn)) void (*barf)( HChar* );
+      void (*barf)( HChar* ) __attribute__((noreturn));
       HChar* barfstr;
    }
    Cursor;
@@ -371,7 +371,7 @@ static ULong get_Initial_Length ( /*OUT*/Bool* is64,
 typedef
    struct {
       /* Call here if anything goes wrong */
-      __attribute__((noreturn)) void (*barf)( HChar* );
+      void (*barf)( HChar* ) __attribute__((noreturn));
       /* Is this 64-bit DWARF ? */
       Bool   is_dw64;
       /* Which DWARF version ?  (2 or 3) */

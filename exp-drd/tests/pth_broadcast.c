@@ -1,8 +1,9 @@
-// Broadcast a (POSIX threads) signal to all running threads, where the 
-// number of threads can be specified on the command line. This test program
-// is intended not only to test the correctness of drd but also to test
-// whether performance does not degrade too much when the number of threads
-// increases.
+/** Broadcast a (POSIX threads) signal to all running threads, where the 
+ *  number of threads can be specified on the command line. This test program
+ *  is intended not only to test the correctness of drd but also to test
+ *  whether performance does not degrade too much when the number of threads
+ *  increases.
+ */
 
 
 #include <assert.h>
@@ -176,5 +177,8 @@ int main(int argc, char** argv)
   }
   pthread_cond_destroy(&s_cond);
   pthread_mutex_destroy(&s_mutex);
+
+  fprintf(stderr, "Done.\n");
+
   return 0;
 }

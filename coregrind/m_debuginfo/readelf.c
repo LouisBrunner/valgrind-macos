@@ -458,7 +458,19 @@ Bool get_elf_symbol_info (
 
 
    if (*is_text_out) {
-      if (!in_text) {
+      /* This used to reject any symbol falling outside the text
+         segment ("if (!in_text) ...").  Now it is relaxed slightly,
+         to reject only symbols which fall outside the area mapped
+         r-x.  This is in accordance with r7427.  See
+         "Comment_Regarding_Text_Range_Checks" in storage.c for
+         background. */
+      Bool in_rx;
+      vg_assert(di->have_rx_map);
+      in_rx = (!(*sym_avma_out + *sym_size_out <= di->rx_map_avma
+                 || *sym_avma_out >= di->rx_map_avma + di->rx_map_size));
+      if (in_text)
+         vg_assert(in_rx);
+      if (!in_rx) {
          TRACE_SYMTAB(
             "ignore -- %p .. %p outside .text svma range %p .. %p\n",
             *sym_avma_out, *sym_avma_out + *sym_size_out,

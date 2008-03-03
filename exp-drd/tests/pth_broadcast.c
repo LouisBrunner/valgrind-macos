@@ -124,6 +124,11 @@ int main(int argc, char** argv)
       break;
     }
   }
+
+  /* This test should complete in 15s or less. If the test does not complete */
+  /* within that time, abort the test via the signal SIGALRM.                */
+  alarm(100);
+
   s_signal_count = argc > optind ? atoi(argv[optind]) : 10;
   thread_count = argc > optind + 1 ? atoi(argv[optind + 1]) : 10;
 

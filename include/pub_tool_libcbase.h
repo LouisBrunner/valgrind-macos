@@ -131,7 +131,8 @@ extern Int   VG_(memcmp) ( const void* s1, const void* s2, SizeT n );
    Misc useful functions
    ------------------------------------------------------------------ */
 
-/* Like qsort(), but does shell-sort.  The size==1/2/4 cases are specialised. */
+/* Like qsort().  The name VG_(ssort) is for historical reasons -- it used
+ * to be a shell sort, but is now a quicksort. */
 extern void VG_(ssort)( void* base, SizeT nmemb, SizeT size,
                         Int (*compar)(void*, void*) );
 

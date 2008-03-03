@@ -730,7 +730,7 @@ Int VG_(log2) ( UInt x )
 }
 
 
-// Generic shell sort.  Like stdlib.h's qsort().
+// Generic quick sort.
 void VG_(ssort)( void* base, SizeT nmemb, SizeT size,
                  Int (*compar)(void*, void*) )
 {

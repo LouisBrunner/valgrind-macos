@@ -1,6 +1,19 @@
+/** Test interception of the various pthread_timed*lock() and pthread_try*lock()
+ *  functions. If any of these are not intercepted, an error message will be
+ *  printed at unlock time.
+ */
+
+
+/* Needed for older glibc's (2.3 and older, at least) who don't
+   otherwise "know" about pthread_rwlock_anything or about
+   PTHREAD_MUTEX_RECURSIVE (amongst things). */
+
+#define _GNU_SOURCE 1
+
 #include <stdio.h>
 #include <assert.h>
 #include <pthread.h>
+
 
 int main(int argc, char** argv)
 {

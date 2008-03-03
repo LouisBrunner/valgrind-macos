@@ -88,7 +88,7 @@ typedef
       Bool client_requests;
       Bool syscall_wrapper;
       Bool sanity_checks;
-      Bool data_syms;
+      Bool var_info;
       Bool malloc_replacement;
       Bool xml_output;
       Bool final_IR_tidy_pass;

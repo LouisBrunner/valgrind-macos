@@ -307,6 +307,8 @@ static ExeContext* record_ExeContext_wrk ( ThreadId tid, Word first_ip_delta,
       ips[0] = VG_(get_IP)(tid);
    } else {
       n_ips = VG_(get_StackTrace)( tid, ips, VG_(clo_backtrace_size),
+                                   NULL/*array to dump SP values in*/,
+                                   NULL/*array to dump FP values in*/,
                                    first_ip_delta );
    }
 

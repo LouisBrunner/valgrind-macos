@@ -1,0 +1,29 @@
+22323 bytes read
+    block 1: crc = 0xA212ABF8, combined CRC = 0xA212ABF8, size = 22373
+    too repetitive; using fallback sorting algorithm
+      22373 in block, 13504 after MTF & 1-2 coding, 79+2 syms in use
+      pass 1: size is 17143, grp uses are 38 62 2 92 6 71 
+      pass 2: size is 6506, grp uses are 28 71 0 86 9 77 
+      pass 3: size is 6479, grp uses are 26 70 0 81 11 83 
+      pass 4: size is 6469, grp uses are 26 69 0 74 17 85 
+      bytes: mapping 19, selectors 66, code lengths 134, codes 6465
+    final combined CRC = 0xA212ABF8
+   6710 after compression
+bit 0   -5  DATA_ERROR_MAGIC 
+bit 3   -5  DATA_ERROR_MAGIC 
+bit 6   -5  DATA_ERROR_MAGIC 
+bit 9   -5  DATA_ERROR_MAGIC 
+bit 12   -5  DATA_ERROR_MAGIC 
+bit 15   -5  DATA_ERROR_MAGIC 
+bit 18   -5  DATA_ERROR_MAGIC 
+bit 21   -5  DATA_ERROR_MAGIC 
+bit 24   0  OK really ok!
+bit 27   0  OK really ok!
+bit 30   -5  DATA_ERROR_MAGIC 
+bit 33   -4  DATA_ERROR 
+bit 36   -4  DATA_ERROR 
+bit 2413   -4  DATA_ERROR 
+bit 4790   -4  DATA_ERROR 
+bit 7167   -4  DATA_ERROR 
+bit 9544   -4  DATA_ERROR 
+all ok

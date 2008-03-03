@@ -34,13 +34,20 @@
 // The basic stack trace type:  just an array of code addresses.
 typedef Addr* StackTrace;
 
-// Walks the stack to get instruction pointers from the top stack frames for
-// thread 'tid'.  Maximum of 'n_ips' addresses put into 'ips';  0 is the top
-// of the stack, 1 is its caller, etc.  Everything from ips[n_ips] onwards
-// is undefined and should not be read.  The initial IP value to 
-// use is adjusted by first_ip_delta before the stack is unwound.
-// A safe value to pass is zero.
-extern UInt VG_(get_StackTrace) ( ThreadId tid, StackTrace ips, UInt n_ips,
+// Walks the stack to get instruction pointers from the top stack frames 
+// for thread 'tid'.  Maximum of 'n_ips' addresses put into 'ips';
+// 0 is the top of the stack, 1 is its caller, etc.  Everything from
+// ips[return_value] onwards is undefined and should not be read.
+// The initial IP value to use is adjusted by first_ip_delta before
+// the stack is unwound. A safe value to pass is zero.
+//
+// If sps and fps are non-NULL, the corresponding frame-pointer and
+// stack-pointer values for each frame are stored there.
+
+extern UInt VG_(get_StackTrace) ( ThreadId tid, 
+                                  /*OUT*/StackTrace ips, UInt n_ips,
+                                  /*OUT*/StackTrace sps,
+                                  /*OUT*/StackTrace fps,
                                   Word first_ip_delta );
 
 // Apply a function to every element in the StackTrace.  The parameter 'n'

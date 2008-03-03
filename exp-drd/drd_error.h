@@ -71,7 +71,7 @@ struct {                      // Used by:
    OffT        rwoffset;      //   ALL
    ExeContext* lastchange;    //   Mallocd
    DrdThreadId stack_tid;     //   Stack
-   SegInfo*    seginfo;       //   Segment
+   DebugInfo*  debuginfo;     //   Segment
    Char        name[256];     //   Segment
    Char        descr[256];    //   Segment
 }

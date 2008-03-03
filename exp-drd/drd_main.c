@@ -584,7 +584,8 @@ IRSB* drd_instrument(VgCallbackClosure* const closure,
       switch (st->tag)
       {
       case Ist_IMark:
-         instrument = VG_(seginfo_sect_kind)(st->Ist.IMark.addr) != Vg_SectPLT;
+         instrument = VG_(seginfo_sect_kind)(NULL, 0, st->Ist.IMark.addr)
+                      != Vg_SectPLT;
          break;
 
       case Ist_MBE:
@@ -811,7 +812,7 @@ void drd_pre_clo_init(void)
    VG_(track_pre_thread_ll_exit)   (drd_thread_finished);
 
    // Other stuff.
-   VG_(needs_data_syms)();
+   VG_(needs_var_info)();
 
    drd_register_malloc_wrappers(drd_start_using_mem, drd_stop_using_mem);
 

@@ -1,0 +1,7 @@
+#! /bin/sh
+
+# See comment at top of varinfo3.c for why these hacks are necessary
+
+./filter_stderr |
+sed "s/static_local_def\.[0-9]*/static_local_def\.XXXX/g" |
+sed "s/static_local_undef\.[0-9]*/static_local_undef\.XXXX/g"

@@ -215,7 +215,9 @@ static Int lc_compar(void* n1, void* n2)
 {
    MC_Chunk* mc1 = *(MC_Chunk**)n1;
    MC_Chunk* mc2 = *(MC_Chunk**)n2;
-   return (mc1->data < mc2->data ? -1 : 1);
+   if (mc1->data < mc2->data) return -1;
+   if (mc1->data > mc2->data) return  1;
+   return 0;
 }
 
 /* If ptr is pointing to a heap-allocated block which hasn't been seen

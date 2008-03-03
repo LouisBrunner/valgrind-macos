@@ -48,12 +48,12 @@
 // Notifications - by which we are told of state changes
 //--------------------------------------------------------------------
 
-/* Notify the module of a new SegInfo (called from m_debuginfo). */
-extern void VG_(redir_notify_new_SegInfo)( SegInfo* );
+/* Notify the module of a new DebugInfo (called from m_debuginfo). */
+extern void VG_(redir_notify_new_DebugInfo)( DebugInfo* );
 
-/* Notify the module of the disappearance of a SegInfo (also called
+/* Notify the module of the disappearance of a DebugInfo (also called
    from m_debuginfo). */
-extern void VG_(redir_notify_delete_SegInfo)( SegInfo* );
+extern void VG_(redir_notify_delete_DebugInfo)( DebugInfo* );
 
 /* Initialise the module, and load initial "hardwired" redirects. */
 extern void VG_(redir_initialise)( void );

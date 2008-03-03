@@ -519,23 +519,39 @@ void* VG_(memmove)(void *dest, const void *src, SizeT sz)
    return dest;
 }
 
-void* VG_(memset) ( void *dest, Int c, SizeT sz )
+void* VG_(memset) ( void *destV, Int c, SizeT sz )
 {
-   Char *d = (Char *)dest;
-   while (sz >= 4) {
-      d[0] = c;
-      d[1] = c;
-      d[2] = c;
-      d[3] = c;
-      d += 4;
-      sz -= 4;
-   }
-   while (sz > 0) {
+   Int   c4;
+   Char* d = (Char*)destV;
+   while ((!VG_IS_4_ALIGNED(d)) && sz >= 1) {
       d[0] = c;
       d++;
       sz--;
    }
-   return dest;
+   if (sz == 0)
+      return destV;
+   c4 = c & 0xFF;
+   c4 |= (c4 << 8);
+   c4 |= (c4 << 16);
+   while (sz >= 16) {
+      ((Int*)d)[0] = c4;
+      ((Int*)d)[1] = c4;
+      ((Int*)d)[2] = c4;
+      ((Int*)d)[3] = c4;
+      d += 16;
+      sz -= 16;
+   }
+   while (sz >= 4) {
+      ((Int*)d)[0] = c4;
+      d += 4;
+      sz -= 4;
+   }
+   while (sz >= 1) {
+      d[0] = c;
+      d++;
+      sz--;
+   }
+   return destV;
 }
 
 Int VG_(memcmp) ( const void* s1, const void* s2, SizeT n )
@@ -563,13 +579,152 @@ Int VG_(memcmp) ( const void* s1, const void* s2, SizeT n )
    Misc useful functions
    ------------------------------------------------------------------ */
 
-/* Returns the base-2 logarithm of x.  Returns -1 if x is not a power of two. */
-Int VG_(log2) ( Int x ) 
+/////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////
+/// begin Bentley-McIlroy style quicksort
+/// See "Engineering a Sort Function".  Jon L Bentley, M. Douglas
+/// McIlroy.  Software Practice and Experience Vol 23(11), Nov 1993.
+
+#define BM_MIN(a, b)                                     \
+   (a) < (b) ? a : b
+
+#define BM_SWAPINIT(a, es)                               \
+   swaptype =   ((a-(Char*)0) | es) % sizeof(Word)  ? 2  \
+              : es > (SizeT)sizeof(Word) ? 1             \
+              : 0
+
+#define BM_EXCH(a, b, t)                                 \
+   (t = a, a = b, b = t)
+
+#define BM_SWAP(a, b)                                    \
+   swaptype != 0                                         \
+      ? bm_swapfunc(a, b, es, swaptype)                  \
+      : (void)BM_EXCH(*(Word*)(a), *(Word*)(b), t)
+
+#define BM_VECSWAP(a, b, n)                              \
+   if (n > 0) bm_swapfunc(a, b, n, swaptype)
+
+#define BM_PVINIT(pv, pm)                                \
+   if (swaptype != 0)                                    \
+      pv = a, BM_SWAP(pv, pm);                           \
+   else                                                  \
+      pv = (Char*)&v, v = *(Word*)pm
+
+static Char* bm_med3 ( Char* a, Char* b, Char* c, 
+                       Int (*cmp)(void*,void*) ) {
+   return cmp(a, b) < 0
+          ? (cmp(b, c) < 0 ? b : cmp(a, c) < 0 ? c : a)
+          : (cmp(b, c) > 0 ? b : cmp(a, c) > 0 ? c : a);
+}
+
+static void bm_swapfunc ( Char* a, Char* b, SizeT n, Int swaptype )
+{
+   if (swaptype <= 1) {
+      Word t;
+      for ( ; n > 0; a += sizeof(Word), b += sizeof(Word),
+                                        n -= sizeof(Word))
+         BM_EXCH(*(Word*)a, *(Word*)b, t);
+   } else {
+      Char t;
+      for ( ; n > 0; a += 1, b += 1, n -= 1)
+         BM_EXCH(*a, *b, t);
+   }
+}
+
+static void bm_qsort ( Char* a, SizeT n, SizeT es,
+                       Int (*cmp)(void*,void*) )
+{
+   Char  *pa, *pb, *pc, *pd, *pl, *pm, *pn, *pv;
+   Int   r, swaptype;
+   Word  t, v;
+   SizeT s, s1, s2;
+  tailcall:
+   BM_SWAPINIT(a, es);
+   if (n < 7) {
+      for (pm = a + es; pm < a + n*es; pm += es)
+         for (pl = pm; pl > a && cmp(pl-es, pl) > 0; pl -= es)
+            BM_SWAP(pl, pl-es);
+      return;
+   }
+   pm = a + (n/2)*es;
+   if (n > 7) {
+      pl = a;
+      pn = a + (n-1)*es;
+      if (n > 40) {
+         s = (n/8)*es;
+         pl = bm_med3(pl, pl+s, pl+2*s, cmp);
+         pm = bm_med3(pm-s, pm, pm+s, cmp);
+         pn = bm_med3(pn-2*s, pn-s, pn, cmp);
+      }
+      pm = bm_med3(pl, pm, pn, cmp);
+   }
+   BM_PVINIT(pv, pm);
+   pa = pb = a;
+   pc = pd = a + (n-1)*es;
+   for (;;) {
+      while (pb <= pc && (r = cmp(pb, pv)) <= 0) {
+         if (r == 0) { BM_SWAP(pa, pb); pa += es; }
+         pb += es;
+      }
+      while (pc >= pb && (r = cmp(pc, pv)) >= 0) {
+         if (r == 0) { BM_SWAP(pc, pd); pd -= es; }
+         pc -= es;
+      }
+      if (pb > pc) break;
+      BM_SWAP(pb, pc);
+      pb += es;
+      pc -= es;
+   }
+   pn = a + n*es;
+   s = BM_MIN(pa-a,  pb-pa   ); BM_VECSWAP(a,  pb-s, s);
+   s = BM_MIN(pd-pc, pn-pd-es); BM_VECSWAP(pb, pn-s, s);
+   /* Now recurse.  Do the smaller partition first with an explicit
+      recursion, then do the larger partition using a tail call.
+      Except we can't rely on gcc to implement a tail call in any sane
+      way, so simply jump back to the start.  This guarantees stack
+      growth can never exceed O(log N) even in the worst case. */
+   s1 = pb-pa;
+   s2 = pd-pc;
+   if (s1 < s2) {
+      if (s1 > es) {
+         bm_qsort(a, s1/es, es, cmp);
+      }
+      if (s2 > es) {
+         /* bm_qsort(pn-s2, s2/es, es, cmp); */
+         a = pn-s2; n = s2/es; es = es; cmp = cmp;
+         goto tailcall;
+      }
+   } else {
+      if (s2 > es) {
+         bm_qsort(pn-s2, s2/es, es, cmp);
+      }
+      if (s1 > es) {
+         /* bm_qsort(a, s1/es, es, cmp); */
+         a = a; n = s1/es; es = es; cmp = cmp;
+         goto tailcall;
+      } 
+   }
+}
+
+#undef BM_MIN
+#undef BM_SWAPINIT
+#undef BM_EXCH
+#undef BM_SWAP
+#undef BM_VECSWAP
+#undef BM_PVINIT
+
+/// end Bentley-McIlroy style quicksort
+/////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////
+
+/* Returns the base-2 logarithm of x.  Returns -1 if x is not a power
+   of two. */
+Int VG_(log2) ( UInt x ) 
 {
    Int i;
    /* Any more than 32 and we overflow anyway... */
    for (i = 0; i < 32; i++) {
-      if (1 << i == x) return i;
+      if ((1U << i) == x) return i;
    }
    return -1;
 }
@@ -579,109 +734,9 @@ Int VG_(log2) ( Int x )
 void VG_(ssort)( void* base, SizeT nmemb, SizeT size,
                  Int (*compar)(void*, void*) )
 {
-   Int   incs[14] = { 1, 4, 13, 40, 121, 364, 1093, 3280,
-                      9841, 29524, 88573, 265720,
-                      797161, 2391484 };
-   Int   lo = 0;
-   Int   hi = nmemb-1;
-   Int   i, j, h, bigN, hp;
-
-   bigN = hi - lo + 1; if (bigN < 2) return;
-   hp = 0; while (hp < 14 && incs[hp] < bigN) hp++; hp--;
-
-   #define SORT \
-   for ( ; hp >= 0; hp--) { \
-      h = incs[hp]; \
-      for (i = lo + h; i <= hi; i++) { \
-         ASSIGN(v,0, a,i); \
-         j = i; \
-         while (COMPAR(a,(j-h), v,0) > 0) { \
-            ASSIGN(a,j, a,(j-h)); \
-            j = j - h; \
-            if (j <= (lo + h - 1)) break; \
-         } \
-         ASSIGN(a,j, v,0); \
-      } \
-   }
-
-   // Specialised cases
-   if (sizeof(ULong) == size) {
-
-      #define ASSIGN(dst, dsti, src, srci) \
-      (dst)[(dsti)] = (src)[(srci)];      
-      
-      #define COMPAR(dst, dsti, src, srci) \
-      compar( (void*)(& (dst)[(dsti)]), (void*)(& (src)[(srci)]) )
-
-      ULong* a = (ULong*)base;
-      ULong  v[1];
-
-      SORT;
-
-   } else if (sizeof(UInt) == size) {
-
-      UInt* a = (UInt*)base;
-      UInt  v[1];
-
-      SORT;
-
-   } else if (sizeof(UShort) == size) {
-      UShort* a = (UShort*)base;
-      UShort  v[1];
-
-      SORT;
-
-   } else if (sizeof(UChar) == size) {
-      UChar* a = (UChar*)base;
-      UChar  v[1];
-
-      SORT;
-
-      #undef ASSIGN
-      #undef COMPAR
-
-   } else if ( (4*sizeof(UWord)) == size ) {
-      /* special-case 4 word-elements.  This captures a lot of cases
-         from symbol table reading/canonicalisaton, because both DiLoc
-         and DiSym are 4 word structures. */
-      HChar* a = base;
-      HChar  v[size];
-
-      #define ASSIGN(dst, dsti, src, srci) \
-       do { UWord* dP = (UWord*)&dst[size*(dsti)]; \
-            UWord* sP = (UWord*)&src[size*(srci)]; \
-            dP[0] = sP[0]; \
-            dP[1] = sP[1]; \
-            dP[2] = sP[2]; \
-            dP[3] = sP[3]; \
-          } while (0)
-
-      #define COMPAR(dst, dsti, src, srci) \
-      compar( &dst[size*(dsti)], &src[size*(srci)] )
-
-      SORT;
-
-      #undef ASSIGN
-      #undef COMPAR
-
-   // General case
-   } else {
-      HChar* a = base;
-      HChar  v[size];      // will be at least 'size' bytes
-
-      #define ASSIGN(dst, dsti, src, srci) \
-      VG_(memcpy)( &dst[size*(dsti)], &src[size*(srci)], size );
-
-      #define COMPAR(dst, dsti, src, srci) \
-      compar( &dst[size*(dsti)], &src[size*(srci)] )
-
-      SORT;
-
-      #undef ASSIGN
-      #undef COMPAR
-   }
-   #undef SORT
+   bm_qsort(base,nmemb,size,compar);
 }
+
 
 // This random number generator is based on the one suggested in Kernighan
 // and Ritchie's "The C Programming Language".

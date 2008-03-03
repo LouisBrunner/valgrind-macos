@@ -40,7 +40,7 @@
 
 /* Identify an ELF object file by peering at the first few bytes of
    it. */
-extern Bool ML_(is_elf_object_file)( const void* buf );
+extern Bool ML_(is_elf_object_file)( void* image, SizeT n_image );
 
 /* The central function for reading ELF debug info.  For the
    object/exe specified by the SegInfo, find ELF sections, then read
@@ -48,7 +48,7 @@ extern Bool ML_(is_elf_object_file)( const void* buf );
    info) and anything else we want, into the tables within the
    supplied SegInfo.
 */
-extern Bool ML_(read_elf_debug_info) ( struct _SegInfo* si );
+extern Bool ML_(read_elf_debug_info) ( struct _DebugInfo* di );
 
 
 #endif /* ndef __PRIV_READELF_H */

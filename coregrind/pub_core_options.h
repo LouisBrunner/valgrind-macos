@@ -135,6 +135,8 @@ extern Int   VG_(clo_dump_error);
 extern Char* VG_(clo_sim_hints);
 /* Show symbols in the form 'name+offset' ?  Default: NO */
 extern Bool VG_(clo_sym_offsets);
+/* Read DWARF3 variable info even if tool doesn't ask for it? */
+extern Bool VG_(clo_read_var_info);
 
 /* Track open file descriptors? */
 extern Bool  VG_(clo_track_fds);

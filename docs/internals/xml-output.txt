@@ -106,8 +106,19 @@ protocol version is one they don`t understand.  Hence TOPLEVEL is:
     PROTOCOL
   </valgrindoutput>
 
-Valgrind versions 3.0.0 and 3.0.1 emit protocol version 1.  Version
-3.1.0 emits protocol version 2.
+Valgrind versions 3.0.0 and 3.0.1 emit protocol version 1.  Versions
+3.1.X and 3.2.X emit protocol version 2.
+
+
+PROTOCOL for version 3
+----------------------
+Changes in 3.3.X (tentative): (jrs, 1 March 2008)
+
+* There may be more than one <logfilequalifier> clause, depending on
+  how this pans out.  (AshleyP perhaps to investigate)
+
+* Some errors may have two <auxwhat> blocks, rather than just one
+  (resulting from merge of the DATASYMS branch)
 
 
 PROTOCOL for version 2

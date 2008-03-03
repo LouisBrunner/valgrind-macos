@@ -39,9 +39,7 @@
 
 /* Read whatever info we can from an XCOFF object file. */
 extern
-Bool ML_(read_xcoff_debug_info) ( struct _SegInfo* si,
-                                  Addr   data_addr,
-                                  SSizeT data_len,
+Bool ML_(read_xcoff_debug_info) ( struct _DebugInfo* di,
                                   Bool   is_mainexe );
 
 #endif /* ndef __PRIV_READXCOFF_H */

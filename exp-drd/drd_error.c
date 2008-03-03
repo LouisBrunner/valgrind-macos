@@ -68,7 +68,7 @@ static void make_path_relative(Char* const path)
 void describe_addr(Addr const a, SizeT const len, AddrInfo* const ai)
 {
    Addr       stack_min, stack_max;
-   SegInfo*   sg;
+   DebugInfo* sg;
 
    /* Perhaps it's on a thread's stack? */
    ai->stack_tid = thread_lookup_stackaddr(a, &stack_min, &stack_max);
@@ -89,7 +89,7 @@ void describe_addr(Addr const a, SizeT const len, AddrInfo* const ai)
       int i, n;
 
       ai->akind   = eSegment;
-      ai->seginfo = sg;
+      ai->debuginfo = sg;
       ai->name[0] = 0;
       ai->size = 1;
       ai->rwoffset = 0;
@@ -103,9 +103,10 @@ void describe_addr(Addr const a, SizeT const len, AddrInfo* const ai)
          HChar* name;
          Char filename[256];
          Int linenum;
+         Bool isText;
 
-         VG_(seginfo_syms_getidx)(sg, i, &addr, &tocptr, &size, &name);
-         if (addr <= a && a < addr + size)
+         VG_(seginfo_syms_getidx)(sg, i, &addr, &tocptr, &size, &name, &isText);
+         if (isText && addr <= a && a < addr + size)
          {
             ai->size     = size;
             ai->rwoffset = a - addr;
@@ -131,10 +132,8 @@ void describe_addr(Addr const a, SizeT const len, AddrInfo* const ai)
       {
          Char filename[512];
          Char soname[512];
-         Char sect_kind_name[16];
-
-         VG_(seginfo_sect_kind_name)(a, sect_kind_name,
-                                     sizeof(sect_kind_name));
+         VgSectKind kind = VG_(seginfo_sect_kind)(NULL, 0, a);
+         const HChar* sect_kind_name = VG_(pp_SectKind)(kind);
          VG_(strncpy)(filename, VG_(seginfo_filename)(sg), sizeof(filename));
          filename[sizeof(filename) - 1] = 0;
          make_path_relative(filename);

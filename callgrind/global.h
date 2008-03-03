@@ -705,7 +705,7 @@ void CLG_(init_eventsets)(Int user);
 
 /* from main.c */
 Bool CLG_(get_debug_info)(Addr, Char filename[FILENAME_LEN],
-			 Char fn_name[FN_NAME_LEN], UInt*, SegInfo**);
+			 Char fn_name[FN_NAME_LEN], UInt*, DebugInfo**);
 void CLG_(collectBlockInfo)(IRSB* bbIn, UInt*, UInt*, Bool*);
 void CLG_(set_instrument_state)(Char*,Bool);
 void CLG_(dump_profile)(Char* trigger,Bool only_current_thread);
@@ -738,7 +738,7 @@ void CLG_(set_current_fn_array)(fn_array*);
 UInt* CLG_(get_fn_entry)(Int n);
 
 void      CLG_(init_obj_table)(void);
-obj_node* CLG_(get_obj_node)(SegInfo* si);
+obj_node* CLG_(get_obj_node)(DebugInfo* si);
 file_node* CLG_(get_file_node)(obj_node*, Char* filename);
 fn_node*  CLG_(get_fn_node)(BB* bb);
 

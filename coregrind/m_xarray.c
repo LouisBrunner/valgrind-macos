@@ -76,6 +76,32 @@ XArray* VG_(newXA) ( void*(*alloc_fn)(SizeT),
    return xa;
 }
 
+XArray* VG_(cloneXA)( XArray* xao )
+{
+   struct _XArray* xa = (struct _XArray*)xao;
+   struct _XArray* nyu;
+   vg_assert(xa);
+   vg_assert(xa->alloc);
+   vg_assert(xa->free);
+   vg_assert(xa->elemSzB >= 1);
+   nyu = xa->alloc( sizeof(struct _XArray) );
+   if (!nyu)
+      return NULL;
+   /* Copy everything verbatim ... */
+   *nyu = *xa;
+   /* ... except we have to clone the contents-array */
+   if (nyu->arr) {
+      nyu->arr = nyu->alloc( nyu->totsizeE * nyu->elemSzB );
+      if (!nyu->arr) {
+         nyu->free(nyu);
+         return NULL;
+      }
+      VG_(memcpy)( nyu->arr, xa->arr, nyu->totsizeE * nyu->elemSzB );
+   }
+   /* We're done! */
+   return nyu;
+}
+
 void VG_(deleteXA) ( XArray* xao )
 {
    struct _XArray* xa = (struct _XArray*)xao;
@@ -104,13 +130,8 @@ inline void* VG_(indexXA) ( XArray* xao, Word n )
    return ((char*)xa->arr) + n * xa->elemSzB;
 }
 
-Int VG_(addToXA) ( XArray* xao, void* elem )
+static inline void ensureSpaceXA ( struct _XArray* xa )
 {
-   struct _XArray* xa = (struct _XArray*)xao;
-   vg_assert(xa);
-   vg_assert(elem);
-   vg_assert(xa->totsizeE >= 0);
-   vg_assert(xa->usedsizeE >= 0 && xa->usedsizeE <= xa->totsizeE);
    if (xa->usedsizeE == xa->totsizeE) {
       void* tmp;
       Word  newsz;
@@ -118,7 +139,18 @@ Int VG_(addToXA) ( XArray* xao, void* elem )
          vg_assert(!xa->arr);
       if (xa->totsizeE > 0)
          vg_assert(xa->arr);
-      newsz = xa->totsizeE==0 ? 2 : 2 * xa->totsizeE;
+      if (xa->totsizeE == 0) {
+         /* No point in having tiny (eg) 2-byte allocations for the
+            element array, since all allocs are rounded up to 8 anyway.
+            Hence increase the initial array size for tiny elements in
+            an attempt to avoid reallocations of size 2, 4, 8 if the
+            array does start to fill up. */
+         if (xa->elemSzB == 1) newsz = 8;
+         else if (xa->elemSzB == 2) newsz = 4;
+         else newsz = 2;
+      } else {
+         newsz = 2 * xa->totsizeE;
+      }
       if (0) 
          VG_(printf)("addToXA: increasing from %ld to %ld\n", 
                      xa->totsizeE, newsz);
@@ -131,6 +163,16 @@ Int VG_(addToXA) ( XArray* xao, void* elem )
       xa->arr = tmp;
       xa->totsizeE = newsz;
    }
+}
+
+Int VG_(addToXA) ( XArray* xao, void* elem )
+{
+   struct _XArray* xa = (struct _XArray*)xao;
+   vg_assert(xa);
+   vg_assert(elem);
+   vg_assert(xa->totsizeE >= 0);
+   vg_assert(xa->usedsizeE >= 0 && xa->usedsizeE <= xa->totsizeE);
+   ensureSpaceXA( xa );
    vg_assert(xa->usedsizeE < xa->totsizeE);
    vg_assert(xa->arr);
    VG_(memcpy)( ((UChar*)xa->arr) + xa->usedsizeE * xa->elemSzB,
@@ -138,6 +180,27 @@ Int VG_(addToXA) ( XArray* xao, void* elem )
    xa->usedsizeE++;
    xa->sorted = False;
    return xa->usedsizeE-1;
+}
+
+Int VG_(addBytesToXA) ( XArray* xao, void* bytesV, Int nbytes )
+{
+   Int r, i;
+   struct _XArray* xa = (struct _XArray*)xao;
+   vg_assert(xa);
+   vg_assert(xa->elemSzB == 1);
+   vg_assert(nbytes >= 0);
+   vg_assert(xa->totsizeE >= 0);
+   vg_assert(xa->usedsizeE >= 0 && xa->usedsizeE <= xa->totsizeE);
+   r = xa->usedsizeE;
+   for (i = 0; i < nbytes; i++) {
+      ensureSpaceXA( xa );
+      vg_assert(xa->usedsizeE < xa->totsizeE);
+      vg_assert(xa->arr);
+      * (((UChar*)xa->arr) + xa->usedsizeE) = ((UChar*)bytesV)[i];
+      xa->usedsizeE++;
+   }
+   xa->sorted = False;
+   return r;
 }
 
 void VG_(sortXA) ( XArray* xao )

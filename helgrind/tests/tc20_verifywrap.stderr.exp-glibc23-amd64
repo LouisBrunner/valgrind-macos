@@ -19,6 +19,8 @@ Possible data race during write of size 2 at 0x........
   Old state: owned exclusively by thread #2
   New state: shared-modified by threads #1, #2
   Reason:    this thread, #1, holds no locks at all
+  Location 0x........ is 0 bytes inside global var "unprotected"
+  declared at tc20_verifywrap.c:27
 
 Thread #1's call to pthread_join failed
    with error code 35 (EDEADLK: Resource deadlock would occur)

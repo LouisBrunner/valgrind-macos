@@ -19,7 +19,8 @@ endif
 DIST_SUBDIRS = ${VG_ARCH_ALL} .
 
 noinst_SCRIPTS = filter_allocs filter_leak_check_size \
-		 filter_stderr filter_stderr_backtrace filter_xml
+		 filter_stderr filter_stderr_backtrace filter_xml \
+		 filter_varinfo3
 
 EXTRA_DIST = $(noinst_SCRIPTS) \
 	addressable.stderr.exp addressable.stdout.exp addressable.vgtest \
@@ -129,6 +130,13 @@ EXTRA_DIST = $(noinst_SCRIPTS) \
 	toobig-allocs.stderr.exp toobig-allocs.vgtest \
 	trivialleak.stderr.exp trivialleak.vgtest \
 	metadata.stderr.exp metadata.stdout.exp metadata.vgtest \
+	varinfo1.vgtest varinfo1.stdout.exp varinfo1.stderr.exp \
+	varinfo2.vgtest varinfo2.stdout.exp varinfo2.stderr.exp \
+	varinfo3.vgtest varinfo3.stdout.exp varinfo3.stderr.exp \
+	varinfo4.vgtest varinfo4.stdout.exp varinfo4.stderr.exp \
+	varinfo5.vgtest varinfo5.stdout.exp varinfo5.stderr.exp \
+	varinfo6.vgtest varinfo6.stdout.exp \
+	varinfo6.stderr.exp-glibc25-amd64 varinfo6.stderr.exp-glibc25-x86 \
 	vcpu_bz2.stdout.exp vcpu_bz2.stderr.exp vcpu_bz2.vgtest \
 	vcpu_fbench.stdout.exp vcpu_fbench.stderr.exp vcpu_fbench.vgtest \
 	vcpu_fnfns.stdout.exp vcpu_fnfns.stderr.exp vcpu_fnfns.vgtest \
@@ -181,6 +189,8 @@ check_PROGRAMS = \
 	supp_unknown supp1 supp2 suppfree \
 	trivialleak \
 	mismatches new_override metadata \
+	varinfo1 varinfo2 varinfo3 varinfo4 \
+	varinfo5 varinfo5so.so varinfo6 \
 	vcpu_bz2 vcpu_fbench vcpu_fnfns \
 	xml1 \
 	wrap1 wrap2 wrap3 wrap4 wrap5 wrap6 wrap7 wrap7so.so wrap8 \
@@ -211,6 +221,14 @@ str_tester_CFLAGS	= $(AM_CFLAGS) -Wno-shadow
 supp_unknown_SOURCES	= badjump.c
 supp1_SOURCES		= supp.c
 supp2_SOURCES		= supp.c
+# To make it a bit more realistic, have some optimisation enabled
+# for the varinfo tests.  We still expect sane results.
+varinfo1_CFLAGS		= -O -g
+varinfo2_CFLAGS		= -O -g
+varinfo3_CFLAGS		= -O -g
+varinfo4_CFLAGS		= -O -g
+varinfo5_CFLAGS		= -O -g
+varinfo6_CFLAGS		= -O -g
 
 # C++ tests
 mismatches_SOURCES	= mismatches.cpp
@@ -267,6 +285,39 @@ if VGP_PPC32_AIX5
 else
  wrap7so_so_LDFLAGS     = -fpic $(AM_FLAG_M3264_PRI) -shared \
 				-Wl,-soname -Wl,wrap7so.so
+endif
+endif
+
+# Build shared object for varinfo5
+varinfo5_SOURCES        = varinfo5.c
+varinfo5_DEPENDENCIES   = varinfo5so.so
+if VGP_PPC64_AIX5 
+ varinfo5_LDADD         = `pwd`/varinfo5so.so
+ varinfo5_LDFLAGS       = $(AM_FLAG_M3264_PRI)
+else
+if VGP_PPC32_AIX5
+ varinfo5_LDADD         = `pwd`/varinfo5so.so
+ varinfo5_LDFLAGS       = $(AM_FLAG_M3264_PRI) -Wl,-G -Wl,-bnogc
+else
+ varinfo5_LDADD         = varinfo5so.so
+ varinfo5_LDFLAGS       = $(AM_FLAG_M3264_PRI) \
+				-Wl,-rpath,$(top_builddir)/memcheck/tests
+endif
+endif
+
+varinfo5so_so_SOURCES   = varinfo5so.c
+varinfo5so_so_LDADD     = 
+varinfo5so_so_DEPENDENCIES = 
+varinfo5so_so_CFLAGS    = -fpic $(AM_FLAG_M3264_PRI) -g -O
+if VGP_PPC64_AIX5
+ varinfo5so_so_LDFLAGS  = -fpic $(AM_FLAG_M3264_PRI) -shared
+else
+if VGP_PPC32_AIX5
+ varinfo5so_so_LDFLAGS  = -fpic $(AM_FLAG_M3264_PRI) -shared \
+				-Wl,-G -Wl,-bnogc
+else
+ varinfo5so_so_LDFLAGS  = -fpic $(AM_FLAG_M3264_PRI) -shared \
+				-Wl,-soname -Wl,varinfo5so.so
 endif
 endif
 

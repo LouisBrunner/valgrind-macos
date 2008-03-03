@@ -13,6 +13,8 @@ Possible data race during write of size 4 at 0x........
   New state: shared-modified by threads #1, #2
   Reason:    this thread, #1, holds no consistent locks
   Location 0x........ has never been protected by any lock
+  Location 0x........ is 0 bytes inside global var "unprot1"
+  declared at tc06_two_races.c:9
 
 Possible data race during write of size 4 at 0x........
    at 0x........: main (tc06_two_races.c:35)
@@ -20,5 +22,7 @@ Possible data race during write of size 4 at 0x........
   New state: shared-modified by threads #1, #2
   Reason:    this thread, #1, holds no consistent locks
   Location 0x........ has never been protected by any lock
+  Location 0x........ is 0 bytes inside global var "unprot2"
+  declared at tc06_two_races.c:9
 
 ERROR SUMMARY: 2 errors from 2 contexts (suppressed: 0 from 0)

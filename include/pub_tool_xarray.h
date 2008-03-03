@@ -66,6 +66,11 @@ extern void VG_(setCmpFnXA) ( XArray*, Int (*compar)(void*,void*) );
    invalidated if the array is later sortXA'd. */
 extern Int VG_(addToXA) ( XArray*, void* elem );
 
+/* Add a sequence of bytes to an XArray of bytes.  Asserts if nbytes
+   is negative or the array's element size is not 1.  Returns the
+   index at which the first byte was added. */
+extern Int VG_(addBytesToXA) ( XArray* xao, void* bytesV, Int nbytes );
+
 /* Sort an XArray using its comparison function, if set; else bomb.
    Probably not a stable sort w.r.t. equal elements module cmpFn. */
 extern void VG_(sortXA) ( XArray* );
@@ -94,6 +99,11 @@ extern void* VG_(indexXA) ( XArray*, Word );
    than n elements in the array. */
 extern void VG_(dropTailXA) ( XArray*, Word );
 
+/* Make a new, completely independent copy of the given XArray, using
+   the existing allocation function to allocate the new space.
+   Returns NULL if the allocation function didn't manage to allocate
+   space (but did return NULL rather than merely abort.) */
+extern XArray* VG_(cloneXA)( XArray* xa );
 
 #endif   // __PUB_TOOL_XARRAY_H
 

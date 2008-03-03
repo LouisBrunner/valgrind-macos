@@ -91,7 +91,7 @@ VgNeeds VG_(needs) = {
    .client_requests      = False,
    .syscall_wrapper      = False,
    .sanity_checks        = False,
-   .data_syms	         = False,
+   .var_info	         = False,
    .malloc_replacement   = False,
    .xml_output           = False,
    .final_IR_tidy_pass   = False
@@ -162,7 +162,7 @@ Bool VG_(sanity_check_needs)(Char** failmsg)
 // These ones don't require any tool-supplied functions
 NEEDS(libc_freeres)
 NEEDS(core_errors)
-NEEDS(data_syms)
+NEEDS(var_info)
 NEEDS(xml_output)
 
 void VG_(needs_superblock_discards)(

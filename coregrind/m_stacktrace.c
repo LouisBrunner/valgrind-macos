@@ -57,10 +57,11 @@
    first parameter, else send zero.  This helps generate better stack
    traces on ppc64-linux and has no effect on other platforms.
 */
-UInt VG_(get_StackTrace2) ( ThreadId tid_if_known,
-                            Addr* ips, UInt n_ips, 
-                            Addr ip, Addr sp, Addr fp, Addr lr,
-                            Addr fp_min, Addr fp_max_orig )
+UInt VG_(get_StackTrace_wrk) ( ThreadId tid_if_known,
+                               /*OUT*/Addr* ips, UInt n_ips,
+                               /*OUT*/Addr* sps, /*OUT*/Addr* fps,
+                               Addr ip, Addr sp, Addr fp, Addr lr,
+                               Addr fp_min, Addr fp_max_orig )
 {
 #  if defined(VGP_ppc32_linux) || defined(VGP_ppc64_linux) \
                                || defined(VGP_ppc32_aix5) \
@@ -92,7 +93,8 @@ UInt VG_(get_StackTrace2) ( ThreadId tid_if_known,
    fp_max -= sizeof(Addr);
 
    if (debug)
-      VG_(printf)("n_ips=%d fp_min=%p fp_max_orig=%p, fp_max=%p ip=%p fp=%p\n",
+      VG_(printf)("n_ips=%d fp_min=%p fp_max_orig=%p, "
+                  "fp_max=%p ip=%p fp=%p\n",
 		  n_ips, fp_min, fp_max_orig, fp_max, ip, fp);
 
    /* Assertion broken before main() is reached in pthreaded programs;  the
@@ -116,6 +118,8 @@ UInt VG_(get_StackTrace2) ( ThreadId tid_if_known,
 
    /* fp is %ebp.  sp is %esp.  ip is %eip. */
 
+   if (sps) sps[0] = sp;
+   if (fps) fps[0] = fp;
    ips[0] = ip;
    i = 1;
 
@@ -133,6 +137,11 @@ UInt VG_(get_StackTrace2) ( ThreadId tid_if_known,
     * This most frequently happens at the end of a function when
     * a tail call occurs and we wind up using the CFI info for the
     * next function which is completely wrong.
+    *
+    * Note that VG_(get_data_description) (in m_debuginfo) has to take
+    * this same problem into account when unwinding the stack to
+    * examine local variable descriptions (as documented therein in
+    * comments).
     */
    while (True) {
 
@@ -155,6 +164,8 @@ UInt VG_(get_StackTrace2) ( ThreadId tid_if_known,
          sp = fp + sizeof(Addr) /*saved %ebp*/ 
                  + sizeof(Addr) /*ra*/;
          fp = (((UWord*)fp)[0]);
+         if (sps) sps[i] = sp;
+         if (fps) fps[i] = fp;
          ips[i++] = ip;
          if (debug)
             VG_(printf)("     ipsF[%d]=0x%08lx\n", i-1, ips[i-1]);
@@ -165,6 +176,8 @@ UInt VG_(get_StackTrace2) ( ThreadId tid_if_known,
       /* That didn't work out, so see if there is any CF info to hand
          which can be used. */
       if ( VG_(use_CF_info)( &ip, &sp, &fp, fp_min, fp_max ) ) {
+         if (sps) sps[i] = sp;
+         if (fps) fps[i] = fp;
          ips[i++] = ip;
          if (debug)
             VG_(printf)("     ipsC[%d]=0x%08lx\n", i-1, ips[i-1]);
@@ -183,6 +196,8 @@ UInt VG_(get_StackTrace2) ( ThreadId tid_if_known,
    /* fp is %rbp.  sp is %rsp.  ip is %rip. */
 
    ips[0] = ip;
+   if (sps) sps[0] = sp;
+   if (fps) fps[0] = fp;
    i = 1;
 
    /* Loop unwinding the stack. Note that the IP value we get on
@@ -199,6 +214,11 @@ UInt VG_(get_StackTrace2) ( ThreadId tid_if_known,
     * This most frequently happens at the end of a function when
     * a tail call occurs and we wind up using the CFI info for the
     * next function which is completely wrong.
+    *
+    * Note that VG_(get_data_description) (in m_debuginfo) has to take
+    * this same problem into account when unwinding the stack to
+    * examine local variable descriptions (as documented therein in
+    * comments).
     */
    while (True) {
 
@@ -211,6 +231,8 @@ UInt VG_(get_StackTrace2) ( ThreadId tid_if_known,
       /* First off, see if there is any CFI info to hand which can
          be used. */
       if ( VG_(use_CF_info)( &ip, &sp, &fp, fp_min, fp_max ) ) {
+         if (sps) sps[i] = sp;
+         if (fps) fps[i] = fp;
          ips[i++] = ip;
          if (debug)
             VG_(printf)("     ipsC[%d]=%08p\n", i-1, ips[i-1]);
@@ -232,6 +254,8 @@ UInt VG_(get_StackTrace2) ( ThreadId tid_if_known,
          sp = fp + sizeof(Addr) /*saved %rbp*/ 
                  + sizeof(Addr) /*ra*/;
          fp = (((UWord*)fp)[0]);
+         if (sps) sps[i] = sp;
+         if (fps) fps[i] = fp;
          ips[i++] = ip;
          if (debug)
             VG_(printf)("     ipsF[%d]=%08p\n", i-1, ips[i-1]);
@@ -253,6 +277,8 @@ UInt VG_(get_StackTrace2) ( ThreadId tid_if_known,
       */
       if (fp_min <= sp && sp < fp_max) {
          ip = ((UWord*)sp)[0];
+         if (sps) sps[i] = sp;
+         if (fps) fps[i] = fp;
          ips[i++] = ip;
          if (debug)
             VG_(printf)("     ipsH[%d]=%08p\n", i-1, ips[i-1]);
@@ -315,6 +341,8 @@ UInt VG_(get_StackTrace2) ( ThreadId tid_if_known,
 #     undef M_VG_ERRTXT
    }
 
+   if (sps) sps[0] = fp; /* NB. not sp */
+   if (fps) fps[0] = fp;
    ips[0] = ip;
    i = 1;
 
@@ -361,7 +389,8 @@ UInt VG_(get_StackTrace2) ( ThreadId tid_if_known,
                used by the unwinding so far with 'redirs_used'. */
             if (ip == (Addr)&VG_(ppctoc_magic_redirect_return_stub)
                 && VG_(is_valid_tid)(tid_if_known)) {
-               Word hsp = VG_(threads)[tid_if_known].arch.vex.guest_REDIR_SP;
+               Word hsp = VG_(threads)[tid_if_known]
+                             .arch.vex.guest_REDIR_SP;
                hsp -= 2 * redirs_used;
                redirs_used ++;
                if (hsp >= 1 && hsp < redir_stack_size)
@@ -371,6 +400,8 @@ UInt VG_(get_StackTrace2) ( ThreadId tid_if_known,
 #           endif
 
             fp = (((UWord*)fp)[0]);
+            if (sps) sps[i] = fp; /* NB. not sp */
+            if (fps) fps[i] = fp;
             ips[i++] = ip;
             if (debug)
                VG_(printf)("     ipsF[%d]=%08p\n", i-1, ips[i-1]);
@@ -390,7 +421,10 @@ UInt VG_(get_StackTrace2) ( ThreadId tid_if_known,
    return n_found;
 }
 
-UInt VG_(get_StackTrace) ( ThreadId tid, StackTrace ips, UInt n_ips, 
+UInt VG_(get_StackTrace) ( ThreadId tid, 
+                           /*OUT*/StackTrace ips, UInt n_ips,
+                           /*OUT*/StackTrace sps,
+                           /*OUT*/StackTrace fps,
                            Word first_ip_delta )
 {
    /* thread in thread table */
@@ -436,11 +470,14 @@ UInt VG_(get_StackTrace) ( ThreadId tid, StackTrace ips, UInt n_ips,
    ip += first_ip_delta;
 
    if (0)
-      VG_(printf)("tid %d: stack_highest=0x%08lx ip=0x%08lx sp=0x%08lx fp=0x%08lx\n",
+      VG_(printf)("tid %d: stack_highest=0x%08lx ip=0x%08lx "
+                  "sp=0x%08lx fp=0x%08lx\n",
 		  tid, stack_highest_word, ip, sp, fp);
 
-   return VG_(get_StackTrace2)(tid, ips, n_ips, ip, sp, fp, lr, sp, 
-                                    stack_highest_word);
+   return VG_(get_StackTrace_wrk)(tid, ips, n_ips, 
+                                       sps, fps,
+                                       ip, sp, fp, lr, sp, 
+                                       stack_highest_word);
 }
 
 static void printIpDesc(UInt n, Addr ip)
@@ -476,8 +513,11 @@ void VG_(pp_StackTrace) ( StackTrace ips, UInt n_ips )
 void VG_(get_and_pp_StackTrace) ( ThreadId tid, UInt n_ips )
 {
    Addr ips[n_ips];
-   UInt n_ips_obtained = VG_(get_StackTrace)(tid, ips, n_ips,
-                                             0/*first_ip_delta*/);
+   UInt n_ips_obtained 
+      = VG_(get_StackTrace)(tid, ips, n_ips,
+                            NULL/*array to dump SP values in*/,
+                            NULL/*array to dump FP values in*/,
+                            0/*first_ip_delta*/);
    VG_(pp_StackTrace)(ips, n_ips_obtained);
 }
 

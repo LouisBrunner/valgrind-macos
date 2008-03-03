@@ -416,8 +416,8 @@ extern void VG_(needs_sanity_checks) (
    Bool(*expensive_sanity_check)(void)
 );
 
-/* Do we need to see data symbols? */
-extern void VG_(needs_data_syms) ( void );
+/* Do we need to see variable type and location information? */
+extern void VG_(needs_var_info) ( void );
 
 /* Does the tool replace malloc() and friends with its own versions?
    This has to be combined with the use of a vgpreload_<tool>.so module

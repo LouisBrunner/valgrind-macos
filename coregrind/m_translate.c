@@ -1011,9 +1011,9 @@ Bool mk_preamble__ppctoc_magic_return_stub ( void* closureV, IRSB* bb )
    wrapped/redirected function to lead to our magic return stub, which
    restores LR and R2 from said stack and returns for real.
 
-   VG_(get_StackTrace2) understands that the LR value may point to the
-   return stub address, and that in that case it can get the real LR
-   value from the hidden stack instead. */
+   VG_(get_StackTrace_wrk) understands that the LR value may point to
+   the return stub address, and that in that case it can get the real
+   LR value from the hidden stack instead. */
 static 
 Bool mk_preamble__set_NRADDR_to_zero ( void* closureV, IRSB* bb )
 {

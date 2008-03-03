@@ -370,7 +370,7 @@ void CLG_(print_addr)(Addr addr)
     Char fl_buf[FILENAME_LEN];
     Char fn_buf[FN_NAME_LEN];
     const UChar* obj_name;
-    SegInfo* si;
+    DebugInfo* di;
     int ln, i=0, opos=0;
 	
     if (addr == 0) {
@@ -378,15 +378,15 @@ void CLG_(print_addr)(Addr addr)
 	return;
     }
 
-    CLG_(get_debug_info)(addr, fl_buf, fn_buf, &ln, &si);
+    CLG_(get_debug_info)(addr, fl_buf, fn_buf, &ln, &di);
 
     if (VG_(strcmp)(fn_buf,"???")==0)
 	VG_(printf)("%p", addr);
     else
 	VG_(printf)("%p %s", addr, fn_buf);
 
-    if (si) {
-      obj_name = VG_(seginfo_filename)(si);
+    if (di) {
+      obj_name = VG_(seginfo_filename)(di);
       if (obj_name) {
 	while(obj_name[i]) {
 	  if (obj_name[i]=='/') opos = i+1;

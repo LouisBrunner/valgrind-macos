@@ -20,5 +20,7 @@ Possible data race during write of size 4 at 0x........
   New state: shared-modified by threads #2, #3
   Reason:    this thread, #3, holds no consistent locks
   Location 0x........ has never been protected by any lock
+  Location 0x........ is 0 bytes inside foo.poot[5].plop[11],
+  declared at hg05_race2.c:24, in frame #3 of thread 1
 
 ERROR SUMMARY: 1 errors from 1 contexts (suppressed: 0 from 0)

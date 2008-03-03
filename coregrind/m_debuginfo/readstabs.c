@@ -38,8 +38,10 @@
 #include "pub_core_libcbase.h"
 #include "pub_core_libcassert.h"
 #include "pub_core_libcprint.h"
-#include "pub_core_mallocfree.h"
 #include "pub_core_xarray.h"
+#include "priv_misc.h"             /* dinfo_zalloc/free/strdup */
+#include "priv_tytypes.h"
+#include "priv_d3basics.h"
 #include "priv_storage.h"
 #include "priv_readstabs.h"        /* self */
 
@@ -78,7 +80,7 @@ typedef enum { N_UNDEF = 0,	/* undefined symbol, new stringtab  */
 /* Read stabs-format debug info.  This is all rather horrible because
    stabs is a underspecified, kludgy hack.
 */
-void ML_(read_debuginfo_stabs) ( SegInfo* si,    OffT debug_offset,
+void ML_(read_debuginfo_stabs) ( DebugInfo* di,  OffT debug_offset,
                                  UChar* stabC,   Int stab_sz, 
                                  UChar* stabstr, Int stabstr_sz )
 {
@@ -119,7 +121,7 @@ void ML_(read_debuginfo_stabs) ( SegInfo* si,    OffT debug_offset,
       Finding the instruction address range covered by an N_SLINE is
       complicated;  see the N_SLINE case below.
    */
-   file.name     = ML_(addStr)(si,"???", -1);
+   file.name     = ML_(addStr)(di,"???", -1);
 
    n_stab_entries = stab_sz/(int)sizeof(struct nlist);
 
@@ -176,11 +178,11 @@ void ML_(read_debuginfo_stabs) ( SegInfo* si,    OffT debug_offset,
                   qbuflen = 16;
                while ((qidx + qlen) >= qbuflen)
                   qbuflen *= 2;
-               n = VG_(arena_malloc)(VG_AR_SYMTAB, qbuflen);
+               n = ML_(dinfo_zalloc)(qbuflen);
                VG_(memcpy)(n, qbuf, qidx);
                
                if (qbuf != NULL)
-                  VG_(arena_free)(VG_AR_SYMTAB, qbuf);
+                  ML_(dinfo_free)(qbuf);
                qbuf = n;
             }
 
@@ -206,8 +208,8 @@ void ML_(read_debuginfo_stabs) ( SegInfo* si,    OffT debug_offset,
 
          if (qbuf != NULL) {
             i--;                        /* overstepped */
-            string = ML_(addStr)(si, qbuf, qidx);
-            VG_(arena_free)(VG_AR_SYMTAB, qbuf);
+            string = ML_(addStr)(di, qbuf, qidx);
+            ML_(dinfo_free)(qbuf);
             if (contdebug)
                VG_(printf)("made composite: \"%s\"\n", string);
          }
@@ -253,7 +255,7 @@ void ML_(read_debuginfo_stabs) ( SegInfo* si,    OffT debug_offset,
 
             if (line.addr != 0) {
                /* finish off previous line */
-               ML_(addLineInfo)(si, file.name, NULL, line.addr,
+               ML_(addLineInfo)(di, file.name, NULL, line.addr,
                                 addr, line.no + line.ovf * LINENO_OVERFLOW, i);
             }
 
@@ -264,11 +266,11 @@ void ML_(read_debuginfo_stabs) ( SegInfo* si,    OffT debug_offset,
             line.no = 0;
 
             if (len > 0 && nm[len-1] != '/') {
-               file.name = ML_(addStr)(si, nm, -1);
+               file.name = ML_(addStr)(di, nm, -1);
                if (debug)
                   VG_(printf)("new source: %s\n", file.name);
             } else if (len == 0)
-               file.name = ML_(addStr)(si, "?1\0", -1);
+               file.name = ML_(addStr)(di, "?1\0", -1);
 
             break;
          }
@@ -278,7 +280,7 @@ void ML_(read_debuginfo_stabs) ( SegInfo* si,    OffT debug_offset,
 
             if (line.addr != 0) {
                /* there was a previous */
-               ML_(addLineInfo)(si, file.name, NULL, line.addr,
+               ML_(addLineInfo)(di, file.name, NULL, line.addr,
                                 addr, line.no + line.ovf * LINENO_OVERFLOW, i);
             }
 
@@ -340,7 +342,7 @@ void ML_(read_debuginfo_stabs) ( SegInfo* si,    OffT debug_offset,
             }
 
             if (line.addr) {
-               ML_(addLineInfo)(si, file.name, NULL, line.addr,
+               ML_(addLineInfo)(di, file.name, NULL, line.addr,
                                 addr, line.no + line.ovf * LINENO_OVERFLOW, i);
                line.addr = 0;
             }

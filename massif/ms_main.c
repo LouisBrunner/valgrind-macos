@@ -813,7 +813,9 @@ Int get_IPs( ThreadId tid, Bool is_custom_alloc, Addr ips[])
 
       // Ask for more IPs than clo_depth suggests we need.
       n_ips = VG_(get_StackTrace)( tid, ips, clo_depth + overestimate,
-                                        0/*first_ip_delta*/ );
+                                   NULL/*array to dump SP values in*/,
+                                   NULL/*array to dump FP values in*/,
+                                   0/*first_ip_delta*/ );
       tl_assert(n_ips > 0);
 
       // If the original stack trace is smaller than asked-for, redo=False.

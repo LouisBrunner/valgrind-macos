@@ -94,11 +94,13 @@ extern void VG_(set_shadow_regs_area) ( ThreadId tid, OffT guest_state_offset,
 // doing leak checking.
 extern void VG_(apply_to_GP_regs)(void (*f)(UWord val));
 
-// This iterator lets you inspect each live thread's stack bounds.  The
-// params are all 'out' params.  Returns False at the end.
-extern void VG_(thread_stack_reset_iter) ( void );
-extern Bool VG_(thread_stack_next)       ( ThreadId* tid, Addr* stack_min,
-                                                          Addr* stack_max );
+// This iterator lets you inspect each live thread's stack bounds.
+// Returns False at the end.  'tid' is the iterator and you can only
+// safely change it by making calls to these functions.
+extern void VG_(thread_stack_reset_iter) ( /*OUT*/ThreadId* tid );
+extern Bool VG_(thread_stack_next)       ( /*MOD*/ThreadId* tid,
+                                           /*OUT*/Addr* stack_min, 
+                                           /*OUT*/Addr* stack_max );
 
 // Returns .client_stack_highest_word for the given thread
 extern Addr VG_(thread_get_stack_max) ( ThreadId tid );

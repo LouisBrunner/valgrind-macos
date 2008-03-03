@@ -38,15 +38,23 @@
 
 #include "pub_tool_stacktrace.h"
 
-// Variant that gives a little more control over the stack-walking.
+// Variant that gives a little more control over the stack-walking
+// (this is the "worker" function that actually does the walking).
 // If you know what the thread ID for this stack is, send that
 // as the first parameter, else send zero.  This helps generate
 // better stack traces on ppc64-linux and has no effect on other
 // platforms.
-extern UInt VG_(get_StackTrace2) ( ThreadId tid_if_known,
-                                   StackTrace ips, UInt n_ips, 
-                                   Addr ip, Addr sp, Addr fp, Addr lr,
-                                   Addr fp_min, Addr fp_max );
+//
+// The acquired IP values are placed in
+// ips[0 .. min(n_ips,return_value)].  If sps and fps are non-NULL,
+// the corresponding frame-pointer and stack-pointer values for each
+// frame are stored there.
+
+UInt VG_(get_StackTrace_wrk) ( ThreadId tid_if_known,
+                               /*OUT*/Addr* ips, UInt n_ips,
+                               /*OUT*/Addr* sps, /*OUT*/Addr* fps,
+                               Addr ip, Addr sp, Addr fp, Addr lr,
+                               Addr fp_min, Addr fp_max_orig );
 
 #endif   // __PUB_CORE_STACKTRACE_H
 

@@ -13,5 +13,7 @@ Possible data race during write of size 4 at 0x........
   New state: shared-modified by threads #1, #2
   Reason:    this thread, #1, holds no consistent locks
   Location 0x........ has never been protected by any lock
+  Location 0x........ is 0 bytes inside global var "y"
+  declared at tc05_simple_race.c:10
 
 ERROR SUMMARY: 1 errors from 1 contexts (suppressed: 0 from 0)

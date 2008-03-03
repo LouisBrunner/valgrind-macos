@@ -193,22 +193,23 @@ void VG_(apply_to_GP_regs)(void (*f)(UWord))
    }
 }
 
-static ThreadId thread_stack_iter = VG_INVALID_THREADID;
-
-void VG_(thread_stack_reset_iter)(void)
+void VG_(thread_stack_reset_iter)(/*OUT*/ThreadId* tid)
 {
-   thread_stack_iter = 1;
+   *tid = (ThreadId)(-1);
 }
 
-Bool VG_(thread_stack_next)(ThreadId* tid, Addr* stack_min, Addr* stack_max)
+Bool VG_(thread_stack_next)(/*MOD*/ThreadId* tid,
+                            /*OUT*/Addr* stack_min, 
+                            /*OUT*/Addr* stack_max)
 {
    ThreadId i;
-   for (i = thread_stack_iter; i < VG_N_THREADS; i++) {
+   for (i = (*tid)+1; i < VG_N_THREADS; i++) {
+      if (i == VG_INVALID_THREADID)
+         continue;
       if (VG_(threads)[i].status != VgTs_Empty) {
          *tid       = i;
          *stack_min = VG_(get_SP)(i);
          *stack_max = VG_(threads)[i].client_stack_highest_word;
-         thread_stack_iter = i + 1;
          return True;
       }
    }

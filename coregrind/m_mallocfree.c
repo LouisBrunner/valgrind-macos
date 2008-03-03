@@ -518,7 +518,7 @@ void ensure_mm_init ( ArenaId aid )
       // Initialise the non-client arenas
       arena_init ( VG_AR_CORE,      "core",     4,             1048576 );
       arena_init ( VG_AR_TOOL,      "tool",     4,             4194304 );
-      arena_init ( VG_AR_SYMTAB,    "symtab",   4,             1048576 );
+      arena_init ( VG_AR_DINFO,     "dinfo",    4,             1048576 );
       arena_init ( VG_AR_DEMANGLE,  "demangle", 4,               65536 );
       arena_init ( VG_AR_EXECTXT,   "exectxt",  4,             1048576 );
       arena_init ( VG_AR_ERRORS,    "errors",   4,               65536 );

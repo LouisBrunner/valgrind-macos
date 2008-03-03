@@ -135,8 +135,9 @@ extern Int   VG_(memcmp) ( const void* s1, const void* s2, SizeT n );
 extern void VG_(ssort)( void* base, SizeT nmemb, SizeT size,
                         Int (*compar)(void*, void*) );
 
-/* Returns the base-2 logarithm of x.  Returns -1 if x is not a power of two. */
-extern Int VG_(log2) ( Int x );
+/* Returns the base-2 logarithm of x.  Returns -1 if x is not a power
+   of two. */
+extern Int VG_(log2) ( UInt x );
 
 // A pseudo-random number generator returning a random UInt.  If pSeed
 // is NULL, it uses its own seed, which starts at zero.  If pSeed is

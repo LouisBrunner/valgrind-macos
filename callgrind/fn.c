@@ -181,22 +181,25 @@ static UInt str_hash(const Char *s, UInt table_size)
 static Char* anonymous_obj = "???";
 
 static __inline__ 
-obj_node* new_obj_node(SegInfo* si, obj_node* next)
+obj_node* new_obj_node(DebugInfo* di, obj_node* next)
 {
    Int i;
    obj_node* new;
 
    new = (obj_node*) CLG_MALLOC(sizeof(obj_node));
-   new->name  = si ? VG_(strdup)( VG_(seginfo_filename)(si) )
+   new->name  = di ? VG_(strdup)( VG_(seginfo_filename)(di) )
                      : anonymous_obj;
    for (i = 0; i < N_FILE_ENTRIES; i++) {
       new->files[i] = NULL;
    }
    CLG_(stat).distinct_objs ++;
    new->number  = CLG_(stat).distinct_objs;
-   new->start   = si ? VG_(seginfo_start)(si) : 0;
-   new->size    = si ? VG_(seginfo_size)(si) : 0;
-   new->offset  = si ? VG_(seginfo_sym_offset)(si) : 0;
+   /* JRS 2008 Feb 19: maybe rename .start/.size/.offset to
+      .text_avma/.text_size/.test_bias to make it clearer what these
+      fields really mean */
+   new->start   = di ? VG_(seginfo_get_text_avma)(di) : 0;
+   new->size    = di ? VG_(seginfo_get_text_size)(di) : 0;
+   new->offset  = di ? VG_(seginfo_get_text_bias)(di) : 0;
    new->next    = next;
 
    // not only used for debug output (see static.c)
@@ -212,13 +215,13 @@ obj_node* new_obj_node(SegInfo* si, obj_node* next)
    return new;
 }
 
-obj_node* CLG_(get_obj_node)(SegInfo* si)
+obj_node* CLG_(get_obj_node)(DebugInfo* di)
 {
     obj_node*    curr_obj_node;
     UInt         objname_hash;
     const UChar* obj_name;
     
-    obj_name = si ? (Char*) VG_(seginfo_filename)(si) : anonymous_obj;
+    obj_name = di ? (Char*) VG_(seginfo_filename)(di) : anonymous_obj;
 
     /* lookup in obj hash */
     objname_hash = str_hash(obj_name, N_OBJ_ENTRIES);
@@ -229,7 +232,7 @@ obj_node* CLG_(get_obj_node)(SegInfo* si)
     }
     if (NULL == curr_obj_node) {
 	obj_table[objname_hash] = curr_obj_node = 
-	    new_obj_node(si, obj_table[objname_hash]);
+	    new_obj_node(di, obj_table[objname_hash]);
     }
 
     return curr_obj_node;
@@ -351,11 +354,11 @@ fn_node* get_fn_node_infile(file_node* curr_file_node,
  * Hash nodes are created if needed.
  */
 static __inline__
-fn_node* get_fn_node_inseg(SegInfo* si,
+fn_node* get_fn_node_inseg(DebugInfo* di,
 			   Char filename[FILENAME_LEN],
 			   Char fnname[FN_NAME_LEN])
 {
-  obj_node  *obj  = CLG_(get_obj_node)(si);
+  obj_node  *obj  = CLG_(get_obj_node)(di);
   file_node *file = CLG_(get_file_node)(obj, filename);
   fn_node   *fn   = get_fn_node_infile(file, fnname);
 
@@ -366,7 +369,7 @@ fn_node* get_fn_node_inseg(SegInfo* si,
 Bool CLG_(get_debug_info)(Addr instr_addr,
 			 Char file[FILENAME_LEN],
 			 Char fn_name[FN_NAME_LEN], UInt* line_num,
-			 SegInfo** pSegInfo)
+			 DebugInfo** pDebugInfo)
 {
   Bool found_file_line, found_fn, found_dirname, result = True;
   Char dir[FILENAME_LEN];
@@ -374,8 +377,8 @@ Bool CLG_(get_debug_info)(Addr instr_addr,
   
   CLG_DEBUG(6, "  + get_debug_info(%p)\n", instr_addr);
 
-  if (pSegInfo) {
-      *pSegInfo = VG_(find_seginfo)(instr_addr);
+  if (pDebugInfo) {
+      *pDebugInfo = VG_(find_seginfo)(instr_addr);
 
       // for generated code in anonymous space, pSegInfo is 0
    }
@@ -420,8 +423,8 @@ Bool CLG_(get_debug_info)(Addr instr_addr,
 
    CLG_DEBUG(6, "  - get_debug_info(%p): seg '%s', fn %s\n",
 	    instr_addr,
-	    !pSegInfo   ? (const UChar*)"-" :
-	    (*pSegInfo) ? VG_(seginfo_filename)(*pSegInfo) :
+	    !pDebugInfo   ? (const UChar*)"-" :
+	    (*pDebugInfo) ? VG_(seginfo_filename)(*pDebugInfo) :
 	    (const UChar*)"(None)",
 	    fn_name);
 
@@ -438,7 +441,7 @@ static BB* exit_bb = 0;
 fn_node* CLG_(get_fn_node)(BB* bb)
 {
     Char       filename[FILENAME_LEN], fnname[FN_NAME_LEN];
-    SegInfo*   si;
+    DebugInfo* di;
     UInt       line_num;
     fn_node*   fn;
 
@@ -451,7 +454,7 @@ fn_node* CLG_(get_fn_node)(BB* bb)
      * the BB according to debug information
      */
     CLG_(get_debug_info)(bb_addr(bb),
-			filename, fnname, &line_num, &si);
+			filename, fnname, &line_num, &di);
 
     if (0 == VG_(strcmp)(fnname, "???")) {
 	int p;
@@ -481,7 +484,7 @@ fn_node* CLG_(get_fn_node)(BB* bb)
     if (0 == VG_(strcmp)(fnname, "vgPlain___libc_freeres_wrapper")
 	&& exit_bb) {
       CLG_(get_debug_info)(bb_addr(exit_bb),
-			  filename, fnname, &line_num, &si);
+			  filename, fnname, &line_num, &di);
 	
 	CLG_DEBUG(1, "__libc_freeres_wrapper renamed to _exit\n");
     }
@@ -496,7 +499,7 @@ fn_node* CLG_(get_fn_node)(BB* bb)
     }
 
     /* get fn_node struct for this function */
-    fn = get_fn_node_inseg( si, filename, fnname);
+    fn = get_fn_node_inseg( di, filename, fnname);
 
     /* if this is the 1st time the function is seen,
      * some attributes are set */

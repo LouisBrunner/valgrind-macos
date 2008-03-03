@@ -39,10 +39,11 @@
 
 struct rwlock_thread_info
 {
-  UWord tid;        // DrdThreadId.
-  UInt  reader_nesting_count;
-  UInt  writer_nesting_count;
+  UWord       tid;        // DrdThreadId.
+  UInt        reader_nesting_count;
+  UInt        writer_nesting_count;
   VectorClock vc;   // Vector clock associated with last unlock by this thread.
+  Bool        last_lock_was_writer_lock;
 };
 
 
@@ -129,6 +130,7 @@ struct rwlock_thread_info* lookup_or_insert_node(OSet* oset, const UWord tid)
     q->reader_nesting_count = 0;
     q->writer_nesting_count = 0;
     vc_init(&q->vc, 0, 0);
+    q->last_lock_was_writer_lock = False;
     VG_(OSetGen_Insert)(oset, q);
   }
   tl_assert(q);
@@ -136,14 +138,15 @@ struct rwlock_thread_info* lookup_or_insert_node(OSet* oset, const UWord tid)
 }
 
 static void rwlock_combine_other_vc(struct rwlock_info* const p,
-                                    const DrdThreadId tid)
+                                    const DrdThreadId tid,
+                                    const Bool readers_too)
 {
   struct rwlock_thread_info* q;
 
   VG_(OSetGen_ResetIter)(p->thread_info);
   for ( ; (q = VG_(OSetGen_Next)(p->thread_info)) != 0; )
   {
-    if (q->tid != tid)
+    if (q->tid != tid && (readers_too || q->last_lock_was_writer_lock))
     {
       thread_combine_vc2(tid, &q->vc);
     }
@@ -175,7 +178,7 @@ static void rwlock_cleanup(struct rwlock_info* p)
   if (s_trace_rwlock)
   {
     VG_(message)(Vg_UserMsg,
-                 "[%d/%d] rwlock_destroy   0x%lx",
+                 "[%d/%d] rwlock_destroy     0x%lx",
                  VG_(get_running_tid)(),
                  thread_get_running_tid(),
                  p->a1);
@@ -244,7 +247,7 @@ rwlock_pre_init(const Addr rwlock, const SizeT size)
   if (s_trace_rwlock)
   {
     VG_(message)(Vg_UserMsg,
-                 "[%d/%d] rwlock_init      %s 0x%lx",
+                 "[%d/%d] rwlock_init        0x%lx",
                  VG_(get_running_tid)(),
                  thread_get_running_tid(),
                  rwlock);
@@ -351,7 +354,7 @@ void rwlock_post_rdlock(const Addr rwlock, const Bool took_lock)
   q = lookup_or_insert_node(p->thread_info, drd_tid);
   if (++q->reader_nesting_count == 1)
   {
-    rwlock_combine_other_vc(p, drd_tid);
+    rwlock_combine_other_vc(p, drd_tid, False);
     thread_new_segment(drd_tid);
   }
 }
@@ -422,8 +425,9 @@ void rwlock_post_wrlock(const Addr rwlock, const Bool took_lock)
   q = lookup_or_insert_node(p->thread_info, thread_get_running_tid());
   tl_assert(q->writer_nesting_count == 0);
   q->writer_nesting_count++;
+  q->last_lock_was_writer_lock = True;
   tl_assert(q->writer_nesting_count == 1);
-  rwlock_combine_other_vc(p, drd_tid);
+  rwlock_combine_other_vc(p, drd_tid, True);
   thread_new_segment(drd_tid);
 }
 
@@ -447,7 +451,7 @@ void rwlock_pre_unlock(const Addr rwlock)
   if (s_trace_rwlock && p != 0)
   {
     VG_(message)(Vg_UserMsg,
-                 "[%d/%d] rwlock_unlock    0x%lx",
+                 "[%d/%d] rwlock_unlock      0x%lx",
                  vg_tid,
                  drd_tid,
                  rwlock);
@@ -479,6 +483,7 @@ void rwlock_pre_unlock(const Addr rwlock)
     /* current vector clock of the thread such that it is available when  */
     /* this rwlock is locked again.                                        */
     vc_assign(&q->vc, vc);
+    q->last_lock_was_writer_lock = False;
 
     thread_new_segment(drd_tid);
   }

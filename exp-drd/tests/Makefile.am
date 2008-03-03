@@ -48,6 +48,7 @@ EXTRA_DIST = $(noinst_SCRIPTS)                                  \
 	pth_detached2.vgtest                                    \
 	pth_detached2.stdout.exp pth_detached2.stderr.exp       \
 	recursive_mutex.vgtest recursive_mutex.stderr.exp	\
+	rwlock_race.vgtest rwlock_race.stderr.exp	        \
 	sem_as_mutex.vgtest  sem_as_mutex.stderr.exp            \
 	sem_as_mutex2.vgtest sem_as_mutex2.stderr.exp           \
 	sigalrm.vgtest                                          \
@@ -121,8 +122,9 @@ check_PROGRAMS =      \
   pth_cond_race       \
   pth_create_chain    \
   pth_detached        \
-  sem_as_mutex        \
   recursive_mutex     \
+  rwlock_race         \
+  sem_as_mutex        \
   sigalrm             \
   tc01_simple_race    \
   tc02_simple_tls     \
@@ -193,6 +195,9 @@ pth_detached_LDADD          = -lpthread
 
 recursive_mutex_SOURCES     = recursive_mutex.c
 recursive_mutex_LDADD       = -lpthread
+
+rwlock_race_SOURCES         = rwlock_race.c
+rwlock_race_LDADD           = -lpthread
 
 sem_as_mutex_SOURCES        = sem_as_mutex.c
 sem_as_mutex_LDADD          = -lpthread

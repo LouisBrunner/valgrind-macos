@@ -30,6 +30,7 @@
 #include "drd_error.h"
 #include "drd_malloc_wrappers.h"
 #include "drd_mutex.h"
+#include "drd_rwlock.h"
 #include "drd_segment.h"
 #include "drd_semaphore.h"
 #include "drd_suppression.h"
@@ -82,6 +83,7 @@ static Bool drd_process_cmd_line_option(Char* arg)
    Bool trace_csw         = False;
    Bool trace_danger_set  = False;
    Bool trace_mutex       = False;
+   Bool trace_rwlock      = False;
    Bool trace_segment     = False;
    Bool trace_semaphore   = False;
    Bool trace_suppression = False;
@@ -96,6 +98,7 @@ static Bool drd_process_cmd_line_option(Char* arg)
    else VG_BOOL_CLO(arg, "--trace-fork-join",   drd_trace_fork_join)
    else VG_BOOL_CLO(arg, "--trace-mem",         drd_trace_mem)
    else VG_BOOL_CLO(arg, "--trace-mutex",       trace_mutex)
+   else VG_BOOL_CLO(arg, "--trace-rwlock",      trace_rwlock)
    else VG_BOOL_CLO(arg, "--trace-segment",     trace_segment)
    else VG_BOOL_CLO(arg, "--trace-semaphore",   trace_semaphore)
    else VG_BOOL_CLO(arg, "--trace-suppression", trace_suppression)
@@ -119,6 +122,8 @@ static Bool drd_process_cmd_line_option(Char* arg)
       thread_trace_danger_set(trace_danger_set);
    if (trace_mutex)
       mutex_set_trace(trace_mutex);
+   if (trace_rwlock)
+      rwlock_set_trace(trace_rwlock);
    if (trace_segment)
       sg_set_trace(trace_segment);
    if (trace_semaphore)
@@ -160,12 +165,15 @@ VG_REGPARM(2) void drd_trace_load(Addr addr, SizeT size)
 #if 1
    if (drd_trace_mem || (addr == drd_trace_address))
    {
-      VG_(message)(Vg_UserMsg, "load  0x%lx size %ld %s (vg %d / drd %d)",
+      char vc[80];
+      vc_snprint(vc, sizeof(vc), thread_get_vc(thread_get_running_tid()));
+      VG_(message)(Vg_UserMsg, "load  0x%lx size %ld %s (vg %d / drd %d / vc %s)",
                    addr,
                    size,
                    thread_get_name(thread_get_running_tid()),
                    VG_(get_running_tid)(),
-                   thread_get_running_tid());
+                   thread_get_running_tid(),
+                   vc);
       VG_(get_and_pp_StackTrace)(VG_(get_running_tid)(),
                                  VG_(clo_backtrace_size));
       tl_assert(DrdThreadIdToVgThreadId(thread_get_running_tid())
@@ -200,13 +208,16 @@ VG_REGPARM(2) void drd_trace_store(Addr addr, SizeT size)
 #if 1
    if (drd_trace_mem || (addr == drd_trace_address))
    {
-      VG_(message)(Vg_UserMsg, "store 0x%lx size %ld %s (vg %d / drd %d / off %d)",
+      char vc[80];
+      vc_snprint(vc, sizeof(vc), thread_get_vc(thread_get_running_tid()));
+      VG_(message)(Vg_UserMsg, "store 0x%lx size %ld %s (vg %d / drd %d / off %d / vc %s)",
                    addr,
                    size,
                    thread_get_name(thread_get_running_tid()),
                    VG_(get_running_tid)(),
                    thread_get_running_tid(),
-                   addr - thread_get_stack_min(thread_get_running_tid()));
+                   addr - thread_get_stack_min(thread_get_running_tid()),
+                   vc);
       VG_(get_and_pp_StackTrace)(VG_(get_running_tid)(),
                                  VG_(clo_backtrace_size));
       tl_assert(DrdThreadIdToVgThreadId(thread_get_running_tid())
@@ -418,6 +429,11 @@ void drd_post_thread_join(DrdThreadId drd_joiner, DrdThreadId drd_joinee)
    cond_thread_delete(drd_joinee);
    semaphore_thread_delete(drd_joinee);
    barrier_thread_delete(drd_joinee);
+}
+
+void drd_trace_addr(const Addr addr)
+{
+   drd_trace_address = addr;
 }
 
 /* Called after a thread has performed its last memory access. */

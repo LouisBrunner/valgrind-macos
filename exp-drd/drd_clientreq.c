@@ -111,6 +111,10 @@ static Bool drd_handle_client_request(ThreadId tid, UWord* arg, UWord* ret)
       thread_new_segment(PtThreadIdToDrdThreadId(arg[1]));
       break;
 
+   case VG_USERREQ__DRD_TRACE_ADDR:
+      drd_trace_addr(arg[1]);
+      break;
+
    case VG_USERREQ__SET_PTHREADID:
       thread_set_pthreadid(thread_get_running_tid(), arg[1]);
       break;

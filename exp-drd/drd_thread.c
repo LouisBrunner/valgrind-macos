@@ -582,7 +582,7 @@ static void thread_compute_maximum_vc(VectorClock* vc)
 }
 
 /**
- * Discard all segments that have a defined ordered against the latest vector
+ * Discard all segments that have a defined order against the latest vector
  * clock of every thread -- these segments can no longer be involved in a
  * data race.
  */
@@ -875,7 +875,7 @@ static void thread_update_danger_set(const DrdThreadId tid)
       VG_(message)(Vg_DebugMsg, "%s", msg);
    }
 
-   for (p = s_threadinfo[tid].first; p; p = p->next)
+   p = s_threadinfo[tid].last;
    {
       unsigned j;
 
@@ -896,7 +896,8 @@ static void thread_update_danger_set(const DrdThreadId tid)
       {
          if (IsValidDrdThreadId(j))
          {
-            const Segment* const q = s_threadinfo[j].last;
+            const Segment* q;
+            for (q = s_threadinfo[j].last; q; q = q->prev)
             if (j != tid && q != 0
                 && ! vc_lte(&q->vc, &p->vc) && ! vc_lte(&p->vc, &q->vc))
             {

@@ -12,6 +12,11 @@ Data-race detection algorithm
   without triggering Valgrind's redirection mechanism.
 - Discuss on the Valgrind mailing list the modificaiton of tests/vg_regtest
   such that it ignores files ending in ~ or #.
+- Continue the discussion on the Valgrind mailing list about docbook and
+  'make dist'.
+- Continue the discussion on the Valgrind mailing list about -Wformat.
+- Explain on the Valgrind mailing list the difference between a bus lock
+  and acquire / release labels.
 - Find out why a race is reported on std::string::string(std::string const&)
   (stc test case 16).
 - Add support for objects that are shared over threads and that use reference
@@ -27,8 +32,9 @@ Data-race detection algorithm
 - Performance testing and tuning.
 - testing on PPC and AIX (current implementation is only tested on X86 and
   AMD64).
-- [AMD64] Find out why removing 'write(1, "", 0)' in drd_intercepts.c triggers
-  a crash on AMD64. Is this an exp-drd or a VEX bug ?
+- Find out why there are sometimes races reported on exp-drd/test/matinv.
+- [Fedora 8] Find out why pth_broadcast sometimes hangs on Fedora 8. Is this an
+  exp-drd, pth_broadcast, kernel or glibc bug ?
 - On x86 and amd64 platforms, add support for implicit locking arising from
   the use of the LOCK instruction prefix.
 - Convert the array in drd_thread.c with thread information into an OSet.
@@ -65,5 +71,3 @@ Known bugs
   (works fine on i386). This is a bug in Valgrind's debug info reader
   -- VG_(find_seginfo)() returns NULL for BSS symbols on x86_64. Not yet in
   the KDE bug tracking system.
-- No error message is printed for tc20_verifywrap when a locked mutex is
-  deallocated (mutex was allocated on the stack).

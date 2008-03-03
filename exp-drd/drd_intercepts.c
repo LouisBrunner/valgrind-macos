@@ -339,12 +339,6 @@ PTH_FUNC(int, pthreadZumutexZulock, // pthread_mutex_lock
    VALGRIND_GET_ORIG_FN(fn);
    VALGRIND_DO_CLIENT_REQUEST(res, 0, VG_USERREQ__PRE_PTHREAD_MUTEX_LOCK,
                               mutex, sizeof(*mutex), mutex_type(mutex), 0, 0);
-#if 1
-   // The only purpose of the system call below is to make drd work on AMD64
-   // systems. Without this system call, clients crash (SIGSEGV) in
-   // std::locale::locale().
-   write(1, "", 0);
-#endif
    CALL_FN_W_W(ret, fn, mutex);
    VALGRIND_DO_CLIENT_REQUEST(res, 0, VG_USERREQ__POST_PTHREAD_MUTEX_LOCK,
                               mutex, ret == 0, 0, 0, 0);

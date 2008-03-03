@@ -28,6 +28,9 @@ enum {
   /* To ask the drd tool to start a new segment in the specified thread. */
   VG_USERREQ__DRD_START_NEW_SEGMENT,
   /* args: POSIX thread ID. */
+  /* To ask the drd tool to trace all accesses to the specified address. */
+  VG_USERREQ__DRD_TRACE_ADDR,
+  /* args: Addr. */
 
   /* Tell the core the pthread_t of the running thread */
   VG_USERREQ__SET_PTHREADID,

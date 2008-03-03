@@ -29,6 +29,7 @@
 #include "priv_drd_clientreq.h"
 #include "pub_tool_errormgr.h"    // VG_(maybe_record_error)()
 #include "pub_tool_libcassert.h"  // tl_assert()
+#include "pub_tool_libcbase.h"    // VG_(strlen)
 #include "pub_tool_libcprint.h"   // VG_(message)()
 #include "pub_tool_machine.h"     // VG_(get_IP)()
 #include "pub_tool_threadstate.h" // VG_(get_running_tid)()
@@ -117,13 +118,13 @@ mutex_get_or_allocate(const Addr mutex,
 
   if (clientobj_present(mutex, mutex + size))
   {
-     GenericErrInfo GEI;
-     VG_(maybe_record_error)(VG_(get_running_tid)(),
-                             GenericErr,
-                             VG_(get_IP)(VG_(get_running_tid)()),
-                             "Not a mutex",
-                             &GEI);
-     return 0;
+    GenericErrInfo GEI;
+    VG_(maybe_record_error)(VG_(get_running_tid)(),
+                            GenericErr,
+                            VG_(get_IP)(VG_(get_running_tid)()),
+                            "Not a mutex",
+                            &GEI);
+    return 0;
   }
 
   p = &clientobj_add(mutex, mutex + size, ClientMutex)->mutex;
@@ -281,10 +282,16 @@ void mutex_post_lock(const Addr mutex, const Bool took_lock)
   }
 
   if (! p || ! took_lock)
-     return;
+    return;
 
   if (p->recursion_count == 0)
   {
+    const DrdThreadId last_owner = p->owner;
+
+    if (last_owner != drd_tid && last_owner != DRD_INVALID_THREADID)
+      thread_combine_vc2(drd_tid, mutex_get_last_vc(mutex));
+    thread_new_segment(drd_tid);
+
     p->owner = drd_tid;
     s_mutex_lock_count++;
   }
@@ -298,15 +305,6 @@ void mutex_post_lock(const Addr mutex, const Bool took_lock)
     p->owner = drd_tid;
   }
   p->recursion_count++;
-
-  if (p->recursion_count == 1)
-  {
-     const DrdThreadId last_owner = p->owner;
-
-    if (last_owner != drd_tid && last_owner != DRD_INVALID_THREADID)
-      thread_combine_vc2(drd_tid, mutex_get_last_vc(mutex));
-    thread_new_segment(drd_tid);
-  }
 }
 
 /**
@@ -339,13 +337,13 @@ void mutex_unlock(const Addr mutex, const MutexT mutex_type)
 
   if (p == 0 || mutex_type == mutex_type_invalid_mutex)
   {
-     GenericErrInfo GEI;
-     VG_(maybe_record_error)(vg_tid,
-                             GenericErr,
-                             VG_(get_IP)(vg_tid),
-                             "Not a mutex",
-                             &GEI);
-     return;
+    GenericErrInfo GEI;
+    VG_(maybe_record_error)(vg_tid,
+                            GenericErr,
+                            VG_(get_IP)(vg_tid),
+                            "Not a mutex",
+                            &GEI);
+    return;
   }
 
   if (p->owner == DRD_INVALID_THREADID)
@@ -356,14 +354,14 @@ void mutex_unlock(const Addr mutex, const MutexT mutex_type)
                             VG_(get_IP)(vg_tid),
                             "Mutex not locked",
                             &MEI);
-     return;
+    return;
   }
 
   tl_assert(p);
   if (p->mutex_type != mutex_type)
   {
     VG_(message)(Vg_UserMsg, "??? mutex %p: type changed from %d into %d",
-	         p->a1, p->mutex_type, mutex_type);
+                 p->a1, p->mutex_type, mutex_type);
   }
   tl_assert(p->mutex_type == mutex_type);
   tl_assert(p->owner != DRD_INVALID_THREADID);
@@ -483,6 +481,6 @@ ULong get_mutex_lock_count(void)
 
 /*
  * Local variables:
- * c-basic-offset: 3
+ * c-basic-offset: 2
  * End:
  */

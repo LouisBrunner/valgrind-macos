@@ -134,9 +134,7 @@ Bool vc_ordered(const VectorClock* const vc1,
   return vc_lte(vc1, vc2) || vc_lte(vc2, vc1);
 }
 
-/**
- * Compute elementwise minimum.
- */
+/** Compute elementwise minimum. */
 void vc_min(VectorClock* const result,
             const VectorClock* const rhs)
 {
@@ -148,7 +146,7 @@ void vc_min(VectorClock* const result,
   tl_assert(result);
   tl_assert(rhs);
 
-  // First count the number of shared thread id's.
+  /* First count the number of shared thread ID's. */
   j = 0;
   shared = 0;
   for (i = 0; i < result->size; i++)
@@ -169,14 +167,18 @@ void vc_min(VectorClock* const result,
 
   vc_check(result);
 
-  // Next, combine both vector clocks into one.
+  /* Next, combine both vector clocks into one. */
   i = 0;
   for (j = 0; j < rhs->size; j++)
   {
     vc_check(result);
 
     while (i < result->size && result->vc[i].threadid < rhs->vc[j].threadid)
+    {
+      /* Thread ID is missing in second vector clock. Clear the count. */
+      result->vc[i].count = 0;
       i++;
+    }
     if (i >= result->size)
     {
       result->size++;
@@ -185,17 +187,12 @@ void vc_min(VectorClock* const result,
     }
     else if (result->vc[i].threadid > rhs->vc[j].threadid)
     {
-      unsigned k;
-      for (k = result->size; k > i; k--)
-      {
-        result->vc[k] = result->vc[k - 1];
-      }
-      result->size++;
-      result->vc[i] = rhs->vc[j];
-      vc_check(result);
+      /* Thread ID is missing in first vector clock. Leave out. */
     }
     else
     {
+      /* The thread ID is present in both vector clocks. Compute the minimum */
+      /* of vc[i].count and vc[j].count. */
       tl_assert(result->vc[i].threadid == rhs->vc[j].threadid);
       if (rhs->vc[j].count < result->vc[i].count)
       {
@@ -205,7 +202,6 @@ void vc_min(VectorClock* const result,
     }
   }
   vc_check(result);
-  tl_assert(result->size == new_size);
 }
 
 /**

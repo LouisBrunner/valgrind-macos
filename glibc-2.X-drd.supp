@@ -113,6 +113,14 @@
    fun:pthread_create*
 }
 {
+   pthread
+   exp-drd:ConflictingAccess
+   fun:clone
+   fun:do_clone
+   fun:pthread_create@@GLIBC_*
+   fun:pthread_create*
+}
+{
    pthread-glibc2.7-pthread_create
    exp-drd:ConflictingAccess
    fun:memset
@@ -123,6 +131,13 @@
    exp-drd:ConflictingAccess
    fun:pthread_mutex_lock
    fun:pthread_mutex_lock
+}
+{
+   pthread
+   exp-drd:ConflictingAccess
+   fun:__pthread_mutex_cond_lock
+   fun:pthread_cond_wait@@GLIBC_*
+   fun:pthread_cond_wait*
 }
 {
    pthread

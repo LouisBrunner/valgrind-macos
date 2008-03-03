@@ -48,6 +48,10 @@ int main(int argc, char** argv)
   fprintf(stderr, "Locking rwlock via pthread_rwlock_timedrdlock().\n");
   r = pthread_rwlock_timedrdlock(&rwlock, &abs_timeout); assert(r == 0);
   r = pthread_rwlock_unlock(&rwlock); assert(r == 0);
+  fprintf(stderr, "Attempt to lock for writing recursively (not allowed).\n");
+  r = pthread_rwlock_wrlock(&rwlock); assert(r == 0);
+  r = pthread_rwlock_wrlock(&rwlock); assert(r != 0);
+  r = pthread_rwlock_unlock(&rwlock); assert(r == 0);
   r = pthread_rwlock_destroy(&rwlock); assert(r == 0);
 
   r = pthread_mutex_init(&mutex, NULL); assert(r == 0);

@@ -90,7 +90,8 @@ UInt VG_(get_StackTrace_wrk) ( ThreadId tid_if_known,
    // current page, at least.  Dunno if it helps.
    // NJN 2002-sep-17: seems to -- stack traces look like 1.0.X again
    fp_max = VG_PGROUNDUP(fp_max_orig);
-   fp_max -= sizeof(Addr);
+   if (fp_max >= sizeof(Addr))
+      fp_max -= sizeof(Addr);
 
    if (debug)
       VG_(printf)("n_ips=%d fp_min=%p fp_max_orig=%p, "

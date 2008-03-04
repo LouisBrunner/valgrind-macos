@@ -137,7 +137,6 @@
    exp-drd:ConflictingAccess
    fun:__pthread_mutex_cond_lock
    fun:pthread_cond_wait@@GLIBC_*
-   fun:pthread_cond_wait*
 }
 {
    pthread

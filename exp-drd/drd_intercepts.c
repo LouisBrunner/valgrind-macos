@@ -47,12 +47,12 @@
 #endif
 
 #include <assert.h>
-#include <inttypes.h> // uintptr_t
+#include <inttypes.h>       // uintptr_t
 #include <pthread.h>
 #include <semaphore.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <unistd.h>
+#include <unistd.h>         // confstr()
 #include "drd_clientreq.h"
 #include "pub_tool_redir.h"
 
@@ -83,7 +83,6 @@ typedef struct
 // Local variables.
 
 static int vg_main_thread_state_is_set = 0;
-static pid_t vg_main_thread_pid;
 
 
 // Function definitions.
@@ -141,28 +140,6 @@ static void* vg_thread_wrapper(void* arg)
 {
    int res;
 
-   if (getpid() != vg_main_thread_pid)
-   {
-      if (getenv("LD_ASSUME_KERNEL"))
-      {
-         fprintf(stderr,
-"Detected the LinuxThreads threading library. Sorry, but DRD only supports\n"
-"the newer NPTL (Native POSIX Threads Library). Please try to rerun DRD\n"
-"after having unset the environment variable LD_ASSUME_KERNEL. Giving up.\n"
-                 );
-      }
-      else
-      {
-         fprintf(stderr,
-"Detected the LinuxThreads threading library. Sorry, but DRD only supports\n"
-"the newer NPTL (Native POSIX Threads Library). Please try to rerun DRD\n"
-"after having upgraded to a newer version of your Linux distribution.\n"
-"Giving up.\n"
-                 );
-      }
-      abort();
-   }
-
    VALGRIND_DO_CLIENT_REQUEST(res, 0, VG_USERREQ__DRD_SUPPRESS_CURRENT_STACK,
                               0, 0, 0, 0, 0);
 
@@ -188,11 +165,51 @@ static void* vg_thread_wrapper(void* arg)
    }
 }
 
+static int detected_linuxthreads(void)
+{
+#if defined(linux)
+#if defined(_CS_GNU_LIBPTHREAD_VERSION)
+   /* Linux with a recent glibc. */
+   char buffer[256];
+   int len;
+   len = confstr(_CS_GNU_LIBPTHREAD_VERSION, buffer, sizeof(buffer));
+   assert(len <= sizeof(buffer));
+   return len > 0 && buffer[0] == 'l';
+#else
+   /* Linux without _CS_GNU_LIBPTHREAD_VERSION: most likely LinuxThreads. */
+   return 1;
+#endif
+#else
+   /* Another OS than Linux, hence no LinuxThreads. */
+   return 0;
+#endif
+}
+
 static void vg_set_main_thread_state(void)
 {
    int res;
 
-   vg_main_thread_pid = getpid();
+   if (detected_linuxthreads())
+   {
+      if (getenv("LD_ASSUME_KERNEL"))
+      {
+         fprintf(stderr,
+"Detected the LinuxThreads threading library. Sorry, but DRD only supports\n"
+"the newer NPTL (Native POSIX Threads Library). Please try to rerun DRD\n"
+"after having unset the environment variable LD_ASSUME_KERNEL. Giving up.\n"
+                 );
+      }
+      else
+      {
+         fprintf(stderr,
+"Detected the LinuxThreads threading library. Sorry, but DRD only supports\n"
+"the newer NPTL (Native POSIX Threads Library). Please try to rerun DRD\n"
+"after having upgraded to a newer version of your Linux distribution.\n"
+"Giving up.\n"
+                 );
+      }
+      abort();
+   }
 
    VALGRIND_DO_CLIENT_REQUEST(res, -1, VG_USERREQ__DRD_SUPPRESS_CURRENT_STACK,
                               0, 0, 0, 0, 0);

@@ -1,0 +1,14 @@
+
+before lock #1
+before lock #2
+before lock #3
+before unlock #1
+before unlock #2
+before unlock #3
+before unlock #4
+Mutex not locked by calling thread: mutex 0x........, recursion count 0, owner 1.
+   at 0x........: pthread_mutex_unlock (drd_intercepts.c:?)
+   by 0x........: nearly_main (../../helgrind/tests/tc10_rec_lock.c:42)
+   by 0x........: main (../../helgrind/tests/tc10_rec_lock.c:47)
+
+ERROR SUMMARY: 1 errors from 1 contexts (suppressed: 0 from 0)

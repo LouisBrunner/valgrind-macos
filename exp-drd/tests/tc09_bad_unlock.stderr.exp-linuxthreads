@@ -1,0 +1,11 @@
+
+Mutex not locked by calling thread: mutex 0x........, recursion count 0, owner 1.
+   at 0x........: pthread_mutex_unlock (drd_intercepts.c:?)
+   by 0x........: nearly_main (../../helgrind/tests/tc09_bad_unlock.c:27)
+   by 0x........: main (../../helgrind/tests/tc09_bad_unlock.c:49)
+Detected the LinuxThreads threading library. Sorry, but DRD only supports
+the newer NPTL (Native POSIX Threads Library). Please try to rerun DRD
+after having upgraded to a newer version of your Linux distribution.
+Giving up.
+
+ERROR SUMMARY: 1 errors from 1 contexts (suppressed: 0 from 0)

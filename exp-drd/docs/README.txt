@@ -231,12 +231,10 @@ Future DRD Versions
 The following may be expected in future versions of DRD:
 * Drastically reduced memory consumption, such that realistic applications can
   be analyzed with DRD.
+* A lock dependency analyzer, as a help in deadlock prevention.
 * Faster operation.
 * More extensive documentation.
-* Support for reader-writer locks.
 * Support for PowerPC CPU's.
-* A lock dependency analyzer, as a help in deadlock prevention.
-* Elimination of several artificial limitations.
 
 
 Acknowledgements

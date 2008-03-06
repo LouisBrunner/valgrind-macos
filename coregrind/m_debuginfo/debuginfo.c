@@ -276,7 +276,8 @@ static void discard_DebugInfo ( DebugInfo* di )
    while (curr) {
       if (curr == di) {
          /* Found it;  remove from list and free it. */
-         if (VG_(clo_verbosity) > 1 || VG_(clo_trace_redir))
+         if (curr->have_dinfo
+             && (VG_(clo_verbosity) > 1 || VG_(clo_trace_redir)))
             VG_(message)(Vg_DebugMsg, 
                          "Discarding syms at %p-%p in %s due to %s()", 
                          di->text_avma, 
@@ -285,7 +286,8 @@ static void discard_DebugInfo ( DebugInfo* di )
                          reason);
          vg_assert(*prev_next_ptr == curr);
          *prev_next_ptr = curr->next;
-         VG_(redir_notify_delete_DebugInfo)( curr );
+         if (curr->have_dinfo)
+            VG_(redir_notify_delete_DebugInfo)( curr );
          free_DebugInfo(curr);
          return;
       }

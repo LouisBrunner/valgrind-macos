@@ -135,35 +135,13 @@ Bool vc_ordered(const VectorClock* const vc1,
 }
 
 /** Compute elementwise minimum. */
-void vc_min(VectorClock* const result,
-            const VectorClock* const rhs)
+void vc_min(VectorClock* const result, const VectorClock* const rhs)
 {
   unsigned i;
   unsigned j;
-  unsigned shared;
-  unsigned new_size;
 
   tl_assert(result);
   tl_assert(rhs);
-
-  /* First count the number of shared thread ID's. */
-  j = 0;
-  shared = 0;
-  for (i = 0; i < result->size; i++)
-  {
-    while (j < rhs->size && rhs->vc[j].threadid < result->vc[i].threadid)
-      j++;
-    if (j >= rhs->size)
-      break;
-    if (result->vc[i].threadid == rhs->vc[j].threadid)
-      shared++;
-  }
-
-  vc_check(result);
-
-  new_size = result->size + rhs->size - shared;
-  if (new_size > result->capacity)
-    vc_reserve(result, new_size);
 
   vc_check(result);
 
@@ -171,8 +149,6 @@ void vc_min(VectorClock* const result,
   i = 0;
   for (j = 0; j < rhs->size; j++)
   {
-    vc_check(result);
-
     while (i < result->size && result->vc[i].threadid < rhs->vc[j].threadid)
     {
       /* Thread ID is missing in second vector clock. Clear the count. */
@@ -181,15 +157,9 @@ void vc_min(VectorClock* const result,
     }
     if (i >= result->size)
     {
-      result->size++;
-      result->vc[i] = rhs->vc[j];
-      vc_check(result);
+      break;
     }
-    else if (result->vc[i].threadid > rhs->vc[j].threadid)
-    {
-      /* Thread ID is missing in first vector clock. Leave out. */
-    }
-    else
+    if (result->vc[i].threadid <= rhs->vc[j].threadid)
     {
       /* The thread ID is present in both vector clocks. Compute the minimum */
       /* of vc[i].count and vc[j].count. */
@@ -198,7 +168,6 @@ void vc_min(VectorClock* const result,
       {
         result->vc[i].count = rhs->vc[j].count;
       }
-      vc_check(result);
     }
   }
   vc_check(result);
@@ -243,15 +212,12 @@ void vc_combine(VectorClock* const result,
   i = 0;
   for (j = 0; j < rhs->size; j++)
   {
-    vc_check(result);
-
     while (i < result->size && result->vc[i].threadid < rhs->vc[j].threadid)
       i++;
     if (i >= result->size)
     {
       result->size++;
       result->vc[i] = rhs->vc[j];
-      vc_check(result);
     }
     else if (result->vc[i].threadid > rhs->vc[j].threadid)
     {
@@ -262,7 +228,6 @@ void vc_combine(VectorClock* const result,
       }
       result->size++;
       result->vc[i] = rhs->vc[j];
-      vc_check(result);
     }
     else
     {
@@ -271,7 +236,6 @@ void vc_combine(VectorClock* const result,
       {
         result->vc[i].count = rhs->vc[j].count;
       }
-      vc_check(result);
     }
   }
   vc_check(result);

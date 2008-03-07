@@ -30,7 +30,7 @@ int get_finished_count()
 
 static void* thread_func1(void* arg)
 {
-  write(STDOUT_FILENO, ".", 1);
+  write(STDOUT_FILENO, ".\n", 2);
   increment_finished_count();
   return 0;
 }
@@ -38,7 +38,7 @@ static void* thread_func1(void* arg)
 static void* thread_func2(void* arg)
 {
   pthread_detach(pthread_self());
-  write(STDOUT_FILENO, ".", 1);
+  write(STDOUT_FILENO, ".\n", 2);
   increment_finished_count();
   return 0;
 }

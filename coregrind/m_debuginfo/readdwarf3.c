@@ -947,6 +947,11 @@ void get_Form_contents ( /*OUT*/ULong* cts,
          *ctsSzB = 4;
          TRACE_D3("%u", (UInt)*cts);
          break;
+      case DW_FORM_data8:
+         *cts = get_ULong(c);
+         *ctsSzB = 8;
+         TRACE_D3("%llu", *cts);
+         break;
       case DW_FORM_sdata:
          *cts = (ULong)(Long)get_SLEB128(c);
          *ctsSzB = 8;
@@ -3279,7 +3284,7 @@ void new_dwarf3_reader_wrk (
            ML_(addVar)(
               di, varp->level, 
                   pcMin + (varp->level==0 ? 0 : di->text_bias),
-                  pcMax + (varp->level==0 ? 0 : di->text_bias), 
+                  pcMax + (varp->level==0 ? 0 : di->text_bias),
                   varp->name, (void*)varp->typeR,
                   varp->gexpr, varp->fbGX,
                   varp->fName, varp->fLine, td3 

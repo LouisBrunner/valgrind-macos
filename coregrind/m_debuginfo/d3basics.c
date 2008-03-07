@@ -502,6 +502,10 @@ GXResult ML_(evaluate_Dwarf3_Expr) ( UChar* expr, UWord exprszB,
                before pushing the result.  FIXME: how can we be sure
                the data bias is intended, not the text bias?  I don't
                know. */
+            /* Furthermore, do we need to take into account the
+               horrible prelinking-induced complications as described
+               in "Comment_Regarding_DWARF3_Text_Biasing" in
+               readdwarf3.c?  Currently I don't know. */
             PUSH( *(Addr*)expr + data_bias ); 
             expr += sizeof(Addr);
             break;

@@ -117,9 +117,14 @@ EXTRA_DIST =                                        \
 	tc06_two_races.stderr.exp-linuxthreads      \
 	tc06_two_races.vgtest                       \
 	tc07_hbl1.stderr.exp                        \
+	tc07_hbl1.stderr.exp-linuxthreads           \
 	tc07_hbl1.stdout.exp                        \
+	tc07_hbl1.stdout.exp-linuxthreads           \
 	tc07_hbl1.vgtest                            \
 	tc08_hbl2.stderr.exp                        \
+	tc08_hbl2.stderr.exp-linuxthreads           \
+	tc08_hbl2.stdout.exp                        \
+	tc08_hbl2.stdout.exp-linuxthreads           \
 	tc08_hbl2.vgtest                            \
 	tc09_bad_unlock.stderr.exp                  \
 	tc09_bad_unlock.stderr.exp-linuxthreads     \

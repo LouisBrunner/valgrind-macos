@@ -27,7 +27,7 @@
 #define __DRD_ERROR_H
 
 
-#include "pub_drd_bitmap.h"         // BmAccessTypeT
+#include "pub_drd_bitmap.h"     // BmAccessTypeT
 #include "drd_thread.h"         // DrdThreadId
 #include "pub_tool_basics.h"    // SizeT
 #include "pub_tool_debuginfo.h" // SegInfo

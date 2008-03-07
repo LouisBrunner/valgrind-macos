@@ -1,7 +1,8 @@
 
 Conflicting load by main at 0x........ size 8
    at 0x........: main (sem_as_mutex.c:?)
-Allocation context: unknown
+Location 0x........ is 0 bytes inside local var "s_d3"
+declared at sem_as_mutex.c:48, in frame #0 of thread 1
 Other segment start (thread_func)
    (thread finished, call stack no longer available)
 Other segment end (thread_func)
@@ -9,7 +10,8 @@ Other segment end (thread_func)
 
 Conflicting store by main at 0x........ size 8
    at 0x........: main (sem_as_mutex.c:?)
-Allocation context: unknown
+Location 0x........ is 0 bytes inside local var "s_d3"
+declared at sem_as_mutex.c:48, in frame #0 of thread 1
 Other segment start (thread_func)
    (thread finished, call stack no longer available)
 Other segment end (thread_func)

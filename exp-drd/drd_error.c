@@ -220,13 +220,20 @@ static
 void drd_report_data_race2(Error* const err, const DataRaceErrInfo* const dri)
 {
    AddrInfo ai;
-   Char descr[256];
+   Char descr1[256];
+   Char descr2[256];
 
    tl_assert(dri);
    tl_assert(dri->addr);
    tl_assert(dri->size > 0);
-   describe_addr_text(dri->addr, dri->size,
-                      &ai, descr, sizeof(descr));
+
+   descr1[0] = 0;
+   descr2[0] = 0;
+   VG_(get_data_description)(descr1, descr2, sizeof(descr1), dri->addr);
+   if (descr1[0] == 0)
+   {
+      describe_addr(dri->addr, dri->size, &ai);
+   }
    VG_(message)(Vg_UserMsg,
                 "Conflicting %s by %s at 0x%08lx size %ld",
                 dri->access_type == eStore ? "store" : "load",
@@ -234,10 +241,18 @@ void drd_report_data_race2(Error* const err, const DataRaceErrInfo* const dri)
                 dri->addr,
                 dri->size);
    VG_(pp_ExeContext)(VG_(get_error_where)(err));
-   VG_(message)(Vg_UserMsg, "Allocation context: %s", descr);
-   if (ai.akind == eMallocd && ai.lastchange)
+   if (descr1[0])
+   {
+      VG_(message)(Vg_UserMsg, "%s", descr1);
+      VG_(message)(Vg_UserMsg, "%s", descr2);
+   }
+   else if (ai.akind == eMallocd && ai.lastchange)
    {
       VG_(pp_ExeContext)(ai.lastchange);
+   }
+   else
+   {
+      VG_(message)(Vg_UserMsg, "Allocation context: unknown.\n");
    }
    thread_report_conflicting_segments(VgThreadIdToDrdThreadId(dri->tid),
                                       dri->addr, dri->size, dri->access_type);

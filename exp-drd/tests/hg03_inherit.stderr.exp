@@ -6,7 +6,7 @@ Conflicting store by thread 3 at 0x........ size 4
    by 0x........: start_thread (in libpthread-?.?.so)
    by 0x........: clone (in /...libc...)
 Location 0x........ is 0 bytes inside shared[1],
-declared at hg03_inherit.c:11, in frame #0 of thread 3
+declared at hg03_inherit.c:11, in frame #? of thread 3
 Other segment start (thread 1)
    at 0x........: pthread_join (drd_intercepts.c:?)
    by 0x........: main (hg03_inherit.c:49)
@@ -21,7 +21,7 @@ Conflicting store by thread 3 at 0x........ size 4
    by 0x........: start_thread (in libpthread-?.?.so)
    by 0x........: clone (in /...libc...)
 Location 0x........ is 0 bytes inside shared[1],
-declared at hg03_inherit.c:11, in frame #0 of thread 3
+declared at hg03_inherit.c:11, in frame #? of thread 3
 Other segment start (thread 1)
    at 0x........: pthread_join (drd_intercepts.c:?)
    by 0x........: main (hg03_inherit.c:49)

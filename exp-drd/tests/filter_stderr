@@ -11,6 +11,8 @@ $dir/../../tests/filter_stderr_basic |
 sed \
 -e "/^exp-drd, a data race detector\.$/d" \
 -e "s/^Allocation context: stack of thread \([0-9]*\), offset -[0-9]*$/Allocation context: stack of thread \1, offset .../" \
+-e "/^warning: evaluate_Dwarf3_Expr: unhandled DW_OP_.*/d" \
+-e "s/, in frame #[0-9]* of thread /, in frame #? of thread /" \
 -e "s/(tc20_verifywrap.c:261)/(tc20_verifywrap.c:262)/" \
 -e "/^NOTE: This is an Experimental-Class Valgrind Tool.$/d"  \
 -e "/^Copyright (C) 2006-200., and GNU GPL'd, by Bart Van Assche.$/d" \

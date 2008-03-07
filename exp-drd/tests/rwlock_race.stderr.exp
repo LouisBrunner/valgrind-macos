@@ -6,7 +6,7 @@ Conflicting load by thread 2 at 0x........ size 4
    by 0x........: start_thread (in libpthread-?.?.so)
    by 0x........: clone (in /...libc...)
 Location 0x........ is 0 bytes inside local var "s_racy"
-declared at rwlock_race.c:17, in frame #0 of thread 2
+declared at rwlock_race.c:17, in frame #? of thread 2
 Other segment start (thread 2)
    (thread finished, call stack no longer available)
 Other segment end (thread 2)
@@ -18,7 +18,7 @@ Conflicting store by thread 2 at 0x........ size 4
    by 0x........: start_thread (in libpthread-?.?.so)
    by 0x........: clone (in /...libc...)
 Location 0x........ is 0 bytes inside local var "s_racy"
-declared at rwlock_race.c:17, in frame #0 of thread 2
+declared at rwlock_race.c:17, in frame #? of thread 2
 Other segment start (thread 2)
    (thread finished, call stack no longer available)
 Other segment end (thread 2)

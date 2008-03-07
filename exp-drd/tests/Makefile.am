@@ -116,6 +116,11 @@ EXTRA_DIST =                                        \
 	tc06_two_races.stderr.exp                   \
 	tc06_two_races.stderr.exp-linuxthreads      \
 	tc06_two_races.vgtest                       \
+	tc07_hbl1.stderr.exp                        \
+	tc07_hbl1.stdout.exp                        \
+	tc07_hbl1.vgtest                            \
+	tc08_hbl2.stderr.exp                        \
+	tc08_hbl2.vgtest                            \
 	tc09_bad_unlock.stderr.exp                  \
 	tc09_bad_unlock.stderr.exp-linuxthreads     \
 	tc09_bad_unlock.vgtest                      \
@@ -169,12 +174,6 @@ EXTRA_DIST =                                        \
 	trylock.c trylock.stderr.exp                \
 	trylock.stderr.exp-linuxthreads
 
-#	tc07_hbl1.vgtest
-#	tc07_hbl1.stderr.exp tc07_hbl1.stdout.exp
-#	tc07_hbl1.stderr.exp
-#	tc08_hbl2.vgtest
-#	tc08_hbl2.stderr.exp
-
 AM_CFLAGS   = $(WERROR) -Winline -Wall -Wshadow -g $(AM_FLAG_M3264_PRI)
 AM_CPPFLAGS = -I$(top_srcdir) -I$(top_srcdir)/include -I$(top_builddir)/include
 AM_CXXFLAGS = $(AM_CFLAGS)
@@ -203,6 +202,8 @@ check_PROGRAMS =      \
   tc04_free_lock      \
   tc05_simple_race    \
   tc06_two_races      \
+  tc07_hbl1           \
+  tc08_hbl2           \
   tc09_bad_unlock     \
   tc10_rec_lock       \
   tc11_XCHG           \
@@ -220,8 +221,6 @@ check_PROGRAMS =      \
   tc24_nonzero_sem    \
   trylock
 
-#  tc07_hbl1 -- requires bus locking support.
-#  tc08_hbl2 -- requires bus locking support.
 #  tc14_laog_dinphils  -- hangs.
 
 
@@ -294,11 +293,11 @@ tc05_simple_race_LDADD      = -lpthread
 tc06_two_races_SOURCES      = ../../helgrind/tests/tc06_two_races.c
 tc06_two_races_LDADD        = -lpthread
 
-# tc07_hbl1_SOURCES           = ../../helgrind/tests/tc07_hbl1.c
-# tc07_hbl1_LDADD             = -lpthread
+tc07_hbl1_SOURCES           = ../../helgrind/tests/tc07_hbl1.c
+tc07_hbl1_LDADD             = -lpthread
 
-# tc08_hbl2_SOURCES           = ../../helgrind/tests/tc08_hbl2.c
-# tc08_hbl2_LDADD             = -lpthread
+tc08_hbl2_SOURCES           = ../../helgrind/tests/tc08_hbl2.c
+tc08_hbl2_LDADD             = -lpthread
 
 tc09_bad_unlock_SOURCES     = ../../helgrind/tests/tc09_bad_unlock.c
 tc09_bad_unlock_LDADD       = -lpthread

@@ -10,8 +10,6 @@ Data-race detection algorithm
 - Discuss on the Valgrind mailing list how to make it possible to call
   POSIX thread synchronization primitives from client code (drd_intercepts.c)
   without triggering Valgrind's redirection mechanism.
-- Discuss on the Valgrind mailing list the modificaiton of tests/vg_regtest
-  such that it ignores files ending in ~ or #.
 - Continue the discussion on the Valgrind mailing list about docbook and
   'make dist'.
 - Continue the discussion on the Valgrind mailing list about -Wformat.
@@ -25,10 +23,11 @@ Data-race detection algorithm
 - Add a regression test for pthread_mutex_timedlock().
 - Add test programs for destroying a condition variable / semaphore / barrier
   being waited upon.
+- Add OpenMP examples to the regression tests.
 - Make sure tc14_laog_dinphils is run during exp-drd regression tests.
 - Find a way for suppressing races reported on _IO_2_1_stdout. This race is
-  triggered by calling printf() from more than one thread. An example:
-  ./vg-in-place --tool=exp-drd exp-drd/tests/pth_barrier 2 1
+  triggered by calling printf() from more than one thread. An example (AMD64):
+  ./vg-in-place --tool=exp-drd exp-drd/tests/tc21_pthonce
 - Performance testing and tuning.
 - testing on PPC and AIX (current implementation is only tested on X86 and
   AMD64).
@@ -47,6 +46,7 @@ Testing
 - test exp-drd's performance with the SPLASH-2 software, e.g. fft
   (http://www-flash.stanford.edu/apps/SPLASH/).
 - test with Synfig Studio (see also http://bugs.kde.org/show_bug.cgi?id=158555)
+- test with some OpenMP examples. See also http://en.wikipedia.org/wiki/OpenMP.
 
 
 Documentation

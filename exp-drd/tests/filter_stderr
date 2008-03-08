@@ -10,6 +10,7 @@ $dir/../../tests/filter_stderr_basic |
 # Remove line numbers from stack traces.
 sed \
 -e "/^exp-drd, a data race detector\.$/d" \
+-e "/^Alarm clock$/d" \
 -e "s/^Allocation context: stack of thread \([0-9]*\), offset -[0-9]*$/Allocation context: stack of thread \1, offset .../" \
 -e "/^warning: evaluate_Dwarf3_Expr: unhandled DW_OP_.*/d" \
 -e "s/, in frame #[0-9]* of thread /, in frame #? of thread /" \

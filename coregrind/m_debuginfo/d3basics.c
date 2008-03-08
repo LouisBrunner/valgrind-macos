@@ -39,6 +39,9 @@
 #include "pub_core_libcprint.h"
 #include "pub_core_options.h"
 
+#include "pub_core_vki.h"       /* VKI_PROT_READ */
+#include "pub_core_aspacemgr.h" /* VG_(is_valid_for_client) */
+
 #include "priv_d3basics.h"      /* self */
 
 HChar* ML_(pp_DW_children) ( DW_children hashch )
@@ -582,6 +585,17 @@ GXResult ML_(evaluate_Dwarf3_Expr) ( UChar* expr, UWord exprszB,
             FAIL("warning: evaluate_Dwarf3_Expr: unhandled "         
                  "DW_OP_GNU_push_tls_address");
             /*NOTREACHED*/
+         case DW_OP_deref:
+            POP(uw1);
+            if (VG_(am_is_valid_for_client)( (Addr)uw1, sizeof(Addr),
+                                             VKI_PROT_READ )) {
+               uw1 = *(UWord*)uw1;
+               PUSH(uw1);
+            } else {
+               FAIL("warning: evaluate_Dwarf3_Expr: DW_OP_deref: "
+                    "address not valid for client");
+            }
+            break;
          default:
             if (!VG_(clo_xml))
                VG_(message)(Vg_DebugMsg, 

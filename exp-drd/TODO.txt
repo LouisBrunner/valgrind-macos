@@ -13,6 +13,7 @@ Data-race detection algorithm
 - Continue the discussion on the Valgrind mailing list about docbook and
   'make dist'.
 - Continue the discussion on the Valgrind mailing list about -Wformat.
+- Enable format string checking for DRD during compilation.
 - Explain on the Valgrind mailing list the difference between a bus lock
   and acquire / release labels.
 - Find out why a race is reported on std::string::string(std::string const&)
@@ -26,18 +27,13 @@ Data-race detection algorithm
 - Add OpenMP examples to the regression tests.
 - Make sure tc14_laog_dinphils is run during exp-drd regression tests.
 - Find a way for suppressing races reported on _IO_2_1_stdout. This race is
-  triggered by calling printf() from more than one thread. An example (AMD64):
+  triggered by calling printf() from more than one thread. Examples (AMD64):
   ./vg-in-place --tool=exp-drd exp-drd/tests/tc21_pthonce
+  ./vg-in-place --tool=exp-drd exp-drd/tests/pth_detached 10 10 1
 - Performance testing and tuning.
 - testing on PPC and AIX (current implementation is only tested on X86 and
   AMD64).
-- Find out why there are sometimes races reported on exp-drd/test/matinv.
-- [Fedora 8] Find out why pth_broadcast sometimes hangs on Fedora 8. Is this an
-  exp-drd, pth_broadcast, kernel or glibc bug ?
-- On x86 and amd64 platforms, add support for implicit locking arising from
-  the use of the LOCK instruction prefix.
 - Convert the array in drd_thread.c with thread information into an OSet.
-- Enable format string checking for DRD during compilation.
 
 
 Testing

@@ -157,9 +157,11 @@ EXTRA_DIST =                                        \
 	tc19_shadowmem.stderr.exp                   \
 	tc19_shadowmem.vgtest                       \
 	tc20_verifywrap.stderr.exp	            \
+	tc20_verifywrap.stderr.exp-glibc2.3         \
 	tc20_verifywrap.stderr.exp-linuxthreads     \
 	tc20_verifywrap.vgtest                      \
 	tc20_verifywrap2.stderr.exp                 \
+	tc20_verifywrap2.stderr.exp-glibc2.3        \
 	tc20_verifywrap2.stderr.exp-linuxthreads    \
 	tc20_verifywrap2.vgtest                     \
 	tc21_pthonce.stderr.exp                     \

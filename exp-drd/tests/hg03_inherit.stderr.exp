@@ -26,7 +26,7 @@ Other segment start (thread 1)
    at 0x........: pthread_join (drd_intercepts.c:?)
    by 0x........: main (hg03_inherit.c:49)
 Other segment end (thread 1)
-   at 0x........: (within /lib/ld-2.6.1.so)
+   at 0x........: (within libpthread-?.?.so)
    by 0x........: pthread_join (drd_intercepts.c:?)
    by 0x........: main (hg03_inherit.c:63)
 

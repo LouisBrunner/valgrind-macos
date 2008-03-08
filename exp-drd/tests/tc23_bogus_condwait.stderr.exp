@@ -8,7 +8,7 @@ Race condition: condition variable 0x........ has been signalled but the associa
    at 0x........: pthread_cond_signal* (drd_intercepts.c:?)
    by 0x........: rescue_me (tc23_bogus_condwait.c:20)
    by 0x........: vg_thread_wrapper (drd_intercepts.c:?)
-   by 0x........: start_thread (in libpthread-?.?.so)
+   by 0x........: (within libpthread-?.?.so)
    by 0x........: clone (in /...libc...)
 
 Thread 1:
@@ -21,7 +21,7 @@ Race condition: condition variable 0x........ has been signalled but the associa
    at 0x........: pthread_cond_signal* (drd_intercepts.c:?)
    by 0x........: rescue_me (tc23_bogus_condwait.c:24)
    by 0x........: vg_thread_wrapper (drd_intercepts.c:?)
-   by 0x........: start_thread (in libpthread-?.?.so)
+   by 0x........: (within libpthread-?.?.so)
    by 0x........: clone (in /...libc...)
 
 Thread 1:
@@ -34,7 +34,7 @@ Race condition: condition variable 0x........ has been signalled but the associa
    at 0x........: pthread_cond_signal* (drd_intercepts.c:?)
    by 0x........: rescue_me (tc23_bogus_condwait.c:28)
    by 0x........: vg_thread_wrapper (drd_intercepts.c:?)
-   by 0x........: start_thread (in libpthread-?.?.so)
+   by 0x........: (within libpthread-?.?.so)
    by 0x........: clone (in /...libc...)
 
 Thread 1:
@@ -47,7 +47,7 @@ Race condition: condition variable 0x........ has been signalled but the associa
    at 0x........: pthread_cond_signal* (drd_intercepts.c:?)
    by 0x........: rescue_me (tc23_bogus_condwait.c:32)
    by 0x........: vg_thread_wrapper (drd_intercepts.c:?)
-   by 0x........: start_thread (in libpthread-?.?.so)
+   by 0x........: (within libpthread-?.?.so)
    by 0x........: clone (in /...libc...)
 The impossible happened: mutex 0x........ is locked simultaneously by two threads (recursion count 1, owners 2 and 1) !
 
@@ -56,7 +56,7 @@ Mutex not locked by calling thread: mutex 0x........, recursion count 2, owner 1
    at 0x........: pthread_mutex_unlock (drd_intercepts.c:?)
    by 0x........: grab_the_lock (tc23_bogus_condwait.c:42)
    by 0x........: vg_thread_wrapper (drd_intercepts.c:?)
-   by 0x........: start_thread (in libpthread-?.?.so)
+   by 0x........: (within libpthread-?.?.so)
    by 0x........: clone (in /...libc...)
 
 ERROR SUMMARY: 9 errors from 9 contexts (suppressed: 0 from 0)

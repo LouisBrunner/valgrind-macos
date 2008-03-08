@@ -27,6 +27,7 @@ int main(int argc, char** argv)
 
     printf("Recursive mutex (statically initialized).\n");
     lock_twice(&m);
+    pthread_mutex_destroy(&m);
   } 
   {
     pthread_mutex_t m;

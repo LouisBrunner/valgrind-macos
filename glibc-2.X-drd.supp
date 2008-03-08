@@ -213,8 +213,6 @@
    pthread
    exp-drd:ConflictingAccess
    fun:__deallocate_stack
-   fun:pthread_join
-   fun:pthread_join
 }
 {
    pthread
@@ -228,11 +226,6 @@
    pthread
    exp-drd:ConflictingAccess
    fun:__free_tcb
-}
-{
-   pthread
-   exp-drd:ConflictingAccess
-   fun:__deallocate_stack
 }
 {
    pthread

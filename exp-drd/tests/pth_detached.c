@@ -1,6 +1,7 @@
-/* Test whether detached threads are handled properly.
-   Contributed by Bart Van Assche (bart.vanassche@gmail.com).
-*/
+/** Test whether detached threads are handled properly.
+ *  Copyright (c) 2006-2008 by Bart Van Assche (bart.vanassche@gmail.com).
+ */
+
 
 #include <assert.h>
 #include <pthread.h>
@@ -9,8 +10,24 @@
 #include <unistd.h>
 #include "../drd_clientreq.h"
 
+
 static int s_finished_count;
+static int s_set_thread_name;
 static pthread_mutex_t s_mutex;
+
+
+static void set_thread_name(const char* const fmt, const int arg)
+{
+  if (s_set_thread_name)
+  {
+    int res;
+    char name[32];
+    snprintf(name, sizeof(name), fmt, arg);
+    name[sizeof(name) - 1] = 0;
+    VALGRIND_DO_CLIENT_REQUEST(res, 0, VG_USERREQ__SET_THREAD_NAME,
+                               name, 0, 0, 0, 0);
+  }
+}
 
 void increment_finished_count()
 {
@@ -30,6 +47,7 @@ int get_finished_count()
 
 static void* thread_func1(void* arg)
 {
+  set_thread_name("thread_func1[%d]", *(int*)arg);
   write(STDOUT_FILENO, ".\n", 2);
   increment_finished_count();
   return 0;
@@ -37,6 +55,7 @@ static void* thread_func1(void* arg)
 
 static void* thread_func2(void* arg)
 {
+  set_thread_name("thread_func2[%d]", *(int*)arg);
   pthread_detach(pthread_self());
   write(STDOUT_FILENO, ".\n", 2);
   increment_finished_count();
@@ -47,10 +66,15 @@ int main(int argc, char** argv)
 {
   const int count1 = argc > 1 ? atoi(argv[1]) : 100;
   const int count2 = argc > 2 ? atoi(argv[2]) : 100;
+  const int do_set_thread_name = argc > 3 ? atoi(argv[3]) != 0 : 0;
   int thread_arg[count1 > count2 ? count1 : count2];
   int i;
   int detachstate;
   pthread_attr_t attr;
+
+  s_set_thread_name = do_set_thread_name;
+
+  set_thread_name("main", 0);
 
   for (i = 0; i < count1 || i < count2; i++)
     thread_arg[i] = i;

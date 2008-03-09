@@ -17,7 +17,7 @@ void* thread_func(void* arg)
 {
   if (s_main_thread_pid == getpid())
   {
-    printf("NPTL or non-Linux POSIX threads implemenentation detected.\n");
+    printf("NPTL or non-Linux POSIX threads implementation detected.\n");
   }
   else
   {

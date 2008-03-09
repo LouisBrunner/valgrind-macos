@@ -195,6 +195,7 @@ check_PROGRAMS =      \
   hg05_race2          \
   hg06_readshared     \
   matinv              \
+  matinv_openmp       \
   pth_barrier         \
   pth_broadcast       \
   pth_cond_race       \
@@ -255,6 +256,10 @@ hg06_readshared_LDADD       = -lpthread
 
 matinv_SOURCES              = matinv.c
 matinv_LDADD                = -lpthread -lm
+
+matinv_openmp_SOURCES       = matinv_openmp.c
+matinv_openmp_CFLAGS        = -fopenmp
+matinv_openmp_LDADD         = -lpthread -lm
 
 pth_barrier_SOURCES         = pth_barrier.c
 pth_barrier_LDADD           = -lpthread

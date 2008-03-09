@@ -165,6 +165,7 @@ EXTRA_DIST =                                        \
 	tc20_verifywrap.vgtest                      \
 	tc20_verifywrap2.stderr.exp                 \
 	tc20_verifywrap2.stderr.exp-glibc2.3        \
+	tc20_verifywrap2.stderr.exp-glibc2.3-b      \
 	tc20_verifywrap2.stderr.exp-linuxthreads    \
 	tc20_verifywrap2.vgtest                     \
 	tc21_pthonce.stderr.exp                     \

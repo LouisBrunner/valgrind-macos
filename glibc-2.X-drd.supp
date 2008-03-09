@@ -20,6 +20,11 @@
    fun:exit
 }
 {
+   dl
+   exp-drd:ConflictingAccess
+   fun:_dl_fixup
+}
+{
    dl-2.6.*
    exp-drd:ConflictingAccess
    obj:/lib*/ld-*.so

@@ -113,6 +113,14 @@
 {
    pthread
    exp-drd:ConflictingAccess
+   fun:clone
+   fun:create_thread
+   fun:pthread_create*
+   fun:pthread_create*
+}
+{
+   pthread
+   exp-drd:ConflictingAccess
    obj:/lib*/libc-*.so
    fun:__libc_thread_freeres
    fun:start_thread
@@ -213,6 +221,21 @@
    exp-drd:ConflictingAccess
    fun:pthread_join
    fun:pthread_join
+}
+{
+   pthread
+   exp-drd:ConflictingAccess
+   fun:allocate_stack
+   fun:pthread_create*
+   fun:pthread_create*
+}
+{
+   pthread
+   exp-drd:ConflictingAccess
+   fun:get_cached_stack
+   fun:allocate_stack
+   fun:pthread_create*
+   fun:pthread_create*
 }
 {
    pthread

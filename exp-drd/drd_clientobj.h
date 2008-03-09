@@ -103,6 +103,7 @@ struct barrier_info
   Word     pre_waiters_left;  // number of waiters left for a complete barrier.
   Word     post_waiters_left; // number of waiters left for a complete barrier.
   OSet*    oset;              // Thread-specific barrier information.
+  VectorClock finished_threads_vc;
 };
 
 struct rwlock_info

@@ -39,7 +39,7 @@
 
 // Type definitions.
 
-/* Information associated with one thread participating in a barrier. */
+/** Information associated with one thread participating in a barrier. */
 struct barrier_thread_info
 {
   UWord       tid;           // A DrdThreadId
@@ -110,6 +110,7 @@ void barrier_initialize(struct barrier_info* const p,
   tl_assert(sizeof(((struct barrier_thread_info*)0)->tid)
             >= sizeof(DrdThreadId));
   p->oset = VG_(OSetGen_Create)(0, 0, VG_(malloc), VG_(free));
+  vc_init(&p->finished_threads_vc, 0, 0);
 }
 
 /** Deallocate the memory allocated by barrier_initialize() and in p->oset. 
@@ -138,6 +139,7 @@ void barrier_cleanup(struct barrier_info* p)
     barrier_thread_destroy(q);
   }
   VG_(OSetGen_Destroy)(p->oset);
+  vc_cleanup(&p->finished_threads_vc);
 }
 
 /** Look up the client-side barrier address barrier in s_barrier[]. If not
@@ -287,6 +289,7 @@ void barrier_post_wait(const DrdThreadId tid, const Addr barrier,
         thread_combine_vc2(tid, &r->vc[p->post_iteration]);
       }
     }
+    thread_combine_vc2(tid, &p->finished_threads_vc);
 
     thread_new_segment(tid);
 
@@ -309,6 +312,7 @@ void barrier_thread_delete(const DrdThreadId tid)
     struct barrier_thread_info* q;
     const UWord word_tid = tid;
     q = VG_(OSetGen_Remove)(p->oset, &word_tid);
+    vc_combine(&p->finished_threads_vc, &q->vc[p->post_iteration]);
     barrier_thread_destroy(q);
     VG_(OSetGen_FreeNode)(p->oset, q);
   }

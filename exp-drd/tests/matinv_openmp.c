@@ -25,13 +25,6 @@
 typedef double elem_t;
 
 
-/********************/
-/* Local variables. */
-/********************/
-
-static int s_nthread;
-
-
 /*************************/
 /* Function definitions. */
 /*************************/
@@ -264,8 +257,7 @@ int main(int argc, char** argv)
   double ratio;
 
   matrix_size = (argc > 1) ? atoi(argv[1]) : 3;
-  s_nthread   = (argc > 2) ? atoi(argv[2]) : 3;
-  silent      = (argc > 3) ? atoi(argv[3]) : 0;
+  silent      = (argc > 2) ? atoi(argv[2]) : 0;
 
   eps = epsilon();
   a = new_matrix(matrix_size, matrix_size);
@@ -280,7 +272,7 @@ int main(int argc, char** argv)
     printf("error = %g; epsilon = %g; error / (epsilon * n) = %g\n",
            error, eps, ratio);
   }
-  if (ratio < 100)
+  if (isfinite(ratio) && ratio < 100)
     printf("Error within bounds.\n");
   else
     printf("Error out of bounds.\n");

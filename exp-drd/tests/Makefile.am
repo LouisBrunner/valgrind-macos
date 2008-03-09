@@ -42,10 +42,13 @@ EXTRA_DIST =                                        \
 	hg06_readshared.stderr.exp                  \
 	hg06_readshared.stderr.exp-linuxthreads     \
 	hg06_readshared.vgtest                      \
+	linuxthreads_det.stderr.exp                 \
+	linuxthreads_det.stderr.exp-linuxthreads    \
+	linuxthreads_det.stdout.exp                 \
+	linuxthreads_det.stdout.exp-linuxthreads    \
 	matinv.stderr.exp                           \
 	matinv.stderr.exp-linuxthreads              \
 	matinv.stdout.exp                           \
-	matinv.stdout.exp-linuxthreads              \
 	matinv.stdout.exp-linuxthreads              \
 	matinv.vgtest                               \
 	pth_barrier.stderr.exp                      \
@@ -194,6 +197,7 @@ check_PROGRAMS_COMMON = \
   hg04_race           \
   hg05_race2          \
   hg06_readshared     \
+  linuxthreads_det    \
   matinv              \
   pth_barrier         \
   pth_broadcast       \
@@ -261,13 +265,16 @@ hg05_race2_LDADD            = -lpthread
 hg06_readshared_SOURCES     = ../../helgrind/tests/hg06_readshared.c
 hg06_readshared_LDADD       = -lpthread
 
+linuxthreads_det_SOURCES    = linuxthreads_det.c
+linuxthreads_det_LDADD      = -lpthread
+
 matinv_SOURCES              = matinv.c
 matinv_LDADD                = -lpthread -lm
 
 if HAVE_GCC_FOPENMP
 matinv_openmp_SOURCES       = matinv_openmp.c
 matinv_openmp_CFLAGS        = -fopenmp
-matinv_openmp_LDADD         = -lpthread -lm
+matinv_openmp_LDADD         = -lm
 endif
 
 pth_barrier_SOURCES         = pth_barrier.c

@@ -220,7 +220,6 @@ static void gj_threadfunc(struct gj_threadinfo* p)
       }
     }
   }
-  pthread_barrier_wait(p->b);
 }
 
 /** Multithreaded Gauss-Jordan algorithm. */

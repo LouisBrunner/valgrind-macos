@@ -255,7 +255,7 @@ void drd_report_data_race2(Error* const err, const DataRaceErrInfo* const dri)
    }
    else
    {
-      VG_(message)(Vg_UserMsg, "Allocation context: unknown.\n");
+      VG_(message)(Vg_UserMsg, "Allocation context: unknown.");
    }
    thread_report_conflicting_segments(VgThreadIdToDrdThreadId(dri->tid),
                                       dri->addr, dri->size, dri->access_type);

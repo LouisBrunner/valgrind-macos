@@ -186,7 +186,7 @@ AM_CFLAGS   = $(WERROR) -Winline -Wall -Wshadow -g $(AM_FLAG_M3264_PRI)
 AM_CPPFLAGS = -I$(top_srcdir) -I$(top_srcdir)/include -I$(top_builddir)/include
 AM_CXXFLAGS = $(AM_CFLAGS)
 
-check_PROGRAMS =      \
+check_PROGRAMS_COMMON = \
   fp_race             \
   hg01_all_ok         \
   hg02_deadlock       \
@@ -195,7 +195,6 @@ check_PROGRAMS =      \
   hg05_race2          \
   hg06_readshared     \
   matinv              \
-  matinv_openmp       \
   pth_barrier         \
   pth_broadcast       \
   pth_cond_race       \
@@ -230,6 +229,14 @@ check_PROGRAMS =      \
   tc24_nonzero_sem    \
   trylock
 
+check_PROGRAMS_OPENMP = matinv_openmp
+
+if HAVE_GCC_FOPENMP
+check_PROGRAMS = $(check_PROGRAMS_COMMON) $(check_PROGRAMS_OPENMP)
+else
+check_PROGRAMS = $(check_PROGRAMS_COMMON)
+endif
+
 #  tc14_laog_dinphils  -- hangs.
 
 
@@ -257,9 +264,11 @@ hg06_readshared_LDADD       = -lpthread
 matinv_SOURCES              = matinv.c
 matinv_LDADD                = -lpthread -lm
 
+if HAVE_GCC_FOPENMP
 matinv_openmp_SOURCES       = matinv_openmp.c
 matinv_openmp_CFLAGS        = -fopenmp
 matinv_openmp_LDADD         = -lpthread -lm
+endif
 
 pth_barrier_SOURCES         = pth_barrier.c
 pth_barrier_LDADD           = -lpthread

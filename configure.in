@@ -550,6 +550,27 @@ if test "${no_x}" != 'yes' ; then
 fi
 
 
+# does this compiler support -fopenmp ?
+AC_MSG_CHECKING([if gcc accepts -fopenmp])
+
+safe_CFLAGS=$CFLAGS
+CFLAGS="-fopenmp"
+
+AC_TRY_COMPILE(, [
+int main () { return 0 ; }
+],
+[
+ac_have_gcc_fopenmp=yes
+AC_MSG_RESULT([yes])
+], [
+ac_have_gcc_fopenmp=no
+AC_MSG_RESULT([no])
+])
+CFLAGS=$safe_CFLAGS
+
+AM_CONDITIONAL([HAVE_GCC_FOPENMP], [test x$ac_have_gcc_fopenmp = xyes])
+
+
 # does this compiler support -m32 ?
 AC_MSG_CHECKING([if gcc accepts -m32])
 

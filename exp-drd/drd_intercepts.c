@@ -171,7 +171,7 @@ static int detected_linuxthreads(void)
 #if defined(_CS_GNU_LIBPTHREAD_VERSION)
    /* Linux with a recent glibc. */
    char buffer[256];
-   int len;
+   unsigned len;
    len = confstr(_CS_GNU_LIBPTHREAD_VERSION, buffer, sizeof(buffer));
    assert(len <= sizeof(buffer));
    return len > 0 && buffer[0] == 'l';

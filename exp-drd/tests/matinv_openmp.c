@@ -185,7 +185,7 @@ static void gj(elem_t* const a, const int rows, const int cols)
     }
 
     // Reduce all rows j != i.
-#pragma omp parallel for
+#pragma omp parallel for private(j, k)
     for (j = 0; j < rows; j++)
     {
       if (i != j)

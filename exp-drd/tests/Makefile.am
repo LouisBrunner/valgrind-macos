@@ -30,8 +30,8 @@ EXTRA_DIST =                                        \
 	hg02_deadlock.stderr.exp-linuxthreads       \
 	hg02_deadlock.vgtest                        \
 	hg03_inherit.stderr.exp                     \
-	hg03_inherit.stderr.exp2                    \
 	hg03_inherit.stderr.exp-linuxthreads        \
+	hg03_inherit.stderr.exp2                    \
 	hg03_inherit.vgtest                         \
 	hg04_race.stderr.exp                        \
 	hg04_race.stderr.exp-linuxthreads           \
@@ -51,6 +51,9 @@ EXTRA_DIST =                                        \
 	matinv.stdout.exp                           \
 	matinv.stdout.exp-linuxthreads              \
 	matinv.vgtest                               \
+	matinv_openmp.stderr.exp                    \
+	matinv_openmp.stdout.exp                    \
+	matinv_openmp.vgtest                        \
 	pth_barrier.stderr.exp                      \
 	pth_barrier.stderr.exp-linuxthreads         \
 	pth_barrier.vgtest                          \
@@ -234,7 +237,7 @@ check_PROGRAMS_COMMON = \
   tc24_nonzero_sem    \
   trylock
 
-check_PROGRAMS_OPENMP = matinv_openmp
+check_PROGRAMS_OPENMP = omp_prime matinv_openmp
 
 if HAVE_GCC_FOPENMP
 check_PROGRAMS = $(check_PROGRAMS_COMMON) $(check_PROGRAMS_OPENMP)
@@ -271,12 +274,6 @@ linuxthreads_det_LDADD      = -lpthread
 
 matinv_SOURCES              = matinv.c
 matinv_LDADD                = -lpthread -lm
-
-if HAVE_GCC_FOPENMP
-matinv_openmp_SOURCES       = matinv_openmp.c
-matinv_openmp_CFLAGS        = -fopenmp
-matinv_openmp_LDADD         = -lm
-endif
 
 pth_barrier_SOURCES         = pth_barrier.c
 pth_barrier_LDADD           = -lpthread
@@ -376,3 +373,13 @@ tc24_nonzero_sem_LDADD      = -lpthread
 
 trylock_SOURCES             = trylock.c
 trylock_LDADD               = -lpthread -lrt
+
+if HAVE_GCC_FOPENMP
+matinv_openmp_SOURCES       = matinv_openmp.c
+matinv_openmp_CFLAGS        = -fopenmp
+matinv_openmp_LDADD         = -lm
+
+omp_prime_SOURCES           = omp_prime.c
+omp_prime_CFLAGS            = -fopenmp
+omp_prime_LDADD             = -lm
+endif

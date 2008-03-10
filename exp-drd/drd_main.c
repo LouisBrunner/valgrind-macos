@@ -55,7 +55,6 @@
 // Function declarations.
 
 static void drd_start_client_code(const ThreadId tid, const ULong bbs_done);
-static void drd_set_running_tid(const ThreadId tid);
 
 
 // Local variables.
@@ -436,7 +435,7 @@ static void drd_thread_finished(ThreadId tid)
 {
    DrdThreadId drd_tid;
 
-   drd_set_running_tid(tid);
+   tl_assert(VG_(get_running_tid)() == tid);
 
    drd_tid = VgThreadIdToDrdThreadId(tid);
    if (drd_trace_fork_join)
@@ -705,27 +704,10 @@ IRSB* drd_instrument(VgCallbackClosure* const closure,
    return bb;
 }
 
-static void drd_set_running_tid(const ThreadId vg_tid)
-{
-   static ThreadId s_last_vg_tid = VG_INVALID_THREADID;
-   if (vg_tid != s_last_vg_tid)
-   {
-      const DrdThreadId drd_tid = VgThreadIdToDrdThreadId(vg_tid);
-      tl_assert(drd_tid != DRD_INVALID_THREADID);
-      s_last_vg_tid = vg_tid;
-      if (drd_trace_fork_join)
-      {
-         VG_(message)(Vg_DebugMsg,
-                      "drd_track_thread_run tid = %d / drd tid %d",
-                      vg_tid, drd_tid);
-      }
-      thread_set_running_tid(vg_tid, drd_tid);
-   }
-}
-
 static void drd_start_client_code(const ThreadId tid, const ULong bbs_done)
 {
-   drd_set_running_tid(tid);
+   tl_assert(tid == VG_(get_running_tid)());
+   thread_set_vg_running_tid(tid);
 }
 
 static

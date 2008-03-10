@@ -550,14 +550,16 @@ if test "${no_x}" != 'yes' ; then
 fi
 
 
-# does this compiler support -fopenmp ?
-AC_MSG_CHECKING([if gcc accepts -fopenmp])
+# does this compiler support -fopenmp, does it have the include file
+# <omp.h> and does it have libgomp ?
+AC_MSG_CHECKING([if gcc supports OpenMP])
 
 safe_CFLAGS=$CFLAGS
 CFLAGS="-fopenmp"
 
 AC_TRY_COMPILE(, [
-int main () { return 0 ; }
+#include <omp.h>
+int main () { omp_set_dynamic(0); return 0; }
 ],
 [
 ac_have_gcc_fopenmp=yes

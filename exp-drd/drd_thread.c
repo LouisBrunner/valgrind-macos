@@ -430,7 +430,6 @@ void thread_set_name_fmt(const DrdThreadId tid, const char* const fmt,
 
 DrdThreadId thread_get_running_tid(void)
 {
-   tl_assert(VG_(get_running_tid)() == s_vg_running_tid);
    tl_assert(s_drd_running_tid != DRD_INVALID_THREADID);
    return s_drd_running_tid;
 }

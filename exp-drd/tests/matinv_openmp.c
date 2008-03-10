@@ -14,8 +14,9 @@
 
 #include <assert.h>
 #include <math.h>
-#include <stdlib.h>
+#include <omp.h>
 #include <stdio.h>
+#include <stdlib.h>
 
 
 /*********************/
@@ -250,6 +251,7 @@ static elem_t epsilon()
 int main(int argc, char** argv)
 {
   int matrix_size;
+  int nthread;
   int silent;
   elem_t *a, *inv, *prod;
   elem_t eps;
@@ -257,7 +259,11 @@ int main(int argc, char** argv)
   double ratio;
 
   matrix_size = (argc > 1) ? atoi(argv[1]) : 3;
-  silent      = (argc > 2) ? atoi(argv[2]) : 0;
+  nthread     = (argc > 2) ? atoi(argv[2]) : 3;
+  silent      = (argc > 3) ? atoi(argv[3]) : 0;
+
+  omp_set_num_threads(nthread);
+  omp_set_dynamic(0);
 
   eps = epsilon();
   a = new_matrix(matrix_size, matrix_size);

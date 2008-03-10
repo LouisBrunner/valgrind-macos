@@ -1,0 +1,2 @@
+prog: matinv_openmp
+args: 30 15 1

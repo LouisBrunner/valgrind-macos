@@ -30,10 +30,16 @@ source reading by a human. It takes a huge effort however to detect
 all possible data races or deadlocks via source reading. This is why
 tools for detecting data races and deadlocks at runtime are essential.
 
-The de facto standard library for multithreading with the C and C++
-programming languages on Unix systems is the POSIX threads library,
-also known as pthreads. The exp-drd tool has been developed for
-multithreaded software that uses the POSIX threads library.
+There exist parallellizing compilers that give good results for a
+certain class of high performance computing (HPC) applications. If you
+are not using a parallelizing compiler, you have to specify explicitly
+in the source code how your program should use threads. How to specify
+this depends on the programming language and the operating system you
+are using.  The two options on Unix systems are for C and C++ are the
+POSIX threads library and OpenMP. OpenMP is best suited for HPC
+applications. For other applications, e.g. server or embedded
+software, you can use the POSIX threads library directly or a library
+that is built on top of it.
 
 
 Data Races
@@ -240,14 +246,14 @@ The following may be expected in future versions of DRD:
 Acknowledgements
 ----------------
 
-The exp-drd tool is built on top of the Valgrind core and VEX, which
+The DRD tool is built on top of the Valgrind core and VEX, which
 proved to be an excellent infrastructure for building such a tool.
 
 During 2006, the early versions of drd were improved via helpful
 feedback of Julian Seward and Nicholas Nethercote.  Any bugs are my
 responsibility of course.
 
-Some of the regression tests used to test exp-drd were developed by
+Some of the regression tests used to test DRD were developed by
 Julian Seward as regression tests for the Helgrind tool.
 
 I would also like to thank Michiel Ronsse for introducing me a long

@@ -2,7 +2,7 @@
 Thread 2:
 Conflicting load by thread 2 at 0x........ size 4
    at 0x........: th (hg05_race2.c:17)
-   by 0x........: vg_thread_wrapper (drd_intercepts.c:?)
+   by 0x........: vg_thread_wrapper (drd_pthread_intercepts.c:?)
    by 0x........: (within libpthread-?.?.so)
    by 0x........: clone (in /...libc...)
 Location 0x........ is 0 bytes inside foo.poot[5].plop[11],
@@ -14,7 +14,7 @@ Other segment end (thread 2)
 
 Conflicting store by thread 2 at 0x........ size 4
    at 0x........: th (hg05_race2.c:17)
-   by 0x........: vg_thread_wrapper (drd_intercepts.c:?)
+   by 0x........: vg_thread_wrapper (drd_pthread_intercepts.c:?)
    by 0x........: (within libpthread-?.?.so)
    by 0x........: clone (in /...libc...)
 Location 0x........ is 0 bytes inside foo.poot[5].plop[11],

@@ -1,6 +1,6 @@
 
 Mutex still locked at thread exit: mutex 0x........, recursion count 1, owner 3.
-   at 0x........: pthread_join (drd_intercepts.c:?)
+   at 0x........: pthread_join (drd_pthread_intercepts.c:?)
    by 0x........: main (tc22_exit_w_lock.c:43)
 
 ERROR SUMMARY: 1 errors from 1 contexts (suppressed: 0 from 0)

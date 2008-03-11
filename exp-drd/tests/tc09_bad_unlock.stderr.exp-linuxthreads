@@ -1,6 +1,6 @@
 
 Mutex not locked by calling thread: mutex 0x........, recursion count 0, owner 1.
-   at 0x........: pthread_mutex_unlock (drd_intercepts.c:?)
+   at 0x........: pthread_mutex_unlock (drd_pthread_intercepts.c:?)
    by 0x........: nearly_main (../../helgrind/tests/tc09_bad_unlock.c:27)
    by 0x........: main (../../helgrind/tests/tc09_bad_unlock.c:49)
 Detected the LinuxThreads threading library. Sorry, but DRD only supports

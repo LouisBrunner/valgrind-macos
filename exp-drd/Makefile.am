@@ -20,7 +20,7 @@ if VGP_PPC64_AIX5
   noinst_PROGRAMS += exp-drd-ppc64-aix5 vgpreload_exp-drd-ppc64-aix5.so
 endif
 
-VGPRELOAD_DRD_SOURCES_COMMON = drd_intercepts.c
+VGPRELOAD_DRD_SOURCES_COMMON = drd_pthread_intercepts.c
 
 vgpreload_exp_drd_x86_linux_so_SOURCES      = $(VGPRELOAD_DRD_SOURCES_COMMON)
 vgpreload_exp_drd_x86_linux_so_CPPFLAGS     = $(AM_CPPFLAGS_X86_LINUX)

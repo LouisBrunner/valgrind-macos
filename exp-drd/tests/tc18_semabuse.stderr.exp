@@ -1,6 +1,6 @@
 
 Invalid semaphore: semaphore 0x........
-   at 0x........: sem_wait* (drd_intercepts.c:?)
+   at 0x........: sem_wait* (drd_pthread_intercepts.c:?)
    by 0x........: main (tc18_semabuse.c:34)
 
 ERROR SUMMARY: 1 errors from 1 contexts (suppressed: 0 from 0)

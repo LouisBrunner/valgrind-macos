@@ -19,7 +19,7 @@ Other segment end (thread 2)
 [1/1] mutex_init      invalid mutex 0x........
 
 Not a mutex
-   at 0x........: pthread_mutex_init (drd_intercepts.c:?)
+   at 0x........: pthread_mutex_init (drd_pthread_intercepts.c:?)
    by 0x........: main (tc20_verifywrap.c:92)
 [1/1] mutex_init      mutex 0x........
 [1/1] pre_mutex_lock  mutex 0x........ rc 0 owner 0
@@ -27,30 +27,30 @@ Not a mutex
 [1/1] mutex_destroy   mutex 0x........
 
 Destroying locked mutex: mutex 0x........, recursion count 1, owner 1.
-   at 0x........: pthread_mutex_destroy (drd_intercepts.c:?)
+   at 0x........: pthread_mutex_destroy (drd_pthread_intercepts.c:?)
    by 0x........: main (tc20_verifywrap.c:102)
 [1/1] pre_mutex_lock  (?) 0x........ rc 0 owner 0
 
 Not a mutex
-   at 0x........: pthread_mutex_lock (drd_intercepts.c:?)
+   at 0x........: pthread_mutex_lock (drd_pthread_intercepts.c:?)
    by 0x........: main (tc20_verifywrap.c:108)
 [1/1] post_mutex_lock (?) 0x........ rc 0 owner 0
 [1/1] pre_mutex_lock  (?) 0x........ rc 0 owner 0
 
 Not a mutex
-   at 0x........: pthread_mutex_trylock (drd_intercepts.c:?)
+   at 0x........: pthread_mutex_trylock (drd_pthread_intercepts.c:?)
    by 0x........: main (tc20_verifywrap.c:116)
 [1/1] post_mutex_lock (?) 0x........ rc 0 owner 0
 [1/1] pre_mutex_lock  (?) 0x........ rc 0 owner 0
 
 Not a mutex
-   at 0x........: pthread_mutex_timedlock (drd_intercepts.c:?)
+   at 0x........: pthread_mutex_timedlock (drd_pthread_intercepts.c:?)
    by 0x........: main (tc20_verifywrap.c:121)
 [1/1] post_mutex_lock (?) 0x........ rc 0 owner 0
 [1/1] mutex_unlock    ? 0x........ rc 0
 
 Not a mutex
-   at 0x........: pthread_mutex_unlock (drd_intercepts.c:?)
+   at 0x........: pthread_mutex_unlock (drd_pthread_intercepts.c:?)
    by 0x........: main (tc20_verifywrap.c:125)
 
 ---------------- pthread_cond_wait et al ----------------
@@ -60,7 +60,7 @@ Not a mutex
 [1/1] mutex_unlock    error checking mutex 0x........ rc 0
 
 Mutex not locked: mutex 0x........, recursion count 0, owner 0.
-   at 0x........: pthread_cond_wait* (drd_intercepts.c:?)
+   at 0x........: pthread_cond_wait* (drd_pthread_intercepts.c:?)
    by 0x........: main (tc20_verifywrap.c:147)
 [1/1] cond_pre_wait 0x........
 [1/1] cond_post_wait 0x........
@@ -76,7 +76,7 @@ FIXME: can't figure out how to verify wrap of pthread_broadcast_signal
 [1/1] mutex_unlock    error checking mutex 0x........ rc 0
 
 Mutex not locked: mutex 0x........, recursion count 0, owner 0.
-   at 0x........: pthread_cond_timedwait* (drd_intercepts.c:?)
+   at 0x........: pthread_cond_timedwait* (drd_pthread_intercepts.c:?)
    by 0x........: main (tc20_verifywrap.c:165)
 [1/1] cond_pre_wait 0x........
 [1/1] cond_post_wait 0x........
@@ -86,18 +86,18 @@ Mutex not locked: mutex 0x........, recursion count 0, owner 0.
 
 
 Reader-writer lock not locked by calling thread: rwlock 0x.........
-   at 0x........: pthread_rwlock_unlock* (drd_intercepts.c:?)
+   at 0x........: pthread_rwlock_unlock* (drd_pthread_intercepts.c:?)
    by 0x........: main (tc20_verifywrap.c:179)
 (1) no error on next line
 (2) no error on next line
 (3)    ERROR on next line
 
 Reader-writer lock not locked by calling thread: rwlock 0x.........
-   at 0x........: pthread_rwlock_unlock* (drd_intercepts.c:?)
+   at 0x........: pthread_rwlock_unlock* (drd_pthread_intercepts.c:?)
    by 0x........: main (tc20_verifywrap.c:196)
 
 Reader-writer lock reinitialization: rwlock 0x.........
-   at 0x........: pthread_rwlock_init* (drd_intercepts.c:?)
+   at 0x........: pthread_rwlock_init* (drd_pthread_intercepts.c:?)
    by 0x........: main (tc20_verifywrap.c:199)
 (4) no error on next line
 (5) no error on next line
@@ -106,7 +106,7 @@ Reader-writer lock reinitialization: rwlock 0x.........
 (8)    ERROR on next line
 
 Reader-writer lock not locked by calling thread: rwlock 0x.........
-   at 0x........: pthread_rwlock_unlock* (drd_intercepts.c:?)
+   at 0x........: pthread_rwlock_unlock* (drd_pthread_intercepts.c:?)
    by 0x........: main (tc20_verifywrap.c:212)
 
 ---------------- sem_* ----------------
@@ -119,7 +119,7 @@ FIXME: can't figure out how to verify wrap of sem_destroy
 [1/1] semaphore_post_wait 0x........
 
 Invalid semaphore: semaphore 0x........
-   at 0x........: sem_wait* (drd_intercepts.c:?)
+   at 0x........: sem_wait* (drd_pthread_intercepts.c:?)
    by 0x........: main (tc20_verifywrap.c:242)
 [1/1] semaphore_post 0x........
 

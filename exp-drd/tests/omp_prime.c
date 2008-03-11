@@ -9,6 +9,7 @@
 #include <omp.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include "../drd_clientreq.h"
 
 
 static int is_prime(int* const pflag, int v)
@@ -49,6 +50,14 @@ int main(int argc, char **argv)
 
   omp_set_num_threads(num_threads);
   omp_set_dynamic(0);
+
+#if 1
+  {
+    int res;
+    VALGRIND_DO_CLIENT_REQUEST(res, 0, VG_USERREQ__DRD_TRACE_ADDR,
+                               &total, 0, 0, 0, 0);
+  }
+#endif
 
   for (i = 0; i < n; i++) {
     pflag[i] = 1;

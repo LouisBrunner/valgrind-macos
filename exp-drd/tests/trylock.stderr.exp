@@ -7,7 +7,7 @@ Locking rwlock via pthread_rwlock_tryrdlock().
 Locking rwlock via pthread_rwlock_timedrdlock().
 Attempt to lock for writing recursively (not allowed).
 Recursive writer locking not allowed: rwlock 0x.........
-   at 0x........: pthread_rwlock_wrlock* (drd_intercepts.c:?)
+   at 0x........: pthread_rwlock_wrlock* (drd_pthread_intercepts.c:?)
    by 0x........: main (trylock.c:?)
 Locking mutex via pthread_mutex_trylock().
 Locking mutex via pthread_mutex_lock().

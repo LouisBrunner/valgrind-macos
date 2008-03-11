@@ -552,15 +552,11 @@ fi
 
 # does this compiler support -fopenmp, does it have the include file
 # <omp.h> and does it have libgomp ?
-AC_MSG_CHECKING([if gcc supports OpenMP])
 
 safe_CFLAGS=$CFLAGS
 CFLAGS="-fopenmp"
 
-AC_TRY_COMPILE(, [
-#include <omp.h>
-int main () { omp_set_dynamic(0); return 0; }
-],
+AC_COMPILE_CHECK([OpenMP], [#include <omp.h>], [ omp_set_dynamic(0); ],
 [
 ac_have_gcc_fopenmp=yes
 AC_MSG_RESULT([yes])

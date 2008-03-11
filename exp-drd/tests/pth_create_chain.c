@@ -20,10 +20,10 @@ static void* thread_func(void* p)
     // std::cout << "create " << thread_count << std::endl;
     s_arg[thread_count] = thread_count;
     pthread_create(&s_thread[thread_count], 0, thread_func,
-		   &s_arg[thread_count]);
+                   &s_arg[thread_count]);
 #if 0
     std::cout << "created " << thread_count << "(" << s_thread[thread_count]
-	      << ")" << std::endl;
+              << ")" << std::endl;
 #endif
   }
   return 0;
@@ -40,10 +40,10 @@ int main(int argc, char** argv)
   thread_count--;
   // std::cout << "create " << thread_count << std::endl;
   pthread_create(&s_thread[thread_count], 0, thread_func,
-		 &thread_count);
+                 &thread_count);
 #if 0
   std::cout << "created " << thread_count << "(" << s_thread[thread_count]
-	    << ")" << std::endl;
+            << ")" << std::endl;
 #endif
   for (i = thread_count; i >= 0; i--)
   {

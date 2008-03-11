@@ -656,7 +656,7 @@ PTH_FUNC(int, semZuinitZAGLIBCZu2Zd0, // sem_init@GLIBC_2.0
    return ret;
 }
 
-PTH_FUNC(int, semZuinitZa, // sem_init*
+PTH_FUNC(int, semZuinitZAZAZa, // sem_init@@*
               sem_t *sem,
               int pshared,
               unsigned int value)
@@ -721,7 +721,7 @@ PTH_FUNC(int, semZuwaitZAGLIBCZu2Zd0, // sem_wait@GLIBC_2.0
 }
 
 // sem_wait
-PTH_FUNC(int, semZuwaitZa, // sem_wait*
+PTH_FUNC(int, semZuwaitZAZAZa, // sem_wait@@*
               sem_t *sem)
 {
    int   ret;
@@ -800,7 +800,7 @@ PTH_FUNC(int, semZupostZAGLIBCZu2Zd0, // sem_post@GLIBC_2.0
 }
 
 // sem_post
-PTH_FUNC(int, semZupostZa, // sem_post*
+PTH_FUNC(int, semZupostZAZAZa, // sem_post@@*
               sem_t *sem)
 {
    int   ret;

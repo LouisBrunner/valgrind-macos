@@ -54,14 +54,10 @@ void semaphore_set_trace(const Bool trace_semaphore)
 
 static
 void semaphore_initialize(struct semaphore_info* const p,
-                          const Addr semaphore,
-                          const SizeT size,
-                          const UWord value)
+                          const Addr semaphore, const UWord value)
 {
   tl_assert(semaphore != 0);
-  tl_assert(size > 0);
   tl_assert(p->a1 == semaphore);
-  tl_assert(p->a2 - p->a1 == size);
   tl_assert(p->type == ClientSemaphore);
 
   p->cleanup   = (void(*)(DrdClientobj*))semaphore_cleanup;
@@ -91,7 +87,7 @@ static void semaphore_cleanup(struct semaphore_info* p)
 
 static
 struct semaphore_info*
-semaphore_get_or_allocate(const Addr semaphore, const SizeT size)
+semaphore_get_or_allocate(const Addr semaphore)
 {
   struct semaphore_info *p;
 
@@ -100,9 +96,8 @@ semaphore_get_or_allocate(const Addr semaphore, const SizeT size)
   if (p == 0)
   {
     tl_assert(offsetof(DrdClientobj, semaphore) == 0);
-    p = &clientobj_add(semaphore, semaphore + size,
-                           ClientSemaphore)->semaphore;
-    semaphore_initialize(p, semaphore, size, 0);
+    p = &clientobj_add(semaphore, ClientSemaphore)->semaphore;
+    semaphore_initialize(p, semaphore, 0);
   }
   return p;
 }
@@ -114,7 +109,7 @@ static struct semaphore_info* semaphore_get(const Addr semaphore)
 }
 
 /** Called before sem_init(). */
-struct semaphore_info* semaphore_init(const Addr semaphore, const SizeT size,
+struct semaphore_info* semaphore_init(const Addr semaphore,
                                       const Word pshared, const UWord value)
 {
   struct semaphore_info* p;
@@ -127,8 +122,11 @@ struct semaphore_info* semaphore_init(const Addr semaphore, const SizeT size,
                  thread_get_running_tid(),
                  semaphore);
   }
-  tl_assert(semaphore_get(semaphore) == 0);
-  p = semaphore_get_or_allocate(semaphore, size);
+  if (semaphore_get(semaphore))
+  {
+    // To do: print an error message that a semaphore is being reinitialized.
+  }
+  p = semaphore_get_or_allocate(semaphore);
   p->value = value;
   return p;
 }
@@ -164,11 +162,11 @@ void semaphore_destroy(const Addr semaphore)
 }
 
 /** Called before sem_wait(). */
-void semaphore_pre_wait(const Addr semaphore, const SizeT size)
+void semaphore_pre_wait(const Addr semaphore)
 {
   struct semaphore_info* p;
 
-  p = semaphore_get_or_allocate(semaphore, size);
+  p = semaphore_get_or_allocate(semaphore);
   if (s_trace_semaphore)
   {
     VG_(message)(Vg_UserMsg,
@@ -223,8 +221,7 @@ void semaphore_post_wait(const DrdThreadId tid, const Addr semaphore,
 }
 
 /** Called before sem_post(). */
-void semaphore_pre_post(const DrdThreadId tid, const Addr semaphore,
-                        const SizeT size)
+void semaphore_pre_post(const DrdThreadId tid, const Addr semaphore)
 {
   struct semaphore_info* p;
 
@@ -236,7 +233,7 @@ void semaphore_pre_post(const DrdThreadId tid, const Addr semaphore,
                  thread_get_running_tid(),
                  semaphore);
   }
-  p = semaphore_get_or_allocate(semaphore, size);
+  p = semaphore_get_or_allocate(semaphore);
   p->value++;
   if (p->value == 1)
   {
@@ -248,7 +245,7 @@ void semaphore_pre_post(const DrdThreadId tid, const Addr semaphore,
 
 /** Called after sem_post() finished successfully. */
 void semaphore_post_post(const DrdThreadId tid, const Addr semaphore,
-                         const SizeT size, const Bool waited)
+                         const Bool waited)
 {
   /* Note: it is hard to implement the sem_post() wrapper correctly in     */
   /* case sem_post() returns an error code. This is because handling this  */

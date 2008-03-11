@@ -32,16 +32,16 @@
 
 
 #include "drd_thread.h"      // DrdThreadid
-#include "pub_tool_basics.h" // Addr, SizeT
+#include "pub_tool_basics.h" // Addr
 
 
 struct cond_info;
 
 
 void cond_set_trace(const Bool trace_cond);
-void cond_pre_init(const Addr cond, const SizeT size);
+void cond_pre_init(const Addr cond);
 void cond_post_destroy(const Addr cond);
-int cond_pre_wait(const Addr cond, const SizeT cond_size, const Addr mutex);
+int cond_pre_wait(const Addr cond, const Addr mutex);
 int cond_post_wait(const Addr cond);
 void cond_pre_signal(const Addr cond);
 void cond_pre_broadcast(const Addr cond);

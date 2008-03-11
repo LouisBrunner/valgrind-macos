@@ -30,15 +30,17 @@ Data-race detection algorithm
 - Add test programs for destroying a condition variable / semaphore / barrier
   being waited upon.
 - Add OpenMP examples to the regression tests.
+- Make sure an error message is printed if no debug information is found in
+  libopenmp.so.1.
 - Make sure tc14_laog_dinphils is run during exp-drd regression tests.
 - Find a way for suppressing races reported on _IO_2_1_stdout. This race is
   triggered by calling printf() from more than one thread. Examples (AMD64):
   ./vg-in-place --tool=exp-drd exp-drd/tests/tc21_pthonce
   ./vg-in-place --tool=exp-drd exp-drd/tests/pth_detached 10 10 1
-- Performance testing and tuning.
 - testing on PPC and AIX (current implementation is only tested on X86 and
   AMD64).
 - Convert the array in drd_thread.c with thread information into an OSet.
+- Performance testing and tuning.
 - Optimize run time of the following test case:
   ./vg-in-place --tool=exp-drd exp-drd/tests/matinv 100 
 

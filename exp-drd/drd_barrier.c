@@ -91,14 +91,13 @@ static void barrier_thread_destroy(struct barrier_thread_info* const p)
 static
 void barrier_initialize(struct barrier_info* const p,
                         const Addr barrier,
-                        const SizeT size,
+                        const BarrierT barrier_type,
                         const Word count)
 {
   tl_assert(barrier != 0);
-  tl_assert(size > 0);
+  tl_assert(barrier_type == pthread_barrier || barrier_type == gomp_barrier);
   tl_assert(count > 0);
   tl_assert(p->a1 == barrier);
-  tl_assert(p->a2 - p->a1 == size);
 
   p->cleanup           = (void(*)(DrdClientobj*))barrier_cleanup;
   p->count             = count;
@@ -146,16 +145,19 @@ void barrier_cleanup(struct barrier_info* p)
  *  found, add it. */
 static
 struct barrier_info*
-barrier_get_or_allocate(const Addr barrier, const SizeT size, const Word count)
+barrier_get_or_allocate(const Addr barrier,
+                        const BarrierT barrier_type, const Word count)
 {
   struct barrier_info *p;
+
+  tl_assert(barrier_type == pthread_barrier || barrier_type == gomp_barrier);
 
   tl_assert(offsetof(DrdClientobj, barrier) == 0);
   p = &clientobj_get(barrier, ClientBarrier)->barrier;
   if (p == 0)
   {
-    p = &clientobj_add(barrier, barrier + size, ClientBarrier)->barrier;
-    barrier_initialize(p, barrier, size, count);
+    p = &clientobj_add(barrier, ClientBarrier)->barrier;
+    barrier_initialize(p, barrier, barrier_type, count);
   }
   return p;
 }
@@ -172,8 +174,9 @@ static struct barrier_info* barrier_get(const Addr barrier)
  *  where count threads participate in each barrier.
  *  Called before pthread_barrier_init().
  */
-struct barrier_info*
-barrier_init(const Addr barrier, const SizeT size, const Word count)
+void barrier_init(const Addr barrier,
+                  const BarrierT barrier_type, const Word count,
+                  const Bool reinitialization)
 {
   if (s_trace_barrier)
   {
@@ -184,11 +187,12 @@ barrier_init(const Addr barrier, const SizeT size, const Word count)
                  barrier);
   }
   tl_assert(barrier_get(barrier) == 0);
-  return barrier_get_or_allocate(barrier, size, count);
+  tl_assert(barrier_type == pthread_barrier || barrier_type == gomp_barrier);
+  barrier_get_or_allocate(barrier, barrier_type, count);
 }
 
 /** Called after pthread_barrier_destroy(). */
-void barrier_destroy(const Addr barrier)
+void barrier_destroy(const Addr barrier, const BarrierT barrier_type)
 {
   struct barrier_info* p;
 
@@ -217,7 +221,8 @@ void barrier_destroy(const Addr barrier)
 }
 
 /** Called before pthread_barrier_wait(). */
-void barrier_pre_wait(const DrdThreadId tid, const Addr barrier)
+void barrier_pre_wait(const DrdThreadId tid, const Addr barrier,
+                      const BarrierT barrier_type)
 {
   struct barrier_info* p;
   struct barrier_thread_info* q;
@@ -256,7 +261,7 @@ void barrier_pre_wait(const DrdThreadId tid, const Addr barrier)
 
 /** Called after pthread_barrier_wait(). */
 void barrier_post_wait(const DrdThreadId tid, const Addr barrier,
-                       const Bool waited)
+                       const BarrierT barrier_type, const Bool waited)
 {
   struct barrier_info* p;
 

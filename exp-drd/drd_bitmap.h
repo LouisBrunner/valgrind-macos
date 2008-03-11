@@ -46,12 +46,12 @@
 
 #define ADDR0_MASK (ADDR0_COUNT - 1)
 
-#define SPLIT_ADDRESS(a)						\
-  UWord a##0 = ((a) & ADDR0_MASK);                                      \
+#define SPLIT_ADDRESS(a)            \
+  UWord a##0 = ((a) & ADDR0_MASK);  \
   UWord a##1 = ((a) >> ADDR0_BITS);
 
 // Assumption: sizeof(Addr) == sizeof(UWord).
-#define MAKE_ADDRESS(a1, a0)			\
+#define MAKE_ADDRESS(a1, a0)  \
   (Addr)(((UWord)(a1) << (ADDR0_BITS)) | ((UWord)(a0)))
 
 #define BITS_PER_UWORD (8UL*sizeof(UWord))

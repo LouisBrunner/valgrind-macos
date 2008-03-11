@@ -51,7 +51,6 @@ typedef enum {
 struct any
 {
   Addr    a1;
-  Addr    a2;
   ObjType type;
   void    (*cleanup)(union drd_clientobj*);
 };
@@ -59,7 +58,6 @@ struct any
 struct mutex_info
 {
   Addr        a1;
-  Addr        a2;
   ObjType     type;
   void        (*cleanup)(union drd_clientobj*);
   MutexT      mutex_type;      // pthread_mutex_t or pthread_spinlock_t.
@@ -71,7 +69,6 @@ struct mutex_info
 struct cond_info
 {
   Addr    a1;
-  Addr    a2;
   ObjType type;
   void    (*cleanup)(union drd_clientobj*);
   int     waiter_count;
@@ -82,7 +79,6 @@ struct cond_info
 struct semaphore_info
 {
   Addr        a1;
-  Addr        a2;
   ObjType     type;
   void        (*cleanup)(union drd_clientobj*);
   UWord       value;             // Semaphore value.
@@ -94,7 +90,6 @@ struct semaphore_info
 struct barrier_info
 {
   Addr    a1;
-  Addr    a2;
   ObjType type;
   void    (*cleanup)(union drd_clientobj*);
   Word     count;             // Participant count in a barrier wait.
@@ -109,7 +104,6 @@ struct barrier_info
 struct rwlock_info
 {
   Addr    a1;
-  Addr    a2;
   ObjType type;
   void    (*cleanup)(union drd_clientobj*);
   OSet*   thread_info;
@@ -133,7 +127,7 @@ void clientobj_init(void);
 void clientobj_cleanup(void);
 DrdClientobj* clientobj_get(const Addr addr, const ObjType t);
 Bool clientobj_present(const Addr a1, const Addr a2);
-DrdClientobj* clientobj_add(const Addr a1, const Addr a2, const ObjType t);
+DrdClientobj* clientobj_add(const Addr a1, const ObjType t);
 Bool clientobj_remove(const Addr addr, const ObjType t);
 void clientobj_stop_using_mem(const Addr a1, const Addr a2);
 void clientobj_resetiter(void);

@@ -63,6 +63,10 @@ typedef struct
    /// If true, indicates that there is a corresponding POSIX thread ID and
    /// a corresponding OS thread that is detached.
    Bool      detached_posix_thread;
+   /// Wether recording of memory accesses is active.
+   Bool      is_recording;
+   /// Nesting level of synchronization functions called by the client.
+   Int       synchr_nesting;
 } ThreadInfo;
 
 
@@ -154,6 +158,8 @@ DrdThreadId VgThreadIdToNewDrdThreadId(const ThreadId tid)
          VG_(snprintf)(s_threadinfo[i].name, sizeof(s_threadinfo[i].name),
                        "thread %d", tid);
          s_threadinfo[i].name[sizeof(s_threadinfo[i].name) - 1] = 0;
+         s_threadinfo[i].is_recording  = True;
+         s_threadinfo[i].synchr_nesting = 0;
          if (s_threadinfo[i].first != 0)
             VG_(printf)("drd thread id = %d\n", i);
          tl_assert(s_threadinfo[i].first == 0);
@@ -330,6 +336,7 @@ void thread_delete(const DrdThreadId tid)
 
    tl_assert(0 <= tid && tid < DRD_N_THREADS
              && tid != DRD_INVALID_THREADID);
+   tl_assert(s_threadinfo[tid].synchr_nesting == 0);
    for (sg = s_threadinfo[tid].last; sg; sg = sg_prev)
    {
       sg_prev = sg->prev;
@@ -469,6 +476,25 @@ void thread_set_running_tid(const ThreadId vg_tid, const DrdThreadId drd_tid)
 
    tl_assert(s_vg_running_tid != VG_INVALID_THREADID);
    tl_assert(s_drd_running_tid != DRD_INVALID_THREADID);
+}
+
+int thread_enter_synchr(const DrdThreadId tid)
+{
+   tl_assert(IsValidDrdThreadId(tid));
+   return s_threadinfo[tid].synchr_nesting++;
+}
+
+int thread_leave_synchr(const DrdThreadId tid)
+{
+   tl_assert(IsValidDrdThreadId(tid));
+   tl_assert(s_threadinfo[tid].synchr_nesting >= 1);
+   return --s_threadinfo[tid].synchr_nesting;
+}
+
+int thread_get_synchr_nesting_count(const DrdThreadId tid)
+{
+   tl_assert(IsValidDrdThreadId(tid));
+   return s_threadinfo[tid].synchr_nesting;
 }
 
 /**
@@ -718,6 +744,27 @@ void thread_stop_using_mem(const Addr a1, const Addr a2)
    {
       thread_update_danger_set(thread_get_running_tid());
    }
+}
+
+void thread_start_recording(const DrdThreadId tid)
+{
+   tl_assert(0 <= tid && tid < DRD_N_THREADS && tid != DRD_INVALID_THREADID);
+   tl_assert(! s_threadinfo[tid].is_recording);
+   s_threadinfo[tid].is_recording = True;
+}
+
+void thread_stop_recording(const DrdThreadId tid)
+{
+   tl_assert(0 <= tid && tid < DRD_N_THREADS && tid != DRD_INVALID_THREADID);
+   tl_assert(s_threadinfo[tid].is_recording);
+   s_threadinfo[tid].is_recording = False;
+}
+
+Bool thread_is_recording(const DrdThreadId tid)
+{
+   tl_assert(0 <= tid && tid < DRD_N_THREADS && tid != DRD_INVALID_THREADID);
+   return (s_threadinfo[tid].synchr_nesting == 0
+           && s_threadinfo[tid].is_recording);
 }
 
 void thread_print_all(void)

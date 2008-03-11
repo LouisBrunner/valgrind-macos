@@ -33,18 +33,18 @@
 #include "drd_clientobj.h"        // struct rwlock_info
 #include "drd_thread.h"           // DrdThreadId
 #include "drd_vc.h"
-#include "pub_tool_basics.h"      // Addr, SizeT
+#include "pub_tool_basics.h"      // Addr
 
 
 struct rwlock_info;
 
 
 void rwlock_set_trace(const Bool trace_rwlock);
-struct rwlock_info* rwlock_pre_init(const Addr rwlock, const SizeT size);
+struct rwlock_info* rwlock_pre_init(const Addr rwlock);
 void rwlock_post_destroy(const Addr rwlock);
-void rwlock_pre_rdlock(const Addr rwlock, const SizeT size);
+void rwlock_pre_rdlock(const Addr rwlock);
 void rwlock_post_rdlock(const Addr rwlock, const Bool took_lock);
-void rwlock_pre_wrlock(const Addr rwlock, const SizeT size);
+void rwlock_pre_wrlock(const Addr rwlock);
 void rwlock_post_wrlock(const Addr rwlock, const Bool took_lock);
 void rwlock_pre_unlock(const Addr rwlock);
 void rwlock_thread_delete(const DrdThreadId tid);

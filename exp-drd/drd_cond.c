@@ -54,12 +54,10 @@ void cond_set_trace(const Bool trace_cond)
 }
 
 static
-void cond_initialize(struct cond_info* const p, const Addr cond,
-                     const SizeT size)
+void cond_initialize(struct cond_info* const p, const Addr cond)
 {
   tl_assert(cond != 0);
   tl_assert(p->a1         == cond);
-  tl_assert(p->a2 - p->a1 == size);
   tl_assert(p->type       == ClientCondvar);
 
   p->cleanup      = (void(*)(DrdClientobj*))cond_cleanup;
@@ -90,8 +88,7 @@ static void cond_cleanup(struct cond_info* p)
   }
 }
 
-static struct cond_info*
-cond_get_or_allocate(const Addr cond, const SizeT size)
+static struct cond_info* cond_get_or_allocate(const Addr cond)
 {
   struct cond_info *p;
 
@@ -99,8 +96,8 @@ cond_get_or_allocate(const Addr cond, const SizeT size)
   p = &clientobj_get(cond, ClientCondvar)->cond;
   if (p == 0)
   {
-    p = &clientobj_add(cond, cond + size, ClientCondvar)->cond;
-    cond_initialize(p, cond, size);
+    p = &clientobj_add(cond, ClientCondvar)->cond;
+    cond_initialize(p, cond);
   }
   return p;
 }
@@ -112,7 +109,7 @@ static struct cond_info* cond_get(const Addr cond)
 }
 
 /** Called before pthread_cond_init(). */
-void cond_pre_init(const Addr cond, const SizeT size)
+void cond_pre_init(const Addr cond)
 {
   struct cond_info* p;
 
@@ -124,8 +121,6 @@ void cond_pre_init(const Addr cond, const SizeT size)
                  thread_get_running_tid(),
                  cond);
   }
-
-  tl_assert(size > 0);
 
   p = cond_get(cond);
 
@@ -139,7 +134,7 @@ void cond_pre_init(const Addr cond, const SizeT size)
                             &cei);
   }
 
-  p = cond_get_or_allocate(cond, size);
+  p = cond_get_or_allocate(cond);
 }
 
 /** Called after pthread_cond_destroy(). */
@@ -183,7 +178,7 @@ void cond_post_destroy(const Addr cond)
 }
 
 /** Called before pthread_cond_wait(). */
-int cond_pre_wait(const Addr cond, const SizeT cond_size, const Addr mutex)
+int cond_pre_wait(const Addr cond, const Addr mutex)
 {
   struct cond_info* p;
 
@@ -196,7 +191,7 @@ int cond_pre_wait(const Addr cond, const SizeT cond_size, const Addr mutex)
                  cond);
   }
 
-  p = cond_get_or_allocate(cond, cond_size);
+  p = cond_get_or_allocate(cond);
   tl_assert(p);
 
   if (p->waiter_count == 0)

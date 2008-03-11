@@ -57,9 +57,9 @@ typedef enum { eLoad, eStore } BmAccessTypeT;
 struct bitmap* bm_new(void);
 void bm_delete(struct bitmap* const bm);
 void bm_access_range(struct bitmap* const bm,
-		     const Addr address,
-		     const SizeT size,
-		     const BmAccessTypeT access_type);
+                     const Addr address,
+                     const SizeT size,
+                     const BmAccessTypeT access_type);
 void bm_access_4(struct bitmap* const bm,
                  const Addr address,
                  const BmAccessTypeT access_type);

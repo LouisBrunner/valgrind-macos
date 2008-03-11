@@ -33,18 +33,18 @@
 #include "drd_clientreq.h"        // MutexT
 #include "drd_thread.h"           // DrdThreadId
 #include "drd_vc.h"
-#include "pub_tool_basics.h"      // Addr, SizeT
+#include "pub_tool_basics.h"      // Addr
 
 
 struct mutex_info;
 
 
 void mutex_set_trace(const Bool trace_mutex);
-struct mutex_info* mutex_init(const Addr mutex, const SizeT size,
+struct mutex_info* mutex_init(const Addr mutex,
                               const MutexT mutex_type);
 void mutex_post_destroy(const Addr mutex);
 struct mutex_info* mutex_get(const Addr mutex);
-void mutex_pre_lock(const Addr mutex, const SizeT size,
+void mutex_pre_lock(const Addr mutex,
                     const MutexT mutex_type);
 void mutex_post_lock(const Addr mutex, const Bool took_lock);
 void mutex_unlock(const Addr mutex, const MutexT mutex_type);

@@ -249,8 +249,9 @@ void drd_report_data_race2(Error* const err, const DataRaceErrInfo* const dri)
    else if (ai.akind == eMallocd && ai.lastchange)
    {
       VG_(message)(Vg_UserMsg,
-                   "Address 0x%08lx is at offset %ld. Allocation context:",
-                   dri->addr, ai.rwoffset);
+                   "Address 0x%lx is at offset %ld from 0x%lx."
+                   " Allocation context:",
+                   dri->addr, ai.rwoffset, dri->addr - ai.rwoffset);
       VG_(pp_ExeContext)(ai.lastchange);
    }
    else

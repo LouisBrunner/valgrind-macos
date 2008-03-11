@@ -151,9 +151,9 @@ void bm_access_4(struct bitmap* const bm,
  * bitmap bm.
  */
 void bm_access_range(struct bitmap* const bm,
-		     const Addr a,
-		     const SizeT size,
-		     const BmAccessTypeT access_type)
+                     const Addr a,
+                     const SizeT size,
+                     const BmAccessTypeT access_type)
 {
    tl_assert(bm);
    tl_assert(size > 0);

@@ -32,23 +32,22 @@
 
 #include "drd_thread.h"           // DrdThreadId
 #include "drd_vc.h"
-#include "pub_tool_basics.h"      // Addr, SizeT
+#include "pub_tool_basics.h"      // Addr
 
 
 struct semaphore_info;
 
 
 void semaphore_set_trace(const Bool trace_semaphore);
-struct semaphore_info* semaphore_init(const Addr semaphore, const SizeT size,
+struct semaphore_info* semaphore_init(const Addr semaphore,
                                       const Word pshared, const UWord value);
 void semaphore_destroy(const Addr semaphore);
-void semaphore_pre_wait(const Addr semaphore, const SizeT size);
+void semaphore_pre_wait(const Addr semaphore);
 void semaphore_post_wait(const DrdThreadId tid, const Addr semaphore,
                          const Bool waited);
-void semaphore_pre_post(const DrdThreadId tid, const Addr semaphore,
-                        const SizeT size);
+void semaphore_pre_post(const DrdThreadId tid, const Addr semaphore);
 void semaphore_post_post(const DrdThreadId tid, const Addr semaphore,
-                         const SizeT size, const Bool waited);
+                         const Bool waited);
 void semaphore_thread_delete(const DrdThreadId tid);
 
 

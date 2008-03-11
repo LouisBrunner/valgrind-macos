@@ -27,30 +27,30 @@ void drd_post_thread_join(DrdThreadId joiner, DrdThreadId joinee);
 
 void drd_trace_addr(const Addr addr);
 
-void drd_pre_mutex_init(Addr mutex, SizeT size, const MutexT mutex_type);
+void drd_pre_mutex_init(Addr mutex, const MutexT mutex_type);
 void drd_post_mutex_destroy(Addr mutex, const MutexT mutex_type);
-void drd_pre_mutex_lock(const Addr mutex, const SizeT size,
-                        const MutexT mutex_type);
+void drd_pre_mutex_lock(const Addr mutex, const MutexT mutex_type);
 void drd_post_mutex_lock(Addr mutex, const Bool took_lock);
 void drd_pre_mutex_unlock(const Addr mutex, const MutexT mutex_type);
 
-void drd_pre_cond_init(Addr cond, SizeT s);
+void drd_pre_cond_init(Addr cond);
 void drd_post_cond_destroy(Addr cond);
 
-void drd_semaphore_init(const Addr semaphore, const SizeT size,
+void drd_semaphore_init(const Addr semaphore,
                         const Word pshared, const Word value);
 void drd_semaphore_destroy(const Addr semaphore);
-void drd_semaphore_pre_wait(const DrdThreadId tid, const Addr semaphore,
-                            const SizeT size);
+void drd_semaphore_pre_wait(const DrdThreadId tid, const Addr semaphore);
 void drd_semaphore_post_wait(const DrdThreadId tid, const Addr semaphore,
                              const Bool waited);
-void drd_semaphore_pre_post(const DrdThreadId tid, const Addr semaphore,
-                            const SizeT size);
+void drd_semaphore_pre_post(const DrdThreadId tid, const Addr semaphore);
 void drd_semaphore_post_post(const DrdThreadId tid, const Addr semaphore,
-                             const SizeT size, const Bool waited);
+                             const Bool waited);
 
-void drd_barrier_init(const Addr barrier, const SizeT size, const Word count);
-void drd_barrier_destroy(const Addr barrier);
-void drd_barrier_pre_wait(const DrdThreadId tid, const Addr barrier);
+void drd_barrier_init(const Addr barrier,
+                      const BarrierT barrier_type, const Word count,
+                      const Bool reinitialization);
+void drd_barrier_destroy(const Addr barrier, const BarrierT barrier_type);
+void drd_barrier_pre_wait(const DrdThreadId tid, const Addr barrier,
+                          const BarrierT barrier_type);
 void drd_barrier_post_wait(const DrdThreadId tid, const Addr barrier,
-                           const Bool waited);
+                           const BarrierT barrier_type, const Bool waited);

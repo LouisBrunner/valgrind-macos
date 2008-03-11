@@ -92,8 +92,7 @@ Bool clientobj_present(const Addr a1, const Addr a2)
   VG_(OSetGen_ResetIter)(s_clientobj);
   for ( ; (p = VG_(OSetGen_Next)(s_clientobj)) != 0; )
   {
-    if ((a1 <= p->any.a1 && p->any.a1 < a2)
-        || (a1 < p->any.a2 && p->any.a2 <= a2))
+    if (a1 <= p->any.a1 && p->any.a1 < a2)
     {
       return True;  
     }
@@ -106,12 +105,11 @@ Bool clientobj_present(const Addr a1, const Addr a2)
  *  @pre No other client object is present in the address range [addr,addr+size[.
  */
 DrdClientobj*
-clientobj_add(const Addr a1, const Addr a2, const ObjType t)
+clientobj_add(const Addr a1, const ObjType t)
 {
   DrdClientobj* p;
 
-  tl_assert(a1 < a2 && a1 + 4096 > a2);
-  tl_assert(! clientobj_present(a1, a2));
+  tl_assert(! clientobj_present(a1, a1 + 1));
   tl_assert(VG_(OSetGen_Lookup)(s_clientobj, &a1) == 0);
 
   if (s_trace_clientobj)
@@ -122,11 +120,9 @@ clientobj_add(const Addr a1, const Addr a2, const ObjType t)
   p = VG_(OSetGen_AllocNode)(s_clientobj, sizeof(*p));
   VG_(memset)(p, 0, sizeof(*p));
   p->any.a1   = a1;
-  p->any.a2   = a2;
   p->any.type = t;
   VG_(OSetGen_Insert)(s_clientobj, p);
   tl_assert(VG_(OSetGen_Lookup)(s_clientobj, &a1) == p);
-  drd_start_suppression(p->any.a1, p->any.a2, "client object");
   return p;
 }
 
@@ -150,7 +146,6 @@ Bool clientobj_remove(const Addr addr, const ObjType t)
   if (p)
   {
     tl_assert(VG_(OSetGen_Lookup)(s_clientobj, &addr) == 0);
-    drd_finish_suppression(p->any.a1, p->any.a2);
     tl_assert(p->any.cleanup);
     (*p->any.cleanup)(p);
     VG_(OSetGen_FreeNode)(s_clientobj, p);
@@ -169,8 +164,7 @@ void clientobj_stop_using_mem(const Addr a1, const Addr a2)
   p = VG_(OSetGen_Next)(s_clientobj);
   for ( ; p != 0; )
   {
-    if ((a1 <= p->any.a1 && p->any.a1 < a2)
-        || (a1 < p->any.a2 && p->any.a2 <= a2))
+    if (a1 <= p->any.a1 && p->any.a1 < a2)
     {
       removed_at = p->any.a1;
       clientobj_remove(p->any.a1, p->any.type);

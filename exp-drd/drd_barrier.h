@@ -30,21 +30,24 @@
 #define __DRD_BARRIER_H
 
 
-#include "drd_thread.h"           // DrdThreadId
+#include "drd_clientreq.h"    // BarrierT
+#include "drd_thread.h"       // DrdThreadId
 #include "drd_vc.h"
-#include "pub_tool_basics.h"      // Addr, SizeT
+#include "pub_tool_basics.h"  // Addr
 
 
 struct barrier_info;
 
 
 void barrier_set_trace(const Bool trace_barrier);
-struct barrier_info* barrier_init(const Addr barrier, const SizeT size,
-                                  const Word count);
-void barrier_destroy(const Addr barrier);
-void barrier_pre_wait(const DrdThreadId tid, const Addr barrier);
+void barrier_init(const Addr barrier,
+                  const BarrierT barrier_type, const Word count,
+                  const Bool reinitialization);
+void barrier_destroy(const Addr barrier, const BarrierT barrier_type);
+void barrier_pre_wait(const DrdThreadId tid, const Addr barrier,
+                      const BarrierT barrier_type);
 void barrier_post_wait(const DrdThreadId tid, const Addr barrier,
-                       const Bool waited);
+                       const BarrierT barrier_type, const Bool waited);
 void barrier_thread_delete(const DrdThreadId threadid);
 void barrier_stop_using_mem(const Addr a1, const Addr a2);
 

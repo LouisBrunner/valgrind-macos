@@ -57,15 +57,11 @@ void mutex_set_trace(const Bool trace_mutex)
 
 static
 void mutex_initialize(struct mutex_info* const p,
-                      const Addr mutex,
-                      const SizeT size,
-                      const MutexT mutex_type)
+                      const Addr mutex, const MutexT mutex_type)
 {
   tl_assert(mutex != 0);
-  tl_assert(size > 0);
 
   tl_assert(p->a1 == mutex);
-  tl_assert(p->a2 == mutex + size);
   p->cleanup         = (void(*)(DrdClientobj*))&mutex_cleanup;
   p->mutex_type      = mutex_type;
   p->recursion_count = 0;
@@ -101,9 +97,7 @@ static void mutex_cleanup(struct mutex_info* p)
 
 static
 struct mutex_info*
-mutex_get_or_allocate(const Addr mutex,
-                      const SizeT size,
-                      const MutexT mutex_type)
+mutex_get_or_allocate(const Addr mutex, const MutexT mutex_type)
 {
   struct mutex_info* p;
 
@@ -111,12 +105,10 @@ mutex_get_or_allocate(const Addr mutex,
   p = &clientobj_get(mutex, ClientMutex)->mutex;
   if (p)
   {
-    tl_assert(p->mutex_type == mutex_type);
-    tl_assert(p->a2 - p->a1 == size);
     return p;
   }
 
-  if (clientobj_present(mutex, mutex + size))
+  if (clientobj_present(mutex, mutex + 1))
   {
     GenericErrInfo GEI;
     VG_(maybe_record_error)(VG_(get_running_tid)(),
@@ -127,8 +119,8 @@ mutex_get_or_allocate(const Addr mutex,
     return 0;
   }
 
-  p = &clientobj_add(mutex, mutex + size, ClientMutex)->mutex;
-  mutex_initialize(p, mutex, size, mutex_type);
+  p = &clientobj_add(mutex, ClientMutex)->mutex;
+  mutex_initialize(p, mutex, mutex_type);
   return p;
 }
 
@@ -140,7 +132,7 @@ struct mutex_info* mutex_get(const Addr mutex)
 
 /** Called before pthread_mutex_init(). */
 struct mutex_info*
-mutex_init(const Addr mutex, const SizeT size, const MutexT mutex_type)
+mutex_init(const Addr mutex, const MutexT mutex_type)
 {
   struct mutex_info* p;
 
@@ -178,7 +170,7 @@ mutex_init(const Addr mutex, const SizeT size, const MutexT mutex_type)
                             &MEI);
     return p;
   }
-  p = mutex_get_or_allocate(mutex, size, mutex_type);
+  p = mutex_get_or_allocate(mutex, mutex_type);
 
   return p;
 }
@@ -208,11 +200,13 @@ void mutex_post_destroy(const Addr mutex)
  *  an attempt is made to lock recursively a synchronization object that must
  *  not be locked recursively.
  */
-void mutex_pre_lock(const Addr mutex, const SizeT size, MutexT mutex_type)
+void mutex_pre_lock(const Addr mutex, MutexT mutex_type)
 {
   struct mutex_info* p;
 
-  p = mutex_get(mutex);
+  p = mutex_get_or_allocate(mutex, mutex_type);
+
+  tl_assert(p);
 
   if (s_trace_mutex)
   {
@@ -220,10 +214,10 @@ void mutex_pre_lock(const Addr mutex, const SizeT size, MutexT mutex_type)
                  "[%d/%d] pre_mutex_lock  %s 0x%lx rc %d owner %d",
                  VG_(get_running_tid)(),
                  thread_get_running_tid(),
-                 p ? mutex_get_typename(p) : "(?)",
+                 mutex_get_typename(p),
                  mutex,
-                 p ? p->recursion_count : 0,
-                 p ? p->owner : VG_INVALID_THREADID);
+                 p->recursion_count,
+                 p->owner);
   }
 
   if (mutex_type == mutex_type_invalid_mutex)
@@ -236,13 +230,6 @@ void mutex_pre_lock(const Addr mutex, const SizeT size, MutexT mutex_type)
                             &GEI);
     return;
   }
-
-  if (p == 0)
-  {
-    p = mutex_init(mutex, size, mutex_type);
-  }
-
-  tl_assert(p);
 
   if (p->owner == thread_get_running_tid()
       && p->recursion_count >= 1

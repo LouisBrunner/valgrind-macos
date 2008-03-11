@@ -321,14 +321,16 @@ PTH_FUNC(int, pthreadZumutexZuinit,
    int ret;
    int res;
    OrigFn fn;
-   int mt = PTHREAD_MUTEX_DEFAULT;
+   int mt;
    VALGRIND_GET_ORIG_FN(fn);
+   mt = PTHREAD_MUTEX_DEFAULT;
    if (attr)
       pthread_mutexattr_gettype(attr, &mt);
    VALGRIND_DO_CLIENT_REQUEST(res, -1, VG_USERREQ__PRE_MUTEX_INIT,
-                              mutex, sizeof(*mutex),
-                              pthread_to_drd_mutex_type(mt), 0, 0);
+                              mutex, pthread_to_drd_mutex_type(mt), 0, 0, 0);
    CALL_FN_W_WW(ret, fn, mutex, attr);
+   VALGRIND_DO_CLIENT_REQUEST(res, -1, VG_USERREQ__POST_MUTEX_INIT,
+                              mutex, 0, 0, 0, 0);
    return ret;
 }
 
@@ -340,6 +342,8 @@ PTH_FUNC(int, pthreadZumutexZudestroy,
    int res;
    OrigFn fn;
    VALGRIND_GET_ORIG_FN(fn);
+   VALGRIND_DO_CLIENT_REQUEST(res, -1, VG_USERREQ__PRE_MUTEX_DESTROY,
+                              mutex, 0, 0, 0, 0);
    CALL_FN_W_W(ret, fn, mutex);
    VALGRIND_DO_CLIENT_REQUEST(res, -1, VG_USERREQ__POST_MUTEX_DESTROY,
                               mutex, mutex_type(mutex), 0, 0, 0);
@@ -354,10 +358,10 @@ PTH_FUNC(int, pthreadZumutexZulock, // pthread_mutex_lock
    int   res;
    OrigFn fn;
    VALGRIND_GET_ORIG_FN(fn);
-   VALGRIND_DO_CLIENT_REQUEST(res, 0, VG_USERREQ__PRE_PTHREAD_MUTEX_LOCK,
-                              mutex, sizeof(*mutex), mutex_type(mutex), 0, 0);
+   VALGRIND_DO_CLIENT_REQUEST(res, 0, VG_USERREQ__PRE_MUTEX_LOCK,
+                              mutex, mutex_type(mutex), 0, 0, 0);
    CALL_FN_W_W(ret, fn, mutex);
-   VALGRIND_DO_CLIENT_REQUEST(res, 0, VG_USERREQ__POST_PTHREAD_MUTEX_LOCK,
+   VALGRIND_DO_CLIENT_REQUEST(res, 0, VG_USERREQ__POST_MUTEX_LOCK,
                               mutex, ret == 0, 0, 0, 0);
    return ret;
 }
@@ -370,10 +374,10 @@ PTH_FUNC(int, pthreadZumutexZutrylock, // pthread_mutex_trylock
    int   res;
    OrigFn fn;
    VALGRIND_GET_ORIG_FN(fn);
-   VALGRIND_DO_CLIENT_REQUEST(res, 0, VG_USERREQ__PRE_PTHREAD_MUTEX_LOCK,
-                              mutex, sizeof(*mutex), mutex_type(mutex), 0, 0);
+   VALGRIND_DO_CLIENT_REQUEST(res, 0, VG_USERREQ__PRE_MUTEX_LOCK,
+                              mutex, mutex_type(mutex), 0, 0, 0);
    CALL_FN_W_W(ret, fn, mutex);
-   VALGRIND_DO_CLIENT_REQUEST(res, -1, VG_USERREQ__POST_PTHREAD_MUTEX_LOCK,
+   VALGRIND_DO_CLIENT_REQUEST(res, -1, VG_USERREQ__POST_MUTEX_LOCK,
                               mutex, ret == 0, 0, 0, 0);
    return ret;
 }
@@ -387,10 +391,10 @@ PTH_FUNC(int, pthreadZumutexZutimedlock, // pthread_mutex_timedlock
    int   res;
    OrigFn fn;
    VALGRIND_GET_ORIG_FN(fn);
-   VALGRIND_DO_CLIENT_REQUEST(res, 0, VG_USERREQ__PRE_PTHREAD_MUTEX_LOCK,
-                              mutex, sizeof(*mutex), mutex_type(mutex), 0, 0);
+   VALGRIND_DO_CLIENT_REQUEST(res, 0, VG_USERREQ__PRE_MUTEX_LOCK,
+                              mutex, mutex_type(mutex), 0, 0, 0);
    CALL_FN_W_WW(ret, fn, mutex, abs_timeout);
-   VALGRIND_DO_CLIENT_REQUEST(res, -1, VG_USERREQ__POST_PTHREAD_MUTEX_LOCK,
+   VALGRIND_DO_CLIENT_REQUEST(res, -1, VG_USERREQ__POST_MUTEX_LOCK,
                               mutex, ret == 0, 0, 0, 0);
    return ret;
 }
@@ -404,9 +408,12 @@ PTH_FUNC(int, pthreadZumutexZuunlock, // pthread_mutex_unlock
    OrigFn fn;
    VALGRIND_GET_ORIG_FN(fn);
    VALGRIND_DO_CLIENT_REQUEST(res, -1,
-                              VG_USERREQ__PRE_PTHREAD_MUTEX_UNLOCK,
-                              mutex, sizeof(*mutex), mutex_type(mutex), 0, 0);
+                              VG_USERREQ__PRE_MUTEX_UNLOCK,
+                              mutex, mutex_type(mutex), 0, 0, 0);
    CALL_FN_W_W(ret, fn, mutex);
+   VALGRIND_DO_CLIENT_REQUEST(res, -1,
+                              VG_USERREQ__POST_MUTEX_UNLOCK,
+                              mutex, 0, 0, 0, 0);
    return ret;
 }
 
@@ -419,8 +426,8 @@ PTH_FUNC(int, pthreadZucondZuinitZa, // pthread_cond_init*
    int res;
    OrigFn fn;
    VALGRIND_GET_ORIG_FN(fn);
-   VALGRIND_DO_CLIENT_REQUEST(res, -1, VG_USERREQ__PRE_PTHREAD_COND_INIT,
-                              cond, sizeof(*cond), 0, 0, 0);
+   VALGRIND_DO_CLIENT_REQUEST(res, -1, VG_USERREQ__PRE_COND_INIT,
+                              cond, 0, 0, 0, 0);
    CALL_FN_W_WW(ret, fn, cond, attr);
    return ret;
 }
@@ -434,7 +441,7 @@ PTH_FUNC(int, pthreadZucondZudestroyZa, // pthread_cond_destroy*
    OrigFn fn;
    VALGRIND_GET_ORIG_FN(fn);
    CALL_FN_W_W(ret, fn, cond);
-   VALGRIND_DO_CLIENT_REQUEST(res, -1, VG_USERREQ__POST_PTHREAD_COND_DESTROY,
+   VALGRIND_DO_CLIENT_REQUEST(res, -1, VG_USERREQ__POST_COND_DESTROY,
                               cond, 0, 0, 0, 0);
    return ret;
 }
@@ -448,11 +455,10 @@ PTH_FUNC(int, pthreadZucondZuwaitZa, // pthread_cond_wait*
    int   res;
    OrigFn fn;
    VALGRIND_GET_ORIG_FN(fn);
-   VALGRIND_DO_CLIENT_REQUEST(res, -1, VG_USERREQ__PRE_PTHREAD_COND_WAIT,
-                              cond, sizeof(*cond), mutex, mutex_type(mutex),
-                              0);
+   VALGRIND_DO_CLIENT_REQUEST(res, -1, VG_USERREQ__PRE_COND_WAIT,
+                              cond, mutex, mutex_type(mutex), 0, 0);
    CALL_FN_W_WW(ret, fn, cond, mutex);
-   VALGRIND_DO_CLIENT_REQUEST(res, -1, VG_USERREQ__POST_PTHREAD_COND_WAIT,
+   VALGRIND_DO_CLIENT_REQUEST(res, -1, VG_USERREQ__POST_COND_WAIT,
                               cond, mutex, ret == 0, 0, 0);
    return ret;
 }
@@ -467,11 +473,10 @@ PTH_FUNC(int, pthreadZucondZutimedwaitZa, // pthread_cond_timedwait*
    int   res;
    OrigFn fn;
    VALGRIND_GET_ORIG_FN(fn);
-   VALGRIND_DO_CLIENT_REQUEST(res, -1, VG_USERREQ__PRE_PTHREAD_COND_WAIT,
-                              cond, sizeof(*cond), mutex, mutex_type(mutex),
-                              0);
+   VALGRIND_DO_CLIENT_REQUEST(res, -1, VG_USERREQ__PRE_COND_WAIT,
+                              cond, mutex, mutex_type(mutex), 0, 0);
    CALL_FN_W_WWW(ret, fn, cond, mutex, abstime);
-   VALGRIND_DO_CLIENT_REQUEST(res, -1, VG_USERREQ__POST_PTHREAD_COND_WAIT,
+   VALGRIND_DO_CLIENT_REQUEST(res, -1, VG_USERREQ__POST_COND_WAIT,
                               cond, mutex, ret == 0, 0, 0);
    return ret;
 }
@@ -484,7 +489,7 @@ PTH_FUNC(int, pthreadZucondZusignalZa, // pthread_cond_signal*
    int   res;
    OrigFn fn;
    VALGRIND_GET_ORIG_FN(fn);
-   VALGRIND_DO_CLIENT_REQUEST(res, -1, VG_USERREQ__PRE_PTHREAD_COND_SIGNAL,
+   VALGRIND_DO_CLIENT_REQUEST(res, -1, VG_USERREQ__PRE_COND_SIGNAL,
                               cond, 0, 0, 0, 0);
    CALL_FN_W_W(ret, fn, cond);
    return ret;
@@ -498,7 +503,7 @@ PTH_FUNC(int, pthreadZucondZubroadcastZa, // pthread_cond_broadcast*
    int   res;
    OrigFn fn;
    VALGRIND_GET_ORIG_FN(fn);
-   VALGRIND_DO_CLIENT_REQUEST(res, -1, VG_USERREQ__PRE_PTHREAD_COND_BROADCAST,
+   VALGRIND_DO_CLIENT_REQUEST(res, -1, VG_USERREQ__PRE_COND_BROADCAST,
                               cond, 0, 0, 0, 0);
    CALL_FN_W_W(ret, fn, cond);
    return ret;
@@ -515,8 +520,7 @@ PTH_FUNC(int, pthreadZuspinZuinit, // pthread_spin_init
    OrigFn fn;
    VALGRIND_GET_ORIG_FN(fn);
    VALGRIND_DO_CLIENT_REQUEST(res, -1, VG_USERREQ__SPIN_INIT_OR_UNLOCK,
-                              spinlock, sizeof(*spinlock),
-                              mutex_type_spinlock, 0, 0);
+                              spinlock, mutex_type_spinlock, 0, 0, 0);
    CALL_FN_W_WW(ret, fn, spinlock, pshared);
    return ret;
 }
@@ -543,11 +547,10 @@ PTH_FUNC(int, pthreadZuspinZulock, // pthread_spin_lock
    int   res;
    OrigFn fn;
    VALGRIND_GET_ORIG_FN(fn);
-   VALGRIND_DO_CLIENT_REQUEST(res, 0, VG_USERREQ__PRE_PTHREAD_MUTEX_LOCK,
-                              spinlock, sizeof(*spinlock), mutex_type_spinlock,
-                              0, 0);
+   VALGRIND_DO_CLIENT_REQUEST(res, 0, VG_USERREQ__PRE_MUTEX_LOCK,
+                              spinlock, mutex_type_spinlock, 0, 0, 0);
    CALL_FN_W_W(ret, fn, spinlock);
-   VALGRIND_DO_CLIENT_REQUEST(res, -1, VG_USERREQ__POST_PTHREAD_MUTEX_LOCK,
+   VALGRIND_DO_CLIENT_REQUEST(res, -1, VG_USERREQ__POST_MUTEX_LOCK,
                               spinlock, ret == 0, 0, 0, 0);
    return ret;
 }
@@ -560,11 +563,10 @@ PTH_FUNC(int, pthreadZuspinZutrylock, // pthread_spin_trylock
    int   res;
    OrigFn fn;
    VALGRIND_GET_ORIG_FN(fn);
-   VALGRIND_DO_CLIENT_REQUEST(res, 0, VG_USERREQ__PRE_PTHREAD_MUTEX_LOCK,
-                              spinlock, sizeof(*spinlock), mutex_type_spinlock,
-                              0, 0);
+   VALGRIND_DO_CLIENT_REQUEST(res, 0, VG_USERREQ__PRE_MUTEX_LOCK,
+                              spinlock, mutex_type_spinlock, 0, 0, 0);
    CALL_FN_W_W(ret, fn, spinlock);
-   VALGRIND_DO_CLIENT_REQUEST(res, -1, VG_USERREQ__POST_PTHREAD_MUTEX_LOCK,
+   VALGRIND_DO_CLIENT_REQUEST(res, -1, VG_USERREQ__POST_MUTEX_LOCK,
                               spinlock, ret == 0, 0, 0, 0);
    return ret;
 }
@@ -578,8 +580,7 @@ PTH_FUNC(int, pthreadZuspinZuunlock, // pthread_spin_unlock
    OrigFn fn;
    VALGRIND_GET_ORIG_FN(fn);
    VALGRIND_DO_CLIENT_REQUEST(res, -1, VG_USERREQ__SPIN_INIT_OR_UNLOCK,
-                              spinlock, sizeof(*spinlock),
-                              mutex_type_spinlock, 0, 0);
+                              spinlock, mutex_type_spinlock, 0, 0, 0);
    CALL_FN_W_W(ret, fn, spinlock);
    return ret;
 }
@@ -594,10 +595,11 @@ PTH_FUNC(int, pthreadZubarrierZuinit, // pthread_barrier_init
    int   res;
    OrigFn fn;
    VALGRIND_GET_ORIG_FN(fn);
-   VALGRIND_DO_CLIENT_REQUEST(res, -1, VG_USERREQ__BARRIER_INIT,
-                              barrier, sizeof(*barrier),
-                              count, 0, 0);
+   VALGRIND_DO_CLIENT_REQUEST(res, -1, VG_USERREQ__PRE_BARRIER_INIT,
+                              barrier, pthread_barrier, count, 0, 0);
    CALL_FN_W_WWW(ret, fn, barrier, attr, count);
+   VALGRIND_DO_CLIENT_REQUEST(res, -1, VG_USERREQ__POST_BARRIER_INIT,
+                              barrier, pthread_barrier, 0, 0, 0);
    return ret;
 }
 
@@ -609,9 +611,11 @@ PTH_FUNC(int, pthreadZubarrierZudestroy, // pthread_barrier_destroy
    int   res;
    OrigFn fn;
    VALGRIND_GET_ORIG_FN(fn);
+   VALGRIND_DO_CLIENT_REQUEST(res, -1, VG_USERREQ__PRE_BARRIER_DESTROY,
+                              barrier, pthread_barrier, 0, 0, 0);
    CALL_FN_W_W(ret, fn, barrier);
-   VALGRIND_DO_CLIENT_REQUEST(res, -1, VG_USERREQ__BARRIER_DESTROY,
-                              barrier, 0, 0, 0, 0);
+   VALGRIND_DO_CLIENT_REQUEST(res, -1, VG_USERREQ__POST_BARRIER_DESTROY,
+                              barrier, pthread_barrier, 0, 0, 0);
    return ret;
 }
 
@@ -624,22 +628,19 @@ PTH_FUNC(int, pthreadZubarrierZuwait, // pthread_barrier_wait
    OrigFn fn;
    VALGRIND_GET_ORIG_FN(fn);
    VALGRIND_DO_CLIENT_REQUEST(res, -1, VG_USERREQ__PRE_BARRIER_WAIT,
-                              barrier, 0, 0, 0, 0);
+                              barrier, pthread_barrier, 0, 0, 0);
    CALL_FN_W_W(ret, fn, barrier);
    VALGRIND_DO_CLIENT_REQUEST(res, -1, VG_USERREQ__POST_BARRIER_WAIT,
-                              barrier,
+                              barrier, pthread_barrier,
                               ret == 0 || ret == PTHREAD_BARRIER_SERIAL_THREAD,
-                              0, 0, 0);
+                              0, 0);
    return ret;
 }
 
 
-// From glibc 2.0 linuxthreads/sysdeps/pthread/cmpxchg/semaphorebits.h
-typedef struct { long int sem_status; } sem_t_glibc_2_0;
-
 // sem_init
 PTH_FUNC(int, semZuinitZAGLIBCZu2Zd0, // sem_init@GLIBC_2.0
-              sem_t_glibc_2_0 *sem,
+              sem_t *sem,
               int pshared,
               unsigned int value)
 {
@@ -647,13 +648,11 @@ PTH_FUNC(int, semZuinitZAGLIBCZu2Zd0, // sem_init@GLIBC_2.0
    int   res;
    OrigFn fn;
    VALGRIND_GET_ORIG_FN(fn);
+   VALGRIND_DO_CLIENT_REQUEST(res, -1, VG_USERREQ__PRE_SEM_INIT,
+                              sem, pshared, value, 0, 0);
    CALL_FN_W_WWW(ret, fn, sem, pshared, value);
-   if (ret == 0)
-   {
-      VALGRIND_DO_CLIENT_REQUEST(res, -1, VG_USERREQ__SEM_INIT,
-                                 sem, sizeof(*sem),
-                                 pshared, value, 0);
-   }
+   VALGRIND_DO_CLIENT_REQUEST(res, -1, VG_USERREQ__POST_SEM_INIT,
+                              sem, 0, 0, 0, 0);
    return ret;
 }
 
@@ -666,30 +665,27 @@ PTH_FUNC(int, semZuinitZa, // sem_init*
    int   res;
    OrigFn fn;
    VALGRIND_GET_ORIG_FN(fn);
+   VALGRIND_DO_CLIENT_REQUEST(res, -1, VG_USERREQ__PRE_SEM_INIT,
+                              sem, pshared, value, 0, 0);
    CALL_FN_W_WWW(ret, fn, sem, pshared, value);
-   if (ret == 0)
-   {
-      VALGRIND_DO_CLIENT_REQUEST(res, -1, VG_USERREQ__SEM_INIT,
-                                 sem, sizeof(*sem),
-                                 pshared, value, 0);
-   }
+   VALGRIND_DO_CLIENT_REQUEST(res, -1, VG_USERREQ__POST_SEM_INIT,
+                              sem, 0, 0, 0, 0);
    return ret;
 }
 
 // sem_destroy
 PTH_FUNC(int, semZudestroyZAGLIBCZu2Zd0, // sem_destroy@GLIBC_2.0
-              sem_t_glibc_2_0 *sem)
+              sem_t *sem)
 {
    int   ret;
    int   res;
    OrigFn fn;
    VALGRIND_GET_ORIG_FN(fn);
+   VALGRIND_DO_CLIENT_REQUEST(res, -1, VG_USERREQ__PRE_SEM_DESTROY,
+                              sem, 0, 0, 0, 0);
    CALL_FN_W_W(ret, fn, sem);
-   if (ret == 0)
-   {
-      VALGRIND_DO_CLIENT_REQUEST(res, -1, VG_USERREQ__SEM_DESTROY,
-                                 sem, 0, 0, 0, 0);
-   }
+   VALGRIND_DO_CLIENT_REQUEST(res, -1, VG_USERREQ__POST_SEM_DESTROY,
+                              sem, 0, 0, 0, 0);
    return ret;
 }
 
@@ -700,18 +696,17 @@ PTH_FUNC(int, semZudestroyZa, // sem_destroy*
    int   res;
    OrigFn fn;
    VALGRIND_GET_ORIG_FN(fn);
+   VALGRIND_DO_CLIENT_REQUEST(res, -1, VG_USERREQ__PRE_SEM_DESTROY,
+                              sem, 0, 0, 0, 0);
    CALL_FN_W_W(ret, fn, sem);
-   if (ret == 0)
-   {
-      VALGRIND_DO_CLIENT_REQUEST(res, -1, VG_USERREQ__SEM_DESTROY,
-                                 sem, 0, 0, 0, 0);
-   }
+   VALGRIND_DO_CLIENT_REQUEST(res, -1, VG_USERREQ__POST_SEM_DESTROY,
+                              sem, 0, 0, 0, 0);
    return ret;
 }
 
 // sem_wait
 PTH_FUNC(int, semZuwaitZAGLIBCZu2Zd0, // sem_wait@GLIBC_2.0
-              sem_t_glibc_2_0 *sem)
+              sem_t *sem)
 {
    int   ret;
    int   res;
@@ -743,7 +738,7 @@ PTH_FUNC(int, semZuwaitZa, // sem_wait*
 
 // sem_trywait
 PTH_FUNC(int, semZutrywaitZAGLIBCZu2Zd0, // sem_trywait@GLIBC_2.0
-              sem_t_glibc_2_0 *sem)
+              sem_t *sem)
 {
    int   ret;
    int   res;
@@ -790,17 +785,17 @@ PTH_FUNC(int, semZutimedwait, // sem_timedwait
 
 // sem_post
 PTH_FUNC(int, semZupostZAGLIBCZu2Zd0, // sem_post@GLIBC_2.0
-              sem_t_glibc_2_0 *sem)
+              sem_t *sem)
 {
    int   ret;
    int   res;
    OrigFn fn;
    VALGRIND_GET_ORIG_FN(fn);
    VALGRIND_DO_CLIENT_REQUEST(res, -1, VG_USERREQ__PRE_SEM_POST,
-                              sem, sizeof(*sem), 0, 0, 0);
+                              sem, 0, 0, 0, 0);
    CALL_FN_W_W(ret, fn, sem);
    VALGRIND_DO_CLIENT_REQUEST(res, -1, VG_USERREQ__POST_SEM_POST,
-                              sem, sizeof(*sem), ret == 0, 0, 0);
+                              sem, ret == 0, 0, 0, 0);
    return ret;
 }
 
@@ -813,10 +808,10 @@ PTH_FUNC(int, semZupostZa, // sem_post*
    OrigFn fn;
    VALGRIND_GET_ORIG_FN(fn);
    VALGRIND_DO_CLIENT_REQUEST(res, -1, VG_USERREQ__PRE_SEM_POST,
-                              sem, sizeof(*sem), 0, 0, 0);
+                              sem, 0, 0, 0, 0);
    CALL_FN_W_W(ret, fn, sem);
    VALGRIND_DO_CLIENT_REQUEST(res, -1, VG_USERREQ__POST_SEM_POST,
-                              sem, sizeof(*sem), ret == 0, 0, 0);
+                              sem, ret == 0, 0, 0, 0);
    return ret;
 }
 
@@ -831,7 +826,7 @@ PTH_FUNC(int,
    OrigFn fn;
    VALGRIND_GET_ORIG_FN(fn);
    VALGRIND_DO_CLIENT_REQUEST(res, -1, VG_USERREQ__PRE_RWLOCK_INIT,
-                              rwlock, sizeof(*rwlock), 0, 0, 0);
+                              rwlock, 0, 0, 0, 0);
    CALL_FN_W_WW(ret, fn, rwlock, attr);
    return ret;
 }
@@ -861,7 +856,7 @@ PTH_FUNC(int,
    OrigFn fn;
    VALGRIND_GET_ORIG_FN(fn);
    VALGRIND_DO_CLIENT_REQUEST(res, -1, VG_USERREQ__PRE_RWLOCK_RDLOCK,
-                              rwlock, sizeof(*rwlock), 0, 0, 0);
+                              rwlock, 0, 0, 0, 0);
    CALL_FN_W_W(ret, fn, rwlock);
    VALGRIND_DO_CLIENT_REQUEST(res, -1, VG_USERREQ__POST_RWLOCK_RDLOCK,
                               rwlock, ret == 0, 0, 0, 0);
@@ -878,7 +873,7 @@ PTH_FUNC(int,
    OrigFn fn;
    VALGRIND_GET_ORIG_FN(fn);
    VALGRIND_DO_CLIENT_REQUEST(res, -1, VG_USERREQ__PRE_RWLOCK_WRLOCK,
-                              rwlock, sizeof(*rwlock), 0, 0, 0);
+                              rwlock, 0, 0, 0, 0);
    CALL_FN_W_W(ret, fn, rwlock);
    VALGRIND_DO_CLIENT_REQUEST(res, -1, VG_USERREQ__POST_RWLOCK_WRLOCK,
                               rwlock, ret == 0, 0, 0, 0);
@@ -895,7 +890,7 @@ PTH_FUNC(int,
    OrigFn fn;
    VALGRIND_GET_ORIG_FN(fn);
    VALGRIND_DO_CLIENT_REQUEST(res, -1, VG_USERREQ__PRE_RWLOCK_RDLOCK,
-                              rwlock, sizeof(*rwlock), 0, 0, 0);
+                              rwlock, 0, 0, 0, 0);
    CALL_FN_W_W(ret, fn, rwlock);
    VALGRIND_DO_CLIENT_REQUEST(res, -1, VG_USERREQ__POST_RWLOCK_RDLOCK,
                               rwlock, ret == 0, 0, 0, 0);
@@ -912,7 +907,7 @@ PTH_FUNC(int,
    OrigFn fn;
    VALGRIND_GET_ORIG_FN(fn);
    VALGRIND_DO_CLIENT_REQUEST(res, -1, VG_USERREQ__PRE_RWLOCK_WRLOCK,
-                              rwlock, sizeof(*rwlock), 0, 0, 0);
+                              rwlock, 0, 0, 0, 0);
    CALL_FN_W_W(ret, fn, rwlock);
    VALGRIND_DO_CLIENT_REQUEST(res, -1, VG_USERREQ__POST_RWLOCK_WRLOCK,
                               rwlock, ret == 0, 0, 0, 0);
@@ -929,7 +924,7 @@ PTH_FUNC(int,
    OrigFn fn;
    VALGRIND_GET_ORIG_FN(fn);
    VALGRIND_DO_CLIENT_REQUEST(res, -1, VG_USERREQ__PRE_RWLOCK_RDLOCK,
-                              rwlock, sizeof(*rwlock), 0, 0, 0);
+                              rwlock, 0, 0, 0, 0);
    CALL_FN_W_W(ret, fn, rwlock);
    VALGRIND_DO_CLIENT_REQUEST(res, -1, VG_USERREQ__POST_RWLOCK_RDLOCK,
                               rwlock, ret == 0, 0, 0, 0);
@@ -946,7 +941,7 @@ PTH_FUNC(int,
    OrigFn fn;
    VALGRIND_GET_ORIG_FN(fn);
    VALGRIND_DO_CLIENT_REQUEST(res, -1, VG_USERREQ__PRE_RWLOCK_WRLOCK,
-                              rwlock, sizeof(*rwlock), 0, 0, 0);
+                              rwlock, 0, 0, 0, 0);
    CALL_FN_W_W(ret, fn, rwlock);
    VALGRIND_DO_CLIENT_REQUEST(res, -1, VG_USERREQ__POST_RWLOCK_WRLOCK,
                               rwlock, ret == 0, 0, 0, 0);
@@ -962,8 +957,10 @@ PTH_FUNC(int,
    int   res;
    OrigFn fn;
    VALGRIND_GET_ORIG_FN(fn);
-   CALL_FN_W_W(ret, fn, rwlock);
    VALGRIND_DO_CLIENT_REQUEST(res, -1, VG_USERREQ__PRE_RWLOCK_UNLOCK,
+                              rwlock, 0, 0, 0, 0);
+   CALL_FN_W_W(ret, fn, rwlock);
+   VALGRIND_DO_CLIENT_REQUEST(res, -1, VG_USERREQ__POST_RWLOCK_UNLOCK,
                               rwlock, ret == 0, 0, 0, 0);
    return ret;
 }

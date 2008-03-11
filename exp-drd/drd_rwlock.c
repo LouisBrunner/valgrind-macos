@@ -154,14 +154,10 @@ static void rwlock_combine_other_vc(struct rwlock_info* const p,
 }
 
 static
-void rwlock_initialize(struct rwlock_info* const p,
-                       const Addr rwlock,
-                       const SizeT size)
+void rwlock_initialize(struct rwlock_info* const p, const Addr rwlock)
 {
   tl_assert(rwlock != 0);
-  tl_assert(size > 0);
   tl_assert(p->a1 == rwlock);
-  tl_assert(p->a2 == rwlock + size);
   tl_assert(p->type == ClientRwlock);
 
   p->cleanup     = (void(*)(DrdClientobj*))&rwlock_cleanup;
@@ -204,7 +200,7 @@ static void rwlock_cleanup(struct rwlock_info* p)
 
 static
 struct rwlock_info*
-rwlock_get_or_allocate(const Addr rwlock, const SizeT size)
+rwlock_get_or_allocate(const Addr rwlock)
 {
   struct rwlock_info* p;
 
@@ -212,11 +208,10 @@ rwlock_get_or_allocate(const Addr rwlock, const SizeT size)
   p = &clientobj_get(rwlock, ClientRwlock)->rwlock;
   if (p)
   {
-    tl_assert(p->a2 - p->a1 == size);
     return p;
   }
 
-  if (clientobj_present(rwlock, rwlock + size))
+  if (clientobj_present(rwlock, rwlock + 1))
   {
     GenericErrInfo GEI;
     VG_(maybe_record_error)(VG_(get_running_tid)(),
@@ -227,8 +222,8 @@ rwlock_get_or_allocate(const Addr rwlock, const SizeT size)
     return 0;
   }
 
-  p = &clientobj_add(rwlock, rwlock + size, ClientRwlock)->rwlock;
-  rwlock_initialize(p, rwlock, size);
+  p = &clientobj_add(rwlock, ClientRwlock)->rwlock;
+  rwlock_initialize(p, rwlock);
   return p;
 }
 
@@ -239,8 +234,7 @@ static struct rwlock_info* rwlock_get(const Addr rwlock)
 }
 
 /** Called before pthread_rwlock_init(). */
-struct rwlock_info*
-rwlock_pre_init(const Addr rwlock, const SizeT size)
+struct rwlock_info* rwlock_pre_init(const Addr rwlock)
 {
   struct rwlock_info* p;
 
@@ -268,7 +262,7 @@ rwlock_pre_init(const Addr rwlock, const SizeT size)
     return p;
   }
 
-  p = rwlock_get_or_allocate(rwlock, size);
+  p = rwlock_get_or_allocate(rwlock);
 
   return p;
 }
@@ -298,11 +292,11 @@ void rwlock_post_destroy(const Addr rwlock)
  *  an attempt is made to lock recursively a synchronization object that must
  *  not be locked recursively.
  */
-void rwlock_pre_rdlock(const Addr rwlock, const SizeT size)
+void rwlock_pre_rdlock(const Addr rwlock)
 {
   struct rwlock_info* p;
 
-  p = rwlock_get_or_allocate(rwlock, size);
+  p = rwlock_get_or_allocate(rwlock);
 
   tl_assert(p);
 
@@ -364,7 +358,7 @@ void rwlock_post_rdlock(const Addr rwlock, const Bool took_lock)
  *  an attempt is made to lock recursively a synchronization object that must
  *  not be locked recursively.
  */
-void rwlock_pre_wrlock(const Addr rwlock, const SizeT size)
+void rwlock_pre_wrlock(const Addr rwlock)
 {
   struct rwlock_info* p;
 
@@ -381,7 +375,7 @@ void rwlock_pre_wrlock(const Addr rwlock, const SizeT size)
 
   if (p == 0)
   {
-    p = rwlock_get_or_allocate(rwlock, size);
+    p = rwlock_get_or_allocate(rwlock);
   }
 
   tl_assert(p);

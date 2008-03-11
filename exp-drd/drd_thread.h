@@ -75,12 +75,18 @@ DrdThreadId thread_get_running_tid(void);
 void thread_set_vg_running_tid(const ThreadId vg_tid);
 void thread_set_running_tid(const ThreadId vg_tid,
                             const DrdThreadId drd_tid);
+int thread_enter_synchr(const DrdThreadId tid);
+int thread_leave_synchr(const DrdThreadId tid);
+int thread_get_synchr_nesting_count(const DrdThreadId tid);
 Segment* thread_get_segment(const DrdThreadId tid);
 void thread_new_segment(const DrdThreadId tid);
 VectorClock* thread_get_vc(const DrdThreadId tid);
 void thread_combine_vc(const DrdThreadId joiner, const DrdThreadId joinee);
 void thread_combine_vc2(const DrdThreadId tid, const VectorClock* const vc);
 void thread_stop_using_mem(const Addr a1, const Addr a2);
+void thread_start_recording(const DrdThreadId tid);
+void thread_stop_recording(const DrdThreadId tid);
+Bool thread_is_recording(const DrdThreadId tid);
 void thread_print_all(void);
 void thread_report_races(const DrdThreadId tid);
 void thread_report_races_segment(const DrdThreadId tid,

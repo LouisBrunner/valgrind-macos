@@ -29,25 +29,25 @@ Not a mutex
 Destroying locked mutex: mutex 0x........, recursion count 1, owner 1.
    at 0x........: pthread_mutex_destroy (drd_pthread_intercepts.c:?)
    by 0x........: main (tc20_verifywrap.c:102)
-[1/1] pre_mutex_lock  (?) 0x........ rc 0 owner 0
+[1/1] pre_mutex_lock  invalid mutex 0x........ rc 0 owner 0
 
 Not a mutex
    at 0x........: pthread_mutex_lock (drd_pthread_intercepts.c:?)
    by 0x........: main (tc20_verifywrap.c:108)
-[1/1] post_mutex_lock (?) 0x........ rc 0 owner 0
-[1/1] pre_mutex_lock  (?) 0x........ rc 0 owner 0
+[1/1] post_mutex_lock invalid mutex 0x........ rc 0 owner 0
+[1/1] pre_mutex_lock  invalid mutex 0x........ rc 0 owner 0
 
 Not a mutex
    at 0x........: pthread_mutex_trylock (drd_pthread_intercepts.c:?)
    by 0x........: main (tc20_verifywrap.c:116)
-[1/1] post_mutex_lock (?) 0x........ rc 0 owner 0
-[1/1] pre_mutex_lock  (?) 0x........ rc 0 owner 0
+[1/1] post_mutex_lock invalid mutex 0x........ rc 0 owner 0
+[1/1] pre_mutex_lock  invalid mutex 0x........ rc 0 owner 0
 
 Not a mutex
    at 0x........: pthread_mutex_timedlock (drd_pthread_intercepts.c:?)
    by 0x........: main (tc20_verifywrap.c:121)
-[1/1] post_mutex_lock (?) 0x........ rc 0 owner 0
-[1/1] mutex_unlock    ? 0x........ rc 0
+[1/1] post_mutex_lock invalid mutex 0x........ rc 0 owner 0
+[1/1] mutex_unlock    invalid mutex 0x........ rc 0
 
 Not a mutex
    at 0x........: pthread_mutex_unlock (drd_pthread_intercepts.c:?)
@@ -112,6 +112,7 @@ Reader-writer lock not locked by calling thread: rwlock 0x.........
 ---------------- sem_* ----------------
 
 [1/1] semaphore_init 0x........
+[1/1] semaphore_init 0x........
 
 FIXME: can't figure out how to verify wrap of sem_destroy
 
@@ -133,8 +134,8 @@ FIXME: can't figure out how to verify wrap of sem_post
 Destroying locked rwlock: rwlock 0x.........
    at 0x........: main (tc20_verifywrap.c:262)
 [1/1] mutex_destroy   error checking mutex 0x........
-[1/1] pre_mutex_lock  (?) 0x........ rc 0 owner 0
-[1/1] mutex_init      recursive mutex 0x........
+[1/1] mutex_destroy   invalid mutex 0x........
+[1/1] pre_mutex_lock  recursive mutex 0x........ rc 0 owner 0
 [1/1] post_mutex_lock recursive mutex 0x........ rc 0 owner 0
 [1/1] mutex_unlock    recursive mutex 0x........ rc 1
 [1/1] pre_mutex_lock  recursive mutex 0x........ rc 0 owner 1

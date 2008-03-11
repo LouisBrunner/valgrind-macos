@@ -156,6 +156,9 @@ VG_REGPARM(2) void drd_trace_load(Addr addr, SizeT size)
    tl_assert(thread_get_running_tid()
              == VgThreadIdToDrdThreadId(VG_(get_running_tid())));
 
+   if (! thread_is_recording(thread_get_running_tid()))
+      return;
+
 #if 1
    if (drd_trace_mem || (addr == drd_trace_address))
    {
@@ -199,6 +202,9 @@ VG_REGPARM(2) void drd_trace_store(Addr addr, SizeT size)
    tl_assert(thread_get_running_tid()
              == VgThreadIdToDrdThreadId(VG_(get_running_tid())));
 
+   if (! thread_is_recording(thread_get_running_tid()))
+      return;
+
 #if 1
    if (drd_trace_mem || (addr == drd_trace_address))
    {
@@ -230,7 +236,7 @@ VG_REGPARM(2) void drd_trace_store(Addr addr, SizeT size)
       VG_(maybe_record_error)(VG_(get_running_tid)(),
                               DataRaceErr,
                               VG_(get_IP)(VG_(get_running_tid)()),
-                                    "Conflicting accesses",
+                              "Conflicting accesses",
                               &drei);
    }
 }
@@ -452,10 +458,9 @@ static void drd_thread_finished(ThreadId tid)
    thread_finished(drd_tid);
 }
 
-void drd_pre_mutex_init(const Addr mutex, const SizeT size,
-			const MutexT mutex_type)
+void drd_pre_mutex_init(const Addr mutex, const MutexT mutex_type)
 {
-   mutex_init(mutex, size, mutex_type);
+   mutex_init(mutex, mutex_type);
 }
 
 void drd_post_mutex_destroy(const Addr mutex, const MutexT mutex_type)
@@ -463,11 +468,9 @@ void drd_post_mutex_destroy(const Addr mutex, const MutexT mutex_type)
    mutex_post_destroy(mutex);
 }
 
-void drd_pre_mutex_lock(const Addr mutex,
-                        const SizeT size,
-                        const MutexT mutex_type)
+void drd_pre_mutex_lock(const Addr mutex, const MutexT mutex_type)
 {
-   mutex_pre_lock(mutex, size, mutex_type);
+   mutex_pre_lock(mutex, mutex_type);
 }
 
 void drd_post_mutex_lock(const Addr mutex, const Bool took_lock)
@@ -480,9 +483,9 @@ void drd_pre_mutex_unlock(const Addr mutex, const MutexT mutex_type)
    mutex_unlock(mutex, mutex_type);
 }
 
-void drd_pre_cond_init(Addr cond, SizeT s)
+void drd_pre_cond_init(Addr cond)
 {
-   cond_pre_init(cond, s);
+   cond_pre_init(cond);
 }
 
 void drd_post_cond_destroy(Addr cond)
@@ -490,10 +493,10 @@ void drd_post_cond_destroy(Addr cond)
    cond_post_destroy(cond);
 }
 
-void drd_semaphore_init(const Addr semaphore, const SizeT size,
+void drd_semaphore_init(const Addr semaphore,
                         const Word pshared, const Word value)
 {
-   semaphore_init(semaphore, size, pshared, value);
+   semaphore_init(semaphore, pshared, value);
 }
 
 void drd_semaphore_destroy(const Addr semaphore)
@@ -501,10 +504,9 @@ void drd_semaphore_destroy(const Addr semaphore)
    semaphore_destroy(semaphore);
 }
 
-void drd_semaphore_pre_wait(const DrdThreadId tid, const Addr semaphore,
-                            const SizeT size)
+void drd_semaphore_pre_wait(const DrdThreadId tid, const Addr semaphore)
 {
-   semaphore_pre_wait(semaphore, size);
+   semaphore_pre_wait(semaphore);
 }
 
 void drd_semaphore_post_wait(const DrdThreadId tid, const Addr semaphore,
@@ -513,38 +515,40 @@ void drd_semaphore_post_wait(const DrdThreadId tid, const Addr semaphore,
    semaphore_post_wait(tid, semaphore, waited);
 }
 
-void drd_semaphore_pre_post(const DrdThreadId tid, const Addr semaphore,
-                            const SizeT size)
+void drd_semaphore_pre_post(const DrdThreadId tid, const Addr semaphore)
 {
-   semaphore_pre_post(tid, semaphore, size);
+   semaphore_pre_post(tid, semaphore);
 }
 
 void drd_semaphore_post_post(const DrdThreadId tid, const Addr semaphore,
-                             const SizeT size, const Bool waited)
+                             const Bool waited)
 {
-   semaphore_post_post(tid, semaphore, size, waited);
+   semaphore_post_post(tid, semaphore, waited);
 }
 
 
-void drd_barrier_init(const Addr barrier, const SizeT size, const Word count)
+void drd_barrier_init(const Addr barrier,
+                      const BarrierT barrier_type, const Word count,
+                      const Bool reinitialization)
 {
-   barrier_init(barrier, size, count);
+   barrier_init(barrier, barrier_type, count, reinitialization);
 }
 
-void drd_barrier_destroy(const Addr barrier)
+void drd_barrier_destroy(const Addr barrier, const BarrierT barrier_type)
 {
-   barrier_destroy(barrier);
+   barrier_destroy(barrier, barrier_type);
 }
 
-void drd_barrier_pre_wait(const DrdThreadId tid, const Addr barrier)
+void drd_barrier_pre_wait(const DrdThreadId tid, const Addr barrier,
+                          const BarrierT barrier_type)
 {
-   barrier_pre_wait(tid, barrier);
+   barrier_pre_wait(tid, barrier, barrier_type);
 }
 
 void drd_barrier_post_wait(const DrdThreadId tid, const Addr barrier,
-                           const Bool waited)
+                           const BarrierT barrier_type, const Bool waited)
 {
-   barrier_post_wait(tid, barrier, waited);
+   barrier_post_wait(tid, barrier, barrier_type, waited);
 }
 
 
@@ -596,7 +600,7 @@ IRSB* drd_instrument(VgCallbackClosure* const closure,
       {
       case Ist_IMark:
          instrument = VG_(seginfo_sect_kind)(NULL, 0, st->Ist.IMark.addr)
-                      != Vg_SectPLT;
+            != Vg_SectPLT;
          break;
 
       case Ist_MBE:
@@ -623,7 +627,7 @@ IRSB* drd_instrument(VgCallbackClosure* const closure,
          {
             addr_expr = st->Ist.Store.addr;
             size_expr = mkIRExpr_HWord( 
-                   sizeofIRType(typeOfIRExpr(bb->tyenv, st->Ist.Store.data)));
+                                       sizeofIRType(typeOfIRExpr(bb->tyenv, st->Ist.Store.data)));
             argv = mkIRExprVec_2(addr_expr, size_expr);
             di = unsafeIRDirty_0_N(/*regparms*/2, 
                                    "drd_trace_store",

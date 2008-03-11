@@ -26,6 +26,13 @@
 typedef double elem_t;
 
 
+/********************/
+/* Local variables. */
+/********************/
+
+static int s_trigger_race;
+
+
 /*************************/
 /* Function definitions. */
 /*************************/
@@ -186,15 +193,34 @@ static void gj(elem_t* const a, const int rows, const int cols)
     }
 
     // Reduce all rows j != i.
-#pragma omp parallel for private(j, k)
-    for (j = 0; j < rows; j++)
+
+    if (s_trigger_race)
     {
-      if (i != j)
+#     pragma omp parallel for
+      for (j = 0; j < rows; j++)
       {
-        const elem_t factor = a[j * cols + i];
-        for (k = 0; k < cols; k++)
+        if (i != j)
         {
-          a[j * cols + k] -= a[i * cols + k] * factor;
+          const elem_t factor = a[j * cols + i];
+          for (k = 0; k < cols; k++)
+          {
+            a[j * cols + k] -= a[i * cols + k] * factor;
+          }
+        }
+      }
+    }
+    else
+    {
+#     pragma omp parallel for private(j, k)
+      for (j = 0; j < rows; j++)
+      {
+        if (i != j)
+        {
+          const elem_t factor = a[j * cols + i];
+          for (k = 0; k < cols; k++)
+          {
+            a[j * cols + k] -= a[i * cols + k] * factor;
+          }
         }
       }
     }
@@ -258,9 +284,10 @@ int main(int argc, char** argv)
   double error;
   double ratio;
 
-  matrix_size = (argc > 1) ? atoi(argv[1]) : 3;
-  nthread     = (argc > 2) ? atoi(argv[2]) : 3;
-  silent      = (argc > 3) ? atoi(argv[3]) : 0;
+  matrix_size    = (argc > 1) ? atoi(argv[1]) : 3;
+  nthread        = (argc > 2) ? atoi(argv[2]) : 3;
+  silent         = (argc > 3) ? atoi(argv[3]) : 0;
+  s_trigger_race = (argc > 4) ? atoi(argv[4]) : 0;
 
   omp_set_num_threads(nthread);
   omp_set_dynamic(0);

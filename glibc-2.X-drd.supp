@@ -334,3 +334,9 @@
    exp-drd:ConflictingAccess
    fun:_pthread_cleanup_push_defer
 }
+{
+   gomp
+   exp-drd:ConflictingAccess
+   obj:/usr/lib*/libgomp.so*
+   obj:/usr/lib*/libgomp.so*
+}

@@ -1,10 +1,8 @@
 
-[1/1] pre_mutex_lock  (?) 0x........ rc 0 owner 0
-[1/1] mutex_init      mutex 0x........
+[1/1] pre_mutex_lock  mutex 0x........ rc 0 owner 0
 [1/1] post_mutex_lock mutex 0x........ rc 0 owner 0
 [1/1] mutex_unlock    mutex 0x........ rc 1
-[1/1] pre_mutex_lock  (?) 0x........ rc 0 owner 0
-[1/1] mutex_init      mutex 0x........
+[1/1] pre_mutex_lock  mutex 0x........ rc 0 owner 0
 [1/1] post_mutex_lock mutex 0x........ rc 0 owner 0
 [1/1] mutex_unlock    mutex 0x........ rc 1
 [1/1] pre_mutex_lock  mutex 0x........ rc 0 owner 1
@@ -13,8 +11,7 @@
 [1/1] pre_mutex_lock  mutex 0x........ rc 0 owner 1
 [1/1] post_mutex_lock mutex 0x........ rc 0 owner 1
 [1/1] mutex_unlock    mutex 0x........ rc 1
-[1/1] pre_mutex_lock  (?) 0x........ rc 0 owner 0
-[1/1] mutex_init      recursive mutex 0x........
+[1/1] pre_mutex_lock  recursive mutex 0x........ rc 0 owner 0
 [1/1] post_mutex_lock recursive mutex 0x........ rc 0 owner 0
 
 
@@ -33,8 +30,7 @@ the newer NPTL (Native POSIX Threads Library). Please try to rerun DRD
 after having upgraded to a newer version of your Linux distribution.
 Giving up.
 [1/1] mutex_unlock    recursive mutex 0x........ rc 1
-[1/1] pre_mutex_lock  (?) 0x........ rc 0 owner 0
-[1/1] mutex_init      recursive mutex 0x........
+[1/1] pre_mutex_lock  recursive mutex 0x........ rc 0 owner 0
 [1/1] post_mutex_lock recursive mutex 0x........ rc 0 owner 0
 [1/1] mutex_unlock    recursive mutex 0x........ rc 1
 

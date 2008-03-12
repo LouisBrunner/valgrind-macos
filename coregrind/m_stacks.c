@@ -30,6 +30,7 @@
 
 #include "pub_core_basics.h"
 #include "pub_core_debuglog.h"
+#include "pub_core_libcassert.h"
 #include "pub_core_libcprint.h"
 #include "pub_core_mallocfree.h"
 #include "pub_core_options.h"
@@ -98,16 +99,74 @@ static UWord next_id;  /* Next id we hand out to a newly registered stack */
  */
 static Stack *current_stack;
 
+/* Find 'st' in the stacks_list and move it one step closer the the
+   front of the list, so as to make subsequent searches for it
+   cheaper. */
+static void move_Stack_one_step_forward ( Stack* st )
+{
+   Stack *st0, *st1, *st2;
+   if (st == stacks)
+      return; /* already at head of list */
+   vg_assert(st != NULL);
+   st0 = stacks;
+   st1 = NULL;
+   st2 = NULL;
+   while (True) {
+      if (st0 == NULL || st0 == st) break;
+      st2 = st1;
+      st1 = st0;
+      st0 = st0->next;
+   }
+   vg_assert(st0 == st);
+   if (st0 != NULL && st1 != NULL && st2 != NULL) {
+      Stack* tmp;
+      /* st0 points to st, st1 to its predecessor, and st2 to st1's
+         predecessor.  Swap st0 and st1, that is, move st0 one step
+         closer to the start of the list. */
+      vg_assert(st2->next == st1);
+      vg_assert(st1->next == st0);
+      tmp = st0->next;
+      st2->next = st0;
+      st0->next = st1;
+      st1->next = tmp;
+   }
+   else
+   if (st0 != NULL && st1 != NULL && st2 == NULL) {
+      /* it's second in the list. */
+      vg_assert(stacks == st1);
+      vg_assert(st1->next == st0);
+      st1->next = st0->next;
+      st0->next = st1;
+      stacks = st0;
+   }
+}
+
 /* Find what stack an address falls into. */
 static Stack* find_stack_by_addr(Addr sp)
 {
+   static UWord n_fails = 0;
+   static UWord n_searches = 0;
+   static UWord n_steps = 0;
    Stack *i = stacks;
+   n_searches++;
+   if (0 && 0 == (n_searches % 10000))
+      VG_(printf)("(hgdev) %lu searches, %lu steps, %lu fails\n",
+                  n_searches, n_steps+1, n_fails);
+   /* fast track common case */
+   if (i && sp >= i->start && sp <= i->end)
+      return i;
+   /* else search the list */
    while (i) {
+      n_steps++;
       if (sp >= i->start && sp <= i->end) {
+         if (1 && (n_searches & 0x3F) == 0) {
+            move_Stack_one_step_forward( i );
+         }
          return i;
       }
       i = i->next;
    }
+   n_fails++;
    return NULL;
 }
 

@@ -377,9 +377,11 @@ trylock_LDADD               = -lpthread -lrt
 if HAVE_GCC_FOPENMP
 matinv_openmp_SOURCES       = matinv_openmp.c
 matinv_openmp_CFLAGS        = -fopenmp
+matinv_openmp_LDFLAGS       = -fopenmp
 matinv_openmp_LDADD         = -lm
 
 omp_prime_SOURCES           = omp_prime.c
 omp_prime_CFLAGS            = -fopenmp
+omp_prime_LDFLAGS           = -fopenmp
 omp_prime_LDADD             = -lm
 endif

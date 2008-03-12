@@ -1,0 +1,4 @@
+prereq: test -e omp_matinv
+prog: matinv_openmp
+args: 3 -t 2 -q -r
+stderr_filter: filter_error_summary

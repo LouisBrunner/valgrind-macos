@@ -50,12 +50,15 @@ EXTRA_DIST =                                        \
 	matinv.stdout.exp                           \
 	matinv.stdout.exp-linuxthreads              \
 	matinv.vgtest                               \
-	matinv_openmp.stderr.exp                    \
-	matinv_openmp.stdout.exp                    \
-	matinv_openmp.vgtest                        \
+	omp_matinv.stderr.exp                       \
+	omp_matinv.stdout.exp                       \
+	omp_matinv.vgtest                           \
 	omp_matinv_racy.stderr.exp                  \
 	omp_matinv_racy.stdout.exp                  \
 	omp_matinv_racy.vgtest                      \
+	omp_prime_racy.stderr.exp                   \
+	omp_prime_racy.stdout.exp                   \
+	omp_prime_racy.vgtest                       \
 	pth_barrier.stderr.exp                      \
 	pth_barrier.stderr.exp-linuxthreads         \
 	pth_barrier.vgtest                          \
@@ -232,7 +235,7 @@ check_PROGRAMS_COMMON = \
   tc24_nonzero_sem    \
   trylock
 
-check_PROGRAMS_OPENMP = omp_prime matinv_openmp
+check_PROGRAMS_OPENMP = omp_matinv omp_prime
 
 if HAVE_OPENMP
 check_PROGRAMS = $(check_PROGRAMS_COMMON) $(check_PROGRAMS_OPENMP)
@@ -370,10 +373,10 @@ trylock_SOURCES             = trylock.c
 trylock_LDADD               = -lpthread -lrt
 
 if HAVE_OPENMP
-matinv_openmp_SOURCES       = matinv_openmp.c
-matinv_openmp_CFLAGS        = -fopenmp
-matinv_openmp_LDFLAGS       = -fopenmp
-matinv_openmp_LDADD         = -lm
+omp_matinv_SOURCES          = omp_matinv.c
+omp_matinv_CFLAGS           = -fopenmp
+omp_matinv_LDFLAGS          = -fopenmp
+omp_matinv_LDADD            = -lm
 
 omp_prime_SOURCES           = omp_prime.c
 omp_prime_CFLAGS            = -fopenmp

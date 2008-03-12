@@ -9,6 +9,7 @@
 #include <omp.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <unistd.h>  // getopt()
 #include "../drd_clientreq.h"
 
 
@@ -35,10 +36,30 @@ int main(int argc, char **argv)
 {
   int i;
   int total = 0;
-  const int n           = argc > 1 ? atoi(argv[1]) : 300;
-  const int num_threads = argc > 2 ? atoi(argv[2]) : 4;
+  int silent = 0;
+  int n;
+  int num_threads = 2;
+  int optchar;
   int* primes;
   int* pflag;
+
+  while ((optchar = getopt(argc, argv, "qt:")) != EOF)
+  {
+    switch (optchar)
+    {
+    case 'q': silent = 1; break;
+    case 't': num_threads = atoi(optarg); break;
+    default:
+      fprintf(stderr, "Error: unknown option '%c'.\n", optchar);
+      return 1;
+    }
+  }
+
+  if (optind + 1 != argc)
+  {
+    fprintf(stderr, "Error: wrong number of arguments.\n");
+  }
+  n = atoi(argv[optind]);
 
   // Not the most user-friendly way to do error checking, but better than
   // nothing.
@@ -50,14 +71,6 @@ int main(int argc, char **argv)
 
   omp_set_num_threads(num_threads);
   omp_set_dynamic(0);
-
-#if 1
-  {
-    int res;
-    VALGRIND_DO_CLIENT_REQUEST(res, 0, VG_USERREQ__DRD_TRACE_ADDR,
-                               &total, 0, 0, 0, 0);
-  }
-#endif
 
   for (i = 0; i < n; i++) {
     pflag[i] = 1;
@@ -72,11 +85,14 @@ int main(int argc, char **argv)
       total++;
     }
   }
-  printf("Number of prime numbers between 2 and %d: %d\n",
-         n, total);
-  for (i = 0; i < total; i++)
+  if (! silent)
   {
-    printf("%d\n", primes[i]);
+    printf("Number of prime numbers between 2 and %d: %d\n",
+           n, total);
+    for (i = 0; i < total; i++)
+    {
+      printf("%d\n", primes[i]);
+    }
   }
 
   free(pflag);

@@ -96,8 +96,7 @@ GOMP_FUNC(void, gompZubarrierZudestroy, // gomp_barrier_destroy
   OrigFn fn;
   VALGRIND_GET_ORIG_FN(fn);
   VALGRIND_DO_CLIENT_REQUEST(res, -1, VG_USERREQ__PRE_BARRIER_DESTROY,
-                             barrier, gomp_barrier,
-                             0, 0, 0);
+                             barrier, gomp_barrier, 0, 0, 0);
   CALL_FN_W_W(ret, fn, barrier);
   VALGRIND_DO_CLIENT_REQUEST(res, -1, VG_USERREQ__POST_BARRIER_DESTROY,
                              barrier, gomp_barrier, 0, 0, 0);

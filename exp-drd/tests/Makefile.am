@@ -239,7 +239,7 @@ check_PROGRAMS_COMMON = \
 
 check_PROGRAMS_OPENMP = omp_prime matinv_openmp
 
-if HAVE_GCC_FOPENMP
+if HAVE_OPENMP
 check_PROGRAMS = $(check_PROGRAMS_COMMON) $(check_PROGRAMS_OPENMP)
 else
 check_PROGRAMS = $(check_PROGRAMS_COMMON)
@@ -374,7 +374,7 @@ tc24_nonzero_sem_LDADD      = -lpthread
 trylock_SOURCES             = trylock.c
 trylock_LDADD               = -lpthread -lrt
 
-if HAVE_GCC_FOPENMP
+if HAVE_OPENMP
 matinv_openmp_SOURCES       = matinv_openmp.c
 matinv_openmp_CFLAGS        = -fopenmp
 matinv_openmp_LDFLAGS       = -fopenmp

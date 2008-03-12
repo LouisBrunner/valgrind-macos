@@ -20,7 +20,7 @@ if VGP_PPC64_AIX5
   noinst_PROGRAMS += exp-drd-ppc64-aix5 vgpreload_exp-drd-ppc64-aix5.so
 endif
 
-if HAVE_GCC_FOPENMP
+if HAVE_OPENMP
 VGPRELOAD_DRD_SOURCES_COMMON = drd_pthread_intercepts.c drd_gomp_intercepts.c
 else
 VGPRELOAD_DRD_SOURCES_COMMON = drd_pthread_intercepts.c

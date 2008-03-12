@@ -1,2 +1,2 @@
 prog: matinv
-args: 30 15 1
+args: 30 -t 15 -q

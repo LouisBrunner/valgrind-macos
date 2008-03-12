@@ -1,8 +1,8 @@
-/* Compute the matrix inverse via Gauss-Jordan elimination.
- * This program uses only barriers to separate computation steps but no
- * mutexes. It is an example of a race-free program on which no data races
- * are reported by the happens-before algorithm (drd), but a lot of data races
- * (all false positives) are reported by the Eraser-algorithm (helgrind).
+/** Compute the matrix inverse via Gauss-Jordan elimination.
+ *  This program uses only barriers to separate computation steps but no
+ *  mutexes. It is an example of a race-free program on which no data races
+ *  are reported by the happens-before algorithm (drd), but a lot of data races
+ *  (all false positives) are reported by the Eraser-algorithm (helgrind).
  */
 
 
@@ -15,8 +15,9 @@
 #include <assert.h>
 #include <math.h>
 #include <pthread.h>
-#include <stdlib.h>
 #include <stdio.h>
+#include <stdlib.h>
+#include <unistd.h>  // getopt()
 
 
 /*********************/
@@ -64,10 +65,7 @@ static void delete_matrix(elem_t* const a)
   free(a);
 }
 
-/** Fill in some numbers in a matrix.
- *  @note It is important not to call srand() in this program, such that
- *        the results of a run are reproducible.
- */
+/** Fill in some numbers in a matrix. */
 static void init_matrix(elem_t* const a, const int rows, const int cols)
 {
   int i, j;
@@ -75,7 +73,7 @@ static void init_matrix(elem_t* const a, const int rows, const int cols)
   {
     for (j = 0; j < rows; j++)
     {
-      a[i * cols + j] = rand() * 1.0 / RAND_MAX;
+      a[i * cols + j] = 1.0 / (1 + abs(i-j));
     }
   }
 }
@@ -306,15 +304,34 @@ static elem_t epsilon()
 int main(int argc, char** argv)
 {
   int matrix_size;
-  int silent;
+  int silent = 0;
+  int optchar;
   elem_t *a, *inv, *prod;
   elem_t eps;
   double error;
   double ratio;
 
-  matrix_size = (argc > 1) ? atoi(argv[1]) : 3;
-  s_nthread   = (argc > 2) ? atoi(argv[2]) : 3;
-  silent      = (argc > 3) ? atoi(argv[3]) : 0;
+  while ((optchar = getopt(argc, argv, "qt:")) != EOF)
+  {
+    switch (optchar)
+    {
+    case 'q': silent = 1; break;
+    case 't': s_nthread = atoi(optarg); break;
+    default:
+      fprintf(stderr, "Error: unknown option '%c'.\n", optchar);
+      return 1;
+    }
+  }
+
+  if (optind + 1 != argc)
+  {
+    fprintf(stderr, "Error: wrong number of arguments.\n");
+  }
+  matrix_size = atoi(argv[optind]);
+
+  /* Error checking. */
+  assert(matrix_size >= 1);
+  assert(s_nthread >= 1);
 
   eps = epsilon();
   a = new_matrix(matrix_size, matrix_size);
@@ -329,7 +346,7 @@ int main(int argc, char** argv)
     printf("error = %g; epsilon = %g; error / (epsilon * n) = %g\n",
            error, eps, ratio);
   }
-  if (ratio < 100)
+  if (isfinite(ratio) && ratio < 100)
     printf("Error within bounds.\n");
   else
     printf("Error out of bounds.\n");

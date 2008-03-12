@@ -370,7 +370,7 @@ void example2(void)
    // comparisons.
    OSet* oset = VG_(OSetGen_Create)(offsetof(Block, first),
                                     blockCmp,
-                                    malloc, free);
+                                    (void*)malloc, free);
 
    // Try some operations on an empty OSet to ensure they don't screw up.
    vg_assert( ! VG_(OSetGen_Contains)(oset, &v) );

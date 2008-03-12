@@ -17,6 +17,7 @@
 #include <omp.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <unistd.h>  // getopt()
 
 
 /*********************/
@@ -53,10 +54,7 @@ static void delete_matrix(elem_t* const a)
   free(a);
 }
 
-/** Fill in some numbers in a matrix.
- *  @note It is important not to call srand() in this program, such that
- *        the results of a run are reproducible.
- */
+/** Fill in some numbers in a matrix. */
 static void init_matrix(elem_t* const a, const int rows, const int cols)
 {
   int i, j;
@@ -64,7 +62,7 @@ static void init_matrix(elem_t* const a, const int rows, const int cols)
   {
     for (j = 0; j < rows; j++)
     {
-      a[i * cols + j] = rand() * 1.0 / RAND_MAX;
+      a[i * cols + j] = 1.0 / (1 + abs(i-j));
     }
   }
 }
@@ -196,7 +194,7 @@ static void gj(elem_t* const a, const int rows, const int cols)
 
     if (s_trigger_race)
     {
-#     pragma omp parallel for
+#     pragma omp parallel for private(j)
       for (j = 0; j < rows; j++)
       {
         if (i != j)
@@ -277,17 +275,36 @@ static elem_t epsilon()
 int main(int argc, char** argv)
 {
   int matrix_size;
-  int nthread;
-  int silent;
+  int nthread = 1;
+  int silent = 0;
+  int optchar;
   elem_t *a, *inv, *prod;
   elem_t eps;
   double error;
   double ratio;
 
-  matrix_size    = (argc > 1) ? atoi(argv[1]) : 3;
-  nthread        = (argc > 2) ? atoi(argv[2]) : 3;
-  silent         = (argc > 3) ? atoi(argv[3]) : 0;
-  s_trigger_race = (argc > 4) ? atoi(argv[4]) : 0;
+  while ((optchar = getopt(argc, argv, "qrt:")) != EOF)
+  {
+    switch (optchar)
+    {
+    case 'q': silent = 1; break;
+    case 'r': s_trigger_race = 1; break;
+    case 't': nthread = atoi(optarg); break;
+    default:
+      fprintf(stderr, "Error: unknown option '%c'.\n", optchar);
+      return 1;
+    }
+  }
+
+  if (optind + 1 != argc)
+  {
+    fprintf(stderr, "Error: wrong number of arguments.\n");
+  }
+  matrix_size = atoi(argv[optind]);
+
+  /* Error checking. */
+  assert(matrix_size >= 1);
+  assert(nthread >= 1);
 
   omp_set_num_threads(nthread);
   omp_set_dynamic(0);

@@ -17,11 +17,9 @@ EXTRA_DIST =                                        \
 	$(noinst_SCRIPTS)                           \
 	fp_race.stderr.exp                          \
 	fp_race.stderr.exp-linuxthreads             \
-	fp_race.stdout.exp                          \
 	fp_race.vgtest                              \
 	fp_race2.stderr.exp                         \
 	fp_race2.stderr.exp-linuxthreads            \
-	fp_race2.stdout.exp                         \
 	fp_race2.vgtest                             \
 	hg01_all_ok.stderr.exp                      \
 	hg01_all_ok.stderr.exp-linuxthreads         \
@@ -46,6 +44,7 @@ EXTRA_DIST =                                        \
 	linuxthreads_det.stderr.exp-linuxthreads    \
 	linuxthreads_det.stdout.exp                 \
 	linuxthreads_det.stdout.exp-linuxthreads    \
+	linuxthreads_det.stdout.exp-linuxthreads    \
 	matinv.stderr.exp                           \
 	matinv.stderr.exp-linuxthreads              \
 	matinv.stdout.exp                           \
@@ -54,6 +53,9 @@ EXTRA_DIST =                                        \
 	matinv_openmp.stderr.exp                    \
 	matinv_openmp.stdout.exp                    \
 	matinv_openmp.vgtest                        \
+	omp_matinv_racy.stderr.exp                  \
+	omp_matinv_racy.stdout.exp                  \
+	omp_matinv_racy.vgtest                      \
 	pth_barrier.stderr.exp                      \
 	pth_barrier.stderr.exp-linuxthreads         \
 	pth_barrier.vgtest                          \
@@ -65,24 +67,19 @@ EXTRA_DIST =                                        \
 	pth_barrier3.vgtest                         \
 	pth_broadcast.stderr.exp                    \
 	pth_broadcast.stderr.exp-linuxthreads       \
-	pth_broadcast.stdout.exp                    \
 	pth_broadcast.vgtest                        \
 	pth_cond_race.stderr.exp                    \
 	pth_cond_race.stderr.exp-linuxthreads       \
-	pth_cond_race.stdout.exp                    \
 	pth_cond_race.vgtest                        \
 	pth_cond_race2.stderr.exp                   \
 	pth_cond_race2.stderr.exp-linuxthreads      \
-	pth_cond_race2.stdout.exp                   \
 	pth_cond_race2.vgtest                       \
 	pth_create_chain.stderr.exp                 \
 	pth_create_chain.stderr.exp-linuxthreads    \
-	pth_create_chain.stdout.exp                 \
 	pth_create_chain.vgtest                     \
 	pth_detached.stderr.exp                     \
 	pth_detached.stderr.exp-linuxthreads        \
 	pth_detached.stdout.exp                     \
-	pth_detached.stdout.exp-linuxthreads        \
 	pth_detached.stdout.exp-linuxthreads        \
 	pth_detached.vgtest                         \
 	pth_detached2.stderr.exp                    \
@@ -92,6 +89,7 @@ EXTRA_DIST =                                        \
 	pth_detached2.stdout.exp-linuxthreads       \
 	pth_detached2.vgtest                        \
 	recursive_mutex.stderr.exp	            \
+	recursive_mutex.stdout.exp	            \
 	recursive_mutex.vgtest                      \
 	rwlock_race.stderr.exp	                    \
 	rwlock_race.stderr.exp-linuxthreads         \
@@ -102,8 +100,8 @@ EXTRA_DIST =                                        \
 	sem_as_mutex2.stderr.exp                    \
 	sem_as_mutex2.stderr.exp-linuxthreads       \
 	sem_as_mutex2.vgtest                        \
+	sigalrm.stderr.exp                          \
 	sigalrm.stderr.exp-linuxthreads             \
-	sigalrm.stdout.exp sigalrm.stderr.exp       \
 	sigalrm.vgtest                              \
 	tc01_simple_race.stderr.exp                 \
 	tc01_simple_race.stderr.exp-linuxthreads    \
@@ -141,8 +139,6 @@ EXTRA_DIST =                                        \
 	tc10_rec_lock.vgtest                        \
 	tc11_XCHG.stderr.exp tc11_XCHG.stdout.exp   \
 	tc11_XCHG.stderr.exp-linuxthreads           \
-	tc11_XCHG.stdout.exp-linuxthreads           \
-	tc11_XCHG.stdout.exp-linuxthreads           \
 	tc11_XCHG.vgtest                            \
 	tc12_rwl_trivial.stderr.exp                 \
 	tc12_rwl_trivial.stderr.exp-linuxthreads    \
@@ -174,7 +170,6 @@ EXTRA_DIST =                                        \
 	tc21_pthonce.stderr.exp                     \
 	tc21_pthonce.stderr.exp-linuxthreads        \
 	tc21_pthonce.stdout.exp                     \
-	tc21_pthonce.stdout.exp-linuxthreads        \
 	tc21_pthonce.stdout.exp-linuxthreads        \
 	tc21_pthonce.vgtest                         \
 	tc22_exit_w_lock.stderr.exp-32bit	    \

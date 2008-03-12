@@ -1,0 +1,4 @@
+prereq: test -e omp_prime
+prog: omp_prime
+args: 4 -q
+stderr_filter: filter_error_summary

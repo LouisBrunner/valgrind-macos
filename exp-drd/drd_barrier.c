@@ -52,7 +52,9 @@ struct barrier_thread_info
 
 // Local functions.
 
-void barrier_cleanup(struct barrier_info* p);
+static void barrier_cleanup(struct barrier_info* p);
+static const char* barrier_get_typename(struct barrier_info* const p);
+static const char* barrier_type_name(const BarrierT bt);
 
 
 // Local variables.
@@ -100,6 +102,7 @@ void barrier_initialize(struct barrier_info* const p,
   tl_assert(p->a1 == barrier);
 
   p->cleanup           = (void(*)(DrdClientobj*))barrier_cleanup;
+  p->barrier_type      = barrier_type;
   p->count             = count;
   p->pre_iteration     = 0;
   p->post_iteration    = 0;
@@ -121,7 +124,7 @@ void barrier_cleanup(struct barrier_info* p)
 
   tl_assert(p);
 
-  if (p->pre_waiters_left != p->count || p->post_waiters_left != p->count)
+  if (p->pre_waiters_left != p->count)
   {
     BarrierErrInfo bei = { p->a1 };
     VG_(maybe_record_error)(VG_(get_running_tid)(),
@@ -178,17 +181,44 @@ void barrier_init(const Addr barrier,
                   const BarrierT barrier_type, const Word count,
                   const Bool reinitialization)
 {
+  struct barrier_info* p;
+
+  tl_assert(barrier_type == pthread_barrier || barrier_type == gomp_barrier);
+
+  p = barrier_get_or_allocate(barrier, barrier_type, count);
+
   if (s_trace_barrier)
   {
-    VG_(message)(Vg_UserMsg,
-                 "[%d/%d] barrier_init 0x%lx",
-                 VG_(get_running_tid)(),
-                 thread_get_running_tid(),
-                 barrier);
+    if (reinitialization)
+    {
+      VG_(message)(Vg_UserMsg,
+                   "[%d/%d] barrier_reinit    %s 0x%lx count %d -> %d",
+                   VG_(get_running_tid)(),
+                   thread_get_running_tid(),
+                   barrier_get_typename(p),
+                   barrier,
+                   p->count,
+                   count);
+    }
+    else
+    {
+      VG_(message)(Vg_UserMsg,
+                   "[%d/%d] barrier_init      %s 0x%lx",
+                   VG_(get_running_tid)(),
+                   thread_get_running_tid(),
+                   barrier_get_typename(p),
+                   barrier);
+    }
   }
-  tl_assert(barrier_get(barrier) == 0);
-  tl_assert(barrier_type == pthread_barrier || barrier_type == gomp_barrier);
-  barrier_get_or_allocate(barrier, barrier_type, count);
+
+  if (reinitialization && p->count != count)
+  {
+    if (p->pre_waiters_left != p->count || p->post_waiters_left != p->count)
+    {
+      VG_(message)(Vg_UserMsg, "Error: reinitialization with active waiters");
+    }
+    p->count = count;
+  }
 }
 
 /** Called after pthread_barrier_destroy(). */
@@ -196,16 +226,18 @@ void barrier_destroy(const Addr barrier, const BarrierT barrier_type)
 {
   struct barrier_info* p;
 
+  p = barrier_get(barrier);
+
   if (s_trace_barrier)
   {
     VG_(message)(Vg_UserMsg,
-                 "[%d/%d] barrier_destroy 0x%lx",
+                 "[%d/%d] barrier_destroy   %s 0x%lx",
                  VG_(get_running_tid)(),
                  thread_get_running_tid(),
+                 barrier_get_typename(p),
                  barrier);
   }
 
-  p = barrier_get(barrier);
   if (p == 0)
   {
     GenericErrInfo GEI;
@@ -234,9 +266,10 @@ void barrier_pre_wait(const DrdThreadId tid, const Addr barrier,
   if (s_trace_barrier)
   {
     VG_(message)(Vg_UserMsg,
-                 "[%d/%d] barrier_pre_wait 0x%lx iteration %d",
+                 "[%d/%d] barrier_pre_wait  %s 0x%lx iteration %d",
                  VG_(get_running_tid)(),
                  thread_get_running_tid(),
+                 barrier_get_typename(p),
                  barrier,
                  p->pre_iteration);
   }
@@ -266,17 +299,23 @@ void barrier_post_wait(const DrdThreadId tid, const Addr barrier,
   struct barrier_info* p;
 
   p = barrier_get(barrier);
-  tl_assert(p);
 
   if (s_trace_barrier)
   {
     VG_(message)(Vg_UserMsg,
-                 "[%d/%d] barrier_post_wait 0x%lx iteration %d",
+                 "[%d/%d] barrier_post_wait %s 0x%lx iteration %d",
                  VG_(get_running_tid)(),
                  tid,
+                 p ? barrier_get_typename(p) : "(?)",
                  barrier,
-                 p->post_iteration);
+                 p ? p->post_iteration : -1);
   }
+
+  /* If p == 0, this means that the barrier has been destroyed after     */
+  /* *_barrier_wait() returned and before this function was called. Just */
+  /* return in that case.                                                */
+  if (p == 0)
+    return;
 
   if (waited)
   {
@@ -321,4 +360,23 @@ void barrier_thread_delete(const DrdThreadId tid)
     barrier_thread_destroy(q);
     VG_(OSetGen_FreeNode)(p->oset, q);
   }
+}
+
+static const char* barrier_get_typename(struct barrier_info* const p)
+{
+  tl_assert(p);
+
+  return barrier_type_name(p->barrier_type);
+}
+
+static const char* barrier_type_name(const BarrierT bt)
+{
+  switch (bt)
+  {
+  case pthread_barrier:
+    return "pthread barrier";
+  case gomp_barrier:
+    return "gomp barrier";
+  }
+  return "?";
 }

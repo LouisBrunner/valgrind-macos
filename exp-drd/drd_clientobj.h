@@ -92,6 +92,7 @@ struct barrier_info
   Addr    a1;
   ObjType type;
   void    (*cleanup)(union drd_clientobj*);
+  BarrierT barrier_type;      // pthread_barrier or gomp_barrier.
   Word     count;             // Participant count in a barrier wait.
   Word     pre_iteration;     // pthread_barrier_wait() call count modulo two.
   Word     post_iteration;    // pthread_barrier_wait() call count modulo two.

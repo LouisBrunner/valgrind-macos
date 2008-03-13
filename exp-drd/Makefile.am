@@ -26,6 +26,13 @@ else
 VGPRELOAD_DRD_SOURCES_COMMON = drd_pthread_intercepts.c
 endif
 
+AM_CFLAGS_X86_LINUX   += -Wsign-compare -O2
+AM_CFLAGS_AMD64_LINUX += -Wsign-compare -O2
+AM_CFLAGS_PPC32_LINUX += -Wsign-compare -O2
+AM_CFLAGS_PPC64_LINUX += -Wsign-compare -O2
+AM_CFLAGS_PPC32_AIX5  += -Wsign-compare -O2
+AM_CFLAGS_PPC64_AIX5  += -Wsign-compare -O2
+
 vgpreload_exp_drd_x86_linux_so_SOURCES      = $(VGPRELOAD_DRD_SOURCES_COMMON)
 vgpreload_exp_drd_x86_linux_so_CPPFLAGS     = $(AM_CPPFLAGS_X86_LINUX)
 vgpreload_exp_drd_x86_linux_so_CFLAGS       = $(AM_CFLAGS_X86_LINUX) $(AM_CFLAGS_PIC)
@@ -110,13 +117,6 @@ noinst_HEADERS =        \
   drd_vc.h              \
   priv_drd_clientreq.h  \
   pub_drd_bitmap.h
-
-AM_CFLAGS_X86_LINUX   += -I$(top_srcdir)/coregrind -Wsign-compare
-AM_CFLAGS_AMD64_LINUX += -I$(top_srcdir)/coregrind -Wsign-compare
-AM_CFLAGS_PPC32_LINUX += -I$(top_srcdir)/coregrind -Wsign-compare
-AM_CFLAGS_PPC64_LINUX += -I$(top_srcdir)/coregrind -Wsign-compare
-AM_CFLAGS_PPC32_AIX5  += -I$(top_srcdir)/coregrind -Wsign-compare
-AM_CFLAGS_PPC64_AIX5  += -I$(top_srcdir)/coregrind -Wsign-compare
 
 exp_drd_x86_linux_SOURCES        = $(DRD_SOURCES_COMMON)
 exp_drd_x86_linux_CPPFLAGS       = $(AM_CPPFLAGS_X86_LINUX)

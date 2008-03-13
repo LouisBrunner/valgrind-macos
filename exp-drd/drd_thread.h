@@ -27,9 +27,17 @@
 #define __THREAD_H
 
 
-#include "drd_segment.h"
-#include "pub_tool_stacktrace.h" // StackTrace
+// Includes.
 
+#include "drd_segment.h"
+#include "pub_tool_libcassert.h"  // tl_assert()
+#include "pub_tool_stacktrace.h"  // StackTrace
+#include "pub_tool_threadstate.h" // VG_N_THREADS
+
+
+// Defines.
+
+#define DRD_N_THREADS VG_N_THREADS
 
 #define DRD_INVALID_THREADID 0
 
@@ -41,9 +49,44 @@
 #define INVALID_POSIX_THREADID ((PThreadId)0)
 
 
+// Type definitions.
+
 typedef UInt DrdThreadId;
 typedef UWord PThreadId;
 
+typedef struct
+{
+   Segment*  first;
+   Segment*  last;
+   ThreadId  vg_threadid;
+   PThreadId pt_threadid;
+   Addr      stack_min_min;
+   Addr      stack_min;
+   Addr      stack_startup;
+   Addr      stack_max;
+   char      name[32];
+   /// Indicates whether the Valgrind core knows about this thread.
+   Bool      vg_thread_exists;
+   /// Indicates whether there is an associated POSIX thread ID.
+   Bool      posix_thread_exists;
+   /// If true, indicates that there is a corresponding POSIX thread ID and
+   /// a corresponding OS thread that is detached.
+   Bool      detached_posix_thread;
+   /// Wether recording of memory accesses is active.
+   Bool      is_recording;
+   /// Nesting level of synchronization functions called by the client.
+   Int       synchr_nesting;
+} ThreadInfo;
+
+
+// Local variables of drd_thread.c that are declared here such that these
+// can be accessed by inline functions.
+
+extern DrdThreadId s_drd_running_tid;
+extern ThreadInfo s_threadinfo[DRD_N_THREADS];
+
+
+// Function declarations.
 
 void thread_trace_context_switches(const Bool t);
 void thread_trace_danger_set(const Bool t);
@@ -86,7 +129,6 @@ void thread_combine_vc2(const DrdThreadId tid, const VectorClock* const vc);
 void thread_stop_using_mem(const Addr a1, const Addr a2);
 void thread_start_recording(const DrdThreadId tid);
 void thread_stop_recording(const DrdThreadId tid);
-Bool thread_is_recording(const DrdThreadId tid);
 void thread_print_all(void);
 void thread_report_races(const DrdThreadId tid);
 void thread_report_races_segment(const DrdThreadId tid,
@@ -105,6 +147,16 @@ ULong thread_get_discard_ordered_segments_count(void);
 ULong thread_get_update_danger_set_count(void);
 ULong thread_get_danger_set_bitmap_creation_count(void);
 ULong thread_get_danger_set_bitmap2_creation_count(void);
+
+
+static inline
+Bool running_thread_is_recording(void)
+{
+   tl_assert(0 <= s_drd_running_tid && s_drd_running_tid < DRD_N_THREADS
+             && s_drd_running_tid != DRD_INVALID_THREADID);
+   return (s_threadinfo[s_drd_running_tid].synchr_nesting == 0
+           && s_threadinfo[s_drd_running_tid].is_recording);
+}
 
 
 #endif // __THREAD_H

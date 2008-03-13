@@ -153,10 +153,12 @@ VG_REGPARM(2) void drd_trace_load(Addr addr, SizeT size)
 {
    Segment* sg;
 
+#if 0
    tl_assert(thread_get_running_tid()
              == VgThreadIdToDrdThreadId(VG_(get_running_tid())));
+#endif
 
-   if (! thread_is_recording(thread_get_running_tid()))
+   if (! running_thread_is_recording())
       return;
 
 #if 1
@@ -199,10 +201,12 @@ VG_REGPARM(2) void drd_trace_store(Addr addr, SizeT size)
 {
    Segment* sg;
 
+#if 0
    tl_assert(thread_get_running_tid()
              == VgThreadIdToDrdThreadId(VG_(get_running_tid())));
+#endif
 
-   if (! thread_is_recording(thread_get_running_tid()))
+   if (! running_thread_is_recording())
       return;
 
 #if 1

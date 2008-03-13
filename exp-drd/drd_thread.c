@@ -38,38 +38,6 @@
 #include "pub_tool_threadstate.h" // VG_(get_pthread_id)()
 
 
-// Defines.
-
-#define DRD_N_THREADS VG_N_THREADS
-
-
-// Type definitions.
-
-typedef struct
-{
-   Segment*  first;
-   Segment*  last;
-   ThreadId  vg_threadid;
-   PThreadId pt_threadid;
-   Addr      stack_min_min;
-   Addr      stack_min;
-   Addr      stack_startup;
-   Addr      stack_max;
-   char      name[32];
-   /// Indicates whether the Valgrind core knows about this thread.
-   Bool      vg_thread_exists;
-   /// Indicates whether there is an associated POSIX thread ID.
-   Bool      posix_thread_exists;
-   /// If true, indicates that there is a corresponding POSIX thread ID and
-   /// a corresponding OS thread that is detached.
-   Bool      detached_posix_thread;
-   /// Wether recording of memory accesses is active.
-   Bool      is_recording;
-   /// Nesting level of synchronization functions called by the client.
-   Int       synchr_nesting;
-} ThreadInfo;
-
-
 // Local functions.
 
 static void thread_append_segment(const DrdThreadId tid,
@@ -85,8 +53,8 @@ static ULong s_update_danger_set_count;
 static ULong s_danger_set_bitmap_creation_count;
 static ULong s_danger_set_bitmap2_creation_count;
 static ThreadId    s_vg_running_tid  = VG_INVALID_THREADID;
-static DrdThreadId s_drd_running_tid = DRD_INVALID_THREADID;
-static ThreadInfo s_threadinfo[DRD_N_THREADS];
+DrdThreadId s_drd_running_tid = DRD_INVALID_THREADID;
+ThreadInfo s_threadinfo[DRD_N_THREADS];
 static struct bitmap* s_danger_set;
 static Bool s_trace_context_switches = False;
 static Bool s_trace_danger_set = False;
@@ -758,13 +726,6 @@ void thread_stop_recording(const DrdThreadId tid)
    tl_assert(0 <= tid && tid < DRD_N_THREADS && tid != DRD_INVALID_THREADID);
    tl_assert(s_threadinfo[tid].is_recording);
    s_threadinfo[tid].is_recording = False;
-}
-
-Bool thread_is_recording(const DrdThreadId tid)
-{
-   tl_assert(0 <= tid && tid < DRD_N_THREADS && tid != DRD_INVALID_THREADID);
-   return (s_threadinfo[tid].synchr_nesting == 0
-           && s_threadinfo[tid].is_recording);
 }
 
 void thread_print_all(void)

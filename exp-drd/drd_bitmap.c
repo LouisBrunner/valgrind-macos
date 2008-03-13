@@ -147,25 +147,24 @@ void bm_access_4(struct bitmap* const bm,
 }
 
 /**
- * Record an access of type access_type at addresses a .. a + size - 1 in
+ * Record an access of type access_type at addresses a1 .. a2 - 1 in
  * bitmap bm.
  */
 void bm_access_range(struct bitmap* const bm,
-                     const Addr a,
-                     const SizeT size,
+                     const Addr a1, const Addr a2,
                      const BmAccessTypeT access_type)
 {
    tl_assert(bm);
-   tl_assert(size > 0);
+   tl_assert(a1 < a2);
 
-   if (size == 4)
-      bm_access_4(bm, a, access_type);
-   else if (size == 1)
-      bm_access_1(bm, a, access_type);
+   if (a2 - a1 == 4)
+      bm_access_4(bm, a1, access_type);
+   else if (a2 - a1 == 1)
+      bm_access_1(bm, a1, access_type);
    else
    {
       Addr b;
-      for (b = a; b != a + size; b++)
+      for (b = a1; b != a2; b++)
       {
          bm_access_1(bm, b, access_type);
       }
@@ -614,8 +613,10 @@ void bm_test(void)
 
    for (i = 0; i < sizeof(s_args)/sizeof(s_args[0]); i++)
    {
-      bm_access_range(bm, s_args[i].address,
-                      s_args[i].size, s_args[i].access_type);
+      bm_access_range(bm,
+                      s_args[i].address,
+                      s_args[i].address + s_args[i].size,
+                      s_args[i].access_type);
    }
 
    VG_(printf)("Map contents -- should contain 10 addresses:\n");

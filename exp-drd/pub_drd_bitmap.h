@@ -57,8 +57,7 @@ typedef enum { eLoad, eStore } BmAccessTypeT;
 struct bitmap* bm_new(void);
 void bm_delete(struct bitmap* const bm);
 void bm_access_range(struct bitmap* const bm,
-                     const Addr address,
-                     const SizeT size,
+                     const Addr a1, const Addr a2,
                      const BmAccessTypeT access_type);
 void bm_access_4(struct bitmap* const bm,
                  const Addr address,
@@ -96,8 +95,6 @@ void bm_report_races(ThreadId const tid1, ThreadId const tid2,
 void bm_print(const struct bitmap* bm);
 ULong bm_get_bitmap_creation_count(void);
 ULong bm_get_bitmap2_creation_count(void);
-void bm_test(void);
-
 
 
 #endif /* __DRD_BITMAP_H */

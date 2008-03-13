@@ -79,7 +79,7 @@ void example1(void)
    // comparisons.
    OSet* oset = VG_(OSetGen_Create)(0,
                                   NULL,
-                                  (void*)malloc, free);
+                                  malloc, free);
 
    // Try some operations on an empty OSet to ensure they don't screw up.
    vg_assert( ! VG_(OSetGen_Contains)(oset, &v) );
@@ -212,7 +212,7 @@ void example1b(void)
 
    // Create a static OSet of Ints.  This one uses fast (built-in)
    // comparisons.
-   OSet* oset = VG_(OSetWord_Create)( (void*)malloc, free);
+   OSet* oset = VG_(OSetWord_Create)(malloc, free);
 
    // Try some operations on an empty OSet to ensure they don't screw up.
    vg_assert( ! VG_(OSetWord_Contains)(oset, v) );
@@ -370,7 +370,7 @@ void example2(void)
    // comparisons.
    OSet* oset = VG_(OSetGen_Create)(offsetof(Block, first),
                                     blockCmp,
-                                    (void*)malloc, free);
+                                    malloc, free);
 
    // Try some operations on an empty OSet to ensure they don't screw up.
    vg_assert( ! VG_(OSetGen_Contains)(oset, &v) );

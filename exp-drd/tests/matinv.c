@@ -42,7 +42,7 @@ struct gj_threadinfo
 /* Local variables. */
 /********************/
 
-static int s_nthread;
+static int s_nthread = 1;
 
 
 /*************************/

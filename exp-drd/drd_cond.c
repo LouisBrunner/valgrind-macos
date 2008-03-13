@@ -245,6 +245,9 @@ static void cond_signal(Addr const cond)
   {
     if (! mutex_is_locked_by(cond_p->mutex, drd_tid))
     {
+      /* A signal is sent while the associated mutex has not been locked. */
+      /* This can indicate but is not necessarily a race condition.       */
+#if 0
       CondRaceErrInfo cei;
       cei.cond  = cond;
       cei.mutex = cond_p->mutex;
@@ -253,6 +256,7 @@ static void cond_signal(Addr const cond)
                               VG_(get_IP)(vg_tid),
                               "CondErr",
                               &cei);
+#endif
     }
   }
   else

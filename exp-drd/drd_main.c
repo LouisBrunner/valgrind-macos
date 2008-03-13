@@ -181,7 +181,8 @@ VG_REGPARM(2) void drd_trace_load(Addr addr, SizeT size)
 #endif
    sg = thread_get_segment(thread_get_running_tid());
    bm_access_range(sg->bm, addr, size, eLoad);
-   if (thread_conflicting_access(addr, size, eLoad))
+   if (bm_has_conflict_with(thread_get_danger_set(), addr, addr + size, eLoad)
+       && ! drd_is_suppressed(addr, addr + size))
    {
       DataRaceErrInfo drei;
       drei.tid  = VG_(get_running_tid)();
@@ -230,7 +231,8 @@ VG_REGPARM(2) void drd_trace_store(Addr addr, SizeT size)
 #endif
    sg = thread_get_segment(thread_get_running_tid());
    bm_access_range(sg->bm, addr, size, eStore);
-   if (thread_conflicting_access(addr, size, eStore))
+   if (bm_has_conflict_with(thread_get_danger_set(), addr, addr + size, eStore)
+       && ! drd_is_suppressed(addr, addr + size))
    {
       DataRaceErrInfo drei;
       drei.tid  = VG_(get_running_tid)();

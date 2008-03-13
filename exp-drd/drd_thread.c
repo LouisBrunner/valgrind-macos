@@ -55,7 +55,7 @@ static ULong s_danger_set_bitmap2_creation_count;
 static ThreadId    s_vg_running_tid  = VG_INVALID_THREADID;
 DrdThreadId s_drd_running_tid = DRD_INVALID_THREADID;
 ThreadInfo s_threadinfo[DRD_N_THREADS];
-static struct bitmap* s_danger_set;
+struct bitmap* s_danger_set;
 static Bool s_trace_context_switches = False;
 static Bool s_trace_danger_set = False;
 
@@ -465,24 +465,7 @@ int thread_get_synchr_nesting_count(const DrdThreadId tid)
    return s_threadinfo[tid].synchr_nesting;
 }
 
-/**
- * Return a pointer to the latest segment for the specified thread.
- */
-Segment* thread_get_segment(const DrdThreadId tid)
-{
-   tl_assert(0 <= tid && tid < DRD_N_THREADS
-             && tid != DRD_INVALID_THREADID);
-   if (s_threadinfo[tid].last == 0)
-   {
-      VG_(message)(Vg_DebugMsg, "threadid = %d", tid);
-      thread_print_all();
-   }
-   tl_assert(s_threadinfo[tid].last);
-   return s_threadinfo[tid].last;
-}
-
-/** Append a new segment at the end of the segment list.
- */
+/** Append a new segment at the end of the segment list. */
 static void thread_append_segment(const DrdThreadId tid, Segment* const sg)
 {
    tl_assert(0 <= tid && tid < DRD_N_THREADS
@@ -966,15 +949,6 @@ static void thread_update_danger_set(const DrdThreadId tid)
       bm_print(s_danger_set);
       VG_(message)(Vg_DebugMsg, "[%d] end of new danger set.", tid);
    }
-}
-
-Bool thread_conflicting_access(const Addr a,
-                               const SizeT size,
-                               const BmAccessTypeT access_type)
-{
-   tl_assert(s_danger_set);
-   return (bm_has_conflict_with(s_danger_set, a, a + size, access_type)
-           && ! drd_is_suppressed(a, a + size));
 }
 
 ULong thread_get_context_switch_count(void)

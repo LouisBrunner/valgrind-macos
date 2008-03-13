@@ -218,14 +218,6 @@ UWord bm_has_any_access(const struct bitmap* const bm,
             b_end = (bm2->addr << ADDR0_BITS) + ADDR0_COUNT;
          else
             b_end = a2;
-#if 0
-         VG_(message)(Vg_DebugMsg,
-                      "in 0x%lx 0x%lx / cur 0x%lx 0x%lx / out 0x%lx 0x%lx",
-                      a1, a2,
-                      (bm2->addr << ADDR0_BITS),
-                      (bm2->addr << ADDR0_BITS) + ADDR0_COUNT,
-                      b_start, b_end);
-#endif
          tl_assert(a1 <= b_end && b_end <= a2);
          tl_assert(b_start < b_end);
          tl_assert((b_start & ADDR0_MASK) <= ((b_end - 1) & ADDR0_MASK));

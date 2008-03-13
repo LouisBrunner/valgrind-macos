@@ -74,106 +74,79 @@ void bm_delete(struct bitmap* const bm)
 }
 
 /**
- * Record an access of type access_type at addresses a in bitmap bm.
- */
-static
-__inline__
-void bm_access_1(struct bitmap* const bm,
-                 const Addr a,
-                 const BmAccessTypeT access_type)
-{
-   struct bitmap2* p2;
-   struct bitmap1* p1;
-   UWord* p0;
-   SPLIT_ADDRESS(a);
-
-   tl_assert(bm);
-
-   p2 = bm2_lookup_or_insert(bm, a1);
-   p1 = &p2->bm1;
-   p0 = (access_type == eLoad) ? p1->bm0_r : p1->bm0_w;
-   bm0_set(p0, a0);
-}
-
-static
-void bm_access_4_nonaligned(struct bitmap* const bm,
-                            const Addr a,
-                            const BmAccessTypeT access_type)
-{
-   bm_access_1(bm, a + 0, access_type);
-   bm_access_1(bm, a + 1, access_type);
-   bm_access_1(bm, a + 2, access_type);
-   bm_access_1(bm, a + 3, access_type);
-}
-
-static
-__inline__
-void bm_access_4_aligned(struct bitmap* const bm,
-                         const Addr a,
-                         const BmAccessTypeT access_type)
-{
-   struct bitmap2* p2;
-   struct bitmap1* p1;
-   UWord* p0;
-   SPLIT_ADDRESS(a);
-
-   tl_assert(bm);
-
-   p2 = bm2_lookup_or_insert(bm, a1);
-   p1 = &p2->bm1;
-   p0 = (access_type == eLoad) ? p1->bm0_r : p1->bm0_w;
-   bm0_set(p0, a0+0);
-   bm0_set(p0, a0+1);
-   bm0_set(p0, a0+2);
-   bm0_set(p0, a0+3);
-}
-
-/**
- * Record an access of type access_type at addresses a .. a + 3 in bitmap bm.
- */
-void bm_access_4(struct bitmap* const bm,
-                 const Addr a,
-                 const BmAccessTypeT access_type)
-{
-   tl_assert(bm);
-   if ((a & 3) != 0)
-   {
-      bm_access_4_nonaligned(bm, a, access_type);
-   }
-   else
-   {
-      bm_access_4_aligned(bm, a, access_type);
-   }
-}
-
-/**
- * Record an access of type access_type at addresses a1 .. a2 - 1 in
+ * Record an access of type access_type at addresses a .. a + size - 1 in
  * bitmap bm.
  */
+static inline
 void bm_access_range(struct bitmap* const bm,
                      const Addr a1, const Addr a2,
                      const BmAccessTypeT access_type)
 {
+   Addr b, b_next;
+
    tl_assert(bm);
    tl_assert(a1 < a2);
 
-   if (a2 - a1 == 4)
-      bm_access_4(bm, a1, access_type);
-   else if (a2 - a1 == 1)
-      bm_access_1(bm, a1, access_type);
-   else
+   for (b = a1; b < a2; b = b_next)
    {
-      Addr b;
-      for (b = a1; b != a2; b++)
+      Addr b_start;
+      Addr b_end;
+      struct bitmap2* bm2;
+      SPLIT_ADDRESS(b);
+
+      b_next = (b & ~ADDR0_MASK) + ADDR0_COUNT;
+      if (b_next > a2)
       {
-         bm_access_1(bm, b, access_type);
+         b_next = a2;
+      }
+
+      bm2 = bm2_lookup_or_insert(bm, b1);
+      tl_assert(bm2);
+
+      if ((bm2->addr << ADDR0_BITS) < a1)
+         b_start = a1;
+      else
+         if ((bm2->addr << ADDR0_BITS) < a2)
+            b_start = (bm2->addr << ADDR0_BITS);
+         else
+            break;
+      tl_assert(a1 <= b_start && b_start <= a2);
+
+      if ((bm2->addr << ADDR0_BITS) + ADDR0_COUNT < a2)
+         b_end = (bm2->addr << ADDR0_BITS) + ADDR0_COUNT;
+      else
+         b_end = a2;
+      tl_assert(a1 <= b_end && b_end <= a2);
+      tl_assert(b_start < b_end);
+      tl_assert((b_start & ADDR0_MASK) <= ((b_end - 1) & ADDR0_MASK));
+      
+      for (b0 = b_start & ADDR0_MASK; b0 <= ((b_end - 1) & ADDR0_MASK); b0++)
+      {
+         if (access_type == eLoad)
+         {
+            bm0_set(bm2->bm1.bm0_r, b0);
+         }
+         else
+         {
+            bm0_set(bm2->bm1.bm0_w, b0);
+         }
       }
    }
 }
 
-Bool bm_has(const struct bitmap* const bm,
-            const Addr a1,
-            const Addr a2,
+void bm_access_range_load(struct bitmap* const bm,
+                          const Addr a1, const Addr a2)
+{
+   bm_access_range(bm, a1, a2, eLoad);
+}
+
+void bm_access_range_store(struct bitmap* const bm,
+                           const Addr a1, const Addr a2)
+{
+   bm_access_range(bm, a1, a2, eStore);
+}
+
+Bool bm_has(const struct bitmap* const bm, const Addr a1, const Addr a2,
             const BmAccessTypeT access_type)
 {
    Addr b;
@@ -188,8 +161,7 @@ Bool bm_has(const struct bitmap* const bm,
 }
 
 Bool bm_has_any(const struct bitmap* const bm,
-                const Addr a1,
-                const Addr a2,
+                const Addr a1, const Addr a2,
                 const BmAccessTypeT access_type)
 {
    Addr b;
@@ -231,6 +203,7 @@ UWord bm_has_any_access(const struct bitmap* const bm,
          Addr b_start;
          Addr b_end;
          UWord b0;
+         const struct bitmap1* const p1 = &bm2->bm1;
 
          if ((bm2->addr << ADDR0_BITS) < a1)
             b_start = a1;
@@ -257,9 +230,8 @@ UWord bm_has_any_access(const struct bitmap* const bm,
          tl_assert(b_start < b_end);
          tl_assert((b_start & ADDR0_MASK) <= ((b_end - 1) & ADDR0_MASK));
       
-         for (b0 = b_start & ADDR0_MASK; b0 <= ((b_end - 1) & ADDR0_MASK); b0++)
+         for (b0 = b_start & ADDR0_MASK; b0 <= ((b_end-1) & ADDR0_MASK); b0++)
          {
-            const struct bitmap1* const p1 = &bm2->bm1;
             const UWord mask
                = bm0_is_set(p1->bm0_r, b0) | bm0_is_set(p1->bm0_w, b0);
             if (mask)
@@ -335,7 +307,6 @@ void bm_clear_all(const struct bitmap* const bm)
    }
 }
 
-// New and fast implementation.
 void bm_clear(const struct bitmap* const bm,
               const Addr a1,
               const Addr a2)
@@ -390,52 +361,83 @@ void bm_clear(const struct bitmap* const bm,
    }
 }
 
-static
-__inline__
-UWord bm_has_conflict_with_1(const struct bitmap* const bm,
-                             const Addr a,
-                             const BmAccessTypeT access_type)
+inline
+Bool bm_has_conflict_with(const struct bitmap* const bm,
+                          const Addr a1, const Addr a2,
+                          const BmAccessTypeT access_type)
 {
-   struct bitmap2* p2;
-   const UWord a0 = a & ADDR0_MASK;
+   Addr b, b_next;
 
    tl_assert(bm);
 
-   p2 = bm_lookup(bm, a);
-   if (p2)
+   for (b = a1; b < a2; b = b_next)
    {
-      if (access_type == eLoad)
+      struct bitmap2* bm2 = bm_lookup(bm, b);
+
+      b_next = (b & ~ADDR0_MASK) + ADDR0_COUNT;
+      if (b_next > a2)
       {
-         return bm0_is_set(p2->bm1.bm0_w, a0);
+         b_next = a2;
       }
-      else
+
+      if (bm2)
       {
-         tl_assert(access_type == eStore);
-         return (bm0_is_set(p2->bm1.bm0_r, a0)
-                 | bm0_is_set(p2->bm1.bm0_w, a0));
+         Addr b_start;
+         Addr b_end;
+         UWord b0;
+         const struct bitmap1* const p1 = &bm2->bm1;
+
+         if ((bm2->addr << ADDR0_BITS) < a1)
+            b_start = a1;
+         else
+            if ((bm2->addr << ADDR0_BITS) < a2)
+               b_start = (bm2->addr << ADDR0_BITS);
+            else
+               break;
+         tl_assert(a1 <= b_start && b_start <= a2);
+
+         if ((bm2->addr << ADDR0_BITS) + ADDR0_COUNT < a2)
+            b_end = (bm2->addr << ADDR0_BITS) + ADDR0_COUNT;
+         else
+            b_end = a2;
+         tl_assert(a1 <= b_end && b_end <= a2);
+         tl_assert(b_start < b_end);
+         tl_assert((b_start & ADDR0_MASK) <= ((b_end - 1) & ADDR0_MASK));
+      
+         for (b0 = b_start & ADDR0_MASK; b0 <= ((b_end-1) & ADDR0_MASK); b0++)
+         {
+            if (access_type == eLoad)
+            {
+               if (bm0_is_set(p1->bm0_w, b0))
+               {
+                  return True;
+               }
+            }
+            else
+            {
+               tl_assert(access_type == eStore);
+               if (bm0_is_set(p1->bm0_r, b0)
+                   | bm0_is_set(p1->bm0_w, b0))
+               {
+                  return True;
+               }
+            }
+         }
       }
    }
    return False;
 }
 
-/**
- * Return true if the access to [a,a+size[ of type access_type conflicts with
- * any access stored in bitmap bm.
- */
-Bool bm_has_conflict_with(const struct bitmap* const bm,
-                          const Addr a1,
-                          const Addr a2,
-                          const BmAccessTypeT access_type)
+Bool bm_load_has_conflict_with(const struct bitmap* const bm,
+                               const Addr a1, const Addr a2)
 {
-   Addr b;
-   for (b = a1; b != a2; b++)
-   {
-      if (bm_has_conflict_with_1(bm, b, access_type))
-      {
-         return True;
-      }
-   }
-   return False;
+   return bm_has_conflict_with(bm, a1, a2, eLoad);
+}
+
+Bool bm_store_has_conflict_with(const struct bitmap* const bm,
+                                const Addr a1, const Addr a2)
+{
+   return bm_has_conflict_with(bm, a1, a2, eStore);
 }
 
 void bm_swap(struct bitmap* const bm1, struct bitmap* const bm2)
@@ -466,7 +468,6 @@ void bm_merge2(struct bitmap* const lhs,
       do
       {
          bm2l = VG_(OSetGen_Next)(lhs->oset);
-         //VG_(message)(Vg_DebugMsg, "0x%x 0x%x", bm2l->addr, bm2r->addr);
       } while (bm2l->addr < bm2r->addr);
 
       tl_assert(bm2l->addr == bm2r->addr);

@@ -56,34 +56,30 @@ typedef enum { eLoad, eStore } BmAccessTypeT;
 // Function declarations.
 struct bitmap* bm_new(void);
 void bm_delete(struct bitmap* const bm);
-void bm_access_range(struct bitmap* const bm,
-                     const Addr a1, const Addr a2,
-                     const BmAccessTypeT access_type);
-void bm_access_4(struct bitmap* const bm,
-                 const Addr address,
-                 const BmAccessTypeT access_type);
+void bm_access_range_load(struct bitmap* const bm,
+                          const Addr a1, const Addr a2);
+void bm_access_range_store(struct bitmap* const bm,
+                           const Addr a1, const Addr a2);
 Bool bm_has(const struct bitmap* const bm,
-            const Addr a1,
-            const Addr a2,
+            const Addr a1, const Addr a2,
             const BmAccessTypeT access_type);
 Bool bm_has_any(const struct bitmap* const bm,
-                const Addr a1,
-                const Addr a2,
+                const Addr a1, const Addr a2,
                 const BmAccessTypeT access_type);
 UWord bm_has_any_access(const struct bitmap* const bm,
-                        const Addr a1,
-                        const Addr a2);
+                        const Addr a1, const Addr a2);
 UWord bm_has_1(const struct bitmap* const bm,
-               const Addr address,
-               const BmAccessTypeT access_type);
+               const Addr address, const BmAccessTypeT access_type);
 void bm_clear_all(const struct bitmap* const bm);
 void bm_clear(const struct bitmap* const bm,
-              const Addr a1,
-              const Addr a2);
+              const Addr a1, const Addr a2);
 Bool bm_has_conflict_with(const struct bitmap* const bm,
-                          const Addr a1,
-                          const Addr a2,
+                          const Addr a1, const Addr a2,
                           const BmAccessTypeT access_type);
+Bool bm_load_has_conflict_with(const struct bitmap* const bm,
+                               const Addr a1, const Addr a2);
+Bool bm_store_has_conflict_with(const struct bitmap* const bm,
+                                const Addr a1, const Addr a2);
 void bm_swap(struct bitmap* const bm1, struct bitmap* const bm2);
 void bm_merge2(struct bitmap* const lhs,
                const struct bitmap* const rhs);

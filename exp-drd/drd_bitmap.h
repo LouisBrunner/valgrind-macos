@@ -42,7 +42,7 @@
 
 #define ADDR0_BITS 12
 
-#define ADDR0_COUNT (1UL << ADDR0_BITS)
+#define ADDR0_COUNT ((UWord)1 << ADDR0_BITS)
 
 #define ADDR0_MASK (ADDR0_COUNT - 1)
 
@@ -89,27 +89,53 @@ struct bitmap1
 
 static __inline__ UWord bm0_mask(const Addr a)
 {
-  return (1UL << UWORD_LSB(a));
+  return ((UWord)1 << UWORD_LSB(a));
 }
 
 static __inline__ void bm0_set(UWord* bm0, const Addr a)
 {
   //tl_assert(a < ADDR0_COUNT);
-  bm0[a >> BITS_PER_BITS_PER_UWORD] |= 1UL << UWORD_LSB(a);
+  bm0[a >> BITS_PER_BITS_PER_UWORD] |= (UWord)1 << UWORD_LSB(a);
+}
+
+/** Set all of the addresses in range a1..a2 (inclusive) in bitmap bm0. */
+static __inline__ void bm0_set_range(UWord* bm0, const Addr a1, const Addr a2)
+{
+#if 0
+  tl_assert(a1 < ADDR0_COUNT);
+  tl_assert(a2 < ADDR0_COUNT);
+  tl_assert(a1 <= a2);
+  tl_assert(UWORD_MSB(a1) == UWORD_MSB(a2));
+#endif
+  bm0[a1 >> BITS_PER_BITS_PER_UWORD]
+    |= ((UWord)2 << UWORD_LSB(a2)) - ((UWord)1 << UWORD_LSB(a1));
 }
 
 static __inline__ void bm0_clear(UWord* bm0, const Addr a)
 {
   //tl_assert(a < ADDR0_COUNT);
-  bm0[a >> BITS_PER_BITS_PER_UWORD] &= ~(1UL << UWORD_LSB(a));
+  bm0[a >> BITS_PER_BITS_PER_UWORD] &= ~((UWord)1 << UWORD_LSB(a));
 }
 
 static __inline__ UWord bm0_is_set(const UWord* bm0, const Addr a)
 {
   //tl_assert(a < ADDR0_COUNT);
-  return (bm0[a >> BITS_PER_BITS_PER_UWORD] & (1UL << UWORD_LSB(a)));
+  return (bm0[a >> BITS_PER_BITS_PER_UWORD] & ((UWord)1 << UWORD_LSB(a)));
 }
 
+/** Return true if any of the bits a1..a2 (inclusive) are set in bm0. */
+static __inline__ UWord bm0_is_any_set(const UWord* bm0,
+                                       const Addr a1, const Addr a2)
+{
+#if 0
+  tl_assert(a1 < ADDR0_COUNT);
+  tl_assert(a2 < ADDR0_COUNT);
+  tl_assert(a1 <= a2);
+  tl_assert(UWORD_MSB(a1) == UWORD_MSB(a2));
+#endif
+  return (bm0[a1 >> BITS_PER_BITS_PER_UWORD]
+          & (((UWord)2 << UWORD_LSB(a2)) - ((UWord)1 << UWORD_LSB(a1))));
+}
 
 struct bitmap2
 {
@@ -120,40 +146,67 @@ struct bitmap2
 /* Complete bitmap. */
 struct bitmap
 {
-  OSet* oset;
+  Addr            last_lookup_a1;
+  struct bitmap2* last_lookup_result;
+  OSet*           oset;
 };
 
 static __inline__
 struct bitmap2* bm_lookup(const struct bitmap* const bm, const Addr a)
 {
+  struct bitmap2* result;
   const UWord a1 = a >> ADDR0_BITS;
-  return VG_(OSetGen_Lookup)(bm->oset, &a1);
+  if (a1 == bm->last_lookup_a1)
+  {
+    //tl_assert(bm->last_lookup_result == VG_(OSetGen_Lookup)(bm->oset, &a1));
+    return bm->last_lookup_result;
+  }
+  result = VG_(OSetGen_Lookup)(bm->oset,&a1);
+  if (result)
+  {
+    ((struct bitmap*)bm)->last_lookup_a1     = a1;
+    ((struct bitmap*)bm)->last_lookup_result = result;
+  }
+  return result;
 }
 
 static __inline__
 struct bitmap2* bm2_insert(const struct bitmap* const bm,
                            const UWord a1)
 {
-   struct bitmap2* const node = VG_(OSetGen_AllocNode)(bm->oset, sizeof(*node));
-   node->addr = a1;
-   VG_(memset)(&node->bm1, 0, sizeof(node->bm1));
-   VG_(OSetGen_Insert)(bm->oset, node);
-
-   s_bitmap2_creation_count++;
-
-   return node;
+  struct bitmap2* const node = VG_(OSetGen_AllocNode)(bm->oset, sizeof(*node));
+  node->addr = a1;
+  VG_(memset)(&node->bm1, 0, sizeof(node->bm1));
+  VG_(OSetGen_Insert)(bm->oset, node);
+  
+  ((struct bitmap*)bm)->last_lookup_a1     = a1;
+  ((struct bitmap*)bm)->last_lookup_result = node;
+  
+  s_bitmap2_creation_count++;
+  
+  return node;
 }
 
 static __inline__
 struct bitmap2* bm2_lookup_or_insert(const struct bitmap* const bm,
                                      const UWord a1)
 {
-   struct bitmap2* p2 = VG_(OSetGen_Lookup)(bm->oset, &a1);
-   if (p2 == 0)
-   {
-      p2 = bm2_insert(bm, a1);
-   }
-   return p2;
+  struct bitmap2* p2;
+
+  if (a1 == bm->last_lookup_a1)
+  {
+    //tl_assert(bm->last_lookup_result == VG_(OSetGen_Lookup)(bm->oset, &a1));
+    return bm->last_lookup_result;
+  }
+
+  p2 = VG_(OSetGen_Lookup)(bm->oset, &a1);
+  if (p2 == 0)
+  {
+    p2 = bm2_insert(bm, a1);
+  }
+  ((struct bitmap*)bm)->last_lookup_a1     = a1;
+  ((struct bitmap*)bm)->last_lookup_result = p2;
+  return p2;
 }
 
 

@@ -171,5 +171,11 @@ Segment* thread_get_segment(const DrdThreadId tid)
   return s_threadinfo[tid].last;
 }
 
+/** Return a pointer to the latest segment for the running thread. */
+static inline
+Segment* running_thread_get_segment(void)
+{
+  return thread_get_segment(s_drd_running_tid);
+}
 
 #endif // __THREAD_H

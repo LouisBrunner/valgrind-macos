@@ -58,6 +58,14 @@ struct bitmap* bm_new(void);
 void bm_delete(struct bitmap* const bm);
 void bm_access_range_load(struct bitmap* const bm,
                           const Addr a1, const Addr a2);
+void bm_access_load_1(struct bitmap* const bm, const Addr a1);
+void bm_access_load_2(struct bitmap* const bm, const Addr a1);
+void bm_access_load_4(struct bitmap* const bm, const Addr a1);
+void bm_access_load_8(struct bitmap* const bm, const Addr a1);
+void bm_access_store_1(struct bitmap* const bm, const Addr a1);
+void bm_access_store_2(struct bitmap* const bm, const Addr a1);
+void bm_access_store_4(struct bitmap* const bm, const Addr a1);
+void bm_access_store_8(struct bitmap* const bm, const Addr a1);
 void bm_access_range_store(struct bitmap* const bm,
                            const Addr a1, const Addr a2);
 Bool bm_has(const struct bitmap* const bm,
@@ -76,8 +84,16 @@ void bm_clear(const struct bitmap* const bm,
 Bool bm_has_conflict_with(const struct bitmap* const bm,
                           const Addr a1, const Addr a2,
                           const BmAccessTypeT access_type);
+Bool bm_load_1_has_conflict_with(const struct bitmap* const bm, const Addr a1);
+Bool bm_load_2_has_conflict_with(const struct bitmap* const bm, const Addr a1);
+Bool bm_load_4_has_conflict_with(const struct bitmap* const bm, const Addr a1);
+Bool bm_load_8_has_conflict_with(const struct bitmap* const bm, const Addr a1);
 Bool bm_load_has_conflict_with(const struct bitmap* const bm,
                                const Addr a1, const Addr a2);
+Bool bm_store_1_has_conflict_with(const struct bitmap* const bm,const Addr a1);
+Bool bm_store_2_has_conflict_with(const struct bitmap* const bm,const Addr a1);
+Bool bm_store_4_has_conflict_with(const struct bitmap* const bm,const Addr a1);
+Bool bm_store_8_has_conflict_with(const struct bitmap* const bm,const Addr a1);
 Bool bm_store_has_conflict_with(const struct bitmap* const bm,
                                 const Addr a1, const Addr a2);
 void bm_swap(struct bitmap* const bm1, struct bitmap* const bm2);

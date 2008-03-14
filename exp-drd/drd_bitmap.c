@@ -77,7 +77,7 @@ void bm_delete(struct bitmap* const bm)
  * Record an access of type access_type at addresses a .. a + size - 1 in
  * bitmap bm.
  */
-static inline
+static
 void bm_access_range(struct bitmap* const bm,
                      const Addr a1, const Addr a2,
                      const BmAccessTypeT access_type)
@@ -134,10 +134,120 @@ void bm_access_range(struct bitmap* const bm,
    }
 }
 
+static inline
+void bm_access_aligned_load(struct bitmap* const bm,
+                            const Addr a1, const Addr a2)
+{
+   struct bitmap2* bm2;
+
+#if 0
+   /* Commented out the statements below because of performance reasons. */
+   tl_assert(bm);
+   tl_assert(a1 < a2);
+   tl_assert((a2 - a1) == 1 || (a2 - a1) == 2
+             || (a2 - a1) == 4 || (a2 - a1) == 8);
+   tl_assert((a1 & (a2 - a1 - 1)) == 0);
+#endif
+
+   bm2 = bm2_lookup_or_insert(bm, a1 >> ADDR0_BITS);
+   tl_assert(bm2);
+
+   bm0_set_range(bm2->bm1.bm0_r, a1 & ADDR0_MASK, (a2 - 1) & ADDR0_MASK);
+}
+
+static inline
+void bm_access_aligned_store(struct bitmap* const bm,
+                             const Addr a1, const Addr a2)
+{
+   struct bitmap2* bm2;
+
+#if 0
+   /* Commented out the statements below because of performance reasons. */
+   tl_assert(bm);
+   tl_assert(a1 < a2);
+   tl_assert((a2 - a1) == 1 || (a2 - a1) == 2
+             || (a2 - a1) == 4 || (a2 - a1) == 8);
+   tl_assert((a1 & (a2 - a1 - 1)) == 0);
+#endif
+
+   bm2 = bm2_lookup_or_insert(bm, a1 >> ADDR0_BITS);
+   tl_assert(bm2);
+
+   bm0_set_range(bm2->bm1.bm0_w, a1 & ADDR0_MASK, (a2 - 1) & ADDR0_MASK);
+}
+
 void bm_access_range_load(struct bitmap* const bm,
                           const Addr a1, const Addr a2)
 {
    bm_access_range(bm, a1, a2, eLoad);
+}
+
+void bm_access_load_1(struct bitmap* const bm, const Addr a1)
+{
+   bm_access_aligned_load(bm, a1, a1 + 1);
+}
+
+void bm_access_load_2(struct bitmap* const bm, const Addr a1)
+{
+   if ((a1 & 1) == 0)
+      bm_access_aligned_load(bm, a1, a1 + 2);
+   else
+      bm_access_range(bm, a1, a1 + 2, eLoad);
+}
+
+void bm_access_load_4(struct bitmap* const bm, const Addr a1)
+{
+   if ((a1 & 3) == 0)
+      bm_access_aligned_load(bm, a1, a1 + 4);
+   else
+      bm_access_range(bm, a1, a1 + 4, eLoad);
+}
+
+void bm_access_load_8(struct bitmap* const bm, const Addr a1)
+{
+   if ((a1 & 7) == 0)
+      bm_access_aligned_load(bm, a1, a1 + 8);
+   else if ((a1 & 3) == 0)
+   {
+      bm_access_aligned_load(bm, a1 + 0, a1 + 4);
+      bm_access_aligned_load(bm, a1 + 4, a1 + 8);
+   }
+   else
+      bm_access_range(bm, a1, a1 + 8, eLoad);
+}
+
+void bm_access_store_1(struct bitmap* const bm, const Addr a1)
+{
+   bm_access_aligned_store(bm, a1, a1 + 1);
+}
+
+void bm_access_store_2(struct bitmap* const bm, const Addr a1)
+{
+   if ((a1 & 1) == 0)
+      bm_access_aligned_store(bm, a1, a1 + 2);
+   else
+      bm_access_range(bm, a1, a1 + 2, eStore);
+}
+
+void bm_access_store_4(struct bitmap* const bm, const Addr a1)
+{
+   if ((a1 & 3) == 0)
+      bm_access_aligned_store(bm, a1, a1 + 4);
+   else
+      bm_access_range(bm, a1, a1 + 4, eStore);
+}
+
+void bm_access_store_8(struct bitmap* const bm, const Addr a1)
+{
+   if ((a1 & 7) == 0)
+      bm_access_aligned_store(bm, a1, a1 + 8);
+   else if ((a1 & 3) == 0)
+   {
+      bm_access_aligned_store(bm, a1 + 0, a1 + 4);
+      bm_access_aligned_store(bm, a1 + 4, a1 + 8);
+   }
+   else
+      bm_access_range(bm, a1, a1 + 8, eStore);
 }
 
 void bm_access_range_store(struct bitmap* const bm,
@@ -269,7 +379,7 @@ void bm1_clear(struct bitmap1* const bm1, const Addr a1, const Addr a2)
    UWord mask;
 
 #if 0
-   // Commented out the assert statements below because of performance reasons.
+   /* Commented out the statements below because of performance reasons. */
    tl_assert(a1);
    tl_assert(a1 <= a2);
    tl_assert(UWORD_MSB(a1) == UWORD_MSB(a2)
@@ -353,7 +463,6 @@ void bm_clear(const struct bitmap* const bm,
    }
 }
 
-inline
 Bool bm_has_conflict_with(const struct bitmap* const bm,
                           const Addr a1, const Addr a2,
                           const BmAccessTypeT access_type)
@@ -420,10 +529,123 @@ Bool bm_has_conflict_with(const struct bitmap* const bm,
    return False;
 }
 
+static inline
+Bool bm_aligned_load_has_conflict_with(const struct bitmap* const bm,
+                                       const Addr a1, const Addr a2)
+{
+   struct bitmap2* bm2;
+
+#if 0
+   /* Commented out the statements below because of performance reasons. */
+   tl_assert(bm);
+   tl_assert(a1 < a2);
+   tl_assert((a2 - a1) == 1 || (a2 - a1) == 2
+             || (a2 - a1) == 4 || (a2 - a1) == 8);
+   tl_assert((a1 & (a2 - a1 - 1)) == 0);
+#endif
+
+   bm2 = bm_lookup(bm, a1);
+
+   if (bm2
+       && bm0_is_any_set(bm2->bm1.bm0_w, a1 & ADDR0_MASK, (a2-1) & ADDR0_MASK))
+   {
+      return True;
+   }
+   return False;
+}
+
+static inline
+Bool bm_aligned_store_has_conflict_with(const struct bitmap* const bm,
+                                        const Addr a1, const Addr a2)
+{
+   struct bitmap2* bm2;
+
+#if 0
+   /* Commented out the statements below because of performance reasons. */
+   tl_assert(bm);
+   tl_assert(a1 < a2);
+   tl_assert((a2 - a1) == 1 || (a2 - a1) == 2
+             || (a2 - a1) == 4 || (a2 - a1) == 8);
+   tl_assert((a1 & (a2 - a1 - 1)) == 0);
+#endif
+
+   bm2 = bm_lookup(bm, a1);
+
+   if (bm2)
+   {
+      const struct bitmap1* const p1 = &bm2->bm1;
+
+      if (bm0_is_any_set(p1->bm0_r, a1 & ADDR0_MASK, (a2-1) & ADDR0_MASK)
+          | bm0_is_any_set(p1->bm0_w, a1 & ADDR0_MASK, (a2-1) & ADDR0_MASK))
+      {
+         return True;
+      }
+   }
+   return False;
+}
+
 Bool bm_load_has_conflict_with(const struct bitmap* const bm,
                                const Addr a1, const Addr a2)
 {
    return bm_has_conflict_with(bm, a1, a2, eLoad);
+}
+
+Bool bm_load_1_has_conflict_with(const struct bitmap* const bm, const Addr a1)
+{
+   return bm_aligned_load_has_conflict_with(bm, a1, a1 + 1);
+}
+
+Bool bm_load_2_has_conflict_with(const struct bitmap* const bm, const Addr a1)
+{
+   if ((a1 & 1) == 0)
+      return bm_aligned_load_has_conflict_with(bm, a1, a1 + 2);
+   else
+      return bm_has_conflict_with(bm, a1, a1 + 2, eLoad);
+}
+
+Bool bm_load_4_has_conflict_with(const struct bitmap* const bm, const Addr a1)
+{
+   if ((a1 & 3) == 0)
+      return bm_aligned_load_has_conflict_with(bm, a1, a1 + 4);
+   else
+      return bm_has_conflict_with(bm, a1, a1 + 4, eLoad);
+}
+
+Bool bm_load_8_has_conflict_with(const struct bitmap* const bm, const Addr a1)
+{
+   if ((a1 & 7) == 0)
+      return bm_aligned_load_has_conflict_with(bm, a1, a1 + 8);
+   else
+      return bm_has_conflict_with(bm, a1, a1 + 8, eLoad);
+}
+
+Bool bm_store_1_has_conflict_with(const struct bitmap* const bm, const Addr a1)
+{
+   return bm_aligned_store_has_conflict_with(bm, a1, a1 + 1);
+}
+
+Bool bm_store_2_has_conflict_with(const struct bitmap* const bm, const Addr a1)
+{
+   if ((a1 & 1) == 0)
+      return bm_aligned_store_has_conflict_with(bm, a1, a1 + 2);
+   else
+      return bm_has_conflict_with(bm, a1, a1 + 2, eStore);
+}
+
+Bool bm_store_4_has_conflict_with(const struct bitmap* const bm, const Addr a1)
+{
+   if ((a1 & 3) == 0)
+      return bm_aligned_store_has_conflict_with(bm, a1, a1 + 4);
+   else
+      return bm_has_conflict_with(bm, a1, a1 + 4, eStore);
+}
+
+Bool bm_store_8_has_conflict_with(const struct bitmap* const bm, const Addr a1)
+{
+   if ((a1 & 7) == 0)
+      return bm_aligned_store_has_conflict_with(bm, a1, a1 + 8);
+   else
+      return bm_has_conflict_with(bm, a1, a1 + 8, eStore);
 }
 
 Bool bm_store_has_conflict_with(const struct bitmap* const bm,

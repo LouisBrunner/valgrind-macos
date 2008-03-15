@@ -171,10 +171,11 @@ static void drd_trace_mem_access(const Addr addr, const SizeT size,
 static void drd_report_race(const Addr addr, const SizeT size,
                             const BmAccessTypeT access_type)
 {
+  DataRaceErrInfo drei;
+
   if (drd_is_suppressed(addr, addr + size))
     return;
 
-  DataRaceErrInfo drei;
   drei.tid  = VG_(get_running_tid)();
   drei.addr = addr;
   drei.size = size;

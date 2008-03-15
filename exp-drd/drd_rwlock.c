@@ -509,10 +509,3 @@ void rwlock_thread_delete(const DrdThreadId tid)
     }
   }
 }
-
-
-/*
- * Local variables:
- * c-basic-offset: 2
- * End:
- */

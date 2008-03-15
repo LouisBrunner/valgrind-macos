@@ -123,9 +123,3 @@ void drd_suppression_stop_using_mem(const Addr a1, const Addr a2)
   tl_assert(a1 < a2);
   bm_clear(s_suppressed, a1, a2);
 }
-
-/*
- * Local variables:
- * c-basic-offset: 3
- * End:
- */

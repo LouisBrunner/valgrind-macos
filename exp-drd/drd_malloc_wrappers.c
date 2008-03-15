@@ -44,10 +44,10 @@
 
 
 typedef struct _DRD_Chunk {
-   struct _DRD_Chunk* next;
-   Addr          data;            // ptr to actual block
-   SizeT         size : (sizeof(UWord)*8)-2; //size requested; 30 or 62 bits
-   ExeContext*   where;           // where it was allocated
+  struct _DRD_Chunk* next;
+  Addr          data;            // ptr to actual block
+  SizeT         size : (sizeof(UWord)*8)-2; //size requested; 30 or 62 bits
+  ExeContext*   where;           // where it was allocated
 } DRD_Chunk;
 
 static StartUsingMem s_start_using_mem_callback;
@@ -70,12 +70,12 @@ static VgHashTable drd_malloc_list = NULL;
 static
 DRD_Chunk* create_DRD_Chunk(ThreadId tid, Addr p, SizeT size)
 {
-   DRD_Chunk* mc = VG_(malloc)(sizeof(DRD_Chunk));
-   mc->data      = p;
-   mc->size      = size;
-   mc->where     = VG_(record_ExeContext)(tid, 0);
+  DRD_Chunk* mc = VG_(malloc)(sizeof(DRD_Chunk));
+  mc->data      = p;
+  mc->size      = size;
+  mc->where     = VG_(record_ExeContext)(tid, 0);
 
-   return mc;
+  return mc;
 }
 
 /*------------------------------------------------------------*/
@@ -89,192 +89,192 @@ void* drd_new_block(ThreadId tid,
                     SizeT size, SizeT align,
                     Bool is_zeroed)
 {
-   Addr p;
+  Addr p;
 
-   cmalloc_n_mallocs ++;
+  cmalloc_n_mallocs ++;
 
-   // Allocate and zero
-   p = (Addr)VG_(cli_malloc)(align, size);
-   if (!p) {
-      return NULL;
-   }
-   if (is_zeroed) VG_(memset)((void*)p, 0, size);
-   s_start_using_mem_callback(p, p + size);
+  // Allocate and zero
+  p = (Addr)VG_(cli_malloc)(align, size);
+  if (!p) {
+    return NULL;
+  }
+  if (is_zeroed) VG_(memset)((void*)p, 0, size);
+  s_start_using_mem_callback(p, p + size);
 
-   // Only update this stat if allocation succeeded.
-   cmalloc_bs_mallocd += size;
+  // Only update this stat if allocation succeeded.
+  cmalloc_bs_mallocd += size;
 
-   VG_(HT_add_node)(drd_malloc_list, create_DRD_Chunk(tid, p, size));
+  VG_(HT_add_node)(drd_malloc_list, create_DRD_Chunk(tid, p, size));
 
-   return (void*)p;
+  return (void*)p;
 }
 
 static
 void* drd_malloc(ThreadId tid, SizeT n)
 {
-   return drd_new_block(tid, n, VG_(clo_alignment), /*is_zeroed*/False);
+  return drd_new_block(tid, n, VG_(clo_alignment), /*is_zeroed*/False);
 }
 
 static
 void* drd_memalign(ThreadId tid, SizeT align, SizeT n)
 {
-   return drd_new_block(tid, n, align, /*is_zeroed*/False);
+  return drd_new_block(tid, n, align, /*is_zeroed*/False);
 }
 
 static
 void* drd_calloc(ThreadId tid, SizeT nmemb, SizeT size1)
 {
-   return drd_new_block(tid, nmemb*size1, VG_(clo_alignment),
-                        /*is_zeroed*/True);
+  return drd_new_block(tid, nmemb*size1, VG_(clo_alignment),
+                       /*is_zeroed*/True);
 }
 
 static
 __inline__
 void drd_handle_free(ThreadId tid, Addr p)
 {
-   DRD_Chunk* mc;
+  DRD_Chunk* mc;
 
-   cmalloc_n_frees++;
+  cmalloc_n_frees++;
 
-   mc = VG_(HT_remove)(drd_malloc_list, (UWord)p);
-   if (mc == NULL)
-   {
-      tl_assert(0);
-   }
-   else
-   {
-      s_stop_using_mem_callback(mc->data, mc->size);
-      VG_(free)(mc);
-   }
+  mc = VG_(HT_remove)(drd_malloc_list, (UWord)p);
+  if (mc == NULL)
+  {
+    tl_assert(0);
+  }
+  else
+  {
+    s_stop_using_mem_callback(mc->data, mc->size);
+    VG_(free)(mc);
+  }
 }
 
 static
 void drd_free(ThreadId tid, void* p)
 {
-   drd_handle_free(tid, (Addr)p);
+  drd_handle_free(tid, (Addr)p);
 }
 
 static
 void* drd_realloc(ThreadId tid, void* p_old, SizeT new_size)
 {
-   DRD_Chunk* mc;
-   void*     p_new;
-   SizeT     old_size;
+  DRD_Chunk* mc;
+  void*     p_new;
+  SizeT     old_size;
 
-   cmalloc_n_frees ++;
-   cmalloc_n_mallocs ++;
-   cmalloc_bs_mallocd += new_size;
+  cmalloc_n_frees ++;
+  cmalloc_n_mallocs ++;
+  cmalloc_bs_mallocd += new_size;
 
-   /* Remove the old block */
-   mc = VG_(HT_remove)(drd_malloc_list, (UWord)p_old);
-   if (mc == NULL) {
-      tl_assert(0);
-      return NULL;
-   }
+  /* Remove the old block */
+  mc = VG_(HT_remove)(drd_malloc_list, (UWord)p_old);
+  if (mc == NULL) {
+    tl_assert(0);
+    return NULL;
+  }
 
-   old_size = mc->size;
+  old_size = mc->size;
 
-   if (old_size == new_size)
-   {
-      /* size unchanged */
-      mc->where = VG_(record_ExeContext)(tid, 0);
-      p_new = p_old;
+  if (old_size == new_size)
+  {
+    /* size unchanged */
+    mc->where = VG_(record_ExeContext)(tid, 0);
+    p_new = p_old;
       
-   }
-   else if (old_size > new_size)
-   {
-      /* new size is smaller */
-      s_stop_using_mem_callback(mc->data + new_size, old_size);
-      mc->size = new_size;
-      mc->where = VG_(record_ExeContext)(tid, 0);
-      p_new = p_old;
+  }
+  else if (old_size > new_size)
+  {
+    /* new size is smaller */
+    s_stop_using_mem_callback(mc->data + new_size, old_size);
+    mc->size = new_size;
+    mc->where = VG_(record_ExeContext)(tid, 0);
+    p_new = p_old;
 
-   }
-   else
-   {
-      /* new size is bigger */
-      /* Get new memory */
-      const Addr a_new = (Addr)VG_(cli_malloc)(VG_(clo_alignment), new_size);
+  }
+  else
+  {
+    /* new size is bigger */
+    /* Get new memory */
+    const Addr a_new = (Addr)VG_(cli_malloc)(VG_(clo_alignment), new_size);
 
-      if (a_new)
-      {
-         /* Copy from old to new */
-         VG_(memcpy)((void*)a_new, p_old, mc->size);
+    if (a_new)
+    {
+      /* Copy from old to new */
+      VG_(memcpy)((void*)a_new, p_old, mc->size);
 
-         /* Free old memory */
-         s_stop_using_mem_callback(mc->data, mc->size);
-         VG_(free)(mc);
+      /* Free old memory */
+      s_stop_using_mem_callback(mc->data, mc->size);
+      VG_(free)(mc);
 
-         // Allocate a new chunk.
-         mc = create_DRD_Chunk(tid, a_new, new_size);
-         s_start_using_mem_callback(a_new, a_new + new_size);
-      }
-      else
-      {
-         /* Allocation failed -- leave original block untouched. */
-      }
+      // Allocate a new chunk.
+      mc = create_DRD_Chunk(tid, a_new, new_size);
+      s_start_using_mem_callback(a_new, a_new + new_size);
+    }
+    else
+    {
+      /* Allocation failed -- leave original block untouched. */
+    }
 
-      p_new = (void*)a_new;
-   }  
+    p_new = (void*)a_new;
+  }  
 
-   // Now insert the new mc (with a possibly new 'data' field) into
-   // malloc_list.  If this realloc() did not increase the memory size, we
-   // will have removed and then re-added mc unnecessarily.  But that's ok
-   // because shrinking a block with realloc() is (presumably) much rarer
-   // than growing it, and this way simplifies the growing case.
-   VG_(HT_add_node)(drd_malloc_list, mc);
+  // Now insert the new mc (with a possibly new 'data' field) into
+  // malloc_list.  If this realloc() did not increase the memory size, we
+  // will have removed and then re-added mc unnecessarily.  But that's ok
+  // because shrinking a block with realloc() is (presumably) much rarer
+  // than growing it, and this way simplifies the growing case.
+  VG_(HT_add_node)(drd_malloc_list, mc);
 
-   return p_new;
+  return p_new;
 }
 
 static
 void* drd___builtin_new(ThreadId tid, SizeT n)
 {
-   void* const result = drd_new_block(tid, n, VG_(clo_alignment), /*is_zeroed*/False);
-   //VG_(message)(Vg_DebugMsg, "__builtin_new(%d, %d) = %p", tid, n, result);
-   return result;
+  void* const result = drd_new_block(tid, n, VG_(clo_alignment), /*is_zeroed*/False);
+  //VG_(message)(Vg_DebugMsg, "__builtin_new(%d, %d) = %p", tid, n, result);
+  return result;
 }
 
 static
 void drd___builtin_delete(ThreadId tid, void* p)
 {
-   //VG_(message)(Vg_DebugMsg, "__builtin_delete(%d, %p)", tid, p);
-   drd_handle_free(tid, (Addr)p);
+  //VG_(message)(Vg_DebugMsg, "__builtin_delete(%d, %p)", tid, p);
+  drd_handle_free(tid, (Addr)p);
 }
 
 static
 void* drd___builtin_vec_new(ThreadId tid, SizeT n)
 {
-   return drd_new_block(tid, n, VG_(clo_alignment), /*is_zeroed*/False);
+  return drd_new_block(tid, n, VG_(clo_alignment), /*is_zeroed*/False);
 }
 
 static
 void drd___builtin_vec_delete(ThreadId tid, void* p)
 {
-   drd_handle_free(tid, (Addr)p);
+  drd_handle_free(tid, (Addr)p);
 }
 
 void drd_register_malloc_wrappers(const StartUsingMem start_using_mem_callback,
                                   const StopUsingMem stop_using_mem_callback)
 {
-   tl_assert(drd_malloc_list == 0);
-   drd_malloc_list = VG_(HT_construct)("drd_malloc_list");   // a big prime
-   tl_assert(drd_malloc_list != 0);
-   tl_assert(stop_using_mem_callback);
+  tl_assert(drd_malloc_list == 0);
+  drd_malloc_list = VG_(HT_construct)("drd_malloc_list");   // a big prime
+  tl_assert(drd_malloc_list != 0);
+  tl_assert(stop_using_mem_callback);
 
-   s_start_using_mem_callback = start_using_mem_callback;
-   s_stop_using_mem_callback  = stop_using_mem_callback;
+  s_start_using_mem_callback = start_using_mem_callback;
+  s_stop_using_mem_callback  = stop_using_mem_callback;
 
-   VG_(needs_malloc_replacement)(drd_malloc,
-                                 drd___builtin_new,
-                                 drd___builtin_vec_new,
-                                 drd_memalign,
-                                 drd_calloc,
-                                 drd_free,
-                                 drd___builtin_delete,
-                                 drd___builtin_vec_delete,
-                                 drd_realloc,
-                                 0);
+  VG_(needs_malloc_replacement)(drd_malloc,
+                                drd___builtin_new,
+                                drd___builtin_vec_new,
+                                drd_memalign,
+                                drd_calloc,
+                                drd_free,
+                                drd___builtin_delete,
+                                drd___builtin_vec_delete,
+                                drd_realloc,
+                                0);
 }
 
 Bool drd_heap_addrinfo(Addr const a,
@@ -282,24 +282,24 @@ Bool drd_heap_addrinfo(Addr const a,
                        SizeT* const size,
                        ExeContext** const where)
 {
-   DRD_Chunk* mc;
+  DRD_Chunk* mc;
 
-   tl_assert(data);
-   tl_assert(size);
-   tl_assert(where);
+  tl_assert(data);
+  tl_assert(size);
+  tl_assert(where);
 
-   VG_(HT_ResetIter)(drd_malloc_list);
-   while ((mc = VG_(HT_Next)(drd_malloc_list)))
-   {
-      if (mc->data <= a && a < mc->data + mc->size)
-      {
-         *data  = mc->data;
-         *size  = mc->size;
-         *where = mc->where;
-         return True;
-      }
-   }
-   return False;
+  VG_(HT_ResetIter)(drd_malloc_list);
+  while ((mc = VG_(HT_Next)(drd_malloc_list)))
+  {
+    if (mc->data <= a && a < mc->data + mc->size)
+    {
+      *data  = mc->data;
+      *size  = mc->size;
+      *where = mc->where;
+      return True;
+    }
+  }
+  return False;
 }
 
 /*------------------------------------------------------------*/
@@ -308,40 +308,34 @@ Bool drd_heap_addrinfo(Addr const a,
 
 void drd_print_malloc_stats(void)
 {
-   DRD_Chunk* mc;
-   SizeT     nblocks = 0;
-   SizeT     nbytes  = 0;
+  DRD_Chunk* mc;
+  SizeT     nblocks = 0;
+  SizeT     nbytes  = 0;
    
-   if (VG_(clo_verbosity) == 0)
-      return;
-   if (VG_(clo_xml))
-      return;
+  if (VG_(clo_verbosity) == 0)
+    return;
+  if (VG_(clo_xml))
+    return;
 
-   /* Count memory still in use. */
-   VG_(HT_ResetIter)(drd_malloc_list);
-   while ((mc = VG_(HT_Next)(drd_malloc_list)))
-   {
-      nblocks++;
-      nbytes += mc->size;
-   }
+  /* Count memory still in use. */
+  VG_(HT_ResetIter)(drd_malloc_list);
+  while ((mc = VG_(HT_Next)(drd_malloc_list)))
+  {
+    nblocks++;
+    nbytes += mc->size;
+  }
 
-   VG_(message)(Vg_DebugMsg, 
-                "malloc/free: in use at exit: %lu bytes in %lu blocks.",
-                nbytes, nblocks);
-   VG_(message)(Vg_DebugMsg, 
-                "malloc/free: %lu allocs, %lu frees, %lu bytes allocated.",
-                cmalloc_n_mallocs,
-                cmalloc_n_frees, cmalloc_bs_mallocd);
-   if (VG_(clo_verbosity) > 1)
-      VG_(message)(Vg_DebugMsg, " ");
+  VG_(message)(Vg_DebugMsg, 
+               "malloc/free: in use at exit: %lu bytes in %lu blocks.",
+               nbytes, nblocks);
+  VG_(message)(Vg_DebugMsg, 
+               "malloc/free: %lu allocs, %lu frees, %lu bytes allocated.",
+               cmalloc_n_mallocs,
+               cmalloc_n_frees, cmalloc_bs_mallocd);
+  if (VG_(clo_verbosity) > 1)
+    VG_(message)(Vg_DebugMsg, " ");
 }
 
 /*--------------------------------------------------------------------*/
 /*--- end                                                          ---*/
 /*--------------------------------------------------------------------*/
-
-/*
- * Local variables:
- * c-basic-offset: 3
- * End:
- */

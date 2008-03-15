@@ -464,10 +464,3 @@ ULong get_mutex_lock_count(void)
 {
   return s_mutex_lock_count;
 }
-
-
-/*
- * Local variables:
- * c-basic-offset: 2
- * End:
- */

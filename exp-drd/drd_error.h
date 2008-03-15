@@ -127,10 +127,3 @@ void drd_register_error_handlers(void);
 
 
 #endif /* __DRD_ERROR_H */
-
-
-/*
- * Local variables:
- * c-basic-offset: 3
- * End:
- */

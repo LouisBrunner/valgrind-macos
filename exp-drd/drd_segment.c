@@ -115,15 +115,15 @@ Segment* sg_new(ThreadId const creator, ThreadId const created)
 void sg_delete(Segment* const sg)
 {
 #if 1
-   if (sg_get_trace())
-   {
-      char msg[256];
-      VG_(snprintf)(msg, sizeof(msg),
-                    "Discarding the segment with vector clock ");
-      vc_snprint(msg + VG_(strlen)(msg), sizeof(msg) - VG_(strlen)(msg),
-                 &sg->vc);
-      VG_(message)(Vg_UserMsg, "%s", msg);
-   }
+  if (sg_get_trace())
+  {
+    char msg[256];
+    VG_(snprintf)(msg, sizeof(msg),
+                  "Discarding the segment with vector clock ");
+    vc_snprint(msg + VG_(strlen)(msg), sizeof(msg) - VG_(strlen)(msg),
+               &sg->vc);
+    VG_(message)(Vg_UserMsg, "%s", msg);
+  }
 #endif
 
   s_segments_alive_count--;

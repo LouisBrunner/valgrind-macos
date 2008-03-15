@@ -52,7 +52,3 @@ int main(int argc, char** argv)
   }
   return 0;
 }
-
-// Local variables:
-// compile-command: "g++ -o pthread_create-chain -g -Wall -Wextra -Werror -Wno-sign-compare -Wno-unused pthread_create-chain.cpp -lpthread"
-// End:

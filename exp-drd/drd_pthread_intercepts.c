@@ -639,23 +639,6 @@ PTH_FUNC(int, pthreadZubarrierZuwait, // pthread_barrier_wait
 
 
 // sem_init
-PTH_FUNC(int, semZuinitZAGLIBCZu2Zd0, // sem_init@GLIBC_2.0
-         sem_t *sem,
-         int pshared,
-         unsigned int value)
-{
-  int   ret;
-  int   res;
-  OrigFn fn;
-  VALGRIND_GET_ORIG_FN(fn);
-  VALGRIND_DO_CLIENT_REQUEST(res, -1, VG_USERREQ__PRE_SEM_INIT,
-                             sem, pshared, value, 0, 0);
-  CALL_FN_W_WWW(ret, fn, sem, pshared, value);
-  VALGRIND_DO_CLIENT_REQUEST(res, -1, VG_USERREQ__POST_SEM_INIT,
-                             sem, 0, 0, 0, 0);
-  return ret;
-}
-
 PTH_FUNC(int, semZuinitZa, // sem_init*
          sem_t *sem,
          int pshared,
@@ -674,21 +657,6 @@ PTH_FUNC(int, semZuinitZa, // sem_init*
 }
 
 // sem_destroy
-PTH_FUNC(int, semZudestroyZAGLIBCZu2Zd0, // sem_destroy@GLIBC_2.0
-         sem_t *sem)
-{
-  int   ret;
-  int   res;
-  OrigFn fn;
-  VALGRIND_GET_ORIG_FN(fn);
-  VALGRIND_DO_CLIENT_REQUEST(res, -1, VG_USERREQ__PRE_SEM_DESTROY,
-                             sem, 0, 0, 0, 0);
-  CALL_FN_W_W(ret, fn, sem);
-  VALGRIND_DO_CLIENT_REQUEST(res, -1, VG_USERREQ__POST_SEM_DESTROY,
-                             sem, 0, 0, 0, 0);
-  return ret;
-}
-
 PTH_FUNC(int, semZudestroyZa, // sem_destroy*
          sem_t *sem)
 {
@@ -701,22 +669,6 @@ PTH_FUNC(int, semZudestroyZa, // sem_destroy*
   CALL_FN_W_W(ret, fn, sem);
   VALGRIND_DO_CLIENT_REQUEST(res, -1, VG_USERREQ__POST_SEM_DESTROY,
                              sem, 0, 0, 0, 0);
-  return ret;
-}
-
-// sem_wait
-PTH_FUNC(int, semZuwaitZAGLIBCZu2Zd0, // sem_wait@GLIBC_2.0
-         sem_t *sem)
-{
-  int   ret;
-  int   res;
-  OrigFn fn;
-  VALGRIND_GET_ORIG_FN(fn);
-  VALGRIND_DO_CLIENT_REQUEST(res, -1, VG_USERREQ__PRE_SEM_WAIT,
-                             sem, 0, 0, 0, 0);
-  CALL_FN_W_W(ret, fn, sem);
-  VALGRIND_DO_CLIENT_REQUEST(res, -1, VG_USERREQ__POST_SEM_WAIT,
-                             sem, ret == 0, 0, 0, 0);
   return ret;
 }
 
@@ -737,21 +689,6 @@ PTH_FUNC(int, semZuwaitZa, // sem_wait*
 }
 
 // sem_trywait
-PTH_FUNC(int, semZutrywaitZAGLIBCZu2Zd0, // sem_trywait@GLIBC_2.0
-         sem_t *sem)
-{
-  int   ret;
-  int   res;
-  OrigFn fn;
-  VALGRIND_GET_ORIG_FN(fn);
-  VALGRIND_DO_CLIENT_REQUEST(res, -1, VG_USERREQ__PRE_SEM_WAIT,
-                             sem, 0, 0, 0, 0);
-  CALL_FN_W_W(ret, fn, sem);
-  VALGRIND_DO_CLIENT_REQUEST(res, -1, VG_USERREQ__POST_SEM_WAIT,
-                             sem, ret == 0, 0, 0, 0);
-  return ret;
-}
-
 PTH_FUNC(int, semZutrywaitZa, // sem_trywait*
          sem_t *sem)
 {
@@ -779,22 +716,6 @@ PTH_FUNC(int, semZutimedwait, // sem_timedwait
                              sem, 0, 0, 0, 0);
   CALL_FN_W_WW(ret, fn, sem, abs_timeout);
   VALGRIND_DO_CLIENT_REQUEST(res, -1, VG_USERREQ__POST_SEM_WAIT,
-                             sem, ret == 0, 0, 0, 0);
-  return ret;
-}
-
-// sem_post
-PTH_FUNC(int, semZupostZAGLIBCZu2Zd0, // sem_post@GLIBC_2.0
-         sem_t *sem)
-{
-  int   ret;
-  int   res;
-  OrigFn fn;
-  VALGRIND_GET_ORIG_FN(fn);
-  VALGRIND_DO_CLIENT_REQUEST(res, -1, VG_USERREQ__PRE_SEM_POST,
-                             sem, 0, 0, 0, 0);
-  CALL_FN_W_W(ret, fn, sem);
-  VALGRIND_DO_CLIENT_REQUEST(res, -1, VG_USERREQ__POST_SEM_POST,
                              sem, ret == 0, 0, 0, 0);
   return ret;
 }

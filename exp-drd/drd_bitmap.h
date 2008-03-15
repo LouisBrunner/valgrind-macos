@@ -40,7 +40,7 @@
 
 /* Macro definitions. */
 
-#define ADDR0_BITS 12
+#define ADDR0_BITS 16
 
 #define ADDR0_COUNT ((UWord)1 << ADDR0_BITS)
 
@@ -159,7 +159,6 @@ struct bitmap2* bm_lookup(const struct bitmap* const bm, const Addr a)
   const UWord a1 = a >> ADDR0_BITS;
   if (a1 == bm->last_lookup_a1)
   {
-    //tl_assert(bm->last_lookup_result == VG_(OSetGen_Lookup)(bm->oset, &a1));
     return bm->last_lookup_result;
   }
   result = VG_(OSetGen_Lookup)(bm->oset,&a1);
@@ -196,7 +195,6 @@ struct bitmap2* bm2_lookup_or_insert(const struct bitmap* const bm,
 
   if (a1 == bm->last_lookup_a1)
   {
-    //tl_assert(bm->last_lookup_result == VG_(OSetGen_Lookup)(bm->oset, &a1));
     return bm->last_lookup_result;
   }
 

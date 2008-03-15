@@ -141,8 +141,6 @@ void bm_access_aligned_load(struct bitmap* const bm,
   struct bitmap2* bm2;
 
   bm2 = bm2_lookup_or_insert(bm, a1 >> ADDR0_BITS);
-  tl_assert(bm2);
-
   bm0_set_range(bm2->bm1.bm0_r, a1 & ADDR0_MASK, size);
 }
 
@@ -153,8 +151,6 @@ void bm_access_aligned_store(struct bitmap* const bm,
   struct bitmap2* bm2;
 
   bm2 = bm2_lookup_or_insert(bm, a1 >> ADDR0_BITS);
-  tl_assert(bm2);
-
   bm0_set_range(bm2->bm1.bm0_w, a1 & ADDR0_MASK, size);
 }
 

@@ -98,17 +98,18 @@ static __inline__ void bm0_set(UWord* bm0, const Addr a)
   bm0[a >> BITS_PER_BITS_PER_UWORD] |= (UWord)1 << UWORD_LSB(a);
 }
 
-/** Set all of the addresses in range a1..a2 (inclusive) in bitmap bm0. */
-static __inline__ void bm0_set_range(UWord* bm0, const Addr a1, const Addr a2)
+/** Set all of the addresses in range [ a1 .. a1 + size [ in bitmap bm0. */
+static __inline__ void bm0_set_range(UWord* bm0,
+                                     const Addr a1, const SizeT size)
 {
 #if 0
   tl_assert(a1 < ADDR0_COUNT);
-  tl_assert(a2 < ADDR0_COUNT);
-  tl_assert(a1 <= a2);
-  tl_assert(UWORD_MSB(a1) == UWORD_MSB(a2));
+  tl_assert(size > 0);
+  tl_assert(a1 + size <= ADDR0_COUNT);
+  tl_assert(UWORD_MSB(a1) == UWORD_MSB(a1 + size - 1));
 #endif
   bm0[a1 >> BITS_PER_BITS_PER_UWORD]
-    |= ((UWord)2 << UWORD_LSB(a2)) - ((UWord)1 << UWORD_LSB(a1));
+    |= (((UWord)1 << size) - 1) << UWORD_LSB(a1);
 }
 
 static __inline__ void bm0_clear(UWord* bm0, const Addr a)
@@ -123,18 +124,18 @@ static __inline__ UWord bm0_is_set(const UWord* bm0, const Addr a)
   return (bm0[a >> BITS_PER_BITS_PER_UWORD] & ((UWord)1 << UWORD_LSB(a)));
 }
 
-/** Return true if any of the bits a1..a2 (inclusive) are set in bm0. */
+/** Return true if any of the bits [ a1 .. a1+size [ are set in bm0. */
 static __inline__ UWord bm0_is_any_set(const UWord* bm0,
-                                       const Addr a1, const Addr a2)
+                                       const Addr a1, const SizeT size)
 {
 #if 0
   tl_assert(a1 < ADDR0_COUNT);
-  tl_assert(a2 < ADDR0_COUNT);
-  tl_assert(a1 <= a2);
-  tl_assert(UWORD_MSB(a1) == UWORD_MSB(a2));
+  tl_assert(size > 0);
+  tl_assert(a1 + size <= ADDR0_COUNT);
+  tl_assert(UWORD_MSB(a1) == UWORD_MSB(a1 + size - 1));
 #endif
   return (bm0[a1 >> BITS_PER_BITS_PER_UWORD]
-          & (((UWord)2 << UWORD_LSB(a2)) - ((UWord)1 << UWORD_LSB(a1))));
+          & ((((UWord)1 << size) - 1) << UWORD_LSB(a1)));
 }
 
 struct bitmap2

@@ -171,6 +171,9 @@ static void drd_trace_mem_access(const Addr addr, const SizeT size,
 static void drd_report_race(const Addr addr, const SizeT size,
                             const BmAccessTypeT access_type)
 {
+  if (drd_is_suppressed(addr, addr + size))
+    return;
+
   DataRaceErrInfo drei;
   drei.tid  = VG_(get_running_tid)();
   drei.addr = addr;
@@ -202,8 +205,7 @@ static VG_REGPARM(2) void drd_trace_load(Addr addr, SizeT size)
   }
   sg = running_thread_get_segment();
   bm_access_range_load(sg->bm, addr, addr + size);
-  if (bm_load_has_conflict_with(thread_get_danger_set(), addr, addr + size)
-      && ! drd_is_suppressed(addr, addr + size))
+  if (bm_load_has_conflict_with(thread_get_danger_set(), addr, addr + size))
   {
     drd_report_race(addr, size, eLoad);
   }
@@ -222,8 +224,7 @@ static VG_REGPARM(1) void drd_trace_load_1(Addr addr)
   }
   sg = running_thread_get_segment();
   bm_access_load_1(sg->bm, addr);
-  if (bm_load_1_has_conflict_with(thread_get_danger_set(), addr)
-      && ! drd_is_suppressed(addr, addr + 1))
+  if (bm_load_1_has_conflict_with(thread_get_danger_set(), addr))
   {
     drd_report_race(addr, 1, eLoad);
   }
@@ -242,8 +243,7 @@ static VG_REGPARM(1) void drd_trace_load_2(Addr addr)
   }
   sg = running_thread_get_segment();
   bm_access_load_2(sg->bm, addr);
-  if (bm_load_2_has_conflict_with(thread_get_danger_set(), addr)
-      && ! drd_is_suppressed(addr, addr + 2))
+  if (bm_load_2_has_conflict_with(thread_get_danger_set(), addr))
   {
     drd_report_race(addr, 2, eLoad);
   }
@@ -262,8 +262,7 @@ static VG_REGPARM(1) void drd_trace_load_4(Addr addr)
   }
   sg = running_thread_get_segment();
   bm_access_load_4(sg->bm, addr);
-  if (bm_load_4_has_conflict_with(thread_get_danger_set(), addr)
-      && ! drd_is_suppressed(addr, addr + 4))
+  if (bm_load_4_has_conflict_with(thread_get_danger_set(), addr))
   {
     drd_report_race(addr, 4, eLoad);
   }
@@ -282,8 +281,7 @@ static VG_REGPARM(1) void drd_trace_load_8(Addr addr)
   }
   sg = running_thread_get_segment();
   bm_access_load_8(sg->bm, addr);
-  if (bm_load_8_has_conflict_with(thread_get_danger_set(), addr)
-      && ! drd_is_suppressed(addr, addr + 8))
+  if (bm_load_8_has_conflict_with(thread_get_danger_set(), addr))
   {
     drd_report_race(addr, 8, eLoad);
   }
@@ -309,8 +307,7 @@ VG_REGPARM(2) void drd_trace_store(Addr addr, SizeT size)
   }
   sg = running_thread_get_segment();
   bm_access_range_store(sg->bm, addr, addr + size);
-  if (bm_store_has_conflict_with(thread_get_danger_set(), addr, addr + size)
-      && ! drd_is_suppressed(addr, addr + size))
+  if (bm_store_has_conflict_with(thread_get_danger_set(), addr, addr + size))
   {
     drd_report_race(addr, size, eStore);
   }
@@ -329,8 +326,7 @@ static VG_REGPARM(1) void drd_trace_store_1(Addr addr)
   }
   sg = running_thread_get_segment();
   bm_access_store_1(sg->bm, addr);
-  if (bm_store_1_has_conflict_with(thread_get_danger_set(), addr)
-      && ! drd_is_suppressed(addr, addr + 1))
+  if (bm_store_1_has_conflict_with(thread_get_danger_set(), addr))
   {
     drd_report_race(addr, 1, eStore);
   }
@@ -349,8 +345,7 @@ static VG_REGPARM(1) void drd_trace_store_2(Addr addr)
   }
   sg = running_thread_get_segment();
   bm_access_store_2(sg->bm, addr);
-  if (bm_store_2_has_conflict_with(thread_get_danger_set(), addr)
-      && ! drd_is_suppressed(addr, addr + 2))
+  if (bm_store_2_has_conflict_with(thread_get_danger_set(), addr))
   {
     drd_report_race(addr, 2, eStore);
   }
@@ -369,8 +364,7 @@ static VG_REGPARM(1) void drd_trace_store_4(Addr addr)
   }
   sg = running_thread_get_segment();
   bm_access_store_4(sg->bm, addr);
-  if (bm_store_4_has_conflict_with(thread_get_danger_set(), addr)
-      && ! drd_is_suppressed(addr, addr + 4))
+  if (bm_store_4_has_conflict_with(thread_get_danger_set(), addr))
   {
     drd_report_race(addr, 4, eStore);
   }
@@ -389,8 +383,7 @@ static VG_REGPARM(1) void drd_trace_store_8(Addr addr)
   }
   sg = running_thread_get_segment();
   bm_access_store_8(sg->bm, addr);
-  if (bm_store_8_has_conflict_with(thread_get_danger_set(), addr)
-      && ! drd_is_suppressed(addr, addr + 8))
+  if (bm_store_8_has_conflict_with(thread_get_danger_set(), addr))
   {
     drd_report_race(addr, 8, eStore);
   }

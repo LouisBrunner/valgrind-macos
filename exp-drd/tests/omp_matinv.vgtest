@@ -1,3 +1,3 @@
-prereq: test -e omp_matinv
+prereq: ./run_openmp_test ./omp_matinv
 prog: omp_matinv
 args: 30 -t 15 -q

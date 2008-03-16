@@ -4,6 +4,25 @@
 # with status 0 if the OpenMP test program should be run and that exits with
 # status 1 if the OpenMP test program should not be run.
 
+# Inspect the output of nm. If nm does not find any symbol information,
+# echo 1. If the symbol gomp_barrier_init is found, echo 0. Otherwise echo
+# nothing. The second case occurs if gcc has been compiled with 
+# --disable-linux-futex, and the last case occurs if gcc has been compiled with
+# --enable-linux-futex.
+function parse_libgomp {
+  nm "$1" 2>&1 \
+  |
+  while read line
+  do
+    if [ "${line%: no symbols}" != "${line}" ]; then
+      echo 1
+    elif [ "${line% gomp_barrier_init}" != "${line}" ]; then
+      echo 0
+    fi
+  done
+}
+
+
 test -e "$1" || exit $?
 
 if [ "$(uname)" = Linux ]; then
@@ -13,17 +32,7 @@ if [ "$(uname)" = Linux ]; then
     | while read soname arrow path offset; \
    do if [ "${soname#libgomp.so}" != "${soname}" ]; then echo $path; fi; done)"
 
-  # Inspect the first line of the output of nm. If nm does not find any symbol
-  # information, return exit code 1, and otherwise return exit code 0.
-  nm "${libgomp_path}" 2>&1 \
-  |
-  while read line
-  do
-    if [ "${line%: no symbols}" != "${line}" ]; then
-      exit 1
-    else
-      exit 0
-    fi
-  done
+  rc="$(parse_libgomp "${libgomp_path}")"
+  exit ${rc:-1}
 
 fi

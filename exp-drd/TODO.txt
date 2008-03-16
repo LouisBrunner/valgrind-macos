@@ -29,14 +29,21 @@ Data-race detection algorithm
   count.
 - Add test programs for destroying a condition variable / semaphore / barrier
   being waited upon.
-- Add OpenMP examples to the regression tests.
 - Make sure an error message is printed if no debug information is found in
   libopenmp.so.1.
 - Make sure tc14_laog_dinphils is run during exp-drd regression tests.
+- Find out why no line number or variable name information is printed for
+  races detected in parallel sections of OpenMP programs. An example:
+  ./vg-in-place --tool=exp-drd exp-drd/tests/omp_prime 4 -t 2
+- Find out why there are races reported on exp-drd/tests/pth_detached_sem
+  on AMD64 (information about freeing stack memory not passed to DRD ?):
+  ./vg-in-place --tool=exp-drd exp-drd/tests/pth_detached_sem 3 0
 - Find a way for suppressing races reported on _IO_2_1_stdout. This race is
   triggered by calling printf() from more than one thread. Examples (AMD64):
   ./vg-in-place --tool=exp-drd exp-drd/tests/tc21_pthonce
   ./vg-in-place --tool=exp-drd exp-drd/tests/pth_detached 10 10 1
+- Find out why 'matinv 400' runs faster in 32-bit mode than in 64-bit mode
+  on the same CPU.
 - testing on PPC and AIX (current implementation is only tested on X86 and
   AMD64).
 - Convert the array in drd_thread.c with thread information into an OSet.
@@ -51,7 +58,6 @@ Testing
   (http://www-flash.stanford.edu/apps/SPLASH/) or the PARSEC benchmark
   (http://parsec.cs.princeton.edu/license.htm).
 - test with Synfig Studio (see also http://bugs.kde.org/show_bug.cgi?id=158555)
-- test with some OpenMP examples. See also http://en.wikipedia.org/wiki/OpenMP.
 
 
 Documentation

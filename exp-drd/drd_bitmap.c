@@ -59,7 +59,9 @@ struct bitmap* bm_new()
 
   bm = VG_(malloc)(sizeof(*bm));
   tl_assert(bm);
-  bm->oset = VG_(OSetGen_Create)(0, 0, VG_(malloc), VG_(free));
+  bm->last_lookup_a1     = 0;
+  bm->last_lookup_result = 0;
+  bm->oset               = VG_(OSetGen_Create)(0, 0, VG_(malloc), VG_(free));
 
   s_bitmap_creation_count++;
 

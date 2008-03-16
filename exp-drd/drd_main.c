@@ -155,7 +155,15 @@ static void drd_trace_mem_access(const Addr addr, const SizeT size,
   vc_snprint(vc, sizeof(vc), thread_get_vc(thread_get_running_tid()));
   VG_(message)(Vg_UserMsg,
                "%s 0x%lx size %ld %s (vg %d / drd %d / vc %s)",
-               access_type == eLoad ? "load " : "store",
+               access_type == eLoad
+               ? "load "
+               : access_type == eStore
+               ? "store"
+               : access_type == eStart
+               ? "start"
+               : access_type == eEnd
+               ? "end"
+               : "????",
                addr,
                size,
                thread_get_name(thread_get_running_tid()),
@@ -443,15 +451,9 @@ static void drd_start_using_mem(const Addr a1, const SizeT len)
 
   tl_assert(a1 < a2);
 
-  thread_set_vg_running_tid(VG_(get_running_tid)());
-
   if (a1 <= drd_trace_address && drd_trace_address < a2)
   {
-    VG_(message)(Vg_UserMsg, "start 0x%lx size %ld %s (tracing 0x%lx)",
-                 a1, a2 - a1, thread_get_name(thread_get_running_tid()),
-                 drd_trace_address);
-    VG_(get_and_pp_StackTrace)(VG_(get_running_tid)(),
-                               VG_(clo_backtrace_size));
+    drd_trace_mem_access(a1, len, eStart);
   }
 }
 
@@ -463,11 +465,7 @@ static void drd_stop_using_mem(const Addr a1, const SizeT len)
 
   if (a1 <= drd_trace_address && drd_trace_address < a2)
   {
-    VG_(message)(Vg_UserMsg, "end   0x%lx size %ld %s (tracing 0x%lx)",
-                 a1, a2 - a1, thread_get_name(thread_get_running_tid()),
-                 drd_trace_address);
-    VG_(get_and_pp_StackTrace)(VG_(get_running_tid)(),
-                               VG_(clo_backtrace_size));
+    drd_trace_mem_access(a1, len, eStart);
   }
   thread_stop_using_mem(a1, a2);
   clientobj_stop_using_mem(a1, a2);
@@ -478,6 +476,8 @@ static
 void drd_start_using_mem_w_perms(const Addr a, const SizeT len,
                                  const Bool rr, const Bool ww, const Bool xx)
 {
+  thread_set_vg_running_tid(VG_(get_running_tid)());
+
   drd_start_using_mem(a, len);
 }
 
@@ -486,7 +486,7 @@ void drd_start_using_mem_w_perms(const Addr a, const SizeT len,
 /* Assumption: stacks grow downward.                                     */
 static void drd_start_using_mem_stack(const Addr a, const SizeT len)
 {
-  thread_set_stack_min(thread_get_running_tid(), a - VG_STACK_REDZONE_SZB);
+  thread_set_stack_min(thread_get_running_tid(), a);
   drd_start_using_mem(a, len);
 }
 
@@ -495,14 +495,13 @@ static void drd_start_using_mem_stack(const Addr a, const SizeT len)
 /* Assumption: stacks grow downward.                                       */
 static void drd_stop_using_mem_stack(const Addr a, const SizeT len)
 {
-  thread_set_vg_running_tid(VG_(get_running_tid)());
-  thread_set_stack_min(thread_get_running_tid(),
-                       a + len - VG_STACK_REDZONE_SZB);
+  thread_set_stack_min(thread_get_running_tid(), a + len);
   drd_stop_using_mem(a, len);
 }
 
 static void drd_start_using_mem_stack_signal(const Addr a, const SizeT len)
 {
+  thread_set_vg_running_tid(VG_(get_running_tid)());
   drd_start_using_mem(a, len);
 }
 

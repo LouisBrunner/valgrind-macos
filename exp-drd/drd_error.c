@@ -44,176 +44,22 @@ typedef enum {
 } DRD_SuppKind;
 
 
-static void make_path_relative(Char* const path)
-{
-  int offset = 0;
-  Char cwd[512];
-
-  if (! VG_(get_startup_wd)(cwd, sizeof(cwd)))
-    tl_assert(False);
-  if (VG_(strncmp)(path + offset, cwd, VG_(strlen)(cwd)) == 0)
-  {
-    offset += VG_(strlen)(cwd);
-    if (path[offset] == '/')
-    {
-      offset++;
-    }
-  }
-  VG_(memmove)(path, path + offset, VG_(strlen)(path + offset) + 1);
-}
-
-
-/* Describe a data address range [a,a+len[ as good as you can, for error */
+/* Describe a data address range [a,a+len[ as good as possible, for error */
 /* messages, putting the result in ai. */
-void describe_addr(Addr const a, SizeT const len, AddrInfo* const ai)
+static
+void describe_malloced_addr(Addr const a, SizeT const len, AddrInfo* const ai)
 {
-  Addr       stack_min, stack_max;
-  DebugInfo* sg;
+  Addr data;
 
-  /* Perhaps it's on a thread's stack? */
-  ai->stack_tid = thread_lookup_stackaddr(a, &stack_min, &stack_max);
-  if (ai->stack_tid != DRD_INVALID_THREADID)
+  if (drd_heap_addrinfo(a, &data, &ai->size, &ai->lastchange))
   {
-    ai->akind     = eStack;
-    ai->size      = len;
-    ai->rwoffset  = a - stack_max;
-    tl_assert(a + ai->size <= stack_max);
-    tl_assert(ai->rwoffset < 0);
-    return;
+    ai->akind = eMallocd;
+    ai->rwoffset = a - data;
   }
-
-  /* Perhaps it's in a mapped segment ? */
-  sg = VG_(find_seginfo)(a);
-  if (sg)
+  else
   {
-    int i, n;
-
-    ai->akind   = eSegment;
-    ai->debuginfo = sg;
-    ai->name[0] = 0;
-    ai->size = 1;
-    ai->rwoffset = 0;
-
-    n = VG_(seginfo_syms_howmany)(sg);
-    for (i = 0; i < n; i++)
-    {
-      Addr addr;
-      Addr tocptr;
-      UInt size;
-      HChar* name;
-      Char filename[256];
-      Int linenum;
-      Bool isText;
-
-      VG_(seginfo_syms_getidx)(sg, i, &addr, &tocptr, &size, &name, &isText);
-      if (isText && addr <= a && a < addr + size)
-      {
-        ai->size     = size;
-        ai->rwoffset = a - addr;
-        tl_assert(name && name[0]);
-        VG_(snprintf)(ai->name, sizeof(ai->name), "%s", name);
-        if (VG_(get_filename_linenum)(addr,
-                                      filename, sizeof(filename),
-                                      0, 0, 0,
-                                      &linenum))
-        {
-          make_path_relative(filename);
-          VG_(snprintf)(ai->descr, sizeof(ai->descr),
-                        " in %s:%d", filename, linenum);
-        }
-        else
-        {
-          i = n;
-        }
-        break;
-      }
-    }
-    if (i == n)
-    {
-      Char filename[512];
-      Char soname[512];
-      VgSectKind kind = VG_(seginfo_sect_kind)(NULL, 0, a);
-      const HChar* sect_kind_name = VG_(pp_SectKind)(kind);
-      VG_(strncpy)(filename, VG_(seginfo_filename)(sg), sizeof(filename));
-      filename[sizeof(filename) - 1] = 0;
-      make_path_relative(filename);
-      VG_(strncpy)(soname, VG_(seginfo_soname)(sg), sizeof(soname));
-      soname[sizeof(soname) - 1] = 0;
-      make_path_relative(soname);
-      VG_(snprintf)(ai->descr, sizeof(ai->descr),
-                    "%s, %s:%s",
-                    filename,
-                    soname,
-                    sect_kind_name);
-    }
-    return;
+    ai->akind = eUnknown;
   }
-
-  /* Search for a currently malloc'd block which might bracket it. */
-  {
-    Addr data;
-    if (drd_heap_addrinfo(a, &data, &ai->size, &ai->lastchange))
-    {
-      ai->akind = eMallocd;
-      ai->rwoffset = a - data;
-      return;
-    }
-  }
-
-  /* Clueless ... */
-  ai->akind = eUnknown;
-  return;
-}
-
-/**
- * Generate a description string for the data residing at address a.
- */
-Char* describe_addr_text(Addr const a, SizeT const len, AddrInfo* const ai,
-                         Char* const buf, UInt const n_buf)
-{
-  tl_assert(a);
-  tl_assert(ai);
-  tl_assert(buf);
-
-  describe_addr(a, len, ai);
-
-  switch (ai->akind)
-  {
-  case eStack: {
-    VG_(snprintf)(buf, n_buf,
-                  "stack of thread %d, offset %d",
-                  ai->stack_tid, ai->rwoffset);
-    break;
-  }
-  case eSegment: {
-    if (ai->name[0])
-    {
-      VG_(snprintf)(buf, n_buf,
-                    "%s (offset %ld, size %ld) in %s",
-                    ai->name, ai->rwoffset, ai->size, ai->descr);
-    }
-    else
-    {
-      VG_(snprintf)(buf, n_buf,
-                    "%s",
-                    ai->descr);
-    }
-    break;
-  }
-  case eMallocd: {
-    VG_(snprintf)(buf, n_buf, "heap");
-    VG_(snprintf)(buf + VG_(strlen)(buf), n_buf - VG_(strlen)(buf),
-                  ", offset %ld in block at 0x%lx of size %ld",
-                  ai->rwoffset, a - ai->rwoffset, ai->size);
-    break;
-  }
-  case eUnknown:
-    VG_(snprintf)(buf, n_buf, "unknown");
-    break;
-  default:
-    tl_assert(0);
-  }
-  return buf;
 }
 
 static
@@ -232,12 +78,13 @@ void drd_report_data_race2(Error* const err, const DataRaceErrInfo* const dri)
   VG_(get_data_description)(descr1, descr2, sizeof(descr1), dri->addr);
   if (descr1[0] == 0)
   {
-    describe_addr(dri->addr, dri->size, &ai);
+    describe_malloced_addr(dri->addr, dri->size, &ai);
   }
   VG_(message)(Vg_UserMsg,
                "Conflicting %s by thread %d at 0x%08lx size %ld",
                dri->access_type == eStore ? "store" : "load",
                DrdThreadIdToVgThreadId(dri->tid),
+               /*dri->tid,*/
                dri->addr,
                dri->size);
   VG_(pp_ExeContext)(VG_(get_error_where)(err));
@@ -417,7 +264,7 @@ static Char* drd_tool_error_name(Error* e)
 {
   switch (VG_(get_error_kind)(e))
   {
-  case DataRaceErr:  return "DataRaceErr";
+  case DataRaceErr:  return "ConflictingAccess";
   case MutexErr:     return "MutexErr";
   case CondErr:      return "CondErr";
   case CondRaceErr:  return "CondRaceErr";

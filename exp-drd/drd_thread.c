@@ -246,21 +246,11 @@ Addr thread_get_stack_min(const DrdThreadId tid)
   return s_threadinfo[tid].stack_min;
 }
 
-DrdThreadId thread_lookup_stackaddr(const Addr a,
-                                    Addr* const stack_min,
-                                    Addr* const stack_max)
+Addr thread_get_stack_max(const DrdThreadId tid)
 {
-  unsigned i;
-  for (i = 0; i < sizeof(s_threadinfo) / sizeof(s_threadinfo[0]); i++)
-  {
-    if (s_threadinfo[i].stack_min <= a && a <= s_threadinfo[i].stack_max)
-    {
-      *stack_min = s_threadinfo[i].stack_min;
-      *stack_max = s_threadinfo[i].stack_max;
-      return i;
-    }
-  }
-  return DRD_INVALID_THREADID;
+  tl_assert(0 <= tid && tid < DRD_N_THREADS
+            && tid != DRD_INVALID_THREADID);
+  return s_threadinfo[tid].stack_max;
 }
 
 /**
@@ -294,9 +284,6 @@ void thread_finished(const DrdThreadId tid)
 {
   tl_assert(0 <= tid && tid < DRD_N_THREADS
             && tid != DRD_INVALID_THREADID);
-
-  thread_stop_using_mem(s_threadinfo[tid].stack_min,
-                        s_threadinfo[tid].stack_max);
 
   s_threadinfo[tid].vg_thread_exists = False;
 
@@ -606,11 +593,11 @@ void thread_combine_vc2(DrdThreadId tid, const VectorClock* const vc)
  */
 void thread_stop_using_mem(const Addr a1, const Addr a2)
 {
-  DrdThreadId other_user = DRD_INVALID_THREADID;
+  DrdThreadId other_user;
+  unsigned i;
 
   /* For all threads, mark the range [ a1, a2 [ as no longer in use. */
-
-  unsigned i;
+  other_user = DRD_INVALID_THREADID;
   for (i = 0; i < sizeof(s_threadinfo) / sizeof(s_threadinfo[0]); i++)
   {
     Segment* p;
@@ -681,7 +668,7 @@ static void show_call_stack(const DrdThreadId tid,
 {
   const ThreadId vg_tid = DrdThreadIdToVgThreadId(tid);
 
-  VG_(message)(Vg_UserMsg, "%s (thread %d)", msg, tid);
+  VG_(message)(Vg_UserMsg, "%s (thread %d)", msg, /*vg_tid,*/ tid);
 
   if (vg_tid != VG_INVALID_THREADID)
   {

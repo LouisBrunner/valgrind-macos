@@ -102,9 +102,7 @@ void thread_delete(const DrdThreadId tid);
 void thread_finished(const DrdThreadId tid);
 void thread_set_stack_startup(const DrdThreadId tid, const Addr stack_startup);
 Addr thread_get_stack_min(const DrdThreadId tid);
-DrdThreadId thread_lookup_stackaddr(const Addr a,
-                                    Addr* const stack_min,
-                                    Addr* const stack_max);
+Addr thread_get_stack_max(const DrdThreadId tid);
 void thread_set_pthreadid(const DrdThreadId tid, const PThreadId ptid);
 Bool thread_get_joinable(const DrdThreadId tid);
 void thread_set_joinable(const DrdThreadId tid, const Bool joinable);

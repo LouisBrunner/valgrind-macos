@@ -162,7 +162,7 @@ static void drd_trace_mem_access(const Addr addr, const SizeT size,
                : access_type == eStart
                ? "start"
                : access_type == eEnd
-               ? "end"
+               ? "end  "
                : "????",
                addr,
                size,
@@ -464,7 +464,7 @@ static void drd_stop_using_mem(const Addr a1, const SizeT len)
 
   if (a1 <= drd_trace_address && drd_trace_address < a2)
   {
-    drd_trace_mem_access(a1, len, eStart);
+    drd_trace_mem_access(a1, len, eEnd);
   }
   thread_stop_using_mem(a1, a2);
   clientobj_stop_using_mem(a1, a2);
@@ -485,8 +485,8 @@ void drd_start_using_mem_w_perms(const Addr a, const SizeT len,
 /* Assumption: stacks grow downward.                                     */
 static void drd_start_using_mem_stack(const Addr a, const SizeT len)
 {
-  thread_set_stack_min(thread_get_running_tid(), a);
-  drd_start_using_mem(a, len);
+  thread_set_stack_min(thread_get_running_tid(), a - VG_STACK_REDZONE_SZB);
+  drd_start_using_mem(a - VG_STACK_REDZONE_SZB, len + VG_STACK_REDZONE_SZB);
 }
 
 /* Called by the core when the stack of a thread shrinks, to indicate that */
@@ -494,8 +494,9 @@ static void drd_start_using_mem_stack(const Addr a, const SizeT len)
 /* Assumption: stacks grow downward.                                       */
 static void drd_stop_using_mem_stack(const Addr a, const SizeT len)
 {
-  thread_set_stack_min(thread_get_running_tid(), a + len);
-  drd_stop_using_mem(a, len);
+  thread_set_stack_min(thread_get_running_tid(),
+                       a + len - VG_STACK_REDZONE_SZB);
+  drd_stop_using_mem(a - VG_STACK_REDZONE_SZB, len + VG_STACK_REDZONE_SZB);
 }
 
 static void drd_start_using_mem_stack_signal(const Addr a, const SizeT len)
@@ -584,24 +585,28 @@ void drd_trace_addr(const Addr addr)
 }
 
 /* Called after a thread has performed its last memory access. */
-static void drd_thread_finished(ThreadId tid)
+static void drd_thread_finished(ThreadId vg_tid)
 {
   DrdThreadId drd_tid;
 
-  tl_assert(VG_(get_running_tid)() == tid);
+  tl_assert(VG_(get_running_tid)() == vg_tid);
 
-  drd_tid = VgThreadIdToDrdThreadId(tid);
+  drd_tid = VgThreadIdToDrdThreadId(vg_tid);
   if (drd_trace_fork_join)
   {
     VG_(message)(Vg_DebugMsg,
                  "drd_thread_finished tid = %d/%d%s",
-                 tid,
+                 vg_tid,
                  drd_tid,
                  thread_get_joinable(drd_tid)
                  ? ""
                  : " (which is a detached thread)");
 
   }
+  drd_stop_using_mem(thread_get_stack_min(drd_tid),
+                     thread_get_stack_max(drd_tid)
+                     - thread_get_stack_min(drd_tid));
+  thread_stop_recording(drd_tid);
   thread_finished(drd_tid);
 }
 

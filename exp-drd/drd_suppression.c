@@ -61,7 +61,7 @@ void drd_start_suppression(const Addr a1, const Addr a2,
   }
 
   tl_assert(a1 < a2);
-  tl_assert(! drd_is_any_suppressed(a1, a2));
+  // tl_assert(! drd_is_any_suppressed(a1, a2));
   bm_access_range_store(s_suppressed, a1, a2);
 }
 

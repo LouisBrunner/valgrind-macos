@@ -63,7 +63,6 @@ typedef struct
   Addr      stack_min;
   Addr      stack_startup;
   Addr      stack_max;
-  char      name[32];
   /// Indicates whether the Valgrind core knows about this thread.
   Bool      vg_thread_exists;
   /// Indicates whether there is an associated POSIX thread ID.
@@ -109,10 +108,6 @@ DrdThreadId thread_lookup_stackaddr(const Addr a,
 void thread_set_pthreadid(const DrdThreadId tid, const PThreadId ptid);
 Bool thread_get_joinable(const DrdThreadId tid);
 void thread_set_joinable(const DrdThreadId tid, const Bool joinable);
-const char* thread_get_name(const DrdThreadId tid);
-void thread_set_name(const DrdThreadId tid, const char* const name);
-void thread_set_name_fmt(const DrdThreadId tid, const char* const name,
-                         const UWord arg);
 void thread_set_vg_running_tid(const ThreadId vg_tid);
 void thread_set_running_tid(const ThreadId vg_tid,
                             const DrdThreadId drd_tid);

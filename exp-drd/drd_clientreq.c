@@ -93,10 +93,6 @@ static Bool drd_handle_client_request(ThreadId vg_tid, UWord* arg, UWord* ret)
     result = vg_tid;
     break;
 
-  case VG_USERREQ__SET_THREAD_NAME:
-    thread_set_name_fmt(drd_tid, (char*)arg[1], arg[2]);
-    break;
-
   case VG_USERREQ__DRD_START_SUPPRESSION:
     drd_start_suppression(arg[1], arg[2], "client");
     break;

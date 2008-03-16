@@ -23,19 +23,10 @@ static int             s_use_mutex = 0;
 
 // Function definitions.
 
-static void set_thread_name(const char* const name)
-{
-  int res;
-  VALGRIND_DO_CLIENT_REQUEST(res, 0, VG_USERREQ__SET_THREAD_NAME,
-                             "%s", name, 0, 0, 0);
-}
-
 int main(int argc, char** argv)
 {
   int optchar;
   pthread_t threadid;
-
-  set_thread_name("main");
 
   while ((optchar = getopt(argc, argv, "m")) != EOF)
   {
@@ -68,8 +59,6 @@ int main(int argc, char** argv)
 
 static void* thread_func(void* thread_arg)
 {
-  set_thread_name("thread_func");
-
   // Wait until the main thread has entered pthread_cond_wait().
   pthread_mutex_lock(&s_mutex);
   pthread_mutex_unlock(&s_mutex);

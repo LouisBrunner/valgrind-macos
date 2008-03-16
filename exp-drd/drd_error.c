@@ -181,8 +181,8 @@ Char* describe_addr_text(Addr const a, SizeT const len, AddrInfo* const ai,
   {
   case eStack: {
     VG_(snprintf)(buf, n_buf,
-                  "stack of %s, offset %d",
-                  thread_get_name(ai->stack_tid), ai->rwoffset);
+                  "stack of thread %d, offset %d",
+                  ai->stack_tid, ai->rwoffset);
     break;
   }
   case eSegment: {
@@ -235,9 +235,9 @@ void drd_report_data_race2(Error* const err, const DataRaceErrInfo* const dri)
     describe_addr(dri->addr, dri->size, &ai);
   }
   VG_(message)(Vg_UserMsg,
-               "Conflicting %s by %s at 0x%08lx size %ld",
+               "Conflicting %s by thread %d at 0x%08lx size %ld",
                dri->access_type == eStore ? "store" : "load",
-               thread_get_name(VgThreadIdToDrdThreadId(dri->tid)),
+               DrdThreadIdToVgThreadId(dri->tid),
                dri->addr,
                dri->size);
   VG_(pp_ExeContext)(VG_(get_error_where)(err));
@@ -258,7 +258,7 @@ void drd_report_data_race2(Error* const err, const DataRaceErrInfo* const dri)
   {
     VG_(message)(Vg_UserMsg, "Allocation context: unknown.");
   }
-  thread_report_conflicting_segments(VgThreadIdToDrdThreadId(dri->tid),
+  thread_report_conflicting_segments(dri->tid,
                                      dri->addr, dri->size, dri->access_type);
 }
 

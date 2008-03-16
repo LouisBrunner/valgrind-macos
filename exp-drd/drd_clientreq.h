@@ -9,9 +9,6 @@ enum {
   /* Ask the core the thread ID assigned by Valgrind. */
   VG_USERREQ__GET_THREAD_SELF = VG_USERREQ_TOOL_BASE('D', 'R'),
   /* args: none. */
-  /* Set the name of the thread that performs this client request. */
-  VG_USERREQ__SET_THREAD_NAME,
-  /* args: null-terminated character string. */
 
   /* To tell the drd tool to suppress data race detection on the specified */
   /* address range. */

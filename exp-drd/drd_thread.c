@@ -122,9 +122,6 @@ DrdThreadId VgThreadIdToNewDrdThreadId(const ThreadId tid)
       s_threadinfo[i].stack_min     = 0;
       s_threadinfo[i].stack_startup = 0;
       s_threadinfo[i].stack_max     = 0;
-      VG_(snprintf)(s_threadinfo[i].name, sizeof(s_threadinfo[i].name),
-                    "thread %d", tid);
-      s_threadinfo[i].name[sizeof(s_threadinfo[i].name) - 1] = 0;
       s_threadinfo[i].is_recording  = True;
       s_threadinfo[i].synchr_nesting = 0;
       if (s_threadinfo[i].first != 0)
@@ -348,32 +345,6 @@ void thread_set_joinable(const DrdThreadId tid, const Bool joinable)
                joinable ? "joinable" : "detached");
 #endif
   s_threadinfo[tid].detached_posix_thread = ! joinable;
-}
-
-const char* thread_get_name(const DrdThreadId tid)
-{
-  tl_assert(0 <= tid && tid < DRD_N_THREADS
-            && tid != DRD_INVALID_THREADID);
-  return s_threadinfo[tid].name;
-}
-
-void thread_set_name(const DrdThreadId tid, const char* const name)
-{
-  tl_assert(0 <= tid && tid < DRD_N_THREADS
-            && tid != DRD_INVALID_THREADID);
-  VG_(strncpy)(s_threadinfo[tid].name, name,
-               sizeof(s_threadinfo[tid].name));
-  s_threadinfo[tid].name[sizeof(s_threadinfo[tid].name) - 1] = 0;
-}
-
-void thread_set_name_fmt(const DrdThreadId tid, const char* const fmt,
-                         const UWord arg)
-{
-  tl_assert(0 <= tid && tid < DRD_N_THREADS
-            && tid != DRD_INVALID_THREADID);
-  VG_(snprintf)(s_threadinfo[tid].name, sizeof(s_threadinfo[tid].name),
-                fmt, arg);
-  s_threadinfo[tid].name[sizeof(s_threadinfo[tid].name) - 1] = 0;
 }
 
 void thread_set_vg_running_tid(const ThreadId vg_tid)
@@ -688,15 +659,14 @@ void thread_print_all(void)
     if (s_threadinfo[i].first)
     {
       VG_(printf)("**************\n"
-                  "* thread %3d (%d/%d/%d/0x%x/%d/%s) *\n"
+                  "* thread %3d (%d/%d/%d/0x%x/%d) *\n"
                   "**************\n",
                   i,
                   s_threadinfo[i].vg_thread_exists,
                   s_threadinfo[i].vg_threadid,
                   s_threadinfo[i].posix_thread_exists,
                   s_threadinfo[i].pt_threadid,
-                  s_threadinfo[i].detached_posix_thread,
-                  s_threadinfo[i].name);
+                  s_threadinfo[i].detached_posix_thread);
       for (p = s_threadinfo[i].first; p; p = p->next)
       {
         sg_print(p);
@@ -711,10 +681,7 @@ static void show_call_stack(const DrdThreadId tid,
 {
   const ThreadId vg_tid = DrdThreadIdToVgThreadId(tid);
 
-  VG_(message)(Vg_UserMsg,
-               "%s (%s)",
-               msg,
-               thread_get_name(tid));
+  VG_(message)(Vg_UserMsg, "%s (thread %d)", msg, tid);
 
   if (vg_tid != VG_INVALID_THREADID)
   {

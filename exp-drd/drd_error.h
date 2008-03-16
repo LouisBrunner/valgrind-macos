@@ -78,7 +78,7 @@ struct {                      // Used by:
    AddrInfo;
 
 typedef struct {
-   ThreadId      tid;         // Thread ID of the running thread.
+   DrdThreadId   tid;         // Thread ID of the running thread.
    Addr          addr;        // Conflicting address in current thread.
    SizeT         size;        // Size in bytes of conflicting operation.
    BmAccessTypeT access_type; // Access type: load or store.

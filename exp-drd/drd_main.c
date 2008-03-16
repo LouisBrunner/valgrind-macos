@@ -154,7 +154,7 @@ static void drd_trace_mem_access(const Addr addr, const SizeT size,
   char vc[80];
   vc_snprint(vc, sizeof(vc), thread_get_vc(thread_get_running_tid()));
   VG_(message)(Vg_UserMsg,
-               "%s 0x%lx size %ld %s (vg %d / drd %d / vc %s)",
+               "%s 0x%lx size %ld (vg %d / drd %d / vc %s)",
                access_type == eLoad
                ? "load "
                : access_type == eStore
@@ -166,7 +166,6 @@ static void drd_trace_mem_access(const Addr addr, const SizeT size,
                : "????",
                addr,
                size,
-               thread_get_name(thread_get_running_tid()),
                VG_(get_running_tid)(),
                thread_get_running_tid(),
                vc);
@@ -184,7 +183,7 @@ static void drd_report_race(const Addr addr, const SizeT size,
   if (drd_is_suppressed(addr, addr + size))
     return;
 
-  drei.tid  = VG_(get_running_tid)();
+  drei.tid  = thread_get_running_tid();
   drei.addr = addr;
   drei.size = size;
   drei.access_type = access_type;

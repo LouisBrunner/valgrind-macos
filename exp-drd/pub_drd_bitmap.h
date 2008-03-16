@@ -50,7 +50,7 @@ struct bitmap;
 
 
 // Datatype definitions.
-typedef enum { eLoad, eStore } BmAccessTypeT;
+typedef enum { eLoad, eStore, eStart, eEnd } BmAccessTypeT;
 
 
 // Function declarations.

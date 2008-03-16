@@ -1,0 +1,29 @@
+#!/bin/sh
+
+# Shell script with one argument (path of an OpenMP executable) that exits
+# with status 0 if the OpenMP test program should be run and that exits with
+# status 1 if the OpenMP test program should not be run.
+
+test -e "$1" || exit $?
+
+if [ "$(uname)" = Linux ]; then
+
+  # Let the dynamic linker/loader print the path of libgomp. See also man ld.so
+  libgomp_path="$(LD_TRACE_LOADED_OBJECTS=1 "$1" \
+    | while read soname arrow path offset; \
+   do if [ "${soname#libgomp.so}" != "${soname}" ]; then echo $path; fi; done)"
+
+  # Inspect the first line of the output of nm. If nm does not find any symbol
+  # information, return exit code 1, and otherwise return exit code 0.
+  nm "${libgomp_path}" 2>&1 \
+  |
+  while read line
+  do
+    if [ "${line%: no symbols}" != "${line}" ]; then
+      exit 1
+    else
+      exit 0
+    fi
+  done
+
+fi

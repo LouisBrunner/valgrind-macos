@@ -5,13 +5,13 @@
 
 ---------------- pthread_create/join ----------------
 
-Conflicting store by thread 1 at 0x........ size 2
+Conflicting store by thread 1/1 at 0x........ size 2
    at 0x........: main (tc20_verifywrap.c:78)
 Location 0x........ is 0 bytes inside global var "unprotected"
 declared at tc20_verifywrap.c:27
-Other segment start (thread 2)
+Other segment start (thread 0/2)
    (thread finished, call stack no longer available)
-Other segment end (thread 2)
+Other segment end (thread 0/2)
    (thread finished, call stack no longer available)
 
 ---------------- pthread_mutex_lock et al ----------------

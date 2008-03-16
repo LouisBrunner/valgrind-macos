@@ -60,7 +60,6 @@ typedef struct
   Segment*  last;
   ThreadId  vg_threadid;
   PThreadId pt_threadid;
-  Addr      stack_min_min;
   Addr      stack_min;
   Addr      stack_startup;
   Addr      stack_max;
@@ -104,7 +103,6 @@ void thread_delete(const DrdThreadId tid);
 void thread_finished(const DrdThreadId tid);
 void thread_set_stack_startup(const DrdThreadId tid, const Addr stack_startup);
 Addr thread_get_stack_min(const DrdThreadId tid);
-void thread_set_stack_min(const DrdThreadId tid, const Addr stack_min);
 DrdThreadId thread_lookup_stackaddr(const Addr a,
                                     Addr* const stack_min,
                                     Addr* const stack_max);
@@ -115,7 +113,6 @@ const char* thread_get_name(const DrdThreadId tid);
 void thread_set_name(const DrdThreadId tid, const char* const name);
 void thread_set_name_fmt(const DrdThreadId tid, const char* const name,
                          const UWord arg);
-DrdThreadId thread_get_running_tid(void);
 void thread_set_vg_running_tid(const ThreadId vg_tid);
 void thread_set_running_tid(const ThreadId vg_tid,
                             const DrdThreadId drd_tid);
@@ -146,8 +143,15 @@ ULong thread_get_danger_set_bitmap_creation_count(void);
 ULong thread_get_danger_set_bitmap2_creation_count(void);
 
 
-static
-inline struct bitmap* thread_get_danger_set(void)
+static inline
+DrdThreadId thread_get_running_tid(void)
+{
+  tl_assert(s_drd_running_tid != DRD_INVALID_THREADID);
+  return s_drd_running_tid;
+}
+
+static inline
+struct bitmap* thread_get_danger_set(void)
 {
   return s_danger_set;
 }
@@ -159,6 +163,21 @@ Bool running_thread_is_recording(void)
             && s_drd_running_tid != DRD_INVALID_THREADID);
   return (s_threadinfo[s_drd_running_tid].synchr_nesting == 0
           && s_threadinfo[s_drd_running_tid].is_recording);
+}
+
+static inline
+void thread_set_stack_min(const DrdThreadId tid, const Addr stack_min)
+{
+#if 0
+  tl_assert(0 <= tid && tid < DRD_N_THREADS && tid != DRD_INVALID_THREADID);
+#endif
+  if (s_threadinfo[tid].stack_max)
+  {
+    s_threadinfo[tid].stack_min = stack_min;
+#if 0
+    tl_assert(s_threadinfo[tid].stack_min < s_threadinfo[tid].stack_max);
+#endif
+  }
 }
 
 /** Return a pointer to the latest segment for the specified thread. */

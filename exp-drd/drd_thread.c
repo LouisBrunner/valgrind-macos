@@ -119,7 +119,6 @@ DrdThreadId VgThreadIdToNewDrdThreadId(const ThreadId tid)
       s_threadinfo[i].vg_thread_exists = True;
       s_threadinfo[i].vg_threadid   = tid;
       s_threadinfo[i].pt_threadid   = INVALID_POSIX_THREADID;
-      s_threadinfo[i].stack_min_min = 0;
       s_threadinfo[i].stack_min     = 0;
       s_threadinfo[i].stack_startup = 0;
       s_threadinfo[i].stack_max     = 0;
@@ -218,7 +217,6 @@ DrdThreadId thread_post_create(const ThreadId vg_created)
   s_threadinfo[created].stack_max     = VG_(thread_get_stack_max)(vg_created);
   s_threadinfo[created].stack_startup = s_threadinfo[created].stack_max;
   s_threadinfo[created].stack_min     = s_threadinfo[created].stack_max;
-  s_threadinfo[created].stack_min_min = s_threadinfo[created].stack_max;
   tl_assert(s_threadinfo[created].stack_max != 0);
 
   return created;
@@ -249,31 +247,6 @@ Addr thread_get_stack_min(const DrdThreadId tid)
   tl_assert(0 <= tid && tid < DRD_N_THREADS
             && tid != DRD_INVALID_THREADID);
   return s_threadinfo[tid].stack_min;
-}
-
-void thread_set_stack_min(const DrdThreadId tid, const Addr stack_min)
-{
-#if 0
-  VG_(message)(Vg_DebugMsg, "thread %d (%d) stack_min = 0x%x"
-               " (size %d, max %d, delta %d)",
-               s_threadinfo[tid].vg_threadid, tid,
-               stack_min,
-               s_threadinfo[tid].stack_max - stack_min,
-               s_threadinfo[tid].stack_max - s_threadinfo[tid].stack_min_min,
-               s_threadinfo[tid].stack_min - stack_min);
-#endif
-  tl_assert(0 <= tid && tid < DRD_N_THREADS && tid != DRD_INVALID_THREADID);
-  if (s_threadinfo[tid].stack_max)
-  {
-    s_threadinfo[tid].stack_min = stack_min;
-    if (stack_min < s_threadinfo[tid].stack_min_min)
-    {
-      s_threadinfo[tid].stack_min_min = stack_min;
-    }
-    tl_assert(s_threadinfo[tid].stack_min_min
-              <= s_threadinfo[tid].stack_min);
-    tl_assert(s_threadinfo[tid].stack_min < s_threadinfo[tid].stack_max);
-  }
 }
 
 DrdThreadId thread_lookup_stackaddr(const Addr a,
@@ -401,12 +374,6 @@ void thread_set_name_fmt(const DrdThreadId tid, const char* const fmt,
   VG_(snprintf)(s_threadinfo[tid].name, sizeof(s_threadinfo[tid].name),
                 fmt, arg);
   s_threadinfo[tid].name[sizeof(s_threadinfo[tid].name) - 1] = 0;
-}
-
-DrdThreadId thread_get_running_tid(void)
-{
-  tl_assert(s_drd_running_tid != DRD_INVALID_THREADID);
-  return s_drd_running_tid;
 }
 
 void thread_set_vg_running_tid(const ThreadId vg_tid)
@@ -845,12 +812,9 @@ static void thread_update_danger_set(const DrdThreadId tid)
 
   if (s_danger_set)
   {
-    bm_clear_all(s_danger_set);
+    bm_delete(s_danger_set);
   }
-  else
-  {
-    s_danger_set = bm_new();
-  }
+  s_danger_set = bm_new();
 
   if (s_trace_danger_set)
   {

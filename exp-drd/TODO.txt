@@ -35,13 +35,9 @@ Data-race detection algorithm
 - Find out why no line number or variable name information is printed for
   races detected in parallel sections of OpenMP programs. An example:
   ./vg-in-place --tool=exp-drd exp-drd/tests/omp_prime 4 -t 2
-- Find out why there are races reported on exp-drd/tests/pth_detached_sem
-  on AMD64 (information about freeing stack memory not passed to DRD ?):
-  ./vg-in-place --tool=exp-drd exp-drd/tests/pth_detached_sem 3 0
 - Find a way for suppressing races reported on _IO_2_1_stdout. This race is
   triggered by calling printf() from more than one thread. Examples (AMD64):
   ./vg-in-place --tool=exp-drd exp-drd/tests/tc21_pthonce
-  ./vg-in-place --tool=exp-drd exp-drd/tests/pth_detached 10 10 1
 - Find out why 'matinv 400' runs faster in 32-bit mode than in 64-bit mode
   on the same CPU.
 - testing on PPC and AIX (current implementation is only tested on X86 and

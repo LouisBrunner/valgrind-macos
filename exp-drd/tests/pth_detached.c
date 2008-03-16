@@ -5,15 +5,15 @@
 
 #include <assert.h>
 #include <pthread.h>
-#include <semaphore.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
 #include "../drd_clientreq.h"
 
 
-static int   s_set_thread_name;
-static sem_t s_sem;
+static int s_finished_count;
+static int s_set_thread_name;
+static pthread_mutex_t s_mutex;
 
 
 static void set_thread_name(const char* const fmt, const int arg)
@@ -31,7 +31,18 @@ static void set_thread_name(const char* const fmt, const int arg)
 
 static void increment_finished_count()
 {
-  sem_post(&s_sem);
+  pthread_mutex_lock(&s_mutex);
+  s_finished_count++;
+  pthread_mutex_unlock(&s_mutex);
+}
+
+static int get_finished_count()
+{
+  int result;
+  pthread_mutex_lock(&s_mutex);
+  result = s_finished_count;
+  pthread_mutex_unlock(&s_mutex);
+  return result;
 }
 
 static void* thread_func1(void* arg)
@@ -68,7 +79,7 @@ int main(int argc, char** argv)
   for (i = 0; i < count1 || i < count2; i++)
     thread_arg[i] = i;
 
-  sem_init(&s_sem, 0, 0);
+  pthread_mutex_init(&s_mutex, 0);
   
   pthread_attr_init(&attr);
   pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_DETACHED);
@@ -94,14 +105,15 @@ int main(int argc, char** argv)
   pthread_attr_destroy(&attr);
 
   // Wait until all detached threads have written their output to stdout.
-  for (i = 0; i < count1 + count2; i++)
+  while (get_finished_count() < count1 + count2)
   {
-    sem_wait(&s_sem);
+    struct timespec delay = { 0, 1 * 1000 * 1000 };
+    nanosleep(&delay, 0);
   }
 
   write(STDOUT_FILENO, "\n", 1);
 
-  sem_destroy(&s_sem);
+  pthread_mutex_destroy(&s_mutex);
 
   return 0;
 }

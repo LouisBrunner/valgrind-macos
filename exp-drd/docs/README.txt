@@ -1,7 +1,7 @@
 DRD: a Data Race Detector
 =========================
 
-Last update: February 16, 2008 by Bart Van Assche.
+Last update: March 16, 2008 by Bart Van Assche.
 
 
 Introduction
@@ -30,16 +30,16 @@ source reading by a human. It takes a huge effort however to detect
 all possible data races or deadlocks via source reading. This is why
 tools for detecting data races and deadlocks at runtime are essential.
 
-There exist parallellizing compilers that give good results for a
-certain class of high performance computing (HPC) applications. If you
-are not using a parallelizing compiler, you have to specify explicitly
-in the source code how your program should use threads. How to specify
-this depends on the programming language and the operating system you
-are using.  The two options on Unix systems are for C and C++ are the
-POSIX threads library and OpenMP. OpenMP is best suited for HPC
-applications. For other applications, e.g. server or embedded
-software, you can use the POSIX threads library directly or a library
-that is built on top of it.
+Threads can be used to model simultaneous activities in software, to
+allow software to use more than one core of a multiprocessor or both
+at the same time.  Most multithreaded server and embedded software
+falls in the first category, while most multithreaded high performance
+computing (HPC) applications fall in the second category. The source
+code syntax for using multithreading depends on the programming
+language and the threading library you want to use. Two common options
+on Unix systems are the POSIX threads library for modeling
+simultaneous activities in C and C++ software and OpenMP for C, C++
+and Fortran HPC applications.
 
 
 Data Races
@@ -119,11 +119,6 @@ library. Regular POSIX threads, detached threads, mutexes, condition
 variables, spinlocks, semaphores and barriers are supported. POSIX
 reader-writer locks are not yet supported.
 
-Although [Savage 1997] claims that a happens-before detector is harder
-to implement efficiently than the Eraser algorithm, as of Valgrind
-version 3.3.0 exp-drd runs significantly faster on several regression
-tests than Helgrind.
-
 
 Programming with Threads
 ------------------------
@@ -136,6 +131,9 @@ applications (more than one million lines of code). In what follows an
 approach is explained that has proven to work in practice. Before you
 decide to use another approach, make sure you understand very well the
 consequences of doing so.
+
+Note: the guidelines below apply to the explicit use of threads such
+as with the POSIX threads library, and not to OpenMP programs.
 
 1. Use of synchronization calls.
 
@@ -230,6 +228,69 @@ How to use DRD
 --------------
 
 To use this tool, specify --tool=drd on the Valgrind command line.
+
+
+DRD and OpenMP
+--------------
+
+Just as regular POSIX threads software, OpenMP software can contain
+data races. DRD is able to detect data races in OpenMP programs, but
+only if the shared library that implements OpenMP functionality
+(libgomp.so) has been compiled such that it uses the POSIX threads
+library instead of futexes. A second requirement is that libgomp.so
+must contain debug information. You have to recompile gcc in order to
+obtain a version of libgomp.so that is suited for use with DRD. Once
+gcc has been recompiled, set the CC and LD_LIBRARY_PATH environment
+variables appropriately. It can be convenient to set up shortcuts for
+switching between the gcc compiler provided by your Linux distribution
+and the newly compiled gcc. The shell command below will add the commands
+system-gcc and my-gcc to your shell upon the next login:
+
+cat <<EOF >>~/.bashrc
+function system-gcc { unset CC LD_LIBRARY_PATH; export CC LD_LIBRARY_PATH; }
+function my-gcc { export CC=$HOME/gcc-4.3.0/bin/gcc LD_LIBRARY_PATH=$HOME/gcc-4.3.0/lib64:; }
+EOF
+
+Recompiling gcc is possible with e.g. the following shell script:
+
+---------------------------------------------------------------------------
+#!/bin/sh
+
+GCC_VERSION=4.3.0
+FSF_MIRROR=ftp://ftp.easynet.be/gnu
+SRCDIR=$HOME/software
+INBOUND=$SRCDIR/inbound
+SRC=$HOME/software/gcc-${GCC_VERSION}
+BUILD=${SRC}-build
+TAR=gcc-${GCC_VERSION}.tar.bz2
+PREFIX=$HOME/gcc-${GCC_VERSION}
+
+rm -rf   ${BUILD}   || exit $?
+rm -rf   ${PREFIX}  || exit $?
+mkdir -p ${BUILD}   || exit $?
+mkdir -p ${INBOUND} || exit $?
+cd       ${BUILD}   || exit $?
+
+if [ ! -e $INBOUND/$TAR ]; then
+  ( cd $INBOUND && wget -q $FSF_MIRROR/gcc/gcc-${GCC_VERSION}/$TAR )
+fi
+
+if [ ! -e $SRC ]; then
+  ( cd $SRCDIR && tar -xjf $INBOUND/$TAR )
+fi
+
+${SRC}/configure            \
+  --disable-linux-futex     \
+  --disable-mudflap         \
+  --disable-nls             \
+  --enable-languages=c,c++  \
+  --enable-threads=posix    \
+  --enable-tls              \
+  --prefix=$PREFIX
+
+make -s         || exit $?
+make -s install || exit $?
+---------------------------------------------------------------------------
 
 
 Future DRD Versions
@@ -406,6 +467,10 @@ References
   pp. 142-143, 2007.
   http://valgrind.org/docs/muehlenfeld2006.pdf
   http://portal.acm.org/citation.cfm?id=1229457
+
+[Sun 2007]
+  Sun Studio 12: Thread Analyzer User's Guide
+  http://docs.sun.com/app/docs/doc/820-0619
 
 [Zhou 2007]
   Pin Zhou, Radu Teodorescu, Yuanyuan Zhou.

@@ -58,7 +58,6 @@ EXTRA_DIST =                                        \
 	omp_matinv_racy.stdout.exp                  \
 	omp_matinv_racy.vgtest                      \
 	omp_prime_racy.stderr.exp                   \
-	omp_prime_racy.stdout.exp                   \
 	omp_prime_racy.vgtest                       \
 	pth_barrier.stderr.exp                      \
 	pth_barrier.stderr.exp-linuxthreads         \

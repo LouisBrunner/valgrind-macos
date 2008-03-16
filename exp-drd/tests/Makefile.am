@@ -11,7 +11,8 @@ noinst_SCRIPTS =		\
 	filter_fdleak		\
 	filter_linenos		\
 	filter_none_discards	\
-	filter_stderr
+	filter_stderr           \
+	run_openmp_test
 
 EXTRA_DIST =                                        \
 	$(noinst_SCRIPTS)                           \
@@ -89,8 +90,12 @@ EXTRA_DIST =                                        \
 	pth_detached2.stderr.exp-linuxthreads       \
 	pth_detached2.stdout.exp                    \
 	pth_detached2.stdout.exp-linuxthreads       \
-	pth_detached2.stdout.exp-linuxthreads       \
 	pth_detached2.vgtest                        \
+	pth_detached_sem.stdout.exp                 \
+	pth_detached_sem.stdout.exp-linuxthreads    \
+	pth_detached_sem.stderr.exp                 \
+	pth_detached_sem.stderr.exp-linuxthreads    \
+	pth_detached_sem.vgtest                     \
 	recursive_mutex.stderr.exp	            \
 	recursive_mutex.stdout.exp	            \
 	recursive_mutex.vgtest                      \
@@ -206,6 +211,7 @@ check_PROGRAMS_COMMON = \
   pth_cond_race       \
   pth_create_chain    \
   pth_detached        \
+  pth_detached_sem    \
   recursive_mutex     \
   rwlock_race         \
   sem_as_mutex        \
@@ -287,6 +293,9 @@ pth_create_chain_LDADD      = -lpthread
 
 pth_detached_SOURCES        = pth_detached.c
 pth_detached_LDADD          = -lpthread
+
+pth_detached_sem_SOURCES    = pth_detached_sem.c
+pth_detached_sem_LDADD      = -lpthread
 
 recursive_mutex_SOURCES     = recursive_mutex.c
 recursive_mutex_LDADD       = -lpthread

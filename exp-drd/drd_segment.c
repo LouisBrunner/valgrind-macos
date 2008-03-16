@@ -81,8 +81,8 @@ void sg_init(Segment* const sg,
   {
     char msg[256];
     VG_(snprintf)(msg, sizeof(msg),
-                  "New segment for thread %d with vc ",
-                  creator);
+                  "New segment for thread %d/%d with vc ",
+                  DrdThreadIdToVgThreadId(creator), creator);
     vc_snprint(msg + VG_(strlen)(msg), sizeof(msg) - VG_(strlen)(msg),
                &sg->vc);
     VG_(message)(Vg_UserMsg, "%s", msg);

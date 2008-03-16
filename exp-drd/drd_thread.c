@@ -225,14 +225,6 @@ DrdThreadId thread_post_create(const ThreadId vg_created)
 /* ignored.                                                                */
 void thread_set_stack_startup(const DrdThreadId tid, const Addr stack_startup)
 {
-#if 0
-  VG_(message)(Vg_DebugMsg, "thread_set_stack_startup: thread %d (%d)"
-               " stack 0x%x .. 0x%lx (size %d)",
-               s_threadinfo[tid].vg_threadid, tid,
-               stack_startup,
-               s_threadinfo[tid].stack_max,
-               s_threadinfo[tid].stack_max - stack_startup);
-#endif
   tl_assert(0 <= tid && tid < DRD_N_THREADS && tid != DRD_INVALID_THREADID);
   tl_assert(s_threadinfo[tid].stack_min <= stack_startup);
   tl_assert(stack_startup <= s_threadinfo[tid].stack_max);
@@ -358,8 +350,9 @@ void thread_set_running_tid(const ThreadId vg_tid, const DrdThreadId drd_tid)
         && s_drd_running_tid != DRD_INVALID_THREADID)
     {
       VG_(message)(Vg_DebugMsg,
-                   "Context switch from thread %d to thread %d",
-                   s_drd_running_tid, drd_tid);
+                   "Context switch from thread %d/%d to thread %d/%d",
+                   s_vg_running_tid, s_drd_running_tid,
+                   DrdThreadIdToVgThreadId(drd_tid), drd_tid);
     }
     s_vg_running_tid = vg_tid;
     s_drd_running_tid = drd_tid;
@@ -668,7 +661,7 @@ static void show_call_stack(const DrdThreadId tid,
 {
   const ThreadId vg_tid = DrdThreadIdToVgThreadId(tid);
 
-  VG_(message)(Vg_UserMsg, "%s (thread %d)", msg, /*vg_tid,*/ tid);
+  VG_(message)(Vg_UserMsg, "%s (thread %d/%d)", msg, vg_tid, tid);
 
   if (vg_tid != VG_INVALID_THREADID)
   {
@@ -775,8 +768,8 @@ static void thread_update_danger_set(const DrdThreadId tid)
     char msg[256];
 
     VG_(snprintf)(msg, sizeof(msg),
-                  "computing danger set for thread %d with vc ",
-                  tid);
+                  "computing danger set for thread %d/%d with vc ",
+                  DrdThreadIdToVgThreadId(tid), tid);
     vc_snprint(msg + VG_(strlen)(msg),
                sizeof(msg) - VG_(strlen)(msg),
                &s_threadinfo[tid].last->vc);

@@ -81,10 +81,10 @@ void drd_report_data_race2(Error* const err, const DataRaceErrInfo* const dri)
     describe_malloced_addr(dri->addr, dri->size, &ai);
   }
   VG_(message)(Vg_UserMsg,
-               "Conflicting %s by thread %d at 0x%08lx size %ld",
+               "Conflicting %s by thread %d/%d at 0x%08lx size %ld",
                dri->access_type == eStore ? "store" : "load",
                DrdThreadIdToVgThreadId(dri->tid),
-               /*dri->tid,*/
+               dri->tid,
                dri->addr,
                dri->size);
   VG_(pp_ExeContext)(VG_(get_error_where)(err));
@@ -156,8 +156,9 @@ static void drd_tool_error_pp(Error* const e)
   case CondDestrErr: {
     CondDestrErrInfo* cdi = (CondDestrErrInfo*)(VG_(get_error_extra)(e));
     VG_(message)(Vg_UserMsg,
-                 "%s: cond 0x%lx, mutex 0x%lx locked by thread %d",
-                 cdi->cond, cdi->mutex, cdi->tid);
+                 "%s: cond 0x%lx, mutex 0x%lx locked by thread %d/%d",
+                 cdi->cond, cdi->mutex,
+                 DrdThreadIdToVgThreadId(cdi->tid), cdi->tid);
     VG_(pp_ExeContext)(VG_(get_error_where)(e));
     break;
   }

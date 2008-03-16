@@ -14,4 +14,10 @@ Recursive locking not allowed: mutex 0x........, recursion count 1, owner 1.
    by 0x........: lock_twice (recursive_mutex.c:?)
    by 0x........: main (recursive_mutex.c:?)
 
-ERROR SUMMARY: 3 errors from 3 contexts (suppressed: 0 from 0)
+Destroying locked mutex: mutex 0x........, recursion count 1, owner 1.
+   at 0x........: (within libpthread-?.?.so)
+   by 0x........: pthread_mutex_lock (drd_pthread_intercepts.c:?)
+   by 0x........: lock_twice (recursive_mutex.c:?)
+   by 0x........: main (recursive_mutex.c:?)
+
+ERROR SUMMARY: 4 errors from 4 contexts (suppressed: 0 from 0)

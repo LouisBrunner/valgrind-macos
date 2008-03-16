@@ -104,8 +104,7 @@ void vc_increment(VectorClock* const vc, ThreadId const threadid)
  *    vc2, and if additionally all corresponding counters in v2 are higher or
  *    equal.
  */
-Bool vc_lte(const VectorClock* const vc1,
-            const VectorClock* const vc2)
+Bool vc_lte(const VectorClock* const vc1, const VectorClock* const vc2)
 {
   unsigned i;
   unsigned j = 0;
@@ -117,7 +116,7 @@ Bool vc_lte(const VectorClock* const vc1,
     }
     if (j >= vc2->size || vc2->vc[j].threadid > vc1->vc[i].threadid)
       return False;
-    tl_assert(j < vc2->size && vc2->vc[j].threadid == vc1->vc[i].threadid);
+    //tl_assert(j < vc2->size && vc2->vc[j].threadid == vc1->vc[i].threadid);
     if (vc1->vc[i].count > vc2->vc[j].count)
       return False;
   }

@@ -400,6 +400,13 @@ References
   pp. 133-152, 1999.
   http://portal.acm.org/citation.cfm?id=312214
 
+[Christiaens 2002]
+  Mark Christiaens, Michiel Ronsse, Koen De Bosschere.
+  Bounding the number of segment histories during data race detection.
+  Parallel Computing  archive, Volume 28, Issue 9, pp 1221-1238,
+  September 2002.
+  http://portal.acm.org/citation.cfm?id=638124
+ 
 [Ronsse 2004]
   Michiel Ronsse, Jonas Maebe, Koen De Bosschere.
   Detecting Data Races in Sequential Programs with DIOTA.

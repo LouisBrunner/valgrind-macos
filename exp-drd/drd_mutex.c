@@ -62,11 +62,11 @@ void mutex_initialize(struct mutex_info* const p,
   tl_assert(mutex != 0);
 
   tl_assert(p->a1 == mutex);
-  p->cleanup         = (void(*)(DrdClientobj*))&mutex_cleanup;
-  p->mutex_type      = mutex_type;
-  p->recursion_count = 0;
-  p->owner           = DRD_INVALID_THREADID;
-  vc_init(&p->vc, 0, 0);
+  p->cleanup             = (void(*)(DrdClientobj*))&mutex_cleanup;
+  p->mutex_type          = mutex_type;
+  p->recursion_count     = 0;
+  p->owner               = DRD_INVALID_THREADID;
+  p->last_locked_segment = 0;
 }
 
 /** Deallocate the memory that was allocated by mutex_initialize(). */
@@ -92,7 +92,8 @@ static void mutex_cleanup(struct mutex_info* p)
                             &MEI);
   }
 
-  vc_cleanup(&p->vc);
+  sg_put(p->last_locked_segment);
+  p->last_locked_segment = 0;
 }
 
 static
@@ -276,7 +277,10 @@ void mutex_post_lock(const Addr mutex, const Bool took_lock)
     const DrdThreadId last_owner = p->owner;
 
     if (last_owner != drd_tid && last_owner != DRD_INVALID_THREADID)
-      thread_combine_vc2(drd_tid, mutex_get_last_vc(mutex));
+    {
+      tl_assert(p->last_locked_segment);
+      thread_combine_vc2(drd_tid, &p->last_locked_segment->vc);
+    }
     thread_new_segment(drd_tid);
 
     p->owner = drd_tid;
@@ -307,7 +311,6 @@ void mutex_unlock(const Addr mutex, const MutexT mutex_type)
 {
   const DrdThreadId drd_tid = thread_get_running_tid();
   const ThreadId vg_tid = VG_(get_running_tid)();
-  const VectorClock* const vc = thread_get_vc(drd_tid);
   struct mutex_info* const p = mutex_get(mutex);
 
   if (s_trace_mutex)
@@ -318,8 +321,7 @@ void mutex_unlock(const Addr mutex, const MutexT mutex_type)
                  drd_tid,
                  p ? mutex_get_typename(p) : "?",
                  mutex,
-                 p ? p->recursion_count : 0,
-                 p ? p->owner : 0);
+                 p ? p->recursion_count : 0);
   }
 
   if (p == 0 || mutex_type == mutex_type_invalid_mutex)
@@ -347,7 +349,7 @@ void mutex_unlock(const Addr mutex, const MutexT mutex_type)
   tl_assert(p);
   if (p->mutex_type != mutex_type)
   {
-    VG_(message)(Vg_UserMsg, "??? mutex %p: type changed from %d into %d",
+    VG_(message)(Vg_UserMsg, "??? mutex 0x%lx: type changed from %d into %d",
                  p->a1, p->mutex_type, mutex_type);
   }
   tl_assert(p->mutex_type == mutex_type);
@@ -372,8 +374,8 @@ void mutex_unlock(const Addr mutex, const MutexT mutex_type)
     /* This pthread_mutex_unlock() call really unlocks the mutex. Save the */
     /* current vector clock of the thread such that it is available when  */
     /* this mutex is locked again.                                        */
-    vc_assign(&p->vc, vc);
 
+    thread_get_latest_segment(&p->last_locked_segment, drd_tid);
     thread_new_segment(drd_tid);
   }
 }
@@ -420,12 +422,6 @@ Bool mutex_is_locked_by(const Addr mutex, const DrdThreadId tid)
     return (p->recursion_count > 0 && p->owner == tid);
   }
   return False;
-}
-
-const VectorClock* mutex_get_last_vc(const Addr mutex)
-{
-  struct mutex_info* const p = mutex_get(mutex);
-  return p ? &p->vc : 0;
 }
 
 int mutex_get_recursion_count(const Addr mutex)

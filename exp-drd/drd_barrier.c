@@ -45,7 +45,7 @@ struct barrier_thread_info
   UWord       tid;           // A DrdThreadId
   Word        iteration;     // iteration of last pthread_barrier_wait()
                              // call thread tid participated in.
-  VectorClock vc[2];         // vector clocks corresponding to the last two
+  Segment*    sg[2];         // Segments of the last two
                              // pthread_barrier() calls by thread tid.
 };
 
@@ -77,15 +77,15 @@ static void barrier_thread_initialize(struct barrier_thread_info* const p,
 {
   p->tid = tid;
   p->iteration = iteration;
-  vc_init(&p->vc[0], 0, 0);
-  vc_init(&p->vc[1], 0, 0);
+  p->sg[0] = 0;
+  p->sg[1] = 0;
 }
 
 /** Deallocate the memory that was allocated in barrier_thread_initialize(). */
 static void barrier_thread_destroy(struct barrier_thread_info* const p)
 {
-  vc_cleanup(&p->vc[0]);
-  vc_cleanup(&p->vc[1]);
+  sg_put(p->sg[0]);
+  sg_put(p->sg[1]);
 }
 
 /** Initialize the structure *p with the specified client-side barrier address,
@@ -112,7 +112,6 @@ void barrier_initialize(struct barrier_info* const p,
   tl_assert(sizeof(((struct barrier_thread_info*)0)->tid)
             >= sizeof(DrdThreadId));
   p->oset = VG_(OSetGen_Create)(0, 0, VG_(malloc), VG_(free));
-  vc_init(&p->finished_threads_vc, 0, 0);
 }
 
 /** Deallocate the memory allocated by barrier_initialize() and in p->oset. 
@@ -141,7 +140,6 @@ void barrier_cleanup(struct barrier_info* p)
     barrier_thread_destroy(q);
   }
   VG_(OSetGen_Destroy)(p->oset);
-  vc_cleanup(&p->finished_threads_vc);
 }
 
 /** Look up the client-side barrier address barrier in s_barrier[]. If not
@@ -192,7 +190,7 @@ void barrier_init(const Addr barrier,
     if (reinitialization)
     {
       VG_(message)(Vg_UserMsg,
-                   "[%d/%d] barrier_reinit    %s 0x%lx count %d -> %d",
+                   "[%d/%d] barrier_reinit    %s 0x%lx count %ld -> %ld",
                    VG_(get_running_tid)(),
                    thread_get_running_tid(),
                    barrier_get_typename(p),
@@ -263,20 +261,20 @@ void barrier_pre_wait(const DrdThreadId tid, const Addr barrier,
   p = barrier_get(barrier);
   if (p == 0 && barrier_type == gomp_barrier)
   {
-    VG_(message)(Vg_UserMsg, "");
+    VG_(message)(Vg_UserMsg, "%s", "");
     VG_(message)(Vg_UserMsg,
                  "Please verify whether gcc has been configured"
                  " with option --disable-linux-futex.");
     VG_(message)(Vg_UserMsg,
                  "See also the section about OpenMP in the DRD manual.");
-    VG_(message)(Vg_UserMsg, "");
+    VG_(message)(Vg_UserMsg, "%s", "");
   }
   tl_assert(p);
 
   if (s_trace_barrier)
   {
     VG_(message)(Vg_UserMsg,
-                 "[%d/%d] barrier_pre_wait  %s 0x%lx iteration %d",
+                 "[%d/%d] barrier_pre_wait  %s 0x%lx iteration %ld",
                  VG_(get_running_tid)(),
                  thread_get_running_tid(),
                  barrier_get_typename(p),
@@ -292,8 +290,7 @@ void barrier_pre_wait(const DrdThreadId tid, const Addr barrier,
     VG_(OSetGen_Insert)(p->oset, q);
     tl_assert(VG_(OSetGen_Lookup)(p->oset, &word_tid) == q);
   }
-  vc_assign(&q->vc[p->pre_iteration], &thread_get_segment(tid)->vc);
-  tl_assert(q->vc[p->pre_iteration].size > 0);
+  thread_get_latest_segment(&q->sg[p->pre_iteration], tid);
 
   if (--p->pre_waiters_left <= 0)
   {
@@ -313,7 +310,7 @@ void barrier_post_wait(const DrdThreadId tid, const Addr barrier,
   if (s_trace_barrier)
   {
     VG_(message)(Vg_UserMsg,
-                 "[%d/%d] barrier_post_wait %s 0x%lx iteration %d",
+                 "[%d/%d] barrier_post_wait %s 0x%lx iteration %ld",
                  VG_(get_running_tid)(),
                  tid,
                  p ? barrier_get_typename(p) : "(?)",
@@ -340,10 +337,10 @@ void barrier_post_wait(const DrdThreadId tid, const Addr barrier,
     {
       if (r != q)
       {
-        thread_combine_vc2(tid, &r->vc[p->post_iteration]);
+        tl_assert(r->sg[p->post_iteration]);
+        thread_combine_vc2(tid, &r->sg[p->post_iteration]->vc);
       }
     }
-    thread_combine_vc2(tid, &p->finished_threads_vc);
 
     thread_new_segment(tid);
 
@@ -366,7 +363,6 @@ void barrier_thread_delete(const DrdThreadId tid)
     struct barrier_thread_info* q;
     const UWord word_tid = tid;
     q = VG_(OSetGen_Remove)(p->oset, &word_tid);
-    vc_combine(&p->finished_threads_vc, &q->vc[p->post_iteration]);
     barrier_thread_destroy(q);
     VG_(OSetGen_FreeNode)(p->oset, q);
   }

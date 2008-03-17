@@ -63,7 +63,7 @@ struct mutex_info
   MutexT      mutex_type;      // pthread_mutex_t or pthread_spinlock_t.
   int         recursion_count; // 0 if free, >= 1 if locked.
   DrdThreadId owner;           // owner if locked, last owner if free.
-  VectorClock vc;              // vector clock associated with last unlock.
+  Segment*    last_locked_segment;
 };
 
 struct cond_info
@@ -72,8 +72,8 @@ struct cond_info
   ObjType type;
   void    (*cleanup)(union drd_clientobj*);
   int     waiter_count;
-  Addr    mutex; // Client mutex specified in pthread_cond_wait() call, and null
-                 // if no client threads are currently waiting on this cond.var.
+  Addr    mutex; //Client mutex specified in pthread_cond_wait() call, and null
+                 //if no client threads are currently waiting on this cond.var.
 };
 
 struct semaphore_info
@@ -84,7 +84,7 @@ struct semaphore_info
   UWord       value;             // Semaphore value.
   UWord       waiters;           // Number of threads inside sem_wait().
   DrdThreadId last_sem_post_tid; // Thread ID associated with last sem_post().
-  VectorClock vc;                // Vector clock of last sem_post() call.
+  Segment*    last_sem_post_segment;
 };
 
 struct barrier_info
@@ -99,7 +99,6 @@ struct barrier_info
   Word     pre_waiters_left;  // number of waiters left for a complete barrier.
   Word     post_waiters_left; // number of waiters left for a complete barrier.
   OSet*    oset;              // Thread-specific barrier information.
-  VectorClock finished_threads_vc;
 };
 
 struct rwlock_info

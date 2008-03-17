@@ -42,13 +42,17 @@ typedef struct segment
 {
   struct segment*    next;
   struct segment*    prev;
+  int                refcnt;
   ExeContext*        stacktrace;
   VectorClock        vc;
   struct bitmap*     bm;
 } Segment;
 
+
 Segment* sg_new(const ThreadId creator, const ThreadId created);
-void sg_delete(Segment* const sg);
+int sg_get_refcnt(const Segment* const sg);
+Segment* sg_get(Segment* const sg);
+void sg_put(Segment* const sg);
 void sg_print(const Segment* const sg);
 Bool sg_get_trace(void);
 void sg_set_trace(const Bool trace_segment);

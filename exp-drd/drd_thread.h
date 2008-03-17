@@ -114,6 +114,7 @@ int thread_leave_synchr(const DrdThreadId tid);
 int thread_get_synchr_nesting_count(const DrdThreadId tid);
 void thread_new_segment(const DrdThreadId tid);
 VectorClock* thread_get_vc(const DrdThreadId tid);
+void thread_get_latest_segment(Segment** sg, const DrdThreadId tid);
 void thread_combine_vc(const DrdThreadId joiner, const DrdThreadId joinee);
 void thread_combine_vc2(const DrdThreadId tid, const VectorClock* const vc);
 void thread_stop_using_mem(const Addr a1, const Addr a2);

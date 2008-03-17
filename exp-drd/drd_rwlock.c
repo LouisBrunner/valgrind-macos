@@ -39,11 +39,11 @@
 
 struct rwlock_thread_info
 {
-  UWord       tid;        // DrdThreadId.
-  UInt        reader_nesting_count;
-  UInt        writer_nesting_count;
-  VectorClock vc;   // Vector clock associated with last unlock by this thread.
-  Bool        last_lock_was_writer_lock;
+  UWord    tid;                 // DrdThreadId.
+  UInt     reader_nesting_count;
+  UInt     writer_nesting_count;
+  Segment* last_unlock_segment; // Segment of last unlock call by this thread.
+  Bool     last_lock_was_writer_lock;
 };
 
 
@@ -129,7 +129,7 @@ struct rwlock_thread_info* lookup_or_insert_node(OSet* oset, const UWord tid)
     q->tid = tid;
     q->reader_nesting_count = 0;
     q->writer_nesting_count = 0;
-    vc_init(&q->vc, 0, 0);
+    q->last_unlock_segment  = 0;
     q->last_lock_was_writer_lock = False;
     VG_(OSetGen_Insert)(oset, q);
   }
@@ -148,7 +148,7 @@ static void rwlock_combine_other_vc(struct rwlock_info* const p,
   {
     if (q->tid != tid && (readers_too || q->last_lock_was_writer_lock))
     {
-      thread_combine_vc2(tid, &q->vc);
+      thread_combine_vc2(tid, &q->last_unlock_segment->vc);
     }
   }
 }
@@ -193,7 +193,7 @@ static void rwlock_cleanup(struct rwlock_info* p)
   VG_(OSetGen_ResetIter)(p->thread_info);
   for ( ; (q = VG_(OSetGen_Next)(p->thread_info)); q++)
   {
-    vc_cleanup(&q->vc);
+    sg_put(q->last_unlock_segment);
   }
   VG_(OSetGen_Destroy)(p->thread_info);
 }
@@ -438,7 +438,6 @@ void rwlock_pre_unlock(const Addr rwlock)
 {
   const DrdThreadId drd_tid = thread_get_running_tid();
   const ThreadId vg_tid = VG_(get_running_tid)();
-  const VectorClock* const vc = thread_get_vc(drd_tid);
   struct rwlock_info* const p = rwlock_get(rwlock);
   struct rwlock_thread_info* q;
 
@@ -476,9 +475,9 @@ void rwlock_pre_unlock(const Addr rwlock)
     /* This pthread_rwlock_unlock() call really unlocks the rwlock. Save the */
     /* current vector clock of the thread such that it is available when  */
     /* this rwlock is locked again.                                        */
-    vc_assign(&q->vc, vc);
-    q->last_lock_was_writer_lock = False;
 
+    thread_get_latest_segment(&q->last_unlock_segment, drd_tid);
+    q->last_lock_was_writer_lock = False;
     thread_new_segment(drd_tid);
   }
 }

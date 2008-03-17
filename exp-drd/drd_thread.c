@@ -42,6 +42,7 @@
 
 static void thread_append_segment(const DrdThreadId tid,
                                   Segment* const sg);
+static void thread_discard_segment(const DrdThreadId tid, Segment* const sg);
 static void thread_update_danger_set(const DrdThreadId tid);
 
 
@@ -245,9 +246,8 @@ Addr thread_get_stack_max(const DrdThreadId tid)
   return s_threadinfo[tid].stack_max;
 }
 
-/**
- * Clean up thread-specific data structures. Call this just after 
- * pthread_join().
+/** Clean up thread-specific data structures. Call this just after 
+ *  pthread_join().
  */
 void thread_delete(const DrdThreadId tid)
 {
@@ -260,7 +260,9 @@ void thread_delete(const DrdThreadId tid)
   for (sg = s_threadinfo[tid].last; sg; sg = sg_prev)
   {
     sg_prev = sg->prev;
-    sg_delete(sg);
+    sg->prev = 0;
+    sg->next = 0;
+    sg_put(sg);
   }
   s_threadinfo[tid].vg_thread_exists = False;
   s_threadinfo[tid].posix_thread_exists = False;
@@ -350,9 +352,11 @@ void thread_set_running_tid(const ThreadId vg_tid, const DrdThreadId drd_tid)
         && s_drd_running_tid != DRD_INVALID_THREADID)
     {
       VG_(message)(Vg_DebugMsg,
-                   "Context switch from thread %d/%d to thread %d/%d",
+                   "Context switch from thread %d/%d to thread %d/%d;"
+                   " segments: %llu",
                    s_vg_running_tid, s_drd_running_tid,
-                   DrdThreadIdToVgThreadId(drd_tid), drd_tid);
+                   DrdThreadIdToVgThreadId(drd_tid), drd_tid,
+                   sg_get_alive_segments_count());
     }
     s_vg_running_tid = vg_tid;
     s_drd_running_tid = drd_tid;
@@ -416,16 +420,28 @@ static void thread_discard_segment(const DrdThreadId tid, Segment* const sg)
     s_threadinfo[tid].first = sg->next;
   if (sg == s_threadinfo[tid].last)
     s_threadinfo[tid].last = sg->prev;
-  sg_delete(sg);
+  sg_put(sg);
   tl_assert(sane_ThreadInfo(&s_threadinfo[tid]));
 }
 
 VectorClock* thread_get_vc(const DrdThreadId tid)
 {
-  tl_assert(0 <= tid && tid < DRD_N_THREADS
-            && tid != DRD_INVALID_THREADID);
+  tl_assert(0 <= tid && tid < DRD_N_THREADS && tid != DRD_INVALID_THREADID);
   tl_assert(s_threadinfo[tid].last);
   return &s_threadinfo[tid].last->vc;
+}
+
+/** Return the latest segment of thread 'tid' and increment its reference
+ *  count.
+ */
+void thread_get_latest_segment(Segment** sg, const DrdThreadId tid)
+{
+  tl_assert(sg);
+  tl_assert(0 <= tid && tid < DRD_N_THREADS && tid != DRD_INVALID_THREADID);
+  tl_assert(s_threadinfo[tid].last);
+
+  sg_put(*sg);
+  *sg = sg_get(s_threadinfo[tid].last);
 }
 
 /**
@@ -504,7 +520,7 @@ static void thread_discard_ordered_segments(void)
                   ", max vc is ");
     vc_snprint(msg + VG_(strlen)(msg), sizeof(msg) - VG_(strlen)(msg),
                &thread_vc_max);
-    VG_(message)(Vg_DebugMsg, "%s", msg);
+    VG_(message)(Vg_UserMsg, "%s", msg);
     vc_cleanup(&thread_vc_max);
   }
 
@@ -522,19 +538,14 @@ static void thread_discard_ordered_segments(void)
   vc_cleanup(&thread_vc_min);
 }
 
-/**
- * Create a new segment for the specified thread, and report all data races
- * of the most recent thread segment with other threads.
+/** Create a new segment for the specified thread, and discard any segments
+ *  that cannot cause races anymore.
  */
 void thread_new_segment(const DrdThreadId tid)
 {
-  Segment* sg;
+  tl_assert(0 <= tid && tid < DRD_N_THREADS && tid != DRD_INVALID_THREADID);
 
-  tl_assert(0 <= tid && tid < DRD_N_THREADS
-            && tid != DRD_INVALID_THREADID);
-
-  sg = sg_new(tid, tid);
-  thread_append_segment(tid, sg);
+  thread_append_segment(tid, sg_new(tid, tid));
 
   thread_discard_ordered_segments();
 
@@ -639,7 +650,7 @@ void thread_print_all(void)
     if (s_threadinfo[i].first)
     {
       VG_(printf)("**************\n"
-                  "* thread %3d (%d/%d/%d/0x%x/%d) *\n"
+                  "* thread %3d (%d/%d/%d/0x%lx/%d) *\n"
                   "**************\n",
                   i,
                   s_threadinfo[i].vg_thread_exists,
@@ -773,7 +784,7 @@ static void thread_update_danger_set(const DrdThreadId tid)
     vc_snprint(msg + VG_(strlen)(msg),
                sizeof(msg) - VG_(strlen)(msg),
                &s_threadinfo[tid].last->vc);
-    VG_(message)(Vg_DebugMsg, "%s", msg);
+    VG_(message)(Vg_UserMsg, "%s", msg);
   }
 
   p = s_threadinfo[tid].last;
@@ -790,7 +801,7 @@ static void thread_update_danger_set(const DrdThreadId tid)
       vc_snprint(msg + VG_(strlen)(msg),
                  sizeof(msg) - VG_(strlen)(msg),
                  &p->vc);
-      VG_(message)(Vg_DebugMsg, "%s", msg);
+      VG_(message)(Vg_UserMsg, "%s", msg);
     }
 
     for (j = 0; j < sizeof(s_threadinfo) / sizeof(s_threadinfo[0]); j++)
@@ -810,7 +821,7 @@ static void thread_update_danger_set(const DrdThreadId tid)
               vc_snprint(msg + VG_(strlen)(msg),
                          sizeof(msg) - VG_(strlen)(msg),
                          &q->vc);
-              VG_(message)(Vg_DebugMsg, "%s", msg);
+              VG_(message)(Vg_UserMsg, "%s", msg);
             }
             bm_merge2(s_danger_set, q->bm);
           }
@@ -824,7 +835,7 @@ static void thread_update_danger_set(const DrdThreadId tid)
               vc_snprint(msg + VG_(strlen)(msg),
                          sizeof(msg) - VG_(strlen)(msg),
                          &q->vc);
-              VG_(message)(Vg_DebugMsg, "%s", msg);
+              VG_(message)(Vg_UserMsg, "%s", msg);
             }
           }
       }
@@ -856,9 +867,9 @@ static void thread_update_danger_set(const DrdThreadId tid)
 
   if (0 && s_trace_danger_set)
   {
-    VG_(message)(Vg_DebugMsg, "[%d] new danger set:", tid);
+    VG_(message)(Vg_UserMsg, "[%d] new danger set:", tid);
     bm_print(s_danger_set);
-    VG_(message)(Vg_DebugMsg, "[%d] end of new danger set.", tid);
+    VG_(message)(Vg_UserMsg, "[%d] end of new danger set.", tid);
   }
 }
 

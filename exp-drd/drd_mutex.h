@@ -51,7 +51,6 @@ void mutex_unlock(const Addr mutex, const MutexT mutex_type);
 const char* mutex_get_typename(struct mutex_info* const p);
 const char* mutex_type_name(const MutexT mt);
 Bool mutex_is_locked_by(const Addr mutex, const DrdThreadId tid);
-const VectorClock* mutex_get_last_vc(const Addr mutex);
 int mutex_get_recursion_count(const Addr mutex);
 void mutex_thread_delete(const DrdThreadId tid);
 ULong get_mutex_lock_count(void);

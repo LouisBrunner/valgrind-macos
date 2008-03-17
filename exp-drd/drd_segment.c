@@ -46,8 +46,8 @@ static Bool drd_trace_segment = False;
 
 // Function definitions.
 
-/**
- * Note: creator and created may be equal.
+/** Initialize the memory pointed at by sg.
+ *  @note The creator and created thread ID's may be equal.
  */
 static
 void sg_init(Segment* const sg,
@@ -62,9 +62,10 @@ void sg_init(Segment* const sg,
 
   creator_sg = (creator != DRD_INVALID_THREADID
                 ? thread_get_segment(creator) : 0);
-  
+
   sg->next = 0;
   sg->prev = 0;
+  sg->refcnt = 1;
 
   if (vg_created != VG_INVALID_THREADID && VG_(get_SP)(vg_created) != 0)
     sg->stacktrace = VG_(record_ExeContext)(vg_created, 0);
@@ -82,23 +83,30 @@ void sg_init(Segment* const sg,
   {
     char msg[256];
     VG_(snprintf)(msg, sizeof(msg),
-                  "New segment for thread %d/%d with vc ",
-                  DrdThreadIdToVgThreadId(creator), creator);
+                  "New segment for thread %d/%d for vc ",
+                  creator != VG_INVALID_THREADID
+                  ? DrdThreadIdToVgThreadId(creator)
+                  : DRD_INVALID_THREADID,
+                  creator);
     vc_snprint(msg + VG_(strlen)(msg), sizeof(msg) - VG_(strlen)(msg),
                &sg->vc);
     VG_(message)(Vg_UserMsg, "%s", msg);
   }
 }
 
+/** Deallocate the memory that was allocated by sg_init(). */
 static
 void sg_cleanup(Segment* const sg)
 {
   tl_assert(sg);
+  tl_assert(sg->refcnt == 0);
+
   vc_cleanup(&sg->vc);
   bm_delete(sg->bm);
   sg->bm = 0;
 }
 
+/** Allocate and initialize a new segment. */
 Segment* sg_new(ThreadId const creator, ThreadId const created)
 {
   Segment* sg;
@@ -114,6 +122,7 @@ Segment* sg_new(ThreadId const creator, ThreadId const created)
   return sg;
 }
 
+static
 void sg_delete(Segment* const sg)
 {
 #if 1
@@ -133,6 +142,50 @@ void sg_delete(Segment* const sg)
   tl_assert(sg);
   sg_cleanup(sg);
   VG_(free)(sg);
+}
+
+/** Query the reference count of the specified segment. */
+int sg_get_refcnt(const Segment* const sg)
+{
+  tl_assert(sg);
+
+  return sg->refcnt;
+}
+
+/** Increment the reference count of the specified segment. */
+Segment* sg_get(Segment* const sg)
+{
+  tl_assert(sg);
+
+  sg->refcnt++;
+  return sg;
+}
+
+/** Decrement the reference count of the specified segment and deallocate the
+ *  segment if the reference count became zero.
+ */
+void sg_put(Segment* const sg)
+{
+  if (sg == 0)
+    return;
+
+  if (drd_trace_segment)
+  {
+    char msg[256];
+    VG_(snprintf)(msg, sizeof(msg),
+                  "Decrementing segment reference count %d -> %d with vc ",
+                  sg->refcnt, sg->refcnt - 1);
+    vc_snprint(msg + VG_(strlen)(msg), sizeof(msg) - VG_(strlen)(msg),
+               &sg->vc);
+    VG_(message)(Vg_UserMsg, "%s", msg);
+  }
+
+  tl_assert(sg->refcnt >= 1);
+
+  if (--sg->refcnt == 0)
+  {
+    sg_delete(sg);
+  }
 }
 
 void sg_print(const Segment* const sg)

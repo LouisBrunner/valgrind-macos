@@ -64,7 +64,7 @@ void semaphore_initialize(struct semaphore_info* const p,
   p->value     = value;
   p->waiters   = 0;
   p->last_sem_post_tid = DRD_INVALID_THREADID;
-  vc_init(&p->vc, 0, 0);
+  p->last_sem_post_segment = 0;
 }
 
 /** Free the memory that was allocated by semaphore_initialize(). Called by
@@ -82,7 +82,7 @@ static void semaphore_cleanup(struct semaphore_info* p)
                             " upon",
                             &sei);
   }
-  vc_cleanup(&p->vc);
+  sg_put(p->last_sem_post_segment);
 }
 
 static
@@ -215,8 +215,12 @@ void semaphore_post_wait(const DrdThreadId tid, const Addr semaphore,
   }
   p->value--;
   tl_assert(p->value >= 0);
-  if (p->last_sem_post_tid != tid)
-    thread_combine_vc2(tid, &p->vc);
+  if (p->last_sem_post_tid != tid
+      && p->last_sem_post_tid != DRD_INVALID_THREADID)
+  {
+    tl_assert(p->last_sem_post_segment);
+    thread_combine_vc2(tid, &p->last_sem_post_segment->vc);
+  }
   thread_new_segment(tid);
 }
 
@@ -239,7 +243,7 @@ void semaphore_pre_post(const DrdThreadId tid, const Addr semaphore)
   {
     p->last_sem_post_tid = tid;
     thread_new_segment(tid);
-    vc_assign(&p->vc, thread_get_vc(tid));
+    thread_get_latest_segment(&p->last_sem_post_segment, tid);
   }
 }
 

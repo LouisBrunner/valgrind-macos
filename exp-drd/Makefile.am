@@ -26,12 +26,12 @@ else
 VGPRELOAD_DRD_SOURCES_COMMON = drd_pthread_intercepts.c
 endif
 
-AM_CFLAGS_X86_LINUX   += -Wsign-compare -O2
-AM_CFLAGS_AMD64_LINUX += -Wsign-compare -O2
-AM_CFLAGS_PPC32_LINUX += -Wsign-compare -O2
-AM_CFLAGS_PPC64_LINUX += -Wsign-compare -O2
-AM_CFLAGS_PPC32_AIX5  += -Wsign-compare -O2
-AM_CFLAGS_PPC64_AIX5  += -Wsign-compare -O2
+AM_CFLAGS_X86_LINUX   += -Wsign-compare -O2 -DCHECK_FORMAT_STRINGS
+AM_CFLAGS_AMD64_LINUX += -Wsign-compare -O2 -DCHECK_FORMAT_STRINGS
+AM_CFLAGS_PPC32_LINUX += -Wsign-compare -O2 -DCHECK_FORMAT_STRINGS
+AM_CFLAGS_PPC64_LINUX += -Wsign-compare -O2 -DCHECK_FORMAT_STRINGS
+AM_CFLAGS_PPC32_AIX5  += -Wsign-compare -O2 -DCHECK_FORMAT_STRINGS
+AM_CFLAGS_PPC64_AIX5  += -Wsign-compare -O2 -DCHECK_FORMAT_STRINGS
 
 vgpreload_exp_drd_x86_linux_so_SOURCES      = $(VGPRELOAD_DRD_SOURCES_COMMON)
 vgpreload_exp_drd_x86_linux_so_CPPFLAGS     = $(AM_CPPFLAGS_X86_LINUX)

@@ -3,8 +3,6 @@ Thread 3:
 Conflicting store by thread 3/3 at 0x........ size 4
    at 0x........: t2 (hg03_inherit.c:28)
    by 0x........: vg_thread_wrapper (drd_pthread_intercepts.c:?)
-   by 0x........: (within libpthread-?.?.so)
-   by 0x........: clone (in /...libc...)
 Location 0x........ is 0 bytes inside shared[1],
 declared at hg03_inherit.c:11, in frame #? of thread 3
 Other segment start (thread 1/1)
@@ -13,13 +11,10 @@ Other segment start (thread 1/1)
 Other segment end (thread 1/1)
    at 0x........: (within libpthread-?.?.so)
    by 0x........: pthread_join (drd_pthread_intercepts.c:?)
-   by 0x........: main (hg03_inherit.c:63)
 
 Conflicting store by thread 3/3 at 0x........ size 4
    at 0x........: t2 (hg03_inherit.c:29)
    by 0x........: vg_thread_wrapper (drd_pthread_intercepts.c:?)
-   by 0x........: (within libpthread-?.?.so)
-   by 0x........: clone (in /...libc...)
 Location 0x........ is 0 bytes inside shared[1],
 declared at hg03_inherit.c:11, in frame #? of thread 3
 Other segment start (thread 1/1)
@@ -28,6 +23,5 @@ Other segment start (thread 1/1)
 Other segment end (thread 1/1)
    at 0x........: (within libpthread-?.?.so)
    by 0x........: pthread_join (drd_pthread_intercepts.c:?)
-   by 0x........: main (hg03_inherit.c:63)
 
 ERROR SUMMARY: 2 errors from 2 contexts (suppressed: 0 from 0)

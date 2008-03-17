@@ -1,1 +1,2 @@
 prog: hg03_inherit
+vgopts: --num-callers=2

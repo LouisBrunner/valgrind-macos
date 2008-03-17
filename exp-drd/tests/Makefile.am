@@ -30,7 +30,6 @@ EXTRA_DIST =                                        \
 	hg02_deadlock.vgtest                        \
 	hg03_inherit.stderr.exp                     \
 	hg03_inherit.stderr.exp-linuxthreads        \
-	hg03_inherit.stderr.exp2                    \
 	hg03_inherit.vgtest                         \
 	hg04_race.stderr.exp                        \
 	hg04_race.stderr.exp-linuxthreads           \

@@ -138,8 +138,8 @@ static void drd_tool_error_pp(Error* const e)
     CondErrInfo* cdei =(CondErrInfo*)(VG_(get_error_extra)(e));
     VG_(message)(Vg_UserMsg,
                  "%s: cond 0x%lx",
-                 cdei->cond,
-                 VG_(get_error_string)(e));
+                 VG_(get_error_string)(e),
+                 cdei->cond);
     VG_(pp_ExeContext)(VG_(get_error_where)(e));
     break;
   }
@@ -157,6 +157,7 @@ static void drd_tool_error_pp(Error* const e)
     CondDestrErrInfo* cdi = (CondDestrErrInfo*)(VG_(get_error_extra)(e));
     VG_(message)(Vg_UserMsg,
                  "%s: cond 0x%lx, mutex 0x%lx locked by thread %d/%d",
+                 VG_(get_error_string)(e),
                  cdi->cond, cdi->mutex,
                  DrdThreadIdToVgThreadId(cdi->tid), cdi->tid);
     VG_(pp_ExeContext)(VG_(get_error_where)(e));

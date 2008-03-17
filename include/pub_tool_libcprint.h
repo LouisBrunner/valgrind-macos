@@ -31,6 +31,21 @@
 #ifndef __PUB_TOOL_LIBCPRINT_H
 #define __PUB_TOOL_LIBCPRINT_H
 
+
+/* Enable compile-time format string checking by gcc if the macro
+   CHECK_FORMAT_STRINGS has been defined before this file has been included.
+   This feature is supported since at least gcc version 2.95.
+   For more information about the format attribute, see also
+   http://gcc.gnu.org/onlinedocs/gcc-4.3.0/gcc/Function-Attributes.html.
+ */
+
+#if defined(__GNUC__) && defined(CHECK_FORMAT_STRINGS)
+#define PRINTF_CHECK(x, y) __attribute__((format(__printf__, x, y)))
+#else
+#define PRINTF_CHECK(x, y)
+#endif
+
+
 /* ---------------------------------------------------------------------
    Basic printing
    ------------------------------------------------------------------ */
@@ -39,17 +54,14 @@
  * --log-fd/--log-file/--log-socket argument, which defaults to 2 (stderr).
  * Hence no need for VG_(fprintf)().
  */
-extern UInt VG_(printf)   ( const HChar *format, ... );
-extern UInt VG_(vprintf)  ( const HChar *format, va_list vargs );
-/* too noisy ...  __attribute__ ((format (printf, 1, 2))) ; */
-
-extern UInt VG_(sprintf)  ( Char* buf, const HChar* format, ... );
-extern UInt VG_(vsprintf) ( Char* buf, const HChar* format, va_list vargs );
-
+extern UInt VG_(printf)   ( const HChar *format, ... ) PRINTF_CHECK(1, 2);
+extern UInt VG_(vprintf)  ( const HChar *format, va_list vargs ) PRINTF_CHECK(1, 0);
+extern UInt VG_(sprintf)  ( Char* buf, const HChar* format, ... ) PRINTF_CHECK(2, 3);
+extern UInt VG_(vsprintf) ( Char* buf, const HChar* format, va_list vargs ) PRINTF_CHECK(2, 0);
 extern UInt VG_(snprintf) ( Char* buf, Int size, 
-                                       const HChar *format, ... );
+                                       const HChar *format, ... ) PRINTF_CHECK(3, 4);
 extern UInt VG_(vsnprintf)( Char* buf, Int size, 
-                                       const HChar *format, va_list vargs );
+                                       const HChar *format, va_list vargs ) PRINTF_CHECK(3, 0);
 
 // Percentify n/m with d decimal places.  Includes the '%' symbol at the end.
 // Right justifies in 'buf'.
@@ -74,9 +86,9 @@ typedef
    VgMsgKind;
 
 /* Send a single-part message.  Appends a newline. */
-extern UInt VG_(message)    ( VgMsgKind kind, const HChar* format, ... );
-extern UInt VG_(vmessage)   ( VgMsgKind kind, const HChar* format, va_list vargs );
+extern UInt VG_(message)    ( VgMsgKind kind, const HChar* format, ... ) PRINTF_CHECK(2, 3);
 
+extern UInt VG_(vmessage)   ( VgMsgKind kind, const HChar* format, va_list vargs ) PRINTF_CHECK(2, 0);
 #endif   // __PUB_TOOL_LIBCPRINT_H
 
 /*--------------------------------------------------------------------*/

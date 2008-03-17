@@ -967,8 +967,8 @@ void drd_fini(Int exitcode)
                  thread_get_update_danger_set_count());
     VG_(message)(Vg_DebugMsg,
                  " segments: %lld total, %lld max, %lld discard points",
-                 sg_get_segments_created_count(),
-                 sg_get_max_segments_alive_count(),
+                 sg_get_created_segments_count(),
+                 sg_get_max_alive_segments_count(),
                  thread_get_discard_ordered_segments_count());
     VG_(message)(Vg_DebugMsg,
                  "  bitmaps: %lld / %lld bitmaps were allocated"

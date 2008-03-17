@@ -47,17 +47,14 @@ typedef struct segment
   struct bitmap*     bm;
 } Segment;
 
-void sg_init(Segment* const sg,
-             const ThreadId creator,
-             const ThreadId created);
-void sg_cleanup(Segment* const sg);
 Segment* sg_new(const ThreadId creator, const ThreadId created);
 void sg_delete(Segment* const sg);
 void sg_print(const Segment* const sg);
 Bool sg_get_trace(void);
 void sg_set_trace(const Bool trace_segment);
-ULong sg_get_segments_created_count(void);
-ULong sg_get_max_segments_alive_count(void);
+ULong sg_get_created_segments_count(void);
+ULong sg_get_alive_segments_count(void);
+ULong sg_get_max_alive_segments_count(void);
 
 
 #endif // __SEGMENT_H

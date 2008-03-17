@@ -38,9 +38,9 @@
 
 // Local variables.
 
-static ULong s_segments_created_count;
-static ULong s_segments_alive_count;
-static ULong s_max_segments_alive_count;
+static ULong s_created_segments_count;
+static ULong s_alive_segments_count;
+static ULong s_max_alive_segments_count;
 static Bool drd_trace_segment = False;
 
 
@@ -49,6 +49,7 @@ static Bool drd_trace_segment = False;
 /**
  * Note: creator and created may be equal.
  */
+static
 void sg_init(Segment* const sg,
              DrdThreadId const creator,
              DrdThreadId const created)
@@ -89,6 +90,7 @@ void sg_init(Segment* const sg,
   }
 }
 
+static
 void sg_cleanup(Segment* const sg)
 {
   tl_assert(sg);
@@ -101,10 +103,10 @@ Segment* sg_new(ThreadId const creator, ThreadId const created)
 {
   Segment* sg;
 
-  s_segments_created_count++;
-  s_segments_alive_count++;
-  if (s_max_segments_alive_count < s_segments_alive_count)
-    s_max_segments_alive_count = s_segments_alive_count;
+  s_created_segments_count++;
+  s_alive_segments_count++;
+  if (s_max_alive_segments_count < s_alive_segments_count)
+    s_max_alive_segments_count = s_alive_segments_count;
 
   sg = VG_(malloc)(sizeof(*sg));
   tl_assert(sg);
@@ -126,7 +128,7 @@ void sg_delete(Segment* const sg)
   }
 #endif
 
-  s_segments_alive_count--;
+  s_alive_segments_count--;
 
   tl_assert(sg);
   sg_cleanup(sg);
@@ -153,12 +155,17 @@ void sg_set_trace(Bool const trace_segment)
   drd_trace_segment = trace_segment;
 }
 
-ULong sg_get_segments_created_count(void)
+ULong sg_get_created_segments_count(void)
 {
-  return s_segments_created_count;
+  return s_created_segments_count;
 }
 
-ULong sg_get_max_segments_alive_count(void)
+ULong sg_get_alive_segments_count(void)
 {
-  return s_max_segments_alive_count;
+  return s_alive_segments_count;
+}
+
+ULong sg_get_max_alive_segments_count(void)
+{
+  return s_max_alive_segments_count;
 }

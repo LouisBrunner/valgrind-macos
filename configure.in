@@ -11,7 +11,7 @@
 AC_INIT(Valgrind, 3.4.0.SVN, valgrind-users@lists.sourceforge.net)
 AC_CONFIG_SRCDIR(coregrind/m_main.c)
 AM_CONFIG_HEADER(config.h)
-AM_INIT_AUTOMAKE
+AM_INIT_AUTOMAKE([foreign])
 
 AM_MAINTAINER_MODE
 

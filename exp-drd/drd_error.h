@@ -120,9 +120,8 @@ typedef struct {
 typedef struct {
 } GenericErrInfo;
 
-void describe_addr(Addr const a, SizeT const len, AddrInfo* const ai);
-Char* describe_addr_text(Addr const a, SizeT const len, AddrInfo* const ai,
-                         Char* const buf, UInt const n_buf);
+
+void set_show_conflicting_segments(const Bool scs);
 void drd_register_error_handlers(void);
 
 

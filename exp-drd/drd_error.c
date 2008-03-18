@@ -39,10 +39,22 @@
 #include "pub_tool_tooliface.h"   // VG_(needs_tool_errors)()
 
 
+/* Local type definitions. */
+
 typedef enum {
   ConflictingAccessSupp
 } DRD_SuppKind;
 
+
+/* Local variables. */
+
+static Bool s_drd_show_conflicting_segments = True;
+
+
+void set_show_conflicting_segments(const Bool scs)
+{
+  s_drd_show_conflicting_segments = scs;
+}
 
 /* Describe a data address range [a,a+len[ as good as possible, for error */
 /* messages, putting the result in ai. */
@@ -105,8 +117,11 @@ void drd_report_data_race2(Error* const err, const DataRaceErrInfo* const dri)
   {
     VG_(message)(Vg_UserMsg, "Allocation context: unknown.");
   }
-  thread_report_conflicting_segments(dri->tid,
-                                     dri->addr, dri->size, dri->access_type);
+  if (s_drd_show_conflicting_segments)
+  {
+    thread_report_conflicting_segments(dri->tid,
+                                       dri->addr, dri->size, dri->access_type);
+  }
 }
 
 static Bool drd_tool_error_eq(VgRes res, Error* e1, Error* e2)

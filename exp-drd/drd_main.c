@@ -71,6 +71,7 @@ static Addr drd_trace_address = 0;
 
 static Bool drd_process_cmd_line_option(Char* arg)
 {
+  Bool show_confl_seg    = True;
   Bool trace_barrier     = False;
   Bool trace_clientobj   = False;
   Bool trace_cond        = False;
@@ -84,6 +85,7 @@ static Bool drd_process_cmd_line_option(Char* arg)
   Char* trace_address    = 0;
 
   VG_BOOL_CLO     (arg, "--drd-stats",         drd_print_stats)
+  else VG_BOOL_CLO(arg, "--show-confl-seg",    show_confl_seg)
   else VG_BOOL_CLO(arg, "--trace-barrier",     trace_barrier)
   else VG_BOOL_CLO(arg, "--trace-clientobj",   trace_clientobj)
   else VG_BOOL_CLO(arg, "--trace-cond",        trace_cond)
@@ -100,6 +102,8 @@ static Bool drd_process_cmd_line_option(Char* arg)
   else
     return False;
 
+  if (! show_confl_seg)
+    set_show_conflicting_segments(show_confl_seg);
   if (trace_address)
   {
     drd_trace_address = VG_(strtoll16)(trace_address, 0);

@@ -1,0 +1,18 @@
+#!/bin/sh
+
+# Exit with status 0 if a supported version of libpthread is found (NPTL or
+# non-Linux libpthread) and exit with status 1 if a non-supported version of
+# libpthread is found (LinuxThreads).
+
+if [ "$(uname)" = "Linux" ]; then
+  libpthread_version="$(/usr/bin/getconf GNU_LIBPTHREAD_VERSION 2>/dev/null)"
+  if [ "${libpthread_version#NPTL}" != "${libpthread_version}" ]; then
+    # NPTL
+    exit 0
+  fi
+  # configuration string is empty or does start with "linuxthreads".
+  exit 1
+fi
+
+# Another OS than Linux, which is also fine.
+exit 0

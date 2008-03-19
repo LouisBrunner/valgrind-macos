@@ -1,7 +1,0 @@
-
-Detected the LinuxThreads threading library. Sorry, but DRD only supports
-the newer NPTL (Native POSIX Threads Library). Please try to rerun DRD
-after having upgraded to a newer version of your Linux distribution.
-Giving up.
-
-ERROR SUMMARY: 0 errors from 0 contexts (suppressed: 0 from 0)

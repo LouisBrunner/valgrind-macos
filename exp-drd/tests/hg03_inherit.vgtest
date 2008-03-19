@@ -1,2 +1,3 @@
+prereq: ./supported_libpthread
 prog: hg03_inherit
 vgopts: --show-confl-seg=no

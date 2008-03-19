@@ -12,43 +12,33 @@ noinst_SCRIPTS =		\
 	filter_linenos		\
 	filter_none_discards	\
 	filter_stderr           \
-	run_openmp_test
+	run_openmp_test         \
+	supported_libpthread
 
 EXTRA_DIST =                                        \
 	$(noinst_SCRIPTS)                           \
 	fp_race.stderr.exp                          \
-	fp_race.stderr.exp-linuxthreads             \
 	fp_race.vgtest                              \
 	fp_race2.stderr.exp                         \
-	fp_race2.stderr.exp-linuxthreads            \
 	fp_race2.vgtest                             \
 	hg01_all_ok.stderr.exp                      \
-	hg01_all_ok.stderr.exp-linuxthreads         \
 	hg01_all_ok.vgtest                          \
 	hg02_deadlock.stderr.exp                    \
-	hg02_deadlock.stderr.exp-linuxthreads       \
 	hg02_deadlock.vgtest                        \
 	hg03_inherit.stderr.exp                     \
-	hg03_inherit.stderr.exp-linuxthreads        \
 	hg03_inherit.vgtest                         \
 	hg04_race.stderr.exp                        \
-	hg04_race.stderr.exp-linuxthreads           \
 	hg04_race.vgtest                            \
 	hg05_race2.stderr.exp                       \
-	hg05_race2.stderr.exp-linuxthreads          \
 	hg05_race2.vgtest                           \
 	hg06_readshared.stderr.exp                  \
-	hg06_readshared.stderr.exp-linuxthreads     \
 	hg06_readshared.vgtest                      \
 	linuxthreads_det.stderr.exp                 \
 	linuxthreads_det.stderr.exp-linuxthreads    \
 	linuxthreads_det.stdout.exp                 \
 	linuxthreads_det.stdout.exp-linuxthreads    \
-	linuxthreads_det.stdout.exp-linuxthreads    \
 	matinv.stderr.exp                           \
-	matinv.stderr.exp-linuxthreads              \
 	matinv.stdout.exp                           \
-	matinv.stdout.exp-linuxthreads              \
 	matinv.vgtest                               \
 	omp_matinv.stderr.exp                       \
 	omp_matinv.stdout.exp                       \
@@ -59,136 +49,95 @@ EXTRA_DIST =                                        \
 	omp_prime_racy.stderr.exp                   \
 	omp_prime_racy.vgtest                       \
 	pth_barrier.stderr.exp                      \
-	pth_barrier.stderr.exp-linuxthreads         \
 	pth_barrier.vgtest                          \
 	pth_barrier2.stderr.exp                     \
-	pth_barrier2.stderr.exp-linuxthreads        \
 	pth_barrier2.vgtest                         \
 	pth_barrier3.stderr.exp                     \
-	pth_barrier3.stderr.exp-linuxthreads        \
 	pth_barrier3.vgtest                         \
 	pth_broadcast.stderr.exp                    \
-	pth_broadcast.stderr.exp-linuxthreads       \
 	pth_broadcast.vgtest                        \
 	pth_cond_race.stderr.exp                    \
-	pth_cond_race.stderr.exp-linuxthreads       \
 	pth_cond_race.vgtest                        \
 	pth_cond_race2.stderr.exp                   \
-	pth_cond_race2.stderr.exp-linuxthreads      \
 	pth_cond_race2.vgtest                       \
 	pth_create_chain.stderr.exp                 \
-	pth_create_chain.stderr.exp-linuxthreads    \
 	pth_create_chain.vgtest                     \
 	pth_detached.stderr.exp                     \
-	pth_detached.stderr.exp-linuxthreads        \
 	pth_detached.stdout.exp                     \
-	pth_detached.stdout.exp-linuxthreads        \
 	pth_detached.vgtest                         \
 	pth_detached2.stderr.exp                    \
-	pth_detached2.stderr.exp-linuxthreads       \
 	pth_detached2.stdout.exp                    \
-	pth_detached2.stdout.exp-linuxthreads       \
 	pth_detached2.vgtest                        \
 	pth_detached_sem.stdout.exp                 \
-	pth_detached_sem.stdout.exp-linuxthreads    \
 	pth_detached_sem.stderr.exp                 \
-	pth_detached_sem.stderr.exp-linuxthreads    \
 	pth_detached_sem.vgtest                     \
 	recursive_mutex.stderr.exp	            \
 	recursive_mutex.stdout.exp	            \
 	recursive_mutex.vgtest                      \
 	rwlock_race.stderr.exp	                    \
-	rwlock_race.stderr.exp-linuxthreads         \
 	rwlock_race.vgtest                          \
 	sem_as_mutex.stderr.exp                     \
-	sem_as_mutex.stderr.exp-linuxthreads        \
 	sem_as_mutex.vgtest                         \
 	sem_as_mutex2.stderr.exp                    \
-	sem_as_mutex2.stderr.exp-linuxthreads       \
 	sem_as_mutex2.vgtest                        \
 	sigalrm.stderr.exp                          \
-	sigalrm.stderr.exp-linuxthreads             \
 	sigalrm.vgtest                              \
 	tc01_simple_race.stderr.exp                 \
-	tc01_simple_race.stderr.exp-linuxthreads    \
 	tc01_simple_race.vgtest                     \
 	tc02_simple_tls.stderr.exp                  \
-	tc02_simple_tls.stderr.exp-linuxthreads     \
 	tc02_simple_tls.vgtest                      \
 	tc03_re_excl.stderr.exp                     \
-	tc03_re_excl.stderr.exp-linuxthreads        \
 	tc03_re_excl.vgtest                         \
 	tc04_free_lock.stderr.exp                   \
-	tc04_free_lock.stderr.exp-linuxthreads      \
 	tc04_free_lock.vgtest                       \
 	tc05_simple_race.stderr.exp                 \
-	tc05_simple_race.stderr.exp-linuxthreads    \
 	tc05_simple_race.vgtest                     \
 	tc06_two_races.stderr.exp                   \
-	tc06_two_races.stderr.exp-linuxthreads      \
 	tc06_two_races.vgtest                       \
 	tc07_hbl1.stderr.exp                        \
-	tc07_hbl1.stderr.exp-linuxthreads           \
 	tc07_hbl1.stdout.exp                        \
-	tc07_hbl1.stdout.exp-linuxthreads           \
 	tc07_hbl1.vgtest                            \
 	tc08_hbl2.stderr.exp                        \
-	tc08_hbl2.stderr.exp-linuxthreads           \
 	tc08_hbl2.stdout.exp                        \
-	tc08_hbl2.stdout.exp-linuxthreads           \
 	tc08_hbl2.vgtest                            \
 	tc09_bad_unlock.stderr.exp                  \
-	tc09_bad_unlock.stderr.exp-linuxthreads     \
 	tc09_bad_unlock.vgtest                      \
 	tc10_rec_lock.stderr.exp                    \
-	tc10_rec_lock.stderr.exp-linuxthreads       \
 	tc10_rec_lock.vgtest                        \
 	tc11_XCHG.stderr.exp tc11_XCHG.stdout.exp   \
-	tc11_XCHG.stderr.exp-linuxthreads           \
 	tc11_XCHG.vgtest                            \
 	tc12_rwl_trivial.stderr.exp                 \
-	tc12_rwl_trivial.stderr.exp-linuxthreads    \
 	tc12_rwl_trivial.vgtest                     \
 	tc13_laog1.stderr.exp                       \
 	tc13_laog1.vgtest                           \
 	tc15_laog_lockdel.stderr.exp                \
 	tc15_laog_lockdel.vgtest                    \
 	tc16_byterace.stderr.exp                    \
-	tc16_byterace.stderr.exp-linuxthreads       \
 	tc16_byterace.vgtest                        \
 	tc17_sembar.stderr.exp                      \
-	tc17_sembar.stderr.exp-linuxthreads         \
 	tc17_sembar.vgtest                          \
 	tc18_semabuse.stderr.exp                    \
-	tc18_semabuse.stderr.exp-linuxthreads       \
 	tc18_semabuse.vgtest                        \
 	tc19_shadowmem.stderr.exp                   \
 	tc19_shadowmem.vgtest                       \
 	tc20_verifywrap.stderr.exp	            \
 	tc20_verifywrap.stderr.exp-glibc2.3         \
-	tc20_verifywrap.stderr.exp-linuxthreads     \
 	tc20_verifywrap.vgtest                      \
 	tc20_verifywrap2.stderr.exp                 \
 	tc20_verifywrap2.stderr.exp-glibc2.3        \
 	tc20_verifywrap2.stderr.exp-glibc2.3-b      \
-	tc20_verifywrap2.stderr.exp-linuxthreads    \
 	tc20_verifywrap2.vgtest                     \
 	tc21_pthonce.stderr.exp                     \
-	tc21_pthonce.stderr.exp-linuxthreads        \
 	tc21_pthonce.stdout.exp                     \
-	tc21_pthonce.stdout.exp-linuxthreads        \
 	tc21_pthonce.vgtest                         \
 	tc22_exit_w_lock.stderr.exp-32bit	    \
 	tc22_exit_w_lock.stderr.exp-64bit           \
-	tc22_exit_w_lock.stderr.exp-linuxthreads    \
 	tc22_exit_w_lock.vgtest                     \
 	tc23_bogus_condwait.stderr.exp              \
-	tc23_bogus_condwait.stderr.exp-linuxthreads \
 	tc23_bogus_condwait.vgtest                  \
 	tc24_nonzero_sem.stderr.exp                 \
 	tc24_nonzero_sem.vgtest                     \
 	trylock.c trylock.stderr.exp                \
-	trylock.stderr.exp-linuxthreads
 
 AM_CFLAGS   = $(WERROR) -Winline -Wall -Wshadow -g $(AM_FLAG_M3264_PRI)
 AM_CPPFLAGS = -I$(top_srcdir) -I$(top_srcdir)/include -I$(top_builddir)/include

@@ -1,2 +1,3 @@
+prereq: ./supported_libpthread
 prog: sem_as_mutex
 args: -m

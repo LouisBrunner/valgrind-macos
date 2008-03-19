@@ -1,2 +1,3 @@
+prereq: ./supported_libpthread
 prog: pth_detached
 args: 1 1

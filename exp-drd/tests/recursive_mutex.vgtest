@@ -1,2 +1,3 @@
+prereq: ./supported_libpthread
 prog: recursive_mutex
 stderr_filter: filter_error_summary

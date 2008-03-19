@@ -1,2 +1,3 @@
+prereq: ./supported_libpthread
 prog: matinv
 args: 30 -t 15 -q

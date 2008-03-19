@@ -138,6 +138,10 @@ static __inline__ UWord bm0_is_any_set(const UWord* bm0,
           & ((((UWord)1 << size) - 1) << UWORD_LSB(a1)));
 }
 
+
+/*********************************************************************/
+
+
 struct bitmap2
 {
   Addr           addr; ///< address >> ADDR0_BITS

@@ -256,27 +256,31 @@ Recompiling gcc is possible with e.g. the following shell script:
 ---------------------------------------------------------------------------
 #!/bin/sh
 
+# Make sure that libgmp and libmpfr are installed before you run this script.
+# On Debian systems, e.g. Ubuntu, you can install these libraries as follows:
+# sudo apt-get install libgmp3-dev libmpfr-dev
+
 GCC_VERSION=4.3.0
 FSF_MIRROR=ftp://ftp.easynet.be/gnu
 SRCDIR=$HOME/software
-INBOUND=$SRCDIR/inbound
+DOWNLOADS=$SRCDIR/downloads
 SRC=$HOME/software/gcc-${GCC_VERSION}
 BUILD=${SRC}-build
 TAR=gcc-${GCC_VERSION}.tar.bz2
 PREFIX=$HOME/gcc-${GCC_VERSION}
 
-rm -rf   ${BUILD}   || exit $?
-rm -rf   ${PREFIX}  || exit $?
-mkdir -p ${BUILD}   || exit $?
-mkdir -p ${INBOUND} || exit $?
-cd       ${BUILD}   || exit $?
+rm -rf   ${BUILD}     || exit $?
+rm -rf   ${PREFIX}    || exit $?
+mkdir -p ${BUILD}     || exit $?
+mkdir -p ${DOWNLOADS} || exit $?
+cd       ${BUILD}     || exit $?
 
-if [ ! -e $INBOUND/$TAR ]; then
-  ( cd $INBOUND && wget -q $FSF_MIRROR/gcc/gcc-${GCC_VERSION}/$TAR )
+if [ ! -e $DOWNLOADS/$TAR ]; then
+  ( cd $DOWNLOADS && wget -q $FSF_MIRROR/gcc/gcc-${GCC_VERSION}/$TAR )
 fi
 
 if [ ! -e $SRC ]; then
-  ( cd $SRCDIR && tar -xjf $INBOUND/$TAR )
+  ( cd $SRCDIR && tar -xjf $DOWNLOADS/$TAR )
 fi
 
 ${SRC}/configure            \

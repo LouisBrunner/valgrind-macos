@@ -59,6 +59,7 @@ ThreadInfo s_threadinfo[DRD_N_THREADS];
 struct bitmap* s_danger_set;
 static Bool s_trace_context_switches = False;
 static Bool s_trace_danger_set = False;
+static Bool s_segment_merging = True;
 
 
 // Function definitions.
@@ -71,6 +72,11 @@ void thread_trace_context_switches(const Bool t)
 void thread_trace_danger_set(const Bool t)
 {
   s_trace_danger_set = t;
+}
+
+void thread_set_segment_merging(const Bool m)
+{
+  s_segment_merging = m;
 }
 
 __inline__ Bool IsValidDrdThreadId(const DrdThreadId tid)
@@ -538,6 +544,41 @@ static void thread_discard_ordered_segments(void)
   vc_cleanup(&thread_vc_min);
 }
 
+/** Merge all segments that may be merged without triggering false positives
+ *  or discarding real data races. For the theoretical background of segment
+ *  merging, see also the following paper:
+ *  Mark Christiaens, Michiel Ronsse and Koen De Bosschere.
+ *  Bounding the number of segment histories during data race detection.
+ *  Parallel Computing archive, Volume 28, Issue 9, pp 1221-1238,
+ *  September 2002.
+ */
+static void thread_merge_segments(void)
+{
+  unsigned i;
+
+  for (i = 0; i < sizeof(s_threadinfo) / sizeof(s_threadinfo[0]); i++)
+  {
+    Segment* sg;
+
+    tl_assert(sane_ThreadInfo(&s_threadinfo[i]));
+
+    for (sg = s_threadinfo[i].first; sg; sg = sg->next)
+    {
+      if (sg_get_refcnt(sg) == 1
+          && sg->next
+          && sg_get_refcnt(sg->next) == 1
+          && sg->next->next)
+      {
+        /* Merge sg and sg->next into sg. */
+        sg_merge(sg, sg->next);
+        thread_discard_segment(i, sg->next);
+      }
+    }
+
+    tl_assert(sane_ThreadInfo(&s_threadinfo[i]));
+  }
+}
+
 /** Create a new segment for the specified thread, and discard any segments
  *  that cannot cause races anymore.
  */
@@ -548,6 +589,9 @@ void thread_new_segment(const DrdThreadId tid)
   thread_append_segment(tid, sg_new(tid, tid));
 
   thread_discard_ordered_segments();
+
+  if (s_segment_merging)
+    thread_merge_segments();
 
   if (tid == s_drd_running_tid)
   {

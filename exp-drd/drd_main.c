@@ -71,20 +71,22 @@ static Addr drd_trace_address = 0;
 
 static Bool drd_process_cmd_line_option(Char* arg)
 {
-  Bool show_confl_seg    = True;
-  Bool trace_barrier     = False;
-  Bool trace_clientobj   = False;
-  Bool trace_cond        = False;
-  Bool trace_csw         = False;
-  Bool trace_danger_set  = False;
-  Bool trace_mutex       = False;
-  Bool trace_rwlock      = False;
-  Bool trace_segment     = False;
-  Bool trace_semaphore   = False;
-  Bool trace_suppression = False;
-  Char* trace_address    = 0;
+  int segment_merging   = -1;
+  int show_confl_seg    = -1;
+  int trace_barrier     = -1;
+  int trace_clientobj   = -1;
+  int trace_cond        = -1;
+  int trace_csw         = -1;
+  int trace_danger_set  = -1;
+  int trace_mutex       = -1;
+  int trace_rwlock      = -1;
+  int trace_segment     = -1;
+  int trace_semaphore   = -1;
+  int trace_suppression = -1;
+  Char* trace_address   = 0;
 
   VG_BOOL_CLO     (arg, "--drd-stats",         drd_print_stats)
+  else VG_BOOL_CLO(arg, "--segment-merging",   segment_merging)
   else VG_BOOL_CLO(arg, "--show-confl-seg",    show_confl_seg)
   else VG_BOOL_CLO(arg, "--trace-barrier",     trace_barrier)
   else VG_BOOL_CLO(arg, "--trace-clientobj",   trace_clientobj)
@@ -102,31 +104,33 @@ static Bool drd_process_cmd_line_option(Char* arg)
   else
     return False;
 
-  if (! show_confl_seg)
+  if (segment_merging != -1)
+    thread_set_segment_merging(segment_merging);
+  if (show_confl_seg != -1)
     set_show_conflicting_segments(show_confl_seg);
   if (trace_address)
   {
     drd_trace_address = VG_(strtoll16)(trace_address, 0);
   }
-  if (trace_barrier)
+  if (trace_barrier != -1)
     barrier_set_trace(trace_barrier);
-  if (trace_clientobj)
+  if (trace_clientobj != -1)
     clientobj_set_trace(trace_clientobj);
-  if (trace_cond)
+  if (trace_cond != -1)
     cond_set_trace(trace_cond);
-  if (trace_csw)
+  if (trace_csw != -1)
     thread_trace_context_switches(trace_csw);
-  if (trace_danger_set)
+  if (trace_danger_set != -1)
     thread_trace_danger_set(trace_danger_set);
-  if (trace_mutex)
+  if (trace_mutex != -1)
     mutex_set_trace(trace_mutex);
-  if (trace_rwlock)
+  if (trace_rwlock != -1)
     rwlock_set_trace(trace_rwlock);
-  if (trace_segment)
+  if (trace_segment != -1)
     sg_set_trace(trace_segment);
-  if (trace_semaphore)
+  if (trace_semaphore != -1)
     semaphore_set_trace(trace_semaphore);
-  if (trace_suppression)
+  if (trace_suppression != -1)
     suppression_set_trace(trace_suppression);
 
   return True;

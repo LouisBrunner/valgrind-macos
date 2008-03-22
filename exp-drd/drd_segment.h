@@ -53,6 +53,7 @@ Segment* sg_new(const ThreadId creator, const ThreadId created);
 int sg_get_refcnt(const Segment* const sg);
 Segment* sg_get(Segment* const sg);
 void sg_put(Segment* const sg);
+void sg_merge(const Segment* const sg1, Segment* const sg2);
 void sg_print(const Segment* const sg);
 Bool sg_get_trace(void);
 void sg_set_trace(const Bool trace_segment);

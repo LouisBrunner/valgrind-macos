@@ -89,6 +89,7 @@ extern struct bitmap* s_danger_set;
 
 void thread_trace_context_switches(const Bool t);
 void thread_trace_danger_set(const Bool t);
+void thread_set_segment_merging(const Bool m);
 Bool IsValidDrdThreadId(const DrdThreadId tid);
 
 DrdThreadId VgThreadIdToDrdThreadId(const ThreadId tid);

@@ -188,6 +188,32 @@ void sg_put(Segment* const sg)
   }
 }
 
+/** Merge sg1 and sg2 into sg1. */
+void sg_merge(const Segment* const sg1, Segment* const sg2)
+{
+  tl_assert(sg1);
+  tl_assert(sg2);
+
+  if (drd_trace_segment)
+  {
+      char msg[256];
+
+      VG_(snprintf)(msg, sizeof(msg), "Merging segments with vector clocks ");
+      vc_snprint(msg + VG_(strlen)(msg), sizeof(msg) - VG_(strlen)(msg),
+                 &sg1->vc);
+      VG_(snprintf)(msg + VG_(strlen)(msg), sizeof(msg) - VG_(strlen)(msg),
+                    " and ");
+      vc_snprint(msg + VG_(strlen)(msg), sizeof(msg) - VG_(strlen)(msg),
+                 &sg2->vc);
+      VG_(message)(Vg_UserMsg, "%s", msg);
+  }
+
+  // Keep sg1->stacktrace.
+  // Keep sg1->vc.
+  // Merge sg2->bm into sg1->bm.
+  bm_merge2(sg1->bm, sg2->bm);
+}
+
 void sg_print(const Segment* const sg)
 {
   tl_assert(sg);

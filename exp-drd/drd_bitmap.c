@@ -122,13 +122,16 @@ void bm_access_range(struct bitmap* const bm,
     tl_assert(b_start < b_end);
     tl_assert((b_start & ADDR0_MASK) <= ((b_end - 1) & ADDR0_MASK));
       
-    for (b0 = b_start & ADDR0_MASK; b0 <= ((b_end - 1) & ADDR0_MASK); b0++)
+    if (access_type == eLoad)
     {
-      if (access_type == eLoad)
+      for (b0 = b_start & ADDR0_MASK; b0 <= ((b_end - 1) & ADDR0_MASK); b0++)
       {
         bm0_set(bm2->bm1.bm0_r, b0);
       }
-      else
+    }
+    else
+    {
+      for (b0 = b_start & ADDR0_MASK; b0 <= ((b_end - 1) & ADDR0_MASK); b0++)
       {
         bm0_set(bm2->bm1.bm0_w, b0);
       }
@@ -708,21 +711,18 @@ void bm_print(const struct bitmap* const bm)
   for ( ; (bm2 = VG_(OSetGen_Next)(bm->oset)) != 0; )
   {
     const struct bitmap1* const bm1 = &bm2->bm1;
-    unsigned k;
-    for (k = 0; k < BITMAP1_UWORD_COUNT; k++)
+    unsigned b;
+    for (b = 0; b < ADDR0_COUNT; b++)
     {
-      unsigned b;
-      for (b = 0; b < BITS_PER_UWORD; b++)
+      const Addr a = (bm2->addr << ADDR0_BITS) | b;
+      const Bool r = bm0_is_set(bm1->bm0_r, b) != 0;
+      const Bool w = bm0_is_set(bm1->bm0_w, b) != 0;
+      if (r || w)
       {
-        int const r = bm1->bm0_r[k] & bm0_mask(b);
-        int const w = bm1->bm0_w[k] & bm0_mask(b);
-        Addr const a = MAKE_ADDRESS(bm2->addr, k * BITS_PER_UWORD | b);
-        if (r || w)
-        {
-          VG_(printf)("0x%08lx %c %c\n",
-                      (Addr)(a), 
-                      w ? 'W' : ' ', r ? 'R' : ' ');
-        }
+        VG_(printf)("0x%08lx %c %c\n",
+                    a,
+                    w ? 'W' : ' ',
+                    r ? 'R' : ' ');
       }
     }
   }
@@ -761,21 +761,21 @@ static void bm2_merge(struct bitmap2* const bm2l,
 static
 struct { Addr address; SizeT size; BmAccessTypeT access_type; }
   s_args[] = {
-    {          0, 1, eLoad  },
-    {        666, 4, eLoad  },
-    {        667, 2, eStore },
-    {       1024, 1, eStore },
-    { 0x0000ffff, 1, eLoad  },
-    { 0x0001ffff, 1, eLoad  },
-    { 0x00ffffff, 1, eLoad  },
-    { 0xffffffff, 1, eStore },
+    {    0 + ADDR0_COUNT, 1, eLoad  },
+    {  666 + ADDR0_COUNT, 4, eLoad  },
+    {  667 + ADDR0_COUNT, 2, eStore },
+    { -1 + 2*ADDR0_COUNT, 1, eStore },
+    {       0x0001ffffUL, 1, eLoad  },
+    {       0x0002ffffUL, 1, eLoad  },
+    {       0x00ffffffUL, 1, eLoad  },
+    {       0xffffffffUL, 1, eStore },
   };
 
 void bm_test(void)
 {
   struct bitmap* bm;
   struct bitmap* bm2;
-  int i, j;
+  unsigned i, j;
 
   VG_(printf)("Start of DRD BM unit test.\n");
 
@@ -801,10 +801,14 @@ void bm_test(void)
   }
 
   VG_(printf)("Merge result:\n");
-  bm2 = bm_merge(bm, bm);
+  bm2 = bm_new();
+  bm_merge2(bm2, bm);
+  bm_merge2(bm2, bm);
   bm_print(bm);
 
+  VG_(printf)("Deleting bitmap bm\n");
   bm_delete(bm);
+  VG_(printf)("Deleting bitmap bm2\n");
   bm_delete(bm2);
 
   VG_(printf)("End of DRD BM unit test.\n");

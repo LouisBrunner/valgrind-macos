@@ -75,9 +75,15 @@
 #define UWORD_HIGHEST_ADDRESS(a) ((a) | (BITS_PER_UWORD - 1))
 
 
-// Local constants.
+/* Local constants. */
 
 static ULong s_bitmap2_creation_count;
+
+
+
+/*********************************************************************/
+/*           Functions for manipulating a struct bitmap1.            */
+/*********************************************************************/
 
 
 /* Lowest level, corresponding to the lowest ADDR0_BITS of an address. */
@@ -139,6 +145,9 @@ static __inline__ UWord bm0_is_any_set(const UWord* bm0,
 }
 
 
+
+/*********************************************************************/
+/*           Functions for manipulating a struct bitmap.             */
 /*********************************************************************/
 
 
@@ -156,6 +165,10 @@ struct bitmap
   OSet*           oset;
 };
 
+/** Look up the address a1 in bitmap bm.
+ *  @param a1 client address shifted right by ADDR0_BITS.
+ *  @param bm bitmap pointer.
+ */
 static __inline__
 struct bitmap2* bm2_lookup(const struct bitmap* const bm, const UWord a1)
 {
@@ -164,7 +177,7 @@ struct bitmap2* bm2_lookup(const struct bitmap* const bm, const UWord a1)
   {
     return bm->last_lookup_result;
   }
-  result = VG_(OSetGen_Lookup)(bm->oset,&a1);
+  result = VG_(OSetGen_Lookup)(bm->oset, &a1);
   if (result)
   {
     ((struct bitmap*)bm)->last_lookup_a1     = a1;
@@ -174,41 +187,45 @@ struct bitmap2* bm2_lookup(const struct bitmap* const bm, const UWord a1)
 }
 
 static __inline__
-struct bitmap2* bm2_insert(const struct bitmap* const bm,
-                           const UWord a1)
+struct bitmap2* bm2_insert(const struct bitmap* const bm, const UWord a1)
 {
-  struct bitmap2* const node = VG_(OSetGen_AllocNode)(bm->oset, sizeof(*node));
-  node->addr = a1;
-  VG_(memset)(&node->bm1, 0, sizeof(node->bm1));
-  VG_(OSetGen_Insert)(bm->oset, node);
+  struct bitmap2* const bm2 = VG_(OSetGen_AllocNode)(bm->oset, sizeof(*bm2));
+  bm2->addr = a1;
+  VG_(memset)(&bm2->bm1, 0, sizeof(bm2->bm1));
+  VG_(OSetGen_Insert)(bm->oset, bm2);
   
   ((struct bitmap*)bm)->last_lookup_a1     = a1;
-  ((struct bitmap*)bm)->last_lookup_result = node;
+  ((struct bitmap*)bm)->last_lookup_result = bm2;
   
   s_bitmap2_creation_count++;
   
-  return node;
+  return bm2;
 }
 
+/** Look up the address a1 in bitmap bm, and insert it if not found.
+ *
+ *  @param a1 client address shifted right by ADDR0_BITS.
+ *  @param bm bitmap pointer.
+ */
 static __inline__
 struct bitmap2* bm2_lookup_or_insert(const struct bitmap* const bm,
                                      const UWord a1)
 {
-  struct bitmap2* p2;
+  struct bitmap2* bm2;
 
   if (a1 == bm->last_lookup_a1)
   {
     return bm->last_lookup_result;
   }
 
-  p2 = VG_(OSetGen_Lookup)(bm->oset, &a1);
-  if (p2 == 0)
+  bm2 = VG_(OSetGen_Lookup)(bm->oset, &a1);
+  if (bm2 == 0)
   {
-    p2 = bm2_insert(bm, a1);
+    bm2 = bm2_insert(bm, a1);
   }
   ((struct bitmap*)bm)->last_lookup_a1     = a1;
-  ((struct bitmap*)bm)->last_lookup_result = p2;
-  return p2;
+  ((struct bitmap*)bm)->last_lookup_result = bm2;
+  return bm2;
 }
 
 

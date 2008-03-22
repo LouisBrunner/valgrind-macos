@@ -340,3 +340,15 @@
    obj:/usr/lib*/libgomp.so*
    obj:/usr/lib*/libgomp.so*
 }
+{
+   libxcb-xcb_wait_for_reply
+   exp-drd:CondErr
+   fun:pthread_cond_destroy*
+   fun:xcb_wait_for_reply
+}
+{
+   libX11-XReply
+   exp-drd:CondErr
+   fun:pthread_cond_init*
+   fun:_XReply
+}

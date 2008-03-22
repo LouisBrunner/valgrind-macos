@@ -52,6 +52,9 @@
 // For varargs types
 #include <stdarg.h>
 
+/* For HAVE_BUILTIN_EXPECT */
+#include "config.h"
+
 
 /* ---------------------------------------------------------------------
    builtin types
@@ -154,6 +157,16 @@ typedef
 
 // Where to send bug reports to.
 #define VG_BUGS_TO "www.valgrind.org"
+
+/* Branch prediction hints. */
+#if HAVE_BUILTIN_EXPECT
+#  define LIKELY(x)   __builtin_expect(!!(x), 1)
+#  define UNLIKELY(x) __builtin_expect((x), 0)
+#else
+#  define LIKELY(x)   (x)
+#  define UNLIKELY(x) (x)
+#endif
+
 
 #endif /* __PUB_TOOL_BASICS_H */
 

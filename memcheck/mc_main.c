@@ -49,13 +49,6 @@
 #include "mc_include.h"
 #include "memcheck.h"   /* for client requests */
 
-#ifdef HAVE_BUILTIN_EXPECT
-#define EXPECTED_TAKEN(cond)     __builtin_expect((cond),1)
-#define EXPECTED_NOT_TAKEN(cond) __builtin_expect((cond),0)
-#else
-#define EXPECTED_TAKEN(cond)     (cond)
-#define EXPECTED_NOT_TAKEN(cond) (cond)
-#endif
 
 /* Set to 1 to do a little more sanity checking */
 #define VG_DEBUG_MEMORY 0
@@ -503,9 +496,9 @@ static INLINE AuxMapEnt* maybe_find_in_auxmap ( Addr a )
    /* First search the front-cache, which is a self-organising
       list containing the most popular entries. */
 
-   if (EXPECTED_TAKEN(auxmap_L1[0].base == a))
+   if (LIKELY(auxmap_L1[0].base == a))
       return auxmap_L1[0].ent;
-   if (EXPECTED_TAKEN(auxmap_L1[1].base == a)) {
+   if (LIKELY(auxmap_L1[1].base == a)) {
       Addr       t_base = auxmap_L1[0].base;
       AuxMapEnt* t_ent  = auxmap_L1[0].ent;
       auxmap_L1[0].base = auxmap_L1[1].base;
@@ -557,7 +550,7 @@ static AuxMapEnt* find_or_alloc_in_auxmap ( Addr a )
 
    /* First see if we already have it. */
    res = maybe_find_in_auxmap( a );
-   if (EXPECTED_TAKEN(res))
+   if (LIKELY(res))
       return res;
 
    /* Ok, there's no entry in the secondary map, so we'll have
@@ -614,7 +607,7 @@ static INLINE SecMap* get_secmap_for_reading_high ( Addr a )
 static INLINE SecMap* get_secmap_for_writing_low(Addr a)
 {
    SecMap** p = get_secmap_low_ptr(a);
-   if (EXPECTED_NOT_TAKEN(is_distinguished_sm(*p)))
+   if (UNLIKELY(is_distinguished_sm(*p)))
       *p = copy_for_writing(*p);
    return *p;
 }
@@ -622,7 +615,7 @@ static INLINE SecMap* get_secmap_for_writing_low(Addr a)
 static INLINE SecMap* get_secmap_for_writing_high ( Addr a )
 {
    SecMap** p = get_secmap_high_ptr(a);
-   if (EXPECTED_NOT_TAKEN(is_distinguished_sm(*p)))
+   if (UNLIKELY(is_distinguished_sm(*p)))
       *p = copy_for_writing(*p);
    return *p;
 }
@@ -1029,7 +1022,7 @@ static IgnoreRanges ignoreRanges;
 static INLINE Bool in_ignored_range ( Addr a )
 {
    Int i;
-   if (EXPECTED_TAKEN(ignoreRanges.used == 0))
+   if (LIKELY(ignoreRanges.used == 0))
       return False;
    for (i = 0; i < ignoreRanges.used; i++) {
       if (a >= ignoreRanges.start[i] && a < ignoreRanges.end[i])
@@ -1174,25 +1167,25 @@ ULong mc_LOADVn_slow ( Addr a, SizeT nBits, Bool bigendian )
       folded out by compilers on 32-bit platforms.  These are derived
       from LOADV64 and LOADV32.
    */
-   if (EXPECTED_TAKEN(sizeof(void*) == 8 
+   if (LIKELY(sizeof(void*) == 8 
                       && nBits == 64 && VG_IS_8_ALIGNED(a))) {
       SecMap* sm       = get_secmap_for_reading(a);
       UWord   sm_off16 = SM_OFF_16(a);
       UWord   vabits16 = ((UShort*)(sm->vabits8))[sm_off16];
-      if (EXPECTED_TAKEN(vabits16 == VA_BITS16_DEFINED))
+      if (LIKELY(vabits16 == VA_BITS16_DEFINED))
          return V_BITS64_DEFINED;
-      if (EXPECTED_TAKEN(vabits16 == VA_BITS16_UNDEFINED))
+      if (LIKELY(vabits16 == VA_BITS16_UNDEFINED))
          return V_BITS64_UNDEFINED;
       /* else fall into the slow case */
    }
-   if (EXPECTED_TAKEN(sizeof(void*) == 8 
+   if (LIKELY(sizeof(void*) == 8 
                       && nBits == 32 && VG_IS_4_ALIGNED(a))) {
       SecMap* sm = get_secmap_for_reading(a);
       UWord sm_off = SM_OFF(a);
       UWord vabits8 = sm->vabits8[sm_off];
-      if (EXPECTED_TAKEN(vabits8 == VA_BITS8_DEFINED))
+      if (LIKELY(vabits8 == VA_BITS8_DEFINED))
          return ((UWord)0xFFFFFFFF00000000ULL | (UWord)V_BITS32_DEFINED);
-      if (EXPECTED_TAKEN(vabits8 == VA_BITS8_UNDEFINED))
+      if (LIKELY(vabits8 == VA_BITS8_UNDEFINED))
          return ((UWord)0xFFFFFFFF00000000ULL | (UWord)V_BITS32_UNDEFINED);
       /* else fall into slow case */
    }
@@ -1256,18 +1249,18 @@ void mc_STOREVn_slow ( Addr a, SizeT nBits, ULong vbytes, Bool bigendian )
       folded out by compilers on 32-bit platforms.  These are derived
       from STOREV64 and STOREV32.
    */
-   if (EXPECTED_TAKEN(sizeof(void*) == 8 
+   if (LIKELY(sizeof(void*) == 8 
                       && nBits == 64 && VG_IS_8_ALIGNED(a))) {
       SecMap* sm       = get_secmap_for_reading(a);
       UWord   sm_off16 = SM_OFF_16(a);
       UWord   vabits16 = ((UShort*)(sm->vabits8))[sm_off16];
-      if (EXPECTED_TAKEN( !is_distinguished_sm(sm) && 
+      if (LIKELY( !is_distinguished_sm(sm) && 
                           (VA_BITS16_DEFINED   == vabits16 ||
                            VA_BITS16_UNDEFINED == vabits16) )) {
          /* Handle common case quickly: a is suitably aligned, */
          /* is mapped, and is addressible. */
          // Convert full V-bits in register to compact 2-bit form.
-         if (EXPECTED_TAKEN(V_BITS64_DEFINED == vbytes)) {
+         if (LIKELY(V_BITS64_DEFINED == vbytes)) {
             ((UShort*)(sm->vabits8))[sm_off16] = (UShort)VA_BITS16_DEFINED;
             return;
          } else if (V_BITS64_UNDEFINED == vbytes) {
@@ -1278,18 +1271,18 @@ void mc_STOREVn_slow ( Addr a, SizeT nBits, ULong vbytes, Bool bigendian )
       }
       /* else fall into the slow case */
    }
-   if (EXPECTED_TAKEN(sizeof(void*) == 8
+   if (LIKELY(sizeof(void*) == 8
                       && nBits == 32 && VG_IS_4_ALIGNED(a))) {
       SecMap* sm      = get_secmap_for_reading(a);
       UWord   sm_off  = SM_OFF(a);
       UWord   vabits8 = sm->vabits8[sm_off];
-      if (EXPECTED_TAKEN( !is_distinguished_sm(sm) && 
+      if (LIKELY( !is_distinguished_sm(sm) && 
                           (VA_BITS8_DEFINED   == vabits8 ||
                            VA_BITS8_UNDEFINED == vabits8) )) {
          /* Handle common case quickly: a is suitably aligned, */
          /* is mapped, and is addressible. */
          // Convert full V-bits in register to compact 2-bit form.
-         if (EXPECTED_TAKEN(V_BITS32_DEFINED == (vbytes & 0xFFFFFFFF))) {
+         if (LIKELY(V_BITS32_DEFINED == (vbytes & 0xFFFFFFFF))) {
             sm->vabits8[sm_off] = VA_BITS8_DEFINED;
             return;
          } else if (V_BITS32_UNDEFINED == (vbytes & 0xFFFFFFFF)) {
@@ -1588,7 +1581,7 @@ static void make_mem_defined_if_addressable ( Addr a, SizeT len )
    DEBUG("make_mem_defined_if_addressable(%p, %llu)\n", a, (ULong)len);
    for (i = 0; i < len; i++) {
       vabits2 = get_vabits2( a+i );
-      if (EXPECTED_TAKEN(VA_BITS2_NOACCESS != vabits2)) {
+      if (LIKELY(VA_BITS2_NOACCESS != vabits2)) {
          set_vabits2(a+i, VA_BITS2_DEFINED);
       }
    }
@@ -1621,7 +1614,7 @@ void MC_(copy_address_range_state) ( Addr src, Addr dst, SizeT len )
       while (len >= 4) {
          vabits8 = get_vabits8_for_aligned_word32( src+i );
          set_vabits8_for_aligned_word32( dst+i, vabits8 );
-         if (EXPECTED_TAKEN(VA_BITS8_DEFINED == vabits8 
+         if (LIKELY(VA_BITS8_DEFINED == vabits8 
                             || VA_BITS8_UNDEFINED == vabits8 
                             || VA_BITS8_NOACCESS == vabits8)) {
             /* do nothing */
@@ -1692,7 +1685,7 @@ void make_aligned_word32_undefined ( Addr a )
 #ifndef PERF_FAST_STACK2
    MC_(make_mem_undefined)(a, 4);
 #else
-   if (EXPECTED_NOT_TAKEN(a > MAX_PRIMARY_ADDRESS)) {
+   if (UNLIKELY(a > MAX_PRIMARY_ADDRESS)) {
       PROF_EVENT(301, "make_aligned_word32_undefined-slow1");
       MC_(make_mem_undefined)(a, 4);
       return;
@@ -1716,7 +1709,7 @@ void make_aligned_word32_noaccess ( Addr a )
 #ifndef PERF_FAST_STACK2
    MC_(make_mem_noaccess)(a, 4);
 #else
-   if (EXPECTED_NOT_TAKEN(a > MAX_PRIMARY_ADDRESS)) {
+   if (UNLIKELY(a > MAX_PRIMARY_ADDRESS)) {
       PROF_EVENT(311, "make_aligned_word32_noaccess-slow1");
       MC_(make_mem_noaccess)(a, 4);
       return;
@@ -1741,7 +1734,7 @@ void make_aligned_word64_undefined ( Addr a )
 #ifndef PERF_FAST_STACK2
    MC_(make_mem_undefined)(a, 8);
 #else
-   if (EXPECTED_NOT_TAKEN(a > MAX_PRIMARY_ADDRESS)) {
+   if (UNLIKELY(a > MAX_PRIMARY_ADDRESS)) {
       PROF_EVENT(321, "make_aligned_word64_undefined-slow1");
       MC_(make_mem_undefined)(a, 8);
       return;
@@ -1765,7 +1758,7 @@ void make_aligned_word64_noaccess ( Addr a )
 #ifndef PERF_FAST_STACK2
    MC_(make_mem_noaccess)(a, 8);
 #else
-   if (EXPECTED_NOT_TAKEN(a > MAX_PRIMARY_ADDRESS)) {
+   if (UNLIKELY(a > MAX_PRIMARY_ADDRESS)) {
       PROF_EVENT(331, "make_aligned_word64_noaccess-slow1");
       MC_(make_mem_noaccess)(a, 8);
       return;
@@ -2207,7 +2200,7 @@ void MC_(helperc_MAKE_STACK_UNINIT) ( Addr base, UWord len )
 #  if 0
    /* Slow(ish) version, which is fairly easily seen to be correct.
    */
-   if (EXPECTED_TAKEN( VG_IS_8_ALIGNED(base) && len==128 )) {
+   if (LIKELY( VG_IS_8_ALIGNED(base) && len==128 )) {
       make_aligned_word64_undefined(base +   0);
       make_aligned_word64_undefined(base +   8);
       make_aligned_word64_undefined(base +  16);
@@ -2240,7 +2233,7 @@ void MC_(helperc_MAKE_STACK_UNINIT) ( Addr base, UWord len )
       directly into the vabits array.  (If the sm was distinguished, this
       will make a copy and then write to it.)
    */
-   if (EXPECTED_TAKEN( len == 128 && VG_IS_8_ALIGNED(base) )) {
+   if (LIKELY( len == 128 && VG_IS_8_ALIGNED(base) )) {
       /* Now we know the address range is suitably sized and aligned. */
       UWord a_lo = (UWord)(base);
       UWord a_hi = (UWord)(base + 128 - 1);
@@ -2252,7 +2245,7 @@ void MC_(helperc_MAKE_STACK_UNINIT) ( Addr base, UWord len )
          /* Now we know that the entire address range falls within a
             single secondary map, and that that secondary 'lives' in
             the main primary map. */
-         if (EXPECTED_TAKEN(sm == sm_hi)) {
+         if (LIKELY(sm == sm_hi)) {
             // Finally, we know that the range is entirely within one secmap.
             UWord   v_off = SM_OFF(a_lo);
             UShort* p     = (UShort*)(&sm->vabits8[v_off]);
@@ -2278,7 +2271,7 @@ void MC_(helperc_MAKE_STACK_UNINIT) ( Addr base, UWord len )
    }
 
    /* 288 bytes (36 ULongs) is the magic value for ELF ppc64. */
-   if (EXPECTED_TAKEN( len == 288 && VG_IS_8_ALIGNED(base) )) {
+   if (LIKELY( len == 288 && VG_IS_8_ALIGNED(base) )) {
       /* Now we know the address range is suitably sized and aligned. */
       UWord a_lo = (UWord)(base);
       UWord a_hi = (UWord)(base + 288 - 1);
@@ -2290,7 +2283,7 @@ void MC_(helperc_MAKE_STACK_UNINIT) ( Addr base, UWord len )
          /* Now we know that the entire address range falls within a
             single secondary map, and that that secondary 'lives' in
             the main primary map. */
-         if (EXPECTED_TAKEN(sm == sm_hi)) {
+         if (LIKELY(sm == sm_hi)) {
             // Finally, we know that the range is entirely within one secmap.
             UWord   v_off = SM_OFF(a_lo);
             UShort* p     = (UShort*)(&sm->vabits8[v_off]);
@@ -3755,7 +3748,7 @@ ULong mc_LOADV64 ( Addr a, Bool isBigEndian )
 #ifndef PERF_FAST_LOADV
    return mc_LOADVn_slow( a, 64, isBigEndian );
 #else
-   if (EXPECTED_NOT_TAKEN( UNALIGNED_OR_HIGH(a,64) )) {
+   if (UNLIKELY( UNALIGNED_OR_HIGH(a,64) )) {
       PROF_EVENT(201, "mc_LOADV64-slow1");
       return (ULong)mc_LOADVn_slow( a, 64, isBigEndian );
    }
@@ -3767,9 +3760,9 @@ ULong mc_LOADV64 ( Addr a, Bool isBigEndian )
    // Handle common case quickly: a is suitably aligned, is mapped, and
    // addressible.
    // Convert V bits from compact memory form to expanded register form.
-   if (EXPECTED_TAKEN(vabits16 == VA_BITS16_DEFINED)) {
+   if (LIKELY(vabits16 == VA_BITS16_DEFINED)) {
       return V_BITS64_DEFINED;
-   } else if (EXPECTED_TAKEN(vabits16 == VA_BITS16_UNDEFINED)) {
+   } else if (LIKELY(vabits16 == VA_BITS16_UNDEFINED)) {
       return V_BITS64_UNDEFINED;
    } else {
       /* Slow case: the 8 bytes are not all-defined or all-undefined. */
@@ -3802,7 +3795,7 @@ void mc_STOREV64 ( Addr a, ULong vbits64, Bool isBigEndian )
    // Investigate further.
    mc_STOREVn_slow( a, 64, vbits64, isBigEndian );
 #else
-   if (EXPECTED_NOT_TAKEN( UNALIGNED_OR_HIGH(a,64) )) {
+   if (UNLIKELY( UNALIGNED_OR_HIGH(a,64) )) {
       PROF_EVENT(211, "mc_STOREV64-slow1");
       mc_STOREVn_slow( a, 64, vbits64, isBigEndian );
       return;
@@ -3812,7 +3805,7 @@ void mc_STOREV64 ( Addr a, ULong vbits64, Bool isBigEndian )
    sm_off16 = SM_OFF_16(a);
    vabits16 = ((UShort*)(sm->vabits8))[sm_off16];
 
-   if (EXPECTED_TAKEN( !is_distinguished_sm(sm) && 
+   if (LIKELY( !is_distinguished_sm(sm) && 
                        (VA_BITS16_DEFINED   == vabits16 ||
                         VA_BITS16_UNDEFINED == vabits16) ))
    {
@@ -3859,7 +3852,7 @@ UWord mc_LOADV32 ( Addr a, Bool isBigEndian )
 #ifndef PERF_FAST_LOADV
    return (UWord)mc_LOADVn_slow( a, 32, isBigEndian );
 #else
-   if (EXPECTED_NOT_TAKEN( UNALIGNED_OR_HIGH(a,32) )) {
+   if (UNLIKELY( UNALIGNED_OR_HIGH(a,32) )) {
       PROF_EVENT(221, "mc_LOADV32-slow1");
       return (UWord)mc_LOADVn_slow( a, 32, isBigEndian );
    }
@@ -3873,9 +3866,9 @@ UWord mc_LOADV32 ( Addr a, Bool isBigEndian )
    // Convert V bits from compact memory form to expanded register form.
    // For 64-bit platforms, set the high 32 bits of retval to 1 (undefined).
    // Almost certainly not necessary, but be paranoid.
-   if (EXPECTED_TAKEN(vabits8 == VA_BITS8_DEFINED)) {
+   if (LIKELY(vabits8 == VA_BITS8_DEFINED)) {
       return ((UWord)0xFFFFFFFF00000000ULL | (UWord)V_BITS32_DEFINED);
-   } else if (EXPECTED_TAKEN(vabits8 == VA_BITS8_UNDEFINED)) {
+   } else if (LIKELY(vabits8 == VA_BITS8_UNDEFINED)) {
       return ((UWord)0xFFFFFFFF00000000ULL | (UWord)V_BITS32_UNDEFINED);
    } else {
       /* Slow case: the 4 bytes are not all-defined or all-undefined. */
@@ -3906,7 +3899,7 @@ void mc_STOREV32 ( Addr a, UWord vbits32, Bool isBigEndian )
 #ifndef PERF_FAST_STOREV
    mc_STOREVn_slow( a, 32, (ULong)vbits32, isBigEndian );
 #else
-   if (EXPECTED_NOT_TAKEN( UNALIGNED_OR_HIGH(a,32) )) {
+   if (UNLIKELY( UNALIGNED_OR_HIGH(a,32) )) {
       PROF_EVENT(231, "mc_STOREV32-slow1");
       mc_STOREVn_slow( a, 32, (ULong)vbits32, isBigEndian );
       return;
@@ -3948,7 +3941,7 @@ void mc_STOREV32 ( Addr a, UWord vbits32, Bool isBigEndian )
    }
 //---------------------------------------------------------------------------
 #else
-   if (EXPECTED_TAKEN( !is_distinguished_sm(sm) && 
+   if (LIKELY( !is_distinguished_sm(sm) && 
                        (VA_BITS8_DEFINED   == vabits8 ||
                         VA_BITS8_UNDEFINED == vabits8) ))
    {
@@ -3997,7 +3990,7 @@ UWord mc_LOADV16 ( Addr a, Bool isBigEndian )
 #ifndef PERF_FAST_LOADV
    return (UWord)mc_LOADVn_slow( a, 16, isBigEndian );
 #else
-   if (EXPECTED_NOT_TAKEN( UNALIGNED_OR_HIGH(a,16) )) {
+   if (UNLIKELY( UNALIGNED_OR_HIGH(a,16) )) {
       PROF_EVENT(241, "mc_LOADV16-slow1");
       return (UWord)mc_LOADVn_slow( a, 16, isBigEndian );
    }
@@ -4046,7 +4039,7 @@ void mc_STOREV16 ( Addr a, UWord vbits16, Bool isBigEndian )
 #ifndef PERF_FAST_STOREV
    mc_STOREVn_slow( a, 16, (ULong)vbits16, isBigEndian );
 #else
-   if (EXPECTED_NOT_TAKEN( UNALIGNED_OR_HIGH(a,16) )) {
+   if (UNLIKELY( UNALIGNED_OR_HIGH(a,16) )) {
       PROF_EVENT(251, "mc_STOREV16-slow1");
       mc_STOREVn_slow( a, 16, (ULong)vbits16, isBigEndian );
       return;
@@ -4055,7 +4048,7 @@ void mc_STOREV16 ( Addr a, UWord vbits16, Bool isBigEndian )
    sm      = get_secmap_for_reading_low(a);
    sm_off  = SM_OFF(a);
    vabits8 = sm->vabits8[sm_off];
-   if (EXPECTED_TAKEN( !is_distinguished_sm(sm) && 
+   if (LIKELY( !is_distinguished_sm(sm) && 
                        (VA_BITS8_DEFINED   == vabits8 ||
                         VA_BITS8_UNDEFINED == vabits8) ))
    {
@@ -4105,7 +4098,7 @@ UWord MC_(helperc_LOADV8) ( Addr a )
 #ifndef PERF_FAST_LOADV
    return (UWord)mc_LOADVn_slow( a, 8, False/*irrelevant*/ );
 #else
-   if (EXPECTED_NOT_TAKEN( UNALIGNED_OR_HIGH(a,8) )) {
+   if (UNLIKELY( UNALIGNED_OR_HIGH(a,8) )) {
       PROF_EVENT(261, "mc_LOADV8-slow1");
       return (UWord)mc_LOADVn_slow( a, 8, False/*irrelevant*/ );
    }
@@ -4145,7 +4138,7 @@ void MC_(helperc_STOREV8) ( Addr a, UWord vbits8 )
 #ifndef PERF_FAST_STOREV
    mc_STOREVn_slow( a, 8, (ULong)vbits8, False/*irrelevant*/ );
 #else
-   if (EXPECTED_NOT_TAKEN( UNALIGNED_OR_HIGH(a,8) )) {
+   if (UNLIKELY( UNALIGNED_OR_HIGH(a,8) )) {
       PROF_EVENT(271, "mc_STOREV8-slow1");
       mc_STOREVn_slow( a, 8, (ULong)vbits8, False/*irrelevant*/ );
       return;
@@ -4154,7 +4147,7 @@ void MC_(helperc_STOREV8) ( Addr a, UWord vbits8 )
    sm      = get_secmap_for_reading_low(a);
    sm_off  = SM_OFF(a);
    vabits8 = sm->vabits8[sm_off];
-   if (EXPECTED_TAKEN
+   if (LIKELY
          ( !is_distinguished_sm(sm) &&
            ( (VA_BITS8_DEFINED == vabits8 || VA_BITS8_UNDEFINED == vabits8)
           || (VA_BITS2_NOACCESS != extract_vabits2_from_vabits8(a, vabits8))

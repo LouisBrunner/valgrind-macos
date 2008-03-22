@@ -226,14 +226,6 @@ static void hg_free ( void* p ) {
 /* Round a down to the next multiple of N.  N must be a power of 2 */
 #define ROUNDDN(a, N)   ((a) & ~(N-1))
 
-#ifdef HAVE_BUILTIN_EXPECT
-#define LIKELY(cond)   __builtin_expect(!!(cond),1)
-#define UNLIKELY(cond) __builtin_expect(!!(cond),0)
-#else
-#define LIKELY(cond)   (cond)
-#define UNLIKELY(cond) (cond)
-#endif
-
 
 /*----------------------------------------------------------------*/
 /*--- Primary data definitions                                 ---*/

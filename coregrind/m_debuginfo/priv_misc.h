@@ -37,15 +37,6 @@
 #define __PRIV_MISC_H
 
 
-#ifdef HAVE_BUILTIN_EXPECT
-#define LIKELY(cond)   __builtin_expect(!!(cond),1)
-#define UNLIKELY(cond) __builtin_expect(!!(cond),0)
-#else
-#define LIKELY(cond)   (cond)
-#define UNLIKELY(cond) (cond)
-#endif
-
-
 /* Allocate(zeroed), free, strdup, all in VG_AR_DINFO. */
 void*  ML_(dinfo_zalloc)( SizeT szB );
 void   ML_(dinfo_free)( void* v );

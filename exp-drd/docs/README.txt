@@ -198,7 +198,8 @@ that path for which it is not known how long the function call will
 take. Exmples for Linux of actions with an unknown call time are:
 - Locking a mutex.
 - Dynamic memory allocation via e.g. malloc() since malloc() internally
-uses mutexes.
+uses mutexes and since malloc() may trigger TLB modifications via the
+kernel.
 - File I/O, since file I/O uses several resources that are shared over
 threads and even over processes.
 
@@ -407,7 +408,7 @@ References
 [Christiaens 2002]
   Mark Christiaens, Michiel Ronsse, Koen De Bosschere.
   Bounding the number of segment histories during data race detection.
-  Parallel Computing  archive, Volume 28, Issue 9, pp 1221-1238,
+  Parallel Computing archive, Volume 28, Issue 9, pp 1221-1238,
   September 2002.
   http://portal.acm.org/citation.cfm?id=638124
  

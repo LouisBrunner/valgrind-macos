@@ -257,6 +257,8 @@ static Bool drd_tool_error_recog(Char* const name, Supp* const supp)
 
   if (VG_(strcmp)(name, "ConflictingAccess") == 0)
     skind = ConflictingAccessSupp;
+  else if (VG_(strcmp)(name, "CondErr") == 0)
+    skind = CondErr;
   else
     return False;
 

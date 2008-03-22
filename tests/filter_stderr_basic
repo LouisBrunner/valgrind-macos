@@ -41,6 +41,12 @@ $dir/filter_libc                                                       |
 # Remove line info out of order warnings
 sed "/warning: line info addresses out of order/d"                     |
 
+# Older bash versions print abnormal termination messages on the stderr
+# of the bash process. Newer bash versions redirect such messages properly.
+# Suppress any redirected abnormal termination messages. You can find the
+# complete list of messages in the bash source file siglist.c.
+sed -r "/^(Segmentation fault|Alarm clock|Aborted)( \(core dumped\))?$/d" |
+
 # Remove any ": dumping core" message as the user might have a
 # limit set that prevents the core dump
 sed "s/\(signal [0-9]* (SIG[A-Z]*)\): dumping core/\1/"

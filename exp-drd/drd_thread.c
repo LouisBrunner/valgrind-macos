@@ -416,7 +416,7 @@ static void thread_discard_segment(const DrdThreadId tid, Segment* const sg)
 {
   tl_assert(0 <= tid && tid < DRD_N_THREADS
             && tid != DRD_INVALID_THREADID);
-  tl_assert(sane_ThreadInfo(&s_threadinfo[tid]));
+  //tl_assert(sane_ThreadInfo(&s_threadinfo[tid]));
 
   if (sg->prev)
     sg->prev->next = sg->next;
@@ -427,7 +427,8 @@ static void thread_discard_segment(const DrdThreadId tid, Segment* const sg)
   if (sg == s_threadinfo[tid].last)
     s_threadinfo[tid].last = sg->prev;
   sg_put(sg);
-  tl_assert(sane_ThreadInfo(&s_threadinfo[tid]));
+
+  //tl_assert(sane_ThreadInfo(&s_threadinfo[tid]));
 }
 
 VectorClock* thread_get_vc(const DrdThreadId tid)

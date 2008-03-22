@@ -280,7 +280,7 @@ UWord bm_has_any_access(const struct bitmap* const bm,
 
   for (b = a1; b < a2; b = b_next)
   {
-    struct bitmap2* bm2 = bm_lookup(bm, b);
+    struct bitmap2* bm2 = bm2_lookup(bm, b >> ADDR0_BITS);
 
     b_next = (b & ~ADDR0_MASK) + ADDR0_COUNT;
     if (b_next > a2)
@@ -342,7 +342,7 @@ UWord bm_has_1(const struct bitmap* const bm,
 
   tl_assert(bm);
 
-  p2 = bm_lookup(bm, a);
+  p2 = bm2_lookup(bm, a >> ADDR0_BITS);
   if (p2)
   {
     p1 = &p2->bm1;
@@ -401,7 +401,7 @@ void bm_clear(const struct bitmap* const bm,
 
   for (b = a1; b < a2; b = b_next)
   {
-    struct bitmap2* const p2 = bm_lookup(bm, b);
+    struct bitmap2* const p2 = bm2_lookup(bm, b >> ADDR0_BITS);
 
     b_next = (b & ~ADDR0_MASK) + ADDR0_COUNT;
     if (b_next > a2)
@@ -453,7 +453,7 @@ Bool bm_has_conflict_with(const struct bitmap* const bm,
 
   for (b = a1; b < a2; b = b_next)
   {
-    struct bitmap2* bm2 = bm_lookup(bm, b);
+    struct bitmap2* bm2 = bm2_lookup(bm, b >> ADDR0_BITS);
 
     b_next = (b & ~ADDR0_MASK) + ADDR0_COUNT;
     if (b_next > a2)
@@ -515,7 +515,7 @@ Bool bm_aligned_load_has_conflict_with(const struct bitmap* const bm,
 {
   struct bitmap2* bm2;
 
-  bm2 = bm_lookup(bm, a1);
+  bm2 = bm2_lookup(bm, a1 >> ADDR0_BITS);
 
   return (bm2 && bm0_is_any_set(bm2->bm1.bm0_w, a1 & ADDR0_MASK, size));
 }
@@ -526,7 +526,7 @@ Bool bm_aligned_store_has_conflict_with(const struct bitmap* const bm,
 {
   struct bitmap2* bm2;
 
-  bm2 = bm_lookup(bm, a1);
+  bm2 = bm2_lookup(bm, a1 >> ADDR0_BITS);
 
   if (bm2)
   {

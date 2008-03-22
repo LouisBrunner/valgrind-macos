@@ -157,10 +157,9 @@ struct bitmap
 };
 
 static __inline__
-struct bitmap2* bm_lookup(const struct bitmap* const bm, const Addr a)
+struct bitmap2* bm2_lookup(const struct bitmap* const bm, const UWord a1)
 {
   struct bitmap2* result;
-  const UWord a1 = a >> ADDR0_BITS;
   if (a1 == bm->last_lookup_a1)
   {
     return bm->last_lookup_result;

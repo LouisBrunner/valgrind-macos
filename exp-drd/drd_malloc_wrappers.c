@@ -143,7 +143,8 @@ void drd_handle_free(ThreadId tid, Addr p)
   }
   else
   {
-    s_stop_using_mem_callback(mc->data, mc->size);
+    if (mc->size > 0)
+      s_stop_using_mem_callback(mc->data, mc->size);
     VG_(free)(mc);
   }
 }

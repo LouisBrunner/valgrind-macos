@@ -18,14 +18,16 @@ if [ "$(uname)" = Linux ]; then
   # nothing. The second case occurs if gcc has been compiled with 
   # --disable-linux-futex, and the last case occurs if gcc has been compiled
   # with --enable-linux-futex.
-  rc="$(nm "${libgomp_path}" 2>&1
+  rc="$(nm "${libgomp_path}" 2>&1 \
         |
         while read line
         do
           if [ "${line%: no symbols}" != "${line}" ]; then
             echo 1
+            break
           elif [ "${line% gomp_barrier_init}" != "${line}" ]; then
             echo 0
+            break
           fi
         done)"
   exit ${rc:-1}

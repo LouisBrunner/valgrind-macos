@@ -192,7 +192,9 @@ void sg_put(Segment* const sg)
 void sg_merge(const Segment* const sg1, Segment* const sg2)
 {
   tl_assert(sg1);
+  tl_assert(sg1->refcnt == 1);
   tl_assert(sg2);
+  tl_assert(sg2->refcnt == 1);
 
   if (drd_trace_segment)
   {

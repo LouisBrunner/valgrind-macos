@@ -37,14 +37,23 @@
 /* DRD error types. */
 
 typedef enum {
+#define STR_DataRaceErr  "ConflictingAccess"
    DataRaceErr    = 1,
+#define STR_MutexErr     "MutexErr"
    MutexErr       = 2,
+#define STR_CondErr      "CondErr"
    CondErr        = 3,
+#define STR_CondRaceErr  "CondRaceErr"
    CondRaceErr    = 4,
+#define STR_CondDestrErr "CondDestrErr"
    CondDestrErr   = 5,
+#define STR_SemaphoreErr "SemaphoreErr"
    SemaphoreErr   = 6,
+#define STR_BarrierErr   "BarrierErr"
    BarrierErr     = 7,
+#define STR_RwlockErr    "RwlockErr"
    RwlockErr      = 8,
+#define STR_GenericErr   "GenericErr"
    GenericErr     = 9,
 } DrdErrorKind;
 

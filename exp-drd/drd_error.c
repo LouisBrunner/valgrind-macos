@@ -39,13 +39,6 @@
 #include "pub_tool_tooliface.h"   // VG_(needs_tool_errors)()
 
 
-/* Local type definitions. */
-
-typedef enum {
-  ConflictingAccessSupp
-} DRD_SuppKind;
-
-
 /* Local variables. */
 
 static Bool s_drd_show_conflicting_segments = True;
@@ -253,12 +246,26 @@ static UInt drd_tool_error_update_extra(Error* e)
 
 static Bool drd_tool_error_recog(Char* const name, Supp* const supp)
 {
-  SuppKind skind;
+  SuppKind skind = 0;
 
-  if (VG_(strcmp)(name, "ConflictingAccess") == 0)
-    skind = ConflictingAccessSupp;
-  else if (VG_(strcmp)(name, "CondErr") == 0)
-    skind = CondErr;
+  if (VG_(strcmp)(name, STR_DataRaceErr) == 0)
+    ;
+  else if (VG_(strcmp)(name, STR_MutexErr) == 0)
+    ;
+  else if (VG_(strcmp)(name, STR_CondErr) == 0)
+    ;
+  else if (VG_(strcmp)(name, STR_CondRaceErr) == 0)
+    ;
+  else if (VG_(strcmp)(name, STR_CondDestrErr) == 0)
+    ;
+  else if (VG_(strcmp)(name, STR_SemaphoreErr) == 0)
+    ;
+  else if (VG_(strcmp)(name, STR_BarrierErr) == 0)
+    ;
+  else if (VG_(strcmp)(name, STR_RwlockErr) == 0)
+    ;
+  else if (VG_(strcmp)(name, STR_GenericErr) == 0)
+    ;
   else
     return False;
 
@@ -283,15 +290,15 @@ static Char* drd_tool_error_name(Error* e)
 {
   switch (VG_(get_error_kind)(e))
   {
-  case DataRaceErr:  return "ConflictingAccess";
-  case MutexErr:     return "MutexErr";
-  case CondErr:      return "CondErr";
-  case CondRaceErr:  return "CondRaceErr";
-  case CondDestrErr: return "CondDestrErr";
-  case SemaphoreErr: return "SemaphoreErr";
-  case BarrierErr:   return "BarrierErr";
-  case RwlockErr:    return "RwlockErr";
-  case GenericErr:   return "GenericErr";
+  case DataRaceErr:  return VGAPPEND(STR_, DataRaceErr);
+  case MutexErr:     return VGAPPEND(STR_, MutexErr);
+  case CondErr:      return VGAPPEND(STR_, CondErr);
+  case CondRaceErr:  return VGAPPEND(STR_, CondRaceErr);
+  case CondDestrErr: return VGAPPEND(STR_, CondDestrErr);
+  case SemaphoreErr: return VGAPPEND(STR_, SemaphoreErr);
+  case BarrierErr:   return VGAPPEND(STR_, BarrierErr);
+  case RwlockErr:    return VGAPPEND(STR_, RwlockErr);
+  case GenericErr:   return VGAPPEND(STR_, GenericErr);
   default:
     tl_assert(0);
   }

@@ -4,26 +4,15 @@ Last updated February 17, 2008
 
 Data-race detection algorithm
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-- Implement segment merging, such that the number of segments per thread
-  remains limited even when there is no synchronization between threads.
-- Add locking order checking.
-- Discuss on the Valgrind mailing list how to make it possible to call
-  POSIX thread synchronization primitives from client code (drd_intercepts.c)
-  without triggering Valgrind's redirection mechanism.
 - Make sure -v works again with exp-drd.
+- Add locking order checking.
 - Continue the discussion on the Valgrind mailing list about docbook and
   'make dist'.
-- Continue the discussion on the Valgrind mailing list about -Wformat.
-- Enable format string checking for DRD during compilation.
-- Propose to modify tl_assert() / vg_assert() such that it uses
-  __builtin_expect.
 - Explain on the Valgrind mailing list the difference between a bus lock
   and acquire / release labels.
 - Add configure tests for the name of the 'kind' member in pthread_mutex_t.
 - Find out why a race is reported on std::string::string(std::string const&)
   (stc test case 16).
-- Find out why no races are reported on matinv_openmp.c when "private(k)" is
-  removed.
 - Add support for objects that are shared over threads and that use reference
   counting, e.g. std::string -- no races should be reported on the reference
   count.
@@ -35,17 +24,13 @@ Data-race detection algorithm
 - Find out why no line number or variable name information is printed for
   races detected in parallel sections of OpenMP programs. An example:
   ./vg-in-place --tool=exp-drd exp-drd/tests/omp_prime 4 -t 2
-- Find a way for suppressing races reported on _IO_2_1_stdout. This race is
-  triggered by calling printf() from more than one thread. Examples (AMD64):
-  ./vg-in-place --tool=exp-drd exp-drd/tests/tc21_pthonce
 - Find out why 'matinv 400' runs faster in 32-bit mode than in 64-bit mode
   on the same CPU.
 - testing on PPC and AIX (current implementation is only tested on X86 and
   AMD64).
 - Convert the array in drd_thread.c with thread information into an OSet.
-- Performance testing and tuning.
-- Optimize run time of the following test case:
-  ./vg-in-place --tool=exp-drd exp-drd/tests/matinv 100 
+- Performance testing and tuning, a.o. for kate / knode / open office / matinv.
+
 
 Testing
 ~~~~~~~
@@ -68,13 +53,3 @@ Limitations
 ~~~~~~~~~~~
 - Does not work with a glibc library compiled with linuxthreads -- NPTL is
   required for proper operation.
-
-
-Known bugs
-~~~~~~~~~~
-- Gets killed by the OOM handler for realistically sized applications,
-  e.g. knode and OpenOffice.
-- [x86_64] Reports "Allocation context: unknown" for BSS symbols on AMD64
-  (works fine on i386). This is a bug in Valgrind's debug info reader
-  -- VG_(find_seginfo)() returns NULL for BSS symbols on x86_64. Not yet in
-  the KDE bug tracking system.

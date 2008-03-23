@@ -301,10 +301,7 @@ make -s install || exit $?
 Future DRD Versions
 -------------------
 The following may be expected in future versions of DRD:
-* Drastically reduced memory consumption, such that realistic applications can
-  be analyzed with DRD.
 * A lock dependency analyzer, as a help in deadlock prevention.
-* Faster operation.
 * More extensive documentation.
 * Support for PowerPC CPU's.
 

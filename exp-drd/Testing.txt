@@ -1,0 +1,57 @@
+How to test DRD
+~~~~~~~~~~~~~~~
+
+1. Run the regression tests. After having compiled DRD, run the following
+   command:
+   perl tests/vg_regtest exp-drd
+2. Test whether DRD works with standard KDE applications and whether it does
+   not print any error messages:
+   ./vg-in-place --tool=exp-drd kate
+   ./vg-in-place --trace-children=yes --tool=exp-drd knode
+3. Test DRD with Firefox. First of all, build and install Firefox 3. Next,
+   run the following command:
+   LD_LIBRARY_PATH=$HOME/firefox3: ./vg-in-place --tool=exp-drd \
+     $HOME/firefox3/firefox-bin
+
+
+
+
+The Firefox source code can be obtained here:
+ftp://ftp.mozilla.org/pub/mozilla.org/firefox/releases/${version}/source
+
+See also http://developer.mozilla.org/en/docs/Build_Documentation
+
+Firefox can be compiled via the following shell script:
+------------------------------------------------------------
+#!/bin/sh
+
+SRCDIR=$HOME/software
+SRC=$SRCDIR/mozilla
+BUILD=${SRC}-build
+PREFIX=$HOME/firefox3
+MOZCONFIG=$BUILD/mozconfig-firefox
+
+rm -rf   ${BUILD}   || exit $?
+rm -rf   ${PREFIX}  || exit $?
+mkdir -p ${BUILD}   || exit $?
+cd       ${BUILD}   || exit $?
+
+cat <<EOF >$MOZCONFIG
+. $SRC/browser/config/mozconfig
+mk_add_options MOZ_OBJDIR="$BUILD"
+ac_add_app_options browser --enable-application=browser
+ac_add_options --disable-optimize
+ac_add_options --disable-tests
+ac_add_options --enable-debug
+ac_add_options --enable-static
+ac_add_options --prefix $PREFIX
+EOF
+
+export MOZCONFIG
+export CFLAGS=-pipe
+
+${SRC}/configure
+
+make -s         || exit $?
+make -s install || exit $?
+------------------------------------------------------------

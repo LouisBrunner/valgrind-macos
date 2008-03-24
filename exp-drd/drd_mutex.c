@@ -72,6 +72,8 @@ void mutex_initialize(struct mutex_info* const p,
 /** Deallocate the memory that was allocated by mutex_initialize(). */
 static void mutex_cleanup(struct mutex_info* p)
 {
+  tl_assert(p);
+
   if (s_trace_mutex)
   {
     VG_(message)(Vg_UserMsg,
@@ -96,6 +98,16 @@ static void mutex_cleanup(struct mutex_info* p)
   p->last_locked_segment = 0;
 }
 
+static void not_a_mutex(const Addr mutex)
+{
+  MutexErrInfo MEI = { mutex, -1, DRD_INVALID_THREADID };
+  VG_(maybe_record_error)(VG_(get_running_tid)(),
+                          MutexErr,
+                          VG_(get_IP)(VG_(get_running_tid)()),
+                          "Not a mutex",
+                          &MEI);
+}
+
 static
 struct mutex_info*
 mutex_get_or_allocate(const Addr mutex, const MutexT mutex_type)
@@ -111,12 +123,7 @@ mutex_get_or_allocate(const Addr mutex, const MutexT mutex_type)
 
   if (clientobj_present(mutex, mutex + 1))
   {
-    GenericErrInfo GEI;
-    VG_(maybe_record_error)(VG_(get_running_tid)(),
-                            GenericErr,
-                            VG_(get_IP)(VG_(get_running_tid)()),
-                            "Not a mutex",
-                            &GEI);
+    not_a_mutex(mutex);
     return 0;
   }
 
@@ -149,12 +156,7 @@ mutex_init(const Addr mutex, const MutexT mutex_type)
 
   if (mutex_type == mutex_type_invalid_mutex)
   {
-    GenericErrInfo GEI;
-    VG_(maybe_record_error)(VG_(get_running_tid)(),
-                            GenericErr,
-                            VG_(get_IP)(VG_(get_running_tid)()),
-                            "Not a mutex",
-                            &GEI);
+    not_a_mutex(mutex);
     return 0;
   }
 
@@ -184,12 +186,7 @@ void mutex_post_destroy(const Addr mutex)
   p = mutex_get(mutex);
   if (p == 0)
   {
-    GenericErrInfo GEI;
-    VG_(maybe_record_error)(VG_(get_running_tid)(),
-                            GenericErr,
-                            VG_(get_IP)(VG_(get_running_tid)()),
-                            "Not a mutex",
-                            &GEI);
+    not_a_mutex(mutex);
     return;
   }
 
@@ -213,7 +210,7 @@ void mutex_pre_lock(const Addr mutex, const MutexT mutex_type,
                  "[%d/%d] pre_mutex_lock  %s 0x%lx rc %d owner %d",
                  VG_(get_running_tid)(),
                  thread_get_running_tid(),
-                 mutex_get_typename(p),
+                 p ? mutex_get_typename(p) : "(?)",
                  mutex,
                  p ? p->recursion_count : -1,
                  p ? p->owner : DRD_INVALID_THREADID);
@@ -221,12 +218,7 @@ void mutex_pre_lock(const Addr mutex, const MutexT mutex_type,
 
   if (p == 0)
   {
-    GenericErrInfo GEI;
-    VG_(maybe_record_error)(VG_(get_running_tid)(),
-                            GenericErr,
-                            VG_(get_IP)(VG_(get_running_tid)()),
-                            "Not a mutex",
-                            &GEI);
+    not_a_mutex(mutex);
     return;
   }
 
@@ -234,12 +226,7 @@ void mutex_pre_lock(const Addr mutex, const MutexT mutex_type,
 
   if (mutex_type == mutex_type_invalid_mutex)
   {
-    GenericErrInfo GEI;
-    VG_(maybe_record_error)(VG_(get_running_tid)(),
-                            GenericErr,
-                            VG_(get_IP)(VG_(get_running_tid)()),
-                            "Not a mutex",
-                            &GEI);
+    not_a_mutex(mutex);
     return;
   }
 
@@ -331,19 +318,14 @@ void mutex_unlock(const Addr mutex, const MutexT mutex_type)
                  "[%d/%d] mutex_unlock    %s 0x%lx rc %d",
                  vg_tid,
                  drd_tid,
-                 p ? mutex_get_typename(p) : "?",
+                 p ? mutex_get_typename(p) : "(?)",
                  mutex,
                  p ? p->recursion_count : 0);
   }
 
   if (p == 0 || mutex_type == mutex_type_invalid_mutex)
   {
-    GenericErrInfo GEI;
-    VG_(maybe_record_error)(vg_tid,
-                            GenericErr,
-                            VG_(get_IP)(vg_tid),
-                            "Not a mutex",
-                            &GEI);
+    not_a_mutex(mutex);
     return;
   }
 

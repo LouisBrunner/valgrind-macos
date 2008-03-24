@@ -1,5 +1,5 @@
 
-Not a mutex
+Not a mutex: mutex 0x.........
    at 0x........: pthread_cond_wait* (drd_pthread_intercepts.c:?)
    by 0x........: main (tc23_bogus_condwait.c:69)
 
@@ -7,7 +7,7 @@ Mutex not locked: mutex 0x........, recursion count 0, owner 0.
    at 0x........: pthread_cond_wait* (drd_pthread_intercepts.c:?)
    by 0x........: main (tc23_bogus_condwait.c:72)
 
-Not a mutex
+Not a mutex: mutex 0x.........
    at 0x........: pthread_cond_wait* (drd_pthread_intercepts.c:?)
    by 0x........: main (tc23_bogus_condwait.c:75)
 

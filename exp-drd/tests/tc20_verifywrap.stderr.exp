@@ -17,7 +17,7 @@ Other segment end (thread 0/2)
 ---------------- pthread_mutex_lock et al ----------------
 
 
-Not a mutex
+Not a mutex: mutex 0x.........
    at 0x........: pthread_mutex_init (drd_pthread_intercepts.c:?)
    by 0x........: main (tc20_verifywrap.c:92)
 
@@ -25,19 +25,19 @@ Destroying locked mutex: mutex 0x........, recursion count 1, owner 1.
    at 0x........: pthread_mutex_destroy (drd_pthread_intercepts.c:?)
    by 0x........: main (tc20_verifywrap.c:102)
 
-Not a mutex
+Not a mutex: mutex 0x.........
    at 0x........: pthread_mutex_lock (drd_pthread_intercepts.c:?)
    by 0x........: main (tc20_verifywrap.c:108)
 
-Not a mutex
+Not a mutex: mutex 0x.........
    at 0x........: pthread_mutex_trylock (drd_pthread_intercepts.c:?)
    by 0x........: main (tc20_verifywrap.c:116)
 
-Not a mutex
+Not a mutex: mutex 0x.........
    at 0x........: pthread_mutex_timedlock (drd_pthread_intercepts.c:?)
    by 0x........: main (tc20_verifywrap.c:121)
 
-Not a mutex
+Not a mutex: mutex 0x.........
    at 0x........: pthread_mutex_unlock (drd_pthread_intercepts.c:?)
    by 0x........: main (tc20_verifywrap.c:125)
 

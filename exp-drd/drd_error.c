@@ -133,12 +133,22 @@ static void drd_tool_error_pp(Error* const e)
   case MutexErr: {
     MutexErrInfo* p = (MutexErrInfo*)(VG_(get_error_extra)(e));
     tl_assert(p);
-    VG_(message)(Vg_UserMsg,
-                 "%s: mutex 0x%lx, recursion count %d, owner %d.",
-                 VG_(get_error_string)(e),
-                 p->mutex,
-                 p->recursion_count,
-                 p->owner);
+    if (p->recursion_count >= 0)
+    {
+      VG_(message)(Vg_UserMsg,
+                   "%s: mutex 0x%lx, recursion count %d, owner %d.",
+                   VG_(get_error_string)(e),
+                   p->mutex,
+                   p->recursion_count,
+                   p->owner);
+    }
+    else
+    {
+      VG_(message)(Vg_UserMsg,
+                   "%s: mutex 0x%lx.",
+                   VG_(get_error_string)(e),
+                   p->mutex);
+    }
     VG_(pp_ExeContext)(VG_(get_error_where)(e));
     break;
   }

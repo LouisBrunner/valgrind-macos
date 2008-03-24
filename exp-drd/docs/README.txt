@@ -381,6 +381,16 @@ References
   http://rsim.cs.uiuc.edu/~sadve/Publications/isca91.dataraces.ps
   http://portal.acm.org/citation.cfm?doid=115953.115976
 
+[Cameron 1995]
+  Steven Cameron Woo, Moriyoshi Ohara, Evan Torrie, Jaswinder Pal Singh
+  and Anoop Gupta.
+  The SPLASH-2 Programs: Characterization and Methodological Considerations.
+  Proceedings of the 22nd International Symposium on Computer Architecture,
+  pages 24-36, Santa Margherita Ligure, Italy, June 1995.
+  http://portal.acm.org/citation.cfm?doid=225830.223990
+  ftp://www-flash.stanford.edu/pub/splash2/splash2_isca95.ps.Z
+  http://www-flash.stanford.edu/apps/SPLASH/splash2.tar.gz
+
 [Ousterhout 1996]
   John Ousterhout.
   Why Threads Are A Bad Idea (for most purposes).

@@ -57,7 +57,7 @@ enum {
   /* args: Addr, MutexT */
   /* to notify the drd tool of pthread_mutex_lock calls */
   VG_USERREQ__PRE_MUTEX_LOCK,
-  /* args: Addr, MutexT */
+  /* args: Addr, MutexT, Bool */
   /* to notify the drd tool of pthread_mutex_lock calls */
   VG_USERREQ__POST_MUTEX_LOCK,
   /* args: Addr, Bool */

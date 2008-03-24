@@ -201,14 +201,12 @@ void mutex_post_destroy(const Addr mutex)
  *  an attempt is made to lock recursively a synchronization object that must
  *  not be locked recursively.
  */
-void mutex_pre_lock(const Addr mutex, MutexT mutex_type)
+void mutex_pre_lock(const Addr mutex, const MutexT mutex_type,
+                    const Bool trylock)
 {
   struct mutex_info* p;
 
   p = mutex_get_or_allocate(mutex, mutex_type);
-
-  tl_assert(p);
-
   if (s_trace_mutex)
   {
     VG_(message)(Vg_UserMsg,
@@ -217,9 +215,22 @@ void mutex_pre_lock(const Addr mutex, MutexT mutex_type)
                  thread_get_running_tid(),
                  mutex_get_typename(p),
                  mutex,
-                 p->recursion_count,
-                 p->owner);
+                 p ? p->recursion_count : -1,
+                 p ? p->owner : DRD_INVALID_THREADID);
   }
+
+  if (p == 0)
+  {
+    GenericErrInfo GEI;
+    VG_(maybe_record_error)(VG_(get_running_tid)(),
+                            GenericErr,
+                            VG_(get_IP)(VG_(get_running_tid)()),
+                            "Not a mutex",
+                            &GEI);
+    return;
+  }
+
+  tl_assert(p);
 
   if (mutex_type == mutex_type_invalid_mutex)
   {
@@ -232,7 +243,8 @@ void mutex_pre_lock(const Addr mutex, MutexT mutex_type)
     return;
   }
 
-  if (p->owner == thread_get_running_tid()
+  if (! trylock
+      && p->owner == thread_get_running_tid()
       && p->recursion_count >= 1
       && mutex_type != mutex_type_recursive_mutex)
   {

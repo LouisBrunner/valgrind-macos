@@ -375,7 +375,7 @@ PTH_FUNC(int, pthreadZumutexZutrylock, // pthread_mutex_trylock
   OrigFn fn;
   VALGRIND_GET_ORIG_FN(fn);
   VALGRIND_DO_CLIENT_REQUEST(res, 0, VG_USERREQ__PRE_MUTEX_LOCK,
-                             mutex, mutex_type(mutex), 0, 0, 0);
+                             mutex, mutex_type(mutex), 1, 0, 0);
   CALL_FN_W_W(ret, fn, mutex);
   VALGRIND_DO_CLIENT_REQUEST(res, -1, VG_USERREQ__POST_MUTEX_LOCK,
                              mutex, ret == 0, 0, 0, 0);

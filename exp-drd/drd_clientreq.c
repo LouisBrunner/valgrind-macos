@@ -147,7 +147,7 @@ static Bool drd_handle_client_request(ThreadId vg_tid, UWord* arg, UWord* ret)
 
   case VG_USERREQ__PRE_MUTEX_LOCK:
     if (thread_enter_synchr(drd_tid) == 0)
-      drd_pre_mutex_lock(arg[1], arg[2]);
+      drd_pre_mutex_lock(arg[1], arg[2], arg[3]);
     break;
 
   case VG_USERREQ__POST_MUTEX_LOCK:

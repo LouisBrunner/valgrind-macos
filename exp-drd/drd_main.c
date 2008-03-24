@@ -628,9 +628,10 @@ void drd_post_mutex_destroy(const Addr mutex, const MutexT mutex_type)
   mutex_post_destroy(mutex);
 }
 
-void drd_pre_mutex_lock(const Addr mutex, const MutexT mutex_type)
+void drd_pre_mutex_lock(const Addr mutex, const MutexT mutex_type,
+                        const Bool trylock)
 {
-  mutex_pre_lock(mutex, mutex_type);
+  mutex_pre_lock(mutex, mutex_type, trylock);
 }
 
 void drd_post_mutex_lock(const Addr mutex, const Bool took_lock)

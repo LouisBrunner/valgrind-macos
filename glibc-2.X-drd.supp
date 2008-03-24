@@ -38,6 +38,13 @@
    obj:/lib*/ld-*.so
 }
 {
+   dl-dlsym
+   exp-drd:ConflictingAccess
+   obj:/lib*/ld-*.so
+   obj:/lib*/libc-*.so
+   obj:/lib*/libdl-*.so
+}
+{
    libc
    exp-drd:ConflictingAccess
    fun:__libc_enable_asynccancel

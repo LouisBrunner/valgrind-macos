@@ -62,5 +62,4 @@ export CFLAGS=-pipe
 ${SRC}/configure
 
 make -s         || exit $?
-make -s install || exit $?
 ------------------------------------------------------------

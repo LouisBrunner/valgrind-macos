@@ -28,8 +28,8 @@
 // segment.
 
 
-#ifndef __DRD_BITMAP_H
-#define __DRD_BITMAP_H
+#ifndef __PUB_DRD_BITMAP_H
+#define __PUB_DRD_BITMAP_H
 
 
 #include "pub_tool_basics.h" /* Addr, SizeT */
@@ -107,6 +107,7 @@ void bm_report_races(ThreadId const tid1, ThreadId const tid2,
 void bm_print(const struct bitmap* bm);
 ULong bm_get_bitmap_creation_count(void);
 ULong bm_get_bitmap2_creation_count(void);
+void bm_test(void);
 
 
-#endif /* __DRD_BITMAP_H */
+#endif /* __PUB_DRD_BITMAP_H */

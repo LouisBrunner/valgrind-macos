@@ -23,8 +23,8 @@
 */
 
 
-#ifndef __DRD_BITMAP3_H
-#define __DRD_BITMAP3_H
+#ifndef __DRD_BITMAP_H
+#define __DRD_BITMAP_H
 
 
 #include "pub_tool_oset.h"
@@ -75,7 +75,7 @@
 #define UWORD_HIGHEST_ADDRESS(a) ((a) | (BITS_PER_UWORD - 1))
 
 
-/* Local constants. */
+/* Local variables. */
 
 static ULong s_bitmap2_creation_count;
 
@@ -151,19 +151,106 @@ static __inline__ UWord bm0_is_any_set(const UWord* bm0,
 /*********************************************************************/
 
 
+/* Second level bitmap. */
 struct bitmap2
 {
-  Addr           addr; ///< address >> ADDR0_BITS
+  Addr           addr;   ///< address >> ADDR0_BITS
   struct bitmap1 bm1;
 };
+
+struct bm_cache_elem
+{
+  Addr            a1;
+  struct bitmap2* bm2;
+};
+
+#define N_CACHE_ELEM 4
 
 /* Complete bitmap. */
 struct bitmap
 {
-  Addr            last_lookup_a1;
-  struct bitmap2* last_lookup_result;
-  OSet*           oset;
+  struct bm_cache_elem cache[N_CACHE_ELEM];
+  OSet*                oset;
 };
+
+
+static __inline__
+struct bitmap2* bm_cache_lookup(const struct bitmap* const bm, const UWord a1)
+{
+  tl_assert(bm);
+
+#if N_CACHE_ELEM > 8
+#error Please update the code below.
+#endif
+#if N_CACHE_ELEM >= 1
+  if (a1 == bm->cache[0].a1)
+    return bm->cache[0].bm2;
+#endif
+#if N_CACHE_ELEM >= 2
+  if (a1 == bm->cache[1].a1)
+    return bm->cache[1].bm2;
+#endif
+#if N_CACHE_ELEM >= 3
+  if (a1 == bm->cache[2].a1)
+    return bm->cache[2].bm2;
+#endif
+#if N_CACHE_ELEM >= 4
+  if (a1 == bm->cache[3].a1)
+    return bm->cache[3].bm2;
+#endif
+#if N_CACHE_ELEM >= 5
+  if (a1 == bm->cache[4].a1)
+    return bm->cache[4].bm2;
+#endif
+#if N_CACHE_ELEM >= 6
+  if (a1 == bm->cache[5].a1)
+    return bm->cache[5].bm2;
+#endif
+#if N_CACHE_ELEM >= 7
+  if (a1 == bm->cache[6].a1)
+    return bm->cache[6].bm2;
+#endif
+#if N_CACHE_ELEM >= 8
+  if (a1 == bm->cache[7].a1)
+    return bm->cache[7].bm2;
+#endif
+  return 0;
+}
+
+static __inline__
+void bm_update_cache(struct bitmap* const bm,
+                     const UWord a1,
+                     struct bitmap2* const bm2)
+{
+  tl_assert(bm);
+
+#if N_CACHE_ELEM > 8
+#error Please update the code below.
+#endif
+#if N_CACHE_ELEM >= 8
+  bm->cache[7] = bm->cache[6];
+#endif
+#if N_CACHE_ELEM >= 7
+  bm->cache[6] = bm->cache[5];
+#endif
+#if N_CACHE_ELEM >= 6
+  bm->cache[5] = bm->cache[4];
+#endif
+#if N_CACHE_ELEM >= 5
+  bm->cache[4] = bm->cache[3];
+#endif
+#if N_CACHE_ELEM >= 4
+  bm->cache[3] = bm->cache[2];
+#endif
+#if N_CACHE_ELEM >= 3
+  bm->cache[2] = bm->cache[1];
+#endif
+#if N_CACHE_ELEM >= 2
+  bm->cache[1] = bm->cache[0];
+#endif
+  bm->cache[0].a1  = a1;
+  bm->cache[0].bm2 = bm2;
+}
 
 /** Look up the address a1 in bitmap bm.
  *  @param a1 client address shifted right by ADDR0_BITS.
@@ -172,30 +259,30 @@ struct bitmap
 static __inline__
 struct bitmap2* bm2_lookup(const struct bitmap* const bm, const UWord a1)
 {
-  struct bitmap2* result;
-  if (a1 == bm->last_lookup_a1)
+  struct bitmap2* bm2;
+  bm2 = bm_cache_lookup(bm, a1);
+  if (bm2 == 0)
   {
-    return bm->last_lookup_result;
+    bm2 = VG_(OSetGen_Lookup)(bm->oset, &a1);
+    if (bm2)
+    {
+      bm_update_cache(*(struct bitmap**)&bm, a1, bm2);
+    }
   }
-  result = VG_(OSetGen_Lookup)(bm->oset, &a1);
-  if (result)
-  {
-    ((struct bitmap*)bm)->last_lookup_a1     = a1;
-    ((struct bitmap*)bm)->last_lookup_result = result;
-  }
-  return result;
+  return bm2;
 }
 
 static __inline__
 struct bitmap2* bm2_insert(const struct bitmap* const bm, const UWord a1)
 {
-  struct bitmap2* const bm2 = VG_(OSetGen_AllocNode)(bm->oset, sizeof(*bm2));
+  struct bitmap2* bm2;
+
+  bm2 = VG_(OSetGen_AllocNode)(bm->oset, sizeof(*bm2));
   bm2->addr = a1;
   VG_(memset)(&bm2->bm1, 0, sizeof(bm2->bm1));
   VG_(OSetGen_Insert)(bm->oset, bm2);
   
-  ((struct bitmap*)bm)->last_lookup_a1     = a1;
-  ((struct bitmap*)bm)->last_lookup_result = bm2;
+  bm_update_cache(*(struct bitmap**)&bm, a1, bm2);
   
   s_bitmap2_creation_count++;
   
@@ -213,20 +300,18 @@ struct bitmap2* bm2_lookup_or_insert(const struct bitmap* const bm,
 {
   struct bitmap2* bm2;
 
-  if (a1 == bm->last_lookup_a1)
-  {
-    return bm->last_lookup_result;
-  }
-
-  bm2 = VG_(OSetGen_Lookup)(bm->oset, &a1);
+  bm2 = bm_cache_lookup(bm, a1);
   if (bm2 == 0)
   {
-    bm2 = bm2_insert(bm, a1);
+    bm2 = VG_(OSetGen_Lookup)(bm->oset, &a1);
+    if (bm2 == 0)
+    {
+      bm2 = bm2_insert(bm, a1);
+    }
+    bm_update_cache(*(struct bitmap**)&bm, a1, bm2);
   }
-  ((struct bitmap*)bm)->last_lookup_a1     = a1;
-  ((struct bitmap*)bm)->last_lookup_result = bm2;
   return bm2;
 }
 
 
-#endif /* __DRD_BITMAP3_H */
+#endif /* __DRD_BITMAP_H */

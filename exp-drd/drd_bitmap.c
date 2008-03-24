@@ -51,6 +51,7 @@ static void bm2_merge(struct bitmap2* const bm2l,
 
 struct bitmap* bm_new()
 {
+  unsigned i;
   struct bitmap* bm;
 
   // If this assert fails, fix the definition of BITS_PER_BITS_PER_UWORD
@@ -59,8 +60,11 @@ struct bitmap* bm_new()
 
   bm = VG_(malloc)(sizeof(*bm));
   tl_assert(bm);
-  bm->last_lookup_a1     = 0;
-  bm->last_lookup_result = 0;
+  for (i = 0; i < N_CACHE_ELEM; i++)
+  {
+    bm->cache[i].a1  = 0;
+    bm->cache[i].bm2 = 0;
+  }
   bm->oset               = VG_(OSetGen_Create)(0, 0, VG_(malloc), VG_(free));
 
   s_bitmap_creation_count++;
@@ -743,6 +747,8 @@ static void bm2_merge(struct bitmap2* const bm2l,
 {
   unsigned k;
 
+  tl_assert(bm2l);
+  tl_assert(bm2r);
   tl_assert(bm2l->addr == bm2r->addr);
 
   for (k = 0; k < BITMAP1_UWORD_COUNT; k++)
@@ -764,7 +770,7 @@ struct { Addr address; SizeT size; BmAccessTypeT access_type; }
     {    0 + ADDR0_COUNT, 1, eLoad  },
     {  666 + ADDR0_COUNT, 4, eLoad  },
     {  667 + ADDR0_COUNT, 2, eStore },
-    { -1 + 2*ADDR0_COUNT, 1, eStore },
+    { -2 + 2*ADDR0_COUNT, 1, eStore },
     {       0x0001ffffUL, 1, eLoad  },
     {       0x0002ffffUL, 1, eLoad  },
     {       0x00ffffffUL, 1, eLoad  },

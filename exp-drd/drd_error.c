@@ -145,8 +145,7 @@ static void drd_tool_error_pp(Error* const e)
     else
     {
       VG_(message)(Vg_UserMsg,
-                   "%s: mutex 0x%lx.",
-                   VG_(get_error_string)(e),
+                   "The object at address 0x%lx is not a mutex.",
                    p->mutex);
     }
     VG_(pp_ExeContext)(VG_(get_error_where)(e));

@@ -6,6 +6,8 @@
 
 test -e "$1" || exit $?
 
+./supported_libpthread || exit $?
+
 if [ "$(uname)" = Linux ]; then
 
   # Let the dynamic linker/loader print the path of libgomp. See also man ld.so

@@ -36,18 +36,23 @@
 #include "drd_suppression.h"
 
 
-// Local constants.
+/* Forward declarations. */
 
-static ULong s_bitmap_creation_count;
+struct bitmap2;
 
 
-// Local function declarations.
+/* Local function declarations. */
 
 static void bm2_merge(struct bitmap2* const bm2l,
                       const struct bitmap2* const bm2r);
 
 
-// Function definitions.
+/* Local constants. */
+
+static ULong s_bitmap_creation_count;
+
+
+/* Function definitions. */
 
 struct bitmap* bm_new()
 {
@@ -65,7 +70,7 @@ struct bitmap* bm_new()
     bm->cache[i].a1  = 0;
     bm->cache[i].bm2 = 0;
   }
-  bm->oset               = VG_(OSetGen_Create)(0, 0, VG_(malloc), VG_(free));
+  bm->oset = VG_(OSetGen_Create)(0, 0, VG_(malloc), VG_(free));
 
   s_bitmap_creation_count++;
 
@@ -74,7 +79,22 @@ struct bitmap* bm_new()
 
 void bm_delete(struct bitmap* const bm)
 {
+  struct bitmap2*    bm2;
+  struct bitmap2ref* bm2ref;
+
   tl_assert(bm);
+
+  VG_(OSetGen_ResetIter)(bm->oset);
+  for ( ; (bm2ref = VG_(OSetGen_Next)(bm->oset)) != 0; )
+  {
+    bm2 = bm2ref->bm2;
+    tl_assert(bm2->refcnt >= 1);
+    if (--bm2->refcnt == 0)
+    {
+      VG_(free)(bm2);
+    }
+  }
+
   VG_(OSetGen_Destroy)(bm->oset);
   VG_(free)(bm);
 }
@@ -106,7 +126,7 @@ void bm_access_range(struct bitmap* const bm,
       b_next = a2;
     }
 
-    bm2 = bm2_lookup_or_insert(bm, b1);
+    bm2 = bm2_lookup_or_insert_exclusive(bm, b1);
     tl_assert(bm2);
 
     if ((bm2->addr << ADDR0_BITS) < a1)
@@ -149,7 +169,7 @@ void bm_access_aligned_load(struct bitmap* const bm,
 {
   struct bitmap2* bm2;
 
-  bm2 = bm2_lookup_or_insert(bm, a1 >> ADDR0_BITS);
+  bm2 = bm2_lookup_or_insert_exclusive(bm, a1 >> ADDR0_BITS);
   bm0_set_range(bm2->bm1.bm0_r, a1 & ADDR0_MASK, size);
 }
 
@@ -159,7 +179,7 @@ void bm_access_aligned_store(struct bitmap* const bm,
 {
   struct bitmap2* bm2;
 
-  bm2 = bm2_lookup_or_insert(bm, a1 >> ADDR0_BITS);
+  bm2 = bm2_lookup_or_insert_exclusive(bm, a1 >> ADDR0_BITS);
   bm0_set_range(bm2->bm1.bm0_w, a1 & ADDR0_MASK, size);
 }
 
@@ -287,7 +307,7 @@ UWord bm_has_any_access(const struct bitmap* const bm,
 
   for (b = a1; b < a2; b = b_next)
   {
-    struct bitmap2* bm2 = bm2_lookup(bm, b >> ADDR0_BITS);
+    const struct bitmap2* bm2 = bm2_lookup(bm, b >> ADDR0_BITS);
 
     b_next = (b & ~ADDR0_MASK) + ADDR0_COUNT;
     if (b_next > a2)
@@ -342,9 +362,9 @@ UWord bm_has_1(const struct bitmap* const bm,
                const Addr a,
                const BmAccessTypeT access_type)
 {
-  struct bitmap2* p2;
-  struct bitmap1* p1;
-  UWord* p0;
+  const struct bitmap2* p2;
+  const struct bitmap1* p1;
+  const UWord* p0;
   const UWord a0 = a & ADDR0_MASK;
 
   tl_assert(bm);
@@ -384,12 +404,16 @@ void bm1_clear(struct bitmap1* const bm1, const Addr a1, const Addr a2)
 void bm_clear_all(const struct bitmap* const bm)
 {
   struct bitmap2* bm2;
+  struct bitmap2ref* bm2ref;
 
   VG_(OSetGen_ResetIter)(bm->oset);
 
-  for ( ; (bm2 = VG_(OSetGen_Next)(bm->oset)) != 0; )
+  for ( ; (bm2ref = VG_(OSetGen_Next)(bm->oset)) != 0; )
   {
-    struct bitmap1* const bm1 = &bm2->bm1;
+    struct bitmap1* bm1;
+
+    bm2 = bm2ref->bm2;
+    bm1 = &bm2->bm1;
     tl_assert(bm1);
     VG_(memset)(&bm1->bm0_r[0], 0, sizeof(bm1->bm0_r));
     VG_(memset)(&bm1->bm0_w[0], 0, sizeof(bm1->bm0_w));
@@ -408,7 +432,7 @@ void bm_clear(const struct bitmap* const bm,
 
   for (b = a1; b < a2; b = b_next)
   {
-    struct bitmap2* const p2 = bm2_lookup(bm, b >> ADDR0_BITS);
+    struct bitmap2* const p2 = bm2_lookup_exclusive(bm, b >> ADDR0_BITS);
 
     b_next = (b & ~ADDR0_MASK) + ADDR0_COUNT;
     if (b_next > a2)
@@ -419,6 +443,9 @@ void bm_clear(const struct bitmap* const bm,
     if (p2)
     {
       Addr c = b;
+      /* If the first address in the bitmap that must be cleared does not */
+      /* start on an UWord boundary, start clearing the first addresses   */
+      /* by calling bm1_clear().                                          */
       if (UWORD_LSB(c))
       {
         Addr c_next = UWORD_MSB(c) + BITS_PER_UWORD;
@@ -427,6 +454,7 @@ void bm_clear(const struct bitmap* const bm,
         bm1_clear(&p2->bm1, c, c_next);
         c = c_next;
       }
+      /* If some UWords have to be cleared entirely, do this now. */
       if (UWORD_LSB(c) == 0)
       {
         const Addr c_next = UWORD_MSB(b_next);
@@ -442,6 +470,9 @@ void bm_clear(const struct bitmap* const bm,
           c = c_next;
         }
       }
+      /* If the last address in the bitmap that must be cleared does not */
+      /* fall on an UWord boundary, clear the last addresses by calling  */
+      /* bm1_clear().                                                    */
       if (c != b_next)
       {
         bm1_clear(&p2->bm1, c, b_next);
@@ -460,7 +491,7 @@ Bool bm_has_conflict_with(const struct bitmap* const bm,
 
   for (b = a1; b < a2; b = b_next)
   {
-    struct bitmap2* bm2 = bm2_lookup(bm, b >> ADDR0_BITS);
+    const struct bitmap2* bm2 = bm2_lookup(bm, b >> ADDR0_BITS);
 
     b_next = (b & ~ADDR0_MASK) + ADDR0_COUNT;
     if (b_next > a2)
@@ -520,7 +551,7 @@ static inline
 Bool bm_aligned_load_has_conflict_with(const struct bitmap* const bm,
                                        const Addr a1, const SizeT size)
 {
-  struct bitmap2* bm2;
+  const struct bitmap2* bm2;
 
   bm2 = bm2_lookup(bm, a1 >> ADDR0_BITS);
 
@@ -531,7 +562,7 @@ static inline
 Bool bm_aligned_store_has_conflict_with(const struct bitmap* const bm,
                                         const Addr a1, const SizeT size)
 {
-  struct bitmap2* bm2;
+  const struct bitmap2* bm2;
 
   bm2 = bm2_lookup(bm, a1 >> ADDR0_BITS);
 
@@ -623,32 +654,35 @@ void bm_swap(struct bitmap* const bm1, struct bitmap* const bm2)
   bm2->oset = tmp;
 }
 
+/** Merge bitmaps *lhs and *rhs into *lhs. */
 void bm_merge2(struct bitmap* const lhs,
                const struct bitmap* const rhs)
 {
   struct bitmap2* bm2l;
-  const struct bitmap2* bm2r;
+  struct bitmap2ref* bm2l_ref;
+  struct bitmap2* bm2r;
+  const struct bitmap2ref* bm2r_ref;
 
-  // First step: allocate any missing bitmaps in *lhs.
-  VG_(OSetGen_ResetIter)(rhs->oset);
-  for ( ; (bm2r = VG_(OSetGen_Next)(rhs->oset)) != 0; )
-  {
-    bm2_lookup_or_insert(lhs, bm2r->addr);
-  }
-
-  VG_(OSetGen_ResetIter)(lhs->oset);
   VG_(OSetGen_ResetIter)(rhs->oset);
 
-  for ( ; (bm2r = VG_(OSetGen_Next)(rhs->oset)) != 0; )
+  for ( ; (bm2r_ref = VG_(OSetGen_Next)(rhs->oset)) != 0; )
   {
-    do
+    bm2r = bm2r_ref->bm2;
+    bm2l_ref = VG_(OSetGen_Lookup)(lhs->oset, &bm2r->addr);
+    if (bm2l_ref)
     {
-      bm2l = VG_(OSetGen_Next)(lhs->oset);
-    } while (bm2l->addr < bm2r->addr);
-
-    tl_assert(bm2l->addr == bm2r->addr);
-
-    bm2_merge(bm2l, bm2r);
+      bm2l = bm2l_ref->bm2;
+      if (bm2l != bm2r)
+      {
+        if (bm2l->refcnt > 1)
+          bm2l = bm2_make_exclusive(lhs, bm2l_ref);
+        bm2_merge(bm2l, bm2r);
+      }
+    }
+    else
+    {
+      bm2_insert_addref(lhs, bm2r);
+    }
   }
 }
 
@@ -666,18 +700,24 @@ int bm_has_races(const struct bitmap* const lhs,
 
   for (;;)
   {
-    const struct bitmap2* bm2l = VG_(OSetGen_Next)(lhs->oset);
-    const struct bitmap2* bm2r = VG_(OSetGen_Next)(rhs->oset);
+    const struct bitmap2ref* bm2l_ref;
+    const struct bitmap2ref* bm2r_ref;
+    const struct bitmap2* bm2l;
+    const struct bitmap2* bm2r;
     const struct bitmap1* bm1l;
     const struct bitmap1* bm1r;
     unsigned k;
 
+    bm2l_ref = VG_(OSetGen_Next)(lhs->oset);
+    bm2l = bm2l_ref->bm2;
+    bm2r_ref = VG_(OSetGen_Next)(rhs->oset);
+    bm2r = bm2r_ref->bm2;
     while (bm2l && bm2r && bm2l->addr != bm2r->addr)
     {
       if (bm2l->addr < bm2r->addr)
-        bm2l = VG_(OSetGen_Next)(lhs->oset);
+        bm2l = (bm2l_ref = VG_(OSetGen_Next)(lhs->oset))->bm2;
       else
-        bm2r = VG_(OSetGen_Next)(rhs->oset);
+        bm2r = (bm2r_ref = VG_(OSetGen_Next)(rhs->oset))->bm2;
     }
     if (bm2l == 0 || bm2r == 0)
       break;
@@ -709,13 +749,17 @@ int bm_has_races(const struct bitmap* const lhs,
 void bm_print(const struct bitmap* const bm)
 {
   struct bitmap2* bm2;
+  struct bitmap2ref* bm2ref;
 
   VG_(OSetGen_ResetIter)(bm->oset);
 
-  for ( ; (bm2 = VG_(OSetGen_Next)(bm->oset)) != 0; )
+  for ( ; (bm2ref = VG_(OSetGen_Next)(bm->oset)) != 0; )
   {
-    const struct bitmap1* const bm1 = &bm2->bm1;
+    const struct bitmap1* bm1;
     unsigned b;
+
+    bm2 = bm2ref->bm2;
+    bm1 = &bm2->bm1;
     for (b = 0; b < ADDR0_COUNT; b++)
     {
       const Addr a = (bm2->addr << ADDR0_BITS) | b;
@@ -742,6 +786,54 @@ ULong bm_get_bitmap2_creation_count(void)
   return s_bitmap2_creation_count;
 }
 
+/** Allocate and initialize a second level bitmap. */
+static struct bitmap2* bm2_new(const UWord a1)
+{
+  struct bitmap2* bm2;
+
+  bm2 = VG_(malloc)(sizeof(*bm2));
+  bm2->addr   = a1;
+  bm2->refcnt = 1;
+
+  s_bitmap2_creation_count++;
+
+  return bm2;
+}
+
+/** Make a copy of a shared second level bitmap such that the copy can be
+ *  modified.
+ *
+ *  @param a1 client address shifted right by ADDR0_BITS.
+ *  @param bm bitmap pointer.
+ */
+static
+struct bitmap2* bm2_make_exclusive(struct bitmap* const bm,
+                                   struct bitmap2ref* const bm2ref)
+{
+  UWord a1;
+  struct bitmap2* bm2;
+  struct bitmap2* bm2_copy;
+
+  tl_assert(bm);
+  tl_assert(bm2ref);
+  bm2 = bm2ref->bm2;
+  tl_assert(bm2);
+  tl_assert(bm2->refcnt > 1);
+  bm2->refcnt--;
+  tl_assert(bm2->refcnt >= 1);
+  a1 = bm2->addr;
+  bm2_copy = bm2_new(a1);
+  tl_assert(bm2_copy);
+  tl_assert(bm2_copy->addr   == a1);
+  tl_assert(bm2_copy->refcnt == 1);
+  VG_(memcpy)(&bm2_copy->bm1, &bm2->bm1, sizeof(bm2->bm1));
+  bm2ref->bm2 = bm2_copy;
+
+  bm_update_cache(bm, a1, bm2_copy);
+
+  return bm2_copy;
+}
+
 static void bm2_merge(struct bitmap2* const bm2l,
                       const struct bitmap2* const bm2r)
 {
@@ -750,6 +842,7 @@ static void bm2_merge(struct bitmap2* const bm2l,
   tl_assert(bm2l);
   tl_assert(bm2r);
   tl_assert(bm2l->addr == bm2r->addr);
+  tl_assert(bm2l->refcnt == 1);
 
   for (k = 0; k < BITMAP1_UWORD_COUNT; k++)
   {

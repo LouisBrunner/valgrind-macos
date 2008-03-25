@@ -434,7 +434,14 @@ struct bitmap2* bm2_lookup_or_insert(const struct bitmap* const bm,
   struct bitmap2* bm2;
 
   tl_assert(bm);
-  if (! bm_cache_lookup(bm, a1, &bm2) || bm2 == 0)
+  if (bm_cache_lookup(bm, a1, &bm2))
+  {
+    if (bm2 == 0)
+    {
+      bm2 = bm2_insert(bm, a1);
+    }
+  }
+  else
   {
     bm2ref = VG_(OSetGen_Lookup)(bm->oset, &a1);
     if (bm2ref)

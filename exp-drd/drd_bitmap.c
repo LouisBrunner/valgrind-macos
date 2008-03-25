@@ -59,15 +59,18 @@ struct bitmap* bm_new()
   unsigned i;
   struct bitmap* bm;
 
-  // If this assert fails, fix the definition of BITS_PER_BITS_PER_UWORD
-  // in drd_bitmap.h.
+  /* If this assert fails, fix the definition of BITS_PER_BITS_PER_UWORD */
+  /* in drd_bitmap.h.                                                    */
   tl_assert((1 << BITS_PER_BITS_PER_UWORD) == BITS_PER_UWORD);
 
   bm = VG_(malloc)(sizeof(*bm));
   tl_assert(bm);
+  /* Cache initialization. a1 is initialized with a value that never can */
+  /* match any valid address: the upper ADDR0_BITS bits of a1 are always */
+  /* zero for a valid cache entry.                                       */
   for (i = 0; i < N_CACHE_ELEM; i++)
   {
-    bm->cache[i].a1  = 0;
+    bm->cache[i].a1  = ~(UWord)1;
     bm->cache[i].bm2 = 0;
   }
   bm->oset = VG_(OSetGen_Create)(0, 0, VG_(malloc), VG_(free));

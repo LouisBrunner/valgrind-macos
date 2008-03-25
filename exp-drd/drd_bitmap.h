@@ -201,69 +201,74 @@ static struct bitmap2* bm2_make_exclusive(struct bitmap* const bm,
                                           struct bitmap2ref* const bm2ref);
 
 
-#if 0
-/** Bitmap invariant check.
- *
- *  @return 1 if the invariant is satisfied, 0 if not.
- */
 static __inline__
-int bm_check(const struct bitmap* const bm)
-{
-  struct bitmap2_ref* bm2ref;
-
-  tl_assert(bm);
-
-  return (bm->cache[0].a1 == 0
-          && bm->cache[1].a1 == 0
-          || ((bm2ref = VG_(OSetGen_Lookup)(bm->oset, &bm->last_lookup_a1))
-              && bm2ref->bm2
-              && bm->last_lookup_a1 == bm2ref->bm2->addr
-              && bm2ref->bm2->refcnt >= 1)
-          );
-}
-#endif
-
-static __inline__
-struct bitmap2* bm_cache_lookup(const struct bitmap* const bm, const UWord a1)
+Bool bm_cache_lookup(const struct bitmap* const bm, const UWord a1,
+                     struct bitmap2** bm2)
 {
   tl_assert(bm);
+  tl_assert(bm2);
 
 #if N_CACHE_ELEM > 8
 #error Please update the code below.
 #endif
 #if N_CACHE_ELEM >= 1
   if (a1 == bm->cache[0].a1)
-    return bm->cache[0].bm2;
+  {
+    *bm2 = bm->cache[0].bm2;
+    return True;
+  }
 #endif
 #if N_CACHE_ELEM >= 2
   if (a1 == bm->cache[1].a1)
-    return bm->cache[1].bm2;
+  {
+    *bm2 = bm->cache[1].bm2;
+    return True;
+  }
 #endif
 #if N_CACHE_ELEM >= 3
   if (a1 == bm->cache[2].a1)
-    return bm->cache[2].bm2;
+  {
+    *bm2 = bm->cache[2].bm2;
+    return True;
+  }
 #endif
 #if N_CACHE_ELEM >= 4
   if (a1 == bm->cache[3].a1)
-    return bm->cache[3].bm2;
+  {
+    *bm2 = bm->cache[3].bm2;
+    return True;
+  }
 #endif
 #if N_CACHE_ELEM >= 5
   if (a1 == bm->cache[4].a1)
-    return bm->cache[4].bm2;
+  {
+    *bm2 = bm->cache[4].bm2;
+    return True;
+  }
 #endif
 #if N_CACHE_ELEM >= 6
   if (a1 == bm->cache[5].a1)
-    return bm->cache[5].bm2;
+  {
+    *bm2 = bm->cache[5].bm2;
+    return True;
+  }
 #endif
 #if N_CACHE_ELEM >= 7
   if (a1 == bm->cache[6].a1)
-    return bm->cache[6].bm2;
+  {
+    *bm2 = bm->cache[6].bm2;
+    return True;
+  }
 #endif
 #if N_CACHE_ELEM >= 8
   if (a1 == bm->cache[7].a1)
-    return bm->cache[7].bm2;
+  {
+    *bm2 = bm->cache[7].bm2;
+    return True;
+  }
 #endif
-  return 0;
+  *bm2 = 0;
+  return False;
 }
 
 static __inline__
@@ -311,25 +316,20 @@ void bm_update_cache(struct bitmap* const bm,
 static __inline__
 const struct bitmap2* bm2_lookup(const struct bitmap* const bm, const UWord a1)
 {
+  struct bitmap2*    bm2;
   struct bitmap2ref* bm2ref;
 
   tl_assert(bm);
-  if (a1 == bm->cache[0].a1)
+  if (! bm_cache_lookup(bm, a1, &bm2))
   {
-    return bm->cache[0].bm2;
-  }
-  if (a1 == bm->cache[1].a1)
-  {
-    return bm->cache[1].bm2;
-  }
-  bm2ref = VG_(OSetGen_Lookup)(bm->oset, &a1);
-  if (bm2ref)
-  {
-    struct bitmap2* const bm2 = bm2ref->bm2;
+    bm2ref = VG_(OSetGen_Lookup)(bm->oset, &a1);
+    if (bm2ref)
+    {
+      bm2 = bm2ref->bm2;
+    }
     bm_update_cache(*(struct bitmap**)&bm, a1, bm2);
-    return bm2;
   }
-  return 0;
+  return bm2;
 }
 
 /** Look up the address a1 in bitmap bm and return a pointer to a second
@@ -346,9 +346,10 @@ bm2_lookup_exclusive(const struct bitmap* const bm, const UWord a1)
   struct bitmap2* bm2;
 
   bm2ref = 0;
-  bm2 = bm_cache_lookup(bm, a1);
-  if (bm2)
+  if (bm_cache_lookup(bm, a1, &bm2))
   {
+    if (bm2 == 0)
+      return 0;
     if (bm2->refcnt > 1)
     {
       bm2ref = VG_(OSetGen_Lookup)(bm->oset, &a1);
@@ -357,14 +358,9 @@ bm2_lookup_exclusive(const struct bitmap* const bm, const UWord a1)
   else
   {
     bm2ref = VG_(OSetGen_Lookup)(bm->oset, &a1);
-    if (bm2ref)
-    {
-      bm2 = bm2ref->bm2;
-    }
-    else
-    {
+    if (bm2ref == 0)
       return 0;
-    }
+    bm2 = bm2ref->bm2;
   }
 
   tl_assert(bm2);
@@ -438,8 +434,7 @@ struct bitmap2* bm2_lookup_or_insert(const struct bitmap* const bm,
   struct bitmap2* bm2;
 
   tl_assert(bm);
-  bm2 = bm_cache_lookup(bm, a1);
-  if (bm2 == 0)
+  if (! bm_cache_lookup(bm, a1, &bm2) || bm2 == 0)
   {
     bm2ref = VG_(OSetGen_Lookup)(bm->oset, &a1);
     if (bm2ref)

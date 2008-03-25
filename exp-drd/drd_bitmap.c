@@ -379,28 +379,6 @@ UWord bm_has_1(const struct bitmap* const bm,
   return 0;
 }
 
-static __inline__
-void bm1_clear(struct bitmap1* const bm1, const Addr a1, const Addr a2)
-{
-  UWord idx;
-  UWord mask;
-
-#if 0
-  /* Commented out the statements below because of performance reasons. */
-  tl_assert(a1);
-  tl_assert(a1 <= a2);
-  tl_assert(UWORD_MSB(a1) == UWORD_MSB(a2)
-            || UWORD_MSB(a1) == UWORD_MSB(a2 - 1));
-#endif
-
-  idx = (a1 & ADDR0_MASK) >> BITS_PER_BITS_PER_UWORD;
-  /* mask: a contiguous series of one bits. The first bit set is bit */
-  /* UWORD_LSB(a2-1), and the last bit set is UWORD_LSB(a1).         */
-  mask = UWORD_LSB(a2) ? bm0_mask(a2) - bm0_mask(a1) : - bm0_mask(a1);
-  bm1->bm0_r[idx] &= ~mask;
-  bm1->bm0_w[idx] &= ~mask;
-}
-
 void bm_clear(const struct bitmap* const bm,
               const Addr a1,
               const Addr a2)
@@ -425,14 +403,14 @@ void bm_clear(const struct bitmap* const bm,
     {
       Addr c = b;
       /* If the first address in the bitmap that must be cleared does not */
-      /* start on an UWord boundary, start clearing the first addresses   */
-      /* by calling bm1_clear().                                          */
+      /* start on an UWord boundary, start clearing the first addresses.  */
       if (UWORD_LSB(c))
       {
         Addr c_next = UWORD_MSB(c) + BITS_PER_UWORD;
         if (c_next > b_next)
           c_next = b_next;
-        bm1_clear(&p2->bm1, c, c_next);
+        bm0_clear_range(p2->bm1.bm0_r, c & ADDR0_MASK, c_next - c);
+        bm0_clear_range(p2->bm1.bm0_w, c & ADDR0_MASK, c_next - c);
         c = c_next;
       }
       /* If some UWords have to be cleared entirely, do this now. */
@@ -452,12 +430,10 @@ void bm_clear(const struct bitmap* const bm,
         }
       }
       /* If the last address in the bitmap that must be cleared does not */
-      /* fall on an UWord boundary, clear the last addresses by calling  */
-      /* bm1_clear().                                                    */
-      if (c != b_next)
-      {
-        bm1_clear(&p2->bm1, c, b_next);
-      }
+      /* fall on an UWord boundary, clear the last addresses.            */
+      /* tl_assert(c <= b_next); */
+      bm0_clear_range(p2->bm1.bm0_r, c & ADDR0_MASK, b_next - c);
+      bm0_clear_range(p2->bm1.bm0_w, c & ADDR0_MASK, b_next - c);
     }
   }
 }

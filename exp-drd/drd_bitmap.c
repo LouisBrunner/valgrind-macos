@@ -401,25 +401,6 @@ void bm1_clear(struct bitmap1* const bm1, const Addr a1, const Addr a2)
   bm1->bm0_w[idx] &= ~mask;
 }
 
-void bm_clear_all(const struct bitmap* const bm)
-{
-  struct bitmap2* bm2;
-  struct bitmap2ref* bm2ref;
-
-  VG_(OSetGen_ResetIter)(bm->oset);
-
-  for ( ; (bm2ref = VG_(OSetGen_Next)(bm->oset)) != 0; )
-  {
-    struct bitmap1* bm1;
-
-    bm2 = bm2ref->bm2;
-    bm1 = &bm2->bm1;
-    tl_assert(bm1);
-    VG_(memset)(&bm1->bm0_r[0], 0, sizeof(bm1->bm0_r));
-    VG_(memset)(&bm1->bm0_w[0], 0, sizeof(bm1->bm0_w));
-  }
-}
-
 void bm_clear(const struct bitmap* const bm,
               const Addr a1,
               const Addr a2)

@@ -48,8 +48,10 @@
 #include "pub_tool_libcproc.h"
 #include "pub_tool_machine.h"
 #include "pub_tool_options.h"     // command line options
+#include "pub_tool_replacemalloc.h"
 #include "pub_tool_threadstate.h" // VG_(get_running_tid)()
 #include "pub_tool_tooliface.h"
+#include "pub_tool_replacemalloc.h"
 
 
 // Function declarations.
@@ -102,7 +104,7 @@ static Bool drd_process_cmd_line_option(Char* arg)
   else VG_BOOL_CLO(arg, "--trace-suppression", trace_suppression)
   else VG_STR_CLO (arg, "--trace-address",     trace_address)
   else
-    return False;
+    return VG_(replacement_malloc_process_cmd_line_option)(arg);
 
   if (segment_merging != -1)
     thread_set_segment_merging(segment_merging);

@@ -13,14 +13,86 @@ PRI: 33  = fix this for 3.3.1
 
 ---------- Bugs reported after (in) 3.3.0 --------------------------
 
+check r7322 is merged to branch
+and 7324 ?
+7334
+7347
+7350
+7355
+
+get rid of pointless constraint !(--db-attach=yes &&
+--trace-children=yes) (users, 14 feb)
+
+utimensat syswrap bug (Kegel, users, 24 Feb)
+
+r7454: Intercept pthread_rwlock_try{rd,wr}lock.  Fixes #158212.
+
+openoffice on suse 10.3 readlink stack problem
+
 Core2/ssse3 support in the trunk: vx1808, vx1809, vx1810, 
                                   r7384, r7385, r7387, r7389.
+(in essence #155528)
 
 Consider potential space/time effects of r7383 (see reply to
 the commit message).
 
 Either back out r7353, or fix the resulting signedness problem
-properly (see replies to the commit message).
+properly (see replies to the commit message).  (now fixed ...)
+
+re Keller vpath bug, don't use attached patch; use Ashley's one
+instead (on @dev ?)
+
+--- start 27 March 08 ---
+
+156065 VALGRIND_MEMPOOL_ALLOC vs. zero-size allocs triggers false
+"overlapping" error
+
+156404 Unable to start oocalc under memcheck on openSUSE 10.3 (64-bit)
+
+157665 Valgrind fails on shmdt(0) after shmat to 0 in X int10 code
+
+126389 (fxrstr) vex x86->IR: unhandled instruction bytes: 0xF 0xAE
+0x4D 0xF0 
+158525 Valgrind doesn't recognise fxrstor instruction
+
+
+157748 New: valgrind seems to not recognize what would be sse2
+instructions
+
+158004 "Assertion 'szB == 32 || szB == 128' failed" with valgrind
+cross-compiled for ppc32
+
+158042 --db-attach at invalid free() gives broken stack trace on
+x86_64
+
+149878 add (proper) check for calloc integer overflow
+
+158212 Locks taken by pthread_rwlock_tryrdlock and
+pthread_rwlock_trywrlock not recognised by helgrind
+
+158425 sys_poll incorrectly emulated when RES==0
+
+158730 ppc: illegal opcode crash on instruction fctiwz
+
+158744 Valgrind fails to handle interlocked instructions on extended
+registers (r8, etc) on amd64 (vex amd64->IR: unhandled instruction
+bytes: 0xF0 0x41 0xF 0xC0 0x87 0xB8)
+
+153196 (repnz cmpsb) vex x86->IR: unhandled instruction bytes: 0xF2
+0xA6 0x89 0x45
+
+159285 unhandled syscall:25
+
+159452 unhandled ioctl 0x8B01 on "valgrind iwconfig"
+
+159501 incorrect handling of ALSA ioctls
+
+159659 scas does not use ES segment selector
+
+159720 Opcode 0xFF 0x58 0xEB 0x5 unhandled on x86
+
+--- end 27 March 08 ---
+
 
 TRUNK   33BRANCH  PRI    BUG#  WHAT
 
@@ -38,6 +110,7 @@ vx1807  pending    33  155011  vex x86->IR: 0xCF (iret)
 
 r7347   pending    33  155091  Warning [...] unhandled DW_OP_ opcode 0x23
                                (patch proposed, waiting for feedback)
+156960 == 155091
 
 r7355   r7356      33  155929  ms_print fails on massif outputs 
                                containing long lines

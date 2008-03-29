@@ -17,8 +17,7 @@ How to test DRD
      ./vg-in-place --tool=exp-drd kate
      ./vg-in-place --trace-children=yes --tool=exp-drd knode
 4. Test DRD with Firefox. First of all, build and install Firefox 3. Next,
-   run one of the following commands:
-     LD_LIBRARY_PATH=$HOME/firefox3/lib/firefox-3.0b4: ./vg-in-place --trace-children=yes --tool=exp-drd $HOME/firefox3/lib/firefox-3.0b4/firefox-bin
+   run the following command:
      LD_LIBRARY_PATH=$HOME/software/mozilla-build/dist/lib: ./vg-in-place --trace-children=yes --tool=exp-drd $HOME/software/mozilla-build/dist/bin/firefox-bin
 
 
@@ -56,12 +55,11 @@ ac_add_options --disable-tests
 ac_add_options --enable-debug
 ac_add_options --enable-static
 ac_add_options --prefix $PREFIX
+ac_add_options --enable-optimize="-O1 -g -pipe"
 EOF
-
-export CFLAGS=-pipe
 
 ${SRC}/configure
 
-make -s         || exit $?
-make -s install || exit $?
+make -s -j2     || exit $?
+# make -s install || exit $?
 ------------------------------------------------------------

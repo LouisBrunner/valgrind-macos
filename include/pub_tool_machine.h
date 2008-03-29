@@ -105,6 +105,9 @@ extern Bool VG_(thread_stack_next)       ( /*MOD*/ThreadId* tid,
 // Returns .client_stack_highest_word for the given thread
 extern Addr VG_(thread_get_stack_max) ( ThreadId tid );
 
+// Returns how many bytes have been allocated for the stack of the given thread
+extern Addr VG_(thread_get_stack_size) ( ThreadId tid );
+
 // Given a pointer to a function as obtained by "& functionname" in C,
 // produce a pointer to the actual entry point for the function.  For
 // most platforms it's the identity function.  Unfortunately, on

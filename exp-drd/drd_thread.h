@@ -60,9 +60,11 @@ typedef struct
   Segment*  last;
   ThreadId  vg_threadid;
   PThreadId pt_threadid;
-  Addr      stack_min;
-  Addr      stack_startup;
-  Addr      stack_max;
+  Addr      stack_min_min; /** Lowest value stack pointer ever had. */
+  Addr      stack_min;     /** Current stack pointer. */
+  Addr      stack_startup; /** Stack pointer after pthread_create() finished.*/
+  Addr      stack_max;     /** Top of stack. */
+  SizeT     stack_size;    /** Maximum size of stack. */
   /// Indicates whether the Valgrind core knows about this thread.
   Bool      vg_thread_exists;
   /// Indicates whether there is an associated POSIX thread ID.
@@ -103,7 +105,9 @@ void thread_delete(const DrdThreadId tid);
 void thread_finished(const DrdThreadId tid);
 void thread_set_stack_startup(const DrdThreadId tid, const Addr stack_startup);
 Addr thread_get_stack_min(const DrdThreadId tid);
+Addr thread_get_stack_min_min(const DrdThreadId tid);
 Addr thread_get_stack_max(const DrdThreadId tid);
+SizeT thread_get_stack_size(const DrdThreadId tid);
 void thread_set_pthreadid(const DrdThreadId tid, const PThreadId ptid);
 Bool thread_get_joinable(const DrdThreadId tid);
 void thread_set_joinable(const DrdThreadId tid, const Bool joinable);
@@ -172,6 +176,10 @@ void thread_set_stack_min(const DrdThreadId tid, const Addr stack_min)
 #if 0
     tl_assert(s_threadinfo[tid].stack_min < s_threadinfo[tid].stack_max);
 #endif
+    if (UNLIKELY(stack_min < s_threadinfo[tid].stack_min_min))
+    {
+      s_threadinfo[tid].stack_min_min = stack_min;
+    }
   }
 }
 

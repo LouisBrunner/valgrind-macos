@@ -127,6 +127,7 @@ DrdThreadId VgThreadIdToNewDrdThreadId(const ThreadId tid)
       s_threadinfo[i].vg_threadid   = tid;
       s_threadinfo[i].pt_threadid   = INVALID_POSIX_THREADID;
       s_threadinfo[i].stack_min     = 0;
+      s_threadinfo[i].stack_min_min = 0;
       s_threadinfo[i].stack_startup = 0;
       s_threadinfo[i].stack_max     = 0;
       s_threadinfo[i].is_recording  = True;
@@ -221,6 +222,8 @@ DrdThreadId thread_post_create(const ThreadId vg_created)
   s_threadinfo[created].stack_max     = VG_(thread_get_stack_max)(vg_created);
   s_threadinfo[created].stack_startup = s_threadinfo[created].stack_max;
   s_threadinfo[created].stack_min     = s_threadinfo[created].stack_max;
+  s_threadinfo[created].stack_min_min = s_threadinfo[created].stack_max;
+  s_threadinfo[created].stack_size    = VG_(thread_get_stack_size)(vg_created);
   tl_assert(s_threadinfo[created].stack_max != 0);
 
   return created;
@@ -245,11 +248,25 @@ Addr thread_get_stack_min(const DrdThreadId tid)
   return s_threadinfo[tid].stack_min;
 }
 
+Addr thread_get_stack_min_min(const DrdThreadId tid)
+{
+  tl_assert(0 <= tid && tid < DRD_N_THREADS
+            && tid != DRD_INVALID_THREADID);
+  return s_threadinfo[tid].stack_min_min;
+}
+
 Addr thread_get_stack_max(const DrdThreadId tid)
 {
   tl_assert(0 <= tid && tid < DRD_N_THREADS
             && tid != DRD_INVALID_THREADID);
   return s_threadinfo[tid].stack_max;
+}
+
+SizeT thread_get_stack_size(const DrdThreadId tid)
+{
+  tl_assert(0 <= tid && tid < DRD_N_THREADS
+            && tid != DRD_INVALID_THREADID);
+  return s_threadinfo[tid].stack_size;
 }
 
 /** Clean up thread-specific data structures. Call this just after 

@@ -194,8 +194,7 @@ typedef struct {
       apply.  We don't know the size of the stack since we didn't
       allocate it, and furthermore we never reallocate it. */
 
-   /* The allocated size of this thread's stack (permanently zero
-      if this is ThreadId == 1, since we didn't allocate its stack) */
+   /* The allocated size of this thread's stack */
    SizeT client_stack_szB;
 
    /* Address of the highest legitimate word in this stack.  This is

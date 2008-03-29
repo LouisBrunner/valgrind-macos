@@ -65,6 +65,7 @@ static Bool drd_print_stats = False;
 static Bool drd_trace_fork_join = False;
 static Bool drd_trace_mem = False;
 static Addr drd_trace_address = 0;
+static Bool s_drd_var_info = False;
 
 
 //
@@ -102,6 +103,7 @@ static Bool drd_process_cmd_line_option(Char* arg)
   else VG_BOOL_CLO(arg, "--trace-segment",     trace_segment)
   else VG_BOOL_CLO(arg, "--trace-semaphore",   trace_semaphore)
   else VG_BOOL_CLO(arg, "--trace-suppression", trace_suppression)
+  else VG_BOOL_CLO(arg, "--var-info",          s_drd_var_info)
   else VG_STR_CLO (arg, "--trace-address",     trace_address)
   else
     return VG_(replacement_malloc_process_cmd_line_option)(arg);
@@ -727,6 +729,11 @@ void drd_post_clo_init(void)
 #  else
   VG_(printf)("\nWARNING: DRD has only been tested on x86-linux and amd64-linux.\n\n");
 #  endif
+
+  if (s_drd_var_info)
+  {
+    VG_(needs_var_info)();
+  }
 }
 
 static void instrument_load(IRSB* const bb,
@@ -1038,8 +1045,6 @@ void drd_pre_clo_init(void)
   VG_(track_pre_thread_ll_exit)   (drd_thread_finished);
 
   // Other stuff.
-  VG_(needs_var_info)();
-
   drd_register_malloc_wrappers(drd_start_using_mem, drd_stop_using_mem);
 
   drd_clientreq_init();

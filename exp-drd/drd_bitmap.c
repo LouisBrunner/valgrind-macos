@@ -441,6 +441,42 @@ void bm_clear(const struct bitmap* const bm,
   }
 }
 
+/** Clear all references to loads in bitmap bm starting at address a1 and
+ *  up to but not including address a2.
+ */
+void bm_clear_load(const struct bitmap* const bm,
+                   const Addr a1, const Addr a2)
+{
+  Addr a;
+
+  for (a = a1; a < a2; a++)
+  {
+    struct bitmap2* const p2 = bm2_lookup_exclusive(bm, a >> ADDR0_BITS);
+    if (p2)
+    {
+      bm0_clear(p2->bm1.bm0_r, a & ADDR0_MASK);
+    }
+  }
+}
+
+/** Clear all references to stores in bitmap bm starting at address a1 and
+ *  up to but not including address a2.
+ */
+void bm_clear_store(const struct bitmap* const bm,
+                    const Addr a1, const Addr a2)
+{
+  Addr a;
+
+  for (a = a1; a < a2; a++)
+  {
+    struct bitmap2* const p2 = bm2_lookup_exclusive(bm, a >> ADDR0_BITS);
+    if (p2)
+    {
+      bm0_clear(p2->bm1.bm0_w, a & ADDR0_MASK);
+    }
+  }
+}
+
 Bool bm_has_conflict_with(const struct bitmap* const bm,
                           const Addr a1, const Addr a2,
                           const BmAccessTypeT access_type)

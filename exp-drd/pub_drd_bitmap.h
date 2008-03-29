@@ -80,6 +80,10 @@ UWord bm_has_1(const struct bitmap* const bm,
                const Addr address, const BmAccessTypeT access_type);
 void bm_clear(const struct bitmap* const bm,
               const Addr a1, const Addr a2);
+void bm_clear_load(const struct bitmap* const bm,
+                   const Addr a1, const Addr a2);
+void bm_clear_store(const struct bitmap* const bm,
+                    const Addr a1, const Addr a2);
 Bool bm_has_conflict_with(const struct bitmap* const bm,
                           const Addr a1, const Addr a2,
                           const BmAccessTypeT access_type);

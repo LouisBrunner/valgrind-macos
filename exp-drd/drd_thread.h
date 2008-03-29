@@ -170,16 +170,13 @@ void thread_set_stack_min(const DrdThreadId tid, const Addr stack_min)
 #if 0
   tl_assert(0 <= tid && tid < DRD_N_THREADS && tid != DRD_INVALID_THREADID);
 #endif
-  if (s_threadinfo[tid].stack_max)
-  {
-    s_threadinfo[tid].stack_min = stack_min;
+  s_threadinfo[tid].stack_min = stack_min;
 #if 0
-    tl_assert(s_threadinfo[tid].stack_min < s_threadinfo[tid].stack_max);
+  tl_assert(s_threadinfo[tid].stack_min < s_threadinfo[tid].stack_max);
 #endif
-    if (UNLIKELY(stack_min < s_threadinfo[tid].stack_min_min))
-    {
-      s_threadinfo[tid].stack_min_min = stack_min;
-    }
+  if (UNLIKELY(stack_min < s_threadinfo[tid].stack_min_min))
+  {
+    s_threadinfo[tid].stack_min_min = stack_min;
   }
 }
 

@@ -172,7 +172,10 @@ void thread_set_stack_min(const DrdThreadId tid, const Addr stack_min)
 #endif
   s_threadinfo[tid].stack_min = stack_min;
 #if 0
-  tl_assert(s_threadinfo[tid].stack_min < s_threadinfo[tid].stack_max);
+  /* This function can be called after the thread has been created but */
+  /* before drd_post_thread_create() has filled in stack_max.          */
+  tl_assert(s_threadinfo[tid].stack_min < s_threadinfo[tid].stack_max
+            || s_threadinfo[tid].stack_max == 0);
 #endif
   if (UNLIKELY(stack_min < s_threadinfo[tid].stack_min_min))
   {

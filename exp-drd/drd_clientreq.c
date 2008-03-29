@@ -109,8 +109,12 @@ static Bool drd_handle_client_request(ThreadId vg_tid, UWord* arg, UWord* ret)
     thread_new_segment(PtThreadIdToDrdThreadId(arg[1]));
     break;
 
-  case VG_USERREQ__DRD_TRACE_ADDR:
-    drd_trace_addr(arg[1]);
+  case VG_USERREQ__DRD_START_TRACE_ADDR:
+    drd_start_tracing_address_range(arg[1], arg[1] + arg[2]);
+    break;
+
+  case VG_USERREQ__DRD_STOP_TRACE_ADDR:
+    drd_stop_tracing_address_range(arg[1], arg[1] + arg[2]);
     break;
 
   case VG_USERREQ__SET_PTHREADID:

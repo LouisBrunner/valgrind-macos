@@ -25,8 +25,6 @@
 
 void drd_post_thread_join(DrdThreadId joiner, DrdThreadId joinee);
 
-void drd_trace_addr(const Addr addr);
-
 void drd_pre_mutex_init(Addr mutex, const MutexT mutex_type);
 void drd_post_mutex_destroy(Addr mutex, const MutexT mutex_type);
 void drd_pre_mutex_lock(const Addr mutex, const MutexT mutex_type,

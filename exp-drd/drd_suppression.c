@@ -35,6 +35,7 @@
 
 static struct bitmap* s_suppressed;
 static Bool s_trace_suppression;
+Bool g_any_address_traced = False;
 
 
 // Function definitions.
@@ -81,7 +82,7 @@ void drd_finish_suppression(const Addr a1, const Addr a2)
      VG_(get_and_pp_StackTrace)(VG_(get_running_tid)(), 12);
      tl_assert(False);
   }
-  bm_clear(s_suppressed, a1, a2);
+  bm_clear_store(s_suppressed, a1, a2);
 }
 
 /**
@@ -102,6 +103,33 @@ Bool drd_is_suppressed(const Addr a1, const Addr a2)
 Bool drd_is_any_suppressed(const Addr a1, const Addr a2)
 {
   return bm_has_any(s_suppressed, a1, a2, eStore);
+}
+
+void drd_start_tracing_address_range(const Addr a1, const Addr a2)
+{
+  tl_assert(a1 < a2);
+
+  bm_access_range_load(s_suppressed, a1, a2);
+  if (! g_any_address_traced)
+  {
+    g_any_address_traced = True;
+  }
+}
+
+void drd_stop_tracing_address_range(const Addr a1, const Addr a2)
+{
+  tl_assert(a1 < a2);
+
+  bm_clear_load(s_suppressed, a1, a2);
+  if (g_any_address_traced)
+  {
+    g_any_address_traced = bm_has_any(s_suppressed, 0, ~(Addr)0, eLoad);
+  }
+}
+
+Bool drd_is_any_traced(const Addr a1, const Addr a2)
+{
+  return bm_has_any(s_suppressed, a1, a2, eLoad);
 }
 
 void drd_suppression_stop_using_mem(const Addr a1, const Addr a2)

@@ -63,8 +63,6 @@ static void drd_start_client_code(const ThreadId tid, const ULong bbs_done);
 
 static Bool drd_print_stats     = False;
 static Bool drd_trace_fork_join = False;
-static Bool drd_trace_mem       = False;
-static Addr drd_trace_address   = 0;
 static Bool s_drd_var_info      = False;
 static Bool s_show_stack_usage  = False;
 
@@ -99,7 +97,6 @@ static Bool drd_process_cmd_line_option(Char* arg)
   else VG_BOOL_CLO(arg, "--trace-csw",         trace_csw)
   else VG_BOOL_CLO(arg, "--trace-danger-set",  trace_danger_set)
   else VG_BOOL_CLO(arg, "--trace-fork-join",   drd_trace_fork_join)
-  else VG_BOOL_CLO(arg, "--trace-mem",         drd_trace_mem)
   else VG_BOOL_CLO(arg, "--trace-mutex",       trace_mutex)
   else VG_BOOL_CLO(arg, "--trace-rwlock",      trace_rwlock)
   else VG_BOOL_CLO(arg, "--trace-segment",     trace_segment)
@@ -116,7 +113,8 @@ static Bool drd_process_cmd_line_option(Char* arg)
     set_show_conflicting_segments(show_confl_seg);
   if (trace_address)
   {
-    drd_trace_address = VG_(strtoll16)(trace_address, 0);
+    const Addr addr = VG_(strtoll16)(trace_address, 0);
+    drd_start_tracing_address_range(addr, addr + 1);
   }
   if (trace_barrier != -1)
     barrier_set_trace(trace_barrier);
@@ -221,7 +219,7 @@ static VG_REGPARM(2) void drd_trace_load(Addr addr, SizeT size)
   if (! running_thread_is_recording())
     return;
 
-  if (drd_trace_mem || (addr == drd_trace_address))
+  if (range_any_is_traced(addr, size))
   {
     drd_trace_mem_access(addr, size, eLoad);
   }
@@ -240,7 +238,7 @@ static VG_REGPARM(1) void drd_trace_load_1(Addr addr)
   if (! running_thread_is_recording())
     return;
 
-  if (drd_trace_mem || (addr == drd_trace_address))
+  if (range_any_is_traced(addr, 1))
   {
     drd_trace_mem_access(addr, 1, eLoad);
   }
@@ -259,7 +257,7 @@ static VG_REGPARM(1) void drd_trace_load_2(Addr addr)
   if (! running_thread_is_recording())
     return;
 
-  if (drd_trace_mem || (addr == drd_trace_address))
+  if (range_any_is_traced(addr, 2))
   {
     drd_trace_mem_access(addr, 2, eLoad);
   }
@@ -278,7 +276,7 @@ static VG_REGPARM(1) void drd_trace_load_4(Addr addr)
   if (! running_thread_is_recording())
     return;
 
-  if (drd_trace_mem || (addr == drd_trace_address))
+  if (range_any_is_traced(addr, 4))
   {
     drd_trace_mem_access(addr, 4, eLoad);
   }
@@ -297,7 +295,7 @@ static VG_REGPARM(1) void drd_trace_load_8(Addr addr)
   if (! running_thread_is_recording())
     return;
 
-  if (drd_trace_mem || (addr == drd_trace_address))
+  if (range_any_is_traced(addr, 8))
   {
     drd_trace_mem_access(addr, 8, eLoad);
   }
@@ -323,7 +321,7 @@ VG_REGPARM(2) void drd_trace_store(Addr addr, SizeT size)
   if (! running_thread_is_recording())
     return;
 
-  if (drd_trace_mem || (addr == drd_trace_address))
+  if (range_any_is_traced(addr, size))
   {
     drd_trace_mem_access(addr, size, eStore);
   }
@@ -342,7 +340,7 @@ static VG_REGPARM(1) void drd_trace_store_1(Addr addr)
   if (! running_thread_is_recording())
     return;
 
-  if (drd_trace_mem || (addr == drd_trace_address))
+  if (range_any_is_traced(addr, 1))
   {
     drd_trace_mem_access(addr, 1, eStore);
   }
@@ -361,7 +359,7 @@ static VG_REGPARM(1) void drd_trace_store_2(Addr addr)
   if (! running_thread_is_recording())
     return;
 
-  if (drd_trace_mem || (addr == drd_trace_address))
+  if (range_any_is_traced(addr, 2))
   {
     drd_trace_mem_access(addr, 2, eStore);
   }
@@ -380,7 +378,7 @@ static VG_REGPARM(1) void drd_trace_store_4(Addr addr)
   if (! running_thread_is_recording())
     return;
 
-  if (drd_trace_mem || (addr == drd_trace_address))
+  if (range_any_is_traced(addr, 4))
   {
     drd_trace_mem_access(addr, 4, eStore);
   }
@@ -399,7 +397,7 @@ static VG_REGPARM(1) void drd_trace_store_8(Addr addr)
   if (! running_thread_is_recording())
     return;
 
-  if (drd_trace_mem || (addr == drd_trace_address))
+  if (range_any_is_traced(addr, 8))
   {
     drd_trace_mem_access(addr, 8, eStore);
   }
@@ -460,11 +458,9 @@ static void drd_post_mem_write(const CorePart part,
 
 static void drd_start_using_mem(const Addr a1, const SizeT len)
 {
-  const Addr a2 = a1 + len;
+  tl_assert(a1 < a1 + len);
 
-  tl_assert(a1 < a2);
-
-  if (a1 <= drd_trace_address && drd_trace_address < a2)
+  if (range_any_is_traced(a1, len))
   {
     drd_trace_mem_access(a1, len, eStart);
   }
@@ -476,7 +472,7 @@ static void drd_stop_using_mem(const Addr a1, const SizeT len)
 
   tl_assert(a1 < a2);
 
-  if (a1 <= drd_trace_address && drd_trace_address < a2)
+  if (range_any_is_traced(a1, len))
   {
     drd_trace_mem_access(a1, len, eEnd);
   }
@@ -593,10 +589,6 @@ void drd_post_thread_join(DrdThreadId drd_joiner, DrdThreadId drd_joinee)
   barrier_thread_delete(drd_joinee);
 }
 
-void drd_trace_addr(const Addr addr)
-{
-  drd_trace_address = addr;
-}
 
 /* Called after a thread has performed its last memory access. */
 static void drd_thread_finished(ThreadId vg_tid)

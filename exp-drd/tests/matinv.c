@@ -226,12 +226,19 @@ static void gj(elem_t* const a, const int rows, const int cols)
   int i;
   struct gj_threadinfo* t;
   pthread_barrier_t b;
+  pthread_attr_t attr;
+  int err;
 
   assert(rows <= cols);
 
   t = malloc(sizeof(struct gj_threadinfo) * s_nthread);
 
   pthread_barrier_init(&b, 0, s_nthread);
+
+  pthread_attr_init(&attr);
+  /* To do: replace the stack size argument by PTHREAD_STACK_MIN + 4096. */
+  err = pthread_attr_setstacksize(&attr, 32768);
+  assert(err == 0);
 
   for (i = 0; i < s_nthread; i++)
   {
@@ -241,8 +248,10 @@ static void gj(elem_t* const a, const int rows, const int cols)
     t[i].cols = cols;
     t[i].r0 = i * rows / s_nthread;
     t[i].r1 = (i+1) * rows / s_nthread;
-    pthread_create(&t[i].tid, 0, (void*(*)(void*))gj_threadfunc, &t[i]);
+    pthread_create(&t[i].tid, &attr, (void*(*)(void*))gj_threadfunc, &t[i]);
   }
+
+  pthread_attr_destroy(&attr);
 
   for (i = 0; i < s_nthread; i++)
   {

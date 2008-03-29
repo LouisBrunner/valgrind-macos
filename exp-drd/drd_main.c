@@ -61,11 +61,12 @@ static void drd_start_client_code(const ThreadId tid, const ULong bbs_done);
 
 // Local variables.
 
-static Bool drd_print_stats = False;
+static Bool drd_print_stats     = False;
 static Bool drd_trace_fork_join = False;
-static Bool drd_trace_mem = False;
-static Addr drd_trace_address = 0;
-static Bool s_drd_var_info = False;
+static Bool drd_trace_mem       = False;
+static Addr drd_trace_address   = 0;
+static Bool s_drd_var_info      = False;
+static Bool s_show_stack_usage  = False;
 
 
 //
@@ -91,6 +92,7 @@ static Bool drd_process_cmd_line_option(Char* arg)
   VG_BOOL_CLO     (arg, "--drd-stats",         drd_print_stats)
   else VG_BOOL_CLO(arg, "--segment-merging",   segment_merging)
   else VG_BOOL_CLO(arg, "--show-confl-seg",    show_confl_seg)
+  else VG_BOOL_CLO(arg, "--show-stack-usage",  s_show_stack_usage)
   else VG_BOOL_CLO(arg, "--trace-barrier",     trace_barrier)
   else VG_BOOL_CLO(arg, "--trace-clientobj",   trace_clientobj)
   else VG_BOOL_CLO(arg, "--trace-cond",        trace_cond)
@@ -613,6 +615,23 @@ static void drd_thread_finished(ThreadId vg_tid)
                  thread_get_joinable(drd_tid)
                  ? ""
                  : " (which is a detached thread)");
+  }
+  if (s_show_stack_usage)
+  {
+    const SizeT stack_size = thread_get_stack_size(drd_tid);
+    const SizeT used_stack
+      = thread_get_stack_max(drd_tid) - thread_get_stack_min_min(drd_tid);
+    VG_(message)(Vg_UserMsg,
+                 "thread %d/%d%s finished and used %ld bytes out of %ld"
+                 " on its stack. Margin: %ld bytes.",
+                 vg_tid,
+                 drd_tid,
+                 thread_get_joinable(drd_tid)
+                 ? ""
+                 : " (which is a detached thread)",
+                 used_stack,
+                 stack_size,
+                 stack_size - used_stack);
 
   }
   drd_stop_using_mem(thread_get_stack_min(drd_tid),

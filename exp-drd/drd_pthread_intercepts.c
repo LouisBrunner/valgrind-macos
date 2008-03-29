@@ -125,7 +125,7 @@ static void vg_start_suppression(const void* const p, size_t const size)
 {
   int res;
   VALGRIND_DO_CLIENT_REQUEST(res, 0, VG_USERREQ__DRD_START_SUPPRESSION,
-                             p, (char*)p + size, 0, 0, 0);
+                             p, size, 0, 0, 0);
 }
 
 static void vg_set_joinable(const pthread_t tid, const int joinable)

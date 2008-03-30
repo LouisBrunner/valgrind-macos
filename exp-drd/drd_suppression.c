@@ -102,7 +102,7 @@ Bool drd_is_suppressed(const Addr a1, const Addr a2)
  */
 Bool drd_is_any_suppressed(const Addr a1, const Addr a2)
 {
-  return bm_has_any(s_suppressed, a1, a2, eStore);
+  return bm_has_any_store(s_suppressed, a1, a2);
 }
 
 void drd_start_tracing_address_range(const Addr a1, const Addr a2)
@@ -123,13 +123,13 @@ void drd_stop_tracing_address_range(const Addr a1, const Addr a2)
   bm_clear_load(s_suppressed, a1, a2);
   if (g_any_address_traced)
   {
-    g_any_address_traced = bm_has_any(s_suppressed, 0, ~(Addr)0, eLoad);
+    g_any_address_traced = bm_has_any_load(s_suppressed, 0, ~(Addr)0);
   }
 }
 
 Bool drd_is_any_traced(const Addr a1, const Addr a2)
 {
-  return bm_has_any(s_suppressed, a1, a2, eLoad);
+  return bm_has_any_load(s_suppressed, a1, a2);
 }
 
 void drd_suppression_stop_using_mem(const Addr a1, const Addr a2)

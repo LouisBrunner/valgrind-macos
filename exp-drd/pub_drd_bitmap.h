@@ -71,9 +71,10 @@ void bm_access_range_store(struct bitmap* const bm,
 Bool bm_has(const struct bitmap* const bm,
             const Addr a1, const Addr a2,
             const BmAccessTypeT access_type);
-Bool bm_has_any(const struct bitmap* const bm,
-                const Addr a1, const Addr a2,
-                const BmAccessTypeT access_type);
+Bool bm_has_any_load(const struct bitmap* const bm,
+                     const Addr a1, const Addr a2);
+Bool bm_has_any_store(const struct bitmap* const bm,
+                      const Addr a1, const Addr a2);
 UWord bm_has_any_access(const struct bitmap* const bm,
                         const Addr a1, const Addr a2);
 UWord bm_has_1(const struct bitmap* const bm,

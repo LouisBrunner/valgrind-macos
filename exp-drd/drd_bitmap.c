@@ -280,22 +280,110 @@ Bool bm_has(const struct bitmap* const bm, const Addr a1, const Addr a2,
   return True;
 }
 
-Bool bm_has_any(const struct bitmap* const bm,
-                const Addr a1, const Addr a2,
-                const BmAccessTypeT access_type)
+Bool bm_has_any_load(const struct bitmap* const bm,
+                     const Addr a1, const Addr a2)
 {
-  Addr b;
+  Addr b, b_next;
 
   tl_assert(bm);
 
-  for (b = a1; b < a2; b++)
+  for (b = a1; b < a2; b = b_next)
   {
-    if (bm_has_1(bm, b, access_type))
+    const struct bitmap2* bm2 = bm2_lookup(bm, b >> ADDR0_BITS);
+
+    b_next = (b & ~ADDR0_MASK) + ADDR0_COUNT;
+    if (b_next > a2)
     {
-      return True;
+      b_next = a2;
+    }
+
+    if (bm2)
+    {
+      Addr b_start;
+      Addr b_end;
+      UWord b0;
+      const struct bitmap1* const p1 = &bm2->bm1;
+
+      if ((bm2->addr << ADDR0_BITS) < a1)
+        b_start = a1;
+      else
+        if ((bm2->addr << ADDR0_BITS) < a2)
+          b_start = (bm2->addr << ADDR0_BITS);
+        else
+          break;
+      tl_assert(a1 <= b_start && b_start <= a2);
+
+      if ((bm2->addr << ADDR0_BITS) + ADDR0_COUNT < a2)
+        b_end = (bm2->addr << ADDR0_BITS) + ADDR0_COUNT;
+      else
+        b_end = a2;
+      tl_assert(a1 <= b_end && b_end <= a2);
+      tl_assert(b_start < b_end);
+      tl_assert((b_start & ADDR0_MASK) <= ((b_end - 1) & ADDR0_MASK));
+      
+      for (b0 = b_start & ADDR0_MASK; b0 <= ((b_end-1) & ADDR0_MASK); b0++)
+      {
+        if (bm0_is_set(p1->bm0_r, b0))
+        {
+          return True;
+        }
+      }
     }
   }
-  return False;
+  return 0;
+}
+
+Bool bm_has_any_store(const struct bitmap* const bm,
+                      const Addr a1, const Addr a2)
+{
+  Addr b, b_next;
+
+  tl_assert(bm);
+
+  for (b = a1; b < a2; b = b_next)
+  {
+    const struct bitmap2* bm2 = bm2_lookup(bm, b >> ADDR0_BITS);
+
+    b_next = (b & ~ADDR0_MASK) + ADDR0_COUNT;
+    if (b_next > a2)
+    {
+      b_next = a2;
+    }
+
+    if (bm2)
+    {
+      Addr b_start;
+      Addr b_end;
+      UWord b0;
+      const struct bitmap1* const p1 = &bm2->bm1;
+
+      if ((bm2->addr << ADDR0_BITS) < a1)
+        b_start = a1;
+      else
+        if ((bm2->addr << ADDR0_BITS) < a2)
+          b_start = (bm2->addr << ADDR0_BITS);
+        else
+          break;
+      tl_assert(a1 <= b_start && b_start <= a2);
+
+      if ((bm2->addr << ADDR0_BITS) + ADDR0_COUNT < a2)
+        b_end = (bm2->addr << ADDR0_BITS) + ADDR0_COUNT;
+      else
+        b_end = a2;
+      tl_assert(a1 <= b_end && b_end <= a2);
+      tl_assert(b_start < b_end);
+      tl_assert((b_start & ADDR0_MASK) <= ((b_end - 1) & ADDR0_MASK));
+      
+      for (b0 = b_start & ADDR0_MASK; b0 <= ((b_end-1) & ADDR0_MASK); b0++)
+      {
+        if (bm0_is_set(p1->bm0_w, b0))
+        {
+          return True;
+        }
+      }
+    }
+  }
+  return 0;
 }
 
 /* Return a non-zero value if there is a read access, write access or both */

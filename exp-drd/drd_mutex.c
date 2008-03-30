@@ -259,13 +259,14 @@ void mutex_post_lock(const Addr mutex, const Bool took_lock)
   if (s_trace_mutex)
   {
     VG_(message)(Vg_UserMsg,
-                 "[%d/%d] post_mutex_lock %s 0x%lx rc %d owner %d",
+                 "[%d/%d] post_mutex_lock %s 0x%lx rc %d owner %d%s",
                  VG_(get_running_tid)(),
                  drd_tid,
                  p ? mutex_get_typename(p) : "(?)",
                  mutex,
                  p ? p->recursion_count : 0,
-                 p ? p->owner : VG_INVALID_THREADID);
+                 p ? p->owner : VG_INVALID_THREADID,
+                 took_lock ? "" : " (locking failed)");
   }
 
   if (! p || ! took_lock)

@@ -670,10 +670,13 @@ void thread_stop_using_mem(const Addr a1, const Addr a2)
     for (p = s_threadinfo[i].first; p; p = p->next)
     {
       if (other_user == DRD_INVALID_THREADID
-          && i != s_drd_running_tid
-          && bm_has_any_access(p->bm, a1, a2))
+          && i != s_drd_running_tid)
       {
-        other_user = i;
+        if (UNLIKELY(bm_test_and_clear(p->bm, a1, a2)))
+        {
+          other_user = i;
+        }
+        continue;
       }
       bm_clear(p->bm, a1, a2);
     }

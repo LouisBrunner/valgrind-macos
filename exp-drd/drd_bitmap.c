@@ -477,6 +477,20 @@ void bm_clear_store(const struct bitmap* const bm,
   }
 }
 
+/** Clear bitmap bm starting at address a1 and up to but not including address
+ *  a2. Return True if and only if any of the addresses was set before
+ *  clearing.
+ */
+Bool bm_test_and_clear(const struct bitmap* const bm,
+                       const Addr a1, const Addr a2)
+{
+  Bool result;
+
+  result = bm_has_any_access(bm, a1, a2) != 0;
+  bm_clear(bm, a1, a2);
+  return result;
+}
+
 Bool bm_has_conflict_with(const struct bitmap* const bm,
                           const Addr a1, const Addr a2,
                           const BmAccessTypeT access_type)

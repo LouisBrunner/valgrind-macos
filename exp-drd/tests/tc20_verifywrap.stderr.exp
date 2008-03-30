@@ -54,10 +54,6 @@ FIXME: can't figure out how to verify wrap of pthread_cond_signal
 FIXME: can't figure out how to verify wrap of pthread_broadcast_signal
 
 
-Mutex not locked: mutex 0x........, recursion count 0, owner 0.
-   at 0x........: pthread_cond_timedwait* (drd_pthread_intercepts.c:?)
-   by 0x........: main (tc20_verifywrap.c:165)
-
 ---------------- pthread_rwlock_* ----------------
 
 
@@ -102,6 +98,9 @@ FIXME: can't figure out how to verify wrap of sem_post
 
 
 Destroying locked rwlock: rwlock 0x.........
+   at 0x........: main (tc20_verifywrap.c:262)
+
+Destroying locked mutex: mutex 0x........, recursion count 1, owner 1.
    at 0x........: main (tc20_verifywrap.c:262)
 
 ERROR SUMMARY: 15 errors from 15 contexts (suppressed: 0 from 0)

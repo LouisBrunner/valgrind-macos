@@ -38,11 +38,25 @@
    obj:/lib*/ld-*.so
 }
 {
-   dl-dlsym
+   dl-dlsym-1
    exp-drd:ConflictingAccess
    obj:/lib*/ld-*.so
    obj:/lib*/libc-*.so
    obj:/lib*/libdl-*.so
+}
+{
+   dl-dlsym-2
+   exp-drd:ConflictingAccess
+   obj:/lib*/libc-*.so
+   obj:/lib*/libdl-*.so
+   obj:/lib*/ld-*.so
+}
+{
+   dl-dlsym-3
+   exp-drd:ConflictingAccess
+   obj:/lib*/ld-*.so
+   obj:/lib*/ld-*.so
+   obj:/lib*/libc-*.so
 }
 {
    libc

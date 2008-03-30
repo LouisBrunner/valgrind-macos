@@ -5,6 +5,10 @@
 #include "valgrind.h" // VG_USERREQ_TOOL_BASE()
 
 
+#define DRD_IGNORE_VAR(x) { int res; VALGRIND_DO_CLIENT_REQUEST(res, 0, VG_USERREQ__DRD_START_SUPPRESSION, &(x), sizeof(x), 0, 0, 0); }
+#define DRD_TRACE_VAR(x)  { int res; VALGRIND_DO_CLIENT_REQUEST(res, 0, VG_USERREQ__DRD_START_TRACE_ADDR, &(x), sizeof(x), 0, 0, 0); }
+
+
 enum {
   /* Ask the core the thread ID assigned by Valgrind. */
   VG_USERREQ__GET_THREAD_SELF = VG_USERREQ_TOOL_BASE('D', 'R'),
@@ -155,7 +159,7 @@ enum {
   VG_USERREQ__PRE_RWLOCK_UNLOCK,
   /* args: Addr rwlock */
   /* To notify the drd tool of a pthread_rwlock_unlock call. */
-  VG_USERREQ__POST_RWLOCK_UNLOCK,
+  VG_USERREQ__POST_RWLOCK_UNLOCK
   /* args: Addr rwlock, Bool unlocked */
 
 };
@@ -166,13 +170,13 @@ typedef enum
    mutex_type_recursive_mutex  = 1,
    mutex_type_errorcheck_mutex = 2,
    mutex_type_default_mutex    = 3,
-   mutex_type_spinlock         = 4,
+   mutex_type_spinlock         = 4
 } MutexT;
 
 typedef enum
   {
     pthread_barrier = 1,
-    gomp_barrier = 2,
+    gomp_barrier = 2
   } BarrierT;
 
 #endif //  __DRD_CLIENTREQ_H

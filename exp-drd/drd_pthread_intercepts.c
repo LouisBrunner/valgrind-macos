@@ -459,7 +459,7 @@ PTH_FUNC(int, pthreadZucondZuwaitZa, // pthread_cond_wait*
                              cond, mutex, mutex_type(mutex), 0, 0);
   CALL_FN_W_WW(ret, fn, cond, mutex);
   VALGRIND_DO_CLIENT_REQUEST(res, -1, VG_USERREQ__POST_COND_WAIT,
-                             cond, mutex, ret == 0, 0, 0);
+                             cond, mutex, 1, 0, 0);
   return ret;
 }
 
@@ -477,7 +477,7 @@ PTH_FUNC(int, pthreadZucondZutimedwaitZa, // pthread_cond_timedwait*
                              cond, mutex, mutex_type(mutex), 0, 0);
   CALL_FN_W_WWW(ret, fn, cond, mutex, abstime);
   VALGRIND_DO_CLIENT_REQUEST(res, -1, VG_USERREQ__POST_COND_WAIT,
-                             cond, mutex, ret == 0, 0, 0);
+                             cond, mutex, 1, 0, 0);
   return ret;
 }
 

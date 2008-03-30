@@ -66,7 +66,7 @@ static void drd_post_cond_wait(const Addr cond,
                                const Bool took_lock)
 {
   cond_post_wait(cond);
-  mutex_post_lock(mutex, took_lock);
+  mutex_post_lock(mutex, took_lock, True);
 }
 
 static void drd_pre_cond_signal(const Addr cond)

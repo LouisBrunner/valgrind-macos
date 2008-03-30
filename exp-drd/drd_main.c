@@ -651,7 +651,7 @@ void drd_pre_mutex_lock(const Addr mutex, const MutexT mutex_type,
 
 void drd_post_mutex_lock(const Addr mutex, const Bool took_lock)
 {
-  mutex_post_lock(mutex, took_lock);
+  mutex_post_lock(mutex, took_lock, False);
 }
 
 void drd_pre_mutex_unlock(const Addr mutex, const MutexT mutex_type)

@@ -116,7 +116,7 @@ void cond_pre_init(const Addr cond)
   if (s_trace_cond)
   {
     VG_(message)(Vg_UserMsg,
-                 "[%d/%d] cond_init 0x%lx",
+                 "[%d/%d] cond_init       cond 0x%lx",
                  VG_(get_running_tid)(),
                  thread_get_running_tid(),
                  cond);
@@ -145,7 +145,7 @@ void cond_post_destroy(const Addr cond)
   if (s_trace_cond)
   {
     VG_(message)(Vg_UserMsg,
-                 "[%d/%d] cond_destroy 0x%lx",
+                 "[%d/%d] cond_destroy    cond 0x%lx",
                  VG_(get_running_tid)(),
                  thread_get_running_tid(),
                  cond);
@@ -185,7 +185,7 @@ int cond_pre_wait(const Addr cond, const Addr mutex)
   if (s_trace_cond)
   {
     VG_(message)(Vg_UserMsg,
-                 "[%d/%d] cond_pre_wait 0x%lx",
+                 "[%d/%d] cond_pre_wait   cond 0x%lx",
                  VG_(get_running_tid)(),
                  thread_get_running_tid(),
                  cond);
@@ -216,7 +216,7 @@ int cond_post_wait(const Addr cond)
   if (s_trace_cond)
   {
     VG_(message)(Vg_UserMsg,
-                 "[%d/%d] cond_post_wait 0x%lx",
+                 "[%d/%d] cond_post_wait  cond 0x%lx",
                  VG_(get_running_tid)(),
                  thread_get_running_tid(),
                  cond);
@@ -272,7 +272,7 @@ void cond_pre_signal(Addr const cond)
   if (s_trace_cond)
   {
     VG_(message)(Vg_UserMsg,
-                 "[%d/%d] cond_signal 0x%lx",
+                 "[%d/%d] cond_signal     cond 0x%lx",
                  VG_(get_running_tid)(),
                  thread_get_running_tid(),
                  cond);
@@ -287,7 +287,7 @@ void cond_pre_broadcast(Addr const cond)
   if (s_trace_cond)
   {
     VG_(message)(Vg_UserMsg,
-                 "[%d/%d] cond_broadcast 0x%lx",
+                 "[%d/%d] cond_broadcast  cond 0x%lx",
                  VG_(get_running_tid)(),
                  thread_get_running_tid(),
                  cond);

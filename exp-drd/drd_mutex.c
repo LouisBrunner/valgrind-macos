@@ -249,7 +249,8 @@ void mutex_pre_lock(const Addr mutex, const MutexT mutex_type,
  * Note: this function must be called after pthread_mutex_lock() has been
  * called, or a race condition is triggered !
  */
-void mutex_post_lock(const Addr mutex, const Bool took_lock)
+void mutex_post_lock(const Addr mutex, const Bool took_lock,
+                     const Bool post_cond_wait)
 {
   const DrdThreadId drd_tid = thread_get_running_tid();
   struct mutex_info* p;
@@ -259,9 +260,10 @@ void mutex_post_lock(const Addr mutex, const Bool took_lock)
   if (s_trace_mutex)
   {
     VG_(message)(Vg_UserMsg,
-                 "[%d/%d] post_mutex_lock %s 0x%lx rc %d owner %d%s",
+                 "[%d/%d] %s %s 0x%lx rc %d owner %d%s",
                  VG_(get_running_tid)(),
                  drd_tid,
+                 post_cond_wait ? "cond_post_wait " : "post_mutex_lock",
                  p ? mutex_get_typename(p) : "(?)",
                  mutex,
                  p ? p->recursion_count : 0,

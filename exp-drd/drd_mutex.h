@@ -46,7 +46,8 @@ void mutex_post_destroy(const Addr mutex);
 struct mutex_info* mutex_get(const Addr mutex);
 void mutex_pre_lock(const Addr mutex, const MutexT mutex_type,
                     const Bool trylock);
-void mutex_post_lock(const Addr mutex, const Bool took_lock);
+void mutex_post_lock(const Addr mutex, const Bool took_lock,
+                     const Bool post_cond_wait);
 void mutex_unlock(const Addr mutex, const MutexT mutex_type);
 const char* mutex_get_typename(struct mutex_info* const p);
 const char* mutex_type_name(const MutexT mt);

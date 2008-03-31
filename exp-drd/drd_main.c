@@ -161,7 +161,6 @@ static void drd_print_usage(void)
 "                               specified address [off].\n"
 "    --trace-barrier=yes|no     Trace all barrier activity [no].\n"
 "    --trace-cond=yes|no        Trace all condition variable activity [no].\n"
-"    --trace-danger-set=yes|no  Trace all danger set updates [no].\n"
 "    --trace-fork-join=yes|no   Trace all thread fork/join activity [no].\n"
 "    --trace-mutex=yes|no       Trace all mutex activity[no].\n"
 "    --trace-rwlock=yes|no      Trace all reader-writer lock activity[no].\n"
@@ -172,6 +171,7 @@ static void drd_print_usage(void)
 "    --drd-stats=yes|no         Print statistics about DRD activity [no].\n"
 "    --trace-clientobj=yes|no   Trace all client object activity [no].\n"
 "    --trace-csw=yes|no         Trace all scheduler context switches [no].\n"
+"    --trace-danger-set=yes|no  Trace all danger set updates [no].\n"
 "    --trace-suppression=yes|no Trace all address suppression actions [no].\n"
               );
 }

@@ -61,10 +61,10 @@ static void drd_start_client_code(const ThreadId tid, const ULong bbs_done);
 
 // Local variables.
 
-static Bool drd_print_stats     = False;
-static Bool drd_trace_fork_join = False;
-static Bool s_drd_var_info      = False;
-static Bool s_show_stack_usage  = False;
+static Bool s_drd_print_stats     = False;
+static Bool s_drd_trace_fork_join = False;
+static Bool s_drd_var_info        = False;
+static Bool s_show_stack_usage    = False;
 
 
 //
@@ -87,7 +87,7 @@ static Bool drd_process_cmd_line_option(Char* arg)
   int trace_suppression = -1;
   Char* trace_address   = 0;
 
-  VG_BOOL_CLO     (arg, "--drd-stats",         drd_print_stats)
+  VG_BOOL_CLO     (arg, "--drd-stats",         s_drd_print_stats)
   else VG_BOOL_CLO(arg, "--segment-merging",   segment_merging)
   else VG_BOOL_CLO(arg, "--show-confl-seg",    show_confl_seg)
   else VG_BOOL_CLO(arg, "--show-stack-usage",  s_show_stack_usage)
@@ -96,7 +96,7 @@ static Bool drd_process_cmd_line_option(Char* arg)
   else VG_BOOL_CLO(arg, "--trace-cond",        trace_cond)
   else VG_BOOL_CLO(arg, "--trace-csw",         trace_csw)
   else VG_BOOL_CLO(arg, "--trace-danger-set",  trace_danger_set)
-  else VG_BOOL_CLO(arg, "--trace-fork-join",   drd_trace_fork_join)
+  else VG_BOOL_CLO(arg, "--trace-fork-join",   s_drd_trace_fork_join)
   else VG_BOOL_CLO(arg, "--trace-mutex",       trace_mutex)
   else VG_BOOL_CLO(arg, "--trace-rwlock",      trace_rwlock)
   else VG_BOOL_CLO(arg, "--trace-segment",     trace_segment)
@@ -141,13 +141,38 @@ static Bool drd_process_cmd_line_option(Char* arg)
 }
 
 static void drd_print_usage(void)
-{  
-  VG_(printf)("    --trace-mem=no|yes Trace all memory accesses to stdout[no]"
-              "\n"
-              "    --trace-fork-join=no|yes Trace all thread creation and join"
-              " activity\n"
-              "    --trace-mutex=no|yes Trace all mutex activity\n"
-              "    --trace-segment=no|yes Trace segment actions\n"
+{
+  VG_(printf)(
+"    --segment-merging=yes|no   Controls segment merging [yes].\n"
+"        Segment merging is an algorithm to limit memory usage of the\n"
+"        data race detection algorithm. Disabling segment merging may\n"
+"        improve the accuracy of the so-called 'other segments' displayed\n"
+"        in race reports but can also trigger an out of memory error.\n"
+"    --show-confl-seg=yes|no    Show conflicting segments in race reports [yes].\n"
+"    --show-stack-usage=yes|no  Print stack usage at thread exit time [no].\n"
+"    --var-info=yes|no          Display the names of global, static and\n"
+"        stack variables when a race is reported on such a variable. This\n"
+"        information is by default not displayed since for big programs\n"
+"        reading in all debug information for all variables at once may\n"
+"        cause an out of memory error [no].\n"
+"\n"
+"  DRD options for monitoring process behavior:\n"
+"    --trace-address=<address>  Trace all load and store activity for the.\n"
+"                               specified address [off].\n"
+"    --trace-barrier=yes|no     Trace all barrier activity [no].\n"
+"    --trace-cond=yes|no        Trace all condition variable activity [no].\n"
+"    --trace-danger-set=yes|no  Trace all danger set updates [no].\n"
+"    --trace-fork-join=yes|no   Trace all thread fork/join activity [no].\n"
+"    --trace-mutex=yes|no       Trace all mutex activity[no].\n"
+"    --trace-rwlock=yes|no      Trace all reader-writer lock activity[no].\n"
+"    --trace-segment=yes|no     Trace segment actions [no].\n"
+"    --trace-semaphore=yes|no   Trace all semaphore activity [no].\n"
+"\n"
+"  Options for debugging DRD:\n"
+"    --drd-stats=yes|no         Print statistics about DRD activity [no].\n"
+"    --trace-clientobj=yes|no   Trace all client object activity [no].\n"
+"    --trace-csw=yes|no         Trace all scheduler context switches [no].\n"
+"    --trace-suppression=yes|no Trace all address suppression actions [no].\n"
               );
 }
 
@@ -530,7 +555,7 @@ void drd_pre_thread_create(const ThreadId creator, const ThreadId created)
   {
     thread_new_segment(drd_creator);
   }
-  if (drd_trace_fork_join)
+  if (s_drd_trace_fork_join)
   {
     VG_(message)(Vg_DebugMsg,
                  "drd_pre_thread_create creator = %d/%d, created = %d",
@@ -546,7 +571,7 @@ void drd_post_thread_create(const ThreadId created)
 {
   const DrdThreadId drd_created = thread_post_create(created);
   tl_assert(created != VG_INVALID_THREADID);
-  if (drd_trace_fork_join)
+  if (s_drd_trace_fork_join)
   {
     VG_(message)(Vg_DebugMsg,
                  "drd_post_thread_create created = %d/%d",
@@ -564,7 +589,7 @@ void drd_post_thread_join(DrdThreadId drd_joiner, DrdThreadId drd_joinee)
   thread_combine_vc(drd_joiner, drd_joinee);
   thread_new_segment(drd_joiner);
 
-  if (drd_trace_fork_join)
+  if (s_drd_trace_fork_join)
   {
     char msg[256];
     const ThreadId joiner = DrdThreadIdToVgThreadId(drd_joiner);
@@ -598,7 +623,7 @@ static void drd_thread_finished(ThreadId vg_tid)
   tl_assert(VG_(get_running_tid)() == vg_tid);
 
   drd_tid = VgThreadIdToDrdThreadId(vg_tid);
-  if (drd_trace_fork_join)
+  if (s_drd_trace_fork_join)
   {
     VG_(message)(Vg_DebugMsg,
                  "drd_thread_finished tid = %d/%d%s",
@@ -987,27 +1012,26 @@ static
 void drd_fini(Int exitcode)
 {
   // thread_print_all();
-  if (VG_(clo_verbosity) > 1 || drd_print_stats)
+  if (VG_(clo_verbosity) > 1 || s_drd_print_stats)
   {
-    VG_(message)(Vg_DebugMsg,
+    VG_(message)(Vg_UserMsg,
                  "   thread: %lld context switches"
-                 " / %lld updates of the danger set",
+                 " / %lld updates of the danger set.",
                  thread_get_context_switch_count(),
                  thread_get_update_danger_set_count());
-    VG_(message)(Vg_DebugMsg,
-                 " segments: %lld total, %lld max, %lld discard points",
+    VG_(message)(Vg_UserMsg,
+                 " segments: created %lld segments, max %lld alive,"
+                 " %lld discard points.",
                  sg_get_created_segments_count(),
                  sg_get_max_alive_segments_count(),
                  thread_get_discard_ordered_segments_count());
-    VG_(message)(Vg_DebugMsg,
-                 "  bitmaps: %lld / %lld bitmaps were allocated"
-                 " and %lld / %lld for danger set updates",
+    VG_(message)(Vg_UserMsg,
+                 "  bitmaps: %lld level 3 / %lld level 2 bitmaps were"
+                 " allocated.",
                  bm_get_bitmap_creation_count(),
-                 bm_get_bitmap2_creation_count(),
-                 thread_get_danger_set_bitmap_creation_count(),
-                 thread_get_danger_set_bitmap2_creation_count());
-    VG_(message)(Vg_DebugMsg,
-                 "    mutex: %lld non-recursive lock/unlock events",
+                 bm_get_bitmap2_creation_count());
+    VG_(message)(Vg_UserMsg,
+                 "    mutex: %lld non-recursive lock/unlock events.",
                  get_mutex_lock_count());
     drd_print_malloc_stats();
   }

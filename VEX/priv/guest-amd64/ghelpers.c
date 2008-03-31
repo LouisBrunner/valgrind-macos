@@ -1043,6 +1043,18 @@ IRExpr* guest_amd64_spechelper ( HChar* function_name,
                       binop(Iop_Shr64,cc_dep1,mkU8(7)),
                       mkU64(1));
       }
+      if (isU64(cc_op, AMD64G_CC_OP_SUBB) && isU64(cond, AMD64CondNS)
+                                          && isU64(cc_dep2, 0)) {
+         /* byte sub/cmp of zero, then NS --> test !(dst-0 <s 0)
+                                          --> test !(dst <s 0)
+                                          --> (ULong) !dst[7]
+         */
+         return binop(Iop_Xor64,
+                      binop(Iop_And64,
+                            binop(Iop_Shr64,cc_dep1,mkU8(7)),
+                            mkU64(1)),
+                      mkU64(1));
+      }
 
       /*---------------- LOGICQ ----------------*/
 

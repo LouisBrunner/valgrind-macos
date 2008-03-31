@@ -967,7 +967,6 @@ IRExpr* guest_x86_spechelper ( HChar* function_name,
                       binop(Iop_Shr32,cc_dep1,mkU8(7)),
                       mkU32(1));
       }
-
       if (isU32(cc_op, X86G_CC_OP_SUBB) && isU32(cond, X86CondNS)
                                         && isU32(cc_dep2, 0)) {
          /* byte sub/cmp of zero, then NS --> test !(dst-0 <s 0) 

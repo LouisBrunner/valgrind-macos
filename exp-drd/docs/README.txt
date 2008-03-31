@@ -228,6 +228,103 @@ How to use DRD
 To use this tool, specify --tool=drd on the Valgrind command line.
 
 
+Interpreting DRD's data race reports
+------------------------------------
+
+You should be aware of the following when interpreting DRD's output:
+* Every thread is assigned two thread ID's: one thread ID is assigned
+  by the Valgrind core and one thread ID is assigned by DRD. Thread
+  ID's start at one. Valgrind thread ID's are reused when one thread
+  finishes and another thread is created. DRD does not reuse thread
+  ID's. Thread ID's are displayed e.g. as follows: 2/3, where the
+  first number is Valgrind's thread ID and the second number is the
+  thread ID assigned by DRD.
+* The term segment refers to a consecutive sequence of load, store and
+  synchronization operations, all issued by the same thread. A segment
+  always starts and ends at a synchronization operation. Data race
+  analysis is performed between segments instead of between individual
+  load and store operations because of performance reasons.
+
+Below you can find an example of a (harmless) data race report from Firefox:
+
+==7689== Thread 1:
+==7689== Conflicting store by thread 1/1 at 0x1226f978 size 8
+==7689==    at 0x5E983D3: _PR_CreateThread (ptthread.c:517)
+==7689==    by 0x5E98474: PR_CreateThread (ptthread.c:544)
+==7689==    by 0x57E1EAE: nsThread::Init() (nsThread.cpp:322)
+==7689==    by 0x57E359B: nsThreadManager::NewThread(unsigned, nsIThread**) (nsThreadManager.cpp:226)
+==7689==    by 0x57915FC: NS_NewThread_P(nsIThread**, nsIRunnable*) (nsThreadUtils.cpp:70)
+==7689==    by 0x4B6CF4: nsSocketTransportService::Init() (nsSocketTransportService2.cpp:406)
+==7689==    by 0x48DDF5: nsSocketTransportServiceConstructor(nsISupports*, nsID const&, void**) (nsNetModule.cpp:88)
+==7689==    by 0x579331C: nsGenericFactory::CreateInstance(nsISupports*, nsID const&, void**) (nsGenericFactory.cpp:80)
+==7689==    by 0x57D79E6: nsComponentManagerImpl::CreateInstanceByContractID(char const*, nsISupports*, nsID const&, void**) (nsComponentManager.cpp:1756)
+==7689==    by 0x57D9381: nsComponentManagerImpl::GetServiceByContractID(char const*, nsID const&, void**) (nsComponentManager.cpp:2189)
+==7689==    by 0x578AEAF: CallGetService(char const*, nsID const&, void**) (nsComponentManagerUtils.cpp:94)
+==7689==    by 0x578AED1: nsGetServiceByContractIDWithError::operator()(nsID const&, void**) const (nsComponentManagerUtils.cpp:288)
+==7689== Address 0x1226f978 is at offset 96 from 0x1226f918. Allocation context:
+==7689==    at 0x4C21CCE: calloc (vg_replace_malloc.c:403)
+==7689==    by 0x5E83F03: PR_Calloc (prmem.c:474)
+==7689==    by 0x5E9816B: _PR_CreateThread (ptthread.c:385)
+==7689==    by 0x5E98474: PR_CreateThread (ptthread.c:544)
+==7689==    by 0x57E1EAE: nsThread::Init() (nsThread.cpp:322)
+==7689==    by 0x57E359B: nsThreadManager::NewThread(unsigned, nsIThread**) (nsThreadManager.cpp:226)
+==7689==    by 0x57915FC: NS_NewThread_P(nsIThread**, nsIRunnable*) (nsThreadUtils.cpp:70)
+==7689==    by 0x4B6CF4: nsSocketTransportService::Init() (nsSocketTransportService2.cpp:406)
+==7689==    by 0x48DDF5: nsSocketTransportServiceConstructor(nsISupports*, nsID const&, void**) (nsNetModule.cpp:88)
+==7689==    by 0x579331C: nsGenericFactory::CreateInstance(nsISupports*, nsID const&, void**) (nsGenericFactory.cpp:80)
+==7689==    by 0x57D79E6: nsComponentManagerImpl::CreateInstanceByContractID(char const*, nsISupports*, nsID const&, void**) (nsComponentManager.cpp:1756)
+==7689==    by 0x57D9381: nsComponentManagerImpl::GetServiceByContractID(char const*, nsID const&, void**) (nsComponentManager.cpp:2189)
+==7689== Other segment start (thread 2/2)
+==7689==    at 0xA948F51: clone (in /lib64/libc-2.6.1.so)
+==7689==    by 0x4E2FF4F: (within /lib64/libpthread-2.6.1.so)
+==7689==    by 0x12B2A94F: ???
+==7689== Other segment end (thread 2/2)
+==7689==    at 0x4C23EE9: pthread_mutex_lock (drd_pthread_intercepts.c:364)
+==7689==    by 0x5E92112: PR_Lock (ptsynch.c:207)
+==7689==    by 0x5E97E87: _pt_root (ptthread.c:206)
+==7689==    by 0x4C26660: vg_thread_wrapper (drd_pthread_intercepts.c:163)
+==7689==    by 0x4E3001F: start_thread (in /lib64/libpthread-2.6.1.so)
+==7689==    by 0xA948F8C: clone (in /lib64/libc-2.6.1.so)
+
+The meaning of all the data in such a report is as follows:
+* The numbers in the column on the left contains the process ID of the
+  process being analyzed by DRD.
+* The first line ("Thread 1") tells you Valgrind's thread ID of the
+  thread in which context the data race was detected.
+* The next line tells which kind of operation was performed (load or
+  store) and by which thread (both Valgrind's and DRD's thread ID are
+  displayed). On the same line the start address and the number of
+  bytes involved in the conflicting access are also displayed.
+* Below the "Conflicting access" line the call stack of the conflicting
+  access is displayed. If your program has been compiled with debug
+  information (-g), this call stack will include file names and line
+  numbers.
+* Next, the allocation context of the address on which the conflict
+  was displayed.
+* A conflicting access involves at least two memory accesses. For one
+  of these accesses an exact call stack is displayed, and for the other
+  accesses an approximate call stack is displayed: the start and the
+  end of the segments of the other accesses are displayed. Sometimes
+  this contains useful information, but not always.
+
+Usually the first call stack displayed in a conflicting access report
+is sufficient for finding on which variable the conflicting access
+happened. The challenge is to find out whether or not such a
+conflicting access can cause undesired behavior. A first step is to
+identify all accesses to the same variable. If you do not have
+sufficient knowledge of the software being analyzed, you can also
+trace all accesses to that variable. For the above example it is
+sufficient to insert the macro DRD_TRACE_VAR(thred->id) in file
+ptthread.c just after allocation of the PRThread structure. The next
+step is to recompile the application and to rerun it under DRD.  For
+the above example, this will learn you that thred->id is assigned a
+value both in the creator and in the created thread. In Firefox'
+source code can see that twice the same value is assigned to the
+per-thread variable thred->id. Or: this is a harmless conflicting
+access, and you can safely replace DRD_TRACE_VAR(thred->id) by
+DRD_IGNORE_VAR(thred->id).
+
+
 DRD and OpenMP
 --------------
 

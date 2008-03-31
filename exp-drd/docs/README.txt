@@ -111,13 +111,10 @@ About DRD
 ---------
 
 DRD is still under development, that is why the tool is named exp-drd.
-The current version of DRD is able to perform data race detection on
-small programs -- DRD quickly runs out of memory for realistically
-sized programs.  The current version runs well under Linux on x86
-CPU's for multithreaded programs that use the POSIX threading
-library. Regular POSIX threads, detached threads, mutexes, condition
-variables, spinlocks, semaphores and barriers are supported. POSIX
-reader-writer locks are not yet supported.
+The current version runs well under Linux on x86 CPU's for
+multithreaded programs that use the POSIX threading library. Regular
+POSIX threads, detached threads, mutexes, condition variables,
+reader-writer locks, spinlocks, semaphores and barriers are supported.
 
 
 Programming with Threads

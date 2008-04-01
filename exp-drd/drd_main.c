@@ -101,7 +101,7 @@ static Bool drd_process_cmd_line_option(Char* arg)
   else VG_BOOL_CLO(arg, "--trace-rwlock",      trace_rwlock)
   else VG_BOOL_CLO(arg, "--trace-segment",     trace_segment)
   else VG_BOOL_CLO(arg, "--trace-semaphore",   trace_semaphore)
-  else VG_BOOL_CLO(arg, "--trace-suppression", trace_suppression)
+  else VG_BOOL_CLO(arg, "--trace-suppr",       trace_suppression)
   else VG_BOOL_CLO(arg, "--var-info",          s_drd_var_info)
   else VG_STR_CLO (arg, "--trace-address",     trace_address)
   else
@@ -143,42 +143,43 @@ static Bool drd_process_cmd_line_option(Char* arg)
 static void drd_print_usage(void)
 {
   VG_(printf)(
-"    --segment-merging=yes|no   Controls segment merging [yes].\n"
+"    --segment-merging=yes|no  Controls segment merging [yes].\n"
 "        Segment merging is an algorithm to limit memory usage of the\n"
 "        data race detection algorithm. Disabling segment merging may\n"
 "        improve the accuracy of the so-called 'other segments' displayed\n"
 "        in race reports but can also trigger an out of memory error.\n"
-"    --show-confl-seg=yes|no    Show conflicting segments in race reports [yes].\n"
-"    --show-stack-usage=yes|no  Print stack usage at thread exit time [no].\n"
-"    --var-info=yes|no          Display the names of global, static and\n"
+"    --show-confl-seg=yes|no   Show conflicting segments in race reports [yes].\n"
+"    --show-stack-usage=yes|no Print stack usage at thread exit time [no].\n"
+"    --var-info=yes|no         Display the names of global, static and\n"
 "        stack variables when a race is reported on such a variable. This\n"
 "        information is by default not displayed since for big programs\n"
 "        reading in all debug information for all variables at once may\n"
 "        cause an out of memory error [no].\n"
 "\n"
 "  exp-drd options for monitoring process behavior:\n"
-"    --trace-address=<address>  Trace all load and store activity for the.\n"
-"                               specified address [off].\n"
-"    --trace-barrier=yes|no     Trace all barrier activity [no].\n"
-"    --trace-cond=yes|no        Trace all condition variable activity [no].\n"
-"    --trace-fork-join=yes|no   Trace all thread fork/join activity [no].\n"
-"    --trace-malloc=yes|no      Trace all dynamic memory allocation calls [no].\n"
-"    --trace-mutex=yes|no       Trace all mutex activity [no].\n"
-"    --trace-rwlock=yes|no      Trace all reader-writer lock activity[no].\n"
-"    --trace-segment=yes|no     Trace segment actions [no].\n"
-"    --trace-semaphore=yes|no   Trace all semaphore activity [no].\n"
-"\n"
-"  Options for debugging exp-drd:\n"
-"    --drd-stats=yes|no         Print statistics about DRD activity [no].\n"
-"    --trace-clientobj=yes|no   Trace all client object activity [no].\n"
-"    --trace-csw=yes|no         Trace all scheduler context switches [no].\n"
-"    --trace-danger-set=yes|no  Trace all danger set updates [no].\n"
-"    --trace-suppression=yes|no Trace all address suppression actions [no].\n"
+"    --trace-address=<address> Trace all load and store activity for the.\n"
+"                              specified address [off].\n"
+"    --trace-barrier=yes|no    Trace all barrier activity [no].\n"
+"    --trace-cond=yes|no       Trace all condition variable activity [no].\n"
+"    --trace-fork-join=yes|no  Trace all thread fork/join activity [no].\n"
+"    --trace-mutex=yes|no      Trace all mutex activity [no].\n"
+"    --trace-rwlock=yes|no     Trace all reader-writer lock activity[no].\n"
+"    --trace-segment=yes|no    Trace segment actions [no].\n"
+"    --trace-semaphore=yes|no  Trace all semaphore activity [no].\n"
               );
+   VG_(replacement_malloc_print_usage)();
 }
 
 static void drd_print_debug_usage(void)
 {  
+  VG_(printf)(
+"    --drd-stats=yes|no        Print statistics about DRD activity [no].\n"
+"    --trace-clientobj=yes|no  Trace all client object activity [no].\n"
+"    --trace-csw=yes|no        Trace all scheduler context switches [no].\n"
+"    --trace-danger-set=yes|no Trace all danger set updates [no].\n"
+"    --trace-suppr=yes|no Trace all address suppression actions [no].\n"
+              );
+   VG_(replacement_malloc_print_debug_usage)();
 }
 
 

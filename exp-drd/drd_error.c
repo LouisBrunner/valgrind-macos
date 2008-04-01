@@ -79,6 +79,8 @@ void drd_report_data_race2(Error* const err, const DataRaceErrInfo* const dri)
   tl_assert(dri);
   tl_assert(dri->addr);
   tl_assert(dri->size > 0);
+  tl_assert(descr1);
+  tl_assert(descr2);
 
   descr1[0] = 0;
   descr2[0] = 0;

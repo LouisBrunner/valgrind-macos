@@ -47,6 +47,7 @@ Documentation
 - Explain that happens-before race detectors are also suited for certain
   classes of programs that do not follow a locking discipline
   (e.g. exp-drd/test/matinv.c).
+- Add a note about how much stack is needed for exp-drd itself.
 
 
 Limitations

@@ -4,8 +4,8 @@ How to test DRD
 1. Run the regression tests. After having compiled DRD, run the following
    command:
      perl tests/vg_regtest exp-drd
-2. Test the slowdown for matinv for various matrix sizes (must be less
-   than 100):
+2. Test the slowdown for matinv for various matrix sizes (must be about 45
+   for i == 1 and about 50 for i == 10):
      time exp-drd/tests/matinv 200
      for ((i=1;i<=10;i++))
      do

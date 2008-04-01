@@ -39,19 +39,20 @@
 #include "drd_vc.h"
 #include "priv_drd_clientreq.h"
 #include "pub_drd_bitmap.h"
+#include "pub_tool_vki.h"         // Must be included before pub_tool_libcproc
 #include "pub_tool_basics.h"
 #include "pub_tool_debuginfo.h"   // VG_(describe_IP)()
 #include "pub_tool_libcassert.h"  // tl_assert()
 #include "pub_tool_libcbase.h"    // VG_(strcmp)
 #include "pub_tool_libcprint.h"   // VG_(printf)
-#include "pub_tool_vki.h"         // Must be included before pub_tool_libcproc
 #include "pub_tool_libcproc.h"
 #include "pub_tool_machine.h"
+#include "pub_tool_mallocfree.h"  // VG_(malloc)(), VG_(free)()
 #include "pub_tool_options.h"     // command line options
+#include "pub_tool_replacemalloc.h"
 #include "pub_tool_replacemalloc.h"
 #include "pub_tool_threadstate.h" // VG_(get_running_tid)()
 #include "pub_tool_tooliface.h"
-#include "pub_tool_replacemalloc.h"
 
 
 // Function declarations.
@@ -593,20 +594,24 @@ void drd_post_thread_join(DrdThreadId drd_joiner, DrdThreadId drd_joinee)
 
   if (s_drd_trace_fork_join)
   {
-    char msg[256];
+    const unsigned msg_size = 256;
+    char* msg;
+
+    msg = VG_(malloc)(msg_size);
     const ThreadId joiner = DrdThreadIdToVgThreadId(drd_joiner);
     const ThreadId joinee = DrdThreadIdToVgThreadId(drd_joinee);
-    VG_(snprintf)(msg, sizeof(msg),
+    VG_(snprintf)(msg, msg_size,
                   "drd_post_thread_join joiner = %d/%d, joinee = %d/%d",
                   joiner, drd_joiner, joinee, drd_joinee);
     if (joiner)
     {
-      VG_(snprintf)(msg + VG_(strlen)(msg), sizeof(msg) - VG_(strlen)(msg),
+      VG_(snprintf)(msg + VG_(strlen)(msg), msg_size - VG_(strlen)(msg),
                     ", new vc: ");
-      vc_snprint(msg + VG_(strlen)(msg), sizeof(msg) - VG_(strlen)(msg),
+      vc_snprint(msg + VG_(strlen)(msg), msg_size - VG_(strlen)(msg),
                  thread_get_vc(drd_joiner));
     }
     VG_(message)(Vg_DebugMsg, msg);
+    VG_(free)(msg);
   }
 
   thread_delete(drd_joinee);

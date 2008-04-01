@@ -35,6 +35,7 @@
 #include "pub_tool_libcfile.h"    // VG_(get_startup_wd)()
 #include "pub_tool_libcprint.h"   // VG_(printf)()
 #include "pub_tool_machine.h"
+#include "pub_tool_mallocfree.h"  // VG_(malloc), VG_(free)
 #include "pub_tool_threadstate.h" // VG_(get_pthread_id)()
 #include "pub_tool_tooliface.h"   // VG_(needs_tool_errors)()
 
@@ -71,8 +72,9 @@ static
 void drd_report_data_race2(Error* const err, const DataRaceErrInfo* const dri)
 {
   AddrInfo ai;
-  Char descr1[256];
-  Char descr2[256];
+  const unsigned descr_size = 256;
+  Char* descr1 = VG_(malloc)(descr_size);
+  Char* descr2 = VG_(malloc)(descr_size);
 
   tl_assert(dri);
   tl_assert(dri->addr);
@@ -80,7 +82,7 @@ void drd_report_data_race2(Error* const err, const DataRaceErrInfo* const dri)
 
   descr1[0] = 0;
   descr2[0] = 0;
-  VG_(get_data_description)(descr1, descr2, sizeof(descr1), dri->addr);
+  VG_(get_data_description)(descr1, descr2, descr_size, dri->addr);
   if (descr1[0] == 0)
   {
     describe_malloced_addr(dri->addr, dri->size, &ai);
@@ -115,6 +117,9 @@ void drd_report_data_race2(Error* const err, const DataRaceErrInfo* const dri)
     thread_report_conflicting_segments(dri->tid,
                                        dri->addr, dri->size, dri->access_type);
   }
+
+  VG_(free)(descr2);
+  VG_(free)(descr1);
 }
 
 static Bool drd_tool_error_eq(VgRes res, Error* e1, Error* e2)

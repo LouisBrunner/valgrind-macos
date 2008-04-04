@@ -59,6 +59,11 @@
    obj:/lib*/libc-*.so
 }
 {
+   dl-dl_addr
+   exp-drd:ConflictingAccess
+   fun:_dl_addr
+}
+{
    libc
    exp-drd:ConflictingAccess
    fun:__libc_enable_asynccancel
@@ -366,10 +371,4 @@
    exp-drd:CondErr
    fun:pthread_cond_destroy*
    fun:xcb_wait_for_reply
-}
-{
-   libX11-XReply
-   exp-drd:CondErr
-   fun:pthread_cond_init*
-   fun:_XReply
 }

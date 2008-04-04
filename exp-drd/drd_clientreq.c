@@ -140,6 +140,14 @@ static Bool drd_handle_client_request(ThreadId vg_tid, UWord* arg, UWord* ret)
     drd_stop_tracing_address_range(arg[1], arg[1] + arg[2]);
     break;
 
+  case VG_USERREQ__DRD_STOP_RECORDING:
+    thread_stop_recording(drd_tid);
+    break;
+
+  case VG_USERREQ__DRD_START_RECORDING:
+    thread_start_recording(drd_tid);
+    break;
+
   case VG_USERREQ__SET_PTHREADID:
     thread_set_pthreadid(drd_tid, arg[1]);
     break;

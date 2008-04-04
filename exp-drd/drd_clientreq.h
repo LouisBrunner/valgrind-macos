@@ -35,6 +35,12 @@ enum {
   /* To ask the drd tool to stop tracing accesses to the specified range. */
   VG_USERREQ__DRD_STOP_TRACE_ADDR,
   /* args: Addr, SizeT. */
+  /* Let the drd tool stop recording memory accesses in the calling thread. */
+  VG_USERREQ__DRD_STOP_RECORDING,
+  /* args: none. */
+  /* Let the drd tool start recording memory accesses in the calling thread. */
+  VG_USERREQ__DRD_START_RECORDING,
+  /* args: none. */
 
   /* Tell the core the pthread_t of the running thread */
   VG_USERREQ__SET_PTHREADID,

@@ -244,6 +244,7 @@ PTH_FUNC(int, pthreadZucreateZa, // pthread_create*
          pthread_t *thread, const pthread_attr_t *attr,
          void *(*start) (void *), void *arg)
 {
+  int    res;
   int    ret;
   OrigFn fn;
   VgPosixThreadArgs vgargs;
@@ -270,7 +271,12 @@ PTH_FUNC(int, pthreadZucreateZa, // pthread_create*
   pthread_cond_init(&vgargs.cond, 0);
   pthread_mutex_lock(&vgargs.mutex);
 #endif
+  /* Suppress NPTL-specific conflicts between creator and created thread. */
+  VALGRIND_DO_CLIENT_REQUEST(res, -1, VG_USERREQ__DRD_STOP_RECORDING,
+                             0, 0, 0, 0, 0);
   CALL_FN_W_WWWW(ret, fn, thread, attr, vg_thread_wrapper, &vgargs);
+  VALGRIND_DO_CLIENT_REQUEST(res, -1, VG_USERREQ__DRD_START_RECORDING,
+                             0, 0, 0, 0, 0);
 #if 0
   pthread_cond_wait(&vgargs.cond, &vgargs.mutex);
   pthread_mutex_unlock(&vgargs.mutex);

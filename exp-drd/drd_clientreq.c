@@ -79,6 +79,24 @@ static void drd_pre_cond_broadcast(const Addr cond)
   cond_pre_broadcast(cond);
 }
 
+/** Walk the stack up to the highest stack frame, and return the stack pointer
+ *  of the highest stack frame. It is assumed that there are no more than
+ *  ten stack frames above the current frame. This should be no problem
+ *  since this function is either called indirectly from the _init() function
+ *  in vgpreload_exp-drd-*.so or from the thread wrapper for a newly created
+ *  thread. See also drd_pthread_intercepts.c.
+ */
+static Addr highest_used_stack_address(const ThreadId vg_tid)
+{
+    UInt nframes;
+    const UInt n_ips = 10;
+    Addr ips[n_ips], sps[n_ips];
+
+    nframes = VG_(get_StackTrace)(vg_tid, ips, n_ips, sps, 0, 0);
+
+    return (nframes >= 1 ? sps[nframes - 1] : VG_(get_SP)(vg_tid));
+}
+
 static Bool drd_handle_client_request(ThreadId vg_tid, UWord* arg, UWord* ret)
 {
   UWord result = 0;
@@ -102,8 +120,13 @@ static Bool drd_handle_client_request(ThreadId vg_tid, UWord* arg, UWord* ret)
     break;
 
   case VG_USERREQ__DRD_SUPPRESS_CURRENT_STACK:
+  {
+    const Addr topmost_sp = highest_used_stack_address(vg_tid);
     thread_set_stack_startup(drd_tid, VG_(get_SP)(vg_tid));
+    drd_start_suppression(topmost_sp, VG_(thread_get_stack_max)(vg_tid),
+                          "stack top");
     break;
+  }
 
   case VG_USERREQ__DRD_START_NEW_SEGMENT:
     thread_new_segment(PtThreadIdToDrdThreadId(arg[1]));

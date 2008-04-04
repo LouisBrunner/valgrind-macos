@@ -905,26 +905,6 @@ static void thread_update_danger_set(const DrdThreadId tid)
           }
       }
     }
-
-    for (j = 0; j < sizeof(s_threadinfo) / sizeof(s_threadinfo[0]); j++)
-    {
-      if (IsValidDrdThreadId(j))
-      {
-        // NPTL hack: don't report data races on sizeof(struct pthread)
-        // bytes at the top of the stack, since the NPTL functions access
-        // this data without locking.
-        if (s_threadinfo[j].stack_min != 0)
-        {
-          tl_assert(s_threadinfo[j].stack_startup != 0);
-          if (s_threadinfo[j].stack_min < s_threadinfo[j].stack_startup)
-          {
-            bm_clear(s_danger_set,
-                     s_threadinfo[j].stack_min,
-                     s_threadinfo[j].stack_startup);
-          }
-        }
-      }
-    }
   }
 
   s_danger_set_bitmap_creation_count  += bm_get_bitmap_creation_count();

@@ -64,7 +64,7 @@
   ret_ty VG_WRAP_FUNCTION_ZZ(libpthreadZdsoZd0,f)(args)
 
 
-// Local data structures.
+/* Local data structures. */
 
 typedef struct
 {
@@ -80,12 +80,24 @@ typedef struct
 } VgPosixThreadArgs;
 
 
-// Local variables.
+/* Function declarations. */
 
-static int vg_main_thread_state_is_set = 0;
+void _init(void);
+static void check_threading_library(void);
+static void vg_set_main_thread_state(void);
 
 
-// Function definitions.
+/* Function definitions. */
+
+/** Shared library initialization function: the _init() function is called
+ *  after dlopen() has loaded the shared library. This function must not
+ *  be declared static.
+ */
+void _init(void)
+{
+  check_threading_library();
+  vg_set_main_thread_state();
+}
 
 static MutexT pthread_to_drd_mutex_type(const int kind)
 {
@@ -165,6 +177,7 @@ static void* vg_thread_wrapper(void* arg)
   }
 }
 
+/** Return 1 if LinuxThread has been detected, and 0 otherwise. */
 static int detected_linuxthreads(void)
 {
 #if defined(linux)
@@ -185,10 +198,11 @@ static int detected_linuxthreads(void)
 #endif
 }
 
-static void vg_set_main_thread_state(void)
+/** Stop and print an error message in case a non-supported threading
+ *  library (LinuxThreads) has been detected.
+ */
+static void check_threading_library(void)
 {
-  int res;
-
   if (detected_linuxthreads())
   {
     if (getenv("LD_ASSUME_KERNEL"))
@@ -210,6 +224,11 @@ static void vg_set_main_thread_state(void)
     }
     abort();
   }
+}
+
+static void vg_set_main_thread_state(void)
+{
+  int res;
 
   VALGRIND_DO_CLIENT_REQUEST(res, -1, VG_USERREQ__DRD_SUPPRESS_CURRENT_STACK,
                              0, 0, 0, 0, 0);
@@ -231,11 +250,6 @@ PTH_FUNC(int, pthreadZucreateZa, // pthread_create*
 
   VALGRIND_GET_ORIG_FN(fn);
 
-  if (vg_main_thread_state_is_set == 0)
-  {
-    vg_set_main_thread_state();
-    vg_main_thread_state_is_set = 1;
-  }
   vg_start_suppression(&vgargs.wrapper_started,
                        sizeof(vgargs.wrapper_started));
   vgargs.start = start;

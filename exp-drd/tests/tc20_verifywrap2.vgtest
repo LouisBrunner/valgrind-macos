@@ -1,3 +1,3 @@
 prereq: ./supported_libpthread
-vgopts: --trace-mutex=yes --trace-cond=yes --trace-semaphore=yes --var-info=yes
+vgopts: --trace-mutex=yes --trace-cond=yes --trace-semaphore=yes --var-info=yes --check-stack-var=yes
 prog: tc20_verifywrap

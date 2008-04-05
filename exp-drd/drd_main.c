@@ -62,6 +62,7 @@ static void drd_start_client_code(const ThreadId tid, const ULong bbs_done);
 
 // Local variables.
 
+static Bool s_drd_check_stack_var = False;
 static Bool s_drd_print_stats     = False;
 static Bool s_drd_trace_fork_join = False;
 static Bool s_drd_var_info        = False;
@@ -88,7 +89,8 @@ static Bool drd_process_cmd_line_option(Char* arg)
   int trace_suppression = -1;
   Char* trace_address   = 0;
 
-  VG_BOOL_CLO     (arg, "--drd-stats",         s_drd_print_stats)
+  VG_BOOL_CLO     (arg, "--check-stack-var",   s_drd_check_stack_var)
+  else VG_BOOL_CLO(arg, "--drd-stats",         s_drd_print_stats)
   else VG_BOOL_CLO(arg, "--segment-merging",   segment_merging)
   else VG_BOOL_CLO(arg, "--show-confl-seg",    show_confl_seg)
   else VG_BOOL_CLO(arg, "--show-stack-usage",  s_show_stack_usage)
@@ -144,6 +146,8 @@ static Bool drd_process_cmd_line_option(Char* arg)
 static void drd_print_usage(void)
 {
   VG_(printf)(
+"    --check-stack-var=yes|no  Whether or not to report data races on\n"
+"                              stack variables [no].\n"
 "    --segment-merging=yes|no  Controls segment merging [yes].\n"
 "        Segment merging is an algorithm to limit memory usage of the\n"
 "        data race detection algorithm. Disabling segment merging may\n"
@@ -494,7 +498,9 @@ static void drd_start_using_mem(const Addr a1, const SizeT len)
   }
 }
 
-static void drd_stop_using_mem(const Addr a1, const SizeT len)
+static __inline__
+void drd_stop_using_mem(const Addr a1, const SizeT len,
+                        const Bool is_stack_mem)
 {
   const Addr a2 = a1 + len;
 
@@ -504,9 +510,18 @@ static void drd_stop_using_mem(const Addr a1, const SizeT len)
   {
     drd_trace_mem_access(a1, len, eEnd);
   }
-  thread_stop_using_mem(a1, a2);
-  clientobj_stop_using_mem(a1, a2);
-  drd_suppression_stop_using_mem(a1, a2);
+  if (! is_stack_mem || s_drd_check_stack_var)
+  {
+    thread_stop_using_mem(a1, a2);
+    clientobj_stop_using_mem(a1, a2);
+    drd_suppression_stop_using_mem(a1, a2);
+  }
+}
+
+static __inline__
+void drd_stop_using_nonstack_mem(const Addr a1, const SizeT len)
+{
+  drd_stop_using_mem(a1, len, False);
 }
 
 static
@@ -534,7 +549,8 @@ static void drd_stop_using_mem_stack(const Addr a, const SizeT len)
 {
   thread_set_stack_min(thread_get_running_tid(),
                        a + len - VG_STACK_REDZONE_SZB);
-  drd_stop_using_mem(a - VG_STACK_REDZONE_SZB, len + VG_STACK_REDZONE_SZB);
+  drd_stop_using_mem(a - VG_STACK_REDZONE_SZB, len + VG_STACK_REDZONE_SZB,
+                     True);
 }
 
 static void drd_start_using_mem_stack_signal(const Addr a, const SizeT len)
@@ -545,7 +561,7 @@ static void drd_start_using_mem_stack_signal(const Addr a, const SizeT len)
 
 static void drd_stop_using_mem_stack_signal(Addr a, SizeT len)
 {
-  drd_stop_using_mem(a, len);
+  drd_stop_using_mem(a, len, True);
 }
 
 static
@@ -570,15 +586,25 @@ void drd_pre_thread_create(const ThreadId creator, const ThreadId created)
 /* the context of thread "created". At startup, this function is called  */
 /* with arguments (0,1).                                                 */
 static
-void drd_post_thread_create(const ThreadId created)
+void drd_post_thread_create(const ThreadId vg_created)
 {
-  const DrdThreadId drd_created = thread_post_create(created);
-  tl_assert(created != VG_INVALID_THREADID);
+  DrdThreadId drd_created;
+
+  tl_assert(vg_created != VG_INVALID_THREADID);
+
+  drd_created = thread_post_create(vg_created);
   if (s_drd_trace_fork_join)
   {
     VG_(message)(Vg_DebugMsg,
                  "drd_post_thread_create created = %d/%d",
-                 created, drd_created);
+                 vg_created, drd_created);
+  }
+  if (! s_drd_check_stack_var)
+  {
+    drd_start_suppression(thread_get_stack_max(drd_created)
+                          - thread_get_stack_size(drd_created),
+                          thread_get_stack_max(drd_created),
+                          "stack");
   }
 }
 
@@ -615,6 +641,12 @@ void drd_post_thread_join(DrdThreadId drd_joiner, DrdThreadId drd_joinee)
     VG_(free)(msg);
   }
 
+  if (! s_drd_check_stack_var)
+  {
+    drd_finish_suppression(thread_get_stack_max(drd_joinee)
+                           - thread_get_stack_size(drd_joinee),
+                           thread_get_stack_max(drd_joinee));
+  }
   thread_delete(drd_joinee);
   mutex_thread_delete(drd_joinee);
   cond_thread_delete(drd_joinee);
@@ -661,7 +693,8 @@ static void drd_thread_finished(ThreadId vg_tid)
   }
   drd_stop_using_mem(thread_get_stack_min(drd_tid),
                      thread_get_stack_max(drd_tid)
-                     - thread_get_stack_min(drd_tid));
+                     - thread_get_stack_min(drd_tid),
+                     True);
   thread_stop_recording(drd_tid);
   thread_finished(drd_tid);
 }
@@ -1078,8 +1111,8 @@ void drd_pre_clo_init(void)
   VG_(track_new_mem_stack)        (drd_start_using_mem_stack);
   VG_(track_new_mem_stack_signal) (drd_start_using_mem_stack_signal);
   VG_(track_new_mem_startup)      (drd_start_using_mem_w_perms);
-  VG_(track_die_mem_brk)          (drd_stop_using_mem);
-  VG_(track_die_mem_munmap)       (drd_stop_using_mem);
+  VG_(track_die_mem_brk)          (drd_stop_using_nonstack_mem);
+  VG_(track_die_mem_munmap)       (drd_stop_using_nonstack_mem);
   VG_(track_die_mem_stack)        (drd_stop_using_mem_stack);
   VG_(track_die_mem_stack_signal) (drd_stop_using_mem_stack_signal);
   VG_(track_start_client_code)    (drd_start_client_code);
@@ -1088,7 +1121,8 @@ void drd_pre_clo_init(void)
   VG_(track_pre_thread_ll_exit)   (drd_thread_finished);
 
   // Other stuff.
-  drd_register_malloc_wrappers(drd_start_using_mem, drd_stop_using_mem);
+  drd_register_malloc_wrappers(drd_start_using_mem,
+                               drd_stop_using_nonstack_mem);
 
   drd_clientreq_init();
 

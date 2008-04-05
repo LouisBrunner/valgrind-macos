@@ -53,6 +53,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>         // confstr()
+#include "config.h"
 #include "drd_clientreq.h"
 #include "pub_tool_redir.h"
 
@@ -120,15 +121,18 @@ static MutexT pthread_to_drd_mutex_type(const int kind)
 
 static MutexT mutex_type(pthread_mutex_t* mutex)
 {
-#if defined(_PTHREAD_DESCR_DEFINED)
-  // Linuxthreads.
+#if defined(HAVE_PTHREAD_MUTEX_T__M_KIND)
+  /* LinuxThreads. */
   const int kind = mutex->__m_kind;
-#elif defined(__SIZEOF_PTHREAD_MUTEX_T)
-  // NPTL.
+#elif defined(HAVE_PTHREAD_MUTEX_T__DATA__KIND)
+  /* NPTL. */
   const int kind = mutex->__data.__kind;
 #else
-  // Another POSIX threads implementation. Regression tests will fail.
+  /* Another POSIX threads implementation. Regression tests will fail. */
   const int kind = PTHREAD_MUTEX_DEFAULT;
+  fprintf(stderr,
+          "Did not recognize your POSIX threads implementation. Giving up.\n");
+  assert(0);
 #endif
   return pthread_to_drd_mutex_type(kind);
 }

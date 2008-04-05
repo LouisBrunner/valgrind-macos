@@ -550,6 +550,50 @@ if test "${no_x}" != 'yes' ; then
 fi
 
 
+# Check whether pthread_mutex_t has a member called __m_kind.
+
+AC_MSG_CHECKING([for pthread_mutex_t::__m_kind])
+
+AC_COMPILE_IFELSE(
+[
+#include <pthread.h> 
+int main(int argc, char** argv)
+{
+  pthread_mutex_t m;
+  return m.__m_kind;
+}
+],
+[
+AC_MSG_RESULT([yes])
+AC_DEFINE([HAVE_PTHREAD_MUTEX_T__M_KIND], 1,
+          [Define to 1 if pthread_mutex_t has a member called __m_kind.])
+], [
+AC_MSG_RESULT([no])
+])
+
+
+# Check whether pthread_mutex_t has a member called __data.__kind.
+
+AC_MSG_CHECKING([for pthread_mutex_t::__data.__kind])
+
+AC_COMPILE_IFELSE(
+[
+#include <pthread.h> 
+int main(int argc, char** argv)
+{
+  pthread_mutex_t m;
+  return m.__data.__kind;
+}
+],
+[
+AC_MSG_RESULT([yes])
+AC_DEFINE([HAVE_PTHREAD_MUTEX_T__DATA__KIND], 1,
+          [Define to 1 if pthread_mutex_t has a member __data.__kind.])
+], [
+AC_MSG_RESULT([no])
+])
+
+
 # does this compiler support -fopenmp, does it have the include file
 # <omp.h> and does it have libgomp ?
 

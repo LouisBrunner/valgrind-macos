@@ -170,6 +170,7 @@ ThreadId DrdThreadIdToVgThreadId(const DrdThreadId tid)
           : VG_INVALID_THREADID);
 }
 
+#if 0
 /** Sanity check of the doubly linked list of segments referenced by a
  *  ThreadInfo struct.
  *  @return True if sane, False if not.
@@ -191,6 +192,7 @@ static Bool sane_ThreadInfo(const ThreadInfo* const ti)
   }
   return True;
 }
+#endif
 
 DrdThreadId thread_pre_create(const DrdThreadId creator,
                               const ThreadId vg_created)
@@ -415,7 +417,7 @@ static void thread_append_segment(const DrdThreadId tid, Segment* const sg)
 {
   tl_assert(0 <= tid && tid < DRD_N_THREADS
             && tid != DRD_INVALID_THREADID);
-  tl_assert(sane_ThreadInfo(&s_threadinfo[tid]));
+  // tl_assert(sane_ThreadInfo(&s_threadinfo[tid]));
   sg->prev = s_threadinfo[tid].last;
   sg->next = 0;
   if (s_threadinfo[tid].last)
@@ -423,7 +425,7 @@ static void thread_append_segment(const DrdThreadId tid, Segment* const sg)
   s_threadinfo[tid].last = sg;
   if (s_threadinfo[tid].first == 0)
     s_threadinfo[tid].first = sg;
-  tl_assert(sane_ThreadInfo(&s_threadinfo[tid]));
+  // tl_assert(sane_ThreadInfo(&s_threadinfo[tid]));
 }
 
 /** Remove a segment from the segment list of thread threadid, and free the
@@ -578,7 +580,7 @@ static void thread_merge_segments(void)
   {
     Segment* sg;
 
-    tl_assert(sane_ThreadInfo(&s_threadinfo[i]));
+    // tl_assert(sane_ThreadInfo(&s_threadinfo[i]));
 
     for (sg = s_threadinfo[i].first; sg; sg = sg->next)
     {
@@ -593,7 +595,7 @@ static void thread_merge_segments(void)
       }
     }
 
-    tl_assert(sane_ThreadInfo(&s_threadinfo[i]));
+    // tl_assert(sane_ThreadInfo(&s_threadinfo[i]));
   }
 }
 

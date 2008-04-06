@@ -122,6 +122,21 @@ static Bool drd_handle_client_request(ThreadId vg_tid, UWord* arg, UWord* ret)
   case VG_USERREQ__DRD_SUPPRESS_CURRENT_STACK:
   {
     const Addr topmost_sp = highest_used_stack_address(vg_tid);
+#if 0
+    UInt nframes;
+    const UInt n_ips = 20;
+    Addr ips[n_ips], sps[n_ips], fps[n_ips];
+    unsigned i;
+
+    nframes = VG_(get_StackTrace)(vg_tid, ips, n_ips, sps, fps, 0);
+
+    VG_(message)(Vg_DebugMsg, "thread %d/%d", vg_tid, drd_tid);
+    for (i = 0; i < nframes; i++)
+    {
+      VG_(message)(Vg_DebugMsg, "[%2d] 0x%09lx 0x%09lx 0x%09lx",
+                   i, ips[i], sps[i], fps[i]);
+    }
+#endif
     thread_set_stack_startup(drd_tid, VG_(get_SP)(vg_tid));
     drd_start_suppression(topmost_sp, VG_(thread_get_stack_max)(vg_tid),
                           "stack top");

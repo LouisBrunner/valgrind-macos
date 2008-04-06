@@ -1055,11 +1055,23 @@ void drd_fini(Int exitcode)
   // thread_print_all();
   if (VG_(clo_verbosity) > 1 || s_drd_print_stats)
   {
+    ULong update_danger_set_count;
+    ULong dsnsc;
+    ULong dscvc;
+
+    update_danger_set_count
+      = thread_get_update_danger_set_count(&dsnsc, &dscvc);
+
     VG_(message)(Vg_UserMsg,
                  "   thread: %lld context switches"
-                 " / %lld updates of the danger set.",
+                 " / %lld updates of the danger set",
                  thread_get_context_switch_count(),
-                 thread_get_update_danger_set_count());
+                 update_danger_set_count);
+    VG_(message)(Vg_UserMsg,
+                 "           (%lld new sg + %lld combine vc + %lld csw).",
+                 dsnsc,
+                 dscvc,
+                 update_danger_set_count - dsnsc - dscvc);
     VG_(message)(Vg_UserMsg,
                  " segments: created %lld segments, max %lld alive,"
                  " %lld discard points.",

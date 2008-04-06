@@ -106,7 +106,7 @@ static Bool drd_process_cmd_line_option(Char* arg)
   else VG_BOOL_CLO(arg, "--trace-semaphore",   trace_semaphore)
   else VG_BOOL_CLO(arg, "--trace-suppr",       trace_suppression)
   else VG_BOOL_CLO(arg, "--var-info",          s_drd_var_info)
-  else VG_STR_CLO (arg, "--trace-address",     trace_address)
+  else VG_STR_CLO (arg, "--trace-addr",        trace_address)
   else
     return VG_(replacement_malloc_process_cmd_line_option)(arg);
 
@@ -162,7 +162,7 @@ static void drd_print_usage(void)
 "        cause an out of memory error [no].\n"
 "\n"
 "  exp-drd options for monitoring process behavior:\n"
-"    --trace-address=<address> Trace all load and store activity for the.\n"
+"    --trace-addr=<address>    Trace all load and store activity for the.\n"
 "                              specified address [off].\n"
 "    --trace-barrier=yes|no    Trace all barrier activity [no].\n"
 "    --trace-cond=yes|no       Trace all condition variable activity [no].\n"
@@ -1067,9 +1067,11 @@ void drd_fini(Int exitcode)
                  sg_get_max_alive_segments_count(),
                  thread_get_discard_ordered_segments_count());
     VG_(message)(Vg_UserMsg,
-                 "  bitmaps: %lld level 3 / %lld level 2 bitmaps were"
-                 " allocated.",
+                 "  bitmaps: %lld level 1 / %lld level 2 bitmap refs",
                  bm_get_bitmap_creation_count(),
+                 bm_get_bitmap2_node_creation_count());
+    VG_(message)(Vg_UserMsg,
+                 "           and %lld level 2 bitmaps were allocated.",
                  bm_get_bitmap2_creation_count());
     VG_(message)(Vg_UserMsg,
                  "    mutex: %lld non-recursive lock/unlock events.",

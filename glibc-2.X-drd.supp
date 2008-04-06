@@ -76,29 +76,6 @@
    obj:/lib*/libc-*
 }
 {
-   libc-race-in-vfprintf
-   exp-drd:ConflictingAccess
-   fun:vfprintf
-}
-{
-   libc-race-in-vsnprintf
-   exp-drd:ConflictingAccess
-   fun:vsnprintf
-}
-{
-   libc-race-in-vsnprintf
-   exp-drd:ConflictingAccess
-   obj:/lib*/libc-*
-   fun:vsnprintf
-}
-{
-   libc-race-in-vsnprintf
-   exp-drd:ConflictingAccess
-   obj:/lib*/libc-*
-   obj:/lib*/libc-*
-   fun:vsnprintf
-}
-{
    librt
    exp-drd:ConflictingAccess
    fun:__librt_enable_asynccancel

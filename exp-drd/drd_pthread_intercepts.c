@@ -98,6 +98,11 @@ void _init(void)
 {
   check_threading_library();
   vg_set_main_thread_state();
+  /* glibc up to and including version 2.7 triggers conflicting accesses   */
+  /* on stdout and stderr when sending output to one of these streams from */
+  /* more than one thread. Suppress data race reports on these objects.    */
+  DRD_IGNORE_VAR(*stdout);
+  DRD_IGNORE_VAR(*stderr);
 }
 
 static MutexT pthread_to_drd_mutex_type(const int kind)

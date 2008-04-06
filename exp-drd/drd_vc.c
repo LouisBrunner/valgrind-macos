@@ -178,10 +178,23 @@ void vc_min(VectorClock* const result, const VectorClock* const rhs)
 void vc_combine(VectorClock* const result,
                 const VectorClock* const rhs)
 {
+  vc_combine2(result, rhs, -1);
+}
+
+/** Compute elementwise maximum.
+ *
+ *  @return True if *result and *rhs are equal, or if *result and *rhs only
+ *          differ in the component with thread ID tid.
+ */
+Bool vc_combine2(VectorClock* const result,
+                 const VectorClock* const rhs,
+                 const ThreadId tid)
+{
   unsigned i;
   unsigned j;
   unsigned shared;
   unsigned new_size;
+  Bool     almost_equal = True;
 
   tl_assert(result);
   tl_assert(rhs);
@@ -211,13 +224,27 @@ void vc_combine(VectorClock* const result,
   i = 0;
   for (j = 0; j < rhs->size; j++)
   {
+    /* First of all, skip those clocks in result->vc[] for which there */
+    /* is no corresponding clock in rhs->vc[].                         */
     while (i < result->size && result->vc[i].threadid < rhs->vc[j].threadid)
+    {
+      if (result->vc[i].threadid != tid)
+      {
+        almost_equal = False;
+      }
       i++;
+    }
+    /* If the end of *result is met, append rhs->vc[j] to *result. */
     if (i >= result->size)
     {
       result->size++;
       result->vc[i] = rhs->vc[j];
+      if (result->vc[i].threadid != tid)
+      {
+        almost_equal = False;
+      }
     }
+    /* If clock rhs->vc[j] is not in *result, insert it. */
     else if (result->vc[i].threadid > rhs->vc[j].threadid)
     {
       unsigned k;
@@ -227,10 +254,21 @@ void vc_combine(VectorClock* const result,
       }
       result->size++;
       result->vc[i] = rhs->vc[j];
+      if (result->vc[i].threadid != tid)
+      {
+        almost_equal = False;
+      }
     }
+    /* Otherwise, both *result and *rhs have a clock for thread            */
+    /* result->vc[i].threadid == rhs->vc[j].threadid. Compute the maximum. */
     else
     {
       tl_assert(result->vc[i].threadid == rhs->vc[j].threadid);
+      if (result->vc[i].threadid != tid
+          && rhs->vc[j].count != result->vc[i].count)
+      {
+        almost_equal = False;
+      }
       if (rhs->vc[j].count > result->vc[i].count)
       {
         result->vc[i].count = rhs->vc[j].count;
@@ -239,6 +277,8 @@ void vc_combine(VectorClock* const result,
   }
   vc_check(result);
   tl_assert(result->size == new_size);
+
+  return almost_equal;
 }
 
 void vc_print(const VectorClock* const vc)

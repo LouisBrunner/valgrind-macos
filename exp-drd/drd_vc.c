@@ -260,15 +260,20 @@ void vc_snprint(Char* const str, Int const size,
                 const VectorClock* const vc)
 {
   unsigned i;
+  unsigned j = 1;
 
   tl_assert(vc);
   VG_(snprintf)(str, size, "[");
   for (i = 0; i < vc->size; i++)
   {
     tl_assert(vc->vc);
-    VG_(snprintf)(str + VG_(strlen)(str), size - VG_(strlen)(str),
-                  "%s %d: %d", i > 0 ? "," : "",
-                  vc->vc[i].threadid, vc->vc[i].count);
+    for ( ; j <= vc->vc[i].threadid; j++)
+    {
+      VG_(snprintf)(str + VG_(strlen)(str), size - VG_(strlen)(str),
+                    "%s %d",
+                    i > 0 ? "," : "",
+                    (j == vc->vc[i].threadid) ? vc->vc[i].count : 0);
+    }
   }
   VG_(snprintf)(str + VG_(strlen)(str), size - VG_(strlen)(str), " ]");
 }

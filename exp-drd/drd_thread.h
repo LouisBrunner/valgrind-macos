@@ -137,7 +137,7 @@ void thread_report_conflicting_segments(const DrdThreadId tid,
 ULong thread_get_context_switch_count(void);
 ULong thread_get_report_races_count(void);
 ULong thread_get_discard_ordered_segments_count(void);
-ULong thread_get_update_danger_set_count(void);
+ULong thread_get_update_danger_set_count(ULong* dsnsc, ULong* dscvc);
 ULong thread_get_danger_set_bitmap_creation_count(void);
 ULong thread_get_danger_set_bitmap2_creation_count(void);
 

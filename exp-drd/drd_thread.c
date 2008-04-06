@@ -51,6 +51,8 @@ static void thread_update_danger_set(const DrdThreadId tid);
 static ULong s_context_switch_count;
 static ULong s_discard_ordered_segments_count;
 static ULong s_update_danger_set_count;
+static ULong s_danger_set_new_segment_count;
+static ULong s_danger_set_combine_vc_count;
 static ULong s_danger_set_bitmap_creation_count;
 static ULong s_danger_set_bitmap2_creation_count;
 static ThreadId    s_vg_running_tid  = VG_INVALID_THREADID;
@@ -599,28 +601,91 @@ static void thread_merge_segments(void)
   }
 }
 
+/** Every change in the vector clock of a thread may cause segments that
+ *  were previously ordered to this thread to become unordered. Hence,
+ *  it may be necessary to recalculate the danger set if the vector clock 
+ *  of the current thread is updated. This function check whether such a
+ *  recalculation is necessary.
+ *
+ *  @param tid    Thread ID of the thread to which a new segment has been
+ *                appended.
+ *  @param new_sg Pointer to the most recent segment of thread tid.
+ */
+static Bool danger_set_update_needed(const DrdThreadId tid,
+                                     const Segment* const new_sg)
+{
+  unsigned i;
+  const Segment* old_sg;
+
+  tl_assert(new_sg);
+
+  /* If a new segment was added to another thread than the running thread, */
+  /* just tell the caller to update the danger set.                        */
+  if (tid != s_drd_running_tid)
+    return True;
+
+  /* Always let the caller update the danger set after creation of the */
+  /* first segment.                                                    */
+  old_sg = new_sg->prev;
+  if (old_sg == 0)
+    return True;
+
+  for (i = 0; i < sizeof(s_threadinfo) / sizeof(s_threadinfo[0]); i++)
+  {
+    Segment* q;
+
+    if (i == s_drd_running_tid)
+      continue;
+
+    for (q = s_threadinfo[i].last; q; q = q->prev)
+    {
+      /* If the expression below evaluates to false, this expression will */
+      /* also evaluate to false for all subsequent iterations. So stop    */
+      /* iterating.                                                       */
+      if (vc_lte(&q->vc, &old_sg->vc))
+        break;
+      /* If the vector clock of the 2nd the last segment is not ordered   */
+      /* to the vector clock of segment q, and the last segment is, ask   */
+      /* the caller to update the danger set.                             */
+      if (! vc_lte(&old_sg->vc, &q->vc))
+      {
+        return True;
+      }
+      /* If the vector clock of the last segment is not ordered to the    */
+      /* vector clock of segment q, ask the caller to update the danger   */
+      /* set.                                                             */
+      if (! vc_lte(&q->vc, &new_sg->vc) && ! vc_lte(&new_sg->vc, &q->vc))
+      {
+        return True;
+      }
+    }
+  }
+
+  return False;
+}
+
 /** Create a new segment for the specified thread, and discard any segments
  *  that cannot cause races anymore.
  */
 void thread_new_segment(const DrdThreadId tid)
 {
+  Segment* new_sg;
+
   tl_assert(0 <= tid && tid < DRD_N_THREADS && tid != DRD_INVALID_THREADID);
 
-  thread_append_segment(tid, sg_new(tid, tid));
+  new_sg = sg_new(tid, tid);
+  thread_append_segment(tid, new_sg);
+
+  if (danger_set_update_needed(tid, new_sg))
+  {
+    thread_update_danger_set(s_drd_running_tid);
+    s_danger_set_new_segment_count++;
+  }
 
   thread_discard_ordered_segments();
 
   if (s_segment_merging)
     thread_merge_segments();
-
-  if (tid == s_drd_running_tid)
-  {
-    /* Every change in the vector clock of the current thread may cause */
-    /* segments that were previously ordered to this thread to become   */
-    /* unordered. Hence, recalculate the danger set if the vector clock */
-    /* of the current thread is updated.                                */
-    thread_update_danger_set(tid);
-  }
 }
 
 /** Call this function after thread 'joiner' joined thread 'joinee'. */
@@ -652,7 +717,9 @@ void thread_combine_vc2(DrdThreadId tid, const VectorClock* const vc)
   tl_assert(s_threadinfo[tid].last);
   tl_assert(vc);
   vc_combine(&s_threadinfo[tid].last->vc, vc);
+  thread_update_danger_set(tid);
   thread_discard_ordered_segments();
+  s_danger_set_combine_vc_count++;
 }
 
 /** Call this function whenever a thread is no longer using the memory
@@ -873,12 +940,12 @@ static void thread_update_danger_set(const DrdThreadId tid)
 
     for (j = 0; j < sizeof(s_threadinfo) / sizeof(s_threadinfo[0]); j++)
     {
-      if (IsValidDrdThreadId(j))
+      if (j != tid && IsValidDrdThreadId(j))
       {
         const Segment* q;
         for (q = s_threadinfo[j].last; q; q = q->prev)
-          if (j != tid && q != 0
-              && ! vc_lte(&q->vc, &p->vc) && ! vc_lte(&p->vc, &q->vc))
+        {
+          if (! vc_lte(&q->vc, &p->vc) && ! vc_lte(&p->vc, &q->vc))
           {
             if (s_trace_danger_set)
             {
@@ -905,6 +972,7 @@ static void thread_update_danger_set(const DrdThreadId tid)
               VG_(message)(Vg_UserMsg, "%s", msg);
             }
           }
+        }
       }
     }
   }
@@ -930,8 +998,12 @@ ULong thread_get_discard_ordered_segments_count(void)
   return s_discard_ordered_segments_count;
 }
 
-ULong thread_get_update_danger_set_count(void)
+ULong thread_get_update_danger_set_count(ULong* dsnsc, ULong* dscvc)
 {
+  tl_assert(dsnsc);
+  tl_assert(dscvc);
+  *dsnsc = s_danger_set_new_segment_count;
+  *dscvc = s_danger_set_combine_vc_count;
   return s_update_danger_set_count;
 }
 

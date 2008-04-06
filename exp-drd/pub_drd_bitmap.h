@@ -112,7 +112,9 @@ void bm_report_races(ThreadId const tid1, ThreadId const tid2,
                      const struct bitmap* const bm2);
 void bm_print(const struct bitmap* bm);
 ULong bm_get_bitmap_creation_count(void);
+ULong bm_get_bitmap2_node_creation_count(void);
 ULong bm_get_bitmap2_creation_count(void);
+
 void bm_test(void);
 
 

@@ -78,6 +78,7 @@
 /* Local variables. */
 
 static ULong s_bitmap2_creation_count;
+static ULong s_node_creation_count;
 
 
 
@@ -386,6 +387,7 @@ struct bitmap2* bm2_insert(const struct bitmap* const bm, const UWord a1)
   struct bitmap2ref* bm2ref;
   struct bitmap2* bm2;
 
+  s_node_creation_count++;
   bm2ref       = VG_(OSetGen_AllocNode)(bm->oset, sizeof(*bm2ref));
   bm2ref->addr = a1;
   bm2          = bm2_new(a1);
@@ -409,6 +411,8 @@ struct bitmap2* bm2_insert_addref(const struct bitmap* const bm,
 
   tl_assert(bm);
   //tl_assert(VG_(OSetGen_Lookup)(bm->oset, &bm2->addr) == 0);
+
+  s_node_creation_count++;
   bm2ref       = VG_(OSetGen_AllocNode)(bm->oset, sizeof(*bm2ref));
   bm2ref->addr = bm2->addr;
   bm2ref->bm2  = bm2;

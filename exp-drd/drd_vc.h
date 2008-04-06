@@ -69,6 +69,7 @@ void vc_copy(VectorClock* const new,
              const VectorClock* const rhs);
 void vc_assign(VectorClock* const lhs,
                const VectorClock* const rhs);
+UInt vc_get(VectorClock* const vc, const ThreadId tid);
 void vc_increment(VectorClock* const vc, ThreadId const threadid);
 Bool vc_lte(const VectorClock* const vc1,
             const VectorClock* const vc2);
@@ -78,6 +79,9 @@ void vc_min(VectorClock* const result,
             const VectorClock* const rhs);
 void vc_combine(VectorClock* const result,
                 const VectorClock* const rhs);
+Bool vc_combine2(VectorClock* const result,
+                 const VectorClock* const rhs,
+                 const ThreadId tid);
 void vc_print(const VectorClock* const vc);
 void vc_snprint(Char* const str, Int const size,
                 const VectorClock* const vc);

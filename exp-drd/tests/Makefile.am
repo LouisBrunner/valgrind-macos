@@ -75,6 +75,7 @@ EXTRA_DIST =                                        \
 	recursive_mutex.stdout.exp	            \
 	recursive_mutex.vgtest                      \
 	rwlock_race.stderr.exp	                    \
+	rwlock_race.stderr.exp2	                    \
 	rwlock_race.vgtest                          \
 	sem_as_mutex.stderr.exp                     \
 	sem_as_mutex.vgtest                         \

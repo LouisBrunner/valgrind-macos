@@ -491,6 +491,8 @@ void VG_(di_notify_mmap)( Addr a, Bool allow_SkFileV )
    Int        nread;
    HChar      buf1k[1024];
    Bool       debug = False;
+   SysRes          statres;
+   struct vki_stat statbuf;
 
    /* In short, figure out if this mapping is of interest to us, and
       if so, try to guess what ld.so is doing and when/if we should
@@ -520,44 +522,29 @@ void VG_(di_notify_mmap)( Addr a, Bool allow_SkFileV )
    if (debug)
       VG_(printf)("di_notify_mmap-2: %s\n", filename);
 
-   /* XXXX begin KLUDGE */
-   /* Skip filenames in /dev/.  Don't even bother to try opening them.
-      Why?
-
-      Suppose the client opens and then mmaps the file specified by
-      'filename' and puts some kind of lock on it, so nobody else can
-      open it.  If we now try to open it to peer at the ELF header,
-      the system can hang, because the VG_(open) call blocks.
-      Precisely this happed when running Amarok, which opened and then
-      mmap'd /dev/snd/pcmC0D0c.
-
-      A clean(er) solution is to open the file with VKI_O_NONBLOCK, so
-      that if it is locked, we simply fail immediately and don't hang
-      the whole system.  But "man 2 open" gives only a sketchy
-      description of the resulting file semantics.  So for the
-      meantime, just skip files in /dev/ as (1) they are likely to be
-      subject to wierd-ass locking stuff, and (2) they won't contain
-      useful debug info anyway.
-
-      But that's a kludge; in principle the same problem could occur
-      with *any* file.
-   */
-   if (0 == VG_(strncmp)(filename, "/dev/", 5)) {
-      if (debug)
-         VG_(printf)("di_notify_mmap-2: skipping %s\n", filename);
+   /* Only try to read debug information from regular files. */
+   statres = VG_(stat)(filename, &statbuf);
+   /* If the assert below ever fails, replace the VG_(stat)() call above */
+   /* by a VG_(lstat)() call.                                            */
+   vg_assert(statres.isError || ! VKI_S_ISLNK(statbuf.st_mode));
+   if (statres.isError || ! VKI_S_ISREG(statbuf.st_mode))
+   {
       return;
    }
-   /* XXXX end KLUDGE */
 
-   /* Peer at the first few bytes of the file, to see if it is an ELF
-      object file. */
+
+   /* Peer at the first few bytes of the file, to see if it is an ELF */
+   /* object file. Ignore the file if we do not have read permission. */
    VG_(memset)(buf1k, 0, sizeof(buf1k));
    fd = VG_(open)( filename, VKI_O_RDONLY, 0 );
    if (fd.isError) {
       DebugInfo fake_di;
-      VG_(memset)(&fake_di, 0, sizeof(fake_di));
-      fake_di.filename = filename;
-      ML_(symerr)(&fake_di, True, "can't open file to inspect ELF header");
+      if (fd.err != VKI_EACCES)
+      {
+         VG_(memset)(&fake_di, 0, sizeof(fake_di));
+         fake_di.filename = filename;
+         ML_(symerr)(&fake_di, True, "can't open file to inspect ELF header");
+      }
       return;
    }
    nread = VG_(read)( fd.res, buf1k, sizeof(buf1k) );

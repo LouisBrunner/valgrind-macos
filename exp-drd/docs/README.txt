@@ -225,7 +225,7 @@ more information.
 How to use DRD
 --------------
 
-To use this tool, specify --tool=drd on the Valgrind command line.
+To use this tool, specify --tool=exp-drd on the Valgrind command line.
 
 
 Interpreting DRD's data race reports

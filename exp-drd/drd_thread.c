@@ -27,11 +27,13 @@
 #include "drd_segment.h"
 #include "drd_suppression.h"
 #include "drd_thread.h"
+#include "pub_tool_vki.h"
 #include "pub_tool_basics.h"      // Addr, SizeT
 #include "pub_tool_errormgr.h"    // VG_(unique_error)()
 #include "pub_tool_libcassert.h"  // tl_assert()
 #include "pub_tool_libcbase.h"    // VG_(strlen)()
 #include "pub_tool_libcprint.h"   // VG_(printf)()
+#include "pub_tool_libcproc.h"    // VG_(getenv)()
 #include "pub_tool_machine.h"
 #include "pub_tool_mallocfree.h"  // VG_(malloc)(), VG_(free)()
 #include "pub_tool_options.h"     // VG_(clo_backtrace_size)
@@ -43,6 +45,7 @@
 static void thread_append_segment(const DrdThreadId tid,
                                   Segment* const sg);
 static void thread_discard_segment(const DrdThreadId tid, Segment* const sg);
+static Bool thread_danger_set_up_to_date(const DrdThreadId tid);
 static void thread_compute_danger_set(struct bitmap** danger_set,
                                      const DrdThreadId tid);
 
@@ -682,6 +685,10 @@ void thread_new_segment(const DrdThreadId tid)
     thread_compute_danger_set(&s_danger_set, s_drd_running_tid);
     s_danger_set_new_segment_count++;
   }
+  else if (tid == s_drd_running_tid)
+  {
+    tl_assert(thread_danger_set_up_to_date(s_drd_running_tid));
+  }
 
   thread_discard_ordered_segments();
 
@@ -887,6 +894,29 @@ void thread_report_conflicting_segments(const DrdThreadId tid,
                                                  access_type, p);
     }
   }
+}
+
+/** Verify whether the danger set for thread tid is up to date. Only perform
+ *  the check if the environment variable DRD_VERIFY_DANGER_SET has been set.
+ */
+static Bool thread_danger_set_up_to_date(const DrdThreadId tid)
+{
+  static int do_verify_danger_set = -1;
+  Bool result;
+  struct bitmap* computed_danger_set = 0;
+
+  if (do_verify_danger_set < 0)
+  {
+    //VG_(message)(Vg_DebugMsg, "%s", VG_(getenv)("DRD_VERIFY_DANGER_SET"));
+    do_verify_danger_set = VG_(getenv)("DRD_VERIFY_DANGER_SET") != 0;
+  }
+  if (do_verify_danger_set == 0)
+    return True;
+
+  thread_compute_danger_set(&computed_danger_set, tid);
+  result = bm_compare(s_danger_set, computed_danger_set);
+  bm_delete(computed_danger_set);
+  return result;
 }
 
 /** Compute a bitmap that represents the union of all memory accesses of all

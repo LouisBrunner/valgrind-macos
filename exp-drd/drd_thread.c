@@ -43,7 +43,8 @@
 static void thread_append_segment(const DrdThreadId tid,
                                   Segment* const sg);
 static void thread_discard_segment(const DrdThreadId tid, Segment* const sg);
-static void thread_update_danger_set(const DrdThreadId tid);
+static void thread_compute_danger_set(struct bitmap** danger_set,
+                                     const DrdThreadId tid);
 
 
 // Local variables.
@@ -387,7 +388,7 @@ void thread_set_running_tid(const ThreadId vg_tid, const DrdThreadId drd_tid)
     }
     s_vg_running_tid = vg_tid;
     s_drd_running_tid = drd_tid;
-    thread_update_danger_set(drd_tid);
+    thread_compute_danger_set(&s_danger_set, drd_tid);
     s_context_switch_count++;
   }
 
@@ -678,7 +679,7 @@ void thread_new_segment(const DrdThreadId tid)
 
   if (danger_set_update_needed(tid, new_sg))
   {
-    thread_update_danger_set(s_drd_running_tid);
+    thread_compute_danger_set(&s_danger_set, s_drd_running_tid);
     s_danger_set_new_segment_count++;
   }
 
@@ -703,7 +704,7 @@ void thread_combine_vc(DrdThreadId joiner, DrdThreadId joinee)
 
   if (joiner == s_drd_running_tid)
   {
-    thread_update_danger_set(joiner);
+    thread_compute_danger_set(&s_danger_set, joiner);
   }
 }
 
@@ -717,7 +718,7 @@ void thread_combine_vc2(DrdThreadId tid, const VectorClock* const vc)
   tl_assert(s_threadinfo[tid].last);
   tl_assert(vc);
   vc_combine(&s_threadinfo[tid].last->vc, vc);
-  thread_update_danger_set(tid);
+  thread_compute_danger_set(&s_danger_set, tid);
   thread_discard_ordered_segments();
   s_danger_set_combine_vc_count++;
 }
@@ -756,7 +757,7 @@ void thread_stop_using_mem(const Addr a1, const Addr a2)
   if (other_user != DRD_INVALID_THREADID
       && bm_has_any_access(s_danger_set, a1, a2))
   {
-    thread_update_danger_set(thread_get_running_tid());
+    thread_compute_danger_set(&s_danger_set, thread_get_running_tid());
   }
 }
 
@@ -891,7 +892,8 @@ void thread_report_conflicting_segments(const DrdThreadId tid,
 /** Compute a bitmap that represents the union of all memory accesses of all
  *  segments that are unordered to the current segment of the thread tid.
  */
-static void thread_update_danger_set(const DrdThreadId tid)
+static void thread_compute_danger_set(struct bitmap** danger_set,
+                                      const DrdThreadId tid)
 {
   Segment* p;
 
@@ -902,11 +904,11 @@ static void thread_update_danger_set(const DrdThreadId tid)
   s_danger_set_bitmap_creation_count  -= bm_get_bitmap_creation_count();
   s_danger_set_bitmap2_creation_count -= bm_get_bitmap2_creation_count();
 
-  if (s_danger_set)
+  if (*danger_set)
   {
-    bm_delete(s_danger_set);
+    bm_delete(*danger_set);
   }
-  s_danger_set = bm_new();
+  *danger_set = bm_new();
 
   if (s_trace_danger_set)
   {
@@ -957,7 +959,7 @@ static void thread_update_danger_set(const DrdThreadId tid)
                          &q->vc);
               VG_(message)(Vg_UserMsg, "%s", msg);
             }
-            bm_merge2(s_danger_set, q->bm);
+            bm_merge2(*danger_set, q->bm);
           }
           else
           {
@@ -983,7 +985,7 @@ static void thread_update_danger_set(const DrdThreadId tid)
   if (0 && s_trace_danger_set)
   {
     VG_(message)(Vg_UserMsg, "[%d] new danger set:", tid);
-    bm_print(s_danger_set);
+    bm_print(*danger_set);
     VG_(message)(Vg_UserMsg, "[%d] end of new danger set.", tid);
   }
 }

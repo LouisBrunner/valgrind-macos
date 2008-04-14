@@ -102,6 +102,8 @@ Bool bm_store_4_has_conflict_with(const struct bitmap* const bm,const Addr a1);
 Bool bm_store_8_has_conflict_with(const struct bitmap* const bm,const Addr a1);
 Bool bm_store_has_conflict_with(const struct bitmap* const bm,
                                 const Addr a1, const Addr a2);
+Bool bm_compare(struct bitmap* const lhs,
+                const struct bitmap* const rhs);
 void bm_swap(struct bitmap* const bm1, struct bitmap* const bm2);
 void bm_merge2(struct bitmap* const lhs,
                const struct bitmap* const rhs);

@@ -745,6 +745,52 @@ Bool bm_store_has_conflict_with(const struct bitmap* const bm,
   return bm_has_conflict_with(bm, a1, a2, eStore);
 }
 
+/** Return true if the two bitmaps *lhs and *rhs are identical, and false
+ *  if not.
+ */
+Bool bm_compare(struct bitmap* const lhs,
+                const struct bitmap* const rhs)
+{
+  struct bitmap2* bm2l;
+  struct bitmap2ref* bm2l_ref;
+  struct bitmap2* bm2r;
+  const struct bitmap2ref* bm2r_ref;
+
+  VG_(OSetGen_ResetIter)(lhs->oset);
+  VG_(OSetGen_ResetIter)(rhs->oset);
+
+  for ( ; (bm2l_ref = VG_(OSetGen_Next)(lhs->oset)) != 0; )
+  {
+    bm2l = bm2l_ref->bm2;
+    tl_assert(bm2l);
+    tl_assert(bm_has_any_access(lhs,
+                                bm2l->addr << ADDR0_BITS,
+                                (bm2l->addr + 1) << ADDR0_BITS));
+    bm2r_ref = VG_(OSetGen_Next)(rhs->oset);
+    if (bm2r_ref == 0)
+      return False;
+    bm2r = bm2r_ref->bm2;
+    tl_assert(bm2r);
+    tl_assert(bm_has_any_access(rhs,
+                                bm2r->addr << ADDR0_BITS,
+                                (bm2r->addr + 1) << ADDR0_BITS));
+    if (bm2l->addr != bm2r->addr
+        || VG_(memcmp)(&bm2l->bm1, &bm2r->bm1, sizeof(bm2l->bm1)) != 0)
+    {
+      return False;
+    }
+    bm2r = VG_(OSetGen_Next)(rhs->oset);
+    if (bm2r)
+    {
+      tl_assert(bm_has_any_access(rhs,
+                                  bm2r->addr << ADDR0_BITS,
+                                  (bm2r->addr + 1) << ADDR0_BITS));
+      return False;
+    }
+  }
+  return True;
+}
+
 void bm_swap(struct bitmap* const bm1, struct bitmap* const bm2)
 {
   OSet* const tmp = bm1->oset;

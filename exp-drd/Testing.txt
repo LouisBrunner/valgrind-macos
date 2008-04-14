@@ -16,6 +16,7 @@ How to test DRD
    not print any error messages:
      ./vg-in-place --tool=exp-drd kate
      ./vg-in-place --trace-children=yes --tool=exp-drd knode
+     ./vg-in-place --trace-children=yes --tool=exp-drd amarokapp
 4. Test DRD with Firefox. First of all, build and install Firefox 3. Next,
    run the following command:
      LD_LIBRARY_PATH=$HOME/software/mozilla-build/dist/lib: ./vg-in-place --trace-children=yes --tool=exp-drd $HOME/software/mozilla-build/dist/bin/firefox-bin

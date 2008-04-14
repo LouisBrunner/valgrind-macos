@@ -1,15 +1,18 @@
-Last updated March 24, 2008.
+Last updated April 14, 2008.
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 
 Data-race detection algorithm
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-- Make sure -v works again with exp-drd.
+- More extensive testing of reader/writer locks.
+- Regression test for bitmap manipulation functions.
+- Continue discussion about unification of DRD and Helgrind client requests.
+- Memory pool support.
 - Add locking order checking.
 - Continue the discussion on the Valgrind mailing list about docbook and
   'make dist'.
-- Explain on the Valgrind mailing list the difference between a bus lock
-  and acquire / release labels.
+- Let DRD print an error message and stop as soon as qt1, qt2 or qt3 is 
+  loaded. Only qt4 is SMP safe.
 - Add configure tests for the name of the 'kind' member in pthread_mutex_t.
 - Find out why a race is reported on std::string::string(std::string const&)
   (stc test case 16).

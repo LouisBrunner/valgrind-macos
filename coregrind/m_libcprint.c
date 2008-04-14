@@ -81,9 +81,9 @@ typedef
    } 
    printf_buf;
 
-static UInt VG_(vprintf_to_buf) ( printf_buf *printf_buf,
-                                  const HChar *format, va_list vargs );
-static UInt VG_(printf_to_buf) ( printf_buf* prbuf, const HChar *format, ... );
+static UInt vprintf_to_buf ( printf_buf *printf_buf,
+                             const HChar *format, va_list vargs );
+static UInt printf_to_buf ( printf_buf* prbuf, const HChar *format, ... );
 
 // Adds a single char to the buffer.  When the buffer gets sufficiently
 // full, we write its contents to the logging sink.
@@ -105,7 +105,7 @@ UInt VG_(vprintf) ( const HChar *format, va_list vargs )
    UInt ret = 0;
    printf_buf myprintf_buf = {"",0};
 
-   ret = VG_(vprintf_to_buf)(&myprintf_buf, format, vargs);
+   ret = vprintf_to_buf(&myprintf_buf, format, vargs);
    // Write out any chars left in the buffer.
    if (myprintf_buf.n > 0) {
       send_bytes_to_logging_sink( myprintf_buf.buf, myprintf_buf.n );
@@ -113,8 +113,8 @@ UInt VG_(vprintf) ( const HChar *format, va_list vargs )
    return ret;
 }
 
-static UInt VG_(vprintf_to_buf) ( printf_buf *prbuf,
-                                  const HChar *format, va_list vargs )
+static UInt vprintf_to_buf ( printf_buf *prbuf,
+                             const HChar *format, va_list vargs )
 {
    UInt ret = 0;
 
@@ -137,13 +137,13 @@ UInt VG_(printf) ( const HChar *format, ... )
    return ret;
 }
 
-static UInt VG_(printf_to_buf) ( printf_buf* prbuf, const HChar *format, ... )
+static UInt printf_to_buf ( printf_buf* prbuf, const HChar *format, ... )
 {
    UInt ret;
    va_list vargs;
 
    va_start(vargs, format);
-   ret = VG_(vprintf_to_buf)(prbuf, format, vargs);
+   ret = vprintf_to_buf(prbuf, format, vargs);
    va_end(vargs);
 
    return ret;
@@ -340,23 +340,23 @@ UInt VG_(vmessage) ( VgMsgKind kind, const HChar* format, va_list vargs )
    // being performed.
    depth = RUNNING_ON_VALGRIND;
    for (i = 0; i < depth; i++) {
-      count += VG_(printf_to_buf) (&myprintf_buf, ">");
+      count += printf_to_buf (&myprintf_buf, ">");
    }
    
    if (!VG_(clo_xml))
-      count += VG_(printf_to_buf) (&myprintf_buf, "%c%c", c,c);
+      count += printf_to_buf (&myprintf_buf, "%c%c", c,c);
 
    if (VG_(clo_time_stamp)) {
       HChar buf[50];
       VG_(elapsed_wallclock_time)(buf);
-      count += VG_(printf_to_buf)(&myprintf_buf,  "%s ", buf);
+      count += printf_to_buf(&myprintf_buf,  "%s ", buf);
    }
 
    if (!VG_(clo_xml))
-      count += VG_(printf_to_buf) (&myprintf_buf, "%d%c%c ", VG_(getpid)(), c,c);
+      count += printf_to_buf (&myprintf_buf, "%d%c%c ", VG_(getpid)(), c,c);
 
-   count += VG_(vprintf_to_buf)(&myprintf_buf, format, vargs);
-   count += VG_(printf_to_buf) (&myprintf_buf, "\n");
+   count += vprintf_to_buf (&myprintf_buf, format, vargs);
+   count += printf_to_buf (&myprintf_buf, "\n");
 
    if (myprintf_buf.n > 0) {
       send_bytes_to_logging_sink( myprintf_buf.buf, myprintf_buf.n );

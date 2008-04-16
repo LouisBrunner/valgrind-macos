@@ -81,7 +81,7 @@ typedef
    } 
    printf_buf;
 
-static UInt vprintf_to_buf ( printf_buf *printf_buf,
+static UInt vprintf_to_buf ( printf_buf *prbuf,
                              const HChar *format, va_list vargs );
 static UInt printf_to_buf ( printf_buf* prbuf, const HChar *format, ... );
 

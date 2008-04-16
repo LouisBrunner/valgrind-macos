@@ -33,6 +33,7 @@
 #include "drd_rwlock.h"
 #include "priv_drd_clientreq.h"
 #include "pub_tool_basics.h"      // Bool
+#include "pub_tool_debuginfo.h"   // VG_(describe_IP)()
 #include "pub_tool_libcassert.h"
 #include "pub_tool_libcassert.h"  // tl_assert()
 #include "pub_tool_libcprint.h"   // VG_(message)()
@@ -126,6 +127,7 @@ static Bool drd_handle_client_request(ThreadId vg_tid, UWord* arg, UWord* ret)
     UInt nframes;
     const UInt n_ips = 20;
     Addr ips[n_ips], sps[n_ips], fps[n_ips];
+    Char desc[128];
     unsigned i;
 
     nframes = VG_(get_StackTrace)(vg_tid, ips, n_ips, sps, fps, 0);
@@ -133,8 +135,9 @@ static Bool drd_handle_client_request(ThreadId vg_tid, UWord* arg, UWord* ret)
     VG_(message)(Vg_DebugMsg, "thread %d/%d", vg_tid, drd_tid);
     for (i = 0; i < nframes; i++)
     {
-      VG_(message)(Vg_DebugMsg, "[%2d] 0x%09lx 0x%09lx 0x%09lx",
-                   i, ips[i], sps[i], fps[i]);
+      VG_(describe_IP)(ips[i], desc, sizeof(desc));
+      VG_(message)(Vg_DebugMsg, "[%2d] sp 0x%09lx fp 0x%09lx ip %s",
+                   i, sps[i], fps[i], desc);
     }
 #endif
     thread_set_stack_startup(drd_tid, VG_(get_SP)(vg_tid));

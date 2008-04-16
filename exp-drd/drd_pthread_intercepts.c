@@ -83,7 +83,7 @@ typedef struct
 
 /* Function declarations. */
 
-void _init(void);
+static void init(void) __attribute__((constructor));
 static void check_threading_library(void);
 static void vg_set_main_thread_state(void);
 
@@ -94,7 +94,7 @@ static void vg_set_main_thread_state(void);
  *  after dlopen() has loaded the shared library. This function must not
  *  be declared static.
  */
-void _init(void)
+static void init(void)
 {
   check_threading_library();
   vg_set_main_thread_state();

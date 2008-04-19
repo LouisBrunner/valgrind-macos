@@ -8,7 +8,10 @@ Data-race detection algorithm
 - Regression test for bitmap manipulation functions.
 - Continue discussion about unification of DRD and Helgrind client requests.
 - Memory pool support.
-- Add locking order checking.
+- Add locking order checking. Start from the following information:
+  * http://sourceforge.net/mailarchive/message.php?msg_id=alpine.LNX.1.10.0803270822080.17890%40mudge.stoecker.eu
+  * http://lwn.net/Articles/185605/
+  * http://git.kernel.org/?p=linux/kernel/git/torvalds/linux-2.6.git;a=blob;f=Documentation/lockdep-design.txt;h=488773018152056ea159685e732e42452a7ae142;hb=HEAD
 - Continue the discussion on the Valgrind mailing list about docbook and
   'make dist'.
 - Let DRD print an error message and stop as soon as qt1, qt2 or qt3 is 

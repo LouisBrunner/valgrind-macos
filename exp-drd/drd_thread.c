@@ -618,6 +618,7 @@ static void thread_merge_segments(void)
 static Bool danger_set_update_needed(const DrdThreadId tid,
                                      const Segment* const new_sg)
 {
+#if 0
   unsigned i;
   const Segment* old_sg;
 
@@ -666,6 +667,9 @@ static Bool danger_set_update_needed(const DrdThreadId tid,
   }
 
   return False;
+#else
+  return True;
+#endif
 }
 
 /** Create a new segment for the specified thread, and discard any segments

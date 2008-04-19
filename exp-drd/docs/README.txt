@@ -115,6 +115,13 @@ The current version runs well under Linux on x86 CPU's for
 multithreaded programs that use the POSIX threading library. Regular
 POSIX threads, detached threads, mutexes, condition variables,
 reader-writer locks, spinlocks, semaphores and barriers are supported.
+Client programs run under exp-drd typically run somewhere between 50
+and 100 times slower than when executed natively. A notable exception
+is Firefox, which runs too slow to be usable. This is because of the
+huge number of mutex lock and unlock calls performed by
+Firefox. E.g. just starting and stopping Firefox 3 triggers 2.5
+million pthread_mutex_lock() calls and the same number of
+pthread_mutex_unlock() calls.
 
 
 Programming with Threads

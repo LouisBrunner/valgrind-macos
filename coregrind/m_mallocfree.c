@@ -596,7 +596,7 @@ Superblock* newSuperblock ( Arena* a, SizeT cszB )
    cszB += sizeof(Superblock);
 
    if (cszB < a->min_sblock_szB) cszB = a->min_sblock_szB;
-   while ((cszB % VKI_PAGE_SIZE) > 0) cszB++;
+   cszB = VG_PGROUNDUP(cszB);
 
    if (a->clientmem) {
       // client allocation -- return 0 to client if it fails
@@ -1473,8 +1473,36 @@ SizeT VG_(arena_payload_szB) ( ThreadId tid, ArenaId aid, void* ptr )
 // a pointer to do call by reference.
 void VG_(mallinfo) ( ThreadId tid, struct vg_mallinfo* mi )
 {
-   // Should do better than this...
-   VG_(memset)(mi, 0x0, sizeof(struct vg_mallinfo));
+   UInt   i, free_blocks, free_blocks_size;
+   Arena* a = arenaId_to_ArenaP(VG_AR_CLIENT);
+
+   // Traverse free list and calculate free blocks statistics.
+   // This may seem slow but glibc works the same way.
+   free_blocks_size = free_blocks = 0;
+   for (i = 0; i < N_MALLOC_LISTS; i++) {
+      Block* b = a->freelist[i];
+      if (b == NULL) continue;
+      for (;;) {
+         free_blocks++;
+         free_blocks_size += get_pszB(a, b);
+         b = get_next_b(b);
+         if (b == a->freelist[i]) break;
+      }
+   }
+
+   // We don't have fastbins so smblks & fsmblks are always 0. Also we don't
+   // have a separate mmap allocator so set hblks & hblkhd to 0. See also
+   // http://www.gnu.org/software/libtool/manual/libc/Statistics-of-Malloc.html
+   mi->arena    = a->bytes_mmaped;
+   mi->ordblks  = free_blocks;
+   mi->smblks   = 0;
+   mi->hblks    = 0;
+   mi->hblkhd   = 0;
+   mi->usmblks  = 0;
+   mi->fsmblks  = 0;
+   mi->uordblks = a->bytes_on_loan;
+   mi->fordblks = free_blocks_size;
+   mi->keepcost = 0; // may want some value in here
 }
 
 

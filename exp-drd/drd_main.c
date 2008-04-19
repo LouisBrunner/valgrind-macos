@@ -50,7 +50,6 @@
 #include "pub_tool_mallocfree.h"  // VG_(malloc)(), VG_(free)()
 #include "pub_tool_options.h"     // command line options
 #include "pub_tool_replacemalloc.h"
-#include "pub_tool_replacemalloc.h"
 #include "pub_tool_threadstate.h" // VG_(get_running_tid)()
 #include "pub_tool_tooliface.h"
 
@@ -1078,6 +1077,12 @@ void drd_fini(Int exitcode)
                  sg_get_created_segments_count(),
                  sg_get_max_alive_segments_count(),
                  thread_get_discard_ordered_segments_count());
+    VG_(message)(Vg_UserMsg,
+                 "           (%lld m, %lld rw, %lld s, %lld b)",
+                 get_mutex_segment_creation_count(),
+                 get_rwlock_segment_creation_count(),
+                 get_semaphore_segment_creation_count(),
+                 get_barrier_segment_creation_count());
     VG_(message)(Vg_UserMsg,
                  "  bitmaps: %lld level 1 / %lld level 2 bitmap refs",
                  bm_get_bitmap_creation_count(),

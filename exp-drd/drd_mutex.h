@@ -55,6 +55,7 @@ Bool mutex_is_locked_by(const Addr mutex, const DrdThreadId tid);
 int mutex_get_recursion_count(const Addr mutex);
 void mutex_thread_delete(const DrdThreadId tid);
 ULong get_mutex_lock_count(void);
+ULong get_mutex_segment_creation_count(void);
 
 
 #endif /* __DRD_MUTEX_H */

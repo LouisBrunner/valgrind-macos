@@ -49,6 +49,7 @@ void semaphore_pre_post(const DrdThreadId tid, const Addr semaphore);
 void semaphore_post_post(const DrdThreadId tid, const Addr semaphore,
                          const Bool waited);
 void semaphore_thread_delete(const DrdThreadId tid);
+ULong get_semaphore_segment_creation_count(void);
 
 
 #endif /* __DRD_SEMAPHORE_H */

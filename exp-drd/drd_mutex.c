@@ -45,6 +45,7 @@ static Bool mutex_is_locked(struct mutex_info* const p);
 
 static Bool s_trace_mutex;
 static ULong s_mutex_lock_count;
+static ULong s_mutex_segment_creation_count;
 
 
 // Function definitions.
@@ -284,6 +285,7 @@ void mutex_post_lock(const Addr mutex, const Bool took_lock,
       thread_combine_vc2(drd_tid, &p->last_locked_segment->vc);
     }
     thread_new_segment(drd_tid);
+    s_mutex_segment_creation_count++;
 
     p->owner = drd_tid;
     s_mutex_lock_count++;
@@ -374,6 +376,7 @@ void mutex_unlock(const Addr mutex, const MutexT mutex_type)
 
     thread_get_latest_segment(&p->last_locked_segment, drd_tid);
     thread_new_segment(drd_tid);
+    s_mutex_segment_creation_count++;
   }
 }
 
@@ -456,4 +459,9 @@ void mutex_thread_delete(const DrdThreadId tid)
 ULong get_mutex_lock_count(void)
 {
   return s_mutex_lock_count;
+}
+
+ULong get_mutex_segment_creation_count(void)
+{
+  return s_mutex_segment_creation_count;
 }

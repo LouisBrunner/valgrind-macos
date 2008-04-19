@@ -50,6 +50,7 @@ void barrier_post_wait(const DrdThreadId tid, const Addr barrier,
                        const BarrierT barrier_type, const Bool waited);
 void barrier_thread_delete(const DrdThreadId threadid);
 void barrier_stop_using_mem(const Addr a1, const Addr a2);
+ULong get_barrier_segment_creation_count(void);
 
 
 #endif /* __DRD_BARRIER_H */

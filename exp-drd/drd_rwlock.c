@@ -50,6 +50,7 @@ struct rwlock_thread_info
 // Local functions.
 
 static void rwlock_cleanup(struct rwlock_info* p);
+static ULong s_rwlock_segment_creation_count;
 
 
 // Local variables.
@@ -350,6 +351,7 @@ void rwlock_post_rdlock(const Addr rwlock, const Bool took_lock)
   {
     rwlock_combine_other_vc(p, drd_tid, False);
     thread_new_segment(drd_tid);
+    s_rwlock_segment_creation_count++;
   }
 }
 
@@ -423,6 +425,7 @@ void rwlock_post_wrlock(const Addr rwlock, const Bool took_lock)
   tl_assert(q->writer_nesting_count == 1);
   rwlock_combine_other_vc(p, drd_tid, True);
   thread_new_segment(drd_tid);
+  s_rwlock_segment_creation_count++;
 }
 
 /**
@@ -479,6 +482,7 @@ void rwlock_pre_unlock(const Addr rwlock)
     thread_get_latest_segment(&q->last_unlock_segment, drd_tid);
     q->last_lock_was_writer_lock = False;
     thread_new_segment(drd_tid);
+    s_rwlock_segment_creation_count++;
   }
 }
 
@@ -507,4 +511,9 @@ void rwlock_thread_delete(const DrdThreadId tid)
       q->writer_nesting_count = 0;
     }
   }
+}
+
+ULong get_rwlock_segment_creation_count(void)
+{
+  return s_rwlock_segment_creation_count;
 }

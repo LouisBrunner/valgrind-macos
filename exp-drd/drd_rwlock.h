@@ -48,6 +48,7 @@ void rwlock_pre_wrlock(const Addr rwlock);
 void rwlock_post_wrlock(const Addr rwlock, const Bool took_lock);
 void rwlock_pre_unlock(const Addr rwlock);
 void rwlock_thread_delete(const DrdThreadId tid);
+ULong get_rwlock_segment_creation_count(void);
 
 
 #endif /* __DRD_RWLOCK_H */

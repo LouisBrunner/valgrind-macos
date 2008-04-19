@@ -43,6 +43,7 @@ static void semaphore_cleanup(struct semaphore_info* p);
 // Local variables.
 
 static Bool s_trace_semaphore;
+static ULong s_semaphore_segment_creation_count;
 
 
 // Function definitions.
@@ -222,6 +223,7 @@ void semaphore_post_wait(const DrdThreadId tid, const Addr semaphore,
     thread_combine_vc2(tid, &p->last_sem_post_segment->vc);
   }
   thread_new_segment(tid);
+  s_semaphore_segment_creation_count++;
 }
 
 /** Called before sem_post(). */
@@ -244,6 +246,7 @@ void semaphore_pre_post(const DrdThreadId tid, const Addr semaphore)
     p->last_sem_post_tid = tid;
     thread_new_segment(tid);
     thread_get_latest_segment(&p->last_sem_post_segment, tid);
+    s_semaphore_segment_creation_count++;
   }
 }
 
@@ -264,3 +267,8 @@ void semaphore_post_post(const DrdThreadId tid, const Addr semaphore,
 
 void semaphore_thread_delete(const DrdThreadId threadid)
 { }
+
+ULong get_semaphore_segment_creation_count(void)
+{
+  return s_semaphore_segment_creation_count;
+}

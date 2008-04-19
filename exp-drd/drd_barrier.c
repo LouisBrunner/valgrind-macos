@@ -60,6 +60,7 @@ static const char* barrier_type_name(const BarrierT bt);
 // Local variables.
 
 static Bool s_trace_barrier = False;
+static ULong s_barrier_segment_creation_count;
 
 
 // Function definitions.
@@ -343,6 +344,7 @@ void barrier_post_wait(const DrdThreadId tid, const Addr barrier,
     }
 
     thread_new_segment(tid);
+    s_barrier_segment_creation_count++;
 
     if (--p->post_waiters_left <= 0)
     {
@@ -385,4 +387,9 @@ static const char* barrier_type_name(const BarrierT bt)
     return "gomp barrier";
   }
   return "?";
+}
+
+ULong get_barrier_segment_creation_count(void)
+{
+  return s_barrier_segment_creation_count;
 }

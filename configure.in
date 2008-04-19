@@ -86,22 +86,13 @@ AC_SUBST(ASFLAGS)
 # We don't want gcc < 3.0
 AC_MSG_CHECKING([for a supported version of gcc])
 
-gcc_version=`${CC} --version | head -n 1`
+[gcc_version=`${CC} --version | head -n 1 | sed 's/^[^0-9.]*\([0-9.]*\).*$/\1/'`]
 
 case "${gcc_version}" in
-     gcc-2.7.*)
+     2.*)
 	AC_MSG_RESULT([no (${gcc_version})])
 	AC_MSG_ERROR([please use a recent (>= gcc-3.0) version of gcc])
 	;;
-     gcc-2.8.*)
-	AC_MSG_RESULT([no (${gcc_version})])
-	AC_MSG_ERROR([please use a recent (>= gcc-3.0) version of gcc])
-	;;
-     gcc-2.9*)
-	AC_MSG_RESULT([no (${gcc_version})])
-	AC_MSG_ERROR([please use a recent (>= gcc-3.0) version of gcc])
-	;;
-
      *)
 	AC_MSG_RESULT([ok (${gcc_version})])
 	;;

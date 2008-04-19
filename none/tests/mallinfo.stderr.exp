@@ -1,0 +1,3 @@
+
+Test of mallinfo(). May not trigger any assertion failures.
+

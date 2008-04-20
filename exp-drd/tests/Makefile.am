@@ -40,6 +40,8 @@ EXTRA_DIST =                                        \
 	matinv.stderr.exp                           \
 	matinv.stdout.exp                           \
 	matinv.vgtest                               \
+	memory_allocation.stderr.exp		    \
+	memory_allocation.vgtest		    \
 	omp_matinv.stderr.exp                       \
 	omp_matinv.stdout.exp                       \
 	omp_matinv.vgtest                           \
@@ -155,6 +157,7 @@ check_PROGRAMS_COMMON = \
   hg06_readshared     \
   linuxthreads_det    \
   matinv              \
+  memory_allocation   \
   pth_barrier         \
   pth_broadcast       \
   pth_cond_race       \
@@ -227,6 +230,9 @@ linuxthreads_det_LDADD      = -lpthread
 
 matinv_SOURCES              = matinv.c
 matinv_LDADD                = -lpthread -lm
+
+memory_allocation_SOURCES   = memory_allocation.c
+memory_allocation_LDADD     = -lpthread -lm
 
 pth_barrier_SOURCES         = pth_barrier.c
 pth_barrier_LDADD           = -lpthread

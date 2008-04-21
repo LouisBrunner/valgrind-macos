@@ -232,7 +232,7 @@ matinv_SOURCES              = matinv.c
 matinv_LDADD                = -lpthread -lm
 
 memory_allocation_SOURCES   = memory_allocation.c
-memory_allocation_LDADD     = -lpthread -lm
+memory_allocation_LDADD     =
 
 pth_barrier_SOURCES         = pth_barrier.c
 pth_barrier_LDADD           = -lpthread

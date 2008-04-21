@@ -71,7 +71,6 @@ VgHashTable MC_(mempool_list) = NULL;
 /* Records blocks after freeing. */
 static MC_Chunk* freed_list_start  = NULL;
 static MC_Chunk* freed_list_end    = NULL;
-static Long      freed_list_volume = 0;
 
 /* Put a shadow chunk on the freed blocks queue, possibly freeing up
    some of the oldest blocks in the queue at the same time. */
@@ -83,33 +82,35 @@ static void add_to_freed_queue ( MC_Chunk* mc )
    if (freed_list_end == NULL) {
       tl_assert(freed_list_start == NULL);
       freed_list_end    = freed_list_start = mc;
-      freed_list_volume = (Long)mc->szB;
+      VG_(free_queue_volume) = (Long)mc->szB;
    } else {
       tl_assert(freed_list_end->next == NULL);
       freed_list_end->next = mc;
       freed_list_end       = mc;
-      freed_list_volume += (Long)mc->szB;
+      VG_(free_queue_volume) += (Long)mc->szB;
       if (show)
          VG_(printf)("mc_freelist: acquire: volume now %lld\n", 
-                     freed_list_volume);
+                     VG_(free_queue_volume));
    }
+   VG_(free_queue_length)++;
    mc->next = NULL;
 
    /* Release enough of the oldest blocks to bring the free queue
       volume below vg_clo_freelist_vol. */
 
-   while (freed_list_volume > MC_(clo_freelist_vol)) {
+   while (VG_(free_queue_volume) > MC_(clo_freelist_vol)) {
       MC_Chunk* mc1;
 
       tl_assert(freed_list_start != NULL);
       tl_assert(freed_list_end != NULL);
 
       mc1 = freed_list_start;
-      freed_list_volume -= (Long)mc1->szB;
+      VG_(free_queue_volume) -= (Long)mc1->szB;
+      VG_(free_queue_length)--;
       if (show)
          VG_(printf)("mc_freelist: discard: volume now %lld\n", 
-                     freed_list_volume);
-      tl_assert(freed_list_volume >= 0);
+                     VG_(free_queue_volume));
+      tl_assert(VG_(free_queue_volume) >= 0);
 
       if (freed_list_start == freed_list_end) {
          freed_list_start = freed_list_end = NULL;

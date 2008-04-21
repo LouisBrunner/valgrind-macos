@@ -41,6 +41,13 @@
 extern void* VG_(cli_malloc) ( SizeT align, SizeT nbytes );
 extern void  VG_(cli_free)   ( void* p );
 
+/* If a tool uses deferred freeing (e.g. memcheck to catch accesses to
+   freed memory) it can maintain number and total size of queued blocks
+   in these variable to provide more accurate statistics about client
+   memory usage. Currently used by mallinfo(). */
+extern Long VG_(free_queue_volume);
+extern Long VG_(free_queue_length);
+
 /* Check if an address is within a range, allowing for redzones at edges */
 extern Bool VG_(addr_is_in_block)( Addr a, Addr start,
                                    SizeT size, SizeT rz_szB );

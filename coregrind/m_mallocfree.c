@@ -47,6 +47,10 @@
 // #define DEBUG_MALLOC      // turn on heavyweight debugging machinery
 // #define VERBOSE_MALLOC    // make verbose, esp. in debugging machinery
 
+/* Number and total size of blocks in free queue. Used by mallinfo(). */
+Long VG_(free_queue_volume) = 0;
+Long VG_(free_queue_length) = 0;
+
 /*------------------------------------------------------------*/
 /*--- Main types                                           ---*/
 /*------------------------------------------------------------*/
@@ -1468,9 +1472,34 @@ SizeT VG_(arena_payload_szB) ( ThreadId tid, ArenaId aid, void* ptr )
    return get_pszB(a, b);
 }
 
-// We cannot return the whole struct as the library function does,
-// because this is called by a client request.  So instead we use
-// a pointer to do call by reference.
+
+// Implementation of mallinfo(). There is no recent standard that defines
+// the behavior of mallinfo(). The meaning of the fields in struct mallinfo
+// is as follows:
+//
+//     struct mallinfo  {
+//                int arena;     /* total space in arena            */
+//                int ordblks;   /* number of ordinary blocks       */
+//                int smblks;    /* number of small blocks          */
+//                int hblks;     /* number of holding blocks        */
+//                int hblkhd;    /* space in holding block headers  */
+//                int usmblks;   /* space in small blocks in use    */
+//                int fsmblks;   /* space in free small blocks      */
+//                int uordblks;  /* space in ordinary blocks in use */
+//                int fordblks;  /* space in free ordinary blocks   */
+//                int keepcost;  /* space penalty if keep option    */
+//                               /* is used                         */
+//        };
+//
+// The glibc documentation about mallinfo (which is somewhat outdated) can
+// be found here:
+// http://www.gnu.org/software/libtool/manual/libc/Statistics-of-Malloc.html
+//
+// See also http://bugs.kde.org/show_bug.cgi?id=160956.
+//
+// Regarding the implementation of VG_(mallinfo)(): we cannot return the
+// whole struct as the library function does, because this is called by a
+// client request.  So instead we use a pointer to do call by reference.
 void VG_(mallinfo) ( ThreadId tid, struct vg_mallinfo* mi )
 {
    UInt   i, free_blocks, free_blocks_size;
@@ -1491,17 +1520,16 @@ void VG_(mallinfo) ( ThreadId tid, struct vg_mallinfo* mi )
    }
 
    // We don't have fastbins so smblks & fsmblks are always 0. Also we don't
-   // have a separate mmap allocator so set hblks & hblkhd to 0. See also
-   // http://www.gnu.org/software/libtool/manual/libc/Statistics-of-Malloc.html
+   // have a separate mmap allocator so set hblks & hblkhd to 0.
    mi->arena    = a->bytes_mmaped;
-   mi->ordblks  = free_blocks;
+   mi->ordblks  = free_blocks + VG_(free_queue_length);
    mi->smblks   = 0;
    mi->hblks    = 0;
    mi->hblkhd   = 0;
    mi->usmblks  = 0;
    mi->fsmblks  = 0;
-   mi->uordblks = a->bytes_on_loan;
-   mi->fordblks = free_blocks_size;
+   mi->uordblks = a->bytes_on_loan - VG_(free_queue_volume);
+   mi->fordblks = free_blocks_size + VG_(free_queue_volume);
    mi->keepcost = 0; // may want some value in here
 }
 

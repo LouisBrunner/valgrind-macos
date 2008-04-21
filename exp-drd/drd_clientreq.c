@@ -167,7 +167,9 @@ static Bool drd_handle_client_request(ThreadId vg_tid, UWord* arg, UWord* ret)
     break;
 
   case VG_USERREQ__SET_PTHREADID:
-    thread_set_pthreadid(drd_tid, arg[1]);
+    // pthread_self() returns 0 for programs not linked with libpthread.so.
+    if (arg[1] != INVALID_POSIX_THREADID)
+      thread_set_pthreadid(drd_tid, arg[1]);
     break;
 
   case VG_USERREQ__SET_JOINABLE:

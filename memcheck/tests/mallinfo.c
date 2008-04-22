@@ -2,10 +2,13 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h> // getopt()
+#include "../config.h"
 
 
 static int s_quiet = 0;
 
+
+#if defined(HAVE_MALLINFO)
 static size_t check(size_t min, size_t max)
 {
   struct mallinfo mi;
@@ -26,6 +29,7 @@ static size_t check(size_t min, size_t max)
     printf("fordblks = %d\n", mi.fordblks); /* total free space */
     printf("keepcost = %d\n", mi.keepcost); /* top-most, releasable (via malloc_trim) space */
     printf("(min = %zu, max = %zu)\n", min, max);
+    printf("\n");
   }
 
   // size checks
@@ -66,6 +70,17 @@ static size_t check(size_t min, size_t max)
 
   return used;
 }
+#else
+static size_t check(size_t min, size_t max)
+{
+  if (! s_quiet)
+  {
+    printf("mallinfo() is not supported on this platform.\n");
+    printf("\n");
+  }
+  return 0;
+}
+#endif
 
 int main(int argc, char** argv)
 {

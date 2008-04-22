@@ -69,6 +69,7 @@ EXTRA_DIST = $(noinst_SCRIPTS) \
 	long_namespace_xml.stderr.exp \
 	lsframe1.vgtest lsframe1.stdout.exp lsframe1.stderr.exp \
 	lsframe2.vgtest lsframe2.stdout.exp lsframe2.stderr.exp \
+	mallinfo.stderr.exp mallinfo.vgtest \
 	malloc_free_fill.vgtest malloc_free_fill.stdout.exp \
 	malloc_free_fill.stderr.exp-glibc25-amd64 \
 	malloc_free_fill.stderr.exp-glibc25-x86 \
@@ -171,6 +172,7 @@ check_PROGRAMS = \
 	leak-0 leak-cycle leak-pool leak-tree leak-regroot leakotron \
 	long_namespace_xml \
 	lsframe1 lsframe2 \
+	mallinfo \
 	malloc_free_fill \
 	malloc_usable malloc1 malloc2 malloc3 manuel1 manuel2 manuel3 \
 	match-overrun \

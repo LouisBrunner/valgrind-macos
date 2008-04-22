@@ -70,7 +70,6 @@ EXTRA_DIST = $(noinst_SCRIPTS) \
 	fork.stderr.exp fork.stdout.exp fork.vgtest \
 	fucomip.stderr.exp fucomip.vgtest \
 	gxx304.stderr.exp gxx304.vgtest \
-	mallinfo.stderr.exp mallinfo.vgtest \
 	manythreads.stdout.exp manythreads.stderr.exp manythreads.vgtest \
 	map_unaligned.stderr.exp map_unaligned.vgtest \
 	map_unmap.stderr.exp map_unmap.stdout.exp map_unmap.vgtest \
@@ -141,7 +140,6 @@ check_PROGRAMS = \
 	fdleak_fcntl fdleak_ipv4 fdleak_open fdleak_pipe \
 	fdleak_socketpair \
 	floored fork fucomip manythreads \
-	mallinfo \
 	munmap_exe map_unaligned map_unmap mq mremap mremap2 \
 	nestedfns \
 	pending \

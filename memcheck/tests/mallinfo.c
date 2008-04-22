@@ -107,6 +107,11 @@ int main(int argc, char** argv)
 
   check(min, max);
 
+  for ( ; i <= 40; i++)
+  {
+    free(ptr[i - 1]);
+  }
+
   fprintf(stderr, "Success.\n");
 
   return 0;

@@ -1,8 +1,8 @@
 
 
 ERROR SUMMARY: 0 errors from 0 contexts (suppressed: 0 from 0)
-malloc/free: in use at exit: 0 bytes in 0 blocks.
-malloc/free: 0 allocs, 0 frees, 0 bytes allocated.
+malloc/free: in use at exit: ... bytes in ... blocks.
+malloc/free: ... allocs, ... frees, ... bytes allocated.
 For a detailed leak analysis,  rerun with: --leak-check=yes
 For counts of detected errors, rerun with: -v
 Unaddressable byte(s) found during client check request
@@ -25,14 +25,14 @@ Process terminating with default action of signal 11 (SIGSEGV)
  The main thread stack size used in this run was ....
 
 ERROR SUMMARY: 2 errors from 2 contexts (suppressed: 0 from 0)
-malloc/free: in use at exit: 0 bytes in 0 blocks.
-malloc/free: 0 allocs, 0 frees, 0 bytes allocated.
+malloc/free: in use at exit: ... bytes in ... blocks.
+malloc/free: ... allocs, ... frees, ... bytes allocated.
 For a detailed leak analysis,  rerun with: --leak-check=yes
 For counts of detected errors, rerun with: -v
 
 ERROR SUMMARY: 0 errors from 0 contexts (suppressed: 0 from 0)
-malloc/free: in use at exit: 0 bytes in 0 blocks.
-malloc/free: 0 allocs, 0 frees, 0 bytes allocated.
+malloc/free: in use at exit: ... bytes in ... blocks.
+malloc/free: ... allocs, ... frees, ... bytes allocated.
 For a detailed leak analysis,  rerun with: --leak-check=yes
 For counts of detected errors, rerun with: -v
 
@@ -42,8 +42,8 @@ Process terminating with default action of signal 11 (SIGSEGV)
    by 0x........: main (addressable.c:125)
 
 ERROR SUMMARY: 0 errors from 0 contexts (suppressed: 0 from 0)
-malloc/free: in use at exit: 0 bytes in 0 blocks.
-malloc/free: 0 allocs, 0 frees, 0 bytes allocated.
+malloc/free: in use at exit: ... bytes in ... blocks.
+malloc/free: ... allocs, ... frees, ... bytes allocated.
 For a detailed leak analysis,  rerun with: --leak-check=yes
 For counts of detected errors, rerun with: -v
 Uninitialised byte(s) found during client check request
@@ -57,13 +57,13 @@ Uninitialised byte(s) found during client check request
  Address 0x........ is not stack'd, malloc'd or (recently) free'd
 
 ERROR SUMMARY: 2 errors from 2 contexts (suppressed: 0 from 0)
-malloc/free: in use at exit: 0 bytes in 0 blocks.
-malloc/free: 0 allocs, 0 frees, 0 bytes allocated.
+malloc/free: in use at exit: ... bytes in ... blocks.
+malloc/free: ... allocs, ... frees, ... bytes allocated.
 For a detailed leak analysis,  rerun with: --leak-check=yes
 For counts of detected errors, rerun with: -v
 
 ERROR SUMMARY: 0 errors from 0 contexts (suppressed: 0 from 0)
-malloc/free: in use at exit: 0 bytes in 0 blocks.
-malloc/free: 0 allocs, 0 frees, 0 bytes allocated.
+malloc/free: in use at exit: ... bytes in ... blocks.
+malloc/free: ... allocs, ... frees, ... bytes allocated.
 For a detailed leak analysis,  rerun with: --leak-check=yes
 For counts of detected errors, rerun with: -v

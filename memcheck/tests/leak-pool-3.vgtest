@@ -1,2 +1,3 @@
 prog: leak-pool
 args: 3
+stderr_filter: filter_allocs

@@ -65,6 +65,7 @@ EXTRA_DIST = $(noinst_SCRIPTS) \
 	leak-tree.stderr.exp2 leak-tree.stderr.exp64 \
 	leak-regroot.vgtest leak-regroot.stderr.exp \
 	leakotron.vgtest leakotron.stdout.exp leakotron.stderr.exp \
+	linux-syscalls-2007 linux-syscalls-2007.stderr.exp \
 	long_namespace_xml.vgtest long_namespace_xml.stdout.exp \
 	long_namespace_xml.stderr.exp \
 	lsframe1.vgtest lsframe1.stdout.exp lsframe1.stderr.exp \
@@ -170,6 +171,7 @@ check_PROGRAMS = \
 	doublefree error_counts errs1 exitprog execve execve2 erringfds \
 	fprw fwrite hello inits inline \
 	leak-0 leak-cycle leak-pool leak-tree leak-regroot leakotron \
+	linux-syscalls-2007 \
 	long_namespace_xml \
 	lsframe1 lsframe2 \
 	mallinfo \

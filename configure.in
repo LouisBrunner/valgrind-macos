@@ -953,7 +953,15 @@ fi
 
 # Checks for header files.
 AC_HEADER_STDC
-AC_CHECK_HEADERS([sys/endian.h endian.h mqueue.h])
+AC_CHECK_HEADERS([       \
+        endian.h         \
+        mqueue.h         \
+        sys/endian.h     \
+        sys/epoll.h      \
+        sys/eventfd.h    \
+        sys/poll.h       \
+        sys/signalfd.h   \
+        ])
 
 
 # Checks for typedefs, structures, and compiler characteristics.
@@ -968,8 +976,27 @@ AC_FUNC_MEMCMP
 AC_FUNC_MMAP
 AC_TYPE_SIGNAL
 
-AC_CHECK_FUNCS([floor memchr memset mkdir strchr strdup strpbrk strrchr strstr semtimedop])
-AC_CHECK_FUNCS([mallinfo])
+AC_CHECK_FUNCS([     \
+        epoll_create \
+        epoll_pwait  \
+        eventfd      \
+        eventfd_read \
+        floor        \
+        mallinfo     \
+        memchr       \
+        memset       \
+        mkdir        \
+        ppoll        \
+        semtimedop   \
+        signalfd     \
+        strchr       \
+        strdup       \
+        strpbrk      \
+        strrchr      \
+        strstr       \
+        timerfd      \
+        utimensat    \
+        ])
 
 
 # Do we have a useable MPI setup on the primary and/or secondary targets?

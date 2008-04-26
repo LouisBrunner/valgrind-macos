@@ -988,7 +988,7 @@ PRE(sys_ppoll)
    UInt i;
    struct vki_pollfd* ufds = (struct vki_pollfd *)ARG1;
    *flags |= SfMayBlock;
-   PRINT("sys_ppoll ( %p, %d, %p, %p, %llu )\n", ARG1,ARG2,ARG3,ARG4,ARG5);
+   PRINT("sys_ppoll ( %p, %d, %p, %p, %llu )\n", ARG1,ARG2,ARG3,ARG4,(ULong)ARG5);
    PRE_REG_READ5(long, "ppoll",
                  struct vki_pollfd *, ufds, unsigned int, nfds,
                  struct vki_timespec *, tsp, vki_sigset_t *, sigmask,
@@ -1070,6 +1070,41 @@ POST(sys_epoll_wait)
    vg_assert(SUCCESS);
    if (RES > 0)
       POST_MEM_WRITE( ARG2, sizeof(struct vki_epoll_event)*RES ) ;
+}
+
+PRE(sys_epoll_pwait)
+{
+   *flags |= SfMayBlock;
+   PRINT("sys_epoll_pwait ( %d, %p, %d, %d, %p, %llu )", ARG1,ARG2,ARG3,ARG4,ARG5,(ULong)ARG6);
+   PRE_REG_READ6(long, "epoll_pwait",
+                 int, epfd, struct vki_epoll_event *, events,
+                 int, maxevents, int, timeout, vki_sigset_t *, sigmask,
+                 vki_size_t, sigsetsize);
+   PRE_MEM_WRITE( "epoll_pwait(events)", ARG2, sizeof(struct vki_epoll_event)*ARG3);
+   if (ARG4)
+      PRE_MEM_READ( "epoll_pwait(sigmask)", ARG5, sizeof(vki_sigset_t) );
+}
+POST(sys_epoll_pwait)
+{
+   vg_assert(SUCCESS);
+   if (RES > 0)
+      POST_MEM_WRITE( ARG2, sizeof(struct vki_epoll_event)*RES ) ;
+}
+
+PRE(sys_eventfd)
+{
+   PRINT("sys_eventfd ( %u )", ARG1);
+   PRE_REG_READ1(long, "sys_eventfd", unsigned int, count);
+}
+POST(sys_eventfd)
+{
+   if (!ML_(fd_allowed)(RES, "eventfd", tid, True)) {
+      VG_(close)(RES);
+      SET_STATUS_Failure( VKI_EMFILE );
+   } else {
+      if (VG_(clo_track_fds))
+         ML_(record_fd_open_nameless) (tid, RES);
+   }
 }
 
 /* ---------------------------------------------------------------------
@@ -1672,6 +1707,27 @@ PRE(sys_timer_delete)
    PRE_REG_READ1(long, "timer_delete", vki_timer_t, timerid);
 }
 
+PRE(sys_timerfd)
+{
+   PRINT("sys_timerfd ( %d, %d, %p )", ARG1, ARG2, ARG3);
+   PRE_REG_READ3(long, "sys_timerfd",
+                 int, fd, int, clockid, const struct itimerspec *, tmr);
+   PRE_MEM_READ( "timerfd(tmr)", ARG3,
+                  sizeof(struct vki_itimerspec) );
+   if (ARG1 != -1 && !ML_(fd_allowed)(ARG1, "timerfd", tid, False))
+      SET_STATUS_Failure( VKI_EBADF );
+}
+POST(sys_timerfd)
+{
+   if (!ML_(fd_allowed)(RES, "timerfd", tid, True)) {
+      VG_(close)(RES);
+      SET_STATUS_Failure( VKI_EMFILE );
+   } else {
+      if (VG_(clo_track_fds))
+         ML_(record_fd_open_nameless) (tid, RES);
+   }
+}
+
 /* ---------------------------------------------------------------------
    capabilities wrappers
    ------------------------------------------------------------------ */
@@ -2220,6 +2276,27 @@ POST(sys_sigprocmask)
 }
 #endif
 
+PRE(sys_signalfd)
+{
+   PRINT("sys_signalfd ( %d, %p, %llu )", ARG1, ARG2, (ULong) ARG3);
+   PRE_REG_READ3(long, "sys_signalfd",
+                 int, fd, vki_sigset_t *, sigmask, vki_size_t, sigsetsize);
+   PRE_MEM_READ( "signalfd(sigmask)", ARG2, sizeof(vki_sigset_t) );
+   if (ARG1 != -1 && !ML_(fd_allowed)(ARG1, "signalfd", tid, False))
+      SET_STATUS_Failure( VKI_EBADF );
+}
+POST(sys_signalfd)
+{
+   if (!ML_(fd_allowed)(RES, "signalfd", tid, True)) {
+      VG_(close)(RES);
+      SET_STATUS_Failure( VKI_EMFILE );
+   } else {
+      if (VG_(clo_track_fds))
+         ML_(record_fd_open_nameless) (tid, RES);
+   }
+}
+
+
 /* ---------------------------------------------------------------------
    rt_sig* wrappers
    ------------------------------------------------------------------ */
@@ -2542,7 +2619,17 @@ PRE(sys_futimesat)
                  int, dfd, char *, filename, struct timeval *, tvp);
    PRE_MEM_RASCIIZ( "futimesat(filename)", ARG2 );
    if (ARG3 != 0)
-      PRE_MEM_READ( "futimesat(tvp)", ARG3, sizeof(struct vki_timeval) );
+      PRE_MEM_READ( "futimesat(tvp)", ARG3, 2 * sizeof(struct vki_timeval) );
+}
+
+PRE(sys_utimensat)
+{
+   PRINT("sys_utimensat ( %d, %p(%s), %p, 0x%x )", ARG1,ARG2,ARG2,ARG3,ARG4);
+   PRE_REG_READ4(long, "utimensat",
+                 int, dfd, char *, filename, struct timespec *, utimes, int, flags);
+   PRE_MEM_RASCIIZ( "utimensat(filename)", ARG2 );
+   if (ARG3 != 0)
+      PRE_MEM_READ( "utimensat(tvp)", ARG3, 2 * sizeof(struct vki_timespec) );
 }
 
 PRE(sys_newfstatat)
@@ -2821,19 +2908,6 @@ PRE(sys_ioprio_set)
 {
    PRINT("sys_ioprio_set ( %ld, %ld, %ld )", ARG1,ARG2,ARG3);
    PRE_REG_READ3(int, "ioprio_set", int, which, int, who, int, ioprio);
-}
-
-
-/* XXX I don't think this is really the right place for this.
-   Move it elsewhere in this file? */
-PRE(sys_utimensat)
-{
-   PRINT("sys_utimensat ( %d, %p(%s), %p )", ARG1,ARG2,ARG2,ARG3);
-   PRE_REG_READ3(long, "utimensat",
-                 int, dfd, char *, filename, struct timespec *, tvp);
-   PRE_MEM_RASCIIZ( "utimensat(filename)", ARG2 );
-   if (ARG3 != 0)
-      PRE_MEM_READ( "utimensat(tvp)", ARG3, sizeof(struct vki_timespec) );
 }
 
 #undef PRE

@@ -34,17 +34,22 @@ int main (void)
     && defined(HAVE_EVENTFD_READ) && defined(HAVE_PPOLL)
   {
     sigset_t mask;
+    int fd, fd2;
+    eventfd_t ev;
+    struct timespec ts = { .tv_sec = 1, .tv_nsec = 0 };
+    struct pollfd pfd[2];
+
     sigemptyset (&mask);
     sigaddset (&mask, SIGUSR1);
-    int fd = signalfd (-1, &mask, 0);
+    fd = signalfd (-1, &mask, 0);
     sigaddset (&mask, SIGUSR2);
     fd = signalfd (fd, &mask, 0);
-    int fd2 = eventfd (5, 0);
-    eventfd_t ev;
+    fd2 = eventfd (5, 0);
     eventfd_read (fd2, &ev);
-    struct timespec ts = { .tv_sec = 1, .tv_nsec = 0 };
-    struct pollfd pfd[2] = { [0].fd = fd, [0].events = POLLIN|POLLOUT,
-                             [1].fd = fd2, [1].events = POLLIN|POLLOUT };
+    pfd[0].fd = fd;
+    pfd[0].events = POLLIN|POLLOUT;
+    pfd[1].fd = fd2;
+    pfd[1].events = POLLIN|POLLOUT;
     ppoll (pfd, 2, &ts, &mask);
   }
 #endif
@@ -61,12 +66,14 @@ int main (void)
 
 #if defined(HAVE_EPOLL_CREATE) && defined(HAVE_EPOLL_PWAIT)
   {
-    int fd3 = epoll_create (10);
+    int fd3;
     struct epoll_event evs[10];
     sigset_t mask;
+
     sigemptyset (&mask);
     sigaddset (&mask, SIGUSR1);
     sigaddset (&mask, SIGUSR2);
+    fd3 = epoll_create (10);
     epoll_pwait (fd3, evs, 10, 0, &mask);
   }
 #endif

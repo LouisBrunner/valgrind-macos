@@ -1,2 +1,3 @@
 prog: badjump
 cleanup: rm -f vgcore.pid*
+stderr_filter: filter_allocs

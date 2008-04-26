@@ -44,38 +44,45 @@ should be familiar to many Unix programmers.
 
 The syscall wrapper for time()
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-Removing the debug printing clutter, it looks like this:
+The wrapper for the time system call looks like this:
 
-  PRE(time)
+  PRE(sys_time)
   {
      /* time_t time(time_t *t); */
-     PRINT("time ( %p )",arg1);
-     if (arg1 != (UWord)NULL) {
-        PRE_MEM_WRITE( "time", arg1, sizeof(time_t) );
+     PRINT("sys_time ( %p )",ARG1);
+     PRE_REG_READ1(long, "time", int *, t);
+     if (ARG1 != 0) {
+        PRE_MEM_WRITE( "time(t)", ARG1, sizeof(vki_time_t) );
      }
   }
 
-  POST(time)
+  POST(sys_time)
   {  
-     if (arg1 != (UWord)NULL) {
-        POST_MEM_WRITE( arg1, sizeof(vki_time_t) );
+     if (ARG1 != 0) {
+        POST_MEM_WRITE( ARG1, sizeof(vki_time_t) );
      }
   }
 
 The first thing we do happens before the syscall occurs, in the PRE() function:
-if a non-NULL buffer is passed in as the argument, tell the tool that the
+tell the tool the return type of the syscall, that the syscall has one
+argument, the type of the argument and that the argument is being read from a
+register:
+
+     PRE_REG_READ1(long, "time", int *, t);
+
+Next, if a non-NULL buffer is passed in as the argument, tell the tool that the
 buffer is about to be written to:
 
-     if (arg1 != (UWord)NULL) {
-        PRE_MEM_WRITE( "time", arg1, sizeof(vki_time_t) );
+     if (ARG1 != 0) {
+        PRE_MEM_WRITE( "time", ARG1, sizeof(vki_time_t) );
      }
 
 Finally, the really important bit, after the syscall occurs, in the POST()
 function:  if, and only if, the system call was successful, tell the tool that
 the memory was written:
 
-     if (arg1 != (UInt)NULL) {
-        POST_MEM_WRITE( arg1, sizeof(vki_time_t) );
+     if (ARG1 != 0) {
+        POST_MEM_WRITE( ARG1, sizeof(vki_time_t) );
      }
 
 The POST() function won't be called if the syscall failed, so you
@@ -134,8 +141,7 @@ following:
     dependant ones (in syswrap-$(PLATFORM)-linux.c).
     The *XY variant if it requires a PRE() and POST() function, and
     the *X_ variant if it only requires a PRE()
-    function.  The 2nd arg of these macros indicate if the syscall
-    could possibly block.
+    function.  
     
     If you find this difficult, read the wrappers for other syscalls
     for ideas.  A good tip is to look for the wrapper for a syscall

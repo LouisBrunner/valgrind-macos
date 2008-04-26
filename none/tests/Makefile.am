@@ -165,6 +165,7 @@ manythreads_LDADD	= -lpthread
 mq_LDADD		= -lrt
 pth_atfork1_LDADD	= -lpthread
 pth_blockedsig_LDADD	= -lpthread
+pth_cancel1_CFLAGS	= -Wno-shadow
 pth_cancel1_LDADD	= -lpthread
 pth_cancel2_LDADD	= -lpthread
 pth_cvsimple_LDADD	= -lpthread

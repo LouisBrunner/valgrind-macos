@@ -1168,7 +1168,7 @@ const SyscallTableEntry ML_(syscall_table)[] = {
    GENXY(__NR_times,             sys_times),          // 100 
    PLAXY(__NR_ptrace,            sys_ptrace),         // 101 
    GENX_(__NR_getuid,            sys_getuid),         // 102 
-   //   (__NR_syslog,            sys_syslog),         // 103 
+   LINXY(__NR_syslog,            sys_syslog),         // 103 
    GENX_(__NR_getgid,            sys_getgid),         // 104 
 
    GENX_(__NR_setuid,            sys_setuid),         // 105 
@@ -1253,7 +1253,7 @@ const SyscallTableEntry ML_(syscall_table)[] = {
    //   (__NR_setdomainname,     sys_setdomainname),  // 171 
    GENX_(__NR_iopl,              sys_iopl),           // 172 
    LINX_(__NR_ioperm,            sys_ioperm),         // 173 
-   //   (__NR_create_module,     sys_ni_syscall),     // 174 
+   GENX_(__NR_create_module,     sys_ni_syscall),     // 174 
 
    //   (__NR_init_module,       sys_init_module),    // 175 
    //   (__NR_delete_module,     sys_delete_module),  // 176 

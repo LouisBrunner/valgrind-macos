@@ -1254,7 +1254,7 @@ const SyscallTableEntry ML_(syscall_table)[] = {
 // _____(__NR_fstatfs,           sys_fstatfs),            // 100
 // _____(__NR_ioperm,            sys_ioperm),             // 101
    PLAXY(__NR_socketcall,        sys_socketcall),         // 102
-// _____(__NR_syslog,            sys_syslog),             // 103
+   LINXY(__NR_syslog,            sys_syslog),             // 103
    GENXY(__NR_setitimer,         sys_setitimer),          // 104
 
    GENXY(__NR_getitimer,         sys_getitimer),          // 105
@@ -1283,7 +1283,7 @@ const SyscallTableEntry ML_(syscall_table)[] = {
 
    GENXY(__NR_mprotect,          sys_mprotect),           // 125
 // _____(__NR_sigprocmask,       sys_sigprocmask),        // 126
-// _____(__NR_create_module,     sys_create_module),      // 127
+   GENX_(__NR_create_module,     sys_ni_syscall),         // 127
 // _____(__NR_init_module,       sys_init_module),        // 128
 // _____(__NR_delete_module,     sys_delete_module),      // 129
 

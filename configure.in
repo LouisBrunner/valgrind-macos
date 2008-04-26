@@ -959,6 +959,7 @@ AC_CHECK_HEADERS([       \
         sys/endian.h     \
         sys/epoll.h      \
         sys/eventfd.h    \
+        sys/klog.h       \
         sys/poll.h       \
         sys/signalfd.h   \
         ])
@@ -982,6 +983,7 @@ AC_CHECK_FUNCS([     \
         eventfd      \
         eventfd_read \
         floor        \
+        klogctl      \
         mallinfo     \
         memchr       \
         memset       \

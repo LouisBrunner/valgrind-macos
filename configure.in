@@ -528,7 +528,7 @@ case "${GLIBC_VERSION}" in
 	;;
      2.8)
 	AC_MSG_RESULT(2.8 family)
-	AC_DEFINE([GLIBC_2_7], 1, [Define to 1 if you're using glibc 2.7.x])
+	AC_DEFINE([GLIBC_2_8], 1, [Define to 1 if you're using glibc 2.8.x])
 	DEFAULT_SUPP="glibc-2.X.supp ${DEFAULT_SUPP}"
 	DEFAULT_SUPP="glibc-2.34567-NPTL-helgrind.supp ${DEFAULT_SUPP}"
 	DEFAULT_SUPP="glibc-2.X-drd.supp ${DEFAULT_SUPP}"

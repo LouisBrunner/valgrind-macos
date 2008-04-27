@@ -4,8 +4,6 @@ Last updated April 14, 2008.
 
 Data-race detection algorithm
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-- More extensive testing of reader/writer locks.
-- Regression test for bitmap manipulation functions.
 - Continue discussion about unification of DRD and Helgrind client requests.
 - Memory pool support.
 - Add locking order checking. Start from the following information:
@@ -40,7 +38,8 @@ Data-race detection algorithm
 
 Testing
 ~~~~~~~
-- testing with more complex multithreaded test programs.
+- More extensive testing of reader/writer locks.
+- Regression test for bitmap manipulation functions.
 - test exp-drd's performance with the SPLASH-2 software, e.g. fft
   (http://www-flash.stanford.edu/apps/SPLASH/) or the PARSEC benchmark
   (http://parsec.cs.princeton.edu/license.htm).

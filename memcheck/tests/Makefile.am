@@ -216,7 +216,7 @@ memcmptest_CFLAGS	= $(AM_FLAG_M3264_PRI) $(AM_CFLAGS) -fno-builtin-memcmp
 oset_test_CFLAGS	= $(AM_FLAG_M3264_PRI) \
 				-DVGA_$(VG_ARCH)=1 -DVGO_$(VG_OS)=1 \
 				-DVGP_$(VG_ARCH)_$(VG_OS)=1
-linux_timerfd_syscall_CFLAGS = -lrt
+linux_timerfd_syscall_LDADD = -lrt
 vcpu_bz2_CFLAGS		= $(AM_FLAG_M3264_PRI) $(AM_CFLAGS) -O2 -g
 vcpu_fbench_CFLAGS	= $(AM_FLAG_M3264_PRI) $(AM_CFLAGS) -O2 -g
 vcpu_fnfns_CFLAGS	= $(AM_FLAG_M3264_PRI) $(AM_CFLAGS) -O2 -g

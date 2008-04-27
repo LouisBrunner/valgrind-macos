@@ -592,6 +592,11 @@ References
   Sun Studio 12: Thread Analyzer User's Guide
   http://docs.sun.com/app/docs/doc/820-0619
 
+[Venetis 2007]
+  Ioannis E. Venetis
+  The Modified SPLASH-2 Home Page
+  http://www.capsl.udel.edu/splash/Download.html
+
 [Zhou 2007]
   Pin Zhou, Radu Teodorescu, Yuanyuan Zhou.
   HARD: Hardware-Assisted Lockset-based Race Detection.

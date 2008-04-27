@@ -1,3 +1,5 @@
+#!/bin/sh
+
 # This ensures it works when invoked from any directory.
 d=`dirname $0`
 

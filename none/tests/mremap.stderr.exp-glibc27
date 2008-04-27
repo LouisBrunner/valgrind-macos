@@ -1,0 +1,6 @@
+
+mremap(grow, fixed): Cannot allocate memory
+grow, nomove: p=0x........ np=0x........: shrink moved?!
+grow, maymove: p=0x........ np=0x........: shrink moved?!
+mremap(grow, nomove, constrained): Cannot allocate memory
+

@@ -67,6 +67,7 @@ EXTRA_DIST = $(noinst_SCRIPTS) \
 	leakotron.vgtest leakotron.stdout.exp leakotron.stderr.exp \
 	linux-syslog-syscall linux-syslog-syscall.stderr.exp \
 	linux-syscalls-2007 linux-syscalls-2007.stderr.exp \
+	linux-timerfd-syscall linux-timerfd-syscall.stderr.exp \
 	long_namespace_xml.vgtest long_namespace_xml.stdout.exp \
 	long_namespace_xml.stderr.exp \
 	lsframe1.vgtest lsframe1.stdout.exp lsframe1.stderr.exp \
@@ -174,6 +175,7 @@ check_PROGRAMS = \
 	leak-0 leak-cycle leak-pool leak-tree leak-regroot leakotron \
 	linux-syslog-syscall \
 	linux-syscalls-2007 \
+	linux-timerfd-syscall \
 	long_namespace_xml \
 	lsframe1 lsframe2 \
 	mallinfo \
@@ -214,6 +216,7 @@ memcmptest_CFLAGS	= $(AM_FLAG_M3264_PRI) $(AM_CFLAGS) -fno-builtin-memcmp
 oset_test_CFLAGS	= $(AM_FLAG_M3264_PRI) \
 				-DVGA_$(VG_ARCH)=1 -DVGO_$(VG_OS)=1 \
 				-DVGP_$(VG_ARCH)_$(VG_OS)=1
+linux_timerfd_syscall_CFLAGS = -lrt
 vcpu_bz2_CFLAGS		= $(AM_FLAG_M3264_PRI) $(AM_CFLAGS) -O2 -g
 vcpu_fbench_CFLAGS	= $(AM_FLAG_M3264_PRI) $(AM_CFLAGS) -O2 -g
 vcpu_fnfns_CFLAGS	= $(AM_FLAG_M3264_PRI) $(AM_CFLAGS) -O2 -g

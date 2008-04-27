@@ -126,7 +126,9 @@ DECL_TEMPLATE(linux, sys_timer_settime);
 DECL_TEMPLATE(linux, sys_timer_gettime);
 DECL_TEMPLATE(linux, sys_timer_getoverrun);
 DECL_TEMPLATE(linux, sys_timer_delete);
-DECL_TEMPLATE(linux, sys_timerfd);
+DECL_TEMPLATE(linux, sys_timerfd_create);
+DECL_TEMPLATE(linux, sys_timerfd_gettime);
+DECL_TEMPLATE(linux, sys_timerfd_settime);
 
 DECL_TEMPLATE(linux, sys_signalfd);
 

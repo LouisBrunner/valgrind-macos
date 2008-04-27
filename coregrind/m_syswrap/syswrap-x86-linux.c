@@ -2228,9 +2228,11 @@ const SyscallTableEntry ML_(syscall_table)[] = {
 
    LINX_(__NR_utimensat,         sys_utimensat),        // 320
    LINXY(__NR_signalfd,          sys_signalfd),         // 321
-   LINXY(__NR_timerfd,           sys_timerfd),          // 322
+   LINXY(__NR_timerfd_create,    sys_timerfd_create),   // 322
    LINX_(__NR_eventfd,           sys_eventfd),          // 323
 //   LINX_(__NR_fallocate,        sys_ni_syscall),        // 324
+   LINXY(__NR_timerfd_settime,   sys_timerfd_settime),  // 325
+   LINXY(__NR_timerfd_gettime,   sys_timerfd_gettime),  // 326
 };
 
 const UInt ML_(syscall_table_size) = 

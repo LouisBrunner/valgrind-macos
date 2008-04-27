@@ -1707,25 +1707,123 @@ PRE(sys_timer_delete)
    PRE_REG_READ1(long, "timer_delete", vki_timer_t, timerid);
 }
 
-PRE(sys_timerfd)
+/* ---------------------------------------------------------------------
+   timerfd* wrappers
+   See also http://lwn.net/Articles/260172/ for an overview.
+   See also /usr/src/linux/fs/timerfd.c for the implementation.
+   ------------------------------------------------------------------ */
+
+static int linux_kernel_2_6_22(void)
 {
-   PRINT("sys_timerfd ( %d, %d, %p )", ARG1, ARG2, ARG3);
-   PRE_REG_READ3(long, "sys_timerfd",
-                 int, fd, int, clockid, const struct itimerspec *, tmr);
-   PRE_MEM_READ( "timerfd(tmr)", ARG3,
-                  sizeof(struct vki_itimerspec) );
-   if (ARG1 != -1 && !ML_(fd_allowed)(ARG1, "timerfd", tid, False))
-      SET_STATUS_Failure( VKI_EBADF );
+  static int result = -1;
+  Int fd, read;
+  char release[64];
+  SysRes res;
+
+  if (result == -1)
+  {
+    res = VG_(open)("/proc/sys/kernel/osrelease", 0, 0);
+    vg_assert(! res.isError);
+    fd = res.res;
+    read = VG_(read)(fd, release, sizeof(release) - 1);
+    vg_assert(read >= 0);
+    release[read] = 0;
+    VG_(close)(fd);
+    //VG_(printf)("kernel release = %s\n", release);
+    result = (VG_(strncmp)(release, "2.6.22", 6) == 0);
+  }
+  return result;
 }
-POST(sys_timerfd)
+
+PRE(sys_timerfd_create)
 {
-   if (!ML_(fd_allowed)(RES, "timerfd", tid, True)) {
-      VG_(close)(RES);
-      SET_STATUS_Failure( VKI_EMFILE );
-   } else {
-      if (VG_(clo_track_fds))
-         ML_(record_fd_open_nameless) (tid, RES);
+   if (linux_kernel_2_6_22())
+   {
+      /* 2.6.22 kernel: timerfd system call. */
+      PRINT("sys_timerfd ( %d, %d, %p )", ARG1, ARG2, ARG3);
+      PRE_REG_READ3(long, "sys_timerfd",
+                    int, fd, int, clockid, const struct itimerspec *, tmr);
+      PRE_MEM_READ("timerfd(tmr)", ARG3,
+                   sizeof(struct vki_itimerspec) );
+      if (ARG1 != -1 && !ML_(fd_allowed)(ARG1, "timerfd", tid, False))
+         SET_STATUS_Failure( VKI_EBADF );
+  }
+  else
+  {
+      /* 2.6.24 and later kernels: timerfd_create system call. */
+     PRINT("sys_timerfd_create (%d, %d )", ARG1, ARG2);
+     PRE_REG_READ2(long, "timerfd_create", int, clockid, int, flags);
+  }
+}
+POST(sys_timerfd_create)
+{
+   if (linux_kernel_2_6_22())
+   {
+      /* 2.6.22 kernel: timerfd system call. */
+      if (!ML_(fd_allowed)(RES, "timerfd", tid, True)) {
+         VG_(close)(RES);
+         SET_STATUS_Failure( VKI_EMFILE );
+      } else {
+         if (VG_(clo_track_fds))
+            ML_(record_fd_open_nameless) (tid, RES);
+      }
    }
+   else
+   {
+      /* 2.6.24 and later kernels: timerfd_create system call. */
+      if (!ML_(fd_allowed)(RES, "timerfd_create", tid, True)) {
+         VG_(close)(RES);
+         SET_STATUS_Failure( VKI_EMFILE );
+      } else {
+         if (VG_(clo_track_fds))
+            ML_(record_fd_open_nameless) (tid, RES);
+      }
+   }
+}
+
+PRE(sys_timerfd_gettime)
+{
+   PRINT("sys_timerfd_gettime ( %d, %p )", ARG1, ARG2);
+   PRE_REG_READ2(long, "timerfd_gettime",
+                 int, ufd,
+                 struct vki_itimerspec*, otmr);
+   if (!ML_(fd_allowed)(ARG1, "timerfd_gettime", tid, False))
+      SET_STATUS_Failure(VKI_EBADF);
+   else
+      PRE_MEM_WRITE("timerfd_gettime(result)",
+                    ARG2, sizeof(struct vki_itimerspec));
+}
+POST(sys_timerfd_gettime)
+{
+   if (RES == 0)
+      POST_MEM_WRITE(ARG2, sizeof(struct vki_itimerspec));
+}
+
+PRE(sys_timerfd_settime)
+{
+   PRINT("sys_timerfd_settime ( %d, %d, %p, %p )", ARG1, ARG2, ARG3, ARG4);
+   PRE_REG_READ4(long, "timerfd_settime",
+                 int, ufd,
+                 int, flags,
+                 const struct vki_itimerspec*, utmr,
+                 struct vki_itimerspec*, otmr);
+   if (!ML_(fd_allowed)(ARG1, "timerfd_settime", tid, False))
+      SET_STATUS_Failure(VKI_EBADF);
+   else
+   {
+      PRE_MEM_READ("timerfd_settime(result)",
+                   ARG3, sizeof(struct vki_itimerspec));
+      if (ARG4)
+      {
+         PRE_MEM_WRITE("timerfd_settime(result)",
+                       ARG4, sizeof(struct vki_itimerspec));
+      }
+   }
+}
+POST(sys_timerfd_settime)
+{
+   if (RES == 0 && ARG4 != 0)
+      POST_MEM_WRITE(ARG4, sizeof(struct vki_itimerspec));
 }
 
 /* ---------------------------------------------------------------------

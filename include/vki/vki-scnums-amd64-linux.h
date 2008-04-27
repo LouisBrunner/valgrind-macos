@@ -364,9 +364,11 @@
 #define __NR_utimensat		280
 #define __NR_epoll_pwait	281
 #define __NR_signalfd		282
-#define __NR_timerfd		283
+#define __NR_timerfd_create	283
 #define __NR_eventfd		284
 #define __NR_fallocate		285
+#define __NR_timerfd_settime	286
+#define __NR_timerfd_gettime	287
 
 #endif /* __VKI_SCNUMS_AMD64_LINUX_H */
 

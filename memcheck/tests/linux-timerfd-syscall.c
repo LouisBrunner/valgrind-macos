@@ -183,7 +183,7 @@ int main(int ac, char **av)
     tnow = getustime(clks[i].id);
     if ((tfd = timerfd_create(clks[i].id, 0)) == -1)
     {
-      perror("timerfd");
+      perror("timerfd_create");
       return 1;
     }
     fprintf(stdout, "timerfd = %d\n", tfd);

@@ -10,7 +10,7 @@ Process terminating with default action of signal 11 (SIGSEGV)
    by 0x........: __libc_start_main (in /...libc...)
 
 ERROR SUMMARY: 1 errors from 1 contexts (suppressed: 0 from 0)
-malloc/free: in use at exit: 24 bytes in 1 blocks.
-malloc/free: 1 allocs, 0 frees, 24 bytes allocated.
+malloc/free: in use at exit: ... bytes in ... blocks.
+malloc/free: ... allocs, ... frees, ... bytes allocated.
 For a detailed leak analysis,  rerun with: --leak-check=yes
 For counts of detected errors, rerun with: -v

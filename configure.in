@@ -633,6 +633,31 @@ CFLAGS=$safe_CFLAGS
 AM_CONDITIONAL([HAVE_OPENMP], [test x$ac_have_openmp = xyes])
 
 
+# Check for eventfd_t, eventfd() and eventfd_read()
+AC_MSG_CHECKING([for eventfd()])
+
+AC_TRY_LINK(
+[
+#include <sys/eventfd.h>
+], [
+  eventfd_t ev;
+  int fd;
+
+  fd = eventfd(5, 0);
+  eventfd_read(fd, &ev);
+  return 0;
+],
+[
+AC_MSG_RESULT([yes])
+AC_DEFINE([HAVE_EVENTFD], 1,
+          [Define to 1 if you have the `eventfd' function.])
+AC_DEFINE([HAVE_EVENTFD_READ], 1,
+          [Define to 1 if you have the `eventfd_read' function.])
+], [
+AC_MSG_RESULT([no])
+])
+
+
 # does this compiler support -m32 ?
 AC_MSG_CHECKING([if gcc accepts -m32])
 
@@ -980,8 +1005,6 @@ AC_TYPE_SIGNAL
 AC_CHECK_FUNCS([     \
         epoll_create \
         epoll_pwait  \
-        eventfd      \
-        eventfd_read \
         floor        \
         klogctl      \
         mallinfo     \

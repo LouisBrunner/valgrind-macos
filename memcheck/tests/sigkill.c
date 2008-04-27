@@ -19,10 +19,13 @@ main (void)
   int i;
   int rc;
   for (i = 1; i <= 65; i++) {
+     // Skip signals 32 and 33, since these are used by LinuxThreads. Some
+     // glibc versions do not invoke the sigaction system call for these
+     // signals.
      // skip signals 63 and 64: some systems say "warning, ignored attempt
      // to catch 32 because it's used internally by Valgrind", others say
      // "invalid argument".
-     if (i == 63 || i == 64) {
+     if (i == 32 || i == 33 || i == 63 || i == 64) {
         continue;       
      }                  // different systems
      sa.sa_flags   = 0;

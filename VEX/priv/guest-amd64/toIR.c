@@ -5159,19 +5159,20 @@ ULong dis_FPU ( /*OUT*/Bool* decode_ok,
                                     get_ST(0), get_ST(r_src)) );
                break;
 
-//..             case 0xE9: /* FUCOMPP %st(0),%st(1) */
-//..                DIP("fucompp %%st(0),%%st(1)\n");
-//..                /* This forces C1 to zero, which isn't right. */
-//..                put_C3210( 
-//..                    binop( Iop_And32,
-//..                           binop(Iop_Shl32, 
-//..                                 binop(Iop_CmpF64, get_ST(0), get_ST(1)),
-//..                                 mkU8(8)),
-//..                           mkU32(0x4500)
-//..                    ));
-//..                fp_pop();
-//..                fp_pop();
-//..                break;
+            case 0xE9: /* FUCOMPP %st(0),%st(1) */
+               DIP("fucompp %%st(0),%%st(1)\n");
+               /* This forces C1 to zero, which isn't right. */
+               put_C3210( 
+                   unop(Iop_32Uto64,
+                   binop( Iop_And32,
+                          binop(Iop_Shl32, 
+                                binop(Iop_CmpF64, get_ST(0), get_ST(1)),
+                                mkU8(8)),
+                          mkU32(0x4500)
+                   )));
+               fp_pop();
+               fp_pop();
+               break;
 
             default:
                goto decode_fail;

@@ -167,7 +167,9 @@ int main(int ac, char **av)
   struct itimerspec tmr;
   struct tmr_type clks[] =
   {
+#if defined(HAVE_CLOCK_MONOTONIC)
     { CLOCK_MONOTONIC, "CLOCK MONOTONIC" },
+#endif
     { CLOCK_REALTIME, "CLOCK REALTIME" },
   };
 

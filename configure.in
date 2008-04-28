@@ -560,6 +560,26 @@ if test "${no_x}" != 'yes' ; then
 fi
 
 
+# Check for CLOCK_MONOTONIC
+
+AC_MSG_CHECKING([for CLOCK_MONOTONIC])
+
+AC_TRY_COMPILE(
+[
+#include <time.h>
+], [
+  struct timespec t;
+  clock_gettime(CLOCK_MONOTONIC, &t);
+  return 0;
+],
+[
+AC_MSG_RESULT([yes])
+AC_DEFINE([HAVE_CLOCK_MONOTONIC], 1,
+          [Define to 1 if you have the `CLOCK_MONOTONIC' constant.])
+], [
+AC_MSG_RESULT([no])
+])
+
 # Check whether pthread_mutex_t has a member called __m_kind.
 
 AC_MSG_CHECKING([for pthread_mutex_t::__m_kind])

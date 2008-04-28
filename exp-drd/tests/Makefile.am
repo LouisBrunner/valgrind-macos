@@ -104,7 +104,7 @@ EXTRA_DIST =                                        \
 	tc08_hbl2.stdout.exp                        \
 	tc08_hbl2.vgtest                            \
 	tc09_bad_unlock.stderr.exp                  \
-	tc09_bad_unlock.stderr.exp-opensuse11       \
+	tc09_bad_unlock.stderr.exp-glibc2.8         \
 	tc09_bad_unlock.vgtest                      \
 	tc10_rec_lock.stderr.exp                    \
 	tc10_rec_lock.vgtest                        \

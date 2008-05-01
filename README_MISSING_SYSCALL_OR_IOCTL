@@ -63,10 +63,12 @@ The wrapper for the time system call looks like this:
      }
   }
 
-The first thing we do happens before the syscall occurs, in the PRE() function:
-tell the tool the return type of the syscall, that the syscall has one
-argument, the type of the argument and that the argument is being read from a
-register:
+The first thing we do happens before the syscall occurs, in the PRE() function.
+The PRE() function typically starts with invoking to the PRINT() macro. This
+PRINT() macro implements support for the --trace-syscalls command line option.
+Next, the tool is told the return type of the syscall, that the syscall has
+one argument, the type of the syscall argument and that the argument is being
+read from a register:
 
      PRE_REG_READ1(long, "time", int *, t);
 

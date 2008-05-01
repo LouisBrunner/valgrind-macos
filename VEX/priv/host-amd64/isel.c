@@ -1150,6 +1150,24 @@ static HReg iselIntExpr_R_wrk ( ISelEnv* env, IRExpr* e )
 
       /* Handle misc other ops. */
 
+      if (e->Iex.Binop.op == Iop_Max32U) {
+         /* This generates a truly rotten piece of code.  Just as well
+            it doesn't happen very often. */
+         HReg src1  = iselIntExpr_R(env, e->Iex.Binop.arg1);
+         HReg src1L = newVRegI(env);
+         HReg src2  = iselIntExpr_R(env, e->Iex.Binop.arg2);
+         HReg src2L = newVRegI(env);
+         HReg dst   = newVRegI(env);
+         addInstr(env, mk_iMOVsd_RR(src1,dst));
+         addInstr(env, mk_iMOVsd_RR(src1,src1L));
+         addInstr(env, AMD64Instr_Sh64(Ash_SHL, 32, src1L));
+         addInstr(env, mk_iMOVsd_RR(src2,src2L));
+         addInstr(env, AMD64Instr_Sh64(Ash_SHL, 32, src2L));
+         addInstr(env, AMD64Instr_Alu64R(Aalu_CMP, AMD64RMI_Reg(src2L), src1L));
+         addInstr(env, AMD64Instr_CMov64(Acc_B, AMD64RM_Reg(src2), dst));
+         return dst;
+      }
+
       if (e->Iex.Binop.op == Iop_DivModS64to32
           || e->Iex.Binop.op == Iop_DivModU64to32) {
          /* 64 x 32 -> (32(rem),32(div)) division */

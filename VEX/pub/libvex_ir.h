@@ -446,6 +446,7 @@ typedef
       Iop_CmpNEZ8, Iop_CmpNEZ16,  Iop_CmpNEZ32,  Iop_CmpNEZ64,
       Iop_CmpwNEZ32, Iop_CmpwNEZ64, /* all-0s -> all-Os; other -> all-1s */
       Iop_Left8, Iop_Left16, Iop_Left32, Iop_Left64, /*  \x -> x | -x */
+      Iop_Max32U, /* unsigned max */
 
       /* PowerPC-style 3-way integer comparisons.  Without them it is
          difficult to simulate PPC efficiently.
@@ -1411,14 +1412,17 @@ typedef
             that a given chunk of address space, [base .. base+len-1],
             has become undefined.  This is used on amd64-linux and
             some ppc variants to pass stack-redzoning hints to whoever
-            wants to see them.
+            wants to see them.  It also indicates the address of the
+            next (dynamic) instruction that will be executed.  This is
+            to help Memcheck to origin tracking.
 
-            ppIRExpr output: ====== AbiHint(<base>, <len>) ======
-                         eg. ====== AbiHint(t1, 16) ======
+            ppIRExpr output: ====== AbiHint(<base>, <len>, <nia>) ======
+                         eg. ====== AbiHint(t1, 16, t2) ======
          */
          struct {
             IRExpr* base;     /* Start  of undefined chunk */
             Int     len;      /* Length of undefined chunk */
+            IRExpr* nia;      /* Address of next (guest) insn */
          } AbiHint;
 
          /* Write a guest register, at a fixed offset in the guest state.
@@ -1505,7 +1509,7 @@ typedef
 /* Statement constructors. */
 extern IRStmt* IRStmt_NoOp    ( void );
 extern IRStmt* IRStmt_IMark   ( Addr64 addr, Int len );
-extern IRStmt* IRStmt_AbiHint ( IRExpr* base, Int len );
+extern IRStmt* IRStmt_AbiHint ( IRExpr* base, Int len, IRExpr* nia );
 extern IRStmt* IRStmt_Put     ( Int off, IRExpr* data );
 extern IRStmt* IRStmt_PutI    ( IRRegArray* descr, IRExpr* ix, Int bias, 
                                 IRExpr* data );

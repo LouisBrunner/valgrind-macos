@@ -570,8 +570,8 @@ PPCAMode* genGuestArrayOffset ( ISelEnv* env, IRRegArray* descr,
 
    if (bias < -100 || bias > 100) /* somewhat arbitrarily */
       vpanic("genGuestArrayOffset(ppc host)(3)");
-   if (descr->base < 0 || descr->base > 2000) /* somewhat arbitrarily */
-     vpanic("genGuestArrayOffset(ppc host)(4)");
+   if (descr->base < 0 || descr->base > 4000) /* somewhat arbitrarily */
+      vpanic("genGuestArrayOffset(ppc host)(4)");
 
    /* Compute off into a reg, %off.  Then return:
 
@@ -1367,6 +1367,18 @@ static HReg iselWordExpr_R_wrk ( ISelEnv* env, IRExpr* e )
          return dst;
       }
 
+      if (e->Iex.Binop.op == Iop_Max32U) {
+         HReg        r1   = iselWordExpr_R(env, e->Iex.Binop.arg1);
+         HReg        r2   = iselWordExpr_R(env, e->Iex.Binop.arg2);
+         HReg        rdst = newVRegI(env);
+         PPCCondCode cc   = mk_PPCCondCode( Pct_TRUE, Pcf_7LT );
+         addInstr(env, mk_iMOVds_RR(rdst, r1));
+         addInstr(env, PPCInstr_Cmp(False/*unsigned*/, True/*32bit cmp*/,
+                                    7/*cr*/, rdst, PPCRH_Reg(r2)));
+         addInstr(env, PPCInstr_CMov(cc, rdst, PPCRI_Reg(r2)));
+         return rdst;
+      }
+
       if (e->Iex.Binop.op == Iop_32HLto64) {
          HReg   r_Hi  = iselWordExpr_R(env, e->Iex.Binop.arg1);
          HReg   r_Lo  = iselWordExpr_R(env, e->Iex.Binop.arg2);
@@ -1908,7 +1920,7 @@ static HReg iselWordExpr_R_wrk ( ISelEnv* env, IRExpr* e )
          addInstr(env, mk_iMOVds_RR(r_dst,rX));
          addInstr(env, PPCInstr_Alu(Palu_AND, r_tmp,
                                     r_cond, PPCRH_Imm(False,0xFF)));
-         addInstr(env, PPCInstr_Cmp(False/*unsined*/, True/*32bit cmp*/,
+         addInstr(env, PPCInstr_Cmp(False/*unsigned*/, True/*32bit cmp*/,
                                     7/*cr*/, r_tmp, PPCRH_Imm(False,0)));
          addInstr(env, PPCInstr_CMov(cc,r_dst,r0));
          return r_dst;
@@ -2672,7 +2684,7 @@ static void iselInt64Expr_wrk ( HReg* rHi, HReg* rLo,
             return;
          }
 
-         /* Add64/Sub64 */
+         /* Add64 */
          case Iop_Add64: {
             HReg xLo, xHi, yLo, yHi;
             HReg tLo = newVRegI(env);
@@ -2748,6 +2760,28 @@ static void iselInt64Expr_wrk ( HReg* rHi, HReg* rLo,
                                      tmp2, tmp2, PPCRH_Imm(False, 31)));
          *rHi = tmp2;
          *rLo = tmp2; /* yes, really tmp2 */
+         return;
+      }
+
+      /* Left64 */
+      case Iop_Left64: {
+         HReg argHi, argLo;
+         HReg zero32 = newVRegI(env);
+         HReg resHi  = newVRegI(env);
+         HReg resLo  = newVRegI(env);
+         iselInt64Expr(&argHi, &argLo, env, e->Iex.Unop.arg);
+         vassert(env->mode64 == False);
+         addInstr(env, PPCInstr_LI(zero32, 0, env->mode64));
+         /* resHi:resLo = - argHi:argLo */
+         addInstr(env, PPCInstr_AddSubC( False/*sub*/, True/*set carry*/,
+                                         resLo, zero32, argLo ));
+         addInstr(env, PPCInstr_AddSubC( False/*sub*/, False/*read carry*/,
+                                         resHi, zero32, argHi ));
+         /* resHi:resLo |= srcHi:srcLo */
+         addInstr(env, PPCInstr_Alu(Palu_OR, resLo, resLo, PPCRH_Reg(argLo)));
+         addInstr(env, PPCInstr_Alu(Palu_OR, resHi, resHi, PPCRH_Reg(argHi)));
+         *rHi = resHi;
+         *rLo = resLo;
          return;
       }
 

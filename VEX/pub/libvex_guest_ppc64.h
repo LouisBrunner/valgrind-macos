@@ -166,38 +166,41 @@ typedef
       /* 504 */ ULong guest_FPR31;
 
       // Vector Registers
-      /*  512 */ U128 guest_VR0 __attribute__ ((aligned (16)));
-      /*  528 */ U128 guest_VR1 __attribute__ ((aligned (16)));
-      /*  544 */ U128 guest_VR2 __attribute__ ((aligned (16)));
-      /*  560 */ U128 guest_VR3 __attribute__ ((aligned (16)));
-      /*  576 */ U128 guest_VR4 __attribute__ ((aligned (16)));
-      /*  592 */ U128 guest_VR5 __attribute__ ((aligned (16)));
-      /*  608 */ U128 guest_VR6 __attribute__ ((aligned (16)));
-      /*  624 */ U128 guest_VR7 __attribute__ ((aligned (16)));
-      /*  640 */ U128 guest_VR8 __attribute__ ((aligned (16)));
-      /*  656 */ U128 guest_VR9 __attribute__ ((aligned (16)));
-      /*  672 */ U128 guest_VR10 __attribute__ ((aligned (16)));
-      /*  688 */ U128 guest_VR11 __attribute__ ((aligned (16)));
-      /*  704 */ U128 guest_VR12 __attribute__ ((aligned (16)));
-      /*  720 */ U128 guest_VR13 __attribute__ ((aligned (16)));
-      /*  736 */ U128 guest_VR14 __attribute__ ((aligned (16)));
-      /*  752 */ U128 guest_VR15 __attribute__ ((aligned (16)));
-      /*  768 */ U128 guest_VR16 __attribute__ ((aligned (16)));
-      /*  784 */ U128 guest_VR17 __attribute__ ((aligned (16)));
-      /*  800 */ U128 guest_VR18 __attribute__ ((aligned (16)));
-      /*  816 */ U128 guest_VR19 __attribute__ ((aligned (16)));
-      /*  832 */ U128 guest_VR20 __attribute__ ((aligned (16)));
-      /*  848 */ U128 guest_VR21 __attribute__ ((aligned (16)));
-      /*  864 */ U128 guest_VR22 __attribute__ ((aligned (16)));
-      /*  880 */ U128 guest_VR23 __attribute__ ((aligned (16)));
-      /*  896 */ U128 guest_VR24 __attribute__ ((aligned (16)));
-      /*  912 */ U128 guest_VR25 __attribute__ ((aligned (16)));
-      /*  928 */ U128 guest_VR26 __attribute__ ((aligned (16)));
-      /*  944 */ U128 guest_VR27 __attribute__ ((aligned (16)));
-      /*  960 */ U128 guest_VR28 __attribute__ ((aligned (16)));
-      /*  976 */ U128 guest_VR29 __attribute__ ((aligned (16)));
-      /*  992 */ U128 guest_VR30 __attribute__ ((aligned (16)));
-      /* 1008 */ U128 guest_VR31 __attribute__ ((aligned (16)));
+      // IMPORTANT: the user of libvex must place the guest state so as
+      // to ensure that guest_VR{0..31}, and any shadows thereof, are
+      // 16-aligned.
+      /*  512 */ U128 guest_VR0;
+      /*  528 */ U128 guest_VR1;
+      /*  544 */ U128 guest_VR2;
+      /*  560 */ U128 guest_VR3;
+      /*  576 */ U128 guest_VR4;
+      /*  592 */ U128 guest_VR5;
+      /*  608 */ U128 guest_VR6;
+      /*  624 */ U128 guest_VR7;
+      /*  640 */ U128 guest_VR8;
+      /*  656 */ U128 guest_VR9;
+      /*  672 */ U128 guest_VR10;
+      /*  688 */ U128 guest_VR11;
+      /*  704 */ U128 guest_VR12;
+      /*  720 */ U128 guest_VR13;
+      /*  736 */ U128 guest_VR14;
+      /*  752 */ U128 guest_VR15;
+      /*  768 */ U128 guest_VR16;
+      /*  784 */ U128 guest_VR17;
+      /*  800 */ U128 guest_VR18;
+      /*  816 */ U128 guest_VR19;
+      /*  832 */ U128 guest_VR20;
+      /*  848 */ U128 guest_VR21;
+      /*  864 */ U128 guest_VR22;
+      /*  880 */ U128 guest_VR23;
+      /*  896 */ U128 guest_VR24;
+      /*  912 */ U128 guest_VR25;
+      /*  928 */ U128 guest_VR26;
+      /*  944 */ U128 guest_VR27;
+      /*  960 */ U128 guest_VR28;
+      /*  976 */ U128 guest_VR29;
+      /*  992 */ U128 guest_VR30;
+      /* 1008 */ U128 guest_VR31;
 
       /* 1024 */ ULong guest_CIA;    // IP (no arch visible register)
       /* 1032 */ ULong guest_LR;     // Link Register

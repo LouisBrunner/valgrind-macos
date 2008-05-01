@@ -288,7 +288,7 @@ typedef
    PPCRI;
 
 extern PPCRI* PPCRI_Imm ( ULong );
-extern PPCRI* PPCRI_Reg ( HReg );
+extern PPCRI* PPCRI_Reg( HReg );
 
 extern void ppPPCRI ( PPCRI* );
 

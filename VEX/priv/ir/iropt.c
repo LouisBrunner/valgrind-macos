@@ -448,7 +448,8 @@ static void flatten_Stmt ( IRSB* bb, IRStmt* st )
          break;
       case Ist_AbiHint:
          e1 = flatten_Expr(bb, st->Ist.AbiHint.base);
-         addStmtToIRSB(bb, IRStmt_AbiHint(e1, st->Ist.AbiHint.len));
+         e2 = flatten_Expr(bb, st->Ist.AbiHint.nia);
+         addStmtToIRSB(bb, IRStmt_AbiHint(e1, st->Ist.AbiHint.len, e2));
          break;
       case Ist_Exit:
          e1 = flatten_Expr(bb, st->Ist.Exit.guard);
@@ -712,6 +713,7 @@ static void handle_gets_Stmt (
          AbiHints.*/
       case Ist_AbiHint:
          vassert(isIRAtom(st->Ist.AbiHint.base));
+         vassert(isIRAtom(st->Ist.AbiHint.nia));
          /* fall through */
       case Ist_MBE:
       case Ist_Dirty:
@@ -1200,6 +1202,15 @@ static IRExpr* fold_Expr ( IRExpr* e )
                         - e->Iex.Binop.arg2->Iex.Const.con->Ico.U64)));
                break;
 
+            /* -- Max32U -- */
+            case Iop_Max32U: {
+               UInt u32a = e->Iex.Binop.arg1->Iex.Const.con->Ico.U32;
+               UInt u32b = e->Iex.Binop.arg2->Iex.Const.con->Ico.U32;
+               UInt res  = u32a > u32b ? u32a : u32b;
+               e2 = IRExpr_Const(IRConst_U32(res));
+               break;
+            }
+
             /* -- Mul -- */
             case Iop_Mul32:
                e2 = IRExpr_Const(IRConst_U32(
@@ -1421,8 +1432,9 @@ static IRExpr* fold_Expr ( IRExpr* e )
             e2 = e->Iex.Binop.arg1;
          } else
 
-         /* Or32/Add32(x,0) ==> x */
-         if ((e->Iex.Binop.op == Iop_Add32 || e->Iex.Binop.op == Iop_Or32)
+         /* Or32/Add32/Max32U(x,0) ==> x */
+         if ((e->Iex.Binop.op == Iop_Add32 
+              || e->Iex.Binop.op == Iop_Or32 || e->Iex.Binop.op == Iop_Max32U)
              && e->Iex.Binop.arg2->tag == Iex_Const
              && e->Iex.Binop.arg2->Iex.Const.con->Ico.U32 == 0) {
             e2 = e->Iex.Binop.arg1;
@@ -1500,8 +1512,8 @@ static IRExpr* fold_Expr ( IRExpr* e )
             e2 = e->Iex.Binop.arg2;
          } else
 
-         /* Or32(0,x) ==> x */
-         if (e->Iex.Binop.op == Iop_Or32
+         /* Or32/Max32U(0,x) ==> x */
+         if ((e->Iex.Binop.op == Iop_Or32 || e->Iex.Binop.op == Iop_Max32U)
              && e->Iex.Binop.arg1->tag == Iex_Const
              && e->Iex.Binop.arg1->Iex.Const.con->Ico.U32 == 0) {
             e2 = e->Iex.Binop.arg2;
@@ -1516,6 +1528,7 @@ static IRExpr* fold_Expr ( IRExpr* e )
 
          /* Or8/16/32/64(t,t) ==> t, for some IRTemp t */
          /* And8/16/32/64(t,t) ==> t, for some IRTemp t */
+         /* Max32U(t,t) ==> t, for some IRTemp t */
          if (   (e->Iex.Binop.op == Iop_And64
               || e->Iex.Binop.op == Iop_And32
               || e->Iex.Binop.op == Iop_And16
@@ -1523,7 +1536,8 @@ static IRExpr* fold_Expr ( IRExpr* e )
               || e->Iex.Binop.op == Iop_Or64
               || e->Iex.Binop.op == Iop_Or32
               || e->Iex.Binop.op == Iop_Or16
-              || e->Iex.Binop.op == Iop_Or8)
+              || e->Iex.Binop.op == Iop_Or8
+              || e->Iex.Binop.op == Iop_Max32U)
              && sameIRTemps(e->Iex.Binop.arg1, e->Iex.Binop.arg2)) {
             e2 = e->Iex.Binop.arg1;
          }
@@ -1697,9 +1711,11 @@ static IRStmt* subst_and_fold_Stmt ( IRExpr** env, IRStmt* st )
    switch (st->tag) {
       case Ist_AbiHint:
          vassert(isIRAtom(st->Ist.AbiHint.base));
+         vassert(isIRAtom(st->Ist.AbiHint.nia));
          return IRStmt_AbiHint(
                    fold_Expr(subst_Expr(env, st->Ist.AbiHint.base)),
-                   st->Ist.AbiHint.len
+                   st->Ist.AbiHint.len,
+                   fold_Expr(subst_Expr(env, st->Ist.AbiHint.nia))
                 );
       case Ist_Put:
          vassert(isIRAtom(st->Ist.Put.data));
@@ -1943,6 +1959,7 @@ static void addUses_Stmt ( Bool* set, IRStmt* st )
    switch (st->tag) {
       case Ist_AbiHint:
          addUses_Expr(set, st->Ist.AbiHint.base);
+         addUses_Expr(set, st->Ist.AbiHint.nia);
          return;
       case Ist_PutI:
          addUses_Expr(set, st->Ist.PutI.ix);
@@ -3211,6 +3228,7 @@ static void deltaIRStmt ( IRStmt* st, Int delta )
          break;
       case Ist_AbiHint:
          deltaIRExpr(st->Ist.AbiHint.base, delta);
+         deltaIRExpr(st->Ist.AbiHint.nia, delta);
          break;
       case Ist_Put:
          deltaIRExpr(st->Ist.Put.data, delta);
@@ -3667,6 +3685,7 @@ static void aoccCount_Stmt ( UShort* uses, IRStmt* st )
    switch (st->tag) {
       case Ist_AbiHint:
          aoccCount_Expr(uses, st->Ist.AbiHint.base);
+         aoccCount_Expr(uses, st->Ist.AbiHint.nia);
          return;
       case Ist_WrTmp: 
          aoccCount_Expr(uses, st->Ist.WrTmp.data); 
@@ -3898,7 +3917,8 @@ static IRStmt* atbSubst_Stmt ( ATmpInfo* env, IRStmt* st )
       case Ist_AbiHint:
          return IRStmt_AbiHint(
                    atbSubst_Expr(env, st->Ist.AbiHint.base),
-                   st->Ist.AbiHint.len
+                   st->Ist.AbiHint.len,
+                   atbSubst_Expr(env, st->Ist.AbiHint.nia)
                 );
       case Ist_Store:
          return IRStmt_Store(
@@ -4231,6 +4251,7 @@ static void considerExpensives ( /*OUT*/Bool* hasGetIorPutI,
       switch (st->tag) {
          case Ist_AbiHint:
             vassert(isIRAtom(st->Ist.AbiHint.base));
+            vassert(isIRAtom(st->Ist.AbiHint.nia));
             break;
          case Ist_PutI: 
             *hasGetIorPutI = True;

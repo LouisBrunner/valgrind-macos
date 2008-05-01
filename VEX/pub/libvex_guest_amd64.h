@@ -85,8 +85,7 @@ typedef
       /* 144 */ ULong  guest_CC_DEP2;
       /* 152 */ ULong  guest_CC_NDEP;
       /* The D flag is stored here, encoded as either -1 or +1 */
-      /* 160 */ ULong  guest_DFLAG;       /* 48 */
-      /* RIP */
+      /* 160 */ ULong  guest_DFLAG;
       /* 168 */ ULong  guest_RIP;
       /* Probably a lot more stuff too. 
          D,ID flags
@@ -96,16 +95,16 @@ typedef
       */
 
       /* Bit 21 (ID) of eflags stored here, as either 0 or 1. */
-      ULong guest_IDFLAG;
+      /* 176 */ ULong guest_IDFLAG;
 
       /* HACK to make tls on amd64-linux work.  %fs only ever seems to
          hold zero, and so guest_FS_ZERO holds the 64-bit offset
          associated with a %fs value of zero. */
-      ULong guest_FS_ZERO;
+      /* 184 */ ULong guest_FS_ZERO;
 
       /* XMM registers */
-      ULong guest_SSEROUND;
-      U128  guest_XMM0;
+      /* 192 */ULong guest_SSEROUND;
+      /* 200 */U128  guest_XMM0;
       U128  guest_XMM1;
       U128  guest_XMM2;
       U128  guest_XMM3;
@@ -126,14 +125,14 @@ typedef
       /* Note.  Setting guest_FTOP to be ULong messes up the
          delicately-balanced PutI/GetI optimisation machinery.
          Therefore best to leave it as a UInt. */
-      UInt  guest_FTOP;
+      /* 456 */UInt  guest_FTOP;
       ULong guest_FPREG[8];
-      UChar guest_FPTAG[8];
-      ULong guest_FPROUND;
-      ULong guest_FC3210;
+      /* 528 */ UChar guest_FPTAG[8];
+      /* 536 */ ULong guest_FPROUND;
+      /* 544 */ ULong guest_FC3210;
 
       /* Emulation warnings */
-      UInt   guest_EMWARN;
+      /* 552 */ UInt  guest_EMWARN;
 
       /* Translation-invalidation area description.  Not used on amd64
          (there is no invalidate-icache insn), but needed so as to
@@ -153,8 +152,8 @@ typedef
          replace-style ones. */
       ULong guest_NRADDR;
 
-      /* Padding to make it have an 8-aligned size */
-      /* UInt   padding; */
+      /* Padding to make it have an 16-aligned size */
+      ULong padding;
    }
    VexGuestAMD64State;
 

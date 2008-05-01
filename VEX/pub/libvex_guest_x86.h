@@ -220,7 +220,7 @@ typedef
          replace-style ones. */
       UInt guest_NRADDR;
 
-      /* Padding to make it have an 8-aligned size */
+      /* Padding to make it have an 16-aligned size */
       UInt padding;
    }
    VexGuestX86State;

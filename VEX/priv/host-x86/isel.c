@@ -926,6 +926,17 @@ static HReg iselIntExpr_R_wrk ( ISelEnv* env, IRExpr* e )
       }
 
       /* Handle misc other ops. */
+
+      if (e->Iex.Binop.op == Iop_Max32U) {
+         HReg src1 = iselIntExpr_R(env, e->Iex.Binop.arg1);
+         HReg dst  = newVRegI(env);
+         HReg src2 = iselIntExpr_R(env, e->Iex.Binop.arg2);
+         addInstr(env, mk_iMOVsd_RR(src1,dst));
+         addInstr(env, X86Instr_Alu32R(Xalu_CMP, X86RMI_Reg(src2), dst));
+         addInstr(env, X86Instr_CMov32(Xcc_B, X86RM_Reg(src2), dst));
+         return dst;
+      }
+
       if (e->Iex.Binop.op == Iop_8HLto16) {
          HReg hi8  = newVRegI(env);
          HReg lo8  = newVRegI(env);

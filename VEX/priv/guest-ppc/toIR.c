@@ -1211,24 +1211,31 @@ static IRExpr* addr_align( IRExpr* addr, UChar align )
 /* Generate AbiHints which mark points at which the ELF or PowerOpen
    ABIs say that the stack red zone (viz, -N(r1) .. -1(r1), for some
    N) becomes undefined.  That is at function calls and returns.  ELF
-   ppc32 doesn't have this "feature" (how fortunate for it).
+   ppc32 doesn't have this "feature" (how fortunate for it).  nia is
+   the address of the next instruction to be executed.
 */
-static void make_redzone_AbiHint ( VexAbiInfo* vbi, HChar* who )
+static void make_redzone_AbiHint ( VexAbiInfo* vbi, 
+                                   IRTemp nia, HChar* who )
 {
    Int szB = vbi->guest_stack_redzone_size;
    if (0) vex_printf("AbiHint: %s\n", who);
    vassert(szB >= 0);
    if (szB > 0) {
-      if (mode64)
+      if (mode64) {
+         vassert(typeOfIRTemp(irsb->tyenv, nia) == Ity_I64);
          stmt( IRStmt_AbiHint( 
                   binop(Iop_Sub64, getIReg(1), mkU64(szB)), 
-                  szB
+                  szB,
+                  mkexpr(nia)
          ));
-      else
+      } else {
+         vassert(typeOfIRTemp(irsb->tyenv, nia) == Ity_I32);
          stmt( IRStmt_AbiHint( 
                   binop(Iop_Sub32, getIReg(1), mkU32(szB)), 
-                  szB
+                  szB,
+                  mkexpr(nia)
          ));
+      }
    }
 }
 
@@ -4308,9 +4315,12 @@ static Bool dis_branch ( UInt theInstr,
       if (flag_LK) {
          putGST( PPC_GST_LR, e_nia );
          if (vbi->guest_ppc_zap_RZ_at_bl
-             && vbi->guest_ppc_zap_RZ_at_bl( (ULong)tgt) )
-            make_redzone_AbiHint( vbi, 
+             && vbi->guest_ppc_zap_RZ_at_bl( (ULong)tgt) ) {
+            IRTemp t_tgt = newTemp(ty);
+            assign(t_tgt, mode64 ? mkU64(tgt) : mkU32(tgt) );
+            make_redzone_AbiHint( vbi, t_tgt,
                                   "branch-and-link (unconditional call)" );
+         }
       }
 
       if (resteerOkFn( callback_opaque, tgt )) {
@@ -4379,6 +4389,8 @@ static Bool dis_branch ( UInt theInstr,
          
          assign( cond_ok, branch_cond_ok( BO, BI ) );
 
+         /* FIXME: this is confusing.  lr_old holds the old value
+            of ctr, not lr :-) */
          assign( lr_old, addr_align( getGST( PPC_GST_CTR ), 4 ));
 
          if (flag_LK)
@@ -4388,7 +4400,12 @@ static Bool dis_branch ( UInt theInstr,
                   binop(Iop_CmpEQ32, mkexpr(cond_ok), mkU32(0)),
                   Ijk_Boring,
                   c_nia ));
-         
+
+         if (flag_LK && vbi->guest_ppc_zap_RZ_at_bl) {
+            make_redzone_AbiHint( vbi, lr_old,
+                                  "b-ctr-l (indirect call)" );
+	 }
+
          irsb->jumpkind = flag_LK ? Ijk_Call : Ijk_Boring;
          irsb->next     = mkexpr(lr_old);
          break;
@@ -4424,8 +4441,10 @@ static Bool dis_branch ( UInt theInstr,
                   Ijk_Boring,
                   c_nia ));
 
-	 if (vanilla_return && vbi->guest_ppc_zap_RZ_at_blr)
-            make_redzone_AbiHint( vbi, "branch-to-lr (unconditional return)" );
+         if (vanilla_return && vbi->guest_ppc_zap_RZ_at_blr) {
+            make_redzone_AbiHint( vbi, lr_old,
+                                  "branch-to-lr (unconditional return)" );
+         }
 
          /* blrl is pretty strange; it's like a return that sets the
             return address of its caller to the insn following this

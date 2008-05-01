@@ -1730,7 +1730,8 @@ static int linux_kernel_2_6_22(void)
     release[read] = 0;
     VG_(close)(fd);
     //VG_(printf)("kernel release = %s\n", release);
-    result = (VG_(strncmp)(release, "2.6.22", 6) == 0);
+    result = (VG_(strncmp)(release, "2.6.22", 6) == 0
+              && (release[6] < '0' || release[6] > '9'));
   }
   return result;
 }

@@ -31,7 +31,7 @@ static void* thread_func(void* p)
 
 int main(int argc, char** argv)
 {
-  int thread_count;
+  unsigned thread_count;
   int i;
 
   thread_count = argc > 1 ? atoi(argv[1]) : 50;

@@ -93,6 +93,16 @@ bytes: 0xF0 0x41 0xF 0xC0 0x87 0xB8)
 
 --- end 27 March 08 ---
 
+r1816 (x86 CondNS after SUBB)
+r1817 (amd64 CondNS after SUBB)
+
+!!ppc32-linux memcheck craps out on some Altivec code!
+(none/tests/ppc32/jm-insns -a -v)
+
+!!massif segfaults on ooo on amd64
+
+r7795 (handle r-x mapped .bss sections - merge to trunk)
+
 
 TRUNK   33BRANCH  PRI    BUG#  WHAT
 

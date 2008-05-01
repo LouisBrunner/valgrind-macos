@@ -145,12 +145,14 @@ EXTRA_DIST =                                        \
 	trylock.c trylock.stderr.exp
 
 AM_CFLAGS   = $(WERROR) -Wall -Wextra -Wshadow -Wno-unused-parameter \
-              -g $(AM_FLAG_M3264_PRI)
-AM_CPPFLAGS = -I$(top_srcdir) -I$(top_srcdir)/include -I$(top_builddir)/include
+              -g $(AM_FLAG_M3264_PRI) -DVGA_$(VG_ARCH)=1 -DVGO_$(VG_OS)=1 \
+              -DVGP_$(VG_ARCH)_$(VG_OS)=1
+AM_CPPFLAGS = -I$(top_srcdir) -I$(top_srcdir)/include \
+              -I$(top_builddir)/include -I$(top_srcdir)/VEX/pub
 AM_CXXFLAGS = $(AM_CFLAGS)
 
 check_PROGRAMS_COMMON = \
-  drd_bitmap_test          \
+  drd_bitmap_test     \
   fp_race             \
   hg01_all_ok         \
   hg02_deadlock       \
@@ -208,9 +210,6 @@ endif
 
 
 drd_bitmap_test_SOURCES     = drd_bitmap_test.c
-drd_bitmap_test_CFLAGS      = \
-  $(AM_FLAG_M3264_PRI) -DVGA_$(VG_ARCH)=1 -DVGO_$(VG_OS)=1 \
-  -DVGP_$(VG_ARCH)_$(VG_OS)=1
 drd_bitmap_test_LDADD       =
 
 fp_race_SOURCES             = fp_race.c

@@ -1009,14 +1009,14 @@ static void bm2_merge(struct bitmap2* const bm2l,
 static
 struct { Addr address; SizeT size; BmAccessTypeT access_type; }
   s_args[] = {
-    {    0 + ADDR0_COUNT, 1, eLoad  },
-    {  666 + ADDR0_COUNT, 4, eLoad  },
-    {  667 + ADDR0_COUNT, 2, eStore },
-    { -2 + 2*ADDR0_COUNT, 1, eStore },
-    {       0x0001ffffUL, 1, eLoad  },
-    {       0x0002ffffUL, 1, eLoad  },
-    {       0x00ffffffUL, 1, eLoad  },
-    {       0xffffffffUL, 1, eStore },
+    {            0, 1, eLoad  },
+    {          666, 4, eLoad  },
+    {          667, 2, eStore },
+    {         1024, 1, eStore },
+    {     0xffffUL, 1, eStore },
+    { 0x0001ffffUL, 1, eLoad  },
+    { 0x00ffffffUL, 1, eLoad  },
+    { 0xffffffffUL, 1, eStore },
   };
 
 void bm_test(void)

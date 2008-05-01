@@ -150,7 +150,7 @@ static gomp_barrier_t bar;
    and this is interesting background:
      www.hpl.hp.com/techreports/2004/HPL-2004-209.pdf
 */
-volatile static long unprotected = 0;
+static volatile long unprotected = 0;
 
 void* child ( void* argV )
 {

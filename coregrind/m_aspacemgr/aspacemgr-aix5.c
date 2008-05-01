@@ -1263,11 +1263,11 @@ void VG_(am_show_nsegments) ( Int logLevel, HChar* who )
 /* Get the filename corresponding to this segment, if known and if it
    has one.  The returned name's storage cannot be assumed to be
    persistent, so the caller should immediately copy the name
-   elsewhere. */
-HChar* VG_(am_get_filename)( NSegment* seg )
+   elsewhere.  On AIX5, we don't know what this is (in general)
+   so just return NULL. */
+HChar* VG_(am_get_filename)( NSegment const* seg )
 {
-   ML_(am_barf)("unimplemented: VG_(am_get_filename)");
-   return NULL; /* placate gcc -Wall */
+   return NULL;
 }
 
 /* Collect up the start addresses of all non-free, non-resvn segments.

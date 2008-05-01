@@ -132,14 +132,14 @@ MC_Chunk* MC_(get_freed_list_head)(void)
 
 /* Allocate its shadow chunk, put it on the appropriate list. */
 static
-MC_Chunk* create_MC_Chunk ( ThreadId tid, Addr p, SizeT szB,
+MC_Chunk* create_MC_Chunk ( ExeContext* ec, Addr p, SizeT szB,
                             MC_AllocKind kind)
 {
    MC_Chunk* mc  = VG_(malloc)(sizeof(MC_Chunk));
    mc->data      = p;
    mc->szB       = szB;
    mc->allockind = kind;
-   mc->where     = VG_(record_ExeContext)(tid, 0/*first_ip_delta*/);
+   mc->where     = ec;
 
    /* Paranoia ... ensure the MC_Chunk is off-limits to the client, so
       the mc->data field isn't visible to the leak checker.  If memory
@@ -186,6 +186,8 @@ void* MC_(new_block) ( ThreadId tid,
                        Addr p, SizeT szB, SizeT alignB, UInt rzB,
                        Bool is_zeroed, MC_AllocKind kind, VgHashTable table)
 {
+   ExeContext* ec;
+
    cmalloc_n_mallocs ++;
 
    // Allocate and zero if necessary
@@ -209,12 +211,18 @@ void* MC_(new_block) ( ThreadId tid,
    // Only update this stat if allocation succeeded.
    cmalloc_bs_mallocd += (ULong)szB;
 
-   VG_(HT_add_node)( table, create_MC_Chunk(tid, p, szB, kind) );
+   ec = VG_(record_ExeContext)(tid, 0/*first_ip_delta*/);
+   tl_assert(ec);
+
+   VG_(HT_add_node)( table, create_MC_Chunk(ec, p, szB, kind) );
 
    if (is_zeroed)
       MC_(make_mem_defined)( p, szB );
-   else
-      MC_(make_mem_undefined)( p, szB );
+   else {
+      UInt ecu = VG_(get_ECU_from_ExeContext)(ec);
+      tl_assert(VG_(is_plausible_ECU)(ecu));
+      MC_(make_mem_undefined_w_otag)( p, szB, ecu | MC_OKIND_HEAP );
+   }
 
    return (void*)p;
 }
@@ -390,11 +398,21 @@ void* MC_(realloc) ( ThreadId tid, void* p_old, SizeT new_szB )
       a_new = (Addr)VG_(cli_malloc)(VG_(clo_alignment), new_szB);
 
       if (a_new) {
+         UInt        ecu;
+         ExeContext* ec;
+
+         ec = VG_(record_ExeContext)(tid, 0/*first_ip_delta*/);
+         tl_assert(ec);
+         ecu = VG_(get_ECU_from_ExeContext)(ec);
+         tl_assert(VG_(is_plausible_ECU)(ecu));
+
          /* First half kept and copied, second half new, red zones as normal */
-         MC_(make_mem_noaccess)( a_new-MC_MALLOC_REDZONE_SZB, MC_MALLOC_REDZONE_SZB );
-         MC_(copy_address_range_state)( (Addr)p_old, a_new, mc->szB );
-         MC_(make_mem_undefined)( a_new+mc->szB, new_szB-mc->szB );
-         MC_(make_mem_noaccess) ( a_new+new_szB, MC_MALLOC_REDZONE_SZB );
+         MC_(make_mem_noaccess)( a_new-MC_MALLOC_REDZONE_SZB, 
+                                 MC_MALLOC_REDZONE_SZB );
+         MC_(copy_address_range_state) ( (Addr)p_old, a_new, mc->szB );
+         MC_(make_mem_undefined_w_otag)( a_new+mc->szB, new_szB-mc->szB,
+                                                        ecu | MC_OKIND_HEAP );
+         MC_(make_mem_noaccess)        ( a_new+new_szB, MC_MALLOC_REDZONE_SZB );
 
          /* Possibly fill new area with specified junk */
          if (MC_(clo_malloc_fill) != -1) {
@@ -420,7 +438,7 @@ void* MC_(realloc) ( ThreadId tid, void* p_old, SizeT new_szB )
          die_and_free_mem ( tid, mc, MC_MALLOC_REDZONE_SZB );
 
          // Allocate a new chunk.
-         mc = create_MC_Chunk( tid, a_new, new_szB, MC_AllocMalloc );
+         mc = create_MC_Chunk( ec, a_new, new_szB, MC_AllocMalloc );
       }
 
       p_new = (void*)a_new;

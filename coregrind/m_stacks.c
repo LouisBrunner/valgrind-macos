@@ -272,8 +272,8 @@ void VG_(stack_limits)(Addr SP, Addr *start, Addr *end )
    tracked by the tool, and one of the specialised cases
    (eg. new_mem_stack_4) isn't used in preference.  
 */
-VG_REGPARM(2)
-void VG_(unknown_SP_update)( Addr old_SP, Addr new_SP )
+VG_REGPARM(3)
+void VG_(unknown_SP_update)( Addr old_SP, Addr new_SP, UInt ecu )
 {
    static Int moans = 3;
    Word delta  = (Word)new_SP - (Word)old_SP;
@@ -315,7 +315,8 @@ void VG_(unknown_SP_update)( Addr old_SP, Addr new_SP )
                 "will not be shown.");
       }
    } else if (delta < 0) {
-      VG_TRACK( new_mem_stack, new_SP, -delta );
+      VG_TRACK( new_mem_stack_w_ECU, new_SP, -delta, ecu );
+      VG_TRACK( new_mem_stack,       new_SP, -delta );
 
    } else if (delta > 0) {
       VG_TRACK( die_mem_stack, old_SP,  delta );

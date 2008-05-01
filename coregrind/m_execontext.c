@@ -75,10 +75,16 @@ static SizeT ec_primes[N_EC_PRIMES] = {
 
 struct _ExeContext {
    struct _ExeContext* chain;
-   UInt   n_ips;
+   /* A 32-bit unsigned integer that uniquely identifies this
+      ExeContext.  Memcheck uses these for origin tracking.  Values
+      must be nonzero (else Memcheck's origin tracking is hosed), must
+      be a multiple of four, and must be unique.  Hence they start at
+      4. */
+   UInt ecu;
    /* Variable-length array.  The size is 'n_ips'; at
       least 1, at most VG_DEEPEST_BACKTRACE.  [0] is the current IP,
       [1] is its caller, [2] is the caller of [1], etc. */
+   UInt n_ips;
    Addr ips[0];
 };
 
@@ -87,6 +93,9 @@ struct _ExeContext {
 static ExeContext** ec_htab; /* array [ec_htab_size] of ExeContext* */
 static SizeT        ec_htab_size;     /* one of the values in ec_primes */
 static SizeT        ec_htab_size_idx; /* 0 .. N_EC_PRIMES-1 */
+
+/* ECU serial number */
+static UInt ec_next_ecu = 4; /* We must never issue zero */
 
 
 /* Stats only: the number of times the system was searched to locate a
@@ -115,7 +124,7 @@ static void init_ExeContext_storage ( void )
 {
    Int i;
    static Bool init_done = False;
-   if (init_done)
+   if (LIKELY(init_done))
       return;
    ec_searchreqs = 0;
    ec_searchcmps = 0;
@@ -280,29 +289,27 @@ static void resize_ec_htab ( void )
    ec_htab_size_idx++;
 }
 
+/* Do the first part of getting a stack trace: actually unwind the
+   stack, and hand the results off to the duplicate-trace-finder
+   (_wrk2). */
+static ExeContext* record_ExeContext_wrk2 ( Addr* ips, UInt n_ips ); /*fwds*/
 static ExeContext* record_ExeContext_wrk ( ThreadId tid, Word first_ip_delta,
                                            Bool first_ip_only )
 {
-   Int         i;
-   Addr        ips[VG_DEEPEST_BACKTRACE];
-   Bool        same;
-   UWord       hash;
-   ExeContext* new_ec;
-   ExeContext* list;
-   UInt        n_ips;
-   ExeContext  *prev2, *prev;
+   Addr ips[VG_DEEPEST_BACKTRACE];
+   UInt n_ips;
 
-   static UInt ctr = 0;
+   init_ExeContext_storage();
 
    vg_assert(sizeof(void*) == sizeof(UWord));
    vg_assert(sizeof(void*) == sizeof(Addr));
 
-   init_ExeContext_storage();
+   vg_assert(VG_(is_valid_tid)(tid));
+
    vg_assert(VG_(clo_backtrace_size) >= 1 &&
              VG_(clo_backtrace_size) <= VG_DEEPEST_BACKTRACE);
 
    if (first_ip_only) {
-      vg_assert(VG_(is_valid_tid)(tid));
       n_ips = 1;
       ips[0] = VG_(get_IP)(tid);
    } else {
@@ -311,6 +318,24 @@ static ExeContext* record_ExeContext_wrk ( ThreadId tid, Word first_ip_delta,
                                    NULL/*array to dump FP values in*/,
                                    first_ip_delta );
    }
+
+   return record_ExeContext_wrk2 ( &ips[0], n_ips );
+}
+
+/* Do the second part of getting a stack trace: ips[0 .. n_ips-1]
+   holds a proposed trace.  Find or allocate a suitable ExeContext.
+   Note that callers must have done init_ExeContext_storage() before
+   getting to this point. */
+static ExeContext* record_ExeContext_wrk2 ( Addr* ips, UInt n_ips )
+{
+   Int         i;
+   Bool        same;
+   UWord       hash;
+   ExeContext* new_ec;
+   ExeContext* list;
+   ExeContext  *prev2, *prev;
+
+   static UInt ctr = 0;
 
    tl_assert(n_ips >= 1 && n_ips <= VG_(clo_backtrace_size));
 
@@ -377,6 +402,15 @@ static ExeContext* record_ExeContext_wrk ( ThreadId tid, Word first_ip_delta,
    for (i = 0; i < n_ips; i++)
       new_ec->ips[i] = ips[i];
 
+   vg_assert(VG_(is_plausible_ECU)(ec_next_ecu));
+   new_ec->ecu = ec_next_ecu;
+   ec_next_ecu += 4;
+   if (ec_next_ecu == 0) {
+      /* Urr.  Now we're hosed; we emitted 2^30 ExeContexts already
+         and have run out of numbers.  Not sure what to do. */
+      VG_(core_panic)("m_execontext: more than 2^30 ExeContexts created");
+   }
+
    new_ec->n_ips = n_ips;
    new_ec->chain = ec_htab[hash];
    ec_htab[hash] = new_ec;
@@ -401,11 +435,39 @@ ExeContext* VG_(record_depth_1_ExeContext)( ThreadId tid ) {
                                       True/*first_ip_only*/ );
 }
 
+ExeContext* VG_(make_depth_1_ExeContext_from_Addr)( Addr a ) {
+   init_ExeContext_storage();
+   return record_ExeContext_wrk2( &a, 1 );
+}
 
-StackTrace VG_(extract_StackTrace) ( ExeContext* e )
-{                                  
+StackTrace VG_(get_ExeContext_StackTrace) ( ExeContext* e ) {
    return e->ips;
 }  
+
+UInt VG_(get_ECU_from_ExeContext)( ExeContext* e ) {
+   vg_assert(VG_(is_plausible_ECU)(e->ecu));
+   return e->ecu;
+}
+
+Int VG_(get_ExeContext_n_ips)( ExeContext* e ) {
+   vg_assert(e->n_ips >= 1);
+   return e->n_ips;
+}
+
+ExeContext* VG_(get_ExeContext_from_ECU)( UInt ecu )
+{
+   UWord i;
+   ExeContext* ec;
+   vg_assert(VG_(is_plausible_ECU)(ecu));
+   vg_assert(ec_htab_size > 0);
+   for (i = 0; i < ec_htab_size; i++) {
+      for (ec = ec_htab[i]; ec; ec = ec->chain) {
+         if (ec->ecu == ecu)
+            return ec;
+      }
+   }
+   return NULL;
+}
 
 /*--------------------------------------------------------------------*/
 /*--- end                                           m_execontext.c ---*/

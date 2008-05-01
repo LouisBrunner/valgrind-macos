@@ -21,7 +21,7 @@ int main(int argc, char** argv)
 {
   /* Let the program abort after 3 seconds instead of leaving it deadlocked. */
   alarm(3);
-
+#if !defined(_AIX)
   {
     pthread_mutex_t m = PTHREAD_RECURSIVE_MUTEX_INITIALIZER_NP;
 
@@ -51,8 +51,8 @@ int main(int argc, char** argv)
     pthread_mutex_init(&m, &attr);
     pthread_mutexattr_destroy(&attr);
     lock_twice(&m);
-    pthread_mutex_destroy(&m);
-  } 
+    pthread_mutex_destroy(&m); }
+#endif /* !defined(_AIX) */
   {
     pthread_mutex_t m = PTHREAD_MUTEX_INITIALIZER;
 

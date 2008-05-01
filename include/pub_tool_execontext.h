@@ -81,6 +81,30 @@ extern Bool VG_(eq_ExeContext) ( VgRes res, ExeContext* e1, ExeContext* e2 );
 // Print an ExeContext.
 extern void VG_(pp_ExeContext) ( ExeContext* ec );
 
+// Get the 32-bit unique reference number for this ExeContext
+// (the "ExeContext Unique").  Guaranteed to be nonzero and to be a
+// multiple of four (iow, the lowest two bits are guaranteed to
+// be zero, so that callers can store other information there.
+extern UInt VG_(get_ECU_from_ExeContext)( ExeContext* e );
+
+// How many entries (frames) in this ExeContext?
+extern Int VG_(get_ExeContext_n_ips)( ExeContext* e );
+
+// Find the ExeContext that has the given ECU, if any.
+// NOTE: very slow.  Do not call often.
+extern ExeContext* VG_(get_ExeContext_from_ECU)( UInt uniq );
+
+// Make an ExeContext containing just 'a', and nothing else
+ExeContext* VG_(make_depth_1_ExeContext_from_Addr)( Addr a );
+
+// Is this a plausible-looking ECU ?  Catches some obvious stupid
+// cases, but does not guarantee that the ECU is really valid, that
+// is, has an associated ExeContext.
+static inline Bool VG_(is_plausible_ECU)( UInt ecu ) {
+   return (ecu > 0) && ((ecu & 3) == 0);
+}
+
+
 #endif   // __PUB_TOOL_EXECONTEXT_H
 
 /*--------------------------------------------------------------------*/

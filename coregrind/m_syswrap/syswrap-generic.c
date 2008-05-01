@@ -2629,7 +2629,7 @@ PRE(sys_brk)
       if (brk_new > brk_limit) {
          /* successfully grew the data segment */
          VG_TRACK( new_mem_brk, brk_limit,
-                                ARG1-brk_limit );
+                   ARG1-brk_limit, tid );
       }
    } else {
       /* brk() failed */

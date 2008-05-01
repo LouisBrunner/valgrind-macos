@@ -99,7 +99,7 @@ void* drd_new_block(ThreadId tid,
     return NULL;
   }
   if (is_zeroed) VG_(memset)((void*)p, 0, size);
-  s_start_using_mem_callback(p, p + size);
+  s_start_using_mem_callback(p, p + size, 0/*ec_uniq*/);
 
   // Only update this stat if allocation succeeded.
   cmalloc_bs_mallocd += size;
@@ -210,7 +210,7 @@ void* drd_realloc(ThreadId tid, void* p_old, SizeT new_size)
 
       // Allocate a new chunk.
       mc = create_DRD_Chunk(tid, a_new, new_size);
-      s_start_using_mem_callback(a_new, a_new + new_size);
+      s_start_using_mem_callback(a_new, a_new + new_size, 0/*ec_uniq*/);
     }
     else
     {

@@ -1164,7 +1164,7 @@ typedef
    }
    TempVar;
 
-#define N_D3_VAR_STACK 24
+#define N_D3_VAR_STACK 48
 
 typedef
    struct {

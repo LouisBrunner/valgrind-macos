@@ -1056,6 +1056,8 @@ Bool VG_(get_objname) ( Addr a, Char* buf, Int nbuf )
    const NSegment *seg;
    HChar* filename;
    vg_assert(nbuf > 0);
+   /* Look in the debugInfo_list to find the name.  In most cases we
+      expect this to produce a result. */
    for (di = debugInfo_list; di != NULL; di = di->next) {
       if (di->text_present
           && di->text_avma <= a 
@@ -1076,9 +1078,13 @@ Bool VG_(get_objname) ( Addr a, Char* buf, Int nbuf )
          return True;
       }
    }
-   if ((seg = VG_(am_find_nsegment(a))) != NULL &&
-       (filename = VG_(am_get_filename)(seg)) != NULL)
-   {
+   /* Last-ditch fallback position: if we don't find the address in
+      the debugInfo_list, ask the address space manager whether it
+      knows the name of the file associated with this mapping.  This
+      allows us to print the names of exe/dll files in the stack trace
+      when running programs under wine. */
+   if ( (seg = VG_(am_find_nsegment(a))) != NULL 
+        && (filename = VG_(am_get_filename)(seg)) != NULL ) {
       VG_(strncpy_safely)(buf, filename, nbuf);
       return True;
    }

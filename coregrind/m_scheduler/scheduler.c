@@ -225,7 +225,9 @@ void VG_(acquire_BigLock)(ThreadId tid, HChar* who)
    vg_assert(VG_(running_tid) == VG_INVALID_THREADID);
    VG_(running_tid) = tid;
 
-   VG_(unknown_SP_update)(VG_(get_SP(tid)), VG_(get_SP(tid)));
+   { Addr gsp = VG_(get_SP)(tid);
+     VG_(unknown_SP_update)(gsp, gsp, 0/*unknown origin*/);
+   }
 
    if (VG_(clo_trace_sched)) {
       HChar buf[150];
@@ -529,40 +531,64 @@ void VG_(scheduler_init_phase2) ( ThreadId tid_main,
 
 /* Do various guest state alignment checks prior to running a thread.
    Specifically, check that what we have matches Vex's guest state
-   layout requirements. */
-static void do_pre_run_checks ( volatile ThreadState* tst )
+   layout requirements.  See libvex.h for details, but in short the
+   requirements are: There must be no holes in between the primary
+   guest state, its two copies, and the spill area.  In short, all 4
+   areas must have a 16-aligned size and be 16-aligned, and placed
+   back-to-back. */
+static void do_pre_run_checks ( ThreadState* tst )
 {
-   Addr a_vex    = (Addr) & tst->arch.vex;
-   Addr a_vexsh  = (Addr) & tst->arch.vex_shadow;
-   Addr a_spill  = (Addr) & tst->arch.vex_spill;
-   UInt sz_vex   = (UInt) sizeof tst->arch.vex;
-   UInt sz_vexsh = (UInt) sizeof tst->arch.vex_shadow;
-   UInt sz_spill = (UInt) sizeof tst->arch.vex_spill;
+   Addr a_vex     = (Addr) & tst->arch.vex;
+   Addr a_vexsh1  = (Addr) & tst->arch.vex_shadow1;
+   Addr a_vexsh2  = (Addr) & tst->arch.vex_shadow2;
+   Addr a_spill   = (Addr) & tst->arch.vex_spill;
+   UInt sz_vex    = (UInt) sizeof tst->arch.vex;
+   UInt sz_vexsh1 = (UInt) sizeof tst->arch.vex_shadow1;
+   UInt sz_vexsh2 = (UInt) sizeof tst->arch.vex_shadow2;
+   UInt sz_spill  = (UInt) sizeof tst->arch.vex_spill;
 
    if (0)
-   VG_(printf)("%p %d %p %d %p %d\n",
-               (void*)a_vex, sz_vex, (void*)a_vexsh, sz_vexsh,
+   VG_(printf)("gst %p %d, sh1 %p %d, "
+               "sh2 %p %d, spill %p %d\n",
+               (void*)a_vex, sz_vex,
+               (void*)a_vexsh1, sz_vexsh1,
+               (void*)a_vexsh2, sz_vexsh2,
                (void*)a_spill, sz_spill );
 
-   vg_assert(VG_IS_8_ALIGNED(sz_vex));
-   vg_assert(VG_IS_8_ALIGNED(sz_vexsh));
+   vg_assert(VG_IS_16_ALIGNED(sz_vex));
+   vg_assert(VG_IS_16_ALIGNED(sz_vexsh1));
+   vg_assert(VG_IS_16_ALIGNED(sz_vexsh2));
    vg_assert(VG_IS_16_ALIGNED(sz_spill));
 
-   vg_assert(VG_IS_4_ALIGNED(a_vex));
-   vg_assert(VG_IS_4_ALIGNED(a_vexsh));
-   vg_assert(VG_IS_4_ALIGNED(a_spill));
+   vg_assert(VG_IS_16_ALIGNED(a_vex));
+   vg_assert(VG_IS_16_ALIGNED(a_vexsh1));
+   vg_assert(VG_IS_16_ALIGNED(a_vexsh2));
+   vg_assert(VG_IS_16_ALIGNED(a_spill));
 
-   vg_assert(sz_vex == sz_vexsh);
-   vg_assert(a_vex + sz_vex == a_vexsh);
-
+   /* Check that the guest state and its two shadows have the same
+      size, and that there are no holes in between.  The latter is
+      important because Memcheck assumes that it can reliably access
+      the shadows by indexing off a pointer to the start of the
+      primary guest state area. */
+   vg_assert(sz_vex == sz_vexsh1);
+   vg_assert(sz_vex == sz_vexsh2);
+   vg_assert(a_vex + 1 * sz_vex == a_vexsh1);
+   vg_assert(a_vex + 2 * sz_vex == a_vexsh2);
+   /* Also check there's no hole between the second shadow area and
+      the spill area. */
    vg_assert(sz_spill == LibVEX_N_SPILL_BYTES);
-   vg_assert(a_vex + 2 * sz_vex == a_spill);
+   vg_assert(a_vex + 3 * sz_vex == a_spill);
 
 #  if defined(VGA_ppc32) || defined(VGA_ppc64)
    /* ppc guest_state vector regs must be 16 byte aligned for
-      loads/stores */
+      loads/stores.  This is important! */
    vg_assert(VG_IS_16_ALIGNED(& tst->arch.vex.guest_VR0));
-   vg_assert(VG_IS_16_ALIGNED(& tst->arch.vex_shadow.guest_VR0));
+   vg_assert(VG_IS_16_ALIGNED(& tst->arch.vex_shadow1.guest_VR0));
+   vg_assert(VG_IS_16_ALIGNED(& tst->arch.vex_shadow2.guest_VR0));
+   /* be extra paranoid .. */
+   vg_assert(VG_IS_16_ALIGNED(& tst->arch.vex.guest_VR1));
+   vg_assert(VG_IS_16_ALIGNED(& tst->arch.vex_shadow1.guest_VR1));
+   vg_assert(VG_IS_16_ALIGNED(& tst->arch.vex_shadow2.guest_VR1));
 #  endif   
 }
 
@@ -583,7 +609,7 @@ static UInt run_thread_for_a_while ( ThreadId tid )
    vg_assert(!VG_(is_exiting)(tid));
 
    tst = VG_(get_ThreadState)(tid);
-   do_pre_run_checks(tst);
+   do_pre_run_checks( (ThreadState*)tst );
    /* end Paranoia */
 
    trc = 0;
@@ -686,7 +712,7 @@ static UInt run_noredir_translation ( Addr hcode, ThreadId tid )
    vg_assert(!VG_(is_exiting)(tid));
 
    tst = VG_(get_ThreadState)(tid);
-   do_pre_run_checks(tst);
+   do_pre_run_checks( (ThreadState*)tst );
    /* end Paranoia */
 
 #  if defined(VGA_ppc32) || defined(VGA_ppc64)

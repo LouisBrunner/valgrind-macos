@@ -98,8 +98,21 @@ EXTRA_DIST = $(noinst_SCRIPTS) \
 	new_override.stderr.exp new_override.stdout.exp new_override.vgtest \
 	noisy_child.vgtest noisy_child.stderr.exp noisy_child.stdout.exp \
 	null_socket.stderr.exp null_socket.vgtest \
-	overlap.stderr.exp overlap.stdout.exp overlap.vgtest \
+	origin1-yes.vgtest origin1-yes.stdout.exp \
+	origin1-yes.stderr.exp \
+	origin2-not-quite.vgtest origin2-not-quite.stdout.exp \
+	origin2-not-quite.stderr.exp \
+	origin3-no.vgtest origin3-no.stdout.exp \
+	origin3-no.stderr.exp \
+	origin4-many.vgtest origin4-many.stdout.exp \
+	origin4-many.stderr.exp-glibc25-x86 \
+	origin4-many.stderr.exp-glibc25-amd64 \
+	origin5-bz2.vgtest origin5-bz2.stdout.exp \
+	origin5-bz2.stderr.exp-glibc25-x86 \
+	origin5-bz2.stderr.exp-glibc25-amd64 \
+	origin5-bz2.stderr.exp-glibc27-ppc64 \
 	oset_test.stderr.exp oset_test.stdout.exp oset_test.vgtest \
+	overlap.stderr.exp overlap.stdout.exp overlap.vgtest \
 	partiallydefinedeq.vgtest partiallydefinedeq.stderr.exp \
 	partiallydefinedeq.stderr.exp2 \
 	partiallydefinedeq.stdout.exp \
@@ -185,7 +198,9 @@ check_PROGRAMS = \
 	memalign_test memalign2 memcmptest mempool mmaptest \
 	nanoleak nanoleak2 new_nothrow \
 	noisy_child \
-	null_socket oset_test overlap \
+	null_socket oset_test \
+	origin1-yes origin2-not-quite origin3-no origin4-many origin5-bz2 \
+	overlap \
 	partiallydefinedeq \
 	partial_load pdb-realloc pdb-realloc2 \
 	pipe pointer-trace \
@@ -232,12 +247,16 @@ supp1_SOURCES		= supp.c
 supp2_SOURCES		= supp.c
 # To make it a bit more realistic, have some optimisation enabled
 # for the varinfo tests.  We still expect sane results.
-varinfo1_CFLAGS		= -O -g
-varinfo2_CFLAGS		= -O -g
-varinfo3_CFLAGS		= -O -g
-varinfo4_CFLAGS		= -O -g
-varinfo5_CFLAGS		= -O -g
-varinfo6_CFLAGS		= -O -g
+varinfo1_CFLAGS		= $(AM_FLAG_M3264_PRI) $(AM_CFLAGS) -O -g
+varinfo2_CFLAGS		= $(AM_FLAG_M3264_PRI) $(AM_CFLAGS) -O -g
+varinfo3_CFLAGS		= $(AM_FLAG_M3264_PRI) $(AM_CFLAGS) -O -g
+varinfo4_CFLAGS		= $(AM_FLAG_M3264_PRI) $(AM_CFLAGS) -O -g
+varinfo5_CFLAGS		= $(AM_FLAG_M3264_PRI) $(AM_CFLAGS) -O -g
+varinfo6_CFLAGS		= $(AM_FLAG_M3264_PRI) $(AM_CFLAGS) -O -g
+# This requires optimisation in order to get just one resulting error
+origin4_many_CFLAGS	= $(AM_FLAG_M3264_PRI) $(AM_CFLAGS) -O -g
+# Apply -O so as to run in reasonable time
+origin5_bz2_CFLAGS	= $(AM_FLAG_M3264_PRI) $(AM_CFLAGS) -O -g
 
 # C++ tests
 mismatches_SOURCES	= mismatches.cpp

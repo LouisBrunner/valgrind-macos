@@ -83,10 +83,14 @@ extern void VG_(set_IP) ( ThreadId tid, Addr ip );
 
 // For get/set, 'area' is where the asked-for shadow state will be copied
 // into/from.
-extern void VG_(get_shadow_regs_area) ( ThreadId tid, OffT guest_state_offset,
-                                        SizeT size, UChar* area );
-extern void VG_(set_shadow_regs_area) ( ThreadId tid, OffT guest_state_offset,
-                                        SizeT size, const UChar* area );
+void
+VG_(get_shadow_regs_area) ( ThreadId tid, 
+                            /*DST*/UChar* dst,
+                            /*SRC*/Int shadowNo, OffT offset, SizeT size );
+void
+VG_(set_shadow_regs_area) ( ThreadId tid, 
+                            /*DST*/Int shadowNo, OffT offset, SizeT size,
+                            /*SRC*/const UChar* src );
 
 // Apply a function 'f' to all the general purpose registers in all the
 // current threads.

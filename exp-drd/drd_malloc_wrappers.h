@@ -30,7 +30,7 @@
 #include "pub_tool_execontext.h" // ExeContext
 
 
-typedef void (*StartUsingMem)(const Addr a1, const Addr a2);
+typedef void (*StartUsingMem)(const Addr a1, const Addr a2, UInt ec_uniq);
 typedef void (*StopUsingMem)(const Addr a1, const Addr a2);
 
 

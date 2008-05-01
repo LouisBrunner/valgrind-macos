@@ -94,7 +94,8 @@
 struct vg_sig_private {
    UInt magicPI;
    UInt sigNo_private;
-   VexGuestPPC32State shadow;
+   VexGuestPPC32State vex_shadow1;
+   VexGuestPPC32State vex_shadow2;
 };
 
 /* Structure put on stack for signal handlers with SA_SIGINFO clear. */
@@ -504,8 +505,8 @@ void stack_mcontext ( struct vki_mcontext *mc,
 */
 static Bool extend ( ThreadState *tst, Addr addr, SizeT size )
 {
-   ThreadId tid = tst->tid;
-   NSegment const *stackseg = NULL;
+   ThreadId        tid = tst->tid;
+   NSegment const* stackseg = NULL;
 
    if (VG_(extend_stack)(addr, tst->client_stack_szB)) {
       stackseg = VG_(am_find_nsegment)(addr);
@@ -536,7 +537,7 @@ static Bool extend ( ThreadState *tst, Addr addr, SizeT size )
    /* For tracking memory events, indicate the entire frame has been
       allocated. */
    VG_TRACK( new_mem_stack_signal, addr - VG_STACK_REDZONE_SZB,
-             size + VG_STACK_REDZONE_SZB );
+             size + VG_STACK_REDZONE_SZB, tid );
 
    return True;
 }
@@ -761,7 +762,8 @@ void VG_(sigframe_create)( ThreadId tid,
 
    priv->magicPI       = 0x31415927;
    priv->sigNo_private = sigNo;
-   priv->shadow        = tst->arch.vex_shadow;
+   priv->vex_shadow1   = tst->arch.vex_shadow1;
+   priv->vex_shadow2   = tst->arch.vex_shadow2;
 
    SET_SIGNAL_GPR(tid, 1, sp);
    SET_SIGNAL_GPR(tid, 3, sigNo);
@@ -931,7 +933,8 @@ void VG_(sigframe_destroy)( ThreadId tid, Bool isRT )
    tst->arch.vex.guest_CTR = mc->mc_gregs[VKI_PT_CTR];
    LibVEX_GuestPPC32_put_XER( mc->mc_gregs[VKI_PT_XER], &tst->arch.vex );
 
-   tst->arch.vex_shadow = priv->shadow;
+   tst->arch.vex_shadow1 = priv->vex_shadow1;
+   tst->arch.vex_shadow2 = priv->vex_shadow2;
 
    VG_TRACK(die_mem_stack_signal, sp, frame_size);
 

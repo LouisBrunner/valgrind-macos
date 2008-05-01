@@ -1393,6 +1393,27 @@ Bool ML_(read_elf_debug_info) ( struct _DebugInfo* di )
                          di->bss_avma + di->bss_size - 1);
             TRACE_SYMTAB("acquiring .bss bias = %p\n", di->bss_bias);
          } else
+
+         /* Now one from the wtf?! department ... */
+         if (inrx && (!inrw) && size >= 0 && !di->bss_present) {
+            /* File contains a .bss, but it got mapped as rx only.
+               This is very strange.  For now, just pretend we didn't
+               see it :-) */
+            di->bss_present = False;
+            di->bss_svma = 0;
+            di->bss_avma = 0;
+            di->bss_size = 0;
+            di->bss_bias = 0;
+            bss_align = 0;
+            if (!VG_(clo_xml)) {
+               VG_(message)(Vg_UserMsg, "Warning: the following file's .bss is "
+                                       "mapped r-x only - ignoring .bss syms");
+               VG_(message)(Vg_UserMsg,   " %s", di->filename 
+                                                    ? di->filename
+                                                    : (UChar*)"(null?!)" );
+            }
+         } else
+
          if ((!inrw) && (!inrx) && size > 0 && !di->bss_present) {
             /* File contains a .bss, but it didn't get mapped.  Ignore. */
             di->bss_present = False;

@@ -93,14 +93,21 @@ typedef
    struct {
       /* --- BEGIN vex-mandated guest state --- */
 
-      /* Saved machine context. */
-      VexGuestArchState vex;
+      /* Note that for code generation reasons, we require that the
+         guest state area, its two shadows, and the spill area, are
+         16-aligned and have 16-aligned sizes, and there are no holes
+         in between.  This is checked by do_pre_run_checks() in
+         scheduler.c. */
 
-      /* Saved shadow context. */
-      VexGuestArchState vex_shadow;
+      /* Saved machine context. */
+      VexGuestArchState vex __attribute__((aligned(16)));
+
+      /* Saved shadow context (2 copies). */
+      VexGuestArchState vex_shadow1 __attribute__((aligned(16)));
+      VexGuestArchState vex_shadow2 __attribute__((aligned(16)));
 
       /* Spill area. */
-      UChar vex_spill[LibVEX_N_SPILL_BYTES];
+      UChar vex_spill[LibVEX_N_SPILL_BYTES] __attribute__((aligned(16)));
 
       /* --- END vex-mandated guest state --- */
    } 

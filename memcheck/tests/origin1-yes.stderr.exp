@@ -1,0 +1,65 @@
+
+Undef 1 of 8 (stack, 32 bit)
+Conditional jump or move depends on uninitialised value(s)
+   at 0x........: main (origin1-yes.c:37)
+ Uninitialised value was created by a stack allocation
+   at 0x........: main (origin1-yes.c:23)
+
+Undef 2 of 8 (stack, 32 bit)
+
+Conditional jump or move depends on uninitialised value(s)
+   at 0x........: main (origin1-yes.c:49)
+ Uninitialised value was created by a stack allocation
+   at 0x........: main (origin1-yes.c:23)
+
+Undef 3 of 8 (stack, 64 bit)
+
+Conditional jump or move depends on uninitialised value(s)
+   at 0x........: main (origin1-yes.c:56)
+ Uninitialised value was created by a stack allocation
+   at 0x........: main (origin1-yes.c:23)
+
+Undef 4 of 8 (mallocd, 32-bit)
+
+Conditional jump or move depends on uninitialised value(s)
+   at 0x........: main (origin1-yes.c:64)
+ Uninitialised value was created by a heap allocation
+   at 0x........: malloc (vg_replace_malloc.c:...)
+   by 0x........: main (origin1-yes.c:61)
+
+Undef 5 of 8 (realloc)
+
+Conditional jump or move depends on uninitialised value(s)
+   at 0x........: main (origin1-yes.c:76)
+ Uninitialised value was created by a heap allocation
+   at 0x........: realloc (vg_replace_malloc.c:...)
+   by 0x........: main (origin1-yes.c:71)
+
+Undef 6 of 8 (MALLOCLIKE_BLOCK)
+
+Conditional jump or move depends on uninitialised value(s)
+   at 0x........: main (origin1-yes.c:85)
+ Uninitialised value was created by a heap allocation
+   at 0x........: main (origin1-yes.c:82)
+
+Undef 7 of 8 (brk)
+
+Conditional jump or move depends on uninitialised value(s)
+   at 0x........: main (origin1-yes.c:93)
+ Uninitialised value was created
+   at 0x........: brk (in /...libc...)
+   by 0x........: ...
+   by 0x........: main (origin1-yes.c:90)
+
+Undef 8 of 8 (MAKE_MEM_UNDEFINED)
+
+Conditional jump or move depends on uninitialised value(s)
+   at 0x........: main (origin1-yes.c:101)
+ Uninitialised value was created by a client request
+   at 0x........: main (origin1-yes.c:99)
+
+Def 1 of 3
+
+Def 2 of 3
+
+Def 3 of 3

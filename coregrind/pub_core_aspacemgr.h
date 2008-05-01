@@ -103,7 +103,9 @@ extern void VG_(am_show_nsegments) ( Int logLevel, HChar* who );
 /* Get the filename corresponding to this segment, if known and if it
    has one.  The returned name's storage cannot be assumed to be
    persistent, so the caller should immediately copy the name
-   elsewhere. */
+   elsewhere.  This may return NULL if the file name is not known or
+   for arbitrary other implementation-dependent reasons, so callers
+   need to be able to handle a NULL return value. */
 // Is in tool-visible header file.
 // extern HChar* VG_(am_get_filename)( NSegment* );
 

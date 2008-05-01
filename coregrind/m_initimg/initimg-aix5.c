@@ -298,8 +298,9 @@ void VG_(ii_finalise_image)( IIFinaliseImageInfo iifii )
       sane way. */
    LibVEX_GuestPPC32_initialise(&arch->vex);
 
-   /* Zero out the shadow area. */
-   VG_(memset)(&arch->vex_shadow, 0, sizeof(VexGuestPPC32State));
+   /* Zero out the shadow areas. */
+   VG_(memset)(&arch->vex_shadow1, 0, sizeof(VexGuestPPC32State));
+   VG_(memset)(&arch->vex_shadow2, 0, sizeof(VexGuestPPC32State));
 
 #  else /* defined(VGP_ppc64_aix5) */
 
@@ -309,8 +310,9 @@ void VG_(ii_finalise_image)( IIFinaliseImageInfo iifii )
       sane way. */
    LibVEX_GuestPPC64_initialise(&arch->vex);
 
-   /* Zero out the shadow area. */
-   VG_(memset)(&arch->vex_shadow, 0, sizeof(VexGuestPPC64State));
+   /* Zero out the shadow areas. */
+   VG_(memset)(&arch->vex_shadow1, 0, sizeof(VexGuestPPC64State));
+   VG_(memset)(&arch->vex_shadow2, 0, sizeof(VexGuestPPC64State));
 
 #  endif
 

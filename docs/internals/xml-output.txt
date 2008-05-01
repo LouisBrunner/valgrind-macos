@@ -107,18 +107,23 @@ protocol version is one they don`t understand.  Hence TOPLEVEL is:
   </valgrindoutput>
 
 Valgrind versions 3.0.0 and 3.0.1 emit protocol version 1.  Versions
-3.1.X and 3.2.X emit protocol version 2.
+3.1.X and 3.2.X emit protocol version 2.  3.4.X emits protocol version
+3.
 
 
 PROTOCOL for version 3
 ----------------------
-Changes in 3.3.X (tentative): (jrs, 1 March 2008)
+Changes in 3.4.X (tentative): (jrs, 1 March 2008)
 
 * There may be more than one <logfilequalifier> clause, depending on
   how this pans out.  (AshleyP perhaps to investigate)
 
 * Some errors may have two <auxwhat> blocks, rather than just one
   (resulting from merge of the DATASYMS branch)
+
+* Some errors may have an ORIGIN component, indicating the origins of
+  uninitialised values.  This results from the merge of the
+  OTRACK_BY_INSTRUMENTATION branch.
 
 
 PROTOCOL for version 2
@@ -231,6 +236,7 @@ is as follows:
 
      optionally: <auxwhat>TEXT</auxwhat>
      optionally: STACK
+     optionally: ORIGIN
 
   </error>
 
@@ -374,6 +380,19 @@ The optional fields, if present, appear in the order stated:
 * file: gives the name of the source file containing the code address
 
 * line: gives the line number in the source file
+
+
+ORIGIN
+------
+ORIGIN shows the origin of uninitialised data in errors that involve
+uninitialised data.  STACK shows the origin of the uninitialised
+value.  TEXT gives a human-understandable hint as to the meaning of
+the information in STACK.
+
+   <origin>
+      <what>TEXT<what>
+      STACK
+   </origin>
 
 
 ERRORCOUNTS

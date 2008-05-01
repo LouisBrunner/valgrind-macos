@@ -100,9 +100,13 @@ VgNeeds VG_(needs) = {
 /* static */
 Bool VG_(sanity_check_needs)(Char** failmsg)
 {
+   Bool any_new_mem_stack_N, any_new_mem_stack_N_w_ECU;
+   Bool any_new_mem_stack_w_conflicting_otags;
+   Bool any_die_mem_stack_N;
+
 #define CHECK_NOT(var, value)                                  \
    if ((var)==(value)) {                                       \
-      *failmsg = "Tool error: '" #var "' not initialised\n"; \
+      *failmsg = "Tool error: '" #var "' not initialised\n";   \
       return False;                                            \
    }
    
@@ -113,35 +117,82 @@ Bool VG_(sanity_check_needs)(Char** failmsg)
    CHECK_NOT(VG_(details).copyright_author, NULL);
    CHECK_NOT(VG_(details).bug_reports_to,   NULL);
 
-   if ( (VG_(tdict).track_new_mem_stack_4   ||
-         VG_(tdict).track_new_mem_stack_8   ||
-         VG_(tdict).track_new_mem_stack_12  ||
-         VG_(tdict).track_new_mem_stack_16  ||
-         VG_(tdict).track_new_mem_stack_32  ||
-         VG_(tdict).track_new_mem_stack_112 ||
-         VG_(tdict).track_new_mem_stack_128 ||
-         VG_(tdict).track_new_mem_stack_144 ||
-         VG_(tdict).track_new_mem_stack_160 ) &&
-       ! VG_(tdict).track_new_mem_stack) 
-   {
-      *failmsg = "Tool error: one of the specialised 'new_mem_stack_n'\n"
+   /* Check that new_mem_stack is defined if any new_mem_stack_N
+      are. */
+   any_new_mem_stack_N 
+      = VG_(tdict).track_new_mem_stack_4   ||
+        VG_(tdict).track_new_mem_stack_8   ||
+        VG_(tdict).track_new_mem_stack_12  ||
+        VG_(tdict).track_new_mem_stack_16  ||
+        VG_(tdict).track_new_mem_stack_32  ||
+        VG_(tdict).track_new_mem_stack_112 ||
+        VG_(tdict).track_new_mem_stack_128 ||
+        VG_(tdict).track_new_mem_stack_144 ||
+        VG_(tdict).track_new_mem_stack_160;
+
+   if (any_new_mem_stack_N && ! VG_(tdict).track_new_mem_stack) {
+      *failmsg = "Tool error: one of the specialised 'new_mem_stack_N'\n"
                  "   events tracked, but not the generic 'new_mem_stack' one.\n"
                  "   'new_mem_stack' should be defined\n";
       return False;
    }
 
-   if ( (VG_(tdict).track_die_mem_stack_4   ||
-         VG_(tdict).track_die_mem_stack_8   ||
-         VG_(tdict).track_die_mem_stack_12  ||
-         VG_(tdict).track_die_mem_stack_16  ||
-         VG_(tdict).track_die_mem_stack_32  ||
-         VG_(tdict).track_die_mem_stack_112 ||
-         VG_(tdict).track_die_mem_stack_128 ||
-         VG_(tdict).track_die_mem_stack_144 ||
-         VG_(tdict).track_die_mem_stack_160 ) &&
-       ! VG_(tdict).track_die_mem_stack) 
-   {
-      *failmsg = "Tool error: one of the specialised 'die_mem_stack_n'\n"
+   /* Check that new_mem_stack_w_ECU is defined if any
+      new_mem_stack_N_w_ECU are. */
+   any_new_mem_stack_N_w_ECU
+      = VG_(tdict).track_new_mem_stack_4_w_ECU   ||
+        VG_(tdict).track_new_mem_stack_8_w_ECU   ||
+        VG_(tdict).track_new_mem_stack_12_w_ECU  ||
+        VG_(tdict).track_new_mem_stack_16_w_ECU  ||
+        VG_(tdict).track_new_mem_stack_32_w_ECU  ||
+        VG_(tdict).track_new_mem_stack_112_w_ECU ||
+        VG_(tdict).track_new_mem_stack_128_w_ECU ||
+        VG_(tdict).track_new_mem_stack_144_w_ECU ||
+        VG_(tdict).track_new_mem_stack_160_w_ECU;
+
+   if (any_new_mem_stack_N_w_ECU && ! VG_(tdict).track_new_mem_stack_w_ECU) {
+      *failmsg = "Tool error: one of the specialised 'new_mem_stack_N_w_ECU'\n"
+                 "   events tracked, but not the generic 'new_mem_stack_w_ECU' one.\n"
+                 "   'new_mem_stack_w_ECU' should be defined\n";
+      return False;
+   }
+
+   /* Check that in no cases are both with- and without-otag versions of the
+      same new_mem_stack_ function defined. */
+   any_new_mem_stack_w_conflicting_otags
+      = (VG_(tdict).track_new_mem_stack_4   && VG_(tdict).track_new_mem_stack_4_w_ECU)   ||
+        (VG_(tdict).track_new_mem_stack_8   && VG_(tdict).track_new_mem_stack_8_w_ECU)   ||
+        (VG_(tdict).track_new_mem_stack_12  && VG_(tdict).track_new_mem_stack_12_w_ECU)  ||
+        (VG_(tdict).track_new_mem_stack_16  && VG_(tdict).track_new_mem_stack_16_w_ECU)  ||
+        (VG_(tdict).track_new_mem_stack_32  && VG_(tdict).track_new_mem_stack_32_w_ECU)  ||
+        (VG_(tdict).track_new_mem_stack_112 && VG_(tdict).track_new_mem_stack_112_w_ECU) ||
+        (VG_(tdict).track_new_mem_stack_128 && VG_(tdict).track_new_mem_stack_128_w_ECU) ||
+        (VG_(tdict).track_new_mem_stack_144 && VG_(tdict).track_new_mem_stack_144_w_ECU) ||
+        (VG_(tdict).track_new_mem_stack_160 && VG_(tdict).track_new_mem_stack_160_w_ECU) ||
+        (VG_(tdict).track_new_mem_stack     && VG_(tdict).track_new_mem_stack_w_ECU);
+
+   if (any_new_mem_stack_w_conflicting_otags) {
+      *failmsg = "Tool error: tool supplies both a 'new_mem_stack_N' and a\n"
+                 "   'new_mem_stack_N_w_ECU' function for some N (or none),\n"
+                 "   but you can only have one or the other (not both)\n";
+      return False;
+   }
+
+   /* Check that die_mem_stack is defined if any die_mem_stack_N
+      are. */
+   any_die_mem_stack_N
+      = VG_(tdict).track_die_mem_stack_4   ||
+        VG_(tdict).track_die_mem_stack_8   ||
+        VG_(tdict).track_die_mem_stack_12  ||
+        VG_(tdict).track_die_mem_stack_16  ||
+        VG_(tdict).track_die_mem_stack_32  ||
+        VG_(tdict).track_die_mem_stack_112 ||
+        VG_(tdict).track_die_mem_stack_128 ||
+        VG_(tdict).track_die_mem_stack_144 ||
+        VG_(tdict).track_die_mem_stack_160;
+
+    if (any_die_mem_stack_N && ! VG_(tdict).track_die_mem_stack) {
+      *failmsg = "Tool error: one of the specialised 'die_mem_stack_N'\n"
                  "   events tracked, but not the generic 'die_mem_stack' one.\n"
                  "   'die_mem_stack' should be defined\n";
       return False;
@@ -272,74 +323,88 @@ void VG_(needs_final_IR_tidy_pass)(
 }
 
 /*--------------------------------------------------------------------*/
-/* Tracked events */
+/* Tracked events.  Digit 'n' on DEFn is the REGPARMness. */
 
-#define DEF(fn, args...) \
-void VG_(fn)(void(*f)(args)) \
-{ \
+#define DEF0(fn, args...) \
+void VG_(fn)(void(*f)(args)) { \
+   VG_(tdict).fn = f; \
+}
+
+#define DEF1(fn, args...) \
+void VG_(fn)(VG_REGPARM(1) void(*f)(args)) { \
    VG_(tdict).fn = f; \
 }
 
 #define DEF2(fn, args...) \
-void VG_(fn)(VG_REGPARM(1) void(*f)(args)) \
-{ \
+void VG_(fn)(VG_REGPARM(2) void(*f)(args)) { \
    VG_(tdict).fn = f; \
 }
 
-DEF(track_new_mem_startup,       Addr, SizeT, Bool, Bool, Bool)
-DEF(track_new_mem_stack_signal,  Addr, SizeT)
-DEF(track_new_mem_brk,           Addr, SizeT)
-DEF(track_new_mem_mmap,          Addr, SizeT, Bool, Bool, Bool)
+DEF0(track_new_mem_startup,       Addr, SizeT, Bool, Bool, Bool)
+DEF0(track_new_mem_stack_signal,  Addr, SizeT, UInt)
+DEF0(track_new_mem_brk,           Addr, SizeT, UInt)
+DEF0(track_new_mem_mmap,          Addr, SizeT, Bool, Bool, Bool)
 
-DEF(track_copy_mem_remap,        Addr, Addr, SizeT)
-DEF(track_change_mem_mprotect,   Addr, SizeT, Bool, Bool, Bool)
-DEF(track_die_mem_stack_signal,  Addr, SizeT)
-DEF(track_die_mem_brk,           Addr, SizeT)
-DEF(track_die_mem_munmap,        Addr, SizeT)
+DEF0(track_copy_mem_remap,        Addr, Addr, SizeT)
+DEF0(track_change_mem_mprotect,   Addr, SizeT, Bool, Bool, Bool)
+DEF0(track_die_mem_stack_signal,  Addr, SizeT)
+DEF0(track_die_mem_brk,           Addr, SizeT)
+DEF0(track_die_mem_munmap,        Addr, SizeT)
 
-DEF2(track_new_mem_stack_4,      Addr)
-DEF2(track_new_mem_stack_8,      Addr)
-DEF2(track_new_mem_stack_12,     Addr)
-DEF2(track_new_mem_stack_16,     Addr)
-DEF2(track_new_mem_stack_32,     Addr)
-DEF2(track_new_mem_stack_112,    Addr)
-DEF2(track_new_mem_stack_128,    Addr)
-DEF2(track_new_mem_stack_144,    Addr)
-DEF2(track_new_mem_stack_160,    Addr)
-DEF (track_new_mem_stack,        Addr, SizeT)
+DEF2(track_new_mem_stack_4_w_ECU,    Addr, UInt)
+DEF2(track_new_mem_stack_8_w_ECU,    Addr, UInt)
+DEF2(track_new_mem_stack_12_w_ECU,   Addr, UInt)
+DEF2(track_new_mem_stack_16_w_ECU,   Addr, UInt)
+DEF2(track_new_mem_stack_32_w_ECU,   Addr, UInt)
+DEF2(track_new_mem_stack_112_w_ECU,  Addr, UInt)
+DEF2(track_new_mem_stack_128_w_ECU,  Addr, UInt)
+DEF2(track_new_mem_stack_144_w_ECU,  Addr, UInt)
+DEF2(track_new_mem_stack_160_w_ECU,  Addr, UInt)
+DEF0(track_new_mem_stack_w_ECU,      Addr, SizeT, UInt)
 
-DEF2(track_die_mem_stack_4,      Addr)
-DEF2(track_die_mem_stack_8,      Addr)
-DEF2(track_die_mem_stack_12,     Addr)
-DEF2(track_die_mem_stack_16,     Addr)
-DEF2(track_die_mem_stack_32,     Addr)
-DEF2(track_die_mem_stack_112,    Addr)
-DEF2(track_die_mem_stack_128,    Addr)
-DEF2(track_die_mem_stack_144,    Addr)
-DEF2(track_die_mem_stack_160,    Addr)
-DEF (track_die_mem_stack,        Addr, SizeT)
+DEF1(track_new_mem_stack_4,       Addr)
+DEF1(track_new_mem_stack_8,       Addr)
+DEF1(track_new_mem_stack_12,      Addr)
+DEF1(track_new_mem_stack_16,      Addr)
+DEF1(track_new_mem_stack_32,      Addr)
+DEF1(track_new_mem_stack_112,     Addr)
+DEF1(track_new_mem_stack_128,     Addr)
+DEF1(track_new_mem_stack_144,     Addr)
+DEF1(track_new_mem_stack_160,     Addr)
+DEF0(track_new_mem_stack,         Addr, SizeT)
 
-DEF(track_ban_mem_stack,         Addr, SizeT)
+DEF1(track_die_mem_stack_4,       Addr)
+DEF1(track_die_mem_stack_8,       Addr)
+DEF1(track_die_mem_stack_12,      Addr)
+DEF1(track_die_mem_stack_16,      Addr)
+DEF1(track_die_mem_stack_32,      Addr)
+DEF1(track_die_mem_stack_112,     Addr)
+DEF1(track_die_mem_stack_128,     Addr)
+DEF1(track_die_mem_stack_144,     Addr)
+DEF1(track_die_mem_stack_160,     Addr)
+DEF0(track_die_mem_stack,         Addr, SizeT)
 
-DEF(track_pre_mem_read,          CorePart, ThreadId, Char*, Addr, SizeT)
-DEF(track_pre_mem_read_asciiz,   CorePart, ThreadId, Char*, Addr)
-DEF(track_pre_mem_write,         CorePart, ThreadId, Char*, Addr, SizeT)
-DEF(track_post_mem_write,        CorePart, ThreadId, Addr, SizeT)
+DEF0(track_ban_mem_stack,         Addr, SizeT)
 
-DEF(track_pre_reg_read,          CorePart, ThreadId, Char*, OffT, SizeT)
-DEF(track_post_reg_write,        CorePart, ThreadId,        OffT, SizeT)
+DEF0(track_pre_mem_read,          CorePart, ThreadId, Char*, Addr, SizeT)
+DEF0(track_pre_mem_read_asciiz,   CorePart, ThreadId, Char*, Addr)
+DEF0(track_pre_mem_write,         CorePart, ThreadId, Char*, Addr, SizeT)
+DEF0(track_post_mem_write,        CorePart, ThreadId, Addr, SizeT)
 
-DEF(track_post_reg_write_clientcall_return, ThreadId, OffT, SizeT, Addr)
+DEF0(track_pre_reg_read,          CorePart, ThreadId, Char*, OffT, SizeT)
+DEF0(track_post_reg_write,        CorePart, ThreadId,        OffT, SizeT)
 
-DEF(track_start_client_code,     ThreadId, ULong)
-DEF(track_stop_client_code,      ThreadId, ULong)
+DEF0(track_post_reg_write_clientcall_return, ThreadId, OffT, SizeT, Addr)
 
-DEF(track_pre_thread_ll_create,  ThreadId, ThreadId)
-DEF(track_pre_thread_first_insn, ThreadId)
-DEF(track_pre_thread_ll_exit,    ThreadId)
+DEF0(track_start_client_code,     ThreadId, ULong)
+DEF0(track_stop_client_code,      ThreadId, ULong)
 
-DEF(track_pre_deliver_signal,    ThreadId, Int sigNo, Bool)
-DEF(track_post_deliver_signal,   ThreadId, Int sigNo)
+DEF0(track_pre_thread_ll_create,  ThreadId, ThreadId)
+DEF0(track_pre_thread_first_insn, ThreadId)
+DEF0(track_pre_thread_ll_exit,    ThreadId)
+
+DEF0(track_pre_deliver_signal,    ThreadId, Int sigNo, Bool)
+DEF0(track_post_deliver_signal,   ThreadId, Int sigNo)
 
 /*--------------------------------------------------------------------*/
 /*--- end                                                          ---*/

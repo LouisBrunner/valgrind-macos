@@ -93,7 +93,8 @@ struct vg_sigframe
 
    /* XXX This is wrong.  Surely we should store the shadow values
       into the shadow memory behind the actual values? */
-   VexGuestAMD64State vex_shadow;
+   VexGuestAMD64State vex_shadow1;
+   VexGuestAMD64State vex_shadow2;
 
    /* HACK ALERT */
    VexGuestAMD64State vex;
@@ -374,7 +375,7 @@ void synth_ucontext(ThreadId tid, const vki_siginfo_t *si, Int trapno,
 */
 static Bool extend ( ThreadState *tst, Addr addr, SizeT size )
 {
-   ThreadId tid = tst->tid;
+   ThreadId        tid = tst->tid;
    NSegment const* stackseg = NULL;
 
    if (VG_(extend_stack)(addr, tst->client_stack_szB)) {
@@ -406,7 +407,7 @@ static Bool extend ( ThreadState *tst, Addr addr, SizeT size )
    /* For tracking memory events, indicate the entire frame has been
       allocated. */
    VG_TRACK( new_mem_stack_signal, addr - VG_STACK_REDZONE_SZB,
-             size + VG_STACK_REDZONE_SZB );
+             size + VG_STACK_REDZONE_SZB, tid );
 
    return True;
 }
@@ -422,7 +423,8 @@ static void build_vg_sigframe(struct vg_sigframe *frame,
 {
    frame->sigNo_private = sigNo;
    frame->magicPI       = 0x31415927;
-   frame->vex_shadow    = tst->arch.vex_shadow;
+   frame->vex_shadow1   = tst->arch.vex_shadow1;
+   frame->vex_shadow2   = tst->arch.vex_shadow2;
    /* HACK ALERT */
    frame->vex           = tst->arch.vex;
    /* end HACK ALERT */
@@ -541,13 +543,14 @@ Bool restore_vg_sigframe ( ThreadState *tst,
       *sigNo = VKI_SIGSEGV;
       return False;
    }
-   tst->sig_mask        = frame->mask;
-   tst->tmp_sig_mask    = frame->mask;
-   tst->arch.vex_shadow = frame->vex_shadow;
+   tst->sig_mask         = frame->mask;
+   tst->tmp_sig_mask     = frame->mask;
+   tst->arch.vex_shadow1 = frame->vex_shadow1;
+   tst->arch.vex_shadow2 = frame->vex_shadow2;
    /* HACK ALERT */
-   tst->arch.vex        = frame->vex;
+   tst->arch.vex         = frame->vex;
    /* end HACK ALERT */
-   *sigNo               = frame->sigNo_private;
+   *sigNo                = frame->sigNo_private;
    return True;
 }
 

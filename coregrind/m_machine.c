@@ -79,34 +79,44 @@ void VG_(set_IP) ( ThreadId tid, Addr ip )
 }
 
 
-void VG_(get_shadow_regs_area) ( ThreadId tid, OffT offset, SizeT size,
-                                 UChar* area )
+void
+VG_(get_shadow_regs_area) ( ThreadId tid, 
+                            /*DST*/UChar* dst,
+                            /*SRC*/Int shadowNo, OffT offset, SizeT size )
 {
+   void*        src;
    ThreadState* tst;
-
+   vg_assert(shadowNo == 1 || shadowNo == 2);
    vg_assert(VG_(is_valid_tid)(tid));
-   tst = & VG_(threads)[tid];
-
    // Bounds check
    vg_assert(0 <= offset && offset < sizeof(VexGuestArchState));
    vg_assert(offset + size <= sizeof(VexGuestArchState));
-
-   VG_(memcpy)( area, (void*)(((Addr)&(tst->arch.vex_shadow)) + offset), size);
+   // Copy
+   tst = & VG_(threads)[tid];
+   src = shadowNo == 1
+            ? (void*)(((Addr)&(tst->arch.vex_shadow1)) + offset)
+            : (void*)(((Addr)&(tst->arch.vex_shadow2)) + offset);
+   VG_(memcpy)( dst, src, size);
 }
 
-void VG_(set_shadow_regs_area) ( ThreadId tid, OffT offset, SizeT size,
-                                 const UChar* area )
+void
+VG_(set_shadow_regs_area) ( ThreadId tid, 
+                            /*DST*/Int shadowNo, OffT offset, SizeT size,
+                            /*SRC*/const UChar* src )
 {
+   void*        dst;
    ThreadState* tst;
-
+   vg_assert(shadowNo == 1 || shadowNo == 2);
    vg_assert(VG_(is_valid_tid)(tid));
-   tst = & VG_(threads)[tid];
-
    // Bounds check
    vg_assert(0 <= offset && offset < sizeof(VexGuestArchState));
    vg_assert(offset + size <= sizeof(VexGuestArchState));
-
-   VG_(memcpy)( (void*)(((Addr)(&tst->arch.vex_shadow)) + offset), area, size);
+   // Copy
+   tst = & VG_(threads)[tid];
+   dst = shadowNo == 1
+            ? (void*)(((Addr)&(tst->arch.vex_shadow1)) + offset)
+            : (void*)(((Addr)&(tst->arch.vex_shadow2)) + offset);
+   VG_(memcpy)( dst, src, size);
 }
 
 

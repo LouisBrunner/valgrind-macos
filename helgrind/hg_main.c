@@ -5425,6 +5425,15 @@ void evh__new_mem ( Addr a, SizeT len ) {
 }
 
 static
+void evh__new_mem_w_tid ( Addr a, SizeT len, ThreadId tid ) {
+   if (SHOW_EVENTS >= 2)
+      VG_(printf)("evh__new_mem_w_tid(%p, %lu)\n", (void*)a, len );
+   shadow_mem_make_New( get_current_Thread(), a, len );
+   if (len >= SCE_BIGRANGE_T && (clo_sanity_flags & SCE_BIGRANGE))
+      all__sanity_check("evh__new_mem_w_tid-post");
+}
+
+static
 void evh__new_mem_w_perms ( Addr a, SizeT len, 
                             Bool rr, Bool ww, Bool xx ) {
    if (SHOW_EVENTS >= 1)
@@ -8821,8 +8830,8 @@ static void hg_pre_clo_init ( void )
    //VG_(needs_xml_output)          ();
 
    VG_(track_new_mem_startup)     ( evh__new_mem_w_perms );
-   VG_(track_new_mem_stack_signal)( evh__die_mem );
-   VG_(track_new_mem_brk)         ( evh__new_mem );
+   VG_(track_new_mem_stack_signal)( evh__new_mem_w_tid );
+   VG_(track_new_mem_brk)         ( evh__new_mem_w_tid );
    VG_(track_new_mem_mmap)        ( evh__new_mem_w_perms );
    VG_(track_new_mem_stack)       ( evh__new_mem );
 

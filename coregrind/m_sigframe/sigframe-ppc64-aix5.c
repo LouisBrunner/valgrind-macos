@@ -63,7 +63,8 @@
 struct hacky_sigframe {
    UChar              lower_guardzone[1024];  // put nothing here
    VexGuestPPC64State gst;
-   VexGuestPPC64State gshadow;
+   VexGuestPPC64State gshadow1;
+   VexGuestPPC64State gshadow2;
    UInt               magicPI;
    UInt               sigNo_private;
    UInt               tramp[2];
@@ -77,10 +78,15 @@ struct hacky_sigframe {
 */
 static Bool extend ( ThreadState *tst, Addr addr, SizeT size )
 {
+   ThreadId tid = tst->tid;
    /* For tracking memory events, indicate the entire frame has been
       allocated.  Except, don't mess with the area which
       overlaps the previous frame's redzone. */
-   VG_TRACK( new_mem_stack_signal, addr, size - VG_STACK_REDZONE_SZB );
+   /* XXX is the following call really right?  compared with the
+      amd64-linux version, this doesn't appear to handle the redzone
+      in the same way. */
+   VG_TRACK( new_mem_stack_signal,
+             addr, size - VG_STACK_REDZONE_SZB, tid );
    return True;
 }
 
@@ -130,12 +136,14 @@ void VG_(sigframe_create) ( ThreadId tid,
 
    /* clear it (very conservatively) */
    VG_(memset)(&frame->lower_guardzone, 0, 1024);
-   VG_(memset)(&frame->gst,     0, sizeof(VexGuestPPC64State));
-   VG_(memset)(&frame->gshadow, 0, sizeof(VexGuestPPC64State));
+   VG_(memset)(&frame->gst,      0, sizeof(VexGuestPPC64State));
+   VG_(memset)(&frame->gshadow1, 0, sizeof(VexGuestPPC64State));
+   VG_(memset)(&frame->gshadow2, 0, sizeof(VexGuestPPC64State));
 
    /* save stuff in frame */
    frame->gst           = tst->arch.vex;
-   frame->gshadow       = tst->arch.vex_shadow;
+   frame->gshadow1      = tst->arch.vex_shadow1;
+   frame->gshadow2      = tst->arch.vex_shadow2;
    frame->sigNo_private = sigNo;
    frame->magicPI       = 0x31415927;
 
@@ -239,7 +247,8 @@ void VG_(sigframe_destroy)( ThreadId tid, Bool isRT )
       frame.  Note, as per comments above, this is a kludge - should
       restore it from saved ucontext.  Oh well. */
    tst->arch.vex = frame->gst;
-   tst->arch.vex_shadow = frame->gshadow;
+   tst->arch.vex_shadow1 = frame->gshadow1;
+   tst->arch.vex_shadow2 = frame->gshadow2;
    sigNo = frame->sigNo_private;
 
    if (VG_(clo_trace_signals))

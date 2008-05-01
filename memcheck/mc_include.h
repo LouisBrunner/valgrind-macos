@@ -101,9 +101,9 @@ extern VgHashTable MC_(mempool_list);
 
 /* Shadow memory functions */
 extern Bool MC_(check_mem_is_noaccess)( Addr a, SizeT len, Addr* bad_addr );
-extern void MC_(make_mem_noaccess) ( Addr a, SizeT len );
-extern void MC_(make_mem_undefined)( Addr a, SizeT len );
-extern void MC_(make_mem_defined)  ( Addr a, SizeT len );
+extern void MC_(make_mem_noaccess)        ( Addr a, SizeT len );
+extern void MC_(make_mem_undefined_w_otag)( Addr a, SizeT len, UInt otag );
+extern void MC_(make_mem_defined)         ( Addr a, SizeT len );
 extern void MC_(copy_address_range_state) ( Addr src, Addr dst, SizeT len );
 
 extern void MC_(print_malloc_stats) ( void );
@@ -117,6 +117,50 @@ extern void  MC_(free)                 ( ThreadId tid, void* p );
 extern void  MC_(__builtin_delete)     ( ThreadId tid, void* p );
 extern void  MC_(__builtin_vec_delete) ( ThreadId tid, void* p );
 extern void* MC_(realloc)              ( ThreadId tid, void* p, SizeT new_size );
+
+/*------------------------------------------------------------*/
+/*--- Origin tracking translate-time support               ---*/
+/*------------------------------------------------------------*/
+
+/* See detailed comments in mc_machine.c. */
+extern 
+Int MC_(get_otrack_shadow_offset) ( Int offset, Int szB );
+extern 
+IRType MC_(get_otrack_reg_array_equiv_int_type) ( IRRegArray* arr );
+
+/* Constants which are used as the lowest 2 bits in origin tags.
+   
+   An origin tag comprises an upper 30-bit ECU field and a lower 2-bit
+   'kind' field.  The ECU field is a number given out by m_execontext
+   and has a 1-1 mapping with ExeContext*s.  An ECU can be used
+   directly as an origin tag (otag), but in fact we want to put
+   additional information 'kind' field to indicate roughly where the
+   tag came from.  This helps print more understandable error messages
+   for the user -- it has no other purpose.
+
+   Hence the following 2-bit constants are needed for 'kind' field. 
+
+   To summarise:
+
+   * Both ECUs and origin tags are represented as 32-bit words
+
+   * m_execontext and the core-tool interface deal purely in ECUs.
+     They have no knowledge of origin tags - that is a purely
+     Memcheck-internal matter.
+
+   * all valid ECUs have the lowest 2 bits zero and at least
+     one of the upper 30 bits nonzero (see VG_(is_plausible_ECU))
+
+   * to convert from an ECU to an otag, OR in one of the MC_OKIND_
+     constants below
+
+   * to convert an otag back to an ECU, AND it with ~3
+*/
+
+#define MC_OKIND_UNKNOWN  0  /* unknown origin */
+#define MC_OKIND_HEAP     1  /* this is a heap origin */
+#define MC_OKIND_STACK    2  /* this is a stack origin */
+#define MC_OKIND_USER     3  /* arises from user-supplied client req */
 
 
 /*------------------------------------------------------------*/
@@ -270,18 +314,6 @@ extern Bool MC_(clo_show_reachable);
  * default: NO */
 extern Bool MC_(clo_workaround_gcc296_bugs);
 
-/* Do undefined value checking? "No" gives Addrcheck-style behaviour, ie.
- * faster but fewer errors found.  Note that although Addrcheck had 1 bit
- * per byte overhead vs the old Memcheck's 9 bits per byte, with this mode
- * and compressed V bits, no memory is saved with this mode -- it's still
- * 2 bits per byte overhead.  This is a little wasteful -- it could be done
- * with 1 bit per byte -- but lets us reuse the many shadow memory access
- * functions.  Note also that in this mode the secondary V bit table is
- * never used.
- *
- * default: YES */
-extern Bool MC_(clo_undef_value_errors);
-
 /* Fill malloc-d/free-d client blocks with a specific value?  -1 if
    not, else 0x00 .. 0xFF indicating the fill value to use.  Can be
    useful for causing programs with bad heap corruption to fail in
@@ -291,18 +323,57 @@ extern Bool MC_(clo_undef_value_errors);
 extern Int MC_(clo_malloc_fill);
 extern Int MC_(clo_free_fill);
 
+/* Indicates the level of instrumentation/checking done by Memcheck.
+
+   1 = No undefined value checking, Addrcheck-style behaviour only:
+       only address checking is done.  This is faster but finds fewer
+       errors.  Note that although Addrcheck had 1 bit per byte
+       overhead vs the old Memcheck's 9 bits per byte, with this mode
+       and compressed V bits, no memory is saved with this mode --
+       it's still 2 bits per byte overhead.  This is a little wasteful
+       -- it could be done with 1 bit per byte -- but lets us reuse
+       the many shadow memory access functions.  Note that in this
+       mode neither the secondary V bit table nor the origin-tag cache
+       are used.
+
+   2 = Address checking and Undefined value checking are performed,
+       but origins are not tracked.  So the origin-tag cache is not
+       used in this mode.  This setting is the default and corresponds
+       to the "normal" Memcheck behaviour that has shipped for years.
+
+   3 = Address checking, undefined value checking, and origins for
+       undefined values are tracked.
+
+   The default is 2.
+*/
+extern Int MC_(clo_mc_level);
+
 
 /*------------------------------------------------------------*/
 /*--- Instrumentation                                      ---*/
 /*------------------------------------------------------------*/
 
 /* Functions defined in mc_main.c */
-extern VG_REGPARM(1) void MC_(helperc_complain_undef) ( HWord );
-extern void MC_(helperc_value_check8_fail) ( void );
-extern void MC_(helperc_value_check4_fail) ( void );
-extern void MC_(helperc_value_check1_fail) ( void );
-extern void MC_(helperc_value_check0_fail) ( void );
 
+/* For the fail_w_o functions, the UWord arg is actually the 32-bit
+   origin tag and should really be UInt, but to be simple and safe
+   considering it's called from generated code, just claim it to be a
+   UWord. */
+extern VG_REGPARM(2) void MC_(helperc_value_checkN_fail_w_o) ( HWord, UWord );
+extern VG_REGPARM(1) void MC_(helperc_value_check8_fail_w_o) ( UWord );
+extern VG_REGPARM(1) void MC_(helperc_value_check4_fail_w_o) ( UWord );
+extern VG_REGPARM(1) void MC_(helperc_value_check1_fail_w_o) ( UWord );
+extern VG_REGPARM(1) void MC_(helperc_value_check0_fail_w_o) ( UWord );
+
+/* And call these ones instead to report an uninitialised value error
+   but with no origin available. */
+extern VG_REGPARM(1) void MC_(helperc_value_checkN_fail_no_o) ( HWord );
+extern VG_REGPARM(0) void MC_(helperc_value_check8_fail_no_o) ( void );
+extern VG_REGPARM(0) void MC_(helperc_value_check4_fail_no_o) ( void );
+extern VG_REGPARM(0) void MC_(helperc_value_check1_fail_no_o) ( void );
+extern VG_REGPARM(0) void MC_(helperc_value_check0_fail_no_o) ( void );
+
+/* V-bits load/store helpers */
 extern VG_REGPARM(1) void MC_(helperc_STOREV64be) ( Addr, ULong );
 extern VG_REGPARM(1) void MC_(helperc_STOREV64le) ( Addr, ULong );
 extern VG_REGPARM(2) void MC_(helperc_STOREV32be) ( Addr, UWord );
@@ -319,7 +390,20 @@ extern VG_REGPARM(1) UWord MC_(helperc_LOADV16be) ( Addr );
 extern VG_REGPARM(1) UWord MC_(helperc_LOADV16le) ( Addr );
 extern VG_REGPARM(1) UWord MC_(helperc_LOADV8)    ( Addr );
 
-extern void MC_(helperc_MAKE_STACK_UNINIT) ( Addr base, UWord len );
+extern void MC_(helperc_MAKE_STACK_UNINIT) ( Addr base, UWord len,
+                                                        Addr nia );
+
+/* Origin tag load/store helpers */
+VG_REGPARM(2) void  MC_(helperc_b_store1) ( Addr a, UWord d32 );
+VG_REGPARM(2) void  MC_(helperc_b_store2) ( Addr a, UWord d32 );
+VG_REGPARM(2) void  MC_(helperc_b_store4) ( Addr a, UWord d32 );
+VG_REGPARM(2) void  MC_(helperc_b_store8) ( Addr a, UWord d32 );
+VG_REGPARM(2) void  MC_(helperc_b_store16)( Addr a, UWord d32 );
+VG_REGPARM(1) UWord MC_(helperc_b_load1) ( Addr a );
+VG_REGPARM(1) UWord MC_(helperc_b_load2) ( Addr a );
+VG_REGPARM(1) UWord MC_(helperc_b_load4) ( Addr a );
+VG_REGPARM(1) UWord MC_(helperc_b_load8) ( Addr a );
+VG_REGPARM(1) UWord MC_(helperc_b_load16)( Addr a );
 
 /* Functions defined in mc_translate.c */
 extern

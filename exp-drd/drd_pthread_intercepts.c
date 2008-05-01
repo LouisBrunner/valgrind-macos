@@ -118,7 +118,9 @@ static MutexT pthread_to_drd_mutex_type(const int kind)
     /* PTHREAD_MUTEX_TIMED_NP */
     /* PTHREAD_MUTEX_NORMAL */
   case PTHREAD_MUTEX_DEFAULT:
+# if !defined(VGP_ppc32_aix5) && !defined(VGP_ppc64_aix5)
   case PTHREAD_MUTEX_ADAPTIVE_NP:
+# endif
     return mutex_type_default_mutex;
   }
   return mutex_type_invalid_mutex;

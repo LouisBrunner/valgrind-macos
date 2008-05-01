@@ -1,0 +1,59 @@
+
+Undef 1 of 8 (8 bit undef)
+Conditional jump or move depends on uninitialised value(s)
+   at 0x........: main (origin3-no.c:24)
+ Uninitialised value was created by a heap allocation
+   at 0x........: malloc (vg_replace_malloc.c:...)
+   by 0x........: main (origin3-no.c:21)
+
+Undef 2 of 8 (8 bits of 32 undef)
+
+Conditional jump or move depends on uninitialised value(s)
+   at 0x........: main (origin3-no.c:33)
+ Uninitialised value was created by a stack allocation
+   at 0x........: main (origin3-no.c:15)
+
+Undef 3 of 8 (32 bit undef)
+
+Conditional jump or move depends on uninitialised value(s)
+   at 0x........: main (origin3-no.c:42)
+ Uninitialised value was created by a heap allocation
+   at 0x........: malloc (vg_replace_malloc.c:...)
+   by 0x........: main (origin3-no.c:39)
+
+Undef 4 of 8 (32 bit undef, unaligned)
+
+Conditional jump or move depends on uninitialised value(s)
+   at 0x........: main (origin3-no.c:50)
+ Uninitialised value was created by a heap allocation
+   at 0x........: malloc (vg_replace_malloc.c:...)
+   by 0x........: main (origin3-no.c:47)
+
+Undef 5 of 8 (32 bit undef, modified)
+
+Conditional jump or move depends on uninitialised value(s)
+   at 0x........: main (origin3-no.c:59)
+ Uninitialised value was created by a heap allocation
+   at 0x........: malloc (vg_replace_malloc.c:...)
+   by 0x........: main (origin3-no.c:55)
+
+Undef 6 of 8 (32 bit undef, unaligned, strange, #1)
+
+Conditional jump or move depends on uninitialised value(s)
+   at 0x........: main (origin3-no.c:78)
+ Uninitialised value was created by a client request
+   at 0x........: main (origin3-no.c:75)
+
+Undef 7 of 8 (32 bit undef, unaligned, strange, #2)
+
+Conditional jump or move depends on uninitialised value(s)
+   at 0x........: main (origin3-no.c:80)
+ Uninitialised value was created by a client request
+   at 0x........: main (origin3-no.c:76)
+
+Undef 8 of 8 (32 bit undef, unaligned, strange, #3)
+
+Conditional jump or move depends on uninitialised value(s)
+   at 0x........: main (origin3-no.c:82)
+ Uninitialised value was created by a client request
+   at 0x........: main (origin3-no.c:76)

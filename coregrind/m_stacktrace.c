@@ -104,6 +104,8 @@ UInt VG_(get_StackTrace_wrk) ( ThreadId tid_if_known,
    if (fp_min + 512 >= fp_max) {
       /* If the stack limits look bogus, don't poke around ... but
          don't bomb out either. */
+      if (sps) sps[0] = sp;
+      if (fps) fps[0] = fp;
       ips[0] = ip;
       return 1;
    } 

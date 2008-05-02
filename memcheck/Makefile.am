@@ -81,7 +81,8 @@ MEMCHECK_SOURCES_COMMON = \
 	mc_malloc_wrappers.c \
 	mc_main.c \
 	mc_translate.c \
-	mc_machine.c
+	mc_machine.c \
+	mc_errors.c
 
 memcheck_x86_linux_SOURCES      = $(MEMCHECK_SOURCES_COMMON)
 memcheck_x86_linux_CPPFLAGS     = $(AM_CPPFLAGS_X86_LINUX)

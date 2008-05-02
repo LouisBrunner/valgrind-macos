@@ -34,6 +34,10 @@
 
 #define MC_(str)    VGAPPEND(vgMemCheck_,str)
 
+
+/* This is a private header file for use only within the
+   memcheck/ directory. */
+
 /*------------------------------------------------------------*/
 /*--- Tracking the heap                                    ---*/
 /*------------------------------------------------------------*/
@@ -282,14 +286,78 @@ extern void MC_(pp_LeakError)(UInt n_this_record, UInt n_total_records,
 /*--- Errors and suppressions                              ---*/
 /*------------------------------------------------------------*/
 
-extern void MC_(record_free_error)            ( ThreadId tid, Addr a ); 
-extern void MC_(record_illegal_mempool_error) ( ThreadId tid, Addr a );
-extern void MC_(record_freemismatch_error)    ( ThreadId tid, MC_Chunk* mc );
-extern Bool MC_(record_leak_error)            ( ThreadId tid,
-                                                UInt n_this_record,
-                                                UInt n_total_records,
-                                                LossRecord* lossRecord,
-                                                Bool print_record );
+/* Did we show to the user, any errors for which an uninitialised
+   value origin could have been collected (but wasn't) ?  If yes,
+   then, at the end of the run, print a 1 line message advising that a
+   rerun with --track-origins=yes might help. */
+Bool MC_(any_value_errors);
+
+/* Standard functions for error and suppressions as required by the
+   core/tool iface */
+Bool MC_(eq_Error) ( VgRes res, Error* e1, Error* e2 );
+void MC_(pp_Error) ( Error* err );
+UInt MC_(update_Error_extra)( Error* err );
+
+Bool MC_(is_recognised_suppression) ( Char* name, Supp* su );
+
+Bool MC_(read_extra_suppression_info) ( Int fd, Char* buf,
+                                        Int nBuf, Supp *su );
+
+Bool MC_(error_matches_suppression) ( Error* err, Supp* su );
+
+void MC_(print_extra_suppression_info) ( Error* err );
+
+Char* MC_(get_error_name) ( Error* err );
+
+/* Recording of errors */
+void MC_(record_address_error) ( ThreadId tid, Addr a, Int szB,
+                                 Bool isWrite );
+void MC_(record_cond_error)    ( ThreadId tid, UInt otag );
+void MC_(record_value_error)   ( ThreadId tid, Int szB, UInt otag );
+void MC_(record_jump_error)    ( ThreadId tid, Addr a );
+
+void MC_(record_free_error)            ( ThreadId tid, Addr a ); 
+void MC_(record_illegal_mempool_error) ( ThreadId tid, Addr a );
+void MC_(record_freemismatch_error)    ( ThreadId tid, MC_Chunk* mc );
+
+void MC_(record_overlap_error)  ( ThreadId tid, Char* function,
+                                  Addr src, Addr dst, SizeT szB );
+void MC_(record_core_mem_error) ( ThreadId tid, Bool isAddrErr, Char* msg );
+void MC_(record_regparam_error) ( ThreadId tid, Char* msg, UInt otag );
+void MC_(record_memparam_error) ( ThreadId tid, Addr a, 
+                                  Bool isAddrErr, Char* msg, UInt otag );
+void MC_(record_user_error)     ( ThreadId tid, Addr a,
+                                  Bool isAddrErr, UInt otag );
+
+Bool MC_(record_leak_error)     ( ThreadId tid,
+                                  UInt n_this_record,
+                                  UInt n_total_records,
+                                  LossRecord* lossRecord,
+                                  Bool print_record );
+
+/* Is this address in a user-specified "ignored range" ? */
+Bool MC_(in_ignored_range) ( Addr a );
+
+
+/*------------------------------------------------------------*/
+/*--- Client blocks                                        ---*/
+/*------------------------------------------------------------*/
+
+/* Describes a client block.  See mc_main.c.  An unused block has
+   start == size == 0.  */
+typedef
+   struct {
+      Addr        start;
+      SizeT       size;
+      ExeContext* where;
+      Char*       desc;
+   } 
+   CGenBlock;
+
+/* Get access to the client block array. */
+void MC_(get_ClientBlock_array)( /*OUT*/CGenBlock** blocks,
+                                 /*OUT*/UWord* nBlocks );
+
 
 /*------------------------------------------------------------*/
 /*--- Command line options + defaults                      ---*/

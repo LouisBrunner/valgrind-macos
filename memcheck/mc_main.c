@@ -1896,16 +1896,24 @@ typedef
    }
    OCache;
 
-static OCache ocache;
-static UWord  ocache_event_ctr = 0;
+static OCache* ocache = NULL;
+static UWord   ocache_event_ctr = 0;
 
 static void init_ocacheL2 ( void ); /* fwds */
 static void init_OCache ( void )
 {
    UWord line, set;
+   tl_assert(MC_(clo_mc_level) >= 3);
+   tl_assert(ocache == NULL);
+   ocache = VG_(am_shadow_alloc)(sizeof(OCache));
+   if (ocache == NULL) {
+      VG_(out_of_memory_NORETURN)( "memcheck:allocate the OCache", 
+                                   sizeof(OCache) );
+   }
+   tl_assert(ocache != NULL);
    for (set = 0; set < OC_N_SETS; set++) {
       for (line = 0; line < OC_LINES_PER_SET; line++) {
-         ocache.set[set].line[line].tag = 1/*invalid*/;
+         ocache->set[set].line[line].tag = 1/*invalid*/;
       }
    }
    init_ocacheL2();
@@ -2015,7 +2023,7 @@ static OCacheLine* find_OCacheLine_SLOW ( Addr a )
 
    /* we already tried line == 0; skip therefore. */
    for (line = 1; line < OC_LINES_PER_SET; line++) {
-      if (ocache.set[setno].line[line].tag == tag) {
+      if (ocache->set[setno].line[line].tag == tag) {
          if (line == 1) {
             stats_ocacheL1_found_at_1++;
          } else {
@@ -2023,10 +2031,10 @@ static OCacheLine* find_OCacheLine_SLOW ( Addr a )
          }
          if (UNLIKELY(0 == (ocache_event_ctr++ 
                             & ((1<<OC_MOVE_FORWARDS_EVERY_BITS)-1)))) {
-            moveLineForwards( &ocache.set[setno], line );
+            moveLineForwards( &ocache->set[setno], line );
             line--;
          }
-         return &ocache.set[setno].line[line];
+         return &ocache->set[setno].line[line];
       }
    }
 
@@ -2038,7 +2046,7 @@ static OCacheLine* find_OCacheLine_SLOW ( Addr a )
    tl_assert(line > 0);
 
    /* First, move the to-be-ejected line to the L2 cache. */
-   victim = &ocache.set[setno].line[line];
+   victim = &ocache->set[setno].line[line];
    c = classify_OCacheLine(victim);
    switch (c) {
       case 'e':
@@ -2073,19 +2081,19 @@ static OCacheLine* find_OCacheLine_SLOW ( Addr a )
    inL2 = ocacheL2_find_tag( tag );
    if (inL2) {
       /* We're in luck.  It's in the L2. */
-      ocache.set[setno].line[line] = *inL2;
+      ocache->set[setno].line[line] = *inL2;
    } else {
       /* Missed at both levels of the cache hierarchy.  We have to
          declare it as full of zeroes (unknown origins). */
       stats__ocacheL2_misses++;
-      zeroise_OCacheLine( &ocache.set[setno].line[line], tag );
+      zeroise_OCacheLine( &ocache->set[setno].line[line], tag );
    }
 
    /* Move it one forwards */
-   moveLineForwards( &ocache.set[setno], line );
+   moveLineForwards( &ocache->set[setno], line );
    line--;
 
-   return &ocache.set[setno].line[line];
+   return &ocache->set[setno].line[line];
 }
 
 static INLINE OCacheLine* find_OCacheLine ( Addr a )
@@ -2101,8 +2109,8 @@ static INLINE OCacheLine* find_OCacheLine ( Addr a )
       tl_assert(0 == (tag & (4 * OC_W32S_PER_LINE - 1)));
    }
 
-   if (LIKELY(ocache.set[setno].line[0].tag == tag)) {
-      return &ocache.set[setno].line[0];
+   if (LIKELY(ocache->set[setno].line[0].tag == tag)) {
+      return &ocache->set[setno].line[0];
    }
 
    return find_OCacheLine_SLOW( a );
@@ -5277,6 +5285,17 @@ static void mc_post_clo_init ( void )
 #     endif
       VG_(track_new_mem_stack)     ( mc_new_mem_stack     );
    }
+
+   /* This origin tracking cache is huge (~100M), so only initialise
+      if we need it. */
+   if (MC_(clo_mc_level) >= 3) {
+      init_OCache();
+      tl_assert(ocache   != NULL);
+      tl_assert(ocacheL2 != NULL);
+   } else {
+      tl_assert(ocache   == NULL);
+      tl_assert(ocacheL2 == NULL);
+   }
 }
 
 static void print_SM_info(char* type, int n_SMs)
@@ -5396,6 +5415,9 @@ static void mc_fini ( Int exitcode )
          VG_(message)(Vg_DebugMsg,
                       " niacache: %,12lu refs   %,12lu misses",
                       stats__nia_cache_queries, stats__nia_cache_misses);
+      } else {
+         tl_assert(ocache == NULL);
+         tl_assert(ocacheL2 == NULL);
       }
    }
 
@@ -5519,8 +5541,14 @@ static void mc_pre_clo_init(void)
    // BYTES_PER_SEC_VBIT_NODE must be a power of two.
    tl_assert(-1 != VG_(log2)(BYTES_PER_SEC_VBIT_NODE));
 
-   init_OCache();
+   /* This is small.  Always initialise it. */
    init_nia_to_ecu_cache();
+
+   /* We can't initialise ocache/ocacheL2 yet, since we don't know if
+      we need to, since the command line args haven't been processed
+      yet.  Hence defer it to mc_post_clo_init. */
+   tl_assert(ocache   == NULL);
+   tl_assert(ocacheL2 == NULL);
 
    /* Check some important stuff.  See extensive comments above
       re UNALIGNED_OR_HIGH for background. */

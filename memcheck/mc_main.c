@@ -156,7 +156,8 @@ static void ocache_sarp_Clear_Origins ( Addr, UWord ); /* fwds */
 #else
 
 /* Just handle the first 32G fast and the rest via auxiliary
-   primaries. */
+   primaries.  If you change this, Memcheck will assert at startup.
+   See the definition of UNALIGNED_OR_HIGH for extensive comments. */
 #  define N_PRIMARY_BITS  19
 
 #endif
@@ -3073,7 +3074,7 @@ void MC_(helperc_MAKE_STACK_UNINIT) ( Addr base, UWord len, Addr nia )
       UWord a_lo = (UWord)(base);
       UWord a_hi = (UWord)(base + 128 - 1);
       tl_assert(a_lo < a_hi);             // paranoia: detect overflow
-      if (a_hi < MAX_PRIMARY_ADDRESS) {
+      if (a_hi <= MAX_PRIMARY_ADDRESS) {
          // Now we know the entire range is within the main primary map.
          SecMap* sm    = get_secmap_for_writing_low(a_lo);
          SecMap* sm_hi = get_secmap_for_writing_low(a_hi);
@@ -3129,7 +3130,7 @@ void MC_(helperc_MAKE_STACK_UNINIT) ( Addr base, UWord len, Addr nia )
       UWord a_lo = (UWord)(base);
       UWord a_hi = (UWord)(base + 288 - 1);
       tl_assert(a_lo < a_hi);             // paranoia: detect overflow
-      if (a_hi < MAX_PRIMARY_ADDRESS) {
+      if (a_hi <= MAX_PRIMARY_ADDRESS) {
          // Now we know the entire range is within the main primary map.
          SecMap* sm    = get_secmap_for_writing_low(a_lo);
          SecMap* sm_hi = get_secmap_for_writing_low(a_hi);
@@ -3570,11 +3571,79 @@ static void mc_pre_reg_read ( CorePart part, ThreadId tid, Char* s,
    are a UWord, and for STOREV64 they are a ULong.
 */
 
-/* If any part of '_a' indicated by the mask is 1, either
-   '_a' is not naturally '_sz/8'-aligned, or it exceeds the range
-   covered by the primary map. */
-#define UNALIGNED_OR_HIGH(_a,_sz)   ((_a) & MASK((_sz>>3)))
-#define MASK(_sz)   ( ~((0x10000-(_sz)) | ((N_PRIMARY_MAP-1) << 16)) )
+/* If any part of '_a' indicated by the mask is 1, either '_a' is not
+   naturally '_sz/8'-aligned, or it exceeds the range covered by the
+   primary map.  This is all very tricky (and important!), so let's
+   work through the maths by hand (below), *and* assert for these
+   values at startup. */
+#define MASK(_szInBytes) \
+   ( ~((0x10000UL-(_szInBytes)) | ((N_PRIMARY_MAP-1) << 16)) )
+
+/* MASK only exists so as to define this macro. */
+#define UNALIGNED_OR_HIGH(_a,_szInBits) \
+   ((_a) & MASK((_szInBits>>3)))
+
+/* On a 32-bit machine:
+
+   N_PRIMARY_BITS          == 16, so
+   N_PRIMARY_MAP           == 0x10000, so
+   N_PRIMARY_MAP-1         == 0xFFFF, so
+   (N_PRIMARY_MAP-1) << 16 == 0xFFFF0000, and so
+
+   MASK(1) = ~ ( (0x10000 - 1) | 0xFFFF0000 )
+           = ~ ( 0xFFFF | 0xFFFF0000 )
+           = ~ 0xFFFF'FFFF
+           = 0
+
+   MASK(2) = ~ ( (0x10000 - 2) | 0xFFFF0000 )
+           = ~ ( 0xFFFE | 0xFFFF0000 )
+           = ~ 0xFFFF'FFFE
+           = 1
+
+   MASK(4) = ~ ( (0x10000 - 4) | 0xFFFF0000 )
+           = ~ ( 0xFFFC | 0xFFFF0000 )
+           = ~ 0xFFFF'FFFC
+           = 3
+
+   MASK(8) = ~ ( (0x10000 - 8) | 0xFFFF0000 )
+           = ~ ( 0xFFF8 | 0xFFFF0000 )
+           = ~ 0xFFFF'FFF8
+           = 7
+
+   Hence in the 32-bit case, "a & MASK(1/2/4/8)" is a nonzero value
+   precisely when a is not 1/2/4/8-bytes aligned.  And obviously, for
+   the 1-byte alignment case, it is always a zero value, since MASK(1)
+   is zero.  All as expected.
+
+   On a 64-bit machine, it's more complex, since we're testing
+   simultaneously for misalignment and for the address being at or
+   above 32G:
+
+   N_PRIMARY_BITS          == 19, so
+   N_PRIMARY_MAP           == 0x80000, so
+   N_PRIMARY_MAP-1         == 0x7FFFF, so
+   (N_PRIMARY_MAP-1) << 16 == 0x7FFFF'0000, and so
+
+   MASK(1) = ~ ( (0x10000 - 1) | 0x7FFFF'0000 )
+           = ~ ( 0xFFFF | 0x7FFFF'0000 )
+           = ~ 0x7FFFF'FFFF
+           = 0xFFFF'FFF8'0000'0000
+
+   MASK(2) = ~ ( (0x10000 - 2) | 0x7FFFF'0000 )
+           = ~ ( 0xFFFE | 0x7FFFF'0000 )
+           = ~ 0x7FFFF'FFFE
+           = 0xFFFF'FFF8'0000'0001
+
+   MASK(4) = ~ ( (0x10000 - 4) | 0x7FFFF'0000 )
+           = ~ ( 0xFFFC | 0x7FFFF'0000 )
+           = ~ 0x7FFFF'FFFC
+           = 0xFFFF'FFF8'0000'0003
+
+   MASK(8) = ~ ( (0x10000 - 8) | 0x7FFFF'0000 )
+           = ~ ( 0xFFF8 | 0x7FFFF'0000 )
+           = ~ 0x7FFFF'FFF8
+           = 0xFFFF'FFF8'0000'0007
+*/
 
 
 /* ------------------------ Size = 8 ------------------------ */
@@ -5452,6 +5521,31 @@ static void mc_pre_clo_init(void)
 
    init_OCache();
    init_nia_to_ecu_cache();
+
+   /* Check some important stuff.  See extensive comments above
+      re UNALIGNED_OR_HIGH for background. */
+#  if VG_WORDSIZE == 4
+   tl_assert(sizeof(void*) == 4);
+   tl_assert(sizeof(Addr)  == 4);
+   tl_assert(sizeof(UWord) == 4);
+   tl_assert(sizeof(Word)  == 4);
+   tl_assert(MAX_PRIMARY_ADDRESS == 0xFFFFFFFFUL);
+   tl_assert(MASK(1) == 0UL);
+   tl_assert(MASK(2) == 1UL);
+   tl_assert(MASK(4) == 3UL);
+   tl_assert(MASK(8) == 7UL);
+#  else
+   tl_assert(VG_WORDSIZE == 8);
+   tl_assert(sizeof(void*) == 8);
+   tl_assert(sizeof(Addr)  == 8);
+   tl_assert(sizeof(UWord) == 8);
+   tl_assert(sizeof(Word)  == 8);
+   tl_assert(MAX_PRIMARY_ADDRESS == 0x7FFFFFFFFULL);
+   tl_assert(MASK(1) == 0xFFFFFFF800000000ULL);
+   tl_assert(MASK(2) == 0xFFFFFFF800000001ULL);
+   tl_assert(MASK(4) == 0xFFFFFFF800000003ULL);
+   tl_assert(MASK(8) == 0xFFFFFFF800000007ULL);
+#  endif
 }
 
 VG_DETERMINE_INTERFACE_VERSION(mc_pre_clo_init)

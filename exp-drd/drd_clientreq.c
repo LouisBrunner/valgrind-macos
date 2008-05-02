@@ -96,6 +96,11 @@ static Addr highest_used_stack_address(const ThreadId vg_tid)
 
     nframes = VG_(get_StackTrace)(vg_tid, ips, n_ips, sps, 0, 0);
 
+    /* Paranoia ... */
+    tl_assert(VG_(thread_get_stack_max)(vg_tid)
+              - VG_(thread_get_stack_size)(vg_tid) <= VG_(get_SP)(vg_tid)
+              && VG_(get_SP)(vg_tid) <= VG_(thread_get_stack_max)(vg_tid));
+
     husa = (nframes >= 1 ? sps[nframes - 1] : VG_(get_SP)(vg_tid));
     tl_assert(VG_(thread_get_stack_max)(vg_tid)
               - VG_(thread_get_stack_size)(vg_tid) <= husa

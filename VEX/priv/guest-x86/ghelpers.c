@@ -925,6 +925,13 @@ IRExpr* guest_x86_spechelper ( HChar* function_name,
                            unop(Iop_32to16,cc_dep1), 
                            unop(Iop_32to16,cc_dep2)));
       }
+      if (isU32(cc_op, X86G_CC_OP_SUBW) && isU32(cond, X86CondNZ)) {
+         /* word sub/cmp, then NZ --> test dst!=src */
+         return unop(Iop_1Uto32,
+                     binop(Iop_CmpNE16, 
+                           unop(Iop_32to16,cc_dep1), 
+                           unop(Iop_32to16,cc_dep2)));
+      }
 
       /*---------------- SUBB ----------------*/
 

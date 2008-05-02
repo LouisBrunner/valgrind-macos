@@ -30,7 +30,6 @@
 */
 
 #include "pub_tool_basics.h"
-#include "pub_tool_aspacemgr.h"
 #include "pub_tool_hashtable.h"     // For mc_include.h
 #include "pub_tool_libcbase.h"
 #include "pub_tool_libcassert.h"
@@ -38,15 +37,12 @@
 #include "pub_tool_machine.h"
 #include "pub_tool_mallocfree.h"
 #include "pub_tool_options.h"
-#include "pub_tool_oset.h"
 #include "pub_tool_replacemalloc.h"
 #include "pub_tool_tooliface.h"
 #include "pub_tool_threadstate.h"
-#include "pub_tool_oset.h"
 #include "pub_tool_debuginfo.h"     // VG_(get_dataname_and_offset)
 
 #include "mc_include.h"
-#include "memcheck.h"   /* for client requests */
 
 
 /*------------------------------------------------------------*/
@@ -948,7 +944,7 @@ static void describe_addr ( Addr a, /*OUT*/AddrInfo* ai )
          ai->Addr.Block.block_kind = Block_Freed;
          ai->Addr.Block.block_desc = "block";
          ai->Addr.Block.block_szB  = mc->szB;
-         ai->Addr.Block.rwoffset   = (Int)a - (Int)mc->data;
+         ai->Addr.Block.rwoffset   = (Word)a - (Word)mc->data;
          ai->Addr.Block.lastchange = mc->where;
          return;
       }
@@ -962,7 +958,7 @@ static void describe_addr ( Addr a, /*OUT*/AddrInfo* ai )
          ai->Addr.Block.block_kind = Block_Mallocd;
          ai->Addr.Block.block_desc = "block";
          ai->Addr.Block.block_szB  = mc->szB;
-         ai->Addr.Block.rwoffset   = (Int)a - (Int)mc->data;
+         ai->Addr.Block.rwoffset   = (Word)a - (Word)mc->data;
          ai->Addr.Block.lastchange = mc->where;
          return;
       }
@@ -1124,10 +1120,10 @@ UInt MC_(update_Error_extra)( Error* err )
 static Bool client_block_maybe_describe( Addr a,
                                          /*OUT*/AddrInfo* ai )
 {
-   UInt i;
-
+   UWord      i;
    CGenBlock* cgbs = NULL;
    UWord      cgb_used = 0;
+
    MC_(get_ClientBlock_array)( &cgbs, &cgb_used );
    if (cgbs == NULL)
       tl_assert(cgb_used == 0);
@@ -1151,7 +1147,7 @@ static Bool client_block_maybe_describe( Addr a,
                      ai->Addr.Block.block_kind = Block_MempoolChunk;
                      ai->Addr.Block.block_desc = "block";
                      ai->Addr.Block.block_szB  = mc->szB;
-                     ai->Addr.Block.rwoffset   = (Int)a - (Int)mc->data;
+                     ai->Addr.Block.rwoffset   = (Word)a - (Word)mc->data;
                      ai->Addr.Block.lastchange = mc->where;
                      return True;
                   }
@@ -1161,7 +1157,7 @@ static Bool client_block_maybe_describe( Addr a,
             ai->Addr.Block.block_kind = Block_Mempool;
             ai->Addr.Block.block_desc = "mempool";
             ai->Addr.Block.block_szB  = cgbs[i].size;
-            ai->Addr.Block.rwoffset   = (Int)(a) - (Int)(cgbs[i].start);
+            ai->Addr.Block.rwoffset   = (Word)(a) - (Word)(cgbs[i].start);
             ai->Addr.Block.lastchange = cgbs[i].where;
             return True;
          }
@@ -1169,7 +1165,7 @@ static Bool client_block_maybe_describe( Addr a,
          ai->Addr.Block.block_kind = Block_UserG;
          ai->Addr.Block.block_desc = cgbs[i].desc;
          ai->Addr.Block.block_szB  = cgbs[i].size;
-         ai->Addr.Block.rwoffset   = (Int)(a) - (Int)(cgbs[i].start);
+         ai->Addr.Block.rwoffset   = (Word)(a) - (Word)(cgbs[i].start);
          ai->Addr.Block.lastchange = cgbs[i].where;
          return True;
       }

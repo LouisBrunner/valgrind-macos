@@ -78,58 +78,57 @@ typedef
    MC_Mempool;
 
 
-extern void* MC_(new_block)  ( ThreadId tid,
-                               Addr p, SizeT size, SizeT align, UInt rzB,
-                               Bool is_zeroed, MC_AllocKind kind,
-                               VgHashTable table);
-extern void MC_(handle_free) ( ThreadId tid,
-                                Addr p, UInt rzB, MC_AllocKind kind );
+void* MC_(new_block)  ( ThreadId tid,
+                        Addr p, SizeT size, SizeT align, UInt rzB,
+                        Bool is_zeroed, MC_AllocKind kind,
+                        VgHashTable table);
+void MC_(handle_free) ( ThreadId tid,
+                        Addr p, UInt rzB, MC_AllocKind kind );
 
-extern void MC_(create_mempool)  ( Addr pool, UInt rzB, Bool is_zeroed );
-extern void MC_(destroy_mempool) ( Addr pool );
-extern void MC_(mempool_alloc)   ( ThreadId tid, Addr pool,
-                                   Addr addr, SizeT size );
-extern void MC_(mempool_free)    ( Addr pool, Addr addr );
-extern void MC_(mempool_trim)    ( Addr pool, Addr addr, SizeT size );
-extern void MC_(move_mempool)    ( Addr poolA, Addr poolB );
-extern void MC_(mempool_change)  ( Addr pool, Addr addrA, Addr addrB, SizeT size );
-extern Bool MC_(mempool_exists)  ( Addr pool );
+void MC_(create_mempool)  ( Addr pool, UInt rzB, Bool is_zeroed );
+void MC_(destroy_mempool) ( Addr pool );
+void MC_(mempool_alloc)   ( ThreadId tid, Addr pool,
+                            Addr addr, SizeT size );
+void MC_(mempool_free)    ( Addr pool, Addr addr );
+void MC_(mempool_trim)    ( Addr pool, Addr addr, SizeT size );
+void MC_(move_mempool)    ( Addr poolA, Addr poolB );
+void MC_(mempool_change)  ( Addr pool, Addr addrA, Addr addrB, SizeT size );
+Bool MC_(mempool_exists)  ( Addr pool );
 
-extern MC_Chunk* MC_(get_freed_list_head)( void );
+MC_Chunk* MC_(get_freed_list_head)( void );
 
 /* For tracking malloc'd blocks */
-extern VgHashTable MC_(malloc_list);
+VgHashTable MC_(malloc_list);
 
 /* For tracking memory pools. */
-extern VgHashTable MC_(mempool_list);
+VgHashTable MC_(mempool_list);
 
 /* Shadow memory functions */
-extern Bool MC_(check_mem_is_noaccess)( Addr a, SizeT len, Addr* bad_addr );
-extern void MC_(make_mem_noaccess)        ( Addr a, SizeT len );
-extern void MC_(make_mem_undefined_w_otag)( Addr a, SizeT len, UInt otag );
-extern void MC_(make_mem_defined)         ( Addr a, SizeT len );
-extern void MC_(copy_address_range_state) ( Addr src, Addr dst, SizeT len );
+Bool MC_(check_mem_is_noaccess)( Addr a, SizeT len, Addr* bad_addr );
+void MC_(make_mem_noaccess)        ( Addr a, SizeT len );
+void MC_(make_mem_undefined_w_otag)( Addr a, SizeT len, UInt otag );
+void MC_(make_mem_defined)         ( Addr a, SizeT len );
+void MC_(copy_address_range_state) ( Addr src, Addr dst, SizeT len );
 
-extern void MC_(print_malloc_stats) ( void );
+void MC_(print_malloc_stats) ( void );
 
-extern void* MC_(malloc)               ( ThreadId tid, SizeT n );
-extern void* MC_(__builtin_new)        ( ThreadId tid, SizeT n );
-extern void* MC_(__builtin_vec_new)    ( ThreadId tid, SizeT n );
-extern void* MC_(memalign)             ( ThreadId tid, SizeT align, SizeT n );
-extern void* MC_(calloc)               ( ThreadId tid, SizeT nmemb, SizeT size1 );
-extern void  MC_(free)                 ( ThreadId tid, void* p );
-extern void  MC_(__builtin_delete)     ( ThreadId tid, void* p );
-extern void  MC_(__builtin_vec_delete) ( ThreadId tid, void* p );
-extern void* MC_(realloc)              ( ThreadId tid, void* p, SizeT new_size );
+void* MC_(malloc)               ( ThreadId tid, SizeT n );
+void* MC_(__builtin_new)        ( ThreadId tid, SizeT n );
+void* MC_(__builtin_vec_new)    ( ThreadId tid, SizeT n );
+void* MC_(memalign)             ( ThreadId tid, SizeT align, SizeT n );
+void* MC_(calloc)               ( ThreadId tid, SizeT nmemb, SizeT size1 );
+void  MC_(free)                 ( ThreadId tid, void* p );
+void  MC_(__builtin_delete)     ( ThreadId tid, void* p );
+void  MC_(__builtin_vec_delete) ( ThreadId tid, void* p );
+void* MC_(realloc)              ( ThreadId tid, void* p, SizeT new_size );
+
 
 /*------------------------------------------------------------*/
 /*--- Origin tracking translate-time support               ---*/
 /*------------------------------------------------------------*/
 
 /* See detailed comments in mc_machine.c. */
-extern 
 Int MC_(get_otrack_shadow_offset) ( Int offset, Int szB );
-extern 
 IRType MC_(get_otrack_reg_array_equiv_int_type) ( IRRegArray* arr );
 
 /* Constants which are used as the lowest 2 bits in origin tags.
@@ -177,8 +176,8 @@ IRType MC_(get_otrack_reg_array_equiv_int_type) ( IRRegArray* arr );
 #ifdef MC_PROFILE_MEMORY
 #  define N_PROF_EVENTS 500
 
-extern UInt   MC_(event_ctr)[N_PROF_EVENTS];
-extern HChar* MC_(event_ctr_name)[N_PROF_EVENTS];
+UInt   MC_(event_ctr)[N_PROF_EVENTS];
+HChar* MC_(event_ctr_name)[N_PROF_EVENTS];
 
 #  define PROF_EVENT(ev, name)                                \
    do { tl_assert((ev) >= 0 && (ev) < N_PROF_EVENTS);         \
@@ -243,11 +242,11 @@ typedef
   Reachedness;
 
 /* For VALGRIND_COUNT_LEAKS client request */
-extern SizeT MC_(bytes_leaked);
-extern SizeT MC_(bytes_indirect);
-extern SizeT MC_(bytes_dubious);
-extern SizeT MC_(bytes_reachable);
-extern SizeT MC_(bytes_suppressed);
+SizeT MC_(bytes_leaked);
+SizeT MC_(bytes_indirect);
+SizeT MC_(bytes_dubious);
+SizeT MC_(bytes_reachable);
+SizeT MC_(bytes_suppressed);
 
 typedef
    enum {
@@ -272,14 +271,14 @@ typedef
    }
    LossRecord;
 
-extern void MC_(do_detect_memory_leaks) (
-          ThreadId tid, LeakCheckMode mode,
-          Bool (*is_within_valid_secondary) ( Addr ),
-          Bool (*is_valid_aligned_word)     ( Addr )
-       );
+void MC_(do_detect_memory_leaks) (
+        ThreadId tid, LeakCheckMode mode,
+        Bool (*is_within_valid_secondary) ( Addr ),
+        Bool (*is_valid_aligned_word)     ( Addr )
+     );
 
-extern void MC_(pp_LeakError)(UInt n_this_record, UInt n_total_records,
-                              LossRecord* l);
+void MC_(pp_LeakError)(UInt n_this_record, UInt n_total_records,
+                       LossRecord* l);
                           
 
 /*------------------------------------------------------------*/
@@ -364,23 +363,23 @@ void MC_(get_ClientBlock_array)( /*OUT*/CGenBlock** blocks,
 /*------------------------------------------------------------*/
 
 /* Allow loads from partially-valid addresses?  default: YES */
-extern Bool MC_(clo_partial_loads_ok);
+Bool MC_(clo_partial_loads_ok);
 
 /* Max volume of the freed blocks queue. */
-extern Long MC_(clo_freelist_vol);
+Long MC_(clo_freelist_vol);
 
 /* Do leak check at exit?  default: NO */
-extern LeakCheckMode MC_(clo_leak_check);
+LeakCheckMode MC_(clo_leak_check);
 
 /* How closely should we compare ExeContexts in leak records? default: 2 */
-extern VgRes MC_(clo_leak_resolution);
+VgRes MC_(clo_leak_resolution);
 
 /* In leak check, show reachable-but-not-freed blocks?  default: NO */
-extern Bool MC_(clo_show_reachable);
+Bool MC_(clo_show_reachable);
 
 /* Assume accesses immediately below %esp are due to gcc-2.96 bugs.
  * default: NO */
-extern Bool MC_(clo_workaround_gcc296_bugs);
+Bool MC_(clo_workaround_gcc296_bugs);
 
 /* Fill malloc-d/free-d client blocks with a specific value?  -1 if
    not, else 0x00 .. 0xFF indicating the fill value to use.  Can be
@@ -388,8 +387,8 @@ extern Bool MC_(clo_workaround_gcc296_bugs);
    more repeatable ways.  Note that malloc-filled and free-filled
    areas are still undefined and noaccess respectively.  This merely
    causes them to contain the specified values. */
-extern Int MC_(clo_malloc_fill);
-extern Int MC_(clo_free_fill);
+Int MC_(clo_malloc_fill);
+Int MC_(clo_free_fill);
 
 /* Indicates the level of instrumentation/checking done by Memcheck.
 
@@ -414,7 +413,7 @@ extern Int MC_(clo_free_fill);
 
    The default is 2.
 */
-extern Int MC_(clo_mc_level);
+Int MC_(clo_mc_level);
 
 
 /*------------------------------------------------------------*/
@@ -427,39 +426,39 @@ extern Int MC_(clo_mc_level);
    origin tag and should really be UInt, but to be simple and safe
    considering it's called from generated code, just claim it to be a
    UWord. */
-extern VG_REGPARM(2) void MC_(helperc_value_checkN_fail_w_o) ( HWord, UWord );
-extern VG_REGPARM(1) void MC_(helperc_value_check8_fail_w_o) ( UWord );
-extern VG_REGPARM(1) void MC_(helperc_value_check4_fail_w_o) ( UWord );
-extern VG_REGPARM(1) void MC_(helperc_value_check1_fail_w_o) ( UWord );
-extern VG_REGPARM(1) void MC_(helperc_value_check0_fail_w_o) ( UWord );
+VG_REGPARM(2) void MC_(helperc_value_checkN_fail_w_o) ( HWord, UWord );
+VG_REGPARM(1) void MC_(helperc_value_check8_fail_w_o) ( UWord );
+VG_REGPARM(1) void MC_(helperc_value_check4_fail_w_o) ( UWord );
+VG_REGPARM(1) void MC_(helperc_value_check1_fail_w_o) ( UWord );
+VG_REGPARM(1) void MC_(helperc_value_check0_fail_w_o) ( UWord );
 
 /* And call these ones instead to report an uninitialised value error
    but with no origin available. */
-extern VG_REGPARM(1) void MC_(helperc_value_checkN_fail_no_o) ( HWord );
-extern VG_REGPARM(0) void MC_(helperc_value_check8_fail_no_o) ( void );
-extern VG_REGPARM(0) void MC_(helperc_value_check4_fail_no_o) ( void );
-extern VG_REGPARM(0) void MC_(helperc_value_check1_fail_no_o) ( void );
-extern VG_REGPARM(0) void MC_(helperc_value_check0_fail_no_o) ( void );
+VG_REGPARM(1) void MC_(helperc_value_checkN_fail_no_o) ( HWord );
+VG_REGPARM(0) void MC_(helperc_value_check8_fail_no_o) ( void );
+VG_REGPARM(0) void MC_(helperc_value_check4_fail_no_o) ( void );
+VG_REGPARM(0) void MC_(helperc_value_check1_fail_no_o) ( void );
+VG_REGPARM(0) void MC_(helperc_value_check0_fail_no_o) ( void );
 
 /* V-bits load/store helpers */
-extern VG_REGPARM(1) void MC_(helperc_STOREV64be) ( Addr, ULong );
-extern VG_REGPARM(1) void MC_(helperc_STOREV64le) ( Addr, ULong );
-extern VG_REGPARM(2) void MC_(helperc_STOREV32be) ( Addr, UWord );
-extern VG_REGPARM(2) void MC_(helperc_STOREV32le) ( Addr, UWord );
-extern VG_REGPARM(2) void MC_(helperc_STOREV16be) ( Addr, UWord );
-extern VG_REGPARM(2) void MC_(helperc_STOREV16le) ( Addr, UWord );
-extern VG_REGPARM(2) void MC_(helperc_STOREV8)   ( Addr, UWord );
+VG_REGPARM(1) void MC_(helperc_STOREV64be) ( Addr, ULong );
+VG_REGPARM(1) void MC_(helperc_STOREV64le) ( Addr, ULong );
+VG_REGPARM(2) void MC_(helperc_STOREV32be) ( Addr, UWord );
+VG_REGPARM(2) void MC_(helperc_STOREV32le) ( Addr, UWord );
+VG_REGPARM(2) void MC_(helperc_STOREV16be) ( Addr, UWord );
+VG_REGPARM(2) void MC_(helperc_STOREV16le) ( Addr, UWord );
+VG_REGPARM(2) void MC_(helperc_STOREV8)   ( Addr, UWord );
 
-extern VG_REGPARM(1) ULong MC_(helperc_LOADV64be) ( Addr );
-extern VG_REGPARM(1) ULong MC_(helperc_LOADV64le) ( Addr );
-extern VG_REGPARM(1) UWord MC_(helperc_LOADV32be) ( Addr );
-extern VG_REGPARM(1) UWord MC_(helperc_LOADV32le) ( Addr );
-extern VG_REGPARM(1) UWord MC_(helperc_LOADV16be) ( Addr );
-extern VG_REGPARM(1) UWord MC_(helperc_LOADV16le) ( Addr );
-extern VG_REGPARM(1) UWord MC_(helperc_LOADV8)    ( Addr );
+VG_REGPARM(1) ULong MC_(helperc_LOADV64be) ( Addr );
+VG_REGPARM(1) ULong MC_(helperc_LOADV64le) ( Addr );
+VG_REGPARM(1) UWord MC_(helperc_LOADV32be) ( Addr );
+VG_REGPARM(1) UWord MC_(helperc_LOADV32le) ( Addr );
+VG_REGPARM(1) UWord MC_(helperc_LOADV16be) ( Addr );
+VG_REGPARM(1) UWord MC_(helperc_LOADV16le) ( Addr );
+VG_REGPARM(1) UWord MC_(helperc_LOADV8)    ( Addr );
 
-extern void MC_(helperc_MAKE_STACK_UNINIT) ( Addr base, UWord len,
-                                                        Addr nia );
+void MC_(helperc_MAKE_STACK_UNINIT) ( Addr base, UWord len,
+                                                 Addr nia );
 
 /* Origin tag load/store helpers */
 VG_REGPARM(2) void  MC_(helperc_b_store1) ( Addr a, UWord d32 );
@@ -474,14 +473,12 @@ VG_REGPARM(1) UWord MC_(helperc_b_load8) ( Addr a );
 VG_REGPARM(1) UWord MC_(helperc_b_load16)( Addr a );
 
 /* Functions defined in mc_translate.c */
-extern
 IRSB* MC_(instrument) ( VgCallbackClosure* closure,
                         IRSB* bb_in, 
                         VexGuestLayout* layout, 
                         VexGuestExtents* vge,
                         IRType gWordTy, IRType hWordTy );
 
-extern
 IRSB* MC_(final_tidy) ( IRSB* );
 
 #endif /* ndef __MC_INCLUDE_H */
@@ -489,4 +486,3 @@ IRSB* MC_(final_tidy) ( IRSB* );
 /*--------------------------------------------------------------------*/
 /*--- end                                                          ---*/
 /*--------------------------------------------------------------------*/
-

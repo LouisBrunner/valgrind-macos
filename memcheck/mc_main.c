@@ -43,8 +43,6 @@
 #include "pub_tool_replacemalloc.h"
 #include "pub_tool_tooliface.h"
 #include "pub_tool_threadstate.h"
-#include "pub_tool_oset.h"
-#include "pub_tool_debuginfo.h"     // VG_(get_dataname_and_offset)
 
 #include "mc_include.h"
 #include "memcheck.h"   /* for client requests */
@@ -4500,15 +4498,15 @@ static void mc_print_debug_usage(void)
 /* type CGenBlock is defined in mc_include.h */
 
 /* This subsystem is self-initialising. */
-static UInt       cgb_size = 0;
-static UInt       cgb_used = 0;
+static UWord      cgb_size = 0;
+static UWord      cgb_used = 0;
 static CGenBlock* cgbs     = NULL;
 
 /* Stats for this subsystem. */
-static UInt cgb_used_MAX = 0;   /* Max in use. */
-static UInt cgb_allocs   = 0;   /* Number of allocs. */
-static UInt cgb_discards = 0;   /* Number of discards. */
-static UInt cgb_search   = 0;   /* Number of searches. */
+static ULong cgb_used_MAX = 0;   /* Max in use. */
+static ULong cgb_allocs   = 0;   /* Number of allocs. */
+static ULong cgb_discards = 0;   /* Number of discards. */
+static ULong cgb_search   = 0;   /* Number of searches. */
 
 
 /* Get access to the client block array. */
@@ -4523,7 +4521,7 @@ void MC_(get_ClientBlock_array)( /*OUT*/CGenBlock** blocks,
 static
 Int alloc_client_block ( void )
 {
-   UInt       i, sz_new;
+   UWord      i, sz_new;
    CGenBlock* cgbs_new;
 
    cgb_allocs++;
@@ -4563,7 +4561,7 @@ Int alloc_client_block ( void )
 static void show_client_block_stats ( void )
 {
    VG_(message)(Vg_DebugMsg, 
-      "general CBs: %d allocs, %d discards, %d maxinuse, %d search",
+      "general CBs: %llu allocs, %llu discards, %llu maxinuse, %llu search",
       cgb_allocs, cgb_discards, cgb_used_MAX, cgb_search 
    );
 }

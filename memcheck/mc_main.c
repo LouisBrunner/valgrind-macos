@@ -3828,11 +3828,10 @@ void mc_STOREV32 ( Addr a, UWord vbits32, Bool isBigEndian )
    sm_off  = SM_OFF(a);
    vabits8 = sm->vabits8[sm_off];
 
-//---------------------------------------------------------------------------
-#if 1
    // Cleverness:  sometimes we don't have to write the shadow memory at
    // all, if we can tell that what we want to write is the same as what is
-   // already there.
+   // already there.  The 64/16/8 bit cases also have cleverness at this
+   // point, but it works a little differently to the code below.
    if (V_BITS32_DEFINED == vbits32) {
       if (vabits8 == (UInt)VA_BITS8_DEFINED) {
          return;
@@ -3858,31 +3857,6 @@ void mc_STOREV32 ( Addr a, UWord vbits32, Bool isBigEndian )
       PROF_EVENT(234, "mc_STOREV32-slow4");
       mc_STOREVn_slow( a, 32, (ULong)vbits32, isBigEndian );
    }
-//---------------------------------------------------------------------------
-#else
-   if (LIKELY( !is_distinguished_sm(sm) && 
-                       (VA_BITS8_DEFINED   == vabits8 ||
-                        VA_BITS8_UNDEFINED == vabits8) ))
-   {
-      /* Handle common case quickly: a is suitably aligned, */
-      /* is mapped, and is addressible. */
-      // Convert full V-bits in register to compact 2-bit form.
-      if (V_BITS32_DEFINED == vbits32) {
-         sm->vabits8[sm_off] = VA_BITS8_DEFINED;
-      } else if (V_BITS32_UNDEFINED == vbits32) {
-         sm->vabits8[sm_off] = VA_BITS8_UNDEFINED;
-      } else {
-         /* Slow but general case -- writing partially defined bytes. */
-         PROF_EVENT(232, "mc_STOREV32-slow2");
-         mc_STOREVn_slow( a, 32, (ULong)vbits32, isBigEndian );
-      }
-   } else {
-      /* Slow but general case. */
-      PROF_EVENT(233, "mc_STOREV32-slow3");
-      mc_STOREVn_slow( a, 32, (ULong)vbits32, isBigEndian );
-   }
-#endif
-//---------------------------------------------------------------------------
 #endif
 }
 

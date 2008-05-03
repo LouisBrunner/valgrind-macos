@@ -5,6 +5,11 @@
 # libpthread is found (LinuxThreads).
 
 if [ "$(uname)" = "Linux" ]; then
+  if [ ! -x /usr/bin/getconf ]; then
+    echo "Error: could not find the program /usr/bin/getconf."
+    # Assume NPTL.
+    exit 0
+  fi
   libpthread_version="$(/usr/bin/getconf GNU_LIBPTHREAD_VERSION 2>/dev/null)"
   if [ "${libpthread_version#NPTL}" != "${libpthread_version}" ]; then
     # NPTL

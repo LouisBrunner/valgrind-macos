@@ -7,6 +7,7 @@
 #include <stdio.h>
 #include <unistd.h>
 #include <pthread.h>
+#include "../../config.h"
 
 
 static void lock_twice(pthread_mutex_t* const p)
@@ -21,14 +22,17 @@ int main(int argc, char** argv)
 {
   /* Let the program abort after 3 seconds instead of leaving it deadlocked. */
   alarm(3);
-#if !defined(_AIX)
+
+#if defined(HAVE_PTHREAD_RECURSIVE_MUTEX_INITIALIZER_NP)
   {
     pthread_mutex_t m = PTHREAD_RECURSIVE_MUTEX_INITIALIZER_NP;
 
     printf("Recursive mutex (statically initialized).\n");
     lock_twice(&m);
     pthread_mutex_destroy(&m);
-  } 
+  }
+#endif
+#if defined(HAVE_PTHREAD_MUTEX_RECURSIVE_NP)
   {
     pthread_mutex_t m;
     pthread_mutexattr_t attr;
@@ -40,7 +44,9 @@ int main(int argc, char** argv)
     pthread_mutexattr_destroy(&attr);
     lock_twice(&m);
     pthread_mutex_destroy(&m);
-  } 
+  }
+#endif
+#if defined(HAVE_PTHREAD_MUTEX_ERRORCHECK_NP)
   {
     pthread_mutex_t m;
     pthread_mutexattr_t attr;
@@ -51,15 +57,16 @@ int main(int argc, char** argv)
     pthread_mutex_init(&m, &attr);
     pthread_mutexattr_destroy(&attr);
     lock_twice(&m);
-    pthread_mutex_destroy(&m); }
-#endif /* !defined(_AIX) */
+    pthread_mutex_destroy(&m);
+  }
+#endif
   {
     pthread_mutex_t m = PTHREAD_MUTEX_INITIALIZER;
 
     printf("Non-recursive mutex.\n");
     fflush(stdout);
     lock_twice(&m);
-  } 
+  }
   printf("Done.\n");
   return 0;
 }

@@ -580,6 +580,88 @@ AC_DEFINE([HAVE_CLOCK_MONOTONIC], 1,
 AC_MSG_RESULT([no])
 ])
 
+
+# Check for PTHREAD_MUTEX_ADAPTIVE_NP
+
+AC_MSG_CHECKING([for PTHREAD_MUTEX_ADAPTIVE_NP])
+
+AC_TRY_COMPILE(
+[
+#define _GNU_SOURCE
+#include <pthread.h>
+], [
+  return (PTHREAD_MUTEX_ADAPTIVE_NP);
+],
+[
+AC_MSG_RESULT([yes])
+AC_DEFINE([HAVE_PTHREAD_MUTEX_ADAPTIVE_NP], 1,
+          [Define to 1 if you have the `PTHREAD_MUTEX_ADAPTIVE_NP' constant.])
+], [
+AC_MSG_RESULT([no])
+])
+
+
+# Check for PTHREAD_MUTEX_ERRORCHECK_NP
+
+AC_MSG_CHECKING([for PTHREAD_MUTEX_ERRORCHECK_NP])
+
+AC_TRY_COMPILE(
+[
+#define _GNU_SOURCE
+#include <pthread.h>
+], [
+  return (PTHREAD_MUTEX_ERRORCHECK_NP);
+],
+[
+AC_MSG_RESULT([yes])
+AC_DEFINE([HAVE_PTHREAD_MUTEX_ERRORCHECK_NP], 1,
+          [Define to 1 if you have the `PTHREAD_MUTEX_ERRORCHECK_NP' constant.])
+], [
+AC_MSG_RESULT([no])
+])
+
+
+# Check for PTHREAD_MUTEX_RECURSIVE_NP
+
+AC_MSG_CHECKING([for PTHREAD_MUTEX_RECURSIVE_NP])
+
+AC_TRY_COMPILE(
+[
+#define _GNU_SOURCE
+#include <pthread.h>
+], [
+  return (PTHREAD_MUTEX_RECURSIVE_NP);
+],
+[
+AC_MSG_RESULT([yes])
+AC_DEFINE([HAVE_PTHREAD_MUTEX_RECURSIVE_NP], 1,
+          [Define to 1 if you have the `PTHREAD_MUTEX_RECURSIVE_NP' constant.])
+], [
+AC_MSG_RESULT([no])
+])
+
+
+# Check for PTHREAD_RECURSIVE_MUTEX_INITIALIZER_NP
+
+AC_MSG_CHECKING([for PTHREAD_RECURSIVE_MUTEX_INITIALIZER_NP])
+
+AC_TRY_COMPILE(
+[
+#define _GNU_SOURCE
+#include <pthread.h>
+], [
+  pthread_mutex_t m = PTHREAD_RECURSIVE_MUTEX_INITIALIZER_NP;
+  return 0;
+],
+[
+AC_MSG_RESULT([yes])
+AC_DEFINE([HAVE_PTHREAD_RECURSIVE_MUTEX_INITIALIZER_NP], 1,
+          [Define to 1 if you have the `PTHREAD_RECURSIVE_MUTEX_INITIALIZER_NP' constant.])
+], [
+AC_MSG_RESULT([no])
+])
+
+
 # Check whether pthread_mutex_t has a member called __m_kind.
 
 AC_MSG_CHECKING([for pthread_mutex_t::__m_kind])

@@ -7,6 +7,7 @@
 if [ "$(uname)" = "Linux" ]; then
   if [ ! -x /usr/bin/getconf ]; then
     echo "Error: could not find the program /usr/bin/getconf."
+    echo "Please install the glibc-common package."
     # Assume NPTL.
     exit 0
   fi

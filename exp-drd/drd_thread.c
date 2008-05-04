@@ -918,7 +918,7 @@ static Bool thread_danger_set_up_to_date(const DrdThreadId tid)
     return True;
 
   thread_compute_danger_set(&computed_danger_set, tid);
-  result = bm_compare(s_danger_set, computed_danger_set);
+  result = bm_equal(s_danger_set, computed_danger_set);
   bm_delete(computed_danger_set);
   return result;
 }

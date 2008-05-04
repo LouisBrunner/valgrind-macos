@@ -115,6 +115,11 @@ void bm_access_range(struct bitmap* const bm,
 
   tl_assert(bm);
   tl_assert(a1 < a2);
+  /* The current implementation of bm_access_range does not work for the   */
+  /* ADDR0_COUNT highest addresses in the address range. At least on Linux */
+  /* this is not a problem since the upper part of the address space is    */
+  /* reserved for the kernel.                                              */
+  tl_assert(a2 + ADDR0_COUNT > a2);
 
   for (b = a1; b < a2; b = b_next)
   {
@@ -748,13 +753,16 @@ Bool bm_store_has_conflict_with(const struct bitmap* const bm,
 /** Return true if the two bitmaps *lhs and *rhs are identical, and false
  *  if not.
  */
-Bool bm_compare(struct bitmap* const lhs,
-                const struct bitmap* const rhs)
+Bool bm_equal(struct bitmap* const lhs, const struct bitmap* const rhs)
 {
   struct bitmap2* bm2l;
   struct bitmap2ref* bm2l_ref;
   struct bitmap2* bm2r;
   const struct bitmap2ref* bm2r_ref;
+
+  /* It's not possible to have two independent iterators over the same OSet, */
+  /* so complain if lhs == rhs.                                              */
+  tl_assert(lhs != rhs);
 
   VG_(OSetGen_ResetIter)(lhs->oset);
   VG_(OSetGen_ResetIter)(rhs->oset);
@@ -766,27 +774,47 @@ Bool bm_compare(struct bitmap* const lhs,
     tl_assert(bm_has_any_access(lhs,
                                 bm2l->addr << ADDR0_BITS,
                                 (bm2l->addr + 1) << ADDR0_BITS));
+#if 0
+    VG_(message)(Vg_DebugMsg, "bm_equal: at 0x%lx", bm2l->addr << ADDR0_BITS);
+#endif
+
     bm2r_ref = VG_(OSetGen_Next)(rhs->oset);
     if (bm2r_ref == 0)
+    {
+#if 0
+      VG_(message)(Vg_DebugMsg, "bm_equal: no match found");
+#endif
       return False;
+    }
     bm2r = bm2r_ref->bm2;
     tl_assert(bm2r);
     tl_assert(bm_has_any_access(rhs,
                                 bm2r->addr << ADDR0_BITS,
                                 (bm2r->addr + 1) << ADDR0_BITS));
-    if (bm2l->addr != bm2r->addr
-        || VG_(memcmp)(&bm2l->bm1, &bm2r->bm1, sizeof(bm2l->bm1)) != 0)
+
+    if (bm2l != bm2r
+        && (bm2l->addr != bm2r->addr
+            || VG_(memcmp)(&bm2l->bm1, &bm2r->bm1, sizeof(bm2l->bm1)) != 0))
     {
+#if 0
+      VG_(message)(Vg_DebugMsg, "bm_equal: rhs 0x%lx -- returning false",
+                   bm2r->addr << ADDR0_BITS);
+#endif
       return False;
     }
-    bm2r = VG_(OSetGen_Next)(rhs->oset);
-    if (bm2r)
-    {
-      tl_assert(bm_has_any_access(rhs,
-                                  bm2r->addr << ADDR0_BITS,
-                                  (bm2r->addr + 1) << ADDR0_BITS));
-      return False;
-    }
+  }
+  bm2r = VG_(OSetGen_Next)(rhs->oset);
+  if (bm2r)
+  {
+    tl_assert(bm_has_any_access(rhs,
+                                bm2r->addr << ADDR0_BITS,
+                                (bm2r->addr + 1) << ADDR0_BITS));
+#if 0
+    VG_(message)(Vg_DebugMsg,
+                 "bm_equal: remaining rhs 0x%lx -- returning false",
+                 bm2r->addr << ADDR0_BITS);
+#endif
+    return False;
   }
   return True;
 }
@@ -874,13 +902,13 @@ int bm_has_races(const struct bitmap* const lhs,
       unsigned b;
       for (b = 0; b < BITS_PER_UWORD; b++)
       {
-        UWord const access
+        UWord const access_mask
           = ((bm1l->bm0_r[k] & bm0_mask(b)) ? LHS_R : 0)
           | ((bm1l->bm0_w[k] & bm0_mask(b)) ? LHS_W : 0)
           | ((bm1r->bm0_r[k] & bm0_mask(b)) ? RHS_R : 0)
           | ((bm1r->bm0_w[k] & bm0_mask(b)) ? RHS_W : 0);
         Addr const a = MAKE_ADDRESS(bm2l->addr, k * BITS_PER_UWORD | b);
-        if (HAS_RACE(access) && ! drd_is_suppressed(a, a + 1))
+        if (HAS_RACE(access_mask) && ! drd_is_suppressed(a, a + 1))
         {
           return 1;
         }

@@ -91,20 +91,35 @@ static Addr highest_used_stack_address(const ThreadId vg_tid)
 {
     UInt nframes;
     const UInt n_ips = 10;
+    UInt i;
     Addr ips[n_ips], sps[n_ips];
     Addr husa;
 
     nframes = VG_(get_StackTrace)(vg_tid, ips, n_ips, sps, 0, 0);
+    tl_assert(1 <= nframes && nframes <= n_ips);
 
-    /* Paranoia ... */
-    tl_assert(VG_(thread_get_stack_max)(vg_tid)
-              - VG_(thread_get_stack_size)(vg_tid) <= VG_(get_SP)(vg_tid)
-              && VG_(get_SP)(vg_tid) < VG_(thread_get_stack_max)(vg_tid));
+    /* A hack to work around VG_(get_StackTrace)()'s behavior that sometimes */
+    /* the topmost stackframes it returns are bogus (this occurs sometimes   */
+    /* at least on amd64, ppc32 and ppc64).                                  */
 
-    husa = (nframes >= 1 ? sps[nframes - 1] : VG_(get_SP)(vg_tid));
+    husa = sps[0];
+
     tl_assert(VG_(thread_get_stack_max)(vg_tid)
               - VG_(thread_get_stack_size)(vg_tid) <= husa
               && husa < VG_(thread_get_stack_max)(vg_tid));
+
+    for (i = 1; i < nframes; i++)
+    {
+      if (sps[i] == 0)
+        break;
+      if (husa < sps[i] && sps[i] < VG_(thread_get_stack_max)(vg_tid))
+        husa = sps[i];
+    }
+
+    tl_assert(VG_(thread_get_stack_max)(vg_tid)
+              - VG_(thread_get_stack_size)(vg_tid) <= husa
+              && husa < VG_(thread_get_stack_max)(vg_tid));
+
     return husa;
 }
 

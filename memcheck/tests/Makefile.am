@@ -248,7 +248,7 @@ supp2_SOURCES		= supp.c
 # To make it a bit more realistic, have some optimisation enabled
 # for the varinfo tests.  We still expect sane results.
 varinfo1_CFLAGS		= $(AM_FLAG_M3264_PRI) $(AM_CFLAGS) -O -g
-varinfo2_CFLAGS		= $(AM_FLAG_M3264_PRI) $(AM_CFLAGS) -O -g
+varinfo2_CFLAGS		= $(AM_FLAG_M3264_PRI) $(AM_CFLAGS) -O -g -Wno-shadow
 varinfo3_CFLAGS		= $(AM_FLAG_M3264_PRI) $(AM_CFLAGS) -O -g
 varinfo4_CFLAGS		= $(AM_FLAG_M3264_PRI) $(AM_CFLAGS) -O -g
 varinfo5_CFLAGS		= $(AM_FLAG_M3264_PRI) $(AM_CFLAGS) -O -g

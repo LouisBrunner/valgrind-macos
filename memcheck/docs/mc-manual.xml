@@ -60,6 +60,78 @@ the following problems:</para>
 <!-- start of xi:include in the manpage -->
 <variablelist id="mc.opts.list">
 
+  <varlistentry id="opt.undef-value-errors" xreflabel="--undef-value-errors">
+    <term>
+      <option><![CDATA[--undef-value-errors=<yes|no> [default: yes] ]]></option>
+    </term>
+    <listitem>
+      <para>Controls whether <constant>memcheck</constant> reports
+      uses of undefined value errors.  Set this to
+      <varname>no</varname> if you don't want to see undefined value
+      errors.  It also has the side effect of speeding up
+      <constant>memcheck</constant> somewhat.
+      </para>
+    </listitem>
+  </varlistentry>
+
+  <varlistentry id="opt.track-origins" xreflabel="--track-origins">
+    <term>
+      <option><![CDATA[--track-origins=<yes|no> [default: no] ]]></option>
+    </term>
+      <listitem>
+        <para>Controls whether <constant>memcheck</constant> tracks
+        the origin of uninitialised values.  By default, it does not,
+        which means that although it can tell you that an
+        uninitialised value is being used in a dangerous way, it
+        cannot tell you where the uninitialised value came from.  This
+        often makes it difficult to track down the root problem.
+        </para>
+        <para>When set
+        to <varname>yes</varname>, <constant>memcheck</constant> keeps
+        track of the origins of all uninitialised values.  Then, when
+        an uninitialised value error is
+        reported, <constant>memcheck</constant> will try to show the
+        origin of the value.  An origin can be one of the following
+        four places: a heap block, a stack allocation, a client
+        request, or miscellaneous other sources (eg, a call
+        to <varname>brk</varname>).
+        </para>
+        <para>For uninitialised values originating from a heap
+        block, <constant>memcheck</constant> shows where the block was
+        allocated.  For uninitialised values originating from a stack
+        allocation, <constant>memcheck</constant> can tell you which
+        function allocated the value, but no more than that -- typically
+        it shows you the source location of the opening brace of the
+        function.  So you should carefully check that all of the
+        function's local variables are initialised properly.
+        </para>
+        <para>Performance overhead: origin tracking is expensive.  It
+        halves <constant>memcheck</constant>'s speed and increases
+        memory use by a minimum of 100MB, and possibly more.
+        Nevertheless it can drastically reduce the effort required to
+        identify the root cause of uninitialised value errors, and so
+        is often a programmer productivity win, despite running
+        more slowly.
+        </para>
+        <para>Accuracy: <constant>memcheck</constant> tracks origins
+        quite accurately.  To avoid very large space and time
+        overheads, some approximations are made.  It is possible,
+        although unlikely, that
+        <constant>memcheck</constant> will report an incorrect origin,
+        or not be able to identify any origin.
+        </para>
+        <para>Note that the combination
+        <option>--track-origins=yes</option>
+        and <option>--undef-value-errors=no</option> is
+        nonsensical.  <constant>memcheck</constant> checks for and
+        rejects this combination at startup.
+        </para>
+        <para>Origin tracking is a new feature, introduced in Valgrind
+        version 3.4.0.
+        </para>
+      </listitem>
+  </varlistentry>
+
   <varlistentry id="opt.leak-check" xreflabel="--leak-check">
     <term>
       <option><![CDATA[--leak-check=<no|summary|yes|full> [default: summary] ]]></option>
@@ -190,20 +262,6 @@ the following problems:</para>
       the the ISO C/C++ standards, and should be considered broken.  If
       at all possible, such code should be fixed.  This flag should be
       used only as a last resort.</para>
-    </listitem>
-  </varlistentry>
-
-  <varlistentry id="opt.undef-value-errors" xreflabel="--undef-value-errors">
-    <term>
-      <option><![CDATA[--undef-value-errors=<yes|no> [default: yes] ]]></option>
-    </term>
-    <listitem>
-      <para>Controls whether <constant>memcheck</constant> detects
-      dangerous uses of undefined value errors.  Set this to
-      <varname>no</varname> if you don't like seeing undefined value
-      errors; it also has the side effect of speeding
-      <constant>memcheck</constant> up somewhat.
-      </para>
     </listitem>
   </varlistentry>
 
@@ -355,6 +413,11 @@ complains.</para>
     until you (or the constructor) fill them in.</para>
   </listitem>
 </itemizedlist>
+
+<para>To see information on the sources of uninitialised data in your
+program, use the <option>--track-origins=yes</option> flag.  This
+makes Memcheck run more slowly, but can make it much easier to track down
+the root causes of uninitialised value errors.</para>
 
 </sect2>
 

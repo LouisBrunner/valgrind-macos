@@ -1,26 +1,2 @@
 Start of DRD BM unit test.
-Map contents -- should contain 10 addresses:
-0x00000000   R
-0x0000029a   R
-0x0000029b W R
-0x0000029c W R
-0x0000029d   R
-0x00000400 W  
-0x0000ffff W  
-0x0001ffff   R
-0x00ffffff   R
-0xffffffff W  
-Merge result:
-0x00000000   R
-0x0000029a   R
-0x0000029b W R
-0x0000029c W R
-0x0000029d   R
-0x00000400 W  
-0x0000ffff W  
-0x0001ffff   R
-0x00ffffff   R
-0xffffffff W  
-Deleting bitmap bm
-Deleting bitmap bm2
 End of DRD BM unit test.

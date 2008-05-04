@@ -1,2 +1,3 @@
 prereq: ./supported_libpthread
 prog: drd_bitmap_test
+args: -q

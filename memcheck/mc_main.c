@@ -77,6 +77,15 @@ static void ocache_sarp_Clear_Origins ( Addr, UWord ); /* fwds */
 
 
 /*------------------------------------------------------------*/
+/*--- Comments on the origin tracking implementation       ---*/
+/*------------------------------------------------------------*/
+
+/* See detailed comment entitled
+   AN OVERVIEW OF THE ORIGIN TRACKING IMPLEMENTATION
+   which is contained further on in this file. */
+
+
+/*------------------------------------------------------------*/
 /*--- V bits and A bits                                    ---*/
 /*------------------------------------------------------------*/
 
@@ -1712,8 +1721,8 @@ void MC_(copy_address_range_state) ( Addr src, Addr dst, SizeT len )
 /*--- Origin tracking stuff - cache basics                 ---*/
 /*------------------------------------------------------------*/
 
-/* Some background comments on the origin tracking implementation
-   ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/* AN OVERVIEW OF THE ORIGIN TRACKING IMPLEMENTATION
+   ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
    Note that this implementation draws inspiration from the "origin
    tracking by value piggybacking" scheme described in "Tracking Bad
@@ -1722,14 +1731,209 @@ void MC_(copy_address_range_state) ( Addr src, Addr dst, SizeT len )
    Kathryn McKinley, OOPSLA07, Montreal, Oct 2007) but in fact it is
    implemented completely differently.
 
-   This implementation tracks the defining point of all values using
-   so called "origin tags", which are 32-bit integers, rather than
-   using the values themselves to encode the origins.  The latter,
-   so-called value piggybacking", is what the OOPSLA07 paper
+   Origin tags and ECUs -- about the shadow values
+   ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+   This implementation tracks the defining point of all uninitialised
+   values using so called "origin tags", which are 32-bit integers,
+   rather than using the values themselves to encode the origins.  The
+   latter, so-called value piggybacking", is what the OOPSLA07 paper
    describes.
 
    Origin tags, as tracked by the machinery below, are 32-bit unsigned
-   ints (UInts), regardless of the machine's word size.
+   ints (UInts), regardless of the machine's word size.  Each tag
+   comprises an upper 30-bit ECU field and a lower 2-bit
+   'kind' field.  The ECU field is a number given out by m_execontext
+   and has a 1-1 mapping with ExeContext*s.  An ECU can be used
+   directly as an origin tag (otag), but in fact we want to put
+   additional information 'kind' field to indicate roughly where the
+   tag came from.  This helps print more understandable error messages
+   for the user -- it has no other purpose.  In summary:
+
+   * Both ECUs and origin tags are represented as 32-bit words
+
+   * m_execontext and the core-tool interface deal purely in ECUs.
+     They have no knowledge of origin tags - that is a purely
+     Memcheck-internal matter.
+
+   * all valid ECUs have the lowest 2 bits zero and at least
+     one of the upper 30 bits nonzero (see VG_(is_plausible_ECU))
+
+   * to convert from an ECU to an otag, OR in one of the MC_OKIND_
+     constants defined in mc_include.h.
+
+   * to convert an otag back to an ECU, AND it with ~3
+
+   One important fact is that no valid otag is zero.  A zero otag is
+   used by the implementation to indicate "no origin", which could
+   mean that either the value is defined, or it is undefined but the
+   implementation somehow managed to lose the origin.
+
+   The ECU used for memory created by malloc etc is derived from the
+   stack trace at the time the malloc etc happens.  This means the
+   mechanism can show the exact allocation point for heap-created
+   uninitialised values.
+
+   In contrast, it is simply too expensive to create a complete
+   backtrace for each stack allocation.  Therefore we merely use a
+   depth-1 backtrace for stack allocations, which can be done once at
+   translation time, rather than N times at run time.  The result of
+   this is that, for stack created uninitialised values, Memcheck can
+   only show the allocating function, and not what called it.
+   Furthermore, compilers tend to move the stack pointer just once at
+   the start of the function, to allocate all locals, and so in fact
+   the stack origin almost always simply points to the opening brace
+   of the function.  Net result is, for stack origins, the mechanism
+   can tell you in which function the undefined value was created, but
+   that's all.  Users will need to carefully check all locals in the
+   specified function.
+
+   Shadowing registers and memory
+   ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+   Memory is shadowed using a two level cache structure (ocacheL1 and
+   ocacheL2).  Memory references are first directed to ocacheL1.  This
+   is a traditional 2-way set associative cache with 32-byte lines and
+   approximate LRU replacement within each set.
+
+   A naive implementation would require storing one 32 bit otag for
+   each byte of memory covered, a 4:1 space overhead.  Instead, there
+   is one otag for every 4 bytes of memory covered, plus a 4-bit mask
+   that shows which of the 4 bytes have that shadow value and which
+   have a shadow value of zero (indicating no origin).  Hence a lot of
+   space is saved, but the cost is that only one different origin per
+   4 bytes of address space can be represented.  This is a source of
+   imprecision, but how much of a problem it really is remains to be
+   seen.
+
+   A cache line that contains all zeroes ("no origins") contains no
+   useful information, and can be ejected from the L1 cache "for
+   free", in the sense that a read miss on the L1 causes a line of
+   zeroes to be installed.  However, ejecting a line containing
+   nonzeroes risks losing origin information permanently.  In order to
+   prevent such lossage, ejected nonzero lines are placed in a
+   secondary cache (ocacheL2), which is an OSet (AVL tree) of cache
+   lines.  This can grow arbitrarily large, and so should ensure that
+   Memcheck runs out of memory in preference to losing useful origin
+   info due to cache size limitations.
+
+   Shadowing registers is a bit tricky, because the shadow values are
+   32 bits, regardless of the size of the register.  That gives a
+   problem for registers smaller than 32 bits.  The solution is to
+   find spaces in the guest state that are unused, and use those to
+   shadow guest state fragments smaller than 32 bits.  For example, on
+   ppc32/64, each vector register is 16 bytes long.  If 4 bytes of the
+   shadow are allocated for the register's otag, then there are still
+   12 bytes left over which could be used to shadow 3 other values.
+
+   This implies there is some non-obvious mapping from guest state
+   (start,length) pairs to the relevant shadow offset (for the origin
+   tags).  And it is unfortunately guest-architecture specific.  The
+   mapping is contained in mc_machine.c, which is quite lengthy but
+   straightforward.
+
+   Instrumenting the IR
+   ~~~~~~~~~~~~~~~~~~~~
+
+   Instrumentation is largely straightforward, and done by the
+   functions schemeE and schemeS in mc_translate.c.  These generate
+   code for handling the origin tags of expressions (E) and statements
+   (S) respectively.  The rather strange names are a reference to the
+   "compilation schemes" shown in Simon Peyton Jones' book "The
+   Implementation of Functional Programming Languages" (Prentice Hall,
+   1987, see
+   http://research.microsoft.com/~simonpj/papers/slpj-book-1987/index.htm).
+
+   schemeS merely arranges to move shadow values around the guest
+   state to track the incoming IR.  schemeE is largely trivial too.
+   The only significant point is how to compute the otag corresponding
+   to binary (or ternary, quaternary, etc) operator applications.  The
+   rule is simple: just take whichever value is larger (32-bit
+   unsigned max).  Constants get the special value zero.  Hence this
+   rule always propagates a nonzero (known) otag in preference to a
+   zero (unknown, or more likely, value-is-defined) tag, as we want.
+   If two different undefined values are inputs to a binary operator
+   application, then which is propagated is arbitrary, but that
+   doesn't matter, since the program is erroneous in using either of
+   the values, and so there's no point in attempting to propagate
+   both.
+
+   Since constants are abstracted to (otag) zero, much of the
+   instrumentation code can be folded out without difficulty by the
+   generic post-instrumentation IR cleanup pass, using these rules:
+   Max32U(0,x) -> x, Max32U(x,0) -> x, Max32(x,y) where x and y are
+   constants is evaluated at JIT time.  And the resulting dead code
+   removal.  In practice this causes surprisingly few Max32Us to
+   survive through to backend code generation.
+
+   Integration with the V-bits machinery
+   ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+   This is again largely straightforward.  Mostly the otag and V bits
+   stuff are independent.  The only point of interaction is when the V
+   bits instrumenter creates a call to a helper function to report an
+   uninitialised value error -- in that case it must first use schemeE
+   to get hold of the origin tag expression for the value, and pass
+   that to the helper too.
+
+   There is the usual stuff to do with setting address range
+   permissions.  When memory is painted undefined, we must also know
+   the origin tag to paint with, which involves some tedious plumbing,
+   particularly to do with the fast case stack handlers.  When memory
+   is painted defined or noaccess then the origin tags must be forced
+   to zero.
+
+   One of the goals of the implementation was to ensure that the
+   non-origin tracking mode isn't slowed down at all.  To do this,
+   various functions to do with memory permissions setting (again,
+   mostly pertaining to the stack) are duplicated for the with- and
+   without-otag case.
+
+   Dealing with stack redzones, and the NIA cache
+   ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+   This is one of the few non-obvious parts of the implementation.
+
+   Some ABIs (amd64-ELF, ppc64-ELF, ppc32/64-XCOFF) define a small
+   reserved area below the stack pointer, that can be used as scratch
+   space by compiler generated code for functions.  In the Memcheck
+   sources this is referred to as the "stack redzone".  The important
+   thing here is that such redzones are considered volatile across
+   function calls and returns.  So Memcheck takes care to mark them as
+   undefined for each call and return, on the afflicted platforms.
+   Past experience shows this is essential in order to get reliable
+   messages about uninitialised values that come from the stack.
+
+   So the question is, when we paint a redzone undefined, what origin
+   tag should we use for it?  Consider a function f() calling g().  If
+   we paint the redzone using an otag derived from the ExeContext of
+   the CALL/BL instruction in f, then any errors in g causing it to
+   use uninitialised values that happen to lie in the redzone, will be
+   reported as having their origin in f.  Which is highly confusing.
+
+   The same applies for returns: if, on a return, we paint the redzone
+   using a origin tag derived from the ExeContext of the RET/BLR
+   instruction in g, then any later errors in f causing it to use
+   uninitialised values in the redzone, will be reported as having
+   their origin in g.  Which is just as confusing.
+
+   To do it right, in both cases we need to use an origin tag which
+   pertains to the instruction which dynamically follows the CALL/BL
+   or RET/BLR.  In short, one derived from the NIA - the "next
+   instruction address".
+
+   To make this work, Memcheck's redzone-painting helper,
+   MC_(helperc_MAKE_STACK_UNINIT), now takes a third argument, the
+   NIA.  It converts the NIA to a 1-element ExeContext, and uses that
+   ExeContext's ECU as the basis for the otag used to paint the
+   redzone.  The expensive part of this is converting an NIA into an
+   ECU, since this happens once for every call and every return.  So
+   we use a simple 511-line, 2-way set associative cache
+   (nia_to_ecu_cache) to cache the mappings, and that knocks most of
+   the cost out.
+
+   Further background comments
+   ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
    > Question: why is otag a UInt?  Wouldn't a UWord be better?  Isn't
    > it really just the address of the relevant ExeContext?
@@ -1737,13 +1941,14 @@ void MC_(copy_address_range_state) ( Addr src, Addr dst, SizeT len )
    Well, it's not the address, but a value which has a 1-1 mapping
    with ExeContexts, and is guaranteed not to be zero, since zero
    denotes (to memcheck) "unknown origin or defined value".  So these
-   UInts are just numbers starting at 1; each ExeContext is given a
-   number when it is created.
+   UInts are just numbers starting at 4 and incrementing by 4; each
+   ExeContext is given a number when it is created.  (*** NOTE this
+   confuses otags and ECUs; see comments above ***).
 
    Making these otags 32-bit regardless of the machine's word size
    makes the 64-bit implementation easier (next para).  And it doesn't
    really limit us in any way, since for the tags to overflow would
-   require that the program somehow caused 2^32-1 different
+   require that the program somehow caused 2^30-1 different
    ExeContexts to be created, in which case it is probably in deep
    trouble.  Not to mention V will have soaked up many tens of
    gigabytes of memory merely to store them all.
@@ -1788,7 +1993,9 @@ void MC_(copy_address_range_state) ( Addr src, Addr dst, SizeT len )
      information.  Interestingly, a line containing all zeroes can be
      evicted "free" from the cache, since it contains no useful
      information, so there is scope perhaps for some cleverer cache
-     management schemes.
+     management schemes.  (*** NOTE, with the introduction of the
+     second level origin tag cache, ocacheL2, this is no longer a
+     problem. ***)
 
    * The origin cache only stores one otag per 32-bits of address
      space, plus 4 bits indicating which of the 4 bytes has that tag
@@ -1896,24 +2103,24 @@ typedef
    }
    OCache;
 
-static OCache* ocache = NULL;
-static UWord   ocache_event_ctr = 0;
+static OCache* ocacheL1 = NULL;
+static UWord   ocacheL1_event_ctr = 0;
 
 static void init_ocacheL2 ( void ); /* fwds */
 static void init_OCache ( void )
 {
    UWord line, set;
    tl_assert(MC_(clo_mc_level) >= 3);
-   tl_assert(ocache == NULL);
-   ocache = VG_(am_shadow_alloc)(sizeof(OCache));
-   if (ocache == NULL) {
-      VG_(out_of_memory_NORETURN)( "memcheck:allocate the OCache", 
+   tl_assert(ocacheL1 == NULL);
+   ocacheL1 = VG_(am_shadow_alloc)(sizeof(OCache));
+   if (ocacheL1 == NULL) {
+      VG_(out_of_memory_NORETURN)( "memcheck:allocating ocacheL1", 
                                    sizeof(OCache) );
    }
-   tl_assert(ocache != NULL);
+   tl_assert(ocacheL1 != NULL);
    for (set = 0; set < OC_N_SETS; set++) {
       for (line = 0; line < OC_LINES_PER_SET; line++) {
-         ocache->set[set].line[line].tag = 1/*invalid*/;
+         ocacheL1->set[set].line[line].tag = 1/*invalid*/;
       }
    }
    init_ocacheL2();
@@ -2023,18 +2230,18 @@ static OCacheLine* find_OCacheLine_SLOW ( Addr a )
 
    /* we already tried line == 0; skip therefore. */
    for (line = 1; line < OC_LINES_PER_SET; line++) {
-      if (ocache->set[setno].line[line].tag == tag) {
+      if (ocacheL1->set[setno].line[line].tag == tag) {
          if (line == 1) {
             stats_ocacheL1_found_at_1++;
          } else {
             stats_ocacheL1_found_at_N++;
          }
-         if (UNLIKELY(0 == (ocache_event_ctr++ 
+         if (UNLIKELY(0 == (ocacheL1_event_ctr++ 
                             & ((1<<OC_MOVE_FORWARDS_EVERY_BITS)-1)))) {
-            moveLineForwards( &ocache->set[setno], line );
+            moveLineForwards( &ocacheL1->set[setno], line );
             line--;
          }
-         return &ocache->set[setno].line[line];
+         return &ocacheL1->set[setno].line[line];
       }
    }
 
@@ -2046,7 +2253,7 @@ static OCacheLine* find_OCacheLine_SLOW ( Addr a )
    tl_assert(line > 0);
 
    /* First, move the to-be-ejected line to the L2 cache. */
-   victim = &ocache->set[setno].line[line];
+   victim = &ocacheL1->set[setno].line[line];
    c = classify_OCacheLine(victim);
    switch (c) {
       case 'e':
@@ -2081,19 +2288,19 @@ static OCacheLine* find_OCacheLine_SLOW ( Addr a )
    inL2 = ocacheL2_find_tag( tag );
    if (inL2) {
       /* We're in luck.  It's in the L2. */
-      ocache->set[setno].line[line] = *inL2;
+      ocacheL1->set[setno].line[line] = *inL2;
    } else {
       /* Missed at both levels of the cache hierarchy.  We have to
          declare it as full of zeroes (unknown origins). */
       stats__ocacheL2_misses++;
-      zeroise_OCacheLine( &ocache->set[setno].line[line], tag );
+      zeroise_OCacheLine( &ocacheL1->set[setno].line[line], tag );
    }
 
    /* Move it one forwards */
-   moveLineForwards( &ocache->set[setno], line );
+   moveLineForwards( &ocacheL1->set[setno], line );
    line--;
 
-   return &ocache->set[setno].line[line];
+   return &ocacheL1->set[setno].line[line];
 }
 
 static INLINE OCacheLine* find_OCacheLine ( Addr a )
@@ -2109,8 +2316,8 @@ static INLINE OCacheLine* find_OCacheLine ( Addr a )
       tl_assert(0 == (tag & (4 * OC_W32S_PER_LINE - 1)));
    }
 
-   if (LIKELY(ocache->set[setno].line[0].tag == tag)) {
-      return &ocache->set[setno].line[0];
+   if (LIKELY(ocacheL1->set[setno].line[0].tag == tag)) {
+      return &ocacheL1->set[setno].line[0];
    }
 
    return find_OCacheLine_SLOW( a );
@@ -5264,10 +5471,10 @@ static void mc_post_clo_init ( void )
       if we need it. */
    if (MC_(clo_mc_level) >= 3) {
       init_OCache();
-      tl_assert(ocache   != NULL);
+      tl_assert(ocacheL1 != NULL);
       tl_assert(ocacheL2 != NULL);
    } else {
-      tl_assert(ocache   == NULL);
+      tl_assert(ocacheL1 == NULL);
       tl_assert(ocacheL2 == NULL);
    }
 }
@@ -5390,7 +5597,7 @@ static void mc_fini ( Int exitcode )
                       " niacache: %,12lu refs   %,12lu misses",
                       stats__nia_cache_queries, stats__nia_cache_misses);
       } else {
-         tl_assert(ocache == NULL);
+         tl_assert(ocacheL1 == NULL);
          tl_assert(ocacheL2 == NULL);
       }
    }
@@ -5518,10 +5725,10 @@ static void mc_pre_clo_init(void)
    /* This is small.  Always initialise it. */
    init_nia_to_ecu_cache();
 
-   /* We can't initialise ocache/ocacheL2 yet, since we don't know if
-      we need to, since the command line args haven't been processed
-      yet.  Hence defer it to mc_post_clo_init. */
-   tl_assert(ocache   == NULL);
+   /* We can't initialise ocacheL1/ocacheL2 yet, since we don't know
+      if we need to, since the command line args haven't been
+      processed yet.  Hence defer it to mc_post_clo_init. */
+   tl_assert(ocacheL1 == NULL);
    tl_assert(ocacheL2 == NULL);
 
    /* Check some important stuff.  See extensive comments above

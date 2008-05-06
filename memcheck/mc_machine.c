@@ -142,7 +142,7 @@ static Int get_otrack_shadow_offset_wrk ( Int offset, Int szB )
             return GOF(GPRn);
          by testing ox instead of o, and setting ox back 4 bytes when sz == 4.
       */
-      Bool ox = sz == 8 ? o : (o - 4);
+      Int ox = sz == 8 ? o : (o - 4);
       if (ox == GOF(GPR0)) return ox;
       if (ox == GOF(GPR1)) return ox;
       if (ox == GOF(GPR2)) return ox;

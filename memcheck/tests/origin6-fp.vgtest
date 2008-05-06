@@ -1,0 +1,2 @@
+prog: origin6-fp
+vgopts: -q --track-origins=yes

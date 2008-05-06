@@ -15,8 +15,14 @@ void* VG_(malloc)(SizeT nbytes)
 void  VG_(free)(void* p)
 { return free(p); }
 void  VG_(assert_fail)(Bool isCore, const Char* expr, const Char* file,
-                       Int line, const Char* fn, const HChar* format, ...)
-{ __assert_fail(expr, file, line, fn); abort(); }
+                       Int line, const Char* fn, const HChar* format, ...) {
+#if defined(__linux__)
+__assert_fail(expr, file, line, fn); abort(); 
+#else
+assert(0);
+#endif /* __linux__ */
+}
+
 void* VG_(memset)(void *s, Int c, SizeT sz)
 { return memset(s, c, sz); }
 void* VG_(memcpy)(void *d, const void *s, SizeT sz)
@@ -46,7 +52,7 @@ struct { Addr address; SizeT size; BmAccessTypeT access_type; }
     {               0x0001ffffULL, 1, eLoad  },
     {               0x00ffffffULL, 1, eLoad  },
     { 0xfffffffeULL - ADDR0_COUNT, 1, eStore },
-#if defined(VGP_amd64_linux) || defined(VGP_ppc64_linux)
+#if defined(VGP_amd64_linux) || defined(VGP_ppc64_linux) || defined(VGP_ppc64_aix5)
     { 0xffffffffULL - ADDR0_COUNT, 1, eStore },
     {               0xffffffffULL, 1, eStore },
     {              0x100000000ULL, 1, eStore },

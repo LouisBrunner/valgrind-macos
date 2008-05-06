@@ -298,3 +298,12 @@ int main(int ac, char **av)
 }
 
 #endif /* __linux__ */
+
+#if defined(_AIX)
+#include <stdio.h>
+int main(int ac, char **av)
+{
+   fprintf(stderr, "This test does not work on AIX5.\n");
+   return 0;
+}
+#endif /* _AIX */

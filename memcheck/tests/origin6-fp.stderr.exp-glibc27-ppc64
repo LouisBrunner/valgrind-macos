@@ -1,0 +1,6 @@
+Conditional jump or move depends on uninitialised value(s)
+   at 0x........: main (origin6-fp.c:97)
+ Uninitialised value was created by a client request
+   at 0x........: setup_arr (origin6-fp.c:71)
+   by 0x........: main (origin6-fp.c:87)
+Test succeeded.

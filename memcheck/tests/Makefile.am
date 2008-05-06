@@ -112,7 +112,8 @@ EXTRA_DIST = $(noinst_SCRIPTS) \
 	origin5-bz2.stderr.exp-glibc25-amd64 \
 	origin5-bz2.stderr.exp-glibc27-ppc64 \
 	origin6-fp.vgtest origin6-fp.stdout.exp \
-	origin6-fp.stderr.exp \
+	origin6-fp.stderr.exp-glibc25-amd64 \
+	origin6-fp.stderr.exp-glibc27-ppc64 \
 	oset_test.stderr.exp oset_test.stdout.exp oset_test.vgtest \
 	overlap.stderr.exp overlap.stdout.exp overlap.vgtest \
 	partiallydefinedeq.vgtest partiallydefinedeq.stderr.exp \

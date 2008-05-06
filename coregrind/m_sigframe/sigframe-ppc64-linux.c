@@ -95,8 +95,9 @@
 /* Structure containing bits of information that we want to save
    on signal delivery. */
 struct vg_sig_private {
-   UInt magicPI;
-   UInt sigNo_private;
+   UInt  magicPI;
+   UInt  sigNo_private;
+   ULong _unused; /* makes the struct size be zero % 16 */
    VexGuestPPC64State vex_shadow1;
    VexGuestPPC64State vex_shadow2;
 };
@@ -190,6 +191,7 @@ void VG_(sigframe_create)( ThreadId tid,
    struct rt_sigframe* frame;
 
    /* Stack must be 16-byte aligned */
+   vg_assert(VG_IS_16_ALIGNED(sizeof(struct vg_sig_private)));
    vg_assert(VG_IS_16_ALIGNED(sizeof(struct rt_sigframe)));
 
    sp_top_of_frame &= ~0xf;

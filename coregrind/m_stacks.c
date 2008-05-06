@@ -301,7 +301,7 @@ void VG_(unknown_SP_update)( Addr old_SP, Addr new_SP, UInt ecu )
          permissions.  Seems to work well with Netscape 4.X.  Really the
          only remaining difficulty is knowing exactly when a stack switch is
          happening. */
-      if (VG_(clo_verbosity) > 0 && moans > 0) {
+      if (VG_(clo_verbosity) > 0 && moans > 0 && !VG_(clo_xml)) {
          moans--;
          VG_(message)(Vg_UserMsg,
             "Warning: client switching stacks?  "

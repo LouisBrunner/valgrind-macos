@@ -2,8 +2,8 @@
 /* This test case was originally written by Nicholas Nethercote. */
 
 // This test demonstrates some cases that the piggybacking algorithm
-// but conceivably might, with more modifications.  The instrumentation
-// based algorithm handles them ok, though.
+// doesn't handle but conceivably might, with more modifications.
+// The instrumentation based algorithm handles them ok, though.
 
 #include <assert.h>
 #include <stdlib.h>

@@ -13,6 +13,8 @@ PRI: 33  = fix this for 3.3.1
 
 ---------- Bugs reported after (in) 3.3.0 --------------------------
 
+tidy up static int linux_kernel_2_6_22(void) (syswrap-linux.c)
+
 check r7322 is merged to branch
 and 7324 ?
 7334
@@ -41,6 +43,57 @@ properly (see replies to the commit message).  (now fixed ...)
 
 re Keller vpath bug, don't use attached patch; use Ashley's one
 instead (on @dev ?)
+
+--- start 8 May 08 ---
+
+disInstr(ppc): unhandled instruction: 0x7D295F1E (users@, 29 Feb)
+
+64 bit tweak ("Solomon, Bernard", user@, 25 Mar, > 1 post the same day)
+
+disInstr(ppc): unhandled instruction: 0x7C1F42A6
+                 primary 31(0x1F), secondary 678(0x2A6)
+ "Gupta Richa", users@, 3 Apr 08
+
+92456: Tracing the origin of uninitialised memory
+
+149878  add (proper) check for calloc integer overflow
+        (possibly with a viable patch now)
+
+160595  Why my program hang-up when work with valgrind ?
+        (no info so far)
+
+160872  race errors reported where libpthread.so
+        (no response from reporter)
+
+160907  Support for a couple of recent Linux syscalls, syscall wrapper
+        bugfixes (doesn't compile on ppc32/64-linux)
+
+160954  ppc build of vagrind crashes with illegal instruction
+
+160956  PATCH: mallinfo implementation
+
+161199  Valgrind restarts my application without my app crashing, The
+        legend at the end of the file indicates that it may be a
+        valgind issue (probably bogus, should close as invalid)
+
+161251  ppc Power-QUICC-III (8555, e500 core) not supported: isel
+        instruction
+
+161285  Patch -- support for eventfd() syscall
+
+161374  SYS_readdir syscall not implemented
+
+161378  illegal opcode in debug libm
+
+161487  number of suppressions files is limited to 10
+
+161609  Results returned by VG_(get_StackTrace)() do not match
+        its documentation
+
+161628  exp-drd/tests/sigalrm triggers an assertion failure in
+        Valgrind's core on ppc64.
+
+--- end 8 May 08 ---
 
 --- start 27 March 08 ---
 
@@ -95,6 +148,7 @@ bytes: 0xF0 0x41 0xF 0xC0 0x87 0xB8)
 
 r1816 (x86 CondNS after SUBB)
 r1817 (amd64 CondNS after SUBB)
+r1833 (both, CondNZ after SUBW)
 
 !!ppc32-linux memcheck craps out on some Altivec code!
 (none/tests/ppc32/jm-insns -a -v)

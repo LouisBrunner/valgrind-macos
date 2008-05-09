@@ -12959,8 +12959,6 @@ DisResult disInstr_X86_WRK (
 
    case 0x9D: /* POPF */
       vassert(sz == 2 || sz == 4);
-      if (sz != 4) goto decode_failure;
-      vassert(sz == 4); // until we know a sz==2 test case exists
       t1 = newTemp(Ity_I32); t2 = newTemp(Ity_I32);
       assign(t2, getIReg(4, R_ESP));
       assign(t1, widenUto32(loadLE(szToITy(sz),mkexpr(t2))));
@@ -13087,8 +13085,6 @@ DisResult disInstr_X86_WRK (
 
    case 0x9C: /* PUSHF */ {
       vassert(sz == 2 || sz == 4);
-      if (sz != 4) goto decode_failure;
-      vassert(sz == 4);  // wait for sz==2 test case
 
       t1 = newTemp(Ity_I32);
       assign( t1, binop(Iop_Sub32,getIReg(4,R_ESP),mkU32(sz)) );

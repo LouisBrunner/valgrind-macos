@@ -489,6 +489,8 @@ static Int get_otrack_shadow_offset_wrk ( Int offset, Int szB )
    if (o == GOF(RIP)     && sz == 8) return -1; /* slot unused */
    if (o == GOF(IDFLAG)  && sz == 8) return -1; /* slot used for %DH */
    if (o == GOF(FS_ZERO) && sz == 8) return -1; /* slot unused */
+   if (o == GOF(TISTART) && sz == 8) return -1; /* slot unused */
+   if (o == GOF(TILEN)   && sz == 8) return -1; /* slot unused */
 
    /* Treat %AH, %BH, %CH, %DH as independent registers.  To do this
       requires finding 4 unused 32-bit slots in the second-shadow
@@ -591,6 +593,8 @@ static Int get_otrack_shadow_offset_wrk ( Int offset, Int szB )
    if (o == GOF(EIP)     && sz == 4) return -1; /* slot unused */
    if (o == GOF(IDFLAG)  && sz == 4) return -1; /* slot used for %DH */
    if (o == GOF(ACFLAG)  && sz == 4) return -1; /* slot unused */
+   if (o == GOF(TISTART) && sz == 4) return -1; /* slot unused */
+   if (o == GOF(TILEN)   && sz == 4) return -1; /* slot unused */
 
    /* Treat %AH, %BH, %CH, %DH as independent registers.  To do this
       requires finding 4 unused 32-bit slots in the second-shadow

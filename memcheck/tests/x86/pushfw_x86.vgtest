@@ -1,0 +1,2 @@
+prog: pushfw_x86
+vgopts: -q

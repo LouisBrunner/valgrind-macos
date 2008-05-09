@@ -1,0 +1,4 @@
+prog: fxsave
+prereq: ../../../tests/cputest x86-sse
+vgopts: -q
+args: x

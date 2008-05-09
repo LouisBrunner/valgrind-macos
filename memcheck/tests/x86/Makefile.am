@@ -9,6 +9,7 @@ EXTRA_DIST = $(noinst_SCRIPTS) \
 	bug152022.vgtest bug152022.stderr.exp bug152022.stdout.exp \
 	espindola2.vgtest espindola2.stderr.exp \
 	fpeflags.stderr.exp fpeflags.vgtest \
+	fxsave.vgtest fxsave.stdout.exp fxsave.stderr.exp \
 	$(addsuffix .stderr.exp,$(INSN_TESTS)) \
 	$(addsuffix .stdout.exp,$(INSN_TESTS)) \
 	$(addsuffix .vgtest,$(INSN_TESTS)) \
@@ -35,6 +36,7 @@ check_PROGRAMS = \
 	bug133694 \
 	bug152022 \
 	espindola2 \
+	fxsave \
 	int3-x86 \
 	scalar_exit_group scalar_fork scalar_supp scalar_vfork \
 	fpeflags pushfpopf \

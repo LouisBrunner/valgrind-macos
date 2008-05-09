@@ -1746,6 +1746,86 @@ void x86g_dirtyhelper_FXSAVE ( VexGuestX86State* gst, HWord addr )
 
 
 /* CALLED FROM GENERATED CODE */
+/* DIRTY HELPER (writes guest state, reads guest mem) */
+VexEmWarn x86g_dirtyhelper_FXRSTOR ( VexGuestX86State* gst, HWord addr )
+{
+   Fpu_State tmp;
+   VexEmWarn warnX87 = EmWarn_NONE;
+   VexEmWarn warnXMM = EmWarn_NONE;
+   UShort*   addrS   = (UShort*)addr;
+   UChar*    addrC   = (UChar*)addr;
+   U128*     xmm     = (U128*)(addr + 160);
+   UShort    fp_tags;
+   Int       r, stno, i;
+
+   /* Restore %xmm0 .. %xmm7.  If the host is big-endian, these need
+      to be byte-swapped. */
+   vassert(host_is_little_endian());
+
+#  define COPY_U128(_dst,_src)                       \
+      do { _dst[0] = _src[0]; _dst[1] = _src[1];     \
+           _dst[2] = _src[2]; _dst[3] = _src[3]; }   \
+      while (0)
+
+   COPY_U128( gst->guest_XMM0, xmm[0] );
+   COPY_U128( gst->guest_XMM1, xmm[1] );
+   COPY_U128( gst->guest_XMM2, xmm[2] );
+   COPY_U128( gst->guest_XMM3, xmm[3] );
+   COPY_U128( gst->guest_XMM4, xmm[4] );
+   COPY_U128( gst->guest_XMM5, xmm[5] );
+   COPY_U128( gst->guest_XMM6, xmm[6] );
+   COPY_U128( gst->guest_XMM7, xmm[7] );
+
+#  undef COPY_U128
+
+   /* Copy the x87 registers out of the image, into a temporary
+      Fpu_State struct. */
+   for (i = 0; i < 14; i++) tmp.env[i] = 0;
+   for (i = 0; i < 80; i++) tmp.reg[i] = 0;
+   /* fill in tmp.reg[0..7] */
+   for (stno = 0; stno < 8; stno++) {
+      UShort* dstS = (UShort*)(&tmp.reg[10*stno]);
+      UShort* srcS = (UShort*)(&addrS[16 + 8*stno]);
+      dstS[0] = srcS[0];
+      dstS[1] = srcS[1];
+      dstS[2] = srcS[2];
+      dstS[3] = srcS[3];
+      dstS[4] = srcS[4];
+   }
+   /* fill in tmp.env[0..13] */
+   tmp.env[FP_ENV_CTRL] = addrS[0]; /* FCW: fpu control word */
+   tmp.env[FP_ENV_STAT] = addrS[1]; /* FCW: fpu status word */
+
+   fp_tags = 0;
+   for (r = 0; r < 8; r++) {
+      if (addrC[4] & (1<<r))
+         fp_tags |= (0 << (2*r)); /* EMPTY */
+      else 
+         fp_tags |= (3 << (2*r)); /* VALID -- not really precise enough. */
+   }
+   tmp.env[FP_ENV_TAG] = fp_tags;
+
+   /* Now write 'tmp' into the guest state. */
+   warnX87 = do_put_x87( True/*moveRegs*/, (UChar*)&tmp, gst );
+
+   { UInt w32 = (((UInt)addrS[12]) & 0xFFFF)
+                | ((((UInt)addrS[13]) & 0xFFFF) << 16);
+     ULong w64 = x86g_check_ldmxcsr( w32 );
+
+     warnXMM = (VexEmWarn)(w64 >> 32);
+
+     gst->guest_SSEROUND = (UInt)w64;
+   }
+
+   /* Prefer an X87 emwarn over an XMM one, if both exist. */
+   if (warnX87 != EmWarn_NONE)
+      return warnX87;
+   else
+      return warnXMM;
+}
+
+
+/* CALLED FROM GENERATED CODE */
 /* DIRTY HELPER (reads guest state, writes guest mem) */
 void x86g_dirtyhelper_FSAVE ( VexGuestX86State* gst, HWord addr )
 {

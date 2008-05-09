@@ -13296,12 +13296,13 @@ DisResult disInstr_X86_WRK (
          dis_REP_op ( X86CondNZ, dis_MOVS, sz, eip_orig,
                                  guest_EIP_bbstart+delta, "repne movs" );
          break;
-//-- 
-//--       case 0xA6: sz = 1;   /* REPNE CMPS<sz> */
-//--       case 0xA7:
-//--          dis_REP_op ( cb, CondNZ, dis_CMPS, sz, eip_orig, eip, "repne cmps" );
-//--          break;
-//-- 
+
+      case 0xA6: sz = 1;   /* REPNE CMP<sz> */
+      case 0xA7:
+         dis_REP_op ( X86CondNZ, dis_CMPS, sz, eip_orig, 
+                                 guest_EIP_bbstart+delta, "repne cmps" );
+         break;
+
       case 0xAA: sz = 1;   /* REPNE STOS<sz> */
       case 0xAB:
          dis_REP_op ( X86CondNZ, dis_STOS, sz, eip_orig, 

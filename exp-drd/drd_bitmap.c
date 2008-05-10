@@ -391,11 +391,10 @@ Bool bm_has_any_store(const struct bitmap* const bm,
   return 0;
 }
 
-/* Return a non-zero value if there is a read access, write access or both */
-/* to any of the addresses in the range [ a1, a2 [ in bitmap bm.           */
-UWord bm_has_any_access(const struct bitmap* const bm,
-                        const Addr a1,
-                        const Addr a2)
+/* Return True if there is a read access, write access or both   */
+/* to any of the addresses in the range [ a1, a2 [ in bitmap bm. */
+Bool bm_has_any_access(const struct bitmap* const bm,
+                       const Addr a1, const Addr a2)
 {
   Addr b, b_next;
 
@@ -437,26 +436,21 @@ UWord bm_has_any_access(const struct bitmap* const bm,
       
       for (b0 = b_start & ADDR0_MASK; b0 <= ((b_end-1) & ADDR0_MASK); b0++)
       {
-        const UWord mask
-          = bm0_is_set(p1->bm0_r, b0) | bm0_is_set(p1->bm0_w, b0);
-        if (mask)
+        if (bm0_is_set(p1->bm0_r, b0) | bm0_is_set(p1->bm0_w, b0))
         {
-          return mask;
+          return True;
         }
       }
     }
   }
-  return 0;
+  return False;
 }
 
-/**
- * Report whether an access of type access_type at address a is recorded in
- * bitmap bm.
- * @return != 0 means true, and == 0 means false
+/** Report whether an access of type access_type at address a is recorded in
+ *  bitmap bm.
  */
-UWord bm_has_1(const struct bitmap* const bm,
-               const Addr a,
-               const BmAccessTypeT access_type)
+Bool bm_has_1(const struct bitmap* const bm,
+              const Addr a, const BmAccessTypeT access_type)
 {
   const struct bitmap2* p2;
   const struct bitmap1* p1;
@@ -470,9 +464,9 @@ UWord bm_has_1(const struct bitmap* const bm,
   {
     p1 = &p2->bm1;
     p0 = (access_type == eLoad) ? p1->bm0_r : p1->bm0_w;
-    return bm0_is_set(p0, a0);
+    return bm0_is_set(p0, a0) ? True : False;
   }
-  return 0;
+  return False;
 }
 
 void bm_clear(const struct bitmap* const bm,
@@ -750,7 +744,7 @@ Bool bm_store_has_conflict_with(const struct bitmap* const bm,
   return bm_has_conflict_with(bm, a1, a2, eStore);
 }
 
-/** Return true if the two bitmaps *lhs and *rhs are identical, and false
+/** Return True if the two bitmaps *lhs and *rhs are identical, and false
  *  if not.
  */
 Bool bm_equal(struct bitmap* const lhs, const struct bitmap* const rhs)

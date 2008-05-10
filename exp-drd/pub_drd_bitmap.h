@@ -75,10 +75,10 @@ Bool bm_has_any_load(const struct bitmap* const bm,
                      const Addr a1, const Addr a2);
 Bool bm_has_any_store(const struct bitmap* const bm,
                       const Addr a1, const Addr a2);
-UWord bm_has_any_access(const struct bitmap* const bm,
-                        const Addr a1, const Addr a2);
-UWord bm_has_1(const struct bitmap* const bm,
-               const Addr address, const BmAccessTypeT access_type);
+Bool bm_has_any_access(const struct bitmap* const bm,
+                       const Addr a1, const Addr a2);
+Bool bm_has_1(const struct bitmap* const bm,
+              const Addr address, const BmAccessTypeT access_type);
 void bm_clear(const struct bitmap* const bm,
               const Addr a1, const Addr a2);
 void bm_clear_load(const struct bitmap* const bm,

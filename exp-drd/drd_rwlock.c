@@ -118,6 +118,7 @@ static Bool rwlock_is_locked_by(struct rwlock_info* p, const DrdThreadId tid)
   return rwlock_is_rdlocked_by(p, tid) || rwlock_is_wrlocked_by(p, tid);
 }
 
+/** Either look up or insert a node corresponding to DRD thread id 'tid'. */
 static
 struct rwlock_thread_info* lookup_or_insert_node(OSet* oset, const UWord tid)
 {
@@ -127,10 +128,10 @@ struct rwlock_thread_info* lookup_or_insert_node(OSet* oset, const UWord tid)
   if (q == 0)
   {
     q = VG_(OSetGen_AllocNode)(oset, sizeof(*q));
-    q->tid = tid;
-    q->reader_nesting_count = 0;
-    q->writer_nesting_count = 0;
-    q->last_unlock_segment  = 0;
+    q->tid                       = tid;
+    q->reader_nesting_count      = 0;
+    q->writer_nesting_count      = 0;
+    q->last_unlock_segment       = 0;
     q->last_lock_was_writer_lock = False;
     VG_(OSetGen_Insert)(oset, q);
   }
@@ -138,6 +139,9 @@ struct rwlock_thread_info* lookup_or_insert_node(OSet* oset, const UWord tid)
   return q;
 }
 
+/** Combine the vector clock corresponding to the last unlock operation of
+ *  reader-writer lock p into the vector clock of thread 'tid'.
+ */
 static void rwlock_combine_other_vc(struct rwlock_info* const p,
                                     const DrdThreadId tid,
                                     const Bool readers_too)
@@ -154,6 +158,7 @@ static void rwlock_combine_other_vc(struct rwlock_info* const p,
   }
 }
 
+/** Initialize the rwlock_info data structure *p. */
 static
 void rwlock_initialize(struct rwlock_info* const p, const Addr rwlock)
 {
@@ -297,10 +302,6 @@ void rwlock_pre_rdlock(const Addr rwlock)
 {
   struct rwlock_info* p;
 
-  p = rwlock_get_or_allocate(rwlock);
-
-  tl_assert(p);
-
   if (s_trace_rwlock)
   {
     VG_(message)(Vg_UserMsg,
@@ -309,6 +310,9 @@ void rwlock_pre_rdlock(const Addr rwlock)
                  thread_get_running_tid(),
                  rwlock);
   }
+
+  p = rwlock_get_or_allocate(rwlock);
+  tl_assert(p);
 
   if (rwlock_is_wrlocked_by(p, thread_get_running_tid()))
   {
@@ -319,18 +323,15 @@ void rwlock_pre_rdlock(const Addr rwlock)
   }
 }
 
-/**
- * Update rwlock_info state when locking the pthread_rwlock_t mutex.
- * Note: this function must be called after pthread_rwlock_rdlock() has been
- * called, or a race condition is triggered !
+/** Update rwlock_info state when locking the pthread_rwlock_t mutex.
+ *  Note: this function must be called after pthread_rwlock_rdlock() has been
+ *  called, or a race condition is triggered !
  */
 void rwlock_post_rdlock(const Addr rwlock, const Bool took_lock)
 {
   const DrdThreadId drd_tid = thread_get_running_tid();
   struct rwlock_info* p;
   struct rwlock_thread_info* q;
-
-  p = rwlock_get(rwlock);
 
   if (s_trace_rwlock)
   {
@@ -341,6 +342,8 @@ void rwlock_post_rdlock(const Addr rwlock, const Bool took_lock)
                  rwlock);
   }
 
+  p = rwlock_get(rwlock);
+
   if (! p || ! took_lock)
     return;
 
@@ -350,6 +353,7 @@ void rwlock_post_rdlock(const Addr rwlock, const Bool took_lock)
   if (++q->reader_nesting_count == 1)
   {
     rwlock_combine_other_vc(p, drd_tid, False);
+    q->last_lock_was_writer_lock = False;
     thread_new_segment(drd_tid);
     s_rwlock_segment_creation_count++;
   }
@@ -395,8 +399,8 @@ void rwlock_pre_wrlock(const Addr rwlock)
 
 /**
  * Update rwlock_info state when locking the pthread_rwlock_t rwlock.
- * Note: this function must be called after pthread_rwlock_wrlock() has been
- * called, or a race condition is triggered !
+ * Note: this function must be called after pthread_rwlock_wrlock() has
+ * finished, or a race condition is triggered !
  */
 void rwlock_post_wrlock(const Addr rwlock, const Bool took_lock)
 {
@@ -480,7 +484,6 @@ void rwlock_pre_unlock(const Addr rwlock)
     /* this rwlock is locked again.                                        */
 
     thread_get_latest_segment(&q->last_unlock_segment, drd_tid);
-    q->last_lock_was_writer_lock = False;
     thread_new_segment(drd_tid);
     s_rwlock_segment_creation_count++;
   }

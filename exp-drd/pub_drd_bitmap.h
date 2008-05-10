@@ -62,12 +62,12 @@ void bm_access_load_1(struct bitmap* const bm, const Addr a1);
 void bm_access_load_2(struct bitmap* const bm, const Addr a1);
 void bm_access_load_4(struct bitmap* const bm, const Addr a1);
 void bm_access_load_8(struct bitmap* const bm, const Addr a1);
+void bm_access_range_store(struct bitmap* const bm,
+                           const Addr a1, const Addr a2);
 void bm_access_store_1(struct bitmap* const bm, const Addr a1);
 void bm_access_store_2(struct bitmap* const bm, const Addr a1);
 void bm_access_store_4(struct bitmap* const bm, const Addr a1);
 void bm_access_store_8(struct bitmap* const bm, const Addr a1);
-void bm_access_range_store(struct bitmap* const bm,
-                           const Addr a1, const Addr a2);
 Bool bm_has(const struct bitmap* const bm,
             const Addr a1, const Addr a2,
             const BmAccessTypeT access_type);

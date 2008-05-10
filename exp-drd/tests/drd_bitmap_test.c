@@ -14,13 +14,19 @@ void* VG_(malloc)(SizeT nbytes)
 { return malloc(nbytes); }
 void  VG_(free)(void* p)
 { return free(p); }
-void  VG_(assert_fail)(Bool isCore, const Char* expr, const Char* file,
-                       Int line, const Char* fn, const HChar* format, ...) {
-#if defined(__linux__)
-__assert_fail(expr, file, line, fn); abort(); 
-#else
-assert(0);
-#endif /* __linux__ */
+void  VG_(assert_fail)(Bool isCore, const Char* assertion, const Char* file,
+                       Int line, const Char* function, const HChar* format,
+                       ...)
+{
+  fprintf(stderr,
+          "%s:%u: %s%sAssertion `%s' failed.\n",
+          file,
+          line,
+          function ? (char*)function : "",
+          function ? ": " : "",
+          assertion);
+  fflush(stderr);
+  abort();
 }
 
 void* VG_(memset)(void *s, Int c, SizeT sz)

@@ -216,7 +216,7 @@ endif
 
 
 drd_bitmap_test_SOURCES     = drd_bitmap_test.c
-drd_bitmap_test_CFLAGS      = $(AM_CFLAGS) -O2 --param inline-unit-growth=100000
+drd_bitmap_test_CFLAGS      = $(AM_CFLAGS) -O2 -finline-limit=100000
 
 fp_race_SOURCES             = fp_race.c
 fp_race_LDADD               = -lpthread

@@ -116,7 +116,7 @@ void bm_test1(void)
   bm_delete(bm2);
 }
 
-/* Test whether bm_equal() works correctly. */
+/** Test whether bm_equal() works correctly. */
 void bm_test2()
 {
   struct bitmap* bm1;
@@ -134,8 +134,101 @@ void bm_test2()
   bm_access_store_1(bm1, ADDR0_COUNT + 7);
   assert(! bm_equal(bm1, bm2));
   assert(! bm_equal(bm2, bm1));
-  bm_delete(bm1);
   bm_delete(bm2);
+  bm_delete(bm1);
+}
+
+/** Torture test of the functions that set or clear a range of bits. */
+void bm_test3()
+{
+  unsigned i, j;
+  struct bitmap* bm1;
+  struct bitmap* bm2;
+
+  bm1 = bm_new();
+  bm2 = bm_new();
+  for (i = ADDR0_COUNT - 2 * BITS_PER_UWORD;
+       i < ADDR0_COUNT + 2 * BITS_PER_UWORD;
+       i+=3)
+  {
+    for (j = i + 1; j < ADDR0_COUNT + 2 * BITS_PER_UWORD; j+=5)
+    {
+      bm_access_range_load(bm1, i, j);
+      bm_clear_load(bm1, i, j);
+      assert(bm_equal(bm1, bm2));
+      bm_access_load_1(bm1, i);
+      bm_clear_load(bm1, i, i+1);
+      assert(bm_equal(bm1, bm2));
+      bm_access_load_2(bm1, i);
+      bm_clear_load(bm1, i, i+2);
+      assert(bm_equal(bm1, bm2));
+      bm_access_load_4(bm1, i);
+      bm_clear_load(bm1, i, i+4);
+      assert(bm_equal(bm1, bm2));
+      bm_access_load_8(bm1, i);
+      bm_clear_load(bm1, i, i+8);
+      assert(bm_equal(bm1, bm2));
+      bm_access_range_store(bm1, i, j);
+      bm_clear_store(bm1, i, j);
+      assert(bm_equal(bm1, bm2));
+      bm_access_store_1(bm1, i);
+      bm_clear_store(bm1, i, i + 1);
+      assert(bm_equal(bm1, bm2));
+      bm_access_store_2(bm1, i);
+      bm_clear_store(bm1, i, i + 2);
+      assert(bm_equal(bm1, bm2));
+      bm_access_store_4(bm1, i);
+      bm_clear_store(bm1, i, i + 4);
+      assert(bm_equal(bm1, bm2));
+      bm_access_store_8(bm1, i);
+      bm_clear_store(bm1, i, i + 8);
+      assert(bm_equal(bm1, bm2));
+    }
+  }
+  bm_access_range_load(bm1, 0, 2 * ADDR0_COUNT + 2 * BITS_PER_UWORD);
+  bm_access_range_store(bm1, 0, 2 * ADDR0_COUNT + 2 * BITS_PER_UWORD);
+  bm_access_range_load(bm2, 0, 2 * ADDR0_COUNT + 2 * BITS_PER_UWORD);
+  bm_access_range_store(bm2, 0, 2 * ADDR0_COUNT + 2 * BITS_PER_UWORD);
+  for (i = ADDR0_COUNT - 2 * BITS_PER_UWORD;
+       i < ADDR0_COUNT + 2 * BITS_PER_UWORD;
+       i+=3)
+  {
+    for (j = i + 1; j < ADDR0_COUNT + 2 * BITS_PER_UWORD; j+=5)
+    {
+      bm_clear_load(bm1, i, j);
+      bm_access_range_load(bm1, i, j);
+      assert(bm_equal(bm1, bm2));
+      bm_clear_load(bm1, i, i+1);
+      bm_access_load_1(bm1, i);
+      assert(bm_equal(bm1, bm2));
+      bm_clear_load(bm1, i, i+2);
+      bm_access_load_2(bm1, i);
+      assert(bm_equal(bm1, bm2));
+      bm_clear_load(bm1, i, i+4);
+      bm_access_load_4(bm1, i);
+      assert(bm_equal(bm1, bm2));
+      bm_clear_load(bm1, i, i+8);
+      bm_access_load_8(bm1, i);
+      assert(bm_equal(bm1, bm2));
+      bm_clear_store(bm1, i, j);
+      bm_access_range_store(bm1, i, j);
+      assert(bm_equal(bm1, bm2));
+      bm_clear_store(bm1, i, i+1);
+      bm_access_store_1(bm1, i);
+      assert(bm_equal(bm1, bm2));
+      bm_clear_store(bm1, i, i+2);
+      bm_access_store_2(bm1, i);
+      assert(bm_equal(bm1, bm2));
+      bm_clear_store(bm1, i, i+4);
+      bm_access_store_4(bm1, i);
+      assert(bm_equal(bm1, bm2));
+      bm_clear_store(bm1, i, i+8);
+      bm_access_store_8(bm1, i);
+      assert(bm_equal(bm1, bm2));
+    }
+  }
+  bm_delete(bm2);
+  bm_delete(bm1);
 }
 
 int main(int argc, char** argv)
@@ -159,6 +252,7 @@ int main(int argc, char** argv)
 
   bm_test1();
   bm_test2();
+  bm_test3();
 
   VG_(printf)("End of DRD BM unit test.\n");
 

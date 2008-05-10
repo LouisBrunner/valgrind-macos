@@ -210,7 +210,7 @@ endif
 
 
 drd_bitmap_test_SOURCES     = drd_bitmap_test.c
-drd_bitmap_test_LDADD       =
+drd_bitmap_test_CFLAGS      = $(AM_FLAG_M3264_PRI) -O2
 
 fp_race_SOURCES             = fp_race.c
 fp_race_LDADD               = -lpthread

@@ -231,6 +231,12 @@ void bm_access_load_8(struct bitmap* const bm, const Addr a1)
     bm_access_range(bm, a1, a1 + 8, eLoad);
 }
 
+void bm_access_range_store(struct bitmap* const bm,
+                           const Addr a1, const Addr a2)
+{
+  bm_access_range(bm, a1, a2, eStore);
+}
+
 void bm_access_store_1(struct bitmap* const bm, const Addr a1)
 {
   bm_access_aligned_store(bm, a1, 1);
@@ -263,12 +269,6 @@ void bm_access_store_8(struct bitmap* const bm, const Addr a1)
   }
   else
     bm_access_range(bm, a1, a1 + 8, eStore);
-}
-
-void bm_access_range_store(struct bitmap* const bm,
-                           const Addr a1, const Addr a2)
-{
-  bm_access_range(bm, a1, a2, eStore);
 }
 
 Bool bm_has(const struct bitmap* const bm, const Addr a1, const Addr a2,
@@ -769,11 +769,18 @@ Bool bm_equal(struct bitmap* const lhs, const struct bitmap* const rhs)
 
   for ( ; (bm2l_ref = VG_(OSetGen_Next)(lhs->oset)) != 0; )
   {
-    bm2l = bm2l_ref->bm2;
+    while (bm2l_ref
+           && (bm2l = bm2l_ref->bm2)
+           && bm2l
+           && ! bm_has_any_access(lhs,
+                                  bm2l->addr << ADDR0_BITS,
+                                  (bm2l->addr + 1) << ADDR0_BITS))
+    {
+      bm2l_ref = VG_(OSetGen_Next)(lhs->oset);
+    }
+    if (bm2l_ref == 0)
+      break;
     tl_assert(bm2l);
-    tl_assert(bm_has_any_access(lhs,
-                                bm2l->addr << ADDR0_BITS,
-                                (bm2l->addr + 1) << ADDR0_BITS));
 #if 0
     VG_(message)(Vg_DebugMsg, "bm_equal: at 0x%lx", bm2l->addr << ADDR0_BITS);
 #endif

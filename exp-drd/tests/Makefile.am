@@ -73,8 +73,8 @@ EXTRA_DIST =                                        \
 	pth_detached2.stderr.exp                    \
 	pth_detached2.stdout.exp                    \
 	pth_detached2.vgtest                        \
-	pth_detached_sem.stdout.exp                 \
 	pth_detached_sem.stderr.exp                 \
+	pth_detached_sem.stdout.exp                 \
 	pth_detached_sem.vgtest                     \
 	recursive_mutex.stderr.exp	            \
 	recursive_mutex.stdout.exp	            \
@@ -82,6 +82,8 @@ EXTRA_DIST =                                        \
 	rwlock_race.stderr.exp	                    \
 	rwlock_race.stderr.exp2	                    \
 	rwlock_race.vgtest                          \
+	rwlock_test.stderr.exp	                    \
+	rwlock_test.vgtest                          \
 	sem_as_mutex.stderr.exp                     \
 	sem_as_mutex.vgtest                         \
 	sem_as_mutex2.stderr.exp                    \
@@ -144,7 +146,7 @@ EXTRA_DIST =                                        \
 	tc23_bogus_condwait.vgtest                  \
 	tc24_nonzero_sem.stderr.exp                 \
 	tc24_nonzero_sem.vgtest                     \
-	trylock.c trylock.stderr.exp
+	trylock.stderr.exp
 
 AM_CFLAGS   = $(WERROR) -Wall -Wshadow -Wno-unused-parameter -Winline\
               -g $(AM_FLAG_M3264_PRI) -DVGA_$(VG_ARCH)=1 -DVGO_$(VG_OS)=1 \
@@ -174,6 +176,7 @@ check_PROGRAMS_COMMON = \
   pth_detached_sem    \
   recursive_mutex     \
   rwlock_race         \
+  rwlock_test         \
   sem_as_mutex        \
   sigalrm             \
   tc01_simple_race    \
@@ -213,7 +216,7 @@ endif
 
 
 drd_bitmap_test_SOURCES     = drd_bitmap_test.c
-drd_bitmap_test_CFLAGS      = $(AM_CFLAGS) -O2 -finline_limit=1000
+drd_bitmap_test_CFLAGS      = $(AM_CFLAGS) -O2 --param inline-unit-growth=100000
 
 fp_race_SOURCES             = fp_race.c
 fp_race_LDADD               = -lpthread
@@ -269,6 +272,9 @@ recursive_mutex_LDADD       = -lpthread
 
 rwlock_race_SOURCES         = rwlock_race.c
 rwlock_race_LDADD           = -lpthread
+
+rwlock_test_SOURCES         = rwlock_test.c
+rwlock_test_LDADD           = -lpthread
 
 sem_as_mutex_SOURCES        = sem_as_mutex.c
 sem_as_mutex_LDADD          = -lpthread

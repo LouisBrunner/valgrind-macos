@@ -43,6 +43,8 @@ EXTRA_DIST =                                        \
 	matinv.vgtest                               \
 	memory_allocation.stderr.exp		    \
 	memory_allocation.vgtest		    \
+	new_delete.stderr.exp                       \
+	new_delete.vgtest                           \
 	omp_matinv.stderr.exp                       \
 	omp_matinv.stdout.exp                       \
 	omp_matinv.vgtest                           \
@@ -163,6 +165,7 @@ check_PROGRAMS_COMMON = \
   linuxthreads_det    \
   matinv              \
   memory_allocation   \
+  new_delete          \
   pth_barrier         \
   pth_broadcast       \
   pth_cond_race       \
@@ -210,7 +213,7 @@ endif
 
 
 drd_bitmap_test_SOURCES     = drd_bitmap_test.c
-drd_bitmap_test_CFLAGS      = $(AM_FLAG_M3264_PRI) -O2
+drd_bitmap_test_CFLAGS      = $(AM_CFLAGS) -O2
 
 fp_race_SOURCES             = fp_race.c
 fp_race_LDADD               = -lpthread
@@ -240,7 +243,8 @@ matinv_SOURCES              = matinv.c
 matinv_LDADD                = -lpthread -lm
 
 memory_allocation_SOURCES   = memory_allocation.c
-memory_allocation_LDADD     =
+
+new_delete_SOURCES          = new_delete.cpp
 
 pth_barrier_SOURCES         = pth_barrier.c
 pth_barrier_LDADD           = -lpthread

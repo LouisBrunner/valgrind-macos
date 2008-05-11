@@ -148,7 +148,7 @@ EXTRA_DIST =                                        \
 	tc24_nonzero_sem.vgtest                     \
 	trylock.stderr.exp
 
-AM_CFLAGS   = $(WERROR) -Wall -Wshadow -Wno-unused-parameter -Winline\
+AM_CFLAGS   = $(WERROR) -Wall @FLAG_W_EXTRA@ -Winline -Wno-unused-parameter\
               -g $(AM_FLAG_M3264_PRI) -DVGA_$(VG_ARCH)=1 -DVGO_$(VG_OS)=1 \
               -DVGP_$(VG_ARCH)_$(VG_OS)=1
 AM_CPPFLAGS = -I$(top_srcdir) -I$(top_srcdir)/include \
@@ -216,7 +216,8 @@ endif
 
 
 drd_bitmap_test_SOURCES     = drd_bitmap_test.c
-drd_bitmap_test_CFLAGS      = $(AM_CFLAGS) -O2 -finline-limit=100000
+drd_bitmap_test_CFLAGS      = $(AM_CFLAGS) -O2 \
+                              @FLAG_UNLIMITED_INLINE_UNIT_GROWTH@
 
 fp_race_SOURCES             = fp_race.c
 fp_race_LDADD               = -lpthread

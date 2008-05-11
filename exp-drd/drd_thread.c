@@ -87,7 +87,7 @@ void thread_set_segment_merging(const Bool m)
 
 __inline__ Bool IsValidDrdThreadId(const DrdThreadId tid)
 {
-  return (0 <= tid && tid < DRD_N_THREADS && tid != DRD_INVALID_THREADID
+  return (0 <= (int)tid && tid < DRD_N_THREADS && tid != DRD_INVALID_THREADID
           && ! (s_threadinfo[tid].vg_thread_exists == False
                 && s_threadinfo[tid].posix_thread_exists == False
                 && s_threadinfo[tid].detached_posix_thread == False));
@@ -170,7 +170,8 @@ DrdThreadId PtThreadIdToDrdThreadId(const PThreadId tid)
 
 ThreadId DrdThreadIdToVgThreadId(const DrdThreadId tid)
 {
-  tl_assert(0 <= tid && tid < DRD_N_THREADS && tid != DRD_INVALID_THREADID);
+  tl_assert(0 <= (int)tid && tid < DRD_N_THREADS
+            && tid != DRD_INVALID_THREADID);
   return (s_threadinfo[tid].vg_thread_exists
           ? s_threadinfo[tid].vg_threadid
           : VG_INVALID_THREADID);
@@ -207,7 +208,7 @@ DrdThreadId thread_pre_create(const DrdThreadId creator,
 
   tl_assert(VgThreadIdToDrdThreadId(vg_created) == DRD_INVALID_THREADID);
   created = VgThreadIdToNewDrdThreadId(vg_created);
-  tl_assert(0 <= created && created < DRD_N_THREADS
+  tl_assert(0 <= (int)created && created < DRD_N_THREADS
             && created != DRD_INVALID_THREADID);
 
   tl_assert(s_threadinfo[created].first == 0);
@@ -224,7 +225,7 @@ DrdThreadId thread_post_create(const ThreadId vg_created)
 {
   const DrdThreadId created = VgThreadIdToDrdThreadId(vg_created);
 
-  tl_assert(0 <= created && created < DRD_N_THREADS
+  tl_assert(0 <= (int)created && created < DRD_N_THREADS
             && created != DRD_INVALID_THREADID);
 
   s_threadinfo[created].stack_max     = VG_(thread_get_stack_max)(vg_created);
@@ -243,7 +244,8 @@ DrdThreadId thread_post_create(const ThreadId vg_created)
 /* ignored.                                                                */
 void thread_set_stack_startup(const DrdThreadId tid, const Addr stack_startup)
 {
-  tl_assert(0 <= tid && tid < DRD_N_THREADS && tid != DRD_INVALID_THREADID);
+  tl_assert(0 <= (int)tid && tid < DRD_N_THREADS
+            && tid != DRD_INVALID_THREADID);
   tl_assert(s_threadinfo[tid].stack_min <= stack_startup);
   tl_assert(stack_startup <= s_threadinfo[tid].stack_max);
   s_threadinfo[tid].stack_startup = stack_startup;
@@ -251,28 +253,28 @@ void thread_set_stack_startup(const DrdThreadId tid, const Addr stack_startup)
 
 Addr thread_get_stack_min(const DrdThreadId tid)
 {
-  tl_assert(0 <= tid && tid < DRD_N_THREADS
+  tl_assert(0 <= (int)tid && tid < DRD_N_THREADS
             && tid != DRD_INVALID_THREADID);
   return s_threadinfo[tid].stack_min;
 }
 
 Addr thread_get_stack_min_min(const DrdThreadId tid)
 {
-  tl_assert(0 <= tid && tid < DRD_N_THREADS
+  tl_assert(0 <= (int)tid && tid < DRD_N_THREADS
             && tid != DRD_INVALID_THREADID);
   return s_threadinfo[tid].stack_min_min;
 }
 
 Addr thread_get_stack_max(const DrdThreadId tid)
 {
-  tl_assert(0 <= tid && tid < DRD_N_THREADS
+  tl_assert(0 <= (int)tid && tid < DRD_N_THREADS
             && tid != DRD_INVALID_THREADID);
   return s_threadinfo[tid].stack_max;
 }
 
 SizeT thread_get_stack_size(const DrdThreadId tid)
 {
-  tl_assert(0 <= tid && tid < DRD_N_THREADS
+  tl_assert(0 <= (int)tid && tid < DRD_N_THREADS
             && tid != DRD_INVALID_THREADID);
   return s_threadinfo[tid].stack_size;
 }
@@ -285,7 +287,7 @@ void thread_delete(const DrdThreadId tid)
   Segment* sg;
   Segment* sg_prev;
 
-  tl_assert(0 <= tid && tid < DRD_N_THREADS
+  tl_assert(0 <= (int)tid && tid < DRD_N_THREADS
             && tid != DRD_INVALID_THREADID);
   tl_assert(s_threadinfo[tid].synchr_nesting == 0);
   for (sg = s_threadinfo[tid].last; sg; sg = sg_prev)
@@ -307,7 +309,7 @@ void thread_delete(const DrdThreadId tid)
 /* joinable threads, not for detached threads.                         */
 void thread_finished(const DrdThreadId tid)
 {
-  tl_assert(0 <= tid && tid < DRD_N_THREADS
+  tl_assert(0 <= (int)tid && tid < DRD_N_THREADS
             && tid != DRD_INVALID_THREADID);
 
   s_threadinfo[tid].vg_thread_exists = False;
@@ -328,7 +330,7 @@ void thread_finished(const DrdThreadId tid)
 
 void thread_set_pthreadid(const DrdThreadId tid, const PThreadId ptid)
 {
-  tl_assert(0 <= tid && tid < DRD_N_THREADS
+  tl_assert(0 <= (int)tid && tid < DRD_N_THREADS
             && tid != DRD_INVALID_THREADID);
   tl_assert(s_threadinfo[tid].pt_threadid == INVALID_POSIX_THREADID);
   tl_assert(ptid != INVALID_POSIX_THREADID);
@@ -338,14 +340,14 @@ void thread_set_pthreadid(const DrdThreadId tid, const PThreadId ptid)
 
 Bool thread_get_joinable(const DrdThreadId tid)
 {
-  tl_assert(0 <= tid && tid < DRD_N_THREADS
+  tl_assert(0 <= (int)tid && tid < DRD_N_THREADS
             && tid != DRD_INVALID_THREADID);
   return ! s_threadinfo[tid].detached_posix_thread;
 }
 
 void thread_set_joinable(const DrdThreadId tid, const Bool joinable)
 {
-  tl_assert(0 <= tid && tid < DRD_N_THREADS
+  tl_assert(0 <= (int)tid && tid < DRD_N_THREADS
             && tid != DRD_INVALID_THREADID);
   tl_assert(!! joinable == joinable);
   tl_assert(s_threadinfo[tid].pt_threadid != INVALID_POSIX_THREADID);
@@ -421,7 +423,7 @@ int thread_get_synchr_nesting_count(const DrdThreadId tid)
 /** Append a new segment at the end of the segment list. */
 static void thread_append_segment(const DrdThreadId tid, Segment* const sg)
 {
-  tl_assert(0 <= tid && tid < DRD_N_THREADS
+  tl_assert(0 <= (int)tid && tid < DRD_N_THREADS
             && tid != DRD_INVALID_THREADID);
   // tl_assert(sane_ThreadInfo(&s_threadinfo[tid]));
   sg->prev = s_threadinfo[tid].last;
@@ -439,7 +441,7 @@ static void thread_append_segment(const DrdThreadId tid, Segment* const sg)
  */
 static void thread_discard_segment(const DrdThreadId tid, Segment* const sg)
 {
-  tl_assert(0 <= tid && tid < DRD_N_THREADS
+  tl_assert(0 <= (int)tid && tid < DRD_N_THREADS
             && tid != DRD_INVALID_THREADID);
   //tl_assert(sane_ThreadInfo(&s_threadinfo[tid]));
 
@@ -458,7 +460,8 @@ static void thread_discard_segment(const DrdThreadId tid, Segment* const sg)
 
 VectorClock* thread_get_vc(const DrdThreadId tid)
 {
-  tl_assert(0 <= tid && tid < DRD_N_THREADS && tid != DRD_INVALID_THREADID);
+  tl_assert(0 <= (int)tid && tid < DRD_N_THREADS
+            && tid != DRD_INVALID_THREADID);
   tl_assert(s_threadinfo[tid].last);
   return &s_threadinfo[tid].last->vc;
 }
@@ -469,7 +472,8 @@ VectorClock* thread_get_vc(const DrdThreadId tid)
 void thread_get_latest_segment(Segment** sg, const DrdThreadId tid)
 {
   tl_assert(sg);
-  tl_assert(0 <= tid && tid < DRD_N_THREADS && tid != DRD_INVALID_THREADID);
+  tl_assert(0 <= (int)tid && tid < DRD_N_THREADS
+            && tid != DRD_INVALID_THREADID);
   tl_assert(s_threadinfo[tid].last);
 
   sg_put(*sg);
@@ -679,7 +683,8 @@ void thread_new_segment(const DrdThreadId tid)
 {
   Segment* new_sg;
 
-  tl_assert(0 <= tid && tid < DRD_N_THREADS && tid != DRD_INVALID_THREADID);
+  tl_assert(0 <= (int)tid && tid < DRD_N_THREADS
+            && tid != DRD_INVALID_THREADID);
 
   new_sg = sg_new(tid, tid);
   thread_append_segment(tid, new_sg);
@@ -704,9 +709,9 @@ void thread_new_segment(const DrdThreadId tid)
 void thread_combine_vc(DrdThreadId joiner, DrdThreadId joinee)
 {
   tl_assert(joiner != joinee);
-  tl_assert(0 <= joiner && joiner < DRD_N_THREADS
+  tl_assert(0 <= (int)joiner && joiner < DRD_N_THREADS
             && joiner != DRD_INVALID_THREADID);
-  tl_assert(0 <= joinee && joinee < DRD_N_THREADS
+  tl_assert(0 <= (int)joinee && joinee < DRD_N_THREADS
             && joinee != DRD_INVALID_THREADID);
   tl_assert(s_threadinfo[joiner].last);
   tl_assert(s_threadinfo[joinee].last);
@@ -725,7 +730,8 @@ void thread_combine_vc(DrdThreadId joiner, DrdThreadId joinee)
  */
 void thread_combine_vc2(DrdThreadId tid, const VectorClock* const vc)
 {
-  tl_assert(0 <= tid && tid < DRD_N_THREADS && tid != DRD_INVALID_THREADID);
+  tl_assert(0 <= (int)tid && tid < DRD_N_THREADS
+            && tid != DRD_INVALID_THREADID);
   tl_assert(s_threadinfo[tid].last);
   tl_assert(vc);
   vc_combine(&s_threadinfo[tid].last->vc, vc);
@@ -774,14 +780,16 @@ void thread_stop_using_mem(const Addr a1, const Addr a2)
 
 void thread_start_recording(const DrdThreadId tid)
 {
-  tl_assert(0 <= tid && tid < DRD_N_THREADS && tid != DRD_INVALID_THREADID);
+  tl_assert(0 <= (int)tid && tid < DRD_N_THREADS
+            && tid != DRD_INVALID_THREADID);
   tl_assert(! s_threadinfo[tid].is_recording);
   s_threadinfo[tid].is_recording = True;
 }
 
 void thread_stop_recording(const DrdThreadId tid)
 {
-  tl_assert(0 <= tid && tid < DRD_N_THREADS && tid != DRD_INVALID_THREADID);
+  tl_assert(0 <= (int)tid && tid < DRD_N_THREADS
+            && tid != DRD_INVALID_THREADID);
   tl_assert(s_threadinfo[tid].is_recording);
   s_threadinfo[tid].is_recording = False;
 }
@@ -847,7 +855,7 @@ thread_report_conflicting_segments_segment(const DrdThreadId tid,
 {
   unsigned i;
 
-  tl_assert(0 <= tid && tid < DRD_N_THREADS
+  tl_assert(0 <= (int)tid && tid < DRD_N_THREADS
             && tid != DRD_INVALID_THREADID);
   tl_assert(p);
 
@@ -887,7 +895,7 @@ void thread_report_conflicting_segments(const DrdThreadId tid,
 {
   Segment* p;
 
-  tl_assert(0 <= tid && tid < DRD_N_THREADS
+  tl_assert(0 <= (int)tid && tid < DRD_N_THREADS
             && tid != DRD_INVALID_THREADID);
 
   for (p = s_threadinfo[tid].first; p; p = p->next)
@@ -931,7 +939,8 @@ static void thread_compute_danger_set(struct bitmap** danger_set,
 {
   Segment* p;
 
-  tl_assert(0 <= tid && tid < DRD_N_THREADS && tid != DRD_INVALID_THREADID);
+  tl_assert(0 <= (int)tid && tid < DRD_N_THREADS
+            && tid != DRD_INVALID_THREADID);
   tl_assert(tid == s_drd_running_tid);
 
   s_update_danger_set_count++;

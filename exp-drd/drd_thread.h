@@ -158,7 +158,7 @@ struct bitmap* thread_get_danger_set(void)
 static inline
 Bool running_thread_is_recording(void)
 {
-  tl_assert(0 <= s_drd_running_tid && s_drd_running_tid < DRD_N_THREADS
+  tl_assert(0 <= (int)s_drd_running_tid && s_drd_running_tid < DRD_N_THREADS
             && s_drd_running_tid != DRD_INVALID_THREADID);
   return (s_threadinfo[s_drd_running_tid].synchr_nesting == 0
           && s_threadinfo[s_drd_running_tid].is_recording);
@@ -187,7 +187,7 @@ void thread_set_stack_min(const DrdThreadId tid, const Addr stack_min)
 static inline
 Segment* thread_get_segment(const DrdThreadId tid)
 {
-  tl_assert(0 <= tid && tid < DRD_N_THREADS
+  tl_assert(0 <= (int)tid && tid < DRD_N_THREADS
             && tid != DRD_INVALID_THREADID);
   tl_assert(s_threadinfo[tid].last);
   return s_threadinfo[tid].last;

@@ -177,7 +177,7 @@ void semaphore_pre_wait(const Addr semaphore)
                  semaphore);
   }
   tl_assert(p);
-  tl_assert(p->waiters >= 0);
+  tl_assert((int)p->waiters >= 0);
   p->waiters++;
   tl_assert(p->waiters > 0);
 }
@@ -202,8 +202,8 @@ void semaphore_post_wait(const DrdThreadId tid, const Addr semaphore,
   }
   tl_assert(p->waiters > 0);
   p->waiters--;
-  tl_assert(p->waiters >= 0);
-  tl_assert(p->value >= 0);
+  tl_assert((int)p->waiters >= 0);
+  tl_assert((int)p->value >= 0);
   if (p->value == 0)
   {
     SemaphoreErrInfo sei = { semaphore };
@@ -215,7 +215,7 @@ void semaphore_post_wait(const DrdThreadId tid, const Addr semaphore,
     return;
   }
   p->value--;
-  tl_assert(p->value >= 0);
+  tl_assert((int)p->value >= 0);
   if (p->last_sem_post_tid != tid
       && p->last_sem_post_tid != DRD_INVALID_THREADID)
   {

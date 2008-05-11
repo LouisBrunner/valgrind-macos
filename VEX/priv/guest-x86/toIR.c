@@ -13347,7 +13347,7 @@ DisResult disInstr_X86_WRK (
 
    /* REPNE prefix insn */
    case 0xF2: { 
-      Addr32 eip_orig = guest_EIP_bbstart + delta - 1;
+      Addr32 eip_orig = guest_EIP_bbstart + delta_start;
       if (sorb != 0) goto decode_failure;
       abyte = getIByte(delta); delta++;
 
@@ -13390,7 +13390,7 @@ DisResult disInstr_X86_WRK (
    /* REP/REPE prefix insn (for SCAS and CMPS, 0xF3 means REPE,
       for the rest, it means REP) */
    case 0xF3: { 
-      Addr32 eip_orig = guest_EIP_bbstart + delta - 1;
+      Addr32 eip_orig = guest_EIP_bbstart + delta_start;
       if (sorb != 0) goto decode_failure;
       abyte = getIByte(delta); delta++;
 

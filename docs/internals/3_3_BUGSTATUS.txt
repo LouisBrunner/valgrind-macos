@@ -13,6 +13,13 @@ PRI: 33  = fix this for 3.3.1
 
 ---------- Bugs reported after (in) 3.3.0 --------------------------
 
+*** definitely fix
+### merge fix to 3.3 branch
+??? marginal
+NNN won't fix
+
+-- Last updated 9 May 08
+
 tidy up static int linux_kernel_2_6_22(void) (syswrap-linux.c)
 
 check r7322 is merged to branch
@@ -27,13 +34,8 @@ get rid of pointless constraint !(--db-attach=yes &&
 
 utimensat syswrap bug (Kegel, users, 24 Feb)
 
-r7454: Intercept pthread_rwlock_try{rd,wr}lock.  Fixes #158212.
 
 openoffice on suse 10.3 readlink stack problem
-
-Core2/ssse3 support in the trunk: vx1808, vx1809, vx1810, 
-                                  r7384, r7385, r7387, r7389.
-(in essence #155528)
 
 Consider potential space/time effects of r7383 (see reply to
 the commit message).
@@ -44,116 +46,144 @@ properly (see replies to the commit message).  (now fixed ...)
 re Keller vpath bug, don't use attached patch; use Ashley's one
 instead (on @dev ?)
 
---- start 8 May 08 ---
-
 disInstr(ppc): unhandled instruction: 0x7D295F1E (users@, 29 Feb)
 
+***
 64 bit tweak ("Solomon, Bernard", user@, 25 Mar, > 1 post the same day)
 
 disInstr(ppc): unhandled instruction: 0x7C1F42A6
                  primary 31(0x1F), secondary 678(0x2A6)
  "Gupta Richa", users@, 3 Apr 08
 
-92456: Tracing the origin of uninitialised memory
+--- start 27 March 08 ---
+
+92456:  Tracing the origin of uninitialised memory
+        FIXED
+
+126389  (fxrstr) vex x86->IR: unhandled instruction bytes:
+###     0xF 0xAE 0x4D 0xF0 
+        == 158525 Valgrind doesn't recognise fxrstor instruction
+        FIXED trunk r1836, (test) r1837
+        MERGE
 
 149878  add (proper) check for calloc integer overflow
-        (possibly with a viable patch now)
+***     (possibly with a viable patch now)
+        FIXME
+
+152818  (repz lodsb) vex x86->IR: unhandled instruction bytes:
+***     0xF3 0xAC 0xFC 0x9C
+
+153196  (repnz cmpsb) vex x86->IR: unhandled instruction bytes: 0xF2
+###     0xA6 0x89 0x45
+        FIXED trunk r1834
+
+155528  valgrind cupinfo reports a CPU, which does not reflect
+        valgrind's instruction set.
+        Core2/ssse3 support in the trunk:
+           vx1808, vx1809, vx1810, 
+           r7384, r7385, r7387, r7389.
+        (in essence #155528)
+        FIXED, MERGE
+
+156065  VALGRIND_MEMPOOL_ALLOC vs. zero-size allocs triggers false
+***     "overlapping" error
+        FIXME
+
+156404  Unable to start oocalc under memcheck on openSUSE 10.3 (64-bit)
+???     POTENTIALLY SERIOUS (need to extend root stack before syscall)
+
+157665  Valgrind fails on shmdt(0) after shmat to 0 in X int10 code
+###     FIXED r7399, MERGE
+
+157748  valgrind seems to not recognize what would be sse2
+###     instructions
+        FIXED vx1835, MERGE
+
+158004  "Assertion 'szB == 32 || szB == 128' failed" with valgrind
+***     cross-compiled for ppc32
+        Easy to fix?
+
+158042  --db-attach at invalid free() gives broken stack trace on
+        x86_64
+
+158212  Locks taken by pthread_rwlock_tryrdlock and
+###     pthread_rwlock_trywrlock not recognised by helgrind
+        r7454: Intercept pthread_rwlock_try{rd,wr}lock.  Fixes #158212.
+        MERGE
+
+158425  sys_poll incorrectly emulated when RES==0
+***     PATCH + test case provided
+
+158730  ppc: illegal opcode crash on instruction fctiwz
+???     Not sure this does have anything to do with fctiwz.
+        Queried reporter.
+
+158744  Valgrind fails to handle interlocked instructions on extended
+***     registers (r8, etc) on amd64 (vex amd64->IR: unhandled
+        instruction bytes: 0xF0 0x41 0xF 0xC0 0x87 0xB8)
+        Patch posted; waiting for response.
+
+159285  unhandled syscall:25
+???     (no test case provided)
+
+159452  unhandled ioctl 0x8B01 on "valgrind iwconfig"
+???     (queried user on documentation for this ioctl)
+
+159501  incorrect handling of ALSA ioctls
+***     (has two patches, looks reasonable, checking for update)
+
+159659  scas does not use ES segment selector
+NNN
+
+159720  Opcode 0xFF 0x58 0xEB 0x5 unhandled on x86
+NNN     (this is a "lcall" or callf -- far call)
+        (no test case)
 
 160595  Why my program hang-up when work with valgrind ?
-        (no info so far)
+NNN     (no info so far, probably a threading bug in client)
 
 160872  race errors reported where libpthread.so
-        (no response from reporter)
+???     (might be a problem with pthread_setspecific)
 
 160907  Support for a couple of recent Linux syscalls, syscall wrapper
-        bugfixes (doesn't compile on ppc32/64-linux)
+***     bugfixes (doesn't compile on ppc32/64-linux)
 
-160954  ppc build of vagrind crashes with illegal instruction
+160954  ppc build of valgrind crashes with illegal instruction
+???     e500 specific instruction
 
 160956  PATCH: mallinfo implementation
-
-161199  Valgrind restarts my application without my app crashing, The
-        legend at the end of the file indicates that it may be a
-        valgind issue (probably bogus, should close as invalid)
+???     fixed.  merge?  difficult; the patch is in so many commits
 
 161251  ppc Power-QUICC-III (8555, e500 core) not supported: isel
-        instruction
+???     instruction (it's "just" a cmov)
 
 161285  Patch -- support for eventfd() syscall
+???     Allegedly fixed, but what rev?
 
 161374  SYS_readdir syscall not implemented
+???     readdir is pretty prehistoric
 
 161378  illegal opcode in debug libm
+        == 160136
+###     FIXED vx1826
 
 161487  number of suppressions files is limited to 10
+???     Patch exists
 
 161609  Results returned by VG_(get_StackTrace)() do not match
-        its documentation
-
-161628  exp-drd/tests/sigalrm triggers an assertion failure in
-        Valgrind's core on ppc64.
+***     its documentation
 
 --- end 8 May 08 ---
 
---- start 27 March 08 ---
 
-156065 VALGRIND_MEMPOOL_ALLOC vs. zero-size allocs triggers false
-"overlapping" error
+### r1816 (x86 CondNS after SUBB)
+### r1817 (amd64 CondNS after SUBB)
+### r1833 (both, CondNZ after SUBW)
 
-156404 Unable to start oocalc under memcheck on openSUSE 10.3 (64-bit)
+*** !!ppc32-linux memcheck craps out on some Altivec code!
+    (none/tests/ppc32/jm-insns -a -v)
 
-157665 Valgrind fails on shmdt(0) after shmat to 0 in X int10 code
-
-126389 (fxrstr) vex x86->IR: unhandled instruction bytes: 0xF 0xAE
-0x4D 0xF0 
-158525 Valgrind doesn't recognise fxrstor instruction
-
-
-157748 New: valgrind seems to not recognize what would be sse2
-instructions
-
-158004 "Assertion 'szB == 32 || szB == 128' failed" with valgrind
-cross-compiled for ppc32
-
-158042 --db-attach at invalid free() gives broken stack trace on
-x86_64
-
-149878 add (proper) check for calloc integer overflow
-
-158212 Locks taken by pthread_rwlock_tryrdlock and
-pthread_rwlock_trywrlock not recognised by helgrind
-
-158425 sys_poll incorrectly emulated when RES==0
-
-158730 ppc: illegal opcode crash on instruction fctiwz
-
-158744 Valgrind fails to handle interlocked instructions on extended
-registers (r8, etc) on amd64 (vex amd64->IR: unhandled instruction
-bytes: 0xF0 0x41 0xF 0xC0 0x87 0xB8)
-
-153196 (repnz cmpsb) vex x86->IR: unhandled instruction bytes: 0xF2
-0xA6 0x89 0x45
-
-159285 unhandled syscall:25
-
-159452 unhandled ioctl 0x8B01 on "valgrind iwconfig"
-
-159501 incorrect handling of ALSA ioctls
-
-159659 scas does not use ES segment selector
-
-159720 Opcode 0xFF 0x58 0xEB 0x5 unhandled on x86
-
---- end 27 March 08 ---
-
-r1816 (x86 CondNS after SUBB)
-r1817 (amd64 CondNS after SUBB)
-r1833 (both, CondNZ after SUBW)
-
-!!ppc32-linux memcheck craps out on some Altivec code!
-(none/tests/ppc32/jm-insns -a -v)
-
-!!massif segfaults on ooo on amd64
+*** !!massif segfaults on ooo on amd64
 
 r7795 (handle r-x mapped .bss sections - merge to trunk)
 

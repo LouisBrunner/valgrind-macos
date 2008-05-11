@@ -666,16 +666,13 @@ AC_MSG_RESULT([no])
 
 AC_MSG_CHECKING([for pthread_mutex_t::__m_kind])
 
-AC_COMPILE_IFELSE(
+AC_TRY_COMPILE(
 [
-#include <pthread.h> 
-int main(int argc, char** argv)
-{
+  #include <pthread.h>
+], [
   pthread_mutex_t m;
   return m.__m_kind;
-}
-],
-[
+], [
 AC_MSG_RESULT([yes])
 AC_DEFINE([HAVE_PTHREAD_MUTEX_T__M_KIND], 1,
           [Define to 1 if pthread_mutex_t has a member called __m_kind.])
@@ -688,16 +685,13 @@ AC_MSG_RESULT([no])
 
 AC_MSG_CHECKING([for pthread_mutex_t::__data.__kind])
 
-AC_COMPILE_IFELSE(
+AC_TRY_COMPILE(
 [
-#include <pthread.h> 
-int main(int argc, char** argv)
-{
+#include <pthread.h>
+], [
   pthread_mutex_t m;
   return m.__data.__kind;
-}
-],
-[
+], [
 AC_MSG_RESULT([yes])
 AC_DEFINE([HAVE_PTHREAD_MUTEX_T__DATA__KIND], 1,
           [Define to 1 if pthread_mutex_t has a member __data.__kind.])
@@ -908,7 +902,7 @@ AC_SUBST(PREFERRED_STACK_BOUNDARY)
 
 
 # does this compiler support -Wno-pointer-sign ?
-AC_MSG_CHECKING([if gcc accepts -Wno-pointer-sign ])
+AC_MSG_CHECKING([if gcc accepts -Wno-pointer-sign])
 
 safe_CFLAGS=$CFLAGS
 CFLAGS="-Wno-pointer-sign"
@@ -931,7 +925,7 @@ fi
 
 
 # does this compiler support -Wdeclaration-after-statement ?
-AC_MSG_CHECKING([if gcc accepts -Wdeclaration-after-statement ])
+AC_MSG_CHECKING([if gcc accepts -Wdeclaration-after-statement])
 
 safe_CFLAGS=$CFLAGS
 CFLAGS="-Wdeclaration-after-statement"
@@ -957,8 +951,41 @@ if test x$declaration_after_statement = xyes; then
 fi
 
 
+# does this compiler support -Wextra or the older -W ?
+
+AC_MSG_CHECKING([if gcc accepts -Wextra or -W])
+
+safe_CFLAGS=$CFLAGS
+CFLAGS="-Wextra"
+
+AC_TRY_COMPILE(
+[ ],
+[
+  return 0;
+],
+[
+AC_SUBST([FLAG_W_EXTRA], [-Wextra])
+AC_MSG_RESULT([-Wextra])
+], [
+  CFLAGS="-W"
+  AC_TRY_COMPILE(
+  [ ],
+  [
+    return 0;
+  ],
+  [
+  AC_SUBST([FLAG_W_EXTRA], [-W])
+  AC_MSG_RESULT([-W])
+  ], [
+  AC_SUBST([FLAG_W_EXTRA], [])
+  AC_MSG_RESULT([not supported])
+  ])
+])
+CFLAGS=$safe_CFLAGS
+
+
 # does this compiler support -fno-stack-protector ?
-AC_MSG_CHECKING([if gcc accepts -fno-stack-protector ])
+AC_MSG_CHECKING([if gcc accepts -fno-stack-protector])
 
 safe_CFLAGS=$CFLAGS
 CFLAGS="-fno-stack-protector"
@@ -984,9 +1011,32 @@ if test x$no_stack_protector = xyes; then
 fi
 
 
+# does this compiler support --param inline-unit-growth=... ?
+
+AC_MSG_CHECKING([if gcc accepts --param inline-unit-growth])
+
+safe_CFLAGS=$CFLAGS
+CFLAGS="--param inline-unit-growth=900"
+
+AC_TRY_COMPILE(
+[ ],
+[
+  return 0;
+],
+[
+AC_SUBST([FLAG_UNLIMITED_INLINE_UNIT_GROWTH],
+         ["--param inline-unit-growth=900"])
+AC_MSG_RESULT([yes])
+], [
+AC_SUBST([FLAG_UNLIMITED_INLINE_UNIT_GROWTH], [""])
+AC_MSG_RESULT([no])
+])
+CFLAGS=$safe_CFLAGS
+
+
 # does this compiler support __builtin_expect?
 AC_MSG_CHECKING([if gcc supports __builtin_expect])
- 
+
 AC_TRY_LINK(, [
 return __builtin_expect(1, 1) ? 1 : 0
 ],

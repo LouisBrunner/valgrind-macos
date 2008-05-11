@@ -26,7 +26,8 @@ else
 VGPRELOAD_DRD_SOURCES_COMMON = drd_pthread_intercepts.c
 endif
 
-DRD_CFLAGS=@FLAG_W_EXTRA@ -Winline -Wno-unused-parameter \
+DRD_CFLAGS=@FLAG_W_EXTRA@ @FLAG_UNLIMITED_INLINE_UNIT_GROWTH@ \
+           -Winline -Wno-unused-parameter \
            -O2 -DCHECK_FORMAT_STRINGS
 
 AM_CFLAGS_X86_LINUX   += $(DRD_CFLAGS)

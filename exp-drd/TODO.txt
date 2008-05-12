@@ -34,6 +34,8 @@ Data-race detection algorithm
   AMD64).
 - Convert the array in drd_thread.c with thread information into an OSet.
 - Performance testing and tuning, a.o. for kate / knode / open office / matinv.
+- Let exp-drd print a warning if a lock is held too long, and add a command
+  line option that allows to configure the threshold time.
 
 
 Testing
@@ -52,6 +54,8 @@ Documentation
   (e.g. exp-drd/test/matinv.c).
 - Add a note about how much stack is needed for exp-drd itself.
 - Explain how to handle transactions (with regard to locking order).
+- Add extra acknowledgement -- see also
+  http://wiki.cc.gatech.edu/cellbuzz/index.php/User_Guide
 
 
 Limitations

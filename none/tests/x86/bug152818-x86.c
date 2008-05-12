@@ -93,6 +93,12 @@ int main ()
       unsigned int eax = 0x12348765;
       unsigned int esi;
       const char * i_name = NULL;
+      unsigned int resulting_eflags;
+      unsigned int resulting_eax;
+      unsigned int resulting_esi;
+      int len;
+      int df;
+
       switch (insn)
       {
         case 0: //b
@@ -117,12 +123,12 @@ int main ()
       pp_eflags ((eflags >> 8) & 0xFF); // scratching off AH
       printf ("REP %s (EAX = %08X, EFLAGS = %s) => ", i_name, eax, sz_eflags);
       
-      unsigned int resulting_eflags = 0;
-      unsigned int resulting_eax = 0;
-      unsigned int resulting_esi;
+      resulting_eflags = 0;
+      resulting_eax = 0;
 
-      int len = lens[idx];
-      int df  = (idx >= (sizeof(lens)/sizeof(lens[0]))/2);
+      len = lens[idx];
+      df  = (idx >= (sizeof(lens)/sizeof(lens[0]))/2);
+
       switch (insn)
       {
         case 0: //b

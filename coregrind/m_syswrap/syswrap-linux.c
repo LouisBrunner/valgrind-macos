@@ -2716,7 +2716,8 @@ PRE(sys_futimesat)
    PRINT("sys_futimesat ( %d, %p(%s), %p )", ARG1,ARG2,ARG2,ARG3);
    PRE_REG_READ3(long, "futimesat",
                  int, dfd, char *, filename, struct timeval *, tvp);
-   PRE_MEM_RASCIIZ( "futimesat(filename)", ARG2 );
+   if (ARG2 != 0)
+      PRE_MEM_RASCIIZ( "futimesat(filename)", ARG2 );
    if (ARG3 != 0)
       PRE_MEM_READ( "futimesat(tvp)", ARG3, 2 * sizeof(struct vki_timeval) );
 }
@@ -2726,7 +2727,8 @@ PRE(sys_utimensat)
    PRINT("sys_utimensat ( %d, %p(%s), %p, 0x%x )", ARG1,ARG2,ARG2,ARG3,ARG4);
    PRE_REG_READ4(long, "utimensat",
                  int, dfd, char *, filename, struct timespec *, utimes, int, flags);
-   PRE_MEM_RASCIIZ( "utimensat(filename)", ARG2 );
+   if (ARG2 != 0)
+      PRE_MEM_RASCIIZ( "utimensat(filename)", ARG2 );
    if (ARG3 != 0)
       PRE_MEM_READ( "utimensat(tvp)", ARG3, 2 * sizeof(struct vki_timespec) );
 }

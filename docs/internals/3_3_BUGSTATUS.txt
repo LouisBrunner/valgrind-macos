@@ -33,9 +33,7 @@ get rid of pointless constraint !(--db-attach=yes &&
 --trace-children=yes) (users, 14 feb)
 
 utimensat syswrap bug (Kegel, users, 24 Feb)
-
-
-openoffice on suse 10.3 readlink stack problem
+### FIXED r8047
 
 Consider potential space/time effects of r7383 (see reply to
 the commit message).
@@ -46,14 +44,19 @@ properly (see replies to the commit message).  (now fixed ...)
 re Keller vpath bug, don't use attached patch; use Ashley's one
 instead (on @dev ?)
 
-disInstr(ppc): unhandled instruction: 0x7D295F1E (users@, 29 Feb)
-
 ***
-64 bit tweak ("Solomon, Bernard", user@, 25 Mar, > 1 post the same day)
+disInstr(ppc): unhandled instruction: 0x7D295F1E (users@, 29 Feb)
+(0x7D295F1E == isel r9,r9,r11,28)
 
+64 bit tweak ("Solomon, Bernard", user@, 25 Mar, > 1 post the same day)
+FIXED r8048.  (don't merge)
+
+NNN
 disInstr(ppc): unhandled instruction: 0x7C1F42A6
                  primary 31(0x1F), secondary 678(0x2A6)
  "Gupta Richa", users@, 3 Apr 08
+ dis_proc_ctl(ppc)(mfspr,SPR)(0x11F)
+ (0x7C1F42A6 == mfsprg  r0,7)
 
 --- start 27 March 08 ---
 
@@ -71,14 +74,15 @@ disInstr(ppc): unhandled instruction: 0x7C1F42A6
         FIXME
 
 152818  (repz lodsb) vex x86->IR: unhandled instruction bytes:
-***     0xF3 0xAC 0xFC 0x9C
+###     0xF3 0xAC 0xFC 0x9C
+        FIXED trunk r1838 (+ test case bug152818_2.c ?)
 
 153196  (repnz cmpsb) vex x86->IR: unhandled instruction bytes: 0xF2
 ###     0xA6 0x89 0x45
         FIXED trunk r1834
 
 155528  valgrind cupinfo reports a CPU, which does not reflect
-        valgrind's instruction set.
+###     valgrind's instruction set.
         Core2/ssse3 support in the trunk:
            vx1808, vx1809, vx1810, 
            r7384, r7385, r7387, r7389.
@@ -90,33 +94,27 @@ disInstr(ppc): unhandled instruction: 0x7C1F42A6
         FIXME
 
 156404  Unable to start oocalc under memcheck on openSUSE 10.3 (64-bit)
-???     POTENTIALLY SERIOUS (need to extend root stack before syscall)
-
-157665  Valgrind fails on shmdt(0) after shmat to 0 in X int10 code
-###     FIXED r7399, MERGE
+???     openoffice on suse 10.3 readlink stack problem
+        POTENTIALLY SERIOUS (need to extend root stack before syscall)
 
 157748  valgrind seems to not recognize what would be sse2
 ###     instructions
         FIXED vx1835, MERGE
-
-158004  "Assertion 'szB == 32 || szB == 128' failed" with valgrind
-***     cross-compiled for ppc32
-        Easy to fix?
 
 158042  --db-attach at invalid free() gives broken stack trace on
         x86_64
 
 158212  Locks taken by pthread_rwlock_tryrdlock and
 ###     pthread_rwlock_trywrlock not recognised by helgrind
-        r7454: Intercept pthread_rwlock_try{rd,wr}lock.  Fixes #158212.
+        r7454: Intercept pthread_rwlock_try{rd,wr}lock.
         MERGE
 
 158425  sys_poll incorrectly emulated when RES==0
-***     PATCH + test case provided
+####    FIXED r8049
 
 158730  ppc: illegal opcode crash on instruction fctiwz
 ???     Not sure this does have anything to do with fctiwz.
-        Queried reporter.
+        VEX generates code that doesn't run on e500
 
 158744  Valgrind fails to handle interlocked instructions on extended
 ***     registers (r8, etc) on amd64 (vex amd64->IR: unhandled
@@ -146,19 +144,18 @@ NNN     (no info so far, probably a threading bug in client)
 ???     (might be a problem with pthread_setspecific)
 
 160907  Support for a couple of recent Linux syscalls, syscall wrapper
-***     bugfixes (doesn't compile on ppc32/64-linux)
+###     bugfixes
+        FIXED 7917,8051
 
 160954  ppc build of valgrind crashes with illegal instruction
-???     e500 specific instruction
+***     0x7D6B4F9E == isel r11,r11,r9,30
+        == 161251
 
 160956  PATCH: mallinfo implementation
-???     fixed.  merge?  difficult; the patch is in so many commits
-
-161251  ppc Power-QUICC-III (8555, e500 core) not supported: isel
-???     instruction (it's "just" a cmov)
+###     FIXED r7888
 
 161285  Patch -- support for eventfd() syscall
-???     Allegedly fixed, but what rev?
+###     7917
 
 161374  SYS_readdir syscall not implemented
 ???     readdir is pretty prehistoric
@@ -168,7 +165,7 @@ NNN     (no info so far, probably a threading bug in client)
 ###     FIXED vx1826
 
 161487  number of suppressions files is limited to 10
-???     Patch exists
+***     Patch exists, or a very lazy fix
 
 161609  Results returned by VG_(get_StackTrace)() do not match
 ***     its documentation
@@ -182,8 +179,10 @@ NNN     (no info so far, probably a threading bug in client)
 
 *** !!ppc32-linux memcheck craps out on some Altivec code!
     (none/tests/ppc32/jm-insns -a -v)
+    (I think this is fixed in trunk now; check)
 
 *** !!massif segfaults on ooo on amd64
+    23-deep recursive calls to pp_snapshot_SXPt
 
 r7795 (handle r-x mapped .bss sections - merge to trunk)
 
@@ -204,7 +203,7 @@ vx1807  pending    33  155011  vex x86->IR: 0xCF (iret)
 
 r7347   pending    33  155091  Warning [...] unhandled DW_OP_ opcode 0x23
                                (patch proposed, waiting for feedback)
-156960 == 155091
+                       ==156960
 
 r7355   r7356      33  155929  ms_print fails on massif outputs 
                                containing long lines

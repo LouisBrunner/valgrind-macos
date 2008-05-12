@@ -729,6 +729,33 @@ CFLAGS=$safe_CFLAGS
 AM_CONDITIONAL([HAVE_OPENMP], [test x$ac_have_openmp = xyes])
 
 
+# does this compiler support -maltivec and does it have the include file
+# <altivec.h> ?
+
+AC_MSG_CHECKING([for Altivec])
+
+safe_CFLAGS=$CFLAGS
+CFLAGS="-maltivec"
+
+AC_TRY_COMPILE(
+[
+#include <altivec.h>
+], [
+  vector unsigned int v;
+],
+[
+ac_have_altivec=yes
+AC_MSG_RESULT([yes])
+], [
+ac_have_altivec=no
+AC_MSG_RESULT([no])
+])
+CFLAGS=$safe_CFLAGS
+
+AM_CONDITIONAL([HAS_ALTIVEC], [test x$ac_have_altivec = xyes])
+AM_CONDITIONAL([HAVE_ALTIVEC_H], [test x$ac_have_altivec = xyes])
+
+
 # Check for eventfd_t, eventfd() and eventfd_read()
 AC_MSG_CHECKING([for eventfd()])
 

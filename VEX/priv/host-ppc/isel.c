@@ -2751,6 +2751,28 @@ static void iselInt64Expr_wrk ( HReg* rHi, HReg* rLo,
          return;
       }
 
+      /* Left64 */
+      case Iop_Left64: {
+         HReg argHi, argLo;
+         HReg zero32 = newVRegI(env);
+         HReg resHi  = newVRegI(env);
+         HReg resLo  = newVRegI(env);
+         iselInt64Expr(&argHi, &argLo, env, e->Iex.Unop.arg);
+         vassert(env->mode64 == False);
+         addInstr(env, PPCInstr_LI(zero32, 0, env->mode64));
+         /* resHi:resLo = - argHi:argLo */
+         addInstr(env, PPCInstr_AddSubC( False/*sub*/, True/*set carry*/,
+                                         resLo, zero32, argLo ));
+         addInstr(env, PPCInstr_AddSubC( False/*sub*/, False/*read carry*/,
+                                         resHi, zero32, argHi ));
+         /* resHi:resLo |= srcHi:srcLo */
+         addInstr(env, PPCInstr_Alu(Palu_OR, resLo, resLo, PPCRH_Reg(argLo)));
+         addInstr(env, PPCInstr_Alu(Palu_OR, resHi, resHi, PPCRH_Reg(argHi)));
+         *rHi = resHi;
+         *rLo = resLo;
+         return;
+      }
+
       /* 32Sto64(e) */
       case Iop_32Sto64: {
          HReg tHi = newVRegI(env);

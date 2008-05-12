@@ -5258,7 +5258,7 @@ PRE(sys_poll)
 
 POST(sys_poll)
 {
-   if (RES > 0) {
+   if (RES >= 0) {
       UInt i;
       struct vki_pollfd* ufds = (struct vki_pollfd *)ARG1;
       for (i = 0; i < ARG2; i++)

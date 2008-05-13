@@ -212,7 +212,4 @@ r7361   r7362      33  n-i-bz  ms_print broken for --time-unit=ms
 
 r7399   pending    33  157665  valgrind fails on shmdt(0) after shmat to 0
 
-r7755   pending    ??  n-i-bz  exp-drd: fixed assertion failure upon delete[]
-                               of an array of size zero.
-
-r7895   pending    ??  161036  exp-drd: client allocated memory was never freed
+r7895   pending    33  161036  exp-drd: client allocated memory was never freed

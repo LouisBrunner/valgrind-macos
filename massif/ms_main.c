@@ -1912,10 +1912,14 @@ static void pp_snapshot_SXPt(Int fd, SXPt* sxpt, Int depth, Char* depth_str,
 {
    Int   i, n_insig_children_sxpts;
    Char* perc;
-   Char  ip_desc_array[BUF_LEN];
-   Char* ip_desc = ip_desc_array;
    SXPt* pred  = NULL;
    SXPt* child = NULL;
+
+   // Used for printing function names.  Is made static to keep it out
+   // of the stack frame -- this function is recursive.  Obviously this
+   // now means its contents are trashed across the recursive call.
+   static Char ip_desc_array[BUF_LEN];
+   Char* ip_desc = ip_desc_array;
 
    switch (sxpt->tag) {
     case SigSXPt:
@@ -1971,7 +1975,9 @@ static void pp_snapshot_SXPt(Int fd, SXPt* sxpt, Int depth, Char* depth_str,
          if (InsigSXPt == child->tag)
             n_insig_children_sxpts++;
 
-         // Ok, print the child.
+         // Ok, print the child.  NB: contents of ip_desc_array will be
+         // trashed by this recursive call.  Doesn't matter currently,
+         // but worth noting.
          pp_snapshot_SXPt(fd, child, depth+1, depth_str, depth_str_len,
             snapshot_heap_szB, snapshot_total_szB);
       }

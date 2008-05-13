@@ -2692,6 +2692,9 @@ Int emit_AMD64Instr ( UChar* buf, Int nbuf, AMD64Instr* i,
          case Ijk_SigTRAP:
             *p++ = 0xBD;
             p = emit32(p, VEX_TRC_JMP_SIGTRAP); break;
+         case Ijk_SigSEGV:
+            *p++ = 0xBD;
+            p = emit32(p, VEX_TRC_JMP_SIGSEGV); break;
          case Ijk_Ret:
          case Ijk_Call:
          case Ijk_Boring:

@@ -1038,6 +1038,12 @@ static HReg iselIntExpr_R_wrk ( ISelEnv* env, IRExpr* e )
             fn = (HWord)h_generic_calc_InterleaveHI32x2; break;
          case Iop_InterleaveLO32x2:
             fn = (HWord)h_generic_calc_InterleaveLO32x2; break;
+         case Iop_CatOddLanes16x4:
+            fn = (HWord)h_generic_calc_CatOddLanes16x4; break;
+         case Iop_CatEvenLanes16x4:
+            fn = (HWord)h_generic_calc_CatEvenLanes16x4; break;
+         case Iop_Perm8x8:
+            fn = (HWord)h_generic_calc_Perm8x8; break;
 
          case Iop_Max8Ux8:
             fn = (HWord)h_generic_calc_Max8Ux8; break;
@@ -1050,6 +1056,8 @@ static HReg iselIntExpr_R_wrk ( ISelEnv* env, IRExpr* e )
 
          case Iop_Mul16x4:
             fn = (HWord)h_generic_calc_Mul16x4; break;
+         case Iop_Mul32x2:
+            fn = (HWord)h_generic_calc_Mul32x2; break;
          case Iop_MulHi16Sx4:
             fn = (HWord)h_generic_calc_MulHi16Sx4; break;
          case Iop_MulHi16Ux4:
@@ -1093,6 +1101,10 @@ static HReg iselIntExpr_R_wrk ( ISelEnv* env, IRExpr* e )
             break;
          case Iop_ShlN16x4:
             fn = (HWord)h_generic_calc_ShlN16x4;
+            second_is_UInt = True;
+            break;
+         case Iop_ShlN8x8:
+            fn = (HWord)h_generic_calc_ShlN8x8;
             second_is_UInt = True;
             break;
          case Iop_ShrN32x2:

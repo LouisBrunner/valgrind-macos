@@ -142,6 +142,11 @@ static inline UChar sel8x8_0 ( ULong w64 ) {
    return toUChar(0xFF & (lo32 >> 0));
 }
 
+static inline UChar index8x8 ( ULong w64, UChar ix ) {
+   ix &= 7;
+   return toUChar((w64 >> (8*ix)) & 0xFF);
+}
+
 
 /* Scalar helpers. */
 
@@ -211,6 +216,12 @@ static inline Short mul16 ( Short xx, Short yy )
 {
    Int t = ((Int)xx) * ((Int)yy);
    return (Short)t;
+}
+
+static inline Int mul32 ( Int xx, Int yy )
+{
+   Int t = ((Int)xx) * ((Int)yy);
+   return (Int)t;
 }
 
 static inline Short mulhi16S ( Short xx, Short yy )
@@ -298,6 +309,11 @@ static inline UChar qnarrow16Uto8 ( UShort xx0 )
 
 /* shifts: we don't care about out-of-range ones, since
    that is dealt with at a higher level. */
+
+static inline UChar shl8 ( UChar v, UInt n )
+{
+   return toUChar(v << n);
+}
 
 static inline UChar sar8 ( UChar v, UInt n )
 {
@@ -555,6 +571,14 @@ ULong h_generic_calc_Mul16x4 ( ULong xx, ULong yy )
           );
 }
 
+ULong h_generic_calc_Mul32x2 ( ULong xx, ULong yy )
+{
+   return mk32x2(
+             mul32( sel32x2_1(xx), sel32x2_1(yy) ),
+             mul32( sel32x2_0(xx), sel32x2_0(yy) )
+          );
+}
+
 ULong h_generic_calc_MulHi16Sx4 ( ULong xx, ULong yy )
 {
    return mk16x4(
@@ -799,6 +823,42 @@ ULong h_generic_calc_InterleaveLO32x2 ( ULong aa, ULong bb )
           );
 }
 
+/* ------------ Concatenation ------------ */
+
+ULong h_generic_calc_CatOddLanes16x4 ( ULong aa, ULong bb )
+{
+   return mk16x4(
+             sel16x4_3(aa),
+             sel16x4_1(aa),
+             sel16x4_3(bb),
+             sel16x4_1(bb)
+          );
+}
+
+ULong h_generic_calc_CatEvenLanes16x4 ( ULong aa, ULong bb )
+{
+   return mk16x4(
+             sel16x4_2(aa),
+             sel16x4_0(aa),
+             sel16x4_2(bb),
+             sel16x4_0(bb)
+          );
+}
+
+/* misc hack looking for a proper home */
+ULong h_generic_calc_Perm8x8 ( ULong aa, ULong bb )
+{
+   return mk8x8(
+             index8x8(aa, sel8x8_7(bb)),
+             index8x8(aa, sel8x8_6(bb)),
+             index8x8(aa, sel8x8_5(bb)),
+             index8x8(aa, sel8x8_4(bb)),
+             index8x8(aa, sel8x8_3(bb)),
+             index8x8(aa, sel8x8_2(bb)),
+             index8x8(aa, sel8x8_1(bb)),
+             index8x8(aa, sel8x8_0(bb))
+          );
+}
 
 /* ------------ Shifting ------------ */
 /* Note that because these primops are undefined if the shift amount
@@ -826,6 +886,22 @@ ULong h_generic_calc_ShlN16x4 ( ULong xx, UInt nn )
              shl16( sel16x4_2(xx), nn ),
              shl16( sel16x4_1(xx), nn ),
              shl16( sel16x4_0(xx), nn )
+          );
+}
+
+ULong h_generic_calc_ShlN8x8  ( ULong xx, UInt nn )
+{
+   /* vassert(nn < 8); */
+   nn &= 7;
+   return mk8x8(
+             shl8( sel8x8_7(xx), nn ),
+             shl8( sel8x8_6(xx), nn ),
+             shl8( sel8x8_5(xx), nn ),
+             shl8( sel8x8_4(xx), nn ),
+             shl8( sel8x8_3(xx), nn ),
+             shl8( sel8x8_2(xx), nn ),
+             shl8( sel8x8_1(xx), nn ),
+             shl8( sel8x8_0(xx), nn )
           );
 }
 

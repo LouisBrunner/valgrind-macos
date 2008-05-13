@@ -2324,6 +2324,12 @@ static void iselInt64Expr_wrk ( HReg* rHi, HReg* rLo, ISelEnv* env, IRExpr* e )
             fn = (HWord)h_generic_calc_InterleaveHI32x2; goto binnish;
          case Iop_InterleaveLO32x2:
             fn = (HWord)h_generic_calc_InterleaveLO32x2; goto binnish;
+         case Iop_CatOddLanes16x4:
+            fn = (HWord)h_generic_calc_CatOddLanes16x4; goto binnish;
+         case Iop_CatEvenLanes16x4:
+            fn = (HWord)h_generic_calc_CatEvenLanes16x4; goto binnish;
+         case Iop_Perm8x8:
+            fn = (HWord)h_generic_calc_Perm8x8; goto binnish;
 
          case Iop_Max8Ux8:
             fn = (HWord)h_generic_calc_Max8Ux8; goto binnish;
@@ -2336,6 +2342,8 @@ static void iselInt64Expr_wrk ( HReg* rHi, HReg* rLo, ISelEnv* env, IRExpr* e )
 
          case Iop_Mul16x4:
             fn = (HWord)h_generic_calc_Mul16x4; goto binnish;
+         case Iop_Mul32x2:
+            fn = (HWord)h_generic_calc_Mul32x2; goto binnish;
          case Iop_MulHi16Sx4:
             fn = (HWord)h_generic_calc_MulHi16Sx4; goto binnish;
          case Iop_MulHi16Ux4:
@@ -2401,6 +2409,8 @@ static void iselInt64Expr_wrk ( HReg* rHi, HReg* rLo, ISelEnv* env, IRExpr* e )
             fn = (HWord)h_generic_calc_ShlN32x2; goto shifty;
          case Iop_ShlN16x4:
             fn = (HWord)h_generic_calc_ShlN16x4; goto shifty;
+         case Iop_ShlN8x8:
+            fn = (HWord)h_generic_calc_ShlN8x8;  goto shifty;
          case Iop_ShrN32x2:
             fn = (HWord)h_generic_calc_ShrN32x2; goto shifty;
          case Iop_ShrN16x4:

@@ -139,19 +139,22 @@ void bm_test2()
 }
 
 /** Torture test of the functions that set or clear a range of bits. */
-void bm_test3()
+void bm_test3(const int outer_loop_step, const int inner_loop_step)
 {
   unsigned i, j;
   struct bitmap* bm1;
   struct bitmap* bm2;
 
+  assert(outer_loop_step >= 1);
+  assert(inner_loop_step >= 1);
+
   bm1 = bm_new();
   bm2 = bm_new();
   for (i = ADDR0_COUNT - 2 * BITS_PER_UWORD;
        i < ADDR0_COUNT + 2 * BITS_PER_UWORD;
-       i+=3)
+       i += outer_loop_step)
   {
-    for (j = i + 1; j < ADDR0_COUNT + 2 * BITS_PER_UWORD; j+=5)
+    for (j = i + 1; j < ADDR0_COUNT + 2 * BITS_PER_UWORD; j += inner_loop_step)
     {
       bm_access_range_load(bm1, i, j);
       bm_clear_load(bm1, i, j);
@@ -191,9 +194,9 @@ void bm_test3()
   bm_access_range_store(bm2, 0, 2 * ADDR0_COUNT + 2 * BITS_PER_UWORD);
   for (i = ADDR0_COUNT - 2 * BITS_PER_UWORD;
        i < ADDR0_COUNT + 2 * BITS_PER_UWORD;
-       i+=3)
+       i += outer_loop_step)
   {
-    for (j = i + 1; j < ADDR0_COUNT + 2 * BITS_PER_UWORD; j+=5)
+    for (j = i + 1; j < ADDR0_COUNT + 2 * BITS_PER_UWORD; j += inner_loop_step)
     {
       bm_clear_load(bm1, i, j);
       bm_access_range_load(bm1, i, j);
@@ -233,17 +236,27 @@ void bm_test3()
 
 int main(int argc, char** argv)
 {
+  int outer_loop_step = 1;
+  int inner_loop_step = 1;
   int optchar;
 
-  while ((optchar = getopt(argc, argv, "q")) != EOF)
+  while ((optchar = getopt(argc, argv, "s:t:q")) != EOF)
   {
     switch (optchar)
     {
+    case 's':
+      outer_loop_step = atoi(optarg);
+      break;
+    case 't':
+      inner_loop_step = atoi(optarg);
+      break;
     case 'q':
       s_verbose = 0;
       break;
     default:
-      fprintf(stderr, "Usage: %s [-q].\n", argv[0]);
+      fprintf(stderr,
+              "Usage: %s [-s<outer_loop_step>] [-t<inner_loop_step>] [-q].\n",
+              argv[0]);
       break;
     }
   }
@@ -252,7 +265,7 @@ int main(int argc, char** argv)
 
   bm_test1();
   bm_test2();
-  bm_test3();
+  bm_test3(outer_loop_step, inner_loop_step);
 
   VG_(printf)("End of DRD BM unit test.\n");
 

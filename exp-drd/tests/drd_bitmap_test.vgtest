@@ -5,6 +5,5 @@
 #
 prereq: ./supported_libpthread
 prog: drd_bitmap_test
-args: -q
-vgopts: --tool=none
-stderr_filter: ../../none/tests/filter_stderr
+args: -s 93 -t 97 -q
+vgopts: -q --tool=memcheck

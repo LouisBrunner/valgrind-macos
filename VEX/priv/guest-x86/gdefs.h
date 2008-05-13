@@ -164,6 +164,9 @@ extern void x86g_dirtyhelper_OUT ( UInt portno, UInt data,
                                    UInt sz/*1,2 or 4*/ );
 
 extern VexEmWarn
+            x86g_dirtyhelper_FXRSTOR ( VexGuestX86State*, HWord );
+
+extern VexEmWarn
             x86g_dirtyhelper_FRSTOR ( VexGuestX86State*, HWord );
 
 extern VexEmWarn 

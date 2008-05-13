@@ -7813,6 +7813,76 @@ DisResult disInstr_X86_WRK (
       goto decode_success;
    }
 
+   /* 0F AE /1 = FXRSTOR m512 -- read x87 and SSE state from memory */
+   if (sz == 4 && insn[0] == 0x0F && insn[1] == 0xAE
+       && !epartIsReg(insn[2]) && gregOfRM(insn[2]) == 1) {
+      IRDirty* d;
+      modrm = getIByte(delta+2);
+      vassert(sz == 4);
+      vassert(!epartIsReg(modrm));
+
+      addr = disAMode ( &alen, sorb, delta+2, dis_buf );
+      delta += 2+alen;
+
+      DIP("fxrstor %s\n", dis_buf);
+
+      /* Uses dirty helper: 
+            void x86g_do_FXRSTOR ( VexGuestX86State*, UInt ) */
+      d = unsafeIRDirty_0_N ( 
+             0/*regparms*/, 
+             "x86g_dirtyhelper_FXRSTOR", 
+             &x86g_dirtyhelper_FXRSTOR,
+             mkIRExprVec_1( mkexpr(addr) )
+          );
+      d->needsBBP = True;
+
+      /* declare we're reading memory */
+      d->mFx   = Ifx_Read;
+      d->mAddr = mkexpr(addr);
+      d->mSize = 512;
+
+      /* declare we're writing guest state */
+      d->nFxState = 7;
+
+      d->fxState[0].fx     = Ifx_Write;
+      d->fxState[0].offset = OFFB_FTOP;
+      d->fxState[0].size   = sizeof(UInt);
+
+      d->fxState[1].fx     = Ifx_Write;
+      d->fxState[1].offset = OFFB_FPREGS;
+      d->fxState[1].size   = 8 * sizeof(ULong);
+
+      d->fxState[2].fx     = Ifx_Write;
+      d->fxState[2].offset = OFFB_FPTAGS;
+      d->fxState[2].size   = 8 * sizeof(UChar);
+
+      d->fxState[3].fx     = Ifx_Write;
+      d->fxState[3].offset = OFFB_FPROUND;
+      d->fxState[3].size   = sizeof(UInt);
+
+      d->fxState[4].fx     = Ifx_Write;
+      d->fxState[4].offset = OFFB_FC3210;
+      d->fxState[4].size   = sizeof(UInt);
+
+      d->fxState[5].fx     = Ifx_Write;
+      d->fxState[5].offset = OFFB_XMM0;
+      d->fxState[5].size   = 8 * sizeof(U128);
+
+      d->fxState[6].fx     = Ifx_Write;
+      d->fxState[6].offset = OFFB_SSEROUND;
+      d->fxState[6].size   = sizeof(UInt);
+
+      /* Be paranoid ... this assertion tries to ensure the 8 %xmm
+	 images are packed back-to-back.  If not, the value of
+	 d->fxState[5].size is wrong. */
+      vassert(16 == sizeof(U128));
+      vassert(OFFB_XMM7 == (OFFB_XMM0 + 7 * 16));
+
+      stmt( IRStmt_Dirty(d) );
+
+      goto decode_success;
+   }
+
    /* ------ SSE decoder main ------ */
 
    /* Skip parts of the decoder which don't apply given the stated

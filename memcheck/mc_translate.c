@@ -1924,6 +1924,7 @@ IRAtom* expr2vbits_Binop ( MCEnv* mce,
       case Iop_SarN32x2:
       case Iop_ShlN16x4:
       case Iop_ShlN32x2:
+      case Iop_ShlN8x8:
          /* Same scheme as with all other shifts. */
          complainIfUndefined(mce, atom2);
          return assignNew(mce, Ity_I64, binop(op, vatom1, atom2));
@@ -1963,6 +1964,7 @@ IRAtom* expr2vbits_Binop ( MCEnv* mce,
          return binary16Ix4(mce, vatom1, vatom2);
 
       case Iop_Sub32x2:
+      case Iop_Mul32x2:
       case Iop_CmpGT32Sx2:
       case Iop_CmpEQ32x2:
       case Iop_Add32x2:
@@ -1975,7 +1977,19 @@ IRAtom* expr2vbits_Binop ( MCEnv* mce,
       case Iop_InterleaveHI32x2:
       case Iop_InterleaveHI16x4:
       case Iop_InterleaveHI8x8:
+      case Iop_CatOddLanes16x4:
+      case Iop_CatEvenLanes16x4:
          return assignNew(mce, Ity_I64, binop(op, vatom1, vatom2));
+
+      /* Perm8x8: rearrange values in left arg using steering values
+        from right arg.  So rearrange the vbits in the same way but
+        pessimise wrt steering values. */
+      case Iop_Perm8x8:
+         return mkUifU64(
+                   mce,
+                   assignNew(mce, Ity_I64, binop(op, vatom1, atom2)),
+                   mkPCast8x8(mce, vatom2)
+                );
 
       /* V128-bit SIMD */
 

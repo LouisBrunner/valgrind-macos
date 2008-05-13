@@ -15584,9 +15584,13 @@ DisResult disInstr_AMD64_WRK (
 
       /* =-=-=-=-=-=-=-=-=- XADD -=-=-=-=-=-=-=-=-=-= */
 
-//.. //--       case 0xC0: /* XADD Gb,Eb */
-//.. //--          eip = dis_xadd_G_E ( cb, sorb, 1, eip );
-//.. //--          break;
+      case 0xC0: { /* XADD Gb,Eb */ 
+         Bool decode_OK = False;
+         delta = dis_xadd_G_E ( &decode_OK, pfx, 1, delta );
+         if (!decode_OK)
+            goto decode_failure;
+         break;
+      }
       case 0xC1: { /* XADD Gv,Ev */ 
          Bool decode_OK = False;
          delta = dis_xadd_G_E ( &decode_OK, pfx, sz, delta );

@@ -39,7 +39,7 @@
 
 
 /*------------------------------------------------------------*/
-/*--- Defns                                                ---*/
+/*--- Definitions                                          ---*/
 /*------------------------------------------------------------*/
 
 
@@ -143,7 +143,9 @@ void drd_handle_free(ThreadId tid, Addr p)
    }
    else
    {
+      tl_assert(p == mc->data);
       s_stop_using_mem_callback(mc->data, mc->data + mc->size);
+      VG_(cli_free)((void*)p);
       VG_(free)(mc);
    }
 }

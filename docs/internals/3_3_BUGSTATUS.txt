@@ -17,6 +17,7 @@ PRI: 33  = fix this for 3.3.1
 ### merge fix to 3.3 branch
 ??? marginal
 NNN won't fix
+Vfd fix has been verified on 3.3.X branch
 
 -- Last updated 9 May 08
 
@@ -31,9 +32,6 @@ and 7324 ?
 
 get rid of pointless constraint !(--db-attach=yes &&
 --trace-children=yes) (users, 14 feb)
-
-utimensat syswrap bug (Kegel, users, 24 Feb)
-### FIXED r8047
 
 Consider potential space/time effects of r7383 (see reply to
 the commit message).
@@ -60,34 +58,9 @@ disInstr(ppc): unhandled instruction: 0x7C1F42A6
 
 --- start 27 March 08 ---
 
-92456:  Tracing the origin of uninitialised memory
-        FIXED
-
-126389  (fxrstr) vex x86->IR: unhandled instruction bytes:
-###     0xF 0xAE 0x4D 0xF0 
-        == 158525 Valgrind doesn't recognise fxrstor instruction
-        FIXED trunk r1836, (test) r1837
-        MERGE
-
 149878  add (proper) check for calloc integer overflow
 ***     (possibly with a viable patch now)
         FIXME
-
-152818  (repz lodsb) vex x86->IR: unhandled instruction bytes:
-###     0xF3 0xAC 0xFC 0x9C
-        FIXED trunk r1838 (+ test case bug152818_2.c ?)
-
-153196  (repnz cmpsb) vex x86->IR: unhandled instruction bytes: 0xF2
-###     0xA6 0x89 0x45
-        FIXED trunk r1834
-
-155528  valgrind cupinfo reports a CPU, which does not reflect
-###     valgrind's instruction set.
-        Core2/ssse3 support in the trunk:
-           vx1808, vx1809, vx1810, 
-           r7384, r7385, r7387, r7389.
-        (in essence #155528)
-        FIXED, MERGE
 
 156065  VALGRIND_MEMPOOL_ALLOC vs. zero-size allocs triggers false
 ***     "overlapping" error
@@ -97,20 +70,8 @@ disInstr(ppc): unhandled instruction: 0x7C1F42A6
 ???     openoffice on suse 10.3 readlink stack problem
         POTENTIALLY SERIOUS (need to extend root stack before syscall)
 
-157748  valgrind seems to not recognize what would be sse2
-###     instructions
-        FIXED vx1835, MERGE
-
 158042  --db-attach at invalid free() gives broken stack trace on
         x86_64
-
-158212  Locks taken by pthread_rwlock_tryrdlock and
-###     pthread_rwlock_trywrlock not recognised by helgrind
-        r7454: Intercept pthread_rwlock_try{rd,wr}lock.
-        MERGE
-
-158425  sys_poll incorrectly emulated when RES==0
-####    FIXED r8049
 
 158730  ppc: illegal opcode crash on instruction fctiwz
 ???     Not sure this does have anything to do with fctiwz.
@@ -143,26 +104,13 @@ NNN     (no info so far, probably a threading bug in client)
 160872  race errors reported where libpthread.so
 ???     (might be a problem with pthread_setspecific)
 
-160907  Support for a couple of recent Linux syscalls, syscall wrapper
-###     bugfixes
-        FIXED 7917,8051
 
 160954  ppc build of valgrind crashes with illegal instruction
 ***     0x7D6B4F9E == isel r11,r11,r9,30
         == 161251
 
-160956  PATCH: mallinfo implementation
-###     FIXED r7888
-
-161285  Patch -- support for eventfd() syscall
-###     7917
-
 161374  SYS_readdir syscall not implemented
 ???     readdir is pretty prehistoric
-
-161378  illegal opcode in debug libm
-        == 160136
-###     FIXED vx1826
 
 161487  number of suppressions files is limited to 10
 ***     Patch exists, or a very lazy fix
@@ -173,21 +121,19 @@ NNN     (no info so far, probably a threading bug in client)
 --- end 8 May 08 ---
 
 
-### r1816 (x86 CondNS after SUBB)
-### r1817 (amd64 CondNS after SUBB)
-### r1833 (both, CondNZ after SUBW)
-
-*** !!ppc32-linux memcheck craps out on some Altivec code!
-    (none/tests/ppc32/jm-insns -a -v)
-    (I think this is fixed in trunk now; check)
-
-*** !!massif segfaults on ooo on amd64
-    23-deep recursive calls to pp_snapshot_SXPt
+r1816 (x86 CondNS after SUBB)
+r1817 (amd64 CondNS after SUBB)
+r1833 (both, CondNZ after SUBW)
+merged; 1847
 
 r7795 (handle r-x mapped .bss sections - merge to trunk)
 
 
 TRUNK   33BRANCH  PRI    BUG#  WHAT
+
+r8058   r8059     Vfd  n-i-bz  Massif segfaults at exit
+
+vx1832  vx1839    Vfd  n-i-bz  Memcheck asserts on Altivec code
 
 r7299   pending    33  n-i-bz  stupid sizeof bug in Helgrind
 r7322   pending    33  n-i-bz  check fd on sys_llseek
@@ -199,17 +145,57 @@ r7334   pending    33  n-i-bz  handle sys_sysinfo, sys_getresuid,
 
 r7350   pending    33  n-i-bz  intercept memcpy in 64-bit ld.so's
 
-vx1807  pending    33  155011  vex x86->IR: 0xCF (iret)
+r8047   pending    33  n-i-bz  Fix wrappers for sys_{futimesat,utimensat}
+
+many    wontfix   Vfd   92456  Tracing the origin of uninitialised memory
+
+vx1836/7 vx1845   Vfd  126389  vex x86->IR: 0xF 0xAE (FXRSTOR)
+                       == 158525
+
+vx1838  vx1846    Vfd  152818  vex x86->IR: 0xF3 0xAC (repz lodsb) 
+
+vx1834  vx1843    Vfd  153196  vex x86->IR: 0xF2 0xA6 (repnz cmpsb) 
+
+vx1807  vx1840    Mgd  155011  vex x86->IR: 0xCF (iret)
+
 
 r7347   pending    33  155091  Warning [...] unhandled DW_OP_ opcode 0x23
                                (patch proposed, waiting for feedback)
                        ==156960
 
-r7355   r7356      33  155929  ms_print fails on massif outputs 
+vx1808/9/10,r7384/5/7/9
+        vx1841,r8056
+                  Vfd  155528  support Core2/SSSE3 insns on x86/amd64
+
+r7355   r7356     Mgd  155929  ms_print fails on massif outputs 
                                containing long lines
 
-r7361   r7362      33  n-i-bz  ms_print broken for --time-unit=ms
-
 r7399   pending    33  157665  valgrind fails on shmdt(0) after shmat to 0
+
+vx1835  vx1844    Vfd  157748  support x86 PUSHFW/POPFW
+
+r7454   pending    33  158212  hg: handle pthread_rwlock_try{rd,wr}lock.
+
+r8049   pending    33  158425  sys_poll incorrectly emulated when RES==0
+
+r7917,8051
+        pending    33  160907  Support for a couple of recent Linux syscalls
+
+r7888   pending    33  160956  PATCH: mallinfo implementation
+
+r7917   pending    33  161285  Patch -- support for eventfd() syscall
+
+vx1826  vx1842    Vfd  161378  illegal opcode in debug libm (FUCOMPP)
+                       == 160136
+
+
+
+
+r7361   r7362     Mgd  n-i-bz  ms_print broken for --time-unit=ms
+
+
+
+r7755   pending    ??  n-i-bz  exp-drd: fixed assertion failure upon delete[]
+                               of an array of size zero.
 
 r7895   pending    33  161036  exp-drd: client allocated memory was never freed

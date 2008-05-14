@@ -1269,7 +1269,7 @@ const SyscallTableEntry ML_(syscall_table)[] = {
    GENXY(__NR_wait4,             sys_wait4),              // 114
 
 // _____(__NR_swapoff,           sys_swapoff),            // 115
-// _____(__NR_sysinfo,           sys_sysinfo),            // 116
+   LINXY(__NR_sysinfo,           sys_sysinfo),            // 116
    PLAXY(__NR_ipc,               sys_ipc),                // 117
    GENX_(__NR_fsync,             sys_fsync),              // 118
 // _____(__NR_sigreturn,         sys_sigreturn),          // 119
@@ -1328,13 +1328,13 @@ const SyscallTableEntry ML_(syscall_table)[] = {
    GENX_(__NR_mremap,            sys_mremap),             // 163
 // _____(__NR_setresuid,         sys_setresuid),          // 164
 
-// _____(__NR_getresuid,         sys_getresuid),          // 165
+   LINXY(__NR_getresuid,         sys_getresuid),          // 165
 // _____(__NR_query_module,      sys_query_module),       // 166
    GENXY(__NR_poll,              sys_poll),               // 167
 // _____(__NR_nfsservctl,        sys_nfsservctl),         // 168
 // _____(__NR_setresgid,         sys_setresgid),          // 169
 
-// _____(__NR_getresgid,         sys_getresgid),          // 170
+   LINXY(__NR_getresgid,         sys_getresgid),          // 170
 // _____(__NR_prctl,             sys_prctl),              // 171
    PLAX_(__NR_rt_sigreturn,      sys_rt_sigreturn),       // 172
    LINXY(__NR_rt_sigaction,      sys_rt_sigaction),       // 173

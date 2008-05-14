@@ -212,6 +212,11 @@ struct vki_sysinfo {
 // From linux-2.6.8.1/include/linux/time.h
 //----------------------------------------------------------------------
 
+#define VKI_CLOCK_REALTIME            0
+#define VKI_CLOCK_MONOTONIC           1
+#define VKI_CLOCK_PROCESS_CPUTIME_ID  2
+#define VKI_CLOCK_THREAD_CPUTIME_ID   3
+
 struct vki_timespec {
 	vki_time_t	tv_sec;		/* seconds */
 	long		tv_nsec;	/* nanoseconds */

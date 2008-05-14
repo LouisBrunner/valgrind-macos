@@ -77,11 +77,6 @@ disInstr(ppc): unhandled instruction: 0x7C1F42A6
 ???     Not sure this does have anything to do with fctiwz.
         VEX generates code that doesn't run on e500
 
-158744  Valgrind fails to handle interlocked instructions on extended
-***     registers (r8, etc) on amd64 (vex amd64->IR: unhandled
-        instruction bytes: 0xF0 0x41 0xF 0xC0 0x87 0xB8)
-        Patch posted; waiting for response.
-
 159285  unhandled syscall:25
 ???     (no test case provided)
 
@@ -111,9 +106,6 @@ NNN     (no info so far, probably a threading bug in client)
 
 161374  SYS_readdir syscall not implemented
 ???     readdir is pretty prehistoric
-
-161487  number of suppressions files is limited to 10
-***     Patch exists, or a very lazy fix
 
 161609  Results returned by VG_(get_StackTrace)() do not match
 ***     its documentation
@@ -178,6 +170,8 @@ r7454   pending    33  158212  hg: handle pthread_rwlock_try{rd,wr}lock.
 
 r8049   pending    33  158425  sys_poll incorrectly emulated when RES==0
 
+vx1848  vx1849    Vfd  158744  vex amd64->IR: 0xF0 0x41 0xF 0xC0 (xaddb)
+
 r7917,8051
         pending    33  160907  Support for a couple of recent Linux syscalls
 
@@ -188,8 +182,7 @@ r7917   pending    33  161285  Patch -- support for eventfd() syscall
 vx1826  vx1842    Vfd  161378  illegal opcode in debug libm (FUCOMPP)
                        == 160136
 
-
-
+r8065/8 r8069     Mgd  161487  number of suppressions files is limited to 10
 
 r7361   r7362     Mgd  n-i-bz  ms_print broken for --time-unit=ms
 

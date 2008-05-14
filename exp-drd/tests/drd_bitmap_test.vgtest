@@ -1,9 +1,3 @@
-#
-# This test really needs to run natively.  Since there's no
-# obvious way to get the regtest mechanism to do that, at least
-# run it on 'none' to minimise the time overhead.
-#
-prereq: ./supported_libpthread
 prog: drd_bitmap_test
 args: -s 93 -t 97 -q
 vgopts: -q --tool=memcheck

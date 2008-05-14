@@ -582,7 +582,7 @@ static inline Bool is_sane_LockN ( Lock* lock ); /* fwds */
 
 static Thread* mk_Thread ( SegmentID csegid ) {
    static Int indx      = 1;
-   Thread* thread       = hg_zalloc( sizeof(Lock) );
+   Thread* thread       = hg_zalloc( sizeof(Thread) );
    thread->locksetA     = HG_(emptyWS)( univ_lsets );
    thread->locksetW     = HG_(emptyWS)( univ_lsets );
    thread->csegid       = csegid;

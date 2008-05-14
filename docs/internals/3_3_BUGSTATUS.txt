@@ -188,7 +188,4 @@ r7361   r7362     Mgd  n-i-bz  ms_print broken for --time-unit=ms
 
 
 
-r7755   pending    ??  n-i-bz  exp-drd: fixed assertion failure upon delete[]
-                               of an array of size zero.
-
-r7895   pending    33  161036  exp-drd: client allocated memory was never freed
+r7895   r8063      33  161036  exp-drd: client allocated memory was never freed

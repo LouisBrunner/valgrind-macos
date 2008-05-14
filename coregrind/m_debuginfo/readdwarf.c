@@ -2638,6 +2638,7 @@ static Int dwarfexpr_to_dag ( UnwindContext* ctx,
    Int    ix, ix2, reg;
    UChar  opcode;
    Word   sw;
+   UWord  uw;
    CfiOp  op;
    HChar* opname;
 
@@ -2710,6 +2711,16 @@ static Int dwarfexpr_to_dag ( UnwindContext* ctx,
             PUSH(ix);
             if (ddump_frames)
                VG_(printf)("DW_OP_breg%d: %ld", reg, sw);
+            break;
+
+         case DW_OP_plus_uconst:
+            uw = read_leb128U( &expr );
+            PUSH( ML_(CfiExpr_Const)( dst, uw ) );
+            POP( ix );
+            POP( ix2 );
+            PUSH( ML_(CfiExpr_Binop)( dst, op, ix2, ix ) );
+            if (ddump_frames)
+               VG_(printf)("DW_OP_plus_uconst: %lu", uw);
             break;
 
          case DW_OP_const4s:

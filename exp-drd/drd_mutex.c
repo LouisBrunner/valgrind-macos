@@ -27,10 +27,12 @@
 #include "drd_error.h"
 #include "drd_mutex.h"
 #include "priv_drd_clientreq.h"
+#include "pub_tool_vki.h"
 #include "pub_tool_errormgr.h"    // VG_(maybe_record_error)()
 #include "pub_tool_libcassert.h"  // tl_assert()
 #include "pub_tool_libcbase.h"    // VG_(strlen)
 #include "pub_tool_libcprint.h"   // VG_(message)()
+#include "pub_tool_libcproc.h"    // VG_(read_millisecond_timer)()
 #include "pub_tool_machine.h"     // VG_(get_IP)()
 #include "pub_tool_threadstate.h" // VG_(get_running_tid)()
 
@@ -46,6 +48,7 @@ static Bool mutex_is_locked(struct mutex_info* const p);
 static Bool s_trace_mutex;
 static ULong s_mutex_lock_count;
 static ULong s_mutex_segment_creation_count;
+static UInt s_mutex_lock_threshold_ms = 1000 * 1000;
 
 
 // Function definitions.
@@ -54,6 +57,11 @@ void mutex_set_trace(const Bool trace_mutex)
 {
   tl_assert(!! trace_mutex == trace_mutex);
   s_trace_mutex = trace_mutex;
+}
+
+void mutex_set_lock_threshold(const UInt lock_threshold_ms)
+{
+  s_mutex_lock_threshold_ms = lock_threshold_ms;
 }
 
 static
@@ -68,6 +76,8 @@ void mutex_initialize(struct mutex_info* const p,
   p->recursion_count     = 0;
   p->owner               = DRD_INVALID_THREADID;
   p->last_locked_segment = 0;
+  p->acquiry_time_ms     = 0;
+  p->acquired_at         = 0;
 }
 
 /** Deallocate the memory that was allocated by mutex_initialize(). */
@@ -287,7 +297,9 @@ void mutex_post_lock(const Addr mutex, const Bool took_lock,
     thread_new_segment(drd_tid);
     s_mutex_segment_creation_count++;
 
-    p->owner = drd_tid;
+    p->owner           = drd_tid;
+    p->acquiry_time_ms = VG_(read_millisecond_timer)();
+    p->acquired_at     = VG_(record_ExeContext)(VG_(get_running_tid)(), 0);
     s_mutex_lock_count++;
   }
   else if (p->owner != drd_tid)
@@ -302,14 +314,16 @@ void mutex_post_lock(const Addr mutex, const Bool took_lock,
   p->recursion_count++;
 }
 
-/**
- * Update mutex_info state when unlocking the pthread_mutex_t mutex.
- * Note: this function must be called before pthread_mutex_unlock() is called,
- * or a race condition is triggered !
- * @return New value of the mutex recursion count.
- * @param mutex Pointer to pthread_mutex_t data structure in the client space.
- * @param tid ThreadId of the thread calling pthread_mutex_unlock().
- * @param vc Pointer to the current vector clock of thread tid.
+/** Update mutex_info state when unlocking the pthread_mutex_t mutex.
+ *
+ *  @param mutex Pointer to pthread_mutex_t data structure in the client space.
+ *  @param tid ThreadId of the thread calling pthread_mutex_unlock().
+ *  @param vc Pointer to the current vector clock of thread tid.
+ *
+ *  @return New value of the mutex recursion count.
+ *
+ *  @note This function must be called before pthread_mutex_unlock() is called,
+ *        or a race condition is triggered !
  */
 void mutex_unlock(const Addr mutex, const MutexT mutex_type)
 {
@@ -370,12 +384,28 @@ void mutex_unlock(const Addr mutex, const MutexT mutex_type)
 
   if (p->recursion_count == 0)
   {
+    if (s_mutex_lock_threshold_ms > 0)
+    {
+      ULong held = VG_(read_millisecond_timer)() - p->acquiry_time_ms;
+      if (held > s_mutex_lock_threshold_ms)
+      {
+        HoldtimeErrInfo HEI
+          = { mutex, p->acquired_at, held, s_mutex_lock_threshold_ms };
+        VG_(maybe_record_error)(vg_tid,
+                                HoldtimeErr,
+                                VG_(get_IP)(vg_tid),
+                                "mutex",
+                                &HEI);
+      }
+    }
+
     /* This pthread_mutex_unlock() call really unlocks the mutex. Save the */
     /* current vector clock of the thread such that it is available when  */
     /* this mutex is locked again.                                        */
 
     thread_get_latest_segment(&p->last_locked_segment, drd_tid);
     thread_new_segment(drd_tid);
+    p->acquired_at = 0;
     s_mutex_segment_creation_count++;
   }
 }

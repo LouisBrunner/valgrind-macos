@@ -40,6 +40,8 @@ struct rwlock_info;
 
 
 void rwlock_set_trace(const Bool trace_rwlock);
+void rwlock_set_exclusive_threshold(const UInt exclusive_threshold_ms);
+void rwlock_set_shared_threshold(const UInt shared_threshold_ms);
 struct rwlock_info* rwlock_pre_init(const Addr rwlock);
 void rwlock_post_destroy(const Addr rwlock);
 void rwlock_pre_rdlock(const Addr rwlock);

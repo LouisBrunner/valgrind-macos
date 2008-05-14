@@ -40,6 +40,7 @@ struct mutex_info;
 
 
 void mutex_set_trace(const Bool trace_mutex);
+void mutex_set_lock_threshold(const UInt lock_threshold_ms);
 struct mutex_info* mutex_init(const Addr mutex,
                               const MutexT mutex_type);
 void mutex_post_destroy(const Addr mutex);

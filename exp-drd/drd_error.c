@@ -217,6 +217,21 @@ static void drd_tool_error_pp(Error* const e)
     VG_(pp_ExeContext)(VG_(get_error_where)(e));
     break;
   }
+  case HoldtimeErr: {
+    HoldtimeErrInfo* p =(HoldtimeErrInfo*)(VG_(get_error_extra)(e));
+    tl_assert(p);
+    tl_assert(p->acquired_at);
+    VG_(message)(Vg_UserMsg, "Acquired at:");
+    VG_(pp_ExeContext)(p->acquired_at);
+    VG_(message)(Vg_UserMsg,
+                 "Lock on %s 0x%lx was held during %d ms (threshold: %d ms).",
+                 VG_(get_error_string)(e),
+                 p->synchronization_object,
+                 p->hold_time_ms,
+                 p->threshold_ms);
+    VG_(pp_ExeContext)(VG_(get_error_where)(e));
+    break;
+  }
   case GenericErr: {
     //GenericErrInfo* gei =(GenericErrInfo*)(VG_(get_error_extra)(e));
     VG_(message)(Vg_UserMsg, "%s", VG_(get_error_string)(e));
@@ -252,6 +267,8 @@ static UInt drd_tool_error_update_extra(Error* e)
     return sizeof(BarrierErrInfo);
   case RwlockErr:
     return sizeof(RwlockErrInfo);
+  case HoldtimeErr:
+    return sizeof(HoldtimeErrInfo);
   case GenericErr:
     return sizeof(GenericErrInfo);
   default:
@@ -279,6 +296,8 @@ static Bool drd_tool_error_recog(Char* const name, Supp* const supp)
   else if (VG_(strcmp)(name, STR_BarrierErr) == 0)
     ;
   else if (VG_(strcmp)(name, STR_RwlockErr) == 0)
+    ;
+  else if (VG_(strcmp)(name, STR_HoldtimeErr) == 0)
     ;
   else if (VG_(strcmp)(name, STR_GenericErr) == 0)
     ;
@@ -314,6 +333,7 @@ static Char* drd_tool_error_name(Error* e)
   case SemaphoreErr: return VGAPPEND(STR_, SemaphoreErr);
   case BarrierErr:   return VGAPPEND(STR_, BarrierErr);
   case RwlockErr:    return VGAPPEND(STR_, RwlockErr);
+  case HoldtimeErr:  return VGAPPEND(STR_, HoldtimeErr);
   case GenericErr:   return VGAPPEND(STR_, GenericErr);
   default:
     tl_assert(0);

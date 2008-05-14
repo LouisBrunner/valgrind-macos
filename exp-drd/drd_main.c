@@ -74,41 +74,54 @@ static Bool s_show_stack_usage    = False;
 
 static Bool drd_process_cmd_line_option(Char* arg)
 {
-  int segment_merging   = -1;
-  int show_confl_seg    = -1;
-  int trace_barrier     = -1;
-  int trace_clientobj   = -1;
-  int trace_cond        = -1;
-  int trace_csw         = -1;
-  int trace_danger_set  = -1;
-  int trace_mutex       = -1;
-  int trace_rwlock      = -1;
-  int trace_segment     = -1;
-  int trace_semaphore   = -1;
-  int trace_suppression = -1;
-  Char* trace_address   = 0;
+  int exclusive_threshold_ms = -1;
+  int segment_merging     = -1;
+  int shared_threshold_ms    = -1;
+  int show_confl_seg      = -1;
+  int trace_barrier       = -1;
+  int trace_clientobj     = -1;
+  int trace_cond          = -1;
+  int trace_csw           = -1;
+  int trace_danger_set    = -1;
+  int trace_mutex         = -1;
+  int trace_rwlock        = -1;
+  int trace_segment       = -1;
+  int trace_semaphore     = -1;
+  int trace_suppression   = -1;
+  Char* trace_address     = 0;
 
-  VG_BOOL_CLO     (arg, "--check-stack-var",   s_drd_check_stack_var)
-  else VG_BOOL_CLO(arg, "--drd-stats",         s_drd_print_stats)
-  else VG_BOOL_CLO(arg, "--segment-merging",   segment_merging)
-  else VG_BOOL_CLO(arg, "--show-confl-seg",    show_confl_seg)
-  else VG_BOOL_CLO(arg, "--show-stack-usage",  s_show_stack_usage)
-  else VG_BOOL_CLO(arg, "--trace-barrier",     trace_barrier)
-  else VG_BOOL_CLO(arg, "--trace-clientobj",   trace_clientobj)
-  else VG_BOOL_CLO(arg, "--trace-cond",        trace_cond)
-  else VG_BOOL_CLO(arg, "--trace-csw",         trace_csw)
-  else VG_BOOL_CLO(arg, "--trace-danger-set",  trace_danger_set)
-  else VG_BOOL_CLO(arg, "--trace-fork-join",   s_drd_trace_fork_join)
-  else VG_BOOL_CLO(arg, "--trace-mutex",       trace_mutex)
-  else VG_BOOL_CLO(arg, "--trace-rwlock",      trace_rwlock)
-  else VG_BOOL_CLO(arg, "--trace-segment",     trace_segment)
-  else VG_BOOL_CLO(arg, "--trace-semaphore",   trace_semaphore)
-  else VG_BOOL_CLO(arg, "--trace-suppr",       trace_suppression)
-  else VG_BOOL_CLO(arg, "--var-info",          s_drd_var_info)
-  else VG_STR_CLO (arg, "--trace-addr",        trace_address)
+  VG_BOOL_CLO     (arg, "--check-stack-var",     s_drd_check_stack_var)
+  else VG_BOOL_CLO(arg, "--drd-stats",           s_drd_print_stats)
+  else VG_BOOL_CLO(arg, "--segment-merging",     segment_merging)
+  else VG_BOOL_CLO(arg, "--show-confl-seg",      show_confl_seg)
+  else VG_BOOL_CLO(arg, "--show-stack-usage",    s_show_stack_usage)
+  else VG_BOOL_CLO(arg, "--trace-barrier",       trace_barrier)
+  else VG_BOOL_CLO(arg, "--trace-clientobj",     trace_clientobj)
+  else VG_BOOL_CLO(arg, "--trace-cond",          trace_cond)
+  else VG_BOOL_CLO(arg, "--trace-csw",           trace_csw)
+  else VG_BOOL_CLO(arg, "--trace-danger-set",    trace_danger_set)
+  else VG_BOOL_CLO(arg, "--trace-fork-join",     s_drd_trace_fork_join)
+  else VG_BOOL_CLO(arg, "--trace-mutex",         trace_mutex)
+  else VG_BOOL_CLO(arg, "--trace-rwlock",        trace_rwlock)
+  else VG_BOOL_CLO(arg, "--trace-segment",       trace_segment)
+  else VG_BOOL_CLO(arg, "--trace-semaphore",     trace_semaphore)
+  else VG_BOOL_CLO(arg, "--trace-suppr",         trace_suppression)
+  else VG_BOOL_CLO(arg, "--var-info",            s_drd_var_info)
+  else VG_NUM_CLO (arg, "--exclusive-threshold", exclusive_threshold_ms)
+  else VG_NUM_CLO (arg, "--shared-threshold",    shared_threshold_ms)
+  else VG_STR_CLO (arg, "--trace-addr",          trace_address)
   else
     return VG_(replacement_malloc_process_cmd_line_option)(arg);
 
+  if (exclusive_threshold_ms != -1)
+  {
+    mutex_set_lock_threshold(exclusive_threshold_ms);
+    rwlock_set_exclusive_threshold(exclusive_threshold_ms);
+  }
+  if (shared_threshold_ms != -1)
+  {
+    rwlock_set_shared_threshold(shared_threshold_ms);
+  }
   if (segment_merging != -1)
     thread_set_segment_merging(segment_merging);
   if (show_confl_seg != -1)
@@ -147,11 +160,15 @@ static void drd_print_usage(void)
   VG_(printf)(
 "    --check-stack-var=yes|no  Whether or not to report data races on\n"
 "                              stack variables [no].\n"
+"    --exclusive-threshold=<n> Print an error message if any mutex or\n"
+"        writer lock is held longer than the specified time (in milliseconds).\n"
 "    --segment-merging=yes|no  Controls segment merging [yes].\n"
 "        Segment merging is an algorithm to limit memory usage of the\n"
 "        data race detection algorithm. Disabling segment merging may\n"
 "        improve the accuracy of the so-called 'other segments' displayed\n"
 "        in race reports but can also trigger an out of memory error.\n"
+"    --shared-threshold=<n>    Print an error message if a reader lock\n"
+"        is held longer than the specified time (in milliseconds).\n"
 "    --show-confl-seg=yes|no   Show conflicting segments in race reports [yes].\n"
 "    --show-stack-usage=yes|no Print stack usage at thread exit time [no].\n"
 "    --var-info=yes|no         Display the names of global, static and\n"

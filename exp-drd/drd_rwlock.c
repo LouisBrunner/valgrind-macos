@@ -27,9 +27,11 @@
 #include "drd_error.h"
 #include "drd_rwlock.h"
 #include "priv_drd_clientreq.h"
+#include "pub_tool_vki.h"
 #include "pub_tool_errormgr.h"    // VG_(maybe_record_error)()
 #include "pub_tool_libcassert.h"  // tl_assert()
 #include "pub_tool_libcprint.h"   // VG_(message)()
+#include "pub_tool_libcproc.h"    // VG_(read_millisecond_timer)()
 #include "pub_tool_machine.h"     // VG_(get_IP)()
 #include "pub_tool_mallocfree.h"  // VG_(malloc)(), VG_(free)()
 #include "pub_tool_threadstate.h" // VG_(get_running_tid)()
@@ -56,6 +58,8 @@ static ULong s_rwlock_segment_creation_count;
 // Local variables.
 
 static Bool s_trace_rwlock;
+static UInt s_exclusive_threshold_ms;
+static UInt s_shared_threshold_ms;
 
 
 // Function definitions.
@@ -64,6 +68,16 @@ void rwlock_set_trace(const Bool trace_rwlock)
 {
   tl_assert(!! trace_rwlock == trace_rwlock);
   s_trace_rwlock = trace_rwlock;
+}
+
+void rwlock_set_exclusive_threshold(const UInt exclusive_threshold_ms)
+{
+  s_exclusive_threshold_ms = exclusive_threshold_ms;
+}
+
+void rwlock_set_shared_threshold(const UInt shared_threshold_ms)
+{
+  s_shared_threshold_ms = shared_threshold_ms;
 }
 
 static Bool rwlock_is_rdlocked(struct rwlock_info* p)
@@ -166,8 +180,10 @@ void rwlock_initialize(struct rwlock_info* const p, const Addr rwlock)
   tl_assert(p->a1 == rwlock);
   tl_assert(p->type == ClientRwlock);
 
-  p->cleanup     = (void(*)(DrdClientobj*))&rwlock_cleanup;
-  p->thread_info = VG_(OSetGen_Create)(0, 0, VG_(malloc), VG_(free));
+  p->cleanup         = (void(*)(DrdClientobj*))&rwlock_cleanup;
+  p->thread_info     = VG_(OSetGen_Create)(0, 0, VG_(malloc), VG_(free));
+  p->acquiry_time_ms = 0;
+  p->acquired_at     = 0;
 }
 
 /** Deallocate the memory that was allocated by rwlock_initialize(). */
@@ -356,6 +372,9 @@ void rwlock_post_rdlock(const Addr rwlock, const Bool took_lock)
     q->last_lock_was_writer_lock = False;
     thread_new_segment(drd_tid);
     s_rwlock_segment_creation_count++;
+
+    p->acquiry_time_ms = VG_(read_millisecond_timer)();
+    p->acquired_at     = VG_(record_ExeContext)(VG_(get_running_tid)(), 0);
   }
 }
 
@@ -430,6 +449,8 @@ void rwlock_post_wrlock(const Addr rwlock, const Bool took_lock)
   rwlock_combine_other_vc(p, drd_tid, True);
   thread_new_segment(drd_tid);
   s_rwlock_segment_creation_count++;
+  p->acquiry_time_ms = VG_(read_millisecond_timer)();
+  p->acquired_at     = VG_(record_ExeContext)(VG_(get_running_tid)(), 0);
 }
 
 /**
@@ -471,11 +492,45 @@ void rwlock_pre_unlock(const Addr rwlock)
   q = lookup_or_insert_node(p->thread_info, drd_tid);
   tl_assert(q);
   if (q->reader_nesting_count > 0)
+  {
     q->reader_nesting_count--;
+    if (q->reader_nesting_count == 0 && s_shared_threshold_ms > 0)
+    {
+      ULong held = VG_(read_millisecond_timer)() - p->acquiry_time_ms;
+      if (held > s_shared_threshold_ms)
+      {
+        HoldtimeErrInfo HEI
+          = { rwlock, p->acquired_at, held, s_shared_threshold_ms };
+        VG_(maybe_record_error)(vg_tid,
+                                HoldtimeErr,
+                                VG_(get_IP)(vg_tid),
+                                "rwlock",
+                                &HEI);
+      }
+    }
+  }
   else if (q->writer_nesting_count > 0)
+  {
     q->writer_nesting_count--;
+    if (q->writer_nesting_count == 0 && s_exclusive_threshold_ms > 0)
+    {
+      ULong held = VG_(read_millisecond_timer)() - p->acquiry_time_ms;
+      if (held > s_exclusive_threshold_ms)
+      {
+        HoldtimeErrInfo HEI
+          = { rwlock, p->acquired_at, held, s_exclusive_threshold_ms };
+        VG_(maybe_record_error)(vg_tid,
+                                HoldtimeErr,
+                                VG_(get_IP)(vg_tid),
+                                "rwlock",
+                                &HEI);
+      }
+    }
+  }
   else
+  {
     tl_assert(False);
+  }
 
   if (q->reader_nesting_count == 0 && q->writer_nesting_count == 0)
   {

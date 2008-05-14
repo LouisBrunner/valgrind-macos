@@ -27,9 +27,10 @@
 #define __DRD_CLIENTOBJ_H
 
 
-#include "drd_clientreq.h"   /* MutexT */
-#include "drd_thread.h"      /* DrdThreadId */
+#include "drd_clientreq.h"       /* MutexT */
+#include "drd_thread.h"          /* DrdThreadId */
 #include "pub_tool_basics.h"
+#include "pub_tool_execontext.h" /* ExeContext */
 #include "pub_tool_oset.h"
 
 
@@ -64,6 +65,8 @@ struct mutex_info
   int         recursion_count; // 0 if free, >= 1 if locked.
   DrdThreadId owner;           // owner if locked, last owner if free.
   Segment*    last_locked_segment;
+  ULong       acquiry_time_ms;
+  ExeContext* acquired_at;
 };
 
 struct cond_info
@@ -89,9 +92,9 @@ struct semaphore_info
 
 struct barrier_info
 {
-  Addr    a1;
-  ObjType type;
-  void    (*cleanup)(union drd_clientobj*);
+  Addr     a1;
+  ObjType  type;
+  void     (*cleanup)(union drd_clientobj*);
   BarrierT barrier_type;      // pthread_barrier or gomp_barrier.
   Word     count;             // Participant count in a barrier wait.
   Word     pre_iteration;     // pthread_barrier_wait() call count modulo two.
@@ -103,10 +106,12 @@ struct barrier_info
 
 struct rwlock_info
 {
-  Addr    a1;
-  ObjType type;
-  void    (*cleanup)(union drd_clientobj*);
-  OSet*   thread_info;
+  Addr        a1;
+  ObjType     type;
+  void        (*cleanup)(union drd_clientobj*);
+  OSet*       thread_info;
+  ULong       acquiry_time_ms;
+  ExeContext* acquired_at;
 };
 
 typedef union drd_clientobj

@@ -53,8 +53,10 @@ typedef enum {
    BarrierErr     = 7,
 #define STR_RwlockErr    "RwlockErr"
    RwlockErr      = 8,
+#define STR_HoldtimeErr  "HoldtimeErr"
+   HoldtimeErr    = 9,
 #define STR_GenericErr   "GenericErr"
-   GenericErr     = 9,
+   GenericErr     = 10,
 } DrdErrorKind;
 
 /* The classification of a faulting address. */
@@ -125,6 +127,13 @@ typedef struct {
 typedef struct {
    Addr rwlock;
 } RwlockErrInfo;
+
+typedef struct {
+  Addr        synchronization_object;
+  ExeContext* acquired_at;
+  UInt        hold_time_ms;
+  UInt        threshold_ms;
+} HoldtimeErrInfo;
 
 typedef struct {
 } GenericErrInfo;

@@ -34,6 +34,10 @@ EXTRA_DIST =                                        \
 	hg05_race2.vgtest                           \
 	hg06_readshared.stderr.exp                  \
 	hg06_readshared.vgtest                      \
+	hold_lock_1.stderr.exp                      \
+	hold_lock_1.vgtest                          \
+	hold_lock_2.stderr.exp                      \
+	hold_lock_2.vgtest                          \
 	linuxthreads_det.stderr.exp                 \
 	linuxthreads_det.stderr.exp-linuxthreads    \
 	linuxthreads_det.stdout.exp                 \
@@ -164,6 +168,7 @@ check_PROGRAMS_COMMON = \
   hg04_race           \
   hg05_race2          \
   hg06_readshared     \
+  hold_lock           \
   linuxthreads_det    \
   matinv              \
   memory_allocation   \
@@ -239,6 +244,9 @@ hg05_race2_LDADD            = -lpthread
 
 hg06_readshared_SOURCES     = ../../helgrind/tests/hg06_readshared.c
 hg06_readshared_LDADD       = -lpthread
+
+hold_lock_SOURCES           = hold_lock.c
+hold_lock_LDADD             = -lpthread
 
 linuxthreads_det_SOURCES    = linuxthreads_det.c
 linuxthreads_det_LDADD      = -lpthread

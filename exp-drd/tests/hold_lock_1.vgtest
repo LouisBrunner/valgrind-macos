@@ -1,0 +1,4 @@
+prereq: ./supported_libpthread
+prog: hold_lock
+vgopts: --exclusive-threshold=500 --shared-threshold=2000
+args: -i 1000

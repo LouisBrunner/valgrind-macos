@@ -40,7 +40,7 @@
 #include "pub_tool_options.h"
 
 /* The max number of suppression files. */
-#define VG_CLO_MAX_SFILES 10
+#define VG_CLO_MAX_SFILES 100
 
 /* Should we stop collecting errors if too many appear?  default: YES */
 extern Bool  VG_(clo_error_limit);

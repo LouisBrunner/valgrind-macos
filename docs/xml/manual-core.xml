@@ -885,8 +885,8 @@ that can report errors, e.g. Memcheck, but not Cachegrind.</para>
     </term>
     <listitem>
       <para>Specifies an extra file from which to read descriptions of
-      errors to suppress.  You may use as many extra suppressions files
-      as you like.</para>
+      errors to suppress.  You may use up to 100 extra suppression
+      files.</para>
     </listitem>
   </varlistentry>
 

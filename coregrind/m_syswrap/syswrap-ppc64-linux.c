@@ -901,9 +901,7 @@ POST(sys_ipc)
       POST_MEM_WRITE( ARG4, sizeof( Addr ) );
 
       addr = deref_Addr ( tid, ARG4, "shmat(addr)" );
-      if ( addr > 0 ) {
-	ML_(generic_POST_sys_shmat)( tid, addr, ARG2, ARG5, ARG3 );
-      }
+      ML_(generic_POST_sys_shmat)( tid, addr, ARG2, ARG5, ARG3 );
       break;
     }
   case VKI_SHMDT:

@@ -360,6 +360,13 @@
 #define __NR_tee		276
 #define __NR_sync_file_range	277
 #define __NR_vmsplice		278
+#define __NR_move_pages		279
+#define __NR_utimensat		280
+#define __NR_epoll_pwait	281
+#define __NR_signalfd		282
+#define __NR_timerfd		283
+#define __NR_eventfd		284
+#define __NR_fallocate		285
 
 #endif /* __VKI_SCNUMS_AMD64_LINUX_H */
 

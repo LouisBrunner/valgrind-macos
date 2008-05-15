@@ -1,4 +1,4 @@
-Last updated April 14, 2008.
+Last updated May 14, 2008.
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 
@@ -10,18 +10,10 @@ Data-race detection algorithm
   * http://sourceforge.net/mailarchive/message.php?msg_id=alpine.LNX.1.10.0803270822080.17890%40mudge.stoecker.eu
   * http://lwn.net/Articles/185605/
   * http://git.kernel.org/?p=linux/kernel/git/torvalds/linux-2.6.git;a=blob;f=Documentation/lockdep-design.txt;h=488773018152056ea159685e732e42452a7ae142;hb=HEAD
-- Continue the discussion on the Valgrind mailing list about docbook and
-  'make dist'.
 - Let DRD print an error message and stop as soon as qt1, qt2 or qt3 is 
   loaded. Only qt4 is SMP safe.
-- Add configure tests for the name of the 'kind' member in pthread_mutex_t.
 - Find out why a race is reported on std::string::string(std::string const&)
   (stc test case 16).
-- Add support for objects that are shared over threads and that use reference
-  counting, e.g. std::string -- no races should be reported on the reference
-  count.
-- Add test programs for destroying a condition variable / semaphore / barrier
-  being waited upon.
 - Make sure an error message is printed if no debug information is found in
   libopenmp.so.1.
 - Make sure tc14_laog_dinphils is run during exp-drd regression tests.
@@ -33,9 +25,6 @@ Data-race detection algorithm
 - testing on PPC and AIX (current implementation is only tested on X86 and
   AMD64).
 - Convert the array in drd_thread.c with thread information into an OSet.
-- Performance testing and tuning, a.o. for kate / knode / open office / matinv.
-- Let exp-drd print a warning if a lock is held too long, and add a command
-  line option that allows to configure the threshold time.
 
 
 Testing
@@ -56,6 +45,8 @@ Documentation
 - Explain how to handle transactions (with regard to locking order).
 - Add extra acknowledgement -- see also
   http://wiki.cc.gatech.edu/cellbuzz/index.php/User_Guide
+- Continue the discussion on the Valgrind mailing list about docbook and
+  'make dist'. See also http://bugs.kde.org/show_bug.cgi?id=162121.
 
 
 Limitations

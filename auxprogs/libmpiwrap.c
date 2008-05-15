@@ -1403,6 +1403,36 @@ int WRAPPER_FOR(PMPI_Wait)( MPI_Request* request,
    return err;
 }
 
+/* --- Waitany --- */
+int WRAPPER_FOR(PMPI_Waitany)( int count,
+                               MPI_Request* requests,
+                               int* index,
+                               MPI_Status* status )
+{
+   MPI_Request* requests_before = NULL;
+   OrigFn       fn;
+   int          err, i;
+   VALGRIND_GET_ORIG_FN(fn);
+   before("Waitany");
+   if (0) fprintf(stderr, "Waitany: %d\n", count);
+   check_mem_is_addressable_untyped(index, sizeof(int));
+   check_mem_is_addressable_untyped(status, sizeof(MPI_Status));
+   for (i = 0; i < count; i++) {
+      check_mem_is_defined_untyped(&requests[i], sizeof(MPI_Request));
+   }
+   requests_before = clone_Request_array( count, requests );
+   CALL_FN_W_WWWW(err, fn, count,requests,index,status);
+   if (err == MPI_SUCCESS && *index >= 0 && *index < count) {
+      maybe_complete(False/*err in status?*/, 
+                     requests_before[*index], requests[*index], status);
+      make_mem_defined_if_addressable_untyped(status, sizeof(MPI_Status));
+   }
+   if (requests_before)
+      free(requests_before);
+   after("Waitany", err);
+   return err;
+}
+
 /* --- Waitall --- */
 int WRAPPER_FOR(PMPI_Waitall)( int count, 
                                MPI_Request* requests,
@@ -2542,7 +2572,7 @@ DEFAULT_WRAPPER_W_5W(Type_vector)
 DEFAULT_WRAPPER_W_3W(Unpublish_name)
 DEFAULT_WRAPPER_W_7W(Unpack_external)
 /* DEFAULT_WRAPPER_W_3W(Waitall) */
-DEFAULT_WRAPPER_W_4W(Waitany)
+/* DEFAULT_WRAPPER_W_4W(Waitany) */
 /* DEFAULT_WRAPPER_W_2W(Wait) */
 DEFAULT_WRAPPER_W_5W(Waitsome)
 DEFAULT_WRAPPER_W_1W(Win_c2f)

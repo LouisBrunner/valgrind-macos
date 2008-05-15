@@ -23,13 +23,6 @@ Vfd fix has been verified on 3.3.X branch
 
 tidy up static int linux_kernel_2_6_22(void) (syswrap-linux.c)
 
-check r7322 is merged to branch
-and 7324 ?
-7334
-7347
-7350
-7355
-
 get rid of pointless constraint !(--db-attach=yes &&
 --trace-children=yes) (users, 14 feb)
 
@@ -112,7 +105,6 @@ NNN     (no info so far, probably a threading bug in client)
 
 --- end 8 May 08 ---
 
-
 r1816 (x86 CondNS after SUBB)
 r1817 (amd64 CondNS after SUBB)
 r1833 (both, CondNZ after SUBW)
@@ -127,15 +119,15 @@ r8058   r8059     Vfd  n-i-bz  Massif segfaults at exit
 
 vx1832  vx1839    Vfd  n-i-bz  Memcheck asserts on Altivec code
 
-r7299   pending    33  n-i-bz  stupid sizeof bug in Helgrind
-r7322   pending    33  n-i-bz  check fd on sys_llseek
-r7323   pending    33  n-i-bz  update syscall lists to kernel 2.6.23.1
-r7324   pending    33  n-i-bz  support sys_sync_file_range
+r7299   r8081     Mgd  n-i-bz  fix sizeof bug in Helgrind
+r7322   r8073     Mgd  n-i-bz  check fd on sys_llseek
+r7323   r8082     Mgd  n-i-bz  update syscall lists to kernel 2.6.23.1
+r7324   r8076     Mgd  n-i-bz  support sys_sync_file_range
 
-r7334   pending    33  n-i-bz  handle sys_sysinfo, sys_getresuid,
+r7334   r8078     Mgd  n-i-bz  handle sys_sysinfo, sys_getresuid,
                                sys_getresgid on ppc64-linux
 
-r7350   pending    33  n-i-bz  intercept memcpy in 64-bit ld.so's
+r7350   r8080     Mgd  n-i-bz  intercept memcpy in 64-bit ld.so's
 
 r8047   pending    33  n-i-bz  Fix wrappers for sys_{futimesat,utimensat}
 
@@ -150,9 +142,7 @@ vx1834  vx1843    Vfd  153196  vex x86->IR: 0xF2 0xA6 (repnz cmpsb)
 
 vx1807  vx1840    Mgd  155011  vex x86->IR: 0xCF (iret)
 
-
-r7347   pending    33  155091  Warning [...] unhandled DW_OP_ opcode 0x23
-                               (patch proposed, waiting for feedback)
+r7347   r8085     Mgd  155091  Warning [...] unhandled DW_OP_ opcode 0x23
                        ==156960
 
 vx1808/9/10,r7384/5/7/9
@@ -162,17 +152,17 @@ vx1808/9/10,r7384/5/7/9
 r7355   r7356     Mgd  155929  ms_print fails on massif outputs 
                                containing long lines
 
-r7399   pending    33  157665  valgrind fails on shmdt(0) after shmat to 0
+r7399   r8083     Mgd  157665  valgrind fails on shmdt(0) after shmat to 0
 
 vx1835  vx1844    Vfd  157748  support x86 PUSHFW/POPFW
 
-r7454   pending    33  158212  hg: handle pthread_rwlock_try{rd,wr}lock.
+r7454   r8084     Mgd  158212  hg: handle pthread_rwlock_try{rd,wr}lock.
 
-r8049   pending    33  158425  sys_poll incorrectly emulated when RES==0
+r8049   r8086     Vfd  158425  sys_poll incorrectly emulated when RES==0
 
 vx1848  vx1849    Vfd  158744  vex amd64->IR: 0xF0 0x41 0xF 0xC0 (xaddb)
 
-r7917,8051
+r7917,8051 OR r7942,r7983,r8051
         pending    33  160907  Support for a couple of recent Linux syscalls
 
 r7888   pending    33  160956  PATCH: mallinfo implementation
@@ -186,6 +176,6 @@ r8065/8 r8069     Mgd  161487  number of suppressions files is limited to 10
 
 r7361   r7362     Mgd  n-i-bz  ms_print broken for --time-unit=ms
 
+r7895   r8063     Mgd  161036  exp-drd: client allocated memory was never freed
 
-
-r7895   r8063      33  161036  exp-drd: client allocated memory was never freed
+r8092   pending    33  n-i-bz  libmpiwrap.c: add a wrapper for MPI_Waitany

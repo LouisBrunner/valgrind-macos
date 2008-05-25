@@ -1,0 +1,90 @@
+#!/bin/bash
+
+downloads="$HOME/software/downloads"
+
+if [ -e splash2 ]; then
+  echo "Error: a directory with the name splash2 already exists. Please"
+  echo "remove it before running this script, or run this script in another"
+  echo "directory."
+  exit 1
+fi
+
+(
+  cd "$downloads"
+  if [ ! -e splash2.tar.gz ]; then
+    wget -q http://www-flash.stanford.edu/apps/SPLASH/splash2.tar.gz
+  fi
+  if [ ! -e splash2-modified.patch.gz ]; then
+    wget -q http://www.capsl.udel.edu/splash/splash2-modified.patch.gz
+  fi
+)
+
+tar zxf $downloads/splash2.tar.gz
+cd splash2
+gzip -cd < "$downloads/splash2-modified.patch.gz" | patch -p1 -s
+patch -p1 -s <<'EOF'
+diff -ru orig/splash2/codes/apps/radiosity/display.C splash2/codes/apps/radiosity/display.C
+--- orig/splash2/codes/apps/radiosity/display.C	2008-05-25 10:38:52.000000000 +0200
++++ splash2/codes/apps/radiosity/display.C	2008-05-25 10:37:51.000000000 +0200
+@@ -14,6 +14,7 @@
+ /*                                                                       */
+ /*************************************************************************/
+ 
++#include <math.h>
+ #include <stdio.h>
+ 
+ EXTERN_ENV;
+--- orig/splash2/codes/apps/radiosity/Makefile	2008-05-25 10:38:52.000000000 +0200
++++ splash2/codes/apps/radiosity/Makefile	2008-05-25 13:05:36.000000000 +0200
+@@ -15,7 +15,7 @@
+ 
+ LOADLIBES = glibdumb/glib.a glibps/glibps.a
+ 
+-$(TARGET): $(OBJS)
++$(TARGET): $(OBJS) $(LOADLIBES)
+ 	$(CC) $(OBJS) $(CFLAGS) $(LOADLIBES) -o $(TARGET) $(LDFLAGS)
+ 
+ radiosity.h: patch.h model.h parallel.h task.h
+@@ -29,3 +29,7 @@
+ visible.c: visible.C $(HS)
+ rad_tools.c: rad_tools.C $(HS)
+ room_model.c: room_model.C $(HS)
++glibdumb/glib.a:
++	make -C glibdumb glib.a
++glibps/glibps.a:
++	make -C glibps glibps.a
+diff -ru orig/splash2/codes/apps/raytrace/rltotiff/Makefile splash2/codes/apps/raytrace/rltotiff/Makefile
+--- orig/splash2/codes/apps/raytrace/rltotiff/Makefile	2008-05-25 10:38:52.000000000 +0200
++++ splash2/codes/apps/raytrace/rltotiff/Makefile	2008-05-25 10:31:57.000000000 +0200
+@@ -4,6 +4,3 @@
+ include ../../../Makefile.config
+ 
+ LDFLAGS := $(LDFLAGS) -ltiff
+-
+-clean:
+-	rm -rf $(OBJS) $(TARGET)
+EOF
+
+
+patch -p1 -s <<EOF
+diff -ru orig/splash2/codes/Makefile.config splash2/codes/Makefile.config
+--- orig/splash2/codes/Makefile.config	2008-05-25 10:38:52.000000000 +0200
++++ splash2/codes/Makefile.config	2008-05-25 10:14:25.000000000 +0200
+@@ -5,8 +5,8 @@
+ CFLAGS := \$(CFLAGS) -Wpadded -Winline -Wpointer-arith -Wsign-compare -Wendif-labels
+ LDFLAGS := -lm
+ 
+-BASEDIR := \$(HOME)/splash2/codes
+-MACROS := \$(BASEDIR)/null_macros/c.m4.null
++BASEDIR := ${PWD}/codes
++MACROS := \$(BASEDIR)/null_macros/c.m4.null.POSIX_BARRIER
+ M4 := m4 -s -Ulen -Uindex
+ 
+ x = *
+EOF
+
+for m in $(find codes -name Makefile)
+do
+  echo "==== $m ===="
+  make -s -C $(dirname $m)
+done

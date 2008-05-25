@@ -538,9 +538,9 @@ void VG_(di_notify_mmap)( Addr a, Bool allow_SkFileV )
    VG_(memset)(buf1k, 0, sizeof(buf1k));
    fd = VG_(open)( filename, VKI_O_RDONLY, 0 );
    if (fd.isError) {
-      DebugInfo fake_di;
       if (fd.err != VKI_EACCES)
       {
+         DebugInfo fake_di;
          VG_(memset)(&fake_di, 0, sizeof(fake_di));
          fake_di.filename = filename;
          ML_(symerr)(&fake_di, True, "can't open file to inspect ELF header");
@@ -550,8 +550,13 @@ void VG_(di_notify_mmap)( Addr a, Bool allow_SkFileV )
    nread = VG_(read)( fd.res, buf1k, sizeof(buf1k) );
    VG_(close)( fd.res );
 
-   if (nread <= 0) {
-      ML_(symerr)(NULL, True, "can't read file to inspect ELF header");
+   if (nread == 0)
+      return;
+   if (nread < 0) {
+      DebugInfo fake_di;
+      VG_(memset)(&fake_di, 0, sizeof(fake_di));
+      fake_di.filename = filename;
+      ML_(symerr)(&fake_di, True, "can't read file to inspect ELF header");
       return;
    }
    vg_assert(nread > 0 && nread <= sizeof(buf1k) );
@@ -2325,13 +2330,13 @@ VgSectKind VG_(seginfo_sect_kind)( /*OUT*/UChar* name, SizeT n_name,
          vg_assert(start_at < fnlen);
          i = start_at; j = 0;
          while (True) {
-            vg_assert(j >= 0 && j+1 < n_name);
+            vg_assert(j >= 0 && j < n_name);
             vg_assert(i >= 0 && i <= fnlen);
             name[j] = di->filename[i];
-            name[j+1] = 0;
             if (di->filename[i] == 0) break;
             i++; j++;
          }
+         vg_assert(i == fnlen);
       } else {
          VG_(snprintf)(name, n_name, "%s", "???");
       }

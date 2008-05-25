@@ -4,6 +4,9 @@ Last updated May 14, 2008.
 
 Data-race detection algorithm
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+- Let DRD print a warning message when, after 30s runtime, the ratio of
+  the number of mutex lock / unlock calls to the number of executed basic
+  blocks exceeds a certain threshold. Test with Firefox and nautilus.
 - Continue discussion about unification of DRD and Helgrind client requests.
 - Memory pool support.
 - Add locking order checking. Start from the following information:

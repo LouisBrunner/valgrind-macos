@@ -15,19 +15,13 @@ Data-race detection algorithm
   * http://git.kernel.org/?p=linux/kernel/git/torvalds/linux-2.6.git;a=blob;f=Documentation/lockdep-design.txt;h=488773018152056ea159685e732e42452a7ae142;hb=HEAD
 - Let DRD print an error message and stop as soon as qt1, qt2 or qt3 is 
   loaded. Only qt4 is SMP safe.
-- Find out why a race is reported on std::string::string(std::string const&)
-  (stc test case 16).
-- Make sure an error message is printed if no debug information is found in
-  libopenmp.so.1.
-- Make sure tc14_laog_dinphils is run during exp-drd regression tests.
+- Make sure tc14_laog_dinphils is run during exp-drd regression tests
+  (only possible after locking order checking is implemented).
 - Find out why no line number or variable name information is printed for
   races detected in parallel sections of OpenMP programs. An example:
   ./vg-in-place --tool=exp-drd exp-drd/tests/omp_prime 4 -t 2
 - Find out why 'matinv 400' runs faster in 32-bit mode than in 64-bit mode
   on the same CPU.
-- testing on PPC and AIX (current implementation is only tested on X86 and
-  AMD64).
-- Convert the array in drd_thread.c with thread information into an OSet.
 
 
 Testing

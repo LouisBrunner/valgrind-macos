@@ -119,6 +119,10 @@ extern       DebugInfo* VG_(find_seginfo)      ( Addr a );
 /* Fish bits out of DebugInfos. */
 extern       Addr     VG_(seginfo_get_text_avma)( const DebugInfo *di );
 extern       SizeT    VG_(seginfo_get_text_size)( const DebugInfo *di );
+extern       Addr     VG_(seginfo_get_plt_avma) ( const DebugInfo *di );
+extern       SizeT    VG_(seginfo_get_plt_size) ( const DebugInfo *di );
+extern       Addr     VG_(seginfo_get_gotplt_avma)( const DebugInfo *di );
+extern       SizeT    VG_(seginfo_get_gotplt_size)( const DebugInfo *di );
 extern const UChar*   VG_(seginfo_soname)       ( const DebugInfo *di );
 extern const UChar*   VG_(seginfo_filename)     ( const DebugInfo *di );
 extern       ULong    VG_(seginfo_get_text_bias)( const DebugInfo *di );
@@ -151,6 +155,7 @@ typedef
       Vg_SectBSS,
       Vg_SectGOT,
       Vg_SectPLT,
+      Vg_SectGOTPLT,
       Vg_SectOPD
    }
    VgSectKind;

@@ -1468,6 +1468,18 @@ Bool ML_(read_elf_debug_info) ( struct _DebugInfo* di )
          }
       }
 
+      /* Accept .got.plt where mapped as rw (data) */
+      if (0 == VG_(strcmp)(name, ".got.plt")) {
+         if (inrw && size > 0 && !di->gotplt_present) {
+            di->gotplt_present = True;
+            di->gotplt_avma = di->rw_map_avma + foff - di->rw_map_foff;
+            di->gotplt_size = size;
+            TRACE_SYMTAB("acquiring .got.plt avma = %p\n", di->gotplt_avma);
+         } else {
+            BAD(".got.plt");
+         }
+      }
+
       /* PLT is different on different platforms, it seems. */
 #     if defined(VGP_x86_linux) || defined(VGP_amd64_linux)
       /* Accept .plt where mapped as rx (code) */

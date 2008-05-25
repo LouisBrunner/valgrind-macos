@@ -331,6 +331,10 @@ struct _DebugInfo {
    Bool   got_present;
    Addr   got_avma;
    SizeT  got_size;
+   /* .got.plt */
+   Bool   gotplt_present;
+   Addr   gotplt_avma;
+   SizeT  gotplt_size;
    /* .opd -- needed on ppc64-linux for finding symbols */
    Bool   opd_present;
    Addr   opd_avma;

@@ -2191,6 +2191,26 @@ SizeT VG_(seginfo_get_text_size)(const DebugInfo* di)
    return di->text_present ? di->text_size : 0; 
 }
 
+Addr VG_(seginfo_get_plt_avma)(const DebugInfo* di)
+{
+   return di->plt_present ? di->plt_avma : 0; 
+}
+
+SizeT VG_(seginfo_get_plt_size)(const DebugInfo* di)
+{
+   return di->plt_present ? di->plt_size : 0; 
+}
+
+Addr VG_(seginfo_get_gotplt_avma)(const DebugInfo* di)
+{
+   return di->gotplt_present ? di->gotplt_avma : 0; 
+}
+
+SizeT VG_(seginfo_get_gotplt_size)(const DebugInfo* di)
+{
+   return di->gotplt_present ? di->gotplt_size : 0; 
+}
+
 const UChar* VG_(seginfo_soname)(const DebugInfo* di)
 {
    return di->soname;
@@ -2304,6 +2324,12 @@ VgSectKind VG_(seginfo_sect_kind)( /*OUT*/UChar* name, SizeT n_name,
           && di->got_size > 0
           && a >= di->got_avma && a < di->got_avma + di->got_size) {
          res = Vg_SectGOT;
+         break;
+      }
+      if (di->gotplt_present
+          && di->gotplt_size > 0
+          && a >= di->gotplt_avma && a < di->gotplt_avma + di->gotplt_size) {
+         res = Vg_SectGOTPLT;
          break;
       }
       if (di->opd_present

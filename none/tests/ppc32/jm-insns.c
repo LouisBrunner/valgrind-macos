@@ -2,9 +2,9 @@
 /* HOW TO COMPILE:
 
 * 32bit build:
-   gcc -Winline -Wall -g -O -mregnames -DHAS_ALTIVEC -maltivec
+   gcc -Winline -Wall -g -O -mregnames -maltivec
 * 64bit build:
-   gcc -Winline -Wall -g -O -mregnames -DHAS_ALTIVEC -maltivec -m64
+   gcc -Winline -Wall -g -O -mregnames -maltivec -m64
 
 This program is useful, but the register usage conventions in
 it are a complete dog.  In particular, _patch_op_imm has to
@@ -219,7 +219,8 @@ register HWord_t r15 __asm__ ("r15");
 register HWord_t r16 __asm__ ("r16");
 register HWord_t r17 __asm__ ("r17");
 
-#if defined (HAS_ALTIVEC)
+#include "config.h"
+#if defined (HAVE_ALTIVEC_H)
 #   include <altivec.h>
 #endif
 #include <assert.h>

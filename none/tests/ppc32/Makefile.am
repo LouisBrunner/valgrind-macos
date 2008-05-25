@@ -31,7 +31,6 @@ AM_CFLAGS   = $(WERROR) -Winline -Wall -Wshadow -g -I$(top_srcdir)/include \
 		@FLAG_M32@
 AM_CXXFLAGS = $(AM_CFLAGS) @FLAG_M32@
 
-jm_insns_CFLAGS = -Winline -Wall -O -mregnames \
-			-DHAS_ALTIVEC -maltivec @FLAG_M32@
+jm_insns_CFLAGS = -Winline -Wall -O -mregnames -maltivec @FLAG_M32@
 testVMX_CFLAGS  = -O -g -Wall -maltivec -mabi=altivec -DALTIVEC \
 			-DGCC_COMPILER @FLAG_M32@

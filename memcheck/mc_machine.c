@@ -511,11 +511,7 @@ static Int get_otrack_shadow_offset_wrk ( Int offset, Int szB )
    if (o == GOF(FTOP)     && szB == 4) return -1;
    if (o == GOF(FPROUND)  && szB == 8) return -1;
    if (o == GOF(EMWARN)   && szB == 4) return -1;
-   /* The amd64 front end doesn't actually use FC3210.  It should
-      be done away with.
-      if (offset == offsetof(VexGuestAMD64State,guest_FC3210) && szB==4)
-        return -1;
-   */
+   if (o == GOF(FC3210)   && szB == 8) return -1;
 
    /* XMM registers */
    if (o >= GOF(XMM0)  && o+sz <= GOF(XMM0) +SZB(XMM0))  return GOF(XMM0);

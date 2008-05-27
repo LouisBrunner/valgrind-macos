@@ -27,7 +27,7 @@
 #include <unistd.h>
 #include <stdlib.h>
 #include <errno.h>
-
+#include "fdleak.h"
 
 char filea[24];
 char fileb[24];
@@ -179,12 +179,12 @@ main (int argc, char **argv)
 {
    int pid, status;
 
-   /*
-    * Fedora Core 1's Perl opens /dev/pts/2 as fd 10.  Let's close it
-    * now to get consistent results across different releases.
-    */
 
-   close(10);  close(4);
+
+
+
+
+   CLOSE_INHERITED_FDS;
 
    pid = getpid();
    sprintf(filea, "/tmp/data1.%d", pid);

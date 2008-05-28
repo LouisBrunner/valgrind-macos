@@ -85,7 +85,7 @@ static Bool rwlock_is_rdlocked(struct rwlock_info* p)
   struct rwlock_thread_info* q;
 
   VG_(OSetGen_ResetIter)(p->thread_info);
-  for ( ; (q = VG_(OSetGen_Next)(p->thread_info)); q++)
+  for ( ; (q = VG_(OSetGen_Next)(p->thread_info)) != 0; )
   {
     return q->reader_nesting_count > 0;
   }
@@ -97,7 +97,7 @@ static Bool rwlock_is_wrlocked(struct rwlock_info* p)
   struct rwlock_thread_info* q;
 
   VG_(OSetGen_ResetIter)(p->thread_info);
-  for ( ; (q = VG_(OSetGen_Next)(p->thread_info)); q++)
+  for ( ; (q = VG_(OSetGen_Next)(p->thread_info)) != 0; )
   {
     return q->writer_nesting_count > 0;
   }
@@ -213,7 +213,7 @@ static void rwlock_cleanup(struct rwlock_info* p)
   }
 
   VG_(OSetGen_ResetIter)(p->thread_info);
-  for ( ; (q = VG_(OSetGen_Next)(p->thread_info)); q++)
+  for ( ; (q = VG_(OSetGen_Next)(p->thread_info)) != 0; )
   {
     sg_put(q->last_unlock_segment);
   }
@@ -466,10 +466,10 @@ void rwlock_pre_unlock(const Addr rwlock)
 {
   const DrdThreadId drd_tid = thread_get_running_tid();
   const ThreadId vg_tid = VG_(get_running_tid)();
-  struct rwlock_info* const p = rwlock_get(rwlock);
+  struct rwlock_info* p;
   struct rwlock_thread_info* q;
 
-  if (s_trace_rwlock && p != 0)
+  if (s_trace_rwlock)
   {
     VG_(message)(Vg_UserMsg,
                  "[%d/%d] rwlock_unlock      0x%lx",
@@ -478,7 +478,18 @@ void rwlock_pre_unlock(const Addr rwlock)
                  rwlock);
   }
 
-  if (p == 0 || ! rwlock_is_locked_by(p, drd_tid))
+  p = rwlock_get(rwlock);
+  if (p == 0)
+  {
+    GenericErrInfo GEI;
+    VG_(maybe_record_error)(VG_(get_running_tid)(),
+                            GenericErr,
+                            VG_(get_IP)(VG_(get_running_tid)()),
+                            "Not a reader-writer lock",
+                            &GEI);
+    return;
+  }
+  if (! rwlock_is_locked_by(p, drd_tid))
   {
     RwlockErrInfo REI = { p->a1 };
     VG_(maybe_record_error)(vg_tid,
@@ -488,7 +499,6 @@ void rwlock_pre_unlock(const Addr rwlock)
                             &REI);
     return;
   }
-  tl_assert(p);
   q = lookup_or_insert_node(p->thread_info, drd_tid);
   tl_assert(q);
   if (q->reader_nesting_count > 0)

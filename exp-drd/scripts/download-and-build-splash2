@@ -2,6 +2,14 @@
 
 downloads="$HOME/software/downloads"
 
+if [ ! -e /usr/include/tiffio.h ]; then
+  echo "Error: could not find file tiffio.h. Please install libtiff4-dev."
+fi
+
+export LC_ALL=C
+
+mkdir -p "${downloads}"
+
 if [ -e splash2 ]; then
   echo "Error: a directory with the name splash2 already exists. Please"
   echo "remove it before running this script, or run this script in another"
@@ -70,6 +78,13 @@ patch -p1 -s <<EOF
 diff -ru orig/splash2/codes/Makefile.config splash2/codes/Makefile.config
 --- orig/splash2/codes/Makefile.config	2008-05-25 10:38:52.000000000 +0200
 +++ splash2/codes/Makefile.config	2008-05-25 10:14:25.000000000 +0200
+@@ -1,5 +1,5 @@
+ CC := gcc
+-CFLAGS := -O3 -pthread -D_POSIX_C_SOURCE=200112
++CFLAGS := -g3 -O3 -pthread -D_POSIX_C_SOURCE=200112
+ #CFLAGS := -g3 -pthread -D_POSIX_C_SOURCE=200112
+ CFLAGS := \$(CFLAGS) -Wall -W -Wmissing-prototypes -Wmissing-declarations -Wredundant-decls -Wdisabled-optimization
+ CFLAGS := \$(CFLAGS) -Wpadded -Winline -Wpointer-arith -Wsign-compare -Wendif-labels
 @@ -5,8 +5,8 @@
  CFLAGS := \$(CFLAGS) -Wpadded -Winline -Wpointer-arith -Wsign-compare -Wendif-labels
  LDFLAGS := -lm

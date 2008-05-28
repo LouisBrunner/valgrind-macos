@@ -1741,7 +1741,7 @@ PRE(sys_timerfd_create)
    if (linux_kernel_2_6_22())
    {
       /* 2.6.22 kernel: timerfd system call. */
-      PRINT("sys_timerfd ( %d, %d, %p )", (int)ARG1, ARG2, ARG3);
+      PRINT("sys_timerfd ( %d, %d, %p )", ARG1, ARG2, ARG3);
       PRE_REG_READ3(long, "sys_timerfd",
                     int, fd, int, clockid, const struct itimerspec *, tmr);
       PRE_MEM_READ("timerfd(tmr)", ARG3,
@@ -2377,7 +2377,7 @@ POST(sys_sigprocmask)
 
 PRE(sys_signalfd)
 {
-   PRINT("sys_signalfd ( %d, %p, %llu )", (int)ARG1, ARG2, (ULong) ARG3);
+   PRINT("sys_signalfd ( %d, %p, %llu )", ARG1, ARG2, (ULong) ARG3);
    PRE_REG_READ3(long, "sys_signalfd",
                  int, fd, vki_sigset_t *, sigmask, vki_size_t, sigsetsize);
    PRE_MEM_READ( "signalfd(sigmask)", ARG2, sizeof(vki_sigset_t) );

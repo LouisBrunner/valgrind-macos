@@ -1713,48 +1713,48 @@ PRE(sys_timer_delete)
    See also /usr/src/linux/fs/timerfd.c for the implementation.
    ------------------------------------------------------------------ */
 
-static int linux_kernel_2_6_22(void)
+/* Returns True if running on 2.6.22, else False (or False if
+   cannot be determined). */
+static Bool linux_kernel_2_6_22(void)
 {
-  static int result = -1;
-  Int fd, read;
-  char release[64];
-  SysRes res;
+   static Int result = -1;
+   Int fd, read;
+   HChar release[64];
+   SysRes res;
 
-  if (result == -1)
-  {
-    res = VG_(open)("/proc/sys/kernel/osrelease", 0, 0);
-    vg_assert(! res.isError);
-    fd = res.res;
-    read = VG_(read)(fd, release, sizeof(release) - 1);
-    vg_assert(read >= 0);
-    release[read] = 0;
-    VG_(close)(fd);
-    //VG_(printf)("kernel release = %s\n", release);
-    result = (VG_(strncmp)(release, "2.6.22", 6) == 0
-              && (release[6] < '0' || release[6] > '9'));
-  }
-  return result;
+   if (result == -1) {
+      res = VG_(open)("/proc/sys/kernel/osrelease", 0, 0);
+      if (res.isError)
+         return False;
+      fd = res.res;
+      read = VG_(read)(fd, release, sizeof(release) - 1);
+      vg_assert(read >= 0);
+      release[read] = 0;
+      VG_(close)(fd);
+      //VG_(printf)("kernel release = %s\n", release);
+      result = (VG_(strncmp)(release, "2.6.22", 6) == 0
+                && (release[6] < '0' || release[6] > '9'));
+   }
+   vg_assert(result == 0 || result == 1);
+   return result == 1;
 }
 
 PRE(sys_timerfd_create)
 {
-   if (linux_kernel_2_6_22())
-   {
+   if (linux_kernel_2_6_22()) {
       /* 2.6.22 kernel: timerfd system call. */
-      PRINT("sys_timerfd ( %d, %d, %p )", ARG1, ARG2, ARG3);
+      PRINT("sys_timerfd ( %ld, %ld, %p )", ARG1, ARG2, ARG3);
       PRE_REG_READ3(long, "sys_timerfd",
                     int, fd, int, clockid, const struct itimerspec *, tmr);
       PRE_MEM_READ("timerfd(tmr)", ARG3,
                    sizeof(struct vki_itimerspec) );
-      if ((int)ARG1 != -1 && !ML_(fd_allowed)(ARG1, "timerfd", tid, False))
+      if ((Word)ARG1 != -1L && !ML_(fd_allowed)(ARG1, "timerfd", tid, False))
          SET_STATUS_Failure( VKI_EBADF );
-  }
-  else
-  {
+   } else {
       /* 2.6.24 and later kernels: timerfd_create system call. */
-     PRINT("sys_timerfd_create (%d, %d )", ARG1, ARG2);
-     PRE_REG_READ2(long, "timerfd_create", int, clockid, int, flags);
-  }
+      PRINT("sys_timerfd_create (%ld, %ld )", ARG1, ARG2);
+      PRE_REG_READ2(long, "timerfd_create", int, clockid, int, flags);
+   }
 }
 POST(sys_timerfd_create)
 {
@@ -2377,7 +2377,7 @@ POST(sys_sigprocmask)
 
 PRE(sys_signalfd)
 {
-   PRINT("sys_signalfd ( %d, %p, %llu )", ARG1, ARG2, (ULong) ARG3);
+   PRINT("sys_signalfd ( %ld, %p, %llu )", ARG1, ARG2, (ULong) ARG3);
    PRE_REG_READ3(long, "sys_signalfd",
                  int, fd, vki_sigset_t *, sigmask, vki_size_t, sigsetsize);
    PRE_MEM_READ( "signalfd(sigmask)", ARG2, sizeof(vki_sigset_t) );

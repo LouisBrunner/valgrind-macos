@@ -1557,7 +1557,7 @@ static X86RI* iselIntExpr_RI ( ISelEnv* env, IRExpr* e )
    switch (ri->tag) {
       case Xri_Imm:
          return ri;
-      case Xrmi_Reg:
+      case Xri_Reg:
          vassert(hregClass(ri->Xri.Reg.reg) == HRcInt32);
          vassert(hregIsVirtual(ri->Xri.Reg.reg));
          return ri;

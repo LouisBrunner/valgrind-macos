@@ -1968,7 +1968,7 @@ static AMD64RI* iselIntExpr_RI ( ISelEnv* env, IRExpr* e )
    switch (ri->tag) {
       case Ari_Imm:
          return ri;
-      case Armi_Reg:
+      case Ari_Reg:
          vassert(hregClass(ri->Ari.Reg.reg) == HRcInt64);
          vassert(hregIsVirtual(ri->Ari.Reg.reg));
          return ri;

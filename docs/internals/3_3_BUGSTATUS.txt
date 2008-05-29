@@ -174,8 +174,12 @@ vx1826  vx1842    Vfd  161378  illegal opcode in debug libm (FUCOMPP)
 
 r8065/8 r8069     Mgd  161487  number of suppressions files is limited to 10
 
-r7361   r7362     Mgd  n-i-bz  ms_print broken for --time-unit=ms
+r7361   r7362     Mgd  162386  ms_print typo in milliseconds time unit for
+                               massif
 
 r7895   r8063     Mgd  161036  exp-drd: client allocated memory was never freed
 
 r8092   pending    33  n-i-bz  libmpiwrap.c: add a wrapper for MPI_Waitany
+
+r8154   r8155     Mgd  n-i-bz  Massif/Cachegrind output corruption when
+                               programs fork

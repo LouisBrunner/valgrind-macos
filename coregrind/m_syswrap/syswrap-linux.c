@@ -2377,7 +2377,7 @@ POST(sys_sigprocmask)
 
 PRE(sys_signalfd)
 {
-   PRINT("sys_signalfd ( %ld, %p, %llu )", ARG1, ARG2, (ULong) ARG3);
+   PRINT("sys_signalfd ( %d, %p, %llu )", (Int)ARG1, ARG2, (ULong) ARG3);
    PRE_REG_READ3(long, "sys_signalfd",
                  int, fd, vki_sigset_t *, sigmask, vki_size_t, sigsetsize);
    PRE_MEM_READ( "signalfd(sigmask)", ARG2, sizeof(vki_sigset_t) );

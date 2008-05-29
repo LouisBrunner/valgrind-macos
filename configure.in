@@ -469,6 +469,16 @@ AC_EGREP_CPP([GLIBC_27], [
 ],
 libc="2.7")
 
+AC_EGREP_CPP([GLIBC_28], [
+#include <features.h>
+#ifdef __GNU_LIBRARY__
+ #if (__GLIBC__ == 2 && __GLIBC_MINOR__ == 8)
+  GLIBC_28
+ #endif
+#endif
+],
+libc="2.8")
+
 AC_EGREP_CPP([AIX5_LIBC], [
 #include <standards.h>
 #if defined(_AIXVERSION_510) || defined(_AIXVERSION_520) || defined(_AIXVERSION_530)
@@ -517,6 +527,12 @@ case "${libc}" in
 	AC_MSG_RESULT(2.7 family)
 	AC_DEFINE([GLIBC_2_7], 1, [Define to 1 if you're using glibc 2.7.x])
 	DEFAULT_SUPP="glibc-2.7.supp ${DEFAULT_SUPP}"
+	DEFAULT_SUPP="glibc-2.34567-NPTL-helgrind.supp ${DEFAULT_SUPP}"
+	;;
+     2.8)
+	AC_MSG_RESULT(2.8 family)
+	AC_DEFINE([GLIBC_2_8], 1, [Define to 1 if you're using glibc 2.8.x])
+	DEFAULT_SUPP="glibc-2.8.supp ${DEFAULT_SUPP}"
 	DEFAULT_SUPP="glibc-2.34567-NPTL-helgrind.supp ${DEFAULT_SUPP}"
 	;;
      aix5)

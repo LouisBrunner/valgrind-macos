@@ -820,6 +820,19 @@ way as for C/C++ programs.</para>
 
 </sect2>
 
+<sect2 id="ms-manual.forkingprograms" xreflabel="Forking Programs">
+<title>Forking Programs</title>
+<para>If your program forks, the child will inherit all the profiling data that
+has been gathered for the parent.</para>
+
+<para>If the output file format string (controlled by
+<option>--cachegrind-out-file</option>) does not contain <option>%p</option>,
+then the outputs from the parent and child will be intermingled in a single
+output file, which will almost certainly make it unreadable by
+cg_annotate.</para>
+</sect2>
+
+
 </sect1>
 
 

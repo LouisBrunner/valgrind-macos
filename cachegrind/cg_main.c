@@ -1256,15 +1256,20 @@ static CacheCC  Dw_total;
 static BranchCC Bc_total;
 static BranchCC Bi_total;
 
-// The output file name.  Controlled by --cachegrind-out-file.
-static Char* cachegrind_out_file = NULL;
-
 static void fprint_CC_table_and_calc_totals(void)
 {
    Int     i, fd;
    SysRes  sres;
    Char    buf[512], *currFile = NULL, *currFn = NULL;
    LineCC* lineCC;
+
+   // Setup output filename.  Nb: it's important to do this now, ie. as late
+   // as possible.  If we do it at start-up and the program forks and the
+   // output file format string contains a %p (pid) specifier, both the
+   // parent and child will incorrectly write to the same file;  this
+   // happened in 3.3.0.
+   Char* cachegrind_out_file =
+      VG_(expand_file_name)("--cachegrind-out-file", clo_cachegrind_out_file);
 
    sres = VG_(open)(cachegrind_out_file, VKI_O_CREAT|VKI_O_TRUNC|VKI_O_WRONLY,
                                          VKI_S_IRUSR|VKI_S_IWUSR);
@@ -1276,9 +1281,11 @@ static void fprint_CC_table_and_calc_totals(void)
          cachegrind_out_file );
       VG_(message)(Vg_UserMsg,
          "       ... so simulation results will be missing.");
+      VG_(free)(cachegrind_out_file);
       return;
    } else {
       fd = sres.res;
+      VG_(free)(cachegrind_out_file);
    }
 
    // "desc:" lines (giving I1/D1/L2 cache configuration).  The spaces after
@@ -1751,10 +1758,6 @@ static void cg_post_clo_init(void)
                    "You must select cache profiling, or branch profiling, or both.");
       VG_(exit)(2);
    }
-
-   // Setup output filename.
-   cachegrind_out_file =
-      VG_(expand_file_name)("--cachegrind-out-file", clo_cachegrind_out_file);
 
    CC_table =
       VG_(OSetGen_Create)(offsetof(LineCC, loc),

@@ -554,7 +554,7 @@ void VG_(machine_ppc32_set_clszB)( Int szB )
    vg_assert(vai.ppc_cache_line_szB == 0
              || vai.ppc_cache_line_szB == szB);
 
-   vg_assert(szB == 32 || szB == 128);
+   vg_assert(szB == 32 || szB == 64 || szB == 128);
    vai.ppc_cache_line_szB = szB;
 }
 #endif
@@ -572,7 +572,7 @@ void VG_(machine_ppc64_set_clszB)( Int szB )
    vg_assert(vai.ppc_cache_line_szB == 0
              || vai.ppc_cache_line_szB == szB);
 
-   vg_assert(szB == 32 || szB == 128);
+   vg_assert(szB == 32 || szB == 64 || szB == 128);
    vai.ppc_cache_line_szB = szB;
 }
 #endif

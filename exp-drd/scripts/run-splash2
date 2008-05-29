@@ -1,0 +1,70 @@
+#!/bin/bash
+
+########################
+# Function definitions #
+########################
+
+# Read a stream of numbers from stdin (one per line), and print the average
+# and standard deviation.
+function avgstddev {
+  awk '{n++;sum+=$1;sumsq+=$1*$1}END{print sum/n,sqrt(sumsq/n-sum*sum/n/n)}'
+}
+
+function run_test {
+  local tmp avg1=1 stddev1=1 avg2=1 stddev2=1
+
+  tmp="/tmp/test-timing.$$"
+  echo "$@"
+  for ((i=0;i<3;i++))
+  do
+    /usr/bin/time --format="%e" "$@" 2>&1 | tail -n 1
+  done | avgstddev > "$tmp"
+  read avg1 stddev1 < "$tmp"
+  echo "Average time: ${avg1} +/- ${stddev1} seconds"
+
+  echo "$VG --tool=exp-drd $@"
+  for ((i=0;i<3;i++))
+  do
+    /usr/bin/time --format="%e" $VG --tool=exp-drd "$@" 2>&1 | tail -n 1
+  done | avgstddev > "$tmp"
+  read avg2 stddev2 < "$tmp"
+  echo "Average time: ${avg2} +/- ${stddev2} seconds"
+
+  awk "END{print "'"'"Ratio ="'"'", ${avg2}/${avg1}, "'"'"+/-"'"'", ${avg2}/${avg1}*(${stddev1}/${avg1}+${stddev2}/${avg2})}" </dev/null
+
+  echo ''
+
+  rm -f "$tmp"
+}
+
+
+# Script body
+
+if [ ! -e splash2 ]; then
+  echo "Error: splash2 directory not found."
+  exit 1
+fi
+
+if [ "$VG" = "" ]; then
+  VG=../vg-in-place
+fi
+
+if [ ! -e "$VG" ]; then
+  echo "Could not find $VG."
+  exit 1
+fi
+
+# run_test splash2/codes/apps/barnes/BARNES
+
+# lu, contiguous blocks: slowdown about 41 (-p1 -n1024). ITC: 230.
+run_test splash2/codes/kernels/lu/contiguous_blocks/LU -p1 -n1024
+run_test splash2/codes/kernels/lu/contiguous_blocks/LU -p2 -n1024
+
+# lu, non-contiguous blocks: slowdown about 37 (-p1 -n1024). ITC: 230.
+run_test splash2/codes/kernels/lu/non_contiguous_blocks/LU -p1 -n1024
+run_test splash2/codes/kernels/lu/non_contiguous_blocks/LU -p2 -n1024
+
+# radiosity: slowdown about 999 because of the large number of mutex operations.
+# ITC: 420.
+run_test splash2/codes/apps/radiosity/RADIOSITY -p1 -batch -room
+run_test splash2/codes/apps/radiosity/RADIOSITY -p2 -batch -room

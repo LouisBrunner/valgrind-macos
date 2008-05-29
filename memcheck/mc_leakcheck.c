@@ -692,10 +692,22 @@ void MC_(do_detect_memory_leaks) (
       tl_assert( lc_shadows[i]->data <= lc_shadows[i+1]->data);
    }
 
-   /* Sanity check -- make sure they don't overlap */
+   /* Sanity check -- make sure they don't overlap.  But do allow
+      exact duplicates.  If this assertion fails, it may mean that the
+      application has done something stupid with
+      VALGRIND_MALLOCLIKE_BLOCK client requests, specifically, has
+      made overlapping requests (which are nonsensical).  Another way
+      to screw up is to use VALGRIND_MALLOCLIKE_BLOCK for stack
+      locations; again nonsensical. */
    for (i = 0; i < lc_n_shadows-1; i++) {
-      tl_assert( lc_shadows[i]->data + lc_shadows[i]->szB
-                 <= lc_shadows[i+1]->data );
+      tl_assert( /* normal case - no overlap */
+                 (lc_shadows[i]->data + lc_shadows[i]->szB
+                  <= lc_shadows[i+1]->data )
+                 ||
+                 /* degenerate case: exact duplicates */
+                 (lc_shadows[i]->data == lc_shadows[i+1]->data
+                  && lc_shadows[i]->szB == lc_shadows[i+1]->szB)
+               );
    }
 
    if (lc_n_shadows == 0) {

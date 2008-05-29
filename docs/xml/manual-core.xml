@@ -714,7 +714,8 @@ categories.</para>
       <para><option>%p</option> is replaced with the current process ID.
       This is very useful for program that invoke multiple processes.
       WARNING: If you use <option>--trace-children=yes</option> and your
-      program invokes multiple processes and you don't use this specifier
+      program invokes multiple processes OR your program forks without
+      calling exec afterwards, and you don't use this specifier
       (or the <option>%q</option> specifier below), the Valgrind output from
       all those processes will go into one file, possibly jumbled up, and
       possibly incomplete.</para>

@@ -494,10 +494,21 @@ responsible for more than 1% of useful memory bytes, and ms_print likewise
 only prints the details for code locations responsible for more than 1%.
 The entries that do not meet this threshold are aggregated.  This avoids
 filling up the output with large numbers of unimportant entries.  The
-thresholds threshold can be changed with the
+thresholds can be changed with the
 <computeroutput>--threshold</computeroutput> option that both Massif and
 ms_print support.</para>
 
+</sect2>
+
+<sect2 id="ms-manual.forkingprograms" xreflabel="Forking Programs">
+<title>Forking Programs</title>
+<para>If your program forks, the child will inherit all the profiling data that
+has been gathered for the parent.</para>
+
+<para>If the output file format string (controlled by
+<option>--massif-out-file</option>) does not contain <option>%p</option>, then
+the outputs from the parent and child will be intermingled in a single output
+file, which will almost certainly make it unreadable by ms_print.</para>
 </sect2>
 
 </sect1>

@@ -5638,7 +5638,7 @@ PRE(sys_utimes)
    PRE_REG_READ2(long, "utimes", char *, filename, struct timeval *, tvp);
    PRE_MEM_RASCIIZ( "utimes(filename)", ARG1 );
    if (ARG2 != 0)
-      PRE_MEM_READ( "utimes(tvp)", ARG2, sizeof(struct vki_timeval) );
+      PRE_MEM_READ( "utimes(tvp)", ARG2, 2 * sizeof(struct vki_timeval) );
 }
 
 PRE(sys_acct)

@@ -1820,6 +1820,18 @@ const SyscallTableEntry ML_(syscall_table)[] = {
    LINX_(__NR_faccessat,         sys_faccessat),         // 298
    LINX_(__NR_set_robust_list,   sys_set_robust_list),   // 299
    LINXY(__NR_get_robust_list,   sys_get_robust_list),   // 300
+//   LINX_(__NR_move_pages,        sys_ni_syscall),        // 301
+//   LINX_(__NR_getcpu,            sys_ni_syscall),        // 302
+   LINXY(__NR_epoll_pwait,       sys_epoll_pwait),       // 303
+   LINX_(__NR_utimensat,         sys_utimensat),         // 304
+   LINXY(__NR_signalfd,          sys_signalfd),          // 305
+   LINXY(__NR_timerfd_create,    sys_timerfd_create),    // 306
+   LINX_(__NR_eventfd,           sys_eventfd),           // 307
+//   LINX_(__NR_sync_file_range2,   sys_ni_syscall),       // 308
+//   LINX_(__NR_fallocate,        sys_ni_syscall),         // 309
+//   LINXY(__NR_subpage_prot,       sys_ni_syscall),       // 310
+   LINXY(__NR_timerfd_settime,   sys_timerfd_settime),  // 311
+   LINXY(__NR_timerfd_gettime,   sys_timerfd_gettime),  // 312
 };
 
 const UInt ML_(syscall_table_size) = 

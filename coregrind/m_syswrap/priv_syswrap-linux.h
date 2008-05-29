@@ -82,6 +82,8 @@ DECL_TEMPLATE(linux, sys_ppoll);
 DECL_TEMPLATE(linux, sys_epoll_create);
 DECL_TEMPLATE(linux, sys_epoll_ctl);
 DECL_TEMPLATE(linux, sys_epoll_wait);
+DECL_TEMPLATE(linux, sys_epoll_pwait);
+DECL_TEMPLATE(linux, sys_eventfd);
 
 DECL_TEMPLATE(linux, sys_gettid);
 DECL_TEMPLATE(linux, sys_set_tid_address);
@@ -124,6 +126,11 @@ DECL_TEMPLATE(linux, sys_timer_settime);
 DECL_TEMPLATE(linux, sys_timer_gettime);
 DECL_TEMPLATE(linux, sys_timer_getoverrun);
 DECL_TEMPLATE(linux, sys_timer_delete);
+DECL_TEMPLATE(linux, sys_timerfd_create);
+DECL_TEMPLATE(linux, sys_timerfd_gettime);
+DECL_TEMPLATE(linux, sys_timerfd_settime);
+
+DECL_TEMPLATE(linux, sys_signalfd);
 
 DECL_TEMPLATE(linux, sys_capget);
 DECL_TEMPLATE(linux, sys_capset);

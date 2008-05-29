@@ -1502,7 +1502,7 @@ SizeT VG_(arena_payload_szB) ( ThreadId tid, ArenaId aid, void* ptr )
 // client request.  So instead we use a pointer to do call by reference.
 void VG_(mallinfo) ( ThreadId tid, struct vg_mallinfo* mi )
 {
-   UInt   i, free_blocks, free_blocks_size;
+   UWord  i, free_blocks, free_blocks_size;
    Arena* a = arenaId_to_ArenaP(VG_AR_CLIENT);
 
    // Traverse free list and calculate free blocks statistics.
@@ -1513,7 +1513,7 @@ void VG_(mallinfo) ( ThreadId tid, struct vg_mallinfo* mi )
       if (b == NULL) continue;
       for (;;) {
          free_blocks++;
-         free_blocks_size += get_pszB(a, b);
+         free_blocks_size += (UWord)get_pszB(a, b);
          b = get_next_b(b);
          if (b == a->freelist[i]) break;
       }

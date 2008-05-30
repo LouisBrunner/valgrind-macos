@@ -7,7 +7,7 @@
 # Read a stream of numbers from stdin (one per line), and print the average
 # and standard deviation.
 function avgstddev {
-  awk '{n++;sum+=$1;sumsq+=$1*$1}END{print sum/n,sqrt(sumsq/n-sum*sum/n/n)}'
+  awk '{n++;sum+=$1;sumsq+=$1*$1}END{d=sumsq/n-sum*sum/n/n;print sum/n,(d>0?sqrt(d):0)}'
 }
 
 function run_test {
@@ -54,17 +54,22 @@ if [ ! -e "$VG" ]; then
   exit 1
 fi
 
-# run_test splash2/codes/apps/barnes/BARNES
+# Results (-p1):             exp-drd (-p1) (-p2) (-p4) ITC (-p4)
+# lu, contiguous blocks:          39       43      46      420
+# lu, non-contiguous blocks:      34       41      48      420
+# radiosity:                      99                       490
 
-# lu, contiguous blocks: slowdown about 41 (-p1 -n1024). ITC: 230.
+# lu, contiguous blocks.
 run_test splash2/codes/kernels/lu/contiguous_blocks/LU -p1 -n1024
 run_test splash2/codes/kernels/lu/contiguous_blocks/LU -p2 -n1024
+run_test splash2/codes/kernels/lu/contiguous_blocks/LU -p4 -n1024
 
-# lu, non-contiguous blocks: slowdown about 37 (-p1 -n1024). ITC: 230.
+# lu, non-contiguous blocks.
 run_test splash2/codes/kernels/lu/non_contiguous_blocks/LU -p1 -n1024
 run_test splash2/codes/kernels/lu/non_contiguous_blocks/LU -p2 -n1024
+run_test splash2/codes/kernels/lu/non_contiguous_blocks/LU -p4 -n1024
 
-# radiosity: slowdown about 999 because of the large number of mutex operations.
-# ITC: 420.
+# radiosity.
 run_test splash2/codes/apps/radiosity/RADIOSITY -p1 -batch -room
 run_test splash2/codes/apps/radiosity/RADIOSITY -p2 -batch -room
+run_test splash2/codes/apps/radiosity/RADIOSITY -p4 -batch -room

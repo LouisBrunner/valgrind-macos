@@ -4,6 +4,7 @@ downloads="$HOME/software/downloads"
 
 if [ ! -e /usr/include/tiffio.h ]; then
   echo "Error: could not find file tiffio.h. Please install libtiff4-dev."
+  exit 1
 fi
 
 export LC_ALL=C

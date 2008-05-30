@@ -1475,7 +1475,7 @@ Bool ML_(read_elf_debug_info) ( struct _DebugInfo* di )
             di->gotplt_avma = di->rw_map_avma + foff - di->rw_map_foff;
             di->gotplt_size = size;
             TRACE_SYMTAB("acquiring .got.plt avma = %p\n", di->gotplt_avma);
-         } else {
+         } else if (size != 0) {
             BAD(".got.plt");
          }
       }

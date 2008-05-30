@@ -1335,7 +1335,15 @@ HInstrArray* doRegisterAllocation (
                EMIT_INSTR( (*genReload)( rreg_state[k].rreg,
                                          vreg_lrs[m].spill_offset,
                                          mode64 ) );
-               rreg_state[k].eq_spill_slot = True;
+               /* This rreg is read or modified by the instruction.
+                  If it's merely read we can claim it now equals the
+                  spill slot, but not so if it is modified. */
+               if (reg_usage.mode[j] == HRmRead) {
+                  rreg_state[k].eq_spill_slot = True;
+               } else {
+                  vassert(reg_usage.mode[j] == HRmModify);
+                  rreg_state[k].eq_spill_slot = False;
+               }
             } else {
                rreg_state[k].eq_spill_slot = False;
             }
@@ -1424,11 +1432,19 @@ HInstrArray* doRegisterAllocation (
             EMIT_INSTR( (*genReload)( rreg_state[spillee].rreg,
                                       vreg_lrs[m].spill_offset,
                                       mode64 ) );
-            rreg_state[spillee].eq_spill_slot = True;
+            /* This rreg is read or modified by the instruction.
+               If it's merely read we can claim it now equals the
+               spill slot, but not so if it is modified. */
+            if (reg_usage.mode[j] == HRmRead) {
+               rreg_state[spillee].eq_spill_slot = True;
+            } else {
+               vassert(reg_usage.mode[j] == HRmModify);
+               rreg_state[spillee].eq_spill_slot = False;
+            }
          }
 
          /* So after much twisting and turning, we have vreg mapped to
-            rreg_state[furthest_k].rreg.  Note that in the map. */
+            rreg_state[spillee].rreg.  Note that in the map. */
          addToHRegRemap(&remap, vreg, rreg_state[spillee].rreg);
 
       } /* iterate over registers in this instruction. */

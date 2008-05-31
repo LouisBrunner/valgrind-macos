@@ -21,8 +21,6 @@ Vfd fix has been verified on 3.3.X branch
 
 -- Last updated 9 May 08
 
-tidy up static int linux_kernel_2_6_22(void) (syswrap-linux.c)
-
 get rid of pointless constraint !(--db-attach=yes &&
 --trace-children=yes) (users, 14 feb)
 
@@ -105,6 +103,10 @@ NNN     (no info so far, probably a threading bug in client)
 
 --- end 8 May 08 ---
 
+--- start 28 May 08 ---
+
+--- end 28 May 08 ---
+
 r1816 (x86 CondNS after SUBB)
 r1817 (amd64 CondNS after SUBB)
 r1833 (both, CondNZ after SUBW)
@@ -129,7 +131,7 @@ r7334   r8078     Mgd  n-i-bz  handle sys_sysinfo, sys_getresuid,
 
 r7350   r8080     Mgd  n-i-bz  intercept memcpy in 64-bit ld.so's
 
-r8047   pending    33  n-i-bz  Fix wrappers for sys_{futimesat,utimensat}
+r8047   r8148     Mgd  n-i-bz  Fix wrappers for sys_{futimesat,utimensat}
 
 many    wontfix   Vfd   92456  Tracing the origin of uninitialised memory
 
@@ -163,11 +165,11 @@ r8049   r8086     Vfd  158425  sys_poll incorrectly emulated when RES==0
 vx1848  vx1849    Vfd  158744  vex amd64->IR: 0xF0 0x41 0xF 0xC0 (xaddb)
 
 r7917,8051 OR r7942,r7983,r8051
-        pending    33  160907  Support for a couple of recent Linux syscalls
+        r8148     Mgd  160907  Support for a couple of recent Linux syscalls
 
 r7888   pending    33  160956  PATCH: mallinfo implementation
 
-r7917   pending    33  161285  Patch -- support for eventfd() syscall
+r7917   r8148     Mgd  161285  Patch -- support for eventfd() syscall
 
 vx1826  vx1842    Vfd  161378  illegal opcode in debug libm (FUCOMPP)
                        == 160136
@@ -179,7 +181,16 @@ r7361   r7362     Mgd  162386  ms_print typo in milliseconds time unit for
 
 r7895   r8063     Mgd  161036  exp-drd: client allocated memory was never freed
 
-r8092   pending    33  n-i-bz  libmpiwrap.c: add a wrapper for MPI_Waitany
+r8092   r8143     Mgd  n-i-bz  libmpiwrap.c: add a wrapper for MPI_Waitany
+
+r8140   r8145     Mgd  n-i-bz  helgrind support for glibc-2.8
+
+r8144   r8146     Vfd  n-i-bz  partial fix for mc_leakcheck.c:698 assert:
+                               'lc_shadows[i]->data + lc_shadows[i] ...
+
+various r8148     Mgd  162663  signalfd_wrapper fails on 64bit linux
 
 r8154   r8155     Mgd  n-i-bz  Massif/Cachegrind output corruption when
                                programs fork
+
+vx1853  vx1854     33  n-i-bz  regalloc: don't incorrectly omit spill stores

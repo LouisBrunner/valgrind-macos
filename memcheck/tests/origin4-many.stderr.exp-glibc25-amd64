@@ -1,3 +1,51 @@
+Conditional jump or move depends on uninitialised value(s)
+   at 0x........: main (origin4-many.c:51)
+ Uninitialised value was created by a heap allocation
+   at 0x........: malloc (vg_replace_malloc.c:...)
+   by 0x........: main (origin4-many.c:32)
+
+Conditional jump or move depends on uninitialised value(s)
+   at 0x........: main (origin4-many.c:52)
+ Uninitialised value was created by a heap allocation
+   at 0x........: malloc (vg_replace_malloc.c:...)
+   by 0x........: main (origin4-many.c:33)
+
+Conditional jump or move depends on uninitialised value(s)
+   at 0x........: main (origin4-many.c:53)
+ Uninitialised value was created by a heap allocation
+   at 0x........: malloc (vg_replace_malloc.c:...)
+   by 0x........: main (origin4-many.c:34)
+
+Conditional jump or move depends on uninitialised value(s)
+   at 0x........: main (origin4-many.c:54)
+ Uninitialised value was created by a heap allocation
+   at 0x........: malloc (vg_replace_malloc.c:...)
+   by 0x........: main (origin4-many.c:35)
+
+Conditional jump or move depends on uninitialised value(s)
+   at 0x........: main (origin4-many.c:55)
+ Uninitialised value was created by a heap allocation
+   at 0x........: malloc (vg_replace_malloc.c:...)
+   by 0x........: main (origin4-many.c:36)
+
+Conditional jump or move depends on uninitialised value(s)
+   at 0x........: main (origin4-many.c:56)
+ Uninitialised value was created by a heap allocation
+   at 0x........: malloc (vg_replace_malloc.c:...)
+   by 0x........: main (origin4-many.c:37)
+
+Conditional jump or move depends on uninitialised value(s)
+   at 0x........: main (origin4-many.c:57)
+ Uninitialised value was created by a heap allocation
+   at 0x........: malloc (vg_replace_malloc.c:...)
+   by 0x........: main (origin4-many.c:38)
+
+Conditional jump or move depends on uninitialised value(s)
+   at 0x........: main (origin4-many.c:58)
+ Uninitialised value was created by a heap allocation
+   at 0x........: malloc (vg_replace_malloc.c:...)
+   by 0x........: main (origin4-many.c:39)
+
 Syscall param exit_group(exit_code) contains uninitialised byte(s)
    at 0x........: _Exit (in /...libc...)
    by 0x........: ...

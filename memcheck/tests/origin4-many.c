@@ -1,16 +1,15 @@
 
 /* This test case was originally written by Nicholas Nethercote. */
 
-// (old comments)
-// This file tests how many possible origins can be tracked for a single
-// error.
-// XXX: other files don't need to do have multiple origins for errors now,
-//      thanks to this test...
-// (end of old comments)
 
-/* When compiled -O, this produces an executable which reports a
-   single uninitialised value error, on the value handed to the exit()
-   system call.  Fair enough.
+
+
+/* For 'x', we get an uninitialised error for every addition to it.  For
+   each one we get one origin identified, even though most of them involve
+   more than one undefined value. */
+
+/* For 'y', we get a single uninitialised value error, on the value handed
+   to the exit() system call.  Fair enough.
 
    An important question is: which of the origins is reported in the
    error?  Well, considering that (1) m_execontext allocates ECUs
@@ -24,6 +23,7 @@
 #include <stdio.h>
 
 static int x = 0;
+static int y = 0;
 
 int main(void)
 {
@@ -46,14 +46,25 @@ int main(void)
    int  ui7 = *p_ui7;
    int  ui8 = *p_ui8;
 
-   x += (ui1                                    == 0x12345678 ? 12 : 23);
-   x += (ui1 +ui2                               == 0x12345678 ? 13 : 24);
-   x += (ui1 +ui2 +ui3                          == 0x12345678 ? 14 : 25);
-   x += (ui1 +ui2 +ui3 +ui4                     == 0x12345678 ? 15 : 26);
-   x += (ui1 +ui2 +ui3 +ui4 +ui5                == 0x12345678 ? 16 : 27);
-   x += (ui1 +ui2 +ui3 +ui4 +ui5 +ui6           == 0x12345678 ? 17 : 28);
-   x += (ui1 +ui2 +ui3 +ui4 +ui5 +ui6 +ui7      == 0x12345678 ? 18 : 29);
-   x += (ui1 +ui2 +ui3 +ui4 +ui5 +ui6 +ui7 +ui8 == 0x12345678 ? 19 : 30);
+#define P   printf("huh?")
 
-   return x & 1;
+   x += (ui1                                    == 0x12345678 ? P : 23);
+   x += (ui1 +ui2                               == 0x12345678 ? P : 24);
+   x += (ui1 +ui2 +ui3                          == 0x12345678 ? P : 25);
+   x += (ui1 +ui2 +ui3 +ui4                     == 0x12345678 ? P : 26);
+   x += (ui1 +ui2 +ui3 +ui4 +ui5                == 0x12345678 ? P : 27);
+   x += (ui1 +ui2 +ui3 +ui4 +ui5 +ui6           == 0x12345678 ? P : 28);
+   x += (ui1 +ui2 +ui3 +ui4 +ui5 +ui6 +ui7      == 0x12345678 ? P : 29);
+   x += (ui1 +ui2 +ui3 +ui4 +ui5 +ui6 +ui7 +ui8 == 0x12345678 ? P : 30);
+
+   y += (ui1                                   );
+   y += (ui1 +ui2                              );
+   y += (ui1 +ui2 +ui3                         );
+   y += (ui1 +ui2 +ui3 +ui4                    );
+   y += (ui1 +ui2 +ui3 +ui4 +ui5               );
+   y += (ui1 +ui2 +ui3 +ui4 +ui5 +ui6          );
+   y += (ui1 +ui2 +ui3 +ui4 +ui5 +ui6 +ui7     );
+   y += (ui1 +ui2 +ui3 +ui4 +ui5 +ui6 +ui7 +ui8);
+
+   return y & 1;
 }

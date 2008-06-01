@@ -1,59 +1,74 @@
 
 Undef 1 of 8 (8 bit undef)
 Conditional jump or move depends on uninitialised value(s)
-   at 0x........: main (origin3-no.c:24)
+   at 0x........: t1 (origin3-no.c:45)
+   by 0x........: main (origin3-no.c:28)
  Uninitialised value was created by a heap allocation
    at 0x........: malloc (vg_replace_malloc.c:...)
-   by 0x........: main (origin3-no.c:21)
+   by 0x........: t1 (origin3-no.c:42)
+   by 0x........: main (origin3-no.c:28)
 
 Undef 2 of 8 (8 bits of 32 undef)
 
 Conditional jump or move depends on uninitialised value(s)
-   at 0x........: main (origin3-no.c:33)
+   at 0x........: t2 (origin3-no.c:55)
+   by 0x........: main (origin3-no.c:29)
  Uninitialised value was created by a stack allocation
-   at 0x........: main (origin3-no.c:15)
+   at 0x........: t2 (origin3-no.c:49)
 
 Undef 3 of 8 (32 bit undef)
 
 Conditional jump or move depends on uninitialised value(s)
-   at 0x........: main (origin3-no.c:42)
+   at 0x........: t3 (origin3-no.c:65)
+   by 0x........: main (origin3-no.c:30)
  Uninitialised value was created by a heap allocation
    at 0x........: malloc (vg_replace_malloc.c:...)
-   by 0x........: main (origin3-no.c:39)
+   by 0x........: t3 (origin3-no.c:62)
+   by 0x........: main (origin3-no.c:30)
 
 Undef 4 of 8 (32 bit undef, unaligned)
 
 Conditional jump or move depends on uninitialised value(s)
-   at 0x........: main (origin3-no.c:50)
+   at 0x........: t4 (origin3-no.c:74)
+   by 0x........: main (origin3-no.c:31)
  Uninitialised value was created by a heap allocation
    at 0x........: malloc (vg_replace_malloc.c:...)
-   by 0x........: main (origin3-no.c:47)
+   by 0x........: t4 (origin3-no.c:71)
+   by 0x........: main (origin3-no.c:31)
 
 Undef 5 of 8 (32 bit undef, modified)
 
 Conditional jump or move depends on uninitialised value(s)
-   at 0x........: main (origin3-no.c:59)
+   at 0x........: t5 (origin3-no.c:84)
+   by 0x........: main (origin3-no.c:32)
  Uninitialised value was created by a heap allocation
    at 0x........: malloc (vg_replace_malloc.c:...)
-   by 0x........: main (origin3-no.c:55)
+   by 0x........: t5 (origin3-no.c:80)
+   by 0x........: main (origin3-no.c:32)
 
 Undef 6 of 8 (32 bit undef, unaligned, strange, #1)
 
 Conditional jump or move depends on uninitialised value(s)
-   at 0x........: main (origin3-no.c:78)
+   at 0x........: t6 (origin3-no.c:107)
+   by 0x........: main (origin3-no.c:33)
  Uninitialised value was created by a client request
-   at 0x........: main (origin3-no.c:75)
+   at 0x........: t6 (origin3-no.c:104)
+   by 0x........: main (origin3-no.c:33)
 
 Undef 7 of 8 (32 bit undef, unaligned, strange, #2)
 
 Conditional jump or move depends on uninitialised value(s)
-   at 0x........: main (origin3-no.c:80)
+   at 0x........: t6 (origin3-no.c:109)
+   by 0x........: main (origin3-no.c:33)
  Uninitialised value was created by a client request
-   at 0x........: main (origin3-no.c:76)
+   at 0x........: t6 (origin3-no.c:105)
+   by 0x........: main (origin3-no.c:33)
 
 Undef 8 of 8 (32 bit undef, unaligned, strange, #3)
 
 Conditional jump or move depends on uninitialised value(s)
-   at 0x........: main (origin3-no.c:82)
+   at 0x........: t6 (origin3-no.c:111)
+   by 0x........: main (origin3-no.c:33)
  Uninitialised value was created by a client request
-   at 0x........: main (origin3-no.c:76)
+   at 0x........: t6 (origin3-no.c:105)
+   by 0x........: main (origin3-no.c:33)

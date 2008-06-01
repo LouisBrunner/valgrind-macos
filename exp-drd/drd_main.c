@@ -884,7 +884,7 @@ void drd_post_clo_init(void)
 {
 #  if defined(VGP_x86_linux) || defined(VGP_amd64_linux)
   /* fine */
-#  elif defined(VGP_ppc64_linux) || defined(VGP_ppc64_linux)
+#  elif defined(VGP_ppc32_linux) || defined(VGP_ppc64_linux)
   VG_(printf)(
 "\nWARNING: support for PowerPC-specific atomic instructions like lwarx and\n"
 "stwcx is not yet complete. As a result, false positives will be reported on\n"

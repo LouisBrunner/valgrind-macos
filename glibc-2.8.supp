@@ -22,36 +22,50 @@
 #     if Param: name of system call param
 
 {
-   dl-hack3-1
+   dl-hack3-cond-1
    Memcheck:Cond
    obj:/lib*/ld-2.8*.so*
    obj:/lib*/ld-2.8*.so*
    obj:/lib*/ld-2.8*.so*
 }
 {
-   dl-hack3-2
+   dl-hack3-cond-2
    Memcheck:Cond
    obj:/lib*/ld-2.8*.so*
    obj:/lib*/ld-2.8*.so*
    obj:/lib*/libc-2.8*.so*
 }
+{
+   dl-hack3-cond-3
+   Memcheck:Cond
+   obj:/lib*/ld-2.8*.so*
+   obj:/lib*/libc-2.8*.so*
+   obj:/lib*/libc-2.8*.so*
+}
+{
+   dl-hack3-cond-4
+   Memcheck:Cond
+   obj:/lib*/ld-2.8*.so*
+   obj:/lib*/ld-2.8*.so*
+   obj:/lib*/libdl-2.8*.so*
+}
 
 {
-   dl-hack4-64bit-1
+   dl-hack4-64bit-addr-1
    Memcheck:Addr8
    obj:/lib64/ld-2.8*.so*
    obj:/lib64/ld-2.8*.so*
    obj:/lib64/ld-2.8*.so*
 }
 {
-   dl-hack4-64bit-2
+   dl-hack4-64bit-addr-2
    Memcheck:Addr8
    obj:/lib64/ld-2.8*.so*
    obj:/lib64/ld-2.8*.so*
    obj:/lib64/libc-2.8*.so*
 }
 {
-   dl-hack4-64bit-3
+   dl-hack4-64bit-addr-3
    Memcheck:Addr8
    obj:/lib64/ld-2.8*.so*
    obj:/lib64/ld-2.8*.so*
@@ -59,9 +73,23 @@
 }
 
 {
-   glibc-2.8-on-SUSE-10.3-(x86)
+   dl-hack5-32bit-addr-1
    Memcheck:Addr4
    obj:/lib/ld-2.8*.so
    obj:/lib/ld-2.8*.so
+   obj:/lib/ld-2.8*.so
+}
+{
+   dl-hack5-32bit-addr-3
+   Memcheck:Addr4
+   obj:/lib/ld-2.8*.so
+   obj:/lib/ld-2.8*.so
+   obj:/lib/libdl-2.8*.so*
+}
+{
+   dl-hack5-32bit-addr-4
+   Memcheck:Addr4
+   obj:/lib/ld-2.8*.so
+   obj:/lib/libdl-2.8*.so*
    obj:/lib/ld-2.8*.so
 }

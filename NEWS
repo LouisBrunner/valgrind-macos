@@ -5,6 +5,11 @@ Release 3.3.1 (2 June 2008)
 systems (openSUSE 11, Fedora Core 9), and adds support for the SSSE3
 (Core 2) instruction set.
 
+3.3.1 will likely be the last release that supports some very old
+systems.  In particular, the next major release, 3.4.0, will drop
+support for the old LinuxThreads threading library, and for gcc
+versions prior to 3.0.
+
 The fixed bugs are as follows.  Note that "n-i-bz" stands for "not in
 bugzilla" -- that is, a bug that was reported to us but never got a
 bugzilla entry.  We encourage you to file bugs in bugzilla
@@ -51,7 +56,7 @@ n-i-bz  regalloc: don't incorrectly omit spill stores
 161036  exp-drd: client allocated memory was never freed
 162663  signalfd_wrapper fails on 64bit linux
 
-(3.3.1.RC1:  30 May 2008, vex r1854, valgrind r81XX (62?)).
+(3.3.1.RC1:  1 June 2008, vex r1854, valgrind r8168).
 
 
 Release 3.3.0 (7 December 2007)

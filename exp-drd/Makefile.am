@@ -21,9 +21,10 @@ if VGP_PPC64_AIX5
 endif
 
 if HAVE_OPENMP
-VGPRELOAD_DRD_SOURCES_COMMON = drd_pthread_intercepts.c drd_gomp_intercepts.c
+VGPRELOAD_DRD_SOURCES_COMMON = \
+  drd_strmem_intercepts.c drd_pthread_intercepts.c drd_gomp_intercepts.c
 else
-VGPRELOAD_DRD_SOURCES_COMMON = drd_pthread_intercepts.c
+VGPRELOAD_DRD_SOURCES_COMMON = drd_strmem_intercepts.c drd_pthread_intercepts.c
 endif
 
 DRD_CFLAGS=@FLAG_W_EXTRA@ @FLAG_UNLIMITED_INLINE_UNIT_GROWTH@ \

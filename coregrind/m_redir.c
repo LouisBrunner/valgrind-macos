@@ -222,7 +222,7 @@ typedef
       HChar* from_fnpatt;  /* from fnname pattern  */
       Addr   to_addr;      /* where redirecting to */
       Bool   isWrap;       /* wrap or replacement? */
-      HChar* mandatory;    /* non-NULL ==> abort V and print the
+      const HChar* mandatory; /* non-NULL ==> abort V and print the
                               string if from_sopatt is loaded but
                               from_fnpatt cannot be found */
       /* VARIABLE PARTS -- used transiently whilst processing redirections */
@@ -807,7 +807,7 @@ static void add_hardwired_active ( Addr from, Addr to )
 __attribute__((unused)) /* not used on all platforms */
 static void add_hardwired_spec ( HChar* sopatt, HChar* fnpatt, 
                                  Addr   to_addr,
-                                 HChar* mandatory )
+                                 const HChar* const mandatory )
 {
    Spec* spec = dinfo_zalloc(sizeof(Spec));
    vg_assert(spec);
@@ -878,12 +878,13 @@ void VG_(redir_initialise) ( void )
    );
 
 #  elif defined(VGP_ppc32_linux)
+   {
+   static const HChar croakage[]
+     = "Possible fix: install glibc's debuginfo package on this machine.";
+
    /* If we're using memcheck, use these intercepts right from
       the start, otherwise ld.so makes a lot of noise. */
    if (0==VG_(strcmp)("Memcheck", VG_(details).name)) {
-
-      static HChar* croakage = "Possible fix: install glibc's debuginfo "
-                               "package on this machine.";
 
       /* this is mandatory - can't sanely continue without it */
       add_hardwired_spec(
@@ -903,15 +904,26 @@ void VG_(redir_initialise) ( void )
          NULL /* not mandatory - so why bother at all? */
          /* glibc-2.6.1 (openSUSE 10.3, ppc32) seems fine without it */
       );
+   } else if (0 == VG_(strcmp)("exp-drd", VG_(details).name)) {
+      /* Only continue if symbol information in ld.so.1 is present,   */
+      /* because otherwise exp-drd's suppression patterns on ld.so do */
+      /* not have any effect.                                         */
+      add_hardwired_spec(
+         "ld.so.1", "strlen",
+         (Addr)(&VG_(ppc32_linux_REDIR_FOR_strlen)),
+         croakage
+      );
+   }
    }
 
 #  elif defined(VGP_ppc64_linux)
+   {
+   static const HChar croakage[]
+     = "Possible fix: install glibc's debuginfo package on this machine.";
+
    /* If we're using memcheck, use these intercepts right from
       the start, otherwise ld.so makes a lot of noise. */
    if (0==VG_(strcmp)("Memcheck", VG_(details).name)) {
-
-      static HChar* croakage = "Possible fix: install glibc's debuginfo "
-                               "package on this machine.";
 
       /* this is mandatory - can't sanely continue without it */
       add_hardwired_spec(
@@ -927,6 +939,16 @@ void VG_(redir_initialise) ( void )
          /* glibc-2.5 (FC6, ppc64) seems fine without it */
       );
 
+   } else if (0 == VG_(strcmp)("exp-drd", VG_(details).name)) {
+      /* Only continue if symbol information in ld64.so.1 is present, */
+      /* because otherwise exp-drd's suppression patterns on ld.so do */
+      /* not have any effect.                                         */
+      add_hardwired_spec(
+         "ld64.so.1", "strlen",
+         (Addr)VG_(fnptr_to_fnentry)( &VG_(ppc64_linux_REDIR_FOR_strlen) ),
+         croakage
+      );
+   }
    }
 
 #  elif defined(VGP_ppc32_aix5)

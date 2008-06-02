@@ -1,7 +1,7 @@
 DRD: a Data Race Detector
 =========================
 
-Last update: December 3, 2007 by Bart Van Assche.
+Last update: June 2, 2008 by Bart Van Assche.
 
 
 The Difficulty of Multithreading Programming
@@ -48,7 +48,7 @@ helgrind.
 
 How to use DRD
 --------------
-To use this tool, specify --tool=drd on the Valgrind command line.
+To use this tool, specify --tool=exp-drd on the Valgrind command line.
 
 
 Future DRD Versions

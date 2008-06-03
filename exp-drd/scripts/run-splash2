@@ -22,15 +22,17 @@ function run_test {
   read avg1 stddev1 < "$tmp"
   echo "Average time: ${avg1} +/- ${stddev1} seconds"
 
-  echo "$VG --tool=exp-drd $@"
-  for ((i=0;i<3;i++))
+  for ((p=1; p<=4; p++))
   do
-    /usr/bin/time --format="%e" $VG --tool=exp-drd "$@" 2>&1 | tail -n 1
-  done | avgstddev > "$tmp"
-  read avg2 stddev2 < "$tmp"
-  echo "Average time: ${avg2} +/- ${stddev2} seconds"
-
-  awk "END{print "'"'"Ratio ="'"'", ${avg2}/${avg1}, "'"'"+/-"'"'", ${avg2}/${avg1}*(${stddev1}/${avg1}+${stddev2}/${avg2})}" </dev/null
+    echo "$VG --tool=exp-drd $@ -p$p"
+    for ((i=0;i<3;i++))
+    do
+      /usr/bin/time --format="%e" $VG --tool=exp-drd "$@" -p$p 2>&1 | tail -n 1
+    done | avgstddev > "$tmp"
+    read avg2 stddev2 < "$tmp"
+    echo "Average time: ${avg2} +/- ${stddev2} seconds"
+    awk "END{print "'"'"Ratio ="'"'", ${avg2}/${avg1}, "'"'"+/-"'"'", ${avg2}/${avg1}*(${stddev1}/${avg1}+${stddev2}/${avg2})}" </dev/null
+  done
 
   echo ''
 
@@ -40,13 +42,14 @@ function run_test {
 
 # Script body
 
-if [ ! -e splash2 ]; then
-  echo "Error: splash2 directory not found."
+SPLASH2="$(dirname $0)/../splash2"
+if [ ! -e "${SPLASH2}" ]; then
+  echo "Error: splash2 directory not found (${SPLASH2})."
   exit 1
 fi
 
 if [ "$VG" = "" ]; then
-  VG=../vg-in-place
+  VG="$(dirname $0)/../../vg-in-place"
 fi
 
 if [ ! -e "$VG" ]; then
@@ -54,22 +57,21 @@ if [ ! -e "$VG" ]; then
   exit 1
 fi
 
-# Results (-p1):             exp-drd (-p1) (-p2) (-p4) ITC (-p4)
-# lu, contiguous blocks:          39       43      46      420
-# lu, non-contiguous blocks:      34       41      48      420
-# radiosity:                      99                       490
+# Results:                      (-p1) (-p2) (-p3) (-p4) ITC (-p4)
+# lu, contiguous blocks:          40    48    53    55      420
+# lu, non-contiguous blocks:      37    47    55    58      420
+# radiosity:                      99    99    99    99      490
 
 # lu, contiguous blocks.
-run_test splash2/codes/kernels/lu/contiguous_blocks/LU -p1 -n1024
-run_test splash2/codes/kernels/lu/contiguous_blocks/LU -p2 -n1024
-run_test splash2/codes/kernels/lu/contiguous_blocks/LU -p4 -n1024
+run_test ${SPLASH2}/codes/kernels/lu/contiguous_blocks/LU -n1024
 
 # lu, non-contiguous blocks.
-run_test splash2/codes/kernels/lu/non_contiguous_blocks/LU -p1 -n1024
-run_test splash2/codes/kernels/lu/non_contiguous_blocks/LU -p2 -n1024
-run_test splash2/codes/kernels/lu/non_contiguous_blocks/LU -p4 -n1024
+run_test ${SPLASH2}/codes/kernels/lu/non_contiguous_blocks/LU -n1024
 
 # radiosity.
-run_test splash2/codes/apps/radiosity/RADIOSITY -p1 -batch -room
-run_test splash2/codes/apps/radiosity/RADIOSITY -p2 -batch -room
-run_test splash2/codes/apps/radiosity/RADIOSITY -p4 -batch -room
+run_test ${SPLASH2}/codes/apps/radiosity/RADIOSITY -batch -room
+
+
+# Local variables:
+# compile-command: "./run-splash2"
+# End:

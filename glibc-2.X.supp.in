@@ -3,6 +3,9 @@
 
 # Errors to suppress by default with glibc @GLIBC_VERSION@.x
 
+# IMPORTANT: DO NOT EDIT glibc-2.X.supp, as it is as a generated
+# file.  Instead edit glibc-2.X.supp.in.
+
 # Format of this file is:
 # {
 #     name_of_suppression
@@ -23,61 +26,86 @@
 # and the optional extra info is:
 #     if Param: name of system call param
 
-{
-   dl-hack1
-   Memcheck:Cond
-   fun:_dl_start
-   fun:_start
-}
+##----------------------------------------------------------------------##
+##--- generic suppressions                                           ---##
+##----------------------------------------------------------------------##
 
 {
-   dl-hack2
-   Memcheck:Cond
-   obj:/lib*/ld-@GLIBC_VERSION@*.so
-   obj:/lib*/ld-@GLIBC_VERSION@*.so
-   obj:/lib*/ld-@GLIBC_VERSION@*.so
-   obj:/lib*/ld-@GLIBC_VERSION@*.so
-}
-
-{
-   dl-hack3-1
+   dl-hack3-cond-1
    Memcheck:Cond
    obj:/lib*/ld-@GLIBC_VERSION@*.so*
    obj:/lib*/ld-@GLIBC_VERSION@*.so*
    obj:/lib*/ld-@GLIBC_VERSION@*.so*
 }
 {
-   dl-hack3-2
+   dl-hack3-cond-2
    Memcheck:Cond
    obj:/lib*/ld-@GLIBC_VERSION@*.so*
    obj:/lib*/ld-@GLIBC_VERSION@*.so*
    obj:/lib*/libc-@GLIBC_VERSION@*.so*
 }
-
 {
-   dl-hack4-64bit-1
-   Memcheck:Addr8
-   obj:/lib64/ld-@GLIBC_VERSION@*.so*
-   obj:/lib64/ld-@GLIBC_VERSION@*.so*
-   obj:/lib64/ld-@GLIBC_VERSION@*.so*
+   dl-hack3-cond-3
+   Memcheck:Cond
+   obj:/lib*/ld-@GLIBC_VERSION@*.so*
+   obj:/lib*/libc-@GLIBC_VERSION@*.so*
+   obj:/lib*/libc-@GLIBC_VERSION@*.so*
 }
 {
-   dl-hack4-64bit-2
+   dl-hack3-cond-4
+   Memcheck:Cond
+   obj:/lib*/ld-@GLIBC_VERSION@*.so*
+   obj:/lib*/ld-@GLIBC_VERSION@*.so*
+   obj:/lib*/libdl-@GLIBC_VERSION@*.so*
+}
+
+{
+   dl-hack4-64bit-addr-1
    Memcheck:Addr8
-   obj:/lib64/ld-@GLIBC_VERSION@*.so*
-   obj:/lib64/ld-@GLIBC_VERSION@*.so*
-   obj:/lib64/libc-@GLIBC_VERSION@*.so*
+   obj:/lib*/ld-@GLIBC_VERSION@*.so*
+   obj:/lib*/ld-@GLIBC_VERSION@*.so*
+   obj:/lib*/ld-@GLIBC_VERSION@*.so*
 }
 {
-   dl-hack4-64bit-3
+   dl-hack4-64bit-addr-2
    Memcheck:Addr8
-   obj:/lib64/ld-@GLIBC_VERSION@*.so*
-   obj:/lib64/ld-@GLIBC_VERSION@*.so*
-   obj:/lib64/libdl-@GLIBC_VERSION@*.so*
+   obj:/lib*/ld-@GLIBC_VERSION@*.so*
+   obj:/lib*/ld-@GLIBC_VERSION@*.so*
+   obj:/lib*/libc-@GLIBC_VERSION@*.so*
+}
+{
+   dl-hack4-64bit-addr-3
+   Memcheck:Addr8
+   obj:/lib*/ld-@GLIBC_VERSION@*.so*
+   obj:/lib*/ld-@GLIBC_VERSION@*.so*
+   obj:/lib*/libdl-@GLIBC_VERSION@*.so*
+}
+
+{
+   dl-hack5-32bit-addr-1
+   Memcheck:Addr4
+   obj:/lib*/ld-@GLIBC_VERSION@*.so
+   obj:/lib*/ld-@GLIBC_VERSION@*.so
+   obj:/lib*/ld-@GLIBC_VERSION@*.so
+}
+{
+   dl-hack5-32bit-addr-3
+   Memcheck:Addr4
+   obj:/lib*/ld-@GLIBC_VERSION@*.so
+   obj:/lib*/ld-@GLIBC_VERSION@*.so
+   obj:/lib*/libdl-@GLIBC_VERSION@*.so*
+}
+{
+   dl-hack5-32bit-addr-4
+   Memcheck:Addr4
+   obj:/lib*/ld-@GLIBC_VERSION@*.so
+   obj:/lib*/libdl-@GLIBC_VERSION@*.so*
+   obj:/lib*/ld-@GLIBC_VERSION@*.so
 }
 
 
-
+##----------------------------------------------------------------------##
+##--- Misc ad-hoc hacks                                              ---##
 ##----------------------------------------------------------------------##
 {
    glibc-2.5.x-on-SUSE-10.2-(PPC)-1

@@ -214,7 +214,39 @@
    fun:_XSend
 }
 
-
+{
+   X on SUSE11 writev uninit padding
+   Memcheck:Param
+   writev(vector[...])
+   fun:writev
+   obj:/usr/lib*/libxcb.so*
+   obj:/usr/lib*/libxcb.so*
+}
+{
+   X on SUSE11 writev uninit padding 2
+   Memcheck:Param
+   writev(vector[...])
+   obj:/lib*/ld-2.*.so*
+   obj:/usr/lib*/libxcb.so*
+   obj:/usr/lib*/libxcb.so*
+}
+{
+   X on SUSE11 writev uninit padding 3
+   Memcheck:Param
+   writev(vector[...])
+   obj:/lib*/ld-2.*.so*
+   obj:/usr/lib*/libORBit*.so*
+   obj:/usr/lib*/libORBit*.so*
+}
+{
+   X on SUSE11 writev uninit padding 4
+   Memcheck:Param
+   writev(vector[...])
+   obj:/lib*/libc-2.*.so*
+   obj:/usr/lib*/libORBit*.so*
+   obj:/usr/lib*/libORBit*.so*
+}
+ 
 
 # There's something strange about a % 127 in XftFontOpenInfo
 # (hashing) which gcc turns into a multiply by 33818641 and

@@ -43,17 +43,21 @@ function run_test {
   echo "$@"
   for ((i=0;i<3;i++))
   do
-    /usr/bin/time --format="%e" "$@" 2>&1 | tail -n 1
+    cat "${test_input:-/dev/null}" | \
+      /usr/bin/time --format="%e" "$@" 2>&1 | \
+      tail -n 1
   done | avgstddev > "$tmp"
   read avg1 stddev1 < "$tmp"
   echo "Average time: ${avg1} +/- ${stddev1} seconds"
 
-  for ((p=1; p<=4; p++))
+  for p in 1 2 4
   do
     echo "$VG --tool=exp-drd $@ -p$p"
     for ((i=0;i<3;i++))
     do
-      /usr/bin/time --format="%e" $VG --tool=exp-drd "$@" -p$p 2>&1 | tail -n 1
+      cat "${test_input:-/dev/null}" | \
+        /usr/bin/time --format="%e" $VG --tool=exp-drd "$@" -p$p 2>&1 | \
+        tail -n 1
     done | avgstddev > "$tmp"
     read avg2 stddev2 < "$tmp"
     echo "Average time: ${avg2} +/- ${stddev2} seconds"
@@ -92,33 +96,32 @@ fi
 #                                                        original w/ filter
 # .........................................................................
 # Cholesky                        46    59    75    92      239      82
-# FFT                             15                         90      41
+# FFT                             15    19   N/A    47       90      41
 # LU, contiguous blocks           40    48    53    55      428     128
 # LU, non-contiguous blocks       37    47    55    58      428     128
-# Ocean                                                      90      28
+# Ocean, contiguous partitions    20    26   N/A    32       90      28
+# Ocean, non-continguous partns   19    24   N/A    34       90      28
 # Radiosity                       99    99    99    99      485     163
-# Radix                                                     222      56
-# Raytrace                                                  172      53
-# Water-n2                                                  189      39
-# Water-sp                                                  183      34
+# Radix                           11    15     ?    17      222      56
+# Raytrace                        75    75     ?    75      172      53
+# Water-n2                       290   290     ?   290      189      39
+# Water-sp                       288   288     ?   287      183      34
 
 cache_size=$(get_cache_size)
 log2_cache_size=$(log2 ${cache_size})
 
 # Cholesky
-if false; then
 (
-  cd ${SPLASH2}/codes/kernels/cholesky
-  if [ ! -e inputs/tk29.O ]; then
-    gzip -cd < inputs/tk29.O.Z > inputs/tk29.O
-  fi
-  run_test ./CHOLESKY -C${cache_size} -n1024 inputs/tk29.O
+  cd ${SPLASH2}/codes/kernels/cholesky/inputs
+  for f in *Z
+  do
+    gzip -cd <$f >${f%.Z}
+  done
+  run_test ../CHOLESKY -C${cache_size} -n1024 tk29.O
 )
-fi
 
 # FFT
-run_test ${SPLASH2}/codes/kernels/fft/FFT -l${log2_cache_size} -m$((2**28))
-exit 1
+run_test ${SPLASH2}/codes/kernels/fft/FFT -t -l${log2_cache_size} -m20
 
 # LU, contiguous blocks.
 run_test ${SPLASH2}/codes/kernels/lu/contiguous_blocks/LU -n1024
@@ -126,8 +129,40 @@ run_test ${SPLASH2}/codes/kernels/lu/contiguous_blocks/LU -n1024
 # LU, non-contiguous blocks.
 run_test ${SPLASH2}/codes/kernels/lu/non_contiguous_blocks/LU -n1024
 
+# Ocean
+run_test ${SPLASH2}/codes/apps/ocean/contiguous_partitions/OCEAN -n2050
+run_test ${SPLASH2}/codes/apps/ocean/non_contiguous_partitions/OCEAN -n258
+
 # Radiosity.
 run_test ${SPLASH2}/codes/apps/radiosity/RADIOSITY -batch -room
+
+# Radix
+run_test ${SPLASH2}/codes/kernels/radix/RADIX -n$((2**24))
+
+# Raytrace
+(
+  cd ${SPLASH2}/codes/apps/raytrace/inputs
+  rm -f *.env *.geo *.rl
+  for f in *Z
+  do
+    gzip -cd <$f >${f%.Z}
+  done
+  run_test ../RAYTRACE balls4.env
+)
+run_test ${SPLASH2}/codes/apps/radiosity/RADIOSITY -batch -room
+
+# Water-n2
+rm -f water-n2-input
+echo "1.5e-16 32768 3 6 -1 3000 3 0 1 6.212752" > water-n2-input
+test_input=water-n2-input \
+  run_test ${SPLASH2}/codes/apps/water-nsquared/WATER-NSQUARED
+
+# Water-sp
+rm -f water-sp-input
+echo "1.5e-16 32768 3 6 -1 3000 3 0 1 6.212752" > water-sp-input
+test_input=water-sp-input \
+  run_test ${SPLASH2}/codes/apps/water-nsquared/WATER-NSQUARED
+
 
 
 # Local variables:

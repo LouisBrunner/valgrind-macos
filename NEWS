@@ -5,6 +5,70 @@ Changes include:
 - SSE3 insns now supported.  Changed CPUID output to be Core-2, so now it
   claims to be a Core 2 E6600.
 
+
+Release 3.3.1 (4 June 2008)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
+3.3.1 fixes a bunch of bugs in 3.3.0, adds support for glibc-2.8 based
+systems (openSUSE 11, Fedora Core 9), improves the existing glibc-2.7
+support, and adds support for the SSSE3 (Core 2) instruction set.
+
+3.3.1 will likely be the last release that supports some very old
+systems.  In particular, the next major release, 3.4.0, will drop
+support for the old LinuxThreads threading library, and for gcc
+versions prior to 3.0.
+
+The fixed bugs are as follows.  Note that "n-i-bz" stands for "not in
+bugzilla" -- that is, a bug that was reported to us but never got a
+bugzilla entry.  We encourage you to file bugs in bugzilla
+(http://bugs.kde.org/enter_valgrind_bug.cgi) rather than mailing the
+developers (or mailing lists) directly -- bugs that are not entered
+into bugzilla tend to get forgotten about or ignored.
+
+n-i-bz  Massif segfaults at exit
+n-i-bz  Memcheck asserts on Altivec code
+n-i-bz  fix sizeof bug in Helgrind
+n-i-bz  check fd on sys_llseek
+n-i-bz  update syscall lists to kernel 2.6.23.1
+n-i-bz  support sys_sync_file_range
+n-i-bz  handle sys_sysinfo, sys_getresuid, sys_getresgid on ppc64-linux
+n-i-bz  intercept memcpy in 64-bit ld.so's
+n-i-bz  Fix wrappers for sys_{futimesat,utimensat}
+n-i-bz  Minor false-error avoidance fixes for Memcheck
+n-i-bz  libmpiwrap.c: add a wrapper for MPI_Waitany
+n-i-bz  helgrind support for glibc-2.8
+n-i-bz  partial fix for mc_leakcheck.c:698 assert:
+        'lc_shadows[i]->data + lc_shadows[i] ...
+n-i-bz  Massif/Cachegrind output corruption when programs fork
+n-i-bz  register allocator fix: handle spill stores correctly
+n-i-bz  add support for PA6T PowerPC CPUs
+126389  vex x86->IR: 0xF 0xAE (FXRSTOR)
+158525  ==126389
+152818  vex x86->IR: 0xF3 0xAC (repz lodsb) 
+153196  vex x86->IR: 0xF2 0xA6 (repnz cmpsb) 
+155011  vex x86->IR: 0xCF (iret)
+155091  Warning [...] unhandled DW_OP_ opcode 0x23
+156960  ==155901
+155528  support Core2/SSSE3 insns on x86/amd64
+155929  ms_print fails on massif outputs containing long lines
+157665  valgrind fails on shmdt(0) after shmat to 0
+157748  support x86 PUSHFW/POPFW
+158212  helgrind: handle pthread_rwlock_try{rd,wr}lock.
+158425  sys_poll incorrectly emulated when RES==0
+158744  vex amd64->IR: 0xF0 0x41 0xF 0xC0 (xaddb)
+160907  Support for a couple of recent Linux syscalls
+161285  Patch -- support for eventfd() syscall
+161378  illegal opcode in debug libm (FUCOMPP)
+160136  ==161378
+161487  number of suppressions files is limited to 10
+162386  ms_print typo in milliseconds time unit for massif
+161036  exp-drd: client allocated memory was never freed
+162663  signalfd_wrapper fails on 64bit linux
+
+(3.3.1.RC1:  2 June 2008, vex r1854, valgrind r8169).
+(3.3.1:      4 June 2008, vex r1854, valgrind r8180).
+
+
+
 Release 3.3.0 (7 December 2007)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 3.3.0 is a feature release with many significant improvements and the

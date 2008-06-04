@@ -1,22 +1,27 @@
 
 Undef 1 of 3 (64-bit FP)
 Conditional jump or move depends on uninitialised value(s)
-   at 0x........: main (origin2-not-quite.c:26)
+   at 0x........: t1 (origin2-not-quite.c:38)
+   by 0x........: main (origin2-not-quite.c:25)
  Uninitialised value was created by a heap allocation
    at 0x........: malloc (vg_replace_malloc.c:...)
-   by 0x........: main (origin2-not-quite.c:23)
+   by 0x........: t1 (origin2-not-quite.c:35)
+   by 0x........: main (origin2-not-quite.c:25)
 
 Undef 2 of 3 (32-bit FP)
 
 Conditional jump or move depends on uninitialised value(s)
-   at 0x........: main (origin2-not-quite.c:34)
+   at 0x........: t2 (origin2-not-quite.c:47)
+   by 0x........: main (origin2-not-quite.c:26)
  Uninitialised value was created by a heap allocation
    at 0x........: malloc (vg_replace_malloc.c:...)
-   by 0x........: main (origin2-not-quite.c:31)
+   by 0x........: t2 (origin2-not-quite.c:44)
+   by 0x........: main (origin2-not-quite.c:26)
 
 Undef 3 of 3 (int)
 
 Conditional jump or move depends on uninitialised value(s)
-   at 0x........: main (origin2-not-quite.c:45)
+   at 0x........: t3 (origin2-not-quite.c:59)
+   by 0x........: main (origin2-not-quite.c:27)
  Uninitialised value was created by a stack allocation
-   at 0x........: main (origin2-not-quite.c:17)
+   at 0x........: t3 (origin2-not-quite.c:51)

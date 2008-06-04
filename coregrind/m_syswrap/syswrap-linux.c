@@ -2275,13 +2275,14 @@ POST(sys_waitid)
 
 PRE(sys_sync_file_range)
 {
-  PRINT("sys_sync_file_range ( %d, %lld, %lld, %d )",
-	ARG1,ARG2,ARG3,ARG4);
-  PRE_REG_READ4(long, "sync_file_range",
-		int, fd, vki_loff_t, offset, vki_loff_t, nbytes,
-		unsigned int, flags);
-  if (!ML_(fd_allowed)(ARG1, "sync_file_range", tid, False))
-     SET_STATUS_Failure( VKI_EBADF );
+   *flags |= SfMayBlock;
+   PRINT("sys_sync_file_range ( %d, %lld, %lld, %d )",
+         ARG1,ARG2,ARG3,ARG4);
+   PRE_REG_READ4(long, "sync_file_range",
+                 int, fd, vki_loff_t, offset, vki_loff_t, nbytes,
+                 unsigned int, flags);
+   if (!ML_(fd_allowed)(ARG1, "sync_file_range", tid, False))
+      SET_STATUS_Failure( VKI_EBADF );
 }
 
 /* ---------------------------------------------------------------------

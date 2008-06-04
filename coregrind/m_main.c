@@ -719,6 +719,47 @@ static Bool main_process_cmd_line_options( UInt* client_auxv,
    return (log_to == VgLogTo_Fd);
 }
 
+// Write the name and value of log file qualifiers to the xml file.
+static void print_file_vars(Char* format)
+{
+   Int i = 0;
+   
+   while (format[i]) {
+      if (format[i] == '%') {
+         // We saw a '%'.  What's next...
+         i++;
+	 if ('q' == format[i]) {
+            i++;
+            if ('{' == format[i]) {
+	       // Get the env var name, print its contents.
+	       Char* qualname;
+               Char* qual;
+               i++;
+               qualname = &format[i];
+               while (True) {
+		  if ('}' == format[i]) {
+                     // Temporarily replace the '}' with NUL to extract var
+                     // name.
+		     format[i] = 0;
+                     qual = VG_(getenv)(qualname);
+		     break;
+                  }
+                  i++;
+               }
+
+	       VG_(message)(Vg_UserMsg, "<logfilequalifier> <var>%t</var> "
+			    "<value>%t</value> </logfilequalifier>",
+			    qualname,qual);
+	       format[i] = '}';
+	       i++;
+	    }
+         }
+      } else {
+	 i++;
+      }
+   }
+}
+
 
 /*====================================================================*/
 /*=== Printing the preamble                                        ===*/
@@ -813,16 +854,7 @@ static void print_preamble(Bool logging_to_fd, const char* toolname)
       VG_(message)(Vg_UserMsg, "<pid>%d</pid>", VG_(getpid)());
       VG_(message)(Vg_UserMsg, "<ppid>%d</ppid>", VG_(getppid)());
       VG_(message)(Vg_UserMsg, "<tool>%t</tool>", toolname);
-// [This was made obsolete by the --log-file change in 3.3.0.  But
-// I'm leaving it here (commented out) in case it needs to be reinstated in
-// some way --njn]
-//      if (VG_(clo_log_file_qualifier)) {
-//         HChar* val = VG_(getenv)(VG_(clo_log_file_qualifier));
-//         VG_(message)(Vg_UserMsg, "<logfilequalifier> <var>%t</var> "
-//                                  "<value>%t</value> </logfilequalifier>",
-//                                  VG_(clo_log_file_qualifier),
-//                                  val ? val : "");
-//      }
+      print_file_vars(VG_(clo_log_name));
       if (VG_(clo_xml_user_comment)) {
          /* Note: the user comment itself is XML and is therefore to
             be passed through verbatim (%s) rather than escaped

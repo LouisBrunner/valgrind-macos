@@ -115,8 +115,7 @@ PROTOCOL for version 3
 ----------------------
 Changes in 3.4.X (tentative): (jrs, 1 March 2008)
 
-* There may be more than one <logfilequalifier> clause, depending on
-  how this pans out.  (AshleyP perhaps to investigate)
+* There may be more than one <logfilequalifier> clause.
 
 * Some errors may have two <auxwhat> blocks, rather than just one
   (resulting from merge of the DATASYMS branch)

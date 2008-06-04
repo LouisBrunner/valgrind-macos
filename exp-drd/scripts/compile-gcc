@@ -1,0 +1,52 @@
+#!/bin/sh
+
+# Make sure that libgmp and libmpfr are installed before you run this script.
+# On Debian systems, e.g. Ubuntu, you can install these libraries as follows:
+# sudo apt-get install libgmp3-dev libmpfr-dev. In openSUSE these packages
+# are called gmp-devel and mpfr-devel.
+
+
+GCC_VERSION=4.3.0
+FSF_MIRROR=ftp://ftp.easynet.be/gnu
+SRCDIR=$HOME/software
+DOWNLOADS=$SRCDIR/downloads
+SRC=$HOME/software/gcc-${GCC_VERSION}
+BUILD=${SRC}-build
+TAR=gcc-${GCC_VERSION}.tar.bz2
+PREFIX=$HOME/gcc-${GCC_VERSION}
+
+if [ ! -e /usr/include/gmp.h ]; then
+  echo "Please install the gmp library development package first."
+  exit 1
+fi
+
+if [ ! -e /usr/include/mpfr.h ]; then
+  echo "Please install the mpfr library development package first."
+  exit 1
+fi
+
+rm -rf   ${BUILD}     || exit $?
+rm -rf   ${PREFIX}    || exit $?
+mkdir -p ${BUILD}     || exit $?
+mkdir -p ${DOWNLOADS} || exit $?
+cd       ${BUILD}     || exit $?
+
+if [ ! -e $DOWNLOADS/$TAR ]; then
+  ( cd $DOWNLOADS && wget -q $FSF_MIRROR/gcc/gcc-${GCC_VERSION}/$TAR )
+fi
+
+if [ ! -e $SRC ]; then
+  ( cd $SRCDIR && tar -xjf $DOWNLOADS/$TAR )
+fi
+
+${SRC}/configure            \
+  --disable-linux-futex     \
+  --disable-mudflap         \
+  --disable-nls             \
+  --enable-languages=c,c++  \
+  --enable-threads=posix    \
+  --enable-tls              \
+  --prefix=$PREFIX
+
+make -s         || exit $?
+make -s install || exit $?

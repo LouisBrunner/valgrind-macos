@@ -353,50 +353,7 @@ function system-gcc { unset CC LD_LIBRARY_PATH; export CC LD_LIBRARY_PATH; }
 function my-gcc { export CC=$HOME/gcc-4.3.0/bin/gcc LD_LIBRARY_PATH=$HOME/gcc-4.3.0/lib64:; }
 EOF
 
-Recompiling gcc is possible with e.g. the following shell script:
-
----------------------------------------------------------------------------
-#!/bin/sh
-
-# Make sure that libgmp and libmpfr are installed before you run this script.
-# On Debian systems, e.g. Ubuntu, you can install these libraries as follows:
-# sudo apt-get install libgmp3-dev libmpfr-dev
-
-GCC_VERSION=4.3.0
-FSF_MIRROR=ftp://ftp.easynet.be/gnu
-SRCDIR=$HOME/software
-DOWNLOADS=$SRCDIR/downloads
-SRC=$HOME/software/gcc-${GCC_VERSION}
-BUILD=${SRC}-build
-TAR=gcc-${GCC_VERSION}.tar.bz2
-PREFIX=$HOME/gcc-${GCC_VERSION}
-
-rm -rf   ${BUILD}     || exit $?
-rm -rf   ${PREFIX}    || exit $?
-mkdir -p ${BUILD}     || exit $?
-mkdir -p ${DOWNLOADS} || exit $?
-cd       ${BUILD}     || exit $?
-
-if [ ! -e $DOWNLOADS/$TAR ]; then
-  ( cd $DOWNLOADS && wget -q $FSF_MIRROR/gcc/gcc-${GCC_VERSION}/$TAR )
-fi
-
-if [ ! -e $SRC ]; then
-  ( cd $SRCDIR && tar -xjf $DOWNLOADS/$TAR )
-fi
-
-${SRC}/configure            \
-  --disable-linux-futex     \
-  --disable-mudflap         \
-  --disable-nls             \
-  --enable-languages=c,c++  \
-  --enable-threads=posix    \
-  --enable-tls              \
-  --prefix=$PREFIX
-
-make -s         || exit $?
-make -s install || exit $?
----------------------------------------------------------------------------
+For an example of how to recompile gcc, see also the script exp-drd/scripts/compile-gcc.
 
 
 Future DRD Versions
@@ -422,6 +379,11 @@ Julian Seward as regression tests for the Helgrind tool.
 
 I would also like to thank Michiel Ronsse for introducing me a long
 time ago to vector clocks and the JiTI and DIOTA projects.
+
+Thanks also to prof. David A. Bader and the Georgia Institute of
+Technology, its Sony-Toshiba-IBM Center of Competence, and the U.S.
+National Science Foundation for the use of Cell Broadband Engine
+resources in testing DRD on the PowerPC CPU architecture.
 
 
 References

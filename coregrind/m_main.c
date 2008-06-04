@@ -854,7 +854,8 @@ static void print_preamble(Bool logging_to_fd, const char* toolname)
       VG_(message)(Vg_UserMsg, "<pid>%d</pid>", VG_(getpid)());
       VG_(message)(Vg_UserMsg, "<ppid>%d</ppid>", VG_(getppid)());
       VG_(message)(Vg_UserMsg, "<tool>%t</tool>", toolname);
-      print_file_vars(VG_(clo_log_name));
+      if (VG_(clo_log_name))
+         print_file_vars(VG_(clo_log_name));
       if (VG_(clo_xml_user_comment)) {
          /* Note: the user comment itself is XML and is therefore to
             be passed through verbatim (%s) rather than escaped

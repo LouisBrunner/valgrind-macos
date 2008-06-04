@@ -5027,7 +5027,25 @@ UInt dis_FPU ( Bool* decode_ok, UChar sorb, Int delta )
             case 0xE0: /* FNSTSW %ax */
                DIP("fnstsw %%ax\n");
                /* Get the FPU status word value and dump it in %AX. */
-               putIReg(2, R_EAX, get_FPU_sw());
+               if (0) {
+                  /* The obvious thing to do is simply dump the 16-bit
+                     status word value in %AX.  However, due to a
+                     limitation in Memcheck's origin tracking
+                     machinery, this causes Memcheck not to track the
+                     origin of any undefinedness into %AH (only into
+                     %AL/%AX/%EAX), which means origins are lost in
+                     the sequence "fnstsw %ax; test $M,%ah; jcond .." */
+                  putIReg(2, R_EAX, get_FPU_sw());
+               } else {
+                  /* So a somewhat lame kludge is to make it very
+                     clear to Memcheck that the value is written to
+                     both %AH and %AL.  This generates marginally
+                     worse code, but I don't think it matters much. */
+                  IRTemp t16 = newTemp(Ity_I16);
+                  assign(t16, get_FPU_sw());
+                  putIReg( 1, R_AL, unop(Iop_16to8, mkexpr(t16)) );
+                  putIReg( 1, R_AH, unop(Iop_16HIto8, mkexpr(t16)) );
+               }
                break;
 
             case 0xE8 ... 0xEF: /* FUCOMIP %st(0),%st(?) */

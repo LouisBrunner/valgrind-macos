@@ -122,6 +122,18 @@ VectorClock* thread_get_vc(const DrdThreadId tid);
 void thread_get_latest_segment(Segment** sg, const DrdThreadId tid);
 void thread_combine_vc(const DrdThreadId joiner, const DrdThreadId joinee);
 void thread_combine_vc2(const DrdThreadId tid, const VectorClock* const vc);
+
+Bool bm_access_load_1_triggers_conflict(const Addr a1);
+Bool bm_access_load_2_triggers_conflict(const Addr a1);
+Bool bm_access_load_4_triggers_conflict(const Addr a1);
+Bool bm_access_load_8_triggers_conflict(const Addr a1);
+Bool bm_access_load_triggers_conflict(const Addr a1, const Addr a2);
+Bool bm_access_store_1_triggers_conflict(const Addr a1);
+Bool bm_access_store_2_triggers_conflict(const Addr a1);
+Bool bm_access_store_4_triggers_conflict(const Addr a1);
+Bool bm_access_store_8_triggers_conflict(const Addr a1);
+Bool bm_access_store_triggers_conflict(const Addr a1, const Addr a2);
+
 void thread_stop_using_mem(const Addr a1, const Addr a2);
 void thread_start_recording(const DrdThreadId tid);
 void thread_stop_recording(const DrdThreadId tid);

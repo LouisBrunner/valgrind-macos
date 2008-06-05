@@ -740,6 +740,66 @@ void thread_combine_vc2(DrdThreadId tid, const VectorClock* const vc)
   s_danger_set_combine_vc_count++;
 }
 
+Bool bm_access_load_1_triggers_conflict(const Addr a1)
+{
+  bm_access_load_1(running_thread_get_segment()->bm, a1);
+  return bm_load_1_has_conflict_with(thread_get_danger_set(), a1);
+}
+
+Bool bm_access_load_2_triggers_conflict(const Addr a1)
+{
+  bm_access_load_2(running_thread_get_segment()->bm, a1);
+  return bm_load_2_has_conflict_with(thread_get_danger_set(), a1);
+}
+
+Bool bm_access_load_4_triggers_conflict(const Addr a1)
+{
+  bm_access_load_4(running_thread_get_segment()->bm, a1);
+  return bm_load_4_has_conflict_with(thread_get_danger_set(), a1);
+}
+
+Bool bm_access_load_8_triggers_conflict(const Addr a1)
+{
+  bm_access_load_8(running_thread_get_segment()->bm, a1);
+  return bm_load_8_has_conflict_with(thread_get_danger_set(), a1);
+}
+
+Bool bm_access_load_triggers_conflict(const Addr a1, const Addr a2)
+{
+  bm_access_range_load(running_thread_get_segment()->bm, a1, a2);
+  return bm_load_has_conflict_with(thread_get_danger_set(), a1, a2);
+}
+
+Bool bm_access_store_1_triggers_conflict(const Addr a1)
+{
+  bm_access_store_1(running_thread_get_segment()->bm, a1);
+  return bm_store_1_has_conflict_with(thread_get_danger_set(), a1);
+}
+
+Bool bm_access_store_2_triggers_conflict(const Addr a1)
+{
+  bm_access_store_2(running_thread_get_segment()->bm, a1);
+  return bm_store_2_has_conflict_with(thread_get_danger_set(), a1);
+}
+
+Bool bm_access_store_4_triggers_conflict(const Addr a1)
+{
+  bm_access_store_4(running_thread_get_segment()->bm, a1);
+  return bm_store_4_has_conflict_with(thread_get_danger_set(), a1);
+}
+
+Bool bm_access_store_8_triggers_conflict(const Addr a1)
+{
+  bm_access_store_8(running_thread_get_segment()->bm, a1);
+  return bm_store_8_has_conflict_with(thread_get_danger_set(), a1);
+}
+
+Bool bm_access_store_triggers_conflict(const Addr a1, const Addr a2)
+{
+  bm_access_range_store(running_thread_get_segment()->bm, a1, a2);
+  return bm_store_has_conflict_with(thread_get_danger_set(), a1, a2);
+}
+
 /** Call this function whenever a thread is no longer using the memory
  *  [ a1, a2 [, e.g. because of a call to free() or a stack pointer
  *  increase.

@@ -40,6 +40,8 @@ function run_test {
   local tmp avg1=1 stddev1=1 avg2=1 stddev2=1
 
   tmp="/tmp/test-timing.$$"
+  rm -f "${tmp}"
+
   echo "$@"
   for ((i=0;i<3;i++))
   do
@@ -104,8 +106,8 @@ fi
 # Radiosity                       99    99    99    99      485     163
 # Radix                           11    15     ?    17      222      56
 # Raytrace                        75    75     ?    75      172      53
-# Water-n2                       290   290     ?   290      189      39
-# Water-sp                       288   288     ?   287      183      34
+# Water-n2                        50    50     ?    50      189      39
+# Water-sp                        49    48     ?    49      183      34
 
 cache_size=$(get_cache_size)
 log2_cache_size=$(log2 ${cache_size})
@@ -149,19 +151,21 @@ run_test ${SPLASH2}/codes/kernels/radix/RADIX -n$((2**24))
   done
   run_test ../RAYTRACE balls4.env
 )
+
+# Radiosity
 run_test ${SPLASH2}/codes/apps/radiosity/RADIOSITY -batch -room
 
 # Water-n2
-rm -f water-n2-input
-echo "1.5e-16 32768 3 6 -1 3000 3 0 1 6.212752" > water-n2-input
-test_input=water-n2-input \
-  run_test ${SPLASH2}/codes/apps/water-nsquared/WATER-NSQUARED
+(
+  cd ${SPLASH2}/codes/apps/water-nsquared
+  test_input=input run_test ./WATER-NSQUARED
+)
 
 # Water-sp
-rm -f water-sp-input
-echo "1.5e-16 32768 3 6 -1 3000 3 0 1 6.212752" > water-sp-input
-test_input=water-sp-input \
-  run_test ${SPLASH2}/codes/apps/water-nsquared/WATER-NSQUARED
+(
+  cd ${SPLASH2}/codes/apps/water-spatial
+  test_input=input run_test ./WATER-SPATIAL
+)
 
 
 

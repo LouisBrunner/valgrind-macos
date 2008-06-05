@@ -97,17 +97,19 @@ fi
 # Results:                      (-p1) (-p2) (-p3) (-p4) ITC (-p4) ITC (-p4)
 #                                                        original w/ filter
 # .........................................................................
-# Cholesky                        46    59    75    92      239      82
-# FFT                             15    19   N/A    47       90      41
-# LU, contiguous blocks           40    48    53    55      428     128
-# LU, non-contiguous blocks       37    47    55    58      428     128
-# Ocean, contiguous partitions    20    26   N/A    32       90      28
-# Ocean, non-continguous partns   19    24   N/A    34       90      28
-# Radiosity                       99    99    99    99      485     163
-# Radix                           11    15     ?    17      222      56
-# Raytrace                        75    75     ?    75      172      53
+# Cholesky                        39    49     ?    81      239      82
+# FFT                             15    16   N/A    43       90      41
+# LU, contiguous blocks           38    39     ?    43      428     128
+# LU, non-contiguous blocks       32    34     ?    41      428     128
+# Ocean, contiguous partitions    19    23   N/A    29       90      28
+# Ocean, non-continguous partns   18    21   N/A    31       90      28
+# Radiosity                       92    92     ?    92      485     163
+# Radix                           11    14     ?    16      222      56
+# Raytrace                        70    70     ?    70      172      53
 # Water-n2                        50    50     ?    50      189      39
 # Water-sp                        49    48     ?    49      183      34
+#
+# Hardware: dual-core Intel Xeon 5130, 1.995 MHz, 4 MB L2 cache, 4 GB RAM.
 
 cache_size=$(get_cache_size)
 log2_cache_size=$(log2 ${cache_size})
@@ -151,9 +153,6 @@ run_test ${SPLASH2}/codes/kernels/radix/RADIX -n$((2**24))
   done
   run_test ../RAYTRACE balls4.env
 )
-
-# Radiosity
-run_test ${SPLASH2}/codes/apps/radiosity/RADIOSITY -batch -room
 
 # Water-n2
 (

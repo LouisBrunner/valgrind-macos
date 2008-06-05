@@ -753,42 +753,49 @@ Bool bm_access_load_1_triggers_conflict(const Addr a1)
 Bool bm_access_load_2_triggers_conflict(const Addr a1)
 {
   if ((a1 & 1) == 0)
+  {
     bm_access_aligned_load(running_thread_get_segment()->bm, a1, 2);
-  else
-    bm_access_range(running_thread_get_segment()->bm, a1, a1 + 2, eLoad);
-  if ((a1 & 1) == 0)
     return bm_aligned_load_has_conflict_with(thread_get_danger_set(), a1, 2);
+  }
   else
+  {
+    bm_access_range(running_thread_get_segment()->bm, a1, a1 + 2, eLoad);
     return bm_has_conflict_with(thread_get_danger_set(), a1, a1 + 2, eLoad);
+  }
 }
 
 Bool bm_access_load_4_triggers_conflict(const Addr a1)
 {
   if ((a1 & 3) == 0)
+  {
     bm_access_aligned_load(running_thread_get_segment()->bm, a1, 4);
-  else
-    bm_access_range(running_thread_get_segment()->bm, a1, a1 + 4, eLoad);
-  if ((a1 & 3) == 0)
     return bm_aligned_load_has_conflict_with(thread_get_danger_set(), a1, 4);
+  }
   else
+  {
+    bm_access_range(running_thread_get_segment()->bm, a1, a1 + 4, eLoad);
     return bm_has_conflict_with(thread_get_danger_set(), a1, a1 + 4, eLoad);
+  }
 }
 
 Bool bm_access_load_8_triggers_conflict(const Addr a1)
 {
   if ((a1 & 7) == 0)
+  {
     bm_access_aligned_load(running_thread_get_segment()->bm, a1, 8);
+    return bm_aligned_load_has_conflict_with(thread_get_danger_set(), a1, 8);
+  }
   else if ((a1 & 3) == 0)
   {
     bm_access_aligned_load(running_thread_get_segment()->bm, a1 + 0, 4);
     bm_access_aligned_load(running_thread_get_segment()->bm, a1 + 4, 4);
+    return bm_has_conflict_with(thread_get_danger_set(), a1, a1 + 8, eLoad);
   }
   else
+  {
     bm_access_range(running_thread_get_segment()->bm, a1, a1 + 8, eLoad);
-  if ((a1 & 7) == 0)
-    return bm_aligned_load_has_conflict_with(thread_get_danger_set(), a1, 8);
-  else
     return bm_has_conflict_with(thread_get_danger_set(), a1, a1 + 8, eLoad);
+  }
 }
 
 Bool bm_access_load_triggers_conflict(const Addr a1, const Addr a2)
@@ -806,42 +813,49 @@ Bool bm_access_store_1_triggers_conflict(const Addr a1)
 Bool bm_access_store_2_triggers_conflict(const Addr a1)
 {
   if ((a1 & 1) == 0)
+  {
     bm_access_aligned_store(running_thread_get_segment()->bm, a1, 2);
-  else
-    bm_access_range(running_thread_get_segment()->bm, a1, a1 + 2, eStore);
-  if ((a1 & 1) == 0)
     return bm_aligned_store_has_conflict_with(thread_get_danger_set(), a1, 2);
+  }
   else
+  {
+    bm_access_range(running_thread_get_segment()->bm, a1, a1 + 2, eStore);
     return bm_has_conflict_with(thread_get_danger_set(), a1, a1 + 2, eStore);
+  }
 }
 
 Bool bm_access_store_4_triggers_conflict(const Addr a1)
 {
   if ((a1 & 3) == 0)
+  {
     bm_access_aligned_store(running_thread_get_segment()->bm, a1, 4);
-  else
-    bm_access_range(running_thread_get_segment()->bm, a1, a1 + 4, eStore);
-  if ((a1 & 3) == 0)
     return bm_aligned_store_has_conflict_with(thread_get_danger_set(), a1, 4);
+  }
   else
+  {
+    bm_access_range(running_thread_get_segment()->bm, a1, a1 + 4, eStore);
     return bm_has_conflict_with(thread_get_danger_set(), a1, a1 + 4, eStore);
+  }
 }
 
 Bool bm_access_store_8_triggers_conflict(const Addr a1)
 {
   if ((a1 & 7) == 0)
+  {
     bm_access_aligned_store(running_thread_get_segment()->bm, a1, 8);
+    return bm_aligned_store_has_conflict_with(thread_get_danger_set(), a1, 8);
+  }
   else if ((a1 & 3) == 0)
   {
     bm_access_aligned_store(running_thread_get_segment()->bm, a1 + 0, 4);
     bm_access_aligned_store(running_thread_get_segment()->bm, a1 + 4, 4);
+    return bm_has_conflict_with(thread_get_danger_set(), a1, a1 + 8, eStore);
   }
   else
+  {
     bm_access_range(running_thread_get_segment()->bm, a1, a1 + 8, eStore);
-  if ((a1 & 7) == 0)
-    return bm_aligned_store_has_conflict_with(thread_get_danger_set(), a1, 8);
-  else
     return bm_has_conflict_with(thread_get_danger_set(), a1, a1 + 8, eStore);
+  }
 }
 
 Bool bm_access_store_triggers_conflict(const Addr a1, const Addr a2)

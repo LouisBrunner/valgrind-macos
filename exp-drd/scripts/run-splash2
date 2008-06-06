@@ -75,8 +75,8 @@ function run_test {
 # Script body
 
 DRD_SCRIPTS_DIR="$(dirname $0)"
-if [ "${DRD_SCRIPTS_DIR}" = "." ]; then
-  DRD_SCRIPTS_DIR="$PWD"
+if [ "${DRD_SCRIPTS_DIR:0:1}" != "/" ]; then
+  DRD_SCRIPTS_DIR="$PWD/$DRD_SCRIPTS_DIR"
 fi
 
 SPLASH2="${DRD_SCRIPTS_DIR}/../splash2"
@@ -110,6 +110,7 @@ fi
 # Water-sp                        49    48     ?    49      183      34
 #
 # Hardware: dual-core Intel Xeon 5130, 1.995 MHz, 4 MB L2 cache, 4 GB RAM.
+# Software: Ubuntu 7.10 server, 64-bit (includes gcc 4.1.3).
 
 cache_size=$(get_cache_size)
 log2_cache_size=$(log2 ${cache_size})

@@ -70,11 +70,11 @@ static void drd_start_client_code(const ThreadId tid, const ULong bbs_done);
 
 // Local variables.
 
-static Bool s_drd_check_stack_var = False;
-static Bool s_drd_print_stats     = False;
-static Bool s_drd_trace_fork_join = False;
-static Bool s_drd_var_info        = False;
-static Bool s_show_stack_usage    = False;
+static Bool s_drd_check_stack_accesses = False;
+static Bool s_drd_print_stats          = False;
+static Bool s_drd_trace_fork_join      = False;
+static Bool s_drd_var_info             = False;
+static Bool s_show_stack_usage         = False;
 
 
 //
@@ -84,22 +84,22 @@ static Bool s_show_stack_usage    = False;
 static Bool drd_process_cmd_line_option(Char* arg)
 {
   int exclusive_threshold_ms = -1;
-  int segment_merging     = -1;
+  int segment_merging        = -1;
   int shared_threshold_ms    = -1;
-  int show_confl_seg      = -1;
-  int trace_barrier       = -1;
-  int trace_clientobj     = -1;
-  int trace_cond          = -1;
-  int trace_csw           = -1;
-  int trace_danger_set    = -1;
-  int trace_mutex         = -1;
-  int trace_rwlock        = -1;
-  int trace_segment       = -1;
-  int trace_semaphore     = -1;
-  int trace_suppression   = -1;
-  Char* trace_address     = 0;
+  int show_confl_seg         = -1;
+  int trace_barrier          = -1;
+  int trace_clientobj        = -1;
+  int trace_cond             = -1;
+  int trace_csw              = -1;
+  int trace_danger_set       = -1;
+  int trace_mutex            = -1;
+  int trace_rwlock           = -1;
+  int trace_segment          = -1;
+  int trace_semaphore        = -1;
+  int trace_suppression      = -1;
+  Char* trace_address        = 0;
 
-  VG_BOOL_CLO     (arg, "--check-stack-var",     s_drd_check_stack_var)
+  VG_BOOL_CLO     (arg, "--check-stack-var",     s_drd_check_stack_accesses)
   else VG_BOOL_CLO(arg, "--drd-stats",           s_drd_print_stats)
   else VG_BOOL_CLO(arg, "--segment-merging",     segment_merging)
   else VG_BOOL_CLO(arg, "--show-confl-seg",      show_confl_seg)
@@ -278,7 +278,8 @@ static VG_REGPARM(2) void drd_trace_load(Addr addr, SizeT size)
   {
     drd_trace_mem_access(addr, size, eLoad);
   }
-  if (bm_access_load_triggers_conflict(addr, addr + size))
+  if ((s_drd_check_stack_accesses || ! thread_address_on_stack(addr))
+      && bm_access_load_triggers_conflict(addr, addr + size))
   {
     drd_report_race(addr, size, eLoad);
   }
@@ -293,7 +294,8 @@ static VG_REGPARM(1) void drd_trace_load_1(Addr addr)
   {
     drd_trace_mem_access(addr, 1, eLoad);
   }
-  if (bm_access_load_1_triggers_conflict(addr))
+  if ((s_drd_check_stack_accesses || ! thread_address_on_stack(addr))
+      && bm_access_load_1_triggers_conflict(addr))
   {
     drd_report_race(addr, 1, eLoad);
   }
@@ -308,7 +310,8 @@ static VG_REGPARM(1) void drd_trace_load_2(Addr addr)
   {
     drd_trace_mem_access(addr, 2, eLoad);
   }
-  if (bm_access_load_2_triggers_conflict(addr))
+  if ((s_drd_check_stack_accesses || ! thread_address_on_stack(addr))
+      && bm_access_load_2_triggers_conflict(addr))
   {
     drd_report_race(addr, 2, eLoad);
   }
@@ -323,7 +326,8 @@ static VG_REGPARM(1) void drd_trace_load_4(Addr addr)
   {
     drd_trace_mem_access(addr, 4, eLoad);
   }
-  if (bm_access_load_4_triggers_conflict(addr))
+  if ((s_drd_check_stack_accesses || ! thread_address_on_stack(addr))
+      && bm_access_load_4_triggers_conflict(addr))
   {
     drd_report_race(addr, 4, eLoad);
   }
@@ -338,7 +342,8 @@ static VG_REGPARM(1) void drd_trace_load_8(Addr addr)
   {
     drd_trace_mem_access(addr, 8, eLoad);
   }
-  if (bm_access_load_8_triggers_conflict(addr))
+  if ((s_drd_check_stack_accesses || ! thread_address_on_stack(addr))
+      && bm_access_load_8_triggers_conflict(addr))
   {
     drd_report_race(addr, 8, eLoad);
   }
@@ -360,7 +365,8 @@ VG_REGPARM(2) void drd_trace_store(Addr addr, SizeT size)
   {
     drd_trace_mem_access(addr, size, eStore);
   }
-  if (bm_access_store_triggers_conflict(addr, addr + size))
+  if ((s_drd_check_stack_accesses || ! thread_address_on_stack(addr))
+      && bm_access_store_triggers_conflict(addr, addr + size))
   {
     drd_report_race(addr, size, eStore);
   }
@@ -375,7 +381,8 @@ static VG_REGPARM(1) void drd_trace_store_1(Addr addr)
   {
     drd_trace_mem_access(addr, 1, eStore);
   }
-  if (bm_access_store_1_triggers_conflict(addr))
+  if ((s_drd_check_stack_accesses || ! thread_address_on_stack(addr))
+      && bm_access_store_1_triggers_conflict(addr))
   {
     drd_report_race(addr, 1, eStore);
   }
@@ -390,7 +397,8 @@ static VG_REGPARM(1) void drd_trace_store_2(Addr addr)
   {
     drd_trace_mem_access(addr, 2, eStore);
   }
-  if (bm_access_store_2_triggers_conflict(addr))
+  if ((s_drd_check_stack_accesses || ! thread_address_on_stack(addr))
+      && bm_access_store_2_triggers_conflict(addr))
   {
     drd_report_race(addr, 2, eStore);
   }
@@ -405,7 +413,8 @@ static VG_REGPARM(1) void drd_trace_store_4(Addr addr)
   {
     drd_trace_mem_access(addr, 4, eStore);
   }
-  if (bm_access_store_4_triggers_conflict(addr))
+  if ((s_drd_check_stack_accesses || ! thread_address_on_stack(addr))
+      && bm_access_store_4_triggers_conflict(addr))
   {
     drd_report_race(addr, 4, eStore);
   }
@@ -420,7 +429,8 @@ static VG_REGPARM(1) void drd_trace_store_8(Addr addr)
   {
     drd_trace_mem_access(addr, 8, eStore);
   }
-  if (bm_access_store_8_triggers_conflict(addr))
+  if ((s_drd_check_stack_accesses || ! thread_address_on_stack(addr))
+      && bm_access_store_8_triggers_conflict(addr))
   {
     drd_report_race(addr, 8, eStore);
   }
@@ -473,7 +483,8 @@ static void drd_post_mem_write(const CorePart part,
   }
 }
 
-static void drd_start_using_mem(const Addr a1, const SizeT len)
+static __inline__
+void drd_start_using_mem(const Addr a1, const SizeT len)
 {
   tl_assert(a1 < a1 + len);
 
@@ -509,7 +520,7 @@ void drd_stop_using_mem(const Addr a1, const SizeT len,
   {
     drd_trace_mem_access(a1, len, eEnd);
   }
-  if (! is_stack_mem || s_drd_check_stack_var)
+  if (! is_stack_mem || s_drd_check_stack_accesses)
   {
     thread_stop_using_mem(a1, a2);
     clientobj_stop_using_mem(a1, a2);
@@ -583,7 +594,8 @@ void drd_start_using_mem_w_perms(const Addr a, const SizeT len,
 /* Called by the core when the stack of a thread grows, to indicate that */
 /* the addresses in range [ a, a + len [ may now be used by the client.  */
 /* Assumption: stacks grow downward.                                     */
-static void drd_start_using_mem_stack(const Addr a, const SizeT len)
+static __inline__
+void drd_start_using_mem_stack(const Addr a, const SizeT len)
 {
   thread_set_stack_min(thread_get_running_tid(), a - VG_STACK_REDZONE_SZB);
   drd_start_using_mem(a - VG_STACK_REDZONE_SZB, 
@@ -593,7 +605,8 @@ static void drd_start_using_mem_stack(const Addr a, const SizeT len)
 /* Called by the core when the stack of a thread shrinks, to indicate that */
 /* the addresses [ a, a + len [ are no longer accessible for the client.   */
 /* Assumption: stacks grow downward.                                       */
-static void drd_stop_using_mem_stack(const Addr a, const SizeT len)
+static __inline__
+void drd_stop_using_mem_stack(const Addr a, const SizeT len)
 {
   thread_set_stack_min(thread_get_running_tid(),
                        a + len - VG_STACK_REDZONE_SZB);
@@ -649,7 +662,7 @@ void drd_post_thread_create(const ThreadId vg_created)
                  "drd_post_thread_create created = %d/%d",
                  vg_created, drd_created);
   }
-  if (! s_drd_check_stack_var)
+  if (! s_drd_check_stack_accesses)
   {
     drd_start_suppression(thread_get_stack_max(drd_created)
                           - thread_get_stack_size(drd_created),
@@ -691,7 +704,7 @@ void drd_post_thread_join(DrdThreadId drd_joiner, DrdThreadId drd_joinee)
     VG_(free)(msg);
   }
 
-  if (! s_drd_check_stack_var)
+  if (! s_drd_check_stack_accesses)
   {
     drd_finish_suppression(thread_get_stack_max(drd_joinee)
                            - thread_get_stack_size(drd_joinee),

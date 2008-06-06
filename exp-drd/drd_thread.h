@@ -162,20 +162,20 @@ Bool IsValidDrdThreadId(const DrdThreadId tid)
                 && s_threadinfo[tid].detached_posix_thread == False));
 }
 
-static inline
+static __inline__
 DrdThreadId thread_get_running_tid(void)
 {
   tl_assert(s_drd_running_tid != DRD_INVALID_THREADID);
   return s_drd_running_tid;
 }
 
-static inline
+static __inline__
 struct bitmap* thread_get_danger_set(void)
 {
   return s_danger_set;
 }
 
-static inline
+static __inline__
 Bool running_thread_is_recording(void)
 {
   tl_assert(0 <= (int)s_drd_running_tid && s_drd_running_tid < DRD_N_THREADS
@@ -184,7 +184,7 @@ Bool running_thread_is_recording(void)
           && s_threadinfo[s_drd_running_tid].is_recording);
 }
 
-static inline
+static __inline__
 void thread_set_stack_min(const DrdThreadId tid, const Addr stack_min)
 {
 #if 0
@@ -203,8 +203,18 @@ void thread_set_stack_min(const DrdThreadId tid, const Addr stack_min)
   }
 }
 
+/** Return true if and only if the specified address is on the stack of the
+ *  currently scheduled thread.
+ */
+static __inline__
+Bool thread_address_on_stack(const Addr a)
+{
+  return (s_threadinfo[s_drd_running_tid].stack_min <= a
+	  && a < s_threadinfo[s_drd_running_tid].stack_max);
+}
+
 /** Return a pointer to the latest segment for the specified thread. */
-static inline
+static __inline__
 Segment* thread_get_segment(const DrdThreadId tid)
 {
   tl_assert(0 <= (int)tid && tid < DRD_N_THREADS
@@ -214,7 +224,7 @@ Segment* thread_get_segment(const DrdThreadId tid)
 }
 
 /** Return a pointer to the latest segment for the running thread. */
-static inline
+static __inline__
 Segment* running_thread_get_segment(void)
 {
   return thread_get_segment(s_drd_running_tid);

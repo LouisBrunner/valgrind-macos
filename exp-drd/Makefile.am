@@ -97,11 +97,8 @@ DRD_SOURCES_COMMON =    \
   drd_malloc_wrappers.c \
   drd_mutex.c           \
   drd_rwlock.c          \
-  drd_segment.c         \
   drd_semaphore.c       \
-  drd_suppression.c     \
-  drd_thread.c          \
-  drd_vc.c
+  drd_suppression.c
 
 noinst_HEADERS =        \
   drd_barrier.h         \

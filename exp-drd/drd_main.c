@@ -54,6 +54,15 @@
 #include "pub_tool_tooliface.h"
 
 
+/* Include several source files here in order to allow the compiler to */
+/* do more inlining.                                                   */
+#include "drd_bitmap.c"
+#include "drd_segment.c"
+#include "drd_thread.c"
+#include "drd_vc.c"
+
+
+
 // Function declarations.
 
 static void drd_start_client_code(const ThreadId tid, const ULong bbs_done);

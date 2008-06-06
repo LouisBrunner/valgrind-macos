@@ -92,7 +92,6 @@ extern struct bitmap* s_danger_set;
 void thread_trace_context_switches(const Bool t);
 void thread_trace_danger_set(const Bool t);
 void thread_set_segment_merging(const Bool m);
-Bool IsValidDrdThreadId(const DrdThreadId tid);
 
 DrdThreadId VgThreadIdToDrdThreadId(const ThreadId tid);
 DrdThreadId NewVgThreadIdToDrdThreadId(const ThreadId tid);
@@ -153,6 +152,15 @@ ULong thread_get_update_danger_set_count(ULong* dsnsc, ULong* dscvc);
 ULong thread_get_danger_set_bitmap_creation_count(void);
 ULong thread_get_danger_set_bitmap2_creation_count(void);
 
+
+static __inline__
+Bool IsValidDrdThreadId(const DrdThreadId tid)
+{
+  return (0 <= (int)tid && tid < DRD_N_THREADS && tid != DRD_INVALID_THREADID
+          && ! (s_threadinfo[tid].vg_thread_exists == False
+                && s_threadinfo[tid].posix_thread_exists == False
+                && s_threadinfo[tid].detached_posix_thread == False));
+}
 
 static inline
 DrdThreadId thread_get_running_tid(void)

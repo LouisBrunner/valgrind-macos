@@ -39,9 +39,6 @@
 #include "pub_tool_options.h"     // VG_(clo_backtrace_size)
 #include "pub_tool_threadstate.h" // VG_(get_pthread_id)()
 
-/* Include the drd_bitmap.c source file here to allow the compiler to     */
-/* inline the bitmap manipulation functions called from this source file. */
-#include "drd_bitmap.c"
 
 
 // Local functions.
@@ -87,14 +84,6 @@ void thread_trace_danger_set(const Bool t)
 void thread_set_segment_merging(const Bool m)
 {
   s_segment_merging = m;
-}
-
-__inline__ Bool IsValidDrdThreadId(const DrdThreadId tid)
-{
-  return (0 <= (int)tid && tid < DRD_N_THREADS && tid != DRD_INVALID_THREADID
-          && ! (s_threadinfo[tid].vg_thread_exists == False
-                && s_threadinfo[tid].posix_thread_exists == False
-                && s_threadinfo[tid].detached_posix_thread == False));
 }
 
 /**

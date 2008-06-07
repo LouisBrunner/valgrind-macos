@@ -4,37 +4,7 @@
 # Function definitions #
 ########################
 
-function log2 {
-  local i
-
-  for ((i=0;i<64;i++))
-  do
-    if [ $((2**i)) = $1 ]; then
-      echo $i
-      return 0
-    fi
-  done
-  echo ""
-  return 1
-}
-
-function get_cache_size {
-  local s
-  s=$(</sys/devices/system/cpu/cpu0/cache/index2/size)
-  if [ "${s%M}" != "$s" ]; then
-    echo $((${s%M}*1024*1024))
-  elif [ "${s%K}" != "$s" ]; then
-    echo $((${s%K}*1024))
-  else
-    echo $s
-  fi
-}
-
-# Read a stream of numbers from stdin (one per line), and print the average
-# and standard deviation.
-function avgstddev {
-  awk '{n++;sum+=$1;sumsq+=$1*$1}END{d=sumsq/n-sum*sum/n/n;print sum/n,(d>0?sqrt(d):0)}'
-}
+source "$(dirname $0)/measurement-functions"
 
 function run_test {
   local tmp avg1=1 stddev1=1 avg2=1 stddev2=1
@@ -42,42 +12,17 @@ function run_test {
   tmp="/tmp/test-timing.$$"
   rm -f "${tmp}"
 
-  echo "$@"
-  for ((i=0;i<3;i++))
-  do
-    cat "${test_input:-/dev/null}" | \
-      /usr/bin/time --format="%e" "$@" 2>&1 | \
-      tee "${1}.out" | \
-      tail -n 1
-  done | avgstddev > "$tmp"
+  test_output="${1}.out" measure_runtime "$@" | avgstddev > "$tmp"
   read avg1 stddev1 < "$tmp"
   echo "Average time: ${avg1} +/- ${stddev1} seconds"
 
   for p in 1 2 4
   do
-    echo "$VG --tool=exp-drd --check-stack-var=yes $@ -p$p"
-    for ((i=0;i<3;i++))
-    do
-      cat "${test_input:-/dev/null}" | \
-        /usr/bin/time --format="%e" $VG --tool=exp-drd "$@" -p$p 2>&1 | \
-        tee "${1}-drd-with-stack-var-${p}.out" | \
-        tail -n 1
-    done | avgstddev > "$tmp"
-    read avg2 stddev2 < "$tmp"
-    echo "Average time: ${avg2} +/- ${stddev2} seconds"
-    awk "END{print "'"'"Ratio ="'"'", ${avg2}/${avg1}, "'"'"+/-"'"'", ${avg2}/${avg1}*(${stddev1}/${avg1}+${stddev2}/${avg2})}" </dev/null
+    test_output="${1}-drd-with-stack-var-${p}.out" \
+    print_runtime_ratio $VG --tool=exp-drd --check-stack-var=yes "$@" -p$p
 
-    echo "$VG --tool=exp-drd --check-stack-var=no $@ -p$p"
-    for ((i=0;i<3;i++))
-    do
-      cat "${test_input:-/dev/null}" | \
-        /usr/bin/time --format="%e" $VG --tool=exp-drd "$@" -p$p 2>&1 | \
-        tee "${1}-drd-without-stack-var-${p}.out" | \
-        tail -n 1
-    done | avgstddev > "$tmp"
-    read avg2 stddev2 < "$tmp"
-    echo "Average time: ${avg2} +/- ${stddev2} seconds"
-    awk "END{print "'"'"Ratio ="'"'", ${avg2}/${avg1}, "'"'"+/-"'"'", ${avg2}/${avg1}*(${stddev1}/${avg1}+${stddev2}/${avg2})}" </dev/null
+    test_output="${1}-drd-without-stack-var-${p}.out" \
+    print_runtime_ratio $VG --tool=exp-drd --check-stack-var=no  "$@" -p$p
   done
 
   echo ''
@@ -125,25 +70,25 @@ fi
 # Water-sp                        33    33    33      183      34
 # ............................................................................
 # Hardware: dual-core Intel Xeon 5130, 2.0 GHz, 4 MB L2 cache, 4 GB RAM.
-# Software: Ubuntu 7.10 server, 64-bit, gcc 4.1.3.
+# Software: Ubuntu 7.10 server, 64-bit, gcc 4.1.3, runlevel 3.
 ##############################################################################
 # Results:                      native DRD (-p4) DRD (-p4) ITC (-p4) ITC (-p4)
 #                               time   original  w/ filter  original w/ filter
 # ............................................................................
-# Cholesky                        0.21     74       76         239      82
-# FFT                             0.16     12       11          90      41
-# LU, contiguous blocks           0.57     49       49         428     128
-# LU, non-contiguous blocks       0.60     52       52         428     128
-# Ocean, contiguous partitions   14.42     24       24          90      28
-# Ocean, non-continguous partns   0.21     30       30          90      28
-# Radiosity                       2.35     75       76         485     163
-# Radix                           2.80     15       16         222      56
-# Raytrace                       90.79     55       54         172      53
-# Water-n2                        0.15     27       27         189      39
-# Water-sp                        0.15     26       26         183      34
+# Cholesky                        0.21    115       72         239      82
+# FFT                             0.11     92       17          90      41
+# LU, contiguous blocks           0.56     57       49         428     128
+# LU, non-contiguous blocks       0.59     60       53         428     128
+# Ocean, contiguous partitions   14.32     ..       24          90      28
+# Ocean, non-continguous partns   0.21     ..       30          90      28
+# Radiosity                       2.35     ..       76         485     163
+# Radix                           2.80     ..       16         222      56
+# Raytrace                       90.79     ..       54         172      53
+# Water-n2                        0.15     ..       27         189      39
+# Water-sp                        0.15     ..       26         183      34
 # ............................................................................
 # Hardware: dual-core Intel Core2 Duo E6750, 2.66 GHz, 4 MB L2 cache, 2 GB RAM.
-# Software: openSUSE 10.3, 64-bit, gcc 4.2.1.
+# Software: openSUSE 10.3, 64-bit, gcc 4.2.1, runlevel 5, X server running.
 ##############################################################################
 
 cache_size=$(($(get_cache_size)/2))

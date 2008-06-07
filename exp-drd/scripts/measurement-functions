@@ -1,0 +1,69 @@
+#!/bin/bash
+
+########################
+# Function definitions #
+########################
+
+## Print the logarithm base 2 of $1 on stdout.
+function log2 {
+  local i
+
+  for ((i=0;i<64;i++))
+  do
+    if [ $((2**i)) = $1 ]; then
+      echo $i
+      return 0
+    fi
+  done
+  echo error
+  return 1
+}
+
+## Print the size of the level 2 cache in bytes on stdout.
+function get_cache_size {
+  local s
+  s=$(</sys/devices/system/cpu/cpu0/cache/index2/size)
+  if [ "${s%M}" != "$s" ]; then
+    echo $((${s%M}*1024*1024))
+  elif [ "${s%K}" != "$s" ]; then
+    echo $((${s%K}*1024))
+  else
+    echo $s
+  fi
+}
+
+## Read a stream of numbers from stdin (one per line), and print the average
+#  and standard deviation.
+function avgstddev {
+  awk '{n++;sum+=$1;sumsq+=$1*$1}END{d=sumsq/n-sum*sum/n/n;print sum/n,(d>0?sqrt(d):0)}'
+}
+
+## Echo all arguments on stderr, run the command passed in $1 .. ${$#} three
+#  times, pass the file specified in ${test_input} to the command, write the
+#  command output to the file specified in ${test_output}, and print the
+#  runtime of the command on stdout.
+function measure_runtime {
+  echo "$@" >&2
+  for ((i=0;i<3;i++))
+  do
+    cat "${test_input:-/dev/null}" | \
+      /usr/bin/time --format="%e" "$@" 2>&1 | \
+      tee "${test_output:-/dev/null}" | \
+      tail -n 1
+  done
+}
+
+## Print the average runtime of the command passed in $1 .. ${$#} and the ratio
+#  of the runtime to ${avg1} +/- ${stddev1}.
+function print_runtime_ratio {
+  local tmp
+
+  tmp="/tmp/test-timing.$$"
+  rm -f "${tmp}"
+
+  measure_runtime "$@" | avgstddev > "$tmp"
+  read avg2 stddev2 < "$tmp"
+  echo "Average time: ${avg2} +/- ${stddev2} seconds"
+  awk "END{print "'"'"Ratio ="'"'", ${avg2}/${avg1}, "'"'"+/-"'"'", ${avg2}/${avg1}*(${stddev1}/${avg1}+${stddev2}/${avg2})}" </dev/null
+}
+

@@ -733,12 +733,14 @@ void thread_combine_vc2(DrdThreadId tid, const VectorClock* const vc)
   s_danger_set_combine_vc_count++;
 }
 
+__inline__
 Bool bm_access_load_1_triggers_conflict(const Addr a1)
 {
   bm_access_load_1(running_thread_get_segment()->bm, a1);
   return bm_load_1_has_conflict_with(thread_get_danger_set(), a1);
 }
 
+__inline__
 Bool bm_access_load_2_triggers_conflict(const Addr a1)
 {
   if ((a1 & 1) == 0)
@@ -753,6 +755,7 @@ Bool bm_access_load_2_triggers_conflict(const Addr a1)
   }
 }
 
+__inline__
 Bool bm_access_load_4_triggers_conflict(const Addr a1)
 {
   if ((a1 & 3) == 0)
@@ -767,6 +770,7 @@ Bool bm_access_load_4_triggers_conflict(const Addr a1)
   }
 }
 
+__inline__
 Bool bm_access_load_8_triggers_conflict(const Addr a1)
 {
   if ((a1 & 7) == 0)
@@ -787,18 +791,21 @@ Bool bm_access_load_8_triggers_conflict(const Addr a1)
   }
 }
 
+__inline__
 Bool bm_access_load_triggers_conflict(const Addr a1, const Addr a2)
 {
   bm_access_range_load(running_thread_get_segment()->bm, a1, a2);
   return bm_load_has_conflict_with(thread_get_danger_set(), a1, a2);
 }
 
+__inline__
 Bool bm_access_store_1_triggers_conflict(const Addr a1)
 {
   bm_access_store_1(running_thread_get_segment()->bm, a1);
   return bm_store_1_has_conflict_with(thread_get_danger_set(), a1);
 }
 
+__inline__
 Bool bm_access_store_2_triggers_conflict(const Addr a1)
 {
   if ((a1 & 1) == 0)
@@ -813,6 +820,7 @@ Bool bm_access_store_2_triggers_conflict(const Addr a1)
   }
 }
 
+__inline__
 Bool bm_access_store_4_triggers_conflict(const Addr a1)
 {
   if ((a1 & 3) == 0)
@@ -827,6 +835,7 @@ Bool bm_access_store_4_triggers_conflict(const Addr a1)
   }
 }
 
+__inline__
 Bool bm_access_store_8_triggers_conflict(const Addr a1)
 {
   if ((a1 & 7) == 0)
@@ -847,6 +856,7 @@ Bool bm_access_store_8_triggers_conflict(const Addr a1)
   }
 }
 
+__inline__
 Bool bm_access_store_triggers_conflict(const Addr a1, const Addr a2)
 {
   bm_access_range_store(running_thread_get_segment()->bm, a1, a2);

@@ -353,7 +353,8 @@ function system-gcc { unset CC LD_LIBRARY_PATH; export CC LD_LIBRARY_PATH; }
 function my-gcc { export CC=$HOME/gcc-4.3.0/bin/gcc LD_LIBRARY_PATH=$HOME/gcc-4.3.0/lib64:; }
 EOF
 
-For an example of how to recompile gcc, see also the script exp-drd/scripts/compile-gcc.
+For an example of how to recompile gcc, see also the script
+exp-drd/scripts/compile-gcc.
 
 
 Future DRD Versions

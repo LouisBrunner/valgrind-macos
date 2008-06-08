@@ -4,16 +4,11 @@ How to test DRD
 1. Run the regression tests. After having compiled DRD, run the following
    command:
      perl tests/vg_regtest exp-drd
-2. Test the slowdown for matinv for various matrix sizes (must be about 45
-   for i == 1 and about 50 for i == 10):
-     time exp-drd/tests/matinv 200
-     for ((i=1;i<=10;i++))
-     do
-       echo "==== $i ===="
-       time ./vg-in-place --tool=exp-drd exp-drd/tests/matinv 200 -t$i
-     done
+2. Test the slowdown for matinv for various matrix sizes via the script
+   exp-drd/scripts/run-matinv (must be about 27 for i == 1 and about
+   36 for i == 10).
 3. Test whether DRD works with standard KDE applications and whether it does
-   not print any error messages:
+   not print any false positives:
      ./vg-in-place --tool=exp-drd kate
      ./vg-in-place --trace-children=yes --tool=exp-drd knode
      ./vg-in-place --trace-children=yes --tool=exp-drd amarokapp

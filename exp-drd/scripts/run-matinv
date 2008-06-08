@@ -1,0 +1,35 @@
+#!/bin/bash
+
+########################
+# Function definitions #
+########################
+
+source "$(dirname $0)/measurement-functions"
+
+########################
+# Script body          #
+########################
+
+DRD_SCRIPTS_DIR="$(dirname $0)"
+if [ "${DRD_SCRIPTS_DIR:0:1}" != "/" ]; then
+  DRD_SCRIPTS_DIR="$PWD/$DRD_SCRIPTS_DIR"
+fi
+
+VG="${DRD_SCRIPTS_DIR}/../../vg-in-place"
+MATINV="${DRD_SCRIPTS_DIR}/../../exp-drd/tests/matinv"
+
+
+for n in 200 400
+do
+  tmp="/tmp/test-timing.$$"
+  rm -f "${tmp}"
+
+  measure_runtime ${MATINV} $n | avgstddev > "$tmp"
+  read avg1 stddev1 < "$tmp"
+  echo "Average time: ${avg1} +/- ${stddev1} seconds"
+
+  for ((i=1;i<=10;i++))
+  do
+    print_runtime_ratio ${VG} --tool=exp-drd ${MATINV} $n -t$i
+  done
+done

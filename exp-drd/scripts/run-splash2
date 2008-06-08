@@ -16,7 +16,7 @@ function run_test {
   read avg1 stddev1 < "$tmp"
   echo "Average time: ${avg1} +/- ${stddev1} seconds"
 
-  for p in 1 2 4
+  for p in 4
   do
     test_output="${1}-drd-with-stack-var-${p}.out" \
     print_runtime_ratio $VG --tool=exp-drd --check-stack-var=yes "$@" -p$p
@@ -31,7 +31,9 @@ function run_test {
 }
 
 
-# Script body
+########################
+# Script body          #
+########################
 
 DRD_SCRIPTS_DIR="$(dirname $0)"
 if [ "${DRD_SCRIPTS_DIR:0:1}" != "/" ]; then
@@ -70,17 +72,17 @@ fi
 # Water-sp                        33    33    33      183      34
 # ............................................................................
 # Hardware: dual-core Intel Xeon 5130, 2.0 GHz, 4 MB L2 cache, 4 GB RAM.
-# Software: Ubuntu 7.10 server, 64-bit, gcc 4.1.3, runlevel 3.
+# Software: Ubuntu 7.10 server, 64-bit, gcc 4.1.3.
 ##############################################################################
 # Results:                      native DRD (-p4) DRD (-p4) ITC (-p4) ITC (-p4)
 #                               time   original  w/ filter  original w/ filter
 # ............................................................................
-# Cholesky                        0.21    115       72         239      82
-# FFT                             0.11     92       17          90      41
-# LU, contiguous blocks           0.56     57       49         428     128
-# LU, non-contiguous blocks       0.59     60       53         428     128
-# Ocean, contiguous partitions   14.32     ..       24          90      28
-# Ocean, non-continguous partns   0.21     ..       30          90      28
+# Cholesky                        0.21    107       70         239      82
+# FFT                             0.11     90       17          90      41
+# LU, contiguous blocks           0.56     53       46         428     128
+# LU, non-contiguous blocks       0.59     57       49         428     128
+# Ocean, contiguous partitions   14.32     34       24          90      28
+# Ocean, non-continguous partns   0.21     28       30          90      28
 # Radiosity                       2.35     ..       76         485     163
 # Radix                           2.80     ..       16         222      56
 # Raytrace                       90.79     ..       54         172      53
@@ -88,7 +90,7 @@ fi
 # Water-sp                        0.15     ..       26         183      34
 # ............................................................................
 # Hardware: dual-core Intel Core2 Duo E6750, 2.66 GHz, 4 MB L2 cache, 2 GB RAM.
-# Software: openSUSE 10.3, 64-bit, gcc 4.2.1, runlevel 5, X server running.
+# Software: openSUSE 10.3, 64-bit, gcc 4.2.1, runlevel 5, X screensaver: blank
 ##############################################################################
 
 cache_size=$(($(get_cache_size)/2))

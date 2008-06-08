@@ -250,9 +250,6 @@ static void drd_report_race(const Addr addr, const SizeT size,
 {
   DataRaceErrInfo drei;
 
-  if (drd_is_suppressed(addr, addr + size))
-    return;
-
   drei.tid  = thread_get_running_tid();
   drei.addr = addr;
   drei.size = size;
@@ -280,7 +277,8 @@ static VG_REGPARM(2) void drd_trace_load(Addr addr, SizeT size)
     drd_trace_mem_access(addr, size, eLoad);
   }
   if ((s_drd_check_stack_accesses || ! thread_address_on_stack(addr))
-      && bm_access_load_triggers_conflict(addr, addr + size))
+      && bm_access_load_triggers_conflict(addr, addr + size)
+      && ! drd_is_suppressed(addr, addr + size))
   {
     drd_report_race(addr, size, eLoad);
   }
@@ -296,7 +294,8 @@ static VG_REGPARM(1) void drd_trace_load_1(Addr addr)
     drd_trace_mem_access(addr, 1, eLoad);
   }
   if ((s_drd_check_stack_accesses || ! thread_address_on_stack(addr))
-      && bm_access_load_1_triggers_conflict(addr))
+      && bm_access_load_1_triggers_conflict(addr)
+      && ! drd_is_suppressed(addr, addr + 1))
   {
     drd_report_race(addr, 1, eLoad);
   }
@@ -312,7 +311,8 @@ static VG_REGPARM(1) void drd_trace_load_2(Addr addr)
     drd_trace_mem_access(addr, 2, eLoad);
   }
   if ((s_drd_check_stack_accesses || ! thread_address_on_stack(addr))
-      && bm_access_load_2_triggers_conflict(addr))
+      && bm_access_load_2_triggers_conflict(addr)
+      && ! drd_is_suppressed(addr, addr + 2))
   {
     drd_report_race(addr, 2, eLoad);
   }
@@ -328,7 +328,8 @@ static VG_REGPARM(1) void drd_trace_load_4(Addr addr)
     drd_trace_mem_access(addr, 4, eLoad);
   }
   if ((s_drd_check_stack_accesses || ! thread_address_on_stack(addr))
-      && bm_access_load_4_triggers_conflict(addr))
+      && bm_access_load_4_triggers_conflict(addr)
+      && ! drd_is_suppressed(addr, addr + 4))
   {
     drd_report_race(addr, 4, eLoad);
   }
@@ -344,7 +345,8 @@ static VG_REGPARM(1) void drd_trace_load_8(Addr addr)
     drd_trace_mem_access(addr, 8, eLoad);
   }
   if ((s_drd_check_stack_accesses || ! thread_address_on_stack(addr))
-      && bm_access_load_8_triggers_conflict(addr))
+      && bm_access_load_8_triggers_conflict(addr)
+      && ! drd_is_suppressed(addr, addr + 8))
   {
     drd_report_race(addr, 8, eLoad);
   }
@@ -367,7 +369,8 @@ VG_REGPARM(2) void drd_trace_store(Addr addr, SizeT size)
     drd_trace_mem_access(addr, size, eStore);
   }
   if ((s_drd_check_stack_accesses || ! thread_address_on_stack(addr))
-      && bm_access_store_triggers_conflict(addr, addr + size))
+      && bm_access_store_triggers_conflict(addr, addr + size)
+      && ! drd_is_suppressed(addr, addr + size))
   {
     drd_report_race(addr, size, eStore);
   }
@@ -383,7 +386,8 @@ static VG_REGPARM(1) void drd_trace_store_1(Addr addr)
     drd_trace_mem_access(addr, 1, eStore);
   }
   if ((s_drd_check_stack_accesses || ! thread_address_on_stack(addr))
-      && bm_access_store_1_triggers_conflict(addr))
+      && bm_access_store_1_triggers_conflict(addr)
+      && ! drd_is_suppressed(addr, addr + 1))
   {
     drd_report_race(addr, 1, eStore);
   }
@@ -399,7 +403,8 @@ static VG_REGPARM(1) void drd_trace_store_2(Addr addr)
     drd_trace_mem_access(addr, 2, eStore);
   }
   if ((s_drd_check_stack_accesses || ! thread_address_on_stack(addr))
-      && bm_access_store_2_triggers_conflict(addr))
+      && bm_access_store_2_triggers_conflict(addr)
+      && ! drd_is_suppressed(addr, addr + 2))
   {
     drd_report_race(addr, 2, eStore);
   }
@@ -415,7 +420,8 @@ static VG_REGPARM(1) void drd_trace_store_4(Addr addr)
     drd_trace_mem_access(addr, 4, eStore);
   }
   if ((s_drd_check_stack_accesses || ! thread_address_on_stack(addr))
-      && bm_access_store_4_triggers_conflict(addr))
+      && bm_access_store_4_triggers_conflict(addr)
+      && ! drd_is_suppressed(addr, addr + 4))
   {
     drd_report_race(addr, 4, eStore);
   }
@@ -431,7 +437,8 @@ static VG_REGPARM(1) void drd_trace_store_8(Addr addr)
     drd_trace_mem_access(addr, 8, eStore);
   }
   if ((s_drd_check_stack_accesses || ! thread_address_on_stack(addr))
-      && bm_access_store_8_triggers_conflict(addr))
+      && bm_access_store_8_triggers_conflict(addr)
+      && ! drd_is_suppressed(addr, addr + 8))
   {
     drd_report_race(addr, 8, eStore);
   }

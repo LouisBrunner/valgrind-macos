@@ -23,6 +23,9 @@ function run_test {
 
     test_output="${1}-drd-without-stack-var-${p}.out" \
     print_runtime_ratio $VG --tool=exp-drd --check-stack-var=no  "$@" -p$p
+
+    test_output="${1}-helgrind-${p}.out" \
+    print_runtime_ratio $VG --tool=helgrind "$@" -p$p
   done
 
   echo ''
@@ -74,20 +77,20 @@ fi
 # Hardware: dual-core Intel Xeon 5130, 2.0 GHz, 4 MB L2 cache, 4 GB RAM.
 # Software: Ubuntu 7.10 server, 64-bit, gcc 4.1.3.
 ##############################################################################
-# Results:                      native DRD (-p4) DRD (-p4) ITC (-p4) ITC (-p4)
-#                               time   original  w/ filter  original w/ filter
+# Results (-p4):                native  DRD     DRD     HG    ITC     ITC
+#                               time         w/ filter             w/ filter
 # ............................................................................
-# Cholesky                        0.21    107       70         239      82
-# FFT                             0.11     90       17          90      41
-# LU, contiguous blocks           0.56     53       46         428     128
-# LU, non-contiguous blocks       0.59     57       49         428     128
-# Ocean, contiguous partitions   14.32     34       24          90      28
-# Ocean, non-continguous partns   0.21     28       30          90      28
-# Radiosity                       2.35     ..       76         485     163
-# Radix                           2.80     ..       16         222      56
-# Raytrace                       90.79     ..       54         172      53
-# Water-n2                        0.15     ..       27         189      39
-# Water-sp                        0.15     ..       26         183      34
+# Cholesky                        0.21  109     71      37    239      82
+# FFT                             0.11   92     17     242     90      41
+# LU, contiguous blocks           0.56   53     46      97    428     128
+# LU, non-contiguous blocks       0.59   56     49      62    428     128
+# Ocean, contiguous partitions   14.32   34     24      57     90      28
+# Ocean, non-continguous partns   0.21   28     30      57     90      28
+# Radiosity                       2.35  259     75      60    485     163
+# Radix                           2.80   17     15      90    222      56
+# Raytrace                       90.79  339     55      89    172      53
+# Water-n2                        0.15  154     30      46    189      39
+# Water-sp                        0.15  146     30      46    183      34
 # ............................................................................
 # Hardware: dual-core Intel Core2 Duo E6750, 2.66 GHz, 4 MB L2 cache, 2 GB RAM.
 # Software: openSUSE 10.3, 64-bit, gcc 4.2.1, runlevel 5, X screensaver: blank

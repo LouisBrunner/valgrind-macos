@@ -35,6 +35,7 @@
 #include "drd_semaphore.h"
 #include "drd_suppression.h"
 #include "drd_thread.h"
+#include "drd_thread_bitmap.h"
 #include "drd_track.h"
 #include "drd_vc.h"
 #include "priv_drd_clientreq.h"

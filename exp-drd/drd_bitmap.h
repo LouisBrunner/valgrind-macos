@@ -28,6 +28,7 @@
 
 
 #include "pub_tool_oset.h"
+#include "pub_tool_libcbase.h"
 
 
 /*
@@ -485,5 +486,54 @@ struct bitmap2* bm2_lookup_or_insert_exclusive(struct bitmap* const bm,
   return bm2;
 }
 
+static __inline__
+void bm_access_aligned_load(struct bitmap* const bm,
+                            const Addr a1, const SizeT size)
+{
+  struct bitmap2* bm2;
+
+  bm2 = bm2_lookup_or_insert_exclusive(bm, a1 >> ADDR0_BITS);
+  bm0_set_range(bm2->bm1.bm0_r, a1 & ADDR0_MASK, size);
+}
+
+static __inline__
+void bm_access_aligned_store(struct bitmap* const bm,
+                             const Addr a1, const SizeT size)
+{
+  struct bitmap2* bm2;
+
+  bm2 = bm2_lookup_or_insert_exclusive(bm, a1 >> ADDR0_BITS);
+  bm0_set_range(bm2->bm1.bm0_w, a1 & ADDR0_MASK, size);
+}
+
+static __inline__
+Bool bm_aligned_load_has_conflict_with(const struct bitmap* const bm,
+                                       const Addr a1, const SizeT size)
+{
+  const struct bitmap2* bm2;
+
+  bm2 = bm2_lookup(bm, a1 >> ADDR0_BITS);
+
+  return (bm2 && bm0_is_any_set(bm2->bm1.bm0_w, a1 & ADDR0_MASK, size));
+}
+
+static __inline__
+Bool bm_aligned_store_has_conflict_with(const struct bitmap* const bm,
+                                        const Addr a1, const SizeT size)
+{
+  const struct bitmap2* bm2;
+
+  bm2 = bm2_lookup(bm, a1 >> ADDR0_BITS);
+
+  if (bm2)
+  {
+    if (bm0_is_any_set(bm2->bm1.bm0_r, a1 & ADDR0_MASK, size)
+        | bm0_is_any_set(bm2->bm1.bm0_w, a1 & ADDR0_MASK, size))
+    {
+      return True;
+    }
+  }
+  return False;
+}
 
 #endif /* __DRD_BITMAP_H */

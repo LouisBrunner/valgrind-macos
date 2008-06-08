@@ -106,7 +106,6 @@ void bm_delete(struct bitmap* const bm)
  * Record an access of type access_type at addresses a .. a + size - 1 in
  * bitmap bm.
  */
-static
 void bm_access_range(struct bitmap* const bm,
                      const Addr a1, const Addr a2,
                      const BmAccessTypeT access_type)
@@ -169,26 +168,6 @@ void bm_access_range(struct bitmap* const bm,
       }
     }
   }
-}
-
-static inline
-void bm_access_aligned_load(struct bitmap* const bm,
-                            const Addr a1, const SizeT size)
-{
-  struct bitmap2* bm2;
-
-  bm2 = bm2_lookup_or_insert_exclusive(bm, a1 >> ADDR0_BITS);
-  bm0_set_range(bm2->bm1.bm0_r, a1 & ADDR0_MASK, size);
-}
-
-static inline
-void bm_access_aligned_store(struct bitmap* const bm,
-                             const Addr a1, const SizeT size)
-{
-  struct bitmap2* bm2;
-
-  bm2 = bm2_lookup_or_insert_exclusive(bm, a1 >> ADDR0_BITS);
-  bm0_set_range(bm2->bm1.bm0_w, a1 & ADDR0_MASK, size);
 }
 
 void bm_access_range_load(struct bitmap* const bm,
@@ -639,36 +618,6 @@ Bool bm_has_conflict_with(const struct bitmap* const bm,
           }
         }
       }
-    }
-  }
-  return False;
-}
-
-static inline
-Bool bm_aligned_load_has_conflict_with(const struct bitmap* const bm,
-                                       const Addr a1, const SizeT size)
-{
-  const struct bitmap2* bm2;
-
-  bm2 = bm2_lookup(bm, a1 >> ADDR0_BITS);
-
-  return (bm2 && bm0_is_any_set(bm2->bm1.bm0_w, a1 & ADDR0_MASK, size));
-}
-
-static inline
-Bool bm_aligned_store_has_conflict_with(const struct bitmap* const bm,
-                                        const Addr a1, const SizeT size)
-{
-  const struct bitmap2* bm2;
-
-  bm2 = bm2_lookup(bm, a1 >> ADDR0_BITS);
-
-  if (bm2)
-  {
-    if (bm0_is_any_set(bm2->bm1.bm0_r, a1 & ADDR0_MASK, size)
-        | bm0_is_any_set(bm2->bm1.bm0_w, a1 & ADDR0_MASK, size))
-    {
-      return True;
     }
   }
   return False;

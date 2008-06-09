@@ -59,20 +59,20 @@ if [ ! -e "$VG" ]; then
 fi
 
 ##############################################################################
-# Results:                      (-p1) (-p2) (-p4) ITC (-p4) ITC (-p4)
-#                                                  original w/ filter
+# Results (-p4):                native  DRD     DRD     HG    ITC     ITC
+#                               time         w/ filter             w/ filter
 # ............................................................................
-# Cholesky                        40    47    82      239      82
-# FFT                             16    17    47       90      41
-# LU, contiguous blocks           39    41    45      428     128
-# LU, non-contiguous blocks       39    41    49      428     128
-# Ocean, contiguous partitions    17    19    25       90      28
-# Ocean, non-continguous partns   18    21    30       90      28
-# Radiosity                       78    78    78      485     163
-# Radix                           10    12    15      222      56
-# Raytrace                        56    56    56      172      53
-# Water-n2                        34    34    34      189      39
-# Water-sp                        33    33    33      183      34
+# Cholesky                        0.29  115     80      47    239      82
+# FFT                             0.19   80     46     556     90      41
+# LU, contiguous blocks           0.76   48     41      97    428     128
+# LU, non-contiguous blocks       0.85   48     42      59    428     128
+# Ocean, contiguous partitions   19.41   31     24      54     90      28
+# Ocean, non-continguous partns   0.29   26     29      53     90      28
+# Radiosity                       3.11  240     76      58    485     163
+# Radix                           4.05   16     15      65    222      56
+# Raytrace                        2.21  272     57      89    172      53
+# Water-n2                        0.17  174     35      53    189      39
+# Water-sp                        0.18  144     35      51    183      34
 # ............................................................................
 # Hardware: dual-core Intel Xeon 5130, 2.0 GHz, 4 MB L2 cache, 4 GB RAM.
 # Software: Ubuntu 7.10 server, 64-bit, gcc 4.1.3.
@@ -88,7 +88,7 @@ fi
 # Ocean, non-continguous partns   0.21   28     30      57     90      28
 # Radiosity                       2.35  259     75      60    485     163
 # Radix                           2.80   17     15      90    222      56
-# Raytrace                       90.79  339     55      89    172      53
+# Raytrace                   (?) 90.79  339     55      89    172      53
 # Water-n2                        0.15  154     30      46    189      39
 # Water-sp                        0.15  146     30      46    183      34
 # ............................................................................

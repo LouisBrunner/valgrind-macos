@@ -71,50 +71,50 @@ void bm_access_store_1(struct bitmap* const bm, const Addr a1);
 void bm_access_store_2(struct bitmap* const bm, const Addr a1);
 void bm_access_store_4(struct bitmap* const bm, const Addr a1);
 void bm_access_store_8(struct bitmap* const bm, const Addr a1);
-Bool bm_has(const struct bitmap* const bm,
+Bool bm_has(struct bitmap* const bm,
             const Addr a1, const Addr a2,
             const BmAccessTypeT access_type);
-Bool bm_has_any_load(const struct bitmap* const bm,
+Bool bm_has_any_load(struct bitmap* const bm,
                      const Addr a1, const Addr a2);
-Bool bm_has_any_store(const struct bitmap* const bm,
+Bool bm_has_any_store(struct bitmap* const bm,
                       const Addr a1, const Addr a2);
-Bool bm_has_any_access(const struct bitmap* const bm,
+Bool bm_has_any_access(struct bitmap* const bm,
                        const Addr a1, const Addr a2);
-Bool bm_has_1(const struct bitmap* const bm,
+Bool bm_has_1(struct bitmap* const bm,
               const Addr address, const BmAccessTypeT access_type);
-void bm_clear(const struct bitmap* const bm,
+void bm_clear(struct bitmap* const bm,
               const Addr a1, const Addr a2);
-void bm_clear_load(const struct bitmap* const bm,
+void bm_clear_load(struct bitmap* const bm,
                    const Addr a1, const Addr a2);
-void bm_clear_store(const struct bitmap* const bm,
+void bm_clear_store(struct bitmap* const bm,
                     const Addr a1, const Addr a2);
-Bool bm_test_and_clear(const struct bitmap* const bm,
+Bool bm_test_and_clear(struct bitmap* const bm,
                        const Addr a1, const Addr a2);
-Bool bm_has_conflict_with(const struct bitmap* const bm,
+Bool bm_has_conflict_with(struct bitmap* const bm,
                           const Addr a1, const Addr a2,
                           const BmAccessTypeT access_type);
-Bool bm_load_1_has_conflict_with(const struct bitmap* const bm, const Addr a1);
-Bool bm_load_2_has_conflict_with(const struct bitmap* const bm, const Addr a1);
-Bool bm_load_4_has_conflict_with(const struct bitmap* const bm, const Addr a1);
-Bool bm_load_8_has_conflict_with(const struct bitmap* const bm, const Addr a1);
-Bool bm_load_has_conflict_with(const struct bitmap* const bm,
+Bool bm_load_1_has_conflict_with(struct bitmap* const bm, const Addr a1);
+Bool bm_load_2_has_conflict_with(struct bitmap* const bm, const Addr a1);
+Bool bm_load_4_has_conflict_with(struct bitmap* const bm, const Addr a1);
+Bool bm_load_8_has_conflict_with(struct bitmap* const bm, const Addr a1);
+Bool bm_load_has_conflict_with(struct bitmap* const bm,
                                const Addr a1, const Addr a2);
-Bool bm_store_1_has_conflict_with(const struct bitmap* const bm,const Addr a1);
-Bool bm_store_2_has_conflict_with(const struct bitmap* const bm,const Addr a1);
-Bool bm_store_4_has_conflict_with(const struct bitmap* const bm,const Addr a1);
-Bool bm_store_8_has_conflict_with(const struct bitmap* const bm,const Addr a1);
-Bool bm_store_has_conflict_with(const struct bitmap* const bm,
+Bool bm_store_1_has_conflict_with(struct bitmap* const bm,const Addr a1);
+Bool bm_store_2_has_conflict_with(struct bitmap* const bm,const Addr a1);
+Bool bm_store_4_has_conflict_with(struct bitmap* const bm,const Addr a1);
+Bool bm_store_8_has_conflict_with(struct bitmap* const bm,const Addr a1);
+Bool bm_store_has_conflict_with(struct bitmap* const bm,
                                 const Addr a1, const Addr a2);
-Bool bm_equal(struct bitmap* const lhs, const struct bitmap* const rhs);
+Bool bm_equal(struct bitmap* const lhs, struct bitmap* const rhs);
 void bm_swap(struct bitmap* const bm1, struct bitmap* const bm2);
 void bm_merge2(struct bitmap* const lhs,
-               const struct bitmap* const rhs);
-int bm_has_races(const struct bitmap* const bm1,
-                 const struct bitmap* const bm2);
+               struct bitmap* const rhs);
+int bm_has_races(struct bitmap* const bm1,
+                 struct bitmap* const bm2);
 void bm_report_races(ThreadId const tid1, ThreadId const tid2,
-                     const struct bitmap* const bm1,
-                     const struct bitmap* const bm2);
-void bm_print(const struct bitmap* bm);
+                     struct bitmap* const bm1,
+                     struct bitmap* const bm2);
+void bm_print(struct bitmap* bm);
 ULong bm_get_bitmap_creation_count(void);
 ULong bm_get_bitmap2_node_creation_count(void);
 ULong bm_get_bitmap2_creation_count(void);

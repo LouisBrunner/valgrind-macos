@@ -250,7 +250,7 @@ void bm_access_store_8(struct bitmap* const bm, const Addr a1)
     bm_access_range(bm, a1, a1 + 8, eStore);
 }
 
-Bool bm_has(const struct bitmap* const bm, const Addr a1, const Addr a2,
+Bool bm_has(struct bitmap* const bm, const Addr a1, const Addr a2,
             const BmAccessTypeT access_type)
 {
   Addr b;
@@ -264,8 +264,7 @@ Bool bm_has(const struct bitmap* const bm, const Addr a1, const Addr a2,
   return True;
 }
 
-Bool bm_has_any_load(const struct bitmap* const bm,
-                     const Addr a1, const Addr a2)
+Bool bm_has_any_load(struct bitmap* const bm, const Addr a1, const Addr a2)
 {
   Addr b, b_next;
 
@@ -317,7 +316,7 @@ Bool bm_has_any_load(const struct bitmap* const bm,
   return 0;
 }
 
-Bool bm_has_any_store(const struct bitmap* const bm,
+Bool bm_has_any_store(struct bitmap* const bm,
                       const Addr a1, const Addr a2)
 {
   Addr b, b_next;
@@ -372,7 +371,7 @@ Bool bm_has_any_store(const struct bitmap* const bm,
 
 /* Return True if there is a read access, write access or both   */
 /* to any of the addresses in the range [ a1, a2 [ in bitmap bm. */
-Bool bm_has_any_access(const struct bitmap* const bm,
+Bool bm_has_any_access(struct bitmap* const bm,
                        const Addr a1, const Addr a2)
 {
   Addr b, b_next;
@@ -428,7 +427,7 @@ Bool bm_has_any_access(const struct bitmap* const bm,
 /** Report whether an access of type access_type at address a is recorded in
  *  bitmap bm.
  */
-Bool bm_has_1(const struct bitmap* const bm,
+Bool bm_has_1(struct bitmap* const bm,
               const Addr a, const BmAccessTypeT access_type)
 {
   const struct bitmap2* p2;
@@ -448,7 +447,7 @@ Bool bm_has_1(const struct bitmap* const bm,
   return False;
 }
 
-void bm_clear(const struct bitmap* const bm,
+void bm_clear(struct bitmap* const bm,
               const Addr a1,
               const Addr a2)
 {
@@ -510,7 +509,7 @@ void bm_clear(const struct bitmap* const bm,
 /** Clear all references to loads in bitmap bm starting at address a1 and
  *  up to but not including address a2.
  */
-void bm_clear_load(const struct bitmap* const bm,
+void bm_clear_load(struct bitmap* const bm,
                    const Addr a1, const Addr a2)
 {
   Addr a;
@@ -528,7 +527,7 @@ void bm_clear_load(const struct bitmap* const bm,
 /** Clear all references to stores in bitmap bm starting at address a1 and
  *  up to but not including address a2.
  */
-void bm_clear_store(const struct bitmap* const bm,
+void bm_clear_store(struct bitmap* const bm,
                     const Addr a1, const Addr a2)
 {
   Addr a;
@@ -547,7 +546,7 @@ void bm_clear_store(const struct bitmap* const bm,
  *  a2. Return True if and only if any of the addresses was set before
  *  clearing.
  */
-Bool bm_test_and_clear(const struct bitmap* const bm,
+Bool bm_test_and_clear(struct bitmap* const bm,
                        const Addr a1, const Addr a2)
 {
   Bool result;
@@ -557,7 +556,7 @@ Bool bm_test_and_clear(const struct bitmap* const bm,
   return result;
 }
 
-Bool bm_has_conflict_with(const struct bitmap* const bm,
+Bool bm_has_conflict_with(struct bitmap* const bm,
                           const Addr a1, const Addr a2,
                           const BmAccessTypeT access_type)
 {
@@ -623,18 +622,18 @@ Bool bm_has_conflict_with(const struct bitmap* const bm,
   return False;
 }
 
-Bool bm_load_has_conflict_with(const struct bitmap* const bm,
+Bool bm_load_has_conflict_with(struct bitmap* const bm,
                                const Addr a1, const Addr a2)
 {
   return bm_has_conflict_with(bm, a1, a2, eLoad);
 }
 
-Bool bm_load_1_has_conflict_with(const struct bitmap* const bm, const Addr a1)
+Bool bm_load_1_has_conflict_with(struct bitmap* const bm, const Addr a1)
 {
   return bm_aligned_load_has_conflict_with(bm, a1, 1);
 }
 
-Bool bm_load_2_has_conflict_with(const struct bitmap* const bm, const Addr a1)
+Bool bm_load_2_has_conflict_with(struct bitmap* const bm, const Addr a1)
 {
   if ((a1 & 1) == 0)
     return bm_aligned_load_has_conflict_with(bm, a1, 2);
@@ -642,7 +641,7 @@ Bool bm_load_2_has_conflict_with(const struct bitmap* const bm, const Addr a1)
     return bm_has_conflict_with(bm, a1, a1 + 2, eLoad);
 }
 
-Bool bm_load_4_has_conflict_with(const struct bitmap* const bm, const Addr a1)
+Bool bm_load_4_has_conflict_with(struct bitmap* const bm, const Addr a1)
 {
   if ((a1 & 3) == 0)
     return bm_aligned_load_has_conflict_with(bm, a1, 4);
@@ -650,7 +649,7 @@ Bool bm_load_4_has_conflict_with(const struct bitmap* const bm, const Addr a1)
     return bm_has_conflict_with(bm, a1, a1 + 4, eLoad);
 }
 
-Bool bm_load_8_has_conflict_with(const struct bitmap* const bm, const Addr a1)
+Bool bm_load_8_has_conflict_with(struct bitmap* const bm, const Addr a1)
 {
   if ((a1 & 7) == 0)
     return bm_aligned_load_has_conflict_with(bm, a1, 8);
@@ -658,12 +657,12 @@ Bool bm_load_8_has_conflict_with(const struct bitmap* const bm, const Addr a1)
     return bm_has_conflict_with(bm, a1, a1 + 8, eLoad);
 }
 
-Bool bm_store_1_has_conflict_with(const struct bitmap* const bm, const Addr a1)
+Bool bm_store_1_has_conflict_with(struct bitmap* const bm, const Addr a1)
 {
   return bm_aligned_store_has_conflict_with(bm, a1, 1);
 }
 
-Bool bm_store_2_has_conflict_with(const struct bitmap* const bm, const Addr a1)
+Bool bm_store_2_has_conflict_with(struct bitmap* const bm, const Addr a1)
 {
   if ((a1 & 1) == 0)
     return bm_aligned_store_has_conflict_with(bm, a1, 2);
@@ -671,7 +670,7 @@ Bool bm_store_2_has_conflict_with(const struct bitmap* const bm, const Addr a1)
     return bm_has_conflict_with(bm, a1, a1 + 2, eStore);
 }
 
-Bool bm_store_4_has_conflict_with(const struct bitmap* const bm, const Addr a1)
+Bool bm_store_4_has_conflict_with(struct bitmap* const bm, const Addr a1)
 {
   if ((a1 & 3) == 0)
     return bm_aligned_store_has_conflict_with(bm, a1, 4);
@@ -679,7 +678,7 @@ Bool bm_store_4_has_conflict_with(const struct bitmap* const bm, const Addr a1)
     return bm_has_conflict_with(bm, a1, a1 + 4, eStore);
 }
 
-Bool bm_store_8_has_conflict_with(const struct bitmap* const bm, const Addr a1)
+Bool bm_store_8_has_conflict_with(struct bitmap* const bm, const Addr a1)
 {
   if ((a1 & 7) == 0)
     return bm_aligned_store_has_conflict_with(bm, a1, 8);
@@ -687,7 +686,7 @@ Bool bm_store_8_has_conflict_with(const struct bitmap* const bm, const Addr a1)
     return bm_has_conflict_with(bm, a1, a1 + 8, eStore);
 }
 
-Bool bm_store_has_conflict_with(const struct bitmap* const bm,
+Bool bm_store_has_conflict_with(struct bitmap* const bm,
                                 const Addr a1, const Addr a2)
 {
   return bm_has_conflict_with(bm, a1, a2, eStore);
@@ -696,7 +695,7 @@ Bool bm_store_has_conflict_with(const struct bitmap* const bm,
 /** Return True if the two bitmaps *lhs and *rhs are identical, and false
  *  if not.
  */
-Bool bm_equal(struct bitmap* const lhs, const struct bitmap* const rhs)
+Bool bm_equal(struct bitmap* const lhs, struct bitmap* const rhs)
 {
   struct bitmap2* bm2l;
   struct bitmap2ref* bm2l_ref;
@@ -778,7 +777,7 @@ void bm_swap(struct bitmap* const bm1, struct bitmap* const bm2)
 
 /** Merge bitmaps *lhs and *rhs into *lhs. */
 void bm_merge2(struct bitmap* const lhs,
-               const struct bitmap* const rhs)
+               struct bitmap* const rhs)
 {
   struct bitmap2* bm2l;
   struct bitmap2ref* bm2l_ref;
@@ -814,8 +813,8 @@ void bm_merge2(struct bitmap* const lhs,
  * @param rhs Bitmap to be compared with lhs.
  * @return !=0 if there are data races, == 0 if there are none.
  */
-int bm_has_races(const struct bitmap* const lhs,
-                 const struct bitmap* const rhs)
+int bm_has_races(struct bitmap* const lhs,
+                 struct bitmap* const rhs)
 {
   VG_(OSetGen_ResetIter)(lhs->oset);
   VG_(OSetGen_ResetIter)(rhs->oset);
@@ -868,7 +867,7 @@ int bm_has_races(const struct bitmap* const lhs,
   return 0;
 }
 
-void bm_print(const struct bitmap* const bm)
+void bm_print(struct bitmap* const bm)
 {
   struct bitmap2* bm2;
   struct bitmap2ref* bm2ref;

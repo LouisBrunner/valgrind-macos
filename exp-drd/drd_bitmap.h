@@ -202,13 +202,40 @@ static struct bitmap2* bm2_new(const UWord a1);
 static struct bitmap2* bm2_make_exclusive(struct bitmap* const bm,
                                           struct bitmap2ref* const bm2ref);
 
+/** Rotate elements cache[0..n-1] such that the element at position n-1 is
+ *  moved to position 0. This allows to speed up future cache lookups.
+ */
+static __inline__
+void bm_cache_rotate(struct bm_cache_elem cache[], const int n)
+{
+  struct bm_cache_elem t;
+
+  t = cache[0];
+  if (n > 1)
+    cache[0] = cache[1];
+  if (n > 2)
+    cache[1] = cache[2];
+  if (n > 3)
+    cache[2] = cache[3];
+  if (n > 4)
+    cache[3] = cache[4];
+  if (n > 5)
+    cache[4] = cache[5];
+  if (n > 6)
+    cache[5] = cache[6];
+  if (n > 7)
+    cache[6] = cache[7];
+  cache[n - 1] = t;
+}
 
 static __inline__
-Bool bm_cache_lookup(const struct bitmap* const bm, const UWord a1,
+Bool bm_cache_lookup(struct bitmap* const bm, const UWord a1,
                      struct bitmap2** bm2)
 {
+#if 0
   tl_assert(bm);
   tl_assert(bm2);
+#endif
 
 #if N_CACHE_ELEM > 8
 #error Please update the code below.
@@ -231,6 +258,7 @@ Bool bm_cache_lookup(const struct bitmap* const bm, const UWord a1,
   if (a1 == bm->cache[2].a1)
   {
     *bm2 = bm->cache[2].bm2;
+    bm_cache_rotate(bm->cache, 3);
     return True;
   }
 #endif
@@ -238,6 +266,7 @@ Bool bm_cache_lookup(const struct bitmap* const bm, const UWord a1,
   if (a1 == bm->cache[3].a1)
   {
     *bm2 = bm->cache[3].bm2;
+    bm_cache_rotate(bm->cache, 4);
     return True;
   }
 #endif
@@ -245,6 +274,7 @@ Bool bm_cache_lookup(const struct bitmap* const bm, const UWord a1,
   if (a1 == bm->cache[4].a1)
   {
     *bm2 = bm->cache[4].bm2;
+    bm_cache_rotate(bm->cache, 5);
     return True;
   }
 #endif
@@ -252,6 +282,7 @@ Bool bm_cache_lookup(const struct bitmap* const bm, const UWord a1,
   if (a1 == bm->cache[5].a1)
   {
     *bm2 = bm->cache[5].bm2;
+    bm_cache_rotate(bm->cache, 6);
     return True;
   }
 #endif
@@ -259,6 +290,7 @@ Bool bm_cache_lookup(const struct bitmap* const bm, const UWord a1,
   if (a1 == bm->cache[6].a1)
   {
     *bm2 = bm->cache[6].bm2;
+    bm_cache_rotate(bm->cache, 7);
     return True;
   }
 #endif
@@ -266,6 +298,7 @@ Bool bm_cache_lookup(const struct bitmap* const bm, const UWord a1,
   if (a1 == bm->cache[7].a1)
   {
     *bm2 = bm->cache[7].bm2;
+    bm_cache_rotate(bm->cache, 8);
     return True;
   }
 #endif
@@ -316,7 +349,7 @@ void bm_update_cache(struct bitmap* const bm,
  *  @param bm bitmap pointer.
  */
 static __inline__
-const struct bitmap2* bm2_lookup(const struct bitmap* const bm, const UWord a1)
+const struct bitmap2* bm2_lookup(struct bitmap* const bm, const UWord a1)
 {
   struct bitmap2*    bm2;
   struct bitmap2ref* bm2ref;
@@ -342,7 +375,7 @@ const struct bitmap2* bm2_lookup(const struct bitmap* const bm, const UWord a1)
  */
 static __inline__
 struct bitmap2*
-bm2_lookup_exclusive(const struct bitmap* const bm, const UWord a1)
+bm2_lookup_exclusive(struct bitmap* const bm, const UWord a1)
 {
   struct bitmap2ref* bm2ref;
   struct bitmap2* bm2;
@@ -383,7 +416,7 @@ bm2_lookup_exclusive(const struct bitmap* const bm, const UWord a1)
  *  @param bm bitmap pointer.
  */
 static __inline__
-struct bitmap2* bm2_insert(const struct bitmap* const bm, const UWord a1)
+struct bitmap2* bm2_insert(struct bitmap* const bm, const UWord a1)
 {
   struct bitmap2ref* bm2ref;
   struct bitmap2* bm2;
@@ -405,7 +438,7 @@ struct bitmap2* bm2_insert(const struct bitmap* const bm, const UWord a1)
  *  *bm2. This means that *bm2 becomes shared over two or more bitmaps.
  */
 static __inline__
-struct bitmap2* bm2_insert_addref(const struct bitmap* const bm,
+struct bitmap2* bm2_insert_addref(struct bitmap* const bm,
                                   struct bitmap2* const bm2)
 {
   struct bitmap2ref* bm2ref;
@@ -432,8 +465,7 @@ struct bitmap2* bm2_insert_addref(const struct bitmap* const bm,
  *  @param bm bitmap pointer.
  */
 static __inline__
-struct bitmap2* bm2_lookup_or_insert(const struct bitmap* const bm,
-                                     const UWord a1)
+struct bitmap2* bm2_lookup_or_insert(struct bitmap* const bm, const UWord a1)
 {
   struct bitmap2ref* bm2ref;
   struct bitmap2* bm2;
@@ -507,7 +539,7 @@ void bm_access_aligned_store(struct bitmap* const bm,
 }
 
 static __inline__
-Bool bm_aligned_load_has_conflict_with(const struct bitmap* const bm,
+Bool bm_aligned_load_has_conflict_with(struct bitmap* const bm,
                                        const Addr a1, const SizeT size)
 {
   const struct bitmap2* bm2;
@@ -518,7 +550,7 @@ Bool bm_aligned_load_has_conflict_with(const struct bitmap* const bm,
 }
 
 static __inline__
-Bool bm_aligned_store_has_conflict_with(const struct bitmap* const bm,
+Bool bm_aligned_store_has_conflict_with(struct bitmap* const bm,
                                         const Addr a1, const SizeT size)
 {
   const struct bitmap2* bm2;

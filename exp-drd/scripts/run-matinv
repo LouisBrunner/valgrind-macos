@@ -28,8 +28,9 @@ do
   read avg1 stddev1 < "$tmp"
   echo "Average time: ${avg1} +/- ${stddev1} seconds"
 
-  for ((i=1;i<=10;i++))
+  for i in 1 10
   do
+    print_runtime_ratio ${VG} --tool=none    ${MATINV} $n -t$i
     print_runtime_ratio ${VG} --tool=exp-drd ${MATINV} $n -t$i
   done
 done

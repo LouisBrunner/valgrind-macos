@@ -269,14 +269,13 @@ static VG_REGPARM(2) void drd_trace_load(Addr addr, SizeT size)
             == VgThreadIdToDrdThreadId(VG_(get_running_tid())));
 #endif
 
-  if (! running_thread_is_recording())
-    return;
-
-  if (range_any_is_traced(addr, size))
+  if (UNLIKELY(range_any_is_traced(addr, size)))
   {
     drd_trace_mem_access(addr, size, eLoad);
   }
-  if ((s_drd_check_stack_accesses || ! thread_address_on_stack(addr))
+
+  if (running_thread_is_recording()
+      && (s_drd_check_stack_accesses || ! thread_address_on_stack(addr))
       && bm_access_load_triggers_conflict(addr, addr + size)
       && ! drd_is_suppressed(addr, addr + size))
   {
@@ -286,14 +285,13 @@ static VG_REGPARM(2) void drd_trace_load(Addr addr, SizeT size)
 
 static VG_REGPARM(1) void drd_trace_load_1(Addr addr)
 {
-  if (! running_thread_is_recording())
-    return;
-
-  if (range_any_is_traced(addr, 1))
+  if (UNLIKELY(range_any_is_traced(addr, 1)))
   {
     drd_trace_mem_access(addr, 1, eLoad);
   }
-  if ((s_drd_check_stack_accesses || ! thread_address_on_stack(addr))
+
+  if (running_thread_is_recording()
+      && (s_drd_check_stack_accesses || ! thread_address_on_stack(addr))
       && bm_access_load_1_triggers_conflict(addr)
       && ! drd_is_suppressed(addr, addr + 1))
   {
@@ -303,14 +301,13 @@ static VG_REGPARM(1) void drd_trace_load_1(Addr addr)
 
 static VG_REGPARM(1) void drd_trace_load_2(Addr addr)
 {
-  if (! running_thread_is_recording())
-    return;
-
-  if (range_any_is_traced(addr, 2))
+  if (UNLIKELY(range_any_is_traced(addr, 2)))
   {
     drd_trace_mem_access(addr, 2, eLoad);
   }
-  if ((s_drd_check_stack_accesses || ! thread_address_on_stack(addr))
+
+  if (running_thread_is_recording()
+      && (s_drd_check_stack_accesses || ! thread_address_on_stack(addr))
       && bm_access_load_2_triggers_conflict(addr)
       && ! drd_is_suppressed(addr, addr + 2))
   {
@@ -320,14 +317,13 @@ static VG_REGPARM(1) void drd_trace_load_2(Addr addr)
 
 static VG_REGPARM(1) void drd_trace_load_4(Addr addr)
 {
-  if (! running_thread_is_recording())
-    return;
-
-  if (range_any_is_traced(addr, 4))
+  if (UNLIKELY(range_any_is_traced(addr, 4)))
   {
     drd_trace_mem_access(addr, 4, eLoad);
   }
-  if ((s_drd_check_stack_accesses || ! thread_address_on_stack(addr))
+
+  if (running_thread_is_recording()
+      && (s_drd_check_stack_accesses || ! thread_address_on_stack(addr))
       && bm_access_load_4_triggers_conflict(addr)
       && ! drd_is_suppressed(addr, addr + 4))
   {
@@ -337,14 +333,13 @@ static VG_REGPARM(1) void drd_trace_load_4(Addr addr)
 
 static VG_REGPARM(1) void drd_trace_load_8(Addr addr)
 {
-  if (! running_thread_is_recording())
-    return;
-
-  if (range_any_is_traced(addr, 8))
+  if (UNLIKELY(range_any_is_traced(addr, 8)))
   {
     drd_trace_mem_access(addr, 8, eLoad);
   }
-  if ((s_drd_check_stack_accesses || ! thread_address_on_stack(addr))
+
+  if (running_thread_is_recording()
+      && (s_drd_check_stack_accesses || ! thread_address_on_stack(addr))
       && bm_access_load_8_triggers_conflict(addr)
       && ! drd_is_suppressed(addr, addr + 8))
   {
@@ -361,14 +356,13 @@ VG_REGPARM(2) void drd_trace_store(Addr addr, SizeT size)
             == VgThreadIdToDrdThreadId(VG_(get_running_tid())));
 #endif
 
-  if (! running_thread_is_recording())
-    return;
-
-  if (range_any_is_traced(addr, size))
+  if (UNLIKELY(range_any_is_traced(addr, size)))
   {
     drd_trace_mem_access(addr, size, eStore);
   }
-  if ((s_drd_check_stack_accesses || ! thread_address_on_stack(addr))
+
+  if (running_thread_is_recording()
+      && (s_drd_check_stack_accesses || ! thread_address_on_stack(addr))
       && bm_access_store_triggers_conflict(addr, addr + size)
       && ! drd_is_suppressed(addr, addr + size))
   {
@@ -378,14 +372,13 @@ VG_REGPARM(2) void drd_trace_store(Addr addr, SizeT size)
 
 static VG_REGPARM(1) void drd_trace_store_1(Addr addr)
 {
-  if (! running_thread_is_recording())
-    return;
-
-  if (range_any_is_traced(addr, 1))
+  if (UNLIKELY(range_any_is_traced(addr, 1)))
   {
     drd_trace_mem_access(addr, 1, eStore);
   }
-  if ((s_drd_check_stack_accesses || ! thread_address_on_stack(addr))
+
+  if (running_thread_is_recording()
+      && (s_drd_check_stack_accesses || ! thread_address_on_stack(addr))
       && bm_access_store_1_triggers_conflict(addr)
       && ! drd_is_suppressed(addr, addr + 1))
   {
@@ -395,14 +388,13 @@ static VG_REGPARM(1) void drd_trace_store_1(Addr addr)
 
 static VG_REGPARM(1) void drd_trace_store_2(Addr addr)
 {
-  if (! running_thread_is_recording())
-    return;
-
-  if (range_any_is_traced(addr, 2))
+  if (UNLIKELY(range_any_is_traced(addr, 2)))
   {
     drd_trace_mem_access(addr, 2, eStore);
   }
-  if ((s_drd_check_stack_accesses || ! thread_address_on_stack(addr))
+
+  if (running_thread_is_recording()
+      && (s_drd_check_stack_accesses || ! thread_address_on_stack(addr))
       && bm_access_store_2_triggers_conflict(addr)
       && ! drd_is_suppressed(addr, addr + 2))
   {
@@ -412,14 +404,13 @@ static VG_REGPARM(1) void drd_trace_store_2(Addr addr)
 
 static VG_REGPARM(1) void drd_trace_store_4(Addr addr)
 {
-  if (! running_thread_is_recording())
-    return;
-
-  if (range_any_is_traced(addr, 4))
+  if (UNLIKELY(range_any_is_traced(addr, 4)))
   {
     drd_trace_mem_access(addr, 4, eStore);
   }
-  if ((s_drd_check_stack_accesses || ! thread_address_on_stack(addr))
+
+  if (running_thread_is_recording()
+      && (s_drd_check_stack_accesses || ! thread_address_on_stack(addr))
       && bm_access_store_4_triggers_conflict(addr)
       && ! drd_is_suppressed(addr, addr + 4))
   {
@@ -429,14 +420,13 @@ static VG_REGPARM(1) void drd_trace_store_4(Addr addr)
 
 static VG_REGPARM(1) void drd_trace_store_8(Addr addr)
 {
-  if (! running_thread_is_recording())
-    return;
-
-  if (range_any_is_traced(addr, 8))
+  if (UNLIKELY(range_any_is_traced(addr, 8)))
   {
     drd_trace_mem_access(addr, 8, eStore);
   }
-  if ((s_drd_check_stack_accesses || ! thread_address_on_stack(addr))
+
+  if (running_thread_is_recording()
+      && (s_drd_check_stack_accesses || ! thread_address_on_stack(addr))
       && bm_access_store_8_triggers_conflict(addr)
       && ! drd_is_suppressed(addr, addr + 8))
   {

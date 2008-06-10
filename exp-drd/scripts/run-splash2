@@ -62,17 +62,17 @@ fi
 # Results (-p4):                native  DRD     DRD     HG    ITC     ITC
 #                               time         w/ filter             w/ filter
 # ............................................................................
-# Cholesky                        0.29  115     80      47    239      82
-# FFT                             0.19   80     46     556     90      41
-# LU, contiguous blocks           0.76   48     41      97    428     128
-# LU, non-contiguous blocks       0.85   48     42      59    428     128
-# Ocean, contiguous partitions   19.41   31     24      54     90      28
-# Ocean, non-continguous partns   0.29   26     29      53     90      28
-# Radiosity                       3.11  240     76      58    485     163
-# Radix                           4.05   16     15      65    222      56
-# Raytrace                        2.21  272     57      89    172      53
-# Water-n2                        0.17  174     35      53    189      39
-# Water-sp                        0.18  144     35      51    183      34
+# Cholesky                        0.29  115     75      37    239      82
+# FFT                             0.19   80     45     556     90      41
+# LU, contiguous blocks           0.76   47     38      97    428     128
+# LU, non-contiguous blocks       0.80   49     42      59    428     128
+# Ocean, contiguous partitions   19.40   31     24      54     90      28
+# Ocean, non-continguous partns   0.29   26     28      53     90      28
+# Radiosity                       3.11  237     76      58    485     163
+# Radix                           4.05   16     15      85    222      56
+# Raytrace                        2.21  267     57      89    172      53
+# Water-n2                        0.17  176     34      52    189      39
+# Water-sp                        0.18  143     34      51    183      34
 # ............................................................................
 # Hardware: dual-core Intel Xeon 5130, 2.0 GHz, 4 MB L2 cache, 4 GB RAM.
 # Software: Ubuntu 7.10 server, 64-bit, gcc 4.1.3.

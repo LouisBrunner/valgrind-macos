@@ -21,10 +21,9 @@ Bool drd_is_any_traced(const Addr a1, const Addr a2);
 void drd_suppression_stop_using_mem(const Addr a1, const Addr a2);
 
 
-static __inline__
-int range_any_is_traced(const Addr addr, const SizeT size)
+static __inline__ Bool drd_any_address_is_traced(void)
 {
-  return (g_any_address_traced && drd_is_any_traced(addr, addr + size));
+  return g_any_address_traced;
 }
 
 

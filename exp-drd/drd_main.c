@@ -221,28 +221,31 @@ static void drd_print_debug_usage(void)
 static void drd_trace_mem_access(const Addr addr, const SizeT size,
                                  const BmAccessTypeT access_type)
 {
-  char vc[80];
-  vc_snprint(vc, sizeof(vc), thread_get_vc(thread_get_running_tid()));
-  VG_(message)(Vg_UserMsg,
-               "%s 0x%lx size %ld (vg %d / drd %d / vc %s)",
-               access_type == eLoad
-               ? "load "
-               : access_type == eStore
-               ? "store"
-               : access_type == eStart
-               ? "start"
-               : access_type == eEnd
-               ? "end  "
-               : "????",
-               addr,
-               size,
-               VG_(get_running_tid)(),
-               thread_get_running_tid(),
-               vc);
-  VG_(get_and_pp_StackTrace)(VG_(get_running_tid)(),
-                             VG_(clo_backtrace_size));
-  tl_assert(DrdThreadIdToVgThreadId(thread_get_running_tid())
-            == VG_(get_running_tid)());
+  if (drd_is_any_traced(addr, addr + size))
+  {
+    char vc[80];
+    vc_snprint(vc, sizeof(vc), thread_get_vc(thread_get_running_tid()));
+    VG_(message)(Vg_UserMsg,
+                 "%s 0x%lx size %ld (vg %d / drd %d / vc %s)",
+                 access_type == eLoad
+                 ? "load "
+                 : access_type == eStore
+                 ? "store"
+                 : access_type == eStart
+                 ? "start"
+                 : access_type == eEnd
+                 ? "end  "
+                 : "????",
+                 addr,
+                 size,
+                 VG_(get_running_tid)(),
+                 thread_get_running_tid(),
+                 vc);
+    VG_(get_and_pp_StackTrace)(VG_(get_running_tid)(),
+                               VG_(clo_backtrace_size));
+    tl_assert(DrdThreadIdToVgThreadId(thread_get_running_tid())
+              == VG_(get_running_tid)());
+  }
 }
 
 static void drd_report_race(const Addr addr, const SizeT size,
@@ -269,7 +272,7 @@ static VG_REGPARM(2) void drd_trace_load(Addr addr, SizeT size)
             == VgThreadIdToDrdThreadId(VG_(get_running_tid())));
 #endif
 
-  if (UNLIKELY(range_any_is_traced(addr, size)))
+  if (UNLIKELY(drd_any_address_is_traced()))
   {
     drd_trace_mem_access(addr, size, eLoad);
   }
@@ -285,7 +288,7 @@ static VG_REGPARM(2) void drd_trace_load(Addr addr, SizeT size)
 
 static VG_REGPARM(1) void drd_trace_load_1(Addr addr)
 {
-  if (UNLIKELY(range_any_is_traced(addr, 1)))
+  if (UNLIKELY(drd_any_address_is_traced()))
   {
     drd_trace_mem_access(addr, 1, eLoad);
   }
@@ -301,7 +304,7 @@ static VG_REGPARM(1) void drd_trace_load_1(Addr addr)
 
 static VG_REGPARM(1) void drd_trace_load_2(Addr addr)
 {
-  if (UNLIKELY(range_any_is_traced(addr, 2)))
+  if (UNLIKELY(drd_any_address_is_traced()))
   {
     drd_trace_mem_access(addr, 2, eLoad);
   }
@@ -317,7 +320,7 @@ static VG_REGPARM(1) void drd_trace_load_2(Addr addr)
 
 static VG_REGPARM(1) void drd_trace_load_4(Addr addr)
 {
-  if (UNLIKELY(range_any_is_traced(addr, 4)))
+  if (UNLIKELY(drd_any_address_is_traced()))
   {
     drd_trace_mem_access(addr, 4, eLoad);
   }
@@ -333,7 +336,7 @@ static VG_REGPARM(1) void drd_trace_load_4(Addr addr)
 
 static VG_REGPARM(1) void drd_trace_load_8(Addr addr)
 {
-  if (UNLIKELY(range_any_is_traced(addr, 8)))
+  if (UNLIKELY(drd_any_address_is_traced()))
   {
     drd_trace_mem_access(addr, 8, eLoad);
   }
@@ -356,7 +359,7 @@ VG_REGPARM(2) void drd_trace_store(Addr addr, SizeT size)
             == VgThreadIdToDrdThreadId(VG_(get_running_tid())));
 #endif
 
-  if (UNLIKELY(range_any_is_traced(addr, size)))
+  if (UNLIKELY(drd_any_address_is_traced()))
   {
     drd_trace_mem_access(addr, size, eStore);
   }
@@ -372,7 +375,7 @@ VG_REGPARM(2) void drd_trace_store(Addr addr, SizeT size)
 
 static VG_REGPARM(1) void drd_trace_store_1(Addr addr)
 {
-  if (UNLIKELY(range_any_is_traced(addr, 1)))
+  if (UNLIKELY(drd_any_address_is_traced()))
   {
     drd_trace_mem_access(addr, 1, eStore);
   }
@@ -388,7 +391,7 @@ static VG_REGPARM(1) void drd_trace_store_1(Addr addr)
 
 static VG_REGPARM(1) void drd_trace_store_2(Addr addr)
 {
-  if (UNLIKELY(range_any_is_traced(addr, 2)))
+  if (UNLIKELY(drd_any_address_is_traced()))
   {
     drd_trace_mem_access(addr, 2, eStore);
   }
@@ -404,7 +407,7 @@ static VG_REGPARM(1) void drd_trace_store_2(Addr addr)
 
 static VG_REGPARM(1) void drd_trace_store_4(Addr addr)
 {
-  if (UNLIKELY(range_any_is_traced(addr, 4)))
+  if (UNLIKELY(drd_any_address_is_traced()))
   {
     drd_trace_mem_access(addr, 4, eStore);
   }
@@ -420,7 +423,7 @@ static VG_REGPARM(1) void drd_trace_store_4(Addr addr)
 
 static VG_REGPARM(1) void drd_trace_store_8(Addr addr)
 {
-  if (UNLIKELY(range_any_is_traced(addr, 8)))
+  if (UNLIKELY(drd_any_address_is_traced()))
   {
     drd_trace_mem_access(addr, 8, eStore);
   }
@@ -486,7 +489,7 @@ void drd_start_using_mem(const Addr a1, const SizeT len)
 {
   tl_assert(a1 < a1 + len);
 
-  if (range_any_is_traced(a1, len))
+  if (UNLIKELY(drd_any_address_is_traced()))
   {
     drd_trace_mem_access(a1, len, eStart);
   }
@@ -514,7 +517,7 @@ void drd_stop_using_mem(const Addr a1, const SizeT len,
 
   tl_assert(a1 < a2);
 
-  if (range_any_is_traced(a1, len))
+  if (UNLIKELY(drd_any_address_is_traced()))
   {
     drd_trace_mem_access(a1, len, eEnd);
   }

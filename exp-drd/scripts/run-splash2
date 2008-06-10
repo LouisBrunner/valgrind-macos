@@ -80,17 +80,17 @@ fi
 # Results (-p4):                native  DRD     DRD     HG    ITC     ITC
 #                               time         w/ filter             w/ filter
 # ............................................................................
-# Cholesky                        0.21  109     71      37    239      82
-# FFT                             0.11   92     17     242     90      41
-# LU, contiguous blocks           0.56   53     46      97    428     128
-# LU, non-contiguous blocks       0.59   56     49      62    428     128
-# Ocean, contiguous partitions   14.32   34     24      57     90      28
-# Ocean, non-continguous partns   0.21   28     30      57     90      28
-# Radiosity                       2.35  259     75      60    485     163
-# Radix                           2.80   17     15      90    222      56
-# Raytrace                   (?) 90.79  339     55      89    172      53
-# Water-n2                        0.15  154     30      46    189      39
-# Water-sp                        0.15  146     30      46    183      34
+# Cholesky                        0.21  114     74      36    239      82
+# FFT                             0.12   83     16     224     90      41
+# LU, contiguous blocks           0.57   57     49      96    428     128
+# LU, non-contiguous blocks       0.61   58     50      60    428     128
+# Ocean, contiguous partitions   14.33   34     25      58     90      28
+# Ocean, non-continguous partns   0.21   29     31      56     90      28
+# Radiosity                       2.37  253     76      60    485     163
+# Radix                           2.81   16     14      90    222      56
+# Raytrace                        1.65  339     53      88    172      53
+# Water-n2                        0.14  156     29      46    189      39
+# Water-sp                        0.14  150     29      46    183      34
 # ............................................................................
 # Hardware: dual-core Intel Core2 Duo E6750, 2.66 GHz, 4 MB L2 cache, 2 GB RAM.
 # Software: openSUSE 10.3, 64-bit, gcc 4.2.1, runlevel 5, X screensaver: blank

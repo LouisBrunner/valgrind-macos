@@ -5,8 +5,8 @@ How to test DRD
    command:
      perl tests/vg_regtest exp-drd
 2. Test the slowdown for matinv for various matrix sizes via the script
-   exp-drd/scripts/run-matinv (must be about 23 for i == 1 and about
-   33 for i == 10 with n == 200).
+   exp-drd/scripts/run-matinv (must be about 24 for i == 1 and about
+   31 for i == 10 with n == 200).
 3. Test whether DRD works with standard KDE applications and whether it does
    not print any false positives:
      ./vg-in-place --tool=exp-drd kate

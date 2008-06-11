@@ -41,7 +41,7 @@
 
 /* Macro definitions. */
 
-#define ADDR0_BITS 16
+#define ADDR0_BITS 14
 
 #define ADDR0_COUNT ((UWord)1 << ADDR0_BITS)
 
@@ -110,7 +110,7 @@ static __inline__ void bm0_set(UWord* bm0, const Addr a)
 static __inline__ void bm0_set_range(UWord* bm0,
                                      const Addr a1, const SizeT size)
 {
-#if 0
+#ifdef ENABLE_DRD_CONSISTENCY_CHECKS
   tl_assert(a1 < ADDR0_COUNT);
   tl_assert(size > 0);
   tl_assert(a1 + size <= ADDR0_COUNT);
@@ -130,7 +130,7 @@ static __inline__ void bm0_clear(UWord* bm0, const Addr a)
 static __inline__ void bm0_clear_range(UWord* bm0,
                                        const Addr a1, const SizeT size)
 {
-#if 0
+#ifdef ENABLE_DRD_CONSISTENCY_CHECKS
   tl_assert(a1 < ADDR0_COUNT);
   tl_assert(size > 0);
   tl_assert(a1 + size <= ADDR0_COUNT);
@@ -150,7 +150,7 @@ static __inline__ UWord bm0_is_set(const UWord* bm0, const Addr a)
 static __inline__ UWord bm0_is_any_set(const UWord* bm0,
                                        const Addr a1, const SizeT size)
 {
-#if 0
+#ifdef ENABLE_DRD_CONSISTENCY_CHECKS
   tl_assert(a1 < ADDR0_COUNT);
   tl_assert(size > 0);
   tl_assert(a1 + size <= ADDR0_COUNT);
@@ -240,7 +240,7 @@ static __inline__
 Bool bm_cache_lookup(struct bitmap* const bm, const UWord a1,
                      struct bitmap2** bm2)
 {
-#if 0
+#ifdef ENABLE_DRD_CONSISTENCY_CHECKS
   tl_assert(bm);
   tl_assert(bm2);
 #endif

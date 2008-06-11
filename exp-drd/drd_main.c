@@ -276,7 +276,7 @@ static void drd_report_race(const Addr addr, const SizeT size,
 
 static VG_REGPARM(2) void drd_trace_load(Addr addr, SizeT size)
 {
-#if 0
+#ifdef ENABLE_DRD_CONSISTENCY_CHECKS
   /* The assert below has been commented out because of performance reasons.*/
   tl_assert(thread_get_running_tid()
             == VgThreadIdToDrdThreadId(VG_(get_running_tid())));
@@ -338,7 +338,7 @@ static VG_REGPARM(1) void drd_trace_load_8(Addr addr)
 static
 VG_REGPARM(2) void drd_trace_store(Addr addr, SizeT size)
 {
-#if 0
+#ifdef ENABLE_DRD_CONSISTENCY_CHECKS
   /* The assert below has been commented out because of performance reasons.*/
   tl_assert(thread_get_running_tid()
             == VgThreadIdToDrdThreadId(VG_(get_running_tid())));

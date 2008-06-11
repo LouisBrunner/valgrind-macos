@@ -168,7 +168,7 @@ struct bitmap* thread_get_danger_set(void)
 static __inline__
 Bool running_thread_is_recording(void)
 {
-#if 0
+#ifdef ENABLE_DRD_CONSISTENCY_CHECKS
   tl_assert(0 <= (int)s_drd_running_tid && s_drd_running_tid < DRD_N_THREADS
             && s_drd_running_tid != DRD_INVALID_THREADID);
 #endif
@@ -179,11 +179,11 @@ Bool running_thread_is_recording(void)
 static __inline__
 void thread_set_stack_min(const DrdThreadId tid, const Addr stack_min)
 {
-#if 0
+#ifdef ENABLE_DRD_CONSISTENCY_CHECKS
   tl_assert(0 <= tid && tid < DRD_N_THREADS && tid != DRD_INVALID_THREADID);
 #endif
   s_threadinfo[tid].stack_min = stack_min;
-#if 0
+#ifdef ENABLE_DRD_CONSISTENCY_CHECKS
   /* This function can be called after the thread has been created but */
   /* before drd_post_thread_create() has filled in stack_max.          */
   tl_assert(s_threadinfo[tid].stack_min < s_threadinfo[tid].stack_max
@@ -209,7 +209,7 @@ Bool thread_address_on_stack(const Addr a)
 static __inline__
 Segment* thread_get_segment(const DrdThreadId tid)
 {
-#if 0
+#ifdef ENABLE_DRD_CONSISTENCY_CHECKS
   tl_assert(0 <= (int)tid && tid < DRD_N_THREADS
             && tid != DRD_INVALID_THREADID);
   tl_assert(s_threadinfo[tid].last);

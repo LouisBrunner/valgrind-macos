@@ -222,6 +222,7 @@ endif
 
 drd_bitmap_test_SOURCES     = drd_bitmap_test.c
 drd_bitmap_test_CFLAGS      = $(AM_CFLAGS) -O2 \
+                              -DENABLE_DRD_CONSISTENCY_CHECKS\
                               @FLAG_UNLIMITED_INLINE_UNIT_GROWTH@
 
 fp_race_SOURCES             = fp_race.c

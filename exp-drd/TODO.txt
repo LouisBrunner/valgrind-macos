@@ -4,11 +4,15 @@ Last updated May 14, 2008.
 
 Data-race detection algorithm
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+- Find out why the following invocations run slowly:
+  (cd exp-drd/splash2/codes/apps/raytrace/inputs && time ../../../../../../vg-in-place --tool=exp-drd --check-stack-var=yes ../RAYTRACE balls4.env)
+  (cd exp-drd/splash2/codes/apps/raytrace && time ../../../../../vg-in-place --tool=exp-drd --check-stack-var=yes ./RAYTRACE inputs/teapot.env)
+- Test whether file with DRD client requests is installed properly.
 - Let DRD print a warning message when, after 30s runtime, the ratio of
   the number of mutex lock / unlock calls to the number of executed basic
   blocks exceeds a certain threshold. Test with Firefox and nautilus.
 - Continue discussion about unification of DRD and Helgrind client requests.
-- Propose renaming exp-drd back to drd.
+- Propose to rename exp-drd back to drd.
 - Memory pool support.
 - Add locking order checking. Start from the following information:
   * http://sourceforge.net/mailarchive/message.php?msg_id=alpine.LNX.1.10.0803270822080.17890%40mudge.stoecker.eu
@@ -19,8 +23,6 @@ Data-race detection algorithm
 - Find out why no line number or variable name information is printed for
   races detected in parallel sections of OpenMP programs. An example:
   ./vg-in-place --tool=exp-drd exp-drd/tests/omp_prime 4 -t 2
-- Find out why 'matinv 400' runs faster in 32-bit mode than in 64-bit mode
-  on the same CPU.
 
 
 Testing
@@ -45,8 +47,12 @@ Documentation
 
 Limitations
 ~~~~~~~~~~~
-- Does not work with a glibc library compiled with linuxthreads -- NPTL is
-  required for proper operation.
 - openSUSE 10.3, ppc: unless the glibc debuginfo packages is installed,
   false positives are reported on ld.so.
   See also https://bugzilla.novell.com/show_bug.cgi?id=396197.
+- ppc: reports false positives on atomic operations (VEX limitation). See also
+  https://bugs.kde.org/show_bug.cgi?id=162354.
+- Does not work with a glibc library compiled with linuxthreads -- NPTL is
+  required for proper operation.
+- Does not work when compiled with gcc 2.95 -- probably a bug in the
+  optimizer of gcc 2.95.

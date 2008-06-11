@@ -4,7 +4,8 @@ Last updated May 14, 2008.
 
 Data-race detection algorithm
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-- Find out why the following invocations run slowly:
+- Find out why the following invocations run slowly (high number of mutex
+  operations ?):
   (cd exp-drd/splash2/codes/apps/raytrace/inputs && time ../../../../../../vg-in-place --tool=exp-drd --check-stack-var=yes ../RAYTRACE balls4.env)
   (cd exp-drd/splash2/codes/apps/raytrace && time ../../../../../vg-in-place --tool=exp-drd --check-stack-var=yes ./RAYTRACE inputs/teapot.env)
 - Test whether file with DRD client requests is installed properly.

@@ -79,7 +79,7 @@
 /* Local variables. */
 
 static ULong s_bitmap2_creation_count;
-static ULong s_node_creation_count;
+static ULong s_bitmap2_node_creation_count;
 
 
 
@@ -102,7 +102,9 @@ static __inline__ UWord bm0_mask(const Addr a)
 
 static __inline__ void bm0_set(UWord* bm0, const Addr a)
 {
-  //tl_assert(a < ADDR0_COUNT);
+#ifdef ENABLE_DRD_CONSISTENCY_CHECKS
+  tl_assert(a < ADDR0_COUNT);
+#endif
   bm0[a >> BITS_PER_BITS_PER_UWORD] |= (UWord)1 << UWORD_LSB(a);
 }
 
@@ -122,7 +124,9 @@ static __inline__ void bm0_set_range(UWord* bm0,
 
 static __inline__ void bm0_clear(UWord* bm0, const Addr a)
 {
-  //tl_assert(a < ADDR0_COUNT);
+#ifdef ENABLE_DRD_CONSISTENCY_CHECKS
+  tl_assert(a < ADDR0_COUNT);
+#endif
   bm0[a >> BITS_PER_BITS_PER_UWORD] &= ~((UWord)1 << UWORD_LSB(a));
 }
 
@@ -142,7 +146,9 @@ static __inline__ void bm0_clear_range(UWord* bm0,
 
 static __inline__ UWord bm0_is_set(const UWord* bm0, const Addr a)
 {
-  //tl_assert(a < ADDR0_COUNT);
+#ifdef ENABLE_DRD_CONSISTENCY_CHECKS
+  tl_assert(a < ADDR0_COUNT);
+#endif
   return (bm0[a >> BITS_PER_BITS_PER_UWORD] & ((UWord)1 << UWORD_LSB(a)));
 }
 
@@ -213,9 +219,7 @@ void bm_cache_rotate(struct bm_cache_elem cache[], const int n)
 #if __GNUC__ >= 4 && __GNUC_MINOR__ >= 2
   struct bm_cache_elem t;
 
-#if 0
   tl_assert(2 <= n && n <= 8);
-#endif
 
   t = cache[0];
   if (n > 1)
@@ -319,7 +323,9 @@ void bm_update_cache(struct bitmap* const bm,
                      const UWord a1,
                      struct bitmap2* const bm2)
 {
+#ifdef ENABLE_DRD_CONSISTENCY_CHECKS
   tl_assert(bm);
+#endif
 
 #if N_CACHE_ELEM > 8
 #error Please update the code below.
@@ -362,7 +368,9 @@ const struct bitmap2* bm2_lookup(struct bitmap* const bm, const UWord a1)
   struct bitmap2*    bm2;
   struct bitmap2ref* bm2ref;
 
+#ifdef ENABLE_DRD_CONSISTENCY_CHECKS
   tl_assert(bm);
+#endif
   if (! bm_cache_lookup(bm, a1, &bm2))
   {
     bm2ref = VG_(OSetGen_Lookup)(bm->oset, &a1);
@@ -406,11 +414,15 @@ bm2_lookup_exclusive(struct bitmap* const bm, const UWord a1)
     bm2 = bm2ref->bm2;
   }
 
+#ifdef ENABLE_DRD_CONSISTENCY_CHECKS
   tl_assert(bm2);
+#endif
 
   if (bm2->refcnt > 1)
   {
+#ifdef ENABLE_DRD_CONSISTENCY_CHECKS
     tl_assert(bm2ref);
+#endif
     bm2 = bm2_make_exclusive(*(struct bitmap**)&bm, bm2ref);
   }
 
@@ -429,7 +441,7 @@ struct bitmap2* bm2_insert(struct bitmap* const bm, const UWord a1)
   struct bitmap2ref* bm2ref;
   struct bitmap2* bm2;
 
-  s_node_creation_count++;
+  s_bitmap2_node_creation_count++;
   bm2ref       = VG_(OSetGen_AllocNode)(bm->oset, sizeof(*bm2ref));
   bm2ref->addr = a1;
   bm2          = bm2_new(a1);
@@ -451,10 +463,12 @@ struct bitmap2* bm2_insert_addref(struct bitmap* const bm,
 {
   struct bitmap2ref* bm2ref;
 
+#ifdef ENABLE_DRD_CONSISTENCY_CHECKS
   tl_assert(bm);
-  //tl_assert(VG_(OSetGen_Lookup)(bm->oset, &bm2->addr) == 0);
+  tl_assert(VG_(OSetGen_Lookup)(bm->oset, &bm2->addr) == 0);
+#endif
 
-  s_node_creation_count++;
+  s_bitmap2_node_creation_count++;
   bm2ref       = VG_(OSetGen_AllocNode)(bm->oset, sizeof(*bm2ref));
   bm2ref->addr = bm2->addr;
   bm2ref->bm2  = bm2;
@@ -478,7 +492,9 @@ struct bitmap2* bm2_lookup_or_insert(struct bitmap* const bm, const UWord a1)
   struct bitmap2ref* bm2ref;
   struct bitmap2* bm2;
 
+#ifdef ENABLE_DRD_CONSISTENCY_CHECKS
   tl_assert(bm);
+#endif
   if (bm_cache_lookup(bm, a1, &bm2))
   {
     if (bm2 == 0)
@@ -514,9 +530,13 @@ struct bitmap2* bm2_lookup_or_insert_exclusive(struct bitmap* const bm,
 {
   struct bitmap2* bm2;
 
+#ifdef ENABLE_DRD_CONSISTENCY_CHECKS
   tl_assert(bm);
+#endif
   bm2 = (struct bitmap2*)bm2_lookup_or_insert(bm, a1);
+#ifdef ENABLE_DRD_CONSISTENCY_CHECKS
   tl_assert(bm2);
+#endif
   if (bm2->refcnt > 1)
   {
     struct bitmap2ref* bm2ref;

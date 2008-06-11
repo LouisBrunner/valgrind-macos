@@ -180,7 +180,9 @@ static __inline__
 void thread_set_stack_min(const DrdThreadId tid, const Addr stack_min)
 {
 #ifdef ENABLE_DRD_CONSISTENCY_CHECKS
-  tl_assert(0 <= tid && tid < DRD_N_THREADS && tid != DRD_INVALID_THREADID);
+  tl_assert(0 <= (int)tid
+            && tid < DRD_N_THREADS
+            && tid != DRD_INVALID_THREADID);
 #endif
   s_threadinfo[tid].stack_min = stack_min;
 #ifdef ENABLE_DRD_CONSISTENCY_CHECKS

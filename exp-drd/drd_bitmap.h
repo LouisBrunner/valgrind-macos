@@ -210,13 +210,11 @@ static struct bitmap2* bm2_make_exclusive(struct bitmap* const bm,
 
 /** Rotate elements cache[0..n-1] such that the element at position n-1 is
  *  moved to position 0. This allows to speed up future cache lookups.
- *
- *  @note Apparently gcc 4.2 compiles this code correctly, but gcc 4.1 not.
  */
 static __inline__
 void bm_cache_rotate(struct bm_cache_elem cache[], const int n)
 {
-#if __GNUC__ >= 4 && __GNUC_MINOR__ >= 2
+#if 0
   struct bm_cache_elem t;
 
   tl_assert(2 <= n && n <= 8);

@@ -6,7 +6,7 @@
 # are called gmp-devel and mpfr-devel.
 
 
-GCC_VERSION=4.3.0
+GCC_VERSION=4.3.1
 FSF_MIRROR=ftp://ftp.easynet.be/gnu
 SRCDIR=$HOME/software
 DOWNLOADS=$SRCDIR/downloads
@@ -14,6 +14,7 @@ SRC=$HOME/software/gcc-${GCC_VERSION}
 BUILD=${SRC}-build
 TAR=gcc-${GCC_VERSION}.tar.bz2
 PREFIX=$HOME/gcc-${GCC_VERSION}
+export LC_ALL=C
 export MAKEFLAGS="-j$(($(grep -c '^processor' /proc/cpuinfo) + 1))"
 
 if [ ! -e /usr/include/gmp.h ]; then

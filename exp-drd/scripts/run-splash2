@@ -62,20 +62,38 @@ fi
 # Results (-p4):                native  DRD     DRD     HG    ITC     ITC
 #                               time         w/ filter             w/ filter
 # ............................................................................
-# Cholesky                        0.29   99     63      37    239      82
+# Cholesky                        0.29  103     64      37    239      82
 # FFT                             0.19   65     32     556     90      41
-# LU, contiguous blocks           0.76   45     37      97    428     128
-# LU, non-contiguous blocks       0.80   52     45      59    428     128
-# Ocean, contiguous partitions   19.40   39     33      54     90      28
+# LU, contiguous blocks           0.76   44     36      97    428     128
+# LU, non-contiguous blocks       0.80   45     39      59    428     128
+# Ocean, contiguous partitions   19.40   39     32      54     90      28
 # Ocean, non-continguous partns   0.29   26     29      53     90      28
-# Radiosity                       3.11  224     61      58    485     163
+# Radiosity                       3.11  223     61      58    485     163
 # Radix                           4.05   16     14      85    222      56
-# Raytrace                        2.21  276     53      89    172      53
+# Raytrace                        2.21  272     53      89    172      53
 # Water-n2                        0.17  176     33      52    189      39
 # Water-sp                        0.18  145     33      51    183      34
 # ............................................................................
 # Hardware: dual-core Intel Xeon 5130, 2.0 GHz, 4 MB L2 cache, 4 GB RAM.
-# Software: Ubuntu 7.10 server, 64-bit, gcc 4.1.3.
+# Software: Ubuntu 7.10 server, 64-bit, gcc 4.1.3, xload -update 1 running.
+##############################################################################
+# Results (-p4):                native  DRD     DRD     HG    ITC     ITC
+#                               time         w/ filter             w/ filter
+# ............................................................................
+# Cholesky                        0.29   89     64      37    239      82
+# FFT                             0.19   50     32     556     90      41
+# LU, contiguous blocks           0.76   41     38      97    428     128
+# LU, non-contiguous blocks       0.80   49     47      59    428     128
+# Ocean, contiguous partitions   19.40   39     33      54     90      28
+# Ocean, non-continguous partns   0.29   25     29      53     90      28
+# Radiosity                       3.11  164     60      58    485     163
+# Radix                           4.05   16     14      85    222      56
+# Raytrace                        2.21  169     56      89    172      53
+# Water-n2                        0.17  118     32      52    189      39
+# Water-sp                        0.18   94     33      51    183      34
+# ............................................................................
+# Hardware: dual-core Intel Xeon 5130, 2.0 GHz, 4 MB L2 cache, 4 GB RAM.
+# Software: Ubuntu 7.10 server, 64-bit, gcc 4.3.1, xload -update 1 running.
 ##############################################################################
 # Results (-p4):                native  DRD     DRD     HG    ITC     ITC
 #                               time         w/ filter             w/ filter

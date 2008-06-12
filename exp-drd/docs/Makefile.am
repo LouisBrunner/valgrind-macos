@@ -1,1 +1,1 @@
-EXTRA_DIST = README.txt
+EXTRA_DIST = drd-manual.xml

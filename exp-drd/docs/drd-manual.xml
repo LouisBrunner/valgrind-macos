@@ -1,0 +1,125 @@
+<?xml version="1.0"?> <!-- -*- sgml -*- -->
+<!DOCTYPE chapter PUBLIC "-//OASIS//DTD DocBook XML V4.2//EN"
+  "http://www.oasis-open.org/docbook/xml/4.2/docbookx.dtd"
+[ <!ENTITY % vg-entities SYSTEM "../../docs/xml/vg-entities.xml"> %vg-entities; ]>
+
+
+<chapter id="drd-manual" xreflabel="DRD: a thread error detector">
+  <title>DRD: a thread error detector</title>
+
+<para>To use this tool, you must specify
+<computeroutput>--tool=exp-drd</computeroutput>
+on the Valgrind command line.</para>
+
+<sect1 id="drd-manual.overview" xreflabel="Overview">
+<title>Overview</title>
+
+<para>
+DRD is a Valgrind tool for detecting errors in multithreaded C and C++
+programs that use the POSIX threading primitives, also known as
+pthreads. POSIX threads is the most widely available threading library
+on Unix systems.
+</para>
+
+<para>
+The next section provides
+<link linkend="drd-manual.multithreading">
+background information about multithreading</link>.
+</para>
+
+<para>
+DRD can detect two classes of errors, which are discussed in detail:
+</para>
+
+<orderedlist>
+ <listitem>
+  <para><link linkend="drd-manual.api-checks">
+        Misuses of the POSIX threads API.</link></para>
+ </listitem>
+ <listitem>
+  <para><link linkend="drd-manual.data-races">
+        Data races -- accessing memory without adequate locking.
+        </link></para>
+ </listitem>
+</orderedlist>
+
+<para>Then there is a
+<link linkend="drd-manual.options">summary of command-line
+options.</link>
+</para>
+
+<para>Finally, there is a section about the current
+<link linkend="drd-manual.limitations">limitations</link>
+of DRD.
+</para>
+
+</sect1>
+
+
+<sect1 id="drd-manual.multithreading" xreflabel="Multithreading">
+<title>Multithreaded Programming</title>
+</sect1>
+
+
+<sect1 id="drd-manual.api-checks" xreflabel="API Checks">
+<title>Detected errors: Misuses of the POSIX threads API</title>
+</sect1>
+
+
+<sect1 id="drd-manual.data-races" xreflabel="Data Races">
+<title>Detected errors: Data Races</title>
+</sect1>
+
+
+<sect1 id="drd-manual.options" xreflabel="DRD Options">
+<title>DRD Options</title>
+
+<para>The following end-user options are available:</para>
+
+<!-- start of xi:include in the manpage -->
+<variablelist id="drd.opts.list">
+</variablelist>
+<!-- end of xi:include in the manpage -->
+
+<!-- start of xi:include in the manpage -->
+<para>In addition, the following debugging options are available for
+DRD:</para>
+<variablelist id="drd.debugopts.list">
+</variablelist>
+<!-- end of xi:include in the manpage -->
+
+</sect1>
+
+<sect1 id="drd-manual.limitations" xreflabel="Limitations">
+<title>DRD Limitations</title>
+
+<para>DRD currently has the following limitations:</para>
+
+<itemizedlist>
+  <listitem><para>DRD has only been tested on the Linux operating
+  system, and not on any of the other operating systems supported by
+  Valgrind.</para>
+  </listitem>
+  <listitem><para>Of the two POSIX threads implementations for Linux,
+  only the NPTL (Native POSIX Thread Library) is supported. The older
+  LinuxThreads library is not supported.</para>
+  </listitem>
+  <listitem><para>When running DRD on a PowerPC CPU, DRD will report
+  false positives on atomic operations. See also <ulink
+  url="http://bugs.kde.org/show_bug.cgi?id=162354">bug 162354</ulink>.
+  </para></listitem>
+  <listitem><para>DRD, just like memcheck, will refuse to
+  start on Linux distributions where all symbol information has been
+  removed from ld.so. This is e.g. the case for openSUSE 10.3 -- see
+  also <ulink
+  url="http://bugzilla.novell.com/show_bug.cgi?id=396197">bug 396197</ulink>.
+  </para></listitem>
+  <listitem><para>If you compile the DRD sourcecode yourself, you need
+  gcc 3.0 or later. gcc 2.95 is not supported.</para>
+  </listitem>
+
+</itemizedlist>
+
+</sect1>
+
+</chapter>

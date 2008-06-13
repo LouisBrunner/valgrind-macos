@@ -321,8 +321,8 @@ struct rt_sigframe
    bits of sigcontext at the moment.
 */
 static 
-void synth_ucontext(ThreadId tid, const vki_siginfo_t *si, Int trapno,
-                    const vki_sigset_t *set, 
+void synth_ucontext(ThreadId tid, const vki_siginfo_t *si,
+                    UWord trapno, UWord err, const vki_sigset_t *set, 
                     struct vki_ucontext *uc, struct _vki_fpstate *fpstate)
 {
    ThreadState *tst = VG_(get_ThreadState)(tid);
@@ -361,8 +361,8 @@ void synth_ucontext(ThreadId tid, const vki_siginfo_t *si, Int trapno,
    // FIXME: SC2(cs,CS);
    // FIXME: SC2(gs,GS);
    // FIXME: SC2(fs,FS);
-   /* XXX err */
    sc->trapno = trapno;
+   sc->err = err;
 #  undef SC2
 
    sc->cr2 = (UWord)si->_sifields._sigfault._addr;
@@ -445,7 +445,8 @@ static Addr build_rt_sigframe(ThreadState *tst,
    struct rt_sigframe *frame;
    Addr rsp = rsp_top_of_frame;
    Int	sigNo = siginfo->si_signo;
-   Int trapno;
+   UWord trapno;
+   UWord err;
 
    rsp -= sizeof(*frame);
    rsp = VG_ROUNDDN(rsp, 16);
@@ -463,10 +464,13 @@ static Addr build_rt_sigframe(ThreadState *tst,
    else
       frame->retaddr = (Addr)&VG_(amd64_linux_SUBST_FOR_rt_sigreturn);
 
-   if (siguc)
+   if (siguc) {
       trapno = siguc->uc_mcontext.trapno;
-   else
+      err = siguc->uc_mcontext.err;
+   } else {
       trapno = 0;
+      err = 0;
+   }
 
    VG_(memcpy)(&frame->sigInfo, siginfo, sizeof(vki_siginfo_t));
 
@@ -475,7 +479,8 @@ static Addr build_rt_sigframe(ThreadState *tst,
       frame->sigInfo._sifields._sigfault._addr 
          = (void*)tst->arch.vex.guest_RIP;
 
-   synth_ucontext(tst->tid, siginfo, trapno, mask, &frame->uContext, &frame->fpstate);
+   synth_ucontext(tst->tid, siginfo, trapno, err, mask,
+                  &frame->uContext, &frame->fpstate);
 
    VG_TRACK( post_mem_write,  Vg_CoreSignal, tst->tid, 
              rsp, offsetof(struct rt_sigframe, vg) );

@@ -345,8 +345,8 @@ struct rt_sigframe
    bits of sigcontext at the moment.
 */
 static 
-void synth_ucontext(ThreadId tid, const vki_siginfo_t *si, Int trapno,
-                    const vki_sigset_t *set, 
+void synth_ucontext(ThreadId tid, const vki_siginfo_t *si,
+                    UWord trapno, UWord err, const vki_sigset_t *set, 
                     struct vki_ucontext *uc, struct _vki_fpstate *fpstate)
 {
    ThreadState *tst = VG_(get_ThreadState)(tid);
@@ -383,7 +383,7 @@ void synth_ucontext(ThreadId tid, const vki_siginfo_t *si, Int trapno,
    SC2(ss,SS);
    /* XXX esp_at_signal */
    sc->trapno = trapno;
-   /* XXX err */
+   sc->err = err;
 #  undef SC2
 
    sc->cr2 = (UInt)si->_sifields._sigfault._addr;
@@ -466,7 +466,8 @@ static Addr build_sigframe(ThreadState *tst,
    struct sigframe *frame;
    Addr esp = esp_top_of_frame;
    Int	sigNo = siginfo->si_signo;
-   Int trapno;
+   UWord trapno;
+   UWord err;
    struct vki_ucontext uc;
 
    vg_assert((flags & VKI_SA_SIGINFO) == 0);
@@ -489,12 +490,15 @@ static Addr build_sigframe(ThreadState *tst,
    else
       frame->retaddr = (Addr)&VG_(x86_linux_SUBST_FOR_sigreturn);
 
-   if (siguc)
+   if (siguc) {
       trapno = siguc->uc_mcontext.trapno;
-   else
+      err = siguc->uc_mcontext.err;
+   } else {
       trapno = 0;
+      err = 0;
+   }
 
-   synth_ucontext(tst->tid, siginfo, trapno, mask, &uc, &frame->fpstate);
+   synth_ucontext(tst->tid, siginfo, trapno, err, mask, &uc, &frame->fpstate);
 
    VG_(memcpy)(&frame->sigContext, &uc.uc_mcontext, 
 	       sizeof(struct vki_sigcontext));
@@ -520,7 +524,8 @@ static Addr build_rt_sigframe(ThreadState *tst,
    struct rt_sigframe *frame;
    Addr esp = esp_top_of_frame;
    Int	sigNo = siginfo->si_signo;
-   Int trapno;
+   UWord trapno;
+   UWord err;
 
    vg_assert((flags & VKI_SA_SIGINFO) != 0);
 
@@ -542,10 +547,13 @@ static Addr build_rt_sigframe(ThreadState *tst,
    else
       frame->retaddr = (Addr)&VG_(x86_linux_SUBST_FOR_rt_sigreturn);
 
-   if (siguc)
+   if (siguc) {
       trapno = siguc->uc_mcontext.trapno;
-   else
+      err = siguc->uc_mcontext.err;
+   } else {
       trapno = 0;
+      err = 0;
+   }
 
    frame->psigInfo = (Addr)&frame->sigInfo;
    frame->puContext = (Addr)&frame->uContext;
@@ -556,7 +564,8 @@ static Addr build_rt_sigframe(ThreadState *tst,
       frame->sigInfo._sifields._sigfault._addr 
          = (void*)tst->arch.vex.guest_EIP;
 
-   synth_ucontext(tst->tid, siginfo, trapno, mask, &frame->uContext, &frame->fpstate);
+   synth_ucontext(tst->tid, siginfo, trapno, err, mask,
+                  &frame->uContext, &frame->fpstate);
 
    VG_TRACK( post_mem_write,  Vg_CoreSignal, tst->tid, 
              esp, offsetof(struct rt_sigframe, vg) );

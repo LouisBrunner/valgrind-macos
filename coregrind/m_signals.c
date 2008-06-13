@@ -1498,6 +1498,8 @@ void VG_(synth_sigtrap)(ThreadId tid)
 #if defined(VGA_x86) || defined(VGA_amd64)
    uc.uc_mcontext.trapno = 3;     /* tjh: this is the x86 trap number
                                           for a breakpoint trap... */
+   uc.uc_mcontext.err = 0;        /* tjh: no error code for x86
+                                          breakpoint trap... */
 #endif
 
    resume_scheduler(tid);

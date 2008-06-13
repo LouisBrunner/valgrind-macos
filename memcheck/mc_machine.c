@@ -531,15 +531,25 @@ static Int get_otrack_shadow_offset_wrk ( Int offset, Int szB )
    if (o >= GOF(XMM14) && o+sz <= GOF(XMM14)+SZB(XMM14)) return GOF(XMM14);
    if (o >= GOF(XMM15) && o+sz <= GOF(XMM15)+SZB(XMM15)) return GOF(XMM15);
 
-   /* MMX accesses to FP regs */
-   if (o == GOF(FPREG[0]) && sz == 8) return o;
-   if (o == GOF(FPREG[1]) && sz == 8) return o;
-   if (o == GOF(FPREG[2]) && sz == 8) return o;
-   if (o == GOF(FPREG[3]) && sz == 8) return o;
-   if (o == GOF(FPREG[4]) && sz == 8) return o;
-   if (o == GOF(FPREG[5]) && sz == 8) return o;
-   if (o == GOF(FPREG[6]) && sz == 8) return o;
-   if (o == GOF(FPREG[7]) && sz == 8) return o;
+   /* MMX accesses to FP regs.  Need to allow for 32-bit references
+      due to dirty helpers for frstor etc, which reference the entire
+      64-byte block in one go. */
+   if (o >= GOF(FPREG[0])
+       && o+sz <= GOF(FPREG[0])+SZB(FPREG[0])) return GOF(FPREG[0]);
+   if (o >= GOF(FPREG[1])
+       && o+sz <= GOF(FPREG[1])+SZB(FPREG[1])) return GOF(FPREG[1]);
+   if (o >= GOF(FPREG[2])
+       && o+sz <= GOF(FPREG[2])+SZB(FPREG[2])) return GOF(FPREG[2]);
+   if (o >= GOF(FPREG[3])
+       && o+sz <= GOF(FPREG[3])+SZB(FPREG[3])) return GOF(FPREG[3]);
+   if (o >= GOF(FPREG[4])
+       && o+sz <= GOF(FPREG[4])+SZB(FPREG[4])) return GOF(FPREG[4]);
+   if (o >= GOF(FPREG[5])
+       && o+sz <= GOF(FPREG[5])+SZB(FPREG[5])) return GOF(FPREG[5]);
+   if (o >= GOF(FPREG[6])
+       && o+sz <= GOF(FPREG[6])+SZB(FPREG[6])) return GOF(FPREG[6]);
+   if (o >= GOF(FPREG[7])
+       && o+sz <= GOF(FPREG[7])+SZB(FPREG[7])) return GOF(FPREG[7]);
 
    /* Map high halves of %RAX,%RCX,%RDX,%RBX to the whole register.
       This is needed because the general handling of dirty helper

@@ -10,7 +10,9 @@ How to test DRD
 3. Test whether DRD works with standard KDE applications and whether it does
    not print any false positives:
      ./vg-in-place --tool=exp-drd kate
+     ./vg-in-place --tool=exp-drd --check-stack-var=yes kate
      ./vg-in-place --trace-children=yes --tool=exp-drd knode
+     ./vg-in-place --trace-children=yes --tool=exp-drd --check-stack-var=yes knode
      ./vg-in-place --trace-children=yes --tool=exp-drd amarokapp
 4. Test whether DRD works with standard GNOME applications. Expect race reports
    after having closed the GNOME terminal window:

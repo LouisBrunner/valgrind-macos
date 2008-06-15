@@ -7,26 +7,31 @@
 source "$(dirname $0)/measurement-functions"
 
 function run_test {
-  local tmp avg1=1 stddev1=1 avg2=1 stddev2=1
+  local tmp avg1=1 stddev1=1 avg2=1 stddev2=1 p=4
 
   tmp="/tmp/test-timing.$$"
   rm -f "${tmp}"
 
-  test_output="${1}.out" measure_runtime "$@" | avgstddev > "$tmp"
+  test_output="${1}.out" measure_runtime "$@" -p1 | avgstddev > "$tmp"
   read avg1 stddev1 < "$tmp"
   echo "Average time: ${avg1} +/- ${stddev1} seconds"
 
-  for p in 4
-  do
-    test_output="${1}-drd-with-stack-var-${p}.out" \
-    print_runtime_ratio $VG --tool=exp-drd --check-stack-var=yes "$@" -p$p
+  test_output="${1}.out" measure_runtime "$@" -p2 | avgstddev > "$tmp"
+  read avg1 stddev1 < "$tmp"
+  echo "Average time: ${avg1} +/- ${stddev1} seconds"
 
-    test_output="${1}-drd-without-stack-var-${p}.out" \
-    print_runtime_ratio $VG --tool=exp-drd --check-stack-var=no  "$@" -p$p
+  test_output="${1}.out" measure_runtime "$@" -p4 | avgstddev > "$tmp"
+  read avg1 stddev1 < "$tmp"
+  echo "Average time: ${avg1} +/- ${stddev1} seconds"
 
-    test_output="${1}-helgrind-${p}.out" \
-    print_runtime_ratio $VG --tool=helgrind "$@" -p$p
-  done
+  test_output="${1}-drd-with-stack-var-${p}.out" \
+  print_runtime_ratio $VG --tool=exp-drd --check-stack-var=yes "$@" -p$p
+
+  test_output="${1}-drd-without-stack-var-${p}.out" \
+  print_runtime_ratio $VG --tool=exp-drd --check-stack-var=no  "$@" -p$p
+
+  test_output="${1}-helgrind-${p}.out" \
+  print_runtime_ratio $VG --tool=helgrind "$@" -p$p
 
   echo ''
 
@@ -60,14 +65,14 @@ fi
 
 ##############################################################################
 # Results (-p4):                native  DRD     DRD     HG    ITC     ITC
-#                               time         w/ filter             w/ filter
+#                               (-p1)        w/ filter             w/ filter
 # ............................................................................
 # Cholesky                        0.29  103     64      37    239      82
 # FFT                             0.19   65     32     556     90      41
 # LU, contiguous blocks           0.76   44     36      97    428     128
 # LU, non-contiguous blocks       0.80   45     39      59    428     128
 # Ocean, contiguous partitions   19.40   39     32      54     90      28
-# Ocean, non-continguous partns   0.29   26     29      53     90      28
+# Ocean, non-contiguous partns    0.29   26     29      53     90      28
 # Radiosity                       3.11  223     61      58    485     163
 # Radix                           4.05   16     14      85    222      56
 # Raytrace                        2.21  272     53      89    172      53
@@ -78,14 +83,14 @@ fi
 # Software: Ubuntu 7.10 server, 64-bit, gcc 4.1.3, xload -update 1 running.
 ##############################################################################
 # Results (-p4):                native  DRD     DRD     HG    ITC     ITC
-#                               time         w/ filter             w/ filter
+#                               (-p1)        w/ filter             w/ filter
 # ............................................................................
 # Cholesky                        0.29   89     64      37    239      82
 # FFT                             0.19   50     32     556     90      41
 # LU, contiguous blocks           0.76   41     38      97    428     128
 # LU, non-contiguous blocks       0.80   49     47      59    428     128
 # Ocean, contiguous partitions   19.40   39     33      54     90      28
-# Ocean, non-continguous partns   0.29   25     29      53     90      28
+# Ocean, non-contiguous partns    0.29   25     29      53     90      28
 # Radiosity                       3.11  164     60      58    485     163
 # Radix                           4.05   16     14      85    222      56
 # Raytrace                        2.21  169     56      89    172      53
@@ -96,14 +101,14 @@ fi
 # Software: Ubuntu 7.10 server, 64-bit, gcc 4.3.1, xload -update 1 running.
 ##############################################################################
 # Results (-p4):                native  DRD     DRD     HG    ITC     ITC
-#                               time         w/ filter             w/ filter
+#                               (-p1)        w/ filter             w/ filter
 # ............................................................................
 # Cholesky                        0.21  100     64      36    239      82
 # FFT                             0.12  100     38     224     90      41
 # LU, contiguous blocks           0.57   58     50      96    428     128
 # LU, non-contiguous blocks       0.61   62     56      60    428     128
 # Ocean, contiguous partitions   14.33   43     34      58     90      28
-# Ocean, non-continguous partns   0.21   30     33      56     90      28
+# Ocean, non-contiguous partns    0.21   30     33      56     90      28
 # Radiosity                       2.33  244     63      60    485     163
 # Radix                           2.81   15     13      90    222      56
 # Raytrace                        1.65  340     52      88    172      53
@@ -114,19 +119,37 @@ fi
 # Software: openSUSE 10.3, 64-bit, gcc 4.2.1, runlevel 5, X screensaver: blank
 ##############################################################################
 # Results (-p4):                native  DRD     DRD     HG    ITC     ITC
-#                               time         w/ filter             w/ filter
+#                               (-p1)        w/ filter             w/ filter
 # ............................................................................
 # Cholesky                        0.21   85     62      36    239      82
 # FFT                             0.12   82     41     224     90      41
 # LU, contiguous blocks           0.57   45     42      96    428     128
 # LU, non-contiguous blocks       0.61   53     53      60    428     128
 # Ocean, contiguous partitions   14.33   40     32      58     90      28
-# Ocean, non-continguous partns   0.21   28     32      56     90      28
+# Ocean, non-contiguous partns    0.21   28     32      56     90      28
 # Radiosity                       2.33  175     62      60    485     163
 # Radix                           2.81   17     15      90    222      56
 # Raytrace                        1.65  233     29      88    172      53
 # Water-n2                        0.14  105     29      46    189      39
 # Water-sp                        0.14  105     31      46    183      34
+# ............................................................................
+# Hardware: dual-core Intel Core2 Duo E6750, 2.66 GHz, 4 MB L2 cache, 2 GB RAM.
+# Software: openSUSE 10.3, 64-bit, gcc 4.3.1, runlevel 5, X screensaver: blank
+##############################################################################
+# Results (-p4):               native      DRD     DRD     HG    ITC     ITC
+#                        (-p1)  (-p2) (-p4)     w/ filter             w/ filter
+# ............................................................................
+# Cholesky                0.21  0.14  4.62   4      3       2    239      82
+# FFT                     0.12  0.08  0.07 138     72     380     90      41
+# LU, contiguous          0.57  0.34  0.34  92     88      96    428     128
+# LU, non-contiguous      0.59  0.32  0.35 116    118      60    428     128
+# Ocean, contiguous      14.49  9.73  9.70  65     53      ..     90      28
+# Ocean, non-contiguous   0.21  0.12  0.12  60     65     105     90      28
+# Radiosity               2.33  2.32  2.33 177     62      60    485     163
+# Radix                   2.81  1.45  1.46  37     35     171    222      56
+# Raytrace                1.65  1.64  1.64 235     55      89    172      53
+# Water-n2                0.14  0.12  0.12 129     36      55    189      39
+# Water-sp                0.14  0.13  0.12 124     36      54    183      34
 # ............................................................................
 # Hardware: dual-core Intel Core2 Duo E6750, 2.66 GHz, 4 MB L2 cache, 2 GB RAM.
 # Software: openSUSE 10.3, 64-bit, gcc 4.3.1, runlevel 5, X screensaver: blank

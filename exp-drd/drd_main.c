@@ -38,6 +38,7 @@
 #include "drd_thread_bitmap.h"
 #include "drd_track.h"
 #include "drd_vc.h"
+#include "libvex_guest_offsets.h"
 #include "priv_drd_clientreq.h"
 #include "pub_drd_bitmap.h"
 #include "pub_tool_vki.h"         // Must be included before pub_tool_libcproc
@@ -843,6 +844,50 @@ void drd_post_clo_init(void)
   }
 }
 
+#if defined(VGA_x86)
+#define STACK_POINTER_OFFSET OFFSET_x86_ESP
+#elif defined(VGA_amd64)
+#define STACK_POINTER_OFFSET OFFSET_amd64_RSP
+#elif defined(VGA_ppc32)
+#define STACK_POINTER_OFFSET ((OFFSET_ppc32_GPR0 + OFFSET_ppc32_GPR2) / 2)
+#elif defined(VGA_ppc64)
+#define STACK_POINTER_OFFSET ((OFFSET_ppc64_GPR0 + OFFSET_ppc64_GPR2) / 2)
+#else
+#error Unknown architecture.
+#endif
+
+
+/** Return true if and only if addr_expr matches the pattern (SP) or
+ *  <offset>(SP).
+ */
+static Bool is_stack_access(IRSB* const bb, IRExpr* const addr_expr)
+{
+  Bool result = False;
+
+  if (addr_expr->tag == Iex_RdTmp)
+  {
+    int i;
+    for (i = 0; i < bb->stmts_size; i++)
+    {
+      if (bb->stmts[i]
+          && bb->stmts[i]->tag == Ist_WrTmp
+          && bb->stmts[i]->Ist.WrTmp.tmp == addr_expr->Iex.RdTmp.tmp)
+      {
+        IRExpr* e = bb->stmts[i]->Ist.WrTmp.data;
+        if (e->tag == Iex_Get && e->Iex.Get.offset == STACK_POINTER_OFFSET)
+        {
+          result = True;
+        }
+
+        //ppIRExpr(e);
+        //VG_(printf)(" (%s)\n", result ? "True" : "False");
+        break;
+      }
+    }
+  }
+  return result;
+}
+
 static void instrument_load(IRSB* const bb,
                             IRExpr* const addr_expr,
                             const HWord size)
@@ -862,6 +907,9 @@ static void instrument_load(IRSB* const bb,
 				      mkIRExprVec_2(addr_expr,
 						    mkIRExpr_HWord(size)))));
   }
+
+  if (! s_drd_check_stack_accesses && is_stack_access(bb, addr_expr))
+    return;
 
   switch (size)
   {
@@ -924,6 +972,9 @@ static void instrument_store(IRSB* const bb,
 				      mkIRExprVec_2(addr_expr,
 						    mkIRExpr_HWord(size)))));
   }
+
+  if (! s_drd_check_stack_accesses && is_stack_access(bb, addr_expr))
+    return;
 
   switch (size)
   {

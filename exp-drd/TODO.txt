@@ -28,10 +28,11 @@ Data-race detection algorithm
 
 Testing
 ~~~~~~~
-- test exp-drd's performance with the SPLASH-2 software, e.g. fft
-  (http://www-flash.stanford.edu/apps/SPLASH/) or the PARSEC benchmark
-  (http://parsec.cs.princeton.edu/license.htm).
-- test with Synfig Studio (see also http://bugs.kde.org/show_bug.cgi?id=158555)
+- Find out the memory overhead for exp-drd on the SPLASH-2 benchmarks (ITC: 20x)
+- Measure the performance and the memory overhead of exp-drd on the PARSEC
+  benchmark (http://parsec.cs.princeton.edu/license.htm).
+- Test with Synfig Studio (see also http://bugs.kde.org/show_bug.cgi?id=158555)
+- Test with a multithreaded Python application.
 
 
 Documentation

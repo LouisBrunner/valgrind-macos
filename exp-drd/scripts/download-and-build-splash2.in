@@ -82,7 +82,8 @@ diff -ru orig/splash2/codes/Makefile.config splash2/codes/Makefile.config
 --- orig/splash2/codes/Makefile.config	2008-05-25 10:38:52.000000000 +0200
 +++ splash2/codes/Makefile.config	2008-05-25 10:14:25.000000000 +0200
 @@ -1,5 +1,5 @@
- CC := gcc
+-CC := gcc
++CC := @CC@
 -CFLAGS := -O3 -pthread -D_POSIX_C_SOURCE=200112
 +CFLAGS := -g3 -O3 -pthread -D_POSIX_C_SOURCE=200112
  #CFLAGS := -g3 -pthread -D_POSIX_C_SOURCE=200112

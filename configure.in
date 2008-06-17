@@ -1393,8 +1393,9 @@ AC_OUTPUT(
    exp-omega/docs/Makefile
    exp-drd/Makefile
    exp-drd/docs/Makefile
+   exp-drd/scripts/download-and-build-splash2
    exp-drd/tests/Makefile
-) 
+)
 
 cat<<EOF
 

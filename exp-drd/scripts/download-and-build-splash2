@@ -11,6 +11,8 @@ export LC_ALL=C
 
 mkdir -p "${downloads}"
 
+cd "$(dirname $0)/.."
+
 if [ -e splash2 ]; then
   echo "Error: a directory with the name splash2 already exists. Please"
   echo "remove it before running this script, or run this script in another"

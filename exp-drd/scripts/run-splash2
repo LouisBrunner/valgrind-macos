@@ -16,6 +16,8 @@ function run_test {
   read avg1 stddev1 < "$tmp"
   echo "Average time: ${avg1} +/- ${stddev1} seconds"
 
+  test_output="/dev/null" print_runtime_ratio $VG --tool=none "$@" -p1
+
   test_output="${1}.out" measure_runtime "$@" -p2 | avgstddev > "$tmp"
   read avg1 stddev1 < "$tmp"
   echo "Average time: ${avg1} +/- ${stddev1} seconds"
@@ -23,6 +25,8 @@ function run_test {
   test_output="${1}.out" measure_runtime "$@" -p4 | avgstddev > "$tmp"
   read avg1 stddev1 < "$tmp"
   echo "Average time: ${avg1} +/- ${stddev1} seconds"
+
+  test_output="/dev/null" print_runtime_ratio $VG --tool=none "$@" -p4
 
   test_output="${1}-drd-with-stack-var-${p}.out" \
   print_runtime_ratio $VG --tool=exp-drd --check-stack-var=yes "$@" -p$p
@@ -64,29 +68,29 @@ if [ ! -e "$VG" ]; then
 fi
 
 ##############################################################################
-# Results:                     native       DRD    DRD     HG    ITC     ITC
-#                         -p1    -p2   -p4  -p4  -p4, f   -p4    -p4    -p4, f
+# Results:                native    native  none  DRD   DRD    HG   ITC    ITC
+#                         -p1    -p2   -p4  -p4   -p4  -p4+f  -p4   -p4  -p4+f
 # ............................................................................
-# Cholesky                0.29  0.21  4.51    5     4       2    239      82
-# FFT                     0.20  0.12  0.12   82    54     963     90      41
-# LU, contiguous          0.76  0.47  0.47   66    62     155    428     128
-# LU, non-contiguous      0.80  0.45  0.48   85    82     102    428     128
-# Ocean, contiguous      19.46 12.62 12.74   57    49      86     90      28
-# Ocean, non-contiguous   0.18  0.19  7.49   40    47      85     90      28
-# Radiosity               3.14  3.11  3.11  164    60      58    485     163
-# Radix                   4.07  2.13  2.15   29    27     147    222      56
-# Raytrace                2.22  2.20  2.20  168    54      93    172      53
-# Water-n2                0.18  0.17  0.17  127    35      52    189      39
-# Water-sp                0.19  0.18  0.18   99    35      51    183      34
+# Cholesky                0.29  0.21  4.46   0.7    5     4     2   239    82
+# FFT                     0.19  0.12  0.12   8.5   82    54  4237    90    41
+# LU, contiguous          0.76  0.47  0.47  12.8   66    61   155   428   128
+# LU, non-contiguous      0.80  0.45  0.48  13.1   88    86   102   428   128
+# Ocean, contiguous      19.45 12.59 12.65   4.1   57    49    86    90    28
+# Ocean, non-contiguous   0.30  0.18  0.19   7.3   39    46    85    90    28
+# Radiosity               3.14  3.11  3.11  16.4  164    60    58   485   163
+# Radix                   4.07  2.12  2.12  10.9   30    27   147   222    56
+# Raytrace                2.22  2.19  2.20   7.9  166    55    93   172    53
+# Water-n2                0.18  0.17  0.17  11.5  126    34    52   189    39
+# Water-sp                0.19  0.18  0.18  10.2   96    34    51   183    34
 # ............................................................................
 # Hardware: dual-core Intel Xeon 5130, 2.0 GHz, 4 MB L2 cache, 4 GB RAM.
 # Software: Ubuntu 7.10 server, 64-bit, gcc 4.3.1, xload -update 1 running.
 ##############################################################################
-# Results:                     native       DRD    DRD     HG    ITC     ITC
+# Results:                native    native  DRD    DRD     HG    ITC     ITC
 #                         -p1    -p2   -p4  -p4  -p4, f   -p4    -p4    -p4, f
 # ............................................................................
 # Cholesky                0.21  0.14  4.49    4     3       2    239      82
-# FFT                     0.11  0.08  0.07  138    66     380     90      41
+# FFT - 1                 0.11  0.08  0.07  138    66     380     90      41
 # LU, contiguous          0.56  0.34  0.34   72    68      96    428     128
 # LU, non-contiguous      0.59  0.32  0.35   92   109      60    428     128
 # Ocean, contiguous      14.30  9.54  9.56   61    48      89     90      28
@@ -111,21 +115,11 @@ log2_cache_size=$(log2 ${cache_size})
   do
     gzip -cd <$f >${f%.Z}
   done
-  run_test ../CHOLESKY -C$((cache_size/2)) tk29.O
+  run_test ../CHOLESKY -C$((cache_size)) tk29.O
 )
 
 # FFT
-run_test ${SPLASH2}/codes/kernels/fft/FFT -t -l$((log2_cache_size - 0)) -m18
-
-run_test ${SPLASH2}/codes/kernels/fft/FFT -t -l$((log2_cache_size - 1)) -m18
-
-run_test ${SPLASH2}/codes/kernels/fft/FFT -t -l$((log2_cache_size - 2)) -m18
-
-run_test ${SPLASH2}/codes/kernels/fft/FFT -t -l$((log2_cache_size - 3)) -m18
-
-run_test ${SPLASH2}/codes/kernels/fft/FFT -t -l$((log2_cache_size - 4)) -m18
-
-run_test ${SPLASH2}/codes/kernels/fft/FFT -t -l$((log2_cache_size - 5)) -m18
+run_test ${SPLASH2}/codes/kernels/fft/FFT -t -l$((log2_cache_size)) -m18
 
 # LU, contiguous blocks.
 run_test ${SPLASH2}/codes/kernels/lu/contiguous_blocks/LU -n1024
@@ -138,8 +132,6 @@ run_test ${SPLASH2}/codes/apps/ocean/contiguous_partitions/OCEAN -n2050
 run_test ${SPLASH2}/codes/apps/ocean/non_contiguous_partitions/OCEAN -n258
 
 # Radiosity.
-run_test ${SPLASH2}/codes/apps/radiosity/RADIOSITY -batch
-
 run_test ${SPLASH2}/codes/apps/radiosity/RADIOSITY -batch -room
 
 # Radix

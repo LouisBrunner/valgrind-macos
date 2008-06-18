@@ -41,14 +41,24 @@ function avgstddev {
 ## Query the virtual memory size for the last invocation of command $1 from
 #  the information logged by the kernel (BSD process accounting).
 function query_cmd_vsz {
+  local pacct
+
   if [ ! -e /usr/sbin/dump-acct ]; then
     echo "Error: userspace tools for BSD process accounting have not been" >&2
     echo "installed. Please install the acct package (Debian systems)."    >&2
     return 1
   fi
 
-  /usr/sbin/dump-acct /var/log/account/pacct | \
-    grep -- "^$(basename "$1")" | \
+  if [ -e /var/log/account/pacct ]; then
+    pacct=/var/log/account/pacct
+  elif [ -e /var/account/pacct ]; then
+    pacct=/var/account/pacct
+  else
+    echo "Where is the pacct file ?" >&2
+    return 1
+  fi
+  /usr/sbin/dump-acct "${pacct}" | \
+    grep -- "^$(basename "$1").*|v3|" | \
     cut -f8 -d'|' | \
     tail -n 1
 }

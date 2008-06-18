@@ -354,7 +354,7 @@ function my-gcc { export CC=$HOME/gcc-4.3.0/bin/gcc LD_LIBRARY_PATH=$HOME/gcc-4.
 EOF
 
 For an example of how to recompile gcc, see also the script
-exp-drd/scripts/compile-gcc.
+exp-drd/scripts/download-and-build-gcc.
 
 
 Future DRD Versions

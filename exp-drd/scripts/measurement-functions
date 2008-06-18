@@ -56,7 +56,10 @@ function measure_runtime {
 ## Print the average runtime of the command passed in $1 .. ${$#} and the ratio
 #  of the runtime to ${avg1} +/- ${stddev1}.
 function print_runtime_ratio {
-  local tmp
+  local tmp avg1="$1" avg2="$2"
+
+  shift
+  shift
 
   tmp="/tmp/test-timing.$$"
   rm -f "${tmp}"

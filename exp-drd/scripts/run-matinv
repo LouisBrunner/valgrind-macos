@@ -30,7 +30,9 @@ do
 
   for i in 1 10
   do
-    print_runtime_ratio ${VG} --tool=none    ${MATINV} $n -t$i
-    print_runtime_ratio ${VG} --tool=exp-drd ${MATINV} $n -t$i
+    print_runtime_ratio ${avg1} ${stddev1} \
+      ${VG} --tool=none    ${MATINV} $n -t$i
+    print_runtime_ratio ${avg1} ${stddev1} \
+      ${VG} --tool=exp-drd ${MATINV} $n -t$i
   done
 done

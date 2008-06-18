@@ -35,7 +35,7 @@ function get_cache_size {
 ## Read a stream of numbers from stdin (one per line), and print the average
 #  and standard deviation.
 function avgstddev {
-  awk '{n++;m=NF;for(i=1;i<=NF;i++){sum[i]+=$i;sumsq[i]+=$i*$i}}END{for(i=1;i<=m;i++){d=sumsq[i]/n-sum[i]*sum[i]/n/n;printf "%g %g ",sum[i]/n,(d>0?sqrt(d):0)}}'
+  awk '{n++;m=NF;for(i=1;i<=NF;i++){sum[i]+=$i;sumsq[i]+=$i*$i}}END{for(i=1;i<=m;i++){d=sumsq[i]/n-sum[i]*sum[i]/n/n;printf "%.2f %.2f ",sum[i]/n,(d>0?sqrt(d):0)}}'
 }
 
 ## Query the virtual memory size for the last invocation of command $1 from
@@ -116,6 +116,6 @@ function print_runtime_ratio {
   measure_runtime "$@" | avgstddev > "$tmp"
   read avg2 stddev2 vsz2 vszdev2 < "$tmp"
   echo "Average time: ${avg2} +/- ${stddev2} seconds / VSZ ${vsz2} +/- ${vszdev2} KB"
-  awk "END{print "'"'"Ratio ="'"'", ${avg2}/${avg1}, "'"'"+/-"'"'", ${avg2}/${avg1}*(${stddev1}/${avg1}+${stddev2}/${avg2}), "'"; VSZ ratio: "'", ${vsz2:-0}/${vsz1}, "'"'"+/-"'"'", ${vsz2:-0}/${vsz1}*(${vszdev1}/${vsz1}+${vszdev2:-0}/${vsz2:-1})}" </dev/null
+  awk "END{printf "'"'"Ratio = %.2f +/- %.2f; VSZ ratio: %.2f +/- %.2f\n"'"'", ${avg2}/${avg1}, ${avg2}/${avg1}*(${stddev1}/${avg1}+${stddev2}/${avg2}), ${vsz2}/${vsz1}, ${vsz2}/${vsz1}*(${vszdev1}/${vsz1}+${vszdev2}/${vsz2})}" </dev/null
 }
 

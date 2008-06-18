@@ -35,7 +35,45 @@ function get_cache_size {
 ## Read a stream of numbers from stdin (one per line), and print the average
 #  and standard deviation.
 function avgstddev {
-  awk '{n++;sum+=$1;sumsq+=$1*$1}END{d=sumsq/n-sum*sum/n/n;print sum/n,(d>0?sqrt(d):0)}'
+  awk '{n++;m=NF;for(i=1;i<=NF;i++){sum[i]+=$i;sumsq[i]+=$i*$i}}END{for(i=1;i<=m;i++){d=sumsq[i]/n-sum[i]*sum[i]/n/n;printf "%g %g ",sum[i]/n,(d>0?sqrt(d):0)}}'
+}
+
+## Query the virtual memory size for the last invocation of command $1 from
+#  the information logged by the kernel (BSD process accounting).
+function query_cmd_vsz {
+  if [ ! -e /usr/sbin/dump-acct ]; then
+    echo "Error: userspace tools for BSD process accounting have not been" >&2
+    echo "installed. Please install the acct package (Debian systems)."    >&2
+    return 1
+  fi
+
+  /usr/sbin/dump-acct /var/log/account/pacct | \
+    grep -- "^$(basename "$1")" | \
+    cut -f8 -d'|' | \
+    tail -n 1
+}
+
+## Query the virtual memory size for the last invocation of command $1 from
+#  the information logged by the kernel (BSD process accounting).
+function query_vsz {
+  local cmd tool
+
+  cmd="$(basename "$1")"
+  if [ "${cmd}" = "vg-in-place" ]; then
+    tool="tool-not-found"
+    for arg in "${@}"
+    do
+      if [ "${arg#--tool=}" != "${arg}" ]; then
+        tool="${arg#--tool=}"
+	break
+      fi
+    done
+    vsz_tool="$(query_cmd_vsz "${tool}")"
+    awk "END{print $(query_cmd_vsz ${cmd}) + ${vsz_tool:-0}}" \
+      </dev/null
+  else
+    query_cmd_vsz "${cmd}"
+  fi
 }
 
 ## Echo all arguments on stderr, run the command passed in $1 .. ${$#} three
@@ -43,21 +81,32 @@ function avgstddev {
 #  command output to the file specified in ${test_output}, and print the
 #  runtime of the command on stdout.
 function measure_runtime {
+  local i
+
   echo "$@" >&2
   for ((i=0;i<3;i++))
   do
-    cat "${test_input:-/dev/null}" | \
+    echo -n "$(cat "${test_input:-/dev/null}" | \
       /usr/bin/time --format="%e" "$@" 2>&1 | \
       tee "${test_output:-/dev/null}" | \
-      tail -n 1
+      tail -n 1) "
+    query_vsz "$@"
   done
 }
 
-## Print the average runtime of the command passed in $1 .. ${$#} and the ratio
-#  of the runtime to ${avg1} +/- ${stddev1}.
+## Print the average runtime of the command passed in $5 .. ${$#}, the ratio
+#  of the runtime to $1 +/- $2 and the ratio of the VSZ to $3 +/- $4.
 function print_runtime_ratio {
-  local tmp avg1="$1" avg2="$2"
+  local tmp avg1="$1" stddev1="$2" vsz1="$3" vszdev1="$4"
+  local avg2 stddev2 vsz2 vszdev2
 
+  if [ "${avg1}" = "" -o "${stddev1}" = "" -o "${vsz1}" = "" -o "${vszdev1}" = "" ]; then
+    echo "Error: invalid arguments ($@)."
+    exit 1
+  fi
+
+  shift
+  shift
   shift
   shift
 
@@ -65,8 +114,8 @@ function print_runtime_ratio {
   rm -f "${tmp}"
 
   measure_runtime "$@" | avgstddev > "$tmp"
-  read avg2 stddev2 < "$tmp"
-  echo "Average time: ${avg2} +/- ${stddev2} seconds"
-  awk "END{print "'"'"Ratio ="'"'", ${avg2}/${avg1}, "'"'"+/-"'"'", ${avg2}/${avg1}*(${stddev1}/${avg1}+${stddev2}/${avg2})}" </dev/null
+  read avg2 stddev2 vsz2 vszdev2 < "$tmp"
+  echo "Average time: ${avg2} +/- ${stddev2} seconds / VSZ ${vsz2} +/- ${vszdev2} KB"
+  awk "END{print "'"'"Ratio ="'"'", ${avg2}/${avg1}, "'"'"+/-"'"'", ${avg2}/${avg1}*(${stddev1}/${avg1}+${stddev2}/${avg2}), "'"; VSZ ratio: "'", ${vsz2:-0}/${vsz1}, "'"'"+/-"'"'", ${vsz2:-0}/${vsz1}*(${vszdev1}/${vsz1}+${vszdev2:-0}/${vsz2:-1})}" </dev/null
 }
 

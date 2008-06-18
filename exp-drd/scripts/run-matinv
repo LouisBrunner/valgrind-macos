@@ -25,14 +25,15 @@ do
   rm -f "${tmp}"
 
   measure_runtime ${MATINV} $n | avgstddev > "$tmp"
-  read avg1 stddev1 < "$tmp"
-  echo "Average time: ${avg1} +/- ${stddev1} seconds"
+  read avg1 stddev1 vsz1 vszdev1 < "$tmp"
+  echo "Average time: ${avg1} +/- ${stddev1} seconds." \
+       " VSZ: ${vsz1} +/- ${vszdev1} KB"
 
   for i in 1 10
   do
-    print_runtime_ratio ${avg1} ${stddev1} \
+    print_runtime_ratio ${avg1} ${stddev1} ${vsz1} ${vszdev1} \
       ${VG} --tool=none    ${MATINV} $n -t$i
-    print_runtime_ratio ${avg1} ${stddev1} \
+    print_runtime_ratio ${avg1} ${stddev1} ${vsz1} ${vszdev1} \
       ${VG} --tool=exp-drd ${MATINV} $n -t$i
   done
 done

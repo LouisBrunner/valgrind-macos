@@ -7,7 +7,7 @@
 source "$(dirname $0)/measurement-functions"
 
 function run_test {
-  local tmp avg1=1 stddev1=1 avg2=1 stddev2=1 p=4
+  local tmp avg1 stddev1 avg2 stddev2 avg4 stddev4 p
 
   tmp="/tmp/test-timing.$$"
   rm -f "${tmp}"
@@ -16,26 +16,30 @@ function run_test {
   read avg1 stddev1 < "$tmp"
   echo "Average time: ${avg1} +/- ${stddev1} seconds"
 
-  test_output="/dev/null" print_runtime_ratio $VG --tool=none "$@" -p1
-
   test_output="${1}.out" measure_runtime "$@" -p2 | avgstddev > "$tmp"
-  read avg1 stddev1 < "$tmp"
-  echo "Average time: ${avg1} +/- ${stddev1} seconds"
+  read avg2 stddev2 < "$tmp"
+  echo "Average time: ${avg2} +/- ${stddev2} seconds"
 
   test_output="${1}.out" measure_runtime "$@" -p4 | avgstddev > "$tmp"
-  read avg1 stddev1 < "$tmp"
-  echo "Average time: ${avg1} +/- ${stddev1} seconds"
+  read avg4 stddev4 < "$tmp"
+  echo "Average time: ${avg4} +/- ${stddev4} seconds"
 
-  test_output="/dev/null" print_runtime_ratio $VG --tool=none "$@" -p4
+  test_output="/dev/null" \
+  print_runtime_ratio ${avg1} ${stddev1} $VG --tool=none "$@" -p1
+
+  test_output="/dev/null" \
+  print_runtime_ratio ${avg4} ${stddev4} $VG --tool=none "$@" -p4
 
   test_output="${1}-drd-with-stack-var-${p}.out" \
-  print_runtime_ratio $VG --tool=exp-drd --check-stack-var=yes "$@" -p$p
+  print_runtime_ratio ${avg4} ${stddev4} \
+    $VG --tool=exp-drd --check-stack-var=yes "$@" -p$p
 
   test_output="${1}-drd-without-stack-var-${p}.out" \
-  print_runtime_ratio $VG --tool=exp-drd --check-stack-var=no  "$@" -p$p
+  print_runtime_ratio ${avg4} ${stddev4} \
+    $VG --tool=exp-drd --check-stack-var=no  "$@" -p$p
 
   test_output="${1}-helgrind-${p}.out" \
-  print_runtime_ratio $VG --tool=helgrind "$@" -p$p
+  print_runtime_ratio ${avg4} ${stddev4} $VG --tool=helgrind "$@" -p$p
 
   echo ''
 

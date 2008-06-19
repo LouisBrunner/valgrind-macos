@@ -87,7 +87,7 @@ function query_vsz {
 }
 
 ## Echo all arguments on stderr, run the command passed in $1 .. ${$#} three
-#  times, pass the file specified in ${test_input} to the command, write the
+#  times, pass the output of ${test_input} -p${p} to the command, write the
 #  command output to the file specified in ${test_output}, and print the
 #  runtime of the command on stdout.
 function measure_runtime {
@@ -96,7 +96,7 @@ function measure_runtime {
   echo "$@" >&2
   for ((i=0;i<3;i++))
   do
-    echo -n "$(cat "${test_input:-/dev/null}" | \
+    echo -n "$("${test_input:-true}" $p | \
       /usr/bin/time --format="%e" "$@" 2>&1 | \
       tee "${test_output:-/dev/null}" | \
       tail -n 1) "

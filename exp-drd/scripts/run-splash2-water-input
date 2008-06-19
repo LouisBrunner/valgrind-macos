@@ -1,0 +1,10 @@
+#!/bin/bash
+
+## Generate input for water-n2 and water-sp. Argument $1 is the number of
+#  processors.
+
+cat <<EOF
+  1.5e-16   512  3   6
+-1      3000     3  0
+${1} 6.212752
+EOF

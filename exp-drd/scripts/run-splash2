@@ -175,7 +175,7 @@ log2_cache_size=$(log2 ${cache_size})
 )
 
 # FFT
-run_test ${SPLASH2}/codes/kernels/fft/FFT -t -l$((log2_cache_size)) -m18
+run_test ${SPLASH2}/codes/kernels/fft/FFT -t -l$((log2_cache_size/2)) -m18
 
 # LU, contiguous blocks.
 run_test ${SPLASH2}/codes/kernels/lu/contiguous_blocks/LU -n1024

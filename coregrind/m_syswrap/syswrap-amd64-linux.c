@@ -1256,7 +1256,7 @@ const SyscallTableEntry ML_(syscall_table)[] = {
    LINX_(__NR_ioperm,            sys_ioperm),         // 173 
    GENX_(__NR_create_module,     sys_ni_syscall),     // 174 
 
-   //   (__NR_init_module,       sys_init_module),    // 175 
+   GENX_(__NR_init_module,       sys_init_module),    // 175 
    //   (__NR_delete_module,     sys_delete_module),  // 176 
    //   (__NR_get_kernel_syms,   sys_ni_syscall),     // 177 
    //   (__NR_query_module,      sys_ni_syscall),     // 178 

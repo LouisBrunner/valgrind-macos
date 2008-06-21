@@ -2342,17 +2342,6 @@ PRE(sys_flock)
    PRE_REG_READ2(long, "flock", unsigned int, fd, unsigned int, operation);
 }
 
-/* This surely isn't remotely generic -- move to linux-specifics? */
-PRE(sys_init_module)
-{
-   *flags |= SfMayBlock;
-   PRINT("sys_init_module ( %p, %llu, %p )", ARG1, (ULong)ARG2, ARG3 );
-   PRE_REG_READ3(long, "init_module",
-                 void *, umod, unsigned long, len, const char *, uargs);
-   PRE_MEM_READ( "init_module(umod)", ARG1, ARG2 );
-   PRE_MEM_RASCIIZ( "init_module(uargs)", ARG3 );
-}
-
 // Pre_read a char** argument.
 static void pre_argv_envp(Addr a, ThreadId tid, Char* s1, Char* s2)
 {

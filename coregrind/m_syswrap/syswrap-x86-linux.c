@@ -1993,8 +1993,8 @@ const SyscallTableEntry ML_(syscall_table)[] = {
    LINXY(__NR_sigprocmask,       sys_sigprocmask),    // 126
 //zz    // Nb: create_module() was removed 2.4-->2.6
    GENX_(__NR_create_module,     sys_ni_syscall),     // 127
-   GENX_(__NR_init_module,       sys_init_module),    // 128
-//zz    //   (__NR_delete_module,     sys_delete_module),  // 129 (*/Linux)?
+   LINX_(__NR_init_module,       sys_init_module),    // 128
+   LINX_(__NR_delete_module,     sys_delete_module),  // 129
 //zz 
 //zz    // Nb: get_kernel_syms() was removed 2.4-->2.6
    GENX_(__NR_get_kernel_syms,   sys_ni_syscall),     // 130

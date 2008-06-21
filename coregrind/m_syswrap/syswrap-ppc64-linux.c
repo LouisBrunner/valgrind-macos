@@ -1293,8 +1293,8 @@ const SyscallTableEntry ML_(syscall_table)[] = {
    GENXY(__NR_mprotect,          sys_mprotect),           // 125
 // _____(__NR_sigprocmask,       sys_sigprocmask),        // 126
    GENX_(__NR_create_module,     sys_ni_syscall),         // 127
-// _____(__NR_init_module,       sys_init_module),        // 128
-// _____(__NR_delete_module,     sys_delete_module),      // 129
+   LINX_(__NR_init_module,       sys_init_module),        // 128
+   LINX_(__NR_delete_module,     sys_delete_module),      // 129
 
 // _____(__NR_get_kernel_syms,   sys_get_kernel_syms),    // 130
 // _____(__NR_quotactl,          sys_quotactl),           // 131

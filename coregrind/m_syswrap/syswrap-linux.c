@@ -3012,6 +3012,30 @@ PRE(sys_ioprio_set)
    PRE_REG_READ3(int, "ioprio_set", int, which, int, who, int, ioprio);
 }
 
+/* ---------------------------------------------------------------------
+   _module wrappers
+   ------------------------------------------------------------------ */
+
+PRE(sys_init_module)
+{
+   *flags |= SfMayBlock;
+   PRINT("sys_init_module ( %p, %llu, %p(\"%s\") )",
+         ARG1, (ULong)ARG2, ARG3, ARG3);
+   PRE_REG_READ3(long, "init_module",
+                 void *, umod, unsigned long, len, const char *, uargs);
+   PRE_MEM_READ( "init_module(umod)", ARG1, ARG2 );
+   PRE_MEM_RASCIIZ( "init_module(uargs)", ARG3 );
+}
+
+PRE(sys_delete_module)
+{
+   *flags |= SfMayBlock;
+   PRINT("sys_delete_module ( %p(\"%s\"), 0x%x )", ARG1,ARG1, ARG2);
+   PRE_REG_READ2(long, "delete_module",
+                 const char *, name_user, unsigned int, flags);
+   PRE_MEM_RASCIIZ("delete_module(name_user)", ARG1);
+}
+
 #undef PRE
 #undef POST
 

@@ -22,7 +22,12 @@ function log2 {
 ## Print the size of the level 2 cache in bytes on stdout.
 function get_cache_size {
   local s
-  s=$(</sys/devices/system/cpu/cpu0/cache/index2/size)
+  if [ -e /sys/devices/system/cpu/cpu0/cache/index2/size ]; then
+    s="$(</sys/devices/system/cpu/cpu0/cache/index2/size)"
+  else
+    s="$(cat /proc/cpuinfo|while read a b c d e ; do if [ "$a" = cache -a "$b" = size ]; then echo $d $e; break; fi; done)"
+    s="${s%B}"
+  fi
   if [ "${s%M}" != "$s" ]; then
     echo $((${s%M}*1024*1024))
   elif [ "${s%K}" != "$s" ]; then

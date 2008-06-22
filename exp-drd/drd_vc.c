@@ -100,30 +100,6 @@ void vc_increment(VectorClock* const vc, ThreadId const threadid)
 }
 
 /**
- * @return True if all thread id's that are present in vc1 also exist in
- *    vc2, and if additionally all corresponding counters in v2 are higher or
- *    equal.
- */
-Bool vc_lte(const VectorClock* const vc1, const VectorClock* const vc2)
-{
-  unsigned i;
-  unsigned j = 0;
-  for (i = 0; i < vc1->size; i++)
-  {
-    while (j < vc2->size && vc2->vc[j].threadid < vc1->vc[i].threadid)
-    {
-      j++;
-    }
-    if (j >= vc2->size || vc2->vc[j].threadid > vc1->vc[i].threadid)
-      return False;
-    //tl_assert(j < vc2->size && vc2->vc[j].threadid == vc1->vc[i].threadid);
-    if (vc1->vc[i].count > vc2->vc[j].count)
-      return False;
-  }
-  return True;
-}
-
-/**
  * @return True if vector clocks vc1 and vc2 are ordered, and false otherwise.
  * Order is as imposed by thread synchronization actions ("happens before").
  */

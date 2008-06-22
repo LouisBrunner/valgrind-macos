@@ -71,6 +71,7 @@ void vc_assign(VectorClock* const lhs,
                const VectorClock* const rhs);
 UInt vc_get(VectorClock* const vc, const ThreadId tid);
 void vc_increment(VectorClock* const vc, ThreadId const threadid);
+static __inline__
 Bool vc_lte(const VectorClock* const vc1,
             const VectorClock* const vc2);
 Bool vc_ordered(const VectorClock* const vc1,
@@ -87,6 +88,38 @@ void vc_snprint(Char* const str, Int const size,
                 const VectorClock* const vc);
 void vc_check(const VectorClock* const vc);
 void vc_test(void);
+
+
+
+/**
+ * @return True if all thread id's that are present in vc1 also exist in
+ *    vc2, and if additionally all corresponding counters in v2 are higher or
+ *    equal.
+ */
+static __inline__
+Bool vc_lte(const VectorClock* const vc1, const VectorClock* const vc2)
+{
+  unsigned i;
+  unsigned j = 0;
+
+  for (i = 0; i < vc1->size; i++)
+  {
+    while (j < vc2->size && vc2->vc[j].threadid < vc1->vc[i].threadid)
+    {
+      j++;
+    }
+    if (j >= vc2->size || vc2->vc[j].threadid > vc1->vc[i].threadid)
+      return False;
+#ifdef ENABLE_DRD_CONSISTENCY_CHECKS
+    /* This assert statement has been commented out because of performance */
+    /* reasons.*/
+    tl_assert(j < vc2->size && vc2->vc[j].threadid == vc1->vc[i].threadid);
+#endif
+    if (vc1->vc[i].count > vc2->vc[j].count)
+      return False;
+  }
+  return True;
+}
 
 
 #endif /* __DRD_VC_H */

@@ -262,13 +262,13 @@ void barrier_pre_wait(const DrdThreadId tid, const Addr barrier,
   p = barrier_get(barrier);
   if (p == 0 && barrier_type == gomp_barrier)
   {
-    VG_(message)(Vg_UserMsg, "%s", "");
+    VG_(message)(Vg_UserMsg, "");
     VG_(message)(Vg_UserMsg,
                  "Please verify whether gcc has been configured"
                  " with option --disable-linux-futex.");
     VG_(message)(Vg_UserMsg,
                  "See also the section about OpenMP in the DRD manual.");
-    VG_(message)(Vg_UserMsg, "%s", "");
+    VG_(message)(Vg_UserMsg, "");
   }
   tl_assert(p);
 

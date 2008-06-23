@@ -985,6 +985,29 @@ if test x$declaration_after_statement = xyes; then
 fi
 
 
+# does this compiler support -Wno-format-zero-length ?
+
+AC_MSG_CHECKING([if gcc accepts -Wno-format-zero-length])
+
+safe_CFLAGS=$CFLAGS
+CFLAGS="-Wno-format-zero-length"
+
+AC_TRY_COMPILE(
+[ ],
+[
+  return 0;
+],
+[
+AC_SUBST([FLAG_W_NO_FORMAT_ZERO_LENGTH], [-Wno-format-zero-length])
+AC_MSG_RESULT([yes])
+],
+[
+AC_SUBST([FLAG_W_NO_FORMAT_ZERO_LENGTH], [])
+AC_MSG_RESULT([no])
+])
+CFLAGS=$safe_CFLAGS
+
+
 # does this compiler support -Wextra or the older -W ?
 
 AC_MSG_CHECKING([if gcc accepts -Wextra or -W])

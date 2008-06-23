@@ -1,4 +1,4 @@
 About to lock file for writing.
 First locking attempt succeeded.
-second open call: Permission denied
+Second locking attempt succeeded.
 Test finished successfully.

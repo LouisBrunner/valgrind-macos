@@ -44,7 +44,7 @@ int main(int argc, char *argv[])
 
   unlink(filename);
 
-  if ((fd1 = open(filename, O_RDWR | O_CREAT)) >= 0)
+  if ((fd1 = open(filename, O_RDWR | O_CREAT, S_IRUSR | S_IWUSR)) >= 0)
   {
     fprintf(stderr, "About to lock file for writing.\n");
     if (lock_file(fd1))
@@ -59,7 +59,7 @@ int main(int argc, char *argv[])
         }
         else
         {
-          fprintf(stderr, "ERROR: second lock attempt succeeded !\n");
+          fprintf(stderr, "Second locking attempt succeeded.\n");
         }
         close(fd2);
       }

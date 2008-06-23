@@ -188,7 +188,6 @@ int main(int ac, char **av)
       perror("timerfd_create");
       return 1;
     }
-    fprintf(stdout, "timerfd = %d\n", tfd);
 
     if (timerfd_settime(tfd, 0, &tmr, NULL))
     {

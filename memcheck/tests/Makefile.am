@@ -49,6 +49,7 @@ EXTRA_DIST = $(noinst_SCRIPTS) \
 	exitprog.stderr.exp exitprog.vgtest \
 	execve.stderr.exp execve.stderr.exp2 execve.vgtest \
 	execve2.stderr.exp execve2.stderr.exp2 execve2.vgtest \
+	file_locking.stderr.exp file_locking.vgtest \
 	fprw.stderr.exp fprw.vgtest \
 	fwrite.stderr.exp fwrite.stderr.exp2 fwrite.vgtest \
 	inits.stderr.exp inits.vgtest \
@@ -187,6 +188,7 @@ check_PROGRAMS = \
 	deep_templates \
 	describe-block \
 	doublefree error_counts errs1 exitprog execve execve2 erringfds \
+	file_locking \
 	fprw fwrite hello inits inline \
 	leak-0 leak-cycle leak-pool leak-tree leak-regroot leakotron \
 	linux-syslog-syscall \

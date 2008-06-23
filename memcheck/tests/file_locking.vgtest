@@ -1,0 +1,2 @@
+prog: file_locking
+vgopts: -q

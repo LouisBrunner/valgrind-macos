@@ -1125,13 +1125,13 @@ static void o_cleanupTrackedPointers( MemBlock * mb )
 	** Maybe decode registers to names later?
 	*/
 	O_DEBUG("Removing hanging pointer in a register to block %p",
-		p->block);
+		(void*)(p->block));
       }
       else
       {
 	O_DEBUG("Removing hanging pointer at %p to block %p",
-		FROM_TRACKED_KEY(p->hdr.key),
-		p->block);
+		(void*)(FROM_TRACKED_KEY(p->hdr.key)),
+		(void*)(p->block));
       }
     }
     VG_(free)(p);
@@ -1175,8 +1175,8 @@ static void o_cleanupMemBlock( MemBlock **mbpp )
   if(mb->shadowing)
   {
     O_DEBUG("Trying to cleanup a shadow block at %p tracking %p",
-	    mb->hdr.key,
-	    mb->shadowing->hdr.key);
+            (void*)(mb->hdr.key),
+            (void*)(mb->shadowing->hdr.key));
     return;
   }
 
@@ -1261,7 +1261,7 @@ static void o_addMemBlockReference( MemBlock *mb, TrackedPointer *tp )
     if(o_addSuppressionBlock(mb->where, mb->leaked) && !o_showSummaryOnly)
     {
       O_DEBUG("Welcome back to the supposedly leaked block at %p. Illegal read?",
-	      mb->hdr.key);
+	      (void*)(mb->hdr.key));
 
       VG_(get_and_pp_StackTrace)(VG_(get_running_tid)(), VG_(clo_backtrace_size));
       O_DEBUG("");
@@ -1613,7 +1613,7 @@ static void o_doLeakReport(MemBlock *mb)
       if(o_showIndirect)
       {
 	VG_(message)(Vg_UserMsg,
-		     "Probably indirectly (level %d) leaking block of %d(%p) bytes",
+		     "Probably indirectly (level %d) leaking block of %ld(0x%lx) bytes",
 		     mb->depth,
 		     mb->length,
 		     mb->length);
@@ -1622,7 +1622,7 @@ static void o_doLeakReport(MemBlock *mb)
     else
     {
       VG_(message)(Vg_UserMsg,
-		   "Probably leaking block of %d(%p) bytes",
+		   "Probably leaking block of %ld(0x%lx) bytes",
 		   mb->length,
 		   mb->length);
     }
@@ -1632,7 +1632,7 @@ static void o_doLeakReport(MemBlock *mb)
       VG_(pp_ExeContext)(mb->leaked);
       
       VG_(message)(Vg_UserMsg,
-		   " Block at %p allocated", mb->hdr.key);
+		   " Block at %p allocated", (void*)(mb->hdr.key));
       VG_(pp_ExeContext)(mb->where);
       VG_(message)(Vg_UserMsg,"");
     }
@@ -1892,7 +1892,7 @@ static void o_duplicateTrackedPointers(Addr dst, Addr src, SizeT length)
   PBitContext pb;
   Addr address;
 
-  O_MDEBUG("o_duplicateTrackedPointers(%p, %p %d(%p))",
+  O_MDEBUG("o_duplicateTrackedPointers(%p, %p %d(0x%lx))",
 	   dst, src, length, length);
 
   address = o_firstPBit(&pb, src, length);
@@ -1921,7 +1921,7 @@ static void o_duplicateTrackedPointers(Addr dst, Addr src, SizeT length)
     if(!mb)
     {
       O_DEBUG("Oops! Copying pointer at %p to block that leaked(%p)",
-	      address, tp->block);
+	      (void*)address, (void*)(tp->block));
       VG_(get_and_pp_StackTrace)(VG_(get_running_tid)(), VG_(clo_backtrace_size));
       O_DEBUG("");
       
@@ -1986,7 +1986,7 @@ static void o_destroyMemBlock(ThreadId tid, Addr start)
   */
   if(!mb)
   {
-    O_DEBUG("Double/Invalid call to free(%p)", start);
+    O_DEBUG("Double/Invalid call to free(%p)", (void*)start);
     VG_(get_and_pp_StackTrace)(VG_(get_running_tid)(), VG_(clo_backtrace_size));
     O_DEBUG("");
   }
@@ -2002,7 +2002,7 @@ static void o_destroyMemBlock(ThreadId tid, Addr start)
       if(o_addSuppressionBlock(mb->where, mb->leaked) && !o_showSummaryOnly)
       {
 	O_DEBUG("Welcome back (and goodbye) to the supposedly leaked block at %p",
-		start);
+		(void*)start);
       }
       o_stats.memoryBlocksLeaked--;
       o_stats.memoryBlocksLostAndFound++;
@@ -3326,7 +3326,7 @@ static int o_reportCircularBlocks(void)
     count++;
 
     VG_(message)(Vg_UserMsg, " Circular loss record %d", count);
-    VG_(message)(Vg_UserMsg, "   Leaked %d (%p) bytes in %d block%sallocated",
+    VG_(message)(Vg_UserMsg, "   Leaked %d (0x%x) bytes in %ld block%sallocated",
 		 block->bytes,
 		 block->bytes,
 		 block->count,
@@ -3377,7 +3377,7 @@ static void o_fini(Int exitcode)
   while(record)
   {
     VG_(message)(Vg_UserMsg,
-		 "Loss Record %d: Leaked %d (%p) bytes in %d block%s",
+		 "Loss Record %d: Leaked %d (0x%x) bytes in %ld block%s",
 		 count, record->bytes, record->bytes, record->count,
 		 (record->count > 1) ? "s" : "");
     VG_(pp_ExeContext)(record->leaked);

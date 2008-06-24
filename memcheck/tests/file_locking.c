@@ -4,14 +4,16 @@
  */
 
 
-#include <sys/mman.h>
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <unistd.h>
+#include <assert.h>
+#include <errno.h>
 #include <fcntl.h>
 #include <stdio.h>
-#include <errno.h>
 #include <stdlib.h>
+#include <sys/mman.h>
+#include <sys/stat.h>
+#include <sys/types.h>
+#include <sys/wait.h>
+#include <unistd.h>
 #include <unistd.h>
 
 
@@ -31,6 +33,46 @@ static int lock_file(const int fd)
   return fcntl(fd, F_SETLK, &fl) >= 0;
 }
 
+static int open_lock_and_map(const char* const process_name,
+                             const char* const filename)
+{
+  int fd;
+  int flags;
+
+  fd = open(filename, O_RDWR | O_CREAT, S_IRUSR | S_IWUSR);
+  if (fd < 0)
+  {
+    perror("open");
+    goto err1;
+  }
+
+  flags = fcntl(fd, F_GETFD);
+  assert(flags >= 0);
+  if (fcntl(fd, F_SETFD, flags | FD_CLOEXEC) < 0)
+    assert(0);
+
+  fprintf(stderr, "%s: about to lock file for writing.\n", process_name);
+  if (! lock_file(fd))
+  {
+    perror("fcntl");
+    goto err2;
+  }
+
+  fprintf(stderr, "%s: file locking attempt succeeded.\n", process_name);
+  if (mmap(NULL, 1, PROT_WRITE, MAP_SHARED, fd, 0) == 0)
+  {
+    perror("mmap");
+    goto err2;
+  }
+
+  goto out;
+
+err2:
+  close(fd);
+err1:
+out:
+  return fd;
+}
 
 int main(int argc, char *argv[]) 
 {
@@ -44,44 +86,44 @@ int main(int argc, char *argv[])
 
   unlink(filename);
 
-  if ((fd1 = open(filename, O_RDWR | O_CREAT, S_IRUSR | S_IWUSR)) >= 0)
+  if ((fd1 = open_lock_and_map("parent", filename)) >= 0)
   {
-    fprintf(stderr, "About to lock file for writing.\n");
-    if (lock_file(fd1))
+    pid_t fork_result;
+
+    fork_result = fork();
+    switch (fork_result)
     {
-      fprintf(stderr, "First locking attempt succeeded.\n");
-      if ((fd2 = open(filename, O_RDWR)) >= 0)
+    case -1:
+      perror("fork");
+      break;
+
+    case 0:
+      /* child */
+      fd2 = open_lock_and_map("child", filename);
+      if (fd2 >= 0)
       {
-        if (! lock_file(fd2))
-        {
-          fprintf(stderr, "Second locking attempt failed.\n");
-          exitcode = 0;
-        }
-        else
-        {
-          fprintf(stderr, "Second locking attempt succeeded.\n");
-        }
         close(fd2);
       }
-      else
+      exit(0);
+      break;
+
+    default:
+      /* parent */
       {
-        perror("second open call");
+        int child_status;
+        int wait_result;
+
+        wait_result = wait4(fork_result, &child_status, 0, 0);
+        assert(wait_result >= 0);
       }
     }
-    else
-    {
-      perror("first locking attempt");
-    }
-    close(fd1);
   }
-  else
-  {
-    perror("first open call");
-  }
+
+  close(fd1);
 
   unlink(filename);
 
-  fprintf(stderr, "Test finished successfully.\n");
+  fprintf(stderr, "Test finished.\n");
 
   return exitcode;
 }

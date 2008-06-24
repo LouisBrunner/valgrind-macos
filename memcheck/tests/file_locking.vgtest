@@ -1,2 +1,2 @@
 prog: file_locking
-vgopts: -q
+vgopts: -q --trace-children=yes

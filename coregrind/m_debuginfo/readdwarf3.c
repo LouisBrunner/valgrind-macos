@@ -1496,7 +1496,20 @@ static void parse_var_DIE ( /*OUT*/TempVar** tempvars,
                         level,
                         False/*isFunc*/, NULL/*fbGX*/ );
       } else
+      if (have_lo && (!have_hi1) && have_range && ip_lo == 0) {
+         /* broken DIE created by gcc-4.3.X ?  Ignore the
+            apparently-redundant DW_AT_low_pc and use the DW_AT_ranges
+            instead. */
+         varstack_push( cc, parser, td3, 
+                        get_range_list( cc, td3,
+                                        rangeoff, cc->cu_svma ),
+                        level,
+                        False/*isFunc*/, NULL/*fbGX*/ );
+      } else {
+         if (0) VG_(printf)("I got hlo %d hhi1 %d hrange %d\n",
+                            (Int)have_lo, (Int)have_hi1, (Int)have_range);
          goto bad_DIE;
+      }
    }
 
    if (dtag == DW_TAG_lexical_block || dtag == DW_TAG_subprogram) {

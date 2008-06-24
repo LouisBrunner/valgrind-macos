@@ -302,6 +302,19 @@
    fun:for__add_to_lf_table
 }
 
+# zlib-1.2.x uses uninitialised memory in some tricky way which
+# apparently is harmless (it must amount to a vectorised while-loop,
+# nothing else makes sense).  Fools Memcheck though.  See the mentioned
+# URL for details.
+{
+   zlib-1.2.x trickyness: See http://www.zlib.net/zlib_faq.html#faq36
+   Memcheck:Cond
+   obj:/lib64/libz.so.1.2.*
+   obj:/lib64/libz.so.1.2.*
+   fun:deflate
+}
+
+
 ##----------------------------------------------------------------------##
 
 ## More general versions of some of the old X suppressions above

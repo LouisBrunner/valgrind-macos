@@ -430,6 +430,7 @@ DECL_TEMPLATE(ppc64_linux, sys_clone);
 //zz DECL_TEMPLATE(ppc64_linux, sys_sigreturn);
 DECL_TEMPLATE(ppc64_linux, sys_rt_sigreturn);
 //zz DECL_TEMPLATE(ppc64_linux, sys_sigaction);
+DECL_TEMPLATE(ppc64_linux, sys_fadvise64);
 
 PRE(sys_socketcall)
 {
@@ -1041,6 +1042,13 @@ PRE(sys_rt_sigreturn)
    *flags |= SfPollAfter;
 }
 
+PRE(sys_fadvise64)
+{
+   PRINT("sys_fadvise64 ( %d, %lld, %llu, %d )", ARG1,ARG2,ARG3,ARG4);
+   PRE_REG_READ4(long, "fadvise64",
+                 int, fd, vki_loff_t, offset, vki_size_t, len, int, advice);
+}
+
 //zz /* Convert from non-RT to RT sigset_t's */
 //zz static 
 //zz void convert_sigset_to_rt(const vki_old_sigset_t *oldset, vki_sigset_t *set)
@@ -1405,7 +1413,7 @@ const SyscallTableEntry ML_(syscall_table)[] = {
    LINX_(__NR_io_submit,         sys_io_submit),          // 230
    LINXY(__NR_io_cancel,         sys_io_cancel),          // 231
    LINX_(__NR_set_tid_address,   sys_set_tid_address),    // 232
-// _____(__NR_fadvise64,         sys_fadvise64),          // 233
+   PLAX_(__NR_fadvise64,         sys_fadvise64),          // 233
    LINX_(__NR_exit_group,        sys_exit_group),         // 234
 
 // _____(__NR_lookup_dcookie,    sys_lookup_dcookie),     // 235

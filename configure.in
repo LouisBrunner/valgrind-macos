@@ -1109,6 +1109,23 @@ if test x$ac_have_builtin_expect = xyes ; then
 fi
 
 
+# does this compiler have built-in functions for atomic memory access ?
+AC_MSG_CHECKING([if gcc supports __sync_bool_compare_and_swap])
+
+AC_TRY_LINK(,
+[
+  int variable = 1;
+  return __sync_bool_compare_and_swap(&variable, 1, 2) ? 1 : 0
+],
+[
+  AC_MSG_RESULT([yes])
+  AC_DEFINE(HAVE_BUILTIN_ATOMIC, 1, [Define to 1 if gcc supports __sync_bool_compare_and_swap() a.o.])
+],
+[
+  AC_MSG_RESULT([no])
+])
+
+
 # does the ppc assembler support "mtocrf" et al?
 AC_MSG_CHECKING([if ppc32/64 as supports mtocrf/mfocrf])
 

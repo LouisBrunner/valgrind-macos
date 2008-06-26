@@ -366,12 +366,12 @@ trylock_LDADD               = -lpthread -lrt
 
 if HAVE_OPENMP
 omp_matinv_SOURCES          = omp_matinv.c
-omp_matinv_CFLAGS           = $(AM_FLAG_M3264_PRI) -fopenmp
+omp_matinv_CFLAGS           = $(AM_CFLAGS) -fopenmp
 omp_matinv_LDFLAGS          = -fopenmp
 omp_matinv_LDADD            = -lm
 
 omp_prime_SOURCES           = omp_prime.c
-omp_prime_CFLAGS            = $(AM_FLAG_M3264_PRI) -fopenmp
+omp_prime_CFLAGS            = $(AM_CFLAGS) -fopenmp
 omp_prime_LDFLAGS           = -fopenmp
 omp_prime_LDADD             = -lm
 endif

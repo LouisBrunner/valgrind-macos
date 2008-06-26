@@ -45,6 +45,18 @@
         : /*in*/  "m"(_addr) \
         : "memory", "cc" \
      )
+#elif defined(PLAT_ppc32_linux) || defined(PLAT_ppc64_linux) \
+      || defined(PLAT_ppc32_aix5) || defined(PLAT_ppc64_aix5)
+#  define XCHG_M_R(_addr,_lval)                                           \
+      do {                                                                \
+        int tmp;                                                          \
+        while ((tmp = *(int*)(& _addr)),                                  \
+               ! __sync_bool_compare_and_swap((int*)&_addr, tmp, _lval))  \
+          ;                                                               \
+        _lval = tmp;                                                      \
+      } while (0)
+#  define XCHG_M_R_with_redundant_LOCK(_addr,_lval) \
+      XCHG_M_R(_addr,_lval)
 #else
 #  define XCHG_M_R(_addr,_lval) \
       do { int tmp = *(int*)(& _addr); \

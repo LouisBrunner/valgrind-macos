@@ -1,4 +1,5 @@
 
+#include "config.h"
 #include <pthread.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -47,6 +48,7 @@
      )
 #elif defined(PLAT_ppc32_linux) || defined(PLAT_ppc64_linux) \
       || defined(PLAT_ppc32_aix5) || defined(PLAT_ppc64_aix5)
+#ifdef HAVE_BUILTIN_ATOMIC
 #  define XCHG_M_R(_addr,_lval)                                           \
       do {                                                                \
         int tmp;                                                          \
@@ -55,6 +57,9 @@
           ;                                                               \
         _lval = tmp;                                                      \
       } while (0)
+#else
+#error "XCHG_M_R() implementation is missing. Either provide one or use a newer gcc version."
+#endif
 #  define XCHG_M_R_with_redundant_LOCK(_addr,_lval) \
       XCHG_M_R(_addr,_lval)
 #else

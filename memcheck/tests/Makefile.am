@@ -75,8 +75,7 @@ EXTRA_DIST = $(noinst_SCRIPTS) \
 	lsframe2.vgtest lsframe2.stdout.exp lsframe2.stderr.exp \
 	mallinfo.stderr.exp mallinfo.vgtest \
 	malloc_free_fill.vgtest malloc_free_fill.stdout.exp \
-	malloc_free_fill.stderr.exp-glibc25-amd64 \
-	malloc_free_fill.stderr.exp-glibc25-x86 \
+	malloc_free_fill.stderr.exp \
 	malloc_usable.stderr.exp malloc_usable.vgtest \
 	malloc1.stderr.exp malloc1.vgtest \
 	malloc2.stderr.exp malloc2.vgtest \

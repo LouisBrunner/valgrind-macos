@@ -11,100 +11,18 @@
 <computeroutput>--tool=exp-drd</computeroutput>
 on the Valgrind command line.</para>
 
+
 <sect1 id="drd-manual.overview" xreflabel="Overview">
-<title>Introduction</title>
+<title>Background</title>
 
 <para>
 DRD is a Valgrind tool for detecting errors in multithreaded C and C++
 shared-memory programs. The tool works for any program that uses the
-POSIX threading primitives or a threading library built on top of the
-POSIX threading primitives. POSIX threads, also known as Pthreads, is
-the most widely available threading library on Unix systems.
+POSIX threading primitives or that uses threading concepts built on
+top of the POSIX threading primitives.
 </para>
 
-<para>
-Multithreaded programming is error prone. Depending on how multithreading is
-expressed in a program, one or more of the following problems can pop up in a
-multithreaded program:
-<itemizedlist>
-  <listitem>
-    <para>
-    A data race, i.e. one or more threads access the same memory
-    location without sufficient locking.
-    </para>
-  </listitem>
-  <listitem>
-    <para>
-    Lock contention: one thread blocks the progress of another thread
-    by holding a lock too long.
-    </para>
-  </listitem>
-  <listitem>
-    <para>
-    Deadlock: two or more threads wait for each other indefinitely.
-    </para>
-  </listitem>
-  <listitem>
-    <para>
-    False sharing: threads on two different processors access different
-    variables in the same cache line frequently, causing frequent exchange
-    of cache lines and slowing down both threads.
-    </para>
-  </listitem>
-  <listitem>
-    <para>
-    Improper use of the POSIX threads API.
-    </para>
-  </listitem>
-</itemizedlist>
-</para>
-
-<para>
-Although the likelihood of some classes of multithreaded programming
-errors can be reduced by a disciplined programming style, a tool for
-automatic detection of runtime threading errors is always a great help
-when developing multithreaded software.
-</para>
-
-<para>
-The remainder of this manual is organized as follows. In the next
-section it is discussed which <link
-linkend="drd-manual.mt-progr-models"> multithreading programming
-paradigms</link> exist.
-</para>
-
-<para>Then there is a
-<link linkend="drd-manual.options">summary of command-line
-options</link>.
-</para>
-
-<para>
-DRD can detect three classes of errors, which are discussed in detail:
-</para>
-
-<orderedlist>
- <listitem>
-  <para><link linkend="drd-manual.data-races">Data races</link>.</para>
- </listitem>
- <listitem>
-  <para><link linkend="drd-manual.lock-contention">Lock contention</link>.
-  </para>
- </listitem>
- <listitem>
-   <para><link linkend="drd-manual.api-checks">
-        Misuse of the POSIX threads API</link>.</para>
- </listitem>
-</orderedlist>
-
-<para>Finally, there is a section about the current
-<link linkend="drd-manual.limitations">limitations</link>
-of DRD.
-</para>
-
-</sect1>
-
-
-<sect1 id="drd-manual.mt-progr-models" xreflabel="MT-progr-models">
+<sect2 id="drd-manual.mt-progr-models" xreflabel="MT-progr-models">
 <title>Multithreaded Programming Paradigms</title>
 
 <para>
@@ -113,119 +31,471 @@ reasons why the use of threads may be required:
 <itemizedlist>
   <listitem>
     <para>
-    To model concurrent activities. Managing the state of one activity
-    per thread is a simpler programming model than multiplexing the states
-    of multiple activities in a single thread. This is why most server and
-    embedded software is multithreaded.
+      To model concurrent activities. Managing the state of one
+      activity per thread can be a great simplification compared to
+      multiplexing the states of multiple activities in a single
+      thread. This is why most server and embedded software is
+      multithreaded.
     </para>
   </listitem>
   <listitem>
     <para>
-    To let computations run on multiple CPU cores simultaneously. This is
-    why many High Performance Computing (HPC) applications are multithreaded.
+      To let computations run on multiple CPU cores
+      simultaneously. This is why many High Performance Computing
+      (HPC) applications are multithreaded.
     </para>
   </listitem>
 </itemizedlist>
 </para>
 
 <para>
-Multithreaded programs can be developed by using one or more of the
-following paradigms. Which paradigm is appropriate also depends on the
+Multithreaded programs can use one or more of the following
+paradigms. Which paradigm is appropriate a.o. depends on the
 application type -- modeling concurrent activities versus HPC.
 <itemizedlist>
   <listitem>
     <para>
-    Locking: data that is shared between threads may only be accessed
-    after a lock is obtained on the mutex(es) associated with the
-    shared data item.  The POSIX threads library, the Qt library
-    and the Boost.Thread library support this paradigm directly.
+      Locking. Data that is shared between threads may only be
+      accessed after a lock is obtained on the mutex associated with
+      the shared data item.  A.o. the POSIX threads library, the Qt
+      library and the Boost.Thread library support this paradigm
+      directly.
     </para>
   </listitem>
   <listitem>
     <para>
-    Message passing: any data that has to be passed from one thread to
-    another is sent via a message to that other thread. No data is explicitly
-    shared. Well known implementations of the message passing paradigm are
-    MPI and CORBA.
+      Message passing. No data is shared between threads, but threads
+      exchange data by passing messages to each other. Well known
+      implementations of the message passing paradigm are MPI and
+      CORBA.
     </para>
   </listitem>
   <listitem>
     <para>
-    Software Transactional Memory (STM). Just like the locking
-    paradigm, with STM data is shared between threads. While the
-    locking paradigm requires that all associated mutexes are locked
-    before the shared data is accessed, with the STM paradigm after
-    each transaction it is verified whether there were conflicting
-    transactions. If there were conflicts, the transaction is aborted,
-    otherwise it is committed. This is a so-called optimistic
-    approach. Not all C, C++ and Fortran compilers already support STM.
+      Software Transactional Memory (STM). Data is shared between
+      threads, and shared data is updated via transactions. After each
+      transaction it is verified whether there were conflicting
+      transactions. If there were conflicts, the transaction is
+      aborted, otherwise it is committed. This is a so-called
+      optimistic approach. There is a prototype of the Intel C
+      Compiler (<computeroutput>icc</computeroutput>) available that
+      supports STM. Research is ongoing about the addition of STM
+      support to <computeroutput>gcc</computeroutput>.
     </para>
   </listitem>
   <listitem>
     <para>
-    Automatic parallelization: a compiler converts a sequential
-    program into a multithreaded program. The original program can
-    contain parallelization hints. As an example, gcc version 4.3.0
-    and later supports OpenMP, a set of standardized compiler
-    directives which tell a compiler how to parallelize a C, C++ or
-    Fortran program.
+      Automatic parallelization. A compiler converts a sequential
+      program into a multithreaded program. The original program may
+      or may not contain parallelization hints. As an example,
+      <computeroutput>gcc</computeroutput> supports OpenMP from
+      version 4.3.0 on. OpenMP is a set of compiler directives which
+      tell a compiler how to parallelize a C, C++ or Fortran program.
     </para>
   </listitem>
 </itemizedlist>
 </para>
 
 <para>
-Next to the above paradigms, most CPU instruction sets support atomic
-memory accesses. Such operations are the most efficient way to update
-a single value on a system with multiple CPU cores.
+DRD supports any combination of multithreaded programming paradigms as
+long as the implementation of these paradigms is based on the POSIX
+threads primitives. DRD however does not support programs that use
+e.g. Linux' futexes directly. Attempts to analyze such programs with
+DRD will result in false positives.
+</para>
+
+</sect2>
+
+
+<sect2 id="drd-manual.pthreads-model" xreflabel="Pthreads-model">
+<title>POSIX Threads Programming Model</title>
+
+<para>
+POSIX threads, also known as Pthreads, is the most widely available
+threading library on Unix systems.
 </para>
 
 <para>
-DRD supports any combination of multithreaded programming paradigms
-and atomic memory accesses, as long as the libraries that implement
-the paradigms are based on POSIX threads. Direct use of e.g. Linux'
-futexes is not recognized by DRD and will result in false positives.
+The POSIX threads programming model is based on the following abstractions:
+<itemizedlist>
+  <listitem>
+    <para>
+      A shared address space. All threads running within the same
+      process share the same address space. All data, whether shared or
+      not, is identified by its address.
+    </para>
+  </listitem>
+  <listitem>
+    <para>
+      Regular load and store operations, which allow to read values
+      from or to write values to the memory shared by all threads
+      running in the same process.
+    </para>
+  </listitem>
+  <listitem>
+    <para>
+      Atomic store and load-modify-store operations. While these
+      are not mentioned in the POSIX threads standard, most
+      microprocessors support atomic memory operations. And some
+      compilers provide direct support for atomic memory operations
+      through built-in functions like
+      e.g. <computeroutput>__sync_fetch_and_add()</computeroutput>.
+    </para>
+  </listitem>
+  <listitem>
+    <para>
+      Threads. Each thread represents a concurrent activity.
+    </para>
+  </listitem>
+  <listitem>
+    <para>
+      Synchronization objects and operations on these synchronization
+      objects. The following types of synchronization objects are
+      defined in the POSIX threads standard: mutexes, condition
+      variables, semaphores, reader-writer locks, barriers and
+      spinlocks.
+    </para>
+  </listitem>
+</itemizedlist>
 </para>
+
+<para>
+Which source code statements generate which memory accesses depends on
+the memory model of the programming language being used. There is not
+yet a definitive memory model for the C and C++ languagues. For a
+draft memory model, see also document <ulink
+url="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2007/n2338.html">
+WG21/N2338</ulink>.
+</para>
+
+<para>
+For more information about POSIX threads, see also the Single UNIX
+Specification version 3, also known as
+<ulink url="http://www.unix.org/version3/ieee_std.html">
+IEEE Std 1003.1</ulink>.
+</para>
+
+</sect2>
+
+
+<sect2 id="drd-manual.mt-problems" xreflabel="MT-Problems">
+<title>Multithreaded Programming Problems</title>
+
+<para>
+Depending on how multithreading is expressed in a program, one or more
+of the following problems can be triggered by a multithreaded program:
+<itemizedlist>
+  <listitem>
+    <para>
+      Data races. One or more threads access the same memory
+      location without sufficient locking.
+    </para>
+  </listitem>
+  <listitem>
+    <para>
+      Lock contention. One thread blocks the progress of one or more other
+      threads by holding a lock too long.
+    </para>
+  </listitem>
+  <listitem>
+    <para>
+      Improper use of the POSIX threads API. The most popular POSIX
+      threads implementation, NPTL, is optimized for speed. The NPTL
+      will not complain on certain errors, e.g. when a mutex is locked
+      in one thread and unlocked in another thread.
+    </para>
+  </listitem>
+  <listitem>
+    <para>
+      Deadlock. A deadlock occurs when two or more threads wait for
+      each other indefinitely.
+    </para>
+  </listitem>
+  <listitem>
+    <para>
+      False sharing. If threads that run on different processor cores
+      access different variables located in the same cache line
+      frequently, this will slow down the involved threads a lot due
+      to frequent exchange of cache lines.
+    </para>
+  </listitem>
+</itemizedlist>
+</para>
+
+<para>
+Although the likelihood of the occurrence of data races can be reduced
+by a disciplined programming style, a tool for automatic detection of
+data races is a necessity when developing multithreaded software. DRD
+can detect these, as well as lock contention and improper use of the
+POSIX threads API.
+</para>
+
+</sect2>
+
+
+<sect2 id="drd-manual.drd-versus-helgrind" xreflabel="DRD-versus-Helgrind">
+<title>Data Race Detection by DRD versus Helgrind</title>
+
+<para>
+Synchronization operations impose an order on interthread memory
+accesses. This order is also known as the happens-before relationship.
+</para>
+
+<para>
+A multithreaded program is data-race free if all interthread memory
+accesses are ordered by synchronization operations.
+</para>
+
+<para>
+A well known way to ensure that a multithreaded program is data-race
+free is to ensure that a locking discipline is followed. It is e.g.
+possible to associate a mutex with each shared data item, and to hold
+a lock on the associated mutex while the shared data is accessed.
+</para>
+
+<para>
+All programs that follow a locking discipline are data-race free, but
+not all data-race free programs follow a locking discipline. There
+exist multithreaded programs where access to shared data is arbitrated
+via condition variables, semaphores or barriers. As an example, a
+certain class of HPC applications consists of a sequence of
+computation steps separated in time by barriers, and where these
+barriers are the only means of synchronization.
+</para>
+
+<para>
+There exist two different algorithms for verifying the correctness of
+multithreaded programs at runtime. The so-called Eraser algorithm
+verifies whether all shared memory accesses follow a consistent
+locking strategy. And the happens-before data race detectors verify
+directly whether all interthread memory accesses are ordered by
+synchronization operations. While the happens-before data race
+detection algorithm is more complex to implement, and while it is more
+sensitive to OS scheduling, it is a general approach that works for
+all classes of multithreaded programs. Furthermore, the happens-before
+data race detection algorithm does not report any false positives.
+</para>
+
+<para>
+DRD is based on the happens-before algorithm, while Helgrind uses a
+variant of the Eraser algorithm.
+</para>
+
+</sect2>
+
 
 </sect1>
 
 
-<sect1 id="drd-manual.options" xreflabel="DRD Options">
+<sect1 id="drd-manual.using-drd" xreflabel="Using DRD">
+<title>Using DRD</title>
+
+<sect2 id="drd-manual.options" xreflabel="DRD Options">
 <title>Command Line Options</title>
 
-<para>The following end-user options are available:</para>
+<para>The following command-line options are available for controlling the
+behavior of the DRD tool itself:</para>
 
 <!-- start of xi:include in the manpage -->
 <variablelist id="drd.opts.list">
+  <varlistentry>
+    <term>
+      <option><![CDATA[--check-stack-var=<yes|no> [default: no]]]></option>
+    </term>
+    <listitem>
+      <para>
+        Controls whether <constant>DRD</constant> reports data races
+        for stack variables. This is disabled by default in order to
+        accelerate data race detection. Most programs do not share
+        stack variables over threads.
+      </para>
+    </listitem>
+  </varlistentry>
+  <varlistentry>
+    <term>
+      <option><![CDATA[--exclusive-threshold=<n> [default: off]]]></option>
+    </term>
+    <listitem>
+      <para>
+        Print an error message if any mutex or writer lock is held
+        longer than the specified time (in milliseconds). This option
+        is intended to allow detection of lock contention.
+      </para>
+    </listitem>
+  </varlistentry>
+  <varlistentry>
+    <term>
+      <option><![CDATA[--segment-merging=<yes|no> [default: yes]]]></option>
+    </term>
+    <listitem>
+      <para>
+        Controls segment merging. Segment merging is an algorithm to
+        limit memory usage of the data race detection
+        algorithm. Disabling segment merging may improve the accuracy
+        of the so-called 'other segments' displayed in race reports
+        but can also trigger an out of memory error.
+      </para>
+    </listitem>
+  </varlistentry>
+  <varlistentry>
+    <term>
+      <option><![CDATA[--shared-threshold=<n> [default: off]]]></option>
+    </term>
+    <listitem>
+      <para>
+        Print an error message if a reader lock is held longer than
+        the specified time (in milliseconds). This option is intended
+        to allow detection of lock contention.
+      </para>
+    </listitem>
+  </varlistentry>
+  <varlistentry>
+    <term>
+      <option><![CDATA[--show-confl-seg=<yes|no> [default: yes]]]></option>
+    </term>
+    <listitem>
+      <para>
+         Show conflicting segments in race reports. Since this
+         information can help to find the cause of a data race, this
+         option is enabled by default. Disabling this option makes the
+         output of DRD more compact.
+      </para>
+    </listitem>
+  </varlistentry>
+  <varlistentry>
+    <term>
+      <option><![CDATA[--show-stack-usage=<yes|no> [default: no]]]></option>
+    </term>
+    <listitem>
+      <para>
+        Print stack usage at thread exit time. When there is a large
+        number of threads created in a program it becomes important to
+        limit the amount of virtual memory allocated for thread
+        stacks. This option makes it possible to observe the maximum
+        number of bytes that has been used by the client program for
+        thread stacks. Note: the DRD tool allocates some temporary
+        data on the client thread stack. The space needed for this
+        temporary data is not reported via this option.
+      </para>
+    </listitem>
+  </varlistentry>
+  <varlistentry>
+    <term>
+      <option><![CDATA[--var-info=<yes|no> [default: no]]]></option>
+    </term>
+    <listitem>
+      <para>
+        Display the names of global, static and stack variables when a
+        data race is reported. While this information can be very
+        helpful, by default it is not loaded into memory since for big
+        programs reading in all debug information at once may cause an
+        out of memory error.
+      </para>
+    </listitem>
+  </varlistentry>
 </variablelist>
 <!-- end of xi:include in the manpage -->
 
 <!-- start of xi:include in the manpage -->
-<para>In addition, the following debugging options are available for
-DRD:</para>
+<para>
+The following options are available for monitoring the behavior of the
+process being analyzed with DRD:
+</para>
+
 <variablelist id="drd.debugopts.list">
+  <varlistentry>
+    <term>
+      <option><![CDATA[--trace-addr=<address> [default: none]]]></option>
+    </term>
+    <listitem>
+      <para>
+        Trace all load and store activity for the specified
+        address. This option may be specified more than once.
+      </para>
+    </listitem>
+  </varlistentry>
+  <varlistentry>
+    <term>
+      <option><![CDATA[--trace-barrier=<yes|no> [default: no]]]></option>
+    </term>
+    <listitem>
+      <para>
+        Trace all barrier activity.
+      </para>
+    </listitem>
+  </varlistentry>
+  <varlistentry>
+    <term>
+      <option><![CDATA[--trace-cond=<yes|no> [default: no]]]></option>
+    </term>
+    <listitem>
+      <para>
+        Trace all condition variable activity.
+      </para>
+    </listitem>
+  </varlistentry>
+  <varlistentry>
+    <term>
+      <option><![CDATA[--trace-fork-join=<yes|no> [default: no]]]></option>
+    </term>
+    <listitem>
+      <para>
+        Trace all thread creation and all thread termination events.
+      </para>
+    </listitem>
+  </varlistentry>
+  <varlistentry>
+    <term>
+      <option><![CDATA[--trace-mutex=<yes|no> [default: no]]]></option>
+    </term>
+    <listitem>
+      <para>
+        Trace all mutex activity.
+      </para>
+    </listitem>
+  </varlistentry>
+  <varlistentry>
+    <term>
+      <option><![CDATA[--trace-rwlock=<yes|no> [default: no]]]></option>
+    </term>
+    <listitem>
+      <para>
+         Trace all reader-writer lock activity.
+      </para>
+    </listitem>
+  </varlistentry>
+  <varlistentry>
+    <term>
+      <option><![CDATA[--trace-semaphore=<yes|no> [default: no]]]></option>
+    </term>
+    <listitem>
+      <para>
+        Trace all semaphore activity.
+      </para>
+    </listitem>
+  </varlistentry>
 </variablelist>
 <!-- end of xi:include in the manpage -->
 
-</sect1>
+</sect2>
 
 
-<sect1 id="drd-manual.data-races" xreflabel="Data Races">
+<sect2 id="drd-manual.data-races" xreflabel="Data Races">
 <title>Data Races</title>
-</sect1>
+</sect2>
 
 
-<sect1 id="drd-manual.lock-contention" xreflabel="Lock Contention">
+<sect2 id="drd-manual.lock-contention" xreflabel="Lock Contention">
 <title>Lock Contention</title>
-</sect1>
+</sect2>
 
 
-<sect1 id="drd-manual.api-checks" xreflabel="API Checks">
+<sect2 id="drd-manual.api-checks" xreflabel="API Checks">
 <title>Misuse of the POSIX threads API</title>
-</sect1>
+</sect2>
 
 
-<sect1 id="drd-manual.clientreqs" xreflabel="Client requests">
+<sect2 id="drd-manual.clientreqs" xreflabel="Client requests">
 <title>Client Requests</title>
 
 <para>
@@ -233,16 +503,24 @@ Just as for other Valgrind tools it is possible to pass information
 from a client program to the DRD tool.
 </para>
 
-</sect1>
+</sect2>
 
 
-<sect1 id="drd-manual.openmp" xreflabel="OpenMP">
+<sect2 id="drd-manual.openmp" xreflabel="OpenMP">
 <title>Debugging OpenMP Programs With DRD</title>
 
 <para>
 Just as for other Valgrind tools it is possible to pass information
 from a client program to the DRD tool.
 </para>
+
+<para>
+For more information about OpenMP, see also 
+<ulink url="http://openmp.org/">openmp.org</ulink>.
+</para>
+
+</sect2>
+
 
 </sect1>
 
@@ -253,30 +531,74 @@ from a client program to the DRD tool.
 <para>DRD currently has the following limitations:</para>
 
 <itemizedlist>
-  <listitem><para>DRD has only been tested on the Linux operating
-  system, and not on any of the other operating systems supported by
-  Valgrind.</para>
+  <listitem>
+    <para>
+      DRD has only been tested on the Linux operating system, and not
+      on any of the other operating systems supported by
+      Valgrind.
+    </para>
   </listitem>
-  <listitem><para>Of the two POSIX threads implementations for Linux,
-  only the NPTL (Native POSIX Thread Library) is supported. The older
-  LinuxThreads library is not supported.</para>
+  <listitem>
+    <para>
+      Of the two POSIX threads implementations for Linux, only the
+      NPTL (Native POSIX Thread Library) is supported. The older
+      LinuxThreads library is not supported.
+    </para>
   </listitem>
-  <listitem><para>When running DRD on a PowerPC CPU, DRD will report
-  false positives on atomic operations. See also <ulink
-  url="http://bugs.kde.org/show_bug.cgi?id=162354">KDE bug 162354</ulink>.
-  </para></listitem>
-  <listitem><para>DRD, just like memcheck, will refuse to
-  start on Linux distributions where all symbol information has been
-  removed from ld.so. This is e.g. the case for openSUSE 10.3 -- see
-  also <ulink url="http://bugzilla.novell.com/show_bug.cgi?id=396197">
-  Novell bug 396197</ulink>.
-  </para></listitem>
-  <listitem><para>If you compile the DRD source code yourself, you need
-  gcc 3.0 or later. gcc 2.95 is not supported.</para>
+  <listitem>
+    <para>
+      When running DRD on a PowerPC CPU, DRD will report false
+      positives on atomic operations. See also Valgrind bug <ulink
+      url="http://bugs.kde.org/show_bug.cgi?id=162354">
+      162354</ulink>.
+    </para>
+  </listitem>
+  <listitem>
+    <para>
+      DRD, just like memcheck, will refuse to start on Linux
+      distributions where all symbol information has been removed from
+      ld.so. This is a.o. the case for the PPC editions of openSUSE
+      and Gentoo. You will have to install the glibc debuginfo package
+      on these platforms before you can use DRD. See also openSUSE bug
+      <ulink url="http://bugzilla.novell.com/show_bug.cgi?id=396197">
+      396197</ulink> and Gentoo bug <ulink
+      url="http://bugs.gentoo.org/214065">214065</ulink>.
+    </para>
+  </listitem>
+  <listitem>
+    <para>
+      When DRD prints a report about a data race detected on a stack
+      variable in a parallel section of an OpenMP program, the report
+      will contain no information about the context of the data race
+      location (<computeroutput>Allocation context:
+      unknown</computeroutput>). It's not yet clear whether this
+      behavior is caused by Valgrind or by gcc.
+    </para>
+  </listitem>
+  <listitem>
+    <para>
+      If you compile the DRD source code yourself, you need gcc 3.0 or
+      later. gcc 2.95 is not supported.
+    </para>
   </listitem>
 
 </itemizedlist>
 
 </sect1>
+
+
+<sect1 id="drd-manual.feedback" xreflabel="Feedback">
+<title>Feedback</title>
+
+<para>
+If you have any comments, suggestions, feedback or bug reports about
+DRD, feel free to either post a message on the Valgrind users mailing
+list or to file a bug report. See also <ulink
+url="&vg-url;">&vg-url;</ulink> for more information about the
+Valgrind mailing lists and how to file a bug report.
+</para>
+
+</sect1>
+
 
 </chapter>

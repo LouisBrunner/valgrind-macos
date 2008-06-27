@@ -196,7 +196,6 @@ static void drd_print_usage(void)
 "    --trace-fork-join=yes|no  Trace all thread fork/join activity [no].\n"
 "    --trace-mutex=yes|no      Trace all mutex activity [no].\n"
 "    --trace-rwlock=yes|no     Trace all reader-writer lock activity[no].\n"
-"    --trace-segment=yes|no    Trace segment actions [no].\n"
 "    --trace-semaphore=yes|no  Trace all semaphore activity [no].\n"
               );
    VG_(replacement_malloc_print_usage)();
@@ -209,7 +208,8 @@ static void drd_print_debug_usage(void)
 "    --trace-clientobj=yes|no  Trace all client object activity [no].\n"
 "    --trace-csw=yes|no        Trace all scheduler context switches [no].\n"
 "    --trace-danger-set=yes|no Trace all danger set updates [no].\n"
-"    --trace-suppr=yes|no Trace all address suppression actions [no].\n"
+"    --trace-segment=yes|no    Trace segment actions [no].\n"
+"    --trace-suppr=yes|no      Trace all address suppression actions [no].\n"
               );
    VG_(replacement_malloc_print_debug_usage)();
 }

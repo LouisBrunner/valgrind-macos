@@ -1020,7 +1020,7 @@ unlock(mx)                             unlock(mx)
     LinuxThreads implementation is not supported.</para>
 
     <para>Unsupported targets may work to varying degrees.  In
-    particular ppc32-linux and ppc64-linux running NTPL should work,
+    particular ppc32-linux and ppc64-linux running NPTL should work,
     but you will get false race errors because Helgrind does not know
     how to properly handle atomic instruction sequences created using
     the lwarx/stwcx instructions.</para>

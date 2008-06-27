@@ -482,6 +482,16 @@ References
   Parallel Computing archive, Volume 28, Issue 9, pp 1221-1238,
   September 2002.
   http://portal.acm.org/citation.cfm?id=638124
+
+[Pozniansky 2003]
+  Eli Pozniansky, Assaf Schuster.
+  Efficient on-the-fly data race detection in multithreaded C++ programs.
+  Proceedings of the ACM SIGPLAN symposium on principles and practice
+  of parallel programming (PPoPP 2003) and workshop on partial
+  evaluation and semantics-based program manipulation (PEPM 2003),
+  Volume 38, Issue 10, pp 179-190 (October 2003).
+  http://www.cs.technion.ac.il/~assaf/publications/MultiRace.pdf
+  http://portal.acm.org/citation.cfm?id=966049.781529
  
 [Ronsse 2004]
   Michiel Ronsse, Jonas Maebe, Koen De Bosschere.

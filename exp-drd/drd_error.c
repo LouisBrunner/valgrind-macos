@@ -23,21 +23,22 @@
 */
 
 
+#include "drd_clientobj.h"        /* struct mutex_info        */
 #include "drd_error.h"
 #include "drd_malloc_wrappers.h"
-#include "drd_mutex.h"            // struct mutex_info
-#include "drd_suppression.h"      // drd_start_suppression()
-#include "pub_drd_bitmap.h"       // LHS_W, ...
+#include "drd_mutex.h"
+#include "drd_suppression.h"      /* drd_start_suppression()  */
+#include "pub_drd_bitmap.h"       /* LHS_W, ...               */
 #include "pub_tool_vki.h"
 #include "pub_tool_basics.h"
-#include "pub_tool_libcassert.h"  // tl_assert()
-#include "pub_tool_libcbase.h"    // strlen()
-#include "pub_tool_libcfile.h"    // VG_(get_startup_wd)()
-#include "pub_tool_libcprint.h"   // VG_(printf)()
+#include "pub_tool_libcassert.h"  /* tl_assert()              */
+#include "pub_tool_libcbase.h"    /* strlen()                 */
+#include "pub_tool_libcfile.h"    /* VG_(get_startup_wd)()    */
+#include "pub_tool_libcprint.h"   /* VG_(printf)()            */
 #include "pub_tool_machine.h"
-#include "pub_tool_mallocfree.h"  // VG_(malloc), VG_(free)
-#include "pub_tool_threadstate.h" // VG_(get_pthread_id)()
-#include "pub_tool_tooliface.h"   // VG_(needs_tool_errors)()
+#include "pub_tool_mallocfree.h"  /* VG_(malloc), VG_(free)   */
+#include "pub_tool_threadstate.h" /* VG_(get_pthread_id)()    */
+#include "pub_tool_tooliface.h"   /* VG_(needs_tool_errors)() */
 
 
 /* Local variables. */
@@ -50,8 +51,9 @@ void set_show_conflicting_segments(const Bool scs)
   s_drd_show_conflicting_segments = scs;
 }
 
-/* Describe a data address range [a,a+len[ as good as possible, for error */
-/* messages, putting the result in ai. */
+/** Describe a data address range [a,a+len[ as good as possible, for error
+ *  messages, putting the result in ai.
+ */
 static
 void describe_malloced_addr(Addr const a, SizeT const len, AddrInfo* const ai)
 {
@@ -65,6 +67,24 @@ void describe_malloced_addr(Addr const a, SizeT const len, AddrInfo* const ai)
   else
   {
     ai->akind = eUnknown;
+  }
+}
+
+/** Report where a mutex has been observed for the first time. The printed
+ *  call stack will either refer to a pthread_mutex_init() or a
+ *  pthread_mutex_lock() call.
+ */
+static void mutex_first_observed(const Addr mutex)
+{
+  struct mutex_info* mi;
+
+  mi = mutex_get(mutex);
+  if (mi)
+  {
+    tl_assert(mi->first_observed_at);
+    VG_(message)(Vg_UserMsg,
+                 "Mutex 0x%lx was first observed at:", mutex);
+    VG_(pp_ExeContext)(mi->first_observed_at);
   }
 }
 
@@ -171,10 +191,11 @@ static void drd_tool_error_pp(Error* const e)
     CondRaceErrInfo* cei = (CondRaceErrInfo*)(VG_(get_error_extra)(e));
     VG_(message)(Vg_UserMsg,
                  "Probably a race condition: condition variable 0x%lx has been"
-                 " signalled but the associated mutex 0x%lx is not locked"
-                 " by the signalling thread",
+                 " signaled but the associated mutex 0x%lx is not locked"
+                 " by the signalling thread.",
                  cei->cond, cei->mutex);
     VG_(pp_ExeContext)(VG_(get_error_where)(e));
+    mutex_first_observed(cei->mutex);
     break;
   }
   case CondDestrErr: {
@@ -185,10 +206,11 @@ static void drd_tool_error_pp(Error* const e)
                  cdi->cond, cdi->mutex,
                  DrdThreadIdToVgThreadId(cdi->tid), cdi->tid);
     VG_(pp_ExeContext)(VG_(get_error_where)(e));
+    mutex_first_observed(cdi->mutex);
     break;
   }
   case SemaphoreErr: {
-    SemaphoreErrInfo* sei =(SemaphoreErrInfo*)(VG_(get_error_extra)(e));
+    SemaphoreErrInfo* sei = (SemaphoreErrInfo*)(VG_(get_error_extra)(e));
     tl_assert(sei);
     VG_(message)(Vg_UserMsg,
                  "%s: semaphore 0x%lx",

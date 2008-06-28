@@ -1,10 +1,13 @@
 
 Thread 2:
-Probably a race condition: condition variable 0x........ has been signalled but the associated mutex 0x........ is not locked by the signalling thread
+Probably a race condition: condition variable 0x........ has been signaled but the associated mutex 0x........ is not locked by the signalling thread.
    at 0x........: pthread_cond_signal* (drd_pthread_intercepts.c:?)
    by 0x........: thread_func (pth_cond_race.c:?)
    by 0x........: vg_thread_wrapper (drd_pthread_intercepts.c:?)
    by 0x........: (within libpthread-?.?.so)
    by 0x........: clone (in /...libc...)
+Mutex 0x........ was first observed at:
+   at 0x........: pthread_mutex_init (drd_pthread_intercepts.c:?)
+   by 0x........: main (pth_cond_race.c:?)
 
 ERROR SUMMARY: 1 errors from 1 contexts (suppressed: 0 from 0)

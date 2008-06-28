@@ -66,6 +66,7 @@ struct mutex_info
   DrdThreadId owner;           // owner if locked, last owner if free.
   Segment*    last_locked_segment;
   ULong       acquiry_time_ms;
+  ExeContext* first_observed_at;
   ExeContext* acquired_at;
 };
 

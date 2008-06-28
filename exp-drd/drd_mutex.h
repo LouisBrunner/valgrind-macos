@@ -23,9 +23,6 @@
 */
 
 
-// Mutex state information: owner thread and recursion count.
-
-
 #ifndef __DRD_MUTEX_H
 #define __DRD_MUTEX_H
 

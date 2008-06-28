@@ -77,6 +77,7 @@ void mutex_initialize(struct mutex_info* const p,
   p->owner               = DRD_INVALID_THREADID;
   p->last_locked_segment = 0;
   p->acquiry_time_ms     = 0;
+  p->first_observed_at   = VG_(record_ExeContext)(VG_(get_running_tid)(), 0);
   p->acquired_at         = 0;
 }
 
@@ -109,6 +110,7 @@ static void mutex_cleanup(struct mutex_info* p)
   p->last_locked_segment = 0;
 }
 
+/** Let Valgrind report that there is no mutex object at address 'mutex'. */
 static void not_a_mutex(const Addr mutex)
 {
   MutexErrInfo MEI = { mutex, -1, DRD_INVALID_THREADID };

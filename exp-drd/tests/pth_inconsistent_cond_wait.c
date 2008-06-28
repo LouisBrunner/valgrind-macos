@@ -1,3 +1,10 @@
+/** Trigger two kinds of errors: once that condition variable s_cond is
+ *  associated with two different mutexes (s_mutex1 and s_mutex2), and two
+ *  times that pthread_cond_signal() is called without that the mutex
+ *  associated with the condition variable is locked.
+ */
+
+
 #include <pthread.h>
 #include <semaphore.h>
 #include <unistd.h>

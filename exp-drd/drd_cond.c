@@ -219,7 +219,7 @@ int cond_pre_wait(const Addr cond, const Addr mutex)
   }
   tl_assert(p->mutex);
   q = mutex_get(p->mutex);
-  if (q && q->recursion_count > 0)
+  if (q && q->owner == thread_get_running_tid() && q->recursion_count > 0)
   {
     const ThreadId vg_tid = VG_(get_running_tid)();
     MutexErrInfo MEI = { q->a1, q->recursion_count, q->owner };

@@ -1,28 +1,44 @@
 
-Thread 2:
-Conflicting load by thread 2/3 at 0x........ size 4
-   at 0x........: thread (rwlock_race.c:?)
+Thread 3:
+Conflicting load by thread 3/3 at 0x........ size 4
+   at 0x........: thread_func (rwlock_race.c:?)
    by 0x........: vg_thread_wrapper (drd_pthread_intercepts.c:?)
    by 0x........: (within libpthread-?.?.so)
    by 0x........: clone (in /...libc...)
 Location 0x........ is 0 bytes inside local var "s_racy"
-declared at rwlock_race.c:17, in frame #? of thread 2
-Other segment start (thread 0/2)
-   (thread finished, call stack no longer available)
-Other segment end (thread 0/2)
-   (thread finished, call stack no longer available)
+declared at rwlock_race.c:18, in frame #? of thread 3
+Other segment start (thread 2/2)
+   at 0x........: pthread_rwlock_rdlock* (drd_pthread_intercepts.c:?)
+   by 0x........: thread_func (rwlock_race.c:?)
+   by 0x........: vg_thread_wrapper (drd_pthread_intercepts.c:?)
+   by 0x........: (within libpthread-?.?.so)
+   by 0x........: clone (in /...libc...)
+Other segment end (thread 2/2)
+   at 0x........: pthread_rwlock_unlock* (drd_pthread_intercepts.c:?)
+   by 0x........: thread_func (rwlock_race.c:?)
+   by 0x........: vg_thread_wrapper (drd_pthread_intercepts.c:?)
+   by 0x........: (within libpthread-?.?.so)
+   by 0x........: clone (in /...libc...)
 
-Conflicting store by thread 2/3 at 0x........ size 4
-   at 0x........: thread (rwlock_race.c:?)
+Conflicting store by thread 3/3 at 0x........ size 4
+   at 0x........: thread_func (rwlock_race.c:?)
    by 0x........: vg_thread_wrapper (drd_pthread_intercepts.c:?)
    by 0x........: (within libpthread-?.?.so)
    by 0x........: clone (in /...libc...)
 Location 0x........ is 0 bytes inside local var "s_racy"
-declared at rwlock_race.c:17, in frame #? of thread 2
-Other segment start (thread 0/2)
-   (thread finished, call stack no longer available)
-Other segment end (thread 0/2)
-   (thread finished, call stack no longer available)
+declared at rwlock_race.c:18, in frame #? of thread 3
+Other segment start (thread 2/2)
+   at 0x........: pthread_rwlock_rdlock* (drd_pthread_intercepts.c:?)
+   by 0x........: thread_func (rwlock_race.c:?)
+   by 0x........: vg_thread_wrapper (drd_pthread_intercepts.c:?)
+   by 0x........: (within libpthread-?.?.so)
+   by 0x........: clone (in /...libc...)
+Other segment end (thread 2/2)
+   at 0x........: pthread_rwlock_unlock* (drd_pthread_intercepts.c:?)
+   by 0x........: thread_func (rwlock_race.c:?)
+   by 0x........: vg_thread_wrapper (drd_pthread_intercepts.c:?)
+   by 0x........: (within libpthread-?.?.so)
+   by 0x........: clone (in /...libc...)
 Result: 2
 
 ERROR SUMMARY: 2 errors from 2 contexts (suppressed: 0 from 0)

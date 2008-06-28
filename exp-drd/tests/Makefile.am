@@ -63,6 +63,8 @@ EXTRA_DIST =                                        \
 	pth_barrier2.vgtest                         \
 	pth_barrier3.stderr.exp                     \
 	pth_barrier3.vgtest                         \
+	pth_barrier_reinit.stderr.exp               \
+	pth_barrier_reinit.vgtest                   \
 	pth_broadcast.stderr.exp                    \
 	pth_broadcast.vgtest                        \
 	pth_cond_race.stderr.exp                    \
@@ -176,6 +178,7 @@ check_PROGRAMS_COMMON = \
   memory_allocation   \
   new_delete          \
   pth_barrier         \
+  pth_barrier_reinit  \
   pth_broadcast       \
   pth_cond_race       \
   pth_create_chain    \
@@ -263,6 +266,9 @@ new_delete_SOURCES          = new_delete.cpp
 
 pth_barrier_SOURCES         = pth_barrier.c
 pth_barrier_LDADD           = -lpthread
+
+pth_barrier_reinit_SOURCES  = pth_barrier_reinit.c
+pth_barrier_reinit_LDADD    = -lpthread
 
 pth_broadcast_SOURCES       = pth_broadcast.c
 pth_broadcast_LDADD         = -lpthread

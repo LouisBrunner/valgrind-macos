@@ -123,11 +123,22 @@ struct semaphore_info* semaphore_init(const Addr semaphore,
                  thread_get_running_tid(),
                  semaphore);
   }
-  if (semaphore_get(semaphore))
+  p = semaphore_get(semaphore);
+  if (p)
   {
-    // To do: print an error message that a semaphore is being reinitialized.
+    const ThreadId vg_tid = VG_(get_running_tid)();
+    SemaphoreErrInfo SEI = { semaphore };
+    VG_(maybe_record_error)(vg_tid,
+                            SemaphoreErr,
+                            VG_(get_IP)(vg_tid),
+                            "Semaphore reinitialization",
+                            &SEI);
   }
-  p = semaphore_get_or_allocate(semaphore);
+  else
+  {
+    p = semaphore_get_or_allocate(semaphore);
+  }
+  tl_assert(p);
   p->value = value;
   return p;
 }

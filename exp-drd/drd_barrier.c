@@ -184,6 +184,19 @@ void barrier_init(const Addr barrier,
 
   tl_assert(barrier_type == pthread_barrier || barrier_type == gomp_barrier);
 
+  if (! reinitialization && barrier_type == pthread_barrier)
+  {
+    p = barrier_get(barrier);
+    if (p)
+    {
+      BarrierErrInfo bei = { barrier };
+      VG_(maybe_record_error)(VG_(get_running_tid)(),
+                              BarrierErr,
+                              VG_(get_IP)(VG_(get_running_tid)()),
+                              "Barrier reinitializatoin",
+                              &bei);
+    }
+  }
   p = barrier_get_or_allocate(barrier, barrier_type, count);
 
   if (s_trace_barrier)

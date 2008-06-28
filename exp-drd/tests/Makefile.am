@@ -69,6 +69,8 @@ EXTRA_DIST =                                        \
 	pth_cond_race.vgtest                        \
 	pth_cond_race2.stderr.exp                   \
 	pth_cond_race2.vgtest                       \
+	pth_cond_race3.stderr.exp                   \
+	pth_cond_race3.vgtest                       \
 	pth_create_chain.stderr.exp                 \
 	pth_create_chain.vgtest                     \
 	pth_detached.stderr.exp                     \

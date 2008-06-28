@@ -28,25 +28,30 @@
 #include "drd_error.h"
 #include "drd_mutex.h"
 #include "drd_suppression.h"
-#include "pub_tool_errormgr.h"    // VG_(maybe_record_error)()
-#include "pub_tool_libcassert.h"  // tl_assert()
-#include "pub_tool_libcprint.h"   // VG_(printf)()
-#include "pub_tool_machine.h"     // VG_(get_IP)()
-#include "pub_tool_options.h"     // VG_(clo_backtrace_size)
-#include "pub_tool_threadstate.h" // VG_(get_running_tid)()
+#include "pub_tool_errormgr.h"    /* VG_(maybe_record_error)() */
+#include "pub_tool_libcassert.h"  /* tl_assert()               */
+#include "pub_tool_libcprint.h"   /* VG_(printf)()             */
+#include "pub_tool_machine.h"     /* VG_(get_IP)()             */
+#include "pub_tool_options.h"     /* VG_(clo_backtrace_size)   */
+#include "pub_tool_threadstate.h" /* VG_(get_running_tid)()    */
 
 
-// Local functions.
+/* Local functions. */
 
 static void cond_cleanup(struct cond_info* p);
 
 
-// Local variables.
+/* Global variables. */
+
+Bool s_drd_report_signal_unlocked = True;
+
+
+/* Local variables. */
 
 static Bool s_trace_cond;
 
 
-// Function definitions.
+/* Function definitions. */
 
 void cond_set_trace(const Bool trace_cond)
 {
@@ -243,11 +248,11 @@ static void cond_signal(Addr const cond)
 
   if (cond_p && cond_p->waiter_count > 0)
   {
-    if (! mutex_is_locked_by(cond_p->mutex, drd_tid))
+    if (s_drd_report_signal_unlocked
+        && ! mutex_is_locked_by(cond_p->mutex, drd_tid))
     {
       /* A signal is sent while the associated mutex has not been locked. */
       /* This can indicate but is not necessarily a race condition.       */
-#if 0
       CondRaceErrInfo cei;
       cei.cond  = cond;
       cei.mutex = cond_p->mutex;
@@ -256,7 +261,6 @@ static void cond_signal(Addr const cond)
                               VG_(get_IP)(vg_tid),
                               "CondErr",
                               &cei);
-#endif
     }
   }
   else

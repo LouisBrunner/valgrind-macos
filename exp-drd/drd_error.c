@@ -170,7 +170,7 @@ static void drd_tool_error_pp(Error* const e)
   case CondRaceErr: {
     CondRaceErrInfo* cei = (CondRaceErrInfo*)(VG_(get_error_extra)(e));
     VG_(message)(Vg_UserMsg,
-                 "Race condition: condition variable 0x%lx has been"
+                 "Probably a race condition: condition variable 0x%lx has been"
                  " signalled but the associated mutex 0x%lx is not locked"
                  " by the signalling thread",
                  cei->cond, cei->mutex);

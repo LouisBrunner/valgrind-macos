@@ -23,20 +23,25 @@
 */
 
 
-// Condition variable state information: mutex specified in pthread_cond_wait()
-// call.
-
-
 #ifndef __DRD_COND_H
 #define __DRD_COND_H
 
 
-#include "drd_thread.h"      // DrdThreadid
-#include "pub_tool_basics.h" // Addr
+#include "drd_thread.h"      /* DrdThreadid */
+#include "pub_tool_basics.h" /* Addr        */
 
+
+/* Forward declarations. */
 
 struct cond_info;
 
+
+/* Global variables. */
+
+extern Bool s_drd_report_signal_unlocked;
+
+
+/* Function declarations. */
 
 void cond_set_trace(const Bool trace_cond);
 void cond_pre_init(const Addr cond);

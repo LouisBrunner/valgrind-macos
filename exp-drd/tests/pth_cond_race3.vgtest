@@ -1,0 +1,3 @@
+prereq: ./supported_libpthread
+prog: pth_cond_race
+vgopts: --report-signal-unlocked=no

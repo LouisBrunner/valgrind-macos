@@ -103,14 +103,15 @@ static Bool drd_process_cmd_line_option(Char* arg)
 
   VG_BOOL_CLO     (arg, "--check-stack-var",     s_drd_check_stack_accesses)
   else VG_BOOL_CLO(arg, "--drd-stats",           s_drd_print_stats)
+  else VG_BOOL_CLO(arg,"--report-signal-unlocked",s_drd_report_signal_unlocked)
   else VG_BOOL_CLO(arg, "--segment-merging",     segment_merging)
   else VG_BOOL_CLO(arg, "--show-confl-seg",      show_confl_seg)
   else VG_BOOL_CLO(arg, "--show-stack-usage",    s_show_stack_usage)
   else VG_BOOL_CLO(arg, "--trace-barrier",       trace_barrier)
   else VG_BOOL_CLO(arg, "--trace-clientobj",     trace_clientobj)
   else VG_BOOL_CLO(arg, "--trace-cond",          trace_cond)
-  else VG_BOOL_CLO(arg, "--trace-csw",           trace_csw)
   else VG_BOOL_CLO(arg, "--trace-conflict-set",  trace_conflict_set)
+  else VG_BOOL_CLO(arg, "--trace-csw",           trace_csw)
   else VG_BOOL_CLO(arg, "--trace-fork-join",     s_drd_trace_fork_join)
   else VG_BOOL_CLO(arg, "--trace-mutex",         trace_mutex)
   else VG_BOOL_CLO(arg, "--trace-rwlock",        trace_rwlock)
@@ -173,6 +174,10 @@ static void drd_print_usage(void)
 "                              stack variables [no].\n"
 "    --exclusive-threshold=<n> Print an error message if any mutex or\n"
 "        writer lock is held longer than the specified time (in milliseconds).\n"
+"    --report-signal-unlocked=yes|no Whether to report calls to\n"
+"                              pthread_cond_signal() where the mutex associated\n"
+"                              with the signal via pthread_cond_wait() is not\n"
+"                              locked at the time the signal is sent [yes].\n"
 "    --segment-merging=yes|no  Controls segment merging [yes].\n"
 "        Segment merging is an algorithm to limit memory usage of the\n"
 "        data race detection algorithm. Disabling segment merging may\n"

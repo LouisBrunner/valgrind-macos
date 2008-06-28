@@ -111,7 +111,7 @@ static void mutex_cleanup(struct mutex_info* p)
 }
 
 /** Let Valgrind report that there is no mutex object at address 'mutex'. */
-static void not_a_mutex(const Addr mutex)
+void not_a_mutex(const Addr mutex)
 {
   MutexErrInfo MEI = { mutex, -1, DRD_INVALID_THREADID };
   VG_(maybe_record_error)(VG_(get_running_tid)(),

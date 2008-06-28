@@ -203,12 +203,16 @@ int cond_pre_wait(const Addr cond, const Addr mutex)
   {
     p->mutex = mutex;
   }
-  else
+  else if (p->mutex != mutex)
   {
-    // TO DO: print a proper error message if two different threads call
-    // pthread_cond_*wait() on the same condition variable but with a different
-    // mutex argument.
-    tl_assert(p->mutex == mutex);
+    CondWaitErrInfo cwei
+      = { .cond = cond, .mutex1 = p->mutex, .mutex2 = mutex };
+    VG_(maybe_record_error)(VG_(get_running_tid)(),
+                            CondWaitErr,
+                            VG_(get_IP)(VG_(get_running_tid)()),
+                            "Inconsistent association of condition variable"
+                            " and mutex",
+                            &cwei);
   }
   return ++p->waiter_count;
 }

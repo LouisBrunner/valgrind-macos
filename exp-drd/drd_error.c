@@ -187,6 +187,17 @@ static void drd_tool_error_pp(Error* const e)
     VG_(pp_ExeContext)(VG_(get_error_where)(e));
     break;
   }
+  case CondDestrErr: {
+    CondDestrErrInfo* cdi = (CondDestrErrInfo*)(VG_(get_error_extra)(e));
+    VG_(message)(Vg_UserMsg,
+                 "%s: cond 0x%lx, mutex 0x%lx locked by thread %d/%d",
+                 VG_(get_error_string)(e),
+                 cdi->cond, cdi->mutex,
+                 DrdThreadIdToVgThreadId(cdi->tid), cdi->tid);
+    VG_(pp_ExeContext)(VG_(get_error_where)(e));
+    mutex_first_observed(cdi->mutex);
+    break;
+  }
   case CondRaceErr: {
     CondRaceErrInfo* cei = (CondRaceErrInfo*)(VG_(get_error_extra)(e));
     VG_(message)(Vg_UserMsg,
@@ -198,15 +209,17 @@ static void drd_tool_error_pp(Error* const e)
     mutex_first_observed(cei->mutex);
     break;
   }
-  case CondDestrErr: {
-    CondDestrErrInfo* cdi = (CondDestrErrInfo*)(VG_(get_error_extra)(e));
+  case CondWaitErr: {
+    CondWaitErrInfo* cwei = (CondWaitErrInfo*)(VG_(get_error_extra)(e));
     VG_(message)(Vg_UserMsg,
-                 "%s: cond 0x%lx, mutex 0x%lx locked by thread %d/%d",
+                 "%s: condition variable 0x%lx, mutexes 0x%lx and 0x%lx",
                  VG_(get_error_string)(e),
-                 cdi->cond, cdi->mutex,
-                 DrdThreadIdToVgThreadId(cdi->tid), cdi->tid);
+                 cwei->cond,
+                 cwei->mutex1,
+                 cwei->mutex2);
     VG_(pp_ExeContext)(VG_(get_error_where)(e));
-    mutex_first_observed(cdi->mutex);
+    mutex_first_observed(cwei->mutex1);
+    mutex_first_observed(cwei->mutex2);
     break;
   }
   case SemaphoreErr: {
@@ -279,10 +292,12 @@ static UInt drd_tool_error_update_extra(Error* e)
     return sizeof(MutexErrInfo);
   case CondErr:
     return sizeof(CondErrInfo);
-  case CondRaceErr:
-    return sizeof(CondRaceErrInfo);
   case CondDestrErr:
     return sizeof(CondDestrErrInfo);
+  case CondRaceErr:
+    return sizeof(CondRaceErrInfo);
+  case CondWaitErr:
+    return sizeof(CondWaitErrInfo);
   case SemaphoreErr:
     return sizeof(SemaphoreErrInfo);
   case BarrierErr:
@@ -309,9 +324,11 @@ static Bool drd_tool_error_recog(Char* const name, Supp* const supp)
     ;
   else if (VG_(strcmp)(name, STR_CondErr) == 0)
     ;
+  else if (VG_(strcmp)(name, STR_CondDestrErr) == 0)
+    ;
   else if (VG_(strcmp)(name, STR_CondRaceErr) == 0)
     ;
-  else if (VG_(strcmp)(name, STR_CondDestrErr) == 0)
+  else if (VG_(strcmp)(name, STR_CondWaitErr) == 0)
     ;
   else if (VG_(strcmp)(name, STR_SemaphoreErr) == 0)
     ;
@@ -350,8 +367,9 @@ static Char* drd_tool_error_name(Error* e)
   case DataRaceErr:  return VGAPPEND(STR_, DataRaceErr);
   case MutexErr:     return VGAPPEND(STR_, MutexErr);
   case CondErr:      return VGAPPEND(STR_, CondErr);
-  case CondRaceErr:  return VGAPPEND(STR_, CondRaceErr);
   case CondDestrErr: return VGAPPEND(STR_, CondDestrErr);
+  case CondRaceErr:  return VGAPPEND(STR_, CondRaceErr);
+  case CondWaitErr:  return VGAPPEND(STR_, CondWaitErr);
   case SemaphoreErr: return VGAPPEND(STR_, SemaphoreErr);
   case BarrierErr:   return VGAPPEND(STR_, BarrierErr);
   case RwlockErr:    return VGAPPEND(STR_, RwlockErr);

@@ -43,20 +43,22 @@ typedef enum {
    MutexErr       = 2,
 #define STR_CondErr      "CondErr"
    CondErr        = 3,
-#define STR_CondRaceErr  "CondRaceErr"
-   CondRaceErr    = 4,
 #define STR_CondDestrErr "CondDestrErr"
-   CondDestrErr   = 5,
+   CondDestrErr   = 4,
+#define STR_CondRaceErr  "CondRaceErr"
+   CondRaceErr    = 5,
+#define STR_CondWaitErr  "CondWaitErr"
+   CondWaitErr    = 6,
 #define STR_SemaphoreErr "SemaphoreErr"
-   SemaphoreErr   = 6,
+   SemaphoreErr   = 7,
 #define STR_BarrierErr   "BarrierErr"
-   BarrierErr     = 7,
+   BarrierErr     = 8,
 #define STR_RwlockErr    "RwlockErr"
-   RwlockErr      = 8,
+   RwlockErr      = 9,
 #define STR_HoldtimeErr  "HoldtimeErr"
-   HoldtimeErr    = 9,
+   HoldtimeErr    = 10,
 #define STR_GenericErr   "GenericErr"
-   GenericErr     = 10,
+   GenericErr     = 11,
 } DrdErrorKind;
 
 /* The classification of a faulting address. */
@@ -106,15 +108,21 @@ typedef struct {
 } CondErrInfo;
 
 typedef struct {
+   Addr        cond;
+   Addr        mutex;
+   DrdThreadId tid;
+} CondDestrErrInfo;
+
+typedef struct {
    Addr cond;
    Addr mutex;
 } CondRaceErrInfo;
 
 typedef struct {
-   Addr        cond;
-   Addr        mutex;
-   DrdThreadId tid;
-} CondDestrErrInfo;
+   Addr cond;
+   Addr mutex1;
+   Addr mutex2;
+} CondWaitErrInfo;
 
 typedef struct {
    Addr semaphore;

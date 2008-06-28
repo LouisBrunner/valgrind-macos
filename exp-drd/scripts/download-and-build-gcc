@@ -29,8 +29,8 @@ fi
 
 rm -rf   ${BUILD}     || exit $?
 rm -rf   ${PREFIX}    || exit $?
-mkdir -p ${BUILD}     || exit $?
 mkdir -p ${DOWNLOADS} || exit $?
+mkdir -p ${BUILD}     || exit $?
 cd       ${BUILD}     || exit $?
 
 if [ ! -e $DOWNLOADS/$TAR ]; then

@@ -182,10 +182,13 @@ void cond_post_destroy(const Addr cond)
   clientobj_remove(p->a1, ClientCondvar);
 }
 
-/** Called before pthread_cond_wait(). */
+/** Called before pthread_cond_wait(). Note: before this function is called,
+ *  mutex_unlock() has already been called from drd_clientreq.c.
+ */
 int cond_pre_wait(const Addr cond, const Addr mutex)
 {
   struct cond_info* p;
+  struct mutex_info* q;
 
   if (s_trace_cond)
   {
@@ -214,6 +217,23 @@ int cond_pre_wait(const Addr cond, const Addr mutex)
                             " and mutex",
                             &cwei);
   }
+  tl_assert(p->mutex);
+  q = mutex_get(p->mutex);
+  if (q && q->recursion_count > 0)
+  {
+    const ThreadId vg_tid = VG_(get_running_tid)();
+    MutexErrInfo MEI = { q->a1, q->recursion_count, q->owner };
+    VG_(maybe_record_error)(vg_tid,
+                            MutexErr,
+                            VG_(get_IP)(vg_tid),
+                            "Mutex locked recursively",
+                            &MEI);
+  }
+  else if (q == 0)
+  {
+    not_a_mutex(p->mutex);
+  }
+
   return ++p->waiter_count;
 }
 

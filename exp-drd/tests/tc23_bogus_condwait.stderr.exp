@@ -3,6 +3,10 @@ The object at address 0x........ is not a mutex.
    at 0x........: pthread_cond_wait* (drd_pthread_intercepts.c:?)
    by 0x........: main (tc23_bogus_condwait.c:69)
 
+The object at address 0x........ is not a mutex.
+   at 0x........: pthread_cond_wait* (drd_pthread_intercepts.c:?)
+   by 0x........: main (tc23_bogus_condwait.c:69)
+
 Thread 3:
 Probably a race condition: condition variable 0x........ has been signaled but the associated mutex 0x........ is not locked by the signalling thread.
    at 0x........: pthread_cond_signal* (drd_pthread_intercepts.c:?)
@@ -32,6 +36,10 @@ The object at address 0x........ is not a mutex.
    at 0x........: pthread_cond_wait* (drd_pthread_intercepts.c:?)
    by 0x........: main (tc23_bogus_condwait.c:75)
 
+The object at address 0x........ is not a mutex.
+   at 0x........: pthread_cond_wait* (drd_pthread_intercepts.c:?)
+   by 0x........: main (tc23_bogus_condwait.c:75)
+
 Thread 3:
 Probably a race condition: condition variable 0x........ has been signaled but the associated mutex 0x........ is not locked by the signalling thread.
    at 0x........: pthread_cond_signal* (drd_pthread_intercepts.c:?)
@@ -42,6 +50,10 @@ Probably a race condition: condition variable 0x........ has been signaled but t
 
 Thread 1:
 Mutex not locked by calling thread: mutex 0x........, recursion count 1, owner 2.
+   at 0x........: pthread_cond_wait* (drd_pthread_intercepts.c:?)
+   by 0x........: main (tc23_bogus_condwait.c:78)
+
+Mutex locked recursively: mutex 0x........, recursion count 1, owner 2.
    at 0x........: pthread_cond_wait* (drd_pthread_intercepts.c:?)
    by 0x........: main (tc23_bogus_condwait.c:78)
 
@@ -65,4 +77,4 @@ Mutex not locked by calling thread: mutex 0x........, recursion count 2, owner 1
    by 0x........: (within libpthread-?.?.so)
    by 0x........: clone (in /...libc...)
 
-ERROR SUMMARY: 9 errors from 9 contexts (suppressed: 0 from 0)
+ERROR SUMMARY: 12 errors from 12 contexts (suppressed: 0 from 0)

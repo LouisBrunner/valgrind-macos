@@ -93,7 +93,7 @@ static Bool drd_process_cmd_line_option(Char* arg)
   int trace_clientobj        = -1;
   int trace_cond             = -1;
   int trace_csw              = -1;
-  int trace_danger_set       = -1;
+  int trace_conflict_set     = -1;
   int trace_mutex            = -1;
   int trace_rwlock           = -1;
   int trace_segment          = -1;
@@ -110,7 +110,7 @@ static Bool drd_process_cmd_line_option(Char* arg)
   else VG_BOOL_CLO(arg, "--trace-clientobj",     trace_clientobj)
   else VG_BOOL_CLO(arg, "--trace-cond",          trace_cond)
   else VG_BOOL_CLO(arg, "--trace-csw",           trace_csw)
-  else VG_BOOL_CLO(arg, "--trace-danger-set",    trace_danger_set)
+  else VG_BOOL_CLO(arg, "--trace-conflict-set",  trace_conflict_set)
   else VG_BOOL_CLO(arg, "--trace-fork-join",     s_drd_trace_fork_join)
   else VG_BOOL_CLO(arg, "--trace-mutex",         trace_mutex)
   else VG_BOOL_CLO(arg, "--trace-rwlock",        trace_rwlock)
@@ -150,8 +150,8 @@ static Bool drd_process_cmd_line_option(Char* arg)
     cond_set_trace(trace_cond);
   if (trace_csw != -1)
     thread_trace_context_switches(trace_csw);
-  if (trace_danger_set != -1)
-    thread_trace_danger_set(trace_danger_set);
+  if (trace_conflict_set != -1)
+    thread_trace_conflict_set(trace_conflict_set);
   if (trace_mutex != -1)
     mutex_set_trace(trace_mutex);
   if (trace_rwlock != -1)
@@ -207,7 +207,7 @@ static void drd_print_debug_usage(void)
 "    --drd-stats=yes|no        Print statistics about DRD activity [no].\n"
 "    --trace-clientobj=yes|no  Trace all client object activity [no].\n"
 "    --trace-csw=yes|no        Trace all scheduler context switches [no].\n"
-"    --trace-danger-set=yes|no Trace all danger set updates [no].\n"
+"    --trace-conflict-set=yes|no Trace all conflict set updates [no].\n"
 "    --trace-segment=yes|no    Trace segment actions [no].\n"
 "    --trace-suppr=yes|no      Trace all address suppression actions [no].\n"
               );
@@ -1155,23 +1155,23 @@ void drd_fini(Int exitcode)
   // thread_print_all();
   if (VG_(clo_verbosity) > 1 || s_drd_print_stats)
   {
-    ULong update_danger_set_count;
+    ULong update_conflict_set_count;
     ULong dsnsc;
     ULong dscvc;
 
-    update_danger_set_count
-      = thread_get_update_danger_set_count(&dsnsc, &dscvc);
+    update_conflict_set_count
+      = thread_get_update_conflict_set_count(&dsnsc, &dscvc);
 
     VG_(message)(Vg_UserMsg,
                  "   thread: %lld context switches"
-                 " / %lld updates of the danger set",
+                 " / %lld updates of the conflict set",
                  thread_get_context_switch_count(),
-                 update_danger_set_count);
+                 update_conflict_set_count);
     VG_(message)(Vg_UserMsg,
                  "           (%lld new sg + %lld combine vc + %lld csw).",
                  dsnsc,
                  dscvc,
-                 update_danger_set_count - dsnsc - dscvc);
+                 update_conflict_set_count - dsnsc - dscvc);
     VG_(message)(Vg_UserMsg,
                  " segments: created %lld segments, max %lld alive,"
                  " %lld discard points.",

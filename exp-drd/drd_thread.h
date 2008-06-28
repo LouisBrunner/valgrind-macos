@@ -85,13 +85,13 @@ typedef struct
 
 extern DrdThreadId s_drd_running_tid;
 extern ThreadInfo s_threadinfo[DRD_N_THREADS];
-extern struct bitmap* s_danger_set;
+extern struct bitmap* s_conflict_set;
 
 
 // Function declarations.
 
 void thread_trace_context_switches(const Bool t);
-void thread_trace_danger_set(const Bool t);
+void thread_trace_conflict_set(const Bool t);
 void thread_set_segment_merging(const Bool m);
 
 DrdThreadId VgThreadIdToDrdThreadId(const ThreadId tid);
@@ -138,9 +138,9 @@ void thread_report_conflicting_segments(const DrdThreadId tid,
 ULong thread_get_context_switch_count(void);
 ULong thread_get_report_races_count(void);
 ULong thread_get_discard_ordered_segments_count(void);
-ULong thread_get_update_danger_set_count(ULong* dsnsc, ULong* dscvc);
-ULong thread_get_danger_set_bitmap_creation_count(void);
-ULong thread_get_danger_set_bitmap2_creation_count(void);
+ULong thread_get_update_conflict_set_count(ULong* dsnsc, ULong* dscvc);
+ULong thread_get_conflict_set_bitmap_creation_count(void);
+ULong thread_get_conflict_set_bitmap2_creation_count(void);
 
 
 static __inline__
@@ -160,9 +160,9 @@ DrdThreadId thread_get_running_tid(void)
 }
 
 static __inline__
-struct bitmap* thread_get_danger_set(void)
+struct bitmap* thread_get_conflict_set(void)
 {
-  return s_danger_set;
+  return s_conflict_set;
 }
 
 static __inline__

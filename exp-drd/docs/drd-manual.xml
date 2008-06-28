@@ -325,6 +325,29 @@ behavior of the DRD tool itself:</para>
   </varlistentry>
   <varlistentry>
     <term>
+      <option>
+        <![CDATA[--report-signal-unlocked=<yes|no> [default: yes]]]>
+      </option>
+    </term>
+    <listitem>
+      <para>
+        Whether to report calls to
+        <function>pthread_cond_signal()</function> and
+        <function>pthread_cond_broadcast()</function>where the mutex
+        associated with the signal via
+        <function>pthread_cond_wait()</function> or
+        <function>pthread_cond_timed_wait()</function>is not locked at
+        the time the signal is sent.  Sending a signal without holding
+        a lock on the associated mutex is a common programming error
+        which can cause subtle race conditions and unpredictable
+        behavior. There exist some uncommon synchronization patterns
+        however where it is safe to send a signal without holding a
+        lock on the associated mutex.
+      </para>
+    </listitem>
+  </varlistentry>
+  <varlistentry>
+    <term>
       <option><![CDATA[--segment-merging=<yes|no> [default: yes]]]></option>
     </term>
     <listitem>
@@ -482,16 +505,306 @@ process being analyzed with DRD:
 
 <sect2 id="drd-manual.data-races" xreflabel="Data Races">
 <title>Data Races</title>
+
+<para>
+DRD prints a message every time it detects a data race. You should be
+aware of the following when interpreting DRD's output:
+<itemizedlist>
+  <listitem>
+    <para>
+      Every thread is assigned two <emphasis>thread ID's</emphasis>:
+      one thread ID is assigned by the Valgrind core and one thread ID
+      is assigned by DRD. Both thread ID's start at one. Valgrind
+      thread ID's are reused when one thread finishes and another
+      thread is created. DRD does not reuse thread ID's. Thread ID's
+      are displayed e.g. as follows: 2/3, where the first number is
+      Valgrind's thread ID and the second number is the thread ID
+      assigned by DRD.
+    </para>
+  </listitem>
+  <listitem>
+    <para>
+      The term <emphasis>segment</emphasis> refers to a consecutive
+      sequence of load, store and synchronization operations, all
+      issued by the same thread. A segment always starts and ends at a
+      synchronization operation. Data race analysis is performed
+      between segments instead of between individual load and store
+      operations because of performance reasons.
+    </para>
+  </listitem>
+  <listitem>
+    <para>
+      There are always at least two memory accesses involved in a data
+      race. Memory accesses involved in a data race are called
+      <emphasis>conflicting memory accesses</emphasis>. DRD prints a
+      report for each memory access that conflicts with a past memory
+      access.
+    </para>
+  </listitem>
+</itemizedlist>
+</para>
+
+<para>
+Below you can find an example of a message printed by DRD when it
+detects a data race:
+</para>
+<programlisting><![CDATA[
+$ valgrind --tool=exp-drd --var-info=yes exp-drd/tests/rwlock_race
+...
+==9466== Thread 3:
+==9466== Conflicting load by thread 3/3 at 0x006020b8 size 4
+==9466==    at 0x400B6C: thread_func (rwlock_race.c:29)
+==9466==    by 0x4C291DF: vg_thread_wrapper (drd_pthread_intercepts.c:186)
+==9466==    by 0x4E3403F: start_thread (in /lib64/libpthread-2.8.so)
+==9466==    by 0x53250CC: clone (in /lib64/libc-2.8.so)
+==9466== Location 0x6020b8 is 0 bytes inside local var "s_racy"
+==9466== declared at rwlock_race.c:18, in frame #0 of thread 3
+==9466== Other segment start (thread 2/2)
+==9466==    at 0x4C2847D: pthread_rwlock_rdlock* (drd_pthread_intercepts.c:813)
+==9466==    by 0x400B6B: thread_func (rwlock_race.c:28)
+==9466==    by 0x4C291DF: vg_thread_wrapper (drd_pthread_intercepts.c:186)
+==9466==    by 0x4E3403F: start_thread (in /lib64/libpthread-2.8.so)
+==9466==    by 0x53250CC: clone (in /lib64/libc-2.8.so)
+==9466== Other segment end (thread 2/2)
+==9466==    at 0x4C28B54: pthread_rwlock_unlock* (drd_pthread_intercepts.c:912)
+==9466==    by 0x400B84: thread_func (rwlock_race.c:30)
+==9466==    by 0x4C291DF: vg_thread_wrapper (drd_pthread_intercepts.c:186)
+==9466==    by 0x4E3403F: start_thread (in /lib64/libpthread-2.8.so)
+==9466==    by 0x53250CC: clone (in /lib64/libc-2.8.so)
+...
+]]></programlisting>
+
+<para>
+The above report has the following meaning:
+<itemizedlist>
+  <listitem>
+    <para>
+      The number in the column on the left is the process ID of the
+      process being analyzed by DRD.
+    </para>
+  </listitem>
+  <listitem>
+    <para>
+      The first line ("Thread 3") tells you Valgrind's thread ID for
+      the thread in which context the data race was detected.
+    </para>
+  </listitem>
+  <listitem>
+    <para>
+      The next line tells which kind of operation was performed (load
+      or store) and by which thread. Both Valgrind's and DRD's thread
+      ID's are displayed. On the same line the start address and the
+      number of bytes involved in the conflicting access are also
+      displayed.
+    </para>
+  </listitem>
+  <listitem>
+    <para>
+      Next, the call stack of the conflicting access is displayed. If
+      your program has been compiled with debug information (-g), this
+      call stack will include file names and line numbers. The two
+      bottommost frames in this call stack (<function>clone</function>
+      and <function>start_thread</function>) show how the NPTL starts a
+      thread. The third frame (<function>vg_thread_wrapper</function>)
+      is added by DRD. The fourth frame
+      (<function>thread_func</function>) is interesting because it
+      shows the thread entry point, that is the function that has been
+      passed as the third argument to
+      <function>pthread_create()</function>.
+    </para>
+  </listitem>
+  <listitem>
+    <para>
+      Next, the allocation context for the conflicting address is
+      displayed. For static and stack variables the allocation context
+      is only shown when the option
+      <computeroutput>--var-info=yes</computeroutput> has been
+      specified. Otherwise DRD will print <computeroutput>Allocation
+      context: unknown</computeroutput> for such variables.
+    </para>
+  </listitem>
+  <listitem>
+    <para>
+      A conflicting access involves at least two memory accesses. For
+      one of these accesses an exact call stack is displayed, and for
+      the other accesses an approximate call stack is displayed,
+      namely the start and the end of the segments of the other
+      accesses. This information can be interpreted as follows:
+      <orderedlist>
+        <listitem>
+          <para>
+            Start at the bottom of both call stacks, and count the
+            number stack frames with identical function name, file
+            name and line number. In the above example the three
+            bottommost frames are identical
+            (<function>clone</function>,
+            <function>start_thread</function> and
+            <function>vg_thread_wrapper</function>).
+          </para>
+        </listitem>
+        <listitem>
+          <para>
+            The next higher stack frame in both call stacks now tells
+            you between in which source code region the other memory
+            access happened. The above output tells that the other
+            memory access involved in the data race happened between
+            source code lines 28 and 30 in file
+            <computeroutput>rwlock_race.c</computeroutput>.
+          </para>
+        </listitem>
+      </orderedlist>
+    </para>
+  </listitem>
+</itemizedlist>
+</para>
+
 </sect2>
 
 
 <sect2 id="drd-manual.lock-contention" xreflabel="Lock Contention">
 <title>Lock Contention</title>
+
+<para>
+Threads should be able to make progress without being blocked by other
+threads.  Unfortunately this is not always true.  Sometimes a thread
+has to wait until a mutex or reader-writer lock is unlocked by another
+thread. This is called <emphasis>lock contention</emphasis>. The more
+granular the locks are, the less likely lock contention will
+occur. The most unfortunate situation occurs when I/O is performed
+while a lock is held.
+</para>
+
+<para>
+Lock contention causes delays and hence should be avoided. The two
+command line options
+<literal>--exclusive-threshold=&lt;n&gt;</literal> and
+<literal>--shared-threshold=&lt;n&gt;</literal> make it possible to
+detect lock contention by making DRD report any lock that is held
+longer than the specified threshold. An example:
+</para>
+<programlisting><![CDATA[
+$ valgrind --tool=exp-drd --exclusive-threshold=10 exp-drd/tests/hold_lock -i 500
+...
+==10668== Acquired at:
+==10668==    at 0x4C267C8: pthread_mutex_lock (drd_pthread_intercepts.c:395)
+==10668==    by 0x400D92: main (hold_lock.c:51)
+==10668== Lock on mutex 0x7fefffd50 was held during 503 ms (threshold: 10 ms).
+==10668==    at 0x4C26ADA: pthread_mutex_unlock (drd_pthread_intercepts.c:441)
+==10668==    by 0x400DB5: main (hold_lock.c:55)
+...
+]]></programlisting>
+
+<para>
+The <literal>hold_lock</literal> test program holds a lock as long as
+specified by the <literal>-i</literal> (interval) argument. The DRD
+output reports that the lock acquired at line 51 in source file
+<literal>hold_lock.c</literal> and released at line 55 was held during
+503 ms, while a threshold of 10 ms was specified to DRD.
+</para>
+
 </sect2>
 
 
 <sect2 id="drd-manual.api-checks" xreflabel="API Checks">
 <title>Misuse of the POSIX threads API</title>
+
+<para>
+  DRD is able to detect and report the following misuses of the POSIX
+  threads API:
+  <itemizedlist>
+    <listitem>
+      <para>
+        Passing the address of one type of synchronization object
+        (e.g. a mutex) to a POSIX API call that expects a pointer to
+        another type of synchronization object (e.g. a condition
+        variable).
+      </para>
+    </listitem>
+    <listitem>
+      <para>
+        Attempt to unlock a mutex that has not been locked.
+      </para>
+    </listitem>
+    <listitem>
+      <para>
+        Attempt to unlock a mutex that was locked by another thread.
+      </para>
+    </listitem>
+    <listitem>
+      <para>
+        Attempt to lock a mutex of type
+        <literal>PTHREAD_MUTEX_NORMAL</literal> or a spinlock
+        recursively.
+      </para>
+    </listitem>
+    <listitem>
+      <para>
+        Destruction or deallocation of a locked mutex.
+      </para>
+    </listitem>
+    <listitem>
+      <para>
+        Sending a signal to a condition variable while no lock is held
+        on the mutex associated with the signal.
+      </para>
+    </listitem>
+    <listitem>
+      <para>
+        Calling <function>pthread_cond_wait()</function> with a mutex
+        that is not locked, that is locked by another thread or that
+        has been locked recursively.
+      </para>
+    </listitem>
+    <listitem>
+      <para>
+        Associating two different mutexes with a condition variable
+        via <function>pthread_cond_wait()</function>.
+      </para>
+    </listitem>
+    <listitem>
+      <para>
+        Destruction or deallocation of a condition variable that is
+        being waited upon.
+      </para>
+    </listitem>
+    <listitem>
+      <para>
+        Destruction or deallocation of a locked reader-writer lock.
+      </para>
+    </listitem>
+    <listitem>
+      <para>
+        Attempt to unlock a reader-writer lock that was not locked by
+        the calling thread.
+      </para>
+    </listitem>
+    <listitem>
+      <para>
+        Attempt to recursively lock a reader-writer lock exclusively.
+      </para>
+    </listitem>
+    <listitem>
+      <para>
+        Reinitialization of a mutex, condition variable, reader-writer
+        lock, semaphore or barrier.
+      </para>
+    </listitem>
+    <listitem>
+      <para>
+        Destruction or deallocation of a semaphore or barrier that is
+        being waited upon.
+      </para>
+    </listitem>
+    <listitem>
+      <para>
+        Exiting a thread without first unlocking the spinlocks,
+        mutexes or reader-writer locks that were locked by that
+        thread.
+      </para>
+    </listitem>
+  </itemizedlist>
+</para>
+
 </sect2>
 
 
@@ -508,11 +821,6 @@ from a client program to the DRD tool.
 
 <sect2 id="drd-manual.openmp" xreflabel="OpenMP">
 <title>Debugging OpenMP Programs With DRD</title>
-
-<para>
-Just as for other Valgrind tools it is possible to pass information
-from a client program to the DRD tool.
-</para>
 
 <para>
 For more information about OpenMP, see also 

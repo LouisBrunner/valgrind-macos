@@ -1,0 +1,57 @@
+#!/bin/bash
+
+# See also http://developer.mozilla.org/en/docs/Build_Documentation
+SRCURL="ftp://ftp.mozilla.org/pub/mozilla.org/firefox/releases/3.0/source"
+
+SRCDIR="$HOME/software"
+SRC="$SRCDIR/mozilla"
+DOWNLOADS="$SRCDIR/downloads"
+BUILD="${SRC}-build"
+TAR="firefox-3.0-source.tar.bz2"
+PREFIX="$HOME/firefox3"
+MOZCONFIG="$BUILD/mozconfig-firefox"
+export MOZCONFIG
+export LC_ALL=C
+export MAKEFLAGS="-j$(($(grep -c '^processor' /proc/cpuinfo) + 1))"
+
+if [ ! -e /usr/include/dbus-1.0/dbus/dbus-glib.h ]; then
+  echo "Please install the dbus-1-glib-devel package first."
+  exit 1
+fi
+
+if [ ! -e /usr/include/libIDL-2.0/libIDL/IDL.h ]; then
+  echo "Please install the libidl-devel package first."
+  exit 1
+fi
+
+rm -rf   ${BUILD}   || exit $?
+rm -rf   ${PREFIX}  || exit $?
+mkdir -p ${DOWNLOADS} || exit $?
+mkdir -p ${BUILD}   || exit $?
+cd       ${BUILD}   || exit $?
+
+if [ ! -e $DOWNLOADS/$TAR ]; then
+  ( cd $DOWNLOADS && wget -q $SRCURL/$TAR )
+fi
+
+if [ ! -e $SRC ]; then
+  ( cd $SRCDIR && tar -xjf $DOWNLOADS/$TAR )
+fi
+
+cat <<EOF >$MOZCONFIG
+. $SRC/browser/config/mozconfig
+mk_add_options MOZ_OBJDIR="$BUILD"
+ac_add_app_options browser --enable-application=browser
+ac_add_options --disable-optimize
+ac_add_options --disable-tests
+ac_add_options --enable-debug
+ac_add_options --enable-static
+ac_add_options --prefix $PREFIX
+ac_add_options --enable-optimize="-O1 -g -pipe"
+EOF
+
+# Note: apparently Firefox 3.0 doesn't compile with gcc 4.3.
+CC=~/gcc-4.2.4/bin/gcc CXX=~/gcc-4.2.4/bin/g++ ${SRC}/configure
+
+make -s -j2     || exit $?
+# make -s install || exit $?

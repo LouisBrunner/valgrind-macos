@@ -107,6 +107,10 @@ Reader-writer lock not locked by calling thread: rwlock 0x.........
 [1/1] semaphore_init      0x........
 [1/1] semaphore_init      0x........
 
+Semaphore reinitialization: semaphore 0x........
+   at 0x........: sem_init* (drd_pthread_intercepts.c:?)
+   by 0x........: main (tc20_verifywrap.c:231)
+
 FIXME: can't figure out how to verify wrap of sem_destroy
 
 [1/1] semaphore_pre_wait  0x........
@@ -135,4 +139,4 @@ Destroying locked mutex: mutex 0x........, recursion count 1, owner 1.
 [1/1] post_mutex_lock recursive mutex 0x........ rc 0 owner 0
 [1/1] mutex_unlock    recursive mutex 0x........ rc 1
 
-ERROR SUMMARY: 14 errors from 14 contexts (suppressed: 0 from 0)
+ERROR SUMMARY: 15 errors from 15 contexts (suppressed: 0 from 0)

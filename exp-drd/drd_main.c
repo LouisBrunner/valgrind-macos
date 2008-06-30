@@ -1048,6 +1048,18 @@ IRSB* drd_instrument(VgCallbackClosure* const closure,
 
     switch (st->tag)
     {
+    /* Note: the code for not instrumenting the code in .plt          */
+    /* sections is only necessary on CentOS 3.0 x86 (kernel 2.4.21    */
+    /* + glibc 2.3.2 + NPTL 0.60 + binutils 2.14.90.0.4).             */
+    /* This is because on this platform dynamic library symbols are   */
+    /* relocated in another way than by later binutils versions. The  */
+    /* linker e.g. does not generate .got.plt sections on CentOS 3.0. */
+    case Ist_IMark:
+      instrument = VG_(seginfo_sect_kind)(NULL, 0, st->Ist.IMark.addr)
+        != Vg_SectPLT;
+      addStmtToIRSB(bb, st);
+      break;
+
     case Ist_MBE:
       switch (st->Ist.MBE.event)
       {

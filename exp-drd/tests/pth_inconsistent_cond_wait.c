@@ -44,6 +44,10 @@ int main(int argc, char** argv)
   pthread_create(&tid1, 0, &thread1, 0);
   pthread_create(&tid2, 0, &thread2, 0);
   sem_wait(&s_sem);
+  pthread_mutex_lock(&s_mutex1);
+  pthread_mutex_lock(&s_mutex2);
+  pthread_mutex_unlock(&s_mutex2);
+  pthread_mutex_unlock(&s_mutex1);
   pthread_cond_signal(&s_cond);
   pthread_cond_signal(&s_cond);
   pthread_join(tid1, 0);

@@ -3947,6 +3947,8 @@ static void iselStmt ( ISelEnv* env, IRStmt* stmt )
             return;
          case Imbe_BusLock:
          case Imbe_BusUnlock:
+         case Imbe_SnoopedStoreBegin:
+         case Imbe_SnoopedStoreEnd:
             return;
          default:
             break;

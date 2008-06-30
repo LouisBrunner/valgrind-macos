@@ -1336,7 +1336,9 @@ typedef
    enum { 
       Imbe_Fence=0x18000, 
       Imbe_BusLock, 
-      Imbe_BusUnlock
+      Imbe_BusUnlock,
+      Imbe_SnoopedStoreBegin,
+      Imbe_SnoopedStoreEnd
    }
    IRMBusEvent;
 

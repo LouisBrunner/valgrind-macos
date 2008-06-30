@@ -4895,9 +4895,13 @@ static Bool dis_memsync ( UInt theInstr )
             If resaddr != lwarx_resaddr, CR0[EQ] is undefined, and
             whether rS is stored is dependent on that value. */
 
-         /* Success?  Do the (32bit) store */
+         /* Success?  Do the (32bit) store.  Mark the store as
+            snooped, so that threading tools can handle it differently
+            if necessary. */
+         stmt( IRStmt_MBE(Imbe_SnoopedStoreBegin) );
          storeBE( mkexpr(EA), mkSzNarrow32(ty, mkexpr(rS)) );
-         
+         stmt( IRStmt_MBE(Imbe_SnoopedStoreEnd) );
+
          // Set CR0[LT GT EQ S0] = 0b001 || XER[SO]
          putCR321(0, mkU8(1<<1));
          break;

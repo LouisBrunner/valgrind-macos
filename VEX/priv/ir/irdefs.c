@@ -745,10 +745,12 @@ void ppIRJumpKind ( IRJumpKind kind )
 void ppIRMBusEvent ( IRMBusEvent event )
 {
    switch (event) {
-      case Imbe_Fence:     vex_printf("Fence"); break;
-      case Imbe_BusLock:   vex_printf("BusLock"); break;
-      case Imbe_BusUnlock: vex_printf("BusUnlock"); break;
-      default:             vpanic("ppIRMBusEvent");
+      case Imbe_Fence:             vex_printf("Fence"); break;
+      case Imbe_BusLock:           vex_printf("BusLock"); break;
+      case Imbe_BusUnlock:         vex_printf("BusUnlock"); break;
+      case Imbe_SnoopedStoreBegin: vex_printf("SnoopedStoreBegin"); break;
+      case Imbe_SnoopedStoreEnd:   vex_printf("SnoopedStoreEnd"); break;
+      default:                     vpanic("ppIRMBusEvent");
    }
 }
 
@@ -2534,6 +2536,7 @@ void tcStmt ( IRSB* bb, IRStmt* stmt, IRType gWordTy )
       case Ist_MBE:
          switch (stmt->Ist.MBE.event) {
             case Imbe_Fence: case Imbe_BusLock: case Imbe_BusUnlock:
+            case Imbe_SnoopedStoreBegin: case Imbe_SnoopedStoreEnd:
                break;
             default: sanityCheckFail(bb,stmt,"IRStmt.MBE.event: unknown");
                break;

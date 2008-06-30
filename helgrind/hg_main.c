@@ -7349,6 +7349,11 @@ static void instrument_mem_access ( IRSB*   bbOut,
 static void instrument_memory_bus_event ( IRSB* bbOut, IRMBusEvent event )
 {
    switch (event) {
+      case Imbe_SnoopedStoreBegin:
+      case Imbe_SnoopedStoreEnd:
+         /* These arise from ppc stwcx. insns.  They should perhaps be
+            handled better. */
+         break;
       case Imbe_Fence:
          break; /* not interesting */
       case Imbe_BusLock:

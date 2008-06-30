@@ -1059,10 +1059,12 @@ IRSB* drd_instrument(VgCallbackClosure* const closure,
       case Imbe_Fence:
         break; /* not interesting */
       case Imbe_BusLock:
+      case Imbe_SnoopedStoreBegin:
         tl_assert(! bus_locked);
         bus_locked = True;
         break;
       case Imbe_BusUnlock:
+      case Imbe_SnoopedStoreEnd:
         tl_assert(bus_locked);
         bus_locked = False;
         break;

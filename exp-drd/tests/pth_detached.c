@@ -8,7 +8,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
-#include "../drd_clientreq.h"
+#include "../drd.h"
 
 
 static int s_finished_count;

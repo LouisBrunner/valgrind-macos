@@ -10,7 +10,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>  // getopt()
-#include "../drd_clientreq.h"
+#include "../drd.h"
 
 
 static int is_prime(int* const pflag, int v)

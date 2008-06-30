@@ -9,7 +9,8 @@
 #include <time.h>
 #include <unistd.h>
 #include <asm/unistd.h>
-#include "../drd_clientreq.h"
+#include "../drd.h"
+
 
 static int s_debug = 0;
 
@@ -23,13 +24,6 @@ static int getktid()
 #endif
 }
 
-static int getvgtid()
-{
-  int res;
-  VALGRIND_DO_CLIENT_REQUEST(res, 0, VG_USERREQ__GET_THREAD_SELF, 0, 0, 0,0,0);
-  return res;
-}
-
 static void print_thread_id(const char* const label)
 {
   if (s_debug)
@@ -37,7 +31,7 @@ static void print_thread_id(const char* const label)
     char msg[256];
     snprintf(msg, sizeof(msg),
              "%spid %d / kernel thread ID %d / Valgrind thread ID %d\n",
-             label, getpid(), getktid(), getvgtid());
+             label, getpid(), getktid(), vg_get_drd_threadid());
     write(STDOUT_FILENO, msg, strlen(msg));
   }
 }
@@ -67,7 +61,7 @@ int main(int argc, char** argv)
   if (argc > 1)
     s_debug = 1;
 
-  vgthreadid = getvgtid();
+  vgthreadid = vg_get_drd_threadid();
 
   print_thread_id("main: ");
 

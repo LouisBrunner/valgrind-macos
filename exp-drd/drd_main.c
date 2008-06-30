@@ -831,16 +831,11 @@ void drd_barrier_post_wait(const DrdThreadId tid, const Addr barrier,
 static
 void drd_post_clo_init(void)
 {
-#  if defined(VGP_x86_linux) || defined(VGP_amd64_linux)
+#  if defined(VGP_x86_linux) || defined(VGP_amd64_linux) \
+      || defined(VGP_ppc32_linux) || defined(VGP_ppc64_linux)
   /* fine */
-#  elif defined(VGP_ppc32_linux) || defined(VGP_ppc64_linux)
-  VG_(printf)(
-"\nWARNING: support for PowerPC-specific atomic instructions like lwarx and\n"
-"stwcx is not yet complete. As a result, false positives will be reported on\n"
-"code that uses these instructions. This will happen e.g. when printf() is\n"
-"called from more than one thread.\n\n");
 #  else
-  VG_(printf)("\nWARNING: DRD has only been tested on x86-linux and amd64-linux.\n\n");
+  VG_(printf)("\nWARNING: DRD has only been tested on Linux.\n\n");
 #  endif
 
   if (s_drd_var_info)

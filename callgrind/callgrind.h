@@ -49,7 +49,7 @@
    ----------------------------------------------------------------
 
    Notice that the above BSD-style license applies to this one file
-   (vgprof.h) only.  The entire rest of Valgrind is licensed under
+   (callgrind.h) only.  The entire rest of Valgrind is licensed under
    the terms of the GNU General Public License, version 2.  See the
    COPYING file in the source distribution for details.
 

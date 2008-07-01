@@ -226,7 +226,13 @@ void barrier_init(const Addr barrier,
   {
     if (p->pre_waiters_left != p->count || p->post_waiters_left != p->count)
     {
-      VG_(message)(Vg_UserMsg, "Error: reinitialization with active waiters");
+      BarrierErrInfo bei = { p->a1 };
+      VG_(maybe_record_error)(VG_(get_running_tid)(),
+                              BarrierErr,
+                              VG_(get_IP)(VG_(get_running_tid)()),
+                              "Reinitialization of barrier with active"
+                              " waiters",
+                              &bei);
     }
     p->count = count;
   }
@@ -258,6 +264,16 @@ void barrier_destroy(const Addr barrier, const BarrierT barrier_type)
                             "Not a barrier",
                             &GEI);
     return;
+  }
+
+  if (p->pre_waiters_left != p->count || p->post_waiters_left != p->count)
+  {
+    BarrierErrInfo bei = { p->a1 };
+    VG_(maybe_record_error)(VG_(get_running_tid)(),
+                            BarrierErr,
+                            VG_(get_IP)(VG_(get_running_tid)()),
+                            "Destruction of a barrier with active waiters",
+                            &bei);
   }
 
   clientobj_remove(p->a1, ClientBarrier);
@@ -344,7 +360,23 @@ void barrier_post_wait(const DrdThreadId tid, const Addr barrier,
     struct barrier_thread_info* r;
 
     q = VG_(OSetGen_Lookup)(p->oset, &word_tid);
-    tl_assert(q);
+    if (q == 0)
+    {
+      BarrierErrInfo bei = { p->a1 };
+      VG_(maybe_record_error)(VG_(get_running_tid)(),
+                              BarrierErr,
+                              VG_(get_IP)(VG_(get_running_tid)()),
+                              "Error in barrier implementation"
+                              " -- barrier_wait() started before"
+                              " barrier_destroy() and finished after"
+                              " barrier_destroy()",
+                              &bei);
+
+      q = VG_(OSetGen_AllocNode)(p->oset, sizeof(*q));
+      barrier_thread_initialize(q, tid, p->pre_iteration);
+      VG_(OSetGen_Insert)(p->oset, q);
+      tl_assert(VG_(OSetGen_Lookup)(p->oset, &word_tid) == q);
+    }
     VG_(OSetGen_ResetIter)(p->oset);
     for ( ; (r = VG_(OSetGen_Next)(p->oset)) != 0; )
     {

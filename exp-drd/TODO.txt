@@ -1,18 +1,12 @@
-Last updated May 14, 2008.
+Last updated July 1, 2008.
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 
 Data-race detection algorithm
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-- Find out why the following invocations run slowly (high number of mutex
-  operations ?):
-  (cd exp-drd/splash2/codes/apps/raytrace/inputs && time ../../../../../../vg-in-place --tool=exp-drd --check-stack-var=yes ../RAYTRACE balls4.env)
-  (cd exp-drd/splash2/codes/apps/raytrace && time ../../../../../vg-in-place --tool=exp-drd --check-stack-var=yes ./RAYTRACE inputs/teapot.env)
-- Test whether file with DRD client requests is installed properly.
 - Let DRD print a warning message when, after 30s runtime, the ratio of
   the number of mutex lock / unlock calls to the number of executed basic
   blocks exceeds a certain threshold. Test with Firefox and nautilus.
-- Continue discussion about unification of DRD and Helgrind client requests.
 - Propose to rename exp-drd back to drd.
 - Memory pool support.
 - Add locking order checking. Start from the following information:
@@ -28,7 +22,6 @@ Data-race detection algorithm
 
 Testing
 ~~~~~~~
-- Find out the memory overhead for exp-drd on the SPLASH-2 benchmarks (ITC: 20x)
 - Measure the performance and the memory overhead of exp-drd on the PARSEC
   benchmark (http://parsec.cs.princeton.edu/license.htm).
 - Test with Synfig Studio (see also http://bugs.kde.org/show_bug.cgi?id=158555)
@@ -37,24 +30,6 @@ Testing
 
 Documentation
 ~~~~~~~~~~~~~
-- Document the command-line options of the exp-drd tool.
-- Explain that happens-before race detectors are also suited for certain
-  classes of programs that do not follow a locking discipline
-  (e.g. exp-drd/test/matinv.c).
-- Add a note about how much stack is needed for exp-drd itself.
 - Explain how to handle transactions (with regard to locking order).
 - Continue the discussion on the Valgrind mailing list about docbook and
   'make dist'. See also http://bugs.kde.org/show_bug.cgi?id=162121.
-
-
-Limitations
-~~~~~~~~~~~
-- openSUSE 10.3, ppc: unless the glibc debuginfo packages is installed,
-  false positives are reported on ld.so.
-  See also https://bugzilla.novell.com/show_bug.cgi?id=396197.
-- ppc: reports false positives on atomic operations (VEX limitation). See also
-  https://bugs.kde.org/show_bug.cgi?id=162354.
-- Does not work with a glibc library compiled with linuxthreads -- NPTL is
-  required for proper operation.
-- Does not work when compiled with gcc 2.95 -- probably a bug in the
-  optimizer of gcc 2.95.

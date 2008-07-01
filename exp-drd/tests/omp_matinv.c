@@ -299,6 +299,7 @@ int main(int argc, char** argv)
   if (optind + 1 != argc)
   {
     fprintf(stderr, "Error: wrong number of arguments.\n");
+    return 1;
   }
   matrix_size = atoi(argv[optind]);
 

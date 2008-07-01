@@ -805,6 +805,103 @@ output reports that the lock acquired at line 51 in source file
   </itemizedlist>
 </para>
 
+<para>
+There is one message that needs further explanation, namely sending a
+signal to a condition variable while no lock is held on the mutex
+associated with the signal. Consider e.g. the example <xref
+linkend="Racy use of pthread_cond_wait()"></xref>. In this example the
+code in thread 1 passes if <literal>flag != 0</literal>, or waits
+until it has been signaled by thread 2. If however the code of thread
+1 is scheduled after the <literal>pthread_mutex_unlock()</literal>
+call in thread 2 and before thread 2 calls
+<literal>pthread_cond_signal()</literal>, thread 1 will block
+indefinitely. The code in the example <xref linkend="Correct use of
+pthread_cond_wait()"></xref> never blocks indefinitely.
+</para>
+
+<para>
+Because most calls of <function>pthread_cond_signal()</function> or
+<function>pthread_cond_broadcast()</function> while no lock is held on
+the mutex associated with the condition variable are racy, by default
+DRD reports such calls.
+</para>
+
+<table
+  frame="none"
+  id="Racy use of pthread_cond_wait()"
+  xreflabel="Racy use of pthread_cond_wait()"
+>
+<title>Racy use of pthread_cond_wait()</title>
+<tgroup cols='2' align='left' colsep='1' rowsep='1'>
+    <colspec colname='thread1'/>
+    <colspec colname='thread2'/>
+  <thead>
+    <row>
+      <entry align="center">Thread 1</entry>
+      <entry align="center">Thread 2</entry>
+    </row>
+  </thead>
+  <tbody>
+    <row>
+      <entry>
+<programlisting><![CDATA[
+pthread_mutex_lock(&mutex);
+if (! flag)
+  pthread_cond_wait(&cond, &mutex);
+pthread_mutex_unlock(&mutex);
+]]></programlisting>
+      </entry>
+      <entry>
+<programlisting><![CDATA[
+pthread_mutex_lock(&mutex);
+flag = 1;
+pthread_mutex_unlock(&mutex);
+pthread_cond_signal(&cond);
+]]></programlisting>
+      </entry>
+    </row>
+  </tbody>
+</tgroup>
+</table>
+
+<table
+  frame="none"
+  id="Correct use of pthread_cond_wait()"
+  xreflabel="Correct use of pthread_cond_wait()"
+>
+<title>Correct use of pthread_cond_wait()</title>
+<tgroup cols='2' align='left' colsep='1' rowsep='1'>
+    <colspec colname='thread1'/>
+    <colspec colname='thread2'/>
+  <thead>
+    <row>
+      <entry align="center">Thread 1</entry>
+      <entry align="center">Thread 2</entry>
+    </row>
+  </thead>
+  <tbody>
+    <row>
+      <entry>
+<programlisting><![CDATA[
+pthread_mutex_lock(&mutex);
+if (! flag)
+  pthread_cond_wait(&cond, &mutex);
+pthread_mutex_unlock(&mutex);
+]]></programlisting>
+      </entry>
+      <entry>
+<programlisting><![CDATA[
+pthread_mutex_lock(&mutex);
+flag = 1;
+pthread_cond_signal(&cond);
+pthread_mutex_unlock(&mutex);
+]]></programlisting>
+      </entry>
+    </row>
+  </tbody>
+</tgroup>
+</table>
+
 </sect2>
 
 
@@ -812,8 +909,81 @@ output reports that the lock acquired at line 51 in source file
 <title>Client Requests</title>
 
 <para>
-Just as for other Valgrind tools it is possible to pass information
-from a client program to the DRD tool.
+Just as for other Valgrind tools it is possible to let a client
+program interact with the DRD tool.
+</para>
+
+<para>
+The interface between client programs and the DRD tool is defined in
+the header file <literal>&lt;valgrind/drd.h&gt;</literal>. The
+available client requests are:
+<itemizedlist>
+  <listitem>
+    <para>
+      <varname>VG_USERREQ__DRD_GET_VALGRIND_THREAD_ID</varname>.
+      Query the thread ID that was assigned by the Valgrind core to
+      the thread executing this client request. Valgrind's thread ID's
+      start at one and are recycled in case a thread stops.
+    </para>
+  </listitem>
+  <listitem>
+    <para>
+      <varname>VG_USERREQ__DRD_GET_DRD_THREAD_ID</varname>.
+      Query the thread ID that was assigned by DRD to
+      the thread executing this client request. DRD's thread ID's
+      start at one and are never recycled.
+    </para>
+  </listitem>
+  <listitem>
+    <para>
+      <varname>VG_USERREQ__DRD_START_SUPPRESSION</varname>. Some
+      applications contain intentional races. There exist
+      e.g. applications where the same value is assigned to a shared
+      variable from two different threads. It may be more convenient
+      to suppress such races than to solve these. This client request
+      allows to suppress such races. See also the macro
+      <literal>DRD_IGNORE_VAR(x)</literal> defined in
+      <literal>&lt;valgrind/drd.h&gt;</literal>.
+    </para>
+  </listitem>
+  <listitem>
+    <para>
+      <varname>VG_USERREQ__DRD_FINISH_SUPPRESSION</varname>. Tell DRD
+      to no longer ignore data races in the address range that was
+      suppressed via
+      <varname>VG_USERREQ__DRD_START_SUPPRESSION</varname>.
+    </para>
+  </listitem>
+  <listitem>
+    <para>
+      <varname>VG_USERREQ__DRD_START_TRACE_ADDR</varname>. Trace all
+      load and store activity on the specified address range. When DRD
+      reports a data race on a specified variable, and it's not
+      immediately clear which source code statements triggered the
+      conflicting accesses, it can be helpful to trace all activity on
+      the offending memory location. See also the macro
+      <literal>DRD_TRACE_VAR(x)</literal> defined in
+      <literal>&lt;valgrind/drd.h&gt;</literal>.
+    </para>
+  </listitem>
+  <listitem>
+    <para>
+      <varname>VG_USERREQ__DRD_STOP_TRACE_ADDR</varname>. Do no longer
+      trace load and store activity for the specified address range.
+      range.
+    </para>
+  </listitem>
+</itemizedlist>
+</para>
+
+<para>
+Note: if you compiled Valgrind yourself, the header file
+<literal>&lt;valgrind/drd.h&gt;</literal> will have been installed in
+the directory <literal>/usr/include</literal> by the command
+<literal>make install</literal>. If you obtained Valgrind by
+installing it as a package however, you will probably have to install
+another package with a name like <literal>valgrind-devel</literal>
+before Valgrind's header files are present.
 </para>
 
 </sect2>
@@ -821,6 +991,87 @@ from a client program to the DRD tool.
 
 <sect2 id="drd-manual.openmp" xreflabel="OpenMP">
 <title>Debugging OpenMP Programs With DRD</title>
+
+<para>
+OpenMP stands for <emphasis>Open Multi-Processing</emphasis>. The
+OpenMP standard consists of a set of compiler directives for C, C++
+and Fortran programs that allows a compiler to transform a sequential
+program into a parallel program. OpenMP is well suited for HPC
+applications and allows to work at a higher level compared to direct
+use of the POSIX threads API. While OpenMP ensures that the POSIX API
+is used correctly, OpenMP programs can still contain data races. So it
+makes sense to verify OpenMP programs with a thread checking tool.
+</para>
+
+<para>
+DRD supports OpenMP shared-memory programs generated by gcc. The gcc
+compiler supports OpenMP since version 4.2.0.  Gcc's runtime support
+for OpenMP programs is provided by a library called
+<literal>libgomp</literal>. The synchronization primites implemented
+in this library use Linux' futex system call directly, unless the
+library has been configured with the
+<literal>--disable-linux-futex</literal> flag. DRD only supports
+libgomp libraries that have been configured with this flag and in
+which symbol information is present. For most Linux distributions this
+means that you will have to recompile gcc. See also the script
+<literal>exp-drd/scripts/download-and-build-gcc</literal> in the
+Valgrind source tree for an example of how to compile gcc. You will
+also have to make sure that the newly compiled
+<literal>libgomp.so</literal> library is loaded when OpenMP programs
+are started. This is possible by adding a line similar to the
+following to your shell startup script:
+</para>
+<programlisting><![CDATA[
+export LD_LIBRARY_PATH=~/gcc-4.3.1/lib64:~/gcc-4.3.1/lib:
+]]></programlisting>
+
+<para>
+As an example, the test OpenMP test program
+<literal>exp-drd/scripts/omp_matinv</literal> triggers a data race
+when the option -r has been specified on the command line. The data
+race is triggered by the following code:
+</para>
+<programlisting><![CDATA[
+#pragma omp parallel for private(j)
+for (j = 0; j < rows; j++)
+{
+  if (i != j)
+  {
+    const elem_t factor = a[j * cols + i];
+    for (k = 0; k < cols; k++)
+    {
+      a[j * cols + k] -= a[i * cols + k] * factor;
+    }
+  }
+}
+]]></programlisting>
+
+<para>
+The above code is racy because the variable <literal>k</literal> has
+not been declared private. DRD will print the following error message
+for the above code:
+</para>
+<programlisting><![CDATA[
+$ valgrind --check-stack-var=yes --var-info=yes --tool=exp-drd exp-drd/tests/omp_matinv 3 -t 2 -r
+...
+Conflicting store by thread 1/1 at 0x7fefffbc4 size 4
+   at 0x4014A0: gj.omp_fn.0 (omp_matinv.c:203)
+   by 0x401211: gj (omp_matinv.c:159)
+   by 0x40166A: invert_matrix (omp_matinv.c:238)
+   by 0x4019B4: main (omp_matinv.c:316)
+Allocation context: unknown.
+...
+]]></programlisting>
+<para>
+In the above output the function name <function>gj.omp_fn.0</function>
+has been generated by gcc from the function name
+<function>gj</function>. Unfortunately the variable name
+(<literal>k</literal>) is not shown as the allocation context -- it is
+not clear to me whether this is caused by Valgrind or whether this is
+caused by gcc. The most usable information in the above output is the
+source file name and the line number where the data race has been detected
+(<literal>omp_matinv.c:203</literal>).
+</para>
 
 <para>
 For more information about OpenMP, see also 
@@ -851,14 +1102,6 @@ For more information about OpenMP, see also
       Of the two POSIX threads implementations for Linux, only the
       NPTL (Native POSIX Thread Library) is supported. The older
       LinuxThreads library is not supported.
-    </para>
-  </listitem>
-  <listitem>
-    <para>
-      When running DRD on a PowerPC CPU, DRD will report false
-      positives on atomic operations. See also Valgrind bug <ulink
-      url="http://bugs.kde.org/show_bug.cgi?id=162354">
-      162354</ulink>.
     </para>
   </listitem>
   <listitem>

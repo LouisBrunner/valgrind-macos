@@ -6,7 +6,6 @@
 #include <stdio.h>      // printf()
 #include <pthread.h>
 #include <unistd.h>    // usleep()
-#include "../drd.h"
 
 
 // Local functions declarations.

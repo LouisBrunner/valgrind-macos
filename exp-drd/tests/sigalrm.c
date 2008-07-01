@@ -31,7 +31,7 @@ static void print_thread_id(const char* const label)
     char msg[256];
     snprintf(msg, sizeof(msg),
              "%spid %d / kernel thread ID %d / Valgrind thread ID %d\n",
-             label, getpid(), getktid(), vg_get_drd_threadid());
+             label, getpid(), getktid(), vg_get_valgrind_threadid());
     write(STDOUT_FILENO, msg, strlen(msg));
   }
 }
@@ -61,7 +61,7 @@ int main(int argc, char** argv)
   if (argc > 1)
     s_debug = 1;
 
-  vgthreadid = vg_get_drd_threadid();
+  vgthreadid = vg_get_valgrind_threadid();
 
   print_thread_id("main: ");
 

@@ -82,7 +82,10 @@
 enum
 {
   /* Ask the core the thread ID assigned by Valgrind. */
-  VG_USERREQ__GET_THREAD_SELF = VG_USERREQ_TOOL_BASE('D','R'),
+  VG_USERREQ__DRD_GET_VALGRIND_THREAD_ID = VG_USERREQ_TOOL_BASE('D','R'),
+  /* args: none. */
+  /* Ask the core the thread ID assigned by DRD. */
+  VG_USERREQ__DRD_GET_DRD_THREAD_ID,
   /* args: none. */
 
   /* To tell the drd tool to suppress data race detection on the specified */
@@ -104,10 +107,20 @@ enum
 
 
 static __inline__
+int vg_get_valgrind_threadid(void)
+{
+  int res;
+  VALGRIND_DO_CLIENT_REQUEST(res, 0, VG_USERREQ__DRD_GET_VALGRIND_THREAD_ID,
+                             0, 0, 0, 0, 0);
+  return res;
+}
+
+static __inline__
 int vg_get_drd_threadid(void)
 {
   int res;
-  VALGRIND_DO_CLIENT_REQUEST(res, 0, VG_USERREQ__GET_THREAD_SELF, 0,0,0,0,0);
+  VALGRIND_DO_CLIENT_REQUEST(res, 0, VG_USERREQ__DRD_GET_DRD_THREAD_ID,
+                             0, 0, 0, 0, 0);
   return res;
 }
 

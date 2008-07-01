@@ -27,7 +27,6 @@
 #include "drd_clientobj.h"
 #include "drd_error.h"
 #include "drd_suppression.h"
-#include "priv_drd_clientreq.h"
 #include "pub_tool_errormgr.h"    // VG_(maybe_record_error)()
 #include "pub_tool_libcassert.h"  // tl_assert()
 #include "pub_tool_libcprint.h"   // VG_(printf)()

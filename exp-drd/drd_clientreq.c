@@ -31,7 +31,6 @@
 #include "drd_thread.h"
 #include "drd_track.h"
 #include "drd_rwlock.h"
-#include "priv_drd_clientreq.h"
 #include "pub_tool_basics.h"      // Bool
 #include "pub_tool_debuginfo.h"   // VG_(describe_IP)()
 #include "pub_tool_libcassert.h"
@@ -133,8 +132,12 @@ static Bool drd_handle_client_request(ThreadId vg_tid, UWord* arg, UWord* ret)
 
   switch (arg[0])
   {
-  case VG_USERREQ__GET_THREAD_SELF:
+  case VG_USERREQ__DRD_GET_VALGRIND_THREAD_ID:
     result = vg_tid;
+    break;
+
+  case VG_USERREQ__DRD_GET_DRD_THREAD_ID:
+    result = drd_tid;
     break;
 
   case VG_USERREQ__DRD_START_SUPPRESSION:

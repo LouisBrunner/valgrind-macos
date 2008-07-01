@@ -39,7 +39,6 @@
 #include "drd_track.h"
 #include "drd_vc.h"
 #include "libvex_guest_offsets.h"
-#include "priv_drd_clientreq.h"
 #include "pub_drd_bitmap.h"
 #include "pub_tool_vki.h"         // Must be included before pub_tool_libcproc
 #include "pub_tool_basics.h"

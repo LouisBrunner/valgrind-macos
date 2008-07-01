@@ -11,7 +11,7 @@
 #include <pthread.h>
 #include <stdio.h>
 #include <unistd.h>
-#include "../drd.h"
+
 
 
 static pthread_rwlock_t s_rwlock;

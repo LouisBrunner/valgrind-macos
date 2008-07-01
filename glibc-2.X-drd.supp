@@ -304,6 +304,16 @@
    obj:/usr/lib*/libgomp.so*
 }
 {
+   libX11-XListFontsWithInfo
+   exp-drd:CondErr
+   fun:pthread_cond_init*
+   fun:_XReply
+   fun:XListFontsWithInfo
+   obj:/usr/lib*/libX11.so*
+   fun:XCreateOC
+   fun:XCreateFontSet
+}
+{
    libxcb-xcb_wait_for_reply
    exp-drd:CondErr
    fun:pthread_cond_destroy*

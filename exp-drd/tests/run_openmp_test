@@ -8,6 +8,11 @@ test -e "$1" || exit $?
 
 ./supported_libpthread || exit $?
 
+# Do not accept any statically linked executable.
+if /usr/bin/file "$1" | grep -q 'statically linked'; then
+  exit 1
+fi
+
 if [ "$(uname)" = Linux ]; then
 
   # Let the dynamic linker/loader print the path of libgomp. See also man ld.so

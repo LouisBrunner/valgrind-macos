@@ -1074,6 +1074,12 @@ source file name and the line number where the data race has been detected
 </para>
 
 <para>
+Note: DRD reports errors on the <literal>libgomp</literal> library
+included with gcc 4.2.0 up to and including 4.3.1. This might indicate
+a race condition in the POSIX version of <literal>libgomp</literal>.
+</para>
+
+<para>
 For more information about OpenMP, see also 
 <ulink url="http://openmp.org/">openmp.org</ulink>.
 </para>
@@ -1095,6 +1101,15 @@ For more information about OpenMP, see also
       DRD has only been tested on the Linux operating system, and not
       on any of the other operating systems supported by
       Valgrind.
+    </para>
+  </listitem>
+  <listitem>
+    <para>
+      Most applications will run between 20 and 100 times slower under
+      DRD than natively. Applications which perform very much mutex
+      lock / unlock operations however will run too slow to be usable
+      under DRD. Examples are Firefox and Nautilus. This will be
+      addressed in a future DRD version.
     </para>
   </listitem>
   <listitem>
@@ -1128,11 +1143,18 @@ For more information about OpenMP, see also
   </listitem>
   <listitem>
     <para>
+      When address tracing is enabled, no information on atomic stores
+      will be displayed. This functionality is easy to add
+      however. Please contact the Valgrind authors if you would like
+      to see this functionality enabled.
+    </para>
+  </listitem>
+  <listitem>
+    <para>
       If you compile the DRD source code yourself, you need gcc 3.0 or
       later. gcc 2.95 is not supported.
     </para>
   </listitem>
-
 </itemizedlist>
 
 </sect1>

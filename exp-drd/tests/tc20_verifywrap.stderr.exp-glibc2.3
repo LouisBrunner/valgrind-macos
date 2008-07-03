@@ -108,21 +108,21 @@ rwlock 0x........ was first observed at:
 
 
 Semaphore reinitialization: semaphore 0x........
+   at 0x........: sem_init* (drd_pthread_intercepts.c:?)
+   by 0x........: main (tc20_verifywrap.c:231)
 semaphore 0x........ was first observed at:
    at 0x........: sem_init* (drd_pthread_intercepts.c:?)
    by 0x........: main (tc20_verifywrap.c:228)
-   at 0x........: sem_init* (drd_pthread_intercepts.c:?)
-   by 0x........: main (tc20_verifywrap.c:231)
 
 FIXME: can't figure out how to verify wrap of sem_destroy
 
 
 Invalid semaphore: semaphore 0x........
+   at 0x........: sem_wait* (drd_pthread_intercepts.c:?)
+   by 0x........: main (tc20_verifywrap.c:242)
 semaphore 0x........ was first observed at:
    at 0x........: sem_init* (drd_pthread_intercepts.c:?)
    by 0x........: main (tc20_verifywrap.c:228)
-   at 0x........: sem_wait* (drd_pthread_intercepts.c:?)
-   by 0x........: main (tc20_verifywrap.c:242)
 
 FIXME: can't figure out how to verify wrap of sem_post
 

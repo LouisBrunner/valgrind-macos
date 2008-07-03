@@ -235,8 +235,8 @@ static void drd_tool_error_pp(Error* const e)
                  "%s: semaphore 0x%lx",
                  VG_(get_error_string)(e),
                  sei->semaphore);
-    first_observed(sei->semaphore);
     VG_(pp_ExeContext)(VG_(get_error_where)(e));
+    first_observed(sei->semaphore);
     break;
   }
   case BarrierErr: {

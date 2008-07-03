@@ -1,16 +1,16 @@
 
 Semaphore reinitialization: semaphore 0x........
-semaphore 0x........ was first observed at:
-   at 0x........: sem_init* (drd_pthread_intercepts.c:?)
-   by 0x........: main (tc18_semabuse.c:23)
    at 0x........: sem_init* (drd_pthread_intercepts.c:?)
    by 0x........: main (tc18_semabuse.c:26)
-
-Invalid semaphore: semaphore 0x........
 semaphore 0x........ was first observed at:
    at 0x........: sem_init* (drd_pthread_intercepts.c:?)
    by 0x........: main (tc18_semabuse.c:23)
+
+Invalid semaphore: semaphore 0x........
    at 0x........: sem_wait* (drd_pthread_intercepts.c:?)
    by 0x........: main (tc18_semabuse.c:34)
+semaphore 0x........ was first observed at:
+   at 0x........: sem_init* (drd_pthread_intercepts.c:?)
+   by 0x........: main (tc18_semabuse.c:23)
 
 ERROR SUMMARY: 2 errors from 2 contexts (suppressed: 0 from 0)

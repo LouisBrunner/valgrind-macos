@@ -4,19 +4,17 @@ Last updated July 1, 2008.
 
 Data-race detection algorithm
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-- Let DRD print a warning message when, after 30s runtime, the ratio of
-  the number of mutex lock / unlock calls to the number of executed basic
-  blocks exceeds a certain threshold. Test with Firefox and nautilus.
 - Propose to rename exp-drd back to drd.
 - Memory pool support.
+- Find out why DRD reports an error on the POSIX implementation of libgomp.so.
 - Add locking order checking. Start from the following information:
   * http://sourceforge.net/mailarchive/message.php?msg_id=alpine.LNX.1.10.0803270822080.17890%40mudge.stoecker.eu
   * http://lwn.net/Articles/185605/
   * http://git.kernel.org/?p=linux/kernel/git/torvalds/linux-2.6.git;a=blob;f=Documentation/lockdep-design.txt;h=488773018152056ea159685e732e42452a7ae142;hb=HEAD
 - Make sure tc14_laog_dinphils is run during exp-drd regression tests
   (only possible after locking order checking is implemented).
-- Find out why no line number or variable name information is printed for
-  races detected in parallel sections of OpenMP programs. An example:
+- Find out why no variable name information is printed for races
+  detected in parallel sections of OpenMP programs. An example:
   ./vg-in-place --tool=exp-drd exp-drd/tests/omp_prime 4 -t 2
 
 

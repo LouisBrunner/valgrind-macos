@@ -1632,7 +1632,7 @@ static void o_doLeakReport(MemBlock *mb)
       VG_(pp_ExeContext)(mb->leaked);
       
       VG_(message)(Vg_UserMsg,
-		   " Block at %p allocated", (void*)(mb->hdr.key));
+		   " Block at %#lx allocated", mb->hdr.key);
       VG_(pp_ExeContext)(mb->where);
       VG_(message)(Vg_UserMsg,"");
     }

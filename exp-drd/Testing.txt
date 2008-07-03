@@ -14,8 +14,9 @@ How to test DRD
      ./vg-in-place --trace-children=yes --tool=exp-drd knode
      ./vg-in-place --trace-children=yes --tool=exp-drd --check-stack-var=yes knode
      ./vg-in-place --trace-children=yes --tool=exp-drd amarokapp
-4. Test whether DRD works with standard GNOME applications. Expect race reports
-   after having closed the GNOME terminal window:
+4. Test whether DRD works with standard GNOME applications. Expect
+   race reports triggered by ORBit_RootObject_duplicate() and after
+   having closed the GNOME terminal window:
      ./vg-in-place --trace-children=yes --tool=exp-drd gnome-terminal
 5. Test DRD with Firefox. First of all, build and install Firefox 3. Next,
    run the following command:

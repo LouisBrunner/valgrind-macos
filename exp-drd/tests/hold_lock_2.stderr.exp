@@ -8,6 +8,9 @@ Acquired at:
 Lock on rwlock 0x........ was held during ... ms (threshold: 500 ms).
    at 0x........: pthread_rwlock_unlock* (drd_pthread_intercepts.c:?)
    by 0x........: main (hold_lock.c:?)
+rwlock 0x........ was first observed at:
+   at 0x........: pthread_rwlock_init* (drd_pthread_intercepts.c:?)
+   by 0x........: main (hold_lock.c:?)
 Done.
 
 ERROR SUMMARY: 1 errors from 1 contexts (suppressed: 0 from 0)

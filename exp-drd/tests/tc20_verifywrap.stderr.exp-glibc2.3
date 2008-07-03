@@ -46,6 +46,9 @@ The object at address 0x........ is not a mutex.
 Mutex not locked: mutex 0x........, recursion count 0, owner 0.
    at 0x........: pthread_cond_wait* (drd_pthread_intercepts.c:?)
    by 0x........: main (tc20_verifywrap.c:147)
+mutex 0x........ was first observed at:
+   at 0x........: pthread_mutex_init (drd_pthread_intercepts.c:?)
+   by 0x........: main (tc20_verifywrap.c:145)
 
 FIXME: can't figure out how to verify wrap of pthread_cond_signal
 
@@ -59,6 +62,9 @@ FIXME: can't figure out how to verify wrap of pthread_broadcast_signal
 Reader-writer lock not locked by calling thread: rwlock 0x.........
    at 0x........: pthread_rwlock_unlock* (drd_pthread_intercepts.c:?)
    by 0x........: main (tc20_verifywrap.c:179)
+rwlock 0x........ was first observed at:
+   at 0x........: pthread_rwlock_init* (drd_pthread_intercepts.c:?)
+   by 0x........: main (tc20_verifywrap.c:178)
 (1) no error on next line
 (2) no error on next line
 (3)    ERROR on next line
@@ -66,10 +72,16 @@ Reader-writer lock not locked by calling thread: rwlock 0x.........
 Reader-writer lock not locked by calling thread: rwlock 0x.........
    at 0x........: pthread_rwlock_unlock* (drd_pthread_intercepts.c:?)
    by 0x........: main (tc20_verifywrap.c:196)
+rwlock 0x........ was first observed at:
+   at 0x........: pthread_rwlock_init* (drd_pthread_intercepts.c:?)
+   by 0x........: main (tc20_verifywrap.c:186)
 
 Reader-writer lock reinitialization: rwlock 0x.........
    at 0x........: pthread_rwlock_init* (drd_pthread_intercepts.c:?)
    by 0x........: main (tc20_verifywrap.c:199)
+rwlock 0x........ was first observed at:
+   at 0x........: pthread_rwlock_init* (drd_pthread_intercepts.c:?)
+   by 0x........: main (tc20_verifywrap.c:186)
 (4) no error on next line
 (5) no error on next line
 (6) no error on next line
@@ -79,11 +91,17 @@ Reader-writer lock reinitialization: rwlock 0x.........
 Reader-writer lock not locked by calling thread: rwlock 0x.........
    at 0x........: pthread_rwlock_unlock* (drd_pthread_intercepts.c:?)
    by 0x........: main (tc20_verifywrap.c:212)
+rwlock 0x........ was first observed at:
+   at 0x........: pthread_rwlock_init* (drd_pthread_intercepts.c:?)
+   by 0x........: main (tc20_verifywrap.c:186)
 
 ---------------- sem_* ----------------
 
 
 Semaphore reinitialization: semaphore 0x........
+semaphore 0x........ was first observed at:
+   at 0x........: sem_init* (drd_pthread_intercepts.c:?)
+   by 0x........: main (tc20_verifywrap.c:228)
    at 0x........: sem_init* (drd_pthread_intercepts.c:?)
    by 0x........: main (tc20_verifywrap.c:231)
 
@@ -91,6 +109,9 @@ FIXME: can't figure out how to verify wrap of sem_destroy
 
 
 Invalid semaphore: semaphore 0x........
+semaphore 0x........ was first observed at:
+   at 0x........: sem_init* (drd_pthread_intercepts.c:?)
+   by 0x........: main (tc20_verifywrap.c:228)
    at 0x........: sem_wait* (drd_pthread_intercepts.c:?)
    by 0x........: main (tc20_verifywrap.c:242)
 

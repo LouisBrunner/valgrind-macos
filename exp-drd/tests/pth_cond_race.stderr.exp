@@ -6,7 +6,10 @@ Probably a race condition: condition variable 0x........ has been signaled but t
    by 0x........: vg_thread_wrapper (drd_pthread_intercepts.c:?)
    by 0x........: (within libpthread-?.?.so)
    by 0x........: clone (in /...libc...)
-Mutex 0x........ was first observed at:
+cond 0x........ was first observed at:
+   at 0x........: pthread_cond_init* (drd_pthread_intercepts.c:?)
+   by 0x........: main (pth_cond_race.c:?)
+mutex 0x........ was first observed at:
    at 0x........: pthread_mutex_init (drd_pthread_intercepts.c:?)
    by 0x........: main (pth_cond_race.c:?)
 

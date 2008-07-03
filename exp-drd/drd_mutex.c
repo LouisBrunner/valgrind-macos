@@ -76,7 +76,6 @@ void mutex_initialize(struct mutex_info* const p,
   p->owner               = DRD_INVALID_THREADID;
   p->last_locked_segment = 0;
   p->acquiry_time_ms     = 0;
-  p->first_observed_at   = VG_(record_ExeContext)(VG_(get_running_tid)(), 0);
   p->acquired_at         = 0;
 }
 

@@ -3,6 +3,10 @@ Mutex not locked by calling thread: mutex 0x........, recursion count 0, owner 1
    at 0x........: pthread_mutex_unlock (drd_pthread_intercepts.c:?)
    by 0x........: nearly_main (tc09_bad_unlock.c:27)
    by 0x........: main (tc09_bad_unlock.c:49)
+mutex 0x........ was first observed at:
+   at 0x........: pthread_mutex_init (drd_pthread_intercepts.c:?)
+   by 0x........: nearly_main (tc09_bad_unlock.c:23)
+   by 0x........: main (tc09_bad_unlock.c:49)
 
 Thread 2:
 Mutex not locked by calling thread: mutex 0x........, recursion count 1, owner 1.
@@ -11,6 +15,10 @@ Mutex not locked by calling thread: mutex 0x........, recursion count 1, owner 1
    by 0x........: vg_thread_wrapper (drd_pthread_intercepts.c:?)
    by 0x........: (within libpthread-?.?.so)
    by 0x........: clone (in /...libc...)
+mutex 0x........ was first observed at:
+   at 0x........: pthread_mutex_init (drd_pthread_intercepts.c:?)
+   by 0x........: nearly_main (tc09_bad_unlock.c:31)
+   by 0x........: main (tc09_bad_unlock.c:49)
 
 Thread 1:
 The object at address 0x........ is not a mutex.
@@ -26,6 +34,10 @@ Mutex not locked by calling thread: mutex 0x........, recursion count 0, owner 1
    at 0x........: pthread_mutex_unlock (drd_pthread_intercepts.c:?)
    by 0x........: nearly_main (tc09_bad_unlock.c:27)
    by 0x........: main (tc09_bad_unlock.c:50)
+mutex 0x........ was first observed at:
+   at 0x........: pthread_mutex_init (drd_pthread_intercepts.c:?)
+   by 0x........: nearly_main (tc09_bad_unlock.c:23)
+   by 0x........: main (tc09_bad_unlock.c:50)
 
 Thread 2:
 Mutex not locked by calling thread: mutex 0x........, recursion count 1, owner 1.
@@ -34,6 +46,10 @@ Mutex not locked by calling thread: mutex 0x........, recursion count 1, owner 1
    by 0x........: vg_thread_wrapper (drd_pthread_intercepts.c:?)
    by 0x........: (within libpthread-?.?.so)
    by 0x........: clone (in /...libc...)
+mutex 0x........ was first observed at:
+   at 0x........: pthread_mutex_init (drd_pthread_intercepts.c:?)
+   by 0x........: nearly_main (tc09_bad_unlock.c:31)
+   by 0x........: main (tc09_bad_unlock.c:50)
 
 Thread 1:
 The object at address 0x........ is not a mutex.

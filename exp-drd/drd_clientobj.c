@@ -68,6 +68,15 @@ void clientobj_cleanup(void)
   s_clientobj = 0;
 }
 
+/** Return the data associated with the client object at client address addr.
+ *  Return 0 if there is no client object in the set with the specified start
+ *  address.
+ */
+DrdClientobj* clientobj_get_any(const Addr addr)
+{
+  return VG_(OSetGen_Lookup)(s_clientobj, &addr);
+}
+
 /** Return the data associated with the client object at client address addr
  *  and that has object type t. Return 0 if there is no client object in the
  *  set with the specified start address.
@@ -121,6 +130,7 @@ clientobj_add(const Addr a1, const ObjType t)
   VG_(memset)(p, 0, sizeof(*p));
   p->any.a1   = a1;
   p->any.type = t;
+  p->any.first_observed_at = VG_(record_ExeContext)(VG_(get_running_tid)(), 0);
   VG_(OSetGen_Insert)(s_clientobj, p);
   tl_assert(VG_(OSetGen_Lookup)(s_clientobj, &a1) == p);
   drd_start_suppression(a1, a1 + 1, "clientobj");
@@ -200,3 +210,15 @@ DrdClientobj* clientobj_next(const ObjType t)
   return p;
 }
 
+const char* clientobj_type_name(const ObjType t)
+{
+  switch (t)
+  {
+  case ClientMutex:     return "mutex";
+  case ClientCondvar:   return "cond";
+  case ClientSemaphore: return "semaphore";
+  case ClientBarrier:   return "barrier";
+  case ClientRwlock:    return "rwlock";
+  }
+  return "(unknown)";
+}

@@ -70,21 +70,23 @@ void describe_malloced_addr(Addr const a, SizeT const len, AddrInfo* const ai)
   }
 }
 
-/** Report where a mutex has been observed for the first time. The printed
- *  call stack will either refer to a pthread_mutex_init() or a
- *  pthread_mutex_lock() call.
+/** Report where an object has been observed for the first time. The printed
+ *  call stack will either refer to a pthread_*_init() or a pthread_*lock()
+ *  call.
  */
-static void mutex_first_observed(const Addr mutex)
+static void first_observed(const Addr obj)
 {
-  struct mutex_info* mi;
+  DrdClientobj* cl;
 
-  mi = mutex_get(mutex);
-  if (mi)
+  cl = clientobj_get_any(obj);
+  if (cl)
   {
-    tl_assert(mi->first_observed_at);
+    tl_assert(cl->any.first_observed_at);
     VG_(message)(Vg_UserMsg,
-                 "Mutex 0x%lx was first observed at:", mutex);
-    VG_(pp_ExeContext)(mi->first_observed_at);
+                 "%s 0x%lx was first observed at:",
+                 clientobj_type_name(cl->any.type),
+                 obj);
+    VG_(pp_ExeContext)(cl->any.first_observed_at);
   }
 }
 
@@ -176,6 +178,7 @@ static void drd_tool_error_pp(Error* const e)
                    p->mutex);
     }
     VG_(pp_ExeContext)(VG_(get_error_where)(e));
+    first_observed(p->mutex);
     break;
   }
   case CondErr: {
@@ -185,6 +188,7 @@ static void drd_tool_error_pp(Error* const e)
                  VG_(get_error_string)(e),
                  cdei->cond);
     VG_(pp_ExeContext)(VG_(get_error_where)(e));
+    first_observed(cdei->cond);
     break;
   }
   case CondDestrErr: {
@@ -195,7 +199,7 @@ static void drd_tool_error_pp(Error* const e)
                  cdi->cond, cdi->mutex,
                  DrdThreadIdToVgThreadId(cdi->tid), cdi->tid);
     VG_(pp_ExeContext)(VG_(get_error_where)(e));
-    mutex_first_observed(cdi->mutex);
+    first_observed(cdi->mutex);
     break;
   }
   case CondRaceErr: {
@@ -206,7 +210,8 @@ static void drd_tool_error_pp(Error* const e)
                  " by the signalling thread.",
                  cei->cond, cei->mutex);
     VG_(pp_ExeContext)(VG_(get_error_where)(e));
-    mutex_first_observed(cei->mutex);
+    first_observed(cei->cond);
+    first_observed(cei->mutex);
     break;
   }
   case CondWaitErr: {
@@ -218,8 +223,9 @@ static void drd_tool_error_pp(Error* const e)
                  cwei->mutex1,
                  cwei->mutex2);
     VG_(pp_ExeContext)(VG_(get_error_where)(e));
-    mutex_first_observed(cwei->mutex1);
-    mutex_first_observed(cwei->mutex2);
+    first_observed(cwei->cond);
+    first_observed(cwei->mutex1);
+    first_observed(cwei->mutex2);
     break;
   }
   case SemaphoreErr: {
@@ -229,17 +235,19 @@ static void drd_tool_error_pp(Error* const e)
                  "%s: semaphore 0x%lx",
                  VG_(get_error_string)(e),
                  sei->semaphore);
+    first_observed(sei->semaphore);
     VG_(pp_ExeContext)(VG_(get_error_where)(e));
     break;
   }
   case BarrierErr: {
-    BarrierErrInfo* sei =(BarrierErrInfo*)(VG_(get_error_extra)(e));
-    tl_assert(sei);
+    BarrierErrInfo* bei =(BarrierErrInfo*)(VG_(get_error_extra)(e));
+    tl_assert(bei);
     VG_(message)(Vg_UserMsg,
                  "%s: barrier 0x%lx",
                  VG_(get_error_string)(e),
-                 sei->barrier);
+                 bei->barrier);
     VG_(pp_ExeContext)(VG_(get_error_where)(e));
+    first_observed(bei->barrier);
     break;
   }
   case RwlockErr: {
@@ -250,6 +258,7 @@ static void drd_tool_error_pp(Error* const e)
                  VG_(get_error_string)(e),
                  p->rwlock);
     VG_(pp_ExeContext)(VG_(get_error_where)(e));
+    first_observed(p->rwlock);
     break;
   }
   case HoldtimeErr: {
@@ -265,6 +274,7 @@ static void drd_tool_error_pp(Error* const e)
                  p->hold_time_ms,
                  p->threshold_ms);
     VG_(pp_ExeContext)(VG_(get_error_where)(e));
+    first_observed(p->synchronization_object);
     break;
   }
   case GenericErr: {

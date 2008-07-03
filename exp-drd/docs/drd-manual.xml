@@ -504,7 +504,7 @@ process being analyzed with DRD:
 
 
 <sect2 id="drd-manual.data-races" xreflabel="Data Races">
-<title>Data Races</title>
+<title>Detected Errors: Data Races</title>
 
 <para>
 DRD prints a message every time it detects a data race. You should be
@@ -662,7 +662,7 @@ The above report has the following meaning:
 
 
 <sect2 id="drd-manual.lock-contention" xreflabel="Lock Contention">
-<title>Lock Contention</title>
+<title>Detected Errors: Lock Contention</title>
 
 <para>
 Threads should be able to make progress without being blocked by other
@@ -706,7 +706,7 @@ output reports that the lock acquired at line 51 in source file
 
 
 <sect2 id="drd-manual.api-checks" xreflabel="API Checks">
-<title>Misuse of the POSIX threads API</title>
+<title>Detected Errors: Misuse of the POSIX threads API</title>
 
 <para>
   DRD is able to detect and report the following misuses of the POSIX
@@ -1087,6 +1087,114 @@ For more information about OpenMP, see also
 </sect2>
 
 
+<sect2 id="drd-manual.cust-mem-alloc" xreflabel="Custom Memory Allocators">
+<title>DRD and Custom Memory Allocators</title>
+
+<para>
+DRD tracks all memory allocation events that happen via either the
+standard memory allocation and deallocation functions
+(<function>malloc</function>, <function>free</function>,
+<function>new</function> and <function>delete</function>) or via entry
+and exit of stack frames. DRD uses memory allocation and deallocation
+information for two purposes:
+<itemizedlist>
+  <listitem>
+    <para>
+      To know where the scope ends of POSIX objects that have not been
+      destroyed explicitly. It is e.g. not required by the POSIX
+      threads standard to call
+      <function>pthread_mutex_destroy()</function> before freeing the
+      memory in which a mutex object resides.
+    </para>
+  </listitem>
+  <listitem>
+    <para>
+      To know where the scope of variables ends. If e.g. heap memory
+      has been used by one thread, that thread frees that memory, and
+      another thread allocates and starts using that memory, no data
+      races must be reported for that memory.
+    </para>
+  </listitem>
+</itemizedlist>
+</para>
+
+<para>
+It is essential for correct operation of DRD that the tool knows about
+memory allocation and deallocation events. DRD does not yet support
+custom memory allocators, so you will have to make sure that any
+program which runs under DRD uses the standard memory allocation
+functions. As an example, the GNU libstdc++ library can be configured
+to use standard memory allocation functions instead of memory pools by
+setting the environment variable
+<literal>GLIBCXX_FORCE_NEW</literal>. For more information, see also
+the <ulink
+url="http://gcc.gnu.org/onlinedocs/libstdc++/manual/bk01pt04ch11.html">libstdc++
+manual</ulink>.
+</para>
+
+</sect2>
+
+
+<sect2 id="drd-manual.drd-versus-memcheck" xreflabel="DRD Versus Memcheck">
+<title>DRD Versus Memcheck</title>
+
+<para>
+It is essential for correct operation of DRD that there are no memory
+errors like dangling pointers in the client program. Which means that
+it is a good idea to make sure that your program is memcheck-clean
+before you analyze it with DRD. It is possible however that some of
+the memcheck reports are caused by data races. In this case it makes
+sense to run DRD before memcheck.
+</para>
+
+<para>
+So which tool should be run first ? In case both DRD and memcheck
+complain about a program, a possible approach is to run both tools
+alternatingly and to fix as many errors as possible after each run of
+each tool until none of the two tools prints any more error messages.
+</para>
+
+</sect2>
+
+
+<sect2 id="drd-manual.resource requirements" xreflabel="Resource Requirements">
+<title>Resource Requirements</title>
+
+<para>
+The requirements of DRD with regard to heap and stack memory and the
+effect on the execution time of client programs are as follows:
+<itemizedlist>
+  <listitem>
+    <para>
+      When running a program under DRD with default DRD options,
+      between 1.1 and 3.6 times more memory will be needed compared to
+      a native run of the client program. More memory will be needed
+      if loading debug information has been enabled
+      (<literal>--var-info=yes</literal>).
+    </para>
+  </listitem>
+  <listitem>
+    <para>
+      DRD allocates some of its temporary data structures on the stack
+      of the client program threads. This amount of data is limited to
+      1 - 2 KB. Make sure that thread stacks are sufficiently large.
+    </para>
+  </listitem>
+  <listitem>
+    <para>
+      Most applications will run between 20 and 50 times slower under
+      DRD than a native single-threaded run. Applications such as
+      Firefox which perform very much mutex lock / unlock operations
+      however will run too slow to be usable under DRD. This issue
+      will be addressed in a future DRD version.
+    </para>
+  </listitem>
+</itemizedlist>
+</para>
+
+</sect2>
+
+
 </sect1>
 
 
@@ -1101,15 +1209,6 @@ For more information about OpenMP, see also
       DRD has only been tested on the Linux operating system, and not
       on any of the other operating systems supported by
       Valgrind.
-    </para>
-  </listitem>
-  <listitem>
-    <para>
-      Most applications will run between 20 and 100 times slower under
-      DRD than natively. Applications which perform very much mutex
-      lock / unlock operations however will run too slow to be usable
-      under DRD. Examples are Firefox and Nautilus. This will be
-      addressed in a future DRD version.
     </para>
   </listitem>
   <listitem>
@@ -1152,7 +1251,7 @@ For more information about OpenMP, see also
   <listitem>
     <para>
       If you compile the DRD source code yourself, you need gcc 3.0 or
-      later. gcc 2.95 is not supported.
+      later. Gcc 2.95 is not supported.
     </para>
   </listitem>
 </itemizedlist>
@@ -1168,7 +1267,7 @@ If you have any comments, suggestions, feedback or bug reports about
 DRD, feel free to either post a message on the Valgrind users mailing
 list or to file a bug report. See also <ulink
 url="&vg-url;">&vg-url;</ulink> for more information about the
-Valgrind mailing lists and how to file a bug report.
+Valgrind mailing lists or about how to file a bug report.
 </para>
 
 </sect1>

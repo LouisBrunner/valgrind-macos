@@ -34,7 +34,13 @@ mkdir -p ${BUILD}     || exit $?
 cd       ${BUILD}     || exit $?
 
 if [ ! -e $DOWNLOADS/$TAR ]; then
-  ( cd $DOWNLOADS && wget -q $FSF_MIRROR/gcc/gcc-${GCC_VERSION}/$TAR )
+(
+  if cd $DOWNLOADS; then
+    wget -q $FSF_MIRROR/gcc/gcc-${GCC_VERSION}/$TAR \
+    || { wget -q -O- $FSF_MIRROR/gcc/gcc-${GCC_VERSION}/${TAR%bz2}gz \
+         | gzip -cd | bzip2 -9 >${TAR}; }
+  fi
+)
 fi
 
 if [ ! -e $SRC ]; then

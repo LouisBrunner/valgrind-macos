@@ -1218,7 +1218,7 @@ void drd_pre_clo_init(void)
 
   VG_(details_name)            ("exp-drd");
   VG_(details_version)         (NULL);
-  VG_(details_description)     ("a data race detector");
+  VG_(details_description)     ("a thread error detector");
   VG_(details_copyright_author)("Copyright (C) 2006-2008, and GNU GPL'd,"
                                 " by Bart Van Assche.");
   VG_(details_bug_reports_to)  (VG_BUGS_TO);

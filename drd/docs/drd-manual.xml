@@ -8,7 +8,7 @@
   <title>DRD: a thread error detector</title>
 
 <para>To use this tool, you must specify
-<computeroutput>--tool=exp-drd</computeroutput>
+<computeroutput>--tool=drd</computeroutput>
 on the Valgrind command line.</para>
 
 
@@ -549,7 +549,7 @@ Below you can find an example of a message printed by DRD when it
 detects a data race:
 </para>
 <programlisting><![CDATA[
-$ valgrind --tool=exp-drd --var-info=yes exp-drd/tests/rwlock_race
+$ valgrind --tool=drd --var-info=yes drd/tests/rwlock_race
 ...
 ==9466== Thread 3:
 ==9466== Conflicting load by thread 3/3 at 0x006020b8 size 4
@@ -683,7 +683,7 @@ detect lock contention by making DRD report any lock that is held
 longer than the specified threshold. An example:
 </para>
 <programlisting><![CDATA[
-$ valgrind --tool=exp-drd --exclusive-threshold=10 exp-drd/tests/hold_lock -i 500
+$ valgrind --tool=drd --exclusive-threshold=10 drd/tests/hold_lock -i 500
 ...
 ==10668== Acquired at:
 ==10668==    at 0x4C267C8: pthread_mutex_lock (drd_pthread_intercepts.c:395)
@@ -1014,7 +1014,7 @@ library has been configured with the
 libgomp libraries that have been configured with this flag and in
 which symbol information is present. For most Linux distributions this
 means that you will have to recompile gcc. See also the script
-<literal>exp-drd/scripts/download-and-build-gcc</literal> in the
+<literal>drd/scripts/download-and-build-gcc</literal> in the
 Valgrind source tree for an example of how to compile gcc. You will
 also have to make sure that the newly compiled
 <literal>libgomp.so</literal> library is loaded when OpenMP programs
@@ -1027,7 +1027,7 @@ export LD_LIBRARY_PATH=~/gcc-4.3.1/lib64:~/gcc-4.3.1/lib:
 
 <para>
 As an example, the test OpenMP test program
-<literal>exp-drd/scripts/omp_matinv</literal> triggers a data race
+<literal>drd/scripts/omp_matinv</literal> triggers a data race
 when the option -r has been specified on the command line. The data
 race is triggered by the following code:
 </para>
@@ -1052,7 +1052,7 @@ not been declared private. DRD will print the following error message
 for the above code:
 </para>
 <programlisting><![CDATA[
-$ valgrind --check-stack-var=yes --var-info=yes --tool=exp-drd exp-drd/tests/omp_matinv 3 -t 2 -r
+$ valgrind --check-stack-var=yes --var-info=yes --tool=drd drd/tests/omp_matinv 3 -t 2 -r
 ...
 Conflicting store by thread 1/1 at 0x7fefffbc4 size 4
    at 0x4014A0: gj.omp_fn.0 (omp_matinv.c:203)

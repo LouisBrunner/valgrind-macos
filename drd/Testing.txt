@@ -3,21 +3,21 @@ How to test DRD
 
 1. Run the regression tests. After having compiled DRD, run the following
    command:
-     perl tests/vg_regtest exp-drd
+     perl tests/vg_regtest drd
 2. Test the slowdown for matinv for various matrix sizes via the script
-   exp-drd/scripts/run-matinv (must be about 24 for i == 1 and about
+   drd/scripts/run-matinv (must be about 24 for i == 1 and about
    31 for i == 10 with n == 200).
 3. Test whether DRD works with standard KDE applications and whether it does
    not print any false positives:
-     ./vg-in-place --tool=exp-drd kate
-     ./vg-in-place --tool=exp-drd --check-stack-var=yes kate
-     ./vg-in-place --trace-children=yes --tool=exp-drd knode
-     ./vg-in-place --trace-children=yes --tool=exp-drd --check-stack-var=yes knode
-     ./vg-in-place --trace-children=yes --tool=exp-drd amarokapp
+     ./vg-in-place --tool=drd kate
+     ./vg-in-place --tool=drd --check-stack-var=yes kate
+     ./vg-in-place --trace-children=yes --tool=drd knode
+     ./vg-in-place --trace-children=yes --tool=drd --check-stack-var=yes knode
+     ./vg-in-place --trace-children=yes --tool=drd amarokapp
 4. Test whether DRD works with standard GNOME applications. Expect
    race reports triggered by ORBit_RootObject_duplicate() and after
    having closed the GNOME terminal window:
-     ./vg-in-place --trace-children=yes --tool=exp-drd gnome-terminal
+     ./vg-in-place --trace-children=yes --tool=drd gnome-terminal
 5. Test DRD with Firefox. First of all, build and install Firefox 3. Next,
    run the following command:
-     LD_LIBRARY_PATH=$HOME/software/mozilla-build/dist/lib: ./vg-in-place --trace-children=yes --tool=exp-drd $HOME/software/mozilla-build/dist/bin/firefox-bin
+     LD_LIBRARY_PATH=$HOME/software/mozilla-build/dist/lib: ./vg-in-place --trace-children=yes --tool=drd $HOME/software/mozilla-build/dist/bin/firefox-bin

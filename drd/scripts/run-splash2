@@ -41,12 +41,12 @@ function run_test {
   p=4
   test_output="${1}-drd-with-stack-var-4.out" \
   print_runtime_ratio ${avg4} ${stddev4} ${vsz4} ${vszdev4} \
-    $VG --tool=exp-drd --check-stack-var=yes "$@" -p${psep}${p} "${test_args}"
+    $VG --tool=drd --check-stack-var=yes "$@" -p${psep}${p} "${test_args}"
 
   p=4
   test_output="${1}-drd-without-stack-var-4.out" \
   print_runtime_ratio ${avg4} ${stddev4} ${vsz4} ${vszdev4} \
-    $VG --tool=exp-drd --check-stack-var=no  "$@" -p${psep}${p} "${test_args}"
+    $VG --tool=drd --check-stack-var=no  "$@" -p${psep}${p} "${test_args}"
 
   p=4
   test_output="${1}-helgrind-4.out" \
@@ -95,10 +95,10 @@ fi
 #  9. Virtual memory size ratio for --tool=none -p1 versus -p1.
 # 10. Execution time ratio for --tool=none -p4 versus -p4.
 # 11. Virtual memory size ratio for --tool=none -p4 versus -p4.
-# 12. Execution time ratio for --tool=exp-drd --check-stack-var=yes -p4 versus -p4.
-# 13. Virtual memory size ratio for --tool=exp-drd --check-stack-var=yes -p4 versus -p4.
-# 14. Execution time ratio for --tool=exp-drd --check-stack-var=no -p4 versus -p4.
-# 15. Virtual memory size ratio for --tool=exp-drd --check-stack-var=no -p4 versus -p4.
+# 12. Execution time ratio for --tool=drd --check-stack-var=yes -p4 versus -p4.
+# 13. Virtual memory size ratio for --tool=drd --check-stack-var=yes -p4 versus -p4.
+# 14. Execution time ratio for --tool=drd --check-stack-var=no -p4 versus -p4.
+# 15. Virtual memory size ratio for --tool=drd --check-stack-var=no -p4 versus -p4.
 # 16. Execution time ratio for --tool=helgrind -p4 versus -p4.
 # 17. Virtual memory size ratio for --tool=helgrind -p4 versus -p4.
 # 18. Execution time ratio for Intel Thread Checker -p4 versus -p4.

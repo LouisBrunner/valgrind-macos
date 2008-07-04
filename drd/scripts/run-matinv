@@ -16,7 +16,7 @@ if [ "${DRD_SCRIPTS_DIR:0:1}" != "/" ]; then
 fi
 
 VG="${DRD_SCRIPTS_DIR}/../../vg-in-place"
-MATINV="${DRD_SCRIPTS_DIR}/../../exp-drd/tests/matinv"
+MATINV="${DRD_SCRIPTS_DIR}/../../drd/tests/matinv"
 
 
 for n in 200 400
@@ -34,6 +34,6 @@ do
     print_runtime_ratio ${avg1} ${stddev1} ${vsz1} ${vszdev1} \
       ${VG} --tool=none    ${MATINV} $n -t$i
     print_runtime_ratio ${avg1} ${stddev1} ${vsz1} ${vszdev1} \
-      ${VG} --tool=exp-drd ${MATINV} $n -t$i
+      ${VG} --tool=drd ${MATINV} $n -t$i
   done
 done

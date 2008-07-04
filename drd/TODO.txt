@@ -4,7 +4,6 @@ Last updated July 1, 2008.
 
 Data-race detection algorithm
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-- Propose to rename exp-drd back to drd.
 - Memory pool support.
 - Find out why DRD reports an error on the POSIX implementation of libgomp.so.
 - Add locking order checking. Start from the following information:

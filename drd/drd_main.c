@@ -192,7 +192,7 @@ static void drd_print_usage(void)
 "        reading in all debug information at once may cause an out of\n"
 "        memory error [no].\n"
 "\n"
-"  exp-drd options for monitoring process behavior:\n"
+"  drd options for monitoring process behavior:\n"
 "    --trace-addr=<address>    Trace all load and store activity for the.\n"
 "                              specified address [off].\n"
 "    --trace-barrier=yes|no    Trace all barrier activity [no].\n"
@@ -1216,7 +1216,7 @@ void drd_pre_clo_init(void)
 {
   // Basic tool stuff.
 
-  VG_(details_name)            ("exp-drd");
+  VG_(details_name)            ("drd");
   VG_(details_version)         (NULL);
   VG_(details_description)     ("a thread error detector");
   VG_(details_copyright_author)("Copyright (C) 2006-2008, and GNU GPL'd,"

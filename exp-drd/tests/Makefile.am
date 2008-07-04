@@ -18,6 +18,8 @@ noinst_SCRIPTS =		\
 EXTRA_DIST =                                        \
 	$(noinst_SCRIPTS)                           \
 	drd_bitmap_test.stderr.exp                  \
+	drd_bitmap_test.stdout.exp                  \
+	drd_bitmap_test.vgtest                      \
 	fp_race.stderr.exp                          \
 	fp_race.vgtest                              \
 	fp_race2.stderr.exp                         \
@@ -31,6 +33,7 @@ EXTRA_DIST =                                        \
 	hg04_race.stderr.exp                        \
 	hg04_race.vgtest                            \
 	hg05_race2.stderr.exp                       \
+	hg05_race2.stderr.exp-powerpc               \
 	hg05_race2.vgtest                           \
 	hg06_readshared.stderr.exp                  \
 	hg06_readshared.vgtest                      \
@@ -42,6 +45,7 @@ EXTRA_DIST =                                        \
 	linuxthreads_det.stderr.exp-linuxthreads    \
 	linuxthreads_det.stdout.exp                 \
 	linuxthreads_det.stdout.exp-linuxthreads    \
+	linuxthreads_det.vgtest                     \
 	matinv.stderr.exp                           \
 	matinv.stdout.exp                           \
 	matinv.vgtest                               \
@@ -84,8 +88,8 @@ EXTRA_DIST =                                        \
 	pth_detached_sem.stderr.exp                 \
 	pth_detached_sem.stdout.exp                 \
 	pth_detached_sem.vgtest                     \
-	pth_inconsistent_cond_wait.stderr.exp                 \
-	pth_inconsistent_cond_wait.vgtest                     \
+	pth_inconsistent_cond_wait.stderr.exp       \
+	pth_inconsistent_cond_wait.vgtest           \
 	recursive_mutex.stderr.exp	            \
 	recursive_mutex.stdout.exp	            \
 	recursive_mutex.vgtest                      \
@@ -141,10 +145,12 @@ EXTRA_DIST =                                        \
 	tc19_shadowmem.vgtest                       \
 	tc20_verifywrap.stderr.exp	            \
 	tc20_verifywrap.stderr.exp-glibc2.3         \
+	tc20_verifywrap.stderr.exp-glibc2.8         \
 	tc20_verifywrap.vgtest                      \
 	tc20_verifywrap2.stderr.exp                 \
 	tc20_verifywrap2.stderr.exp-glibc2.3        \
 	tc20_verifywrap2.stderr.exp-glibc2.3-b      \
+	tc20_verifywrap2.stderr.exp-glibc2.8        \
 	tc20_verifywrap2.vgtest                     \
 	tc21_pthonce.stderr.exp                     \
 	tc21_pthonce.stdout.exp                     \
@@ -156,7 +162,8 @@ EXTRA_DIST =                                        \
 	tc23_bogus_condwait.vgtest                  \
 	tc24_nonzero_sem.stderr.exp                 \
 	tc24_nonzero_sem.vgtest                     \
-	trylock.stderr.exp
+	trylock.stderr.exp                          \
+	trylock.vgtest
 
 AM_CFLAGS   = $(WERROR) -Wall @FLAG_W_EXTRA@ -Wno-inline -Wno-unused-parameter\
               -g $(AM_FLAG_M3264_PRI) -DVGA_$(VG_ARCH)=1 -DVGO_$(VG_OS)=1 \

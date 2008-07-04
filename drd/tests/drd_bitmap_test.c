@@ -4,8 +4,8 @@
 #include <string.h>
 #include <unistd.h>
 #include "coregrind/m_oset.c"
-#include "exp-drd/drd_bitmap.c"
-#include "exp-drd/pub_drd_bitmap.h"
+#include "drd/drd_bitmap.c"
+#include "drd/pub_drd_bitmap.h"
 
 
 /* Replacements for core functionality. */

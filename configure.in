@@ -1431,10 +1431,10 @@ AC_OUTPUT(
    exp-omega/Makefile
    exp-omega/tests/Makefile
    exp-omega/docs/Makefile
-   exp-drd/Makefile
-   exp-drd/docs/Makefile
-   exp-drd/scripts/download-and-build-splash2
-   exp-drd/tests/Makefile
+   drd/Makefile
+   drd/docs/Makefile
+   drd/scripts/download-and-build-splash2
+   drd/tests/Makefile
 )
 
 cat<<EOF

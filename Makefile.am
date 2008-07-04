@@ -9,10 +9,10 @@ TOOLS =		memcheck \
 		massif \
 		lackey \
 		none \
-		helgrind
+		helgrind \
+		drd
 
-EXP_TOOLS = 	exp-omega \
-		exp-drd
+EXP_TOOLS = 	exp-omega
 
 # Put docs last because building the HTML is slow and we want to get
 # everything else working before we try it.

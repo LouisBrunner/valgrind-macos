@@ -32,7 +32,7 @@
       xmlns:xi="http://www.w3.org/2001/XInclude" />
   <xi:include href="../../helgrind/docs/hg-manual.xml" parse="xml"  
       xmlns:xi="http://www.w3.org/2001/XInclude" />
-  <xi:include href="../../exp-drd/docs/drd-manual.xml" parse="xml"  
+  <xi:include href="../../drd/docs/drd-manual.xml" parse="xml"  
       xmlns:xi="http://www.w3.org/2001/XInclude" />
   <xi:include href="../../massif/docs/ms-manual.xml" parse="xml"  
       xmlns:xi="http://www.w3.org/2001/XInclude" />

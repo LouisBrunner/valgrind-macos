@@ -78,7 +78,7 @@ Valgrind.  The following notes may save you some trouble.
 
 
 -- Don't strip symbols from lib/valgrind/$platform/{cachegrind,
-   callgrind,exp-drd,exp-omega,helgrind,lackey,massif,memcheck,none}
+   callgrind,drd,exp-omega,helgrind,lackey,massif,memcheck,none}
    in the installation tree.  Doing so will likely cause problems.
    Removing the line number info is probably OK, although that has not
    been tested by the Valgrind developers.

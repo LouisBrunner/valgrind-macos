@@ -666,7 +666,7 @@ void drd_post_thread_join(DrdThreadId drd_joiner, DrdThreadId drd_joinee)
       vc_snprint(msg + VG_(strlen)(msg), msg_size - VG_(strlen)(msg),
                  thread_get_vc(drd_joiner));
     }
-    VG_(message)(Vg_DebugMsg, msg);
+    VG_(message)(Vg_DebugMsg, "%s", msg);
     VG_(free)(msg);
   }
 

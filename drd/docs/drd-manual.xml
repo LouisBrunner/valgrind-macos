@@ -1157,7 +1157,7 @@ each tool until none of the two tools prints any more error messages.
 </sect2>
 
 
-<sect2 id="drd-manual.resource requirements" xreflabel="Resource Requirements">
+<sect2 id="drd-manual.resource-requirements" xreflabel="Resource Requirements">
 <title>Resource Requirements</title>
 
 <para>
@@ -1187,6 +1187,75 @@ effect on the execution time of client programs are as follows:
       Firefox which perform very much mutex lock / unlock operations
       however will run too slow to be usable under DRD. This issue
       will be addressed in a future DRD version.
+    </para>
+  </listitem>
+</itemizedlist>
+</para>
+
+</sect2>
+
+
+<sect2 id="drd-manual.effective-use" xreflabel="Effective Use">
+<title>Hints and Tips for Effective Use of DRD</title>
+
+<para>
+The following information may be helpful when using DRD:
+<itemizedlist>
+  <listitem>
+    <para>
+      Make sure that debug information is present in the executable
+      being analysed, such that DRD can print function name and line
+      number information in stack traces. Most compilers can be told
+      to include debug information via compiler option
+      <option>-g</option>.
+    </para>
+  </listitem>
+  <listitem>
+    <para>
+      Compile with flag <option>-O1</option> instead of
+      <option>-O0</option>. This will reduce the amount of generated
+      code, may reduce the amount of debug info and will speed up
+      DRD's processing of the client program. For more information,
+      see also <xref linkend="manual-core.started"/>.
+    </para>
+  </listitem>
+  <listitem>
+    <para>
+      If DRD reports any errors on libraries that are part of your
+      Linux distribution like e.g. <literal>libc.so</literal> or
+      <literal>libstdc++.so</literal>, installing the debug packages
+      for these libraries will make the output of DRD a lot more
+      detailed.
+    </para>
+  </listitem>
+  <listitem>
+    <para>
+      When using C++, do not send output from more than one thread to
+      <literal>std::cout</literal>. Doing so would not only
+      generate multiple data race reports, it could also result in
+      output from several threads getting mixed up.  Either use
+      <function>printf()</function> or do the following:
+      <orderedlist>
+        <listitem>
+          <para>Derive a class from <literal>std::ostreambuf</literal>
+          and let that class send output line by line to
+          <literal>stdout</literal>. This will avoid that individual
+          lines of text produced by different threads get mixed
+          up.</para>
+        </listitem>
+        <listitem>
+          <para>Create one instance of <literal>std::ostream</literal>
+          for each thread. This makes stream formatting settings
+          thread-local. Pass a per-thread instance of the class
+          derived from <literal>std::ostreambuf</literal> to the
+          constructor of each instance. </para>
+        </listitem>
+        <listitem>
+          <para>Let each thread send its output to its own instance of
+          <literal>std::ostream</literal> instead of
+          <literal>std::cout</literal>.</para>
+        </listitem>
+      </orderedlist>
     </para>
   </listitem>
 </itemizedlist>

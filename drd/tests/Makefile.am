@@ -143,13 +143,15 @@ EXTRA_DIST =                                        \
 	tc18_semabuse.vgtest                        \
 	tc19_shadowmem.stderr.exp                   \
 	tc19_shadowmem.vgtest                       \
-	tc20_verifywrap.stderr.exp	            \
 	tc20_verifywrap.stderr.exp-glibc2.3         \
+	tc20_verifywrap.stderr.exp-glibc2.5         \
+	tc20_verifywrap.stderr.exp-glibc2.5-ppc     \
 	tc20_verifywrap.stderr.exp-glibc2.8         \
 	tc20_verifywrap.vgtest                      \
-	tc20_verifywrap2.stderr.exp                 \
 	tc20_verifywrap2.stderr.exp-glibc2.3        \
 	tc20_verifywrap2.stderr.exp-glibc2.3-b      \
+	tc20_verifywrap2.stderr.exp-glibc2.5        \
+	tc20_verifywrap2.stderr.exp-glibc2.5-ppc    \
 	tc20_verifywrap2.stderr.exp-glibc2.8        \
 	tc20_verifywrap2.vgtest                     \
 	tc21_pthonce.stderr.exp                     \

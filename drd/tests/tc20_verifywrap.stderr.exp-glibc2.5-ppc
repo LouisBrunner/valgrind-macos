@@ -1,0 +1,143 @@
+
+
+
+------ This is output for >= glibc 2.4 ------
+
+---------------- pthread_create/join ----------------
+
+Conflicting store by thread 1/1 at 0x........ size 2
+   at 0x........: main (tc20_verifywrap.c:78)
+Location 0x........ is 0 bytes inside global var "unprotected"
+declared at tc20_verifywrap.c:27
+Other segment start (thread 0/2)
+   (thread finished, call stack no longer available)
+Other segment end (thread 0/2)
+   (thread finished, call stack no longer available)
+
+---------------- pthread_mutex_lock et al ----------------
+
+
+The object at address 0x........ is not a mutex.
+   at 0x........: pthread_mutex_init (drd_pthread_intercepts.c:?)
+   by 0x........: main (tc20_verifywrap.c:92)
+
+Destroying locked mutex: mutex 0x........, recursion count 1, owner 1.
+   at 0x........: pthread_mutex_destroy (drd_pthread_intercepts.c:?)
+   by 0x........: main (tc20_verifywrap.c:102)
+
+The object at address 0x........ is not a mutex.
+   at 0x........: pthread_mutex_lock (drd_pthread_intercepts.c:?)
+   by 0x........: main (tc20_verifywrap.c:108)
+mutex 0x........ was first observed at:
+   at 0x........: pthread_mutex_lock (drd_pthread_intercepts.c:?)
+   by 0x........: main (tc20_verifywrap.c:108)
+
+The object at address 0x........ is not a mutex.
+   at 0x........: pthread_mutex_trylock (drd_pthread_intercepts.c:?)
+   by 0x........: main (tc20_verifywrap.c:116)
+mutex 0x........ was first observed at:
+   at 0x........: pthread_mutex_lock (drd_pthread_intercepts.c:?)
+   by 0x........: main (tc20_verifywrap.c:108)
+
+The object at address 0x........ is not a mutex.
+   at 0x........: pthread_mutex_timedlock (drd_pthread_intercepts.c:?)
+   by 0x........: main (tc20_verifywrap.c:121)
+mutex 0x........ was first observed at:
+   at 0x........: pthread_mutex_lock (drd_pthread_intercepts.c:?)
+   by 0x........: main (tc20_verifywrap.c:108)
+
+The object at address 0x........ is not a mutex.
+   at 0x........: pthread_mutex_unlock (drd_pthread_intercepts.c:?)
+   by 0x........: main (tc20_verifywrap.c:125)
+mutex 0x........ was first observed at:
+   at 0x........: pthread_mutex_lock (drd_pthread_intercepts.c:?)
+   by 0x........: main (tc20_verifywrap.c:108)
+
+---------------- pthread_cond_wait et al ----------------
+
+
+Mutex not locked: mutex 0x........, recursion count 0, owner 0.
+   at 0x........: pthread_cond_wait* (drd_pthread_intercepts.c:?)
+   by 0x........: main (tc20_verifywrap.c:147)
+mutex 0x........ was first observed at:
+   at 0x........: pthread_mutex_init (drd_pthread_intercepts.c:?)
+   by 0x........: main (tc20_verifywrap.c:145)
+
+FIXME: can't figure out how to verify wrap of pthread_cond_signal
+
+
+FIXME: can't figure out how to verify wrap of pthread_broadcast_signal
+
+
+---------------- pthread_rwlock_* ----------------
+
+
+Reader-writer lock not locked by calling thread: rwlock 0x.........
+   at 0x........: pthread_rwlock_unlock* (drd_pthread_intercepts.c:?)
+   by 0x........: main (tc20_verifywrap.c:179)
+rwlock 0x........ was first observed at:
+   at 0x........: pthread_rwlock_init* (drd_pthread_intercepts.c:?)
+   by 0x........: main (tc20_verifywrap.c:178)
+(1) no error on next line
+(2) no error on next line
+(3)    ERROR on next line
+
+Reader-writer lock not locked by calling thread: rwlock 0x.........
+   at 0x........: pthread_rwlock_unlock* (drd_pthread_intercepts.c:?)
+   by 0x........: main (tc20_verifywrap.c:196)
+rwlock 0x........ was first observed at:
+   at 0x........: pthread_rwlock_init* (drd_pthread_intercepts.c:?)
+   by 0x........: main (tc20_verifywrap.c:186)
+
+Reader-writer lock reinitialization: rwlock 0x.........
+   at 0x........: pthread_rwlock_init* (drd_pthread_intercepts.c:?)
+   by 0x........: main (tc20_verifywrap.c:199)
+rwlock 0x........ was first observed at:
+   at 0x........: pthread_rwlock_init* (drd_pthread_intercepts.c:?)
+   by 0x........: main (tc20_verifywrap.c:186)
+(4) no error on next line
+(5) no error on next line
+(6) no error on next line
+(7) no error on next line
+(8)    ERROR on next line
+
+Reader-writer lock not locked by calling thread: rwlock 0x.........
+   at 0x........: pthread_rwlock_unlock* (drd_pthread_intercepts.c:?)
+   by 0x........: main (tc20_verifywrap.c:212)
+rwlock 0x........ was first observed at:
+   at 0x........: pthread_rwlock_init* (drd_pthread_intercepts.c:?)
+   by 0x........: main (tc20_verifywrap.c:186)
+
+---------------- sem_* ----------------
+
+
+Semaphore reinitialization: semaphore 0x........
+   at 0x........: sem_init* (drd_pthread_intercepts.c:?)
+   by 0x........: main (tc20_verifywrap.c:231)
+semaphore 0x........ was first observed at:
+   at 0x........: sem_init* (drd_pthread_intercepts.c:?)
+   by 0x........: main (tc20_verifywrap.c:228)
+
+FIXME: can't figure out how to verify wrap of sem_destroy
+
+
+Invalid semaphore: semaphore 0x........
+   at 0x........: sem_wait* (drd_pthread_intercepts.c:?)
+   by 0x........: main (tc20_verifywrap.c:242)
+semaphore 0x........ was first observed at:
+   at 0x........: sem_init* (drd_pthread_intercepts.c:?)
+   by 0x........: main (tc20_verifywrap.c:228)
+
+FIXME: can't figure out how to verify wrap of sem_post
+
+
+------------ dealloc of mem holding locks ------------
+
+
+Destroying locked mutex: mutex 0x........, recursion count 1, owner 1.
+   at 0x........: main (tc20_verifywrap.c:262)
+
+Destroying locked rwlock: rwlock 0x.........
+   at 0x........: main (tc20_verifywrap.c:262)
+
+ERROR SUMMARY: 16 errors from 16 contexts (suppressed: 0 from 0)

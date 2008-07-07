@@ -4,12 +4,12 @@
 #define _GNU_SOURCE
 #endif
 
-#include <QtCore/QThread>  // class QMutex
-#include <QtCore/QMutex>
-#include <cstdio>       // fprintf()
-#include <cstdlib>      // atoi()
+#include <QtCore/QThread> // class QThread
+#include <QtCore/QMutex>  // class QMutex
+#include <cstdio>         // fprintf()
+#include <cstdlib>        // atoi()
 #include <new>
-#include <pthread.h>    // pthread_barrier_t
+#include <pthread.h>      // pthread_barrier_t
 #include <vector>
 
 

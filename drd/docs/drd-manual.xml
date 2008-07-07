@@ -989,6 +989,46 @@ before Valgrind's header files are present.
 </sect2>
 
 
+<sect2 id="drd-manual.gnome" xreflabel="GNOME">
+<title>Debugging GNOME Programs With DRD</title>
+
+<para>
+GNOME applications use the threading primitives provided by the
+<computeroutput>glib</computeroutput> library. This library is built
+on top of POSIX threads, and is hence directly supported by DRD.
+</para>
+
+</sect2>
+
+
+<sect2 id="drd-manual.qt" xreflabel="Qt">
+<title>Debugging Qt Programs With DRD</title>
+
+<para>
+The Qt library is the GUI library used by the KDE project.  Currently
+there are two versions of the Qt library in use: Qt3 by KDE 3 and Qt4
+by KDE 4. If possible, use Qt4 instead of Qt3. Qt3 is no longer
+supported, and there are known problems with multithreading support in
+Qt3. As an example, using QString objects in more than one thread will
+trigger race reports (this has been confirmed by Trolltech -- see also
+Trolltech task <ulink
+url="http://trolltech.com/developer/task-tracker/index_html?id=206152&amp;method=entry">#206152</ulink>).
+</para>
+
+<para>
+Qt4 applications are supported by DRD, but only if the
+<literal>libqt4-debuginfo</literal> package has been installed. Some
+of the synchronization and threading primitives in Qt4 bypass the
+POSIX threads library, and DRD can only intercept these if symbol
+information for the Qt4 library is available. DRD won't tell you if it
+has not been able to load the Qt4 debug information, but a huge number
+of data races will be reported on data protected via
+<literal>QMutex</literal> objects.
+</para>
+
+</sect2>
+
+
 <sect2 id="drd-manual.openmp" xreflabel="OpenMP">
 <title>Debugging OpenMP Programs With DRD</title>
 

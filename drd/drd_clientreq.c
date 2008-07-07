@@ -257,13 +257,21 @@ static Bool drd_handle_client_request(ThreadId vg_tid, UWord* arg, UWord* ret)
     break;
 
   case VG_USERREQ__PRE_COND_INIT:
-    tl_assert(thread_get_synchr_nesting_count(drd_tid) == 0);
-    drd_pre_cond_init(arg[1]);
+    if (thread_enter_synchr(drd_tid) == 0)
+      drd_pre_cond_init(arg[1]);
+    break;
+
+  case VG_USERREQ__POST_COND_INIT:
+    thread_leave_synchr(drd_tid);
+    break;
+
+  case VG_USERREQ__PRE_COND_DESTROY:
+    thread_enter_synchr(drd_tid);
     break;
 
   case VG_USERREQ__POST_COND_DESTROY:
-    tl_assert(thread_get_synchr_nesting_count(drd_tid) == 0);
-    drd_post_cond_destroy(arg[1]);
+    if (thread_leave_synchr(drd_tid) == 0)
+      drd_post_cond_destroy(arg[1]);
     break;
 
   case VG_USERREQ__PRE_COND_WAIT:
@@ -277,13 +285,21 @@ static Bool drd_handle_client_request(ThreadId vg_tid, UWord* arg, UWord* ret)
     break;
 
   case VG_USERREQ__PRE_COND_SIGNAL:
-    tl_assert(thread_get_synchr_nesting_count(drd_tid) == 0);
-    drd_pre_cond_signal(arg[1]);
+    if (thread_enter_synchr(drd_tid) == 0)
+      drd_pre_cond_signal(arg[1]);
+    break;
+
+  case VG_USERREQ__POST_COND_SIGNAL:
+    thread_leave_synchr(drd_tid);
     break;
 
   case VG_USERREQ__PRE_COND_BROADCAST:
-    tl_assert(thread_get_synchr_nesting_count(drd_tid) == 0);
-    drd_pre_cond_broadcast(arg[1]);
+    if (thread_enter_synchr(drd_tid) == 0)
+      drd_pre_cond_broadcast(arg[1]);
+    break;
+
+  case VG_USERREQ__POST_COND_BROADCAST:
+    thread_leave_synchr(drd_tid);
     break;
 
   case VG_USERREQ__PRE_SEM_INIT:

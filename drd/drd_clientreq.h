@@ -94,16 +94,26 @@ enum {
   /* to notify the drd tool of a pthread_cond_init call. */
   VG_USERREQ__PRE_COND_INIT,
   /* args: Addr */
+  /* to notify the drd tool of a pthread_cond_init call. */
+  VG_USERREQ__POST_COND_INIT,
+  /* args: Addr */
+  /* to notify the drd tool of a pthread_cond_destroy call. */
+  VG_USERREQ__PRE_COND_DESTROY,
+  /* args: Addr */
   /* to notify the drd tool of a pthread_cond_destroy call. */
   VG_USERREQ__POST_COND_DESTROY,
-  /* args: Addr cond */
+  /* args: Addr */
   VG_USERREQ__PRE_COND_WAIT,
   /* args: Addr cond, Addr mutex, MutexT mt */
   VG_USERREQ__POST_COND_WAIT,
   /* args: Addr cond, Addr mutex, Bool took_lock*/
   VG_USERREQ__PRE_COND_SIGNAL,
   /* args: Addr cond */
+  VG_USERREQ__POST_COND_SIGNAL,
+  /* args: Addr cond */
   VG_USERREQ__PRE_COND_BROADCAST,
+  /* args: Addr cond */
+  VG_USERREQ__POST_COND_BROADCAST,
   /* args: Addr cond */
 
   /* To notify the drd tool of a sem_init call. */
@@ -179,11 +189,12 @@ enum {
 
 typedef enum
 {
-   mutex_type_invalid_mutex    = 0,
-   mutex_type_recursive_mutex  = 1,
-   mutex_type_errorcheck_mutex = 2,
-   mutex_type_default_mutex    = 3,
-   mutex_type_spinlock         = 4
+  mutex_type_unknown          = -1,
+  mutex_type_invalid_mutex    = 0,
+  mutex_type_recursive_mutex  = 1,
+  mutex_type_errorcheck_mutex = 2,
+  mutex_type_default_mutex    = 3,
+  mutex_type_spinlock         = 4
 } MutexT;
 
 typedef enum

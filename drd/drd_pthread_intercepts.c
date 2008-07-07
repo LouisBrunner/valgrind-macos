@@ -1,6 +1,6 @@
 
 /*--------------------------------------------------------------------*/
-/*--- Client-space code for drd.                  drd_intercepts.c ---*/
+/*--- Client-space code for drd.          drd_pthread_intercepts.c ---*/
 /*--------------------------------------------------------------------*/
 
 /*
@@ -460,6 +460,8 @@ PTH_FUNC(int, pthreadZucondZuinitZa, // pthread_cond_init*
   VALGRIND_DO_CLIENT_REQUEST(res, -1, VG_USERREQ__PRE_COND_INIT,
                              cond, 0, 0, 0, 0);
   CALL_FN_W_WW(ret, fn, cond, attr);
+  VALGRIND_DO_CLIENT_REQUEST(res, -1, VG_USERREQ__POST_COND_INIT,
+                             cond, 0, 0, 0, 0);
   return ret;
 }
 
@@ -471,6 +473,8 @@ PTH_FUNC(int, pthreadZucondZudestroyZa, // pthread_cond_destroy*
   int res;
   OrigFn fn;
   VALGRIND_GET_ORIG_FN(fn);
+  VALGRIND_DO_CLIENT_REQUEST(res, -1, VG_USERREQ__PRE_COND_DESTROY,
+                             cond, 0, 0, 0, 0);
   CALL_FN_W_W(ret, fn, cond);
   VALGRIND_DO_CLIENT_REQUEST(res, -1, VG_USERREQ__POST_COND_DESTROY,
                              cond, 0, 0, 0, 0);
@@ -523,6 +527,8 @@ PTH_FUNC(int, pthreadZucondZusignalZa, // pthread_cond_signal*
   VALGRIND_DO_CLIENT_REQUEST(res, -1, VG_USERREQ__PRE_COND_SIGNAL,
                              cond, 0, 0, 0, 0);
   CALL_FN_W_W(ret, fn, cond);
+  VALGRIND_DO_CLIENT_REQUEST(res, -1, VG_USERREQ__POST_COND_SIGNAL,
+                             cond, 0, 0, 0, 0);
   return ret;
 }
 
@@ -537,6 +543,8 @@ PTH_FUNC(int, pthreadZucondZubroadcastZa, // pthread_cond_broadcast*
   VALGRIND_DO_CLIENT_REQUEST(res, -1, VG_USERREQ__PRE_COND_BROADCAST,
                              cond, 0, 0, 0, 0);
   CALL_FN_W_W(ret, fn, cond);
+  VALGRIND_DO_CLIENT_REQUEST(res, -1, VG_USERREQ__POST_COND_BROADCAST,
+                             cond, 0, 0, 0, 0);
   return ret;
 }
 

@@ -67,9 +67,10 @@ static
 void mutex_initialize(struct mutex_info* const p,
                       const Addr mutex, const MutexT mutex_type)
 {
-  tl_assert(mutex != 0);
-
+  tl_assert(mutex);
+  tl_assert(mutex_type != mutex_type_unknown);
   tl_assert(p->a1 == mutex);
+
   p->cleanup             = (void(*)(DrdClientobj*))&mutex_cleanup;
   p->mutex_type          = mutex_type;
   p->recursion_count     = 0;
@@ -87,11 +88,13 @@ static void mutex_cleanup(struct mutex_info* p)
   if (s_trace_mutex)
   {
     VG_(message)(Vg_UserMsg,
-                 "[%d/%d] mutex_destroy   %s 0x%lx",
+                 "[%d/%d] mutex_destroy   %s 0x%lx rc %d owner %d",
                  VG_(get_running_tid)(),
                  thread_get_running_tid(),
                  mutex_get_typename(p),
-                 p->a1);
+                 p->a1,
+                 p ? p->recursion_count : -1,
+                 p ? p->owner : DRD_INVALID_THREADID);
   }
 
   if (mutex_is_locked(p))
@@ -138,6 +141,8 @@ mutex_get_or_allocate(const Addr mutex, const MutexT mutex_type)
     return 0;
   }
 
+  tl_assert(mutex_type != mutex_type_unknown);
+
   p = &clientobj_add(mutex, ClientMutex)->mutex;
   mutex_initialize(p, mutex, mutex_type);
   return p;
@@ -154,6 +159,8 @@ struct mutex_info*
 mutex_init(const Addr mutex, const MutexT mutex_type)
 {
   struct mutex_info* p;
+
+  tl_assert(mutex_type != mutex_type_unknown);
 
   if (s_trace_mutex)
   {
@@ -209,18 +216,22 @@ void mutex_post_destroy(const Addr mutex)
  *  an attempt is made to lock recursively a synchronization object that must
  *  not be locked recursively.
  */
-void mutex_pre_lock(const Addr mutex, const MutexT mutex_type,
+void mutex_pre_lock(const Addr mutex, MutexT mutex_type,
                     const Bool trylock)
 {
   struct mutex_info* p;
 
   p = mutex_get_or_allocate(mutex, mutex_type);
+  if (mutex_type == mutex_type_unknown)
+    mutex_type = p->mutex_type;
+
   if (s_trace_mutex)
   {
     VG_(message)(Vg_UserMsg,
-                 "[%d/%d] pre_mutex_lock  %s 0x%lx rc %d owner %d",
+                 "[%d/%d] %s %s 0x%lx rc %d owner %d",
                  VG_(get_running_tid)(),
                  thread_get_running_tid(),
+                 trylock ? "pre_mutex_lock " : "mutex_trylock  ",
                  p ? mutex_get_typename(p) : "(?)",
                  mutex,
                  p ? p->recursion_count : -1,
@@ -325,11 +336,15 @@ void mutex_post_lock(const Addr mutex, const Bool took_lock,
  *  @note This function must be called before pthread_mutex_unlock() is called,
  *        or a race condition is triggered !
  */
-void mutex_unlock(const Addr mutex, const MutexT mutex_type)
+void mutex_unlock(const Addr mutex, MutexT mutex_type)
 {
   const DrdThreadId drd_tid = thread_get_running_tid();
   const ThreadId vg_tid = VG_(get_running_tid)();
-  struct mutex_info* const p = mutex_get(mutex);
+  struct mutex_info* p;
+
+  p = mutex_get(mutex);
+  if (mutex_type == mutex_type_unknown)
+    mutex_type = p->mutex_type;
 
   if (s_trace_mutex)
   {

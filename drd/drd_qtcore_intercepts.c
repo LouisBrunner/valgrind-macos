@@ -180,10 +180,18 @@ QT4CORE_FUNC(int, _ZN6QMutex7tryLockEv,
 // QMutex::tryLock(int) -- _ZN6QMutex7tryLockEi
 QT4CORE_FUNC(int, _ZN6QMutex7tryLockEi,
              void* mutex,
-             int timeout)
+             int timeout_ms)
 {
-  // Not yet implemented.
-  assert(0);
+  int    ret;
+  int    res;
+  OrigFn fn;
+  VALGRIND_GET_ORIG_FN(fn);
+  VALGRIND_DO_CLIENT_REQUEST(res, 0, VG_USERREQ__PRE_MUTEX_LOCK,
+                             mutex, mutex_type(mutex), 1, 0, 0);
+  CALL_FN_W_WW(ret, fn, mutex, timeout_ms);
+  VALGRIND_DO_CLIENT_REQUEST(res, -1, VG_USERREQ__POST_MUTEX_LOCK,
+                             mutex, ret, 0, 0, 0);
+  return ret;
 }
 
 // QMutex::unlock() -- _ZN6QMutex6unlockEv

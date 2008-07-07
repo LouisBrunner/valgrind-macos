@@ -4,8 +4,9 @@
 #define _GNU_SOURCE
 #endif
 
-#include <QtCore/QThread> // class QThread
 #include <QtCore/QMutex>  // class QMutex
+#include <QtCore/QThread> // class QThread
+#include <cassert>
 #include <cstdio>         // fprintf()
 #include <cstdlib>        // atoi()
 #include <new>
@@ -51,8 +52,14 @@ int main(int argc, char** argv)
     // Stack-allocated mutex.
     QMutex M(QMutex::Recursive);
     M.lock();
-    M.tryLock();
+    assert(M.tryLock());
     M.unlock();
+    M.unlock();
+  }
+  {
+    QMutex M(QMutex::NonRecursive);
+    assert(M.tryLock(1));
+    assert(! M.tryLock(1));
     M.unlock();
   }
 

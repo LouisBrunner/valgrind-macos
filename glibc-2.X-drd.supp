@@ -208,10 +208,22 @@
 {
    pthread
    drd:ConflictingAccess
+   fun:__deallocate_stack
+}
+{
+   pthread
+   drd:ConflictingAccess
    fun:free_stacks
    fun:__deallocate_stack
-   fun:pthread_join
-   fun:pthread_join
+}
+{
+   pthread
+   drd:ConflictingAccess
+   obj:/lib*/libpthread-*
+   obj:/lib*/libpthread-*
+   fun:__deallocate_stack
+   fun:start_thread
+   fun:clone
 }
 {
    pthread

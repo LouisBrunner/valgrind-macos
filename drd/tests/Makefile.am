@@ -94,6 +94,8 @@ EXTRA_DIST =                                        \
 	pth_spinlock.vgtest                         \
 	qt4_mutex.stderr.exp                        \
 	qt4_mutex.vgtest                            \
+	qt4_rwlock.stderr.exp                       \
+	qt4_rwlock.vgtest                           \
 	qt4_semaphore.stderr.exp                    \
 	qt4_semaphore.vgtest                        \
 	recursive_mutex.stderr.exp	            \
@@ -234,7 +236,7 @@ check_PROGRAMS = \
   trylock
 
 if HAVE_QTCORE
-check_PROGRAMS += qt4_mutex qt4_semaphore
+check_PROGRAMS += qt4_mutex qt4_rwlock qt4_semaphore
 endif
 
 if HAVE_OPENMP
@@ -311,6 +313,9 @@ pth_spinlock_LDADD          = -lpthread
 if HAVE_QTCORE
 qt4_mutex_SOURCES           = qt4_mutex.cpp
 qt4_mutex_LDADD             = -lQtCore -lpthread
+
+qt4_rwlock_SOURCES          = qt4_rwlock.cpp
+qt4_rwlock_LDADD            = -lQtCore -lpthread
 
 qt4_semaphore_SOURCES       = qt4_semaphore.cpp
 qt4_semaphore_LDADD         = -lQtCore -lpthread

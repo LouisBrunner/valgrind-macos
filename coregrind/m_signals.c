@@ -658,8 +658,8 @@ static void handle_SCSS_change ( Bool force_update )
 
       if (VG_(clo_trace_signals) && VG_(clo_verbosity) > 2)
          VG_(message)(Vg_DebugMsg, 
-            "setting ksig %d to: hdlr 0x%x, flags 0x%x, "
-            "mask(63..0) 0x%x 0x%x",
+            "setting ksig %d to: hdlr %p, flags 0x%lx, "
+            "mask(63..0) 0x%lx 0x%lx",
             sig, ksa.ksa_handler,
             ksa.sa_flags,
             ksa.sa_mask.sig[1], 
@@ -765,7 +765,7 @@ SysRes VG_(do_sys_sigaction) ( Int signo,
    if (VG_(clo_trace_signals))
       VG_(message)(Vg_DebugExtraMsg, 
          "sys_sigaction: sigNo %d, "
-         "new %p, old %p, new flags 0x%llx",
+         "new %#lx, old %#lx, new flags 0x%llx",
          signo, (UWord)new_act, (UWord)old_act,
          (ULong)(new_act ? new_act->sa_flags : 0) );
 
@@ -1029,11 +1029,11 @@ void push_signal_frame ( ThreadId tid, const vki_siginfo_t *siginfo, const struc
          = (Addr)(tst->altstack.ss_sp) + tst->altstack.ss_size;
       if (VG_(clo_trace_signals))
          VG_(message)(Vg_DebugMsg,
-		      "delivering signal %d (%s) to thread %d: on ALT STACK (%p-%p; %d bytes)", 
+		      "delivering signal %d (%s) to thread %d: on ALT STACK (%p-%p; %ld bytes)",
 		      sigNo, signame(sigNo), tid, 
 		      tst->altstack.ss_sp,
 		      (UChar *)tst->altstack.ss_sp + tst->altstack.ss_size,
-		      tst->altstack.ss_size );
+		      (unsigned long)tst->altstack.ss_size );
 
       /* Signal delivery to tools */
       VG_TRACK( pre_deliver_signal, tid, sigNo, /*alt_stack*/True );
@@ -1813,7 +1813,7 @@ void sync_signalhandler ( Int sigNo, vki_siginfo_t *info, struct vki_ucontext *u
 
    if (VG_(clo_trace_signals)) {
       VG_(message)(Vg_DebugMsg, "signal %d arrived ... si_code=%d, "
-                                "EIP=%p, eip=%p",
+                                "EIP=%#lx, eip=%#lx",
                    sigNo, info->si_code, VG_(get_IP)(tid), 
 		   VG_UCONTEXT_INSTR_PTR(uc) );
    }
@@ -1847,13 +1847,13 @@ void sync_signalhandler ( Int sigNo, vki_siginfo_t *info, struct vki_ucontext *u
       if (VG_(clo_trace_signals)) {
 	 if (seg == NULL)
 	    VG_(message)(Vg_DebugMsg,
-			 "SIGSEGV: si_code=%d faultaddr=%p tid=%d ESP=%p "
+			 "SIGSEGV: si_code=%d faultaddr=%#lx tid=%d ESP=%#lx "
                          "seg=NULL",
 			 info->si_code, fault, tid, esp);
 	 else
 	    VG_(message)(Vg_DebugMsg,
-			 "SIGSEGV: si_code=%d faultaddr=%p tid=%d ESP=%p "
-                          "seg=%p-%p",
+			 "SIGSEGV: si_code=%d faultaddr=%#lx tid=%d ESP=%#lx "
+                          "seg=%#lx-%#lx",
 			 info->si_code, fault, tid, esp, seg->start, seg->end);
       }
       if (info->si_code == VKI_SEGV_MAPERR
@@ -1873,13 +1873,13 @@ void sync_signalhandler ( Int sigNo, vki_siginfo_t *info, struct vki_ucontext *u
 	 if (VG_(extend_stack)(base, VG_(threads)[tid].client_stack_szB)) {
 	    if (VG_(clo_trace_signals))
 	       VG_(message)(Vg_DebugMsg, 
-			    "       -> extended stack base to %p", 
+			    "       -> extended stack base to %#lx",
                             VG_PGROUNDDN(fault));
             return; // extension succeeded, restart host (hence guest)
                     // instruction
 	 } else
 	    VG_(message)(Vg_UserMsg, 
-                         "Stack overflow in thread %d: can't grow stack to %p", 
+                         "Stack overflow in thread %d: can't grow stack to %#lx",
 			 tid, fault);
       }
       /* Fall into normal signal handling for all other cases */
@@ -1914,7 +1914,7 @@ void sync_signalhandler ( Int sigNo, vki_siginfo_t *info, struct vki_ucontext *u
 		   sigNo, signame(sigNo));
 
       VG_(message)(Vg_DebugMsg, 
-		   "si_code=%x;  Faulting address: %p;  sp: %p",
+		   "si_code=%x;  Faulting address: %p;  sp: %#lx",
 		   info->si_code, info->VKI_SIGINFO_si_addr,
                    VG_UCONTEXT_STACK_PTR(uc));
 

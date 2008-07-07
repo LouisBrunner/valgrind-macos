@@ -709,12 +709,12 @@ static Bool show_used_suppressions ( void )
          continue;
       any_supp = True;
       if (VG_(clo_xml)) {
-         VG_(message)(Vg_DebugMsg, 
-                      "  <pair>\n"
-                      "    <count>%d</count>\n"
-                      "    <name>%t</name>\n"
-                      "  </pair>", 
-                      su->count, su->sname);
+         VG_(message_no_f_c)(Vg_DebugMsg,
+                             "  <pair>\n"
+                             "    <count>%d</count>\n"
+                             "    <name>%t</name>\n"
+                             "  </pair>",
+                             su->count, su->sname);
       } else {
          VG_(message)(Vg_DebugMsg, "supp: %6d %s", su->count, su->sname);
       }
@@ -1221,11 +1221,11 @@ static Supp* is_suppressible_error ( Error* err )
 void VG_(print_errormgr_stats) ( void )
 {
    VG_(message)(Vg_DebugMsg, 
-      " errormgr: %,lu supplist searches, %,lu comparisons during search",
+      " errormgr: %'lu supplist searches, %'lu comparisons during search",
       em_supplist_searches, em_supplist_cmps
    );
    VG_(message)(Vg_DebugMsg, 
-      " errormgr: %,lu errlist searches, %,lu comparisons during search",
+      " errormgr: %'lu errlist searches, %'lu comparisons during search",
       em_errlist_searches, em_errlist_cmps
    );
 }

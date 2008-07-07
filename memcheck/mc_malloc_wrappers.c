@@ -461,7 +461,7 @@ void MC_(create_mempool)(Addr pool, UInt rzB, Bool is_zeroed)
    MC_Mempool* mp;
 
    if (VG_(clo_verbosity) > 2) {
-      VG_(message)(Vg_UserMsg, "create_mempool(%p, %d, %d)", 
+      VG_(message)(Vg_UserMsg, "create_mempool(0x%lx, %d, %d)",
                                pool, rzB, is_zeroed);
       VG_(get_and_pp_StackTrace)
          (VG_(get_running_tid)(), MEMPOOL_DEBUG_STACKTRACE_DEPTH);
@@ -496,7 +496,7 @@ void MC_(destroy_mempool)(Addr pool)
    MC_Mempool* mp;
 
    if (VG_(clo_verbosity) > 2) {
-      VG_(message)(Vg_UserMsg, "destroy_mempool(%p)", pool);
+      VG_(message)(Vg_UserMsg, "destroy_mempool(0x%lx)", pool);
       VG_(get_and_pp_StackTrace)
          (VG_(get_running_tid)(), MEMPOOL_DEBUG_STACKTRACE_DEPTH);
    }
@@ -594,10 +594,10 @@ check_mempool_sane(MC_Mempool* mp)
                       n_chunks);
          for (i = 0; i < n_chunks; ++i) {
             VG_(message)(Vg_UserMsg, 
-                         "Mempool chunk %d / %d: %d bytes [%x,%x), allocated:",
+                         "Mempool chunk %d / %d: %ld bytes [%lx,%lx), allocated:",
                          i+1, 
                          n_chunks, 
-                         chunks[i]->szB, 
+                         chunks[i]->szB + 0UL,
                          chunks[i]->data, 
                          chunks[i]->data + chunks[i]->szB);
 
@@ -612,7 +612,7 @@ void MC_(mempool_alloc)(ThreadId tid, Addr pool, Addr addr, SizeT szB)
    MC_Mempool* mp;
 
    if (VG_(clo_verbosity) > 2) {     
-      VG_(message)(Vg_UserMsg, "mempool_alloc(%p, %p, %d)", pool, addr, szB);
+      VG_(message)(Vg_UserMsg, "mempool_alloc(0x%lx, 0x%lx, %ld)", pool, addr, szB);
       VG_(get_and_pp_StackTrace) (tid, MEMPOOL_DEBUG_STACKTRACE_DEPTH);
    }
 
@@ -640,7 +640,7 @@ void MC_(mempool_free)(Addr pool, Addr addr)
    }
 
    if (VG_(clo_verbosity) > 2) {
-      VG_(message)(Vg_UserMsg, "mempool_free(%p, %p)", pool, addr);
+      VG_(message)(Vg_UserMsg, "mempool_free(0x%lx, 0x%lx)", pool, addr);
       VG_(get_and_pp_StackTrace) (tid, MEMPOOL_DEBUG_STACKTRACE_DEPTH);
    }
 
@@ -653,8 +653,8 @@ void MC_(mempool_free)(Addr pool, Addr addr)
 
    if (VG_(clo_verbosity) > 2) {
       VG_(message)(Vg_UserMsg, 
-		   "mempool_free(%p, %p) freed chunk of %d bytes", 
-		   pool, addr, mc->szB);
+		   "mempool_free(0x%lx, 0x%lx) freed chunk of %ld bytes",
+		   pool, addr, mc->szB + 0UL);
    }
 
    die_and_free_mem ( tid, mc, mp->rzB );
@@ -671,7 +671,7 @@ void MC_(mempool_trim)(Addr pool, Addr addr, SizeT szB)
    VgHashNode** chunks;
 
    if (VG_(clo_verbosity) > 2) {
-      VG_(message)(Vg_UserMsg, "mempool_trim(%p, %p, %d)", pool, addr, szB);
+      VG_(message)(Vg_UserMsg, "mempool_trim(0x%lx, 0x%lx, %ld)", pool, addr, szB);
       VG_(get_and_pp_StackTrace) (tid, MEMPOOL_DEBUG_STACKTRACE_DEPTH);
    }
 
@@ -780,7 +780,7 @@ void MC_(move_mempool)(Addr poolA, Addr poolB)
    MC_Mempool* mp;
 
    if (VG_(clo_verbosity) > 2) {
-      VG_(message)(Vg_UserMsg, "move_mempool(%p, %p)", poolA, poolB);
+      VG_(message)(Vg_UserMsg, "move_mempool(0x%lx, 0x%lx)", poolA, poolB);
       VG_(get_and_pp_StackTrace)
          (VG_(get_running_tid)(), MEMPOOL_DEBUG_STACKTRACE_DEPTH);
    }
@@ -804,7 +804,7 @@ void MC_(mempool_change)(Addr pool, Addr addrA, Addr addrB, SizeT szB)
    ThreadId     tid = VG_(get_running_tid)();
 
    if (VG_(clo_verbosity) > 2) {
-      VG_(message)(Vg_UserMsg, "mempool_change(%p, %p, %p, %d)", 
+      VG_(message)(Vg_UserMsg, "mempool_change(0x%lx, 0x%lx, 0x%lx, %ld)",
                    pool, addrA, addrB, szB);
       VG_(get_and_pp_StackTrace) (tid, MEMPOOL_DEBUG_STACKTRACE_DEPTH);
    }
@@ -865,10 +865,10 @@ void MC_(print_malloc_stats) ( void )
    }
 
    VG_(message)(Vg_UserMsg, 
-                "malloc/free: in use at exit: %,llu bytes in %,lu blocks.",
+                "malloc/free: in use at exit: %'llu bytes in %'lu blocks.",
                 nbytes, nblocks);
    VG_(message)(Vg_UserMsg, 
-                "malloc/free: %,lu allocs, %,lu frees, %,llu bytes allocated.",
+                "malloc/free: %'lu allocs, %'lu frees, %'llu bytes allocated.",
                 cmalloc_n_mallocs,
                 cmalloc_n_frees, cmalloc_bs_mallocd);
    if (VG_(clo_verbosity) > 1)

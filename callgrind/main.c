@@ -522,12 +522,12 @@ IRSB* CLG_(instrument)( VgCallbackClosure* closure,
 
    // No instrumentation if it is switched off
    if (! CLG_(instrument_state)) {
-       CLG_DEBUG(5, "instrument(BB %p) [Instrumentation OFF]\n",
+       CLG_DEBUG(5, "instrument(BB %#lx) [Instrumentation OFF]\n",
 		 (Addr)closure->readdr);
        return bbIn;
    }
 
-   CLG_DEBUG(3, "+ instrument(BB %p)\n", (Addr)closure->readdr);
+   CLG_DEBUG(3, "+ instrument(BB %#lx)\n", (Addr)closure->readdr);
 
    /* Set up SB for instrumented IR */
    bbOut = deepCopyIRSBExceptStmts(bbIn);
@@ -681,7 +681,7 @@ IRSB* CLG_(instrument)( VgCallbackClosure* closure,
        bb->jmpkind = bbIn->jumpkind;
    }
    
-   CLG_DEBUG(3, "- instrument(BB %p): byteLen %u, CJumps %u, CostLen %u\n",
+   CLG_DEBUG(3, "- instrument(BB %#lx): byteLen %u, CJumps %u, CostLen %u\n",
 	     origAddr, bb->instr_len, bb->cjmp_count, bb->cost_count);
    if (cJumps>0) {
        CLG_DEBUG(3, "                     [ ");

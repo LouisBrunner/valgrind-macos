@@ -467,7 +467,7 @@ void ML_(pp_GX) ( GExpr* gx ) {
       aMin   = * (Addr*)p;  p += sizeof(Addr);
       aMax   = * (Addr*)p;  p += sizeof(Addr);
       nbytes = * (UShort*)p; p += sizeof(UShort);
-      VG_(printf)("[%p,%p]=", aMin, aMax);
+      VG_(printf)("[%#lx,%#lx]=", aMin, aMax);
       while (nbytes > 0) {
          VG_(printf)("%02x", (UInt)*p++);
          nbytes--;
@@ -1119,7 +1119,7 @@ void get_Form_contents ( /*OUT*/ULong* cts,
          break;
       }
       default:
-         VG_(printf)("get_Form_contents: unhandled %lld (%s)\n",
+         VG_(printf)("get_Form_contents: unhandled %d (%s)\n",
                      form, ML_(pp_DW_FORM)(form));
          c->barf("get_Form_contents: unhandled DW_FORM");
    }
@@ -1215,7 +1215,7 @@ static void varstack_show ( D3VarParser* parser, HChar* str ) {
          for (j = 0; j < VG_(sizeXA)( xa ); j++) {
             AddrRange* range = (AddrRange*) VG_(indexXA)( xa, j );
             vg_assert(range);
-            VG_(printf)("[%p,%p] ", range->aMin, range->aMax);
+            VG_(printf)("[%#lx,%#lx] ", range->aMin, range->aMax);
          }
       }
       VG_(printf)("\n");
@@ -3405,7 +3405,7 @@ void new_dwarf3_reader_wrk (
 
            if (i > 0 && (i%2) == 0) 
               TRACE_D3("\n                       ");
-           TRACE_D3("[%p,%p] ", pcMin, pcMax );
+           TRACE_D3("[%#lx,%#lx] ", pcMin, pcMax );
 
            ML_(addVar)(
               di, varp->level, 

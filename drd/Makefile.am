@@ -29,7 +29,7 @@ endif
 
 DRD_CFLAGS=@FLAG_W_EXTRA@ @FLAG_UNLIMITED_INLINE_UNIT_GROWTH@ \
            -Wformat-nonliteral -Wno-inline -Wno-unused-parameter \
-           -O2 -DCHECK_FORMAT_STRINGS
+           -O2
 
 AM_CFLAGS_X86_LINUX   += $(DRD_CFLAGS)
 AM_CFLAGS_AMD64_LINUX += $(DRD_CFLAGS)

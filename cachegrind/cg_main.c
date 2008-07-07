@@ -1609,11 +1609,11 @@ static void cg_fini(Int exitcode)
       VG_(message)(Vg_DebugMsg, "cachegrind: with zero      info:%s (%d)", 
                    buf4, no_debugs);
 
-      VG_(message)(Vg_DebugMsg, "cachegrind: string table size: %u",
+      VG_(message)(Vg_DebugMsg, "cachegrind: string table size: %lu",
                    VG_(OSetGen_Size)(stringTable));
-      VG_(message)(Vg_DebugMsg, "cachegrind: CC table size: %u",
+      VG_(message)(Vg_DebugMsg, "cachegrind: CC table size: %lu",
                    VG_(OSetGen_Size)(CC_table));
-      VG_(message)(Vg_DebugMsg, "cachegrind: InstrInfo table size: %u",
+      VG_(message)(Vg_DebugMsg, "cachegrind: InstrInfo table size: %lu",
                    VG_(OSetGen_Size)(instrInfoTable));
    }
 }

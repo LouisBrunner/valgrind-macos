@@ -305,7 +305,7 @@ void VG_(unknown_SP_update)( Addr old_SP, Addr new_SP, UInt ecu )
          moans--;
          VG_(message)(Vg_UserMsg,
             "Warning: client switching stacks?  "
-            "SP change: %p --> %p", old_SP, new_SP);
+            "SP change: 0x%lx --> 0x%lx", old_SP, new_SP);
          VG_(message)(Vg_UserMsg,
             "         to suppress, use: --max-stackframe=%ld or greater",
             (delta < 0 ? -delta : delta));

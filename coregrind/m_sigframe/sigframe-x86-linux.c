@@ -402,14 +402,14 @@ static Bool extend ( ThreadState *tst, Addr addr, SizeT size )
    if (VG_(extend_stack)(addr, tst->client_stack_szB)) {
       stackseg = VG_(am_find_nsegment)(addr);
       if (0 && stackseg)
-	 VG_(printf)("frame=%p seg=%p-%p\n",
+	 VG_(printf)("frame=%#lx seg=%#lx-%#lx\n",
 		     addr, stackseg->start, stackseg->end);
    }
 
    if (stackseg == NULL || !stackseg->hasR || !stackseg->hasW) {
       VG_(message)(
          Vg_UserMsg,
-         "Can't extend stack to %p during signal delivery for thread %d:",
+         "Can't extend stack to %#lx during signal delivery for thread %d:",
          addr, tid);
       if (stackseg == NULL)
          VG_(message)(Vg_UserMsg, "  no stack segment");
@@ -607,8 +607,8 @@ void VG_(sigframe_create)( ThreadId tid,
       caller to do. */
 
    if (0)
-      VG_(printf)("pushed signal frame; %%ESP now = %p, "
-                  "next %%EIP = %p, status=%d\n", 
+      VG_(printf)("pushed signal frame; %%ESP now = %#lx, "
+                  "next %%EIP = %#x, status=%d\n",
 		  esp, tst->arch.vex.guest_EIP, tst->status);
 }
 
@@ -715,7 +715,7 @@ void VG_(sigframe_destroy)( ThreadId tid, Bool isRT )
    if (VG_(clo_trace_signals))
       VG_(message)(
          Vg_DebugMsg, 
-         "VG_(signal_return) (thread %d): isRT=%d valid magic; EIP=%p", 
+         "VG_(signal_return) (thread %d): isRT=%d valid magic; EIP=%#x",
          tid, isRT, tst->arch.vex.guest_EIP);
 
    /* tell the tools */

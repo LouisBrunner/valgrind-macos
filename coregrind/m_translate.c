@@ -74,17 +74,17 @@ void VG_(print_translation_stats) ( void )
                                          + n_SP_updates_generic_unknown;
    VG_(percentify)(n_SP_updates_fast, n_SP_updates, 1, 6, buf);
    VG_(message)(Vg_DebugMsg,
-      "translate:            fast SP updates identified: %,u (%s)",
+      "translate:            fast SP updates identified: %'u (%s)",
       n_SP_updates_fast, buf );
 
    VG_(percentify)(n_SP_updates_generic_known, n_SP_updates, 1, 6, buf);
    VG_(message)(Vg_DebugMsg,
-      "translate:   generic_known SP updates identified: %,u (%s)",
+      "translate:   generic_known SP updates identified: %'u (%s)",
       n_SP_updates_generic_known, buf );
 
    VG_(percentify)(n_SP_updates_generic_unknown, n_SP_updates, 1, 6, buf);
    VG_(message)(Vg_DebugMsg,
-      "translate: generic_unknown SP updates identified: %,u (%s)",
+      "translate: generic_unknown SP updates identified: %'u (%s)",
       n_SP_updates_generic_unknown, buf );
 }
 

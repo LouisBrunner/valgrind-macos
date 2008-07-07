@@ -326,10 +326,10 @@ void CLG_(push_cxt)(fn_node* fn)
   *(CLG_(current_fn_stack).top) = fn;
   CLG_(current_state).cxt = CLG_(get_cxt)(CLG_(current_fn_stack).top);
 
-  CLG_DEBUG(5, "- push_cxt(fn '%s'): new cxt %d, fn_sp %d\n", 
+  CLG_DEBUG(5, "- push_cxt(fn '%s'): new cxt %d, fn_sp %ld\n",
 	    fn ? fn->name : (Char*)"0x0",
 	    CLG_(current_state).cxt ?
 	      CLG_(current_state).cxt->base_number : -1,
-	    CLG_(current_fn_stack).top - CLG_(current_fn_stack).bottom);
+	    CLG_(current_fn_stack).top - CLG_(current_fn_stack).bottom + 0L);
 }
 			       

@@ -273,10 +273,10 @@ static SysRes do_clone ( ThreadId ptid,
       VG_(register_stack)(seg->start, ctst->client_stack_highest_word);
 
       if (debug)
-	 VG_(printf)("tid %d: guessed client stack range %p-%p\n",
+	 VG_(printf)("tid %d: guessed client stack range %#lx-%#lx\n",
 		     ctid, seg->start, VG_PGROUNDUP(esp));
    } else {
-      VG_(message)(Vg_UserMsg, "!? New thread %d starts with ESP(%p) unmapped\n",
+      VG_(message)(Vg_UserMsg, "!? New thread %d starts with ESP(%#lx) unmapped\n",
 		   ctid, esp);
       ctst->client_stack_szB  = 0;
    }
@@ -293,7 +293,7 @@ static SysRes do_clone ( ThreadId ptid,
    if (flags & VKI_CLONE_SETTLS) {
       if (debug)
 	 VG_(printf)("clone child has SETTLS: tls info at %p: idx=%d "
-                     "base=%p limit=%x; esp=%p fs=%x gs=%x\n",
+                     "base=%#lx limit=%x; esp=%#x fs=%x gs=%x\n",
 		     tlsinfo, tlsinfo->entry_number, 
                      tlsinfo->base_addr, tlsinfo->limit,
 		     ptst->arch.vex.guest_ESP,
@@ -402,7 +402,7 @@ void translate_to_hw_format ( /* IN  */ vki_modify_ldt_t* inn,
    vg_assert(8 == sizeof(VexGuestX86SegDescr));
 
    if (0)
-      VG_(printf)("translate_to_hw_format: base %p, limit %d\n", 
+      VG_(printf)("translate_to_hw_format: base %#lx, limit %d\n",
                   inn->base_addr, inn->limit );
 
    /* Allow LDTs to be cleared by the user. */
@@ -490,7 +490,7 @@ static void deallocate_LGDTs_for_thread ( VexGuestX86State* vex )
 
    if (0)
       VG_(printf)("deallocate_LGDTs_for_thread: "
-                  "ldt = 0x%x, gdt = 0x%x\n", 
+                  "ldt = 0x%lx, gdt = 0x%lx\n",
                   vex->guest_LDT, vex->guest_GDT );
 
    if (vex->guest_LDT != (HWord)NULL) {
@@ -813,7 +813,7 @@ PRE(old_select)
       a4 = arg_struct[3];
       a5 = arg_struct[4];
 
-      PRINT("old_select ( %d, %p, %p, %p, %p )", a1,a2,a3,a4,a5);
+      PRINT("old_select ( %d, %#x, %#x, %#x, %#x )", a1,a2,a3,a4,a5);
       if (a2 != (Addr)NULL)
          PRE_MEM_READ( "old_select(readfds)",   a2, a1/8 /* __FD_SETSIZE/8 */ );
       if (a3 != (Addr)NULL)
@@ -829,7 +829,7 @@ PRE(sys_clone)
 {
    UInt cloneflags;
 
-   PRINT("sys_clone ( %x, %p, %p, %p, %p )",ARG1,ARG2,ARG3,ARG4,ARG5);
+   PRINT("sys_clone ( %lx, %#lx, %#lx, %#lx, %#lx )",ARG1,ARG2,ARG3,ARG4,ARG5);
    PRE_REG_READ5(int, "clone",
                  unsigned long, flags,
                  void *, child_stack,
@@ -925,7 +925,7 @@ PRE(sys_clone)
    reject:
       /* should we just ENOSYS? */
       VG_(message)(Vg_UserMsg, "");
-      VG_(message)(Vg_UserMsg, "Unsupported clone() flags: 0x%x", ARG1);
+      VG_(message)(Vg_UserMsg, "Unsupported clone() flags: 0x%lx", ARG1);
       VG_(message)(Vg_UserMsg, "");
       VG_(message)(Vg_UserMsg, "The only supported clone() uses are:");
       VG_(message)(Vg_UserMsg, " - via a threads library (LinuxThreads or NPTL)");
@@ -1017,7 +1017,7 @@ PRE(sys_rt_sigreturn)
 
 PRE(sys_modify_ldt)
 {
-   PRINT("sys_modify_ldt ( %d, %p, %d )", ARG1,ARG2,ARG3);
+   PRINT("sys_modify_ldt ( %ld, %#lx, %ld )", ARG1,ARG2,ARG3);
    PRE_REG_READ3(int, "modify_ldt", int, func, void *, ptr,
                  unsigned long, bytecount);
    
@@ -1039,7 +1039,7 @@ PRE(sys_modify_ldt)
 
 PRE(sys_set_thread_area)
 {
-   PRINT("sys_set_thread_area ( %p )", ARG1);
+   PRINT("sys_set_thread_area ( %#lx )", ARG1);
    PRE_REG_READ1(int, "set_thread_area", struct user_desc *, u_info)
    PRE_MEM_READ( "set_thread_area(u_info)", ARG1, sizeof(vki_modify_ldt_t) );
 
@@ -1049,7 +1049,7 @@ PRE(sys_set_thread_area)
 
 PRE(sys_get_thread_area)
 {
-   PRINT("sys_get_thread_area ( %p )", ARG1);
+   PRINT("sys_get_thread_area ( %#lx )", ARG1);
    PRE_REG_READ1(int, "get_thread_area", struct user_desc *, u_info)
    PRE_MEM_WRITE( "get_thread_area(u_info)", ARG1, sizeof(vki_modify_ldt_t) );
 
@@ -1069,7 +1069,7 @@ PRE(sys_get_thread_area)
 // space, and we should therefore not check anything it points to.
 PRE(sys_ptrace)
 {
-   PRINT("sys_ptrace ( %d, %d, %p, %p )", ARG1,ARG2,ARG3,ARG4);
+   PRINT("sys_ptrace ( %ld, %ld, %#lx, %#lx )", ARG1,ARG2,ARG3,ARG4);
    PRE_REG_READ4(int, "ptrace", 
                  long, request, long, pid, long, addr, long, data);
    switch (ARG1) {
@@ -1157,7 +1157,7 @@ static Addr deref_Addr ( ThreadId tid, Addr a, Char* s )
  
 PRE(sys_ipc)
 {
-   PRINT("sys_ipc ( %d, %d, %d, %d, %p, %d )", ARG1,ARG2,ARG3,ARG4,ARG5,ARG6);
+   PRINT("sys_ipc ( %ld, %ld, %ld, %ld, %#lx, %ld )", ARG1,ARG2,ARG3,ARG4,ARG5,ARG6);
    // XXX: this is simplistic -- some args are not used in all circumstances.
    PRE_REG_READ6(int, "ipc",
                  vki_uint, call, int, first, int, second, int, third,
@@ -1229,7 +1229,7 @@ PRE(sys_ipc)
       ML_(generic_PRE_sys_shmctl)( tid, ARG2, ARG3, ARG5 );
       break;
    default:
-      VG_(message)(Vg_DebugMsg, "FATAL: unhandled syscall(ipc) %d", ARG1 );
+      VG_(message)(Vg_DebugMsg, "FATAL: unhandled syscall(ipc) %ld", ARG1 );
       VG_(core_panic)("... bye!\n");
       break; /*NOTREACHED*/
    }   
@@ -1294,7 +1294,7 @@ POST(sys_ipc)
       break;
    default:
       VG_(message)(Vg_DebugMsg,
-		   "FATAL: unhandled syscall(ipc) %d",
+		   "FATAL: unhandled syscall(ipc) %ld",
 		   ARG1 );
       VG_(core_panic)("... bye!\n");
       break; /*NOTREACHED*/
@@ -1325,7 +1325,7 @@ PRE(old_mmap)
    a5 = args[5-1];
    a6 = args[6-1];
 
-   PRINT("old_mmap ( %p, %llu, %d, %d, %d, %d )",
+   PRINT("old_mmap ( %#lx, %llu, %ld, %ld, %ld, %ld )",
          a1, (ULong)a2, a3, a4, a5, a6 );
 
    r = ML_(generic_PRE_sys_mmap)( tid, a1, a2, a3, a4, a5, (Off64T)a6 );
@@ -1343,7 +1343,7 @@ PRE(sys_mmap2)
    // pagesize or 4K-size units in offset?  For ppc32/64-linux, this is
    // 4K-sized.  Assert that the page size is 4K here for safety.
    vg_assert(VKI_PAGE_SIZE == 4096);
-   PRINT("sys_mmap2 ( %p, %llu, %d, %d, %d, %d )",
+   PRINT("sys_mmap2 ( %#lx, %llu, %ld, %ld, %ld, %ld )",
          ARG1, (ULong)ARG2, ARG3, ARG4, ARG5, ARG6 );
    PRE_REG_READ6(long, "mmap2",
                  unsigned long, start, unsigned long, length,
@@ -1361,7 +1361,7 @@ PRE(sys_mmap2)
 // things, eventually, I think.  --njn
 PRE(sys_lstat64)
 {
-   PRINT("sys_lstat64 ( %p(%s), %p )",ARG1,ARG1,ARG2);
+   PRINT("sys_lstat64 ( %#lx(%s), %#lx )",ARG1,(char*)ARG1,ARG2);
    PRE_REG_READ2(long, "lstat64", char *, file_name, struct stat64 *, buf);
    PRE_MEM_RASCIIZ( "lstat64(file_name)", ARG1 );
    PRE_MEM_WRITE( "lstat64(buf)", ARG2, sizeof(struct vki_stat64) );
@@ -1377,7 +1377,7 @@ POST(sys_lstat64)
 
 PRE(sys_stat64)
 {
-   PRINT("sys_stat64 ( %p(%s), %p )",ARG1,ARG1,ARG2);
+   PRINT("sys_stat64 ( %#lx(%s), %#lx )",ARG1,(char*)ARG1,ARG2);
    PRE_REG_READ2(long, "stat64", char *, file_name, struct stat64 *, buf);
    PRE_MEM_RASCIIZ( "stat64(file_name)", ARG1 );
    PRE_MEM_WRITE( "stat64(buf)", ARG2, sizeof(struct vki_stat64) );
@@ -1390,7 +1390,7 @@ POST(sys_stat64)
 
 PRE(sys_fstatat64)
 {
-   PRINT("sys_fstatat64 ( %d, %p(%s), %p )",ARG1,ARG2,ARG2,ARG3);
+   PRINT("sys_fstatat64 ( %ld, %#lx(%s), %#lx )",ARG1,ARG2,(char*)ARG2,ARG3);
    PRE_REG_READ3(long, "fstatat64",
                  int, dfd, char *, file_name, struct stat64 *, buf);
    PRE_MEM_RASCIIZ( "fstatat64(file_name)", ARG2 );
@@ -1404,7 +1404,7 @@ POST(sys_fstatat64)
 
 PRE(sys_fstat64)
 {
-   PRINT("sys_fstat64 ( %d, %p )",ARG1,ARG2);
+   PRINT("sys_fstat64 ( %ld, %#lx )",ARG1,ARG2);
    PRE_REG_READ2(long, "fstat64", unsigned long, fd, struct stat64 *, buf);
    PRE_MEM_WRITE( "fstat64(buf)", ARG2, sizeof(struct vki_stat64) );
 }
@@ -1424,7 +1424,7 @@ PRE(sys_socketcall)
 #  define ARG2_5  (((UWord*)ARG2)[5])
 
    *flags |= SfMayBlock;
-   PRINT("sys_socketcall ( %d, %p )",ARG1,ARG2);
+   PRINT("sys_socketcall ( %ld, %#lx )",ARG1,ARG2);
    PRE_REG_READ2(long, "socketcall", int, call, unsigned long *, args);
 
    switch (ARG1 /* request */) {
@@ -1556,7 +1556,7 @@ PRE(sys_socketcall)
    }
 
    default:
-      VG_(message)(Vg_DebugMsg,"Warning: unhandled socketcall 0x%x",ARG1);
+      VG_(message)(Vg_DebugMsg,"Warning: unhandled socketcall 0x%lx",ARG1);
       SET_STATUS_Failure( VKI_EINVAL );
       break;
    }
@@ -1659,7 +1659,7 @@ POST(sys_socketcall)
      break;
 
    default:
-      VG_(message)(Vg_DebugMsg,"FATAL: unhandled socketcall 0x%x",ARG1);
+      VG_(message)(Vg_DebugMsg,"FATAL: unhandled socketcall 0x%lx",ARG1);
       VG_(core_panic)("... bye!\n");
       break; /*NOTREACHED*/
    }
@@ -1683,7 +1683,7 @@ PRE(sys_sigaction)
    struct vki_sigaction new, old;
    struct vki_sigaction *newp, *oldp;
 
-   PRINT("sys_sigaction ( %d, %p, %p )", ARG1,ARG2,ARG3);
+   PRINT("sys_sigaction ( %ld, %#lx, %#lx )", ARG1,ARG2,ARG3);
    PRE_REG_READ3(int, "sigaction",
                  int, signum, const struct old_sigaction *, act,
                  struct old_sigaction *, oldact);
@@ -1750,7 +1750,7 @@ PRE(sys_sigsuspend)
       that takes a pointer to the signal mask so supports more signals.
     */
    *flags |= SfMayBlock;
-   PRINT("sys_sigsuspend ( %d, %d, %d )", ARG1,ARG2,ARG3 );
+   PRINT("sys_sigsuspend ( %ld, %ld, %ld )", ARG1,ARG2,ARG3 );
    PRE_REG_READ3(int, "sigsuspend",
                  int, history0, int, history1,
                  vki_old_sigset_t, mask);
@@ -1758,7 +1758,7 @@ PRE(sys_sigsuspend)
 
 PRE(sys_vm86old)
 {
-   PRINT("sys_vm86old ( %p )", ARG1);
+   PRINT("sys_vm86old ( %#lx )", ARG1);
    PRE_REG_READ1(int, "vm86old", struct vm86_struct *, info);
    PRE_MEM_WRITE( "vm86old(info)", ARG1, sizeof(struct vki_vm86_struct));
 }
@@ -1770,7 +1770,7 @@ POST(sys_vm86old)
 
 PRE(sys_vm86)
 {
-   PRINT("sys_vm86 ( %d, %p )", ARG1,ARG2);
+   PRINT("sys_vm86 ( %ld, %#lx )", ARG1,ARG2);
    PRE_REG_READ2(int, "vm86", unsigned long, fn, struct vm86plus_struct *, v86);
    if (ARG1 == VKI_VM86_ENTER || ARG1 == VKI_VM86_ENTER_NO_BYPASS)
       PRE_MEM_WRITE( "vm86(v86)", ARG2, sizeof(struct vki_vm86plus_struct));

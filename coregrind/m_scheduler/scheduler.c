@@ -125,9 +125,9 @@ static UInt sanity_slow_count = 0;
 void VG_(print_scheduler_stats)(void)
 {
    VG_(message)(Vg_DebugMsg,
-      "scheduler: %,llu jumps (bb entries).", bbs_done );
+      "scheduler: %'llu jumps (bb entries).", bbs_done );
    VG_(message)(Vg_DebugMsg,
-      "scheduler: %,llu/%,llu major/minor sched events.", 
+      "scheduler: %'llu/%'llu major/minor sched events.",
       n_scheduling_events_MAJOR, n_scheduling_events_MINOR);
    VG_(message)(Vg_DebugMsg, 
                 "   sanity: %d cheap, %d expensive checks.",
@@ -1105,7 +1105,7 @@ VgSchedReturnCode VG_(scheduler) ( ThreadId tid )
 
       case VEX_TRC_JMP_NODECODE:
    VG_(message)(Vg_UserMsg,
-      "valgrind: Unrecognised instruction at address %p.", VG_(get_IP)(tid));
+      "valgrind: Unrecognised instruction at address %#lx.", VG_(get_IP)(tid));
 #define M(a) VG_(message)(Vg_UserMsg, a);
    M("Your program just tried to execute an instruction that Valgrind" );
    M("did not recognise.  There are two possible reasons for this."    );
@@ -1424,7 +1424,7 @@ void do_client_request ( ThreadId tid )
                if (c1 == 0) c1 = '_';
                if (c2 == 0) c2 = '_';
 	       VG_(message)(Vg_UserMsg, "Warning:\n"
-                   "  unhandled client request: 0x%x (%c%c+0x%x).  Perhaps\n" 
+                   "  unhandled client request: 0x%lx (%c%c+0x%lx).  Perhaps\n"
 		   "  VG_(needs).client_requests should be set?",
 			    arg[0], c1, c2, arg[0] & 0xffff);
 	       whined = True;
@@ -1543,7 +1543,7 @@ void VG_(sanity_check_general) ( Bool force_expensive )
             = VG_(am_get_VgStack_unused_szB)(stack);
 	 if (remains < VKI_PAGE_SIZE)
 	    VG_(message)(Vg_DebugMsg, 
-                         "WARNING: Thread %d is within %d bytes "
+                         "WARNING: Thread %d is within %ld bytes "
                          "of running out of stack!",
 		         tid, remains);
       }

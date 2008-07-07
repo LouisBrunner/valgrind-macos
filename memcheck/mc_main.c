@@ -3230,7 +3230,7 @@ void MC_(helperc_MAKE_STACK_UNINIT) ( Addr base, UWord len, Addr nia )
    UInt otag;
    tl_assert(sizeof(UWord) == sizeof(SizeT));
    if (0)
-      VG_(printf)("helperc_MAKE_STACK_UNINIT (%p,%lu,nia=%p)\n",
+      VG_(printf)("helperc_MAKE_STACK_UNINIT (%#lx,%lu,nia=%#lx)\n",
                   base, len, nia );
 
    if (UNLIKELY( MC_(clo_mc_level) == 3 )) {
@@ -3666,7 +3666,7 @@ void mc_new_mem_startup( Addr a, SizeT len, Bool rr, Bool ww, Bool xx )
    // false negative, but it's a grey area -- the behaviour is defined (the
    // padding is zeroed) but it's probably not what the user intended.  And
    // we can't avoid it.
-   DEBUG("mc_new_mem_startup(%p, %llu, rr=%u, ww=%u, xx=%u)\n",
+   DEBUG("mc_new_mem_startup(%#lx, %llu, rr=%u, ww=%u, xx=%u)\n",
          a, (ULong)len, rr, ww, xx);
    MC_(make_mem_defined)(a, len);
 }
@@ -5482,11 +5482,11 @@ static void mc_post_clo_init ( void )
 static void print_SM_info(char* type, int n_SMs)
 {
    VG_(message)(Vg_DebugMsg,
-      " memcheck: SMs: %s = %d (%dk, %dM)",
+      " memcheck: SMs: %s = %d (%ldk, %ldM)",
       type,
       n_SMs,
-      n_SMs * sizeof(SecMap) / 1024,
-      n_SMs * sizeof(SecMap) / (1024 * 1024) );
+      n_SMs * sizeof(SecMap) / 1024UL,
+      n_SMs * sizeof(SecMap) / (1024 * 1024UL) );
 }
 
 static void mc_fini ( Int exitcode )
@@ -5522,7 +5522,7 @@ static void mc_fini ( Int exitcode )
          " memcheck: sanity checks: %d cheap, %d expensive",
          n_sanity_cheap, n_sanity_expensive );
       VG_(message)(Vg_DebugMsg,
-         " memcheck: auxmaps: %d auxmap entries (%dk, %dM) in use",
+         " memcheck: auxmaps: %lld auxmap entries (%lldk, %lldM) in use",
          n_auxmap_L2_nodes, 
          n_auxmap_L2_nodes * 64, 
          n_auxmap_L2_nodes / 16 );
@@ -5554,7 +5554,7 @@ static void mc_fini ( Int exitcode )
       max_shmem_szB   = sizeof(primary_map) + max_SMs_szB + max_secVBit_szB;
 
       VG_(message)(Vg_DebugMsg,
-         " memcheck: max sec V bit nodes:    %d (%dk, %dM)",
+         " memcheck: max sec V bit nodes:    %d (%ldk, %ldM)",
          max_secVBit_nodes, max_secVBit_szB / 1024,
                             max_secVBit_szB / (1024 * 1024));
       VG_(message)(Vg_DebugMsg,
@@ -5562,39 +5562,39 @@ static void mc_fini ( Int exitcode )
          sec_vbits_new_nodes + sec_vbits_updates,
          sec_vbits_new_nodes, sec_vbits_updates );
       VG_(message)(Vg_DebugMsg,
-         " memcheck: max shadow mem size:   %dk, %dM",
+         " memcheck: max shadow mem size:   %ldk, %ldM",
          max_shmem_szB / 1024, max_shmem_szB / (1024 * 1024));
 
       if (MC_(clo_mc_level) >= 3) {
          VG_(message)(Vg_DebugMsg,
-                      " ocacheL1: %,12lu refs   %,12lu misses (%,lu lossage)", 
+                      " ocacheL1: %'12lu refs   %'12lu misses (%'lu lossage)",
                       stats_ocacheL1_find, 
                       stats_ocacheL1_misses,
                       stats_ocacheL1_lossage );
          VG_(message)(Vg_DebugMsg,
-                      " ocacheL1: %,12lu at 0   %,12lu at 1", 
+                      " ocacheL1: %'12lu at 0   %'12lu at 1",
                       stats_ocacheL1_find - stats_ocacheL1_misses 
                          - stats_ocacheL1_found_at_1 
                          - stats_ocacheL1_found_at_N,
                       stats_ocacheL1_found_at_1 );
          VG_(message)(Vg_DebugMsg,
-                      " ocacheL1: %,12lu at 2+  %,12lu move-fwds", 
+                      " ocacheL1: %'12lu at 2+  %'12lu move-fwds",
                       stats_ocacheL1_found_at_N,
                       stats_ocacheL1_movefwds );
          VG_(message)(Vg_DebugMsg,
-                      " ocacheL1: %,12lu sizeB  %,12lu useful",
+                      " ocacheL1: %'12lu sizeB  %'12u useful",
                       (UWord)sizeof(OCache),
                       4 * OC_W32S_PER_LINE * OC_LINES_PER_SET * OC_N_SETS );
          VG_(message)(Vg_DebugMsg,
-                      " ocacheL2: %,12lu refs   %,12lu misses", 
+                      " ocacheL2: %'12lu refs   %'12lu misses",
                       stats__ocacheL2_refs, 
                       stats__ocacheL2_misses );
          VG_(message)(Vg_DebugMsg,
-                      " ocacheL2:    %,9lu max nodes %,9lu curr nodes",
+                      " ocacheL2:    %'9lu max nodes %'9lu curr nodes",
                       stats__ocacheL2_n_nodes_max,
                       stats__ocacheL2_n_nodes );
          VG_(message)(Vg_DebugMsg,
-                      " niacache: %,12lu refs   %,12lu misses",
+                      " niacache: %'12lu refs   %'12lu misses",
                       stats__nia_cache_queries, stats__nia_cache_misses);
       } else {
          tl_assert(ocacheL1 == NULL);

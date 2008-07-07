@@ -477,7 +477,7 @@ Bool get_debug_pos(BBCC* bbcc, Addr addr, AddrPos* p)
     p->addr = addr - bbcc->bb->obj->offset;
     p->bb_addr = bbcc->bb->offset;
 
-    CLG_DEBUG(3, "  get_debug_pos(%p): BB %p, fn '%s', file '%s', line %u\n",
+    CLG_DEBUG(3, "  get_debug_pos(%#lx): BB %#lx, fn '%s', file '%s', line %u\n",
 	     addr, bb_addr(bbcc->bb), bbcc->cxt->fn[0]->name,
 	     p->file->name, p->line);
 
@@ -519,7 +519,7 @@ static void init_fcost(AddrCost* c, Addr addr, Addr bbaddr, file_node* file)
 static void fprint_apos(Int fd, AddrPos* curr, AddrPos* last, file_node* func_file)
 {
     CLG_ASSERT(curr->file != 0);
-    CLG_DEBUG(2, "    print_apos(file '%s', line %d, bb %p, addr %p) fnFile '%s'\n",
+    CLG_DEBUG(2, "    print_apos(file '%s', line %d, bb %#lx, addr %#lx) fnFile '%s'\n",
 	     curr->file->name, curr->line, curr->bb_addr, curr->addr,
 	     func_file->name);
 
@@ -569,7 +569,7 @@ void fprint_pos(Int fd, AddrPos* curr, AddrPos* last)
 		    p = VG_(sprintf)(outbuf, "%d ", diff);
 	    }
 	    else
-		p = VG_(sprintf)(outbuf, "%p ", curr->addr);
+		p = VG_(sprintf)(outbuf, "%#lx ", curr->addr);
 	}
 
 	if (CLG_(clo).dump_bb) {
@@ -584,7 +584,7 @@ void fprint_pos(Int fd, AddrPos* curr, AddrPos* last)
 		    p += VG_(sprintf)(outbuf+p, "%d ", diff);
 	    }
 	    else
-		p += VG_(sprintf)(outbuf+p, "%p ", curr->bb_addr);
+		p += VG_(sprintf)(outbuf+p, "%#lx ", curr->bb_addr);
 	}
 
 	if (CLG_(clo).dump_line) {
@@ -630,7 +630,7 @@ void fprint_cost(int fd, EventMapping* es, ULong* cost)
 static void fprint_fcost(Int fd, AddrCost* c, AddrPos* last)
 {
   CLG_DEBUGIF(3) {
-    CLG_DEBUG(2, "   print_fcost(file '%s', line %d, bb %p, addr %p):\n",
+    CLG_DEBUG(2, "   print_fcost(file '%s', line %d, bb %#lx, addr %#lx):\n",
 	     c->p.file->name, c->p.line, c->p.bb_addr, c->p.addr);
     CLG_(print_cost)(-5, CLG_(sets).full, c->cost);
   }
@@ -1018,7 +1018,7 @@ static void qsort(BBCC **a, int n, int (*cmp)(BBCC**,BBCC**))
 	int s, r;
 	BBCC* v;
 
-	CLG_DEBUG(8, "  qsort(%d,%d)\n", a-qsort_start, n);
+	CLG_DEBUG(8, "  qsort(%ld,%ld)\n", a-qsort_start + 0L, n + 0L);
 
 	if (n < 7) {	 /* Insertion sort on smallest arrays */
 		for (pm = a+1; pm < a+n; pm++)
@@ -1027,7 +1027,8 @@ static void qsort(BBCC **a, int n, int (*cmp)(BBCC**,BBCC**))
 
 		CLG_DEBUGIF(8) {
 		    for (pm = a; pm < a+n; pm++) {
-			VG_(printf)("   %3d BB %p, ", pm - qsort_start,
+			VG_(printf)("   %3ld BB %#lx, ",
+                                    pm - qsort_start + 0L,
 				    bb_addr((*pm)->bb));      
 			CLG_(print_cxt)(9, (*pm)->cxt, (*pm)->rec_index);
 		    }
@@ -1081,25 +1082,30 @@ static void qsort(BBCC **a, int n, int (*cmp)(BBCC**,BBCC**))
 	if ((s = a+n-1-pd)>0) { for(r=0;r<s;r++) swap(pc+r, a+n-s+r); }	    
 
 	CLG_DEBUGIF(8) {
-	  VG_(printf)("   PV BB %p, ", bb_addr((*pv)->bb));
+	  VG_(printf)("   PV BB %#lx, ", bb_addr((*pv)->bb));
 	    CLG_(print_cxt)(9, (*pv)->cxt, (*pv)->rec_index);
 
 	    s = pb-pa+1;
-	    VG_(printf)("    Lower %d - %d:\n", a-qsort_start, a+s-1-qsort_start);
+	    VG_(printf)("    Lower %ld - %ld:\n",
+                        a-qsort_start + 0L,
+                        a+s-1-qsort_start + 0L);
 	    for (r=0;r<s;r++) {
 		pm = a+r;
-		VG_(printf)("     %3d BB %p, ", 
-			    pm-qsort_start,bb_addr((*pm)->bb));
+		VG_(printf)("     %3ld BB %#lx, ",
+			    pm-qsort_start + 0L,
+                            bb_addr((*pm)->bb));
 		CLG_(print_cxt)(9, (*pm)->cxt, (*pm)->rec_index);
 	    }
 
 	    s = pd-pc+1;
-	    VG_(printf)("    Upper %d - %d:\n", 
-			a+n-s-qsort_start, a+n-1-qsort_start);
+	    VG_(printf)("    Upper %ld - %ld:\n",
+			a+n-s-qsort_start + 0L,
+                        a+n-1-qsort_start + 0L);
 	    for (r=0;r<s;r++) {
 		pm = a+n-s+r;
-		VG_(printf)("     %3d BB %p, ", 
-			    pm-qsort_start,bb_addr((*pm)->bb));
+		VG_(printf)("     %3ld BB %#lx, ",
+			    pm-qsort_start + 0L,
+                            bb_addr((*pm)->bb));
 		CLG_(print_cxt)(9, (*pm)->cxt, (*pm)->rec_index);
 	    }
 	}
@@ -1549,7 +1555,7 @@ static void print_bbccs_of_thread(thread_info* ti)
 	/* FIXME: Specify Object of BB if different to object of fn */
 	int i, pos = 0;
 	ULong ecounter = (*p)->ecounter_sum;
-	pos = VG_(sprintf)(print_buf, "bb=%p ", (*p)->bb->offset);
+	pos = VG_(sprintf)(print_buf, "bb=%#lx ", (*p)->bb->offset);
 	for(i = 0; i<(*p)->bb->cjmp_count;i++) {
 	    pos += VG_(sprintf)(print_buf+pos, "%d %llu ", 
 				(*p)->bb->jmp[i].instr,

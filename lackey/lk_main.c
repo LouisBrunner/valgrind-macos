@@ -374,7 +374,7 @@ static void print_details ( void )
                 "   -------------------------------------------");
    for (typeIx = 0; typeIx < N_TYPES; typeIx++) {
       VG_(message)(Vg_UserMsg,
-                   "   %4s %,12llu %,12llu %,12llu", 
+                   "   %4s %'12llu %'12llu %'12llu",
                    nameOfTypeIndex( typeIx ),
                    detailCounts[OpLoad ][typeIx],
                    detailCounts[OpStore][typeIx],
@@ -866,32 +866,32 @@ static void lk_fini(Int exitcode)
       ULong taken_Jccs = (n_Jccs - n_Jccs_untaken) + n_IJccs_untaken;
 
       VG_(message)(Vg_UserMsg,
-         "Counted %,llu calls to %s()", n_func_calls, clo_fnname);
+         "Counted %'llu calls to %s()", n_func_calls, clo_fnname);
 
       VG_(message)(Vg_UserMsg, "");
       VG_(message)(Vg_UserMsg, "Jccs:");
-      VG_(message)(Vg_UserMsg, "  total:         %,llu", total_Jccs);
+      VG_(message)(Vg_UserMsg, "  total:         %'llu", total_Jccs);
       VG_(percentify)(taken_Jccs, (total_Jccs ? total_Jccs : 1),
          percentify_decs, percentify_size, percentify_buf);
-      VG_(message)(Vg_UserMsg, "  taken:         %,llu (%s)", 
+      VG_(message)(Vg_UserMsg, "  taken:         %'llu (%s)",
          taken_Jccs, percentify_buf);
       
       VG_(message)(Vg_UserMsg, "");
       VG_(message)(Vg_UserMsg, "Executed:");
-      VG_(message)(Vg_UserMsg, "  SBs entered:   %,llu", n_SBs_entered);
-      VG_(message)(Vg_UserMsg, "  SBs completed: %,llu", n_SBs_completed);
-      VG_(message)(Vg_UserMsg, "  guest instrs:  %,llu", n_guest_instrs);
-      VG_(message)(Vg_UserMsg, "  IRStmts:       %,llu", n_IRStmts);
+      VG_(message)(Vg_UserMsg, "  SBs entered:   %'llu", n_SBs_entered);
+      VG_(message)(Vg_UserMsg, "  SBs completed: %'llu", n_SBs_completed);
+      VG_(message)(Vg_UserMsg, "  guest instrs:  %'llu", n_guest_instrs);
+      VG_(message)(Vg_UserMsg, "  IRStmts:       %'llu", n_IRStmts);
       
       VG_(message)(Vg_UserMsg, "");
       VG_(message)(Vg_UserMsg, "Ratios:");
       tl_assert(n_SBs_entered); // Paranoia time.
-      VG_(message)(Vg_UserMsg, "  guest instrs : SB entered  = %3u : 10",
+      VG_(message)(Vg_UserMsg, "  guest instrs : SB entered  = %3llu : 10",
          10 * n_guest_instrs / n_SBs_entered);
-      VG_(message)(Vg_UserMsg, "       IRStmts : SB entered  = %3u : 10",
+      VG_(message)(Vg_UserMsg, "       IRStmts : SB entered  = %3llu : 10",
          10 * n_IRStmts / n_SBs_entered);
       tl_assert(n_guest_instrs); // Paranoia time.
-      VG_(message)(Vg_UserMsg, "       IRStmts : guest instr = %3u : 10",
+      VG_(message)(Vg_UserMsg, "       IRStmts : guest instr = %3llu : 10",
          10 * n_IRStmts / n_guest_instrs);
    }
 

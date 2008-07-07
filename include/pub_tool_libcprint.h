@@ -32,14 +32,13 @@
 #define __PUB_TOOL_LIBCPRINT_H
 
 
-/* Enable compile-time format string checking by gcc if the macro
-   CHECK_FORMAT_STRINGS has been defined before this file has been included.
+/* Enable compile-time format string checking by gcc.
    This feature is supported since at least gcc version 2.95.
    For more information about the format attribute, see also
    http://gcc.gnu.org/onlinedocs/gcc-4.3.0/gcc/Function-Attributes.html.
  */
 
-#if defined(__GNUC__) && defined(CHECK_FORMAT_STRINGS)
+#if defined(__GNUC__)
 #define PRINTF_CHECK(x, y) __attribute__((format(__printf__, x, y)))
 #else
 #define PRINTF_CHECK(x, y)
@@ -85,10 +84,22 @@ typedef
    }
    VgMsgKind;
 
-/* Send a single-part message.  Appends a newline. */
-extern UInt VG_(message)    ( VgMsgKind kind, const HChar* format, ... ) PRINTF_CHECK(2, 3);
+/* Send a single-part message.  Appends a newline. The format
+   specification may contain any ISO C format specifier or %t.
+   No attempt is made to let the compiler verify consistency of the
+   format string and the argument list. */
+extern UInt VG_(message_no_f_c)( VgMsgKind kind, const HChar* format, ... );
+/* Send a single-part message.  Appends a newline. The format
+   specification may contain any ISO C format specifier. The gcc compiler
+   will verify consistency of the format string and the argument list. */
+extern UInt VG_(message)( VgMsgKind kind, const HChar* format, ... )
+  PRINTF_CHECK(2, 3);
 
-extern UInt VG_(vmessage)   ( VgMsgKind kind, const HChar* format, va_list vargs ) PRINTF_CHECK(2, 0);
+extern UInt VG_(vmessage)( VgMsgKind kind, const HChar* format, va_list vargs )
+  PRINTF_CHECK(2, 0);
+
+
+
 #endif   // __PUB_TOOL_LIBCPRINT_H
 
 /*--------------------------------------------------------------------*/

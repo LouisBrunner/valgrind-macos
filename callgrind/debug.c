@@ -51,7 +51,7 @@ void CLG_(print_bb)(int s, BB* bb)
 	print_indent(s);
     }
 
-    VG_(printf)("BB %p (Obj '%s')", bb_addr(bb), bb->obj->name);
+    VG_(printf)("BB %#lx (Obj '%s')", bb_addr(bb), bb->obj->name);
 }
 
 static
@@ -136,7 +136,7 @@ void CLG_(print_bbcc)(int s, BBCC* bbcc, Bool jumpaddr)
 	      bb->jmp_offset, bb_jmpaddr(bb));
   else
 #endif
-    VG_(printf)("%s +%p=%p, ",
+    VG_(printf)("%s +%#lx=%#lx, ",
 		bb->obj->name + bb->obj->last_slash_pos,
 		bb->offset, bb_addr(bb));
   CLG_(print_cxt)(s+8, bbcc->cxt, bbcc->rec_index);
@@ -220,7 +220,7 @@ void CLG_(print_cost)(int s, EventSet* es, ULong* c)
 void CLG_(print_short_jcc)(jCC* jcc)
 {
     if (jcc)
-	VG_(printf)("%p => %p [%llu/%llu,%llu,%llu]",
+	VG_(printf)("%#lx => %#lx [%llu/%llu,%llu,%llu]",
 		    bb_jmpaddr(jcc->from->bb),
 		    bb_addr(jcc->to->bb),
 		    jcc->call_counter,
@@ -264,9 +264,9 @@ void CLG_(print_stackentry)(int s, int sp)
     }
 
     ce = CLG_(get_call_entry)(sp);
-    VG_(printf)("[%-2d] SP %p, RA %p", sp, ce->sp, ce->ret_addr);
+    VG_(printf)("[%-2d] SP %#lx, RA %#lx", sp, ce->sp, ce->ret_addr);
     if (ce->nonskipped)
-	VG_(printf)(" NonSkipped BB %p / %s",
+	VG_(printf)(" NonSkipped BB %#lx / %s",
 		    bb_addr(ce->nonskipped->bb),
 		    ce->nonskipped->cxt->fn[0]->name);
     VG_(printf)("\n");
@@ -381,9 +381,9 @@ void CLG_(print_addr)(Addr addr)
     CLG_(get_debug_info)(addr, fl_buf, fn_buf, &ln, &di);
 
     if (VG_(strcmp)(fn_buf,"???")==0)
-	VG_(printf)("%p", addr);
+	VG_(printf)("%#lx", addr);
     else
-	VG_(printf)("%p %s", addr, fn_buf);
+	VG_(printf)("%#lx %s", addr, fn_buf);
 
     if (di) {
       obj_name = VG_(seginfo_filename)(di);

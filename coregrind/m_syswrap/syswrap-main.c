@@ -951,7 +951,7 @@ void VG_(client_syscall) ( ThreadId tid )
          getSyscallStatusFromGuestState( &sci->status, &tst->arch.vex );
          vg_assert(sci->status.what == SsComplete);
 
-         PRINT("SYSCALL[%d,%d](%3d) ... [async] --> %s(0x%llx)\n",
+         PRINT("SYSCALL[%d,%d](%3ld) ... [async] --> %s(0x%llx)\n",
                VG_(getpid)(), tid, sysno, 
                sci->status.sres.isError ? "Failure" : "Success",
                sci->status.sres.isError ? (ULong)sci->status.sres.err
@@ -1155,7 +1155,7 @@ void ML_(fixup_guest_state_to_restart_syscall) ( ThreadArchState* arch )
       
       if (p[0] != 0xcd || p[1] != 0x80)
          VG_(message)(Vg_DebugMsg,
-                      "?! restarting over syscall at %p %02x %02x\n",
+                      "?! restarting over syscall at %#x %02x %02x\n",
                       arch->vex.guest_EIP, p[0], p[1]); 
 
       vg_assert(p[0] == 0xcd && p[1] == 0x80);
@@ -1174,7 +1174,7 @@ void ML_(fixup_guest_state_to_restart_syscall) ( ThreadArchState* arch )
       
       if (p[0] != 0x0F || p[1] != 0x05)
          VG_(message)(Vg_DebugMsg,
-                      "?! restarting over syscall at %p %02x %02x\n",
+                      "?! restarting over syscall at %#llx %02x %02x\n",
                       arch->vex.guest_RIP, p[0], p[1]); 
 
       vg_assert(p[0] == 0x0F && p[1] == 0x05);
@@ -1193,8 +1193,8 @@ void ML_(fixup_guest_state_to_restart_syscall) ( ThreadArchState* arch )
 
       if (p[0] != 0x44 || p[1] != 0x0 || p[2] != 0x0 || p[3] != 0x02)
          VG_(message)(Vg_DebugMsg,
-                      "?! restarting over syscall at %p %02x %02x %02x %02x\n",
-                      arch->vex.guest_CIA, p[0], p[1], p[2], p[3]);
+                      "?! restarting over syscall at %#llx %02x %02x %02x %02x\n",
+                      arch->vex.guest_CIA + 0ULL, p[0], p[1], p[2], p[3]);
 
       vg_assert(p[0] == 0x44 && p[1] == 0x0 && p[2] == 0x0 && p[3] == 0x2);
    }
@@ -1219,7 +1219,7 @@ void ML_(fixup_guest_state_to_restart_syscall) ( ThreadArchState* arch )
 
       if (p[0] != 0x44 || p[1] != 0x0 || p[2] != 0x0 || p[3] != 0x02)
          VG_(message)(Vg_DebugMsg,
-                      "?! restarting over syscall at %p %02x %02x %02x %02x\n",
+                      "?! restarting over syscall at %#lx %02x %02x %02x %02x\n",
                       arch->vex.guest_CIA, p[0], p[1], p[2], p[3]);
 
       vg_assert(p[0] == 0x44 && p[1] == 0x0 && p[2] == 0x0 && p[3] == 0x2);
@@ -1301,7 +1301,7 @@ VG_(fixup_guest_state_after_syscall_interrupted)( ThreadId tid,
       (real) IP at the time of the signal, and act accordingly. */
 
    if (ip < ML_(blksys_setup) || ip >= ML_(blksys_finished)) {
-      VG_(printf)("  not in syscall (%p - %p)\n", 
+      VG_(printf)("  not in syscall (%#lx - %#lx)\n",
                   ML_(blksys_setup), ML_(blksys_finished));
       /* Looks like we weren't in a syscall at all.  Hmm. */
       vg_assert(sci->status.what != SsIdle);

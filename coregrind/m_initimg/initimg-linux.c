@@ -568,7 +568,7 @@ Addr setup_client_stack( void*  init_sp,
 #    endif
 
      if (0)
-        VG_(printf)("%p 0x%x  %p 0x%x\n", 
+        VG_(printf)("%#lx 0x%lx  %#lx 0x%lx\n",
                     resvn_start, resvn_size, anon_start, anon_size);
 
      /* Create a shrinkable reservation followed by an anonymous
@@ -762,7 +762,7 @@ Addr setup_client_stack( void*  init_sp,
 
    /* client_SP is pointing at client's argc/argv */
 
-   if (0) VG_(printf)("startup SP = %p\n", client_SP);
+   if (0) VG_(printf)("startup SP = %#lx\n", client_SP);
    return client_SP;
 }
 

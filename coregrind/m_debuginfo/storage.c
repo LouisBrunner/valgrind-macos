@@ -89,7 +89,7 @@ void ML_(symerr) ( struct _DebugInfo* di, Bool serious, HChar* msg )
 /* Print a symbol. */
 void ML_(ppSym) ( Int idx, DiSym* sym )
 {
-  VG_(printf)( "%5d:  %8p .. %8p (%d)      %s\n",
+  VG_(printf)( "%5d:  %#8lx .. %#8lx (%d)      %s\n",
                idx,
                sym->addr, 
                sym->addr + sym->size - 1, sym->size,
@@ -122,7 +122,7 @@ void ML_(ppDiCfSI) ( XArray* /* of CfiExpr */ exprs, DiCfSI* si )
          }                                       \
       } while (0)
 
-   VG_(printf)("[%p .. %p]: ", si->base, 
+   VG_(printf)("[%#lx .. %#lx]: ", si->base,
                                si->base + (UWord)si->len - 1);
    switch (si->cfa_how) {
       case CFIC_SPREL: 
@@ -275,7 +275,7 @@ void ML_(addLineInfo) ( struct _DebugInfo* di,
    if (this == next) return;
 
    if (debug)
-      VG_(printf)( "  src %s %s line %d %p-%p\n",
+      VG_(printf)( "  src %s %s line %d %#lx-%#lx\n",
                    dirname ? dirname : (UChar*)"(unknown)",
                    filename, lineno, this, next );
 
@@ -290,7 +290,7 @@ void ML_(addLineInfo) ( struct _DebugInfo* di,
        if (VG_(clo_verbosity) > 2) {
            VG_(message)(Vg_DebugMsg, 
                         "warning: line info addresses out of order "
-                        "at entry %d: 0x%x 0x%x", entry, this, next);
+                        "at entry %d: 0x%lx 0x%lx", entry, this, next);
        }
        size = 1;
    }
@@ -312,7 +312,7 @@ void ML_(addLineInfo) ( struct _DebugInfo* di,
        if (0)
           VG_(message)(Vg_DebugMsg, 
                        "warning: ignoring line info entry falling "
-                       "outside current DebugInfo: %p %p %p %p",
+                       "outside current DebugInfo: %#lx %#lx %#lx %#lx",
                        di->text_avma, 
                        di->text_avma + di->text_size, 
                        this, next-1);
@@ -343,7 +343,7 @@ void ML_(addLineInfo) ( struct _DebugInfo* di,
    loc.dirname   = dirname;
 
    if (0) VG_(message)(Vg_DebugMsg, 
-		       "addLoc: addr %p, size %d, line %d, file %s",
+		       "addLoc: addr %#lx, size %d, line %d, file %s",
 		       this,size,lineno,filename);
 
    addLoc ( di, &loc );
@@ -383,7 +383,7 @@ void ML_(addDiCfSI) ( struct _DebugInfo* di, DiCfSI* cfsi )
          if (VG_(clo_verbosity) > 1) {
             VG_(message)(
                Vg_DebugMsg,
-               "warning: DiCfSI %p .. %p outside segment %p .. %p",
+               "warning: DiCfSI %#lx .. %#lx outside segment %#lx .. %#lx",
                cfsi->base, 
                cfsi->base + cfsi->len - 1,
                di->text_avma,
@@ -531,7 +531,7 @@ Word ML_(cmp_for_DiAddrRange_range) ( const void* keyV,
    const Addr* key = (const Addr*)keyV;
    const DiAddrRange* elem = (const DiAddrRange*)elemV;
    if (0)
-      VG_(printf)("cmp_for_DiAddrRange_range: %p vs %p\n",
+      VG_(printf)("cmp_for_DiAddrRange_range: %#lx vs %#lx\n",
                   *key, elem->aMin);
    if ((*key) < elem->aMin) return -1;
    if ((*key) > elem->aMax) return 1;
@@ -547,7 +547,7 @@ void show_scope ( OSet* /* of DiAddrRange */ scope, HChar* who )
    while (True) {
       range = VG_(OSetGen_Next)( scope );
       if (!range) break;
-      VG_(printf)("   %p .. %p: %lu vars\n", range->aMin, range->aMax,
+      VG_(printf)("   %#lx .. %#lx: %lu vars\n", range->aMin, range->aMax,
                   range->vars ? VG_(sizeXA)(range->vars) : 0);
    }
    VG_(printf)("}\n");
@@ -574,7 +574,7 @@ static void add_var_to_arange (
 
    vg_assert(aMin <= aMax);
 
-   if (0) VG_(printf)("add_var_to_arange: %p .. %p\n", aMin, aMax);
+   if (0) VG_(printf)("add_var_to_arange: %#lx .. %#lx\n", aMin, aMax);
    if (0) show_scope( scope, "add_var_to_arange(1)" );
 
    /* See if the lower end of the range (aMin) falls exactly on an
@@ -680,7 +680,7 @@ static void add_var_to_arange (
       if (!range) break;
       if (range->aMin > aMax) break;
       xxIters++;
-      if (0) VG_(printf)("have range %p %p\n", 
+      if (0) VG_(printf)("have range %#lx %#lx\n",
                          range->aMin, range->aMax);
 
       /* Sanity checks */
@@ -724,7 +724,7 @@ void ML_(addVar)( struct _DebugInfo* di,
    Bool       all;
 
    if (0) {
-      VG_(printf)("  ML_(addVar): level %d  %p-%p  %s :: ",
+      VG_(printf)("  ML_(addVar): level %d  %#lx-%#lx  %s :: ",
                   level, aMin, aMax, name );
       ML_(pp_Type_C_ishly)( type );
       VG_(printf)("\n  Var=");
@@ -767,8 +767,8 @@ void ML_(addVar)( struct _DebugInfo* di,
            || aMin >= di->rx_map_avma + di->rx_map_size)) {
       if (VG_(clo_verbosity) >= 0) {
          VG_(message)(Vg_DebugMsg, 
-            "warning: addVar: in range %p .. %p outside "
-            "segment %p .. %p (%s)",
+            "warning: addVar: in range %#lx .. %#lx outside "
+            "segment %#lx .. %#lx (%s)",
             aMin, aMax,
             di->text_avma, di->text_avma + di->text_size -1,
             name
@@ -1023,12 +1023,12 @@ static DiSym* prefersym ( struct _DebugInfo* di, DiSym* a, DiSym* b )
    vg_assert(0);
   out:
    if (preferA && !preferB) {
-      TRACE_SYMTAB("sym at %p: prefer '%s' to '%s'\n",
+      TRACE_SYMTAB("sym at %#lx: prefer '%s' to '%s'\n",
                    a->addr, a->name, b->name );
       return a;
    }
    if (preferB && !preferA) {
-      TRACE_SYMTAB("sym at %p: prefer '%s' to '%s'\n",
+      TRACE_SYMTAB("sym at %#lx: prefer '%s' to '%s'\n",
                    b->addr, b->name, a->name );
       return b;
    }
@@ -1273,7 +1273,7 @@ static void canonicaliseCFI ( struct _DebugInfo* di )
    }
 
    if (di->trace_cfi)
-      VG_(printf)("canonicaliseCfiSI: %d entries, %p .. %p\n", 
+      VG_(printf)("canonicaliseCfiSI: %d entries, %#lx .. %#lx\n",
                   di->cfsi_used,
 	          di->cfsi_minavma, di->cfsi_maxavma);
 

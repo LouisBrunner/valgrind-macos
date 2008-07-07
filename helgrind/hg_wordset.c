@@ -494,21 +494,21 @@ void HG_(ppWS) ( WordSetU* wsu, WordSet ws )
 void HG_(ppWSUstats) ( WordSetU* wsu, HChar* name )
 {
    VG_(printf)("   WordSet \"%s\":\n", name);
-   VG_(printf)("      addTo        %10u (%u uncached)\n",
+   VG_(printf)("      addTo        %10lu (%lu uncached)\n",
                wsu->n_add, wsu->n_add_uncached);
-   VG_(printf)("      delFrom      %10u (%u uncached)\n", 
+   VG_(printf)("      delFrom      %10lu (%lu uncached)\n",
                wsu->n_del, wsu->n_del_uncached);
-   VG_(printf)("      union        %10u\n", wsu->n_union);
-   VG_(printf)("      intersect    %10u (%u uncached) [nb. incl isSubsetOf]\n", 
+   VG_(printf)("      union        %10lu\n", wsu->n_union);
+   VG_(printf)("      intersect    %10lu (%lu uncached) [nb. incl isSubsetOf]\n",
                wsu->n_intersect, wsu->n_intersect_uncached);
-   VG_(printf)("      minus        %10u (%u uncached)\n",
+   VG_(printf)("      minus        %10lu (%lu uncached)\n",
                wsu->n_minus, wsu->n_minus_uncached);
-   VG_(printf)("      elem         %10u\n",   wsu->n_elem);
-   VG_(printf)("      doubleton    %10u\n",   wsu->n_doubleton);
-   VG_(printf)("      isEmpty      %10u\n",   wsu->n_isEmpty);
-   VG_(printf)("      isSingleton  %10u\n",   wsu->n_isSingleton);
-   VG_(printf)("      anyElementOf %10u\n",   wsu->n_anyElementOf);
-   VG_(printf)("      isSubsetOf   %10u\n",   wsu->n_isSubsetOf);
+   VG_(printf)("      elem         %10lu\n",   wsu->n_elem);
+   VG_(printf)("      doubleton    %10lu\n",   wsu->n_doubleton);
+   VG_(printf)("      isEmpty      %10lu\n",   wsu->n_isEmpty);
+   VG_(printf)("      isSingleton  %10lu\n",   wsu->n_isSingleton);
+   VG_(printf)("      anyElementOf %10lu\n",   wsu->n_anyElementOf);
+   VG_(printf)("      isSubsetOf   %10lu\n",   wsu->n_isSubsetOf);
 }
 
 WordSet HG_(addToWS) ( WordSetU* wsu, WordSet ws, UWord w )

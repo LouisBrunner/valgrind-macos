@@ -90,6 +90,8 @@ EXTRA_DIST =                                        \
 	pth_detached_sem.vgtest                     \
 	pth_inconsistent_cond_wait.stderr.exp       \
 	pth_inconsistent_cond_wait.vgtest           \
+	pth_spinlock.stderr.exp                     \
+	pth_spinlock.vgtest                         \
 	recursive_mutex.stderr.exp	            \
 	recursive_mutex.stdout.exp	            \
 	recursive_mutex.vgtest                      \
@@ -196,6 +198,7 @@ check_PROGRAMS_COMMON = \
   pth_detached        \
   pth_detached_sem    \
   pth_inconsistent_cond_wait \
+  pth_spinlock        \
   recursive_mutex     \
   rwlock_race         \
   rwlock_test         \
@@ -299,6 +302,9 @@ pth_detached_sem_LDADD      = -lpthread
 
 pth_inconsistent_cond_wait_SOURCES = pth_inconsistent_cond_wait.c
 pth_inconsistent_cond_wait_LDADD   = -lpthread
+
+pth_spinlock_SOURCES        = pth_spinlock.c
+pth_spinlock_LDADD          = -lpthread
 
 recursive_mutex_SOURCES     = recursive_mutex.c
 recursive_mutex_LDADD       = -lpthread

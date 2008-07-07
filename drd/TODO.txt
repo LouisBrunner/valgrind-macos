@@ -15,6 +15,7 @@ Data-race detection algorithm
 - Find out why no variable name information is printed for races
   detected in parallel sections of OpenMP programs. An example:
   ./vg-in-place --tool=exp-drd exp-drd/tests/omp_prime 4 -t 2
+- Report races in glibc on stdout / stderr back to glibc maintainers.
 
 
 Testing
@@ -27,6 +28,8 @@ Testing
 
 Documentation
 ~~~~~~~~~~~~~
+- Add comment on double checked locking.
+- Add comment on circular buffers.
 - Explain how to handle transactions (with regard to locking order).
 - Continue the discussion on the Valgrind mailing list about docbook and
   'make dist'. See also http://bugs.kde.org/show_bug.cgi?id=162121.

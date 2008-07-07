@@ -410,6 +410,9 @@ void barrier_thread_delete(const DrdThreadId tid)
     struct barrier_thread_info* q;
     const UWord word_tid = tid;
     q = VG_(OSetGen_Remove)(p->oset, &word_tid);
+    /* q is only non-zero if the barrier object has been used by thread tid
+     * after the barrier_init() call and before the thread finished.
+     */
     if (q)
     {
       barrier_thread_destroy(q);

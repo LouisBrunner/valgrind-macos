@@ -1233,6 +1233,13 @@ AC_CHECK_HEADERS([       \
         sys/types.h      \
         ])
 
+AC_LANG(C++)
+AC_CHECK_HEADERS([         \
+        QtCore/QMutex      \
+        QtCore/QSemaphore  \
+        QtCore/QThread     \
+        ])
+AC_LANG(C)
 
 # Checks for typedefs, structures, and compiler characteristics.
 AC_TYPE_UID_T
@@ -1247,6 +1254,12 @@ AC_FUNC_MMAP
 AC_TYPE_SIGNAL
 
 AC_CHECK_LIB([rt], [clock_gettime])
+AC_CHECK_LIB([QtCore], [_ZN6QMutex4lockEv]) # QMutex::lock()
+
+# AC_CHECK_LIB adds any library found to the variable LIBS, and links these
+# libraries with any shared object and/or executable. This is NOT what we
+# want for e.g. vgpreload_core-x86-linux.so
+LIBS=""
 
 AC_CHECK_FUNCS([     \
         clock_gettime\
@@ -1368,6 +1381,24 @@ AC_MSG_RESULT([no])
 CC=$saved_CC
 CFLAGS=$saved_CFLAGS
 AM_CONDITIONAL(BUILD_MPIWRAP_SEC, test x$ac_have_mpi2_sec = xyes)
+
+
+# does this compiler have the include file <Qt/qmutex.h> and does it have
+# libQtCore.so ?
+
+AC_MSG_CHECKING([for Qt4 core library])
+
+if grep -q -w '^#define HAVE_LIBQTCORE 1$' config.h \
+   && grep -q -w '^#define HAVE_QTCORE_QMUTEX 1$' config.h
+then
+  ac_have_qtcore=yes
+  AC_MSG_RESULT([yes])
+else
+  ac_have_qtcore=no
+  AC_MSG_RESULT([no])
+fi
+
+AM_CONDITIONAL([HAVE_QTCORE], [test x$ac_have_qtcore = xyes])
 
 
 # -------------------- ok.  We're done. --------------------

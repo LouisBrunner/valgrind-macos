@@ -1,2 +1,3 @@
+prereq: test -e qt4_mutex
 vgopts: --check-stack-var=yes
 prog: qt4_mutex

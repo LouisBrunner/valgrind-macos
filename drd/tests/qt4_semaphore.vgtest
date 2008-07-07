@@ -1,2 +1,3 @@
+prereq: test -e qt4_semaphore
 vgopts: --check-stack-var=yes
 prog: qt4_semaphore

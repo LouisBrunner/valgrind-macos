@@ -41,7 +41,7 @@ mutex 0x........ was first observed at:
    at 0x........: pthread_mutex_trylock (drd_pthread_intercepts.c:?)
    by 0x........: main (tc20_verifywrap.c:116)
 [1/1] post_mutex_lock invalid mutex 0x........ rc 0 owner 0 (locking failed)
-[1/1] pre_mutex_lock  invalid mutex 0x........ rc 0 owner 0
+[1/1] mutex_trylock   invalid mutex 0x........ rc 0 owner 0
 
 The object at address 0x........ is not a mutex.
    at 0x........: pthread_mutex_timedlock (drd_pthread_intercepts.c:?)
@@ -160,57 +160,57 @@ FIXME: can't figure out how to verify wrap of sem_post
 
 Destroying locked rwlock: rwlock 0x.........
    at 0x........: main (tc20_verifywrap.c:262)
-[1/1] mutex_destroy   error checking mutex 0x........
+[1/1] mutex_destroy   error checking mutex 0x........ rc 1 owner 1
 
 Destroying locked mutex: mutex 0x........, recursion count 1, owner 1.
    at 0x........: main (tc20_verifywrap.c:262)
-[1/1] mutex_destroy   invalid mutex 0x........
-[1/1] pre_mutex_lock  recursive mutex 0x........ rc 0 owner 0
+[1/1] mutex_destroy   invalid mutex 0x........ rc 0 owner 0
+[1/1] mutex_trylock   recursive mutex 0x........ rc 0 owner 0
 [1/1] post_mutex_lock recursive mutex 0x........ rc 0 owner 0
 [1/1] mutex_unlock    recursive mutex 0x........ rc 1
-[1/1] pre_mutex_lock  recursive mutex 0x........ rc 0 owner 1
+[1/1] mutex_trylock   recursive mutex 0x........ rc 0 owner 1
 [1/1] post_mutex_lock recursive mutex 0x........ rc 0 owner 1
 [1/1] mutex_unlock    recursive mutex 0x........ rc 1
-[1/1] pre_mutex_lock  recursive mutex 0x........ rc 0 owner 1
+[1/1] mutex_trylock   recursive mutex 0x........ rc 0 owner 1
 [1/1] post_mutex_lock recursive mutex 0x........ rc 0 owner 1
 [1/1] mutex_unlock    recursive mutex 0x........ rc 1
-[1/1] pre_mutex_lock  recursive mutex 0x........ rc 0 owner 1
+[1/1] mutex_trylock   recursive mutex 0x........ rc 0 owner 1
 [1/1] post_mutex_lock recursive mutex 0x........ rc 0 owner 1
 [1/1] mutex_unlock    recursive mutex 0x........ rc 1
-[1/1] pre_mutex_lock  recursive mutex 0x........ rc 0 owner 1
+[1/1] mutex_trylock   recursive mutex 0x........ rc 0 owner 1
 [1/1] post_mutex_lock recursive mutex 0x........ rc 0 owner 1
 [1/1] mutex_unlock    recursive mutex 0x........ rc 1
-[1/1] pre_mutex_lock  recursive mutex 0x........ rc 0 owner 1
+[1/1] mutex_trylock   recursive mutex 0x........ rc 0 owner 1
 [1/1] post_mutex_lock recursive mutex 0x........ rc 0 owner 1
 [1/1] mutex_unlock    recursive mutex 0x........ rc 1
-[1/1] pre_mutex_lock  recursive mutex 0x........ rc 0 owner 1
+[1/1] mutex_trylock   recursive mutex 0x........ rc 0 owner 1
 [1/1] post_mutex_lock recursive mutex 0x........ rc 0 owner 1
 [1/1] mutex_unlock    recursive mutex 0x........ rc 1
-[1/1] pre_mutex_lock  recursive mutex 0x........ rc 0 owner 1
+[1/1] mutex_trylock   recursive mutex 0x........ rc 0 owner 1
 [1/1] post_mutex_lock recursive mutex 0x........ rc 0 owner 1
 [1/1] mutex_unlock    recursive mutex 0x........ rc 1
-[1/1] pre_mutex_lock  recursive mutex 0x........ rc 0 owner 1
+[1/1] mutex_trylock   recursive mutex 0x........ rc 0 owner 1
 [1/1] post_mutex_lock recursive mutex 0x........ rc 0 owner 1
 [1/1] mutex_unlock    recursive mutex 0x........ rc 1
-[1/1] pre_mutex_lock  recursive mutex 0x........ rc 0 owner 1
+[1/1] mutex_trylock   recursive mutex 0x........ rc 0 owner 1
 [1/1] post_mutex_lock recursive mutex 0x........ rc 0 owner 1
 [1/1] mutex_unlock    recursive mutex 0x........ rc 1
-[1/1] pre_mutex_lock  recursive mutex 0x........ rc 0 owner 1
+[1/1] mutex_trylock   recursive mutex 0x........ rc 0 owner 1
 [1/1] post_mutex_lock recursive mutex 0x........ rc 0 owner 1
 [1/1] mutex_unlock    recursive mutex 0x........ rc 1
-[1/1] pre_mutex_lock  recursive mutex 0x........ rc 0 owner 1
+[1/1] mutex_trylock   recursive mutex 0x........ rc 0 owner 1
 [1/1] post_mutex_lock recursive mutex 0x........ rc 0 owner 1
 [1/1] mutex_unlock    recursive mutex 0x........ rc 1
-[1/1] pre_mutex_lock  recursive mutex 0x........ rc 0 owner 1
+[1/1] mutex_trylock   recursive mutex 0x........ rc 0 owner 1
 [1/1] post_mutex_lock recursive mutex 0x........ rc 0 owner 1
 [1/1] mutex_unlock    recursive mutex 0x........ rc 1
-[1/1] pre_mutex_lock  recursive mutex 0x........ rc 0 owner 1
+[1/1] mutex_trylock   recursive mutex 0x........ rc 0 owner 1
 [1/1] post_mutex_lock recursive mutex 0x........ rc 0 owner 1
 [1/1] mutex_unlock    recursive mutex 0x........ rc 1
-[1/1] pre_mutex_lock  recursive mutex 0x........ rc 0 owner 1
+[1/1] mutex_trylock   recursive mutex 0x........ rc 0 owner 1
 [1/1] post_mutex_lock recursive mutex 0x........ rc 0 owner 1
 [1/1] mutex_unlock    recursive mutex 0x........ rc 1
-[1/1] pre_mutex_lock  recursive mutex 0x........ rc 0 owner 1
+[1/1] mutex_trylock   recursive mutex 0x........ rc 0 owner 1
 [1/1] post_mutex_lock recursive mutex 0x........ rc 0 owner 1
 [1/1] mutex_unlock    recursive mutex 0x........ rc 1
 

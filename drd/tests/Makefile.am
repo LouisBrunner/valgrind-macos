@@ -92,6 +92,8 @@ EXTRA_DIST =                                        \
 	pth_inconsistent_cond_wait.vgtest           \
 	pth_spinlock.stderr.exp                     \
 	pth_spinlock.vgtest                         \
+	qt4_mutex.stderr.exp                        \
+	qt4_mutex.vgtest                            \
 	recursive_mutex.stderr.exp	            \
 	recursive_mutex.stdout.exp	            \
 	recursive_mutex.vgtest                      \
@@ -176,7 +178,7 @@ AM_CPPFLAGS = -I$(top_srcdir) -I$(top_srcdir)/include \
               -I$(top_builddir)/include -I$(top_srcdir)/VEX/pub
 AM_CXXFLAGS = $(AM_CFLAGS)
 
-check_PROGRAMS_COMMON = \
+check_PROGRAMS = \
   drd_bitmap_test     \
   fp_race             \
   hg01_all_ok         \
@@ -229,15 +231,13 @@ check_PROGRAMS_COMMON = \
   tc24_nonzero_sem    \
   trylock
 
-check_PROGRAMS_OPENMP = omp_matinv omp_prime
-
-if HAVE_OPENMP
-check_PROGRAMS = $(check_PROGRAMS_COMMON) $(check_PROGRAMS_OPENMP)
-else
-check_PROGRAMS = $(check_PROGRAMS_COMMON)
+if HAVE_QTCORE
+check_PROGRAMS += qt4_mutex
 endif
 
-#  tc14_laog_dinphils  -- hangs.
+if HAVE_OPENMP
+check_PROGRAMS += omp_matinv omp_prime
+endif
 
 
 drd_bitmap_test_SOURCES     = drd_bitmap_test.c
@@ -305,6 +305,11 @@ pth_inconsistent_cond_wait_LDADD   = -lpthread
 
 pth_spinlock_SOURCES        = pth_spinlock.c
 pth_spinlock_LDADD          = -lpthread
+
+if HAVE_QTCORE
+qt4_mutex_SOURCES           = qt4_mutex.cpp
+qt4_mutex_LDADD             = -lpthread -lQtCore
+endif
 
 recursive_mutex_SOURCES     = recursive_mutex.c
 recursive_mutex_LDADD       = -lpthread

@@ -550,9 +550,11 @@ PTH_FUNC(int, pthreadZuspinZuinit, // pthread_spin_init
   int res;
   OrigFn fn;
   VALGRIND_GET_ORIG_FN(fn);
-  VALGRIND_DO_CLIENT_REQUEST(res, -1, VG_USERREQ__SPIN_INIT_OR_UNLOCK,
-                             spinlock, mutex_type_spinlock, 0, 0, 0);
+  VALGRIND_DO_CLIENT_REQUEST(res, -1, VG_USERREQ__PRE_SPIN_INIT_OR_UNLOCK,
+                             spinlock, 0, 0, 0, 0);
   CALL_FN_W_WW(ret, fn, spinlock, pshared);
+  VALGRIND_DO_CLIENT_REQUEST(res, -1, VG_USERREQ__POST_SPIN_INIT_OR_UNLOCK,
+                             spinlock, 0, 0, 0, 0);
   return ret;
 }
 
@@ -564,6 +566,8 @@ PTH_FUNC(int, pthreadZuspinZudestroy, // pthread_spin_destroy
   int res;
   OrigFn fn;
   VALGRIND_GET_ORIG_FN(fn);
+  VALGRIND_DO_CLIENT_REQUEST(res, -1, VG_USERREQ__PRE_MUTEX_DESTROY,
+                             spinlock, 0, 0, 0, 0);
   CALL_FN_W_W(ret, fn, spinlock);
   VALGRIND_DO_CLIENT_REQUEST(res, -1, VG_USERREQ__POST_MUTEX_DESTROY,
                              spinlock, mutex_type_spinlock, 0, 0, 0);
@@ -610,9 +614,11 @@ PTH_FUNC(int, pthreadZuspinZuunlock, // pthread_spin_unlock
   int   res;
   OrigFn fn;
   VALGRIND_GET_ORIG_FN(fn);
-  VALGRIND_DO_CLIENT_REQUEST(res, -1, VG_USERREQ__SPIN_INIT_OR_UNLOCK,
+  VALGRIND_DO_CLIENT_REQUEST(res, -1, VG_USERREQ__PRE_SPIN_INIT_OR_UNLOCK,
                              spinlock, mutex_type_spinlock, 0, 0, 0);
   CALL_FN_W_W(ret, fn, spinlock);
+  VALGRIND_DO_CLIENT_REQUEST(res, -1, VG_USERREQ__POST_SPIN_INIT_OR_UNLOCK,
+                             spinlock, 0, 0, 0, 0);
   return ret;
 }
 

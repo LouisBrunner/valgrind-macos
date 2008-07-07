@@ -247,9 +247,13 @@ static Bool drd_handle_client_request(ThreadId vg_tid, UWord* arg, UWord* ret)
     thread_leave_synchr(drd_tid);
     break;
 
-  case VG_USERREQ__SPIN_INIT_OR_UNLOCK:
-    tl_assert(thread_get_synchr_nesting_count(drd_tid) == 0);
-    drd_spin_init_or_unlock(arg[1]);
+  case VG_USERREQ__PRE_SPIN_INIT_OR_UNLOCK:
+    if (thread_enter_synchr(drd_tid) == 0)
+      drd_spin_init_or_unlock(arg[1]);
+    break;
+
+  case VG_USERREQ__POST_SPIN_INIT_OR_UNLOCK:
+    thread_leave_synchr(drd_tid);
     break;
 
   case VG_USERREQ__PRE_COND_INIT:

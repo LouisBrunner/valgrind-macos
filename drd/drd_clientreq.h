@@ -83,8 +83,12 @@ enum {
   /* to notify the drd tool of pthread_mutex_unlock calls */
   VG_USERREQ__POST_MUTEX_UNLOCK,
   /* args: Addr */
-  VG_USERREQ__SPIN_INIT_OR_UNLOCK,
-  /* args: Addr spinlock */
+  /* to notify the drd tool of a pthread_spin_init/pthread_spin_unlock call */
+  VG_USERREQ__PRE_SPIN_INIT_OR_UNLOCK,
+  /* args: Addr */
+  /* to notify the drd tool of a pthread_spin_init/pthread_spin_unlock call */
+  VG_USERREQ__POST_SPIN_INIT_OR_UNLOCK,
+  /* args: Addr */
 
 
   /* to notify the drd tool of a pthread_cond_init call. */

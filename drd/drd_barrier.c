@@ -84,6 +84,7 @@ static void barrier_thread_initialize(struct barrier_thread_info* const p,
 /** Deallocate the memory that was allocated in barrier_thread_initialize(). */
 static void barrier_thread_destroy(struct barrier_thread_info* const p)
 {
+  tl_assert(p);
   sg_put(p->sg[0]);
   sg_put(p->sg[1]);
 }
@@ -409,8 +410,11 @@ void barrier_thread_delete(const DrdThreadId tid)
     struct barrier_thread_info* q;
     const UWord word_tid = tid;
     q = VG_(OSetGen_Remove)(p->oset, &word_tid);
-    barrier_thread_destroy(q);
-    VG_(OSetGen_FreeNode)(p->oset, q);
+    if (q)
+    {
+      barrier_thread_destroy(q);
+      VG_(OSetGen_FreeNode)(p->oset, q);
+    }
   }
 }
 

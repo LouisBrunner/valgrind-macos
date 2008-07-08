@@ -331,3 +331,41 @@
    fun:pthread_cond_destroy*
    fun:xcb_wait_for_reply
 }
+{
+   libglib-access-g_threads_got_initialized
+   drd:ConflictingAccess
+   fun:g_slice_alloc
+   fun:g_ptr_array_sized_new
+   fun:g_main_context_new
+}
+{
+   libglib-access-g_threads_got_initialized
+   drd:ConflictingAccess
+   fun:_ZN27QEventDispatcherGlibPrivateC1EP13_GMainContext
+   fun:_ZN20QEventDispatcherGlibC1EP7QObject
+   obj:/usr/lib*/libQtCore.so.4.*
+   obj:/usr/lib*/libQtCore.so.4.*
+}
+{
+   libglib-access-g_mem_initialized
+   drd:ConflictingAccess
+   fun:g_malloc0
+}
+{
+   libglib-g_private_get_posix_impl
+   drd:ConflictingAccess
+   fun:g_private_get_posix_impl
+}
+{
+   libglib-g_private_set_posix_impl
+   drd:ConflictingAccess
+   fun:g_private_set_posix_impl
+}
+{
+   libQtCore-QObjectPrivate::clearGuards(QObject*)
+   drd:ConflictingAccess
+   fun:_ZN14QReadWriteLock12lockForWriteEv
+   fun:_ZN14QObjectPrivate11clearGuardsEP7QObject
+   fun:_ZN7QObjectD2Ev
+   fun:_ZN20QEventDispatcherGlibD0Ev
+}

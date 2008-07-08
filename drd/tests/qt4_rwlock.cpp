@@ -49,14 +49,10 @@ int main(int argc, char** argv)
 
   {
     // Stack-allocated reader-writer lock.
-    QReadWriteLock RWL(QReadWriteLock::Recursive);
+    QReadWriteLock RWL;
     RWL.lockForRead();
-    RWL.lockForRead();
-    RWL.unlock();
     RWL.unlock();
     RWL.lockForWrite();
-    RWL.lockForWrite();
-    RWL.unlock();
     RWL.unlock();
   }
 

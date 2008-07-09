@@ -134,7 +134,21 @@ void drd_report_data_race2(Error* const err, const DataRaceErrInfo* const dri)
   }
   else
   {
-    VG_(message)(Vg_UserMsg, "Allocation context: unknown.");
+    char sect_name[64];
+    VgSectKind sect_kind;
+
+    sect_kind = VG_(seginfo_sect_kind)(sect_name, sizeof(sect_name), dri->addr);
+    if (sect_kind != Vg_SectUnknown)
+    {
+      VG_(message)(Vg_UserMsg,
+                   "Allocation context: %s section of %s",
+                   VG_(pp_SectKind)(sect_kind),
+                   sect_name);
+    }
+    else
+    {
+      VG_(message)(Vg_UserMsg, "Allocation context: unknown.");
+    }
   }
   if (s_drd_show_conflicting_segments)
   {

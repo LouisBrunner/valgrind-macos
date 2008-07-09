@@ -1324,7 +1324,7 @@ const SyscallTableEntry ML_(syscall_table)[] = {
    GENX_(__NR_munlock,           sys_munlock),            // 151
    GENX_(__NR_mlockall,          sys_mlockall),           // 152
    LINX_(__NR_munlockall,        sys_munlockall),         // 153
-// _____(__NR_sched_setparam,    sys_sched_setparam),     // 154
+   LINXY(__NR_sched_setparam,    sys_sched_setparam),     // 154
 
    LINXY(__NR_sched_getparam,         sys_sched_getparam),        // 155
    LINX_(__NR_sched_setscheduler,     sys_sched_setscheduler),    // 156

@@ -24,6 +24,27 @@
    obj:/lib*/ld-*.so
 }
 {
+   dl-dlsym-1
+   drd:ConflictingAccess
+   obj:/lib/ld-*.so
+   obj:/lib/tls/*/cmov/libc-*.so
+   fun:_dl_sym
+}
+{
+   dl-dlsym-2
+   drd:ConflictingAccess
+   obj:/lib/ld-*.so
+   obj:/lib/tls/*/cmov/libc-*.so
+   obj:/lib/ld-*.so
+   fun:__libc_dlsym
+}
+{
+   dl-backtrace_symbols
+   drd:ConflictingAccess
+   fun:_dl_addr
+   fun:backtrace_symbols
+}
+{
    libc
    drd:ConflictingAccess
    fun:__libc_enable_asynccancel

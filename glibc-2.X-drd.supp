@@ -34,7 +34,25 @@
    dl-dlsym-2
    drd:ConflictingAccess
    obj:/lib/ld-*.so
+   obj:/lib/libc-*.so
+   obj:/lib/libdl-*.so
+   obj:/lib/ld-*.so
+   obj:/lib/libdl-*.so
+   fun:dlsym
+}
+{
+   dl-dlsym-3
+   drd:ConflictingAccess
+   obj:/lib/ld-*.so
    obj:/lib/tls/*/cmov/libc-*.so
+   obj:/lib/ld-*.so
+   fun:__libc_dlsym
+}
+{
+   dl-dlsym-4
+   drd:ConflictingAccess
+   obj:/lib/ld-*.so
+   obj:/lib/libc-*.so
    obj:/lib/ld-*.so
    fun:__libc_dlsym
 }

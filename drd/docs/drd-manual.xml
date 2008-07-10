@@ -998,6 +998,16 @@ GNOME applications use the threading primitives provided by the
 on top of POSIX threads, and is hence directly supported by DRD.
 </para>
 
+<para>
+One of the many facilities provided by the <literal>glib</literal>
+library is a block allocator, called <literal>g_slice</literal>. You
+have to disable this block allocator when using DRD by adding the
+following to the shell environment variables:
+<literal>G_SLICE=always-malloc</literal>. See also the <ulink
+url="http://library.gnome.org/devel/glib/stable/glib-Memory-Slices.html">GLib
+Reference Manual</ulink> for more information.
+</para>
+
 </sect2>
 
 

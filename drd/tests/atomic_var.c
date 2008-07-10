@@ -34,7 +34,7 @@ static int s_y = 0;
 static void* thread_func_1(void* arg)
 {
   s_y = 1;
-  __sync_add_and_fetch(&s_x, 1);
+  (void) __sync_add_and_fetch(&s_x, 1);
   return 0;
 }
 

@@ -3,6 +3,11 @@
 ## Generate input for water-n2 and water-sp. Argument $1 is the number of
 #  processors.
 
+#  File format:
+#  TSTEP NMOL NSTEP NORDER
+#  NSAVE NRST NPRINT NFMC
+#  NumProcs CUTOFF
+
 cat <<EOF
   1.5e-16   512  3   6
 -1      3000     3  0

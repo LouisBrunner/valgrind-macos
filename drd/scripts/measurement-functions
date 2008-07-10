@@ -40,7 +40,7 @@ function get_cache_size {
 ## Read a stream of numbers from stdin (one per line), and print the average
 #  and standard deviation.
 function avgstddev {
-  awk '{n++;m=NF;for(i=1;i<=NF;i++){sum[i]+=$i;sumsq[i]+=$i*$i}}END{for(i=1;i<=m;i++){d=sumsq[i]/n-sum[i]*sum[i]/n/n;printf "%.2f %.2f ",sum[i]/n,(d>0?sqrt(d):0)}}'
+  awk '{n++;m=NF;for(i=1;i<=NF;i++){sum[i]+=$i;sumsq[i]+=$i*$i}}END{for(i=1;i<=m;i++){d=sumsq[i]/n-sum[i]*sum[i]/n/n;printf "%.2f %.2f ",sum[i]/n,(d>0?sqrt(d):0.01)}}'
 }
 
 ## Query the virtual memory size for the last invocation of command $1 from
@@ -99,11 +99,14 @@ function measure_runtime {
   local i
 
   echo "$@" >&2
+  if [ "${test_output}" != "" ]; then
+    echo "$@" >"${test_output}"
+  fi
   for ((i=0;i<3;i++))
   do
     echo -n "$("${test_input:-true}" $p | \
       /usr/bin/time --format="%e" "$@" 2>&1 | \
-      tee "${test_output:-/dev/null}" | \
+      tee -a "${test_output:-/dev/null}" | \
       tail -n 1) "
     query_vsz "$@"
   done

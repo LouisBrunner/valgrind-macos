@@ -1,0 +1,3 @@
+prereq: ./supported_libpthread
+vgopts: --var-info=yes --check-stack-var=yes --show-confl-seg=no
+prog: atomic_var

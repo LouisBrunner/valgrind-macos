@@ -17,6 +17,8 @@ noinst_SCRIPTS =		\
 
 EXTRA_DIST =                                        \
 	$(noinst_SCRIPTS)                           \
+	atomic_var.stderr.exp			    \
+	atomic_var.vgtest			    \
 	drd_bitmap_test.stderr.exp                  \
 	drd_bitmap_test.stdout.exp                  \
 	drd_bitmap_test.vgtest                      \
@@ -182,7 +184,8 @@ AM_CPPFLAGS = -I$(top_srcdir) -I$(top_srcdir)/include \
               -I$(top_builddir)/include -I$(top_srcdir)/VEX/pub
 AM_CXXFLAGS = $(AM_CFLAGS)
 
-check_PROGRAMS = \
+check_PROGRAMS =      \
+  atomic_var          \
   drd_bitmap_test     \
   fp_race             \
   hg01_all_ok         \
@@ -243,6 +246,9 @@ if HAVE_OPENMP
 check_PROGRAMS += omp_matinv omp_prime
 endif
 
+
+atomic_var_SOURCES          = atomic_var.c
+atomic_var_LDADD            = -lpthread
 
 drd_bitmap_test_SOURCES     = drd_bitmap_test.c
 drd_bitmap_test_CFLAGS      = $(AM_CFLAGS) -O2 \

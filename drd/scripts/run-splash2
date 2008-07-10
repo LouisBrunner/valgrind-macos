@@ -13,19 +13,19 @@ function run_test {
   rm -f "${tmp}"
 
   p=1
-  test_output="${1}.out" measure_runtime "$@" -p${psep}${p} "${test_args}" | avgstddev > "$tmp"
+  test_output="${1}-p${p}.out" measure_runtime "$@" -p${psep}${p} "${test_args}" | avgstddev > "$tmp"
   read avg1 stddev1 vsz1 vszdev1 < "$tmp"
   echo "Average time: ${avg1} +/- ${stddev1} seconds." \
        " VSZ: ${vsz1} +/- ${vszdev1} KB"
 
   p=2
-  test_output="${1}.out" measure_runtime "$@" -p${psep}${p} "${test_args}" | avgstddev > "$tmp"
+  test_output="${1}-p${p}.out" measure_runtime "$@" -p${psep}${p} "${test_args}" | avgstddev > "$tmp"
   read avg2 stddev2 vsz2 vszdev2 < "$tmp"
   echo "Average time: ${avg2} +/- ${stddev2} seconds." \
        " VSZ: ${vsz2} +/- ${vszdev2} KB"
 
   p=4
-  test_output="${1}.out" measure_runtime "$@" -p${psep}${p} "${test_args}" | avgstddev > "$tmp"
+  test_output="${1}-p${p}.out" measure_runtime "$@" -p${psep}${p} "${test_args}" | avgstddev > "$tmp"
   read avg4 stddev4 vsz4 vszdev4 < "$tmp"
   echo "Average time: ${avg4} +/- ${stddev4} seconds." \
        " VSZ: ${vsz4} +/- ${vszdev4} KB"
@@ -52,6 +52,12 @@ function run_test {
   test_output="${1}-helgrind-4.out" \
   print_runtime_ratio ${avg4} ${stddev4} ${vsz4} ${vszdev4} $VG --tool=helgrind "$@" -p${psep}${p} "${test_args}"
 
+  if [ -e $HGDEV_VG ]; then
+    p=4
+    test_output="${1}-helgrind-hb-4.out" \
+    print_runtime_ratio ${avg4} ${stddev4} ${vsz4} ${vszdev4} $HGDEV_VG --tool=helgrind --pure-happens-before=yes "$@" -p${psep}${p} "${test_args}"
+  fi
+
   echo ''
 
   rm -f "$tmp"
@@ -75,6 +81,10 @@ fi
 
 if [ "$VG" = "" ]; then
   VG="${DRD_SCRIPTS_DIR}/../../vg-in-place"
+fi
+
+if [ "$HGDEV_VG" = "" ]; then
+  HGDEV_VG="${DRD_SCRIPTS_DIR}/../../../valgrind-hgdev/vg-in-place"
 fi
 
 if [ ! -e "$VG" ]; then
@@ -101,65 +111,77 @@ fi
 # 15. Virtual memory size ratio for --tool=drd --check-stack-var=no -p4 versus -p4.
 # 16. Execution time ratio for --tool=helgrind -p4 versus -p4.
 # 17. Virtual memory size ratio for --tool=helgrind -p4 versus -p4.
-# 18. Execution time ratio for Intel Thread Checker -p4 versus -p4.
-# 19. Execution time ratio for Intel Thread Checker -p4 versus -p4.
+# 18. Execution time ratio for --tool=helgrind --pure-happens-before=yes -p4 versus -p4.
+# 19. Virtual memory size ratio for --tool=helgrind --pure-happens-before=yes -p4 versus -p4.
+# 20. Execution time ratio for Intel Thread Checker -p4 versus -p4.
+# 21. Execution time ratio for Intel Thread Checker -p4 versus -p4.
 #
-#     1                    2     3      4      5      6     7     8   9    10   11   12  13   14  15   16    17   18   19
-#########################################################################################################################
-# Results:                native       native       native       none     none       DRD       DRD      HG        ITC ITC
-#                         -p1          -p2          -p4          -p1      -p4       -p4      -p4+f     -p4      -p4 -p4+f
-# .......................................................................................................................
-# Cholesky                0.37  45867  0.25  55965  0.20  74944  8.8 2.08 28.9 1.66  171 1.96 114 2.85   54  3.13 239  82
-# FFT                     0.20  23976  0.13  54026  0.09 114112  8.2 3.02 18.4 0.85  130 1.20  85 1.27  416  1.65  90  41
-# LU, contiguous          0.95  16784  0.64  24984  0.43  41392  8.0 3.88 19.3 2.17  120 2.84 113 3.04  223  4.36 428 128
-# LU, non-contiguous      1.06  16792  0.67  24984  0.40  41376  7.5 3.88 20.0 2.17  210 3.04 190 3.24  166  4.26 428 128
-# Ocean, contiguous      24.25 918016 14.57 927732  9.09 945664  2.4 1.05  6.6 1.05   89 1.92  77 1.93  149  1.88  90  28
-# Ocean, non-contiguous   0.36  32120  0.18  40320  0.16  56728  4.2 2.51 10.4 1.86   58 2.27  71 2.43  127  3.54  90  28
-# Radiosity               4.73  56120  ....  .....  ....  ..... 16.6 1.86 .... ....  ... ....  .. ....   ..  .... 485 163
-# Radix                   4.98 279744  2.55 287936  1.36 304448  6.1 1.17 22.4 1.16   57 1.90  52 1.92  208  2.09 222  56
-# Raytrace                2.76 320526  1.44 328448  0.77 344832  8.3 1.15 28.6 1.14 2324 1.31 326 1.34  420  0.60 172  53
-# Water-n2                0.19  17304  0.12  33680  0.12  66432 12.0 3.85 20.2 3.53 2789 2.78 562 2.84  121  3.32 189  39
-# Water-sp                0.21  10976  0.11  19176  0.07  35568 11.0 5.41 33.3 2.37  475 2.85 147 3.08  196  4.61 183  34
-# .......................................................................................................................
-# Hardware: Two quad-core Intel Xeon L5130, 1.6 GHz, 4 MB L2 cache, 16 GB RAM.
-# Software: Ubuntu 8.04 server, 64-bit, gcc 4.3.1.
-#########################################################################################################################
-# Results:                native       native       native       none     none       DRD       DRD      HG        ITC ITC
-#                         -p1          -p2          -p4          -p1      -p4       -p4      -p4+f     -p4      -p4 -p4+f
-# .......................................................................................................................
-# Cholesky                0.29  45835  0.21  55933  4.51  74944  8.8 2.21  1.0 1.75    6 2.05   4 2.16    2  3.22 239  82
-# FFT                     0.17  23949  0.12  32144  0.11  48536  7.8 3.28 12.0 2.13   85 2.96  56 3.13  282  4.02  90  41
-# LU, contiguous          0.78  16752  0.53  24957  0.53  41365  7.9 4.27 11.7 2.33   78 3.00  74 3.20  146  4.51 428 128
-# LU, non-contiguous      0.86  16760  0.47  24957  0.50  41352  7.0 4.26 12.2 2.33  135 3.20 125 3.40  107  4.41 428 128
-# Ocean, contiguous      19.47 918016 12.59 927232 12.61 945664  2.4 1.06  3.8 1.06   53 1.92  47 1.93   86  1.88  90  28
-# Ocean, non-contiguous   0.31  32088  0.17  40291  0.19  56696  3.9 2.71  6.8 1.97   38 2.38  47 2.55   84  3.66  90  28
-# Radiosity               3.85  56088  ....  .....  ....  ..... 16.4 1.98 .... ....  ... ....  .. ....   ..  .... 485 163
-# Radix                   4.05 279680  2.12 287872  2.14 304405  6.0 1.20 11.4 1.18   29 1.92  27 1.94  157  2.12 222  56
-# Raytrace                2.22 320192  ....  .....  2.20 ......  7.4 1.17  ... ....  ... ....  .. ....   ..  .... 172  53
-# Water-n2                0.15  17272  0.10  33651  0.11  66432 12.3 4.22 17.5 1.84 2320 2.90 583 2.92  105  3.41 189  39
-# Water-sp                0.16  10947  0.09  19144  0.09  35536 11.4 6.00 20.7 2.55  251 3.03  91 3.26  123  4.79 183  34
-# .......................................................................................................................
-# Hardware: dual-core Intel Xeon 5130, 2.0 GHz, 4 MB L2 cache, 4 GB RAM.
-# Software: Ubuntu 7.10 server, 64-bit, gcc 4.3.1, xload -update 1 running.
-#########################################################################################################################
-# Results:                native       native       native       none     none       DRD       DRD      HG        ITC ITC
-#                         -p1          -p2          -p4           -p1      -p4       -p4      -p4+f     -p4     -p4 -p4+f
-# .......................................................................................................................
-# Cholesky                0.21  45672  0.15  55765  1.02 140203 9.05 2.31  4.5 0.96   20 1.12  15 1.18    7  1.76 239  82
-# FFT                     0.11  23776  0.07  75683  0.07 113920 8.36 3.48 13.1 0.94   86 1.30  64 1.37  371  1.75  90  41
-# LU, contiguous          0.58  16584  0.38  24784  0.36  41192 7.72 4.56 12.7 2.44   81 3.11  80 3.31  163  4.63 428 128
-# LU, non-contiguous      0.64  16592  0.34  24784  0.36  41176 7.59 4.55 12.7 2.44  134 3.31 124 3.51  111  4.53 428 128
-# Ocean, contiguous      14.37 917504  9.60 927232  9.61 945664 2.38 1.06  3.6 1.06   61 1.93  47 1.94   89  1.89  90  28
-# Ocean, non-contiguous   0.20  31944  0.12  40144  0.14  56552 4.40 2.85  6.7 2.05   37 2.48  45 2.63   84  3.74  90  28
-# Radiosity               2.33  .....  2.32  .....  2.33  ..... .... .... .... ....  175 ....  61 ....   60  .... 485 163
-# Radix                   2.80 279488  1.46 287744  1.47 304256 6.17 1.21 11.8 1.19   30 1.93  28 1.96  212  2.13 222  56
-# Raytrace                1.68 320064  0.87 328256  0.87 388330 7.29 1.18 14.9 1.04 1290 1.19 169 1.21  219  1.86 172  53
-# Water-n2                0.16  17104  0.07  33480  0.08  66240 8.62 4.50 17.8 1.91 1869 2.94 449 3.01  106  3.48 189  39
-# Water-sp                0.13  10784  0.07  84352  0.06 144448 10.1 6.47 22.5 0.65  258 0.77  91 0.83  129  1.21 183  34
-# .......................................................................................................................
-# Hardware: dual-core Intel Core2 Duo E6750, 2.66 GHz, 4 MB L2 cache, 2 GB RAM.
-# Software: openSUSE 11.0, 64-bit, gcc 4.3.1, runlevel 3.
-#########################################################################################################################
+# Note: Helgrind uses a granularity of four bytes for data race detection, and DRD a granularity of one byte.
+#
+#     1                    2     3      4      5      6     7     8   9    10   11   12  13   14  15   16    17   18    19   20   21
+####################################################################################################################################
+# Results:                native       native       native       none     none       DRD       DRD      HG         HG-hb     ITC ITC
+#                         -p1          -p2          -p4          -p1      -p4       -p4      -p4+f     -p4        -p4      -p4 -p4+f
+# ..................................................................................................................................
+# Cholesky                0.37  45867  0.25  55965  0.20  74944  8.8 2.08 28.9 1.66  171 1.96 114 2.85   54  3.13  ...  .... 239  82
+# FFT                     0.20  23976  0.13  54026  0.09 114112  8.2 3.02 18.4 0.85  130 1.20  85 1.27  416  1.65  ...  ....  90  41
+# LU, contiguous          0.95  16784  0.64  24984  0.43  41392  8.0 3.88 19.3 2.17  120 2.84 113 3.04  223  4.36  ...  .... 428 128
+# LU, non-contiguous      1.06  16792  0.67  24984  0.40  41376  7.5 3.88 20.0 2.17  210 3.04 190 3.24  166  4.26  ...  ....  -   -
+# Ocean, contiguous      24.25 918016 14.57 927732  9.09 945664  2.4 1.05  6.6 1.05   89 1.92  77 1.93  149  1.88  ...  ....  90  28
+# Ocean, non-contiguous   0.36  32120  0.18  40320  0.16  56728  4.2 2.51 10.4 1.86   58 2.27  71 2.43  127  3.54  ...  ....  -   -
+# Radiosity               4.73  56120  ....  .....  ....  ..... 16.6 1.86 .... ....  ... ....  .. ....   ..  ....  ...  .... 485 163
+# Radix                   4.98 279744  2.55 287936  1.36 304448  6.1 1.17 22.4 1.16   57 1.90  52 1.92  208  2.09  ...  .... 222  56
+# Raytrace                2.76 320526  1.44 328448  0.77 344832  8.3 1.15 28.6 1.14 2324 1.31 326 1.34  420  0.60  ...  .... 172  53
+# Water-n2                0.19  17304  0.12  33680  0.12  66432 12.0 3.85 20.2 3.53 2789 2.78 562 2.84  121  3.32  ...  .... 189  39
+# Water-sp                0.21  10976  0.11  19176  0.07  35568 11.0 5.41 33.3 2.37  475 2.85 147 3.08  196  4.61  ...  .... 183  34
+# ..................................................................................................................................
+# Hardware: Two quad-core Intel Xeon L5130, 1.6 GHz, 4 MB L2 cache, 16 GB RAM.                                              
+# Software: Ubuntu 8.04 server, 64-bit, gcc 4.3.1.                                                                          
+####################################################################################################################################
+# Results:                native       native       native       none     none       DRD       DRD      HG         HG-hb     ITC ITC
+#                         -p1          -p2          -p4          -p1      -p4       -p4      -p4+f     -p4        -p4      -p4 -p4+f
+# ..................................................................................................................................
+# Cholesky                0.29  45835  0.21  55933  4.51  74944  8.8 2.21  1.0 1.75    6 2.05   4 2.16    2  3.22  ...  .... 239  82
+# FFT                     0.17  23949  0.12  32144  0.11  48536  7.8 3.28 12.0 2.13   85 2.96  56 3.13  282  4.02  ...  ....  90  41
+# LU, contiguous          0.78  16752  0.53  24957  0.53  41365  7.9 4.27 11.7 2.33   78 3.00  74 3.20  146  4.51  ...  .... 428 128
+# LU, non-contiguous      0.86  16760  0.47  24957  0.50  41352  7.0 4.26 12.2 2.33  135 3.20 125 3.40  107  4.41  ...  ....  -   -
+# Ocean, contiguous      19.47 918016 12.59 927232 12.61 945664  2.4 1.06  3.8 1.06   53 1.92  47 1.93   86  1.88  ...  ....  90  28
+# Ocean, non-contiguous   0.31  32088  0.17  40291  0.19  56696  3.9 2.71  6.8 1.97   38 2.38  47 2.55   84  3.66  ...  ....  -   -
+# Radiosity               3.85  56088  ....  .....  ....  ..... 16.4 1.98 .... ....  ... ....  .. ....   ..  ....  ...  .... 485 163
+# Radix                   4.05 279680  2.12 287872  2.14 304405  6.0 1.20 11.4 1.18   29 1.92  27 1.94  157  2.12  ...  .... 222  56
+# Raytrace                2.22 320192  ....  .....  2.20 ......  7.4 1.17  ... ....  ... ....  .. ....   ..  ....  ...  .... 172  53
+# Water-n2                0.15  17272  0.10  33651  0.11  66432 12.3 4.22 17.5 1.84 2320 2.90 583 2.92  105  3.41  ...  .... 189  39
+# Water-sp                0.16  10947  0.09  19144  0.09  35536 11.4 6.00 20.7 2.55  251 3.03  91 3.26  123  4.79  ...  .... 183  34
+# ..................................................................................................................................
+# Hardware: dual-core Intel Xeon 5130, 2.0 GHz, 4 MB L2 cache, 4 GB RAM.                                                    
+# Software: Ubuntu 7.10 server, 64-bit, gcc 4.3.1, xload -update 1 running.                                                 
+####################################################################################################################################
+# Results:                native       native       native       none     none       DRD       DRD      HG         HG-hb     ITC ITC
+#                         -p1          -p2          -p4           -p1      -p4       -p4      -p4+f     -p4        -p4     -p4 -p4+f
+# ..................................................................................................................................
+# Cholesky                0.08  21760  0.05  31728  0.56  50148 13.6 3.62  3.8 2.14   16 2.51  14 2.68    9  4.03   15  5.01 239  82
+# FFT                     0.02  13024  0.02  64931  0.01  81317 17.5 5.37 36.0 1.16  248 1.35 219 1.45  704  2.19  182  2.50  90  41
+# LU, contiguous          0.08  10440  0.06  18640  0.06  35048  9.9 6.45 13.0 2.63   81 2.89  88 3.13  156  4.92  125  5.63 428 128
+# Ocean, contiguous       0.19  23208  0.18  31744  0.13  48888  4.8 3.45  7.6 2.17   59 2.58  50 2.75   77  4.01   72  4.96  90  28
+# Radiosity               0.43  55912  ....  .....  ....  ..... .... .... .... ....  ... ....  .. ....   ..  ....  ...  .... 485 163
+# Radix                   0.17  33760  0.10  41952  0.10  58488  7.2 2.68 14.0 1.98   28 2.52  41 2.66  159  3.70   34  4.12 222  56
+# Raytrace                0.21 320064  0.21 320064  0.21 320064 13.3 1.18 13.2 1.18  169 1.25  58 1.25  105  2.10   71  2.96 172  53
+# Water-n2                0.11  17104  0.07  33480  0.08  66240 12.4 4.38 17.5 1.88 1877 2.93 525 2.97  106  3.47  105  4.15 189  39
+# Water-sp                0.12  10784  0.06  84352  0.06 100835 11.0 6.27 22.7 0.92  257 1.09  91 1.17  129  1.72  139  1.97 183  34
+# ..................................................................................................................................
+# Hardware: dual-core Intel Core2 Duo E6750, 2.66 GHz, 4 MB L2 cache, 2 GB RAM.                                             
+# Software: openSUSE 11.0, 64-bit, gcc 4.3.1, runlevel 3.                                                                   
+####################################################################################################################################
+
+####
+# Note: the input parameters for benchmarks below originate from table 1 in the
+# following paper:
+# The SPLASH-2 programs: characterization and methodological considerations
+# Woo, S.C.; Ohara, M.; Torrie, E.; Singh, J.P.; Gupta, A.
+# Computer Architecture, 1995. Proceedings. 22nd Annual International Symposium
+# on Volume , Issue , 22-24 Jun 1995 Page(s): 24 - 36.
+# ftp://www-flash.stanford.edu/pub/splash2/splash2_isca95.ps.Z
+####
 
 cache_size=$(get_cache_size)
 log2_cache_size=$(log2 ${cache_size})
@@ -171,29 +193,29 @@ log2_cache_size=$(log2 ${cache_size})
   do
     gzip -cd <$f >${f%.Z}
   done
-  test_args=tk29.O run_test ../CHOLESKY -C$((cache_size))
+  test_args=tk15.O run_test ../CHOLESKY -C$((cache_size))
 )
 
 # FFT
-run_test ${SPLASH2}/codes/kernels/fft/FFT -t -l$((log2_cache_size/2)) -m18
+run_test ${SPLASH2}/codes/kernels/fft/FFT -t -l$((log2_cache_size/2)) -m16
 
 # LU, contiguous blocks.
-run_test ${SPLASH2}/codes/kernels/lu/contiguous_blocks/LU -n1024
+run_test ${SPLASH2}/codes/kernels/lu/contiguous_blocks/LU -n512
 
 # LU, non-contiguous blocks.
-run_test ${SPLASH2}/codes/kernels/lu/non_contiguous_blocks/LU -n1024
+#run_test ${SPLASH2}/codes/kernels/lu/non_contiguous_blocks/LU -n512
 
 # Ocean
-run_test ${SPLASH2}/codes/apps/ocean/contiguous_partitions/OCEAN -n2050
-run_test ${SPLASH2}/codes/apps/ocean/non_contiguous_partitions/OCEAN -n258
+run_test ${SPLASH2}/codes/apps/ocean/contiguous_partitions/OCEAN -n258
+#run_test ${SPLASH2}/codes/apps/ocean/non_contiguous_partitions/OCEAN -n258
 
-# Radiosity.
+# Radiosity. Disabled this benchmark because it deadlocks.
 if false; then
-psep=' ' run_test ${SPLASH2}/codes/apps/radiosity/RADIOSITY -batch -room
+psep=' ' run_test ${SPLASH2}/codes/apps/radiosity/RADIOSITY -batch -room -ae 5000.0 -en 0.050 -bf 0.10
 fi
 
 # Radix
-run_test ${SPLASH2}/codes/kernels/radix/RADIX -n $((2**24))
+run_test ${SPLASH2}/codes/kernels/radix/RADIX -n$((2**20)) -r1024
 
 # Raytrace
 (
@@ -203,7 +225,8 @@ run_test ${SPLASH2}/codes/kernels/radix/RADIX -n $((2**24))
   do
     gzip -cd <$f >${f%.Z}
   done
-  test_args=balls4.env psep=' ' run_test ../RAYTRACE 
+  cd ..
+  test_args=inputs/car.env psep=' ' run_test ./RAYTRACE 
 )
 
 # Water-n2

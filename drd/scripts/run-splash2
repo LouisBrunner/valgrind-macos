@@ -227,7 +227,7 @@ run_test ${SPLASH2}/codes/kernels/radix/RADIX -n$((2**20)) -r1024
     gzip -cd <$f >${f%.Z}
   done
   cd ..
-  test_args=inputs/car.env psep=' ' run_test ./RAYTRACE 
+  test_args=inputs/car.env psep='' run_test ./RAYTRACE -m64
 )
 
 # Water-n2

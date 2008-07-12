@@ -126,10 +126,7 @@ fi
 # Cholesky                0.37  45867  0.25  55965  0.20  74944  8.8 2.08 28.9 1.66  171 1.96 114 2.85   54  3.13  ...  .... 239  82
 # FFT                     0.20  23976  0.13  54026  0.09 114112  8.2 3.02 18.4 0.85  130 1.20  85 1.27  416  1.65  ...  ....  90  41
 # LU, contiguous          0.95  16784  0.64  24984  0.43  41392  8.0 3.88 19.3 2.17  120 2.84 113 3.04  223  4.36  ...  .... 428 128
-# LU, non-contiguous      1.06  16792  0.67  24984  0.40  41376  7.5 3.88 20.0 2.17  210 3.04 190 3.24  166  4.26  ...  ....  -   -
 # Ocean, contiguous      24.25 918016 14.57 927732  9.09 945664  2.4 1.05  6.6 1.05   89 1.92  77 1.93  149  1.88  ...  ....  90  28
-# Ocean, non-contiguous   0.36  32120  0.18  40320  0.16  56728  4.2 2.51 10.4 1.86   58 2.27  71 2.43  127  3.54  ...  ....  -   -
-# Radiosity               4.73  56120  ....  .....  ....  ..... 16.6 1.86 .... ....  ... ....  .. ....   ..  ....  ...  .... 485 163
 # Radix                   4.98 279744  2.55 287936  1.36 304448  6.1 1.17 22.4 1.16   57 1.90  52 1.92  208  2.09  ...  .... 222  56
 # Raytrace                2.76 320526  1.44 328448  0.77 344832  8.3 1.15 28.6 1.14 2324 1.31 326 1.34  420  0.60  ...  .... 172  53
 # Water-n2                0.19  17304  0.12  33680  0.12  66432 12.0 3.85 20.2 3.53 2789 2.78 562 2.84  121  3.32  ...  .... 189  39
@@ -144,10 +141,7 @@ fi
 # Cholesky                0.29  45835  0.21  55933  4.51  74944  8.8 2.21  1.0 1.75    6 2.05   4 2.16    2  3.22  ...  .... 239  82
 # FFT                     0.17  23949  0.12  32144  0.11  48536  7.8 3.28 12.0 2.13   85 2.96  56 3.13  282  4.02  ...  ....  90  41
 # LU, contiguous          0.78  16752  0.53  24957  0.53  41365  7.9 4.27 11.7 2.33   78 3.00  74 3.20  146  4.51  ...  .... 428 128
-# LU, non-contiguous      0.86  16760  0.47  24957  0.50  41352  7.0 4.26 12.2 2.33  135 3.20 125 3.40  107  4.41  ...  ....  -   -
 # Ocean, contiguous      19.47 918016 12.59 927232 12.61 945664  2.4 1.06  3.8 1.06   53 1.92  47 1.93   86  1.88  ...  ....  90  28
-# Ocean, non-contiguous   0.31  32088  0.17  40291  0.19  56696  3.9 2.71  6.8 1.97   38 2.38  47 2.55   84  3.66  ...  ....  -   -
-# Radiosity               3.85  56088  ....  .....  ....  ..... 16.4 1.98 .... ....  ... ....  .. ....   ..  ....  ...  .... 485 163
 # Radix                   4.05 279680  2.12 287872  2.14 304405  6.0 1.20 11.4 1.18   29 1.92  27 1.94  157  2.12  ...  .... 222  56
 # Raytrace                2.22 320192  ....  .....  2.20 ......  7.4 1.17  ... ....  ... ....  .. ....   ..  ....  ...  .... 172  53
 # Water-n2                0.15  17272  0.10  33651  0.11  66432 12.3 4.22 17.5 1.84 2320 2.90 583 2.92  105  3.41  ...  .... 189  39
@@ -163,7 +157,6 @@ fi
 # FFT                     0.02  13024  0.02  64931  0.01  81317 17.5 5.37 36.0 1.16  248 1.35 219 1.45  704  2.19  182  2.50  90  41
 # LU, contiguous          0.08  10440  0.06  18640  0.06  35048  9.9 6.45 13.0 2.63   81 2.89  88 3.13  156  4.92  125  5.63 428 128
 # Ocean, contiguous       0.19  23208  0.18  31744  0.13  48888  4.8 3.45  7.6 2.17   59 2.58  50 2.75   77  4.01   72  4.96  90  28
-# Radiosity               0.43  55912  ....  .....  ....  ..... .... .... .... ....  ... ....  .. ....   ..  ....  ...  .... 485 163
 # Radix                   0.17  33760  0.10  41952  0.10  58488  7.2 2.68 14.0 1.98   28 2.52  41 2.66  159  3.70   34  4.12 222  56
 # Raytrace                0.21 320064  0.21 320064  0.21 320064 13.3 1.18 13.2 1.18  169 1.25  58 1.25  105  2.10   71  2.96 172  53
 # Water-n2                0.11  17104  0.07  33480  0.08  66240 12.4 4.38 17.5 1.88 1877 2.93 525 2.97  106  3.47  105  4.15 189  39
@@ -174,13 +167,21 @@ fi
 ####################################################################################################################################
 
 ####
-# Note: the input parameters for benchmarks below originate from table 1 in the
-# following paper:
-# The SPLASH-2 programs: characterization and methodological considerations
-# Woo, S.C.; Ohara, M.; Torrie, E.; Singh, J.P.; Gupta, A.
-# Computer Architecture, 1995. Proceedings. 22nd Annual International Symposium
-# on Volume , Issue , 22-24 Jun 1995 Page(s): 24 - 36.
-# ftp://www-flash.stanford.edu/pub/splash2/splash2_isca95.ps.Z
+# Notes:
+# - The ITC performance numbers in the above table originate from table 1 in
+#   the following paper:
+#   Paul Sack, Brian E. Bliss, Zhiqiang Ma, Paul Petersen, Josep Torrellas,
+#   Accurate and efficient filtering for the Intel thread checker race
+#   detector, Proceedings of the 1st workshop on Architectural and system
+#   support for improving software dependability, San Jose, California,
+#   2006. Pages: 34 - 41.
+# - The input parameters for benchmarks below originate from table 1 in the
+#   following paper:
+#   The SPLASH-2 programs: characterization and methodological considerations
+#   Woo, S.C.; Ohara, M.; Torrie, E.; Singh, J.P.; Gupta, A.
+#   1995. Proceedings of the 22nd Annual International Symposium on Computer
+#   Architecture, 22-24 Jun 1995, Page(s): 24 - 36.
+#   ftp://www-flash.stanford.edu/pub/splash2/splash2_isca95.ps.Z
 ####
 
 cache_size=$(get_cache_size)

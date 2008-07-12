@@ -21,14 +21,20 @@ if VGP_PPC64_AIX5
 endif
 
 
-VGPRELOAD_DRD_SOURCES = drd_strmem_intercepts.c drd_pthread_intercepts.c
-VGPRELOAD_DRD_SOURCES += drd_qtcore_intercepts.c
-VGPRELOAD_DRD_SOURCES += drd_gomp_intercepts.c
+VGPRELOAD_DRD_SOURCES =    \
+  drd_gomp_intercepts.c    \
+  drd_pthread_intercepts.c \
+  drd_qtcore_intercepts.c  \
+  drd_strmem_intercepts.c
 
 
-DRD_CFLAGS=@FLAG_W_EXTRA@ @FLAG_UNLIMITED_INLINE_UNIT_GROWTH@ \
-           -Wformat-nonliteral -Wno-inline -Wno-unused-parameter \
-           -O2
+DRD_CFLAGS =                          \
+  -O2                                 \
+  -Wformat-nonliteral                 \
+  -Wno-inline                         \
+  -Wno-unused-parameter               \
+  @FLAG_UNLIMITED_INLINE_UNIT_GROWTH@ \
+  @FLAG_W_EXTRA@
 
 AM_CFLAGS_X86_LINUX   += $(DRD_CFLAGS)
 AM_CFLAGS_AMD64_LINUX += $(DRD_CFLAGS)

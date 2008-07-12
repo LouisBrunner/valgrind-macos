@@ -28,13 +28,13 @@ VGPRELOAD_DRD_SOURCES =    \
   drd_strmem_intercepts.c
 
 
-DRD_CFLAGS =                          \
-  -O2                                 \
-  -Wformat-nonliteral                 \
-  -Wno-inline                         \
-  -Wno-unused-parameter               \
-  @FLAG_UNLIMITED_INLINE_UNIT_GROWTH@ \
-  @FLAG_W_EXTRA@
+DRD_CFLAGS =				\
+  @FLAG_UNLIMITED_INLINE_UNIT_GROWTH@	\
+  -O2					\
+  @FLAG_W_EXTRA@			\
+  -Wformat-nonliteral			\
+  -Wno-inline				\
+  -Wno-unused-parameter
 
 AM_CFLAGS_X86_LINUX   += $(DRD_CFLAGS)
 AM_CFLAGS_AMD64_LINUX += $(DRD_CFLAGS)

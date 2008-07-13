@@ -210,10 +210,8 @@ run_test ${SPLASH2}/codes/kernels/lu/contiguous_blocks/LU -n512
 run_test ${SPLASH2}/codes/apps/ocean/contiguous_partitions/OCEAN -n258
 #run_test ${SPLASH2}/codes/apps/ocean/non_contiguous_partitions/OCEAN -n258
 
-# Radiosity. Disabled this benchmark because it deadlocks.
-if false; then
+# Radiosity.
 psep=' ' run_test ${SPLASH2}/codes/apps/radiosity/RADIOSITY -batch -room -ae 5000.0 -en 0.050 -bf 0.10
-fi
 
 # Radix
 run_test ${SPLASH2}/codes/kernels/radix/RADIX -n$((2**20)) -r1024

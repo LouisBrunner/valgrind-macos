@@ -85,7 +85,7 @@ diff -ru orig/splash2/codes/Makefile.config splash2/codes/Makefile.config
 -CC := gcc
 +CC := @CC@
 -CFLAGS := -O3 -pthread -D_POSIX_C_SOURCE=200112
-+CFLAGS := -g3 -O3 -pthread -D_POSIX_C_SOURCE=200112
++CFLAGS := -g3 -m32 -O3 -pthread -D_POSIX_C_SOURCE=200112
  #CFLAGS := -g3 -pthread -D_POSIX_C_SOURCE=200112
  CFLAGS := \$(CFLAGS) -Wall -W -Wmissing-prototypes -Wmissing-declarations -Wredundant-decls -Wdisabled-optimization
  CFLAGS := \$(CFLAGS) -Wpadded -Winline -Wpointer-arith -Wsign-compare -Wendif-labels
@@ -100,6 +100,69 @@ diff -ru orig/splash2/codes/Makefile.config splash2/codes/Makefile.config
  M4 := m4 -s -Ulen -Uindex
  
  x = *
+--- orig/splash2/codes/apps/radiosity/elemman.C	2008-07-13 20:24:35.000000000 +0200
++++ splash2/codes/apps/radiosity/elemman.C	2008-07-13 20:45:15.000000000 +0200
+@@ -24,6 +24,7 @@
+ 
+ 
+ #include <stdio.h>
++#include "drd.h"
+ 
+ EXTERN_ENV;
+ 
+@@ -707,6 +708,12 @@ void process_rays(Element *e, long proce
+     e->n_interactions = 0 ;
+     UNLOCK(e->elem_lock->lock);
+ 
++    {
++      Interaction* p;
++      for (p = i_list; p; p = p->next)
++	DRD_IGNORE_VAR(*p);
++    }
++
+     /* For each interaction, do BF-error-analysis */
+     bf_error_analysis_list( e, i_list, process_id ) ;
+ 
+--- orig/splash2/codes/apps/radiosity/rad_main.C	2008-07-13 20:24:35.000000000 +0200
++++ splash2/codes/apps/radiosity/rad_main.C	2008-07-13 20:50:01.000000000 +0200
+@@ -30,6 +30,7 @@
+ #include <panel.h>
+ #endif
+ #endif
++#include "drd.h"
+ 
+ /* ANL macro initialization */
+ 
+@@ -1084,6 +1085,18 @@ void init_global(long process_id)
+     /* Initialize statistical info */
+     init_stat_info(process_id) ;
+ 
++    {
++      int i;
++
++      DRD_IGNORE_VAR(global->pbar_count);
++      for (i = 0;
++	   i < sizeof(global->task_queue) / sizeof(global->task_queue[0]);
++	   i++)
++	{
++	  DRD_IGNORE_VAR(global->task_queue[i].n_tasks);
++	}
++      DRD_IGNORE_VAR(global->element_buf);
++    }
+ }
+ 
+ 
+--- orig/splash2/codes/apps/radiosity/Makefile	2008-07-13 20:24:35.000000000 +0200
++++ splash2/codes/apps/radiosity/Makefile	2008-07-13 20:09:27.000000000 +0200
+@@ -6,7 +6,7 @@ HS = model.h parallel.h patch.h radiosit
+ 
+ include ../../Makefile.config
+ 
+-CFLAGS := \$(CFLAGS) -I./glibdumb -I./glibps
++CFLAGS := \$(CFLAGS) -I./glibdumb -I./glibps -I../../../../../drd -I../../../../../include
+ 
+ #CCOPTS = -I -float -I/usr/include \$(CFLAGS)
+ #LDFLAGS = -lm -lpthread
 EOF
 
 for m in $(find codes -name Makefile)

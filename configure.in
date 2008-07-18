@@ -52,8 +52,6 @@ AC_SUBST([DISTCHECK_CONFIGURE_FLAGS], [--with-vex=$VEX_DIR])
 
 # Checks for programs.
 CFLAGS="-Wno-long-long"
-CXXFLAGS="-I/usr/include/qt4"
-CPPFLAGS="-I/usr/include/qt4"
 
 AC_PROG_LN_S
 AC_PROG_CC

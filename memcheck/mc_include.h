@@ -98,10 +98,10 @@ Bool MC_(mempool_exists)  ( Addr pool );
 MC_Chunk* MC_(get_freed_list_head)( void );
 
 /* For tracking malloc'd blocks */
-VgHashTable MC_(malloc_list);
+extern VgHashTable MC_(malloc_list);
 
 /* For tracking memory pools. */
-VgHashTable MC_(mempool_list);
+extern VgHashTable MC_(mempool_list);
 
 /* Shadow memory functions */
 Bool MC_(check_mem_is_noaccess)( Addr a, SizeT len, Addr* bad_addr );
@@ -242,11 +242,11 @@ typedef
   Reachedness;
 
 /* For VALGRIND_COUNT_LEAKS client request */
-SizeT MC_(bytes_leaked);
-SizeT MC_(bytes_indirect);
-SizeT MC_(bytes_dubious);
-SizeT MC_(bytes_reachable);
-SizeT MC_(bytes_suppressed);
+extern SizeT MC_(bytes_leaked);
+extern SizeT MC_(bytes_indirect);
+extern SizeT MC_(bytes_dubious);
+extern SizeT MC_(bytes_reachable);
+extern SizeT MC_(bytes_suppressed);
 
 typedef
    enum {
@@ -289,7 +289,7 @@ void MC_(pp_LeakError)(UInt n_this_record, UInt n_total_records,
    value origin could have been collected (but wasn't) ?  If yes,
    then, at the end of the run, print a 1 line message advising that a
    rerun with --track-origins=yes might help. */
-Bool MC_(any_value_errors);
+extern Bool MC_(any_value_errors);
 
 /* Standard functions for error and suppressions as required by the
    core/tool iface */
@@ -363,23 +363,23 @@ void MC_(get_ClientBlock_array)( /*OUT*/CGenBlock** blocks,
 /*------------------------------------------------------------*/
 
 /* Allow loads from partially-valid addresses?  default: YES */
-Bool MC_(clo_partial_loads_ok);
+extern Bool MC_(clo_partial_loads_ok);
 
 /* Max volume of the freed blocks queue. */
-Long MC_(clo_freelist_vol);
+extern Long MC_(clo_freelist_vol);
 
 /* Do leak check at exit?  default: NO */
-LeakCheckMode MC_(clo_leak_check);
+extern LeakCheckMode MC_(clo_leak_check);
 
 /* How closely should we compare ExeContexts in leak records? default: 2 */
-VgRes MC_(clo_leak_resolution);
+extern VgRes MC_(clo_leak_resolution);
 
 /* In leak check, show reachable-but-not-freed blocks?  default: NO */
-Bool MC_(clo_show_reachable);
+extern Bool MC_(clo_show_reachable);
 
 /* Assume accesses immediately below %esp are due to gcc-2.96 bugs.
  * default: NO */
-Bool MC_(clo_workaround_gcc296_bugs);
+extern Bool MC_(clo_workaround_gcc296_bugs);
 
 /* Fill malloc-d/free-d client blocks with a specific value?  -1 if
    not, else 0x00 .. 0xFF indicating the fill value to use.  Can be
@@ -387,8 +387,8 @@ Bool MC_(clo_workaround_gcc296_bugs);
    more repeatable ways.  Note that malloc-filled and free-filled
    areas are still undefined and noaccess respectively.  This merely
    causes them to contain the specified values. */
-Int MC_(clo_malloc_fill);
-Int MC_(clo_free_fill);
+extern Int MC_(clo_malloc_fill);
+extern Int MC_(clo_free_fill);
 
 /* Indicates the level of instrumentation/checking done by Memcheck.
 
@@ -413,7 +413,7 @@ Int MC_(clo_free_fill);
 
    The default is 2.
 */
-Int MC_(clo_mc_level);
+extern Int MC_(clo_mc_level);
 
 
 /*------------------------------------------------------------*/

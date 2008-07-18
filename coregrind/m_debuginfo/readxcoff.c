@@ -480,7 +480,7 @@ Bool get_csect_bounds ( UChar* start, UWord n_entries,
    if (cssym->n_sclass == C_EXT || cssym->n_sclass == C_HIDEXT) {
       if (cssym->n_numaux == 1) {
          if (CSECT_SMTYP(csaux) == XTY_SD) {
-            if (0) VG_(printf)("GCB: SD: len is %ld\n", CSECT_LEN(csaux));
+            if (0) VG_(printf)("GCB: SD: len is %lld\n", (Long)CSECT_LEN(csaux));
             *first = (UChar*)(cssym->n_value);
             *last = *first + CSECT_LEN(csaux)-1;
            return True;
@@ -635,7 +635,7 @@ HChar* read_symbol_table (
                pot for phase 2. */
             XCoffSym cand;
             if (0) VG_(printf)("SD: len is %d\n", (Int)CSECT_LEN(aux));
-            if (0) VG_(printf)("SD: proposed %p\n", sym->n_value);
+            if (0) VG_(printf)("SD: proposed %#llx\n", (ULong)sym->n_value);
             init_XCoffSym(&cand);
             cand.first = sym->n_value;
             cand.last = cand.first + (UWord)CSECT_LEN(aux) - 1;
@@ -677,7 +677,8 @@ HChar* read_symbol_table (
                   VG_(printf)("LD: in a csect %p %p\n", 
                               csect_first, csect_last);
                   VG_(printf)("CAND: %p .. %p  %s\n", 
-                              (void*)sym->n_value, (void*)csect_last, name);
+                              (void*)sym->n_value, (void*)csect_last, 
+                              "fixme-Name-printing(1)" /*name*/);
                }
                cand.first = sym->n_value;
                cand.last = (Addr)csect_last;
@@ -686,7 +687,8 @@ HChar* read_symbol_table (
                   VG_(printf)("LD: can't compute csect bounds?!\n");
                   VG_(printf)("CAND: %p .. %p  %s\n", 
                               (HChar*)sym->n_value,
-                              (HChar*)sym->n_value+1, name);
+                              (HChar*)sym->n_value+1,
+                               "fixme-Name-printing(2)" /*name*/);
                }
                cand.first = sym->n_value;
                cand.last = cand.first + 1;
@@ -965,7 +967,7 @@ HChar* read_symbol_table (
          if (SHOW && SHOW_SYMS_P3)
             VG_(printf)("Phase3: %5d+%d  BINCL     %s\n",
                          i-1-sym->n_numaux, (Int)sym->n_numaux, 
-                         name );
+                         "fixme-Name-printing(3)" /*name*/ );
          continue;
       }
       /* --- END C_BINCL [beginning of include] --- */
@@ -976,7 +978,7 @@ HChar* read_symbol_table (
          if (SHOW && SHOW_SYMS_P3)
             VG_(printf)("Phase3: %5d+%d  EINCL     %s\n",
                          i-1-sym->n_numaux, (Int)sym->n_numaux, 
-                         name );
+                         "fixme-Name-printing(4)" /*name*/ );
          continue;
       }
       /* --- END C_EINCL [end of include] --- */
@@ -1073,7 +1075,7 @@ HChar* read_symbol_table (
                /* also take the opportunity to trim the symbol's
                   length to something less than established by the
                   initial estimation done by Phases 1 and 2. */
-               if (0) VG_(printf)("trim end from %p to %p\n", 
+               if (0) VG_(printf)("trim end from %#lx to %#lx\n", 
                                   p3currsym->last, fn_end_avma);
                p3currsym->last = fn_end_avma;
             }
@@ -1371,7 +1373,7 @@ HChar* read_symbol_table (
       VG_(printf)("--- BEGIN kludged Phase5 (find TOC pointers) ---\n");
 
    if (SHOW)
-      VG_(printf)("Phase5: actual data segment: %p %p\n",
+      VG_(printf)("Phase5: actual data segment: %#lx %#lx\n",
                   di->data_avma, di->data_avma + di->data_size);
 
    /* Skip obviously-missing data sections. */
@@ -1529,11 +1531,12 @@ HChar* read_symbol_table (
             dis.name = ML_(addStr)(di, &s->name.vec[0], nlen-0 );
          ML_(addSym)( di, &dis );
          if (0 && s->r2known)
-            VG_(printf)("r2 known for %s\n", s->name);
+            VG_(printf)("r2 known for %s\n",
+                        "fixme-Name-printing(5)" /*s->name*/ );
 
 	 if (guessed_toc)
             VG_(message)(Vg_DebugMsg, "WARNING: assuming toc 0x%lx for %s", 
-                                      s->r2value, s->name);
+                                      s->r2value, dis.name);
       }
    }
 
@@ -1554,14 +1557,14 @@ static void show_loader_section ( struct _DebugInfo* di,
    UChar* strtab_import = NULL;
    UChar* strtab_other  = NULL;
    if (SHOW) {
-      VG_(printf)("   l_version           %lu\n", hdr->l_version);
-      VG_(printf)("   l_nsyms             %ld\n", hdr->l_nsyms);
-      VG_(printf)("   l_nreloc            %ld\n", hdr->l_nreloc);
-      VG_(printf)("   l_istlen (i st len) %ld\n", hdr->l_istlen);
-      VG_(printf)("   l_impoff (i st off) %lu\n", hdr->l_impoff);
-      VG_(printf)("   l_nimpid (# imps)   %ld\n", hdr->l_nimpid);
-      VG_(printf)("   l_stlen  (st len)   %lu\n", hdr->l_stlen);
-      VG_(printf)("   l_stoff  (st off)   %lu\n", hdr->l_stoff);
+      VG_(printf)("   l_version           %llu\n", (ULong)hdr->l_version);
+      VG_(printf)("   l_nsyms             %lld\n", (Long)hdr->l_nsyms);
+      VG_(printf)("   l_nreloc            %lld\n", (Long)hdr->l_nreloc);
+      VG_(printf)("   l_istlen (i st len) %lld\n", (Long)hdr->l_istlen);
+      VG_(printf)("   l_impoff (i st off) %llu\n", (ULong)hdr->l_impoff);
+      VG_(printf)("   l_nimpid (# imps)   %llu\n", (ULong)hdr->l_nimpid);
+      VG_(printf)("   l_stlen  (st len)   %llu\n", (ULong)hdr->l_stlen);
+      VG_(printf)("   l_stoff  (st off)   %llu\n", (ULong)hdr->l_stoff);
    }
 
    if (hdr->l_istlen > 0)
@@ -1571,8 +1574,8 @@ static void show_loader_section ( struct _DebugInfo* di,
 
    if (strtab_import) {
       if (SHOW)
-         VG_(printf)("   Loader Import String Table: %lu bytes\n", 
-                     hdr->l_istlen);
+         VG_(printf)("   Loader Import String Table: %llu bytes\n", 
+                     (ULong)hdr->l_istlen);
       i = 0;
       j = 0;
       while (1) {
@@ -1594,8 +1597,8 @@ static void show_loader_section ( struct _DebugInfo* di,
 
    if (strtab_other) {
       if (SHOW)
-         VG_(printf)("   Loader Other String Table: %lu bytes\n", 
-                     hdr->l_stlen);
+         VG_(printf)("   Loader Other String Table: %llu bytes\n", 
+                     (ULong)hdr->l_stlen);
       i = 0;
       while (1) {
          int len = 0;
@@ -1622,7 +1625,7 @@ static void show_loader_section ( struct _DebugInfo* di,
    }
 
    if (SHOW)
-      VG_(printf)("   Loader Symbol Table: %ld entries\n", hdr->l_nsyms);
+      VG_(printf)("   Loader Symbol Table: %lld entries\n", (Long)hdr->l_nsyms);
    LDSYM* sym = (LDSYM*)(oi_start + sizeof(LDHDR));
    for (i = 0; i < hdr->l_nsyms; i++) {
       Name name = maybeDerefStrTab( (SYMENT*)&sym[i],
@@ -1648,12 +1651,12 @@ static void show_loader_section ( struct _DebugInfo* di,
 
    LDREL* rel = (LDREL*)(&sym[hdr->l_nsyms]);
    if (SHOW)
-      VG_(printf)("   Loader Relocation Table: %ld entries\n", 
-                  hdr->l_nreloc);
+      VG_(printf)("   Loader Relocation Table: %lld entries\n", 
+                  (Long)hdr->l_nreloc);
    for (i = 0; i < hdr->l_nreloc; i++) {
       if (SHOW && SHOW_LD_RELTAB)
-         VG_(printf)("      %3d:  va %016llx  sym %2ld  rty 0x%4x  sec %2d\n",
-                     i, (ULong)rel[i].l_vaddr, rel[i].l_symndx, 
+         VG_(printf)("      %3d:  va %016llx  sym %2lld  rty 0x%4x  sec %2d\n",
+                     i, (ULong)rel[i].l_vaddr, (Long)rel[i].l_symndx, 
                         (Int)rel[i].l_rtype, (Int)rel[i].l_rsecnm);
    }
 
@@ -1729,12 +1732,12 @@ Bool read_xcoff_mapped_object ( struct _DebugInfo* di,
 #  endif
 
    if (SHOW) {
-      VG_(printf)("   # of sections     %u\n",     (UInt)t_filehdr->f_nscns);
-      VG_(printf)("   time/date         0x%08lx\n", t_filehdr->f_timdat);
-      VG_(printf)("   symtab foffset    %lu\n", t_filehdr->f_symptr);
-      VG_(printf)("   # symtab entries  %lu\n", t_filehdr->f_nsyms);
-      VG_(printf)("   size of aux hdr   %u\n", (UInt)t_filehdr->f_opthdr);
-      VG_(printf)("   flags             0x%04x\n", (UInt)t_filehdr->f_flags);
+      VG_(printf)("   # of sections     %u\n",       (UInt)t_filehdr->f_nscns);
+      VG_(printf)("   time/date         0x%08llx\n", (ULong)t_filehdr->f_timdat);
+      VG_(printf)("   symtab foffset    %llu\n",     (ULong)t_filehdr->f_symptr);
+      VG_(printf)("   # symtab entries  %llu\n",     (ULong)t_filehdr->f_nsyms);
+      VG_(printf)("   size of aux hdr   %llu\n",     (ULong)t_filehdr->f_opthdr);
+      VG_(printf)("   flags             0x%04x\n",   (UInt)t_filehdr->f_flags);
       if (t_filehdr->f_flags) {
          VG_(printf)("                     ");
          if (t_filehdr->f_flags & F_RELFLG)    VG_(printf)("NoRelocInfo ");
@@ -1801,13 +1804,15 @@ Bool read_xcoff_mapped_object ( struct _DebugInfo* di,
          VG_(printf)("   magic        0x%04x (should be 0x010b)\n", 
                      (UInt)t_auxhdr->magic);
          VG_(printf)("   vstamp       0x%04x\n", (UInt)t_auxhdr->vstamp);
-         VG_(printf)("   tsize        %ld\n", t_auxhdr->tsize);
-         VG_(printf)("   dsize        %ld\n", t_auxhdr->dsize);
-         VG_(printf)("   bsize        %ld\n", t_auxhdr->bsize);
-         VG_(printf)("   entry        0x%lx\n", t_auxhdr->entry);
-         VG_(printf)("   text_start   0x%lx (stated)\n", t_auxhdr->text_start);
-         VG_(printf)("   data_start   0x%lx (stated)\n", t_auxhdr->data_start);
-         VG_(printf)("   o_toc        0x%lx\n", t_auxhdr->o_toc);
+         VG_(printf)("   tsize        %lld\n", (Long)t_auxhdr->tsize);
+         VG_(printf)("   dsize        %lld\n", (Long)t_auxhdr->dsize);
+         VG_(printf)("   bsize        %lld\n", (Long)t_auxhdr->bsize);
+         VG_(printf)("   entry        0x%llx\n", (ULong)t_auxhdr->entry);
+         VG_(printf)("   text_start   0x%llx (stated)\n",
+                     (ULong)t_auxhdr->text_start);
+         VG_(printf)("   data_start   0x%llx (stated)\n",
+                     (ULong)t_auxhdr->data_start);
+         VG_(printf)("   o_toc        0x%llx\n", (ULong)t_auxhdr->o_toc);
          VG_(printf)("   o_snentry    %d\n", (Int)t_auxhdr->o_snentry);
          VG_(printf)("   o_sntext     %d\n", (Int)t_auxhdr->o_sntext);
          VG_(printf)("   o_sndata     %d\n", (Int)t_auxhdr->o_sndata);
@@ -1821,8 +1826,8 @@ Bool read_xcoff_mapped_object ( struct _DebugInfo* di,
                      (UChar)t_auxhdr->o_modtype[1] );
          VG_(printf)("   o_cpuflag    0x%02x\n", (UInt)t_auxhdr->o_cpuflag);
          VG_(printf)("   o_cputype    0x%02x\n", (UInt)t_auxhdr->o_cputype);
-         VG_(printf)("   o_maxstack   %lu\n", t_auxhdr->o_maxstack);
-         VG_(printf)("   o_maxdata    %lu\n", t_auxhdr->o_maxdata);
+         VG_(printf)("   o_maxstack   %llu\n", (ULong)t_auxhdr->o_maxstack);
+         VG_(printf)("   o_maxdata    %llu\n", (ULong)t_auxhdr->o_maxdata);
          VG_(printf)("   o_debugger   %u\n", t_auxhdr->o_debugger);
          /* printf("   o_textpsize  %u\n", (UInt)t_auxhdr->o_textpsize); */
          /* printf("   o_stackpsize %u\n", (UInt)t_auxhdr->o_stackpsize); */
@@ -1877,16 +1882,16 @@ Bool read_xcoff_mapped_object ( struct _DebugInfo* di,
       if (SHOW) {
          VG_(printf)("   --- #%d ---\n", i);
          VG_(printf)("   s_name    %s\n", sname_safe);
-         VG_(printf)("   s_paddr   0x%lx\n", t_scnhdr[i].s_paddr);
-         VG_(printf)("   s_vaddr   0x%lx\n", t_scnhdr[i].s_vaddr);
-         VG_(printf)("   s_size    %ld\n", t_scnhdr[i].s_size);
-         VG_(printf)("   s_scnptr  %ld\n", t_scnhdr[i].s_scnptr);
-         VG_(printf)("   s_relptr  %ld\n", t_scnhdr[i].s_relptr);
-         VG_(printf)("   s_lnnoptr %ld\n", t_scnhdr[i].s_lnnoptr);
-         VG_(printf)("   s_nreloc  %u\n", (UInt)t_scnhdr[i].s_nreloc);
-         VG_(printf)("   s_nlnno   %u\n", (UInt)t_scnhdr[i].s_nlnno);
-         VG_(printf)("   s_flags   0x%lx (%s)\n", 
-                     t_scnhdr[i].s_flags,
+         VG_(printf)("   s_paddr   0x%llx\n", (ULong)t_scnhdr[i].s_paddr);
+         VG_(printf)("   s_vaddr   0x%llx\n", (ULong)t_scnhdr[i].s_vaddr);
+         VG_(printf)("   s_size    %lld\n",   (Long)t_scnhdr[i].s_size);
+         VG_(printf)("   s_scnptr  %lld\n",   (Long)t_scnhdr[i].s_scnptr);
+         VG_(printf)("   s_relptr  %lld\n",   (Long)t_scnhdr[i].s_relptr);
+         VG_(printf)("   s_lnnoptr %lld\n",   (Long)t_scnhdr[i].s_lnnoptr);
+         VG_(printf)("   s_nreloc  %llu\n",   (ULong)t_scnhdr[i].s_nreloc);
+         VG_(printf)("   s_nlnno   %llu\n",   (ULong)t_scnhdr[i].s_nlnno);
+         VG_(printf)("   s_flags   0x%llx (%s)\n", 
+                     (ULong)t_scnhdr[i].s_flags,
                      name_of_scnhdr_s_flags(t_scnhdr[i].s_flags));
       }
       /* find the stabs strings */
@@ -2071,7 +2076,7 @@ Bool read_xcoff_mapped_object ( struct _DebugInfo* di,
 
    /* ------------ Symbol Table ------------ */
    if (SHOW)
-      VG_(printf)("\nSymbol Table: %ld entries\n", t_filehdr->f_nsyms);
+      VG_(printf)("\nSymbol Table: %llu entries\n", (ULong)t_filehdr->f_nsyms);
    cursor = oimage;
    cursor += t_filehdr->f_symptr;
    HChar* badness = read_symbol_table( 
@@ -2092,7 +2097,7 @@ Bool read_xcoff_mapped_object ( struct _DebugInfo* di,
    /* ------------ String Table ------------ */
    if (oi_strtab) {
       if (SHOW)
-         VG_(printf)("\nString Table: %u bytes\n", oi_n_strtab);
+         VG_(printf)("\nString Table: %lu bytes\n", oi_n_strtab);
       i = 4;
       while (1) {
          if (i >= oi_n_strtab)
@@ -2416,10 +2421,10 @@ Bool ML_(read_xcoff_debug_info) ( struct _DebugInfo* di,
 
    if (VG_(clo_verbosity) > 1 || VG_(clo_trace_redir)) {
       if (di->memname) {
-         VG_(message)(Vg_DebugMsg, "Reading syms from %s(%s) (%p)",
+         VG_(message)(Vg_DebugMsg, "Reading syms from %s(%s) (%#lx)",
                       di->filename, di->memname, di->text_avma);
       } else {
-         VG_(message)(Vg_DebugMsg, "Reading syms from %s (%p)",
+         VG_(message)(Vg_DebugMsg, "Reading syms from %s (%#lx)",
                       di->filename, di->text_avma);
       }
    }
@@ -2429,10 +2434,10 @@ Bool ML_(read_xcoff_debug_info) ( struct _DebugInfo* di,
       VG_(printf)("---         file: %s\n",  di->filename);
       VG_(printf)("---          mem: %s\n",  di->memname ? di->memname  
                                                          : (UChar*)"(none)" );
-      VG_(printf)("--- t actual vma: %p\n",  di->text_avma);
-      VG_(printf)("--- t actual len: %ld\n", di->text_size);
-      VG_(printf)("--- d actual vma: %p\n",  di->data_avma);
-      VG_(printf)("--- d actual len: %ld\n", di->data_size);
+      VG_(printf)("--- t actual vma: %#lx\n", di->text_avma);
+      VG_(printf)("--- t actual len: %ld\n",  di->text_size);
+      VG_(printf)("--- d actual vma: %#lx\n", di->data_avma);
+      VG_(printf)("--- d actual len: %ld\n",  di->data_size);
    }
 
    if (di->memname) {

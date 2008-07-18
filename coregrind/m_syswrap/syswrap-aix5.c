@@ -184,7 +184,7 @@ Bool ML_(aix5_force_thread_into_pthread_exit)( ThreadId tid )
                                    &ent, &toc);
    if (found) {
       if (0) 
-         VG_(printf)("THREAD CANCELED, new cia,toc = %p,%p\n", ent, toc);
+         VG_(printf)("THREAD CANCELED, new cia,toc = %#lx,%#lx\n", ent, toc);
       tst->arch.vex.guest_CIA  = ent;
       tst->arch.vex.guest_GPR2 = toc;
       tst->arch.vex.guest_GPR3 = (Word)(-1); /* == PTHREAD_CANCELED */
@@ -383,7 +383,7 @@ void ML_(aix5debugstuff_show_tstate) ( Addr tsA, HChar* who )
       if ((i == _NGPRS-1) || ((i % step) == step-1 && i > 0)) 
          VG_(printf)("\n");
    }
-   VG_(printf)("  [iar] %p %s\n", ts->mst.iar, 
+   VG_(printf)("  [iar] %#llx %s\n", (ULong)ts->mst.iar, 
                ML_(aix5debugstuff_pc_to_fnname)(ts->mst.iar));
 
    VG_(printf)("  errnop_addr      %p\n", ts->errnop_addr);
@@ -416,7 +416,7 @@ void ML_(aix5debugstuff_show_tstate) ( Addr tsA, HChar* who )
       HChar* s = ML_(aix5debugstuff_pc_to_fnname)( (Addr)p[i] );
       if (0==VG_(strcmp)(s,"???"))
          continue;
-      VG_(printf)("  [%d] %p %s\n", i, p[i], s);
+      VG_(printf)("  [%d] %x %s\n", i, p[i], s);
    }
    VG_(printf)("}\n");
 }
@@ -445,7 +445,7 @@ void ML_(aix5debugstuff_show_tstate) ( Addr tsA, HChar* who )
 
 PRE(sys___libc_sbrk)
 {
-   PRINT("__libc_sbrk (BOGUS HANDLER)( %p )",ARG1);
+   PRINT("__libc_sbrk (BOGUS HANDLER)( %#lx )",ARG1);
    PRE_REG_READ1(long, "__libc_sbrk", long, arg1);
    /* After a zero sbrk, disallow aspacem from doing sbrk, since libc
       might rely on the value returned by this syscall. */
@@ -473,7 +473,7 @@ POST(sys___libc_sbrk)
 
 PRE(sys___msleep)
 {
-   PRINT("__msleep (BOGUS HANDLER) ( %p )", ARG1);
+   PRINT("__msleep (BOGUS HANDLER) ( %#lx )", ARG1);
    PRE_REG_READ1(long, "msleep", void*, arg1);
 }
 
@@ -481,7 +481,7 @@ PRE(sys___msleep)
 
 PRE(sys__clock_settime)
 {
-   PRINT("_clock_settime (UNDOCUMENTED) ( %d, %p )", ARG1, ARG2);
+   PRINT("_clock_settime (UNDOCUMENTED) ( %ld, %#lx )", ARG1, ARG2);
    PRE_REG_READ2(int, "_clock_settime", int, arg1, int, arg2);
 }
 
@@ -489,7 +489,7 @@ PRE(sys__exit)
 {
    ThreadState* tst;
    /* simple; just make this thread exit */
-   PRINT("_exit( %d )", ARG1);
+   PRINT("_exit( %ld )", ARG1);
    PRE_REG_READ1(void, "exit", int, exitcode);
 
    tst = VG_(get_ThreadState)(tid);
@@ -528,7 +528,7 @@ PRE(sys__getpriority)
 PRE(sys__nsleep)
 {
    *flags |= SfMayBlock;
-   PRINT("_nsleep( %p, %p )", ARG1, ARG2);
+   PRINT("_nsleep( %#lx, %#lx )", ARG1, ARG2);
    PRE_REG_READ2(void, "_nsleep", struct timestruc_t*, arg1,
                                   struct timestruc_t*, arg2);
    /* In 64-bit mode, struct ends in 4 padding bytes.  Hence: */
@@ -558,7 +558,7 @@ PRE(sys__poll)
    UInt i;
    struct pollfd* ufds = (struct pollfd *)ARG1;
    *flags |= SfMayBlock;
-   PRINT("_poll ( %p, %ld, %ld )\n", ARG1,ARG2,ARG3);
+   PRINT("_poll ( %#lx, %ld, %ld )\n", ARG1,ARG2,ARG3);
    PRE_REG_READ3(long, "_poll",
                  struct pollfd *, ufds, unsigned int, nfds, long, timeout);
 
@@ -586,7 +586,7 @@ PRE(sys__select)
    UInt nfds, nmqids;
    *flags |= SfMayBlock;
    /* XXX: copy of generic; I don't know if this is right or not. */
-   PRINT("_select ( %ld, %p, %p, %p, %p )", ARG1,ARG2,ARG3,ARG4,ARG5);
+   PRINT("_select ( %ld, %#lx, %#lx, %#lx, %#lx )", ARG1,ARG2,ARG3,ARG4,ARG5);
    PRE_REG_READ5(long, "_select",
                  int, n, struct sellist *, readfds, 
                          struct sellist *, writefds,
@@ -618,7 +618,7 @@ PRE(sys__select)
 PRE(sys__sem_wait)
 {
    *flags |= SfMayBlock;
-   PRINT("_sem_wait (BOGUS HANDLER) ( %p, %p, %ld )", ARG1, ARG2, ARG3);
+   PRINT("_sem_wait (BOGUS HANDLER) ( %#lx, %#lx, %ld )", ARG1, ARG2, ARG3);
    PRE_REG_READ3(long, "_sem_wait", void*, arg1, void*, arg2, long, arg3 );
    /* Not sure what the two pointer args are.  Hence no proper handler.*/
 }
@@ -636,7 +636,7 @@ PRE(sys__setsid)
 
 PRE(sys__sigaction) /* COL, more or less */
 {
-   PRINT("_sigaction ( %ld, %p, %p )", ARG1, ARG2, ARG3);
+   PRINT("_sigaction ( %ld, %#lx, %#lx )", ARG1, ARG2, ARG3);
    PRE_REG_READ3(long, "_sigaction",
                  int, signum, const struct sigaction *, act,
                  struct sigaction *, oldact);
@@ -678,14 +678,14 @@ PRE(sys__thread_setsched)
 
 PRE(sys_access)
 {
-   PRINT("access ( %p(%s), %ld )", ARG1,ARG1, ARG2);
+   PRINT("access ( %#lx(%s), %ld )", ARG1,(Char*)ARG1, ARG2);
    PRE_REG_READ2(int, "access", char*, pathname, int, mode);
    PRE_MEM_RASCIIZ( "access(pathname)", ARG1 );
 }
 
 PRE(sys_accessx)
 {
-   PRINT("accessx ( %p(%s), %ld, %ld )", ARG1,ARG1, ARG2, ARG3);
+   PRINT("accessx ( %#lx(%s), %ld, %ld )", ARG1,(Char*)ARG1, ARG2, ARG3);
    PRE_REG_READ3(int, "accessx", char*, pathname, int, mode, int, who);
    PRE_MEM_RASCIIZ( "accessx(pathname)", ARG1 );
 }
@@ -693,7 +693,7 @@ PRE(sys_accessx)
 PRE(sys_appgetrlimit)
 {
    /* Note: assumes kernel struct == libc struct */
-   PRINT("appgetrlimit ( %ld, %p )", ARG1, ARG2);
+   PRINT("appgetrlimit ( %ld, %#lx )", ARG1, ARG2);
    PRE_REG_READ2(int, "appgetrlimit", int, arg1, struct rlimit*, arg2);
    PRE_MEM_WRITE( "appgetrlimit(buf)", ARG2, sizeof(struct rlimit) );
 }
@@ -705,7 +705,7 @@ POST(sys_appgetrlimit)
 PRE(sys_appgetrusage)
 {
    /* Note: assumes kernel struct == libc struct */
-   PRINT("appgetrusage ( %d, %p )", ARG1, ARG2);
+   PRINT("appgetrusage ( %ld, %#lx )", ARG1, ARG2);
    PRE_REG_READ2(int, "appgetrusage", int, arg1, struct rusage*, arg2);
    PRE_MEM_WRITE( "appgetrusage(buf)", ARG2, sizeof(struct rusage) );
 }
@@ -732,7 +732,7 @@ PRE(sys_appulimit)
 
 PRE(sys_bind)
 {
-   PRINT("bind ( %ld, %p, %ld )", ARG1, ARG2, ARG3);
+   PRINT("bind ( %ld, %#lx, %ld )", ARG1, ARG2, ARG3);
    PRE_REG_READ3(int, "bind", int, socket, 
                               void*, address, int, addresslen);
    /* Hmm.  This isn't really right - see pre_mem_read_sockaddr. */
@@ -741,21 +741,21 @@ PRE(sys_bind)
 
 PRE(sys_chdir)
 {
-  PRINT("chdir ( %p(%s) )", ARG1,ARG1);
+  PRINT("chdir ( %#lx(%s) )", ARG1,(Char*)ARG1);
   PRE_REG_READ1(long, "chdir", const char *, path);
   PRE_MEM_RASCIIZ( "chdir(path)", ARG1 );
 }
 
 PRE(sys_chmod)
 {
-   PRINT("chmod ( %p(%s), 0x%lx )", ARG1,ARG1, ARG2 );
+   PRINT("chmod ( %#lx(%s), 0x%lx )", ARG1,(Char*)ARG1, ARG2 );
    PRE_REG_READ2(int, "chmod", char*, path, int, mode);
    PRE_MEM_RASCIIZ( "chmod(path)", ARG1 );
 }
 
 PRE(sys_chown)
 {
-   PRINT("chown ( %p(%s), %ld, %ld )", ARG1,ARG1, ARG2, ARG3 );
+   PRINT("chown ( %#lx(%s), %ld, %ld )", ARG1,(Char*)ARG1, ARG2, ARG3 );
    PRE_REG_READ3(int, "chown", char*, path, int, owner, int, group);
    PRE_MEM_RASCIIZ( "chown(path)", ARG1 );
 }
@@ -776,7 +776,7 @@ PRE(sys_connext)
    /* Although /usr/include/net/proto_uipc.h does mention it.
       Args are apparently (int, caddr_t, int).  I suspect the
       first arg is a fd and the third a flags value. */
-   PRINT("connext (UNDOCUMENTED)( %ld, %p, %ld )", ARG1, ARG2, ARG3);
+   PRINT("connext (UNDOCUMENTED)( %ld, %#lx, %ld )", ARG1, ARG2, ARG3);
    PRE_REG_READ3(int, "connext", int, arg1, caddr_t*, arg2, int, arg3);
 }
 
@@ -831,7 +831,7 @@ PRE(sys_execve)
    Int          i, j, tot_args;
    SysRes       res;
 
-   PRINT("sys_execve ( %p(%s), %p, %p )", ARG1, ARG1, ARG2, ARG3);
+   PRINT("sys_execve ( %#lx(%s), %#lx, %#lx )", ARG1, (Char*)ARG1, ARG2, ARG3);
    PRE_REG_READ3(vki_off_t, "execve",
                  char *, filename, char **, argv, char **, envp);
    PRE_MEM_RASCIIZ( "execve(filename)", ARG1 );
@@ -1040,8 +1040,8 @@ PRE(sys_execve)
       too much of a mess to continue, so we have to abort. */
   hosed:
    vg_assert(FAILURE);
-   VG_(message)(Vg_UserMsg, "execve(%p(%s), %p, %p) failed, errno %d",
-                ARG1, ARG1, ARG2, ARG3, ERR);
+   VG_(message)(Vg_UserMsg, "execve(%#lx(%s), %#lx, %#lx) failed, errno %ld",
+                ARG1, (Char*)ARG1, ARG2, ARG3, ERR);
    VG_(message)(Vg_UserMsg, "EXEC FAILED: I can't recover from "
                             "execve() failing, so I'm dying.");
    VG_(message)(Vg_UserMsg, "Add more stringent tests in PRE(sys_execve), "
@@ -1051,8 +1051,8 @@ PRE(sys_execve)
 
 PRE(sys_finfo)
 {
-   PRINT("finfo ( %p(%s), %ld, %p, %ld )",
-          ARG1,ARG1, ARG2, ARG3, ARG4);
+   PRINT("finfo ( %#lx(%s), %ld, %#lx, %ld )",
+          ARG1,(Char*)ARG1, ARG2, ARG3, ARG4);
    PRE_REG_READ4(int, "finfo", 
                       char*, Path1, int, cmd, void*, buffer, int, length);
    PRE_MEM_RASCIIZ( "finfo(Path1)", ARG1 );
@@ -1065,7 +1065,7 @@ POST(sys_finfo)
 
 PRE(sys_fstatfs)
 {
-   PRINT("sys_fstatfs ( %ld, %p )", ARG1, ARG2);
+   PRINT("sys_fstatfs ( %ld, %#lx )", ARG1, ARG2);
    PRE_REG_READ2(UWord, "fstatfs", UWord, fd, struct statfs *, buf);
    PRE_MEM_WRITE( "fstatfs(buf)", ARG2, sizeof(struct statfs) );
 }
@@ -1076,7 +1076,7 @@ POST(sys_fstatfs)
 
 PRE(sys_fstatx)
 {
-   PRINT("fstatx ( %ld, %p, %ld, %ld )", ARG1, ARG2, ARG3, ARG4 );
+   PRINT("fstatx ( %ld, %#lx, %ld, %ld )", ARG1, ARG2, ARG3, ARG4 );
    PRE_REG_READ4(Word, "fstatx", UWord, fd, void*, buf,
                                  UWord, len, UWord, cmd);
    PRE_MEM_WRITE( "fstatx(buf)", ARG2, ARG3 );
@@ -1097,7 +1097,7 @@ PRE(sys_getdirent)
    *flags |= SfMayBlock;
    /* this is pretty much like 'read':
       getdirent(fd, buffer, nbytes) -> # actually read */
-   PRINT("getdirent ( %ld, %p, %ld )", ARG1, ARG2, ARG3);
+   PRINT("getdirent ( %ld, %#lx, %ld )", ARG1, ARG2, ARG3);
    PRE_REG_READ3(Word, "getdirent", UWord, fd, UChar*, buf, UWord, count);
    PRE_MEM_WRITE( "getdirent(buf)", ARG2, ARG3 );
 }
@@ -1113,7 +1113,7 @@ PRE(sys_getdirent64)
    *flags |= SfMayBlock;
    /* this is pretty much like 'read':
       getdirent(fd, buffer, nbytes) -> # actually read */
-   PRINT("getdirent64 ( %ld, %p, %ld )", ARG1, ARG2, ARG3);
+   PRINT("getdirent64 ( %ld, %#lx, %ld )", ARG1, ARG2, ARG3);
    PRE_REG_READ3(Word, "getdirent64", UWord, fd, UChar*, buf, UWord, count);
    PRE_MEM_WRITE( "getdirent64(buf)", ARG2, ARG3 );
 }
@@ -1125,7 +1125,7 @@ POST(sys_getdirent64)
 
 PRE(sys_getdomainname)
 {
-   PRINT("getdomainname ( %p, %ld )", ARG1, ARG2 );
+   PRINT("getdomainname ( %#lx, %ld )", ARG1, ARG2 );
    PRE_MEM_WRITE( "getdomainname(buf)", ARG1, ARG2 );
 }
 POST(sys_getdomainname)
@@ -1135,13 +1135,13 @@ POST(sys_getdomainname)
 
 PRE(sys_getgidx)
 {
-   PRINT("getgidx ( %d )", ARG1);
+   PRINT("getgidx ( %ld )", ARG1);
    PRE_REG_READ1(UInt, "getgidx", long, arg1);
 }
 
 PRE(sys_getgroups)
 {
-   PRINT("getgroups ( %d, %p )", ARG1, ARG2);
+   PRINT("getgroups ( %ld, %#lx )", ARG1, ARG2);
    PRE_REG_READ2(long, "getgroups", int, size, gid_t *, list);
    if (ARG1 > 0)
       PRE_MEM_WRITE( "getgroups(list)", ARG2, ARG1 * sizeof(gid_t) );
@@ -1155,7 +1155,7 @@ POST(sys_getgroups)
 
 PRE(sys_gethostname)
 {
-   PRINT("gethostname ( %p, %ld )", ARG1, ARG2);
+   PRINT("gethostname ( %#lx, %ld )", ARG1, ARG2);
    PRE_MEM_WRITE( "gethostname(buf)", ARG1, ARG2 );
 }
 POST(sys_gethostname)
@@ -1165,7 +1165,7 @@ POST(sys_gethostname)
 
 PRE(sys_getpriv)
 {
-   PRINT("getpriv (UNDOCUMENTED)(%ld, %p, %ld)", ARG1, ARG2, ARG3);
+   PRINT("getpriv (UNDOCUMENTED)(%ld, %#lx, %ld)", ARG1, ARG2, ARG3);
    PRE_REG_READ3(int, "getpriv", int, arg1, void*, arg2, int, arg3);
    PRE_MEM_WRITE( "getpriv(arg2)", ARG2, 8 );
 }
@@ -1177,7 +1177,7 @@ POST(sys_getpriv)
 
 PRE(sys_getprocs)
 {
-   PRINT("getprocs ( %p, %ld, %p, %ld, %p, %ld )",
+   PRINT("getprocs ( %#lx, %ld, %#lx, %ld, %#lx, %ld )",
          ARG1, ARG2, ARG3, ARG4, ARG5, ARG6 );
    PRE_REG_READ6(int, "getprocs", 
                  void*, processbuffer, long, processize, 
@@ -1203,13 +1203,13 @@ POST(sys_getprocs)
 
 PRE(sys_getrpid)
 {
-   PRINT("getrpid ( %d, %ld, %ld )", ARG1, ARG2, ARG3);
+   PRINT("getrpid ( %ld, %ld, %ld )", ARG1, ARG2, ARG3);
    PRE_REG_READ3(long, "getrpid", long, arg1, long, arg2, long, arg3);
 }
 
 PRE(sys_getsockopt)
 {
-   PRINT("getsockopt ( %ld, %ld, %ld, %p, %p )", 
+   PRINT("getsockopt ( %ld, %ld, %ld, %#lx, %#lx )", 
          ARG1, ARG2, ARG3, ARG4, ARG5);
    PRE_REG_READ5(int, "getsockopt", int, socket, int, level, 
                                     int, optionname, 
@@ -1241,7 +1241,7 @@ PRE(sys_getuidx)
 
 PRE(sys_incinterval)
 {
-   PRINT("incinterval ( %ld, %p, %p )", ARG1, ARG2, ARG3);
+   PRINT("incinterval ( %ld, %#lx, %#lx )", ARG1, ARG2, ARG3);
    PRE_REG_READ3(int, "incinterval", int, timerid, 
                       struct itimerstruc_t*, value,
                       struct itimerstruc_t*, ovalue);
@@ -1289,7 +1289,7 @@ PRE(sys_kfcntl)
       case F_GETLK64:
       case F_SETLK64:
       case F_SETLKW64:
-         PRINT("kfcntl[ARG3=='lock'] ( %ld, %ld, %p )", ARG1,ARG2,ARG3);
+         PRINT("kfcntl[ARG3=='lock'] ( %ld, %ld, %#lx )", ARG1,ARG2,ARG3);
          PRE_REG_READ3(long, "fcntl",
                        unsigned int, fd, unsigned int, cmd,
                        struct flock64 *, lock);
@@ -1346,7 +1346,7 @@ PRE(sys_kfork) /* COPY OF GENERIC */
    else 
    if (SUCCESS && RES > 0) {
       /* parent */
-      PRINT("   fork: process %d created child %d\n", VG_(getpid)(), RES);
+      PRINT("   fork: process %d created child %lu\n", VG_(getpid)(), RES);
 
       /* restore signal mask */
       VG_(sigprocmask)(VKI_SIG_SETMASK, &fork_saved_mask, NULL);
@@ -1373,7 +1373,7 @@ PRE(sys_kill)
 PRE(sys_kioctl)
 {
    *flags |= SfMayBlock;
-   PRINT("kioctl ( %ld, %p, %p, %p )", ARG1, ARG2, ARG3, ARG4);
+   PRINT("kioctl ( %ld, %#lx, %#lx, %#lx )", ARG1, ARG2, ARG3, ARG4);
    PRE_REG_READ4(Word, "ioctl", Word, fd, 
                                 Word, command, Word, arg, Word, ext);
    switch (ARG2 /* request */) {
@@ -1423,7 +1423,7 @@ PRE(sys_kioctl)
             if (moans > 0 && !VG_(clo_xml)) {
                moans--;
                VG_(message)(Vg_UserMsg, 
-                            "Warning: noted but unhandled ioctl 0x%x"
+                            "Warning: noted but unhandled ioctl 0x%lx"
                             " with no size/direction hints",
                             ARG2); 
                VG_(message)(Vg_UserMsg, 
@@ -1509,7 +1509,7 @@ POST(sys_kioctl)
 
 PRE(sys_klseek)
 {
-   PRINT("klseek ( %ld, %ld, %ld, %p )", ARG1, ARG2, ARG3, ARG4);
+   PRINT("klseek ( %ld, %ld, %ld, %#lx )", ARG1, ARG2, ARG3, ARG4);
    PRE_REG_READ4(long, "klseek", 
                  long, fd, long, offset, long, whence, void*, arg4);
    /* XXX: looks like 4th arg is a pointer to something.  Is it
@@ -1524,8 +1524,8 @@ PRE(sys_knlist)
 PRE(sys_kpread)
 {
    *flags |= SfMayBlock;
-   PRINT("sys_kpread ( %d, %p, %llu, %lld )",
-         ARG1, ARG2, (ULong)ARG3, ARG4);
+   PRINT("sys_kpread ( %ld, %#lx, %llu, %lld )",
+         ARG1, ARG2, (ULong)ARG3, (ULong)ARG4);
    PRE_REG_READ4(ssize_t, "kpread",
                  unsigned int, fd, char *, buf,
                  vki_size_t, count, long, offset);
@@ -1542,7 +1542,7 @@ POST(sys_kpread)
 PRE(sys_kread)
 {
    *flags |= SfMayBlock;
-   PRINT("sys_read ( %ld, %p, %llu )", ARG1, ARG2, (ULong)ARG3);
+   PRINT("sys_read ( %ld, %#lx, %llu )", ARG1, ARG2, (ULong)ARG3);
    PRE_REG_READ3(ssize_t, "read",
                  unsigned int, fd, char *, buf, vki_size_t, count);
    //zz   if (!ML_(fd_allowed)(ARG1, "read", tid, False))
@@ -1562,7 +1562,7 @@ PRE(sys_kreadv)
    struct vki_iovec * vec;
    *flags |= SfMayBlock;
    /* ssize_t readvx ( int fd, struct iovec*, int iovCount, int extension ) */
-   PRINT("kreadv ( %ld, %p, %ld, %p )", ARG1, ARG2, ARG3, ARG4);
+   PRINT("kreadv ( %ld, %#lx, %ld, %#lx )", ARG1, ARG2, ARG3, ARG4);
    PRE_REG_READ4(ssize_t, "kreadv",
                  unsigned long, fd, const struct iovec *, vector,
                  unsigned long, iovCount, unsigned long, extension);
@@ -1606,7 +1606,7 @@ PRE(sys_kthread_ctl)
 
 PRE(sys_ktruncate)
 {
-   PRINT("ktruncate( %p(%s), %lx, %lx )", ARG1,ARG1, ARG2, ARG3 );
+   PRINT("ktruncate( %#lx(%s), %lx, %lx )", ARG1,(Char*)ARG1, ARG2, ARG3 );
    PRE_REG_READ3(int, "ktruncate", char*, path, long, arg2, long, arg3 );
    PRE_MEM_RASCIIZ( "ktruncate(path)", ARG1 );
 }
@@ -1616,7 +1616,7 @@ PRE(sys_kwaitpid)
    /* Note: args 1 and 2 (status, pid) opposite way round
       from generic handler */
    *flags |= SfMayBlock;
-   PRINT("kwaitpid ( %p, %ld, %ld, %p, %p )", ARG1,ARG2,ARG3,ARG4,ARG5);
+   PRINT("kwaitpid ( %#lx, %ld, %ld, %#lx, %#lx )", ARG1,ARG2,ARG3,ARG4,ARG5);
    PRE_REG_READ3(long, "waitpid", 
                  unsigned int *, status, int, pid, int, options);
 
@@ -1633,7 +1633,7 @@ PRE(sys_kwrite)
 {
    //zz   Bool ok;
    *flags |= SfMayBlock;
-   PRINT("sys_kwrite ( %ld, %p, %llu )", ARG1, ARG2, (ULong)ARG3);
+   PRINT("sys_kwrite ( %ld, %#lx, %llu )", ARG1, ARG2, (ULong)ARG3);
    PRE_REG_READ3(ssize_t, "kwrite",
                  unsigned int, fd, const char *, buf, vki_size_t, count);
    /* check to see if it is allowed.  If not, try for an exemption from
@@ -1660,7 +1660,7 @@ PRE(sys_listen)
 
 PRE(sys_loadbind)
 {
-   PRINT("loadbind( %ld, %p, %p )", ARG1, ARG2, ARG3);
+   PRINT("loadbind( %ld, %#lx, %#lx )", ARG1, ARG2, ARG3);
    PRE_REG_READ3(int, "loadbind", int, flag,
                       void*, ExportPointer, void*, ImportPointer);
 }
@@ -1668,7 +1668,7 @@ PRE(sys_loadbind)
 PRE(sys_loadquery)
 {
    /* loadquery ( int flags, void* buffer, unsigned int bufferlength ) */
-   PRINT("loadquery ( %p, %p, %ld )", ARG1, ARG2, ARG3);
+   PRINT("loadquery ( %#lx, %#lx, %ld )", ARG1, ARG2, ARG3);
    PRE_MEM_WRITE( "loadquery(buf)", ARG2, ARG3 );
 }
 POST(sys_loadquery)
@@ -1685,14 +1685,14 @@ PRE(sys_lseek)
 
 PRE(sys_mkdir)
 {
-   PRINT("mkdir (%p(%s), %p)", ARG1,ARG1, ARG2);
+   PRINT("mkdir (%#lx(%s), %#lx)", ARG1,(Char*)ARG1, ARG2);
    PRE_REG_READ2(int, "mkdir", char*, path, int, mode);
    PRE_MEM_RASCIIZ( "mkdir(path)", ARG1 );
 }
 
 PRE(sys_mmap)
 {
-   PRINT("mmap ( %p, %ld, %p, %p, %ld, %ld )",
+   PRINT("mmap ( %#lx, %ld, %#lx, %#lx, %ld, %ld )",
          ARG1, ARG2, ARG3, ARG4, ARG5, ARG6);
    PRE_REG_READ6(void*, "mmap", void*, addr, int, len, 
                         int, prot, int, flags, int, fd, int, off);
@@ -1716,7 +1716,7 @@ POST(sys_mmap)
 
 PRE(sys_mntctl)
 {
-   PRINT("mntctl ( %ld, %ld, %p )", ARG1, ARG2, ARG3 );
+   PRINT("mntctl ( %ld, %ld, %#lx )", ARG1, ARG2, ARG3 );
    PRE_REG_READ3(long, "mntctl", long, command, long, size, char*, buffer);
    PRE_MEM_WRITE( "mntctl(buffer)", ARG3, ARG2 );
 }
@@ -1737,7 +1737,7 @@ POST(sys_mntctl)
 
 PRE(sys_mprotect)
 {
-   PRINT("mprotect (BOGUS HANDLER)( %p, %ld, %p )", ARG1, ARG2, ARG3);
+   PRINT("mprotect (BOGUS HANDLER)( %#lx, %ld, %#lx )", ARG1, ARG2, ARG3);
    PRE_REG_READ3(int, "mprotect", void*, addr, long, len, long, prot);
 }
 POST(sys_mprotect)
@@ -1754,7 +1754,7 @@ POST(sys_mprotect)
 
 PRE(sys_munmap)
 {
-   PRINT("munmap ( %p, %ld )", ARG1, ARG2);
+   PRINT("munmap ( %#lx, %ld )", ARG1, ARG2);
    PRE_REG_READ2(int, "munmap", void*, addr, long, len);
 }
 POST(sys_munmap)
@@ -1771,7 +1771,7 @@ POST(sys_munmap)
 
 PRE(sys_naccept)
 {
-   PRINT("naccept (%ld, %p, %p)", ARG1, ARG2, ARG3);
+   PRINT("naccept (%ld, %#lx, %#lx)", ARG1, ARG2, ARG3);
    PRE_REG_READ3(int, "naccept", int, socket, char*, addr, int*, addrlen);
    PRE_MEM_READ( "naccept(addrlen)", ARG3, sizeof(UInt) );
    PRE_MEM_WRITE( "naccept(addr)", ARG2, *(UInt*)ARG3 );
@@ -1784,7 +1784,7 @@ POST(sys_naccept)
 
 PRE(sys_ngetpeername)
 {
-   PRINT("ngetpeername ( %ld, %p, %p )", ARG1, ARG2, ARG3);
+   PRINT("ngetpeername ( %ld, %#lx, %#lx )", ARG1, ARG2, ARG3);
    PRE_REG_READ3(int, "ngetpeername", int, fd, char*, name, int*, namelen);
    PRE_MEM_READ( "ngetpeername(namelen)", ARG3, sizeof(UInt) );
    PRE_MEM_WRITE( "ngetpeername(name)", ARG2, *(UInt*)ARG3 );
@@ -1797,7 +1797,7 @@ POST(sys_ngetpeername)
 
 PRE(sys_ngetsockname)
 {
-   PRINT("ngetsockname ( %ld, %p, %p )", ARG1, ARG2, ARG3);
+   PRINT("ngetsockname ( %ld, %#lx, %#lx )", ARG1, ARG2, ARG3);
    PRE_REG_READ3(int, "ngetsockname", int, fd, char*, name, int*, namelen);
    PRE_MEM_READ( "ngetsockname(namelen)", ARG3, sizeof(UInt) );
    PRE_MEM_WRITE( "ngetsockname(name)", ARG2, *(UInt*)ARG3 );
@@ -1811,7 +1811,7 @@ POST(sys_ngetsockname)
 PRE(sys_nrecvfrom)
 {
    *flags |= SfMayBlock;
-   PRINT("nrecvfrom ( %ld, %p, %ld, %ld, %p, %p )",
+   PRINT("nrecvfrom ( %ld, %#lx, %ld, %ld, %#lx, %#lx )",
          ARG1, ARG2, ARG3, ARG4, ARG5, ARG6 );
    PRE_REG_READ6(ssize_t, "nrecvfrom",
                  int, s, void*, buf, size_t, len, int, flags,
@@ -1834,14 +1834,14 @@ POST(sys_nrecvfrom)
 PRE(sys_nrecvmsg)
 {
    *flags |= SfMayBlock;
-   PRINT("nrecvmsg(BOGUS HANDLER)( %ld, %p, %ld )", ARG1, ARG2, ARG3);
+   PRINT("nrecvmsg(BOGUS HANDLER)( %ld, %#lx, %ld )", ARG1, ARG2, ARG3);
    PRE_REG_READ3(long, "nrecvmsg", long, arg1, void*, arg2, long, arg3);
 }
 
 PRE(sys_nsendmsg)
 {
    *flags |= SfMayBlock;
-   PRINT("nsendmsg(BOGUS HANDLER)( %ld, %p, %ld )", ARG1, ARG2, ARG3);
+   PRINT("nsendmsg(BOGUS HANDLER)( %ld, %#lx, %ld )", ARG1, ARG2, ARG3);
 }
 
 PRE(sys_open) /* XXX CoG */
@@ -1851,12 +1851,12 @@ PRE(sys_open) /* XXX CoG */
 
    if (ARG2 & VKI_O_CREAT) {
       // 3-arg version
-      PRINT("sys_open ( %p(%s), %p, %ld )",ARG1,ARG1,ARG2,ARG3);
+      PRINT("sys_open ( %#lx(%s), %#lx, %ld )",ARG1,(Char*)ARG1,ARG2,ARG3);
       PRE_REG_READ3(long, "open",
                     const char *, filename, int, flags, int, mode);
    } else {
       // 2-arg version
-      PRINT("sys_open ( %p(%s), %p )",ARG1,ARG1,ARG2);
+      PRINT("sys_open ( %#lx(%s), %#lx )",ARG1,(Char*)ARG1,ARG2);
       PRE_REG_READ2(long, "open",
                     const char *, filename, int, flags);
    }
@@ -1898,7 +1898,7 @@ POST(sys_open)
 
 PRE(sys_pipe)
 {
-   PRINT("sys_pipe ( %p )", ARG1);
+   PRINT("sys_pipe ( %#lx )", ARG1);
    PRE_REG_READ1(int, "pipe", int *, filedes);
    PRE_MEM_WRITE( "pipe(filedes)", ARG1, 2*sizeof(int) );
 }
@@ -1928,7 +1928,7 @@ PRE(sys_privcheck)
 
 PRE(sys_readlink)
 {
-   PRINT("readlink ( 0x%x(%s),0x%x,%ld )", ARG1,ARG1, ARG2, ARG3);
+   PRINT("readlink ( 0x%lx(%s),0x%lx,%ld )", ARG1,(Char*)ARG1, ARG2, ARG3);
    PRE_REG_READ3(long, "readlink",
                  const char *, path, char *, buf, int, bufsiz);
    PRE_MEM_RASCIIZ( "readlink(path)", ARG1 );
@@ -1942,7 +1942,7 @@ POST(sys_readlink)
 PRE(sys_recv)
 {
    *flags |= SfMayBlock;
-   PRINT("recv ( %ld, %p, %ld, %ld )",
+   PRINT("recv ( %ld, %#lx, %ld, %ld )",
          ARG1, ARG2, ARG3, ARG4);
    PRE_REG_READ4(int, "recv", int, fd, void*, buf, int, len, int, flags);
    PRE_MEM_WRITE( "recv(buf)", ARG2, ARG3);
@@ -1956,7 +1956,7 @@ POST(sys_recv)
 PRE(sys_rename)
 {
    *flags |= SfMayBlock;
-   PRINT( "rename ( %p(%s), %p(%s) )", ARG1,ARG1, ARG2,ARG2 );
+   PRINT( "rename ( %#lx(%s), %#lx(%s) )", ARG1,(Char*)ARG1, ARG2,(Char*)ARG2 );
    PRE_REG_READ2(int, "rename", char*, frompath, char*, topath);
    PRE_MEM_RASCIIZ( "rename(frompath)", ARG1 );
    PRE_MEM_RASCIIZ( "rename(topath)", ARG2 );
@@ -1964,7 +1964,7 @@ PRE(sys_rename)
 
 PRE(sys_sbrk)
 {
-   PRINT("sbrk (BOGUS HANDLER)( %p )", ARG1);
+   PRINT("sbrk (BOGUS HANDLER)( %#lx )", ARG1);
    PRE_REG_READ1(long, "sbrk", long, arg1);
    /* After a zero sbrk, disallow aspacem from doing sbrk, since libc
       might rely on the value returned by this syscall. */
@@ -1996,14 +1996,14 @@ PRE(sys_sched_get_priority_max)
 
 PRE(sys_sem_destroy)
 {
-   PRINT("sem_destroy ( %p )", ARG1);
+   PRINT("sem_destroy ( %#lx )", ARG1);
    PRE_REG_READ1(int, "sem_destroy", sem_t*, sem);
    PRE_MEM_READ( "sem_destroy(sem)", ARG1, sizeof(sem_t) );
 }
 
 PRE(sys_sem_init)
 {
-   PRINT("sem_init ( %p, %ld, %ld )", ARG1, ARG2, ARG3);
+   PRINT("sem_init ( %#lx, %ld, %ld )", ARG1, ARG2, ARG3);
    PRE_REG_READ3(int, "sem_init", sem_t*, sem, int, pshared, int, value);
    PRE_MEM_WRITE( "sem_init(sem)", ARG1, sizeof(sem_t) );
 }
@@ -2014,7 +2014,7 @@ POST(sys_sem_init)
 
 PRE(sys_sem_post)
 {
-   PRINT("sem_post ( %p )", ARG1);
+   PRINT("sem_post ( %#lx )", ARG1);
    PRE_REG_READ1(int, "sem_post", sem_t*, sem);
    PRE_MEM_READ("sem_post(sem)", ARG1, sizeof(sem_t));
 }
@@ -2026,7 +2026,7 @@ POST(sys_sem_post)
 PRE(sys_send)
 {
    *flags |= SfMayBlock;
-   PRINT("send (BOGUS HANDLER)( %ld, %p, %ld, %ld )", 
+   PRINT("send (BOGUS HANDLER)( %ld, %#lx, %ld, %ld )", 
          ARG1, ARG2, ARG3, ARG4);
 }
 
@@ -2038,7 +2038,7 @@ PRE(sys_setgid)
 
 PRE(sys_setsockopt)
 {
-   PRINT("setsockopt ( %ld, %ld, %ld, %p, %ld )", 
+   PRINT("setsockopt ( %ld, %ld, %ld, %#lx, %ld )", 
          ARG1,ARG2,ARG3,ARG4,ARG5 );
    PRE_REG_READ5(long, "setsockopt", 
                  long, socket, long, level, long, optionname, 
@@ -2060,7 +2060,7 @@ static UWord get_shm_size ( Word shmid )
    vg_assert(__NR_AIX5_shmctl != __NR_AIX5_UNKNOWN);
    res = VG_(do_syscall3)(__NR_AIX5_shmctl, shmid, IPC_STAT, (UWord)&buf);
    if (0) 
-      VG_(printf)("XXX: shm_size(%ld) = %d %d\n", shmid, res.res, res.err);
+      VG_(printf)("XXX: shm_size(%ld) = %ld %ld\n", shmid, res.res, res.err);
    if (res.isError) {
       if (0)
          VG_(printf)("XXX: shm_size(shmid = %ld): FAILED\n", shmid);
@@ -2090,7 +2090,7 @@ PRE(sys_shmat)
 {
    UWord segmentSize;
    /* void* shmat ( int shmid, const void* shmaddr, int flags ) */
-   PRINT("shmat (%ld, %p, %p)", ARG1, ARG2, ARG3);
+   PRINT("shmat (%ld, %#lx, %#lx)", ARG1, ARG2, ARG3);
    PRE_REG_READ3(void*, "shmat", int, shmid, void*, shmaddr, int, flags);
    segmentSize = get_shm_size( ARG1 );
    if (0) VG_(printf)("shmat: seg size = %lu\n", segmentSize);
@@ -2122,7 +2122,7 @@ POST(sys_shmat)
 
 PRE(sys_shmctl)
 {
-   PRINT("shmctl ( %ld, %ld, %p )", ARG1, ARG2, ARG3 );
+   PRINT("shmctl ( %ld, %ld, %#lx )", ARG1, ARG2, ARG3 );
    PRE_REG_READ3(int, "shmctl", int, shmid, int, command, void*, buffer);
    if (ARG3)
       PRE_MEM_WRITE( "shmctl(buffer)", ARG3, sizeof(struct shmid_ds) );
@@ -2135,7 +2135,7 @@ POST(sys_shmctl)
 
 PRE(sys_shmdt)
 {
-   PRINT("shmdt ( %p )", ARG1);
+   PRINT("shmdt ( %#lx )", ARG1);
    PRE_REG_READ1(long, "shmdt", void*, address);
 }
 POST(sys_shmdt)
@@ -2177,7 +2177,7 @@ PRE(sys_sigcleanup)
 
 PRE(sys_sigprocmask)
 {
-   PRINT("sigprocmask ( %ld, %p, %p )", ARG1, ARG2, ARG3);
+   PRINT("sigprocmask ( %ld, %#lx, %#lx )", ARG1, ARG2, ARG3);
    PRE_REG_READ3(long, "sigprocmask", 
                  int, how, vki_sigset_t *, set, vki_sigset_t *, oldset);
    if (ARG2 != 0)
@@ -2208,7 +2208,7 @@ PRE(sys_socket)
 
 PRE(sys_statfs)
 {
-   PRINT("sys_statfs ( %p(%s), %p )",ARG1,ARG1,ARG2);
+   PRINT("sys_statfs ( %#lx(%s), %#lx )",ARG1,(Char*)ARG1,ARG2);
    PRE_REG_READ2(long, "statfs", const char *, path, struct statfs *, buf);
    PRE_MEM_RASCIIZ( "statfs(path)", ARG1 );
    PRE_MEM_WRITE( "statfs(buf)", ARG2, sizeof(struct statfs) );
@@ -2220,7 +2220,7 @@ POST(sys_statfs)
 
 PRE(sys_statx)
 {
-   PRINT("statx ( %p(%s), %p, %ld, %ld )", ARG1,ARG1,ARG2,ARG3,ARG4);
+   PRINT("statx ( %#lx(%s), %#lx, %ld, %ld )", ARG1,(Char*)ARG1,ARG2,ARG3,ARG4);
    PRE_MEM_RASCIIZ( "statx(file_name)", ARG1 );
    PRE_REG_READ4(Word, "statx", UWord, fd, void*, buf,
                                 UWord, len, UWord, cmd);
@@ -2238,7 +2238,7 @@ PRE(sys_symlink)
 
 PRE(sys_sys_parm)
 {
-   PRINT("sys_parm (%ld, %ld, %p)", ARG1, ARG2, ARG3);
+   PRINT("sys_parm (%ld, %ld, %#lx)", ARG1, ARG2, ARG3);
    PRE_REG_READ3(int, "sys_parm", int, cmd, int, cmdflag, 
                       struct vario*, parmp);
    /* this is a bit of a kludge, but if parmp has uninitialised areas
@@ -2255,7 +2255,7 @@ POST(sys_sys_parm)
 
 PRE(sys_sysconfig)
 {
-   PRINT("sysconfig ( %ld, %p, %ld )", ARG1, ARG2, ARG3);
+   PRINT("sysconfig ( %ld, %#lx, %ld )", ARG1, ARG2, ARG3);
    PRE_REG_READ3(int, "sysconfig", int, cmd, void*, parmp, int, parmlen);
    /* It may be that the area is read sometimes as well as written,
       but for the same reasons as sys_parm, just check addressibility,
@@ -2301,7 +2301,7 @@ PRE(sys_thread_init)
 {
    *flags |= SfMayBlock;
    PRE_REG_READ2(long, "thread_init", long, arg1, long, arg2);
-   PRINT("thread_init (BOGUS HANDLER) ( %p, %p )", ARG1, ARG2);
+   PRINT("thread_init (BOGUS HANDLER) ( %#lx, %#lx )", ARG1, ARG2);
 }
 
 PRE(sys_thread_kill)
@@ -2345,7 +2345,7 @@ PRE(sys_thread_setmystate)
       I assume: first is new state, if not NULL.  
       Second is place to write the previous state, if not NULL.
       (in the style of sigaction) */
-   PRINT("thread_setmystate (BOGUS HANDLER) ( %p, %p )",
+   PRINT("thread_setmystate (BOGUS HANDLER) ( %#lx, %#lx )",
          ARG1, ARG2 );
    PRE_REG_READ2(long, "thread_setmystate", 
                        struct tstate *, newstate, 
@@ -2386,7 +2386,7 @@ PRE(sys_thread_setmystate_fast)
    UWord how = ARG1;
    /* args: ?? */
    PRINT("thread_setmystate_fast (BOGUS HANDLER)"
-         "(%p,%p(%s),%p(%s))", 
+         "(%#lx,%#lx(%s),%#lx(%s))", 
          ARG1,
          ARG2, ML_(aix5debugstuff_pc_to_fnname)(ARG2),
          ARG3, ML_(aix5debugstuff_pc_to_fnname)(ARG3)
@@ -2439,7 +2439,7 @@ PRE(sys_thread_terminate_unlock)
 {
    ThreadState* tst;
    /* simple; just make this thread exit */
-   PRINT("thread_terminate_unlock( %p )", ARG1);
+   PRINT("thread_terminate_unlock( %#lx )", ARG1);
    PRE_REG_READ1(void, "thread_terminate_unlock", void*, exitcode);
    tst = VG_(get_ThreadState)(tid);
    /* Drop the lock we were holding, since we're not really going to
@@ -2456,27 +2456,27 @@ PRE(sys_thread_terminate_unlock)
 PRE(sys_thread_tsleep)
 {
    *flags |= SfMayBlock;
-   PRINT("thread_tsleep (BOGUS HANDLER)( %ld, %p, %p, %p )", 
+   PRINT("thread_tsleep (BOGUS HANDLER)( %ld, %#lx, %#lx, %#lx )", 
          ARG1, ARG2, ARG3, ARG4 );
 }
 
 PRE(sys_thread_tsleep_event)
 {
    *flags |= SfMayBlock;
-   PRINT("thread_tsleep_event (UNDOCUMENTED)( %p, %p, %ld, %p )", 
+   PRINT("thread_tsleep_event (UNDOCUMENTED)( %#lx, %#lx, %ld, %#lx )", 
          ARG1, ARG2, ARG3, ARG4 );
 }
 
 PRE(sys_thread_twakeup)
 {
    *flags |= SfMayBlock;
-   PRINT("thread_twakeup (BOGUS HANDLER)( tid=%ld, val=%p )", ARG1, ARG2 );
+   PRINT("thread_twakeup (BOGUS HANDLER)( tid=%ld, val=%#lx )", ARG1, ARG2 );
 }
 
 PRE(sys_thread_twakeup_event)
 {
    *flags |= SfMayBlock;
-   PRINT("thread_twakeup_event (BOGUS HANDLER)( %p, %ld, %ld )", 
+   PRINT("thread_twakeup_event (BOGUS HANDLER)( %#lx, %ld, %ld )", 
          ARG1, ARG2, ARG3 );
 }
 
@@ -2500,7 +2500,7 @@ PRE(sys_thread_waitlock_)
 
 PRE(sys_times)
 {
-   PRINT("times ( %p )", ARG1);
+   PRINT("times ( %#lx )", ARG1);
    PRE_REG_READ1(long, "times", struct tms *, buffer);
    PRE_MEM_WRITE("times(buf)", ARG1, sizeof(struct tms) );
 }
@@ -2521,14 +2521,14 @@ PRE(sys_uname)
 
 PRE(sys_unlink)
 {
-   PRINT("unlink ( %p(%s) )", ARG1);
+   PRINT("unlink ( %#lx(%s) )", ARG1, (Char*)ARG1 );
    PRE_REG_READ1(int, "unlink", char*, path);
    PRE_MEM_RASCIIZ( "unlink(path)", ARG1 );
 }
 
 PRE(sys_utimes)
 {
-   PRINT("utimes ( %p(%s), %p )", ARG1, ARG2);
+   PRINT("utimes ( %#lx(%s), %#lx )", ARG1,(Char*)ARG1, ARG2);
    PRE_REG_READ2(int, "utimes", char*, path, struct timeval*, times);
    PRE_MEM_RASCIIZ( "utimes(path)", ARG1 );
    PRE_MEM_READ( "utimes(times)", ARG2, 2 * sizeof(struct vki_timeval) );
@@ -2536,7 +2536,7 @@ PRE(sys_utimes)
 
 PRE(sys_vmgetinfo)
 {
-   PRINT("vmgetinfo ( %p, %ld, %ld )", ARG1, ARG2, ARG3 );
+   PRINT("vmgetinfo ( %#lx, %ld, %ld )", ARG1, ARG2, ARG3 );
    PRE_REG_READ3(int, "vmgetinfo", void*, out, int, command, int, arg);
    /* It looks like libc's vmgetinfo just hands stuff through to the
       syscall.  The man page says that the interpretation of ARG3(arg)

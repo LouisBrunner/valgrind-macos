@@ -350,9 +350,9 @@ PRE(sys___loadx)
 {
    *flags |= SfMayBlock;
    if ((ARG1 & VKI_DL_FUNCTION_MASK) == VKI_DL_LOAD) {
-      PRINT("__loadx(0x%x(DL_LOAD),0x%x,%d,0x%x(%s),0x%x(%s))",
+      PRINT("__loadx(0x%lx(DL_LOAD),0x%lx,%ld,0x%lx(%s),0x%lx(%s))",
             ARG1,ARG2,ARG3,
-            ARG4,ARG4,
+            ARG4,(HChar*)ARG4,
             ARG5, (ARG5 ? (HChar*)ARG5 : "nil") );
       /* It would appear that (ARG2, ARG3) describe a buffer
          which is written into by the kernel on success. */
@@ -360,7 +360,7 @@ PRE(sys___loadx)
    }
    else
    if ((ARG1 & VKI_DL_FUNCTION_MASK) == VKI_DL_POSTLOADQ) {
-      PRINT("__loadx(0x%x(DL_POSTLOADQ),0x%x,%d,0x%x)",
+      PRINT("__loadx(0x%lx(DL_POSTLOADQ),0x%lx,%ld,0x%lx)",
             ARG1,ARG2,ARG3,ARG4);
     /* It would appear that (ARG2, ARG3) describe a buffer                      
         which is written into by the kernel on success. */
@@ -368,40 +368,40 @@ PRE(sys___loadx)
    }
    else
    if ((ARG1 & VKI_DL_FUNCTION_MASK) == VKI_DL_GLOBALSYM) {
-      PRINT("__loadx(0x%x(DL_GLOBALSYM),0x%x(%s),0x%x,0x%x,0x%x)",
-            ARG1, ARG2,ARG2,
+      PRINT("__loadx(0x%lx(DL_GLOBALSYM),0x%lx(%s),0x%lx,0x%lx,0x%lx)",
+            ARG1, ARG2,(Char*)ARG2,
             ARG3, ARG4, ARG5);
    }
    else
    if ((ARG1 & VKI_DL_FUNCTION_MASK) == VKI_DL_EXITQ) {
-      PRINT("__loadx(0x%x(DL_EXITQ),0x%x,%d)", ARG1, ARG2, ARG3);
+      PRINT("__loadx(0x%lx(DL_EXITQ),0x%lx,%ld)", ARG1, ARG2, ARG3);
       PRE_MEM_WRITE("__loadx(DL_EXITQ)(ARG2,ARG3)", ARG2, ARG3);
    }
    else
    if ((ARG1 & VKI_DL_FUNCTION_MASK) == VKI_DL_EXECQ) {
-      PRINT("__loadx(0x%x(DL_EXECQ),0x%x,%d)", ARG1, ARG2, ARG3);
+      PRINT("__loadx(0x%lx(DL_EXECQ),0x%lx,%ld)", ARG1, ARG2, ARG3);
       PRE_MEM_WRITE("__loadx(DL_EXECQ)(ARG2,ARG3)", ARG2, ARG3);
    }
    else
    if ((ARG1 & VKI_DL_FUNCTION_MASK) == VKI_DL_GETSYM) {
-      PRINT("__loadx(0x%x(DL_GETSYM),0x%x(%s),%d,0x%x)", 
-            ARG1, ARG2,ARG2, ARG3, ARG4);
+      PRINT("__loadx(0x%lx(DL_GETSYM),0x%lx(%s),%ld,0x%lx)", 
+            ARG1, ARG2,(Char*)ARG2, ARG3, ARG4);
    }
    else
    if ((ARG1 & VKI_DL_FUNCTION_MASK) == VKI_DL_PREUNLOADQ) {
-      PRINT("__loadx(0x%x(DL_PREUNLOADQ),0x%x,%d,0x%x)", 
+      PRINT("__loadx(0x%lx(DL_PREUNLOADQ),0x%lx,%ld,0x%lx)", 
             ARG1,ARG2,ARG3,ARG4);
       PRE_MEM_WRITE("__loadx(DL_PREUNLOADQ)(ARG2,ARG3)", ARG2, ARG3);
    }
    else
    if ((ARG1 & VKI_DL_FUNCTION_MASK) == 0x0D000000) {
-      PRINT("__loadx(0x%x(UNDOCUMENTED),0x%x,0x%xd,0x%x)", 
+      PRINT("__loadx(0x%lx(UNDOCUMENTED),0x%lx,0x%lx,0x%lx)", 
             ARG1,ARG2,ARG3,ARG4);
       /* This doesn't appear to have any args, from the examples I've
          seen. */
    }
    else {
-      PRINT("__loadx (BOGUS HANDLER) (0x%x, ..)", ARG1);
+      PRINT("__loadx (BOGUS HANDLER) (0x%lx, ..)", ARG1);
    }
 }
 POST(sys___loadx)
@@ -444,7 +444,7 @@ POST(sys___loadx)
 
 PRE(sys___unload)
 {
-   PRINT("__unload (UNDOCUMENTED) ( %p )", ARG1);
+   PRINT("__unload (UNDOCUMENTED) ( %#lx )", ARG1);
 }
 POST(sys___unload)
 {
@@ -457,7 +457,7 @@ PRE(sys__clock_gettime)
 {
    /* Seems like ARG3 points at a destination buffer? */
    /* _clock_gettime (UNDOCUMENTED) ( 0, 0xA, 0x2FF21808 ) */
-   PRINT("_clock_gettime (UNDOCUMENTED) ( %d, %p, %p )", ARG1, ARG2, ARG3 );
+   PRINT("_clock_gettime (UNDOCUMENTED) ( %ld, %#lx, %#lx )", ARG1, ARG2, ARG3 );
    PRE_REG_READ3(int, "_clock_gettime", int, arg1, int, arg2, void*, arg3);
    PRE_MEM_WRITE( "_clock_gettime(dst)", ARG3, sizeof(struct timespec) );
 }
@@ -474,7 +474,7 @@ PRE(sys_thread_setmymask_fast)
       mask, we act like sigprocmask(SIG_SETMASK, set, NULL) and don't
       hand this to the kernel.  Layout verified 30 July 06. */
    vki_sigset_t set;
-   PRINT("thread_setmymask_fast (BOGUS HANDLER)( %08x %08x )", ARG1,ARG2 );
+   PRINT("thread_setmymask_fast (BOGUS HANDLER)( %08lx %08lx )", ARG1,ARG2 );
    vg_assert(sizeof(vki_sigset_t) == 8);
    set.sig[0] = ARG1; /* sigs 1-32 */
    set.sig[1] = ARG2; /* sigs 32-64 */

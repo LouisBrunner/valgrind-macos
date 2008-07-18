@@ -181,8 +181,8 @@ void VG_(sigframe_create) ( ThreadId tid,
             (Addr)&frame->tramp, sizeof(frame->tramp));
 
    if (0) {
-      VG_(printf)("pushed signal frame for sig %d; R1 now = %p, "
-                  "next %%CIA = %p, status=%d\n", 
+      VG_(printf)("pushed signal frame for sig %d; R1 now = %#lx, "
+                  "next %%CIA = %#x, status=%d\n", 
                   sigNo,
 	          sp, tst->arch.vex.guest_CIA, tst->status);
       VG_(printf)("trampoline is at %p\n",  &frame->tramp[0]);
@@ -219,7 +219,7 @@ void VG_(sigframe_destroy)( ThreadId tid, Bool isRT )
 
    if (VG_(clo_trace_signals))
       VG_(message)(Vg_DebugMsg,
-                   "vg_pop_signal_frame (thread %d): valid magic; CIA=%p",
+                   "vg_pop_signal_frame (thread %d): valid magic; CIA=%#x",
                    tid, tst->arch.vex.guest_CIA);
 
    VG_TRACK( die_mem_stack_signal, 

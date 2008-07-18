@@ -234,7 +234,7 @@ Int VG_(waitpid)(Int pid, Int *status, Int options)
       POSIX. */
    SysRes res = VG_(do_syscall5)(__NR_AIX5_kwaitpid, 
                                  (UWord)status, pid, 4 | options,0,0);
-   if (0) VG_(printf)("waitpid: got 0x%x 0x%x\n", res.res, res.err);
+   if (0) VG_(printf)("waitpid: got 0x%lx 0x%lx\n", res.res, res.err);
    return res.isError ? -1 : res.res;
 #  else
 #    error Unknown OS

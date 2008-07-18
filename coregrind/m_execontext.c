@@ -150,14 +150,14 @@ void VG_(print_ExeContext_stats) ( void )
    init_ExeContext_storage();
    VG_(message)(Vg_DebugMsg, 
       "   exectx: %'lu lists, %'llu contexts (avg %'llu per list)",
-      ec_htab_size, ec_totstored, ec_totstored / ec_htab_size
+      ec_htab_size, ec_totstored, ec_totstored / (ULong)ec_htab_size
    );
    VG_(message)(Vg_DebugMsg, 
       "   exectx: %'llu searches, %'llu full compares (%'llu per 1000)",
       ec_searchreqs, ec_searchcmps, 
       ec_searchreqs == 0 
-         ? 0L 
-         : ( (ec_searchcmps * 1000) / ec_searchreqs ) 
+         ? 0ULL 
+         : ( (ec_searchcmps * 1000ULL) / ec_searchreqs ) 
    );
    VG_(message)(Vg_DebugMsg, 
       "   exectx: %'llu cmp2, %'llu cmp4, %'llu cmpAll",

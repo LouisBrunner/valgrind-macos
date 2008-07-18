@@ -661,9 +661,9 @@ static void handle_SCSS_change ( Bool force_update )
             "setting ksig %d to: hdlr %p, flags 0x%lx, "
             "mask(63..0) 0x%lx 0x%lx",
             sig, ksa.ksa_handler,
-            ksa.sa_flags,
-            ksa.sa_mask.sig[1], 
-            ksa.sa_mask.sig[0] 
+            (UWord)ksa.sa_flags,
+            (UWord)ksa.sa_mask.sig[1], 
+            (UWord)ksa.sa_mask.sig[0] 
          );
 
       res = VG_(sigaction)( sig, &ksa, &ksa_old );
@@ -884,13 +884,15 @@ const Char *format_sigset ( const vki_sigset_t* set )
 
    for (w = _VKI_NSIG_WORDS - 1; w >= 0; w--)
    {
-#if _VKI_NSIG_BPW == 32
-      VG_(sprintf)(buf + VG_(strlen)(buf), "%08lx", set ? set->sig[w] : 0);
-#elif _VKI_NSIG_BPW == 64
-      VG_(sprintf)(buf + VG_(strlen)(buf), "%16lx", set ? set->sig[w] : 0);
-#else
-#error "Unsupported value for _VKI_NSIG_BPW"
-#endif
+#     if _VKI_NSIG_BPW == 32
+      VG_(sprintf)(buf + VG_(strlen)(buf), "%08llx",
+                   set ? (ULong)set->sig[w] : 0);
+#     elif _VKI_NSIG_BPW == 64
+      VG_(sprintf)(buf + VG_(strlen)(buf), "%16llx",
+                   set ? (ULong)set->sig[w] : 0);
+#     else
+#       error "Unsupported value for _VKI_NSIG_BPW"
+#     endif
    }
 
    return buf;
@@ -1982,7 +1984,7 @@ void pp_ksigaction ( struct vki_sigaction* sa )
 #              if !defined(VGP_ppc32_aix5) && !defined(VGP_ppc64_aix5)
                   sa->sa_restorer
 #              else
-                  0
+                  (void*)0
 #              endif
               );
    VG_(printf)("pp_ksigaction: { ");

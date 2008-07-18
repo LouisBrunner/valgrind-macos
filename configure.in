@@ -576,15 +576,13 @@ esac
 
 AC_SUBST(GLIBC_VERSION)
 
-# We don't know how to detect the X client library version
-# (detecting the server version is easy, but no help).  So we
-# just use a hack: always include the suppressions for both
-# versions 3 and 4.
-AC_PATH_X
-if test "${no_x}" != 'yes' ; then
-   DEFAULT_SUPP="xfree-4.supp ${DEFAULT_SUPP}"
-   DEFAULT_SUPP="xfree-3.supp ${DEFAULT_SUPP}"
-fi
+
+# Add default suppressions for the X client libraries.  Make no
+# attempt to detect whether such libraries are installed on the
+# build machine (or even if any X facilities are present); just
+# add the suppressions antidisirregardless.
+DEFAULT_SUPP="xfree-4.supp ${DEFAULT_SUPP}"
+DEFAULT_SUPP="xfree-3.supp ${DEFAULT_SUPP}"
 
 
 # Check for CLOCK_MONOTONIC

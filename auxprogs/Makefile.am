@@ -45,10 +45,10 @@ valgrind_listener_LDFLAGS   = $(AM_CFLAGS_PRI)
 #
 if VGO_AIX5
  HACKY_FLAGS_PRI = -g -O -bE:libmpiwrap_aix5.exp -bM:SRE -bnoentry \
-			-qflag=w:w \
+			-qflag=w:w -qlanglvl=extended \
 			`echo $(AM_FLAG_M3264_PRI) | sed s/maix/q/g`
  HACKY_FLAGS_SEC = -g -O -bE:libmpiwrap_aix5.exp -bM:SRE -bnoentry \
-			-qflag=w:w \
+			-qflag=w:w -qlanglvl=extended \
 			`echo $(AM_FLAG_M3264_SEC) | sed s/maix/q/g`
 else
  HACKY_FLAGS_PRI = -g -O -fno-omit-frame-pointer -Wall -fpic -shared \

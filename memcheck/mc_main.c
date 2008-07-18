@@ -1357,7 +1357,8 @@ static void set_address_range_perms ( Addr a, SizeT lenT, UWord vabits16,
          if (vabits16 == VA_BITS16_UNDEFINED) s = "undefined";
          if (vabits16 == VA_BITS16_DEFINED  ) s = "defined";
          VG_(message)(Vg_UserMsg, "Warning: set address range perms: "
-                                  "large range %lu (%s)", lenT, s);
+                                  "large range [0x%lx, 0x%lx) (%s)",
+                                  a, a + lenT, s);
       }
    }
 

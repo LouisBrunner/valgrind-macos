@@ -789,6 +789,7 @@ AIX5SCTabEntry aix5_ppc32_syscall_table[]
     AIXXY(__NR_AIX5_gethostname,        sys_gethostname),
     AIXXY(__NR_AIX5_getpriv,            sys_getpriv),
     AIXXY(__NR_AIX5_getprocs,           sys_getprocs),
+    AIXXY(__NR_AIX5_getprocs64,         sys_getprocs), /* XXX: correct? */
     AIXX_(__NR_AIX5_getrpid,            sys_getrpid),
     AIXXY(__NR_AIX5_getsockopt,         sys_getsockopt),
     AIXX_(__NR_AIX5_gettimerid,         sys_gettimerid),
@@ -870,7 +871,7 @@ AIX5SCTabEntry aix5_ppc32_syscall_table[]
     AIXX_(__NR_AIX5_thread_waitlock_,   sys_thread_waitlock_),
     AIXXY(__NR_AIX5_times,              sys_times),
     AIXX_(__NR_AIX5_umask,              sys_umask),
-    AIXX_(__NR_AIX5_uname,              sys_uname),
+    AIXXY(__NR_AIX5_uname,              sys_uname),
     AIXX_(__NR_AIX5_unlink,             sys_unlink),
     AIXX_(__NR_AIX5_utimes,             sys_utimes),
     AIXXY(__NR_AIX5_vmgetinfo,          sys_vmgetinfo),

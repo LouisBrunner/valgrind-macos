@@ -751,6 +751,7 @@ AIX5SCTabEntry aix5_ppc64_syscall_table[]
     AIXX_(__NR_AIX5_thread_unlock,      sys_thread_unlock),
     AIXX_(__NR_AIX5_thread_waitlock_,   sys_thread_waitlock_),
     AIXXY(__NR_AIX5_times,              sys_times),
+    AIXXY(__NR_AIX5_uname,              sys_uname),
     AIXX_(__NR_AIX5_unlink,             sys_unlink),
     AIXX_(__NR_AIX5_utimes,             sys_utimes),
     AIXXY(__NR_AIX5_vmgetinfo,          sys_vmgetinfo),

@@ -264,6 +264,7 @@ static void handle_sbrk ( Word delta )
 #include <sys/shm.h>
 #include <semaphore.h>
 #include <sys/statfs.h>
+#include <sys/utsname.h>
 /* --- !!! --- EXTERNAL HEADERS end --- !!! --- */
 
 HChar* ML_(aix5debugstuff_pc_to_fnname) ( Addr pc )
@@ -1175,6 +1176,9 @@ POST(sys_getpriv)
       POST_MEM_WRITE(ARG2, 8);
 }
 
+/* Note that this is used for both sys_getprocs and sys_getprocs64.  I
+   think that's correct - from the man page, the calling conventions
+   look identical. */
 PRE(sys_getprocs)
 {
    PRINT("getprocs ( %#lx, %ld, %#lx, %ld, %#lx, %ld )",
@@ -2516,7 +2520,13 @@ PRE(sys_umask)
 
 PRE(sys_uname)
 {
-   PRINT("uname (BOGUS HANDLER)");
+   PRINT("uname ( %#lx )", ARG1);
+   PRE_MEM_WRITE( "uname(Name)", ARG1, sizeof(struct utsname));
+}
+POST(sys_uname)
+{
+   vg_assert(SUCCESS);
+   POST_MEM_WRITE( ARG1, sizeof(struct utsname));
 }
 
 PRE(sys_unlink)

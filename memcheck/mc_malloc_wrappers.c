@@ -372,23 +372,44 @@ void* MC_(realloc) ( ThreadId tid, void* p_old, SizeT new_szB )
 
    old_szB = mc->szB;
 
-   if (old_szB == new_szB) {
-      /* size unchanged */
-      mc->where = VG_(record_ExeContext)(tid, 0/*first_ip_delta*/);
-      p_new = p_old;
-      
-   } else if (old_szB > new_szB) {
-      /* new size is smaller */
-      MC_(make_mem_noaccess)( mc->data+new_szB, mc->szB-new_szB );
-      mc->szB = new_szB;
-      mc->where = VG_(record_ExeContext)(tid, 0/*first_ip_delta*/);
-      p_new = p_old;
-      /* Possibly fill freed area with specified junk. */
-      if (MC_(clo_free_fill) != -1) {
-         tl_assert(MC_(clo_free_fill) >= 0x00 && MC_(clo_free_fill) <= 0xFF);
-         VG_(memset)((void*)(mc->data+new_szB), MC_(clo_free_fill), 
-                                                old_szB-new_szB);
+   if (new_szB <= old_szB) {
+      /* new size is smaller or the same */
+      Addr a_new; 
+      /* Get new memory */
+      a_new = (Addr)VG_(cli_malloc)(VG_(clo_alignment), new_szB);
+
+      if (a_new) {
+         ExeContext* ec;
+
+         ec = VG_(record_ExeContext)(tid, 0/*first_ip_delta*/);
+         tl_assert(ec);
+
+         /* Retained part is copied, red zones set as normal */
+         MC_(make_mem_noaccess)( a_new-MC_MALLOC_REDZONE_SZB, 
+                                 MC_MALLOC_REDZONE_SZB );
+         MC_(copy_address_range_state) ( (Addr)p_old, a_new, new_szB );
+         MC_(make_mem_noaccess)        ( a_new+new_szB, MC_MALLOC_REDZONE_SZB );
+
+         /* Copy from old to new */
+         VG_(memcpy)((void*)a_new, p_old, new_szB);
+
+         /* Possibly fill freed area with specified junk. */
+         if (MC_(clo_free_fill) != -1) {
+            tl_assert(MC_(clo_free_fill) >= 0x00 && MC_(clo_free_fill) <= 0xFF);
+            VG_(memset)((void*)p_old, MC_(clo_free_fill), old_szB);
+         }
+
+         /* Free old memory */
+         /* Nb: we have to allocate a new MC_Chunk for the new memory rather
+            than recycling the old one, so that any erroneous accesses to the
+            old memory are reported. */
+         die_and_free_mem ( tid, mc, MC_MALLOC_REDZONE_SZB );
+
+         // Allocate a new chunk.
+         mc = create_MC_Chunk( ec, a_new, new_szB, MC_AllocMalloc );
       }
+
+      p_new = (void*)a_new;
 
    } else {
       /* new size is bigger */

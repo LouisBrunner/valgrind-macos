@@ -119,6 +119,7 @@ struct _MCEnv;
 
 static IRType  shadowTypeV ( IRType ty );
 static IRExpr* expr2vbits ( struct _MCEnv* mce, IRExpr* e );
+static IRTemp  findShadowTmpB ( struct _MCEnv* mce, IRTemp orig );
 
 
 /*------------------------------------------------------------*/
@@ -3520,22 +3521,31 @@ IRSB* MC_(instrument) ( VgCallbackClosure* closure,
 
       The following loop therefore scans the preamble looking for
       assignments to temporaries.  For each one found it creates an
-      assignment to the corresponding shadow temp, marking it as
+      assignment to the corresponding (V) shadow temp, marking it as
       'defined'.  This is the same resulting IR as if the main
       instrumentation loop before had been applied to the statement
       'tmp = CONSTANT'.
+
+      Similarly, if origin tracking is enabled, we must generate an
+      assignment for the corresponding origin (B) shadow, claiming
+      no-origin, as appropriate for a defined value.
    */
    for (j = 0; j < i; j++) {
       if (bb_in->stmts[j]->tag == Ist_WrTmp) {
          /* findShadowTmpV checks its arg is an original tmp;
             no need to assert that here. */
          IRTemp tmp_o = bb_in->stmts[j]->Ist.WrTmp.tmp;
-         IRTemp tmp_s = findShadowTmpV(&mce, tmp_o);
-         IRType ty_s  = typeOfIRTemp(bb->tyenv, tmp_s);
-         assign( 'V', &mce, tmp_s, definedOfType( ty_s ) );
+         IRTemp tmp_v = findShadowTmpV(&mce, tmp_o);
+         IRType ty_v  = typeOfIRTemp(bb->tyenv, tmp_v);
+         assign( 'V', &mce, tmp_v, definedOfType( ty_v ) );
+         if (MC_(clo_mc_level) == 3) {
+            IRTemp tmp_b = findShadowTmpB(&mce, tmp_o);
+            tl_assert(typeOfIRTemp(bb->tyenv, tmp_b) == Ity_I32);
+            assign( 'B', &mce, tmp_b, mkU32(0)/* UNKNOWN ORIGIN */);
+         }
          if (0) {
-            VG_(printf)("create shadow tmp for preamble tmp [%d] ty ", j);
-            ppIRType( ty_s );
+            VG_(printf)("create shadow tmp(s) for preamble tmp [%d] ty ", j);
+            ppIRType( ty_v );
             VG_(printf)("\n");
          }
       }

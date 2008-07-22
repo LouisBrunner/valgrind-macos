@@ -832,6 +832,7 @@ DRD reports such calls.
   xreflabel="Racy use of pthread_cond_wait()"
 >
 <title>Racy use of pthread_cond_wait()</title>
+<!--
 <tgroup cols='2' align='left' colsep='1' rowsep='1'>
     <colspec colname='thread1'/>
     <colspec colname='thread2'/>
@@ -862,6 +863,7 @@ pthread_cond_signal(&cond);
     </row>
   </tbody>
 </tgroup>
+-->
 </table>
 
 <table
@@ -870,6 +872,7 @@ pthread_cond_signal(&cond);
   xreflabel="Correct use of pthread_cond_wait()"
 >
 <title>Correct use of pthread_cond_wait()</title>
+<!--
 <tgroup cols='2' align='left' colsep='1' rowsep='1'>
     <colspec colname='thread1'/>
     <colspec colname='thread2'/>
@@ -900,6 +903,7 @@ pthread_mutex_unlock(&mutex);
     </row>
   </tbody>
 </tgroup>
+-->
 </table>
 
 </sect2>
@@ -1021,8 +1025,11 @@ by KDE 4. If possible, use Qt4 instead of Qt3. Qt3 is no longer
 supported, and there are known problems with multithreading support in
 Qt3. As an example, using QString objects in more than one thread will
 trigger race reports (this has been confirmed by Trolltech -- see also
-Trolltech task <ulink
+Trolltech task (bug report) number 206152.
+<!--
+ <ulink
 url="http://trolltech.com/developer/task-tracker/index_html?id=206152&amp;method=entry">#206152</ulink>).
+-->
 </para>
 
 <para>

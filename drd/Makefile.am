@@ -125,7 +125,12 @@ noinst_HEADERS =        \
   drd_thread.h          \
   drd_track.h           \
   drd_vc.h              \
-  pub_drd_bitmap.h
+  pub_drd_bitmap.h      \
+  drd_bitmap.c          \
+  drd_segment.c         \
+  drd_thread.c          \
+  drd_vc.c              \
+  drd_thread_bitmap.h
 
 drd_x86_linux_SOURCES        = $(DRD_SOURCES)
 drd_x86_linux_CPPFLAGS       = $(AM_CPPFLAGS_X86_LINUX)

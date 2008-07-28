@@ -806,105 +806,14 @@ output reports that the lock acquired at line 51 in source file
 </para>
 
 <para>
-There is one message that needs further explanation, namely sending a
-signal to a condition variable while no lock is held on the mutex
-associated with the signal. Consider e.g. the example <xref
-linkend="Racy use of pthread_cond_wait()"></xref>. In this example the
-code in thread 1 passes if <literal>flag != 0</literal>, or waits
-until it has been signaled by thread 2. If however the code of thread
-1 is scheduled after the <literal>pthread_mutex_unlock()</literal>
-call in thread 2 and before thread 2 calls
-<literal>pthread_cond_signal()</literal>, thread 1 will block
-indefinitely. The code in the example <xref linkend="Correct use of
-pthread_cond_wait()"></xref> never blocks indefinitely.
-</para>
-
-<para>
-Because most calls of <function>pthread_cond_signal()</function> or
+Regarding the message DRD prints about sending a signal to a condition
+variable while no lock is held on the mutex associated with the
+signal: DRD reports this because some calls of
+<function>pthread_cond_signal()</function> or
 <function>pthread_cond_broadcast()</function> while no lock is held on
-the mutex associated with the condition variable are racy, by default
-DRD reports such calls.
+the mutex associated with the condition variable introduce subtle race
+conditions.
 </para>
-
-<table
-  frame="none"
-  id="Racy use of pthread_cond_wait()"
-  xreflabel="Racy use of pthread_cond_wait()"
->
-<title>Racy use of pthread_cond_wait()</title>
-<!--
-<tgroup cols='2' align='left' colsep='1' rowsep='1'>
-    <colspec colname='thread1'/>
-    <colspec colname='thread2'/>
-  <thead>
-    <row>
-      <entry align="center">Thread 1</entry>
-      <entry align="center">Thread 2</entry>
-    </row>
-  </thead>
-  <tbody>
-    <row>
-      <entry>
-<programlisting><![CDATA[
-pthread_mutex_lock(&mutex);
-if (! flag)
-  pthread_cond_wait(&cond, &mutex);
-pthread_mutex_unlock(&mutex);
-]]></programlisting>
-      </entry>
-      <entry>
-<programlisting><![CDATA[
-pthread_mutex_lock(&mutex);
-flag = 1;
-pthread_mutex_unlock(&mutex);
-pthread_cond_signal(&cond);
-]]></programlisting>
-      </entry>
-    </row>
-  </tbody>
-</tgroup>
--->
-</table>
-
-<table
-  frame="none"
-  id="Correct use of pthread_cond_wait()"
-  xreflabel="Correct use of pthread_cond_wait()"
->
-<title>Correct use of pthread_cond_wait()</title>
-<!--
-<tgroup cols='2' align='left' colsep='1' rowsep='1'>
-    <colspec colname='thread1'/>
-    <colspec colname='thread2'/>
-  <thead>
-    <row>
-      <entry align="center">Thread 1</entry>
-      <entry align="center">Thread 2</entry>
-    </row>
-  </thead>
-  <tbody>
-    <row>
-      <entry>
-<programlisting><![CDATA[
-pthread_mutex_lock(&mutex);
-if (! flag)
-  pthread_cond_wait(&cond, &mutex);
-pthread_mutex_unlock(&mutex);
-]]></programlisting>
-      </entry>
-      <entry>
-<programlisting><![CDATA[
-pthread_mutex_lock(&mutex);
-flag = 1;
-pthread_cond_signal(&cond);
-pthread_mutex_unlock(&mutex);
-]]></programlisting>
-      </entry>
-    </row>
-  </tbody>
-</tgroup>
--->
-</table>
 
 </sect2>
 
@@ -998,8 +907,16 @@ before Valgrind's header files are present.
 
 <para>
 GNOME applications use the threading primitives provided by the
-<computeroutput>glib</computeroutput> library. This library is built
-on top of POSIX threads, and is hence directly supported by DRD.
+<computeroutput>glib</computeroutput> and
+<computeroutput>gthread</computeroutput> libraries. These libraries
+are built on top of POSIX threads, and hence are directly supported by
+DRD. Please keep in mind that you have to call
+<function>g_thread_init()</function> before creating any threads, or
+DRD will report several data races on glib functions. See also the
+<ulink
+url="http://library.gnome.org/devel/glib/stable/glib-Threads.html">GLib
+Reference Manual</ulink> for more information about
+<function>g_thread_init()</function>.
 </para>
 
 <para>
@@ -1025,11 +942,8 @@ by KDE 4. If possible, use Qt4 instead of Qt3. Qt3 is no longer
 supported, and there are known problems with multithreading support in
 Qt3. As an example, using QString objects in more than one thread will
 trigger race reports (this has been confirmed by Trolltech -- see also
-Trolltech task (bug report) number 206152.
-<!--
- <ulink
-url="http://trolltech.com/developer/task-tracker/index_html?id=206152&amp;method=entry">#206152</ulink>).
--->
+Trolltech task <ulink
+url="http://trolltech.com/developer/task-tracker/index_html">#206152</ulink>).
 </para>
 
 <para>

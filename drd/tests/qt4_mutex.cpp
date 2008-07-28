@@ -4,6 +4,7 @@
 #define _GNU_SOURCE
 #endif
 
+#include "config.h"
 #include <QtCore/QMutex>  // class QMutex
 #include <QtCore/QThread> // class QThread
 #include <cassert>
@@ -56,12 +57,14 @@ int main(int argc, char** argv)
     M.unlock();
     M.unlock();
   }
+#if defined(HAVE_QTCORE_QMUTEX_TRYLOCK_INT)
   {
     QMutex M(QMutex::NonRecursive);
     assert(M.tryLock(1));
     assert(! M.tryLock(1));
     M.unlock();
   }
+#endif
 
   pthread_barrier_init(&s_barrier, 0, n_threads);
   s_pMutex = new QMutex();

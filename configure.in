@@ -1234,7 +1234,7 @@ AC_DEFINE([HAVE_TLS], 1, [can use __thread to define thread-local variables])
 fi
 
 
-# Checks for header files.
+# Checks for C header files.
 AC_HEADER_STDC
 AC_CHECK_HEADERS([       \
         endian.h         \
@@ -1251,6 +1251,7 @@ AC_CHECK_HEADERS([       \
         sys/types.h      \
         ])
 
+# Checks for C++ header files.
 AC_LANG(C++)
 AC_CHECK_HEADERS([         \
         QtCore/QMutex      \
@@ -1423,6 +1424,31 @@ AC_TRY_COMPILE([ ],
 ])
 
 AM_CONDITIONAL([HAVE_QTCORE], [test x$ac_have_qtcore = xyes])
+
+
+# Test for QMutex::tryLock(int), which has been introduced in Qt 4.3.
+# See also http://doc.trolltech.com/4.3/qmutex.html.
+if test x$ac_have_qtcore = xyes; then
+  AC_MSG_CHECKING([for Qt4 QMutex::tryLock(int)])
+  AC_LANG(C++)
+  AC_TRY_COMPILE([
+    #include <QtCore/QMutex>
+  ],
+  [
+    QMutex M;
+    M.tryLock(1);
+    M.unlock();
+    return 0;
+  ],
+  [
+    AC_MSG_RESULT([yes])
+    AC_DEFINE([HAVE_QTCORE_QMUTEX_TRYLOCK_INT], [1], [Define to 1 if the installed version of Qt4 provides QMutex::tryLock(int).])
+  ],
+  [
+    AC_MSG_RESULT([no])
+  ])
+  AC_LANG(C)
+fi
 
 
 # -------------------- ok.  We're done. --------------------

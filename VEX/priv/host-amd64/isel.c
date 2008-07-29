@@ -1607,6 +1607,20 @@ static HReg iselIntExpr_R_wrk ( ISelEnv* env, IRExpr* e )
             return dst;
          }
 
+         /* ReinterpF32asI32(e) */
+         /* Given an IEEE754 single, produce an I64 with the same bit
+            pattern in the lower half. */
+         case Iop_ReinterpF32asI32: {
+            AMD64AMode* m8_rsp = AMD64AMode_IR(-8, hregAMD64_RSP());
+            HReg        dst    = newVRegI(env);
+            HReg        src    = iselFltExpr(env, e->Iex.Unop.arg);
+            /* paranoia */
+            set_SSE_rounding_default(env);
+            addInstr(env, AMD64Instr_SseLdSt(False/*store*/, 4, src, m8_rsp));
+            addInstr(env, AMD64Instr_LoadEX(4, False/*unsigned*/, m8_rsp, dst ));
+            return dst;
+         }
+
          case Iop_16to8:
          case Iop_32to8:
          case Iop_64to8:

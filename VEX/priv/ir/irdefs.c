@@ -301,16 +301,16 @@ void ppIROp ( IROp op )
       case Iop_ReinterpF32asI32: vex_printf("ReinterpF32asI32"); return;
       case Iop_ReinterpI32asF32: vex_printf("ReinterpI32asF32"); return;
 
-      case Iop_I32UtoFx4: vex_printf("Iop_I32UtoFx4"); return;
-      case Iop_I32StoFx4: vex_printf("Iop_I32StoFx4"); return;
+      case Iop_I32UtoFx4: vex_printf("I32UtoFx4"); return;
+      case Iop_I32StoFx4: vex_printf("I32StoFx4"); return;
 
-      case Iop_QFtoI32Ux4_RZ: vex_printf("Iop_QFtoI32Ux4_RZ"); return;
-      case Iop_QFtoI32Sx4_RZ: vex_printf("Iop_QFtoI32Sx4_RZ"); return;
+      case Iop_QFtoI32Ux4_RZ: vex_printf("QFtoI32Ux4_RZ"); return;
+      case Iop_QFtoI32Sx4_RZ: vex_printf("QFtoI32Sx4_RZ"); return;
 
-      case Iop_RoundF32x4_RM: vex_printf("Iop_RoundF32x4_RM"); return;
-      case Iop_RoundF32x4_RP: vex_printf("Iop_RoundF32x4_RP"); return;
-      case Iop_RoundF32x4_RN: vex_printf("Iop_RoundF32x4_RN"); return;
-      case Iop_RoundF32x4_RZ: vex_printf("Iop_RoundF32x4_RZ"); return;
+      case Iop_RoundF32x4_RM: vex_printf("RoundF32x4_RM"); return;
+      case Iop_RoundF32x4_RP: vex_printf("RoundF32x4_RP"); return;
+      case Iop_RoundF32x4_RN: vex_printf("RoundF32x4_RN"); return;
+      case Iop_RoundF32x4_RZ: vex_printf("RoundF32x4_RZ"); return;
 
       case Iop_Add8x8: vex_printf("Add8x8"); return;
       case Iop_Add16x4: vex_printf("Add16x4"); return;
@@ -361,7 +361,7 @@ void ppIROp ( IROp op )
       case Iop_InterleaveLO32x2: vex_printf("InterleaveLO32x2"); return;
       case Iop_CatOddLanes16x4: vex_printf("CatOddLanes16x4"); return;
       case Iop_CatEvenLanes16x4: vex_printf("CatEvenLanes16x4"); return;
-      case Iop_Perm8x8: vex_printf("Iop_Perm8x8"); return;
+      case Iop_Perm8x8: vex_printf("Perm8x8"); return;
 
       case Iop_CmpNEZ32x2: vex_printf("CmpNEZ32x2"); return;
       case Iop_CmpNEZ16x4: vex_printf("CmpNEZ16x4"); return;

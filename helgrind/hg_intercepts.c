@@ -177,7 +177,7 @@ static char* lame_strerror ( long err )
    so is mentioned by name in glibc-*helgrind*.supp. */
 static void* mythread_wrapper ( void* xargsV )
 {
-   volatile Word volatile* xargs = (volatile Word volatile*) xargsV;
+   volatile Word* xargs = (volatile Word*) xargsV;
    void*(*fn)(void*) = (void*(*)(void*))xargs[0];
    void* arg         = (void*)xargs[1];
    pthread_t me = pthread_self();

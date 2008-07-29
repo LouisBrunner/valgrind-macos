@@ -13,6 +13,7 @@
 #include "../../config.h"
 #include <fcntl.h>
 #include <signal.h>
+#include <stdint.h>
 #if defined(HAVE_SYS_EPOLL_H)
 #include <sys/epoll.h>
 #endif

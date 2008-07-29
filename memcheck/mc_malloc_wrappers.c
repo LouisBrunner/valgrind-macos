@@ -372,6 +372,14 @@ void* MC_(realloc) ( ThreadId tid, void* p_old, SizeT new_szB )
 
    old_szB = mc->szB;
 
+   /* In all cases, even when the new size is smaller or unchanged, we
+      reallocate and copy the contents, and make the old block
+      inaccessible.  This is so as to guarantee to catch all cases of
+      accesses via the old address after reallocation, regardless of
+      the change in size.  (Of course the ability to detect accesses
+      to the old block also depends on the size of the freed blocks
+      queue). */
+
    if (new_szB <= old_szB) {
       /* new size is smaller or the same */
       Addr a_new; 

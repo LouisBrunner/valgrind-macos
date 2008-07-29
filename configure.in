@@ -1275,11 +1275,6 @@ AC_TYPE_SIGNAL
 AC_CHECK_LIB([rt], [clock_gettime])
 AC_CHECK_LIB([QtCore], [_ZN6QMutex4lockEv]) # QMutex::lock()
 
-# AC_CHECK_LIB adds any library found to the variable LIBS, and links these
-# libraries with any shared object and/or executable. This is NOT what we
-# want for e.g. vgpreload_core-x86-linux.so
-LIBS=""
-
 AC_CHECK_FUNCS([     \
         clock_gettime\
         epoll_create \
@@ -1303,6 +1298,10 @@ AC_CHECK_FUNCS([     \
         utimensat    \
         ])
 
+# AC_CHECK_LIB adds any library found to the variable LIBS, and links these
+# libraries with any shared object and/or executable. This is NOT what we
+# want for e.g. vgpreload_core-x86-linux.so
+LIBS=""
 
 # Do we have a useable MPI setup on the primary and/or secondary targets?
 # On Linux, by default, assumes mpicc and -m32/-m64

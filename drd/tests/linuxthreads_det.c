@@ -5,7 +5,6 @@
 
 #include <pthread.h>
 #include <semaphore.h>
-#include <stdio.h>
 #include <unistd.h>
 
 
@@ -17,11 +16,11 @@ void* thread_func(void* arg)
 {
   if (s_main_thread_pid == getpid())
   {
-    printf("NPTL or non-Linux POSIX threads implementation detected.\n");
+    write(STDOUT_FILENO, "NPTL or non-Linux POSIX threads implementation detected.\n", 57);
   }
   else
   {
-    printf("Detected LinuxThreads as POSIX threads implemenentation.\n");
+    write(STDOUT_FILENO, "Detected LinuxThreads as POSIX threads implementation.\n", 55);
   }
   sem_post(&s_sem);
   return 0;

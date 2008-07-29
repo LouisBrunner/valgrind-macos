@@ -401,6 +401,13 @@
    fun:g_private_set_posix_impl
 }
 {
+   libQtCore-4.0/4.1-Q_GLOBAL_STATIC-connectionList
+   drd:ConflictingAccess
+   obj:/usr/lib*/libQtCore.so.4.*
+   fun:_ZN11QMetaObject8activateEP7QObjectiiPPv
+   fun:_ZN11QMetaObject8activateEP7QObjectPKS_iPPv
+}
+{
    libQtCore-QObjectPrivate::clearGuards(QObject*)
    drd:ConflictingAccess
    fun:_ZN14QReadWriteLock12lockForWriteEv

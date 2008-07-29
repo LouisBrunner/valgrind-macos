@@ -17,7 +17,8 @@ noinst_SCRIPTS =		\
 
 EXTRA_DIST =                                        \
 	$(noinst_SCRIPTS)                           \
-	atomic_var.stderr.exp			    \
+	atomic_var.stderr.exp-with-atomic-builtins    \
+	atomic_var.stderr.exp-without-atomic-builtins \
 	atomic_var.vgtest			    \
 	drd_bitmap_test.stderr.exp                  \
 	drd_bitmap_test.stdout.exp                  \

@@ -1831,6 +1831,29 @@ static HReg iselWordExpr_R_wrk ( ISelEnv* env, IRExpr* e )
          }
          break;
 
+      /* ReinterpF32asI32(e) */
+      /* Given an IEEE754 float, produce an I32 with the same bit
+         pattern. */
+      case Iop_ReinterpF32asI32: {
+         /* I believe this generates correct code for both 32- and
+            64-bit hosts. */
+         PPCAMode *am_addr;
+         HReg fr_src = iselFltExpr(env, e->Iex.Unop.arg);
+         HReg r_dst  = newVRegI(env);
+
+         sub_from_sp( env, 16 );     // Move SP down 16 bytes
+         am_addr = PPCAMode_IR( 0, StackFramePtr(mode64) );
+
+         // store as F32
+         addInstr(env, PPCInstr_FpLdSt( False/*store*/, 4,
+                                        fr_src, am_addr ));
+         // load as Ity_I32
+         addInstr(env, PPCInstr_Load( 4, r_dst, am_addr, mode64 ));
+
+         add_to_sp( env, 16 );       // Reset SP
+         return r_dst;
+      }
+
       default: 
          break;
       }

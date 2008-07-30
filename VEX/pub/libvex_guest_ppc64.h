@@ -271,7 +271,7 @@ typedef
 
       /* Needed for AIX: CIA at the last SC insn.  Used when backing up
          to restart a syscall that has been interrupted by a signal. */
-      /* ???? */ ULong guest_CIA_AT_SC; 
+      /* 1392 */ ULong guest_CIA_AT_SC; 
 
       /* SPRG3, which AIUI is readonly in user space.  Needed for
          threading on AIX. */

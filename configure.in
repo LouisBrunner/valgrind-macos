@@ -1251,15 +1251,6 @@ AC_CHECK_HEADERS([       \
         sys/types.h      \
         ])
 
-# Checks for C++ header files.
-AC_LANG(C++)
-AC_CHECK_HEADERS([         \
-        QtCore/QMutex      \
-        QtCore/QSemaphore  \
-        QtCore/QThread     \
-        ])
-AC_LANG(C)
-
 # Checks for typedefs, structures, and compiler characteristics.
 AC_TYPE_UID_T
 AC_TYPE_OFF_T
@@ -1273,7 +1264,6 @@ AC_FUNC_MMAP
 AC_TYPE_SIGNAL
 
 AC_CHECK_LIB([rt], [clock_gettime])
-AC_CHECK_LIB([QtCore], [_ZN6QMutex4lockEv]) # QMutex::lock()
 
 AC_CHECK_FUNCS([     \
         clock_gettime\
@@ -1401,26 +1391,40 @@ CFLAGS=$saved_CFLAGS
 AM_CONDITIONAL(BUILD_MPIWRAP_SEC, test x$ac_have_mpi2_sec = xyes)
 
 
-# does this compiler have the include file <Qt/qmutex.h> and does it have
-# libQtCore.so ?
+# The test below verifies whether the QtCore package been installed.
+# This test works as follows:
+# - If pkg-config was not installed at the time autogen.sh was run,
+#   the definition of the PKG_CHECK_EXISTS() macro will not be found by
+#   autogen.sh. Augogen.sh will generate a configure script that prints
+#   a warning about pkg-config and proceeds as if Qt4 has not been installed.
+# - If pkg-config was installed at the time autogen.sh was run,
+#   the generated configure script will try to detect the presence of the
+#   Qt4 QtCore library by looking up compile and linker flags in the file
+#   called QtCore.pc.
+# - pkg-config settings can be overridden via the configure variables
+#   QTCORE_CFLAGS and QTCORE_LIBS (added by the pkg-config m4 macro's to the
+#   configure script -- see also ./configure --help).
+# - The QTCORE_CFLAGS and QTCORE_LIBS configure variables can be used even if
+#   the pkg-config executable is not present on the system on which the
+#   configure script is run.
 
-AC_MSG_CHECKING([for Qt4 core library])
-
-AC_TRY_COMPILE([ ],
-[
-#if ! defined(HAVE_LIBQTCORE) || ! defined(HAVE_QTCORE_QMUTEX)
-#error Qt4 not supported.
-#endif
-  return 0;
-],
-[
-  ac_have_qtcore=yes
-  AC_MSG_RESULT([yes])
-],
-[
-  ac_have_qtcore=no
-  AC_MSG_RESULT([no])
-])
+ifdef(
+  [PKG_CHECK_EXISTS],
+  [PKG_CHECK_EXISTS(
+    [QtCore],
+    [
+      PKG_CHECK_MODULES([QTCORE], [QtCore])
+      ac_have_qtcore=yes
+    ],
+    [
+      ac_have_qtcore=no
+    ]
+    )
+  ],
+  AC_MSG_WARN([pkg-config has not been installed or is too old.])
+  AC_MSG_WARN([Detection of Qt4 will be skipped.])
+  [ac_have_qtcore=no]
+)
 
 AM_CONDITIONAL([HAVE_QTCORE], [test x$ac_have_qtcore = xyes])
 
@@ -1430,6 +1434,8 @@ AM_CONDITIONAL([HAVE_QTCORE], [test x$ac_have_qtcore = xyes])
 if test x$ac_have_qtcore = xyes; then
   AC_MSG_CHECKING([for Qt4 QMutex::tryLock(int)])
   AC_LANG(C++)
+  safe_CXXFLAGS="${CXXFLAGS}"
+  CXXFLAGS="${pkg_cv_QTCORE_CFLAGS}"
   AC_TRY_COMPILE([
     #include <QtCore/QMutex>
   ],
@@ -1446,6 +1452,7 @@ if test x$ac_have_qtcore = xyes; then
   [
     AC_MSG_RESULT([no])
   ])
+  CXXFLAGS="${safe_CXXFLAGS}"
   AC_LANG(C)
 fi
 

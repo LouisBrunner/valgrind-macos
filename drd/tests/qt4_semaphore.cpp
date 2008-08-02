@@ -4,8 +4,8 @@
 #define _GNU_SOURCE
 #endif
 
-#include <QtCore/QThread>    // class QMutex
-#include <QtCore/QSemaphore> // class QSemaphore
+#include <QThread>           // class QMutex
+#include <QSemaphore>        // class QSemaphore
 #include <cstdio>            // fprintf()
 #include <cstdlib>           // atoi()
 #include <new>

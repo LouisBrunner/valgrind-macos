@@ -319,13 +319,16 @@ pth_spinlock_LDADD          = -lpthread
 
 if HAVE_QTCORE
 qt4_mutex_SOURCES           = qt4_mutex.cpp
-qt4_mutex_LDADD             = -lQtCore -lpthread
+qt4_mutex_CXXFLAGS          = $(AM_CXXFLAGS) $(QTCORE_CFLAGS)
+qt4_mutex_LDADD             = $(QTCORE_LIBS)
 
 qt4_rwlock_SOURCES          = qt4_rwlock.cpp
-qt4_rwlock_LDADD            = -lQtCore -lpthread
+qt4_rwlock_CXXFLAGS         = $(AM_CXXFLAGS) $(QTCORE_CFLAGS)
+qt4_rwlock_LDADD            = $(QTCORE_LIBS)
 
 qt4_semaphore_SOURCES       = qt4_semaphore.cpp
-qt4_semaphore_LDADD         = -lQtCore -lpthread
+qt4_semaphore_CXXFLAGS      = $(AM_CXXFLAGS) $(QTCORE_CFLAGS)
+qt4_semaphore_LDADD         = $(QTCORE_LIBS)
 endif
 
 recursive_mutex_SOURCES     = recursive_mutex.c

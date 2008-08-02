@@ -4,8 +4,8 @@
 #define _GNU_SOURCE
 #endif
 
-#include <QtCore/QThread>        // class QThread
-#include <QtCore/QReadWriteLock> // class QReadWriteLock
+#include <QThread>               // class QThread
+#include <QReadWriteLock>        // class QReadWriteLock
 #include <cstdio>                // fprintf()
 #include <cstdlib>               // atoi()
 #include <new>

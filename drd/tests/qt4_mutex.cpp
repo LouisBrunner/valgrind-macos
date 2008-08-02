@@ -5,8 +5,8 @@
 #endif
 
 #include "config.h"
-#include <QtCore/QMutex>  // class QMutex
-#include <QtCore/QThread> // class QThread
+#include <QMutex>         // class QMutex
+#include <QThread>        // class QThread
 #include <cassert>
 #include <cstdio>         // fprintf()
 #include <cstdlib>        // atoi()

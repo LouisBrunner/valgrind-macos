@@ -415,3 +415,14 @@
    fun:_ZN7QObjectD2Ev
    fun:_ZN20QEventDispatcherGlibD0Ev
 }
+{
+   libQtCore-QObjectPrivate::clearGuards(QObject*)
+   drd:ConflictingAccess
+   fun:_ZN14QReadWriteLock12lockForWriteEv
+   fun:_ZN12QWriteLocker6relockEv
+   fun:_ZN12QWriteLockerC1EP14QReadWriteLock
+   fun:_ZN14QObjectPrivate11clearGuardsEP7QObject
+   fun:_ZN7QObjectD2Ev
+   fun:_ZN24QAbstractEventDispatcherD2Ev
+   fun:_ZN20QEventDispatcherGlibD0Ev
+}

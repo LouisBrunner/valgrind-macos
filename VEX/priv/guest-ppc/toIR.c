@@ -4852,11 +4852,11 @@ static Bool dis_memsync ( UInt theInstr )
          break;
 
       case 0x014: // lwarx (Load Word and Reserve Indexed, PPC32 p458)
-         if (b0 != 0) {
-            vex_printf("dis_memsync(ppc)(lwarx,b0)\n");
-            return False;
-         }
-         DIP("lwarx r%u,r%u,r%u\n", rD_addr, rA_addr, rB_addr);
+         /* According to the PowerPC ISA version 2.05, b0 (called EH
+            in the documentation) is merely a hint bit to the
+            hardware, I think as to whether or not contention is
+            likely.  So we can just ignore it. */
+         DIP("lwarx r%u,r%u,r%u,EH=%u\n", rD_addr, rA_addr, rB_addr, (UInt)b0);
          putIReg( rD_addr, mkSzWiden32(ty, loadBE(Ity_I32, mkexpr(EA)),
                                        False) );
          /* Take a reservation */
@@ -4946,11 +4946,11 @@ static Bool dis_memsync ( UInt theInstr )
 
       /* 64bit Memsync */
       case 0x054: // ldarx (Load DWord and Reserve Indexed, PPC64 p473)
-         if (b0 != 0) {
-            vex_printf("dis_memsync(ppc)(ldarx,b0)\n");
-            return False;
-         }
-         DIP("ldarx r%u,r%u,r%u\n", rD_addr, rA_addr, rB_addr);
+         /* According to the PowerPC ISA version 2.05, b0 (called EH
+            in the documentation) is merely a hint bit to the
+            hardware, I think as to whether or not contention is
+            likely.  So we can just ignore it. */
+         DIP("ldarx r%u,r%u,r%u,EH=%u\n", rD_addr, rA_addr, rB_addr, (UInt)b0);
          putIReg( rD_addr, loadBE(Ity_I64, mkexpr(EA)) );
          // Take a reservation
          putGST( PPC_GST_RESVN, mkexpr(EA) );

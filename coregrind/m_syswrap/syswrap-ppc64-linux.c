@@ -1260,7 +1260,7 @@ const SyscallTableEntry ML_(syscall_table)[] = {
 // _____(__NR_profil,            sys_profil),             //  98
    GENXY(__NR_statfs,            sys_statfs),             //  99
 
-// _____(__NR_fstatfs,           sys_fstatfs),            // 100
+   GENXY(__NR_fstatfs,           sys_fstatfs),            // 100
 // _____(__NR_ioperm,            sys_ioperm),             // 101
    PLAXY(__NR_socketcall,        sys_socketcall),         // 102
    LINXY(__NR_syslog,            sys_syslog),             // 103
@@ -1354,7 +1354,7 @@ const SyscallTableEntry ML_(syscall_table)[] = {
    LINXY(__NR_rt_sigtimedwait,   sys_rt_sigtimedwait),    // 176
 // _____(__NR_rt_sigqueueinfo,   sys_rt_sigqueueinfo),    // 177
 // _____(__NR_rt_sigsuspend,     sys_rt_sigsuspend),      // 178
-// _____(__NR_pread64,           sys_pread64),            // 179
+   GENXY(__NR_pread64,           sys_pread64_on64bitplat), // 179
 
 // _____(__NR_pwrite64,          sys_pwrite64),           // 180
    GENX_(__NR_chown,             sys_chown),              // 181
@@ -1382,7 +1382,7 @@ const SyscallTableEntry ML_(syscall_table)[] = {
 
 // _____(__NR_pciconfig_iobase,  sys_pciconfig_iobase),   // 200
 // _____(__NR_multiplexer,       sys_multiplexer),        // 201
-// _____(__NR_getdents64,        sys_getdents64),         // 202
+   GENXY(__NR_getdents64,        sys_getdents64),         // 202
 // _____(__NR_pivot_root,        sys_pivot_root),         // 203
    GENXY(__NR_fcntl64,           sys_fcntl64),            // 204 !!!!?? 32bit only */
 

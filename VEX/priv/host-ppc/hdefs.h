@@ -377,7 +377,8 @@ typedef
       Pfp_ADDS, Pfp_SUBS, Pfp_MULS, Pfp_DIVS, 
 
       /* Unary */
-      Pfp_SQRT, Pfp_ABS, Pfp_NEG, Pfp_MOV, Pfp_RES, Pfp_RSQRTE
+      Pfp_SQRT, Pfp_ABS, Pfp_NEG, Pfp_MOV, Pfp_RES, Pfp_RSQRTE,
+      Pfp_FRIN, Pfp_FRIM, Pfp_FRIP, Pfp_FRIZ
    }
    PPCFpOp;
 

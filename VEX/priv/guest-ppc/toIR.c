@@ -8845,6 +8845,66 @@ static Bool dis_av_fp_convert ( UInt theInstr )
 
 
 
+/*------------------------------------------------------------*/
+/*--- POWER6 Instruction Translation                       ---*/
+/*------------------------------------------------------------*/
+
+static
+Bool dis_P6 ( UInt theInstr,
+              Bool allow_F, Bool allow_V, Bool allow_FX, Bool allow_GX)
+{
+    /* This is a hack.  We should do P6 capability checking properly.
+       But anyway, make a guess at whether we should even try to handle
+       this instruction.  All P6 capable CPUs should be able to handle
+       F, V, FX and GX, so that seems like a good check. */
+   if (! (allow_F && allow_V && allow_FX && allow_GX) )
+      return False;
+   if (!mode64)
+      return False; /* only support P6 in 64-bit mode for now */
+
+   UInt opc  = ifieldOPC(theInstr);     /* primary opcode */
+   UInt rd   = ifieldRegDS(theInstr);   /* dst reg */
+   UInt ra   = ifieldRegA(theInstr);    /* first source reg */
+   UInt rb   = ifieldRegB(theInstr);    /* second source reg */
+   UInt opc2 = ifieldOPClo10(theInstr); /* secondary opc, 10:1 */
+   UInt dot  = ifieldBIT0(theInstr);    /* Rc field, bit 0 */
+
+   if (opc == 63 && ra == 0/*presumably*/ && opc2 == 488) {
+      /* frim (Floating Round to Integer Minus, PPC ISA 2.05 p137) */
+      if (dot) return False;
+      putFReg( rd, unop(Iop_RoundF64toF64_NegINF, getFReg( rb )) );
+      DIP("frim%s fr%u,fr%u\n", dot ? "." : "", rd, rb);
+      return True;
+   }
+
+   if (opc == 63 && ra == 0/*presumably*/ && opc2 == 456) {
+      /* frip (Floating Round to Integer Plus, PPC ISA 2.05 p137) */
+      if (dot) return False;
+      putFReg( rd, unop(Iop_RoundF64toF64_PosINF, getFReg( rb )) );
+      DIP("frip%s fr%u,fr%u\n", dot ? "." : "", rd, rb);
+      return True;
+   }
+
+   if (opc == 63 && ra == 0/*presumably*/ && opc2 == 392) {
+      /* frin (Floating Round to Integer Nearest, PPC ISA 2.05 p137) */
+      if (dot) return False;
+      putFReg( rd, unop(Iop_RoundF64toF64_NEAREST, getFReg( rb )) );
+      DIP("frin%s fr%u,fr%u\n", dot ? "." : "", rd, rb);
+      return True;
+   }
+
+   if (opc == 63 && ra == 0/*presumably*/ && opc2 == 424) {
+      /* frin (Floating Round to Integer Zero, PPC ISA 2.05 p137) */
+      if (dot) return False;
+      putFReg( rd, unop(Iop_RoundF64toF64_ZERO, getFReg( rb )) );
+      DIP("friz%s fr%u,fr%u\n", dot ? "." : "", rd, rb);
+      return True;
+   }
+
+   if (0)
+      vex_printf("dis_P6: %u %u %u %u %u %u\n", opc, rd, ra, rb, opc2, dot);
+   return False;
+}
 
 
 
@@ -9163,6 +9223,15 @@ DisResult disInstr_PPC_WRK (
       case 0x32F: // fctidz
       case 0x34E: // fcfid
          if (dis_fp_round(theInstr)) goto decode_success;
+         goto decode_failure;
+
+      /* Power6 rounding stuff */
+      case 0x1E8: // frim
+      case 0x1C8: // frip
+      case 0x188: // frin
+      case 0x1A8: // friz
+         if (dis_P6(theInstr, allow_F, allow_V, allow_FX, allow_GX))
+            goto decode_success;
          goto decode_failure;
          
       /* Floating Point Move Instructions */         

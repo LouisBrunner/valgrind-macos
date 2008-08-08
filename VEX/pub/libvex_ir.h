@@ -630,6 +630,10 @@ typedef
 
       /* :: F64 -> F64 */
       Iop_Est5FRSqrt,    /* reciprocal square root estimate, 5 good bits */
+      Iop_RoundF64toF64_NEAREST, /* frin */
+      Iop_RoundF64toF64_NegINF,  /* frim */ 
+      Iop_RoundF64toF64_PosINF,  /* frip */
+      Iop_RoundF64toF64_ZERO,    /* friz */
 
       /* :: F64 -> F32 */
       Iop_TruncF64asF32, /* do F64->F32 truncation as per 'fsts' */

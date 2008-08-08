@@ -630,6 +630,10 @@ HChar* showPPCFpOp ( PPCFpOp op ) {
       case Pfp_MOV:    return "fmr";
       case Pfp_RES:    return "fres";
       case Pfp_RSQRTE: return "frsqrte";
+      case Pfp_FRIM:   return "frim";
+      case Pfp_FRIN:   return "frin";
+      case Pfp_FRIP:   return "frip";
+      case Pfp_FRIZ:   return "friz";
       default: vpanic("showPPCFpOp");
    }
 }
@@ -3164,6 +3168,18 @@ Int emit_PPCInstr ( UChar* buf, Int nbuf, PPCInstr* i,
          break;
       case Pfp_MOV:   // fmr, PPC32 p410
          p = mkFormX(p, 63, fr_dst, 0, fr_src, 72, 0);
+         break;
+      case Pfp_FRIM:  // frim, PPC ISA 2.05 p137
+         p = mkFormX(p, 63, fr_dst, 0, fr_src, 488, 0);
+         break;
+      case Pfp_FRIP:  // frip, PPC ISA 2.05 p137
+         p = mkFormX(p, 63, fr_dst, 0, fr_src, 456, 0);
+         break;
+      case Pfp_FRIN:  // frin, PPC ISA 2.05 p137
+         p = mkFormX(p, 63, fr_dst, 0, fr_src, 392, 0);
+         break;
+      case Pfp_FRIZ:  // friz, PPC ISA 2.05 p137
+         p = mkFormX(p, 63, fr_dst, 0, fr_src, 424, 0);
          break;
       default:
          goto bad;

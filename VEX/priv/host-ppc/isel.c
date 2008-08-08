@@ -3242,6 +3242,10 @@ static HReg iselDblExpr_wrk ( ISelEnv* env, IRExpr* e )
          case Iop_NegF64:     fpop = Pfp_NEG; break;
          case Iop_AbsF64:     fpop = Pfp_ABS; break;
          case Iop_Est5FRSqrt: fpop = Pfp_RSQRTE; break;
+         case Iop_RoundF64toF64_NegINF:  fpop = Pfp_FRIM; break;
+         case Iop_RoundF64toF64_PosINF:  fpop = Pfp_FRIP; break;
+         case Iop_RoundF64toF64_NEAREST: fpop = Pfp_FRIN; break;
+         case Iop_RoundF64toF64_ZERO:    fpop = Pfp_FRIZ; break;
          default: break;
       }
       if (fpop != Pfp_INVALID) {

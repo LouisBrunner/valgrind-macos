@@ -277,6 +277,11 @@ void ppIROp ( IROp op )
       case Iop_MSubF64r32: vex_printf("MSubF64r32"); return;
 
       case Iop_Est5FRSqrt:    vex_printf("Est5FRSqrt"); return;
+      case Iop_RoundF64toF64_NEAREST: vex_printf("RoundF64toF64_NEAREST"); return;
+      case Iop_RoundF64toF64_NegINF: vex_printf("RoundF64toF64_NegINF"); return;
+      case Iop_RoundF64toF64_PosINF: vex_printf("RoundF64toF64_PosINF"); return;
+      case Iop_RoundF64toF64_ZERO: vex_printf("RoundF64toF64_ZERO"); return;
+
       case Iop_TruncF64asF32: vex_printf("TruncF64asF32"); return;
       case Iop_CalcFPRF:      vex_printf("CalcFPRF"); return;
 
@@ -1709,6 +1714,8 @@ void typeOfPrimop ( IROp op,
          QUATERNARY(ity_RMode,Ity_F64,Ity_F64,Ity_F64, Ity_F64);
 
       case Iop_Est5FRSqrt:
+      case Iop_RoundF64toF64_NEAREST: case Iop_RoundF64toF64_NegINF:
+      case Iop_RoundF64toF64_PosINF: case Iop_RoundF64toF64_ZERO:
          UNARY(Ity_F64, Ity_F64);
       case Iop_RoundF64toF32:
          BINARY(ity_RMode,Ity_F64, Ity_F64);

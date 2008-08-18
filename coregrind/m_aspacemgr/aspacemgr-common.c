@@ -255,8 +255,8 @@ Int ML_(am_readlink)(HChar* path, HChar* buf, UInt bufsiz)
 /* Get the dev, inode and mode info for a file descriptor, if
    possible.  Returns True on success. */
 Bool ML_(am_get_fd_d_i_m)( Int fd, 
-                           /*OUT*/UWord* dev, 
-                           /*OUT*/UWord* ino, /*OUT*/UInt* mode )
+                           /*OUT*/ULong* dev, 
+                           /*OUT*/ULong* ino, /*OUT*/UInt* mode )
 {
    SysRes          res;
    struct vki_stat buf;
@@ -267,17 +267,17 @@ Bool ML_(am_get_fd_d_i_m)( Int fd,
    struct vki_stat64 buf64;
    res = VG_(do_syscall2)(__NR_fstat64, fd, (UWord)&buf64);
    if (!res.isError) {
-      *dev  = buf64.st_dev;
-      *ino  = buf64.st_ino;
-      *mode = buf64.st_mode;
+      *dev  = (ULong)buf64.st_dev;
+      *ino  = (ULong)buf64.st_ino;
+      *mode = (UInt) buf64.st_mode;
       return True;
    }
 #  endif
    res = VG_(do_syscall2)(__NR_fstat, fd, (UWord)&buf);
    if (!res.isError) {
-      *dev  = buf.st_dev;
-      *ino  = buf.st_ino;
-      *mode = buf.st_mode;
+      *dev  = (ULong)buf.st_dev;
+      *ino  = (ULong)buf.st_ino;
+      *mode = (UInt) buf.st_mode;
       return True;
    }
    return False;

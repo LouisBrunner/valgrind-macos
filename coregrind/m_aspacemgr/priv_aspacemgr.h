@@ -112,8 +112,8 @@ extern Int    ML_(am_readlink) ( HChar* path, HChar* buf, UInt bufsiz );
    possible.  Returns True on success. */
 extern
 Bool ML_(am_get_fd_d_i_m)( Int fd, 
-                                /*OUT*/UWord* dev, 
-                                /*OUT*/UWord* ino, /*OUT*/UInt* mode );
+                                /*OUT*/ULong* dev, 
+                                /*OUT*/ULong* ino, /*OUT*/UInt* mode );
 
 /* ------ Implemented seperately in aspacemgr-{linux,aix5}.c ------ */
 

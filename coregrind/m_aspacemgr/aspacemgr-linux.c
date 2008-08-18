@@ -329,7 +329,7 @@ static Int  find_nsegment_idx ( Addr a );
 
 static void parse_procselfmaps (
       void (*record_mapping)( Addr addr, SizeT len, UInt prot,
-                              UInt dev, UInt ino, ULong offset, 
+                              ULong dev, ULong ino, ULong offset, 
                               const UChar* filename ),
       void (*record_gap)( Addr addr, SizeT len )
    );
@@ -343,8 +343,8 @@ static void parse_procselfmaps (
 
 /* Extract the device, inode and mode numbers for a fd. */
 static 
-Bool get_inode_for_fd ( Int fd, /*OUT*/UWord* dev, 
-                                /*OUT*/UWord* ino, /*OUT*/UInt* mode )
+Bool get_inode_for_fd ( Int fd, /*OUT*/ULong* dev, 
+                                /*OUT*/ULong* ino, /*OUT*/UInt* mode )
 {
    return ML_(am_get_fd_d_i_m)(fd, dev, ino, mode);
 }
@@ -503,7 +503,7 @@ static void __attribute__ ((unused))
       (ULong)seg->start,
       (ULong)seg->end,
       show_ShrinkMode(seg->smode),
-      (ULong)seg->dev, (ULong)seg->ino, (ULong)seg->offset, seg->fnIdx,
+      seg->dev, seg->ino, seg->offset, seg->fnIdx,
       (Int)seg->hasR, (Int)seg->hasW, (Int)seg->hasX, (Int)seg->hasT,
       (Int)seg->mark, 
       name
@@ -552,7 +552,7 @@ static void show_nsegment ( Int logLevel, Int segNo, NSegment* seg )
             seg->hasR ? 'r' : '-', seg->hasW ? 'w' : '-', 
             seg->hasX ? 'x' : '-', seg->hasT ? 'T' : '-', 
             seg->isCH ? 'H' : '-',
-            (ULong)seg->dev, (ULong)seg->ino, (Long)seg->offset, seg->fnIdx
+            seg->dev, seg->ino, (Long)seg->offset, seg->fnIdx
          );
          break;
 
@@ -871,7 +871,7 @@ static Bool preen_nsegments ( void )
 static Bool sync_check_ok = False;
 
 static void sync_check_mapping_callback ( Addr addr, SizeT len, UInt prot,
-                                          UInt dev, UInt ino, ULong offset, 
+                                          ULong dev, ULong ino, ULong offset, 
                                           const UChar* filename )
 {
    Int  iLo, iHi, i;
@@ -908,7 +908,7 @@ static void sync_check_mapping_callback ( Addr addr, SizeT len, UInt prot,
       These kernels report which mappings are really executable in
       the /proc/self/maps output rather than mirroring what was asked
       for when each mapping was created. In order to cope with this we
-      have a slopyXcheck mode which we enable on x86 - in this mode we
+      have a sloppyXcheck mode which we enable on x86 - in this mode we
       allow the kernel to report execute permission when we weren't
       expecting it but not vice versa. */
    sloppyXcheck = False;
@@ -988,7 +988,7 @@ static void sync_check_mapping_callback ( Addr addr, SizeT len, UInt prot,
                    "segment mismatch: kernel's seg:\n");
    VG_(debugLog)(0,"aspacem", 
                    "start=0x%llx end=0x%llx prot=%u "
-                   "dev=%u ino=%u offset=%lld name=\"%s\"\n",
+                   "dev=%llu ino=%llu offset=%lld name=\"%s\"\n",
                    (ULong)addr, ((ULong)addr) + ((ULong)len) - 1,
                    prot, dev, ino, offset, 
                    filename ? (HChar*)filename : "(none)" );
@@ -1469,7 +1469,7 @@ static void init_resvn ( /*OUT*/NSegment* seg, Addr start, Addr end )
 /*-----------------------------------------------------------------*/
 
 static void read_maps_callback ( Addr addr, SizeT len, UInt prot,
-                                 UInt dev, UInt ino, ULong offset, 
+                                 ULong dev, ULong ino, ULong offset, 
                                  const UChar* filename )
 {
    NSegment seg;
@@ -1517,13 +1517,12 @@ Addr VG_(am_startup) ( Addr sp_at_startup )
    aspacem_assert(sizeof(SizeT)  == sizeof(void*));
    aspacem_assert(sizeof(SSizeT) == sizeof(void*));
 
-   { 
-      /* If these fail, we'd better change the type of dev and ino in
-         NSegment accordingly. */
-      struct vki_stat buf;
-      aspacem_assert(sizeof(buf.st_dev) == sizeof(seg.dev));
-      aspacem_assert(sizeof(buf.st_ino) == sizeof(seg.ino));
-   }
+   /* Check that we can store the largest imaginable dev, ino and
+      offset numbers in an NSegment. */
+   aspacem_assert(sizeof(seg.dev)    == 8);
+   aspacem_assert(sizeof(seg.ino)    == 8);
+   aspacem_assert(sizeof(seg.offset) == 8);
+   aspacem_assert(sizeof(seg.mode)   == 4);
 
    /* Add a single interval covering the entire address space. */
    init_nsegment(&seg);
@@ -1878,7 +1877,7 @@ VG_(am_notify_client_mmap)( Addr a, SizeT len, UInt prot, UInt flags,
                             Int fd, Off64T offset )
 {
    HChar    buf[VKI_PATH_MAX];
-   UWord    dev, ino;
+   ULong    dev, ino;
    UInt     mode;
    NSegment seg;
    Bool     needDiscard;
@@ -2070,7 +2069,7 @@ SysRes VG_(am_mmap_file_fixed_client)
    Addr       advised;
    Bool       ok;
    MapRequest req;
-   UWord      dev, ino;
+   ULong      dev, ino;
    UInt       mode;
    HChar      buf[VKI_PATH_MAX];
 
@@ -2347,7 +2346,7 @@ SysRes VG_(am_mmap_file_float_valgrind) ( SizeT length, UInt prot,
    Addr       advised;
    Bool       ok;
    MapRequest req;
-   UWord      dev, ino;
+   ULong      dev, ino;
    UInt       mode;
    HChar      buf[VKI_PATH_MAX];
  
@@ -2935,7 +2934,7 @@ static Int readhex64 ( const Char* buf, ULong* val )
    return n;
 }
 
-static Int readdec ( const Char* buf, UInt* val )
+static Int readdec64 ( const Char* buf, ULong* val )
 {
    Int n = 0;
    *val = 0;
@@ -3003,7 +3002,7 @@ static void read_procselfmaps_into_buf ( void )
 */
 static void parse_procselfmaps (
       void (*record_mapping)( Addr addr, SizeT len, UInt prot,
-                              UInt dev, UInt ino, ULong offset, 
+                              ULong dev, ULong ino, ULong offset, 
                               const UChar* filename ),
       void (*record_gap)( Addr addr, SizeT len )
    )
@@ -3012,9 +3011,9 @@ static void parse_procselfmaps (
    Addr   start, endPlusOne, gapStart;
    UChar* filename;
    UChar  rr, ww, xx, pp, ch, tmp;
-   UInt	  ino, prot;
-   UWord  maj, min, dev;
-   ULong  foffset;
+   UInt	  prot;
+   UWord  maj, min;
+   ULong  foffset, dev, ino;
 
    foffset = ino = 0; /* keep gcc-4.1.0 happy */
 
@@ -3072,7 +3071,7 @@ static void parse_procselfmaps (
       j = readchar(&procmap_buf[i], &ch);
       if (j == 1 && ch == ' ') i += j; else goto syntaxerror;
 
-      j = readdec(&procmap_buf[i], &ino);
+      j = readdec64(&procmap_buf[i], &ino);
       if (j > 0) i += j; else goto syntaxerror;
  
       goto read_line_ok;

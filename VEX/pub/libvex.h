@@ -319,6 +319,9 @@ typedef
       /* Whereabouts is the stack pointer? */
       Int offset_SP;
       Int sizeof_SP; /* 4 or 8 */
+      /* Whereabouts is the frame pointer? */
+      Int offset_FP;
+      Int sizeof_FP; /* 4 or 8 */
       /* Whereabouts is the instruction pointer? */
       Int offset_IP;
       Int sizeof_IP; /* 4 or 8 */

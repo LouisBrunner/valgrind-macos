@@ -757,6 +757,10 @@ VexGuestLayout
           .offset_SP = offsetof(VexGuestPPC32State,guest_GPR1),
           .sizeof_SP = 4,
 
+          /* Describe the frame pointer. */
+          .offset_FP = offsetof(VexGuestPPC32State,guest_GPR1),
+          .sizeof_FP = 4,
+
           /* Describe the instruction pointer. */
           .offset_IP = offsetof(VexGuestPPC32State,guest_CIA),
           .sizeof_IP = 4,
@@ -794,6 +798,10 @@ VexGuestLayout
           /* Describe the stack pointer. */
           .offset_SP = offsetof(VexGuestPPC64State,guest_GPR1),
           .sizeof_SP = 8,
+
+          /* Describe the frame pointer. */
+          .offset_FP = offsetof(VexGuestPPC64State,guest_GPR1),
+          .sizeof_FP = 8,
 
           /* Describe the instruction pointer. */
           .offset_IP = offsetof(VexGuestPPC64State,guest_CIA),

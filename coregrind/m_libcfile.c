@@ -401,17 +401,8 @@ Int VG_(access) ( HChar* path, Bool irusr, Bool iwusr, Bool ixusr )
 Int VG_(check_executable)(/*OUT*/Bool* is_setuid,
                           HChar* f, Bool allow_setuid)
 {
-  /* This is something of a kludge.  Really we should fix VG_(stat) to
-     do this itself, but not clear how to do it as it depends on
-     having a 'struct vki_stat64' which is different from 'struct
-     vki_stat'. */
-#  if defined(VGO_linux) && defined(__NR_stat64)
-   struct vki_stat64 st;
-   SysRes res = VG_(do_syscall2)(__NR_stat64, (UWord)f, (UWord)&st);
-#  else
-   struct vki_stat st;
+   struct vg_stat st;
    SysRes res = VG_(stat)(f, &st);
-#  endif
 
    if (is_setuid)
       *is_setuid = False;

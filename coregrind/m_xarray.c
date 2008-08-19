@@ -165,7 +165,7 @@ static inline void ensureSpaceXA ( struct _XArray* xa )
    }
 }
 
-Int VG_(addToXA) ( XArray* xao, void* elem )
+Word VG_(addToXA) ( XArray* xao, void* elem )
 {
    struct _XArray* xa = (struct _XArray*)xao;
    vg_assert(xa);
@@ -182,9 +182,9 @@ Int VG_(addToXA) ( XArray* xao, void* elem )
    return xa->usedsizeE-1;
 }
 
-Int VG_(addBytesToXA) ( XArray* xao, void* bytesV, Int nbytes )
+Word VG_(addBytesToXA) ( XArray* xao, void* bytesV, Word nbytes )
 {
-   Int r, i;
+   Word r, i;
    struct _XArray* xa = (struct _XArray*)xao;
    vg_assert(xa);
    vg_assert(xa->elemSzB == 1);

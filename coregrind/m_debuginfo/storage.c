@@ -420,7 +420,7 @@ Int ML_(CfiExpr_Undef)( XArray* dst )
    CfiExpr e;
    VG_(memset)( &e, 0, sizeof(e) );
    e.tag = Cex_Undef;
-   return VG_(addToXA)( dst, &e );
+   return (Int)VG_(addToXA)( dst, &e );
 }
 Int ML_(CfiExpr_Deref)( XArray* dst, Int ixAddr )
 {
@@ -428,7 +428,7 @@ Int ML_(CfiExpr_Deref)( XArray* dst, Int ixAddr )
    VG_(memset)( &e, 0, sizeof(e) );
    e.tag = Cex_Deref;
    e.Cex.Deref.ixAddr = ixAddr;
-   return VG_(addToXA)( dst, &e );
+   return (Int)VG_(addToXA)( dst, &e );
 }
 Int ML_(CfiExpr_Const)( XArray* dst, UWord con )
 {
@@ -436,7 +436,7 @@ Int ML_(CfiExpr_Const)( XArray* dst, UWord con )
    VG_(memset)( &e, 0, sizeof(e) );
    e.tag = Cex_Const;
    e.Cex.Const.con = con;
-   return VG_(addToXA)( dst, &e );
+   return (Int)VG_(addToXA)( dst, &e );
 }
 Int ML_(CfiExpr_Binop)( XArray* dst, CfiOp op, Int ixL, Int ixR )
 {
@@ -446,7 +446,7 @@ Int ML_(CfiExpr_Binop)( XArray* dst, CfiOp op, Int ixL, Int ixR )
    e.Cex.Binop.op  = op;
    e.Cex.Binop.ixL = ixL;
    e.Cex.Binop.ixR = ixR;
-   return VG_(addToXA)( dst, &e );
+   return (Int)VG_(addToXA)( dst, &e );
 }
 Int ML_(CfiExpr_CfiReg)( XArray* dst, CfiReg reg )
 {
@@ -454,7 +454,7 @@ Int ML_(CfiExpr_CfiReg)( XArray* dst, CfiReg reg )
    VG_(memset)( &e, 0, sizeof(e) );
    e.tag = Cex_CfiReg;
    e.Cex.CfiReg.reg = reg;
-   return VG_(addToXA)( dst, &e );
+   return (Int)VG_(addToXA)( dst, &e );
 }
 Int ML_(CfiExpr_DwReg)( XArray* dst, Int reg )
 {
@@ -462,7 +462,7 @@ Int ML_(CfiExpr_DwReg)( XArray* dst, Int reg )
    VG_(memset)( &e, 0, sizeof(e) );
    e.tag = Cex_DwReg;
    e.Cex.DwReg.reg = reg;
-   return VG_(addToXA)( dst, &e );
+   return (Int)VG_(addToXA)( dst, &e );
 }
 
 static void ppCfiOp ( CfiOp op ) 

@@ -64,12 +64,12 @@ extern void VG_(setCmpFnXA) ( XArray*, Int (*compar)(void*,void*) );
 /* Add an element to an XArray.  Element is copied into the XArray.
    Index at which it was added is returned.  Note this will be
    invalidated if the array is later sortXA'd. */
-extern Int VG_(addToXA) ( XArray*, void* elem );
+extern Word VG_(addToXA) ( XArray*, void* elem );
 
 /* Add a sequence of bytes to an XArray of bytes.  Asserts if nbytes
    is negative or the array's element size is not 1.  Returns the
    index at which the first byte was added. */
-extern Int VG_(addBytesToXA) ( XArray* xao, void* bytesV, Int nbytes );
+extern Word VG_(addBytesToXA) ( XArray* xao, void* bytesV, Word nbytes );
 
 /* Sort an XArray using its comparison function, if set; else bomb.
    Probably not a stable sort w.r.t. equal elements module cmpFn. */

@@ -669,7 +669,7 @@ VG_(pre_exec_check)(const HChar* exe_name, Int* out_fd, Bool allow_setuid)
       return VG_(mk_SysRes_Error)(ret);
    }
 
-   fsz = VG_(fsize)(fd);
+   fsz = (SizeT)VG_(fsize)(fd);
    if (fsz < bufsz)
       bufsz = fsz;
 
@@ -773,7 +773,7 @@ static Int do_exec_shell_followup(Int ret, HChar* exe_name,
 {
    Char*  default_interp_name = "/bin/sh";
    SysRes res;
-   struct vki_stat st;
+   struct vg_stat st;
 
    if (VKI_ENOEXEC == ret) {
       // It was an executable file, but in an unacceptable format.  Probably

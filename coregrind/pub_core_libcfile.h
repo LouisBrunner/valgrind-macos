@@ -46,8 +46,8 @@ extern Int VG_(fcntl)   ( Int fd, Int cmd, Int arg );
 /* Convert an fd into a filename */
 extern Bool VG_(resolve_filename) ( Int fd, HChar* buf, Int n_buf );
 
-/* Return the size of a file */
-extern Int VG_(fsize) ( Int fd );
+/* Return the size of a file, or -1 in case of error */
+extern Long VG_(fsize) ( Int fd );
 
 /* Is the file a directory? */
 extern Bool VG_(is_dir) ( HChar* f );

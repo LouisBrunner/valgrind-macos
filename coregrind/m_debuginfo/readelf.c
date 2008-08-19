@@ -859,7 +859,7 @@ static
 Addr open_debug_file( Char* name, UInt crc, /*OUT*/UWord* size )
 {
    SysRes fd, sres;
-   struct vki_stat stat_buf;
+   struct vg_stat stat_buf;
    UInt calccrc;
 
    fd = VG_(open)(name, VKI_O_RDONLY, 0);
@@ -1083,11 +1083,13 @@ Bool ML_(read_elf_debug_info) ( struct _DebugInfo* di )
       return False;
    }
 
-   n_oimage = VG_(fsize)(fd.res);
-   if (n_oimage <= 0) {
-      ML_(symerr)(di, True, "Can't stat .so/.exe (to determine its size)?!");
-      VG_(close)(fd.res);
-      return False;
+   { Long n_oimageLL = VG_(fsize)(fd.res);
+     if (n_oimageLL <= 0) {
+        ML_(symerr)(di, True, "Can't stat .so/.exe (to determine its size)?!");
+        VG_(close)(fd.res);
+        return False;
+     }
+     n_oimage = (UWord)(ULong)n_oimageLL;
    }
 
    sres = VG_(am_mmap_file_float_valgrind)

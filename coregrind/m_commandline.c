@@ -57,7 +57,7 @@ static HChar* read_dot_valgrindrc ( HChar* dir )
 {
    Int    n;
    SysRes fd;
-   Int    size;
+   Long   size;
    HChar* f_clo = NULL;
    HChar  filename[VKI_PATH_MAX];
 

@@ -491,8 +491,8 @@ void VG_(di_notify_mmap)( Addr a, Bool allow_SkFileV )
    Int        nread;
    HChar      buf1k[1024];
    Bool       debug = False;
-   SysRes          statres;
-   struct vki_stat statbuf;
+   SysRes     statres;
+   struct vg_stat statbuf;
 
    /* In short, figure out if this mapping is of interest to us, and
       if so, try to guess what ld.so is doing and when/if we should
@@ -522,16 +522,32 @@ void VG_(di_notify_mmap)( Addr a, Bool allow_SkFileV )
    if (debug)
       VG_(printf)("di_notify_mmap-2: %s\n", filename);
 
-   /* Only try to read debug information from regular files. */
+   /* Only try to read debug information from regular files.  */
    statres = VG_(stat)(filename, &statbuf);
-   /* If the assert below ever fails, replace the VG_(stat)() call above */
-   /* by a VG_(lstat)() call.                                            */
+
+   /* stat dereferences symlinks, so we don't expect it to succeed and
+      yet produce something that is a symlink. */
    vg_assert(statres.isError || ! VKI_S_ISLNK(statbuf.st_mode));
-   if (statres.isError || ! VKI_S_ISREG(statbuf.st_mode))
-   {
+
+   /* Don't let the stat call fail silently.  Filter out some known
+      sources of noise before complaining, though. */
+   if (statres.isError) {
+      DebugInfo fake_di;
+      Bool quiet = VG_(strstr)(filename, "/var/run/nscd/") != NULL;
+      if (!quiet) {
+         VG_(memset)(&fake_di, 0, sizeof(fake_di));
+         fake_di.filename = filename;
+         ML_(symerr)(&fake_di, True, "failed to stat64/stat this file");
+      }
       return;
    }
 
+   /* Finally, the point of all this stattery: if it's not a regular file,
+      don't try to read debug info from it. */
+   if (! VKI_S_ISREG(statbuf.st_mode))
+      return;
+
+   /* no uses of statbuf below here. */
 
    /* Peer at the first few bytes of the file, to see if it is an ELF */
    /* object file. Ignore the file if we do not have read permission. */

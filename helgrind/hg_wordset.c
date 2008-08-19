@@ -38,9 +38,9 @@
 #include "pub_tool_libcassert.h"
 #include "pub_tool_libcbase.h"
 #include "pub_tool_libcprint.h"
+#include "pub_tool_wordfm.h"
 
 #define HG_(str) VGAPPEND(vgHelgrind_,str)
-#include "hg_wordfm.h"
 #include "hg_wordset.h"
 
 //------------------------------------------------------------------//
@@ -280,7 +280,7 @@ static WordSet add_or_dealloc_WordVec( WordSetU* wsu, WordVec* wv_new )
       a Word* in the lookupFM.  Making it WordSet (which is 32 bits)
       causes failures on a 64-bit platform. */
    tl_assert(wv_new->owner == wsu);
-   have = HG_(lookupFM)( wsu->vec2ix, 
+   have = VG_(lookupFM)( wsu->vec2ix, 
                          (Word*)&wv_old, (Word*)&ix_old,
                          (Word)wv_new );
    if (have) {
@@ -296,7 +296,7 @@ static WordSet add_or_dealloc_WordVec( WordSetU* wsu, WordVec* wv_new )
       tl_assert(wsu->ix2vec);
       tl_assert(wsu->ix2vec_used < wsu->ix2vec_size);
       wsu->ix2vec[wsu->ix2vec_used] = wv_new;
-      HG_(addToFM)( wsu->vec2ix, (Word)wv_new, (Word)wsu->ix2vec_used );
+      VG_(addToFM)( wsu->vec2ix, (Word)wv_new, (Word)wsu->ix2vec_used );
       if (0) VG_(printf)("aodW %d\n", (Int)wsu->ix2vec_used );
       wsu->ix2vec_used++;
       tl_assert(wsu->ix2vec_used <= wsu->ix2vec_size);
@@ -316,7 +316,7 @@ WordSetU* HG_(newWordSetU) ( void* (*alloc_nofail)( SizeT ),
    VG_(memset)( wsu, 0, sizeof(WordSetU) );
    wsu->alloc   = alloc_nofail;
    wsu->dealloc = dealloc;
-   wsu->vec2ix  = HG_(newFM)( alloc_nofail, dealloc, cmp_WordVecs_for_FM );
+   wsu->vec2ix  = VG_(newFM)( alloc_nofail, dealloc, cmp_WordVecs_for_FM );
    wsu->ix2vec_used = 0;
    wsu->ix2vec_size = 0;
    wsu->ix2vec      = NULL;
@@ -334,7 +334,7 @@ void HG_(deleteWordSetU) ( WordSetU* wsu )
 {
    void (*dealloc)(void*) = wsu->dealloc;
    tl_assert(wsu->vec2ix);
-   HG_(deleteFM)( wsu->vec2ix, delete_WV_for_FM, NULL/*val-finalizer*/ );
+   VG_(deleteFM)( wsu->vec2ix, delete_WV_for_FM, NULL/*val-finalizer*/ );
    if (wsu->ix2vec)
       dealloc(wsu->ix2vec);
    dealloc(wsu);
@@ -496,10 +496,11 @@ void HG_(ppWSUstats) ( WordSetU* wsu, HChar* name )
    VG_(printf)("   WordSet \"%s\":\n", name);
    VG_(printf)("      addTo        %10lu (%lu uncached)\n",
                wsu->n_add, wsu->n_add_uncached);
-   VG_(printf)("      delFrom      %10lu (%lu uncached)\n",
+   VG_(printf)("      delFrom      %10lu (%lu uncached)\n", 
                wsu->n_del, wsu->n_del_uncached);
    VG_(printf)("      union        %10lu\n", wsu->n_union);
-   VG_(printf)("      intersect    %10lu (%lu uncached) [nb. incl isSubsetOf]\n",
+   VG_(printf)("      intersect    %10lu (%lu uncached) "
+               "[nb. incl isSubsetOf]\n", 
                wsu->n_intersect, wsu->n_intersect_uncached);
    VG_(printf)("      minus        %10lu (%lu uncached)\n",
                wsu->n_minus, wsu->n_minus_uncached);

@@ -2195,7 +2195,11 @@ static void parse_type_DIE ( /*OUT*/TyAdmin** admin,
       goto acquire_Atom;
    }
 
-   if (dtag == DW_TAG_structure_type || dtag == DW_TAG_union_type) {
+   /* Treat DW_TAG_class_type as if it was a DW_TAG_structure_type.  I
+      don't know if this is correct, but it at least makes this reader
+      usable for gcc-4.3 produced Dwarf3. */
+   if (dtag == DW_TAG_structure_type || dtag == DW_TAG_class_type
+       || dtag == DW_TAG_union_type) {
       Bool have_szB = False;
       Bool is_decl  = False;
       Bool is_spec  = False;
@@ -2207,7 +2211,8 @@ static void parse_type_DIE ( /*OUT*/TyAdmin** admin,
          = VG_(newXA)( ML_(dinfo_zalloc), ML_(dinfo_free),
                        sizeof(TyAtom*) );
       type->Ty.StOrUn.complete = True;
-      type->Ty.StOrUn.isStruct = dtag == DW_TAG_structure_type;
+      type->Ty.StOrUn.isStruct = dtag == DW_TAG_structure_type 
+                                 || dtag == DW_TAG_class_type;
       while (True) {
          DW_AT   attr = (DW_AT)  get_ULEB128( c_abbv );
          DW_FORM form = (DW_FORM)get_ULEB128( c_abbv );

@@ -577,7 +577,6 @@ HChar* ML_(pp_DW_AT)       ( DW_AT attr );
 */
 typedef
    struct _GExpr { 
-      struct _GExpr* next;
       UChar payload[0];
    }
    GExpr;

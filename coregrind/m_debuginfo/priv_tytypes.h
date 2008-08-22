@@ -52,7 +52,6 @@ typedef
 struct _TyAdmin {
    UWord      cuOff;
    void*      payload;
-   TyAdmin*   next;
    TyAdminTag tag;
 };
 
@@ -128,14 +127,16 @@ struct _Type {
    } Ty;
 };
 
-TyAdmin*  ML_(new_TyAdmin)  ( UWord cuOff, TyAdmin* next );
+TyAdmin*  ML_(new_TyAdmin)  ( UWord cuOff );
 TyAtom*   ML_(new_TyAtom)   ( UChar* name, Long value );
 TyField*  ML_(new_TyField)  ( UChar* name, Type* typeR, D3Expr* loc );
 TyBounds* ML_(new_TyBounds) ( void );
 Type*     ML_(new_Type)     ( void );
 D3Expr*   ML_(new_D3Expr)   ( UChar* bytes, UWord nbytes );
 
-void ML_(delete_TyAdmin_and_payload) ( TyAdmin* ad );
+/* Delete the payload attached to this TyAdmin, but not the TyAdmin
+   itself. */
+void ML_(delete_payload_of_TyAdmin) ( TyAdmin* );
 
 void ML_(pp_TyAdmin)  ( TyAdmin* admin );
 void ML_(pp_TyAtom)   ( TyAtom* atom );

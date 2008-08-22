@@ -192,10 +192,10 @@ DebugInfo* alloc_DebugInfo( const UChar* filename,
 /* Free a DebugInfo, and also all the stuff hanging off it. */
 static void free_DebugInfo ( DebugInfo* di )
 {
-   Word i, j;
+   Word i, j, n;
    struct strchunk *chunk, *next;
-   TyAdmin *admin1, *admin2;
-   GExpr *gexpr1, *gexpr2;
+   TyAdmin* admin;
+   GExpr* gexpr;
 
    vg_assert(di != NULL);
    if (di->filename)   ML_(dinfo_free)(di->filename);
@@ -212,13 +212,24 @@ static void free_DebugInfo ( DebugInfo* di )
    /* Delete the two admin lists.  These lists exist purely so that we
       can visit each object exactly once when we need to delete
       them. */
-   for (admin1 = di->admin_tyadmins; admin1; admin1 = admin2) {
-      admin2 = admin1->next;
-      ML_(delete_TyAdmin_and_payload)(admin1);
+   if (di->admin_tyadmins) {
+      n = VG_(sizeXA)(di->admin_tyadmins);
+      for (i = 0; i < n; i++) {
+         admin = (TyAdmin*)VG_(indexXA)(di->admin_tyadmins, i);
+         ML_(delete_payload_of_TyAdmin)(admin);
+      }
+      VG_(deleteXA)(di->admin_tyadmins);
+      di->admin_tyadmins = NULL;
    }
-   for (gexpr1 = di->admin_gexprs; gexpr1; gexpr1 = gexpr2) {
-      gexpr2 = gexpr1->next;
-      ML_(dinfo_free)(gexpr1);
+
+   if (di->admin_gexprs) {
+      n = VG_(sizeXA)(di->admin_gexprs);
+      for (i = 0; i < n; i++) {
+         gexpr = *(GExpr**)VG_(indexXA)(di->admin_gexprs, i);
+         ML_(dinfo_free)(gexpr);
+      }
+      VG_(deleteXA)(di->admin_gexprs);
+      di->admin_gexprs = NULL;
    }
 
    /* Dump the variable info.  This is kinda complex: we must take

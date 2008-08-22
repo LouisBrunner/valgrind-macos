@@ -630,7 +630,6 @@ static GExpr* make_singleton_GX ( UChar* block, UWord nbytes )
    vg_assert( &gx->payload[bytesReqd] 
               == ((UChar*)gx) + sizeof(GExpr) + bytesReqd );
 
-   gx->next = NULL;
    return gx;
 }
 
@@ -736,8 +735,6 @@ static GExpr* make_general_GX ( CUConst* cc,
               == ((UChar*)gx) + sizeof(GExpr) + nbytes );
 
    VG_(deleteXA)( xa );
-
-   gx->next = NULL;
 
    TRACE_D3("}\n");
 
@@ -1134,7 +1131,6 @@ void get_Form_contents ( /*OUT*/ULong* cts,
 
 typedef
    struct _TempVar {
-      struct _TempVar* next;
       UChar*  name; /* in DebugInfo's .strchunks */
       /* Represent ranges economically.  nRanges is the number of
          ranges.  Cases:
@@ -1387,8 +1383,8 @@ void read_filename_table( /*MOD*/D3VarParser* parser,
 
 
 __attribute__((noinline))
-static void parse_var_DIE ( /*OUT*/TempVar** tempvars,
-                            /*OUT*/GExpr** gexprs,
+static void parse_var_DIE ( /*MOD*/XArray* /* of TempVar* */ tempvars,
+                            /*MOD*/XArray* /* of GExpr* */ gexprs,
                             /*MOD*/D3VarParser* parser,
                             DW_TAG dtag,
                             UWord posn,
@@ -1545,9 +1541,7 @@ static void parse_var_DIE ( /*OUT*/TempVar** tempvars,
                  || (ctsMemSzB == 0 && ctsSzB > 0))) {
             fbGX = get_GX( cc, False/*td3*/, cts, ctsSzB, ctsMemSzB );
             vg_assert(fbGX);
-            vg_assert(!fbGX->next);
-            fbGX->next = *gexprs;
-            *gexprs = fbGX;
+            VG_(addToXA)(gexprs, &fbGX);
          }
       }
       /* Do we have something that looks sane? */
@@ -1621,9 +1615,7 @@ static void parse_var_DIE ( /*OUT*/TempVar** tempvars,
                  || (ctsMemSzB == 0 && ctsSzB > 0))) {
             gexpr = get_GX( cc, False/*td3*/, cts, ctsSzB, ctsMemSzB );
             vg_assert(gexpr);
-            vg_assert(!gexpr->next);
-            gexpr->next = *gexprs;
-            *gexprs = gexpr;
+            VG_(addToXA)(gexprs, &gexpr);
          }
          if (attr == DW_AT_type && ctsSzB > 0) {
             typeR = (Type*)(UWord)cts;
@@ -1748,8 +1740,7 @@ static void parse_var_DIE ( /*OUT*/TempVar** tempvars,
             tv->rngMany = VG_(cloneXA)( xa ); /* free when 'tv' freed */
          }
 
-         tv->next  = *tempvars;
-         *tempvars = tv;
+         VG_(addToXA)( tempvars, &tv );
 
          TRACE_D3("  Recording this variable, with %ld PC range(s)\n",
                   VG_(sizeXA)(xa) );
@@ -1963,7 +1954,7 @@ static void typestack_push ( CUConst* cc,
    it.
 */
 __attribute__((noinline))
-static void parse_type_DIE ( /*OUT*/TyAdmin** admin,
+static void parse_type_DIE ( /*MOD*/XArray* /* of TyAdmin */ admin,
                              /*MOD*/D3TypeParser* parser,
                              DW_TAG dtag,
                              UWord posn,
@@ -1981,6 +1972,7 @@ static void parse_type_DIE ( /*OUT*/TyAdmin** admin,
    TyField*  field  = NULL;
    D3Expr*   expr   = NULL;
    TyBounds* bounds = NULL;
+   TyAdmin   tyad;
 
    UWord saved_die_c_offset  = get_position_of_Cursor( c_die );
    UWord saved_abbv_c_offset = get_position_of_Cursor( c_abbv );
@@ -2488,9 +2480,11 @@ static void parse_type_DIE ( /*OUT*/TyAdmin** admin,
    if (0) VG_(printf)("YYYY Acquire Type\n");
    vg_assert(type); vg_assert(!atom); vg_assert(!field);
    vg_assert(!expr); vg_assert(!bounds);
-   *admin            = ML_(new_TyAdmin)( posn, *admin );
-   (*admin)->payload = type;
-   (*admin)->tag     = TyA_Type;
+   VG_(memset)( &tyad, 0, sizeof(tyad) );
+   tyad.cuOff   = posn;
+   tyad.payload = type;
+   tyad.tag     = TyA_Type;
+   VG_(addToXA)( admin, &tyad );
    return;
    /*NOTREACHED*/
 
@@ -2498,9 +2492,11 @@ static void parse_type_DIE ( /*OUT*/TyAdmin** admin,
    if (0) VG_(printf)("YYYY Acquire Atom\n");
    vg_assert(!type); vg_assert(atom); vg_assert(!field);
    vg_assert(!expr); vg_assert(!bounds);
-   *admin            = ML_(new_TyAdmin)( posn, *admin );
-   (*admin)->payload = atom;
-   (*admin)->tag     = TyA_Atom;
+   VG_(memset)( &tyad, 0, sizeof(tyad) );
+   tyad.cuOff   = posn;
+   tyad.payload = atom;
+   tyad.tag     = TyA_Atom;
+   VG_(addToXA)( admin, &tyad );
    return;
    /*NOTREACHED*/
 
@@ -2510,14 +2506,17 @@ static void parse_type_DIE ( /*OUT*/TyAdmin** admin,
    vg_assert(!type); vg_assert(!atom); vg_assert(field); 
    /*vg_assert(expr);*/ vg_assert(!bounds);
    if (expr) {
-      *admin            = ML_(new_TyAdmin)( (UWord)D3_INVALID_CUOFF,
-                                            *admin );
-      (*admin)->payload = expr;
-      (*admin)->tag     = TyA_Expr;
+      VG_(memset)( &tyad, 0, sizeof(tyad) );
+      tyad.cuOff   = (UWord)D3_INVALID_CUOFF;
+      tyad.payload = expr;
+      tyad.tag     = TyA_Expr;
+      VG_(addToXA)( admin, &tyad );
    }
-   *admin            = ML_(new_TyAdmin)( posn, *admin );
-   (*admin)->payload = field;
-   (*admin)->tag     = TyA_Field;
+   VG_(memset)( &tyad, 0, sizeof(tyad) );
+   tyad.cuOff   = posn;
+   tyad.payload = field;
+   tyad.tag     = TyA_Field;
+   VG_(addToXA)( admin, &tyad );
    return;
    /*NOTREACHED*/
 
@@ -2525,9 +2524,11 @@ static void parse_type_DIE ( /*OUT*/TyAdmin** admin,
    if (0) VG_(printf)("YYYY Acquire Bounds\n");
    vg_assert(!type); vg_assert(!atom); vg_assert(!field);
    vg_assert(!expr); vg_assert(bounds);
-   *admin            = ML_(new_TyAdmin)( posn, *admin );
-   (*admin)->payload = bounds;
-   (*admin)->tag     = TyA_Bounds;
+   VG_(memset)( &tyad, 0, sizeof(tyad) );
+   tyad.cuOff   = posn;
+   tyad.payload = bounds;
+   tyad.tag     = TyA_Bounds;
+   VG_(addToXA)( admin, &tyad );
    return;
    /*NOTREACHED*/
 
@@ -2559,84 +2560,109 @@ static void parse_type_DIE ( /*OUT*/TyAdmin** admin,
 /*------------------------------------------------------------*/
 
 static Int cmp_D3TyAdmin_by_cuOff ( void* v1, void* v2 ) {
-   TyAdmin* a1 = *(TyAdmin**)v1;
-   TyAdmin* a2 = *(TyAdmin**)v2;
+   TyAdmin* a1 = (TyAdmin*)v1;
+   TyAdmin* a2 = (TyAdmin*)v2;
    if (a1->cuOff < a2->cuOff) return -1;
    if (a1->cuOff > a2->cuOff) return 1;
    return 0;
 }
 
-/* Look up 'cuOff' in 'map', to find the associated D3TyAdmin*.  Check
-   that the found D3TyAdmin has tag 'adtag'.  Sets *payload to be the
-   resulting payload pointer and returns True on success.
+/* Look up 'cuOff' in 'admin', to find the associated D3TyAdmin.
+   Check that the found D3TyAdmin has tag 'adtag'.  Sets *payload to
+   be the resulting payload pointer and returns True on success.
 
    Also, if 'allow_invalid' is True, then if cuOff is
    D3_INVALID_CUOFF, return NULL in *payload.
 
-   Otherwise (conceptually fails) and returns False. */
+   Otherwise (conceptually fails) and returns False.
+
+   Note that 'admin' has previously been sorted on its .cuOff fields,
+   so we can legitimately look up using them.
+ */
 __attribute__((noinline))
 static Bool resolve_binding ( /*OUT*/void** payload,
-                              XArray* map, void* cuOff,
+                              XArray* /* of TyAdmin */ admin, 
+                              void* cuOff,
                               TyAdminTag tag, 
                               Bool allow_invalid ) {
    Bool    found;
    Word    ixLo, ixHi;
-   TyAdmin dummy, *dummyP, *admin;
+   TyAdmin dummy, *tyad;
 
-   if (cuOff == D3_INVALID_CUOFF && allow_invalid) {
-      *payload = NULL;
-      return True;
+   if (cuOff == D3_INVALID_CUOFF) {
+      if (allow_invalid) {
+         *payload = NULL;
+         return True;
+      } else {
+         return False;
+      }
    }
+
+   /* Hence ... */
+   tl_assert(cuOff != D3_INVALID_CUOFF);
 
    VG_(memset)(&dummy, 0, sizeof(dummy));
    dummy.cuOff = (UWord)cuOff;
-   dummyP = &dummy;
-   found = VG_(lookupXA)( map, &dummyP, &ixLo, &ixHi );
+   found = VG_(lookupXA)( admin, &dummy, &ixLo, &ixHi );
    if (!found)
       return False;
    /* If this doesn't hold, we must have seen more than one DIE with
       the same cuOff(set).  Which isn't possible. */
    vg_assert(ixLo == ixHi);
-   admin = *(TyAdmin**)VG_(indexXA)( map, ixLo );
+   tyad = (TyAdmin*)VG_(indexXA)( admin, ixLo );
    /* All payload pointers should be non-NULL.  Ensured by assertion in
       loop in resolve_type_entities that creates 'map'.  Hence it is
       safe to return NULL to indicate 'not found'. */
-   vg_assert(admin->payload);
-   vg_assert(admin->cuOff == (UWord)cuOff); /* stay sane */
+   vg_assert(tyad->payload);
+   vg_assert(tyad->cuOff == (UWord)cuOff); /* stay sane */
 
-   if (admin->tag != tag)
+   if (tyad->tag != tag)
       return False;
 
-   *payload = admin->payload;
+   *payload = tyad->payload;
    return True;
 }
 
+
+/* First, we sort the 'admin' array by its .cuOff fields.  That means
+   we can now hand it to resolve_binding() above, which simply looks
+   up the payload associated with a given cuOff value by doing a
+   binary search in 'admin'.
+
+   There is a subtlety that some of the .cuOff fields in 'admin' are
+   D3_INVALID_CUOFF, and we don't want anybody to be able to look up
+   anything against that value.  Rather than filter those out, we
+   leave them in, sort as usual, but arrange so that resolve_binding()
+   never looks up a D3_INVALID_CUOFF value.
+
+   Having done the sorting, we then work through the payload fields of
+   'admin' and convert all cuOff values into real pointers, by looking
+   them up using resolve_binding().  That's the whole purpose of this
+   resolution mechanism.  We also resolve the type expressions on the
+   supplied 'vars' array. */
+
 __attribute__((noinline))
-static void resolve_type_entities ( /*MOD*/TyAdmin* admin,
-                                    /*MOD*/TempVar* vars )
+static void resolve_type_entities ( /*MOD*/XArray* /* of TyAdmin */ admin,
+                                    /*MOD*/XArray* /* of TempVar* */ vars )
 {
    Bool     ok;
+   Word     i, n;
    void*    payload;
    TyAdmin* adp;
-   XArray* /* of D3TyAdmin* */ map;
 
-   map = VG_(newXA)( ML_(dinfo_zalloc), ML_(dinfo_free),
-                     sizeof(TyAdmin*) );
-   for (adp = admin; adp; adp = adp->next) {
-      vg_assert(adp);
-      vg_assert(adp->payload != NULL);
-      if (adp->cuOff != (UWord)D3_INVALID_CUOFF) {
-         VG_(addToXA)( map, &adp );
-      }
-   }
+   tl_assert(admin);
 
-   VG_(setCmpFnXA)( map, cmp_D3TyAdmin_by_cuOff );
+   n = VG_(sizeXA)( admin );
+
+   VG_(setCmpFnXA)( admin, cmp_D3TyAdmin_by_cuOff );
    if (0) 
       VG_(printf)("XXXXXX sorting map with %d entries\n",
-                  (Int)VG_(sizeXA)(map));
-   VG_(sortXA)( map );
+                  (Int)VG_(sizeXA)(admin));
+   VG_(sortXA)( admin );
 
-   for (adp = admin; adp; adp = adp->next) {
+   for (i = 0; i < n; i++) {
+      adp = (TyAdmin*)VG_(indexXA)( admin, i );
+      vg_assert(adp);
       vg_assert(adp->payload);
       switch (adp->tag) {
       case TyA_Bounds: {
@@ -2661,7 +2687,7 @@ static void resolve_type_entities ( /*MOD*/TyAdmin* admin,
          if ( (field->isStruct && (!field->loc)) 
               || ((!field->isStruct) && field->loc))
             goto baaad;
-         ok = resolve_binding( &payload, map, field->typeR,
+         ok = resolve_binding( &payload, admin, field->typeR,
                                TyA_Type, False/*!allow_invalid*/ );
          if (!ok) goto baaad;
          field->typeR = payload;
@@ -2681,7 +2707,7 @@ static void resolve_type_entities ( /*MOD*/TyAdmin* admin,
                break;
             case Ty_TyDef:
                if (!ty->Ty.TyDef.name) goto baaad;
-               ok = resolve_binding( &payload, map,
+               ok = resolve_binding( &payload, admin,
                                      ty->Ty.TyDef.typeR, 
                                      TyA_Type,
                                      True/*allow_invalid*/ );
@@ -2690,7 +2716,7 @@ static void resolve_type_entities ( /*MOD*/TyAdmin* admin,
                break;
             case Ty_PorR:
                if (ty->Ty.PorR.szB != sizeof(Word)) goto baaad;
-               ok = resolve_binding( &payload, map,
+               ok = resolve_binding( &payload, admin,
                                      ty->Ty.PorR.typeR, 
                                      TyA_Type,
                                      False/*!allow_invalid*/ );
@@ -2699,7 +2725,7 @@ static void resolve_type_entities ( /*MOD*/TyAdmin* admin,
                break;
             case Ty_Array:
                if (!ty->Ty.Array.bounds) goto baaad;
-               ok = resolve_binding( &payload, map,
+               ok = resolve_binding( &payload, admin,
                                      ty->Ty.Array.typeR, 
                                      TyA_Type,
                                      False/*!allow_invalid*/ );
@@ -2721,7 +2747,7 @@ static void resolve_type_entities ( /*MOD*/TyAdmin* admin,
             case Ty_Qual:
                if (ty->Ty.Qual.qual != 'C' 
                    && ty->Ty.Qual.qual != 'V') goto baaad;
-               ok = resolve_binding( &payload, map,
+               ok = resolve_binding( &payload, admin,
                                      ty->Ty.Qual.typeR, 
                                      TyA_Type,
                                      False/*!allow_invalid*/ );
@@ -2746,19 +2772,19 @@ static void resolve_type_entities ( /*MOD*/TyAdmin* admin,
    }
 
    /* Now resolve the variables list */
-   for (; vars; vars = vars->next) {
+   n = VG_(sizeXA)( vars );
+   for (i = 0; i < n; i++) {
+      TempVar* var = *(TempVar**)VG_(indexXA)( vars, i );
       payload = NULL;
-      ok = resolve_binding( &payload, map, vars->typeR,
+      ok = resolve_binding( &payload, admin, var->typeR,
                             TyA_Type, True/*allow_invalid*/ );
 
       if (0 && !ok)
          VG_(printf)("Can't resolve type reference 0x%lx\n",
-                     (UWord)vars->typeR);
+                     (UWord)var->typeR);
       //vg_assert(ok);
-      vars->typeR = payload;
+      var->typeR = payload;
    }
-
-   VG_(deleteXA)( map );
 }
 
 
@@ -2776,9 +2802,9 @@ static Int cmp_TempVar_by_dioff ( void* v1, void* v2 ) {
    return 0;
 }
 
-static void read_DIE ( /*OUT*/TyAdmin** admin,
-                       /*OUT*/TempVar** tempvars,
-                       /*OUT*/GExpr** gexprs,
+static void read_DIE ( /*MOD*/XArray* /* of TyAdmin */ admin,
+                       /*OUT*/XArray* /* of TempVar* */ tempvars,
+                       /*MOD*/XArray* /* of GExpr* */ gexprs,
                        /*MOD*/D3TypeParser* typarser,
                        /*MOD*/D3VarParser* varparser,
                        Cursor* c, Bool td3, CUConst* cc, Int level )
@@ -2895,9 +2921,11 @@ void new_dwarf3_reader_wrk (
    UChar* debug_loc_img,    SizeT debug_loc_sz
 )
 {
-   TyAdmin *admin, *adminp;
-   TempVar *tempvars, *varp, *varp2;
-   GExpr *gexprs, *gexpr;
+   XArray* /* of TyAdmin */ admin;
+   XArray* /* of GExpr* */ gexprs;
+   XArray* /* of TempVar* */ tempvars;
+   TempVar *varp, *varp2;
+   GExpr* gexpr;
    Cursor abbv; /* for showing .debug_abbrev */
    Cursor info; /* primary cursor for parsing .debug_info */
    Cursor ranges; /* for showing .debug_ranges */
@@ -2905,7 +2933,7 @@ void new_dwarf3_reader_wrk (
    D3VarParser varparser;
    Addr  dr_base;
    UWord dr_offset;
-   Word  i;
+   Word  i, j, n;
    Bool td3 = di->trace_symtab;
    XArray* /* of TempVar* */ dioff_lookup_tab;
    Bool text_biasing_borked;
@@ -3013,7 +3041,6 @@ void new_dwarf3_reader_wrk (
                dr_offset, w1 + dr_base, w2 + dr_base);
    }
 
-
    /* Display .debug_abbrev */
    init_Cursor( &abbv, debug_abbv_img, debug_abbv_sz, 0, barf, 
                 "Overrun whilst reading .debug_abbrev section" );
@@ -3058,23 +3085,27 @@ void new_dwarf3_reader_wrk (
       huge and presumably will not occur in any valid DWARF3 file --
       it would need to have a .debug_info section 4GB long for that to
       happen.  These type entries end up in the DebugInfo. */
-   admin = NULL;
-   { Type* tVoid = ML_(new_Type)();
+   admin = VG_(newXA)( ML_(dinfo_zalloc), ML_(dinfo_free), sizeof(TyAdmin) );
+   { TyAdmin tyad;
+     Type* tVoid = ML_(new_Type)();
      tVoid->tag = Ty_Void;
      tVoid->Ty.Void.isFake = True;
-     admin = ML_(new_TyAdmin)( (UWord)D3_FAKEVOID_CUOFF, admin );
-     admin->payload = tVoid;
-     admin->tag     = TyA_Type;
+     VG_(memset)( &tyad, 0, sizeof(tyad) );
+     tyad.cuOff   = (UWord)D3_FAKEVOID_CUOFF;
+     tyad.payload = tVoid;
+     tyad.tag     = TyA_Type;
+     VG_(addToXA)( admin, &tyad );
    }
 
    /* List of variables we're accumulating.  These don't end up in the
       DebugInfo; instead their contents are handed to ML_(addVar) and
       the list elements are then deleted. */
-   tempvars = NULL;
+   tempvars = VG_(newXA)( ML_(dinfo_zalloc), ML_(dinfo_free), 
+                          sizeof(TempVar*) );
 
    /* List of GExprs we're accumulating.  These wind up in the
       DebugInfo. */
-   gexprs = NULL;
+   gexprs = VG_(newXA)( ML_(dinfo_zalloc), ML_(dinfo_free), sizeof(GExpr*) );
 
    /* We need a D3TypeParser to keep track of partially constructed
       types.  It'll be discarded as soon as we've completed the CU,
@@ -3162,7 +3193,7 @@ void new_dwarf3_reader_wrk (
 
       /* Now read the one-and-only top-level DIE for this CU. */
       vg_assert(varparser.sp == 0);
-      read_DIE( &admin, &tempvars, &gexprs, &typarser, &varparser,
+      read_DIE( admin, tempvars, gexprs, &typarser, &varparser,
                 &info, td3, &cc, 0 );
 
       cu_offset_now = get_position_of_Cursor( &info );
@@ -3191,40 +3222,22 @@ void new_dwarf3_reader_wrk (
       varparser.filenameTable = NULL;
    }
 
-   /* Put the type entry list the right way round.  Not strictly
-      necessary, but makes it easier to read. */
-   vg_assert(admin);
-   if (admin) { 
-      TyAdmin *next, *prev = NULL;
-      for (adminp = admin; adminp; adminp = next) {
-         next = adminp->next;
-         adminp->next = prev;
-         prev = adminp;
-      }
-      admin = prev;
-   }
+   /* From here on we're post-processing the stuff we got
+      out of the .debug_info section. */
 
-   /* Put the variable list the right way round.  Not strictly
-      necessary, but makes it easier to read. */
-   if (tempvars) { 
-      TempVar *next, *prev = NULL;
-      for (varp = tempvars; varp; varp = next) {
-         next = varp->next;
-         varp->next = prev;
-         prev = varp;
-      }
-      tempvars = prev;
-   }
-
-   TRACE_D3("\n");
-   TRACE_D3("------ Acquired the following type entities: ------\n");
-   for (adminp = admin; adminp; adminp = adminp->next) {
-      TRACE_D3("   ");
-      if (td3) ML_(pp_TyAdmin)( adminp );
+   if (td3) {
       TRACE_D3("\n");
+      TRACE_D3("------ Acquired the following type entities: ------\n");
+      n = VG_(sizeXA)( admin );
+      for (i = 0; i < n; i++) {
+         TyAdmin* tyad = (TyAdmin*)VG_(indexXA)( admin, i );
+         TRACE_D3("   ");
+         ML_(pp_TyAdmin)( tyad );
+         TRACE_D3("\n");
+      }
+      TRACE_D3("\n");
+      TRACE_D3("------ Resolving type entries ------\n");
    }
-   TRACE_D3("\n");
-   TRACE_D3("------ Resolving type entries ------\n");
 
    /* See "Comment_Regarding_DWARF3_Text_Biasing" above. */
    VG_(memset)( &ktb, 0, sizeof(ktb ));
@@ -3233,7 +3246,9 @@ void new_dwarf3_reader_wrk (
    ktb.text_bias   = di->text_bias;
 
    resolve_type_entities( admin, tempvars );
-   for (gexpr = gexprs; gexpr; gexpr = gexpr->next) {
+   n = VG_(sizeXA)( gexprs );
+   for (i = 0; i < n; i++) {
+      gexpr = *(GExpr**)VG_(indexXA)( gexprs, i );
       bias_GX( gexpr, &ktb );
    }
 
@@ -3242,26 +3257,35 @@ void new_dwarf3_reader_wrk (
 
    /* Park (pointers to) all the vars in an XArray, so we can look up
       abstract origins quickly.  The array is sorted (hence, looked-up
-      by) the .dioff fields.  Since the .dioffs should be instrictly
+      by) the .dioff fields.  Since the .dioffs should be in strictly
       ascending order, there is no need to sort the array after
       construction.  The ascendingness is however asserted for. */
    dioff_lookup_tab
       = VG_(newXA)( ML_(dinfo_zalloc), ML_(dinfo_free), 
                     sizeof(TempVar*) );
    vg_assert(dioff_lookup_tab);
-   varp2 = NULL;
-   for (varp = tempvars; varp; varp = varp->next) {
-      if (varp2)
+
+   n = VG_(sizeXA)( tempvars );
+   for (i = 0; i < n; i++) {
+      varp = *(TempVar**)VG_(indexXA)( tempvars, i );
+      if (i > 0) {
+         varp2 = *(TempVar**)VG_(indexXA)( tempvars, i-1 );
+         /* why should this hold?  Only, I think, because we've
+            constructed the array by reading .debug_info sequentially,
+            and so the array .dioff fields should reflect that, and be
+            strictly ascending. */
          vg_assert(varp2->dioff < varp->dioff);
+      }
       VG_(addToXA)( dioff_lookup_tab, &varp );
-      varp2 = varp;
    }
    VG_(setCmpFnXA)( dioff_lookup_tab, cmp_TempVar_by_dioff );
    VG_(sortXA)( dioff_lookup_tab ); /* POINTLESS; FIXME: rm */
 
    /* Now visit each var.  Collect up as much info as possible for
       each var and hand it to ML_(addVar). */
-   for (varp = tempvars; varp; varp = varp->next) {
+   n = VG_(sizeXA)( tempvars );
+   for (j = 0; j < n; j++) {
+      varp = *(TempVar**)VG_(indexXA)( tempvars, j );
 
       /* Possibly show .. */
       if (td3) {
@@ -3448,12 +3472,14 @@ void new_dwarf3_reader_wrk (
       barf("couldn't make sense of DWARF3 text-svma biasing; details above");
 
    /* Now free all the TempVars */
-   for (varp = tempvars; varp; varp = varp2) {
-      varp2 = varp->next;
+   n = VG_(sizeXA)( tempvars );
+   for (i = 0; i < n; i++) {
+      varp = *(TempVar**)VG_(indexXA)( tempvars, i );
       if (varp->rngMany)
          VG_(deleteXA)(varp->rngMany);
       ML_(dinfo_free)(varp);
    }
+   VG_(deleteXA)( tempvars );
    tempvars = NULL;
 
    /* And get rid of the temporary mapping table. */

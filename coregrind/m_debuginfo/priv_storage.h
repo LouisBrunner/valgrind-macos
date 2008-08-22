@@ -403,9 +403,9 @@ struct _DebugInfo {
       expressly for the purposes of visiting each object exactly once
       when we need to delete them. */
 
-   /* A list of TyAdmin structs, and the payloads that they refer
+   /* An array of TyAdmin structs, and the payloads that they refer
       to. */
-   TyAdmin* admin_tyadmins;
+   XArray* /* of TyAdmin */ admin_tyadmins;
 
    /* A list of guarded DWARF3 expressions. */
    GExpr*   admin_gexprs;

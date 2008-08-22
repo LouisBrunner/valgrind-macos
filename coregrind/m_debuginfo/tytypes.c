@@ -44,10 +44,9 @@
 #include "priv_tytypes.h"      /* self */
 
 
-TyAdmin* ML_(new_TyAdmin) ( UWord cuOff, TyAdmin* next ) {
+TyAdmin* ML_(new_TyAdmin) ( UWord cuOff ) {
    TyAdmin* admin = ML_(dinfo_zalloc)( sizeof(TyAdmin) );
    admin->cuOff = cuOff;
-   admin->next  = next;
    return admin;
 }
 TyAtom* ML_(new_TyAtom) ( UChar* name, Long value ) {
@@ -140,7 +139,8 @@ static void delete_Type ( Type* ty ) {
    }
 }
 
-void ML_(delete_TyAdmin_and_payload) ( TyAdmin* ad ) {
+void ML_(delete_payload_of_TyAdmin) ( TyAdmin* ad ) {
+   vg_assert(ad);
    vg_assert(ad->payload);
    switch (ad->tag) {
       case TyA_Type:   delete_Type(ad->payload);     break;
@@ -150,9 +150,7 @@ void ML_(delete_TyAdmin_and_payload) ( TyAdmin* ad ) {
       case TyA_Bounds: delete_TyBounds(ad->payload); break;
       default:         vg_assert(0);
    }
-   ML_(dinfo_free)(ad);
 }
-
 
 
 static void pp_XArray_of_pointersOrRefs ( XArray* xa ) {

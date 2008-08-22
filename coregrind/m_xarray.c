@@ -91,6 +91,13 @@ XArray* VG_(cloneXA)( XArray* xao )
    *nyu = *xa;
    /* ... except we have to clone the contents-array */
    if (nyu->arr) {
+      /* Restrict the total size of the new array to its current
+         actual size.  That means we don't waste space copying the
+         unused tail of the original.  The tradeoff is that it
+         guarantees we will have to resize the child if even one more
+         element is later added to it, unfortunately. */
+      nyu->totsizeE = nyu->usedsizeE;
+      /* and allocate .. */
       nyu->arr = nyu->alloc( nyu->totsizeE * nyu->elemSzB );
       if (!nyu->arr) {
          nyu->free(nyu);
@@ -149,9 +156,9 @@ static inline void ensureSpaceXA ( struct _XArray* xa )
          else if (xa->elemSzB == 2) newsz = 4;
          else newsz = 2;
       } else {
-         newsz = 2 * xa->totsizeE;
+         newsz = 1 + (3 * xa->totsizeE) / 2;  /* 2 * xa->totsizeE; */
       }
-      if (0) 
+      if (0 && xa->totsizeE >= 10000) 
          VG_(printf)("addToXA: increasing from %ld to %ld\n", 
                      xa->totsizeE, newsz);
       tmp = xa->alloc(newsz * xa->elemSzB);

@@ -545,7 +545,7 @@ void VG_(di_notify_mmap)( Addr a, Bool allow_SkFileV )
    if (statres.isError) {
       DebugInfo fake_di;
       Bool quiet = VG_(strstr)(filename, "/var/run/nscd/") != NULL;
-      if (!quiet) {
+      if (!quiet && VG_(clo_verbosity) > 1) {
          VG_(memset)(&fake_di, 0, sizeof(fake_di));
          fake_di.filename = filename;
          ML_(symerr)(&fake_di, True, "failed to stat64/stat this file");

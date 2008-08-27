@@ -66,6 +66,7 @@ EXTRA_DIST = $(noinst_SCRIPTS) \
 	leak-tree.stderr.exp2 leak-tree.stderr.exp64 \
 	leak-regroot.vgtest leak-regroot.stderr.exp \
 	leakotron.vgtest leakotron.stdout.exp leakotron.stderr.exp \
+	linux-capget linux-capget.stderr.exp \
 	linux-syslog-syscall linux-syslog-syscall.stderr.exp \
 	linux-syscalls-2007 linux-syscalls-2007.stderr.exp \
 	linux-timerfd-syscall linux-timerfd-syscall.stderr.exp \
@@ -190,6 +191,7 @@ check_PROGRAMS = \
 	file_locking \
 	fprw fwrite hello inits inline \
 	leak-0 leak-cycle leak-pool leak-tree leak-regroot leakotron \
+	linux-capget \
 	linux-syslog-syscall \
 	linux-syscalls-2007 \
 	linux-timerfd-syscall \

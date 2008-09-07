@@ -267,7 +267,9 @@ int main(int ac, char **av)
       perror("timerfd_settime");
       return 1;
     }
+#if 0
     fprintf(stdout, "timerfd = %d\n", tfd);
+#endif
 
     fprintf(stdout, "wating timer (flush the single tick) ...\n");
     ticks = waittmr(tfd, -1);

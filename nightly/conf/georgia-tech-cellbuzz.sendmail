@@ -1,0 +1,4 @@
+
+#use: subject file-to-mail
+
+/bin/mailx -s "$1" valgrind-developers@lists.sourceforge.net -- -R bart.vanassche@gmail.com -r bart.vanassche@gmail.com < $2

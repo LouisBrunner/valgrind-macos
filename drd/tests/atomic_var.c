@@ -26,6 +26,7 @@ int __sync_add_and_fetch(int* p, int i)
 #endif
 
 
+#ifdef HAVE_BUILTIN_ATOMIC
 static int s_x = 0;
 /* s_dummy[] ensures that s_x and s_y are not in the same cache line. */
 static char s_dummy[512];
@@ -45,6 +46,7 @@ static void* thread_func_2(void* arg)
   fprintf(stderr, "y = %d\n", s_y);
   return 0;
 }
+#endif
 
 int main(int argc, char** argv)
 {
@@ -59,14 +61,14 @@ int main(int argc, char** argv)
   for (i = 0; i < n_threads; i++)
     pthread_join(tid[i], 0);
   fprintf(stderr, "Test finished.\n");
+
+  /* Suppress the compiler warning about s_dummy not being used. */
+  s_dummy[0]++;
 #else
   fprintf(stderr,
           "Sorry, but your compiler does not have built-in support for atomic"
           " operations.\n");
 #endif
-
-  /* Suppress the compiler warning about s_dummy not being used. */
-  s_dummy[0]++;
 
   return 0;
 }

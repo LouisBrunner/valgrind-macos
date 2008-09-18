@@ -1,0 +1,4 @@
+
+Warning: invalid file descriptor -1 in syscall write()
+
+ERROR SUMMARY: 0 errors from 0 contexts (suppressed: 0 from 0)

@@ -1,0 +1,8 @@
+#! /bin/sh
+
+dir=`dirname $0`
+
+$dir/filter_stderr | 
+
+# Anonymise "before" distances (if greater than 9 bytes)
+sed "s/Address 0x........ is [0-9][0-9]\+ bytes /Address 0x........ is ... bytes /"

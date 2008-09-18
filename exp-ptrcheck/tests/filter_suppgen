@@ -1,0 +1,11 @@
+
+#! /bin/sh
+
+dir=`dirname $0`
+
+$dir/filter_stderr | 
+
+# Anonymise "obj:" path
+sed "s/obj:.*\/annelid\/tests\/supp/obj:*\/annelid\/tests\/supp/"
+
+

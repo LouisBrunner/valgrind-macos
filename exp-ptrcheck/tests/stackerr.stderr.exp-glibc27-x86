@@ -1,0 +1,26 @@
+
+Invalid write of size 4
+   at 0x........: foo (stackerr.c:27)
+   by 0x........: bar (stackerr.c:32)
+   by 0x........: main (stackerr.c:41)
+ Address 0x........ expected vs actual:
+ Expected: stack array "a" in frame 2 back from here
+ Actual:   stack array "beforea" in frame 2 back from here
+
+Invalid write of size 4
+   at 0x........: main (stackerr.c:44)
+ Address 0x........ expected vs actual:
+ Expected: stack array "a" in this frame
+ Actual:   stack array "beforea" in this frame
+
+Invalid write of size 1
+   at 0x........: _IO_default_xsputn (in /...libc...)
+   by 0x........: ...
+   by 0x........: ...
+   by 0x........: ...
+   by 0x........: main (stackerr.c:49)
+ Address 0x........ expected vs actual:
+ Expected: stack array "buf" in frame 4 back from here
+ Actual:   stack array "beforebuf" in frame 4 back from here
+
+ERROR SUMMARY: 3 errors from 3 contexts (suppressed: 0 from 0)

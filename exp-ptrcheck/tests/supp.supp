@@ -1,0 +1,18 @@
+{
+   first-in-supp.supp
+   exp-ptrcheck:Heap
+   fun:main
+}
+{
+   second-in-supp.supp
+   exp-ptrcheck:Arith
+   fun:main
+}
+{
+   third-in-supp.supp
+   exp-ptrcheck:SysParam
+   write(buf)
+   fun:__GI___libc_write
+   fun:__libc_start_main
+   obj:*/annelid/tests/supp
+}

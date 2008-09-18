@@ -1,0 +1,2 @@
+prog: partial
+vgopts: --partial-loads-ok=yes

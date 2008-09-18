@@ -1,0 +1,2 @@
+prog: xor
+stderr_filter: filter_add

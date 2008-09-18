@@ -1,0 +1,47 @@
+
+Invalid read of size 4
+   at 0x........: main (lea.S:59)
+   by 0x........: __libc_start_main (...libc...)
+   by 0x........: ...
+Address 0x........ is 1 bytes before the accessing pointer's
+ legitimate range, the 1365-byte block alloc'd
+   at 0x........: malloc (vg_replace_malloc.c:...)
+   by 0x........: main (lea.S:20)
+   by 0x........: __libc_start_main (...libc...)
+   by 0x........: ...
+
+Invalid read of size 4
+   at 0x........: main (lea.S:60)
+   by 0x........: __libc_start_main (...libc...)
+   by 0x........: ...
+Address 0x........ is 1 bytes before the accessing pointer's
+ legitimate range, the 1365-byte block alloc'd
+   at 0x........: malloc (vg_replace_malloc.c:...)
+   by 0x........: main (lea.S:20)
+   by 0x........: __libc_start_main (...libc...)
+   by 0x........: ...
+
+Invalid read of size 4
+   at 0x........: main (lea.S:63)
+   by 0x........: __libc_start_main (...libc...)
+   by 0x........: ...
+Address 0x........ is 1 bytes before the accessing pointer's
+ legitimate range, the 1365-byte block alloc'd
+   at 0x........: malloc (vg_replace_malloc.c:...)
+   by 0x........: main (lea.S:20)
+   by 0x........: __libc_start_main (...libc...)
+   by 0x........: ...
+
+Invalid LEA2
+   at 0x........: main (lea.S:66)
+   by 0x........: __libc_start_main (...libc...)
+   by 0x........: ...
+Both args derived from address 0x........ of 1365-byte block alloc'd
+   at 0x........: malloc (vg_replace_malloc.c:...)
+   by 0x........: main (lea.S:20)
+   by 0x........: __libc_start_main (...libc...)
+   by 0x........: ...
+
+Scaling known pointer by value > 1 in lea instruction
+
+ERROR SUMMARY: 4 errors from 4 contexts (suppressed: 0 from 0)

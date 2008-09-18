@@ -1,0 +1,2 @@
+prog: idiv
+stderr_filter: filter_add

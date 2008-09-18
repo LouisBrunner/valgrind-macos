@@ -1,0 +1,2 @@
+prog: strlen
+vgopts: --partial-loads-ok=no

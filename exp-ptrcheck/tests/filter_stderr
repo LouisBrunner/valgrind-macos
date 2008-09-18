@@ -1,0 +1,34 @@
+#! /bin/sh
+
+dir=`dirname $0`
+
+$dir/../../tests/filter_stderr_basic                    |
+
+# Anonymise addresses
+$dir/../../tests/filter_addresses                       |
+
+$dir/../../tests/filter_test_paths                      |
+
+# Anonymise paths like "(in /foo/bar/libc-baz.so)"
+sed "s/(in \/.*libc.*)$/(in \/...libc...)/"             |
+sed "s/(in \/.*libpthread.*)$/(in \/...libpthread...)/"             |
+
+# Anonymise paths like "__libc_start_main (../foo/bar/libc-quux.c:129)"
+sed "s/__libc_\(.*\) (.*)$/__libc_\1 (...libc...)/" |
+
+# Remove preambly stuff
+sed \
+-e "/^exp-ptrcheck, a heap, stack & global array overrun detector\.$/d" \
+-e "/^NOTE: This is an Experimental-Class Valgrind Tool.$/d"  \
+-e "/^Copyright (C) 2003-200., and GNU GPL'd, by OpenWorks Ltd et al.$/d" |
+
+# Tidy up in cases where glibc (+ libdl + libpthread + ld) have
+# been built with debugging information, hence source locs are present
+sed \
+-e "s/vfprintf ([a-z]*printf.c:[0-9]*)/.../" \
+-e "s/vsprintf ([a-z]*printf.c:[0-9]*)/.../" \
+-e "s/sprintf (sprintf.c:[0-9]*)/.../" \
+-e "s/printf (printf.c:[0-9]*)/.../" \
+-e "s/strdup (strdup.c:[0-9]*)/.../" \
+-e "s/pthread_key_create.c:[0-9]*/in \/...libpthread.../" \
+-e "s/genops.c:[0-9]*/in \/...libc.../"

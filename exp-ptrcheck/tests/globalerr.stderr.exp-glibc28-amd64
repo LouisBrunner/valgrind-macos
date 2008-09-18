@@ -1,0 +1,14 @@
+
+Invalid read of size 2
+   at 0x........: main (globalerr.c:12)
+ Address 0x........ expected vs actual:
+ Expected: global array "a" in object with soname "NONE"
+ Actual:   unknown
+
+Invalid read of size 2
+   at 0x........: main (globalerr.c:12)
+ Address 0x........ expected vs actual:
+ Expected: global array "b" in object with soname "NONE"
+ Actual:   unknown
+
+ERROR SUMMARY: 2 errors from 2 contexts (suppressed: 0 from 0)

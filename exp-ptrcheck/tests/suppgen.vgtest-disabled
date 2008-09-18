@@ -1,0 +1,4 @@
+prog: supp
+vgopts: --gen-suppressions=yes
+args: < suppgen.stdin
+stderr_filter: filter_suppgen

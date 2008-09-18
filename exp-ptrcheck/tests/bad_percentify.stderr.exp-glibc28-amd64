@@ -1,0 +1,32 @@
+
+Invalid read of size 1
+   at 0x........: strlen (h_intercepts.c:109)
+   by 0x........: ...
+   by 0x........: ...
+   by 0x........: VG_print_translation_stats (bad_percentify.c:88)
+   by 0x........: main (bad_percentify.c:107)
+ Address 0x........ expected vs actual:
+ Expected: stack array "buf" in frame 3 back from here
+ Actual:   unknown
+
+Invalid read of size 1
+   at 0x........: strlen (h_intercepts.c:109)
+   by 0x........: ...
+   by 0x........: ...
+   by 0x........: VG_print_translation_stats (bad_percentify.c:93)
+   by 0x........: main (bad_percentify.c:107)
+ Address 0x........ expected vs actual:
+ Expected: stack array "buf" in frame 3 back from here
+ Actual:   unknown
+
+Invalid read of size 1
+   at 0x........: strlen (h_intercepts.c:109)
+   by 0x........: ...
+   by 0x........: ...
+   by 0x........: VG_print_translation_stats (bad_percentify.c:98)
+   by 0x........: main (bad_percentify.c:107)
+ Address 0x........ expected vs actual:
+ Expected: stack array "buf" in frame 3 back from here
+ Actual:   unknown
+
+ERROR SUMMARY: 3 errors from 3 contexts (suppressed: 0 from 0)

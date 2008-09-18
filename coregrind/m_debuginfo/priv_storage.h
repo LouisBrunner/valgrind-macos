@@ -221,7 +221,7 @@ typedef
 typedef
    struct {
       UChar* name;  /* in DebugInfo.strchunks */
-      Type*  type;  /* on DebugInfo.admin list */
+      UWord  typeR; /* a cuOff */
       GExpr* gexpr; /* on DebugInfo.gexprs list */
       GExpr* fbGX;  /* SHARED. */
       UChar* fileName; /* where declared; may be NULL. in
@@ -247,6 +247,16 @@ struct _DebugInfo {
 
    struct _DebugInfo* next;   /* list of DebugInfos */
    Bool               mark;   /* marked for deletion? */
+
+   /* An abstract handle, which can be used by entities outside of
+      m_debuginfo to (in an abstract datatype sense) refer to this
+      struct _DebugInfo.  A .handle of zero is invalid; valid handles
+      are 1 and above.  The same handle is never issued twice (in any
+      given run of Valgrind), so a handle becomes invalid when the
+      associated struct _DebugInfo is discarded, and remains invalid
+      forever thereafter.  The .handle field is set as soon as this
+      structure is allocated. */
+   ULong handle;
 
    /* Used for debugging only - indicate what stuff to dump whilst
       reading stuff into the seginfo.  Are computed as early in the
@@ -399,16 +409,18 @@ struct _DebugInfo {
    */
    XArray* /* of OSet of DiAddrRange */varinfo;
 
-   /* These are lists of the relevant typed objects, held here
-      expressly for the purposes of visiting each object exactly once
+   /* These are arrays of the relevant typed objects, held here
+      partially for the purposes of visiting each object exactly once
       when we need to delete them. */
 
-   /* An array of TyAdmin structs, and the payloads that they refer
-      to. */
-   XArray* /* of TyAdmin */ admin_tyadmins;
+   /* An array of TyEnts.  These are needed to make sense of any types
+      in the .varinfo.  Also, when deleting this DebugInfo, we must
+      first traverse this array and throw away malloc'd stuff hanging
+      off it -- by calling ML_(TyEnt__make_EMPTY) on each entry. */
+   XArray* /* of TyEnt */ admin_tyents;
 
-   /* A list of guarded DWARF3 expressions. */
-   GExpr*   admin_gexprs;
+   /* An array of guarded DWARF3 expressions. */
+   XArray* admin_gexprs;
 };
 
 /* --------------------- functions --------------------- */
@@ -437,7 +449,7 @@ extern void ML_(addVar)( struct _DebugInfo* di,
                          Addr   aMin,
                          Addr   aMax,
                          UChar* name,
-                         Type*  type,
+                         UWord  typeR, /* a cuOff */
                          GExpr* gexpr,
                          GExpr* fbGX, /* SHARED. */
                          UChar* fileName, /* where decl'd - may be NULL */

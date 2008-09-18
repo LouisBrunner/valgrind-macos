@@ -126,10 +126,10 @@ extern Bool  VG_(clo_debug_dump_frames);
 extern Bool  VG_(clo_trace_redir);
 /* DEBUG: print thread scheduling events?  default: NO */
 extern Bool  VG_(clo_trace_sched);
-/* DEBUG: print pthreads calls?  default: NO */
-extern Bool  VG_(clo_trace_pthreads);
-/* Display gory details for the k'th most popular error.  default:
-   Infinity. */
+/* DEBUG: do heap profiling?  default: NO */
+extern Bool  VG_(clo_profile_heap);
+/* DEBUG: display gory details for the k'th most popular error.
+   default: Infinity. */
 extern Int   VG_(clo_dump_error);
 /* Engage miscellaneous weird hacks needed for some progs. */
 extern Char* VG_(clo_sim_hints);

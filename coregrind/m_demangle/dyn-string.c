@@ -39,9 +39,9 @@ Boston, MA 02111-1307, USA.  */
 #include "dyn-string.h"
 
 #ifndef STANDALONE
-#define malloc(s)    VG_(arena_malloc) (VG_AR_DEMANGLE, s)
-#define free(p)      VG_(arena_free)   (VG_AR_DEMANGLE, p)
-#define realloc(p,s) VG_(arena_realloc)(VG_AR_DEMANGLE, p, s)
+#define malloc(_cc,s)    VG_(arena_malloc) (VG_AR_DEMANGLE, _cc, s)
+#define free(p)          VG_(arena_free)   (VG_AR_DEMANGLE, p)
+#define realloc(_cc,p,s) VG_(arena_realloc)(VG_AR_DEMANGLE, _cc, p, s)
 #endif
 
 /* If this file is being compiled for inclusion in the C++ runtime
@@ -77,7 +77,7 @@ dyn_string_init (ds_struct_ptr, space)
   if (ds_struct_ptr->s == NULL)
     return 0;
 #else
-  ds_struct_ptr->s = (char *) malloc (space);
+  ds_struct_ptr->s = (char *) malloc ("demangle.dsi.1", space);
 #endif
   ds_struct_ptr->allocated = space;
   ds_struct_ptr->length = 0;
@@ -98,7 +98,7 @@ dyn_string_new (space)
 {
   dyn_string_t result;
 #ifdef RETURN_ON_ALLOCATION_FAILURE
-  result = (dyn_string_t) malloc (sizeof (struct dyn_string));
+  result = (dyn_string_t) malloc ("demangle.dsn.1", sizeof (struct dyn_string));
   if (result == NULL)
     return NULL;
   if (!dyn_string_init (result, space))
@@ -107,7 +107,7 @@ dyn_string_new (space)
       return NULL;
     }
 #else
-  result = (dyn_string_t) malloc (sizeof (struct dyn_string));
+  result = (dyn_string_t) malloc ("demangle.dsn.2", sizeof (struct dyn_string));
   dyn_string_init (result, space);
 #endif
   return result;
@@ -167,14 +167,14 @@ dyn_string_resize (ds, space)
       ds->allocated = new_allocated;
       /* We actually need more space.  */
 #ifdef RETURN_ON_ALLOCATION_FAILURE
-      ds->s = (char *) realloc (ds->s, ds->allocated);
+      ds->s = (char *) realloc ("demangle.dsr.1", ds->s, ds->allocated);
       if (ds->s == NULL)
 	{
 	  free (ds);
 	  return NULL;
 	}
 #else
-      ds->s = (char *) realloc (ds->s, ds->allocated);
+      ds->s = (char *) realloc ("demangle.dsr.2", ds->s, ds->allocated);
 #endif
     }
 

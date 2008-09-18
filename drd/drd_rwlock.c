@@ -180,7 +180,8 @@ void rwlock_initialize(struct rwlock_info* const p, const Addr rwlock)
   tl_assert(p->type == ClientRwlock);
 
   p->cleanup         = (void(*)(DrdClientobj*))&rwlock_cleanup;
-  p->thread_info     = VG_(OSetGen_Create)(0, 0, VG_(malloc), VG_(free));
+  p->thread_info     = VG_(OSetGen_Create)(
+                          0, 0, VG_(malloc), "drd.rwlock.ri.1", VG_(free));
   p->acquiry_time_ms = 0;
   p->acquired_at     = 0;
 }

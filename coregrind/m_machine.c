@@ -78,6 +78,30 @@ void VG_(set_IP) ( ThreadId tid, Addr ip )
    INSTR_PTR( VG_(threads)[tid].arch ) = ip;
 }
 
+void VG_(set_syscall_return_shadows) ( ThreadId tid,
+                                       /* shadow vals for the result */
+                                       UWord s1res, UWord s2res,
+                                       /* shadow vals for the error val */
+                                       UWord s1err, UWord s2err )
+{
+#  if defined(VGP_x86_linux)
+   VG_(threads)[tid].arch.vex_shadow1.guest_EAX = s1res;
+   VG_(threads)[tid].arch.vex_shadow2.guest_EAX = s2res;
+#  elif defined(VGP_amd64_linux)
+   VG_(threads)[tid].arch.vex_shadow1.guest_RAX = s1res;
+   VG_(threads)[tid].arch.vex_shadow2.guest_RAX = s2res;
+#  elif defined(VGP_ppc32_linux) || defined(VGP_ppc64_linux)
+   VG_(threads)[tid].arch.vex_shadow1.guest_GPR3 = s1res;
+   VG_(threads)[tid].arch.vex_shadow2.guest_GPR3 = s2res;
+#  elif defined(VGP_ppc32_aix5) || defined(VGP_ppc64_aix5)
+   VG_(threads)[tid].arch.vex_shadow1.guest_GPR3 = s1res;
+   VG_(threads)[tid].arch.vex_shadow2.guest_GPR3 = s2res;
+   VG_(threads)[tid].arch.vex_shadow1.guest_GPR4 = s1err;
+   VG_(threads)[tid].arch.vex_shadow2.guest_GPR4 = s2err;
+#  else
+#    error "Unknown plat"
+#  endif
+}
 
 void
 VG_(get_shadow_regs_area) ( ThreadId tid, 
@@ -86,16 +110,20 @@ VG_(get_shadow_regs_area) ( ThreadId tid,
 {
    void*        src;
    ThreadState* tst;
-   vg_assert(shadowNo == 1 || shadowNo == 2);
+   vg_assert(shadowNo == 0 || shadowNo == 1 || shadowNo == 2);
    vg_assert(VG_(is_valid_tid)(tid));
    // Bounds check
    vg_assert(0 <= offset && offset < sizeof(VexGuestArchState));
    vg_assert(offset + size <= sizeof(VexGuestArchState));
    // Copy
    tst = & VG_(threads)[tid];
-   src = shadowNo == 1
-            ? (void*)(((Addr)&(tst->arch.vex_shadow1)) + offset)
-            : (void*)(((Addr)&(tst->arch.vex_shadow2)) + offset);
+   src = NULL;
+   switch (shadowNo) {
+      case 0: src = (void*)(((Addr)&(tst->arch.vex)) + offset); break;
+      case 1: src = (void*)(((Addr)&(tst->arch.vex_shadow1)) + offset); break;
+      case 2: src = (void*)(((Addr)&(tst->arch.vex_shadow2)) + offset); break;
+   }
+   tl_assert(src != NULL);
    VG_(memcpy)( dst, src, size);
 }
 
@@ -106,16 +134,20 @@ VG_(set_shadow_regs_area) ( ThreadId tid,
 {
    void*        dst;
    ThreadState* tst;
-   vg_assert(shadowNo == 1 || shadowNo == 2);
+   vg_assert(shadowNo == 0 || shadowNo == 1 || shadowNo == 2);
    vg_assert(VG_(is_valid_tid)(tid));
    // Bounds check
    vg_assert(0 <= offset && offset < sizeof(VexGuestArchState));
    vg_assert(offset + size <= sizeof(VexGuestArchState));
    // Copy
    tst = & VG_(threads)[tid];
-   dst = shadowNo == 1
-            ? (void*)(((Addr)&(tst->arch.vex_shadow1)) + offset)
-            : (void*)(((Addr)&(tst->arch.vex_shadow2)) + offset);
+   dst = NULL;
+   switch (shadowNo) {
+      case 0: dst = (void*)(((Addr)&(tst->arch.vex)) + offset); break;
+      case 1: dst = (void*)(((Addr)&(tst->arch.vex_shadow1)) + offset); break;
+      case 2: dst = (void*)(((Addr)&(tst->arch.vex_shadow2)) + offset); break;
+   }
+   tl_assert(dst != NULL);
    VG_(memcpy)( dst, src, size);
 }
 

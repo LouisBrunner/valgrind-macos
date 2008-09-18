@@ -18,4 +18,4 @@ AM_CFLAGS   = $(WERROR) -Winline -Wall -Wshadow -g -I$(top_srcdir)/include \
 		@FLAG_M64@
 AM_CXXFLAGS = $(AM_CFLAGS) @FLAG_M64@
 
-jm_insns_CFLAGS = -Winline -Wall -O -mregnames -maltivec @FLAG_M64@
+jm_insns_CFLAGS = -Winline -Wall -O -g -mregnames -maltivec @FLAG_M64@

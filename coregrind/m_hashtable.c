@@ -69,8 +69,9 @@ VgHashTable VG_(HT_construct) ( HChar* name )
    /* Initialises to zero, ie. all entries NULL */
    SizeT       n_chains = primes[0];
    SizeT       sz       = n_chains * sizeof(VgHashNode*);
-   VgHashTable table    = VG_(calloc)(1, sizeof(struct _VgHashTable));
-   table->chains        = VG_(calloc)(1, sz);
+   VgHashTable table    = VG_(calloc)("hashtable.Hc.1",
+                                      1, sizeof(struct _VgHashTable));
+   table->chains        = VG_(calloc)("hashtable.Hc.2", 1, sz);
    table->n_chains      = n_chains;
    table->n_elements    = 0;
    table->iterOK        = True;
@@ -119,7 +120,7 @@ static void resize ( VgHashTable table )
 
    table->n_chains = new_chains;
    sz = new_chains * sizeof(VgHashNode*);
-   chains = VG_(calloc)(1, sz);
+   chains = VG_(calloc)("hashtable.resize.1", 1, sz);
 
    for (i = 0; i < old_chains; i++) {
       node = table->chains[i];
@@ -209,7 +210,7 @@ VgHashNode** VG_(HT_to_array) ( VgHashTable table, /*OUT*/ UInt* n_elems )
    if (*n_elems == 0)
       return NULL;
 
-   arr = VG_(malloc)( *n_elems * sizeof(VgHashNode*) );
+   arr = VG_(malloc)( "hashtable.Hta.1", *n_elems * sizeof(VgHashNode*) );
 
    j = 0;
    for (i = 0; i < table->n_chains; i++) {

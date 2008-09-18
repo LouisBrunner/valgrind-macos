@@ -384,7 +384,8 @@ UInt addEClassNo ( /*MOD*/Sector* sec, Int ec, UShort tteno )
       old_sz = sec->ec2tte_size[ec];
       old_ar = sec->ec2tte[ec];
       new_sz = old_sz==0 ? 8 : old_sz<64 ? 2*old_sz : (3*old_sz)/2;
-      new_ar = VG_(arena_malloc)(VG_AR_TTAUX, new_sz * sizeof(UShort));
+      new_ar = VG_(arena_malloc)(VG_AR_TTAUX, "transtab.aECN.1",
+                                 new_sz * sizeof(UShort));
       for (i = 0; i < old_sz; i++)
          new_ar[i] = old_ar[i];
       if (old_ar)

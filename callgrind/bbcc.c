@@ -48,7 +48,8 @@ void CLG_(init_bbcc_hash)(bbcc_hash* bbccs)
 
    bbccs->size    = N_BBCC_INITIAL_ENTRIES;
    bbccs->entries = 0;
-   bbccs->table = (BBCC**) CLG_MALLOC(bbccs->size * sizeof(BBCC*));
+   bbccs->table = (BBCC**) CLG_MALLOC("cl.bbcc.ibh.1",
+                                      bbccs->size * sizeof(BBCC*));
 
    for (i = 0; i < bbccs->size; i++) bbccs->table[i] = NULL;
 }
@@ -197,7 +198,8 @@ static void resize_bbcc_hash(void)
     BBCC *curr_BBCC, *next_BBCC;
 
     new_size = 2*current_bbccs.size+3;
-    new_table = (BBCC**) CLG_MALLOC(new_size * sizeof(BBCC*));
+    new_table = (BBCC**) CLG_MALLOC("cl.bbcc.rbh.1",
+                                    new_size * sizeof(BBCC*));
  
     if (!new_table) return;
  
@@ -246,7 +248,7 @@ BBCC** new_recursion(int size)
     BBCC** bbccs;
     int i;
     
-    bbccs = (BBCC**) CLG_MALLOC(sizeof(BBCC*) * size);
+    bbccs = (BBCC**) CLG_MALLOC("cl.bbcc.nr.1", sizeof(BBCC*) * size);
     for(i=0;i<size;i++)
 	bbccs[i] = 0;
 
@@ -271,7 +273,8 @@ BBCC* new_bbcc(BB* bb)
    /* We need cjmp_count+1 JmpData structs:
     * the last is for the unconditional jump/call/ret at end of BB
     */
-   new = (BBCC*)CLG_MALLOC(sizeof(BBCC) +
+   new = (BBCC*)CLG_MALLOC("cl.bbcc.nb.1",
+                           sizeof(BBCC) +
 			   (bb->cjmp_count+1) * sizeof(JmpData));
    new->bb  = bb;
    new->tid = CLG_(current_tid);

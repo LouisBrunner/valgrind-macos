@@ -182,7 +182,7 @@ UChar* ML_(addStr) ( struct _DebugInfo* di, UChar* str, Int len )
    if (di->strchunks == NULL || 
        (di->strchunks->strtab_used 
         + space_needed) > SEGINFO_STRCHUNKSIZE) {
-      chunk = ML_(dinfo_zalloc)(sizeof(*chunk));
+      chunk = ML_(dinfo_zalloc)("di.storage.addStr.1", sizeof(*chunk));
       chunk->strtab_used = 0;
       chunk->next = di->strchunks;
       di->strchunks = chunk;
@@ -211,7 +211,8 @@ void ML_(addSym) ( struct _DebugInfo* di, DiSym* sym )
    if (di->symtab_used == di->symtab_size) {
       new_sz = 2 * di->symtab_size;
       if (new_sz == 0) new_sz = 500;
-      new_tab = ML_(dinfo_zalloc)( new_sz * sizeof(DiSym) );
+      new_tab = ML_(dinfo_zalloc)( "di.storage.addSym.1", 
+                                   new_sz * sizeof(DiSym) );
       if (di->symtab != NULL) {
          for (i = 0; i < di->symtab_used; i++)
             new_tab[i] = di->symtab[i];
@@ -240,7 +241,8 @@ static void addLoc ( struct _DebugInfo* di, DiLoc* loc )
    if (di->loctab_used == di->loctab_size) {
       new_sz = 2 * di->loctab_size;
       if (new_sz == 0) new_sz = 500;
-      new_tab = ML_(dinfo_zalloc)( new_sz * sizeof(DiLoc) );
+      new_tab = ML_(dinfo_zalloc)( "di.storage.addLoc.1",
+                                   new_sz * sizeof(DiLoc) );
       if (di->loctab != NULL) {
          for (i = 0; i < di->loctab_used; i++)
             new_tab[i] = di->loctab[i];
@@ -399,7 +401,8 @@ void ML_(addDiCfSI) ( struct _DebugInfo* di, DiCfSI* cfsi )
    if (di->cfsi_used == di->cfsi_size) {
       new_sz = 2 * di->cfsi_size;
       if (new_sz == 0) new_sz = 20;
-      new_tab = ML_(dinfo_zalloc)( new_sz * sizeof(DiCfSI) );
+      new_tab = ML_(dinfo_zalloc)( "di.storage.addDiCfSI.1",
+                                   new_sz * sizeof(DiCfSI) );
       if (di->cfsi != NULL) {
          for (i = 0; i < di->cfsi_used; i++)
             new_tab[i] = di->cfsi[i];
@@ -614,7 +617,7 @@ static void add_var_to_arange (
       vg_assert(nyu->aMin <= nyu->aMax);
       /* copy vars into it */
       vg_assert(first->vars);
-      nyu->vars = VG_(cloneXA)( first->vars );
+      nyu->vars = VG_(cloneXA)( "di.storage.avta.1", first->vars );
       vg_assert(nyu->vars);
       VG_(OSetGen_Insert)( scope, nyu );
       first = nyu;
@@ -644,7 +647,7 @@ static void add_var_to_arange (
       vg_assert(nyu->aMin <= nyu->aMax);
       /* copy vars into it */
       vg_assert(last->vars);
-      nyu->vars = VG_(cloneXA)( last->vars );
+      nyu->vars = VG_(cloneXA)( "di.storage.avta.2", last->vars );
       vg_assert(nyu->vars);
       VG_(OSetGen_Insert)( scope, nyu );
       last = nyu;
@@ -711,7 +714,7 @@ void ML_(addVar)( struct _DebugInfo* di,
                   Addr   aMin,
                   Addr   aMax,
                   UChar* name, /* in di's .strchunks */
-                  Type*  type,
+                  UWord  typeR, /* a cuOff */
                   GExpr* gexpr,
                   GExpr* fbGX,
                   UChar* fileName, /* where decl'd - may be NULL.
@@ -722,11 +725,14 @@ void ML_(addVar)( struct _DebugInfo* di,
    OSet* /* of DiAddrRange */ scope;
    DiVariable var;
    Bool       all;
+   TyEnt*     ent;
+
+   tl_assert(di && di->admin_tyents);
 
    if (0) {
       VG_(printf)("  ML_(addVar): level %d  %#lx-%#lx  %s :: ",
                   level, aMin, aMax, name );
-      ML_(pp_Type_C_ishly)( type );
+      ML_(pp_TyEnt_C_ishly)( di->admin_tyents, typeR );
       VG_(printf)("\n  Var=");
       ML_(pp_GX)(gexpr);
       VG_(printf)("\n");
@@ -743,8 +749,11 @@ void ML_(addVar)( struct _DebugInfo* di,
    vg_assert(level >= 0);
    vg_assert(aMin <= aMax);
    vg_assert(name);
-   vg_assert(type);
    vg_assert(gexpr);
+
+   ent = ML_(TyEnts__index_by_cuOff)( di->admin_tyents, NULL, typeR);
+   tl_assert(ent);
+   vg_assert(ML_(TyEnt__is_type)(ent));
 
    /* "Comment_Regarding_Text_Range_Checks" (is referred to elsewhere)
       ----------------------------------------------------------------
@@ -781,7 +790,7 @@ void ML_(addVar)( struct _DebugInfo* di,
       it.  We will never be able to actually relate a data address to
       a data object with zero size, so there's no point in storing
       info on it. */
-   if (ML_(sizeOfType)(type).b != True) {
+   if (ML_(sizeOfType)(di->admin_tyents, typeR).b != True) {
       static Int complaints = 10;
       if (VG_(clo_verbosity) >= 2 && complaints > 0) {
          VG_(message)(Vg_DebugMsg, 
@@ -794,7 +803,9 @@ void ML_(addVar)( struct _DebugInfo* di,
    }
 
    if (!di->varinfo) {
-      di->varinfo = VG_(newXA)( ML_(dinfo_zalloc), ML_(dinfo_free),
+      di->varinfo = VG_(newXA)( ML_(dinfo_zalloc), 
+                                "di.storage.addVar.1",
+                                ML_(dinfo_free),
                                 sizeof(OSet*) );
    }
 
@@ -804,7 +815,8 @@ void ML_(addVar)( struct _DebugInfo* di,
       DiAddrRange* nyu;
       scope = VG_(OSetGen_Create)( offsetof(DiAddrRange,aMin), 
                                    ML_(cmp_for_DiAddrRange_range),
-                                   ML_(dinfo_zalloc), ML_(dinfo_free) );
+                                   ML_(dinfo_zalloc), "di.storage.addVar.2",
+                                   ML_(dinfo_free) );
       vg_assert(scope);
       if (0) VG_(printf)("create: scope = %p, adding at %ld\n",
                          scope, VG_(sizeXA)(di->varinfo));
@@ -818,7 +830,8 @@ void ML_(addVar)( struct _DebugInfo* di,
       vg_assert(nyu);
       nyu->aMin = (Addr)0;
       nyu->aMax = ~(Addr)0;
-      nyu->vars = VG_(newXA)( ML_(dinfo_zalloc), ML_(dinfo_free),
+      nyu->vars = VG_(newXA)( ML_(dinfo_zalloc), "di.storage.addVar.3",
+                              ML_(dinfo_free),
                               sizeof(DiVariable) );
       vg_assert(nyu->vars);
       VG_(OSetGen_Insert)( scope, nyu );
@@ -829,7 +842,7 @@ void ML_(addVar)( struct _DebugInfo* di,
    vg_assert(scope);
 
    var.name     = name;
-   var.type     = type;
+   var.typeR    = typeR;
    var.gexpr    = gexpr;
    var.fbGX     = fbGX;
    var.fileName = fileName;

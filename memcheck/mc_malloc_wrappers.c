@@ -135,7 +135,7 @@ static
 MC_Chunk* create_MC_Chunk ( ExeContext* ec, Addr p, SizeT szB,
                             MC_AllocKind kind)
 {
-   MC_Chunk* mc  = VG_(malloc)(sizeof(MC_Chunk));
+   MC_Chunk* mc  = VG_(malloc)("mc.cMC.1 (a MC_Chunk)", sizeof(MC_Chunk));
    mc->data      = p;
    mc->szB       = szB;
    mc->allockind = kind;
@@ -501,7 +501,7 @@ void MC_(create_mempool)(Addr pool, UInt rzB, Bool is_zeroed)
      VG_(tool_panic)("MC_(create_mempool): duplicate pool creation");
    }
    
-   mp = VG_(malloc)(sizeof(MC_Mempool));
+   mp = VG_(malloc)("mc.cm.1", sizeof(MC_Mempool));
    mp->pool       = pool;
    mp->rzB        = rzB;
    mp->is_zeroed  = is_zeroed;

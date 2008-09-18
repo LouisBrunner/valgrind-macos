@@ -95,8 +95,8 @@ void drd_report_data_race2(Error* const err, const DataRaceErrInfo* const dri)
 {
   AddrInfo ai;
   const unsigned descr_size = 256;
-  Char* descr1 = VG_(malloc)(descr_size);
-  Char* descr2 = VG_(malloc)(descr_size);
+  Char* descr1 = VG_(malloc)("drd.error.drdr2.1", descr_size);
+  Char* descr2 = VG_(malloc)("drd.error.drdr2.2", descr_size);
 
   tl_assert(dri);
   tl_assert(dri->addr);

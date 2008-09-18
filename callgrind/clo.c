@@ -98,7 +98,8 @@ static config_node* fn_configs = 0;
 static __inline__ 
 fn_config* new_fnc(void)
 {
-   fn_config* new = (fn_config*) CLG_MALLOC(sizeof(fn_config));
+   fn_config* new = (fn_config*) CLG_MALLOC("cl.clo.nf.1",
+                                            sizeof(fn_config));
 
    new->dump_before  = CONFIG_DEFAULT;
    new->dump_after   = CONFIG_DEFAULT;
@@ -121,7 +122,8 @@ fn_config* new_fnc(void)
 static config_node* new_config(Char* name, int length)
 {
     int i;
-    config_node* node = (config_node*) CLG_MALLOC(sizeof(config_node) + length);
+    config_node* node = (config_node*) CLG_MALLOC("cl.clo.nc.1",
+                                                  sizeof(config_node) + length);
 
     for(i=0;i<length;i++) {
       if (name[i] == 0) break;
@@ -588,7 +590,7 @@ Bool CLG_(process_cmd_line_option)(Char* arg)
    }
 
    else if (0 == VG_(strncmp)(arg, "--callgrind-out-file=", 21))
-       CLG_(clo).out_format = VG_(strdup)(arg+21);
+       CLG_(clo).out_format = VG_(strdup)("cl.clo.pclo.1", arg+21);
 
    else if (0 == VG_(strcmp)(arg, "--mangle-names=yes"))
        CLG_(clo).mangle_names = True;

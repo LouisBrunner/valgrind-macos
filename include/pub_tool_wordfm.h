@@ -76,7 +76,8 @@ typedef  struct _WordFM  WordFM; /* opaque */
    sections of the map, or the whole thing.  If kCmp is NULL then the
    ordering used is unsigned word ordering (UWord) on the key
    values. */
-WordFM* VG_(newFM) ( void* (*alloc_nofail)( SizeT ),
+WordFM* VG_(newFM) ( void* (*alloc_nofail)( HChar* cc, SizeT ),
+                     HChar* cc,
                      void  (*dealloc)(void*),
                      Word  (*kCmp)(UWord,UWord) );
 
@@ -86,8 +87,9 @@ void VG_(deleteFM) ( WordFM*, void(*kFin)(UWord), void(*vFin)(UWord) );
 
 /* Add (k,v) to fm.  If a binding for k already exists, it is updated
    to map to this new v.  In that case we should really return the
-   previous v so that caller can finalise it.  Oh well. */
-void VG_(addToFM) ( WordFM* fm, UWord k, UWord v );
+   previous v so that caller can finalise it.  Oh well.  Returns
+   True if a binding for k already exists. */
+Bool VG_(addToFM) ( WordFM* fm, UWord k, UWord v );
 
 // Delete key from fm, returning associated key and val if found
 Bool VG_(delFromFM) ( WordFM* fm,
@@ -96,6 +98,19 @@ Bool VG_(delFromFM) ( WordFM* fm,
 // Look up in fm, assigning found key & val at spec'd addresses
 Bool VG_(lookupFM) ( WordFM* fm, 
                      /*OUT*/UWord* keyP, /*OUT*/UWord* valP, UWord key );
+
+// Find the closest key values bracketing the given key, assuming the 
+// given key is not present in the map.  minKey and maxKey are the 
+// minimum and maximum possible key values.  The resulting bracket
+// values are returned in *kMinP and *kMaxP.  It follows that if fm is
+// empty then the returned values are simply minKey and maxKey.
+//
+// If the operation was successful (that is, the given key is not
+// present), True is returned.  If the given key is in fact present,
+// False is returned, and *kMinP and *kMaxP are undefined.
+Bool VG_(findBoundsFM)( WordFM* fm,
+                        /*OUT*/UWord* kMinP, /*OUT*/UWord* kMaxP,
+                        UWord minKey, UWord maxKey, UWord key );
 
 // How many elements are there in fm?
 UWord VG_(sizeFM) ( WordFM* fm );
@@ -139,7 +154,8 @@ WordFM* VG_(dopyFM) ( WordFM* fm,
 typedef  struct _WordBag  WordBag; /* opaque */
 
 /* Allocate and initialise a WordBag */
-WordBag* VG_(newBag) ( void* (*alloc_nofail)( SizeT ),
+WordBag* VG_(newBag) ( void* (*alloc_nofail)( HChar* cc, SizeT ),
+                       HChar* cc,
                        void  (*dealloc)(void*) );
 
 /* Free up the Bag. */

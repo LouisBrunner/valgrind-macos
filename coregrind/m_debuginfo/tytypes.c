@@ -44,319 +44,565 @@
 #include "priv_tytypes.h"      /* self */
 
 
-TyAdmin* ML_(new_TyAdmin) ( UWord cuOff ) {
-   TyAdmin* admin = ML_(dinfo_zalloc)( sizeof(TyAdmin) );
-   admin->cuOff = cuOff;
-   return admin;
-}
-TyAtom* ML_(new_TyAtom) ( UChar* name, Long value ) {
-   TyAtom* atom = ML_(dinfo_zalloc)( sizeof(TyAtom) );
-   atom->name  = name;
-   atom->value = value;
-   return atom;
-}
-TyField* ML_(new_TyField) ( UChar* name,
-                            Type* typeR, D3Expr* loc ) {
-   TyField* field = ML_(dinfo_zalloc)( sizeof(TyField) );
-   field->name  = name;
-   field->typeR = typeR;
-   field->loc   = loc;
-   return field;
-}
-TyBounds* ML_(new_TyBounds) ( void ) {
-   TyBounds* bounds = ML_(dinfo_zalloc)( sizeof(TyBounds) );
-   bounds->magic = TyBounds_MAGIC;
-   return bounds;
-}
-D3Expr* ML_(new_D3Expr) ( UChar* bytes, UWord nbytes ) {
-   D3Expr* expr = ML_(dinfo_zalloc)( sizeof(D3Expr) );
-   expr->bytes = bytes;
-   expr->nbytes = nbytes;
-   return expr;
-}
-Type* ML_(new_Type) ( void ) {
-   Type* type = ML_(dinfo_zalloc)( sizeof(Type) );
-   return type;
+/* Does this TyEnt denote a type, as opposed to some other kind of
+   thing? */
+
+Bool ML_(TyEnt__is_type)( TyEnt* te )
+{
+   switch (te->tag) {
+      case Te_EMPTY: case Te_INDIR: case Te_UNKNOWN: 
+      case Te_Atom:  case Te_Field: case Te_Bound:
+         return False;
+      case Te_TyBase:   case Te_TyPorR: case Te_TyTyDef:
+      case Te_TyStOrUn: case Te_TyEnum: case Te_TyArray:
+      case Te_TyFn:     case Te_TyQual: case Te_TyVoid:
+         return True;
+      default:
+         vg_assert(0);
+   }
 }
 
-static void delete_TyAtom ( TyAtom* atom ) {
-   /* .name is in DebugInfo.strchunks */
-   ML_(dinfo_free)(atom);
+
+/* Print a TyEnt, debug-style. */
+
+static void pp_XArray_of_cuOffs ( XArray* xa )
+{
+   Word i;
+   VG_(printf)("{");
+   for (i = 0; i < VG_(sizeXA)(xa); i++) {
+      UWord cuOff = *(UWord*)VG_(indexXA)(xa, i);
+      VG_(printf)("0x%05lx", cuOff);
+      if (i+1 < VG_(sizeXA)(xa))
+         VG_(printf)(",");
+   }
+   VG_(printf)("}");
 }
-static void delete_TyField ( TyField* field ) {
-   /* .name is in DebugInfo.strchunks */
-   /* typeR and loc will be on the admin list; no need to free */
-   ML_(dinfo_free)(field);
-}
-static void delete_TyBounds ( TyBounds* bounds ) {
-   ML_(dinfo_free)(bounds);
-}
-static void delete_D3Expr ( D3Expr* expr ) {
-   /* .bytes is in DebugInfo.strchunks */
-   ML_(dinfo_free)(expr);
-}
-static void delete_Type ( Type* ty ) {
-   switch (ty->tag) {
-      case Ty_Base:
-         /* .name is in DebugInfo.strchunks */
+
+void ML_(pp_TyEnt)( TyEnt* te )
+{
+   VG_(printf)("0x%05lx  ", te->cuOff);
+   switch (te->tag) {
+      case Te_EMPTY:
+         VG_(printf)("EMPTY");
          break;
-      case Ty_PorR:
-         /* typeR will be on the admin list */
+      case Te_INDIR:
+         VG_(printf)("INDIR(0x%05lx)", te->Te.INDIR.indR);
          break;
-      case Ty_TyDef:
-         /* .name is in DebugInfo.strchunks */
-         /* typeR will be on the admin list */
+      case Te_UNKNOWN:
+         VG_(printf)("UNKNOWN");
          break;
-      case Ty_StOrUn:
-         /* .name is in DebugInfo.strchunks */
-         /* Just dump the containing XArray.  The fields themselves
-            will be on the admin list. */
-         if (ty->Ty.StOrUn.fields)
-            VG_(deleteXA)(ty->Ty.StOrUn.fields);
+      case Te_Atom:
+         VG_(printf)("Te_Atom(%lld,\"%s\")",
+                     te->Te.Atom.value, te->Te.Atom.name);
          break;
-      case Ty_Enum:
-         /* .name is in DebugInfo.strchunks */
-         if (ty->Ty.Enum.atomRs)
-            VG_(deleteXA)( ty->Ty.Enum.atomRs);
-         /* Just dump the containing XArray.  The atoms themselves
-            will be on the admin list. */
+      case Te_Field:
+         VG_(printf)("Te_Field(ty=0x%05lx,nLoc=%lu,loc=%p,\"%s\")",
+                     te->Te.Field.typeR, te->Te.Field.nLoc,
+                     te->Te.Field.loc,
+                     te->Te.Field.name ? te->Te.Field.name : (UChar*)"");
          break;
-      case Ty_Array:
-         if (ty->Ty.Array.bounds)
-            VG_(deleteXA)( ty->Ty.Array.bounds);
-         /* Just dump the containing XArray.  The bounds themselves
-            will be on the admin list. */
+      case Te_Bound:
+         VG_(printf)("Te_Bound[");
+         if (te->Te.Bound.knownL)
+            VG_(printf)("%lld", te->Te.Bound.boundL);
+         else
+            VG_(printf)("??");
+         VG_(printf)(",");
+         if (te->Te.Bound.knownU)
+            VG_(printf)("%lld", te->Te.Bound.boundU);
+         else
+            VG_(printf)("??");
+         VG_(printf)("]");
          break;
-      case Ty_Fn:
+      case Te_TyBase:
+         VG_(printf)("Te_TyBase(%d,%c,\"%s\")",
+                     te->Te.TyBase.szB, te->Te.TyBase.enc,
+                     te->Te.TyBase.name ? te->Te.TyBase.name
+                                        : (UChar*)"(null)" );
          break;
-      case Ty_Qual:
-         /* typeR will be on the admin list */
+      case Te_TyPorR:
+         VG_(printf)("Te_TyPorR(%d,%c,0x%05lx)",
+                     te->Te.TyPorR.szB,
+                     te->Te.TyPorR.isPtr ? 'P' : 'R',
+                     te->Te.TyPorR.typeR);
          break;
-      case Ty_Void:
+      case Te_TyTyDef:
+         VG_(printf)("Te_TyTyDef(0x%05lx,\"%s\")",
+                     te->Te.TyTyDef.typeR,
+                     te->Te.TyTyDef.name ? te->Te.TyTyDef.name
+                                         : (UChar*)"" );
+         break;
+      case Te_TyStOrUn:
+         if (te->Te.TyStOrUn.complete) {
+            VG_(printf)("Te_TyStOrUn(%ld,%c,%p,\"%s\")",
+                        te->Te.TyStOrUn.szB, 
+                        te->Te.TyStOrUn.isStruct ? 'S' : 'U',
+                        te->Te.TyStOrUn.fieldRs,
+                        te->Te.TyStOrUn.name ? te->Te.TyStOrUn.name
+                                             : (UChar*)"" );
+            if (te->Te.TyStOrUn.fieldRs)
+               pp_XArray_of_cuOffs( te->Te.TyStOrUn.fieldRs );
+         } else {
+            VG_(printf)("Te_TyStOrUn(INCOMPLETE,\"%s\")",
+                        te->Te.TyStOrUn.name);
+         }
+         break;
+      case Te_TyEnum:
+         VG_(printf)("Te_TyEnum(%d,%p,\"%s\")",
+                     te->Te.TyEnum.szB, te->Te.TyEnum.atomRs,
+                     te->Te.TyEnum.name ? te->Te.TyEnum.name
+                                        : (UChar*)"" );
+         if (te->Te.TyEnum.atomRs)
+            pp_XArray_of_cuOffs( te->Te.TyEnum.atomRs );
+         break;
+      case Te_TyArray:
+         VG_(printf)("Te_TyArray(0x%05lx,%p)",
+                     te->Te.TyArray.typeR, te->Te.TyArray.boundRs);
+         if (te->Te.TyArray.boundRs)
+            pp_XArray_of_cuOffs( te->Te.TyArray.boundRs );
+         break;
+      case Te_TyFn:
+         VG_(printf)("Te_TyFn");
+         break;
+      case Te_TyQual:
+         VG_(printf)("Te_TyQual(%c,0x%05lx)", te->Te.TyQual.qual,
+                     te->Te.TyQual.typeR);
+         break;
+      case Te_TyVoid:
+         VG_(printf)("Te_TyVoid%s",
+                     te->Te.TyVoid.isFake ? "(fake)" : "");
          break;
       default:
          vg_assert(0);
    }
 }
 
-void ML_(delete_payload_of_TyAdmin) ( TyAdmin* ad ) {
-   vg_assert(ad);
-   vg_assert(ad->payload);
-   switch (ad->tag) {
-      case TyA_Type:   delete_Type(ad->payload);     break;
-      case TyA_Atom:   delete_TyAtom(ad->payload);   break;
-      case TyA_Expr:   delete_D3Expr(ad->payload);   break;
-      case TyA_Field:  delete_TyField(ad->payload);  break;
-      case TyA_Bounds: delete_TyBounds(ad->payload); break;
-      default:         vg_assert(0);
+
+/* Print a whole XArray of TyEnts, debug-style */
+
+void ML_(pp_TyEnts)( XArray* tyents, HChar* who )
+{
+   Word i, n;
+   VG_(printf)("------ %s ------\n", who);
+   n = VG_(sizeXA)( tyents );
+   for (i = 0; i < n; i++) {
+      TyEnt* tyent = (TyEnt*)VG_(indexXA)( tyents, i );
+      VG_(printf)("   [%5ld]  ", i);
+      ML_(pp_TyEnt)( tyent );
+      VG_(printf)("\n");
    }
 }
 
 
-static void pp_XArray_of_pointersOrRefs ( XArray* xa ) {
-   Word i;
-   VG_(printf)("{");
-   for (i = 0; i < VG_(sizeXA)(xa); i++) {
-      void* ptr = *(void**) VG_(indexXA)(xa, i);
-      VG_(printf)("0x%05lx", (unsigned long)(ptr));
-      if (i+1 < VG_(sizeXA)(xa))
-         VG_(printf)(",");
-   }
-   VG_(printf)("}");
-}
-void ML_(pp_TyAtom) ( TyAtom* atom ) {
-   VG_(printf)("TyAtom(%lld,\"%s\")", atom->value, atom->name);
-}
-void ML_(pp_D3Expr) ( D3Expr* expr ) {
-   VG_(printf)("D3Expr(%p,%lu)", expr->bytes, expr->nbytes);
-}
-void ML_(pp_TyField) ( TyField* field ) {
-   VG_(printf)("TyField(0x%05lx,%p,\"%s\")",
-               (unsigned long)(field->typeR), field->loc,
-               field->name ? field->name : (UChar*)"");
-}
-void ML_(pp_TyBounds) ( TyBounds* bounds ) {
-   vg_assert(bounds->magic == TyBounds_MAGIC);
-   VG_(printf)("TyBounds[");
-   if (bounds->knownL)
-      VG_(printf)("%lld", bounds->boundL);
-   else
-      VG_(printf)("??");
-   VG_(printf)(",");
-   if (bounds->knownU)
-      VG_(printf)("%lld", bounds->boundU);
-   else
-      VG_(printf)("??");
-   VG_(printf)("]");
-}
+/* Print a TyEnt, C style, chasing stuff as necessary. */
 
-static void pp_TyBounds_C_ishly ( TyBounds* bounds ) {
-   vg_assert(bounds->magic == TyBounds_MAGIC);
-   if (bounds->knownL && bounds->knownU && bounds->boundL == 0) {
-      VG_(printf)("[%lld]", 1 + bounds->boundU);
+static void pp_TyBound_C_ishly ( XArray* tyents, UWord cuOff )
+{
+   TyEnt* ent = ML_(TyEnts__index_by_cuOff)( tyents, NULL, cuOff );
+   if (!ent) {
+      VG_(printf)("**bounds-have-invalid-cuOff**");
+      return;
+   }
+   vg_assert(ent->tag == Te_Bound);
+   if (ent->Te.Bound.knownL && ent->Te.Bound.knownU
+       && ent->Te.Bound.boundL == 0) {
+      VG_(printf)("[%lld]", 1 + ent->Te.Bound.boundU);
    }
    else
-   if (bounds->knownL && (!bounds->knownU) && bounds->boundL == 0) {
+   if (ent->Te.Bound.knownL && (!ent->Te.Bound.knownU) 
+       && ent->Te.Bound.boundL == 0) {
       VG_(printf)("[]");
    }
    else
-      ML_(pp_TyBounds)( bounds );
+      ML_(pp_TyEnt)( ent );
 }
 
-
-void ML_(pp_Type) ( Type* ty )
+void ML_(pp_TyEnt_C_ishly)( XArray* /* of TyEnt */ tyents,
+                            UWord cuOff )
 {
-   if (!ty) {
-      VG_(printf)("**type=NULL**");
+   TyEnt* ent = ML_(TyEnts__index_by_cuOff)( tyents, NULL, cuOff );
+   if (!ent) {
+      VG_(printf)("**type-has-invalid-cuOff**");
       return;
    }
-   switch (ty->tag) {
-      case Ty_Base:
-         VG_(printf)("Ty_Base(%d,%c,\"%s\")",
-                     ty->Ty.Base.szB, ty->Ty.Base.enc,
-                     ty->Ty.Base.name ? ty->Ty.Base.name
-                                        : (UChar*)"(null)" );
+   switch (ent->tag) {
+      case Te_TyBase:
+         if (!ent->Te.TyBase.name) goto unhandled;
+         VG_(printf)("%s", ent->Te.TyBase.name);
          break;
-      case Ty_PorR:
-         VG_(printf)("Ty_PorR(%d,%c,0x%05lx)",
-                     ty->Ty.PorR.szB,
-                     ty->Ty.PorR.isPtr ? 'P' : 'R',
-                     (unsigned long)(ty->Ty.PorR.typeR));
+      case Te_TyPorR:
+         ML_(pp_TyEnt_C_ishly)(tyents, ent->Te.TyPorR.typeR);
+         VG_(printf)("%s", ent->Te.TyPorR.isPtr ? "*" : "&");
          break;
-      case Ty_Enum:
-         VG_(printf)("Ty_Enum(%d,%p,\"%s\")",
-                     ty->Ty.Enum.szB, ty->Ty.Enum.atomRs,
-                     ty->Ty.Enum.name ? ty->Ty.Enum.name
-                                        : (UChar*)"" );
-         if (ty->Ty.Enum.atomRs)
-            pp_XArray_of_pointersOrRefs( ty->Ty.Enum.atomRs );
+      case Te_TyEnum:
+         if (!ent->Te.TyEnum.name) goto unhandled;
+         VG_(printf)("enum %s", ent->Te.TyEnum.name);
          break;
-      case Ty_StOrUn:
-         if (ty->Ty.StOrUn.complete) {
-            VG_(printf)("Ty_StOrUn(%ld,%c,%p,\"%s\")",
-                        ty->Ty.StOrUn.szB, 
-                        ty->Ty.StOrUn.isStruct ? 'S' : 'U',
-                        ty->Ty.StOrUn.fields,
-                        ty->Ty.StOrUn.name ? ty->Ty.StOrUn.name
-                                             : (UChar*)"" );
-            if (ty->Ty.StOrUn.fields)
-               pp_XArray_of_pointersOrRefs( ty->Ty.StOrUn.fields );
-         } else {
-            VG_(printf)("Ty_StOrUn(INCOMPLETE,\"%s\")",
-                        ty->Ty.StOrUn.name);
-         }
-         break;
-      case Ty_Array:
-         VG_(printf)("Ty_Array(0x%05lx,%p)",
-                     (unsigned long)(ty->Ty.Array.typeR), ty->Ty.Array.bounds);
-         if (ty->Ty.Array.bounds)
-            pp_XArray_of_pointersOrRefs( ty->Ty.Array.bounds );
-         break;
-      case Ty_TyDef:
-         VG_(printf)("Ty_TyDef(0x%05lx,\"%s\")",
-                     (unsigned long)(ty->Ty.TyDef.typeR),
-                     ty->Ty.TyDef.name ? ty->Ty.TyDef.name
-                                         : (UChar*)"" );
-         break;
-      case Ty_Fn:
-         VG_(printf)("Ty_Fn");
-         break;
-      case Ty_Qual:
-         VG_(printf)("Ty_Qual(%c,0x%05lx)", ty->Ty.Qual.qual,
-                     (unsigned long)(ty->Ty.Qual.typeR));
-         break;
-      case Ty_Void:
-         VG_(printf)("Ty_Void%s",
-                     ty->Ty.Void.isFake ? "(fake)" : "");
-         break;
-      default: VG_(printf)("pp_Type:???");
-         break;
-   }
-}
-void ML_(pp_TyAdmin) ( TyAdmin* admin ) {
-   if (admin->cuOff != -1UL) {
-      VG_(printf)("<%05lx,%p> ", admin->cuOff, admin->payload);
-   } else {
-      VG_(printf)("<ff..f,%p> ", admin->payload);
-   }
-   switch (admin->tag) {
-      case TyA_Type:   ML_(pp_Type)(admin->payload);     break;
-      case TyA_Atom:   ML_(pp_TyAtom)(admin->payload);   break;
-      case TyA_Expr:   ML_(pp_D3Expr)(admin->payload);   break;
-      case TyA_Field:  ML_(pp_TyField)(admin->payload);  break;
-      case TyA_Bounds: ML_(pp_TyBounds)(admin->payload); break;
-      default:         VG_(printf)("pp_TyAdmin:???");    break;
-   }
-}
-
-/* NOTE: this assumes that the types have all been 'resolved' (that
-   is, inter-type references expressed as .debug_info offsets have
-   been converted into pointers) */
-void ML_(pp_Type_C_ishly) ( Type* ty )
-{
-   if (!ty) {
-      VG_(printf)("**type=NULL**");
-      return;
-   }
-   switch (ty->tag) {
-      case Ty_Base:
-         if (!ty->Ty.Base.name) goto unhandled;
-         VG_(printf)("%s", ty->Ty.Base.name);
-         break;
-      case Ty_PorR:
-         ML_(pp_Type_C_ishly)(ty->Ty.PorR.typeR);
-         VG_(printf)("%s", ty->Ty.PorR.isPtr ? "*" : "&");
-         break;
-      case Ty_Enum:
-         if (!ty->Ty.Enum.name) goto unhandled;
-         VG_(printf)("enum %s", ty->Ty.Enum.name);
-         break;
-      case Ty_StOrUn:
-         if (!ty->Ty.StOrUn.name) goto unhandled;
+      case Te_TyStOrUn:
+         if (!ent->Te.TyStOrUn.name) goto unhandled;
          VG_(printf)("%s %s",
-                     ty->Ty.StOrUn.isStruct ? "struct" : "union",
-                     ty->Ty.StOrUn.name);
+                     ent->Te.TyStOrUn.isStruct ? "struct" : "union",
+                     ent->Te.TyStOrUn.name);
          break;
-      case Ty_Array:
-         ML_(pp_Type_C_ishly)(ty->Ty.Array.typeR);
-         if (ty->Ty.Array.bounds) {
+      case Te_TyArray:
+         ML_(pp_TyEnt_C_ishly)(tyents, ent->Te.TyArray.typeR);
+         if (ent->Te.TyArray.boundRs) {
             Word    w;
-            XArray* xa = ty->Ty.Array.bounds;
+            XArray* xa = ent->Te.TyArray.boundRs;
             for (w = 0; w < VG_(sizeXA)(xa); w++) {
-               pp_TyBounds_C_ishly( *(TyBounds**)VG_(indexXA)(xa, w) );
+               pp_TyBound_C_ishly( tyents, *(UWord*)VG_(indexXA)(xa, w) );
             }
          } else {
             VG_(printf)("%s", "[??]");
          }
          break;
-      case Ty_TyDef:
-         if (!ty->Ty.TyDef.name) goto unhandled;
-         VG_(printf)("%s", ty->Ty.TyDef.name);
+      case Te_TyTyDef:
+         if (!ent->Te.TyTyDef.name) goto unhandled;
+         VG_(printf)("%s", ent->Te.TyTyDef.name);
          break;
-      case Ty_Fn:
+      case Te_TyFn:
          VG_(printf)("%s", "<function_type>");
          break;
-      case Ty_Qual:
-         switch (ty->Ty.Qual.qual) {
+      case Te_TyQual:
+         switch (ent->Te.TyQual.qual) {
             case 'C': VG_(printf)("const "); break;
             case 'V': VG_(printf)("volatile "); break;
             default: goto unhandled;
          }
-         ML_(pp_Type_C_ishly)(ty->Ty.Qual.typeR);
+         ML_(pp_TyEnt_C_ishly)(tyents, ent->Te.TyQual.typeR);
          break;
-      case Ty_Void:
+      case Te_TyVoid:
          VG_(printf)("%svoid",
-                     ty->Ty.Void.isFake ? "fake" : "");
+                     ent->Te.TyVoid.isFake ? "fake" : "");
          break;
-      default: VG_(printf)("pp_Type_C_ishly:???");
-         break;
+      default:
+         goto unhandled;
    }
    return;
 
   unhandled:
-   ML_(pp_Type)(ty);
+   VG_(printf)("pp_TyEnt_C_ishly:unhandled: ");
+   ML_(pp_TyEnt)(ent);
+   vg_assert(0);
 }
 
+
+/* 'ents' is an XArray of TyEnts, sorted by their .cuOff fields.  Find
+   the entry which has .cuOff field as specified.  Returns NULL if not
+   found.  Asserts if more than one entry has the specified .cuOff
+   value. */
+
+void ML_(TyEntIndexCache__invalidate) ( TyEntIndexCache* cache )
+{
+   Word i;
+   for (i = 0; i < N_TYENT_INDEX_CACHE; i++) {
+      cache->ce[i].cuOff0 = 0;    /* not actually necessary */
+      cache->ce[i].ent0   = NULL; /* "invalid entry" */
+      cache->ce[i].cuOff1 = 0;    /* not actually necessary */
+      cache->ce[i].ent1   = NULL; /* "invalid entry" */
+   }
+}
+
+TyEnt* ML_(TyEnts__index_by_cuOff) ( XArray* /* of TyEnt */ ents,
+                                     TyEntIndexCache* cache,
+                                     UWord cuOff_to_find )
+{
+   Bool  found;
+   Word  first, last;
+   TyEnt key, *res;
+
+   /* crude stats, aggregated over all caches */
+   static UWord cacheQs = 0 - 1;
+   static UWord cacheHits = 0;
+
+   if (0 && 0 == (cacheQs & 0xFFFF))
+      VG_(printf)("cache: %'lu queries, %'lu misses\n", 
+                  cacheQs, cacheQs - cacheHits);
+
+   if (LIKELY(cache != NULL)) {
+      UWord h = cuOff_to_find % (UWord)N_TYENT_INDEX_CACHE;
+      cacheQs++;
+      // dude, like, way 0, dude.
+      if (cache->ce[h].cuOff0 == cuOff_to_find && cache->ce[h].ent0 != NULL) {
+         // dude, way 0 is a total hit!
+         cacheHits++;
+         return cache->ce[h].ent0;
+      }
+      // dude, check out way 1, dude.
+      if (cache->ce[h].cuOff1 == cuOff_to_find && cache->ce[h].ent1 != NULL) {
+         // way 1 hit
+         UWord  tc;
+         TyEnt* te;
+         cacheHits++;
+         // dude, way 1 is the new way 0.  move with the times, dude.
+         tc = cache->ce[h].cuOff0;
+         te = cache->ce[h].ent0;
+         cache->ce[h].cuOff0 = cache->ce[h].cuOff1;
+         cache->ce[h].ent0   = cache->ce[h].ent1;
+         cache->ce[h].cuOff1 = tc;
+         cache->ce[h].ent1   = te;
+         return cache->ce[h].ent0;
+      }
+   }
+
+   /* We'll have to do it the hard way */
+   key.cuOff = cuOff_to_find;
+   key.tag   = Te_EMPTY;
+   found = VG_(lookupXA)( ents, &key, &first, &last );
+   //found = VG_(lookupXA_UNBOXED)( ents, cuOff_to_find, &first, &last, 
+   //                               offsetof(TyEnt,cuOff) );
+   if (!found)
+      return NULL;
+   /* If this fails, the array is invalid in the sense that there is
+      more than one entry with .cuOff == cuOff_to_find. */
+   vg_assert(first == last);
+   res = (TyEnt*)VG_(indexXA)( ents, first );
+
+   if (LIKELY(cache != NULL) && LIKELY(res != NULL)) {
+      /* this is a bit stupid, computing this twice.  Oh well.
+         Perhaps some magic gcc transformation will common them up.
+         re "res != NULL", since .ent of NULL denotes 'invalid entry',
+         we can't cache the result when res == NULL. */
+      UWord h = cuOff_to_find % (UWord)N_TYENT_INDEX_CACHE;
+      cache->ce[h].cuOff1 = cache->ce[h].cuOff0;
+      cache->ce[h].ent1   = cache->ce[h].ent0;
+      cache->ce[h].cuOff0 = cuOff_to_find;
+      cache->ce[h].ent0   = res;
+   }
+
+   return res;
+}
+
+
+/* Generates a total ordering on TyEnts based only on their .cuOff
+   fields. */
+
+Word ML_(TyEnt__cmp_by_cuOff_only) ( TyEnt* te1, TyEnt* te2 )
+{
+   if (te1->cuOff < te2->cuOff) return -1;
+   if (te1->cuOff > te2->cuOff) return 1;
+   return 0;
+}
+
+
+/* Generates a total ordering on TyEnts based on everything except
+   their .cuOff fields. */
+static __attribute__((always_inline)) Word UWord__cmp ( UWord a, UWord b ) {
+   if (a < b) return -1;
+   if (a > b) return 1;
+   return 0;
+}
+static __attribute__((always_inline)) Word Long__cmp ( Long a, Long b ) {
+   if (a < b) return -1;
+   if (a > b) return 1;
+   return 0;
+}
+static __attribute__((always_inline)) Word Bool__cmp ( Bool a, Bool b ) {
+   vg_assert( ((UWord)a) <= 1 );
+   vg_assert( ((UWord)b) <= 1 );
+   if (a < b) return -1;
+   if (a > b) return 1;
+   return 0;
+}
+static __attribute__((always_inline)) Word UChar__cmp ( UChar a, UChar b ) {
+   if (a < b) return -1;
+   if (a > b) return 1;
+   return 0;
+}
+static __attribute__((always_inline)) Word Int__cmp ( Int a, Int b ) {
+   if (a < b) return -1;
+   if (a > b) return 1;
+   return 0;
+}
+static Word XArray_of_UWord__cmp ( XArray* a, XArray* b ) {
+   Word i, r;
+   Word aN = VG_(sizeXA)( a );
+   Word bN = VG_(sizeXA)( b );
+   if (aN < bN) return -1;
+   if (aN > bN) return 1;
+   for (i = 0; i < aN; i++) {
+      r = UWord__cmp( *(UWord*)VG_(indexXA)( a, i ),
+                      *(UWord*)VG_(indexXA)( b, i ) );
+      if (r != 0) return r;
+   }
+   return 0;
+}
+static Word Bytevector__cmp ( UChar* a, UChar* b, Word n ) {
+   Word i, r;
+   vg_assert(n >= 0);
+   for (i = 0; i < n; i++) {
+      r = UChar__cmp( a[i], b[i] );
+      if (r != 0) return r;
+   }
+   return 0;
+}
+static Word Asciiz__cmp ( UChar* a, UChar* b ) {
+   /* A wrapper around strcmp that handles NULL strings safely. */
+   if (a == NULL && b == NULL) return 0;
+   if (a == NULL && b != NULL) return -1;
+   if (a != NULL && b == NULL) return 1;
+   return VG_(strcmp)(a, b);
+}
+
+Word ML_(TyEnt__cmp_by_all_except_cuOff) ( TyEnt* te1, TyEnt* te2 )
+{
+   Word r;
+   if (te1->tag < te2->tag) return -1;
+   if (te1->tag > te2->tag) return 1;
+   switch (te1->tag) {
+   case Te_EMPTY:
+      return 0;
+   case Te_INDIR:
+      r = UWord__cmp(te1->Te.INDIR.indR, te2->Te.INDIR.indR);
+      return r;
+   case Te_Atom:
+      r = Long__cmp(te1->Te.Atom.value, te2->Te.Atom.value);
+      if (r != 0) return r;
+      r = Asciiz__cmp(te1->Te.Atom.name, te2->Te.Atom.name);
+      return r;
+   case Te_Field:
+      r = Bool__cmp(te1->Te.Field.isStruct, te2->Te.Field.isStruct);
+      if (r != 0) return r;
+      r = UWord__cmp(te1->Te.Field.typeR, te2->Te.Field.typeR);
+      if (r != 0) return r;
+      r = Asciiz__cmp(te1->Te.Field.name, te2->Te.Field.name);
+      if (r != 0) return r;
+      r = UWord__cmp(te1->Te.Field.nLoc, te2->Te.Field.nLoc);
+      if (r != 0) return r;
+      r = Bytevector__cmp(te1->Te.Field.loc, te2->Te.Field.loc,
+                          te1->Te.Field.nLoc);
+      return r;
+   case Te_Bound:
+      r = Bool__cmp(te1->Te.Bound.knownL, te2->Te.Bound.knownL);
+      if (r != 0) return r;
+      r = Bool__cmp(te1->Te.Bound.knownU, te2->Te.Bound.knownU);
+      if (r != 0) return r;
+      r = Long__cmp(te1->Te.Bound.boundL, te2->Te.Bound.boundL);
+      if (r != 0) return r;
+      r = Long__cmp(te1->Te.Bound.boundU, te2->Te.Bound.boundU);
+      return r;
+   case Te_TyBase:
+      r = UChar__cmp(te1->Te.TyBase.enc, te2->Te.TyBase.enc);
+      if (r != 0) return r;
+      r = Int__cmp(te1->Te.TyBase.szB, te2->Te.TyBase.szB);
+      if (r != 0) return r;
+      r = Asciiz__cmp(te1->Te.TyBase.name, te2->Te.TyBase.name);
+      return r;
+   case Te_TyPorR:
+      r = Int__cmp(te1->Te.TyPorR.szB, te2->Te.TyPorR.szB);
+      if (r != 0) return r;
+      r = UWord__cmp(te1->Te.TyPorR.typeR, te2->Te.TyPorR.typeR);
+      if (r != 0) return r;
+      r = Bool__cmp(te1->Te.TyPorR.isPtr, te2->Te.TyPorR.isPtr);
+      return r;
+   case Te_TyTyDef:
+      r = UWord__cmp(te1->Te.TyTyDef.typeR, te2->Te.TyTyDef.typeR);
+      if (r != 0) return r;
+      r = Asciiz__cmp(te1->Te.TyTyDef.name, te2->Te.TyTyDef.name);
+      return r;
+   case Te_TyStOrUn:
+      r = Bool__cmp(te1->Te.TyStOrUn.isStruct, te2->Te.TyStOrUn.isStruct);
+      if (r != 0) return r;
+      r = Bool__cmp(te1->Te.TyStOrUn.complete, te2->Te.TyStOrUn.complete);
+      if (r != 0) return r;
+      r = UWord__cmp(te1->Te.TyStOrUn.szB, te2->Te.TyStOrUn.szB);
+      if (r != 0) return r;
+      r = Asciiz__cmp(te1->Te.TyStOrUn.name, te2->Te.TyStOrUn.name);
+      if (r != 0) return r;
+      r = XArray_of_UWord__cmp(te1->Te.TyStOrUn.fieldRs,
+                               te2->Te.TyStOrUn.fieldRs);
+      return r;
+   case Te_TyEnum:
+      r = Int__cmp(te1->Te.TyEnum.szB, te2->Te.TyEnum.szB);
+      if (r != 0) return r;
+      r = Asciiz__cmp(te1->Te.TyEnum.name, te2->Te.TyEnum.name);
+      if (r != 0) return r;
+      r = XArray_of_UWord__cmp(te1->Te.TyEnum.atomRs, te2->Te.TyEnum.atomRs);
+      return r;
+   case Te_TyArray:
+      r = UWord__cmp(te1->Te.TyArray.typeR, te2->Te.TyArray.typeR);
+      if (r != 0) return r;
+      r = XArray_of_UWord__cmp(te1->Te.TyArray.boundRs,
+                               te2->Te.TyArray.boundRs);
+      return r;
+   case Te_TyFn:
+      return 0;
+   case Te_TyQual:
+      r = UWord__cmp(te1->Te.TyQual.typeR, te2->Te.TyQual.typeR);
+      if (r != 0) return r;
+      r = UChar__cmp(te1->Te.TyQual.qual, te2->Te.TyQual.qual);
+      return r;
+   case Te_TyVoid:
+      r = Bool__cmp(te1->Te.TyVoid.isFake, te2->Te.TyVoid.isFake);
+      return r;
+   default:
+      vg_assert(0);
+   }
+}
+
+
+/* Free up all directly or indirectly heap-allocated stuff attached to
+   this TyEnt, and set its tag to Te_EMPTY.  The .cuOff field is
+   unchanged. */
+
+void ML_(TyEnt__make_EMPTY) ( TyEnt* te )
+{
+   UWord saved_cuOff;
+   /* First, free up any fields in mallocville. */
+   switch (te->tag) {
+      case Te_EMPTY:
+         break;
+      case Te_INDIR:
+         break;
+      case Te_UNKNOWN:
+         break;
+      case Te_Atom:
+         if (te->Te.Atom.name) ML_(dinfo_free)(te->Te.Atom.name);
+         break;
+      case Te_Field:
+         if (te->Te.Field.name) ML_(dinfo_free)(te->Te.Field.name);
+         if (te->Te.Field.loc) ML_(dinfo_free)(te->Te.Field.loc);
+         break;
+      case Te_Bound:
+         break;
+      case Te_TyBase:
+         if (te->Te.TyBase.name) ML_(dinfo_free)(te->Te.TyBase.name);
+         break;
+      case Te_TyPorR:
+         break;
+      case Te_TyTyDef:
+         if (te->Te.TyTyDef.name) ML_(dinfo_free)(te->Te.TyTyDef.name);
+         break;
+      case Te_TyStOrUn:
+         if (te->Te.TyStOrUn.name) ML_(dinfo_free)(te->Te.TyStOrUn.name);
+         if (te->Te.TyStOrUn.fieldRs) VG_(deleteXA)(te->Te.TyStOrUn.fieldRs);
+         break;
+      case Te_TyEnum:
+         if (te->Te.TyEnum.name) ML_(dinfo_free)(te->Te.TyEnum.name);
+         if (te->Te.TyEnum.atomRs) VG_(deleteXA)(te->Te.TyEnum.atomRs);
+         break;
+      case Te_TyArray:
+         if (te->Te.TyArray.boundRs) VG_(deleteXA)(te->Te.TyArray.boundRs);
+         break;
+      case Te_TyFn:
+         break;
+      case Te_TyQual:
+         break;
+      case Te_TyVoid:
+         break;
+      default:
+         vg_assert(0);
+   }
+   /* Now clear it out and set to Te_EMPTY. */
+   saved_cuOff = te->cuOff;
+   VG_(memset)(te, 0, sizeof(*te));
+   te->cuOff = saved_cuOff;
+   te->tag = Te_EMPTY;
+}
+
+
+/* How big is this type?  If .b in the returned struct is False, the
+   size is unknown. */
 
 static MaybeUWord mk_MaybeUWord_Nothing ( void ) {
    MaybeUWord muw;
@@ -377,55 +623,70 @@ static MaybeUWord mul_MaybeUWord ( MaybeUWord muw1, MaybeUWord muw2 ) {
    return muw1;
 }
 
-/* How big is this type?  (post-resolved only) */
-/* FIXME: check all pointers before dereferencing */
-MaybeUWord ML_(sizeOfType)( Type* ty )
+MaybeUWord ML_(sizeOfType)( XArray* /* of TyEnt */ tyents,
+                            UWord cuOff )
 {
    Word       i;
    MaybeUWord eszB;
-   vg_assert(ty);
-   switch (ty->tag) {
-      case Ty_Base:
-         vg_assert(ty->Ty.Base.szB > 0);
-         return mk_MaybeUWord_Just( ty->Ty.Base.szB );
-      case Ty_Qual:
-         return ML_(sizeOfType)( ty->Ty.Qual.typeR );
-      case Ty_TyDef:
-         if (!ty->Ty.TyDef.typeR)
+   TyEnt*     ent = ML_(TyEnts__index_by_cuOff)(tyents, NULL, cuOff);
+   TyEnt*     ent2;
+   vg_assert(ent);
+   vg_assert(ML_(TyEnt__is_type)(ent));
+   switch (ent->tag) {
+      case Te_TyBase:
+         vg_assert(ent->Te.TyBase.szB > 0);
+         return mk_MaybeUWord_Just( ent->Te.TyBase.szB );
+      case Te_TyQual:
+         return ML_(sizeOfType)( tyents, ent->Te.TyQual.typeR );
+      case Te_TyTyDef:
+         ent2 = ML_(TyEnts__index_by_cuOff)(tyents, NULL,
+                                            ent->Te.TyTyDef.typeR);
+         vg_assert(ent2);
+         if (ent2->tag == Te_UNKNOWN)
             return mk_MaybeUWord_Nothing(); /*UNKNOWN*/
-         return ML_(sizeOfType)( ty->Ty.TyDef.typeR );
-      case Ty_PorR:
-         vg_assert(ty->Ty.PorR.szB == 4 || ty->Ty.PorR.szB == 8);
-         return mk_MaybeUWord_Just( ty->Ty.PorR.szB );
-      case Ty_StOrUn:
-         return ty->Ty.StOrUn.complete
-                   ? mk_MaybeUWord_Just( ty->Ty.StOrUn.szB )
+         return ML_(sizeOfType)( tyents, ent->Te.TyTyDef.typeR );
+      case Te_TyPorR:
+         vg_assert(ent->Te.TyPorR.szB == 4 || ent->Te.TyPorR.szB == 8);
+         return mk_MaybeUWord_Just( ent->Te.TyPorR.szB );
+      case Te_TyStOrUn:
+         return ent->Te.TyStOrUn.complete
+                   ? mk_MaybeUWord_Just( ent->Te.TyStOrUn.szB )
                    : mk_MaybeUWord_Nothing();
-      case Ty_Enum:
-         return mk_MaybeUWord_Just( ty->Ty.Enum.szB );
-      case Ty_Array:
-         if (!ty->Ty.Array.typeR)
+      case Te_TyEnum:
+         return mk_MaybeUWord_Just( ent->Te.TyEnum.szB );
+      case Te_TyArray:
+         ent2 = ML_(TyEnts__index_by_cuOff)(tyents, NULL,
+                                            ent->Te.TyArray.typeR);
+         vg_assert(ent2);
+         if (ent2->tag == Te_UNKNOWN)
             return mk_MaybeUWord_Nothing(); /*UNKNOWN*/
-         eszB = ML_(sizeOfType)( ty->Ty.Array.typeR );
-         for (i = 0; i < VG_(sizeXA)( ty->Ty.Array.bounds ); i++) {
-            TyBounds* bo
-               = *(TyBounds**)VG_(indexXA)(ty->Ty.Array.bounds, i);
+         eszB = ML_(sizeOfType)( tyents, ent->Te.TyArray.typeR );
+         for (i = 0; i < VG_(sizeXA)( ent->Te.TyArray.boundRs ); i++) {
+            UWord bo_cuOff
+               = *(UWord*)VG_(indexXA)(ent->Te.TyArray.boundRs, i);
+            TyEnt* bo
+              = ML_(TyEnts__index_by_cuOff)( tyents, NULL, bo_cuOff );
             vg_assert(bo);
-            if (!(bo->knownL && bo->knownU))
+            vg_assert(bo->tag == Te_Bound);
+            if (!(bo->Te.Bound.knownL && bo->Te.Bound.knownU))
                return mk_MaybeUWord_Nothing(); /*UNKNOWN*/
             eszB = mul_MaybeUWord( 
                       eszB,
-                      mk_MaybeUWord_Just( bo->boundU - bo->boundL + 1 ));
+                      mk_MaybeUWord_Just( bo->Te.Bound.boundU 
+                                          - bo->Te.Bound.boundL + 1 ));
          }
          return eszB;
       default:
          VG_(printf)("ML_(sizeOfType): unhandled: ");
-         ML_(pp_Type)(ty);
+         ML_(pp_TyEnt)(ent);
          VG_(printf)("\n");
          vg_assert(0);
    }
 }
 
+
+/* Describe where in the type 'offset' falls.  Caller must
+   deallocate the resulting XArray. */
 
 static void copy_UWord_into_XA ( XArray* /* of UChar */ xa,
                                  UWord uw ) {
@@ -435,42 +696,52 @@ static void copy_UWord_into_XA ( XArray* /* of UChar */ xa,
    VG_(addBytesToXA)( xa, buf, VG_(strlen)(buf));
 }
 
-/* Describe where in the type 'offset' falls.  Caller must
-   deallocate the resulting XArray. */
 XArray* /*UChar*/ ML_(describe_type)( /*OUT*/OffT* residual_offset,
-                                      Type* ty, OffT offset )
+                                      XArray* /* of TyEnt */ tyents,
+                                      UWord ty_cuOff, 
+                                      OffT offset )
 {
-   XArray* xa = VG_(newXA)( ML_(dinfo_zalloc), ML_(dinfo_free),
+   TyEnt*  ty;
+   XArray* xa = VG_(newXA)( ML_(dinfo_zalloc), "di.tytypes.dt.1",
+                            ML_(dinfo_free),
                             sizeof(UChar) );
    vg_assert(xa);
 
+   ty = ML_(TyEnts__index_by_cuOff)(tyents, NULL, ty_cuOff);
+
    while (True) {
       vg_assert(ty);
+      vg_assert(ML_(TyEnt__is_type)(ty));
 
       switch (ty->tag) {
 
          /* These are all atomic types; there is nothing useful we can
             do. */
-         case Ty_Enum:
-         case Ty_Fn:
-         case Ty_Void:
-         case Ty_PorR:
-         case Ty_Base:
+         case Te_TyEnum:
+         case Te_TyFn:
+         case Te_TyVoid:
+         case Te_TyPorR:
+         case Te_TyBase:
             goto done;
 
-         case Ty_StOrUn: {
+         case Te_TyStOrUn: {
             Word       i;
             GXResult   res;
             MaybeUWord muw;
-            TyField    *field = NULL, *fields;
+            XArray*    fieldRs;
+            UWord      fieldR;
+            TyEnt*     field = NULL;
             OffT       offMin = 0, offMax1 = 0;
-            if (!ty->Ty.StOrUn.isStruct) goto done;
-            fields = ty->Ty.StOrUn.fields;
-            if ((!fields) || VG_(sizeXA)(fields) == 0) goto done;
-            for (i = 0; i < VG_(sizeXA)( fields ); i++ ) {
-               field = *(TyField**)VG_(indexXA)( fields, i );
+            if (!ty->Te.TyStOrUn.isStruct) goto done;
+            fieldRs = ty->Te.TyStOrUn.fieldRs;
+            if ((!fieldRs) || VG_(sizeXA)(fieldRs) == 0) goto done;
+            for (i = 0; i < VG_(sizeXA)( fieldRs ); i++ ) {
+               fieldR = *(UWord*)VG_(indexXA)( fieldRs, i );
+               field = ML_(TyEnts__index_by_cuOff)(tyents, NULL, fieldR);
                vg_assert(field);
-               vg_assert(field->loc);
+               vg_assert(field->tag == Te_Field);
+               vg_assert(field->Te.Field.loc);
+               vg_assert(field->Te.Field.nLoc > 0);
                /* Re data_bias in this call, we should really send in
                   a legitimate value.  But the expression is expected
                   to be a constant expression, evaluation of which
@@ -479,7 +750,7 @@ XArray* /*UChar*/ ML_(describe_type)( /*OUT*/OffT* residual_offset,
                   to this point (if, indeed, it has any meaning; from
                   which DebugInfo would we take the data bias? */
                res = ML_(evaluate_Dwarf3_Expr)(
-                       field->loc->bytes, field->loc->nbytes,
+                       field->Te.Field.loc, field->Te.Field.nLoc,
                        NULL/*fbGX*/, NULL/*RegSummary*/,
                        0/*data_bias*/,
                        True/*push_initial_zero*/);
@@ -490,7 +761,7 @@ XArray* /*UChar*/ ML_(describe_type)( /*OUT*/OffT* residual_offset,
                }
                if (res.kind != GXR_Value)
                   continue;
-               muw = ML_(sizeOfType)( field->typeR );
+               muw = ML_(sizeOfType)( tyents, field->Te.Field.typeR );
                if (muw.b != True)
                   goto done; /* size of field is unknown (?!) */
                offMin  = res.word;
@@ -502,39 +773,51 @@ XArray* /*UChar*/ ML_(describe_type)( /*OUT*/OffT* residual_offset,
                   break;
             }
             /* Did we find a suitable field? */
-            vg_assert(i >= 0 && i <= VG_(sizeXA)( fields ));
-            if (i == VG_(sizeXA)( fields ))
+            vg_assert(i >= 0 && i <= VG_(sizeXA)( fieldRs ));
+            if (i == VG_(sizeXA)( fieldRs ))
                goto done; /* No.  Give up. */
             /* Yes.  'field' is it. */
-            if (!field->name) goto done;
+            vg_assert(field);
+            if (!field->Te.Field.name) goto done;
             VG_(addBytesToXA)( xa, ".", 1 );
-            VG_(addBytesToXA)( xa, field->name,
-                               VG_(strlen)(field->name) );
+            VG_(addBytesToXA)( xa, field->Te.Field.name,
+                               VG_(strlen)(field->Te.Field.name) );
             offset -= offMin;
-            ty = field->typeR;
-            if (!ty) goto done;
+            ty = ML_(TyEnts__index_by_cuOff)(tyents, NULL,
+                                             field->Te.Field.typeR );
+            tl_assert(ty);
+            if (ty->tag == Te_UNKNOWN) goto done;
             /* keep going; look inside the field. */
             break;
          }
 
-         case Ty_Array: {
+         case Te_TyArray: {
             MaybeUWord muw;
-            TyBounds*  bounds;
             UWord      size, eszB, ix;
+            UWord      boundR;
+            TyEnt*     elemTy;
+            TyEnt*     bound;
             /* Just deal with the simple, common C-case: 1-D array,
                zero based, known size. */
-            if (!(ty->Ty.Array.typeR && ty->Ty.Array.bounds))
+            elemTy = ML_(TyEnts__index_by_cuOff)(tyents, NULL, 
+                                                 ty->Te.TyArray.typeR);
+            vg_assert(elemTy);
+            if (elemTy->tag == Te_UNKNOWN) goto done;
+            vg_assert(ML_(TyEnt__is_type)(elemTy));
+            if (!ty->Te.TyArray.boundRs)
                goto done;
-            if (VG_(sizeXA)( ty->Ty.Array.bounds ) != 1) goto done;
-            bounds = *(TyBounds**)VG_(indexXA)( ty->Ty.Array.bounds, 0 );
-            vg_assert(bounds);
-            vg_assert(bounds->magic == TyBounds_MAGIC);
-            if (!(bounds->knownL && bounds->knownU && bounds->boundL == 0
-                  && bounds->boundU >= bounds->boundL))
+            if (VG_(sizeXA)( ty->Te.TyArray.boundRs ) != 1) goto done;
+            boundR = *(UWord*)VG_(indexXA)( ty->Te.TyArray.boundRs, 0 );
+            bound = ML_(TyEnts__index_by_cuOff)(tyents, NULL, boundR);
+            vg_assert(bound);
+            vg_assert(bound->tag == Te_Bound);
+            if (!(bound->Te.Bound.knownL && bound->Te.Bound.knownU
+                  && bound->Te.Bound.boundL == 0
+                  && bound->Te.Bound.boundU >= bound->Te.Bound.boundL))
                goto done;
-            size = bounds->boundU - bounds->boundL + 1;
+            size = bound->Te.Bound.boundU - bound->Te.Bound.boundL + 1;
             vg_assert(size >= 1);
-            muw = ML_(sizeOfType)( ty->Ty.Array.typeR );
+            muw = ML_(sizeOfType)( tyents, ty->Te.TyArray.typeR );
             if (muw.b != True)
                goto done; /* size of element type not known */
             eszB = muw.w;
@@ -543,27 +826,31 @@ XArray* /*UChar*/ ML_(describe_type)( /*OUT*/OffT* residual_offset,
             VG_(addBytesToXA)( xa, "[", 1 );
             copy_UWord_into_XA( xa, ix );
             VG_(addBytesToXA)( xa, "]", 1 );
-            ty = ty->Ty.Array.typeR;
+            ty = elemTy;
             offset -= ix * eszB;
             /* keep going; look inside the array element. */
             break;
          }
 
-         case Ty_Qual: {
-            if (!ty->Ty.Qual.typeR) goto done;
-            ty = ty->Ty.Qual.typeR;
+         case Te_TyQual: {
+            ty = ML_(TyEnts__index_by_cuOff)(tyents, NULL,
+                                             ty->Te.TyQual.typeR);
+            tl_assert(ty);
+            if (ty->tag == Te_UNKNOWN) goto done;
             break;
          }
 
-         case Ty_TyDef: {
-            if (!ty->Ty.TyDef.typeR) goto done;
-            ty = ty->Ty.TyDef.typeR;
+         case Te_TyTyDef: {
+            ty = ML_(TyEnts__index_by_cuOff)(tyents, NULL,
+                                             ty->Te.TyTyDef.typeR);
+            tl_assert(ty);
+            if (ty->tag == Te_UNKNOWN) goto done;
             break;
          }
 
          default: {
             VG_(printf)("ML_(describe_type): unhandled: ");
-            ML_(pp_Type)(ty);
+            ML_(pp_TyEnt)(ty);
             VG_(printf)("\n");
             vg_assert(0);
          }

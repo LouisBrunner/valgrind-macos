@@ -548,7 +548,8 @@ static void suppress_relocation_conflicts(const Addr a, const SizeT len)
 
 static
 void drd_start_using_mem_w_perms(const Addr a, const SizeT len,
-                                 const Bool rr, const Bool ww, const Bool xx)
+                                 const Bool rr, const Bool ww, const Bool xx,
+                                 ULong di_handle)
 {
   thread_set_vg_running_tid(VG_(get_running_tid)());
 
@@ -654,7 +655,7 @@ void drd_post_thread_join(DrdThreadId drd_joiner, DrdThreadId drd_joinee)
     const unsigned msg_size = 256;
     char* msg;
 
-    msg = VG_(malloc)(msg_size);
+    msg = VG_(malloc)("drd.main.dptj.1", msg_size);
     tl_assert(msg);
     VG_(snprintf)(msg, msg_size,
                   "drd_post_thread_join joiner = %d/%d, joinee = %d/%d",

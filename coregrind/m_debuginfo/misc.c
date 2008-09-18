@@ -42,10 +42,10 @@
 #include "priv_misc.h"            /* self */
 
 
-void* ML_(dinfo_zalloc) ( SizeT szB ) {
+void* ML_(dinfo_zalloc) ( HChar* cc, SizeT szB ) {
    void* v;
    vg_assert(szB > 0);
-   v = VG_(arena_malloc)( VG_AR_DINFO, szB );
+   v = VG_(arena_malloc)( VG_AR_DINFO, cc, szB );
    vg_assert(v);
    VG_(memset)(v, 0, szB);
    return v;
@@ -55,8 +55,15 @@ void ML_(dinfo_free) ( void* v ) {
    VG_(arena_free)( VG_AR_DINFO, v );
 }
 
-UChar* ML_(dinfo_strdup) ( const UChar* str ) {
-   return VG_(arena_strdup)( VG_AR_DINFO, str );
+UChar* ML_(dinfo_strdup) ( HChar* cc, const UChar* str ) {
+   return VG_(arena_strdup)( VG_AR_DINFO, cc, str );
+}
+
+UChar* ML_(dinfo_memdup)( HChar* cc, UChar* str, SizeT nStr ) {
+   UChar* dst = VG_(arena_malloc)( VG_AR_DINFO, cc, nStr );
+   tl_assert(dst);
+   VG_(memcpy)(dst, str, nStr);
+   return dst;
 }
 
 

@@ -1518,6 +1518,9 @@ AC_OUTPUT(
    exp-omega/Makefile
    exp-omega/tests/Makefile
    exp-omega/docs/Makefile
+   exp-ptrcheck/Makefile
+   exp-ptrcheck/tests/Makefile
+   exp-ptrcheck/docs/Makefile
    drd/Makefile
    drd/docs/Makefile
    drd/scripts/download-and-build-splash2

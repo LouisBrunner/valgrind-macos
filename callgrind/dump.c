@@ -105,7 +105,8 @@ void init_dump_array(void)
       CLG_(stat).distinct_fns +
       CLG_(stat).context_counter;
     CLG_ASSERT(dump_array == 0);
-    dump_array = (Bool*) CLG_MALLOC(dump_array_size * sizeof(Bool));
+    dump_array = (Bool*) CLG_MALLOC("cl.dump.ida.1",
+                                    dump_array_size * sizeof(Bool));
     obj_dumped  = dump_array;
     file_dumped = obj_dumped + CLG_(stat).distinct_objs;
     fn_dumped   = file_dumped + CLG_(stat).distinct_files;
@@ -1218,7 +1219,8 @@ BBCC** prepare_dump(void)
 
     /* allocate bbcc array, insert BBCCs and sort */
     prepare_ptr = array =
-      (BBCC**) CLG_MALLOC((prepare_count+1) * sizeof(BBCC*));    
+      (BBCC**) CLG_MALLOC("cl.dump.pd.1",
+                          (prepare_count+1) * sizeof(BBCC*));    
 
     CLG_(forall_bbccs)(hash_addPtr);
 
@@ -1693,12 +1695,13 @@ void CLG_(init_dumps)()
        i++;
    }
    i = lastSlash;
-   out_directory = (Char*) CLG_MALLOC(i+1);
+   out_directory = (Char*) CLG_MALLOC("cl.dump.init_dumps.1", i+1);
    VG_(strncpy)(out_directory, out_file, i);
    out_directory[i] = 0;
 
    /* allocate space big enough for final filenames */
-   filename = (Char*) CLG_MALLOC(VG_(strlen)(out_file)+32);
+   filename = (Char*) CLG_MALLOC("cl.dump.init_dumps.2",
+                                 VG_(strlen)(out_file)+32);
    CLG_ASSERT(filename != 0);
        
    /* Make sure the output base file can be written.

@@ -86,14 +86,16 @@ struct vg_mallinfo {
    int keepcost; /* top-most, releasable (via malloc_trim) space */
 };
 
-extern void* VG_(arena_malloc)  ( ArenaId arena, SizeT nbytes );
+extern void* VG_(arena_malloc)  ( ArenaId arena, HChar* cc, SizeT nbytes );
 extern void  VG_(arena_free)    ( ArenaId arena, void* ptr );
-extern void* VG_(arena_calloc)  ( ArenaId arena, 
+extern void* VG_(arena_calloc)  ( ArenaId arena, HChar* cc,
                                   SizeT nmemb, SizeT bytes_per_memb );
-extern void* VG_(arena_realloc) ( ArenaId arena, void* ptr, SizeT size );
-extern void* VG_(arena_memalign)( ArenaId aid, SizeT req_alignB, 
-                                               SizeT req_pszB );
-extern Char* VG_(arena_strdup)  ( ArenaId aid, const Char* s);
+extern void* VG_(arena_realloc) ( ArenaId arena, HChar* cc,
+                                  void* ptr, SizeT size );
+extern void* VG_(arena_memalign)( ArenaId aid, HChar* cc,
+                                  SizeT req_alignB, SizeT req_pszB );
+extern Char* VG_(arena_strdup)  ( ArenaId aid, HChar* cc, 
+                                  const Char* s);
 
 // Nb: The ThreadId doesn't matter, it's not used.
 extern SizeT VG_(arena_payload_szB) ( ThreadId tid, ArenaId aid, void* payload );
@@ -103,6 +105,8 @@ extern void  VG_(mallinfo) ( ThreadId tid, struct vg_mallinfo* mi );
 extern void  VG_(sanity_check_malloc_all) ( void );
 
 extern void  VG_(print_all_arena_stats) ( void );
+
+extern void  VG_(print_arena_cc_analysis) ( void );
 
 #endif   // __PUB_CORE_MALLOCFREE_H
 

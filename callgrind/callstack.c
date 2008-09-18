@@ -52,7 +52,8 @@ void CLG_(init_call_stack)(call_stack* s)
   CLG_ASSERT(s != 0);
 
   s->size = N_CALL_STACK_INITIAL_ENTRIES;   
-  s->entry = (call_entry*) CLG_MALLOC(s->size * sizeof(call_entry));
+  s->entry = (call_entry*) CLG_MALLOC("cl.callstack.ics.1",
+                                      s->size * sizeof(call_entry));
   s->sp = 0;
   s->entry[0].cxt = 0; /* for assertion in push_cxt() */
 
@@ -96,7 +97,8 @@ void ensure_stack_size(Int i)
   cs->size *= 2;
   while (i > cs->size) cs->size *= 2;
 
-  cs->entry = (call_entry*) VG_(realloc)(cs->entry,
+  cs->entry = (call_entry*) VG_(realloc)("cl.callstack.ess.1",
+                                         cs->entry,
 					 cs->size * sizeof(call_entry));
 
   for(i=oldsize; i<cs->size; i++)

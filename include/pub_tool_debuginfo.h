@@ -105,6 +105,48 @@ extern Bool VG_(get_objname)  ( Addr a, Char* objname, Int n_objname );
 */
 extern Char* VG_(describe_IP)(Addr eip, Char* buf, Int n_buf);
 
+
+/* Get an XArray of StackBlock which describe the stack (auto) blocks
+   for this ip.  The caller is expected to free the XArray at some
+   point.  If 'arrays_only' is True, only array-typed blocks are
+   returned; otherwise blocks of all types are returned. */
+
+typedef
+   struct {
+      OffT  base;     /* offset from sp or fp */
+      SizeT szB;      /* size in bytes */
+      Bool  spRel;    /* True => sp-rel, False => fp-rel */
+      Bool  isVec;    /* does block have an array type, or not? */
+      HChar name[16]; /* first 15 chars of name (asciiz) */
+   }
+   StackBlock;
+
+extern void* /* really, XArray* of StackBlock */
+             VG_(di_get_stack_blocks_at_ip)( Addr ip, Bool arrays_only );
+
+
+/* Get an array of GlobalBlock which describe the global blocks owned
+   by the shared object characterised by the given di_handle.  Asserts
+   if the handle is invalid.  The caller is responsible for freeing
+   the array at some point.  If 'arrays_only' is True, only
+   array-typed blocks are returned; otherwise blocks of all types are
+   returned. */
+
+typedef
+   struct {
+      Addr  addr;
+      SizeT szB;
+      Bool  isVec;      /* does block have an array type, or not? */
+      HChar name[16];   /* first 15 chars of name (asciiz) */
+      HChar soname[16]; /* first 15 chars of name (asciiz) */
+   }
+   GlobalBlock;
+
+extern void* /* really, XArray* of GlobalBlock */
+VG_(di_get_global_blocks_from_dihandle) ( ULong di_handle,
+                                          Bool  arrays_only );
+
+
 /*====================================================================*/
 /*=== Obtaining segment information                                ===*/
 /*====================================================================*/

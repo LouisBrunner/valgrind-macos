@@ -83,6 +83,9 @@ typedef ULong                 Off64T;     // 64             64
 #  define NULL ((void*)0)
 #endif
 
+/* This is just too useful to not have around the place somewhere. */
+typedef  struct { UWord uw1; UWord uw2; }  UWordPair;
+
 
 /* ---------------------------------------------------------------------
    non-builtin types

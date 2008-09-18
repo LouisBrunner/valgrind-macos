@@ -429,10 +429,10 @@ void CLG_(print_context)(void)
   VG_(printf)("\n");
 }
 
-void* CLG_(malloc)(UWord s, char* f)
+void* CLG_(malloc)(HChar* cc, UWord s, char* f)
 {
     CLG_DEBUG(3, "Malloc(%lu) in %s.\n", s, f);
-    return VG_(malloc)(s);
+    return VG_(malloc)(cc,s);
 }
 
 #else /* CLG_ENABLE_DEBUG */

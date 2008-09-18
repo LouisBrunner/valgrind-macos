@@ -35,11 +35,11 @@
 // These can be for allocating memory used by tools.
 // Nb: the allocators *always succeed* -- they never return NULL (Valgrind
 // will abort if they can't allocate the memory).
-extern void* VG_(malloc)         ( SizeT nbytes );
+extern void* VG_(malloc)         ( HChar* cc, SizeT nbytes );
 extern void  VG_(free)           ( void* p );
-extern void* VG_(calloc)         ( SizeT n, SizeT bytes_per_elem );
-extern void* VG_(realloc)        ( void* p, SizeT size );
-extern Char* VG_(strdup)         ( const Char* s );
+extern void* VG_(calloc)         ( HChar* cc, SizeT n, SizeT bytes_per_elem );
+extern void* VG_(realloc)        ( HChar* cc, void* p, SizeT size );
+extern Char* VG_(strdup)         ( HChar* cc, const Char* s );
 
 // Returns the usable size of a heap-block.  It's the asked-for size plus
 // possibly some more due to rounding up.

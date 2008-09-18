@@ -600,7 +600,7 @@ void VG_(maybe_record_error) ( ThreadId tid,
    */
 
    /* copy main part */
-   p = VG_(arena_malloc)(VG_AR_ERRORS, sizeof(Error));
+   p = VG_(arena_malloc)(VG_AR_ERRORS, "errormgr.mre.1", sizeof(Error));
    *p = err;
 
    /* update 'extra' */
@@ -618,7 +618,7 @@ void VG_(maybe_record_error) ( ThreadId tid,
 
    /* copy block pointed to by 'extra', if there is one */
    if (NULL != p->extra && 0 != extra_size) { 
-      void* new_extra = VG_(malloc)(extra_size);
+      void* new_extra = VG_(malloc)("errormgr.mre.2", extra_size);
       VG_(memcpy)(new_extra, p->extra, extra_size);
       p->extra = new_extra;
    }
@@ -979,7 +979,8 @@ static void load_one_suppressions_file ( Char* filename )
    while (True) {
       /* Assign and initialise the two suppression halves (core and tool) */
       Supp* supp;
-      supp        = VG_(arena_malloc)(VG_AR_CORE, sizeof(Supp));
+      supp        = VG_(arena_malloc)(VG_AR_CORE, "errormgr.losf.1",
+                                      sizeof(Supp));
       supp->count = 0;
 
       // Initialise temporary reading-in buffer.
@@ -999,7 +1000,7 @@ static void load_one_suppressions_file ( Char* filename )
 
       if (eof || VG_STREQ(buf, "}")) BOMB("unexpected '}'");
 
-      supp->sname = VG_(arena_strdup)(VG_AR_CORE, buf);
+      supp->sname = VG_(arena_strdup)(VG_AR_CORE, "errormgr.losf.2", buf);
 
       eof = VG_(get_line) ( fd, buf, N_BUF );
 
@@ -1069,7 +1070,8 @@ static void load_one_suppressions_file ( Char* filename )
             BOMB("too many callers in stack trace");
          if (i > 0 && i >= VG_(clo_backtrace_size)) 
             break;
-         tmp_callers[i].name = VG_(arena_strdup)(VG_AR_CORE, buf);
+         tmp_callers[i].name = VG_(arena_strdup)(VG_AR_CORE,
+                                                 "errormgr.losf.3", buf);
          if (!setLocationTy(&(tmp_callers[i])))
             BOMB("location should start with 'fun:' or 'obj:'");
          i++;
@@ -1085,7 +1087,8 @@ static void load_one_suppressions_file ( Char* filename )
 
       // Copy tmp_callers[] into supp->callers[]
       supp->n_callers = i;
-      supp->callers = VG_(arena_malloc)(VG_AR_CORE, i*sizeof(SuppLoc));
+      supp->callers = VG_(arena_malloc)(VG_AR_CORE, "errormgr.losf.4",
+                                        i*sizeof(SuppLoc));
       for (i = 0; i < supp->n_callers; i++) {
          supp->callers[i] = tmp_callers[i];
       }

@@ -45,7 +45,7 @@ static UInt myrandom( void )
   return seed;
 }
 
-static void* allocate_node(SizeT szB)
+static void* allocate_node(HChar* cc, SizeT szB)
 { return malloc(szB); }
 
 static void free_node(void* p)
@@ -84,7 +84,7 @@ void example1(void)
    // comparisons.
    OSet* oset = VG_(OSetGen_Create)(0,
                                     NULL,
-                                    allocate_node, free_node);
+                                    allocate_node, "oset_test.1", free_node);
 
    // Try some operations on an empty OSet to ensure they don't screw up.
    vg_assert( ! VG_(OSetGen_Contains)(oset, &v) );
@@ -217,7 +217,7 @@ void example1b(void)
 
    // Create a static OSet of Ints.  This one uses fast (built-in)
    // comparisons.
-   OSet* oset = VG_(OSetWord_Create)(allocate_node, free_node);
+   OSet* oset = VG_(OSetWord_Create)(allocate_node, "oset_test.2", free_node);
 
    // Try some operations on an empty OSet to ensure they don't screw up.
    vg_assert( ! VG_(OSetWord_Contains)(oset, v) );
@@ -375,7 +375,7 @@ void example2(void)
    // comparisons.
    OSet* oset = VG_(OSetGen_Create)(offsetof(Block, first),
                                     blockCmp,
-                                    allocate_node, free_node);
+                                    allocate_node, "oset_test.3", free_node);
 
    // Try some operations on an empty OSet to ensure they don't screw up.
    vg_assert( ! VG_(OSetGen_Contains)(oset, &v) );

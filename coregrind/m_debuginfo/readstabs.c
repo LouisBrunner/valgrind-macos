@@ -178,7 +178,7 @@ void ML_(read_debuginfo_stabs) ( DebugInfo* di,  OffT debug_offset,
                   qbuflen = 16;
                while ((qidx + qlen) >= qbuflen)
                   qbuflen *= 2;
-               n = ML_(dinfo_zalloc)(qbuflen);
+               n = ML_(dinfo_zalloc)("di.readstabs.rds.1", qbuflen);
                VG_(memcpy)(n, qbuf, qidx);
                
                if (qbuf != NULL)

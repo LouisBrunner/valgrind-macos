@@ -57,6 +57,11 @@
    merely zero when not explicitly stated.  So we too have to make
    that assumption.
 
+   POTENTIAL BUG?  Spotted 6 Sept 08.  Why doesn't
+   unitary_range_list() bias the resulting range list in the same way
+   that its more general cousin, get_range_list(), does?  I don't
+   know.
+
    TODO, 2008 Feb 17:
 
    get rid of cu_svma_known and document the assumed-zero svma hack.
@@ -93,15 +98,19 @@
 
    POTENTIAL PERFORMANCE IMPROVEMENTS:
 
-   The number of type entities that end up in the list of TyAdmins
-   rapidly becomes huge (eg, for libQtGui.so.4.3.2 (amd64-linux, size
-   80729047 bytes), there are 786860 entries in the list).  Mostly
-   this seems to be caused by g++ adding type DIEs for all the basic
-   types once for each source file contributing to the compilation
-   unit, and for a large library they add up quickly.  That causes
-   both a lot of work for this reader module, and also wastes vast
-   amounts of memory storing this duplicated information.  We could
-   surely do a lot better here.
+   Currently, duplicate removal and all other queries for the type
+   entities array is done using cuOffset-based pointing, which
+   involves a binary search (VG_(lookupXA)) for each access.  This is
+   wildly inefficient, although simple.  It would be better to
+   translate all the cuOffset-based references (iow, all the "R" and
+   "Rs" fields in the TyEnts in 'tyents') to direct index numbers in
+   'tyents' right at the start of dedup_types(), and use direct
+   indexing (VG_(indexXA)) wherever possible after that.
+
+   cmp__XArrays_of_AddrRange is also a performance bottleneck.  Move
+   VG_(indexXA) into pub_tool_xarray.h so it can be inlined at all use
+   points, and possibly also make an _UNCHECKED version which skips
+   the range checks in performance-critical situations such as this.
 
    Handle interaction between read_DIE and parse_{var,type}_DIE
    better.  Currently read_DIE reads the entire DIE just to find where
@@ -129,6 +138,7 @@
 #include "pub_core_libcprint.h"
 #include "pub_core_options.h"
 #include "pub_core_xarray.h"
+#include "pub_core_wordfm.h"
 #include "priv_misc.h"             /* dinfo_zalloc/free */
 #include "priv_tytypes.h"
 #include "priv_d3basics.h"
@@ -145,8 +155,8 @@
 #define TRACE_D3(format, args...) \
    if (td3) { VG_(printf)(format, ## args); }
 
-#define D3_INVALID_CUOFF  ((void*)(-1UL))
-#define D3_FAKEVOID_CUOFF ((void*)(-2UL))
+#define D3_INVALID_CUOFF  ((UWord)(-1UL))
+#define D3_FAKEVOID_CUOFF ((UWord)(-2UL))
 
 typedef
    struct {
@@ -451,32 +461,9 @@ typedef
    location list.  Zero length ranges, with aMax == aMin-1, are not
    allowed.
 */
-void ML_(pp_GX) ( GExpr* gx ) {
-   Addr   aMin, aMax;
-   UChar  uc;
-   UShort nbytes;
-   UChar* p = &gx->payload[0];
-   uc = *p++;
-   VG_(printf)("GX(%s){", uc == 0 ? "final" : "Breqd" );
-   vg_assert(uc == 0 || uc == 1);
-   while (True) {
-      uc = *p++;
-      if (uc == 1)
-         break; /*isEnd*/
-      vg_assert(uc == 0);
-      aMin   = * (Addr*)p;  p += sizeof(Addr);
-      aMax   = * (Addr*)p;  p += sizeof(Addr);
-      nbytes = * (UShort*)p; p += sizeof(UShort);
-      VG_(printf)("[%#lx,%#lx]=", aMin, aMax);
-      while (nbytes > 0) {
-         VG_(printf)("%02x", (UInt)*p++);
-         nbytes--;
-      }
-      if (*p == 0)
-         VG_(printf)(",");
-   }
-   VG_(printf)("}");
-}
+/* 2008-sept-12: moved ML_(pp_GX) from here to d3basics.c, where
+   it more logically belongs. */
+
 
 /* "Comment_Regarding_DWARF3_Text_Biasing" (is referred to elsewhere)
     -----------------------------------------------------------------
@@ -613,7 +600,8 @@ static GExpr* make_singleton_GX ( UChar* block, UWord nbytes )
         + sizeof(UShort) /*nbytes*/    + nbytes
         + sizeof(UChar); /*isEnd*/
 
-   gx = ML_(dinfo_zalloc)( sizeof(GExpr) + bytesReqd );
+   gx = ML_(dinfo_zalloc)( "di.readdwarf3.msGX.1", 
+                           sizeof(GExpr) + bytesReqd );
    vg_assert(gx);
 
    p = pstart = &gx->payload[0];
@@ -658,7 +646,8 @@ static GExpr* make_general_GX ( CUConst* cc,
             debug_loc_offset, get_address_of_Cursor( &loc ) );
 
    /* Who frees this xa?  It is freed before this fn exits. */
-   xa = VG_(newXA)( ML_(dinfo_zalloc), ML_(dinfo_free),
+   xa = VG_(newXA)( ML_(dinfo_zalloc), "di.readdwarf3.mgGX.1", 
+                    ML_(dinfo_free),
                     sizeof(UChar) );
 
    { UChar c = 1; /*biasMe*/ VG_(addBytesToXA)( xa, &c, sizeof(c) ); }
@@ -728,7 +717,7 @@ static GExpr* make_general_GX ( CUConst* cc,
    nbytes = VG_(sizeXA)( xa );
    vg_assert(nbytes >= 1);
 
-   gx = ML_(dinfo_zalloc)( sizeof(GExpr) + nbytes );
+   gx = ML_(dinfo_zalloc)( "di.readdwarf3.mgGX.2", sizeof(GExpr) + nbytes );
    vg_assert(gx);
    VG_(memcpy)( &gx->payload[0], (UChar*)VG_(indexXA)(xa,0), nbytes );
    vg_assert( &gx->payload[nbytes] 
@@ -756,24 +745,49 @@ typedef
    AddrRange;
 
 
+/* Generate an arbitrary structural total ordering on
+   XArray* of AddrRange. */
+static Word cmp__XArrays_of_AddrRange ( XArray* rngs1, XArray* rngs2 )
+{
+   Word n1, n2, i;
+   tl_assert(rngs1 && rngs2);
+   n1 = VG_(sizeXA)( rngs1 );  
+   n2 = VG_(sizeXA)( rngs2 );
+   if (n1 < n2) return -1;
+   if (n1 > n2) return 1;
+   for (i = 0; i < n1; i++) {
+      AddrRange* rng1 = (AddrRange*)VG_(indexXA)( rngs1, i );
+      AddrRange* rng2 = (AddrRange*)VG_(indexXA)( rngs2, i );
+      if (rng1->aMin < rng2->aMin) return -1;
+      if (rng1->aMin > rng2->aMin) return 1;
+      if (rng1->aMax < rng2->aMax) return -1;
+      if (rng1->aMax > rng2->aMax) return 1;
+   }
+   return 0;
+}
+
+
 __attribute__((noinline))
 static XArray* /* of AddrRange */ empty_range_list ( void )
 {
    XArray* xa; /* XArray of AddrRange */
    /* Who frees this xa?  varstack_preen() does. */
-   xa = VG_(newXA)( ML_(dinfo_zalloc), ML_(dinfo_free),
+   xa = VG_(newXA)( ML_(dinfo_zalloc), "di.readdwarf3.erl.1",
+                    ML_(dinfo_free),
                     sizeof(AddrRange) );
    return xa;
 }
 
 
+__attribute__((noinline))
 static XArray* unitary_range_list ( Addr aMin, Addr aMax )
 {
    XArray*   xa;
    AddrRange pair;
    vg_assert(aMin <= aMax);
    /* Who frees this xa?  varstack_preen() does. */
-   xa = VG_(newXA)( ML_(dinfo_zalloc), ML_(dinfo_free),
+   xa = VG_(newXA)( ML_(dinfo_zalloc),  "di.readdwarf3.url.1",
+                    ML_(dinfo_free),
                     sizeof(AddrRange) );
    pair.aMin = aMin;
    pair.aMax = aMax;
@@ -808,7 +822,7 @@ static XArray* /* of AddrRange */
    set_position_of_Cursor( &ranges, debug_ranges_offset );
 
    /* Who frees this xa?  varstack_preen() does. */
-   xa = VG_(newXA)( ML_(dinfo_zalloc), ML_(dinfo_free),
+   xa = VG_(newXA)( ML_(dinfo_zalloc), "di.readdwarf3.grl.1", ML_(dinfo_free),
                     sizeof(AddrRange) );
    base = 0;
    while (True) {
@@ -1143,10 +1157,14 @@ typedef
       UWord   nRanges;
       Addr    rngOneMin;
       Addr    rngOneMax;
-      XArray* rngMany; /* of AddrRange.  UNIQUE PTR in AR_DINFO. */
+      XArray* rngMany; /* of AddrRange.  NON-UNIQUE PTR in AR_DINFO. */
+      /* Do not free .rngMany, since many TempVars will have the same
+         value.  Instead the associated storage is to be freed by
+         deleting 'rangetree', which stores a single copy of each
+         range. */
       /* --- */
       Int     level;
-      Type*   typeR;
+      UWord   typeR; /* a cuOff */
       GExpr*  gexpr; /* for this variable */
       GExpr*  fbGX;  /* to find the frame base of the enclosing fn, if
                         any */
@@ -1383,16 +1401,19 @@ void read_filename_table( /*MOD*/D3VarParser* parser,
 
 
 __attribute__((noinline))
-static void parse_var_DIE ( /*MOD*/XArray* /* of TempVar* */ tempvars,
-                            /*MOD*/XArray* /* of GExpr* */ gexprs,
-                            /*MOD*/D3VarParser* parser,
-                            DW_TAG dtag,
-                            UWord posn,
-                            Int level,
-                            Cursor* c_die,
-                            Cursor* c_abbv,
-                            CUConst* cc,
-                            Bool td3 )
+static void parse_var_DIE (
+   /*MOD*/WordFM* /* of (XArray* of AddrRange, void) */ rangestree,
+   /*MOD*/XArray* /* of TempVar* */ tempvars,
+   /*MOD*/XArray* /* of GExpr* */ gexprs,
+   /*MOD*/D3VarParser* parser,
+   DW_TAG dtag,
+   UWord posn,
+   Int level,
+   Cursor* c_die,
+   Cursor* c_abbv,
+   CUConst* cc,
+   Bool td3
+)
 {
    ULong       cts;
    Int         ctsSzB;
@@ -1592,7 +1613,7 @@ static void parse_var_DIE ( /*MOD*/XArray* /* of TempVar* */ tempvars,
 
    if (dtag == DW_TAG_variable || dtag == DW_TAG_formal_parameter) {
       UChar* name        = NULL;
-      Type*  typeR       = D3_INVALID_CUOFF;
+      UWord  typeR       = D3_INVALID_CUOFF;
       Bool   external    = False;
       GExpr* gexpr       = NULL;
       Int    n_attrs     = 0;
@@ -1618,7 +1639,7 @@ static void parse_var_DIE ( /*MOD*/XArray* /* of TempVar* */ tempvars,
             VG_(addToXA)(gexprs, &gexpr);
          }
          if (attr == DW_AT_type && ctsSzB > 0) {
-            typeR = (Type*)(UWord)cts;
+            typeR = (UWord)cts;
          }
          if (attr == DW_AT_external && ctsSzB > 0 && cts > 0) {
             external = True;
@@ -1648,7 +1669,7 @@ static void parse_var_DIE ( /*MOD*/XArray* /* of TempVar* */ tempvars,
          (1) has location and type    -> completed
          (2) has type only            -> is an abstract instance
          (3) has location and abs_ori -> is a concrete instance
-         Name, filename and line number are all option frills.
+         Name, filename and line number are all optional frills.
       */
       if ( /* 1 */ (gexpr && typeR != D3_INVALID_CUOFF) 
            /* 2 */ || (typeR != D3_INVALID_CUOFF)
@@ -1714,7 +1735,7 @@ static void parse_var_DIE ( /*MOD*/XArray* /* of TempVar* */ tempvars,
          nRanges = VG_(sizeXA)(xa);
          vg_assert(nRanges >= 0);
 
-         tv = ML_(dinfo_zalloc)( sizeof(TempVar) );
+         tv = ML_(dinfo_zalloc)( "di.readdwarf3.pvD.1", sizeof(TempVar) );
          tv->name   = name;
          tv->level  = external ? 0 : parser->sp;
          tv->typeR  = typeR;
@@ -1737,7 +1758,20 @@ static void parse_var_DIE ( /*MOD*/XArray* /* of TempVar* */ tempvars,
             tv->rngOneMax = range->aMax;
          }
          else if (nRanges > 1) {
-            tv->rngMany = VG_(cloneXA)( xa ); /* free when 'tv' freed */
+            /* See if we already have a range list which is
+               structurally identical.  If so, use that; if not, clone
+               this one, and add it to our collection. */
+            UWord keyW, valW;
+            if (VG_(lookupFM)( rangestree, &keyW, &valW, (UWord)xa )) {
+               XArray* old = (XArray*)keyW;
+               tl_assert(valW == 0);
+               tl_assert(old != xa);
+               tv->rngMany = old;
+            } else {
+               XArray* cloned = VG_(cloneXA)( "di.readdwarf3.pvD.2", xa );
+               tv->rngMany = cloned;
+               VG_(addToFM)( rangestree, (UWord)cloned, 0 );
+            }
          }
 
          VG_(addToXA)( tempvars, &tv );
@@ -1747,11 +1781,11 @@ static void parse_var_DIE ( /*MOD*/XArray* /* of TempVar* */ tempvars,
          /* collect stats on how effective the ->ranges special
             casing is */
          if (0) {
-           static Int ntot=0, ngt=0;
-           ntot++;
-           if (tv->rngMany) ngt++;
-           if (0 == (ntot % 100000))
-              VG_(printf)("XXXX %d tot, %d cloned\n", ntot, ngt);
+            static Int ntot=0, ngt=0;
+            ntot++;
+            if (tv->rngMany) ngt++;
+            if (0 == (ntot % 100000))
+               VG_(printf)("XXXX %d tot, %d cloned\n", ntot, ngt);
          }
 
       }
@@ -1870,7 +1904,12 @@ typedef
       /* A stack of types which are currently under construction */
       Int   sp; /* [sp] is innermost active entry; sp==-1 for empty
                    stack */
-      Type* qparent[N_D3_TYPE_STACK];
+      /* Note that the TyEnts in qparentE are temporary copies of the
+         ones accumulating in the main tyent array.  So it is not safe
+         to free up anything on them when popping them off the stack
+         (iow, it isn't safe to use TyEnt__make_EMPTY on them).  Just
+         memset them to zero when done. */
+      TyEnt qparentE[N_D3_TYPE_STACK]; /* parent TyEnts */
       Int   qlevel[N_D3_TYPE_STACK];
 
    }
@@ -1881,7 +1920,7 @@ static void typestack_show ( D3TypeParser* parser, HChar* str ) {
    VG_(printf)("  typestack (%s) {\n", str);
    for (i = 0; i <= parser->sp; i++) {
       VG_(printf)("    [%ld] (level %d): ", i, parser->qlevel[i]);
-      ML_(pp_Type)( parser->qparent[i] );
+      ML_(pp_TyEnt)( &parser->qparentE[i] );
       VG_(printf)("\n");
    }
    VG_(printf)("  }\n");
@@ -1899,9 +1938,11 @@ void typestack_preen ( D3TypeParser* parser, Bool td3, Int level )
       if (parser->qlevel[parser->sp] <= level) break;
       if (0) 
          TRACE_D3("BBBBAAAA typestack_pop [newsp=%d]\n", parser->sp-1);
-      vg_assert(parser->qparent[parser->sp]);
-      parser->qparent[parser->sp] = NULL;
-      parser->qlevel[parser->sp]  = 0;
+      vg_assert(ML_(TyEnt__is_type)(&parser->qparentE[parser->sp]));
+      VG_(memset)(&parser->qparentE[parser->sp], 0, sizeof(TyEnt));
+      parser->qparentE[parser->sp].cuOff = D3_INVALID_CUOFF;
+      parser->qparentE[parser->sp].tag = Te_EMPTY;
+      parser->qlevel[parser->sp] = 0;
       parser->sp--;
       changed = True;
    }
@@ -1917,10 +1958,10 @@ static Bool typestack_is_empty ( D3TypeParser* parser ) {
 static void typestack_push ( CUConst* cc,
                              D3TypeParser* parser,
                              Bool td3,
-                             Type* parent, Int level ) {
+                             TyEnt* parentE, Int level ) {
    if (0)
-   TRACE_D3("BBBBAAAA typestack_push[newsp=%d]: %d  %p\n",
-            parser->sp+1, level, parent);
+   TRACE_D3("BBBBAAAA typestack_push[newsp=%d]: %d  %05lx\n",
+            parser->sp+1, level, parentE->cuOff);
 
    /* First we need to zap everything >= 'level', as we are about to
       replace any previous entry at 'level', so .. */
@@ -1934,10 +1975,12 @@ static void typestack_push ( CUConst* cc,
    if (parser->sp >= 0)
       vg_assert(parser->qlevel[parser->sp] < level);
    parser->sp++;
-   vg_assert(parser->qparent[parser->sp] == NULL);
+   vg_assert(parser->qparentE[parser->sp].tag == Te_EMPTY);
    vg_assert(parser->qlevel[parser->sp]  == 0);
-   vg_assert(parent != NULL);
-   parser->qparent[parser->sp] = parent;
+   vg_assert(parentE);
+   vg_assert(ML_(TyEnt__is_type)(parentE));
+   vg_assert(parentE->cuOff != D3_INVALID_CUOFF);
+   parser->qparentE[parser->sp] = *parentE;
    parser->qlevel[parser->sp]  = level;
    if (td3)
       typestack_show( parser, "after push" );
@@ -1952,9 +1995,27 @@ static void typestack_push ( CUConst* cc,
 
    We may find the DIE uninteresting, in which case we should ignore
    it.
+
+   What happens: the DIE is examined.  If uninteresting, it is ignored.
+   Otherwise, the DIE gives rise to two things:
+
+   (1) the offset of this DIE in the CU -- the cuOffset, a UWord
+   (2) a TyAdmin structure, which holds the type, or related stuff
+
+   (2) is added at the end of 'tyadmins', at some index, say 'i'.
+
+   A pair (cuOffset, i) is added to 'tydict'.
+
+   Hence 'tyadmins' holds the actual type entities, and 'tydict' holds
+   a mapping from cuOffset to the index of the corresponding entry in
+   'tyadmin'.
+
+   When resolving a cuOffset to a TyAdmin, first look up the cuOffset
+   in the tydict (by binary search).  This gives an index into
+   tyadmins, and the required entity lives in tyadmins at that index.
 */
 __attribute__((noinline))
-static void parse_type_DIE ( /*MOD*/XArray* /* of TyAdmin */ admin,
+static void parse_type_DIE ( /*MOD*/XArray* /* of TyEnt */ tyents,
                              /*MOD*/D3TypeParser* parser,
                              DW_TAG dtag,
                              UWord posn,
@@ -1964,18 +2025,21 @@ static void parse_type_DIE ( /*MOD*/XArray* /* of TyAdmin */ admin,
                              CUConst* cc,
                              Bool td3 )
 {
-   ULong     cts;
-   Int       ctsSzB;
-   UWord     ctsMemSzB;
-   Type*     type   = NULL;
-   TyAtom*   atom   = NULL;
-   TyField*  field  = NULL;
-   D3Expr*   expr   = NULL;
-   TyBounds* bounds = NULL;
-   TyAdmin   tyad;
+   ULong cts;
+   Int   ctsSzB;
+   UWord ctsMemSzB;
+   TyEnt typeE;
+   TyEnt atomE;
+   TyEnt fieldE;
+   TyEnt boundE;
 
    UWord saved_die_c_offset  = get_position_of_Cursor( c_die );
    UWord saved_abbv_c_offset = get_position_of_Cursor( c_abbv );
+
+   VG_(memset)( &typeE,  0xAA, sizeof(typeE) );
+   VG_(memset)( &atomE,  0xAA, sizeof(atomE) );
+   VG_(memset)( &fieldE, 0xAA, sizeof(fieldE) );
+   VG_(memset)( &boundE, 0xAA, sizeof(boundE) );
 
    /* If we've returned to a level at or above any previously noted
       parent, un-note it, so we don't believe we're still collecting
@@ -2020,8 +2084,9 @@ static void parse_type_DIE ( /*MOD*/XArray* /* of TyAdmin */ admin,
 
    if (dtag == DW_TAG_base_type) {
       /* We can pick up a new base type any time. */
-      type = ML_(new_Type)();
-      type->tag = Ty_Base;
+      VG_(memset)(&typeE, 0, sizeof(typeE));
+      typeE.cuOff = D3_INVALID_CUOFF;
+      typeE.tag   = Te_TyBase;
       while (True) {
          DW_AT   attr = (DW_AT)  get_ULEB128( c_abbv );
          DW_FORM form = (DW_FORM)get_ULEB128( c_abbv );
@@ -2029,23 +2094,24 @@ static void parse_type_DIE ( /*MOD*/XArray* /* of TyAdmin */ admin,
          get_Form_contents( &cts, &ctsSzB, &ctsMemSzB,
                             cc, c_die, False/*td3*/, form );
          if (attr == DW_AT_name && ctsMemSzB > 0) {
-            type->Ty.Base.name
-               = ML_(addStr)( cc->di, (UChar*)(UWord)cts, -1 );
+            typeE.Te.TyBase.name
+               = ML_(dinfo_strdup)( "di.readdwarf3.ptD.base_type.1",
+                                    (UChar*)(UWord)cts );
          }
          if (attr == DW_AT_byte_size && ctsSzB > 0) {
-            type->Ty.Base.szB = cts;
+            typeE.Te.TyBase.szB = cts;
          }
          if (attr == DW_AT_encoding && ctsSzB > 0) {
             switch (cts) {
                case DW_ATE_unsigned: case DW_ATE_unsigned_char:
                case DW_ATE_boolean:/* FIXME - is this correct? */
-                  type->Ty.Base.enc = 'U'; break;
+                  typeE.Te.TyBase.enc = 'U'; break;
                case DW_ATE_signed: case DW_ATE_signed_char:
-                  type->Ty.Base.enc = 'S'; break;
+                  typeE.Te.TyBase.enc = 'S'; break;
                case DW_ATE_float:
-                  type->Ty.Base.enc = 'F'; break;
+                  typeE.Te.TyBase.enc = 'F'; break;
                case DW_ATE_complex_float:
-                  type->Ty.Base.enc = 'C'; break;
+                  typeE.Te.TyBase.enc = 'C'; break;
                default:
                   goto bad_DIE;
             }
@@ -2054,21 +2120,22 @@ static void parse_type_DIE ( /*MOD*/XArray* /* of TyAdmin */ admin,
 
       /* Invent a name if it doesn't have one.  gcc-4.3
          -ftree-vectorize is observed to emit nameless base types. */
-      if (!type->Ty.Base.name)
-         type->Ty.Base.name 
-            = ML_(addStr)( cc->di, "<anon_base_type>", -1 );
+      if (!typeE.Te.TyBase.name)
+         typeE.Te.TyBase.name 
+            = ML_(dinfo_strdup)( "di.readdwarf3.ptD.base_type.2",
+                                 "<anon_base_type>" );
 
       /* Do we have something that looks sane? */
       if (/* must have a name */
-          type->Ty.Base.name == NULL
+          typeE.Te.TyBase.name == NULL
           /* and a plausible size.  Yes, really 32: "complex long
              double" apparently has size=32 */
-          || type->Ty.Base.szB < 0 || type->Ty.Base.szB > 32
+          || typeE.Te.TyBase.szB < 0 || typeE.Te.TyBase.szB > 32
           /* and a plausible encoding */
-          || (type->Ty.Base.enc != 'U'
-              && type->Ty.Base.enc != 'S' 
-              && type->Ty.Base.enc != 'F'
-              && type->Ty.Base.enc != 'C'))
+          || (typeE.Te.TyBase.enc != 'U'
+              && typeE.Te.TyBase.enc != 'S' 
+              && typeE.Te.TyBase.enc != 'F'
+              && typeE.Te.TyBase.enc != 'C'))
          goto bad_DIE;
       /* Last minute hack: if we see this
          <1><515>: DW_TAG_base_type
@@ -2076,12 +2143,13 @@ static void parse_type_DIE ( /*MOD*/XArray* /* of TyAdmin */ admin,
              DW_AT_encoding    : 5
              DW_AT_name        : void
          convert it into a real Void type. */
-      if (type->Ty.Base.szB == 0
-          && 0 == VG_(strcmp)("void", type->Ty.Base.name)) {
-         VG_(memset)(type, 0, sizeof(*type));
-         type->tag = Ty_Void;
-         type->Ty.Void.isFake = False; /* it's a real one! */
+      if (typeE.Te.TyBase.szB == 0
+          && 0 == VG_(strcmp)("void", typeE.Te.TyBase.name)) {
+         ML_(TyEnt__make_EMPTY)(&typeE);
+         typeE.tag = Te_TyVoid;
+         typeE.Te.TyVoid.isFake = False; /* it's a real one! */
       }
+
       goto acquire_Type;
    }
 
@@ -2090,20 +2158,21 @@ static void parse_type_DIE ( /*MOD*/XArray* /* of TyAdmin */ admin,
       /* This seems legit for _pointer_type and _reference_type.  I
          don't know if rolling _ptr_to_member_type in here really is
          legit, but it's better than not handling it at all. */
-      type = ML_(new_Type)();
-      type->tag = Ty_PorR;
+      VG_(memset)(&typeE, 0, sizeof(typeE));
+      typeE.cuOff = D3_INVALID_CUOFF;
+      typeE.tag   = Te_TyPorR;
       /* target type defaults to void */
-      type->Ty.PorR.typeR = D3_FAKEVOID_CUOFF;
-      type->Ty.PorR.isPtr = dtag == DW_TAG_pointer_type
-                            || dtag == DW_TAG_ptr_to_member_type;
+      typeE.Te.TyPorR.typeR = D3_FAKEVOID_CUOFF;
+      typeE.Te.TyPorR.isPtr = dtag == DW_TAG_pointer_type
+                              || dtag == DW_TAG_ptr_to_member_type;
       /* Pointer types don't *have* to specify their size, in which
          case we assume it's a machine word.  But if they do specify
          it, it must be a machine word :-) This probably assumes that
          the word size of the Dwarf3 we're reading is the same size as
          that on the machine.  gcc appears to give a size whereas icc9
          doesn't. */
-      if (type->Ty.PorR.isPtr)
-         type->Ty.PorR.szB = sizeof(Word);
+      if (typeE.Te.TyPorR.isPtr)
+         typeE.Te.TyPorR.szB = sizeof(Word);
       while (True) {
          DW_AT   attr = (DW_AT)  get_ULEB128( c_abbv );
          DW_FORM form = (DW_FORM)get_ULEB128( c_abbv );
@@ -2111,14 +2180,14 @@ static void parse_type_DIE ( /*MOD*/XArray* /* of TyAdmin */ admin,
          get_Form_contents( &cts, &ctsSzB, &ctsMemSzB,
                             cc, c_die, False/*td3*/, form );
          if (attr == DW_AT_byte_size && ctsSzB > 0) {
-            type->Ty.PorR.szB = cts;
+            typeE.Te.TyPorR.szB = cts;
          }
          if (attr == DW_AT_type && ctsSzB > 0) {
-            type->Ty.PorR.typeR = (Type*)(UWord)cts;
+            typeE.Te.TyPorR.typeR = (UWord)cts;
          }
       }
       /* Do we have something that looks sane? */
-      if (type->Ty.PorR.szB != sizeof(Word))
+      if (typeE.Te.TyPorR.szB != sizeof(Word))
          goto bad_DIE;
       else
          goto acquire_Type;
@@ -2126,12 +2195,13 @@ static void parse_type_DIE ( /*MOD*/XArray* /* of TyAdmin */ admin,
 
    if (dtag == DW_TAG_enumeration_type) {
       /* Create a new Type to hold the results. */
-      type = ML_(new_Type)();
-      type->tag = Ty_Enum;
-      type->Ty.Enum.name = NULL;
-      type->Ty.Enum.atomRs
-         = VG_(newXA)( ML_(dinfo_zalloc), ML_(dinfo_free),
-                       sizeof(TyAtom*) );
+      VG_(memset)(&typeE, 0, sizeof(typeE));
+      typeE.cuOff = posn;
+      typeE.tag   = Te_TyEnum;
+      typeE.Te.TyEnum.atomRs
+         = VG_(newXA)( ML_(dinfo_zalloc), "di.readdwarf3.ptD.enum_type.1", 
+                       ML_(dinfo_free),
+                       sizeof(UWord) );
       while (True) {
          DW_AT   attr = (DW_AT)  get_ULEB128( c_abbv );
          DW_FORM form = (DW_FORM)get_ULEB128( c_abbv );
@@ -2139,25 +2209,28 @@ static void parse_type_DIE ( /*MOD*/XArray* /* of TyAdmin */ admin,
          get_Form_contents( &cts, &ctsSzB, &ctsMemSzB,
                             cc, c_die, False/*td3*/, form );
          if (attr == DW_AT_name && ctsMemSzB > 0) {
-            type->Ty.Enum.name
-               = ML_(addStr)( cc->di, (UChar*)(UWord)cts, -1 );
+            typeE.Te.TyEnum.name
+              = ML_(dinfo_strdup)( "di.readdwarf3.pTD.enum_type.2",
+                                   (UChar*)(UWord)cts );
          }
          if (attr == DW_AT_byte_size && ctsSzB > 0) {
-            type->Ty.Enum.szB = cts;
+            typeE.Te.TyEnum.szB = cts;
          }
       }
       /* Do we have something that looks sane? */
-      if (type->Ty.Enum.szB == 0 /* we must know the size */
-          /* But the name can be present, or not */)
+      if (typeE.Te.TyEnum.szB == 0 /* we must know the size */
+         /* But the name can be present, or not */)
          goto bad_DIE;
       /* On't stack! */
-      typestack_push( cc, parser, td3, type, level );
+      typestack_push( cc, parser, td3, &typeE, level );
       goto acquire_Type;
    }
 
    if (dtag == DW_TAG_enumerator) {
       Bool have_value = False;
-      atom = ML_(new_TyAtom)( NULL, 0 );
+      VG_(memset)( &atomE, 0, sizeof(atomE) );
+      atomE.cuOff = posn;
+      atomE.tag   = Te_Atom;
       while (True) {
          DW_AT   attr = (DW_AT)  get_ULEB128( c_abbv );
          DW_FORM form = (DW_FORM)get_ULEB128( c_abbv );
@@ -2165,24 +2238,28 @@ static void parse_type_DIE ( /*MOD*/XArray* /* of TyAdmin */ admin,
          get_Form_contents( &cts, &ctsSzB, &ctsMemSzB,
                             cc, c_die, False/*td3*/, form );
          if (attr == DW_AT_name && ctsMemSzB > 0) {
-            atom->name = ML_(addStr)( cc->di, (UChar*)(UWord)cts, -1 );
+            atomE.Te.Atom.name 
+              = ML_(dinfo_strdup)( "di.readdwarf3.pTD.enumerator.1",
+                                   (UChar*)(UWord)cts );
          }
          if (attr == DW_AT_const_value && ctsSzB > 0) {
-            atom->value = cts;
+            atomE.Te.Atom.value = cts;
             have_value = True;
          }
       }
       /* Do we have something that looks sane? */
-      if ((!have_value) || atom->name == NULL)
+      if ((!have_value) || atomE.Te.Atom.name == NULL)
          goto bad_DIE;
       /* Do we have a plausible parent? */
       if (typestack_is_empty(parser)) goto bad_DIE;
-      vg_assert(parser->qparent[parser->sp]);
+      vg_assert(ML_(TyEnt__is_type)(&parser->qparentE[parser->sp]));
+      vg_assert(parser->qparentE[parser->sp].cuOff != D3_INVALID_CUOFF);
       if (level != parser->qlevel[parser->sp]+1) goto bad_DIE;
-      if (parser->qparent[parser->sp]->tag != Ty_Enum) goto bad_DIE;
+      if (parser->qparentE[parser->sp].tag != Te_TyEnum) goto bad_DIE;
       /* Record this child in the parent */
-      vg_assert(parser->qparent[parser->sp]->Ty.Enum.atomRs);
-      VG_(addToXA)( parser->qparent[parser->sp]->Ty.Enum.atomRs, &atom );
+      vg_assert(parser->qparentE[parser->sp].Te.TyEnum.atomRs);
+      VG_(addToXA)( parser->qparentE[parser->sp].Te.TyEnum.atomRs,
+                    &atomE );
       /* And record the child itself */
       goto acquire_Atom;
    }
@@ -2196,15 +2273,17 @@ static void parse_type_DIE ( /*MOD*/XArray* /* of TyAdmin */ admin,
       Bool is_decl  = False;
       Bool is_spec  = False;
       /* Create a new Type to hold the results. */
-      type = ML_(new_Type)();
-      type->tag = Ty_StOrUn;
-      type->Ty.StOrUn.name = NULL;
-      type->Ty.StOrUn.fields
-         = VG_(newXA)( ML_(dinfo_zalloc), ML_(dinfo_free),
-                       sizeof(TyAtom*) );
-      type->Ty.StOrUn.complete = True;
-      type->Ty.StOrUn.isStruct = dtag == DW_TAG_structure_type 
-                                 || dtag == DW_TAG_class_type;
+      VG_(memset)(&typeE, 0, sizeof(typeE));
+      typeE.cuOff = posn;
+      typeE.tag   = Te_TyStOrUn;
+      typeE.Te.TyStOrUn.name = NULL;
+      typeE.Te.TyStOrUn.fieldRs
+         = VG_(newXA)( ML_(dinfo_zalloc), "di.readdwarf3.pTD.struct_type.1", 
+                       ML_(dinfo_free),
+                       sizeof(UWord) );
+      typeE.Te.TyStOrUn.complete = True;
+      typeE.Te.TyStOrUn.isStruct = dtag == DW_TAG_structure_type 
+                                   || dtag == DW_TAG_class_type;
       while (True) {
          DW_AT   attr = (DW_AT)  get_ULEB128( c_abbv );
          DW_FORM form = (DW_FORM)get_ULEB128( c_abbv );
@@ -2212,11 +2291,12 @@ static void parse_type_DIE ( /*MOD*/XArray* /* of TyAdmin */ admin,
          get_Form_contents( &cts, &ctsSzB, &ctsMemSzB,
                             cc, c_die, False/*td3*/, form );
          if (attr == DW_AT_name && ctsMemSzB > 0) {
-            type->Ty.StOrUn.name
-               = ML_(addStr)( cc->di, (UChar*)(UWord)cts, -1 );
+            typeE.Te.TyStOrUn.name
+               = ML_(dinfo_strdup)( "di.readdwarf3.ptD.struct_type.2",
+                                    (UChar*)(UWord)cts );
          }
          if (attr == DW_AT_byte_size && ctsSzB >= 0) {
-            type->Ty.StOrUn.szB = cts;
+            typeE.Te.TyStOrUn.szB = cts;
             have_szB = True;
          }
          if (attr == DW_AT_declaration && ctsSzB > 0 && cts > 0) {
@@ -2230,9 +2310,9 @@ static void parse_type_DIE ( /*MOD*/XArray* /* of TyAdmin */ admin,
       if (is_decl && (!is_spec)) {
          /* It's a DW_AT_declaration.  We require the name but
             nothing else. */
-         if (type->Ty.StOrUn.name == NULL)
+         if (typeE.Te.TyStOrUn.name == NULL)
             goto bad_DIE;
-         type->Ty.StOrUn.complete = False;
+         typeE.Te.TyStOrUn.complete = False;
          goto acquire_Type;
       }
       if ((!is_decl) /* && (!is_spec) */) {
@@ -2241,7 +2321,7 @@ static void parse_type_DIE ( /*MOD*/XArray* /* of TyAdmin */ admin,
              /* But the name can be present, or not */)
             goto bad_DIE;
          /* On't stack! */
-         typestack_push( cc, parser, td3, type, level );
+         typestack_push( cc, parser, td3, &typeE, level );
          goto acquire_Type;
       }
       else {
@@ -2256,9 +2336,10 @@ static void parse_type_DIE ( /*MOD*/XArray* /* of TyAdmin */ admin,
          members must have a DW_AT_data_member_location expression
          whereas union members must not. */
       Bool parent_is_struct;
-      field = ML_(new_TyField)( NULL, NULL, NULL );
-      field->typeR = D3_INVALID_CUOFF;
-      expr  = NULL;
+      VG_(memset)( &fieldE, 0, sizeof(fieldE) );
+      fieldE.cuOff = posn;
+      fieldE.tag   = Te_Field;
+      fieldE.Te.Field.typeR = D3_INVALID_CUOFF;
       while (True) {
          DW_AT   attr = (DW_AT)  get_ULEB128( c_abbv );
          DW_FORM form = (DW_FORM)get_ULEB128( c_abbv );
@@ -2266,22 +2347,27 @@ static void parse_type_DIE ( /*MOD*/XArray* /* of TyAdmin */ admin,
          get_Form_contents( &cts, &ctsSzB, &ctsMemSzB,
                             cc, c_die, False/*td3*/, form );
          if (attr == DW_AT_name && ctsMemSzB > 0) {
-            field->name = ML_(addStr)( cc->di, (UChar*)(UWord)cts, -1 );
+            fieldE.Te.Field.name
+               = ML_(dinfo_strdup)( "di.readdwarf3.ptD.member.1",
+                                    (UChar*)(UWord)cts );
          }
          if (attr == DW_AT_type && ctsSzB > 0) {
-            field->typeR = (Type*)(UWord)cts;
+            fieldE.Te.Field.typeR = (UWord)cts;
          }
          if (attr == DW_AT_data_member_location && ctsMemSzB > 0) {
-            UChar* copy = ML_(addStr)( cc->di, (UChar*)(UWord)cts, 
-                                               (Int)ctsMemSzB );
-            expr = ML_(new_D3Expr)( copy, (UWord)ctsMemSzB );
+            fieldE.Te.Field.nLoc = (UWord)ctsMemSzB;
+            fieldE.Te.Field.loc
+               = ML_(dinfo_memdup)( "di.readdwarf3.ptD.member.2",
+                                    (UChar*)(UWord)cts, 
+                                    (SizeT)fieldE.Te.Field.nLoc );
          }
       }
       /* Do we have a plausible parent? */
       if (typestack_is_empty(parser)) goto bad_DIE;
-      vg_assert(parser->qparent[parser->sp]);
+      vg_assert(ML_(TyEnt__is_type)(&parser->qparentE[parser->sp]));
+      vg_assert(parser->qparentE[parser->sp].cuOff != D3_INVALID_CUOFF);
       if (level != parser->qlevel[parser->sp]+1) goto bad_DIE;
-      if (parser->qparent[parser->sp]->tag != Ty_StOrUn) goto bad_DIE;
+      if (parser->qparentE[parser->sp].tag != Te_TyStOrUn) goto bad_DIE;
       /* Do we have something that looks sane?  If this a member of a
          struct, we must have a location expression; but if a member
          of a union that is irrelevant (D3 spec sec 5.6.6).  We ought
@@ -2289,37 +2375,42 @@ static void parse_type_DIE ( /*MOD*/XArray* /* of TyAdmin */ admin,
          observed to emit constant-zero expressions.  So just ignore
          them. */
       parent_is_struct
-         = parser->qparent[parser->sp]->Ty.StOrUn.isStruct;
-      if (!field->name)
-         field->name = ML_(addStr)(cc->di, "<anon_field>", -1);
-      if ((!field->name) || (field->typeR == D3_INVALID_CUOFF))
+         = parser->qparentE[parser->sp].Te.TyStOrUn.isStruct;
+      if (!fieldE.Te.Field.name)
+         fieldE.Te.Field.name
+            = ML_(dinfo_strdup)( "di.readdwarf3.ptD.member.3",
+                                 "<anon_field>" );
+      vg_assert(fieldE.Te.Field.name);
+      if (fieldE.Te.Field.typeR == D3_INVALID_CUOFF)
          goto bad_DIE;
-      if (parent_is_struct && (!expr))
+      if (parent_is_struct && (!fieldE.Te.Field.loc))
          goto bad_DIE;
-      if ((!parent_is_struct) && expr) {
+      if ((!parent_is_struct) && fieldE.Te.Field.loc) {
          /* If this is a union type, pretend we haven't seen the data
             member location expression, as it is by definition
             redundant (it must be zero). */
-         expr = NULL;
+         ML_(dinfo_free)(fieldE.Te.Field.loc);
+         fieldE.Te.Field.loc  = NULL;
+         fieldE.Te.Field.nLoc = 0;
       }
       /* Record this child in the parent */
-      field->isStruct = parent_is_struct;
-      if (expr)
-         field->loc = expr;
-      vg_assert(parser->qparent[parser->sp]->Ty.StOrUn.fields);
-      VG_(addToXA)( parser->qparent[parser->sp]->Ty.StOrUn.fields,
-                    &field );
+      fieldE.Te.Field.isStruct = parent_is_struct;
+      vg_assert(parser->qparentE[parser->sp].Te.TyStOrUn.fieldRs);
+      VG_(addToXA)( parser->qparentE[parser->sp].Te.TyStOrUn.fieldRs,
+                    &posn );
       /* And record the child itself */
-      goto acquire_Field_and_Expr;
+      goto acquire_Field;
    }
 
    if (dtag == DW_TAG_array_type) {
-      type = ML_(new_Type)();
-      type->tag = Ty_Array;
-      type->Ty.Array.typeR = D3_INVALID_CUOFF;
-      type->Ty.Array.bounds
-         = VG_(newXA)( ML_(dinfo_zalloc), ML_(dinfo_free),
-                       sizeof(TyBounds*) );
+      VG_(memset)(&typeE, 0, sizeof(typeE));
+      typeE.cuOff = posn;
+      typeE.tag   = Te_TyArray;
+      typeE.Te.TyArray.typeR = D3_INVALID_CUOFF;
+      typeE.Te.TyArray.boundRs
+         = VG_(newXA)( ML_(dinfo_zalloc), "di.readdwarf3.ptD.array_type.1",
+                       ML_(dinfo_free),
+                       sizeof(UWord) );
       while (True) {
          DW_AT   attr = (DW_AT)  get_ULEB128( c_abbv );
          DW_FORM form = (DW_FORM)get_ULEB128( c_abbv );
@@ -2327,13 +2418,13 @@ static void parse_type_DIE ( /*MOD*/XArray* /* of TyAdmin */ admin,
          get_Form_contents( &cts, &ctsSzB, &ctsMemSzB,
                             cc, c_die, False/*td3*/, form );
          if (attr == DW_AT_type && ctsSzB > 0) {
-            type->Ty.Array.typeR = (Type*)(UWord)cts;
+            typeE.Te.TyArray.typeR = (UWord)cts;
          }
       }
-      if (type->Ty.Array.typeR == D3_INVALID_CUOFF)
+      if (typeE.Te.TyArray.typeR == D3_INVALID_CUOFF)
          goto bad_DIE;
       /* On't stack! */
-      typestack_push( cc, parser, td3, type, level );
+      typestack_push( cc, parser, td3, &typeE, level );
       goto acquire_Type;
    }
 
@@ -2352,7 +2443,10 @@ static void parse_type_DIE ( /*MOD*/XArray* /* of TyAdmin */ admin,
          default:  vg_assert(0); /* assured us by handling of
                                     DW_TAG_compile_unit in this fn */
       }
-      bounds = ML_(new_TyBounds)();
+
+      VG_(memset)( &boundE, 0, sizeof(boundE) );
+      boundE.cuOff = D3_INVALID_CUOFF;
+      boundE.tag   = Te_Bound;
       while (True) {
          DW_AT   attr = (DW_AT)  get_ULEB128( c_abbv );
          DW_FORM form = (DW_FORM)get_ULEB128( c_abbv );
@@ -2378,41 +2472,44 @@ static void parse_type_DIE ( /*MOD*/XArray* /* of TyAdmin */ admin,
          type) */
       /* Do we have a plausible parent? */
       if (typestack_is_empty(parser)) goto bad_DIE;
-      vg_assert(parser->qparent[parser->sp]);
+      vg_assert(ML_(TyEnt__is_type)(&parser->qparentE[parser->sp]));
+      vg_assert(parser->qparentE[parser->sp].cuOff != D3_INVALID_CUOFF);
       if (level != parser->qlevel[parser->sp]+1) goto bad_DIE;
-      if (parser->qparent[parser->sp]->tag != Ty_Array) goto bad_DIE;
+      if (parser->qparentE[parser->sp].tag != Te_TyArray) goto bad_DIE;
 
       /* Figure out if we have a definite range or not */
       if (have_lower && have_upper && (!have_count)) {
-         bounds->knownL = True;
-         bounds->knownU = True;
-         bounds->boundL = lower;
-         bounds->boundU = upper;
+         boundE.Te.Bound.knownL = True;
+         boundE.Te.Bound.knownU = True;
+         boundE.Te.Bound.boundL = lower;
+         boundE.Te.Bound.boundU = upper;
       } 
       else if (have_lower && (!have_upper) && (!have_count)) {
-         bounds->knownL = True;
-         bounds->knownU = False;
-         bounds->boundL = lower;
-         bounds->boundU = 0;
+         boundE.Te.Bound.knownL = True;
+         boundE.Te.Bound.knownU = False;
+         boundE.Te.Bound.boundL = lower;
+         boundE.Te.Bound.boundU = 0;
       } else {
          /* FIXME: handle more cases */
          goto bad_DIE;
       }
 
       /* Record this bound in the parent */
-      vg_assert(parser->qparent[parser->sp]->Ty.Array.bounds);
-      VG_(addToXA)( parser->qparent[parser->sp]->Ty.Array.bounds,
-                    &bounds );
+      boundE.cuOff = posn;
+      vg_assert(parser->qparentE[parser->sp].Te.TyArray.boundRs);
+      VG_(addToXA)( parser->qparentE[parser->sp].Te.TyArray.boundRs,
+                    &boundE );
       /* And record the child itself */
-      goto acquire_Bounds;
+      goto acquire_Bound;
    }
 
    if (dtag == DW_TAG_typedef) {
-      /* We can pick up a new base type any time. */
-      type = ML_(new_Type)();
-      type->tag = Ty_TyDef;
-      type->Ty.TyDef.name = NULL;
-      type->Ty.TyDef.typeR = D3_INVALID_CUOFF;
+      /* We can pick up a new typedef any time. */
+      VG_(memset)(&typeE, 0, sizeof(typeE));
+      typeE.cuOff = D3_INVALID_CUOFF;
+      typeE.tag   = Te_TyTyDef;
+      typeE.Te.TyTyDef.name = NULL;
+      typeE.Te.TyTyDef.typeR = D3_INVALID_CUOFF;
       while (True) {
          DW_AT   attr = (DW_AT)  get_ULEB128( c_abbv );
          DW_FORM form = (DW_FORM)get_ULEB128( c_abbv );
@@ -2420,16 +2517,17 @@ static void parse_type_DIE ( /*MOD*/XArray* /* of TyAdmin */ admin,
          get_Form_contents( &cts, &ctsSzB, &ctsMemSzB,
                             cc, c_die, False/*td3*/, form );
          if (attr == DW_AT_name && ctsMemSzB > 0) {
-            type->Ty.TyDef.name
-               = ML_(addStr)( cc->di, (UChar*)(UWord)cts, -1 );
+            typeE.Te.TyTyDef.name
+               = ML_(dinfo_strdup)( "di.readdwarf3.ptD.typedef.1",
+                                    (UChar*)(UWord)cts );
          }
          if (attr == DW_AT_type && ctsSzB > 0) {
-            type->Ty.TyDef.typeR = (Type*)(UWord)cts;
+            typeE.Te.TyTyDef.typeR = (UWord)cts;
          }
       }
       /* Do we have something that looks sane? */
       if (/* must have a name */
-          type->Ty.TyDef.name == NULL
+          typeE.Te.TyTyDef.name == NULL
           /* but the referred-to type can be absent */)
          goto bad_DIE;
       else
@@ -2439,19 +2537,21 @@ static void parse_type_DIE ( /*MOD*/XArray* /* of TyAdmin */ admin,
    if (dtag == DW_TAG_subroutine_type) {
       /* function type? just record that one fact and ask no
          further questions. */
-      type = ML_(new_Type)();
-      type->tag = Ty_Fn;
+      VG_(memset)(&typeE, 0, sizeof(typeE));
+      typeE.cuOff = D3_INVALID_CUOFF;
+      typeE.tag   = Te_TyFn;
       goto acquire_Type;
    }
 
    if (dtag == DW_TAG_volatile_type || dtag == DW_TAG_const_type) {
       Int have_ty = 0;
-      type = ML_(new_Type)();
-      type->tag = Ty_Qual;
-      type->Ty.Qual.qual
+      VG_(memset)(&typeE, 0, sizeof(typeE));
+      typeE.cuOff = D3_INVALID_CUOFF;
+      typeE.tag   = Te_TyQual;
+      typeE.Te.TyQual.qual
          = dtag == DW_TAG_volatile_type ? 'V' : 'C';
       /* target type defaults to 'void' */
-      type->Ty.Qual.typeR = D3_FAKEVOID_CUOFF;
+      typeE.Te.TyQual.typeR = D3_FAKEVOID_CUOFF;
       while (True) {
          DW_AT   attr = (DW_AT)  get_ULEB128( c_abbv );
          DW_FORM form = (DW_FORM)get_ULEB128( c_abbv );
@@ -2459,7 +2559,7 @@ static void parse_type_DIE ( /*MOD*/XArray* /* of TyAdmin */ admin,
          get_Form_contents( &cts, &ctsSzB, &ctsMemSzB,
                             cc, c_die, False/*td3*/, form );
          if (attr == DW_AT_type && ctsSzB > 0) {
-            type->Ty.Qual.typeR = (Type*)(UWord)cts;
+            typeE.Te.TyQual.typeR = (UWord)cts;
             have_ty++;
          }
       }
@@ -2478,57 +2578,45 @@ static void parse_type_DIE ( /*MOD*/XArray* /* of TyAdmin */ admin,
 
   acquire_Type:
    if (0) VG_(printf)("YYYY Acquire Type\n");
-   vg_assert(type); vg_assert(!atom); vg_assert(!field);
-   vg_assert(!expr); vg_assert(!bounds);
-   VG_(memset)( &tyad, 0, sizeof(tyad) );
-   tyad.cuOff   = posn;
-   tyad.payload = type;
-   tyad.tag     = TyA_Type;
-   VG_(addToXA)( admin, &tyad );
+   vg_assert(ML_(TyEnt__is_type)( &typeE ));
+   vg_assert(typeE.cuOff == D3_INVALID_CUOFF || typeE.cuOff == posn);
+   typeE.cuOff = posn;
+   VG_(addToXA)( tyents, &typeE );
    return;
    /*NOTREACHED*/
 
   acquire_Atom:
    if (0) VG_(printf)("YYYY Acquire Atom\n");
-   vg_assert(!type); vg_assert(atom); vg_assert(!field);
-   vg_assert(!expr); vg_assert(!bounds);
-   VG_(memset)( &tyad, 0, sizeof(tyad) );
-   tyad.cuOff   = posn;
-   tyad.payload = atom;
-   tyad.tag     = TyA_Atom;
-   VG_(addToXA)( admin, &tyad );
+   vg_assert(atomE.tag == Te_Atom);
+   vg_assert(atomE.cuOff == D3_INVALID_CUOFF || atomE.cuOff == posn);
+   atomE.cuOff = posn;
+   VG_(addToXA)( tyents, &atomE );
    return;
    /*NOTREACHED*/
 
-  acquire_Field_and_Expr:
+  acquire_Field:
    /* For union members, Expr should be absent */
-   if (0) VG_(printf)("YYYY Acquire Field and Expr\n");
-   vg_assert(!type); vg_assert(!atom); vg_assert(field); 
-   /*vg_assert(expr);*/ vg_assert(!bounds);
-   if (expr) {
-      VG_(memset)( &tyad, 0, sizeof(tyad) );
-      tyad.cuOff   = (UWord)D3_INVALID_CUOFF;
-      tyad.payload = expr;
-      tyad.tag     = TyA_Expr;
-      VG_(addToXA)( admin, &tyad );
+   if (0) VG_(printf)("YYYY Acquire Field\n");
+   vg_assert(fieldE.tag == Te_Field);
+   vg_assert( (fieldE.Te.Field.nLoc > 0 && fieldE.Te.Field.loc != NULL)
+              || (fieldE.Te.Field.nLoc == 0 && fieldE.Te.Field.loc == NULL) );
+   if (fieldE.Te.Field.isStruct) {
+      vg_assert(fieldE.Te.Field.nLoc > 0);
+   } else {
+      vg_assert(fieldE.Te.Field.nLoc == 0);
    }
-   VG_(memset)( &tyad, 0, sizeof(tyad) );
-   tyad.cuOff   = posn;
-   tyad.payload = field;
-   tyad.tag     = TyA_Field;
-   VG_(addToXA)( admin, &tyad );
+   vg_assert(fieldE.cuOff == D3_INVALID_CUOFF || fieldE.cuOff == posn);
+   fieldE.cuOff = posn;
+   VG_(addToXA)( tyents, &fieldE );
    return;
    /*NOTREACHED*/
 
-  acquire_Bounds:
-   if (0) VG_(printf)("YYYY Acquire Bounds\n");
-   vg_assert(!type); vg_assert(!atom); vg_assert(!field);
-   vg_assert(!expr); vg_assert(bounds);
-   VG_(memset)( &tyad, 0, sizeof(tyad) );
-   tyad.cuOff   = posn;
-   tyad.payload = bounds;
-   tyad.tag     = TyA_Bounds;
-   VG_(addToXA)( admin, &tyad );
+  acquire_Bound:
+   if (0) VG_(printf)("YYYY Acquire Bound\n");
+   vg_assert(boundE.tag == Te_Bound);
+   vg_assert(boundE.cuOff == D3_INVALID_CUOFF || boundE.cuOff == posn);
+   boundE.cuOff = posn;
+   VG_(addToXA)( tyents, &boundE );
    return;
    /*NOTREACHED*/
 
@@ -2555,235 +2643,321 @@ static void parse_type_DIE ( /*MOD*/XArray* /* of TyAdmin */ admin,
 
 /*------------------------------------------------------------*/
 /*---                                                      ---*/
+/*--- Compression of type DIE information                  ---*/
+/*---                                                      ---*/
+/*------------------------------------------------------------*/
+
+static UWord chase_cuOff ( Bool* changed,
+                           XArray* /* of TyEnt */ ents,
+                           TyEntIndexCache* ents_cache,
+                           UWord cuOff )
+{
+   TyEnt* ent;
+   ent = ML_(TyEnts__index_by_cuOff)( ents, ents_cache, cuOff );
+
+   if (!ent) {
+      VG_(printf)("chase_cuOff: no entry for 0x%05lx\n", cuOff);
+      *changed = False;
+      return cuOff;
+   }
+
+   vg_assert(ent->tag != Te_EMPTY);
+   if (ent->tag != Te_INDIR) {
+      *changed = False;
+      return cuOff;
+   } else {
+      vg_assert(ent->Te.INDIR.indR < cuOff);
+      *changed = True;
+      return ent->Te.INDIR.indR;
+   }
+}
+
+static
+void chase_cuOffs_in_XArray ( Bool* changed,
+                              XArray* /* of TyEnt */ ents,
+                              TyEntIndexCache* ents_cache,
+                              /*MOD*/XArray* /* of UWord */ cuOffs )
+{
+   Bool b2 = False;
+   Word i, n = VG_(sizeXA)( cuOffs );
+   for (i = 0; i < n; i++) {
+      Bool   b = False;
+      UWord* p = VG_(indexXA)( cuOffs, i );
+      *p = chase_cuOff( &b, ents, ents_cache, *p );
+      if (b)
+         b2 = True;
+   }
+   *changed = b2;
+}
+
+static Bool TyEnt__subst_R_fields ( XArray* /* of TyEnt */ ents,
+                                    TyEntIndexCache* ents_cache,
+                                    /*MOD*/TyEnt* te )
+{
+   Bool b, changed = False;
+   switch (te->tag) {
+      case Te_EMPTY:
+         break;
+      case Te_INDIR:
+         te->Te.INDIR.indR
+            = chase_cuOff( &b, ents, ents_cache, te->Te.INDIR.indR );
+         if (b) changed = True;
+         break;
+      case Te_UNKNOWN:
+         break;
+      case Te_Atom:
+         break;
+      case Te_Field:
+         te->Te.Field.typeR
+            = chase_cuOff( &b, ents, ents_cache, te->Te.Field.typeR );
+         if (b) changed = True;
+         break;
+      case Te_Bound:
+         break;
+      case Te_TyBase:
+         break;
+      case Te_TyPorR:
+         te->Te.TyPorR.typeR
+            = chase_cuOff( &b, ents, ents_cache, te->Te.TyPorR.typeR );
+         if (b) changed = True;
+         break;
+      case Te_TyTyDef:
+         te->Te.TyTyDef.typeR
+            = chase_cuOff( &b, ents, ents_cache, te->Te.TyTyDef.typeR );
+         if (b) changed = True;
+         break;
+      case Te_TyStOrUn:
+         chase_cuOffs_in_XArray( &b, ents, ents_cache, te->Te.TyStOrUn.fieldRs );
+         if (b) changed = True;
+         break;
+      case Te_TyEnum:
+         chase_cuOffs_in_XArray( &b, ents, ents_cache, te->Te.TyEnum.atomRs );
+         if (b) changed = True;
+         break;
+      case Te_TyArray:
+         te->Te.TyArray.typeR
+            = chase_cuOff( &b, ents, ents_cache, te->Te.TyArray.typeR );
+         if (b) changed = True;
+         chase_cuOffs_in_XArray( &b, ents, ents_cache, te->Te.TyArray.boundRs );
+         if (b) changed = True;
+         break;
+      case Te_TyFn:
+         break;
+      case Te_TyQual:
+         te->Te.TyQual.typeR
+            = chase_cuOff( &b, ents, ents_cache, te->Te.TyQual.typeR );
+         if (b) changed = True;
+         break;
+      case Te_TyVoid:
+         break;
+      default:
+         ML_(pp_TyEnt)(te);
+         vg_assert(0);
+   }
+   return changed;
+}
+
+/* Make a pass over 'ents'.  For each tyent, inspect the target of any
+   'R' or 'Rs' fields (those which refer to other tyents), and replace
+   any which point to INDIR nodes with the target of the indirection
+   (which should not itself be an indirection).  In summary, this
+   routine shorts out all references to indirection nodes. */
+static
+Word dedup_types_substitution_pass ( /*MOD*/XArray* /* of TyEnt */ ents,
+                                     TyEntIndexCache* ents_cache )
+{
+   Word i, n, nChanged = 0;
+   Bool b;
+   n = VG_(sizeXA)( ents );
+   for (i = 0; i < n; i++) {
+      TyEnt* ent = VG_(indexXA)( ents, i );
+      vg_assert(ent->tag != Te_EMPTY);
+      /* We have to substitute everything, even indirections, so as to
+         ensure that chains of indirections don't build up. */
+      b = TyEnt__subst_R_fields( ents, ents_cache, ent );
+      if (b)
+         nChanged++;
+   }
+
+   return nChanged;
+}
+
+
+/* Make a pass over 'ents', building a dictionary of TyEnts as we go.
+   Look up each new tyent in the dictionary in turn.  If it is already
+   in the dictionary, replace this tyent with an indirection to the
+   existing one, and delete any malloc'd stuff hanging off this one.
+   In summary, this routine commons up all tyents that are identical
+   as defined by TyEnt__cmp_by_all_except_cuOff. */
+static
+Word dedup_types_commoning_pass ( /*MOD*/XArray* /* of TyEnt */ ents )
+{
+   Word    n, i, nDeleted;
+   WordFM* dict; /* TyEnt* -> void */
+   TyEnt*  ent;
+   UWord   keyW, valW;
+
+   dict = VG_(newFM)(
+             ML_(dinfo_zalloc), "di.readdwarf3.dtcp.1", 
+             ML_(dinfo_free),
+             (Word(*)(UWord,UWord)) ML_(TyEnt__cmp_by_all_except_cuOff)
+          );
+
+   nDeleted = 0;
+   n = VG_(sizeXA)( ents );
+   for (i = 0; i < n; i++) {
+      ent = VG_(indexXA)( ents, i );
+      vg_assert(ent->tag != Te_EMPTY);
+     
+      /* Ignore indirections, although check that they are
+         not forming a cycle. */
+      if (ent->tag == Te_INDIR) {
+         vg_assert(ent->Te.INDIR.indR < ent->cuOff);
+         continue;
+      }
+
+      keyW = valW = 0;
+      if (VG_(lookupFM)( dict, &keyW, &valW, (UWord)ent )) {
+         /* it's already in the dictionary. */
+         TyEnt* old = (TyEnt*)keyW;
+         vg_assert(valW == 0);
+         vg_assert(old != ent);
+         vg_assert(old->tag != Te_INDIR);
+         /* since we are traversing the array in increasing order of
+            cuOff: */
+         vg_assert(old->cuOff < ent->cuOff); 
+         /* So anyway, dump this entry and replace it with an
+            indirection to the one in the dictionary.  Note that the
+            assertion above guarantees that we cannot create cycles of
+            indirections, since we are always creating an indirection
+            to a tyent with a cuOff lower than this one. */
+         ML_(TyEnt__make_EMPTY)( ent );
+         ent->tag = Te_INDIR;
+         ent->Te.INDIR.indR = old->cuOff;
+         nDeleted++;
+      } else {
+         /* not in dictionary; add it and keep going. */
+         VG_(addToFM)( dict, (UWord)ent, 0 );
+      }
+   }
+
+   VG_(deleteFM)( dict, NULL, NULL );
+
+   return nDeleted;
+}
+
+
+static
+void dedup_types ( Bool td3, 
+                   /*MOD*/XArray* /* of TyEnt */ ents,
+                   TyEntIndexCache* ents_cache )
+{
+   Word m, n, i, nDel, nSubst, nThresh;
+   if (0) td3 = True;
+
+   n = VG_(sizeXA)( ents );
+
+   /* If a commoning pass and a substitution pass both make fewer than
+      this many changes, just stop.  It's pointless to burn up CPU
+      time trying to compress the last 1% or so out of the array. */
+   nThresh = n / 200;
+
+   /* First we must sort .ents by its .cuOff fields, so we
+      can index into it. */
+   VG_(setCmpFnXA)(
+      ents,
+      (Int(*)(void*,void*)) ML_(TyEnt__cmp_by_cuOff_only)
+   );
+   VG_(sortXA)( ents );
+
+   /* Now repeatedly do commoning and substitution passes over
+      the array, until there are no more changes. */
+   do {
+      nDel   = dedup_types_commoning_pass ( ents );
+      nSubst = dedup_types_substitution_pass ( ents, ents_cache );
+      vg_assert(nDel >= 0 && nSubst >= 0);
+      TRACE_D3("   %ld deletions, %ld substitutions\n", nDel, nSubst);
+   } while (nDel > nThresh || nSubst > nThresh);
+
+   /* Sanity check: all INDIR nodes should point at a non-INDIR thing.
+      In fact this should be true at the end of every loop iteration
+      above (a commoning pass followed by a substitution pass), but
+      checking it on every iteration is excessively expensive.  Note,
+      this loop also computes 'm' for the stats printing below it. */
+   m = 0;
+   n = VG_(sizeXA)( ents );
+   for (i = 0; i < n; i++) {
+      TyEnt *ent, *ind;
+      ent = VG_(indexXA)( ents, i );
+      if (ent->tag != Te_INDIR) continue;
+      m++;
+      ind = ML_(TyEnts__index_by_cuOff)( ents, ents_cache,
+                                         ent->Te.INDIR.indR );
+      vg_assert(ind);
+      vg_assert(ind->tag != Te_INDIR);
+   }
+
+   TRACE_D3("Overall: %ld before, %ld after\n", n, n-m);
+}
+
+
+/*------------------------------------------------------------*/
+/*---                                                      ---*/
 /*--- Resolution of references to type DIEs                ---*/
 /*---                                                      ---*/
 /*------------------------------------------------------------*/
 
-static Int cmp_D3TyAdmin_by_cuOff ( void* v1, void* v2 ) {
-   TyAdmin* a1 = (TyAdmin*)v1;
-   TyAdmin* a2 = (TyAdmin*)v2;
-   if (a1->cuOff < a2->cuOff) return -1;
-   if (a1->cuOff > a2->cuOff) return 1;
-   return 0;
-}
-
-/* Look up 'cuOff' in 'admin', to find the associated D3TyAdmin.
-   Check that the found D3TyAdmin has tag 'adtag'.  Sets *payload to
-   be the resulting payload pointer and returns True on success.
-
-   Also, if 'allow_invalid' is True, then if cuOff is
-   D3_INVALID_CUOFF, return NULL in *payload.
-
-   Otherwise (conceptually fails) and returns False.
-
-   Note that 'admin' has previously been sorted on its .cuOff fields,
-   so we can legitimately look up using them.
- */
-__attribute__((noinline))
-static Bool resolve_binding ( /*OUT*/void** payload,
-                              XArray* /* of TyAdmin */ admin, 
-                              void* cuOff,
-                              TyAdminTag tag, 
-                              Bool allow_invalid ) {
-   Bool    found;
-   Word    ixLo, ixHi;
-   TyAdmin dummy, *tyad;
-
-   if (cuOff == D3_INVALID_CUOFF) {
-      if (allow_invalid) {
-         *payload = NULL;
-         return True;
-      } else {
-         return False;
-      }
-   }
-
-   /* Hence ... */
-   tl_assert(cuOff != D3_INVALID_CUOFF);
-
-   VG_(memset)(&dummy, 0, sizeof(dummy));
-   dummy.cuOff = (UWord)cuOff;
-   found = VG_(lookupXA)( admin, &dummy, &ixLo, &ixHi );
-   if (!found)
-      return False;
-   /* If this doesn't hold, we must have seen more than one DIE with
-      the same cuOff(set).  Which isn't possible. */
-   vg_assert(ixLo == ixHi);
-   tyad = (TyAdmin*)VG_(indexXA)( admin, ixLo );
-   /* All payload pointers should be non-NULL.  Ensured by assertion in
-      loop in resolve_type_entities that creates 'map'.  Hence it is
-      safe to return NULL to indicate 'not found'. */
-   vg_assert(tyad->payload);
-   vg_assert(tyad->cuOff == (UWord)cuOff); /* stay sane */
-
-   if (tyad->tag != tag)
-      return False;
-
-   *payload = tyad->payload;
-   return True;
-}
-
-
-/* First, we sort the 'admin' array by its .cuOff fields.  That means
-   we can now hand it to resolve_binding() above, which simply looks
-   up the payload associated with a given cuOff value by doing a
-   binary search in 'admin'.
-
-   There is a subtlety that some of the .cuOff fields in 'admin' are
-   D3_INVALID_CUOFF, and we don't want anybody to be able to look up
-   anything against that value.  Rather than filter those out, we
-   leave them in, sort as usual, but arrange so that resolve_binding()
-   never looks up a D3_INVALID_CUOFF value.
-
-   Having done the sorting, we then work through the payload fields of
-   'admin' and convert all cuOff values into real pointers, by looking
-   them up using resolve_binding().  That's the whole purpose of this
-   resolution mechanism.  We also resolve the type expressions on the
-   supplied 'vars' array. */
+/* Make a pass through the (temporary) variables array.  Examine the
+   type of each variable, check is it found, and chase any Te_INDIRs.
+   Postcondition is: each variable has a typeR field that refers to a
+   valid type in tyents, or a Te_UNKNOWN, and is certainly guaranteed
+   not to refer to a Te_INDIR.  (This is so that we can throw all the
+   Te_INDIRs away later). */
 
 __attribute__((noinline))
-static void resolve_type_entities ( /*MOD*/XArray* /* of TyAdmin */ admin,
-                                    /*MOD*/XArray* /* of TempVar* */ vars )
+static void resolve_variable_types (
+               void (*barf)( HChar* ) __attribute__((noreturn)),
+               /*R-O*/XArray* /* of TyEnt */ ents,
+               /*MOD*/TyEntIndexCache* ents_cache,
+               /*MOD*/XArray* /* of TempVar* */ vars
+            )
 {
-   Bool     ok;
-   Word     i, n;
-   void*    payload;
-   TyAdmin* adp;
-
-   tl_assert(admin);
-
-   n = VG_(sizeXA)( admin );
-
-   VG_(setCmpFnXA)( admin, cmp_D3TyAdmin_by_cuOff );
-   if (0) 
-      VG_(printf)("XXXXXX sorting map with %d entries\n",
-                  (Int)VG_(sizeXA)(admin));
-   VG_(sortXA)( admin );
-
-   for (i = 0; i < n; i++) {
-      adp = (TyAdmin*)VG_(indexXA)( admin, i );
-      vg_assert(adp);
-      vg_assert(adp->payload);
-      switch (adp->tag) {
-      case TyA_Bounds: {
-         TyBounds* bounds = (TyBounds*)adp->payload;
-         if (bounds->knownL && bounds->knownU 
-             && bounds->knownL > bounds->knownU) goto baaad;
-         break;
-      }
-      case TyA_Atom: {
-         TyAtom* atom = (TyAtom*)adp->payload;
-         if (!atom->name) goto baaad;
-         break;
-      }
-      case TyA_Expr: {
-         D3Expr* expr = (D3Expr*)adp->payload;
-         if (!expr->bytes) goto baaad;
-         break;
-      }
-      case TyA_Field: {
-         TyField* field = (TyField*)adp->payload;
-         if (!field->name) goto baaad;
-         if ( (field->isStruct && (!field->loc)) 
-              || ((!field->isStruct) && field->loc))
-            goto baaad;
-         ok = resolve_binding( &payload, admin, field->typeR,
-                               TyA_Type, False/*!allow_invalid*/ );
-         if (!ok) goto baaad;
-         field->typeR = payload;
-         break;
-      }
-      case TyA_Type: {
-         UChar   enc;
-         XArray* xa;
-         Type* ty = (Type*)adp->payload;
-         switch (ty->tag) {
-            case Ty_Base:
-               enc = ty->Ty.Base.enc;
-               if ((!ty->Ty.Base.name) 
-                   || ty->Ty.Base.szB < 1 || ty->Ty.Base.szB > 32
-                   || (enc != 'S' && enc != 'U' && enc != 'F' && enc != 'C'))
-                  goto baaad;
-               break;
-            case Ty_TyDef:
-               if (!ty->Ty.TyDef.name) goto baaad;
-               ok = resolve_binding( &payload, admin,
-                                     ty->Ty.TyDef.typeR, 
-                                     TyA_Type,
-                                     True/*allow_invalid*/ );
-               if (!ok) goto baaad;
-               ty->Ty.TyDef.typeR = payload;
-               break;
-            case Ty_PorR:
-               if (ty->Ty.PorR.szB != sizeof(Word)) goto baaad;
-               ok = resolve_binding( &payload, admin,
-                                     ty->Ty.PorR.typeR, 
-                                     TyA_Type,
-                                     False/*!allow_invalid*/ );
-               if (!ok) goto baaad;
-               ty->Ty.PorR.typeR = payload;
-               break;
-            case Ty_Array:
-               if (!ty->Ty.Array.bounds) goto baaad;
-               ok = resolve_binding( &payload, admin,
-                                     ty->Ty.Array.typeR, 
-                                     TyA_Type,
-                                     False/*!allow_invalid*/ );
-               if (!ok) goto baaad;
-               ty->Ty.Array.typeR = payload;
-               break;
-            case Ty_Enum:
-               if ((!ty->Ty.Enum.atomRs)
-                   || ty->Ty.Enum.szB < 1 
-                   || ty->Ty.Enum.szB > 8) goto baaad;
-               xa = ty->Ty.Enum.atomRs;
-               break;
-            case Ty_StOrUn:
-               xa = ty->Ty.StOrUn.fields;
-               if (!xa) goto baaad;
-               break;
-            case Ty_Fn:
-               break;
-            case Ty_Qual:
-               if (ty->Ty.Qual.qual != 'C' 
-                   && ty->Ty.Qual.qual != 'V') goto baaad;
-               ok = resolve_binding( &payload, admin,
-                                     ty->Ty.Qual.typeR, 
-                                     TyA_Type,
-                                     False/*!allow_invalid*/ );
-               if (!ok) goto baaad;
-               ty->Ty.Qual.typeR = payload;
-               break;
-            case Ty_Void:
-               if (ty->Ty.Void.isFake != False 
-                   && ty->Ty.Void.isFake != True) goto baaad;
-               break;
-            default:
-               goto baaad;
-         }
-         break;
-      }
-      baaad:
-      default:
-         VG_(printf)("valgrind: bad D3TyAdmin: ");
-         ML_(pp_TyAdmin)(adp);
-         VG_(printf)("\n");
-      }
-   }
-
-   /* Now resolve the variables list */
+   Word i, n;
    n = VG_(sizeXA)( vars );
    for (i = 0; i < n; i++) {
       TempVar* var = *(TempVar**)VG_(indexXA)( vars, i );
-      payload = NULL;
-      ok = resolve_binding( &payload, admin, var->typeR,
-                            TyA_Type, True/*allow_invalid*/ );
+      /* This is the stated type of the variable.  But it might be
+         an indirection, so be careful. */
+      TyEnt* ent = ML_(TyEnts__index_by_cuOff)( ents, ents_cache,
+                                                var->typeR );
+      if (ent && ent->tag == Te_INDIR) {
+         ent = ML_(TyEnts__index_by_cuOff)( ents, ents_cache, 
+                                            ent->Te.INDIR.indR );
+         vg_assert(ent);
+         vg_assert(ent->tag != Te_INDIR);
+      }
 
-      if (0 && !ok)
-         VG_(printf)("Can't resolve type reference 0x%lx\n",
-                     (UWord)var->typeR);
-      //vg_assert(ok);
-      var->typeR = payload;
+      /* Deal first with "normal" cases */
+      if (ent && ML_(TyEnt__is_type)(ent)) {
+         var->typeR = ent->cuOff;
+         continue;
+      }
+
+      /* If there's no ent, it probably we did not manage to read a
+         type at the cuOffset which is stated as being this variable's
+         type.  Maybe a deficiency in parse_type_DIE.  Complain. */
+      if (ent == NULL) {
+         VG_(printf)("\n: Invalid cuOff = 0x%05lx\n", var->typeR );
+         barf("resolve_variable_types: "
+              "cuOff does not refer to a known type");
+      }
+      vg_assert(ent);
+      /* If ent has any other tag, something bad happened, along the
+         lines of var->typeR not referring to a type at all. */
+      vg_assert(ent->tag == Te_UNKNOWN);
+      /* Just accept it; the type will be useless, but at least keep
+         going. */
+      var->typeR = ent->cuOff;
    }
 }
 
@@ -2802,12 +2976,15 @@ static Int cmp_TempVar_by_dioff ( void* v1, void* v2 ) {
    return 0;
 }
 
-static void read_DIE ( /*MOD*/XArray* /* of TyAdmin */ admin,
-                       /*OUT*/XArray* /* of TempVar* */ tempvars,
-                       /*MOD*/XArray* /* of GExpr* */ gexprs,
-                       /*MOD*/D3TypeParser* typarser,
-                       /*MOD*/D3VarParser* varparser,
-                       Cursor* c, Bool td3, CUConst* cc, Int level )
+static void read_DIE ( 
+   /*MOD*/WordFM* /* of (XArray* of AddrRange, void) */ rangestree,
+   /*MOD*/XArray* /* of TyEnt */ tyents,
+   /*MOD*/XArray* /* of TempVar* */ tempvars,
+   /*MOD*/XArray* /* of GExpr* */ gexprs,
+   /*MOD*/D3TypeParser* typarser,
+   /*MOD*/D3VarParser* varparser,
+   Cursor* c, Bool td3, CUConst* cc, Int level
+)
 {
    Cursor abbv;
    ULong  atag, abbv_code;
@@ -2863,7 +3040,7 @@ static void read_DIE ( /*MOD*/XArray* /* of TyAdmin */ admin,
    set_position_of_Cursor( c,     start_die_c_offset );
    set_position_of_Cursor( &abbv, start_abbv_c_offset );
 
-   parse_type_DIE( admin,
+   parse_type_DIE( tyents,
                    typarser,
                    (DW_TAG)atag,
                    posn,
@@ -2876,7 +3053,8 @@ static void read_DIE ( /*MOD*/XArray* /* of TyAdmin */ admin,
    set_position_of_Cursor( c,     start_die_c_offset );
    set_position_of_Cursor( &abbv, start_abbv_c_offset );
 
-   parse_var_DIE( tempvars,
+   parse_var_DIE( rangestree,
+                  tempvars,
                   gexprs,
                   varparser,
                   (DW_TAG)atag,
@@ -2896,7 +3074,8 @@ static void read_DIE ( /*MOD*/XArray* /* of TyAdmin */ admin,
       while (True) {
          atag = peek_ULEB128( c );
          if (atag == 0) break;
-         read_DIE( admin, tempvars, gexprs, typarser, varparser,
+         read_DIE( rangestree, tyents, tempvars, gexprs,
+                   typarser, varparser,
                    c, td3, cc, level+1 );
       }
       /* Now we need to eat the terminating zero */
@@ -2911,8 +3090,7 @@ static void read_DIE ( /*MOD*/XArray* /* of TyAdmin */ admin,
 static
 void new_dwarf3_reader_wrk ( 
    struct _DebugInfo* di,
-   __attribute__((noreturn))
-   void (*barf)( HChar* ),
+   __attribute__((noreturn)) void (*barf)( HChar* ),
    UChar* debug_info_img,   SizeT debug_info_sz,
    UChar* debug_abbv_img,   SizeT debug_abbv_sz,
    UChar* debug_line_img,   SizeT debug_line_sz,
@@ -2921,9 +3099,13 @@ void new_dwarf3_reader_wrk (
    UChar* debug_loc_img,    SizeT debug_loc_sz
 )
 {
-   XArray* /* of TyAdmin */ admin;
-   XArray* /* of GExpr* */ gexprs;
-   XArray* /* of TempVar* */ tempvars;
+   XArray* /* of TyEnt */     tyents;
+   XArray* /* of TyEnt */     tyents_to_keep;
+   XArray* /* of GExpr* */    gexprs;
+   XArray* /* of TempVar* */  tempvars;
+   WordFM* /* of (XArray* of AddrRange, void) */ rangestree;
+   TyEntIndexCache* tyents_cache = NULL;
+   TyEntIndexCache* tyents_to_keep_cache = NULL;
    TempVar *varp, *varp2;
    GExpr* gexpr;
    Cursor abbv; /* for showing .debug_abbrev */
@@ -2938,7 +3120,6 @@ void new_dwarf3_reader_wrk (
    XArray* /* of TempVar* */ dioff_lookup_tab;
    Bool text_biasing_borked;
    KludgeyTextBiaser ktb;
-
 #if 0
    /* This doesn't work properly because it assumes all entries are
       packed end to end, with no holes.  But that doesn't always
@@ -3085,35 +3266,57 @@ void new_dwarf3_reader_wrk (
       huge and presumably will not occur in any valid DWARF3 file --
       it would need to have a .debug_info section 4GB long for that to
       happen.  These type entries end up in the DebugInfo. */
-   admin = VG_(newXA)( ML_(dinfo_zalloc), ML_(dinfo_free), sizeof(TyAdmin) );
-   { TyAdmin tyad;
-     Type* tVoid = ML_(new_Type)();
-     tVoid->tag = Ty_Void;
-     tVoid->Ty.Void.isFake = True;
-     VG_(memset)( &tyad, 0, sizeof(tyad) );
-     tyad.cuOff   = (UWord)D3_FAKEVOID_CUOFF;
-     tyad.payload = tVoid;
-     tyad.tag     = TyA_Type;
-     VG_(addToXA)( admin, &tyad );
+   tyents = VG_(newXA)( ML_(dinfo_zalloc), 
+                        "di.readdwarf3.ndrw.1 (TyEnt temp array)",
+                        ML_(dinfo_free), sizeof(TyEnt) );
+   { TyEnt tyent;
+     VG_(memset)(&tyent, 0, sizeof(tyent));
+     tyent.tag   = Te_TyVoid;
+     tyent.cuOff = D3_FAKEVOID_CUOFF;
+     tyent.Te.TyVoid.isFake = True;
+     VG_(addToXA)( tyents, &tyent );
    }
+   { TyEnt tyent;
+     VG_(memset)(&tyent, 0, sizeof(tyent));
+     tyent.tag   = Te_UNKNOWN;
+     tyent.cuOff = D3_INVALID_CUOFF;
+     VG_(addToXA)( tyents, &tyent );
+   }
+
+   /* This is a tree used to unique-ify the range lists that are
+      manufactured by parse_var_DIE.  References to the keys in the
+      tree wind up in .rngMany fields in TempVars.  We'll need to
+      delete this tree, and the XArrays attached to it, at the end of
+      this function. */
+   rangestree = VG_(newFM)( ML_(dinfo_zalloc),
+                            "di.readdwarf3.ndrw.2 (rangestree)",
+                            ML_(dinfo_free),
+                            (Word(*)(UWord,UWord))cmp__XArrays_of_AddrRange );
 
    /* List of variables we're accumulating.  These don't end up in the
       DebugInfo; instead their contents are handed to ML_(addVar) and
       the list elements are then deleted. */
-   tempvars = VG_(newXA)( ML_(dinfo_zalloc), ML_(dinfo_free), 
+   tempvars = VG_(newXA)( ML_(dinfo_zalloc),
+                          "di.readdwarf3.ndrw.3 (TempVar*s array)",
+                          ML_(dinfo_free), 
                           sizeof(TempVar*) );
 
    /* List of GExprs we're accumulating.  These wind up in the
       DebugInfo. */
-   gexprs = VG_(newXA)( ML_(dinfo_zalloc), ML_(dinfo_free), sizeof(GExpr*) );
+   gexprs = VG_(newXA)( ML_(dinfo_zalloc), "di.readdwarf3.ndrw.4",
+                        ML_(dinfo_free), sizeof(GExpr*) );
 
    /* We need a D3TypeParser to keep track of partially constructed
       types.  It'll be discarded as soon as we've completed the CU,
-      since the resulting information is tipped in to 'admin' as it is
-      generated. */
+      since the resulting information is tipped in to 'tyents' as it
+      is generated. */
    VG_(memset)( &typarser, 0, sizeof(typarser) );
    typarser.sp = -1;
    typarser.language = '?';
+   for (i = 0; i < N_D3_TYPE_STACK; i++) {
+      typarser.qparentE[i].tag   = Te_EMPTY;
+      typarser.qparentE[i].cuOff = D3_INVALID_CUOFF;
+   }
 
    VG_(memset)( &varparser, 0, sizeof(varparser) );
    varparser.sp = -1;
@@ -3143,7 +3346,8 @@ void new_dwarf3_reader_wrk (
          vg_assert(varparser.level[i] == 0);
       }
       for (i = 0; i < N_D3_TYPE_STACK; i++) {
-         vg_assert(typarser.qparent[i] == NULL);
+         vg_assert(typarser.qparentE[i].cuOff == D3_INVALID_CUOFF);
+         vg_assert(typarser.qparentE[i].tag   == Te_EMPTY);
          vg_assert(typarser.qlevel[i] == 0);
       }
 
@@ -3187,13 +3391,16 @@ void new_dwarf3_reader_wrk (
          etc. */
       vg_assert(!varparser.filenameTable );
       varparser.filenameTable 
-         = VG_(newXA)( ML_(dinfo_zalloc), ML_(dinfo_free),
+         = VG_(newXA)( ML_(dinfo_zalloc), "di.readdwarf3.ndrw.5",
+                       ML_(dinfo_free),
                        sizeof(UChar*) );
-      vg_assert(varparser.filenameTable );
+      vg_assert(varparser.filenameTable);
 
       /* Now read the one-and-only top-level DIE for this CU. */
       vg_assert(varparser.sp == 0);
-      read_DIE( admin, tempvars, gexprs, &typarser, &varparser,
+      read_DIE( rangestree,
+                tyents, tempvars, gexprs,
+                &typarser, &varparser,
                 &info, td3, &cc, 0 );
 
       cu_offset_now = get_position_of_Cursor( &info );
@@ -3224,28 +3431,78 @@ void new_dwarf3_reader_wrk (
 
    /* From here on we're post-processing the stuff we got
       out of the .debug_info section. */
-
    if (td3) {
       TRACE_D3("\n");
-      TRACE_D3("------ Acquired the following type entities: ------\n");
-      n = VG_(sizeXA)( admin );
-      for (i = 0; i < n; i++) {
-         TyAdmin* tyad = (TyAdmin*)VG_(indexXA)( admin, i );
-         TRACE_D3("   ");
-         ML_(pp_TyAdmin)( tyad );
-         TRACE_D3("\n");
-      }
+      ML_(pp_TyEnts)(tyents, "Initial type entity (TyEnt) array");
       TRACE_D3("\n");
-      TRACE_D3("------ Resolving type entries ------\n");
+      TRACE_D3("------ Compressing type entries ------\n");
    }
 
-   /* See "Comment_Regarding_DWARF3_Text_Biasing" above. */
+   tyents_cache = ML_(dinfo_zalloc)( "di.readdwarf3.ndrw.6",
+                                     sizeof(TyEntIndexCache) );
+   ML_(TyEntIndexCache__invalidate)( tyents_cache );
+   dedup_types( td3, tyents, tyents_cache );
+   if (td3) {
+      TRACE_D3("\n");
+      ML_(pp_TyEnts)(tyents, "After type entity (TyEnt) compression");
+   }
+
+   TRACE_D3("\n");
+   TRACE_D3("------ Resolving the types of variables ------\n" );
+   resolve_variable_types( barf, tyents, tyents_cache, tempvars );
+
+   /* Copy all the non-INDIR tyents into a new table.  For large
+      .so's, about 90% of the tyents will by now have been resolved to
+      INDIRs, and we no longer need them, and so don't need to store
+      them. */
+   tyents_to_keep
+      = VG_(newXA)( ML_(dinfo_zalloc), 
+                    "di.readdwarf3.ndrw.7 (TyEnt to-keep array)",
+                    ML_(dinfo_free), sizeof(TyEnt) );
+   n = VG_(sizeXA)( tyents );
+   for (i = 0; i < n; i++) {
+      TyEnt* ent = VG_(indexXA)( tyents, i );
+      if (ent->tag != Te_INDIR)
+         VG_(addToXA)( tyents_to_keep, ent );
+   }
+
+   VG_(deleteXA)( tyents );
+   tyents = NULL;
+   ML_(dinfo_free)( tyents_cache );
+   tyents_cache = NULL;
+
+   /* Sort tyents_to_keep so we can lookup in it.  A complete (if
+      minor) waste of time, since tyents itself is sorted, but
+      necessary since VG_(lookupXA) refuses to cooperate if we
+      don't. */
+   VG_(setCmpFnXA)(
+      tyents_to_keep,
+      (Int(*)(void*,void*)) ML_(TyEnt__cmp_by_cuOff_only)
+   );
+   VG_(sortXA)( tyents_to_keep );
+
+   /* Enable cacheing on tyents_to_keep */
+   tyents_to_keep_cache
+      = ML_(dinfo_zalloc)( "di.readdwarf3.ndrw.8",
+                           sizeof(TyEntIndexCache) );
+   ML_(TyEntIndexCache__invalidate)( tyents_to_keep_cache );
+
+   /* And record the tyents in the DebugInfo.  We do this before
+      starting to hand variables to ML_(addVar), since if ML_(addVar)
+      wants to do debug printing (of the types of said vars) then it
+      will need the tyents.*/
+   vg_assert(!di->admin_tyents);
+   di->admin_tyents = tyents_to_keep;
+
+   /* Bias all the location expressions.  See
+      "Comment_Regarding_DWARF3_Text_Biasing" above. */
+   TRACE_D3("\n");
+   TRACE_D3("------ Biasing the location expressions ------\n" );
    VG_(memset)( &ktb, 0, sizeof(ktb ));
    ktb.rx_map_avma = di->rx_map_avma;
    ktb.rx_map_size = di->rx_map_size;
    ktb.text_bias   = di->text_bias;
 
-   resolve_type_entities( admin, tempvars );
    n = VG_(sizeXA)( gexprs );
    for (i = 0; i < n; i++) {
       gexpr = *(GExpr**)VG_(indexXA)( gexprs, i );
@@ -3261,7 +3518,8 @@ void new_dwarf3_reader_wrk (
       ascending order, there is no need to sort the array after
       construction.  The ascendingness is however asserted for. */
    dioff_lookup_tab
-      = VG_(newXA)( ML_(dinfo_zalloc), ML_(dinfo_free), 
+      = VG_(newXA)( ML_(dinfo_zalloc), "di.readdwarf3.ndrw.9",
+                    ML_(dinfo_free), 
                     sizeof(TempVar*) );
    vg_assert(dioff_lookup_tab);
 
@@ -3285,6 +3543,7 @@ void new_dwarf3_reader_wrk (
       each var and hand it to ML_(addVar). */
    n = VG_(sizeXA)( tempvars );
    for (j = 0; j < n; j++) {
+      TyEnt* ent;
       varp = *(TempVar**)VG_(indexXA)( tempvars, j );
 
       /* Possibly show .. */
@@ -3294,7 +3553,7 @@ void new_dwarf3_reader_wrk (
                      varp->level,
                      varp->name ? varp->name : (UChar*)"<anon_var>" );
          if (varp->typeR) {
-            ML_(pp_Type_C_ishly)( varp->typeR );
+            ML_(pp_TyEnt_C_ishly)( tyents_to_keep, varp->typeR );
          } else {
             VG_(printf)("NULL");
          }
@@ -3368,11 +3627,20 @@ void new_dwarf3_reader_wrk (
          varp->name = ML_(addStr)( di, "<anon_var>", -1 );
 
       /* So now does it have enough info to be useful? */
-      /* NOTE: re typeR: this is a hack.  If typeR is NULL then the
-         type didn't get resolved.  Really, in that case something's
-         broken earlier on, and should be fixed, rather than just
-         skipping the variable. */
-      if (!varp->typeR) continue;
+      /* NOTE: re typeR: this is a hack.  If typeR is Te_UNKNOWN then
+         the type didn't get resolved.  Really, in that case
+         something's broken earlier on, and should be fixed, rather
+         than just skipping the variable. */
+      ent = ML_(TyEnts__index_by_cuOff)( tyents_to_keep,
+                                         tyents_to_keep_cache, 
+                                         varp->typeR );
+      /* The next two assertions should be guaranteed by 
+         our previous call to resolve_variable_types. */
+      vg_assert(ent);
+      vg_assert(ML_(TyEnt__is_type)(ent) || ent->tag == Te_UNKNOWN);
+
+      if (ent->tag == Te_UNKNOWN) continue;
+
       vg_assert(varp->gexpr);
       vg_assert(varp->name);
       vg_assert(varp->typeR);
@@ -3439,7 +3707,7 @@ void new_dwarf3_reader_wrk (
            ML_(addVar)(
               di, varp->level, 
                   pcMin, pcMax,
-                  varp->name, (void*)varp->typeR,
+                  varp->name,  varp->typeR,
                   varp->gexpr, varp->fbGX,
                   varp->fName, varp->fLine, td3 
            );
@@ -3475,20 +3743,29 @@ void new_dwarf3_reader_wrk (
    n = VG_(sizeXA)( tempvars );
    for (i = 0; i < n; i++) {
       varp = *(TempVar**)VG_(indexXA)( tempvars, i );
-      if (varp->rngMany)
-         VG_(deleteXA)(varp->rngMany);
       ML_(dinfo_free)(varp);
    }
    VG_(deleteXA)( tempvars );
    tempvars = NULL;
 
-   /* And get rid of the temporary mapping table. */
+   /* and the temp lookup table */
    VG_(deleteXA)( dioff_lookup_tab );
 
-   /* record the TyAdmins and the GExprs in di so they can be freed
-      later */
-   vg_assert(!di->admin_tyadmins);
-   di->admin_tyadmins = admin;
+   /* and the ranges tree.  Note that we need to also free the XArrays
+      which constitute the keys, hence pass VG_(deleteXA) as a
+      key-finalizer. */
+   VG_(deleteFM)( rangestree, (void(*)(UWord))VG_(deleteXA), NULL );
+
+   /* and the tyents_to_keep cache */
+   ML_(dinfo_free)( tyents_to_keep_cache );
+   tyents_to_keep_cache = NULL;
+
+   /* and the file name table (just the array, not the entries 
+      themselves). */
+   vg_assert(varparser.filenameTable);
+   VG_(deleteXA)( varparser.filenameTable );
+
+   /* record the GExprs in di so they can be freed later */
    vg_assert(!di->admin_gexprs);
    di->admin_gexprs = gexprs;
 }

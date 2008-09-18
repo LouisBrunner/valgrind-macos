@@ -186,14 +186,23 @@ SysRes VG_(stat) ( Char* file_name, struct vg_stat* vgbuf )
      return res;
    }
 #  elif defined(VGO_aix5)
-   res = VG_(do_syscall4)(__NR_AIX5_statx,
-                          (UWord)file_name,
-                          (UWord)buf,
-                          sizeof(struct vki_stat),
-                          VKI_STX_NORMAL);
-   if (!res.isError)
-      TRANSLATE_TO_vg_stat(vgbuf, &buf);
-   return res;
+   { struct vki_stat buf;
+     res = VG_(do_syscall4)(__NR_AIX5_statx,
+                            (UWord)file_name,
+                            (UWord)&buf,
+                            sizeof(struct vki_stat),
+                            VKI_STX_NORMAL);
+     if (!res.isError) {
+        VG_(memset)(vgbuf, 0, sizeof(*vgbuf));
+        vgbuf->st_dev  = (ULong)buf.st_dev;
+        vgbuf->st_ino  = (ULong)buf.st_ino;
+        vgbuf->st_mode = (UInt)buf.st_mode;
+        vgbuf->st_uid  = (UInt)buf.st_uid;
+        vgbuf->st_gid  = (UInt)buf.st_gid;
+        vgbuf->st_size = (Long)buf.st_size;
+     }
+     return res;
+   }
 #  else
 #    error Unknown OS
 #  endif

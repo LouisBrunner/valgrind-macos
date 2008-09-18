@@ -53,7 +53,8 @@ void clientobj_set_trace(const Bool trace)
 void clientobj_init(void)
 {
   tl_assert(s_clientobj == 0);
-  s_clientobj = VG_(OSetGen_Create)(0, 0, VG_(malloc), VG_(free));
+  s_clientobj = VG_(OSetGen_Create)(0, 0, VG_(malloc), "drd.clientobj.ci.1",
+                                          VG_(free));
   tl_assert(s_clientobj);
 }
 

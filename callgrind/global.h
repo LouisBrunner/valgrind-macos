@@ -868,14 +868,14 @@ void CLG_(print_stackentry)(int s, int sp);
 void CLG_(print_addr)(Addr addr);
 void CLG_(print_addr_ln)(Addr addr);
 
-void* CLG_(malloc)(UWord s, char* f);
+void* CLG_(malloc)(HChar* cc, UWord s, char* f);
 void* CLG_(free)(void* p, char* f);
 #if 0
-#define CLG_MALLOC(x) CLG_(malloc)(x,__FUNCTION__)
-#define CLG_FREE(p)   CLG_(free)(p,__FUNCTION__)
+#define CLG_MALLOC(_cc,x) CLG_(malloc)((_cc),x,__FUNCTION__)
+#define CLG_FREE(p)       CLG_(free)(p,__FUNCTION__)
 #else
-#define CLG_MALLOC(x) VG_(malloc)(x)
-#define CLG_FREE(p)   VG_(free)(p)
+#define CLG_MALLOC(_cc,x) VG_(malloc)((_cc),x)
+#define CLG_FREE(p)       VG_(free)(p)
 #endif
 
 #endif /* CLG_GLOBAL */

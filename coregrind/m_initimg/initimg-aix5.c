@@ -115,7 +115,7 @@ IIFinaliseImageInfo VG_(ii_create_image)( IICreateImageInfo iicii )
                 + VG_(strlen)( _so )
                 + 1 /*NUL*/;
    vg_assert(pltool_len > 0);
-   pltool_str = VG_(malloc)( pltool_len );
+   pltool_str = VG_(malloc)( "initimg-aix5.ici.1", pltool_len );
    pltool_str[0] = 0;
    VG_(strcat)( pltool_str, VG_(libdir) );
    VG_(strcat)( pltool_str, "/" );
@@ -134,7 +134,7 @@ IIFinaliseImageInfo VG_(ii_create_image)( IICreateImageInfo iicii )
                 + VG_(strlen)( vgpreload_core_so )
                 + 1 /*NUL*/;
    vg_assert(plcore_len > 0);
-   plcore_str = VG_(malloc)( plcore_len );
+   plcore_str = VG_(malloc)( "initimg-aix5.ici.2", plcore_len );
    plcore_str[0] = 0;
    VG_(strcat)( plcore_str, VG_(libdir) );
    VG_(strcat)( plcore_str, "/" );
@@ -151,7 +151,7 @@ IIFinaliseImageInfo VG_(ii_create_image)( IICreateImageInfo iicii )
    if (ld_pre_str && VG_(strlen)(ld_pre_str) > 0) {
       have_ld_pre = True;
       ld_pre_len  = VG_(strlen)(ld_pre_str) + 1/*NUL*/;
-      ld_pre_str = VG_(malloc)( ld_pre_len );
+      ld_pre_str = VG_(malloc)( "initimg-aix5.ici.3", ld_pre_len );
       ld_pre_str[0] = 0;
       VG_(strcat)( ld_pre_str, VG_(getenv)("LD_PRELOAD") );
       vg_assert( ld_pre_str[ld_pre_len-1] == 0);

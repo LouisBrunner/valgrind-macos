@@ -89,7 +89,8 @@ Char **VG_(env_setenv) ( Char ***envp, const Char* varname, const Char *val )
    Char **env = (*envp);
    Char **cpp;
    Int len = VG_(strlen)(varname);
-   Char *valstr = VG_(arena_malloc)(VG_AR_CORE, len + VG_(strlen)(val) + 2);
+   Char *valstr = VG_(arena_malloc)(VG_AR_CORE, "libcproc.es.1",
+                                    len + VG_(strlen)(val) + 2);
    Char **oldenv = NULL;
 
    VG_(sprintf)(valstr, "%s=%s", varname, val);
@@ -102,7 +103,7 @@ Char **VG_(env_setenv) ( Char ***envp, const Char* varname, const Char *val )
    }
 
    if (env == NULL) {
-      env = VG_(arena_malloc)(VG_AR_CORE, sizeof(Char **) * 2);
+      env = VG_(arena_malloc)(VG_AR_CORE, "libcproc.es.2", sizeof(Char **) * 2);
       env[0] = valstr;
       env[1] = NULL;
 
@@ -110,7 +111,8 @@ Char **VG_(env_setenv) ( Char ***envp, const Char* varname, const Char *val )
 
    }  else {
       Int envlen = (cpp-env) + 2;
-      Char **newenv = VG_(arena_malloc)(VG_AR_CORE, envlen * sizeof(Char **));
+      Char **newenv = VG_(arena_malloc)(VG_AR_CORE, "libcproc.es.3",
+                                        envlen * sizeof(Char **));
 
       for (cpp = newenv; *env; )
 	 *cpp++ = *env++;
@@ -203,7 +205,8 @@ void VG_(env_remove_valgrind_env_stuff)(Char** envp)
          ld_library_path_str = &envp[i][16];
    }
 
-   buf = VG_(arena_malloc)(VG_AR_CORE, VG_(strlen)(VG_(libdir)) + 20);
+   buf = VG_(arena_malloc)(VG_AR_CORE, "libcproc.erves.1",
+                           VG_(strlen)(VG_(libdir)) + 20);
 
    // Remove Valgrind-specific entries from LD_*.
    VG_(sprintf)(buf, "%s*/vgpreload_*.so", VG_(libdir));
@@ -253,7 +256,8 @@ Char **VG_(env_clone) ( Char **oldenv )
 
    envlen = oldenvp - oldenv + 1;
    
-   newenv = VG_(arena_malloc)(VG_AR_CORE, envlen * sizeof(Char **));
+   newenv = VG_(arena_malloc)(VG_AR_CORE, "libcproc.ec.1",
+                              envlen * sizeof(Char **));
 
    oldenvp = oldenv;
    newenvp = newenv;

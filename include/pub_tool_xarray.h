@@ -44,12 +44,13 @@
 
 
 /* It's an abstract type.  Bwaha. */
-typedef  void  XArray;
+typedef  struct _XArray  XArray;
 
 /* Create new XArray, using given allocation and free function, and
    for elements of the specified size.  Alloc fn must not fail (that
    is, if it returns it must have succeeded.) */
-extern XArray* VG_(newXA) ( void*(*alloc_fn)(SizeT), 
+extern XArray* VG_(newXA) ( void*(*alloc_fn)(HChar*,SizeT), 
+                            HChar* cc,
                             void(*free_fn)(void*),
                             Word elemSzB );
 
@@ -102,8 +103,10 @@ extern void VG_(dropTailXA) ( XArray*, Word );
 /* Make a new, completely independent copy of the given XArray, using
    the existing allocation function to allocate the new space.
    Returns NULL if the allocation function didn't manage to allocate
-   space (but did return NULL rather than merely abort.) */
-extern XArray* VG_(cloneXA)( XArray* xa );
+   space (but did return NULL rather than merely abort.)  Space for
+   the clone (and all additions to it) is billed to 'cc' unless that
+   is NULL, in which case the parent's cost-center is used. */
+extern XArray* VG_(cloneXA)( HChar* cc, XArray* xa );
 
 #endif   // __PUB_TOOL_XARRAY_H
 

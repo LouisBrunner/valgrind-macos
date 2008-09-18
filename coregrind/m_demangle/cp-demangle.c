@@ -51,9 +51,9 @@
 #ifndef STANDALONE
 #define size_t       Int
 
-#define malloc(s)    VG_(arena_malloc) (VG_AR_DEMANGLE, s)
-#define free(p)      VG_(arena_free)   (VG_AR_DEMANGLE, p)
-#define realloc(p,s) VG_(arena_realloc)(VG_AR_DEMANGLE, p, s)
+#define malloc(_cc,s)    VG_(arena_malloc) (VG_AR_DEMANGLE, _cc, s)
+#define free(p)          VG_(arena_free)   (VG_AR_DEMANGLE, p)
+#define realloc(_cc,p,s) VG_(arena_realloc)(VG_AR_DEMANGLE, _cc, p, s)
 #endif
 
 /* If CP_DEMANGLE_DEBUG is defined, a trace of the grammar evaluation,
@@ -423,7 +423,8 @@ static string_list_t
 string_list_new (length)
      int length;
 {
-  string_list_t s = (string_list_t) malloc (sizeof (struct string_list_def));
+  string_list_t s = (string_list_t) malloc ("demangle.sln.1",
+                                            sizeof (struct string_list_def));
   if (s == NULL)
     return NULL;
   s->caret_position = 0;
@@ -594,7 +595,7 @@ substitution_add (dm, start_position, template_p)
 	sizeof (struct substitution_def) * dm->substitutions_allocated;
 
       dm->substitutions = (struct substitution_def *)
-	realloc (dm->substitutions, new_array_size);
+	realloc ("demangle.sa.1", dm->substitutions, new_array_size);
       if (dm->substitutions == NULL)
 	/* Realloc failed.  */
 	{
@@ -672,7 +673,8 @@ static template_arg_list_t
 template_arg_list_new ()
 {
   template_arg_list_t new_list =
-    (template_arg_list_t) malloc (sizeof (struct template_arg_list_def));
+    (template_arg_list_t) malloc ("demangle.talt.1",
+                                  sizeof (struct template_arg_list_def));
   if (new_list == NULL)
     return NULL;
   /* Initialize the new list to have no arguments.  */
@@ -820,7 +822,8 @@ demangling_new (name, style)
      int style;
 {
   demangling_t dm;
-  dm = (demangling_t) malloc (sizeof (struct demangling_def));
+  dm = (demangling_t) malloc ("demangle.dn.1",
+                              sizeof (struct demangling_def));
   if (dm == NULL)
     return NULL;
 
@@ -834,7 +837,8 @@ demangling_new (name, style)
   if (dm->last_source_name == NULL)
     return NULL;
   dm->substitutions = (struct substitution_def *)
-    malloc (dm->substitutions_allocated * sizeof (struct substitution_def));
+    malloc ("demangle.dn.2",
+            dm->substitutions_allocated * sizeof (struct substitution_def));
   if (dm->substitutions == NULL)
     {
       dyn_string_delete (dm->last_source_name);

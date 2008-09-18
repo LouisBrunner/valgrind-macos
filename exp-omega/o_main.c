@@ -399,7 +399,7 @@ static PBitNode *o_getPBitNode(Addr address, Bool create)
       /*
       ** We don't have a node for this address. Create one now.
       */
-      o_lastPBitNode = VG_(malloc)( sizeof(PBitNode) );
+      o_lastPBitNode = VG_(malloc)( "om.ogPBN.1", sizeof(PBitNode) );
       tl_assert(o_lastPBitNode);
       VG_(memset)(o_lastPBitNode, 0, sizeof(PBitNode));
       o_lastPBitNode->hdr.key = key;
@@ -903,7 +903,7 @@ static Bool o_addLeakedBlock(ExeContext *allocated,
     /*
     ** Create a new block and add it to the leaked list.
     */
-    item = VG_(malloc)(sizeof(BlockRecord));
+    item = VG_(malloc)("om.oaLB.1", sizeof(BlockRecord));
     tl_assert(item);
     
     item->count = 1;
@@ -1288,7 +1288,7 @@ static void o_addMemBlockReference( MemBlock *mb, TrackedPointer *tp )
   if(!smb->pointers)
   {
     smb->pointers =
-      VG_(malloc)((smb->refNum + 8) * sizeof(TrackedPointer *));
+      VG_(malloc)("om.oAMBR.1", (smb->refNum + 8) * sizeof(TrackedPointer *));
     tl_assert(smb->pointers);
   }
   else if(!((smb->refNum + 1) & 7))
@@ -1298,7 +1298,8 @@ static void o_addMemBlockReference( MemBlock *mb, TrackedPointer *tp )
     ** Note that this will also shrink us if needed.
     */
     smb->pointers =
-      VG_(realloc)(smb->pointers, ((smb->refNum + 8) * sizeof(Addr)));
+      VG_(realloc)("om.oAMBR.2",
+                   smb->pointers, ((smb->refNum + 8) * sizeof(Addr)));
     tl_assert(smb->pointers);
   }
 
@@ -1728,7 +1729,7 @@ static Bool o_setupShadow(TrackedPointer *tp, Addr address)
       /*
       ** Create a new shadow for the block.
       */
-      smb = VG_(malloc)( sizeof(MemBlock) );
+      smb = VG_(malloc)( "om.osuS.1", sizeof(MemBlock) );
       tl_assert(smb);
 
       o_stats.shadowMemoryBlocksAllocated++;
@@ -1905,7 +1906,7 @@ static void o_duplicateTrackedPointers(Addr dst, Addr src, SizeT length)
     */
     TrackedPointer *tp = VG_(HT_lookup)(o_TrackedPointers, TRACKED_KEY(address));
     Int diff           = dst - src;
-    TrackedPointer *ntp = VG_(malloc)((sizeof(TrackedPointer)));
+    TrackedPointer *ntp = VG_(malloc)("om.odTP.1", (sizeof(TrackedPointer)));
     MemBlock       *mb = NULL;
     
     tl_assert(tp);
@@ -1946,7 +1947,7 @@ static void o_duplicateTrackedPointers(Addr dst, Addr src, SizeT length)
 
 static void o_createMemBlock(ThreadId tid, Addr start, SizeT size)
 {
-  MemBlock *mb = VG_(malloc)(sizeof(MemBlock));
+  MemBlock *mb = VG_(malloc)("om.ocMB.1", sizeof(MemBlock));
   tl_assert(mb);
   
   o_stats.memoryBlocksAllocated++;
@@ -2324,7 +2325,7 @@ void o_omegaDetector( Addr address, Addr value)
       /*
       ** No tracked pointer - create one now.
       */
-      tp = VG_(malloc)(sizeof(TrackedPointer));
+      tp = VG_(malloc)("om.oD.1", sizeof(TrackedPointer));
       tl_assert(tp);
       o_stats.trackedPointersAllocated++;
       o_stats.liveTrackedPointers++;
@@ -3160,7 +3161,7 @@ static UInt o_buildMemblockTree(void)
       /*
       ** Create and populate the new node
       */
-      tn = VG_(malloc)(sizeof(TreeNode));
+      tn = VG_(malloc)("om.obMbT.1", sizeof(TreeNode));
       VG_(memset)(tn, 0, sizeof(TreeNode));
       
       tn->start = mb->hdr.key;
@@ -3299,7 +3300,7 @@ static int o_reportCircularBlocks(void)
 	/*
 	** Create a new block and add it to the circular records list.
 	*/
-	BlockRecord *item = VG_(malloc)(sizeof(BlockRecord));
+	BlockRecord *item = VG_(malloc)("om.orCB.1", sizeof(BlockRecord));
 	tl_assert(item);
 	
 	item->count = 1;

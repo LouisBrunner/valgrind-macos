@@ -70,7 +70,8 @@ static VgHashTable drd_malloc_list = NULL;
 static
 DRD_Chunk* create_DRD_Chunk(ThreadId tid, Addr p, SizeT size)
 {
-  DRD_Chunk* mc = VG_(malloc)(sizeof(DRD_Chunk));
+  DRD_Chunk* mc = VG_(malloc)("drd.malloc_wrappers.cDC.1",
+                              sizeof(DRD_Chunk));
   mc->data      = p;
   mc->size      = size;
   mc->where     = VG_(record_ExeContext)(tid, 0);

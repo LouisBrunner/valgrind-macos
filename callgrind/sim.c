@@ -214,7 +214,8 @@ static void cachesim_initcache(cache_t config, cache_t2* c)
 		   c->sectored ? ", sectored":"");
    }
 
-   c->tags = (UWord*) CLG_MALLOC(sizeof(UWord) * c->sets * c->assoc);
+   c->tags = (UWord*) CLG_MALLOC("cl.sim.cs_ic.1",
+                                 sizeof(UWord) * c->sets * c->assoc);
    if (clo_collect_cacheuse)
        cacheuse_initcache(c);
    else
@@ -611,12 +612,15 @@ void cacheuse_initcache(cache_t2* c)
     unsigned int start_mask, start_val;
     unsigned int end_mask, end_val;
 
-    c->use    = CLG_MALLOC(sizeof(line_use) * c->sets * c->assoc);
-    c->loaded = CLG_MALLOC(sizeof(line_loaded) * c->sets * c->assoc);
-    c->line_start_mask = CLG_MALLOC(sizeof(int) * c->line_size);
-    c->line_end_mask = CLG_MALLOC(sizeof(int) * c->line_size);
+    c->use    = CLG_MALLOC("cl.sim.cu_ic.1",
+                           sizeof(line_use) * c->sets * c->assoc);
+    c->loaded = CLG_MALLOC("cl.sim.cu_ic.2",
+                           sizeof(line_loaded) * c->sets * c->assoc);
+    c->line_start_mask = CLG_MALLOC("cl.sim.cu_ic.3",
+                                    sizeof(int) * c->line_size);
+    c->line_end_mask = CLG_MALLOC("cl.sim.cu_ic.4",
+                                  sizeof(int) * c->line_size);
     
-
     c->line_size_mask = c->line_size-1;
 
     /* Meaning of line_start_mask/line_end_mask
@@ -1614,7 +1618,7 @@ static void parse_opt ( cache_t* cache, char* orig_opt, int opt_len )
 {
    int   i1, i2, i3;
    int   i;
-   char *opt = VG_(strdup)(orig_opt);
+   char *opt = VG_(strdup)("cl.sim.po.1", orig_opt);
 
    i = i1 = opt_len;
 

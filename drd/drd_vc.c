@@ -320,11 +320,13 @@ void vc_reserve(VectorClock* const vc, const unsigned new_capacity)
   {
     if (vc->vc)
     {
-      vc->vc = VG_(realloc)(vc->vc, new_capacity * sizeof(vc->vc[0]));
+      vc->vc = VG_(realloc)("drd.vc.vr.1",
+                            vc->vc, new_capacity * sizeof(vc->vc[0]));
     }
     else if (new_capacity > 0)
     {
-      vc->vc = VG_(malloc)(new_capacity * sizeof(vc->vc[0]));
+      vc->vc = VG_(malloc)("drd.vc.vr.2",
+                           new_capacity * sizeof(vc->vc[0]));
     }
     else
     {

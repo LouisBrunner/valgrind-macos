@@ -569,8 +569,8 @@ HChar* read_symbol_table (
       add the rest to 'syms'.
       ---------------------------------------------------------- */
 
-   syms = VG_(newXA)( ML_(dinfo_zalloc), ML_(dinfo_free), 
-                      sizeof(XCoffSym) );
+   syms = VG_(newXA)( ML_(dinfo_zalloc), "di.readxcoff.rst.1", 
+                      ML_(dinfo_free), sizeof(XCoffSym) );
 
    if (SHOW && SHOW_SYMS_P1) {
       VG_(printf)("--- BEGIN Phase1 (find text symbol starts) ---\n");
@@ -2149,7 +2149,7 @@ Bool read_xcoff_o_or_a ( /*MOD*/struct _DebugInfo* di,
    Int    i;
    SysRes sr, fd;
 
-   struct vki_stat stat_buf;
+   struct vg_stat stat_buf;
 
    vg_assert(o_name);
 
@@ -2460,14 +2460,14 @@ Bool ML_(read_xcoff_debug_info) ( struct _DebugInfo* di,
          if (di->memname) {
             /* set the soname to "archive.a(member.o)" */
             Int nbytes = VG_(strlen)(p) + 1 + VG_(strlen)(di->memname) + 1 + 1;
-            UChar* so = ML_(dinfo_zalloc)(nbytes);
+            UChar* so = ML_(dinfo_zalloc)("di.readxcoff.rxdi.1", nbytes);
             vg_assert(so);
             VG_(sprintf)(so, "%s(%s)", p, di->memname);
             vg_assert(VG_(strlen)(so) == nbytes-1);
             di->soname = so;
          } else {
             /* no member name, hence soname = "archive.a" */
-            di->soname = ML_(dinfo_strdup)(p);
+            di->soname = ML_(dinfo_strdup)("di.readxcoff.rxdi.2", p);
          }
       }
       if (SHOW)

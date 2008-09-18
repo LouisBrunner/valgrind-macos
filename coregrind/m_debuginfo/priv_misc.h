@@ -37,10 +37,15 @@
 #define __PRIV_MISC_H
 
 
-/* Allocate(zeroed), free, strdup, all in VG_AR_DINFO. */
-void*  ML_(dinfo_zalloc)( SizeT szB );
+/* Allocate(zeroed), free, strdup, memdup, all in VG_AR_DINFO. */
+void*  ML_(dinfo_zalloc)( HChar* cc, SizeT szB );
 void   ML_(dinfo_free)( void* v );
-UChar* ML_(dinfo_strdup)( const UChar* str );
+UChar* ML_(dinfo_strdup)( HChar* cc, const UChar* str );
+UChar* ML_(dinfo_memdup)( HChar* cc, UChar* str, SizeT nStr );
+
+/* A handy type, a la Haskell's Maybe type.  Yes, I know, C sucks.
+   Been there.  Done that.  Seen the movie.  Got the T-shirt.  Etc. */
+typedef struct { UWord w; Bool b; } MaybeUWord;
 
 
 #endif /* ndef __PRIV_MISC_H */

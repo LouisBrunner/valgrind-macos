@@ -38,10 +38,12 @@
 #include "pub_core_libcassert.h"
 #include "pub_core_libcprint.h"
 #include "pub_core_options.h"
+#include "pub_core_xarray.h"
 
 #include "pub_core_vki.h"       /* VKI_PROT_READ */
 #include "pub_core_aspacemgr.h" /* VG_(is_valid_for_client) */
 
+#include "priv_misc.h"
 #include "priv_d3basics.h"      /* self */
 
 HChar* ML_(pp_DW_children) ( DW_children hashch )
@@ -461,7 +463,6 @@ GXResult ML_(evaluate_Dwarf3_Expr) ( UChar* expr, UWord exprszB,
        && expr[0] == DW_OP_regx) {
       /* JRS: 2008Feb20: I believe the following is correct, but would
          like to see a test case show up before enabling it. */
-      vg_assert(0);
       expr++;
       res.kind = GXR_RegNo;
       res.word = (UWord)read_leb128U( &expr );
@@ -472,7 +473,7 @@ GXResult ML_(evaluate_Dwarf3_Expr) ( UChar* expr, UWord exprszB,
       /*NOTREACHED*/
    }
 
-   /* Evidently this expresion denotes a value, not a register name.
+   /* Evidently this expression denotes a value, not a register name.
       So evaluate it accordingly. */
 
    if (push_initial_zero)
@@ -674,6 +675,148 @@ GXResult ML_(evaluate_GX)( GExpr* gx, GExpr* fbGX,
 }
 
 
+/* Evaluate a very simple Guarded (DWARF3) expression.  The expression
+   is expected to denote a constant, with no reference to any
+   registers nor to any frame base expression.  The expression is
+   expected to have at least one guard.  If there is more than one
+   guard, all the sub-expressions are evaluated and compared.  The
+   address ranges on the guards are ignored.  GXR_Failure is returned
+   in the following circumstances:
+   * no guards
+   * any of the subexpressions require a frame base expression
+   * any of the subexpressions denote a register location
+   * any of the subexpressions do not produce a manifest constant
+   * there's more than one subexpression, all of which successfully
+     evaluate to a constant, but they don't all produce the same constant.
+ */
+GXResult ML_(evaluate_trivial_GX)( GExpr* gx, Addr data_bias )
+{
+   GXResult   res;
+   Addr       aMin, aMax;
+   UChar      uc;
+   UShort     nbytes;
+   Word       i, nGuards;
+   MaybeUWord *muw, *muw2;
+
+   HChar*  badness = NULL;
+   UChar*  p       = &gx->payload[0];
+   XArray* results = VG_(newXA)( ML_(dinfo_zalloc), "di.d3basics.etG.1",
+                                 ML_(dinfo_free),
+                                 sizeof(MaybeUWord) );
+
+   uc = *p++; /*biasMe*/
+   vg_assert(uc == 0 || uc == 1);
+   /* in fact it's senseless to evaluate if the guards need biasing.
+      So don't. */
+   vg_assert(uc == 0);
+
+   nGuards = 0;
+   while (True) {
+      MaybeUWord thisResult;
+      uc = *p++;
+      if (uc == 1) /*isEnd*/
+         break;
+      vg_assert(uc == 0);
+      aMin   = * (Addr*)p;   p += sizeof(Addr);
+      aMax   = * (Addr*)p;   p += sizeof(Addr);
+      nbytes = * (UShort*)p; p += sizeof(UShort);
+      nGuards++;
+      if (0) VG_(printf)("           guard %ld: %#lx %#lx\n", 
+                         nGuards, aMin,aMax);
+
+      thisResult.b = False;
+      thisResult.w = 0;
+
+      /* Peer at this particular subexpression, to see if it's
+         obviously a constant. */
+      if (nbytes == 1 + sizeof(Addr) && *p == DW_OP_addr) {
+         thisResult.b = True;
+         thisResult.w = *(Addr*)(p+1) + data_bias;
+      }
+      else if (nbytes == 2 + sizeof(Addr) 
+               && *p == DW_OP_addr
+               && *(p + 1 + sizeof(Addr)) == DW_OP_GNU_push_tls_address) {
+         if (!badness)
+            badness = "trivial GExpr is DW_OP_addr plus trailing junk";
+      }
+      else if (nbytes >= 1 && *p >= DW_OP_reg0 && *p <= DW_OP_reg31) {
+         if (!badness)
+            badness = "trivial GExpr denotes register (1)";
+      }
+      else if (nbytes >= 1 && *p == DW_OP_fbreg) {
+         if (!badness)
+            badness = "trivial GExpr requires fbGX";
+      }
+      else if (nbytes >= 1 && *p >= DW_OP_breg0 && *p <= DW_OP_breg31) {
+         if (!badness)
+            badness = "trivial GExpr requires register value";
+      }
+      else if (nbytes >= 1 && *p == DW_OP_regx) {
+         if (!badness)
+            badness = "trivial GExpr denotes register (2)";
+      }
+      else {
+         VG_(printf)(" ML_(evaluate_trivial_GX): unhandled:\n   ");
+         ML_(pp_GX)( gx );
+         VG_(printf)("\n");
+         tl_assert(0);
+      }
+
+      VG_(addToXA)( results, &thisResult );
+
+      p += (UWord)nbytes;
+   }
+
+   res.kind = GXR_Failure;
+
+   tl_assert(nGuards == VG_(sizeXA)( results ));
+   tl_assert(nGuards >= 0);
+   if (nGuards == 0) {
+      tl_assert(!badness);
+      res.word = (UWord)"trivial GExpr has no guards (!)";
+      VG_(deleteXA)( results );
+      return res;
+   }
+
+   for (i = 0; i < nGuards; i++) {
+      muw = VG_(indexXA)( results, i );
+      if (muw->b == False)
+         break;
+   }
+
+   vg_assert(i >= 0 && i <= nGuards);
+   if (i < nGuards) {
+      /* at least one subexpression failed to produce a manifest constant. */
+      vg_assert(badness);
+      res.word = (UWord)badness;
+      VG_(deleteXA)( results );
+      return res;
+   }
+
+   /* All the subexpressions produced a constant, but did they all produce
+      the same one? */
+   muw = VG_(indexXA)( results, 0 );
+   tl_assert(muw->b == True); /* we just established that all exprs are ok */
+
+   for (i = 1; i < nGuards; i++) {
+      muw2 = VG_(indexXA)( results, i );
+      tl_assert(muw2->b == True);
+      if (muw2->w != muw->w) {
+         res.word = (UWord)"trivial GExpr: subexpressions disagree";
+         VG_(deleteXA)( results );
+         return res;
+      }
+   }
+
+   /* Well, we have success.  All subexpressions evaluated, and 
+      they all agree.  Hurrah. */
+   res.kind = GXR_Value;
+   res.word = muw->w;
+   VG_(deleteXA)( results );
+   return res;
+}
+
+
 void ML_(pp_GXResult) ( GXResult res )
 {
    switch (res.kind) {
@@ -686,6 +829,34 @@ void ML_(pp_GXResult) ( GXResult res )
       default:
          VG_(printf)("GXR_???"); break;
    }
+}
+
+
+void ML_(pp_GX) ( GExpr* gx ) {
+   Addr   aMin, aMax;
+   UChar  uc;
+   UShort nbytes;
+   UChar* p = &gx->payload[0];
+   uc = *p++;
+   VG_(printf)("GX(%s){", uc == 0 ? "final" : "Breqd" );
+   vg_assert(uc == 0 || uc == 1);
+   while (True) {
+      uc = *p++;
+      if (uc == 1)
+         break; /*isEnd*/
+      vg_assert(uc == 0);
+      aMin   = * (Addr*)p;  p += sizeof(Addr);
+      aMax   = * (Addr*)p;  p += sizeof(Addr);
+      nbytes = * (UShort*)p; p += sizeof(UShort);
+      VG_(printf)("[%#lx,%#lx]=", aMin, aMax);
+      while (nbytes > 0) {
+         VG_(printf)("%02x", (UInt)*p++);
+         nbytes--;
+      }
+      if (*p == 0)
+         VG_(printf)(",");
+   }
+   VG_(printf)("}");
 }
 
 

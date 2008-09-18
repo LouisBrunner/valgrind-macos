@@ -100,7 +100,8 @@ thread_info* new_thread(void)
 {
     thread_info* t;
 
-    t = (thread_info*) CLG_MALLOC(sizeof(thread_info));
+    t = (thread_info*) CLG_MALLOC("cl.threads.nt.1",
+                                  sizeof(thread_info));
 
     /* init state */
     CLG_(init_exec_stack)( &(t->states) );
@@ -323,7 +324,8 @@ void CLG_(init_exec_state)(exec_state* es)
 static exec_state* new_exec_state(Int sigNum)
 {
     exec_state* es;
-    es = (exec_state*) CLG_MALLOC(sizeof(exec_state));
+    es = (exec_state*) CLG_MALLOC("cl.threads.nes.1",
+                                  sizeof(exec_state));
 
     /* allocate real cost space: needed as incremented by
      * simulation functions */

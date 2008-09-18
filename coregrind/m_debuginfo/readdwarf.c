@@ -99,7 +99,7 @@ static void addto_WordArray ( WordArray* wa, Word w )
       vg_assert( (wa->tab_size == 0 && wa->tab == NULL)
                  || (wa->tab_size != 0 && wa->tab != NULL) );
       new_size = wa->tab_size == 0 ? 8 : 2 * wa->tab_size;
-      new_tab  = ML_(dinfo_zalloc)(new_size * sizeof(Word));
+      new_tab  = ML_(dinfo_zalloc)("di.aWA.1", new_size * sizeof(Word));
       vg_assert(new_tab != NULL);
       for (i = 0; i < wa->tab_used; i++)
          new_tab[i] = wa->tab[i];
@@ -2040,7 +2040,7 @@ static Bool summarise_context( /*OUT*/DiCfSI* si,
       src = ctx->exprs;
       dst = debuginfo->cfsi_exprs;
       if (src && (VG_(sizeXA)(src) > 0) && (!dst)) {
-         dst = VG_(newXA)( ML_(dinfo_zalloc), ML_(dinfo_free),
+         dst = VG_(newXA)( ML_(dinfo_zalloc), "di.ccCt.1", ML_(dinfo_free),
                            sizeof(CfiExpr) );
          vg_assert(dst);
          debuginfo->cfsi_exprs = dst;
@@ -2083,6 +2083,7 @@ static Bool summarise_context( /*OUT*/DiCfSI* si,
          dst = debuginfo->cfsi_exprs;                         \
          if (src && (VG_(sizeXA)(src) > 0) && (!dst)) {       \
             dst = VG_(newXA)( ML_(dinfo_zalloc),              \
+                              "di.ccCt.2",                    \
                               ML_(dinfo_free),                \
                               sizeof(CfiExpr) );              \
             vg_assert(dst);                                   \
@@ -3739,7 +3740,8 @@ void ML_(read_callframe_info_dwarf3)
          ctx.data_a_f = the_CIEs[cie].data_a_f;
          ctx.initloc  = fde_initloc;
          ctx.ra_reg   = the_CIEs[cie].ra_reg;
-         ctx.exprs    = VG_(newXA)( ML_(dinfo_zalloc), ML_(dinfo_free), 
+         ctx.exprs    = VG_(newXA)( ML_(dinfo_zalloc), "di.rcid.1",
+                                    ML_(dinfo_free), 
                                     sizeof(CfiExpr) );
          vg_assert(ctx.exprs);
 

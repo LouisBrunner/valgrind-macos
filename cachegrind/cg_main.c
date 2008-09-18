@@ -196,7 +196,7 @@ static Char* get_perm_string(Char* s)
       return *s_ptr;
    } else {
       Char** s_node = VG_(OSetGen_AllocNode)(stringTable, sizeof(Char*));
-      *s_node = VG_(strdup)(s);
+      *s_node = VG_(strdup)("cg.main.gps.1", s);
       VG_(OSetGen_Insert)(stringTable, s_node);
       return *s_node;
    }
@@ -1762,15 +1762,18 @@ static void cg_post_clo_init(void)
    CC_table =
       VG_(OSetGen_Create)(offsetof(LineCC, loc),
                           cmp_CodeLoc_LineCC,
-                          VG_(malloc), VG_(free));
+                          VG_(malloc), "cg.main.cpci.1",
+                          VG_(free));
    instrInfoTable =
       VG_(OSetGen_Create)(/*keyOff*/0,
                           NULL,
-                          VG_(malloc), VG_(free));
+                          VG_(malloc), "cg.main.cpci.2",
+                          VG_(free));
    stringTable =
       VG_(OSetGen_Create)(/*keyOff*/0,
                           stringCmp,
-                          VG_(malloc), VG_(free));
+                          VG_(malloc), "cg.main.cpci.3",
+                          VG_(free));
 
    configure_caches(&I1c, &D1c, &L2c);
 

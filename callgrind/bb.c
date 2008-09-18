@@ -41,7 +41,8 @@ void CLG_(init_bb_hash)()
 
    bbs.size    = 8437;
    bbs.entries = 0;
-   bbs.table = (BB**) CLG_MALLOC(bbs.size * sizeof(BB*));
+   bbs.table = (BB**) CLG_MALLOC("cl.bb.ibh.1",
+                                 bbs.size * sizeof(BB*));
 
    for (i = 0; i < bbs.size; i++) bbs.table[i] = NULL;
 }
@@ -70,7 +71,8 @@ void resize_bb_table(void)
     UInt new_idx;
 
     new_size  = 2* bbs.size +3;
-    new_table = (BB**) CLG_MALLOC(new_size * sizeof(BB*));
+    new_table = (BB**) CLG_MALLOC("cl.bb.rbt.1",
+                                  new_size * sizeof(BB*));
  
     if (!new_table) return;
  
@@ -129,7 +131,7 @@ static BB* new_bb(obj_node* obj, OffT offset,
 
    size = sizeof(BB) + instr_count * sizeof(InstrInfo)
                      + (cjmp_count+1) * sizeof(CJmpInfo);
-   new = (BB*) CLG_MALLOC(size);
+   new = (BB*) CLG_MALLOC("cl.bb.nb.1", size);
    VG_(memset)(new, 0, size);
 
    new->obj        = obj;

@@ -453,7 +453,7 @@ extern void VG_(needs_final_IR_tidy_pass) ( IRSB*(*final_tidy)(IRSB*) );
 /* Part of the core from which this call was made.  Useful for determining
    what kind of error message should be emitted. */
 typedef
-   enum { Vg_CoreStartup, Vg_CoreSignal, Vg_CoreSysCall,
+   enum { Vg_CoreStartup=1, Vg_CoreSignal, Vg_CoreSysCall,
           Vg_CoreTranslate, Vg_CoreClientReq }
    CorePart;
 
@@ -471,15 +471,24 @@ typedef
 
    These ones occur at startup, upon some signals, and upon some syscalls.
 
-   For the new_mem_brk and new_mem_stack_signal, the supplied ThreadId
+   For new_mem_brk and new_mem_stack_signal, the supplied ThreadId
    indicates the thread for whom the new memory is being allocated.
+
+   For new_mem_startup and new_mem_mmap, the di_handle argument is a
+   handle which can be used to retrieve debug info associated with the
+   mapping or allocation (because it is of a file that Valgrind has
+   decided to read debug info from).  If the value is zero, there is
+   no associated debug info.  If the value exceeds zero, it can be
+   supplied as an argument to selected queries in m_debuginfo.
 */
 void VG_(track_new_mem_startup)     (void(*f)(Addr a, SizeT len,
-                                              Bool rr, Bool ww, Bool xx));
+                                              Bool rr, Bool ww, Bool xx,
+                                              ULong di_handle));
 void VG_(track_new_mem_stack_signal)(void(*f)(Addr a, SizeT len, ThreadId tid));
 void VG_(track_new_mem_brk)         (void(*f)(Addr a, SizeT len, ThreadId tid));
 void VG_(track_new_mem_mmap)        (void(*f)(Addr a, SizeT len,
-                                              Bool rr, Bool ww, Bool xx));
+                                              Bool rr, Bool ww, Bool xx,
+                                              ULong di_handle));
 
 void VG_(track_copy_mem_remap)      (void(*f)(Addr from, Addr to, SizeT len));
 void VG_(track_change_mem_mprotect) (void(*f)(Addr a, SizeT len,

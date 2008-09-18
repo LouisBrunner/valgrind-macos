@@ -1528,7 +1528,8 @@ void queue_signal(ThreadId tid, const vki_siginfo_t *si)
    block_all_host_signals(&savedmask);
 
    if (tst->sig_queue == NULL) {
-      tst->sig_queue = VG_(arena_malloc)(VG_AR_CORE, sizeof(*tst->sig_queue));
+      tst->sig_queue = VG_(arena_malloc)(VG_AR_CORE, "signals.qs.1",
+                                         sizeof(*tst->sig_queue));
       VG_(memset)(tst->sig_queue, 0, sizeof(*tst->sig_queue));
    }
    sq = tst->sig_queue;

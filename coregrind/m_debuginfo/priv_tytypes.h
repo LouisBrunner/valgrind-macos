@@ -36,133 +36,173 @@
 #ifndef __PRIV_TYTYPES_H
 #define __PRIV_TYTYPES_H
 
-typedef  struct _TyAdmin   TyAdmin;
-typedef  struct _TyAtom    TyAtom;
-typedef  struct _TyField   TyField;
-typedef  struct _TyBounds  TyBounds;
-typedef  struct _D3Expr    D3Expr;
-typedef  struct _Type      Type;
-
-#define TyBounds_MAGIC 0x0d573990UL
-
 typedef
-   enum { TyA_Atom=10, TyA_Field, TyA_Bounds, TyA_Expr, TyA_Type } 
-   TyAdminTag;
+   enum {
+      Te_EMPTY=10, /* empty (contains no info) */
+      Te_INDIR,    /* indirection to some other TyEnt */
+      Te_UNKNOWN,  /* denotes a unknown type/field/whatever */
+      Te_Atom,     /* name & 64-bit const, iow, enumeration member */
+      Te_Field,    /* struct/class field defn */
+      Te_Bound,    /* array bounds indication, for one dimension */
+      Te_TyBase,   /* base type */
+      Te_TyPorR,   /* pointer or reference type */
+      Te_TyTyDef,  /* a renaming of some other type */
+      Te_TyStOrUn, /* structure or union type */
+      Te_TyEnum,   /* an enum type */
+      Te_TyArray,  /* an array type */
+      Te_TyFn,     /* function type */
+      Te_TyQual,   /* qualified type */
+      Te_TyVoid    /* void type */
+   }
+   TyEntTag;
 
-struct _TyAdmin {
-   UWord      cuOff;
-   void*      payload;
-   TyAdminTag tag;
-};
+/* Fields ending in "R" are references to other TyEnts.  Fields ending
+   in "Rs" are XArray*s of references to other TyEnts. */
+typedef
+   struct {
+      UWord    cuOff;
+      TyEntTag tag;
+      union {
+         struct {
+         } EMPTY;
+         struct {
+            UWord indR;
+         } INDIR;
+         struct {
+         } UNKNOWN;
+         struct {
+            UChar* name; /* in mallocville */
+            Long   value;
+         } Atom;
+         struct {
+            UChar* name;  /* in mallocville */
+            UWord  typeR; /* should be Te_TyXXXX */
+            UChar* loc;   /* location expr, in mallocville */
+            UWord  nLoc;  /* number of bytes in .loc */
+            Bool   isStruct;
+         } Field;
+         struct {
+            Bool knownL;
+            Bool knownU;
+            Long boundL;
+            Long boundU;
+         } Bound;
+         struct {
+            UChar* name; /* in mallocville */
+            Int    szB;
+            UChar  enc; /* S:signed U:unsigned F:floating C:complex float */
+         } TyBase;
+         struct {
+            Int   szB;
+            UWord typeR;
+            Bool  isPtr;
+         } TyPorR;
+         struct {
+            UChar* name;  /* in mallocville */
+            UWord  typeR; /* MAY BE D3_INVALID_CUOFF, denoting unknown */
+         } TyTyDef;
+         struct {
+            UChar*  name; /* in mallocville */
+            UWord   szB;
+            XArray* /* of UWord */ fieldRs;
+            Bool    complete;
+            Bool    isStruct;
+         } TyStOrUn;
+         struct {
+            UChar*  name; /* in mallocville */
+            Int     szB;
+            XArray* /* of UWord */ atomRs;
+         } TyEnum;
+         struct {
+            UWord   typeR;
+            XArray* /* of UWord */ boundRs;
+         } TyArray;
+         struct {
+         } TyFn;
+         struct {
+            UChar qual; /* C:const V:volatile */
+            UWord typeR;
+         } TyQual;
+         struct {
+            Bool isFake; /* True == introduced by the reader */
+         } TyVoid;
+      } Te;
+   }
+   TyEnt;
 
-/* an enumeration value */
-struct _TyAtom {
-   UChar* name; /* in DebugInfo.strchunks */
-   Long   value;
-};
+/* Does this TyEnt denote a type, as opposed to some other kind of
+   thing? */
+Bool ML_(TyEnt__is_type)( TyEnt* );
 
-struct _TyField {
-   UChar*  name; /* in DebugInfo.strchunks */
-   Type*   typeR;
-   D3Expr* loc;
-   Bool    isStruct;
-};
+/* Print a TyEnt, debug-style. */
+void ML_(pp_TyEnt)( TyEnt* );
 
-struct _TyBounds {
-   UInt magic;
-   Bool knownL;
-   Bool knownU;
-   Long boundL;
-   Long boundU;
-};
+/* Print a whole XArray of TyEnts, debug-style */
+void ML_(pp_TyEnts)( XArray* tyents, HChar* who );
 
-struct _D3Expr {
-   UChar* bytes; /* in DebugInfo.strchunks */
-   UWord  nbytes;
-};
+/* Print a TyEnt, C style, chasing stuff as necessary. */
+void ML_(pp_TyEnt_C_ishly)( XArray* /* of TyEnt */ tyents,
+                            UWord cuOff );
 
-struct _Type {
-   enum { Ty_Base=30, Ty_PorR, Ty_TyDef, Ty_StOrUn, 
-          Ty_Enum, Ty_Array, Ty_Fn, Ty_Qual, Ty_Void } tag;
-   union {
-      struct {
-         UChar* name; /* in DebugInfo.strchunks */
-         Int    szB;
-         UChar  enc; /* S:signed U:unsigned F:floating C:complex float */
-      } Base;
-      struct {
-         Int   szB;
-         Type* typeR;
-         Bool  isPtr;
-      } PorR;
-      struct {
-         UChar* name;  /* in DebugInfo.strchunks */
-         Type*  typeR; /* MAY BE NULL, denoting unknown */
-      } TyDef;
-      struct {
-         UChar*  name; /* in DebugInfo.strchunks */
-         UWord   szB;
-         XArray* /* of TyField* */ fields;
-         Bool    complete;
-         Bool    isStruct;
-      } StOrUn;
-      struct {
-         UChar*  name; /* in DebugInfo.strchunks */
-         Int     szB;
-         XArray* /* of TyAtom* */ atomRs;
-      } Enum;
-      struct {
-         Type*   typeR;
-         XArray* /* of TyBounds* */ bounds;
-      } Array;
-      struct {
-      } Fn;
-      struct {
-         UChar qual; /* C:const V:volatile */
-         Type* typeR;
-      } Qual;
-      struct {
-         Bool isFake; /* True == introduced by the reader */
-      } Void;
-   } Ty;
-};
+/* Generates a total ordering on TyEnts based only on their .cuOff
+   fields. */
+Word ML_(TyEnt__cmp_by_cuOff_only) ( TyEnt* te1, TyEnt* te2 );
 
-TyAdmin*  ML_(new_TyAdmin)  ( UWord cuOff );
-TyAtom*   ML_(new_TyAtom)   ( UChar* name, Long value );
-TyField*  ML_(new_TyField)  ( UChar* name, Type* typeR, D3Expr* loc );
-TyBounds* ML_(new_TyBounds) ( void );
-Type*     ML_(new_Type)     ( void );
-D3Expr*   ML_(new_D3Expr)   ( UChar* bytes, UWord nbytes );
+/* Generates a total ordering on TyEnts based on everything except
+   their .cuOff fields. */
+Word ML_(TyEnt__cmp_by_all_except_cuOff) ( TyEnt* te1, TyEnt* te2 );
 
-/* Delete the payload attached to this TyAdmin, but not the TyAdmin
-   itself. */
-void ML_(delete_payload_of_TyAdmin) ( TyAdmin* );
+/* Free up all directly or indirectly heap-allocated stuff attached to
+   this TyEnt, and set its tag to Te_EMPTY.  The .cuOff field is
+   unchanged. */
+void ML_(TyEnt__make_EMPTY) ( TyEnt* te );
 
-void ML_(pp_TyAdmin)  ( TyAdmin* admin );
-void ML_(pp_TyAtom)   ( TyAtom* atom );
-void ML_(pp_TyField)  ( TyField* field );
-void ML_(pp_TyBounds) ( TyBounds* bounds );
-void ML_(pp_Type)     ( Type* ty );
-void ML_(pp_D3Expr)   ( D3Expr* expr );
+/* How big is this type?  If .b in the returned struct is False, the
+   size is unknown. */
 
-/* NOTE: this assumes that the types have all been 'resolved' (that
-   is, inter-type references expressed as .debug_info offsets have
-   been converted into pointers) */
-void ML_(pp_Type_C_ishly) ( Type* ty );
-
-/* How big is this type?  (post-resolved only)  If .b in the
-   returned struct is False, the size is unknown. */
-/* FIXME: check all pointers before dereferencing */
-
-typedef struct { UWord w; Bool b; } MaybeUWord;
-
-MaybeUWord ML_(sizeOfType)( Type* ty );
+MaybeUWord ML_(sizeOfType)( XArray* /* of TyEnt */ tyents,
+                            UWord cuOff );
 
 /* Describe where in the type 'offset' falls.  Caller must
    deallocate the resulting XArray. */
 XArray* /*UChar*/ ML_(describe_type)( /*OUT*/OffT* residual_offset,
-                                      Type* ty, OffT offset );
+                                      XArray* /* of TyEnt */ tyents,
+                                      UWord ty_cuOff, 
+                                      OffT offset );
 
+
+/* A fast-lookup cache for ML_(TyEnts__index_by_cuOff).  Nothing
+   particularly surprising here; it's 2 way set associative, with some
+   number of ways, doesn't particularly have to be a power of 2.  In
+   order to have a way to indicate an invalid entry, we set the second
+   value of the pair to NULL, and keep checking for it, since
+   unfortunately there's no obvious cuOff number that we could put in
+   the first word of the pair that could indicate an invalid entry.
+
+   4096 arrived at as the best value for an E6600 loading Qt-4.4.1
+   Designer and all associated libraries, compiled by gcc-4.3.1, 
+   -g -O, 64-bit, which is at least a moderately good stress test,
+   with the largest library being about 150MB.*/
+
+#define N_TYENT_INDEX_CACHE 4096
+
+typedef
+   struct {
+      struct { UWord cuOff0; TyEnt* ent0; 
+               UWord cuOff1; TyEnt* ent1; }
+         ce[N_TYENT_INDEX_CACHE];
+   }
+   TyEntIndexCache;
+
+void ML_(TyEntIndexCache__invalidate) ( TyEntIndexCache* cache );
+
+/* 'ents' is an XArray of TyEnts, sorted by their .cuOff fields.  Find
+   the entry which has .cuOff field as specified.  Returns NULL if not
+   found.  Asserts if more than one entry has the specified .cuOff
+   value. */
+TyEnt* ML_(TyEnts__index_by_cuOff) ( XArray* /* of TyEnt */ ents,
+                                     TyEntIndexCache* cache,
+                                     UWord cuOff_to_find );
 
 #endif /* ndef __PRIV_TYTYPES_H */
 

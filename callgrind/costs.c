@@ -43,7 +43,8 @@ ULong* CLG_(get_costarray)(Int size)
 
   if (!cost_chunk_current ||
       (cost_chunk_current->size - cost_chunk_current->used < size)) {
-    CostChunk* cc  = (CostChunk*) CLG_MALLOC(sizeof(CostChunk) +
+    CostChunk* cc  = (CostChunk*) CLG_MALLOC("cl.costs.gc.1",
+                                              sizeof(CostChunk) +
 					      COSTCHUNK_SIZE * sizeof(ULong));
     cc->size = COSTCHUNK_SIZE;
     cc->used = 0;

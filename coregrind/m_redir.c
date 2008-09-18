@@ -280,9 +280,9 @@ static OSet* activeSet = NULL;
 
 static void maybe_add_active ( Active /*by value; callee copies*/ );
 
-static void*  dinfo_zalloc(SizeT);
+static void*  dinfo_zalloc(HChar* ec, SizeT);
 static void   dinfo_free(void*);
-static HChar* dinfo_strdup(HChar*);
+static HChar* dinfo_strdup(HChar* ec, HChar*);
 static Bool   is_plausible_guest_addr(Addr);
 static Bool   is_aix5_glink_idiom(Addr);
 
@@ -369,10 +369,10 @@ void VG_(redir_notify_new_DebugInfo)( DebugInfo* newsi )
             the following loop, and complain at that point. */
          continue;
       }
-      spec = dinfo_zalloc(sizeof(Spec));
+      spec = dinfo_zalloc("redir.rnnD.1", sizeof(Spec));
       vg_assert(spec);
-      spec->from_sopatt = dinfo_strdup(demangled_sopatt);
-      spec->from_fnpatt = dinfo_strdup(demangled_fnpatt);
+      spec->from_sopatt = dinfo_strdup("redir.rnnD.2", demangled_sopatt);
+      spec->from_fnpatt = dinfo_strdup("redir.rnnD.3", demangled_fnpatt);
       vg_assert(spec->from_sopatt);
       vg_assert(spec->from_fnpatt);
       spec->to_addr = sym_addr;
@@ -418,7 +418,7 @@ void VG_(redir_notify_new_DebugInfo)( DebugInfo* newsi )
 
    /* Ok.  Now specList holds the list of specs from the DebugInfo. 
       Build a new TopSpec, but don't add it to topSpecs yet. */
-   newts = dinfo_zalloc(sizeof(TopSpec));
+   newts = dinfo_zalloc("redir.rnnD.4", sizeof(TopSpec));
    vg_assert(newts);
    newts->next    = NULL; /* not significant */
    newts->seginfo = newsi;
@@ -691,7 +691,7 @@ void VG_(redir_notify_delete_DebugInfo)( DebugInfo* delsi )
 
    /* Traverse the actives, copying the addresses of those we intend
       to delete into tmpSet. */
-   tmpSet = VG_(OSetWord_Create)(dinfo_zalloc, dinfo_free);
+   tmpSet = VG_(OSetWord_Create)(dinfo_zalloc, "redir.rndD.1", dinfo_free);
 
    ts->mark = True;
 
@@ -809,11 +809,11 @@ static void add_hardwired_spec ( HChar* sopatt, HChar* fnpatt,
                                  Addr   to_addr,
                                  const HChar* const mandatory )
 {
-   Spec* spec = dinfo_zalloc(sizeof(Spec));
+   Spec* spec = dinfo_zalloc("redir.ahs.1", sizeof(Spec));
    vg_assert(spec);
 
    if (topSpecs == NULL) {
-      topSpecs = dinfo_zalloc(sizeof(TopSpec));
+      topSpecs = dinfo_zalloc("redir.ahs.2", sizeof(TopSpec));
       vg_assert(topSpecs);
       /* symtab_zalloc sets all fields to zero */
    }
@@ -851,6 +851,7 @@ void VG_(redir_initialise) ( void )
    activeSet = VG_(OSetGen_Create)(offsetof(Active, from_addr),
                                    NULL,     // Use fast comparison
                                    dinfo_zalloc,
+                                   "redir.ri.1", 
                                    dinfo_free);
 
    // The rest of this function just adds initial Specs.   
@@ -970,10 +971,10 @@ void VG_(redir_initialise) ( void )
 /*--- MISC HELPERS                                         ---*/
 /*------------------------------------------------------------*/
 
-static void* dinfo_zalloc(SizeT n) {
+static void* dinfo_zalloc(HChar* ec, SizeT n) {
    void* p;
    vg_assert(n > 0);
-   p = VG_(arena_malloc)(VG_AR_DINFO, n);
+   p = VG_(arena_malloc)(VG_AR_DINFO, ec, n);
    tl_assert(p);
    VG_(memset)(p, 0, n);
    return p;
@@ -984,9 +985,9 @@ static void dinfo_free(void* p) {
    return VG_(arena_free)(VG_AR_DINFO, p);
 }
 
-static HChar* dinfo_strdup(HChar* str)
+static HChar* dinfo_strdup(HChar* ec, HChar* str)
 {
-   return VG_(arena_strdup)(VG_AR_DINFO, str);
+   return VG_(arena_strdup)(VG_AR_DINFO, ec, str);
 }
 
 /* Really this should be merged with translations_allowable_from_seg

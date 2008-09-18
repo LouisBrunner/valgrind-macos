@@ -135,7 +135,7 @@ static void init_ExeContext_storage ( void )
 
    ec_htab_size_idx = 0;
    ec_htab_size = ec_primes[ec_htab_size_idx];
-   ec_htab = VG_(arena_malloc)(VG_AR_EXECTXT, 
+   ec_htab = VG_(arena_malloc)(VG_AR_EXECTXT, "execontext.iEs1",
                                sizeof(ExeContext*) * ec_htab_size);
    for (i = 0; i < ec_htab_size; i++)
       ec_htab[i] = NULL;
@@ -260,7 +260,7 @@ static void resize_ec_htab ( void )
       return; /* out of primes - can't resize further */
 
    new_size = ec_primes[ec_htab_size_idx + 1];
-   new_ec_htab = VG_(arena_malloc)(VG_AR_EXECTXT,
+   new_ec_htab = VG_(arena_malloc)(VG_AR_EXECTXT, "execontext.reh1",
                                    sizeof(ExeContext*) * new_size);
 
    VG_(debugLog)(
@@ -395,7 +395,7 @@ static ExeContext* record_ExeContext_wrk2 ( Addr* ips, UInt n_ips )
    /* Bummer.  We have to allocate a new context record. */
    ec_totstored++;
 
-   new_ec = VG_(arena_malloc)( VG_AR_EXECTXT, 
+   new_ec = VG_(arena_malloc)( VG_AR_EXECTXT, "execontext.rEw2.2",
                                sizeof(struct _ExeContext) 
                                + n_ips * sizeof(Addr) );
 

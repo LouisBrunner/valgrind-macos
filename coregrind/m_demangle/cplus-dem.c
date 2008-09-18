@@ -76,10 +76,10 @@ static char *ada_demangle  PARAMS ((const char *, int));
 #ifndef STANDALONE
 #define size_t  Int
 
-#define xstrdup(ptr)        VG_(arena_strdup) (VG_AR_DEMANGLE, ptr)
-#define free(ptr)           VG_(arena_free)   (VG_AR_DEMANGLE, ptr)
-#define xmalloc(size)       VG_(arena_malloc) (VG_AR_DEMANGLE, size)
-#define xrealloc(ptr, size) VG_(arena_realloc)(VG_AR_DEMANGLE, ptr, size)
+#define xstrdup(_cc,ptr)        VG_(arena_strdup) (VG_AR_DEMANGLE, _cc, ptr)
+#define free(ptr)               VG_(arena_free)   (VG_AR_DEMANGLE, ptr)
+#define xmalloc(_cc,size)       VG_(arena_malloc) (VG_AR_DEMANGLE, _cc, size)
+#define xrealloc(_cc,ptr, size) VG_(arena_realloc)(VG_AR_DEMANGLE, _cc, ptr, size)
 
 #define abort() vg_assert(0)
 #undef strstr
@@ -948,7 +948,7 @@ ML_(cplus_demangle) (mangled, options)
   struct work_stuff work[1];
 
   if (current_demangling_style == no_demangling)
-    return xstrdup (mangled);
+    return xstrdup ("demangle.cd.1", mangled);
 
   memset ((char *) work, 0, sizeof (work));
   work->options = options;
@@ -995,7 +995,7 @@ grow_vect (old_vect, size, min_size, element_size)
       *size *= 2;
       if (*size < min_size)
 	*size = min_size;
-      *old_vect = xrealloc (*old_vect, *size * element_size);
+      *old_vect = xrealloc ("demangle.gv.1", *old_vect, *size * element_size);
     }
 }
 
@@ -1219,55 +1219,60 @@ work_stuff_copy_to_from (to, from)
   /* Deep-copy dynamic storage.  */
   if (from->typevec_size)
     to->typevec
-      = (char **) xmalloc (from->typevec_size * sizeof (to->typevec[0]));
+      = (char **) xmalloc ("demangle.wsctf.1",
+                           from->typevec_size * sizeof (to->typevec[0]));
 
   for (i = 0; i < from->ntypes; i++)
     {
       int len = strlen (from->typevec[i]) + 1;
 
-      to->typevec[i] = xmalloc (len);
+      to->typevec[i] = xmalloc ("demangle.wsctf.2", len);
       memcpy (to->typevec[i], from->typevec[i], len);
     }
 
   if (from->ksize)
     to->ktypevec
-      = (char **) xmalloc (from->ksize * sizeof (to->ktypevec[0]));
+      = (char **) xmalloc ("demangle.wsctf.3",
+                           from->ksize * sizeof (to->ktypevec[0]));
 
   for (i = 0; i < from->numk; i++)
     {
       int len = strlen (from->ktypevec[i]) + 1;
 
-      to->ktypevec[i] = xmalloc (len);
+      to->ktypevec[i] = xmalloc ("demangle.wsctf.4", len);
       memcpy (to->ktypevec[i], from->ktypevec[i], len);
     }
 
   if (from->bsize)
     to->btypevec
-      = (char **) xmalloc (from->bsize * sizeof (to->btypevec[0]));
+      = (char **) xmalloc ("demangle.wsctf.5",
+                           from->bsize * sizeof (to->btypevec[0]));
 
   for (i = 0; i < from->numb; i++)
     {
       int len = strlen (from->btypevec[i]) + 1;
 
-      to->btypevec[i] = xmalloc (len);
+      to->btypevec[i] = xmalloc ("demangle.wsctf.6", len);
       memcpy (to->btypevec[i], from->btypevec[i], len);
     }
 
   if (from->ntmpl_args)
     to->tmpl_argvec
-      = xmalloc (from->ntmpl_args * sizeof (to->tmpl_argvec[0]));
+      = xmalloc ("demangle.wsctf.7",
+                 from->ntmpl_args * sizeof (to->tmpl_argvec[0]));
 
   for (i = 0; i < from->ntmpl_args; i++)
     {
       int len = strlen (from->tmpl_argvec[i]) + 1;
 
-      to->tmpl_argvec[i] = xmalloc (len);
+      to->tmpl_argvec[i] = xmalloc ("demangle.wsctf.8", len);
       memcpy (to->tmpl_argvec[i], from->tmpl_argvec[i], len);
     }
 
   if (from->previous_argument)
     {
-      to->previous_argument = (string*) xmalloc (sizeof (string));
+      to->previous_argument = (string*) xmalloc ("demangle.wsctf.9",
+                                                 sizeof (string));
       string_init (to->previous_argument);
       string_appends (to->previous_argument, from->previous_argument);
     }
@@ -2018,7 +2023,7 @@ demangle_template_value_parm (work, mangled, s, tk)
 	    string_appendn (s, "0", 1);
 	  else
 	    {
-	      char *p = xmalloc (symbol_len + 1), *q;
+	      char *p = xmalloc ("demangle.dtvp.1", symbol_len + 1), *q;
 	      strncpy (p, *mangled, symbol_len);
 	      p [symbol_len] = '\0';
 	      /* We use cplus_demangle here, rather than
@@ -2133,7 +2138,8 @@ demangle_template (work, mangled, tname, trawname, is_type, remember)
   if (!is_type)
     {
       /* Create an array for saving the template argument values. */
-      work->tmpl_argvec = (char**) xmalloc (r * sizeof (char *));
+      work->tmpl_argvec = (char**) xmalloc ("demangle.dt.1",
+                                            r * sizeof (char *));
       work->ntmpl_args = r;
       for (i = 0; i < r; i++)
 	work->tmpl_argvec[i] = 0;
@@ -2158,7 +2164,7 @@ demangle_template (work, mangled, tname, trawname, is_type, remember)
 		{
 		  /* Save the template argument. */
 		  int len = temp.p - temp.b;
-		  work->tmpl_argvec[i] = xmalloc (len + 1);
+		  work->tmpl_argvec[i] = xmalloc ("demangle.dt.2", len + 1);
 		  memcpy (work->tmpl_argvec[i], temp.b, len);
 		  work->tmpl_argvec[i][len] = '\0';
 		}
@@ -2186,7 +2192,7 @@ demangle_template (work, mangled, tname, trawname, is_type, remember)
 		{
 		  /* Save the template argument. */
 		  int len = r2;
-		  work->tmpl_argvec[i] = xmalloc (len + 1);
+		  work->tmpl_argvec[i] = xmalloc ("demangle.dt.3", len + 1);
 		  memcpy (work->tmpl_argvec[i], *mangled, len);
 		  work->tmpl_argvec[i][len] = '\0';
 		}
@@ -2232,7 +2238,7 @@ demangle_template (work, mangled, tname, trawname, is_type, remember)
 	  if (!is_type)
 	    {
 	      int len = s->p - s->b;
-	      work->tmpl_argvec[i] = xmalloc (len + 1);
+	      work->tmpl_argvec[i] = xmalloc ("demangle.dt.4", len + 1);
 	      memcpy (work->tmpl_argvec[i], s->b, len);
 	      work->tmpl_argvec[i][len] = '\0';
 
@@ -3131,7 +3137,7 @@ recursively_demangle(work, mangled, result, namelength)
   char * recurse = (char *)NULL;
   char * recurse_dem = (char *)NULL;
 
-  recurse = (char *) xmalloc (namelength + 1);
+  recurse = (char *) xmalloc ("demangle.rd.1", namelength + 1);
   memcpy (recurse, *mangled, namelength);
   recurse[namelength] = '\000';
 
@@ -4130,7 +4136,7 @@ do_hpacc_template_literal (work, mangled, result)
   string_append (result, "&");
 
   /* Now recursively demangle the literal name */
-  recurse = (char *) xmalloc (literal_len + 1);
+  recurse = (char *) xmalloc ("demangle.dhtl.1", literal_len + 1);
   memcpy (recurse, *mangled, literal_len);
   recurse[literal_len] = '\000';
 
@@ -4240,7 +4246,8 @@ do_arg (work, mangled, result)
     string_clear (work->previous_argument);
   else
     {
-      work->previous_argument = (string*) xmalloc (sizeof (string));
+      work->previous_argument = (string*) xmalloc ("demangle.da.1",
+                                                   sizeof (string));
       string_init (work->previous_argument);
     }
 
@@ -4275,17 +4282,18 @@ remember_type (work, start, len)
 	{
 	  work -> typevec_size = 3;
 	  work -> typevec
-	    = (char **) xmalloc (sizeof (char *) * work -> typevec_size);
+	    = (char **) xmalloc ("demangle.rt.1",
+                                 sizeof (char *) * work -> typevec_size);
 	}
       else
 	{
 	  work -> typevec_size *= 2;
 	  work -> typevec
-	    = (char **) xrealloc ((char *)work -> typevec,
+	    = (char **) xrealloc ("demangle.rt.2", (char *)work -> typevec,
 				  sizeof (char *) * work -> typevec_size);
 	}
     }
-  tem = xmalloc (len + 1);
+  tem = xmalloc ("demangle.rt.3", len + 1);
   memcpy (tem, start, len);
   tem[len] = '\0';
   work -> typevec[work -> ntypes++] = tem;
@@ -4307,17 +4315,18 @@ remember_Ktype (work, start, len)
 	{
 	  work -> ksize = 5;
 	  work -> ktypevec
-	    = (char **) xmalloc (sizeof (char *) * work -> ksize);
+	    = (char **) xmalloc ("demangle.rK.1",
+                                 sizeof (char *) * work -> ksize);
 	}
       else
 	{
 	  work -> ksize *= 2;
 	  work -> ktypevec
-	    = (char **) xrealloc ((char *)work -> ktypevec,
+	    = (char **) xrealloc ("demangle.rK.2", (char *)work -> ktypevec,
 				  sizeof (char *) * work -> ksize);
 	}
     }
-  tem = xmalloc (len + 1);
+  tem = xmalloc ("demangle.rK.3", len + 1);
   memcpy (tem, start, len);
   tem[len] = '\0';
   work -> ktypevec[work -> numk++] = tem;
@@ -4339,13 +4348,14 @@ register_Btype (work)
 	{
 	  work -> bsize = 5;
 	  work -> btypevec
-	    = (char **) xmalloc (sizeof (char *) * work -> bsize);
+	    = (char **) xmalloc ("demangle.rB.1", 
+                                 sizeof (char *) * work -> bsize);
 	}
       else
 	{
 	  work -> bsize *= 2;
 	  work -> btypevec
-	    = (char **) xrealloc ((char *)work -> btypevec,
+	    = (char **) xrealloc ("demangle.rB.2", (char *)work -> btypevec,
 				  sizeof (char *) * work -> bsize);
 	}
     }
@@ -4364,7 +4374,7 @@ remember_Btype (work, start, len, ind)
 {
   char *tem;
 
-  tem = xmalloc (len + 1);
+  tem = xmalloc ("demangle.remember_Btype.1", len + 1);
   memcpy (tem, start, len);
   tem[len] = '\0';
   work -> btypevec[ind] = tem;
@@ -4815,7 +4825,7 @@ string_need (s, n)
 	{
 	  n = 32;
 	}
-      s->p = s->b = xmalloc (n);
+      s->p = s->b = xmalloc ("demangle.sn.1", n);
       s->e = s->b + n;
     }
   else if (s->e - s->p < n)
@@ -4823,7 +4833,7 @@ string_need (s, n)
       tem = s->p - s->b;
       n += tem;
       n *= 2;
-      s->b = xrealloc (s->b, n);
+      s->b = xrealloc ("demangle.sn.2", s->b, n);
       s->p = s->b + tem;
       s->e = s->b + n;
     }

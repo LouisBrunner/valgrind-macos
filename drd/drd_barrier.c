@@ -112,7 +112,8 @@ void barrier_initialize(struct barrier_info* const p,
   tl_assert(sizeof(((struct barrier_thread_info*)0)->tid) == sizeof(Word));
   tl_assert(sizeof(((struct barrier_thread_info*)0)->tid)
             >= sizeof(DrdThreadId));
-  p->oset = VG_(OSetGen_Create)(0, 0, VG_(malloc), VG_(free));
+  p->oset = VG_(OSetGen_Create)(0, 0, VG_(malloc), "drd.barrier.bi.1",
+                                      VG_(free));
 }
 
 /** Deallocate the memory allocated by barrier_initialize() and in p->oset. 

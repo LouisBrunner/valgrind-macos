@@ -38,7 +38,8 @@
 /* See pub_tool_xarray.h for details of what this is all about. */
 
 struct _XArray {
-   void* (*alloc) ( SizeT );        /* alloc fn (nofail) */
+   void* (*alloc) ( HChar*, SizeT ); /* alloc fn (nofail) */
+   HChar* cc;                       /* cost centre for alloc */
    void  (*free) ( void* );         /* free fn */
    Int   (*cmpFn) ( void*, void* ); /* cmp fn (may be NULL) */
    Word  elemSzB;   /* element size in bytes */
@@ -49,7 +50,8 @@ struct _XArray {
 };
 
 
-XArray* VG_(newXA) ( void*(*alloc_fn)(SizeT), 
+XArray* VG_(newXA) ( void*(*alloc_fn)(HChar*,SizeT), 
+                     HChar* cc,
                      void(*free_fn)(void*),
                      Word elemSzB )
 {
@@ -63,9 +65,10 @@ XArray* VG_(newXA) ( void*(*alloc_fn)(SizeT),
    vg_assert(alloc_fn);
    vg_assert(free_fn);
    vg_assert(elemSzB > 0);
-   xa = alloc_fn( sizeof(struct _XArray) );
+   xa = alloc_fn( cc, sizeof(struct _XArray) );
    vg_assert(xa);
    xa->alloc     = alloc_fn;
+   xa->cc        = cc;
    xa->free      = free_fn;
    xa->cmpFn     = NULL;
    xa->elemSzB   = elemSzB;
@@ -76,19 +79,22 @@ XArray* VG_(newXA) ( void*(*alloc_fn)(SizeT),
    return xa;
 }
 
-XArray* VG_(cloneXA)( XArray* xao )
+XArray* VG_(cloneXA)( HChar* cc, XArray* xao )
 {
    struct _XArray* xa = (struct _XArray*)xao;
    struct _XArray* nyu;
+   HChar* nyu_cc;
    vg_assert(xa);
    vg_assert(xa->alloc);
    vg_assert(xa->free);
    vg_assert(xa->elemSzB >= 1);
-   nyu = xa->alloc( sizeof(struct _XArray) );
+   nyu_cc = cc ? cc : xa->cc;
+   nyu = xa->alloc( nyu_cc, sizeof(struct _XArray) );
    if (!nyu)
       return NULL;
    /* Copy everything verbatim ... */
    *nyu = *xa;
+   nyu->cc = nyu_cc;
    /* ... except we have to clone the contents-array */
    if (nyu->arr) {
       /* Restrict the total size of the new array to its current
@@ -98,7 +104,7 @@ XArray* VG_(cloneXA)( XArray* xao )
          element is later added to it, unfortunately. */
       nyu->totsizeE = nyu->usedsizeE;
       /* and allocate .. */
-      nyu->arr = nyu->alloc( nyu->totsizeE * nyu->elemSzB );
+      nyu->arr = nyu->alloc( nyu->cc, nyu->totsizeE * nyu->elemSzB );
       if (!nyu->arr) {
          nyu->free(nyu);
          return NULL;
@@ -161,7 +167,7 @@ static inline void ensureSpaceXA ( struct _XArray* xa )
       if (0 && xa->totsizeE >= 10000) 
          VG_(printf)("addToXA: increasing from %ld to %ld\n", 
                      xa->totsizeE, newsz);
-      tmp = xa->alloc(newsz * xa->elemSzB);
+      tmp = xa->alloc(xa->cc, newsz * xa->elemSzB);
       vg_assert(tmp);
       if (xa->usedsizeE > 0) 
          VG_(memcpy)(tmp, xa->arr, xa->usedsizeE * xa->elemSzB);

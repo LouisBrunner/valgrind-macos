@@ -125,8 +125,8 @@ void ML_(aix5_rescan_procmap_after_load_or_unload) ( void )
    /* Find out how many AixCodeSegChange records we will need, and
       acquire them. */
    changes_size = VG_(am_aix5_reread_procmap_howmany_directives)(); 
-   changes = VG_(arena_malloc)(VG_AR_CORE,
-                                  changes_size * sizeof(AixCodeSegChange));
+   changes = VG_(arena_malloc)(VG_AR_CORE, "syswrap-aix5.arpalou.1",
+                               changes_size * sizeof(AixCodeSegChange));
    vg_assert(changes);
 
    /* Now re-read /proc/<pid>/map and acquire a change set */
@@ -135,24 +135,24 @@ void ML_(aix5_rescan_procmap_after_load_or_unload) ( void )
 
    /* And notify all parties of the changes. */
    for (i = 0; i < changes_used; i++) {
-      VG_(di_aix5_notify_segchange)(
-         changes[i].code_start,
-         changes[i].code_len,
-         changes[i].data_start,
-         changes[i].data_len,
-         changes[i].file_name,
-         changes[i].mem_name,
-         changes[i].is_mainexe,
-         changes[i].acquire
-      );
+      ULong di_handle = VG_(di_aix5_notify_segchange)(
+                           changes[i].code_start,
+                           changes[i].code_len,
+                           changes[i].data_start,
+                           changes[i].data_len,
+                           changes[i].file_name,
+                           changes[i].mem_name,
+                           changes[i].is_mainexe,
+                           changes[i].acquire
+                        );
 
       if (changes[i].acquire) {
          VG_TRACK( new_mem_mmap, 
                    changes[i].code_start, changes[i].code_len, 
-                   /*r*/True, /*w*/False, /*x*/True );
+                   /*r*/True, /*w*/False, /*x*/True, di_handle );
          VG_TRACK( new_mem_mmap, 
                    changes[i].data_start, changes[i].data_len, 
-                   /*r*/True, /*w*/True, /*x*/False );
+                   /*r*/True, /*w*/True, /*x*/False, 0/*or di_handle?*/ );
       } else {
          VG_TRACK( die_mem_munmap, 
                    changes[i].code_start, changes[i].code_len );
@@ -962,7 +962,8 @@ PRE(sys_execve)
             tot_args++;
       }
       // allocate
-      argv = VG_(malloc)( (tot_args+1) * sizeof(HChar*) );
+      argv = VG_(malloc)( "syswrap-aix5.pre_sys_execve.1",
+                          (tot_args+1) * sizeof(HChar*) );
       if (argv == 0) goto hosed;
       // copy
       j = 0;
@@ -1711,7 +1712,7 @@ POST(sys_mmap)
    Bool r = (prot & VKI_PROT_READ) > 0;
    Bool w = (prot & VKI_PROT_WRITE) > 0;
    Bool x = (prot & VKI_PROT_EXEC) > 0;
-   VG_TRACK( new_mem_mmap, addr, len, r,w,x );
+   VG_TRACK( new_mem_mmap, addr, len, r,w,x, 0/*di_handle*/ );
    Bool d = VG_(am_notify_client_mmap)( addr, len, prot, flags, 
                                         0/*fake fd*/, 0/*fake offset*/);
    if (d) 
@@ -2116,7 +2117,7 @@ POST(sys_shmat)
 
       /* we don't distinguish whether it's read-only or
        * read-write -- it doesn't matter really. */
-      VG_TRACK( new_mem_mmap, RES, segmentSize, True, True, False );
+      VG_TRACK( new_mem_mmap, RES, segmentSize, True, True, False, 0/*di_handle*/ );
       if (d)
          VG_(discard_translations)( (Addr64)RES, 
                                     (ULong)VG_PGROUNDUP(segmentSize),

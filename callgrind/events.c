@@ -46,7 +46,7 @@ EventType* CLG_(register_eventtype)(Char* name)
 
   et = &(eventtype[eventtype_count]);
   et->id = eventtype_count; 
-  et->name = (UChar*) VG_(strdup)(name);
+  et->name = (UChar*) VG_(strdup)("cl.events.re.1", name);
   et->description = 0;
 
   eventtype_count++;
@@ -77,7 +77,8 @@ EventSet* CLG_(get_eventset)(Char* n, Int capacity)
 {
   EventSet* es;
 
-  es = (EventSet*) CLG_MALLOC(sizeof(EventSet) +
+  es = (EventSet*) CLG_MALLOC("cl.events.geSet.1",
+                               sizeof(EventSet) +
 			       capacity * sizeof(EventSetEntry));
   es->capacity = capacity;
   es->size = 0;
@@ -499,7 +500,8 @@ EventMapping* CLG_(get_eventmapping)(EventSet* es)
 
   CLG_ASSERT(es != 0);
 
-  em = (EventMapping*) CLG_MALLOC(sizeof(EventMapping) +
+  em = (EventMapping*) CLG_MALLOC("cl.events.geMapping.1",
+                                   sizeof(EventMapping) +
 				   es->capacity * sizeof(Int));
   em->capacity = es->capacity;
   em->size = 0;

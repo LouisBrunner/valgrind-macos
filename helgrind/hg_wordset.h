@@ -47,7 +47,7 @@ typedef  struct _WordSetU  WordSetU;  /* opaque */
 typedef  UInt              WordSet;   /* opaque, small int index */
 
 /* Allocate and initialise a WordSetU */
-WordSetU* HG_(newWordSetU) ( void* (*alloc_nofail)( SizeT ),
+WordSetU* HG_(newWordSetU) ( void* (*alloc_nofail)( HChar*, SizeT ),
                              void  (*dealloc)(void*),
                              Word  cacheSize );
 

@@ -116,7 +116,7 @@ Segment* sg_new(ThreadId const creator, ThreadId const created)
   if (s_max_alive_segments_count < s_alive_segments_count)
     s_max_alive_segments_count = s_alive_segments_count;
 
-  sg = VG_(malloc)(sizeof(*sg));
+  sg = VG_(malloc)("drd.segment.sn.1", sizeof(*sg));
   tl_assert(sg);
   sg_init(sg, creator, created);
   return sg;

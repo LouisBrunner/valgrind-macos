@@ -186,8 +186,8 @@ obj_node* new_obj_node(DebugInfo* di, obj_node* next)
    Int i;
    obj_node* new;
 
-   new = (obj_node*) CLG_MALLOC(sizeof(obj_node));
-   new->name  = di ? VG_(strdup)( VG_(seginfo_filename)(di) )
+   new = (obj_node*) CLG_MALLOC("cl.fn.non.1", sizeof(obj_node));
+   new->name  = di ? VG_(strdup)( "cl.fn.non.2",VG_(seginfo_filename)(di) )
                      : anonymous_obj;
    for (i = 0; i < N_FILE_ENTRIES; i++) {
       new->files[i] = NULL;
@@ -244,8 +244,9 @@ file_node* new_file_node(Char filename[FILENAME_LEN],
 			 obj_node* obj, file_node* next)
 {
   Int i;
-  file_node* new = (file_node*) CLG_MALLOC(sizeof(file_node));
-  new->name  = VG_(strdup)(filename);
+  file_node* new = (file_node*) CLG_MALLOC("cl.fn.nfn.1",
+                                           sizeof(file_node));
+  new->name  = VG_(strdup)("cl.fn.nfn.2", filename);
   for (i = 0; i < N_FN_ENTRIES; i++) {
     new->fns[i] = NULL;
   }
@@ -286,8 +287,9 @@ static __inline__
 fn_node* new_fn_node(Char fnname[FILENAME_LEN],
 		     file_node* file, fn_node* next)
 {
-    fn_node* new = (fn_node*) CLG_MALLOC(sizeof(fn_node));
-    new->name = VG_(strdup)(fnname);
+    fn_node* new = (fn_node*) CLG_MALLOC("cl.fn.nfnnd.1",
+                                         sizeof(fn_node));
+    new->name = VG_(strdup)("cl.fn.nfnnd.2", fnname);
 
     CLG_(stat).distinct_fns++;
     new->number   = CLG_(stat).distinct_fns;
@@ -574,7 +576,8 @@ void CLG_(init_fn_array)(fn_array* a)
   if (a->size <= CLG_(stat).distinct_fns)
     a->size = CLG_(stat).distinct_fns+1;
   
-  a->array = (UInt*) CLG_MALLOC(a->size * sizeof(UInt));
+  a->array = (UInt*) CLG_MALLOC("cl.fn.gfe.1",
+                                a->size * sizeof(UInt));
   for(i=0;i<a->size;i++)
     a->array[i] = 0;
 }
@@ -617,7 +620,7 @@ static void resize_fn_array(void)
     CLG_DEBUG(0, "Resize fn_active_array: %d => %d\n",
 	     current_fn_active.size, newsize);
 
-    new = (UInt*) CLG_MALLOC(newsize * sizeof(UInt));
+    new = (UInt*) CLG_MALLOC("cl.fn.rfa.1", newsize * sizeof(UInt));
     for(i=0;i<current_fn_active.size;i++)
       new[i] = current_fn_active.array[i];
     while(i<newsize)

@@ -22,6 +22,8 @@ noinst_SCRIPTS = \
 	filter_cmdline0 filter_linenos \
 	filter_fdleak filter_none_discards filter_stderr
 
+noinst_HEADERS = fdleak.h
+
 EXTRA_DIST = $(noinst_SCRIPTS) \
 	ansi.stderr.exp ansi.vgtest \
 	args.stderr.exp args.stdout.exp args.vgtest \

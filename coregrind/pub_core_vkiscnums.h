@@ -51,9 +51,6 @@
 /* Bind the given syscall name to the given number.  Returns True if
    successful, False if the name is unknown. */
 extern Bool VG_(aix5_register_syscall)( Int, UChar* );
-/* Look up in said binding later, for the purposes of making error
-   messages. */
-extern UChar* VG_(aix5_sysno_to_sysname)( Int sysno );
 #endif
 
 #endif /* !defined(VG_IN_ASSEMBLY_SOURCE) */

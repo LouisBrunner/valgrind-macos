@@ -74,7 +74,8 @@ static void cachesim_initcache(cache_t config, cache_t2* c)
                                  c->size, c->line_size, c->assoc);
    }
 
-   c->tags = VG_(malloc)(sizeof(UWord) * c->sets * c->assoc);
+   c->tags = VG_(malloc)("cg.sim.ci.1",
+                         sizeof(UWord) * c->sets * c->assoc);
 
    for (i = 0; i < c->sets * c->assoc; i++)
       c->tags[i] = 0;

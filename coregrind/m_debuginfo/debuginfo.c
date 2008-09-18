@@ -156,6 +156,11 @@ static void move_DebugInfo_one_step_forward ( DebugInfo* di )
 /*--- Notification (acquire/discard) helpers               ---*/
 /*------------------------------------------------------------*/
 
+/* Gives out unique abstract handles for allocated DebugInfos.  See
+   comment in priv_storage.h, declaration of struct _DebugInfo, for
+   details. */
+static ULong handle_counter = 1;
+
 /* Allocate and zero out a new DebugInfo record. */
 static 
 DebugInfo* alloc_DebugInfo( const UChar* filename,
@@ -166,9 +171,10 @@ DebugInfo* alloc_DebugInfo( const UChar* filename,
 
    vg_assert(filename);
 
-   di = ML_(dinfo_zalloc)(sizeof(DebugInfo));
-   di->filename  = ML_(dinfo_strdup)(filename);
-   di->memname   = memname ? ML_(dinfo_strdup)(memname)
+   di = ML_(dinfo_zalloc)("di.debuginfo.aDI.1", sizeof(DebugInfo));
+   di->handle    = handle_counter++;
+   di->filename  = ML_(dinfo_strdup)("di.debuginfo.aDI.2", filename);
+   di->memname   = memname ? ML_(dinfo_strdup)("di.debuginfo.aDI.3", memname)
                            : NULL;
 
    /* Everything else -- pointers, sizes, arrays -- is zeroed by calloc.
@@ -194,7 +200,7 @@ static void free_DebugInfo ( DebugInfo* di )
 {
    Word i, j, n;
    struct strchunk *chunk, *next;
-   TyAdmin* admin;
+   TyEnt* ent;
    GExpr* gexpr;
 
    vg_assert(di != NULL);
@@ -209,17 +215,18 @@ static void free_DebugInfo ( DebugInfo* di )
       ML_(dinfo_free)(chunk);
    }
 
-   /* Delete the two admin lists.  These lists exist purely so that we
-      can visit each object exactly once when we need to delete
-      them. */
-   if (di->admin_tyadmins) {
-      n = VG_(sizeXA)(di->admin_tyadmins);
+   /* Delete the two admin arrays.  These lists exist primarily so
+      that we can visit each object exactly once when we need to
+      delete them. */
+   if (di->admin_tyents) {
+      n = VG_(sizeXA)(di->admin_tyents);
       for (i = 0; i < n; i++) {
-         admin = (TyAdmin*)VG_(indexXA)(di->admin_tyadmins, i);
-         ML_(delete_payload_of_TyAdmin)(admin);
+         ent = (TyEnt*)VG_(indexXA)(di->admin_tyents, i);
+         /* Dump anything hanging off this ent */
+         ML_(TyEnt__make_EMPTY)(ent);
       }
-      VG_(deleteXA)(di->admin_tyadmins);
-      di->admin_tyadmins = NULL;
+      VG_(deleteXA)(di->admin_tyents);
+      di->admin_tyents = NULL;
    }
 
    if (di->admin_gexprs) {
@@ -490,14 +497,22 @@ DebugInfo* find_or_create_DebugInfo_for ( UChar* filename, UChar* memname )
    will try load debug info if the mapping at 'a' belongs to Valgrind;
    whereas normally (False) it will not do that.  This allows us to
    carefully control when the thing will read symbols from the
-   Valgrind executable itself. */
+   Valgrind executable itself.
 
-void VG_(di_notify_mmap)( Addr a, Bool allow_SkFileV )
+   If a call to VG_(di_notify_mmap) causes debug info to be read, then
+   the returned ULong is an abstract handle which can later be used to
+   refer to the debuginfo read as a result of this specific mapping,
+   in later queries to m_debuginfo.  In this case the handle value
+   will be one or above.  If the returned value is zero, no debug info
+   was read. */
+
+ULong VG_(di_notify_mmap)( Addr a, Bool allow_SkFileV )
 {
    NSegment const * seg;
    HChar*     filename;
    Bool       ok, is_rx_map, is_rw_map;
    DebugInfo* di;
+   ULong      di_handle;
    SysRes     fd;
    Int        nread;
    HChar      buf1k[1024];
@@ -523,12 +538,12 @@ void VG_(di_notify_mmap)( Addr a, Bool allow_SkFileV )
    /* Ignore non-file mappings */
    if ( ! (seg->kind == SkFileC
            || (seg->kind == SkFileV && allow_SkFileV)) )
-      return;
+      return 0;
 
    /* If the file doesn't have a name, we're hosed.  Give up. */
    filename = VG_(am_get_filename)( (NSegment*)seg );
    if (!filename)
-      return;
+      return 0;
 
    if (debug)
       VG_(printf)("di_notify_mmap-2: %s\n", filename);
@@ -550,13 +565,13 @@ void VG_(di_notify_mmap)( Addr a, Bool allow_SkFileV )
          fake_di.filename = filename;
          ML_(symerr)(&fake_di, True, "failed to stat64/stat this file");
       }
-      return;
+      return 0;
    }
 
    /* Finally, the point of all this stattery: if it's not a regular file,
       don't try to read debug info from it. */
    if (! VKI_S_ISREG(statbuf.st_mode))
-      return;
+      return 0;
 
    /* no uses of statbuf below here. */
 
@@ -572,25 +587,25 @@ void VG_(di_notify_mmap)( Addr a, Bool allow_SkFileV )
          fake_di.filename = filename;
          ML_(symerr)(&fake_di, True, "can't open file to inspect ELF header");
       }
-      return;
+      return 0;
    }
    nread = VG_(read)( fd.res, buf1k, sizeof(buf1k) );
    VG_(close)( fd.res );
 
    if (nread == 0)
-      return;
+      return 0;
    if (nread < 0) {
       DebugInfo fake_di;
       VG_(memset)(&fake_di, 0, sizeof(fake_di));
       fake_di.filename = filename;
       ML_(symerr)(&fake_di, True, "can't read file to inspect ELF header");
-      return;
+      return 0;
    }
    vg_assert(nread > 0 && nread <= sizeof(buf1k) );
 
    /* We're only interested in mappings of ELF object files. */
    if (!ML_(is_elf_object_file)( buf1k, (SizeT)nread ))
-      return;
+      return 0;
 
    /* Now we have to guess if this is a text-like mapping, a data-like
       mapping, neither or both.  The rules are:
@@ -645,7 +660,7 @@ void VG_(di_notify_mmap)( Addr a, Bool allow_SkFileV )
 
    /* If it is neither text-ish nor data-ish, we're not interested. */
    if (!(is_rx_map || is_rw_map))
-      return;
+      return 0;
 
    /* See if we have a DebugInfo for this filename.  If not,
       create one. */
@@ -676,48 +691,58 @@ void VG_(di_notify_mmap)( Addr a, Bool allow_SkFileV )
       }
    }
 
-   if (di->have_rx_map && di->have_rw_map && !di->have_dinfo) {
+   /* If we don't have an rx and rw mapping, or if we already have
+      debuginfo for this mapping for whatever reason, go no
+      further. */
+   if ( ! (di->have_rx_map && di->have_rw_map && !di->have_dinfo) )
+      return 0;
 
-      vg_assert(di->filename);
-      TRACE_SYMTAB("\n");
-      TRACE_SYMTAB("------ start ELF OBJECT "
-                   "------------------------------\n");
-      TRACE_SYMTAB("------ name = %s\n", di->filename);
-      TRACE_SYMTAB("\n");
+   /* Ok, so, finally, let's try to read the debuginfo. */
+   vg_assert(di->filename);
+   TRACE_SYMTAB("\n");
+   TRACE_SYMTAB("------ start ELF OBJECT "
+                "------------------------------\n");
+   TRACE_SYMTAB("------ name = %s\n", di->filename);
+   TRACE_SYMTAB("\n");
 
-      /* We're going to read symbols and debug info for the avma
-         ranges [rx_map_avma, +rx_map_size) and [rw_map_avma,
-         +rw_map_size).  First get rid of any other DebugInfos which
-         overlap either of those ranges (to avoid total confusion). */
-      discard_DebugInfos_which_overlap_with( di );
+   /* We're going to read symbols and debug info for the avma
+      ranges [rx_map_avma, +rx_map_size) and [rw_map_avma,
+      +rw_map_size).  First get rid of any other DebugInfos which
+      overlap either of those ranges (to avoid total confusion). */
+   discard_DebugInfos_which_overlap_with( di );
 
-      /* .. and acquire new info. */
-      ok = ML_(read_elf_debug_info)( di );
+   /* .. and acquire new info. */
+   ok = ML_(read_elf_debug_info)( di );
 
-      if (ok) {
-         TRACE_SYMTAB("\n------ Canonicalising the "
-                      "acquired info ------\n");
-         /* prepare read data for use */
-         ML_(canonicaliseTables)( di );
-         /* notify m_redir about it */
-         TRACE_SYMTAB("\n------ Notifying m_redir ------\n");
-         VG_(redir_notify_new_DebugInfo)( di );
-         /* Note that we succeeded */
-         di->have_dinfo = True;
-      } else {
-         TRACE_SYMTAB("\n------ ELF reading failed ------\n");
-         /* Something went wrong (eg. bad ELF file).  Should we delete
-            this DebugInfo?  No - it contains info on the rw/rx
-            mappings, at least. */
-      }
+   if (ok) {
 
-      TRACE_SYMTAB("\n");
-      TRACE_SYMTAB("------ name = %s\n", di->filename);
-      TRACE_SYMTAB("------ end ELF OBJECT "
-                   "------------------------------\n");
-      TRACE_SYMTAB("\n");
+      TRACE_SYMTAB("\n------ Canonicalising the "
+                   "acquired info ------\n");
+      /* prepare read data for use */
+      ML_(canonicaliseTables)( di );
+      /* notify m_redir about it */
+      TRACE_SYMTAB("\n------ Notifying m_redir ------\n");
+      VG_(redir_notify_new_DebugInfo)( di );
+      /* Note that we succeeded */
+      di->have_dinfo = True;
+      tl_assert(di->handle > 0);
+      di_handle = di->handle;
 
+   } else {
+      TRACE_SYMTAB("\n------ ELF reading failed ------\n");
+      /* Something went wrong (eg. bad ELF file).  Should we delete
+         this DebugInfo?  No - it contains info on the rw/rx
+         mappings, at least. */
+      di_handle = 0;
    }
+
+   TRACE_SYMTAB("\n");
+   TRACE_SYMTAB("------ name = %s\n", di->filename);
+   TRACE_SYMTAB("------ end ELF OBJECT "
+                "------------------------------\n");
+   TRACE_SYMTAB("\n");
+
+   return di_handle;
 }
 
 
@@ -760,7 +785,7 @@ void VG_(di_notify_mprotect)( Addr a, SizeT len, UInt prot )
    read debug info for it -- or conversely, have recently been dumped,
    in which case the relevant debug info has to be unloaded. */
 
-void VG_(di_aix5_notify_segchange)( 
+ULong VG_(di_aix5_notify_segchange)( 
                Addr   code_start,
                Word   code_len,
                Addr   data_start,
@@ -770,6 +795,8 @@ void VG_(di_aix5_notify_segchange)(
                Bool   is_mainexe,
                Bool   acquire )
 {
+   ULong hdl = 0;
+
    if (acquire) {
 
       Bool       ok;
@@ -811,6 +838,8 @@ void VG_(di_aix5_notify_segchange)(
          VG_(redir_notify_new_DebugInfo)( di );
          /* Note that we succeeded */
          di->have_dinfo = True;
+         hdl = di->handle;
+         vg_assert(hdl > 0);
       } else {
          /*  Something went wrong (eg. bad XCOFF file). */
          discard_DebugInfo( di );
@@ -825,6 +854,8 @@ void VG_(di_aix5_notify_segchange)(
          discard_syms_in_range( code_start, code_len );
 
    }
+
+   return hdl;
 }
         
 
@@ -836,6 +867,19 @@ void VG_(di_aix5_notify_segchange)(
 /*--- TOP LEVEL: QUERYING EXISTING DEBUG INFO              ---*/
 /*---                                                      ---*/
 /*------------------------------------------------------------*/
+
+void VG_(di_discard_ALL_debuginfo)( void )
+{
+   DebugInfo *di, *di2;
+   di = debugInfo_list;
+   while (di) {
+      di2 = di->next;
+      VG_(printf)("XXX rm %p\n", di);
+      free_DebugInfo( di );
+      di = di2;
+   }
+}
+
 
 /*------------------------------------------------------------*/
 /*--- Use of symbol table & location info to create        ---*/
@@ -1613,7 +1657,7 @@ Bool VG_(use_CF_info) ( /*MOD*/Addr* ipP,
             case CFIR_MEMCFAREL: {                      \
                Addr a = cfa + (Word)_off;               \
                if (a < min_accessible                   \
-                   || a+sizeof(Addr) > max_accessible)  \
+                   || a > max_accessible-sizeof(Addr))  \
                   return False;                         \
                _prev = *(Addr*)a;                       \
                break;                                   \
@@ -1664,6 +1708,7 @@ Bool VG_(use_CF_info) ( /*MOD*/Addr* ipP,
    regs, which supplies ip,sp,fp values, will be NULL for global
    variables, and non-NULL for local variables. */
 static Bool data_address_is_in_var ( /*OUT*/UWord* offset,
+                                     XArray* /* TyEnt */ tyents,
                                      DiVariable*   var,
                                      RegSummary*   regs,
                                      Addr          data_addr,
@@ -1673,12 +1718,12 @@ static Bool data_address_is_in_var ( /*OUT*/UWord* offset,
    SizeT      var_szB;
    GXResult   res;
    Bool       show = False;
+
    vg_assert(var->name);
-   vg_assert(var->type);
    vg_assert(var->gexpr);
 
    /* Figure out how big the variable is. */
-   muw = ML_(sizeOfType)(var->type);
+   muw = ML_(sizeOfType)(tyents, var->typeR);
    /* if this var has a type whose size is unknown, it should never
       have been added.  ML_(addVar) should have rejected it. */
    vg_assert(muw.b == True);
@@ -1688,7 +1733,7 @@ static Bool data_address_is_in_var ( /*OUT*/UWord* offset,
    if (show) {
       VG_(printf)("VVVV: data_address_%#lx_is_in_var: %s :: ",
                   data_addr, var->name );
-      ML_(pp_Type_C_ishly)( var->type );
+      ML_(pp_TyEnt_C_ishly)( tyents, var->typeR );
       VG_(printf)("\n");
    }
 
@@ -1867,7 +1912,6 @@ static void format_message ( /*OUT*/Char* dname1,
    dname1[n_dname-1] = dname2[n_dname-1] = 0;
 }
 
-
 /* Determine if data_addr is a local variable in the frame
    characterised by (ip,sp,fp), and if so write its description into
    dname{1,2}[0..n_dname-1], and return True.  If not, return
@@ -1976,11 +2020,13 @@ Bool consider_vars_in_frame ( /*OUT*/Char* dname1,
          if (debug)
             VG_(printf)("QQQQ:    var:name=%s %#lx-%#lx %#lx\n",
                         var->name,arange->aMin,arange->aMax,ip);
-         if (data_address_is_in_var( &offset, var, &regs, data_addr,
-                                     di->data_bias )) {
+         if (data_address_is_in_var( &offset, di->admin_tyents,
+                                     var, &regs,
+                                     data_addr, di->data_bias )) {
             OffT residual_offset = 0;
             XArray* described = ML_(describe_type)( &residual_offset,
-                                                    var->type, offset );
+                                                    di->admin_tyents, 
+                                                    var->typeR, offset );
             format_message( dname1, dname2, n_dname, 
                             data_addr, var, offset, residual_offset,
                             described, frameNo, tid );
@@ -2023,7 +2069,7 @@ Bool VG_(get_data_description)( /*OUT*/Char* dname1,
       scope. */
    for (di = debugInfo_list; di != NULL; di = di->next) {
       OSet*        global_scope;
-      Int          gs_size;
+      Word         gs_size;
       Addr         zero;
       DiAddrRange* global_arange;
       Word         i;
@@ -2073,12 +2119,13 @@ Bool VG_(get_data_description)( /*OUT*/Char* dname1,
             This means, if the evaluation of the location
             expression/list requires a register, we have to let it
             fail. */
-         if (data_address_is_in_var( &offset, var, 
+         if (data_address_is_in_var( &offset, di->admin_tyents, var, 
                                      NULL/* RegSummary* */, 
                                      data_addr, di->data_bias )) {
             OffT residual_offset = 0;
             XArray* described = ML_(describe_type)( &residual_offset,
-                                                    var->type, offset );
+                                                    di->admin_tyents,
+                                                    var->typeR, offset );
             format_message( dname1, dname2, n_dname, 
                             data_addr, var, offset, residual_offset,
                             described, -1/*frameNo*/, tid );
@@ -2195,6 +2242,392 @@ Bool VG_(get_data_description)( /*OUT*/Char* dname1,
    return False;
 #  undef N_FRAMES
 }
+
+
+//////////////////////////////////////////////////////////////////
+//                                                              //
+// Support for other kinds of queries to the Dwarf3 var info    //
+//                                                              //
+//////////////////////////////////////////////////////////////////
+
+/* Figure out if the variable 'var' has a location that is linearly
+   dependent on a stack pointer value, or a frame pointer value, and
+   if it is, add a description of it to 'blocks'.  Otherwise ignore
+   it.  If 'arrays_only' is True, also ignore it unless it has an
+   array type. */
+
+static 
+void analyse_deps ( /*MOD*/XArray* /* of FrameBlock */ blocks,
+                    XArray* /* TyEnt */ tyents,
+                    Addr ip, Addr data_bias, DiVariable* var,
+                    Bool arrays_only )
+{
+   GXResult   res_sp_6k, res_sp_7k, res_fp_6k, res_fp_7k;
+   RegSummary regs;
+   MaybeUWord muw;
+   Bool       isVec;
+   TyEnt*     ty;
+
+   Bool debug = False;
+   if (0&&debug)
+      VG_(printf)("adeps: var %s\n", var->name );
+
+   /* Figure out how big the variable is. */
+   muw = ML_(sizeOfType)(tyents, var->typeR);
+   /* if this var has a type whose size is unknown or zero, it should
+      never have been added.  ML_(addVar) should have rejected it. */
+   vg_assert(muw.b == True);
+   vg_assert(muw.w > 0);
+
+   /* skip if non-array and we're only interested in arrays */
+   ty = ML_(TyEnts__index_by_cuOff)( tyents, NULL, var->typeR );
+   vg_assert(ty);
+   vg_assert(ty->tag == Te_UNKNOWN || ML_(TyEnt__is_type)(ty));
+   if (ty->tag == Te_UNKNOWN)
+      return; /* perhaps we should complain in this case? */
+   isVec = ty->tag == Te_TyArray;
+   if (arrays_only && !isVec)
+      return;
+
+   if (0) {ML_(pp_TyEnt_C_ishly)(tyents, var->typeR);
+           VG_(printf)("  %s\n", var->name);}
+
+   /* Do some test evaluations of the variable's location expression,
+      in order to guess whether it is sp-relative, fp-relative, or
+      none.  A crude hack, which can be interpreted roughly as finding
+      the first derivative of the location expression w.r.t. the
+      supplied frame and stack pointer values. */
+   regs.fp   = 0;
+   regs.ip   = ip;
+   regs.sp   = 6 * 1024;
+   res_sp_6k = ML_(evaluate_GX)( var->gexpr, var->fbGX, &regs, data_bias );
+
+   regs.fp   = 0;
+   regs.ip   = ip;
+   regs.sp   = 7 * 1024;
+   res_sp_7k = ML_(evaluate_GX)( var->gexpr, var->fbGX, &regs, data_bias );
+
+   regs.fp   = 6 * 1024;
+   regs.ip   = ip;
+   regs.sp   = 0;
+   res_fp_6k = ML_(evaluate_GX)( var->gexpr, var->fbGX, &regs, data_bias );
+
+   regs.fp   = 7 * 1024;
+   regs.ip   = ip;
+   regs.sp   = 0;
+   res_fp_7k = ML_(evaluate_GX)( var->gexpr, var->fbGX, &regs, data_bias );
+
+   vg_assert(res_sp_6k.kind == res_sp_7k.kind);
+   vg_assert(res_sp_6k.kind == res_fp_6k.kind);
+   vg_assert(res_sp_6k.kind == res_fp_7k.kind);
+
+   if (res_sp_6k.kind == GXR_Value) {
+      StackBlock block;
+      GXResult res;
+      UWord sp_delta = res_sp_7k.word - res_sp_6k.word;
+      UWord fp_delta = res_fp_7k.word - res_fp_6k.word;
+      tl_assert(sp_delta == 0 || sp_delta == 1024);
+      tl_assert(fp_delta == 0 || fp_delta == 1024);
+
+      if (sp_delta == 0 && fp_delta == 0) {
+         /* depends neither on sp nor fp, so it can't be a stack
+            local.  Ignore it. */
+      }
+      else
+      if (sp_delta == 1024 && fp_delta == 0) {
+         regs.sp = regs.fp = 0;
+         regs.ip = ip;
+         res = ML_(evaluate_GX)( var->gexpr, var->fbGX, &regs, data_bias );
+         tl_assert(res.kind == GXR_Value);
+         if (debug)
+         VG_(printf)("   %5ld .. %5ld (sp) %s\n",
+                     res.word, res.word + muw.w - 1, var->name);
+         block.base  = res.word;
+         block.szB   = muw.w;
+         block.spRel = True;
+         block.isVec = isVec;
+         VG_(memset)( &block.name[0], 0, sizeof(block.name) );
+         if (var->name)
+            VG_(strncpy)( &block.name[0], var->name, sizeof(block.name)-1 );
+         block.name[ sizeof(block.name)-1 ] = 0;
+         VG_(addToXA)( blocks, &block );
+      }
+      else
+      if (sp_delta == 0 && fp_delta == 1024) {
+         regs.sp = regs.fp = 0;
+         regs.ip = ip;
+         res = ML_(evaluate_GX)( var->gexpr, var->fbGX, &regs, data_bias );
+         tl_assert(res.kind == GXR_Value);
+         if (debug)
+         VG_(printf)("   %5ld .. %5ld (FP) %s\n",
+                     res.word, res.word + muw.w - 1, var->name);
+         block.base  = res.word;
+         block.szB   = muw.w;
+         block.spRel = False;
+         block.isVec = isVec;
+         VG_(memset)( &block.name[0], 0, sizeof(block.name) );
+         if (var->name)
+            VG_(strncpy)( &block.name[0], var->name, sizeof(block.name)-1 );
+         block.name[ sizeof(block.name)-1 ] = 0;
+         VG_(addToXA)( blocks, &block );
+      }
+      else {
+         vg_assert(0);
+      }
+   }
+}
+
+
+/* Get an XArray of StackBlock which describe the stack (auto) blocks
+   for this ip.  The caller is expected to free the XArray at some
+   point.  If 'arrays_only' is True, only array-typed blocks are
+   returned; otherwise blocks of all types are returned. */
+
+void* /* really, XArray* of StackBlock */
+      VG_(di_get_stack_blocks_at_ip)( Addr ip, Bool arrays_only )
+{
+   /* This is a derivation of consider_vars_in_frame() above. */
+   Word       i;
+   DebugInfo* di;
+   RegSummary regs;
+   Bool debug = False;
+
+   XArray* res = VG_(newXA)( ML_(dinfo_zalloc), "di.debuginfo.dgsbai.1",
+                             ML_(dinfo_free),
+                             sizeof(StackBlock) );
+
+   static UInt n_search = 0;
+   static UInt n_steps = 0;
+   n_search++;
+   if (debug)
+      VG_(printf)("QQQQ: dgsbai: ip %#lx\n", ip);
+   /* first, find the DebugInfo that pertains to 'ip'. */
+   for (di = debugInfo_list; di; di = di->next) {
+      n_steps++;
+      /* text segment missing? unlikely, but handle it .. */
+      if (!di->text_present || di->text_size == 0)
+         continue;
+      /* Ok.  So does this text mapping bracket the ip? */
+      if (di->text_avma <= ip && ip < di->text_avma + di->text_size)
+         break;
+   }
+ 
+   /* Didn't find it.  Strange -- means ip is a code address outside
+      of any mapped text segment.  Unlikely but not impossible -- app
+      could be generating code to run. */
+   if (!di)
+      return res; /* currently empty */
+
+   if (0 && ((n_search & 0x1) == 0))
+      VG_(printf)("VG_(di_get_stack_blocks_at_ip): %u searches, "
+                  "%u DebugInfos looked at\n", 
+                  n_search, n_steps);
+   /* Start of performance-enhancing hack: once every ??? (chosen
+      hackily after profiling) successful searches, move the found
+      DebugInfo one step closer to the start of the list.  This makes
+      future searches cheaper. */
+   if ((n_search & 0xFFFF) == 0) {
+      /* Move si one step closer to the start of the list. */
+      move_DebugInfo_one_step_forward( di );
+   }
+   /* End of performance-enhancing hack. */
+
+   /* any var info at all? */
+   if (!di->varinfo)
+      return res; /* currently empty */
+
+   /* Work through the scopes from most deeply nested outwards,
+      looking for code address ranges that bracket 'ip'.  The
+      variables on each such address range found are in scope right
+      now.  Don't descend to level zero as that is the global
+      scope. */
+   regs.ip = ip;
+   regs.sp = 0;
+   regs.fp = 0;
+
+   /* "for each scope, working outwards ..." */
+   for (i = VG_(sizeXA)(di->varinfo) - 1; i >= 1; i--) {
+      XArray*      vars;
+      Word         j;
+      DiAddrRange* arange;
+      OSet*        this_scope 
+         = *(OSet**)VG_(indexXA)( di->varinfo, i );
+      if (debug)
+         VG_(printf)("QQQQ:   considering scope %ld\n", (Word)i);
+      if (!this_scope)
+         continue;
+      /* Find the set of variables in this scope that
+         bracket the program counter. */
+      arange = VG_(OSetGen_LookupWithCmp)(
+                  this_scope, &ip, 
+                  ML_(cmp_for_DiAddrRange_range)
+               );
+      if (!arange)
+         continue;
+      /* stay sane */
+      vg_assert(arange->aMin <= arange->aMax);
+      /* It must bracket the ip we asked for, else
+         ML_(cmp_for_DiAddrRange_range) is somehow broken. */
+      vg_assert(arange->aMin <= ip && ip <= arange->aMax);
+      /* It must have an attached XArray of DiVariables. */
+      vars = arange->vars;
+      vg_assert(vars);
+      /* But it mustn't cover the entire address range.  We only
+         expect that to happen for the global scope (level 0), which
+         we're not looking at here.  Except, it may cover the entire
+         address range, but in that case the vars array must be
+         empty. */
+      vg_assert(! (arange->aMin == (Addr)0
+                   && arange->aMax == ~(Addr)0
+                   && VG_(sizeXA)(vars) > 0) );
+      for (j = 0; j < VG_(sizeXA)( vars ); j++) {
+         DiVariable* var = (DiVariable*)VG_(indexXA)( vars, j );
+         if (debug)
+            VG_(printf)("QQQQ:    var:name=%s %#lx-%#lx %#lx\n", 
+                        var->name,arange->aMin,arange->aMax,ip);
+         analyse_deps( res, di->admin_tyents, ip,
+                       di->data_bias, var, arrays_only );
+      }
+   }
+
+   return res;
+}
+
+
+/* Get an array of GlobalBlock which describe the global blocks owned
+   by the shared object characterised by the given di_handle.  Asserts
+   if the handle is invalid.  The caller is responsible for freeing
+   the array at some point.  If 'arrays_only' is True, only
+   array-typed blocks are returned; otherwise blocks of all types are
+   returned. */
+
+void* /* really, XArray* of GlobalBlock */
+      VG_(di_get_global_blocks_from_dihandle) ( ULong di_handle,
+                                                Bool  arrays_only )
+{
+   /* This is a derivation of consider_vars_in_frame() above. */
+
+   DebugInfo* di;
+   XArray* gvars; /* XArray* of GlobalBlock */
+   Word nScopes, scopeIx;
+
+   /* The first thing to do is find the DebugInfo that
+      pertains to 'di_handle'. */
+   tl_assert(di_handle > 0);
+   for (di = debugInfo_list; di; di = di->next) {
+      if (di->handle == di_handle)
+         break;
+   }
+
+   /* If this fails, we were unable to find any DebugInfo with the
+      given handle.  This is considered an error on the part of the
+      caller. */
+   tl_assert(di != NULL);
+
+   /* we'll put the collected variables in here. */
+   gvars = VG_(newXA)( ML_(dinfo_zalloc), "di.debuginfo.dggbfd.1",
+                       ML_(dinfo_free), sizeof(GlobalBlock) );
+   tl_assert(gvars);
+
+   /* any var info at all? */
+   if (!di->varinfo)
+      return gvars;
+
+   /* we'll iterate over all the variables we can find, even if
+      it seems senseless to visit stack-allocated variables */
+   /* Iterate over all scopes */
+   nScopes = VG_(sizeXA)( di->varinfo );
+   for (scopeIx = 0; scopeIx < nScopes; scopeIx++) {
+
+      /* Iterate over each (code) address range at the current scope */
+      DiAddrRange* range;
+      OSet* /* of DiAddrInfo */ scope
+         = *(OSet**)VG_(indexXA)( di->varinfo, scopeIx );
+      tl_assert(scope);
+      VG_(OSetGen_ResetIter)(scope);
+      while ( (range = VG_(OSetGen_Next)(scope)) ) {
+
+         /* Iterate over each variable in the current address range */
+         Word nVars, varIx;
+         tl_assert(range->vars);
+         nVars = VG_(sizeXA)( range->vars );
+         for (varIx = 0; varIx < nVars; varIx++) {
+
+            Bool        isVec;
+            GXResult    res;
+            MaybeUWord  muw;
+            GlobalBlock gb;
+            TyEnt*      ty;
+            DiVariable* var = VG_(indexXA)( range->vars, varIx );
+            tl_assert(var->name);
+            if (0) VG_(printf)("at depth %ld var %s ", scopeIx, var->name );
+
+            /* Now figure out if this variable has a constant address
+               (that is, independent of FP, SP, phase of moon, etc),
+               and if so, what the address is.  Any variable with a
+               constant address is deemed to be a global so we collect
+               it. */
+            if (0) { VG_(printf)("EVAL: "); ML_(pp_GX)(var->gexpr);
+                     VG_(printf)("\n"); }
+            res = ML_(evaluate_trivial_GX)( var->gexpr, di->data_bias );
+
+            /* Not a constant address => not interesting */
+            if (res.kind != GXR_Value) {
+               if (0) VG_(printf)("FAIL\n");
+               continue;
+            }
+
+            /* Ok, it's a constant address.  See if we want to collect
+               it. */
+            if (0) VG_(printf)("%#lx\n", res.word);
+
+            /* Figure out how big the variable is. */
+            muw = ML_(sizeOfType)(di->admin_tyents, var->typeR);
+
+            /* if this var has a type whose size is unknown or zero,
+               it should never have been added.  ML_(addVar) should
+               have rejected it. */
+            vg_assert(muw.b == True);
+            vg_assert(muw.w > 0);
+
+            /* skip if non-array and we're only interested in
+               arrays */
+            ty = ML_(TyEnts__index_by_cuOff)( di->admin_tyents, NULL,
+                                              var->typeR );
+            vg_assert(ty);
+            vg_assert(ty->tag == Te_UNKNOWN || ML_(TyEnt__is_type)(ty));
+            if (ty->tag == Te_UNKNOWN)
+               continue; /* perhaps we should complain in this case? */
+
+            isVec = ty->tag == Te_TyArray;
+            if (arrays_only && !isVec) continue;
+
+            /* Ok, so collect it! */
+            tl_assert(var->name);
+            tl_assert(di->soname);
+            if (0) VG_(printf)("XXXX %s %s %d\n", var->name,
+                                var->fileName?(HChar*)var->fileName
+                                             :"??",var->lineNo);
+            VG_(memset)(&gb, 0, sizeof(gb));
+            gb.addr  = res.word;
+            gb.szB   = muw.w;
+            gb.isVec = isVec;
+            VG_(strncpy)(&gb.name[0], var->name, sizeof(gb.name)-1);
+            VG_(strncpy)(&gb.soname[0], di->soname, sizeof(gb.soname)-1);
+            tl_assert(gb.name[ sizeof(gb.name)-1 ] == 0);
+            tl_assert(gb.soname[ sizeof(gb.soname)-1 ] == 0);
+
+            VG_(addToXA)( gvars, &gb );
+
+         } /* for (varIx = 0; varIx < nVars; varIx++) */
+
+      } /* while ( (range = VG_(OSetGen_Next)(scope)) ) */
+
+   } /* for (scopeIx = 0; scopeIx < nScopes; scopeIx++) */
+
+   return gvars;
+}
+
 
 
 /*------------------------------------------------------------*/

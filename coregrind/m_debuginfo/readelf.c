@@ -639,7 +639,8 @@ void read_elf_symtab__ppc64_linux(
 
    oset = VG_(OSetGen_Create)( offsetof(TempSym,key), 
                                (OSetCmp_t)cmp_TempSymKey, 
-                               ML_(dinfo_zalloc), ML_(dinfo_free) );
+                               ML_(dinfo_zalloc), "di.respl.1",
+                               ML_(dinfo_free) );
    vg_assert(oset);
 
    /* Perhaps should start at i = 1; ELF docs suggest that entry
@@ -905,7 +906,7 @@ Addr find_debug_file( struct _DebugInfo* di,
                       Char* objpath, Char* debugname, 
                       UInt crc, /*OUT*/UWord* size )
 {
-   Char *objdir = ML_(dinfo_strdup)(objpath);
+   Char *objdir = ML_(dinfo_strdup)("di.fdf.1", objpath);
    Char *objdirptr;
    Char *debugpath;
    Addr addr = 0;
@@ -914,6 +915,7 @@ Addr find_debug_file( struct _DebugInfo* di,
       *objdirptr = '\0';
 
    debugpath = ML_(dinfo_zalloc)(
+                  "di.fdf.2",
                   VG_(strlen)(objdir) + VG_(strlen)(debugname) + 32);
    
    VG_(sprintf)(debugpath, "%s/%s", objdir, debugname);
@@ -1239,7 +1241,7 @@ Bool ML_(read_elf_debug_info) ( struct _DebugInfo* di )
             }
             if (stroff != -1 && strtab != NULL) {
                TRACE_SYMTAB("Found soname = %s\n", strtab+stroff);
-               di->soname = ML_(dinfo_strdup)(strtab+stroff);
+               di->soname = ML_(dinfo_strdup)("di.redi.1", strtab+stroff);
             }
          }
       } /* for (i = 0; i < phdr_nent; i++) ... */

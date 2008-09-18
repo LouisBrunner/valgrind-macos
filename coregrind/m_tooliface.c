@@ -340,10 +340,10 @@ void VG_(fn)(VG_REGPARM(2) void(*f)(args)) { \
    VG_(tdict).fn = f; \
 }
 
-DEF0(track_new_mem_startup,       Addr, SizeT, Bool, Bool, Bool)
+DEF0(track_new_mem_startup,       Addr, SizeT, Bool, Bool, Bool, ULong)
 DEF0(track_new_mem_stack_signal,  Addr, SizeT, UInt)
 DEF0(track_new_mem_brk,           Addr, SizeT, UInt)
-DEF0(track_new_mem_mmap,          Addr, SizeT, Bool, Bool, Bool)
+DEF0(track_new_mem_mmap,          Addr, SizeT, Bool, Bool, Bool, ULong)
 
 DEF0(track_copy_mem_remap,        Addr, Addr, SizeT)
 DEF0(track_change_mem_mprotect,   Addr, SizeT, Bool, Bool, Bool)

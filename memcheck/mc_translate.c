@@ -3787,7 +3787,8 @@ IRSB* MC_(final_tidy) ( IRSB* sb_in )
    IRExpr*   guard;
    IRCallee* cee;
    Bool      alreadyPresent;
-   XArray*   pairs = VG_(newXA)( VG_(malloc), VG_(free), sizeof(Pair) );
+   XArray*   pairs = VG_(newXA)( VG_(malloc), "mc.ft.1",
+                                 VG_(free), sizeof(Pair) );
    /* Scan forwards through the statements.  Each time a call to one
       of the relevant helpers is seen, check if we have made a
       previous call to the same helper using the same guard

@@ -444,14 +444,14 @@ void translate_to_hw_format ( /* IN  */ vki_modify_ldt_t* inn,
 static VexGuestX86SegDescr* alloc_zeroed_x86_GDT ( void )
 {
    Int nbytes = VEX_GUEST_X86_GDT_NENT * sizeof(VexGuestX86SegDescr);
-   return VG_(arena_calloc)(VG_AR_CORE, nbytes, 1);
+   return VG_(arena_calloc)(VG_AR_CORE, "di.syswrap-x86.azxG.1", nbytes, 1);
 }
 
 /* Create a zeroed-out LDT. */
 static VexGuestX86SegDescr* alloc_zeroed_x86_LDT ( void )
 {
    Int nbytes = VEX_GUEST_X86_LDT_NENT * sizeof(VexGuestX86SegDescr);
-   return VG_(arena_calloc)(VG_AR_CORE, nbytes, 1);
+   return VG_(arena_calloc)(VG_AR_CORE, "di.syswrap-x86.azxL.1", nbytes, 1);
 }
 
 /* Free up an LDT or GDT allocated by the above fns. */

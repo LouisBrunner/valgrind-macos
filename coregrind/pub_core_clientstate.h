@@ -42,9 +42,6 @@
 
 // Address space globals
 
-extern Addr  VG_(client_base);	 // client address space limits
-extern Addr  VG_(client_end);
-
 extern Addr  VG_(clstk_base);	 // client stack range
 extern Addr  VG_(clstk_end);
 extern UWord VG_(clstk_id);      // client stack id

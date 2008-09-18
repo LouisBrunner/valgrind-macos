@@ -67,7 +67,7 @@ static HChar* read_dot_valgrindrc ( HChar* dir )
    if ( !fd.isError ) {
       size = VG_(fsize)(fd.res);
       if (size > 0) {
-         f_clo = VG_(malloc)(size+1);
+         f_clo = VG_(malloc)("commandline.rdv.1", size+1);
          vg_assert(f_clo);
          n = VG_(read)(fd.res, f_clo, size);
          if (n == -1) n = 0;
@@ -154,17 +154,20 @@ void VG_(split_up_argv)( Int argc, HChar** argv )
    vg_assert(!already_called);
    already_called = True;
 
-   tmp_xarray = VG_(newXA)( VG_(malloc), VG_(free), sizeof(HChar*) );
+   tmp_xarray = VG_(newXA)( VG_(malloc), "commandline.sua.1",
+                            VG_(free), sizeof(HChar*) );
    vg_assert(tmp_xarray);
 
    vg_assert( ! VG_(args_for_valgrind) );
    VG_(args_for_valgrind)
-      = VG_(newXA)( VG_(malloc), VG_(free), sizeof(HChar*) );
+      = VG_(newXA)( VG_(malloc), "commandline.sua.2",
+                    VG_(free), sizeof(HChar*) );
    vg_assert( VG_(args_for_valgrind) );
 
    vg_assert( ! VG_(args_for_client) );
    VG_(args_for_client)
-      = VG_(newXA)( VG_(malloc), VG_(free), sizeof(HChar*) );
+      = VG_(newXA)( VG_(malloc), "commandline.sua.3",
+                    VG_(free), sizeof(HChar*) );
    vg_assert( VG_(args_for_client) );
 
    /* Collect up the args-for-V. */
@@ -203,7 +206,8 @@ void VG_(split_up_argv)( Int argc, HChar** argv )
       // put into VG_(args_for_valgrind) and so must persist.
       HChar* home    = VG_(getenv)("HOME");
       HChar* f1_clo  = home ? read_dot_valgrindrc( home ) : NULL;
-      HChar* env_clo = VG_(strdup)( VG_(getenv)(VALGRIND_OPTS) );
+      HChar* env_clo = VG_(strdup)( "commandline.sua.4",
+                                    VG_(getenv)(VALGRIND_OPTS) );
       HChar* f2_clo  = NULL;
 
       // Don't read ./.valgrindrc if "." is the same as "$HOME", else its

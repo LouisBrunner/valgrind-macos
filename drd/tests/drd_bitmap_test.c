@@ -10,7 +10,7 @@
 
 /* Replacements for core functionality. */
 
-void* VG_(malloc)(SizeT nbytes)
+void* VG_(malloc)(HChar* cc, SizeT nbytes)
 { return malloc(nbytes); }
 void  VG_(free)(void* p)
 { return free(p); }

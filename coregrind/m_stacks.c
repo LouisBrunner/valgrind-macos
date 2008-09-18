@@ -185,7 +185,7 @@ UWord VG_(register_stack)(Addr start, Addr end)
       start = t;
    }
 
-   i = (Stack *)VG_(arena_malloc)(VG_AR_CORE, sizeof(Stack));
+   i = (Stack *)VG_(arena_malloc)(VG_AR_CORE, "stacks.rs.1", sizeof(Stack));
    i->start = start;
    i->end = end;
    i->id = next_id++;

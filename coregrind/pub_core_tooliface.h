@@ -161,10 +161,10 @@ typedef struct {
    IRSB* (*tool_final_IR_tidy_pass)  (IRSB*);
 
    // -- Event tracking functions ------------------------------------
-   void (*track_new_mem_startup)     (Addr, SizeT, Bool, Bool, Bool);
+   void (*track_new_mem_startup)     (Addr, SizeT, Bool, Bool, Bool, ULong);
    void (*track_new_mem_stack_signal)(Addr, SizeT, ThreadId);
    void (*track_new_mem_brk)         (Addr, SizeT, ThreadId);
-   void (*track_new_mem_mmap)        (Addr, SizeT, Bool, Bool, Bool);
+   void (*track_new_mem_mmap)        (Addr, SizeT, Bool, Bool, Bool, ULong);
 
    void (*track_copy_mem_remap)      (Addr src, Addr dst, SizeT);
    void (*track_change_mem_mprotect) (Addr, SizeT, Bool, Bool, Bool);

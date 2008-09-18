@@ -77,7 +77,7 @@ typedef struct _OSet     OSet;
 // - Free: frees a chunk of memory allocated with Alloc.
 
 typedef Word  (*OSetCmp_t)         ( const void* key, const void* elem );
-typedef void* (*OSetAlloc_t)       ( SizeT szB );
+typedef void* (*OSetAlloc_t)       ( HChar* ec, SizeT szB );
 typedef void  (*OSetFree_t)        ( void* p );
 
 /*--------------------------------------------------------------------*/
@@ -98,7 +98,8 @@ typedef void  (*OSetFree_t)        ( void* p );
 //   to allow the destruction of any attached resources;  if NULL it is not
 //   called.
 
-extern OSet* VG_(OSetWord_Create)       ( OSetAlloc_t alloc, OSetFree_t free );
+extern OSet* VG_(OSetWord_Create)       ( OSetAlloc_t alloc, HChar* ec, 
+                                          OSetFree_t free );
 extern void  VG_(OSetWord_Destroy)      ( OSet* os );
 
 /*--------------------------------------------------------------------*/
@@ -183,7 +184,8 @@ extern Bool  VG_(OSetWord_Next)         ( OSet* os, /*OUT*/UWord* val );
 //   lead to assertions in Valgrind's allocator.
 
 extern OSet* VG_(OSetGen_Create)    ( OffT keyOff, OSetCmp_t cmp,
-                                      OSetAlloc_t alloc, OSetFree_t free );
+                                      OSetAlloc_t alloc, HChar* ec,
+                                      OSetFree_t free );
 extern void  VG_(OSetGen_Destroy)   ( OSet* os );
 extern void* VG_(OSetGen_AllocNode) ( OSet* os, SizeT elemSize );
 extern void  VG_(OSetGen_FreeNode)  ( OSet* os, void* elem );

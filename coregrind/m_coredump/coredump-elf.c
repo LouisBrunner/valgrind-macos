@@ -79,7 +79,7 @@ static Addr* get_seg_starts ( /*OUT*/Int* n_acquired )
 
    n_starts = 1;
    while (True) {
-      starts = VG_(malloc)( n_starts * sizeof(Addr) );
+      starts = VG_(malloc)( "coredump-elf.gss.1", n_starts * sizeof(Addr) );
       if (starts == NULL)
          break;
       r = VG_(am_get_segment_starts)( starts, n_starts );
@@ -184,7 +184,7 @@ static void add_note(struct note **list, const Char *name, UInt type, const void
    Int notelen = sizeof(struct note) + 
       VG_ROUNDUP(namelen, 4) + 
       VG_ROUNDUP(datasz, 4);
-   struct note *n = VG_(arena_malloc)(VG_AR_CORE, notelen);
+   struct note *n = VG_(arena_malloc)(VG_AR_CORE, "coredump-elf.an.1", notelen);
 
    VG_(memset)(n, 0, notelen);
 
@@ -349,7 +349,8 @@ void make_elf_coredump(ThreadId tid, const vki_siginfo_t *si, UInt max_size)
    notelist = NULL;
 
    /* Second, work out their layout */
-   phdrs = VG_(arena_malloc)(VG_AR_CORE, sizeof(*phdrs) * num_phdrs);
+   phdrs = VG_(arena_malloc)(VG_AR_CORE, "coredump-elf.mec.1", 
+                             sizeof(*phdrs) * num_phdrs);
 
    for(i = 1; i < VG_N_THREADS; i++) {
       vki_elf_fpregset_t  fpu;

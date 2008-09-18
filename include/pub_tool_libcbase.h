@@ -144,6 +144,7 @@ extern Int VG_(log2) ( UInt x );
 // is NULL, it uses its own seed, which starts at zero.  If pSeed is
 // non-NULL, it uses and updates whatever pSeed points at.
 extern UInt VG_(random) ( /*MOD*/UInt* pSeed );
+#define VG_RAND_MAX (1ULL << 32)
 
 #endif   // __PUB_TOOL_LIBCBASE_H
 

@@ -81,8 +81,12 @@ extern Addr VG_(get_LR) ( ThreadId tid );
 extern void VG_(set_SP) ( ThreadId tid, Addr sp );
 extern void VG_(set_IP) ( ThreadId tid, Addr ip );
 
-// For get/set, 'area' is where the asked-for shadow state will be copied
-// into/from.
+// For get/set, 'area' is where the asked-for guest state will be copied
+// into/from.  If shadowNo == 0, the real (non-shadow) guest state is
+// accessed.  If shadowNo == 1, the first shadow area is accessed, and
+// if shadowNo == 2, the second shadow area is accessed.  This gives a
+// completely general way to read/modify a thread's guest register state
+// providing you know the offsets you need.
 void
 VG_(get_shadow_regs_area) ( ThreadId tid, 
                             /*DST*/UChar* dst,
@@ -91,6 +95,14 @@ void
 VG_(set_shadow_regs_area) ( ThreadId tid, 
                             /*DST*/Int shadowNo, OffT offset, SizeT size,
                             /*SRC*/const UChar* src );
+
+// Sets the shadow values for the syscall return value register(s).
+// This is platform specific.
+void VG_(set_syscall_return_shadows) ( ThreadId tid,
+                                       /* shadow vals for the result */
+                                       UWord s1res, UWord s2res,
+                                       /* shadow vals for the error val */
+                                       UWord s1err, UWord s2err );
 
 // Apply a function 'f' to all the general purpose registers in all the
 // current threads.

@@ -43,7 +43,8 @@ void CLG_(init_fn_stack)(fn_stack* s)
   CLG_ASSERT(s != 0);
 
   s->size   = N_FNSTACK_INITIAL_ENTRIES;   
-  s->bottom = (fn_node**) CLG_MALLOC(s->size * sizeof(fn_node*));
+  s->bottom = (fn_node**) CLG_MALLOC("cl.context.ifs.1",
+                                     s->size * sizeof(fn_node*));
   s->top    = s->bottom;
   s->bottom[0] = 0;
 }
@@ -74,7 +75,8 @@ void CLG_(init_cxt_table)()
    
    cxts.size    = N_CXT_INITIAL_ENTRIES;
    cxts.entries = 0;
-   cxts.table   = (Context**) CLG_MALLOC(cxts.size * sizeof(Context*));
+   cxts.table   = (Context**) CLG_MALLOC("cl.context.ict.1",
+                                         cxts.size * sizeof(Context*));
 
    for (i = 0; i < cxts.size; i++)
      cxts.table[i] = 0;
@@ -93,7 +95,8 @@ static void resize_cxt_table(void)
     UInt new_idx;
 
     new_size  = 2* cxts.size +3;
-    new_table = (Context**) CLG_MALLOC(new_size * sizeof(Context*));
+    new_table = (Context**) CLG_MALLOC("cl.context.rct.1",
+                                       new_size * sizeof(Context*));
 
     if (!new_table) return;
 
@@ -190,7 +193,8 @@ static Context* new_cxt(fn_node** fn)
     if (10 * cxts.entries / cxts.size > 8)
         resize_cxt_table();
 
-    new = (Context*) CLG_MALLOC(sizeof(Context)+sizeof(fn_node*)*size);
+    new = (Context*) CLG_MALLOC("cl.context.nc.1",
+                                sizeof(Context)+sizeof(fn_node*)*size);
 
     // hash value calculation similar to cxt_hash_val(), but additionally
     // copying function pointers in one run
@@ -298,7 +302,8 @@ void CLG_(push_cxt)(fn_node* fn)
   fn_entries = CLG_(current_fn_stack).top - CLG_(current_fn_stack).bottom;
   if (fn_entries == CLG_(current_fn_stack).size-1) {
     int new_size = CLG_(current_fn_stack).size *2;
-    fn_node** new = (fn_node**) CLG_MALLOC(new_size * sizeof(fn_node*));
+    fn_node** new = (fn_node**) CLG_MALLOC("cl.context.pc.1",
+                                           new_size * sizeof(fn_node*));
     int i;
     for(i=0;i<CLG_(current_fn_stack).size;i++)
       new[i] = CLG_(current_fn_stack).bottom[i];

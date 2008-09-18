@@ -112,6 +112,7 @@ struct _OSet {
    SizeT       keyOff;     // key offset
    OSetCmp_t   cmp;        // compare a key and an element, or NULL
    OSetAlloc_t alloc;      // allocator
+   HChar* cc;              // cc for allocator
    OSetFree_t  free;       // deallocator
    Word        nElems;     // number of elements in the tree
    AvlNode*    root;       // root node
@@ -282,7 +283,8 @@ static inline Bool stackPop(AvlTree* t, AvlNode** n, Int* i)
 
 // The underscores avoid GCC complaints about overshadowing global names.
 AvlTree* VG_(OSetGen_Create)(OffT _keyOff, OSetCmp_t _cmp,
-                             OSetAlloc_t _alloc, OSetFree_t _free)
+                             OSetAlloc_t _alloc, HChar* _cc,
+                             OSetFree_t _free)
 {
    AvlTree* t;
 
@@ -294,10 +296,11 @@ AvlTree* VG_(OSetGen_Create)(OffT _keyOff, OSetCmp_t _cmp,
    vg_assert(_free);
    if (!_cmp) vg_assert(0 == _keyOff);    // If no cmp, offset must be zero
 
-   t           = _alloc(sizeof(AvlTree));
+   t           = _alloc(_cc, sizeof(AvlTree));
    t->keyOff   = _keyOff;
    t->cmp      = _cmp;
    t->alloc    = _alloc;
+   t->cc       = _cc;
    t->free     = _free;
    t->nElems   = 0;
    t->root     = NULL;
@@ -306,9 +309,10 @@ AvlTree* VG_(OSetGen_Create)(OffT _keyOff, OSetCmp_t _cmp,
    return t;
 }
 
-AvlTree* VG_(OSetWord_Create)(OSetAlloc_t _alloc, OSetFree_t _free)
+AvlTree* VG_(OSetWord_Create)(OSetAlloc_t _alloc, HChar* _cc, 
+                              OSetFree_t _free)
 {
-   return VG_(OSetGen_Create)(/*keyOff*/0, /*cmp*/NULL, _alloc, _free);
+   return VG_(OSetGen_Create)(/*keyOff*/0, /*cmp*/NULL, _alloc, _cc, _free);
 }
 
 // Destructor, frees up all memory held by remaining nodes.
@@ -356,7 +360,7 @@ void VG_(OSetWord_Destroy)(AvlTree* t)
 void* VG_(OSetGen_AllocNode)(AvlTree* t, SizeT elemSize)
 {
    Int nodeSize = sizeof(AvlNode) + elemSize;
-   AvlNode* n   = t->alloc( nodeSize );
+   AvlNode* n   = t->alloc( t->cc, nodeSize );
    vg_assert(elemSize > 0);
    VG_(memset)(n, 0, nodeSize);
    n->magic = OSET_MAGIC;

@@ -236,8 +236,8 @@ AM_CXXFLAGS = $(AM_CFLAGS)
 # Extra stuff for C tests
 memcmptest_CFLAGS	= $(AM_FLAG_M3264_PRI) $(AM_CFLAGS) -fno-builtin-memcmp
 oset_test_CFLAGS	= $(AM_FLAG_M3264_PRI) \
-				-DVGA_$(VG_ARCH)=1 -DVGO_$(VG_OS)=1 \
-				-DVGP_$(VG_ARCH)_$(VG_OS)=1
+				-DVGA_$(VG_ARCH_PRI)=1 -DVGO_$(VG_OS)=1 \
+				-DVGP_$(VG_ARCH_PRI)_$(VG_OS)=1
 linux_timerfd_syscall_LDADD = -lrt
 vcpu_bz2_CFLAGS		= $(AM_FLAG_M3264_PRI) $(AM_CFLAGS) -O2 -g
 vcpu_fbench_CFLAGS	= $(AM_FLAG_M3264_PRI) $(AM_CFLAGS) -O2 -g
@@ -363,6 +363,6 @@ endif
 #hello_DEPENDENCIES 	= $(top_builddir)/valt_load_address.lds
 
 # vgtest_ume is not working
-#vgtest_ume_CFLAGS	= -DVGA_$(VG_ARCH) -DVGO_$(VG_OS)
+#vgtest_ume_CFLAGS	= -DVGA_$(VG_ARCH_PRI) -DVGO_$(VG_OS)
 #vgtest_ume_LDADD	= ../../coregrind/m_ume.o
 

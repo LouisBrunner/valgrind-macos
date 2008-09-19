@@ -158,5 +158,7 @@ whether -m32 or -m64 is the right thing to specify.  So instead of
 messing with AM_FLAG_M3264_PRI, these directories merely specific
 @FLAG_M32@ or @FLAG_M64@ directly.  (These two symbols are also
 automagically set up by configure.in.  Do not use -m32 and -m64
-directly - older compilers barf on them).
-
+directly - older compilers barf on them).  Another reason not to
+use -m32 and -m64 directly is that they are called -maix32 and 
+-maix64 on AIX; once again this is taken care of properly if you
+use @FLAG_M32@ and @FLAG_M64@ instead.

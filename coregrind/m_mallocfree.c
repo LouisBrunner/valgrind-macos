@@ -70,7 +70,7 @@ typedef UChar UByte;
 
 /* Layout of an in-use block:
 
-      cost center              (sizeof(ULong) bytes)
+      cost center (OPTIONAL)   (sizeof(ULong) bytes, only when h-p enabled)
       this block total szB     (sizeof(SizeT) bytes)
       red zone bytes           (depends on Arena.rz_szB, but >= sizeof(void*))
       (payload bytes)
@@ -79,7 +79,7 @@ typedef UChar UByte;
 
    Layout of a block on the free list:
 
-      cost center              (sizeof(ULong) bytes)
+      cost center (OPTIONAL)   (sizeof(ULong) bytes, only when h-p enabled)
       this block total szB     (sizeof(SizeT) bytes)
       freelist previous ptr    (sizeof(void*) bytes)
       excess red zone bytes    (if Arena.rz_szB > sizeof(void*))
@@ -91,16 +91,25 @@ typedef UChar UByte;
    Total size in bytes (bszB) and payload size in bytes (pszB)
    are related by:
 
+      bszB == pszB + 2*sizeof(SizeT) + 2*a->rz_szB
+
+   when heap profiling is not enabled, and
+
       bszB == pszB + 2*sizeof(SizeT) + 2*a->rz_szB + sizeof(ULong)
 
-   The minimum overhead per heap block for arenas used by
-   the core is:   
+   when it is enabled.  It follows that the minimum overhead per heap
+   block for arenas used by the core is:
+
+      32-bit platforms:  2*4 + 2*4 == 16 bytes
+      64-bit platforms:  2*8 + 2*8 == 32 bytes
+
+   when heap profiling is not enabled, and
 
       32-bit platforms:  2*4 + 2*4 + 8 == 24 bytes
       64-bit platforms:  2*8 + 2*8 + 8 == 40 bytes
 
-   In both cases extra overhead may be incurred when rounding the payload
-   size up to VG_MIN_MALLOC_SZB.
+   when it is enabled.  In all cases, extra overhead may be incurred
+   when rounding the payload size up to VG_MIN_MALLOC_SZB.
 
    Furthermore, both size fields in the block have their least-significant
    bit set if the block is not in use, and unset if it is in use.
@@ -211,6 +220,14 @@ SizeT mk_plain_bszB ( SizeT bszB )
    return bszB & (~SIZE_T_0x1);
 }
 
+// return either 0 or sizeof(ULong) depending on whether or not
+// heap profiling is engaged
+static __inline__
+SizeT hp_overhead_szB ( void )
+{
+   return VG_(clo_profile_heap)  ? sizeof(ULong)  : 0;
+}
+
 //---------------------------------------------------------------------------
 
 // Get a block's size as stored, ie with the in-use/free attribute.
@@ -218,7 +235,7 @@ static __inline__
 SizeT get_bszB_as_is ( Block* b )
 {
    UByte* b2     = (UByte*)b;
-   SizeT bszB_lo = *(SizeT*)&b2[0 + sizeof(ULong)];
+   SizeT bszB_lo = *(SizeT*)&b2[0 + hp_overhead_szB()];
    SizeT bszB_hi = *(SizeT*)&b2[mk_plain_bszB(bszB_lo) - sizeof(SizeT)];
    vg_assert2(bszB_lo == bszB_hi, 
       "Heap block lo/hi size mismatch: lo = %llu, hi = %llu.\n"
@@ -239,7 +256,7 @@ static __inline__
 void set_bszB ( Block* b, SizeT bszB )
 {
    UByte* b2 = (UByte*)b;
-   *(SizeT*)&b2[0 + sizeof(ULong)]                   = bszB;
+   *(SizeT*)&b2[0 + hp_overhead_szB()]               = bszB;
    *(SizeT*)&b2[mk_plain_bszB(bszB) - sizeof(SizeT)] = bszB;
 }
 
@@ -261,7 +278,7 @@ Bool is_inuse_block ( Block* b )
 static __inline__
 SizeT overhead_szB_lo ( Arena* a )
 {
-   return sizeof(ULong) + sizeof(SizeT) + a->rz_szB;
+   return hp_overhead_szB() + sizeof(SizeT) + a->rz_szB;
 }
 static __inline__
 SizeT overhead_szB_hi ( Arena* a )
@@ -331,7 +348,7 @@ static __inline__
 void set_prev_b ( Block* b, Block* prev_p )
 { 
    UByte* b2 = (UByte*)b;
-   *(Block**)&b2[sizeof(ULong) + sizeof(SizeT)] = prev_p;
+   *(Block**)&b2[hp_overhead_szB() + sizeof(SizeT)] = prev_p;
 }
 static __inline__
 void set_next_b ( Block* b, Block* next_p )
@@ -343,7 +360,7 @@ static __inline__
 Block* get_prev_b ( Block* b )
 { 
    UByte* b2 = (UByte*)b;
-   return *(Block**)&b2[sizeof(ULong) + sizeof(SizeT)];
+   return *(Block**)&b2[hp_overhead_szB() + sizeof(SizeT)];
 }
 static __inline__
 Block* get_next_b ( Block* b )
@@ -359,12 +376,14 @@ static __inline__
 void set_cc ( Block* b, HChar* cc )
 { 
    UByte* b2 = (UByte*)b;
+   vg_assert( VG_(clo_profile_heap) );
    *(HChar**)&b2[0] = cc;
 }
 static __inline__
 HChar* get_cc ( Block* b )
 {
    UByte* b2 = (UByte*)b;
+   vg_assert( VG_(clo_profile_heap) );
    return *(HChar**)&b2[0];
 }
 
@@ -386,7 +405,7 @@ static __inline__
 void set_rz_lo_byte ( Arena* a, Block* b, UInt rz_byteno, UByte v )
 {
    UByte* b2 = (UByte*)b;
-   b2[sizeof(ULong) + sizeof(SizeT) + rz_byteno] = v;
+   b2[hp_overhead_szB() + sizeof(SizeT) + rz_byteno] = v;
 }
 static __inline__
 void set_rz_hi_byte ( Arena* a, Block* b, UInt rz_byteno, UByte v )
@@ -398,7 +417,7 @@ static __inline__
 UByte get_rz_lo_byte ( Arena* a, Block* b, UInt rz_byteno )
 {
    UByte* b2 = (UByte*)b;
-   return b2[sizeof(ULong) + sizeof(SizeT) + rz_byteno];
+   return b2[hp_overhead_szB() + sizeof(SizeT) + rz_byteno];
 }
 static __inline__
 UByte get_rz_hi_byte ( Arena* a, Block* b, UInt rz_byteno )
@@ -1334,7 +1353,8 @@ void* VG_(arena_malloc) ( ArenaId aid, HChar* cc, SizeT req_pszB )
    b = (Block*)&new_sb->payload_bytes[0];
    lno = pszB_to_listNo(bszB_to_pszB(a, new_sb->n_payload_bytes));
    mkFreeBlock ( a, b, new_sb->n_payload_bytes, lno);
-   set_cc(b, "admin.free-new-sb-1");
+   if (VG_(clo_profile_heap))
+      set_cc(b, "admin.free-new-sb-1");
    // fall through
 
   obtained_block:
@@ -1355,16 +1375,19 @@ void* VG_(arena_malloc) ( ArenaId aid, HChar* cc, SizeT req_pszB )
       // printf( "split %dB into %dB and %dB\n", b_bszB, req_bszB, frag_bszB );
       unlinkBlock(a, b, lno);
       mkInuseBlock(a, b, req_bszB);
-      set_cc(b, cc);
+      if (VG_(clo_profile_heap))
+         set_cc(b, cc);
       mkFreeBlock(a, &b[req_bszB], frag_bszB, 
                      pszB_to_listNo(bszB_to_pszB(a, frag_bszB)));
-      set_cc(&b[req_bszB], "admin.fragmentation-1");
+      if (VG_(clo_profile_heap))
+         set_cc(&b[req_bszB], "admin.fragmentation-1");
       b_bszB = get_bszB(b);
    } else {
       // No, mark as in use and use as-is.
       unlinkBlock(a, b, lno);
       mkInuseBlock(a, b, b_bszB);
-      set_cc(b, cc);
+      if (VG_(clo_profile_heap))
+         set_cc(b, cc);
    }
 
    // Update stats
@@ -1448,7 +1471,8 @@ void VG_(arena_free) ( ArenaId aid, void* ptr )
    // Put this chunk back on a list somewhere.
    b_listno = pszB_to_listNo(b_pszB);
    mkFreeBlock( a, b, b_bszB, b_listno );
-   set_cc(b, "admin.free-1");
+   if (VG_(clo_profile_heap))
+      set_cc(b, "admin.free-1");
 
    // See if this block can be merged with its successor.
    // First test if we're far enough before the superblock's end to possibly
@@ -1467,7 +1491,8 @@ void VG_(arena_free) ( ArenaId aid, void* ptr )
          b_bszB += other_bszB;
          b_listno = pszB_to_listNo(bszB_to_pszB(a, b_bszB));
          mkFreeBlock( a, b, b_bszB, b_listno );
-         set_cc(b, "admin.free-2");
+         if (VG_(clo_profile_heap))
+            set_cc(b, "admin.free-2");
       }
    } else {
       // Not enough space for successor: check that b is the last block
@@ -1490,7 +1515,8 @@ void VG_(arena_free) ( ArenaId aid, void* ptr )
          b_bszB += other_bszB;
          b_listno = pszB_to_listNo(bszB_to_pszB(a, b_bszB));
          mkFreeBlock( a, b, b_bszB, b_listno );
-         set_cc(b, "admin.free-3");
+         if (VG_(clo_profile_heap))
+            set_cc(b, "admin.free-3");
       }
    } else {
       // Not enough space for predecessor: check that b is the first block,
@@ -1607,13 +1633,15 @@ void* VG_(arena_memalign) ( ArenaId aid, HChar* cc,
    /* Create the fragment block, and put it back on the relevant free list. */
    mkFreeBlock ( a, base_b, frag_bszB,
                  pszB_to_listNo(bszB_to_pszB(a, frag_bszB)) );
-   set_cc(base_b, "admin.frag-memalign-1");
+   if (VG_(clo_profile_heap))
+      set_cc(base_b, "admin.frag-memalign-1");
 
    /* Create the aligned block. */
    mkInuseBlock ( a, align_b,
                   base_p + base_pszB_act 
                          + overhead_szB_hi(a) - (UByte*)align_b );
-   set_cc(align_b, cc);
+   if (VG_(clo_profile_heap))
+      set_cc(align_b, cc);
 
    /* Final sanity checks. */
    vg_assert( is_inuse_block(get_payload_block(a, align_p)) );

@@ -420,7 +420,6 @@ static Bool main_process_cmd_line_options( UInt* client_auxv,
       else VG_BOOL_CLO(arg, "--trace-redir",      VG_(clo_trace_redir))
 
       else VG_BOOL_CLO(arg, "--trace-syscalls",   VG_(clo_trace_syscalls))
-      else VG_BOOL_CLO(arg, "--profile-heap",     VG_(clo_profile_heap))
       else VG_BOOL_CLO(arg, "--wait-for-gdb",     VG_(clo_wait_for_gdb))
       else VG_STR_CLO (arg, "--db-command",       VG_(clo_db_command))
       else VG_STR_CLO (arg, "--sim-hints",        VG_(clo_sim_hints))
@@ -439,6 +438,12 @@ static Bool main_process_cmd_line_options( UInt* client_auxv,
          VG_(clo_smc_check) = Vg_SmcStack;
       else if (VG_CLO_STREQ(arg, "--smc-check=all"))
          VG_(clo_smc_check) = Vg_SmcAll;
+
+      else if (VG_CLO_STREQ(arg, "--profile-heap=no"))
+         ; /* We already handled it right at the top of valgrind_main.
+              Just ignore. */
+      else if (VG_CLO_STREQ(arg, "--profile-heap=yes"))
+         ; /* ditto */
 
       else VG_STR_CLO (arg, "--kernel-variant",   VG_(clo_kernel_variant))
 
@@ -1223,6 +1228,10 @@ Int valgrind_main ( Int argc, HChar **argv, HChar **envp )
          break;
       if (VG_STREQ(argv[i], "-d")) 
          loglevel++;
+      if (VG_STREQ(argv[i], "--profile-heap=yes"))
+         VG_(clo_profile_heap) = True;
+      if (VG_STREQ(argv[i], "--profile-heap=no"))
+         VG_(clo_profile_heap) = False;
    }
 
    /* ... and start the debug logger.  Now we can safely emit logging

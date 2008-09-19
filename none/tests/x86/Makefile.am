@@ -100,7 +100,7 @@ insn_sse2_SOURCES	= insn_sse2.def
 insn_sse2_LDADD		= -lm
 insn_sse3_SOURCES	= insn_sse3.def
 insn_sse3_LDADD		= -lm
-yield_CFLAGS		= $(AM_CFLAGS) -D__$(VG_ARCH_MAX)__
+yield_CFLAGS		= $(AM_CFLAGS) -D__$(VG_ARCH_PRI)__
 yield_LDADD		= -lpthread
 
 .def.c: $(srcdir)/gen_insn_test.pl

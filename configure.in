@@ -1436,7 +1436,25 @@ ifdef(
     [QtCore],
     [
       PKG_CHECK_MODULES([QTCORE], [QtCore])
-      ac_have_qtcore=yes
+      # Paranoia: don't trust the result reported by pkg-config, but when
+      # pkg-config reports that QtCore has been found, verify whether linking
+      # programs with QtCore succeeds.
+      AC_LANG(C++)
+      safe_CXXFLAGS="${CXXFLAGS}"
+      CXXFLAGS="${QTCORE_CFLAGS} ${QTCORE_LIBS}"
+      if test x$vg_cv_only32bit = xyes; then
+        CXXFLAGS="${CXXFLAGS} -m32"
+      fi
+      AC_TRY_LINK(
+        [#include <QMutex>],
+        [QMutex Mutex;],
+        [ac_have_qtcore=yes],
+        [
+          AC_MSG_WARN([Although pkg-config detected Qt4, linking Qt4 programs fails. Skipping Qt4.])
+          ac_have_qtcore=no
+        ]
+        )
+      CXXFLAGS="${safe_CXXFLAGS}"
     ],
     [
       ac_have_qtcore=no
@@ -1457,7 +1475,7 @@ if test x$ac_have_qtcore = xyes; then
   AC_MSG_CHECKING([for Qt4 QMutex::tryLock(int)])
   AC_LANG(C++)
   safe_CXXFLAGS="${CXXFLAGS}"
-  CXXFLAGS="${pkg_cv_QTCORE_CFLAGS}"
+  CXXFLAGS="${QTCORE_CFLAGS}"
   AC_TRY_COMPILE([
     #include <QtCore/QMutex>
   ],

@@ -59,6 +59,13 @@ enum {
   VG_USERREQ__POST_THREAD_JOIN,
   /* args: pthread_t (joinee) */
 
+  /* To notify drd before a pthread_cancel call. */
+  VG_USERREQ__PRE_THREAD_CANCEL,
+  /* args: pthread_t */
+  /* To notify drd after a pthread_cancel call. */
+  VG_USERREQ__POST_THREAD_CANCEL,
+  /* args: pthread_t, Bool */
+
   /* to notify the drd tool of a pthread_mutex_init call. */
   VG_USERREQ__PRE_MUTEX_INIT,
   /* args: Addr, MutexT */

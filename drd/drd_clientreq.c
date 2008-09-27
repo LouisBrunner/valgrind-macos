@@ -210,6 +210,16 @@ static Bool drd_handle_client_request(ThreadId vg_tid, UWord* arg, UWord* ret)
                          PtThreadIdToDrdThreadId(arg[1]));
     break;
 
+  case VG_USERREQ__PRE_THREAD_CANCEL:
+    tl_assert(arg[1]);
+    drd_pre_thread_cancel(drd_tid, PtThreadIdToDrdThreadId(arg[1]));
+    break;
+
+  case VG_USERREQ__POST_THREAD_CANCEL:
+    tl_assert(arg[1]);
+    drd_post_thread_cancel(drd_tid, PtThreadIdToDrdThreadId(arg[1]), arg[2]);
+    break;
+
   case VG_USERREQ__PRE_MUTEX_INIT:
     if (thread_enter_synchr(drd_tid) == 0)
       drd_pre_mutex_init(arg[1], arg[2]);

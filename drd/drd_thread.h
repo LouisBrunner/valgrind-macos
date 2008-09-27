@@ -103,6 +103,7 @@ DrdThreadId thread_pre_create(const DrdThreadId creator,
 DrdThreadId thread_post_create(const ThreadId vg_created);
 void thread_delete(const DrdThreadId tid);
 void thread_finished(const DrdThreadId tid);
+void thread_pre_cancel(const DrdThreadId tid);
 void thread_set_stack_startup(const DrdThreadId tid, const Addr stack_startup);
 Addr thread_get_stack_min(const DrdThreadId tid);
 Addr thread_get_stack_min_min(const DrdThreadId tid);

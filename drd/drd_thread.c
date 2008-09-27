@@ -321,6 +321,15 @@ void thread_finished(const DrdThreadId tid)
   }
 }
 
+void thread_pre_cancel(const DrdThreadId tid)
+{
+  tl_assert(0 <= (int)tid && tid < DRD_N_THREADS
+            && tid != DRD_INVALID_THREADID);
+  tl_assert(s_threadinfo[tid].pt_threadid != INVALID_POSIX_THREADID);
+
+  s_threadinfo[tid].synchr_nesting = 0;
+}
+
 void thread_set_pthreadid(const DrdThreadId tid, const PThreadId ptid)
 {
   tl_assert(0 <= (int)tid && tid < DRD_N_THREADS

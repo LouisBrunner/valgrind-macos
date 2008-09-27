@@ -126,7 +126,10 @@ static MutexT pthread_to_drd_mutex_type(const int kind)
   return mutex_type_invalid_mutex;
 }
 
-static MutexT mutex_type(pthread_mutex_t* mutex)
+/** @note The function mutex_type() has been declared inline in order
+ *  to avoid that it shows up in call stacks.
+ */
+static __inline__ MutexT mutex_type(pthread_mutex_t* mutex)
 {
 #if defined(HAVE_PTHREAD_MUTEX_T__M_KIND)
   /* LinuxThreads. */
@@ -341,6 +344,21 @@ PTH_FUNC(int, pthreadZudetach, pthread_t pt_thread)
       vg_set_joinable(pt_thread, 0);
     }
   }
+  return ret;
+}
+
+// pthread_cancel
+PTH_FUNC(int, pthreadZucancel, pthread_t pt_thread)
+{
+  int res;
+  int ret;
+  OrigFn fn;
+  VALGRIND_GET_ORIG_FN(fn);
+  VALGRIND_DO_CLIENT_REQUEST(res, -1, VG_USERREQ__PRE_THREAD_CANCEL,
+                             pt_thread, 0, 0, 0, 0);
+  CALL_FN_W_W(ret, fn, pt_thread);
+  VALGRIND_DO_CLIENT_REQUEST(res, -1, VG_USERREQ__POST_THREAD_CANCEL,
+                             pt_thread, ret==0, 0, 0, 0);
   return ret;
 }
 

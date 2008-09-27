@@ -291,38 +291,6 @@
    obj:/lib*/libpthread-*
 }
 {
-   pthread-unwind
-   drd:ConflictingAccess
-   fun:_Unwind_ForcedUnwind
-   fun:__pthread_unwind
-   fun:sigcancel_handler
-   obj:/lib*/libpthread-*
-}
-{
-   pthread-unwind
-   drd:ConflictingAccess
-   fun:_Unwind_ForcedUnwind
-   fun:__pthread_unwind
-}
-{
-   pthread-unwind
-   drd:ConflictingAccess
-   fun:_Unwind_GetCFA
-   fun:unwind_stop
-}
-{
-   pthread-unwind
-   drd:ConflictingAccess
-   fun:uw_update_context
-   fun:_Unwind_ForcedUnwind_Phase2
-}
-{
-   pthread-unwind
-   drd:ConflictingAccess
-   fun:uw_frame_state_for
-   fun:_Unwind_ForcedUnwind_Phase2
-}
-{
    pthread
    drd:ConflictingAccess
    fun:pthread_detach
@@ -351,59 +319,54 @@
 {
    pthread-unwind
    drd:ConflictingAccess
-   obj:/lib*/ld-*.so
-   obj:/lib*/ld-*.so
-   obj:/lib*/libgcc_s.so.1
-   obj:/lib*/libgcc_s.so.1
    fun:_Unwind_ForcedUnwind
    fun:__pthread_unwind
 }
 {
    pthread-unwind
    drd:ConflictingAccess
-   fun:_Unwind_Find_FDE
-   obj:/lib*/libgcc_s.so.1
-   obj:/lib*/libgcc_s.so.1
-   fun:_Unwind_ForcedUnwind
-   fun:__pthread_unwind
+   fun:_Unwind_GetCFA
+   fun:unwind_stop
 }
 {
    pthread-unwind
    drd:ConflictingAccess
-   obj:/lib*/ld-*.so
-   obj:/lib*/ld-*.so
-   fun:_Unwind_Find_FDE
-   obj:/lib*/libgcc_s.so.1
-   obj:/lib*/libgcc_s.so.1
-   fun:_Unwind_ForcedUnwind
-   fun:__pthread_unwind
+   fun:uw_update_context
+   fun:_Unwind_ForcedUnwind_Phase2
 }
 {
    pthread-unwind
    drd:ConflictingAccess
-   obj:/lib*/ld-*.so
-   obj:/lib*/ld-*.so
-   obj:/lib*/libgcc_s.so.1
+   fun:uw_frame_state_for
+   fun:_Unwind_ForcedUnwind_Phase2
+}
+{
+   pthread-unwind-3
+   drd:ConflictingAccess
+   obj:*
+   obj:*
+   obj:*
    fun:_Unwind_ForcedUnwind
    fun:__pthread_unwind
 }
 {
-   pthread-unwind
+   pthread-unwind-4
    drd:ConflictingAccess
-   fun:pthread_mutex_lock
-   fun:_Unwind_Find_FDE
-   obj:/lib*/libgcc_s.so.1
-   obj:/lib*/libgcc_s.so.1
+   obj:*
+   obj:*
+   obj:*
+   obj:*
    fun:_Unwind_ForcedUnwind
    fun:__pthread_unwind
 }
 {
-   pthread-unwind
+   pthread-unwind-5
    drd:ConflictingAccess
-   fun:pthread_mutex_unlock
-   fun:_Unwind_Find_FDE
-   obj:/lib*/libgcc_s.so.1
-   obj:/lib*/libgcc_s.so.1
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
    fun:_Unwind_ForcedUnwind
    fun:__pthread_unwind
 }

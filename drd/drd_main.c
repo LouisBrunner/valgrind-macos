@@ -684,6 +684,13 @@ void drd_post_thread_join(DrdThreadId drd_joiner, DrdThreadId drd_joinee)
   barrier_thread_delete(drd_joinee);
 }
 
+void drd_pre_thread_cancel(DrdThreadId canceling, DrdThreadId canceled)
+{
+  thread_pre_cancel(canceled);
+}
+
+void drd_post_thread_cancel(DrdThreadId canceling, DrdThreadId canceled, Bool succeeded)
+{ }
 
 /* Called after a thread has performed its last memory access. */
 static void drd_thread_finished(ThreadId vg_tid)

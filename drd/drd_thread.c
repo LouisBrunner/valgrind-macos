@@ -321,6 +321,7 @@ void thread_finished(const DrdThreadId tid)
   }
 }
 
+/** Called just before pthread_cancel(). */
 void thread_pre_cancel(const DrdThreadId tid)
 {
   tl_assert(0 <= (int)tid && tid < DRD_N_THREADS

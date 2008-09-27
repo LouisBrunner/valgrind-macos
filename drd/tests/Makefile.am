@@ -74,6 +74,8 @@ EXTRA_DIST =                                        \
 	pth_barrier_reinit.vgtest                   \
 	pth_broadcast.stderr.exp                    \
 	pth_broadcast.vgtest                        \
+	pth_cancel_locked.stderr.exp		    \
+	pth_cancel_locked.vgtest		    \
 	pth_cond_race.stderr.exp                    \
 	pth_cond_race.vgtest                        \
 	pth_cond_race2.stderr.exp                   \
@@ -203,6 +205,7 @@ check_PROGRAMS =      \
   pth_barrier         \
   pth_barrier_reinit  \
   pth_broadcast       \
+  pth_cancel_locked   \
   pth_cond_race       \
   pth_create_chain    \
   pth_detached        \
@@ -298,6 +301,9 @@ pth_barrier_reinit_LDADD    = -lpthread
 
 pth_broadcast_SOURCES       = pth_broadcast.c
 pth_broadcast_LDADD         = -lpthread
+
+pth_cancel_locked_SOURCES   = pth_cancel_locked.c
+pth_cancel_locked_LDADD     = -lpthread
 
 pth_cond_race_SOURCES       = pth_cond_race.c
 pth_cond_race_LDADD         = -lpthread

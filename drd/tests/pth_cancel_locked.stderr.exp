@@ -1,0 +1,10 @@
+
+Mutex still locked at thread exit: mutex 0x........, recursion count 1, owner 2.
+   at 0x........: pthread_join (drd_pthread_intercepts.c:?)
+   by 0x........: main (pth_cancel_locked.c:?)
+mutex 0x........ was first observed at:
+   at 0x........: pthread_mutex_init (drd_pthread_intercepts.c:?)
+   by 0x........: main (pth_cancel_locked.c:?)
+Test finished.
+
+ERROR SUMMARY: 1 errors from 1 contexts (suppressed: 0 from 0)

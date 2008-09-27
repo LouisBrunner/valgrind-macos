@@ -349,6 +349,56 @@
    fun:_pthread_cleanup_push_defer
 }
 {
+   pthread-forced-unwind
+   drd:ConflictingAccess
+   obj:/lib*/ld-*.so
+   obj:/lib*/ld-*.so
+   obj:/lib*/libgcc_s.so.1
+   obj:/lib*/libgcc_s.so.1
+   fun:_Unwind_ForcedUnwind
+   fun:__pthread_unwind
+}
+{
+   pthread-forced-unwind
+   drd:ConflictingAccess
+   fun:_Unwind_Find_FDE
+   obj:/lib*/libgcc_s.so.1
+   obj:/lib*/libgcc_s.so.1
+   fun:_Unwind_ForcedUnwind
+   fun:__pthread_unwind
+}
+{
+   pthread-forced-unwind
+   drd:ConflictingAccess
+   obj:/lib*/ld-*.so
+   obj:/lib*/ld-*.so
+   fun:_Unwind_Find_FDE
+   obj:/lib*/libgcc_s.so.1
+   obj:/lib*/libgcc_s.so.1
+   fun:_Unwind_ForcedUnwind
+   fun:__pthread_unwind
+}
+{
+   pthread-forced-unwind
+   drd:ConflictingAccess
+   fun:pthread_mutex_lock
+   fun:_Unwind_Find_FDE
+   obj:/lib*/libgcc_s.so.1
+   obj:/lib*/libgcc_s.so.1
+   fun:_Unwind_ForcedUnwind
+   fun:__pthread_unwind
+}
+{
+   pthread-forced-unwind
+   drd:ConflictingAccess
+   fun:pthread_mutex_unlock
+   fun:_Unwind_Find_FDE
+   obj:/lib*/libgcc_s.so.1
+   obj:/lib*/libgcc_s.so.1
+   fun:_Unwind_ForcedUnwind
+   fun:__pthread_unwind
+}
+{
    gomp
    drd:ConflictingAccess
    obj:/usr/lib*/libgomp.so*

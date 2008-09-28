@@ -1,6 +1,11 @@
+#define _XOPEN_SOURCE 600 // to enable posix_memalign()
+
+
 #include <assert.h>
 #include <stdlib.h>
 #include <malloc.h> // for memalign()
+
+
 static __attribute__((noinline)) void bar ( int ); /* fwds */
 int main(void)
 {

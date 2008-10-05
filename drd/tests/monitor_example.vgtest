@@ -1,0 +1,2 @@
+prereq: ./supported_libpthread
+prog: monitor_example

@@ -54,6 +54,8 @@ EXTRA_DIST =                                        \
 	matinv.vgtest                               \
 	memory_allocation.stderr.exp		    \
 	memory_allocation.vgtest		    \
+	monitor_example.stderr.exp		    \
+	monitor_example.vgtest			    \
 	new_delete.stderr.exp                       \
 	new_delete.vgtest                           \
 	omp_matinv.stderr.exp                       \
@@ -201,6 +203,7 @@ check_PROGRAMS =      \
   linuxthreads_det    \
   matinv              \
   memory_allocation   \
+  monitor_example     \
   new_delete          \
   pth_barrier         \
   pth_barrier_reinit  \
@@ -290,6 +293,9 @@ matinv_SOURCES              = matinv.c
 matinv_LDADD                = -lpthread -lm
 
 memory_allocation_SOURCES   = memory_allocation.c
+
+monitor_example_SOURCES     = monitor_example.cpp
+monitor_example_LDADD       = -lpthread
 
 new_delete_SOURCES          = new_delete.cpp
 

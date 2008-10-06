@@ -11,6 +11,7 @@
 #define _GNU_SOURCE 1
 
 
+#include "config.h"
 #include <cassert>
 #include <iostream>
 #include <pthread.h>
@@ -32,8 +33,10 @@ public:
     pthread_mutexattr_destroy(&mutexattr);
     pthread_condattr_t condattr;
     pthread_condattr_init(&condattr);
+#if defined(HAVE_PTHREAD_CONDATTR_SETCLOCK)
     pthread_condattr_setclock(&condattr, CLOCK_MONOTONIC);
-    pthread_cond_init(&m_cond, 0);
+#endif
+    pthread_cond_init(&m_cond, &condattr);
     pthread_condattr_destroy(&condattr);
   }
   ~Monitor()

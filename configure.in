@@ -1298,6 +1298,7 @@ AC_CHECK_FUNCS([     \
         memset       \
         mkdir        \
         ppoll        \
+        pthread_condattr_setclock \
         semtimedop   \
         signalfd     \
         syscall      \

@@ -272,6 +272,17 @@ static elem_t epsilon()
   return 2 * eps;
 }
 
+static void usage(const char* const exe)
+{
+  printf("Usage: %s [-h] [-q] [-r] [-t<n>] <m>\n"
+         "-h: display this information.\n"
+         "-q: quiet mode -- do not print computed error.\n"
+         "-r: trigger a race condition.\n"
+         "-t<n>: use <n> threads.\n"
+         "<m>: matrix size.\n",
+         exe);
+}
+
 int main(int argc, char** argv)
 {
   int matrix_size;
@@ -283,15 +294,15 @@ int main(int argc, char** argv)
   double error;
   double ratio;
 
-  while ((optchar = getopt(argc, argv, "qrt:")) != EOF)
+  while ((optchar = getopt(argc, argv, "hqrt:")) != EOF)
   {
     switch (optchar)
     {
+    case 'h': usage(argv[0]); return 1;
     case 'q': silent = 1; break;
     case 'r': s_trigger_race = 1; break;
     case 't': nthread = atoi(optarg); break;
     default:
-      fprintf(stderr, "Error: unknown option '%c'.\n", optchar);
       return 1;
     }
   }

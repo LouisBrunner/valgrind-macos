@@ -993,12 +993,12 @@ are started. This is possible by adding a line similar to the
 following to your shell startup script:
 </para>
 <programlisting><![CDATA[
-export LD_LIBRARY_PATH=~/gcc-4.3.1/lib64:~/gcc-4.3.1/lib:
+export LD_LIBRARY_PATH=~/gcc-4.3.2/lib64:~/gcc-4.3.2/lib:
 ]]></programlisting>
 
 <para>
 As an example, the test OpenMP test program
-<literal>drd/scripts/omp_matinv</literal> triggers a data race
+<literal>drd/tests/omp_matinv</literal> triggers a data race
 when the option -r has been specified on the command line. The data
 race is triggered by the following code:
 </para>
@@ -1046,7 +1046,7 @@ source file name and the line number where the data race has been detected
 
 <para>
 Note: DRD reports errors on the <literal>libgomp</literal> library
-included with gcc 4.2.0 up to and including 4.3.1. This might indicate
+included with gcc 4.2.0 up to and including 4.3.2. This might indicate
 a race condition in the POSIX version of <literal>libgomp</literal>.
 </para>
 
@@ -1234,6 +1234,165 @@ The following information may be helpful when using DRD:
 
 </sect2>
 
+
+</sect1>
+
+
+<sect1 id="drd-manual.Pthreads" xreflabel="Pthreads">
+<title>Using the POSIX Threads API Effectively</title>
+
+<sect2 id="drd-manual.mutex-types" xreflabel="mutex-types">
+<title>Mutex types</title>
+
+<para>
+The Single UNIX Specification version two defines the following four
+mutex types (see also the documentation of <ulink
+url="http://www.opengroup.org/onlinepubs/007908799/xsh/pthread_mutexattr_settype.html"><function>pthread_mutexattr_settype()</function></ulink>):
+<itemizedlist>
+  <listitem>
+    <para>
+      <emphasis>normal</emphasis>, which means that no error checking
+      is performed, and that the mutex is non-recursive.
+    </para>
+  </listitem>
+  <listitem>
+    <para>
+      <emphasis>error checking</emphasis>, which means that the mutex
+      is non-recursive and that error checking is performed.
+    </para>
+  </listitem>
+  <listitem>
+    <para>
+      <emphasis>recursive</emphasis>, which means that a mutex may be
+      locked recursively.
+    </para>
+  </listitem>
+  <listitem>
+    <para>
+      <emphasis>default</emphasis>, which means that error checking
+      behavior is undefined, and that the behavior for recursive
+      locking is also undefined. Or: portable code must neither
+      trigger error conditions through the Pthreads API nor attempt to
+      lock a mutex of default type recursively.
+    </para>
+  </listitem>
+</itemizedlist>
+</para>
+
+<para>
+In complex applications it is not always clear from beforehand which
+mutex will be locked recursively and which mutex will not be locked
+recursively. Attempts lock a non-recursive mutex recursively will
+result in race conditions that are very hard to find without a thread
+checking tool. So either use the error checking mutex type and
+consistently check the return value of Pthread API mutex calls, or use
+the recursive mutex type.
+</para>
+
+</sect2>
+
+<sect2 id="drd-manual.condvar" xreflabel="condition-variables">
+<title>Condition variables</title>
+
+<para>
+A condition variable allows one thread to wake up one or more other
+threads. Condition variables are typically used to notify one or more
+threads about state changes of shared data. Unfortunately it is very
+easy to introduce race conditions by using condition variables as the
+only means of state information propagation. A better approach is to
+let threads poll for changes of a state variable that is protected by
+a mutex, and to use condition variables only as a thread wakeup
+mechanism. See also the source file
+<computeroutput>drd/tests/monitor_example.cpp</computeroutput> for an
+example of how to implement this concept in C++. The monitor concept
+used in this example is a well known concept in computer science --
+see also Wikipedia for more information about the <ulink
+url="http://en.wikipedia.org/wiki/Monitor_(synchronization)">monitor</ulink>
+concept.
+</para>
+
+</sect2>
+
+<sect2 id="drd-manual.pctw" xreflabel="pthread_cond_timedwait">
+<title>pthread_cond_timedwait() and timeouts</title>
+
+<para>
+Historically the function
+<function>pthread_cond_timedwait()</function> only allowed the
+specification of an absolute timeout, that is a timeout independent of
+the time when this function was called. However, almost every call to
+this function expresses a relative timeout. This typically happens by
+passing the sum of
+<computeroutput>clock_gettime(CLOCK_REALTIME)</computeroutput> and a
+relative timeout as the third argument. This approach is incorrect
+since forward or backward clock adjustments by e.g. ntpd will affect
+the timeout. A more reliable approach is as follows:
+<itemizedlist>
+  <listitem>
+    <para>
+      When initializing a condition variable through
+      pthread_cond_init(), specify that the timeout of
+      pthread_cond_timedwait() will use the clock
+      <literal>CLOCK_MONOTONIC</literal> instead of
+      <literal>CLOCK_REALTIME</literal>. You can do this via
+      <computeroutput>pthread_condattr_setclock(...,
+      CLOCK_MONOTONIC)</computeroutput>.  See also
+      <computeroutput>drd/tests/monitor_example.cpp</computeroutput>
+      for an example.
+    </para>
+  </listitem>
+  <listitem>
+    <para>
+      When calling <function>pthread_cond_timedwait()</function>, pass
+      the sum of
+      <computeroutput>clock_gettime(CLOCK_MONOTONIC)</computeroutput>
+      and a relative timeout as the third argument.
+    </para>
+  </listitem>
+</itemizedlist>
+</para>
+
+</sect2>
+
+<sect2 id="drd-manual.naming-threads" xreflabel="naming threads">
+<title>Assigning names to threads</title>
+
+<para>
+Many applications log information about changes in internal or
+external state to a file. When analyzing log files of a multithreaded
+application it can be very convenient to know which thread logged
+which information. One possible approach is to identify threads in
+logging output by including the result of
+<function>pthread_self()</function> in every log line. However, this approach
+has two disadvantages: there is no direct relationship between these
+values and the source code and these values can be different in each
+run. A better approach is to assign a brief name to each thread and to
+include the assigned thread name in each log line. One possible
+approach for managing thread names is as follows:
+<itemizedlist>
+  <listitem>
+    <para>
+      Allocate a key for the pointer to the thread name through
+      <function>pthread_key_create()</function>.
+    </para>
+  </listitem>
+  <listitem>
+    <para>
+      Just after thread creation, set the thread name through
+      <function>pthread_setspecific()</function>.
+    </para>
+  </listitem>
+  <listitem>
+    <para>
+      In the code that generates the logging information, query the thread
+      name by calling <function>pthread_getspecific()</function>.
+    </para>
+  </listitem>
+</itemizedlist>
+
+</para>
+
+</sect2>
 
 </sect1>
 

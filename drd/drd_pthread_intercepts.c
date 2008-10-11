@@ -44,6 +44,7 @@
 // versions (2.3 or before).
 #ifndef _GNU_SOURCE
 #define _GNU_SOURCE
+#define _IO_MTSAFE_IO
 #endif
 
 #include <assert.h>
@@ -53,6 +54,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>         // confstr()
+#if defined(HAVE_BITS_LIBC_LOCK_H)
+#include <bits/libc-lock.h>
+#endif
 #include "config.h"
 #include "drd_clientreq.h"
 #include "pub_tool_redir.h"
@@ -98,11 +102,15 @@ static void init(void)
 {
   check_threading_library();
   vg_set_main_thread_state();
-  /* glibc up to and including version 2.7 triggers conflicting accesses   */
+  /* glibc up to and including version 2.8 triggers conflicting accesses   */
   /* on stdout and stderr when sending output to one of these streams from */
   /* more than one thread. Suppress data race reports on these objects.    */
   DRD_IGNORE_VAR(*stdout);
   DRD_IGNORE_VAR(*stderr);
+#if defined(HAVE_BITS_LIBC_LOCK_H)
+  DRD_IGNORE_VAR(*(__libc_lock_recursive_t*)(stdout->_lock));
+  DRD_IGNORE_VAR(*(__libc_lock_recursive_t*)(stderr->_lock));
+#endif
 }
 
 static MutexT pthread_to_drd_mutex_type(const int kind)

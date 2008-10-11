@@ -549,7 +549,7 @@ HChar* showA87FpOp ( A87FpOp op ) {
       case Afp_YL2X:   return "yl2x";
       case Afp_YL2XP1: return "yl2xp1";
       case Afp_PREM:   return "prem";
-//..       case Xfp_PREM1:  return "prem1";
+      case Afp_PREM1:  return "prem1";
       case Afp_SQRT:   return "sqrt";
 //..       case Xfp_ABS:    return "abs";
 //..       case Xfp_NEG:    return "chs";
@@ -2885,6 +2885,7 @@ Int emit_AMD64Instr ( UChar* buf, Int nbuf, AMD64Instr* i,
          case Afp_YL2X:   *p++ = 0xD9; *p++ = 0xF1; break;
          case Afp_YL2XP1: *p++ = 0xD9; *p++ = 0xF9; break;
          case Afp_PREM:   *p++ = 0xD9; *p++ = 0xF8; break;
+         case Afp_PREM1:  *p++ = 0xD9; *p++ = 0xF5; break;
          default: goto bad;
       }
       goto done;

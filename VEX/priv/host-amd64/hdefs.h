@@ -307,7 +307,7 @@ typedef
    enum {
       Afp_INVALID,
       /* Binary */
-      Afp_SCALE, Afp_ATAN, Afp_YL2X, Afp_YL2XP1, Afp_PREM,
+      Afp_SCALE, Afp_ATAN, Afp_YL2X, Afp_YL2XP1, Afp_PREM, Afp_PREM1,
       /* Unary */
       Afp_SQRT,
       Afp_SIN, Afp_COS, Afp_TAN,

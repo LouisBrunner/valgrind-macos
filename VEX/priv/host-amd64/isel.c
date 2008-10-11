@@ -1761,7 +1761,8 @@ static HReg iselIntExpr_R_wrk ( ISelEnv* env, IRExpr* e )
    case Iex_Triop: {
       /* C3210 flags following FPU partial remainder (fprem), both
          IEEE compliant (PREM1) and non-IEEE compliant (PREM). */
-      if (e->Iex.Triop.op == Iop_PRemC3210F64) {
+      if (e->Iex.Triop.op == Iop_PRemC3210F64
+          || e->Iex.Triop.op == Iop_PRem1C3210F64) {
          AMD64AMode* m8_rsp = AMD64AMode_IR(-8, hregAMD64_RSP());
          HReg        arg1   = iselDblExpr(env, e->Iex.Triop.arg2);
          HReg        arg2   = iselDblExpr(env, e->Iex.Triop.arg3);
@@ -1779,6 +1780,9 @@ static HReg iselIntExpr_R_wrk ( ISelEnv* env, IRExpr* e )
          switch (e->Iex.Triop.op) {
             case Iop_PRemC3210F64:
                addInstr(env, AMD64Instr_A87FpOp(Afp_PREM));
+               break;
+            case Iop_PRem1C3210F64:
+               addInstr(env, AMD64Instr_A87FpOp(Afp_PREM1));
                break;
             default: 
                vassert(0);
@@ -2936,14 +2940,16 @@ static HReg iselDblExpr_wrk ( ISelEnv* env, IRExpr* e )
            || e->Iex.Triop.op == Iop_AtanF64
            || e->Iex.Triop.op == Iop_Yl2xF64
            || e->Iex.Triop.op == Iop_Yl2xp1F64
-           || e->Iex.Triop.op == Iop_PRemF64)
+           || e->Iex.Triop.op == Iop_PRemF64
+           || e->Iex.Triop.op == Iop_PRem1F64)
       ) {
       AMD64AMode* m8_rsp = AMD64AMode_IR(-8, hregAMD64_RSP());
       HReg        arg1   = iselDblExpr(env, e->Iex.Triop.arg2);
       HReg        arg2   = iselDblExpr(env, e->Iex.Triop.arg3);
       HReg        dst    = newVRegV(env);
       Bool     arg2first = toBool(e->Iex.Triop.op == Iop_ScaleF64 
-                                  || e->Iex.Triop.op == Iop_PRemF64);
+                                  || e->Iex.Triop.op == Iop_PRemF64
+                                  || e->Iex.Triop.op == Iop_PRem1F64);
       addInstr(env, AMD64Instr_A87Free(2));
 
       /* one arg -> top of x87 stack */
@@ -2974,6 +2980,9 @@ static HReg iselDblExpr_wrk ( ISelEnv* env, IRExpr* e )
             break;
          case Iop_PRemF64:
             addInstr(env, AMD64Instr_A87FpOp(Afp_PREM));
+            break;
+         case Iop_PRem1F64:
+            addInstr(env, AMD64Instr_A87FpOp(Afp_PREM1));
             break;
          default: 
             vassert(0);

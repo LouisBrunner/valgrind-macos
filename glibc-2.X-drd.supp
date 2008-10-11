@@ -75,6 +75,17 @@
    obj:/lib*/libc-*
 }
 {
+   libc-exit-io-cleanup
+   drd:ConflictingAccess
+   obj:/lib*/libc-*.so
+   obj:/lib*/libc-*.so
+   obj:/lib*/libc-*.so
+   obj:/lib*/libc-*.so
+   obj:/lib*/libc-*.so
+   obj:/lib*/libc-*.so
+   fun:exit
+}
+{
    librt
    drd:ConflictingAccess
    fun:__librt_enable_asynccancel

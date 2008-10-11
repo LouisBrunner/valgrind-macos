@@ -1258,7 +1258,7 @@ static void get_IntRegInfo ( /*OUT*/IntRegInfo* iii, Int offset, Int szB )
    if (o == GOF(ECX)     && is21) {         o -= 0; goto contains_o; }
    if (o == GOF(ECX)+1   && is21) { o -= 1; o -= 0; goto contains_o; }
    if (o == GOF(EBX)     && is21) {         o -= 0; goto contains_o; }
-   // bl case
+   if (o == GOF(EBX)+1   && is21) { o -= 1; o -= 0; goto contains_o; }
    if (o == GOF(EDX)     && is21) {         o -= 0; goto contains_o; }
    if (o == GOF(EDX)+1   && is21) { o -= 1; o -= 0; goto contains_o; }
    if (o == GOF(ESI)     && is21) {         o -= 0; goto contains_o; }

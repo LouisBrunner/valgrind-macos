@@ -44,7 +44,6 @@
 // versions (2.3 or before).
 #ifndef _GNU_SOURCE
 #define _GNU_SOURCE
-#define _IO_MTSAFE_IO
 #endif
 
 #include <assert.h>

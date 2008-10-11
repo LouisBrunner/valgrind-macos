@@ -66,6 +66,8 @@ EXTRA_DIST =                                        \
 	omp_matinv_racy.vgtest                      \
 	omp_prime_racy.stderr.exp                   \
 	omp_prime_racy.vgtest                       \
+	omp_printf.stderr.exp                       \
+	omp_printf.vgtest                           \
 	pth_barrier.stderr.exp                      \
 	pth_barrier.vgtest                          \
 	pth_barrier2.stderr.exp                     \
@@ -250,7 +252,7 @@ check_PROGRAMS += qt4_mutex qt4_rwlock qt4_semaphore
 endif
 
 if HAVE_OPENMP
-check_PROGRAMS += omp_matinv omp_prime
+check_PROGRAMS += omp_matinv omp_prime omp_printf
 endif
 
 
@@ -440,4 +442,9 @@ omp_prime_SOURCES           = omp_prime.c
 omp_prime_CFLAGS            = $(AM_CFLAGS) -fopenmp
 omp_prime_LDFLAGS           = -fopenmp
 omp_prime_LDADD             = -lm
+
+omp_printf_SOURCES          = omp_printf.c
+omp_printf_CFLAGS           = $(AM_CFLAGS) -fopenmp
+omp_printf_LDFLAGS          = -fopenmp
+omp_printf_LDADD            = -lm
 endif

@@ -1,0 +1,5 @@
+prereq: ./run_openmp_test ./omp_printf
+prog: omp_printf
+vgopts: --check-stack-var=yes --var-info=yes
+args: -q
+stderr_filter: filter_error_summary

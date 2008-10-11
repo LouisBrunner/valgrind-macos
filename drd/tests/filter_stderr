@@ -14,10 +14,9 @@ sed \
 -e "/^warning: evaluate_Dwarf3_Expr: unhandled DW_OP_.*/d" \
 -e "s/, in frame #[0-9]* of thread /, in frame #? of thread /" \
 -e "s/(tc20_verifywrap.c:261)/(tc20_verifywrap.c:262)/" \
--e "/^NOTE: This is an Experimental-Class Valgrind Tool.$/d"  \
 -e "/^Copyright (C) 2006-200., and GNU GPL'd, by Bart Van Assche.$/d" \
--e "s/\(pthread_create.c:[0-9]*\)/in libpthread-?.?.so/" \
--e "s:[A-Za-z_]* (in [^ ]*libpthread-[0-9.]*\.so):(within libpthread-?.?.so):" \
+-e "s/[A-Za-z_]* (pthread_create.c:[0-9]*)/(within libpthread-?.?.so)/" \
+-e "s/[A-Za-z_]* (in [^ ]*libpthread-[0-9.]*\.so)/(within libpthread-?.?.so)/" \
 -e "s:(within /lib[0-9]*/ld-[0-9.]*\.so):(within ld-?.?.so):" \
 -e "s/was held during [0-9][0-9]*/was held during .../" \
 -e "s/ (\([a-zA-Z_]*\.c\):[0-9]*)/ (\1:?)/" \

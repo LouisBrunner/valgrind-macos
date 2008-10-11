@@ -54,9 +54,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>         // confstr()
-#if defined(HAVE_BITS_LIBC_LOCK_H)
-#include <bits/libc-lock.h>
-#endif
 #include "config.h"
 #include "drd_clientreq.h"
 #include "pub_tool_redir.h"
@@ -108,8 +105,8 @@ static void init(void)
   DRD_IGNORE_VAR(*stdout);
   DRD_IGNORE_VAR(*stderr);
 #if defined(HAVE_BITS_LIBC_LOCK_H)
-  DRD_IGNORE_VAR(*(__libc_lock_recursive_t*)(stdout->_lock));
-  DRD_IGNORE_VAR(*(__libc_lock_recursive_t*)(stderr->_lock));
+  DRD_IGNORE_VAR(*(pthread_mutex_t*)(stdout->_lock));
+  DRD_IGNORE_VAR(*(pthread_mutex_t*)(stderr->_lock));
 #endif
 }
 

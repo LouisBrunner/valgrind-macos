@@ -1261,6 +1261,7 @@ AC_HEADER_STDC
 AC_CHECK_HEADERS([       \
         endian.h         \
         mqueue.h         \
+        bits/libc-lock.h \
         sys/endian.h     \
         sys/epoll.h      \
         sys/eventfd.h    \

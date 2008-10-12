@@ -260,6 +260,11 @@ SysRes VG_(dup) ( Int oldfd )
    return VG_(do_syscall1)(__NR_dup, oldfd);
 }
 
+SysRes VG_(dup2) ( Int oldfd, Int newfd )
+{
+   return VG_(do_syscall2)(__NR_dup2, oldfd, newfd);
+}
+
 /* Returns -1 on error. */
 Int VG_(fcntl) ( Int fd, Int cmd, Int arg )
 {

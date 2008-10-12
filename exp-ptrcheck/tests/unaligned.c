@@ -10,11 +10,16 @@ int main ( void )
    char c0[8], c1[8], c2[8], c3[8], c4[8];
 
    // Each of these pointers has a different alignment
-   char** p0 = (char**)&c0[0]; *p0 = x;
-   char** p1 = (char**)&c1[1]; *p1 = x;
-   char** p2 = (char**)&c2[2]; *p2 = x;
-   char** p3 = (char**)&c3[3]; *p3 = x;
-   char** p4 = (char**)&c4[4]; *p4 = x;
+   char** p0 = (char**)&c0[0];
+   char** p1 = (char**)&c1[1];
+   char** p2 = (char**)&c2[2];
+   char** p3 = (char**)&c3[3];
+   char** p4 = (char**)&c4[4];
+   *p0 = x;
+   *p1 = x;
+   *p2 = x;
+   *p3 = x;
+   *p4 = x;
 
    // These 10 are ok
    c = (*p0)[0];

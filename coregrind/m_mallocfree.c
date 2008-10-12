@@ -1770,6 +1770,15 @@ void* VG_(arena_realloc) ( ArenaId aid, HChar* cc,
 
    vg_assert(req_pszB < MAX_PSZB);
 
+   if (NULL == ptr) {
+      return VG_(arena_malloc)(aid, cc, req_pszB);
+   }
+
+   if (req_pszB == 0) {
+      VG_(arena_free)(aid, ptr);
+      return NULL;
+   }
+
    b = get_payload_block(a, ptr);
    vg_assert(blockSane(a, b));
 

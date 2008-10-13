@@ -502,7 +502,7 @@ void VG_(scheduler_init_phase2) ( ThreadId tid_main,
    VG_(threads)[tid_main].client_stack_szB 
       = clstack_size;
 
-   VG_(atfork_child)(sched_fork_cleanup);
+   VG_(atfork)(NULL, NULL, sched_fork_cleanup);
 }
 
 

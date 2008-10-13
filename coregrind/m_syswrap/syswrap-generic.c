@@ -2977,6 +2977,8 @@ PRE(sys_fork)
 
    SET_STATUS_from_SysRes( VG_(do_syscall0)(__NR_fork) );
 
+   VG_(do_atfork_pre)(tid);
+
    if (SUCCESS && RES == 0) {
       /* child */
       VG_(do_atfork_child)(tid);
@@ -2994,6 +2996,8 @@ PRE(sys_fork)
    else 
    if (SUCCESS && RES > 0) {
       /* parent */
+      VG_(do_atfork_parent)(tid);
+
       PRINT("   fork: process %d created child %ld\n", VG_(getpid)(), RES);
 
       /* restore signal mask */

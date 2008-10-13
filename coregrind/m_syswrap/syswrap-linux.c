@@ -313,6 +313,8 @@ SysRes ML_(do_fork_clone) ( ThreadId tid, UInt flags,
    VG_(sigfillset)(&mask);
    VG_(sigprocmask)(VKI_SIG_SETMASK, &mask, &fork_saved_mask);
 
+   VG_(do_atfork_pre)(tid);
+
    /* Since this is the fork() form of clone, we don't need all that
       VG_(clone) stuff */
 #if defined(VGP_x86_linux) || defined(VGP_ppc32_linux) || defined(VGP_ppc64_linux)
@@ -346,6 +348,8 @@ SysRes ML_(do_fork_clone) ( ThreadId tid, UInt flags,
    else 
    if (!res.isError && res.res > 0) {
       /* parent */
+      VG_(do_atfork_parent)(tid);
+
       if (VG_(clo_trace_syscalls))
 	  VG_(printf)("   clone(fork): process %d created child %ld\n",
                       VG_(getpid)(), res.res);

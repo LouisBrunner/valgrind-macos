@@ -78,12 +78,11 @@ extern Char **VG_(env_clone)    ( Char **env_clone );
 // misc
 extern Int  VG_(getgroups)( Int size, UInt* list );
 extern Int  VG_(ptrace)( Int request, Int pid, void *addr, void *data );
-extern Int  VG_(fork)( void );
 
 // atfork
-typedef void (*vg_atfork_t)(ThreadId);
-extern void VG_(atfork_child)    ( vg_atfork_t child_action );
-extern void VG_(do_atfork_child) ( ThreadId tid );
+extern void VG_(do_atfork_pre)    ( ThreadId tid );
+extern void VG_(do_atfork_parent) ( ThreadId tid );
+extern void VG_(do_atfork_child)  ( ThreadId tid );
 
 #endif   // __PUB_CORE_LIBCPROC_H
 

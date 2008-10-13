@@ -103,7 +103,7 @@ static void init(void)
   /* more than one thread. Suppress data race reports on these objects.    */
   DRD_IGNORE_VAR(*stdout);
   DRD_IGNORE_VAR(*stderr);
-#if defined(HAVE_BITS_LIBC_LOCK_H)
+#if defined(HAVE_LIBC_FILE_LOCK)
   DRD_IGNORE_VAR(*(pthread_mutex_t*)(stdout->_lock));
   DRD_IGNORE_VAR(*(pthread_mutex_t*)(stderr->_lock));
 #endif

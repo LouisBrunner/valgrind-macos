@@ -708,6 +708,26 @@ AC_MSG_RESULT([no])
 ])
 
 
+# Check whether FILE has a member called _lock and whether it's a pointer.
+
+AC_MSG_CHECKING([for FILE::_lock])
+
+AC_TRY_COMPILE(
+[
+  #include <stdio.h>
+], [
+  void *p;
+  p = stdout->_lock;
+  return 0;
+], [
+AC_MSG_RESULT([yes])
+AC_DEFINE([HAVE_LIBC_FILE_LOCK], 1,
+          [Define to 1 if FILE has a member called _lock.])
+], [
+AC_MSG_RESULT([no])
+])
+
+
 # Check whether pthread_mutex_t has a member called __m_kind.
 
 AC_MSG_CHECKING([for pthread_mutex_t::__m_kind])
@@ -1261,7 +1281,6 @@ AC_HEADER_STDC
 AC_CHECK_HEADERS([       \
         endian.h         \
         mqueue.h         \
-        bits/libc-lock.h \
         sys/endian.h     \
         sys/epoll.h      \
         sys/eventfd.h    \

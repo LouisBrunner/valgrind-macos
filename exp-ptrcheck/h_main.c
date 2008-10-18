@@ -417,13 +417,13 @@ static void set_Seg_freed ( Seg* seg )
    }
 }
 
-static WordFM* addr_to_seg_map = NULL;
+static WordFM* addr_to_seg_map = NULL; /* GuestAddr -> Seg* */
 
 static void addr_to_seg_map_ENSURE_INIT ( void )
 {
    if (UNLIKELY(addr_to_seg_map == NULL)) {
       addr_to_seg_map = VG_(newFM)( VG_(malloc), "pc.h_main.attmEI.1",
-                                    VG_(free), NULL );
+                                    VG_(free), NULL/*unboxedcmp*/ );
    }
 }
 
@@ -780,8 +780,93 @@ static inline void set_mem_vseg ( Addr a, Seg* vseg )
    sm->vseg[sm_off] = vseg;
 }
 
+// Find the Seg which contains the given address.
 // Returns UNKNOWN if no matches.  Never returns BOTTOM or NONPTR.
 // Also, only returns in-use segments, not freed ones.
+/* Doing this fast is distinctly difficult when there are more than a
+   few heap allocated blocks live.  Basically it is done by searching
+   addr_to_seg_map for 'a'.
+
+   First, if 'a' is the start address of a segment, then we can detect
+   that by simply doing a VG_(lookupFM) of 'a', and we are done (nice
+   and easy).
+
+   If 'a' is within some segment, but does not point to the start, it
+   is much more complex.  We use VG_(findBoundsFM) to find the segment
+   with the largest .addr field which is <= a, and we then inspect the
+   segment to see if 'a' really falls inside it or not.  This is all a
+   bit complex and fragile, and so there's a lot of assertery in the
+   code below.  It has been crosschecked however against the trivial
+   _SLOW implementation shown after the end of this fn.
+*/
+static Seg* get_Seg_containing_addr( Addr a )
+{
+   UWord keyW, valW;
+   Seg*  s2;
+
+   /* Since we are going to poke around in it */
+   addr_to_seg_map_ENSURE_INIT();
+
+   /* first, see if 'a' is at the start of a block.  We do this both
+      because it's easy and more imporantly because VG_(findBoundsFM)
+      will fail in this case, so we need to exclude it first. */
+   if (VG_(lookupFM)( addr_to_seg_map, &keyW, &valW, a )) {
+      tl_assert(keyW == a);
+      s2 = (Seg*)valW;
+      tl_assert(s2->addr == a);
+   } else {
+      Bool  ok;
+      UWord kMin, vMin, kMax, vMax;
+      Seg   minSeg;
+      Seg   maxSeg;
+      UWord minAddr = 0;
+      UWord maxAddr = ~minAddr;
+      VG_(memset)(&minSeg, 0, sizeof(minSeg));
+      VG_(memset)(&maxSeg, 0, sizeof(maxSeg));
+      minSeg.addr = minAddr;
+      maxSeg.addr = maxAddr;
+      ok = VG_(findBoundsFM)( addr_to_seg_map,
+                              &kMin, &vMin, &kMax, &vMax,
+                              minAddr, (UWord)&minSeg,
+                              maxAddr, (UWord)&maxSeg, a );
+      tl_assert(ok); /* must be so, since False is only returned when
+                        'a' is directly present in the map, and we
+                        just established that it isn't. */
+      /* At this point, either vMin points at minSeg, or it points at a
+         real Seg.  In the former case, there is no live heap-allocated
+         Seg which has a start address <= a, so a is not in any block.
+         In the latter case, the Seg vMin points at may or may not
+         actually contain 'a'; we can only tell that by inspecting the
+         Seg itself. */
+      s2 = (Seg*)vMin;
+      tl_assert(kMin == s2->addr);
+      if (s2 == &minSeg) {
+         /* the former */
+         s2 = UNKNOWN;
+      } else {
+         /* the latter */
+         tl_assert(s2->addr <= a);
+         /* if s2 doesn't actually contain 'a', we must forget about it. */
+         if (s2->szB == 0 /* a zero sized block can't contain anything */
+             || s2->addr + s2->szB < a /* the usual range check */)
+            s2 = UNKNOWN;
+      }
+      /* while we're at it, do as much assertery as we can, since this
+         is all rather complex.  Either vMax points at maxSeg, or it
+         points to a real block, which must have a start address
+         greater than a. */
+      tl_assert(kMax == ((Seg*)vMax)->addr);
+      if (kMax == (UWord)&maxSeg) {
+         /* nothing we can check */
+      } else {
+         tl_assert(a < kMax); /* hence also a < ((Seg*)vMax)->addr */
+      }
+   }
+
+   return s2;
+}
+
+/* XXXX very slow reference implementation.  Do not use.
 static Seg* get_Seg_containing_addr_SLOW( Addr a )
 {
    SegGroup* group;
@@ -799,6 +884,8 @@ static Seg* get_Seg_containing_addr_SLOW( Addr a )
    }
    return UNKNOWN;
 }
+*/
+
 
 
 /*------------------------------------------------------------*/
@@ -1084,8 +1171,8 @@ static void pre_mem_access2 ( CorePart part, ThreadId tid, Char* str,
    }
 
    // Check first and last bytes match
-   seglo = get_Seg_containing_addr_SLOW( s );
-   seghi = get_Seg_containing_addr_SLOW( e );
+   seglo = get_Seg_containing_addr( s );
+   seghi = get_Seg_containing_addr( e );
    tl_assert( BOTTOM != seglo && NONPTR != seglo );
    tl_assert( BOTTOM != seghi && NONPTR != seghi );
 

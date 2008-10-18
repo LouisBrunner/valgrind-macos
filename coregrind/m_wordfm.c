@@ -418,22 +418,29 @@ AvlNode* avl_find_node ( AvlNode* t, Word k, Word(*kCmp)(UWord,UWord) )
 
 static
 Bool avl_find_bounds ( AvlNode* t, 
-                       /*OUT*/UWord* kMinP, /*OUT*/UWord* kMaxP,
-                       UWord minKey, UWord maxKey, UWord key,
+                       /*OUT*/UWord* kMinP, /*OUT*/UWord* vMinP,
+                       /*OUT*/UWord* kMaxP, /*OUT*/UWord* vMaxP,
+                       UWord minKey, UWord minVal,
+                       UWord maxKey, UWord maxVal,
+                       UWord key,
                        Word(*kCmp)(UWord,UWord) )
 {
-   UWord lowerBound = minKey;
-   UWord upperBound = maxKey;
+   UWord kLowerBound = minKey;
+   UWord vLowerBound = minVal;
+   UWord kUpperBound = maxKey;
+   UWord vUpperBound = maxVal;
    while (t) {
       Word cmpresS = kCmp ? kCmp(t->key, key)
                           : cmp_unsigned_Words(t->key, key);
       if (cmpresS < 0) {
-         lowerBound = t->key;
+         kLowerBound = t->key;
+         vLowerBound = t->val;
          t = t->child[1];
          continue;
       }
       if (cmpresS > 0) {
-         upperBound = t->key;
+         kUpperBound = t->key;
+         vUpperBound = t->val;
          t = t->child[0];
          continue;
       }
@@ -444,8 +451,10 @@ Bool avl_find_bounds ( AvlNode* t,
          maybe we could, but we're not gonna.  Ner!) */
       return False;
    }
-   *kMinP = lowerBound;
-   *kMaxP = upperBound;
+   if (kMinP) *kMinP = kLowerBound;
+   if (vMinP) *vMinP = vLowerBound;
+   if (kMaxP) *kMaxP = kUpperBound;
+   if (vMaxP) *vMaxP = vUpperBound;
    return True;
 }
 
@@ -661,10 +670,16 @@ Bool VG_(lookupFM) ( WordFM* fm,
 
 // See comment in pub_tool_wordfm.h for explanation
 Bool VG_(findBoundsFM)( WordFM* fm,
-                        /*OUT*/UWord* kMinP, /*OUT*/UWord* kMaxP,
-                        UWord minKey, UWord maxKey, UWord key )
+                        /*OUT*/UWord* kMinP, /*OUT*/UWord* vMinP,
+                        /*OUT*/UWord* kMaxP, /*OUT*/UWord* vMaxP,
+                        UWord minKey, UWord minVal,
+                        UWord maxKey, UWord maxVal,
+                        UWord key )
 {
-   return avl_find_bounds( fm->root, kMinP, kMaxP, minKey, maxKey,
+   return avl_find_bounds( fm->root, kMinP, vMinP,
+                                     kMaxP, vMaxP,
+                                     minKey, minVal, 
+                                     maxKey, maxVal,
                                      key, fm->kCmp );
 }
 

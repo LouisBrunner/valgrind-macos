@@ -105,12 +105,22 @@ Bool VG_(lookupFM) ( WordFM* fm,
 // values are returned in *kMinP and *kMaxP.  It follows that if fm is
 // empty then the returned values are simply minKey and maxKey.
 //
+// For convenience the associated value fields are also returned
+// through *vMinP and *vMaxP.  To make that possible in the general
+// case, the caller must supply via minVal and maxVal, the value
+// fields associated with minKey and maxKey.
+//
 // If the operation was successful (that is, the given key is not
 // present), True is returned.  If the given key is in fact present,
-// False is returned, and *kMinP and *kMaxP are undefined.
+// False is returned, and *kMinP, *vMinP, *kMaxP and *vMaxP are
+// undefined.  Any of kMinP, vMinP, kMaxP and vMaxP may be safely
+// supplied as NULL.
 Bool VG_(findBoundsFM)( WordFM* fm,
-                        /*OUT*/UWord* kMinP, /*OUT*/UWord* kMaxP,
-                        UWord minKey, UWord maxKey, UWord key );
+                        /*OUT*/UWord* kMinP, /*OUT*/UWord* vMinP,
+                        /*OUT*/UWord* kMaxP, /*OUT*/UWord* vMaxP,
+                        UWord minKey, UWord minVal,
+                        UWord maxKey, UWord maxVal,
+                        UWord key );
 
 // How many elements are there in fm?
 UWord VG_(sizeFM) ( WordFM* fm );

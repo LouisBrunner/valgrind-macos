@@ -319,11 +319,6 @@ of.
 
 * Extend system call checking to work on stack and global arrays
 
-* Fix big performance problem to do with heap-vs-syscall checking.
-  How: in h_main.c: get rid of get_Seg_containing_addr_SLOW and
-  implement the same by doing a search in addr_to_seg_map.  This would
-  fix the heap-vs-syscall performance problem noted above.
-
 * Print a warning if a shared object does not have debug info attached
 
 

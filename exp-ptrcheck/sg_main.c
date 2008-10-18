@@ -1564,12 +1564,16 @@ static void classify_address ( /*OUT*/Invar* inv,
            if (0) VG_(printf)("Tree sizes %ld %ld\n",
                               VG_(sizeFM)(siTrees[tid]), VG_(sizeFM)(giTree));
            sOK = VG_(findBoundsFM)( siTrees[tid], 
-                                    (UWord*)&sLB, (UWord*)&sUB,
-                                    (UWord)&sNegInf, (UWord)&sPosInf,
+                                    (UWord*)&sLB,    NULL/*unused*/,
+                                    (UWord*)&sUB,    NULL/*unused*/,
+                                    (UWord)&sNegInf, 0/*unused*/,
+                                    (UWord)&sPosInf, 0/*unused*/,
                                     (UWord)&sKey );
            gOK = VG_(findBoundsFM)( giTree,
-                                    (UWord*)&gLB, (UWord*)&gUB,
-                                    (UWord)&gNegInf, (UWord)&gPosInf,
+                                    (UWord*)&gLB,    NULL/*unused*/,
+                                    (UWord*)&gUB,    NULL/*unused*/,
+                                    (UWord)&gNegInf, 0/*unused*/,
+                                    (UWord)&gPosInf, 0/*unused*/,
                                     (UWord)&gKey );
            if (!(sOK && gOK)) {
               /* If this happens, then [ea,ea+szB) partially overlaps

@@ -605,6 +605,9 @@ AC_SUBST(GLIBC_VERSION)
 DEFAULT_SUPP="xfree-4.supp ${DEFAULT_SUPP}"
 DEFAULT_SUPP="xfree-3.supp ${DEFAULT_SUPP}"
 
+# Add glibc and X11 suppressions for exp-ptrcheck
+DEFAULT_SUPP="exp-ptrcheck.supp ${DEFAULT_SUPP}"
+
 
 # Check for CLOCK_MONOTONIC
 

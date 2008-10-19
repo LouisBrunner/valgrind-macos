@@ -1,0 +1,38 @@
+{
+   lib-X11-used-old-pointer-after-realloc-1
+   exp-ptrcheck:Heap
+   fun:strlen
+   obj:/usr/lib*/libX11.so*
+   obj:/usr/lib*/libX11.so*
+}
+{
+   lib-X11-used-old-pointer-after-realloc-2
+   exp-ptrcheck:Heap
+   obj:/usr/lib*/libX11.so*
+   obj:/usr/lib*/libX11.so*
+}
+
+{
+   ld-2.X-invalid-Add32/64-who-knows
+   exp-ptrcheck:Arith
+   obj:/lib*/ld-2.*so*
+   obj:/lib*/ld-2.*so*
+   obj:/lib*/ld-2.*so*
+}
+
+{
+   ld-2.X poking around in god knows where
+   exp-ptrcheck:SorG
+   obj:/lib*/ld-2.*so*
+   obj:/lib*/ld-2.*so*
+   obj:/lib*/ld-2.*so*
+   obj:/lib*/ld-2.*so*
+}
+
+# I'm pretty sure this is a false positive caused by the sg_ stuff
+{
+   glibc realpath false positive
+   exp-ptrcheck:SorG
+   fun:realpath
+   fun:*
+}

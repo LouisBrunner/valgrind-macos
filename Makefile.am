@@ -26,7 +26,8 @@ SUPP_FILES = \
 	aix5libc.supp xfree-3.supp xfree-4.supp \
 	glibc-2.34567-NPTL-helgrind.supp \
 	glibc-2.2-LinuxThreads-helgrind.supp \
-	glibc-2.X-drd.supp
+	glibc-2.X-drd.supp \
+	exp-ptrcheck.supp
 
 dist_val_DATA = $(SUPP_FILES) default.supp
 

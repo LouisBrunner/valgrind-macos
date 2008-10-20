@@ -2107,6 +2107,9 @@ void sg_instrument_IRStmt ( /*MOD*/struct _SGEnv * env,
                             VexGuestLayout* layout,
                             IRType gWordTy, IRType hWordTy )
 {
+   if (!sg_clo_enable_sg_checks)
+      return;
+
    tl_assert(st);
    tl_assert(isFlatIRStmt(st));
    switch (st->tag) {
@@ -2212,6 +2215,9 @@ void sg_instrument_final_jump ( /*MOD*/struct _SGEnv * env,
                                 VexGuestLayout* layout,
                                 IRType gWordTy, IRType hWordTy )
 {
+   if (!sg_clo_enable_sg_checks)
+      return;
+
    if (jumpkind == Ijk_Call) {
       // Assumes x86 or amd64
       IRTemp   sp_post_call_insn, fp_post_call_insn;

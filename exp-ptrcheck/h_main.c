@@ -2654,9 +2654,9 @@ static void show_lossage ( void )
 static inline
 void check_load_or_store(Bool is_write, Addr m, UWord sz, Seg* mptr_vseg)
 {
-   if (h_clo_lossage_check) {
-     tl_assert(0);
 #if 0
+   tl_assert(0);
+   if (h_clo_lossage_check) {
       Seg* seg;
       stats__tot_mem_refs++;
       if (ISList__findI0( seglist, (Addr)m, &seg )) {
@@ -2693,8 +2693,8 @@ void check_load_or_store(Bool is_write, Addr m, UWord sz, Seg* mptr_vseg)
             }
          }
       }
-#endif
    } /* clo_lossage_check */
+#endif
 
 #  if SC_SEGS
    checkSeg(mptr_vseg);
@@ -4732,6 +4732,7 @@ void h_fini ( Int exitcode )
                    stats__segs_allocd, stats__segs_recycled);
    }
 
+#if 0
    if (h_clo_lossage_check) {
       VG_(message)(Vg_UserMsg, "");
       VG_(message)(Vg_UserMsg, "%12lld total memory references",
@@ -4746,6 +4747,7 @@ void h_fini ( Int exitcode )
    } else {
       tl_assert( 0 == VG_(OSetGen_Size)(lossage) );
    }
+#endif
 }
 
 

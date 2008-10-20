@@ -37,11 +37,11 @@
 
 #include "pub_tool_basics.h"
 #include "pub_tool_libcassert.h"
+#include "pub_tool_libcprint.h"
 #include "pub_tool_execontext.h"
 #include "pub_tool_tooliface.h"
 #include "pub_tool_options.h"
 
-//#include "h_list.h"      // Seg
 #include "sg_main.h"
 #include "pc_common.h"
 #include "h_main.h"
@@ -125,6 +125,21 @@ static void pc_post_clo_init ( void )
 {
    h_post_clo_init();
    sg_post_clo_init();
+#  if defined(VGA_x86) || defined(VGA_amd64)
+   /* nothing */
+#  elif defined(VGA_ppc32) || defined(VGA_ppc64)
+   if (VG_(clo_verbosity) >= 1 && sg_clo_enable_sg_checks) {
+      VG_(message)(Vg_UserMsg, 
+         "WARNING: exp-ptrcheck on ppc32/ppc64 platforms: stack and global array");
+      VG_(message)(Vg_UserMsg, 
+         "WARNING: checking is not currently supported.  Only heap checking is");
+      VG_(message)(Vg_UserMsg, 
+         "WARNING: supported.  Disabling s/g checks (like --enable-sg-checks=no).");
+   }
+   sg_clo_enable_sg_checks = False;
+#  else
+#    error "Unsupported architecture"
+#  endif
 }
 
 static void pc_pre_clo_init(void)

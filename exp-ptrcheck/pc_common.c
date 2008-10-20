@@ -58,13 +58,15 @@
 //                                                          //
 //////////////////////////////////////////////////////////////
 
-Bool h_clo_partial_loads_ok = True;   /* user visible */
-Bool h_clo_lossage_check    = False;  /* dev flag only */
+Bool h_clo_partial_loads_ok  = True;   /* user visible */
+/* Bool h_clo_lossage_check     = False; */ /* dev flag only */
+Bool sg_clo_enable_sg_checks = True;   /* user visible */
 
 Bool pc_process_cmd_line_options(Char* arg)
 {
         VG_BOOL_CLO(arg, "--partial-loads-ok", h_clo_partial_loads_ok)
-   else VG_BOOL_CLO(arg, "--lossage-check",    h_clo_lossage_check)
+   /* else VG_BOOL_CLO(arg, "--lossage-check",    h_clo_lossage_check) */
+   else VG_BOOL_CLO(arg, "--enable-sg-checks", sg_clo_enable_sg_checks)
    else
       return VG_(replacement_malloc_process_cmd_line_option)(arg);
 
@@ -74,16 +76,19 @@ Bool pc_process_cmd_line_options(Char* arg)
 void pc_print_usage(void)
 {
    VG_(printf)(
-   "    --partial-loads-ok=no|yes same as for Memcheck [yes]\n"
+   "    --partial-loads-ok=no|yes  same as for Memcheck [yes]\n"
+   "    --enable-sg-checks=no|yes  enable stack & global array checking? [yes]\n"
    );
    VG_(replacement_malloc_print_usage)();
 }
 
 void pc_print_debug_usage(void)
 {
+  /*
    VG_(printf)(
-   "    --lossage-check=no|yes gather stats for quality control [no]\n"
+   "    --lossage-check=no|yes    gather stats for quality control [no]\n"
    );
+  */
    VG_(replacement_malloc_print_debug_usage)();
 }
 

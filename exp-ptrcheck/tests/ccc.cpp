@@ -1,15 +1,10 @@
 #define _XOPEN_SOURCE 600 // to enable posix_memalign()
-
-
 #include <assert.h>
 #include <stdlib.h>
 #include <malloc.h> // for memalign()
-
-
 static __attribute__((noinline)) void bar ( int ); /* fwds */
-int main(void)
-{
-   int  y1, y2, y3, y4, y5, y6, sum = 0;
+int main(void) {
+   int  sum = 0;
    int* x1 = (int*)malloc(sizeof(int));
    int* x2 = new int;
    int* x3 = new int[10];
@@ -17,9 +12,9 @@ int main(void)
    int* x5 = (int*)memalign(8, sizeof(int));
    int* x6;  void* v6;
    int res = posix_memalign(&v6, 8, sizeof(int)); x6 = (int*)v6;
-
    assert(NULL != x1 && NULL != x2 && NULL != x3 && NULL != x4 &&
           NULL != x5 && 0 == res);
+
    __asm__ __volatile__("":::"memory");
    // all underruns
    sum += x1[-1]; __asm__ __volatile__("":::"memory"); bar(1);

@@ -1714,7 +1714,7 @@ static Bool data_address_is_in_var ( /*OUT*/UWord* offset,
                                      Addr          data_addr,
                                      Addr          data_bias )
 {
-   MaybeUWord muw;
+   MaybeULong mul;
    SizeT      var_szB;
    GXResult   res;
    Bool       show = False;
@@ -1723,12 +1723,17 @@ static Bool data_address_is_in_var ( /*OUT*/UWord* offset,
    vg_assert(var->gexpr);
 
    /* Figure out how big the variable is. */
-   muw = ML_(sizeOfType)(tyents, var->typeR);
-   /* if this var has a type whose size is unknown, it should never
-      have been added.  ML_(addVar) should have rejected it. */
-   vg_assert(muw.b == True);
+   mul = ML_(sizeOfType)(tyents, var->typeR);
+   /* If this var has a type whose size is unknown, zero, or
+      impossibly large, it should never have been added.  ML_(addVar)
+      should have rejected it. */
+   vg_assert(mul.b == True);
+   vg_assert(mul.ul > 0);
+   if (sizeof(void*) == 4) vg_assert(mul.ul < (1ULL << 32));
+   /* After this point, we assume we can truncate mul.ul to a host word
+      safely (without loss of info). */
 
-   var_szB = muw.w;
+   var_szB = (SizeT)mul.ul; /* NB: truncate to host word */
 
    if (show) {
       VG_(printf)("VVVV: data_address_%#lx_is_in_var: %s :: ",
@@ -2264,7 +2269,7 @@ void analyse_deps ( /*MOD*/XArray* /* of FrameBlock */ blocks,
 {
    GXResult   res_sp_6k, res_sp_7k, res_fp_6k, res_fp_7k;
    RegSummary regs;
-   MaybeUWord muw;
+   MaybeULong mul;
    Bool       isVec;
    TyEnt*     ty;
 
@@ -2273,11 +2278,15 @@ void analyse_deps ( /*MOD*/XArray* /* of FrameBlock */ blocks,
       VG_(printf)("adeps: var %s\n", var->name );
 
    /* Figure out how big the variable is. */
-   muw = ML_(sizeOfType)(tyents, var->typeR);
-   /* if this var has a type whose size is unknown or zero, it should
-      never have been added.  ML_(addVar) should have rejected it. */
-   vg_assert(muw.b == True);
-   vg_assert(muw.w > 0);
+   mul = ML_(sizeOfType)(tyents, var->typeR);
+   /* If this var has a type whose size is unknown, zero, or
+      impossibly large, it should never have been added.  ML_(addVar)
+      should have rejected it. */
+   vg_assert(mul.b == True);
+   vg_assert(mul.ul > 0);
+   if (sizeof(void*) == 4) vg_assert(mul.ul < (1ULL << 32));
+   /* After this point, we assume we can truncate mul.ul to a host word
+      safely (without loss of info). */
 
    /* skip if non-array and we're only interested in arrays */
    ty = ML_(TyEnts__index_by_cuOff)( tyents, NULL, var->typeR );
@@ -2341,9 +2350,9 @@ void analyse_deps ( /*MOD*/XArray* /* of FrameBlock */ blocks,
          tl_assert(res.kind == GXR_Value);
          if (debug)
          VG_(printf)("   %5ld .. %5ld (sp) %s\n",
-                     res.word, res.word + muw.w - 1, var->name);
+                     res.word, res.word + ((UWord)mul.ul) - 1, var->name);
          block.base  = res.word;
-         block.szB   = muw.w;
+         block.szB   = (SizeT)mul.ul;
          block.spRel = True;
          block.isVec = isVec;
          VG_(memset)( &block.name[0], 0, sizeof(block.name) );
@@ -2360,9 +2369,9 @@ void analyse_deps ( /*MOD*/XArray* /* of FrameBlock */ blocks,
          tl_assert(res.kind == GXR_Value);
          if (debug)
          VG_(printf)("   %5ld .. %5ld (FP) %s\n",
-                     res.word, res.word + muw.w - 1, var->name);
+                     res.word, res.word + ((UWord)mul.ul) - 1, var->name);
          block.base  = res.word;
-         block.szB   = muw.w;
+         block.szB   = (SizeT)mul.ul;
          block.spRel = False;
          block.isVec = isVec;
          VG_(memset)( &block.name[0], 0, sizeof(block.name) );
@@ -2555,7 +2564,7 @@ void* /* really, XArray* of GlobalBlock */
 
             Bool        isVec;
             GXResult    res;
-            MaybeUWord  muw;
+            MaybeULong  mul;
             GlobalBlock gb;
             TyEnt*      ty;
             DiVariable* var = VG_(indexXA)( range->vars, varIx );
@@ -2582,13 +2591,16 @@ void* /* really, XArray* of GlobalBlock */
             if (0) VG_(printf)("%#lx\n", res.word);
 
             /* Figure out how big the variable is. */
-            muw = ML_(sizeOfType)(di->admin_tyents, var->typeR);
+            mul = ML_(sizeOfType)(di->admin_tyents, var->typeR);
 
-            /* if this var has a type whose size is unknown or zero,
-               it should never have been added.  ML_(addVar) should
-               have rejected it. */
-            vg_assert(muw.b == True);
-            vg_assert(muw.w > 0);
+            /* If this var has a type whose size is unknown, zero, or
+               impossibly large, it should never have been added.
+               ML_(addVar) should have rejected it. */
+            vg_assert(mul.b == True);
+            vg_assert(mul.ul > 0);
+            if (sizeof(void*) == 4) vg_assert(mul.ul < (1ULL << 32));
+            /* After this point, we assume we can truncate mul.ul to a
+               host word safely (without loss of info). */
 
             /* skip if non-array and we're only interested in
                arrays */
@@ -2610,7 +2622,7 @@ void* /* really, XArray* of GlobalBlock */
                                              :"??",var->lineNo);
             VG_(memset)(&gb, 0, sizeof(gb));
             gb.addr  = res.word;
-            gb.szB   = muw.w;
+            gb.szB   = (SizeT)mul.ul;
             gb.isVec = isVec;
             VG_(strncpy)(&gb.name[0], var->name, sizeof(gb.name)-1);
             VG_(strncpy)(&gb.soname[0], di->soname, sizeof(gb.soname)-1);

@@ -726,6 +726,8 @@ void ML_(addVar)( struct _DebugInfo* di,
    DiVariable var;
    Bool       all;
    TyEnt*     ent;
+   MaybeULong mul;
+   HChar*     badness;
 
    tl_assert(di && di->admin_tyents);
 
@@ -789,14 +791,23 @@ void ML_(addVar)( struct _DebugInfo* di,
    /* If the type's size is zero (which can mean unknown size), ignore
       it.  We will never be able to actually relate a data address to
       a data object with zero size, so there's no point in storing
-      info on it. */
-   if (ML_(sizeOfType)(di->admin_tyents, typeR).b != True) {
+      info on it.  On 32-bit platforms, also reject types whose size
+      is 2^32 bytes or large.  (It's amazing what junk shows up ..) */
+   mul = ML_(sizeOfType)(di->admin_tyents, typeR);
+
+   badness = NULL;
+   if (mul.b != True) 
+      badness = "unknown size";
+   else if (mul.ul == 0)
+      badness = "zero size   ";
+   else if (sizeof(void*) == 4 && mul.ul >= (1ULL<<32))
+      badness = "implausibly large";
+
+   if (badness) {
       static Int complaints = 10;
       if (VG_(clo_verbosity) >= 2 && complaints > 0) {
-         VG_(message)(Vg_DebugMsg, 
-            "warning: addVar: unknown size (%s)",
-            name
-         );
+         VG_(message)(Vg_DebugMsg, "warning: addVar: %s (%s)",
+                                   badness, name );
          complaints--;
       }
       return;

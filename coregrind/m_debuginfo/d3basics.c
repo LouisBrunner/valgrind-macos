@@ -696,13 +696,13 @@ GXResult ML_(evaluate_trivial_GX)( GExpr* gx, Addr data_bias )
    UChar      uc;
    UShort     nbytes;
    Word       i, nGuards;
-   MaybeUWord *muw, *muw2;
+   MaybeULong *mul, *mul2;
 
    HChar*  badness = NULL;
    UChar*  p       = &gx->payload[0];
    XArray* results = VG_(newXA)( ML_(dinfo_zalloc), "di.d3basics.etG.1",
                                  ML_(dinfo_free),
-                                 sizeof(MaybeUWord) );
+                                 sizeof(MaybeULong) );
 
    uc = *p++; /*biasMe*/
    vg_assert(uc == 0 || uc == 1);
@@ -712,7 +712,7 @@ GXResult ML_(evaluate_trivial_GX)( GExpr* gx, Addr data_bias )
 
    nGuards = 0;
    while (True) {
-      MaybeUWord thisResult;
+      MaybeULong thisResult;
       uc = *p++;
       if (uc == 1) /*isEnd*/
          break;
@@ -724,14 +724,14 @@ GXResult ML_(evaluate_trivial_GX)( GExpr* gx, Addr data_bias )
       if (0) VG_(printf)("           guard %ld: %#lx %#lx\n", 
                          nGuards, aMin,aMax);
 
-      thisResult.b = False;
-      thisResult.w = 0;
+      thisResult.b  = False;
+      thisResult.ul = 0;
 
       /* Peer at this particular subexpression, to see if it's
          obviously a constant. */
       if (nbytes == 1 + sizeof(Addr) && *p == DW_OP_addr) {
-         thisResult.b = True;
-         thisResult.w = *(Addr*)(p+1) + data_bias;
+         thisResult.b  = True;
+         thisResult.ul = (ULong)(*(Addr*)(p+1)) + (ULong)data_bias;
       }
       else if (nbytes == 2 + sizeof(Addr) 
                && *p == DW_OP_addr
@@ -779,8 +779,8 @@ GXResult ML_(evaluate_trivial_GX)( GExpr* gx, Addr data_bias )
    }
 
    for (i = 0; i < nGuards; i++) {
-      muw = VG_(indexXA)( results, i );
-      if (muw->b == False)
+      mul = VG_(indexXA)( results, i );
+      if (mul->b == False)
          break;
    }
 
@@ -795,13 +795,13 @@ GXResult ML_(evaluate_trivial_GX)( GExpr* gx, Addr data_bias )
 
    /* All the subexpressions produced a constant, but did they all produce
       the same one? */
-   muw = VG_(indexXA)( results, 0 );
-   tl_assert(muw->b == True); /* we just established that all exprs are ok */
+   mul = VG_(indexXA)( results, 0 );
+   tl_assert(mul->b == True); /* we just established that all exprs are ok */
 
    for (i = 1; i < nGuards; i++) {
-      muw2 = VG_(indexXA)( results, i );
-      tl_assert(muw2->b == True);
-      if (muw2->w != muw->w) {
+      mul2 = VG_(indexXA)( results, i );
+      tl_assert(mul2->b == True);
+      if (mul2->ul != mul->ul) {
          res.word = (UWord)"trivial GExpr: subexpressions disagree";
          VG_(deleteXA)( results );
          return res;
@@ -811,7 +811,7 @@ GXResult ML_(evaluate_trivial_GX)( GExpr* gx, Addr data_bias )
    /* Well, we have success.  All subexpressions evaluated, and 
       they all agree.  Hurrah. */
    res.kind = GXR_Value;
-   res.word = muw->w;
+   res.word = (UWord)mul->ul; /* NB: narrowing from ULong */
    VG_(deleteXA)( results );
    return res;
 }

@@ -45,7 +45,7 @@ UChar* ML_(dinfo_memdup)( HChar* cc, UChar* str, SizeT nStr );
 
 /* A handy type, a la Haskell's Maybe type.  Yes, I know, C sucks.
    Been there.  Done that.  Seen the movie.  Got the T-shirt.  Etc. */
-typedef struct { UWord w; Bool b; } MaybeUWord;
+typedef struct { ULong ul; Bool b; } MaybeULong;
 
 
 #endif /* ndef __PRIV_MISC_H */

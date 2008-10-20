@@ -255,8 +255,6 @@ static ULong stats__client_mallocs = 0;
 static ULong stats__client_frees   = 0;
 static ULong stats__segs_allocd    = 0;
 static ULong stats__segs_recycled  = 0;
-static ULong stats__slow_searches  = 0;
-static ULong stats__slow_totcmps   = 0;
 
 
 //////////////////////////////////////////////////////////////
@@ -2253,7 +2251,9 @@ static void setup_post_syscall_table ( void )
       ADD(0, __NR_getuid32);
 #     endif
       ADD(0, __NR_getxattr);
+      ADD(0, __NR_inotify_add_watch);
       ADD(0, __NR_inotify_init);
+      ADD(0, __NR_inotify_rm_watch);
       ADD(0, __NR_ioctl); // ioctl -- assuming no pointers returned
       ADD(0, __NR_kill);
       ADD(0, __NR_link);
@@ -2269,6 +2269,7 @@ static void setup_post_syscall_table ( void )
       ADD(0, __NR_mkdir);
       ADD(0, __NR_mprotect);
       ADD(0, __NR_munmap); // die_mem_munmap already called, segment remove);
+      ADD(0, __NR_nanosleep);
       ADD(0, __NR_open);
       ADD(0, __NR_pipe);
       ADD(0, __NR_poll);
@@ -2290,6 +2291,7 @@ static void setup_post_syscall_table ( void )
       ADD(0, __NR_rt_sigreturn); /* not sure if we should see this or not */
       ADD(0, __NR_sched_get_priority_max);
       ADD(0, __NR_sched_get_priority_min);
+      ADD(0, __NR_sched_getaffinity);
       ADD(0, __NR_sched_getparam);
       ADD(0, __NR_sched_getscheduler);
       ADD(0, __NR_sched_setscheduler);
@@ -4728,10 +4730,6 @@ void h_fini ( Int exitcode )
       VG_(message)(Vg_DebugMsg,
                    "  h_:  %'10llu Segs allocd,   %'10llu Segs recycled", 
                    stats__segs_allocd, stats__segs_recycled);
-      VG_(message)(Vg_DebugMsg,
-                   "  h_:  %'10llu slow searches, %'10llu total cmps",
-                   stats__slow_searches, stats__slow_totcmps);
-
    }
 
    if (h_clo_lossage_check) {

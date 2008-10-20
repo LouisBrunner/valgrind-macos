@@ -54,7 +54,7 @@
 
 
 static
-void preen_Invars ( Addr a, SizeT len, Bool isHeap ); /*fwds*/
+void preen_global_Invars ( Addr a, SizeT len ); /*fwds*/
 
 
 //////////////////////////////////////////////////////////////
@@ -1067,10 +1067,10 @@ void sg_die_mem_munmap ( Addr a, SizeT len )
 
    /* Ok, the range contained some blocks.  Therefore we'll need to
       visit all the Invars in all the thread shadow stacks, and
-      convert all Inv_Global{S,V} entries that intersect [a,a+len) to
+      convert all Inv_Global entries that intersect [a,a+len) to
       Inv_Unknown. */
    tl_assert(len > 0);
-   preen_Invars( a, len, False/*!isHeap*/ );
+   preen_global_Invars( a, len );
    invalidate_all_QCaches();
 }
 
@@ -1161,73 +1161,70 @@ typedef
    instead. */
 
 __attribute__((noinline))
-static void preen_Invar ( Invar* inv, Addr a, SizeT len, Bool isHeap )
+static void preen_global_Invar ( Invar* inv, Addr a, SizeT len )
 {
    stats__Invars_preened++;
    tl_assert(len > 0);
    tl_assert(inv);
    switch (inv->tag) {
-#if 0
-      case Inv_Heap:
-         tl_assert(inv->Inv.Heap.len > 0);
-         if (isHeap && rangesOverlap(a, len, inv->Inv.Heap.start,
-                                             inv->Inv.Heap.len)) {
+      case Inv_Global:
+         tl_assert(inv->Inv.Global.nd);
+         tl_assert(inv->Inv.Global.nd->szB > 0);
+         if (0) VG_(printf)("preen_Invar Global %#lx %lu\n",
+                            inv->Inv.Global.nd->addr,
+                            inv->Inv.Global.nd->szB);
+         if (0 == cmp_nonempty_intervals(a, len, inv->Inv.Global.nd->addr,
+                                                 inv->Inv.Global.nd->szB)) {
             inv->tag = Inv_Unknown;
             stats__Invars_changed++;
          }
          break;
-      case Inv_GlobalS:
-      case Inv_GlobalV:
-         tl_assert(inv->Inv.Global.len > 0);
-         if ((!isHeap)
-             && rangesOverlap(a, len, inv->Inv.Global.start,
-                                      inv->Inv.Global.len)) {
-            inv->tag = Inv_Unknown;
-            stats__Invars_changed++;
-         }
-         break;
-      case Inv_StackS:
-      case Inv_StackV:
+      case Inv_Stack0:
+      case Inv_StackN:
       case Inv_Unknown:
          break;
-#endif
-      default: tl_assert(0);
+      default:
+         tl_assert(0);
    }
 }
 
 __attribute__((noinline))
-static void preen_Invars ( Addr a, SizeT len, Bool isHeap )
+static void preen_global_Invars ( Addr a, SizeT len )
 {
-  tl_assert(0);
-#if 0
    Int         i;
-   Word        ixFrames, nFrames;
    UWord       u;
-   XArray*     stack; /* XArray* of StackFrame */
    StackFrame* frame;
    tl_assert(len > 0);
-   tl_assert(0);
    for (i = 0; i < VG_N_THREADS; i++) {
-tl_assert(0);
-      stack = shadowStacks[i];
-      if (!stack)
-         continue;
-      nFrames = VG_(sizeXA)( stack );
-      for (ixFrames = 0; ixFrames < nFrames; ixFrames++) {
+      frame = shadowStacks[i];
+      if (!frame)
+         continue; /* no frames for this thread */
+      /* start from the innermost frame */
+      while (frame->inner)
+         frame = frame->inner;
+      tl_assert(frame->outer);
+      /* work through the frames from innermost to outermost.  The
+         order isn't important; we just need to ensure we visit each
+         frame once (including those which are not actually active,
+         more 'inner' than the 'innermost active frame', viz, just
+         hanging around waiting to be used, when the current innermost
+         active frame makes more calls.  See comments on definition of
+         struct _StackFrame. */
+      for (; frame; frame = frame->outer) {
          UWord xx = 0; /* sanity check only; count of used htab entries */
-         frame = VG_(indexXA)( stack, ixFrames );
-         tl_assert(frame->htab);
+         if (!frame->htab)
+            continue; /* frame not in use.  See shadowStack_unwind(). */
          for (u = 0; u < frame->htab_size; u++) {
             IInstance* ii = &frame->htab[u];
             if (ii->insn_addr == 0)
                continue; /* not in use */
-            preen_Invar( &ii->invar, a, len, isHeap );
+            if (0) { pp_Invar(&ii->invar); VG_(printf)(" x\n"); }
+            preen_global_Invar( &ii->invar, a, len );
             xx++;           
          }
          tl_assert(xx == frame->htab_used);
       }
    }
-#endif
 }
 
 

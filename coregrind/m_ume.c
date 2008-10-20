@@ -362,8 +362,12 @@ static Int load_ELF(Int fd, const HChar* name, /*MOD*/ExeInfo* info)
          become legit, which is really bad) and causes problems for
          exp-ptrcheck, which assumes all numbers below 1MB are
          nonpointers.  So, hackily, move it above 1MB. */
-      if (ebase < 0x100000)
-         ebase = 0x100000;
+      /* Later .. is appears ppc32-linux tries to put [vdso] at 1MB,
+         which totally screws things up, because nothing else can go
+         there.  So bump the hacky load addess along by 0x8000, to
+         0x108000. */
+      if (ebase < 0x108000)
+         ebase = 0x108000;
    }
 
    info->phnum = e->e.e_phnum;

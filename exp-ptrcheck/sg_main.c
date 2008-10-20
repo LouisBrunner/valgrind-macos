@@ -522,8 +522,9 @@ static void add_blocks_to_StackTree (
 
    tl_assert(sitree);
    if (debug) {
-      VG_(printf)("\n");
+      VG_(printf)("\ndepth = %lu\n", depth);
       pp_StackTree( sitree, "add_blocks_to_StackTree-pre" );
+      pp_StackBlocks(descrs);
    }
 
    for (i = 0; i < nDescrs; i++) {

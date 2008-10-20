@@ -54,6 +54,8 @@ EXTRA_DIST = $(noinst_SCRIPTS) \
 	partial_good.vgtest \
 	partial_good.stderr.exp-glibc25-x86 \
 	partial_good.stderr.exp-glibc25-amd64 \
+	preen_invars.vgtest preen_invars.stdout.exp \
+	preen_invars.stderr.exp-glibc28-amd64 \
 	pth_create.vgtest pth_create.stderr.exp \
 	pth_specific.vgtest pth_specific.stderr.exp \
 	realloc.vgtest \
@@ -78,7 +80,9 @@ check_PROGRAMS = \
 	add and arith bad_percentify base ccc cmp fp \
 	globalerr hackedbz2 \
 	hp_bounds hp_dangle idiv imul \
-	justify mm not neg or partial pth_create pth_specific realloc \
+	justify mm not neg or partial \
+	preen_invars preen_invars_so.so \
+	pth_create pth_specific realloc \
 	stackerr \
 	strcpy strlen sub supp syscall tricky unaligned xor zero
 
@@ -130,3 +134,37 @@ zero_SOURCES		= zero.c
 
 # C++ ones
 ccc_SOURCES		= ccc.cpp
+
+# Build shared object for preen_invars
+preen_invars_SOURCES           = preen_invars.c
+preen_invars_DEPENDENCIES      = preen_invars_so.so
+if VGP_PPC64_AIX5 
+ preen_invars_LDADD            = -ldl
+ preen_invars_LDFLAGS          = $(AM_FLAG_M3264_PRI)
+else
+if VGP_PPC32_AIX5
+ preen_invars_LDADD            = -ldl
+ preen_invars_LDFLAGS          = $(AM_FLAG_M3264_PRI) -Wl,-G -Wl,-bnogc
+else
+ preen_invars_LDADD            = -ldl
+ preen_invars_LDFLAGS          = $(AM_FLAG_M3264_PRI) \
+				-Wl,-rpath,$(top_builddir)/memcheck/tests
+endif
+endif
+
+preen_invars_so_so_SOURCES      = preen_invars_so.c
+preen_invars_so_so_LDADD        = 
+preen_invars_so_so_DEPENDENCIES = 
+preen_invars_so_so_CFLAGS       = -fpic $(AM_FLAG_M3264_PRI) -g
+if VGP_PPC64_AIX5
+ preen_invars_so_so_LDFLAGS     = -fpic $(AM_FLAG_M3264_PRI) -shared
+else
+if VGP_PPC32_AIX5
+ preen_invars_so_so_LDFLAGS     = -fpic $(AM_FLAG_M3264_PRI) -shared \
+					-Wl,-G -Wl,-bnogc
+else
+ preen_invars_so_so_LDFLAGS     = -fpic $(AM_FLAG_M3264_PRI) -shared \
+					-Wl,-soname -Wl,preen_invars_so.so
+endif
+endif
+

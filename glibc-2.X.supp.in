@@ -31,6 +31,12 @@
 ##----------------------------------------------------------------------##
 
 {
+   dl-hack3-cond-0
+   Memcheck:Cond
+   fun:_dl_start
+   fun:_start
+}
+{
    dl-hack3-cond-1
    Memcheck:Cond
    obj:/lib*/ld-@GLIBC_VERSION@*.so*

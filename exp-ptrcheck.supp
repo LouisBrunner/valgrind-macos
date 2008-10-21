@@ -15,18 +15,18 @@
 {
    ld-2.X-invalid-Add32/64-who-knows
    exp-ptrcheck:Arith
-   obj:/lib*/ld-2.*so*
-   obj:/lib*/ld-2.*so*
-   obj:/lib*/ld-2.*so*
+   obj:/*lib*/ld-2.*so*
+   obj:/*lib*/ld-2.*so*
+   obj:/*lib*/ld-2.*so*
 }
 
 {
-   ld-2.X poking around in god knows where
+   ld-2.X possibly applying relocations
    exp-ptrcheck:SorG
-   obj:/lib*/ld-2.*so*
-   obj:/lib*/ld-2.*so*
-   obj:/lib*/ld-2.*so*
-   obj:/lib*/ld-2.*so*
+   obj:/*lib*/ld-2.*so*
+   obj:/*lib*/ld-2.*so*
+   obj:/*lib*/ld-2.*so*
+   obj:/*lib*/ld-2.*so*
 }
 
 # I'm pretty sure this is a false positive caused by the sg_ stuff
@@ -35,4 +35,12 @@
    exp-ptrcheck:SorG
    fun:realpath
    fun:*
+}
+
+{
+   If I had to guess, inlined or nameless strlen etc in ld.so
+   exp-ptrcheck:Heap
+   obj:/*lib*/ld-2.*so*
+   obj:/*lib*/ld-2.*so*
+   obj:/*lib*/ld-2.*so*
 }

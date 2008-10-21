@@ -295,11 +295,6 @@ of.
   them for overruns stack and global arrays.  This would be easy to
   add.
 
-* Performance: for implementation reasons, system call checking has a
-  cost proportional to the number of live and freed heap blocks being
-  tracked, and so can be very expensive.  This is stupid and could
-  easily be fixed (see "STILL TO DO -- User visible things" below).
-
 * Platforms: the stack/global checks won't work properly on any
   PowerPC platforms, only on x86 and amd64 targets.  That's because
   the stack and global checking requires tracking function calls and
@@ -312,6 +307,7 @@ of.
   presence of longjmps within the same stack (although this has not
   been tested).  However, code which switches stacks is likely to
   cause breakage/chaos.
+
 
 
 7. STILL TO DO -- User visible things
@@ -358,8 +354,6 @@ in real use.
   shadows for word-sized temps defined in the block's preamble.  (Why
   does this work at all, as it stands?)
 
-* CRITICAL: sg_main.c: make preen_Invar work properly again.  Why
-  isn't it being called?
-
 * sg_main.c: fix compute_II_hash to make it a bit more sensible
-  for ppc32/64 targets
+  for ppc32/64 targets (except that sg_ doesn't work on ppc32/64
+  targets, so this is a bit academic at the mo)

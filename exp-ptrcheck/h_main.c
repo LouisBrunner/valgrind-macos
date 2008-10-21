@@ -1641,6 +1641,9 @@ static void get_IntRegInfo ( /*OUT*/IntRegInfo* iii, Int offset, Int szB )
    if (o == GOF(VR30) && sz == 16) goto none;
    if (o == GOF(VR31) && sz == 16) goto none;
 
+   /* Altivec admin related */
+   if (o == GOF(VRSAVE) && is4) goto none;
+
    VG_(printf)("get_IntRegInfo(ppc32):failing on (%d,%d)\n", o, sz);
    tl_assert(0);
 #  undef GOF
@@ -1801,6 +1804,9 @@ static void get_IntRegInfo ( /*OUT*/IntRegInfo* iii, Int offset, Int szB )
    if (o == GOF(VR29) && sz == 16) goto none;
    if (o == GOF(VR30) && sz == 16) goto none;
    if (o == GOF(VR31) && sz == 16) goto none;
+
+   /* Altivec admin related */
+   if (o == GOF(VRSAVE) && is4) goto none;
 
    VG_(printf)("get_IntRegInfo(ppc64):failing on (%d,%d)\n", o, sz);
    tl_assert(0);

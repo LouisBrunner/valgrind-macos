@@ -41,7 +41,8 @@
 
 
 /* The following intercepts are copied verbatim from
-   memcheck/mc_replace_strmem.c. */
+   memcheck/mc_replace_strmem.c.  If you copy more in, please keep
+   them in the same order as in mc_replace_strmem.c. */
 
 /* --------- Some handy Z-encoded names. --------- */
 
@@ -68,6 +69,25 @@
 
 
 
+// Note that this replacement often doesn't get used because gcc inlines
+// calls to strlen() with its own built-in version.  This can be very
+// confusing if you aren't expecting it.  Other small functions in this file
+// may also be inline by gcc.
+#define STRLEN(soname, fnname) \
+   SizeT VG_REPLACE_FUNCTION_ZU(soname,fnname)( const char* str ); \
+   SizeT VG_REPLACE_FUNCTION_ZU(soname,fnname)( const char* str ) \
+   { \
+      SizeT i = 0; \
+      while (str[i] != 0) i++; \
+      return i; \
+   }
+
+STRLEN(m_libc_soname,          strlen)
+STRLEN(m_ld_linux_so_2,        strlen)
+STRLEN(m_ld_linux_x86_64_so_2, strlen)
+STRLEN(m_ld_so_1,              strlen)
+
+
 #define STRCMP(soname, fnname) \
    int VG_REPLACE_FUNCTION_ZU(soname,fnname) \
           ( const char* s1, const char* s2 ); \
@@ -91,24 +111,6 @@
 STRCMP(m_libc_soname,          strcmp)
 STRCMP(m_ld_linux_x86_64_so_2, strcmp)
 STRCMP(m_ld64_so_1,            strcmp)
-
-
-// Note that this replacement often doesn't get used because gcc inlines
-// calls to strlen() with its own built-in version.  This can be very
-// confusing if you aren't expecting it.  Other small functions in this file
-// may also be inline by gcc.
-#define STRLEN(soname, fnname) \
-   SizeT VG_REPLACE_FUNCTION_ZU(soname,fnname)( const char* str ); \
-   SizeT VG_REPLACE_FUNCTION_ZU(soname,fnname)( const char* str ) \
-   { \
-      SizeT i = 0; \
-      while (str[i] != 0) i++; \
-      return i; \
-   }
-
-STRLEN(m_libc_soname,          strlen)
-STRLEN(m_ld_linux_so_2,        strlen)
-STRLEN(m_ld_linux_x86_64_so_2, strlen)
 
 
 #define MEMCPY(soname, fnname) \
@@ -156,6 +158,23 @@ STRLEN(m_ld_linux_x86_64_so_2, strlen)
 MEMCPY(m_libc_soname, memcpy)
 MEMCPY(m_ld_so_1,     memcpy) /* ld.so.1 */
 MEMCPY(m_ld64_so_1,   memcpy) /* ld64.so.1 */
+
+
+/* Copy SRC to DEST, returning the address of the terminating '\0' in
+   DEST. (minor variant of strcpy) */
+#define STPCPY(soname, fnname) \
+   char* VG_REPLACE_FUNCTION_ZU(soname,fnname) ( char* dst, const char* src ); \
+   char* VG_REPLACE_FUNCTION_ZU(soname,fnname) ( char* dst, const char* src ) \
+   { \
+      while (*src) *dst++ = *src++; \
+      *dst = 0; \
+      \
+      return dst; \
+   }
+
+STPCPY(m_libc_soname,         stpcpy)
+STPCPY(m_ld_linux_so_2,        stpcpy)
+STPCPY(m_ld_linux_x86_64_so_2, stpcpy)
 
 
 /*--------------------------------------------------------------------*/

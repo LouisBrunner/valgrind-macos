@@ -2605,6 +2605,18 @@ void _start_valgrind ( AIX5Bootblock* bootblock )
    VG_(exit)(0);
 }
 
+/* At some point in Oct 2008, static linking appeared to stop working
+   on AIX 5.3.  This breaks the build since we link statically.  The
+   linking fails citing absence of the following five symbols as the
+   reason.  In the absence of a better solution, here are stand-ins
+   for them.  Kludge appears to work; presumably said functions,
+   assuming they are indeed functions, are never called. */
+void encrypted_pw_passlen ( void ) { vg_assert(0); }
+void crypt_r              ( void ) { vg_assert(0); }
+void max_history_size     ( void ) { vg_assert(0); }
+void getpass_auto         ( void ) { vg_assert(0); }
+void max_pw_passlen       ( void ) { vg_assert(0); }
+
 #endif /* defined(VGP_ppc{32,64}_aix5) */
 
 

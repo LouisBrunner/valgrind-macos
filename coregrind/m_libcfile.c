@@ -262,7 +262,13 @@ SysRes VG_(dup) ( Int oldfd )
 
 SysRes VG_(dup2) ( Int oldfd, Int newfd )
 {
+#  if defined(VGO_linux)
    return VG_(do_syscall2)(__NR_dup2, oldfd, newfd);
+#  elif defined(VGO_aix5)
+   I_die_here;
+#  else
+#    error Unknown OS
+#  endif
 }
 
 /* Returns -1 on error. */

@@ -3760,10 +3760,14 @@ void new_dwarf3_reader_wrk (
    ML_(dinfo_free)( tyents_to_keep_cache );
    tyents_to_keep_cache = NULL;
 
-   /* and the file name table (just the array, not the entries 
-      themselves). */
-   vg_assert(varparser.filenameTable);
-   VG_(deleteXA)( varparser.filenameTable );
+   /* and the file name table (just the array, not the entries
+      themselves).  (Apparently, 2008-Oct-23, varparser.filenameTable
+      can be NULL here, for icc9 generated Dwarf3.  Not sure what that
+      signifies (a deeper problem with the reader?)) */
+   if (varparser.filenameTable) {
+      VG_(deleteXA)( varparser.filenameTable );
+      varparser.filenameTable = NULL;
+   }
 
    /* record the GExprs in di so they can be freed later */
    vg_assert(!di->admin_gexprs);

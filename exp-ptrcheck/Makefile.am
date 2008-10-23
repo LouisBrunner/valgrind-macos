@@ -126,4 +126,4 @@ exp_ptrcheck_ppc64_aix5_LDFLAGS      = $(TOOL_LDFLAGS_PPC64_AIX5)
 
 noinst_HEADERS = h_main.h sg_main.h pc_common.h
 
-EXTRA_DIST = README.ABOUT.PTRCHECK.txt
+EXTRA_DIST = 

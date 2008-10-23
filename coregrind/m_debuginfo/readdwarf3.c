@@ -1129,6 +1129,19 @@ void get_Form_contents ( /*OUT*/ULong* cts,
          *ctsMemSzB = (UWord)u64;
          break;
       }
+      case DW_FORM_block2: {
+         ULong  u64b;
+         ULong  u64 = (ULong)get_UShort(c);
+         UChar* block = get_address_of_Cursor(c);
+         TRACE_D3("%llu byte block: ", u64);
+         for (u64b = u64; u64b > 0; u64b--) {
+            UChar u8 = get_UChar(c);
+            TRACE_D3("%x ", (UInt)u8);
+         }
+         *cts = (ULong)(UWord)block;
+         *ctsMemSzB = (UWord)u64;
+         break;
+      }
       default:
          VG_(printf)("get_Form_contents: unhandled %d (%s)\n",
                      form, ML_(pp_DW_FORM)(form));

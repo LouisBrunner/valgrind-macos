@@ -92,7 +92,8 @@ void ML_(pp_TyEnt)( TyEnt* te )
          VG_(printf)("UNKNOWN");
          break;
       case Te_Atom:
-         VG_(printf)("Te_Atom(%lld,\"%s\")",
+         VG_(printf)("Te_Atom(%s%lld,\"%s\")",
+                     te->Te.Atom.valueKnown ? "" : "unknown:",
                      te->Te.Atom.value, te->Te.Atom.name);
          break;
       case Te_Field:
@@ -459,6 +460,8 @@ Word ML_(TyEnt__cmp_by_all_except_cuOff) ( TyEnt* te1, TyEnt* te2 )
       r = UWord__cmp(te1->Te.INDIR.indR, te2->Te.INDIR.indR);
       return r;
    case Te_Atom:
+      r = Bool__cmp(te1->Te.Atom.valueKnown, te2->Te.Atom.valueKnown);
+      if (r != 0) return r;
       r = Long__cmp(te1->Te.Atom.value, te2->Te.Atom.value);
       if (r != 0) return r;
       r = Asciiz__cmp(te1->Te.Atom.name, te2->Te.Atom.name);

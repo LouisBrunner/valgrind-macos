@@ -2226,8 +2226,37 @@ static void parse_type_DIE ( /*MOD*/XArray* /* of TyEnt */ tyents,
       goto acquire_Type;
    }
 
+   /* gcc (GCC) 4.4.0 20081017 (experimental) occasionally produces
+      DW_TAG_enumerator with only a DW_AT_name but no
+      DW_AT_const_value.  This is in violation of the Dwarf3 standard,
+      and appears to be a new "feature" of gcc - versions 4.3.x and
+      earlier do not appear to do this.  So accept DW_TAG_enumerator
+      which only have a name but no value.  An example:
+
+      <1><180>: Abbrev Number: 6 (DW_TAG_enumeration_type)
+         <181>   DW_AT_name        : (indirect string, offset: 0xda70):
+                                     QtMsgType
+         <185>   DW_AT_byte_size   : 4
+         <186>   DW_AT_decl_file   : 14
+         <187>   DW_AT_decl_line   : 1480
+         <189>   DW_AT_sibling     : <0x1a7>
+      <2><18d>: Abbrev Number: 7 (DW_TAG_enumerator)
+         <18e>   DW_AT_name        : (indirect string, offset: 0x9e18):
+                                     QtDebugMsg
+      <2><192>: Abbrev Number: 7 (DW_TAG_enumerator)
+         <193>   DW_AT_name        : (indirect string, offset: 0x1505f):
+                                     QtWarningMsg
+      <2><197>: Abbrev Number: 7 (DW_TAG_enumerator)
+         <198>   DW_AT_name        : (indirect string, offset: 0x16f4a):
+                                     QtCriticalMsg
+      <2><19c>: Abbrev Number: 7 (DW_TAG_enumerator)
+         <19d>   DW_AT_name        : (indirect string, offset: 0x156dd):
+                                     QtFatalMsg
+      <2><1a1>: Abbrev Number: 7 (DW_TAG_enumerator)
+         <1a2>   DW_AT_name        : (indirect string, offset: 0x13660):
+                                     QtSystemMsg
+   */
    if (dtag == DW_TAG_enumerator) {
-      Bool have_value = False;
       VG_(memset)( &atomE, 0, sizeof(atomE) );
       atomE.cuOff = posn;
       atomE.tag   = Te_Atom;
@@ -2244,11 +2273,11 @@ static void parse_type_DIE ( /*MOD*/XArray* /* of TyEnt */ tyents,
          }
          if (attr == DW_AT_const_value && ctsSzB > 0) {
             atomE.Te.Atom.value = cts;
-            have_value = True;
+            atomE.Te.Atom.valueKnown = True;
          }
       }
       /* Do we have something that looks sane? */
-      if ((!have_value) || atomE.Te.Atom.name == NULL)
+      if (atomE.Te.Atom.name == NULL)
          goto bad_DIE;
       /* Do we have a plausible parent? */
       if (typestack_is_empty(parser)) goto bad_DIE;

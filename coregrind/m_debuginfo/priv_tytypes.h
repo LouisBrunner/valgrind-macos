@@ -72,6 +72,7 @@ typedef
          } UNKNOWN;
          struct {
             UChar* name; /* in mallocville */
+            Bool   valueKnown; /* atoms w/ unknown value are possible */
             Long   value;
          } Atom;
          struct {

@@ -376,9 +376,12 @@ IRSB* bb_to_IR ( /*OUT*/VexGuestExtents* vge,
      irsb->stmts[selfcheck_idx+3]
         = IRStmt_Put( offB_TILEN, IRExpr_RdTmp(tilen_tmp) );
 
-     p_adler_helper = abiinfo_both->host_ppc_calls_use_fndescrs
-                      ? ((HWord*)(&genericg_compute_adler32))[0]
-                      : (HWord)&genericg_compute_adler32;
+     if (abiinfo_both->host_ppc_calls_use_fndescrs) {
+        HWord* fndescr = (HWord*)&genericg_compute_adler32;
+        p_adler_helper = fndescr[0];
+     } else {
+        p_adler_helper = (HWord)&genericg_compute_adler32;
+     }
 
      irsb->stmts[selfcheck_idx+4]
         = IRStmt_Exit( 

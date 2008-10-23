@@ -1580,6 +1580,11 @@ UInt get_sem_count( Int semid )
    union vki_semun arg;
    SysRes res;
 
+   /* Doesn't actually seem to be necessary, but gcc-4.4.0 20081017
+      (experimental) otherwise complains that the use in the return
+      statement below is uninitialised. */
+   buf.sem_nsems = 0;
+
    arg.buf = &buf;
 
 #  ifdef __NR_semctl
@@ -1587,7 +1592,7 @@ UInt get_sem_count( Int semid )
 #  else
    res = VG_(do_syscall5)(__NR_ipc, 3 /* IPCOP_semctl */, semid, 0,
                           VKI_IPC_STAT, (UWord)&arg);
-# endif
+#  endif
    if (res.isError)
       return 0;
 

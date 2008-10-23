@@ -3,6 +3,10 @@
 
 # Errors to suppress by default with XFree86 4.1.0)
 
+# *** And a bunch of other stuff which is completely unrelated
+# to X.  The default suppressions are a bit of a mess and could do
+# with a good tidying up.
+
 # Format of this file is:
 # {
 #     name_of_suppression
@@ -314,6 +318,12 @@
    obj:/*lib*/libz.so.1.2.*
    fun:deflate
 }
+{
+   zlib-1.2.x trickyness (1b): See http://www.zlib.net/zlib_faq.html#faq36
+   Memcheck:Cond
+   obj:/*lib*/libz.so.1.2.*
+   fun:deflate
+}
 
 {
    zlib-1.2.x trickyness (2a): See http://www.zlib.net/zlib_faq.html#faq36
@@ -322,11 +332,23 @@
    obj:/*lib*/libz.so.1.2.*
    fun:deflate
 }
+{
+   zlib-1.2.x trickyness (2b): See http://www.zlib.net/zlib_faq.html#faq36
+   Memcheck:Value8
+   obj:/*lib*/libz.so.1.2.*
+   fun:deflate
+}
 
 {
    zlib-1.2.x trickyness (3a): See http://www.zlib.net/zlib_faq.html#faq36
    Memcheck:Value4
    obj:/*lib*/libz.so.1.2.*
+   obj:/*lib*/libz.so.1.2.*
+   fun:deflate
+}
+{
+   zlib-1.2.x trickyness (3b): See http://www.zlib.net/zlib_faq.html#faq36
+   Memcheck:Value4
    obj:/*lib*/libz.so.1.2.*
    fun:deflate
 }

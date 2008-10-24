@@ -193,4 +193,6 @@ various r8148     Mgd  162663  signalfd_wrapper fails on 64bit linux
 r8154   r8155     Mgd  n-i-bz  Massif/Cachegrind output corruption when
                                programs fork
 
+r8704   pending        166581  Callgrind output corruption when program forks
+
 vx1853  vx1854     33  n-i-bz  regalloc: don't incorrectly omit spill stores

@@ -197,7 +197,7 @@ on heuristics to detect calls and returns.</para>
   <computeroutput>callgrind_control -i on</computeroutput> just before the 
   interesting code section is executed. To exactly specify
   the code position where profiling should start, use the client request
-  <computeroutput>CALLGRIND_START_INSTRUMENTATION</computeroutput>.</para>
+  <computeroutput><xref linkend="cr.start-instr"/></computeroutput>.</para>
 
   <para>If you want to be able to see assembly code level annotation, specify
   <option><xref linkend="opt.dump-instr"/>=yes</option>. This will produce
@@ -292,18 +292,13 @@ callgrind.out.<emphasis>pid</emphasis>.<emphasis>part</emphasis>-<emphasis>threa
 
     <listitem>
       <para><command>Program controlled dumping.</command>
-      Put <screen><![CDATA[#include <valgrind/callgrind.h>]]></screen>
-      into your source and add 
-      <computeroutput>CALLGRIND_DUMP_STATS;</computeroutput> when you
-      want a dump to happen. Use 
-      <computeroutput>CALLGRIND_ZERO_STATS;</computeroutput> to only 
-      zero cost centers.</para>
-      <para>In Valgrind terminology, this method is called "Client
-      requests".  The given macros generate a special instruction
-      pattern with no effect at all (i.e. a NOP). When run under
-      Valgrind, the CPU simulation engine detects the special
-      instruction pattern and triggers special actions like the ones
-      described above.</para>
+      Insert
+      <computeroutput><xref linkend="cr.dump-stats"/>;</computeroutput>
+      at the position in your code where you want a profile dump to happen. Use 
+      <computeroutput><xref linkend="cr.zero-stats"/>;</computeroutput> to only 
+      zero profile counters.
+      See <xref linkend="cl-manual.clientrequests"/> for more information on
+      Callgrind specific client requests.</para>
     </listitem>
   </itemizedlist>
 
@@ -338,8 +333,8 @@ callgrind.out.<emphasis>pid</emphasis>.<emphasis>part</emphasis>-<emphasis>threa
   with <screen>callgrind_control -i on</screen>
   and off by specifying "off" instead of "on".
   Furthermore, instrumentation state can be programatically changed with
-  the macros <computeroutput>CALLGRIND_START_INSTRUMENTATION;</computeroutput>
-  and <computeroutput>CALLGRIND_STOP_INSTRUMENTATION;</computeroutput>.
+  the macros <computeroutput><xref linkend="cr.start-instr"/>;</computeroutput>
+  and <computeroutput><xref linkend="cr.stop-instr"/>;</computeroutput>.
   </para>
   
   <para>In addition to enabling instrumentation, you must also enable
@@ -468,6 +463,27 @@ callgrind.out.<emphasis>pid</emphasis>.<emphasis>part</emphasis>-<emphasis>threa
   <option><xref linkend="opt.separate-callers"/>=2</option> to get a 2-caller 
   dependency for all functions.  Note that doing this will increase
   the size of profile data files.</para>
+
+  </sect2>
+
+  <sect2 id="cl-manual.forkingprograms" xreflabel="Forking Programs">
+  <title>Forking Programs</title>
+
+  <para>If your program forks, the child will inherit all the profiling
+  data that has been gathered for the parent. To start with empty profile
+  counter values in the child, the client request
+  <computeroutput><xref linkend="cr.zero-stats"/>;</computeroutput>
+  can be inserted into code to be executed by the child, directly after
+  <computeroutput>fork()</computeroutput>.</para>
+
+  <para>However, you will have to make sure that the output file format string
+  (controlled by <option>--callgrind-out-file</option>) does contain
+  <option>%p</option> (which is true by default). Otherwise, the
+  outputs from the parent and child will overwrite each other or will be
+  intermingled, which almost certainly is not what you want.</para>
+
+  <para>You will be able to control the new child independently from
+  the parent via <computeroutput>callgrind_control</computeroutput>.</para>
 
   </sect2>
 
@@ -701,7 +717,7 @@ Also see <xref linkend="cl-manual.limits"/>.</para>
     </listitem>
   </varlistentry>
   
-  <varlistentry id="opt.collect-atstart">
+  <varlistentry id="opt.collect-atstart" xreflabel="--collect-atstart">
     <term>
       <option><![CDATA[--collect-atstart=<yes|no> [default: yes] ]]></option>
     </term>
@@ -733,13 +749,9 @@ Also see <xref linkend="cl-manual.limits"/>.</para>
       specification of <computeroutput>--toggle-collect</computeroutput>
       implicitly sets
       <computeroutput>--collect-state=no</computeroutput>.</para>
-      <para>Collection state can be toggled also by using a Valgrind
-      Client Request in your application.  For this, include
-      <computeroutput>valgrind/callgrind.h</computeroutput> and specify
-      the macro
-      <computeroutput>CALLGRIND_TOGGLE_COLLECT</computeroutput> at the
-      needed positions. This only will have any effect if run under
-      supervision of the Callgrind tool.</para>
+      <para>Collection state can be toggled also by inserting the client request
+      <computeroutput><xref linkend="cr.toggle-collect"/>;</computeroutput>
+      at the needed code positions.</para>
     </listitem>
   </varlistentry>
 
@@ -909,6 +921,96 @@ Also see <xref linkend="cl-manual.cycles"/>.</para>
 </variablelist>
 
 </sect2>
+
+</sect1>
+
+<sect1 id="cl-manual.clientrequests" xreflabel="Client request reference">
+<title>Callgrind specific client requests</title>
+
+<para>In Valgrind terminology, a client request is a C macro which
+can be inserted into your code to request specific functionality when
+run under Valgrind. For this, special instruction patterns resulting
+in NOPs are used, but which can be detected by Valgrind.</para>
+
+<para>Callgrind provides the following specific client requests.
+To use them, add the line
+<screen><![CDATA[#include <valgrind/callgrind.h>]]></screen>
+into your code for the macro definitions.
+.</para>
+
+<variablelist id="cl.clientrequests.list">
+  
+  <varlistentry id="cr.dump-stats" xreflabel="CALLGRIND_DUMP_STATS">
+    <term>
+      <computeroutput>CALLGRIND_DUMP_STATS</computeroutput>
+    </term>
+    <listitem>
+      <para>Force generation of a profile dump at specified position
+      in code, for the current thread only. Written counters will be reset
+      to zero.</para>
+    </listitem>
+  </varlistentry>
+
+  <varlistentry id="cr.dump-stats-at" xreflabel="CALLGRIND_DUMP_STATS_AT">
+    <term>
+      <computeroutput>CALLGRIND_DUMP_STATS_AT(string)</computeroutput>
+    </term>
+    <listitem>
+      <para>Same as CALLGRIND_DUMP_STATS, but allows to specify a string
+      to be able to distinguish profile dumps.</para>
+    </listitem>
+  </varlistentry>
+
+  <varlistentry id="cr.zero-stats" xreflabel="CALLGRIND_ZERO_STATS">
+    <term>
+      <computeroutput>CALLGRIND_ZERO_STATS</computeroutput>
+    </term>
+    <listitem>
+      <para>Reset the profile counters for the current thread to zero.</para>
+    </listitem>
+  </varlistentry>
+
+  <varlistentry id="cr.toggle-collect" xreflabel="CALLGRIND_TOGGLE_COLLECT">
+    <term>
+      <computeroutput>CALLGRIND_TOGGLE_COLLECT</computeroutput>
+    </term>
+    <listitem>
+      <para>Toggle the collection state. This allows to ignore events
+      with regard to profile counters. See also options
+      <xref linkend="opt.collect-atstart"/> and
+      <xref linkend="opt.toggle-collect"/>.</para>
+    </listitem>
+  </varlistentry>
+
+  <varlistentry id="cr.start-instr" xreflabel="CALLGRIND_START_INSTRUMENTATION">
+    <term>
+      <computeroutput>CALLGRIND_START_INSTRUMENTATION</computeroutput>
+    </term>
+    <listitem>
+      <para>Start full Callgrind instrumentation if not already switched on.
+      When cache simulation is done, this will flush the simulated cache
+      and lead to an artifical cache warmup phase afterwards with
+      cache misses which would not have happened in reality.
+      See also option <xref linkend="opt.instr-atstart"/>.</para>
+    </listitem>
+  </varlistentry>
+
+  <varlistentry id="cr.stop-instr" xreflabel="CALLGRIND_STOP_INSTRUMENTATION">
+    <term>
+      <computeroutput>CALLGRIND_STOP_INSTRUMENTATION</computeroutput>
+    </term>
+    <listitem>
+      <para>Stop full Callgrind instrumentation if not already switched off.
+      This flushes Valgrinds translation cache, and does no additional
+      instrumentation afterwards: it effectivly will run at the same
+      speed as the "none" tool, ie. at minimal slowdown. Use this to
+      speed up the Callgrind run for uninteresting code parts. Use
+      <xref linkend="cr.start-instr"/> to switch on instrumentation again.
+      See also option <xref linkend="opt.instr-atstart"/>.</para>
+    </listitem>
+  </varlistentry>
+
+</variablelist>
 
 </sect1>
 

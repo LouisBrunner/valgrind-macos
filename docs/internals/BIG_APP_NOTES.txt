@@ -1,0 +1,192 @@
+
+Building Firefox-2.0.0.12 from source, for testing Helgrind
+-----------------------------------------------------------
+
+wget
+ftp://ftp.mozilla.org/pub/firefox/releases/2.0.0.12/source/firefox-2.0.0.12-source.tar.bz2
+
+bzip2 -dc firefox-2.0.0.12-source.tar.bz2 | tar xvf -
+
+mv mozilla firefox-2.0.0.12
+
+mkdir InstFirefox20012
+export XYZZYFOOBAR=`pwd`/InstFirefox20012
+
+cd firefox-2.0.0.12
+
+./configure --prefix=$XYZZYFOOBAR --enable-application=browser \
+    --enable-optimize="-O -g"
+
+make -j 2
+make install
+
+cd ../InstFirefox20012
+
+MOZ_NO_REMOTE=1 NO_EM_RESTART=1 \
+LD_LIBRARY_PATH=`pwd`/lib/firefox-2.0.0.12:\
+`pwd`/lib/firefox-2.0.0.12/components:\
+`pwd`/lib/firefox-2.0.0.12/plugins \
+/home/sewardj/VgTRUNK/hgdev/Inst/bin/valgrind --tool=helgrind \
+--trace-children=no -v ./lib/firefox-2.0.0.12/firefox-bin
+
+# start and then quit firefox a couple of times before measuring
+# it, analysing results, etc.  This is because (I think) the new
+# build is probably a different version from whatever you used 
+# before and so on the first run, the new build wants to mess with
+# ~/.mozilla (or something) and that makes it take much longer than
+# subsequent runs.
+
+# Patch the recycling allocator thusly (is this still necessary) ?
+
+
+$ diff -U3 ./xpcom/ds/nsRecyclingAllocator.cpp-ORIG ./xpcom/ds/nsRecyclingAllocator.cpp
+--- ./xpcom/ds/nsRecyclingAllocator.cpp-ORIG    2008-03-14 19:09:17.000000000 +0100
++++ ./xpcom/ds/nsRecyclingAllocator.cpp 2008-03-14 19:39:34.000000000 +0100
+@@ -156,7 +156,7 @@
+         mLock = nsnull;
+     }
+ }
+-
++#include "/home/sewardj/VgTRUNK/hgde2/Inst/include/valgrind/helgrind.h"
+ // Allocation and free routines
+ void*
+ nsRecyclingAllocator::Malloc(PRSize bytes, PRBool zeroit)
+@@ -169,7 +169,7 @@
+     if (freeBlock)
+     {
+         void *data = DATA(freeBlock);
+-
++if (bytes > 0) VALGRIND_HG_CLEAN_MEMORY(data,bytes);
+         if (zeroit)
+             memset(data, 0, bytes);
+         return data;
+
+
+
+Building OpenOffice 2.4/3.0 from source
+---------------------------------------
+
+svn co svn://svn.gnome.org/svn/ooo-build/trunk ooo-build
+
+cd ooo-build
+
+export ARCH_FLAGS="-g -O"
+export DOWNLOADCACHE=~/DOWNLOADS/OOo
+
+#export ARCH_FLAGS="-g -O -fno-inline -fno-inline-functions"  
+# very slow, and not helpful
+
+./autogen.sh --with-distro=SUSE-11.0
+   --disable-gstreamer --disable-mono
+
+#  --with-max-jobs=2 --with-num-cpus=2 sounds good on paper, but often
+#  cause the build to fail
+# --with-alloc=system is used by default
+
+./download
+
+make
+
+# make now runs the 'inner' configure (of OOo proper) and
+# invariably fails.  To fix, install 987,654,321 packages you never 
+# heard of before, that OOo absolutely needs, and go back to the
+# autogen step.  You probably need to do this ten times or more.
+#
+#   configure: error: \genbrk\ not found in $PATH, install the icu 
+#   development tool \genbrk""
+#
+# means you have to install packages: icu libicu-devel
+
+# eventually you might get through the inner configure.  After
+# a couple of hours of flat out computation on both cores of
+# a fast Core 2, the build might complete successfully.
+
+# in the likely event of even all that not working, go on to #go-oo
+# at irc.freenode.org and ask questions
+
+# eventually ...
+
+./bin/ooinstall ~/OOoBuild/Inst01
+cd ~/OOoBuild/Inst01
+valgrind -v ./program/soffice.bin
+
+
+# Hacking OOo
+
+# Use two shells, (C)ompile and (R)un.  In (C):
+#
+cd build/ooh680-m12
+. ./LinuxX86Env.Set.sh  (or ". ./LinuxX86-64Env.Set.sh")
+./solenv/bin/linkoo ~/OOoBuild/Inst01
+#
+# This replaces all the .so's in the install tree with symlinks 
+# back into the build tree, so you can then re-run without 
+# having to endlessly reinstall.  It also creates 'ooenv' in
+# ~/OOoBuild/Inst01/program, which needs to be sourced
+# once before running.
+#
+# So having changed something in OOo, eg in svx/, do:
+#
+(cd svx && build)
+#
+# Meanwhile in the (R)un shell:
+source ooenv  # just once!
+# appears to complain aobut "ulimit -c", but OK nevertheless
+
+valgrind [args] ./soffice.bin
+
+
+## More notes, 2 May 08
+export DOWNLOADCACHE=~/DOWNLOADS/OOo to cache downloaded tarballs
+##export CONFIGURE_FLAGS=--disable-mediawiki is needed for dev300-m10
+##or not -- causes the build to fail later.  Don't use this.
+
+
+# These are packages I had to install on a fairly vanilla OpenSUSE
+# 10.3 in order to get a build working
+
+perl-Archive-Zip-1.20
+cups-devel-1.2.12
+libjpeg-devel-6.2.0
+libxslt-devel
+  libgcrypt-devel
+  liggpg-error-devel
+  libxml2-devel
+  readline-devel
+python-devel
+  blt
+  python-tk
+libcurl-devel
+  libidn-devel
+boost-devel
+unixODBC-devel
+mozilla-xulrunner181-devel
+  mozilla-nspr-devel
+  mozilla-nss-devel
+  mozilla-xulrunner181
+neon-devel
+gnome-vfs2-devel
+  avahi-devel
+  dbus-1-devel
+  dbus-1-glib
+  gconf2-devel
+  hal-devel
+  indent
+  libblkid-devel
+  libbonobo-devel
+  libcom_err-devel
+  libext2fs-devel
+  libidl-devel
+  libusb-devel
+  libuuid-devel
+  orbit2-devel
+  popt-devel
+qt3-devel
+  liblcms-devel
+  libmnt-devel
+
+export QTDIR=/usr/lib/qt3
+
+kdebase3-devel
+  (tons of stuff)
+

@@ -1,0 +1,41 @@
+
+# Note that you must do all the following as root (I believe).
+# Although the program to be profiled can be run by anybody.
+
+# start the profiler
+opcontrol --stop ; opcontrol --reset ; opcontrol --callgraph=5 --start
+
+# now run the program(s) to be profiled
+
+# stop the profiler and dump results to .. um .. some file somewhere
+opcontrol --stop ; opcontrol --dump
+
+# produce a flat profile
+opreport --merge=tgid --symbols -x \
+    /home/sewardj/VgTRUNK/hgdev/Inst/lib/valgrind/x86-linux/helgrind \
+    | less
+
+# produce a profile w/ callgraph
+opreport --merge=tgid --callgraph \
+    /home/sewardj/VgTRUNK/hgdev/Inst/lib/valgrind/x86-linux/helgrind \
+    | less
+
+#### notes.
+
+1. on amd64, need to build V with -fno-omit-frame-pointer, else the
+   w/ callgraph profiles are useless.  (oprofile doesn't do CFI based
+   stack unwinding, I guess).  Add -fno-omit-frame-pointer to
+   AM_CFLAGS_BASE in Makefile.flags.am, and rebuild from clean.
+
+2. even at the best of times the callgraph profiles seem pretty
+   flaky to me.
+
+3. Even oprofile 0.9.4 (the latest) on amd64-linux doesn't work
+   for callgraph profiling.  There is however a patch that
+   makes it work.  See 
+
+http://sourceforge.net/tracker/index.php?func=detail&aid=1685267&group_id=16191&atid=116191
+
+   for details.  Even then it sometimes fails at the "opcontrol
+   --dump" phase, complaining that the daemon died (or something like
+   that).  But apart from that, it seems usable.

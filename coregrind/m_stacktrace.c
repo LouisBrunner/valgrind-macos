@@ -161,7 +161,8 @@ UInt VG_(get_StackTrace_wrk) ( ThreadId tid_if_known,
          fails, and is expensive. */
       /* Deal with frames resulting from functions which begin "pushl%
          ebp ; movl %esp, %ebp" which is the ABI-mandated preamble. */
-      if (fp_min <= fp && fp <= fp_max) {
+      if (fp_min <= fp && fp <= fp_max
+                                - 1 * sizeof(UWord)/*see comment below*/) {
          /* fp looks sane, so use it. */
          ip = (((UWord*)fp)[1]);
          sp = fp + sizeof(Addr) /*saved %ebp*/ 
@@ -251,7 +252,11 @@ UInt VG_(get_StackTrace_wrk) ( ThreadId tid_if_known,
          the start of the fn, like GDB does, there's no reliable way
          to tell.  Hence the hack of first trying out CFI, and if that
          fails, then use this as a fallback. */
-      if (fp_min <= fp && fp <= fp_max) {
+      /* Note: re "- 1 * sizeof(UWord)", need to take account of the
+         fact that we are prodding at & ((UWord*)fp)[1] and so need to
+         adjust the limit check accordingly.  Omitting this has been
+         observed to cause segfaults on rare occasions. */
+      if (fp_min <= fp && fp <= fp_max - 1 * sizeof(UWord)) {
          /* fp looks sane, so use it. */
          ip = (((UWord*)fp)[1]);
          sp = fp + sizeof(Addr) /*saved %rbp*/ 
@@ -371,7 +376,7 @@ UInt VG_(get_StackTrace_wrk) ( ThreadId tid_if_known,
 
          /* Try to derive a new (ip,fp) pair from the current set. */
 
-         if (fp_min <= fp && fp <= fp_max) {
+         if (fp_min <= fp && fp <= fp_max - lr_offset * sizeof(UWord)) {
             /* fp looks sane, so use it. */
 
             if (i == 1 && lr_is_first_RA)

@@ -978,9 +978,9 @@ static Int compare_DiSym ( void* va, void* vb )
  */
 static DiSym* prefersym ( struct _DebugInfo* di, DiSym* a, DiSym* b )
 {
-   Int cmp;
-   Int lena, lenb;		/* full length */
-   Int vlena, vlenb;		/* length without version */
+   Word cmp;
+   Word lena, lenb;		/* full length */
+   Word vlena, vlenb;		/* length without version */
    const UChar *vpa, *vpb;
 
    Bool preferA = False;
@@ -1062,7 +1062,7 @@ static DiSym* prefersym ( struct _DebugInfo* di, DiSym* a, DiSym* b )
 
 static void canonicaliseSymtab ( struct _DebugInfo* di )
 {
-   Int   i, j, n_merged, n_truncated;
+   Word  i, j, n_merged, n_truncated;
    Addr  s1, s2, e1, e2;
 
 #  define SWAP(ty,aa,bb) \
@@ -1095,14 +1095,14 @@ static void canonicaliseSymtab ( struct _DebugInfo* di )
             di->symtab[di->symtab_used++] = di->symtab[i];
          }
       }
-      TRACE_SYMTAB( "canonicaliseSymtab: %d symbols merged\n", n_merged);
+      TRACE_SYMTAB( "canonicaliseSymtab: %ld symbols merged\n", n_merged);
    }
    while (n_merged > 0);
 
    /* Detect and "fix" overlapping address ranges. */
    n_truncated = 0;
 
-   for (i = 0; i < ((Int)di->symtab_used) -1; i++) {
+   for (i = 0; i < ((Word)di->symtab_used) -1; i++) {
 
       vg_assert(di->symtab[i].addr <= di->symtab[i+1].addr);
 
@@ -1149,7 +1149,7 @@ static void canonicaliseSymtab ( struct _DebugInfo* di )
       /* It may be that the i+1 entry now needs to be moved further
          along to maintain the address order requirement. */
       j = i+1;
-      while (j < ((Int)di->symtab_used)-1 
+      while (j < ((Word)di->symtab_used)-1 
              && di->symtab[j].addr > di->symtab[j+1].addr) {
          SWAP(DiSym,di->symtab[j],di->symtab[j+1]);
          j++;
@@ -1160,7 +1160,7 @@ static void canonicaliseSymtab ( struct _DebugInfo* di )
    if (n_truncated > 0) goto cleanup_more;
 
    /* Ensure relevant postconditions hold. */
-   for (i = 0; i < ((Int)di->symtab_used)-1; i++) {
+   for (i = 0; i < ((Word)di->symtab_used)-1; i++) {
       /* No zero-sized symbols. */
       vg_assert(di->symtab[i].size > 0);
       /* In order. */
@@ -1189,7 +1189,7 @@ static Int compare_DiLoc ( void* va, void* vb )
 
 static void canonicaliseLoctab ( struct _DebugInfo* di )
 {
-   Int i, j;
+   Word i, j;
 
 #  define SWAP(ty,aa,bb) \
       do { ty tt = (aa); (aa) = (bb); (bb) = tt; } while (0);
@@ -1202,7 +1202,7 @@ static void canonicaliseLoctab ( struct _DebugInfo* di )
                           sizeof(*di->loctab), compare_DiLoc);
 
    /* If two adjacent entries overlap, truncate the first. */
-   for (i = 0; i < ((Int)di->loctab_used)-1; i++) {
+   for (i = 0; i < ((Word)di->loctab_used)-1; i++) {
       vg_assert(di->loctab[i].size < 10000);
       if (di->loctab[i].addr + di->loctab[i].size > di->loctab[i+1].addr) {
          /* Do this in signed int32 because the actual .size fields
@@ -1222,7 +1222,7 @@ static void canonicaliseLoctab ( struct _DebugInfo* di )
    /* Zap any zero-sized entries resulting from the truncation
       process. */
    j = 0;
-   for (i = 0; i < (Int)di->loctab_used; i++) {
+   for (i = 0; i < (Word)di->loctab_used; i++) {
       if (di->loctab[i].size > 0) {
          if (j != i)
             di->loctab[j] = di->loctab[i];
@@ -1232,7 +1232,7 @@ static void canonicaliseLoctab ( struct _DebugInfo* di )
    di->loctab_used = j;
 
    /* Ensure relevant postconditions hold. */
-   for (i = 0; i < ((Int)di->loctab_used)-1; i++) {
+   for (i = 0; i < ((Word)di->loctab_used)-1; i++) {
       /* 
       VG_(printf)("%d   (%d) %d 0x%x\n", 
                    i, di->loctab[i+1].confident, 
@@ -1272,7 +1272,7 @@ static Int compare_DiCfSI ( void* va, void* vb )
 
 static void canonicaliseCFI ( struct _DebugInfo* di )
 {
-   Int   i, j;
+   Word  i, j;
    const Addr minAvma = 0;
    const Addr maxAvma = ~minAvma;
 
@@ -1287,7 +1287,7 @@ static void canonicaliseCFI ( struct _DebugInfo* di )
       address range contained in cfsi[0 .. cfsi_used-1]. */
    di->cfsi_minavma = maxAvma; 
    di->cfsi_maxavma = minAvma;
-   for (i = 0; i < (Int)di->cfsi_used; i++) {
+   for (i = 0; i < (Word)di->cfsi_used; i++) {
       Addr here_min = di->cfsi[i].base;
       Addr here_max = di->cfsi[i].base + di->cfsi[i].len - 1;
       if (here_min < di->cfsi_minavma)
@@ -1297,7 +1297,7 @@ static void canonicaliseCFI ( struct _DebugInfo* di )
    }
 
    if (di->trace_cfi)
-      VG_(printf)("canonicaliseCfiSI: %d entries, %#lx .. %#lx\n",
+      VG_(printf)("canonicaliseCfiSI: %ld entries, %#lx .. %#lx\n",
                   di->cfsi_used,
 	          di->cfsi_minavma, di->cfsi_maxavma);
 
@@ -1305,9 +1305,9 @@ static void canonicaliseCFI ( struct _DebugInfo* di )
    VG_(ssort)(di->cfsi, di->cfsi_used, sizeof(*di->cfsi), compare_DiCfSI);
 
    /* If two adjacent entries overlap, truncate the first. */
-   for (i = 0; i < (Int)di->cfsi_used-1; i++) {
+   for (i = 0; i < (Word)di->cfsi_used-1; i++) {
       if (di->cfsi[i].base + di->cfsi[i].len > di->cfsi[i+1].base) {
-         Int new_len = di->cfsi[i+1].base - di->cfsi[i].base;
+         Word new_len = di->cfsi[i+1].base - di->cfsi[i].base;
          /* how could it be otherwise?  The entries are sorted by the
             .base field. */         
          vg_assert(new_len >= 0);
@@ -1319,7 +1319,7 @@ static void canonicaliseCFI ( struct _DebugInfo* di )
    /* Zap any zero-sized entries resulting from the truncation
       process. */
    j = 0;
-   for (i = 0; i < (Int)di->cfsi_used; i++) {
+   for (i = 0; i < (Word)di->cfsi_used; i++) {
       if (di->cfsi[i].len > 0) {
          if (j != i)
             di->cfsi[j] = di->cfsi[i];
@@ -1330,7 +1330,7 @@ static void canonicaliseCFI ( struct _DebugInfo* di )
    di->cfsi_used = j;
 
    /* Ensure relevant postconditions hold. */
-   for (i = 0; i < (Int)di->cfsi_used; i++) {
+   for (i = 0; i < (Word)di->cfsi_used; i++) {
       /* No zero-length ranges. */
       vg_assert(di->cfsi[i].len > 0);
       /* Makes sense w.r.t. summary address range */
@@ -1375,9 +1375,9 @@ void ML_(canonicaliseTables) ( struct _DebugInfo* di )
 /* Find a symbol-table index containing the specified pointer, or -1
    if not found.  Binary search.  */
 
-Int ML_(search_one_symtab) ( struct _DebugInfo* di, Addr ptr,
-                             Bool match_anywhere_in_sym,
-                             Bool findText )
+Word ML_(search_one_symtab) ( struct _DebugInfo* di, Addr ptr,
+                              Bool match_anywhere_in_sym,
+                              Bool findText )
 {
    Addr a_mid_lo, a_mid_hi;
    Word mid, size, 
@@ -1408,7 +1408,7 @@ Int ML_(search_one_symtab) ( struct _DebugInfo* di, Addr ptr,
 /* Find a location-table index containing the specified pointer, or -1
    if not found.  Binary search.  */
 
-Int ML_(search_one_loctab) ( struct _DebugInfo* di, Addr ptr )
+Word ML_(search_one_loctab) ( struct _DebugInfo* di, Addr ptr )
 {
    Addr a_mid_lo, a_mid_hi;
    Word mid, 
@@ -1432,10 +1432,10 @@ Int ML_(search_one_loctab) ( struct _DebugInfo* di, Addr ptr )
 /* Find a CFI-table index containing the specified pointer, or -1
    if not found.  Binary search.  */
 
-Int ML_(search_one_cfitab) ( struct _DebugInfo* di, Addr ptr )
+Word ML_(search_one_cfitab) ( struct _DebugInfo* di, Addr ptr )
 {
    Addr a_mid_lo, a_mid_hi;
-   Int  mid, size, 
+   Word mid, size, 
         lo = 0, 
         hi = di->cfsi_used-1;
    while (True) {

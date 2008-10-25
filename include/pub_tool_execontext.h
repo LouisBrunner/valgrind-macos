@@ -104,6 +104,8 @@ static inline Bool VG_(is_plausible_ECU)( UInt ecu ) {
    return (ecu > 0) && ((ecu & 3) == 0);
 }
 
+// Make an ExeContext containing exactly the specified stack frames.
+ExeContext* VG_(make_ExeContext_from_StackTrace)( Addr* ips, UInt n_ips );
 
 #endif   // __PUB_TOOL_EXECONTEXT_H
 

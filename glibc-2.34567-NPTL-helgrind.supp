@@ -210,6 +210,11 @@
    Helgrind:Race
    fun:__lll_*lock_*
 }
+{
+   helgrind-glibc28-112
+   Helgrind:Race
+   fun:pthread_create@*
+}
 
 ######------------ glibc-2.7 specific ---------######
 #

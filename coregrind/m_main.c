@@ -1360,6 +1360,12 @@ Int valgrind_main ( Int argc, HChar **argv, HChar **envp )
    //============================================================
 
    //--------------------------------------------------------------
+   // Initialise m_debuginfo
+   //  p: dynamic memory allocation
+   VG_(debugLog)(1, "main", "Initialise m_debuginfo\n");
+   VG_(di_initialise)();
+
+   //--------------------------------------------------------------
    // Look for alternative libdir                                  
    { HChar *cp = VG_(getenv)(VALGRIND_LIB);
      if (cp != NULL)
@@ -1729,6 +1735,7 @@ Int valgrind_main ( Int argc, HChar **argv, HChar **envp )
    //   p: setup_code_redirect_table [so that redirs can be recorded]
    //   p: mallocfree
    //   p: probably: setup fds and process CLOs, so that logging works
+   //   p: initialise m_debuginfo
    //
    // While doing this, make a note of the debuginfo-handles that
    // come back from VG_(di_notify_mmap)/VG_(di_aix5_notify_segchange).

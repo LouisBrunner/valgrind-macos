@@ -39,6 +39,9 @@
 
 #include "pub_tool_debuginfo.h"
 
+/* Initialise the entire module.  Must be called first of all. */
+extern void VG_(di_initialise) ( void );
+
 /* LINUX: Notify the debuginfo system about a new mapping, or the
    disappearance of such, or a permissions change on an existing
    mapping.  This is the way new debug information gets loaded.  If

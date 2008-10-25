@@ -82,6 +82,7 @@ typedef
       _VG_USERREQ__HG_PTHREAD_COND_BROADCAST_PRE, /* pth_cond_t* */
       _VG_USERREQ__HG_PTHREAD_COND_WAIT_PRE,     /* pth_cond_t*, pth_mx_t* */
       _VG_USERREQ__HG_PTHREAD_COND_WAIT_POST,    /* pth_cond_t*, pth_mx_t* */
+      _VG_USERREQ__HG_PTHREAD_COND_DESTROY_PRE,   /* pth_cond_t* */
       _VG_USERREQ__HG_PTHREAD_RWLOCK_INIT_POST,   /* pth_rwlk_t* */
       _VG_USERREQ__HG_PTHREAD_RWLOCK_DESTROY_PRE, /* pth_rwlk_t* */
       _VG_USERREQ__HG_PTHREAD_RWLOCK_LOCK_PRE,    /* pth_rwlk_t*, long isW */

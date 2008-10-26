@@ -34,8 +34,10 @@
 #include "pub_core_mallocfree.h"
 #include "pub_core_options.h"
 #include "pub_core_libcassert.h"
-#include "demangle.h"
 #include "pub_core_libcprint.h"
+
+#include "vg_libciface.h"
+#include "demangle.h"
 
 /* The demangler's job is to take a raw symbol name and turn it into
    something a Human Bean can understand.  There are two levels of
@@ -67,6 +69,20 @@
    - undo (2) [Z-encoding]
    - do the below-main hack
 */
+
+/* Note that the C++ demangler is from GNU libiberty and is almost
+   completely unmodified.  We use vg_libciface.h as a way to
+   impedance-match the libiberty code into our own framework.
+
+   The current code is from libiberty in the gcc tree, gcc svn
+   r141363, dated 26 Oct 2008 (when the gcc trunk was in Stage 3
+   leading up to a gcc-4.4 release).  As of r141363, libiberty is LGPL
+   2.1, which AFAICT is compatible with "GPL 2 or later" and so is OK
+   for inclusion in Valgrind.
+
+   To update to a newer libiberty, it might be simplest to svn diff
+   the gcc tree libibery against r141363 and then apply those diffs
+   here. */
 
 /* This is the main, standard demangler entry point. */
 

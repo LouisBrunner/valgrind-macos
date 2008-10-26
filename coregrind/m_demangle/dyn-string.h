@@ -1,5 +1,5 @@
 /* An abstract string datatype.
-   Copyright (C) 1998, 1999, 2000 Free Software Foundation, Inc.
+   Copyright (C) 1998, 1999, 2000, 2002, 2004 Free Software Foundation, Inc.
    Contributed by Mark Mitchell (mark@markmitchell.com).
 
 This file is part of GCC.
@@ -16,10 +16,8 @@ GNU General Public License for more details.
 
 You should have received a copy of the GNU General Public License
 along with GCC; see the file COPYING.  If not, write to
-the Free Software Foundation, 59 Temple Place - Suite 330,
-Boston, MA 02111-1307, USA.  */
-#ifndef __DYN_STRING_H
-#define __DYN_STRING_H
+the Free Software Foundation, 51 Franklin Street - Fifth Floor,
+Boston, MA 02110-1301, USA.  */
 
 
 typedef struct dyn_string
@@ -39,58 +37,24 @@ typedef struct dyn_string
 
 /* Compare DS1 to DS2 with strcmp.  */
 #define dyn_string_compare(DS1, DS2)                                    \
-  (VG_(strcmp) ((DS1)->s, (DS2)->s))
+  (strcmp ((DS1)->s, (DS2)->s))
 
 
-/* dyn_string functions are used in the demangling implementation
-   included in the G++ runtime library.  To prevent collisions with
-   names in user programs, the functions that are used in the
-   demangler are given implementation-reserved names.  */
-
-#if 1 /* def IN_LIBGCC2 */
-
-#define dyn_string_init                 VG_(__cxa_dyn_string_init)
-#define dyn_string_new                  VG_(__cxa_dyn_string_new)
-#define dyn_string_delete               VG_(__cxa_dyn_string_delete)
-#define dyn_string_release              VG_(__cxa_dyn_string_release)
-#define dyn_string_resize               VG_(__cxa_dyn_string_resize)
-#define dyn_string_clear                VG_(__cxa_dyn_string_clear)
-#define dyn_string_copy                 VG_(__cxa_dyn_string_copy)
-#define dyn_string_copy_cstr            VG_(__cxa_dyn_string_copy_cstr)
-#define dyn_string_prepend              VG_(__cxa_dyn_string_prepend)
-#define dyn_string_prepend_cstr         VG_(__cxa_dyn_string_prepend_cstr)
-#define dyn_string_insert               VG_(__cxa_dyn_string_insert)
-#define dyn_string_insert_cstr          VG_(__cxa_dyn_string_insert_cstr)
-#define dyn_string_insert_char          VG_(__cxa_dyn_string_insert_char)
-#define dyn_string_append               VG_(__cxa_dyn_string_append)
-#define dyn_string_append_cstr          VG_(__cxa_dyn_string_append_cstr)
-#define dyn_string_append_char          VG_(__cxa_dyn_string_append_char)
-#define dyn_string_substring            VG_(__cxa_dyn_string_substring)
-#define dyn_string_eq                   VG_(__cxa_dyn_string_eq)
-
-#endif /* IN_LIBGCC2 */
-
-
-extern int dyn_string_init              PARAMS ((struct dyn_string *, int));
-extern dyn_string_t dyn_string_new      PARAMS ((int));
-extern void dyn_string_delete           PARAMS ((dyn_string_t));
-extern char *dyn_string_release         PARAMS ((dyn_string_t));
-extern dyn_string_t dyn_string_resize   PARAMS ((dyn_string_t, int));
-extern void dyn_string_clear            PARAMS ((dyn_string_t));
-extern int dyn_string_copy              PARAMS ((dyn_string_t, dyn_string_t));
-extern int dyn_string_copy_cstr         PARAMS ((dyn_string_t, const char *));
-extern int dyn_string_prepend           PARAMS ((dyn_string_t, dyn_string_t));
-extern int dyn_string_prepend_cstr      PARAMS ((dyn_string_t, const char *));
-extern int dyn_string_insert            PARAMS ((dyn_string_t, int,
-						 dyn_string_t));
-extern int dyn_string_insert_cstr       PARAMS ((dyn_string_t, int,
-						 const char *));
-extern int dyn_string_insert_char       PARAMS ((dyn_string_t, int, int));
-extern int dyn_string_append            PARAMS ((dyn_string_t, dyn_string_t));
-extern int dyn_string_append_cstr       PARAMS ((dyn_string_t, const char *));
-extern int dyn_string_append_char       PARAMS ((dyn_string_t, int));
-extern int dyn_string_substring         PARAMS ((dyn_string_t, 
-						 dyn_string_t, int, int));
-extern int dyn_string_eq                PARAMS ((dyn_string_t, dyn_string_t));
-
-#endif
+extern int dyn_string_init (struct dyn_string *, int);
+extern dyn_string_t dyn_string_new (int);
+extern void dyn_string_delete (dyn_string_t);
+extern char *dyn_string_release (dyn_string_t);
+extern dyn_string_t dyn_string_resize (dyn_string_t, int);
+extern void dyn_string_clear (dyn_string_t);
+extern int dyn_string_copy (dyn_string_t, dyn_string_t);
+extern int dyn_string_copy_cstr (dyn_string_t, const char *);
+extern int dyn_string_prepend (dyn_string_t, dyn_string_t);
+extern int dyn_string_prepend_cstr (dyn_string_t, const char *);
+extern int dyn_string_insert (dyn_string_t, int, dyn_string_t);
+extern int dyn_string_insert_cstr (dyn_string_t, int, const char *);
+extern int dyn_string_insert_char (dyn_string_t, int, int);
+extern int dyn_string_append (dyn_string_t, dyn_string_t);
+extern int dyn_string_append_cstr (dyn_string_t, const char *);
+extern int dyn_string_append_char (dyn_string_t, int);
+extern int dyn_string_substring (dyn_string_t,  dyn_string_t, int, int);
+extern int dyn_string_eq (dyn_string_t, dyn_string_t);

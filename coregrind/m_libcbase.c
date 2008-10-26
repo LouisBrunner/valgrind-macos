@@ -226,9 +226,9 @@ Long VG_(atoll36) ( Char* str )
    String functions
    ------------------------------------------------------------------ */
 
-Int VG_(strlen) ( const Char* str )
+SizeT VG_(strlen) ( const Char* str )
 {
-   Int i = 0;
+   SizeT i = 0;
    while (str[i] != 0) i++;
    return i;
 }
@@ -276,7 +276,7 @@ Char* VG_(strcpy) ( Char* dest, const Char* src )
    zero termination. */
 void VG_(strncpy_safely) ( Char* dest, const Char* src, SizeT ndest )
 {
-   Int i = 0;
+   SizeT i = 0;
    while (True) {
       dest[i] = 0;
       if (src[i] == 0) return;
@@ -288,7 +288,7 @@ void VG_(strncpy_safely) ( Char* dest, const Char* src, SizeT ndest )
 
 Char* VG_(strncpy) ( Char* dest, const Char* src, SizeT ndest )
 {
-   Int i = 0;
+   SizeT i = 0;
    while (True) {
       if (i >= ndest) return dest;     /* reached limit */
       dest[i] = src[i];
@@ -335,7 +335,7 @@ Int VG_(strcmp_ws) ( const Char* s1, const Char* s2 )
 
 Int VG_(strncmp) ( const Char* s1, const Char* s2, SizeT nmax )
 {
-   Int n = 0;
+   SizeT n = 0;
    while (True) {
       if (n >= nmax) return 0;
       if (*s1 == 0 && *s2 == 0) return 0;
@@ -367,7 +367,7 @@ Int VG_(strncmp_ws) ( const Char* s1, const Char* s2, SizeT nmax )
 
 Char* VG_(strstr) ( const Char* haystack, Char* needle )
 {
-   Int n; 
+   SizeT n; 
    if (haystack == NULL)
       return NULL;
    n = VG_(strlen)(needle);
@@ -397,6 +397,35 @@ Char* VG_(strrchr) ( const Char* s, Char c )
    }
    return NULL;
 }
+
+SizeT VG_(strspn) ( const Char* s, const Char* accept )
+{
+   const Char *p, *a;
+   SizeT count = 0;
+   for (p = s; *p != '\0'; ++p) {
+      for (a = accept; *a != '\0'; ++a)
+         if (*p == *a)
+            break;
+      if (*a == '\0')
+         return count;
+      else
+         ++count;
+   }
+   return count;
+}
+
+SizeT VG_(strcspn) ( const Char* s, const char* reject )
+{
+   SizeT count = 0;
+   while (*s != '\0') {
+      if (VG_(strchr) (reject, *s++) == NULL)
+         ++count;
+      else
+         return count;
+   }
+   return count;
+}
+
 
 /* ---------------------------------------------------------------------
    A simple string matching routine, purloined from Hugs98.

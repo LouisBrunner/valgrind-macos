@@ -149,9 +149,11 @@ noinst_HEADERS = \
 	m_debuginfo/priv_readelf.h	\
 	m_debuginfo/priv_readxcoff.h	\
 	m_demangle/ansidecl.h	\
+	m_demangle/cp-demangle.h \
 	m_demangle/dyn-string.h	\
 	m_demangle/demangle.h	\
 	m_demangle/safe-ctype.h \
+	m_demangle/vg_libciface.h \
 	m_scheduler/priv_sema.h \
 	m_syswrap/priv_types_n_macros.h \
 	m_syswrap/priv_syswrap-generic.h \

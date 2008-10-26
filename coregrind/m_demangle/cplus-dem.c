@@ -1,6 +1,6 @@
 /* Demangler for GNU C++
    Copyright 1989, 1991, 1994, 1995, 1996, 1997, 1998, 1999,
-   2000, 2001 Free Software Foundation, Inc.
+   2000, 2001, 2002, 2003, 2004 Free Software Foundation, Inc.
    Written by James Clark (jjc@jclark.uucp)
    Rewritten by Fred Fish (fnf@cygnus.com) for ARM and Lucid demangling
    Modified by Satish Pai (pai@apollo.hp.com) for HP demangling
@@ -11,6 +11,15 @@ modify it under the terms of the GNU Library General Public
 License as published by the Free Software Foundation; either
 version 2 of the License, or (at your option) any later version.
 
+In addition to the permissions in the GNU Library General Public
+License, the Free Software Foundation gives you unlimited permission
+to link the compiled version of this file into combinations with other
+programs, and to distribute those combinations without any restriction
+coming from the use of this file.  (The Library Public License
+restrictions do apply in other respects; for example, they cover
+modification of the file, and distribution when not linked into a
+combined executable.)
+
 Libiberty is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
@@ -18,8 +27,8 @@ Library General Public License for more details.
 
 You should have received a copy of the GNU Library General Public
 License along with libiberty; see the file COPYING.LIB.  If
-not, write to the Free Software Foundation, Inc., 59 Temple Place - Suite 330,
-Boston, MA 02111-1307, USA.  */
+not, write to the Free Software Foundation, Inc., 51 Franklin Street - Fifth Floor,
+Boston, MA 02110-1301, USA.  */
 
 /* This file exports two functions; cplus_mangle_opname and cplus_demangle.
 
@@ -30,38 +39,48 @@ Boston, MA 02111-1307, USA.  */
 /* This file lives in both GCC and libiberty.  When making changes, please
    try not to break either.  */
 
-#define __NO_STRING_INLINES
-
+#if 0 /* in valgrind */
 #ifdef HAVE_CONFIG_H
 #include "config.h"
 #endif
+#endif /* ! in valgrind */
 
+#if 0 /* in valgrind */
 #include "safe-ctype.h"
-#include "pub_core_basics.h"
-#include "pub_core_libcbase.h"
-#include "pub_core_libcassert.h"
-#include "pub_tool_libcprint.h"
-#include "pub_core_mallocfree.h"
+#endif /* ! in valgrind */
 
-/*#include <sys/types.h>
+#if 0 /* in valgrind */
+#include <sys/types.h>
 #include <string.h>
-#include <stdio.h>*/
+#include <stdio.h>
+#endif /* ! in valgrind */
 
-/*#ifdef HAVE_STDLIB_H
+#if 0 /* in valgrind */
+#ifdef HAVE_STDLIB_H
 #include <stdlib.h>
 #else
-char * malloc ();
-char * realloc ();
-#endif*/
+void * malloc ();
+void * realloc ();
+#endif
+#endif /* ! in valgrind */
 
-#include "demangle.h"
-#include "dyn-string.h"
+#if 0 /* in valgrind */
+#include <demangle.h>
 #undef CURRENT_DEMANGLING_STYLE
 #define CURRENT_DEMANGLING_STYLE work->options
+#endif /* ! in valgrind */
 
-/*#include "libiberty.h"*/
+#if 0 /* in valgrind */
+#include "libiberty.h"
+#endif /* ! in valgrind */
 
-static char *ada_demangle  PARAMS ((const char *, int));
+#include "vg_libciface.h"
+
+#include "ansidecl.h"
+#include "demangle.h"
+#include "safe-ctype.h"
+
+static char *ada_demangle (const char *, int);
 
 #define min(X,Y) (((X) < (Y)) ? (X) : (Y))
 
@@ -69,36 +88,7 @@ static char *ada_demangle  PARAMS ((const char *, int));
    that will be output when using the `%d' format with `printf'.  */
 #define INTBUF_SIZE 32
 
-#ifndef ARRAY_SIZE
-#define ARRAY_SIZE(a) (sizeof (a) / sizeof ((a)[0]))
-#endif
-
-#ifndef STANDALONE
-#define size_t  Int
-
-#define xstrdup(_cc,ptr)        VG_(arena_strdup) (VG_AR_DEMANGLE, _cc, ptr)
-#define free(ptr)               VG_(arena_free)   (VG_AR_DEMANGLE, ptr)
-#define xmalloc(_cc,size)       VG_(arena_malloc) (VG_AR_DEMANGLE, _cc, size)
-#define xrealloc(_cc,ptr, size) VG_(arena_realloc)(VG_AR_DEMANGLE, _cc, ptr, size)
-
-#define abort() vg_assert(0)
-#undef strstr
-#define strstr  VG_(strstr)
-#define sprintf VG_(sprintf)
-#define strcpy  VG_(strcpy)
-#define strncpy VG_(strncpy)
-#define strncat VG_(strncat)
-#define strchr  VG_(strchr)
-#define strpbrk VG_(strpbrk)
-#define strlen  VG_(strlen)
-#define strcmp  VG_(strcmp)
-#define strncmp VG_(strncmp)
-#define memcpy  VG_(memcpy)
-#define memset  VG_(memset)
-#define memcmp  VG_(memcmp)
-#endif
-
-extern void fancy_abort PARAMS ((void)) ATTRIBUTE_NORETURN;
+extern void fancy_abort (void) ATTRIBUTE_NORETURN;
 
 /* In order to allow a single demangler executable to demangle strings
    using various common values of CPLUS_MARKER, as well as any specific
@@ -126,14 +116,11 @@ static char cplus_markers[] = { CPLUS_MARKER, '.', '$', '\0' };
 
 static char char_str[2] = { '\000', '\000' };
 
-/*
 void
-set_cplus_marker_for_demangling (ch)
-     int ch;
+set_cplus_marker_for_demangling (int ch)
 {
   cplus_markers[0] = ch;
 }
-*/
 
 typedef struct string		/* Beware: these aren't required to be */
 {				/*  '\0' terminated.  */
@@ -344,8 +331,6 @@ const struct demangler_engine libiberty_demanglers[] =
 };
 
 #define STRING_EMPTY(str)	((str) -> b == (str) -> p)
-#define PREPEND_BLANK(str)	{if (!STRING_EMPTY(str)) \
-    string_prepend(str, " ");}
 #define APPEND_BLANK(str)	{if (!STRING_EMPTY(str)) \
     string_append(str, " ");}
 #define LEN_STRING(str)         ( (STRING_EMPTY(str))?0:((str)->p - (str)->b))
@@ -359,163 +344,127 @@ const struct demangler_engine libiberty_demanglers[] =
 
 /* Prototypes for local functions */
 
-static void
-delete_work_stuff PARAMS ((struct work_stuff *));
+static void delete_work_stuff (struct work_stuff *);
 
-static void
-delete_non_B_K_work_stuff PARAMS ((struct work_stuff *));
+static void delete_non_B_K_work_stuff (struct work_stuff *);
 
-static char *
-mop_up PARAMS ((struct work_stuff *, string *, int));
+static char *mop_up (struct work_stuff *, string *, int);
 
-static void
-squangle_mop_up PARAMS ((struct work_stuff *));
+static void squangle_mop_up (struct work_stuff *);
 
-static void
-work_stuff_copy_to_from PARAMS ((struct work_stuff *, struct work_stuff *));
+static void work_stuff_copy_to_from (struct work_stuff *, struct work_stuff *);
 
 #if 0
 static int
-demangle_method_args PARAMS ((struct work_stuff *, const char **, string *));
+demangle_method_args (struct work_stuff *, const char **, string *);
 #endif
 
 static char *
-internal_cplus_demangle PARAMS ((struct work_stuff *, const char *));
+internal_cplus_demangle (struct work_stuff *, const char *);
 
 static int
-demangle_template_template_parm PARAMS ((struct work_stuff *work,
-					 const char **, string *));
+demangle_template_template_parm (struct work_stuff *work,
+                                 const char **, string *);
 
 static int
-demangle_template PARAMS ((struct work_stuff *work, const char **, string *,
-			   string *, int, int));
+demangle_template (struct work_stuff *work, const char **, string *,
+                   string *, int, int);
 
 static int
-arm_pt PARAMS ((struct work_stuff *, const char *, int, const char **,
-		const char **));
+arm_pt (struct work_stuff *, const char *, int, const char **,
+        const char **);
 
 static int
-demangle_class_name PARAMS ((struct work_stuff *, const char **, string *));
+demangle_class_name (struct work_stuff *, const char **, string *);
 
 static int
-demangle_qualified PARAMS ((struct work_stuff *, const char **, string *,
-			    int, int));
+demangle_qualified (struct work_stuff *, const char **, string *,
+                    int, int);
 
-static int
-demangle_class PARAMS ((struct work_stuff *, const char **, string *));
+static int demangle_class (struct work_stuff *, const char **, string *);
 
-static int
-demangle_fund_type PARAMS ((struct work_stuff *, const char **, string *));
+static int demangle_fund_type (struct work_stuff *, const char **, string *);
 
-static int
-demangle_signature PARAMS ((struct work_stuff *, const char **, string *));
+static int demangle_signature (struct work_stuff *, const char **, string *);
 
-static int
-demangle_prefix PARAMS ((struct work_stuff *, const char **, string *));
+static int demangle_prefix (struct work_stuff *, const char **, string *);
 
-static int
-gnu_special PARAMS ((struct work_stuff *, const char **, string *));
+static int gnu_special (struct work_stuff *, const char **, string *);
 
-static int
-arm_special PARAMS ((const char **, string *));
+static int arm_special (const char **, string *);
+
+static void string_need (string *, int);
+
+static void string_delete (string *);
 
 static void
-string_need PARAMS ((string *, int));
+string_init (string *);
 
-static void
-string_delete PARAMS ((string *));
-
-static void
-string_init PARAMS ((string *));
-
-static void
-string_clear PARAMS ((string *));
+static void string_clear (string *);
 
 #if 0
-static int
-string_empty PARAMS ((string *));
+static int string_empty (string *);
 #endif
 
-static void
-string_append PARAMS ((string *, const char *));
+static void string_append (string *, const char *);
 
-static void
-string_appends PARAMS ((string *, string *));
+static void string_appends (string *, string *);
 
-static void
-string_appendn PARAMS ((string *, const char *, int));
+static void string_appendn (string *, const char *, int);
 
-static void
-string_prepend PARAMS ((string *, const char *));
+static void string_prepend (string *, const char *);
 
-static void
-string_prependn PARAMS ((string *, const char *, int));
+static void string_prependn (string *, const char *, int);
 
-static void
-string_append_template_idx PARAMS ((string *, int));
+static void string_append_template_idx (string *, int);
 
-static int
-get_count PARAMS ((const char **, int *));
+static int get_count (const char **, int *);
 
-static int
-consume_count PARAMS ((const char **));
+static int consume_count (const char **);
 
-static int
-consume_count_with_underscores PARAMS ((const char**));
+static int consume_count_with_underscores (const char**);
 
-static int
-demangle_args PARAMS ((struct work_stuff *, const char **, string *));
+static int demangle_args (struct work_stuff *, const char **, string *);
+
+static int demangle_nested_args (struct work_stuff*, const char**, string*);
+
+static int do_type (struct work_stuff *, const char **, string *);
+
+static int do_arg (struct work_stuff *, const char **, string *);
 
 static int
-demangle_nested_args PARAMS ((struct work_stuff*, const char**, string*));
+demangle_function_name (struct work_stuff *, const char **, string *,
+                        const char *);
 
 static int
-do_type PARAMS ((struct work_stuff *, const char **, string *));
+iterate_demangle_function (struct work_stuff *,
+                           const char **, string *, const char *);
+
+static void remember_type (struct work_stuff *, const char *, int);
+
+static void remember_Btype (struct work_stuff *, const char *, int, int);
+
+static int register_Btype (struct work_stuff *);
+
+static void remember_Ktype (struct work_stuff *, const char *, int);
+
+static void forget_types (struct work_stuff *);
+
+static void forget_B_and_K_types (struct work_stuff *);
+
+static void string_prepends (string *, string *);
 
 static int
-do_arg PARAMS ((struct work_stuff *, const char **, string *));
-
-static void
-demangle_function_name PARAMS ((struct work_stuff *, const char **, string *,
-				const char *));
+demangle_template_value_parm (struct work_stuff*, const char**,
+                              string*, type_kind_t);
 
 static int
-iterate_demangle_function PARAMS ((struct work_stuff *,
-				   const char **, string *, const char *));
-
-static void
-remember_type PARAMS ((struct work_stuff *, const char *, int));
-
-static void
-remember_Btype PARAMS ((struct work_stuff *, const char *, int, int));
+do_hpacc_template_const_value (struct work_stuff *, const char **, string *);
 
 static int
-register_Btype PARAMS ((struct work_stuff *));
+do_hpacc_template_literal (struct work_stuff *, const char **, string *);
 
-static void
-remember_Ktype PARAMS ((struct work_stuff *, const char *, int));
-
-static void
-forget_types PARAMS ((struct work_stuff *));
-
-static void
-forget_B_and_K_types PARAMS ((struct work_stuff *));
-
-static void
-string_prepends PARAMS ((string *, string *));
-
-static int
-demangle_template_value_parm PARAMS ((struct work_stuff*, const char**,
-				      string*, type_kind_t));
-
-static int
-do_hpacc_template_const_value PARAMS ((struct work_stuff *, const char **, string *));
-
-static int
-do_hpacc_template_literal PARAMS ((struct work_stuff *, const char **, string *));
-
-static int
-snarf_numeric_literal PARAMS ((const char **, string *));
+static int snarf_numeric_literal (const char **, string *);
 
 /* There is a TYPE_QUAL value for each type qualifier.  They can be
    combined by bitwise-or to form the complete set of qualifiers for a
@@ -526,36 +475,28 @@ snarf_numeric_literal PARAMS ((const char **, string *));
 #define TYPE_QUAL_VOLATILE 0x2
 #define TYPE_QUAL_RESTRICT 0x4
 
-static int
-code_for_qualifier PARAMS ((int));
+static int code_for_qualifier (int);
 
-static const char*
-qualifier_string PARAMS ((int));
+static const char* qualifier_string (int);
 
-static const char*
-demangle_qualifier PARAMS ((int));
+static const char* demangle_qualifier (int);
 
-static int
-demangle_expression PARAMS ((struct work_stuff *, const char **, string *, 
-			     type_kind_t));
+static int demangle_expression (struct work_stuff *, const char **, string *, 
+                                type_kind_t);
 
 static int
-demangle_integral_value PARAMS ((struct work_stuff *, const char **,
-				 string *));
+demangle_integral_value (struct work_stuff *, const char **, string *);
 
 static int
-demangle_real_value PARAMS ((struct work_stuff *, const char **, string *));
+demangle_real_value (struct work_stuff *, const char **, string *);
 
 static void
-demangle_arm_hp_template PARAMS ((struct work_stuff *, const char **, int,
-				  string *));
+demangle_arm_hp_template (struct work_stuff *, const char **, int, string *);
 
 static void
-recursively_demangle PARAMS ((struct work_stuff *, const char **, string *,
-			      int));
+recursively_demangle (struct work_stuff *, const char **, string *, int);
 
-static void
-grow_vect PARAMS ((void **, size_t *, size_t, int));
+static void grow_vect (char **, size_t *, size_t, int);
 
 /* Translate count to integer, consuming tokens in the process.
    Conversion terminates on the first non-digit character.
@@ -566,8 +507,7 @@ grow_vect PARAMS ((void **, size_t *, size_t, int));
    Overflow consumes the rest of the digits, and returns -1.  */
 
 static int
-consume_count (type)
-     const char **type;
+consume_count (const char **type)
 {
   int count = 0;
 
@@ -606,8 +546,7 @@ consume_count (type)
    failure, since 0 can be a valid value.  */
 
 static int
-consume_count_with_underscores (mangled)
-     const char **mangled;
+consume_count_with_underscores (const char **mangled)
 {
   int idx;
 
@@ -640,8 +579,7 @@ consume_count_with_underscores (mangled)
    corresponding to this qualifier.  */
 
 static int
-code_for_qualifier (c)
-  int c;
+code_for_qualifier (int c)
 {
   switch (c)
     {
@@ -666,8 +604,7 @@ code_for_qualifier (c)
    TYPE_QUALS.  */
 
 static const char*
-qualifier_string (type_quals)
-     int type_quals;
+qualifier_string (int type_quals)
 {
   switch (type_quals)
     {
@@ -708,18 +645,13 @@ qualifier_string (type_quals)
    called with a valid qualifier code.  */
 
 static const char*
-demangle_qualifier (c)
-  int c;
+demangle_qualifier (int c)
 {
   return qualifier_string (code_for_qualifier (c));
 }
 
-#if 0
 int
-cplus_demangle_opname (opname, result, options)
-     const char *opname;
-     char *result;
-     int options;
+cplus_demangle_opname (const char *opname, char *result, int options)
 {
   int len, len1, ret;
   string type;
@@ -844,7 +776,6 @@ cplus_demangle_opname (opname, result, options)
   return ret;
 
 }
-#endif /* 0 */
 
 /* Takes operator name as e.g. "++" and returns mangled
    operator name (e.g. "postincrement_expr"), or NULL if not found.
@@ -852,11 +783,8 @@ cplus_demangle_opname (opname, result, options)
    If OPTIONS & DMGL_ANSI == 1, return the ANSI name;
    if OPTIONS & DMGL_ANSI == 0, return the old GNU name.  */
 
-/*
 const char *
-cplus_mangle_opname (opname, options)
-     const char *opname;
-     int options;
+cplus_mangle_opname (const char *opname, int options)
 {
   size_t i;
   int len;
@@ -871,15 +799,12 @@ cplus_mangle_opname (opname, options)
     }
   return (0);
 }
-*/
 
 /* Add a routine to set the demangling style to be sure it is valid and
    allow for any demangler initialization that maybe necessary. */
 
-/*
 enum demangling_styles
-cplus_demangle_set_style (style)
-     enum demangling_styles style;
+cplus_demangle_set_style (enum demangling_styles style)
 {
   const struct demangler_engine *demangler = libiberty_demanglers; 
 
@@ -892,14 +817,11 @@ cplus_demangle_set_style (style)
 
   return unknown_demangling;
 }
-*/
 
 /* Do string name to style translation */
 
-/*
 enum demangling_styles
-cplus_demangle_name_to_style (name)
-     const char *name;
+cplus_demangle_name_to_style (const char *name)
 {
   const struct demangler_engine *demangler = libiberty_demanglers; 
 
@@ -909,7 +831,6 @@ cplus_demangle_name_to_style (name)
 
   return unknown_demangling;
 }
-*/
 
 /* char *cplus_demangle (const char *mangled, int options)
 
@@ -940,15 +861,13 @@ cplus_demangle_name_to_style (name)
    MANGLED.  */
 
 char *
-ML_(cplus_demangle) (mangled, options)
-     const char *mangled;
-     int options;
+ML_(cplus_demangle) (const char *mangled, int options)
 {
   char *ret;
   struct work_stuff work[1];
 
   if (current_demangling_style == no_demangling)
-    return xstrdup ("demangle.cd.1", mangled);
+    return xstrdup (mangled);
 
   memset ((char *) work, 0, sizeof (work));
   work->options = options;
@@ -958,14 +877,14 @@ ML_(cplus_demangle) (mangled, options)
   /* The V3 ABI demangling is implemented elsewhere.  */
   if (GNU_V3_DEMANGLING || AUTO_DEMANGLING)
     {
-      ret = ML_(cplus_demangle_v3) (mangled/*, work->options*/);
+      ret = cplus_demangle_v3 (mangled, work->options);
       if (ret || GNU_V3_DEMANGLING)
 	return ret;
     }
 
   if (JAVA_DEMANGLING)
     {
-      ret = ML_(java_demangle_v3) (mangled);
+      ret = java_demangle_v3 (mangled);
       if (ret)
         return ret;
     }
@@ -984,18 +903,14 @@ ML_(cplus_demangle) (mangled, options)
    updating *OLD_VECT and *SIZE as necessary.  */
 
 static void
-grow_vect (old_vect, size, min_size, element_size)
-     void **old_vect;
-     size_t *size;
-     size_t min_size;
-     int element_size;
+grow_vect (char **old_vect, size_t *size, size_t min_size, int element_size)
 {
   if (*size < min_size)
     {
       *size *= 2;
       if (*size < min_size)
 	*size = min_size;
-      *old_vect = xrealloc ("demangle.gv.1", *old_vect, *size * element_size);
+      *old_vect = XRESIZEVAR (char, *old_vect, *size * element_size);
     }
 }
 
@@ -1008,18 +923,14 @@ grow_vect (old_vect, size, min_size, element_size)
    The resulting string is valid until the next call of ada_demangle.  */
 
 static char *
-ada_demangle (mangled, option)
-     const char *mangled;
-     int option ATTRIBUTE_UNUSED;
+ada_demangle (const char *mangled, int option ATTRIBUTE_UNUSED)
 {
   int i, j;
   int len0;
   const char* p;
   char *demangled = NULL;
-  int at_start_name;
   int changed;
-  char *demangling_buffer = NULL;
-  size_t demangling_buffer_size = 0;
+  size_t demangled_size = 0;
   
   changed = 0;
 
@@ -1047,10 +958,9 @@ ada_demangle (mangled, option)
     }
   
   /* Make demangled big enough for possible expansion by operator name.  */
-  grow_vect ((void **) &(demangling_buffer),
-	     &demangling_buffer_size,  2 * len0 + 1,
+  grow_vect (&demangled,
+	     &demangled_size,  2 * len0 + 1,
 	     sizeof (char));
-  demangled = demangling_buffer;
   
   if (ISDIGIT ((unsigned char) mangled[len0 - 1])) {
     for (i = len0 - 2; i >= 0 && ISDIGIT ((unsigned char) mangled[i]); i -= 1)
@@ -1071,15 +981,12 @@ ada_demangle (mangled, option)
        i += 1, j += 1)
     demangled[j] = mangled[i];
   
-  at_start_name = 1;
   while (i < len0)
     {
-      at_start_name = 0;
-      
       if (i < len0 - 2 && mangled[i] == '_' && mangled[i + 1] == '_')
 	{
 	  demangled[j] = '.';
-	  changed = at_start_name = 1;
+	  changed = 1;
 	  i += 2; j += 1;
 	}
       else
@@ -1100,10 +1007,10 @@ ada_demangle (mangled, option)
     return demangled;
   
  Suppress:
-  grow_vect ((void **) &(demangling_buffer),
-	     &demangling_buffer_size,  strlen (mangled) + 3,
+  grow_vect (&demangled,
+	     &demangled_size,  strlen (mangled) + 3,
 	     sizeof (char));
-  demangled = demangling_buffer;
+
   if (mangled[0] == '<')
      strcpy (demangled, mangled);
   else
@@ -1119,9 +1026,7 @@ ada_demangle (mangled, option)
    calls go directly to this routine to avoid resetting that info. */
 
 static char *
-internal_cplus_demangle (work, mangled)
-     struct work_stuff *work;
-     const char *mangled;
+internal_cplus_demangle (struct work_stuff *work, const char *mangled)
 {
 
   string decl;
@@ -1186,8 +1091,7 @@ internal_cplus_demangle (work, mangled)
 
 /* Clear out and squangling related storage */
 static void
-squangle_mop_up (work)
-     struct work_stuff *work;
+squangle_mop_up (struct work_stuff *work)
 {
   /* clean up the B and K type mangling types. */
   forget_B_and_K_types (work);
@@ -1205,9 +1109,7 @@ squangle_mop_up (work)
 /* Copy the work state and storage.  */
 
 static void
-work_stuff_copy_to_from (to, from)
-     struct work_stuff *to;
-     struct work_stuff *from;
+work_stuff_copy_to_from (struct work_stuff *to, struct work_stuff *from)
 {
   int i;
 
@@ -1218,61 +1120,52 @@ work_stuff_copy_to_from (to, from)
 
   /* Deep-copy dynamic storage.  */
   if (from->typevec_size)
-    to->typevec
-      = (char **) xmalloc ("demangle.wsctf.1",
-                           from->typevec_size * sizeof (to->typevec[0]));
+    to->typevec = XNEWVEC (char *, from->typevec_size);
 
   for (i = 0; i < from->ntypes; i++)
     {
       int len = strlen (from->typevec[i]) + 1;
 
-      to->typevec[i] = xmalloc ("demangle.wsctf.2", len);
+      to->typevec[i] = XNEWVEC (char, len);
       memcpy (to->typevec[i], from->typevec[i], len);
     }
 
   if (from->ksize)
-    to->ktypevec
-      = (char **) xmalloc ("demangle.wsctf.3",
-                           from->ksize * sizeof (to->ktypevec[0]));
+    to->ktypevec = XNEWVEC (char *, from->ksize);
 
   for (i = 0; i < from->numk; i++)
     {
       int len = strlen (from->ktypevec[i]) + 1;
 
-      to->ktypevec[i] = xmalloc ("demangle.wsctf.4", len);
+      to->ktypevec[i] = XNEWVEC (char, len);
       memcpy (to->ktypevec[i], from->ktypevec[i], len);
     }
 
   if (from->bsize)
-    to->btypevec
-      = (char **) xmalloc ("demangle.wsctf.5",
-                           from->bsize * sizeof (to->btypevec[0]));
+    to->btypevec = XNEWVEC (char *, from->bsize);
 
   for (i = 0; i < from->numb; i++)
     {
       int len = strlen (from->btypevec[i]) + 1;
 
-      to->btypevec[i] = xmalloc ("demangle.wsctf.6", len);
+      to->btypevec[i] = XNEWVEC (char , len);
       memcpy (to->btypevec[i], from->btypevec[i], len);
     }
 
   if (from->ntmpl_args)
-    to->tmpl_argvec
-      = xmalloc ("demangle.wsctf.7",
-                 from->ntmpl_args * sizeof (to->tmpl_argvec[0]));
+    to->tmpl_argvec = XNEWVEC (char *, from->ntmpl_args);
 
   for (i = 0; i < from->ntmpl_args; i++)
     {
       int len = strlen (from->tmpl_argvec[i]) + 1;
 
-      to->tmpl_argvec[i] = xmalloc ("demangle.wsctf.8", len);
+      to->tmpl_argvec[i] = XNEWVEC (char, len);
       memcpy (to->tmpl_argvec[i], from->tmpl_argvec[i], len);
     }
 
   if (from->previous_argument)
     {
-      to->previous_argument = (string*) xmalloc ("demangle.wsctf.9",
-                                                 sizeof (string));
+      to->previous_argument = XNEW (string);
       string_init (to->previous_argument);
       string_appends (to->previous_argument, from->previous_argument);
     }
@@ -1282,8 +1175,7 @@ work_stuff_copy_to_from (to, from)
 /* Delete dynamic stuff in work_stuff that is not to be re-used.  */
 
 static void
-delete_non_B_K_work_stuff (work)
-     struct work_stuff *work;
+delete_non_B_K_work_stuff (struct work_stuff *work)
 {
   /* Discard the remembered types, if any.  */
 
@@ -1316,8 +1208,7 @@ delete_non_B_K_work_stuff (work)
 
 /* Delete all dynamic storage in work_stuff.  */
 static void
-delete_work_stuff (work)
-     struct work_stuff *work;
+delete_work_stuff (struct work_stuff *work)
 {
   delete_non_B_K_work_stuff (work);
   squangle_mop_up (work);
@@ -1327,10 +1218,7 @@ delete_work_stuff (work)
 /* Clear out any mangled storage */
 
 static char *
-mop_up (work, declp, success)
-     struct work_stuff *work;
-     string *declp;
-     int success;
+mop_up (struct work_stuff *work, string *declp, int success)
 {
   char *demangled = NULL;
 
@@ -1382,10 +1270,8 @@ DESCRIPTION
 	argument list.  */
 
 static int
-demangle_signature (work, mangled, declp)
-     struct work_stuff *work;
-     const char **mangled;
-     string *declp;
+demangle_signature (struct work_stuff *work,
+                    const char **mangled, string *declp)
 {
   int success = 1;
   int func_done = 0;
@@ -1485,6 +1371,7 @@ demangle_signature (work, mangled, declp)
 	      {
 		string_append (&s, SCOPE_STRING (work));
 		string_prepends (declp, &s);
+		string_delete (&s);
 	      }
 	    oldmangled = NULL;
 	    expect_func = 1;
@@ -1564,7 +1451,6 @@ demangle_signature (work, mangled, declp)
 	    {
 	      /* Read the return type. */
 	      string return_type;
-	      string_init (&return_type);
 
 	      (*mangled)++;
 	      success = do_type (work, mangled, &return_type);
@@ -1675,10 +1561,8 @@ demangle_signature (work, mangled, declp)
 #if 0
 
 static int
-demangle_method_args (work, mangled, declp)
-     struct work_stuff *work;
-     const char **mangled;
-     string *declp;
+demangle_method_args (struct work_stuff *work, const char **mangled,
+                      string *declp)
 {
   int success = 0;
 
@@ -1698,10 +1582,8 @@ demangle_method_args (work, mangled, declp)
 #endif
 
 static int
-demangle_template_template_parm (work, mangled, tname)
-     struct work_stuff *work;
-     const char **mangled;
-     string *tname;
+demangle_template_template_parm (struct work_stuff *work,
+                                 const char **mangled, string *tname)
 {
   int i;
   int r;
@@ -1762,11 +1644,8 @@ demangle_template_template_parm (work, mangled, tname)
 }
 
 static int
-demangle_expression (work, mangled, s, tk)
-     struct work_stuff *work;
-     const char** mangled;
-     string* s;
-     type_kind_t tk;
+demangle_expression (struct work_stuff *work, const char **mangled,
+                     string *s, type_kind_t tk)
 {
   int need_operator = 0;
   int success;
@@ -1785,7 +1664,7 @@ demangle_expression (work, mangled, s, tk)
 
 	  len = strlen (*mangled);
 
-	  for (i = 0; i < (size_t)ARRAY_SIZE (optable); ++i)
+	  for (i = 0; i < ARRAY_SIZE (optable); ++i)
 	    {
 	      size_t l = strlen (optable[i].in);
 
@@ -1822,10 +1701,8 @@ demangle_expression (work, mangled, s, tk)
 }
 
 static int
-demangle_integral_value (work, mangled, s)
-     struct work_stuff *work;
-     const char** mangled;
-     string* s;
+demangle_integral_value (struct work_stuff *work,
+                         const char **mangled, string *s)
 {
   int success;
 
@@ -1839,32 +1716,46 @@ demangle_integral_value (work, mangled, s)
 
       /* By default, we let the number decide whether we shall consume an
 	 underscore.  */
-      int consume_following_underscore = 0;
+      int multidigit_without_leading_underscore = 0;
       int leave_following_underscore = 0;
 
       success = 0;
 
-      /* Negative numbers are indicated with a leading `m'.  */
-      if (**mangled == 'm')
-	{
-	  string_appendn (s, "-", 1);
-	  (*mangled)++;
+      if (**mangled == '_')
+        {
+	  if (mangled[0][1] == 'm')
+	    {
+	      /* Since consume_count_with_underscores does not handle the
+		 `m'-prefix we must do it here, using consume_count and
+		 adjusting underscores: we have to consume the underscore
+		 matching the prepended one.  */
+	      multidigit_without_leading_underscore = 1;
+	      string_appendn (s, "-", 1);
+	      (*mangled) += 2;
+	    }
+	  else
+	    {
+	      /* Do not consume a following underscore;
+	         consume_count_with_underscores will consume what
+	         should be consumed.  */
+	      leave_following_underscore = 1;
+	    }
 	}
-      else if (mangled[0][0] == '_' && mangled[0][1] == 'm')
+      else
 	{
-	  /* Since consume_count_with_underscores does not handle the
-	     `m'-prefix we must do it here, using consume_count and
-	     adjusting underscores: we have to consume the underscore
-	     matching the prepended one.  */
-	  consume_following_underscore = 1;
-	  string_appendn (s, "-", 1);
-	  (*mangled) += 2;
-	}
-      else if (**mangled == '_')
-	{
-	  /* Do not consume a following underscore;
-	     consume_following_underscore will consume what should be
-	     consumed.  */
+	  /* Negative numbers are indicated with a leading `m'.  */
+	  if (**mangled == 'm')
+	  {
+	    string_appendn (s, "-", 1);
+	    (*mangled)++;
+	  }
+	  /* Since consume_count_with_underscores does not handle
+	     multi-digit numbers that do not start with an underscore,
+	     and this number can be an integer template parameter,
+	     we have to call consume_count. */
+	  multidigit_without_leading_underscore = 1;
+	  /* These multi-digit numbers never end on an underscore,
+	     so if there is one then don't eat it. */
 	  leave_following_underscore = 1;
 	}
 
@@ -1872,7 +1763,7 @@ demangle_integral_value (work, mangled, s)
 	 underscore, since consume_count_with_underscores expects
 	 the leading underscore (that we consumed) if it is to handle
 	 multi-digit numbers.  */
-      if (consume_following_underscore)
+      if (multidigit_without_leading_underscore)
 	value = consume_count (mangled);
       else
 	value = consume_count_with_underscores (mangled);
@@ -1890,7 +1781,7 @@ demangle_integral_value (work, mangled, s)
 	     is wrong.  If other (arbitrary) cases are followed by an
 	     underscore, we need to do something more radical.  */
 
-	  if ((value > 9 || consume_following_underscore)
+	  if ((value > 9 || multidigit_without_leading_underscore)
 	      && ! leave_following_underscore
 	      && **mangled == '_')
 	    (*mangled)++;
@@ -1898,7 +1789,7 @@ demangle_integral_value (work, mangled, s)
 	  /* All is well.  */
 	  success = 1;
 	}
-    }
+      }
 
   return success;
 }
@@ -1906,10 +1797,8 @@ demangle_integral_value (work, mangled, s)
 /* Demangle the real value in MANGLED.  */
 
 static int
-demangle_real_value (work, mangled, s)
-     struct work_stuff *work;
-     const char **mangled;
-     string* s;
+demangle_real_value (struct work_stuff *work,
+                     const char **mangled, string *s)
 {
   if (**mangled == 'E')
     return demangle_expression (work, mangled, s, tk_real);
@@ -1949,11 +1838,8 @@ demangle_real_value (work, mangled, s)
 }
 
 static int
-demangle_template_value_parm (work, mangled, s, tk)
-     struct work_stuff *work;
-     const char **mangled;
-     string* s;
-     type_kind_t tk;
+demangle_template_value_parm (struct work_stuff *work, const char **mangled,
+                              string *s, type_kind_t tk)
 {
   int success = 1;
 
@@ -2023,7 +1909,7 @@ demangle_template_value_parm (work, mangled, s, tk)
 	    string_appendn (s, "0", 1);
 	  else
 	    {
-	      char *p = xmalloc ("demangle.dtvp.1", symbol_len + 1), *q;
+	      char *p = XNEWVEC (char, symbol_len + 1), *q;
 	      strncpy (p, *mangled, symbol_len);
 	      p [symbol_len] = '\0';
 	      /* We use cplus_demangle here, rather than
@@ -2061,29 +1947,20 @@ demangle_template_value_parm (work, mangled, s, tk)
    types.  */
 
 static int
-demangle_template (work, mangled, tname, trawname, is_type, remember)
-     struct work_stuff *work;
-     const char **mangled;
-     string *tname;
-     string *trawname;
-     int is_type;
-     int remember;
+demangle_template (struct work_stuff *work, const char **mangled,
+                   string *tname, string *trawname,
+                   int is_type, int remember)
 {
   int i;
   int r;
   int need_comma = 0;
   int success = 0;
-  const char *start;
   int is_java_array = 0;
   string temp;
-  int bindex = 0;
 
   (*mangled)++;
   if (is_type)
     {
-      if (remember)
-	bindex = register_Btype (work);
-      start = *mangled;
       /* get template name */
       if (**mangled == 'z')
 	{
@@ -2138,8 +2015,7 @@ demangle_template (work, mangled, tname, trawname, is_type, remember)
   if (!is_type)
     {
       /* Create an array for saving the template argument values. */
-      work->tmpl_argvec = (char**) xmalloc ("demangle.dt.1",
-                                            r * sizeof (char *));
+      work->tmpl_argvec = XNEWVEC (char *, r);
       work->ntmpl_args = r;
       for (i = 0; i < r; i++)
 	work->tmpl_argvec[i] = 0;
@@ -2164,7 +2040,7 @@ demangle_template (work, mangled, tname, trawname, is_type, remember)
 		{
 		  /* Save the template argument. */
 		  int len = temp.p - temp.b;
-		  work->tmpl_argvec[i] = xmalloc ("demangle.dt.2", len + 1);
+		  work->tmpl_argvec[i] = XNEWVEC (char, len + 1);
 		  memcpy (work->tmpl_argvec[i], temp.b, len);
 		  work->tmpl_argvec[i][len] = '\0';
 		}
@@ -2192,7 +2068,7 @@ demangle_template (work, mangled, tname, trawname, is_type, remember)
 		{
 		  /* Save the template argument. */
 		  int len = r2;
-		  work->tmpl_argvec[i] = xmalloc ("demangle.dt.3", len + 1);
+		  work->tmpl_argvec[i] = XNEWVEC (char, len + 1);
 		  memcpy (work->tmpl_argvec[i], *mangled, len);
 		  work->tmpl_argvec[i][len] = '\0';
 		}
@@ -2238,7 +2114,7 @@ demangle_template (work, mangled, tname, trawname, is_type, remember)
 	  if (!is_type)
 	    {
 	      int len = s->p - s->b;
-	      work->tmpl_argvec[i] = xmalloc ("demangle.dt.4", len + 1);
+	      work->tmpl_argvec[i] = XNEWVEC (char, len + 1);
 	      memcpy (work->tmpl_argvec[i], s->b, len);
 	      work->tmpl_argvec[i][len] = '\0';
 
@@ -2260,7 +2136,10 @@ demangle_template (work, mangled, tname, trawname, is_type, remember)
     }
 
   if (is_type && remember)
-    remember_Btype (work, tname->b, LEN_STRING (tname), bindex);
+    {
+      const int bindex = register_Btype (work);
+      remember_Btype (work, tname->b, LEN_STRING (tname), bindex);
+    }
 
   /*
     if (work -> static_type)
@@ -2279,11 +2158,8 @@ demangle_template (work, mangled, tname, trawname, is_type, remember)
 }
 
 static int
-arm_pt (work, mangled, n, anchor, args)
-     struct work_stuff *work;
-     const char *mangled;
-     int n;
-     const char **anchor, **args;
+arm_pt (struct work_stuff *work, const char *mangled,
+        int n, const char **anchor, const char **args)
 {
   /* Check if ARM template with "__pt__" in it ("parameterized type") */
   /* Allow HP also here, because HP's cfront compiler follows ARM to some extent */
@@ -2336,11 +2212,8 @@ arm_pt (work, mangled, n, anchor, args)
 }
 
 static void
-demangle_arm_hp_template (work, mangled, n, declp)
-     struct work_stuff *work;
-     const char **mangled;
-     int n;
-     string *declp;
+demangle_arm_hp_template (struct work_stuff *work, const char **mangled,
+                          int n, string *declp)
 {
   const char *p;
   const char *args;
@@ -2352,6 +2225,7 @@ demangle_arm_hp_template (work, mangled, n, declp)
   if (HP_DEMANGLING && ((*mangled)[n] == 'X'))
     {
       char *start_spec_args = NULL;
+      int hold_options;
 
       /* First check for and omit template specialization pseudo-arguments,
          such as in "Spec<#1,#1.*>" */
@@ -2364,10 +2238,16 @@ demangle_arm_hp_template (work, mangled, n, declp)
       string_init (&arg);
       if (work->temp_start == -1) /* non-recursive call */
         work->temp_start = declp->p - declp->b;
+
+      /* We want to unconditionally demangle parameter types in
+	 template parameters.  */
+      hold_options = work->options;
+      work->options |= DMGL_PARAMS;
+
       string_append (declp, "<");
       while (1)
         {
-          string_clear (&arg);
+          string_delete (&arg);
           switch (**mangled)
             {
               case 'T':
@@ -2410,21 +2290,29 @@ demangle_arm_hp_template (work, mangled, n, declp)
       string_delete (&arg);
       if (**mangled == '_')
         (*mangled)++;
+      work->options = hold_options;
       return;
     }
   /* ARM template? (Also handles HP cfront extensions) */
   else if (arm_pt (work, *mangled, n, &p, &args))
     {
+      int hold_options;
       string type_str;
 
       string_init (&arg);
       string_appendn (declp, *mangled, p - *mangled);
       if (work->temp_start == -1)  /* non-recursive call */
 	work->temp_start = declp->p - declp->b;
+
+      /* We want to unconditionally demangle parameter types in
+	 template parameters.  */
+      hold_options = work->options;
+      work->options |= DMGL_PARAMS;
+
       string_append (declp, "<");
       /* should do error checking here */
       while (args < e) {
-	string_clear (&arg);
+	string_delete (&arg);
 
 	/* Check for type or literal here */
 	switch (*args)
@@ -2439,6 +2327,7 @@ demangle_arm_hp_template (work, mangled, n, declp)
 	      goto cfront_template_args_done;
             string_append (&arg, "(");
             string_appends (&arg, &type_str);
+            string_delete (&type_str);
             string_append (&arg, ")");
             if (*args != 'L')
               goto cfront_template_args_done;
@@ -2456,8 +2345,18 @@ demangle_arm_hp_template (work, mangled, n, declp)
             break;
           default:
             /* Not handling other HP cfront stuff */
-            if (!do_type (work, &args, &arg))
-              goto cfront_template_args_done;
+            {
+              const char* old_args = args;
+              if (!do_type (work, &args, &arg))
+                goto cfront_template_args_done;
+
+              /* Fail if we didn't make any progress: prevent infinite loop. */
+              if (args == old_args)
+		{
+		  work->options = hold_options;
+		  return;
+		}
+            }
 	  }
 	string_appends (declp, &arg);
 	string_append (declp, ",");
@@ -2467,6 +2366,7 @@ demangle_arm_hp_template (work, mangled, n, declp)
       if (args >= e)
 	--declp->p; /* remove extra comma */
       string_append (declp, ">");
+      work->options = hold_options;
     }
   else if (n>10 && strncmp (*mangled, "_GLOBAL_", 8) == 0
 	   && (*mangled)[9] == 'N'
@@ -2490,10 +2390,8 @@ demangle_arm_hp_template (work, mangled, n, declp)
    already been dealt with */
 
 static int
-demangle_class_name (work, mangled, declp)
-     struct work_stuff *work;
-     const char **mangled;
-     string *declp;
+demangle_class_name (struct work_stuff *work, const char **mangled,
+                     string *declp)
 {
   int n;
   int success = 0;
@@ -2546,10 +2444,7 @@ DESCRIPTION
 */
 
 static int
-demangle_class (work, mangled, declp)
-     struct work_stuff *work;
-     const char **mangled;
-     string *declp;
+demangle_class (struct work_stuff *work, const char **mangled, string *declp)
 {
   int success = 0;
   int btype;
@@ -2601,11 +2496,8 @@ demangle_class (work, mangled, declp)
    demangle_signature.  */
 
 static int
-iterate_demangle_function (work, mangled, declp, scan)
-     struct work_stuff *work;
-     const char **mangled;
-     string *declp;
-     const char *scan;
+iterate_demangle_function (struct work_stuff *work, const char **mangled,
+                           string *declp, const char *scan)
 {
   const char *mangle_init = *mangled;
   int success = 0;
@@ -2619,10 +2511,7 @@ iterate_demangle_function (work, mangled, declp, scan)
      "__"-sequence.  This is the normal case.  */
   if (ARM_DEMANGLING || LUCID_DEMANGLING || HP_DEMANGLING || EDG_DEMANGLING
       || strstr (scan + 2, "__") == NULL)
-    {
-      demangle_function_name (work, mangled, declp, scan);
-      return 1;
-    }
+    return demangle_function_name (work, mangled, declp, scan);
 
   /* Save state so we can restart if the guess at the correct "__" was
      wrong.  */
@@ -2634,15 +2523,17 @@ iterate_demangle_function (work, mangled, declp, scan)
   /* Iterate over occurrences of __, allowing names and types to have a
      "__" sequence in them.  We must start with the first (not the last)
      occurrence, since "__" most often occur between independent mangled
-     parts, hence starting at the last occurrence inside a signature
+     parts, hence starting at the last occurence inside a signature
      might get us a "successful" demangling of the signature.  */
 
   while (scan[2])
     {
-      demangle_function_name (work, mangled, declp, scan);
-      success = demangle_signature (work, mangled, declp);
-      if (success)
-	break;
+      if (demangle_function_name (work, mangled, declp, scan))
+	{
+	  success = demangle_signature (work, mangled, declp);
+	  if (success)
+	    break;
+	}
 
       /* Reset demangle state for the next round.  */
       *mangled = mangle_init;
@@ -2704,10 +2595,8 @@ DESCRIPTION
  */
 
 static int
-demangle_prefix (work, mangled, declp)
-     struct work_stuff *work;
-     const char **mangled;
-     string *declp;
+demangle_prefix (struct work_stuff *work, const char **mangled,
+                 string *declp)
 {
   int success = 1;
   const char *scan;
@@ -2777,9 +2666,7 @@ demangle_prefix (work, mangled, declp)
     {
       /* We found a sequence of two or more '_', ensure that we start at
 	 the last pair in the sequence.  */
-      /* i = strspn (scan, "_"); */
-      i = 0;
-      while (scan[i] == '_') i++;
+      i = strspn (scan, "_");
       if (i > 2)
 	{
 	  scan += (i - 2);
@@ -2917,10 +2804,7 @@ DESCRIPTION
  */
 
 static int
-gnu_special (work, mangled, declp)
-     struct work_stuff *work;
-     const char **mangled;
-     string *declp;
+gnu_special (struct work_stuff *work, const char **mangled, string *declp)
 {
   int n;
   int success = 1;
@@ -2979,14 +2863,7 @@ gnu_special (work, mangled, declp)
 		}
 	      else
 		{
-		  /*n = strcspn (*mangled, cplus_markers);*/
-		  const char *check = *mangled;
-		  n = 0;
-		  while (*check)
-		    if (strchr (cplus_markers, *check++) == NULL)
-		      n++;
-		    else
-		      break;
+		  n = strcspn (*mangled, cplus_markers);
 		}
 	      string_appendn (declp, *mangled, n);
 	      (*mangled) += n;
@@ -3128,16 +3005,13 @@ gnu_special (work, mangled, declp)
 }
 
 static void
-recursively_demangle(work, mangled, result, namelength)
-     struct work_stuff *work;
-     const char **mangled;
-     string *result;
-     int namelength;
+recursively_demangle(struct work_stuff *work, const char **mangled,
+                     string *result, int namelength)
 {
   char * recurse = (char *)NULL;
   char * recurse_dem = (char *)NULL;
 
-  recurse = (char *) xmalloc ("demangle.rd.1", namelength + 1);
+  recurse = XNEWVEC (char, namelength + 1);
   memcpy (recurse, *mangled, namelength);
   recurse[namelength] = '\000';
 
@@ -3180,9 +3054,7 @@ DESCRIPTION
  */
 
 static int
-arm_special (mangled, declp)
-     const char **mangled;
-     string *declp;
+arm_special (const char **mangled, string *declp)
 {
   int n;
   int success = 1;
@@ -3265,15 +3137,12 @@ BUGS
  */
 
 static int
-demangle_qualified (work, mangled, result, isfuncname, append)
-     struct work_stuff *work;
-     const char **mangled;
-     string *result;
-     int isfuncname;
-     int append;
+demangle_qualified (struct work_stuff *work, const char **mangled,
+                    string *result, int isfuncname, int append)
 {
   int qualifiers = 0;
   int success = 1;
+  char num[2];
   string temp;
   string last_name;
   int bindex = register_Btype (work);
@@ -3320,7 +3189,9 @@ demangle_qualified (work, mangled, result, isfuncname, append)
     case '8':
     case '9':
       /* The count is in a single digit.  */
-      qualifiers = (*mangled)[1] - '0';
+      num[0] = (*mangled)[1];
+      num[1] = '\0';
+      qualifiers = atoi (num);
 
       /* If there is an underscore after the digit, skip it.  This is
 	 said to be for ARM-qualified names, but the ARM makes no
@@ -3338,11 +3209,7 @@ demangle_qualified (work, mangled, result, isfuncname, append)
     }
 
   if (!success)
-    {
-      string_delete (&last_name);
-      string_delete (&temp);
-      return success;
-    }
+    return success;
 
   /* Pick off the names and collect them in the temp buffer in the order
      in which they are found, separated by '::'.  */
@@ -3399,17 +3266,11 @@ demangle_qualified (work, mangled, result, isfuncname, append)
             }
           else
             {
-	      string temp_last_name;
-	      string_init (&temp_last_name);
-              success = do_type (work, mangled, &temp_last_name);
+              string_delete (&last_name);
+              success = do_type (work, mangled, &last_name);
               if (!success)
-	        {
-		  string_delete (&temp_last_name);
-                  break;
-		}
-              string_appends (&temp, &temp_last_name);
-	      string_appends (&last_name, &temp_last_name);
-	      string_delete (&temp_last_name);
+                break;
+              string_appends (&temp, &last_name);
             }
 	}
 
@@ -3499,9 +3360,7 @@ DESCRIPTION
 */
 
 static int
-get_count (type, count)
-     const char **type;
-     int *count;
+get_count (const char **type, int *count)
 {
   const char *p;
   int n;
@@ -3537,10 +3396,7 @@ get_count (type, count)
    value returned is really a type_kind_t.  */
 
 static int
-do_type (work, mangled, result)
-     struct work_stuff *work;
-     const char **mangled;
-     string *result;
+do_type (struct work_stuff *work, const char **mangled, string *result)
 {
   int n;
   int done;
@@ -3548,10 +3404,8 @@ do_type (work, mangled, result)
   string decl;
   const char *remembered_type;
   int type_quals;
-  string btype;
   type_kind_t tk = tk_none;
 
-  string_init (&btype);
   string_init (&decl);
   string_init (result);
 
@@ -3669,6 +3523,7 @@ do_type (work, mangled, result)
 		string temp;
 		do_type (work, mangled, &temp);
 		string_prepends (&decl, &temp);
+		string_delete (&temp);
 	      }
 	    else if (**mangled == 't')
 	      {
@@ -3679,7 +3534,7 @@ do_type (work, mangled, result)
 		if (success)
 		  {
 		    string_prependn (&decl, temp.b, temp.p - temp.b);
-		    string_clear (&temp);
+		    string_delete (&temp);
 		  }
 		else
 		  break;
@@ -3850,19 +3705,14 @@ do_type (work, mangled, result)
    The value returned is really a type_kind_t.  */
 
 static int
-demangle_fund_type (work, mangled, result)
-     struct work_stuff *work;
-     const char **mangled;
-     string *result;
+demangle_fund_type (struct work_stuff *work,
+                    const char **mangled, string *result)
 {
   int done = 0;
   int success = 1;
-  char buf[10];
-  //unsigned int dec = 0;     // unused
-  string btype;
+  char buf[INTBUF_SIZE + 5 /* 'int%u_t' */];
+  /* unsigned int dec = 0; */ /* JRS 2008-Oct-26: unused (see below) */
   type_kind_t tk = tk_integral;
-
-  string_init (&btype);
 
   /* First pick off any type qualifiers.  There can be more than one.  */
 
@@ -4001,9 +3851,15 @@ demangle_fund_type (work, mangled, result)
 	  buf[2] = '\0';
 	  *mangled += min (strlen (*mangled), 2);
 	}
+      /* JRS 2008-Oct-26: the next two commented out lines have been
+         replaced by the sprintf that follows.  This is to avoid use
+         of sscanf.  This hack is merely copied from the old demangler
+         port (by Michael Matz, Simon Hausmann?) -- I have no idea if
+         it is really correct/safe, but it looks ok. */
       /*sscanf (buf, "%x", &dec);
       sprintf (buf, "int%u_t", dec);*/
-      sprintf (buf, "i_xx_t");
+      sprintf (buf, "%s", "intXX_t");
+      /* end JRS 2008-Oct-26 */
       APPEND_BLANK (result);
       string_append (result, buf);
       break;
@@ -4022,30 +3878,31 @@ demangle_fund_type (work, mangled, result)
     case '9':
       {
         int bindex = register_Btype (work);
-        string loc_btype;
-        string_init (&loc_btype);
-        if (demangle_class_name (work, mangled, &loc_btype)) {
-          remember_Btype (work, loc_btype.b, LEN_STRING (&loc_btype), bindex);
+        string btype;
+        string_init (&btype);
+        if (demangle_class_name (work, mangled, &btype)) {
+          remember_Btype (work, btype.b, LEN_STRING (&btype), bindex);
           APPEND_BLANK (result);
-          string_appends (result, &loc_btype);
+          string_appends (result, &btype);
         }
         else
           success = 0;
-        string_delete (&loc_btype);
+        string_delete (&btype);
         break;
       }
     case 't':
       {
+        string btype;
+        string_init (&btype);
         success = demangle_template (work, mangled, &btype, 0, 1, 1);
         string_appends (result, &btype);
+        string_delete (&btype);
         break;
       }
     default:
       success = 0;
       break;
     }
-
-  string_delete (&btype);
 
   return success ? ((int) tk) : 0;
 }
@@ -4055,10 +3912,8 @@ demangle_fund_type (work, mangled, result)
    **mangled points to 'S' or 'U' */
 
 static int
-do_hpacc_template_const_value (work, mangled, result)
-     struct work_stuff *work ATTRIBUTE_UNUSED;
-     const char **mangled;
-     string *result;
+do_hpacc_template_const_value (struct work_stuff *work ATTRIBUTE_UNUSED,
+                               const char **mangled, string *result)
 {
   int unsigned_const;
 
@@ -4112,10 +3967,8 @@ do_hpacc_template_const_value (work, mangled, result)
    **mangled is pointing to the 'A' */
 
 static int
-do_hpacc_template_literal (work, mangled, result)
-     struct work_stuff *work;
-     const char **mangled;
-     string *result;
+do_hpacc_template_literal (struct work_stuff *work, const char **mangled,
+                           string *result)
 {
   int literal_len = 0;
   char * recurse;
@@ -4136,7 +3989,7 @@ do_hpacc_template_literal (work, mangled, result)
   string_append (result, "&");
 
   /* Now recursively demangle the literal name */
-  recurse = (char *) xmalloc ("demangle.dhtl.1", literal_len + 1);
+  recurse = XNEWVEC (char, literal_len + 1);
   memcpy (recurse, *mangled, literal_len);
   recurse[literal_len] = '\000';
 
@@ -4158,9 +4011,7 @@ do_hpacc_template_literal (work, mangled, result)
 }
 
 static int
-snarf_numeric_literal (args, arg)
-     const char ** args;
-     string * arg;
+snarf_numeric_literal (const char **args, string *arg)
 {
   if (**args == '-')
     {
@@ -4189,18 +4040,13 @@ snarf_numeric_literal (args, arg)
    and free'd should anything go wrong.  */
 
 static int
-do_arg (work, mangled, result)
-     struct work_stuff *work;
-     const char **mangled;
-     string *result;
+do_arg (struct work_stuff *work, const char **mangled, string *result)
 {
   /* Remember where we started so that we can record the type, for
      non-squangling type remembering.  */
   const char *start = *mangled;
-  string temp_result;
 
   string_init (result);
-  string_init (&temp_result);
 
   if (work->nrepeats > 0)
     {
@@ -4243,21 +4089,12 @@ do_arg (work, mangled, result)
      do not want to add additional types to the back-referenceable
      type vector when processing a repeated type.  */
   if (work->previous_argument)
-    string_clear (work->previous_argument);
+    string_delete (work->previous_argument);
   else
-    {
-      work->previous_argument = (string*) xmalloc ("demangle.da.1",
-                                                   sizeof (string));
-      string_init (work->previous_argument);
-    }
+    work->previous_argument = XNEW (string);
 
-  if (!do_type (work, mangled, &temp_result))
-    {
-      string_delete (&temp_result);
-      return 0;
-    }
-  string_appends (work->previous_argument, &temp_result);
-  string_delete (&temp_result);
+  if (!do_type (work, mangled, work->previous_argument))
+    return 0;
 
   string_appends (result, work->previous_argument);
 
@@ -4266,10 +4103,7 @@ do_arg (work, mangled, result)
 }
 
 static void
-remember_type (work, start, len)
-     struct work_stuff *work;
-     const char *start;
-     int len;
+remember_type (struct work_stuff *work, const char *start, int len)
 {
   char *tem;
 
@@ -4281,19 +4115,16 @@ remember_type (work, start, len)
       if (work -> typevec_size == 0)
 	{
 	  work -> typevec_size = 3;
-	  work -> typevec
-	    = (char **) xmalloc ("demangle.rt.1",
-                                 sizeof (char *) * work -> typevec_size);
+	  work -> typevec = XNEWVEC (char *, work->typevec_size);
 	}
       else
 	{
 	  work -> typevec_size *= 2;
 	  work -> typevec
-	    = (char **) xrealloc ("demangle.rt.2", (char *)work -> typevec,
-				  sizeof (char *) * work -> typevec_size);
+	    = XRESIZEVEC (char *, work->typevec, work->typevec_size);
 	}
     }
-  tem = xmalloc ("demangle.rt.3", len + 1);
+  tem = XNEWVEC (char, len + 1);
   memcpy (tem, start, len);
   tem[len] = '\0';
   work -> typevec[work -> ntypes++] = tem;
@@ -4302,10 +4133,7 @@ remember_type (work, start, len)
 
 /* Remember a K type class qualifier. */
 static void
-remember_Ktype (work, start, len)
-     struct work_stuff *work;
-     const char *start;
-     int len;
+remember_Ktype (struct work_stuff *work, const char *start, int len)
 {
   char *tem;
 
@@ -4314,19 +4142,16 @@ remember_Ktype (work, start, len)
       if (work -> ksize == 0)
 	{
 	  work -> ksize = 5;
-	  work -> ktypevec
-	    = (char **) xmalloc ("demangle.rK.1",
-                                 sizeof (char *) * work -> ksize);
+	  work -> ktypevec = XNEWVEC (char *, work->ksize);
 	}
       else
 	{
 	  work -> ksize *= 2;
 	  work -> ktypevec
-	    = (char **) xrealloc ("demangle.rK.2", (char *)work -> ktypevec,
-				  sizeof (char *) * work -> ksize);
+	    = XRESIZEVEC (char *, work->ktypevec, work->ksize);
 	}
     }
-  tem = xmalloc ("demangle.rK.3", len + 1);
+  tem = XNEWVEC (char, len + 1);
   memcpy (tem, start, len);
   tem[len] = '\0';
   work -> ktypevec[work -> numk++] = tem;
@@ -4337,8 +4162,7 @@ remember_Ktype (work, start, len)
    registers map<temp<char> > as B0, and temp<char> as B1 */
 
 static int
-register_Btype (work)
-     struct work_stuff *work;
+register_Btype (struct work_stuff *work)
 {
   int ret;
 
@@ -4347,16 +4171,13 @@ register_Btype (work)
       if (work -> bsize == 0)
 	{
 	  work -> bsize = 5;
-	  work -> btypevec
-	    = (char **) xmalloc ("demangle.rB.1", 
-                                 sizeof (char *) * work -> bsize);
+	  work -> btypevec = XNEWVEC (char *, work->bsize);
 	}
       else
 	{
 	  work -> bsize *= 2;
 	  work -> btypevec
-	    = (char **) xrealloc ("demangle.rB.2", (char *)work -> btypevec,
-				  sizeof (char *) * work -> bsize);
+	    = XRESIZEVEC (char *, work->btypevec, work->bsize);
 	}
     }
   ret = work -> numb++;
@@ -4367,23 +4188,20 @@ register_Btype (work)
 /* Store a value into a previously registered B code type. */
 
 static void
-remember_Btype (work, start, len, ind)
-     struct work_stuff *work;
-     const char *start;
-     int len, ind;
+remember_Btype (struct work_stuff *work, const char *start,
+                int len, int index)
 {
   char *tem;
 
-  tem = xmalloc ("demangle.remember_Btype.1", len + 1);
+  tem = XNEWVEC (char, len + 1);
   memcpy (tem, start, len);
   tem[len] = '\0';
-  work -> btypevec[ind] = tem;
+  work -> btypevec[index] = tem;
 }
 
 /* Lose all the info related to B and K type codes. */
 static void
-forget_B_and_K_types (work)
-     struct work_stuff *work;
+forget_B_and_K_types (struct work_stuff *work)
 {
   int i;
 
@@ -4410,8 +4228,7 @@ forget_B_and_K_types (work)
 /* Forget the remembered types, but not the type vector itself.  */
 
 static void
-forget_types (work)
-     struct work_stuff *work;
+forget_types (struct work_stuff *work)
 {
   int i;
 
@@ -4469,10 +4286,8 @@ forget_types (work)
  */
 
 static int
-demangle_args (work, mangled, declp)
-     struct work_stuff *work;
-     const char **mangled;
-     string *declp;
+demangle_args (struct work_stuff *work, const char **mangled,
+               string *declp)
 {
   string arg;
   int need_comma = 0;
@@ -4562,10 +4377,7 @@ demangle_args (work, mangled, declp)
 	  if (need_comma && PRINT_ARG_TYPES)
 	    string_append (declp, ", ");
 	  if (!do_arg (work, mangled, &arg))
-	    {
-	      string_delete (&arg);
-	      return (0);
-	    }
+	    return (0);
 	  if (PRINT_ARG_TYPES)
 	    string_appends (declp, &arg);
 	  string_delete (&arg);
@@ -4597,10 +4409,8 @@ demangle_args (work, mangled, declp)
    and method pointers or references, not top-level declarations.  */
 
 static int
-demangle_nested_args (work, mangled, declp)
-     struct work_stuff *work;
-     const char **mangled;
-     string *declp;
+demangle_nested_args (struct work_stuff *work, const char **mangled,
+                      string *declp)
 {
   string* saved_previous_argument;
   int result;
@@ -4626,7 +4436,7 @@ demangle_nested_args (work, mangled, declp)
   if (work->previous_argument)
     {
       string_delete (work->previous_argument);
-      free ((char*) work->previous_argument);
+      free ((char *) work->previous_argument);
     }
   work->previous_argument = saved_previous_argument;
   --work->forgetting_types;
@@ -4635,12 +4445,11 @@ demangle_nested_args (work, mangled, declp)
   return result;
 }
 
-static void
-demangle_function_name (work, mangled, declp, scan)
-     struct work_stuff *work;
-     const char **mangled;
-     string *declp;
-     const char *scan;
+/* Returns 1 if a valid function name was found or 0 otherwise.  */
+
+static int 
+demangle_function_name (struct work_stuff *work, const char **mangled,
+                        string *declp, const char *scan)
 {
   size_t i;
   string type;
@@ -4678,13 +4487,13 @@ demangle_function_name (work, mangled, declp, scan)
 	{
 	  work -> constructor += 1;
 	  string_clear (declp);
-	  return;
+	  return 1;
 	}
       else if (strcmp (declp -> b, "__dt") == 0)
 	{
 	  work -> destructor += 1;
 	  string_clear (declp);
-	  return;
+	  return 1;
 	}
     }
 
@@ -4697,7 +4506,7 @@ demangle_function_name (work, mangled, declp, scan)
       if (declp->p - declp->b >= 10 /* op$assign_ */
 	  && memcmp (declp->b + 3, "assign_", 7) == 0)
 	{
-	  for (i = 0; i < (size_t)ARRAY_SIZE (optable); i++)
+	  for (i = 0; i < ARRAY_SIZE (optable); i++)
 	    {
 	      int len = declp->p - declp->b - 10;
 	      if ((int) strlen (optable[i].in) == len
@@ -4713,7 +4522,7 @@ demangle_function_name (work, mangled, declp, scan)
 	}
       else
 	{
-	  for (i = 0; i < (size_t)ARRAY_SIZE (optable); i++)
+	  for (i = 0; i < ARRAY_SIZE (optable); i++)
 	    {
 	      int len = declp->p - declp->b - 3;
 	      if ((int) strlen (optable[i].in) == len
@@ -4761,7 +4570,7 @@ demangle_function_name (work, mangled, declp, scan)
       if (declp->b[4] == '\0')
 	{
 	  /* Operator.  */
-	  for (i = 0; i < (size_t)ARRAY_SIZE (optable); i++)
+	  for (i = 0; i < ARRAY_SIZE (optable); i++)
 	    {
 	      if (strlen (optable[i].in) == 2
 		  && memcmp (optable[i].in, declp->b + 2, 2) == 0)
@@ -4773,28 +4582,12 @@ demangle_function_name (work, mangled, declp, scan)
 		}
 	    }
 	}
-
-      /* BEGIN hack inserted 20050403 by JRS to deal with apparently
-         non-cfront compliant new[]/delete[] manglings generated by
-         the Portland Group's C++ compiler. */
-      else 
-      if (strcmp (declp -> b, "__nwa") == 0) {
-         string_clear (declp);
-         string_append (declp, "operator new[]");
-      }
-      else 
-      if (strcmp (declp -> b, "__dla") == 0) {
-         string_clear (declp);
-         string_append (declp, "operator delete[]");
-      }
-      /* END hack */
-
       else
 	{
 	  if (declp->b[2] == 'a' && declp->b[5] == '\0')
 	    {
 	      /* Assignment.  */
-	      for (i = 0; i < (size_t)ARRAY_SIZE (optable); i++)
+	      for (i = 0; i < ARRAY_SIZE (optable); i++)
 		{
 		  if (strlen (optable[i].in) == 3
 		      && memcmp (optable[i].in, declp->b + 2, 3) == 0)
@@ -4808,14 +4601,19 @@ demangle_function_name (work, mangled, declp, scan)
 	    }
 	}
     }
+
+  /* If a function name was obtained but it's not valid, we were not
+     successful.  */
+  if (LEN_STRING (declp) == 1 && declp->b[0] == '.')
+    return 0;
+  else
+    return 1;
 }
 
 /* a mini string-handling package */
 
 static void
-string_need (s, n)
-     string *s;
-     int n;
+string_need (string *s, int n)
 {
   int tem;
 
@@ -4825,7 +4623,7 @@ string_need (s, n)
 	{
 	  n = 32;
 	}
-      s->p = s->b = xmalloc ("demangle.sn.1", n);
+      s->p = s->b = XNEWVEC (char, n);
       s->e = s->b + n;
     }
   else if (s->e - s->p < n)
@@ -4833,15 +4631,14 @@ string_need (s, n)
       tem = s->p - s->b;
       n += tem;
       n *= 2;
-      s->b = xrealloc ("demangle.sn.2", s->b, n);
+      s->b = XRESIZEVEC (char, s->b, n);
       s->p = s->b + tem;
       s->e = s->b + n;
     }
 }
 
 static void
-string_delete (s)
-     string *s;
+string_delete (string *s)
 {
   if (s->b != NULL)
     {
@@ -4851,15 +4648,13 @@ string_delete (s)
 }
 
 static void
-string_init (s)
-     string *s;
+string_init (string *s)
 {
   s->b = s->p = s->e = NULL;
 }
 
 static void
-string_clear (s)
-     string *s;
+string_clear (string *s)
 {
   s->p = s->b;
 }
@@ -4867,8 +4662,7 @@ string_clear (s)
 #if 0
 
 static int
-string_empty (s)
-     string *s;
+string_empty (string *s)
 {
   return (s->b == s->p);
 }
@@ -4876,9 +4670,7 @@ string_empty (s)
 #endif
 
 static void
-string_append (p, s)
-     string *p;
-     const char *s;
+string_append (string *p, const char *s)
 {
   int n;
   if (s == NULL || *s == '\0')
@@ -4890,8 +4682,7 @@ string_append (p, s)
 }
 
 static void
-string_appends (p, s)
-     string *p, *s;
+string_appends (string *p, string *s)
 {
   int n;
 
@@ -4905,10 +4696,7 @@ string_appends (p, s)
 }
 
 static void
-string_appendn (p, s, n)
-     string *p;
-     const char *s;
-     int n;
+string_appendn (string *p, const char *s, int n)
 {
   if (n != 0)
     {
@@ -4919,9 +4707,7 @@ string_appendn (p, s, n)
 }
 
 static void
-string_prepend (p, s)
-     string *p;
-     const char *s;
+string_prepend (string *p, const char *s)
 {
   if (s != NULL && *s != '\0')
     {
@@ -4930,8 +4716,7 @@ string_prepend (p, s)
 }
 
 static void
-string_prepends (p, s)
-     string *p, *s;
+string_prepends (string *p, string *s)
 {
   if (s->b != s->p)
     {
@@ -4940,10 +4725,7 @@ string_prepends (p, s)
 }
 
 static void
-string_prependn (p, s, n)
-     string *p;
-     const char *s;
-     int n;
+string_prependn (string *p, const char *s, int n)
 {
   char *q;
 
@@ -4960,345 +4742,9 @@ string_prependn (p, s, n)
 }
 
 static void
-string_append_template_idx (s, idx)
-     string *s;
-     int idx;
+string_append_template_idx (string *s, int idx)
 {
   char buf[INTBUF_SIZE + 1 /* 'T' */];
   sprintf(buf, "T%d", idx);
   string_append (s, buf);
 }
-
-/* To generate a standalone demangler program for testing purposes,
-   just compile and link this file with -DMAIN and libiberty.a.  When
-   run, it demangles each command line arg, or each stdin string, and
-   prints the result on stdout.  */
-
-#ifdef MAIN
-
-#include "getopt.h"
-
-static const char *program_name;
-static const char *program_version = VERSION;
-static int flags = DMGL_PARAMS | DMGL_ANSI | DMGL_VERBOSE;
-
-static void demangle_it PARAMS ((char *));
-static void usage PARAMS ((FILE *, int)) ATTRIBUTE_NORETURN;
-static void fatal PARAMS ((const char *)) ATTRIBUTE_NORETURN;
-static void print_demangler_list PARAMS ((FILE *));
-
-static void
-demangle_it (mangled_name)
-     char *mangled_name;
-{
-  char *result;
-
-  /* For command line args, also try to demangle type encodings.  */
-  result = cplus_demangle (mangled_name, flags | DMGL_TYPES);
-  if (result == NULL)
-    {
-      printf ("%s\n", mangled_name);
-    }
-  else
-    {
-      printf ("%s\n", result);
-      free (result);
-    }
-}
-
-static void 
-print_demangler_list (stream)
-     FILE *stream;
-{
-  const struct demangler_engine *demangler; 
-
-  fprintf (stream, "{%s", libiberty_demanglers->demangling_style_name);
-  
-  for (demangler = libiberty_demanglers + 1;
-       demangler->demangling_style != unknown_demangling;
-       ++demangler)
-    fprintf (stream, ",%s", demangler->demangling_style_name);
-
-  fprintf (stream, "}");
-}
-
-static void
-usage (stream, status)
-     FILE *stream;
-     int status;
-{
-  fprintf (stream, "\
-Usage: %s [-_] [-n] [--strip-underscores] [--no-strip-underscores] \n",
-	   program_name);
-
-  fprintf (stream, "\
-       [-s ");
-  print_demangler_list (stream);
-  fprintf (stream, "]\n");
-
-  fprintf (stream, "\
-       [--format ");
-  print_demangler_list (stream);
-  fprintf (stream, "]\n");
-
-  fprintf (stream, "\
-       [--help] [--version] [arg...]\n");
-  exit (status);
-}
-
-#define MBUF_SIZE 32767
-char mbuffer[MBUF_SIZE];
-
-/* Defined in the automatically-generated underscore.c.  */
-extern int prepends_underscore;
-
-int strip_underscore = 0;
-
-static const struct option long_options[] = {
-  {"strip-underscores", no_argument, 0, '_'},
-  {"format", required_argument, 0, 's'},
-  {"help", no_argument, 0, 'h'},
-  {"no-strip-underscores", no_argument, 0, 'n'},
-  {"version", no_argument, 0, 'v'},
-  {0, no_argument, 0, 0}
-};
-
-/* More 'friendly' abort that prints the line and file.
-   config.h can #define abort fancy_abort if you like that sort of thing.  */
-
-void
-fancy_abort ()
-{
-  fatal ("Internal gcc abort.");
-}
-
-
-static const char *
-standard_symbol_characters PARAMS ((void));
-
-static const char *
-hp_symbol_characters PARAMS ((void));
-
-static const char *
-gnu_v3_symbol_characters PARAMS ((void));
-
-/* Return the string of non-alnum characters that may occur 
-   as a valid symbol component, in the standard assembler symbol
-   syntax.  */
-
-static const char *
-standard_symbol_characters ()
-{
-  return "_$.";
-}
-
-
-/* Return the string of non-alnum characters that may occur
-   as a valid symbol name component in an HP object file.
-
-   Note that, since HP's compiler generates object code straight from
-   C++ source, without going through an assembler, its mangled
-   identifiers can use all sorts of characters that no assembler would
-   tolerate, so the alphabet this function creates is a little odd.
-   Here are some sample mangled identifiers offered by HP:
-
-	typeid*__XT24AddressIndExpClassMember_
-	[Vftptr]key:__dt__32OrdinaryCompareIndExpClassMemberFv
-	__ct__Q2_9Elf64_Dyn18{unnamed.union.#1}Fv
-
-   This still seems really weird to me, since nowhere else in this
-   file is there anything to recognize curly brackets, parens, etc.
-   I've talked with Srikanth <srikanth@cup.hp.com>, and he assures me
-   this is right, but I still strongly suspect that there's a
-   misunderstanding here.
-
-   If we decide it's better for c++filt to use HP's assembler syntax
-   to scrape identifiers out of its input, here's the definition of
-   the symbol name syntax from the HP assembler manual:
-
-       Symbols are composed of uppercase and lowercase letters, decimal
-       digits, dollar symbol, period (.), ampersand (&), pound sign(#) and
-       underscore (_). A symbol can begin with a letter, digit underscore or
-       dollar sign. If a symbol begins with a digit, it must contain a
-       non-digit character.
-
-   So have fun.  */
-static const char *
-hp_symbol_characters ()
-{
-  return "_$.<>#,*&[]:(){}";
-}
-
-
-/* Return the string of non-alnum characters that may occur 
-   as a valid symbol component in the GNU C++ V3 ABI mangling
-   scheme.  */
-
-static const char *
-gnu_v3_symbol_characters ()
-{
-  return "_$.";
-}
-
-
-extern int main PARAMS ((int, char **));
-
-int
-main (argc, argv)
-     int argc;
-     char **argv;
-{
-  char *result;
-  int c;
-  const char *valid_symbols;
-  enum demangling_styles style = auto_demangling;
-
-  program_name = argv[0];
-
-  strip_underscore = prepends_underscore;
-
-  while ((c = getopt_long (argc, argv, "_ns:", long_options, (int *) 0)) != EOF)
-    {
-      switch (c)
-	{
-	case '?':
-	  usage (stderr, 1);
-	  break;
-	case 'h':
-	  usage (stdout, 0);
-	case 'n':
-	  strip_underscore = 0;
-	  break;
-	case 'v':
-	  printf ("GNU %s (C++ demangler), version %s\n", program_name, program_version);
-	  return (0);
-	case '_':
-	  strip_underscore = 1;
-	  break;
-	case 's':
-	  {
-	    style = cplus_demangle_name_to_style (optarg);
-	    if (style == unknown_demangling)
-	      {
-		fprintf (stderr, "%s: unknown demangling style `%s'\n",
-			 program_name, optarg);
-		return (1);
-	      }
-	    else
-	      cplus_demangle_set_style (style);
-	  }
-	  break;
-	}
-    }
-
-  if (optind < argc)
-    {
-      for ( ; optind < argc; optind++)
-	{
-	  demangle_it (argv[optind]);
-	}
-    }
-  else
-    {
-      switch (current_demangling_style)
-	{
-	case gnu_demangling:
-	case lucid_demangling:
-	case arm_demangling:
-	case java_demangling:
-	case edg_demangling:
-	case gnat_demangling:
-	case auto_demangling:
-	  valid_symbols = standard_symbol_characters ();
-	  break;
-	case hp_demangling:
-	  valid_symbols = hp_symbol_characters ();
-	  break;
-	case gnu_v3_demangling:
-	  valid_symbols = gnu_v3_symbol_characters ();
-	  break;
-	default:
-	  /* Folks should explicitly indicate the appropriate alphabet for
-	     each demangling.  Providing a default would allow the
-	     question to go unconsidered.  */
-	  abort ();
-	}
-
-      for (;;)
-	{
-	  int i = 0;
-	  c = getchar ();
-	  /* Try to read a label.  */
-	  while (c != EOF && (ISALNUM (c) || strchr (valid_symbols, c)))
-	    {
-	      if (i >= MBUF_SIZE-1)
-		break;
-	      mbuffer[i++] = c;
-	      c = getchar ();
-	    }
-	  if (i > 0)
-	    {
-	      int skip_first = 0;
-
-	      if (mbuffer[0] == '.' || mbuffer[0] == '$')
-		++skip_first;
-	      if (strip_underscore && mbuffer[skip_first] == '_')
-		++skip_first;
-
-	      if (skip_first > i)
-		skip_first = i;
-
-	      mbuffer[i] = 0;
-	      flags |= (int) style;
-	      result = cplus_demangle (mbuffer + skip_first, flags);
-	      if (result)
-		{
-		  if (mbuffer[0] == '.')
-		    putc ('.', stdout);
-		  fputs (result, stdout);
-		  free (result);
-		}
-	      else
-		fputs (mbuffer, stdout);
-
-	      fflush (stdout);
-	    }
-	  if (c == EOF)
-	    break;
-	  putchar (c);
-	  fflush (stdout);
-	}
-    }
-
-  return (0);
-}
-
-static void
-fatal (str)
-     const char *str;
-{
-  fprintf (stderr, "%s: %s\n", program_name, str);
-  exit (1);
-}
-
-PTR
-xmalloc (size)
-  size_t size;
-{
-  register PTR value = (PTR) malloc (size);
-  if (value == 0)
-    fatal ("virtual memory exhausted");
-  return value;
-}
-
-PTR
-xrealloc (ptr, size)
-  PTR ptr;
-  size_t size;
-{
-  register PTR value = (PTR) realloc (ptr, size);
-  if (value == 0)
-    fatal ("virtual memory exhausted");
-  return value;
-}
-#endif	/* main */

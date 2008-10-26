@@ -75,7 +75,7 @@ extern Long  VG_(atoll36) ( Char* str ); // base 36
 #define VG_STREQ(s1,s2) ( (s1 != NULL && s2 != NULL \
                            && VG_(strcmp)((s1),(s2))==0) ? True : False )
 
-extern Int   VG_(strlen)         ( const Char* str );
+extern SizeT VG_(strlen)         ( const Char* str );
 extern Char* VG_(strcat)         ( Char* dest, const Char* src );
 extern Char* VG_(strncat)        ( Char* dest, const Char* src, SizeT n );
 extern Char* VG_(strpbrk)        ( const Char* s, const Char* accpt );
@@ -86,6 +86,8 @@ extern Int   VG_(strncmp)        ( const Char* s1, const Char* s2, SizeT nmax );
 extern Char* VG_(strstr)         ( const Char* haystack, Char* needle );
 extern Char* VG_(strchr)         ( const Char* s, Char c );
 extern Char* VG_(strrchr)        ( const Char* s, Char c );
+extern SizeT VG_(strspn)         ( const Char* s, const Char* accept );
+extern SizeT VG_(strcspn)        ( const Char* s, const char* reject );
 
 /* Like strcmp() and strncmp(), but stop comparing at any whitespace. */
 extern Int   VG_(strcmp_ws)      ( const Char* s1, const Char* s2 );

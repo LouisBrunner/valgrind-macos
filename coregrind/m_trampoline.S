@@ -162,7 +162,7 @@ VG_(amd64_linux_REDIR_FOR_vgettimeofday):
         syscall
         ret
 .LfnE2:
-.size VG_(amd64_linux_REDIR_FOR_vgettimeofday), .-LfnB2
+.size VG_(amd64_linux_REDIR_FOR_vgettimeofday), .-.LfnB2
 	
 .global VG_(amd64_linux_REDIR_FOR_vtime)
 .type   VG_(amd64_linux_REDIR_FOR_vtime), @function
@@ -172,7 +172,7 @@ VG_(amd64_linux_REDIR_FOR_vtime):
         syscall
         ret
 .LfnE3:
-.size VG_(amd64_linux_REDIR_FOR_vtime), .-LfnB3
+.size VG_(amd64_linux_REDIR_FOR_vtime), .-.LfnB3
 
 /* A CIE for the above two functions, followed by their FDEs */
 	.section .eh_frame,"a",@progbits

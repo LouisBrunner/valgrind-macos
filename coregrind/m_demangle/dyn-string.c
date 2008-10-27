@@ -28,25 +28,34 @@ along with GNU CC; see the file COPYING.  If not, write to
 the Free Software Foundation, 51 Franklin Street - Fifth Floor,
 Boston, MA 02110-1301, USA.  */
 
-/////////////////////////////
-#include <string.h>
-#include <stdlib.h>
-/////////////////////////////
+#if 0 /* in valgrind */
 #ifdef HAVE_CONFIG_H
 #include "config.h"
 #endif
+#endif /* ! in valgrind */
 
+#if 0 /* in valgrind */
 #include <stdio.h>
+#endif /* ! in valgrind */
 
+#if 0 /* in valgrind */
 #ifdef HAVE_STRING_H
 #include <string.h>
 #endif
+#endif /* ! in valgrind */
 
+#if 0 /* in valgrind */
 #ifdef HAVE_STDLIB_H
 #include <stdlib.h>
 #endif
+#endif /* ! in valgrind */
 
+#if 0 /* in valgrind */
 #include "libiberty.h"
+#endif /* ! in valgrind */
+
+#include "vg_libciface.h"
+
 #include "dyn-string.h"
 
 /* Performs in-place initialization of a dyn_string struct.  This

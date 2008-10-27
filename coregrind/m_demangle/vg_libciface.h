@@ -74,6 +74,11 @@
 #define xstrdup(_str) \
    VG_(arena_strdup)(VG_AR_DEMANGLE,"m_demangle.xstrdup",(_str))
 
+/* Required by safe-ctype.h */
+
+#undef EOF
+#define EOF -1
+
 /* Taken from libiberty.h: */
 
 #define ARRAY_SIZE(_arr) \

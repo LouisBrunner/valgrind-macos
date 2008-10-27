@@ -115,9 +115,15 @@ sets of characters:
 
 */
 
+#if 0 /* in valgrind */
 #include "ansidecl.h"
 #include <safe-ctype.h>
 #include <stdio.h>  /* for EOF */
+#endif /* ! in valgrind */
+
+#include "vg_libciface.h"
+
+#include "safe-ctype.h"
 
 #if EOF != -1
  #error "<safe-ctype.h> requires EOF == -1"

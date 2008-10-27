@@ -1555,7 +1555,7 @@ Word VTS__cmp_structural ( VTS* a, VTS* b );
 void VTS__show ( HChar* buf, Int nBuf, VTS* vts );
 
 /* Debugging only.  Return vts[index], so to speak. */
-ULong VTS__indexAt_SLOW ( VTS* vts, Thr* index );
+ULong VTS__indexAt_SLOW ( VTS* vts, Thr* idx );
 
 #endif /* ! __HB_VTS_H */
 

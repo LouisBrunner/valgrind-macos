@@ -4189,14 +4189,14 @@ register_Btype (struct work_stuff *work)
 
 static void
 remember_Btype (struct work_stuff *work, const char *start,
-                int len, int index)
+                int len, int indx)
 {
   char *tem;
 
   tem = XNEWVEC (char, len + 1);
   memcpy (tem, start, len);
   tem[len] = '\0';
-  work -> btypevec[index] = tem;
+  work -> btypevec[indx] = tem;
 }
 
 /* Lose all the info related to B and K type codes. */

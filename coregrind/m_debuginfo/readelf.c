@@ -951,8 +951,8 @@ static Bool contained_within ( Addr outer, UWord n_outer,
    return False;
 }
 
-static void* INDEX_BIS ( void* base, Word index, Word scale ) {
-   return (void*)( ((UChar*)base) + index * scale );
+static void* INDEX_BIS ( void* base, Word idx, Word scale ) {
+   return (void*)( ((UChar*)base) + idx * scale );
 }
 
 static Addr round_Addr_upwards ( Addr a, UInt align ) 

@@ -325,6 +325,7 @@ static Addr aspacem_vStart = 0;
 /* ------ end of STATE for the address-space manager ------ */
 
 /* ------ Forwards decls ------ */
+inline
 static Int  find_nsegment_idx ( Addr a );
 
 static void parse_procselfmaps (
@@ -1100,8 +1101,19 @@ void ML_(am_do_sanity_check)( void )
 /*-----------------------------------------------------------------*/
 
 /* Binary search the interval array for a given address.  Since the
-   array covers the entire address space the search cannot fail. */
-static Int find_nsegment_idx ( Addr a )
+   array covers the entire address space the search cannot fail.  The
+   _WRK function does the real work.  Its caller (just below) caches
+   the results thereof, to save time.  With N_CACHE of 63 we get a hit
+   rate exceeding 90% when running OpenOffice.
+
+   Re ">> 12", it doesn't matter that the page size of some targets
+   might be different from 12.  Really "(a >> 12) % N_CACHE" is merely
+   a hash function, and the actual cache entry is always validated
+   correctly against the selected cache entry before use.
+*/
+/* Don't call find_nsegment_idx_WRK; use find_nsegment_idx instead. */
+__attribute__((noinline))
+static Int find_nsegment_idx_WRK ( Addr a )
 {
    Addr a_mid_lo, a_mid_hi;
    Int  mid,
@@ -1124,6 +1136,52 @@ static Int find_nsegment_idx ( Addr a )
       return mid;
    }
 }
+
+inline static Int find_nsegment_idx ( Addr a )
+{
+#  define N_CACHE 63
+   static Addr cache_pageno[N_CACHE];
+   static Int  cache_segidx[N_CACHE];
+   static Bool cache_inited = False;
+
+   static UWord n_q = 0;
+   static UWord n_m = 0;
+
+   UWord ix;
+
+   if (LIKELY(cache_inited)) {
+      /* do nothing */
+   } else {
+      for (ix = 0; ix < N_CACHE; ix++) {
+         cache_pageno[ix] = 0;
+         cache_segidx[ix] = -1;
+      }
+      cache_inited = True;
+   }
+
+   ix = (a >> 12) % N_CACHE;
+
+   n_q++;
+   if (0 && 0 == (n_q & 0xFFFF))
+      VG_(debugLog)(0,"xxx","find_nsegment_idx: %lu %lu\n", n_q, n_m);
+
+   if ((a >> 12) == cache_pageno[ix]
+       && cache_segidx[ix] >= 0
+       && cache_segidx[ix] < nsegments_used
+       && nsegments[cache_segidx[ix]].start <= a
+       && a <= nsegments[cache_segidx[ix]].end) {
+      /* hit */
+      /* aspacem_assert( cache_segidx[ix] == find_nsegment_idx_WRK(a) ); */
+      return cache_segidx[ix];
+   }
+   /* miss */
+   n_m++;
+   cache_segidx[ix] = find_nsegment_idx_WRK(a);
+   cache_pageno[ix] = a >> 12;
+   return cache_segidx[ix];
+#  undef N_CACHE
+}
+
 
 
 /* Finds the segment containing 'a'.  Only returns file/anon/resvn

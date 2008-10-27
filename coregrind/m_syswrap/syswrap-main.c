@@ -30,6 +30,7 @@
 
 #include "libvex_guest_offsets.h"
 #include "pub_core_basics.h"
+#include "pub_core_aspacemgr.h"
 #include "pub_core_vki.h"
 #include "pub_core_vkiscnums.h"
 #include "pub_core_threadstate.h"
@@ -45,6 +46,7 @@
 #include "pub_core_options.h"
 #include "pub_core_signals.h"       // For VG_SIGVGKILL, VG_(poll_signals)
 #include "pub_core_syscall.h"
+#include "pub_core_machine.h"
 #include "pub_core_syswrap.h"
 
 #include "priv_types_n_macros.h"
@@ -81,6 +83,9 @@
 /* The main function is VG_(client_syscall).  The simulation calls it
    whenever a client thread wants to do a syscall.  The following is a
    sketch of what it does.
+
+   * Ensures the root thread's stack is suitably mapped.  Tedious and
+     arcane.  See big big comment in VG_(client_syscall).
 
    * First, it rounds up the syscall number and args (which is a
      platform dependent activity) and puts them in a struct ("args")
@@ -788,6 +793,93 @@ void VG_(client_syscall) ( ThreadId tid )
    vg_assert(VG_(is_running_thread)(tid));
 
    tst = VG_(get_ThreadState)(tid);
+
+   /* BEGIN ensure root thread's stack is suitably mapped */
+   /* In some rare circumstances, we may do the syscall without the
+      bottom page of the stack being mapped, because the stack pointer
+      was moved down just a few instructions before the syscall
+      instruction, and there have been no memory references since
+      then, that would cause a call to VG_(extend_stack) to have
+      happened.
+
+      In native execution that's OK: the kernel automagically extends
+      the stack's mapped area down to cover the stack pointer (or sp -
+      redzone, really).  In simulated normal execution that's OK too,
+      since any signals we get from accessing below the mapped area of
+      the (guest's) stack lead us to VG_(extend_stack), where we
+      simulate the kernel's stack extension logic.  But that leaves
+      the problem of entering a syscall with the SP unmapped.  Because
+      the kernel doesn't know that the segment immediately above SP is
+      supposed to be a grow-down segment, it causes the syscall to
+      fail, and thereby causes a divergence between native behaviour
+      (syscall succeeds) and simulated behaviour (syscall fails).
+
+      This is quite a rare failure mode.  It has only been seen
+      affecting calls to sys_readlink on amd64-linux, and even then it
+      requires a certain code sequence around the syscall to trigger
+      it.  Here is one:
+
+      extern int my_readlink ( const char* path );
+      asm(
+      ".text\n"
+      ".globl my_readlink\n"
+      "my_readlink:\n"
+      "\tsubq    $0x1008,%rsp\n"
+      "\tmovq    %rdi,%rdi\n"              // path is in rdi
+      "\tmovq    %rsp,%rsi\n"              // &buf[0] -> rsi
+      "\tmovl    $0x1000,%edx\n"           // sizeof(buf) in rdx
+      "\tmovl    $"__NR_READLINK",%eax\n"  // syscall number
+      "\tsyscall\n"
+      "\taddq    $0x1008,%rsp\n"
+      "\tret\n"
+      ".previous\n"
+      );
+
+      For more details, see bug #156404
+      (https://bugs.kde.org/show_bug.cgi?id=156404).
+
+      The fix is actually very simple.  We simply need to call
+      VG_(extend_stack) for this thread, handing it the lowest
+      possible valid address for stack (sp - redzone), to ensure the
+      pages all the way down to that address, are mapped.  Because
+      this is a potentially expensive and frequent operation, we
+      filter in two ways:
+
+      First, only the main thread (tid=1) has a growdown stack.  So
+      ignore all others.  It is conceivable, although highly unlikely,
+      that the main thread exits, and later another thread is
+      allocated tid=1, but that's harmless, I believe;
+      VG_(extend_stack) will do nothing when applied to a non-root
+      thread.
+
+      Secondly, first call VG_(am_find_nsegment) directly, to see if
+      the page holding (sp - redzone) is mapped correctly.  If so, do
+      nothing.  This is almost always the case.  VG_(extend_stack)
+      calls VG_(am_find_nsegment) twice, so this optimisation -- and
+      that's all it is -- more or less halves the number of calls to
+      VG_(am_find_nsegment) required.
+
+      TODO: the test "seg->kind == SkAnonC" is really inadequate,
+      because although it tests whether the segment is mapped
+      _somehow_, it doesn't check that it has the right permissions
+      (r,w, maybe x) ?  We could test that here, but it will also be
+      necessary to fix the corresponding test in VG_(extend_stack).
+
+      All this guff is of course Linux-specific.  Hence the ifdef.
+   */
+#  if defined(VGO_linux)
+   if (tid == 1/*ROOT THREAD*/) {
+      Addr     stackMin   = VG_(get_SP)(tid) - VG_STACK_REDZONE_SZB;
+      NSegment const* seg = VG_(am_find_nsegment)(stackMin);
+      if (seg && seg->kind == SkAnonC) {
+         /* stackMin is already mapped.  Nothing to do. */
+      } else {
+         (void)VG_(extend_stack)( stackMin,
+                                  tst->client_stack_szB );
+      }
+   }
+#  endif
+   /* END ensure root thread's stack is suitably mapped */
 
    /* First off, get the syscall args and number.  This is a
       platform-dependent action. */

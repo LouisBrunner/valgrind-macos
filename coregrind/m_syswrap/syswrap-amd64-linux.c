@@ -1229,7 +1229,7 @@ const SyscallTableEntry ML_(syscall_table)[] = {
    LINX_(__NR_delete_module,     sys_delete_module),  // 176 
    //   (__NR_get_kernel_syms,   sys_ni_syscall),     // 177 
    //   (__NR_query_module,      sys_ni_syscall),     // 178 
-   //LINX_(__NR_quotactl,          sys_quotactl),       // 179 
+   LINX_(__NR_quotactl,          sys_quotactl),       // 179 
 
    //   (__NR_nfsservctl,        sys_nfsservctl),     // 180 
    //   (__NR_getpmsg,           sys_ni_syscall),     // 181

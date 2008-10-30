@@ -563,15 +563,6 @@ static Bool main_process_cmd_line_options( UInt* client_auxv,
    if (VG_(clo_verbosity) < 0)
       VG_(clo_verbosity) = 0;
 
-   if (VG_(clo_db_attach) && VG_(clo_trace_children)) {
-      VG_(message)(Vg_UserMsg, "");
-      VG_(message)(Vg_UserMsg, 
-         "--db-attach=yes conflicts with --trace-children=yes");
-      VG_(message)(Vg_UserMsg, 
-         "Please choose one or the other, but not both.");
-      VG_(err_bad_option)("--db-attach=yes and --trace-children=yes");
-   }
-
    if (VG_(clo_gen_suppressions) > 0 && 
        !VG_(needs).core_errors && !VG_(needs).tool_errors) {
       VG_(message)(Vg_UserMsg, 

@@ -950,18 +950,6 @@ that can report errors, e.g. Memcheck, but not Cachegrind.</para>
 
       <para><varname>C Ret</varname> or <varname>c Ret</varname> causes
       Valgrind not to start a debugger, and not to ask again.</para>
-
-      <para><command>Note:</command> <option>--db-attach=yes</option>
-      conflicts with <option>--trace-children=yes</option>.  You can't
-      use them together.  Valgrind refuses to start up in this
-      situation.</para>
-
-      <para>May 2002: this is a historical relic which could be easily
-      fixed if it gets in your way.  Mail us and complain if this is a
-      problem for you.</para>
-      <para>Nov 2002: if you're sending output to a logfile or to a
-      network socket, I guess this option doesn't make any sense.
-      Caveat emptor.</para>
     </listitem>
   </varlistentry>
 

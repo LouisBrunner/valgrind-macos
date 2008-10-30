@@ -2241,6 +2241,7 @@ static void setup_post_syscall_table ( void )
       ADD(0, __NR_getpeername);
 #     endif
       ADD(0, __NR_getpid);
+      ADD(0, __NR_getpgrp);
       ADD(0, __NR_getppid);
       ADD(0, __NR_getresgid);
       ADD(0, __NR_getresuid);
@@ -2312,6 +2313,7 @@ static void setup_post_syscall_table ( void )
 #     endif
       ADD(0, __NR_set_tid_address);
       ADD(0, __NR_setitimer);
+      ADD(0, __NR_setpgid);
       ADD(0, __NR_setrlimit);
       ADD(0, __NR_setsid);
 #     if defined(__NR_setsockopt)

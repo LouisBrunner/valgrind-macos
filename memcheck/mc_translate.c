@@ -4174,10 +4174,13 @@ static void do_origins_Dirty ( MCEnv* mce, IRDirty* d )
          curr = gen_maxU32( mce, curr, here );
          toDo -= 4;
       }
-      if (toDo != 0)
-         VG_(printf)("Approx: do_origins_Dirty(R): missed %d bytes\n",
-                     (Int)toDo );
-      //tl_assert(toDo == 0); /* also need to handle 1,2-byte excess */
+      /* handle possible 16-bit excess */
+      while (toDo >= 2) {
+         here = gen_load_b( mce, 2, d->mAddr, d->mSize - toDo );
+         curr = gen_maxU32( mce, curr, here );
+         toDo -= 2;
+      }
+      tl_assert(toDo == 0); /* also need to handle 1-byte excess */
    }
 
    /* Whew!  So curr is a 32-bit B-value which should give an origin
@@ -4231,10 +4234,12 @@ static void do_origins_Dirty ( MCEnv* mce, IRDirty* d )
          gen_store_b( mce, 4, d->mAddr, d->mSize - toDo, curr );
          toDo -= 4;
       }
-      if (toDo != 0)
-         VG_(printf)("Approx: do_origins_Dirty(W): missed %d bytes\n",
-                     (Int)toDo );
-      //tl_assert(toDo == 0); /* also need to handle 1,2-byte excess */
+      /* handle possible 16-bit excess */
+      while (toDo >= 2) {
+         gen_store_b( mce, 2, d->mAddr, d->mSize - toDo, curr );
+         toDo -= 2;
+      }
+      tl_assert(toDo == 0); /* also need to handle 1-byte excess */
    }
 
 }

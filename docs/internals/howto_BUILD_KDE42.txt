@@ -1,0 +1,291 @@
+
+Building, running and Valgrinding KDE 4.2 svn from source
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+It is recommended to make a new user ("kde4", maybe) to do the
+building, and do all the following as that user.  This means it can't
+mess up any existing KDE sessions/settings.
+
+Prelims (note, needed for both building and running KDE4):
+
+# Change these as you like; but "-g -O" is known to be a good
+# speed vs debuginfo-accuracy tradeoff for Valgrind
+
+export CFLAGS="-g -O"
+export CXXFLAGS="-g -O"
+
+export KDEINST=$HOME/InstKdeSvn  ## change as you like
+export PATH=$KDEINST/bin:$PATH
+export LD_LIBRARY_PATH=$KDEINST/lib:$KDEINST/lib64:$LD_LIBRARY_PATH
+
+unset XDG_DATA_DIRS # to avoid seeing kde3 files from /usr
+unset XDG_CONFIG_DIRS
+
+export PKG_CONFIG_PATH=$KDEINST/lib/pkgconfig:$KDEINST/lib64/pkgconfig:$PKG_CONFIG_PATH
+# else kdelibs' config detection of strigi screws up
+
+Check these carefully before proceeding.
+
+env | grep FLAGS
+env | grep PATH
+env | grep XDG
+env | grep KDEINST
+
+The final installation will be placed in the directory $KDEINST.
+
+As a general comment, it is particularly important to read the output
+of the cmake runs (below), as these tell you of missing libraries that
+may screw up the build.  After a cmake run, you may want to install
+some supporting libs (through yast, etc) before re-running cmake.  The
+"rm -f CMakeCache.txt" ensures cmakes starts afresh.
+
+
+Getting the sources
+~~~~~~~~~~~~~~~~~~~
+
+  # note also that this assumes that the KDE 4.2 sources are
+  # acquired from the KDE trunk; that is, this is happening
+  # prior to the 4.2 release.
+
+  # note this takes ages, unless you are fortunate enough to have
+  # a gazigabit-per-second network connection
+  # checking out merely "trunk" is a really bad idea
+  # due to the enormous amount of unnecessary stuff fetched.
+  #
+  svn co svn://anonsvn.kde.org/home/kde/trunk/kdesupport trunk_kdesupport
+  svn co svn://anonsvn.kde.org/home/kde/trunk/KDE trunk_KDE
+
+  # This alone soaks up about 2.5GB of disk space.
+  # You'll also need to snarf a copy of qt-x11-opensource-src-4.4.3.tar.bz2
+  # (md5 = 00e00c6324d342a7b0d8653112b4f08c)
+
+
+Building Qt
+~~~~~~~~~~~
+
+First build qt-4.4.3 with QtDBus support and some other kind of
+support (can't remember what.  jpeg?).  These are both added by
+default provided the relevant packages are installed.  Check the Qt
+configure output to be sure.
+
+  bzip2 -dc qt-x11-opensource-src-4.4.3.tar.bz2 | tar xvf -
+  cd qt-x11-opensource-src-4.4.3
+
+  emacs mkspecs/common/g++.conf
+  # change QMAKE_CFLAGS_RELEASE and QMAKE_CFLAGS_DEBUG both to be -g -O
+
+  # optionally, in src/corelib/tools/qvector.h, for the defns of
+  # QVectorData and QVectorTypedData, change
+  #if defined(QT_ARCH_SPARC) && defined(Q_CC_GNU) && defined(__LP64__) \
+      && defined(QT_BOOTSTRAPPED)
+  # to "if 1 || defined ..."
+  # twice (else get strange memcheck errors with QVector on ppc.  Not
+  # sure if this is a qt bug (possibly), a gcc bug (unlikely) or a
+  # valgrind bug (unlikely)).  I don't think this is necessary on x86
+  # or x86_64.
+  
+  echo yes | ./configure -platform linux-g++-64 -prefix $KDEINST
+  # NB: change that to linux-g++-32 for a 32 bit build
+
+  # check configure output before proceeding, to ensure that
+  # qt will built with support for the following:
+  # 
+  # QtDBus module ....... yes (run-time)
+  # GIF support ......... plugin
+  # TIFF support ........ plugin (system)
+  # JPEG support ........ plugin (system)
+  # PNG support ......... yes (system)
+  # MNG support ......... plugin (system)
+  # zlib support ........ system
+  # OpenSSL support ..... yes (run-time)
+  #
+  # If some of these are missing ("... no"), then it means you need
+  # to install the relevant supporting libs and redo the qt configure
+  # (make confclean, then redo configure)
+
+  make -j 2
+  make install
+  # this takes approx 1 hour on a dual processor 2.5GHz PPC970
+
+  # check that this installed correctly
+  # - qmake is in $KDEINST/bin and is linked against stuff in
+  #   $KDEINST/lib
+  # - ditto designer and linguist
+  # - check qmake, designer, linguist actually start up/run
+
+
+Building KDE
+~~~~~~~~~~~~
+
+The basic deal is
+
+for each package, use a separate source and build dir cd to the build
+dir (can be anything)
+
+then
+
+ # note that LIB_SUFFIX must be "" for 32 bit builds and "64" for 64 bit builds
+ rm -f CMakeCache.txt && cmake /path/to/source/tree/for/this/package -DCMAKE_INSTALL_PREFIX=$KDEINST -DCMAKE_BUILD_TYPE=debugfull -DLIB_SUFFIX=64 -DQT_QMAKE_EXECUTABLE=$KDEINST/bin/qmake
+
+ # check output, particularly that it has the right Qt
+ make 
+ # make -j 2 quite often screws up
+ make install
+
+Packages should be built in the order: 
+   kdesupport
+   kdelibs
+   kdepimlibs
+   kdebase-runtime
+   kdebase-workspace
+   kdebase
+
+This gives a working basic KDE.  Then build the rest in any order, perhaps:
+
+   kdegraphics
+   kdeadmin
+   kdeutils
+   kdenetwork
+   kdepim
+
+So the actual stuff to do is:
+
+   cd ~
+   mkdir build
+
+   cd build
+   mkdir kdesupport
+   cd kdesupport
+   rm -f CMakeCache.txt && cmake ~/trunk_kdesupport \
+      -DCMAKE_INSTALL_PREFIX=$KDEINST -DCMAKE_BUILD_TYPE=debugfull \
+      -DLIB_SUFFIX=64 -DQT_QMAKE_EXECUTABLE=$KDEINST/bin/qmake
+   make -j 2
+   make install
+
+   cd ~/build
+   mkdir kdelibs
+   cd kdelibs
+   rm -f CMakeCache.txt && cmake ~/trunk_KDE/kdelibs \
+      -DCMAKE_INSTALL_PREFIX=$KDEINST -DCMAKE_BUILD_TYPE=debugfull \
+      -DLIB_SUFFIX=64 -DQT_QMAKE_EXECUTABLE=$KDEINST/bin/qmake
+   make -j 2
+   make install
+
+   cd ~/build
+   mkdir kdepimlibs
+   cd kdepimlibs
+   rm -f CMakeCache.txt && cmake ~/trunk_KDE/kdepimlibs \
+      -DCMAKE_INSTALL_PREFIX=$KDEINST -DCMAKE_BUILD_TYPE=debugfull \
+      -DLIB_SUFFIX=64 -DQT_QMAKE_EXECUTABLE=$KDEINST/bin/qmake
+   make -j 2
+   make install
+
+   cd ~/build
+   mkdir kdebase-runtime
+   cd kdebase-runtime
+   rm -f CMakeCache.txt && cmake ~/trunk_KDE/kdebase/runtime \
+      -DCMAKE_INSTALL_PREFIX=$KDEINST -DCMAKE_BUILD_TYPE=debugfull \
+      -DLIB_SUFFIX=64 -DQT_QMAKE_EXECUTABLE=$KDEINST/bin/qmake
+   make -j 2
+   make install
+
+   cd ~/build
+   mkdir kdebase-workspace
+   cd kdebase-workspace
+   rm -f CMakeCache.txt && cmake ~/trunk_KDE/kdebase/workspace \
+         -DCMAKE_INSTALL_PREFIX=$KDEINST -DCMAKE_BUILD_TYPE=debugfull \
+         -DLIB_SUFFIX=64 -DQT_QMAKE_EXECUTABLE=$KDEINST/bin/qmake
+   make -j 2
+   make install
+
+   cd ~/build
+   mkdir kdebase-apps
+   cd kdebase-apps
+   rm -f CMakeCache.txt && cmake ~/trunk_KDE/kdebase/apps \
+      -DCMAKE_INSTALL_PREFIX=$KDEINST -DCMAKE_BUILD_TYPE=debugfull \
+      -DLIB_SUFFIX=64 -DQT_QMAKE_EXECUTABLE=$KDEINST/bin/qmake
+   make -j 2
+   make install
+
+   cd ~/build
+   mkdir kdegraphics
+   cd kdegraphics
+   rm -f CMakeCache.txt && cmake ~/trunk_KDE/kdegraphics \
+      -DCMAKE_INSTALL_PREFIX=$KDEINST -DCMAKE_BUILD_TYPE=debugfull \
+      -DLIB_SUFFIX=64 -DQT_QMAKE_EXECUTABLE=$KDEINST/bin/qmake
+   make -j 2
+   make install
+
+   cd ~/build
+   mkdir kdeadmin
+   cd kdeadmin
+   rm -f CMakeCache.txt && cmake ~/trunk_KDE/kdeadmin \
+      -DCMAKE_INSTALL_PREFIX=$KDEINST -DCMAKE_BUILD_TYPE=debugfull \
+      -DLIB_SUFFIX=64 -DQT_QMAKE_EXECUTABLE=$KDEINST/bin/qmake
+   make -j 2
+   make install
+
+   cd ~/build
+   mkdir kdeutils
+   cd kdeutils
+   rm -f CMakeCache.txt && cmake ~/trunk_KDE/kdeutils \
+      -DCMAKE_INSTALL_PREFIX=$KDEINST -DCMAKE_BUILD_TYPE=debugfull \
+      -DLIB_SUFFIX=64 -DQT_QMAKE_EXECUTABLE=$KDEINST/bin/qmake
+   make -j 2
+   make install
+
+   cd ~/build
+   mkdir kdenetwork
+   cd kdenetwork
+   rm -f CMakeCache.txt && cmake ~/trunk_KDE/kdenetwork \
+      -DCMAKE_INSTALL_PREFIX=$KDEINST -DCMAKE_BUILD_TYPE=debugfull \
+      -DLIB_SUFFIX=64 -DQT_QMAKE_EXECUTABLE=$KDEINST/bin/qmake
+   make -j 2
+   make install
+
+   cd ~/build
+   mkdir kdepim
+   cd kdepim
+   rm -f CMakeCache.txt && cmake ~/trunk_KDE/kdepim \
+      -DCMAKE_INSTALL_PREFIX=$KDEINST -DCMAKE_BUILD_TYPE=debugfull \
+      -DLIB_SUFFIX=64 -DQT_QMAKE_EXECUTABLE=$KDEINST/bin/qmake
+   make -j 2
+   make install
+
+   cd ~/build
+   mkdir kdeartwork
+   cd kdeartwork
+   rm -f CMakeCache.txt && cmake ~/trunk_KDE/kdeartwork \
+      -DCMAKE_INSTALL_PREFIX=$KDEINST -DCMAKE_BUILD_TYPE=debugfull \
+      -DLIB_SUFFIX=64 -DQT_QMAKE_EXECUTABLE=$KDEINST/bin/qmake
+   make -j 2
+   make install
+
+   cd ~/build
+   mkdir kdemultimedia
+   cd kdemultimedia
+   rm -f CMakeCache.txt && cmake ~/trunk_KDE/kdemultimedia \
+      -DCMAKE_INSTALL_PREFIX=$KDEINST -DCMAKE_BUILD_TYPE=debugfull \
+      -DLIB_SUFFIX=64 -DQT_QMAKE_EXECUTABLE=$KDEINST/bin/qmake
+   make -j 2
+   make install
+
+
+   # still todo: koffice, amarok ?
+
+
+Running KDE
+~~~~~~~~~~~
+
+Make sure dbus is running (pstree -p <myusername> | grep dbus)
+
+If not running:
+
+   eval `dbus-launch --auto-syntax`
+
+probably best to ensure there's only one instance, to avoid confusion
+
+You need PATH, LD_LIBRARY_PATH, XDG_DATA_DIRS and XDG_CONFIG_DIRS set as above
+
+Then run  startkde  in an xterm on the new X server
+

@@ -4,6 +4,7 @@ EXTRA_DIST = \
 	BIG_APP_NOTES.txt \
 	darwin-notes.txt darwin-syscalls.txt \
 	directory-structure.txt \
+	howto_BUILD_KDE42.txt \
 	howto_oprofile.txt \
 	m_replacemalloc.txt \
 	m_syswrap.txt module-structure.txt notes.txt porting-HOWTO.txt \

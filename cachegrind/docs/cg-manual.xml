@@ -807,16 +807,12 @@ interesting line of C code is translated into multiple
 instructions.</para>
 
 <para>To do this, you just need to assemble your
-<computeroutput>.s</computeroutput> files with assembler-level
-debug information.  gcc doesn't do this, but you can use the GNU
-assembler with the <computeroutput>--gstabs</computeroutput>
-option to generate object files with this information, eg:</para>
-
-<programlisting><![CDATA[
-as --gstabs foo.s]]></programlisting>
-
-<para>You can then profile and annotate source files in the same
-way as for C/C++ programs.</para>
+<computeroutput>.s</computeroutput> files with assembly-level debug
+information.  You can use <computeroutput>gcc
+-S</computeroutput> to compile C/C++ programs to assembly code, and then
+<computeroutput>gcc -g</computeroutput> on the assembly code files to
+achieve this.  You can then profile and annotate the assembly code source
+files in the same way as C/C++ source files.</para>
 
 </sect2>
 

@@ -21,6 +21,8 @@ EXTRA_DIST = $(noinst_SCRIPTS) \
 	bug137714-amd64.vgtest bug137714-amd64.stdout.exp \
 	bug137714-amd64.stderr.exp \
 	bug132918.vgtest bug132918.stderr.exp bug132918.stdout.exp \
+	bug156404-amd64.vgtest bug156404-amd64.stdout.exp \
+	bug156404-amd64.stderr.exp \
 	clc.vgtest clc.stdout.exp clc.stderr.exp \
 	faultstatus.disabled faultstatus.stderr.exp \
 	fcmovnu.vgtest fcmovnu.stderr.exp fcmovnu.stdout.exp \
@@ -47,6 +49,7 @@ EXTRA_DIST = $(noinst_SCRIPTS) \
 
 check_PROGRAMS = \
 	bug127521-64 bug132813-amd64 bug137714-amd64 bug132918 \
+	bug156404-amd64 \
 	clc \
 	faultstatus fcmovnu fxtract $(INSN_TESTS) looper jrcxz \
 	rcl-amd64 \

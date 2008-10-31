@@ -13643,6 +13643,9 @@ DisResult disInstr_X86_WRK (
 
    /* ------------------------ (Grp1 extensions) ---------- */
 
+   case 0x82: /* Grp1 Ib,Eb too.  Apparently this is the same as 
+                 case 0x80, but only in 32-bit mode. */
+      /* fallthru */
    case 0x80: /* Grp1 Ib,Eb */
       modrm = getIByte(delta);
       am_sz = lengthAMode(delta);

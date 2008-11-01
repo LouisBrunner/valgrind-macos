@@ -128,7 +128,8 @@ static void copyout ( char* buf, int nbuf )
       if (buf[i] == '\n') {
          fprintf(stdout, "\n(%d) ", conn_count);
       } else {
-         fwrite(&buf[i], 1, 1, stdout);
+         __attribute__((unused)) size_t ignored 
+            = fwrite(&buf[i], 1, 1, stdout);
       }
    }
    fflush(stdout);

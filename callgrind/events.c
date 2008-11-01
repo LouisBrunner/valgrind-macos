@@ -180,7 +180,7 @@ Int CLG_(sprint_eventset)(Char* buf, EventSet* es)
 
   for(i=0; i< es->size; i++) {
     if (pos>0) buf[pos++] = ' ';
-    pos += VG_(sprintf)(buf + pos, es->e[i].type->name);
+    pos += VG_(sprintf)(buf + pos, "%s", es->e[i].type->name);
   }
   buf[pos] = 0;
 
@@ -538,7 +538,7 @@ Int CLG_(sprint_eventmapping)(Char* buf, EventMapping* em)
 
   for(i=0; i< em->size; i++) {
     if (pos>0) buf[pos++] = ' ';
-    pos += VG_(sprintf)(buf + pos, em->set->e[em->index[i]].type->name);
+    pos += VG_(sprintf)(buf + pos, "%s", em->set->e[em->index[i]].type->name);
   }
   buf[pos] = 0;
 

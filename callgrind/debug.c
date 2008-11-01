@@ -41,7 +41,7 @@ static void print_indent(int s)
     /* max of 40 spaces */
     char sp[] = "                                        ";
     if (s>40) s=40;
-    VG_(printf)(sp+40-s);
+    VG_(printf)("%s", sp+40-s);
 }
 
 void CLG_(print_bb)(int s, BB* bb)
@@ -168,7 +168,7 @@ void CLG_(print_eventset)(int s, EventSet* es)
 	if (es->e[i-1].nextTop == i)
 	  VG_(printf)("| ");
       }
-      VG_(printf)(es->e[i].type->name);
+      VG_(printf)("%s", es->e[i].type->name);
     }
   }
   VG_(printf)("\n");

@@ -279,7 +279,7 @@ static void print_config_node(int s, config_node* node)
     char sp[] = "                                        ";
 
     if (s>40) s=40;
-    VG_(printf)(sp+40-s);
+    VG_(printf)("%s", sp+40-s);
     VG_(printf)("'%s'/%d\n", node->name, node->length);
   }
   for(i=0;i<NODE_DEGREE;i++) {

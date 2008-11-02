@@ -10,102 +10,201 @@ WF      = waiting for feedback from bug reporter
 PRI: 33  = fix this for 3.3.1
      Vfd = fix has been verified on 3.3.X branch
 
+***  definitely fix
+###  merge fix to 3.3 branch
+???  marginal
+NNN  won't fix
+Vfd  fix has been verified on 3.3.X branch
+Fxd  fixed
 
----------- Bugs reported after (in) 3.3.0 --------------------------
-
-*** definitely fix
-### merge fix to 3.3 branch
-??? marginal
-NNN won't fix
-Vfd fix has been verified on 3.3.X branch
-
--- Last updated 9 May 08
-
-get rid of pointless constraint !(--db-attach=yes &&
---trace-children=yes) (users, 14 feb)
-
-Consider potential space/time effects of r7383 (see reply to
-the commit message).
-
-Either back out r7353, or fix the resulting signedness problem
-properly (see replies to the commit message).  (now fixed ...)
+---------- Bugs reported after (in) 3.3.1 --------------------------
 
 re Keller vpath bug, don't use attached patch; use Ashley's one
 instead (on @dev ?)
 
-***
-disInstr(ppc): unhandled instruction: 0x7D295F1E (users@, 29 Feb)
-(0x7D295F1E == isel r9,r9,r11,28)
-
-64 bit tweak ("Solomon, Bernard", user@, 25 Mar, > 1 post the same day)
-FIXED r8048.  (don't merge)
-
-NNN
 disInstr(ppc): unhandled instruction: 0x7C1F42A6
                  primary 31(0x1F), secondary 678(0x2A6)
  "Gupta Richa", users@, 3 Apr 08
  dis_proc_ctl(ppc)(mfspr,SPR)(0x11F)
  (0x7C1F42A6 == mfsprg  r0,7)
 
---- start 27 March 08 ---
 
-149878  add (proper) check for calloc integer overflow
-***     (possibly with a viable patch now)
-        FIXME
+BUG#    STAT  TRUNK  WHAT
 
-156065  VALGRIND_MEMPOOL_ALLOC vs. zero-size allocs triggers false
-***     "overlapping" error
-        FIXME
-
-156404  Unable to start oocalc under memcheck on openSUSE 10.3 (64-bit)
-???     openoffice on suse 10.3 readlink stack problem
-        POTENTIALLY SERIOUS (need to extend root stack before syscall)
-
-158042  --db-attach at invalid free() gives broken stack trace on
-        x86_64
-
-158730  ppc: illegal opcode crash on instruction fctiwz
-???     Not sure this does have anything to do with fctiwz.
-        VEX generates code that doesn't run on e500
-
-159285  unhandled syscall:25
-???     (no test case provided)
-
-159452  unhandled ioctl 0x8B01 on "valgrind iwconfig"
-???     (queried user on documentation for this ioctl)
-
-159501  incorrect handling of ALSA ioctls
-***     (has two patches, looks reasonable, checking for update)
-
-159659  scas does not use ES segment selector
-NNN
-
-159720  Opcode 0xFF 0x58 0xEB 0x5 unhandled on x86
-NNN     (this is a "lcall" or callf -- far call)
-        (no test case)
-
-160595  Why my program hang-up when work with valgrind ?
-NNN     (no info so far, probably a threading bug in client)
-
-160872  race errors reported where libpthread.so
-???     (might be a problem with pthread_setspecific)
+n-i-bz  Fixd  8048   Make return types for some of the requests 64-bit clean
 
 
-160954  ppc build of valgrind crashes with illegal instruction
-***     0x7D6B4F9E == isel r11,r11,r9,30
-        == 161251
+92456   Fixd  many   Tracing the origin of uninitialised memory
 
-161374  SYS_readdir syscall not implemented
-???     readdir is pretty prehistoric
+106497  Fixd  ????   Valgrind does not demangles some C++template symbols
+162222  Fixd  ????   ==106497
 
-161609  Results returned by VG_(get_StackTrace)() do not match
-***     its documentation
+126255  Wont  pend   vex x86->IR: 0xDF 0x75 (fbstp) (x87 BCD stores)
 
---- end 8 May 08 ---
+140939  MED   pend   --track-fds reports leakage of stdout/in/err and
+                     doesn't respect -q, w/ patch
 
---- start 28 May 08 ---
+149878  LOW   pend   (proper) check for calloc integer overflow
+                     (possibly with a viable patch now)
 
---- end 28 May 08 ---
+151612  HIGH  pend   Suppression with "..." (w/ good patch)
+
+156404  Fixd  8712/3 Unable to start oocalc under memcheck on openSUSE
+                     10.3 (64-bit)
+
+156065  LOW   pend   VALGRIND_MEMPOOL_ALLOC vs. zero-size allocs
+                     triggers false "overlapping" error
+
+158042  WF    pend   --db-attach at invalid free() gives broken stack
+                     trace on x86_64
+                     Can't repro; reported queried
+
+158730  Wont  pend   ppc: illegal opcode crash on instruction fctiwz
+                     Not sure this does have anything to do with fctiwz.
+                     VEX generates code that doesn't run on e500
+
+159285  WF    pend   unhandled syscall:25
+                     requested test case
+
+159452  ???   pend   unhandled ioctl 0x8B01 on "valgrind iwconfig"
+                     w/ plausible-looking patch
+
+159501  ???   pend   incorrect handling of ALSA ioctls
+                     (has two patches, looks reasonable)
+
+159659  Wont  pend   scas does not use ES segment selector
+
+159720  Wont  pend   Opcode 0xFF 0x58 0xEB 0x5 unhandled on x86
+                     (this is a "lcall" or callf -- far call)
+                     (no test case)
+
+160595  Wont  pend   Why my program hang-up when work with valgrind ?
+                     (no info so far, probably a threading bug in client)
+
+160872  ???   pend   race errors reported where libpthread.so
+                     (might be a problem with pthread_setspecific)
+
+160954  ???   pend   ppc build of valgrind crashes with illegal instruction
+                     (isel)
+                     == 161251
+
+160956  Fixd  7888   mallinfo implementation, w/ patch
+
+161374  WF    pend   SYS_readdir syscall not implemented
+                     will fix if reporter supplies a test case
+
+161609  ???   pend   Results returned by VG_(get_StackTrace)() do not
+                     match its documentation
+
+162020  ???   pend   Valgrinding an empty/zero-byte file crashes valgrind
+
+162092  HIGH  pend   Valgrind fails to start gnome-system-monitor
+
+162229  LOW   pend   VALGRIND_DO_LEAK_CHECK emits false positive
+
+162456  ???   pend   valgrind-3.2.3 on ppc fails
+                     problem undetermined (probably close)
+
+162630  Fixd  many   hg_main.c:926 (mk_SHVAL_fail): the 'impossible' happened.
+
+162718  ???   pend   x86: avoid segment selector 0 in sys_set_thread_area()
+                     decide if this is a problem or not
+
+162819  ???   8285/6 malloc_free_fill test doesn't pass on glibc2.8 x86
+                     need to look at this
+
+163253  ???   pend   canonicaliseSymtab forgot some fields in DiSym
+                     is this correct?
+
+163794  Fixd  8228   assertion failure with "--track-origins=yes"
+
+163910  ???   pend   Typo in Helgrind's Documentation
+
+163933  Fixd  8229   sigcontext.err and .trapno must be set together
+
+163955  Fixd  8722   remove pointless constraint !(--db-attach=yes &&
+                     --trace-children=yes)
+
+164298  Wont  pend   Valgrind asserts on finitel with long double using
+                     gcc-4.3 -- closed as wontfix
+
+164476  Fixd  8263,6 Missing kernel module loading system calls
+****                 But need to move non-generic code to Linux section
+
+164485  ???   pend   VG_N_SEGNAMES and VG_N_SEGMENTS are (still) too small
+
+164669  HIGH  pend   SVN regression: mmap() drops posix file locks
+
+165417  ???   pend   helgrind/tests/hg05_race2: VG_(get_data_description)()
+                     succeeds on x86 and amd64 but fails on ppc
+
+165468  ???   pend   Inconsistent formatting in memcheck manual
+
+165598  ???   pend   fixed mmap() regions (via MAP_FIXED) cause various
+                     strange failures
+                     (I think this should be closed as invalid)
+
+166355  ???   pend   unshare syscall not supported (amd64, #272)
+
+166581  Fixd  8704   Callgrind output corruption when program forks
+
+167212  ???   pend   Valgrind does not attach to GDB correctly, traceback
+                     spits garbage
+
+167288  ???   pend   Patch file for missing system calls on Cell BE
+
+167483  ???   pend   __libc_freeres error valgrind with shared libraries with
+                     multiple --rpath (w/ repro case)
+
+167640  HIGH  pend   un-efficient memory management cause segmentation fault
+                     w/ test case
+
+167676  ???   pend   Valgrind loads wrong threading library on Red Hat 9
+
+167700  ???   pend   vex x86->IR: unhandled instruction bytes: 0xD5 0x36 0x5B
+                     0xC3 (aad)
+
+168538  ???   pend   Poor detection of stacks for clone can lead to
+                     bad results, w/ patch
+                     Looks plausible
+
+168943  ???   pend   unsupported scas instruction pentium
+
+169539  WF    pend   mremap fails on specific address on 32-bit memcheck
+                     w/ test case
+                     (not clear if this is still valid)
+
+169562  ???   pend   memcheck warns on some unaligned bcopy()s
+                     w/ test case
+
+169957  ???   pend   Bad report about stack memory after long jump
+                     from signal handler, w/ test case
+
+170510  ???   pend   Don't warn about ioctl of size 0 without
+                     direction hint, w/ patch
+
+171627  ???   pend   Valgrind macros change program behavior
+
+171645  ???   WF     Unrecognised instruction (MOVSD, non-binutils
+                     encoding) (patch proposed, waiting for feedback)
+
+172417  Fixd  vx1867 x86->IR: 0x82 ... (dun, vx1867)
+
+172563  Fixd  vx???? amd64->IR: 0xD9 0xF5  -  fprem1
+
+173099  ???   pend    .lds linker script generation error
+                      w/ plausible patch
+
+173177  Fixd  8720    [x86_64] WARNING: unhandled syscall: 125/126/179
+                      (capget/capset/quotactl)
+
+
+
+---------- Bugs fixed in 3.3.1 -------------------------------------
+
+/////////////////////////////////////////////////////////////////
+//
+// Changes in 3.3.1 only below here
 
 r1816 (x86 CondNS after SUBB)
 r1817 (amd64 CondNS after SUBB)
@@ -133,7 +232,6 @@ r7350   r8080     Mgd  n-i-bz  intercept memcpy in 64-bit ld.so's
 
 r8047   r8148     Mgd  n-i-bz  Fix wrappers for sys_{futimesat,utimensat}
 
-many    wontfix   Vfd   92456  Tracing the origin of uninitialised memory
 
 vx1836/7 vx1845   Vfd  126389  vex x86->IR: 0xF 0xAE (FXRSTOR)
                        == 158525
@@ -167,8 +265,6 @@ vx1848  vx1849    Vfd  158744  vex amd64->IR: 0xF0 0x41 0xF 0xC0 (xaddb)
 r7917,8051 OR r7942,r7983,r8051
         r8148     Mgd  160907  Support for a couple of recent Linux syscalls
 
-r7888   pending    33  160956  PATCH: mallinfo implementation
-
 r7917   r8148     Mgd  161285  Patch -- support for eventfd() syscall
 
 vx1826  vx1842    Vfd  161378  illegal opcode in debug libm (FUCOMPP)
@@ -192,7 +288,5 @@ various r8148     Mgd  162663  signalfd_wrapper fails on 64bit linux
 
 r8154   r8155     Mgd  n-i-bz  Massif/Cachegrind output corruption when
                                programs fork
-
-r8704   pending        166581  Callgrind output corruption when program forks
 
 vx1853  vx1854     33  n-i-bz  regalloc: don't incorrectly omit spill stores

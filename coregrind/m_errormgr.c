@@ -184,14 +184,15 @@ typedef
    enum { 
       NoName,     /* Error case */
       ObjName,    /* Name is of an shared object file. */
-      FunName     /* Name is of a function. */
+      FunName,    /* Name is of a function. */
+      DotDotDot   /* Frame-level wildcard */
    }
    SuppLocTy;
 
 typedef
    struct {
       SuppLocTy ty;
-      Char*     name;
+      Char*     name; /* NULL for NoName and DotDotDot */
    }
    SuppLoc;
 
@@ -926,7 +927,13 @@ static Bool setLocationTy ( SuppLoc* p )
       p->ty = ObjName;
       return True;
    }
-   VG_(printf)("location should start with fun: or obj:\n");
+   if (VG_(strcmp)(p->name, "...") == 0) {
+      p->name = NULL;
+      p->ty = DotDotDot;
+      return True;
+   }
+   VG_(printf)("location should be \"...\", or should start "
+               "with \"fun:\" or \"obj:\"\n");
    return False;
 }
 
@@ -955,7 +962,7 @@ static void load_one_suppressions_file ( Char* filename )
 {
 #  define N_BUF 200
    SysRes sres;
-   Int    fd, i;
+   Int    fd, i, j, lineno = 0;
    Bool   eof;
    Char   buf[N_BUF+1];
    Char*  tool_names;
@@ -968,7 +975,7 @@ static void load_one_suppressions_file ( Char* filename )
    if (sres.isError) {
       if (VG_(clo_xml))
          VG_(message)(Vg_UserMsg, "</valgrindoutput>\n");
-      VG_(message)(Vg_UserMsg, "FATAL: can't open suppressions file '%s'", 
+      VG_(message)(Vg_UserMsg, "FATAL: can't open suppressions file \"%s\"", 
                    filename );
       VG_(exit)(1);
    }
@@ -992,17 +999,20 @@ static void load_one_suppressions_file ( Char* filename )
       supp->string = supp->extra = NULL;
 
       eof = VG_(get_line) ( fd, buf, N_BUF );
+      lineno++;
       if (eof) break;
 
       if (!VG_STREQ(buf, "{")) BOMB("expected '{' or end-of-file");
       
       eof = VG_(get_line) ( fd, buf, N_BUF );
+      lineno++;
 
       if (eof || VG_STREQ(buf, "}")) BOMB("unexpected '}'");
 
       supp->sname = VG_(arena_strdup)(VG_AR_CORE, "errormgr.losf.2", buf);
 
       eof = VG_(get_line) ( fd, buf, N_BUF );
+      lineno++;
 
       if (eof) BOMB("unexpected end-of-file");
 
@@ -1041,6 +1051,7 @@ static void load_one_suppressions_file ( Char* filename )
          // Ignore rest of suppression
          while (True) {
             eof = VG_(get_line) ( fd, buf, N_BUF );
+            lineno++;
             if (eof) BOMB("unexpected end-of-file");
             if (VG_STREQ(buf, "}"))
                break;
@@ -1054,9 +1065,11 @@ static void load_one_suppressions_file ( Char* filename )
          BOMB("bad or missing extra suppression info");
       }
 
+      /* the main frame-descriptor reading loop */
       i = 0;
       while (True) {
          eof = VG_(get_line) ( fd, buf, N_BUF );
+         lineno++;
          if (eof)
             BOMB("unexpected end-of-file");
          if (VG_STREQ(buf, "}")) {
@@ -1073,7 +1086,8 @@ static void load_one_suppressions_file ( Char* filename )
          tmp_callers[i].name = VG_(arena_strdup)(VG_AR_CORE,
                                                  "errormgr.losf.3", buf);
          if (!setLocationTy(&(tmp_callers[i])))
-            BOMB("location should start with 'fun:' or 'obj:'");
+            BOMB("location should be \"...\", or should start "
+                 "with \"fun:\" or \"obj:\"");
          i++;
       }
 
@@ -1082,8 +1096,24 @@ static void load_one_suppressions_file ( Char* filename )
       if (!VG_STREQ(buf, "}")) {
          do {
             eof = VG_(get_line) ( fd, buf, N_BUF );
+            lineno++;
          } while (!eof && !VG_STREQ(buf, "}"));
       }
+
+      // Reject entries which are entirely composed of frame
+      // level wildcards.
+      vg_assert(i > 0); // guaranteed by frame-descriptor reading loop
+      for (j = 0; j < i; j++) {
+         if (tmp_callers[j].ty == FunName || tmp_callers[j].ty == ObjName)
+            break;
+         vg_assert(tmp_callers[j].ty == DotDotDot);
+      }
+      vg_assert(j >= 0 && j <= i);
+      if (j == i) {
+         // we didn't find any non-"..." entries
+         BOMB("suppression must contain at least one location "
+              "line which is not \"...\"");
+      } 
 
       // Copy tmp_callers[] into supp->callers[]
       supp->n_callers = i;
@@ -1103,7 +1133,10 @@ static void load_one_suppressions_file ( Char* filename )
    if (VG_(clo_xml))
       VG_(message)(Vg_UserMsg, "</valgrindoutput>\n");
    VG_(message)(Vg_UserMsg, 
-                "FATAL: in suppressions file '%s': %s", filename, err_str );
+                "FATAL: in suppressions file \"%s\" around line %d:",
+                filename, lineno );
+   VG_(message)(Vg_UserMsg, 
+                "   %s", err_str );
    
    VG_(close)(fd);
    VG_(message)(Vg_UserMsg, "exiting now.");
@@ -1147,26 +1180,25 @@ Bool supp_matches_error(Supp* su, Error* err)
    }
 }
 
-static
-Bool supp_matches_callers(Error* err, Supp* su)
-{
-   Int i;
-   Char caller_name[ERRTXT_LEN];
-   StackTrace ips = VG_(get_ExeContext_StackTrace)(err->where);
 
-   for (i = 0; i < su->n_callers; i++) {
-      Addr a = ips[i];
-      vg_assert(su->callers[i].name != NULL);
-      // The string to be used in the unknown case ("???") can be anything
-      // that couldn't be a valid function or objname.  --gen-suppressions
-      // prints 'obj:*' for such an entry, which will match any string we
-      // use.
-      switch (su->callers[i].ty) {
+/* This function is recursive, in order to handle frame-level
+   wildcards. */
+static
+Bool supp_matches_callers_WRK ( StackTrace trace, Int n_ips,
+                                SuppLoc *callers, Int n_callers )
+{
+   Int i, j;
+   static Char caller_name[ERRTXT_LEN]; /* NOT IN FRAME */
+
+   i = j = 0;
+   while (i < n_callers) {
+      Addr a = trace[j];
+
+      switch (callers[i].ty) {
          case ObjName: 
             if (!VG_(get_objname)(a, caller_name, ERRTXT_LEN))
                VG_(strcpy)(caller_name, "???");
             break; 
-
          case FunName: 
             // Nb: mangled names used in suppressions.  Do, though,
             // Z-demangle them, since otherwise it's possible to wind
@@ -1176,16 +1208,64 @@ Bool supp_matches_callers(Error* err, Supp* su)
             if (!VG_(get_fnname_Z_demangle_only)(a, caller_name, ERRTXT_LEN))
                VG_(strcpy)(caller_name, "???");
             break;
-         default: VG_(tool_panic)("supp_matches_callers");
+         case DotDotDot:
+            break;
+         default:
+            VG_(tool_panic)("supp_wildmatch_callers");
       }
-      if (0) VG_(printf)("cmp %s %s\n", su->callers[i].name, caller_name);
-      if (!VG_(string_match)(su->callers[i].name, caller_name))
-         return False;
+      // If "..." is given in a suppression (either obj, or fun), then
+      // use it as wildcard, and match as many callers as possible.
+      if (callers[i].ty == DotDotDot) {
+         /* Handle frame-level wildcard case */
+         Char *lookahead;
+
+	 // collapse subsequent wildcards
+	 while (i < n_callers && callers[i].ty == DotDotDot)
+            ++i;
+	 --i;
+
+         if (i == n_callers-1)
+            // wildcard at the top, doesn't matter
+            return True;
+
+	 lookahead = callers[i+1].name;
+         while (j < n_ips) {
+            static Char tmp[ERRTXT_LEN]; /* NOT IN FRAME */
+
+            if (!VG_(get_fnname_Z_demangle_only)(trace[j], tmp, ERRTXT_LEN))
+               VG_(strcpy)(tmp, "???");
+            if (VG_(string_match)(tmp, lookahead)) {
+               // found a possible continuation, try from there
+               return supp_matches_callers_WRK(
+                         &trace[j], n_ips - j,
+                         &callers[i+1], n_callers - i - 1
+                      );
+            }
+            j++;
+         }
+      } else {
+         /* Handle normal (obj: or fun:) case */
+         if (!VG_(string_match)(callers[i].name, caller_name)) {
+            return False;
+         }
+      }
+      j++;
+      i++;
    }
 
    /* If we reach here, it's a match */
    return True;
 }
+
+static
+Bool supp_matches_callers(Error* err, Supp* su)
+{
+   /* Unwrap the args and pass them to the worker function. */
+   StackTrace ips   = VG_(get_ExeContext_StackTrace)(err->where);
+   UInt       n_ips = VG_(get_ExeContext_n_ips)(err->where);
+   return supp_matches_callers_WRK(ips, n_ips, su->callers, su->n_callers);
+}
+
 
 /* Does an error context match a suppression?  ie is this a suppressible
    error?  If so, return a pointer to the Supp record, otherwise NULL.

@@ -436,8 +436,8 @@ tool_name1,tool_name2:suppression_name]]></programlisting>
     the chain of function calls that led to it.  There can be up to 24
     of these lines.</para>
 
-    <para>Locations may be either names of shared objects/executables or
-    wildcards matching function names.  They begin
+    <para>Locations may be names of either shared objects or
+    functions.  They begin
     <computeroutput>obj:</computeroutput> and
     <computeroutput>fun:</computeroutput> respectively.  Function and
     object names to match against may use the wildcard characters
@@ -447,7 +447,22 @@ tool_name1,tool_name2:suppression_name]]></programlisting>
     <para><command>Important note: </command> C++ function names must be
     <command>mangled</command>.  If you are writing suppressions by
     hand, use the <option>--demangle=no</option> option to get the
-    mangled names in your error messages.</para>
+    mangled names in your error messages.  An example of a mangled
+    C++ name is  <computeroutput>_ZN9QListView4showEv</computeroutput>.
+    This is the form that the GNU C++ compiler uses internally, and
+    the form that must be used in suppression files.  The equivalent
+    demangled name, <computeroutput>QListView::show()</computeroutput>,
+    is what you see at the C++ source code level.
+    </para>
+
+    <para>A location line may also be
+    simply "<computeroutput>...</computeroutput>" (three dots).  This is
+    a frame-level wildcard, which matches zero or more frames.  Frame
+    level wildcards are useful because they make it easy to ignore
+    varying numbers of uninteresting frames in between frames of
+    interest.  That is often important when writing suppressions which
+    are intended to be robust against variations in the amount of
+    function inlining done by compilers.</para>
   </listitem>
 
   <listitem>
@@ -496,7 +511,7 @@ on the specifics of Memcheck's suppression kinds.)</para>
   obj:/usr/X11R6/lib/libXaw.so.7.0
 }]]></programlisting>
 
-<para>Suppress any size 4 uninitialised-value error which occurs
+<para>This suppresses any size 4 uninitialised-value error which occurs
 anywhere in <filename>libX11.so.6.2</filename>, when called from
 anywhere in the same library, when called from anywhere in
 <filename>libXaw.so.7.0</filename>.  The inexact specification of
@@ -508,6 +523,28 @@ was made have had their symbol tables removed.</para>
 freely mix <computeroutput>obj:</computeroutput> and
 <computeroutput>fun:</computeroutput> lines in a suppression.</para>
 
+<para>Finally, here's an example using three frame-level wildcards:</para>
+
+<programlisting><![CDATA[
+{
+   a-contrived-example
+   Memcheck:Leak
+   fun:malloc
+   ...
+   fun:ddd
+   ...
+   fun:ccc
+   ...
+   fun:main
+}
+]]></programlisting>
+This suppresses Memcheck memory-leak errors, in the case where
+the allocation was done by <computeroutput>main</computeroutput>
+calling (though any number of intermediaries, including zero)
+<computeroutput>ccc</computeroutput>,
+calling onwards via
+<computeroutput>ddd</computeroutput> and eventually
+to <computeroutput>malloc.</computeroutput>.
 </sect1>
 
 

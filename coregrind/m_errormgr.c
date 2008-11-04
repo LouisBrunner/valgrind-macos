@@ -1133,7 +1133,7 @@ static void load_one_suppressions_file ( Char* filename )
    if (VG_(clo_xml))
       VG_(message)(Vg_UserMsg, "</valgrindoutput>\n");
    VG_(message)(Vg_UserMsg, 
-                "FATAL: in suppressions file \"%s\" around line %d:",
+                "FATAL: in suppressions file \"%s\" near line %d:",
                 filename, lineno );
    VG_(message)(Vg_UserMsg, 
                 "   %s", err_str );
@@ -1190,6 +1190,7 @@ Bool supp_matches_callers_WRK ( StackTrace trace, Int n_ips,
    Int i, j;
    static Char caller_name[ERRTXT_LEN]; /* NOT IN FRAME */
 
+   vg_assert(n_ips > 0 && n_callers > 0);
    i = j = 0;
    while (i < n_callers) {
       Addr a = trace[j];
@@ -1209,6 +1210,7 @@ Bool supp_matches_callers_WRK ( StackTrace trace, Int n_ips,
                VG_(strcpy)(caller_name, "???");
             break;
          case DotDotDot:
+            caller_name[0] = 0; /* precautionary */
             break;
          default:
             VG_(tool_panic)("supp_wildmatch_callers");
@@ -1219,16 +1221,17 @@ Bool supp_matches_callers_WRK ( StackTrace trace, Int n_ips,
          /* Handle frame-level wildcard case */
          Char *lookahead;
 
-	 // collapse subsequent wildcards
-	 while (i < n_callers && callers[i].ty == DotDotDot)
+         // collapse subsequent wildcards
+         while (i < n_callers && callers[i].ty == DotDotDot)
             ++i;
-	 --i;
+         --i;
 
          if (i == n_callers-1)
             // wildcard at the top, doesn't matter
             return True;
 
-	 lookahead = callers[i+1].name;
+         vg_assert(i >= 0 && i+1 < n_callers);
+         lookahead = callers[i+1].name;
          while (j < n_ips) {
             static Char tmp[ERRTXT_LEN]; /* NOT IN FRAME */
 

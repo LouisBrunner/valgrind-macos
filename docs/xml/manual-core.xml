@@ -365,7 +365,12 @@ them.</para>
 
 <formalpara><title>Note:</title> <para>By far the easiest way to add
 suppressions is to use the <option>--gen-suppressions=yes</option> flag
-described in <xref linkend="manual-core.flags"/>.</para>
+described in <xref linkend="manual-core.flags"/>.  This generates
+suppressions automatically.  For best results,
+though, you may want to edit the output
+    of  <option>--gen-suppressions=yes</option> by hand, in which
+case it would be advisable to read through this section.
+</para>
 </formalpara>
 
 <para>Each error to be suppressed is described very specifically, to
@@ -953,8 +958,15 @@ that can report errors, e.g. Memcheck, but not Cachegrind.</para>
       required.</para>
 
       <para>Note that the suppressions printed are as specific as
-      possible.  You may want to common up similar ones, eg. by adding
-      wildcards to function names.  Sometimes two different errors
+      possible.  You may want to common up similar ones, by adding
+      wildcards to function names, and by using frame-level wildcards.
+      The wildcarding facilities are powerful yet flexible, and with a
+      bit of careful editing, you may be able to suppress a whole
+      family of related errors with only a few suppressions.  For
+      details on how to do this, see
+      <xref linkend="manual-core.suppress"/>.</para>
+
+      <para>Sometimes two different errors
       are suppressed by the same suppression, in which case Valgrind
       will output the suppression more than once, but you only need to
       have one copy in your suppression file (but having more than one
@@ -1445,7 +1457,7 @@ will create a core dump in the usual way.</para>
 <computeroutput>make</computeroutput>, <computeroutput>make
 install</computeroutput> mechanism, and we have attempted to
 ensure that it works on machines with kernel 2.4 or 2.6 and glibc
-2.2.X to 2.5.X.  Once you have completed 
+2.2.X to 2.9.X.  Once you have completed 
 <computeroutput>make install</computeroutput> you may then want 
 to run the regression tests
 with <computeroutput>make regtest</computeroutput>.

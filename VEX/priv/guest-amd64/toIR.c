@@ -11138,7 +11138,11 @@ DisResult disInstr_AMD64_WRK (
        && insn[0] == 0x0F && insn[1] == 0x11) {
       modrm = getUChar(delta+2);
       if (epartIsReg(modrm)) {
-         /* fall through, we don't yet have a test case */
+         putXMMRegLane64( eregOfRexRM(pfx,modrm), 0,
+                          getXMMRegLane64( gregOfRexRM(pfx,modrm), 0 ));
+         DIP("movsd %s,%s\n", nameXMMReg(gregOfRexRM(pfx,modrm)),
+                              nameXMMReg(eregOfRexRM(pfx,modrm)));
+         delta += 2+1;
       } else {
          addr = disAMode ( &alen, pfx, delta+2, dis_buf, 0 );
          storeLE( mkexpr(addr),
@@ -11146,8 +11150,8 @@ DisResult disInstr_AMD64_WRK (
          DIP("movsd %s,%s\n", nameXMMReg(gregOfRexRM(pfx,modrm)),
                               dis_buf);
          delta += 2+alen;
-         goto decode_success;
       }
+      goto decode_success;
    }
 
    /* 66 0F 59 = MULPD -- mul 64Fx2 from R/M to R */

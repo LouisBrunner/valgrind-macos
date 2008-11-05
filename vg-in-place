@@ -1,14 +1,29 @@
 #!/bin/sh
 
-# This ensures it works when invoked from any directory.
-d="`dirname $0`"
-if [ "$d" = "." ]; then
-  d="$PWD"
+# Figure out an absolute pathname to this file, based on
+# $0 (the name of the file) and $PWD.
+
+dollarzero=$0
+
+if [ "${dollarzero#/}" == "${dollarzero}" ];
+then
+   # Relative name
+   scriptname=$PWD/$dollarzero;
+else
+   # Absolute name
+   scriptname=$dollarzero;
 fi
+
+# echo "Name of this script: " $scriptname
+
+vgbasedir=`dirname $scriptname`
+
+# echo "VG base directory:   " $vgbasedir
+
 
 # We set both VALGRIND_LIB and VALGRIND_LIB_INNER to handle normal and
 # 'inner' builds.
-VALGRIND_LIB="$d/.in_place" \
-    VALGRIND_LIB_INNER="$d/.in_place" \
-    "$d/coregrind/valgrind" "$@"
+VALGRIND_LIB="$vgbasedir/.in_place" \
+    VALGRIND_LIB_INNER="$vgbasedir/.in_place" \
+    "$vgbasedir/coregrind/valgrind" "$@"
 

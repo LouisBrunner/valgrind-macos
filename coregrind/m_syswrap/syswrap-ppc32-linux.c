@@ -406,6 +406,8 @@ DECL_TEMPLATE(ppc32_linux, sys_sigreturn);
 DECL_TEMPLATE(ppc32_linux, sys_rt_sigreturn);
 DECL_TEMPLATE(ppc32_linux, sys_sigaction);
 DECL_TEMPLATE(ppc32_linux, sys_sigsuspend);
+DECL_TEMPLATE(ppc32_linux, sys_spu_create);
+DECL_TEMPLATE(ppc32_linux, sys_spu_run);
 
 PRE(sys_socketcall)
 {
@@ -1449,6 +1451,27 @@ PRE(sys_sigsuspend)
    PRE_REG_READ1(int, "sigsuspend", vki_old_sigset_t, mask);
 }
 
+PRE(sys_spu_create)
+{
+   PRE_MEM_RASCIIZ("stat64(filename)", ARG1);
+}
+POST(sys_spu_create)
+{
+   vg_assert(SUCCESS);
+}
+
+PRE(sys_spu_run)
+{
+   *flags |= SfMayBlock;
+   if (ARG2 != NULL)
+     PRE_MEM_WRITE("npc", ARG2, sizeof(unsigned int));
+   PRE_MEM_READ("event", ARG3, sizeof(unsigned int));
+}
+POST(sys_spu_run)
+{
+   if (ARG2 != NULL)
+      POST_MEM_WRITE(ARG2, sizeof(unsigned int));
+}
 
 #undef PRE
 #undef POST
@@ -1806,6 +1829,8 @@ const SyscallTableEntry ML_(syscall_table)[] = {
    LINX_(__NR_inotify_init,  sys_inotify_init),               // 275
    LINX_(__NR_inotify_add_watch,  sys_inotify_add_watch),     // 276
    LINX_(__NR_inotify_rm_watch,   sys_inotify_rm_watch),      // 277
+   PLAXY(__NR_spu_run,            sys_spu_run),               // 278
+   PLAX_(__NR_spu_create,         sys_spu_create),            // 279
 
    LINXY(__NR_openat,            sys_openat),            // 286
    LINX_(__NR_mkdirat,           sys_mkdirat),           // 287

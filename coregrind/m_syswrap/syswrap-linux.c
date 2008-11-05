@@ -2235,9 +2235,35 @@ PRE(sys_pipe)
 POST(sys_pipe)
 {
    Int *p = (Int *)ARG1;
-
    if (!ML_(fd_allowed)(p[0], "pipe", tid, True) ||
        !ML_(fd_allowed)(p[1], "pipe", tid, True)) {
+      VG_(close)(p[0]);
+      VG_(close)(p[1]);
+      SET_STATUS_Failure( VKI_EMFILE );
+   } else {
+      POST_MEM_WRITE( ARG1, 2*sizeof(int) );
+      if (VG_(clo_track_fds)) {
+         ML_(record_fd_open_nameless)(tid, p[0]);
+         ML_(record_fd_open_nameless)(tid, p[1]);
+      }
+   }
+}
+
+/* pipe2 (a kernel 2.6.twentysomething invention) is like pipe, except
+   there's a second arg containing flags to be applied to the new file
+   descriptors.  It hardly seems worth the effort to factor out the
+   duplicated code, hence: */
+PRE(sys_pipe2)
+{
+   PRINT("sys_pipe2 ( %#lx, %#lx )", ARG1, ARG2);
+   PRE_REG_READ2(int, "pipe", int *, filedes, long, flags);
+   PRE_MEM_WRITE( "pipe2(filedes)", ARG1, 2*sizeof(int) );
+}
+POST(sys_pipe2)
+{
+   Int *p = (Int *)ARG1;
+   if (!ML_(fd_allowed)(p[0], "pipe2", tid, True) ||
+       !ML_(fd_allowed)(p[1], "pipe2", tid, True)) {
       VG_(close)(p[0]);
       VG_(close)(p[1]);
       SET_STATUS_Failure( VKI_EMFILE );

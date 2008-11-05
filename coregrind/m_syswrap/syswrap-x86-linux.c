@@ -2231,8 +2231,16 @@ const SyscallTableEntry ML_(syscall_table)[] = {
    LINXY(__NR_timerfd_create,    sys_timerfd_create),   // 322
    LINX_(__NR_eventfd,           sys_eventfd),          // 323
 //   LINX_(__NR_fallocate,        sys_ni_syscall),        // 324
+
    LINXY(__NR_timerfd_settime,   sys_timerfd_settime),  // 325
    LINXY(__NR_timerfd_gettime,   sys_timerfd_gettime),  // 326
+   //   (__NR_signalfd4,         sys_ni_syscall)        // 327
+   //   (__NR_eventfd2,          sys_ni_syscall)        // 328
+   //   (__NR_epoll_create1,     sys_ni_syscall)        // 329
+
+   //   (__NR_dup3,              sys_ni_syscall)        // 330
+   LINXY(__NR_pipe2,             sys_pipe2)             // 331
+   //   (__NR_inotify_init1,     sys_ni_syscall)        // 332
 };
 
 const UInt ML_(syscall_table_size) = 

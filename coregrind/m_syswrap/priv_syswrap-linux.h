@@ -206,6 +206,7 @@ DECL_TEMPLATE(linux, sys_sched_getaffinity);
 // Also, some archs on Linux do not match the generic wrapper for sys_pipe.
 DECL_TEMPLATE(linux, sys_munlockall);
 DECL_TEMPLATE(linux, sys_pipe);
+DECL_TEMPLATE(linux, sys_pipe2);
 DECL_TEMPLATE(linux, sys_quotactl);
 DECL_TEMPLATE(linux, sys_waitid);
 

@@ -9479,7 +9479,9 @@ DisResult disInstr_PPC_WRK (
          /* Deal with some other cases that we would otherwise have
             punted on. */
          /* --- ISEL (PowerISA_V2.05.pdf, p74) --- */
-         if (IFIELD(theInstr, 1, 5) == 15) {
+         /* only decode this insn when reserved bit 0 (31 in IBM's
+            notation) is zero */
+         if (IFIELD(theInstr, 0, 6) == (15<<1)) {
             UInt rT = ifieldRegDS( theInstr );
             UInt rA = ifieldRegA( theInstr );
             UInt rB = ifieldRegB( theInstr );

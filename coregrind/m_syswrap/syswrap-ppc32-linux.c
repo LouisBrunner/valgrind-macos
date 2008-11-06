@@ -1463,13 +1463,13 @@ POST(sys_spu_create)
 PRE(sys_spu_run)
 {
    *flags |= SfMayBlock;
-   if (ARG2 != NULL)
-     PRE_MEM_WRITE("npc", ARG2, sizeof(unsigned int));
+   if (ARG2 != 0)
+      PRE_MEM_WRITE("npc", ARG2, sizeof(unsigned int));
    PRE_MEM_READ("event", ARG3, sizeof(unsigned int));
 }
 POST(sys_spu_run)
 {
-   if (ARG2 != NULL)
+   if (ARG2 != 0)
       POST_MEM_WRITE(ARG2, sizeof(unsigned int));
 }
 

@@ -9476,6 +9476,24 @@ DisResult disInstr_PPC_WRK (
          goto decode_failure;
 
       default:
+         /* Deal with some other cases that we would otherwise have
+            punted on. */
+         /* --- ISEL (PowerISA_V2.05.pdf, p74) --- */
+         if (IFIELD(theInstr, 1, 5) == 15) {
+            UInt rT = ifieldRegDS( theInstr );
+            UInt rA = ifieldRegA( theInstr );
+            UInt rB = ifieldRegB( theInstr );
+            UInt bi = ifieldRegC( theInstr );
+            putIReg(
+               rT,
+               IRExpr_Mux0X( unop(Iop_32to8,getCRbit( bi )),
+                             getIReg(rB),
+                             rA == 0 ? (mode64 ? mkU64(0) : mkU32(0))
+                                     : getIReg(rA) )
+            );
+            DIP("isel r%u,r%u,r%u,crb%u\n", rT,rA,rB,bi);
+            goto decode_success;
+         }
          goto decode_failure;
       }
       break;

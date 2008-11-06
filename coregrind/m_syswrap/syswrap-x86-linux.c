@@ -1868,8 +1868,8 @@ const SyscallTableEntry ML_(syscall_table)[] = {
    LINX_(__NR_umount,            sys_oldumount),      // 22
    LINX_(__NR_setuid,            sys_setuid16),       // 23 ## P
    LINX_(__NR_getuid,            sys_getuid16),       // 24 ## P
-//zz 
-//zz    //   (__NR_stime,             sys_stime),          // 25 * (SVr4,SVID,X/OPEN)
+
+   LINX_(__NR_stime,             sys_stime),          // 25 * (SVr4,SVID,X/OPEN)
    PLAXY(__NR_ptrace,            sys_ptrace),         // 26
    GENX_(__NR_alarm,             sys_alarm),          // 27
 //zz    //   (__NR_oldfstat,          sys_fstat),          // 28 * L -- obsolete

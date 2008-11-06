@@ -2315,6 +2315,13 @@ PRE(sys_sync_file_range)
       SET_STATUS_Failure( VKI_EBADF );
 }
 
+PRE(sys_stime)
+{
+   PRINT("sys_stime ( %#lx )", ARG1);
+   PRE_REG_READ1(int, "stime", vki_time_t*, t);
+   PRE_MEM_READ( "stime(t)", ARG1, sizeof(vki_time_t) );
+}
+
 /* ---------------------------------------------------------------------
    utime wrapper
    ------------------------------------------------------------------ */

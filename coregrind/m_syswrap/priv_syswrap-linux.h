@@ -230,6 +230,7 @@ DECL_TEMPLATE(linux, sys_rt_sigsuspend);
 
 // Linux-specific?
 DECL_TEMPLATE(linux, sys_sync_file_range);
+DECL_TEMPLATE(linux, sys_stime);  /* maybe generic?  I'm not sure */
 
 // Linux specific (kernel modules)
 DECL_TEMPLATE(linux, sys_init_module);

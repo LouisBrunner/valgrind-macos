@@ -19,12 +19,10 @@ checked ... bytes.
 
 1,048,576 bytes in 1 blocks are definitely lost in loss record 1 of 1
    at 0x........: malloc (vg_replace_malloc.c:...)
-   by 0x........: main (pointer-trace.c:43)
+   by 0x........: main (pointer-trace.c:47)
 
 LEAK SUMMARY:
    definitely lost: 1,048,576 bytes in 1 blocks.
      possibly lost: 0 bytes in 0 blocks.
    still reachable: 0 bytes in 0 blocks.
         suppressed: 0 bytes in 0 blocks.
-Reachable blocks (those to which a pointer was found) are not shown.
-To see them, rerun with: --leak-check=full --show-reachable=yes

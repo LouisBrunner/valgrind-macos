@@ -45,7 +45,9 @@ test realloc-smaller:
 
 Invalid read of size 4
    at 0x........: main (malloc_free_fill.c:49)
- Address 0x........ is not stack'd, malloc'd or (recently) free'd
+ Address 0x........ is 104 bytes inside a block of size 120 free'd
+   at 0x........: realloc (vg_replace_malloc.c:...)
+   by 0x........: main (malloc_free_fill.c:47)
 (should be free-filled)   oldr[26] = 77777777
 test calloc:
 (should be zero)             a[42] = 0

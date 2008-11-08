@@ -5,7 +5,7 @@
 
 dollarzero=$0
 
-if [ "${dollarzero#/}" == "${dollarzero}" ];
+if [ "${dollarzero#/}" = "${dollarzero}" ];
 then
    # Relative name
    scriptname=$PWD/$dollarzero;

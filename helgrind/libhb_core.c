@@ -55,8 +55,7 @@
    Globals needed by other parts of the library.  These are set
    once at startup and then never changed. */
 static void        (*main_get_stacktrace)( Thr*, Addr*, UWord ) = NULL;
-static struct _EC* (*main_stacktrace_to_EC)( Addr*, UWord ) = NULL;
-static struct _EC* (*main_get_EC)( Thr* ) = NULL;
+static ExeContext* (*main_get_EC)( Thr* ) = NULL;
 
 /////////////////////////////////////////////////////////////////
 /////////////////////////////////////////////////////////////////
@@ -2343,16 +2342,16 @@ static void VtsID__invalidate_caches ( void ) {
 }
 //////////////////////////
 
-static Bool VtsID__is_valid ( VtsID vi ) {
-   VtsTE* ve;
-   if (vi >= (VtsID)VG_(sizeXA)( vts_tab ))
-      return False;
-   ve = VG_(indexXA)( vts_tab, vi );
-   if (!ve->vts)
-      return False;
-   tl_assert(ve->vts->id == vi);
-   return True;
-}
+//static Bool VtsID__is_valid ( VtsID vi ) {
+//   VtsTE* ve;
+//   if (vi >= (VtsID)VG_(sizeXA)( vts_tab ))
+//      return False;
+//   ve = VG_(indexXA)( vts_tab, vi );
+//   if (!ve->vts)
+//      return False;
+//   tl_assert(ve->vts->id == vi);
+//   return True;
+//}
 
 static VTS* VtsID__to_VTS ( VtsID vi ) {
    VtsTE* te = VG_(indexXA)( vts_tab, vi );
@@ -2790,14 +2789,6 @@ typedef
    }
    OldRef;
 
-static Word OldRef__cmp_by_EA ( OldRef* r1, OldRef* r2 ) {
-   tl_assert(r1 && r1->magic == OldRef_MAGIC);
-   tl_assert(r2 && r2->magic == OldRef_MAGIC);
-   if (r1->ea < r2->ea) return -1;
-   if (r1->ea > r2->ea) return 1;
-   return 0;
-}
-
 static OSet* oldrefTree     = NULL; /* OSet* of OldRef */
 static UWord oldrefGen      = 0;    /* current LRU generation # */
 static UWord oldrefTreeN    = 0;    /* # elems in oldrefTree */
@@ -2898,7 +2889,7 @@ static void event_map_bind ( Addr a, Thr* thr )
 
 
 static
-Bool event_map_lookup ( /*OUT*/struct _EC** resEC,
+Bool event_map_lookup ( /*OUT*/ExeContext** resEC,
                         /*OUT*/Thr** resThr,
                         Thr* thr_acc, Addr a )
 {
@@ -2931,7 +2922,9 @@ Bool event_map_lookup ( /*OUT*/struct _EC** resEC,
       tl_assert(ref->accs[i].rcec);
       tl_assert(ref->accs[i].rcec->magic == RCEC_MAGIC);
 
-      *resEC  = main_stacktrace_to_EC(&ref->accs[i].rcec->frames[1], N_FRAMES);
+      *resEC  = VG_(make_ExeContext_from_StackTrace)(
+                   &ref->accs[i].rcec->frames[1], N_FRAMES
+                );
       *resThr = ref->accs[i].thr;
       return True;
    } else {
@@ -3180,8 +3173,8 @@ static void record_race_info ( Thr* acc_thr,
 {
    Bool found;
    Thr* thrp = NULL;
-   struct _EC* where  = NULL;
-   struct _EC* wherep = NULL;
+   ExeContext* where  = NULL;
+   ExeContext* wherep = NULL;
    where = main_get_EC( acc_thr );
    found = event_map_lookup( &wherep, &thrp, acc_thr, acc_addr );
    if (found) {
@@ -4179,17 +4172,14 @@ static void show_thread_state ( HChar* str, Thr* t )
 
 Thr* libhb_init (
         void        (*get_stacktrace)( Thr*, Addr*, UWord ),
-        struct _EC* (*stacktrace_to_EC)( Addr*, UWord ),
-        struct _EC* (*get_EC)( Thr* )
+        ExeContext* (*get_EC)( Thr* )
      )
 {
    Thr*  thr;
    VtsID vi;
    tl_assert(get_stacktrace);
-   tl_assert(stacktrace_to_EC);
    tl_assert(get_EC);
    main_get_stacktrace   = get_stacktrace;
-   main_stacktrace_to_EC = stacktrace_to_EC;
    main_get_EC           = get_EC;
 
    // No need to initialise hg_wordfm.

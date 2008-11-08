@@ -39,17 +39,12 @@
 /* Abstract to user: synchronisation objects */
 /* typedef  struct _SO  SO; */ /* now in hg_lock_n_thread.h */
 
-/* Abstract to the lib: execution contexts */
-/* struct _EC will be defined by user at some point. */
-typedef  struct _EC  EC;
-
 /* Initialise library; returns Thr* for root thread.  'shadow_alloc'
    should never return NULL, instead it should simply not return if
    they encounter an out-of-memory condition. */
 Thr* libhb_init (
         void        (*get_stacktrace)( Thr*, Addr*, UWord ),
-        struct _EC* (*stacktrace_to_EC)( Addr*, UWord ),
-        struct _EC* (*get_EC)( Thr* )
+        ExeContext* (*get_EC)( Thr* )
      );
 
 /* Shut down the library, and print stats (in fact that's _all_

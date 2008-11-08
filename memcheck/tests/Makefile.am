@@ -160,7 +160,8 @@ EXTRA_DIST = $(noinst_SCRIPTS) \
 	varinfo6.stderr.exp-glibc25-amd64 varinfo6.stderr.exp-glibc25-x86 \
 	vcpu_bz2.stdout.exp vcpu_bz2.stderr.exp vcpu_bz2.vgtest \
 	vcpu_fbench.stdout.exp vcpu_fbench.stderr.exp vcpu_fbench.vgtest \
-	vcpu_fnfns.stdout.exp vcpu_fnfns.stderr.exp vcpu_fnfns.vgtest \
+	vcpu_fnfns.stdout.exp vcpu_fnfns.stdout.exp-glibc28-amd64 \
+	vcpu_fnfns.stderr.exp vcpu_fnfns.vgtest \
 	vgtest_ume.stderr.exp vgtest_ume.disabled \
 	with-space.stderr.exp with-space.stdout.exp with-space.vgtest \
 	wrap1.vgtest wrap1.stdout.exp wrap1.stderr.exp \

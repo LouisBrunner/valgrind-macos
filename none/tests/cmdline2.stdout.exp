@@ -61,6 +61,7 @@ usage: valgrind [options] prog-and-args
     --debug-dump=frames       mimic /usr/bin/readelf --debug-dump=frames
     --trace-redir=no|yes      show redirection details? [no]
     --trace-sched=no|yes      show thread scheduler details? [no]
+    --profile-heap=no|yes     profile Valgrind's own space use
     --wait-for-gdb=yes|no     pause on startup to wait for gdb attach
     --sym-offsets=yes|no      show syms in form 'name+offset' ? [no]
     --read-var-info=yes|no    read variable type & location info? [no]

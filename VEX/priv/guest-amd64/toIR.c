@@ -14717,6 +14717,18 @@ DisResult disInstr_AMD64_WRK (
          dres.whatNext = Dis_StopHere;
          break;
       }
+      /* F3 AE/AF: repe scasb/repe scas{w,l,q} */
+      if (haveASO(pfx)) 
+         goto decode_failure;
+      if (!haveF2(pfx) && haveF3(pfx)) {
+         if (opc == 0xAE)
+            sz = 1;
+         dis_REP_op ( AMD64CondZ, dis_SCAS, sz, 
+                      guest_RIP_curr_instr,
+                      guest_RIP_bbstart+delta, "repe scas", pfx );
+         dres.whatNext = Dis_StopHere;
+         break;
+      }
       /* AE/AF: scasb/scas{w,l,q} */
       if (!haveF2(pfx) && !haveF3(pfx)) {
          if (opc == 0xAE)

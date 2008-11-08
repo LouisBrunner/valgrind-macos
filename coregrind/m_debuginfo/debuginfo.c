@@ -664,38 +664,6 @@ ULong VG_(di_notify_mmap)( Addr a, Bool allow_SkFileV )
 
    /* no uses of statbuf below here. */
 
-   /* Peer at the first few bytes of the file, to see if it is an ELF */
-   /* object file. Ignore the file if we do not have read permission. */
-   VG_(memset)(buf1k, 0, sizeof(buf1k));
-   fd = VG_(open)( filename, VKI_O_RDONLY, 0 );
-   if (fd.isError) {
-      if (fd.err != VKI_EACCES)
-      {
-         DebugInfo fake_di;
-         VG_(memset)(&fake_di, 0, sizeof(fake_di));
-         fake_di.filename = filename;
-         ML_(symerr)(&fake_di, True, "can't open file to inspect ELF header");
-      }
-      return 0;
-   }
-   nread = VG_(read)( fd.res, buf1k, sizeof(buf1k) );
-   VG_(close)( fd.res );
-
-   if (nread == 0)
-      return 0;
-   if (nread < 0) {
-      DebugInfo fake_di;
-      VG_(memset)(&fake_di, 0, sizeof(fake_di));
-      fake_di.filename = filename;
-      ML_(symerr)(&fake_di, True, "can't read file to inspect ELF header");
-      return 0;
-   }
-   vg_assert(nread > 0 && nread <= sizeof(buf1k) );
-
-   /* We're only interested in mappings of ELF object files. */
-   if (!ML_(is_elf_object_file)( buf1k, (SizeT)nread ))
-      return 0;
-
    /* Now we have to guess if this is a text-like mapping, a data-like
       mapping, neither or both.  The rules are:
 
@@ -749,6 +717,38 @@ ULong VG_(di_notify_mmap)( Addr a, Bool allow_SkFileV )
 
    /* If it is neither text-ish nor data-ish, we're not interested. */
    if (!(is_rx_map || is_rw_map))
+      return 0;
+
+   /* Peer at the first few bytes of the file, to see if it is an ELF */
+   /* object file. Ignore the file if we do not have read permission. */
+   VG_(memset)(buf1k, 0, sizeof(buf1k));
+   fd = VG_(open)( filename, VKI_O_RDONLY, 0 );
+   if (fd.isError) {
+      if (fd.err != VKI_EACCES)
+      {
+         DebugInfo fake_di;
+         VG_(memset)(&fake_di, 0, sizeof(fake_di));
+         fake_di.filename = filename;
+         ML_(symerr)(&fake_di, True, "can't open file to inspect ELF header");
+      }
+      return 0;
+   }
+   nread = VG_(read)( fd.res, buf1k, sizeof(buf1k) );
+   VG_(close)( fd.res );
+
+   if (nread == 0)
+      return 0;
+   if (nread < 0) {
+      DebugInfo fake_di;
+      VG_(memset)(&fake_di, 0, sizeof(fake_di));
+      fake_di.filename = filename;
+      ML_(symerr)(&fake_di, True, "can't read file to inspect ELF header");
+      return 0;
+   }
+   vg_assert(nread > 0 && nread <= sizeof(buf1k) );
+
+   /* We're only interested in mappings of ELF object files. */
+   if (!ML_(is_elf_object_file)( buf1k, (SizeT)nread ))
       return 0;
 
    /* See if we have a DebugInfo for this filename.  If not,

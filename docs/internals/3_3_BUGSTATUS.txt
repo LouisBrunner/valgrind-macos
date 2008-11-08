@@ -67,10 +67,9 @@ n-i-bz  Fixd  8048   Make return types for some of the requests 64-bit clean
                      Not sure this does have anything to do with fctiwz.
                      VEX generates code that doesn't run on e500
 
-159285  WF,HIGH pend unhandled syscall:25
-                     requested test case
+159285  Fixd  8736   unhandled syscall:25 (stime, on x86-linux)
 
-159452  MED   pend   unhandled ioctl 0x8B01 on "valgrind iwconfig"
+159452  Fixd  8734   unhandled ioctl 0x8B01 on "valgrind iwconfig"
                      w/ plausible-looking patch
 
 159501  MED   pend   incorrect handling of ALSA ioctls
@@ -88,7 +87,7 @@ n-i-bz  Fixd  8048   Make return types for some of the requests 64-bit clean
 160872  MED   pend   race errors reported where libpthread.so
                      (might be a problem with pthread_setspecific)
 
-160954  HIGH  pend   ppc build of valgrind crashes with illegal instruction
+160954  Fixd  1870,1  ppc build of valgrind crashes with illegal instruction
                      (isel)
                      == 161251
 
@@ -133,12 +132,10 @@ n-i-bz  Fixd  8048   Make return types for some of the requests 64-bit clean
                      gcc-4.3 -- closed as wontfix
 
 164476  Fixd  8263,6 Missing kernel module loading system calls
-****                 But need to move non-generic code to Linux section
 
 164485  MED   pend   VG_N_SEGNAMES and VG_N_SEGMENTS are (still) too small
 
-**--P1--**
-164669  HIGH,WF pend SVN regression: mmap() drops posix file locks
+164669  Fixd  r8747  SVN regression: mmap() drops posix file locks
 
 165417  LOW   pend   helgrind/tests/hg05_race2: VG_(get_data_description)()
                      succeeds on x86 and amd64 but fails on ppc
@@ -149,7 +146,7 @@ n-i-bz  Fixd  8048   Make return types for some of the requests 64-bit clean
                      strange failures
                      (I think this should be closed as invalid)
 
-166355  HIGH  pend   unshare syscall not supported (amd64, #272)
+166355  HIGH,WF  pend   unshare syscall not supported (amd64, #272)
 
 166581  Fixd  8704   Callgrind output corruption when program forks
 
@@ -168,14 +165,14 @@ n-i-bz  Fixd  8048   Make return types for some of the requests 64-bit clean
 
 167676  ???   pend   Valgrind loads wrong threading library on Red Hat 9
 
-167700  HIGH  pend   vex x86->IR: unhandled instruction bytes: 0xD5 0x36 0x5B
-                     0xC3 (aad)
+167700  HIGH,WF pend  vex x86->IR: unhandled instruction bytes: 0xD5 0x36 0x5B
+                      0xC3 (aad)
 
 168538  ???   pend   Poor detection of stacks for clone can lead to
                      bad results, w/ patch
                      Looks plausible
 
-168943  ???   pend   unsupported scas instruction pentium
+168943  Fixd  vx1872 unsupported scas instruction pentium
 
 169539  WF    pend   mremap fails on specific address on 32-bit memcheck
                      w/ test case

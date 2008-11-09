@@ -4,7 +4,7 @@
 #include <stdlib.h>
 
 /* Simple test program, has two races.  A happens-before detector can only
-   ever detect one of them, though. */
+   ever detect one of them, though.  XXX: apparently not so; Drd and H 3.4 detect both. */
 
 int unprot1 = 0, unprot2 = 0, prot = 0;
 pthread_mutex_t mu = PTHREAD_MUTEX_INITIALIZER;

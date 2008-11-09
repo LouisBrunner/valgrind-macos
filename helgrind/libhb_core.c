@@ -42,7 +42,7 @@
 #include "pub_tool_aspacemgr.h"
 #include "pub_tool_execontext.h"
 #include "pub_tool_errormgr.h"
-
+#include "pub_tool_options.h"        // VG_(clo_verbosity)
 #include "hg_basics.h"
 #include "hg_wordset.h"
 #include "hg_lock_n_thread.h"
@@ -2287,10 +2287,11 @@ static void vts_tab__do_GC ( Bool show_stats )
       VG_(printf)("<<GC ends, next gc at %ld>>\n", vts_next_GC_at);
    }
 
-   if (1) {
+   if (VG_(clo_verbosity) > 1) {
       static UInt ctr = 0;
       tl_assert(nTab > 0);
-      VG_(printf)("libhb: VTS GC: #%u  old size %lu  live %lu  (%2llu%%)\n",
+      VG_(message)(Vg_DebugMsg,
+                  "libhb: VTS GC: #%u  old size %lu  live %lu  (%2llu%%)",
                   ctr++, nTab, nLive, (100ULL * nLive) / nTab);
    }
 }

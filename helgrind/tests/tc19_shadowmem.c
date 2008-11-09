@@ -29,14 +29,14 @@ void* child8 ( void* infoV )
    arr      = info->arr;
    assert( sizeof(char) == 1 );
    assert( info->child == &child8 );
+   { char* ptr = (char*)&arr[skipoff];
+     *ptr = 0; }
    for (i = firstoff; i <= lastoff; i += 1) {
       char* ptr = (char*)&arr[i];
-      if (i == skipoff) {
-        *ptr = 0;
-      } else {
-        r= pthread_mutex_lock( &mx ); assert(!r);
-        *ptr = 0;
-        r= pthread_mutex_unlock( &mx ); assert(!r);
+      if (i != skipoff) {
+         r= pthread_mutex_lock( &mx ); assert(!r);
+         *ptr = 0;
+         r= pthread_mutex_unlock( &mx ); assert(!r);
       }
    }
    return NULL;
@@ -53,14 +53,14 @@ void* child16 ( void* infoV )
    arr      = info->arr;
    assert( sizeof(short) == 2 );
    assert( info->child == &child16 );
+   { short* ptr = (short*)&arr[skipoff];
+     *ptr = 0; }
    for (i = firstoff; i <= lastoff; i += 2) {
       short* ptr = (short*)&arr[i];
-      if (i == skipoff) {
-        *ptr = 0;
-      } else {
-        r= pthread_mutex_lock( &mx ); assert(!r);
-        *ptr = 0;
-        r= pthread_mutex_unlock( &mx ); assert(!r);
+      if (i != skipoff) {
+         r= pthread_mutex_lock( &mx ); assert(!r);
+         *ptr = 0;
+         r= pthread_mutex_unlock( &mx ); assert(!r);
       }
    }
    return NULL;
@@ -77,14 +77,14 @@ void* child32 ( void* infoV )
    arr      = info->arr;
    assert( sizeof(int) == 4 );
    assert( info->child == &child32 );
+   { int* ptr = (int*)&arr[skipoff];
+     *ptr = 0; }
    for (i = firstoff; i <= lastoff; i += 4) {
       int* ptr = (int*)&arr[i];
-      if (i == skipoff) {
-        *ptr = 0;
-      } else {
-        r= pthread_mutex_lock( &mx ); assert(!r);
-        *ptr = 0;
-        r= pthread_mutex_unlock( &mx ); assert(!r);
+      if (i != skipoff) {
+         r= pthread_mutex_lock( &mx ); assert(!r);
+         *ptr = 0;
+         r= pthread_mutex_unlock( &mx ); assert(!r);
       }
    }
    return NULL;
@@ -101,14 +101,14 @@ void* child64 ( void* infoV )
    arr      = info->arr;
    assert( sizeof(double) == 8 );
    assert( info->child == &child64 );
+   { double* ptr = (double*)&arr[skipoff];
+     *ptr = 0.0; }
    for (i = firstoff; i <= lastoff; i += 8) {
       double* ptr = (double*)&arr[i];
-      if (i == skipoff) {
-        *ptr = 0;
-      } else {
-        r= pthread_mutex_lock( &mx ); assert(!r);
-        *ptr = 0;
-        r= pthread_mutex_unlock( &mx ); assert(!r);
+      if (i != skipoff) {
+         r= pthread_mutex_lock( &mx ); assert(!r);
+         *ptr = 0.0;
+         r= pthread_mutex_unlock( &mx ); assert(!r);
       }
    }
    return NULL;

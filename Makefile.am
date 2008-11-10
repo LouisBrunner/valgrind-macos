@@ -207,27 +207,27 @@ vex_primary_sources = \
 valt_load_address_x86_linux.lds: Makefile
 	$(CC) @FLAG_M32@ -Wl,--verbose -nostdlib 2>&1 | sed \
 		-e '1,/^=====\+$$/d' \
-		-e '/^=====\+$$/d' \
+		-e '/^=====\+$$/,/.\*/d' \
 		-e '/\. = 0x[0-9A-Fa-f]\+ + SIZEOF_HEADERS/s/0x[0-9A-Fa-f]\+/valt_load_address/g' > $@ \
 	|| rm -f $@
 
 valt_load_address_amd64_linux.lds: Makefile
 	$(CC) -m64 -Wl,--verbose -nostdlib 2>&1 | sed \
 		-e '1,/^=====\+$$/d' \
-		-e '/^=====\+$$/d' \
+		-e '/^=====\+$$/,/.\*/d' \
 		-e '/\. = 0x[0-9A-Fa-f]\+ + SIZEOF_HEADERS/s/0x[0-9A-Fa-f]\+/valt_load_address/g' > $@ \
 	|| rm -f $@
 
 valt_load_address_ppc32_linux.lds: Makefile
 	$(CC) @FLAG_M32@ -Wl,--verbose -nostdlib 2>&1 | sed \
 		-e '1,/^=====\+$$/d' \
-		-e '/^=====\+$$/d' \
+		-e '/^=====\+$$/,/.\*/d' \
 		-e '/\. = 0x[0-9A-Fa-f]\+ + SIZEOF_HEADERS/s/0x[0-9A-Fa-f]\+/valt_load_address/g' > $@ \
 	|| rm -f $@
 
 valt_load_address_ppc64_linux.lds: Makefile
 	$(CC) -m64 -Wl,--verbose -nostdlib 2>&1 | sed \
 		-e '1,/^=====\+$$/d' \
-		-e '/^=====\+$$/d' \
+		-e '/^=====\+$$/,/.\*/d' \
 		-e '/\. = 0x[0-9A-Fa-f]\+ + SIZEOF_HEADERS/s/0x[0-9A-Fa-f]\+/valt_load_address/g' > $@ \
 	|| rm -f $@

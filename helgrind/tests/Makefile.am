@@ -66,6 +66,7 @@ EXTRA_DIST = $(noinst_SCRIPTS) \
 	tc18_semabuse.vgtest tc18_semabuse.stdout.exp \
 		tc18_semabuse.stderr.exp-glibc25-amd64 \
 		tc18_semabuse.stderr.exp-glibc25-x86 \
+		tc18_semabuse.stderr.exp-glibc28-amd64 \
 	tc19_shadowmem.vgtest tc19_shadowmem.stdout.exp \
 		tc19_shadowmem.stderr.exp-glibc25-amd64 \
 		tc19_shadowmem.stderr.exp-glibc25-x86 \

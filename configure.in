@@ -769,6 +769,42 @@ AC_MSG_RESULT([no])
 ])
 
 
+# Check whether the boost library 1.35 or later has been installed.
+# The Boost.Threads library has undergone a major rewrite in version 1.35.0.
+
+AC_MSG_CHECKING([for boost])
+
+AC_LANG(C++)
+safe_CXXFLAGS=$CXXFLAGS
+CXXFLAGS="-lboost_thread-mt"
+
+AC_LINK_IFELSE(
+[
+#include <boost/thread.hpp>
+static void thread_func(void)
+{ }
+int main(int argc, char** argv)
+{
+  boost::thread t(thread_func);
+  return 0;
+}
+],
+[
+ac_have_boost_1_35=yes
+AC_SUBST([BOOST_CFLAGS], [])
+AC_SUBST([BOOST_LIBS], ["${CXXFLAGS}"])
+AC_MSG_RESULT([yes])
+], [
+ac_have_boost_1_35=no
+AC_MSG_RESULT([no])
+])
+
+CXXFLAGS=$safe_CXXFLAGS
+AC_LANG(C)
+
+AM_CONDITIONAL([HAVE_BOOST_1_35], [test x$ac_have_boost_1_35 = xyes])
+
+
 # does this compiler support -fopenmp, does it have the include file
 # <omp.h> and does it have libgomp ?
 

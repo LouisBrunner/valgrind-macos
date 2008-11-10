@@ -3065,10 +3065,12 @@ static void event_map_maybe_GC ( void )
    }
    VG_(doneIterFM)( genMap );
 
-   VG_(printf)(
-      "libhb: EvM GC: delete generations %lu and below, "
-      "retaining %lu entries\n",
-      maxGen, retained );
+   if (VG_(clo_verbosity) > 1) {
+      VG_(message)(Vg_DebugMsg,
+         "libhb: EvM GC: delete generations %lu and below, "
+         "retaining %lu entries",
+         maxGen, retained );
+   }
 
    VG_(deleteFM)( genMap, NULL, NULL );
 

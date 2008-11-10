@@ -39,14 +39,7 @@ Thread #1's call to pthread_mutex_unlock failed
    at 0x........: pthread_mutex_unlock (hg_intercepts.c:...)
    by 0x........: nearly_main (tc09_bad_unlock.c:41)
    by 0x........: main (tc09_bad_unlock.c:49)
-
-Thread #1 deallocated location 0x........ containing a locked lock
-   at 0x........: nearly_main (tc09_bad_unlock.c:45)
-   by 0x........: main (tc09_bad_unlock.c:49)
-  Lock at 0x........ was first observed
-   at 0x........: pthread_mutex_init (hg_intercepts.c:...)
-   by 0x........: nearly_main (tc09_bad_unlock.c:31)
-   by 0x........: main (tc09_bad_unlock.c:49)
+---------------------
 
 Thread #1 unlocked a not-locked lock at 0x........ 
    at 0x........: pthread_mutex_unlock (hg_intercepts.c:...)
@@ -55,6 +48,16 @@ Thread #1 unlocked a not-locked lock at 0x........
   Lock at 0x........ was first observed
    at 0x........: pthread_mutex_init (hg_intercepts.c:...)
    by 0x........: nearly_main (tc09_bad_unlock.c:23)
+   by 0x........: main (tc09_bad_unlock.c:49)
+
+Thread #1: Attempt to re-lock a non-recursive lock I already hold
+   at 0x........: pthread_mutex_lock (hg_intercepts.c:...)
+   by 0x........: nearly_main (tc09_bad_unlock.c:32)
+   by 0x........: main (tc09_bad_unlock.c:50)
+
+Thread #1: Bug in libpthread: recursive write lock granted on mutex/wrlock which does not support recursion
+   at 0x........: pthread_mutex_lock (hg_intercepts.c:...)
+   by 0x........: nearly_main (tc09_bad_unlock.c:32)
    by 0x........: main (tc09_bad_unlock.c:50)
 
 Thread #3 was created
@@ -74,7 +77,7 @@ Thread #3 unlocked lock at 0x........ currently held by thread #1
   Lock at 0x........ was first observed
    at 0x........: pthread_mutex_init (hg_intercepts.c:...)
    by 0x........: nearly_main (tc09_bad_unlock.c:31)
-   by 0x........: main (tc09_bad_unlock.c:50)
+   by 0x........: main (tc09_bad_unlock.c:49)
 
 Thread #1 unlocked an invalid lock at 0x........ 
    at 0x........: pthread_mutex_unlock (hg_intercepts.c:...)
@@ -87,12 +90,9 @@ Thread #1's call to pthread_mutex_unlock failed
    by 0x........: nearly_main (tc09_bad_unlock.c:41)
    by 0x........: main (tc09_bad_unlock.c:50)
 
-Thread #1 deallocated location 0x........ containing a locked lock
-   at 0x........: nearly_main (tc09_bad_unlock.c:45)
-   by 0x........: main (tc09_bad_unlock.c:50)
-  Lock at 0x........ was first observed
-   at 0x........: pthread_mutex_init (hg_intercepts.c:...)
-   by 0x........: nearly_main (tc09_bad_unlock.c:31)
-   by 0x........: main (tc09_bad_unlock.c:50)
+Thread #1: Exiting thread still holds 1 lock
+   at 0x........: _Exit (in /...libc...)
+   by 0x........: ...
+   by 0x........: (below main) (in /...libc...)
 
-ERROR SUMMARY: 10 errors from 10 contexts (suppressed: 0 from 0)
+ERROR SUMMARY: 11 errors from 11 contexts (suppressed: 0 from 0)

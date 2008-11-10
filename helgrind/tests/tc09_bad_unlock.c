@@ -46,7 +46,7 @@ void nearly_main ( void )
 
 int main ( void )
 {
-   nearly_main();
+   nearly_main(); fprintf(stderr, "---------------------\n" );
    nearly_main();
    return 0;
 }

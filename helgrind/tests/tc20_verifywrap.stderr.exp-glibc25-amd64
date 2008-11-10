@@ -14,13 +14,15 @@ Thread #2 was created
    by 0x........: pthread_create@* (hg_intercepts.c:...)
    by 0x........: main (tc20_verifywrap.c:76)
 
-Possible data race during write of size 2 at 0x........
+Possible data race during write of size 2 at 0x........ by thread #1
    at 0x........: main (tc20_verifywrap.c:78)
-  Old state: owned exclusively by thread #2
-  New state: shared-modified by threads #1, #2
-  Reason:    this thread, #1, holds no locks at all
-  Location 0x........ is 0 bytes inside global var "unprotected"
-  declared at tc20_verifywrap.c:27
+ This conflicts with a previous access by thread #2
+   at 0x........: racy_child (tc20_verifywrap.c:34)
+   by 0x........: mythread_wrapper (hg_intercepts.c:...)
+   by 0x........: ...
+   by 0x........: ...
+ Location 0x........ is 0 bytes inside global var "unprotected"
+ declared at tc20_verifywrap.c:27
 
 Thread #1's call to pthread_join failed
    with error code 35 (EDEADLK: Resource deadlock would occur)
@@ -149,10 +151,9 @@ FIXME: can't figure out how to verify wrap of sem_post
 ------------ dealloc of mem holding locks ------------
 
 
-Thread #1 deallocated location 0x........ containing a locked lock
-   at 0x........: main (tc20_verifywrap.c:262)
-  Lock at 0x........ was first observed
-   at 0x........: pthread_rwlock_init (hg_intercepts.c:...)
-   by 0x........: main (tc20_verifywrap.c:216)
+Thread #1: Exiting thread still holds 1 lock
+   at 0x........: _Exit (in /...libc...)
+   by 0x........: ...
+   by 0x........: (below main) (in /...libc...)
 
 ERROR SUMMARY: 20 errors from 20 contexts (suppressed: 0 from 0)

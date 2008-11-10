@@ -29,6 +29,7 @@ The object at address 0x........ is not a mutex.
 Destroying locked mutex: mutex 0x........, recursion count 1, owner 1.
    at 0x........: nearly_main (tc09_bad_unlock.c:45)
    by 0x........: (below main) (in /...libc...)
+---------------------
 
 Mutex not locked by calling thread: mutex 0x........, recursion count 0, owner 1.
    at 0x........: pthread_mutex_unlock (drd_pthread_intercepts.c:?)

@@ -1,0 +1,3 @@
+prereq: test -e boost_threads
+vgopts: --var-info=yes
+prog: boost_threads

@@ -20,6 +20,8 @@ EXTRA_DIST =                                        \
 	atomic_var.stderr.exp-with-atomic-builtins    \
 	atomic_var.stderr.exp-without-atomic-builtins \
 	atomic_var.vgtest			    \
+	boost_threads.stderr.exp                    \
+	boost_threads.vgtest			    \
 	drd_bitmap_test.stderr.exp                  \
 	drd_bitmap_test.stdout.exp                  \
 	drd_bitmap_test.vgtest                      \
@@ -247,12 +249,16 @@ check_PROGRAMS =      \
   tc24_nonzero_sem    \
   trylock
 
-if HAVE_QTCORE
-check_PROGRAMS += qt4_mutex qt4_rwlock qt4_semaphore
+if HAVE_BOOST_1_35
+check_PROGRAMS += boost_threads
 endif
 
 if HAVE_OPENMP
 check_PROGRAMS += omp_matinv omp_prime omp_printf
+endif
+
+if HAVE_QTCORE
+check_PROGRAMS += qt4_mutex qt4_rwlock qt4_semaphore
 endif
 
 
@@ -330,20 +336,6 @@ pth_inconsistent_cond_wait_LDADD   = -lpthread
 
 pth_spinlock_SOURCES        = pth_spinlock.c
 pth_spinlock_LDADD          = -lpthread
-
-if HAVE_QTCORE
-qt4_mutex_SOURCES           = qt4_mutex.cpp
-qt4_mutex_CXXFLAGS          = $(AM_CXXFLAGS) $(QTCORE_CFLAGS)
-qt4_mutex_LDADD             = $(QTCORE_LIBS)
-
-qt4_rwlock_SOURCES          = qt4_rwlock.cpp
-qt4_rwlock_CXXFLAGS         = $(AM_CXXFLAGS) $(QTCORE_CFLAGS)
-qt4_rwlock_LDADD            = $(QTCORE_LIBS)
-
-qt4_semaphore_SOURCES       = qt4_semaphore.cpp
-qt4_semaphore_CXXFLAGS      = $(AM_CXXFLAGS) $(QTCORE_CFLAGS)
-qt4_semaphore_LDADD         = $(QTCORE_LIBS)
-endif
 
 recursive_mutex_SOURCES     = recursive_mutex.c
 recursive_mutex_LDADD       = -lpthread
@@ -432,6 +424,12 @@ tc24_nonzero_sem_LDADD      = -lpthread
 trylock_SOURCES             = trylock.c
 trylock_LDADD               = -lpthread -lrt
 
+if HAVE_BOOST_1_35
+boost_threads_SOURCES       = boost_threads.cpp
+boost_threads_CXXFLAGS      = $(AM_CXXFLAGS) $(BOOST_CFLAGS)
+boost_threads_LDADD         = $(BOOST_LIBS)
+endif
+
 if HAVE_OPENMP
 omp_matinv_SOURCES          = omp_matinv.c
 omp_matinv_CFLAGS           = $(AM_CFLAGS) -fopenmp
@@ -447,4 +445,18 @@ omp_printf_SOURCES          = omp_printf.c
 omp_printf_CFLAGS           = $(AM_CFLAGS) -fopenmp
 omp_printf_LDFLAGS          = -fopenmp
 omp_printf_LDADD            = -lm
+endif
+
+if HAVE_QTCORE
+qt4_mutex_SOURCES           = qt4_mutex.cpp
+qt4_mutex_CXXFLAGS          = $(AM_CXXFLAGS) $(QTCORE_CFLAGS)
+qt4_mutex_LDADD             = $(QTCORE_LIBS)
+
+qt4_rwlock_SOURCES          = qt4_rwlock.cpp
+qt4_rwlock_CXXFLAGS         = $(AM_CXXFLAGS) $(QTCORE_CFLAGS)
+qt4_rwlock_LDADD            = $(QTCORE_LIBS)
+
+qt4_semaphore_SOURCES       = qt4_semaphore.cpp
+qt4_semaphore_CXXFLAGS      = $(AM_CXXFLAGS) $(QTCORE_CFLAGS)
+qt4_semaphore_LDADD         = $(QTCORE_LIBS)
 endif

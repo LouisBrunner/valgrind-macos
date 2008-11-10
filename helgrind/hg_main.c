@@ -1040,8 +1040,10 @@ static void all__sanity_check ( Char* who ) {
 /*----------------------------------------------------------------*/
 
 static void laog__pre_thread_acquires_lock ( Thread*, Lock* ); /* fwds */
-static void laog__handle_lock_deletions    ( WordSetID ); /* fwds */
+//static void laog__handle_lock_deletions    ( WordSetID ); /* fwds */
 static inline Thread* get_current_Thread ( void ); /* fwds */
+__attribute__((noinline))
+static void laog__handle_one_lock_deletion ( Lock* lk ); /* fwds */
 
 
 /* Block-copy states (needed for implementing realloc()). */
@@ -1870,6 +1872,7 @@ void evh__HG_PTHREAD_MUTEX_DESTROY_PRE( ThreadId tid, void* mutex )
       tl_assert( !lk->heldBy );
       tl_assert( HG_(is_sane_LockN)(lk) );
 
+      laog__handle_one_lock_deletion(lk);
       map_locks_delete( lk->guestaddr );
       del_LockN( lk );
    }
@@ -2185,6 +2188,7 @@ void evh__HG_PTHREAD_RWLOCK_DESTROY_PRE( ThreadId tid, void* rwl )
       tl_assert( !lk->heldBy );
       tl_assert( HG_(is_sane_LockN)(lk) );
 
+      laog__handle_one_lock_deletion(lk);
       map_locks_delete( lk->guestaddr );
       del_LockN( lk );
    }
@@ -2943,27 +2947,27 @@ static void laog__handle_one_lock_deletion ( Lock* lk )
    }
 }
 
-__attribute__((noinline))
-static void laog__handle_lock_deletions (
-               WordSetID /* in univ_laog */ locksToDelete
-            )
-{
-   Word   i, ws_size;
-   UWord* ws_words;
-
-   if (!laog)
-      laog = VG_(newFM)( HG_(zalloc), "hg.lhld.1", HG_(free), NULL/*unboxedcmp*/ );
-   if (!laog_exposition)
-      laog_exposition = VG_(newFM)( HG_(zalloc), "hg.lhld.2", HG_(free), 
-                                    cmp_LAOGLinkExposition );
-
-   HG_(getPayloadWS)( &ws_words, &ws_size, univ_lsets, locksToDelete );
-   for (i = 0; i < ws_size; i++)
-      laog__handle_one_lock_deletion( (Lock*)ws_words[i] );
-
-   if (HG_(clo_sanity_flags) & SCE_LAOG)
-      all__sanity_check("laog__handle_lock_deletions-post");
-}
+//__attribute__((noinline))
+//static void laog__handle_lock_deletions (
+//               WordSetID /* in univ_laog */ locksToDelete
+//            )
+//{
+//   Word   i, ws_size;
+//   UWord* ws_words;
+//
+//   if (!laog)
+//      laog = VG_(newFM)( HG_(zalloc), "hg.lhld.1", HG_(free), NULL/*unboxedcmp*/ );
+//   if (!laog_exposition)
+//      laog_exposition = VG_(newFM)( HG_(zalloc), "hg.lhld.2", HG_(free), 
+//                                    cmp_LAOGLinkExposition );
+//
+//   HG_(getPayloadWS)( &ws_words, &ws_size, univ_lsets, locksToDelete );
+//   for (i = 0; i < ws_size; i++)
+//      laog__handle_one_lock_deletion( (Lock*)ws_words[i] );
+//
+//   if (HG_(clo_sanity_flags) & SCE_LAOG)
+//      all__sanity_check("laog__handle_lock_deletions-post");
+//}
 
 
 /*--------------------------------------------------------------*/

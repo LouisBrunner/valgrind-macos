@@ -21,6 +21,10 @@ EXTRA_DIST = $(noinst_SCRIPTS) \
 		hg05_race2.stderr.exp-glibc25-x86 \
 	hg06_readshared.vgtest hg06_readshared.stdout.exp \
 		hg06_readshared.stderr.exp-glibc25-amd64 \
+	rwlock_race.vgtest rwlock_race.stdout.exp \
+		rwlock_race.stderr.exp-glibc25-amd64 \
+	rwlock_test.vgtest rwlock_test.stdout.exp \
+		rwlock_test.stderr.exp-glibc25-amd64 \
 	tc01_simple_race.vgtest tc01_simple_race.stdout.exp \
 		tc01_simple_race.stderr.exp-glibc25-amd64 \
 		tc01_simple_race.stderr.exp-glibc25-x86 \
@@ -95,6 +99,8 @@ check_PROGRAMS = \
 	hg04_race \
 	hg05_race2 \
 	hg06_readshared \
+	rwlock_race \
+	rwlock_test \
 	tc01_simple_race \
 	tc02_simple_tls \
 	tc03_re_excl \
@@ -126,5 +132,8 @@ AM_CPPFLAGS = -I$(top_srcdir) -I$(top_srcdir)/include \
 
 # are these necessary?
 AM_CFLAGS	= $(WERROR) -Winline -Wall -Wshadow -g $(AM_FLAG_M3264_PRI)
-
 LDADD		= -lpthread
+
+# only needed because of referencing sources in drd/tests
+rwlock_race_SOURCES	= ../../drd/tests/rwlock_race.c
+rwlock_test_SOURCES	= ../../drd/tests/rwlock_test.c

@@ -215,6 +215,11 @@
    Helgrind:Race
    fun:pthread_create@*
 }
+{
+   helgrind-glibc28-113
+   Helgrind:Race
+   fun:pthread_barrier_wait*
+}
 
 ######------------ glibc-2.7 specific ---------######
 #

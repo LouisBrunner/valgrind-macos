@@ -1397,7 +1397,9 @@ void evhH__pre_thread_releases_lock ( Thread* thr,
 }
 
 
-/*--------- Event handlers proper (evh__* functions) ---------*/
+/* ---------------------------------------------------------- */
+/* -------- Event handlers proper (evh__* functions) -------- */
+/* ---------------------------------------------------------- */
 
 /* What is the Thread* for the currently running thread?  This is
    absolutely performance critical.  We receive notifications from the
@@ -1814,8 +1816,9 @@ void evh__mem_help_write_N(Addr a, SizeT size) {
 //   evhH__pre_thread_releases_lock( thr, (Addr)&__bus_lock, False/*!isRDWR*/ );
 //}
 
-
+/* ------------------------------------------------------- */
 /* -------------- events to do with mutexes -------------- */
+/* ------------------------------------------------------- */
 
 /* EXPOSITION only: by intercepting lock init events we can show the
    user where the lock was initialised, rather than only being able to
@@ -1964,7 +1967,9 @@ static void evh__HG_PTHREAD_MUTEX_UNLOCK_POST ( ThreadId tid, void* mutex )
 }
 
 
+/* ----------------------------------------------------- */
 /* --------------- events to do with CVs --------------- */
+/* ----------------------------------------------------- */
 
 /* A mapping from CV to the SO associated with it.  When the CV is
    signalled/broadcasted upon, we do a 'send' into the SO, and when a
@@ -1978,7 +1983,8 @@ static WordFM* map_cond_to_SO = NULL;
 
 static void map_cond_to_SO_INIT ( void ) {
    if (UNLIKELY(map_cond_to_SO == NULL)) {
-      map_cond_to_SO = VG_(newFM)( HG_(zalloc), "hg.mctSI.1", HG_(free), NULL );
+      map_cond_to_SO = VG_(newFM)( HG_(zalloc),
+                                   "hg.mctSI.1", HG_(free), NULL );
       tl_assert(map_cond_to_SO != NULL);
    }
 }
@@ -2137,7 +2143,9 @@ static void evh__HG_PTHREAD_COND_DESTROY_PRE ( ThreadId tid,
 }
 
 
+/* ------------------------------------------------------- */
 /* -------------- events to do with rwlocks -------------- */
+/* ------------------------------------------------------- */
 
 /* EXPOSITION only */
 static
@@ -2274,7 +2282,9 @@ static void evh__HG_PTHREAD_RWLOCK_UNLOCK_POST ( ThreadId tid, void* rwl )
 }
 
 
-/* --------------- events to do with semaphores --------------- */
+/* ---------------------------------------------------------- */
+/* -------------- events to do with semaphores -------------- */
+/* ---------------------------------------------------------- */
 
 /* This is similar to but not identical to the handling for condition
    variables. */
@@ -2497,6 +2507,213 @@ static void evh__HG_POSIX_SEM_WAIT_POST ( ThreadId tid, void* sem )
          thr, "Bug in libpthread: sem_wait succeeded on"
               " semaphore without prior sem_post");
    }
+}
+
+
+/* -------------------------------------------------------- */
+/* -------------- events to do with barriers -------------- */
+/* -------------------------------------------------------- */
+
+typedef
+   struct {
+      Bool    initted; /* has it yet been initted by guest? */
+      UWord   size;    /* declared size */
+      XArray* waiting; /* XA of Thread*.  # present is 0 .. .size */
+   }
+   Bar;
+
+static Bar* new_Bar ( void ) {
+   Bar* bar = HG_(zalloc)( "hg.nB.1 (new_Bar)", sizeof(Bar) );
+   tl_assert(bar);
+   /* all fields are zero */
+   tl_assert(bar->initted == False);
+   return bar;
+}
+
+static void delete_Bar ( Bar* bar ) {
+   tl_assert(bar);
+   if (bar->waiting)
+      VG_(deleteXA)(bar->waiting);
+   HG_(free)(bar);
+}
+
+/* A mapping which stores auxiliary data for barriers. */
+
+/* pthread_barrier_t* -> Bar* */
+static WordFM* map_barrier_to_Bar = NULL;
+
+static void map_barrier_to_Bar_INIT ( void ) {
+   if (UNLIKELY(map_barrier_to_Bar == NULL)) {
+      map_barrier_to_Bar = VG_(newFM)( HG_(zalloc),
+                                       "hg.mbtBI.1", HG_(free), NULL );
+      tl_assert(map_barrier_to_Bar != NULL);
+   }
+}
+
+static Bar* map_barrier_to_Bar_lookup_or_alloc ( void* barrier ) {
+   UWord key, val;
+   map_barrier_to_Bar_INIT();
+   if (VG_(lookupFM)( map_barrier_to_Bar, &key, &val, (UWord)barrier )) {
+      tl_assert(key == (UWord)barrier);
+      return (Bar*)val;
+   } else {
+      Bar* bar = new_Bar();
+      VG_(addToFM)( map_barrier_to_Bar, (UWord)barrier, (UWord)bar );
+      return bar;
+   }
+}
+
+static void map_barrier_to_Bar_delete ( void* barrier ) {
+   UWord keyW, valW;
+   map_barrier_to_Bar_INIT();
+   if (VG_(delFromFM)( map_barrier_to_Bar, &keyW, &valW, (UWord)barrier )) {
+      Bar* bar = (Bar*)valW;
+      tl_assert(keyW == (UWord)barrier);
+      delete_Bar(bar);
+   }
+}
+
+
+static void evh__HG_PTHREAD_BARRIER_INIT_PRE ( ThreadId tid,
+                                               void* barrier,
+                                               UWord count )
+{
+   Thread* thr;
+   Bar*    bar;
+
+   if (SHOW_EVENTS >= 1)
+      VG_(printf)("evh__HG_PTHREAD_BARRIER_INIT_PRE"
+                  "(tid=%d, barrier=%p, count=%lu)\n", 
+                  (Int)tid, (void*)barrier, count );
+
+   thr = map_threads_maybe_lookup( tid );
+   tl_assert(thr); /* cannot fail - Thread* must already exist */
+
+   if (count == 0) {
+      HG_(record_error_Misc)(
+         thr, "pthread_barrier_init: 'count' argument is zero"
+      );
+   }
+
+   bar = map_barrier_to_Bar_lookup_or_alloc(barrier);
+   tl_assert(bar);
+
+   if (bar->initted) {
+      HG_(record_error_Misc)(
+         thr, "pthread_barrier_init: barrier is already initialised"
+      );
+   }
+
+   if (bar->waiting && VG_(sizeXA)(bar->waiting) > 0) {
+      tl_assert(bar->initted);
+      HG_(record_error_Misc)(
+         thr, "pthread_barrier_init: barrier still has waiting threads"
+      );
+      VG_(dropTailXA)(bar->waiting, VG_(sizeXA)(bar->waiting));
+   }
+   if (!bar->waiting) {
+      bar->waiting = VG_(newXA)( HG_(zalloc), "hg.eHPBIP.1", HG_(free),
+                                 sizeof(Thread*) );
+   }
+
+   tl_assert(bar->waiting);
+   tl_assert(VG_(sizeXA)(bar->waiting) == 0);
+   bar->initted = True;
+   bar->size    = count;
+}
+
+
+static void evh__HG_PTHREAD_BARRIER_DESTROY_PRE ( ThreadId tid,
+                                                  void* barrier )
+{
+   /* Deal with destroy events.  The only purpose is to free storage
+      associated with the barrier, so as to avoid any possible
+      resource leaks. */
+   if (SHOW_EVENTS >= 1)
+      VG_(printf)("evh__HG_PTHREAD_BARRIER_DESTROY_PRE"
+                  "(tid=%d, barrier=%p)\n", 
+                  (Int)tid, (void*)barrier );
+
+   /* Maybe we shouldn't do this; just let it persist, so that when it
+      is reinitialised we don't need to do any dynamic memory
+      allocation?  The downside is a potentially unlimited space leak,
+      if the client creates (in turn) a large number of barriers all
+      at different locations.  Note that if we do later move to the
+      don't-delete-it scheme, we need to mark the barrier as
+      uninitialised again since otherwise a later _init call will
+      elicit a duplicate-init error. */
+   map_barrier_to_Bar_delete( barrier );
+}
+
+
+static void evh__HG_PTHREAD_BARRIER_WAIT_PRE ( ThreadId tid,
+                                               void* barrier )
+{
+   Thread* thr;
+   Bar*    bar;
+   SO*     so;
+   UWord   present, i;
+
+   if (SHOW_EVENTS >= 1)
+      VG_(printf)("evh__HG_PTHREAD_BARRIER_WAIT_PRE"
+                  "(tid=%d, barrier=%p)\n", 
+                  (Int)tid, (void*)barrier );
+
+   thr = map_threads_maybe_lookup( tid );
+   tl_assert(thr); /* cannot fail - Thread* must already exist */
+
+   bar = map_barrier_to_Bar_lookup_or_alloc(barrier);
+   tl_assert(bar);
+
+   if (!bar->initted) {
+      HG_(record_error_Misc)(
+         thr, "pthread_barrier_wait: barrier is uninitialised"
+      );
+      return; /* client is broken .. avoid assertions below */
+   }
+
+   /* guaranteed by _INIT_PRE above */
+   tl_assert(bar->size > 0);
+   tl_assert(bar->waiting);
+
+   VG_(addToXA)( bar->waiting, &thr );
+
+   /* guaranteed by this function */
+   present = VG_(sizeXA)(bar->waiting);
+   tl_assert(present > 0 && present <= bar->size);
+
+   if (present < bar->size)
+      return;
+
+   /* All the threads have arrived.  Now do the Interesting bit.  Get
+      a new synchronisation object and do a weak send to it from all
+      the participating threads.  This makes its vector clocks be the
+      join of all the individual thread's vector clocks.  Then do a
+      strong receive from it back to all threads, so that their VCs
+      are a copy of it (hence are all equal to the join of their
+      original VCs.) */
+   so = libhb_so_alloc();
+
+   /* XXX check ->waiting has no duplicates */
+
+   tl_assert(bar->waiting);
+   tl_assert(VG_(sizeXA)(bar->waiting) == bar->size);
+
+   /* compute the join ... */
+   for (i = 0; i < bar->size; i++) {
+      Thread* t = *(Thread**)VG_(indexXA)(bar->waiting, i);
+      Thr* hbthr = t->hbthr;
+      libhb_so_send( hbthr, so, False/*weak send*/ );
+   }
+   /* ... and distribute to all threads */
+   for (i = 0; i < bar->size; i++) {
+      Thread* t = *(Thread**)VG_(indexXA)(bar->waiting, i);
+      Thr* hbthr = t->hbthr;
+      libhb_so_recv( hbthr, so, True/*strong recv*/ );
+   }
+
+   /* finally, we must empty out the waiting vector */
+   VG_(dropTailXA)(bar->waiting, VG_(sizeXA)(bar->waiting));   
 }
 
 
@@ -3658,19 +3875,20 @@ Bool hg_handle_client_request ( ThreadId tid, UWord* args, UWord* ret)
          evh__HG_POSIX_SEM_WAIT_POST( tid, (void*)args[1] );
          break;
 
-//zz       case _VG_USERREQ__HG_GET_MY_SEGMENT: { // -> Segment*
-//zz          Thread*   thr;
-//zz          SegmentID segid;
-//zz          Segment*  seg;
-//zz          thr = map_threads_maybe_lookup( tid );
-//zz          tl_assert(thr); /* cannot fail */
-//zz          segid = thr->csegid;
-//zz          tl_assert(is_sane_SegmentID(segid));
-//zz          seg = map_segments_lookup( segid );
-//zz          tl_assert(seg);
-//zz          *ret = (UWord)seg;
-//zz          break;
-//zz       }
+      case _VG_USERREQ__HG_PTHREAD_BARRIER_INIT_PRE:
+         /* pth_bar_t*, ulong */
+         evh__HG_PTHREAD_BARRIER_INIT_PRE( tid, (void*)args[1], args[2] );
+         break;
+
+      case _VG_USERREQ__HG_PTHREAD_BARRIER_WAIT_PRE:
+         /* pth_bar_t* */
+         evh__HG_PTHREAD_BARRIER_WAIT_PRE( tid, (void*)args[1] );
+         break;
+
+      case _VG_USERREQ__HG_PTHREAD_BARRIER_DESTROY_PRE:
+         /* pth_bar_t* */
+         evh__HG_PTHREAD_BARRIER_DESTROY_PRE( tid, (void*)args[1] );
+         break;
 
       default:
          /* Unhandled Helgrind client request! */

@@ -755,28 +755,74 @@ PTH_FUNC(int, pthreadZucondZudestroyZAZa, // pthread_cond_destroy@*
 /*--- pthread_barrier_t functions                              ---*/
 /*----------------------------------------------------------------*/
 
-PTH_FUNC(int, pthreadZubarrierZuwait, // pthread_barrier_wait.
-              pthread_barrier_t* b)
+/* Handled:   pthread_barrier_init
+              pthread_barrier_wait
+              pthread_barrier_destroy
+
+   Unhandled: pthread_barrierattr_destroy
+              pthread_barrierattr_getpshared
+              pthread_barrierattr_init
+              pthread_barrierattr_setpshared
+              -- are these important?
+*/
+
+PTH_FUNC(int, pthreadZubarrierZuinit, // pthread_barrier_init
+         pthread_barrier_t* bar,
+         pthread_barrierattr_t* attr, unsigned long count)
 {
    int ret;
    OrigFn fn;
    VALGRIND_GET_ORIG_FN(fn);
 
    if (TRACE_PTH_FNS) {
-      fprintf(stderr, "<< pthread_barrier_wait %p", b);
+      fprintf(stderr, "<< pthread_barrier_init %p %p %lu",
+                      bar, attr, count);
       fflush(stderr);
    }
 
-   // We blocked, signal.
-   DO_CREQ_v_W(_VG_USERREQ__HG_PTHREAD_COND_BROADCAST_PRE,
-               void*,b);
-   CALL_FN_W_W(ret, fn, b);
+   DO_CREQ_v_WW(_VG_USERREQ__HG_PTHREAD_BARRIER_INIT_PRE,
+                pthread_barrier_t*,bar,
+                unsigned long,count);
 
-   // FIXME: handle ret
+   CALL_FN_W_WWW(ret, fn, bar,attr,count);
 
-   // We unblocked, finish wait.
-   DO_CREQ_v_WW(_VG_USERREQ__HG_PTHREAD_COND_WAIT_POST,
-               void *, b, void *, b);
+   if (ret != 0) {
+      DO_PthAPIerror( "pthread_barrier_init", ret );
+   }
+
+   if (TRACE_PTH_FNS) {
+      fprintf(stderr, "  pthread_barrier_init -> %d >>\n", ret);
+   }
+
+   return ret;
+}
+
+
+PTH_FUNC(int, pthreadZubarrierZuwait, // pthread_barrier_wait
+              pthread_barrier_t* bar)
+{
+   int ret;
+   OrigFn fn;
+   VALGRIND_GET_ORIG_FN(fn);
+
+   if (TRACE_PTH_FNS) {
+      fprintf(stderr, "<< pthread_barrier_wait %p", bar);
+      fflush(stderr);
+   }
+
+   /* That this works correctly, and doesn't screw up when a thread
+      leaving the barrier races round to the front and re-enters while
+      other threads are still leaving it, is quite subtle.  See
+      comments in the handler for PTHREAD_BARRIER_WAIT_PRE in
+      hg_main.c. */
+   DO_CREQ_v_W(_VG_USERREQ__HG_PTHREAD_BARRIER_WAIT_PRE,
+               pthread_barrier_t*,bar);
+
+   CALL_FN_W_W(ret, fn, bar);
+
+   if (ret != 0 && ret != PTHREAD_BARRIER_SERIAL_THREAD) {
+      DO_PthAPIerror( "pthread_barrier_wait", ret );
+   }
 
    if (TRACE_PTH_FNS) {
       fprintf(stderr, "  pthread_barrier_wait -> %d >>\n", ret);
@@ -786,6 +832,33 @@ PTH_FUNC(int, pthreadZubarrierZuwait, // pthread_barrier_wait.
 }
 
 
+PTH_FUNC(int, pthreadZubarrierZudestroy, // pthread_barrier_destroy
+         pthread_barrier_t* bar)
+{
+   int ret;
+   OrigFn fn;
+   VALGRIND_GET_ORIG_FN(fn);
+
+   if (TRACE_PTH_FNS) {
+      fprintf(stderr, "<< pthread_barrier_destroy %p", bar);
+      fflush(stderr);
+   }
+
+   DO_CREQ_v_W(_VG_USERREQ__HG_PTHREAD_BARRIER_DESTROY_PRE,
+               pthread_barrier_t*,bar);
+
+   CALL_FN_W_W(ret, fn, bar);
+
+   if (ret != 0) {
+      DO_PthAPIerror( "pthread_barrier_destroy", ret );
+   }
+
+   if (TRACE_PTH_FNS) {
+      fprintf(stderr, "  pthread_barrier_destroy -> %d >>\n", ret);
+   }
+
+   return ret;
+}
 
 /*----------------------------------------------------------------*/
 /*--- pthread_rwlock_t functions                               ---*/

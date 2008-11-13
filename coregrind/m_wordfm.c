@@ -683,11 +683,18 @@ Bool VG_(findBoundsFM)( WordFM* fm,
                                      key, fm->kCmp );
 }
 
+// See comment in pub_tool_wordfm.h for performance warning
 UWord VG_(sizeFM) ( WordFM* fm )
 {
    // Hmm, this is a bad way to do this
    return fm->root ? size_avl_nonNull( fm->root ) : 0;
 }
+
+// NB UNTESTED!  TEST BEFORE USE!
+//Bool VG_(isEmptyFM)( WordFM* fm )
+//{
+//   return fm->root ? False : True;
+//}
 
 // set up FM for iteration
 void VG_(initIterFM) ( WordFM* fm )

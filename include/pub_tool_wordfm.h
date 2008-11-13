@@ -122,8 +122,15 @@ Bool VG_(findBoundsFM)( WordFM* fm,
                         UWord maxKey, UWord maxVal,
                         UWord key );
 
-// How many elements are there in fm?
+// How many elements are there in fm?  NOTE: dangerous in the
+// sense that this is not an O(1) operation but rather O(N),
+// since it involves walking the whole tree.
 UWord VG_(sizeFM) ( WordFM* fm );
+
+// Is fm empty?  This at least is an O(1) operation.
+// Code is present in m_wordfm.c but commented out due to no
+// current usage.  Un-comment (and TEST IT) if required.
+//Bool VG_(isEmptyFM)( WordFM* fm );
 
 // set up FM for iteration
 void VG_(initIterFM) ( WordFM* fm );

@@ -948,8 +948,8 @@ PRE(sys_mmap)
 {
    SysRes r;
 
-   PRINT("sys_mmap ( %#lx, %llu, %ld, %ld, %ld, %ld )",
-         ARG1, (ULong)ARG2, ARG3, ARG4, ARG5, ARG6 );
+   PRINT("sys_mmap ( %#lx, %llu, %ld, %ld, %d, %ld )",
+         ARG1, (ULong)ARG2, ARG3, ARG4, (Int)ARG5, ARG6 );
    PRE_REG_READ6(long, "mmap",
                  unsigned long, start, unsigned long, length,
                  unsigned long, prot,  unsigned long, flags,

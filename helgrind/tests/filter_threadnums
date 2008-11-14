@@ -1,0 +1,9 @@
+#! /bin/sh
+
+./filter_stderr |
+
+# get rid of the numbers in bits of text "Thread #n" and "thread #n"
+# as these make some tests more scheduling sensitive -- those where
+# there are multiple threads which play interchangeable roles.
+
+sed "s/hread #[0-9]*/hread #x/"

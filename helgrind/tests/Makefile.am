@@ -2,9 +2,13 @@
 # For AM_FLAG_M3264_PRI
 include $(top_srcdir)/Makefile.flags.am
 
-noinst_SCRIPTS = filter_stderr
+noinst_SCRIPTS = filter_stderr filter_threadnums
 
 EXTRA_DIST = $(noinst_SCRIPTS) \
+	bar_bad.vgtest bar_bad.stdout.exp \
+		bar_bad.stderr.exp-glibc28-amd64 \
+	bar_trivial.vgtest bar_trivial.stdout.exp \
+		bar_trivial.stderr.exp-glibc28-amd64 \
 	hg01_all_ok.vgtest hg01_all_ok.stdout.exp \
 		hg01_all_ok.stderr.exp-glibc25-amd64 \
 	hg02_deadlock.vgtest hg02_deadlock.stdout.exp \
@@ -21,6 +25,12 @@ EXTRA_DIST = $(noinst_SCRIPTS) \
 		hg05_race2.stderr.exp-glibc25-x86 \
 	hg06_readshared.vgtest hg06_readshared.stdout.exp \
 		hg06_readshared.stderr.exp-glibc25-amd64 \
+	pth_barrier1.vgtest pth_barrier1.stdout.exp \
+		pth_barrier1.stderr.exp-glibc28-amd64 \
+	pth_barrier2.vgtest pth_barrier2.stdout.exp \
+		pth_barrier2.stderr.exp-glibc28-amd64 \
+	pth_barrier3.vgtest pth_barrier3.stdout.exp \
+		pth_barrier3.stderr.exp-glibc28-amd64 \
 	rwlock_race.vgtest rwlock_race.stdout.exp \
 		rwlock_race.stderr.exp-glibc25-amd64 \
 	rwlock_test.vgtest rwlock_test.stdout.exp \
@@ -93,12 +103,15 @@ EXTRA_DIST = $(noinst_SCRIPTS) \
 		tc24_nonzero_sem.stderr.exp-glibc25-amd64
 
 check_PROGRAMS = \
+	bar_bad \
+	bar_trivial \
 	hg01_all_ok \
 	hg02_deadlock \
 	hg03_inherit \
 	hg04_race \
 	hg05_race2 \
 	hg06_readshared \
+	pth_barrier \
 	rwlock_race \
 	rwlock_test \
 	tc01_simple_race \
@@ -135,5 +148,6 @@ AM_CFLAGS	= $(WERROR) -Winline -Wall -Wshadow -g $(AM_FLAG_M3264_PRI)
 LDADD		= -lpthread
 
 # only needed because of referencing sources in drd/tests
+pth_barrier_SOURCES	= ../../drd/tests/pth_barrier.c
 rwlock_race_SOURCES	= ../../drd/tests/rwlock_race.c
 rwlock_test_SOURCES	= ../../drd/tests/rwlock_test.c

@@ -2607,7 +2607,7 @@ static void evh__HG_PTHREAD_BARRIER_INIT_PRE ( ThreadId tid,
    if (bar->waiting && VG_(sizeXA)(bar->waiting) > 0) {
       tl_assert(bar->initted);
       HG_(record_error_Misc)(
-         thr, "pthread_barrier_init: barrier still has waiting threads"
+         thr, "pthread_barrier_init: threads are waiting at barrier"
       );
       VG_(dropTailXA)(bar->waiting, VG_(sizeXA)(bar->waiting));
    }
@@ -2626,6 +2626,9 @@ static void evh__HG_PTHREAD_BARRIER_INIT_PRE ( ThreadId tid,
 static void evh__HG_PTHREAD_BARRIER_DESTROY_PRE ( ThreadId tid,
                                                   void* barrier )
 {
+   Thread* thr;
+   Bar*    bar;
+
    /* Deal with destroy events.  The only purpose is to free storage
       associated with the barrier, so as to avoid any possible
       resource leaks. */
@@ -2634,6 +2637,24 @@ static void evh__HG_PTHREAD_BARRIER_DESTROY_PRE ( ThreadId tid,
                   "(tid=%d, barrier=%p)\n", 
                   (Int)tid, (void*)barrier );
 
+   thr = map_threads_maybe_lookup( tid );
+   tl_assert(thr); /* cannot fail - Thread* must already exist */
+
+   bar = map_barrier_to_Bar_lookup_or_alloc(barrier);
+   tl_assert(bar);
+
+   if (!bar->initted) {
+      HG_(record_error_Misc)(
+         thr, "pthread_barrier_destroy: barrier was never initialised"
+      );
+   }
+
+   if (bar->initted && bar->waiting && VG_(sizeXA)(bar->waiting) > 0) {
+      HG_(record_error_Misc)(
+         thr, "pthread_barrier_destroy: threads are waiting at barrier"
+      );
+   }
+
    /* Maybe we shouldn't do this; just let it persist, so that when it
       is reinitialised we don't need to do any dynamic memory
       allocation?  The downside is a potentially unlimited space leak,
@@ -2641,7 +2662,7 @@ static void evh__HG_PTHREAD_BARRIER_DESTROY_PRE ( ThreadId tid,
       at different locations.  Note that if we do later move to the
       don't-delete-it scheme, we need to mark the barrier as
       uninitialised again since otherwise a later _init call will
-      elicit a duplicate-init error. */
+      elicit a duplicate-init error.  */
    map_barrier_to_Bar_delete( barrier );
 }
 
@@ -2685,10 +2706,10 @@ static void evh__HG_PTHREAD_BARRIER_WAIT_PRE ( ThreadId tid,
    if (present < bar->size)
       return;
 
-   /* All the threads have arrived.  Now do the Interesting bit.  Get
+   /* All the threads have arrived.  Now do the Interesting Bit.  Get
       a new synchronisation object and do a weak send to it from all
       the participating threads.  This makes its vector clocks be the
-      join of all the individual thread's vector clocks.  Then do a
+      join of all the individual threads' vector clocks.  Then do a
       strong receive from it back to all threads, so that their VCs
       are a copy of it (hence are all equal to the join of their
       original VCs.) */

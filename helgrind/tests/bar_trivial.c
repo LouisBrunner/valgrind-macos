@@ -3,7 +3,7 @@
    barriers.  If H fails to notice the pthread_barrier_wait call then
    it will report a race.  Correct behaviour is not to report a race
    (there isn't one.) */
-
+#define _GNU_SOURCE
 #include <pthread.h>
 #include <stdio.h>
 #include <stdlib.h>

@@ -1,7 +1,7 @@
 
 /* This program checks that Helgrind reports the five degenerate
    uses of the barrier functions shown. */
-
+#define _GNU_SOURCE
 #include <pthread.h>
 #include <stdio.h>
 #include <stdlib.h>

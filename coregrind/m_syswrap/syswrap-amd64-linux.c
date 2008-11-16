@@ -1269,7 +1269,7 @@ const SyscallTableEntry ML_(syscall_table)[] = {
 
    LINXY(__NR_io_cancel,         sys_io_cancel),      // 210 
    //   (__NR_get_thread_area,   sys_ni_syscall),     // 211 
-   //   (__NR_lookup_dcookie,    sys_lookup_dcookie), // 212 
+   LINXY(__NR_lookup_dcookie,    sys_lookup_dcookie), // 212 
    LINXY(__NR_epoll_create,      sys_epoll_create),   // 213 
    //   (__NR_epoll_ctl_old,     sys_ni_syscall),     // 214 
 

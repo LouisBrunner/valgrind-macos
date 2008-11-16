@@ -236,6 +236,9 @@ DECL_TEMPLATE(linux, sys_stime);  /* maybe generic?  I'm not sure */
 DECL_TEMPLATE(linux, sys_init_module);
 DECL_TEMPLATE(linux, sys_delete_module);
 
+// Linux-specific (oprofile-related)
+DECL_TEMPLATE(linux, sys_lookup_dcookie);        // (*/32/64) L
+
 /* ---------------------------------------------------------------------
    Wrappers for sockets and ipc-ery.  These are split into standalone
    procedures because x86-linux hides them inside multiplexors

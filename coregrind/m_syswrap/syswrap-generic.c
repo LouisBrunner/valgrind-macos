@@ -2063,24 +2063,6 @@ PRE(sys_iopl)
    PRE_REG_READ1(long, "iopl", unsigned long, level);
 }
 
-// XXX: this wrapper is only suitable for 32-bit platforms
-#if defined(VGP_x86_linux)
-PRE(sys_lookup_dcookie)
-{
-   PRINT("sys_lookup_dcookie (0x%llx, %#lx, %ld)", LOHI64(ARG1,ARG2), ARG3, ARG4);
-   PRE_REG_READ4(long, "lookup_dcookie",
-                 vki_u32, cookie_low32, vki_u32, cookie_high32,
-                 char *, buf, vki_size_t, len);
-   PRE_MEM_WRITE( "lookup_dcookie(buf)", ARG3, ARG4);
-}
-POST(sys_lookup_dcookie)
-{
-   vg_assert(SUCCESS);
-   if (ARG3 != (Addr)NULL)
-      POST_MEM_WRITE( ARG3, RES);
-}
-#endif
-
 PRE(sys_fsync)
 {
    *flags |= SfMayBlock;

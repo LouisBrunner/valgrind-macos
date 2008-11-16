@@ -3073,6 +3073,48 @@ PRE(sys_delete_module)
    PRE_MEM_RASCIIZ("delete_module(name_user)", ARG1);
 }
 
+/* ---------------------------------------------------------------------
+   oprofile-related wrappers
+   ------------------------------------------------------------------ */
+
+#if defined(VGP_x86_linux)
+PRE(sys_lookup_dcookie)
+{
+   PRINT("sys_lookup_dcookie (0x%llx, %#lx, %ld)",
+         LOHI64(ARG1,ARG2), ARG3, ARG4);
+   PRE_REG_READ4(long, "lookup_dcookie",
+                 vki_u32, cookie_low32, vki_u32, cookie_high32,
+                 char *, buf, vki_size_t, len);
+   PRE_MEM_WRITE( "lookup_dcookie(buf)", ARG3, ARG4);
+}
+POST(sys_lookup_dcookie)
+{
+   vg_assert(SUCCESS);
+   if (ARG3 != (Addr)NULL)
+      POST_MEM_WRITE( ARG3, RES);
+}
+#endif
+
+#if defined(VGP_amd64_linux)
+PRE(sys_lookup_dcookie)
+{
+   *flags |= SfMayBlock;
+   PRINT("sys_lookup_dcookie ( %llu, %#lx, %llu )",
+	 (ULong)ARG1, ARG2, (ULong)ARG3);
+   PRE_REG_READ3(int, "lookup_dcookie",
+                 unsigned long long, cookie, char *, buf, vki_size_t, len);
+
+   PRE_MEM_WRITE( "sys_lookup_dcookie(buf)", ARG2, ARG3 );
+}
+
+POST(sys_lookup_dcookie)
+{
+   vg_assert(SUCCESS);
+   if (ARG2 != (Addr)NULL)
+     POST_MEM_WRITE( ARG2, RES );
+}
+#endif
+
 #undef PRE
 #undef POST
 

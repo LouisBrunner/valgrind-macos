@@ -2145,7 +2145,7 @@ const SyscallTableEntry ML_(syscall_table)[] = {
    LINX_(__NR_fadvise64,         sys_fadvise64),      // 250 */(Linux?)
    GENX_(251,                    sys_ni_syscall),     // 251
    LINX_(__NR_exit_group,        sys_exit_group),     // 252
-   GENXY(__NR_lookup_dcookie,    sys_lookup_dcookie), // 253
+   LINXY(__NR_lookup_dcookie,    sys_lookup_dcookie), // 253
    LINXY(__NR_epoll_create,      sys_epoll_create),   // 254
 
    LINX_(__NR_epoll_ctl,         sys_epoll_ctl),         // 255

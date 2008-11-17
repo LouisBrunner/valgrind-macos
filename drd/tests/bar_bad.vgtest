@@ -1,0 +1,2 @@
+prog: bar_bad
+vgopts: -q

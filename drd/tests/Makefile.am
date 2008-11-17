@@ -20,8 +20,12 @@ EXTRA_DIST =                                        \
 	atomic_var.stderr.exp-with-atomic-builtins    \
 	atomic_var.stderr.exp-without-atomic-builtins \
 	atomic_var.vgtest			    \
-	boost_threads.stderr.exp                    \
-	boost_threads.vgtest			    \
+	bar_bad.stderr.exp			    \
+	bar_bad.vgtest				    \
+	bar_trivial.stderr.exp			    \
+	bar_trivial.vgtest			    \
+	boost_thread.stderr.exp			    \
+	boost_thread.vgtest			    \
 	drd_bitmap_test.stderr.exp                  \
 	drd_bitmap_test.stdout.exp                  \
 	drd_bitmap_test.vgtest                      \
@@ -195,6 +199,8 @@ AM_CXXFLAGS = $(AM_CFLAGS)
 
 check_PROGRAMS =      \
   atomic_var          \
+  bar_bad	      \
+  bar_trivial         \
   drd_bitmap_test     \
   fp_race             \
   hg01_all_ok         \
@@ -250,7 +256,7 @@ check_PROGRAMS =      \
   trylock
 
 if HAVE_BOOST_1_35
-check_PROGRAMS += boost_threads
+check_PROGRAMS += boost_thread
 endif
 
 if HAVE_OPENMP
@@ -264,6 +270,12 @@ endif
 
 atomic_var_SOURCES          = atomic_var.c
 atomic_var_LDADD            = -lpthread
+
+bar_bad_SOURCES             = ../../helgrind/tests/bar_bad.c
+bar_bad_LDADD               = -lpthread
+
+bar_trivial_SOURCES         = ../../helgrind/tests/bar_trivial.c
+bar_trivial_LDADD           = -lpthread
 
 drd_bitmap_test_SOURCES     = drd_bitmap_test.c
 drd_bitmap_test_CFLAGS      = $(AM_CFLAGS) -O2 \
@@ -425,9 +437,9 @@ trylock_SOURCES             = trylock.c
 trylock_LDADD               = -lpthread -lrt
 
 if HAVE_BOOST_1_35
-boost_threads_SOURCES       = boost_threads.cpp
-boost_threads_CXXFLAGS      = $(AM_CXXFLAGS) $(BOOST_CFLAGS)
-boost_threads_LDADD         = $(BOOST_LIBS)
+boost_thread_SOURCES        = boost_thread.cpp
+boost_thread_CXXFLAGS       = $(AM_CXXFLAGS) $(BOOST_CFLAGS)
+boost_thread_LDADD          = $(BOOST_LIBS)
 endif
 
 if HAVE_OPENMP

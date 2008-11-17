@@ -106,9 +106,7 @@
 {
    pthread
    drd:ConflictingAccess
-   fun:clone
-   fun:create_thread
-   fun:pthread_create*
+   ...
    fun:pthread_create*
 }
 {
@@ -129,26 +127,6 @@
 {
    pthread
    drd:ConflictingAccess
-   fun:pthread_create@@GLIBC_*
-   fun:pthread_create*
-}
-{
-   pthread
-   drd:ConflictingAccess
-   fun:clone
-   fun:do_clone
-   fun:pthread_create@@GLIBC_*
-   fun:pthread_create*
-}
-{
-   pthread-glibc2.7-pthread_create
-   drd:ConflictingAccess
-   fun:memset
-   fun:pthread_create*
-}
-{
-   pthread
-   drd:ConflictingAccess
    fun:pthread_mutex_lock
    fun:pthread_mutex_lock
 }
@@ -161,65 +139,8 @@
 {
    pthread
    drd:ConflictingAccess
-   fun:clone
-   fun:pthread_create*
-}
-{
-   pthread
-   drd:ConflictingAccess
-   fun:do_clone
-   fun:pthread_create@@GLIBC_*
-   fun:pthread_create*
-}
-{
-   pthread
-   drd:ConflictingAccess
-   fun:memset
-   fun:pthread_create@@GLIBC_*
-   fun:pthread_create*
-}
-{
-   pthread
-   drd:ConflictingAccess
-   fun:_dl_allocate_tls_init
-   fun:pthread_create@@GLIBC_*
-   fun:pthread_create*
-}
-{
-   pthread
-   drd:ConflictingAccess
-   fun:memset
-   fun:_dl_allocate_tls_init
-   fun:pthread_create@@GLIBC_*
-   fun:pthread_create*
-}
-{
-   pthread
-   drd:ConflictingAccess
-   fun:mempcpy
-   fun:pthread_create@@GLIBC_*
-   fun:pthread_create*
-}
-{
-   pthread
-   drd:ConflictingAccess
    fun:pthread_join
    fun:pthread_join
-}
-{
-   pthread
-   drd:ConflictingAccess
-   fun:allocate_stack
-   fun:pthread_create*
-   fun:pthread_create*
-}
-{
-   pthread
-   drd:ConflictingAccess
-   fun:get_cached_stack
-   fun:allocate_stack
-   fun:pthread_create*
-   fun:pthread_create*
 }
 {
    pthread

@@ -127,7 +127,7 @@ extern Int   VG_(clo_backtrace_size);
 __attribute__((noreturn))
 extern void VG_(err_bad_option) ( Char* opt );
 
-/* Used to expand file names.  'option_name" is the option name, eg.
+/* Used to expand file names.  "option_name" is the option name, eg.
    "--log-file".  'format' is what follows, eg. "cachegrind.out.%p".  In
    'format': 
    - "%p" is replaced with PID.
@@ -138,6 +138,12 @@ extern void VG_(err_bad_option) ( Char* opt );
    If the format specifies a relative file name, it's put in the program's
    initial working directory.  If it specifies an absolute file name (ie.
    starts with '/') then it is put there.
+
+   Note that "option_name" has no effect on the returned string: the
+   returned string depends only on "format" and the PIDs and
+   environment variables that it references (if any). "option_name" is
+   merely used in printing error messages, if an error message needs
+   to be printed due to malformedness of the "format" argument.
 */
 extern Char* VG_(expand_file_name)(Char* option_name, Char* format);
 

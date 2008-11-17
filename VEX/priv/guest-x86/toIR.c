@@ -10016,7 +10016,11 @@ DisResult disInstr_X86_WRK (
       vassert(sz == 4);
       modrm = getIByte(delta+3);
       if (epartIsReg(modrm)) {
-         /* fall through, we don't yet have a test case */
+         putXMMRegLane64( eregOfRM(modrm), 0,
+                          getXMMRegLane64( gregOfRM(modrm), 0 ));
+         DIP("movsd %s,%s\n", nameXMMReg(gregOfRM(modrm)),
+                              nameXMMReg(eregOfRM(modrm)));
+         delta += 3+1;
       } else {
          addr = disAMode ( &alen, sorb, delta+3, dis_buf );
          storeLE( mkexpr(addr),
@@ -10024,8 +10028,8 @@ DisResult disInstr_X86_WRK (
          DIP("movsd %s,%s\n", nameXMMReg(gregOfRM(modrm)),
                               dis_buf);
          delta += 3+alen;
-         goto decode_success;
       }
+      goto decode_success;
    }
 
    /* 66 0F 59 = MULPD -- mul 64Fx2 from R/M to R */

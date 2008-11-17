@@ -1,5 +1,5 @@
 
-Barrier reinitializatoin: barrier 0x........
+Barrier reinitialization: barrier 0x........
    at 0x........: pthread_barrier_init (drd_pthread_intercepts.c:?)
    by 0x........: main (pth_barrier_reinit.c:?)
 barrier 0x........ was first observed at:

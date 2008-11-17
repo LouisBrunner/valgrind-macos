@@ -211,11 +211,7 @@ static void usage_NORETURN ( Bool debug_help )
 "  tool's start-up message for more information.\n"
 "\n";
 
-#  if defined(GDB_PATH)
    Char* gdb_path = GDB_PATH;
-#  else
-   Char* gdb_path = "/no/gdb/was/found/at/configure/time";
-#  endif
 
    // Ensure the message goes to stdout
    VG_(clo_log_fd) = 1;

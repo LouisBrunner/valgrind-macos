@@ -76,7 +76,7 @@ fi
 AC_PATH_PROG(PERL, perl)
 
 # figure out where gdb lives
-AC_PATH_PROG(GDB, gdb)
+AC_PATH_PROG(GDB, gdb, "/no/gdb/was/found/at/configure/time")
 AC_DEFINE_UNQUOTED(GDB_PATH, "$GDB", [path to GDB])
 
 # some older automake's don't have it so try something on our own

@@ -298,6 +298,12 @@
 {
    pthread
    drd:ConflictingAccess
+   ...
+   fun:pthread_cancel_init
+}
+{
+   pthread
+   drd:ConflictingAccess
    fun:sigcancel_handler
    obj:/lib*/libpthread-*
 }

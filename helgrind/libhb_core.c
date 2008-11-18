@@ -3065,20 +3065,9 @@ static void event_map_maybe_GC ( void )
    }
    VG_(doneIterFM)( genMap );
 
-   if (VG_(clo_verbosity) > 1) {
-      VG_(message)(Vg_DebugMsg,
-         "libhb: EvM GC: delete generations %lu and below, "
-         "retaining %lu entries",
-         maxGen, retained );
-   }
-
    VG_(deleteFM)( genMap, NULL, NULL );
 
-   /* If this fails, it means there's only one generation in the
-      entire tree.  So we're kind of in a bad situation, and need to
-      do some stop-gap measure, such as randomly deleting half the
-      entries. */
-   tl_assert(retained < oldrefTreeN);
+   tl_assert(retained >= 0 && retained <= oldrefTreeN);
 
    /* Now make up a big list of the oldrefTree entries we want to
       delete.  We can't simultaneously traverse the tree and delete
@@ -3087,12 +3076,49 @@ static void event_map_maybe_GC ( void )
    refs2del = VG_(newXA)( HG_(zalloc), "libhb.emmG.1",
                           HG_(free), sizeof(OldRef*) );
 
-   VG_(OSetGen_ResetIter)( oldrefTree );
-   while ( (oldref = VG_(OSetGen_Next)( oldrefTree )) ) {
-      tl_assert(oldref->magic == OldRef_MAGIC);
-      if (oldref->gen <= maxGen) {
-         VG_(addToXA)( refs2del, &oldref );
+   if (retained < oldrefTreeN) {
+
+      /* This is the normal (expected) case.  We discard any ref whose
+         generation number <= maxGen. */
+      VG_(OSetGen_ResetIter)( oldrefTree );
+      while ( (oldref = VG_(OSetGen_Next)( oldrefTree )) ) {
+         tl_assert(oldref->magic == OldRef_MAGIC);
+         if (oldref->gen <= maxGen) {
+            VG_(addToXA)( refs2del, &oldref );
+         }
       }
+      if (VG_(clo_verbosity) > 1) {
+         VG_(message)(Vg_DebugMsg,
+            "libhb: EvM GC: delete generations %lu and below, "
+            "retaining %lu entries",
+            maxGen, retained );
+      }
+
+   } else {
+
+      static UInt rand_seed = 0; /* leave as static */
+
+      /* Degenerate case: there's only one generation in the entire
+         tree, so we need to have some other way of deciding which
+         refs to throw away.  Just throw out half of them randomly. */
+      tl_assert(retained == oldrefTreeN);
+      VG_(OSetGen_ResetIter)( oldrefTree );
+      while ( (oldref = VG_(OSetGen_Next)( oldrefTree )) ) {
+         UInt n;
+         tl_assert(oldref->magic == OldRef_MAGIC);
+         n = VG_(random)( &rand_seed );
+         if ((n & 0xFFF) < 0x800) {
+            VG_(addToXA)( refs2del, &oldref );
+            retained--;
+         }
+      }
+      if (VG_(clo_verbosity) > 1) {
+         VG_(message)(Vg_DebugMsg,
+            "libhb: EvM GC: randomly delete half the entries, "
+            "retaining %lu entries",
+            retained );
+      }
+
    }
 
    n2del = VG_(sizeXA)( refs2del );

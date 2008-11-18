@@ -121,6 +121,7 @@ hgincludedir = $(includedir)/valgrind
 hginclude_HEADERS = helgrind.h
 
 noinst_HEADERS = \
-	hg_basics.h hg_lock_n_thread.h hg_errors.h hg_wordset.h
+	hg_basics.h hg_lock_n_thread.h hg_errors.h hg_wordset.h \
+	libhb.h
 
 EXTRA_DIST = README_MSMProp2.txt README_YARD.txt

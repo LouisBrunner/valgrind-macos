@@ -3184,11 +3184,32 @@ static void event_map_maybe_GC ( void )
 //                                                     //
 /////////////////////////////////////////////////////////
 
+/* Logic in msm_read/msm_write updated/verified after re-analysis,
+   19 Nov 08. */
+
 #define MSM_CONFACC 1
 
-#define MSM_RACE2ERR 1
-
 #define MSM_CHECK 0
+
+/* 19 Nov 08: it seems that MSM_RACE2ERR == 1 is a bad idea.  When
+   nonzero, the effect is that when a race is detected for a location,
+   that location is put into a special 'error' state and no further
+   checking of it is done until it returns to a 'normal' state, which
+   requires it to be deallocated and reallocated.
+
+   This is a bad idea, because of the interaction with suppressions.
+   Suppose there is a race on the location, but the error is
+   suppressed.  The location now is marked as in-error.  Now any
+   subsequent race -- including ones we want to see -- will never be
+   detected until the location is deallocated and reallocated.
+
+   Hence set MSM_CHECK to zero.  This causes raced-on locations to
+   remain in the normal 'C' (constrained) state, but places on them
+   the constraint that the next accesses happen-after both the
+   existing constraint and the relevant vector clock of the thread
+   doing the racing access. 
+*/
+#define MSM_RACE2ERR 0
 
 static ULong stats__msm_read         = 0;
 static ULong stats__msm_read_change  = 0;
@@ -3262,9 +3283,13 @@ static inline SVal msm_read ( SVal svOld,
          svNew = SVal__mkC( rmini, VtsID__join2(wmini, tviW) );
          goto out;
       } else {
+         /* assert on sanity of constraints. */
+         POrd  ordxx = VtsID__getOrdering(rmini,wmini);
+         tl_assert(ordxx == POrd_EQ || ordxx == POrd_LT);
          svNew = MSM_RACE2ERR
                     ? SVal__mkE()
-                    : SVal__mkC( rmini, VtsID__join2(wmini,tviR) );
+                    : SVal__mkC( VtsID__join2(wmini,tviR),
+                                 VtsID__join2(wmini,tviW) );
          record_race_info( acc_thr, acc_addr, szB, False/*!isWrite*/,
                            svOld, svNew );
          goto out;
@@ -3326,10 +3351,14 @@ static inline SVal msm_write ( SVal svOld,
          svNew = SVal__mkC( tviW, tviW );
          goto out;
       } else {
+         VtsID tviR  = acc_thr->viR;
          VtsID rmini = SVal__unC_Rmin(svOld);
+         /* assert on sanity of constraints. */
+         POrd  ordxx = VtsID__getOrdering(rmini,wmini);
+         tl_assert(ordxx == POrd_EQ || ordxx == POrd_LT);
          svNew = MSM_RACE2ERR
                     ? SVal__mkE()
-                    : SVal__mkC( VtsID__join2(rmini,tviW),
+                    : SVal__mkC( VtsID__join2(wmini,tviR),
                                  VtsID__join2(wmini,tviW) );
          record_race_info( acc_thr, acc_addr, szB, True/*isWrite*/,
                            svOld, svNew );

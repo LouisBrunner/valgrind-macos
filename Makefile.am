@@ -21,7 +21,7 @@ DIST_SUBDIRS  = $(SUBDIRS)
 
 SUPP_FILES = \
 	glibc-2.2.supp glibc-2.3.supp glibc-2.4.supp glibc-2.5.supp \
-	glibc-2.6.supp glibc-2.7.supp glibc-2.8.supp \
+	glibc-2.6.supp glibc-2.7.supp glibc-2.8.supp glibc-2.9.supp  \
 	aix5libc.supp xfree-3.supp xfree-4.supp \
 	glibc-2.34567-NPTL-helgrind.supp \
 	glibc-2.2-LinuxThreads-helgrind.supp \

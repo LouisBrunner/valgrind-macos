@@ -1585,7 +1585,7 @@ QT4_FUNC(void*, _ZN6QMutexD2Ev, void* mutex)
 
 /*----------------------------------------------------------------*/
 /*--- Replacements for basic string functions, that don't      ---*/
-/*--- the input arrays.                                        ---*/
+/*--- overrun the input arrays.                                ---*/
 /*----------------------------------------------------------------*/
 
 /* Copied verbatim from memcheck/mc_replace_strmem.c.  When copying

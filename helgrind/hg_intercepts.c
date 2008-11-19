@@ -46,6 +46,7 @@
 */
 
 #include "pub_tool_basics.h"
+#include "pub_tool_redir.h"
 #include "valgrind.h"
 #include "helgrind.h"
 
@@ -1258,34 +1259,93 @@ PTH_FUNC(int, semZupostZAZa, sem_t* sem) { /* sem_post@* */
 /*--- Qt 4 threading functions (w/ GNU name mangling)          ---*/
 /*----------------------------------------------------------------*/
 
-/* Handled:   QMutex::lock()
-              QMutex::unlock()
-              QMutex::tryLock
-              QReadWriteLock::lockForRead()
-              QReadWriteLock::lockForWrite()
-              QReadWriteLock::unlock()
+/* Handled:
+      QMutex::lock()
+      QMutex::unlock()
+      QMutex::tryLock()
+      QMutex::tryLock(int)
 
-   Unhandled: QMutex::tryLock(int)
-              QReadWriteLock::tryLockForRead(int)
-              QReadWriteLock::tryLockForRead()
-              QReadWriteLock::tryLockForWrite(int)
-              QReadWriteLock::tryLockForWrite()
+      QMutex::QMutex(QMutex::RecursionMode)  _ZN6QMutexC1ENS_13RecursionModeE
+      QMutex::QMutex(QMutex::RecursionMode)  _ZN6QMutexC2ENS_13RecursionModeE
+      QMutex::~QMutex()                      _ZN6QMutexD1Ev
+      QMutex::~QMutex()                      _ZN6QMutexD2Ev
 
-              maybe not the next 3; qt-4.3.1 on Unix merely
-              implements QWaitCondition using pthread_cond_t
-              QWaitCondition::wait(QMutex*, unsigned long)
-              QWaitCondition::wakeAll()
-              QWaitCondition::wakeOne()
+   Unhandled:
+      QReadWriteLock::lockForRead()
+      QReadWriteLock::lockForWrite()
+      QReadWriteLock::unlock()
+      QReadWriteLock::tryLockForRead(int)
+      QReadWriteLock::tryLockForRead()
+      QReadWriteLock::tryLockForWrite(int)
+      QReadWriteLock::tryLockForWrite()
+
+      QWaitCondition::wait(QMutex*, unsigned long)
+      QWaitCondition::wakeAll()
+      QWaitCondition::wakeOne()
+
+      QSemaphore::*
+*/
+/* More comments, 19 Nov 08, based on assessment of qt-4.5.0TP1,
+   at least on Unix:
+
+   It's apparently only necessary to intercept QMutex, since that is
+   not implemented using pthread_mutex_t; instead Qt4 has its own
+   implementation based on atomics (to check the non-contended case)
+   and pthread_cond_wait (to wait in the contended case).
+
+   QReadWriteLock is built on top of QMutex, counters, and a wait
+   queue.  So we don't need to handle it specially once QMutex
+   handling is correct -- presumably the dependencies through QMutex
+   are sufficient to avoid any false race reports.  On the other hand,
+   it is an open question whether too many dependencies are observed
+   -- in which case we may miss races (false negatives).  I suspect
+   this is likely to be the case, unfortunately.
+
+   QWaitCondition is built on pthread_cond_t, pthread_mutex_t, QMutex
+   and QReadWriteLock.  Same compositional-correctness justificiation
+   and limitations as fro QReadWriteLock.
+
+   Ditto QSemaphore (from cursory examination).
+
+   Does it matter that only QMutex is handled directly?  Open
+   question.  From testing with drd/tests/qt4_* and with KDE4 apps, it
+   appears that no false errors are reported; however it is not clear
+   if this is causing false negatives.
+
+   Another problem with Qt4 is thread exiting.  Threads are created
+   with pthread_create (fine); but they detach and simply exit when
+   done.  There is no use of pthread_join, and the provided
+   wait-for-a-thread-to-exit mechanism (QThread::wait, I believe)
+   relies on a system of mutexes and flags.  I suspect this also
+   causes too many dependencies to appear.  Consequently H sometimes
+   fails to detect races at exit in some very short-lived racy
+   programs, because it appears that a thread can exit _and_ have an
+   observed dependency edge back to the main thread (presumably)
+   before the main thread reaps the child (that is, calls
+   QThread::wait).
+
+   This theory is supported by the observation that if all threads are
+   made to wait at a pthread_barrier_t immediately before they exit,
+   then H's detection of races in such programs becomes reliable;
+   without the barrier, it is varies from run to run, depending
+   (according to investigation) on whether aforementioned
+   exit-before-reaping behaviour happens or not.
+
+   Finally, why is it necessary to intercept the QMutex constructors
+   and destructors?  The constructors are intercepted only as a matter
+   of convenience, so H can print accurate "first observed at"
+   clauses.  However, it is actually necessary to intercept the
+   destructors (as it is with pthread_mutex_destroy) in order that
+   locks get removed from LAOG when they are destroyed.
 */
 
 // soname is libQtCore.so.4 ; match against libQtCore.so*
 #define QT4_FUNC(ret_ty, f, args...) \
-   ret_ty I_WRAP_SONAME_FNNAME_ZZ(libQtCoreZdsoZa,f)(args); \
-   ret_ty I_WRAP_SONAME_FNNAME_ZZ(libQtCoreZdsoZa,f)(args)
+   ret_ty I_WRAP_SONAME_FNNAME_ZU(libQtCoreZdsoZa,f)(args); \
+   ret_ty I_WRAP_SONAME_FNNAME_ZU(libQtCoreZdsoZa,f)(args)
 
 // QMutex::lock()
-QT4_FUNC(void, ZuZZN6QMutex4lockEv, // _ZN6QMutex4lockEv == QMutex::lock()
-               void* self)
+QT4_FUNC(void, _ZN6QMutex4lockEv, void* self)
 {
    OrigFn fn;
    VALGRIND_GET_ORIG_FN(fn);
@@ -1307,8 +1367,7 @@ QT4_FUNC(void, ZuZZN6QMutex4lockEv, // _ZN6QMutex4lockEv == QMutex::lock()
 }
 
 // QMutex::unlock()
-QT4_FUNC(void, ZuZZN6QMutex6unlockEv, // _ZN6QMutex6unlockEv == QMutex::unlock()
-               void* self)
+QT4_FUNC(void, _ZN6QMutex6unlockEv, void* self)
 {
    OrigFn fn;
    VALGRIND_GET_ORIG_FN(fn);
@@ -1330,11 +1389,9 @@ QT4_FUNC(void, ZuZZN6QMutex6unlockEv, // _ZN6QMutex6unlockEv == QMutex::unlock()
    }
 }
 
-// QMutex::tryLock
-// _ZN6QMutex7tryLockEv == bool QMutex::tryLock()
+// bool QMutex::tryLock()
 // using 'long' to mimic C++ 'bool'
-QT4_FUNC(long, ZuZZN6QMutex7tryLockEv,
-               void* self)
+QT4_FUNC(long, _ZN6QMutex7tryLockEv, void* self)
 {
    OrigFn fn;
    long   ret;
@@ -1361,86 +1418,337 @@ QT4_FUNC(long, ZuZZN6QMutex7tryLockEv,
    return ret;
 }
 
-
-// QReadWriteLock::lockForRead()
-// _ZN14QReadWriteLock11lockForReadEv == QReadWriteLock::lockForRead()
-QT4_FUNC(void, ZuZZN14QReadWriteLock11lockForReadEv, 
-               // _ZN14QReadWriteLock11lockForReadEv
-               void* self)
+// bool QMutex::tryLock(int)
+// using 'long' to mimic C++ 'bool'
+QT4_FUNC(long, _ZN6QMutex7tryLockEi, void* self, long arg2)
 {
    OrigFn fn;
+   long   ret;
    VALGRIND_GET_ORIG_FN(fn);
    if (TRACE_QT4_FNS) {
-      fprintf(stderr, "<< QReadWriteLock::lockForRead %p", self);
+      fprintf(stderr, "<< QMutex::tryLock(int) %p %d", self, (int)arg2);
       fflush(stderr);
    }
 
-   DO_CREQ_v_WWW(_VG_USERREQ__HG_PTHREAD_RWLOCK_LOCK_PRE,
-                 void*,self,
-                 long,0/*!isW*/, long,0/*!isTryLock*/);
+   DO_CREQ_v_WW(_VG_USERREQ__HG_PTHREAD_MUTEX_LOCK_PRE,
+                void*,self, long,1/*isTryLock*/);
 
-   CALL_FN_v_W(fn, self);
+   CALL_FN_W_WW(ret, fn, self,arg2);
 
-   DO_CREQ_v_WW(_VG_USERREQ__HG_PTHREAD_RWLOCK_LOCK_POST,
-                void*,self, long,0/*!isW*/);
+   // assumes that only the low 8 bits of the 'bool' are significant
+   if (ret & 0xFF) {
+      DO_CREQ_v_W(_VG_USERREQ__HG_PTHREAD_MUTEX_LOCK_POST,
+                  void*, self);
+   }
 
    if (TRACE_QT4_FNS) {
-      fprintf(stderr, " :: Q::lockForRead :: done >>\n");
+      fprintf(stderr, " :: Q::tryLock(int) -> %lu >>\n", ret);
    }
+   
+   return ret;
 }
 
-// QReadWriteLock::lockForWrite()
-// _ZN14QReadWriteLock12lockForWriteEv == QReadWriteLock::lockForWrite()
-QT4_FUNC(void, ZuZZN14QReadWriteLock12lockForWriteEv, 
-               // _ZN14QReadWriteLock12lockForWriteEv
-               void* self)
+
+// It's not really very clear what the args are here.  But from
+// a bit of dataflow analysis of the generated machine code of
+// the original function, it appears this takes two args, and
+// returns nothing.  Nevertheless preserve return value just in
+// case.  A bit of debug printing indicates that the first arg
+// is that of the mutex and the second is either zero or one,
+// probably being the recursion mode, therefore.
+// QMutex::QMutex(QMutex::RecursionMode)  ("C1ENS" variant)
+QT4_FUNC(void*, _ZN6QMutexC1ENS_13RecursionModeE,
+         void* mutex,
+         long  recmode)
 {
    OrigFn fn;
+   long   ret;
    VALGRIND_GET_ORIG_FN(fn);
-   if (TRACE_QT4_FNS) {
-      fprintf(stderr, "<< QReadWriteLock::lockForWrite %p", self);
-      fflush(stderr);
-   }
-
-   DO_CREQ_v_WWW(_VG_USERREQ__HG_PTHREAD_RWLOCK_LOCK_PRE,
-                 void*,self,
-                 long,1/*isW*/, long,0/*!isTryLock*/);
-
-   CALL_FN_v_W(fn, self);
-
-   DO_CREQ_v_WW(_VG_USERREQ__HG_PTHREAD_RWLOCK_LOCK_POST,
-                void*,self, long,1/*isW*/);
-
-   if (TRACE_QT4_FNS) {
-      fprintf(stderr, " :: Q::lockForWrite :: done >>\n");
-   }
+   CALL_FN_W_WW(ret, fn, mutex, recmode);
+   //   fprintf(stderr, "QMutex constructor 1: %p <- %p %p\n", ret, arg1, arg2);
+   DO_CREQ_v_WW(_VG_USERREQ__HG_PTHREAD_MUTEX_INIT_POST,
+                void*,mutex, long,1/*mbRec*/);
+   return (void*)ret;
 }
 
-// QReadWriteLock::unlock()
-// _ZN14QReadWriteLock6unlockEv == QReadWriteLock::unlock()
-QT4_FUNC(void, ZuZZN14QReadWriteLock6unlockEv,
-               // _ZN14QReadWriteLock6unlockEv
-               void* self)
+// QMutex::~QMutex()  ("D1Ev" variant)
+QT4_FUNC(void*, _ZN6QMutexD1Ev, void* mutex)
 {
    OrigFn fn;
+   long   ret;
    VALGRIND_GET_ORIG_FN(fn);
-   if (TRACE_QT4_FNS) {
-      fprintf(stderr, "<< QReadWriteLock::unlock %p", self);
-      fflush(stderr);
-   }
-
-   DO_CREQ_v_W(_VG_USERREQ__HG_PTHREAD_RWLOCK_UNLOCK_PRE,
-               void*,self);
-
-   CALL_FN_v_W(fn, self);
-
-   DO_CREQ_v_W(_VG_USERREQ__HG_PTHREAD_RWLOCK_UNLOCK_POST,
-               void*,self);
-
-   if (TRACE_QT4_FNS) {
-      fprintf(stderr, " :: Q::unlock :: done >>\n");
-   }
+   DO_CREQ_v_W(_VG_USERREQ__HG_PTHREAD_MUTEX_DESTROY_PRE,
+               void*,mutex);
+   CALL_FN_W_W(ret, fn, mutex);
+   return (void*)ret;
 }
+
+
+// QMutex::QMutex(QMutex::RecursionMode)  ("C2ENS" variant)
+QT4_FUNC(void*, _ZN6QMutexC2ENS_13RecursionModeE,
+         void* mutex,
+         long  recmode)
+{
+   assert(0);
+}
+
+// QMutex::~QMutex()  ("D2Ev" variant)
+QT4_FUNC(void*, _ZN6QMutexD2Ev, void* mutex)
+{
+   assert(0);
+}
+
+
+// QReadWriteLock is not intercepted directly.  See comments
+// above.
+
+//// QReadWriteLock::lockForRead()
+//// _ZN14QReadWriteLock11lockForReadEv == QReadWriteLock::lockForRead()
+//QT4_FUNC(void, ZuZZN14QReadWriteLock11lockForReadEv, 
+//               // _ZN14QReadWriteLock11lockForReadEv
+//               void* self)
+//{
+//   OrigFn fn;
+//   VALGRIND_GET_ORIG_FN(fn);
+//   if (TRACE_QT4_FNS) {
+//      fprintf(stderr, "<< QReadWriteLock::lockForRead %p", self);
+//      fflush(stderr);
+//   }
+//
+//   DO_CREQ_v_WWW(_VG_USERREQ__HG_PTHREAD_RWLOCK_LOCK_PRE,
+//                 void*,self,
+//                 long,0/*!isW*/, long,0/*!isTryLock*/);
+//
+//   CALL_FN_v_W(fn, self);
+//
+//   DO_CREQ_v_WW(_VG_USERREQ__HG_PTHREAD_RWLOCK_LOCK_POST,
+//                void*,self, long,0/*!isW*/);
+//
+//   if (TRACE_QT4_FNS) {
+//      fprintf(stderr, " :: Q::lockForRead :: done >>\n");
+//   }
+//}
+//
+//// QReadWriteLock::lockForWrite()
+//// _ZN14QReadWriteLock12lockForWriteEv == QReadWriteLock::lockForWrite()
+//QT4_FUNC(void, ZuZZN14QReadWriteLock12lockForWriteEv, 
+//               // _ZN14QReadWriteLock12lockForWriteEv
+//               void* self)
+//{
+//   OrigFn fn;
+//   VALGRIND_GET_ORIG_FN(fn);
+//   if (TRACE_QT4_FNS) {
+//      fprintf(stderr, "<< QReadWriteLock::lockForWrite %p", self);
+//      fflush(stderr);
+//   }
+//
+//   DO_CREQ_v_WWW(_VG_USERREQ__HG_PTHREAD_RWLOCK_LOCK_PRE,
+//                 void*,self,
+//                 long,1/*isW*/, long,0/*!isTryLock*/);
+//
+//   CALL_FN_v_W(fn, self);
+//
+//   DO_CREQ_v_WW(_VG_USERREQ__HG_PTHREAD_RWLOCK_LOCK_POST,
+//                void*,self, long,1/*isW*/);
+//
+//   if (TRACE_QT4_FNS) {
+//      fprintf(stderr, " :: Q::lockForWrite :: done >>\n");
+//   }
+//}
+//
+//// QReadWriteLock::unlock()
+//// _ZN14QReadWriteLock6unlockEv == QReadWriteLock::unlock()
+//QT4_FUNC(void, ZuZZN14QReadWriteLock6unlockEv,
+//               // _ZN14QReadWriteLock6unlockEv
+//               void* self)
+//{
+//   OrigFn fn;
+//   VALGRIND_GET_ORIG_FN(fn);
+//   if (TRACE_QT4_FNS) {
+//      fprintf(stderr, "<< QReadWriteLock::unlock %p", self);
+//      fflush(stderr);
+//   }
+//
+//   DO_CREQ_v_W(_VG_USERREQ__HG_PTHREAD_RWLOCK_UNLOCK_PRE,
+//               void*,self);
+//
+//   CALL_FN_v_W(fn, self);
+//
+//   DO_CREQ_v_W(_VG_USERREQ__HG_PTHREAD_RWLOCK_UNLOCK_POST,
+//               void*,self);
+//
+//   if (TRACE_QT4_FNS) {
+//      fprintf(stderr, " :: Q::unlock :: done >>\n");
+//   }
+//}
+
+
+/*----------------------------------------------------------------*/
+/*--- Replacements for basic string functions, that don't      ---*/
+/*--- the input arrays.                                        ---*/
+/*----------------------------------------------------------------*/
+
+/* Copied verbatim from memcheck/mc_replace_strmem.c.  When copying
+   new functions, please keep them in the same order as they appear in
+   mc_replace_strmem.c. */
+
+/* --------- Some handy Z-encoded names. --------- */
+
+/* --- Soname of the standard C library. --- */
+
+#if defined(VGO_linux)
+#  define  m_libc_soname     libcZdsoZa              // libc.so*
+#elif defined(VGP_ppc32_aix5)
+   /* AIX has both /usr/lib/libc.a and /usr/lib/libc_r.a. */
+#  define  m_libc_soname     libcZaZdaZLshrZdoZR     // libc*.a(shr.o)
+#elif defined(VGP_ppc64_aix5)
+#  define  m_libc_soname     libcZaZdaZLshrZu64ZdoZR // libc*.a(shr_64.o)
+#else
+#  error "Unknown platform"
+#endif
+
+/* --- Sonames for Linux ELF linkers. --- */
+
+#define  m_ld_linux_so_2         ldZhlinuxZdsoZd2           // ld-linux.so.2
+#define  m_ld_linux_x86_64_so_2  ldZhlinuxZhx86Zh64ZdsoZd2  // ld-linux-x86-64.so.2
+#define  m_ld64_so_1             ld64ZdsoZd1                // ld64.so.1
+#define  m_ld_so_1               ldZdsoZd1                  // ld.so.1
+
+
+#define STRCHR(soname, fnname) \
+   char* VG_REPLACE_FUNCTION_ZU(soname,fnname) ( const char* s, int c ); \
+   char* VG_REPLACE_FUNCTION_ZU(soname,fnname) ( const char* s, int c ) \
+   { \
+      UChar  ch = (UChar)((UInt)c); \
+      UChar* p  = (UChar*)s; \
+      while (True) { \
+         if (*p == ch) return p; \
+         if (*p == 0) return NULL; \
+         p++; \
+      } \
+   }
+
+// Apparently index() is the same thing as strchr()
+STRCHR(m_libc_soname,          strchr)
+STRCHR(m_ld_linux_so_2,        strchr)
+STRCHR(m_ld_linux_x86_64_so_2, strchr)
+STRCHR(m_libc_soname,          index)
+STRCHR(m_ld_linux_so_2,        index)
+STRCHR(m_ld_linux_x86_64_so_2, index)
+
+
+// Note that this replacement often doesn't get used because gcc inlines
+// calls to strlen() with its own built-in version.  This can be very
+// confusing if you aren't expecting it.  Other small functions in this file
+// may also be inline by gcc.
+#define STRLEN(soname, fnname) \
+   SizeT VG_REPLACE_FUNCTION_ZU(soname,fnname)( const char* str ); \
+   SizeT VG_REPLACE_FUNCTION_ZU(soname,fnname)( const char* str ) \
+   { \
+      SizeT i = 0; \
+      while (str[i] != 0) i++; \
+      return i; \
+   }
+
+STRLEN(m_libc_soname,          strlen)
+STRLEN(m_ld_linux_so_2,        strlen)
+STRLEN(m_ld_linux_x86_64_so_2, strlen)
+
+
+#define STRCPY(soname, fnname) \
+   char* VG_REPLACE_FUNCTION_ZU(soname, fnname) ( char* dst, const char* src ); \
+   char* VG_REPLACE_FUNCTION_ZU(soname, fnname) ( char* dst, const char* src ) \
+   { \
+      const Char* dst_orig = dst; \
+      \
+      while (*src) *dst++ = *src++; \
+      *dst = 0; \
+      \
+      return (char*)dst_orig; \
+   }
+
+STRCPY(m_libc_soname, strcpy)
+
+
+#define STRCMP(soname, fnname) \
+   int VG_REPLACE_FUNCTION_ZU(soname,fnname) \
+          ( const char* s1, const char* s2 ); \
+   int VG_REPLACE_FUNCTION_ZU(soname,fnname) \
+          ( const char* s1, const char* s2 ) \
+   { \
+      register unsigned char c1; \
+      register unsigned char c2; \
+      while (True) { \
+         c1 = *(unsigned char *)s1; \
+         c2 = *(unsigned char *)s2; \
+         if (c1 != c2) break; \
+         if (c1 == 0) break; \
+         s1++; s2++; \
+      } \
+      if ((unsigned char)c1 < (unsigned char)c2) return -1; \
+      if ((unsigned char)c1 > (unsigned char)c2) return 1; \
+      return 0; \
+   }
+
+STRCMP(m_libc_soname,          strcmp)
+STRCMP(m_ld_linux_x86_64_so_2, strcmp)
+STRCMP(m_ld64_so_1,            strcmp)
+
+
+#define MEMCPY(soname, fnname) \
+   void* VG_REPLACE_FUNCTION_ZU(soname,fnname) \
+            ( void *dst, const void *src, SizeT len ); \
+   void* VG_REPLACE_FUNCTION_ZU(soname,fnname) \
+            ( void *dst, const void *src, SizeT len ) \
+   { \
+      register char *d; \
+      register char *s; \
+      \
+      if (len == 0) \
+         return dst; \
+      \
+      if ( dst > src ) { \
+         d = (char *)dst + len - 1; \
+         s = (char *)src + len - 1; \
+         while ( len >= 4 ) { \
+            *d-- = *s--; \
+            *d-- = *s--; \
+            *d-- = *s--; \
+            *d-- = *s--; \
+            len -= 4; \
+         } \
+         while ( len-- ) { \
+            *d-- = *s--; \
+         } \
+      } else if ( dst < src ) { \
+         d = (char *)dst; \
+         s = (char *)src; \
+         while ( len >= 4 ) { \
+            *d++ = *s++; \
+            *d++ = *s++; \
+            *d++ = *s++; \
+            *d++ = *s++; \
+            len -= 4; \
+         } \
+         while ( len-- ) { \
+            *d++ = *s++; \
+         } \
+      } \
+      return dst; \
+   }
+
+MEMCPY(m_libc_soname, memcpy)
+MEMCPY(m_ld_so_1,     memcpy) /* ld.so.1 */
+MEMCPY(m_ld64_so_1,   memcpy) /* ld64.so.1 */
+/* icc9 blats these around all over the place.  Not only in the main
+   executable but various .so's.  They are highly tuned and read
+   memory beyond the source boundary (although work correctly and
+   never go across page boundaries), so give errors when run natively,
+   at least for misaligned source arg.  Just intercepting in the exe
+   only until we understand more about the problem.  See
+   http://bugs.kde.org/show_bug.cgi?id=139776
+ */
+MEMCPY(NONE, _intel_fast_memcpy)
 
 
 /*--------------------------------------------------------------------*/

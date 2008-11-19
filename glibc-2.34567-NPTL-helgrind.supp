@@ -504,8 +504,42 @@
 
 ######------ qt4 specific (GNU mangling) ------######
 {
-   helgrind-qt4-QMutex::lock()-twice
+   helgrind-qt4---QMutex::lock()-QMutex::lock()
    Helgrind:Race
    fun:_ZN6QMutex4lockEv
    fun:_ZN6QMutex4lockEv
+}
+
+{
+   helgrind-qt4---pthread_setspecific-QThreadPrivate::start(void*)
+   Helgrind:Race
+   fun:pthread_setspecific
+   fun:_ZN14QThreadPrivate5startEPv
+}
+
+{
+   helgrind-qt4---free_stacks-__deallocate_stack
+   Helgrind:Race
+   fun:free_stacks
+   fun:__deallocate_stack
+}
+
+{
+   helgrind---pthread_setspecific
+   Helgrind:Race
+   fun:pthread_setspecific
+}
+
+{
+   helgrind---pthread_getspecific
+   Helgrind:Race
+   fun:pthread_getspecific
+}
+
+{
+   helgrind---ld.so-...-dlsym
+   Helgrind:Race
+   obj:/lib*/ld-2.*so*
+   ...
+   fun:dlsym
 }

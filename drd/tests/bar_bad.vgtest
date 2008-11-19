@@ -1,2 +1,3 @@
+prereq: ./supported_libpthread
 prog: bar_bad
 vgopts: -q

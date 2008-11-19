@@ -2670,6 +2670,46 @@ static void evh__HG_PTHREAD_BARRIER_DESTROY_PRE ( ThreadId tid,
 static void evh__HG_PTHREAD_BARRIER_WAIT_PRE ( ThreadId tid,
                                                void* barrier )
 {
+  /* This function gets called after a client thread calls
+     pthread_barrier_wait but before it arrives at the real
+     pthread_barrier_wait.
+
+     Why is the following correct?  It's a bit subtle.
+
+     If this is not the last thread arriving at the barrier, we simply
+     note its presence and return.  Because valgrind (at least as of
+     Nov 08) is single threaded, we are guaranteed safe from any race
+     conditions when in this function -- no other client threads are
+     running.
+
+     If this is the last thread, then we are again the only running
+     thread.  All the other threads will have either arrived at the
+     real pthread_barrier_wait or are on their way to it, but in any
+     case are guaranteed not to be able to move past it, because this
+     thread is currently in this function and so has not yet arrived
+     at the real pthread_barrier_wait.  That means that:
+
+     1. While we are in this function, none of the other threads
+        waiting at the barrier can move past it.
+
+     2. When this function returns (and simulated execution resumes),
+        this thread and all other waiting threads will be able to move
+        past the real barrier.
+
+     Because of this, it is now safe to update the vector clocks of
+     all threads, to represent the fact that they all arrived at the
+     barrier and have all moved on.  There is no danger of any
+     complications to do with some threads leaving the barrier and
+     racing back round to the front, whilst others are still leaving
+     (which is the primary source of complication in correct handling/
+     implementation of barriers).  That can't happen because we update
+     here our data structures so as to indicate that the threads have
+     passed the barrier, even though, as per (2) above, they are
+     guaranteed not to pass the barrier until we return.
+
+     This relies crucially on Valgrind being single threaded.  If that
+     changes, this will need to be reconsidered.
+   */
    Thread* thr;
    Bar*    bar;
    SO*     so;
@@ -2734,7 +2774,11 @@ static void evh__HG_PTHREAD_BARRIER_WAIT_PRE ( ThreadId tid,
    }
 
    /* finally, we must empty out the waiting vector */
-   VG_(dropTailXA)(bar->waiting, VG_(sizeXA)(bar->waiting));   
+   VG_(dropTailXA)(bar->waiting, VG_(sizeXA)(bar->waiting));
+
+   /* and we don't need this any more.  Perhaps a stack-allocated
+      SO would be better? */
+   libhb_so_dealloc(so);
 }
 
 

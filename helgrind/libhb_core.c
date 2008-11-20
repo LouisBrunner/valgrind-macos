@@ -3288,8 +3288,15 @@ static inline SVal msm_read ( SVal svOld,
          tl_assert(ordxx == POrd_EQ || ordxx == POrd_LT);
          svNew = MSM_RACE2ERR
                     ? SVal__mkE()
+#if 0
+           //std
                     : SVal__mkC( VtsID__join2(wmini,tviR),
                                  VtsID__join2(wmini,tviW) );
+#else
+         // relaxed
+                    : SVal__mkC( VtsID__join2(rmini,tviR),
+                                 VtsID__join2(wmini,tviW) );
+#endif
          record_race_info( acc_thr, acc_addr, szB, False/*!isWrite*/,
                            svOld, svNew );
          goto out;
@@ -3358,8 +3365,15 @@ static inline SVal msm_write ( SVal svOld,
          tl_assert(ordxx == POrd_EQ || ordxx == POrd_LT);
          svNew = MSM_RACE2ERR
                     ? SVal__mkE()
+#if 0
+           // std
                     : SVal__mkC( VtsID__join2(wmini,tviR),
                                  VtsID__join2(wmini,tviW) );
+#else
+         // relaxed
+                    : SVal__mkC( VtsID__join2(rmini,tviR),
+                                 VtsID__join2(wmini,tviW) );
+#endif
          record_race_info( acc_thr, acc_addr, szB, True/*isWrite*/,
                            svOld, svNew );
          goto out;

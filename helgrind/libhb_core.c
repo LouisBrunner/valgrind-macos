@@ -2218,6 +2218,7 @@ static void show_vts_stats ( HChar* caller )
 }
 
 /* NOT TO BE CALLED FROM WITHIN libzsm. */
+__attribute__((noinline))
 static void vts_tab__do_GC ( Bool show_stats )
 {
    UWord i, nTab, nLive, nFreed;
@@ -3008,13 +3009,17 @@ static void event_map__check_reference_counts ( Bool before )
    }
 }
 
+__attribute__((noinline))
 static void event_map_maybe_GC ( void )
 {
    OldRef* oldref;
    UWord   keyW, valW, retained, maxGen;
-   WordFM* genMap;
    XArray* refs2del;
    Word    i, j, n2del;
+
+   UWord* genMap      = NULL;
+   UWord  genMap_min  = 0;
+   UWord  genMap_size = 0;
 
    if (LIKELY(oldrefTreeN < EVENT_MAP_GC_AT))
       return;
@@ -3028,29 +3033,113 @@ static void event_map_maybe_GC ( void )
    /* Check the reference counts */
    event_map__check_reference_counts( True/*before*/ );
 
-   /* Compute the distribution of generation values in the ref tree */
+   /* Compute the distribution of generation values in the ref tree.
+      There are likely only to be a few different generation numbers
+      in the whole tree, but we don't know what they are.  Hence use a
+      dynamically resized array of counters.  The array is genMap[0
+      .. genMap_size-1], where genMap[0] is the count for the
+      generation number genMap_min, genMap[1] is the count for
+      genMap_min+1, etc.  If a new number is seen outside the range
+      [genMap_min .. genMap_min + genMap_size - 1] then the array is
+      copied into a larger array, and genMap_min and genMap_size are
+      adjusted accordingly. */
+
    /* genMap :: generation-number -> count-of-nodes-with-that-number */
-   genMap = VG_(newFM)( HG_(zalloc), "libhb.emmG.1",
-                                      HG_(free), NULL );
 
    VG_(OSetGen_ResetIter)( oldrefTree );
    while ( (oldref = VG_(OSetGen_Next)( oldrefTree )) ) {
+
+      UWord ea;
       UWord key = oldref->gen;
-      keyW = valW = 0;
-      if (VG_(lookupFM)(genMap, &keyW, &valW, key )) {
-         tl_assert(keyW == key);
-         tl_assert(valW > 0);
+
+      /* BEGIN find 'ea', which is the index in genMap holding the
+         count for generation number 'key'. */
+      if (UNLIKELY(genMap == NULL)) {
+         /* deal with the first key to be seen, so that the following
+            cases don't need to handle the complexity of a NULL count
+            array. */
+         genMap_min  = key;
+         genMap_size = 1;
+         genMap = HG_(zalloc)( "libhb.emmG.1a",
+                                genMap_size * sizeof(UWord) );
+         ea = 0;
+         if (0) VG_(printf)("(%lu) case 1 [%lu .. %lu]\n",
+                            key, genMap_min, genMap_min+genMap_size- 1 );
       }
-      /* now valW is the old count for generation 'key' */
-      VG_(addToFM)(genMap, key, valW+1);
+      else
+      if (LIKELY(key >= genMap_min && key < genMap_min + genMap_size)) {
+         /* this is the expected (almost-always-happens) case: 'key'
+            is already mapped in the array. */
+         ea = key - genMap_min;
+      }
+      else
+      if (key < genMap_min) {
+         /* 'key' appears before the start of the current array.
+            Extend the current array by allocating a larger one and
+            copying the current one to the upper end of it. */
+         Word   more;
+         UWord* map2;
+         more = genMap_min - key;
+         tl_assert(more > 0);
+         map2 = HG_(zalloc)( "libhb.emmG.1b",
+                             (genMap_size + more) * sizeof(UWord) );
+         VG_(memcpy)( &map2[more], genMap, genMap_size * sizeof(UWord) );
+         HG_(free)( genMap );
+         genMap = map2;
+         genMap_size += more;
+         genMap_min -= more;
+         ea = 0;
+         tl_assert(genMap_min == key);
+         if (0) VG_(printf)("(%lu) case 2 [%lu .. %lu]\n",
+                            key, genMap_min,  genMap_min+genMap_size- 1 );
+      }
+      else {
+         /* 'key' appears after the end of the current array.  Extend
+            the current array by allocating a larger one and copying
+            the current one to the lower end of it. */
+         Word   more;
+         UWord* map2;
+         tl_assert(key >= genMap_min + genMap_size);
+         more = key - (genMap_min + genMap_size) + 1;
+         tl_assert(more > 0);
+         map2 = HG_(zalloc)( "libhb.emmG.1c",
+                             (genMap_size + more) * sizeof(UWord) );
+         VG_(memcpy)( &map2[0], genMap, genMap_size * sizeof(UWord) );
+         HG_(free)( genMap );
+         genMap = map2;
+         genMap_size += more;
+         ea = genMap_size - 1;;
+         tl_assert(genMap_min + genMap_size - 1 == key);
+         if (0) VG_(printf)("(%lu) case 3 [%lu .. %lu]\n",
+                            key, genMap_min, genMap_min+genMap_size- 1 );
+      }
+      /* END find 'ea' from 'key' */
+
+      tl_assert(ea >= 0 && ea < genMap_size);
+      /* and the whole point of this elaborate compuation of 'ea' is .. */
+      genMap[ea]++;
    }
 
-   tl_assert(VG_(sizeFM)(genMap) > 0);
+   tl_assert(genMap);
+   tl_assert(genMap_size > 0);
 
+   /* Sanity check what we just computed */
+   { UWord sum = 0;
+     for (i = 0; i < genMap_size; i++) {
+        if (0) VG_(printf)("  xxx: gen %ld has %lu\n",
+                           i + genMap_min, genMap[i] );
+        sum += genMap[i];
+     }
+     tl_assert(sum == oldrefTreeN);
+   }
+
+   /* Figure out how many generations to throw away */
    retained = oldrefTreeN;
    maxGen = 0;
-   VG_(initIterFM)( genMap );
-   while (VG_(nextIterFM)( genMap, &keyW, &valW )) {
+
+   for (i = 0; i < genMap_size; i++) {
+      keyW = i + genMap_min;
+      valW = genMap[i];
       tl_assert(keyW > 0); /* can't allow a generation # 0 */
       if (0) VG_(printf)("  XXX: gen %lu has %lu\n", keyW, valW );
       tl_assert(keyW >= maxGen);
@@ -3063,9 +3152,8 @@ static void event_map_maybe_GC ( void )
          break;
       }
    }
-   VG_(doneIterFM)( genMap );
 
-   VG_(deleteFM)( genMap, NULL, NULL );
+   HG_(free)(genMap);
 
    tl_assert(retained >= 0 && retained <= oldrefTreeN);
 
@@ -3073,7 +3161,7 @@ static void event_map_maybe_GC ( void )
       delete.  We can't simultaneously traverse the tree and delete
       stuff from it, so first we need to copy them off somewhere
       else. (sigh) */
-   refs2del = VG_(newXA)( HG_(zalloc), "libhb.emmG.1",
+   refs2del = VG_(newXA)( HG_(zalloc), "libhb.emmG.2",
                           HG_(free), sizeof(OldRef*) );
 
    if (retained < oldrefTreeN) {

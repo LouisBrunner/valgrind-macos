@@ -751,15 +751,17 @@ void* VG_(OSetGen_Next)(AvlTree* t)
    // keeping this loop in this simpler form.
    while (stackPop(t, &n, &i)) {
       switch (i) {
-      case 1: 
+      case 1: case_1:
          stackPush(t, n, 2);
-         if (n->left)  stackPush(t, n->left, 1);
+         /* if (n->left)  stackPush(t, n->left, 1); */
+         if (n->left) { n = n->left; goto case_1; }
          break;
       case 2: 
          stackPush(t, n, 3);
          return elem_of_node(n);
       case 3:
-         if (n->right) stackPush(t, n->right, 1);
+         /* if (n->right) stackPush(t, n->right, 1); */
+         if (n->right) { n = n->right; goto case_1; }
          break;
       }
    }

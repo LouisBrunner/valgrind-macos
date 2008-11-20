@@ -158,6 +158,8 @@ n-i-bz  Fixd  8048   Make return types for some of the requests 64-bit clean
 167483  LOW   pend   __libc_freeres error valgrind with shared libraries with
                      multiple --rpath (w/ repro case)
 
+n-i-bz  Fixd  8760   glibc 2.9 support
+
 **--P1--**
 167640  HIGH,WF pend un-efficient memory management cause segmentation fault
                      w/ test case

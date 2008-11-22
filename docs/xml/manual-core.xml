@@ -1255,7 +1255,14 @@ processed earlier; for example, options in
 precedence over those in
 <computeroutput>~/.valgrindrc</computeroutput>.  The first two
 are particularly useful for setting the default tool to
-use.</para>
+</para>
+
+<para>Please note that the <computeroutput>./.valgrindrc</computeroutput>
+file is ignored if it is marked as world writeable or not owned
+by the current user. This is because the .valgrindrc can contain options
+that are potentially harmful or can be used by a local attacker to
+execute code under your user account.
+</para>
 
 <para>Any tool-specific options put in
 <computeroutput>$VALGRIND_OPTS</computeroutput> or the

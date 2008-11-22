@@ -160,6 +160,8 @@ n-i-bz  Fixd  8048   Make return types for some of the requests 64-bit clean
 
 n-i-bz  Fixd  8760   glibc 2.9 support
 
+n-i-bz  Fixd  8800   ignore unsafe .valgrindrc's (CVE-2008-4865)
+
 **--P1--**
 167640  HIGH,WF pend un-efficient memory management cause segmentation fault
                      w/ test case

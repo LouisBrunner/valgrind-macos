@@ -52,12 +52,6 @@ function run_test {
   test_output="${1}-helgrind-4.out" \
   print_runtime_ratio ${avg4} ${stddev4} ${vsz4} ${vszdev4} $VG --tool=helgrind "$@" -p${psep}${p} "${test_args}"
 
-  if [ -e $HGDEV_VG ]; then
-    p=4
-    test_output="${1}-helgrind-hb-4.out" \
-    print_runtime_ratio ${avg4} ${stddev4} ${vsz4} ${vszdev4} $HGDEV_VG --tool=helgrind --pure-happens-before=yes "$@" -p${psep}${p} "${test_args}"
-  fi
-
   echo ''
 
   rm -f "$tmp"
@@ -81,10 +75,6 @@ fi
 
 if [ "$VG" = "" ]; then
   VG="${DRD_SCRIPTS_DIR}/../../vg-in-place"
-fi
-
-if [ "$HGDEV_VG" = "" ]; then
-  HGDEV_VG="${DRD_SCRIPTS_DIR}/../../../valgrind-hgdev/vg-in-place"
 fi
 
 if [ ! -e "$VG" ]; then
@@ -111,67 +101,37 @@ fi
 # 15. Virtual memory size ratio for --tool=drd --check-stack-var=no -p4 versus -p4.
 # 16. Execution time ratio for --tool=helgrind -p4 versus -p4.
 # 17. Virtual memory size ratio for --tool=helgrind -p4 versus -p4.
-# 18. Execution time ratio for --tool=helgrind --pure-happens-before=yes -p4 versus -p4.
-# 19. Virtual memory size ratio for --tool=helgrind --pure-happens-before=yes -p4 versus -p4.
-# 20. Execution time ratio for Intel Thread Checker -p4 versus -p4.
-# 21. Execution time ratio for Intel Thread Checker -p4 versus -p4.
+# 18. Execution time ratio for Intel Thread Checker -p4 versus -p4.
+# 19. Execution time ratio for Intel Thread Checker -p4 versus -p4.
 #
 # Notes:
 # - Both Helgrind and DRD use a granularity of one byte for data race detection.
 # - Helgrind does detect data races on stack variables. DRD only detects
 #   data races on stack variables with --check-stack-var=yes.
-# - The ITC tests have been run on a 4-way 2.5 GHz Pentium 4 workstation.
-#   Not yet clear to me: have these tests been run on a 32-bit or on a 64-bit
-#   OS ? Which OS ? Which granularity does ITC use ? And which m4 macro's
-#   have been used by ITC as implementation of the synchronization primitives ?
+# - The ITC tests have been run on a 4-way 2.5 GHz Pentium 4 workstation, most
+#   likely running a 32-bit OS. Not yet clear to me: which OS ? Which
+#   granularity does ITC use ? And which m4 macro's have been used by ITC as
+#   implementation of the synchronization primitives ?
 #
-#     1                    2     3      4      5      6     7     8   9    10   11   12  13   14  15   16    17   18    19   20   21
-####################################################################################################################################
-# Results:                native       native       native       none     none       DRD       DRD      HG         HG-hb     ITC ITC
-#                         -p1          -p2          -p4          -p1      -p4       -p4      -p4+f     -p4        -p4      -p4 -p4+f
-# ..................................................................................................................................
-# Cholesky                0.37  45867  0.25  55965  0.20  74944  8.8 2.08 28.9 1.66  171 1.96 114 2.85   54  3.13  ...  .... 239  82
-# FFT                     0.20  23976  0.13  54026  0.09 114112  8.2 3.02 18.4 0.85  130 1.20  85 1.27  416  1.65  ...  ....  90  41
-# LU, contiguous          0.95  16784  0.64  24984  0.43  41392  8.0 3.88 19.3 2.17  120 2.84 113 3.04  223  4.36  ...  .... 428 128
-# Ocean, contiguous      24.25 918016 14.57 927732  9.09 945664  2.4 1.05  6.6 1.05   89 1.92  77 1.93  149  1.88  ...  ....  90  28
-# Radix                   4.98 279744  2.55 287936  1.36 304448  6.1 1.17 22.4 1.16   57 1.90  52 1.92  208  2.09  ...  .... 222  56
-# Raytrace                2.76 320526  1.44 328448  0.77 344832  8.3 1.15 28.6 1.14 2324 1.31 326 1.34  420  0.60  ...  .... 172  53
-# Water-n2                0.19  17304  0.12  33680  0.12  66432 12.0 3.85 20.2 3.53 2789 2.78 562 2.84  121  3.32  ...  .... 189  39
-# Water-sp                0.21  10976  0.11  19176  0.07  35568 11.0 5.41 33.3 2.37  475 2.85 147 3.08  196  4.61  ...  .... 183  34
-# ..................................................................................................................................
-# Hardware: Two quad-core Intel Xeon L5130, 1.6 GHz, 4 MB L2 cache, 16 GB RAM.                                              
-# Software: Ubuntu 8.04 server, 64-bit, gcc 4.3.1.                                                                          
-####################################################################################################################################
-# Results:                native       native       native       none     none       DRD       DRD      HG         HG-hb     ITC ITC
-#                         -p1          -p2          -p4          -p1      -p4       -p4      -p4+f     -p4        -p4      -p4 -p4+f
-# ..................................................................................................................................
-# Cholesky                0.29  45835  0.21  55933  4.51  74944  8.8 2.21  1.0 1.75    6 2.05   4 2.16    2  3.22  ...  .... 239  82
-# FFT                     0.17  23949  0.12  32144  0.11  48536  7.8 3.28 12.0 2.13   85 2.96  56 3.13  282  4.02  ...  ....  90  41
-# LU, contiguous          0.78  16752  0.53  24957  0.53  41365  7.9 4.27 11.7 2.33   78 3.00  74 3.20  146  4.51  ...  .... 428 128
-# Ocean, contiguous      19.47 918016 12.59 927232 12.61 945664  2.4 1.06  3.8 1.06   53 1.92  47 1.93   86  1.88  ...  ....  90  28
-# Radix                   4.05 279680  2.12 287872  2.14 304405  6.0 1.20 11.4 1.18   29 1.92  27 1.94  157  2.12  ...  .... 222  56
-# Raytrace                2.22 320192  ....  .....  2.20 ......  7.4 1.17  ... ....  ... ....  .. ....   ..  ....  ...  .... 172  53
-# Water-n2                0.15  17272  0.10  33651  0.11  66432 12.3 4.22 17.5 1.84 2320 2.90 583 2.92  105  3.41  ...  .... 189  39
-# Water-sp                0.16  10947  0.09  19144  0.09  35536 11.4 6.00 20.7 2.55  251 3.03  91 3.26  123  4.79  ...  .... 183  34
-# ..................................................................................................................................
-# Hardware: dual-core Intel Xeon 5130, 2.0 GHz, 4 MB L2 cache, 4 GB RAM.                                                    
-# Software: Ubuntu 7.10 server, 64-bit, gcc 4.3.1, xload -update 1 running.                                                 
-####################################################################################################################################
-# Results:                native       native       native       none     none       DRD       DRD      HG         HG-hb     ITC ITC
-#                         -p1          -p2          -p4           -p1      -p4       -p4      -p4+f     -p4        -p4     -p4 -p4+f
-# ..................................................................................................................................
-# Cholesky                0.08  21760  0.05  31728  0.56  50148 13.6 3.62  3.8 2.14   16 2.51  14 2.68    9  4.03   15  5.01 239  82
-# FFT                     0.02  13024  0.02  64931  0.01  81317 17.5 5.37 36.0 1.16  248 1.35 219 1.45  704  2.19  182  2.50  90  41
-# LU, contiguous          0.08  10440  0.06  18640  0.06  35048  9.9 6.45 13.0 2.63   81 2.89  88 3.13  156  4.92  125  5.63 428 128
-# Ocean, contiguous       0.19  23208  0.18  31744  0.13  48888  4.8 3.45  7.6 2.17   59 2.58  50 2.75   77  4.01   72  4.96  90  28
-# Radix                   0.17  33760  0.10  41952  0.10  58488  7.2 2.68 14.0 1.98   28 2.52  41 2.66  159  3.70   34  4.12 222  56
-# Raytrace                0.21 320064  0.21 320064  0.21 320064 13.3 1.18 13.2 1.18  169 1.25  58 1.25  105  2.10   71  2.96 172  53
-# Water-n2                0.11  17104  0.07  33480  0.08  66240 12.4 4.38 17.5 1.88 1877 2.93 525 2.97  106  3.47  105  4.15 189  39
-# Water-sp                0.12  10784  0.06  84352  0.06 100835 11.0 6.27 22.7 0.92  257 1.09  91 1.17  129  1.72  139  1.97 183  34
-# ..................................................................................................................................
-# Hardware: dual-core Intel Core2 Duo E6750, 2.66 GHz, 4 MB L2 cache, 2 GB RAM.                                             
-# Software: openSUSE 11.0, 64-bit, gcc 4.3.1, runlevel 3.                                                                   
-####################################################################################################################################
+#     1                    2     3      4      5      6     7     8    9   10   11   12  13   14  15   16    17   18    19
+###########################################################################################################################
+# Results:                native       native       native       none      none       DRD       DRD      HG         ITC ITC
+#                         -p1          -p2          -p4           -p1       -p4       -p4      -p4+f     -p4      -p4 -p4+f
+# .........................................................................................................................
+# Cholesky                0.09  11880  0.07  21888  0.65  41883 15.2  5.08  3.9 2.15   17 2.41  13 2.60   50  5.86  239  82
+# FFT                     0.03   6560  0.02  15101  0.02  32176 10.7  8.36 17.0 2.48   92 2.88 113 3.13  156  5.43   90  41
+# LU, contiguous          0.07   3968  0.05  12176  0.06  28584 12.4 13.17 14.8 2.70   89 2.95  80 3.24  135  5.68  428 128
+# Ocean, contiguous       0.19  23208  0.18  31744  0.13  48888  4.8  3.45  7.6 2.17   59 2.58  50 2.75   77  4.01   90  28
+# Radix                   0.20  15008  0.11  23200  0.11  39592 13.1  4.22 23.6 2.23   59 2.67  54 2.87  282  6.23  222  56
+# Raytrace                0.66 206976  0.47 215168  0.47 232235  8.2  1.23 11.5 1.21  262 1.54 101 1.57  291  3.57  172  53
+# Water-n2                0.19  10560  0.09  26944  0.10  59704 11.4  5.65 22.0 1.83 3194 2.92 467 2.99  108  3.49  189  39
+# Water-sp                0.21   4312  0.10  13400  0.10  29496  9.8 12.20 20.7 2.63  254 3.14  64 3.42   99  5.13  183  34
+# .........................................................................................................................
+# geometric mean          0.41  13360  0.09  26319  0.12  48476 10.2  5.37 13.2 2.12  134 2.58  75 2.76  128  4.81  180  51
+# .........................................................................................................................
+# Hardware: dual-core Intel Core2 Duo E6750, 2.66 GHz, 4 MB L2 cache, 2 GB RAM.                                    
+# Software: openSUSE 11.0 (64-bit edition), runlevel 3, gcc 4.3.1, 32 bit executables, valgrind trunk r8795.
+###########################################################################################################################
 
 ####
 # Notes:
@@ -219,7 +179,7 @@ run_test ${SPLASH2}/codes/apps/ocean/contiguous_partitions/OCEAN -n258
 
 # Radiosity. Runs fine on a 32-bit OS, but deadlocks on a 64-bit OS. Not clear to me why.
 if [ $(uname -p) = "i686" ]; then
-psep=' ' run_test ${SPLASH2}/codes/apps/radiosity/RADIOSITY -batch -room -ae 5000.0 -en 0.050 -bf 0.10
+  psep=' ' run_test ${SPLASH2}/codes/apps/radiosity/RADIOSITY -batch -room -ae 5000.0 -en 0.050 -bf 0.10
 fi
 
 # Radix

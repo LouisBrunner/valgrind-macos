@@ -57,7 +57,7 @@ static HChar* read_dot_valgrindrc ( HChar* dir )
 {
    Int    n;
    SysRes fd;
-   Long   size;
+   struct vg_stat stat_buf;
    HChar* f_clo = NULL;
    HChar  filename[VKI_PATH_MAX];
 
@@ -65,15 +65,24 @@ static HChar* read_dot_valgrindrc ( HChar* dir )
                            ( NULL == dir ? "" : dir ) );
    fd = VG_(open)(filename, 0, VKI_S_IRUSR);
    if ( !fd.isError ) {
-      size = VG_(fsize)(fd.res);
-      if (size > 0) {
-         f_clo = VG_(malloc)("commandline.rdv.1", size+1);
-         vg_assert(f_clo);
-         n = VG_(read)(fd.res, f_clo, size);
-         if (n == -1) n = 0;
-         vg_assert(n >= 0 && n <= size+1);
-         f_clo[n] = '\0';
+      Int res = VG_(fstat)( fd.res, &stat_buf );
+      // Ignore if not owned by current user or world writeable (CVE-2008-4865)
+      if (!res && stat_buf.st_uid == VG_(geteuid)()
+          && (!(stat_buf.st_mode & VKI_S_IWOTH))) {
+         if ( stat_buf.st_size > 0 ) {
+            f_clo = VG_(malloc)("commandline.rdv.1", stat_buf.st_size+1);
+            vg_assert(f_clo);
+            n = VG_(read)(fd.res, f_clo, stat_buf.st_size);
+            if (n == -1) n = 0;
+            vg_assert(n >= 0 && n <= stat_buf.st_size+1);
+            f_clo[n] = '\0';
+         }
       }
+      else
+         VG_(message)(Vg_UserMsg,
+               "%s was not read as it is world writeable or not owned by the "
+               "current user", filename);
+
       VG_(close)(fd.res);
    }
    return f_clo;

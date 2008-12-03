@@ -125,6 +125,18 @@ TAG_amd64_linux:
 	if [ ! -f TAG_amd64_linux ] ; then rm -f $(LIB_OBJS) TAG_* libvex.a ; fi
 	touch TAG_amd64_linux
 
+libvex_x86_darwin.a: TAG_x86_darwin libvex.a
+	mv -f libvex.a libvex_x86_darwin.a
+TAG_x86_darwin:
+	if [ ! -f TAG_x86_darwin ] ; then rm -f $(LIB_OBJS) TAG_* libvex.a ; fi
+	touch TAG_x86_darwin
+
+libvex_amd64_darwin.a: TAG_amd64_darwin libvex.a
+	mv -f libvex.a libvex_amd64_darwin.a
+TAG_amd64_darwin:
+	if [ ! -f TAG_amd64_darwin ] ; then rm -f $(LIB_OBJS) TAG_* libvex.a ; fi
+	touch TAG_amd64_darwin
+
 libvex_ppc32_linux.a: TAG_ppc32_linux libvex.a
 	mv -f libvex.a libvex_ppc32_linux.a
 TAG_ppc32_linux:

@@ -220,8 +220,11 @@ typedef
          replace-style ones. */
       UInt guest_NRADDR;
 
+      /* Used for Darwin syscall dispatching. */
+      UInt guest_SC_CLASS;
+
       /* Padding to make it have an 16-aligned size */
-      UInt padding;
+      /* UInt padding; */
    }
    VexGuestX86State;
 

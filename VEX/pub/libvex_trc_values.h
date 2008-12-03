@@ -79,6 +79,9 @@
 #define VEX_TRC_JMP_SYS_SYSCALL  73 /* do syscall before continuing */
 #define VEX_TRC_JMP_SYS_INT32    75 /* do syscall before continuing */
 #define VEX_TRC_JMP_SYS_INT128   77 /* do syscall before continuing */
+#define VEX_TRC_JMP_SYS_INT129   89 /* do syscall before continuing */
+#define VEX_TRC_JMP_SYS_INT130   91 /* do syscall before continuing */
+
 #define VEX_TRC_JMP_SYS_SYSENTER 79 /* do syscall before continuing */
 
 #endif /* ndef __LIBVEX_TRC_VALUES_H */

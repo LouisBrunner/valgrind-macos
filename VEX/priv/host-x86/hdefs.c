@@ -2276,6 +2276,12 @@ Int emit_X86Instr ( UChar* buf, Int nbuf, X86Instr* i,
          case Ijk_Sys_int128:
             *p++ = 0xBD;
             p = emit32(p, VEX_TRC_JMP_SYS_INT128); break;
+         case Ijk_Sys_int129:
+            *p++ = 0xBD;
+            p = emit32(p, VEX_TRC_JMP_SYS_INT129); break;
+         case Ijk_Sys_int130:
+            *p++ = 0xBD;
+            p = emit32(p, VEX_TRC_JMP_SYS_INT130); break;
          case Ijk_Yield: 
             *p++ = 0xBD;
             p = emit32(p, VEX_TRC_JMP_YIELD); break;

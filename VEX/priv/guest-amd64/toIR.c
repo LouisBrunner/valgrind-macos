@@ -381,6 +381,7 @@ static void unimplemented ( HChar* str )
 #define OFFB_RIP       offsetof(VexGuestAMD64State,guest_RIP)
 
 #define OFFB_FS_ZERO   offsetof(VexGuestAMD64State,guest_FS_ZERO)
+#define OFFB_GS_0x60   offsetof(VexGuestAMD64State,guest_GS_0x60)
 
 #define OFFB_CC_OP     offsetof(VexGuestAMD64State,guest_CC_OP)
 #define OFFB_CC_DEP1   offsetof(VexGuestAMD64State,guest_CC_DEP1)
@@ -2008,7 +2009,10 @@ IRExpr* handleAddrOverrides ( Prefix pfx, IRExpr* virtual )
    }
 
    if (pfx & PFX_GS) {
-      unimplemented("amd64 %gs segment override");
+      /* Note that this is a darwin-kernel specific hack that relies
+         on the assumption that %gs is always 0x60. */
+      /* return virtual + guest_GS_0x60. */
+      virtual = binop(Iop_Add64, virtual, IRExpr_Get(OFFB_GS_0x60, Ity_I64));
    }
 
    /* cs, ds, es and ss are simply ignored in 64-bit mode. */

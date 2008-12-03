@@ -838,6 +838,28 @@ ULong LibVEX_GuestAMD64_get_rflags ( /*IN*/VexGuestAMD64State* vex_state )
    return rflags;
 }
 
+/* VISIBLE TO LIBVEX CLIENT */
+void
+LibVEX_GuestAMD64_put_rflag_c ( ULong new_carry_flag,
+                               /*MOD*/VexGuestAMD64State* vex_state )
+{
+   ULong oszacp = amd64g_calculate_rflags_all_WRK(
+                     vex_state->guest_CC_OP,
+                     vex_state->guest_CC_DEP1,
+                     vex_state->guest_CC_DEP2,
+                     vex_state->guest_CC_NDEP
+                  );
+   if (new_carry_flag & 1) {
+      oszacp |= AMD64G_CC_MASK_C;
+   } else {
+      oszacp &= ~AMD64G_CC_MASK_C;
+   }
+   vex_state->guest_CC_OP   = AMD64G_CC_OP_COPY;
+   vex_state->guest_CC_DEP1 = oszacp;
+   vex_state->guest_CC_DEP2 = 0;
+   vex_state->guest_CC_NDEP = 0;
+}
+
 
 /*---------------------------------------------------------------*/
 /*--- %rflags translation-time function specialisers.         ---*/
@@ -2225,8 +2247,6 @@ ULong amd64g_calculate_sse_pmovmskb ( ULong w64hi, ULong w64lo )
 /* VISIBLE TO LIBVEX CLIENT */
 void LibVEX_GuestAMD64_initialise ( /*OUT*/VexGuestAMD64State* vex_state )
 {
-   //Int i;
-
    vex_state->guest_RAX = 0;
    vex_state->guest_RCX = 0;
    vex_state->guest_RDX = 0;
@@ -2291,7 +2311,11 @@ void LibVEX_GuestAMD64_initialise ( /*OUT*/VexGuestAMD64State* vex_state )
    vex_state->guest_TISTART = 0;
    vex_state->guest_TILEN   = 0;
 
-   vex_state->guest_NRADDR = 0;
+   vex_state->guest_NRADDR   = 0;
+   vex_state->guest_SC_CLASS = 0;
+   vex_state->guest_GS_0x60  = 0;
+
+   vex_state->padding = 0;
 }
 
 

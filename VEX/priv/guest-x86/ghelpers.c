@@ -2633,7 +2633,8 @@ void LibVEX_GuestX86_initialise ( /*OUT*/VexGuestX86State* vex_state )
    vex_state->guest_TISTART = 0;
    vex_state->guest_TILEN   = 0;
 
-   vex_state->guest_NRADDR = 0;
+   vex_state->guest_NRADDR   = 0;
+   vex_state->guest_SC_CLASS = 0;
 }
 
 

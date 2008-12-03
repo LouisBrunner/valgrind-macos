@@ -292,7 +292,7 @@ void VG_(ii_finalise_image)( IIFinaliseImageInfo iifii )
 
 #  if defined(VGP_ppc32_aix5)
 
-   vg_assert(0 == sizeof(VexGuestPPC32State) % 8);
+   vg_assert(0 == sizeof(VexGuestPPC32State) % 16);
 
    /* Zero out the initial state, and set up the simulated FPU in a
       sane way. */
@@ -304,7 +304,7 @@ void VG_(ii_finalise_image)( IIFinaliseImageInfo iifii )
 
 #  else /* defined(VGP_ppc64_aix5) */
 
-   vg_assert(0 == sizeof(VexGuestPPC64State) % 8);
+   vg_assert(0 == sizeof(VexGuestPPC64State) % 16);
 
    /* Zero out the initial state, and set up the simulated FPU in a
       sane way. */

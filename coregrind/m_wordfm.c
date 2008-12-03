@@ -621,7 +621,7 @@ Bool VG_(addToFM) ( WordFM* fm, UWord k, UWord v )
 {
    MaybeWord oldV;
    AvlNode* node;
-   node = fm->alloc_nofail( fm->cc, sizeof(struct _AvlNode) );
+   node = fm->alloc_nofail( fm->cc, sizeof(AvlNode) );
    node->key = k;
    node->val = v;
    oldV.b = False;
@@ -824,6 +824,12 @@ WordFM* VG_(dopyFM) ( WordFM* fm, UWord(*dopyK)(UWord), UWord(*dopyV)(UWord) )
    }
 
    return nyu;
+}
+
+// admin: what's the 'common' allocation size (for tree nodes?)
+SizeT VG_(getNodeSizeFM)( void )
+{
+   return sizeof(AvlNode);
 }
 
 //------------------------------------------------------------------//

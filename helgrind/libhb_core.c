@@ -2546,6 +2546,108 @@ static void SVal__rcdec ( SVal s ) {
 
 /////////////////////////////////////////////////////////
 //                                                     //
+// A simple group (memory) allocator                   //
+//                                                     //
+/////////////////////////////////////////////////////////
+
+//////////////// BEGIN general group allocator
+typedef
+   struct {
+      UWord   elemSzB;        /* element size */
+      UWord   nPerGroup;      /* # elems per group */
+      void*   (*alloc)(HChar*, SizeT); /* group allocator */
+      HChar*  cc; /* group allocator's cc */
+      void    (*free)(void*); /* group allocator's free-er (unused) */
+      /* XArray of void* (pointers to groups).  The groups themselves.
+         Each element is a pointer to a block of size (elemSzB *
+         nPerGroup) bytes. */
+      XArray* groups;
+      /* next free element.  Is a pointer to an element in one of the
+         groups pointed to by .groups. */
+      void* nextFree;
+   }
+   GroupAlloc;
+
+static void init_GroupAlloc ( /*MOD*/GroupAlloc* ga,
+                              UWord  elemSzB,
+                              UWord  nPerGroup,
+                              void*  (*alloc)(HChar*, SizeT),
+                              HChar* cc,
+                              void   (*free)(void*) )
+{
+   tl_assert(0 == (elemSzB % sizeof(UWord)));
+   tl_assert(elemSzB >= sizeof(UWord));
+   tl_assert(nPerGroup >= 100); /* let's say */
+   tl_assert(alloc);
+   tl_assert(cc);
+   tl_assert(free);
+   tl_assert(ga);
+   VG_(memset)(ga, 0, sizeof(*ga));
+   ga->elemSzB   = elemSzB;
+   ga->nPerGroup = nPerGroup;
+   ga->groups    = NULL;
+   ga->alloc     = alloc;
+   ga->cc        = cc;
+   ga->free      = free;
+   ga->groups    = VG_(newXA)( alloc, cc, free, sizeof(void*) );
+   ga->nextFree  = NULL;
+   tl_assert(ga->groups);
+}
+
+/* The freelist is empty.  Allocate a new group and put all the new
+   elements in it onto the freelist. */
+__attribute__((noinline))
+static void gal_add_new_group ( GroupAlloc* ga ) 
+{
+   Word   i;
+   UWord* group;
+   tl_assert(ga);
+   tl_assert(ga->nextFree == NULL);
+   group = ga->alloc( ga->cc, ga->elemSzB * ga->nPerGroup );
+   tl_assert(group);
+   /* extend the freelist through the new group.  Place the freelist
+      pointer in the first word of each element.  That's why the
+      element size must be at least one word. */
+   for (i = ga->nPerGroup-1; i >= 0; i--) {
+      UChar* elemC = ((UChar*)group) + i * ga->elemSzB;
+      UWord* elem  = (UWord*)elemC;
+      tl_assert(0 == (((UWord)elem) % sizeof(UWord)));
+      *elem = (UWord)ga->nextFree;
+      ga->nextFree = elem;
+   }
+   /* and add to our collection of groups */
+   VG_(addToXA)( ga->groups, &group );
+}
+
+inline static void* gal_Alloc ( GroupAlloc* ga )
+{
+   UWord* elem;
+   if (UNLIKELY(ga->nextFree == NULL)) {
+      gal_add_new_group(ga);
+   }
+   elem = ga->nextFree;
+   ga->nextFree = (void*)*elem;
+   *elem = 0; /* unnecessary, but just to be on the safe side */
+   return elem;
+}
+
+inline static void* gal_Alloc_w_size_check ( GroupAlloc* ga, SizeT n )
+{
+   tl_assert(n == ga->elemSzB);
+   return gal_Alloc( ga );
+}
+
+inline static void gal_Free ( GroupAlloc* ga, void* p )
+{
+   UWord* elem = (UWord*)p;
+   *elem = (UWord)ga->nextFree;
+   ga->nextFree = elem;
+}
+//////////////// END general group allocator
+
+
+/////////////////////////////////////////////////////////
+//                                                     //
 // Change-event map2                                   //
 //                                                     //
 /////////////////////////////////////////////////////////
@@ -2613,8 +2715,8 @@ static UWord stats__ctxt_tab_cmps = 0;
 
 typedef
    struct _RCEC {
+      UWord magic;  /* sanity check only */
       struct _RCEC* next;
-      UWord magic;
       UWord rc;
       UWord rcX; /* used for crosschecking */
       UWord frames[1 + N_FRAMES]; /* first word is hash of all the rest */
@@ -2653,6 +2755,20 @@ static void ctxt__rcinc ( RCEC* ec )
    tl_assert(ec && ec->magic == RCEC_MAGIC);
    ec->rc++;
 }
+
+
+//////////// BEGIN RCEC group allocator
+static GroupAlloc rcec_group_allocator;
+
+static RCEC* alloc_RCEC ( void ) {
+   return gal_Alloc ( &rcec_group_allocator );
+}
+
+static void free_RCEC ( RCEC* rcec ) {
+   tl_assert(rcec->magic == RCEC_MAGIC);
+   gal_Free( &rcec_group_allocator, rcec );
+}
+//////////// END OldRef group allocator
 
 
 /* Find 'ec' in the RCEC list whose head pointer lives at 'headp' and
@@ -2733,7 +2849,7 @@ static RCEC* ctxt__find_or_add ( RCEC* example )
          move_RCEC_one_step_forward( &contextTab[hent], copy );
       }
    } else {
-      copy = HG_(zalloc)( "libhb.cfoa.1", sizeof(RCEC) );
+      copy = alloc_RCEC();
       tl_assert(copy != example);
       *copy = *example;
       copy->next = contextTab[hent];
@@ -2771,7 +2887,7 @@ static RCEC* get_RCEC ( Thr* thr )
 }
 
 ///////////////////////////////////////////////////////
-//// Part (2): An OSet of OldRefs, that refer to (1)
+//// Part (2): A WordFM guest-addr -> OldRef, that refer to (1)
 ///
 
 // (UInt) `echo "Old Reference Information" | md5sum`
@@ -2783,35 +2899,73 @@ typedef  struct { Thr* thr; RCEC* rcec; }  Thr_n_RCEC;
 
 typedef
    struct {
-      Addr  ea;
-      UWord magic;
+      UWord magic;  /* sanity check only */
       UWord gen;    /* when most recently accessed */
+                    /* or free list when not in use */
       /* unused slots in this array have .thr == NULL */
       Thr_n_RCEC accs[N_OLDREF_ACCS];
    }
    OldRef;
 
-static OSet* oldrefTree     = NULL; /* OSet* of OldRef */
-static UWord oldrefGen      = 0;    /* current LRU generation # */
-static UWord oldrefTreeN    = 0;    /* # elems in oldrefTree */
-static UWord oldrefGenIncAt = 0;    /* inc gen # when size hits this */
+
+//////////// BEGIN OldRef group allocator
+static GroupAlloc oldref_group_allocator;
+
+static OldRef* alloc_OldRef ( void ) {
+   return gal_Alloc ( &oldref_group_allocator );
+}
+
+static void free_OldRef ( OldRef* r ) {
+   tl_assert(r->magic == OldRef_MAGIC);
+   gal_Free( &oldref_group_allocator, r );
+}
+//////////// END OldRef group allocator
+
+//////////// BEGIN oldrefTree node group allocator
+static GroupAlloc oldrefnd_group_allocator;
+static void*      oldrefnd_first_alloc = NULL;
+
+static void* alloc_OldRef_nd ( HChar* cc, SizeT n ) {
+   if (UNLIKELY(oldrefnd_first_alloc == NULL)) {
+      oldrefnd_first_alloc = HG_(zalloc)( "libhb.alloc_OldRef_nd.1", n );
+      return oldrefnd_first_alloc;
+   } else {
+     return gal_Alloc_w_size_check ( &oldrefnd_group_allocator, n );
+   }
+}
+
+static void free_OldRef_nd ( void* p ) {
+   if (UNLIKELY(p == oldrefnd_first_alloc)) {
+      HG_(free)( oldrefnd_first_alloc );
+      oldrefnd_first_alloc = NULL;
+   } else {
+     gal_Free( &oldrefnd_group_allocator, p );
+   }
+}
+//////////// BEGIN oldrefTree node group allocator
+
+static WordFM* oldrefTree     = NULL; /* WordFM* Addr OldRef* */
+static UWord   oldrefGen      = 0;    /* current LRU generation # */
+static UWord   oldrefTreeN    = 0;    /* # elems in oldrefTree */
+static UWord   oldrefGenIncAt = 0;    /* inc gen # when size hits this */
 
 static void event_map_bind ( Addr a, Thr* thr )
 {
-   OldRef key, *ref;
-   RCEC*  here;
-   Word   i, j;
+   OldRef* ref;
+   RCEC*   here;
+   Word    i, j;
+   UWord   keyW, valW;
+   Bool    b;
 
-   key.ea    = a;
-   key.magic = OldRef_MAGIC;
+   b = VG_(lookupFM)( oldrefTree, &keyW, &valW, a );
 
-   ref = VG_(OSetGen_Lookup)( oldrefTree, &key );
-
-   if (ref) {
+   if (b) {
 
       /* We already have a record for this address.  We now need to
          see if we have a stack trace pertaining to this thread's
          access. */
+      tl_assert(keyW == a);
+      ref = (OldRef*)valW;
       tl_assert(ref->magic == OldRef_MAGIC);
 
       tl_assert(thr);
@@ -2858,7 +3012,6 @@ static void event_map_bind ( Addr a, Thr* thr )
       }
 
       ref->gen = oldrefGen;
-      tl_assert(ref->ea == a);
 
    } else {
 
@@ -2871,10 +3024,11 @@ static void event_map_bind ( Addr a, Thr* thr )
       }
       here = get_RCEC( thr );
       ctxt__rcinc(here);
-      ref = VG_(OSetGen_AllocNode)( oldrefTree, sizeof(OldRef) );
+
+
+      ref = alloc_OldRef();
       ref->magic = OldRef_MAGIC;
       ref->gen = oldrefGen;
-      ref->ea = a;
       ref->accs[0].rcec = here;
       ref->accs[0].thr = thr;
       tl_assert(thr); /* thr==NULL is used to signify an empty slot,
@@ -2883,7 +3037,7 @@ static void event_map_bind ( Addr a, Thr* thr )
          ref->accs[j].thr = NULL;
          ref->accs[j].rcec = NULL;
       }
-      VG_(OSetGen_Insert)( oldrefTree, ref );
+      VG_(addToFM)( oldrefTree, a, (UWord)ref );
       oldrefTreeN++;
 
    }
@@ -2895,16 +3049,17 @@ Bool event_map_lookup ( /*OUT*/ExeContext** resEC,
                         /*OUT*/Thr** resThr,
                         Thr* thr_acc, Addr a )
 {
-  Word   i;
-  OldRef key, *ref;
+   Word    i;
+   OldRef* ref;
+   UWord   keyW, valW;
+   Bool    b;
 
-  tl_assert(thr_acc);
+   tl_assert(thr_acc);
 
-  key.ea = a;
-  key.magic = OldRef_MAGIC;
-
-   ref = VG_(OSetGen_Lookup)( oldrefTree, &key );
-   if (ref) {
+   b = VG_(lookupFM)( oldrefTree, &keyW, &valW, a );
+   if (b) {
+      ref = (OldRef*)valW;
+      tl_assert(keyW == a);
       tl_assert(ref->magic == OldRef_MAGIC);
       tl_assert(ref->accs[0].thr); /* first slot must always be used */
 
@@ -2937,20 +3092,46 @@ Bool event_map_lookup ( /*OUT*/ExeContext** resEC,
 static void event_map_init ( void )
 {
    Word i;
+
+   /* Context (RCEC) group allocator */
+   init_GroupAlloc ( &rcec_group_allocator,
+                     sizeof(RCEC),
+                     1000 /* RCECs per group */,
+                     HG_(zalloc),
+                     "libhb.event_map_init.1 (RCEC groups)",
+                     HG_(free) );
+
+   /* Context table */
    tl_assert(!contextTab);
-   contextTab = HG_(zalloc)( "libhb.event_map_init.1 (context table)",
+   contextTab = HG_(zalloc)( "libhb.event_map_init.2 (context table)",
                              N_RCEC_TAB * sizeof(RCEC*) );
    tl_assert(contextTab);
    for (i = 0; i < N_RCEC_TAB; i++)
       contextTab[i] = NULL;
 
+   /* Oldref group allocator */
+   init_GroupAlloc ( &oldref_group_allocator,
+                     sizeof(OldRef),
+                     1000 /* OldRefs per group */,
+                     HG_(zalloc),
+                     "libhb.event_map_init.3 (OldRef groups)",
+                     HG_(free) );
+
+   /* Oldref node group allocator */
+   init_GroupAlloc ( &oldrefnd_group_allocator,
+                     VG_(getNodeSizeFM)(),
+                     1000 /* OldRefs per group */,
+                     HG_(zalloc),
+                     "libhb.event_map_init.3 (OldRef tree node groups)",
+                     HG_(free) );
+
+   /* Oldref tree */
    tl_assert(!oldrefTree);
-   tl_assert(offsetof(OldRef,ea) == 0); /* prereq for unboxed cmps */
-   oldrefTree = VG_(OSetGen_Create)(
-                   offsetof(OldRef,ea), /* == 0 */
-                   NULL, /* use unboxed cmp on OldRefs */
-                   HG_(zalloc), "libhb.event_map_init.2 (oldref tree)", 
-                   HG_(free)
+   oldrefTree = VG_(newFM)(
+                   alloc_OldRef_nd,
+                   "libhb.event_map_init.4 (oldref tree)", 
+                   free_OldRef_nd,
+                   NULL /* use unboxed cmp */
                 );
    tl_assert(oldrefTree);
 
@@ -2965,6 +3146,7 @@ static void event_map__check_reference_counts ( Bool before )
    OldRef* oldref;
    Word    i;
    UWord   nEnts = 0;
+   UWord   keyW, valW;
 
    /* Set the 'check' reference counts to zero.  Also, optionally
       check that the real reference counts are non-zero.  We allow
@@ -2987,8 +3169,9 @@ static void event_map__check_reference_counts ( Bool before )
    tl_assert(stats__ctxt_tab_curr <= stats__ctxt_tab_max);
 
    /* visit all the referencing points, inc check ref counts */
-   VG_(OSetGen_ResetIter)( oldrefTree );
-   while ( (oldref = VG_(OSetGen_Next)( oldrefTree )) ) {
+   VG_(initIterFM)( oldrefTree );
+   while (VG_(nextIterFM)( oldrefTree, &keyW, &valW )) {
+      oldref = (OldRef*)valW;
       tl_assert(oldref->magic == OldRef_MAGIC);
       for (i = 0; i < N_OLDREF_ACCS; i++) {
          if (oldref->accs[i].thr) {
@@ -3028,7 +3211,7 @@ static void event_map_maybe_GC ( void )
       VG_(printf)("libhb: event_map GC at size %lu\n", oldrefTreeN);
 
    /* Check our counting is sane */
-   tl_assert(oldrefTreeN == (UWord) VG_(OSetGen_Size)( oldrefTree ));
+   tl_assert(oldrefTreeN == VG_(sizeFM)( oldrefTree ));
 
    /* Check the reference counts */
    event_map__check_reference_counts( True/*before*/ );
@@ -3046,11 +3229,12 @@ static void event_map_maybe_GC ( void )
 
    /* genMap :: generation-number -> count-of-nodes-with-that-number */
 
-   VG_(OSetGen_ResetIter)( oldrefTree );
-   while ( (oldref = VG_(OSetGen_Next)( oldrefTree )) ) {
+   VG_(initIterFM)( oldrefTree );
+   while ( VG_(nextIterFM)( oldrefTree, &keyW, &valW )) {
 
-      UWord ea;
-      UWord key = oldref->gen;
+       UWord ea, key;
+       oldref = (OldRef*)valW;
+       key = oldref->gen;
 
       /* BEGIN find 'ea', which is the index in genMap holding the
          count for generation number 'key'. */
@@ -3116,7 +3300,7 @@ static void event_map_maybe_GC ( void )
       /* END find 'ea' from 'key' */
 
       tl_assert(ea >= 0 && ea < genMap_size);
-      /* and the whole point of this elaborate compuation of 'ea' is .. */
+      /* and the whole point of this elaborate computation of 'ea' is .. */
       genMap[ea]++;
    }
 
@@ -3162,17 +3346,18 @@ static void event_map_maybe_GC ( void )
       stuff from it, so first we need to copy them off somewhere
       else. (sigh) */
    refs2del = VG_(newXA)( HG_(zalloc), "libhb.emmG.2",
-                          HG_(free), sizeof(OldRef*) );
+                          HG_(free), sizeof(Addr) );
 
    if (retained < oldrefTreeN) {
 
       /* This is the normal (expected) case.  We discard any ref whose
          generation number <= maxGen. */
-      VG_(OSetGen_ResetIter)( oldrefTree );
-      while ( (oldref = VG_(OSetGen_Next)( oldrefTree )) ) {
+      VG_(initIterFM)( oldrefTree );
+      while (VG_(nextIterFM)( oldrefTree, &keyW, &valW )) {
+         oldref = (OldRef*)valW;
          tl_assert(oldref->magic == OldRef_MAGIC);
          if (oldref->gen <= maxGen) {
-            VG_(addToXA)( refs2del, &oldref );
+            VG_(addToXA)( refs2del, &keyW );
          }
       }
       if (VG_(clo_verbosity) > 1) {
@@ -3190,13 +3375,14 @@ static void event_map_maybe_GC ( void )
          tree, so we need to have some other way of deciding which
          refs to throw away.  Just throw out half of them randomly. */
       tl_assert(retained == oldrefTreeN);
-      VG_(OSetGen_ResetIter)( oldrefTree );
-      while ( (oldref = VG_(OSetGen_Next)( oldrefTree )) ) {
+      VG_(initIterFM)( oldrefTree );
+      while (VG_(nextIterFM)( oldrefTree, &keyW, &valW )) {
          UInt n;
+         oldref = (OldRef*)valW;
          tl_assert(oldref->magic == OldRef_MAGIC);
          n = VG_(random)( &rand_seed );
          if ((n & 0xFFF) < 0x800) {
-            VG_(addToXA)( refs2del, &oldref );
+            VG_(addToXA)( refs2del, &keyW );
             retained--;
          }
       }
@@ -3214,26 +3400,28 @@ static void event_map_maybe_GC ( void )
 
    if (0) VG_(printf)("%s","deleting entries\n");
    for (i = 0; i < n2del; i++) {
-      void* nd;
-      OldRef* ref = *(OldRef**)VG_(indexXA)( refs2del, i );
-      tl_assert(ref);
-      tl_assert(ref->magic == OldRef_MAGIC);
+      Bool  b;
+      Addr  ga2del = *(Addr*)VG_(indexXA)( refs2del, i );
+      b = VG_(delFromFM)( oldrefTree, &keyW, &valW, ga2del );
+      tl_assert(b);
+      tl_assert(keyW == ga2del);
+      oldref = (OldRef*)valW;
       for (j = 0; j < N_OLDREF_ACCS; j++) {
-         if (ref->accs[j].rcec) {
-            tl_assert(ref->accs[j].thr);
+         if (oldref->accs[j].rcec) {
+            tl_assert(oldref->accs[j].thr);
             stats__ctxt_rcdec3++;
-            ctxt__rcdec( ref->accs[j].rcec );
+            ctxt__rcdec( oldref->accs[j].rcec );
          } else {
-            tl_assert(!ref->accs[j].thr);
+            tl_assert(!oldref->accs[j].thr);
          }
       }
-      nd = VG_(OSetGen_Remove)( oldrefTree, ref );
-      VG_(OSetGen_FreeNode)( oldrefTree, nd );
+
+      free_OldRef( oldref );
    }
 
    VG_(deleteXA)( refs2del );
 
-   tl_assert( VG_(OSetGen_Size)( oldrefTree ) == retained );
+   tl_assert( VG_(sizeFM)( oldrefTree ) == retained );
 
    oldrefTreeN = retained;
    oldrefGenIncAt = oldrefTreeN; /* start new gen right away */
@@ -3245,7 +3433,7 @@ static void event_map_maybe_GC ( void )
       while (p) {
          if (p->rc == 0) {
             *pp = p->next;
-            HG_(free)(p);
+            free_RCEC(p);
             p = *pp;
             tl_assert(stats__ctxt_tab_curr > 0);
             stats__ctxt_tab_curr--;

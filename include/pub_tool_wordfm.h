@@ -158,6 +158,9 @@ void VG_(doneIterFM) ( WordFM* fm );
 WordFM* VG_(dopyFM) ( WordFM* fm,
                       UWord(*dopyK)(UWord), UWord(*dopyV)(UWord) );
 
+// admin: what's the 'common' allocation size (for tree nodes?)
+SizeT VG_(getNodeSizeFM)( void );
+
 //------------------------------------------------------------------//
 //---                         end WordFM                         ---//
 //---                      Public interface                      ---//

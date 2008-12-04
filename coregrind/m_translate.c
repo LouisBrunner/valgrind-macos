@@ -1414,6 +1414,9 @@ Bool VG_(translate) ( ThreadId tid,
    LibVEX_default_VexAbiInfo( &vex_abiinfo );
    vex_abiinfo.guest_stack_redzone_size = VG_STACK_REDZONE_SZB;
 
+#  if defined(VGP_amd64_linux)
+   vex_abiinfo.guest_amd64_assume_fs_is_zero  = True;
+#  endif
 #  if defined(VGP_ppc32_linux)
    vex_abiinfo.guest_ppc_zap_RZ_at_blr        = False;
    vex_abiinfo.guest_ppc_zap_RZ_at_bl         = NULL;

@@ -36,6 +36,7 @@
 #include "pub_tool_libcprint.h"
 #include "pub_tool_mallocfree.h"
 #include "pub_tool_wordfm.h"
+#include "pub_tool_sparsewa.h"
 #include "pub_tool_xarray.h"
 #include "pub_tool_oset.h"
 #include "pub_tool_threadstate.h"
@@ -2887,7 +2888,8 @@ static RCEC* get_RCEC ( Thr* thr )
 }
 
 ///////////////////////////////////////////////////////
-//// Part (2): A WordFM guest-addr -> OldRef, that refer to (1)
+//// Part (2):
+///  A SparseWA guest-addr -> OldRef, that refers to (1)
 ///
 
 // (UInt) `echo "Old Reference Information" | md5sum`
@@ -2921,33 +2923,11 @@ static void free_OldRef ( OldRef* r ) {
 }
 //////////// END OldRef group allocator
 
-//////////// BEGIN oldrefTree node group allocator
-static GroupAlloc oldrefnd_group_allocator;
-static void*      oldrefnd_first_alloc = NULL;
 
-static void* alloc_OldRef_nd ( HChar* cc, SizeT n ) {
-   if (UNLIKELY(oldrefnd_first_alloc == NULL)) {
-      oldrefnd_first_alloc = HG_(zalloc)( "libhb.alloc_OldRef_nd.1", n );
-      return oldrefnd_first_alloc;
-   } else {
-     return gal_Alloc_w_size_check ( &oldrefnd_group_allocator, n );
-   }
-}
-
-static void free_OldRef_nd ( void* p ) {
-   if (UNLIKELY(p == oldrefnd_first_alloc)) {
-      HG_(free)( oldrefnd_first_alloc );
-      oldrefnd_first_alloc = NULL;
-   } else {
-     gal_Free( &oldrefnd_group_allocator, p );
-   }
-}
-//////////// BEGIN oldrefTree node group allocator
-
-static WordFM* oldrefTree     = NULL; /* WordFM* Addr OldRef* */
-static UWord   oldrefGen      = 0;    /* current LRU generation # */
-static UWord   oldrefTreeN    = 0;    /* # elems in oldrefTree */
-static UWord   oldrefGenIncAt = 0;    /* inc gen # when size hits this */
+static SparseWA* oldrefTree     = NULL; /* SparseWA* OldRef* */
+static UWord     oldrefGen      = 0;    /* current LRU generation # */
+static UWord     oldrefTreeN    = 0;    /* # elems in oldrefTree */
+static UWord     oldrefGenIncAt = 0;    /* inc gen # when size hits this */
 
 static void event_map_bind ( Addr a, Thr* thr )
 {
@@ -2957,7 +2937,7 @@ static void event_map_bind ( Addr a, Thr* thr )
    UWord   keyW, valW;
    Bool    b;
 
-   b = VG_(lookupFM)( oldrefTree, &keyW, &valW, a );
+   b = VG_(lookupSWA)( oldrefTree, &keyW, &valW, a );
 
    if (b) {
 
@@ -3037,7 +3017,7 @@ static void event_map_bind ( Addr a, Thr* thr )
          ref->accs[j].thr = NULL;
          ref->accs[j].rcec = NULL;
       }
-      VG_(addToFM)( oldrefTree, a, (UWord)ref );
+      VG_(addToSWA)( oldrefTree, a, (UWord)ref );
       oldrefTreeN++;
 
    }
@@ -3056,7 +3036,7 @@ Bool event_map_lookup ( /*OUT*/ExeContext** resEC,
 
    tl_assert(thr_acc);
 
-   b = VG_(lookupFM)( oldrefTree, &keyW, &valW, a );
+   b = VG_(lookupSWA)( oldrefTree, &keyW, &valW, a );
    if (b) {
       ref = (OldRef*)valW;
       tl_assert(keyW == a);
@@ -3117,21 +3097,12 @@ static void event_map_init ( void )
                      "libhb.event_map_init.3 (OldRef groups)",
                      HG_(free) );
 
-   /* Oldref node group allocator */
-   init_GroupAlloc ( &oldrefnd_group_allocator,
-                     VG_(getNodeSizeFM)(),
-                     1000 /* OldRefs per group */,
-                     HG_(zalloc),
-                     "libhb.event_map_init.3 (OldRef tree node groups)",
-                     HG_(free) );
-
    /* Oldref tree */
    tl_assert(!oldrefTree);
-   oldrefTree = VG_(newFM)(
-                   alloc_OldRef_nd,
+   oldrefTree = VG_(newSWA)(
+                   HG_(zalloc),
                    "libhb.event_map_init.4 (oldref tree)", 
-                   free_OldRef_nd,
-                   NULL /* use unboxed cmp */
+                   HG_(free)
                 );
    tl_assert(oldrefTree);
 
@@ -3169,8 +3140,8 @@ static void event_map__check_reference_counts ( Bool before )
    tl_assert(stats__ctxt_tab_curr <= stats__ctxt_tab_max);
 
    /* visit all the referencing points, inc check ref counts */
-   VG_(initIterFM)( oldrefTree );
-   while (VG_(nextIterFM)( oldrefTree, &keyW, &valW )) {
+   VG_(initIterSWA)( oldrefTree );
+   while (VG_(nextIterSWA)( oldrefTree, &keyW, &valW )) {
       oldref = (OldRef*)valW;
       tl_assert(oldref->magic == OldRef_MAGIC);
       for (i = 0; i < N_OLDREF_ACCS; i++) {
@@ -3211,7 +3182,8 @@ static void event_map_maybe_GC ( void )
       VG_(printf)("libhb: event_map GC at size %lu\n", oldrefTreeN);
 
    /* Check our counting is sane */
-   tl_assert(oldrefTreeN == VG_(sizeFM)( oldrefTree ));
+#warning Fixme1
+   //tl_assert(oldrefTreeN == VG_(sizeFM)( oldrefTree ));
 
    /* Check the reference counts */
    event_map__check_reference_counts( True/*before*/ );
@@ -3229,8 +3201,8 @@ static void event_map_maybe_GC ( void )
 
    /* genMap :: generation-number -> count-of-nodes-with-that-number */
 
-   VG_(initIterFM)( oldrefTree );
-   while ( VG_(nextIterFM)( oldrefTree, &keyW, &valW )) {
+   VG_(initIterSWA)( oldrefTree );
+   while ( VG_(nextIterSWA)( oldrefTree, &keyW, &valW )) {
 
        UWord ea, key;
        oldref = (OldRef*)valW;
@@ -3352,8 +3324,8 @@ static void event_map_maybe_GC ( void )
 
       /* This is the normal (expected) case.  We discard any ref whose
          generation number <= maxGen. */
-      VG_(initIterFM)( oldrefTree );
-      while (VG_(nextIterFM)( oldrefTree, &keyW, &valW )) {
+      VG_(initIterSWA)( oldrefTree );
+      while (VG_(nextIterSWA)( oldrefTree, &keyW, &valW )) {
          oldref = (OldRef*)valW;
          tl_assert(oldref->magic == OldRef_MAGIC);
          if (oldref->gen <= maxGen) {
@@ -3375,8 +3347,8 @@ static void event_map_maybe_GC ( void )
          tree, so we need to have some other way of deciding which
          refs to throw away.  Just throw out half of them randomly. */
       tl_assert(retained == oldrefTreeN);
-      VG_(initIterFM)( oldrefTree );
-      while (VG_(nextIterFM)( oldrefTree, &keyW, &valW )) {
+      VG_(initIterSWA)( oldrefTree );
+      while (VG_(nextIterSWA)( oldrefTree, &keyW, &valW )) {
          UInt n;
          oldref = (OldRef*)valW;
          tl_assert(oldref->magic == OldRef_MAGIC);
@@ -3402,7 +3374,7 @@ static void event_map_maybe_GC ( void )
    for (i = 0; i < n2del; i++) {
       Bool  b;
       Addr  ga2del = *(Addr*)VG_(indexXA)( refs2del, i );
-      b = VG_(delFromFM)( oldrefTree, &keyW, &valW, ga2del );
+      b = VG_(delFromSWA)( oldrefTree, &keyW, &valW, ga2del );
       tl_assert(b);
       tl_assert(keyW == ga2del);
       oldref = (OldRef*)valW;
@@ -3421,7 +3393,8 @@ static void event_map_maybe_GC ( void )
 
    VG_(deleteXA)( refs2del );
 
-   tl_assert( VG_(sizeFM)( oldrefTree ) == retained );
+#warning Fixme2
+   //tl_assert( VG_(sizeFM)( oldrefTree ) == retained );
 
    oldrefTreeN = retained;
    oldrefGenIncAt = oldrefTreeN; /* start new gen right away */

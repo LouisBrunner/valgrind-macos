@@ -87,6 +87,10 @@ void VG_(initIterSWA) ( SparseWA* swa );
 Bool VG_(nextIterSWA)( SparseWA* swa,
                        /*OUT*/UWord* keyP, /*OUT*/UWord* valP );
 
+// How many elements are there in 'swa'?  NOTE: dangerous in the
+// sense that this is not an O(1) operation but rather O(N),
+// since it involves walking the whole tree.
+UWord VG_(sizeSWA) ( SparseWA* swa );
 
 #endif   // __PUB_TOOL_SPARSEWA_H
 

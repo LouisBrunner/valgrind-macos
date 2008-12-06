@@ -115,7 +115,6 @@ static inline UWord swa_bitarray_read_then_clear ( UChar* arr, UWord ix ) {
 
 //////// SWA helper functions (iteration)
 
-inline
 static void swa_PUSH ( SparseWA* swa, UWord partial_key, Int curr_ix,
                                       void* curr_nd, Int resume_point )
 {
@@ -130,7 +129,6 @@ static void swa_PUSH ( SparseWA* swa, UWord partial_key, Int curr_ix,
    swa->isUsed = sp+1;
 }
 
-inline
 static void swa_POP ( SparseWA* swa,
                       UWord* partial_key, Int* curr_ix,
                       void** curr_nd, Int* resume_point )
@@ -165,6 +163,7 @@ static Level0* swa_new_Level0 ( SparseWA* swa )
    return level0;
 }
 
+
 //////// SWA public interface
 
 void VG_(initIterSWA) ( SparseWA* swa )
@@ -172,6 +171,7 @@ void VG_(initIterSWA) ( SparseWA* swa )
    swa->isUsed = 0;
    if (swa->root) swa_PUSH(swa, 0, 0, swa->root, 1/*start_new_node*/);
 }
+
 
 Bool VG_(nextIterSWA)( SparseWA* swa,
                        /*OUT*/UWord* keyP, /*OUT*/UWord* valP )
@@ -230,6 +230,7 @@ Bool VG_(nextIterSWA)( SparseWA* swa,
    goto dispatch;
 }
 
+
 SparseWA* VG_(newSWA) ( void*(*alloc_nofail)(HChar* cc, SizeT), 
                         HChar* cc,
                         void(*dealloc)(void*) )
@@ -247,6 +248,7 @@ SparseWA* VG_(newSWA) ( void*(*alloc_nofail)(HChar* cc, SizeT),
    return swa;
 }
 
+
 static void swa_deleteSWA_wrk ( void(*dealloc)(void*), void* nd )
 {
    Int i;
@@ -263,13 +265,13 @@ static void swa_deleteSWA_wrk ( void(*dealloc)(void*), void* nd )
    }
    dealloc(nd);
 }
-
 void VG_(deleteSWA) ( SparseWA* swa )
 {
    if (swa->root)
       swa_deleteSWA_wrk( swa->dealloc, swa->root );
    swa->dealloc(swa);
 }
+
 
 Bool VG_(lookupSWA) ( SparseWA* swa,
                       /*OUT*/UWord* keyP, /*OUT*/UWord* valP,
@@ -304,6 +306,7 @@ Bool VG_(lookupSWA) ( SparseWA* swa,
    *valP = level0->words[ix];
    return True;
 }
+
 
 Bool VG_(addToSWA) ( SparseWA* swa, UWord key, UWord val )
 {
@@ -360,6 +363,7 @@ Bool VG_(addToSWA) ( SparseWA* swa, UWord key, UWord val )
 
    return already_present;
 }
+
 
 Bool VG_(delFromSWA) ( SparseWA* swa,
                        /*OUT*/UWord* oldK, /*OUT*/UWord* oldV, UWord key )
@@ -426,6 +430,48 @@ Bool VG_(delFromSWA) ( SparseWA* swa,
    swa->root = NULL;
    return True;
 }
+
+
+static UWord swa_sizeSWA_wrk ( void* nd )
+{
+   Int   i;
+   UWord sum = 0;
+   if (*(UWord*)nd == LevelN_MAGIC) {
+      LevelN* levelN = (LevelN*)nd;
+      for (i = 0; i < 256; i++) {
+         if (levelN->child[i]) {
+            sum += swa_sizeSWA_wrk( levelN->child[i] );
+         }
+      }     
+   } else {
+      Level0* level0;
+      vg_assert(*(UWord*)nd == Level0_MAGIC);
+      level0 = (Level0*)nd;
+      for (i = 0; i < 256/8; i += 2) {
+         UWord x = level0->inUse[i+0]; /* assume zero-extend */
+         UWord y = level0->inUse[i+1]; /* assume zero-extend */
+         /* do 'sum += popcount(x) + popcount(y)' for byte-sized x, y */
+         /* unroll the loop twice so as to expose more ILP */
+         x = (x & 0x55) + ((x >> 1) & 0x55);
+         y = (y & 0x55) + ((y >> 1) & 0x55);
+         x = (x & 0x33) + ((x >> 2) & 0x33);
+         y = (y & 0x33) + ((y >> 2) & 0x33);
+         x = (x & 0x0F) + ((x >> 4) & 0x0F);
+         y = (y & 0x0F) + ((y >> 4) & 0x0F);
+         sum += x + y;
+      }
+   }
+   return sum;
+}
+UWord VG_(sizeSWA) ( SparseWA* swa )
+{
+   if (swa->root)
+      return swa_sizeSWA_wrk ( swa->root );
+   else
+      return 0;
+}
+
+
 
 /*--------------------------------------------------------------------*/
 /*--- end                                             m_sparsewa.c ---*/

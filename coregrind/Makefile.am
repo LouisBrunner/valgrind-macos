@@ -123,6 +123,7 @@ noinst_HEADERS = \
 	pub_core_scheduler.h	\
 	pub_core_sigframe.h	\
 	pub_core_signals.h	\
+	pub_core_sparsewa.h	\
 	pub_core_stacks.h	\
 	pub_core_stacktrace.h	\
 	pub_core_syscall.h	\
@@ -191,6 +192,7 @@ COREGRIND_SOURCES_COMMON = \
 	m_oset.c \
 	m_redir.c \
 	m_signals.c \
+	m_sparsewa.c \
 	m_stacks.c \
 	m_stacktrace.c \
 	m_syscall.c \

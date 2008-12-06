@@ -27,6 +27,7 @@ incinc_HEADERS = \
 	pub_tool_redir.h		\
 	pub_tool_replacemalloc.h	\
 	pub_tool_signals.h 		\
+	pub_tool_sparsewa.h		\
 	pub_tool_stacktrace.h 		\
 	pub_tool_threadstate.h 		\
 	pub_tool_tooliface.h 		\

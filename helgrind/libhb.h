@@ -142,6 +142,13 @@ void libhb_copy_shadow_state ( Addr src, Addr dst, SizeT len );
    garbage-collect its internal data structures. */
 void libhb_maybe_GC ( void );
 
+/* Extract info from the conflicting-access machinery. */
+Bool libhb_event_map_lookup ( /*OUT*/ExeContext** resEC,
+                              /*OUT*/Thr**  resThr,
+                              /*OUT*/SizeT* resSzB,
+                              /*OUT*/Bool*  resIsW,
+                              Thr* thr, Addr a, SizeT szB, Bool isW );
+
 #endif /* __LIBHB_H */
 
 /*--------------------------------------------------------------------*/

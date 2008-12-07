@@ -43,6 +43,7 @@
 #include "hg_basics.h"
 #include "hg_wordset.h"
 #include "hg_lock_n_thread.h"
+#include "libhb.h"
 #include "hg_errors.h"            /* self */
 
 
@@ -190,6 +191,8 @@ typedef
             ExeContext* mb_confacc;
             Thread* thr;
             Thread* mb_confaccthr;
+            Int   mb_confaccSzB;
+            Bool  mb_confaccIsW;
             Char  descr1[96];
             Char  descr2[96];
          } Race;
@@ -266,6 +269,11 @@ UInt HG_(update_extra) ( Error* err )
          raced-upon address.  This is potentially expensive, which is
          why it's only done at the update_extra point, not when the
          error is initially created. */
+      static Int xxx = 0;
+      xxx++;
+      if (0)
+         VG_(printf)("HG_(update_extra): "
+                     "%d conflicting-event queries\n", xxx);
       tl_assert(sizeof(xe->XE.Race.descr1) == sizeof(xe->XE.Race.descr2));
       if (VG_(get_data_description)(
                 &xe->XE.Race.descr1[0],
@@ -277,6 +285,30 @@ UInt HG_(update_extra) ( Error* err )
          tl_assert( xe->XE.Race.descr2
                        [ sizeof(xe->XE.Race.descr2)-1 ] == 0);
       }
+      { Thr* thrp = NULL;
+        ExeContext* wherep = NULL;
+        Addr  acc_addr = xe->XE.Race.data_addr;
+        Int   acc_szB  = xe->XE.Race.szB;
+        Thr*  acc_thr  = xe->XE.Race.thr->hbthr;
+        Bool  acc_isW  = xe->XE.Race.isWrite;
+        SizeT conf_szB = 0;
+        Bool  conf_isW = False;
+        tl_assert(!xe->XE.Race.mb_confacc);
+        tl_assert(!xe->XE.Race.mb_confaccthr);
+        if (libhb_event_map_lookup(
+               &wherep, &thrp, &conf_szB, &conf_isW,
+               acc_thr, acc_addr, acc_szB, acc_isW )) {
+           Thread* threadp;
+           tl_assert(wherep);
+           tl_assert(thrp);
+           threadp = libhb_get_Thr_opaque( thrp );
+           tl_assert(threadp);
+           xe->XE.Race.mb_confacc = wherep;
+           xe->XE.Race.mb_confaccthr = threadp;
+           xe->XE.Race.mb_confaccSzB = (Int)conf_szB;
+           xe->XE.Race.mb_confaccIsW = conf_isW;
+        }
+      }
    }
 
    return sizeof(XError);
@@ -284,9 +316,7 @@ UInt HG_(update_extra) ( Error* err )
 
 void HG_(record_error_Race) ( Thread* thr, 
                               Addr data_addr, Bool isWrite, Int szB,
-                              ExeContext* mb_lastlock,
-                              ExeContext* mb_confacc,
-                              Thread* mb_confaccthr )
+                              ExeContext* mb_lastlock )
 {
    XError xe;
    tl_assert( HG_(is_sane_Thread)(thr) );
@@ -311,13 +341,20 @@ void HG_(record_error_Race) ( Thread* thr,
    xe.XE.Race.szB         = szB;
    xe.XE.Race.isWrite     = isWrite;
    xe.XE.Race.mb_lastlock = mb_lastlock;
-   xe.XE.Race.mb_confacc  = mb_confacc;
    xe.XE.Race.thr         = thr;
-   xe.XE.Race.mb_confaccthr = mb_confaccthr;
    tl_assert(isWrite == False || isWrite == True);
    //   tl_assert(szB == 8 || szB == 4 || szB == 2 || szB == 1);
    xe.XE.Race.descr1[0] = xe.XE.Race.descr2[0] = 0;
    // FIXME: tid vs thr
+   // Skip on any of the conflicting-access info at this point.
+   // It's expensive to obtain, and this error is more likely than
+   // not to be discarded.  We'll fill these fields in in 
+   // HG_(update_extra) just above, assuming the error ever makes
+   // it that far (unlikely).
+   xe.XE.Race.mb_confaccSzB = 0;
+   xe.XE.Race.mb_confaccIsW = False;
+   xe.XE.Race.mb_confacc    = NULL;
+   xe.XE.Race.mb_confaccthr = NULL;
    tl_assert( HG_(is_sane_ThreadId)(thr->coretid) );
    tl_assert( thr->coretid != VG_INVALID_THREADID );
    VG_(maybe_record_error)( thr->coretid,
@@ -673,12 +710,17 @@ void HG_(pp_Error) ( Error* err )
       if (xe->XE.Race.mb_confacc) {
          if (xe->XE.Race.mb_confaccthr) {
             VG_(message)(Vg_UserMsg,
-               " This conflicts with a previous access by thread #%d",
+               " This conflicts with a previous %s of size %d by thread #%d",
+               xe->XE.Race.mb_confaccIsW ? "write" : "read",
+               xe->XE.Race.mb_confaccSzB,
                xe->XE.Race.mb_confaccthr->errmsg_index
             );
          } else {
+            // FIXME: can this ever happen?
             VG_(message)(Vg_UserMsg,
-               " This conflicts with a previous access"
+               " This conflicts with a previous %s of size %d",
+               xe->XE.Race.mb_confaccIsW ? "write" : "read",
+               xe->XE.Race.mb_confaccSzB
             );
          }
          VG_(pp_ExeContext)( xe->XE.Race.mb_confacc );

@@ -2895,6 +2895,12 @@ static RCEC* get_RCEC ( Thr* thr )
 // (UInt) `echo "Old Reference Information" | md5sum`
 #define OldRef_MAGIC 0x30b1f075UL
 
+/* Records an access: a thread and a context.  The size
+   (1,2,4,8) and read-or-writeness are also encoded as
+   follows: bottom bit of .thr is 1 if write, 0 if read
+            bottom 2 bits of .rcec are encode size:
+            00 = 1, 01 = 2, 10 = 4, 11 = 8
+*/
 typedef  struct { Thr* thr; RCEC* rcec; }  Thr_n_RCEC;
 
 #define N_OLDREF_ACCS 3
@@ -2929,14 +2935,37 @@ static UWord     oldrefGen      = 0;    /* current LRU generation # */
 static UWord     oldrefTreeN    = 0;    /* # elems in oldrefTree */
 static UWord     oldrefGenIncAt = 0;    /* inc gen # when size hits this */
 
-static void event_map_bind ( Addr a, Thr* thr )
+inline static void* ptr_or_UWord ( void* p, UWord w ) {
+   return (void*)( ((UWord)p) | ((UWord)w) );
+}
+inline static void* ptr_and_UWord ( void* p, UWord w ) {
+   return (void*)( ((UWord)p) & ((UWord)w) );
+}
+
+static void event_map_bind ( Addr a, SizeT szB, Bool isW, Thr* thr )
 {
    OldRef* ref;
-   RCEC*   here;
+   RCEC*   rcec;
    Word    i, j;
    UWord   keyW, valW;
    Bool    b;
 
+   rcec = get_RCEC( thr );
+   ctxt__rcinc(rcec);
+
+   /* encode the size and writeness of the transaction in the bottom
+      two bits of thr and rcec. */
+   thr = ptr_or_UWord(thr, isW ? 1 : 0);
+   switch (szB) {
+      /* This doesn't look particularly branch-predictor friendly. */
+      case 1:  rcec = ptr_or_UWord(rcec, 0); break;
+      case 2:  rcec = ptr_or_UWord(rcec, 1); break;
+      case 4:  rcec = ptr_or_UWord(rcec, 2); break;
+      case 8:  rcec = ptr_or_UWord(rcec, 3); break;
+      default: tl_assert(0);
+   }
+
+   /* Look in the map to see if we already have this. */
    b = VG_(lookupSWA)( oldrefTree, &keyW, &valW, a );
 
    if (b) {
@@ -2962,16 +2991,12 @@ static void event_map_bind ( Addr a, Thr* thr )
             ref->accs[i] = tmp;
             i--;
          }
-         here = get_RCEC( thr );
-         if (here == ref->accs[i].rcec) stats__ctxt_rcdec1_eq++;
-         ctxt__rcinc( here );
+         if (rcec == ref->accs[i].rcec) stats__ctxt_rcdec1_eq++;
          stats__ctxt_rcdec1++;
-         ctxt__rcdec( ref->accs[i].rcec );
-         ref->accs[i].rcec = here;
+         ctxt__rcdec( ptr_and_UWord(ref->accs[i].rcec, ~3) );
+         ref->accs[i].rcec = rcec;
          tl_assert(ref->accs[i].thr == thr);
       } else {
-         here = get_RCEC( thr );
-         ctxt__rcinc( here );
          /* No entry for this thread.  Shuffle all of them down one
             slot, and put the new entry at the start of the array. */
          if (ref->accs[N_OLDREF_ACCS-1].thr) {
@@ -2979,16 +3004,17 @@ static void event_map_bind ( Addr a, Thr* thr )
                associated rcec. */
             tl_assert(ref->accs[N_OLDREF_ACCS-1].rcec);
             stats__ctxt_rcdec2++;
-            ctxt__rcdec(ref->accs[N_OLDREF_ACCS-1].rcec);
+            ctxt__rcdec( ptr_and_UWord(ref->accs[N_OLDREF_ACCS-1].rcec, ~3) );
          } else {
             tl_assert(!ref->accs[N_OLDREF_ACCS-1].rcec);
          }
          for (j = N_OLDREF_ACCS-1; j >= 1; j--)
             ref->accs[j] = ref->accs[j-1];
          ref->accs[0].thr = thr;
-         ref->accs[0].rcec = here;
-         tl_assert(thr); /* thr==NULL is used to signify an empty slot,
-                            so we can't add a NULL thr. */
+         ref->accs[0].rcec = rcec;
+         /* thr==NULL is used to signify an empty slot, so we can't
+            add a NULL thr. */
+         tl_assert(ptr_and_UWord(thr, ~3) != 0); 
       }
 
       ref->gen = oldrefGen;
@@ -3002,17 +3028,15 @@ static void event_map_bind ( Addr a, Thr* thr )
          if (0) VG_(printf)("oldrefTree: new gen %lu at size %lu\n",
                             oldrefGen, oldrefTreeN );
       }
-      here = get_RCEC( thr );
-      ctxt__rcinc(here);
-
 
       ref = alloc_OldRef();
       ref->magic = OldRef_MAGIC;
       ref->gen = oldrefGen;
-      ref->accs[0].rcec = here;
+      ref->accs[0].rcec = rcec;
       ref->accs[0].thr = thr;
-      tl_assert(thr); /* thr==NULL is used to signify an empty slot,
-                         so we can't add a NULL thr. */
+         /* thr==NULL is used to signify an empty slot, so we can't
+            add a NULL thr. */
+         tl_assert(ptr_and_UWord(thr, ~3) != 0); 
       for (j = 1; j < N_OLDREF_ACCS; j++) {
          ref->accs[j].thr = NULL;
          ref->accs[j].rcec = NULL;
@@ -3024,17 +3048,24 @@ static void event_map_bind ( Addr a, Thr* thr )
 }
 
 
-static
-Bool event_map_lookup ( /*OUT*/ExeContext** resEC,
-                        /*OUT*/Thr** resThr,
-                        Thr* thr_acc, Addr a )
+Bool libhb_event_map_lookup ( /*OUT*/ExeContext** resEC,
+                              /*OUT*/Thr**  resThr,
+                              /*OUT*/SizeT* resSzB,
+                              /*OUT*/Bool*  resIsW,
+                              Thr* thr, Addr a, SizeT szB, Bool isW )
 {
    Word    i;
    OldRef* ref;
    UWord   keyW, valW;
    Bool    b;
 
-   tl_assert(thr_acc);
+   Thr*    cand_thr;
+   RCEC*   cand_rcec;
+   Bool    cand_isW;
+   SizeT   cand_szB;
+
+   tl_assert(thr);
+   tl_assert(szB == 8 || szB == 4 || szB == 2 || szB == 1);
 
    b = VG_(lookupSWA)( oldrefTree, &keyW, &valW, a );
    if (b) {
@@ -3043,26 +3074,60 @@ Bool event_map_lookup ( /*OUT*/ExeContext** resEC,
       tl_assert(ref->magic == OldRef_MAGIC);
       tl_assert(ref->accs[0].thr); /* first slot must always be used */
 
-      for (i = 0; i < N_OLDREF_ACCS; i++) {
-         if (ref->accs[i].thr != NULL
-             && ref->accs[i].thr != thr_acc)
-            break;
-      }
-      /* If we didn't find an entry for some thread other than
-         thr_acc, just return the entry for thread 0.  It'll look
-         pretty stupid to the user though. */
-      if (i == N_OLDREF_ACCS)
-         i = 0;
+      cand_thr  = NULL;
+      cand_rcec = NULL;
+      cand_isW  = False;
+      cand_szB  = 0;
 
-      tl_assert(i >= 0 && i < N_OLDREF_ACCS);
-      tl_assert(ref->accs[i].thr);
-      tl_assert(ref->accs[i].rcec);
-      tl_assert(ref->accs[i].rcec->magic == RCEC_MAGIC);
+      for (i = 0; i < N_OLDREF_ACCS; i++) {
+         Thr_n_RCEC* cand = &ref->accs[i];
+         cand_thr  = ptr_and_UWord(cand->thr, ~3);
+         cand_rcec = ptr_and_UWord(cand->rcec, ~3);
+         /* Decode the writeness from the bottom bit of .thr. */
+         cand_isW = 1 == (UWord)ptr_and_UWord(cand->thr, 1);
+         /* Decode the size from the bottom two bits of .rcec. */
+         switch ((UWord)ptr_and_UWord(cand->rcec, 3)) {
+            case 0:  cand_szB = 1; break;
+            case 1:  cand_szB = 2; break;
+            case 2:  cand_szB = 4; break;
+            case 3:  cand_szB = 8; break;
+            default: tl_assert(0);
+         }
+
+         if (cand_thr == NULL) 
+            /* This slot isn't in use.  Ignore it. */
+            continue;
+
+         if (cand_thr == thr)
+            /* This is an access by the same thread, but we're only
+               interested in accesses from other threads.  Ignore. */
+            continue;
+
+         if ((!cand_isW) && (!isW))
+            /* We don't want to report a read racing against another
+               read; that's stupid.  So in this case move on. */
+            continue;
+
+         /* We have a match.  Stop searching. */
+         break;
+      }
+
+      tl_assert(i >= 0 && i <= N_OLDREF_ACCS);
+
+      if (i == N_OLDREF_ACCS)
+         return False;
+
+      tl_assert(cand_thr);
+      tl_assert(cand_rcec);
+      tl_assert(cand_rcec->magic == RCEC_MAGIC);
+      tl_assert(cand_szB >= 1);
 
       *resEC  = VG_(make_ExeContext_from_StackTrace)(
-                   &ref->accs[i].rcec->frames[1], N_FRAMES
+                   &cand_rcec->frames[1], N_FRAMES
                 );
-      *resThr = ref->accs[i].thr;
+      *resThr = cand_thr;
+      *resSzB = cand_szB;
+      *resIsW = cand_isW;
       return True;
    } else {
       return False;
@@ -3145,12 +3210,14 @@ static void event_map__check_reference_counts ( Bool before )
       oldref = (OldRef*)valW;
       tl_assert(oldref->magic == OldRef_MAGIC);
       for (i = 0; i < N_OLDREF_ACCS; i++) {
-         if (oldref->accs[i].thr) {
-            tl_assert(oldref->accs[i].rcec);
-            tl_assert(oldref->accs[i].rcec->magic == RCEC_MAGIC);
-            oldref->accs[i].rcec->rcX++;
+         Thr*  aThr = ptr_and_UWord(oldref->accs[i].thr, ~3);
+         RCEC* aRef = ptr_and_UWord(oldref->accs[i].rcec, ~3);
+         if (aThr) {
+            tl_assert(aRef);
+            tl_assert(aRef->magic == RCEC_MAGIC);
+            aRef->rcX++;
          } else {
-            tl_assert(!oldref->accs[i].rcec);
+            tl_assert(!aRef);
          }
       }
    }
@@ -3182,8 +3249,7 @@ static void event_map_maybe_GC ( void )
       VG_(printf)("libhb: event_map GC at size %lu\n", oldrefTreeN);
 
    /* Check our counting is sane */
-#warning Fixme1
-   //tl_assert(oldrefTreeN == VG_(sizeFM)( oldrefTree ));
+   tl_assert(oldrefTreeN == VG_(sizeSWA)( oldrefTree ));
 
    /* Check the reference counts */
    event_map__check_reference_counts( True/*before*/ );
@@ -3379,12 +3445,14 @@ static void event_map_maybe_GC ( void )
       tl_assert(keyW == ga2del);
       oldref = (OldRef*)valW;
       for (j = 0; j < N_OLDREF_ACCS; j++) {
-         if (oldref->accs[j].rcec) {
-            tl_assert(oldref->accs[j].thr);
+         Thr*  aThr = ptr_and_UWord(oldref->accs[j].thr, ~3);
+         RCEC* aRef = ptr_and_UWord(oldref->accs[j].rcec, ~3);
+         if (aRef) {
+            tl_assert(aThr);
             stats__ctxt_rcdec3++;
-            ctxt__rcdec( oldref->accs[j].rcec );
+            ctxt__rcdec( aRef );
          } else {
-            tl_assert(!oldref->accs[j].thr);
+            tl_assert(!aThr);
          }
       }
 
@@ -3393,8 +3461,7 @@ static void event_map_maybe_GC ( void )
 
    VG_(deleteXA)( refs2del );
 
-#warning Fixme2
-   //tl_assert( VG_(sizeFM)( oldrefTree ) == retained );
+   tl_assert( VG_(sizeSWA)( oldrefTree ) == retained );
 
    oldrefTreeN = retained;
    oldrefGenIncAt = oldrefTreeN; /* start new gen right away */
@@ -3470,28 +3537,17 @@ static void record_race_info ( Thr* acc_thr,
                                Addr acc_addr, SizeT szB, Bool isWrite,
                                SVal svOld, SVal svNew )
 {
-   Bool found;
-   Thr* thrp = NULL;
-   ExeContext* where  = NULL;
-   ExeContext* wherep = NULL;
-   where = main_get_EC( acc_thr );
-   found = event_map_lookup( &wherep, &thrp, acc_thr, acc_addr );
-   if (found) {
-      tl_assert(wherep);
-      tl_assert(thrp);
-      tl_assert(thrp->opaque);
-      tl_assert(acc_thr->opaque);
-      HG_(record_error_Race)( acc_thr->opaque, acc_addr,
-                              isWrite, szB, NULL/*mb_lastlock*/,
-                              wherep, thrp->opaque );
-   } else {
-      tl_assert(!wherep);
-      tl_assert(!thrp);
-      tl_assert(acc_thr->opaque);
-      HG_(record_error_Race)( acc_thr->opaque, acc_addr,
-                              isWrite, szB, NULL/*mb_lastlock*/,
-                              NULL, NULL );
-   }
+   /* Call here to report a race.  We just hand it onwards to
+      HG_(record_error_Race).  If that in turn discovers that the
+      error is going to be collected, then that queries the
+      conflicting-event map.  The alternative would be to query it
+      right here.  But that causes a lot of pointless queries for
+      errors which will shortly be discarded as duplicates, and can
+      become a performance overhead; so we defer the query until we
+      know the error is not a duplicate. */
+   tl_assert(acc_thr->opaque);
+   HG_(record_error_Race)( acc_thr->opaque, acc_addr,
+                           isWrite, szB, NULL/*mb_lastlock*/ );
 }
 
 static Bool is_sane_SVal_C ( SVal sv ) {
@@ -3573,7 +3629,7 @@ static inline SVal msm_read ( SVal svOld,
    tl_assert(svNew != SVal_INVALID);
    if (svNew != svOld) {
       if (MSM_CONFACC && SVal__isC(svOld) && SVal__isC(svNew)) {
-         event_map_bind( acc_addr, acc_thr );
+         event_map_bind( acc_addr, szB, False/*!isWrite*/, acc_thr );
          stats__msm_read_change++;
       }
    }
@@ -3650,7 +3706,7 @@ static inline SVal msm_write ( SVal svOld,
    tl_assert(svNew != SVal_INVALID);
    if (svNew != svOld) {
       if (MSM_CONFACC && SVal__isC(svOld) && SVal__isC(svNew)) {
-         event_map_bind( acc_addr, acc_thr );
+         event_map_bind( acc_addr, szB, True/*isWrite*/, acc_thr );
          stats__msm_write_change++;
       }
    }

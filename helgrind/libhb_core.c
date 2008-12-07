@@ -52,19 +52,59 @@
 #include "libhb.h"
 
 
+/////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////
+//                                                             //
+// Debugging #defines                                          //
+//                                                             //
+/////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////
+
+/* Check the sanity of shadow values in the core memory state
+   machine.  Change #if 0 to #if 1 to enable this. */
+#if 0
+#  define CHECK_MSM 1
+#else
+#  define CHECK_MSM 0
+#endif
+
+
+/* Check sanity (reference counts, etc) in the conflicting access
+   machinery.  Change #if 0 to #if 1 to enable this. */
+#if 0
+#  define CHECK_CEM 1
+#else
+#  define CHECK_CEM 0
+#endif
+
+
+/* Check sanity in the compressed shadow memory machinery,
+   particularly in its caching innards.  Unfortunately there's no
+   almost-zero-cost way to make them selectable at run time.  Hence
+   set the #if 0 to #if 1 and rebuild if you want them. */
+#if 0
+#  define CHECK_ZSM 1  /* do sanity-check CacheLine stuff */
+#  define inline __attribute__((noinline))
+   /* probably want to ditch -fomit-frame-pointer too */
+#else
+#  define CHECK_ZSM 0   /* don't sanity-check CacheLine stuff */
+#endif
+
+
+/////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////
+//                                                             //
+// Forward declarations                                        //
+//                                                             //
+/////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////
+
 /* fwds for
    Globals needed by other parts of the library.  These are set
    once at startup and then never changed. */
 static void        (*main_get_stacktrace)( Thr*, Addr*, UWord ) = NULL;
 static ExeContext* (*main_get_EC)( Thr* ) = NULL;
 
-/////////////////////////////////////////////////////////////////
-/////////////////////////////////////////////////////////////////
-//                                                             //
-//                                                             //
-//                                                             //
-/////////////////////////////////////////////////////////////////
-/////////////////////////////////////////////////////////////////
 
 
 /////////////////////////////////////////////////////////////////
@@ -113,28 +153,6 @@ static void zsm_copy_range  ( Addr, Addr, SizeT );
 static void zsm_flush_cache ( void );
 
 #endif /* ! __HB_ZSM_H */
-
-
-/* For the shadow mem cache stuff we may want more intrusive
-   checks.  Unfortunately there's no almost-zero-cost way to make them
-   selectable at run time.  Hence set the #if 0 to #if 1 and
-   rebuild if you want them. */
-#if 0
-#  define SCE_CACHELINE 1  /* do sanity-check CacheLine stuff */
-#  define inline __attribute__((noinline))
-   /* probably want to ditch -fomit-frame-pointer too */
-#else
-#  define SCE_CACHELINE 0   /* don't sanity-check CacheLine stuff */
-#endif
-
-/* For the SegmentID, SegmentSet and SVal stuff we may want more
-   intrusive checks.  Again there's no zero cost way to do this.  Set
-   the #if 0 to #if 1 and rebuild if you want them. */
-#if 0
-#  define SCE_SVALS 1 /* sanity-check shadow value stuff */
-#else
-#  define SCE_SVALS 0
-#endif
 
 
 /* Round a up to the next multiple of N.  N must be a power of 2 */
@@ -913,7 +931,7 @@ static void normalise_CacheLine ( /*MOD*/CacheLine* cl )
       cl->descrs[tno] = normalise_tree( tree );
    }
    tl_assert(cloff == N_LINE_ARANGE);
-   if (SCE_CACHELINE)
+   if (CHECK_ZSM)
       tl_assert(is_sane_CacheLine(cl)); /* EXPENSIVE */
    stats__cline_normalises++;
 }
@@ -1016,7 +1034,7 @@ static __attribute__((noinline)) void cacheline_wback ( UWord wix )
    lineZ = &sm->linesZ[zix];
 
    /* Generate the data to be stored */
-   if (SCE_CACHELINE)
+   if (CHECK_ZSM)
       tl_assert(is_sane_CacheLine(cl)); /* EXPENSIVE */
 
    csvalsUsed = -1;
@@ -1033,7 +1051,7 @@ static __attribute__((noinline)) void cacheline_wback ( UWord wix )
    for (k = 0; k < csvalsUsed; k++) {
 
       sv = csvals[k].sval;
-      if (SCE_SVALS)
+      if (CHECK_ZSM)
          tl_assert(csvals[k].count >= 1 && csvals[k].count <= 8);
       /* do we already have it? */
       if (sv == lineZ->dict[0]) { j = 0; goto dict_ok; }
@@ -1041,7 +1059,7 @@ static __attribute__((noinline)) void cacheline_wback ( UWord wix )
       if (sv == lineZ->dict[2]) { j = 2; goto dict_ok; }
       if (sv == lineZ->dict[3]) { j = 3; goto dict_ok; }
       /* no.  look for a free slot. */
-      if (SCE_SVALS)
+      if (CHECK_ZSM)
          tl_assert(sv != SVal_INVALID);
       if (lineZ->dict[0] 
           == SVal_INVALID) { lineZ->dict[0] = sv; j = 0; goto dict_ok; }
@@ -1107,10 +1125,10 @@ static __attribute__((noinline)) void cacheline_wback ( UWord wix )
       lineF->inUse = True;
       i = 0;
       for (k = 0; k < csvalsUsed; k++) {
-         if (SCE_SVALS)
+         if (CHECK_ZSM)
             tl_assert(csvals[k].count >= 1 && csvals[k].count <= 8);
          sv = csvals[k].sval;
-         if (SCE_SVALS)
+         if (CHECK_ZSM)
             tl_assert(sv != SVal_INVALID);
          for (m = csvals[k].count; m > 0; m--) {
             lineF->w64s[i] = sv;
@@ -1121,11 +1139,6 @@ static __attribute__((noinline)) void cacheline_wback ( UWord wix )
       rcinc_LineF(lineF);
       stats__cache_F_wbacks++;
    }
-
-   //if (anyShared)
-   //   sm->mbHasShared = True;
-
-   /* mb_tidy_one_cacheline(); */
 }
 
 /* Fetch the cacheline 'wix' from the backing store.  The tag
@@ -1270,14 +1283,14 @@ static __attribute__((noinline))
 
    if (is_valid_scache_tag( *tag_old_p )) {
       /* EXPENSIVE and REDUNDANT: callee does it */
-      if (SCE_CACHELINE)
+      if (CHECK_ZSM)
          tl_assert(is_sane_CacheLine(cl)); /* EXPENSIVE */
       cacheline_wback( wix );
    }
    /* and reload the new one */
    *tag_old_p = tag;
    cacheline_fetch( wix );
-   if (SCE_CACHELINE)
+   if (CHECK_ZSM)
       tl_assert(is_sane_CacheLine(cl)); /* EXPENSIVE */
    return cl;
 }
@@ -3248,11 +3261,13 @@ static void event_map_maybe_GC ( void )
    if (0)
       VG_(printf)("libhb: event_map GC at size %lu\n", oldrefTreeN);
 
-   /* Check our counting is sane */
-   tl_assert(oldrefTreeN == VG_(sizeSWA)( oldrefTree ));
+   /* Check our counting is sane (expensive) */
+   if (CHECK_CEM)
+      tl_assert(oldrefTreeN == VG_(sizeSWA)( oldrefTree ));
 
-   /* Check the reference counts */
-   event_map__check_reference_counts( True/*before*/ );
+   /* Check the reference counts (expensive) */
+   if (CHECK_CEM)
+      event_map__check_reference_counts( True/*before*/ );
 
    /* Compute the distribution of generation values in the ref tree.
       There are likely only to be a few different generation numbers
@@ -3484,8 +3499,9 @@ static void event_map_maybe_GC ( void )
       }
    }
 
-   /* Check the reference counts */
-   event_map__check_reference_counts( False/*after*/ );
+   /* Check the reference counts (expensive) */
+   if (CHECK_CEM)
+      event_map__check_reference_counts( False/*after*/ );
 
    //if (0)
    //VG_(printf)("XXXX final sizes: oldrefTree %ld, contextTree %ld\n\n",
@@ -3503,10 +3519,6 @@ static void event_map_maybe_GC ( void )
 /* Logic in msm_read/msm_write updated/verified after re-analysis,
    19 Nov 08. */
 
-#define MSM_CONFACC 1
-
-#define MSM_CHECK 0
-
 /* 19 Nov 08: it seems that MSM_RACE2ERR == 1 is a bad idea.  When
    nonzero, the effect is that when a race is detected for a location,
    that location is put into a special 'error' state and no further
@@ -3519,11 +3531,11 @@ static void event_map_maybe_GC ( void )
    subsequent race -- including ones we want to see -- will never be
    detected until the location is deallocated and reallocated.
 
-   Hence set MSM_CHECK to zero.  This causes raced-on locations to
+   Hence set MSM_RACE2ERR to zero.  This causes raced-on locations to
    remain in the normal 'C' (constrained) state, but places on them
    the constraint that the next accesses happen-after both the
    existing constraint and the relevant vector clock of the thread
-   doing the racing access. 
+   doing the racing access.
 */
 #define MSM_RACE2ERR 0
 
@@ -3570,7 +3582,7 @@ static inline SVal msm_read ( SVal svOld,
    stats__msm_read++;
 
    /* Redundant sanity check on the constraints */
-   if (MSM_CHECK) {
+   if (CHECK_MSM) {
       tl_assert(is_sane_SVal_C(svOld));
    }
 
@@ -3593,15 +3605,16 @@ static inline SVal msm_read ( SVal svOld,
          tl_assert(ordxx == POrd_EQ || ordxx == POrd_LT);
          svNew = MSM_RACE2ERR
                     ? SVal__mkE()
-#if 0
-           //std
+                    /* see comments on corresponding fragment in
+                       msm_write for explanation. */
+                    /* aggressive setting: */
+                    /* 
                     : SVal__mkC( VtsID__join2(wmini,tviR),
                                  VtsID__join2(wmini,tviW) );
-#else
-         // relaxed
+                    */
+                    /* "consistent" setting: */ 
                     : SVal__mkC( VtsID__join2(rmini,tviR),
                                  VtsID__join2(wmini,tviW) );
-#endif
          record_race_info( acc_thr, acc_addr, szB, False/*!isWrite*/,
                            svOld, svNew );
          goto out;
@@ -3623,12 +3636,12 @@ static inline SVal msm_read ( SVal svOld,
    tl_assert(0);
 
   out:
-   if (MSM_CHECK) {
+   if (CHECK_MSM) {
       tl_assert(is_sane_SVal_C(svNew));
    }
    tl_assert(svNew != SVal_INVALID);
    if (svNew != svOld) {
-      if (MSM_CONFACC && SVal__isC(svOld) && SVal__isC(svNew)) {
+      if (SVal__isC(svOld) && SVal__isC(svNew)) {
          event_map_bind( acc_addr, szB, False/*!isWrite*/, acc_thr );
          stats__msm_read_change++;
       }
@@ -3648,7 +3661,7 @@ static inline SVal msm_write ( SVal svOld,
    stats__msm_write++;
 
    /* Redundant sanity check on the constraints */
-   if (MSM_CHECK) {
+   if (CHECK_MSM) {
       tl_assert(is_sane_SVal_C(svOld));
    }
 
@@ -3670,15 +3683,20 @@ static inline SVal msm_write ( SVal svOld,
          tl_assert(ordxx == POrd_EQ || ordxx == POrd_LT);
          svNew = MSM_RACE2ERR
                     ? SVal__mkE()
-#if 0
-           // std
+                    /* One possibility is, after a race is seen, to
+                       set the location's constraints as aggressively
+                       (as far ahead) as possible.  However, that just
+                       causes lots more races to be reported, which is
+                       very confusing.  Hence don't do this. */
+                    /*
                     : SVal__mkC( VtsID__join2(wmini,tviR),
                                  VtsID__join2(wmini,tviW) );
-#else
-         // relaxed
+                    */
+                    /* instead, re-set the constraints in a way which
+                       is consistent with (ie, as they would have been
+                       computed anyway) had no race been detected. */
                     : SVal__mkC( VtsID__join2(rmini,tviR),
                                  VtsID__join2(wmini,tviW) );
-#endif
          record_race_info( acc_thr, acc_addr, szB, True/*isWrite*/,
                            svOld, svNew );
          goto out;
@@ -3700,12 +3718,12 @@ static inline SVal msm_write ( SVal svOld,
    tl_assert(0);
 
   out:
-   if (MSM_CHECK) {
+   if (CHECK_MSM) {
       tl_assert(is_sane_SVal_C(svNew));
    }
    tl_assert(svNew != SVal_INVALID);
    if (svNew != svOld) {
-      if (MSM_CONFACC && SVal__isC(svOld) && SVal__isC(svNew)) {
+      if (SVal__isC(svOld) && SVal__isC(svNew)) {
          event_map_bind( acc_addr, szB, True/*isWrite*/, acc_thr );
          stats__msm_write_change++;
       }
@@ -3736,7 +3754,7 @@ void zsm_apply8___msm_read ( Thr* thr, Addr a ) {
    if (UNLIKELY( !(descr & (TREE_DESCR_8_0 << toff)) )) {
       SVal* tree = &cl->svals[tno << 3];
       cl->descrs[tno] = pulldown_to_8(tree, toff, descr);
-      if (SCE_CACHELINE)
+      if (CHECK_ZSM)
          tl_assert(is_sane_CacheLine(cl)); /* EXPENSIVE */
    }
    svOld = cl->svals[cloff];
@@ -3759,7 +3777,7 @@ void zsm_apply8___msm_write ( Thr* thr, Addr a ) {
    if (UNLIKELY( !(descr & (TREE_DESCR_8_0 << toff)) )) {
       SVal* tree = &cl->svals[tno << 3];
       cl->descrs[tno] = pulldown_to_8(tree, toff, descr);
-      if (SCE_CACHELINE)
+      if (CHECK_ZSM)
          tl_assert(is_sane_CacheLine(cl)); /* EXPENSIVE */
    }
    svOld = cl->svals[cloff];
@@ -3789,7 +3807,7 @@ void zsm_apply16___msm_read ( Thr* thr, Addr a ) {
          SVal* tree = &cl->svals[tno << 3];
          cl->descrs[tno] = pulldown_to_16(tree, toff, descr);
       }
-      if (SCE_CACHELINE)
+      if (CHECK_ZSM)
          tl_assert(is_sane_CacheLine(cl)); /* EXPENSIVE */
    }
    svOld = cl->svals[cloff];
@@ -3822,7 +3840,7 @@ void zsm_apply16___msm_write ( Thr* thr, Addr a ) {
          SVal* tree = &cl->svals[tno << 3];
          cl->descrs[tno] = pulldown_to_16(tree, toff, descr);
       }
-      if (SCE_CACHELINE)
+      if (CHECK_ZSM)
          tl_assert(is_sane_CacheLine(cl)); /* EXPENSIVE */
    }
    svOld = cl->svals[cloff];
@@ -3856,7 +3874,7 @@ void zsm_apply32___msm_read ( Thr* thr, Addr a ) {
       } else {
          goto slowcase;
       }
-      if (SCE_CACHELINE)
+      if (CHECK_ZSM)
          tl_assert(is_sane_CacheLine(cl)); /* EXPENSIVE */
    }
    svOld = cl->svals[cloff];
@@ -3888,7 +3906,7 @@ void zsm_apply32___msm_write ( Thr* thr, Addr a ) {
       } else {
          goto slowcase;
       }
-      if (SCE_CACHELINE)
+      if (CHECK_ZSM)
          tl_assert(is_sane_CacheLine(cl)); /* EXPENSIVE */
    }
    svOld = cl->svals[cloff];
@@ -3972,7 +3990,7 @@ void zsm_write8 ( Addr a, SVal svNew ) {
    if (UNLIKELY( !(descr & (TREE_DESCR_8_0 << toff)) )) {
       SVal* tree = &cl->svals[tno << 3];
       cl->descrs[tno] = pulldown_to_8(tree, toff, descr);
-      if (SCE_CACHELINE)
+      if (CHECK_ZSM)
          tl_assert(is_sane_CacheLine(cl)); /* EXPENSIVE */
    }
    tl_assert(svNew != SVal_INVALID);
@@ -4005,7 +4023,7 @@ void zsm_write16 ( Addr a, SVal svNew ) {
             its parent.  So first, pull down to this level. */
          SVal* tree = &cl->svals[tno << 3];
          cl->descrs[tno] = pulldown_to_16(tree, toff, descr);
-      if (SCE_CACHELINE)
+      if (CHECK_ZSM)
          tl_assert(is_sane_CacheLine(cl)); /* EXPENSIVE */
       }
    }
@@ -4040,7 +4058,7 @@ void zsm_write32 ( Addr a, SVal svNew ) {
             its parent.  So first, pull down to this level. */
          SVal* tree = &cl->svals[tno << 3];
          cl->descrs[tno] = pulldown_to_32(tree, toff, descr);
-         if (SCE_CACHELINE)
+         if (CHECK_ZSM)
             tl_assert(is_sane_CacheLine(cl)); /* EXPENSIVE */
       } else {
          /* Writing at this level.  Need to fix up 'descr'. */

@@ -2113,8 +2113,12 @@ long WRAPPER_FOR(PMPI_Init)(int *argc, char ***argv)
    int    err;
    VALGRIND_GET_ORIG_FN(fn);
    before("Init");
-   check_mem_is_defined_untyped(argc, sizeof(int));
-   check_mem_is_defined_untyped(*argv, *argc * sizeof(char**));
+   if (argc) {
+      check_mem_is_defined_untyped(argc, sizeof(int));
+   }
+   if (argc && argv) {
+      check_mem_is_defined_untyped(*argv, *argc * sizeof(char**));
+   }
    CALL_FN_W_WW(err, fn, argc,argv);
    after("Init", err);
    if (opt_initkludge)

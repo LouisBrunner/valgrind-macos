@@ -315,7 +315,7 @@ UInt HG_(update_extra) ( Error* err )
 }
 
 void HG_(record_error_Race) ( Thread* thr, 
-                              Addr data_addr, Bool isWrite, Int szB,
+                              Addr data_addr, Int szB, Bool isWrite,
                               ExeContext* mb_lastlock )
 {
    XError xe;
@@ -343,7 +343,7 @@ void HG_(record_error_Race) ( Thread* thr,
    xe.XE.Race.mb_lastlock = mb_lastlock;
    xe.XE.Race.thr         = thr;
    tl_assert(isWrite == False || isWrite == True);
-   //   tl_assert(szB == 8 || szB == 4 || szB == 2 || szB == 1);
+   tl_assert(szB == 8 || szB == 4 || szB == 2 || szB == 1);
    xe.XE.Race.descr1[0] = xe.XE.Race.descr2[0] = 0;
    // FIXME: tid vs thr
    // Skip on any of the conflicting-access info at this point.

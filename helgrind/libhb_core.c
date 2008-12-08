@@ -2955,6 +2955,25 @@ inline static void* ptr_and_UWord ( void* p, UWord w ) {
    return (void*)( ((UWord)p) & ((UWord)w) );
 }
 
+/* Compare the intervals [a1,a1+n1) and [a2,a2+n2).  Return -1 if the
+   first interval is lower, 1 if the first interval is higher, and 0
+   if there is any overlap.  Redundant paranoia with casting is there
+   following what looked distinctly like a bug in gcc-4.1.2, in which
+   some of the comparisons were done signedly instead of
+   unsignedly. */
+/* Copied from exp-ptrcheck/sg_main.c */
+static Word cmp_nonempty_intervals ( Addr a1, SizeT n1,
+                                     Addr a2, SizeT n2 ) {
+   UWord a1w = (UWord)a1;
+   UWord n1w = (UWord)n1;
+   UWord a2w = (UWord)a2;
+   UWord n2w = (UWord)n2;
+   tl_assert(n1w > 0 && n2w > 0);
+   if (a1w + n1w <= a2w) return -1L;
+   if (a2w + n2w <= a1w) return 1L;
+   return 0;
+}
+
 static void event_map_bind ( Addr a, SizeT szB, Bool isW, Thr* thr )
 {
    OldRef* ref;
@@ -3067,7 +3086,7 @@ Bool libhb_event_map_lookup ( /*OUT*/ExeContext** resEC,
                               /*OUT*/Bool*  resIsW,
                               Thr* thr, Addr a, SizeT szB, Bool isW )
 {
-   Word    i;
+   Word    i, j;
    OldRef* ref;
    UWord   keyW, valW;
    Bool    b;
@@ -3076,14 +3095,34 @@ Bool libhb_event_map_lookup ( /*OUT*/ExeContext** resEC,
    RCEC*   cand_rcec;
    Bool    cand_isW;
    SizeT   cand_szB;
+   Addr    cand_a;
+
+   Addr toCheck[15];
+   Int  nToCheck = 0;
 
    tl_assert(thr);
    tl_assert(szB == 8 || szB == 4 || szB == 2 || szB == 1);
 
-   b = VG_(lookupSWA)( oldrefTree, &keyW, &valW, a );
-   if (b) {
+   toCheck[nToCheck++] = a;
+   for (i = -7; i < (Word)szB; i++) {
+      if (i != 0)
+         toCheck[nToCheck++] = a + i;
+   }
+   tl_assert(nToCheck <= 15);
+
+   /* Now see if we can find a suitable matching event for
+      any of the addresses in toCheck[0 .. nToCheck-1]. */
+   for (j = 0; j < nToCheck; j++) {
+
+      cand_a = toCheck[j];
+      //      VG_(printf)("test %ld %p\n", j, cand_a);
+
+      b = VG_(lookupSWA)( oldrefTree, &keyW, &valW, cand_a );
+      if (!b)
+         continue;
+
       ref = (OldRef*)valW;
-      tl_assert(keyW == a);
+      tl_assert(keyW == cand_a);
       tl_assert(ref->magic == OldRef_MAGIC);
       tl_assert(ref->accs[0].thr); /* first slot must always be used */
 
@@ -3121,30 +3160,36 @@ Bool libhb_event_map_lookup ( /*OUT*/ExeContext** resEC,
                read; that's stupid.  So in this case move on. */
             continue;
 
+         if (cmp_nonempty_intervals(a, szB, cand_a, cand_szB) != 0)
+            /* No overlap with the access we're asking about.  Ignore. */
+            continue;
+
          /* We have a match.  Stop searching. */
          break;
       }
 
       tl_assert(i >= 0 && i <= N_OLDREF_ACCS);
 
-      if (i == N_OLDREF_ACCS)
-         return False;
+      if (i < N_OLDREF_ACCS) {
+         /* return with success */
+         tl_assert(cand_thr);
+         tl_assert(cand_rcec);
+         tl_assert(cand_rcec->magic == RCEC_MAGIC);
+         tl_assert(cand_szB >= 1);
+         *resEC  = VG_(make_ExeContext_from_StackTrace)(
+                      &cand_rcec->frames[1], N_FRAMES
+                   );
+         *resThr = cand_thr;
+         *resSzB = cand_szB;
+         *resIsW = cand_isW;
+         return True;
+      }
 
-      tl_assert(cand_thr);
-      tl_assert(cand_rcec);
-      tl_assert(cand_rcec->magic == RCEC_MAGIC);
-      tl_assert(cand_szB >= 1);
+      /* consider next address in toCheck[] */
+   } /* for (j = 0; j < nToCheck; j++) */
 
-      *resEC  = VG_(make_ExeContext_from_StackTrace)(
-                   &cand_rcec->frames[1], N_FRAMES
-                );
-      *resThr = cand_thr;
-      *resSzB = cand_szB;
-      *resIsW = cand_isW;
-      return True;
-   } else {
-      return False;
-   }
+   /* really didn't find anything. */
+   return False;
 }
 
 static void event_map_init ( void )
@@ -3546,8 +3591,7 @@ static ULong stats__msm_write_change = 0;
 
 __attribute__((noinline))
 static void record_race_info ( Thr* acc_thr, 
-                               Addr acc_addr, SizeT szB, Bool isWrite,
-                               SVal svOld, SVal svNew )
+                               Addr acc_addr, SizeT szB, Bool isWrite )
 {
    /* Call here to report a race.  We just hand it onwards to
       HG_(record_error_Race).  If that in turn discovers that the
@@ -3559,7 +3603,7 @@ static void record_race_info ( Thr* acc_thr,
       know the error is not a duplicate. */
    tl_assert(acc_thr->opaque);
    HG_(record_error_Race)( acc_thr->opaque, acc_addr,
-                           isWrite, szB, NULL/*mb_lastlock*/ );
+                           szB, isWrite, NULL/*mb_lastlock*/ );
 }
 
 static Bool is_sane_SVal_C ( SVal sv ) {
@@ -3615,8 +3659,7 @@ static inline SVal msm_read ( SVal svOld,
                     /* "consistent" setting: */ 
                     : SVal__mkC( VtsID__join2(rmini,tviR),
                                  VtsID__join2(wmini,tviW) );
-         record_race_info( acc_thr, acc_addr, szB, False/*!isWrite*/,
-                           svOld, svNew );
+         record_race_info( acc_thr, acc_addr, szB, False/*!isWrite*/ );
          goto out;
       }
    }
@@ -3697,8 +3740,7 @@ static inline SVal msm_write ( SVal svOld,
                        computed anyway) had no race been detected. */
                     : SVal__mkC( VtsID__join2(rmini,tviR),
                                  VtsID__join2(wmini,tviW) );
-         record_race_info( acc_thr, acc_addr, szB, True/*isWrite*/,
-                           svOld, svNew );
+         record_race_info( acc_thr, acc_addr, szB, True/*isWrite*/ );
          goto out;
       }
    }

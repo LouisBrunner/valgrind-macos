@@ -1237,7 +1237,7 @@ Bool supp_matches_callers_WRK ( StackTrace trace, Int n_ips,
 
             if (!VG_(get_fnname_Z_demangle_only)(trace[j], tmp, ERRTXT_LEN))
                VG_(strcpy)(tmp, "???");
-            if (VG_(string_match)(tmp, lookahead)) {
+            if (VG_(string_match)(lookahead, tmp)) {
                // found a possible continuation, try from there
                return supp_matches_callers_WRK(
                          &trace[j], n_ips - j,

@@ -66,6 +66,11 @@
    fun:exit
 }
 {
+   libc-random_r
+   drd:ConflictingAccess
+   fun:random_r
+}
+{
    librt
    drd:ConflictingAccess
    fun:__librt_enable_asynccancel

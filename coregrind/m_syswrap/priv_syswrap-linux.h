@@ -84,6 +84,7 @@ DECL_TEMPLATE(linux, sys_epoll_ctl);
 DECL_TEMPLATE(linux, sys_epoll_wait);
 DECL_TEMPLATE(linux, sys_epoll_pwait);
 DECL_TEMPLATE(linux, sys_eventfd);
+DECL_TEMPLATE(linux, sys_eventfd2);
 
 DECL_TEMPLATE(linux, sys_gettid);
 DECL_TEMPLATE(linux, sys_set_tid_address);

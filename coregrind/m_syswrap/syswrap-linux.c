@@ -1111,6 +1111,22 @@ POST(sys_eventfd)
    }
 }
 
+PRE(sys_eventfd2)
+{
+   PRINT("sys_eventfd2 ( %lu, %d )", ARG1,ARG2);
+   PRE_REG_READ2(long, "sys_eventfd2", unsigned int, count, int, flags);
+}
+POST(sys_eventfd2)
+{
+   if (!ML_(fd_allowed)(RES, "eventfd2", tid, True)) {
+      VG_(close)(RES);
+      SET_STATUS_Failure( VKI_EMFILE );
+   } else {
+      if (VG_(clo_track_fds))
+         ML_(record_fd_open_nameless) (tid, RES);
+   }
+}
+
 /* ---------------------------------------------------------------------
    tid-related wrappers
    ------------------------------------------------------------------ */

@@ -54,6 +54,9 @@ typedef
 // ThreadId should be passed in by the core.  The initial IP value to 
 // use is adjusted by first_ip_delta before the stack is unwound.
 // A safe value to pass is zero.
+//
+// See comments in pub_tool_stacktrace.h for precise definition of
+// the meaning of the code addresses in the returned ExeContext.
 extern 
 ExeContext* VG_(record_ExeContext) ( ThreadId tid, Word first_ip_delta );
 

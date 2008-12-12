@@ -41,6 +41,18 @@ typedef Addr* StackTrace;
 // The initial IP value to use is adjusted by first_ip_delta before
 // the stack is unwound. A safe value to pass is zero.
 //
+// The specific meaning of the returned addresses is:
+//
+// [0] is the IP of thread 'tid'
+// [1] points to the last byte of the call instruction that called [0].
+// [2] points to the last byte of the call instruction that called [1].
+// etc etc
+//
+// Hence ips[0 .. return_value-1] should all point to currently
+// 'active' (in the sense of a stack of unfinished function calls)
+// instructions.  [0] points to the start of an arbitrary instruction.#
+// [1 ..] point to the last byte of a chain of call instructions.
+//
 // If sps and fps are non-NULL, the corresponding frame-pointer and
 // stack-pointer values for each frame are stored there.
 

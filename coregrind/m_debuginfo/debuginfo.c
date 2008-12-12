@@ -2404,29 +2404,15 @@ Bool VG_(get_data_description)( /*OUT*/Char* dname1,
       frames, and for each frame, consider the local variables. */
    n_frames = VG_(get_StackTrace)( tid, ips, N_FRAMES,
                                    sps, fps, 0/*first_ip_delta*/ );
-   /* Re ip_delta in the next loop: There's a subtlety in the meaning
-      of the IP values in a stack obtained from VG_(get_StackTrace).
-      The innermost value really is simply the thread's program
-      counter at the time the snapshot was taken.  However, all the
-      other values are actually return addresses, and so point just
-      after the call instructions.  Hence they notionally reflect not
-      what the program counters were at the time those calls were
-      made, but what they will be when those calls return.  This can
-      be of significance should an address range happen to end at the
-      end of a call instruction -- we may ignore the range when in
-      fact it should be considered.  Hence, back up the IPs by 1 for
-      all non-innermost IPs.  Note that VG_(get_StackTrace_wrk) itself
-      has to use the same trick in order to use CFI data to unwind the
-      stack (as documented therein in comments). */
+
    /* As a result of KLUDGE above, starting the loop at j = 0
       duplicates examination of the top frame and so isn't necessary.
       Oh well. */
    vg_assert(n_frames >= 0 && n_frames <= N_FRAMES);
    for (j = 0; j < n_frames; j++) {
-      Word ip_delta = j == 0 ? 0 : 1;
       if (consider_vars_in_frame( dname1, dname2, n_dname,
                                   data_addr,
-                                  ips[j] - ip_delta, 
+                                  ips[j], 
                                   sps[j], fps[j], tid, j )) {
          dname1[n_dname-1] = dname2[n_dname-1] = 0;
          return True;
@@ -2445,14 +2431,15 @@ Bool VG_(get_data_description)( /*OUT*/Char* dname1,
          amd64), the variable's location list does claim it exists
          starting at the first byte of the first instruction after the
          call instruction.  So, call consider_vars_in_frame a second
-         time, but this time don't subtract 1 from the IP.  GDB
-         handles this example with no difficulty, which leads me to
-         believe that either (1) I misunderstood something, or (2) GDB
-         has an equivalent kludge. */
-      if (consider_vars_in_frame( dname1, dname2, n_dname,
-                                  data_addr,
-                                  ips[j], 
-                                  sps[j], fps[j], tid, j )) {
+         time, but this time add 1 to the IP.  GDB handles this
+         example with no difficulty, which leads me to believe that
+         either (1) I misunderstood something, or (2) GDB has an
+         equivalent kludge. */
+      if (j > 0 /* this is a non-innermost frame */
+          && consider_vars_in_frame( dname1, dname2, n_dname,
+                                     data_addr,
+                                     ips[j] + 1, 
+                                     sps[j], fps[j], tid, j )) {
          dname1[n_dname-1] = dname2[n_dname-1] = 0;
          return True;
       }

@@ -1113,7 +1113,7 @@ POST(sys_eventfd)
 
 PRE(sys_eventfd2)
 {
-   PRINT("sys_eventfd2 ( %lu, %d )", ARG1,ARG2);
+   PRINT("sys_eventfd2 ( %lu, %ld )", ARG1,ARG2);
    PRE_REG_READ2(long, "sys_eventfd2", unsigned int, count, int, flags);
 }
 POST(sys_eventfd2)

@@ -97,10 +97,6 @@ extern Int   VG_(strncmp_ws)     ( const Char* s1, const Char* s2, SizeT nmax );
    last character. */
 extern void  VG_(strncpy_safely) ( Char* dest, const Char* src, SizeT ndest );
 
-/* Mini-regexp function.  Searches for 'pat' in 'str'.  Supports
- * meta-symbols '*' and '?'.  '\' escapes meta-symbols. */
-extern Bool  VG_(string_match)   ( const Char* pat, const Char* str );
-
 /* ---------------------------------------------------------------------
    mem* functions
    ------------------------------------------------------------------ */

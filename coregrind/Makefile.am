@@ -121,6 +121,7 @@ noinst_HEADERS = \
 	pub_core_redir.h	\
 	pub_core_replacemalloc.h\
 	pub_core_scheduler.h	\
+	pub_core_seqmatch.h	\
 	pub_core_sigframe.h	\
 	pub_core_signals.h	\
 	pub_core_sparsewa.h	\
@@ -191,6 +192,7 @@ COREGRIND_SOURCES_COMMON = \
 	m_options.c \
 	m_oset.c \
 	m_redir.c \
+	m_seqmatch.c \
 	m_signals.c \
 	m_sparsewa.c \
 	m_stacks.c \

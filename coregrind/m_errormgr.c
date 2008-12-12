@@ -40,6 +40,7 @@
 #include "pub_core_libcfile.h"
 #include "pub_core_libcprint.h"
 #include "pub_core_libcproc.h"         // For VG_(getpid)()
+#include "pub_core_seqmatch.h"
 #include "pub_core_mallocfree.h"
 #include "pub_core_options.h"
 #include "pub_core_stacktrace.h"
@@ -840,7 +841,7 @@ void VG_(show_error_counts_as_XML) ( void )
 
 
 /*------------------------------------------------------------*/
-/*--- Standard suppressions                                ---*/
+/*--- Suppression parsing                                  ---*/
 /*------------------------------------------------------------*/
 
 /* Get the next char from fd into *out_buf.  Returns 1 if success,
@@ -939,8 +940,7 @@ static Bool setLocationTy ( SuppLoc* p )
 
 
 /* Look for "tool" in a string like "tool1,tool2,tool3" */
-static __inline__
-Bool tool_name_present(Char *name, Char *names)
+static Bool tool_name_present(Char *name, Char *names)
 {
    Bool  found;
    Char *s = NULL;   /* Shut gcc up */
@@ -1060,7 +1060,8 @@ static void load_one_suppressions_file ( Char* filename )
       }
 
       if (VG_(needs).tool_errors && 
-          !VG_TDICT_CALL(tool_read_extra_suppression_info, fd, buf, N_BUF, supp))
+          !VG_TDICT_CALL(tool_read_extra_suppression_info,
+                         fd, buf, N_BUF, supp))
       {
          BOMB("bad or missing extra suppression info");
       }
@@ -1160,6 +1161,100 @@ void VG_(load_suppressions) ( void )
    }
 }
 
+
+/*------------------------------------------------------------*/
+/*--- Matching errors to suppressions                      ---*/
+/*------------------------------------------------------------*/
+
+/* Parameterising functions for the use of VG_(generic_match) in
+   suppression-vs-error matching.  The suppression frames (SuppLoc)
+   play the role of 'pattern'-element, and the error frames (IPs,
+   hence simply Addrs) play the role of 'input'.  In short then, we're
+   matching a sequence of Addrs against a pattern composed of a
+   sequence of SuppLocs.
+*/
+static Bool supploc_IsStar ( void* supplocV )
+{
+   SuppLoc* supploc = (SuppLoc*)supplocV;
+   return supploc->ty == DotDotDot;
+}
+
+static Bool supploc_IsQuery ( void* supplocV )
+{
+   return False; /* there's no '?' equivalent in the supp syntax */
+}
+
+static Bool supp_pattEQinp ( void* supplocV, void* addrV )
+{
+   SuppLoc* supploc = (SuppLoc*)supplocV; /* PATTERN */
+   Addr     ip      = *(Addr*)addrV; /* INPUT */
+
+   Char caller_name[ERRTXT_LEN];
+   caller_name[0] = 0;
+
+   /* So, does this IP address match this suppression-line? */
+   switch (supploc->ty) {
+      case DotDotDot:
+         /* supp_pattEQinp is a callback from VG_(generic_match).  As
+            per the spec thereof (see include/pub_tool_seqmatch.h), we
+            should never get called with a pattern value for which the
+            _IsStar or _IsQuery function would return True.  Hence
+            this can't happen. */
+         vg_assert(0);
+      case ObjName:
+         /* Get the object name into 'caller_name', or "???"
+            if unknown. */
+         if (!VG_(get_objname)(ip, caller_name, ERRTXT_LEN))
+            VG_(strcpy)(caller_name, "???");
+         break; 
+      case FunName: 
+         /* Get the function name into 'caller_name', or "???"
+            if unknown. */
+         // Nb: mangled names used in suppressions.  Do, though,
+         // Z-demangle them, since otherwise it's possible to wind
+         // up comparing "malloc" in the suppression against
+         // "_vgrZU_libcZdsoZa_malloc" in the backtrace, and the
+         // two of them need to be made to match.
+         if (!VG_(get_fnname_Z_demangle_only)(ip, caller_name, ERRTXT_LEN))
+            VG_(strcpy)(caller_name, "???");
+         break;
+      default:
+        vg_assert(0);
+   }
+
+   /* So now we have the function or object name in caller_name, and
+      the pattern (at the character level) to match against is in
+      supploc->name.  Hence (and leading to a re-entrant call of
+      VG_(generic_match)): */
+   return VG_(string_match)(supploc->name, caller_name);
+}
+
+/////////////////////////////////////////////////////
+
+static Bool supp_matches_callers(Error* err, Supp* su)
+{
+   /* Unwrap the args and set up the correct parameterisation of
+      VG_(generic_match), using supploc_IsStar, supploc_IsQuery and
+      supp_pattEQinp. */
+   /* note, StackTrace === Addr* */
+   StackTrace ips      = VG_(get_ExeContext_StackTrace)(err->where);
+   UWord      n_ips    = VG_(get_ExeContext_n_ips)(err->where);
+   SuppLoc*   supps    = su->callers;
+   UWord      n_supps  = su->n_callers;
+   UWord      szbPatt  = sizeof(SuppLoc);
+   UWord      szbInput = sizeof(Addr);
+   Bool       matchAll = False; /* we just want to match a prefix */
+   return
+      VG_(generic_match)(
+         matchAll,
+         /*PATT*/supps, szbPatt, n_supps, 0/*initial Ix*/,
+         /*INPUT*/ips, szbInput, n_ips,  0/*initial Ix*/,
+         supploc_IsStar, supploc_IsQuery, supp_pattEQinp
+      );
+}
+
+/////////////////////////////////////////////////////
+
 static
 Bool supp_matches_error(Supp* su, Error* err)
 {
@@ -1180,95 +1275,7 @@ Bool supp_matches_error(Supp* su, Error* err)
    }
 }
 
-
-/* This function is recursive, in order to handle frame-level
-   wildcards. */
-static
-Bool supp_matches_callers_WRK ( StackTrace trace, Int n_ips,
-                                SuppLoc *callers, Int n_callers )
-{
-   Int i, j;
-   static Char caller_name[ERRTXT_LEN]; /* NOT IN FRAME */
-
-   vg_assert(n_ips > 0 && n_callers > 0);
-   i = j = 0;
-   while (i < n_callers) {
-      Addr a = trace[j];
-
-      switch (callers[i].ty) {
-         case ObjName: 
-            if (!VG_(get_objname)(a, caller_name, ERRTXT_LEN))
-               VG_(strcpy)(caller_name, "???");
-            break; 
-         case FunName: 
-            // Nb: mangled names used in suppressions.  Do, though,
-            // Z-demangle them, since otherwise it's possible to wind
-            // up comparing "malloc" in the suppression against
-            // "_vgrZU_libcZdsoZa_malloc" in the backtrace, and the
-            // two of them need to be made to match.
-            if (!VG_(get_fnname_Z_demangle_only)(a, caller_name, ERRTXT_LEN))
-               VG_(strcpy)(caller_name, "???");
-            break;
-         case DotDotDot:
-            caller_name[0] = 0; /* precautionary */
-            break;
-         default:
-            VG_(tool_panic)("supp_wildmatch_callers");
-      }
-      // If "..." is given in a suppression (either obj, or fun), then
-      // use it as wildcard, and match as many callers as possible.
-      if (callers[i].ty == DotDotDot) {
-         /* Handle frame-level wildcard case */
-         Char *lookahead;
-
-         // collapse subsequent wildcards
-         while (i < n_callers && callers[i].ty == DotDotDot)
-            ++i;
-         --i;
-
-         if (i == n_callers-1)
-            // wildcard at the top, doesn't matter
-            return True;
-
-         vg_assert(i >= 0 && i+1 < n_callers);
-         lookahead = callers[i+1].name;
-         while (j < n_ips) {
-            static Char tmp[ERRTXT_LEN]; /* NOT IN FRAME */
-
-            if (!VG_(get_fnname_Z_demangle_only)(trace[j], tmp, ERRTXT_LEN))
-               VG_(strcpy)(tmp, "???");
-            if (VG_(string_match)(lookahead, tmp)) {
-               // found a possible continuation, try from there
-               return supp_matches_callers_WRK(
-                         &trace[j], n_ips - j,
-                         &callers[i+1], n_callers - i - 1
-                      );
-            }
-            j++;
-         }
-      } else {
-         /* Handle normal (obj: or fun:) case */
-         if (!VG_(string_match)(callers[i].name, caller_name)) {
-            return False;
-         }
-      }
-      j++;
-      i++;
-   }
-
-   /* If we reach here, it's a match */
-   return True;
-}
-
-static
-Bool supp_matches_callers(Error* err, Supp* su)
-{
-   /* Unwrap the args and pass them to the worker function. */
-   StackTrace ips   = VG_(get_ExeContext_StackTrace)(err->where);
-   UInt       n_ips = VG_(get_ExeContext_n_ips)(err->where);
-   return supp_matches_callers_WRK(ips, n_ips, su->callers, su->n_callers);
-}
-
+/////////////////////////////////////////////////////
 
 /* Does an error context match a suppression?  ie is this a suppressible
    error?  If so, return a pointer to the Supp record, otherwise NULL.

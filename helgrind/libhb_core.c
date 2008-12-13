@@ -2955,6 +2955,10 @@ inline static void* ptr_and_UWord ( void* p, UWord w ) {
    return (void*)( ((UWord)p) & ((UWord)w) );
 }
 
+inline static UInt min_UInt ( UInt a, UInt b ) {
+   return a < b ? a : b;
+}
+
 /* Compare the intervals [a1,a1+n1) and [a2,a2+n2).  Return -1 if the
    first interval is lower, 1 if the first interval is higher, and 0
    if there is any overlap.  Redundant paranoia with casting is there
@@ -3177,7 +3181,8 @@ Bool libhb_event_map_lookup ( /*OUT*/ExeContext** resEC,
          tl_assert(cand_rcec->magic == RCEC_MAGIC);
          tl_assert(cand_szB >= 1);
          *resEC  = VG_(make_ExeContext_from_StackTrace)(
-                      &cand_rcec->frames[1], N_FRAMES
+                      &cand_rcec->frames[1],
+                      min_UInt(N_FRAMES, VG_(clo_backtrace_size))
                    );
          *resThr = cand_thr;
          *resSzB = cand_szB;

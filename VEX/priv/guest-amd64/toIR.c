@@ -6457,7 +6457,8 @@ ULong dis_MMX ( Bool* decode_ok,
 
       case 0x6F:
          /* MOVQ (src)mmxreg-or-mem, (dst)mmxreg */
-         if (sz != 4) 
+         if (sz != 4
+             && /*ignore redundant REX.W*/!(sz==8 && haveNo66noF2noF3(pfx))) 
             goto mmx_decode_failure;
          modrm = getUChar(delta);
          if (epartIsReg(modrm)) {
@@ -6477,7 +6478,8 @@ ULong dis_MMX ( Bool* decode_ok,
 
       case 0x7F:
          /* MOVQ (src)mmxreg, (dst)mmxreg-or-mem */
-         if (sz != 4) 
+         if (sz != 4
+             && /*ignore redundant REX.W*/!(sz==8 && haveNo66noF2noF3(pfx)))
             goto mmx_decode_failure;
          modrm = getUChar(delta);
          if (epartIsReg(modrm)) {
@@ -6503,7 +6505,8 @@ ULong dis_MMX ( Bool* decode_ok,
 
       case 0xEC: 
       case 0xED: /* PADDSgg (src)mmxreg-or-mem, (dst)mmxreg */
-         if (sz != 4) 
+         if (sz != 4
+             && /*ignore redundant REX.W*/!(sz==8 && haveNo66noF2noF3(pfx)))
             goto mmx_decode_failure;
          delta = dis_MMXop_regmem_to_reg ( vbi, pfx, delta, opc, "padds", True );
          break;
@@ -6599,7 +6602,8 @@ ULong dis_MMX ( Bool* decode_ok,
       case 0x60: 
       case 0x61: 
       case 0x62: /* PUNPCKLgg (src)mmxreg-or-mem, (dst)mmxreg */
-         if (sz != 4) 
+         if (sz != 4
+             && /*ignore redundant REX.W*/!(sz==8 && haveNo66noF2noF3(pfx))) 
             goto mmx_decode_failure;
          delta = dis_MMXop_regmem_to_reg ( vbi, pfx, delta, opc, "punpckl", True );
          break;
@@ -9566,7 +9570,7 @@ DisResult disInstr_AMD64_WRK (
    /* F3 0F 10 = MOVSS -- move 32 bits from E (mem or lo 1/4 xmm) to G
       (lo 1/4 xmm).  If E is mem, upper 3/4 of G is zeroed out. */
    if (haveF3no66noF2(pfx) 
-       && (sz == 4|| /* ignore redundant REX.W */ sz == 8)
+       && (sz == 4 || /* ignore redundant REX.W */ sz == 8)
        && insn[0] == 0x0F && insn[1] == 0x10) {
       modrm = getUChar(delta+2);
       if (epartIsReg(modrm)) {
@@ -11541,7 +11545,8 @@ DisResult disInstr_AMD64_WRK (
 
    /* 66 0F C5 = PEXTRW -- extract 16-bit field from xmm(E) and put 
       zero-extend of it in ireg(G). */
-   if (have66noF2noF3(pfx) && sz == 2 
+   if (have66noF2noF3(pfx) 
+       && (sz == 2 || /* ignore redundant REX.W */ sz == 8)
        && insn[0] == 0x0F && insn[1] == 0xC5) {
       modrm = insn[2];
       if (epartIsReg(modrm)) {
@@ -11574,7 +11579,8 @@ DisResult disInstr_AMD64_WRK (
 
    /* 66 0F C4 = PINSRW -- get 16 bits from E(mem or low half ireg) and
       put it into the specified lane of xmm(G). */
-   if (have66noF2noF3(pfx) && sz == 2 
+   if (have66noF2noF3(pfx) 
+       && (sz == 2 || /* ignore redundant REX.W */ sz == 8)
        && insn[0] == 0x0F && insn[1] == 0xC4) {
       Int lane;
       t4 = newTemp(Ity_I16);
@@ -11687,7 +11693,8 @@ DisResult disInstr_AMD64_WRK (
       ireg(G).  Doing this directly is just too cumbersome; give up
       therefore and call a helper. */
    /* UInt x86g_calculate_sse_pmovmskb ( ULong w64hi, ULong w64lo ); */
-   if (have66noF2noF3(pfx) && sz == 2 
+   if (have66noF2noF3(pfx) 
+       && (sz == 2 || /* ignore redundant REX.W */ sz == 8)
        && insn[0] == 0x0F && insn[1] == 0xD7) {
       modrm = insn[2];
       if (epartIsReg(modrm)) {

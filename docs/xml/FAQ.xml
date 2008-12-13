@@ -542,10 +542,14 @@ int main(void)
     memory values?</para>
   </question>
   <answer id="a-undeferrors">
-    <para>We'd love to improve these errors, but we don't know how to do it
-    without huge performance penalties.</para>
+    <para>Prior to version 3.4.0, the answer was "we don't know how to do it
+    without huge performance penalties".  As of 3.4.0, try using the
+    <option>--track-origins=yes</option> flag.  It will run slower than
+    usual, but will give you extra information about the origin of
+    uninitialised values.</para>
 
-    <para>You can use the client request
+    <para>Or if you want to do it the old fashioned way, you can use the
+    client request
     <computeroutput>VALGRIND_CHECK_VALUE_IS_DEFINED</computeroutput> to help
     track these errors down -- work backwards from the point where the
     uninitialised error occurs, checking suspect values until you find the

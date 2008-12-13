@@ -88,7 +88,8 @@ EXTRA_DIST = \
 	valgrind.spec.in valgrind.pc.in \
 	Makefile.all.am Makefile.tool.am Makefile.core.am \
 	Makefile.tool-inplace.am \
-	$(vex_primary_sources)
+	$(vex_primary_sources) \
+	vg-in-place
 
 install-exec-hook:
 	$(mkinstalldirs) $(DESTDIR)$(valdir)

@@ -200,12 +200,36 @@ n-i-bz  Fixd  8800   ignore unsafe .valgrindrc's (CVE-2008-4865)
 
 172563  Fixd  vx???? amd64->IR: 0xD9 0xF5  -  fprem1
 
-173099  LOW   pend   .lds linker script generation error
-                     w/ plausible patch
+173099  Fixd  8758   .lds linker script generation error
 
 173177  Fixd  8720   [x86_64] WARNING: unhandled syscall: 125/126/179
                      (capget/capset/quotactl)
 
+173751  Fixd  vx1876 amd64->IR: 0x48 0xF 0x6F 0x45
+                     (even more redundant prefixes)
+174532  WF    DUP    amd64->IR: 0x48 0xF 0xED 0x0 
+              == 173751
+
+174908  Fixd  8774   --log-file value not expanded correctly for core file
+
+175044  Fixd  8769   Add lookup_dcookie for amd64
+
+175138  WF    pend   aspacem assertion failed: segment_is_sane at
+                     m_aspacemgr/aspacemgr-linux.c:1412 (add_segment)
+
+175150  Fixd  vx1873 x86->IR: 0xF2 0xF 0x11 0xC1 (movss xmm1, xmm0)
+                     non-binutils encoding
+
+[patch] fix RPM/spec build... (Daniel J Blueman, @dev, 12 Aug 08)
+
+FAQ.html and FAQ.html (Greg Czajknowski, @users, 21 Nov 08)
+
+n-i-bz  Fixd   8812  MPI_Init(0,0) is valid but libmpiwrap.c segfaults
+
+building in an env without gdb gives bogus gdb attach (i'm sure i
+fixed this, but where is it?)
+
+Better return values from VG_(record_error) (kcc)
 
 
 ---------- Bugs fixed in 3.3.1 -------------------------------------

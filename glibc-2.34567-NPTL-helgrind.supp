@@ -543,3 +543,27 @@
    ...
    fun:dlsym
 }
+
+####################################################
+# Other stuff.
+#
+# pthread_exit apparently calls some kind of unwind
+# mechanism - maybe to remove some number of frames
+# from the thread's stack, so as to get back to the 
+# outermost frame for the thread?  Anyway..
+
+{
+   helgrind---*Unwind*-...-pthread_exit
+   Helgrind:Race
+   fun:*Unwind*
+   ...
+   fun:pthread_exit
+}
+
+{
+   helgrind---...-*Unwind*-*pthread_unwind*
+   Helgrind:Race
+   ...
+   fun:*Unwind*
+   fun:*pthread_unwind*
+}

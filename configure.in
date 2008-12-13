@@ -785,71 +785,6 @@ AC_MSG_RESULT([no])
 ])
 
 
-# Check whether the boost library 1.35 or later has been installed.
-# The Boost.Threads library has undergone a major rewrite in version 1.35.0.
-
-AC_MSG_CHECKING([for boost])
-
-AC_LANG(C++)
-safe_CXXFLAGS=$CXXFLAGS
-CXXFLAGS="-lboost_thread-mt"
-
-AC_LINK_IFELSE(
-[
-#include <boost/thread.hpp>
-static void thread_func(void)
-{ }
-int main(int argc, char** argv)
-{
-  boost::thread t(thread_func);
-  return 0;
-}
-],
-[
-ac_have_boost_1_35=yes
-AC_SUBST([BOOST_CFLAGS], [])
-AC_SUBST([BOOST_LIBS], ["${CXXFLAGS}"])
-AC_MSG_RESULT([yes])
-], [
-ac_have_boost_1_35=no
-AC_MSG_RESULT([no])
-])
-
-CXXFLAGS=$safe_CXXFLAGS
-AC_LANG(C)
-
-AM_CONDITIONAL([HAVE_BOOST_1_35], [test x$ac_have_boost_1_35 = xyes])
-
-
-# does this compiler support -fopenmp, does it have the include file
-# <omp.h> and does it have libgomp ?
-
-AC_MSG_CHECKING([for OpenMP])
-
-safe_CFLAGS=$CFLAGS
-CFLAGS="-fopenmp"
-
-AC_LINK_IFELSE(
-[
-#include <omp.h> 
-int main(int argc, char** argv)
-{
-  omp_set_dynamic(0);
-  return 0;
-}
-],
-[
-ac_have_openmp=yes
-AC_MSG_RESULT([yes])
-], [
-ac_have_openmp=no
-AC_MSG_RESULT([no])
-])
-CFLAGS=$safe_CFLAGS
-
-AM_CONDITIONAL([HAVE_OPENMP], [test x$ac_have_openmp = xyes])
-
-
 # does this compiler support -maltivec and does it have the include file
 # <altivec.h> ?
 
@@ -1489,6 +1424,22 @@ CFLAGS=$saved_CFLAGS
 AM_CONDITIONAL(BUILD_MPIWRAP_SEC, test x$ac_have_mpi2_sec = xyes)
 
 
+# There now follow some tests for QtCore, Boost, and OpenMP.  These
+# tests are present because Drd has some regression tests that use
+# these packages.  All regression test programs all compiled only
+# for the primary target.  And so it is important that the configure
+# checks that follow, use the correct -m32 or -m64 flag for the
+# primary target (called $mflag_primary).  Otherwise, we can end up
+# in a situation (eg) where, on amd64-linux, the test for Boost checks
+# for usable 64-bit Boost facilities, but because we are doing a 32-bit
+# only build (meaning, the primary target is x86-linux), the build
+# of the regtest programs that use Boost fails, because they are 
+# build as 32-bit (IN THIS EXAMPLE).
+#
+# Hence: ALWAYS USE $mflag_primary FOR CONFIGURE TESTS FOR FACILITIES
+# NEEDED BY THE REGRESSION TEST PROGRAMS.
+
+
 # The test below verifies whether the QtCore package been installed.
 # This test works as follows:
 # - If pkg-config was not installed at the time autogen.sh was run,
@@ -1517,10 +1468,7 @@ ifdef(
       # programs with QtCore succeeds.
       AC_LANG(C++)
       safe_CXXFLAGS="${CXXFLAGS}"
-      CXXFLAGS="${QTCORE_CFLAGS} ${QTCORE_LIBS}"
-      if test x$vg_cv_only32bit = xyes; then
-        CXXFLAGS="${CXXFLAGS} -m32"
-      fi
+      CXXFLAGS="${QTCORE_CFLAGS} ${QTCORE_LIBS} $mflag_primary"
       AC_TRY_LINK(
         [#include <QMutex>],
         [QMutex Mutex;],
@@ -1551,7 +1499,7 @@ if test x$ac_have_qtcore = xyes; then
   AC_MSG_CHECKING([for Qt4 QMutex::tryLock(int)])
   AC_LANG(C++)
   safe_CXXFLAGS="${CXXFLAGS}"
-  CXXFLAGS="${QTCORE_CFLAGS}"
+  CXXFLAGS="${QTCORE_CFLAGS} $mflag_primary"
   AC_TRY_COMPILE([
     #include <QtCore/QMutex>
   ],
@@ -1571,6 +1519,71 @@ if test x$ac_have_qtcore = xyes; then
   CXXFLAGS="${safe_CXXFLAGS}"
   AC_LANG(C)
 fi
+
+
+# Check whether the boost library 1.35 or later has been installed.
+# The Boost.Threads library has undergone a major rewrite in version 1.35.0.
+
+AC_MSG_CHECKING([for boost])
+
+AC_LANG(C++)
+safe_CXXFLAGS=$CXXFLAGS
+CXXFLAGS="-lboost_thread-mt $mflag_primary"
+
+AC_LINK_IFELSE(
+[
+#include <boost/thread.hpp>
+static void thread_func(void)
+{ }
+int main(int argc, char** argv)
+{
+  boost::thread t(thread_func);
+  return 0;
+}
+],
+[
+ac_have_boost_1_35=yes
+AC_SUBST([BOOST_CFLAGS], [])
+AC_SUBST([BOOST_LIBS], ["${CXXFLAGS}"])
+AC_MSG_RESULT([yes])
+], [
+ac_have_boost_1_35=no
+AC_MSG_RESULT([no])
+])
+
+CXXFLAGS=$safe_CXXFLAGS
+AC_LANG(C)
+
+AM_CONDITIONAL([HAVE_BOOST_1_35], [test x$ac_have_boost_1_35 = xyes])
+
+
+# does this compiler support -fopenmp, does it have the include file
+# <omp.h> and does it have libgomp ?
+
+AC_MSG_CHECKING([for OpenMP])
+
+safe_CFLAGS=$CFLAGS
+CFLAGS="-fopenmp"
+
+AC_LINK_IFELSE(
+[
+#include <omp.h> 
+int main(int argc, char** argv)
+{
+  omp_set_dynamic(0);
+  return 0;
+}
+],
+[
+ac_have_openmp=yes
+AC_MSG_RESULT([yes])
+], [
+ac_have_openmp=no
+AC_MSG_RESULT([no])
+])
+CFLAGS=$safe_CFLAGS
+
+AM_CONDITIONAL([HAVE_OPENMP], [test x$ac_have_openmp = xyes])
 
 
 # -------------------- ok.  We're done. --------------------

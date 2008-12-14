@@ -117,10 +117,11 @@ struct semaphore_info* semaphore_init(const Addr semaphore,
   if (s_trace_semaphore)
   {
     VG_(message)(Vg_UserMsg,
-                 "[%d/%d] semaphore_init      0x%lx",
+                 "[%d/%d] semaphore_init      0x%lx value %d",
                  VG_(get_running_tid)(),
                  thread_get_running_tid(),
-                 semaphore);
+                 semaphore,
+                 value);
   }
   p = semaphore_get(semaphore);
   if (p)
@@ -147,16 +148,17 @@ void semaphore_destroy(const Addr semaphore)
 {
   struct semaphore_info* p;
 
+  p = semaphore_get(semaphore);
+
   if (s_trace_semaphore)
   {
     VG_(message)(Vg_UserMsg,
-                 "[%d/%d] semaphore_destroy   0x%lx",
+                 "[%d/%d] semaphore_destroy   0x%lx value %d",
                  VG_(get_running_tid)(),
                  thread_get_running_tid(),
-                 semaphore);
+                 semaphore,
+                 p ? p->value : 0);
   }
-
-  p = semaphore_get(semaphore);
 
   if (p == 0)
   {
@@ -181,10 +183,11 @@ void semaphore_pre_wait(const Addr semaphore)
   if (s_trace_semaphore)
   {
     VG_(message)(Vg_UserMsg,
-                 "[%d/%d] semaphore_pre_wait  0x%lx",
+                 "[%d/%d] semaphore_pre_wait  0x%lx value %d",
                  VG_(get_running_tid)(),
                  thread_get_running_tid(),
-                 semaphore);
+                 semaphore,
+                 p->value);
   }
   tl_assert(p);
   tl_assert((int)p->waiters >= 0);
@@ -205,10 +208,11 @@ void semaphore_post_wait(const DrdThreadId tid, const Addr semaphore,
   if (s_trace_semaphore)
   {
     VG_(message)(Vg_UserMsg,
-                 "[%d/%d] semaphore_post_wait 0x%lx",
+                 "[%d/%d] semaphore_post_wait 0x%lx value %d",
                  VG_(get_running_tid)(),
                  thread_get_running_tid(),
-                 semaphore);
+                 semaphore,
+                 p ? p->value - 1 : 0);
   }
   tl_assert(p->waiters > 0);
   p->waiters--;
@@ -241,16 +245,19 @@ void semaphore_pre_post(const DrdThreadId tid, const Addr semaphore)
 {
   struct semaphore_info* p;
 
+  p = semaphore_get_or_allocate(semaphore);
+  p->value++;
+
   if (s_trace_semaphore)
   {
     VG_(message)(Vg_UserMsg,
-                 "[%d/%d] semaphore_post      0x%lx",
+                 "[%d/%d] semaphore_post      0x%lx value %d",
                  VG_(get_running_tid)(),
                  thread_get_running_tid(),
-                 semaphore);
+                 semaphore,
+                 p->value);
   }
-  p = semaphore_get_or_allocate(semaphore);
-  p->value++;
+
   if (p->value == 1)
   {
     p->last_sem_post_tid = tid;

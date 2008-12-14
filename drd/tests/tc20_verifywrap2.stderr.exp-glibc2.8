@@ -134,13 +134,13 @@ rwlock 0x........ was first observed at:
 
 ---------------- sem_* ----------------
 
-[1/1] semaphore_init      0x........
-[1/1] semaphore_init      0x........
+[1/1] semaphore_init      0x........ value -1
+[1/1] semaphore_init      0x........ value 0
 
 FIXME: can't figure out how to verify wrap of sem_destroy
 
-[1/1] semaphore_pre_wait  0x........
-[1/1] semaphore_post_wait 0x........
+[1/1] semaphore_pre_wait  0x........ value 0
+[1/1] semaphore_post_wait 0x........ value -1
 
 Invalid semaphore: semaphore 0x........
    at 0x........: sem_wait* (drd_pthread_intercepts.c:?)
@@ -148,11 +148,11 @@ Invalid semaphore: semaphore 0x........
 semaphore 0x........ was first observed at:
    at 0x........: sem_init* (drd_pthread_intercepts.c:?)
    by 0x........: main (tc20_verifywrap.c:228)
-[1/1] semaphore_post      0x........
+[1/1] semaphore_post      0x........ value 1
 
 FIXME: can't figure out how to verify wrap of sem_post
 
-[1/1] semaphore_destroy   0x........
+[1/1] semaphore_destroy   0x........ value 1
 
 ------------ dealloc of mem holding locks ------------
 

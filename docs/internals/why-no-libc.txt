@@ -1,0 +1,69 @@
+ate: Mon, 15 Dec 2008 15:23:31 -0500
+From: Stephen McCamant <smcc@CSAIL.MIT.EDU>
+To: Igor Shaul <mindmaze@gmail.com>
+Cc: valgrind-developers@lists.sourceforge.net
+Subject: Re: [Valgrind-developers] Using standard C library in valgrind tool
+
+RW> On Dec 12, 2008, at 6:33 PM, "Igor Shaul" <mindmaze@gmail.com> wrote:
+
+IS> Hi,
+IS> I would like to write a valgrind tool that uses the standard c
+IS> library (actually, I must link my tool to another library, which
+IS> happens to use stdlib). I noticed that all the tools link with -
+IS> nodefaultlibs flag, and if said flag is removed, then naturally no
+IS> main() is found (stdlib requires a main). So, is there a natural
+IS> way to use stdlib in my valgrind tool?
+
+>>>>> "RW" == Robert Walsh <rjwalsh@durables.org> writes:
+
+RW> Sadly, no. Valgrind shares the address space of the guest process,
+RW> which would mean libc would get linked into the address space
+RW> twice.  There's no telling how libc would react to that.
+
+Though I agree that the short answer is "sorry, that's not supported",
+I thought you might find a few more technical details helpful in
+considering what to do.
+
+Valgrind tools and the guest processes do run in the same address
+space in terms of memory management, but in current versions they
+don't share any dynamic linker context, and in fact Valgrind tools
+don't link with libc at all, so there wouldn't be a double-linking
+problem per se.
+
+However, there are some incompatibilities between Valgrind and glibc
+that are the reason Valgrind tools don't link with the standard
+libraries. The most fundamental one is that Valgrind and glibc are
+both designed with the assumption that they alone will be talking to
+the kernel on behalf of their process, but obviously this can't be
+true for both at once.
+
+As of a few years ago, it was still possible (though unsupported) to
+just link your tool directly with /usr/lib/libc.a, and it worked for
+at least a reasonable subset of programs and glibc functionality. I
+research tool I was working on did that for a while. However, we gave
+that up because of a further issue that affects glibcs configured with
+thread-local storage (which I think is standard these days). Glibc now
+uses a segment pointed to by %gs to keep TLS, other thread data,
+-fstack-protector canary values, and who knows what else. It relies on
+its startup code to initialize this correctly, so if you call many
+glibc functions before initializing this, it crashes. That's the point
+where we gave up.
+
+In theory, I don't think any of these Valgrind/glibc incompatibilities
+are fundamental, and there would be ways of hacking around them. But
+the glibc and Valgrind developers don't consider them bugs, and so
+probably aren't interesting it expending much effort to fix them.
+
+So if you need C standard library functionality that isn't covered by
+the Valgrind core's somewhat non-standard subset, you'll have to get
+it from somewhere else. What we found to be the easiest approach in
+our Fjalar tool was to cut and paste the particular functions we need
+from dietlibc (a nice lightweight implementation) or glibc itself. The
+code is GPLed if you want to reuse it.
+
+http://groups.csail.mit.edu/pag/fjalar/
+
+Hope this helps,
+
+ -- Stephen
+

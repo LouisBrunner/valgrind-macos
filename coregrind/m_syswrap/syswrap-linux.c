@@ -3057,12 +3057,16 @@ POST(sys_keyctl)
    ioprio_ wrappers
    ------------------------------------------------------------------ */
 
-/* _syscall3(int, ioprio_set, int, which, int, who, int, ioprio); */
-
 PRE(sys_ioprio_set)
 {
    PRINT("sys_ioprio_set ( %ld, %ld, %ld )", ARG1,ARG2,ARG3);
    PRE_REG_READ3(int, "ioprio_set", int, which, int, who, int, ioprio);
+}
+
+PRE(sys_ioprio_get)
+{
+   PRINT("sys_ioprio_get ( %ld, %ld )", ARG1,ARG2);
+   PRE_REG_READ2(int, "ioprio_get", int, which, int, who);
 }
 
 /* ---------------------------------------------------------------------

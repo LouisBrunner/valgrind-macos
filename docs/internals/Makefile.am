@@ -14,4 +14,5 @@ EXTRA_DIST = \
 	release-HOWTO.txt roadmap.txt \
 	segments-seginfos.txt threads-syscalls-signals.txt \
 	tm-mutexstates.dot tm-threadstates.dot tracking-fn-entry-exit.txt \
+	why-no-libc.txt \
 	xml-output.txt

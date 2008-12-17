@@ -46,7 +46,9 @@
 
 #include <stdio.h>
 
-/* A program which generates various guest state offsets. */
+/* A program which, when compiled to assembly, exposes various guest
+   state offsets.  The program isn't executed, since that breaks
+   cross-compilation. */
 
 #include "../pub/libvex_basictypes.h"
 #include "../pub/libvex_guest_x86.h"
@@ -54,187 +56,91 @@
 #include "../pub/libvex_guest_ppc32.h"
 #include "../pub/libvex_guest_ppc64.h"
 
-Int main ( void )
+#define VG_STRINGIFZ(__str)  #__str
+#define VG_STRINGIFY(__str)  VG_STRINGIFZ(__str)
+
+/* This forces gcc to evaluate the __builtin_offset at compile time,
+   and then emits it in the assembly, along with the nonsense string
+   "xyzzy", for easy greppability.  Once this file is compiled to
+   assembly, the lines containing "xyzzy" are grepped out and sed-ed
+   to produce the final result.  See the Makefile rule for
+   pub/libvex_guest_offsets.h. */
+#define GENOFFSET(_structUppercase,_structLowercase,_fieldname)  \
+   __asm__ __volatile__ ( \
+      "\n#define OFFSET_" \
+      VG_STRINGIFY(_structLowercase) "_" \
+      VG_STRINGIFY(_fieldname) \
+      " xyzzy%0\n" : /*out*/ \
+                   : /*in*/ "n" \
+         (__builtin_offsetof(VexGuest##_structUppercase##State, \
+          guest_##_fieldname)) \
+   )
+
+void foo ( void );
+__attribute__((noinline))
+void foo ( void )
 {
-  // x86
-  printf("#define OFFSET_x86_EAX %3d\n", 
-         offsetof(VexGuestX86State,guest_EAX));
+   // x86
+   GENOFFSET(X86,x86,EAX);
+   GENOFFSET(X86,x86,EBX);
+   GENOFFSET(X86,x86,ECX);
+   GENOFFSET(X86,x86,EDX);
+   GENOFFSET(X86,x86,ESI);
+   GENOFFSET(X86,x86,EDI);
+   GENOFFSET(X86,x86,EBP);
+   GENOFFSET(X86,x86,ESP);
+   GENOFFSET(X86,x86,EIP);
+   GENOFFSET(X86,x86,CS);
+   GENOFFSET(X86,x86,DS);
+   GENOFFSET(X86,x86,ES);
+   GENOFFSET(X86,x86,FS);
+   GENOFFSET(X86,x86,GS);
+   GENOFFSET(X86,x86,SS);
 
-  printf("#define OFFSET_x86_EBX %3d\n", 
-         offsetof(VexGuestX86State,guest_EBX));
+   // amd64
+   GENOFFSET(AMD64,amd64,RAX);
+   GENOFFSET(AMD64,amd64,RBX);
+   GENOFFSET(AMD64,amd64,RCX);
+   GENOFFSET(AMD64,amd64,RDX);
+   GENOFFSET(AMD64,amd64,RSI);
+   GENOFFSET(AMD64,amd64,RDI);
+   GENOFFSET(AMD64,amd64,RSP);
+   GENOFFSET(AMD64,amd64,RBP);
+   GENOFFSET(AMD64,amd64,R8);
+   GENOFFSET(AMD64,amd64,R9);
+   GENOFFSET(AMD64,amd64,R10);
+   GENOFFSET(AMD64,amd64,R11);
+   GENOFFSET(AMD64,amd64,R12);
+   GENOFFSET(AMD64,amd64,R13);
+   GENOFFSET(AMD64,amd64,R14);
+   GENOFFSET(AMD64,amd64,R15);
+   GENOFFSET(AMD64,amd64,RIP);
 
-  printf("#define OFFSET_x86_ECX %3d\n", 
-         offsetof(VexGuestX86State,guest_ECX));
+   // ppc32
+   GENOFFSET(PPC32,ppc32,GPR0);
+   GENOFFSET(PPC32,ppc32,GPR2);
+   GENOFFSET(PPC32,ppc32,GPR3);
+   GENOFFSET(PPC32,ppc32,GPR4);
+   GENOFFSET(PPC32,ppc32,GPR5);
+   GENOFFSET(PPC32,ppc32,GPR6);
+   GENOFFSET(PPC32,ppc32,GPR7);
+   GENOFFSET(PPC32,ppc32,GPR8);
+   GENOFFSET(PPC32,ppc32,GPR9);
+   GENOFFSET(PPC32,ppc32,GPR10);
+   GENOFFSET(PPC32,ppc32,CIA);
+   GENOFFSET(PPC32,ppc32,CR0_0);
 
-  printf("#define OFFSET_x86_EDX %3d\n", 
-         offsetof(VexGuestX86State,guest_EDX));
-
-  printf("#define OFFSET_x86_ESI %3d\n", 
-         offsetof(VexGuestX86State,guest_ESI));
-
-  printf("#define OFFSET_x86_EDI %3d\n", 
-         offsetof(VexGuestX86State,guest_EDI));
-
-  printf("#define OFFSET_x86_EBP %3d\n", 
-         offsetof(VexGuestX86State,guest_EBP));
-
-  printf("#define OFFSET_x86_ESP %3d\n", 
-         offsetof(VexGuestX86State,guest_ESP));
-
-  printf("#define OFFSET_x86_EIP %3d\n", 
-         offsetof(VexGuestX86State,guest_EIP));
-
-  printf("#define OFFSET_x86_CS %3d\n",
-         offsetof(VexGuestX86State,guest_CS));
-
-  printf("#define OFFSET_x86_DS %3d\n",
-         offsetof(VexGuestX86State,guest_DS));
-
-  printf("#define OFFSET_x86_ES %3d\n",
-         offsetof(VexGuestX86State,guest_ES));
-
-  printf("#define OFFSET_x86_FS %3d\n",
-         offsetof(VexGuestX86State,guest_FS));
-
-  printf("#define OFFSET_x86_GS %3d\n",
-         offsetof(VexGuestX86State,guest_GS));
-
-  printf("#define OFFSET_x86_SS %3d\n",
-         offsetof(VexGuestX86State,guest_SS));
-
-  printf("\n");
-
-  // amd64
-  printf("#define OFFSET_amd64_RAX %3d\n", 
-         offsetof(VexGuestAMD64State,guest_RAX));
-
-  printf("#define OFFSET_amd64_RBX %3d\n", 
-         offsetof(VexGuestAMD64State,guest_RBX));
-
-  printf("#define OFFSET_amd64_RCX %3d\n", 
-         offsetof(VexGuestAMD64State,guest_RCX));
-
-  printf("#define OFFSET_amd64_RDX %3d\n", 
-         offsetof(VexGuestAMD64State,guest_RDX));
-
-  printf("#define OFFSET_amd64_RSI %3d\n", 
-         offsetof(VexGuestAMD64State,guest_RSI));
-
-  printf("#define OFFSET_amd64_RDI %3d\n", 
-         offsetof(VexGuestAMD64State,guest_RDI));
-
-  printf("#define OFFSET_amd64_RSP %3d\n", 
-         offsetof(VexGuestAMD64State,guest_RSP));
-
-  printf("#define OFFSET_amd64_RBP %3d\n", 
-         offsetof(VexGuestAMD64State,guest_RBP));
-
-  printf("#define OFFSET_amd64_R8  %3d\n", 
-         offsetof(VexGuestAMD64State,guest_R8));
-
-  printf("#define OFFSET_amd64_R9  %3d\n", 
-         offsetof(VexGuestAMD64State,guest_R9));
-
-  printf("#define OFFSET_amd64_R10 %3d\n", 
-         offsetof(VexGuestAMD64State,guest_R10));
-
-  printf("#define OFFSET_amd64_R11 %3d\n", 
-         offsetof(VexGuestAMD64State,guest_R11));
-
-  printf("#define OFFSET_amd64_R12 %3d\n", 
-         offsetof(VexGuestAMD64State,guest_R12));
-
-  printf("#define OFFSET_amd64_R13 %3d\n", 
-         offsetof(VexGuestAMD64State,guest_R13));
-
-  printf("#define OFFSET_amd64_R14 %3d\n", 
-         offsetof(VexGuestAMD64State,guest_R14));
-
-  printf("#define OFFSET_amd64_R15 %3d\n", 
-         offsetof(VexGuestAMD64State,guest_R15));
-
-  printf("#define OFFSET_amd64_RIP %3d\n", 
-         offsetof(VexGuestAMD64State,guest_RIP));
-
-  printf("\n");
-
-  // ppc32
-  printf("#define OFFSET_ppc32_GPR0      %3d\n",
-         offsetof(VexGuestPPC32State,guest_GPR0));
-
-  printf("#define OFFSET_ppc32_GPR2      %3d\n",
-         offsetof(VexGuestPPC32State,guest_GPR2));
-
-  printf("#define OFFSET_ppc32_GPR3      %3d\n",
-         offsetof(VexGuestPPC32State,guest_GPR3));
-
-  printf("#define OFFSET_ppc32_GPR4      %3d\n",
-         offsetof(VexGuestPPC32State,guest_GPR4));
-
-  printf("#define OFFSET_ppc32_GPR5      %3d\n",
-         offsetof(VexGuestPPC32State,guest_GPR5));
-
-  printf("#define OFFSET_ppc32_GPR6      %3d\n",
-         offsetof(VexGuestPPC32State,guest_GPR6));
-
-  printf("#define OFFSET_ppc32_GPR7      %3d\n",
-         offsetof(VexGuestPPC32State,guest_GPR7));
-
-  printf("#define OFFSET_ppc32_GPR8      %3d\n",
-         offsetof(VexGuestPPC32State,guest_GPR8));
-
-  printf("#define OFFSET_ppc32_GPR9      %3d\n",
-         offsetof(VexGuestPPC32State,guest_GPR9));
-
-  printf("#define OFFSET_ppc32_GPR10     %3d\n",
-         offsetof(VexGuestPPC32State,guest_GPR10));
-
-  printf("#define OFFSET_ppc32_CIA       %3d\n",
-         offsetof(VexGuestPPC32State,guest_CIA));
-
-  printf("#define OFFSET_ppc32_CR0_0     %3d\n",
-         offsetof(VexGuestPPC32State,guest_CR0_0));
-
-  printf("\n");
-
-  // ppc64
-  printf("#define OFFSET_ppc64_GPR0     %4d\n",
-         offsetof(VexGuestPPC64State,guest_GPR0));
-
-  printf("#define OFFSET_ppc64_GPR2     %4d\n",
-         offsetof(VexGuestPPC64State,guest_GPR2));
-
-  printf("#define OFFSET_ppc64_GPR3     %4d\n",
-         offsetof(VexGuestPPC64State,guest_GPR3));
-
-  printf("#define OFFSET_ppc64_GPR4     %4d\n",
-         offsetof(VexGuestPPC64State,guest_GPR4));
-
-  printf("#define OFFSET_ppc64_GPR5     %4d\n",
-         offsetof(VexGuestPPC64State,guest_GPR5));
-
-  printf("#define OFFSET_ppc64_GPR6     %4d\n",
-         offsetof(VexGuestPPC64State,guest_GPR6));
-
-  printf("#define OFFSET_ppc64_GPR7     %4d\n",
-         offsetof(VexGuestPPC64State,guest_GPR7));
-
-  printf("#define OFFSET_ppc64_GPR8     %4d\n",
-         offsetof(VexGuestPPC64State,guest_GPR8));
-
-  printf("#define OFFSET_ppc64_GPR9     %4d\n",
-         offsetof(VexGuestPPC64State,guest_GPR9));
-
-  printf("#define OFFSET_ppc64_GPR10    %4d\n",
-         offsetof(VexGuestPPC64State,guest_GPR10));
-
-  printf("#define OFFSET_ppc64_CIA      %4d\n",
-         offsetof(VexGuestPPC64State,guest_CIA));
-
-  printf("#define OFFSET_ppc64_CR0_0    %4d\n",
-         offsetof(VexGuestPPC64State,guest_CR0_0));
-
-  printf("\n");
-
-  return 0;
+   // ppc64
+   GENOFFSET(PPC64,ppc64,GPR0);
+   GENOFFSET(PPC64,ppc64,GPR2);
+   GENOFFSET(PPC64,ppc64,GPR3);
+   GENOFFSET(PPC64,ppc64,GPR4);
+   GENOFFSET(PPC64,ppc64,GPR5);
+   GENOFFSET(PPC64,ppc64,GPR6);
+   GENOFFSET(PPC64,ppc64,GPR7);
+   GENOFFSET(PPC64,ppc64,GPR8);
+   GENOFFSET(PPC64,ppc64,GPR9);
+   GENOFFSET(PPC64,ppc64,GPR10);
+   GENOFFSET(PPC64,ppc64,CIA);
+   GENOFFSET(PPC64,ppc64,CR0_0);
 }

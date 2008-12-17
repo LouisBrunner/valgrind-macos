@@ -168,7 +168,8 @@ TAG_ppc64_aix5:
 # doing 'make ; make clean ; make' (or distclean) would fail.
 clean:
 	rm -f $(LIB_OBJS) *.a vex test_main.o TAG_* \
-		pub/libvex_guest_offsets.h
+		pub/libvex_guest_offsets.h \
+		auxprogs/genoffsets.s
 
 version:
 	rm -f priv/main/vex_svnversion.h
@@ -190,9 +191,17 @@ minidist: version
 	@cat priv/main/vex_svnversion.h
 	@echo
 
+# This is very uggerly.  Need to sed out both "xyzzyN" and
+# "xyzzy$N" since gcc on different targets emits the constants
+# differently -- with a leading $ on x86/amd64 but none on ppc32/64.
 pub/libvex_guest_offsets.h:
-	$(CC) -Wall -g -o auxprogs/genoffsets auxprogs/genoffsets.c
-	./auxprogs/genoffsets > pub/libvex_guest_offsets.h
+	rm -f auxprogs/genoffsets.s
+	$(CC) $(CCFLAGS) -O0 -S -o auxprogs/genoffsets.s \
+				auxprogs/genoffsets.c
+	grep xyzzy auxprogs/genoffsets.s | grep define \
+	   | sed "s/xyzzy\\$$//g" | sed "s/xyzzy//g" \
+	   > pub/libvex_guest_offsets.h
+	rm -f auxprogs/genoffsets.s
 
 
 ALL_HEADERS  = $(PUB_HEADERS) $(PRIV_HEADERS)

@@ -71,6 +71,10 @@
    fun:random_r
 }
 {
+   libc:stdio
+   fun:_IO_file_xsputn*
+}
+{
    librt
    drd:ConflictingAccess
    fun:__librt_enable_asynccancel

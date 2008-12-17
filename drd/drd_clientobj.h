@@ -32,6 +32,7 @@
 #include "pub_tool_basics.h"
 #include "pub_tool_execontext.h" /* ExeContext */
 #include "pub_tool_oset.h"
+#include "pub_tool_xarray.h"
 
 
 // Forward declarations.
@@ -91,7 +92,7 @@ struct semaphore_info
   UInt        value;             // Semaphore value.
   UWord       waiters;           // Number of threads inside sem_wait().
   DrdThreadId last_sem_post_tid; // Thread ID associated with last sem_post().
-  Segment*    last_sem_post_segment;
+  XArray*     last_sem_post_seg; // array of Segment*, used as a stack.
 };
 
 struct barrier_info

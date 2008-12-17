@@ -903,7 +903,7 @@ before Valgrind's header files are present.
 
 
 <sect2 id="drd-manual.gnome" xreflabel="GNOME">
-<title>Debugging GNOME Programs With DRD</title>
+<title>Debugging GNOME Programs</title>
 
 <para>
 GNOME applications use the threading primitives provided by the
@@ -933,7 +933,7 @@ Reference Manual</ulink> for more information.
 
 
 <sect2 id="drd-manual.qt" xreflabel="Qt">
-<title>Debugging Qt Programs With DRD</title>
+<title>Debugging Qt Programs</title>
 
 <para>
 The Qt library is the GUI library used by the KDE project.  Currently
@@ -960,8 +960,42 @@ of data races will be reported on data protected via
 </sect2>
 
 
+<sect2 id="drd-manual.boost.thread" xreflabel="Boost.Thread">
+<title>Debugging Boost.Thread Programs</title>
+
+<para>
+The Boost.Thread library the threading library included with the
+cross-platform Boost Libraries. This threading library is an
+implementation of the draft C++0x threading library. Applications
+that use the Boost.Thread library should run fine under DRD.
+</para>
+
+<para>
+More information about Boost.Thread can be found here:
+<itemizedlist>
+  <listitem>
+    <para>
+      Anthony Williams, <ulink
+      url="http://www.boost.org/doc/libs/1_37_0/doc/html/thread.html">Boost.Thread</ulink>
+      Library Documentation, Boost website, 2007.
+    </para>
+  </listitem>
+  <listitem>
+    <para>
+      Anthony Williams, <ulink
+      url="http://www.ddj.com/cpp/211600441">What's New in Boost
+      Threads?</ulink>, Recent changes to the Boost Thread library,
+      Dr. Dobbs Magazine, October 2008.
+    </para>
+  </listitem>
+</itemizedlist>
+</para>
+
+</sect2>
+
+
 <sect2 id="drd-manual.openmp" xreflabel="OpenMP">
-<title>Debugging OpenMP Programs With DRD</title>
+<title>Debugging OpenMP Programs</title>
 
 <para>
 OpenMP stands for <emphasis>Open Multi-Processing</emphasis>. The

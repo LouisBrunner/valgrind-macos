@@ -134,7 +134,7 @@ rwlock 0x........ was first observed at:
 
 ---------------- sem_* ----------------
 
-[1/1] semaphore_init      0x........ value -1
+[1/1] semaphore_init      0x........ value 4294967295
 [1/1] semaphore_init      0x........ value 0
 
 Semaphore reinitialization: semaphore 0x........
@@ -147,7 +147,7 @@ semaphore 0x........ was first observed at:
 FIXME: can't figure out how to verify wrap of sem_destroy
 
 [1/1] semaphore_pre_wait  0x........ value 0
-[1/1] semaphore_post_wait 0x........ value -1
+[1/1] semaphore_post_wait 0x........ value 4294967295
 
 Invalid semaphore: semaphore 0x........
    at 0x........: sem_wait* (drd_pthread_intercepts.c:?)

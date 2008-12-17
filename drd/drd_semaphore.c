@@ -110,14 +110,14 @@ static struct semaphore_info* semaphore_get(const Addr semaphore)
 
 /** Called before sem_init(). */
 struct semaphore_info* semaphore_init(const Addr semaphore,
-                                      const Word pshared, const UWord value)
+                                      const Word pshared, const UInt value)
 {
   struct semaphore_info* p;
 
   if (s_trace_semaphore)
   {
     VG_(message)(Vg_UserMsg,
-                 "[%d/%d] semaphore_init      0x%lx value %ld",
+                 "[%d/%d] semaphore_init      0x%lx value %u",
                  VG_(get_running_tid)(),
                  thread_get_running_tid(),
                  semaphore,
@@ -153,7 +153,7 @@ void semaphore_destroy(const Addr semaphore)
   if (s_trace_semaphore)
   {
     VG_(message)(Vg_UserMsg,
-                 "[%d/%d] semaphore_destroy   0x%lx value %ld",
+                 "[%d/%d] semaphore_destroy   0x%lx value %u",
                  VG_(get_running_tid)(),
                  thread_get_running_tid(),
                  semaphore,
@@ -183,7 +183,7 @@ void semaphore_pre_wait(const Addr semaphore)
   if (s_trace_semaphore)
   {
     VG_(message)(Vg_UserMsg,
-                 "[%d/%d] semaphore_pre_wait  0x%lx value %ld",
+                 "[%d/%d] semaphore_pre_wait  0x%lx value %u",
                  VG_(get_running_tid)(),
                  thread_get_running_tid(),
                  semaphore,
@@ -208,7 +208,7 @@ void semaphore_post_wait(const DrdThreadId tid, const Addr semaphore,
   if (s_trace_semaphore)
   {
     VG_(message)(Vg_UserMsg,
-                 "[%d/%d] semaphore_post_wait 0x%lx value %ld",
+                 "[%d/%d] semaphore_post_wait 0x%lx value %u",
                  VG_(get_running_tid)(),
                  thread_get_running_tid(),
                  semaphore,
@@ -251,7 +251,7 @@ void semaphore_pre_post(const DrdThreadId tid, const Addr semaphore)
   if (s_trace_semaphore)
   {
     VG_(message)(Vg_UserMsg,
-                 "[%d/%d] semaphore_post      0x%lx value %ld",
+                 "[%d/%d] semaphore_post      0x%lx value %u",
                  VG_(get_running_tid)(),
                  thread_get_running_tid(),
                  semaphore,

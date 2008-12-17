@@ -1,0 +1,2 @@
+prog: circular_buffer
+args: -q

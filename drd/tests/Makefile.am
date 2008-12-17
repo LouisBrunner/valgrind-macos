@@ -26,6 +26,8 @@ EXTRA_DIST =                                        \
 	bar_trivial.vgtest			    \
 	boost_thread.stderr.exp			    \
 	boost_thread.vgtest			    \
+	circular_buffer.stderr.exp		    \
+	circular_buffer.vgtest			    \
 	drd_bitmap_test.stderr.exp                  \
 	drd_bitmap_test.stdout.exp                  \
 	drd_bitmap_test.vgtest                      \
@@ -201,6 +203,7 @@ check_PROGRAMS =      \
   atomic_var          \
   bar_bad	      \
   bar_trivial         \
+  circular_buffer     \
   drd_bitmap_test     \
   fp_race             \
   hg01_all_ok         \
@@ -276,6 +279,9 @@ bar_bad_LDADD               = -lpthread
 
 bar_trivial_SOURCES         = ../../helgrind/tests/bar_trivial.c
 bar_trivial_LDADD           = -lpthread
+
+circular_buffer_SOURCES     = circular_buffer.c
+circular_buffer_LDADD       = -lpthread
 
 drd_bitmap_test_SOURCES     = drd_bitmap_test.c
 drd_bitmap_test_CFLAGS      = $(AM_CFLAGS) -O2 \

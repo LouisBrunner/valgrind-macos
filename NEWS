@@ -1,9 +1,39 @@
 
 Release 3.4.0 (???)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-Changes include:
-- SSE3 insns now supported.  Changed CPUID output to be Core-2, so now it
+
+Main change points (need to add details for all)
+
+- Origin tracking in Memcheck
+
+- Helgrind completely rewritten, to remove false error and scaling
+problems and to give improved diagnostics
+
+- Drd majorly improved (details ..)
+
+- New tool: exp-ptrcheck, for doing checks on stack and global arrays
+
+- gcc-4.4.0 support, including demangler fixes for recent g++'s
+
+- new distro support: OpenSUSE 11.1, Fedora 10, Ubuntu 8.10
+
+- Frame level wildcarding in suppressions
+
+- Basic support for IBM Power6 (64-bit processes only)
+
+- SSSE3 insns now supported.  Changed CPUID output to be Core-2, so now it
   claims to be a Core 2 E6600.
+
+- cross-compilation support
+
+- many bugs fixed, as usual
+
+- non-user-visible: able to read Dwarf3 type/variable information,
+  so as to understand the location and type of stack and local variables
+
+- matching release of Valkyrie, (a GUI for Memcheck), v 1.4.0
+
+- what else?
 
 
 Release 3.3.1 (4 June 2008)

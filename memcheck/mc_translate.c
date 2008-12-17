@@ -3335,11 +3335,12 @@ static Bool isBogusAtom ( IRAtom* at )
    /* VG_(printf)("%llx\n", n); */
    return (/*32*/    n == 0xFEFEFEFFULL
            /*32*/ || n == 0x80808080ULL
+           /*32*/ || n == 0x7F7F7F7FULL
            /*64*/ || n == 0xFFFFFFFFFEFEFEFFULL
            /*64*/ || n == 0xFEFEFEFEFEFEFEFFULL
            /*64*/ || n == 0x0000000000008080ULL
            /*64*/ || n == 0x8080808080808080ULL
-	   /*64*/ || n == 0x0101010101010101ULL
+           /*64*/ || n == 0x0101010101010101ULL
           );
 }
 

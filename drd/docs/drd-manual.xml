@@ -964,10 +964,13 @@ of data races will be reported on data protected via
 <title>Debugging Boost.Thread Programs</title>
 
 <para>
-The Boost.Thread library the threading library included with the
-cross-platform Boost Libraries. This threading library is an
-implementation of the draft C++0x threading library. Applications
-that use the Boost.Thread library should run fine under DRD.
+The Boost.Thread library is the threading library included with the
+cross-platform Boost Libraries. This threading library is an early
+implementation of the upcoming C++0x threading library.
+</para>
+
+<para>
+Applications that use the Boost.Thread library should run fine under DRD.
 </para>
 
 <para>

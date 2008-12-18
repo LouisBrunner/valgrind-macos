@@ -2,7 +2,7 @@
 # For AM_FLAG_M3264_PRI
 include $(top_srcdir)/Makefile.flags.am
 
-noinst_SCRIPTS = filter_stderr filter_threadnums
+noinst_SCRIPTS = filter_stderr
 
 EXTRA_DIST = $(noinst_SCRIPTS) \
 	bar_bad.vgtest bar_bad.stdout.exp \

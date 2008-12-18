@@ -1,4 +1,3 @@
 prog: pth_barrier
 args: 32 1 1
 vgopts: -q
-stderr_filter: ./filter_threadnums

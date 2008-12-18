@@ -35,7 +35,76 @@ static fn_array current_fn_active;
 static Addr runtime_resolve_addr = 0;
 static int  runtime_resolve_length = 0;
 
-/* _ld_runtime_resolve, located in needs special handling:
+// a code pattern is a list of tuples (start offset, length)
+struct chunk_t { int start, len; };
+struct pattern
+{
+    const char* name;
+    int len;
+    struct chunk_t chunk[];
+};
+
+/* Scan for a pattern in the code of an ELF object.
+ * If found, return true and set runtime_resolve_{addr,length}
+ */
+static Bool check_code(obj_node* obj,
+		       unsigned char code[], struct pattern* pat)
+{
+    Bool found;
+    Addr addr, end;
+    int chunk, start, len;
+
+    /* first chunk of pattern should always start at offset 0 and
+     * have at least 3 bytes */
+    CLG_ASSERT((pat->chunk[0].start == 0) && (pat->chunk[0].len >2));
+    
+    CLG_DEBUG(1, "check_code: %s, pattern %s, check %d bytes of [%x %x %x...]\n",
+              obj->name, pat->name, pat->chunk[0].len, code[0], code[1], code[2]);
+
+    end = obj->start + obj->size - pat->len;
+    addr = obj->start;
+    while(addr < end) {
+	found = (VG_(memcmp)( (void*)addr, code, pat->chunk[0].len) == 0);
+
+        if (found) {
+	    chunk = 1;
+	    while(1) {		
+		start = pat->chunk[chunk].start;
+		len   = pat->chunk[chunk].len;
+		if (len == 0) break;
+
+		CLG_ASSERT(len >2);
+                CLG_DEBUG(1, " found chunk %d at %#lx, checking %d bytes of [%x %x %x...]\n",
+                          chunk-1, addr - obj->start, len,
+			  code[start], code[start+1], code[start+2]);
+
+                if (VG_(memcmp)( (void*)(addr+start), code+start, len) != 0) {
+                    found = False;
+                    break;
+                }
+		chunk++;
+	    }
+
+            if (found) {
+		CLG_DEBUG(1, "found at offset %#lx.\n", addr - obj->start);
+		if (VG_(clo_verbosity) > 1)
+		    VG_(message)(Vg_DebugMsg, "Found runtime_resolve (%s): %s +%#lx=%#lx, length %d",
+				 pat->name, obj->name + obj->last_slash_pos,
+				 addr - obj->start, addr, pat->len);
+		    
+		runtime_resolve_addr   = addr;
+		runtime_resolve_length = pat->len;
+		return True;
+	    }
+        }
+        addr++;
+    }
+    CLG_DEBUG(1, " found nothing.\n");
+    return False;
+}
+    	       
+
+/* _ld_runtime_resolve, located in ld.so, needs special handling:
  * The jump at end into the resolved function should not be
  * represented as a call (as usually done in callgrind with jumps),
  * but as a return + call. Otherwise, the repeated existance of
@@ -43,26 +112,37 @@ static int  runtime_resolve_length = 0;
  * making the profile almost worthless.
  *
  * If ld.so is stripped, the symbol will not appear. But as this
- * function is handcrafted assembler, we search for it...
+ * function is handcrafted assembler, we search for it.
  *
- * Returns 0 if code not found, otherwise start address
+ * We stop if the ELF object name does not seem to be the runtime linker
  */
-static void search_runtime_resolve(obj_node* obj)
+static Bool search_runtime_resolve(obj_node* obj)
 {
-    /* We do not check target address of <fixup>, therefore we have >1 ranges.
-     * We use a tuple sequence (offset,length) into the code array for this
-     */
-
 #if defined(VGP_x86_linux)
-    /* Check ranges [0-11], [16-23] */
-    static int  code_offsets[] = { 0, 12, 16, 8, 24, 0 };
     static unsigned char code[] = {
 	/* 0*/ 0x50, 0x51, 0x52, 0x8b, 0x54, 0x24, 0x10, 0x8b,
 	/* 8*/ 0x44, 0x24, 0x0c, 0xe8, 0x70, 0x01, 0x00, 0x00,
 	/*16*/ 0x5a, 0x59, 0x87, 0x04, 0x24, 0xc2, 0x08, 0x00 };
-#else
+    /* Check ranges [0-11] and [16-23] ([12-15] is an absolute address) */
+    static struct pattern pat = {
+	"x86-def", 24, {{ 0,12 }, { 16,8 }, { 24,0}} };
+
+    /* Pattern for glibc-2.8 on OpenSuse11.0 */
+    static unsigned char code_28[] = {
+	/* 0*/ 0x50, 0x51, 0x52, 0x8b, 0x54, 0x24, 0x10, 0x8b,
+	/* 8*/ 0x44, 0x24, 0x0c, 0xe8, 0x70, 0x01, 0x00, 0x00,
+	/*16*/ 0x5a, 0x8b, 0x0c, 0x24, 0x89, 0x04, 0x24, 0x8b,
+	/*24*/ 0x44, 0x24, 0x04, 0xc2, 0x0c, 0x00 };
+    static struct pattern pat_28 = {
+	"x86-glibc2.8", 30, {{ 0,12 }, { 16,14 }, { 30,0}} };
+
+    if (VG_(strncmp)(obj->name, "/lib/ld", 7) != 0) return False;
+    if (check_code(obj, code, &pat)) return True;
+    if (check_code(obj, code_28, &pat_28)) return True;
+    return False;
+#endif
+
 #if defined(VGP_ppc32_linux)
-    static int  code_offsets[] = {0, 65, 68, 64, 132, 0 };
     static unsigned char code[] = {
 	/* 0*/ 0x94, 0x21, 0xff, 0xc0, 0x90, 0x01, 0x00, 0x0c,
 	/* 8*/ 0x90, 0x61, 0x00, 0x10, 0x90, 0x81, 0x00, 0x14,
@@ -81,10 +161,14 @@ static void search_runtime_resolve(obj_node* obj)
 	/*112*/0x80, 0x81, 0x00, 0x14, 0x80, 0x61, 0x00, 0x10,
 	/*120*/0x80, 0x01, 0x00, 0x0c, 0x38, 0x21, 0x00, 0x40,
 	/*128*/0x4e, 0x80, 0x04, 0x20 };
-#else
+    static struct pattern pat = {
+	"ppc32-def", 132, {{ 0,65 }, { 68,64 }, { 132,0 }} };
+
+    if (VG_(strncmp)(obj->name, "/lib/ld", 7) != 0) return False;
+    return check_code(obj, code, &pat);
+#endif
+
 #if defined(VGP_amd64_linux)
-    /* x86_64 */
-    static int  code_offsets[] = {0, 62, 66, 44, 110, 0 };
     static unsigned char code[] = {
 	/* 0*/ 0x48, 0x83, 0xec, 0x38, 0x48, 0x89, 0x04, 0x24,
 	/* 8*/ 0x48, 0x89, 0x4c, 0x24, 0x08, 0x48, 0x89, 0x54, 0x24, 0x10,
@@ -98,60 +182,18 @@ static void search_runtime_resolve(obj_node* obj)
 	/*84*/ 0x48, 0x8b, 0x74, 0x24, 0x18, 0x48, 0x8b, 0x54, 0x24, 0x10,
 	/*94*/ 0x48, 0x8b, 0x4c, 0x24, 0x08, 0x48, 0x8b, 0x04, 0x24,
 	/*103*/0x48, 0x83, 0xc4, 0x48, 0x41, 0xff, 0xe3 };
-#else
-    /* Unknown platform, no check is done */
-    static int  code_offsets[] = {0, 0 };
-    static unsigned char code[] = { 0 };
-#endif
-#endif
-#endif
-    
-    int *range = &(code_offsets[0]), *r = 0;
-    Bool found = False;
-    Addr addr, end;
+    static struct pattern pat = {
+	"amd64-def", 110, {{ 0,62 }, { 66,44 }, { 110,0 }} };
 
-    /* Only search in libraries with a given name pattern */
     if ((VG_(strncmp)(obj->name, "/lib/ld", 7) != 0) &&
-	(VG_(strncmp)(obj->name, "/lib64/ld", 9) != 0)) return;
-    
-    CLG_DEBUG(1, "search_rs: Checking %d bytes of [%x %x %x...]\n",
-	      range[1], code[0], code[1], code[2]);
+	(VG_(strncmp)(obj->name, "/lib64/ld", 9) != 0)) return False;
+    return check_code(obj, code, &pat);
+#endif
 
-    end = obj->start + obj->size - range[1];
-    addr = obj->start;
-
-    if (range[1] == 0) return;
-
-    while(addr < end) {
-	if (VG_(memcmp)( (void*)addr, code, range[1]) == 0) {
-
-	    r = range + 2;
-	    found = True;
-	    while(r[1]) {
-		CLG_DEBUG(1, " [%#lx] Found! Checking %d bytes of [%x %x %x...]\n",
-			  addr, r[1], code[r[0]], code[r[0]+1], code[r[0]+2]);
-
-		if (VG_(memcmp)( (void*)(addr+r[0]), code+r[0], r[1]) != 0) {
-		    found = False;
-		    break;
-		}
-		r += 2;
-	    }
-	    if (found) break;
-	}
-	addr++;
-    }
-
-    if (!found || (r==0)) return;
-
-    if (VG_(clo_verbosity) > 1)
-	VG_(message)(Vg_DebugMsg, "Code check found runtime_resolve: %s +%#lx=%#lx, length %d",
-		     obj->name + obj->last_slash_pos,
-		     addr - obj->start, addr, r[0]);
-
-    runtime_resolve_addr   = addr;
-    runtime_resolve_length = r[0];
+    /* For other platforms, no patterns known */
+    return False;
 }
+
 
 /*------------------------------------------------------------*/
 /*--- Object/File/Function hash entry operations           ---*/

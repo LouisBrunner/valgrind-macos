@@ -91,7 +91,7 @@ for logfile in old new ; do
    # Check out, build, run tests
    runcmd $logfile \
           "Checking out valgrind source tree" \
-          "svn co svn://svn.valgrind.org/valgrind/trunk -r {$svn_date} valgrind && ( cd valgrind && { svn cat svn://svn.valgrind.org/valgrind/branches/CROSS_COMPILATION/vex-cross-compilation.patch | patch -p0 -s; } )" && \
+          "svn co svn://svn.valgrind.org/valgrind/trunk -r {$svn_date} valgrind" && \
    \
    runcmd $logfile \
           "Configuring valgrind             " \

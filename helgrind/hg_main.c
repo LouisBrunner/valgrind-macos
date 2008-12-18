@@ -3653,6 +3653,11 @@ IRSB* hg_instrument ( VgCallbackClosure* closure,
                   tl_assert(x86busLocked == True);
                   x86busLocked = False;
                   break;
+               case Imbe_SnoopedStoreBegin:
+               case Imbe_SnoopedStoreEnd:
+                  /* These arise from ppc stwcx. insns.  They should
+                     perhaps be handled better. */
+                  break;
                default:
                   goto unhandled;
             }

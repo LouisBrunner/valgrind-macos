@@ -196,7 +196,7 @@ minidist: version
 # differently -- with a leading $ on x86/amd64 but none on ppc32/64.
 pub/libvex_guest_offsets.h:
 	rm -f auxprogs/genoffsets.s
-	$(CC) $(CCFLAGS) -O0 -S -o auxprogs/genoffsets.s \
+	$(CC) $(CCFLAGS) -O -S -o auxprogs/genoffsets.s \
 				auxprogs/genoffsets.c
 	grep xyzzy auxprogs/genoffsets.s | grep define \
 	   | sed "s/xyzzy\\$$//g" | sed "s/xyzzy//g" \

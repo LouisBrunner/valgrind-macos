@@ -48,7 +48,13 @@
 
 /* A program which, when compiled to assembly, exposes various guest
    state offsets.  The program isn't executed, since that breaks
-   cross-compilation. */
+   cross-compilation.
+
+   It does rely on the assumption that 'my_offsetof(Ty,Field)' is
+   folded to a constant at a compile time, which seems a bit dodgy
+   to me.  On gcc4 it is possible to use __builtin_offsetof, which
+   sounds safer, but that doesn't exist on older gccs.  Oh Well.
+*/
 
 #include "../pub/libvex_basictypes.h"
 #include "../pub/libvex_guest_x86.h"
@@ -59,7 +65,9 @@
 #define VG_STRINGIFZ(__str)  #__str
 #define VG_STRINGIFY(__str)  VG_STRINGIFZ(__str)
 
-/* This forces gcc to evaluate the __builtin_offset at compile time,
+#define my_offsetof(__type,__field) (&((__type*)0)->__field)
+
+/* This forces gcc to evaluate the my_offsetof call at compile time,
    and then emits it in the assembly, along with the nonsense string
    "xyzzy", for easy greppability.  Once this file is compiled to
    assembly, the lines containing "xyzzy" are grepped out and sed-ed
@@ -72,7 +80,7 @@
       VG_STRINGIFY(_fieldname) \
       " xyzzy%0\n" : /*out*/ \
                    : /*in*/ "n" \
-         (__builtin_offsetof(VexGuest##_structUppercase##State, \
+         (my_offsetof(VexGuest##_structUppercase##State, \
           guest_##_fieldname)) \
    )
 

@@ -502,12 +502,21 @@
    obj:/lib*/libpthread-2.3.*so
 }
 
+
+####################################################
 ######------ qt4 specific (GNU mangling) ------######
 {
    helgrind-qt4---QMutex::lock()-QMutex::lock()
    Helgrind:Race
    fun:_ZN6QMutex4lockEv
    fun:_ZN6QMutex4lockEv
+}
+
+{                                                               
+   helgrind-qt4---QMutex::unlock()-QMutex::unlock()
+   Helgrind:Race                                                
+   fun:_ZN6QMutex6unlockEv                                      
+   fun:_ZN6QMutex6unlockEv
 }
 
 {
@@ -517,32 +526,6 @@
    fun:_ZN14QThreadPrivate5startEPv
 }
 
-{
-   helgrind-qt4---free_stacks-__deallocate_stack
-   Helgrind:Race
-   fun:free_stacks
-   fun:__deallocate_stack
-}
-
-{
-   helgrind---pthread_setspecific
-   Helgrind:Race
-   fun:pthread_setspecific
-}
-
-{
-   helgrind---pthread_getspecific
-   Helgrind:Race
-   fun:pthread_getspecific
-}
-
-{
-   helgrind---ld.so-...-dlsym
-   Helgrind:Race
-   obj:/lib*/ld-2.*so*
-   ...
-   fun:dlsym
-}
 
 ####################################################
 # Other stuff.
@@ -566,4 +549,51 @@
    ...
    fun:*Unwind*
    fun:*pthread_unwind*
+}
+
+
+####################################################
+# To do with thread stack allocation and deallocation?
+#
+{
+   helgrind---free_stacks-__deallocate_stack
+   Helgrind:Race
+   fun:free_stacks
+   fun:__deallocate_stack
+}
+
+{
+   helgrind---__deallocate_stack-start_thread-clone
+   Helgrind:Race
+   fun:__deallocate_stack
+   fun:start_thread
+   fun:clone
+}
+
+
+####################################################
+# To do with pthread_{set,get}specific
+#
+{
+   helgrind---pthread_setspecific
+   Helgrind:Race
+   fun:pthread_setspecific
+}
+
+{
+   helgrind---pthread_getspecific
+   Helgrind:Race
+   fun:pthread_getspecific
+}
+
+
+####################################################
+# To do with dynamic linking
+#
+{
+   helgrind---ld.so-...-dlsym
+   Helgrind:Race
+   obj:/lib*/ld-2.*so*
+   ...
+   fun:dlsym
 }

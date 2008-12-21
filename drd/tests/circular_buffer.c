@@ -42,6 +42,7 @@ typedef struct {
 } buffer_t;
 
 static int quiet = 0;
+static int use_locking = 1;
 
 static __inline__
 int fetch_and_add(int* p, int i)
@@ -65,7 +66,8 @@ void buffer_recv(buffer_t* b, data_t* d)
 {
   int out;
   sem_wait(&b->data);
-  pthread_mutex_lock(&b->mutex_out);
+  if (use_locking)
+    pthread_mutex_lock(&b->mutex_out);
   out = fetch_and_add(&b->out, 1);
   if (out >= BUFFER_MAX)
   {
@@ -73,7 +75,8 @@ void buffer_recv(buffer_t* b, data_t* d)
     out -= BUFFER_MAX;
   }
   *d = b->buffer[out];
-  pthread_mutex_unlock(&b->mutex_out);
+  if (use_locking)
+    pthread_mutex_unlock(&b->mutex_out);
   if (! quiet)
   {
     printf("received %d from buffer[%d]\n", *d, out);
@@ -86,7 +89,8 @@ void buffer_send(buffer_t* b, data_t* d)
 {
   int in;
   sem_wait(&b->free);
-  pthread_mutex_lock(&b->mutex_in);
+  if (use_locking)
+    pthread_mutex_lock(&b->mutex_in);
   in = fetch_and_add(&b->in, 1);
   if (in >= BUFFER_MAX)
   {
@@ -94,7 +98,8 @@ void buffer_send(buffer_t* b, data_t* d)
     in -= BUFFER_MAX;
   }
   b->buffer[in] = *d;
-  pthread_mutex_unlock(&b->mutex_in);
+  if (use_locking)
+    pthread_mutex_unlock(&b->mutex_in);
   if (! quiet)
   {
     printf("sent %d to buffer[%d]\n", *d, in);
@@ -145,10 +150,13 @@ int main(int argc, char** argv)
   int i;
   int optchar;
 
-  while ((optchar = getopt(argc, argv, "q")) != EOF)
+  while ((optchar = getopt(argc, argv, "nq")) != EOF)
   {
     switch (optchar)
     {
+    case 'n':
+      use_locking = 0;
+      break;
     case 'q':
       quiet = 1;
       break;

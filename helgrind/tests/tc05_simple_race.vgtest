@@ -1,1 +1,2 @@
 prog: tc05_simple_race
+vgopts: --read-var-info=yes

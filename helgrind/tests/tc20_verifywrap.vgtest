@@ -1,1 +1,2 @@
 prog: tc20_verifywrap
+vgopts: --read-var-info=yes

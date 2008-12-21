@@ -2666,7 +2666,6 @@ inline static void gal_Free ( GroupAlloc* ga, void* p )
 //                                                     //
 /////////////////////////////////////////////////////////
 
-#define EVENT_MAP_GC_AT                (1 * 1000 * 1000)
 #define EVENT_MAP_GC_DISCARD_FRACTION  0.5
 
 /* This is in two parts:
@@ -2678,26 +2677,40 @@ inline static void gal_Free ( GroupAlloc* ga, void* p )
       only represent each one once.  The set is indexed/searched by
       ordering on the stack trace vectors.
 
-   2. An OSet of OldRefs.  These store information about each old ref
-      that we need to record.  It is indexed by address of the
+   2. A SparseWA of OldRefs.  These store information about each old
+      ref that we need to record.  It is indexed by address of the
       location for which the information is recorded.  For LRU
       purposes, each OldRef also contains a generation number,
       indicating when it was most recently accessed.
 
       The important part of an OldRef is, however, its accs[] array.
-      This is an array of N_OLDREF_ACCS pairs of Thr and a RCEC.  This
-      allows us to collect the last access-traceback by up to
-      N_OLDREF_ACCS different threads for this location.  The accs[]
-      array is a MTF-array.  If a pair falls off the end, that's too
-      bad -- we will lose info about that thread's access to this
-      location.
+      This is an array of N_OLDREF_ACCS which binds (thread, R/W,
+      size) triples to RCECs.  This allows us to collect the last
+      access-traceback by up to N_OLDREF_ACCS different triples for
+      this location.  The accs[] array is a MTF-array.  If a binding
+      falls off the end, that's too bad -- we will lose info about
+      that triple's access to this location.
 
-      When this OSet becomes too big, we can throw away the entries
+      When the SparseWA becomes too big, we can throw away the OldRefs
       whose generation numbers are below some threshold; hence doing
       approximate LRU discarding.  For each discarded OldRef we must
       of course decrement the reference count on the all RCECs it
       refers to, in order that entries from (1) eventually get
       discarded too.
+
+   A major improvement in reliability of this mechanism would be to
+   have a dynamically sized OldRef.accs[] array, so no entries ever
+   fall off the end.  In investigations (Dec 08) it appears that a
+   major cause for the non-availability of conflicting-access traces
+   in race reports is caused by the fixed size of this array.  I
+   suspect for most OldRefs, only a few entries are used, but for a
+   minority of cases there is an overflow, leading to info lossage.
+   Investigations also suggest this is very workload and scheduling
+   sensitive.  Therefore a dynamic sizing would be better.
+
+   However, dynamic sizing would defeat the use of a GroupAllocator
+   for OldRef structures.  And that's important for performance.  So
+   it's not straightforward to do.
 */
 
 
@@ -2916,7 +2929,7 @@ static RCEC* get_RCEC ( Thr* thr )
 */
 typedef  struct { Thr* thr; RCEC* rcec; }  Thr_n_RCEC;
 
-#define N_OLDREF_ACCS 3
+#define N_OLDREF_ACCS 5
 
 typedef
    struct {
@@ -3007,16 +3020,25 @@ static void event_map_bind ( Addr a, SizeT szB, Bool isW, Thr* thr )
    if (b) {
 
       /* We already have a record for this address.  We now need to
-         see if we have a stack trace pertaining to this thread's
-         access. */
+         see if we have a stack trace pertaining to this (thread, R/W,
+         size) triple. */
       tl_assert(keyW == a);
       ref = (OldRef*)valW;
       tl_assert(ref->magic == OldRef_MAGIC);
 
       tl_assert(thr);
       for (i = 0; i < N_OLDREF_ACCS; i++) {
-         if (ref->accs[i].thr == thr)
-            break;
+         if (ref->accs[i].thr != thr)
+            continue;
+         /* since .thr encodes both the accessing thread and the
+            read/writeness, we know now that at least those features
+            of the access match this entry.  So we just need to check
+            the size indication.  Do this by inspecting the lowest 2 bits of
+            .rcec, which contain the encoded size info. */
+         if (ptr_and_UWord(ref->accs[i].rcec,3) != ptr_and_UWord(rcec,3))
+            continue;
+         /* else we have a match, so stop looking. */
+         break;
       }
 
       if (i < N_OLDREF_ACCS) {
@@ -3033,13 +3055,16 @@ static void event_map_bind ( Addr a, SizeT szB, Bool isW, Thr* thr )
          ref->accs[i].rcec = rcec;
          tl_assert(ref->accs[i].thr == thr);
       } else {
-         /* No entry for this thread.  Shuffle all of them down one
-            slot, and put the new entry at the start of the array. */
+         /* No entry for this (thread, R/W, size) triple.  Shuffle all
+            of them down one slot, and put the new entry at the start
+            of the array. */
          if (ref->accs[N_OLDREF_ACCS-1].thr) {
             /* the last slot is in use.  We must dec the rc on the
                associated rcec. */
             tl_assert(ref->accs[N_OLDREF_ACCS-1].rcec);
             stats__ctxt_rcdec2++;
+            if (0 && 0 == (stats__ctxt_rcdec2 & 0xFFF))
+               VG_(printf)("QQQQ %lu overflows\n",stats__ctxt_rcdec2);
             ctxt__rcdec( ptr_and_UWord(ref->accs[N_OLDREF_ACCS-1].rcec, ~3) );
          } else {
             tl_assert(!ref->accs[N_OLDREF_ACCS-1].rcec);
@@ -3070,9 +3095,9 @@ static void event_map_bind ( Addr a, SizeT szB, Bool isW, Thr* thr )
       ref->gen = oldrefGen;
       ref->accs[0].rcec = rcec;
       ref->accs[0].thr = thr;
-         /* thr==NULL is used to signify an empty slot, so we can't
-            add a NULL thr. */
-         tl_assert(ptr_and_UWord(thr, ~3) != 0); 
+      /* thr==NULL is used to signify an empty slot, so we can't add a
+         NULL thr. */
+      tl_assert(ptr_and_UWord(thr, ~3) != 0); 
       for (j = 1; j < N_OLDREF_ACCS; j++) {
          ref->accs[j].thr = NULL;
          ref->accs[j].rcec = NULL;
@@ -3305,11 +3330,16 @@ static void event_map_maybe_GC ( void )
    UWord  genMap_min  = 0;
    UWord  genMap_size = 0;
 
-   if (LIKELY(oldrefTreeN < EVENT_MAP_GC_AT))
+   if (LIKELY(oldrefTreeN < HG_(clo_conflict_cache_size)))
       return;
 
    if (0)
       VG_(printf)("libhb: event_map GC at size %lu\n", oldrefTreeN);
+
+   /* Check for sane command line params.  Limit values must match
+      those in hg_process_cmd_line_option. */
+   tl_assert( HG_(clo_conflict_cache_size) >= 10*1000 );
+   tl_assert( HG_(clo_conflict_cache_size) <= 10*1000*1000 );
 
    /* Check our counting is sane (expensive) */
    if (CHECK_CEM)
@@ -3432,7 +3462,8 @@ static void event_map_maybe_GC ( void )
       tl_assert(keyW >= maxGen);
       tl_assert(retained >= valW);
       if (retained - valW
-          > (UWord)(EVENT_MAP_GC_AT * EVENT_MAP_GC_DISCARD_FRACTION)) {
+          > (UWord)(HG_(clo_conflict_cache_size) 
+                    * EVENT_MAP_GC_DISCARD_FRACTION)) {
          retained -= valW;
          maxGen = keyW;
       } else {
@@ -3688,7 +3719,7 @@ static inline SVal msm_read ( SVal svOld,
       tl_assert(is_sane_SVal_C(svNew));
    }
    tl_assert(svNew != SVal_INVALID);
-   if (svNew != svOld) {
+   if (svNew != svOld && HG_(clo_show_conflicts)) {
       if (SVal__isC(svOld) && SVal__isC(svNew)) {
          event_map_bind( acc_addr, szB, False/*!isWrite*/, acc_thr );
          stats__msm_read_change++;
@@ -3769,7 +3800,7 @@ static inline SVal msm_write ( SVal svOld,
       tl_assert(is_sane_SVal_C(svNew));
    }
    tl_assert(svNew != SVal_INVALID);
-   if (svNew != svOld) {
+   if (svNew != svOld && HG_(clo_show_conflicts)) {
       if (SVal__isC(svOld) && SVal__isC(svNew)) {
          event_map_bind( acc_addr, szB, True/*isWrite*/, acc_thr );
          stats__msm_write_change++;

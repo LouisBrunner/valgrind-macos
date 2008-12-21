@@ -3986,12 +3986,15 @@ static Bool hg_process_cmd_line_option ( Char* arg )
    else if (VG_CLO_STREQ(arg, "--cmp-race-err-addrs=yes"))
       HG_(clo_cmp_race_err_addrs) = True;
 
-   else if (VG_CLO_STREQN(13, arg, "--trace-addr=")) {
-      HG_(clo_trace_addr) = VG_(atoll16)(&arg[13]);
-      if (HG_(clo_trace_level) == 0)
-         HG_(clo_trace_level) = 1;
-   }
-   else VG_BNUM_CLO(arg, "--trace-level", HG_(clo_trace_level), 0, 2)
+   else if (VG_CLO_STREQ(arg, "--show-conflicts=no"))
+      HG_(clo_show_conflicts) = False;
+   else if (VG_CLO_STREQ(arg, "--show-conflicts=yes"))
+      HG_(clo_show_conflicts) = True;
+
+   /* If you change the 10k/10mill limits, remember to also change
+      them in assertions at the top of event_map_maybe_GC. */
+   else VG_BNUM_CLO(arg, "--conflict-cache-size",
+                         HG_(clo_conflict_cache_size), 10*1000, 10*1000*1000)
 
    /* "stuvwx" --> stuvwx (binary) */
    else if (VG_CLO_STREQN(18, arg, "--hg-sanity-flags=")) {
@@ -4024,9 +4027,9 @@ static Bool hg_process_cmd_line_option ( Char* arg )
 static void hg_print_usage ( void )
 {
    VG_(printf)(
-"    --track-lockorders=no|yes  show lock ordering errors? [yes]\n"
-"    --trace-addr=0xXXYYZZ     show all state changes for address 0xXXYYZZ\n"
-"    --trace-level=0|1|2       verbosity level of --trace-addr [1]\n"
+"    --track-lockorders=no|yes show lock ordering errors? [yes]\n"
+"    --show-conflicts=no|yes   show both stack traces in a race? [yes]\n"
+"    --conflict-cache-size=N   size of conflict history cache [1000000]\n"
    );
    VG_(replacement_malloc_print_usage)();
 }
@@ -4036,10 +4039,9 @@ static void hg_print_debug_usage ( void )
    VG_(replacement_malloc_print_debug_usage)();
    VG_(printf)("    --cmp-race-err-addrs=no|yes  are data addresses in "
                "race errors significant? [no]\n");
-   VG_(printf)("    --hg-sanity-flags=<XXXXXX> sanity check "
+   VG_(printf)("    --hg-sanity-flags=<XXXXXX>   sanity check "
                "  at events (X = 0|1) [000000]\n");
    VG_(printf)("    --hg-sanity-flags values:\n");
-   VG_(printf)("       100000   crosscheck happens-before-graph searches\n");
    VG_(printf)("       010000   after changes to "
                "lock-order-acquisition-graph\n");
    VG_(printf)("       001000   at memory accesses (NB: not currently used)\n");
@@ -4198,7 +4200,11 @@ static void hg_pre_clo_init ( void )
                                    hg_cli__realloc,
                                    HG_CLI__MALLOC_REDZONE_SZB );
 
-   VG_(needs_var_info)(); /* optional */
+   /* 21 Dec 08: disabled this; it mostly causes H to start more
+      slowly and use significantly more memory, without very often
+      providing useful results.  The user can request to load this
+      information manually with --read-var-info=yes. */
+   if (0) VG_(needs_var_info)(); /* optional */
 
    VG_(track_new_mem_startup)     ( evh__new_mem_w_perms );
    VG_(track_new_mem_stack_signal)( evh__new_mem_w_tid );

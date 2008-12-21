@@ -72,11 +72,16 @@ extern Bool HG_(clo_track_lockorders);
    (regtesting) this is sometimes important. */
 extern Bool HG_(clo_cmp_race_err_addrs);
 
-/* Tracing memory accesses, so we can see what's going on.
-   clo_trace_addr is the address to monitor.  clo_trace_level = 0 for
-   no tracing, 1 for summary, 2 for detailed. */
-extern Addr HG_(clo_trace_addr);
-extern Word HG_(clo_trace_level);
+/* Show conflicting accesses?  This involves collecting and storing
+   large numbers of call stacks just in case we might need to show
+   them later, and so is expensive (although very useful).  Hence
+   allow it to be optionally disabled. */
+extern Bool HG_(clo_show_conflicts);
+
+/* Size of the conflicting-access cache, measured in terms of
+   maximum possible number of elements in the previous-access map.
+   Must be between 10k amd 10 million.  Default is 1 million. */
+extern UWord HG_(clo_conflict_cache_size);
 
 /* Sanity check level.  This is an or-ing of
    SCE_{THREADS,LOCKS,BIGRANGE,ACCESS,LAOG}. */

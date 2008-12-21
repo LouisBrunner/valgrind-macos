@@ -70,15 +70,15 @@ Char* HG_(strdup) ( HChar* cc, const Char* s )
 
 /* Description of these flags is in hg_basics.h. */
 
-Bool HG_(clo_track_lockorders) = True;
+Bool  HG_(clo_track_lockorders) = True;
 
-Bool HG_(clo_cmp_race_err_addrs) = False;
+Bool  HG_(clo_cmp_race_err_addrs) = False;
 
-Addr HG_(clo_trace_addr) = 0;
+Bool  HG_(clo_show_conflicts) = True;
 
-Word HG_(clo_trace_level) = 0;
+UWord HG_(clo_conflict_cache_size) = 1000000;
 
-Word HG_(clo_sanity_flags) = 0;
+Word  HG_(clo_sanity_flags) = 0;
 
 
 /*--------------------------------------------------------------------*/

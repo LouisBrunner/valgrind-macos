@@ -12,8 +12,15 @@
 #include <time.h>
 #include <pthread.h>
 #include <semaphore.h>
+#include "../../config.h"
+
+
+/** gcc versions 4.1.0 and later have support for atomic builtins. */
+#if defined(HAVE_BUILTIN_ATOMIC)
+
 
 #define BUFFER_MAX (2)
+
 
 typedef int data_t;
 
@@ -23,9 +30,9 @@ typedef struct {
   /* Counting semaphore representing the number of free elements. */
   sem_t free;
   /* Position where a new elements should be written. */
-  size_t in;
+  int in;
   /* Position from where an element can be removed. */
-  size_t out;
+  int out;
   /* Mutex that protects 'in'. */
   pthread_mutex_t mutex_in;
   /* Mutex that protects 'out'. */
@@ -35,6 +42,12 @@ typedef struct {
 } buffer_t;
 
 static int quiet = 0;
+
+static __inline__
+int fetch_and_add(int* p, int i)
+{
+  return __sync_fetch_and_add(p, i);
+}
 
 void buffer_init(buffer_t * b)
 {
@@ -48,27 +61,49 @@ void buffer_init(buffer_t * b)
   b->out = 0;
 }
 
-void buffer_recv(buffer_t * b, data_t * d)
+void buffer_recv(buffer_t* b, data_t* d)
 {
+  int out;
   sem_wait(&b->data);
   pthread_mutex_lock(&b->mutex_out);
-  memcpy(d, b->buffer + b->out, sizeof(data_t));
-  b->out = (b->out + 1) % BUFFER_MAX;
+  out = fetch_and_add(&b->out, 1);
+  if (out >= BUFFER_MAX)
+  {
+    fetch_and_add(&b->out, -BUFFER_MAX);
+    out -= BUFFER_MAX;
+  }
+  *d = b->buffer[out];
   pthread_mutex_unlock(&b->mutex_out);
+  if (! quiet)
+  {
+    printf("received %d from buffer[%d]\n", *d, out);
+    fflush(stdout);
+  }
   sem_post(&b->free);
 }
 
-void buffer_send(buffer_t * b, data_t * d)
+void buffer_send(buffer_t* b, data_t* d)
 {
+  int in;
   sem_wait(&b->free);
   pthread_mutex_lock(&b->mutex_in);
-  memcpy(b->buffer + b->in, d, sizeof(data_t));
-  b->in = (b->in + 1) % BUFFER_MAX;
+  in = fetch_and_add(&b->in, 1);
+  if (in >= BUFFER_MAX)
+  {
+    fetch_and_add(&b->in, -BUFFER_MAX);
+    in -= BUFFER_MAX;
+  }
+  b->buffer[in] = *d;
   pthread_mutex_unlock(&b->mutex_in);
+  if (! quiet)
+  {
+    printf("sent %d to buffer[%d]\n", *d, in);
+    fflush(stdout);
+  }
   sem_post(&b->data);
 }
 
-void buffer_destroy(buffer_t * b)
+void buffer_destroy(buffer_t* b)
 {
   sem_destroy(&b->data);
   sem_destroy(&b->free);
@@ -93,7 +128,10 @@ void consumer(int* id)
   usleep(rand() % MAXSLEEP);
   buffer_recv(&b, &d);
   if (! quiet)
+  {
     printf("%i: %i\n", *id, d);
+    fflush(stdout);
+  }
   pthread_exit(NULL);
 }
 
@@ -142,3 +180,18 @@ int main(int argc, char** argv)
 
   return 0;
 }
+
+
+#else
+
+
+int main(int argc, char** argv)
+{
+  fprintf(stderr,
+          "This test program has to be compiled with gcc version 4.1.0"
+          " or later.\n");
+  return 0;
+}
+
+
+#endif

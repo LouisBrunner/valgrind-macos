@@ -362,17 +362,6 @@ algorithm in more detail.</para>
 
 
 
-
-
-
-
-
-
-
-
-
-
-
 <sect2 id="hg-manual.data-races.algorithm" xreflabel="DR Algorithm">
 <title>Helgrind's Race Detection Algorithm</title>
 
@@ -573,10 +562,6 @@ to the other, then it complains of a race.</para>
 
 
 
-
-
-
-
 <sect2 id="hg-manual.data-races.errmsgs" xreflabel="Race Error Messages">
 <title>Interpreting Race Error Messages</title>
 
@@ -586,112 +571,98 @@ detected.  Here's an example:</para>
 
 <programlisting><![CDATA[
 Thread #2 was created
-   at 0x510548E: clone (in /lib64/libc-2.5.so)
-   by 0x4E2F305: do_clone (in /lib64/libpthread-2.5.so)
-   by 0x4E2F7C5: pthread_create@@GLIBC_2.2.5 (in /lib64/libpthread-2.5.so)
-   by 0x4C23870: pthread_create@* (hg_intercepts.c:198)
-   by 0x400CEF: main (tc17_sembar.c:195)
+   at 0x511C08E: clone (in /lib64/libc-2.8.so)
+   by 0x4E333A4: do_clone (in /lib64/libpthread-2.8.so)
+   by 0x4E33A30: pthread_create@@GLIBC_2.2.5 (in /lib64/libpthread-2.8.so)
+   by 0x4C299D4: pthread_create@* (hg_intercepts.c:214)
+   by 0x4008F2: main (tc21_pthonce.c:86)
 
-// And the same for threads #3, #4 and #5 -- omitted for conciseness
+Thread #3 was created
+   at 0x511C08E: clone (in /lib64/libc-2.8.so)
+   by 0x4E333A4: do_clone (in /lib64/libpthread-2.8.so)
+   by 0x4E33A30: pthread_create@@GLIBC_2.2.5 (in /lib64/libpthread-2.8.so)
+   by 0x4C299D4: pthread_create@* (hg_intercepts.c:214)
+   by 0x4008F2: main (tc21_pthonce.c:86)
 
-Possible data race during read of size 4 at 0x602174
-   at 0x400BE5: gomp_barrier_wait (tc17_sembar.c:122)
-   by 0x400C44: child (tc17_sembar.c:161)
-   by 0x4C25DF7: mythread_wrapper (hg_intercepts.c:178)
-   by 0x4E2F09D: start_thread (in /lib64/libpthread-2.5.so)
-   by 0x51054CC: clone (in /lib64/libc-2.5.so)
-  Old state: shared-modified by threads #2, #3, #4, #5
-  New state: shared-modified by threads #2, #3, #4, #5
-  Reason:    this thread, #2, holds no consistent locks
-  Last consistently used lock for 0x602174 was first observed
-   at 0x4C25D01: pthread_mutex_init (hg_intercepts.c:326)
-   by 0x4009E4: gomp_barrier_init (tc17_sembar.c:46)
-   by 0x400CBC: main (tc17_sembar.c:192)
+Possible data race during read of size 4 at 0x601070 by thread #3
+   at 0x40087A: child (tc21_pthonce.c:74)
+   by 0x4C29AFF: mythread_wrapper (hg_intercepts.c:194)
+   by 0x4E3403F: start_thread (in /lib64/libpthread-2.8.so)
+   by 0x511C0CC: clone (in /lib64/libc-2.8.so)
+ This conflicts with a previous write of size 4 by thread #2
+   at 0x400883: child (tc21_pthonce.c:74)
+   by 0x4C29AFF: mythread_wrapper (hg_intercepts.c:194)
+   by 0x4E3403F: start_thread (in /lib64/libpthread-2.8.so)
+   by 0x511C0CC: clone (in /lib64/libc-2.8.so)
+ Location 0x601070 is 0 bytes inside local var "unprotected2"
+ declared at tc21_pthonce.c:51, in frame #0 of thread 3
 ]]></programlisting>
 
 <para>Helgrind first announces the creation points of any threads
 referenced in the error message.  This is so it can speak concisely
-about threads and sets of threads without repeatedly printing their
-creation point call stacks.  Each thread is only ever announced once,
-the first time it appears in any Helgrind error message.</para>
+about threads without repeatedly printing their creation point call
+stacks.  Each thread is only ever announced once, the first time it
+appears in any Helgrind error message.</para>
 
 <para>The main error message begins at the text
-"<computeroutput>Possible data race during read</computeroutput>".
-At the start is information you would expect to see -- address and
-size of the racing access, whether a read or a write, and the call
-stack at the point it was detected.</para>
+"<computeroutput>Possible data race during read</computeroutput>".  At
+the start is information you would expect to see -- address and size
+of the racing access, whether a read or a write, and the call stack at
+the point it was detected.</para>
 
-<para>More interesting is the state transition caused by this access.
-This memory is already in the shared-modified state, and up to now has
-been consistently protected by at least one lock.  However, the thread
-making the access in question (thread #2, here) does not hold any
-locks in common with those held during all previous accesses to the
-location -- "no consistent locks", in other words.</para>
+<para>A second call stack is presented starting at the text
+"<computeroutput>This conflicts with a previous
+write</computeroutput>".  This shows a previous access which also
+accessed the stated address, and which is believed to be racing
+against the access in the first call stack.</para>
 
-<para>Finally, Helgrind shows the lock which has protected this
-location in all previous accesses.  (If there is more than one, only
-one is shown).  This can be a useful hint, because it typically shows
-the lock that the programmers intended to use to protect the location,
-but in this case forgot.</para>
+<para>Finally, Helgrind may attempt to give a description of the
+raced-on address in source level terms.  In this example, it
+identifies it as a local variable, shows its name, declaration point,
+and in which frame (of the first call stack) it lives.  Note that this
+information is only shown when <varname>--read-var-info=yes</varname>
+is specified on the command line.  That's because reading the DWARF3
+debug information in enough detail to capture variable type and
+location information makes Helgrind much slower at startup, and also
+requires considerable amounts of memory, for large programs.
+</para>
 
-<para>Here are some more examples of race reports.  This not an
-exhaustive list of combinations, but should give you some insight into
-how to interpret the output.</para>
+<para>Once you have your two call stacks, how do you begin to get to
+the root problem?</para>
 
-<programlisting><![CDATA[
-Possible data race during write ...
-  Old state: shared-readonly by threads #1, #2, #3
-  New state: shared-modified by threads #1, #2, #3
-  Reason:    this thread, #3, holds no consistent locks
-  Location ... has never been protected by any lock
-]]></programlisting>
+<para>The first thing to do is examine the source locations referred
+to by each call stack.  They should both show an access to the same
+location, or variable.</para>
 
-<para>The location is shared by 3 threads, all of which have been
-reading it without locking ("has never been protected by any lock").
-Now one of them is writing it.  Regardless of whether the writer has a
-lock or not, this is still an error, because the write races against
-the previously observed reads.</para>
+<para>Now figure out how how that location should have been made
+thread-safe:</para>
 
-<programlisting><![CDATA[
-Possible data race during read ...
-  Old state: shared-modified by threads #1, #2, #3
-  New state: shared-modified by threads #1, #2, #3
-  Reason:    this thread, #3, holds no consistent locks
-  Last consistently used lock for ... was first observed ...
-]]></programlisting>
-
-<para>The location is shared by 3 threads, all of which have been
-reading and writing it while (as required) holding at least one lock
-in common.  Now it is being read without that lock being held.  In the
-"Last consistently used lock" part, Helgrind offers its best guess as
-to the identity of the lock that should have been used.</para>
-
-<programlisting><![CDATA[
-Possible data race during write ...
-  Old state: owned exclusively by thread #4
-  New state: shared-modified by threads #4, #5
-  Reason:    this thread, #5, holds no locks at all
-]]></programlisting>
-
-<para>A location that has so far been accessed exclusively by thread
-#4 has now been written by thread #5, without use of any lock.  This
-can be a sign that the programmer did not consider the possibility of
-the location being shared between threads, or, alternatively, forgot
-to use the appropriate lock.</para>
-
-<para>Note that thread #4 exclusively owns the location, and so has
-the right to access it without holding a lock.  However, this message
-does not say that thread #4 is not using a lock for this location.
-Indeed, it could be using a lock for the location because it intends
-to make it available to other threads, one of which is thread #5 --
-and thread #5 has forgotten to use the lock.</para>
-
-<para>Also, this message implies that Helgrind did not see any
-synchronisation event between threads #4 and #5 that would have
-allowed #5 to acquire exclusive ownership from #4.  See
-<link linkend="hg-manual.data-races.exclusive">above</link>
-for a discussion of transfers of exclusive ownership states between
-threads.</para>
+<itemizedlist>
+ <listitem><para>Perhaps the location was intended to be protected by
+  a mutex?  If so, you need to lock and unlock the mutex at both
+  access points, even if one of the accesses is reported to be a read.
+  Did you perhaps forget the locking at one or other of the
+  accesses?</para>
+ </listitem>
+ <listitem><para>Alternatively, you intended to use a some other
+  scheme to make it safe, such as signalling on a condition variable.
+  In all such cases, try to find a synchronisation event (or a chain
+  thereof) which separates the earlier-observed access (as shown in the
+  second call stack) from the later-observed access (as shown in the
+  first call stack).  In other words, try to find evidence that the
+  earlier access "happens-before" the later access.  See the previous
+  subsection for an explanation of the happens-before
+  relationship.</para>
+  <para>
+  The fact that Helgrind is reporting a race means it did not observe
+  any happens-before relationship between the two accesses.  If
+  Helgrind is working correctly, it should also be the case that you
+  also cannot find any such relationship, even on detailed inspection
+  of the source code.  Hopefully, though, your inspection of the code
+  will show where the missing synchronisation operation(s) should have
+  been.</para>
+ </listitem>
+</itemizedlist>
 
 </sect2>
 
@@ -731,9 +702,9 @@ of false data-race errors.</para>
     pthread_ functions.</para>
 
     <para>Do not roll your own threading primitives (mutexes, etc)
-    from combinations of the Linux futex syscall, counters and wotnot.
-    These throw Helgrind's internal what's-going-on models way off
-    course and will give bogus results.</para>
+    from combinations of the Linux futex syscall, atomic counters and
+    wotnot.  These throw Helgrind's internal what's-going-on models
+    way off course and will give bogus results.</para>
 
     <para>Also, do not reimplement existing POSIX abstractions using
     other POSIX abstractions.  For example, don't build your own
@@ -743,26 +714,39 @@ of false data-race errors.</para>
 
     <para>Helgrind directly supports the following POSIX threading
     abstractions: mutexes, reader-writer locks, condition variables
-    (but see below), and semaphores.  Currently spinlocks and barriers
-    are not supported, although they could be in future.  A prototype
-    "safe" implementation of barriers, based on semaphores, is
-    available: please contact the Valgrind authors for details.</para>
+    (but see below), semaphores and barriers.  Currently spinlocks
+    are not supported, although they could be in future.</para>
 
     <para>At the time of writing, the following popular Linux packages
     are known to implement their own threading primitives:</para>
 
     <itemizedlist>
-      <listitem><para>Qt version 4.X.  Qt 3.X is fine, but not 4.X.
-      Helgrind contains partial direct support for Qt 4.X threading,
-      but this is not yet in a usable state.  Assistance from folks
-      knowledgeable in Qt 4 threading internals would be
-      appreciated.</para></listitem>
-
-      <listitem><para>Runtime support library for GNU OpenMP (part of
-      GCC), at least GCC versions 4.2 and 4.3.  With some minor effort
-      of modifying the GNU OpenMP runtime support sources, it is
-      possible to use Helgrind on GNU OpenMP compiled codes.  Please
-      contact the Valgrind authors for details.</para></listitem>
+     <listitem><para>Qt version 4.X.  Qt 3.X is harmless in that it
+      only uses POSIX pthreads primitives.  Unfortunately Qt 4.X 
+      has its own implementation of mutexes (QMutex) and thread reaping.
+      Helgrind 3.4.x contains direct support
+      for Qt 4.X threading, which is experimental but is believed to
+      work fairly well.  A side effect of supporting Qt 4 directly is
+      that Helgrind can be used to debug KDE4 applications.  As this
+      is an experimental feature, we would particularly appreciate
+      feedback from folks who have used Helgrind to successfully debug
+      Qt 4 and/or KDE4 applications.</para>
+     </listitem>
+     <listitem><para>Runtime support library for GNU OpenMP (part of
+      GCC), at least GCC versions 4.2 and 4.3.  The GNU OpenMP runtime
+      library (libgomp.so) constructs its own synchronisation
+      primitives using combinations of atomic memory instructions and
+      the futex syscall, which causes total chaos since in Helgrind
+      since it cannot "see" those.</para>
+     <para>Fortunately, this can be solved using a configuration-time
+      flag (for gcc).  Rebuild gcc from source, and configure using
+      <varname>--disable-linux-futex</varname>.
+      This makes libgomp.so use the standard
+      POSIX threading primitives instead.  Note that this was tested
+      using gcc-4.2.3 and has not been re-tested using more recent gcc
+      versions.  We would appreciate hearing about any successes or
+      failures with more recent versions.</para>
+     </listitem>
     </itemizedlist>
   </listitem>
 
@@ -810,10 +794,7 @@ of false data-race errors.</para>
 
     <para>The result of Helgrind missing some inter-thread
     synchronisation events is to cause it to report false positives.
-    That's because missing such events reduces the extent to which it
-    can transfer exclusive memory ownership between threads.  So
-    memory may end up in a shared-modified state when that was not
-    intended by the application programmers.</para>
+    </para>
 
     <para>The root cause of this synchronisation lossage is
     particularly hard to understand, so an example is helpful.  It was
@@ -862,16 +843,10 @@ unlock(mx)                             unlock(mx)
 
   <listitem>
     <para>Make sure you are using a supported Linux distribution.  At
-    present, Helgrind only properly supports x86-linux and amd64-linux
-    with glibc-2.3 or later.  The latter restriction means we only
-    support glibc's NPTL threading implementation.  The old
-    LinuxThreads implementation is not supported.</para>
-
-    <para>Unsupported targets may work to varying degrees.  In
-    particular ppc32-linux and ppc64-linux running NPTL should work,
-    but you will get false race errors because Helgrind does not know
-    how to properly handle atomic instruction sequences created using
-    the lwarx/stwcx instructions.</para>
+    present, Helgrind only properly supports glibc-2.3 or later.  This
+    in turn means we only support glibc's NPTL threading
+    implementation.  The old LinuxThreads implementation is not
+    supported.</para>
   </listitem>
 
   <listitem>
@@ -881,13 +856,7 @@ unlock(mx)                             unlock(mx)
 
     <para>Using pthread_join to round up finished threads provides a
     clear synchronisation point that both Helgrind and programmers can
-    see.  This synchronisation point allows Helgrind to adjust its
-    memory ownership
-    models <link linkend="hg-manual.data-races.exclusive">as described
-    extensively above</link>, which helps Helgrind produce more
-    accurate error reports.</para>
-
-    <para>If you don't call pthread_join on a thread, Helgrind has no
+    see.  If you don't call pthread_join on a thread, Helgrind has no
     way to know when it finishes, relative to any significant
     synchronisation points for other threads in the program.  So it
     assumes that the thread lingers indefinitely and can potentially

@@ -89,6 +89,7 @@ struct semaphore_info
   ObjType     type;
   void        (*cleanup)(union drd_clientobj*);
   ExeContext* first_observed_at;
+  UInt        initial_value;     // Value assigned through sem_init().
   UInt        value;             // Semaphore value.
   UWord       waiters;           // Number of threads inside sem_wait().
   DrdThreadId last_sem_post_tid; // Thread ID associated with last sem_post().

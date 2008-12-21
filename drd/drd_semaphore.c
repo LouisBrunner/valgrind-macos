@@ -87,16 +87,16 @@ void semaphore_set_trace(const Bool trace_semaphore)
 }
 
 static
-void semaphore_initialize(struct semaphore_info* const p,
-                          const Addr semaphore, const UWord value)
+void semaphore_initialize(struct semaphore_info* const p, const Addr semaphore)
 {
   tl_assert(semaphore != 0);
   tl_assert(p->a1 == semaphore);
   tl_assert(p->type == ClientSemaphore);
 
-  p->cleanup   = (void(*)(DrdClientobj*))semaphore_cleanup;
-  p->value     = value;
-  p->waiters   = 0;
+  p->cleanup           = (void(*)(DrdClientobj*))semaphore_cleanup;
+  p->initial_value     = 0;
+  p->value             = 0;
+  p->waiters           = 0;
   p->last_sem_post_tid = DRD_INVALID_THREADID;
   p->last_sem_post_seg = VG_(newXA)(VG_(malloc), "drd.sg-stack",
                                     VG_(free), sizeof(Segment*));
@@ -136,7 +136,7 @@ semaphore_get_or_allocate(const Addr semaphore)
   {
     tl_assert(offsetof(DrdClientobj, semaphore) == 0);
     p = &clientobj_add(semaphore, ClientSemaphore)->semaphore;
-    semaphore_initialize(p, semaphore, 0);
+    semaphore_initialize(p, semaphore);
   }
   return p;
 }
@@ -151,7 +151,10 @@ static struct semaphore_info* semaphore_get(const Addr semaphore)
 struct semaphore_info* semaphore_init(const Addr semaphore,
                                       const Word pshared, const UInt value)
 {
+  unsigned n;
   struct semaphore_info* p;
+  Segment* sg;
+  const DrdThreadId drd_tid = thread_get_running_tid();
 
   if (s_trace_semaphore)
   {
@@ -172,13 +175,19 @@ struct semaphore_info* semaphore_init(const Addr semaphore,
                             VG_(get_IP)(vg_tid),
                             "Semaphore reinitialization",
                             &SEI);
+    // Remove all segments from the segment stack.
+    while ((sg = segment_pop(p)))
+    {
+      sg_put(sg);
+    }
   }
   else
   {
     p = semaphore_get_or_allocate(semaphore);
   }
   tl_assert(p);
-  p->value = value;
+  p->initial_value = value;
+  p->value         = value;
   return p;
 }
 
@@ -263,17 +272,23 @@ void semaphore_post_wait(const DrdThreadId tid, const Addr semaphore,
   }
   p->value--;
   tl_assert((int)p->value >= 0);
-  sg = segment_pop(p);
-  if (sg)
+  if (p->initial_value > 0)
+    p->initial_value--;
+  else
   {
-    if (p->last_sem_post_tid != tid
-        && p->last_sem_post_tid != DRD_INVALID_THREADID)
+    sg = segment_pop(p);
+    tl_assert(sg);
+    if (sg)
     {
-      thread_combine_vc2(tid, &sg->vc);
+      if (p->last_sem_post_tid != tid
+          && p->last_sem_post_tid != DRD_INVALID_THREADID)
+      {
+        thread_combine_vc2(tid, &sg->vc);
+      }
+      sg_put(sg);
+      thread_new_segment(tid);
+      s_semaphore_segment_creation_count++;
     }
-    sg_put(sg);
-    thread_new_segment(tid);
-    s_semaphore_segment_creation_count++;
   }
 }
 

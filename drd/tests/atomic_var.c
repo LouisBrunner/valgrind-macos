@@ -8,10 +8,10 @@
 
 #define _GNU_SOURCE
 
-#include "config.h"
 #include <pthread.h>
 #include <stdio.h>   /* fprintf() */
 #include <stdlib.h>  /* atoi() */
+#include "../../config.h"
 
 
 /** Only gcc 4.1.0 and later have atomic builtins. */

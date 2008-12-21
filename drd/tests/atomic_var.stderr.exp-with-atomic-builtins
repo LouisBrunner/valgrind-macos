@@ -7,7 +7,7 @@ Conflicting load by thread 2/3 at 0x........ size 4
    by 0x........: (within libpthread-?.?.so)
    by 0x........: clone (in /...libc...)
 Location 0x........ is 0 bytes inside local var "s_y"
-declared at atomic_var.c:33, in frame #? of thread 2
+declared at atomic_var.c:39, in frame #? of thread 2
 y = 1
 Test finished.
 

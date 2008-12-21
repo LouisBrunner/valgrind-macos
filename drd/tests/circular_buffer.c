@@ -196,8 +196,8 @@ int main(int argc, char** argv)
 int main(int argc, char** argv)
 {
   fprintf(stderr,
-          "This test program has to be compiled with gcc version 4.1.0"
-          " or later.\n");
+          "Sorry, but your compiler does not have built-in support for atomic"
+          " operations.\n");
   return 0;
 }
 

@@ -1165,7 +1165,7 @@ AC_TRY_LINK(,
 [
   int variable = 1;
   return (__sync_bool_compare_and_swap(&variable, 1, 2)
-         && __sync_add_and_fetch(&variable, 1) ? 1 : 0
+         && __sync_add_and_fetch(&variable, 1) ? 1 : 0)
 ],
 [
   AC_MSG_RESULT([yes])

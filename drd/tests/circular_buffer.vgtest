@@ -1,2 +1,3 @@
+prereq: ./supported_libpthread
 prog: circular_buffer
 args: -q

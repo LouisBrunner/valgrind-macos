@@ -72,7 +72,10 @@
 }
 {
    libc:stdio
+   drd:ConflictingAccess
+   ...
    fun:_IO_file_xsputn*
+   fun:vfprintf
 }
 {
    librt
@@ -316,4 +319,11 @@
    fun:_ZN7QObjectD2Ev
    fun:_ZN24QAbstractEventDispatcherD2Ev
    fun:_ZN20QEventDispatcherGlibD0Ev
+}
+{
+   libboost_thread_1
+   drd:ConflictingAccess
+   ...
+   fun:_ZN5boost9call_onceIPFvvEEEvRNS_9once_flagET_
+   fun:_ZN5boost6detail23get_current_thread_dataEv
 }

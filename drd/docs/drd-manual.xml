@@ -233,8 +233,8 @@ POSIX threads API.
 </sect2>
 
 
-<sect2 id="drd-manual.drd-versus-helgrind" xreflabel="DRD-versus-Helgrind">
-<title>Data Race Detection by DRD versus Helgrind</title>
+<sect2 id="drd-manual.data-race-detection" xreflabel="data-race-detection">
+<title>Data Race Detection</title>
 
 <para>
 Synchronization operations impose an order on interthread memory
@@ -277,8 +277,7 @@ data race detection algorithm does not report any false positives.
 </para>
 
 <para>
-DRD is based on the happens-before algorithm, while Helgrind uses a
-variant of the Eraser algorithm.
+DRD is based on the happens-before algorithm.
 </para>
 
 </sect2>

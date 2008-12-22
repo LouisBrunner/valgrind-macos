@@ -79,7 +79,7 @@ Other tools you may find useful are:</para>
     the codebase.  They can be distinguished by the "exp-" prefix on
     their names.  Experimental tools are not subject to the same
     quality control standards that apply to our production-grade tools
-    (Memcheck, Cachegrind, Callgrind, Massif and Helgrind).</para>
+    (Memcheck, Cachegrind, Callgrind, Massif, Helgrind and DRD).</para>
   </listitem>
 </itemizedlist>
 
@@ -89,7 +89,7 @@ Valgrind User Manual.</para>
 
 <para>What follows is the minimum information you need to start
 detecting memory errors in your program with Memcheck.  Note that this
-guide applies to Valgrind version 3.3.0 and later.  Some of the
+guide applies to Valgrind version 3.4.0 and later.  Some of the
 information is not quite right for earlier versions.</para>
 
 </sect1>
@@ -104,7 +104,8 @@ numbers.  Using <computeroutput>-O0</computeroutput> is also a good
 idea, if you can tolerate the slowdown.  With
 <computeroutput>-O1</computeroutput> line numbers in error messages can
 be inaccurate, although generally speaking Memchecking code compiled at
-<computeroutput>-O1</computeroutput> works fairly well.  Use of
+<computeroutput>-O1</computeroutput> works fairly well and is
+recommended.  Use of
 <computeroutput>-O2</computeroutput> and above is not recommended as
 Memcheck occasionally reports uninitialised-value errors which don't
 really exist.</para>
@@ -115,16 +116,16 @@ really exist.</para>
 <sect1 id="quick-start.mcrun" xreflabel="Running your program under Memcheck">
 <title>Running your program under Memcheck</title>
 
-<para>If you normally run your program like this:
+<para>If you normally run your program like this:</para>
 <programlisting>    myprog arg1 arg2
 </programlisting>
 
-Use this command line:
+<para>Use this command line:</para>
 <programlisting>    valgrind --leak-check=yes myprog arg1 arg2
 </programlisting>
 
-Memcheck is the default tool.  The <option>--leak-check</option> option
-turns on the detailed memory leak detector.</para>
+<para>Memcheck is the default tool.  The <option>--leak-check</option>
+option turns on the detailed memory leak detector.</para>
 
 <para>Your program will run much slower (eg. 20 to 30 times) than
 normal, and use a lot more memory.  Memcheck will issue messages about
@@ -136,7 +137,8 @@ memory errors and leaks that it detects.</para>
 <sect1 id="quick-start.interpret" 
        xreflabel="Interpreting Memcheck's output">
 <title>Interpreting Memcheck's output</title>
-<para>Here's an example C program with a memory error and a memory leak.
+<para>Here's an example C program with a memory error and a memory
+leak.</para>
 
 <programlisting>
   #include &lt;stdlib.h&gt;
@@ -154,8 +156,8 @@ memory errors and leaks that it detects.</para>
   }
 </programlisting>
 
-Most error messages look like the following, which describes problem 1,
-the heap block overrun:
+<para>Most error messages look like the following, which describes
+problem 1, the heap block overrun:</para>
 
 <programlisting>
   ==19182== Invalid write of size 4
@@ -167,7 +169,7 @@ the heap block overrun:
   ==19182==    by 0x80483AB: main (example.c:11)
 </programlisting>
 
-Things to notice:
+<para>Things to notice:</para>
 
 <itemizedlist>
   <listitem>
@@ -202,11 +204,11 @@ Things to notice:
   </listitem>
 </itemizedlist>
 
-It's worth fixing errors in the order they are reported, as later
-errors can be caused by earlier errors.  Failing to do this is a
+<para>It's worth fixing errors in the order they are reported, as
+later errors can be caused by earlier errors.  Failing to do this is a
 common cause of difficulty with Memcheck.</para>
 
-<para>Memory leak messages look like this:
+<para>Memory leak messages look like this:</para>
 
 <programlisting>
   ==19182== 40 bytes in 1 blocks are definitely lost in loss record 1 of 1
@@ -215,12 +217,13 @@ common cause of difficulty with Memcheck.</para>
   ==19182==    by 0x80483AB: main (a.c:11)
 </programlisting>
 
-The stack trace tells you where the leaked memory was allocated.
-Memcheck cannot tell you why the memory leaked, unfortunately.  (Ignore
-the "vg_replace_malloc.c", that's an implementation detail.)</para>
+<para>The stack trace tells you where the leaked memory was allocated.
+Memcheck cannot tell you why the memory leaked, unfortunately.
+(Ignore the "vg_replace_malloc.c", that's an implementation
+detail.)</para>
 
 <para>There are several kinds of leaks; the two most important
-categories are:
+categories are:</para>
 
 <itemizedlist>
   <listitem>
@@ -234,7 +237,14 @@ categories are:
   </listitem>
 </itemizedlist>
 
-If you don't understand an error message, please consult 
+<para>It can be difficult to track down the root causes of
+uninitialised-value errors reported by Memcheck.  Try using
+the <option>--track-origins=yes</option> to get extra information.
+This makes Memcheck run slower, but the extra information you get
+often saves a lot of time figuring out where the uninitialised values
+are coming from.</para>
+
+<para>If you don't understand an error message, please consult
 <xref linkend="mc-manual.errormsgs"/> in the <xref linkend="manual"/>
 which has examples of all the error messages Memcheck produces.</para>
 

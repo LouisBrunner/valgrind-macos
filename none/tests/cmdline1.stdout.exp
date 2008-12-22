@@ -24,6 +24,9 @@ usage: valgrind [options] prog-and-args
                               only for code found in stacks, or all [stack]
     --kernel-variant=variant1,variant2,...  known variants: bproc [none]
                               handle non-standard kernel variants
+    --read-var-info=yes|no    read debug info on stack and global variables
+                              and use it to print better error messages in
+                              tools that make use of it (Memcheck, Helgrind)
 
   user options for Valgrind tools that report errors:
     --xml=yes                 all output is in XML (some tools only)

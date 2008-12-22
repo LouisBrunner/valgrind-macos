@@ -51,7 +51,7 @@ in detail in the next three sections:</para>
   <para><link linkend="hg-manual.data-races">
         Data races -- accessing memory without adequate locking
                       or synchronisation</link>.
-        Note that Helgrind in Valgrind 3.4.0 and later uses a
+        Note that race detection in versions  3.4.0 and later uses a
         different algorithm than in 3.3.x.  Hence, if you have been using
         Helgrind in 3.3.x, you may want to re-read this section.
   </para>
@@ -320,7 +320,7 @@ address of <computeroutput>var</computeroutput>, happening in
 function <computeroutput>main</computeroutput> at line 13 in the
 program.</para>
 
-<para>The error message shows two other important:</para>
+<para>Two important parts of the message are:</para>
 
 <itemizedlist>
  <listitem>
@@ -337,8 +337,9 @@ program.</para>
    one of these will be a write (since two concurrent, unsynchronised
    reads are harmless), and they will of course be from different
    threads.</para>
-  <para>By examining your program at the two locations, it should be
-   fairly clear what the root cause of the problem is.</para>
+  <para>By examining your program at the two locations, you should be
+   able to get at least some idea of what the root cause of the
+   problem is.</para>
  </listitem>
  <listitem>
   <para>For races which occur on global or stack variables, Helgrind
@@ -367,8 +368,8 @@ algorithm in more detail.</para>
 
 <para>Most programmers think about threaded programming in terms of
 the abstractions provided by the threading library (POSIX Pthreads):
-thread creation, thread joining, locks, condition variables and
-barriers.</para>
+thread creation, thread joining, locks, condition variables,
+semaphores and barriers.</para>
 
 <para>The effect of using locks, barriers, etc, is to impose on a
 threaded program, constraints upon the order in which memory accesses
@@ -376,22 +377,25 @@ can happen.  This implied ordering is generally known as the
 "happens-before relationship".  Once you understand the happens-before
 relationship, it is easy to see how Helgrind finds races in your code.
 Fortunately, the happens-before relationship is itself easy to
-understand, and, additionally, is by itself a useful tool for
-reasoning about the behaviour of parallel programs.  We now introduce
-it using a simple example.</para>
+understand, and is by itself a useful tool for reasoning about the
+behaviour of parallel programs.  We now introduce it using a simple
+example.</para>
 
 <para>Consider first the following buggy program:</para>
 
 <programlisting><![CDATA[
-         int var;
+Parent thread:                         Child thread:
 
-         create child
-                          
-         var = 20;            var = 10;
-                              exit
+int var;
 
-         wait for child
-         print(var);
+// create child thread
+pthread_create(...)                          
+var = 20;                              var = 10;
+                                       exit
+
+// wait for child
+pthread_join(...)
+printf("%d\n", var);
 ]]></programlisting>
 
 <para>The parent thread creates a child.  Both then write different
@@ -418,18 +422,21 @@ instructive to consider a somewhat more abstract solution, which is to
 send a message from one thread to the other:</para>
 
 <programlisting><![CDATA[
-         int var;
+Parent thread:                         Child thread:
 
-         create child
-                          
-         var = 20;
-         send message
-                              wait for message
-                              var = 10;
-                              exit
+int var;
 
-         wait for child
-         print(var);
+// create child thread
+pthread_create(...)                          
+var = 20;
+// send message to child
+                                       // wait for message to arrive
+                                       var = 10;
+                                       exit
+
+// wait for child
+pthread_join(...)
+printf("%d\n", var);
 ]]></programlisting>
 
 <para>Now the program reliably prints "10", regardless of the speed of
@@ -464,7 +471,7 @@ a total ordering is comparison of numbers: for any two numbers
 <computeroutput>x</computeroutput> is less than, equal to, or greater
 than
 <computeroutput>y</computeroutput>.  A partial ordering is like a
-total ordering, but it can also express the concepts that two elements
+total ordering, but it can also express the concept that two elements
 are neither equal, less or greater, but merely unordered with respect
 to each other.</para>
 
@@ -495,14 +502,14 @@ primitives are as follows:</para>
   although with some complication so as to allow correct handling of
   reads vs writes.</para>
  </listitem>
- <listitem><para>When a condition variable is signed on by thread T1
-  and some other thread T2 is thereby released from a wait on the same
-  CV, then the memory accesses in T1 prior to the signalling must
-  happen-before those in T2 after it returns from the wait.  If no
-  thread was waiting on the CV then there is no
+ <listitem><para>When a condition variable (CV) is signalled on by
+  thread T1 and some other thread T2 is thereby released from a wait
+  on the same CV, then the memory accesses in T1 prior to the
+  signalling must happen-before those in T2 after it returns from the
+  wait.  If no thread was waiting on the CV then there is no
   effect.</para>
  </listitem>
- <listitem><para>If instead T1 broadcasts on a CV then all of the
+ <listitem><para>If instead T1 broadcasts on a CV, then all of the
   waiting threads, rather than just one of them, acquire a
   happens-before dependency on the broadcasting thread at the point it
   did the broadcast.</para>
@@ -532,20 +539,20 @@ primitives are as follows:</para>
  </listitem>
 </itemizedlist>
 
-<para>Helgrind intercepts the above listed events, and builds a
+<para>In summary: Helgrind intercepts the above listed events, and builds a
 directed acyclic graph represented the collective happens-before
 dependencies.  It also monitors all memory accesses.</para>
 
 <para>If a location is accessed by two different threads, but Helgrind
 cannot find any path through the happens-before graph from one access
-to the other, then it complains of a race.</para>
+to the other, then it reports a race.</para>
 
 <para>There are a couple of caveats:</para>
 
 <itemizedlist>
- <listitem><para>Helgrind doesn't check in the case where both
-  accesses are reads.  That would be silly, since concurrent reads are
-  harmless.</para>
+ <listitem><para>Helgrind doesn't check for a race in the case where
+  both accesses are reads.  That would be silly, since concurrent
+  reads are harmless.</para>
  </listitem>
  <listitem><para>Two accesses are considered to be ordered by the
   happens-before dependency even through arbitrarily long chains of
@@ -627,8 +634,8 @@ location information makes Helgrind much slower at startup, and also
 requires considerable amounts of memory, for large programs.
 </para>
 
-<para>Once you have your two call stacks, how do you begin to get to
-the root problem?</para>
+<para>Once you have your two call stacks, how do you find the root
+cause of the race?</para>
 
 <para>The first thing to do is examine the source locations referred
 to by each call stack.  They should both show an access to the same
@@ -644,14 +651,14 @@ thread-safe:</para>
   Did you perhaps forget the locking at one or other of the
   accesses?</para>
  </listitem>
- <listitem><para>Alternatively, you intended to use a some other
-  scheme to make it safe, such as signalling on a condition variable.
-  In all such cases, try to find a synchronisation event (or a chain
-  thereof) which separates the earlier-observed access (as shown in the
-  second call stack) from the later-observed access (as shown in the
-  first call stack).  In other words, try to find evidence that the
-  earlier access "happens-before" the later access.  See the previous
-  subsection for an explanation of the happens-before
+ <listitem><para>Alternatively, perhaps you intended to use a some
+  other scheme to make it safe, such as signalling on a condition
+  variable.  In all such cases, try to find a synchronisation event
+  (or a chain thereof) which separates the earlier-observed access (as
+  shown in the second call stack) from the later-observed access (as
+  shown in the first call stack).  In other words, try to find
+  evidence that the earlier access "happens-before" the later access.
+  See the previous subsection for an explanation of the happens-before
   relationship.</para>
   <para>
   The fact that Helgrind is reporting a race means it did not observe
@@ -932,59 +939,68 @@ unlock(mx)                             unlock(mx)
 <!-- start of xi:include in the manpage -->
 <variablelist id="hg.opts.list">
 
-  <varlistentry id="opt.happens-before" xreflabel="--happens-before">
+  <varlistentry id="opt.track-lockorders"
+                xreflabel="--track-lockorders">
     <term>
-      <option><![CDATA[--happens-before=none|threads|all
-      [default: all] ]]></option>
+      <option><![CDATA[--track-lockorders=no|yes
+      [default: yes] ]]></option>
     </term>
     <listitem>
-      <para>Helgrind always regards locks as the basis for
-       inter-thread synchronisation.  However, by default, before
-       reporting a race error, Helgrind will also check whether
-       certain other kinds of inter-thread synchronisation events
-       happened.  It may be that if such events took place, then no
-       race really occurred, and so no error needs to be reported.
-       See <link linkend="hg-manual.data-races.exclusive">above</link>
-       for a discussion of transfers of exclusive ownership states
-       between threads.
-      </para>
-      <para>With <varname>--happens-before=all</varname>, the
-       following events are regarded as sources of synchronisation:
-       thread creation/joinage, condition variable
-       signal/broadcast/waits, and semaphore posts/waits.
-      </para>
-      <para>With <varname>--happens-before=threads</varname>, only
-       thread creation/joinage events are regarded as sources of
-       synchronisation.
-      </para>
-      <para>With <varname>--happens-before=none</varname>, no events
-       (apart, of course, from locking) are regarded as sources of
-       synchronisation.
-      </para>
-      <para>Changing this setting from the default will increase your
-       false-error rate but give little or no gain.  The only advantage
-       is that <option>--happens-before=threads</option> and 
-       <option>--happens-before=none</option> should make Helgrind
-       less and less sensitive to the scheduling of threads, and hence
-       the output more and more repeatable across runs.
-      </para>
+      <para>When enabled (the default), Helgrind performs lock order
+      consistency checking.  For some buggy programs, the large number
+      of lock order errors reported can become annoying, particularly
+      if you're only interested in race errors.  You may therefore find
+      it helpful to disable lock order checking.</para>
     </listitem>
   </varlistentry>
 
-  <varlistentry id="opt.trace-addr" xreflabel="--trace-addr">
+  <varlistentry id="opt.show-conflicts"
+                xreflabel="--show-conflicts">
     <term>
-      <option><![CDATA[--trace-addr=0xXXYYZZ
-      ]]></option> and
-      <option><![CDATA[--trace-level=0|1|2 [default: 1]
-      ]]></option>
+      <option><![CDATA[--show-conflicts=no|yes
+      [default: yes] ]]></option>
     </term>
     <listitem>
-      <para>Requests that Helgrind produces a log of all state changes
-      to location 0xXXYYZZ.  This can be helpful in tracking down
-      tricky races.  <varname>--trace-level</varname> controls the
-      verbosity of the log.  At the default setting (1), a one-line
-      summary of is printed for each state change.  At level 2 a
-      complete stack trace is printed for each state change.</para>
+      <para>When enabled (the default), Helgrind collects enough
+        information about "old" accesses that it can produce two stack
+        traces in a race report -- both the stack trace for the
+        current access, and the trace for the older, conflicting
+        access.</para>
+      <para>Collecting such information is expensive in both speed and
+        memory.  This flag disables collection of such information.
+        Helgrind will run significantly faster and use less memory,
+        but without the conflicting access stacks, it will be very
+        much more difficult to track down the root causes of
+        races.  However, this option may be useful in situations where
+        you just want to check for the presence or absence of races,
+        for example, when doing regression testing of a previously
+        race-free program.</para>
+    </listitem>
+  </varlistentry>
+
+  <varlistentry id="opt.conflict-cache-size"
+                xreflabel="--conflict-cache-size">
+    <term>
+      <option><![CDATA[--conflict-cache-size=N
+      [default: 1000000] ]]></option>
+    </term>
+    <listitem>
+      <para>Information about "old" conflicting accesses is stored in
+        a cache of limited size, with LRU-style management.  This is
+        necessary because it isn't practical to store a stack trace
+        for every single memory access made by the program.
+        Historical information on not recently accessed locations is
+        periodically discarded, to free up space in the cache.</para>
+      <para>This flag controls the size of the cache, in terms of the
+        number of different memory addresses for which
+        conflicting access information is stored.  If you find that
+        Helgrind is showing race errors with only one stack instead of
+        the expected two stacks, try increasing this value.</para>
+      <para>The minimum value is 10,000 and the maximum is 10,000,000
+        (ten times the default value).  Increasing the value by 1
+        increases Helgrind's memory requirement by very roughly 100
+        bytes, so the maximum value will easily eat up an extra
+        gigabyte or so of memory.</para>
     </listitem>
   </varlistentry>
 
@@ -1004,26 +1020,6 @@ Helgrind:</para>
     </term>
     <listitem>
       <para>Show all client malloc (etc) and free (etc) requests.</para>
-    </listitem>
-  </varlistentry>
-
-  <varlistentry id="opt.gen-vcg" xreflabel="--gen-vcg">
-    <term>
-      <option><![CDATA[--gen-vcg=no|yes|yes-w-vts [no]
-      ]]></option>
-    </term>
-    <listitem>
-      <para>At exit, write to stderr a dump of the happens-before
-	graph computed by Helgrind, in a format suitable for the VCG 
-        graph visualisation tool.  A suitable command line is:</para>
-      <para><computeroutput>valgrind --tool=helgrind 
-        --gen-vcg=yes my_app 2&gt;&amp;1
-        | grep xxxxxx | sed "s/xxxxxx//g"
-        | xvcg -</computeroutput></para>
-      <para>With <varname>--gen-vcg=yes</varname>, the basic
-        happens-before graph is shown.  With 
-        <varname>--gen-vcg=yes-w-vts</varname>, the vector timestamp 
-        for each node is also shown.</para>
     </listitem>
   </varlistentry>
 
@@ -1054,8 +1050,6 @@ Helgrind:</para>
       <para>Run extensive sanity checks on Helgrind's internal
         data structures at events defined by the bitstring, as
         follows:</para>
-      <para><computeroutput>100000 </computeroutput>at every query
-        to the happens-before graph</para>
       <para><computeroutput>010000 </computeroutput>after changes to
         the lock order acquisition graph</para>
       <para><computeroutput>001000 </computeroutput>after every client
@@ -1095,13 +1089,10 @@ some time.</para>
   <listitem><para>Document the VALGRIND_HG_CLEAN_MEMORY client
     request.</para>
   </listitem>
-  <listitem><para>Possibly a client request to forcibly transfer
-    ownership of memory from one thread to another.  Requires further
-    consideration.</para>
-  </listitem>
-  <listitem><para>Add a new client request that marks an address range
-    as being "shared-modified with empty lockset" (the error state),
-    and describe how to use it.</para>
+  <listitem><para>The conflicting access mechanism sometimes
+    mysteriously fails to show the conflicting access' stack, even
+    when provided with unbounded storage for conflicting access info.
+    This should be investigated.</para>
   </listitem>
   <listitem><para>Document races caused by gcc's thread-unsafe code
     generation for speculative stores.  In the interim see
@@ -1119,8 +1110,8 @@ some time.</para>
     generate false lock-order errors and confuse users.</para>
   </listitem>
   <listitem><para> Performance can be very poor.  Slowdowns on the
-    order of 100:1 are not unusual.  There is quite some scope for
-    performance improvements, though.
+    order of 100:1 are not unusual.  There is limited scope for
+    performance improvements.
     </para>
   </listitem>
 

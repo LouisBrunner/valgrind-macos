@@ -3606,7 +3606,8 @@ IRSB* hg_instrument ( VgCallbackClosure* closure,
 {
    Int   i;
    IRSB* bbOut;
-   Bool x86busLocked = False;
+   Bool  x86busLocked   = False;
+   Bool  isSnoopedStore = False;
 
    if (gWordTy != hWordTy) {
       /* We don't currently support this case. */
@@ -3645,6 +3646,8 @@ IRSB* hg_instrument ( VgCallbackClosure* closure,
             switch (st->Ist.MBE.event) {
                case Imbe_Fence:
                   break; /* not interesting */
+               /* Imbe_Bus{Lock,Unlock} arise from x86/amd64 LOCK
+                  prefixed instructions. */
                case Imbe_BusLock:
                   tl_assert(x86busLocked == False);
                   x86busLocked = True;
@@ -3653,10 +3656,15 @@ IRSB* hg_instrument ( VgCallbackClosure* closure,
                   tl_assert(x86busLocked == True);
                   x86busLocked = False;
                   break;
+                  /* Imbe_SnoopedStore{Begin,End} arise from ppc
+                     stwcx. instructions. */
                case Imbe_SnoopedStoreBegin:
+                  tl_assert(isSnoopedStore == False);
+                  isSnoopedStore = True;
+                  break;
                case Imbe_SnoopedStoreEnd:
-                  /* These arise from ppc stwcx. insns.  They should
-                     perhaps be handled better. */
+                  tl_assert(isSnoopedStore == True);
+                  isSnoopedStore = False;
                   break;
                default:
                   goto unhandled;
@@ -3664,7 +3672,7 @@ IRSB* hg_instrument ( VgCallbackClosure* closure,
             break;
 
          case Ist_Store:
-            if (!x86busLocked)
+            if (!x86busLocked && !isSnoopedStore)
                instrument_mem_access( 
                   bbOut, 
                   st->Ist.Store.addr, 
@@ -3703,6 +3711,11 @@ IRSB* hg_instrument ( VgCallbackClosure* closure,
                      sizeofIRType(hWordTy)
                   );
                }
+               /* This isn't really correct.  Really the
+                  instrumentation should be only added when
+                  (!x86busLocked && !isSnoopedStore), just like with
+                  Ist_Store.  Still, I don't think this is
+                  particularly important. */
                if (d->mFx == Ifx_Write || d->mFx == Ifx_Modify) {
                   instrument_mem_access( 
                      bbOut, d->mAddr, dataSize, True/*isStore*/,

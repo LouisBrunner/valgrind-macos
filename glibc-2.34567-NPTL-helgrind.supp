@@ -101,6 +101,20 @@
    obj:/lib*/ld-2.*so*
    obj:/lib*/libpthread-2.*so*
 }
+{
+   helgrind-glibc2X-015
+   Helgrind:Race
+   obj:/lib*/libc-2.*so*
+   obj:/lib*/libdl-2.*so*
+   obj:/lib*/ld-2.*so*
+}
+{
+   helgrind-glibc2X-016
+   Helgrind:Race
+   obj:/lib*/libpthread-2.*so*
+   obj:/lib*/ld-2.*so*
+   obj:/lib*/ld-2.*so*
+}
 
 # These are very ugly.  They are needed to suppress errors inside (eg)
 # NPTL's pthread_cond_signal.  Why only one stack frame -- at least we
@@ -228,6 +242,17 @@
    fun:*Unwind*
    fun:*pthread_unwind*
 }
+
+{
+   helgrind---...-*Unwind*-*pthread_unwind*
+   Helgrind:Race
+   ...
+   fun:_Unwind*
+   ...
+   fun:_Unwind_Backtrace
+}
+
+
 
 
 ####################################################

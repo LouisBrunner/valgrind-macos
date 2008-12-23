@@ -33,8 +33,8 @@ global arrays.  In detail:
     likely to report races that do not really exist.
 
   - Helgrind will display full call stacks for both accesses involved
-    in a race.  This makes it far easier to identify the root causes
-    of races.
+    in a race.  This makes it easier to identify the root causes of
+    races.
 
   - Limitations on the size of program that can run have been removed.
 
@@ -104,13 +104,53 @@ global arrays.  In detail:
   cross compile Valgrind on an x86/amd64-linux host, so that it runs
   on a ppc32/64-linux target.
 
+* You can set the main thread's stack size at startup using the
+  new --main-stacksize= flag (subject of course to ulimit settings).
+  This is useful for running apps that need a lot of stack space.
+
+* The limitation that you can't use --trace-children=yes together
+  with --db-attach=yes has been removed.
+
 * The following bugs have been fixed.  Note that "n-i-bz" stands for
   "not in bugzilla" -- that is, a bug that was reported to us but
   never got a bugzilla entry.  We encourage you to file bugs in
   bugzilla (http://bugs.kde.org/enter_valgrind_bug.cgi) rather than
   mailing the developers (or mailing lists) directly.
 
-  // fill this bit in
+  n-i-bz  Make return types for some client requests 64-bit clean
+  n-i-bz  glibc 2.9 support
+  n-i-bz  ignore unsafe .valgrindrc's (CVE-2008-4865)
+  n-i-bz  MPI_Init(0,0) is valid but libmpiwrap.c segfaults
+  n-i-bz  Building in an env without gdb gives bogus gdb attach
+  92456   Tracing the origin of uninitialised memory
+  106497  Valgrind does not demangle some C++ template symbols
+  162222  ==106497
+  151612  Suppression with "..." (w/ good patch)
+  156404  Unable to start oocalc under memcheck on openSUSE 10.3 (64-bit)
+  159285  unhandled syscall:25 (stime, on x86-linux)
+  159452  unhandled ioctl 0x8B01 on "valgrind iwconfig"
+  160954  ppc build of valgrind crashes with illegal instruction (isel)
+  160956  mallinfo implementation, w/ patch
+  162092  Valgrind fails to start gnome-system-monitor
+  162819  malloc_free_fill test doesn't pass on glibc2.8 x86
+  163794  assertion failure with "--track-origins=yes"
+  163933  sigcontext.err and .trapno must be set together
+  163955  remove constraint !(--db-attach=yes && --trace-children=yes)
+  164476  Missing kernel module loading system calls
+  164669  SVN regression: mmap() drops posix file locks
+  166581  Callgrind output corruption when program forks
+  167288  Patch file for missing system calls on Cell BE
+  168943  unsupported scas instruction pentium
+  171645  Unrecognised instruction (MOVSD, non-binutils encoding)
+  172417  x86->IR: 0x82 ...
+  172563  amd64->IR: 0xD9 0xF5  -  fprem1
+  173099  .lds linker script generation error
+  173177  [x86_64] syscalls: 125/126/179 (capget/capset/quotactl)
+  173751  amd64->IR: 0x48 0xF 0x6F 0x45 (even more redundant prefixes)
+  174532  == 173751
+  174908  --log-file value not expanded correctly for core file
+  175044  Add lookup_dcookie for amd64
+  175150  x86->IR: 0xF2 0xF 0x11 0xC1 (movss non-binutils encoding)
 
 Developer-visible changes:
 

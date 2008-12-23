@@ -36,12 +36,7 @@ disInstr(ppc): unhandled instruction: 0x7C1F42A6
 
 BUG#    STAT  TRUNK  WHAT
 
-n-i-bz  Fixd  8048   Make return types for some of the requests 64-bit clean
-
-92456   Fixd  many   Tracing the origin of uninitialised memory
-
-106497  Fixd  ????   Valgrind does not demangles some C++template symbols
-162222  Fixd  ????   ==106497
+// not fixed in 3.4.0 -- triaged, but low prio
 
 126255  Wont  pend   vex x86->IR: 0xDF 0x75 (fbstp) (x87 BCD stores)
 
@@ -50,11 +45,6 @@ n-i-bz  Fixd  8048   Make return types for some of the requests 64-bit clean
 
 149878  LOW   pend   (proper) check for calloc integer overflow
                      (possibly with a viable patch now)
-
-151612  Fixd  8725-7 Suppression with "..." (w/ good patch)
-
-156404  Fixd  8712/3 Unable to start oocalc under memcheck on openSUSE
-                     10.3 (64-bit)
 
 156065  LOW   pend   VALGRIND_MEMPOOL_ALLOC vs. zero-size allocs
                      triggers false "overlapping" error
@@ -66,11 +56,6 @@ n-i-bz  Fixd  8048   Make return types for some of the requests 64-bit clean
 158730  Wont  pend   ppc: illegal opcode crash on instruction fctiwz
                      Not sure this does have anything to do with fctiwz.
                      VEX generates code that doesn't run on e500
-
-159285  Fixd  8736   unhandled syscall:25 (stime, on x86-linux)
-
-159452  Fixd  8734   unhandled ioctl 0x8B01 on "valgrind iwconfig"
-                     w/ plausible-looking patch
 
 159501  MED   pend   incorrect handling of ALSA ioctls
                      (has two patches, looks reasonable)
@@ -87,12 +72,6 @@ n-i-bz  Fixd  8048   Make return types for some of the requests 64-bit clean
 160872  MED   pend   race errors reported where libpthread.so
                      (might be a problem with pthread_setspecific)
 
-160954  Fixd  1870,1  ppc build of valgrind crashes with illegal instruction
-                     (isel)
-                     == 161251
-
-160956  Fixd  7888   mallinfo implementation, w/ patch
-
 161374  WF,HIGH pend SYS_readdir syscall not implemented
                      will fix if reporter supplies a test case
 
@@ -100,8 +79,6 @@ n-i-bz  Fixd  8048   Make return types for some of the requests 64-bit clean
                      match its documentation
 
 162020  MED   pend   Valgrinding an empty/zero-byte file crashes valgrind
-
-162092  Fixd  8729,32  Valgrind fails to start gnome-system-monitor
 
 162229  LOW   pend   VALGRIND_DO_LEAK_CHECK emits false positive
 
@@ -113,29 +90,15 @@ n-i-bz  Fixd  8048   Make return types for some of the requests 64-bit clean
 162718  ???   pend   x86: avoid segment selector 0 in sys_set_thread_area()
                      decide if this is a problem or not
 
-162819  ???   8285/6 malloc_free_fill test doesn't pass on glibc2.8 x86
-                     need to look at this
-
 163253  ???   pend   canonicaliseSymtab forgot some fields in DiSym
                      is this correct?
 
-163794  Fixd  8228   assertion failure with "--track-origins=yes"
-
 163910  LOW   pend   Typo in Helgrind's Documentation
-
-163933  Fixd  8229   sigcontext.err and .trapno must be set together
-
-163955  Fixd  8722   remove pointless constraint !(--db-attach=yes &&
-                     --trace-children=yes)
 
 164298  Wont  pend   Valgrind asserts on finitel with long double using
                      gcc-4.3 -- closed as wontfix
 
-164476  Fixd  8263,6 Missing kernel module loading system calls
-
 164485  MED   pend   VG_N_SEGNAMES and VG_N_SEGMENTS are (still) too small
-
-164669  Fixd  r8747  SVN regression: mmap() drops posix file locks
 
 165417  LOW   pend   helgrind/tests/hg05_race2: VG_(get_data_description)()
                      succeeds on x86 and amd64 but fails on ppc
@@ -148,21 +111,12 @@ n-i-bz  Fixd  8048   Make return types for some of the requests 64-bit clean
 
 166355  HIGH,WF  pend   unshare syscall not supported (amd64, #272)
 
-166581  Fixd  8704   Callgrind output corruption when program forks
-
 167212  ???   pend   Valgrind does not attach to GDB correctly, traceback
                      spits garbage
-
-167288  Fixd  8731   Patch file for missing system calls on Cell BE
 
 167483  LOW   pend   __libc_freeres error valgrind with shared libraries with
                      multiple --rpath (w/ repro case)
 
-n-i-bz  Fixd  8760   glibc 2.9 support
-
-n-i-bz  Fixd  8800   ignore unsafe .valgrindrc's (CVE-2008-4865)
-
-**--P1--**
 167640  HIGH,WF pend un-efficient memory management cause segmentation fault
                      w/ test case
                      Can't reproduce
@@ -175,8 +129,6 @@ n-i-bz  Fixd  8800   ignore unsafe .valgrindrc's (CVE-2008-4865)
 168538  ???   pend   Poor detection of stacks for clone can lead to
                      bad results, w/ patch
                      Looks plausible
-
-168943  Fixd  vx1872 unsupported scas instruction pentium
 
 169539  WF    pend   mremap fails on specific address on 32-bit memcheck
                      w/ test case
@@ -193,6 +145,80 @@ n-i-bz  Fixd  8800   ignore unsafe .valgrindrc's (CVE-2008-4865)
 
 171627  ???   pend   Valgrind macros change program behavior
 
+175138  WF    pend   aspacem assertion failed: segment_is_sane at
+                     m_aspacemgr/aspacemgr-linux.c:1412 (add_segment)
+
+FAQ.html and FAQ.html (Greg Czajknowski, @users, 21 Nov 08)
+
+Better return values from VG_(record_error) (kcc)
+
+%gs register not implemented in amd64 (test prog, 15 Dec)
+
+// not fixed in 3.4.0 -- not triaged
+
+175721 unexpected summarise_context messages
+175819 Support for ipv6 socket reporting with --track-fds
+175984 LDT is process-shared, not per-thread
+175985 missing modify_ldt syscall support on x86_64
+176641 The 'impossible' happened (dup of kernel bug)
+176926 memcheck floating point exception at valgrind startup with PPC 440EPX
+178092 Incomplete stack traces when using makecontext/swapcontext
+
+// 22 Dec 2008
+
+
+---------- Bugs fixed in 3.4.0 -------------------------------------
+
+n-i-bz  Fixd  8048   Make return types for some of the requests 64-bit clean
+
+n-i-bz  Fixd  8760   glibc 2.9 support
+
+n-i-bz  Fixd  8800   ignore unsafe .valgrindrc's (CVE-2008-4865)
+
+n-i-bz  Fixd   8812  MPI_Init(0,0) is valid but libmpiwrap.c segfaults
+
+n-i-bz  Fixd  ????   Building in an env without gdb gives bogus gdb attach
+
+92456   Fixd  many   Tracing the origin of uninitialised memory
+
+106497  Fixd  ????   Valgrind does not demangles some C++template symbols
+162222  Fixd  ????   ==106497
+
+151612  Fixd  8725-7 Suppression with "..." (w/ good patch)
+
+156404  Fixd  8712/3 Unable to start oocalc under memcheck on openSUSE
+                     10.3 (64-bit)
+159285  Fixd  8736   unhandled syscall:25 (stime, on x86-linux)
+
+159452  Fixd  8734   unhandled ioctl 0x8B01 on "valgrind iwconfig"
+                     w/ plausible-looking patch
+160954  Fixd  1870,1  ppc build of valgrind crashes with illegal instruction
+                     (isel)
+                     == 161251
+
+160956  Fixd  7888   mallinfo implementation, w/ patch
+
+162092  Fixd  8729,32  Valgrind fails to start gnome-system-monitor
+
+162819  ???   8285/6 malloc_free_fill test doesn't pass on glibc2.8 x86
+                     need to look at this
+163794  Fixd  8228   assertion failure with "--track-origins=yes"
+
+163933  Fixd  8229   sigcontext.err and .trapno must be set together
+
+163955  Fixd  8722   remove pointless constraint !(--db-attach=yes &&
+                     --trace-children=yes)
+
+164476  Fixd  8263,6 Missing kernel module loading system calls
+
+164669  Fixd  r8747  SVN regression: mmap() drops posix file locks
+
+166581  Fixd  8704   Callgrind output corruption when program forks
+
+167288  Fixd  8731   Patch file for missing system calls on Cell BE
+
+168943  Fixd  vx1872 unsupported scas instruction pentium
+
 171645  Fixd  vx1869 Unrecognised instruction (MOVSD, non-binutils
                      encoding)
 
@@ -207,6 +233,7 @@ n-i-bz  Fixd  8800   ignore unsafe .valgrindrc's (CVE-2008-4865)
 
 173751  Fixd  vx1876 amd64->IR: 0x48 0xF 0x6F 0x45
                      (even more redundant prefixes)
+
 174532  WF    DUP    amd64->IR: 0x48 0xF 0xED 0x0 
               == 173751
 
@@ -214,34 +241,8 @@ n-i-bz  Fixd  8800   ignore unsafe .valgrindrc's (CVE-2008-4865)
 
 175044  Fixd  8769   Add lookup_dcookie for amd64
 
-175138  WF    pend   aspacem assertion failed: segment_is_sane at
-                     m_aspacemgr/aspacemgr-linux.c:1412 (add_segment)
-
 175150  Fixd  vx1873 x86->IR: 0xF2 0xF 0x11 0xC1 (movss xmm1, xmm0)
                      non-binutils encoding
-
-FAQ.html and FAQ.html (Greg Czajknowski, @users, 21 Nov 08)
-
-n-i-bz  Fixd   8812  MPI_Init(0,0) is valid but libmpiwrap.c segfaults
-
-building in an env without gdb gives bogus gdb attach (i'm sure i
-fixed this, but where is it?)
-
-Better return values from VG_(record_error) (kcc)
-
-%gs register not implemented in amd64 (test prog, 15 Dec)
-
-// not fixed in 3.4.0
-
-175721 unexpected summarise_context messages
-175819 Support for ipv6 socket reporting with --track-fds
-175984 LDT is process-shared, not per-thread
-175985 missing modify_ldt syscall support on x86_64
-176641 The 'impossible' happened (dup of kernel bug)
-176926 memcheck floating point exception at valgrind startup with PPC 440EPX
-178092 Incomplete stack traces when using makecontext/swapcontext
-
-// 22 Dec 2008
 
 
 ---------- Bugs fixed in 3.3.1 -------------------------------------

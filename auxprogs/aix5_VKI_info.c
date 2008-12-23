@@ -61,6 +61,7 @@ int main ( void )
    printf("#define VKI_S_IXGRP  0x%08x\n", S_IXGRP);
    printf("#define VKI_S_IXOTH  0x%08x\n", S_IXOTH);
    printf("#define VKI_S_IWUSR  0x%08x\n", S_IWUSR);
+   printf("#define VKI_S_IWOTH  0x%08x\n", S_IWOTH);
    printf("#define VKI_S_ISUID  0x%08x\n", S_ISUID);
    printf("#define VKI_S_ISGID  0x%08x\n", S_ISGID);
    printf("#define VKI_S_IFMT   0x%08x\n", S_IFMT);

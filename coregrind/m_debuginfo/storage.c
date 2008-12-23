@@ -354,31 +354,42 @@ void ML_(addLineInfo) ( struct _DebugInfo* di,
 
 /* Top-level place to call to add a CFI summary record.  The supplied
    DiCfSI is copied. */
-void ML_(addDiCfSI) ( struct _DebugInfo* di, DiCfSI* cfsi )
+void ML_(addDiCfSI) ( struct _DebugInfo* di, DiCfSI* cfsi_orig )
 {
    static const Bool debug = False;
    UInt    new_sz, i;
    DiCfSI* new_tab;
+   SSizeT  delta;
+
+   /* copy the original, so we can mess with it */
+   DiCfSI cfsi = *cfsi_orig;
 
    if (debug) {
       VG_(printf)("adding DiCfSI: ");
-      ML_(ppDiCfSI)(di->cfsi_exprs, cfsi);
+      ML_(ppDiCfSI)(di->cfsi_exprs, &cfsi);
    }
 
    /* sanity */
-   vg_assert(cfsi->len > 0);
+   vg_assert(cfsi.len > 0);
    /* If this fails, the implication is you have a single procedure
       with more than 5 million bytes of code.  Which is pretty
       unlikely.  Either that, or the debuginfo reader is somehow
-      broken. */
-   vg_assert(cfsi->len < 5000000);
+      broken.  5 million is of course arbitrary; but it's big enough
+      to be bigger than the size of any plausible piece of code that
+      would fall within a single procedure. */
+   vg_assert(cfsi.len < 5000000);
+
+   vg_assert(di->have_rx_map && di->have_rw_map);
+   /* If we have an empty r-x mapping (is that possible?) then the
+      DiCfSI can't possibly fall inside it.  In which case skip. */
+   if (di->rx_map_size == 0)
+      return;
 
    /* Rule out ones which are completely outside the r-x mapped area.
       See "Comment_Regarding_Text_Range_Checks" elsewhere in this file
       for background and rationale. */
-   vg_assert(di->have_rx_map && di->have_rw_map);
-   if (cfsi->base + cfsi->len - 1 < di->rx_map_avma
-       || cfsi->base >= di->rx_map_avma + di->rx_map_size) {
+   if (cfsi.base + cfsi.len - 1 < di->rx_map_avma
+       || cfsi.base >= di->rx_map_avma + di->rx_map_size) {
       static Int complaints = 10;
       if (VG_(clo_trace_cfi) || complaints > 0) {
          complaints--;
@@ -386,17 +397,61 @@ void ML_(addDiCfSI) ( struct _DebugInfo* di, DiCfSI* cfsi )
             VG_(message)(
                Vg_DebugMsg,
                "warning: DiCfSI %#lx .. %#lx outside segment %#lx .. %#lx",
-               cfsi->base, 
-               cfsi->base + cfsi->len - 1,
+               cfsi.base, 
+               cfsi.base + cfsi.len - 1,
                di->text_avma,
                di->text_avma + di->text_size - 1 
             );
          }
          if (VG_(clo_trace_cfi)) 
-            ML_(ppDiCfSI)(di->cfsi_exprs, cfsi);
+            ML_(ppDiCfSI)(di->cfsi_exprs, &cfsi);
       }
       return;
    }
+
+   /* Now we know the range is at least partially inside the r-x
+      mapped area.  That implies that at least one of the ends of the
+      range falls inside the area.  If necessary, clip it so it is
+      completely within the area.  If we don't do this,
+      check_CFSI_related_invariants() in debuginfo.c (invariant #2)
+      will fail.  See
+      "Comment_on_IMPORTANT_CFSI_REPRESENTATIONAL_INVARIANTS" in
+      priv_storage.h for background. */
+   if (cfsi.base < di->rx_map_avma) {
+      /* Lower end is outside the mapped area.  Hence upper end must
+         be inside it. */
+      if (0) VG_(printf)("XXX truncate lower\n");
+      vg_assert(cfsi.base + cfsi.len - 1 >= di->rx_map_avma);
+      delta = (SSizeT)(di->rx_map_avma - cfsi.base);
+      vg_assert(delta > 0);
+      vg_assert(delta < (SSizeT)cfsi.len);
+      cfsi.base += delta;
+      cfsi.len -= delta;
+   }
+   else
+   if (cfsi.base + cfsi.len - 1 > di->rx_map_avma + di->rx_map_size - 1) {
+      /* Upper end is outside the mapped area.  Hence lower end must be
+         inside it. */
+      if (0) VG_(printf)("XXX truncate upper\n");
+      vg_assert(cfsi.base <= di->rx_map_avma + di->rx_map_size - 1);
+      delta = (SSizeT)( (cfsi.base + cfsi.len - 1) 
+                        - (di->rx_map_avma + di->rx_map_size - 1) );
+      vg_assert(delta > 0); vg_assert(delta < (SSizeT)cfsi.len);
+      cfsi.len -= delta;
+   }
+
+   /* Final checks */
+
+   /* Because: either cfsi was entirely inside the range, in which
+      case we asserted that len > 0 at the start, OR it fell partially
+      inside the range, in which case we reduced it by some size
+      (delta) which is < its original size. */
+   vg_assert(cfsi.len > 0);
+
+   /* Similar logic applies for the next two assertions. */
+   vg_assert(cfsi.base >= di->rx_map_avma);
+   vg_assert(cfsi.base + cfsi.len - 1
+             <= di->rx_map_avma + di->rx_map_size - 1);
 
    if (di->cfsi_used == di->cfsi_size) {
       new_sz = 2 * di->cfsi_size;
@@ -412,7 +467,7 @@ void ML_(addDiCfSI) ( struct _DebugInfo* di, DiCfSI* cfsi )
       di->cfsi_size = new_sz;
    }
 
-   di->cfsi[di->cfsi_used] = *cfsi;
+   di->cfsi[di->cfsi_used] = cfsi;
    di->cfsi_used++;
    vg_assert(di->cfsi_used <= di->cfsi_size);
 }

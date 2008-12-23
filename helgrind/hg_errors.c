@@ -331,7 +331,10 @@ void HG_(record_error_Race) ( Thread* thr,
      VgSectKind sect = VG_(seginfo_sect_kind)( NULL, 0, data_addr );
      if (0) VG_(printf)("XXXXXXXXX RACE on %#lx %s\n",
                         data_addr, VG_(pp_SectKind)(sect));
+     /* SectPLT is required on ???-linux */
      if (sect == Vg_SectGOTPLT) return;
+     /* SectPLT is required on ppc32/64-linux */
+     if (sect == Vg_SectPLT) return;
    }
 #  endif
 

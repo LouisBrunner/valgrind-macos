@@ -220,8 +220,6 @@ n-i-bz  Fixd  8800   ignore unsafe .valgrindrc's (CVE-2008-4865)
 175150  Fixd  vx1873 x86->IR: 0xF2 0xF 0x11 0xC1 (movss xmm1, xmm0)
                      non-binutils encoding
 
-[patch] fix RPM/spec build... (Daniel J Blueman, @dev, 12 Aug 08)
-
 FAQ.html and FAQ.html (Greg Czajknowski, @users, 21 Nov 08)
 
 n-i-bz  Fixd   8812  MPI_Init(0,0) is valid but libmpiwrap.c segfaults
@@ -230,6 +228,20 @@ building in an env without gdb gives bogus gdb attach (i'm sure i
 fixed this, but where is it?)
 
 Better return values from VG_(record_error) (kcc)
+
+%gs register not implemented in amd64 (test prog, 15 Dec)
+
+// not fixed in 3.4.0
+
+175721 unexpected summarise_context messages
+175819 Support for ipv6 socket reporting with --track-fds
+175984 LDT is process-shared, not per-thread
+175985 missing modify_ldt syscall support on x86_64
+176641 The 'impossible' happened (dup of kernel bug)
+176926 memcheck floating point exception at valgrind startup with PPC 440EPX
+178092 Incomplete stack traces when using makecontext/swapcontext
+
+// 22 Dec 2008
 
 
 ---------- Bugs fixed in 3.3.1 -------------------------------------

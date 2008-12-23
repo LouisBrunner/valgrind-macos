@@ -26,7 +26,8 @@ EXTRA_DIST =                                        \
 	bar_trivial.vgtest			    \
 	boost_thread.stderr.exp			    \
 	boost_thread.vgtest			    \
-	circular_buffer.stderr.exp		    \
+	circular_buffer.stderr.exp-with-atomic-builtins		\
+	circular_buffer.stderr.exp-without-atomic-builtins	\
 	circular_buffer.vgtest			    \
 	drd_bitmap_test.stderr.exp                  \
 	drd_bitmap_test.stdout.exp                  \

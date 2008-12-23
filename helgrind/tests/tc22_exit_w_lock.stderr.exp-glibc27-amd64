@@ -1,0 +1,28 @@
+
+Thread #x was created
+   at 0x........: clone (in /...libc...)
+   by 0x........: pthread_create@GLIBC_ (in /lib/libpthread...)
+   by 0x........: pthread_create@* (hg_intercepts.c:...)
+   by 0x........: main (tc22_exit_w_lock.c:39)
+
+Thread #x: Exiting thread still holds 2 locks
+   at 0x........: start_thread (in /lib/libpthread...)
+   by 0x........: clone (in /...libc...)
+
+Thread #x was created
+   at 0x........: clone (in /...libc...)
+   by 0x........: pthread_create@GLIBC_ (in /lib/libpthread...)
+   by 0x........: pthread_create@* (hg_intercepts.c:...)
+   by 0x........: main (tc22_exit_w_lock.c:42)
+
+Thread #x: Exiting thread still holds 1 lock
+   at 0x........: start_thread (in /lib/libpthread...)
+   by 0x........: clone (in /...libc...)
+
+Thread #x is the program's root thread
+
+Thread #x: Exiting thread still holds 1 lock
+   at 0x........: kill (in /...libc...)
+   by 0x........: main (tc22_exit_w_lock.c:48)
+
+ERROR SUMMARY: 3 errors from 3 contexts (suppressed: 0 from 0)

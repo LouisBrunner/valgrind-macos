@@ -1,0 +1,40 @@
+
+Thread #x was created
+   at 0x........: clone (in /...libc...)
+   by 0x........: pthread_create@GLIBC_ (in /lib/libpthread...)
+   by 0x........: pthread_create@* (hg_intercepts.c:...)
+   by 0x........: main (hg05_race2.c:29)
+
+Thread #x was created
+   at 0x........: clone (in /...libc...)
+   by 0x........: pthread_create@GLIBC_ (in /lib/libpthread...)
+   by 0x........: pthread_create@* (hg_intercepts.c:...)
+   by 0x........: main (hg05_race2.c:27)
+
+Possible data race during read of size 4 at 0x........ by thread #x
+   at 0x........: th (hg05_race2.c:17)
+   by 0x........: mythread_wrapper (hg_intercepts.c:...)
+   by 0x........: start_thread (in /lib/libpthread...)
+   by 0x........: clone (in /...libc...)
+ This conflicts with a previous write of size 4 by thread #x
+   at 0x........: th (hg05_race2.c:17)
+   by 0x........: mythread_wrapper (hg_intercepts.c:...)
+   by 0x........: start_thread (in /lib/libpthread...)
+   by 0x........: clone (in /...libc...)
+ Location 0x........ is 0 bytes inside foo.poot[5].plop[11],
+ declared at hg05_race2.c:24, in frame #3 of thread x
+
+Possible data race during write of size 4 at 0x........ by thread #x
+   at 0x........: th (hg05_race2.c:17)
+   by 0x........: mythread_wrapper (hg_intercepts.c:...)
+   by 0x........: start_thread (in /lib/libpthread...)
+   by 0x........: clone (in /...libc...)
+ This conflicts with a previous write of size 4 by thread #x
+   at 0x........: th (hg05_race2.c:17)
+   by 0x........: mythread_wrapper (hg_intercepts.c:...)
+   by 0x........: start_thread (in /lib/libpthread...)
+   by 0x........: clone (in /...libc...)
+ Location 0x........ is 0 bytes inside foo.poot[5].plop[11],
+ declared at hg05_race2.c:24, in frame #3 of thread x
+
+ERROR SUMMARY: 2 errors from 2 contexts (suppressed: 0 from 0)

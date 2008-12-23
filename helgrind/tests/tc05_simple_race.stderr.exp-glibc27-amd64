@@ -1,0 +1,30 @@
+
+Thread #x is the program's root thread
+
+Thread #x was created
+   at 0x........: clone (in /...libc...)
+   by 0x........: pthread_create@GLIBC_ (in /lib/libpthread...)
+   by 0x........: pthread_create@* (hg_intercepts.c:...)
+   by 0x........: main (tc05_simple_race.c:27)
+
+Possible data race during read of size 4 at 0x........ by thread #x
+   at 0x........: main (tc05_simple_race.c:33)
+ This conflicts with a previous write of size 4 by thread #x
+   at 0x........: child_fn (tc05_simple_race.c:19)
+   by 0x........: mythread_wrapper (hg_intercepts.c:...)
+   by 0x........: start_thread (in /lib/libpthread...)
+   by 0x........: clone (in /...libc...)
+ Location 0x........ is 0 bytes inside global var "y"
+ declared at tc05_simple_race.c:10
+
+Possible data race during write of size 4 at 0x........ by thread #x
+   at 0x........: main (tc05_simple_race.c:33)
+ This conflicts with a previous write of size 4 by thread #x
+   at 0x........: child_fn (tc05_simple_race.c:19)
+   by 0x........: mythread_wrapper (hg_intercepts.c:...)
+   by 0x........: start_thread (in /lib/libpthread...)
+   by 0x........: clone (in /...libc...)
+ Location 0x........ is 0 bytes inside global var "y"
+ declared at tc05_simple_race.c:10
+
+ERROR SUMMARY: 2 errors from 2 contexts (suppressed: 0 from 0)

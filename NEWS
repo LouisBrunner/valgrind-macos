@@ -1,39 +1,137 @@
 
-Release 3.4.0 (???)
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Release 3.4.0 (2 January 2009)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+3.4.0 is a feature release with many significant improvements and the
+usual collection of bug fixes.  This release supports X86/Linux,
+AMD64/Linux, PPC32/Linux and PPC64/Linux.  Support for recent distros
+(using gcc 4.4, glibc 2.8 and 2.9) has been added.
 
-Main change points (need to add details for all)
+3.4.0 brings some significant tool improvements.  Memcheck can now
+report the origin of uninitialised values, the thread checkers
+Helgrind and DRD are much improved, and we have a new experimental
+tool, exp-Ptrcheck, which is able to detect overruns of stack and
+global arrays.  In detail:
 
-- Origin tracking in Memcheck
+* Memcheck is now able to track the origin of uninitialised values.
+  When it reports an uninitialised value error, it will try to show
+  the origin of the value, as either a heap or stack allocation.
+  Origin tracking is expensive and so is not enabled by default.  To
+  use it, specify --track-origins=yes.  Memcheck's speed will be
+  essentially halved, and memory usage will be significantly
+  increased.  Nevertheless it can drastically reduce the effort
+  required to identify the root cause of uninitialised value errors,
+  and so is often a programmer productivity win, despite running more
+  slowly.
 
-- Helgrind completely rewritten, to remove false error and scaling
-problems and to give improved diagnostics
+* A version (1.4.0) of the Valkyrie GUI, that works with Memcheck in
+  3.4.0, will be released at the same time as 3.4.0.
 
-- Drd majorly improved (details ..)
+* Helgrind's race detection algorithm has been completely redesigned
+  and reimplemented, to address usability and scalability concerns:
 
-- New tool: exp-ptrcheck, for doing checks on stack and global arrays
+  - The new algorithm has a lower false-error rate: it is much less
+    likely to report races that do not really exist.
 
-- gcc-4.4.0 support, including demangler fixes for recent g++'s
+  - Helgrind will display full call stacks for both accesses involved
+    in a race.  This makes it far easier to identify the root causes
+    of races.
 
-- new distro support: OpenSUSE 11.1, Fedora 10, Ubuntu 8.10
+  - Limitations on the size of program that can run have been removed.
 
-- Frame level wildcarding in suppressions
+  - Performance has been modestly improved, although that is very
+    workload-dependent.
 
-- Basic support for IBM Power6 (64-bit processes only)
+  - Direct support for Qt4 threading has been added.
 
-- SSSE3 insns now supported.  Changed CPUID output to be Core-2, so now it
-  claims to be a Core 2 E6600.
+  - pthread_barriers are now directly supported.
 
-- cross-compilation support
+  - Helgrind works well on all supported Linux targets.
 
-- many bugs fixed, as usual
+* The DRD thread debugging tool has seen major improvements:
 
-- non-user-visible: able to read Dwarf3 type/variable information,
-  so as to understand the location and type of stack and local variables
+  - Greatly improved performance and significantly reduced memory
+    usage.
 
-- matching release of Valkyrie, (a GUI for Memcheck), v 1.4.0
+  - Support for several major threading libraries (Boost.Thread, Qt4,
+    glib, OpenMP) has been added.
 
-- what else?
+  - Support for atomic instructions, POSIX semaphores, barriers and
+    reader-writer locks has been added.
+
+  - Works now on PowerPC CPUs too.
+
+  - Added support for printing thread stack usage at thread exit time.
+
+  - Added support for debugging lock contention.
+
+  - Added a manual for Drd.
+
+* A new experimental tool, exp-Ptrcheck, has been added.  Ptrcheck
+  checks for misuses of pointers.  In that sense it is a bit like
+  Memcheck.  However, Ptrcheck can do things Memcheck can't: it can
+  detect overruns of stack and global arrays, it can detect
+  arbitrarily far out-of-bounds accesses to heap blocks, and it can
+  detect accesses heap blocks that have been freed a very long time
+  ago (millions of blocks in the past).
+
+  Ptrcheck currently works only on x86-linux and amd64-linux.  To use
+  it, use --tool=exp-ptrcheck.  A simple manual is provided, as part
+  of the main Valgrind documentation.  As this is an experimental
+  tool, we would be particularly interested in hearing about your
+  experiences with it.
+
+* exp-Omega, an experimental instantaneous leak-detecting tool,
+  has been removed from the distribution.
+
+* As usual, support for the latest Linux distros and toolchain
+  components has been added.  It should work well on Fedora Core 10,
+  OpenSUSE 11.1 and Ubuntu 8.10.  gcc-4.4 (in its current pre-release
+  state) is supported, as is glibc-2.9.  The C++ demangler has been
+  updated so as to work well with C++ compiled by even the most recent
+  g++'s.
+
+* You can now use frame-level wildcards in suppressions.  This was a
+  frequently-requested enhancement.  A line "..." in a suppression now
+  matches zero or more frames.  This makes it easier to write
+  suppressions which are precise yet insensitive to changes in
+  inlining behaviour.
+
+* 3.4.0 adds support on x86/amd64 for the SSSE3 instruction set.
+
+* Very basic support for IBM Power6 has been added (64-bit processes only).
+
+* Valgrind is now cross-compilable.  For example, it is possible to
+  cross compile Valgrind on an x86/amd64-linux host, so that it runs
+  on a ppc32/64-linux target.
+
+* The following bugs have been fixed.  Note that "n-i-bz" stands for
+  "not in bugzilla" -- that is, a bug that was reported to us but
+  never got a bugzilla entry.  We encourage you to file bugs in
+  bugzilla (http://bugs.kde.org/enter_valgrind_bug.cgi) rather than
+  mailing the developers (or mailing lists) directly.
+
+  // fill this bit in
+
+Developer-visible changes:
+
+* Valgrind's debug-info reading machinery has been majorly overhauled.
+  It can now correctly establish the addresses for ELF data symbols,
+  which is something that has never worked properly before now.
+
+  Also, Valgrind can now read DWARF3 type and location information for
+  stack and global variables.  This makes it possible to use the
+  framework to build tools that rely on knowing the type and locations
+  of stack and global variables, for example exp-Ptrcheck.
+
+  Reading of such information is disabled by default, because most
+  tools don't need it, and because it is expensive in space and time.
+  However, you can force Valgrind to read it, using the
+  --read-var-info=yes flag.  Memcheck, Helgrind and DRD are able to
+  make use of such information, if present, to provide source-level
+  descriptions of data addresses in the error messages they create.
+
+(3.4.0.RC1:    23 Dec 2008, vex rXXXX, valgrind rXXXX).
+
 
 
 Release 3.3.1 (4 June 2008)

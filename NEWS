@@ -125,7 +125,7 @@ global arrays.  In detail:
   92456   Tracing the origin of uninitialised memory
   106497  Valgrind does not demangle some C++ template symbols
   162222  ==106497
-  151612  Suppression with "..." (w/ good patch)
+  151612  Suppression with "..." (frame-level wildcards in .supp files)
   156404  Unable to start oocalc under memcheck on openSUSE 10.3 (64-bit)
   159285  unhandled syscall:25 (stime, on x86-linux)
   159452  unhandled ioctl 0x8B01 on "valgrind iwconfig"
@@ -170,7 +170,7 @@ Developer-visible changes:
   make use of such information, if present, to provide source-level
   descriptions of data addresses in the error messages they create.
 
-(3.4.0.RC1:    23 Dec 2008, vex rXXXX, valgrind rXXXX).
+(3.4.0.RC1:  23 Dec 2008, vex r1878, valgrind r8879).
 
 
 

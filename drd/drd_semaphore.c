@@ -151,10 +151,10 @@ static struct semaphore_info* semaphore_get(const Addr semaphore)
 struct semaphore_info* semaphore_init(const Addr semaphore,
                                       const Word pshared, const UInt value)
 {
-  unsigned n;
+  /* unsigned n; */
   struct semaphore_info* p;
   Segment* sg;
-  const DrdThreadId drd_tid = thread_get_running_tid();
+  /* const DrdThreadId drd_tid = thread_get_running_tid(); */
 
   if (s_trace_semaphore)
   {

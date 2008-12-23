@@ -2606,9 +2606,9 @@ Seg* nonptr_or_unknown(UWord x)
 //zz    VG_(printf)("%u =\n", bb);
 //zz }
 
-static ULong stats__tot_mem_refs  = 0;
-static ULong stats__refs_in_a_seg = 0;
-static ULong stats__refs_lost_seg = 0;
+//static ULong stats__tot_mem_refs  = 0;
+//static ULong stats__refs_in_a_seg = 0;
+//static ULong stats__refs_lost_seg = 0;
 
 typedef
    struct { ExeContext* ec; UWord count; }
@@ -2616,23 +2616,23 @@ typedef
 
 static OSet* lossage = NULL;
 
-static void inc_lossage ( ExeContext* ec ) 
-{
-   Lossage key, *res, *nyu;
-   key.ec = ec;
-   key.count = 0; /* frivolous */
-   res = VG_(OSetGen_Lookup)(lossage, &key);
-   if (res) {
-      tl_assert(res->ec == ec);
-      res->count++;
-   } else {
-      nyu = (Lossage*)VG_(OSetGen_AllocNode)(lossage, sizeof(Lossage));
-      tl_assert(nyu);
-      nyu->ec = ec;
-      nyu->count = 1;
-      VG_(OSetGen_Insert)( lossage, nyu );
-   }
-}
+//static void inc_lossage ( ExeContext* ec ) 
+//{
+//   Lossage key, *res, *nyu;
+//   key.ec = ec;
+//   key.count = 0; /* frivolous */
+//   res = VG_(OSetGen_Lookup)(lossage, &key);
+//   if (res) {
+//      tl_assert(res->ec == ec);
+//      res->count++;
+//   } else {
+//      nyu = (Lossage*)VG_(OSetGen_AllocNode)(lossage, sizeof(Lossage));
+//      tl_assert(nyu);
+//      nyu->ec = ec;
+//      nyu->count = 1;
+//      VG_(OSetGen_Insert)( lossage, nyu );
+//   }
+//}
 
 static void init_lossage ( void )
 {
@@ -2643,20 +2643,20 @@ static void init_lossage ( void )
    tl_assert(lossage);
 }
 
-static void show_lossage ( void )
-{
-   Lossage* elem;
-   VG_(OSetGen_ResetIter)( lossage );
-   while ( (elem = VG_(OSetGen_Next)(lossage)) ) {
-      if (elem->count < 10) continue;
-      //Char buf[100];
-      //(void)VG_(describe_IP)(elem->ec, buf, sizeof(buf)-1);
-      //buf[sizeof(buf)-1] = 0;
-      //VG_(printf)("  %,8lu  %s\n", elem->count, buf);
-      VG_(message)(Vg_UserMsg, "Lossage count %'lu at", elem->count);
-      VG_(pp_ExeContext)(elem->ec);
-   }
-}
+//static void show_lossage ( void )
+//{
+//   Lossage* elem;
+//   VG_(OSetGen_ResetIter)( lossage );
+//   while ( (elem = VG_(OSetGen_Next)(lossage)) ) {
+//      if (elem->count < 10) continue;
+//      //Char buf[100];
+//      //(void)VG_(describe_IP)(elem->ec, buf, sizeof(buf)-1);
+//      //buf[sizeof(buf)-1] = 0;
+//      //VG_(printf)("  %,8lu  %s\n", elem->count, buf);
+//      VG_(message)(Vg_UserMsg, "Lossage count %'lu at", elem->count);
+//      VG_(pp_ExeContext)(elem->ec);
+//   }
+//}
 
 // This function is called *a lot*; inlining it sped up Konqueror by 20%.
 static inline

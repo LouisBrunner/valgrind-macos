@@ -367,19 +367,18 @@ algorithm in more detail.</para>
 <title>Helgrind's Race Detection Algorithm</title>
 
 <para>Most programmers think about threaded programming in terms of
-the abstractions provided by the threading library (POSIX Pthreads):
-thread creation, thread joining, locks, condition variables,
-semaphores and barriers.</para>
+the basic functionality provided by the threading library (POSIX
+Pthreads): thread creation, thread joining, locks, condition
+variables, semaphores and barriers.</para>
 
-<para>The effect of using locks, barriers, etc, is to impose on a
-threaded program, constraints upon the order in which memory accesses
-can happen.  This implied ordering is generally known as the
-"happens-before relationship".  Once you understand the happens-before
-relationship, it is easy to see how Helgrind finds races in your code.
-Fortunately, the happens-before relationship is itself easy to
-understand, and is by itself a useful tool for reasoning about the
-behaviour of parallel programs.  We now introduce it using a simple
-example.</para>
+<para>The effect of using these functions is to impose on a threaded
+program, constraints upon the order in which memory accesses can
+happen.  This implied ordering is generally known as the
+"happens-before relation".  Once you understand the happens-before
+relation, it is easy to see how Helgrind finds races in your code.
+Fortunately, the happens-before relation is itself easy to understand,
+and is by itself a useful tool for reasoning about the behaviour of
+parallel programs.  We now introduce it using a simple example.</para>
 
 <para>Consider first the following buggy program:</para>
 
@@ -460,10 +459,10 @@ the program to reliably print "20".</para>
 accesses to memory locations.  If a location -- in this example, 
 <computeroutput>var</computeroutput>,
 is accessed by two different threads, Helgrind checks to see if the
-two accesses are ordered by the happens-before relationship.  If so,
+two accesses are ordered by the happens-before relation.  If so,
 that's fine; if not, it reports a race.</para>
 
-<para>It is important to understand the the happens-before relationship
+<para>It is important to understand the the happens-before relation
 creates only a partial ordering, not a total ordering.  An example of
 a total ordering is comparison of numbers: for any two numbers 
 <computeroutput>x</computeroutput> and
@@ -482,7 +481,7 @@ version, they are unordered: we cannot say that either happens-before
 the other.</para>
 
 <para>What does it mean to say that two accesses from different
-threads are ordered by the happens-before relationship?  It means that
+threads are ordered by the happens-before relation?  It means that
 there is some chain of inter-thread synchronisation operations which
 cause those accesses to happen in a particular order, irrespective of
 the actual rates of progress of the individual threads.  This is a
@@ -659,12 +658,12 @@ thread-safe:</para>
   shown in the first call stack).  In other words, try to find
   evidence that the earlier access "happens-before" the later access.
   See the previous subsection for an explanation of the happens-before
-  relationship.</para>
+  relation.</para>
   <para>
   The fact that Helgrind is reporting a race means it did not observe
-  any happens-before relationship between the two accesses.  If
+  any happens-before relation between the two accesses.  If
   Helgrind is working correctly, it should also be the case that you
-  also cannot find any such relationship, even on detailed inspection
+  also cannot find any such relation, even on detailed inspection
   of the source code.  Hopefully, though, your inspection of the code
   will show where the missing synchronisation operation(s) should have
   been.</para>

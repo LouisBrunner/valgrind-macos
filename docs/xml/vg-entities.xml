@@ -2,13 +2,13 @@
 <!ENTITY vg-url        "http://www.valgrind.org/">
 <!ENTITY vg-jemail     "julian@valgrind.org">
 <!ENTITY vg-vemail     "valgrind@valgrind.org">
-<!ENTITY vg-lifespan   "2000-2007">
+<!ENTITY vg-lifespan   "2000-2009">
 <!ENTITY vg-users-list "http://lists.sourceforge.net/lists/listinfo/valgrind-users">
 
 <!-- valgrind release + version stuff -->
 <!ENTITY rel-type    "Release">
-<!ENTITY rel-version "3.3.0">
-<!ENTITY rel-date    "7 December 2007">
+<!ENTITY rel-version "3.4.0">
+<!ENTITY rel-date    "2 January 2009">
 
 <!-- where the docs are installed -->
 <!ENTITY vg-doc-path  "/usr/share/doc/valgrind/html/index.html">

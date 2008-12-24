@@ -80,8 +80,11 @@ global arrays.  In detail:
   tool, we would be particularly interested in hearing about your
   experiences with it.
 
-* exp-Omega, an experimental instantaneous leak-detecting tool,
-  has been removed from the distribution.
+* exp-Omega, an experimental instantaneous leak-detecting tool, is no
+  longer built by default, although the code remains in the repository
+  and the tarball.  This is due to three factors: a perceived lack of
+  users, a lack of maintenance, and concerns that it may not be
+  possible to achieve reliable operation using the existing design.
 
 * As usual, support for the latest Linux distros and toolchain
   components has been added.  It should work well on Fedora Core 10,
@@ -170,7 +173,7 @@ Developer-visible changes:
   make use of such information, if present, to provide source-level
   descriptions of data addresses in the error messages they create.
 
-(3.4.0.RC1:  23 Dec 2008, vex r1878, valgrind r8879).
+(3.4.0.RC1:  24 Dec 2008, vex r1878, valgrind r8882).
 
 
 

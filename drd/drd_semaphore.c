@@ -94,7 +94,7 @@ void semaphore_initialize(struct semaphore_info* const p, const Addr semaphore)
   tl_assert(p->type == ClientSemaphore);
 
   p->cleanup           = (void(*)(DrdClientobj*))semaphore_cleanup;
-  p->initial_value     = 0;
+  p->waits_to_skip     = 0;
   p->value             = 0;
   p->waiters           = 0;
   p->last_sem_post_tid = DRD_INVALID_THREADID;
@@ -151,10 +151,8 @@ static struct semaphore_info* semaphore_get(const Addr semaphore)
 struct semaphore_info* semaphore_init(const Addr semaphore,
                                       const Word pshared, const UInt value)
 {
-  /* unsigned n; */
   struct semaphore_info* p;
   Segment* sg;
-  /* const DrdThreadId drd_tid = thread_get_running_tid(); */
 
   if (s_trace_semaphore)
   {
@@ -186,7 +184,7 @@ struct semaphore_info* semaphore_init(const Addr semaphore,
     p = semaphore_get_or_allocate(semaphore);
   }
   tl_assert(p);
-  p->initial_value = value;
+  p->waits_to_skip = value;
   p->value         = value;
   return p;
 }
@@ -272,8 +270,8 @@ void semaphore_post_wait(const DrdThreadId tid, const Addr semaphore,
   }
   p->value--;
   tl_assert((int)p->value >= 0);
-  if (p->initial_value > 0)
-    p->initial_value--;
+  if (p->waits_to_skip > 0)
+    p->waits_to_skip--;
   else
   {
     sg = segment_pop(p);

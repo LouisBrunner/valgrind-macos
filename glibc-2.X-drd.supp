@@ -233,6 +233,12 @@
 {
    pthread-unwind
    drd:ConflictingAccess
+   ...
+   fun:_Unwind_Resume
+}
+{
+   pthread-unwind
+   drd:ConflictingAccess
    fun:_Unwind_GetCFA
    fun:unwind_stop
 }
@@ -275,7 +281,6 @@
    drd:ConflictingAccess
    fun:g_slice_alloc
    fun:g_ptr_array_sized_new
-   fun:g_main_context_new
 }
 {
    libglib-access-g_threads_got_initialized

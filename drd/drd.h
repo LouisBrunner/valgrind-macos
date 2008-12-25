@@ -68,17 +68,6 @@
    which use client requests.  DO NOT CHANGE THE ORDER OF THESE
    ENTRIES, NOR DELETE ANY -- add new ones at the end.
  */
-
-
-/** Tell DRD to suppress data race detection on the specified variable. */
-#define DRD_IGNORE_VAR(x) vg_drd_ignore_range(&(x), sizeof(x))
-
-/** Tell DRD to trace all memory accesses on the specified variable. 
- *  until the memory that was allocated for the variable is freed.
- */
-#define DRD_TRACE_VAR(x) vg_drd_trace_range(&(x), sizeof(x))
-
-
 enum
 {
   /* Ask the core the thread ID assigned by Valgrind. */
@@ -104,6 +93,15 @@ enum
   VG_USERREQ__DRD_STOP_TRACE_ADDR,
   /* args: Addr, SizeT. */
 };
+
+
+/** Tell DRD to suppress data race detection on the specified variable. */
+#define DRD_IGNORE_VAR(x) vg_drd_ignore_range(&(x), sizeof(x))
+
+/** Tell DRD to trace all memory accesses on the specified variable. 
+ *  until the memory that was allocated for the variable is freed.
+ */
+#define DRD_TRACE_VAR(x) vg_drd_trace_range(&(x), sizeof(x))
 
 
 static __inline__

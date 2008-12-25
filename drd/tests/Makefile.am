@@ -22,6 +22,7 @@ EXTRA_DIST =                                        \
 	atomic_var.vgtest			    \
 	bar_bad.stderr.exp			    \
 	bar_bad.vgtest				    \
+	bar_trivial.stdout.exp			    \
 	bar_trivial.stderr.exp			    \
 	bar_trivial.vgtest			    \
 	boost_thread.stderr.exp			    \

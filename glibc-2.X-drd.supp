@@ -279,6 +279,7 @@
 {
    libglib-access-g_threads_got_initialized
    drd:ConflictingAccess
+   ...
    fun:g_slice_alloc
    fun:g_ptr_array_sized_new
 }
@@ -304,6 +305,12 @@
    libglib-g_private_set_posix_impl
    drd:ConflictingAccess
    fun:g_private_set_posix_impl
+}
+{
+   libglib-g_get_language_names
+   drd:ConflictingAccess
+   fun:g_slice_free_chain_with_offset
+   fun:g_get_language_names
 }
 {
    libQtCore-4.0/4.1-Q_GLOBAL_STATIC-connectionList

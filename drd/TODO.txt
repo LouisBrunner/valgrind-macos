@@ -15,7 +15,11 @@ Data-race detection algorithm
 - Find out why no variable name information is printed for races
   detected in parallel sections of OpenMP programs. An example:
   ./vg-in-place --tool=exp-drd exp-drd/tests/omp_prime 4 -t 2
-- Report races in glibc on stdout / stderr back to glibc maintainers.
+- Improve the code for suppressing races reported on glibc FILE objects, e.g. by intercepting
+  all operations on FILE objects and by associating mutex semantics with FILE objects. Verify
+  that races on unsynchronized *_unlocked() operations are reported. Remove FILE-I/O suppression
+  patterns from glibc-2.X-drd.supp. See also http://www.unix.org/whitepapers/reentrant.html.
+- Find out why drd/tests/pth_inconsistent_cond_wait sometimes fails on Fedora Core 6.
 
 
 Testing

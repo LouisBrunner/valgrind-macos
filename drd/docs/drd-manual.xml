@@ -52,13 +52,14 @@ reasons why the use of threads may be required:
 Multithreaded programs can use one or more of the following
 paradigms. Which paradigm is appropriate a.o. depends on the
 application type -- modeling concurrent activities versus HPC.
+Some examples of multithreaded programming paradigms are:
 <itemizedlist>
   <listitem>
     <para>
       Locking. Data that is shared between threads may only be
-      accessed after a lock is obtained on the mutex associated with
-      the shared data item.  A.o. the POSIX threads library, the Qt
-      library and the Boost.Thread library support this paradigm
+      accessed after a lock has been obtained on the mutex associated
+      with the shared data item.  A.o. the POSIX threads library, the
+      Qt library and the Boost.Thread library support this paradigm
       directly.
     </para>
   </listitem>
@@ -68,6 +69,17 @@ application type -- modeling concurrent activities versus HPC.
       exchange data by passing messages to each other. Well known
       implementations of the message passing paradigm are MPI and
       CORBA.
+    </para>
+  </listitem>
+  <listitem>
+    <para>
+      Automatic parallelization. A compiler converts a sequential
+      program into a multithreaded program. The original program may
+      or may not contain parallelization hints. As an example,
+      <computeroutput>gcc</computeroutput> supports the OpenMP
+      standard from gcc version 4.3.0 on. OpenMP is a set of compiler
+      directives which tell a compiler how to parallelize a C, C++ or
+      Fortran program.
     </para>
   </listitem>
   <listitem>
@@ -83,16 +95,6 @@ application type -- modeling concurrent activities versus HPC.
       support to <computeroutput>gcc</computeroutput>.
     </para>
   </listitem>
-  <listitem>
-    <para>
-      Automatic parallelization. A compiler converts a sequential
-      program into a multithreaded program. The original program may
-      or may not contain parallelization hints. As an example,
-      <computeroutput>gcc</computeroutput> supports OpenMP from
-      version 4.3.0 on. OpenMP is a set of compiler directives which
-      tell a compiler how to parallelize a C, C++ or Fortran program.
-    </para>
-  </listitem>
 </itemizedlist>
 </para>
 
@@ -101,7 +103,7 @@ DRD supports any combination of multithreaded programming paradigms as
 long as the implementation of these paradigms is based on the POSIX
 threads primitives. DRD however does not support programs that use
 e.g. Linux' futexes directly. Attempts to analyze such programs with
-DRD will result in false positives.
+DRD will cause DRD to report many false positives.
 </para>
 
 </sect2>
@@ -134,12 +136,14 @@ The POSIX threads programming model is based on the following abstractions:
   </listitem>
   <listitem>
     <para>
-      Atomic store and load-modify-store operations. While these
-      are not mentioned in the POSIX threads standard, most
+      Atomic store and load-modify-store operations. While these are
+      not mentioned in the POSIX threads standard, most
       microprocessors support atomic memory operations. And some
       compilers provide direct support for atomic memory operations
       through built-in functions like
-      e.g. <computeroutput>__sync_fetch_and_add()</computeroutput>.
+      e.g. <computeroutput>__sync_fetch_and_add()</computeroutput>
+      which is supported by both <computeroutput>gcc</computeroutput>
+      and <computeroutput>icc</computeroutput>.
     </para>
   </listitem>
   <listitem>
@@ -161,9 +165,9 @@ The POSIX threads programming model is based on the following abstractions:
 
 <para>
 Which source code statements generate which memory accesses depends on
-the memory model of the programming language being used. There is not
-yet a definitive memory model for the C and C++ languagues. For a
-draft memory model, see also document <ulink
+the <emphasis>memory model</emphasis> of the programming language
+being used. There is not yet a definitive memory model for the C and
+C++ languagues. For a draft memory model, see also document <ulink
 url="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2007/n2338.html">
 WG21/N2338</ulink>.
 </para>
@@ -182,8 +186,8 @@ IEEE Std 1003.1</ulink>.
 <title>Multithreaded Programming Problems</title>
 
 <para>
-Depending on how multithreading is expressed in a program, one or more
-of the following problems can be triggered by a multithreaded program:
+Depending on which multithreading paradigm is being used in a program,
+one or more of the following problems can occur:
 <itemizedlist>
   <listitem>
     <para>
@@ -224,10 +228,10 @@ of the following problems can be triggered by a multithreaded program:
 
 <para>
 Although the likelihood of the occurrence of data races can be reduced
-by a disciplined programming style, a tool for automatic detection of
-data races is a necessity when developing multithreaded software. DRD
-can detect these, as well as lock contention and improper use of the
-POSIX threads API.
+through a disciplined programming style, a tool for automatic
+detection of data races is a necessity when developing multithreaded
+software. DRD can detect these, as well as lock contention and
+improper use of the POSIX threads API.
 </para>
 
 </sect2>
@@ -316,9 +320,9 @@ behavior of the DRD tool itself:</para>
     </term>
     <listitem>
       <para>
-        Print an error message if any mutex or writer lock is held
-        longer than the specified time (in milliseconds). This option
-        is intended to allow detection of lock contention.
+        Print an error message if any mutex or writer lock has been
+        held longer than the specified time (in milliseconds). This
+        option enables detecting lock contention.
       </para>
     </listitem>
   </varlistentry>
@@ -332,8 +336,8 @@ behavior of the DRD tool itself:</para>
       <para>
         Whether to report calls to
         <function>pthread_cond_signal()</function> and
-        <function>pthread_cond_broadcast()</function>where the mutex
-        associated with the signal via
+        <function>pthread_cond_broadcast()</function> where the mutex
+        associated with the signal through
         <function>pthread_cond_wait()</function> or
         <function>pthread_cond_timed_wait()</function>is not locked at
         the time the signal is sent.  Sending a signal without holding
@@ -365,9 +369,9 @@ behavior of the DRD tool itself:</para>
     </term>
     <listitem>
       <para>
-        Print an error message if a reader lock is held longer than
-        the specified time (in milliseconds). This option is intended
-        to allow detection of lock contention.
+        Print an error message if a reader lock has been held longer
+        than the specified time (in milliseconds). This option enables
+        detection of lock contention.
       </para>
     </listitem>
   </varlistentry>
@@ -390,14 +394,15 @@ behavior of the DRD tool itself:</para>
     </term>
     <listitem>
       <para>
-        Print stack usage at thread exit time. When there is a large
-        number of threads created in a program it becomes important to
-        limit the amount of virtual memory allocated for thread
-        stacks. This option makes it possible to observe the maximum
-        number of bytes that has been used by the client program for
-        thread stacks. Note: the DRD tool allocates some temporary
-        data on the client thread stack. The space needed for this
-        temporary data is not reported via this option.
+        Print stack usage at thread exit time. When a program creates
+        a large number of threads it becomes important to limit the
+        amount of virtual memory allocated for thread stacks. This
+        option makes it possible to observe how much stack memory has
+        been used by each thread of the the client program. Note: the
+        DRD tool allocates some temporary data on the client thread
+        stack itself. The space necessary for this temporary data must
+        be allocated by the client program, but is not included in the
+        reported stack usage.
       </para>
     </listitem>
   </varlistentry>
@@ -409,9 +414,9 @@ behavior of the DRD tool itself:</para>
       <para>
         Display the names of global, static and stack variables when a
         data race is reported. While this information can be very
-        helpful, by default it is not loaded into memory since for big
-        programs reading in all debug information at once may cause an
-        out of memory error.
+        helpful, it is not loaded into memory by default. This is
+        because for big programs reading in all debug information at
+        once may cause an out of memory error.
       </para>
     </listitem>
   </varlistentry>
@@ -421,7 +426,7 @@ behavior of the DRD tool itself:</para>
 <!-- start of xi:include in the manpage -->
 <para>
 The following options are available for monitoring the behavior of the
-process being analyzed with DRD:
+client program:
 </para>
 
 <variablelist id="drd.debugopts.list">
@@ -506,8 +511,8 @@ process being analyzed with DRD:
 <title>Detected Errors: Data Races</title>
 
 <para>
-DRD prints a message every time it detects a data race. You should be
-aware of the following when interpreting DRD's output:
+DRD prints a message every time it detects a data race. Please keep
+the following in mind when interpreting DRD's output:
 <itemizedlist>
   <listitem>
     <para>
@@ -603,23 +608,24 @@ The above report has the following meaning:
       your program has been compiled with debug information (-g), this
       call stack will include file names and line numbers. The two
       bottommost frames in this call stack (<function>clone</function>
-      and <function>start_thread</function>) show how the NPTL starts a
-      thread. The third frame (<function>vg_thread_wrapper</function>)
-      is added by DRD. The fourth frame
-      (<function>thread_func</function>) is interesting because it
-      shows the thread entry point, that is the function that has been
-      passed as the third argument to
+      and <function>start_thread</function>) show how the NPTL starts
+      a thread. The third frame
+      (<function>vg_thread_wrapper</function>) is added by DRD. The
+      fourth frame (<function>thread_func</function>) is the first
+      interesting line because it shows the thread entry point, that
+      is the function that has been passed as the third argument to
       <function>pthread_create()</function>.
     </para>
   </listitem>
   <listitem>
     <para>
       Next, the allocation context for the conflicting address is
-      displayed. For static and stack variables the allocation context
-      is only shown when the option
+      displayed. For dynamically allocated data the allocation call
+      stack is shown. For static variables and stack variables the
+      allocation context is only shown when the option
       <computeroutput>--var-info=yes</computeroutput> has been
       specified. Otherwise DRD will print <computeroutput>Allocation
-      context: unknown</computeroutput> for such variables.
+      context: unknown</computeroutput>.
     </para>
   </listitem>
   <listitem>
@@ -664,22 +670,19 @@ The above report has the following meaning:
 <title>Detected Errors: Lock Contention</title>
 
 <para>
-Threads should be able to make progress without being blocked by other
-threads.  Unfortunately this is not always true.  Sometimes a thread
-has to wait until a mutex or reader-writer lock is unlocked by another
-thread. This is called <emphasis>lock contention</emphasis>. The more
-granular the locks are, the less likely lock contention will
-occur. The most unfortunate situation occurs when I/O is performed
-while a lock is held.
+Threads must be able to make progress without being blocked for too
+long by other threads. Sometimes a thread has to wait until a mutex or
+reader-writer lock is unlocked by another thread. This is called
+<emphasis>lock contention</emphasis>.
 </para>
 
 <para>
-Lock contention causes delays and hence should be avoided. The two
-command line options
+Lock contention causes delays. Such delays should be as short as
+possible. The two command line options
 <literal>--exclusive-threshold=&lt;n&gt;</literal> and
 <literal>--shared-threshold=&lt;n&gt;</literal> make it possible to
-detect lock contention by making DRD report any lock that is held
-longer than the specified threshold. An example:
+detect excessive lock contention by making DRD report any lock that
+has been held longer than the specified threshold. An example:
 </para>
 <programlisting><![CDATA[
 $ valgrind --tool=drd --exclusive-threshold=10 drd/tests/hold_lock -i 500
@@ -721,17 +724,17 @@ output reports that the lock acquired at line 51 in source file
     </listitem>
     <listitem>
       <para>
-        Attempt to unlock a mutex that has not been locked.
+        Attempts to unlock a mutex that has not been locked.
       </para>
     </listitem>
     <listitem>
       <para>
-        Attempt to unlock a mutex that was locked by another thread.
+        Attempts to unlock a mutex that was locked by another thread.
       </para>
     </listitem>
     <listitem>
       <para>
-        Attempt to lock a mutex of type
+        Attempts to lock a mutex of type
         <literal>PTHREAD_MUTEX_NORMAL</literal> or a spinlock
         recursively.
       </para>
@@ -749,7 +752,7 @@ output reports that the lock acquired at line 51 in source file
     </listitem>
     <listitem>
       <para>
-        Calling <function>pthread_cond_wait()</function> with a mutex
+        Calling <function>pthread_cond_wait()</function> on a mutex
         that is not locked, that is locked by another thread or that
         has been locked recursively.
       </para>
@@ -757,7 +760,7 @@ output reports that the lock acquired at line 51 in source file
     <listitem>
       <para>
         Associating two different mutexes with a condition variable
-        via <function>pthread_cond_wait()</function>.
+        through <function>pthread_cond_wait()</function>.
       </para>
     </listitem>
     <listitem>
@@ -773,13 +776,13 @@ output reports that the lock acquired at line 51 in source file
     </listitem>
     <listitem>
       <para>
-        Attempt to unlock a reader-writer lock that was not locked by
+        Attempts to unlock a reader-writer lock that was not locked by
         the calling thread.
       </para>
     </listitem>
     <listitem>
       <para>
-        Attempt to recursively lock a reader-writer lock exclusively.
+        Attempts to recursively lock a reader-writer lock exclusively.
       </para>
     </listitem>
     <listitem>
@@ -802,16 +805,6 @@ output reports that the lock acquired at line 51 in source file
       </para>
     </listitem>
   </itemizedlist>
-</para>
-
-<para>
-Regarding the message DRD prints about sending a signal to a condition
-variable while no lock is held on the mutex associated with the
-signal: DRD reports this because some calls of
-<function>pthread_cond_signal()</function> or
-<function>pthread_cond_broadcast()</function> while no lock is held on
-the mutex associated with the condition variable introduce subtle race
-conditions.
 </para>
 
 </sect2>
@@ -882,7 +875,6 @@ available client requests are:
     <para>
       <varname>VG_USERREQ__DRD_STOP_TRACE_ADDR</varname>. Do no longer
       trace load and store activity for the specified address range.
-      range.
     </para>
   </listitem>
 </itemizedlist>
@@ -1073,7 +1065,7 @@ Allocation context: unknown.
 In the above output the function name <function>gj.omp_fn.0</function>
 has been generated by gcc from the function name
 <function>gj</function>. Unfortunately the variable name
-(<literal>k</literal>) is not shown as the allocation context -- it is
+<literal>k</literal> is not shown as the allocation context -- it is
 not clear to me whether this is caused by Valgrind or whether this is
 caused by gcc. The most usable information in the above output is the
 source file name and the line number where the data race has been detected
@@ -1147,7 +1139,7 @@ manual</ulink>.
 
 <para>
 It is essential for correct operation of DRD that there are no memory
-errors like dangling pointers in the client program. Which means that
+errors such as dangling pointers in the client program. Which means that
 it is a good idea to make sure that your program is memcheck-clean
 before you analyze it with DRD. It is possible however that some of
 the memcheck reports are caused by data races. In this case it makes
@@ -1332,7 +1324,7 @@ the recursive mutex type.
 
 <para>
 A condition variable allows one thread to wake up one or more other
-threads. Condition variables are typically used to notify one or more
+threads. Condition variables are often used to notify one or more
 threads about state changes of shared data. Unfortunately it is very
 easy to introduce race conditions by using condition variables as the
 only means of state information propagation. A better approach is to
@@ -1341,8 +1333,8 @@ a mutex, and to use condition variables only as a thread wakeup
 mechanism. See also the source file
 <computeroutput>drd/tests/monitor_example.cpp</computeroutput> for an
 example of how to implement this concept in C++. The monitor concept
-used in this example is a well known concept in computer science --
-see also Wikipedia for more information about the <ulink
+used in this example is a well known and very useful concept -- see
+also Wikipedia for more information about the <ulink
 url="http://en.wikipedia.org/wiki/Monitor_(synchronization)">monitor</ulink>
 concept.
 </para>
@@ -1372,9 +1364,7 @@ the timeout. A more reliable approach is as follows:
       <literal>CLOCK_MONOTONIC</literal> instead of
       <literal>CLOCK_REALTIME</literal>. You can do this via
       <computeroutput>pthread_condattr_setclock(...,
-      CLOCK_MONOTONIC)</computeroutput>.  See also
-      <computeroutput>drd/tests/monitor_example.cpp</computeroutput>
-      for an example.
+      CLOCK_MONOTONIC)</computeroutput>.
     </para>
   </listitem>
   <listitem>
@@ -1386,6 +1376,9 @@ the timeout. A more reliable approach is as follows:
     </para>
   </listitem>
 </itemizedlist>
+See also
+<computeroutput>drd/tests/monitor_example.cpp</computeroutput> for an
+example.
 </para>
 
 </sect2>
@@ -1501,8 +1494,7 @@ approach for managing thread names is as follows:
 If you have any comments, suggestions, feedback or bug reports about
 DRD, feel free to either post a message on the Valgrind users mailing
 list or to file a bug report. See also <ulink
-url="&vg-url;">&vg-url;</ulink> for more information about the
-Valgrind mailing lists or about how to file a bug report.
+url="&vg-url;">&vg-url;</ulink> for more information.
 </para>
 
 </sect1>

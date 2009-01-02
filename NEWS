@@ -24,7 +24,7 @@ global arrays.  In detail:
   slowly.
 
 * A version (1.4.0) of the Valkyrie GUI, that works with Memcheck in
-  3.4.0, will be released at the same time as 3.4.0.
+  3.4.0, will be released shortly.
 
 * Helgrind's race detection algorithm has been completely redesigned
   and reimplemented, to address usability and scalability concerns:
@@ -174,7 +174,7 @@ Developer-visible changes:
   descriptions of data addresses in the error messages they create.
 
 (3.4.0.RC1:  24 Dec 2008, vex r1878, valgrind r8882).
-(3.4.0:       3 Jan 2009, vex r1878, valgrind r8898).
+(3.4.0:       3 Jan 2009, vex r1878, valgrind r8899).
 
 
 

@@ -119,7 +119,8 @@ Int Intel_cache_info(Int level, cache_t* I1c, cache_t* D1c, cache_t* L2c)
       case 0x90: case 0x96: case 0x9b:
          VG_(tool_panic)("IA-64 cache detected?!");
 
-      case 0x22: case 0x23: case 0x25: case 0x29: case 0x46: case 0x47:
+      case 0x22: case 0x23: case 0x25: case 0x29:
+      case 0x46: case 0x47: case 0x4a: case 0x4b: case 0x4c: case 0x4d:
           VG_(message)(Vg_DebugMsg,
              "warning: L3 cache detected but ignored");
           break;
@@ -140,6 +141,12 @@ Int Intel_cache_info(Int level, cache_t* I1c, cache_t* D1c, cache_t* L2c)
       case 0x43: *L2c = (cache_t) {  512, 4, 32 }; L2_found = True; break;
       case 0x44: *L2c = (cache_t) { 1024, 4, 32 }; L2_found = True; break;
       case 0x45: *L2c = (cache_t) { 2048, 4, 32 }; L2_found = True; break;
+      case 0x48:
+         /* Real L2 cache configuration is:
+            *L2c = (cache_t) { 3072, 12, 64 }; L2_found = True; */
+         VG_(message)(Vg_DebugMsg, "warning: 3Mb L2 cache detected, treating as 2Mb\n");
+         *L2c = (cache_t) { 2048, 8, 64 }; L2_found = True;
+         break;
       case 0x49:
 	  if ((family == 15) && (model == 6))
 	      /* On Xeon MP (family F, model 6), this is for L3 */
@@ -148,6 +155,12 @@ Int Intel_cache_info(Int level, cache_t* I1c, cache_t* D1c, cache_t* L2c)
 	  else
 	      *L2c = (cache_t) { 4096, 16, 64 }; L2_found = True;
 	  break;
+      case 0x4e:
+         /* Real L2 cache configuration is:
+            *L2c = (cache_t) { 6144, 24, 64 }; L2_found = True; */
+         VG_(message)(Vg_DebugMsg, "warning: 6Mb L2 cache detected, treating as 4Mb\n");
+         *L2c = (cache_t) { 4096, 16, 64 }; L2_found = True;
+         break;
 
       /* These are sectored, whatever that means */
       case 0x60: *D1c = (cache_t) { 16, 8, 64 };  break;      /* sectored */

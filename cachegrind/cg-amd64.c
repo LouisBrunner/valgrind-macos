@@ -100,9 +100,11 @@ Int Intel_cache_info(Int level, cache_t* I1c, cache_t* D1c, cache_t* L2c)
           
       /* TLB info, ignore */
       case 0x01: case 0x02: case 0x03: case 0x04: case 0x05:
-      case 0x50: case 0x51: case 0x52: case 0x56: case 0x57:
+      case 0x4f: case 0x50: case 0x51: case 0x52:
+      case 0x56: case 0x57: case 0x59:
       case 0x5b: case 0x5c: case 0x5d:
-      case 0xb0: case 0xb1: case 0xb3: case 0xb4:
+      case 0xb0: case 0xb1:
+      case 0xb3: case 0xb4: case 0xba: case 0xc0:
           break;      
 
       case 0x06: *I1c = (cache_t) {  8, 4, 32 }; break;
@@ -111,6 +113,12 @@ Int Intel_cache_info(Int level, cache_t* I1c, cache_t* D1c, cache_t* L2c)
 
       case 0x0a: *D1c = (cache_t) {  8, 2, 32 }; break;
       case 0x0c: *D1c = (cache_t) { 16, 4, 32 }; break;
+      case 0x0e:
+         /* Real D1 cache configuration is:
+            D1c = (cache_t) { 24, 6, 64 }; */
+         VG_(message)(Vg_DebugMsg, "warning: 24Kb D1 cache detected, treating as 16Kb");
+         *D1c = (cache_t) { 16, 4, 64 };
+         break;
       case 0x2c: *D1c = (cache_t) { 32, 8, 64 }; break;
 
       /* IA-64 info -- panic! */
@@ -193,6 +201,9 @@ Int Intel_cache_info(Int level, cache_t* I1c, cache_t* D1c, cache_t* L2c)
       case 0x7c: *L2c = (cache_t) { 1024, 8,  64 }; L2_found = True;  break;
       case 0x7d: *L2c = (cache_t) { 2048, 8,  64 }; L2_found = True;  break;
       case 0x7e: *L2c = (cache_t) {  256, 8, 128 }; L2_found = True;  break;
+
+      case 0x7f: *L2c = (cache_t) {  512, 2, 64 };  L2_found = True;  break;
+      case 0x80: *L2c = (cache_t) {  512, 8, 64 };  L2_found = True;  break;
 
       case 0x81: *L2c = (cache_t) {  128, 8, 32 };  L2_found = True;  break;
       case 0x82: *L2c = (cache_t) {  256, 8, 32 };  L2_found = True;  break;

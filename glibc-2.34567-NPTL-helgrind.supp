@@ -8,69 +8,71 @@
 # These are generic cover-alls which catch a lot of stuff
 # in various combinations of ld, libc and libpthread
 #
+# Note this is heavyhanded and not very clever:
+#
+# - suppress anything that has its top frame in ld.so
+#   That's fine, since it's mostly dynamic linking stuff,
+#   which has various deliberate (harmless) races
+#
+# - suppress anything that has its top frame in libc.so.
+#   This really isn't clever, since it could hide some 
+#   legitimate races.  But the problem is, if we don't do
+#   this, then loads of errors to do with stdio are reported, because
+#   H fails to see glibc's internal locking/unlocking of FILE*s
+#   as required by POSIX.  A better solution is needed.
+
 {
    helgrind-glibc2X-001
    Helgrind:Race
    obj:/lib*/ld-2.*so*
 }
+
 # helgrind-glibc2X-002 was merged into helgrind-glibc2X-001
+
 # helgrind-glibc2X-003 was merged into helgrind-glibc2X-001
+
 {
    helgrind-glibc2X-004
    Helgrind:Race
    obj:/lib*/libc-2.*so*
-   obj:/lib*/libc-2.*so*
 }
+
 {
    helgrind-glibc2X-005
    Helgrind:Race
    obj:/lib*/libpthread-2.*so*
    obj:/lib*/libpthread-2.*so*
-   obj:/lib*/libpthread-2.*so*
 }
-{
-   helgrind-glibc2X-006
-   Helgrind:Race
-   obj:/lib*/libpthread-2.*so*
-   obj:/lib*/libpthread-2.*so*
-   obj:/lib*/libc-2.*so*
-}
+
+# helgrind-glibc2X-006 was merged into helgrind-glibc2X-005
+
 # helgrind-glibc2X-007 was merged into helgrind-glibc2X-001
+
 {
    helgrind-glibc2X-008
    Helgrind:Race
    obj:/lib*/libpthread-2.*so*
    obj:/lib*/libc-2.*so*
 }
-{
-   helgrind-glibc2X-009
-   Helgrind:Race
-   obj:/lib*/libc-2.*so*
-   fun:*
-   obj:/lib*/libc-2.*so*
-}
+
+# helgrind-glibc2X-009 was merged into helgrind-glibc2X-004
+
 # helgrind-glibc2X-010 was merged into helgrind-glibc2X-001
-{
-   helgrind-glibc2X-011
-   Helgrind:Race
-   obj:/lib*/libc-2.*so*
-   obj:/lib*/libpthread-2.*so*
-}
+
+# helgrind-glibc2X-011 was merged into helgrind-glibc2X-004
+
 # helgrind-glibc2X-012 was merged into helgrind-glibc2X-001
+
 # helgrind-glibc2X-013 was merged into helgrind-glibc2X-001
+
 # helgrind-glibc2X-014 was merged into helgrind-glibc2X-001
-{
-   helgrind-glibc2X-015
-   Helgrind:Race
-   obj:/lib*/libc-2.*so*
-   obj:/lib*/libdl-2.*so*
-   obj:/lib*/ld-2.*so*
-}
+
+# helgrind-glibc2X-015 was merged into helgrind-glibc2X-004
+
 {
    helgrind-glibc2X-016
    Helgrind:Race
    obj:/lib*/libpthread-2.*so*
-   obj:/lib*/ld-2.*so*
    obj:/lib*/ld-2.*so*
 }
 
@@ -252,3 +254,4 @@
 # To do with dynamic linking
 #
 # helgrind---ld.so-...-dlsym was merged into helgrind-glibc2X-001
+

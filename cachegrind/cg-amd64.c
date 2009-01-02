@@ -144,21 +144,21 @@ Int Intel_cache_info(Int level, cache_t* I1c, cache_t* D1c, cache_t* L2c)
       case 0x48:
          /* Real L2 cache configuration is:
             *L2c = (cache_t) { 3072, 12, 64 }; L2_found = True; */
-         VG_(message)(Vg_DebugMsg, "warning: 3Mb L2 cache detected, treating as 2Mb\n");
+         VG_(message)(Vg_DebugMsg, "warning: 3Mb L2 cache detected, treating as 2Mb");
          *L2c = (cache_t) { 2048, 8, 64 }; L2_found = True;
          break;
       case 0x49:
 	  if ((family == 15) && (model == 6))
 	      /* On Xeon MP (family F, model 6), this is for L3 */
 	      VG_(message)(Vg_DebugMsg, 
-			   "warning: L3 cache detected but ignored\n");
+			   "warning: L3 cache detected but ignored");
 	  else
 	      *L2c = (cache_t) { 4096, 16, 64 }; L2_found = True;
 	  break;
       case 0x4e:
          /* Real L2 cache configuration is:
             *L2c = (cache_t) { 6144, 24, 64 }; L2_found = True; */
-         VG_(message)(Vg_DebugMsg, "warning: 6Mb L2 cache detected, treating as 4Mb\n");
+         VG_(message)(Vg_DebugMsg, "warning: 6Mb L2 cache detected, treating as 4Mb");
          *L2c = (cache_t) { 4096, 16, 64 }; L2_found = True;
          break;
 
@@ -304,7 +304,7 @@ Int get_caches_from_CPUID(cache_t* I1c, cache_t* D1c, cache_t* L2c)
    vendor_id[12] = '\0';
 
    if (0 == level) {
-      VG_(message)(Vg_DebugMsg, "CPUID level is 0, early Pentium?\n");
+      VG_(message)(Vg_DebugMsg, "CPUID level is 0, early Pentium?");
       return -1;
    }
 

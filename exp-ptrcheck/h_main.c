@@ -2179,6 +2179,7 @@ static void setup_post_syscall_table ( void )
       ADD(0, __NR_accept);
 #     endif
       ADD(0, __NR_access);
+      ADD(0, __NR_alarm);
 #     if defined(__NR_bind)
       ADD(0, __NR_bind);
 #     endif
@@ -2194,6 +2195,7 @@ static void setup_post_syscall_table ( void )
 #     if defined(__NR_connect)
       ADD(0, __NR_connect);
 #     endif
+      ADD(0, __NR_creat);
       ADD(0, __NR_dup);
       ADD(0, __NR_dup2);
       ADD(0, __NR_execve); /* presumably we see this because the call failed? */
@@ -2246,6 +2248,7 @@ static void setup_post_syscall_table ( void )
       ADD(0, __NR_getresgid);
       ADD(0, __NR_getresuid);
       ADD(0, __NR_getrlimit);
+      ADD(0, __NR_getrusage);
 #     if defined(__NR_getsockname)
       ADD(0, __NR_getsockname);
 #     endif
@@ -2306,6 +2309,9 @@ static void setup_post_syscall_table ( void )
       ADD(0, __NR_select);
 #     if defined(__NR_sendto)
       ADD(0, __NR_sendto);
+#     endif
+#     if defined(__NR_sendmsg)
+      ADD(0, __NR_sendmsg);
 #     endif
       ADD(0, __NR_set_robust_list);
 #     if defined(__NR_set_thread_area)

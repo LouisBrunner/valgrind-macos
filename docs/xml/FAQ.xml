@@ -567,6 +567,29 @@ int main(void)
 </qandaentry>
 
 
+<qandaentry id="faq.attach">
+  <question id="q-attach">
+    <para>Is it possible to attach Valgrind to a program that is already
+    running?</para>
+  </question>
+  <answer id="a-undeferrors">
+    <para>No.  The environment that Valgrind provides for running programs
+    is significantly different to that for normal programs, e.g. due to
+    different layout of memory.  Therefore Valgrind has to have full control
+    from the very start.</para>
+
+    <para>It is possible to achieve something like this by running your
+    program without any instrumentation (which involves a slow-down of about
+    5x, less than that of most tools), and then adding instrumentation once
+    you get to a point of interest.  Support for this must be provided by
+    the tool, however, and Callgrind is the only tool that currently has
+    such support.  See the instructions on the
+    <computeroutput>callgrind_control</computeroutput> program for details.
+    </para>
+  </answer>
+</qandaentry>
+
+
 </qandadiv>
 
 

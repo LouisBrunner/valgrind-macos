@@ -39,6 +39,12 @@ runcmd () {
 #----------------------------------------------------------------------------
 # Startup
 #----------------------------------------------------------------------------
+# Must have at two arguments
+if [ $# -ne 2 ] ; then
+    echo "usage: bin/night /path/to/valgrind/nightly <tag>"
+    exit 1
+fi
+
 # Get args from command line
 ABT_TOP=$1
 ABT_MACHINE=$2
@@ -51,7 +57,8 @@ svn_new_date=`date --date=today     +%Y-%m-%dT%H:%M:%S`
 
 cd $ABT_TOP
 
-source $ABT_TOP/conf/$ABT_MACHINE.conf
+# Setup any relevant environment variables from conf/<tag>.conf.
+source conf/$ABT_MACHINE.conf
 if [ "${ABT_JOBS}" = "" ]; then
   ABT_JOBS=1
 fi
@@ -92,7 +99,7 @@ for logfile in old new ; do
    \
    runcmd $logfile \
           "Configuring valgrind             " \
-          "cd valgrind && ./autogen.sh  && ./configure --prefix=$ABT_TOP/Inst ${ABT_CONFIGURE_OPTIONS}" && \
+          "cd valgrind && ./autogen.sh  && ./configure --prefix=`pwd`/Inst ${ABT_CONFIGURE_OPTIONS}" && \
    \
    runcmd $logfile \
           "Building valgrind                " \
@@ -155,7 +162,29 @@ if [ $changed != 0 ] ; then
    echo                                                     >> final
 fi
 
-# Email the results
-$ABT_TOP/conf/$ABT_MACHINE.sendmail \
+# Gather up the diffs (at most the first 100 lines for each one) into a
+# single file.
+MAX_LINES=100
+rm -f diffs
+diff_files=`find . -name '*.diff'`
+if [ z"$diff_files" = z ] ; then
+   echo "Congratulations, all tests passed!" >> diffs
+else
+   for i in $diff_files ; do
+      echo "=================================================" >> diffs
+      echo $i                                                  >> diffs 
+      echo "=================================================" >> diffs
+      if [ `wc -l < $i` -le $MAX_LINES ] ; then
+         cat $i                                                >> diffs
+      else
+         head -$MAX_LINES $i                                   >> diffs
+         echo "<truncated beyond $MAX_LINES lines>"            >> diffs
+      fi
+   done
+fi
+
+# Use the conf/<tag>.sendmail script to email the results.
+conf/$ABT_MACHINE.sendmail \
    "$ABT_START nightly build ($ABT_MACHINE, $ABT_DETAILS)" \
-   $ABT_TOP/final
+   final \
+   diffs

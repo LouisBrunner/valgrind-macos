@@ -9,7 +9,7 @@ existing tree.
 
 To use, choose a tag, probably a machine name, and run
 
-   bin/nightly  /path/to/valgrind/nightly  <tag>
+   bin/nightly  /path/to/valgrind/nightly/  <tag>
 
 and supply the following two config files:
 
@@ -29,4 +29,7 @@ and supply the following two config files:
 - conf/<tag>.sendmail:  this should be a script that sends an email to the
   desired recipient (eg. the valgrind-developers list).  It must take two
   command line arguments.  The first is the email subject line, the second
-  is the email's body.
+  is the name of the file containing the email's body (showing the tests
+  that failed, and the difference between now and 24 hours ago), the third
+  is the name of the file containing all the diffs (which can be made into
+  an attachment, for example).

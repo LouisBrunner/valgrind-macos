@@ -177,7 +177,7 @@ else
       if [ `wc -l < $i` -le $MAX_LINES ] ; then
          cat $i                                                >> diffs
       else
-         head -$MAX_LINES $i                                   >> diffs
+         head -n $MAX_LINES $i                                 >> diffs
          echo "<truncated beyond $MAX_LINES lines>"            >> diffs
       fi
    done

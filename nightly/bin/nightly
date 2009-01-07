@@ -2,10 +2,7 @@
 
 #----------------------------------------------------------------------------
 # Automated build and test for Valgrind.  Compares Valgrind from 24 hours
-# ago with the current one.
-#
-#   Use: two args, first is path to top of ValgrindABT tree
-#        second is name of machine
+# ago with the current one.  See the README.txt on how to run it.
 #----------------------------------------------------------------------------
 
 #----------------------------------------------------------------------------

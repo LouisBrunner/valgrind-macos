@@ -2338,6 +2338,9 @@ static void setup_post_syscall_table ( void )
 #     if defined(__NR_socketcall)
       ADD(0, __NR_socketcall); /* the nasty x86-linux socket multiplexor */
 #     endif
+#     if defined(__NR_socketpair)
+      ADD(0, __NR_socketpair);
+#     endif
 #     if defined(__NR_statfs64)
       ADD(0, __NR_statfs64);
 #     endif

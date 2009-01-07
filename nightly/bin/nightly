@@ -26,7 +26,7 @@ runcmd () {
    res=$?
 
    # Write result to the short logfile
-   if [ $res == 0 ]
+   if [ $res = 0 ]
    then
       echo "done"   >> $logfile.short
    else

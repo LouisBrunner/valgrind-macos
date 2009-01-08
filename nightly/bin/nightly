@@ -58,7 +58,7 @@ svn_new_date=`date --date=today     +%Y-%m-%dT%H:%M:%S`
 cd $ABT_TOP
 
 # Setup any relevant environment variables from conf/<tag>.conf.
-source conf/$ABT_MACHINE.conf
+. conf/$ABT_MACHINE.conf
 if [ "${ABT_JOBS}" = "" ]; then
   ABT_JOBS=1
 fi

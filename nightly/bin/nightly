@@ -166,7 +166,7 @@ fi
 # single file.
 MAX_LINES=100
 rm -f diffs
-diff_files=`find . -name '*.diff'`
+diff_files=`find . -name '*.diff' | sort`
 if [ z"$diff_files" = z ] ; then
    echo "Congratulations, all tests passed!" >> diffs
 else

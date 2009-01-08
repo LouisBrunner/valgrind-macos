@@ -222,7 +222,7 @@ check_PROGRAMS = \
 	mismatches new_override metadata \
 	varinfo1 varinfo2 varinfo3 varinfo4 \
 	varinfo5 varinfo5so.so varinfo6 \
-	vcpu_bz2 vcpu_fbench vcpu_fnfns \
+	vcpu_fbench vcpu_fnfns \
 	xml1 \
 	wrap1 wrap2 wrap3 wrap4 wrap5 wrap6 wrap7 wrap7so.so wrap8 \
 	writev zeropage

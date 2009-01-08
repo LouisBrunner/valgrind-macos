@@ -76,7 +76,7 @@ nonexp-regtest: check
 exp-regtest: check
 	@PERL@ tests/vg_regtest $(EXP_TOOLS)
 
-## Preprend @PERL@ because tests/vg_per isn't executable
+## Preprend @PERL@ because tests/vg_perf isn't executable
 perf: check
 	@PERL@ perf/vg_perf perf
 

@@ -1,2 +1,2 @@
-prog: wrap5
+prog: ../../memcheck/tests/wrap5
 cleanup: rm cachegrind.out.*

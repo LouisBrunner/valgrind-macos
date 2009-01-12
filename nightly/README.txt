@@ -19,6 +19,13 @@ and supply the following two config files:
   ABT_DETAILS: describes the machine in more detail, eg. the OS.  The default
     is empty.
   ABT_CONFIGURE_OPTIONS: gives extra configure options.  The default is empty.
+  ABT_EVAL: if provided, it must be the name of a shell script that executes
+    the shell command $1 with arguments $2 .. ${$#}. Allows to compile and
+    run the Valgrind regression tests on another system than the system the
+    'nightly' script runs on. It is assumed that the remote system shares the
+    local filesystem tree through e.g. NFS. It is the responsibility of the
+    shell script to set the remote working directory such that it matches the
+    local current directory ($PWD).
   ABT_RUN_REGTEST: if provided, it must be the name of an argumentless shell
     function (also specified in the tag.conf file) it's an argumentless bash
     function that will be used to run the tests.  If not specified, the usual

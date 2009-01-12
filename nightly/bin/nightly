@@ -22,7 +22,7 @@ runcmd () {
    echo "$*" >> $logfile.verbose
 
    # Run the command
-   (eval "$*") >> $logfile.verbose 2>&1
+   ("${ABT_EVAL}" "$*") >> $logfile.verbose 2>&1
    res=$?
 
    # Write result to the short logfile
@@ -39,7 +39,7 @@ runcmd () {
 #----------------------------------------------------------------------------
 # Startup
 #----------------------------------------------------------------------------
-# Must have at two arguments
+# Must have exactly two arguments
 if [ $# -ne 2 ] ; then
     echo "usage: bin/night /path/to/valgrind/nightly <tag>"
     exit 1
@@ -61,6 +61,9 @@ cd $ABT_TOP
 . conf/$ABT_MACHINE.conf
 if [ "${ABT_JOBS}" = "" ]; then
   ABT_JOBS=1
+fi
+if [ "${ABT_EVAL}" = "" ]; then
+  ABT_EVAL="eval"
 fi
 if [ "${ABT_RUN_REGTEST}" = "" ]; then
   ABT_RUN_REGTEST="cd valgrind && perl tests/vg_regtest --all"

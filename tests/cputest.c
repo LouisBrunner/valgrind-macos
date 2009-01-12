@@ -99,12 +99,18 @@ static Bool go(char* cpu)
    } else if ( strcmp( cpu, "x86-sse3" ) == 0 ) {
      level = 1;
      cmask = 1 << 0;
+   } else if ( strcmp( cpu, "x86-ssse3" ) == 0 ) {
+     level = 1;
+     cmask = 1 << 9;
 #if defined(__x86_64__)
    } else if ( strcmp( cpu, "amd64" ) == 0 ) {
      return True;
    } else if ( strcmp( cpu, "amd64-sse3" ) == 0 ) {
      level = 1;
      cmask = 1 << 0;
+   } else if ( strcmp( cpu, "amd64-ssse3" ) == 0 ) {
+     level = 1;
+     cmask = 1 << 9;
 #endif
    } else {
      return False;

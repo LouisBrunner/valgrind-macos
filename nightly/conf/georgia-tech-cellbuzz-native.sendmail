@@ -4,10 +4,10 @@
 # Don't forget to set the from and realname variables in ~/.muttrc !
 
 sender="bart.vanassche@gmail.com"
-recipient="valgrind-developers@lists.sourceforge.net"
-#recipient="bart.vanassche@gmail.com"
+recipients="valgrind-developers@lists.sourceforge.net bart.vanassche@gmail.com"
+#recipients="bart.vanassche@gmail.com"
 if [ $# -ge 3 ]; then
-  mutt -s -a "$3" "$1" "${recipient}" < "$2"
+  mutt -s "$1" -a "$3" ${recipients} < "$2"
 else
-  mutt -s "$1" "${recipient}" < "$2"
+  mutt -s "$1" ${recipients} < "$2"
 fi

@@ -35,7 +35,8 @@
 #include "pub_core_libcbase.h"
 #include "pub_core_machine.h"
 #include "pub_core_cpuid.h"
-#include "pub_core_libcsignal.h"   // for ppc32 messing with SIGILL
+#include "pub_core_libcsignal.h"   // for ppc32 messing with SIGILL and SIGFPE
+#include "pub_core_debuglog.h"
 
 
 #define INSTR_PTR(regs)    ((regs).vex.VG_INSTR_PTR)
@@ -333,8 +334,8 @@ ULong VG_(machine_ppc64_has_VMX) = 0;
 
 #if defined(VGA_ppc32) || defined(VGA_ppc64)
 #include <setjmp.h> // For jmp_buf
-static jmp_buf env_sigill;
-static void handler_sigill ( Int x ) { __builtin_longjmp(env_sigill,1); }
+static jmp_buf env_unsup_insn;
+static void handler_unsup_insn ( Int x ) { __builtin_longjmp(env_unsup_insn,1); }
 #endif
 
 Bool VG_(machine_get_hwcaps)( void )
@@ -393,38 +394,55 @@ Bool VG_(machine_get_hwcaps)( void )
    return True;
 
 #elif defined(VGA_ppc32)
-   { /* ppc32 doesn't seem to have a sane way to find out what insn
-        sets the CPU supports.  So we have to arse around with
-        SIGILLs.  Yuck. */
+   {
+     /* Find out which subset of the ppc32 instruction set is supported by
+        verifying whether various ppc32 instructions generate a SIGILL
+        or a SIGFPE. An alternative approach is to check the AT_HWCAP and
+        AT_PLATFORM entries in the ELF auxiliary table -- see also
+        the_iifii.client_auxv in m_main.c.
+      */
      vki_sigset_t         saved_set, tmp_set;
-     struct vki_sigaction saved_act, tmp_act;
+     struct vki_sigaction saved_sigill_act, tmp_sigill_act;
+     struct vki_sigaction saved_sigfpe_act, tmp_sigfpe_act;
 
      volatile Bool have_F, have_V, have_FX, have_GX;
      Int r;
 
      VG_(sigemptyset)(&tmp_set);
      VG_(sigaddset)(&tmp_set, VKI_SIGILL);
+     VG_(sigaddset)(&tmp_set, VKI_SIGFPE);
 
      r = VG_(sigprocmask)(VKI_SIG_UNBLOCK, &tmp_set, &saved_set);
      vg_assert(r == 0);
 
-     r = VG_(sigaction)(VKI_SIGILL, NULL, &saved_act);
+     r = VG_(sigaction)(VKI_SIGILL, NULL, &saved_sigill_act);
      vg_assert(r == 0);
-     tmp_act = saved_act;
+     tmp_sigill_act = saved_sigill_act;
+
+     r = VG_(sigaction)(VKI_SIGFPE, NULL, &saved_sigfpe_act);
+     vg_assert(r == 0);
+     tmp_sigfpe_act = saved_sigfpe_act;
 
      /* NODEFER: signal handler does not return (from the kernel's point of
         view), hence if it is to successfully catch a signal more than once,
         we need the NODEFER flag. */
-     tmp_act.sa_flags &= ~VKI_SA_RESETHAND;
-     tmp_act.sa_flags &= ~VKI_SA_SIGINFO;
-     tmp_act.sa_flags |=  VKI_SA_NODEFER;
+     tmp_sigill_act.sa_flags &= ~VKI_SA_RESETHAND;
+     tmp_sigill_act.sa_flags &= ~VKI_SA_SIGINFO;
+     tmp_sigill_act.sa_flags |=  VKI_SA_NODEFER;
+     tmp_sigill_act.ksa_handler = handler_unsup_insn;
+     r = VG_(sigaction)(VKI_SIGILL, &tmp_sigill_act, NULL);
+     vg_assert(r == 0);
+
+     tmp_sigfpe_act.sa_flags &= ~VKI_SA_RESETHAND;
+     tmp_sigfpe_act.sa_flags &= ~VKI_SA_SIGINFO;
+     tmp_sigfpe_act.sa_flags |=  VKI_SA_NODEFER;
+     tmp_sigfpe_act.ksa_handler = handler_unsup_insn;
+     r = VG_(sigaction)(VKI_SIGFPE, &tmp_sigfpe_act, NULL);
+     vg_assert(r == 0);
 
      /* standard FP insns */
      have_F = True;
-     tmp_act.ksa_handler = handler_sigill;
-     r = VG_(sigaction)(VKI_SIGILL, &tmp_act, NULL);
-     vg_assert(r == 0);
-     if (__builtin_setjmp(env_sigill)) {
+     if (__builtin_setjmp(env_unsup_insn)) {
         have_F = False;
      } else {
         __asm__ __volatile__(".long 0xFC000090"); /*fmr 0,0 */
@@ -432,10 +450,7 @@ Bool VG_(machine_get_hwcaps)( void )
 
      /* Altivec insns */
      have_V = True;
-     tmp_act.ksa_handler = handler_sigill;
-     r = VG_(sigaction)(VKI_SIGILL, &tmp_act, NULL);
-     vg_assert(r == 0);
-     if (__builtin_setjmp(env_sigill)) {
+     if (__builtin_setjmp(env_unsup_insn)) {
         have_V = False;
      } else {
         /* Unfortunately some older assemblers don't speak Altivec (or
@@ -448,10 +463,7 @@ Bool VG_(machine_get_hwcaps)( void )
 
      /* General-Purpose optional (fsqrt, fsqrts) */
      have_FX = True;
-     tmp_act.ksa_handler = handler_sigill;
-     r = VG_(sigaction)(VKI_SIGILL, &tmp_act, NULL);
-     vg_assert(r == 0);
-     if (__builtin_setjmp(env_sigill)) {
+     if (__builtin_setjmp(env_unsup_insn)) {
         have_FX = False;
      } else {
         __asm__ __volatile__(".long 0xFC00002C"); /*fsqrt 0,0 */
@@ -459,23 +471,20 @@ Bool VG_(machine_get_hwcaps)( void )
 
      /* Graphics optional (stfiwx, fres, frsqrte, fsel) */
      have_GX = True;
-     tmp_act.ksa_handler = handler_sigill;
-     r = VG_(sigaction)(VKI_SIGILL, &tmp_act, NULL);
-     vg_assert(r == 0);
-     if (__builtin_setjmp(env_sigill)) {
+     if (__builtin_setjmp(env_unsup_insn)) {
         have_GX = False;
      } else {
         __asm__ __volatile__(".long 0xFC000034"); /* frsqrte 0,0 */
      }
 
-     r = VG_(sigaction)(VKI_SIGILL, &saved_act, NULL);
+     r = VG_(sigaction)(VKI_SIGILL, &saved_sigill_act, NULL);
+     vg_assert(r == 0);
+     r = VG_(sigaction)(VKI_SIGFPE, &saved_sigfpe_act, NULL);
      vg_assert(r == 0);
      r = VG_(sigprocmask)(VKI_SIG_SETMASK, &saved_set, NULL);
      vg_assert(r == 0);
-     /*
-        VG_(printf)("F %d V %d FX %d GX %d\n", 
+     VG_(debugLog)(1, "machine", "F %d V %d FX %d GX %d\n", 
                     (Int)have_F, (Int)have_V, (Int)have_FX, (Int)have_GX);
-     */
      /* Make FP a prerequisite for VMX (bogusly so), and for FX and GX. */
      if (have_V && !have_F)
         have_V = False;
@@ -501,32 +510,45 @@ Bool VG_(machine_get_hwcaps)( void )
    }
 
 #elif defined(VGA_ppc64)
-   { /* Same idiocy as for ppc32 - arse around with SIGILLs. */
+   {
+     /* Same instruction set detection algorithm as for ppc32. */
      vki_sigset_t         saved_set, tmp_set;
-     struct vki_sigaction saved_act, tmp_act;
+     struct vki_sigaction saved_sigill_act, tmp_sigill_act;
+     struct vki_sigaction saved_sigfpe_act, tmp_sigfpe_act;
 
      volatile Bool have_F, have_V, have_FX, have_GX;
 
      VG_(sigemptyset)(&tmp_set);
      VG_(sigaddset)(&tmp_set, VKI_SIGILL);
+     VG_(sigaddset)(&tmp_set, VKI_SIGFPE);
 
      VG_(sigprocmask)(VKI_SIG_UNBLOCK, &tmp_set, &saved_set);
 
-     VG_(sigaction)(VKI_SIGILL, NULL, &saved_act);
-     tmp_act = saved_act;
+     VG_(sigaction)(VKI_SIGILL, NULL, &saved_sigill_act);
+     tmp_sigill_act = saved_sigill_act;
+
+     VG_(sigaction)(VKI_SIGFPE, NULL, &saved_sigfpe_act);
+     tmp_sigfpe_act = saved_sigfpe_act;
+
 
      /* NODEFER: signal handler does not return (from the kernel's point of
         view), hence if it is to successfully catch a signal more than once,
         we need the NODEFER flag. */
-     tmp_act.sa_flags &= ~VKI_SA_RESETHAND;
-     tmp_act.sa_flags &= ~VKI_SA_SIGINFO;
-     tmp_act.sa_flags |=  VKI_SA_NODEFER;
+     tmp_sigill_act.sa_flags &= ~VKI_SA_RESETHAND;
+     tmp_sigill_act.sa_flags &= ~VKI_SA_SIGINFO;
+     tmp_sigill_act.sa_flags |=  VKI_SA_NODEFER;
+     tmp_sigill_act.ksa_handler = handler_unsup_insn;
+     VG_(sigaction)(VKI_SIGILL, &tmp_sigill_act, NULL);
+
+     tmp_sigfpe_act.sa_flags &= ~VKI_SA_RESETHAND;
+     tmp_sigfpe_act.sa_flags &= ~VKI_SA_SIGINFO;
+     tmp_sigfpe_act.sa_flags |=  VKI_SA_NODEFER;
+     tmp_sigfpe_act.ksa_handler = handler_unsup_insn;
+     VG_(sigaction)(VKI_SIGFPE, &tmp_sigfpe_act, NULL);
 
      /* standard FP insns */
      have_F = True;
-     tmp_act.ksa_handler = handler_sigill;
-     VG_(sigaction)(VKI_SIGILL, &tmp_act, NULL);
-     if (__builtin_setjmp(env_sigill)) {
+     if (__builtin_setjmp(env_unsup_insn)) {
         have_F = False;
      } else {
         __asm__ __volatile__("fmr 0,0");
@@ -534,9 +556,7 @@ Bool VG_(machine_get_hwcaps)( void )
 
      /* Altivec insns */
      have_V = True;
-     tmp_act.ksa_handler = handler_sigill;
-     VG_(sigaction)(VKI_SIGILL, &tmp_act, NULL);
-     if (__builtin_setjmp(env_sigill)) {
+     if (__builtin_setjmp(env_unsup_insn)) {
         have_V = False;
      } else {
         __asm__ __volatile__(".long 0x10000484"); /*vor 0,0,0*/
@@ -544,9 +564,7 @@ Bool VG_(machine_get_hwcaps)( void )
 
      /* General-Purpose optional (fsqrt, fsqrts) */
      have_FX = True;
-     tmp_act.ksa_handler = handler_sigill;
-     VG_(sigaction)(VKI_SIGILL, &tmp_act, NULL);
-     if (__builtin_setjmp(env_sigill)) {
+     if (__builtin_setjmp(env_unsup_insn)) {
         have_FX = False;
      } else {
         __asm__ __volatile__(".long 0xFC00002C"); /*fsqrt 0,0*/
@@ -554,21 +572,17 @@ Bool VG_(machine_get_hwcaps)( void )
 
      /* Graphics optional (stfiwx, fres, frsqrte, fsel) */
      have_GX = True;
-     tmp_act.ksa_handler = handler_sigill;
-     VG_(sigaction)(VKI_SIGILL, &tmp_act, NULL);
-     if (__builtin_setjmp(env_sigill)) {
+     if (__builtin_setjmp(env_unsup_insn)) {
         have_GX = False;
      } else {
         __asm__ __volatile__(".long 0xFC000034"); /*frsqrte 0,0*/
      }
 
-     VG_(sigaction)(VKI_SIGILL, &saved_act, NULL);
+     VG_(sigaction)(VKI_SIGILL, &saved_sigill_act, NULL);
+     VG_(sigaction)(VKI_SIGFPE, &saved_sigfpe_act, NULL);
      VG_(sigprocmask)(VKI_SIG_SETMASK, &saved_set, NULL);
-     /*
-     if (0)
-        VG_(printf)("F %d V %d FX %d GX %d\n", 
+     VG_(debugLog)(1, "machine", "F %d V %d FX %d GX %d\n", 
                     (Int)have_F, (Int)have_V, (Int)have_FX, (Int)have_GX);
-     */
      /* on ppc64, if we don't even have FP, just give up. */
      if (!have_F)
         return False;

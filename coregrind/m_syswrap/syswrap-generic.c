@@ -3354,7 +3354,7 @@ PRE(sys_ioctl)
       PRE_MEM_WRITE( "ioctl(SG_GET_TIMEOUT)", ARG3, sizeof(int) );
       break;
    case VKI_SG_GET_VERSION_NUM:
-      PRE_MEM_READ(  "ioctl(SG_GET_VERSION_NUM)",  ARG3, sizeof(int) );
+      PRE_MEM_WRITE(  "ioctl(SG_GET_VERSION_NUM)",  ARG3, sizeof(int) );
       break;
    case VKI_SG_EMULATED_HOST: /* 0x2203 */
       PRE_MEM_WRITE( "ioctl(SG_EMULATED_HOST)",    ARG3, sizeof(int) );
@@ -4434,6 +4434,7 @@ POST(sys_ioctl)
       POST_MEM_WRITE(ARG3, sizeof(int));
       break;
    case VKI_SG_GET_VERSION_NUM:
+      POST_MEM_WRITE(ARG3, sizeof(int));
       break;
    case VKI_SG_EMULATED_HOST:
       POST_MEM_WRITE(ARG3, sizeof(int));

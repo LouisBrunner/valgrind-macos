@@ -77,8 +77,8 @@ void h_pre_mem_read_asciiz ( CorePart part, ThreadId tid,
                              Char* s, Addr lo );
 
 void h_post_reg_write_demux ( CorePart part, ThreadId tid,
-                              OffT guest_state_offset, SizeT size);
-void h_post_reg_write_clientcall(ThreadId tid, OffT guest_state_offset,
+                              PtrdiffT guest_state_offset, SizeT size);
+void h_post_reg_write_clientcall(ThreadId tid, PtrdiffT guest_state_offset,
                                  SizeT size, Addr f );
 
 void h_pre_syscall ( ThreadId tid, UInt syscallno );

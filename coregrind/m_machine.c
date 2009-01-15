@@ -107,7 +107,7 @@ void VG_(set_syscall_return_shadows) ( ThreadId tid,
 void
 VG_(get_shadow_regs_area) ( ThreadId tid, 
                             /*DST*/UChar* dst,
-                            /*SRC*/Int shadowNo, OffT offset, SizeT size )
+                            /*SRC*/Int shadowNo, PtrdiffT offset, SizeT size )
 {
    void*        src;
    ThreadState* tst;
@@ -130,7 +130,7 @@ VG_(get_shadow_regs_area) ( ThreadId tid,
 
 void
 VG_(set_shadow_regs_area) ( ThreadId tid, 
-                            /*DST*/Int shadowNo, OffT offset, SizeT size,
+                            /*DST*/Int shadowNo, PtrdiffT offset, SizeT size,
                             /*SRC*/const UChar* src )
 {
    void*        dst;

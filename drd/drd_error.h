@@ -81,7 +81,7 @@ typedef
 struct {                      // Used by:
    AddrKind    akind;         //   ALL
    SizeT       size;          //   ALL
-   OffT        rwoffset;      //   ALL
+   PtrdiffT    rwoffset;      //   ALL
    ExeContext* lastchange;    //   Mallocd
    DrdThreadId stack_tid;     //   Stack
    DebugInfo*  debuginfo;     //   Segment

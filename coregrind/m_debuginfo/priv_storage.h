@@ -349,29 +349,29 @@ struct _DebugInfo {
       (4) is ensured by canonicaliseCFI.
    */
    /* .text */
-   Bool   text_present;
-   Addr   text_avma;
-   Addr   text_svma;
-   SizeT  text_size;
-   OffT   text_bias;
+   Bool     text_present;
+   Addr     text_avma;
+   Addr     text_svma;
+   SizeT    text_size;
+   PtrdiffT text_bias;
    /* .data */
-   Bool   data_present;
-   Addr   data_svma;
-   Addr   data_avma;
-   SizeT  data_size;
-   OffT   data_bias;
+   Bool     data_present;
+   Addr     data_svma;
+   Addr     data_avma;
+   SizeT    data_size;
+   PtrdiffT data_bias;
    /* .sdata */
-   Bool   sdata_present;
-   Addr   sdata_svma;
-   Addr   sdata_avma;
-   SizeT  sdata_size;
-   OffT   sdata_bias;
+   Bool     sdata_present;
+   Addr     sdata_svma;
+   Addr     sdata_avma;
+   SizeT    sdata_size;
+   PtrdiffT sdata_bias;
    /* .bss */
-   Bool   bss_present;
-   Addr   bss_svma;
-   Addr   bss_avma;
-   SizeT  bss_size;
-   OffT   bss_bias;
+   Bool     bss_present;
+   Addr     bss_svma;
+   Addr     bss_avma;
+   SizeT    bss_size;
+   PtrdiffT bss_bias;
    /* .plt */
    Bool   plt_present;
    Addr	  plt_avma;

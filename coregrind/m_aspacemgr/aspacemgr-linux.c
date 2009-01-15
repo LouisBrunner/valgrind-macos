@@ -330,7 +330,7 @@ static Int  find_nsegment_idx ( Addr a );
 
 static void parse_procselfmaps (
       void (*record_mapping)( Addr addr, SizeT len, UInt prot,
-                              ULong dev, ULong ino, ULong offset, 
+                              ULong dev, ULong ino, Off64T offset, 
                               const UChar* filename ),
       void (*record_gap)( Addr addr, SizeT len )
    );
@@ -498,7 +498,7 @@ static void __attribute__ ((unused))
 
    VG_(debugLog)(logLevel, "aspacem",
       "NSegment{%s, start=0x%llx, end=0x%llx, smode=%s, dev=%llu, "
-      "ino=%llu, offset=%llu, fnIdx=%d, hasR=%d, hasW=%d, hasX=%d, "
+      "ino=%llu, offset=%lld, fnIdx=%d, hasR=%d, hasW=%d, hasX=%d, "
       "hasT=%d, mark=%d, name=\"%s\"}\n",
       show_SegKind(seg->kind),
       (ULong)seg->start,
@@ -553,7 +553,7 @@ static void show_nsegment ( Int logLevel, Int segNo, NSegment* seg )
             seg->hasR ? 'r' : '-', seg->hasW ? 'w' : '-', 
             seg->hasX ? 'x' : '-', seg->hasT ? 'T' : '-', 
             seg->isCH ? 'H' : '-',
-            seg->dev, seg->ino, (Long)seg->offset, seg->fnIdx
+            seg->dev, seg->ino, seg->offset, seg->fnIdx
          );
          break;
 
@@ -872,7 +872,7 @@ static Bool preen_nsegments ( void )
 static Bool sync_check_ok = False;
 
 static void sync_check_mapping_callback ( Addr addr, SizeT len, UInt prot,
-                                          ULong dev, ULong ino, ULong offset, 
+                                          ULong dev, ULong ino, Off64T offset, 
                                           const UChar* filename )
 {
    Int  iLo, iHi, i;
@@ -1527,7 +1527,7 @@ static void init_resvn ( /*OUT*/NSegment* seg, Addr start, Addr end )
 /*-----------------------------------------------------------------*/
 
 static void read_maps_callback ( Addr addr, SizeT len, UInt prot,
-                                 ULong dev, ULong ino, ULong offset, 
+                                 ULong dev, ULong ino, Off64T offset, 
                                  const UChar* filename )
 {
    NSegment seg;
@@ -3060,7 +3060,7 @@ static void read_procselfmaps_into_buf ( void )
 */
 static void parse_procselfmaps (
       void (*record_mapping)( Addr addr, SizeT len, UInt prot,
-                              ULong dev, ULong ino, ULong offset, 
+                              ULong dev, ULong ino, Off64T offset, 
                               const UChar* filename ),
       void (*record_gap)( Addr addr, SizeT len )
    )

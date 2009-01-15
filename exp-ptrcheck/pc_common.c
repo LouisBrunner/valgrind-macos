@@ -130,13 +130,13 @@ typedef
             HChar  actual[128];
          } SorG;
          struct {
-            Addr   addr;
-            SSizeT sszB;  /* -ve is write, +ve is read */
-            Seg*   vseg;
-            Char   descr1[96];
-            Char   descr2[96];
-            Char   datasym[96];
-            OffT   datasymoff;
+            Addr     addr;
+            SSizeT   sszB;  /* -ve is write, +ve is read */
+            Seg*     vseg;
+            Char     descr1[96];
+            Char     descr2[96];
+            Char     datasym[96];
+            PtrdiffT datasymoff;
          } Heap;
          struct {
             Seg* seg1;

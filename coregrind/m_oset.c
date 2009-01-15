@@ -282,7 +282,7 @@ static inline Bool stackPop(AvlTree* t, AvlNode** n, Int* i)
 /*--------------------------------------------------------------------*/
 
 // The underscores avoid GCC complaints about overshadowing global names.
-AvlTree* VG_(OSetGen_Create)(OffT _keyOff, OSetCmp_t _cmp,
+AvlTree* VG_(OSetGen_Create)(PtrdiffT _keyOff, OSetCmp_t _cmp,
                              OSetAlloc_t _alloc, HChar* _cc,
                              OSetFree_t _free)
 {

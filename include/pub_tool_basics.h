@@ -62,22 +62,40 @@
 
 // By choosing the right types, we can get these right for 32-bit and 64-bit
 // platforms without having to do any conditional compilation or anything.
+// POSIX references:
+// - http://www.opengroup.org/onlinepubs/009695399/basedefs/sys/types.h.html
+// - http://www.opengroup.org/onlinepubs/009695399/basedefs/stddef.h.html
 // 
 // Size in bits on:                          32-bit archs   64-bit archs
 //                                           ------------   ------------
 typedef unsigned long          UWord;     // 32             64
+typedef   signed long           Word;     // 32             64
 
-typedef signed long            Word;      // 32             64
-
+// Addr is for holding an address.  AddrH was intended to be "Addr on the
+// host", for the notional case where host word size != guest word size.
+// But since the assumption that host arch == guest arch has become so
+// deeply wired in, it's a pretty pointless distinction now.
 typedef UWord                  Addr;      // 32             64
 typedef UWord                  AddrH;     // 32             64
 
+// Our equivalents of POSIX 'size_t' and 'ssize_t':
+// - size_t is an "unsigned integer type of the result of the sizeof operator".
+// - ssize_t is "used for a count of bytes or an error indication".
 typedef UWord                  SizeT;     // 32             64
 typedef  Word                 SSizeT;     // 32             64
 
-typedef  Word                   OffT;     // 32             64
+// Our equivalent of POSIX 'ptrdiff_t':
+// - ptrdiff_t is a "signed integer type of the result of subtracting two
+//   pointers".
+// We use it for memory offsets, eg. the offset into a memory block.
+typedef  Word                 PtrdiffT;   // 32             64
 
-typedef ULong                 Off64T;     // 64             64
+// Our equivalent of POSIX 'off_t':
+// - off_t is "used for file sizes".
+// At one point we were using it for memory offsets, but PtrdiffT should be
+// used in those cases.
+typedef Word                   OffT;      // 32             64
+typedef Long                 Off64T;      // 64             64
 
 #if !defined(NULL)
 #  define NULL ((void*)0)

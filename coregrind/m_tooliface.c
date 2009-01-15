@@ -391,10 +391,10 @@ DEF0(track_pre_mem_read_asciiz,   CorePart, ThreadId, Char*, Addr)
 DEF0(track_pre_mem_write,         CorePart, ThreadId, Char*, Addr, SizeT)
 DEF0(track_post_mem_write,        CorePart, ThreadId, Addr, SizeT)
 
-DEF0(track_pre_reg_read,          CorePart, ThreadId, Char*, OffT, SizeT)
-DEF0(track_post_reg_write,        CorePart, ThreadId,        OffT, SizeT)
+DEF0(track_pre_reg_read,          CorePart, ThreadId, Char*, PtrdiffT, SizeT)
+DEF0(track_post_reg_write,        CorePart, ThreadId,        PtrdiffT, SizeT)
 
-DEF0(track_post_reg_write_clientcall_return, ThreadId, OffT, SizeT, Addr)
+DEF0(track_post_reg_write_clientcall_return, ThreadId, PtrdiffT, SizeT, Addr)
 
 DEF0(track_start_client_code,     ThreadId, ULong)
 DEF0(track_stop_client_code,      ThreadId, ULong)

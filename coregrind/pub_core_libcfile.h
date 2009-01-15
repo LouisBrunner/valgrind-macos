@@ -74,7 +74,7 @@ extern Int VG_(access) ( HChar* path, Bool irusr, Bool iwusr, Bool ixusr );
 extern Int VG_(check_executable)(/*OUT*/Bool* is_setuid,
                                  HChar* f, Bool allow_setuid);
 
-extern SysRes VG_(pread) ( Int fd, void* buf, Int count, Int offset );
+extern SysRes VG_(pread) ( Int fd, void* buf, Int count, OffT offset );
 
 /* Create and open (-rw------) a tmp file name incorporating said arg.
    Returns -1 on failure, else the fd of the file.  If fullname is

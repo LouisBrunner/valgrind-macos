@@ -567,15 +567,15 @@ void VG_(track_post_mem_write)     (void(*f)(CorePart part, ThreadId tid,
 /* Register events.  Use VG_(set_shadow_state_area)() to set the shadow regs
    for these events.  */
 void VG_(track_pre_reg_read)  (void(*f)(CorePart part, ThreadId tid,
-                                        Char* s, OffT guest_state_offset,
+                                        Char* s, PtrdiffT guest_state_offset,
                                         SizeT size));
 void VG_(track_post_reg_write)(void(*f)(CorePart part, ThreadId tid,
-                                        OffT guest_state_offset,
+                                        PtrdiffT guest_state_offset,
                                         SizeT size));
 
 /* This one is called for malloc() et al if they are replaced by a tool. */
 void VG_(track_post_reg_write_clientcall_return)(
-      void(*f)(ThreadId tid, OffT guest_state_offset, SizeT size, Addr f));
+      void(*f)(ThreadId tid, PtrdiffT guest_state_offset, SizeT size, Addr f));
 
 
 /* Scheduler events (not exhaustive) */

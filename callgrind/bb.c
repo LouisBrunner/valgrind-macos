@@ -57,7 +57,7 @@ bb_hash* CLG_(get_bb_hash)()
  * - BB base as object file offset
  */
 static __inline__
-UInt bb_hash_idx(obj_node* obj, OffT offset, UInt size)
+UInt bb_hash_idx(obj_node* obj, PtrdiffT offset, UInt size)
 {
   return (((Addr)obj) + offset) % size;
 }
@@ -118,7 +118,7 @@ void resize_bb_table(void)
  * Not initialized:
  * - instr_len, cost_count, instr[]
  */
-static BB* new_bb(obj_node* obj, OffT offset,
+static BB* new_bb(obj_node* obj, PtrdiffT offset,
 		  UInt instr_count, UInt cjmp_count, Bool cjmp_inverted)
 {
    BB* new;
@@ -176,7 +176,7 @@ static BB* new_bb(obj_node* obj, OffT offset,
 
 /* get the BB structure for a BB start address */
 static __inline__
-BB* lookup_bb(obj_node* obj, OffT offset)
+BB* lookup_bb(obj_node* obj, PtrdiffT offset)
 {
     BB* bb;
     Int idx;
@@ -199,7 +199,7 @@ obj_node* obj_of_address(Addr addr)
 {
   obj_node* obj;
   DebugInfo* di;
-  OffT offset;
+  PtrdiffT offset;
 
   di = VG_(find_seginfo)(addr);
   obj = CLG_(get_obj_node)( di );
@@ -292,7 +292,7 @@ void CLG_(delete_bb)(Addr addr)
     Int idx, size;
 
     obj_node* obj = obj_of_address(addr);
-    OffT offset = addr - obj->offset;
+    PtrdiffT offset = addr - obj->offset;
 
     idx = bb_hash_idx(obj, offset, bbs.size);
     bb = bbs.table[idx];

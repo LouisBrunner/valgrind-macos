@@ -98,15 +98,15 @@ struct _AddrInfo {
          BlockKind   block_kind;
          Char*       block_desc;    // "block", "mempool" or user-defined
          SizeT       block_szB;
-         OffT        rwoffset;
+         PtrdiffT    rwoffset;
          ExeContext* lastchange;
       } Block;
 
-      // In a global .data symbol.  This holds the first 63 chars of
-      // the variable's (zero terminated), plus an offset.
+      // In a global .data symbol.  This holds the first 127 chars of
+      // the variable's name (zero terminated), plus a (memory) offset.
       struct {
-         Char name[128];
-         OffT offset;
+         Char     name[128];
+         PtrdiffT offset;
       } DataSym;
 
       // Is described by Dwarf debug info.  Arbitrary strings.  Must
@@ -286,10 +286,10 @@ static void mc_pp_AddrInfo ( Addr a, AddrInfo* ai, Bool maybe_gcc )
          break;
 
       case Addr_Block: {
-         SizeT block_szB  = ai->Addr.Block.block_szB;
-         OffT  rwoffset   = ai->Addr.Block.rwoffset;
-         SizeT delta;
-         const Char* relative;
+         SizeT    block_szB = ai->Addr.Block.block_szB;
+         PtrdiffT rwoffset  = ai->Addr.Block.rwoffset;
+         SizeT    delta;
+         const    Char* relative;
 
          if (rwoffset < 0) {
             delta    = (SizeT)(-rwoffset);

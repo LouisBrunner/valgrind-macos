@@ -90,10 +90,10 @@ extern void VG_(set_IP) ( ThreadId tid, Addr ip );
 void
 VG_(get_shadow_regs_area) ( ThreadId tid, 
                             /*DST*/UChar* dst,
-                            /*SRC*/Int shadowNo, OffT offset, SizeT size );
+                            /*SRC*/Int shadowNo, PtrdiffT offset, SizeT size );
 void
 VG_(set_shadow_regs_area) ( ThreadId tid, 
-                            /*DST*/Int shadowNo, OffT offset, SizeT size,
+                            /*DST*/Int shadowNo, PtrdiffT offset, SizeT size,
                             /*SRC*/const UChar* src );
 
 // Sets the shadow values for the syscall return value register(s).

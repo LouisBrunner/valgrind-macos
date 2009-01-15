@@ -206,7 +206,7 @@ Bool get_elf_symbol_info (
         Char*      sym_name,   /* name */
         Addr       sym_svma,   /* address as stated in the object file */
         UChar*     opd_img,    /* oimage of .opd sec (ppc64-linux only) */
-        OffT       opd_bias,   /* for biasing AVMAs found in .opd */
+        PtrdiffT   opd_bias,   /* for biasing AVMAs found in .opd */
         /* OUTPUTS */
         Char** sym_name_out,   /* name we should record */
         Addr*  sym_avma_out,   /* addr we should record */

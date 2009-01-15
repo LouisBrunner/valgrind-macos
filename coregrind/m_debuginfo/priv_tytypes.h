@@ -166,10 +166,10 @@ MaybeULong ML_(sizeOfType)( XArray* /* of TyEnt */ tyents,
 
 /* Describe where in the type 'offset' falls.  Caller must
    deallocate the resulting XArray. */
-XArray* /*UChar*/ ML_(describe_type)( /*OUT*/OffT* residual_offset,
+XArray* /*UChar*/ ML_(describe_type)( /*OUT*/PtrdiffT* residual_offset,
                                       XArray* /* of TyEnt */ tyents,
                                       UWord ty_cuOff, 
-                                      OffT offset );
+                                      PtrdiffT offset );
 
 
 /* A fast-lookup cache for ML_(TyEnts__index_by_cuOff).  Nothing

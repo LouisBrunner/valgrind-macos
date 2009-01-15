@@ -304,7 +304,7 @@ struct _CJmpInfo {
  */
 struct _BB {
   obj_node*  obj;         /* ELF object of BB */
-  OffT       offset;      /* offset of BB in ELF object file */
+  PtrdiffT   offset;      /* offset of BB in ELF object file */
   BB*        next;       /* chaining for a hash entry */
 
   VgSectKind sect_kind;  /* section of this BB, e.g. PLT */
@@ -463,7 +463,7 @@ struct _obj_node {
 
    Addr       start;  /* Start address of text segment mapping */
    SizeT      size;   /* Length of mapping */
-   OffT       offset; /* Offset between symbol address and file offset */
+   PtrdiffT   offset; /* Offset between symbol address and file offset */
 
    file_node* files[N_FILE_ENTRIES];
    UInt       number;

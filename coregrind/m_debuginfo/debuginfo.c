@@ -1088,11 +1088,11 @@ static void search_all_loctabs ( Addr ptr, /*OUT*/DebugInfo** pdi,
 static
 Bool get_sym_name ( Bool demangle, Addr a, Char* buf, Int nbuf,
                     Bool match_anywhere_in_sym, Bool show_offset,
-                    Bool findText, /*OUT*/OffT* offsetP )
+                    Bool findText, /*OUT*/PtrdiffT* offsetP )
 {
    DebugInfo* di;
    Word       sno;
-   Int        offset;
+   PtrdiffT   offset;
 
    search_all_symtabs ( a, &di, &sno, match_anywhere_in_sym, findText );
    if (di == NULL) 
@@ -1105,7 +1105,7 @@ Bool get_sym_name ( Bool demangle, Addr a, Char* buf, Int nbuf,
    }
 
    offset = a - di->symtab[sno].addr;
-   if (offsetP) *offsetP = (OffT)offset;
+   if (offsetP) *offsetP = offset;
 
    if (show_offset && offset != 0) {
       Char     buf2[12];
@@ -1113,7 +1113,7 @@ Bool get_sym_name ( Bool demangle, Addr a, Char* buf, Int nbuf,
       Char*    end = buf + nbuf;
       Int      len;
 
-      len = VG_(sprintf)(buf2, "%c%d",
+      len = VG_(sprintf)(buf2, "%c%ld",
 			 offset < 0 ? '-' : '+',
 			 offset < 0 ? -offset : offset);
       vg_assert(len < (Int)sizeof(buf2));
@@ -1221,7 +1221,7 @@ Bool VG_(get_fnname_Z_demangle_only) ( Addr a, Char* buf, Int nbuf )
    from the symbol start is put into *offset. */
 Bool VG_(get_datasym_and_offset)( Addr data_addr,
                                   /*OUT*/Char* dname, Int n_dname,
-                                  /*OUT*/OffT* offset )
+                                  /*OUT*/PtrdiffT* offset )
 {
    Bool ok;
    vg_assert(n_dname > 1);
@@ -1923,7 +1923,7 @@ Bool VG_(use_CF_info) ( /*MOD*/Addr* ipP,
    offset of data_addr from the start of the variable.  Note that
    regs, which supplies ip,sp,fp values, will be NULL for global
    variables, and non-NULL for local variables. */
-static Bool data_address_is_in_var ( /*OUT*/UWord* offset,
+static Bool data_address_is_in_var ( /*OUT*/PtrdiffT* offset,
                                      XArray* /* TyEnt */ tyents,
                                      DiVariable*   var,
                                      RegSummary*   regs,
@@ -1993,8 +1993,8 @@ static void format_message ( /*OUT*/Char* dname1,
                              Int      n_dname,
                              Addr     data_addr,
                              DiVariable* var,
-                             OffT     var_offset,
-                             OffT     residual_offset,
+                             PtrdiffT var_offset,
+                             PtrdiffT residual_offset,
                              XArray* /*UChar*/ described,
                              Int      frameNo, 
                              ThreadId tid )
@@ -2237,14 +2237,14 @@ Bool consider_vars_in_frame ( /*OUT*/Char* dname1,
                    && VG_(sizeXA)(vars) > 0) );
       for (j = 0; j < VG_(sizeXA)( vars ); j++) {
          DiVariable* var = (DiVariable*)VG_(indexXA)( vars, j );
-         SizeT       offset;
+         PtrdiffT    offset;
          if (debug)
             VG_(printf)("QQQQ:    var:name=%s %#lx-%#lx %#lx\n",
                         var->name,arange->aMin,arange->aMax,ip);
          if (data_address_is_in_var( &offset, di->admin_tyents,
                                      var, &regs,
                                      data_addr, di->data_bias )) {
-            OffT residual_offset = 0;
+            PtrdiffT residual_offset = 0;
             XArray* described = ML_(describe_type)( &residual_offset,
                                                     di->admin_tyents, 
                                                     var->typeR, offset );
@@ -2331,7 +2331,7 @@ Bool VG_(get_data_description)( /*OUT*/Char* dname1,
          of any of them bracket data_addr. */
       vars = global_arange->vars;
       for (i = 0; i < VG_(sizeXA)( vars ); i++) {
-         SizeT offset;
+         PtrdiffT offset;
          DiVariable* var = (DiVariable*)VG_(indexXA)( vars, i );
          vg_assert(var->name);
          /* Note we use a NULL RegSummary* here.  It can't make any
@@ -2343,7 +2343,7 @@ Bool VG_(get_data_description)( /*OUT*/Char* dname1,
          if (data_address_is_in_var( &offset, di->admin_tyents, var, 
                                      NULL/* RegSummary* */, 
                                      data_addr, di->data_bias )) {
-            OffT residual_offset = 0;
+            PtrdiffT residual_offset = 0;
             XArray* described = ML_(describe_type)( &residual_offset,
                                                     di->admin_tyents,
                                                     var->typeR, offset );
@@ -2896,7 +2896,7 @@ const UChar* VG_(seginfo_filename)(const DebugInfo* di)
    return di->filename;
 }
 
-ULong VG_(seginfo_get_text_bias)(const DebugInfo* di)
+PtrdiffT VG_(seginfo_get_text_bias)(const DebugInfo* di)
 {
    return di->text_present ? di->text_bias : 0;
 }

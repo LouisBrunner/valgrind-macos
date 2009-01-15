@@ -67,7 +67,7 @@ Bool ML_(do_sigkill)(Int pid, Int tgid);
 extern 
 void 
 ML_(notify_aspacem_and_tool_of_mmap) ( Addr a, SizeT len, UInt prot, 
-                                       UInt mm_flags, Int fd, ULong offset );
+                                       UInt mm_flags, Int fd, Off64T offset );
 
 
 DECL_TEMPLATE(generic, sys_ni_syscall);            // * P -- unimplemented

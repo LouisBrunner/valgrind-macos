@@ -1915,7 +1915,7 @@ static Bool is_integer_guest_reg ( Int offset, Int szB )
 /* these assume guest and host have the same endianness and
    word size (probably). */
 static UWord get_guest_intreg ( ThreadId tid, Int shadowNo,
-                                OffT offset, SizeT size )
+                                PtrdiffT offset, SizeT size )
 {
    UChar tmp[ 2 + sizeof(UWord) ];
    tl_assert(size == sizeof(UWord));
@@ -1929,7 +1929,7 @@ static UWord get_guest_intreg ( ThreadId tid, Int shadowNo,
    return * ((UWord*) &tmp[1] ); /* MISALIGNED LOAD */
 }
 static void put_guest_intreg ( ThreadId tid, Int shadowNo,
-                               OffT offset, SizeT size, UWord w )
+                               PtrdiffT offset, SizeT size, UWord w )
 {
    tl_assert(size == sizeof(UWord));
    tl_assert(0 == (offset % sizeof(UWord)));
@@ -1950,7 +1950,7 @@ static void init_shadow_registers ( ThreadId tid )
    }
 }
 
-static void post_reg_write_nonptr ( ThreadId tid, OffT offset, SizeT size )
+static void post_reg_write_nonptr ( ThreadId tid, PtrdiffT offset, SizeT size )
 {
    // syscall_return: Default is non-pointer.  If it really is a pointer
    // (eg. for mmap()), SK_(post_syscall) sets it again afterwards.
@@ -1968,7 +1968,7 @@ static void post_reg_write_nonptr ( ThreadId tid, OffT offset, SizeT size )
 }
 
 static void post_reg_write_nonptr_or_unknown ( ThreadId tid,
-                                               OffT offset, SizeT size )
+                                               PtrdiffT offset, SizeT size )
 {
    // deliver_signal: called from two places; one sets the reg to zero, the
    // other sets the stack pointer.
@@ -1985,7 +1985,7 @@ static void post_reg_write_nonptr_or_unknown ( ThreadId tid,
 }
 
 void h_post_reg_write_demux ( CorePart part, ThreadId tid,
-                              OffT guest_state_offset, SizeT size)
+                              PtrdiffT guest_state_offset, SizeT size)
 {
    if (0)
    VG_(printf)("post_reg_write_demux: tid %d part %d off %ld size %ld\n",
@@ -2015,7 +2015,7 @@ void h_post_reg_write_demux ( CorePart part, ThreadId tid,
    }
 }
 
-void h_post_reg_write_clientcall(ThreadId tid, OffT guest_state_offset,
+void h_post_reg_write_clientcall(ThreadId tid, PtrdiffT guest_state_offset,
                                  SizeT size, Addr f )
 {
    UWord p;

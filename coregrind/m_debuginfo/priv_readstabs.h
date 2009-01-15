@@ -41,7 +41,7 @@
    Stabs reader
    -------------------- */
 extern
-void ML_(read_debuginfo_stabs) ( struct _DebugInfo* di, OffT debug_offset,
+void ML_(read_debuginfo_stabs) ( struct _DebugInfo* di, PtrdiffT debug_offset,
                                  UChar* stabC,   Int stab_sz,
                                  UChar* stabstr, Int stabstr_sz );
 

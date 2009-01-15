@@ -524,9 +524,9 @@ typedef
 typedef
    struct {
       /* FIXED */
-      Addr  rx_map_avma;
-      SizeT rx_map_size;
-      OffT  text_bias;
+      Addr     rx_map_avma;
+      SizeT    rx_map_size;
+      PtrdiffT text_bias;
       /* VARIABLE -- count stats */
       UWord n_straightforward_biasings;
       UWord n_kludgey_biasings;

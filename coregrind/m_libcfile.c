@@ -470,7 +470,7 @@ Int VG_(check_executable)(/*OUT*/Bool* is_setuid,
    return 0;
 }
 
-SysRes VG_(pread) ( Int fd, void* buf, Int count, Int offset )
+SysRes VG_(pread) ( Int fd, void* buf, Int count, OffT offset )
 {
    OffT off = VG_(lseek)( fd, (OffT)offset, VKI_SEEK_SET);
    if (off < 0)

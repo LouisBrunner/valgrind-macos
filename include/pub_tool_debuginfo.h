@@ -80,7 +80,7 @@ extern Bool VG_(get_fnname_if_entry) ( Addr a, Char* fnname, Int n_fnname );
    from the symbol start is put into *offset. */
 extern Bool VG_(get_datasym_and_offset)( Addr data_addr,
                                          /*OUT*/Char* dname, Int n_dname,
-                                         /*OUT*/OffT* offset );
+                                         /*OUT*/PtrdiffT* offset );
 
 /* Try to form some description of data_addr by looking at the DWARF3
    debug info we have.  This considers all global variables, and all
@@ -113,11 +113,11 @@ extern Char* VG_(describe_IP)(Addr eip, Char* buf, Int n_buf);
 
 typedef
    struct {
-      OffT  base;     /* offset from sp or fp */
-      SizeT szB;      /* size in bytes */
-      Bool  spRel;    /* True => sp-rel, False => fp-rel */
-      Bool  isVec;    /* does block have an array type, or not? */
-      HChar name[16]; /* first 15 chars of name (asciiz) */
+      PtrdiffT base;       /* offset from sp or fp */
+      SizeT    szB;        /* size in bytes */
+      Bool     spRel;      /* True => sp-rel, False => fp-rel */
+      Bool     isVec;      /* does block have an array type, or not? */
+      HChar    name[16];   /* first 15 chars of name (asciiz) */
    }
    StackBlock;
 
@@ -167,7 +167,7 @@ extern       Addr     VG_(seginfo_get_gotplt_avma)( const DebugInfo *di );
 extern       SizeT    VG_(seginfo_get_gotplt_size)( const DebugInfo *di );
 extern const UChar*   VG_(seginfo_soname)       ( const DebugInfo *di );
 extern const UChar*   VG_(seginfo_filename)     ( const DebugInfo *di );
-extern       ULong    VG_(seginfo_get_text_bias)( const DebugInfo *di );
+extern       PtrdiffT VG_(seginfo_get_text_bias)( const DebugInfo *di );
 
 /* Function for traversing the seginfo list.  When called with NULL it
    returns the first element; otherwise it returns the given element's

@@ -3351,7 +3351,6 @@ PRE(sys_ioctl)
       PRE_MEM_WRITE( "ioctl(SG_GET_RESERVED_SIZE)", ARG3, sizeof(int) );
       break;
    case VKI_SG_GET_TIMEOUT:
-      PRE_MEM_WRITE( "ioctl(SG_GET_TIMEOUT)", ARG3, sizeof(int) );
       break;
    case VKI_SG_GET_VERSION_NUM:
       PRE_MEM_WRITE(  "ioctl(SG_GET_VERSION_NUM)",  ARG3, sizeof(int) );
@@ -4431,7 +4430,6 @@ POST(sys_ioctl)
       POST_MEM_WRITE(ARG3, sizeof(int));
       break;
    case VKI_SG_GET_TIMEOUT:
-      POST_MEM_WRITE(ARG3, sizeof(int));
       break;
    case VKI_SG_GET_VERSION_NUM:
       POST_MEM_WRITE(ARG3, sizeof(int));

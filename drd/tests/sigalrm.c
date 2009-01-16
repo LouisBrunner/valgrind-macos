@@ -1,4 +1,4 @@
-#if !defined(_AIX)
+#include "../../config.h"
 #include <assert.h>
 #include <errno.h>
 #include <pthread.h>
@@ -8,7 +8,9 @@
 #include <string.h>
 #include <time.h>
 #include <unistd.h>
-#include <asm/unistd.h>
+#ifdef HAVE_ASM_UNISTD_H
+#include <asm/unistd.h> // __NR_gettid
+#endif
 #include "../drd.h"
 
 
@@ -84,11 +86,3 @@ int main(int argc, char** argv)
 
   return 0;
 }
-
-#else /* !defined(_AIX) */
-#include <stdio.h>
-int main ( void ) {
-  fprintf(stderr, "This test does not compile on AIX5.\n");
-  return 0;
-}
-#endif /* !defined(_AIX) */

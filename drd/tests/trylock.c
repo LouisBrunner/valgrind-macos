@@ -22,7 +22,9 @@ int main(int argc, char** argv)
   pthread_rwlock_t rwlock;
   struct timespec abs_timeout;
 
-  r = clock_gettime(CLOCK_REALTIME, &abs_timeout); assert(r == 0);
+  time(&abs_timeout.tv_sec);
+  abs_timeout.tv_nsec = 0;
+
   abs_timeout.tv_sec += 10;
 
   r = pthread_rwlock_init(&rwlock, NULL); assert(r == 0);

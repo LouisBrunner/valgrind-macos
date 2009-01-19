@@ -1,2 +1,0 @@
-prog: linux-capget
-stderr_filter: filter_allocs

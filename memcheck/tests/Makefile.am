@@ -18,6 +18,11 @@ if VGA_PPC64
 SUBDIRS += ppc64
 endif
 
+# OS-specific tests
+if VGO_LINUX
+SUBDIRS += linux
+endif
+
 # Platform-specific tests
 if VGP_X86_LINUX
 SUBDIRS += x86-linux
@@ -73,10 +78,8 @@ EXTRA_DIST = $(noinst_SCRIPTS) \
 	leak-tree.stderr.exp2 leak-tree.stderr.exp64 \
 	leak-regroot.vgtest leak-regroot.stderr.exp \
 	leakotron.vgtest leakotron.stdout.exp leakotron.stderr.exp \
-	linux-capget linux-capget.stderr.exp \
 	linux-syslog-syscall linux-syslog-syscall.stderr.exp \
 	linux-syscalls-2007 linux-syscalls-2007.stderr.exp \
-	linux-timerfd-syscall linux-timerfd-syscall.stderr.exp \
 	long_namespace_xml.vgtest long_namespace_xml.stdout.exp \
 	long_namespace_xml.stderr.exp \
 	lsframe1.vgtest lsframe1.stdout.exp lsframe1.stderr.exp \
@@ -199,10 +202,8 @@ check_PROGRAMS = \
 	file_locking \
 	fprw fwrite hello inits inline \
 	leak-0 leak-cycle leak-pool leak-tree leak-regroot leakotron \
-	linux-capget \
 	linux-syslog-syscall \
 	linux-syscalls-2007 \
-	linux-timerfd-syscall \
 	long_namespace_xml \
 	lsframe1 lsframe2 \
 	mallinfo \
@@ -246,7 +247,6 @@ memcmptest_CFLAGS	= $(AM_FLAG_M3264_PRI) $(AM_CFLAGS) -fno-builtin-memcmp
 oset_test_CFLAGS	= $(AM_FLAG_M3264_PRI) \
 				-DVGA_$(VG_ARCH_PRI)=1 -DVGO_$(VG_OS)=1 \
 				-DVGP_$(VG_ARCH_PRI)_$(VG_OS)=1
-linux_timerfd_syscall_LDADD = -lrt
 vcpu_bz2_CFLAGS		= $(AM_FLAG_M3264_PRI) $(AM_CFLAGS) -O2 -g
 vcpu_fbench_CFLAGS	= $(AM_FLAG_M3264_PRI) $(AM_CFLAGS) -O2 -g
 vcpu_fnfns_CFLAGS	= $(AM_FLAG_M3264_PRI) $(AM_CFLAGS) -O2 -g

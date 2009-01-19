@@ -443,7 +443,7 @@ tc24_nonzero_sem_SOURCES    = ../../helgrind/tests/tc24_nonzero_sem.c
 tc24_nonzero_sem_LDADD      = -lpthread
 
 trylock_SOURCES             = trylock.c
-trylock_LDADD               = -lpthread -lrt
+trylock_LDADD               = -lpthread
 
 if HAVE_BOOST_1_35
 boost_thread_SOURCES        = boost_thread.cpp

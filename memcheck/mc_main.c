@@ -2356,23 +2356,25 @@ static INLINE void set_aligned_word64_Origin_to_undef ( Addr a, UInt otag )
 
 static INLINE void make_aligned_word32_undefined ( Addr a )
 {
-   UWord   sm_off;
-   SecMap* sm;
-
    PROF_EVENT(300, "make_aligned_word32_undefined");
 
 #ifndef PERF_FAST_STACK2
    make_mem_undefined(a, 4);
 #else
-   if (UNLIKELY(a > MAX_PRIMARY_ADDRESS)) {
-      PROF_EVENT(301, "make_aligned_word32_undefined-slow1");
-      make_mem_undefined(a, 4);
-      return;
-   }
+   {
+      UWord   sm_off;
+      SecMap* sm;
 
-   sm                  = get_secmap_for_writing_low(a);
-   sm_off              = SM_OFF(a);
-   sm->vabits8[sm_off] = VA_BITS8_UNDEFINED;
+      if (UNLIKELY(a > MAX_PRIMARY_ADDRESS)) {
+         PROF_EVENT(301, "make_aligned_word32_undefined-slow1");
+         make_mem_undefined(a, 4);
+         return;
+      }
+
+      sm                  = get_secmap_for_writing_low(a);
+      sm_off              = SM_OFF(a);
+      sm->vabits8[sm_off] = VA_BITS8_UNDEFINED;
+   }
 #endif
 }
 
@@ -2397,36 +2399,38 @@ void make_aligned_word32_undefined_w_otag ( Addr a, UInt otag )
 static INLINE
 void make_aligned_word32_noaccess ( Addr a )
 {
-   UWord   sm_off;
-   SecMap* sm;
-
    PROF_EVENT(310, "make_aligned_word32_noaccess");
 
 #ifndef PERF_FAST_STACK2
    MC_(make_mem_noaccess)(a, 4);
 #else
-   if (UNLIKELY(a > MAX_PRIMARY_ADDRESS)) {
-      PROF_EVENT(311, "make_aligned_word32_noaccess-slow1");
-      MC_(make_mem_noaccess)(a, 4);
-      return;
-   }
+   {
+      UWord   sm_off;
+      SecMap* sm;
 
-   sm                  = get_secmap_for_writing_low(a);
-   sm_off              = SM_OFF(a);
-   sm->vabits8[sm_off] = VA_BITS8_NOACCESS;
-
-   //// BEGIN inlined, specialised version of MC_(helperc_b_store4)
-   //// Set the origins for a+0 .. a+3.
-   if (UNLIKELY( MC_(clo_mc_level) == 3 )) {
-      OCacheLine* line;
-      UWord lineoff = oc_line_offset(a);
-      if (OC_ENABLE_ASSERTIONS) {
-         tl_assert(lineoff >= 0 && lineoff < OC_W32S_PER_LINE);
+      if (UNLIKELY(a > MAX_PRIMARY_ADDRESS)) {
+         PROF_EVENT(311, "make_aligned_word32_noaccess-slow1");
+         MC_(make_mem_noaccess)(a, 4);
+         return;
       }
-      line = find_OCacheLine( a );
-      line->descr[lineoff] = 0;
+
+      sm                  = get_secmap_for_writing_low(a);
+      sm_off              = SM_OFF(a);
+      sm->vabits8[sm_off] = VA_BITS8_NOACCESS;
+
+      //// BEGIN inlined, specialised version of MC_(helperc_b_store4)
+      //// Set the origins for a+0 .. a+3.
+      if (UNLIKELY( MC_(clo_mc_level) == 3 )) {
+         OCacheLine* line;
+         UWord lineoff = oc_line_offset(a);
+         if (OC_ENABLE_ASSERTIONS) {
+            tl_assert(lineoff >= 0 && lineoff < OC_W32S_PER_LINE);
+         }
+         line = find_OCacheLine( a );
+         line->descr[lineoff] = 0;
+      }
+      //// END inlined, specialised version of MC_(helperc_b_store4)
    }
-   //// END inlined, specialised version of MC_(helperc_b_store4)
 #endif
 }
 
@@ -2436,23 +2440,25 @@ void make_aligned_word32_noaccess ( Addr a )
 
 static INLINE void make_aligned_word64_undefined ( Addr a )
 {
-   UWord   sm_off16;
-   SecMap* sm;
-
    PROF_EVENT(320, "make_aligned_word64_undefined");
 
 #ifndef PERF_FAST_STACK2
    make_mem_undefined(a, 8);
 #else
-   if (UNLIKELY(a > MAX_PRIMARY_ADDRESS)) {
-      PROF_EVENT(321, "make_aligned_word64_undefined-slow1");
-      make_mem_undefined(a, 8);
-      return;
-   }
+   {
+      UWord   sm_off16;
+      SecMap* sm;
 
-   sm       = get_secmap_for_writing_low(a);
-   sm_off16 = SM_OFF_16(a);
-   ((UShort*)(sm->vabits8))[sm_off16] = VA_BITS16_UNDEFINED;
+      if (UNLIKELY(a > MAX_PRIMARY_ADDRESS)) {
+         PROF_EVENT(321, "make_aligned_word64_undefined-slow1");
+         make_mem_undefined(a, 8);
+         return;
+      }
+
+      sm       = get_secmap_for_writing_low(a);
+      sm_off16 = SM_OFF_16(a);
+      ((UShort*)(sm->vabits8))[sm_off16] = VA_BITS16_UNDEFINED;
+   }
 #endif
 }
 
@@ -2478,36 +2484,38 @@ void make_aligned_word64_undefined_w_otag ( Addr a, UInt otag )
 static INLINE
 void make_aligned_word64_noaccess ( Addr a )
 {
-   UWord   sm_off16;
-   SecMap* sm;
-
    PROF_EVENT(330, "make_aligned_word64_noaccess");
 
 #ifndef PERF_FAST_STACK2
    MC_(make_mem_noaccess)(a, 8);
 #else
-   if (UNLIKELY(a > MAX_PRIMARY_ADDRESS)) {
-      PROF_EVENT(331, "make_aligned_word64_noaccess-slow1");
-      MC_(make_mem_noaccess)(a, 8);
-      return;
-   }
+   {
+      UWord   sm_off16;
+      SecMap* sm;
 
-   sm       = get_secmap_for_writing_low(a);
-   sm_off16 = SM_OFF_16(a);
-   ((UShort*)(sm->vabits8))[sm_off16] = VA_BITS16_NOACCESS;
+      if (UNLIKELY(a > MAX_PRIMARY_ADDRESS)) {
+         PROF_EVENT(331, "make_aligned_word64_noaccess-slow1");
+         MC_(make_mem_noaccess)(a, 8);
+         return;
+      }
 
-   //// BEGIN inlined, specialised version of MC_(helperc_b_store8)
-   //// Clear the origins for a+0 .. a+7.
-   if (UNLIKELY( MC_(clo_mc_level) == 3 )) {
-      OCacheLine* line;
-      UWord lineoff = oc_line_offset(a);
-      tl_assert(lineoff >= 0 
-                && lineoff < OC_W32S_PER_LINE -1/*'cos 8-aligned*/);
-      line = find_OCacheLine( a );
-      line->descr[lineoff+0] = 0;
-      line->descr[lineoff+1] = 0;
+      sm       = get_secmap_for_writing_low(a);
+      sm_off16 = SM_OFF_16(a);
+      ((UShort*)(sm->vabits8))[sm_off16] = VA_BITS16_NOACCESS;
+
+      //// BEGIN inlined, specialised version of MC_(helperc_b_store8)
+      //// Clear the origins for a+0 .. a+7.
+      if (UNLIKELY( MC_(clo_mc_level) == 3 )) {
+         OCacheLine* line;
+         UWord lineoff = oc_line_offset(a);
+         tl_assert(lineoff >= 0 
+                   && lineoff < OC_W32S_PER_LINE -1/*'cos 8-aligned*/);
+         line = find_OCacheLine( a );
+         line->descr[lineoff+0] = 0;
+         line->descr[lineoff+1] = 0;
+      }
+      //// END inlined, specialised version of MC_(helperc_b_store8)
    }
-   //// END inlined, specialised version of MC_(helperc_b_store8)
 #endif
 }
 
@@ -2516,8 +2524,15 @@ void make_aligned_word64_noaccess ( Addr a )
 /*--- Stack pointer adjustment                             ---*/
 /*------------------------------------------------------------*/
 
+#ifdef PERF_FAST_STACK
+#  define MAYBE_USED
+#else
+#  define MAYBE_USED __attribute__((unused))
+#endif
+
 /*--------------- adjustment by 4 bytes ---------------*/
 
+MAYBE_USED
 static void VG_REGPARM(2) mc_new_mem_stack_4_w_ECU(Addr new_SP, UInt ecu)
 {
    UInt otag = ecu | MC_OKIND_STACK;
@@ -2529,6 +2544,7 @@ static void VG_REGPARM(2) mc_new_mem_stack_4_w_ECU(Addr new_SP, UInt ecu)
    }
 }
 
+MAYBE_USED
 static void VG_REGPARM(1) mc_new_mem_stack_4(Addr new_SP)
 {
    PROF_EVENT(110, "new_mem_stack_4");
@@ -2539,6 +2555,7 @@ static void VG_REGPARM(1) mc_new_mem_stack_4(Addr new_SP)
    }
 }
 
+MAYBE_USED
 static void VG_REGPARM(1) mc_die_mem_stack_4(Addr new_SP)
 {
    PROF_EVENT(120, "die_mem_stack_4");
@@ -2551,6 +2568,7 @@ static void VG_REGPARM(1) mc_die_mem_stack_4(Addr new_SP)
 
 /*--------------- adjustment by 8 bytes ---------------*/
 
+MAYBE_USED
 static void VG_REGPARM(2) mc_new_mem_stack_8_w_ECU(Addr new_SP, UInt ecu)
 {
    UInt otag = ecu | MC_OKIND_STACK;
@@ -2565,6 +2583,7 @@ static void VG_REGPARM(2) mc_new_mem_stack_8_w_ECU(Addr new_SP, UInt ecu)
    }
 }
 
+MAYBE_USED
 static void VG_REGPARM(1) mc_new_mem_stack_8(Addr new_SP)
 {
    PROF_EVENT(111, "new_mem_stack_8");
@@ -2578,6 +2597,7 @@ static void VG_REGPARM(1) mc_new_mem_stack_8(Addr new_SP)
    }
 }
 
+MAYBE_USED
 static void VG_REGPARM(1) mc_die_mem_stack_8(Addr new_SP)
 {
    PROF_EVENT(121, "die_mem_stack_8");
@@ -2593,6 +2613,7 @@ static void VG_REGPARM(1) mc_die_mem_stack_8(Addr new_SP)
 
 /*--------------- adjustment by 12 bytes ---------------*/
 
+MAYBE_USED
 static void VG_REGPARM(2) mc_new_mem_stack_12_w_ECU(Addr new_SP, UInt ecu)
 {
    UInt otag = ecu | MC_OKIND_STACK;
@@ -2611,6 +2632,7 @@ static void VG_REGPARM(2) mc_new_mem_stack_12_w_ECU(Addr new_SP, UInt ecu)
    }
 }
 
+MAYBE_USED
 static void VG_REGPARM(1) mc_new_mem_stack_12(Addr new_SP)
 {
    PROF_EVENT(112, "new_mem_stack_12");
@@ -2628,6 +2650,7 @@ static void VG_REGPARM(1) mc_new_mem_stack_12(Addr new_SP)
    }
 }
 
+MAYBE_USED
 static void VG_REGPARM(1) mc_die_mem_stack_12(Addr new_SP)
 {
    PROF_EVENT(122, "die_mem_stack_12");
@@ -2650,6 +2673,7 @@ static void VG_REGPARM(1) mc_die_mem_stack_12(Addr new_SP)
 
 /*--------------- adjustment by 16 bytes ---------------*/
 
+MAYBE_USED
 static void VG_REGPARM(2) mc_new_mem_stack_16_w_ECU(Addr new_SP, UInt ecu)
 {
    UInt otag = ecu | MC_OKIND_STACK;
@@ -2669,6 +2693,7 @@ static void VG_REGPARM(2) mc_new_mem_stack_16_w_ECU(Addr new_SP, UInt ecu)
    }
 }
 
+MAYBE_USED
 static void VG_REGPARM(1) mc_new_mem_stack_16(Addr new_SP)
 {
    PROF_EVENT(113, "new_mem_stack_16");
@@ -2687,6 +2712,7 @@ static void VG_REGPARM(1) mc_new_mem_stack_16(Addr new_SP)
    }
 }
 
+MAYBE_USED
 static void VG_REGPARM(1) mc_die_mem_stack_16(Addr new_SP)
 {
    PROF_EVENT(123, "die_mem_stack_16");
@@ -2706,6 +2732,7 @@ static void VG_REGPARM(1) mc_die_mem_stack_16(Addr new_SP)
 
 /*--------------- adjustment by 32 bytes ---------------*/
 
+MAYBE_USED
 static void VG_REGPARM(2) mc_new_mem_stack_32_w_ECU(Addr new_SP, UInt ecu)
 {
    UInt otag = ecu | MC_OKIND_STACK;
@@ -2729,6 +2756,7 @@ static void VG_REGPARM(2) mc_new_mem_stack_32_w_ECU(Addr new_SP, UInt ecu)
    }
 }
 
+MAYBE_USED
 static void VG_REGPARM(1) mc_new_mem_stack_32(Addr new_SP)
 {
    PROF_EVENT(114, "new_mem_stack_32");
@@ -2751,6 +2779,7 @@ static void VG_REGPARM(1) mc_new_mem_stack_32(Addr new_SP)
    }
 }
 
+MAYBE_USED
 static void VG_REGPARM(1) mc_die_mem_stack_32(Addr new_SP)
 {
    PROF_EVENT(124, "die_mem_stack_32");
@@ -2775,6 +2804,7 @@ static void VG_REGPARM(1) mc_die_mem_stack_32(Addr new_SP)
 
 /*--------------- adjustment by 112 bytes ---------------*/
 
+MAYBE_USED
 static void VG_REGPARM(2) mc_new_mem_stack_112_w_ECU(Addr new_SP, UInt ecu)
 {
    UInt otag = ecu | MC_OKIND_STACK;
@@ -2799,6 +2829,7 @@ static void VG_REGPARM(2) mc_new_mem_stack_112_w_ECU(Addr new_SP, UInt ecu)
    }
 }
 
+MAYBE_USED
 static void VG_REGPARM(1) mc_new_mem_stack_112(Addr new_SP)
 {
    PROF_EVENT(115, "new_mem_stack_112");
@@ -2822,6 +2853,7 @@ static void VG_REGPARM(1) mc_new_mem_stack_112(Addr new_SP)
    }
 }
 
+MAYBE_USED
 static void VG_REGPARM(1) mc_die_mem_stack_112(Addr new_SP)
 {
    PROF_EVENT(125, "die_mem_stack_112");
@@ -2847,6 +2879,7 @@ static void VG_REGPARM(1) mc_die_mem_stack_112(Addr new_SP)
 
 /*--------------- adjustment by 128 bytes ---------------*/
 
+MAYBE_USED
 static void VG_REGPARM(2) mc_new_mem_stack_128_w_ECU(Addr new_SP, UInt ecu)
 {
    UInt otag = ecu | MC_OKIND_STACK;
@@ -2873,6 +2906,7 @@ static void VG_REGPARM(2) mc_new_mem_stack_128_w_ECU(Addr new_SP, UInt ecu)
    }
 }
 
+MAYBE_USED
 static void VG_REGPARM(1) mc_new_mem_stack_128(Addr new_SP)
 {
    PROF_EVENT(116, "new_mem_stack_128");
@@ -2898,6 +2932,7 @@ static void VG_REGPARM(1) mc_new_mem_stack_128(Addr new_SP)
    }
 }
 
+MAYBE_USED
 static void VG_REGPARM(1) mc_die_mem_stack_128(Addr new_SP)
 {
    PROF_EVENT(126, "die_mem_stack_128");
@@ -2925,6 +2960,7 @@ static void VG_REGPARM(1) mc_die_mem_stack_128(Addr new_SP)
 
 /*--------------- adjustment by 144 bytes ---------------*/
 
+MAYBE_USED
 static void VG_REGPARM(2) mc_new_mem_stack_144_w_ECU(Addr new_SP, UInt ecu)
 {
    UInt otag = ecu | MC_OKIND_STACK;
@@ -2953,6 +2989,7 @@ static void VG_REGPARM(2) mc_new_mem_stack_144_w_ECU(Addr new_SP, UInt ecu)
    }
 }
 
+MAYBE_USED
 static void VG_REGPARM(1) mc_new_mem_stack_144(Addr new_SP)
 {
    PROF_EVENT(117, "new_mem_stack_144");
@@ -2980,6 +3017,7 @@ static void VG_REGPARM(1) mc_new_mem_stack_144(Addr new_SP)
    }
 }
 
+MAYBE_USED
 static void VG_REGPARM(1) mc_die_mem_stack_144(Addr new_SP)
 {
    PROF_EVENT(127, "die_mem_stack_144");
@@ -3009,6 +3047,7 @@ static void VG_REGPARM(1) mc_die_mem_stack_144(Addr new_SP)
 
 /*--------------- adjustment by 160 bytes ---------------*/
 
+MAYBE_USED
 static void VG_REGPARM(2) mc_new_mem_stack_160_w_ECU(Addr new_SP, UInt ecu)
 {
    UInt otag = ecu | MC_OKIND_STACK;
@@ -3039,6 +3078,7 @@ static void VG_REGPARM(2) mc_new_mem_stack_160_w_ECU(Addr new_SP, UInt ecu)
    }
 }
 
+MAYBE_USED
 static void VG_REGPARM(1) mc_new_mem_stack_160(Addr new_SP)
 {
    PROF_EVENT(118, "new_mem_stack_160");
@@ -3068,6 +3108,7 @@ static void VG_REGPARM(1) mc_new_mem_stack_160(Addr new_SP)
    }
 }
 
+MAYBE_USED
 static void VG_REGPARM(1) mc_die_mem_stack_160(Addr new_SP)
 {
    PROF_EVENT(128, "die_mem_stack_160");
@@ -3869,34 +3910,36 @@ static void mc_pre_reg_read ( CorePart part, ThreadId tid, Char* s,
 static INLINE
 ULong mc_LOADV64 ( Addr a, Bool isBigEndian )
 {
-   UWord   sm_off16, vabits16;
-   SecMap* sm;
-
    PROF_EVENT(200, "mc_LOADV64");
 
 #ifndef PERF_FAST_LOADV
    return mc_LOADVn_slow( a, 64, isBigEndian );
 #else
-   if (UNLIKELY( UNALIGNED_OR_HIGH(a,64) )) {
-      PROF_EVENT(201, "mc_LOADV64-slow1");
-      return (ULong)mc_LOADVn_slow( a, 64, isBigEndian );
-   }
+   {
+      UWord   sm_off16, vabits16;
+      SecMap* sm;
 
-   sm       = get_secmap_for_reading_low(a);
-   sm_off16 = SM_OFF_16(a);
-   vabits16 = ((UShort*)(sm->vabits8))[sm_off16];
+      if (UNLIKELY( UNALIGNED_OR_HIGH(a,64) )) {
+         PROF_EVENT(201, "mc_LOADV64-slow1");
+         return (ULong)mc_LOADVn_slow( a, 64, isBigEndian );
+      }
 
-   // Handle common case quickly: a is suitably aligned, is mapped, and
-   // addressible.
-   // Convert V bits from compact memory form to expanded register form.
-   if (LIKELY(vabits16 == VA_BITS16_DEFINED)) {
-      return V_BITS64_DEFINED;
-   } else if (LIKELY(vabits16 == VA_BITS16_UNDEFINED)) {
-      return V_BITS64_UNDEFINED;
-   } else {
-      /* Slow case: the 8 bytes are not all-defined or all-undefined. */
-      PROF_EVENT(202, "mc_LOADV64-slow2");
-      return mc_LOADVn_slow( a, 64, isBigEndian );
+      sm       = get_secmap_for_reading_low(a);
+      sm_off16 = SM_OFF_16(a);
+      vabits16 = ((UShort*)(sm->vabits8))[sm_off16];
+
+      // Handle common case quickly: a is suitably aligned, is mapped, and
+      // addressible.
+      // Convert V bits from compact memory form to expanded register form.
+      if (LIKELY(vabits16 == VA_BITS16_DEFINED)) {
+         return V_BITS64_DEFINED;
+      } else if (LIKELY(vabits16 == VA_BITS16_UNDEFINED)) {
+         return V_BITS64_UNDEFINED;
+      } else {
+         /* Slow case: the 8 bytes are not all-defined or all-undefined. */
+         PROF_EVENT(202, "mc_LOADV64-slow2");
+         return mc_LOADVn_slow( a, 64, isBigEndian );
+      }
    }
 #endif
 }
@@ -3914,9 +3957,6 @@ VG_REGPARM(1) ULong MC_(helperc_LOADV64le) ( Addr a )
 static INLINE
 void mc_STOREV64 ( Addr a, ULong vbits64, Bool isBigEndian )
 {
-   UWord   sm_off16, vabits16;
-   SecMap* sm;
-
    PROF_EVENT(210, "mc_STOREV64");
 
 #ifndef PERF_FAST_STOREV
@@ -3924,36 +3964,41 @@ void mc_STOREV64 ( Addr a, ULong vbits64, Bool isBigEndian )
    // Investigate further.
    mc_STOREVn_slow( a, 64, vbits64, isBigEndian );
 #else
-   if (UNLIKELY( UNALIGNED_OR_HIGH(a,64) )) {
-      PROF_EVENT(211, "mc_STOREV64-slow1");
-      mc_STOREVn_slow( a, 64, vbits64, isBigEndian );
-      return;
-   }
-
-   sm       = get_secmap_for_reading_low(a);
-   sm_off16 = SM_OFF_16(a);
-   vabits16 = ((UShort*)(sm->vabits8))[sm_off16];
-
-   if (LIKELY( !is_distinguished_sm(sm) && 
-                       (VA_BITS16_DEFINED   == vabits16 ||
-                        VA_BITS16_UNDEFINED == vabits16) ))
    {
-      /* Handle common case quickly: a is suitably aligned, */
-      /* is mapped, and is addressible. */
-      // Convert full V-bits in register to compact 2-bit form.
-      if (V_BITS64_DEFINED == vbits64) {
-         ((UShort*)(sm->vabits8))[sm_off16] = (UShort)VA_BITS16_DEFINED;
-      } else if (V_BITS64_UNDEFINED == vbits64) {
-         ((UShort*)(sm->vabits8))[sm_off16] = (UShort)VA_BITS16_UNDEFINED;
+      UWord   sm_off16, vabits16;
+      SecMap* sm;
+
+      if (UNLIKELY( UNALIGNED_OR_HIGH(a,64) )) {
+         PROF_EVENT(211, "mc_STOREV64-slow1");
+         mc_STOREVn_slow( a, 64, vbits64, isBigEndian );
+         return;
+      }
+
+      sm       = get_secmap_for_reading_low(a);
+      sm_off16 = SM_OFF_16(a);
+      vabits16 = ((UShort*)(sm->vabits8))[sm_off16];
+
+      if (LIKELY( !is_distinguished_sm(sm) && 
+                          (VA_BITS16_DEFINED   == vabits16 ||
+                           VA_BITS16_UNDEFINED == vabits16) ))
+      {
+         /* Handle common case quickly: a is suitably aligned, */
+         /* is mapped, and is addressible. */
+         // Convert full V-bits in register to compact 2-bit form.
+         if (V_BITS64_DEFINED == vbits64) {
+            ((UShort*)(sm->vabits8))[sm_off16] = (UShort)VA_BITS16_DEFINED;
+         } else if (V_BITS64_UNDEFINED == vbits64) {
+            ((UShort*)(sm->vabits8))[sm_off16] = (UShort)VA_BITS16_UNDEFINED;
+         } else {
+            /* Slow but general case -- writing partially defined bytes. */
+            PROF_EVENT(212, "mc_STOREV64-slow2");
+            mc_STOREVn_slow( a, 64, vbits64, isBigEndian );
+         }
       } else {
-         /* Slow but general case -- writing partially defined bytes. */
-         PROF_EVENT(212, "mc_STOREV64-slow2");
+         /* Slow but general case. */
+         PROF_EVENT(213, "mc_STOREV64-slow3");
          mc_STOREVn_slow( a, 64, vbits64, isBigEndian );
       }
-   } else {
-      /* Slow but general case. */
-      PROF_EVENT(213, "mc_STOREV64-slow3");
-      mc_STOREVn_slow( a, 64, vbits64, isBigEndian );
    }
 #endif
 }
@@ -3973,36 +4018,38 @@ VG_REGPARM(1) void MC_(helperc_STOREV64le) ( Addr a, ULong vbits64 )
 static INLINE
 UWord mc_LOADV32 ( Addr a, Bool isBigEndian )
 {
-   UWord   sm_off, vabits8;
-   SecMap* sm;
-
    PROF_EVENT(220, "mc_LOADV32");
 
 #ifndef PERF_FAST_LOADV
    return (UWord)mc_LOADVn_slow( a, 32, isBigEndian );
 #else
-   if (UNLIKELY( UNALIGNED_OR_HIGH(a,32) )) {
-      PROF_EVENT(221, "mc_LOADV32-slow1");
-      return (UWord)mc_LOADVn_slow( a, 32, isBigEndian );
-   }
+   {
+      UWord   sm_off, vabits8;
+      SecMap* sm;
 
-   sm      = get_secmap_for_reading_low(a);
-   sm_off  = SM_OFF(a);
-   vabits8 = sm->vabits8[sm_off];
+      if (UNLIKELY( UNALIGNED_OR_HIGH(a,32) )) {
+         PROF_EVENT(221, "mc_LOADV32-slow1");
+         return (UWord)mc_LOADVn_slow( a, 32, isBigEndian );
+      }
 
-   // Handle common case quickly: a is suitably aligned, is mapped, and the
-   // entire word32 it lives in is addressible.
-   // Convert V bits from compact memory form to expanded register form.
-   // For 64-bit platforms, set the high 32 bits of retval to 1 (undefined).
-   // Almost certainly not necessary, but be paranoid.
-   if (LIKELY(vabits8 == VA_BITS8_DEFINED)) {
-      return ((UWord)0xFFFFFFFF00000000ULL | (UWord)V_BITS32_DEFINED);
-   } else if (LIKELY(vabits8 == VA_BITS8_UNDEFINED)) {
-      return ((UWord)0xFFFFFFFF00000000ULL | (UWord)V_BITS32_UNDEFINED);
-   } else {
-      /* Slow case: the 4 bytes are not all-defined or all-undefined. */
-      PROF_EVENT(222, "mc_LOADV32-slow2");
-      return (UWord)mc_LOADVn_slow( a, 32, isBigEndian );
+      sm      = get_secmap_for_reading_low(a);
+      sm_off  = SM_OFF(a);
+      vabits8 = sm->vabits8[sm_off];
+
+      // Handle common case quickly: a is suitably aligned, is mapped, and the
+      // entire word32 it lives in is addressible.
+      // Convert V bits from compact memory form to expanded register form.
+      // For 64-bit platforms, set the high 32 bits of retval to 1 (undefined).
+      // Almost certainly not necessary, but be paranoid.
+      if (LIKELY(vabits8 == VA_BITS8_DEFINED)) {
+         return ((UWord)0xFFFFFFFF00000000ULL | (UWord)V_BITS32_DEFINED);
+      } else if (LIKELY(vabits8 == VA_BITS8_UNDEFINED)) {
+         return ((UWord)0xFFFFFFFF00000000ULL | (UWord)V_BITS32_UNDEFINED);
+      } else {
+         /* Slow case: the 4 bytes are not all-defined or all-undefined. */
+         PROF_EVENT(222, "mc_LOADV32-slow2");
+         return (UWord)mc_LOADVn_slow( a, 32, isBigEndian );
+      }
    }
 #endif
 }
@@ -4020,52 +4067,54 @@ VG_REGPARM(1) UWord MC_(helperc_LOADV32le) ( Addr a )
 static INLINE
 void mc_STOREV32 ( Addr a, UWord vbits32, Bool isBigEndian )
 {
-   UWord   sm_off, vabits8;
-   SecMap* sm;
-
    PROF_EVENT(230, "mc_STOREV32");
 
 #ifndef PERF_FAST_STOREV
    mc_STOREVn_slow( a, 32, (ULong)vbits32, isBigEndian );
 #else
-   if (UNLIKELY( UNALIGNED_OR_HIGH(a,32) )) {
-      PROF_EVENT(231, "mc_STOREV32-slow1");
-      mc_STOREVn_slow( a, 32, (ULong)vbits32, isBigEndian );
-      return;
-   }
+   {
+      UWord   sm_off, vabits8;
+      SecMap* sm;
 
-   sm      = get_secmap_for_reading_low(a);
-   sm_off  = SM_OFF(a);
-   vabits8 = sm->vabits8[sm_off];
-
-   // Cleverness:  sometimes we don't have to write the shadow memory at
-   // all, if we can tell that what we want to write is the same as what is
-   // already there.  The 64/16/8 bit cases also have cleverness at this
-   // point, but it works a little differently to the code below.
-   if (V_BITS32_DEFINED == vbits32) {
-      if (vabits8 == (UInt)VA_BITS8_DEFINED) {
+      if (UNLIKELY( UNALIGNED_OR_HIGH(a,32) )) {
+         PROF_EVENT(231, "mc_STOREV32-slow1");
+         mc_STOREVn_slow( a, 32, (ULong)vbits32, isBigEndian );
          return;
-      } else if (!is_distinguished_sm(sm) && VA_BITS8_UNDEFINED == vabits8) {
-         sm->vabits8[sm_off] = (UInt)VA_BITS8_DEFINED;
+      }
+
+      sm      = get_secmap_for_reading_low(a);
+      sm_off  = SM_OFF(a);
+      vabits8 = sm->vabits8[sm_off];
+
+      // Cleverness:  sometimes we don't have to write the shadow memory at
+      // all, if we can tell that what we want to write is the same as what is
+      // already there.  The 64/16/8 bit cases also have cleverness at this
+      // point, but it works a little differently to the code below.
+      if (V_BITS32_DEFINED == vbits32) {
+         if (vabits8 == (UInt)VA_BITS8_DEFINED) {
+            return;
+         } else if (!is_distinguished_sm(sm) && VA_BITS8_UNDEFINED == vabits8) {
+            sm->vabits8[sm_off] = (UInt)VA_BITS8_DEFINED;
+         } else {
+            // not defined/undefined, or distinguished and changing state
+            PROF_EVENT(232, "mc_STOREV32-slow2");
+            mc_STOREVn_slow( a, 32, (ULong)vbits32, isBigEndian );
+         }
+      } else if (V_BITS32_UNDEFINED == vbits32) {
+         if (vabits8 == (UInt)VA_BITS8_UNDEFINED) {
+            return;
+         } else if (!is_distinguished_sm(sm) && VA_BITS8_DEFINED == vabits8) {
+            sm->vabits8[sm_off] = (UInt)VA_BITS8_UNDEFINED;
+         } else {
+            // not defined/undefined, or distinguished and changing state
+            PROF_EVENT(233, "mc_STOREV32-slow3");
+            mc_STOREVn_slow( a, 32, (ULong)vbits32, isBigEndian );
+         }
       } else {
-         // not defined/undefined, or distinguished and changing state
-         PROF_EVENT(232, "mc_STOREV32-slow2");
+         // Partially defined word
+         PROF_EVENT(234, "mc_STOREV32-slow4");
          mc_STOREVn_slow( a, 32, (ULong)vbits32, isBigEndian );
       }
-   } else if (V_BITS32_UNDEFINED == vbits32) {
-      if (vabits8 == (UInt)VA_BITS8_UNDEFINED) {
-         return;
-      } else if (!is_distinguished_sm(sm) && VA_BITS8_DEFINED == vabits8) {
-         sm->vabits8[sm_off] = (UInt)VA_BITS8_UNDEFINED;
-      } else {
-         // not defined/undefined, or distinguished and changing state
-         PROF_EVENT(233, "mc_STOREV32-slow3");
-         mc_STOREVn_slow( a, 32, (ULong)vbits32, isBigEndian );
-      }
-   } else {
-      // Partially defined word
-      PROF_EVENT(234, "mc_STOREV32-slow4");
-      mc_STOREVn_slow( a, 32, (ULong)vbits32, isBigEndian );
    }
 #endif
 }
@@ -4085,37 +4134,39 @@ VG_REGPARM(2) void MC_(helperc_STOREV32le) ( Addr a, UWord vbits32 )
 static INLINE
 UWord mc_LOADV16 ( Addr a, Bool isBigEndian )
 {
-   UWord   sm_off, vabits8;
-   SecMap* sm;
-
    PROF_EVENT(240, "mc_LOADV16");
 
 #ifndef PERF_FAST_LOADV
    return (UWord)mc_LOADVn_slow( a, 16, isBigEndian );
 #else
-   if (UNLIKELY( UNALIGNED_OR_HIGH(a,16) )) {
-      PROF_EVENT(241, "mc_LOADV16-slow1");
-      return (UWord)mc_LOADVn_slow( a, 16, isBigEndian );
-   }
+   {
+      UWord   sm_off, vabits8;
+      SecMap* sm;
 
-   sm      = get_secmap_for_reading_low(a);
-   sm_off  = SM_OFF(a);
-   vabits8 = sm->vabits8[sm_off];
-   // Handle common case quickly: a is suitably aligned, is mapped, and is
-   // addressible.
-   // Convert V bits from compact memory form to expanded register form
-   if      (vabits8 == VA_BITS8_DEFINED  ) { return V_BITS16_DEFINED;   }
-   else if (vabits8 == VA_BITS8_UNDEFINED) { return V_BITS16_UNDEFINED; }
-   else {
-      // The 4 (yes, 4) bytes are not all-defined or all-undefined, check
-      // the two sub-bytes.
-      UChar vabits4 = extract_vabits4_from_vabits8(a, vabits8);
-      if      (vabits4 == VA_BITS4_DEFINED  ) { return V_BITS16_DEFINED;   }
-      else if (vabits4 == VA_BITS4_UNDEFINED) { return V_BITS16_UNDEFINED; }
-      else {
-         /* Slow case: the two bytes are not all-defined or all-undefined. */
-         PROF_EVENT(242, "mc_LOADV16-slow2");
+      if (UNLIKELY( UNALIGNED_OR_HIGH(a,16) )) {
+         PROF_EVENT(241, "mc_LOADV16-slow1");
          return (UWord)mc_LOADVn_slow( a, 16, isBigEndian );
+      }
+
+      sm      = get_secmap_for_reading_low(a);
+      sm_off  = SM_OFF(a);
+      vabits8 = sm->vabits8[sm_off];
+      // Handle common case quickly: a is suitably aligned, is mapped, and is
+      // addressible.
+      // Convert V bits from compact memory form to expanded register form
+      if      (vabits8 == VA_BITS8_DEFINED  ) { return V_BITS16_DEFINED;   }
+      else if (vabits8 == VA_BITS8_UNDEFINED) { return V_BITS16_UNDEFINED; }
+      else {
+         // The 4 (yes, 4) bytes are not all-defined or all-undefined, check
+         // the two sub-bytes.
+         UChar vabits4 = extract_vabits4_from_vabits8(a, vabits8);
+         if      (vabits4 == VA_BITS4_DEFINED  ) { return V_BITS16_DEFINED;   }
+         else if (vabits4 == VA_BITS4_UNDEFINED) { return V_BITS16_UNDEFINED; }
+         else {
+            /* Slow case: the two bytes are not all-defined or all-undefined. */
+            PROF_EVENT(242, "mc_LOADV16-slow2");
+            return (UWord)mc_LOADVn_slow( a, 16, isBigEndian );
+         }
       }
    }
 #endif
@@ -4134,45 +4185,47 @@ VG_REGPARM(1) UWord MC_(helperc_LOADV16le) ( Addr a )
 static INLINE
 void mc_STOREV16 ( Addr a, UWord vbits16, Bool isBigEndian )
 {
-   UWord   sm_off, vabits8;
-   SecMap* sm;
-
    PROF_EVENT(250, "mc_STOREV16");
 
 #ifndef PERF_FAST_STOREV
    mc_STOREVn_slow( a, 16, (ULong)vbits16, isBigEndian );
 #else
-   if (UNLIKELY( UNALIGNED_OR_HIGH(a,16) )) {
-      PROF_EVENT(251, "mc_STOREV16-slow1");
-      mc_STOREVn_slow( a, 16, (ULong)vbits16, isBigEndian );
-      return;
-   }
-
-   sm      = get_secmap_for_reading_low(a);
-   sm_off  = SM_OFF(a);
-   vabits8 = sm->vabits8[sm_off];
-   if (LIKELY( !is_distinguished_sm(sm) && 
-                       (VA_BITS8_DEFINED   == vabits8 ||
-                        VA_BITS8_UNDEFINED == vabits8) ))
    {
-      /* Handle common case quickly: a is suitably aligned, */
-      /* is mapped, and is addressible. */
-      // Convert full V-bits in register to compact 2-bit form.
-      if (V_BITS16_DEFINED == vbits16) {
-         insert_vabits4_into_vabits8( a, VA_BITS4_DEFINED ,
-                                      &(sm->vabits8[sm_off]) );
-      } else if (V_BITS16_UNDEFINED == vbits16) {
-         insert_vabits4_into_vabits8( a, VA_BITS4_UNDEFINED,
-                                      &(sm->vabits8[sm_off]) );
+      UWord   sm_off, vabits8;
+      SecMap* sm;
+
+      if (UNLIKELY( UNALIGNED_OR_HIGH(a,16) )) {
+         PROF_EVENT(251, "mc_STOREV16-slow1");
+         mc_STOREVn_slow( a, 16, (ULong)vbits16, isBigEndian );
+         return;
+      }
+
+      sm      = get_secmap_for_reading_low(a);
+      sm_off  = SM_OFF(a);
+      vabits8 = sm->vabits8[sm_off];
+      if (LIKELY( !is_distinguished_sm(sm) && 
+                          (VA_BITS8_DEFINED   == vabits8 ||
+                           VA_BITS8_UNDEFINED == vabits8) ))
+      {
+         /* Handle common case quickly: a is suitably aligned, */
+         /* is mapped, and is addressible. */
+         // Convert full V-bits in register to compact 2-bit form.
+         if (V_BITS16_DEFINED == vbits16) {
+            insert_vabits4_into_vabits8( a, VA_BITS4_DEFINED ,
+                                         &(sm->vabits8[sm_off]) );
+         } else if (V_BITS16_UNDEFINED == vbits16) {
+            insert_vabits4_into_vabits8( a, VA_BITS4_UNDEFINED,
+                                         &(sm->vabits8[sm_off]) );
+         } else {
+            /* Slow but general case -- writing partially defined bytes. */
+            PROF_EVENT(252, "mc_STOREV16-slow2");
+            mc_STOREVn_slow( a, 16, (ULong)vbits16, isBigEndian );
+         }
       } else {
-         /* Slow but general case -- writing partially defined bytes. */
-         PROF_EVENT(252, "mc_STOREV16-slow2");
+         /* Slow but general case. */
+         PROF_EVENT(253, "mc_STOREV16-slow3");
          mc_STOREVn_slow( a, 16, (ULong)vbits16, isBigEndian );
       }
-   } else {
-      /* Slow but general case. */
-      PROF_EVENT(253, "mc_STOREV16-slow3");
-      mc_STOREVn_slow( a, 16, (ULong)vbits16, isBigEndian );
    }
 #endif
 }
@@ -4193,37 +4246,39 @@ VG_REGPARM(2) void MC_(helperc_STOREV16le) ( Addr a, UWord vbits16 )
 VG_REGPARM(1)
 UWord MC_(helperc_LOADV8) ( Addr a )
 {
-   UWord   sm_off, vabits8;
-   SecMap* sm;
-
    PROF_EVENT(260, "mc_LOADV8");
 
 #ifndef PERF_FAST_LOADV
    return (UWord)mc_LOADVn_slow( a, 8, False/*irrelevant*/ );
 #else
-   if (UNLIKELY( UNALIGNED_OR_HIGH(a,8) )) {
-      PROF_EVENT(261, "mc_LOADV8-slow1");
-      return (UWord)mc_LOADVn_slow( a, 8, False/*irrelevant*/ );
-   }
+   {
+      UWord   sm_off, vabits8;
+      SecMap* sm;
 
-   sm      = get_secmap_for_reading_low(a);
-   sm_off  = SM_OFF(a);
-   vabits8 = sm->vabits8[sm_off];
-   // Convert V bits from compact memory form to expanded register form
-   // Handle common case quickly: a is mapped, and the entire
-   // word32 it lives in is addressible.
-   if      (vabits8 == VA_BITS8_DEFINED  ) { return V_BITS8_DEFINED;   }
-   else if (vabits8 == VA_BITS8_UNDEFINED) { return V_BITS8_UNDEFINED; }
-   else {
-      // The 4 (yes, 4) bytes are not all-defined or all-undefined, check
-      // the single byte.
-      UChar vabits2 = extract_vabits2_from_vabits8(a, vabits8);
-      if      (vabits2 == VA_BITS2_DEFINED  ) { return V_BITS8_DEFINED;   }
-      else if (vabits2 == VA_BITS2_UNDEFINED) { return V_BITS8_UNDEFINED; }
-      else {
-         /* Slow case: the byte is not all-defined or all-undefined. */
-         PROF_EVENT(262, "mc_LOADV8-slow2");
+      if (UNLIKELY( UNALIGNED_OR_HIGH(a,8) )) {
+         PROF_EVENT(261, "mc_LOADV8-slow1");
          return (UWord)mc_LOADVn_slow( a, 8, False/*irrelevant*/ );
+      }
+
+      sm      = get_secmap_for_reading_low(a);
+      sm_off  = SM_OFF(a);
+      vabits8 = sm->vabits8[sm_off];
+      // Convert V bits from compact memory form to expanded register form
+      // Handle common case quickly: a is mapped, and the entire
+      // word32 it lives in is addressible.
+      if      (vabits8 == VA_BITS8_DEFINED  ) { return V_BITS8_DEFINED;   }
+      else if (vabits8 == VA_BITS8_UNDEFINED) { return V_BITS8_UNDEFINED; }
+      else {
+         // The 4 (yes, 4) bytes are not all-defined or all-undefined, check
+         // the single byte.
+         UChar vabits2 = extract_vabits2_from_vabits8(a, vabits8);
+         if      (vabits2 == VA_BITS2_DEFINED  ) { return V_BITS8_DEFINED;   }
+         else if (vabits2 == VA_BITS2_UNDEFINED) { return V_BITS8_UNDEFINED; }
+         else {
+            /* Slow case: the byte is not all-defined or all-undefined. */
+            PROF_EVENT(262, "mc_LOADV8-slow2");
+            return (UWord)mc_LOADVn_slow( a, 8, False/*irrelevant*/ );
+         }
       }
    }
 #endif
@@ -4233,49 +4288,51 @@ UWord MC_(helperc_LOADV8) ( Addr a )
 VG_REGPARM(2)
 void MC_(helperc_STOREV8) ( Addr a, UWord vbits8 )
 {
-   UWord   sm_off, vabits8;
-   SecMap* sm;
-
    PROF_EVENT(270, "mc_STOREV8");
 
 #ifndef PERF_FAST_STOREV
    mc_STOREVn_slow( a, 8, (ULong)vbits8, False/*irrelevant*/ );
 #else
-   if (UNLIKELY( UNALIGNED_OR_HIGH(a,8) )) {
-      PROF_EVENT(271, "mc_STOREV8-slow1");
-      mc_STOREVn_slow( a, 8, (ULong)vbits8, False/*irrelevant*/ );
-      return;
-   }
-
-   sm      = get_secmap_for_reading_low(a);
-   sm_off  = SM_OFF(a);
-   vabits8 = sm->vabits8[sm_off];
-   if (LIKELY
-         ( !is_distinguished_sm(sm) &&
-           ( (VA_BITS8_DEFINED == vabits8 || VA_BITS8_UNDEFINED == vabits8)
-          || (VA_BITS2_NOACCESS != extract_vabits2_from_vabits8(a, vabits8))
-           )
-         )
-      )
    {
-      /* Handle common case quickly: a is mapped, the entire word32 it
-         lives in is addressible. */
-      // Convert full V-bits in register to compact 2-bit form.
-      if (V_BITS8_DEFINED == vbits8) {
-         insert_vabits2_into_vabits8( a, VA_BITS2_DEFINED,
-                                       &(sm->vabits8[sm_off]) );
-      } else if (V_BITS8_UNDEFINED == vbits8) {
-         insert_vabits2_into_vabits8( a, VA_BITS2_UNDEFINED,
-                                       &(sm->vabits8[sm_off]) );
+      UWord   sm_off, vabits8;
+      SecMap* sm;
+
+      if (UNLIKELY( UNALIGNED_OR_HIGH(a,8) )) {
+         PROF_EVENT(271, "mc_STOREV8-slow1");
+         mc_STOREVn_slow( a, 8, (ULong)vbits8, False/*irrelevant*/ );
+         return;
+      }
+
+      sm      = get_secmap_for_reading_low(a);
+      sm_off  = SM_OFF(a);
+      vabits8 = sm->vabits8[sm_off];
+      if (LIKELY
+            ( !is_distinguished_sm(sm) &&
+              ( (VA_BITS8_DEFINED == vabits8 || VA_BITS8_UNDEFINED == vabits8)
+             || (VA_BITS2_NOACCESS != extract_vabits2_from_vabits8(a, vabits8))
+              )
+            )
+         )
+      {
+         /* Handle common case quickly: a is mapped, the entire word32 it
+            lives in is addressible. */
+         // Convert full V-bits in register to compact 2-bit form.
+         if (V_BITS8_DEFINED == vbits8) {
+            insert_vabits2_into_vabits8( a, VA_BITS2_DEFINED,
+                                          &(sm->vabits8[sm_off]) );
+         } else if (V_BITS8_UNDEFINED == vbits8) {
+            insert_vabits2_into_vabits8( a, VA_BITS2_UNDEFINED,
+                                          &(sm->vabits8[sm_off]) );
+         } else {
+            /* Slow but general case -- writing partially defined bytes. */
+            PROF_EVENT(272, "mc_STOREV8-slow2");
+            mc_STOREVn_slow( a, 8, (ULong)vbits8, False/*irrelevant*/ );
+         }
       } else {
-         /* Slow but general case -- writing partially defined bytes. */
-         PROF_EVENT(272, "mc_STOREV8-slow2");
+         /* Slow but general case. */
+         PROF_EVENT(273, "mc_STOREV8-slow3");
          mc_STOREVn_slow( a, 8, (ULong)vbits8, False/*irrelevant*/ );
       }
-   } else {
-      /* Slow but general case. */
-      PROF_EVENT(273, "mc_STOREV8-slow3");
-      mc_STOREVn_slow( a, 8, (ULong)vbits8, False/*irrelevant*/ );
    }
 #endif
 }

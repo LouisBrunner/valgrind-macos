@@ -401,6 +401,22 @@ case "$VG_ARCH_MAX-$VG_OS" in
         ;;
 esac
 
+# Set up VGA_<arch>.  Either one or two of these become defined.
+#
+AM_CONDITIONAL(VGA_X86,   
+               test x$VG_PLATFORM_PRI = xX86_LINUX \
+                 -o x$VG_PLATFORM_SEC = xX86_LINUX )
+AM_CONDITIONAL(VGA_AMD64, 
+               test x$VG_PLATFORM_PRI = xAMD64_LINUX )
+AM_CONDITIONAL(VGA_PPC32, 
+               test x$VG_PLATFORM_PRI = xPPC32_LINUX \ 
+                 -o x$VG_PLATFORM_SEC = xPPC32_LINUX \
+                 -o x$VG_PLATFORM_PRI = xPPC32_AIX5 \ 
+                 -o x$VG_PLATFORM_SEC = xPPC32_AIX5 )
+AM_CONDITIONAL(VGA_PPC64, 
+               test x$VG_PLATFORM_PRI = xPPC64_LINUX \
+                 -o x$VG_PLATFORM_PRI = xPPC64_AIX5 )
+
 # Set up VGP_<platform>.  Either one or two of these become defined.
 #
 AM_CONDITIONAL(VGP_X86_LINUX,   
@@ -1613,6 +1629,7 @@ AC_OUTPUT(
    memcheck/tests/ppc32/Makefile
    memcheck/tests/ppc64/Makefile
    memcheck/tests/x86/Makefile
+   memcheck/tests/x86-linux/Makefile
    memcheck/docs/Makefile
    cachegrind/Makefile
    cachegrind/tests/Makefile

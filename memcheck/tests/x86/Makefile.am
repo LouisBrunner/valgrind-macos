@@ -1,7 +1,5 @@
 noinst_SCRIPTS = filter_stderr filter_pushfpopf filter_tronical
 
-noinst_HEADERS = scalar.h
-
 INSN_TESTS = insn_basic insn_fpu insn_cmov insn_mmx insn_mmxext insn_sse insn_sse2
 
 EXTRA_DIST = $(noinst_SCRIPTS) \
@@ -17,13 +15,6 @@ EXTRA_DIST = $(noinst_SCRIPTS) \
 	pushfpopf.stderr.exp pushfpopf.stdout.exp pushfpopf.vgtest \
 	pushfw_x86.vgtest pushfw_x86.stdout.exp pushfw_x86.stderr.exp \
 	pushpopmem.stderr.exp pushpopmem.stdout.exp pushpopmem.vgtest \
-	scalar.stderr.exp scalar.stderr.exp2 scalar.vgtest \
-	scalar_fork.stderr.exp scalar_fork.vgtest \
-	scalar_exit_group.stderr.exp scalar_exit_group.stderr.exp2 \
-	scalar_exit_group.vgtest \
-	scalar_supp.stderr.exp scalar_supp.stderr.exp2 \
-	scalar_supp.vgtest scalar_supp.supp \
-	scalar_vfork.stderr.exp scalar_vfork.vgtest \
 	sse1_memory.stderr.exp sse1_memory.stdout.exp sse1_memory.vgtest \
 	sse2_memory.stderr.exp sse2_memory.stdout.exp sse2_memory.vgtest \
 	tronical.stderr.exp tronical.vgtest \
@@ -38,10 +29,9 @@ check_PROGRAMS = \
 	espindola2 \
 	fxsave \
 	int3-x86 \
-	scalar_exit_group scalar_fork scalar_supp scalar_vfork \
 	fpeflags pushfpopf \
 	pushfw_x86 \
-	pushpopmem scalar sse_memory tronical \
+	pushpopmem sse_memory tronical \
 	more_x86_fp fprem xor-undef-x86
 
 AM_CPPFLAGS  = -I$(top_srcdir)/include

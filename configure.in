@@ -146,29 +146,21 @@ AC_SUBST(VG_ARCH_MAX)
 AC_SUBST(VG_ARCH_ALL)
 VG_ARCH_ALL="amd64 ppc32 ppc64 x86"
 
-AC_SUBST(VALT_LOAD_ADDRESS)
-
 case "${host_cpu}" in
      i?86) 
 	AC_MSG_RESULT([ok (${host_cpu})])
         VG_ARCH_MAX="x86"
-        valt_load_address_normal="0x38000000"
-        valt_load_address_inner="0x28000000"
         ;;
 
      x86_64) 
         AC_MSG_RESULT([ok (${host_cpu})])
         VG_ARCH_MAX="amd64"
-        valt_load_address_normal="0x38000000"
-        valt_load_address_inner="0x28000000"
         ;;
 
      powerpc64)
 #       This value can only happen on Linux, not on AIX
         AC_MSG_RESULT([ok (${host_cpu})])
         VG_ARCH_MAX="ppc64"
-        valt_load_address_normal="0x38000000"
-        valt_load_address_inner="0x28000000"
         ;;
 
      powerpc)
@@ -183,8 +175,6 @@ case "${host_cpu}" in
               VG_ARCH_MAX="ppc32"
               ;;
         esac
-        valt_load_address_normal="0x38000000"
-        valt_load_address_inner="0x28000000"
         ;;
 
      *) 
@@ -192,20 +182,6 @@ case "${host_cpu}" in
 	AC_MSG_ERROR([Unsupported host architecture. Sorry])
 	;;
 esac
-
-# Check if this should be built as an inner Valgrind, to be run within
-# another Valgrind.  Choose the load address accordingly.
-AC_CACHE_CHECK([for use as an inner Valgrind], vg_cv_inner,
-   [AC_ARG_ENABLE(inner, 
-      [  --enable-inner          enables self-hosting],
-      [vg_cv_inner=$enableval],
-      [vg_cv_inner=no])])
-if test "$vg_cv_inner" = yes; then
-    AC_DEFINE([ENABLE_INNER], 1, [configured to run as an inner Valgrind])
-    VALT_LOAD_ADDRESS=$valt_load_address_inner
-else
-    VALT_LOAD_ADDRESS=$valt_load_address_normal
-fi
 
 # Sometimes it's convenient to subvert the bi-arch build system and
 # just have a single build even though the underlying platform is
@@ -344,6 +320,8 @@ case "$VG_ARCH_MAX-$VG_OS" in
      x86-linux)
 	VG_PLATFORM_PRI="X86_LINUX"
 	VG_PLATFORM_SEC=""
+        valt_load_address_normal="0x38000000"
+        valt_load_address_inner="0x28000000"
         AC_MSG_RESULT([ok (${host_cpu}-${host_os})])
 	;;
      amd64-linux)
@@ -358,11 +336,15 @@ case "$VG_ARCH_MAX-$VG_OS" in
 	   VG_PLATFORM_PRI="AMD64_LINUX"
 	   VG_PLATFORM_SEC="X86_LINUX"
 	fi
+        valt_load_address_normal="0x38000000"
+        valt_load_address_inner="0x28000000"
         AC_MSG_RESULT([ok (${host_cpu}-${host_os})])
 	;;
      ppc32-linux)
 	VG_PLATFORM_PRI="PPC32_LINUX"
 	VG_PLATFORM_SEC=""
+        valt_load_address_normal="0x38000000"
+        valt_load_address_inner="0x28000000"
         AC_MSG_RESULT([ok (${host_cpu}-${host_os})])
 	;;
      ppc64-aix5)
@@ -377,6 +359,8 @@ case "$VG_ARCH_MAX-$VG_OS" in
 	   VG_PLATFORM_PRI="PPC64_AIX5"
 	   VG_PLATFORM_SEC="PPC32_AIX5"
 	fi
+        valt_load_address_normal="0x38000000"
+        valt_load_address_inner="0x28000000"
         AC_MSG_RESULT([ok (${host_cpu}-${host_os})])
 	;;
      ppc64-linux)
@@ -391,6 +375,8 @@ case "$VG_ARCH_MAX-$VG_OS" in
 	   VG_PLATFORM_PRI="PPC64_LINUX"
 	   VG_PLATFORM_SEC="PPC32_LINUX"
 	fi
+        valt_load_address_normal="0x38000000"
+        valt_load_address_inner="0x28000000"
         AC_MSG_RESULT([ok (${host_cpu}-${host_os})])
 	;;
     *)
@@ -454,6 +440,22 @@ AM_CONDITIONAL(VGO_AIX5,
 #
 AM_CONDITIONAL(VGP_HAVE_SECONDARY,
                test x$VG_PLATFORM_SEC != x)
+
+
+# Check if this should be built as an inner Valgrind, to be run within
+# another Valgrind.  Choose the load address accordingly.
+AC_SUBST(VALT_LOAD_ADDRESS)
+AC_CACHE_CHECK([for use as an inner Valgrind], vg_cv_inner,
+   [AC_ARG_ENABLE(inner, 
+      [  --enable-inner          enables self-hosting],
+      [vg_cv_inner=$enableval],
+      [vg_cv_inner=no])])
+if test "$vg_cv_inner" = yes; then
+    AC_DEFINE([ENABLE_INNER], 1, [configured to run as an inner Valgrind])
+    VALT_LOAD_ADDRESS=$valt_load_address_inner
+else
+    VALT_LOAD_ADDRESS=$valt_load_address_normal
+fi
 
 
 # This variable will collect the individual suppression files

@@ -1327,7 +1327,12 @@ AC_CHECK_FUNCS([     \
         memset       \
         mkdir        \
         ppoll        \
-        pthread_condattr_setclock \
+        pthread_barrier_init       \
+        pthread_condattr_setclock  \
+        pthread_mutex_timedlock    \
+        pthread_rwlock_timedrdlock \
+        pthread_rwlock_timedwrlock \
+        pthread_spin_lock          \
         semtimedop   \
         signalfd     \
         syscall      \
@@ -1344,6 +1349,11 @@ AC_CHECK_FUNCS([     \
 # libraries with any shared object and/or executable. This is NOT what we
 # want for e.g. vgpreload_core-x86-linux.so
 LIBS=""
+
+AM_CONDITIONAL([HAVE_PTHREAD_BARRIER],
+               [test x$ac_cv_func_pthread_barrier_init = xyes])
+AM_CONDITIONAL([HAVE_PTHREAD_SPINLOCK],
+               [test x$ac_cv_func_pthread_spin_lock = xyes])
 
 # Do we have a useable MPI setup on the primary and/or secondary targets?
 # On Linux, by default, assumes mpicc and -m32/-m64

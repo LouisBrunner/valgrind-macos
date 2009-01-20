@@ -209,6 +209,10 @@ if test x$vg_cv_only64bit = xyes -a x$vg_cv_only32bit = xyes; then
 fi
 
 
+# This variable will collect the individual suppression files
+# depending on the results of autoconf
+DEFAULT_SUPP=""
+AC_SUBST(DEFAULT_SUPP)
 
 AC_MSG_CHECKING([for a supported OS])
 AC_SUBST(VG_OS)
@@ -458,10 +462,6 @@ else
 fi
 
 
-# This variable will collect the individual suppression files
-# depending on the results of autoconf
-DEFAULT_SUPP=""
-AC_SUBST(DEFAULT_SUPP)
 
 
 GLIBC_VERSION=""
@@ -1687,15 +1687,3 @@ cat<<EOF
          Default supp files: ${DEFAULT_SUPP}
 
 EOF
-
-cat<<EOF > default.supp
-# This is a generated file, composed of the following suppression rules:
-#
-#      ${DEFAULT_SUPP}
-#
-
-EOF
-
-for file in ${DEFAULT_SUPP} ; do
-    cat ${srcdir}/$file >> default.supp
-done

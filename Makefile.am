@@ -28,6 +28,7 @@ SUPP_FILES = \
 	glibc-2.2-LinuxThreads-helgrind.supp \
 	glibc-2.X-drd.supp \
 	exp-ptrcheck.supp
+DEFAULT_SUPP_FILES = @DEFAULT_SUPP@
 
 dist_val_DATA = $(SUPP_FILES) default.supp
 
@@ -66,7 +67,10 @@ if VGP_PPC64_AIX5
 # Ditto
 endif
 
-default.supp: $(SUPP_FILES)
+default.supp: $(DEFAULT_SUPP_FILES)
+	echo "# This is a generated file, composed of the following suppression rules:" > default.supp
+	echo "# " $(DEFAULT_SUPP_FILES) >> default.supp
+	cat $(DEFAULT_SUPP_FILES) >> default.supp
 
 ## Preprend @PERL@ because tests/vg_regtest isn't executable
 regtest: check
@@ -94,7 +98,7 @@ EXTRA_DIST = \
 install-exec-hook:
 	$(mkinstalldirs) $(DESTDIR)$(valdir)
 
-all-local:
+all-local: default.supp
 	mkdir -p $(inplacedir)
 	rm -f $(addprefix $(inplacedir)/,default.supp $(SUPP_FILES))
 	ln -s ../default.supp $(inplacedir)

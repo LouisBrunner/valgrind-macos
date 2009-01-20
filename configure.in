@@ -1352,6 +1352,8 @@ LIBS=""
 
 AM_CONDITIONAL([HAVE_PTHREAD_BARRIER],
                [test x$ac_cv_func_pthread_barrier_init = xyes])
+AM_CONDITIONAL([HAVE_PTHREAD_MUTEX_TIMEDLOCK],
+               [test x$ac_cv_func_pthread_mutex_timedlock = xyes])
 AM_CONDITIONAL([HAVE_PTHREAD_SPINLOCK],
                [test x$ac_cv_func_pthread_spin_lock = xyes])
 

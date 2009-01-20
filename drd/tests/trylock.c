@@ -10,6 +10,7 @@
 
 #define _GNU_SOURCE 1
 
+#include "../../config.h"
 #include <stdio.h>
 #include <assert.h>
 #include <pthread.h>
@@ -24,7 +25,6 @@ int main(int argc, char** argv)
 
   time(&abs_timeout.tv_sec);
   abs_timeout.tv_nsec = 0;
-
   abs_timeout.tv_sec += 10;
 
   r = pthread_rwlock_init(&rwlock, NULL); assert(r == 0);
@@ -35,8 +35,10 @@ int main(int argc, char** argv)
   r = pthread_rwlock_trywrlock(&rwlock); assert(r == 0);
   r = pthread_rwlock_unlock(&rwlock); assert(r == 0);
   fprintf(stderr, "Locking rwlock via pthread_rwlock_timedwrlock().\n");
+#ifdef HAVE_PTHREAD_RWLOCK_TIMEDWRLOCK
   r = pthread_rwlock_timedwrlock(&rwlock, &abs_timeout); assert(r == 0);
   r = pthread_rwlock_unlock(&rwlock); assert(r == 0);
+#endif
   fprintf(stderr, "Locking rwlock via pthread_rwlock_rdlock().\n");
   r = pthread_rwlock_rdlock(&rwlock); assert(r == 0);
   r = pthread_rwlock_rdlock(&rwlock); assert(r == 0);
@@ -48,8 +50,10 @@ int main(int argc, char** argv)
   r = pthread_rwlock_tryrdlock(&rwlock); assert(r == 0);
   r = pthread_rwlock_unlock(&rwlock); assert(r == 0);
   fprintf(stderr, "Locking rwlock via pthread_rwlock_timedrdlock().\n");
+#ifdef HAVE_PTHREAD_RWLOCK_TIMEDRDLOCK
   r = pthread_rwlock_timedrdlock(&rwlock, &abs_timeout); assert(r == 0);
   r = pthread_rwlock_unlock(&rwlock); assert(r == 0);
+#endif
   fprintf(stderr, "Attempt to lock for writing recursively (not allowed).\n");
   r = pthread_rwlock_wrlock(&rwlock); assert(r == 0);
   r = pthread_rwlock_wrlock(&rwlock); assert(r != 0);

@@ -17,7 +17,8 @@ noinst_SCRIPTS =		\
 
 EXTRA_DIST =                                        \
 	$(noinst_SCRIPTS)                           \
-	atomic_var.stderr.exp-with-atomic-builtins    \
+	atomic_var.stderr.exp-with-atomic-builtins-1  \
+	atomic_var.stderr.exp-with-atomic-builtins-2  \
 	atomic_var.stderr.exp-without-atomic-builtins \
 	atomic_var.vgtest			    \
 	bar_bad.stderr.exp			    \

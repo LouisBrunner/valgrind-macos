@@ -68,8 +68,10 @@ int main(int argc, char** argv)
   r = pthread_mutex_lock(&mutex); assert(r == 0);
   r = pthread_mutex_unlock(&mutex); assert(r == 0);
   fprintf(stderr, "Locking mutex via pthread_mutex_timedlock().\n");
+#ifdef HAVE_PTHREAD_MUTEX_TIMEDLOCK
   r = pthread_mutex_timedlock(&mutex, &abs_timeout); assert(r == 0);
   r = pthread_mutex_unlock(&mutex); assert(r == 0);
+#endif
   r = pthread_mutex_destroy(&mutex); assert(r == 0);
 
   return 0;

@@ -1,3 +1,3 @@
-prereq: ./supported_libpthread
+prereq: test -e bar_bad && ./supported_libpthread
 prog: bar_bad
 vgopts: -q

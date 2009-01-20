@@ -108,7 +108,8 @@ EXTRA_DIST =                                        \
 	pth_detached_sem.stderr.exp                 \
 	pth_detached_sem.stdout.exp                 \
 	pth_detached_sem.vgtest                     \
-	pth_inconsistent_cond_wait.stderr.exp       \
+	pth_inconsistent_cond_wait.stderr.exp1      \
+	pth_inconsistent_cond_wait.stderr.exp2      \
 	pth_inconsistent_cond_wait.vgtest           \
 	pth_spinlock.stderr.exp                     \
 	pth_spinlock.vgtest                         \

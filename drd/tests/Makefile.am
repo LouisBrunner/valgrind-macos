@@ -204,8 +204,6 @@ AM_CXXFLAGS = $(AM_CFLAGS)
 
 check_PROGRAMS =      \
   atomic_var          \
-  bar_bad	      \
-  bar_trivial         \
   circular_buffer     \
   drd_bitmap_test     \
   fp_race             \
@@ -217,12 +215,9 @@ check_PROGRAMS =      \
   hg06_readshared     \
   hold_lock           \
   linuxthreads_det    \
-  matinv              \
   memory_allocation   \
   monitor_example     \
   new_delete          \
-  pth_barrier         \
-  pth_barrier_reinit  \
   pth_broadcast       \
   pth_cancel_locked   \
   pth_cond_race       \
@@ -230,7 +225,6 @@ check_PROGRAMS =      \
   pth_detached        \
   pth_detached_sem    \
   pth_inconsistent_cond_wait \
-  pth_spinlock        \
   recursive_mutex     \
   rwlock_race         \
   rwlock_test         \
@@ -254,7 +248,6 @@ check_PROGRAMS =      \
   tc17_sembar         \
   tc18_semabuse       \
   tc19_shadowmem      \
-  tc20_verifywrap     \
   tc21_pthonce        \
   tc22_exit_w_lock    \
   tc23_bogus_condwait \
@@ -269,6 +262,18 @@ if HAVE_OPENMP
 check_PROGRAMS += omp_matinv omp_prime omp_printf
 endif
 
+if HAVE_PTHREAD_BARRIER
+check_PROGRAMS += bar_bad bar_trivial matinv pth_barrier pth_barrier_reinit
+endif
+
+if HAVE_PTHREAD_MUTEX_TIMEDLOCK
+check_PROGRAMS += tc20_verifywrap
+endif
+
+if HAVE_PTHREAD_SPINLOCK
+check_PROGRAMS += pth_spinlock
+endif
+
 if HAVE_QTCORE
 check_PROGRAMS += qt4_mutex qt4_rwlock qt4_semaphore
 endif
@@ -276,12 +281,6 @@ endif
 
 atomic_var_SOURCES          = atomic_var.c
 atomic_var_LDADD            = -lpthread
-
-bar_bad_SOURCES             = ../../helgrind/tests/bar_bad.c
-bar_bad_LDADD               = -lpthread
-
-bar_trivial_SOURCES         = ../../helgrind/tests/bar_trivial.c
-bar_trivial_LDADD           = -lpthread
 
 circular_buffer_SOURCES     = circular_buffer.c
 circular_buffer_LDADD       = -lpthread
@@ -318,21 +317,12 @@ hold_lock_LDADD             = -lpthread
 linuxthreads_det_SOURCES    = linuxthreads_det.c
 linuxthreads_det_LDADD      = -lpthread
 
-matinv_SOURCES              = matinv.c
-matinv_LDADD                = -lpthread -lm
-
 memory_allocation_SOURCES   = memory_allocation.c
 
 monitor_example_SOURCES     = monitor_example.cpp
 monitor_example_LDADD       = -lpthread
 
 new_delete_SOURCES          = new_delete.cpp
-
-pth_barrier_SOURCES         = pth_barrier.c
-pth_barrier_LDADD           = -lpthread
-
-pth_barrier_reinit_SOURCES  = pth_barrier_reinit.c
-pth_barrier_reinit_LDADD    = -lpthread
 
 pth_broadcast_SOURCES       = pth_broadcast.c
 pth_broadcast_LDADD         = -lpthread
@@ -354,9 +344,6 @@ pth_detached_sem_LDADD      = -lpthread
 
 pth_inconsistent_cond_wait_SOURCES = pth_inconsistent_cond_wait.c
 pth_inconsistent_cond_wait_LDADD   = -lpthread
-
-pth_spinlock_SOURCES        = pth_spinlock.c
-pth_spinlock_LDADD          = -lpthread
 
 recursive_mutex_SOURCES     = recursive_mutex.c
 recursive_mutex_LDADD       = -lpthread
@@ -427,9 +414,6 @@ tc18_semabuse_LDADD         = -lpthread
 tc19_shadowmem_SOURCES      = ../../helgrind/tests/tc19_shadowmem.c
 tc19_shadowmem_LDADD        = -lpthread
 
-tc20_verifywrap_SOURCES     = ../../helgrind/tests/tc20_verifywrap.c
-tc20_verifywrap_LDADD       = -lpthread
-
 tc21_pthonce_SOURCES        = ../../helgrind/tests/tc21_pthonce.c
 tc21_pthonce_LDADD          = -lpthread
 
@@ -466,6 +450,33 @@ omp_printf_SOURCES          = omp_printf.c
 omp_printf_CFLAGS           = $(AM_CFLAGS) -fopenmp
 omp_printf_LDFLAGS          = -fopenmp
 omp_printf_LDADD            = -lm
+endif
+
+if HAVE_PTHREAD_BARRIER
+bar_bad_SOURCES             = ../../helgrind/tests/bar_bad.c
+bar_bad_LDADD               = -lpthread
+
+bar_trivial_SOURCES         = ../../helgrind/tests/bar_trivial.c
+bar_trivial_LDADD           = -lpthread
+
+matinv_SOURCES              = matinv.c
+matinv_LDADD                = -lpthread -lm
+
+pth_barrier_SOURCES         = pth_barrier.c
+pth_barrier_LDADD           = -lpthread
+
+pth_barrier_reinit_SOURCES  = pth_barrier_reinit.c
+pth_barrier_reinit_LDADD    = -lpthread
+endif
+
+if HAVE_PTHREAD_MUTEX_TIMEDLOCK
+tc20_verifywrap_SOURCES     = ../../helgrind/tests/tc20_verifywrap.c
+tc20_verifywrap_LDADD       = -lpthread
+endif
+
+if HAVE_PTHREAD_SPINLOCK
+pth_spinlock_SOURCES        = pth_spinlock.c
+pth_spinlock_LDADD          = -lpthread
 endif
 
 if HAVE_QTCORE

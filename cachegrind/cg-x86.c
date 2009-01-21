@@ -42,12 +42,12 @@
 
 static void micro_ops_warn(Int actual_size, Int used_size, Int line_size)
 {
-    VG_(message)(Vg_DebugMsg, 
-       "warning: Pentium 4 with %d KB micro-op instruction trace cache", 
-       actual_size);
-    VG_(message)(Vg_DebugMsg, 
-       "         Simulating a %d KB I-cache with %d B lines", 
-       used_size, line_size);
+   VG_(message)(Vg_DebugMsg, 
+      "warning: Pentium 4 with %d KB micro-op instruction trace cache", 
+      actual_size);
+   VG_(message)(Vg_DebugMsg, 
+      "         Simulating a %d KB I-cache with %d B lines", 
+      used_size, line_size);
 }
 
 /* Intel method is truly wretched.  We have to do an insane indexing into an

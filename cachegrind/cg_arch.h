@@ -33,9 +33,9 @@
 
 // For cache simulation
 typedef struct {
-    int size;       // bytes
-    int assoc;
-    int line_size;  // bytes
+   int size;       // bytes
+   int assoc;
+   int line_size;  // bytes
 } cache_t;
 
 // Gives the configuration of I1, D1 and L2 caches.  They get overridden

@@ -412,6 +412,38 @@ static char *copy_str(char **tab, const char *str)
 
    ---------------------------------------------------------------- */
 
+struct auxv
+{
+   Word a_type;
+   union {
+      void *a_ptr;
+      Word a_val;
+   } u;
+};
+
+static
+struct auxv *find_auxv(UWord* sp)
+{
+   sp++;                // skip argc (Nb: is word-sized, not int-sized!)
+
+   while (*sp != 0)     // skip argv
+      sp++;
+   sp++;
+
+   while (*sp != 0)     // skip env
+      sp++;
+   sp++;
+   
+#if defined(VGA_ppc32) || defined(VGA_ppc64)
+# if defined AT_IGNOREPPC
+   while (*sp == AT_IGNOREPPC)        // skip AT_IGNOREPPC entries
+      sp += 2;
+# endif
+#endif
+
+   return (struct auxv *)sp;
+}
+
 static 
 Addr setup_client_stack( void*  init_sp,
                          char** orig_envp, 
@@ -425,9 +457,9 @@ Addr setup_client_stack( void*  init_sp,
    char *strtab;		/* string table */
    char *stringbase;
    Addr *ptr;
-   struct ume_auxv *auxv;
-   const struct ume_auxv *orig_auxv;
-   const struct ume_auxv *cauxv;
+   struct auxv *auxv;
+   const struct auxv *orig_auxv;
+   const struct auxv *cauxv;
    unsigned stringsize;		/* total size of strings in bytes */
    unsigned auxsize;		/* total size of auxv in bytes */
    Int argc;			/* total argc */
@@ -442,7 +474,7 @@ Addr setup_client_stack( void*  init_sp,
    vg_assert( VG_(args_for_client) );
 
    /* use our own auxv as a prototype */
-   orig_auxv = VG_(find_auxv)(init_sp);
+   orig_auxv = find_auxv(init_sp);
 
    /* ==================== compute sizes ==================== */
 
@@ -636,7 +668,7 @@ Addr setup_client_stack( void*  init_sp,
    *ptr++ = 0;
 
    /* --- auxv --- */
-   auxv = (struct ume_auxv *)ptr;
+   auxv = (struct auxv *)ptr;
    *client_auxv = (UInt *)auxv;
 
 #  if defined(VGP_ppc32_linux) || defined(VGP_ppc64_linux)

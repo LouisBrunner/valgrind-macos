@@ -1,4 +1,0 @@
-Calling VG_(foreach_map)()
-Calling VG_(find_auxv)()
-Calling VG_(do_exec)("hello")
-Hello, world!

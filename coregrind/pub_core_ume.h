@@ -37,7 +37,7 @@
 //--------------------------------------------------------------------
 
 /*------------------------------------------------------------*/
-/*--- Loading ELF files                                    ---*/
+/*--- Loading files                                        ---*/
 /*------------------------------------------------------------*/
 
 // Info needed to load and run a program.  IN/INOUT/OUT refers to the
@@ -67,7 +67,7 @@ typedef
 
 // Do a number of appropriate checks to see if the file looks executable by
 // the kernel: ie. it's a file, it's readable and executable, and it's in
-// either ELF or "#!" format.  On success, 'out_fd' gets the fd of the file
+// either binary or "#!" format.  On success, 'out_fd' gets the fd of the file
 // if it's non-NULL.  Otherwise the fd is closed.
 extern SysRes VG_(pre_exec_check)(const HChar* exe_name, Int* out_fd,
                                   Bool allow_setuid);
@@ -77,21 +77,6 @@ extern SysRes VG_(pre_exec_check)(const HChar* exe_name, Int* out_fd,
 // reads headers, maps file into memory, and returns important info about
 // the program.
 extern Int VG_(do_exec)(const HChar* exe, ExeInfo* info);
-
-/*------------------------------------------------------------*/
-/*--- Finding and dealing with auxv                        ---*/
-/*------------------------------------------------------------*/
-
-struct ume_auxv
-{
-   Word a_type;
-   union {
-      void *a_ptr;
-      Word a_val;
-   } u;
-};
-
-extern struct ume_auxv *VG_(find_auxv)(UWord* orig_esp);
 
 #endif /* __PUB_CORE_UME_H */
 

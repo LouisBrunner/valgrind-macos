@@ -140,6 +140,7 @@ noinst_HEADERS = \
 	pub_core_vkiscnums.h	\
 	pub_core_wordfm.h	\
 	pub_core_xarray.h	\
+	m_aspacemgr/priv_aspacemgr.h \
 	m_coredump/priv_elf.h	\
 	m_debuginfo/priv_misc.h	\
 	m_debuginfo/priv_storage.h	\
@@ -163,7 +164,7 @@ noinst_HEADERS = \
 	m_syswrap/priv_syswrap-linux-variants.h \
 	m_syswrap/priv_syswrap-aix5.h \
 	m_syswrap/priv_syswrap-main.h \
-	m_aspacemgr/priv_aspacemgr.h \
+	m_ume/priv_ume.h \
 	launcher-aix5-bootblock.h \
 	m_initimg/simple_huffman.c
 
@@ -203,7 +204,6 @@ COREGRIND_SOURCES_COMMON = \
 	m_trampoline.S \
 	m_translate.c \
 	m_transtab.c \
-	m_ume.c \
 	m_vki.c \
 	m_vkiscnums.c \
 	m_wordfm.c \
@@ -222,7 +222,10 @@ COREGRIND_SOURCES_COMMON = \
 	m_replacemalloc/replacemalloc_core.c \
 	m_scheduler/scheduler.c \
 	m_scheduler/sema.c \
-	m_syswrap/syswrap-main.c
+	m_syswrap/syswrap-main.c \
+	m_ume/elf.c \
+	m_ume/main.c \
+	m_ume/script.c
 
 COREGRIND_LINUX_SOURCE = \
 	m_coredump/coredump-elf.c \

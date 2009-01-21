@@ -172,7 +172,6 @@ EXTRA_DIST = $(noinst_SCRIPTS) \
 	vcpu_fbench.stdout.exp vcpu_fbench.stderr.exp vcpu_fbench.vgtest \
 	vcpu_fnfns.stdout.exp vcpu_fnfns.stdout.exp-glibc28-amd64 \
 	vcpu_fnfns.stderr.exp vcpu_fnfns.vgtest \
-	vgtest_ume.stderr.exp vgtest_ume.disabled \
 	with-space.stderr.exp with-space.stdout.exp with-space.vgtest \
 	wrap1.vgtest wrap1.stdout.exp wrap1.stderr.exp \
 	wrap2.vgtest wrap2.stdout.exp wrap2.stderr.exp \
@@ -190,7 +189,6 @@ EXTRA_DIST = $(noinst_SCRIPTS) \
 	zeropage.stderr.exp zeropage.stderr.exp2 zeropage.stdout.exp \
 	zeropage.vgtest
 
-# vgtest_ume is not working
 check_PROGRAMS = \
 	addressable \
 	badaddrvalue badfree badjump badjump2 \
@@ -369,8 +367,4 @@ endif
 #hello_LDFLAGS		= -Wl,-defsym,valt_load_address=0x50000000 \
 #			  -Wl,-T,$(top_builddir)/valt_load_address.lds
 #hello_DEPENDENCIES 	= $(top_builddir)/valt_load_address.lds
-
-# vgtest_ume is not working
-#vgtest_ume_CFLAGS	= -DVGA_$(VG_ARCH_PRI) -DVGO_$(VG_OS)
-#vgtest_ume_LDADD	= ../../coregrind/m_ume.o
 

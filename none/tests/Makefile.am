@@ -3,16 +3,16 @@
 include $(top_srcdir)/Makefile.flags.am
 
 SUBDIRS = .
-if VGP_X86_LINUX
+if VGA_X86
 SUBDIRS += x86
 endif
-if VGP_AMD64_LINUX
+if VGA_AMD64
 SUBDIRS += amd64
 endif
-if VGP_PPC32_LINUX
+if VGA_PPC32
 SUBDIRS += ppc32
 endif
-if VGP_PPC64_LINUX
+if VGA_PPC64
 SUBDIRS += ppc64
 endif
 

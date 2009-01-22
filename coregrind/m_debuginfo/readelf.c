@@ -36,6 +36,7 @@
 
 #include "pub_core_basics.h"
 #include "pub_core_vki.h"
+#include "pub_core_debuginfo.h"
 #include "pub_core_libcbase.h"
 #include "pub_core_libcprint.h"
 #include "pub_core_libcassert.h"
@@ -1027,15 +1028,13 @@ Bool ML_(read_elf_debug_info) ( struct _DebugInfo* di )
    UWord       shdr_ent_szB    = 0;
    UChar*      shdr_strtab_img = NULL;
 
-   /* To do with figuring out where .sbss is relative to .bss.  A
-      kludge at the best of times. */
-   SizeT sbss_size;
-   Addr  sbss_svma;
-   UInt  bss_align;
-   UInt  sbss_align;
-   UInt  data_align;
-   SizeT bss_totsize;
-   Addr  gen_bss_lowest_svma;
+   /* SVMAs covered by rx and rw segments and corresponding bias. */
+   Addr rx_svma_base = 0;
+   Addr rx_svma_limit = 0;
+   OffT rx_bias = 0;
+   Addr rw_svma_base = 0;
+   Addr rw_svma_limit = 0;
+   OffT rw_bias = 0;
 
    vg_assert(di);
    vg_assert(di->have_rx_map == True);
@@ -1203,6 +1202,22 @@ Bool ML_(read_elf_debug_info) ( struct _DebugInfo* di )
                goto out;
             }
             prev_svma = phdr->p_vaddr;
+            if (rx_svma_limit == 0
+                && phdr->p_offset >= di->rx_map_foff
+                && phdr->p_offset < di->rx_map_foff + di->rx_map_size
+                && phdr->p_offset + phdr->p_filesz <= di->rx_map_foff + di->rx_map_size) {
+               rx_svma_base = phdr->p_vaddr;
+               rx_svma_limit = phdr->p_vaddr + phdr->p_memsz;
+               rx_bias = di->rx_map_avma - di->rx_map_foff + phdr->p_offset - phdr->p_vaddr;
+            }
+            else if (rw_svma_limit == 0
+                     && phdr->p_offset >= di->rw_map_foff
+                     && phdr->p_offset < di->rw_map_foff + di->rw_map_size
+                     && phdr->p_offset + phdr->p_filesz <= di->rw_map_foff + di->rw_map_size) {
+               rw_svma_base = phdr->p_vaddr;
+               rw_svma_limit = phdr->p_vaddr + phdr->p_memsz;
+               rw_bias = di->rw_map_avma - di->rw_map_foff + phdr->p_offset - phdr->p_vaddr;
+            }
          }
 
          /* Try to get the soname.  If there isn't one, use "NONE".
@@ -1254,14 +1269,8 @@ Bool ML_(read_elf_debug_info) ( struct _DebugInfo* di )
       di->soname = "NONE";
    }
 
-   /*SizeT*/ sbss_size  = 0;
-   /*Addr */ sbss_svma  = 0;
-   /*UInt */ bss_align  = 0;
-   /*UInt */ sbss_align = 0;
-
-   /* UInt */  data_align = 0;
-   /* SizeT */ bss_totsize = 0;
-   /* Addr */  gen_bss_lowest_svma = ~((Addr)0);
+   vg_assert(rx_svma_limit != 0);
+   vg_assert(rw_svma_limit != 0);
 
    /* Now read the section table. */
    TRACE_SYMTAB("\n");
@@ -1270,9 +1279,13 @@ Bool ML_(read_elf_debug_info) ( struct _DebugInfo* di )
    TRACE_SYMTAB("rx: at %#lx are mapped foffsets %ld .. %ld\n",
                di->rx_map_avma,
                di->rx_map_foff, di->rx_map_foff + di->rx_map_size - 1 );
+   TRACE_SYMTAB("rx: contains svmas %#lx .. %#lx with bias %#lx\n",
+                rx_svma_base, rx_svma_limit - 1, rx_bias );
    TRACE_SYMTAB("rw: at %#lx are mapped foffsets %ld .. %ld\n",
                di->rw_map_avma,
                di->rw_map_foff, di->rw_map_foff + di->rw_map_size - 1 );
+   TRACE_SYMTAB("rw: contains svmas %#lx .. %#lx with bias %#lx\n",
+                rw_svma_base, rw_svma_limit - 1, rw_bias );
 
    for (i = 0; i < shdr_nent; i++) {
       ElfXX_Shdr* shdr = INDEX_BIS( shdr_img, i, shdr_ent_szB );
@@ -1282,10 +1295,8 @@ Bool ML_(read_elf_debug_info) ( struct _DebugInfo* di )
       UWord  size = shdr->sh_size;
       UInt   alyn = shdr->sh_addralign;
       Bool   bits = !(shdr->sh_type == SHT_NOBITS);
-      Bool   inrx = foff >= di->rx_map_foff
-                    && foff < di->rx_map_foff + di->rx_map_size;
-      Bool   inrw = foff >= di->rw_map_foff
-                    && foff < di->rw_map_foff + di->rw_map_size;
+      Bool   inrx = svma >= rx_svma_base && svma < rx_svma_limit;
+      Bool   inrw = svma >= rw_svma_base && svma < rw_svma_limit;
 
       TRACE_SYMTAB(" [sec %2ld]  %s %s  al%2u  foff %6ld .. %6ld  "
                   "  svma %p  name \"%s\"\n", 
@@ -1321,9 +1332,9 @@ Bool ML_(read_elf_debug_info) ( struct _DebugInfo* di )
          if (inrx && size > 0 && !di->text_present) {
             di->text_present = True;
             di->text_svma = svma;
-            di->text_avma = di->rx_map_avma + foff - di->rx_map_foff;
+            di->text_avma = svma + rx_bias;
             di->text_size = size;
-            di->text_bias = di->text_avma - svma;
+            di->text_bias = rx_bias;
             TRACE_SYMTAB("acquiring .text svma = %#lx .. %#lx\n",
                          di->text_svma, 
                          di->text_svma + di->text_size - 1);
@@ -1339,13 +1350,11 @@ Bool ML_(read_elf_debug_info) ( struct _DebugInfo* di )
       /* Accept .data where mapped as rw (data), even if zero-sized */
       if (0 == VG_(strcmp)(name, ".data")) {
          if (inrw && size >= 0 && !di->data_present) {
-            if (alyn > data_align)
-               data_align = alyn;
             di->data_present = True;
             di->data_svma = svma;
-            di->data_avma = di->rw_map_avma + foff - di->rw_map_foff;
+            di->data_avma = svma + rw_bias;
             di->data_size = size;
-            di->data_bias = di->data_avma - svma;
+            di->data_bias = rw_bias;
             TRACE_SYMTAB("acquiring .data svma = %#lx .. %#lx\n",
                          di->data_svma,
                          di->data_svma + di->data_size - 1);
@@ -1361,13 +1370,11 @@ Bool ML_(read_elf_debug_info) ( struct _DebugInfo* di )
       /* Accept .sdata where mapped as rw (data) */
       if (0 == VG_(strcmp)(name, ".sdata")) {
          if (inrw && size > 0 && !di->sdata_present) {
-            if (alyn > data_align)
-               data_align = alyn;
             di->sdata_present = True;
             di->sdata_svma = svma;
-            di->sdata_avma = di->rw_map_avma + foff - di->rw_map_foff;
+            di->sdata_avma = svma + rw_bias;
             di->sdata_size = size;
-            di->sdata_bias = di->sdata_avma - svma;
+            di->sdata_bias = rw_bias;
             TRACE_SYMTAB("acquiring .sdata svma = %#lx .. %#lx\n",
                          di->sdata_svma,
                          di->sdata_svma + di->sdata_size - 1);
@@ -1383,17 +1390,11 @@ Bool ML_(read_elf_debug_info) ( struct _DebugInfo* di )
       /* Accept .bss where mapped as rw (data), even if zero-sized */
       if (0 == VG_(strcmp)(name, ".bss")) {
          if (inrw && size >= 0 && !di->bss_present) {
-            bss_totsize += round_Addr_upwards(size, alyn);
-            if (svma < gen_bss_lowest_svma)
-               gen_bss_lowest_svma = svma;
-            TRACE_SYMTAB("increasing total bss-like size to %ld\n",
-                         bss_totsize);
             di->bss_present = True;
             di->bss_svma = svma;
-            di->bss_avma = di->rw_map_avma + foff - di->rw_map_foff;
+            di->bss_avma = svma + rw_bias;
             di->bss_size = size;
-            di->bss_bias = di->bss_avma - svma;
-            bss_align = alyn;
+            di->bss_bias = rw_bias;
             TRACE_SYMTAB("acquiring .bss svma = %#lx .. %#lx\n",
                          di->bss_svma,
                          di->bss_svma + di->bss_size - 1);
@@ -1413,7 +1414,6 @@ Bool ML_(read_elf_debug_info) ( struct _DebugInfo* di )
             di->bss_avma = 0;
             di->bss_size = 0;
             di->bss_bias = 0;
-            bss_align = 0;
             if (!VG_(clo_xml)) {
                VG_(message)(Vg_UserMsg, "Warning: the following file's .bss is "
                                        "mapped r-x only - ignoring .bss syms");
@@ -1430,38 +1430,8 @@ Bool ML_(read_elf_debug_info) ( struct _DebugInfo* di )
             di->bss_avma = 0;
             di->bss_size = 0;
             di->bss_bias = 0;
-            bss_align = 0;
          } else {
             BAD(".bss");
-         }
-      }
-
-      /* Accept .sbss where mapped as rw (data) */
-      if (0 == VG_(strcmp)(name, ".sbss")) {
-         if (inrw && size > 0 && sbss_size == 0) {
-            bss_totsize += round_Addr_upwards(size, alyn);
-            if (svma < gen_bss_lowest_svma)
-               gen_bss_lowest_svma = svma;
-            TRACE_SYMTAB("increasing total bss-like size to %ld\n",
-                         bss_totsize);
-            sbss_size  = size;
-            sbss_svma  = svma;
-            sbss_align = alyn;
-         } else {
-            BAD(".sbss");
-         }
-      }
-
-      /* Accept .dynbss where mapped as rw (data) */
-      if (0 == VG_(strcmp)(name, ".dynbss")) {
-	if (inrw && size > 0 /* && sbss_size == 0*/) {
-           bss_totsize += round_Addr_upwards(size, alyn);
-           if (svma < gen_bss_lowest_svma)
-              gen_bss_lowest_svma = svma;
-           TRACE_SYMTAB("increasing total bss-like size to %ld\n",
-                        bss_totsize);
-         } else {
-            BAD(".dynbss");
          }
       }
 
@@ -1469,7 +1439,7 @@ Bool ML_(read_elf_debug_info) ( struct _DebugInfo* di )
       if (0 == VG_(strcmp)(name, ".got")) {
          if (inrw && size > 0 && !di->got_present) {
             di->got_present = True;
-            di->got_avma = di->rw_map_avma + foff - di->rw_map_foff;
+            di->got_avma = svma + rw_bias;
             di->got_size = size;
             TRACE_SYMTAB("acquiring .got avma = %#lx\n", di->got_avma);
          } else {
@@ -1481,7 +1451,7 @@ Bool ML_(read_elf_debug_info) ( struct _DebugInfo* di )
       if (0 == VG_(strcmp)(name, ".got.plt")) {
          if (inrw && size > 0 && !di->gotplt_present) {
             di->gotplt_present = True;
-            di->gotplt_avma = di->rw_map_avma + foff - di->rw_map_foff;
+            di->gotplt_avma = svma + rw_bias;
             di->gotplt_size = size;
             TRACE_SYMTAB("acquiring .got.plt avma = %#lx\n", di->gotplt_avma);
          } else if (size != 0) {
@@ -1495,7 +1465,7 @@ Bool ML_(read_elf_debug_info) ( struct _DebugInfo* di )
       if (0 == VG_(strcmp)(name, ".plt")) {
          if (inrx && size > 0 && !di->plt_present) {
             di->plt_present = True;
-            di->plt_avma = di->rx_map_avma + foff - di->rx_map_foff;
+            di->plt_avma = svma + rx_bias;
             di->plt_size = size;
             TRACE_SYMTAB("acquiring .plt avma = %#lx\n", di->plt_avma);
          } else {
@@ -1507,7 +1477,7 @@ Bool ML_(read_elf_debug_info) ( struct _DebugInfo* di )
       if (0 == VG_(strcmp)(name, ".plt")) {
          if (inrw && size > 0 && !di->plt_present) {
             di->plt_present = True;
-            di->plt_avma = di->rw_map_avma + foff - di->rw_map_foff;
+            di->plt_avma = svma + rw_bias;
             di->plt_size = size;
             TRACE_SYMTAB("acquiring .plt avma = %#lx\n", di->plt_avma);
          } else {
@@ -1519,7 +1489,7 @@ Bool ML_(read_elf_debug_info) ( struct _DebugInfo* di )
       if (0 == VG_(strcmp)(name, ".plt")) {
          if (inrw && size > 0 && !di->plt_present) {
             di->plt_present = True;
-            di->plt_avma = di->rw_map_avma + foff - di->rw_map_foff;
+            di->plt_avma = svma + rw_bias;
             di->plt_size = size;
             TRACE_SYMTAB("acquiring .plt avma = %#lx\n", di->plt_avma);
          } else 
@@ -1542,7 +1512,7 @@ Bool ML_(read_elf_debug_info) ( struct _DebugInfo* di )
       if (0 == VG_(strcmp)(name, ".opd")) {
          if (inrw && size > 0 && !di->opd_present) {
             di->opd_present = True;
-            di->opd_avma = di->rw_map_avma + foff - di->rw_map_foff;
+            di->opd_avma = svma + rw_bias;
             di->opd_size = size;
             TRACE_SYMTAB("acquiring .opd avma = %#lx\n", di->opd_avma);
          } else {
@@ -1556,13 +1526,13 @@ Bool ML_(read_elf_debug_info) ( struct _DebugInfo* di )
       if (0 == VG_(strcmp)(name, ".eh_frame")) {
          if (inrx && size > 0 && !di->ehframe_present) {
             di->ehframe_present = True;
-            di->ehframe_avma = di->rx_map_avma + foff - di->rx_map_foff;
+            di->ehframe_avma = svma + rx_bias;
             di->ehframe_size = size;
             TRACE_SYMTAB("acquiring .eh_frame avma = %#lx\n", di->ehframe_avma);
          } else
          if (inrw && size > 0 && !di->ehframe_present) {
             di->ehframe_present = True;
-            di->ehframe_avma = di->rw_map_avma + foff - di->rw_map_foff;
+            di->ehframe_avma = svma + rw_bias;
             di->ehframe_size = size;
             TRACE_SYMTAB("acquiring .eh_frame avma = %#lx\n", di->ehframe_avma);
          } else {
@@ -1572,24 +1542,6 @@ Bool ML_(read_elf_debug_info) ( struct _DebugInfo* di )
 
 #    undef BAD
 
-   }
-
-   /* Kludge: ignore all previous computations for .bss avma range,
-      and simply assume that .bss immediately follows .data/.sdata.*/
-   if (1) {
-      SizeT data_al = round_Addr_upwards(di->data_avma, data_align)
-                      - di->data_avma;
-      TRACE_SYMTAB("data_al = %ld\n", data_al);
-      bss_totsize += data_al;
-      di->bss_svma = gen_bss_lowest_svma;
-      di->bss_size = bss_totsize;
-      di->bss_avma = di->data_avma + (di->bss_svma - di->data_svma);
-      di->bss_bias = di->data_bias;
-      TRACE_SYMTAB("kludged .bss svma = %#lx .. %#lx\n",
-                   di->bss_svma, di->bss_svma + di->bss_size - 1);
-      TRACE_SYMTAB("kludged .bss avma = %#lx .. %#lx\n",
-                   di->bss_avma, di->bss_avma + di->bss_size - 1);
-      TRACE_SYMTAB("kludged .bss bias = %#lx\n", di->bss_bias);
    }
 
    if (0) VG_(printf)("YYYY text_: avma %#lx  size %ld  bias %#lx\n",

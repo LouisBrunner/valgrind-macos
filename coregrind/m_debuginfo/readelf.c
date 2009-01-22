@@ -956,15 +956,6 @@ static void* INDEX_BIS ( void* base, Word idx, Word scale ) {
    return (void*)( ((UChar*)base) + idx * scale );
 }
 
-static Addr round_Addr_upwards ( Addr a, UInt align ) 
-{
-   if (align > 0) {
-      vg_assert(-1 != VG_(log2)(align));
-      a = VG_ROUNDUP(a, align);
-   }
-   return a;
-}
-
 
 /* Find the file offset corresponding to SVMA by using the program
    headers.  This is taken from binutils-2.17/binutils/readelf.c

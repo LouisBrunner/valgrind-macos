@@ -9,9 +9,8 @@ check_PROGRAMS = \
 	timerfd-syscall
 
 AM_CPPFLAGS  = -I$(top_srcdir)/include
-AM_CFLAGS    = $(WERROR) @FLAG_M32@ -Winline -Wall -Wshadow -g \
+AM_CFLAGS    = $(WERROR) $(AM_FLAG_M3264_PRI) -Winline -Wall -Wshadow -g \
 		$(FLAG_MMMX) $(FLAG_MSSE)
 AM_CXXFLAGS  = $(AM_CFLAGS)
-AM_CCASFLAGS = @FLAG_M32@
 
 timerfd_syscall_LDADD = -lrt

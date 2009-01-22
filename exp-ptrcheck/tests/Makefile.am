@@ -3,20 +3,10 @@
 include $(top_srcdir)/Makefile.flags.am
 
 #SUBDIRS = .
-#if VGP_X86_LINUX
+#if VGA_X86
 #SUBDIRS += x86
-#endif
-#if VGP_AMD64_LINUX
-#SUBDIRS += amd64
-#endif
-#if VGP_PPC32_LINUX
-#SUBDIRS += ppc32
-#endif
-#if VGP_PPC64_LINUX
-#SUBDIRS += ppc64
-#endif
 
-#DIST_SUBDIRS = ${VG_ARCH_ALL} .
+#DIST_SUBDIRS = x86 .
 
 noinst_SCRIPTS = filter_stderr filter_add filter_suppgen \
 	sh_script

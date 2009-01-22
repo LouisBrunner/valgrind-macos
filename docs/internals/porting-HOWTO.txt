@@ -17,8 +17,7 @@ To begin:
   thorough!)  Put in Makefile.am files for them, edit them for the new
   architecture name. 
 
-- Update configure.in (use x86 and x86-linux as a guide).  Don't forget to
-  update VG_ARCH_ALL, VG_PLATFORM_ALL.
+- Update configure.in (use x86 and x86-linux as a guide).
 
 Once it configures ok, get it to compile:
 

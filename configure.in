@@ -143,9 +143,6 @@ AC_CANONICAL_HOST
 AC_MSG_CHECKING([for a supported CPU])
 AC_SUBST(VG_ARCH_MAX)
 
-AC_SUBST(VG_ARCH_ALL)
-VG_ARCH_ALL="amd64 ppc32 ppc64 x86"
-
 case "${host_cpu}" in
      i?86) 
 	AC_MSG_RESULT([ok (${host_cpu})])
@@ -1640,17 +1637,12 @@ AC_OUTPUT(
    memcheck/Makefile
    memcheck/tests/Makefile
    memcheck/tests/amd64/Makefile
-   memcheck/tests/ppc32/Makefile
-   memcheck/tests/ppc64/Makefile
    memcheck/tests/x86/Makefile
    memcheck/tests/linux/Makefile
    memcheck/tests/x86-linux/Makefile
    memcheck/docs/Makefile
    cachegrind/Makefile
    cachegrind/tests/Makefile
-   cachegrind/tests/amd64/Makefile
-   cachegrind/tests/ppc32/Makefile
-   cachegrind/tests/ppc64/Makefile
    cachegrind/tests/x86/Makefile
    cachegrind/docs/Makefile
    cachegrind/cg_annotate

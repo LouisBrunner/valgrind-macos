@@ -16,7 +16,7 @@ if VGA_PPC64
 SUBDIRS += ppc64
 endif
 
-DIST_SUBDIRS = ${VG_ARCH_ALL} .
+DIST_SUBDIRS = x86 amd64 ppc32 ppc64 .
 
 noinst_SCRIPTS = \
 	filter_cmdline0 filter_linenos \

@@ -1460,7 +1460,7 @@ Bool ML_(read_elf_debug_info) ( struct _DebugInfo* di )
             }
          } else
 
-         if ((!inrw) && (!inrx) && size > 0 && !di->bss_present) {
+         if ((!inrw) && (!inrx) && size >= 0 && !di->bss_present) {
             /* File contains a .bss, but it didn't get mapped.  Ignore. */
             di->bss_present = False;
             di->bss_svma = 0;

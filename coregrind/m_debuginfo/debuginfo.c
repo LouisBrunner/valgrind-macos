@@ -1036,7 +1036,17 @@ static void search_all_symtabs ( Addr ptr, /*OUT*/DebugInfo** pdi,
                    (di->bss_present
                     && di->bss_size > 0
                     && di->bss_avma <= ptr 
-                    && ptr < di->bss_avma + di->bss_size);
+                    && ptr < di->bss_avma + di->bss_size)
+                   ||
+                   (di->sbss_present
+                    && di->sbss_size > 0
+                    && di->sbss_avma <= ptr 
+                    && ptr < di->sbss_avma + di->sbss_size)
+                   ||
+                   (di->rodata_present
+                    && di->rodata_size > 0
+                    && di->rodata_avma <= ptr 
+                    && ptr < di->rodata_avma + di->rodata_size);
       }
 
       if (!inRange) continue;
@@ -1064,6 +1074,7 @@ static void search_all_loctabs ( Addr ptr, /*OUT*/DebugInfo** pdi,
    DebugInfo* di;
    for (di = debugInfo_list; di != NULL; di = di->next) {
       if (di->text_present
+          && di->text_size > 0
           && di->text_avma <= ptr 
           && ptr < di->text_avma + di->text_size) {
          lno = ML_(search_one_loctab) ( di, ptr );
@@ -1250,6 +1261,7 @@ Bool VG_(get_objname) ( Addr a, Char* buf, Int nbuf )
       expect this to produce a result. */
    for (di = debugInfo_list; di != NULL; di = di->next) {
       if (di->text_present
+          && di->text_size > 0
           && di->text_avma <= a 
           && a < di->text_avma + di->text_size) {
          VG_(strncpy_safely)(buf, di->filename, nbuf);
@@ -1288,6 +1300,7 @@ DebugInfo* VG_(find_seginfo) ( Addr a )
    DebugInfo* di;
    for (di = debugInfo_list; di != NULL; di = di->next) {
       if (di->text_present
+          && di->text_size > 0
           && di->text_avma <= a 
           && a < di->text_avma + di->text_size) {
          return di;
@@ -2939,6 +2952,7 @@ const HChar* VG_(pp_SectKind)( VgSectKind kind )
       case Vg_SectGOT:     return "GOT";
       case Vg_SectPLT:     return "PLT";
       case Vg_SectOPD:     return "OPD";
+      case Vg_SectGOTPLT:  return "GOTPLT";
       default:             vg_assert(0);
    }
 }
@@ -2986,6 +3000,12 @@ VgSectKind VG_(seginfo_sect_kind)( /*OUT*/UChar* name, SizeT n_name,
       if (di->bss_present
           && di->bss_size > 0
           && a >= di->bss_avma && a < di->bss_avma + di->bss_size) {
+         res = Vg_SectBSS;
+         break;
+      }
+      if (di->sbss_present
+          && di->sbss_size > 0
+          && a >= di->sbss_avma && a < di->sbss_avma + di->sbss_size) {
          res = Vg_SectBSS;
          break;
       }

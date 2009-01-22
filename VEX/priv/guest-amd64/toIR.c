@@ -8813,8 +8813,14 @@ DisResult disInstr_AMD64_WRK (
    if (n > 1) 
       goto decode_failure; /* multiple seg overrides == illegal */
 
-   if (pfx & PFX_GS)
-      goto decode_failure; /* legal, but unsupported right now */
+   /* We have a %fs prefix.  Reject it if there's no evidence in 'vbi'
+      that we should accept it. */
+   if ((pfx & PFX_FS) && !vbi->guest_amd64_assume_fs_is_zero)
+      goto decode_failure;
+
+   /* Ditto for %gs prefixes. */
+   if ((pfx & PFX_GS) && !vbi->guest_amd64_assume_gs_is_0x60)
+      goto decode_failure;
 
    /* Set up sz. */
    sz = 4;

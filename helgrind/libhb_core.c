@@ -2307,7 +2307,7 @@ static void vts_tab__do_GC ( Bool show_stats )
       tl_assert(nTab > 0);
       VG_(message)(Vg_DebugMsg,
                   "libhb: VTS GC: #%u  old size %lu  live %lu  (%2llu%%)",
-                  ctr++, nTab, nLive, (100ULL * nLive) / nTab);
+                  ctr++, nTab, nLive, (100ULL * (ULong)nLive) / (ULong)nTab);
    }
 }
 

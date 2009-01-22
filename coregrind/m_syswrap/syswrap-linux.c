@@ -373,7 +373,7 @@ SysRes ML_(do_fork_clone) ( ThreadId tid, UInt flags,
 #define POST(name)      DEFN_POST_TEMPLATE(linux, name)
 
 // Combine two 32-bit values into a 64-bit value
-#define LOHI64(lo,hi)   ( (lo) | ((ULong)(hi) << 32) )
+#define LOHI64(lo,hi)   ( ((ULong)(lo)) | (((ULong)(hi)) << 32) )
 
 /* ---------------------------------------------------------------------
    *mount wrappers

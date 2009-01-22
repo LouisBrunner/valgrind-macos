@@ -2029,7 +2029,7 @@ ML_(generic_PRE_sys_mmap) ( ThreadId tid,
 #define POST(name)     DEFN_POST_TEMPLATE(generic, name)
 
 // Combine two 32-bit values into a 64-bit value
-#define LOHI64(lo,hi)   ( (lo) | ((ULong)(hi) << 32) )
+#define LOHI64(lo,hi)   ( ((ULong)(lo)) | (((ULong)(hi)) << 32) )
 
 //zz //PRE(sys_exit_group, Special)
 //zz //{

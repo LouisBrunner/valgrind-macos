@@ -3,7 +3,7 @@
 include $(top_srcdir)/Makefile.flags.am
 
 #SUBDIRS = .
-#if VGA_X86
+#if VGCONF_ARCHS_INCLUDE_X86
 #SUBDIRS += x86
 
 #DIST_SUBDIRS = x86 .
@@ -128,11 +128,11 @@ ccc_SOURCES		= ccc.cpp
 # Build shared object for preen_invars
 preen_invars_SOURCES           = preen_invars.c
 preen_invars_DEPENDENCIES      = preen_invars_so.so
-if VGP_PPC64_AIX5 
+if VGCONF_PLATFORMS_INCLUDE_PPC64_AIX5 
  preen_invars_LDADD            = -ldl
  preen_invars_LDFLAGS          = $(AM_FLAG_M3264_PRI)
 else
-if VGP_PPC32_AIX5
+if VGCONF_PLATFORMS_INCLUDE_PPC32_AIX5
  preen_invars_LDADD            = -ldl
  preen_invars_LDFLAGS          = $(AM_FLAG_M3264_PRI) -Wl,-G -Wl,-bnogc
 else
@@ -146,10 +146,10 @@ preen_invars_so_so_SOURCES      = preen_invars_so.c
 preen_invars_so_so_LDADD        = 
 preen_invars_so_so_DEPENDENCIES = 
 preen_invars_so_so_CFLAGS       = -fpic $(AM_FLAG_M3264_PRI) -g
-if VGP_PPC64_AIX5
+if VGCONF_PLATFORMS_INCLUDE_PPC64_AIX5
  preen_invars_so_so_LDFLAGS     = -fpic $(AM_FLAG_M3264_PRI) -shared
 else
-if VGP_PPC32_AIX5
+if VGCONF_PLATFORMS_INCLUDE_PPC32_AIX5
  preen_invars_so_so_LDFLAGS     = -fpic $(AM_FLAG_M3264_PRI) -shared \
 					-Wl,-G -Wl,-bnogc
 else

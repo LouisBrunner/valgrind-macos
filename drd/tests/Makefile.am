@@ -198,8 +198,8 @@ EXTRA_DIST =                                        \
 	trylock.vgtest
 
 AM_CFLAGS   = $(WERROR) -Wall @FLAG_W_EXTRA@ -Wno-inline -Wno-unused-parameter\
-              -g $(AM_FLAG_M3264_PRI) -DVGA_$(VG_ARCH_PRI)=1 -DVGO_$(VG_OS)=1 \
-              -DVGP_$(VG_ARCH_PRI)_$(VG_OS)=1
+              -g $(AM_FLAG_M3264_PRI) -DVGA_$(VGCONF_ARCH_PRI)=1 \
+	      -DVGO_$(VGCONF_OS)=1 -DVGP_$(VGCONF_ARCH_PRI)_$(VGCONF_OS)=1
 AM_CPPFLAGS = -I$(top_srcdir) -I$(top_srcdir)/include \
               -I$(top_builddir)/include -I$(top_srcdir)/VEX/pub
 AM_CXXFLAGS = $(AM_CFLAGS)

@@ -23,9 +23,7 @@ AM_CFLAGS   = $(WERROR) -Winline -Wall -Wshadow -g $(AM_FLAG_M3264_PRI)
 AM_CXXFLAGS = $(AM_CFLAGS)
 
 # generic C ones
-cputest_SOURCES 	= cputest.c
-cputest_CFLAGS  	= $(AM_CFLAGS) -D__$(VG_ARCH_MAX)__
-cputest_DEPENDENCIES	= 
-cputest_LDADD		= 
-toobig_allocs_SOURCES	= toobig-allocs.c
-true_SOURCES 		= true.c
+cputest_CFLAGS  	= $(AM_CFLAGS) \
+				-DVGA_$(VGCONF_ARCH_PRI)=1 \
+				-DVGO_$(VGCONF_OS)=1 \
+				-DVGP_$(VGCONF_ARCH_PRI)_$(VGCONF_OS)=1

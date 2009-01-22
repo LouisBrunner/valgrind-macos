@@ -42,28 +42,28 @@ BUILT_SOURCES  = default.supp valgrind.pc
 CLEANFILES     = 
 DISTCLEANFILES = default.supp
 
-if VGP_X86_LINUX
+if VGCONF_PLATFORMS_INCLUDE_X86_LINUX
 BUILT_SOURCES += valt_load_address_x86_linux.lds
 CLEANFILES += valt_load_address_x86_linux.lds
 endif
-if VGP_AMD64_LINUX
+if VGCONF_PLATFORMS_INCLUDE_AMD64_LINUX
 BUILT_SOURCES += valt_load_address_amd64_linux.lds
 CLEANFILES += valt_load_address_amd64_linux.lds
 endif
-if VGP_PPC32_LINUX
+if VGCONF_PLATFORMS_INCLUDE_PPC32_LINUX
 BUILT_SOURCES += valt_load_address_ppc32_linux.lds
 CLEANFILES += valt_load_address_ppc32_linux.lds
 endif
-if VGP_PPC64_LINUX
+if VGCONF_PLATFORMS_INCLUDE_PPC64_LINUX
 BUILT_SOURCES += valt_load_address_ppc64_linux.lds
 CLEANFILES += valt_load_address_ppc64_linux.lds
 endif
-if VGP_PPC32_AIX5
+if VGCONF_PLATFORMS_INCLUDE_PPC32_AIX5
 # No need to generate valt_load_address*.lds; the final executables
 # can be linked to be at any address.  They will be relocated by
 # AIX kernel when they are loaded.
 endif
-if VGP_PPC64_AIX5
+if VGCONF_PLATFORMS_INCLUDE_PPC64_AIX5
 # Ditto
 endif
 

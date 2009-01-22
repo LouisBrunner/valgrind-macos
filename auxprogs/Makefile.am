@@ -43,7 +43,7 @@ valgrind_listener_LDFLAGS   = $(AM_CFLAGS_PRI)
 # directly saying how to build libmpiwrap-*.so, instead of
 # using automake's standard gunk.
 #
-if VGO_AIX5
+if VGCONF_OS_IS_AIX5
  HACKY_FLAGS_PRI = -g -O -bE:libmpiwrap_aix5.exp -bM:SRE -bnoentry \
 			-qflag=w:w -qlanglvl=extended \
 			`echo $(AM_FLAG_M3264_PRI) | sed s/maix/q/g`
@@ -62,18 +62,18 @@ endif
 ##
 noinst_PROGRAMS =
 if BUILD_MPIWRAP_PRI
-noinst_PROGRAMS       += libmpiwrap-@VG_PLATFORM_PRI@.so
-libmpiwrap-@VG_PLATFORM_PRI@.so: libmpiwrap.c
+noinst_PROGRAMS       += libmpiwrap-@VGCONF_PLATFORM_PRI_CAPS@.so
+libmpiwrap-@VGCONF_PLATFORM_PRI_CAPS@.so: libmpiwrap.c
 	$(MPI_CC) $(HACKY_FLAGS_PRI) \
 		-I../include \
-		-o libmpiwrap-@VG_PLATFORM_PRI@.so libmpiwrap.c
+		-o libmpiwrap-@VGCONF_PLATFORM_PRI_CAPS@.so libmpiwrap.c
 endif
 if BUILD_MPIWRAP_SEC
-noinst_PROGRAMS       += libmpiwrap-@VG_PLATFORM_SEC@.so
-libmpiwrap-@VG_PLATFORM_SEC@.so: libmpiwrap.c
+noinst_PROGRAMS       += libmpiwrap-@VGCONF_PLATFORM_SEC_CAPS@.so
+libmpiwrap-@VGCONF_PLATFORM_SEC_CAPS@.so: libmpiwrap.c
 	$(MPI_CC) $(HACKY_FLAGS_SEC) \
 		-I../include \
-		-o libmpiwrap-@VG_PLATFORM_SEC@.so libmpiwrap.c
+		-o libmpiwrap-@VGCONF_PLATFORM_SEC_CAPS@.so libmpiwrap.c
 endif
 
 
@@ -87,19 +87,19 @@ install-exec-local:
 if BUILD_MPIWRAP_PRI
 # convert (eg) X86_LINUX to x86-linux
 # really should use sed here, rather than assume tr is available
-	pD=`echo @VG_PLATFORM_PRI@ | tr A-Z_ a-z-` ; \
+	pD=`echo @VGCONF_PLATFORM_PRI_CAPS@ | tr A-Z_ a-z-` ; \
 		$(mkinstalldirs) $(DESTDIR)$(valdir)/$$pD; \
 	rm -f ./libmpiwrap.so; \
-	cp ./libmpiwrap-@VG_PLATFORM_PRI@.so ./libmpiwrap.so; \
+	cp ./libmpiwrap-@VGCONF_PLATFORM_PRI_CAPS@.so ./libmpiwrap.so; \
 	$(INSTALL_PROGRAM) ./libmpiwrap.so \
 		$(DESTDIR)$(valdir)/$$pD; \
 	rm -f ./libmpiwrap.so
 endif
 if BUILD_MPIWRAP_SEC
-	pD=`echo @VG_PLATFORM_SEC@ | tr A-Z_ a-z-` ; \
+	pD=`echo @VGCONF_PLATFORM_SEC_CAPS@ | tr A-Z_ a-z-` ; \
 	$(mkinstalldirs) $(DESTDIR)$(valdir)/$$pD; \
 	rm -f ./libmpiwrap.so; \
-	cp ./libmpiwrap-@VG_PLATFORM_SEC@.so ./libmpiwrap.so; \
+	cp ./libmpiwrap-@VGCONF_PLATFORM_SEC_CAPS@.so ./libmpiwrap.so; \
 	$(INSTALL_PROGRAM) ./libmpiwrap.so \
 		$(DESTDIR)$(valdir)/$$pD; \
 	rm -f ./libmpiwrap.so
@@ -110,27 +110,28 @@ endif
 ## It would seem that using nodist_SOURCES is the right fix, but
 ## I can't figure out how to do it.
 ##
-#nodist_SOURCES        = libmpiwrap-@VG_PLATFORM_PRI@.c
-#nodist_SOURCES        = libmpiwrap-@VG_PLATFORM_SEC@.c
+#nodist_SOURCES        = libmpiwrap-@VGCONF_PLATFORM_PRI_CAPS@.c
+#nodist_SOURCES        = libmpiwrap-@VGCONF_PLATFORM_SEC_CAPS@.c
 
 libmpiwrap-.c:
 	rm -f libmpiwrap-.c
 	touch libmpiwrap-.c
 
-libmpiwrap-@VG_PLATFORM_PRI@.c:
-	rm -f libmpiwrap-@VG_PLATFORM_PRI@.c
-	touch libmpiwrap-@VG_PLATFORM_PRI@.c
+libmpiwrap-@VGCONF_PLATFORM_PRI_CAPS@.c:
+	rm -f libmpiwrap-@VGCONF_PLATFORM_PRI_CAPS@.c
+	touch libmpiwrap-@VGCONF_PLATFORM_PRI_CAPS@.c
 
-if VGP_HAVE_SECONDARY
-libmpiwrap-@VG_PLATFORM_SEC@.c:
-	rm -f libmpiwrap-@VG_PLATFORM_SEC@.c
-	touch libmpiwrap-@VG_PLATFORM_SEC@.c
+if VGCONF_HAVE_PLATFORM_SEC_CAPS
+libmpiwrap-@VGCONF_PLATFORM_SEC_CAPS@.c:
+	rm -f libmpiwrap-@VGCONF_PLATFORM_SEC_CAPS@.c
+	touch libmpiwrap-@VGCONF_PLATFORM_SEC_CAPS@.c
 endif
 
 ## cleanery
 clean-local:
 	rm -f libmpiwrap-.c \
-	libmpiwrap-@VG_PLATFORM_PRI@.c libmpiwrap-@VG_PLATFORM_SEC@.c
+	libmpiwrap-@VGCONF_PLATFORM_PRI_CAPS@.c \
+	libmpiwrap-@VGCONF_PLATFORM_SEC_CAPS@.c
 
 #
 #----------------------------------------------------------

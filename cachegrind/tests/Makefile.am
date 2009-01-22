@@ -3,7 +3,7 @@
 include $(top_srcdir)/Makefile.flags.am
 
 SUBDIRS = .
-if VGA_X86
+if VGCONF_ARCHS_INCLUDE_X86
 SUBDIRS += x86
 endif
 

@@ -41,21 +41,25 @@ The keys to understanding this are in:
 
 The configure script inspects the CPU.  It then sets
 
-   VG_PLATFORM_PRI to be the primary target
-   VG_PLATFORM_SEC to be the secondary target, if any
+   VGCONF_PLATFORM_PRI_CAPS to be the primary target
+   VGCONF_PLATFORM_SEC_CAPS to be the secondary target, if any
 
 It also sets one (single-arch build) or two (dual-arch build) of
 the following:
 
-  VG_X86_LINUX
-  VG_AMD64_LINUX
-  VG_PPC32_LINUX
-  VG_PPC64_LINUX
+  VGCONF_PLATFORMS_INCLUDE_X86_LINUX
+  VGCONF_PLATFORMS_INCLUDE_AMD64_LINUX
+  VGCONF_PLATFORMS_INCLUDE_PPC32_LINUX
+  VGCONF_PLATFORMS_INCLUDE_PPC64_LINUX
+  ...
 
-On an amd64 system both VG_X86_LINUX and VG_AMD64_LINUX will be true
-so that two versions of all the tools will be built.  Similarly on a
-ppc64 system both VG_PPC32_LINUX and VG_PPC64_LINUX will be defined.
-For the amd64 example, the coregrind libraries will be named:
+On an amd64 system both VGCONF_PLATFORMS_INCLUDE_X86_LINUX and
+VGCONF_PLATFORMS_INCLUDE_AMD64_LINUX will be true so that two versions of
+all the tools will be built.  Similarly on a ppc64 system both
+VGCONF_PLATFORMS_INCLUDE_PPC32_LINUX and
+VGCONF_PLATFORMS_INCLUDE_PPC64_LINUX will be defined (unless
+--enable-only32bit or --enable-only64bit is used).  For the amd64 example,
+ the coregrind libraries will be named:
 
   libcoregrind_x86_linux.a
   libcoregrind_amd64_linux.a
@@ -117,12 +121,7 @@ Rules for Makefile.am hacking
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 In places where compilation should happen twice (on a dual-arch
 system), the decision about which directories and flags to use is
-guarded by the symbols:
-
-  VG_X86_LINUX
-  VG_AMD64_LINUX
-  VG_PPC32_LINUX
-  VG_PPC64_LINUX
+guarded by the VGCONF_PLATFORMS_INCLUDE_* symbols.
 
 But there are also places where building must only happen once,
 for the primary architecture.  These places are (at least):

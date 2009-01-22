@@ -15,7 +15,9 @@ AM_INIT_AUTOMAKE([foreign])
 
 AM_MAINTAINER_MODE
 
+#----------------------------------------------------------------------------
 # Where is VEX ?
+#----------------------------------------------------------------------------
 # Nb: For the 2nd arg, the help string, AS_HELP_STRING is the proper way, but
 #     older autoconfs don't support it... here's what it would say:
 #
@@ -50,7 +52,9 @@ AC_SUBST(VEX_DIR)
 # place.
 AC_SUBST([DISTCHECK_CONFIGURE_FLAGS], [--with-vex=$VEX_DIR])
 
-# Checks for programs.
+#----------------------------------------------------------------------------
+# Checks for various programs.
+#----------------------------------------------------------------------------
 CFLAGS="-Wno-long-long"
 
 AC_PROG_LN_S
@@ -125,51 +129,49 @@ case "${gcc_version}" in
 	;;
 esac
 
-
-# Checks for the platform, with the aim of setting VG_ARCH_MAX.  Note
-# that VG_ARCH_MAX must be set to reflect the most that this CPU can
-# do: for example if it is a 64-bit capable PowerPC, then it must be
-# set to ppc64 and not ppc32.  Ditto for amd64.
-#
-# We will later in this file set VG_ARCH_PRI, which is the arch for
-# the primary target.  For example, suppose we do a build on an amd64
-# machine, but --enable-only32bit has been requested.  Then
-# VG_ARCH_MAX will be "amd64" since that reflects the most that this
-# cpu can do, but VG_ARCH_PRI will be "x86", since that reflects the
-# arch corresponding to the primary build (VG_PLATFORM_PRI).
+#----------------------------------------------------------------------------
+# Arch/OS/platform tests.
+#----------------------------------------------------------------------------
+# We create a number of arch/OS/platform-related variables.  We prefix them
+# all with "VGCONF_" which indicates that they are defined at
+# configure-time, and distinguishes them from the VGA_*/VGO_*/VGP_*
+# variables used when compiling C files.
 
 AC_CANONICAL_HOST
 
 AC_MSG_CHECKING([for a supported CPU])
-AC_SUBST(VG_ARCH_MAX)
 
+# ARCH_MAX reflects the most that this CPU can do: for example if it
+# is a 64-bit capable PowerPC, then it must be set to ppc64 and not ppc32.
+# Ditto for amd64.  It is used for more configuration below, but is not used
+# outside this file.
 case "${host_cpu}" in
      i?86) 
 	AC_MSG_RESULT([ok (${host_cpu})])
-        VG_ARCH_MAX="x86"
+        ARCH_MAX="x86"
         ;;
 
      x86_64) 
         AC_MSG_RESULT([ok (${host_cpu})])
-        VG_ARCH_MAX="amd64"
+        ARCH_MAX="amd64"
         ;;
 
      powerpc64)
-#       This value can only happen on Linux, not on AIX
+        # This value can only happen on Linux, not on AIX
         AC_MSG_RESULT([ok (${host_cpu})])
-        VG_ARCH_MAX="ppc64"
+        ARCH_MAX="ppc64"
         ;;
 
      powerpc)
-#       Complexity.  'powerpc' on AIX implies a 64-bit capable CPU.
-#       Whereas in Linux that means only a 32-bit capable CPU.
+        # Complexity.  'powerpc' on AIX implies a 64-bit capable CPU.
+        # Whereas in Linux that means only a 32-bit capable CPU.
         AC_MSG_RESULT([ok (${host_cpu})])
 	case "${host_os}" in
 	   aix5.*)
-	      VG_ARCH_MAX="ppc64"
+	      ARCH_MAX="ppc64"
               ;;
            *)
-              VG_ARCH_MAX="ppc32"
+              ARCH_MAX="ppc32"
               ;;
         esac
         ;;
@@ -180,10 +182,15 @@ case "${host_cpu}" in
 	;;
 esac
 
+#----------------------------------------------------------------------------
+
 # Sometimes it's convenient to subvert the bi-arch build system and
 # just have a single build even though the underlying platform is
 # capable of both.  Hence handle --enable-only64bit and
 # --enable-only32bit.  Complain if both are issued :-)
+# [Actually, if either of these options are used, I think both get built,
+# but only one gets installed.  So if you use an in-place build, both can be
+# used. --njn]
 
 # Check if a 64-bit only build has been requested
 AC_CACHE_CHECK([for a 64-bit only build], vg_cv_only64bit,
@@ -205,19 +212,17 @@ if test x$vg_cv_only64bit = xyes -a x$vg_cv_only32bit = xyes; then
       [Nonsensical: both --enable-only64bit and --enable-only32bit.])
 fi
 
+#----------------------------------------------------------------------------
 
-# This variable will collect the individual suppression files
-# depending on the results of autoconf
-DEFAULT_SUPP=""
-AC_SUBST(DEFAULT_SUPP)
-
+# VGCONF_OS is the primary build OS.  It is passed in to compilation of many
+# C files via -VGO_$(VGCONF_OS) and -VGP_$(VGCONF_ARCH_PRI)_$(VGCONF_OS).
 AC_MSG_CHECKING([for a supported OS])
-AC_SUBST(VG_OS)
+AC_SUBST(VGCONF_OS)
 
 case "${host_os}" in
      *linux*)
 	AC_MSG_RESULT([ok (${host_os})])
-        VG_OS="linux"
+        VGCONF_OS="linux"
 
         # Ok, this is linux. Check the kernel version
         AC_MSG_CHECKING([for the kernel version])
@@ -245,20 +250,20 @@ case "${host_os}" in
 
      aix5.1.*)
         AC_MSG_RESULT([ok (${host_os})])
-        VG_OS="aix5"
+        VGCONF_OS="aix5"
         ;;
      aix5.2.*)
         AC_MSG_RESULT([ok (${host_os})])
-        VG_OS="aix5"
+        VGCONF_OS="aix5"
         ;;       
      aix5.3.*)
         AC_MSG_RESULT([ok (${host_os})])
-        VG_OS="aix5"
+        VGCONF_OS="aix5"
         ;;       
 
      *freebsd*)
         AC_MSG_RESULT([ok (${host_os})])
-        VG_OS="freebsd"
+        VGCONF_OS="freebsd"
         ;;
 
      *) 
@@ -267,11 +272,13 @@ case "${host_os}" in
 	;;
 esac
 
+#----------------------------------------------------------------------------
+
 # If we are building on a 64 bit platform test to see if the system
 # supports building 32 bit programs and disable 32 bit support if it
 # does not support building 32 bit programs
 
-case "$VG_ARCH_MAX-$VG_OS" in
+case "$ARCH_MAX-$VGCONF_OS" in
      amd64-linux|ppc64-linux)
         AC_MSG_CHECKING([for 32 bit build support])
         safe_CFLAGS=$CFLAGS
@@ -293,72 +300,86 @@ if test x$vg_cv_only64bit = xyes -a x$vg_cv_only32bit = xyes; then
       [--enable-only32bit was specified but system does not support 32 bit builds])
 fi
 
-# Establish VG_PLATFORM_PRI.  This is the primary build target.  The
-# entire system, including regression and performance tests, will be
-# built for this target.
+#----------------------------------------------------------------------------
+
+# VGCONF_ARCH_PRI is the arch for the primary build target.  By default it's
+# the same as ARCH_MAX.  But if, say, we do a build on an amd64 machine, but
+# --enable-only32bit has been requested, then ARCH_MAX (see above) will be
+# "amd64" since that reflects the most that this cpu can do, but
+# VGCONF_ARCH_PRI will be downgraded to "x86", since that reflects the arch
+# corresponding to the primary build (VGCONF_PLATFORM_PRI_CAPS).  It is
+# passed in to compilation of many C files via -VGA_$(VGCONF_ARCH_PRI) and
+# -VGP_$(VGCONF_ARCH_PRI)_$(VGCONF_OS).
+AC_SUBST(VGCONF_ARCH_PRI)
+
+# VGCONF_PLATFORM_PRI_CAPS is the primary build target.  The entire system,
+# including regression and performance tests, will be built for this target.
+# The "_CAPS" indicates that the name is in capital letters, because it's
+# used to create various Makefile variables, which are all in caps by
+# convention.  This is in contrast to VGCONF_ARCH_PRI and VGCONF_OS which
+# are not in caps.
+AC_SUBST(VGCONF_PLATFORM_PRI_CAPS)
+
+# VGCONF_PLATFORM_SEC_CAPS is the secondary build target, if there is one.
+# Valgrind and tools will also be built for this target, but not the
+# regression or performance tests.
 #
-# Also establish VG_PLATFORM_SEC, the secondary build target, if
-# possible.  The system will also be built for this target, but not
-# the regression or performance tests.
-#
-# Also establish VG_ARCH_PRI, which is the arch for the primary
-# build target.  The various makefiles building regression tests
-# sometimes need to see this.
+# By default, the primary arch is the same as the "max" arch, as commented
+# above (at the definition of ARCH_MAX).  We may choose to downgrade it in
+# the big case statement just below here, in the case where we're building
+# on a 64 bit machine but have been requested only to do a 32 bit build.
+AC_SUBST(VGCONF_PLATFORM_SEC_CAPS)
+
 AC_MSG_CHECKING([for a supported CPU/OS combination])
 
-AC_SUBST(VG_PLATFORM_PRI)
-AC_SUBST(VG_PLATFORM_SEC)
-AC_SUBST(VG_ARCH_PRI)
-
-# By default, the primary arch is the same as the "max" arch, as
-# commented above (at the definition of VG_ARCH_MAX).  We may choose
-# to downgrade it in the big case statement just below here, in the
-# case where we're building on a 64 bit machine but have been
-# requested only to do a 32 bit build.
-VG_ARCH_PRI=$VG_ARCH_MAX
-
-case "$VG_ARCH_MAX-$VG_OS" in
+case "$ARCH_MAX-$VGCONF_OS" in
      x86-linux)
-	VG_PLATFORM_PRI="X86_LINUX"
-	VG_PLATFORM_SEC=""
+        VGCONF_ARCH_PRI="x86"
+	VGCONF_PLATFORM_PRI_CAPS="X86_LINUX"
+	VGCONF_PLATFORM_SEC_CAPS=""
         valt_load_address_normal="0x38000000"
         valt_load_address_inner="0x28000000"
         AC_MSG_RESULT([ok (${host_cpu}-${host_os})])
 	;;
      amd64-linux)
 	if test x$vg_cv_only64bit = xyes; then
-	   VG_PLATFORM_PRI="AMD64_LINUX"
-	   VG_PLATFORM_SEC=""
+           VGCONF_ARCH_PRI="amd64"
+	   VGCONF_PLATFORM_PRI_CAPS="AMD64_LINUX"
+	   VGCONF_PLATFORM_SEC_CAPS=""
 	elif test x$vg_cv_only32bit = xyes; then
-	   VG_PLATFORM_PRI="X86_LINUX"
-	   VG_PLATFORM_SEC=""
-	   VG_ARCH_PRI="x86"
+	   VGCONF_ARCH_PRI="x86"
+	   VGCONF_PLATFORM_PRI_CAPS="X86_LINUX"
+	   VGCONF_PLATFORM_SEC_CAPS=""
 	else
-	   VG_PLATFORM_PRI="AMD64_LINUX"
-	   VG_PLATFORM_SEC="X86_LINUX"
+           VGCONF_ARCH_PRI="amd64"
+	   VGCONF_PLATFORM_PRI_CAPS="AMD64_LINUX"
+	   VGCONF_PLATFORM_SEC_CAPS="X86_LINUX"
 	fi
         valt_load_address_normal="0x38000000"
         valt_load_address_inner="0x28000000"
         AC_MSG_RESULT([ok (${host_cpu}-${host_os})])
 	;;
      ppc32-linux)
-	VG_PLATFORM_PRI="PPC32_LINUX"
-	VG_PLATFORM_SEC=""
+        VGCONF_ARCH_PRI="ppc32"
+	VGCONF_PLATFORM_PRI_CAPS="PPC32_LINUX"
+	VGCONF_PLATFORM_SEC_CAPS=""
         valt_load_address_normal="0x38000000"
         valt_load_address_inner="0x28000000"
         AC_MSG_RESULT([ok (${host_cpu}-${host_os})])
 	;;
      ppc64-aix5)
 	if test x$vg_cv_only64bit = xyes; then
-	   VG_PLATFORM_PRI="PPC64_AIX5"
-	   VG_PLATFORM_SEC=""
+           VGCONF_ARCH_PRI="ppc64"
+	   VGCONF_PLATFORM_PRI_CAPS="PPC64_AIX5"
+	   VGCONF_PLATFORM_SEC_CAPS=""
 	elif test x$vg_cv_only32bit = xyes; then
-	   VG_PLATFORM_PRI="PPC32_AIX5"
-	   VG_PLATFORM_SEC=""
-	   VG_ARCH_PRI="ppc32"
+	   VGCONF_ARCH_PRI="ppc32"
+	   VGCONF_PLATFORM_PRI_CAPS="PPC32_AIX5"
+	   VGCONF_PLATFORM_SEC_CAPS=""
 	else
-	   VG_PLATFORM_PRI="PPC64_AIX5"
-	   VG_PLATFORM_SEC="PPC32_AIX5"
+	   VGCONF_ARCH_PRI="ppc64"
+	   VGCONF_PLATFORM_PRI_CAPS="PPC64_AIX5"
+	   VGCONF_PLATFORM_SEC_CAPS="PPC32_AIX5"
 	fi
         valt_load_address_normal="0x38000000"
         valt_load_address_inner="0x28000000"
@@ -366,82 +387,90 @@ case "$VG_ARCH_MAX-$VG_OS" in
 	;;
      ppc64-linux)
 	if test x$vg_cv_only64bit = xyes; then
-	   VG_PLATFORM_PRI="PPC64_LINUX"
-	   VG_PLATFORM_SEC=""
+	   VGCONF_ARCH_PRI="ppc64"
+	   VGCONF_PLATFORM_PRI_CAPS="PPC64_LINUX"
+	   VGCONF_PLATFORM_SEC_CAPS=""
 	elif test x$vg_cv_only32bit = xyes; then
-	   VG_PLATFORM_PRI="PPC32_LINUX"
-	   VG_PLATFORM_SEC=""
-	   VG_ARCH_PRI="ppc32"
+	   VGCONF_ARCH_PRI="ppc32"
+	   VGCONF_PLATFORM_PRI_CAPS="PPC32_LINUX"
+	   VGCONF_PLATFORM_SEC_CAPS=""
+	   VGCONF_ARCH_PRI="ppc32"
 	else
-	   VG_PLATFORM_PRI="PPC64_LINUX"
-	   VG_PLATFORM_SEC="PPC32_LINUX"
+	   VGCONF_ARCH_PRI="ppc64"
+	   VGCONF_PLATFORM_PRI_CAPS="PPC64_LINUX"
+	   VGCONF_PLATFORM_SEC_CAPS="PPC32_LINUX"
 	fi
         valt_load_address_normal="0x38000000"
         valt_load_address_inner="0x28000000"
         AC_MSG_RESULT([ok (${host_cpu}-${host_os})])
 	;;
     *)
-	VG_PLATFORM_PRI="unknown"
-	VG_PLATFORM_SEC="unknown"
+        VGCONF_ARCH_PRI="unknown"
+	VGCONF_PLATFORM_PRI_CAPS="UNKNOWN"
+	VGCONF_PLATFORM_SEC_CAPS="UNKNOWN"
         AC_MSG_RESULT([no (${host_cpu}-${host_os})])
         AC_MSG_ERROR([Valgrind is platform specific. Sorry. Please consider doing a port.])
         ;;
 esac
 
-# Set up VGA_<arch>.  Either one or two of these become defined.
-#
-AM_CONDITIONAL(VGA_X86,   
-               test x$VG_PLATFORM_PRI = xX86_LINUX \
-                 -o x$VG_PLATFORM_SEC = xX86_LINUX )
-AM_CONDITIONAL(VGA_AMD64, 
-               test x$VG_PLATFORM_PRI = xAMD64_LINUX )
-AM_CONDITIONAL(VGA_PPC32, 
-               test x$VG_PLATFORM_PRI = xPPC32_LINUX \ 
-                 -o x$VG_PLATFORM_SEC = xPPC32_LINUX \
-                 -o x$VG_PLATFORM_PRI = xPPC32_AIX5 \ 
-                 -o x$VG_PLATFORM_SEC = xPPC32_AIX5 )
-AM_CONDITIONAL(VGA_PPC64, 
-               test x$VG_PLATFORM_PRI = xPPC64_LINUX \
-                 -o x$VG_PLATFORM_PRI = xPPC64_AIX5 )
+#----------------------------------------------------------------------------
 
-# Set up VGP_<platform>.  Either one or two of these become defined.
-#
-AM_CONDITIONAL(VGP_X86_LINUX,   
-               test x$VG_PLATFORM_PRI = xX86_LINUX \
-                 -o x$VG_PLATFORM_SEC = xX86_LINUX)
-AM_CONDITIONAL(VGP_AMD64_LINUX, 
-               test x$VG_PLATFORM_PRI = xAMD64_LINUX)
-AM_CONDITIONAL(VGP_PPC32_LINUX, 
-               test x$VG_PLATFORM_PRI = xPPC32_LINUX \ 
-                 -o x$VG_PLATFORM_SEC = xPPC32_LINUX)
-AM_CONDITIONAL(VGP_PPC64_LINUX, 
-               test x$VG_PLATFORM_PRI = xPPC64_LINUX)
-AM_CONDITIONAL(VGP_PPC32_AIX5, 
-               test x$VG_PLATFORM_PRI = xPPC32_AIX5 \ 
-                 -o x$VG_PLATFORM_SEC = xPPC32_AIX5)
-AM_CONDITIONAL(VGP_PPC64_AIX5, 
-               test x$VG_PLATFORM_PRI = xPPC64_AIX5)
+# Set up VGCONF_ARCHS_INCLUDE_<arch>.  Either one or two of these become
+# defined.
+AM_CONDITIONAL(VGCONF_ARCHS_INCLUDE_X86,   
+               test x$VGCONF_PLATFORM_PRI_CAPS = xX86_LINUX \
+                 -o x$VGCONF_PLATFORM_SEC_CAPS = xX86_LINUX )
+AM_CONDITIONAL(VGCONF_ARCHS_INCLUDE_AMD64, 
+               test x$VGCONF_PLATFORM_PRI_CAPS = xAMD64_LINUX )
+AM_CONDITIONAL(VGCONF_ARCHS_INCLUDE_PPC32, 
+               test x$VGCONF_PLATFORM_PRI_CAPS = xPPC32_LINUX \ 
+                 -o x$VGCONF_PLATFORM_SEC_CAPS = xPPC32_LINUX \
+                 -o x$VGCONF_PLATFORM_PRI_CAPS = xPPC32_AIX5 \ 
+                 -o x$VGCONF_PLATFORM_SEC_CAPS = xPPC32_AIX5 )
+AM_CONDITIONAL(VGCONF_ARCHS_INCLUDE_PPC64, 
+               test x$VGCONF_PLATFORM_PRI_CAPS = xPPC64_LINUX \
+                 -o x$VGCONF_PLATFORM_PRI_CAPS = xPPC64_AIX5 )
 
-# Similarly, set up VGO_<os>.  Exactly one of these becomes defined.
+# Set up VGCONF_PLATFORMS_INCLUDE_<platform>.  Either one or two of these
+# become defined.
+AM_CONDITIONAL(VGCONF_PLATFORMS_INCLUDE_X86_LINUX,   
+               test x$VGCONF_PLATFORM_PRI_CAPS = xX86_LINUX \
+                 -o x$VGCONF_PLATFORM_SEC_CAPS = xX86_LINUX)
+AM_CONDITIONAL(VGCONF_PLATFORMS_INCLUDE_AMD64_LINUX, 
+               test x$VGCONF_PLATFORM_PRI_CAPS = xAMD64_LINUX)
+AM_CONDITIONAL(VGCONF_PLATFORMS_INCLUDE_PPC32_LINUX, 
+               test x$VGCONF_PLATFORM_PRI_CAPS = xPPC32_LINUX \ 
+                 -o x$VGCONF_PLATFORM_SEC_CAPS = xPPC32_LINUX)
+AM_CONDITIONAL(VGCONF_PLATFORMS_INCLUDE_PPC64_LINUX, 
+               test x$VGCONF_PLATFORM_PRI_CAPS = xPPC64_LINUX)
+AM_CONDITIONAL(VGCONF_PLATFORMS_INCLUDE_PPC32_AIX5, 
+               test x$VGCONF_PLATFORM_PRI_CAPS = xPPC32_AIX5 \ 
+                 -o x$VGCONF_PLATFORM_SEC_CAPS = xPPC32_AIX5)
+AM_CONDITIONAL(VGCONF_PLATFORMS_INCLUDE_PPC64_AIX5, 
+               test x$VGCONF_PLATFORM_PRI_CAPS = xPPC64_AIX5)
+
+# Similarly, set up VGCONF_OF_IS_<os>.  Exactly one of these becomes defined.
 # Relies on the assumption that the primary and secondary targets are 
 # for the same OS, so therefore only necessary to test the primary.
-#
-AM_CONDITIONAL(VGO_LINUX,
-               test x$VG_PLATFORM_PRI = xX86_LINUX \
-                 -o x$VG_PLATFORM_PRI = xAMD64_LINUX \
-                 -o x$VG_PLATFORM_PRI = xPPC32_LINUX \
-                 -o x$VG_PLATFORM_PRI = xPPC64_LINUX)
-AM_CONDITIONAL(VGO_AIX5,
-               test x$VG_PLATFORM_PRI = xPPC32_AIX5 \
-                 -o x$VG_PLATFORM_PRI = xPPC64_AIX5)
+AM_CONDITIONAL(VGCONF_OS_IS_LINUX,
+               test x$VGCONF_PLATFORM_PRI_CAPS = xX86_LINUX \
+                 -o x$VGCONF_PLATFORM_PRI_CAPS = xAMD64_LINUX \
+                 -o x$VGCONF_PLATFORM_PRI_CAPS = xPPC32_LINUX \
+                 -o x$VGCONF_PLATFORM_PRI_CAPS = xPPC64_LINUX)
+AM_CONDITIONAL(VGCONF_OS_IS_AIX5,
+               test x$VGCONF_PLATFORM_PRI_CAPS = xPPC32_AIX5 \
+                 -o x$VGCONF_PLATFORM_PRI_CAPS = xPPC64_AIX5)
 
 
-# Sometimes, in the Makefile.am-s, it's useful to know
-# whether or not there is a secondary target.
-#
-AM_CONDITIONAL(VGP_HAVE_SECONDARY,
-               test x$VG_PLATFORM_SEC != x)
+# Sometimes, in the Makefile.am files, it's useful to know whether or not
+# there is a secondary target.
+AM_CONDITIONAL(VGCONF_HAVE_PLATFORM_SEC_CAPS,
+               test x$VGCONF_PLATFORM_SEC_CAPS != x)
 
+
+#----------------------------------------------------------------------------
+# Inner Valgrind?
+#----------------------------------------------------------------------------
 
 # Check if this should be built as an inner Valgrind, to be run within
 # another Valgrind.  Choose the load address accordingly.
@@ -459,7 +488,12 @@ else
 fi
 
 
-
+#----------------------------------------------------------------------------
+# Libc and suppressions
+#----------------------------------------------------------------------------
+# This variable will collect the suppression files to be used.
+DEFAULT_SUPP=""
+AC_SUBST(DEFAULT_SUPP)
 
 GLIBC_VERSION=""
 
@@ -639,6 +673,10 @@ DEFAULT_SUPP="xfree-3.supp ${DEFAULT_SUPP}"
 # Add glibc and X11 suppressions for exp-ptrcheck
 DEFAULT_SUPP="exp-ptrcheck.supp ${DEFAULT_SUPP}"
 
+
+#----------------------------------------------------------------------------
+# Checking for various library functions and other definitions
+#----------------------------------------------------------------------------
 
 # Check for CLOCK_MONOTONIC
 
@@ -851,6 +889,10 @@ AC_DEFINE([HAVE_EVENTFD_READ], 1,
 AC_MSG_RESULT([no])
 ])
 
+
+#----------------------------------------------------------------------------
+# Checking for supported compiler flags.
+#----------------------------------------------------------------------------
 
 # does this compiler support -m32 ?
 AC_MSG_CHECKING([if gcc accepts -m32])
@@ -1281,7 +1323,10 @@ AC_DEFINE([HAVE_TLS], 1, [can use __thread to define thread-local variables])
 fi
 
 
+#----------------------------------------------------------------------------
 # Checks for C header files.
+#----------------------------------------------------------------------------
+
 AC_HEADER_STDC
 AC_CHECK_HEADERS([       \
         asm/unistd.h     \
@@ -1299,14 +1344,18 @@ AC_CHECK_HEADERS([       \
         sys/types.h      \
         ])
 
+#----------------------------------------------------------------------------
 # Checks for typedefs, structures, and compiler characteristics.
+#----------------------------------------------------------------------------
 AC_TYPE_UID_T
 AC_TYPE_OFF_T
 AC_TYPE_SIZE_T
 AC_HEADER_TIME
 
 
+#----------------------------------------------------------------------------
 # Checks for library functions.
+#----------------------------------------------------------------------------
 AC_FUNC_MEMCMP
 AC_FUNC_MMAP
 AC_TYPE_SIGNAL
@@ -1354,6 +1403,10 @@ AM_CONDITIONAL([HAVE_PTHREAD_MUTEX_TIMEDLOCK],
 AM_CONDITIONAL([HAVE_PTHREAD_SPINLOCK],
                [test x$ac_cv_func_pthread_spin_lock = xyes])
 
+
+#----------------------------------------------------------------------------
+# MPI checks
+#----------------------------------------------------------------------------
 # Do we have a useable MPI setup on the primary and/or secondary targets?
 # On Linux, by default, assumes mpicc and -m32/-m64
 # On AIX, by default, assumes mpxlc and -q32/-q64
@@ -1361,29 +1414,29 @@ AM_CONDITIONAL([HAVE_PTHREAD_SPINLOCK],
 # understands -m32/-m64/-q32/-q64 regardless of what is specified using
 # --with-mpicc=.
 MPI_CC="mpicc"
-if test x$VG_PLATFORM_PRI = xPPC32_AIX5 \
-     -o x$VG_PLATFORM_PRI = xPPC64_AIX5 ; then
+if test x$VGCONF_PLATFORM_PRI_CAPS = xPPC32_AIX5 \
+     -o x$VGCONF_PLATFORM_PRI_CAPS = xPPC64_AIX5 ; then
   MPI_CC="mpxlc"
 fi
 
 mflag_primary=
-if test x$VG_PLATFORM_PRI = xX86_LINUX \
-     -o x$VG_PLATFORM_PRI = xPPC32_LINUX ; then
+if test x$VGCONF_PLATFORM_PRI_CAPS = xX86_LINUX \
+     -o x$VGCONF_PLATFORM_PRI_CAPS = xPPC32_LINUX ; then
   mflag_primary=$FLAG_M32
-elif test x$VG_PLATFORM_PRI = xAMD64_LINUX \
-       -o x$VG_PLATFORM_PRI = xPPC64_LINUX ; then
+elif test x$VGCONF_PLATFORM_PRI_CAPS = xAMD64_LINUX \
+       -o x$VGCONF_PLATFORM_PRI_CAPS = xPPC64_LINUX ; then
   mflag_primary=$FLAG_M64
-elif test x$VG_PLATFORM_PRI = xPPC32_AIX5 ; then
+elif test x$VGCONF_PLATFORM_PRI_CAPS = xPPC32_AIX5 ; then
   mflag_primary=-q32
-elif test x$VG_PLATFORM_PRI = xPPC64_AIX5 ; then
+elif test x$VGCONF_PLATFORM_PRI_CAPS = xPPC64_AIX5 ; then
   mflag_primary=-q64
 fi
 
 mflag_secondary=
-if test x$VG_PLATFORM_SEC = xX86_LINUX \
-     -o x$VG_PLATFORM_SEC = xPPC32_LINUX ; then
+if test x$VGCONF_PLATFORM_SEC_CAPS = xX86_LINUX \
+     -o x$VGCONF_PLATFORM_SEC_CAPS = xPPC32_LINUX ; then
   mflag_secondary=$FLAG_M32
-elif test x$VG_PLATFORM_SEC = xPPC32_AIX5 ; then
+elif test x$VGCONF_PLATFORM_SEC_CAPS = xPPC32_AIX5 ; then
   mflag_secondary=-q32
 fi
 
@@ -1427,7 +1480,7 @@ AM_CONDITIONAL(BUILD_MPIWRAP_PRI, test x$ac_have_mpi2_pri = xyes)
 AC_MSG_CHECKING([secondary target for usable MPI2-compliant C compiler and mpi.h])
 saved_CC=$CC
 saved_CFLAGS=$CFLAGS
-if test x$VG_PLATFORM_SEC = x ; then
+if test x$VGCONF_PLATFORM_SEC_CAPS = x ; then
   CC="$MPI_CC this will surely fail"
 else
   CC=$MPI_CC
@@ -1452,6 +1505,9 @@ CFLAGS=$saved_CFLAGS
 AM_CONDITIONAL(BUILD_MPIWRAP_SEC, test x$ac_have_mpi2_sec = xyes)
 
 
+#----------------------------------------------------------------------------
+# Other library checks
+#----------------------------------------------------------------------------
 # There now follow some tests for QtCore, Boost, and OpenMP.  These
 # tests are present because Drd has some regression tests that use
 # these packages.  All regression test programs all compiled only
@@ -1614,7 +1670,9 @@ CFLAGS=$safe_CFLAGS
 AM_CONDITIONAL([HAVE_OPENMP], [test x$ac_have_openmp = xyes])
 
 
-# -------------------- ok.  We're done. --------------------
+#----------------------------------------------------------------------------
+# Ok.  We're done checking.
+#----------------------------------------------------------------------------
 
 AC_OUTPUT(
    Makefile 
@@ -1683,11 +1741,11 @@ AC_OUTPUT(
 
 cat<<EOF
 
- configure.in: VG_ARCH_MAX = ${VG_ARCH_MAX}
- configure.in: VG_ARCH_PRI = ${VG_ARCH_PRI}
+ configure.in: ARCH_MAX        = ${ARCH_MAX}
+ configure.in: VGCONF_ARCH_PRI = ${VGCONF_ARCH_PRI}
 
-       Primary build target: ${VG_PLATFORM_PRI}
-     Secondary build target: ${VG_PLATFORM_SEC}
+       Primary build target: ${VGCONF_PLATFORM_PRI_CAPS}
+     Secondary build target: ${VGCONF_PLATFORM_SEC_CAPS}
          Default supp files: ${DEFAULT_SUPP}
 
 EOF

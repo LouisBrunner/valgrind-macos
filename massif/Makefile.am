@@ -5,22 +5,22 @@ SUBDIRS += perf
 bin_SCRIPTS = ms_print
 
 noinst_PROGRAMS = 
-if VGP_X86_LINUX
+if VGCONF_PLATFORMS_INCLUDE_X86_LINUX
 noinst_PROGRAMS += massif-x86-linux vgpreload_massif-x86-linux.so
 endif
-if VGP_AMD64_LINUX
+if VGCONF_PLATFORMS_INCLUDE_AMD64_LINUX
 noinst_PROGRAMS += massif-amd64-linux vgpreload_massif-amd64-linux.so
 endif
-if VGP_PPC32_LINUX
+if VGCONF_PLATFORMS_INCLUDE_PPC32_LINUX
 noinst_PROGRAMS += massif-ppc32-linux vgpreload_massif-ppc32-linux.so
 endif
-if VGP_PPC64_LINUX
+if VGCONF_PLATFORMS_INCLUDE_PPC64_LINUX
 noinst_PROGRAMS += massif-ppc64-linux vgpreload_massif-ppc64-linux.so
 endif
-if VGP_PPC32_AIX5
+if VGCONF_PLATFORMS_INCLUDE_PPC32_AIX5
 noinst_PROGRAMS += massif-ppc32-aix5 vgpreload_massif-ppc32-aix5.so
 endif
-if VGP_PPC64_AIX5
+if VGCONF_PLATFORMS_INCLUDE_PPC64_AIX5
 noinst_PROGRAMS += massif-ppc64-aix5 vgpreload_massif-ppc64-aix5.so
 endif
 

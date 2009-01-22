@@ -85,7 +85,6 @@ Similarly to above, this implies both a new OS, and a new platform.
 - Create necessary subdirs (copy linux/ and x86-linux/ subdirs).
 
 - Update configure.in (use linux and x86-linux as a guide).
-  Don't forget to update VG_OS_ALL, VG_PLATFORM_ALL.
 
 - Implement all the necessary OS-specific and platform-specific types,
   functions, and macros... use the following as templates:

@@ -3,12 +3,18 @@
 #include <string.h>
 #include <assert.h>
 
+// This file determines which architectures that this Valgrind installation
+// supports, which depends on the machine's architecture.  It also depends
+// on the configuration options;  for example, if Valgrind is installed on
+// an AMD64 machine but has been configured with --enable-only32bit then
+// this program will not match "amd64".
+//
 // We return:
 // - 0 if the machine matches the asked-for cpu
 // - 1 if it didn't match, but did match the name of another arch
 // - 2 otherwise
 
-// When updating this file for a new architecture, add the name to
+// Nb: When updating this file for a new architecture, add the name to
 // 'all_archs' as well as adding go().
 
 #define False  0
@@ -23,16 +29,22 @@ char* all_archs[] = {
    NULL
 };
 
-#if !defined(_AIX) && defined(__powerpc__) && !defined(__powerpc64__)
+//-----------------------------------------------------------------------------
+// ppc32-linux
+//---------------------------------------------------------------------------
+#if defined(VGP_ppc32_linux)
 static Bool go(char* cpu)
 {
    if ( strcmp( cpu, "ppc32" ) == 0 )
       return True;
    return False;
 }
-#endif // __powerpc__ (32)
+#endif   // VGP_ppc32_linux
 
-#if !defined(_AIX) && defined(__powerpc__) && defined(__powerpc64__)
+//---------------------------------------------------------------------------
+// ppc64-linux
+//---------------------------------------------------------------------------
+#if defined(VGP_ppc64_linux)
 static Bool go(char* cpu)
 {
    if ( strcmp( cpu, "ppc64" ) == 0 )
@@ -41,9 +53,12 @@ static Bool go(char* cpu)
       return True;
    return False;
 }
-#endif // __powerpc__ (64)
+#endif   // VGP_ppc64_linux
 
-#if defined(_AIX)
+//---------------------------------------------------------------------------
+// ppc{32,64}-aix
+//---------------------------------------------------------------------------
+#if defined(VGP_ppc32_aix5) || defined(VGP_ppc64_aix5)
 static Bool go(char* cpu)
 {
    if (sizeof(void*) == 8) {
@@ -58,9 +73,12 @@ static Bool go(char* cpu)
    }
    return False;
 }
-#endif // _AIX
+#endif   // VGP_ppc32_aix5 || VGP_ppc64_aix5
 
-#if !defined(_AIX) && (defined(__i386__) || defined(__x86_64__))
+//---------------------------------------------------------------------------
+// {x86,amd64}-linux (part 1 of 2)
+//---------------------------------------------------------------------------
+#if defined(VGP_x86_linux) || defined(VGP_amd64_linux)
 static void cpuid ( unsigned int n,
                     unsigned int* a, unsigned int* b,
                     unsigned int* c, unsigned int* d )
@@ -71,7 +89,12 @@ static void cpuid ( unsigned int n,
       : "0" (n)         /* input */
    );
 }
+#endif   // VGP_x86_linux || VGP_amd64_linux
 
+//---------------------------------------------------------------------------
+// {x86,amd64}-{linux} (part 2 of 2)
+//---------------------------------------------------------------------------
+#if defined(VGP_x86_linux)  || defined(VGP_amd64_linux)
 static Bool go(char* cpu)
 { 
    unsigned int level = 0, cmask = 0, dmask = 0, a, b, c, d;
@@ -102,7 +125,7 @@ static Bool go(char* cpu)
    } else if ( strcmp( cpu, "x86-ssse3" ) == 0 ) {
      level = 1;
      cmask = 1 << 9;
-#if defined(__x86_64__)
+#if defined(VGA_amd64)
    } else if ( strcmp( cpu, "amd64" ) == 0 ) {
      return True;
    } else if ( strcmp( cpu, "amd64-sse3" ) == 0 ) {
@@ -129,9 +152,12 @@ static Bool go(char* cpu)
    }
    return False;
 }
-#endif // !_AIX && (__i386__ || __x86_64__)
+#endif   // VGP_x86_linux  || VGP_amd64_linux
 
 
+//---------------------------------------------------------------------------
+// main
+//---------------------------------------------------------------------------
 int main(int argc, char **argv)
 {
    int i;

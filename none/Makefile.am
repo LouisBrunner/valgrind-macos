@@ -1,22 +1,22 @@
 include $(top_srcdir)/Makefile.tool.am
 
 noinst_PROGRAMS = 
-if VGP_X86_LINUX
+if VGCONF_PLATFORMS_INCLUDE_X86_LINUX
 noinst_PROGRAMS += none-x86-linux
 endif
-if VGP_AMD64_LINUX
+if VGCONF_PLATFORMS_INCLUDE_AMD64_LINUX
 noinst_PROGRAMS += none-amd64-linux
 endif
-if VGP_PPC32_LINUX
+if VGCONF_PLATFORMS_INCLUDE_PPC32_LINUX
 noinst_PROGRAMS += none-ppc32-linux
 endif
-if VGP_PPC64_LINUX
+if VGCONF_PLATFORMS_INCLUDE_PPC64_LINUX
 noinst_PROGRAMS += none-ppc64-linux
 endif
-if VGP_PPC32_AIX5
+if VGCONF_PLATFORMS_INCLUDE_PPC32_AIX5
 noinst_PROGRAMS += none-ppc32-aix5
 endif
-if VGP_PPC64_AIX5
+if VGCONF_PLATFORMS_INCLUDE_PPC64_AIX5
 noinst_PROGRAMS += none-ppc64-aix5
 endif
 

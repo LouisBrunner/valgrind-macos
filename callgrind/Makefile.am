@@ -5,22 +5,22 @@ bin_SCRIPTS = callgrind_annotate callgrind_control
 noinst_HEADERS = global.h costs.h events.h
 
 noinst_PROGRAMS = 
-if VGP_X86_LINUX
+if VGCONF_PLATFORMS_INCLUDE_X86_LINUX
 noinst_PROGRAMS += callgrind-x86-linux
 endif
-if VGP_AMD64_LINUX
+if VGCONF_PLATFORMS_INCLUDE_AMD64_LINUX
 noinst_PROGRAMS += callgrind-amd64-linux
 endif
-if VGP_PPC32_LINUX
+if VGCONF_PLATFORMS_INCLUDE_PPC32_LINUX
 noinst_PROGRAMS += callgrind-ppc32-linux
 endif
-if VGP_PPC64_LINUX
+if VGCONF_PLATFORMS_INCLUDE_PPC64_LINUX
 noinst_PROGRAMS += callgrind-ppc64-linux
 endif
-if VGP_PPC32_AIX5
+if VGCONF_PLATFORMS_INCLUDE_PPC32_AIX5
 noinst_PROGRAMS += callgrind-ppc32-aix5
 endif
-if VGP_PPC64_AIX5
+if VGCONF_PLATFORMS_INCLUDE_PPC64_AIX5
 noinst_PROGRAMS += callgrind-ppc64-aix5
 endif
 

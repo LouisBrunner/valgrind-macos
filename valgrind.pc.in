@@ -2,15 +2,15 @@ prefix=@prefix@
 exec_prefix=@exec_prefix@
 libdir=@libdir@
 includedir=@includedir@/valgrind
-arch=@VG_ARCH_PRI@
-os=@VG_OS@
-platform=@VG_PLATFORM_PRI@
+arch=@VGCONF_ARCH_PRI@
+os=@VGCONF_OS@
+platform=@VGCONF_ARCH_PRI@-@VGCONF_OS@
 valt_load_address=@VALT_LOAD_ADDRESS@
 
 Name: Valgrind
 Description: A dynamic binary instrumentation framework
 Version: @VERSION@
 Requires:
-Libs: -L${libdir}/valgrind/@VG_PLATFORM_PRI@ -lcoregrind -lvex -lgcc
+Libs: -L${libdir}/valgrind/@VGCONF_ARCH_PRI@-@VGCONF_OS@ -lcoregrind -lvex -lgcc
 Cflags: -I${includedir}
 

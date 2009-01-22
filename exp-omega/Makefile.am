@@ -12,22 +12,22 @@ EXTRA_DIST = exp-omega.h o_main.c o_replace_memops.c
 ##zz 
 ##zz # include memcheck/ for mac_shared.h
 ##zz noinst_PROGRAMS = 
-##zz if VGP_X86_LINUX
+##zz if VGCONF_PLATFORMS_INCLUDE_X86_LINUX
 ##zz noinst_PROGRAMS += exp-omega-x86-linux vgpreload_exp-omega-x86-linux.so
 ##zz endif
-##zz if VGP_AMD64_LINUX
+##zz if VGCONF_PLATFORMS_INCLUDE_AMD64_LINUX
 ##zz noinst_PROGRAMS += exp-omega-amd64-linux vgpreload_exp-omega-amd64-linux.so
 ##zz endif
-##zz if VGP_PPC32_LINUX
+##zz if VGCONF_PLATFORMS_INCLUDE_PPC32_LINUX
 ##zz noinst_PROGRAMS += exp-omega-ppc32-linux vgpreload_exp-omega-ppc32-linux.so
 ##zz endif
-##zz if VGP_PPC64_LINUX
+##zz if VGCONF_PLATFORMS_INCLUDE_PPC64_LINUX
 ##zz noinst_PROGRAMS += exp-omega-ppc64-linux vgpreload_exp-omega-ppc64-linux.so
 ##zz endif
-##zz if VGP_PPC32_AIX5
+##zz if VGCONF_PLATFORMS_INCLUDE_PPC32_AIX5
 ##zz noinst_PROGRAMS += exp-omega-ppc32-aix5 vgpreload_exp-omega-ppc32-aix5.so
 ##zz endif
-##zz if VGP_PPC64_AIX5
+##zz if VGCONF_PLATFORMS_INCLUDE_PPC64_AIX5
 ##zz noinst_PROGRAMS += exp-omega-ppc64-aix5 vgpreload_exp-omega-ppc64-aix5.so
 ##zz endif
 ##zz 

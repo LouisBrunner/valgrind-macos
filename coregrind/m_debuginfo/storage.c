@@ -39,6 +39,7 @@
 
 #include "pub_core_basics.h"
 #include "pub_core_options.h"      /* VG_(clo_verbosity) */
+#include "pub_core_debuginfo.h"
 #include "pub_core_libcassert.h"
 #include "pub_core_libcbase.h"
 #include "pub_core_libcprint.h"

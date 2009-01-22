@@ -133,6 +133,7 @@
    groupies always show up at the top of performance profiles. */
 
 #include "pub_core_basics.h"
+#include "pub_core_debuginfo.h"
 #include "pub_core_libcbase.h"
 #include "pub_core_libcassert.h"
 #include "pub_core_libcprint.h"

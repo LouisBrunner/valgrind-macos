@@ -1020,12 +1020,12 @@ Bool ML_(read_elf_debug_info) ( struct _DebugInfo* di )
    UChar*      shdr_strtab_img = NULL;
 
    /* SVMAs covered by rx and rw segments and corresponding bias. */
-   Addr rx_svma_base = 0;
-   Addr rx_svma_limit = 0;
-   OffT rx_bias = 0;
-   Addr rw_svma_base = 0;
-   Addr rw_svma_limit = 0;
-   OffT rw_bias = 0;
+   Addr     rx_svma_base = 0;
+   Addr     rx_svma_limit = 0;
+   PtrdiffT rx_bias = 0;
+   Addr     rw_svma_base = 0;
+   Addr     rw_svma_limit = 0;
+   PtrdiffT rw_bias = 0;
 
    vg_assert(di);
    vg_assert(di->have_rx_map == True);

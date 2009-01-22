@@ -1344,9 +1344,9 @@ Bool ML_(read_elf_debug_info) ( struct _DebugInfo* di )
       /* Find avma-s for: .text .data .sdata .rodata .bss .sbss .plt .got .opd
          and .eh_frame */
 
-      /* Accept .text where mapped as rx (code) */
+      /* Accept .text where mapped as rx (code), even if zero-sized */
       if (0 == VG_(strcmp)(name, ".text")) {
-         if (inrx && size > 0 && !di->text_present) {
+         if (inrx && size >= 0 && !di->text_present) {
             di->text_present = True;
             di->text_svma = svma;
             di->text_avma = svma + rx_bias;

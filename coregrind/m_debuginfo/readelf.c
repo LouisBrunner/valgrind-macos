@@ -220,7 +220,7 @@ Bool get_elf_symbol_info (
      )
 {
    Bool plausible, is_in_opd;
-   Bool in_text, in_data, in_sdata, in_bss;
+   Bool in_text, in_data, in_sdata, in_rodata, in_bss, in_sbss;
 
    /* Set defaults */
    *sym_name_out   = sym_name;
@@ -277,12 +277,26 @@ Bool get_elf_symbol_info (
       *is_text_out = False;
       *sym_avma_out += di->sdata_bias;
    } else
+   if (di->rodata_present
+       && di->rodata_size > 0
+       && sym_svma >= di->rodata_svma 
+       && sym_svma < di->rodata_svma + di->rodata_size) {
+      *is_text_out = False;
+      *sym_avma_out += di->rodata_bias;
+   } else
    if (di->bss_present
        && di->bss_size > 0
        && sym_svma >= di->bss_svma 
        && sym_svma < di->bss_svma + di->bss_size) {
       *is_text_out = False;
       *sym_avma_out += di->bss_bias;
+   } else
+   if (di->sbss_present
+       && di->sbss_size > 0
+       && sym_svma >= di->sbss_svma 
+       && sym_svma < di->sbss_svma + di->sbss_size) {
+      *is_text_out = False;
+      *sym_avma_out += di->sbss_bias;
    } else {
       /* Assume it's in .text.  Is this a good idea? */
       *is_text_out = True;
@@ -451,11 +465,23 @@ Bool get_elf_symbol_info (
         && !(*sym_avma_out + *sym_size_out <= di->sdata_avma
              || *sym_avma_out >= di->sdata_avma + di->sdata_size);
 
+   in_rodata 
+      = di->rodata_present
+        && di->rodata_size > 0
+        && !(*sym_avma_out + *sym_size_out <= di->rodata_avma
+             || *sym_avma_out >= di->rodata_avma + di->rodata_size);
+
    in_bss 
       = di->bss_present
         && di->bss_size > 0
         && !(*sym_avma_out + *sym_size_out <= di->bss_avma
              || *sym_avma_out >= di->bss_avma + di->bss_size);
+
+   in_sbss 
+      = di->sbss_present
+        && di->sbss_size > 0
+        && !(*sym_avma_out + *sym_size_out <= di->sbss_avma
+             || *sym_avma_out >= di->sbss_avma + di->sbss_size);
 
 
    if (*is_text_out) {
@@ -480,9 +506,9 @@ Bool get_elf_symbol_info (
          return False;
       }
    } else {
-     if (!(in_data || in_sdata || in_bss)) {
+     if (!(in_data || in_sdata || in_rodata || in_bss || in_sbss)) {
          TRACE_SYMTAB(
-            "ignore -- %#lx .. %#lx outside .data / .sdata / .bss svma ranges\n",
+            "ignore -- %#lx .. %#lx outside .data / .sdata / .rodata / .bss / .sbss svma ranges\n",
             *sym_avma_out, *sym_avma_out + *sym_size_out);
          return False;
       }
@@ -1315,7 +1341,7 @@ Bool ML_(read_elf_debug_info) ( struct _DebugInfo* di )
               goto out;                                    \
          } while (0)
 
-      /* Find avma-s for: .text .data .sdata .bss .plt .got .opd
+      /* Find avma-s for: .text .data .sdata .rodata .bss .sbss .plt .got .opd
          and .eh_frame */
 
       /* Accept .text where mapped as rx (code) */
@@ -1378,6 +1404,26 @@ Bool ML_(read_elf_debug_info) ( struct _DebugInfo* di )
          }
       }
 
+      /* Accept .rodata where mapped as rx (data), even if zero-sized */
+      if (0 == VG_(strcmp)(name, ".rodata")) {
+         if (inrx && size >= 0 && !di->rodata_present) {
+            di->rodata_present = True;
+            di->rodata_svma = svma;
+            di->rodata_avma = svma + rx_bias;
+            di->rodata_size = size;
+            di->rodata_bias = rx_bias;
+            TRACE_SYMTAB("acquiring .rodata svma = %#lx .. %#lx\n",
+                         di->rodata_svma,
+                         di->rodata_svma + di->rodata_size - 1);
+            TRACE_SYMTAB("acquiring .rodata avma = %#lx .. %#lx\n",
+                         di->rodata_avma,
+                         di->rodata_avma + di->rodata_size - 1);
+            TRACE_SYMTAB("acquiring .rodata bias = %#lx\n", di->rodata_bias);
+         } else {
+            BAD(".rodata");
+         }
+      }
+
       /* Accept .bss where mapped as rw (data), even if zero-sized */
       if (0 == VG_(strcmp)(name, ".bss")) {
          if (inrw && size >= 0 && !di->bss_present) {
@@ -1423,6 +1469,26 @@ Bool ML_(read_elf_debug_info) ( struct _DebugInfo* di )
             di->bss_bias = 0;
          } else {
             BAD(".bss");
+         }
+      }
+
+      /* Accept .sbss where mapped as rw (data) */
+      if (0 == VG_(strcmp)(name, ".sbss")) {
+         if (inrw && size > 0 && !di->sbss_present) {
+            di->sbss_present = True;
+            di->sbss_svma = svma;
+            di->sbss_avma = svma + rw_bias;
+            di->sbss_size = size;
+            di->sbss_bias = rw_bias;
+            TRACE_SYMTAB("acquiring .sbss svma = %#lx .. %#lx\n",
+                         di->sbss_svma,
+                         di->sbss_svma + di->sbss_size - 1);
+            TRACE_SYMTAB("acquiring .sbss avma = %#lx .. %#lx\n",
+                         di->sbss_avma,
+                         di->sbss_avma + di->sbss_size - 1);
+            TRACE_SYMTAB("acquiring .sbss bias = %#lx\n", di->sbss_bias);
+         } else {
+            BAD(".sbss");
          }
       }
 

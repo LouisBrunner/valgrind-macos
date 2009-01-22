@@ -366,12 +366,24 @@ struct _DebugInfo {
    Addr     sdata_avma;
    SizeT    sdata_size;
    PtrdiffT sdata_bias;
+   /* .rodata */
+   Bool     rodata_present;
+   Addr     rodata_svma;
+   Addr     rodata_avma;
+   SizeT    rodata_size;
+   PtrdiffT rodata_bias;
    /* .bss */
    Bool     bss_present;
    Addr     bss_svma;
    Addr     bss_avma;
    SizeT    bss_size;
    PtrdiffT bss_bias;
+   /* .sbss */
+   Bool     sbss_present;
+   Addr     sbss_svma;
+   Addr     sbss_avma;
+   SizeT    sbss_size;
+   PtrdiffT sbss_bias;
    /* .plt */
    Bool   plt_present;
    Addr	  plt_avma;

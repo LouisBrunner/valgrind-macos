@@ -419,10 +419,20 @@ static Bool bias_address( Addr* a, const DebugInfo* di )
             && *a >= di->sdata_svma && *a < di->sdata_svma + di->sdata_size) {
       *a += di->sdata_bias;
    }
+   else if (di->rodata_present
+            && di->rodata_size > 0
+            && *a >= di->rodata_svma && *a < di->rodata_svma + di->rodata_size) {
+      *a += di->rodata_bias;
+   }
    else if (di->bss_present
             && di->bss_size > 0
             && *a >= di->bss_svma && *a < di->bss_svma + di->bss_size) {
       *a += di->bss_bias;
+   }
+   else if (di->sbss_present
+            && di->sbss_size > 0
+            && *a >= di->sbss_svma && *a < di->sbss_svma + di->sbss_size) {
+      *a += di->sbss_bias;
    }
    else {
       return False;

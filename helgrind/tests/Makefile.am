@@ -121,15 +121,12 @@ EXTRA_DIST = $(noinst_SCRIPTS) \
 		tc24_nonzero_sem.stderr.exp-glibc25-amd64
 
 check_PROGRAMS = \
-	bar_bad \
-	bar_trivial \
 	hg01_all_ok \
 	hg02_deadlock \
 	hg03_inherit \
 	hg04_race \
 	hg05_race2 \
 	hg06_readshared \
-	pth_barrier \
 	rwlock_race \
 	rwlock_test \
 	tc01_simple_race \
@@ -156,6 +153,11 @@ check_PROGRAMS = \
 	tc22_exit_w_lock \
 	tc23_bogus_condwait \
 	tc24_nonzero_sem
+
+if HAVE_PTHREAD_BARRIER
+check_PROGRAMS += bar_bad bar_trivial pth_barrier
+endif
+
 
 AM_CPPFLAGS = -I$(top_srcdir) -I$(top_srcdir)/include \
                 -I$(top_srcdir)/coregrind -I$(top_builddir)/include \

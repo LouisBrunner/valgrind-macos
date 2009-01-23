@@ -39,7 +39,6 @@ EXTRA_DIST = $(noinst_SCRIPTS) \
 	badloop.stderr.exp badloop.vgtest \
 	badpoll.stderr.exp badpoll.vgtest \
 	badrw.stderr.exp badrw.vgtest \
-	brk.stderr.exp brk.vgtest \
 	brk2.stderr.exp brk2.vgtest \
 	buflen_check.stderr.exp buflen_check.stderr.exp2 buflen_check.vgtest \
 	clientperm.stderr.exp \
@@ -186,7 +185,7 @@ EXTRA_DIST = $(noinst_SCRIPTS) \
 check_PROGRAMS = \
 	addressable \
 	badaddrvalue badfree badjump badjump2 \
-	badloop badpoll badrw brk brk2 buflen_check \
+	badloop badpoll badrw brk2 buflen_check \
 	clientperm custom_alloc \
 	deep_templates \
 	describe-block \

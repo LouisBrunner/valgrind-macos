@@ -1,10 +1,12 @@
 noinst_SCRIPTS = filter_stderr
 
 EXTRA_DIST = $(noinst_SCRIPTS) \
+	brk.stderr.exp brk.vgtest \
 	capget capget.stderr.exp \
 	timerfd-syscall timerfd-syscall.stderr.exp
 
 check_PROGRAMS = \
+	brk \
 	capget \
 	timerfd-syscall
 

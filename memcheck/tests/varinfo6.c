@@ -6449,8 +6449,8 @@ void set_inbuf ( void )
   my_strcat(inbuf, "\n");
 }
 
+
 #include <stdio.h>
-#include <malloc.h>
 #include <assert.h>
 
 /* For providing services. */

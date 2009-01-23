@@ -1,6 +1,6 @@
 
 #include <stdio.h>
-#include <malloc.h>
+#include <stdlib.h>
 
 // Do a test comparison.  By default memcheck does not use the
 // expensive EQ/NE scheme as it would be too expensive.  The 

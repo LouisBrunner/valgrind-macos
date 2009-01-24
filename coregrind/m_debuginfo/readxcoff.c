@@ -58,6 +58,7 @@
 #include "pub_core_xarray.h"
 #include "priv_misc.h"
 #include "priv_tytypes.h"
+#include "pub_tool_debuginfo.h"
 #include "priv_d3basics.h"
 #include "priv_storage.h"
 #include "priv_readxcoff.h"        /* self */

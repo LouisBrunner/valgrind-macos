@@ -736,7 +736,10 @@ GXResult ML_(evaluate_GX)( GExpr* gx, GExpr* fbGX,
    * any of the subexpressions do not produce a manifest constant
    * there's more than one subexpression, all of which successfully
      evaluate to a constant, but they don't all produce the same constant.
- */
+   JRS 23Jan09: the special-casing in this function is a nasty kludge.
+   Really it ought to be pulled out and turned into a general
+   constant- expression evaluator.
+*/
 GXResult ML_(evaluate_trivial_GX)( GExpr* gx, const DebugInfo* di )
 {
    GXResult   res;
@@ -747,7 +750,7 @@ GXResult ML_(evaluate_trivial_GX)( GExpr* gx, const DebugInfo* di )
    MaybeULong *mul, *mul2;
 
    HChar*  badness = NULL;
-   UChar*  p       = &gx->payload[0];
+   UChar*  p       = &gx->payload[0]; /* must remain unsigned */
    XArray* results = VG_(newXA)( ML_(dinfo_zalloc), "di.d3basics.etG.1",
                                  ML_(dinfo_free),
                                  sizeof(MaybeULong) );
@@ -778,18 +781,41 @@ GXResult ML_(evaluate_trivial_GX)( GExpr* gx, const DebugInfo* di )
       /* Peer at this particular subexpression, to see if it's
          obviously a constant. */
       if (nbytes == 1 + sizeof(Addr) && *p == DW_OP_addr) {
+         /* DW_OP_addr a */
          Addr a = *(Addr*)(p+1);
          if (bias_address(&a, di)) {
             thisResult.b = True;
             thisResult.ul = (ULong)a;
-         }
-         else if (!badness) {
-            badness = "trivial GExpr denotes constant address in unknown section";
+         } else {
+            if (!badness)
+               badness = "trivial GExpr denotes constant address "
+                         "in unknown section (1)";
          }
       }
-      else if (nbytes == 2 + sizeof(Addr) 
-               && *p == DW_OP_addr
-               && *(p + 1 + sizeof(Addr)) == DW_OP_GNU_push_tls_address) {
+      else 
+      if (nbytes == 1 + sizeof(Addr) + 1 + 1
+          /* 11 byte block: 3 c0 b6 2b 0 0 0 0 0 23 4
+             (DW_OP_addr: 2bb6c0; DW_OP_plus_uconst: 4)
+             This is really a nasty kludge - only matches if the
+             trailing ULEB denotes a number in the range 0 .. 127
+             inclusive. */
+          && p[0] == DW_OP_addr
+          && p[1 + sizeof(Addr)] == DW_OP_plus_uconst 
+          && p[1 + sizeof(Addr) + 1] < 0x80 /*1-byte ULEB*/) {
+         Addr a = *(Addr*)&p[1];
+         if (bias_address(&a, di)) {
+            thisResult.b = True;
+            thisResult.ul = (ULong)a + (ULong)p[1 + sizeof(Addr) + 1];
+         } else {
+            if (!badness)
+               badness = "trivial GExpr denotes constant address "
+                         "in unknown section (2)";
+         }
+      }
+      else
+      if (nbytes == 2 + sizeof(Addr) 
+          && *p == DW_OP_addr
+          && *(p + 1 + sizeof(Addr)) == DW_OP_GNU_push_tls_address) {
          if (!badness)
             badness = "trivial GExpr is DW_OP_addr plus trailing junk";
       }

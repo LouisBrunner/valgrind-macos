@@ -2236,9 +2236,14 @@ static void parse_type_DIE ( /*MOD*/XArray* /* of TyEnt */ tyents,
             typeE.Te.TyEnum.szB = cts;
          }
       }
+
+      if (!typeE.Te.TyEnum.name)
+         typeE.Te.TyEnum.name 
+            = ML_(dinfo_strdup)( "di.readdwarf3.pTD.enum_type.3",
+                                 "<anon_enum_type>" );
+
       /* Do we have something that looks sane? */
-      if (typeE.Te.TyEnum.szB == 0 /* we must know the size */
-         /* But the name can be present, or not */)
+      if (typeE.Te.TyEnum.szB == 0 /* we must know the size */)
          goto bad_DIE;
       /* On't stack! */
       typestack_push( cc, parser, td3, &typeE, level );

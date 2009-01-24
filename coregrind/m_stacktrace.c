@@ -561,7 +561,13 @@ void VG_(apply_StackTrace)( void(*action)(UInt n, Addr ip),
       action(i, ip);
 
       i++;
-   } while (i < n_ips && ips[i] != 0 && !main_done);
+      // re 'while' condition: stop if we hit a zero value (the traditional
+      // end-of-stack marker) or a ~0 value.  The latter because r8818 
+      // (in this file) changes the meaning of entries [1] and above in a
+      // stack trace, by subtracting 1 from them.  Hence stacks that used
+      // to end with a zero value now end in -1 and so we must detect
+      // that too.
+   } while (i < n_ips && ips[i] != 0 && ips[i] != ~(Addr)0 && !main_done);
 
    #undef MYBUF_LEN
 }

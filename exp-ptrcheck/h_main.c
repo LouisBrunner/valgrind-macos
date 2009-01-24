@@ -2188,6 +2188,9 @@ static void setup_post_syscall_table ( void )
 #     endif
       ADD(0, __NR_chmod);
       ADD(0, __NR_chown);
+#     if defined(__NR_chown32)
+      ADD(0, __NR_chown32);
+#     endif
       ADD(0, __NR_clock_getres);
       ADD(0, __NR_clock_gettime);
       ADD(0, __NR_clone);
@@ -2255,6 +2258,7 @@ static void setup_post_syscall_table ( void )
 #     if defined(__NR_getsockopt)
       ADD(0, __NR_getsockopt);
 #     endif
+      ADD(0, __NR_gettid);
       ADD(0, __NR_gettimeofday);
       ADD(0, __NR_getuid);
 #     if defined(__NR_getuid32)
@@ -2304,6 +2308,7 @@ static void setup_post_syscall_table ( void )
       ADD(0, __NR_sched_getaffinity);
       ADD(0, __NR_sched_getparam);
       ADD(0, __NR_sched_getscheduler);
+      ADD(0, __NR_sched_setaffinity);
       ADD(0, __NR_sched_setscheduler);
       ADD(0, __NR_sched_yield);
       ADD(0, __NR_select);
@@ -2332,6 +2337,7 @@ static void setup_post_syscall_table ( void )
 #     if defined(__NR_shutdown)
       ADD(0, __NR_shutdown);
 #     endif
+      ADD(0, __NR_sigaltstack);
 #     if defined(__NR_socket)
       ADD(0, __NR_socket);
 #     endif

@@ -230,13 +230,16 @@ static void pp_StackBlock ( StackBlock* sb )
 static void pp_StackBlocks ( XArray* sbs )
 {
    Word i, n = VG_(sizeXA)( sbs );
-   VG_(printf)("<<< STACKBLOCKS\n" );
+   VG_(message)(Vg_DebugMsg, "<<< STACKBLOCKS" );
    for (i = 0; i < n; i++) {
-      VG_(printf)("   ");
-      pp_StackBlock( (StackBlock*)VG_(indexXA)( sbs, i ) );
-      VG_(printf)("\n");
+      StackBlock* sb = (StackBlock*)VG_(indexXA)( sbs, i );
+      VG_(message)(Vg_DebugMsg,
+         "   StackBlock{ off %ld szB %lu spRel:%c isVec:%c \"%s\" }",
+         sb->base, sb->szB, sb->spRel ? 'Y' : 'N',
+         sb->isVec ? 'Y' : 'N', &sb->name[0] 
+      );
    }
-   VG_(printf)(">>> STACKBLOCKS\n" );
+   VG_(message)(Vg_DebugMsg, ">>> STACKBLOCKS" );
 }
 
 
@@ -332,14 +335,33 @@ static XArray* /* of StackBlock */
      }
    }
 
-   /* A rather poor sanity check on the results. */
+   /* If there are any blocks which overlap and have the same
+      fpRel-ness, junk the whole descriptor; it's obviously bogus.
+      Icc11 certainly generates bogus info from time to time.
+
+      This check is pretty weak; really we ought to have a stronger
+      sanity check. */
    { Word i, n = VG_(sizeXA)( orig );
+     static Int moans = 3;
      for (i = 0; i < n-1; i++) {
        StackBlock* sb1 = (StackBlock*)VG_(indexXA)( orig, i );
        StackBlock* sb2 = (StackBlock*)VG_(indexXA)( orig, i+1 );
-       if (sb1->base == sb2->base)
-          pp_StackBlocks(orig);
-       tl_assert(sb1->base != sb2->base);
+       if (sb1->spRel == sb2->spRel
+           && (sb1->base >= sb2->base
+               || sb1->base + sb1->szB > sb2->base)) {
+          if (moans > 0 && !VG_(clo_xml)) {
+             moans--;
+             VG_(message)(Vg_UserMsg, "Warning: bogus DWARF3 info: "
+                                      "overlapping stack blocks");
+             if (VG_(clo_verbosity) >= 2)
+                pp_StackBlocks(orig);
+             if (moans == 0)
+                VG_(message)(Vg_UserMsg, "Further instances of this "
+                                         "message will not be shown" );
+          }
+          VG_(dropTailXA)( orig, VG_(sizeXA)( orig ));
+          break;
+       }
      }
    }
 
@@ -674,6 +696,7 @@ static void add_block_to_GlobalTree (
    Bool already_present;
    GlobalTreeNode *nyu, *nd;
    UWord keyW, valW;
+   static Int moans = 3;
 
    tl_assert(descr->szB > 0);
    nyu = sg_malloc( "di.sg_main.abtG.1", sizeof(GlobalTreeNode) );
@@ -718,13 +741,25 @@ static void add_block_to_GlobalTree (
    already_present = VG_(addToFM)( gitree, (UWord)nyu, 0 );
    /* The interval can't already be there; else we have
       overlapping global blocks. */
-   if (already_present) {
-      GlobalTree__pp( gitree, "add_block_to_GlobalTree: non-exact duplicate" );
-      VG_(printf)("Overlapping block: ");
-      GlobalTreeNode__pp(nyu);
-      VG_(printf)("\n");
+   /* Unfortunately (25 Jan 09) at least icc11 has been seen to
+      generate overlapping block descriptions in the Dwarf3; clearly
+      bogus. */
+   if (already_present && moans > 0 && !VG_(clo_xml)) {
+      moans--;
+      VG_(message)(Vg_UserMsg, "Warning: bogus DWARF3 info: "
+                               "overlapping global blocks");
+      if (VG_(clo_verbosity) >= 2) {
+         GlobalTree__pp( gitree,
+                         "add_block_to_GlobalTree: non-exact duplicate" );
+         VG_(printf)("Overlapping block: ");
+         GlobalTreeNode__pp(nyu);
+         VG_(printf)("\n");
+      }
+      if (moans == 0)
+         VG_(message)(Vg_UserMsg, "Further instances of this "
+                                  "message will not be shown" );
    }
-   tl_assert(!already_present);
+   /* tl_assert(!already_present); */
 }
 
 static Bool del_GlobalTree_range ( /*MOD*/WordFM* gitree,

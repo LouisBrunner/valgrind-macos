@@ -418,6 +418,9 @@ typedef
       /* Where is .debug_line? */
       UChar* debug_line_img;
       UWord  debug_line_sz;
+      /* Where is .debug_info? */
+      UChar* debug_info_img;
+      UWord  debug_info_sz;
       /* --- Needed so we can add stuff to the string table. --- */
       struct _DebugInfo* di;
       /* --- a cache for set_abbv_Cursor --- */
@@ -901,7 +904,8 @@ void parse_CU_Header ( /*OUT*/CUConst* cc,
 
    /* address size.  If this isn't equal to the host word size, just
       give up.  This makes it safe to assume elsewhere that
-      DW_FORM_addr can be treated as a host word. */
+      DW_FORM_addr and DW_FORM_ref_addr can be treated as a host
+      word. */
    address_size = get_UChar( c );
    if (address_size != sizeof(void*))
       cc->barf( "parse_CU_Header: invalid address_size" );
@@ -1083,12 +1087,43 @@ void get_Form_contents ( /*OUT*/ULong* cts,
          *ctsSzB = sizeof(UWord);
          TRACE_D3("0x%lx", (UWord)*cts);
          break;
+
+      case DW_FORM_ref_addr:
+         /* We make the same word-size assumption as DW_FORM_addr. */
+         /* What does this really mean?  From D3 Sec 7.5.4,
+            description of "reference", it would appear to reference
+            some other DIE, by specifying the offset from the
+            beginning of a .debug_info section.  The D3 spec mentions
+            that this might be in some other shared object and
+            executable.  But I don't see how the name of the other
+            object/exe is specified.
+
+            At least for the DW_FORM_ref_addrs created by icc11, the
+            references seem to be within the same object/executable.
+            So for the moment we merely range-check, to see that they
+            actually do specify a plausible offset within this
+            object's .debug_info, and return the value unchanged.
+         */
+         *cts = (ULong)(UWord)get_UWord(c);
+         *ctsSzB = sizeof(UWord);
+         TRACE_D3("0x%lx", (UWord)*cts);
+         if (0) VG_(printf)("DW_FORM_ref_addr 0x%lx\n", (UWord)*cts);
+         if (/* the following 2 are surely impossible, but ... */
+             cc->debug_info_img == NULL || cc->debug_info_sz == 0
+             || *cts >= (ULong)cc->debug_info_sz) {
+            /* Hmm.  Offset is nonsensical for this object's .debug_info
+               section.  Be safe and reject it. */
+            cc->barf("get_Form_contents: DW_FORM_ref_addr points "
+                     "outside .debug_info");
+         }
+         break;
+
       case DW_FORM_strp: {
          /* this is an offset into .debug_str */
          UChar* str;
          UWord uw = (UWord)get_Dwarfish_UWord( c, cc->is_dw64 );
          if (cc->debug_str_img == NULL || uw >= cc->debug_str_sz)
-            cc->barf("read_and_show_Form: DW_FORM_strp "
+            cc->barf("get_Form_contents: DW_FORM_strp "
                      "points outside .debug_str");
          /* FIXME: check the entire string lies inside debug_str,
             not just the first byte of it. */
@@ -1149,8 +1184,9 @@ void get_Form_contents ( /*OUT*/ULong* cts,
          break;
       }
       default:
-         VG_(printf)("get_Form_contents: unhandled %d (%s)\n",
-                     form, ML_(pp_DW_FORM)(form));
+         VG_(printf)(
+            "get_Form_contents: unhandled %d (%s) at <%lx>\n",
+            form, ML_(pp_DW_FORM)(form), get_position_of_Cursor(c));
          c->barf("get_Form_contents: unhandled DW_FORM");
    }
 }
@@ -2184,14 +2220,13 @@ static void parse_type_DIE ( /*MOD*/XArray* /* of TyEnt */ tyents,
       typeE.Te.TyPorR.typeR = D3_FAKEVOID_CUOFF;
       typeE.Te.TyPorR.isPtr = dtag == DW_TAG_pointer_type
                               || dtag == DW_TAG_ptr_to_member_type;
-      /* Pointer types don't *have* to specify their size, in which
-         case we assume it's a machine word.  But if they do specify
-         it, it must be a machine word :-) This probably assumes that
-         the word size of the Dwarf3 we're reading is the same size as
-         that on the machine.  gcc appears to give a size whereas icc9
-         doesn't. */
-      if (typeE.Te.TyPorR.isPtr)
-         typeE.Te.TyPorR.szB = sizeof(Word);
+      /* These three type kinds don't *have* to specify their size, in
+         which case we assume it's a machine word.  But if they do
+         specify it, it must be a machine word :-)  This probably
+         assumes that the word size of the Dwarf3 we're reading is the
+         same size as that on the machine.  gcc appears to give a size
+         whereas icc9 doesn't. */
+      typeE.Te.TyPorR.szB = sizeof(UWord);
       while (True) {
          DW_AT   attr = (DW_AT)  get_ULEB128( c_abbv );
          DW_FORM form = (DW_FORM)get_ULEB128( c_abbv );
@@ -2206,7 +2241,7 @@ static void parse_type_DIE ( /*MOD*/XArray* /* of TyEnt */ tyents,
          }
       }
       /* Do we have something that looks sane? */
-      if (typeE.Te.TyPorR.szB != sizeof(Word))
+      if (typeE.Te.TyPorR.szB != sizeof(UWord))
          goto bad_DIE;
       else
          goto acquire_Type;
@@ -3437,6 +3472,8 @@ void new_dwarf3_reader_wrk (
       cc.debug_loc_sz     = debug_loc_sz;
       cc.debug_line_img   = debug_line_img;
       cc.debug_line_sz    = debug_line_sz;
+      cc.debug_info_img   = debug_info_img;
+      cc.debug_info_sz    = debug_info_sz;
       cc.cu_start_offset  = cu_start_offset;
       cc.di = di;
       /* The CU's svma can be deduced by looking at the AT_low_pc

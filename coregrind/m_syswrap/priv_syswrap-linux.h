@@ -133,6 +133,7 @@ DECL_TEMPLATE(linux, sys_timerfd_gettime);
 DECL_TEMPLATE(linux, sys_timerfd_settime);
 
 DECL_TEMPLATE(linux, sys_signalfd);
+DECL_TEMPLATE(linux, sys_signalfd4);
 
 DECL_TEMPLATE(linux, sys_capget);
 DECL_TEMPLATE(linux, sys_capset);

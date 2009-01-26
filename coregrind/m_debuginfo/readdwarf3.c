@@ -387,7 +387,12 @@ typedef
       Bool   is_dw64;
       /* Which DWARF version ?  (2 or 3) */
       UShort version;
-      /* Length of this Compilation Unit, excluding its Header */
+      /* Length of this Compilation Unit, as stated in the
+         .unit_length :: InitialLength field of the CU Header.
+         However, this size (as specified by the D3 spec) does not
+         include the size of the .unit_length field itself, which is
+         either 4 or 12 bytes (32-bit or 64-bit Dwarf3).  That value
+         can be obtained through the expression ".is_dw64 ? 12 : 4". */
       ULong  unit_length;
       /* Offset of start of this unit in .debug_info */
       UWord  cu_start_offset;
@@ -3368,12 +3373,30 @@ void new_dwarf3_reader_wrk (
    while (True) {
       UWord   cu_start_offset, cu_offset_now;
       CUConst cc;
+      /* It may be that the stated size of this CU is larger than the
+         amount of stuff actually in it.  icc9 seems to generate CUs
+         thusly.  We use these variables to figure out if this is
+         indeed the case, and if so how many bytes we need to skip to
+         get to the start of the next CU.  Not skipping those bytes
+         causes us to misidentify the start of the next CU, and it all
+         goes badly wrong after that (not surprisingly). */
+      UWord cu_size_including_IniLen, cu_amount_used;
 
       /* It seems icc9 finishes the DIE info before debug_info_sz
          bytes have been used up.  So be flexible, and declare the
          sequence complete if there is not enough remaining bytes to
          hold even the smallest conceivable CU header.  (11 bytes I
          reckon). */
+      /* JRS 23Jan09: I suspect this is no longer necessary now that
+         the code below contains a 'while (cu_amount_used <
+         cu_size_including_IniLen ...'  style loop, which skips over
+         any leftover bytes at the end of a CU in the case where the
+         CU's stated size is larger than its actual size (as
+         determined by reading all its DIEs).  However, for prudence,
+         I'll leave the following test in place.  I can't see that a
+         CU header can be smaller than 11 bytes, so I don't think
+         there's any harm possible through the test -- it just adds
+         robustness. */
       Word avail = get_remaining_length_Cursor( &info );
       if (avail < 11) {
          if (avail > 0)
@@ -3447,10 +3470,36 @@ void new_dwarf3_reader_wrk (
                 &info, td3, &cc, 0 );
 
       cu_offset_now = get_position_of_Cursor( &info );
+
+      if (0) VG_(printf)("Travelled: %lu  size %llu\n",
+                         cu_offset_now - cc.cu_start_offset,
+                         cc.unit_length + (cc.is_dw64 ? 12 : 4));
+
+      /* How big the CU claims it is .. */
+      cu_size_including_IniLen = cc.unit_length + (cc.is_dw64 ? 12 : 4);
+      /* .. vs how big we have found it to be */
+      cu_amount_used = cu_offset_now - cc.cu_start_offset;
+
       if (1) TRACE_D3("offset now %ld, d-i-size %ld\n",
                       cu_offset_now, debug_info_sz);
       if (cu_offset_now > debug_info_sz)
          barf("toplevel DIEs beyond end of CU");
+
+      /* If the CU is bigger than it claims to be, we've got a serious
+         problem. */
+      if (cu_amount_used > cu_size_including_IniLen)
+         barf("CU's actual size appears to be larger than it claims it is");
+
+      /* If the CU is smaller than it claims to be, we need to skip some
+         bytes.  Loop updates cu_offset_new and cu_amount_used. */
+      while (cu_amount_used < cu_size_including_IniLen
+             && get_remaining_length_Cursor( &info ) > 0) {
+         if (0) VG_(printf)("SKIP\n");
+         (void)get_UChar( &info );
+         cu_offset_now = get_position_of_Cursor( &info );
+         cu_amount_used = cu_offset_now - cc.cu_start_offset;
+      }
+
       if (cu_offset_now == debug_info_sz)
          break;
 

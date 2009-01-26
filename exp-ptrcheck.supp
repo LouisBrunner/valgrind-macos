@@ -42,3 +42,9 @@
    obj:/*lib*/ld-2.*so*
    obj:/*lib*/ld-2.*so*
 }
+
+{
+   I think this is glibc's ultra optimised getenv doing 2 byte reads
+   exp-ptrcheck:SorG
+   fun:getenv
+}

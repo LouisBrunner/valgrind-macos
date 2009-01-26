@@ -2215,6 +2215,7 @@ static void setup_post_syscall_table ( void )
       ADD(0, __NR_fcntl64);
 #     endif
       ADD(0, __NR_fdatasync);
+      ADD(0, __NR_flock);
       ADD(0, __NR_fstat);
 #     if defined(__NR_fstat64)
       ADD(0, __NR_fstat64);
@@ -2269,6 +2270,7 @@ static void setup_post_syscall_table ( void )
       ADD(0, __NR_inotify_init);
       ADD(0, __NR_inotify_rm_watch);
       ADD(0, __NR_ioctl); // ioctl -- assuming no pointers returned
+      ADD(0, __NR_ioprio_get);
       ADD(0, __NR_kill);
       ADD(0, __NR_link);
 #     if defined(__NR_listen)
@@ -2281,6 +2283,7 @@ static void setup_post_syscall_table ( void )
 #     endif
       ADD(0, __NR_madvise);
       ADD(0, __NR_mkdir);
+      ADD(0, __NR_mlock);
       ADD(0, __NR_mprotect);
       ADD(0, __NR_munmap); // die_mem_munmap already called, segment remove);
       ADD(0, __NR_nanosleep);
@@ -2312,6 +2315,15 @@ static void setup_post_syscall_table ( void )
       ADD(0, __NR_sched_setscheduler);
       ADD(0, __NR_sched_yield);
       ADD(0, __NR_select);
+#     if defined(__NR_semctl)
+      ADD(0, __NR_semctl);
+#     endif
+#     if defined(__NR_semget)
+      ADD(0, __NR_semget);
+#     endif
+#     if defined(__NR_semop)
+      ADD(0, __NR_semop);
+#     endif
 #     if defined(__NR_sendto)
       ADD(0, __NR_sendto);
 #     endif

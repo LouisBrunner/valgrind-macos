@@ -44,7 +44,6 @@ typedef struct {
    Int          line_size;              /* bytes */
    Int          sets;
    Int          sets_min_1;
-   Int          assoc_bits;
    Int          line_size_bits;
    Int          tag_shift;
    Char         desc_line[128];
@@ -62,7 +61,6 @@ static void cachesim_initcache(cache_t config, cache_t2* c)
 
    c->sets           = (c->size / c->line_size) / c->assoc;
    c->sets_min_1     = c->sets - 1;
-   c->assoc_bits     = VG_(log2)(c->assoc);
    c->line_size_bits = VG_(log2)(c->line_size);
    c->tag_shift      = c->line_size_bits + VG_(log2)(c->sets);
 
@@ -111,8 +109,7 @@ void cachesim_##L##_doref(Addr a, UChar size, ULong* m1, ULong *m2)         \
    /* First case: word entirely within line. */                             \
    if (set1 == set2) {                                                      \
                                                                             \
-      /* Shifting is a bit faster than multiplying */                       \
-      set = &(L.tags[set1 << L.assoc_bits]);                                \
+      set = &(L.tags[set1 * L.assoc]);                                      \
                                                                             \
       /* This loop is unrolled for just the first case, which is the most */\
       /* common.  We can't unroll any further because it would screw up   */\
@@ -143,7 +140,7 @@ void cachesim_##L##_doref(Addr a, UChar size, ULong* m1, ULong *m2)         \
    /* Second case: word straddles two lines. */                             \
    /* Nb: this is a fast way of doing ((set1+1) % L.sets) */                \
    } else if (((set1 + 1) & (L.sets-1)) == set2) {                          \
-      set = &(L.tags[set1 << L.assoc_bits]);                                \
+      set = &(L.tags[set1 * L.assoc]);                                      \
       if (tag == set[0]) {                                                  \
          goto block2;                                                       \
       }                                                                     \
@@ -162,7 +159,7 @@ void cachesim_##L##_doref(Addr a, UChar size, ULong* m1, ULong *m2)         \
       set[0] = tag;                                                         \
       is_miss = True;                                                       \
 block2:                                                                     \
-      set = &(L.tags[set2 << L.assoc_bits]);                                \
+      set = &(L.tags[set2 * L.assoc]);                                      \
       tag2 = (a+size-1) >> L.tag_shift;                                     \
       if (tag2 == set[0]) {                                                 \
          goto miss_treatment;                                               \

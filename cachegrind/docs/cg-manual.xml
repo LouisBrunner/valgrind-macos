@@ -142,7 +142,7 @@ follows:</para>
   </listitem>
 
   <listitem>
-    <para>Bit-selection hash function: the line(s) in the cache
+    <para>Bit-selection hash function: the set of line(s) in the cache
     to which a memory block maps is chosen by the middle bits
     M--(M+N-1) of the byte address, where:</para>
     <itemizedlist>
@@ -150,15 +150,17 @@ follows:</para>
         <para>line size = 2^M bytes</para>
       </listitem>
       <listitem>
-        <para>(cache size / line size) = 2^N bytes</para>
+        <para>(cache size / line size / associativity) = 2^N bytes</para>
       </listitem>
     </itemizedlist> 
   </listitem>
 
   <listitem>
-    <para>Inclusive L2 cache: the L2 cache replicates all the
-    entries of the L1 cache.  This is standard on Pentium chips,
-    but AMD Opterons, Athlons and Durons 
+    <para>Inclusive L2 cache: the L2 cache typically replicates all
+    the entries of the L1 caches, because fetching into L1 involves
+    fetching into L2 first (this does not guarantee strict inclusiveness,
+    as lines evicted from L2 still could reside in L1).  This is
+    standard on Pentium chips, but AMD Opterons, Athlons and Durons
     use an exclusive L2 cache that only holds
     blocks evicted from L1.  Ditto most modern VIA CPUs.</para>
   </listitem>
@@ -176,7 +178,10 @@ happens.  You can manually specify one, two or all three levels
 (I1/D1/L2) of the cache from the command line using the
 <computeroutput>--I1</computeroutput>,
 <computeroutput>--D1</computeroutput> and
-<computeroutput>--L2</computeroutput> options.</para>
+<computeroutput>--L2</computeroutput> options.
+For cache parameters to be valid for simulation, the number
+of sets (with associativity being the number of cache lines in
+each set) has to be a power of two.</para>
 
 <para>On PowerPC platforms
 Cachegrind cannot automatically 
@@ -227,10 +232,7 @@ need to specify it with the
 <para>If you are interested in simulating a cache with different
 properties, it is not particularly hard to write your own cache
 simulator, or to modify the existing ones in
-<computeroutput>vg_cachesim_I1.c</computeroutput>,
-<computeroutput>vg_cachesim_D1.c</computeroutput>,
-<computeroutput>vg_cachesim_L2.c</computeroutput> and
-<computeroutput>vg_cachesim_gen.c</computeroutput>.  We'd be
+<computeroutput>cg_sim.c</computeroutput>. We'd be
 interested to hear from anyone who does.</para>
 
 </sect2>

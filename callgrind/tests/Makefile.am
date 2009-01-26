@@ -11,6 +11,10 @@ EXTRA_DIST = $(noinst_SCRIPTS) \
              simwork1.vgtest simwork1.stdout.exp simwork1.stderr.exp \
              simwork2.vgtest simwork2.stdout.exp simwork2.stderr.exp \
              simwork3.vgtest simwork3.stdout.exp simwork3.stderr.exp \
+             notpower2.vgtest notpower2.stderr.exp \
+             notpower2-wb.vgtest notpower2-wb.stderr.exp \
+             notpower2-hwpref.vgtest notpower2-hwpref.stderr.exp \
+             notpower2-use.vgtest notpower2-use.stderr.exp \
              threads.vgtest threads.stderr.exp
 
 check_PROGRAMS = clreq simwork threads

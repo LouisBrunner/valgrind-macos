@@ -1158,18 +1158,12 @@ static cache_t clo_L2_cache = UNDEFINED_CACHE;
 static 
 void check_cache(cache_t* cache, Char *name)
 {
-   /* First check they're all powers of two */
-   if (-1 == VG_(log2)(cache->size)) {
+   /* Simulator requires line size and set count to be powers of two */
+   if (( cache->size % (cache->line_size * cache->assoc) != 0) ||
+       (-1 == VG_(log2)(cache->size/cache->line_size/cache->assoc))) {
       VG_(message)(Vg_UserMsg,
-         "error: %s size of %dB not a power of two; aborting.",
-         name, cache->size);
-      VG_(exit)(1);
-   }
-
-   if (-1 == VG_(log2)(cache->assoc)) {
-      VG_(message)(Vg_UserMsg,
-         "error: %s associativity of %d not a power of two; aborting.",
-         name, cache->assoc);
+         "error: %s set count not a power of two; aborting.",
+         name);
       VG_(exit)(1);
    }
 

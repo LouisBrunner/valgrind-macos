@@ -1,6 +1,6 @@
 
 Invalid read of size 1
-   at 0x........: strlen (h_intercepts.c:85)
+   at 0x........: strlen (h_intercepts.c:97)
    by 0x........: ...
    by 0x........: ...
    by 0x........: VG_print_translation_stats (bad_percentify.c:88)
@@ -10,7 +10,7 @@ Invalid read of size 1
  Actual:   unknown
 
 Invalid read of size 1
-   at 0x........: strlen (h_intercepts.c:85)
+   at 0x........: strlen (h_intercepts.c:97)
    by 0x........: ...
    by 0x........: ...
    by 0x........: VG_print_translation_stats (bad_percentify.c:93)
@@ -20,7 +20,7 @@ Invalid read of size 1
  Actual:   unknown
 
 Invalid read of size 1
-   at 0x........: strlen (h_intercepts.c:85)
+   at 0x........: strlen (h_intercepts.c:97)
    by 0x........: ...
    by 0x........: ...
    by 0x........: VG_print_translation_stats (bad_percentify.c:98)

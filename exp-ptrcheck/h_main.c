@@ -2179,6 +2179,7 @@ static void setup_post_syscall_table ( void )
       ADD(0, __NR_accept);
 #     endif
       ADD(0, __NR_access);
+      ADD(0, __NR_alarm);
 #     if defined(__NR_bind)
       ADD(0, __NR_bind);
 #     endif
@@ -2187,6 +2188,9 @@ static void setup_post_syscall_table ( void )
 #     endif
       ADD(0, __NR_chmod);
       ADD(0, __NR_chown);
+#     if defined(__NR_chown32)
+      ADD(0, __NR_chown32);
+#     endif
       ADD(0, __NR_clock_getres);
       ADD(0, __NR_clock_gettime);
       ADD(0, __NR_clone);
@@ -2194,6 +2198,7 @@ static void setup_post_syscall_table ( void )
 #     if defined(__NR_connect)
       ADD(0, __NR_connect);
 #     endif
+      ADD(0, __NR_creat);
       ADD(0, __NR_dup);
       ADD(0, __NR_dup2);
       ADD(0, __NR_execve); /* presumably we see this because the call failed? */
@@ -2210,6 +2215,7 @@ static void setup_post_syscall_table ( void )
       ADD(0, __NR_fcntl64);
 #     endif
       ADD(0, __NR_fdatasync);
+      ADD(0, __NR_flock);
       ADD(0, __NR_fstat);
 #     if defined(__NR_fstat64)
       ADD(0, __NR_fstat64);
@@ -2246,12 +2252,14 @@ static void setup_post_syscall_table ( void )
       ADD(0, __NR_getresgid);
       ADD(0, __NR_getresuid);
       ADD(0, __NR_getrlimit);
+      ADD(0, __NR_getrusage);
 #     if defined(__NR_getsockname)
       ADD(0, __NR_getsockname);
 #     endif
 #     if defined(__NR_getsockopt)
       ADD(0, __NR_getsockopt);
 #     endif
+      ADD(0, __NR_gettid);
       ADD(0, __NR_gettimeofday);
       ADD(0, __NR_getuid);
 #     if defined(__NR_getuid32)
@@ -2262,6 +2270,7 @@ static void setup_post_syscall_table ( void )
       ADD(0, __NR_inotify_init);
       ADD(0, __NR_inotify_rm_watch);
       ADD(0, __NR_ioctl); // ioctl -- assuming no pointers returned
+      ADD(0, __NR_ioprio_get);
       ADD(0, __NR_kill);
       ADD(0, __NR_link);
 #     if defined(__NR_listen)
@@ -2274,6 +2283,7 @@ static void setup_post_syscall_table ( void )
 #     endif
       ADD(0, __NR_madvise);
       ADD(0, __NR_mkdir);
+      ADD(0, __NR_mlock);
       ADD(0, __NR_mprotect);
       ADD(0, __NR_munmap); // die_mem_munmap already called, segment remove);
       ADD(0, __NR_nanosleep);
@@ -2301,11 +2311,24 @@ static void setup_post_syscall_table ( void )
       ADD(0, __NR_sched_getaffinity);
       ADD(0, __NR_sched_getparam);
       ADD(0, __NR_sched_getscheduler);
+      ADD(0, __NR_sched_setaffinity);
       ADD(0, __NR_sched_setscheduler);
       ADD(0, __NR_sched_yield);
       ADD(0, __NR_select);
+#     if defined(__NR_semctl)
+      ADD(0, __NR_semctl);
+#     endif
+#     if defined(__NR_semget)
+      ADD(0, __NR_semget);
+#     endif
+#     if defined(__NR_semop)
+      ADD(0, __NR_semop);
+#     endif
 #     if defined(__NR_sendto)
       ADD(0, __NR_sendto);
+#     endif
+#     if defined(__NR_sendmsg)
+      ADD(0, __NR_sendmsg);
 #     endif
       ADD(0, __NR_set_robust_list);
 #     if defined(__NR_set_thread_area)
@@ -2326,6 +2349,7 @@ static void setup_post_syscall_table ( void )
 #     if defined(__NR_shutdown)
       ADD(0, __NR_shutdown);
 #     endif
+      ADD(0, __NR_sigaltstack);
 #     if defined(__NR_socket)
       ADD(0, __NR_socket);
 #     endif

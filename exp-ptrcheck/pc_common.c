@@ -397,7 +397,7 @@ void pc_pp_Error ( Error* err )
          VG_(pp_ExeContext)( VG_(get_error_where)(err) );
 
          VG_(message)(Vg_UserMsg, " Address %#lx is %ld bytes inside a "
-                                  "%ld-byte block alloc'd",
+                                  "%ld-byte block free'd",
                                   lo, lo-Seg__addr(seglo),
                                   Seg__size(seglo) );
          VG_(pp_ExeContext)(Seg__where(seglo));

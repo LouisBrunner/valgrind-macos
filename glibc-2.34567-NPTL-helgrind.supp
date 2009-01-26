@@ -1,4 +1,7 @@
 
+# FIXME 22 Jan 09: helgrind-glibc2X-005 overlaps with a lot of
+# other stuff.  They should be removed.
+
 ##----------------------------------------------------------------------##
 # Suppressions for the Helgrind tool when using 
 # a glibc-2.{3,4,5,6,7,8,9} system
@@ -40,7 +43,6 @@
 {
    helgrind-glibc2X-005
    Helgrind:Race
-   obj:/lib*/libpthread-2.*so*
    obj:/lib*/libpthread-2.*so*
 }
 

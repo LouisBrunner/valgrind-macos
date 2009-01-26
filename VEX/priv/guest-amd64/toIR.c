@@ -6594,7 +6594,8 @@ ULong dis_MMX ( Bool* decode_ok,
       case 0x68: 
       case 0x69: 
       case 0x6A: /* PUNPCKHgg (src)mmxreg-or-mem, (dst)mmxreg */
-         if (sz != 4) 
+         if (sz != 4
+             && /*ignore redundant REX.W*/!(sz==8 && haveNo66noF2noF3(pfx))) 
             goto mmx_decode_failure;
          delta = dis_MMXop_regmem_to_reg ( vbi, pfx, delta, opc, "punpckh", True );
          break;

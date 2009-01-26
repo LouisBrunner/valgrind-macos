@@ -2555,6 +2555,16 @@ static Int dwarfexpr_to_dag ( UnwindContext* ctx,
                VG_(printf)("DW_OP_breg%d: %ld", reg, sw);
             break;
 
+         case DW_OP_reg0 ... DW_OP_reg31:
+            /* push: reg */
+            reg = (Int)opcode - (Int)DW_OP_reg0;
+            vg_assert(reg >= 0 && reg <= 31);
+            ix = ML_(CfiExpr_DwReg)( dst, reg );
+            PUSH(ix);
+            if (ddump_frames)
+               VG_(printf)("DW_OP_reg%d", reg);
+            break;
+
          case DW_OP_plus_uconst:
             uw = read_leb128U( &expr );
             PUSH( ML_(CfiExpr_Const)( dst, uw ) );
@@ -2572,6 +2582,15 @@ static Int dwarfexpr_to_dag ( UnwindContext* ctx,
             PUSH( ML_(CfiExpr_Const)( dst, (UWord)sw ) );
             if (ddump_frames)
                VG_(printf)("DW_OP_const4s: %ld", sw);
+            break;
+
+         case DW_OP_const1s:
+            /* push: 8-bit signed immediate */
+            sw = read_le_s_encoded_literal( expr, 1 );
+            expr += 1;
+            PUSH( ML_(CfiExpr_Const)( dst, (UWord)sw ) );
+            if (ddump_frames)
+               VG_(printf)("DW_OP_const1s: %ld", sw);
             break;
 
          case DW_OP_minus:

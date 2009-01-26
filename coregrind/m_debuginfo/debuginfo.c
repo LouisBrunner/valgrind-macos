@@ -1928,7 +1928,7 @@ static Bool data_address_is_in_var ( /*OUT*/UWord* offset,
                                      DiVariable*   var,
                                      RegSummary*   regs,
                                      Addr          data_addr,
-                                     Addr          data_bias )
+                                     const DebugInfo* di )
 {
    MaybeULong mul;
    SizeT      var_szB;
@@ -1965,7 +1965,7 @@ static Bool data_address_is_in_var ( /*OUT*/UWord* offset,
       return False;
    }
 
-   res = ML_(evaluate_GX)( var->gexpr, var->fbGX, regs, data_bias );
+   res = ML_(evaluate_GX)( var->gexpr, var->fbGX, regs, di );
 
    if (show) {
       VG_(printf)("VVVV: -> ");
@@ -2243,7 +2243,7 @@ Bool consider_vars_in_frame ( /*OUT*/Char* dname1,
                         var->name,arange->aMin,arange->aMax,ip);
          if (data_address_is_in_var( &offset, di->admin_tyents,
                                      var, &regs,
-                                     data_addr, di->data_bias )) {
+                                     data_addr, di )) {
             OffT residual_offset = 0;
             XArray* described = ML_(describe_type)( &residual_offset,
                                                     di->admin_tyents, 
@@ -2342,7 +2342,7 @@ Bool VG_(get_data_description)( /*OUT*/Char* dname1,
             fail. */
          if (data_address_is_in_var( &offset, di->admin_tyents, var, 
                                      NULL/* RegSummary* */, 
-                                     data_addr, di->data_bias )) {
+                                     data_addr, di )) {
             OffT residual_offset = 0;
             XArray* described = ML_(describe_type)( &residual_offset,
                                                     di->admin_tyents,
@@ -2467,7 +2467,7 @@ Bool VG_(get_data_description)( /*OUT*/Char* dname1,
 static 
 void analyse_deps ( /*MOD*/XArray* /* of FrameBlock */ blocks,
                     XArray* /* TyEnt */ tyents,
-                    Addr ip, Addr data_bias, DiVariable* var,
+                    Addr ip, const DebugInfo* di, DiVariable* var,
                     Bool arrays_only )
 {
    GXResult   res_sp_6k, res_sp_7k, res_fp_6k, res_fp_7k;
@@ -2512,22 +2512,22 @@ void analyse_deps ( /*MOD*/XArray* /* of FrameBlock */ blocks,
    regs.fp   = 0;
    regs.ip   = ip;
    regs.sp   = 6 * 1024;
-   res_sp_6k = ML_(evaluate_GX)( var->gexpr, var->fbGX, &regs, data_bias );
+   res_sp_6k = ML_(evaluate_GX)( var->gexpr, var->fbGX, &regs, di );
 
    regs.fp   = 0;
    regs.ip   = ip;
    regs.sp   = 7 * 1024;
-   res_sp_7k = ML_(evaluate_GX)( var->gexpr, var->fbGX, &regs, data_bias );
+   res_sp_7k = ML_(evaluate_GX)( var->gexpr, var->fbGX, &regs, di );
 
    regs.fp   = 6 * 1024;
    regs.ip   = ip;
    regs.sp   = 0;
-   res_fp_6k = ML_(evaluate_GX)( var->gexpr, var->fbGX, &regs, data_bias );
+   res_fp_6k = ML_(evaluate_GX)( var->gexpr, var->fbGX, &regs, di );
 
    regs.fp   = 7 * 1024;
    regs.ip   = ip;
    regs.sp   = 0;
-   res_fp_7k = ML_(evaluate_GX)( var->gexpr, var->fbGX, &regs, data_bias );
+   res_fp_7k = ML_(evaluate_GX)( var->gexpr, var->fbGX, &regs, di );
 
    vg_assert(res_sp_6k.kind == res_sp_7k.kind);
    vg_assert(res_sp_6k.kind == res_fp_6k.kind);
@@ -2549,7 +2549,7 @@ void analyse_deps ( /*MOD*/XArray* /* of FrameBlock */ blocks,
       if (sp_delta == 1024 && fp_delta == 0) {
          regs.sp = regs.fp = 0;
          regs.ip = ip;
-         res = ML_(evaluate_GX)( var->gexpr, var->fbGX, &regs, data_bias );
+         res = ML_(evaluate_GX)( var->gexpr, var->fbGX, &regs, di );
          tl_assert(res.kind == GXR_Value);
          if (debug)
          VG_(printf)("   %5ld .. %5ld (sp) %s\n",
@@ -2568,7 +2568,7 @@ void analyse_deps ( /*MOD*/XArray* /* of FrameBlock */ blocks,
       if (sp_delta == 0 && fp_delta == 1024) {
          regs.sp = regs.fp = 0;
          regs.ip = ip;
-         res = ML_(evaluate_GX)( var->gexpr, var->fbGX, &regs, data_bias );
+         res = ML_(evaluate_GX)( var->gexpr, var->fbGX, &regs, di );
          tl_assert(res.kind == GXR_Value);
          if (debug)
          VG_(printf)("   %5ld .. %5ld (FP) %s\n",
@@ -2698,7 +2698,7 @@ void* /* really, XArray* of StackBlock */
             VG_(printf)("QQQQ:    var:name=%s %#lx-%#lx %#lx\n", 
                         var->name,arange->aMin,arange->aMax,ip);
          analyse_deps( res, di->admin_tyents, ip,
-                       di->data_bias, var, arrays_only );
+                       di, var, arrays_only );
       }
    }
 
@@ -2781,7 +2781,7 @@ void* /* really, XArray* of GlobalBlock */
                it. */
             if (0) { VG_(printf)("EVAL: "); ML_(pp_GX)(var->gexpr);
                      VG_(printf)("\n"); }
-            res = ML_(evaluate_trivial_GX)( var->gexpr, di->data_bias );
+            res = ML_(evaluate_trivial_GX)( var->gexpr, di );
 
             /* Not a constant address => not interesting */
             if (res.kind != GXR_Value) {

@@ -35,6 +35,7 @@
 */
 
 #include "pub_core_basics.h"
+#include "pub_core_debuginfo.h"
 #include "pub_core_libcassert.h"
 #include "pub_core_libcprint.h"
 #include "pub_core_options.h"
@@ -45,6 +46,7 @@
 
 #include "priv_misc.h"
 #include "priv_d3basics.h"      /* self */
+#include "priv_storage.h"
 
 HChar* ML_(pp_DW_children) ( DW_children hashch )
 {
@@ -372,7 +374,6 @@ static Long read_leb128S( UChar **data )
    return (Long)val;
 }
 
-
 /* FIXME: duplicates logic in readdwarf.c: copy_convert_CfiExpr_tree
    and {FP,SP}_REG decls */
 static Bool get_Dwarf_Reg( /*OUT*/Addr* a, Word regno, RegSummary* regs )
@@ -400,12 +401,52 @@ static Bool get_Dwarf_Reg( /*OUT*/Addr* a, Word regno, RegSummary* regs )
    return False;
 }
 
+/* Convert a stated address to an actual address */
+static Bool bias_address( Addr* a, const DebugInfo* di )
+{
+   if (di->text_present
+       && di->text_size > 0
+       && *a >= di->text_svma && *a < di->text_svma + di->text_size) {
+      *a += di->text_bias;
+   }
+   else if (di->data_present
+            && di->data_size > 0
+            && *a >= di->data_svma && *a < di->data_svma + di->data_size) {
+      *a += di->data_bias;
+   }
+   else if (di->sdata_present
+            && di->sdata_size > 0
+            && *a >= di->sdata_svma && *a < di->sdata_svma + di->sdata_size) {
+      *a += di->sdata_bias;
+   }
+   else if (di->rodata_present
+            && di->rodata_size > 0
+            && *a >= di->rodata_svma && *a < di->rodata_svma + di->rodata_size) {
+      *a += di->rodata_bias;
+   }
+   else if (di->bss_present
+            && di->bss_size > 0
+            && *a >= di->bss_svma && *a < di->bss_svma + di->bss_size) {
+      *a += di->bss_bias;
+   }
+   else if (di->sbss_present
+            && di->sbss_size > 0
+            && *a >= di->sbss_svma && *a < di->sbss_svma + di->sbss_size) {
+      *a += di->sbss_bias;
+   }
+   else {
+      return False;
+   }
+
+   return True;
+}
+
 
 /* Evaluate a standard DWARF3 expression.  See detailed description in
    priv_d3basics.h. */
 GXResult ML_(evaluate_Dwarf3_Expr) ( UChar* expr, UWord exprszB, 
                                      GExpr* fbGX, RegSummary* regs,
-                                     Addr data_bias,
+                                     const DebugInfo* di,
                                      Bool push_initial_zero )
 {
 #  define N_EXPR_STACK 20
@@ -508,14 +549,21 @@ GXResult ML_(evaluate_Dwarf3_Expr) ( UChar* expr, UWord exprszB,
                horrible prelinking-induced complications as described
                in "Comment_Regarding_DWARF3_Text_Biasing" in
                readdwarf3.c?  Currently I don't know. */
-            PUSH( *(Addr*)expr + data_bias ); 
-            expr += sizeof(Addr);
+            a1 = *(Addr*)expr;
+            if (bias_address(&a1, di)) {
+               PUSH( a1 ); 
+               expr += sizeof(Addr);
+            }
+            else {
+               FAIL("evaluate_Dwarf3_Expr: DW_OP_addr with address "
+                    "in unknown section");
+            }
             break;
          case DW_OP_fbreg:
             if (!fbGX)
                FAIL("evaluate_Dwarf3_Expr: DW_OP_fbreg with "
                     "no expr for fbreg present");
-            fbval = ML_(evaluate_GX)(fbGX, NULL, regs, data_bias);
+            fbval = ML_(evaluate_GX)(fbGX, NULL, regs, di);
             /* Convert fbval into something we can use.  If we got a
                Value, no problem.  However, as per D3 spec sec 3.3.5
                (Low Level Information) sec 2, we could also get a
@@ -621,7 +669,7 @@ GXResult ML_(evaluate_Dwarf3_Expr) ( UChar* expr, UWord exprszB,
 /* Evaluate a so-called Guarded (DWARF3) expression.  See detailed
    description in priv_d3basics.h. */
 GXResult ML_(evaluate_GX)( GExpr* gx, GExpr* fbGX,
-                           RegSummary* regs, Addr data_bias )
+                           RegSummary* regs, const DebugInfo* di )
 {
    GXResult res;
    Addr     aMin, aMax;
@@ -655,7 +703,7 @@ GXResult ML_(evaluate_GX)( GExpr* gx, GExpr* fbGX,
          /* Assert this is the first guard. */
          vg_assert(nGuards == 1);
          res = ML_(evaluate_Dwarf3_Expr)(
-                  p, (UWord)nbytes, fbGX, regs, data_bias,
+                  p, (UWord)nbytes, fbGX, regs, di,
                   False/*push_initial_zero*/ );
          /* Now check there are no more guards. */
          p += (UWord)nbytes;
@@ -665,7 +713,7 @@ GXResult ML_(evaluate_GX)( GExpr* gx, GExpr* fbGX,
          if (aMin <= regs->ip && regs->ip <= aMax) {
             /* found a matching range.  Evaluate the expression. */
             return ML_(evaluate_Dwarf3_Expr)(
-                      p, (UWord)nbytes, fbGX, regs, data_bias,
+                      p, (UWord)nbytes, fbGX, regs, di,
                       False/*push_initial_zero*/ );
          }
       }
@@ -689,7 +737,7 @@ GXResult ML_(evaluate_GX)( GExpr* gx, GExpr* fbGX,
    * there's more than one subexpression, all of which successfully
      evaluate to a constant, but they don't all produce the same constant.
  */
-GXResult ML_(evaluate_trivial_GX)( GExpr* gx, Addr data_bias )
+GXResult ML_(evaluate_trivial_GX)( GExpr* gx, const DebugInfo* di )
 {
    GXResult   res;
    Addr       aMin, aMax;
@@ -730,8 +778,14 @@ GXResult ML_(evaluate_trivial_GX)( GExpr* gx, Addr data_bias )
       /* Peer at this particular subexpression, to see if it's
          obviously a constant. */
       if (nbytes == 1 + sizeof(Addr) && *p == DW_OP_addr) {
-         thisResult.b  = True;
-         thisResult.ul = (ULong)(*(Addr*)(p+1)) + (ULong)data_bias;
+         Addr a = *(Addr*)(p+1);
+         if (bias_address(&a, di)) {
+            thisResult.b = True;
+            thisResult.ul = (ULong)a;
+         }
+         else if (!badness) {
+            badness = "trivial GExpr denotes constant address in unknown section";
+         }
       }
       else if (nbytes == 2 + sizeof(Addr) 
                && *p == DW_OP_addr

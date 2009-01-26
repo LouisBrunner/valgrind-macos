@@ -69,6 +69,18 @@
 
 
 
+#define STRNLEN(soname, fnname) \
+   SizeT VG_REPLACE_FUNCTION_ZU(soname,fnname) ( const char* str, SizeT n ); \
+   SizeT VG_REPLACE_FUNCTION_ZU(soname,fnname) ( const char* str, SizeT n ) \
+   { \
+      SizeT i = 0; \
+      while (i < n && str[i] != 0) i++; \
+      return i; \
+   }
+
+STRNLEN(m_libc_soname, strnlen)
+
+
 // Note that this replacement often doesn't get used because gcc inlines
 // calls to strlen() with its own built-in version.  This can be very
 // confusing if you aren't expecting it.  Other small functions in this file

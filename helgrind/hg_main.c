@@ -2849,6 +2849,21 @@ static WordFM* laog_exposition = NULL; /* WordFM LAOGLinkExposition* NULL */
 /* end EXPOSITION ONLY */
 
 
+__attribute__((noinline))
+static void laog__init ( void )
+{
+   tl_assert(!laog);
+   tl_assert(!laog_exposition);
+
+   laog = VG_(newFM)( HG_(zalloc), "hg.laog__init.1", 
+                      HG_(free), NULL/*unboxedcmp*/ );
+
+   laog_exposition = VG_(newFM)( HG_(zalloc), "hg.laog__init.2", HG_(free), 
+                                 cmp_LAOGLinkExposition );
+   tl_assert(laog);
+   tl_assert(laog_exposition);
+}
+
 static void laog__show ( Char* who ) {
    Word i, ws_size;
    UWord* ws_words;
@@ -3015,8 +3030,8 @@ static void laog__sanity_check ( Char* who ) {
    UWord* ws_words;
    Lock* me;
    LAOGLinks* links;
-   if ( !laog )
-      return; /* nothing much we can do */
+   if (UNLIKELY(!laog || !laog_exposition))
+      laog__init();
    VG_(initIterFM)( laog );
    me = NULL;
    links = NULL;
@@ -3128,12 +3143,8 @@ static void laog__pre_thread_acquires_lock (
    if (HG_(elemWS)( univ_lsets, thr->locksetA, (Word)lk ))
       return;
 
-   if (!laog)
-      laog = VG_(newFM)( HG_(zalloc), "hg.lptal.1", 
-                         HG_(free), NULL/*unboxedcmp*/ );
-   if (!laog_exposition)
-      laog_exposition = VG_(newFM)( HG_(zalloc), "hg.lptal.2", HG_(free), 
-                                    cmp_LAOGLinkExposition );
+   if (UNLIKELY(!laog || !laog_exposition))
+      laog__init();
 
    /* First, the check.  Complain if there is any path in laog from lk
       to any of the locks already held by thr, since if any such path
@@ -3206,6 +3217,9 @@ static void laog__handle_one_lock_deletion ( Lock* lk )
    Word preds_size, succs_size, i, j;
    UWord *preds_words, *succs_words;
 
+   if (UNLIKELY(!laog || !laog_exposition))
+      laog__init();
+
    preds = laog__preds( lk );
    succs = laog__succs( lk );
 
@@ -3237,11 +3251,8 @@ static void laog__handle_one_lock_deletion ( Lock* lk )
 //   Word   i, ws_size;
 //   UWord* ws_words;
 //
-//   if (!laog)
-//      laog = VG_(newFM)( HG_(zalloc), "hg.lhld.1", HG_(free), NULL/*unboxedcmp*/ );
-//   if (!laog_exposition)
-//      laog_exposition = VG_(newFM)( HG_(zalloc), "hg.lhld.2", HG_(free), 
-//                                    cmp_LAOGLinkExposition );
+//   if (UNLIKELY(!laog || !laog_exposition))
+//      laog__init();
 //
 //   HG_(getPayloadWS)( &ws_words, &ws_size, univ_lsets, locksToDelete );
 //   for (i = 0; i < ws_size; i++)

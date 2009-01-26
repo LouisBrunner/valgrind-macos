@@ -220,13 +220,6 @@ static Word StackBlocks__cmp ( XArray* fb1s, XArray* fb2s )
    return 0;
 }
 
-static void pp_StackBlock ( StackBlock* sb )
-{
-   VG_(printf)("StackBlock{ off %ld szB %lu spRel:%c isVec:%c \"%s\" }",
-               sb->base, sb->szB, sb->spRel ? 'Y' : 'N',
-               sb->isVec ? 'Y' : 'N', &sb->name[0] );
-}
-
 static void pp_StackBlocks ( XArray* sbs )
 {
    Word i, n = VG_(sizeXA)( sbs );

@@ -24,6 +24,7 @@ EXTRA_DIST = $(noinst_SCRIPTS) \
 	chdir.vgtest chdir.stderr.exp \
 	clreq.vgtest clreq.stderr.exp \
 	dlclose.vgtest dlclose.stderr.exp dlclose.stdout.exp \
+	notpower2.vgtest notpower2.stderr.exp \
 	wrap5.vgtest wrap5.stderr.exp wrap5.stdout.exp
 
 check_PROGRAMS = \

@@ -1,6 +1,6 @@
 
 /*--------------------------------------------------------------------*/
-/*--- x86-specific definitions.                           cg-x86.c ---*/
+/*--- x86-specific (and AMD64-specific) definitions.      cg-x86.c ---*/
 /*--------------------------------------------------------------------*/
 
 /*
@@ -113,12 +113,7 @@ Int Intel_cache_info(Int level, cache_t* I1c, cache_t* D1c, cache_t* L2c)
 
       case 0x0a: *D1c = (cache_t) {  8, 2, 32 }; break;
       case 0x0c: *D1c = (cache_t) { 16, 4, 32 }; break;
-      case 0x0e:
-         /* Real D1 cache configuration is:
-            D1c = (cache_t) { 24, 6, 64 }; */
-         VG_(message)(Vg_DebugMsg, "warning: 24Kb D1 cache detected, treating as 16Kb");
-         *D1c = (cache_t) { 16, 4, 64 };
-         break;
+      case 0x0e: *D1c = (cache_t) { 24, 6, 64 }; break;
       case 0x2c: *D1c = (cache_t) { 32, 8, 64 }; break;
 
       /* IA-64 info -- panic! */
@@ -149,12 +144,7 @@ Int Intel_cache_info(Int level, cache_t* I1c, cache_t* D1c, cache_t* L2c)
       case 0x43: *L2c = (cache_t) {  512, 4, 32 }; L2_found = True; break;
       case 0x44: *L2c = (cache_t) { 1024, 4, 32 }; L2_found = True; break;
       case 0x45: *L2c = (cache_t) { 2048, 4, 32 }; L2_found = True; break;
-      case 0x48:
-         /* Real L2 cache configuration is:
-            *L2c = (cache_t) { 3072, 12, 64 }; L2_found = True; */
-         VG_(message)(Vg_DebugMsg, "warning: 3Mb L2 cache detected, treating as 2Mb");
-         *L2c = (cache_t) { 2048, 8, 64 }; L2_found = True;
-         break;
+      case 0x48: *L2c = (cache_t) { 3072,12, 64 }; L2_found = True; break;
       case 0x49:
 	  if ((family == 15) && (model == 6))
 	      /* On Xeon MP (family F, model 6), this is for L3 */
@@ -163,12 +153,7 @@ Int Intel_cache_info(Int level, cache_t* I1c, cache_t* D1c, cache_t* L2c)
 	  else
 	      *L2c = (cache_t) { 4096, 16, 64 }; L2_found = True;
 	  break;
-      case 0x4e:
-         /* Real L2 cache configuration is:
-            *L2c = (cache_t) { 6144, 24, 64 }; L2_found = True; */
-         VG_(message)(Vg_DebugMsg, "warning: 6Mb L2 cache detected, treating as 4Mb");
-         *L2c = (cache_t) { 4096, 16, 64 }; L2_found = True;
-         break;
+      case 0x4e: *L2c = (cache_t) { 6144, 24, 64 }; L2_found = True; break;
 
       /* These are sectored, whatever that means */
       case 0x60: *D1c = (cache_t) { 16, 8, 64 };  break;      /* sectored */

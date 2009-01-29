@@ -74,7 +74,6 @@ typedef struct {
    Bool         sectored;  /* prefetch nearside cacheline on read */
    int          sets;
    int          sets_min_1;
-   int          assoc_bits;
    int          line_size_bits;
    int          tag_shift;
    UWord        tag_mask;
@@ -195,7 +194,6 @@ static void cachesim_initcache(cache_t config, cache_t2* c)
 
    c->sets           = (c->size / c->line_size) / c->assoc;
    c->sets_min_1     = c->sets - 1;
-   c->assoc_bits     = VG_(log2)(c->assoc);
    c->line_size_bits = VG_(log2)(c->line_size);
    c->tag_shift      = c->line_size_bits + VG_(log2)(c->sets);
    c->tag_mask       = ~((1<<c->tag_shift)-1);
@@ -259,8 +257,7 @@ CacheResult cachesim_setref(cache_t2* c, UInt set_no, UWord tag)
     int i, j;
     UWord *set;
 
-    /* Shifting is a bit faster than multiplying */
-    set = &(c->tags[set_no << c->assoc_bits]);
+    set = &(c->tags[set_no * c->assoc]);
 
     /* This loop is unrolled for just the first case, which is the most */
     /* common.  We can't unroll any further because it would screw up   */
@@ -359,8 +356,7 @@ CacheResult cachesim_setref_wb(cache_t2* c, RefType ref, UInt set_no, UWord tag)
     int i, j;
     UWord *set, tmp_tag;
 
-    /* Shifting is a bit faster than multiplying */
-    set = &(c->tags[set_no << c->assoc_bits]);
+    set = &(c->tags[set_no * c->assoc]);
 
     /* This loop is unrolled for just the first case, which is the most */
     /* common.  We can't unroll any further because it would screw up   */
@@ -407,7 +403,7 @@ CacheResult cachesim_ref_wb(cache_t2* c, RefType ref, Addr a, UChar size)
     /* Access straddles two lines. */
     /* Nb: this is a fast way of doing ((set1+1) % c->sets) */
     else if (((set1 + 1) & (c->sets-1)) == set2) {
-	UWord tag2  = (a+size-1) >> c->tag_shift;
+	UWord tag2  = (a+size-1) & c->tag_mask;
 
 	/* the call updates cache structures as side effect */
 	CacheResult res1 =  cachesim_setref_wb(c, ref, set1, tag);
@@ -676,7 +672,7 @@ void cacheuse_initcache(cache_t2* c)
     /* We use lower tag bits as offset pointers to cache use info.
      * I.e. some cache parameters don't work.
      */
-    if (c->tag_shift < c->assoc_bits) {
+    if ( (1<<c->tag_shift) < c->assoc) {
 	VG_(message)(Vg_DebugMsg,
 		     "error: Use associativity < %d for cache use statistics!",
 		     (1<<c->tag_shift) );
@@ -684,102 +680,6 @@ void cacheuse_initcache(cache_t2* c)
     }
 }
     
-/* FIXME: A little tricky */
-#if 0
-
-static __inline__
-void cacheuse_update_hit(cache_t2* c, UInt high_idx, UInt low_idx, UInt use_mask)
-{
-    int idx = (high_idx << c->assoc_bits) | low_idx;
-
-    c->use[idx].count ++;
-    c->use[idx].mask |= use_mask;
-
-    CLG_DEBUG(6," Hit [idx %d] (line %#lx from %#lx): %x => %08x, count %d\n",
-	      idx, c->loaded[idx].memline,  c->loaded[idx].iaddr,
-	      use_mask, c->use[idx].mask, c->use[idx].count);
-}
-
-/* only used for I1, D1 */
-
-static __inline__
-CacheResult cacheuse_setref(cache_t2* c, UInt set_no, UWord tag)
-{
-    int i, j, idx;
-    UWord *set, tmp_tag;
-    UInt use_mask;
-
-    /* Shifting is a bit faster than multiplying */
-    set = &(c->tags[set_no << c->assoc_bits]);
-    use_mask =
-	c->line_start_mask[a & c->line_size_mask] &
-	c->line_end_mask[(a+size-1) & c->line_size_mask];
-
-    /* This loop is unrolled for just the first case, which is the most */
-    /* common.  We can't unroll any further because it would screw up   */
-    /* if we have a direct-mapped (1-way) cache.                        */
-    if (tag == (set[0] & c->tag_mask)) {
-	cacheuse_update(c, set_no, set[0] & ~c->tag_mask, use_mask);
-	return L1_Hit;
-    }
-
-    /* If the tag is one other than the MRU, move it into the MRU spot  */
-    /* and shuffle the rest down.                                       */
-    for (i = 1; i < c->assoc; i++) {
-	if (tag == (set[i] & c->tag_mask)) {
-  	    tmp_tag = set[i];
-            for (j = i; j > 0; j--) {
-                set[j] = set[j - 1];
-            }
-            set[0] = tmp_tag;
-
-	    cacheuse_update(c, set_no, tmp_tag & ~c->tag_mask, use_mask);
-            return L1_Hit;
-        }
-    }
-
-    /* A miss;  install this tag as MRU, shuffle rest down. */
-    tmp_tag = set[L.assoc - 1] & ~c->tag_mask;
-    for (j = c->assoc - 1; j > 0; j--) {
-        set[j] = set[j - 1];
-    }
-    set[0] = tag | tmp_tag;
-
-    cacheuse_L2_miss(c, (set_no << c->assoc_bits) | tmp_tag,
-		     use_mask, a & ~c->line_size_mask);
-
-    return Miss;
-}
-
-
-static CacheResult cacheuse_ref(cache_t2* c, Addr a, UChar size)
-{
-    UInt  set1 = ( a         >> c->line_size_bits) & (c->sets_min_1);
-    UInt  set2 = ((a+size-1) >> c->line_size_bits) & (c->sets_min_1);
-    UWord tag  = a >> c->tag_shift;
-
-    /* Access entirely within line. */
-    if (set1 == set2) 
-	return cacheuse_setref(c, set1, tag);
-
-    /* Access straddles two lines. */
-    /* Nb: this is a fast way of doing ((set1+1) % c->sets) */
-    else if (((set1 + 1) & (c->sets-1)) == set2) {
-	UWord tag2  = a >> c->tag_shift;
-
-	/* the call updates cache structures as side effect */
-	CacheResult res1 =  cacheuse_isMiss(c, set1, tag);
-	CacheResult res2 =  cacheuse_isMiss(c, set2, tag2);
-	return ((res1 == Miss) || (res2 == Miss)) ? Miss : Hit;
-
-   } else {
-       VG_(printf)("addr: %x  size: %u  sets: %d %d", a, size, set1, set2);
-       VG_(tool_panic)("item straddles more than two cache sets");
-   }
-   return Hit;
-}
-#endif
-
 
 /* for I1/D1 caches */
 #define CACHEUSE(L)                                                         \
@@ -800,8 +700,7 @@ static CacheModelResult cacheuse##_##L##_doRead(Addr a, UChar size)         \
    /* First case: word entirely within line. */                             \
    if (set1 == set2) {                                                      \
                                                                             \
-      /* Shifting is a bit faster than multiplying */                       \
-      set = &(L.tags[set1 << L.assoc_bits]);                                \
+      set = &(L.tags[set1 * L.assoc]);                                      \
       use_mask = L.line_start_mask[a & L.line_size_mask] &                  \
 	         L.line_end_mask[(a+size-1) & L.line_size_mask];	    \
                                                                             \
@@ -809,7 +708,7 @@ static CacheModelResult cacheuse##_##L##_doRead(Addr a, UChar size)         \
       /* common.  We can't unroll any further because it would screw up   */\
       /* if we have a direct-mapped (1-way) cache.                        */\
       if (tag == (set[0] & L.tag_mask)) {                                   \
-        idx = (set1 << L.assoc_bits) | (set[0] & ~L.tag_mask);              \
+        idx = (set1 * L.assoc) + (set[0] & ~L.tag_mask);                    \
         L.use[idx].count ++;                                                \
         L.use[idx].mask |= use_mask;                                        \
 	CLG_DEBUG(6," Hit0 [idx %d] (line %#lx from %#lx): %x => %08x, count %d\n",\
@@ -826,7 +725,7 @@ static CacheModelResult cacheuse##_##L##_doRead(Addr a, UChar size)         \
                set[j] = set[j - 1];                                         \
             }                                                               \
             set[0] = tmp_tag;			                            \
-            idx = (set1 << L.assoc_bits) | (tmp_tag & ~L.tag_mask);         \
+            idx = (set1 * L.assoc) + (tmp_tag & ~L.tag_mask);               \
             L.use[idx].count ++;                                            \
             L.use[idx].mask |= use_mask;                                    \
 	CLG_DEBUG(6," Hit%d [idx %d] (line %#lx from %#lx): %x => %08x, count %d\n",\
@@ -842,7 +741,7 @@ static CacheModelResult cacheuse##_##L##_doRead(Addr a, UChar size)         \
          set[j] = set[j - 1];                                               \
       }                                                                     \
       set[0] = tag | tmp_tag;                                               \
-      idx = (set1 << L.assoc_bits) | tmp_tag;                               \
+      idx = (set1 * L.assoc) + tmp_tag;                                     \
       return update_##L##_use(&L, idx,         			            \
 		       use_mask, a &~ L.line_size_mask);		    \
                                                                             \
@@ -850,10 +749,10 @@ static CacheModelResult cacheuse##_##L##_doRead(Addr a, UChar size)         \
    /* Nb: this is a fast way of doing ((set1+1) % L.sets) */                \
    } else if (((set1 + 1) & (L.sets-1)) == set2) {                          \
       Int miss1=0, miss2=0; /* 0: L1 hit, 1:L1 miss, 2:L2 miss */           \
-      set = &(L.tags[set1 << L.assoc_bits]);                                \
+      set = &(L.tags[set1 * L.assoc]);                                      \
       use_mask = L.line_start_mask[a & L.line_size_mask];		    \
       if (tag == (set[0] & L.tag_mask)) {                                   \
-         idx = (set1 << L.assoc_bits) | (set[0] & ~L.tag_mask);             \
+         idx = (set1 * L.assoc) + (set[0] & ~L.tag_mask);                   \
          L.use[idx].count ++;                                               \
          L.use[idx].mask |= use_mask;                                       \
 	CLG_DEBUG(6," Hit0 [idx %d] (line %#lx from %#lx): %x => %08x, count %d\n",\
@@ -868,7 +767,7 @@ static CacheModelResult cacheuse##_##L##_doRead(Addr a, UChar size)         \
                set[j] = set[j - 1];                                         \
             }                                                               \
             set[0] = tmp_tag;                                               \
-            idx = (set1 << L.assoc_bits) | (tmp_tag & ~L.tag_mask);         \
+            idx = (set1 * L.assoc) + (tmp_tag & ~L.tag_mask);               \
             L.use[idx].count ++;                                            \
             L.use[idx].mask |= use_mask;                                    \
 	CLG_DEBUG(6," Hit%d [idx %d] (line %#lx from %#lx): %x => %08x, count %d\n",\
@@ -882,15 +781,15 @@ static CacheModelResult cacheuse##_##L##_doRead(Addr a, UChar size)         \
          set[j] = set[j - 1];                                               \
       }                                                                     \
       set[0] = tag | tmp_tag;                                               \
-      idx = (set1 << L.assoc_bits) | tmp_tag;                               \
+      idx = (set1 * L.assoc) + tmp_tag;                                     \
       miss1 = update_##L##_use(&L, idx,        			            \
 		       use_mask, a &~ L.line_size_mask);		    \
 block2:                                                                     \
-      set = &(L.tags[set2 << L.assoc_bits]);                                \
+      set = &(L.tags[set2 * L.assoc]);                                      \
       use_mask = L.line_end_mask[(a+size-1) & L.line_size_mask];  	    \
       tag2  = (a+size-1) & L.tag_mask;                                      \
       if (tag2 == (set[0] & L.tag_mask)) {                                  \
-         idx = (set2 << L.assoc_bits) | (set[0] & ~L.tag_mask);             \
+         idx = (set2 * L.assoc) + (set[0] & ~L.tag_mask);                   \
          L.use[idx].count ++;                                               \
          L.use[idx].mask |= use_mask;                                       \
 	CLG_DEBUG(6," Hit0 [idx %d] (line %#lx from %#lx): %x => %08x, count %d\n",\
@@ -905,7 +804,7 @@ block2:                                                                     \
                set[j] = set[j - 1];                                         \
             }                                                               \
             set[0] = tmp_tag;                                               \
-            idx = (set2 << L.assoc_bits) | (tmp_tag & ~L.tag_mask);         \
+            idx = (set2 * L.assoc) + (tmp_tag & ~L.tag_mask);               \
             L.use[idx].count ++;                                            \
             L.use[idx].mask |= use_mask;                                    \
 	CLG_DEBUG(6," Hit%d [idx %d] (line %#lx from %#lx): %x => %08x, count %d\n",\
@@ -919,7 +818,7 @@ block2:                                                                     \
          set[j] = set[j - 1];                                               \
       }                                                                     \
       set[0] = tag2 | tmp_tag;                                              \
-      idx = (set2 << L.assoc_bits) | tmp_tag;                               \
+      idx = (set2 * L.assoc) + tmp_tag;                                     \
       miss2 = update_##L##_use(&L, idx,			                    \
 		       use_mask, (a+size-1) &~ L.line_size_mask);	    \
       return (miss1==MemAccess || miss2==MemAccess) ? MemAccess:L2_Hit;     \
@@ -984,7 +883,7 @@ static
 CacheModelResult cacheuse_L2_access(Addr memline, line_loaded* l1_loaded)
 {
    UInt setNo = (memline >> L2.line_size_bits) & (L2.sets_min_1);
-   UWord* set = &(L2.tags[setNo << L2.assoc_bits]);
+   UWord* set = &(L2.tags[setNo * L2.assoc]);
    UWord tag  = memline & L2.tag_mask;
 
    int i, j, idx;
@@ -993,7 +892,7 @@ CacheModelResult cacheuse_L2_access(Addr memline, line_loaded* l1_loaded)
    CLG_DEBUG(6,"L2.Acc(Memline %#lx): Set %d\n", memline, setNo);
 
    if (tag == (set[0] & L2.tag_mask)) {
-     idx = (setNo << L2.assoc_bits) | (set[0] & ~L2.tag_mask);
+     idx = (setNo * L2.assoc) + (set[0] & ~L2.tag_mask);
      l1_loaded->dep_use = &(L2.use[idx]);
 
      CLG_DEBUG(6," Hit0 [idx %d] (line %#lx from %#lx): => %08x, count %d\n",
@@ -1008,7 +907,7 @@ CacheModelResult cacheuse_L2_access(Addr memline, line_loaded* l1_loaded)
 	 set[j] = set[j - 1];
        }
        set[0] = tmp_tag;
-       idx = (setNo << L2.assoc_bits) | (tmp_tag & ~L2.tag_mask);
+       idx = (setNo * L2.assoc) + (tmp_tag & ~L2.tag_mask);
        l1_loaded->dep_use = &(L2.use[idx]);
 
 	CLG_DEBUG(6," Hit%d [idx %d] (line %#lx from %#lx): => %08x, count %d\n",
@@ -1024,7 +923,7 @@ CacheModelResult cacheuse_L2_access(Addr memline, line_loaded* l1_loaded)
      set[j] = set[j - 1];
    }
    set[0] = tag | tmp_tag;
-   idx = (setNo << L2.assoc_bits) | tmp_tag;
+   idx = (setNo * L2.assoc) + tmp_tag;
    l1_loaded->dep_use = &(L2.use[idx]);
 
    update_L2_use(idx, memline);
@@ -1380,22 +1279,15 @@ static cache_t clo_L2_cache = UNDEFINED_CACHE;
 static
 void check_cache(cache_t* cache, Char *name)
 {
-   /* First check they're all powers of two */
-   if (-1 == VG_(log2)(cache->size)) {
+   /* Simulator requires line size and set count to be powers of two */
+   if (( cache->size % (cache->line_size * cache->assoc) != 0) ||
+       (-1 == VG_(log2)(cache->size/cache->line_size/cache->assoc))) {
       VG_(message)(Vg_UserMsg,
-         "error: %s size of %dB not a power of two; aborting.",
-         name, cache->size);
-      VG_(exit)(1);
+         "error: %s set count not a power of two; aborting.",
+         name);
    }
 
-   if (-1 == VG_(log2)(cache->assoc)) {
-      VG_(message)(Vg_UserMsg,
-         "error: %s associativity of %d not a power of two; aborting.",
-         name, cache->assoc);
-      VG_(exit)(1);
-   }
-
-  if (-1 == VG_(log2)(cache->line_size)) {
+   if (-1 == VG_(log2)(cache->line_size)) {
       VG_(message)(Vg_UserMsg,
          "error: %s line size of %dB not a power of two; aborting.",
          name, cache->line_size);

@@ -676,6 +676,8 @@ Bool VG_(findBoundsFM)( WordFM* fm,
                         UWord maxKey, UWord maxVal,
                         UWord key )
 {
+   /* really we should assert that minKey <= key <= maxKey,
+      where <= is as defined by fm->kCmp. */
    return avl_find_bounds( fm->root, kMinP, vMinP,
                                      kMaxP, vMaxP,
                                      minKey, minVal, 

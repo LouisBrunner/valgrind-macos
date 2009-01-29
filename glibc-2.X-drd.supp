@@ -48,6 +48,11 @@
    fun:backtrace_symbols
 }
 {
+   libc-stdio
+   drd:ConflictingAccess
+   obj:/lib*/libc-*
+}
+{
    libc
    drd:ConflictingAccess
    fun:__libc_enable_asynccancel

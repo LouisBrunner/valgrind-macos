@@ -854,7 +854,7 @@ static Seg* get_Seg_containing_addr( Addr a )
          points to a real block, which must have a start address
          greater than a. */
       tl_assert(kMax == ((Seg*)vMax)->addr);
-      if (kMax == (UWord)&maxSeg) {
+      if (vMax == (UWord)&maxSeg) {
          /* nothing we can check */
       } else {
          tl_assert(a < kMax); /* hence also a < ((Seg*)vMax)->addr */
@@ -2242,6 +2242,7 @@ static void setup_post_syscall_table ( void )
 #     if defined(__NR_getgid32)
       ADD(0, __NR_getgid32);
 #     endif
+      ADD(0, __NR_getgroups);
       ADD(0, __NR_getitimer);
 #     if defined(__NR_getpeername)
       ADD(0, __NR_getpeername);
@@ -2335,13 +2336,18 @@ static void setup_post_syscall_table ( void )
       ADD(0, __NR_set_thread_area);
 #     endif
       ADD(0, __NR_set_tid_address);
+      ADD(0, __NR_setfsgid);
+      ADD(0, __NR_setfsuid);
+      ADD(0, __NR_setgid);
       ADD(0, __NR_setitimer);
       ADD(0, __NR_setpgid);
+      ADD(0, __NR_setresgid);
       ADD(0, __NR_setrlimit);
       ADD(0, __NR_setsid);
 #     if defined(__NR_setsockopt)
       ADD(0, __NR_setsockopt);
 #     endif
+      ADD(0, __NR_setuid);
 #     if defined(__NR_shmctl)
       ADD(0, __NR_shmctl);
       ADD(0, __NR_shmdt);

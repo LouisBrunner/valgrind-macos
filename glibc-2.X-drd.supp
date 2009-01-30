@@ -21,7 +21,6 @@
    drd:ConflictingAccess
    obj:/lib*/ld-*.so
    obj:/lib*/ld-*.so
-   obj:/lib*/ld-*.so
 }
 {
    dl-dlsym-1

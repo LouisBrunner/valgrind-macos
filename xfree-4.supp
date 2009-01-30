@@ -315,6 +315,7 @@
    zlib-1.2.x trickyness (1a): See http://www.zlib.net/zlib_faq.html#faq36
    Memcheck:Cond
    obj:/*lib*/libz.so.1.2.*
+   ...
    obj:/*lib*/libz.so.1.2.*
    fun:deflate
 }
@@ -329,6 +330,7 @@
    zlib-1.2.x trickyness (2a): See http://www.zlib.net/zlib_faq.html#faq36
    Memcheck:Value8
    obj:/*lib*/libz.so.1.2.*
+   ...
    obj:/*lib*/libz.so.1.2.*
    fun:deflate
 }
@@ -343,6 +345,7 @@
    zlib-1.2.x trickyness (3a): See http://www.zlib.net/zlib_faq.html#faq36
    Memcheck:Value4
    obj:/*lib*/libz.so.1.2.*
+   ...
    obj:/*lib*/libz.so.1.2.*
    fun:deflate
 }

@@ -1870,8 +1870,29 @@ Int valgrind_main ( Int argc, HChar **argv, HChar **envp )
         NSegment const* seg 
            = VG_(am_find_nsegment)( seg_starts[i] );
         vg_assert(seg);
-        vg_assert(seg->start == seg_starts[i] );
         if (seg->kind == SkFileC || seg->kind == SkAnonC) {
+          /* This next assertion is tricky.  If it is placed
+             immediately before this 'if', it very occasionally fails.
+             Why?  Because previous iterations of the loop may have
+             caused tools (via the new_mem_startup calls) to do
+             dynamic memory allocation, and that may affect the mapped
+             segments; in particular it may cause segment merging to
+             happen.  Hence we cannot assume that seg_starts[i], which
+             reflects the state of the world before we started this
+             loop, is the same as seg->start, as the latter reflects
+             the state of the world (viz, mappings) at this particular
+             iteration of the loop.
+
+             Why does moving it inside the 'if' make it safe?  Because
+             any dynamic memory allocation done by the tools will
+             affect only the state of Valgrind-owned segments, not of
+             Client-owned segments.  And the 'if' guards against that
+             -- we only get in here for Client-owned segments.
+
+             In other words: the loop may change the state of
+             Valgrind-owned segments as it proceeds.  But it should
+             not cause the Client-owned segments to change. */
+           vg_assert(seg->start == seg_starts[i]);
            VG_(debugLog)(2, "main", 
                             "tell tool about %010lx-%010lx %c%c%c\n",
                              seg->start, seg->end,

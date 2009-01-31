@@ -906,15 +906,6 @@ void VG_(redir_initialise) ( void )
          NULL /* not mandatory - so why bother at all? */
          /* glibc-2.6.1 (openSUSE 10.3, ppc32) seems fine without it */
       );
-   } else if (0 == VG_(strcmp)("drd", VG_(details).name)) {
-      /* Only continue if symbol information in ld.so.1 is present,   */
-      /* because otherwise drd's suppression patterns on ld.so do     */
-      /* not have any effect.                                         */
-      add_hardwired_spec(
-         "ld.so.1", "strlen",
-         (Addr)(&VG_(ppc32_linux_REDIR_FOR_strlen)),
-         croakage
-      );
    }
    }
 
@@ -939,16 +930,6 @@ void VG_(redir_initialise) ( void )
          (Addr)VG_(fnptr_to_fnentry)( &VG_(ppc64_linux_REDIR_FOR_strchr) ),
          NULL /* not mandatory - so why bother at all? */
          /* glibc-2.5 (FC6, ppc64) seems fine without it */
-      );
-
-   } else if (0 == VG_(strcmp)("drd", VG_(details).name)) {
-      /* Only continue if symbol information in ld64.so.1 is present, */
-      /* because otherwise drd's suppression patterns on ld.so do     */
-      /* not have any effect.                                         */
-      add_hardwired_spec(
-         "ld64.so.1", "strlen",
-         (Addr)VG_(fnptr_to_fnentry)( &VG_(ppc64_linux_REDIR_FOR_strlen) ),
-         croakage
       );
    }
    }

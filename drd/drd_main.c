@@ -524,7 +524,8 @@ static void suppress_relocation_conflicts(const Addr a, const SizeT len)
 
     avma = VG_(seginfo_get_plt_avma)(di);
     size = VG_(seginfo_get_plt_size)(di);
-    if (size > 0 && a <= avma && avma + size <= a + len)
+    tl_assert((avma && size) || (avma == 0 && size == 0));
+    if (size > 0)
     {
 #if 0
       VG_(printf)("Suppressing .plt @ 0x%lx size %ld\n", avma, size);
@@ -535,7 +536,8 @@ static void suppress_relocation_conflicts(const Addr a, const SizeT len)
 
     avma = VG_(seginfo_get_gotplt_avma)(di);
     size = VG_(seginfo_get_gotplt_size)(di);
-    if (size > 0 && a <= avma && avma + size <= a + len)
+    tl_assert((avma && size) || (avma == 0 && size == 0));
+    if (size > 0)
     {
 #if 0
       VG_(printf)("Suppressing .got.plt @ 0x%lx size %ld\n", avma, size);

@@ -21,7 +21,6 @@
    drd:ConflictingAccess
    obj:/lib*/ld-*.so
    obj:/lib*/ld-*.so
-   obj:/lib*/ld-*.so
 }
 {
    dl-dlsym-1
@@ -46,6 +45,11 @@
    drd:ConflictingAccess
    fun:_dl_addr
    fun:backtrace_symbols
+}
+{
+   libc-stdio
+   drd:ConflictingAccess
+   obj:/lib*/libc-*
 }
 {
    libc

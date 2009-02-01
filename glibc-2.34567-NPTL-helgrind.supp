@@ -50,12 +50,7 @@
 
 # helgrind-glibc2X-007 was merged into helgrind-glibc2X-001
 
-{
-   helgrind-glibc2X-008
-   Helgrind:Race
-   obj:/lib*/libpthread-2.*so*
-   obj:/lib*/libc-2.*so*
-}
+# helgrind-glibc2X-008 was merged into helgrind-glibc2X-004
 
 # helgrind-glibc2X-009 was merged into helgrind-glibc2X-004
 
@@ -71,12 +66,7 @@
 
 # helgrind-glibc2X-015 was merged into helgrind-glibc2X-004
 
-{
-   helgrind-glibc2X-016
-   Helgrind:Race
-   obj:/lib*/libpthread-2.*so*
-   obj:/lib*/ld-2.*so*
-}
+# helgrind-glibc2X-016 was merged into helgrind-glibc2X-004
 
 # These are very ugly.  They are needed to suppress errors inside (eg)
 # NPTL's pthread_cond_signal.  Why only one stack frame -- at least we
@@ -257,3 +247,24 @@
 #
 # helgrind---ld.so-...-dlsym was merged into helgrind-glibc2X-001
 
+
+####################################################
+# To do with GNU libgomp
+#
+{
+   helgrind---libgomp43-1
+   Helgrind:Race
+   fun:gomp_ordered_sync
+}
+
+{
+   helgrind---libgomp43-1
+   Helgrind:Race
+   fun:gomp_ordered_next
+}
+
+{
+   helgrind---libgomp43-1
+   Helgrind:Race
+   fun:gomp_ordered_last
+}

@@ -397,7 +397,7 @@ static Bool ms_process_cmd_line_option(Char* arg)
       VG_(addToXA)(alloc_fns, &alloc_fn);
    }
 
-   else if (VG_CLO_STREQN(14, arg, "--massif-out-file=")) {
+   else if (VG_CLO_STREQN(18, arg, "--massif-out-file=")) {
       clo_massif_out_file = &arg[18];
    }
 

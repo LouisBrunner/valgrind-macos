@@ -243,7 +243,7 @@ int main(int argc, char** argv, char** envp)
        (0==strcmp(VG_PLATFORM,"amd64-linux")) ||
        (0==strcmp(VG_PLATFORM,"ppc32-linux")) ||
        (0==strcmp(VG_PLATFORM,"ppc64-linux")))
-      default_platform = VG_PLATFORM"ppc32-linux";
+      default_platform = VG_PLATFORM;
    else
       barf("Unknown VG_PLATFORM '%s'", VG_PLATFORM);
 

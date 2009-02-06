@@ -1,4 +1,6 @@
-
+# This is used by coregrind/Makefile.am and Makefile.tool.am for doing
+# "in-place" installs.  It copies $(noinst_PROGRAMS) into $inplacedir, doing
+# some magic renaming as it does.
 # For a description of what these magic sed commands do, see comments
 # in Makefile.install.am (which has identical magic)
 

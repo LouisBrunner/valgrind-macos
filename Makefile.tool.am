@@ -2,9 +2,44 @@
 SUBDIRS = . tests docs
 
 include $(top_srcdir)/Makefile.all.am
+include $(top_srcdir)/Makefile.flags.am
 include $(top_srcdir)/Makefile.install.am
-include $(top_srcdir)/Makefile.tool-flags.am
 include $(top_srcdir)/Makefile.tool-inplace.am
+
+add_includes_COMMON = \
+		-I$(top_srcdir)/include \
+		-I@VEX_DIR@/pub
+
+add_includes_x86_linux = $(add_includes_COMMON) \
+		-DVGA_x86=1 \
+		-DVGO_linux=1 \
+		-DVGP_x86_linux=1
+
+add_includes_amd64_linux = $(add_includes_COMMON) \
+		-DVGA_amd64=1 \
+		-DVGO_linux=1 \
+		-DVGP_amd64_linux=1
+
+add_includes_ppc32_linux = $(add_includes_COMMON) \
+		-DVGA_ppc32=1 \
+		-DVGO_linux=1 \
+		-DVGP_ppc32_linux=1
+
+add_includes_ppc64_linux = $(add_includes_COMMON) \
+		-DVGA_ppc64=1 \
+		-DVGO_linux=1 \
+		-DVGP_ppc64_linux=1
+
+add_includes_ppc32_aix5 = $(add_includes_COMMON) \
+		-DVGA_ppc32=1 \
+		-DVGO_aix5=1 \
+		-DVGP_ppc32_aix5=1
+
+add_includes_ppc64_aix5 = $(add_includes_COMMON) \
+		-DVGA_ppc64=1 \
+		-DVGO_aix5=1 \
+		-DVGP_ppc64_aix5=1
+
 
 LIBREPLACEMALLOC_X86_LINUX = \
 	$(top_builddir)/coregrind/libreplacemalloc_toolpreload_x86_linux.a
@@ -23,6 +58,7 @@ LIBREPLACEMALLOC_PPC32_AIX5 = \
 
 LIBREPLACEMALLOC_PPC64_AIX5 = \
 	$(top_builddir)/coregrind/libreplacemalloc_toolpreload_ppc64_aix5.a
+
 
 COREGRIND_LIBS_X86_LINUX = \
 	$(top_builddir)/coregrind/libcoregrind_x86_linux.a \
@@ -47,6 +83,7 @@ COREGRIND_LIBS_PPC32_AIX5 = \
 COREGRIND_LIBS_PPC64_AIX5 = \
 	$(top_builddir)/coregrind/libcoregrind_ppc64_aix5.a \
 	@VEX_DIR@/libvex_ppc64_aix5.a
+
 
 ##.PHONY:  @VEX_DIR@/libvex.a
 
@@ -89,6 +126,7 @@ COREGRIND_LIBS_PPC64_AIX5 = \
 @VEX_DIR@/priv/main/vex_svnversion.h:
 	$(MAKE) -C @VEX_DIR@ CC="$(CC)" version
 
+
 TOOL_LDADD_COMMON = -lgcc
 TOOL_LDFLAGS_COMMON_LINUX = -static \
 	-Wl,-defsym,valt_load_address=@VALT_LOAD_ADDRESS@ \
@@ -128,19 +166,24 @@ LIBREPLACEMALLOC_LDFLAGS_X86_LINUX = \
 	-Wl,--whole-archive \
 	$(LIBREPLACEMALLOC_X86_LINUX) \
 	-Wl,--no-whole-archive
+
 LIBREPLACEMALLOC_LDFLAGS_AMD64_LINUX = \
 	-Wl,--whole-archive \
 	$(LIBREPLACEMALLOC_AMD64_LINUX) \
 	-Wl,--no-whole-archive
+
 LIBREPLACEMALLOC_LDFLAGS_PPC32_LINUX = \
 	-Wl,--whole-archive \
 	$(LIBREPLACEMALLOC_PPC32_LINUX) \
 	-Wl,--no-whole-archive
+
 LIBREPLACEMALLOC_LDFLAGS_PPC64_LINUX = \
 	-Wl,--whole-archive \
 	$(LIBREPLACEMALLOC_PPC64_LINUX) \
 	-Wl,--no-whole-archive
+
 LIBREPLACEMALLOC_LDFLAGS_PPC32_AIX5 = \
 	$(LIBREPLACEMALLOC_PPC32_AIX5)
+
 LIBREPLACEMALLOC_LDFLAGS_PPC64_AIX5 = \
 	$(LIBREPLACEMALLOC_PPC64_AIX5)

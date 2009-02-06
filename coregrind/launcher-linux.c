@@ -239,14 +239,11 @@ int main(int argc, char** argv, char** envp)
       target, because on most ppc64-linux setups, the basic /bin,
       /usr/bin, etc, stuff is built in 32-bit mode, not 64-bit
       mode. */
-   if (0==strcmp(VG_PLATFORM,"x86-linux"))
-      default_platform = "x86-linux";
-   else if (0==strcmp(VG_PLATFORM,"amd64-linux"))
-      default_platform = "amd64-linux";
-   else if (0==strcmp(VG_PLATFORM,"ppc32-linux"))
-      default_platform = "ppc32-linux";
-   else if (0==strcmp(VG_PLATFORM,"ppc64-linux"))
-      default_platform = "ppc32-linux";
+   if ((0==strcmp(VG_PLATFORM,"x86-linux"))   ||
+       (0==strcmp(VG_PLATFORM,"amd64-linux")) ||
+       (0==strcmp(VG_PLATFORM,"ppc32-linux")) ||
+       (0==strcmp(VG_PLATFORM,"ppc64-linux")))
+      default_platform = VG_PLATFORM"ppc32-linux";
    else
       barf("Unknown VG_PLATFORM '%s'", VG_PLATFORM);
 

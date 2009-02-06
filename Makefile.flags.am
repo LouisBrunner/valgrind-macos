@@ -12,37 +12,61 @@ AM_CFLAGS_BASE = -O2 -g -Wmissing-prototypes -Wall -Wshadow \
 # into (and through) the preloads.
 AM_CFLAGS_PIC = -O -g -fpic -fno-omit-frame-pointer -fno-strict-aliasing
 
-# Flags for specific targets
+# Flags for specific targets.
+# Nb: the AM_CPPFLAGS_* values are suitable for building tools and auxprogs.
+# For building the core, coregrind/Makefile.am files add some extra things.
+AM_CPPFLAGS_COMMON = \
+		-I$(top_srcdir)/include \
+		-I@VEX_DIR@/pub
+
 AM_FLAG_M3264_X86_LINUX   = @FLAG_M32@
-AM_CPPFLAGS_X86_LINUX     = $(add_includes_x86_linux)
+AM_CPPFLAGS_X86_LINUX 	  = $(AM_CPPFLAGS_COMMON) \
+			    -DVGA_x86=1 \
+			    -DVGO_linux=1 \
+			    -DVGP_x86_linux=1
 AM_CFLAGS_X86_LINUX       = $(WERROR) @FLAG_M32@ @PREFERRED_STACK_BOUNDARY@ \
 			 	$(AM_CFLAGS_BASE)
 AM_CCASFLAGS_X86_LINUX    = $(add_includes_x86_linux) @FLAG_M32@ -g
 
 AM_FLAG_M3264_AMD64_LINUX = @FLAG_M64@
-AM_CPPFLAGS_AMD64_LINUX   = $(add_includes_amd64_linux)
+AM_CPPFLAGS_AMD64_LINUX   = $(AM_CPPFLAGS_COMMON) \
+			    -DVGA_amd64=1 \
+			    -DVGO_linux=1 \
+			    -DVGP_amd64_linux=1
 AM_CFLAGS_AMD64_LINUX     = $(WERROR) @FLAG_M64@ -fomit-frame-pointer \
 				@PREFERRED_STACK_BOUNDARY@ $(AM_CFLAGS_BASE)
 AM_CCASFLAGS_AMD64_LINUX  = $(add_includes_amd64_linux) @FLAG_M64@ -g
 
 AM_FLAG_M3264_PPC32_LINUX = @FLAG_M32@
-AM_CPPFLAGS_PPC32_LINUX   = $(add_includes_ppc32_linux)
+AM_CPPFLAGS_PPC32_LINUX = $(AM_CPPFLAGS_COMMON) \
+		-DVGA_ppc32=1 \
+		-DVGO_linux=1 \
+		-DVGP_ppc32_linux=1
 AM_CFLAGS_PPC32_LINUX     = $(WERROR) @FLAG_M32@ $(AM_CFLAGS_BASE)
 AM_CCASFLAGS_PPC32_LINUX  = $(add_includes_ppc32_linux) -Wa,-maltivec @FLAG_M32@ -g
 
 AM_FLAG_M3264_PPC64_LINUX = @FLAG_M64@
-AM_CPPFLAGS_PPC64_LINUX   = $(add_includes_ppc64_linux)
+AM_CPPFLAGS_PPC64_LINUX   = $(AM_CPPFLAGS_COMMON) \
+			    -DVGA_ppc64=1 \
+			    -DVGO_linux=1 \
+			    -DVGP_ppc64_linux=1
 AM_CFLAGS_PPC64_LINUX     = $(WERROR) @FLAG_M64@ $(AM_CFLAGS_BASE)
 AM_CCASFLAGS_PPC64_LINUX  = $(add_includes_ppc64_linux) -Wa,-maltivec @FLAG_M64@ -g
 
 AM_FLAG_M3264_PPC32_AIX5  = @FLAG_MAIX32@
-AM_CPPFLAGS_PPC32_AIX5    = $(add_includes_ppc32_aix5)
+AM_CPPFLAGS_PPC32_AIX5 	  = $(AM_CPPFLAGS_COMMON) \
+			    -DVGA_ppc32=1 \
+			    -DVGO_aix5=1 \
+			    -DVGP_ppc32_aix5=1
 AM_CFLAGS_PPC32_AIX5      = $(WERROR) @FLAG_MAIX32@ -mcpu=powerpc $(AM_CFLAGS_BASE)
 AM_CCASFLAGS_PPC32_AIX5   = $(add_includes_ppc32_aix5) \
 				@FLAG_MAIX32@ -mcpu=powerpc -g
 
 AM_FLAG_M3264_PPC64_AIX5  = @FLAG_MAIX64@
-AM_CPPFLAGS_PPC64_AIX5    = $(add_includes_ppc64_aix5)
+AM_CPPFLAGS_PPC64_AIX5    = $(AM_CPPFLAGS_COMMON) \
+			    -DVGA_ppc64=1 \
+			    -DVGO_aix5=1 \
+			    -DVGP_ppc64_aix5=1
 AM_CFLAGS_PPC64_AIX5      = $(WERROR) @FLAG_MAIX64@ -mcpu=powerpc64 $(AM_CFLAGS_BASE)
 AM_CCASFLAGS_PPC64_AIX5   = $(add_includes_ppc64_aix5) \
 				@FLAG_MAIX64@ -mcpu=powerpc64 -g

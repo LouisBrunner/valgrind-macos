@@ -5,18 +5,30 @@
 # the names of noinst_LIBRARIES or noinst_PROGRAMS change 'shape'.
 
 include $(top_srcdir)/Makefile.all.am
-include $(top_srcdir)/Makefile.core.am
+include $(top_srcdir)/Makefile.flags.am
 include $(top_srcdir)/Makefile.install.am
 
-AM_CPPFLAGS_X86_LINUX   += -DVG_LIBDIR="\"$(valdir)"\"
-AM_CPPFLAGS_AMD64_LINUX += -DVG_LIBDIR="\"$(valdir)"\"
-AM_CPPFLAGS_PPC32_LINUX += -DVG_LIBDIR="\"$(valdir)"\"
-AM_CPPFLAGS_PPC64_LINUX += -DVG_LIBDIR="\"$(valdir)"\"
-AM_CPPFLAGS_PPC32_AIX5  += -DVG_LIBDIR="\"$(valdir)"\"
-AM_CPPFLAGS_PPC64_AIX5  += -DVG_LIBDIR="\"$(valdir)"\"
+
+AM_CPPFLAGS_CORE_COMMON = \
+	-I$(top_srcdir)/coregrind \
+	-DVG_LIBDIR="\"$(valdir)"\"
+
+AM_CPPFLAGS_X86_LINUX   += \
+    $(AM_CPPFLAGS_CORE_COMMON) -DVG_PLATFORM="\"x86-linux\""
+AM_CPPFLAGS_AMD64_LINUX += \
+    $(AM_CPPFLAGS_CORE_COMMON) -DVG_PLATFORM="\"amd64-linux\""
+AM_CPPFLAGS_PPC32_LINUX += \
+    $(AM_CPPFLAGS_CORE_COMMON) -DVG_PLATFORM="\"ppc32-linux\""
+AM_CPPFLAGS_PPC64_LINUX += \
+    $(AM_CPPFLAGS_CORE_COMMON) -DVG_PLATFORM="\"ppc64-linux\""
+AM_CPPFLAGS_PPC32_AIX5  += \
+    $(AM_CPPFLAGS_CORE_COMMON) -DVG_PLATFORM="\"ppc32-aix5\""
+AM_CPPFLAGS_PPC64_AIX5  += \
+    $(AM_CPPFLAGS_CORE_COMMON) -DVG_PLATFORM="\"ppc64-aix5\""
 
 
 default.supp: $(SUPP_FILES)
+
 
 noinst_LIBRARIES =
 if VGCONF_PLATFORMS_INCLUDE_X86_LINUX
@@ -37,6 +49,7 @@ endif
 if VGCONF_PLATFORMS_INCLUDE_PPC64_AIX5
 noinst_LIBRARIES += libcoregrind_ppc64_aix5.a libreplacemalloc_toolpreload_ppc64_aix5.a
 endif
+
 
 #------------------------- launcher -----------------------
 # Build the launcher (valgrind) for the primary target only.

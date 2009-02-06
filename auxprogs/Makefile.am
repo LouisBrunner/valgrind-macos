@@ -1,5 +1,5 @@
 include $(top_srcdir)/Makefile.all.am
-include $(top_srcdir)/Makefile.core.am
+include $(top_srcdir)/Makefile.flags.am
 
 bin_PROGRAMS = valgrind-listener
 
@@ -20,7 +20,7 @@ EXTRA_DIST = $(noinst_SCRIPTS)
 #
 valgrind_listener_SOURCES = valgrind-listener.c
 
-valgrind_listener_CPPFLAGS  = $(AM_CPPFLAGS_PRI)
+valgrind_listener_CPPFLAGS  = $(AM_CPPFLAGS_PRI) -I$(top_srcdir)/coregrind
 valgrind_listener_CFLAGS    = $(AM_CFLAGS_PRI)
 valgrind_listener_CCASFLAGS = $(AM_CCASFLAGS_PRI)
 valgrind_listener_LDFLAGS   = $(AM_CFLAGS_PRI)

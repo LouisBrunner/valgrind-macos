@@ -6,40 +6,6 @@ include $(top_srcdir)/Makefile.flags.am
 include $(top_srcdir)/Makefile.install.am
 include $(top_srcdir)/Makefile.tool-inplace.am
 
-add_includes_COMMON = \
-		-I$(top_srcdir)/include \
-		-I@VEX_DIR@/pub
-
-add_includes_x86_linux = $(add_includes_COMMON) \
-		-DVGA_x86=1 \
-		-DVGO_linux=1 \
-		-DVGP_x86_linux=1
-
-add_includes_amd64_linux = $(add_includes_COMMON) \
-		-DVGA_amd64=1 \
-		-DVGO_linux=1 \
-		-DVGP_amd64_linux=1
-
-add_includes_ppc32_linux = $(add_includes_COMMON) \
-		-DVGA_ppc32=1 \
-		-DVGO_linux=1 \
-		-DVGP_ppc32_linux=1
-
-add_includes_ppc64_linux = $(add_includes_COMMON) \
-		-DVGA_ppc64=1 \
-		-DVGO_linux=1 \
-		-DVGP_ppc64_linux=1
-
-add_includes_ppc32_aix5 = $(add_includes_COMMON) \
-		-DVGA_ppc32=1 \
-		-DVGO_aix5=1 \
-		-DVGP_ppc32_aix5=1
-
-add_includes_ppc64_aix5 = $(add_includes_COMMON) \
-		-DVGA_ppc64=1 \
-		-DVGO_aix5=1 \
-		-DVGP_ppc64_aix5=1
-
 
 LIBREPLACEMALLOC_X86_LINUX = \
 	$(top_builddir)/coregrind/libreplacemalloc_toolpreload_x86_linux.a

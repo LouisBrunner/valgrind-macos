@@ -84,14 +84,14 @@ exp-regtest: check
 perf: check
 	@PERL@ perf/vg_perf perf
 
+# Nb: no need to include any Makefile.am files here, or files included from
+# them, as automake includes them automatically.
 EXTRA_DIST = \
 	ACKNOWLEDGEMENTS \
 	README_DEVELOPERS \
 	README_PACKAGERS \
 	README_MISSING_SYSCALL_OR_IOCTL \
 	valgrind.spec.in valgrind.pc.in \
-	Makefile.all.am Makefile.tool.am Makefile.core.am \
-	Makefile.tool-inplace.am \
 	$(vex_primary_sources) \
 	vg-in-place
 

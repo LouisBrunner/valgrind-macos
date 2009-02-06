@@ -214,8 +214,9 @@ fi
 
 #----------------------------------------------------------------------------
 
-# VGCONF_OS is the primary build OS.  It is passed in to compilation of many
-# C files via -VGO_$(VGCONF_OS) and -VGP_$(VGCONF_ARCH_PRI)_$(VGCONF_OS).
+# VGCONF_OS is the primary build OS, eg. "linux".  It is passed in to
+# compilation of many C files via -VGO_$(VGCONF_OS) and
+# -VGP_$(VGCONF_ARCH_PRI)_$(VGCONF_OS).
 AC_MSG_CHECKING([for a supported OS])
 AC_SUBST(VGCONF_OS)
 
@@ -302,22 +303,23 @@ fi
 
 #----------------------------------------------------------------------------
 
-# VGCONF_ARCH_PRI is the arch for the primary build target.  By default it's
-# the same as ARCH_MAX.  But if, say, we do a build on an amd64 machine, but
-# --enable-only32bit has been requested, then ARCH_MAX (see above) will be
-# "amd64" since that reflects the most that this cpu can do, but
-# VGCONF_ARCH_PRI will be downgraded to "x86", since that reflects the arch
-# corresponding to the primary build (VGCONF_PLATFORM_PRI_CAPS).  It is
+# VGCONF_ARCH_PRI is the arch for the primary build target, eg. "amd64".  By
+# default it's the same as ARCH_MAX.  But if, say, we do a build on an amd64
+# machine, but --enable-only32bit has been requested, then ARCH_MAX (see
+# above) will be "amd64" since that reflects the most that this cpu can do,
+# but VGCONF_ARCH_PRI will be downgraded to "x86", since that reflects the
+# arch corresponding to the primary build (VGCONF_PLATFORM_PRI_CAPS).  It is
 # passed in to compilation of many C files via -VGA_$(VGCONF_ARCH_PRI) and
 # -VGP_$(VGCONF_ARCH_PRI)_$(VGCONF_OS).
 AC_SUBST(VGCONF_ARCH_PRI)
 
-# VGCONF_PLATFORM_PRI_CAPS is the primary build target.  The entire system,
-# including regression and performance tests, will be built for this target.
-# The "_CAPS" indicates that the name is in capital letters, because it's
+# VGCONF_PLATFORM_PRI_CAPS is the primary build target, eg. "AMD64_LINUX".
+# The entire system, including regression and performance tests, will be
+# built for this target.  The "_CAPS" indicates that the name is in capital
+# letters, and it also uses '_' rather than '-' as a separator, because it's
 # used to create various Makefile variables, which are all in caps by
-# convention.  This is in contrast to VGCONF_ARCH_PRI and VGCONF_OS which
-# are not in caps.
+# convention and cannot contain '-' characters.  This is in contrast to
+# VGCONF_ARCH_PRI and VGCONF_OS which are not in caps.
 AC_SUBST(VGCONF_PLATFORM_PRI_CAPS)
 
 # VGCONF_PLATFORM_SEC_CAPS is the secondary build target, if there is one.
@@ -1763,9 +1765,9 @@ AC_OUTPUT(
 
 cat<<EOF
 
- configure.in: ARCH_MAX        = ${ARCH_MAX}
- configure.in: VGCONF_ARCH_PRI = ${VGCONF_ARCH_PRI}
-
+         Maximum build arch: ${ARCH_MAX}
+         Primary build arch: ${VGCONF_ARCH_PRI}
+                   Build OS: ${VGCONF_OS}
        Primary build target: ${VGCONF_PLATFORM_PRI_CAPS}
      Secondary build target: ${VGCONF_PLATFORM_SEC_CAPS}
          Default supp files: ${DEFAULT_SUPP}

@@ -1,8 +1,7 @@
 
 # Be very careful when renaming any files, targets, whatever, in this
-# Makefile.  The install-exec-local target in ../Makefile.install.am
-# does some fragile sed file-name-mangling which is liable to break if
-# the names of noinst_LIBRARIES or noinst_PROGRAMS change 'shape'.
+# Makefile.  Various parts of the system rely on these names having
+# particular forms.
 
 include $(top_srcdir)/Makefile.all.am
 include $(top_srcdir)/Makefile.flags.am
@@ -32,23 +31,30 @@ default.supp: $(SUPP_FILES)
 
 
 noinst_LIBRARIES =
+LIBPLATFORMS =
 if VGCONF_PLATFORMS_INCLUDE_X86_LINUX
 noinst_LIBRARIES += libcoregrind_x86_linux.a libreplacemalloc_toolpreload_x86_linux.a
+LIBPLATFORMS += x86_linux
 endif
 if VGCONF_PLATFORMS_INCLUDE_AMD64_LINUX
 noinst_LIBRARIES += libcoregrind_amd64_linux.a libreplacemalloc_toolpreload_amd64_linux.a
+LIBPLATFORMS += amd64_linux
 endif
 if VGCONF_PLATFORMS_INCLUDE_PPC32_LINUX
 noinst_LIBRARIES += libcoregrind_ppc32_linux.a libreplacemalloc_toolpreload_ppc32_linux.a
+LIBPLATFORMS += ppc32_linux
 endif
 if VGCONF_PLATFORMS_INCLUDE_PPC64_LINUX
 noinst_LIBRARIES += libcoregrind_ppc64_linux.a libreplacemalloc_toolpreload_ppc64_linux.a
+LIBPLATFORMS += ppc64_linux
 endif
 if VGCONF_PLATFORMS_INCLUDE_PPC32_AIX5
 noinst_LIBRARIES += libcoregrind_ppc32_aix5.a libreplacemalloc_toolpreload_ppc32_aix5.a
+LIBPLATFORMS += ppc32_aix5
 endif
 if VGCONF_PLATFORMS_INCLUDE_PPC64_AIX5
 noinst_LIBRARIES += libcoregrind_ppc64_aix5.a libreplacemalloc_toolpreload_ppc64_aix5.a
+LIBPLATFORMS += ppc64_aix5
 endif
 
 
@@ -267,7 +273,6 @@ libcoregrind_x86_linux_a_SOURCES = \
 	m_sigframe/sigframe-x86-linux.c \
 	m_syswrap/syscall-x86-linux.S \
 	m_syswrap/syswrap-x86-linux.c
-
 libcoregrind_x86_linux_a_CPPFLAGS = $(AM_CPPFLAGS_X86_LINUX)
 libcoregrind_x86_linux_a_CFLAGS = $(AM_CFLAGS_X86_LINUX)
 libcoregrind_x86_linux_a_CCASFLAGS = $(AM_CCASFLAGS_X86_LINUX)
@@ -280,7 +285,6 @@ libcoregrind_amd64_linux_a_SOURCES = \
 	m_sigframe/sigframe-amd64-linux.c \
 	m_syswrap/syscall-amd64-linux.S \
 	m_syswrap/syswrap-amd64-linux.c
-
 libcoregrind_amd64_linux_a_CPPFLAGS = $(AM_CPPFLAGS_AMD64_LINUX)
 libcoregrind_amd64_linux_a_CFLAGS = $(AM_CFLAGS_AMD64_LINUX)
 libcoregrind_amd64_linux_a_CCASFLAGS = $(AM_CCASFLAGS_AMD64_LINUX)
@@ -293,7 +297,6 @@ libcoregrind_ppc32_linux_a_SOURCES = \
 	m_sigframe/sigframe-ppc32-linux.c \
 	m_syswrap/syscall-ppc32-linux.S \
 	m_syswrap/syswrap-ppc32-linux.c
-
 libcoregrind_ppc32_linux_a_CPPFLAGS = $(AM_CPPFLAGS_PPC32_LINUX)
 libcoregrind_ppc32_linux_a_CFLAGS = $(AM_CFLAGS_PPC32_LINUX)
 libcoregrind_ppc32_linux_a_CCASFLAGS = $(AM_CCASFLAGS_PPC32_LINUX)
@@ -306,7 +309,6 @@ libcoregrind_ppc64_linux_a_SOURCES = \
 	m_sigframe/sigframe-ppc64-linux.c \
 	m_syswrap/syscall-ppc64-linux.S \
 	m_syswrap/syswrap-ppc64-linux.c
-
 libcoregrind_ppc64_linux_a_CPPFLAGS = $(AM_CPPFLAGS_PPC64_LINUX)
 libcoregrind_ppc64_linux_a_CFLAGS = $(AM_CFLAGS_PPC64_LINUX)
 libcoregrind_ppc64_linux_a_CCASFLAGS = $(AM_CCASFLAGS_PPC64_LINUX)
@@ -319,7 +321,6 @@ libcoregrind_ppc32_aix5_a_SOURCES = \
 	m_sigframe/sigframe-ppc32-aix5.c \
 	m_syswrap/syscall-ppc32-aix5.S \
 	m_syswrap/syswrap-ppc32-aix5.c
-
 libcoregrind_ppc32_aix5_a_CPPFLAGS = $(AM_CPPFLAGS_PPC32_AIX5)
 libcoregrind_ppc32_aix5_a_CFLAGS = $(AM_CFLAGS_PPC32_AIX5)
 libcoregrind_ppc32_aix5_a_CCASFLAGS = $(AM_CCASFLAGS_PPC32_AIX5)
@@ -333,7 +334,6 @@ libcoregrind_ppc64_aix5_a_SOURCES = \
 	m_sigframe/sigframe-ppc64-aix5.c \
 	m_syswrap/syscall-ppc64-aix5.S \
 	m_syswrap/syswrap-ppc64-aix5.c
-
 libcoregrind_ppc64_aix5_a_CPPFLAGS = $(AM_CPPFLAGS_PPC64_AIX5)
 libcoregrind_ppc64_aix5_a_CFLAGS = $(AM_CFLAGS_PPC64_AIX5)
 libcoregrind_ppc64_aix5_a_CCASFLAGS = $(AM_CCASFLAGS_PPC64_AIX5)
@@ -417,6 +417,22 @@ vgpreload_core_ppc64_aix5_so_LDFLAGS = $(PRELOAD_LDFLAGS_PPC64_AIX5)
 
 clean-local:
 	$(MAKE) -C @VEX_DIR@ CC="$(CC)" AR="$(AR)" clean
+
+# Nb: The loop installs some .a files for possible use by standalone tools
+# into the correct (target-specific) lib dirs at install time.
+# $(LIBPLATFORMS) will look like this:
+#    x86_linux amd64_linux
+# pD and pU are the (arch,os) target pairs separated by a dash (pD) or
+# an underscore (pU) respectively, eg amd64-linux (pD) and amd64_linux (pU).
+# It then copies the libraries to the right places.
+install-exec-local: install-exec-local-programs
+	for pU in $(LIBPLATFORMS) ; do \
+	  pD=`echo $$pU | sed -e 's/_/-/g'` ; \
+	  $(INSTALL_DATA) libcoregrind_$$pU.a $(DESTDIR)$(valdir)/$$pD/libcoregrind.a ; \
+	  $(INSTALL_DATA) libreplacemalloc_toolpreload_$$pU.a $(DESTDIR)$(valdir)/$$pD/libreplacemalloc_toolpreload.a ; \
+	  $(INSTALL_DATA) @VEX_DIR@/libvex_$$pU.a $(DESTDIR)$(valdir)/$$pD/libvex.a ; \
+	done
+
 
 MANUAL_DEPS = $(noinst_HEADERS) $(include_HEADERS)
 

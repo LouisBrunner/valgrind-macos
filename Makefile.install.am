@@ -1,6 +1,11 @@
-
-# What the first for loop does: it copies a bunch of files which names
-# of the form wurble-arch-os to $prefix/lib/valgrind/arch-os/wurble.
+# This is used by coregrind/Makefile.am and by <tool>/Makefile.am for doing
+# "make install".  It copies $(noinst_PROGRAMS) into $prefix/lib/valgrind/,
+# doing some magic renaming as it does.
+# It needs to be depended on by an 'install-exec-local' rule.
+# There is similar code in Makefile.inplace.am.
+#
+# Details about the renaming: the loop copies a bunch of files with
+# names of the form wurble-arch-os to $prefix/lib/valgrind/arch-os/wurble.
 # There is some complexity in the sed mangling because wurble may itself
 # contain a dash, which must be ignored.  For example we want
 #    exp-omega-x86-linux
@@ -9,20 +14,8 @@
 # and not in
 #    $prefix/lib/valgrind/omega-x86-linux/exp
 # or similarly mutant place.
-#
-# Note there is identical sed magic in Makefile.inplace.am.
 
-# What the second for loop does: it copies libcoregrind.a and libvex.a
-# into the correct (target-specific) lib dirs at install time.
-# $(noinst_LIBRARIES) will look like this:
-#    libcoregrind_x86_linux.a libreplacemalloc_toolpreload_x86_linux.a
-#    libcoregrind_amd64_linux.a libreplacemalloc_toolpreload_amd64_linux.a
-# The 'if expr' filters out all but the libcoregrind_ ones.
-# pD and pU are the (arch,os) target pairs separated by a dash (pD) or
-# an underscore (pU) respectively, eg amd64-linux (pD) and amd64_linux (pU).
-# It then copies libcoregrind.a and libvex.a to the right places.
-
-install-exec-local:
+install-exec-local-programs:
 	if [ -n "$(noinst_PROGRAMS)" ] ; then \
 	  for f in $(noinst_PROGRAMS); do \
 	    name=`echo $$f | sed -e 's/-\([^-]*-[^-.]*\)\(\..*\)\?$$/\2/'`; \
@@ -30,15 +23,5 @@ install-exec-local:
 	    $(mkinstalldirs) $(DESTDIR)$(valdir)/$$plat; \
 	    $(INSTALL_PROGRAM) $$f $(DESTDIR)$(valdir)/$$plat/$$name; \
 	  done ; \
-	fi ; \
-	if [ -n "$(noinst_LIBRARIES)" ] ; then \
-	  for f in $(noinst_LIBRARIES) expr_wont_match_me; do \
-	    if expr match $$f libcoregrind_ > /dev/null ; then \
-	      pU=`echo $$f | sed -e 's/libcoregrind_//g' -e 's/\.a//g'` ; \
-	      pD=`echo $$pU | sed -e 's/_/-/g'` ; \
-	      $(INSTALL_DATA) $$f $(DESTDIR)$(valdir)/$$pD/libcoregrind.a ; \
-	      $(INSTALL_DATA) @VEX_DIR@/libvex_$$pU.a \
-				$(DESTDIR)$(valdir)/$$pD/libvex.a ; \
-	    fi ; \
-	  done ; \
 	fi
+

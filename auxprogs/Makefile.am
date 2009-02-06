@@ -62,18 +62,18 @@ endif
 ##
 noinst_PROGRAMS =
 if BUILD_MPIWRAP_PRI
-noinst_PROGRAMS       += libmpiwrap-@VGCONF_PLATFORM_PRI_CAPS@.so
-libmpiwrap-@VGCONF_PLATFORM_PRI_CAPS@.so: libmpiwrap.c
+noinst_PROGRAMS       += libmpiwrap-@VGCONF_ARCH_PRI@-@VGCONF_OS@.so
+libmpiwrap-@VGCONF_ARCH_PRI@-@VGCONF_OS@.so: libmpiwrap.c
 	$(MPI_CC) $(HACKY_FLAGS_PRI) \
 		-I../include \
-		-o libmpiwrap-@VGCONF_PLATFORM_PRI_CAPS@.so libmpiwrap.c
+		-o libmpiwrap-@VGCONF_ARCH_PRI@-@VGCONF_OS@.so libmpiwrap.c
 endif
 if BUILD_MPIWRAP_SEC
-noinst_PROGRAMS       += libmpiwrap-@VGCONF_PLATFORM_SEC_CAPS@.so
-libmpiwrap-@VGCONF_PLATFORM_SEC_CAPS@.so: libmpiwrap.c
+noinst_PROGRAMS       += libmpiwrap-@VGCONF_ARCH_SEC@-@VGCONF_OS@.so
+libmpiwrap-@VGCONF_ARCH_SEC@-@VGCONF_OS@.so: libmpiwrap.c
 	$(MPI_CC) $(HACKY_FLAGS_SEC) \
 		-I../include \
-		-o libmpiwrap-@VGCONF_PLATFORM_SEC_CAPS@.so libmpiwrap.c
+		-o libmpiwrap-@VGCONF_ARCH_SEC@-@VGCONF_OS@.so libmpiwrap.c
 endif
 
 
@@ -85,24 +85,12 @@ endif
 
 install-exec-local:
 if BUILD_MPIWRAP_PRI
-# convert (eg) X86_LINUX to x86-linux
-# really should use sed here, rather than assume tr is available
-	pD=`echo @VGCONF_PLATFORM_PRI_CAPS@ | tr A-Z_ a-z-` ; \
-		$(mkinstalldirs) $(DESTDIR)$(valdir)/$$pD; \
-	rm -f ./libmpiwrap.so; \
-	cp ./libmpiwrap-@VGCONF_PLATFORM_PRI_CAPS@.so ./libmpiwrap.so; \
-	$(INSTALL_PROGRAM) ./libmpiwrap.so \
-		$(DESTDIR)$(valdir)/$$pD; \
-	rm -f ./libmpiwrap.so
+	$(mkinstalldirs) $(DESTDIR)$(valdir)/@VGCONF_ARCH_PRI@-@VGCONF_OS@; \
+	$(INSTALL_PROGRAM) ./libmpiwrap-@VGCONF_ARCH_PRI@-@VGCONF_OS@.so $(DESTDIR)$(valdir)/@VGCONF_ARCH_PRI@-@VGCONF_OS@/libmpiwrap.so;
 endif
 if BUILD_MPIWRAP_SEC
-	pD=`echo @VGCONF_PLATFORM_SEC_CAPS@ | tr A-Z_ a-z-` ; \
-	$(mkinstalldirs) $(DESTDIR)$(valdir)/$$pD; \
-	rm -f ./libmpiwrap.so; \
-	cp ./libmpiwrap-@VGCONF_PLATFORM_SEC_CAPS@.so ./libmpiwrap.so; \
-	$(INSTALL_PROGRAM) ./libmpiwrap.so \
-		$(DESTDIR)$(valdir)/$$pD; \
-	rm -f ./libmpiwrap.so
+	$(mkinstalldirs) $(DESTDIR)$(valdir)/@VGCONF_ARCH_PRI@-@VGCONF_OS@; \
+	$(INSTALL_PROGRAM) ./libmpiwrap-@VGCONF_ARCH_SEC@-@VGCONF_OS@.so $(DESTDIR)$(valdir)/@VGCONF_ARCH_SEC@-@VGCONF_OS@/libmpiwrap.so;
 endif
 
 
@@ -110,28 +98,28 @@ endif
 ## It would seem that using nodist_SOURCES is the right fix, but
 ## I can't figure out how to do it.
 ##
-#nodist_SOURCES        = libmpiwrap-@VGCONF_PLATFORM_PRI_CAPS@.c
-#nodist_SOURCES        = libmpiwrap-@VGCONF_PLATFORM_SEC_CAPS@.c
+#nodist_SOURCES        = libmpiwrap-@VGCONF_ARCH_PRI@-@VGCONF_OS@.c
+#nodist_SOURCES        = libmpiwrap-@VGCONF_ARCH_SEC@-@VGCONF_OS@.c
 
 libmpiwrap-.c:
 	rm -f libmpiwrap-.c
 	touch libmpiwrap-.c
 
-libmpiwrap-@VGCONF_PLATFORM_PRI_CAPS@.c:
-	rm -f libmpiwrap-@VGCONF_PLATFORM_PRI_CAPS@.c
-	touch libmpiwrap-@VGCONF_PLATFORM_PRI_CAPS@.c
+libmpiwrap-@VGCONF_ARCH_PRI@-@VGCONF_OS@.c:
+	rm -f libmpiwrap-@VGCONF_ARCH_PRI@-@VGCONF_OS@.c
+	touch libmpiwrap-@VGCONF_ARCH_PRI@-@VGCONF_OS@.c
 
 if VGCONF_HAVE_PLATFORM_SEC_CAPS
-libmpiwrap-@VGCONF_PLATFORM_SEC_CAPS@.c:
-	rm -f libmpiwrap-@VGCONF_PLATFORM_SEC_CAPS@.c
-	touch libmpiwrap-@VGCONF_PLATFORM_SEC_CAPS@.c
+libmpiwrap-@VGCONF_ARCH_SEC@-@VGCONF_OS@.c:
+	rm -f libmpiwrap-@VGCONF_ARCH_SEC@-@VGCONF_OS@.c
+	touch libmpiwrap-@VGCONF_ARCH_SEC@-@VGCONF_OS@.c
 endif
 
 ## cleanery
 clean-local:
 	rm -f libmpiwrap-.c \
-	libmpiwrap-@VGCONF_PLATFORM_PRI_CAPS@.c \
-	libmpiwrap-@VGCONF_PLATFORM_SEC_CAPS@.c
+	libmpiwrap-@VGCONF_ARCH_PRI@-@VGCONF_OS@.c \
+	libmpiwrap-@VGCONF_ARCH_SEC@-@VGCONF_OS@.c
 
 #
 #----------------------------------------------------------

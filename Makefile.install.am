@@ -1,8 +1,22 @@
+# This is used by coregrind/Makefile.am and Makefile.tool.am for doing
+# "in-place" installs.  It copies $(noinst_PROGRAMS) into $inplacedir, doing
+# some magic renaming as it does.
+# The similar code below explains how the magic sed commands work.
+all-local:
+	if [ -n "$(noinst_PROGRAMS)" ] ; then \
+	  for f in $(noinst_PROGRAMS); do \
+	    name=`echo $$f | sed -e 's/-\([^-]*-[^-.]*\)\(\..*\)\{0,1\}$$/\2/'`; \
+	    plat=`echo $$f | sed -e 's/^.*-\([^-]*-[^-.]*\)\(\..*\)\{0,1\}$$/\1/'`; \
+	    mkdir -p $(inplacedir)/$$plat; \
+	    rm -f $(inplacedir)/$$plat/$$name; \
+	    ln -f -s ../../$(subdir)/$$f $(inplacedir)/$$plat/$$name; \
+	  done ; \
+	fi
+
 # This is used by coregrind/Makefile.am and by <tool>/Makefile.am for doing
 # "make install".  It copies $(noinst_PROGRAMS) into $prefix/lib/valgrind/,
 # doing some magic renaming as it does.
 # It needs to be depended on by an 'install-exec-local' rule.
-# There is similar code in Makefile.inplace.am.
 #
 # Details about the renaming: the loop copies a bunch of files with
 # names of the form wurble-arch-os to $prefix/lib/valgrind/arch-os/wurble.
@@ -14,7 +28,6 @@
 # and not in
 #    $prefix/lib/valgrind/omega-x86-linux/exp
 # or similarly mutant place.
-
 install-exec-local-programs:
 	if [ -n "$(noinst_PROGRAMS)" ] ; then \
 	  for f in $(noinst_PROGRAMS); do \

@@ -30,7 +30,10 @@ SUPP_FILES = \
 	exp-ptrcheck.supp
 DEFAULT_SUPP_FILES = @DEFAULT_SUPP@
 
-dist_val_DATA = $(SUPP_FILES) default.supp
+# We include all .supp files in the distribution, but only install
+# default.supp.
+dist_val_DATA    = default.supp
+dist_noinst_DATA = $(SUPP_FILES)
 
 pkgconfigdir = $(libdir)/pkgconfig
 pkgconfig_DATA = valgrind.pc

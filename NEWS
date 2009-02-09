@@ -1,4 +1,12 @@
 
+Release 3.5.0 (???)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+* Previously, all the distributed suppression (*.supp) files were installed.
+  Now, only default.supp is installed.  This should not affect users as the
+  other installed suppression files were not read.
+
+
+
 Release 3.4.0 (2 January 2009)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 3.4.0 is a feature release with many significant improvements and the

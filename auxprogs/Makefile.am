@@ -89,7 +89,7 @@ if BUILD_MPIWRAP_PRI
 	$(INSTALL_PROGRAM) ./libmpiwrap-@VGCONF_ARCH_PRI@-@VGCONF_OS@.so $(DESTDIR)$(valdir)/@VGCONF_ARCH_PRI@-@VGCONF_OS@/libmpiwrap.so;
 endif
 if BUILD_MPIWRAP_SEC
-	$(mkinstalldirs) $(DESTDIR)$(valdir)/@VGCONF_ARCH_PRI@-@VGCONF_OS@; \
+	$(mkinstalldirs) $(DESTDIR)$(valdir)/@VGCONF_ARCH_SEC@-@VGCONF_OS@; \
 	$(INSTALL_PROGRAM) ./libmpiwrap-@VGCONF_ARCH_SEC@-@VGCONF_OS@.so $(DESTDIR)$(valdir)/@VGCONF_ARCH_SEC@-@VGCONF_OS@/libmpiwrap.so;
 endif
 

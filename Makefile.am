@@ -100,9 +100,8 @@ install-exec-hook:
 
 all-local: default.supp
 	mkdir -p $(inplacedir)
-	rm -f $(addprefix $(inplacedir)/,default.supp $(SUPP_FILES))
+	rm -f $(inplacedir)/default.supp
 	ln -s ../default.supp $(inplacedir)
-	ln -s $(addprefix ../$(top_srcdir)/,$(SUPP_FILES)) $(inplacedir)
 
 distclean-local:
 	rm -rf $(inplacedir)

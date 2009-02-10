@@ -31,4 +31,8 @@ sed \
 -e "s/printf (printf.c:[0-9]*)/.../" \
 -e "s/strdup (strdup.c:[0-9]*)/.../" \
 -e "s/pthread_key_create.c:[0-9]*/in \/...libpthread.../" \
--e "s/genops.c:[0-9]*/in \/...libc.../"
+-e "s/genops.c:[0-9]*/in \/...libc.../" |
+
+# Anonymise line numbers in h_intercepts.c.
+sed "s/h_intercepts.c:[0-9]*/h_intercepts.c:.../" 
+

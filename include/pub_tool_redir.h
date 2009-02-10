@@ -158,6 +158,45 @@
 #define VG_WRAP_FUNCTION_ZU(soname,fnname) VG_CONCAT4(_vgwZU_,soname,_,fnname)
 #define VG_WRAP_FUNCTION_ZZ(soname,fnname) VG_CONCAT4(_vgwZZ_,soname,_,fnname)
 
+/* --------- Some handy Z-encoded names. --------- */
+
+/* --- Soname of the standard C library. --- */
+
+#if defined(VGO_linux)
+#  define  VG_Z_LIBC_SONAME  libcZdsoZa              // libc.so*
+#elif defined(VGP_ppc32_aix5)
+   /* AIX has both /usr/lib/libc.a and /usr/lib/libc_r.a. */
+#  define  VG_Z_LIBC_SONAME  libcZaZdaZLshrZdoZR     // libc*.a(shr.o)
+#elif defined(VGP_ppc64_aix5)
+#  define  VG_Z_LIBC_SONAME  libcZaZdaZLshrZu64ZdoZR // libc*.a(shr_64.o)
+#else
+#  error "Unknown platform"
+#endif
+
+/* --- Soname of the GNU C++ library. --- */
+
+// DDD: this one and those below should probably be conditionally compiled,
+// as should all the redirects in the tools that use them.
+#define  VG_Z_LIBSTDCXX_SONAME  libstdcZpZpZa           // libstdc++*
+
+/* --- Soname of XLC's C++ library. --- */
+
+/* AIX: xlC's C++ runtime library is called libC.a, and the
+   interesting symbols appear to be in ansicore_32.o or ansicore_64.o
+   respectively. */
+#if defined(VGP_ppc32_aix5)
+#  define  VG_Z_LIBC_DOT_A   libCZdaZLansicoreZu32ZdoZR // libC.a(ansicore_32.o)
+#elif defined(VGP_ppc64_aix5)
+#  define  VG_Z_LIBC_DOT_A   libCZdaZLansicoreZu64ZdoZR // libC.a(ansicore_64.o)
+#endif
+
+/* --- Sonames for Linux ELF linkers. --- */
+
+#define  VG_Z_LD_LINUX_SO_2         ldZhlinuxZdsoZd2           // ld-linux.so.2
+#define  VG_Z_LD_LINUX_X86_64_SO_2  ldZhlinuxZhx86Zh64ZdsoZd2  // ld-linux-x86-64.so.2
+#define  VG_Z_LD64_SO_1             ld64ZdsoZd1                // ld64.so.1
+#define  VG_Z_LD_SO_1               ldZdsoZd1                  // ld.so.1
+
 
 #endif   // __PUB_TOOL_REDIR_H
 

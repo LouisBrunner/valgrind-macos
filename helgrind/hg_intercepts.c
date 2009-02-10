@@ -1592,28 +1592,6 @@ QT4_FUNC(void*, _ZN6QMutexD2Ev, void* mutex)
    new functions, please keep them in the same order as they appear in
    mc_replace_strmem.c. */
 
-/* --------- Some handy Z-encoded names. --------- */
-
-/* --- Soname of the standard C library. --- */
-
-#if defined(VGO_linux)
-#  define  m_libc_soname     libcZdsoZa              // libc.so*
-#elif defined(VGP_ppc32_aix5)
-   /* AIX has both /usr/lib/libc.a and /usr/lib/libc_r.a. */
-#  define  m_libc_soname     libcZaZdaZLshrZdoZR     // libc*.a(shr.o)
-#elif defined(VGP_ppc64_aix5)
-#  define  m_libc_soname     libcZaZdaZLshrZu64ZdoZR // libc*.a(shr_64.o)
-#else
-#  error "Unknown platform"
-#endif
-
-/* --- Sonames for Linux ELF linkers. --- */
-
-#define  m_ld_linux_so_2         ldZhlinuxZdsoZd2           // ld-linux.so.2
-#define  m_ld_linux_x86_64_so_2  ldZhlinuxZhx86Zh64ZdsoZd2  // ld-linux-x86-64.so.2
-#define  m_ld64_so_1             ld64ZdsoZd1                // ld64.so.1
-#define  m_ld_so_1               ldZdsoZd1                  // ld.so.1
-
 
 #define STRCHR(soname, fnname) \
    char* VG_REPLACE_FUNCTION_ZU(soname,fnname) ( const char* s, int c ); \
@@ -1629,12 +1607,12 @@ QT4_FUNC(void*, _ZN6QMutexD2Ev, void* mutex)
    }
 
 // Apparently index() is the same thing as strchr()
-STRCHR(m_libc_soname,          strchr)
-STRCHR(m_ld_linux_so_2,        strchr)
-STRCHR(m_ld_linux_x86_64_so_2, strchr)
-STRCHR(m_libc_soname,          index)
-STRCHR(m_ld_linux_so_2,        index)
-STRCHR(m_ld_linux_x86_64_so_2, index)
+STRCHR(VG_Z_LIBC_SONAME,          strchr)
+STRCHR(VG_Z_LD_LINUX_SO_2,        strchr)
+STRCHR(VG_Z_LD_LINUX_X86_64_SO_2, strchr)
+STRCHR(VG_Z_LIBC_SONAME,          index)
+STRCHR(VG_Z_LD_LINUX_SO_2,        index)
+STRCHR(VG_Z_LD_LINUX_X86_64_SO_2, index)
 
 
 // Note that this replacement often doesn't get used because gcc inlines
@@ -1650,9 +1628,9 @@ STRCHR(m_ld_linux_x86_64_so_2, index)
       return i; \
    }
 
-STRLEN(m_libc_soname,          strlen)
-STRLEN(m_ld_linux_so_2,        strlen)
-STRLEN(m_ld_linux_x86_64_so_2, strlen)
+STRLEN(VG_Z_LIBC_SONAME,          strlen)
+STRLEN(VG_Z_LD_LINUX_SO_2,        strlen)
+STRLEN(VG_Z_LD_LINUX_X86_64_SO_2, strlen)
 
 
 #define STRCPY(soname, fnname) \
@@ -1667,7 +1645,7 @@ STRLEN(m_ld_linux_x86_64_so_2, strlen)
       return (char*)dst_orig; \
    }
 
-STRCPY(m_libc_soname, strcpy)
+STRCPY(VG_Z_LIBC_SONAME, strcpy)
 
 
 #define STRCMP(soname, fnname) \
@@ -1690,9 +1668,9 @@ STRCPY(m_libc_soname, strcpy)
       return 0; \
    }
 
-STRCMP(m_libc_soname,          strcmp)
-STRCMP(m_ld_linux_x86_64_so_2, strcmp)
-STRCMP(m_ld64_so_1,            strcmp)
+STRCMP(VG_Z_LIBC_SONAME,          strcmp)
+STRCMP(VG_Z_LD_LINUX_X86_64_SO_2, strcmp)
+STRCMP(VG_Z_LD64_SO_1,            strcmp)
 
 
 #define MEMCPY(soname, fnname) \
@@ -1737,9 +1715,9 @@ STRCMP(m_ld64_so_1,            strcmp)
       return dst; \
    }
 
-MEMCPY(m_libc_soname, memcpy)
-MEMCPY(m_ld_so_1,     memcpy) /* ld.so.1 */
-MEMCPY(m_ld64_so_1,   memcpy) /* ld64.so.1 */
+MEMCPY(VG_Z_LIBC_SONAME,    memcpy)
+MEMCPY(VG_Z_LD_SO_1,        memcpy) /* ld.so.1 */
+MEMCPY(VG_Z_LD64_SO_1,      memcpy) /* ld64.so.1 */
 /* icc9 blats these around all over the place.  Not only in the main
    executable but various .so's.  They are highly tuned and read
    memory beyond the source boundary (although work correctly and

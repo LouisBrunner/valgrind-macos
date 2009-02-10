@@ -543,7 +543,7 @@ static void* perm_malloc(SizeT n_bytes)
 
    if (hp + n_bytes > hp_lim) {
       hp = (Addr)VG_(am_shadow_alloc)(SUPERBLOCK_SIZE);
-      if (hp == 0)
+      if (0 == hp)
          VG_(out_of_memory_NORETURN)( "massif:perm_malloc",
                                       SUPERBLOCK_SIZE);
       hp_lim = hp + SUPERBLOCK_SIZE - 1;
@@ -582,7 +582,7 @@ static void add_child_xpt(XPt* parent, XPt* child)
    // Expand 'children' if necessary.
    tl_assert(parent->n_children <= parent->max_children);
    if (parent->n_children == parent->max_children) {
-      if (parent->max_children == 0) {
+      if (0 == parent->max_children) {
          parent->max_children = 4;
          parent->children = VG_(malloc)( "ms.main.acx.1",
                                          parent->max_children * sizeof(XPt*) );
@@ -636,7 +636,7 @@ static SXPt* dup_XTree(XPt* xpt, SizeT total_szB)
    //
    // Nb: We do this once now, rather than once per child, because if we do
    // that the cost of all the divisions adds up to something significant.
-   if (total_szB == 0 && clo_threshold != 0) {
+   if (0 == total_szB && 0 != clo_threshold) {
       sig_child_threshold_szB = 1;
    } else {
       sig_child_threshold_szB = (SizeT)((total_szB * clo_threshold) / 100);
@@ -1382,7 +1382,7 @@ maybe_take_snapshot(SnapshotKind kind, Char* what)
    if (n_skipped_snapshots_since_last_snapshot > 0) {
       VERB(2, "  (skipped %d snapshot%s)",
          n_skipped_snapshots_since_last_snapshot,
-         ( n_skipped_snapshots_since_last_snapshot == 1 ? "" : "s") );
+         ( 1 == n_skipped_snapshots_since_last_snapshot ? "" : "s") );
    }
    VERB_snapshot(2, what, next_snapshot_i);
    n_skipped_snapshots_since_last_snapshot = 0;
@@ -1925,7 +1925,7 @@ static void pp_snapshot_SXPt(Int fd, SXPt* sxpt, Int depth, Char* depth_str,
    switch (sxpt->tag) {
     case SigSXPt:
       // Print the SXPt itself.
-      if (sxpt->Sig.ip == 0) {
+      if (0 == depth) {
          ip_desc =
             "(heap allocation functions) malloc/new/new[], --alloc-fns, etc.";
       } else {
@@ -1987,7 +1987,7 @@ static void pp_snapshot_SXPt(Int fd, SXPt* sxpt, Int depth, Char* depth_str,
       break;
 
     case InsigSXPt: {
-      Char* s = ( sxpt->Insig.n_xpts == 1 ? "," : "s, all" );
+      Char* s = ( 1 == sxpt->Insig.n_xpts ? "," : "s, all" );
       perc = make_perc(sxpt->szB, snapshot_total_szB);
       FP("%sn0: %lu in %d place%s below massif's threshold (%s)\n",
          depth_str, sxpt->szB, sxpt->Insig.n_xpts, s,

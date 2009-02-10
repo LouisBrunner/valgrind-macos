@@ -351,7 +351,7 @@
     <frame>
       <ip>0x........</ip>
       <obj>...</obj>
-      <fn>__libc_start_main</fn>
+      <fn>(below main)</fn>
     </frame>
   </stack>
 </error>

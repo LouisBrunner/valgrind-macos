@@ -74,6 +74,19 @@ extern Bool VG_(get_filename_linenum)
    entry points within it. */
 extern Bool VG_(get_fnname_if_entry) ( Addr a, Char* fnname, Int n_fnname );
 
+typedef
+   enum {
+      Vg_FnNameNormal,        // A normal function.
+      Vg_FnNameMain,          // "main"
+      Vg_FnNameBelowMain      // Something below "main", eg. __libc_start_main.
+   } Vg_FnNameKind;           //   Such names are often filtered.
+
+/* Indicates what kind of fnname it is. */
+extern Vg_FnNameKind VG_(get_fnname_kind) ( Char* name );
+
+/* Like VG_(get_fnname_kind), but takes a code address. */
+extern Vg_FnNameKind VG_(get_fnname_kind_from_IP) ( Addr ip );
+
 /* Looks up data_addr in the collection of data symbols, and if found
    puts its name (or as much as will fit) into dname[0 .. n_dname-1],
    which is guaranteed to be zero terminated.  Also data_addr's offset

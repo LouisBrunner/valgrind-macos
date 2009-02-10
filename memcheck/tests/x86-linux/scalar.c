@@ -267,10 +267,8 @@ int main(void)
    GO(__NR_fcntl, "(DUPFD) 1s 0m");
    SY(__NR_fcntl, x0-1, x0+F_DUPFD, x0); FAILx(EBADF);
 
-   // For F_GETLK the 3rd arg is 'lock'
-   // on x86, this fails with EBADF.  But on amd64 in 32-bit mode
-   // it fails with EFAULT.
-   GO(__NR_fcntl, "(GETLK) 1s 0m");
+   // For F_GETLK the 3rd arg is 'lock'.  On x86, this fails w/EBADF.  But on 
+   GO(__NR_fcntl, "(GETLK) 1s 0m"); // amd64 in 32-bit mode it fails w/EFAULT.
    SY(__NR_fcntl, x0-1, x0+F_GETLK, x0); FAIL; //FAILx(EBADF);
 
    // __NR_mpx 56
@@ -976,10 +974,8 @@ int main(void)
    GO(__NR_fcntl64, "(DUPFD) 1s 0m");
    SY(__NR_fcntl64, x0-1, x0+F_DUPFD, x0); FAILx(EBADF);
 
-   // For F_GETLK the 3rd arg is 'lock'
-   // on x86, this fails with EBADF.  But on amd64 in 32-bit mode
-   // it fails with EFAULT.
-   GO(__NR_fcntl64, "(GETLK) 1s 0m");
+   // For F_GETLK the 3rd arg is 'lock'.  // On x86, this fails w/EBADF.  But on
+   GO(__NR_fcntl64, "(GETLK) 1s 0m"); // amd64 in 32-bit mode it fails w/EFAULT.
    SY(__NR_fcntl64, x0-1, x0+F_GETLK, x0); FAIL; //FAILx(EBADF);
 
    // 222

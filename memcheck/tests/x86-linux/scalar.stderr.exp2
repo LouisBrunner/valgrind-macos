@@ -281,9 +281,6 @@ Syscall param mount(target) contains uninitialised byte(s)
    at 0x........: syscall (in /...libc...)
    by 0x........: main (scalar.c:124)
 
-More than 50 errors detected.  Subsequent errors
-will still be recorded, but in less detail than before.
-
 Syscall param mount(type) contains uninitialised byte(s)
    at 0x........: syscall (in /...libc...)
    by 0x........: main (scalar.c:124)
@@ -628,6 +625,9 @@ Syscall param fcntl(arg) contains uninitialised byte(s)
 -----------------------------------------------------
  55:          __NR_fcntl (GETLK) 1s 0m
 -----------------------------------------------------
+
+More than 100 errors detected.  Subsequent errors
+will still be recorded, but in less detail than before.
 
 Syscall param fcntl(fd) contains uninitialised byte(s)
    at 0x........: syscall (in /...libc...)
@@ -3983,6 +3983,8 @@ Syscall param mq_getsetattr(omqstat) points to unaddressable byte(s)
 WARNING: unhandled syscall: 9999
 You may be able to write your own handler.
 Read the file README_MISSING_SYSCALL_OR_IOCTL.
+Nevertheless we consider this a bug.  Please report
+it at http://valgrind.org/support/bug_reports.html.
 -----------------------------------------------------
   1:           __NR_exit 1s 0m
 -----------------------------------------------------

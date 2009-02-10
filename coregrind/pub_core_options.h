@@ -147,8 +147,6 @@ extern Bool  VG_(clo_track_fds);
    is ignored.  Ie if a tool says no, I don't want this to run, that
    cannot be overridden from the command line. */
 extern Bool  VG_(clo_run_libc_freeres);
-/* Continue stack traces below main()?  Default: NO */
-extern Bool VG_(clo_show_below_main);
 
 /* Should we show VEX emulation warnings?  Default: NO */
 extern Bool VG_(clo_show_emwarns);

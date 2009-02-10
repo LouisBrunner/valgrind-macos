@@ -36,7 +36,12 @@
 // Z-encoded names.
 //--------------------------------------------------------------------
 
-/* This is the main, standard demangler entry point. */
+/* This is the main, standard demangler entry point.  It does three things:
+ * (1) undoes Z-encoding;
+ * (2) undoes C++ demangling, if 'do_cxx_demangle' is True
+ * (3) converts "below main" names (eg. '__libc_start_main') to "(below
+ *     main)", if --show-below-main=no.
+ */
 
 extern 
 void VG_(demangle) ( Bool do_cxx_demangle,

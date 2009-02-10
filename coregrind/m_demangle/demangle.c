@@ -29,12 +29,13 @@
 */
 
 #include "pub_core_basics.h"
+#include "pub_core_debuginfo.h"     // XXX: circular dependency
 #include "pub_core_demangle.h"
+#include "pub_core_libcassert.h"
 #include "pub_core_libcbase.h"
+#include "pub_core_libcprint.h"
 #include "pub_core_mallocfree.h"
 #include "pub_core_options.h"
-#include "pub_core_libcassert.h"
-#include "pub_core_libcprint.h"
 
 #include "vg_libciface.h"
 #include "demangle.h"
@@ -121,21 +122,24 @@ void VG_(demangle) ( Bool do_cxx_demangle,
       VG_(strncpy_safely)(result, orig, result_size);
    }
 
-   /* Do the below-main hack */
    // 13 Mar 2005: We used to check here that the demangler wasn't leaking
    // by calling the (now-removed) function VG_(is_empty_arena)().  But,
    // very rarely (ie. I've heard of it twice in 3 years), the demangler
    // does leak.  But, we can't do much about it, and it's not a disaster,
    // so we just let it slide without aborting or telling the user.
 
+   /* Do the below-main hack */
    // Finally, to reduce the endless nuisance of multiple different names 
    // for "the frame below main()" screwing up the testsuite, change all
-   // known incarnations of said into a single name, "(below main)".
-   if (0==VG_(strcmp)("__libc_start_main", result)
-       || 0==VG_(strcmp)("generic_start_main", result)
-       || 0==VG_(strcmp)("__start", result)) /* on AIX */
-      VG_(strncpy_safely)(result, "(below main)", 13);
-
+   // known incarnations of said into a single name, "(below main)", if
+   // --show-below-main=yes.
+   // XXX: this makes a circular dependency between m_demangle and
+   // m_debuginfo.
+   if ( ! VG_(clo_show_below_main) &&
+          Vg_FnNameBelowMain == VG_(get_fnname_kind)(result))
+   {
+      VG_(strncpy_safely)(result, "(below main)", result_size);
+   }
 #  undef N_ZBUF
 }
 

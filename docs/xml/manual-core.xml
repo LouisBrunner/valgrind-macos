@@ -913,12 +913,18 @@ that can report errors, e.g. Memcheck, but not Cachegrind.</para>
     <listitem>
       <para>By default, stack traces for errors do not show any
       functions that appear beneath <function>main()</function> 
-      (or similar functions such as glibc's
-      <function>__libc_start_main()</function>, if
-      <function>main()</function> is not present in the stack trace);
-      most of the time it's uninteresting C library stuff.  If this
-      option is enabled, those entries below <function>main()</function>
-      will be shown.</para>
+      most of the time it's uninteresting C library stuff and/or
+      gobbledygook.  Alternatively, if <function>main()</function> is not
+      present in the stack trace, stack traces will not show any functions
+      below <function>main()</function>-like functions such as glibc's
+      <function>__libc_start_main()</function>).  Furthermore, if
+      <function>main()</function>-like functions are present in the trace,
+      they are normalised as "(below main)", in order to make the output
+      more deterministic.</para>
+      
+      <para>If this option is enabled, all stack trace entries will be
+      shown and <function>main()</function>-like functions will not be
+      normalised.</para>
     </listitem>
   </varlistentry>
 

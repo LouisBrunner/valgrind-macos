@@ -1931,18 +1931,13 @@ static void pp_snapshot_SXPt(Int fd, SXPt* sxpt, Int depth, Char* depth_str,
       } else {
          // If it's main-or-below-main, we (if appropriate) ignore everything
          // below it by pretending it has no children.
-         // XXX: get this properly.  Also, don't hard-code "(below main)"
-         //      here -- look at the "(below main)"/"__libc_start_main" mess
-         //      (m_stacktrace.c and m_demangle.c).
-         // [Nb: Josef wants --show-below-main to work for his fn entry/exit
-         //      tracing]
-         Bool should_hide_below_main = /*!VG_(clo_show_below_main)*/True;
-         if (should_hide_below_main &&
-             VG_(get_fnname)(sxpt->Sig.ip, ip_desc, BUF_LEN) &&
-             (VG_STREQ(ip_desc, "main") || VG_STREQ(ip_desc, "(below main)")))
-         {
-            sxpt->Sig.n_children = 0;
+         if ( ! VG_(clo_show_below_main) ) {
+            Vg_FnNameKind kind = VG_(get_fnname_kind_from_IP)(sxpt->Sig.ip);
+            if (Vg_FnNameMain == kind || Vg_FnNameBelowMain == kind) {
+               sxpt->Sig.n_children = 0;
+            }
          }
+
          // We need the -1 to get the line number right, But I'm not sure why.
          ip_desc = VG_(describe_IP)(sxpt->Sig.ip-1, ip_desc, BUF_LEN);
       }

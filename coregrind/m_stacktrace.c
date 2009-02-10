@@ -31,7 +31,7 @@
 #include "pub_core_basics.h"
 #include "pub_core_vki.h"
 #include "pub_core_threadstate.h"
-#include "pub_core_debuginfo.h"
+#include "pub_core_debuginfo.h"     // XXX: circular dependency
 #include "pub_core_aspacemgr.h"     // For VG_(is_addressable)()
 #include "pub_core_libcbase.h"
 #include "pub_core_libcassert.h"
@@ -531,11 +531,7 @@ void VG_(get_and_pp_StackTrace) ( ThreadId tid, UInt n_ips )
 void VG_(apply_StackTrace)( void(*action)(UInt n, Addr ip),
                             StackTrace ips, UInt n_ips )
 {
-   #define MYBUF_LEN 50  // only needs to be long enough for 
-                         // the names specially tested for
-
    Bool main_done = False;
-   Char mybuf[MYBUF_LEN];     // ok to stack allocate mybuf[] -- it's tiny
    Int i = 0;
 
    vg_assert(n_ips > 0);
@@ -545,16 +541,11 @@ void VG_(apply_StackTrace)( void(*action)(UInt n, Addr ip),
       // Stop after the first appearance of "main" or one of the other names
       // (the appearance of which is a pretty good sign that we've gone past
       // main without seeing it, for whatever reason)
-      if ( ! VG_(clo_show_below_main)) {
-         VG_(get_fnname_nodemangle)( ip, mybuf, MYBUF_LEN );
-         mybuf[MYBUF_LEN-1] = 0; // paranoia
-         if ( VG_STREQ("main", mybuf)
-#             if defined(VGO_linux)
-              || VG_STREQ("__libc_start_main", mybuf)   // glibc glibness
-              || VG_STREQ("generic_start_main", mybuf)  // Yellow Dog doggedness
-#             endif
-            )
+      if ( ! VG_(clo_show_below_main) ) {
+         Vg_FnNameKind kind = VG_(get_fnname_kind_from_IP)(ip);
+         if (Vg_FnNameMain == kind || Vg_FnNameBelowMain == kind) {
             main_done = True;
+         }
       }
 
       // Act on the ip

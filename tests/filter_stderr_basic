@@ -45,7 +45,7 @@ sed "/warning: line info addresses out of order/d"                     |
 # of the bash process. Newer bash versions redirect such messages properly.
 # Suppress any redirected abnormal termination messages. You can find the
 # complete list of messages in the bash source file siglist.c.
-sed -r "/^(Segmentation fault|Alarm clock|Aborted)( \(core dumped\))?$/d" |
+sed -r "/^(Segmentation fault|Alarm clock|Aborted|Bus error)( \(core dumped\))?$/d" |
 
 # Remove any ": dumping core" message as the user might have a
 # limit set that prevents the core dump

@@ -29,7 +29,6 @@
 */
 
 #include "pub_core_basics.h"
-#include "pub_core_debuginfo.h"     // XXX: circular dependency
 #include "pub_core_demangle.h"
 #include "pub_core_libcassert.h"
 #include "pub_core_libcbase.h"
@@ -87,34 +86,31 @@
 
 /* This is the main, standard demangler entry point. */
 
-void VG_(demangle) ( Bool do_cxx_demangle, 
+void VG_(demangle) ( Bool do_cxx_demangling, Bool do_z_demangling,
                      Char* orig, Char* result, Int result_size )
 {
 #  define N_ZBUF 4096
    HChar* demangled = NULL;
    HChar z_demangled[N_ZBUF];
 
-   if (!VG_(clo_demangle)) {
-      VG_(strncpy_safely)(result, orig, result_size);
-      return;
-   }
-
-   /* Undo (2) */
-   /* Demangling was requested.  First see if it's a Z-mangled
-      intercept specification.  The fastest way is just to attempt a
-      Z-demangling (with NULL soname buffer, since we're not
+   /* Possibly undo (2) */
+   /* Z-Demangling was requested.  
+      The fastest way to see if it's a Z-mangled name is just to attempt
+      to Z-demangle it (with NULL for the soname buffer, since we're not
       interested in that). */
-   if (VG_(maybe_Z_demangle)( orig, NULL,0,/*soname*/
-                              z_demangled, N_ZBUF, NULL)) {
-      orig = z_demangled;
+   if (do_z_demangling) {
+      if (VG_(maybe_Z_demangle)( orig, NULL,0,/*soname*/
+                                 z_demangled, N_ZBUF, NULL)) {
+         orig = z_demangled;
+      }
    }
 
    /* Possibly undo (1) */
-   if (do_cxx_demangle)
+   if (do_cxx_demangling && VG_(clo_demangle)) {
       demangled = ML_(cplus_demangle) ( orig, DMGL_ANSI | DMGL_PARAMS );
-   else
+   } else {
       demangled = NULL;
-
+   }
    if (demangled) {
       VG_(strncpy_safely)(result, demangled, result_size);
       VG_(arena_free) (VG_AR_DEMANGLE, demangled);
@@ -127,19 +123,6 @@ void VG_(demangle) ( Bool do_cxx_demangle,
    // very rarely (ie. I've heard of it twice in 3 years), the demangler
    // does leak.  But, we can't do much about it, and it's not a disaster,
    // so we just let it slide without aborting or telling the user.
-
-   /* Do the below-main hack */
-   // Finally, to reduce the endless nuisance of multiple different names 
-   // for "the frame below main()" screwing up the testsuite, change all
-   // known incarnations of said into a single name, "(below main)", if
-   // --show-below-main=yes.
-   // XXX: this makes a circular dependency between m_demangle and
-   // m_debuginfo.
-   if ( ! VG_(clo_show_below_main) &&
-          Vg_FnNameBelowMain == VG_(get_fnname_kind)(result))
-   {
-      VG_(strncpy_safely)(result, "(below main)", result_size);
-   }
 #  undef N_ZBUF
 }
 

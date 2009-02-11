@@ -337,8 +337,8 @@ UInt VG_(get_StackTrace_wrk) ( ThreadId tid_if_known,
       UChar buf_lr[M_VG_ERRTXT], buf_ip[M_VG_ERRTXT];
       /* The following conditional looks grossly inefficient and
          surely could be majorly improved, with not much effort. */
-      if (VG_(get_fnname_nodemangle) (lr, buf_lr, M_VG_ERRTXT))
-         if (VG_(get_fnname_nodemangle) (ip, buf_ip, M_VG_ERRTXT))
+      if (VG_(get_fnname_raw) (lr, buf_lr, M_VG_ERRTXT))
+         if (VG_(get_fnname_raw) (ip, buf_ip, M_VG_ERRTXT))
             if (VG_(strncmp)(buf_lr, buf_ip, M_VG_ERRTXT))
                lr_is_first_RA = True;
 #     undef M_VG_ERRTXT

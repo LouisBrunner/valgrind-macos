@@ -1091,13 +1091,15 @@ static void search_all_loctabs ( Addr ptr, /*OUT*/DebugInfo** pdi,
 
 /* The whole point of this whole big deal: map a code address to a
    plausible symbol name.  Returns False if no idea; otherwise True.
-   Caller supplies buf and nbuf.  If demangle is False, don't do
-   demangling, regardless of VG_(clo_demangle) -- probably because the
-   call has come from VG_(get_fnname_nodemangle)().  findText
+   Caller supplies buf and nbuf.  If do_cxx_demangling is False, don't do
+   C++ demangling, regardless of VG_(clo_demangle) -- probably because the
+   call has come from VG_(get_fnname_raw)().  findText
    indicates whether we're looking for a text symbol or a data symbol
    -- caller must choose one kind or the other. */
 static
-Bool get_sym_name ( Bool demangle, Addr a, Char* buf, Int nbuf,
+Bool get_sym_name ( Bool do_cxx_demangling, Bool do_z_demangling,
+                    Bool do_below_main_renaming,
+                    Addr a, Char* buf, Int nbuf,
                     Bool match_anywhere_in_sym, Bool show_offset,
                     Bool findText, /*OUT*/PtrdiffT* offsetP )
 {
@@ -1108,14 +1110,20 @@ Bool get_sym_name ( Bool demangle, Addr a, Char* buf, Int nbuf,
    search_all_symtabs ( a, &di, &sno, match_anywhere_in_sym, findText );
    if (di == NULL) 
       return False;
-   if (demangle) {
-      VG_(demangle) ( True/*do C++ demangle*/,
-                      di->symtab[sno].name, buf, nbuf );
 
-   } else {
-      VG_(strncpy_safely) ( buf, di->symtab[sno].name, nbuf );
+   VG_(demangle) ( do_cxx_demangling, do_z_demangling,
+                   di->symtab[sno].name, buf, nbuf );
+
+   /* Do the below-main hack */
+   // To reduce the endless nuisance of multiple different names 
+   // for "the frame below main()" screwing up the testsuite, change all
+   // known incarnations of said into a single name, "(below main)", if
+   // --show-below-main=yes.
+   if ( do_below_main_renaming && ! VG_(clo_show_below_main) &&
+        Vg_FnNameBelowMain == VG_(get_fnname_kind)(buf) )
+   {
+      VG_(strncpy_safely)(buf, "(below main)", nbuf);
    }
-
    offset = a - di->symtab[sno].addr;
    if (offsetP) *offsetP = offset;
 
@@ -1135,6 +1143,8 @@ Bool get_sym_name ( Bool demangle, Addr a, Char* buf, Int nbuf,
 	 VG_(memcpy)(symend, cp, len+1);
       }
    }
+
+   buf[nbuf-1] = 0; /* paranoia */
 
    return True;
 }
@@ -1160,7 +1170,9 @@ Addr VG_(get_tocptr) ( Addr guest_code_addr )
    match anywhere in function, but don't show offsets. */
 Bool VG_(get_fnname) ( Addr a, Char* buf, Int nbuf )
 {
-   return get_sym_name ( /*demangle*/True, a, buf, nbuf,
+   return get_sym_name ( /*C++-demangle*/True, /*Z-demangle*/True,
+                         /*below-main-renaming*/True,
+                         a, buf, nbuf,
                          /*match_anywhere_in_fun*/True, 
                          /*show offset?*/False,
                          /*text syms only*/True,
@@ -1171,7 +1183,9 @@ Bool VG_(get_fnname) ( Addr a, Char* buf, Int nbuf )
    match anywhere in function, and show offset if nonzero. */
 Bool VG_(get_fnname_w_offset) ( Addr a, Char* buf, Int nbuf )
 {
-   return get_sym_name ( /*demangle*/True, a, buf, nbuf,
+   return get_sym_name ( /*C++-demangle*/True, /*Z-demangle*/True,
+                         /*below-main-renaming*/True,
+                         a, buf, nbuf,
                          /*match_anywhere_in_fun*/True, 
                          /*show offset?*/True,
                          /*text syms only*/True,
@@ -1183,18 +1197,23 @@ Bool VG_(get_fnname_w_offset) ( Addr a, Char* buf, Int nbuf )
    and don't show offsets. */
 Bool VG_(get_fnname_if_entry) ( Addr a, Char* buf, Int nbuf )
 {
-   return get_sym_name ( /*demangle*/True, a, buf, nbuf,
+   return get_sym_name ( /*C++-demangle*/True, /*Z-demangle*/True,
+                         /*below-main-renaming*/True,
+                         a, buf, nbuf,
                          /*match_anywhere_in_fun*/False, 
                          /*show offset?*/False,
                          /*text syms only*/True,
                          /*offsetP*/NULL );
 }
 
-/* This is only available to core... don't demangle C++ names,
-   match anywhere in function, and don't show offsets. */
-Bool VG_(get_fnname_nodemangle) ( Addr a, Char* buf, Int nbuf )
+/* This is only available to core... don't C++-demangle, don't Z-demangle,
+   don't rename below-main, match anywhere in function, and don't show
+   offsets. */
+Bool VG_(get_fnname_raw) ( Addr a, Char* buf, Int nbuf )
 {
-   return get_sym_name ( /*demangle*/False, a, buf, nbuf,
+   return get_sym_name ( /*C++-demangle*/False, /*Z-demangle*/False,
+                         /*below-main-renaming*/False,
+                         a, buf, nbuf,
                          /*match_anywhere_in_fun*/True, 
                          /*show offset?*/False,
                          /*text syms only*/True,
@@ -1202,29 +1221,17 @@ Bool VG_(get_fnname_nodemangle) ( Addr a, Char* buf, Int nbuf )
 }
 
 /* This is only available to core... don't demangle C++ names, but do
-   do Z-demangling, match anywhere in function, and don't show
-   offsets. */
-Bool VG_(get_fnname_Z_demangle_only) ( Addr a, Char* buf, Int nbuf )
+   do Z-demangling and below-main-renaming, match anywhere in function, and
+   don't show offsets. */
+Bool VG_(get_fnname_no_cxx_demangle) ( Addr a, Char* buf, Int nbuf )
 {
-#  define N_TMPBUF 4096 /* arbitrary, 4096 == ERRTXT_LEN */
-   Char tmpbuf[N_TMPBUF];
-   Bool ok;
-   vg_assert(nbuf > 0);
-   ok = get_sym_name ( /*demangle*/False, a, tmpbuf, N_TMPBUF,
-                       /*match_anywhere_in_fun*/True, 
-                       /*show offset?*/False,
-                       /*text syms only*/True,
-                       /*offsetP*/NULL );
-   tmpbuf[N_TMPBUF-1] = 0; /* paranoia */
-   if (!ok) 
-      return False;
-
-   /* We have something, at least.  Try to Z-demangle it. */
-   VG_(demangle)( False/*don't do C++ demangling*/, tmpbuf, buf, nbuf);
-
-   buf[nbuf-1] = 0; /* paranoia */
-   return True;
-#  undef N_TMPBUF
+   return get_sym_name ( /*C++-demangle*/False, /*Z-demangle*/True,
+                         /*below-main-renaming*/True,
+                         a, buf, nbuf,
+                         /*match_anywhere_in_fun*/True, 
+                         /*show offset?*/False,
+                         /*text syms only*/True,
+                         /*offsetP*/NULL );
 }
 
 Vg_FnNameKind VG_(get_fnname_kind) ( Char* name )
@@ -1257,7 +1264,7 @@ Vg_FnNameKind VG_(get_fnname_kind_from_IP) ( Addr ip )
 
    // We don't demangle, because it's faster not to, and the special names
    // we're looking for won't be demangled.
-   if (VG_(get_fnname_nodemangle) ( ip, buf, BUFLEN )) {
+   if (VG_(get_fnname_raw) ( ip, buf, BUFLEN )) {
       buf[BUFLEN-1] = '\0';      // paranoia
       return VG_(get_fnname_kind)(buf);
    } else {
@@ -1275,7 +1282,9 @@ Bool VG_(get_datasym_and_offset)( Addr data_addr,
 {
    Bool ok;
    vg_assert(n_dname > 1);
-   ok = get_sym_name ( /*demangle*/False, data_addr, dname, n_dname,
+   ok = get_sym_name ( /*C++-demangle*/False, /*Z-demangle*/False,
+                       /*below-main-renaming*/False,
+                       data_addr, dname, n_dname,
                        /*match_anywhere_in_sym*/True, 
                        /*show offset?*/False,
                        /*data syms only please*/False,

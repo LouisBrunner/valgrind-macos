@@ -404,7 +404,7 @@ static void printSuppForIp(UInt n, Addr ip)
 {
    static UChar buf[ERRTXT_LEN];
 
-   if ( VG_(get_fnname_Z_demangle_only) (ip, buf,  ERRTXT_LEN) ) {
+   if ( VG_(get_fnname_no_cxx_demangle) (ip, buf,  ERRTXT_LEN) ) {
       VG_(printf)("   fun:%s\n", buf);
    } else if ( VG_(get_objname)(ip, buf, ERRTXT_LEN) ) {
       VG_(printf)("   obj:%s\n", buf);
@@ -1210,12 +1210,12 @@ static Bool supp_pattEQinp ( void* supplocV, void* addrV )
       case FunName: 
          /* Get the function name into 'caller_name', or "???"
             if unknown. */
-         // Nb: mangled names used in suppressions.  Do, though,
+         // Nb: C++-mangled names are used in suppressions.  Do, though,
          // Z-demangle them, since otherwise it's possible to wind
          // up comparing "malloc" in the suppression against
          // "_vgrZU_libcZdsoZa_malloc" in the backtrace, and the
          // two of them need to be made to match.
-         if (!VG_(get_fnname_Z_demangle_only)(ip, caller_name, ERRTXT_LEN))
+         if (!VG_(get_fnname_no_cxx_demangle)(ip, caller_name, ERRTXT_LEN))
             VG_(strcpy)(caller_name, "???");
          break;
       default:

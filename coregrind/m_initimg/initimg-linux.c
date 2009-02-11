@@ -202,8 +202,8 @@ static void load_client ( /*OUT*/ExeInfo* info,
 /* Prepare the client's environment.  This is basically a copy of our
    environment, except:
 
-     LD_PRELOAD=$VALGRIND_LIB/PLATFORM/vgpreload_core.so:
-                ($VALGRIND_LIB/PLATFORM/vgpreload_TOOL.so:)?
+     LD_PRELOAD=$VALGRIND_LIB/vgpreload_core-PLATFORM.so:
+                ($VALGRIND_LIB/vgpreload_TOOL-PLATFORM.so:)?
                 $LD_PRELOAD
 
    If this is missing, then it is added.
@@ -242,18 +242,18 @@ static HChar** setup_client_env ( HChar** origenv, const HChar* toolname)
                                            preload_string_len);
    vg_assert(preload_string);
 
-   /* Determine if there's a vgpreload_<tool>.so file, and setup
+   /* Determine if there's a vgpreload_<tool>_<platform>.so file, and setup
       preload_string. */
    preload_tool_path = VG_(malloc)("initimg-linux.sce.2", preload_tool_path_len);
    vg_assert(preload_tool_path);
    VG_(snprintf)(preload_tool_path, preload_tool_path_len,
-                 "%s/%s/vgpreload_%s.so", VG_(libdir), VG_PLATFORM, toolname);
+                 "%s/vgpreload_%s-%s.so", VG_(libdir), toolname, VG_PLATFORM);
    if (VG_(access)(preload_tool_path, True/*r*/, False/*w*/, False/*x*/) == 0) {
-      VG_(snprintf)(preload_string, preload_string_len, "%s/%s/%s.so:%s", 
-                    VG_(libdir), VG_PLATFORM, preload_core, preload_tool_path);
+      VG_(snprintf)(preload_string, preload_string_len, "%s/%s-%s.so:%s", 
+                    VG_(libdir), preload_core, VG_PLATFORM, preload_tool_path);
    } else {
-      VG_(snprintf)(preload_string, preload_string_len, "%s/%s/%s.so", 
-                    VG_(libdir), VG_PLATFORM, preload_core);
+      VG_(snprintf)(preload_string, preload_string_len, "%s/%s-%s.so", 
+                    VG_(libdir), preload_core, VG_PLATFORM);
    }
    VG_(free)(preload_tool_path);
 

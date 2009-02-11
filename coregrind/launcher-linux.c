@@ -309,7 +309,7 @@ int main(int argc, char** argv, char** envp)
    toolfile = malloc(strlen(valgrind_lib) + strlen(toolname) + strlen(platform) + 3);
    if (toolfile == NULL)
       barf("malloc of toolfile failed.");
-   sprintf(toolfile, "%s/%s/%s", valgrind_lib, platform, toolname);
+   sprintf(toolfile, "%s/%s-%s", valgrind_lib, toolname, platform);
 
    VG_(debugLog)(1, "launcher", "launching %s\n", toolfile);
 

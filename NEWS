@@ -1,6 +1,19 @@
 
 Release 3.5.0 (???)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+* The location of some install files has changed.  This should not affect
+  most users.  Those who might be affected:
+
+  - For people who use Valgrind with MPI programs, the installed
+    libmpiwrap.so library has moved from $(INSTALL)/<platform>/libmpiwrap.so
+    to $(INSTALL)/libmpiwrap-<platform>.so.
+
+  - For people who distribute standalone Valgrind tools, the installed
+    libraries such as $(INSTALL)/<platform>/libcoregrind.a have moved to
+    $(INSTALL)/libcoregrind-<platform>.a.
+
+  These changes were made to simplify the build system.
+
 * Previously, all the distributed suppression (*.supp) files were installed.
   Now, only default.supp is installed.  This should not affect users as the
   other installed suppression files were not read.

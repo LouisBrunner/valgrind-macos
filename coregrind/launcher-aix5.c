@@ -1503,7 +1503,7 @@ int main ( int argc, char** argv, char** envp )
       fprintf(stderr,"%s: malloc of toolfile failed\n", argv[0]);
       return 1;
    }
-   sprintf(toolfile, "%s/%s/%s", valgrind_lib, platform, toolname);
+   sprintf(toolfile, "%s/%s-%s", valgrind_lib, toolname, platform);
 
    if (!file_exists(toolfile)) {
       fprintf(stderr,"%s: can't stat %s\n", argv[0], toolfile);

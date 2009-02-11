@@ -85,12 +85,12 @@ endif
 
 install-exec-local:
 if BUILD_MPIWRAP_PRI
-	$(mkinstalldirs) $(DESTDIR)$(valdir)/@VGCONF_ARCH_PRI@-@VGCONF_OS@; \
-	$(INSTALL_PROGRAM) ./libmpiwrap-@VGCONF_ARCH_PRI@-@VGCONF_OS@.so $(DESTDIR)$(valdir)/@VGCONF_ARCH_PRI@-@VGCONF_OS@/libmpiwrap.so;
+	$(mkinstalldirs) $(DESTDIR)$(valdir); \
+	$(INSTALL_PROGRAM) ./libmpiwrap-@VGCONF_ARCH_PRI@-@VGCONF_OS@.so $(DESTDIR)$(valdir);
 endif
 if BUILD_MPIWRAP_SEC
-	$(mkinstalldirs) $(DESTDIR)$(valdir)/@VGCONF_ARCH_SEC@-@VGCONF_OS@; \
-	$(INSTALL_PROGRAM) ./libmpiwrap-@VGCONF_ARCH_SEC@-@VGCONF_OS@.so $(DESTDIR)$(valdir)/@VGCONF_ARCH_SEC@-@VGCONF_OS@/libmpiwrap.so;
+	$(mkinstalldirs) $(DESTDIR)$(valdir); \
+	$(INSTALL_PROGRAM) ./libmpiwrap-@VGCONF_ARCH_SEC@-@VGCONF_OS@.so $(DESTDIR)$(valdir);
 endif
 
 

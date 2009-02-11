@@ -1,40 +1,22 @@
 # This is used by coregrind/Makefile.am and Makefile.tool.am for doing
-# "in-place" installs.  It copies $(noinst_PROGRAMS) into $inplacedir, doing
-# some magic renaming as it does.
-# The similar code below explains how the magic sed commands work.
+# "in-place" installs.  It copies $(noinst_PROGRAMS) into $inplacedir.
 all-local:
 	if [ -n "$(noinst_PROGRAMS)" ] ; then \
 	  for f in $(noinst_PROGRAMS); do \
-	    name=`echo $$f | sed -e 's/-\([^-]*-[^-.]*\)\(\..*\)\{0,1\}$$/\2/'`; \
-	    plat=`echo $$f | sed -e 's/^.*-\([^-]*-[^-.]*\)\(\..*\)\{0,1\}$$/\1/'`; \
-	    mkdir -p $(inplacedir)/$$plat; \
-	    rm -f $(inplacedir)/$$plat/$$name; \
-	    ln -f -s ../../$(subdir)/$$f $(inplacedir)/$$plat/$$name; \
+	    mkdir -p $(inplacedir); \
+	    rm -f $(inplacedir)/$$f; \
+	    ln -f -s ../$(subdir)/$$f $(inplacedir); \
 	  done ; \
 	fi
 
 # This is used by coregrind/Makefile.am and by <tool>/Makefile.am for doing
-# "make install".  It copies $(noinst_PROGRAMS) into $prefix/lib/valgrind/,
-# doing some magic renaming as it does.
+# "make install".  It copies $(noinst_PROGRAMS) into $prefix/lib/valgrind/.
 # It needs to be depended on by an 'install-exec-local' rule.
-#
-# Details about the renaming: the loop copies a bunch of files with
-# names of the form wurble-arch-os to $prefix/lib/valgrind/arch-os/wurble.
-# There is some complexity in the sed mangling because wurble may itself
-# contain a dash, which must be ignored.  For example we want
-#    exp-omega-x86-linux
-# to be installed in 
-#    $prefix/lib/valgrind/x86-linux/exp-omega
-# and not in
-#    $prefix/lib/valgrind/omega-x86-linux/exp
-# or similarly mutant place.
 install-exec-local-programs:
 	if [ -n "$(noinst_PROGRAMS)" ] ; then \
 	  for f in $(noinst_PROGRAMS); do \
-	    name=`echo $$f | sed -e 's/-\([^-]*-[^-.]*\)\(\..*\)\?$$/\2/'`; \
-	    plat=`echo $$f | sed -e 's/^.*-\([^-]*-[^-.]*\)\(\..*\)\?$$/\1/'`; \
-	    $(mkinstalldirs) $(DESTDIR)$(valdir)/$$plat; \
-	    $(INSTALL_PROGRAM) $$f $(DESTDIR)$(valdir)/$$plat/$$name; \
+	    $(mkinstalldirs) $(DESTDIR)$(valdir); \
+	    $(INSTALL_PROGRAM) $$f $(DESTDIR)$(valdir); \
 	  done ; \
 	fi
 

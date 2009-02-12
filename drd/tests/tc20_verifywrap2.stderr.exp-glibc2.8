@@ -163,7 +163,7 @@ Destroying locked mutex: mutex 0x........, recursion count 1, owner 1.
    at 0x........: pthread_mutex_lock (drd_pthread_intercepts.c:?)
    by 0x........: (within ld-?.?.so)
    by 0x........: exit (in /...libc...)
-   by 0x........: (below main) (in /...libc...)
+   by 0x........: (below main)
 [1/1] mutex_destroy   invalid mutex 0x........
 [1/1] mutex_unlock    recursive mutex 0x........ rc 1
 [1/1] pre_mutex_lock  recursive mutex 0x........ rc 0 owner 1

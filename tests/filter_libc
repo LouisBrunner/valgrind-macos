@@ -18,7 +18,9 @@ while (<>)
     s/\(in \/.*libc.*\)$/(in \/...libc...)/;
     s/\(within \/.*libc.*\)$/(within \/...libc...)/;
 
-    s/\(below main\) \(.+\.[cS]:\d+\)$/(below main) (in \/...libc...)/;
+    # Remove the filename -- on some platforms (eg. Linux) it will be in
+    # libc, on some (eg. Darwin) it will be in the main executable.
+    s/\(below main\) \(.+\)$/(below main)/;
 
     s/($libc_symbols) \(.+\.[cS]:\d+\)$/$1 (in \/...libc...)/;
 

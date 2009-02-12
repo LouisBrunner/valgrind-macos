@@ -23,6 +23,6 @@ Thread #x is the program's root thread
 
 Thread #x: Exiting thread still holds 1 lock
    at 0x........: kill (in /...libc...)
-   by 0x........: (below main) (in /...libc...)
+   by 0x........: (below main)
 
 ERROR SUMMARY: 3 errors from 3 contexts (suppressed: 0 from 0)

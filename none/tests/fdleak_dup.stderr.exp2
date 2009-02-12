@@ -3,7 +3,7 @@
 FILE DESCRIPTORS: 5 open at exit.
 Open file descriptor .: /dev/null
    at 0x........: dup (in /...libc...)
-   by 0x........: (below main) (in /...libc...)
+   by 0x........: (below main)
 
 Open file descriptor .: /dev/null
    at 0x........: open (in /...libc...)

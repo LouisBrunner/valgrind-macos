@@ -154,6 +154,6 @@ FIXME: can't figure out how to verify wrap of sem_post
 Thread #x: Exiting thread still holds 1 lock
    at 0x........: _Exit (in /...libc...)
    by 0x........: exit (in /...libc...)
-   by 0x........: (below main) (in /...libc...)
+   by 0x........: (below main)
 
 ERROR SUMMARY: 20 errors from 20 contexts (suppressed: 0 from 0)

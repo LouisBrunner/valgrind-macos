@@ -91,6 +91,6 @@ Thread #x's call to pthread_mutex_unlock failed
 Thread #x: Exiting thread still holds 1 lock
    at 0x........: _Exit (in /...libc...)
    by 0x........: exit (in /...libc...)
-   by 0x........: (below main) (in /...libc...)
+   by 0x........: (below main)
 
 ERROR SUMMARY: 11 errors from 11 contexts (suppressed: 0 from 0)

@@ -154,4 +154,7 @@ LIBREPLACEMALLOC_LDFLAGS_PPC64_AIX5 = \
 	$(LIBREPLACEMALLOC_PPC64_AIX5)
 
 
-install-exec-local: install-exec-local-programs
+all-local: inplace-noinst_PROGRAMS
+
+install-exec-local: install-noinst_PROGRAMS
+

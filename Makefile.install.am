@@ -1,9 +1,10 @@
 # This is used by coregrind/Makefile.am and Makefile.tool.am for doing
 # "in-place" installs.  It copies $(noinst_PROGRAMS) into $inplacedir.
-all-local:
+# It needs to be depended on by an 'all-local' rule.
+inplace-noinst_PROGRAMS:
 	if [ -n "$(noinst_PROGRAMS)" ] ; then \
-	  for f in $(noinst_PROGRAMS); do \
-	    mkdir -p $(inplacedir); \
+	  mkdir -p $(inplacedir); \
+	  for f in $(noinst_PROGRAMS) ; do \
 	    rm -f $(inplacedir)/$$f; \
 	    ln -f -s ../$(subdir)/$$f $(inplacedir); \
 	  done ; \
@@ -12,10 +13,10 @@ all-local:
 # This is used by coregrind/Makefile.am and by <tool>/Makefile.am for doing
 # "make install".  It copies $(noinst_PROGRAMS) into $prefix/lib/valgrind/.
 # It needs to be depended on by an 'install-exec-local' rule.
-install-exec-local-programs:
+install-noinst_PROGRAMS:
 	if [ -n "$(noinst_PROGRAMS)" ] ; then \
+	  $(mkinstalldirs) $(DESTDIR)$(valdir); \
 	  for f in $(noinst_PROGRAMS); do \
-	    $(mkinstalldirs) $(DESTDIR)$(valdir); \
 	    $(INSTALL_PROGRAM) $$f $(DESTDIR)$(valdir); \
 	  done ; \
 	fi

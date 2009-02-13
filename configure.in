@@ -1750,6 +1750,7 @@ AC_OUTPUT(
    none/tests/ppc32/Makefile
    none/tests/ppc64/Makefile
    none/tests/x86/Makefile
+   none/tests/linux/Makefile
    none/docs/Makefile
    exp-omega/Makefile
    exp-omega/tests/Makefile

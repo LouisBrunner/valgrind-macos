@@ -143,7 +143,6 @@ EXTRA_DIST = $(noinst_SCRIPTS) \
 	sigprocmask.stderr.exp sigprocmask.stderr.exp2 sigprocmask.vgtest \
 	stack_changes.stderr.exp stack_changes.stdout.exp \
 	stack_changes.stdout.exp2 stack_changes.vgtest \
-	stack_switch.stderr.exp stack_switch.vgtest \
 	strchr.stderr.exp strchr.stderr.exp2 strchr.vgtest \
 	str_tester.stderr.exp str_tester.vgtest \
 	supp_unknown.stderr.exp supp_unknown.vgtest supp_unknown.supp \
@@ -215,7 +214,7 @@ check_PROGRAMS = \
 	realloc1 realloc2 realloc3 \
 	sh-mem sh-mem-random \
 	sigaltstack signal2 sigprocmask sigkill \
-	stack_changes stack_switch strchr str_tester \
+	stack_changes strchr str_tester \
 	supp_unknown supp1 supp2 suppfree \
 	trivialleak \
 	mismatches new_override metadata \
@@ -247,7 +246,6 @@ wrap6_CFLAGS		= $(AM_FLAG_M3264_PRI) $(AM_CFLAGS) -O2 -g
 
 # Don't allow GCC to inline memcpy(), because then we can't intercept it
 overlap_CFLAGS		= $(AM_CFLAGS) -fno-builtin-memcpy
-stack_switch_LDADD      = -lpthread
 str_tester_CFLAGS	= $(AM_CFLAGS) -Wno-shadow
 supp_unknown_SOURCES	= badjump.c
 supp1_SOURCES		= supp.c

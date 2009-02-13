@@ -3,16 +3,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#if defined(_AIX)
-
-int main ( void )
-{
-  printf("This test is Linux-specific.\n");
-  return 0;
-}
-
-#else
-
 static char *mkmap(unsigned sz)
 {
 	static char *map;
@@ -106,5 +96,3 @@ int main()
 
 	return 0;
 }
-
-#endif /* defined(_AIX) */

@@ -3,6 +3,8 @@
 include $(top_srcdir)/Makefile.flags.am
 
 SUBDIRS = .
+
+# Arch-specific tests.
 if VGCONF_ARCHS_INCLUDE_X86
 SUBDIRS += x86
 endif
@@ -16,7 +18,12 @@ if VGCONF_ARCHS_INCLUDE_PPC64
 SUBDIRS += ppc64
 endif
 
-DIST_SUBDIRS = x86 amd64 ppc32 ppc64 .
+# OS-specific tests
+if VGCONF_OS_IS_LINUX
+SUBDIRS += linux
+endif
+
+DIST_SUBDIRS = x86 amd64 ppc32 ppc64 linux .
 
 noinst_SCRIPTS = \
 	filter_cmdline0 filter_linenos \
@@ -76,11 +83,6 @@ EXTRA_DIST = $(noinst_SCRIPTS) \
 	map_unaligned.stderr.exp map_unaligned.vgtest \
 	map_unmap.stderr.exp map_unmap.stdout.exp map_unmap.vgtest \
 	mq.stderr.exp mq.vgtest \
-	mremap.stderr.exp mremap.stdout.exp mremap.vgtest \
-	mremap2.stderr.exp \
-	mremap2.stdout.exp mremap2.stdout.exp2 \
-	mremap2.stdout.exp-glibc28-amd64 \
-	mremap2.vgtest \
 	munmap_exe.stderr.exp munmap_exe.vgtest \
 	nestedfns.stderr.exp nestedfns.stdout.exp nestedfns.vgtest \
 	pending.stdout.exp pending.stderr.exp pending.vgtest \
@@ -144,7 +146,7 @@ check_PROGRAMS = \
 	fdleak_fcntl fdleak_ipv4 fdleak_open fdleak_pipe \
 	fdleak_socketpair \
 	floored fork fucomip manythreads \
-	munmap_exe map_unaligned map_unmap mq mremap mremap2 \
+	munmap_exe map_unaligned map_unmap mq \
 	nestedfns \
 	pending \
 	pth_atfork1 pth_blockedsig pth_cancel1 pth_cancel2 pth_cvsimple \

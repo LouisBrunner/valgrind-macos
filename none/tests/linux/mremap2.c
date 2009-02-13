@@ -2,16 +2,6 @@
 
 #include <stdio.h>
 
-#if defined(_AIX)
-
-int main ( void )
-{
-  printf("This test is Linux-specific.\n");
-  return 0;
-}
-
-#else
-
 #include <sys/mman.h>
 #include <assert.h>
 #include <stdlib.h>
@@ -172,5 +162,3 @@ int main ( void )
   }
   return 0;
 }
-
-#endif /* defined(_AIX5) */

@@ -317,6 +317,13 @@
    fun:g_get_language_names
 }
 {
+   libQtCore-deref-that-calls-QThreadData-destructor
+   drd:ConflictingAccess
+   fun:_ZN11QThreadDataD1Ev
+   fun:_ZN11QThreadData5derefEv
+   obj:/usr/lib*/libQtCore.so.4.*
+}
+{
    libQtCore-4.0/4.1-Q_GLOBAL_STATIC-connectionList
    drd:ConflictingAccess
    obj:/usr/lib*/libQtCore.so.4.*

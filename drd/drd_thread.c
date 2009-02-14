@@ -282,7 +282,7 @@ void thread_delete(const DrdThreadId tid)
 
   tl_assert(0 <= (int)tid && tid < DRD_N_THREADS
             && tid != DRD_INVALID_THREADID);
-  tl_assert(s_threadinfo[tid].synchr_nesting == 0);
+  tl_assert(s_threadinfo[tid].synchr_nesting >= 0);
   for (sg = s_threadinfo[tid].last; sg; sg = sg_prev)
   {
     sg_prev = sg->prev;

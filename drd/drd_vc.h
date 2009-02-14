@@ -27,67 +27,69 @@
 #define __DRD_VC_H
 
 
-// DRD vector clock implementation:
-// - One counter per thread.
-// - A vector clock is implemented as multiple pairs of (thread id, counter).
-// - Pairs are stored in an array sorted by thread id.
-// Semantics:
-// - Each time a thread performs an action that implies an ordering between
-//   intra-thread events, the counter of that thread is incremented.
-// - Vector clocks are compared by comparing all counters of all threads.
-// - When a thread synchronization action is performed that guarantees that
-//   new actions of the current thread are executed after the actions of the
-//   other thread, the vector clock of the synchronization object and the 
-//   current thread are combined (by taking the component-wise maximum).
-// - A vector clock is incremented during actions such as
-//   pthread_create(), pthread_mutex_unlock(), sem_post(). (Actions where
-//   an inter-thread ordering "arrow" starts).
+/*
+ * DRD vector clock implementation:
+ * - One counter per thread.
+ * - A vector clock is implemented as multiple pairs of (thread id, counter).
+ * - Pairs are stored in an array sorted by thread id.
+ *
+ * Semantics:
+ * - Each time a thread performs an action that implies an ordering between
+ *   intra-thread events, the counter of that thread is incremented.
+ * - Vector clocks are compared by comparing all counters of all threads.
+ * - When a thread synchronization action is performed that guarantees that
+ *   new actions of the current thread are executed after the actions of the
+ *   other thread, the vector clock of the synchronization object and the 
+ *   current thread are combined (by taking the component-wise maximum).
+ * - A vector clock is incremented during actions such as
+ *   pthread_create(), pthread_mutex_unlock(), sem_post(). (Actions where
+ *   an inter-thread ordering "arrow" starts).
+ */
 
 
 #include "pub_tool_basics.h"    // Addr, SizeT
 
 
+/** Vector clock element. */
 typedef struct
 {
-  ThreadId threadid;
-  UInt     count;
+  DrdThreadId threadid;
+  UInt        count;
 } VCElem;
 
 typedef struct
 {
-  unsigned capacity;
-  unsigned size;
-  VCElem*  vc;
+  unsigned capacity; /**< number of elements allocated for array vc. */
+  unsigned size;     /**< number of elements used of array vc. */
+  VCElem*  vc;       /**< vector clock elements. */
 } VectorClock;
 
 
-void vc_init(VectorClock* const vc,
-             const VCElem* const vcelem,
-             const unsigned size);
-void vc_cleanup(VectorClock* const vc);
-void vc_copy(VectorClock* const new,
-             const VectorClock* const rhs);
-void vc_assign(VectorClock* const lhs,
-               const VectorClock* const rhs);
-UInt vc_get(VectorClock* const vc, const ThreadId tid);
-void vc_increment(VectorClock* const vc, ThreadId const threadid);
+void DRD_(vc_init)(VectorClock* const vc,
+                   const VCElem* const vcelem,
+                   const unsigned size);
+void DRD_(vc_cleanup)(VectorClock* const vc);
+void DRD_(vc_copy)(VectorClock* const new, const VectorClock* const rhs);
+void DRD_(vc_assign)(VectorClock* const lhs, const VectorClock* const rhs);
+UInt DRD_(vc_get)(VectorClock* const vc, const DrdThreadId tid);
+void DRD_(vc_increment)(VectorClock* const vc, DrdThreadId const tid);
 static __inline__
-Bool vc_lte(const VectorClock* const vc1,
-            const VectorClock* const vc2);
-Bool vc_ordered(const VectorClock* const vc1,
-                const VectorClock* const vc2);
-void vc_min(VectorClock* const result,
-            const VectorClock* const rhs);
-void vc_combine(VectorClock* const result,
-                const VectorClock* const rhs);
-Bool vc_combine2(VectorClock* const result,
-                 const VectorClock* const rhs,
-                 const ThreadId tid);
-void vc_print(const VectorClock* const vc);
-void vc_snprint(Char* const str, Int const size,
-                const VectorClock* const vc);
-void vc_check(const VectorClock* const vc);
-void vc_test(void);
+Bool DRD_(vc_lte)(const VectorClock* const vc1,
+                  const VectorClock* const vc2);
+Bool DRD_(vc_ordered)(const VectorClock* const vc1,
+                      const VectorClock* const vc2);
+void DRD_(vc_min)(VectorClock* const result,
+                  const VectorClock* const rhs);
+void DRD_(vc_combine)(VectorClock* const result,
+                      const VectorClock* const rhs);
+Bool DRD_(vc_combine2)(VectorClock* const result,
+                       const VectorClock* const rhs,
+                       const DrdThreadId tid);
+void DRD_(vc_print)(const VectorClock* const vc);
+void DRD_(vc_snprint)(Char* const str, const Int size,
+                      const VectorClock* const vc);
+void DRD_(vc_check)(const VectorClock* const vc);
+void DRD_(vc_test)(void);
 
 
 
@@ -97,7 +99,7 @@ void vc_test(void);
  *    equal.
  */
 static __inline__
-Bool vc_lte(const VectorClock* const vc1, const VectorClock* const vc2)
+Bool DRD_(vc_lte)(const VectorClock* const vc1, const VectorClock* const vc2)
 {
   unsigned i;
   unsigned j = 0;

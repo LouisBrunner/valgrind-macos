@@ -24,6 +24,7 @@
 
 #include "drd_bitmap.h"
 #include "drd_thread_bitmap.h"
+#include "drd_vc.h"            /* DRD_(vc_snprint)() */
 
 /* Include several source files here in order to allow the compiler to */
 /* do more inlining.                                                   */
@@ -73,7 +74,7 @@ void DRD_(trace_mem_access)(const Addr addr, const SizeT size,
   if (DRD_(is_any_traced)(addr, addr + size))
   {
     char vc[80];
-    vc_snprint(vc, sizeof(vc), thread_get_vc(thread_get_running_tid()));
+    DRD_(vc_snprint)(vc, sizeof(vc), thread_get_vc(thread_get_running_tid()));
     VG_(message)(Vg_UserMsg,
                  "%s 0x%lx size %ld (vg %d / drd %d / vc %s)",
                  access_type == eLoad

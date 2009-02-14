@@ -23,7 +23,7 @@
 */
 
 
-// Barrier state information.
+/* Barrier state information. */
 
 
 #ifndef __DRD_BARRIER_H
@@ -32,7 +32,6 @@
 
 #include "drd_clientreq.h"    // BarrierT
 #include "drd_thread.h"       // DrdThreadId
-#include "drd_vc.h"
 #include "pub_tool_basics.h"  // Addr
 
 

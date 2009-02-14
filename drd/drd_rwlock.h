@@ -32,7 +32,6 @@
 
 #include "drd_clientobj.h"        // struct rwlock_info
 #include "drd_thread.h"           // DrdThreadId
-#include "drd_vc.h"
 #include "pub_tool_basics.h"      // Addr
 
 

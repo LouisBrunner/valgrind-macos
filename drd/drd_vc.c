@@ -26,25 +26,33 @@
 #include "drd_vc.h"
 #include "pub_tool_basics.h"      // Addr, SizeT
 #include "pub_tool_libcassert.h"  // tl_assert()
-#include "pub_tool_libcbase.h"    // VG_(memset), VG_(memmove)
+#include "pub_tool_libcbase.h"    // VG_(memcpy)
 #include "pub_tool_libcprint.h"   // VG_(printf)
 #include "pub_tool_mallocfree.h"  // VG_(malloc), VG_(free)
-#include "pub_tool_threadstate.h" // VG_(get_running_tid)
 
+
+/* Local function declarations. */
 
 static
-void vc_reserve(VectorClock* const vc, const unsigned new_capacity);
+void DRD_(vc_reserve)(VectorClock* const vc, const unsigned new_capacity);
 
 
-void vc_init(VectorClock* const vc,
-             const VCElem* const vcelem,
-             const unsigned size)
+/* Function definitions. */
+
+/**
+ * Initialize the memory 'vc' points at as a vector clock with size 'size'.
+ * If the pointer 'vcelem' is not null, it is assumed to be an array with
+ * 'size' elements and it becomes the initial value of the vector clock.
+ */
+void DRD_(vc_init)(VectorClock* const vc,
+                   const VCElem* const vcelem,
+                   const unsigned size)
 {
   tl_assert(vc);
   vc->size = 0;
   vc->capacity = 0;
   vc->vc = 0;
-  vc_reserve(vc, size);
+  DRD_(vc_reserve)(vc, size);
   tl_assert(size == 0 || vc->vc != 0);
   if (vcelem)
   {
@@ -53,32 +61,32 @@ void vc_init(VectorClock* const vc,
   }
 }
 
-void vc_cleanup(VectorClock* const vc)
+/** Reset vc to the empty vector clock. */
+void DRD_(vc_cleanup)(VectorClock* const vc)
 {
-  vc_reserve(vc, 0);
+  DRD_(vc_reserve)(vc, 0);
 }
 
 /** Copy constructor -- initializes *new. */
-void vc_copy(VectorClock* const new,
-             const VectorClock* const rhs)
+void DRD_(vc_copy)(VectorClock* const new, const VectorClock* const rhs)
 {
-  vc_init(new, rhs->vc, rhs->size);
+  DRD_(vc_init)(new, rhs->vc, rhs->size);
 }
 
 /** Assignment operator -- *lhs is already a valid vector clock. */
-void vc_assign(VectorClock* const lhs,
-               const VectorClock* const rhs)
+void DRD_(vc_assign)(VectorClock* const lhs, const VectorClock* const rhs)
 {
-  vc_cleanup(lhs);
-  vc_copy(lhs, rhs);
+  DRD_(vc_cleanup)(lhs);
+  DRD_(vc_copy)(lhs, rhs);
 }
 
-void vc_increment(VectorClock* const vc, ThreadId const threadid)
+/** Increment the clock of thread 'tid' in vector clock 'vc'. */
+void DRD_(vc_increment)(VectorClock* const vc, DrdThreadId const tid)
 {
   unsigned i;
   for (i = 0; i < vc->size; i++)
   {
-    if (vc->vc[i].threadid == threadid)
+    if (vc->vc[i].threadid == tid)
     {
       typeof(vc->vc[i].count) const oldcount = vc->vc[i].count;
       vc->vc[i].count++;
@@ -88,14 +96,16 @@ void vc_increment(VectorClock* const vc, ThreadId const threadid)
     }
   }
 
-  // The specified thread ID does not yet exist in the vector clock
-  // -- insert it.
+  /*
+   * The specified thread ID does not yet exist in the vector clock
+   * -- insert it.
+   */
   {
-    VCElem vcelem = { threadid, 1 };
+    const VCElem vcelem = { tid, 1 };
     VectorClock vc2;
-    vc_init(&vc2, &vcelem, 1);
-    vc_combine(vc, &vc2);
-    vc_cleanup(&vc2);
+    DRD_(vc_init)(&vc2, &vcelem, 1);
+    DRD_(vc_combine)(vc, &vc2);
+    DRD_(vc_cleanup)(&vc2);
   }
 }
 
@@ -103,14 +113,14 @@ void vc_increment(VectorClock* const vc, ThreadId const threadid)
  * @return True if vector clocks vc1 and vc2 are ordered, and false otherwise.
  * Order is as imposed by thread synchronization actions ("happens before").
  */
-Bool vc_ordered(const VectorClock* const vc1,
-                const VectorClock* const vc2)
+Bool DRD_(vc_ordered)(const VectorClock* const vc1,
+                      const VectorClock* const vc2)
 {
-  return vc_lte(vc1, vc2) || vc_lte(vc2, vc1);
+  return DRD_(vc_lte)(vc1, vc2) || DRD_(vc_lte)(vc2, vc1);
 }
 
 /** Compute elementwise minimum. */
-void vc_min(VectorClock* const result, const VectorClock* const rhs)
+void DRD_(vc_min)(VectorClock* const result, const VectorClock* const rhs)
 {
   unsigned i;
   unsigned j;
@@ -118,7 +128,7 @@ void vc_min(VectorClock* const result, const VectorClock* const rhs)
   tl_assert(result);
   tl_assert(rhs);
 
-  vc_check(result);
+  DRD_(vc_check)(result);
 
   /* Next, combine both vector clocks into one. */
   i = 0;
@@ -145,26 +155,26 @@ void vc_min(VectorClock* const result, const VectorClock* const rhs)
       }
     }
   }
-  vc_check(result);
+  DRD_(vc_check)(result);
 }
 
 /**
  * Compute elementwise maximum.
  */
-void vc_combine(VectorClock* const result,
-                const VectorClock* const rhs)
+void DRD_(vc_combine)(VectorClock* const result, const VectorClock* const rhs)
 {
-  vc_combine2(result, rhs, -1);
+  DRD_(vc_combine2)(result, rhs, -1);
 }
 
-/** Compute elementwise maximum.
+/**
+ * Compute elementwise maximum.
  *
- *  @return True if *result and *rhs are equal, or if *result and *rhs only
- *          differ in the component with thread ID tid.
+ * @return True if *result and *rhs are equal, or if *result and *rhs only
+ *         differ in the component with thread ID tid.
  */
-Bool vc_combine2(VectorClock* const result,
-                 const VectorClock* const rhs,
-                 const ThreadId tid)
+Bool DRD_(vc_combine2)(VectorClock* const result,
+                       const VectorClock* const rhs,
+                       const DrdThreadId tid)
 {
   unsigned i;
   unsigned j;
@@ -188,13 +198,13 @@ Bool vc_combine2(VectorClock* const result,
       shared++;
   }
 
-  vc_check(result);
+  DRD_(vc_check)(result);
 
   new_size = result->size + rhs->size - shared;
   if (new_size > result->capacity)
-    vc_reserve(result, new_size);
+    DRD_(vc_reserve)(result, new_size);
 
-  vc_check(result);
+  DRD_(vc_check)(result);
 
   // Next, combine both vector clocks into one.
   i = 0;
@@ -251,13 +261,14 @@ Bool vc_combine2(VectorClock* const result,
       }
     }
   }
-  vc_check(result);
+  DRD_(vc_check)(result);
   tl_assert(result->size == new_size);
 
   return almost_equal;
 }
 
-void vc_print(const VectorClock* const vc)
+/** Print the contents of vector clock 'vc'. */
+void DRD_(vc_print)(const VectorClock* const vc)
 {
   unsigned i;
 
@@ -272,8 +283,12 @@ void vc_print(const VectorClock* const vc)
   VG_(printf)(" ]");
 }
 
-void vc_snprint(Char* const str, Int const size,
-                const VectorClock* const vc)
+/**
+ * Print the contents of vector clock 'vc' to the character array 'str' that
+ * has 'size' elements.
+ */
+void DRD_(vc_snprint)(Char* const str, const Int size,
+                      const VectorClock* const vc)
 {
   unsigned i;
   unsigned j = 1;
@@ -296,8 +311,15 @@ void vc_snprint(Char* const str, Int const size,
 
 /**
  * Invariant test.
+ *
+ * The function below tests whether the following two conditions are
+ * satisfied:
+ * - size <= capacity.
+ * - Vector clock elements are stored in thread ID order.
+ *
+ * If one of these conditions is not met, an assertion failure is triggered.
  */
-void vc_check(const VectorClock* const vc)
+void DRD_(vc_check)(const VectorClock* const vc)
 {
   unsigned i;
   tl_assert(vc->size <= vc->capacity);
@@ -313,7 +335,7 @@ void vc_check(const VectorClock* const vc)
  * block is increased, the newly allocated memory is not initialized.
  */
 static
-void vc_reserve(VectorClock* const vc, const unsigned new_capacity)
+void DRD_(vc_reserve)(VectorClock* const vc, const unsigned new_capacity)
 {
   tl_assert(vc);
   if (new_capacity > vc->capacity)
@@ -337,10 +359,11 @@ void vc_reserve(VectorClock* const vc, const unsigned new_capacity)
   tl_assert(new_capacity == 0 || vc->vc != 0);
 }
 
+#if 0
 /**
  * Unit test.
  */
-void vc_test(void)
+void DRD_(vc_test)(void)
 {
   VectorClock vc1;
   VCElem vc1elem[] = { { 3, 7 }, { 5, 8 }, };
@@ -378,3 +401,4 @@ void vc_test(void)
   vc_cleanup(&vc2);
   vc_cleanup(&vc3);
 }
+#endif

@@ -35,4 +35,7 @@
 #define DRD_(str) VGAPPEND(vgDrd_, str)
 
 
+typedef UInt DrdThreadId;
+
+
 #endif /* __DRD_BASICS_H */

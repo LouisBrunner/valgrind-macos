@@ -53,7 +53,6 @@
 
 // Type definitions.
 
-typedef UInt DrdThreadId;
 typedef UWord PThreadId;
 
 typedef struct

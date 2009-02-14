@@ -73,10 +73,10 @@ void sg_init(Segment* const sg,
     sg->stacktrace = 0;
 
   if (creator_sg)
-    vc_copy(&sg->vc, &creator_sg->vc);
+    DRD_(vc_copy)(&sg->vc, &creator_sg->vc);
   else
-    vc_init(&sg->vc, 0, 0);
-  vc_increment(&sg->vc, created);
+    DRD_(vc_init)(&sg->vc, 0, 0);
+  DRD_(vc_increment)(&sg->vc, created);
   sg->bm = bm_new();
 
   if (drd_trace_segment)
@@ -88,7 +88,7 @@ void sg_init(Segment* const sg,
                   ? DrdThreadIdToVgThreadId(created)
                   : DRD_INVALID_THREADID,
                   created);
-    vc_snprint(msg + VG_(strlen)(msg), sizeof(msg) - VG_(strlen)(msg),
+    DRD_(vc_snprint)(msg + VG_(strlen)(msg), sizeof(msg) - VG_(strlen)(msg),
                &sg->vc);
     VG_(message)(Vg_UserMsg, "%s", msg);
   }
@@ -101,7 +101,7 @@ void sg_cleanup(Segment* const sg)
   tl_assert(sg);
   tl_assert(sg->refcnt == 0);
 
-  vc_cleanup(&sg->vc);
+  DRD_(vc_cleanup)(&sg->vc);
   bm_delete(sg->bm);
   sg->bm = 0;
 }
@@ -131,7 +131,7 @@ void sg_delete(Segment* const sg)
     char msg[256];
     VG_(snprintf)(msg, sizeof(msg),
                   "Discarding the segment with vector clock ");
-    vc_snprint(msg + VG_(strlen)(msg), sizeof(msg) - VG_(strlen)(msg),
+    DRD_(vc_snprint)(msg + VG_(strlen)(msg), sizeof(msg) - VG_(strlen)(msg),
                &sg->vc);
     VG_(message)(Vg_UserMsg, "%s", msg);
   }
@@ -175,7 +175,7 @@ void sg_put(Segment* const sg)
     VG_(snprintf)(msg, sizeof(msg),
                   "Decrementing segment reference count %d -> %d with vc ",
                   sg->refcnt, sg->refcnt - 1);
-    vc_snprint(msg + VG_(strlen)(msg), sizeof(msg) - VG_(strlen)(msg),
+    DRD_(vc_snprint)(msg + VG_(strlen)(msg), sizeof(msg) - VG_(strlen)(msg),
                &sg->vc);
     VG_(message)(Vg_UserMsg, "%s", msg);
   }
@@ -201,11 +201,11 @@ void sg_merge(const Segment* const sg1, Segment* const sg2)
       char msg[256];
 
       VG_(snprintf)(msg, sizeof(msg), "Merging segments with vector clocks ");
-      vc_snprint(msg + VG_(strlen)(msg), sizeof(msg) - VG_(strlen)(msg),
+      DRD_(vc_snprint)(msg + VG_(strlen)(msg), sizeof(msg) - VG_(strlen)(msg),
                  &sg1->vc);
       VG_(snprintf)(msg + VG_(strlen)(msg), sizeof(msg) - VG_(strlen)(msg),
                     " and ");
-      vc_snprint(msg + VG_(strlen)(msg), sizeof(msg) - VG_(strlen)(msg),
+      DRD_(vc_snprint)(msg + VG_(strlen)(msg), sizeof(msg) - VG_(strlen)(msg),
                  &sg2->vc);
       VG_(message)(Vg_UserMsg, "%s", msg);
   }
@@ -220,7 +220,7 @@ void sg_print(const Segment* const sg)
 {
   tl_assert(sg);
   VG_(printf)("vc: ");
-  vc_print(&sg->vc);
+  DRD_(vc_print)(&sg->vc);
   VG_(printf)("\n");
   bm_print(sg->bm);
 }

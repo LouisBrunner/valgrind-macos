@@ -35,7 +35,6 @@
 #include "drd_semaphore.h"
 #include "drd_suppression.h"
 #include "drd_thread.h"
-#include "drd_vc.h"
 #include "libvex_guest_offsets.h"
 #include "pub_drd_bitmap.h"
 #include "pub_tool_vki.h"         // Must be included before pub_tool_libcproc

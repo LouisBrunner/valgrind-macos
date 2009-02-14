@@ -11,7 +11,7 @@ Thread 3:
 Probably a race condition: condition variable 0x........ has been signaled but the associated mutex 0x........ is not locked by the signalling thread.
    at 0x........: pthread_cond_signal* (drd_pthread_intercepts.c:?)
    by 0x........: rescue_me (tc23_bogus_condwait.c:20)
-   by 0x........: vg_thread_wrapper (drd_pthread_intercepts.c:?)
+   by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
    by 0x........: (within libpthread-?.?.so)
    by 0x........: clone (in /...libc...)
 cond 0x........ was first observed at:
@@ -30,7 +30,7 @@ Thread 3:
 Probably a race condition: condition variable 0x........ has been signaled but the associated mutex 0x........ is not locked by the signalling thread.
    at 0x........: pthread_cond_signal* (drd_pthread_intercepts.c:?)
    by 0x........: rescue_me (tc23_bogus_condwait.c:24)
-   by 0x........: vg_thread_wrapper (drd_pthread_intercepts.c:?)
+   by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
    by 0x........: (within libpthread-?.?.so)
    by 0x........: clone (in /...libc...)
 cond 0x........ was first observed at:
@@ -59,7 +59,7 @@ Thread 3:
 Probably a race condition: condition variable 0x........ has been signaled but the associated mutex 0x........ is not locked by the signalling thread.
    at 0x........: pthread_cond_signal* (drd_pthread_intercepts.c:?)
    by 0x........: rescue_me (tc23_bogus_condwait.c:28)
-   by 0x........: vg_thread_wrapper (drd_pthread_intercepts.c:?)
+   by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
    by 0x........: (within libpthread-?.?.so)
    by 0x........: clone (in /...libc...)
 cond 0x........ was first observed at:
@@ -81,7 +81,7 @@ Thread 3:
 Probably a race condition: condition variable 0x........ has been signaled but the associated mutex 0x........ is not locked by the signalling thread.
    at 0x........: pthread_cond_signal* (drd_pthread_intercepts.c:?)
    by 0x........: rescue_me (tc23_bogus_condwait.c:32)
-   by 0x........: vg_thread_wrapper (drd_pthread_intercepts.c:?)
+   by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
    by 0x........: (within libpthread-?.?.so)
    by 0x........: clone (in /...libc...)
 cond 0x........ was first observed at:
@@ -96,7 +96,7 @@ Thread 2:
 Mutex not locked by calling thread: mutex 0x........, recursion count 2, owner 1.
    at 0x........: pthread_mutex_unlock (drd_pthread_intercepts.c:?)
    by 0x........: grab_the_lock (tc23_bogus_condwait.c:42)
-   by 0x........: vg_thread_wrapper (drd_pthread_intercepts.c:?)
+   by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
    by 0x........: (within libpthread-?.?.so)
    by 0x........: clone (in /...libc...)
 mutex 0x........ was first observed at:

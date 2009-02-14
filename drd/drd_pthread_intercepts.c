@@ -54,6 +54,7 @@
 #include <stdlib.h>
 #include <unistd.h>         // confstr()
 #include "config.h"
+#include "drd_basics.h"
 #include "drd_clientreq.h"
 #include "pub_tool_redir.h"
 
@@ -166,7 +167,7 @@ static void vg_set_joinable(const pthread_t tid, const int joinable)
                              tid, joinable, 0, 0, 0);
 }
 
-static void* vg_thread_wrapper(void* arg)
+static void* DRD_(thread_wrapper)(void* arg)
 {
   int res;
 
@@ -292,7 +293,7 @@ PTH_FUNC(int, pthreadZucreateZa, // pthread_create*
   /* Suppress NPTL-specific conflicts between creator and created thread. */
   VALGRIND_DO_CLIENT_REQUEST(res, -1, VG_USERREQ__DRD_STOP_RECORDING,
                              0, 0, 0, 0, 0);
-  CALL_FN_W_WWWW(ret, fn, thread, attr, vg_thread_wrapper, &vgargs);
+  CALL_FN_W_WWWW(ret, fn, thread, attr, DRD_(thread_wrapper), &vgargs);
   VALGRIND_DO_CLIENT_REQUEST(res, -1, VG_USERREQ__DRD_START_RECORDING,
                              0, 0, 0, 0, 0);
 #if 0

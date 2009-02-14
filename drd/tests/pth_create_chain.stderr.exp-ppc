@@ -2,7 +2,7 @@
 Emulation fatal error -- Valgrind cannot continue:
   PPC64 function redirection stack overflow
    at 0x........: ???
-   by 0x........: vg_thread_wrapper (drd_pthread_intercepts.c:?)
+   by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
    by 0x........: (within libpthread-?.?.so)
    by 0x........: clone (in /...libc...)
 

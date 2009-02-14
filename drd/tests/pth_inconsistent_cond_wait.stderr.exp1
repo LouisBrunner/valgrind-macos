@@ -3,7 +3,7 @@ Thread 3:
 Inconsistent association of condition variable and mutex: condition variable 0x........, mutexes 0x........ and 0x........
    at 0x........: pthread_cond_wait* (drd_pthread_intercepts.c:?)
    by 0x........: thread2 (pth_inconsistent_cond_wait.c:?)
-   by 0x........: vg_thread_wrapper (drd_pthread_intercepts.c:?)
+   by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
    by 0x........: (within libpthread-?.?.so)
    by 0x........: clone (in /...libc...)
 cond 0x........ was first observed at:

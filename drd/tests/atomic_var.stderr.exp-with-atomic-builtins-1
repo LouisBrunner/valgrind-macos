@@ -3,7 +3,7 @@ Start of test.
 Thread 2:
 Conflicting load by thread 2/3 at 0x........ size 4
    at 0x........: thread_func_2 (atomic_var.c:?)
-   by 0x........: vg_thread_wrapper (drd_pthread_intercepts.c:?)
+   by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
    by 0x........: (within libpthread-?.?.so)
    by 0x........: clone (in /...libc...)
 Location 0x........ is 0 bytes inside local var "s_y"

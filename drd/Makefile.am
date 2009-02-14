@@ -92,12 +92,13 @@ vgpreload_drd_ppc64_aix5_so_LDFLAGS      = $(PRELOAD_LDFLAGS_PPC64_AIX5)\
                                         $(LIBREPLACEMALLOC_LDFLAGS_PPC64_AIX5)
 
 
-DRD_SOURCES =    \
+DRD_SOURCES =           \
   drd_barrier.c         \
   drd_clientobj.c       \
   drd_clientreq.c       \
   drd_cond.c            \
   drd_error.c           \
+  drd_load_store.c      \
   drd_main.c            \
   drd_malloc_wrappers.c \
   drd_mutex.c           \
@@ -111,12 +112,14 @@ drdinclude_HEADERS = drd.h
 
 noinst_HEADERS =        \
   drd_barrier.h         \
+  drd_basics.h          \
   drd_bitmap.c          \
   drd_bitmap.h          \
   drd_clientobj.h       \
   drd_clientreq.h       \
   drd_cond.h            \
   drd_error.h           \
+  drd_load_store.h      \
   drd_malloc_wrappers.h \
   drd_mutex.h           \
   drd_rwlock.h          \
@@ -127,7 +130,6 @@ noinst_HEADERS =        \
   drd_thread.c          \
   drd_thread.h          \
   drd_thread_bitmap.h   \
-  drd_track.h           \
   drd_vc.c              \
   drd_vc.h              \
   pub_drd_bitmap.h

@@ -26,7 +26,11 @@
 #ifndef __DRD_THREAD_BITMAP_H
 #define __DRD_THREAD_BITMAP_H
 
+
 #include "drd_bitmap.h"
+#include "drd_thread.h" /* running_thread_get_segment() */
+#include "pub_drd_bitmap.h"
+
 
 static __inline__
 Bool bm_access_load_1_triggers_conflict(const Addr a1)

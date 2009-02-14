@@ -1,8 +1,7 @@
 /*
   This file is part of drd, a data race detector.
 
-  Copyright (C) 2006-2008 Bart Van Assche
-  bart.vanassche@gmail.com
+  Copyright (C) 2006-2009 Bart Van Assche <bart.vanassche@gmail.com>.
 
   This program is free software; you can redistribute it and/or
   modify it under the terms of the GNU General Public License as
@@ -23,14 +22,14 @@
 */
 
 
+#include "drd_barrier.h"
 #include "drd_clientreq.h"
 #include "drd_cond.h"
 #include "drd_mutex.h"
+#include "drd_rwlock.h"
 #include "drd_semaphore.h"
 #include "drd_suppression.h"      // drd_start_suppression()
 #include "drd_thread.h"
-#include "drd_track.h"
-#include "drd_rwlock.h"
 #include "pub_tool_basics.h"      // Bool
 #include "pub_tool_debuginfo.h"   // VG_(describe_IP)()
 #include "pub_tool_libcassert.h"
@@ -41,52 +40,22 @@
 #include "pub_tool_tooliface.h"   // VG_(needs_...)()
 
 
-static void drd_spin_init_or_unlock(const Addr spinlock)
-{
-  struct mutex_info* mutex_p = mutex_get(spinlock);
-  if (mutex_p)
-  {
-    mutex_unlock(spinlock, mutex_type_spinlock);
-  }
-  else
-  {
-    mutex_init(spinlock, mutex_type_spinlock);
-  }
-}
+/* Local function declarations. */
 
-static void drd_pre_cond_wait(const Addr cond,
-                              const Addr mutex, const MutexT mutex_type)
-{
-  mutex_unlock(mutex, mutex_type);
-  cond_pre_wait(cond, mutex);
-}
+static
+Bool DRD_(handle_client_request)(ThreadId vg_tid, UWord* arg, UWord* ret);
+static Addr DRD_(highest_used_stack_address)(const ThreadId vg_tid);
 
-static void drd_post_cond_wait(const Addr cond,
-                               const Addr mutex,
-                               const Bool took_lock)
-{
-  cond_post_wait(cond);
-  mutex_post_lock(mutex, took_lock, True);
-}
 
-static void drd_pre_cond_signal(const Addr cond)
-{
-  cond_pre_signal(cond);
-}
-
-static void drd_pre_cond_broadcast(const Addr cond)
-{
-  cond_pre_broadcast(cond);
-}
-
-/** Walk the stack up to the highest stack frame, and return the stack pointer
- *  of the highest stack frame. It is assumed that there are no more than
- *  ten stack frames above the current frame. This should be no problem
- *  since this function is either called indirectly from the _init() function
- *  in vgpreload_exp-drd-*.so or from the thread wrapper for a newly created
- *  thread. See also drd_pthread_intercepts.c.
+/**
+ * Walk the stack up to the highest stack frame, and return the stack pointer
+ * of the highest stack frame. It is assumed that there are no more than
+ * ten stack frames above the current frame. This should be no problem
+ * since this function is either called indirectly from the _init() function
+ * in vgpreload_exp-drd-*.so or from the thread wrapper for a newly created
+ * thread. See also drd_pthread_intercepts.c.
  */
-static Addr highest_used_stack_address(const ThreadId vg_tid)
+static Addr DRD_(highest_used_stack_address)(const ThreadId vg_tid)
 {
     UInt nframes;
     const UInt n_ips = 10;
@@ -122,7 +91,12 @@ static Addr highest_used_stack_address(const ThreadId vg_tid)
     return husa;
 }
 
-static Bool drd_handle_client_request(ThreadId vg_tid, UWord* arg, UWord* ret)
+/**
+ * DRD's handler for Valgrind client requests. The code below handles both
+ * DRD's public and tool-internal client requests.
+ */
+static
+Bool DRD_(handle_client_request)(ThreadId vg_tid, UWord* arg, UWord* ret)
 {
   UWord result = 0;
   const DrdThreadId drd_tid = thread_get_running_tid();
@@ -150,7 +124,7 @@ static Bool drd_handle_client_request(ThreadId vg_tid, UWord* arg, UWord* ret)
 
   case VG_USERREQ__DRD_SUPPRESS_CURRENT_STACK:
   {
-    const Addr topmost_sp = highest_used_stack_address(vg_tid);
+    const Addr topmost_sp = DRD_(highest_used_stack_address)(vg_tid);
 #if 0
     UInt nframes;
     const UInt n_ips = 20;
@@ -206,23 +180,21 @@ static Bool drd_handle_client_request(ThreadId vg_tid, UWord* arg, UWord* ret)
 
   case VG_USERREQ__POST_THREAD_JOIN:
     tl_assert(arg[1]);
-    drd_post_thread_join(drd_tid,
-                         PtThreadIdToDrdThreadId(arg[1]));
+    DRD_(thread_post_join)(drd_tid, PtThreadIdToDrdThreadId(arg[1]));
     break;
 
   case VG_USERREQ__PRE_THREAD_CANCEL:
     tl_assert(arg[1]);
-    drd_pre_thread_cancel(drd_tid, PtThreadIdToDrdThreadId(arg[1]));
+    thread_pre_cancel(drd_tid);
     break;
 
   case VG_USERREQ__POST_THREAD_CANCEL:
     tl_assert(arg[1]);
-    drd_post_thread_cancel(drd_tid, PtThreadIdToDrdThreadId(arg[1]), arg[2]);
     break;
 
   case VG_USERREQ__PRE_MUTEX_INIT:
     if (thread_enter_synchr(drd_tid) == 0)
-      drd_pre_mutex_init(arg[1], arg[2]);
+      mutex_init(arg[1], arg[2]);
     break;
 
   case VG_USERREQ__POST_MUTEX_INIT:
@@ -235,22 +207,22 @@ static Bool drd_handle_client_request(ThreadId vg_tid, UWord* arg, UWord* ret)
 
   case VG_USERREQ__POST_MUTEX_DESTROY:
     if (thread_leave_synchr(drd_tid) == 0)
-      drd_post_mutex_destroy(arg[1], arg[2]);
+      mutex_post_destroy(arg[1]);
     break;
 
   case VG_USERREQ__PRE_MUTEX_LOCK:
     if (thread_enter_synchr(drd_tid) == 0)
-      drd_pre_mutex_lock(arg[1], arg[2], arg[3]);
+      mutex_pre_lock(arg[1], arg[2], arg[3]);
     break;
 
   case VG_USERREQ__POST_MUTEX_LOCK:
     if (thread_leave_synchr(drd_tid) == 0)
-      drd_post_mutex_lock(arg[1], arg[2]);
+      mutex_post_lock(arg[1], arg[2], False/*post_cond_wait*/);
     break;
 
   case VG_USERREQ__PRE_MUTEX_UNLOCK:
     if (thread_enter_synchr(drd_tid) == 0)
-      drd_pre_mutex_unlock(arg[1], arg[2]);
+      mutex_unlock(arg[1], arg[2]);
     break;
 
   case VG_USERREQ__POST_MUTEX_UNLOCK:
@@ -259,7 +231,7 @@ static Bool drd_handle_client_request(ThreadId vg_tid, UWord* arg, UWord* ret)
 
   case VG_USERREQ__PRE_SPIN_INIT_OR_UNLOCK:
     if (thread_enter_synchr(drd_tid) == 0)
-      drd_spin_init_or_unlock(arg[1]);
+      DRD_(spinlock_init_or_unlock)(arg[1]);
     break;
 
   case VG_USERREQ__POST_SPIN_INIT_OR_UNLOCK:
@@ -268,7 +240,7 @@ static Bool drd_handle_client_request(ThreadId vg_tid, UWord* arg, UWord* ret)
 
   case VG_USERREQ__PRE_COND_INIT:
     if (thread_enter_synchr(drd_tid) == 0)
-      drd_pre_cond_init(arg[1]);
+      cond_pre_init(arg[1]);
     break;
 
   case VG_USERREQ__POST_COND_INIT:
@@ -281,22 +253,34 @@ static Bool drd_handle_client_request(ThreadId vg_tid, UWord* arg, UWord* ret)
 
   case VG_USERREQ__POST_COND_DESTROY:
     if (thread_leave_synchr(drd_tid) == 0)
-      drd_post_cond_destroy(arg[1]);
+      cond_post_destroy(arg[1]);
     break;
 
   case VG_USERREQ__PRE_COND_WAIT:
     if (thread_enter_synchr(drd_tid) == 0)
-      drd_pre_cond_wait(arg[1], arg[2], arg[3]);
+    {
+      const Addr cond = arg[1];
+      const Addr mutex = arg[2];
+      const MutexT mutex_type = arg[3];
+      mutex_unlock(mutex, mutex_type);
+      cond_pre_wait(cond, mutex);
+    }
     break;
 
   case VG_USERREQ__POST_COND_WAIT:
     if (thread_leave_synchr(drd_tid) == 0)
-      drd_post_cond_wait(arg[1], arg[2], arg[3]);
+    {
+      const Addr cond = arg[1];
+      const Addr mutex = arg[2];
+      const Bool took_lock = arg[3];
+      cond_post_wait(cond);
+      mutex_post_lock(mutex, took_lock, True);
+    }
     break;
 
   case VG_USERREQ__PRE_COND_SIGNAL:
     if (thread_enter_synchr(drd_tid) == 0)
-      drd_pre_cond_signal(arg[1]);
+      cond_pre_signal(arg[1]);
     break;
 
   case VG_USERREQ__POST_COND_SIGNAL:
@@ -305,7 +289,7 @@ static Bool drd_handle_client_request(ThreadId vg_tid, UWord* arg, UWord* ret)
 
   case VG_USERREQ__PRE_COND_BROADCAST:
     if (thread_enter_synchr(drd_tid) == 0)
-      drd_pre_cond_broadcast(arg[1]);
+      cond_pre_broadcast(arg[1]);
     break;
 
   case VG_USERREQ__POST_COND_BROADCAST:
@@ -314,7 +298,7 @@ static Bool drd_handle_client_request(ThreadId vg_tid, UWord* arg, UWord* ret)
 
   case VG_USERREQ__PRE_SEM_INIT:
     if (thread_enter_synchr(drd_tid) == 0)
-      drd_semaphore_init(arg[1], arg[2], arg[3]);
+      semaphore_init(arg[1], arg[2], arg[3]);
     break;
 
   case VG_USERREQ__POST_SEM_INIT:
@@ -327,32 +311,32 @@ static Bool drd_handle_client_request(ThreadId vg_tid, UWord* arg, UWord* ret)
 
   case VG_USERREQ__POST_SEM_DESTROY:
     if (thread_leave_synchr(drd_tid) == 0)
-      drd_semaphore_destroy(arg[1]);
+      semaphore_destroy(arg[1]);
     break;
 
   case VG_USERREQ__PRE_SEM_WAIT:
     if (thread_enter_synchr(drd_tid) == 0)
-      drd_semaphore_pre_wait(drd_tid, arg[1]);
+      semaphore_pre_wait(arg[1]);
     break;
 
   case VG_USERREQ__POST_SEM_WAIT:
     if (thread_leave_synchr(drd_tid) == 0)
-      drd_semaphore_post_wait(drd_tid, arg[1], arg[2]);
+      semaphore_post_wait(drd_tid, arg[1], arg[2]);
     break;
 
   case VG_USERREQ__PRE_SEM_POST:
     if (thread_enter_synchr(drd_tid) == 0)
-      drd_semaphore_pre_post(drd_tid, arg[1]);
+      semaphore_pre_post(drd_tid, arg[1]);
     break;
 
   case VG_USERREQ__POST_SEM_POST:
     if (thread_leave_synchr(drd_tid) == 0)
-      drd_semaphore_post_post(drd_tid, arg[1], arg[2]);
+      semaphore_post_post(drd_tid, arg[1], arg[2]);
     break;
 
   case VG_USERREQ__PRE_BARRIER_INIT:
     if (thread_enter_synchr(drd_tid) == 0)
-      drd_barrier_init(arg[1], arg[2], arg[3], arg[4]);
+      barrier_init(arg[1], arg[2], arg[3], arg[4]);
     break;
 
   case VG_USERREQ__POST_BARRIER_INIT:
@@ -365,17 +349,17 @@ static Bool drd_handle_client_request(ThreadId vg_tid, UWord* arg, UWord* ret)
 
   case VG_USERREQ__POST_BARRIER_DESTROY:
     if (thread_leave_synchr(drd_tid) == 0)
-      drd_barrier_destroy(arg[1], arg[2]);
+      barrier_destroy(arg[1], arg[2]);
     break;
 
   case VG_USERREQ__PRE_BARRIER_WAIT:
     if (thread_enter_synchr(drd_tid) == 0)
-      drd_barrier_pre_wait(drd_tid, arg[1], arg[2]);
+      barrier_pre_wait(drd_tid, arg[1], arg[2]);
     break;
 
   case VG_USERREQ__POST_BARRIER_WAIT:
     if (thread_leave_synchr(drd_tid) == 0)
-      drd_barrier_post_wait(drd_tid, arg[1], arg[2], arg[3]);
+      barrier_post_wait(drd_tid, arg[1], arg[2], arg[3]);
     break;
 
   case VG_USERREQ__PRE_RWLOCK_INIT:
@@ -426,7 +410,11 @@ static Bool drd_handle_client_request(ThreadId vg_tid, UWord* arg, UWord* ret)
   return True;
 }
 
-void drd_clientreq_init(void)
+/**
+ * Tell the Valgrind core the address of the DRD function that processes
+ * client requests. Must be called before any client code is run.
+ */
+void DRD_(clientreq_init)(void)
 {
-  VG_(needs_client_requests)(drd_handle_client_request);
+  VG_(needs_client_requests)(DRD_(handle_client_request));
 }

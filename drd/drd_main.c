@@ -1,8 +1,7 @@
 /*
   This file is part of drd, a data race detector.
 
-  Copyright (C) 2006-2008 Bart Van Assche
-  bart.vanassche@gmail.com
+  Copyright (C) 2006-2009 Bart Van Assche <bart.vanassche@gmail.com>.
 
   This program is free software; you can redistribute it and/or
   modify it under the terms of the GNU General Public License as
@@ -24,10 +23,11 @@
 
 
 #include "drd_barrier.h"
-#include "drd_clientreq.h"
 #include "drd_clientobj.h"
+#include "drd_clientreq.h"
 #include "drd_cond.h"
 #include "drd_error.h"
+#include "drd_load_store.h"
 #include "drd_malloc_wrappers.h"
 #include "drd_mutex.h"
 #include "drd_rwlock.h"
@@ -35,8 +35,6 @@
 #include "drd_semaphore.h"
 #include "drd_suppression.h"
 #include "drd_thread.h"
-#include "drd_thread_bitmap.h"
-#include "drd_track.h"
 #include "drd_vc.h"
 #include "libvex_guest_offsets.h"
 #include "pub_drd_bitmap.h"
@@ -55,15 +53,6 @@
 #include "pub_tool_tooliface.h"
 
 
-/* Include several source files here in order to allow the compiler to */
-/* do more inlining.                                                   */
-#include "drd_bitmap.c"
-#include "drd_segment.c"
-#include "drd_thread.c"
-#include "drd_vc.c"
-
-
-
 // Function declarations.
 
 static void drd_start_client_code(const ThreadId tid, const ULong bbs_done);
@@ -71,9 +60,7 @@ static void drd_start_client_code(const ThreadId tid, const ULong bbs_done);
 
 // Local variables.
 
-static Bool s_drd_check_stack_accesses = False;
 static Bool s_drd_print_stats          = False;
-static Bool s_drd_trace_fork_join      = False;
 static Bool s_drd_var_info             = False;
 static Bool s_show_stack_usage         = False;
 
@@ -84,6 +71,7 @@ static Bool s_show_stack_usage         = False;
 
 static Bool drd_process_cmd_line_option(Char* arg)
 {
+  int check_stack_accesses   = -1;
   int exclusive_threshold_ms = -1;
   int segment_merging        = -1;
   int shared_threshold_ms    = -1;
@@ -92,6 +80,7 @@ static Bool drd_process_cmd_line_option(Char* arg)
   int trace_clientobj        = -1;
   int trace_cond             = -1;
   int trace_csw              = -1;
+  int trace_fork_join        = -1;
   int trace_conflict_set     = -1;
   int trace_mutex            = -1;
   int trace_rwlock           = -1;
@@ -100,7 +89,7 @@ static Bool drd_process_cmd_line_option(Char* arg)
   int trace_suppression      = -1;
   Char* trace_address        = 0;
 
-  VG_BOOL_CLO     (arg, "--check-stack-var",     s_drd_check_stack_accesses)
+  VG_BOOL_CLO     (arg, "--check-stack-var",     check_stack_accesses)
   else VG_BOOL_CLO(arg, "--drd-stats",           s_drd_print_stats)
   else VG_BOOL_CLO(arg,"--report-signal-unlocked",s_drd_report_signal_unlocked)
   else VG_BOOL_CLO(arg, "--segment-merging",     segment_merging)
@@ -111,7 +100,7 @@ static Bool drd_process_cmd_line_option(Char* arg)
   else VG_BOOL_CLO(arg, "--trace-cond",          trace_cond)
   else VG_BOOL_CLO(arg, "--trace-conflict-set",  trace_conflict_set)
   else VG_BOOL_CLO(arg, "--trace-csw",           trace_csw)
-  else VG_BOOL_CLO(arg, "--trace-fork-join",     s_drd_trace_fork_join)
+  else VG_BOOL_CLO(arg, "--trace-fork-join",     trace_fork_join)
   else VG_BOOL_CLO(arg, "--trace-mutex",         trace_mutex)
   else VG_BOOL_CLO(arg, "--trace-rwlock",        trace_rwlock)
   else VG_BOOL_CLO(arg, "--trace-segment",       trace_segment)
@@ -124,6 +113,8 @@ static Bool drd_process_cmd_line_option(Char* arg)
   else
     return VG_(replacement_malloc_process_cmd_line_option)(arg);
 
+  if (check_stack_accesses != -1)
+    DRD_(set_check_stack_accesses)(check_stack_accesses);
   if (exclusive_threshold_ms != -1)
   {
     mutex_set_lock_threshold(exclusive_threshold_ms);
@@ -150,6 +141,8 @@ static Bool drd_process_cmd_line_option(Char* arg)
     cond_set_trace(trace_cond);
   if (trace_csw != -1)
     thread_trace_context_switches(trace_csw);
+  if (trace_fork_join != -1)
+    DRD_(thread_set_trace_fork_join)(trace_fork_join);
   if (trace_conflict_set != -1)
     thread_trace_conflict_set(trace_conflict_set);
   if (trace_mutex != -1)
@@ -222,185 +215,6 @@ static void drd_print_debug_usage(void)
 //
 // Implements the thread-related core callbacks.
 //
-
-static void drd_trace_mem_access(const Addr addr, const SizeT size,
-                                 const BmAccessTypeT access_type)
-{
-  if (drd_is_any_traced(addr, addr + size))
-  {
-    char vc[80];
-    vc_snprint(vc, sizeof(vc), thread_get_vc(thread_get_running_tid()));
-    VG_(message)(Vg_UserMsg,
-                 "%s 0x%lx size %ld (vg %d / drd %d / vc %s)",
-                 access_type == eLoad
-                 ? "load "
-                 : access_type == eStore
-                 ? "store"
-                 : access_type == eStart
-                 ? "start"
-                 : access_type == eEnd
-                 ? "end  "
-                 : "????",
-                 addr,
-                 size,
-                 VG_(get_running_tid)(),
-                 thread_get_running_tid(),
-                 vc);
-    VG_(get_and_pp_StackTrace)(VG_(get_running_tid)(),
-                               VG_(clo_backtrace_size));
-    tl_assert(DrdThreadIdToVgThreadId(thread_get_running_tid())
-              == VG_(get_running_tid)());
-  }
-}
-
-static VG_REGPARM(2) void drd_trace_mem_load(const Addr addr, const SizeT size)
-{
-  return drd_trace_mem_access(addr, size, eLoad);
-}
-
-static VG_REGPARM(2) void drd_trace_mem_store(const Addr addr,const SizeT size)
-{
-  return drd_trace_mem_access(addr, size, eStore);
-}
-
-static void drd_report_race(const Addr addr, const SizeT size,
-                            const BmAccessTypeT access_type)
-{
-  DataRaceErrInfo drei;
-
-  drei.tid  = thread_get_running_tid();
-  drei.addr = addr;
-  drei.size = size;
-  drei.access_type = access_type;
-  VG_(maybe_record_error)(VG_(get_running_tid)(),
-                          DataRaceErr,
-                          VG_(get_IP)(VG_(get_running_tid)()),
-                          "Conflicting accesses",
-                          &drei);
-}
-
-static VG_REGPARM(2) void drd_trace_load(Addr addr, SizeT size)
-{
-#ifdef ENABLE_DRD_CONSISTENCY_CHECKS
-  /* The assert below has been commented out because of performance reasons.*/
-  tl_assert(thread_get_running_tid()
-            == VgThreadIdToDrdThreadId(VG_(get_running_tid())));
-#endif
-
-  if (running_thread_is_recording()
-      && (s_drd_check_stack_accesses || ! thread_address_on_stack(addr))
-      && bm_access_load_triggers_conflict(addr, addr + size)
-      && ! drd_is_suppressed(addr, addr + size))
-  {
-    drd_report_race(addr, size, eLoad);
-  }
-}
-
-static VG_REGPARM(1) void drd_trace_load_1(Addr addr)
-{
-  if (running_thread_is_recording()
-      && (s_drd_check_stack_accesses || ! thread_address_on_stack(addr))
-      && bm_access_load_1_triggers_conflict(addr)
-      && ! drd_is_suppressed(addr, addr + 1))
-  {
-    drd_report_race(addr, 1, eLoad);
-  }
-}
-
-static VG_REGPARM(1) void drd_trace_load_2(Addr addr)
-{
-  if (running_thread_is_recording()
-      && (s_drd_check_stack_accesses || ! thread_address_on_stack(addr))
-      && bm_access_load_2_triggers_conflict(addr)
-      && ! drd_is_suppressed(addr, addr + 2))
-  {
-    drd_report_race(addr, 2, eLoad);
-  }
-}
-
-static VG_REGPARM(1) void drd_trace_load_4(Addr addr)
-{
-  if (running_thread_is_recording()
-      && (s_drd_check_stack_accesses || ! thread_address_on_stack(addr))
-      && bm_access_load_4_triggers_conflict(addr)
-      && ! drd_is_suppressed(addr, addr + 4))
-  {
-    drd_report_race(addr, 4, eLoad);
-  }
-}
-
-static VG_REGPARM(1) void drd_trace_load_8(Addr addr)
-{
-  if (running_thread_is_recording()
-      && (s_drd_check_stack_accesses || ! thread_address_on_stack(addr))
-      && bm_access_load_8_triggers_conflict(addr)
-      && ! drd_is_suppressed(addr, addr + 8))
-  {
-    drd_report_race(addr, 8, eLoad);
-  }
-}
-
-static
-VG_REGPARM(2) void drd_trace_store(Addr addr, SizeT size)
-{
-#ifdef ENABLE_DRD_CONSISTENCY_CHECKS
-  /* The assert below has been commented out because of performance reasons.*/
-  tl_assert(thread_get_running_tid()
-            == VgThreadIdToDrdThreadId(VG_(get_running_tid())));
-#endif
-
-  if (running_thread_is_recording()
-      && (s_drd_check_stack_accesses || ! thread_address_on_stack(addr))
-      && bm_access_store_triggers_conflict(addr, addr + size)
-      && ! drd_is_suppressed(addr, addr + size))
-  {
-    drd_report_race(addr, size, eStore);
-  }
-}
-
-static VG_REGPARM(1) void drd_trace_store_1(Addr addr)
-{
-  if (running_thread_is_recording()
-      && (s_drd_check_stack_accesses || ! thread_address_on_stack(addr))
-      && bm_access_store_1_triggers_conflict(addr)
-      && ! drd_is_suppressed(addr, addr + 1))
-  {
-    drd_report_race(addr, 1, eStore);
-  }
-}
-
-static VG_REGPARM(1) void drd_trace_store_2(Addr addr)
-{
-  if (running_thread_is_recording()
-      && (s_drd_check_stack_accesses || ! thread_address_on_stack(addr))
-      && bm_access_store_2_triggers_conflict(addr)
-      && ! drd_is_suppressed(addr, addr + 2))
-  {
-    drd_report_race(addr, 2, eStore);
-  }
-}
-
-static VG_REGPARM(1) void drd_trace_store_4(Addr addr)
-{
-  if (running_thread_is_recording()
-      && (s_drd_check_stack_accesses || ! thread_address_on_stack(addr))
-      && bm_access_store_4_triggers_conflict(addr)
-      && ! drd_is_suppressed(addr, addr + 4))
-  {
-    drd_report_race(addr, 4, eStore);
-  }
-}
-
-static VG_REGPARM(1) void drd_trace_store_8(Addr addr)
-{
-  if (running_thread_is_recording()
-      && (s_drd_check_stack_accesses || ! thread_address_on_stack(addr))
-      && bm_access_store_8_triggers_conflict(addr)
-      && ! drd_is_suppressed(addr, addr + 8))
-  {
-    drd_report_race(addr, 8, eStore);
-  }
-}
 
 static void drd_pre_mem_read(const CorePart part,
                              const ThreadId tid,
@@ -486,7 +300,7 @@ void drd_stop_using_mem(const Addr a1, const SizeT len,
   {
     drd_trace_mem_access(a1, len, eEnd);
   }
-  if (! is_stack_mem || s_drd_check_stack_accesses)
+  if (! is_stack_mem || DRD_(get_check_stack_accesses)())
   {
     thread_stop_using_mem(a1, a2);
     clientobj_stop_using_mem(a1, a2);
@@ -606,7 +420,7 @@ void drd_pre_thread_create(const ThreadId creator, const ThreadId created)
   {
     thread_new_segment(drd_creator);
   }
-  if (s_drd_trace_fork_join)
+  if (DRD_(thread_get_trace_fork_join)())
   {
     VG_(message)(Vg_DebugMsg,
                  "drd_pre_thread_create creator = %d/%d, created = %d",
@@ -625,13 +439,13 @@ void drd_post_thread_create(const ThreadId vg_created)
   tl_assert(vg_created != VG_INVALID_THREADID);
 
   drd_created = thread_post_create(vg_created);
-  if (s_drd_trace_fork_join)
+  if (DRD_(thread_get_trace_fork_join)())
   {
     VG_(message)(Vg_DebugMsg,
                  "drd_post_thread_create created = %d/%d",
                  vg_created, drd_created);
   }
-  if (! s_drd_check_stack_accesses)
+  if (! DRD_(get_check_stack_accesses)())
   {
     drd_start_suppression(thread_get_stack_max(drd_created)
                           - thread_get_stack_size(drd_created),
@@ -639,60 +453,6 @@ void drd_post_thread_create(const ThreadId vg_created)
                           "stack");
   }
 }
-
-/* Process VG_USERREQ__POST_THREAD_JOIN. This client request is invoked just */
-/* after thread drd_joiner joined thread drd_joinee.                         */
-void drd_post_thread_join(DrdThreadId drd_joiner, DrdThreadId drd_joinee)
-{
-  tl_assert(IsValidDrdThreadId(drd_joiner));
-  tl_assert(IsValidDrdThreadId(drd_joinee));
-  thread_new_segment(drd_joinee);
-  thread_combine_vc(drd_joiner, drd_joinee);
-  thread_new_segment(drd_joiner);
-
-  if (s_drd_trace_fork_join)
-  {
-    const ThreadId joiner = DrdThreadIdToVgThreadId(drd_joiner);
-    const ThreadId joinee = DrdThreadIdToVgThreadId(drd_joinee);
-    const unsigned msg_size = 256;
-    char* msg;
-
-    msg = VG_(malloc)("drd.main.dptj.1", msg_size);
-    tl_assert(msg);
-    VG_(snprintf)(msg, msg_size,
-                  "drd_post_thread_join joiner = %d/%d, joinee = %d/%d",
-                  joiner, drd_joiner, joinee, drd_joinee);
-    if (joiner)
-    {
-      VG_(snprintf)(msg + VG_(strlen)(msg), msg_size - VG_(strlen)(msg),
-                    ", new vc: ");
-      vc_snprint(msg + VG_(strlen)(msg), msg_size - VG_(strlen)(msg),
-                 thread_get_vc(drd_joiner));
-    }
-    VG_(message)(Vg_DebugMsg, "%s", msg);
-    VG_(free)(msg);
-  }
-
-  if (! s_drd_check_stack_accesses)
-  {
-    drd_finish_suppression(thread_get_stack_max(drd_joinee)
-                           - thread_get_stack_size(drd_joinee),
-                           thread_get_stack_max(drd_joinee));
-  }
-  thread_delete(drd_joinee);
-  mutex_thread_delete(drd_joinee);
-  cond_thread_delete(drd_joinee);
-  semaphore_thread_delete(drd_joinee);
-  barrier_thread_delete(drd_joinee);
-}
-
-void drd_pre_thread_cancel(DrdThreadId canceling, DrdThreadId canceled)
-{
-  thread_pre_cancel(canceled);
-}
-
-void drd_post_thread_cancel(DrdThreadId canceling, DrdThreadId canceled, Bool succeeded)
-{ }
 
 /* Called after a thread has performed its last memory access. */
 static void drd_thread_finished(ThreadId vg_tid)
@@ -702,7 +462,7 @@ static void drd_thread_finished(ThreadId vg_tid)
   tl_assert(VG_(get_running_tid)() == vg_tid);
 
   drd_tid = VgThreadIdToDrdThreadId(vg_tid);
-  if (s_drd_trace_fork_join)
+  if (DRD_(thread_get_trace_fork_join)())
   {
     VG_(message)(Vg_DebugMsg,
                  "drd_thread_finished tid = %d/%d%s",
@@ -738,101 +498,6 @@ static void drd_thread_finished(ThreadId vg_tid)
   thread_finished(drd_tid);
 }
 
-void drd_pre_mutex_init(const Addr mutex, const MutexT mutex_type)
-{
-  mutex_init(mutex, mutex_type);
-}
-
-void drd_post_mutex_destroy(const Addr mutex, const MutexT mutex_type)
-{
-  mutex_post_destroy(mutex);
-}
-
-void drd_pre_mutex_lock(const Addr mutex, const MutexT mutex_type,
-                        const Bool trylock)
-{
-  mutex_pre_lock(mutex, mutex_type, trylock);
-}
-
-void drd_post_mutex_lock(const Addr mutex, const Bool took_lock)
-{
-  mutex_post_lock(mutex, took_lock, False);
-}
-
-void drd_pre_mutex_unlock(const Addr mutex, const MutexT mutex_type)
-{
-  mutex_unlock(mutex, mutex_type);
-}
-
-void drd_pre_cond_init(Addr cond)
-{
-  cond_pre_init(cond);
-}
-
-void drd_post_cond_destroy(Addr cond)
-{
-  cond_post_destroy(cond);
-}
-
-void drd_semaphore_init(const Addr semaphore,
-                        const Word pshared, const Word value)
-{
-  semaphore_init(semaphore, pshared, value);
-}
-
-void drd_semaphore_destroy(const Addr semaphore)
-{
-  semaphore_destroy(semaphore);
-}
-
-void drd_semaphore_pre_wait(const DrdThreadId tid, const Addr semaphore)
-{
-  semaphore_pre_wait(semaphore);
-}
-
-void drd_semaphore_post_wait(const DrdThreadId tid, const Addr semaphore,
-                             const Bool waited)
-{
-  semaphore_post_wait(tid, semaphore, waited);
-}
-
-void drd_semaphore_pre_post(const DrdThreadId tid, const Addr semaphore)
-{
-  semaphore_pre_post(tid, semaphore);
-}
-
-void drd_semaphore_post_post(const DrdThreadId tid, const Addr semaphore,
-                             const Bool waited)
-{
-  semaphore_post_post(tid, semaphore, waited);
-}
-
-
-void drd_barrier_init(const Addr barrier,
-                      const BarrierT barrier_type, const Word count,
-                      const Bool reinitialization)
-{
-  barrier_init(barrier, barrier_type, count, reinitialization);
-}
-
-void drd_barrier_destroy(const Addr barrier, const BarrierT barrier_type)
-{
-  barrier_destroy(barrier, barrier_type);
-}
-
-void drd_barrier_pre_wait(const DrdThreadId tid, const Addr barrier,
-                          const BarrierT barrier_type)
-{
-  barrier_pre_wait(tid, barrier, barrier_type);
-}
-
-void drd_barrier_post_wait(const DrdThreadId tid, const Addr barrier,
-                           const BarrierT barrier_type, const Bool waited)
-{
-  barrier_post_wait(tid, barrier, barrier_type, waited);
-}
-
-
 //
 // Implementation of the tool interface.
 //
@@ -851,319 +516,6 @@ void drd_post_clo_init(void)
   {
     VG_(needs_var_info)();
   }
-}
-
-#if defined(VGA_x86)
-#define STACK_POINTER_OFFSET OFFSET_x86_ESP
-#elif defined(VGA_amd64)
-#define STACK_POINTER_OFFSET OFFSET_amd64_RSP
-#elif defined(VGA_ppc32)
-#define STACK_POINTER_OFFSET ((OFFSET_ppc32_GPR0 + OFFSET_ppc32_GPR2) / 2)
-#elif defined(VGA_ppc64)
-#define STACK_POINTER_OFFSET ((OFFSET_ppc64_GPR0 + OFFSET_ppc64_GPR2) / 2)
-#else
-#error Unknown architecture.
-#endif
-
-
-/** Return true if and only if addr_expr matches the pattern (SP) or
- *  <offset>(SP).
- */
-static Bool is_stack_access(IRSB* const bb, IRExpr* const addr_expr)
-{
-  Bool result = False;
-
-  if (addr_expr->tag == Iex_RdTmp)
-  {
-    int i;
-    for (i = 0; i < bb->stmts_size; i++)
-    {
-      if (bb->stmts[i]
-          && bb->stmts[i]->tag == Ist_WrTmp
-          && bb->stmts[i]->Ist.WrTmp.tmp == addr_expr->Iex.RdTmp.tmp)
-      {
-        IRExpr* e = bb->stmts[i]->Ist.WrTmp.data;
-        if (e->tag == Iex_Get && e->Iex.Get.offset == STACK_POINTER_OFFSET)
-        {
-          result = True;
-        }
-
-        //ppIRExpr(e);
-        //VG_(printf)(" (%s)\n", result ? "True" : "False");
-        break;
-      }
-    }
-  }
-  return result;
-}
-
-static void instrument_load(IRSB* const bb,
-                            IRExpr* const addr_expr,
-                            const HWord size)
-{
-  IRExpr* size_expr;
-  IRExpr** argv;
-  IRDirty* di;
-
-  if (UNLIKELY(drd_any_address_is_traced()))
-  {
-    addStmtToIRSB(bb,
-		  IRStmt_Dirty(
-		    unsafeIRDirty_0_N(/*regparms*/2,
-				      "drd_trace_load",
-				      VG_(fnptr_to_fnentry)
-				      (drd_trace_mem_load),
-				      mkIRExprVec_2(addr_expr,
-						    mkIRExpr_HWord(size)))));
-  }
-
-  if (! s_drd_check_stack_accesses && is_stack_access(bb, addr_expr))
-    return;
-
-  switch (size)
-  {
-  case 1:
-    argv = mkIRExprVec_1(addr_expr);
-    di = unsafeIRDirty_0_N(/*regparms*/1,
-                           "drd_trace_load_1",
-                           VG_(fnptr_to_fnentry)(drd_trace_load_1),
-                           argv);
-    break;
-  case 2:
-    argv = mkIRExprVec_1(addr_expr);
-    di = unsafeIRDirty_0_N(/*regparms*/1,
-                           "drd_trace_load_2",
-                           VG_(fnptr_to_fnentry)(drd_trace_load_2),
-                           argv);
-    break;
-  case 4:
-    argv = mkIRExprVec_1(addr_expr);
-    di = unsafeIRDirty_0_N(/*regparms*/1,
-                           "drd_trace_load_4",
-                           VG_(fnptr_to_fnentry)(drd_trace_load_4),
-                           argv);
-    break;
-  case 8:
-    argv = mkIRExprVec_1(addr_expr);
-    di = unsafeIRDirty_0_N(/*regparms*/1,
-                           "drd_trace_load_8",
-                           VG_(fnptr_to_fnentry)(drd_trace_load_8),
-                           argv);
-    break;
-  default:
-    size_expr = mkIRExpr_HWord(size);
-    argv = mkIRExprVec_2(addr_expr, size_expr);
-    di = unsafeIRDirty_0_N(/*regparms*/2,
-                           "drd_trace_load",
-                           VG_(fnptr_to_fnentry)(drd_trace_load),
-                           argv);
-    break;
-  }
-  addStmtToIRSB(bb, IRStmt_Dirty(di));
-}
-
-static void instrument_store(IRSB* const bb,
-                             IRExpr* const addr_expr,
-                             const HWord size)
-{
-  IRExpr* size_expr;
-  IRExpr** argv;
-  IRDirty* di;
-
-  if (UNLIKELY(drd_any_address_is_traced()))
-  {
-    addStmtToIRSB(bb,
-		  IRStmt_Dirty(
-		    unsafeIRDirty_0_N(/*regparms*/2,
-				      "drd_trace_store",
-				      VG_(fnptr_to_fnentry)
-				      (drd_trace_mem_store),
-				      mkIRExprVec_2(addr_expr,
-						    mkIRExpr_HWord(size)))));
-  }
-
-  if (! s_drd_check_stack_accesses && is_stack_access(bb, addr_expr))
-    return;
-
-  switch (size)
-  {
-  case 1:
-    argv = mkIRExprVec_1(addr_expr);
-    di = unsafeIRDirty_0_N(/*regparms*/1,
-                           "drd_trace_store_1",
-                           VG_(fnptr_to_fnentry)(drd_trace_store_1),
-                           argv);
-    break;
-  case 2:
-    argv = mkIRExprVec_1(addr_expr);
-    di = unsafeIRDirty_0_N(/*regparms*/1,
-                           "drd_trace_store_2",
-                           VG_(fnptr_to_fnentry)(drd_trace_store_2),
-                           argv);
-    break;
-  case 4:
-    argv = mkIRExprVec_1(addr_expr);
-    di = unsafeIRDirty_0_N(/*regparms*/1,
-                           "drd_trace_store_4",
-                           VG_(fnptr_to_fnentry)(drd_trace_store_4),
-                           argv);
-    break;
-  case 8:
-    argv = mkIRExprVec_1(addr_expr);
-    di = unsafeIRDirty_0_N(/*regparms*/1,
-                           "drd_trace_store_8",
-                           VG_(fnptr_to_fnentry)(drd_trace_store_8),
-                           argv);
-    break;
-  default:
-    size_expr = mkIRExpr_HWord(size);
-    argv = mkIRExprVec_2(addr_expr, size_expr);
-    di = unsafeIRDirty_0_N(/*regparms*/2,
-                           "drd_trace_store",
-                           VG_(fnptr_to_fnentry)(drd_trace_store),
-                           argv);
-    break;
-  }
-  addStmtToIRSB(bb, IRStmt_Dirty(di));
-}
-
-static
-IRSB* drd_instrument(VgCallbackClosure* const closure,
-                     IRSB* const bb_in,
-                     VexGuestLayout* const layout,
-                     VexGuestExtents* const vge, 
-                     IRType const gWordTy,
-                     IRType const hWordTy)
-{
-  IRDirty* di;
-  Int      i;
-  IRSB*    bb;
-  IRExpr** argv;
-  Bool     instrument = True;
-  Bool     bus_locked = False;
-
-  /* Set up BB */
-  bb           = emptyIRSB();
-  bb->tyenv    = deepCopyIRTypeEnv(bb_in->tyenv);
-  bb->next     = deepCopyIRExpr(bb_in->next);
-  bb->jumpkind = bb_in->jumpkind;
-
-  for (i = 0; i < bb_in->stmts_used; i++)
-  {
-    IRStmt* const st = bb_in->stmts[i];
-    tl_assert(st);
-    if (st->tag == Ist_NoOp)
-      continue;
-
-    switch (st->tag)
-    {
-    /* Note: the code for not instrumenting the code in .plt          */
-    /* sections is only necessary on CentOS 3.0 x86 (kernel 2.4.21    */
-    /* + glibc 2.3.2 + NPTL 0.60 + binutils 2.14.90.0.4).             */
-    /* This is because on this platform dynamic library symbols are   */
-    /* relocated in another way than by later binutils versions. The  */
-    /* linker e.g. does not generate .got.plt sections on CentOS 3.0. */
-    case Ist_IMark:
-      instrument = VG_(seginfo_sect_kind)(NULL, 0, st->Ist.IMark.addr)
-        != Vg_SectPLT;
-      addStmtToIRSB(bb, st);
-      break;
-
-    case Ist_MBE:
-      switch (st->Ist.MBE.event)
-      {
-      case Imbe_Fence:
-        break; /* not interesting */
-      case Imbe_BusLock:
-      case Imbe_SnoopedStoreBegin:
-        tl_assert(! bus_locked);
-        bus_locked = True;
-        break;
-      case Imbe_BusUnlock:
-      case Imbe_SnoopedStoreEnd:
-        tl_assert(bus_locked);
-        bus_locked = False;
-        break;
-      default:
-        tl_assert(0);
-      }
-      addStmtToIRSB(bb, st);
-      break;
-
-    case Ist_Store:
-      if (instrument && ! bus_locked)
-      {
-        instrument_store(bb,
-                         st->Ist.Store.addr,
-                         sizeofIRType(typeOfIRExpr(bb->tyenv,
-                                                   st->Ist.Store.data)));
-      }
-      addStmtToIRSB(bb, st);
-      break;
-
-    case Ist_WrTmp:
-      if (instrument)
-      {
-        const IRExpr* const data = st->Ist.WrTmp.data;
-        if (data->tag == Iex_Load)
-        {
-          instrument_load(bb,
-                          data->Iex.Load.addr,
-                          sizeofIRType(data->Iex.Load.ty));
-        }
-      }
-      addStmtToIRSB(bb, st);
-      break;
-
-    case Ist_Dirty:
-      if (instrument)
-      {
-        IRDirty* d = st->Ist.Dirty.details;
-        IREffect const mFx = d->mFx;
-        switch (mFx) {
-        case Ifx_None:
-          break;
-        case Ifx_Read:
-        case Ifx_Write:
-        case Ifx_Modify:
-          tl_assert(d->mAddr);
-          tl_assert(d->mSize > 0);
-          argv = mkIRExprVec_2(d->mAddr, mkIRExpr_HWord(d->mSize));
-          if (mFx == Ifx_Read || mFx == Ifx_Modify) {
-            di = unsafeIRDirty_0_N(
-                                   /*regparms*/2,
-                                   "drd_trace_load",
-                                   VG_(fnptr_to_fnentry)(drd_trace_load),
-                                   argv);
-            addStmtToIRSB(bb, IRStmt_Dirty(di));
-          }
-          if ((mFx == Ifx_Write || mFx == Ifx_Modify)
-              && ! bus_locked)
-          {
-            di = unsafeIRDirty_0_N(
-                                   /*regparms*/2,
-                                   "drd_trace_store",
-                                   VG_(fnptr_to_fnentry)(drd_trace_store),
-                                   argv);
-            addStmtToIRSB(bb, IRStmt_Dirty(di));
-          }
-          break;
-        default:
-          tl_assert(0);
-        }
-      }
-      addStmtToIRSB(bb, st);
-      break;
-
-    default:
-      addStmtToIRSB(bb, st);
-      break;
-    }
-  }
-
-  tl_assert(! bus_locked);
-
-  return bb;
 }
 
 static void drd_start_client_code(const ThreadId tid, const ULong bbs_done)
@@ -1267,7 +619,7 @@ void drd_pre_clo_init(void)
   drd_register_malloc_wrappers(drd_start_using_mem_w_ecu,
                                drd_stop_using_nonstack_mem);
 
-  drd_clientreq_init();
+  DRD_(clientreq_init)();
 
   drd_suppression_init();
 

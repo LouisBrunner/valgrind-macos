@@ -29,6 +29,7 @@
 
 // Includes.
 
+#include "drd_basics.h"
 #include "drd_segment.h"
 #include "pub_drd_bitmap.h"
 #include "pub_tool_libcassert.h"  // tl_assert()
@@ -92,6 +93,8 @@ extern struct bitmap* s_conflict_set;
 
 void thread_trace_context_switches(const Bool t);
 void thread_trace_conflict_set(const Bool t);
+Bool DRD_(thread_get_trace_fork_join)(void);
+void DRD_(thread_set_trace_fork_join)(const Bool t);
 void thread_set_segment_merging(const Bool m);
 
 DrdThreadId VgThreadIdToDrdThreadId(const ThreadId tid);
@@ -101,6 +104,7 @@ ThreadId DrdThreadIdToVgThreadId(const DrdThreadId tid);
 DrdThreadId thread_pre_create(const DrdThreadId creator,
                               const ThreadId vg_created);
 DrdThreadId thread_post_create(const ThreadId vg_created);
+void DRD_(thread_post_join)(DrdThreadId drd_joiner, DrdThreadId drd_joinee);
 void thread_delete(const DrdThreadId tid);
 void thread_finished(const DrdThreadId tid);
 void thread_pre_cancel(const DrdThreadId tid);

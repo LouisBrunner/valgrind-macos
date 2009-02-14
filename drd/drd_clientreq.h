@@ -22,14 +22,27 @@
   The GNU General Public License is contained in the file COPYING.
 */
 
+/*
+ * This header file contains the tool-internal interface for the code that
+ * processes client requests.
+ */
+
 
 #ifndef __DRD_CLIENTREQ_H
 #define __DRD_CLIENTREQ_H
 
 
 #include "drd.h"
+#include "drd_basics.h" /* DRD_() */
 
 
+/*
+ * While the client requests defined in the header file "drd.h" define a
+ * public interface between client programs and the DRD tool, the client
+ * requests defined below are a tool-internal interface. These last client
+ * requests must only be used by the source code in the various *_intercepts.c
+ * source files.
+ */
 enum {
   /* Ask drd to suppress data race reports on all currently allocated stack */
   /* data of the current thread.                                            */
@@ -194,6 +207,11 @@ enum {
 
 };
 
+/*
+ * Error checking on POSIX recursive mutexes, POSIX error checking mutexes,
+ * POSIX default mutexes and POSIX spinlocks happens by the same code. The
+ * values defined below specify which of these types a mutex really is.
+ */
 typedef enum
 {
   mutex_type_unknown          = -1,
@@ -204,13 +222,19 @@ typedef enum
   mutex_type_spinlock         = 4
 } MutexT;
 
+/*
+ * Error checking on POSIX barriers and GOMP barriers happens by the same
+ * code. The integer values defined below specify the type of a barrier with
+ * a given client address.
+ */
 typedef enum
   {
     pthread_barrier = 1,
     gomp_barrier = 2
   } BarrierT;
 
-void drd_clientreq_init(void);
+
+void DRD_(clientreq_init)(void);
 
 
 #endif //  __DRD_CLIENTREQ_H

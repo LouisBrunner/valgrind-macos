@@ -24,7 +24,11 @@
 
 
 #include "drd_error.h"
+#include "drd_barrier.h"
+#include "drd_cond.h"
+#include "drd_mutex.h"
 #include "drd_segment.h"
+#include "drd_semaphore.h"
 #include "drd_suppression.h"
 #include "drd_thread.h"
 #include "pub_tool_vki.h"
@@ -66,6 +70,7 @@ ThreadInfo s_threadinfo[DRD_N_THREADS];
 struct bitmap* s_conflict_set;
 static Bool s_trace_context_switches = False;
 static Bool s_trace_conflict_set = False;
+static Bool s_trace_fork_join = False;
 static Bool s_segment_merging = True;
 
 
@@ -73,16 +78,30 @@ static Bool s_segment_merging = True;
 
 void thread_trace_context_switches(const Bool t)
 {
+  tl_assert(t == False || t == True);
   s_trace_context_switches = t;
 }
 
 void thread_trace_conflict_set(const Bool t)
 {
+  tl_assert(t == False || t == True);
   s_trace_conflict_set = t;
+}
+
+Bool DRD_(thread_get_trace_fork_join)(void)
+{
+  return s_trace_fork_join;
+}
+
+void DRD_(thread_set_trace_fork_join)(const Bool t)
+{
+  tl_assert(t == False || t == True);
+  s_trace_fork_join = t;
 }
 
 void thread_set_segment_merging(const Bool m)
 {
+  tl_assert(m == False || m == True);
   s_segment_merging = m;
 }
 
@@ -211,6 +230,53 @@ DrdThreadId thread_pre_create(const DrdThreadId creator,
   return created;
 }
 
+
+/* Process VG_USERREQ__POST_THREAD_JOIN. This client request is invoked just */
+/* after thread drd_joiner joined thread drd_joinee.                         */
+void DRD_(thread_post_join)(DrdThreadId drd_joiner, DrdThreadId drd_joinee)
+{
+  tl_assert(IsValidDrdThreadId(drd_joiner));
+  tl_assert(IsValidDrdThreadId(drd_joinee));
+  thread_new_segment(drd_joinee);
+  thread_combine_vc(drd_joiner, drd_joinee);
+  thread_new_segment(drd_joiner);
+
+  if (s_trace_fork_join)
+  {
+    const ThreadId joiner = DrdThreadIdToVgThreadId(drd_joiner);
+    const ThreadId joinee = DrdThreadIdToVgThreadId(drd_joinee);
+    const unsigned msg_size = 256;
+    char* msg;
+
+    msg = VG_(malloc)("drd.main.dptj.1", msg_size);
+    tl_assert(msg);
+    VG_(snprintf)(msg, msg_size,
+                  "drd_post_thread_join joiner = %d/%d, joinee = %d/%d",
+                  joiner, drd_joiner, joinee, drd_joinee);
+    if (joiner)
+    {
+      VG_(snprintf)(msg + VG_(strlen)(msg), msg_size - VG_(strlen)(msg),
+                    ", new vc: ");
+      vc_snprint(msg + VG_(strlen)(msg), msg_size - VG_(strlen)(msg),
+                 thread_get_vc(drd_joiner));
+    }
+    VG_(message)(Vg_DebugMsg, "%s", msg);
+    VG_(free)(msg);
+  }
+
+  if (!  DRD_(get_check_stack_accesses)())
+  {
+    drd_finish_suppression(thread_get_stack_max(drd_joinee)
+                           - thread_get_stack_size(drd_joinee),
+                           thread_get_stack_max(drd_joinee));
+  }
+  thread_delete(drd_joinee);
+  mutex_thread_delete(drd_joinee);
+  cond_thread_delete(drd_joinee);
+  semaphore_thread_delete(drd_joinee);
+  barrier_thread_delete(drd_joinee);
+}
+
 /** Allocate the first segment for a thread. Call this just after
  *  pthread_create().
  */
@@ -272,8 +338,9 @@ SizeT thread_get_stack_size(const DrdThreadId tid)
   return s_threadinfo[tid].stack_size;
 }
 
-/** Clean up thread-specific data structures. Call this just after 
- *  pthread_join().
+/**
+ * Clean up thread-specific data structures. Call this just after 
+ * pthread_join().
  */
 void thread_delete(const DrdThreadId tid)
 {

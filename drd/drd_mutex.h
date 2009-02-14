@@ -48,6 +48,7 @@ void mutex_pre_lock(const Addr mutex, const MutexT mutex_type,
 void mutex_post_lock(const Addr mutex, const Bool took_lock,
                      const Bool post_cond_wait);
 void mutex_unlock(const Addr mutex, const MutexT mutex_type);
+void DRD_(spinlock_init_or_unlock)(const Addr spinlock);
 const char* mutex_get_typename(struct mutex_info* const p);
 const char* mutex_type_name(const MutexT mt);
 Bool mutex_is_locked_by(const Addr mutex, const DrdThreadId tid);

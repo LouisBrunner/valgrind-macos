@@ -1,8 +1,7 @@
 /*
   This file is part of drd, a data race detector.
 
-  Copyright (C) 2006-2008 Bart Van Assche
-  bart.vanassche@gmail.com
+  Copyright (C) 2006-2009 Bart Van Assche <bart.vanassche@gmail.com>.
 
   This program is free software; you can redistribute it and/or
   modify it under the terms of the GNU General Public License as
@@ -23,6 +22,7 @@
 */
 
 
+#include "drd_basics.h"
 #include "drd_clientobj.h"
 #include "drd_error.h"
 #include "drd_mutex.h"
@@ -422,6 +422,19 @@ void mutex_unlock(const Addr mutex, MutexT mutex_type)
     thread_new_segment(drd_tid);
     p->acquired_at = 0;
     s_mutex_segment_creation_count++;
+  }
+}
+
+void DRD_(spinlock_init_or_unlock)(const Addr spinlock)
+{
+  struct mutex_info* mutex_p = mutex_get(spinlock);
+  if (mutex_p)
+  {
+    mutex_unlock(spinlock, mutex_type_spinlock);
+  }
+  else
+  {
+    mutex_init(spinlock, mutex_type_spinlock);
   }
 }
 

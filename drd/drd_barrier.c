@@ -85,8 +85,8 @@ static void barrier_thread_initialize(struct barrier_thread_info* const p,
 static void barrier_thread_destroy(struct barrier_thread_info* const p)
 {
   tl_assert(p);
-  sg_put(p->sg[0]);
-  sg_put(p->sg[1]);
+  DRD_(sg_put)(p->sg[0]);
+  DRD_(sg_put)(p->sg[1]);
 }
 
 /** Initialize the structure *p with the specified client-side barrier address,

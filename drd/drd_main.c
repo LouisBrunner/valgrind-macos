@@ -143,7 +143,7 @@ static Bool DRD_(process_cmd_line_option)(Char* arg)
   if (trace_rwlock != -1)
     rwlock_set_trace(trace_rwlock);
   if (trace_segment != -1)
-    sg_set_trace(trace_segment);
+    DRD_(sg_set_trace)(trace_segment);
   if (trace_semaphore != -1)
     semaphore_set_trace(trace_semaphore);
   if (trace_suppression != -1)
@@ -542,8 +542,8 @@ static void DRD_(fini)(Int exitcode)
     VG_(message)(Vg_UserMsg,
                  " segments: created %lld segments, max %lld alive,"
                  " %lld discard points.",
-                 sg_get_created_segments_count(),
-                 sg_get_max_alive_segments_count(),
+                 DRD_(sg_get_segments_created_count)(),
+                 DRD_(sg_get_max_segments_alive_count)(),
                  thread_get_discard_ordered_segments_count());
     VG_(message)(Vg_UserMsg,
                  "           (%lld m, %lld rw, %lld s, %lld b)",

@@ -120,7 +120,7 @@ static void semaphore_cleanup(struct semaphore_info* p)
                             &sei);
   }
   while ((sg = segment_pop(p)))
-    sg_put(sg);
+    DRD_(sg_put)(sg);
   VG_(deleteXA)(p->last_sem_post_seg);
 }
 
@@ -176,7 +176,7 @@ struct semaphore_info* semaphore_init(const Addr semaphore,
     // Remove all segments from the segment stack.
     while ((sg = segment_pop(p)))
     {
-      sg_put(sg);
+      DRD_(sg_put)(sg);
     }
   }
   else
@@ -283,7 +283,7 @@ void semaphore_post_wait(const DrdThreadId tid, const Addr semaphore,
       {
         thread_combine_vc2(tid, &sg->vc);
       }
-      sg_put(sg);
+      DRD_(sg_put)(sg);
       thread_new_segment(tid);
       s_semaphore_segment_creation_count++;
     }

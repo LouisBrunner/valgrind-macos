@@ -27,9 +27,11 @@
 #define __SEGMENT_H
 
 
-// Segments and segment lists. A segment represents information about 
-// a contiguous group of statements of a specific thread. There is a vector
-// clock associated with each segment.
+/*
+ * Segments and segment lists. A segment represents information about 
+ * a contiguous group of statements of a specific thread. There is a vector
+ * clock associated with each segment.
+ */
 
 
 #include "drd_vc.h"
@@ -40,26 +42,34 @@
 
 typedef struct segment
 {
+  /** Pointers to next and previous segments executed by the same thread. */
   struct segment*    next;
   struct segment*    prev;
+  /** Reference count: number of pointers that point to this segment. */
   int                refcnt;
+  /** Stack trace of the first instruction of the segment. */
   ExeContext*        stacktrace;
+  /** Vector clock associated with the segment. */
   VectorClock        vc;
+  /**
+   * Bitmap representing the memory accesses by the instructions associated
+   * with the segment.
+   */
   struct bitmap*     bm;
 } Segment;
 
 
-Segment* sg_new(const ThreadId creator, const ThreadId created);
-int sg_get_refcnt(const Segment* const sg);
-Segment* sg_get(Segment* const sg);
-void sg_put(Segment* const sg);
-void sg_merge(const Segment* const sg1, Segment* const sg2);
-void sg_print(const Segment* const sg);
-Bool sg_get_trace(void);
-void sg_set_trace(const Bool trace_segment);
-ULong sg_get_created_segments_count(void);
-ULong sg_get_alive_segments_count(void);
-ULong sg_get_max_alive_segments_count(void);
+Segment* DRD_(sg_new)(const ThreadId creator, const ThreadId created);
+int DRD_(sg_get_refcnt)(const Segment* const sg);
+Segment* DRD_(sg_get)(Segment* const sg);
+void DRD_(sg_put)(Segment* const sg);
+void DRD_(sg_merge)(const Segment* const sg1, Segment* const sg2);
+void DRD_(sg_print)(const Segment* const sg);
+Bool DRD_(sg_get_trace)(void);
+void DRD_(sg_set_trace)(const Bool trace_segment);
+ULong DRD_(sg_get_segments_created_count)(void);
+ULong DRD_(sg_get_segments_alive_count)(void);
+ULong DRD_(sg_get_max_segments_alive_count)(void);
 
 
 #endif // __SEGMENT_H

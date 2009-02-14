@@ -225,7 +225,7 @@ DrdThreadId thread_pre_create(const DrdThreadId creator,
 
   tl_assert(s_threadinfo[created].first == 0);
   tl_assert(s_threadinfo[created].last == 0);
-  thread_append_segment(created, sg_new(creator, created));
+  thread_append_segment(created, DRD_(sg_new)(creator, created));
 
   return created;
 }
@@ -355,7 +355,7 @@ void thread_delete(const DrdThreadId tid)
     sg_prev = sg->prev;
     sg->prev = 0;
     sg->next = 0;
-    sg_put(sg);
+    DRD_(sg_put)(sg);
   }
   s_threadinfo[tid].vg_thread_exists = False;
   s_threadinfo[tid].posix_thread_exists = False;
@@ -459,7 +459,7 @@ void thread_set_running_tid(const ThreadId vg_tid, const DrdThreadId drd_tid)
                    " segments: %llu",
                    s_vg_running_tid, s_drd_running_tid,
                    DrdThreadIdToVgThreadId(drd_tid), drd_tid,
-                   sg_get_alive_segments_count());
+                   DRD_(sg_get_segments_alive_count)());
     }
     s_vg_running_tid = vg_tid;
     s_drd_running_tid = drd_tid;
@@ -523,7 +523,7 @@ static void thread_discard_segment(const DrdThreadId tid, Segment* const sg)
     s_threadinfo[tid].first = sg->next;
   if (sg == s_threadinfo[tid].last)
     s_threadinfo[tid].last = sg->prev;
-  sg_put(sg);
+  DRD_(sg_put)(sg);
 
   //tl_assert(sane_ThreadInfo(&s_threadinfo[tid]));
 }
@@ -546,8 +546,8 @@ void thread_get_latest_segment(Segment** sg, const DrdThreadId tid)
             && tid != DRD_INVALID_THREADID);
   tl_assert(s_threadinfo[tid].last);
 
-  sg_put(*sg);
-  *sg = sg_get(s_threadinfo[tid].last);
+  DRD_(sg_put)(*sg);
+  *sg = DRD_(sg_get)(s_threadinfo[tid].last);
 }
 
 /**
@@ -611,7 +611,7 @@ static void thread_discard_ordered_segments(void)
 
   DRD_(vc_init)(&thread_vc_min, 0, 0);
   thread_compute_minimum_vc(&thread_vc_min);
-  if (sg_get_trace())
+  if (DRD_(sg_get_trace)())
   {
     char msg[256];
     VectorClock thread_vc_max;
@@ -664,13 +664,13 @@ static void thread_merge_segments(void)
 
     for (sg = s_threadinfo[i].first; sg; sg = sg->next)
     {
-      if (sg_get_refcnt(sg) == 1
+      if (DRD_(sg_get_refcnt)(sg) == 1
           && sg->next
-          && sg_get_refcnt(sg->next) == 1
+          && DRD_(sg_get_refcnt)(sg->next) == 1
           && sg->next->next)
       {
         /* Merge sg and sg->next into sg. */
-        sg_merge(sg, sg->next);
+        DRD_(sg_merge)(sg, sg->next);
         thread_discard_segment(i, sg->next);
       }
     }
@@ -756,7 +756,7 @@ void thread_new_segment(const DrdThreadId tid)
   tl_assert(0 <= (int)tid && tid < DRD_N_THREADS
             && tid != DRD_INVALID_THREADID);
 
-  new_sg = sg_new(tid, tid);
+  new_sg = DRD_(sg_new)(tid, tid);
   thread_append_segment(tid, new_sg);
 
   if (conflict_set_update_needed(tid, new_sg))
@@ -884,7 +884,7 @@ void thread_print_all(void)
                   s_threadinfo[i].detached_posix_thread);
       for (p = s_threadinfo[i].first; p; p = p->next)
       {
-        sg_print(p);
+        DRD_(sg_print)(p);
       }
     }
   }

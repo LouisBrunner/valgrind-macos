@@ -107,7 +107,7 @@ static void mutex_cleanup(struct mutex_info* p)
                             &MEI);
   }
 
-  sg_put(p->last_locked_segment);
+  DRD_(sg_put)(p->last_locked_segment);
   p->last_locked_segment = 0;
 }
 

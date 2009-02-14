@@ -36,23 +36,24 @@
 #include "pub_tool_threadstate.h" // VG_INVALID_THREADID
 
 
-// Local variables.
+/* Local variables. */
 
-static ULong s_created_segments_count;
-static ULong s_alive_segments_count;
-static ULong s_max_alive_segments_count;
-static Bool drd_trace_segment = False;
+static ULong DRD_(s_segments_created_count);
+static ULong DRD_(s_segments_alive_count);
+static ULong DRD_(s_max_segments_alive_count);
+static Bool DRD_(s_trace_segment) = False;
 
 
-// Function definitions.
+/* Function definitions. */
 
-/** Initialize the memory pointed at by sg.
+/**
+ * Initialize the memory 'sg' points at.
  *  @note The creator and created thread ID's may be equal.
  */
 static
-void sg_init(Segment* const sg,
-             DrdThreadId const creator,
-             DrdThreadId const created)
+void DRD_(sg_init)(Segment* const sg,
+                   DrdThreadId const creator,
+                   DrdThreadId const created)
 {
   Segment* creator_sg;
   ThreadId vg_created = DrdThreadIdToVgThreadId(created);
@@ -79,7 +80,7 @@ void sg_init(Segment* const sg,
   DRD_(vc_increment)(&sg->vc, created);
   sg->bm = bm_new();
 
-  if (drd_trace_segment)
+  if (DRD_(s_trace_segment))
   {
     char msg[256];
     VG_(snprintf)(msg, sizeof(msg),
@@ -95,8 +96,7 @@ void sg_init(Segment* const sg,
 }
 
 /** Deallocate the memory that was allocated by sg_init(). */
-static
-void sg_cleanup(Segment* const sg)
+static void DRD_(sg_cleanup)(Segment* const sg)
 {
   tl_assert(sg);
   tl_assert(sg->refcnt == 0);
@@ -107,26 +107,25 @@ void sg_cleanup(Segment* const sg)
 }
 
 /** Allocate and initialize a new segment. */
-Segment* sg_new(ThreadId const creator, ThreadId const created)
+Segment* DRD_(sg_new)(ThreadId const creator, ThreadId const created)
 {
   Segment* sg;
 
-  s_created_segments_count++;
-  s_alive_segments_count++;
-  if (s_max_alive_segments_count < s_alive_segments_count)
-    s_max_alive_segments_count = s_alive_segments_count;
+  DRD_(s_segments_created_count)++;
+  DRD_(s_segments_alive_count)++;
+  if (DRD_(s_max_segments_alive_count) < DRD_(s_segments_alive_count))
+    DRD_(s_max_segments_alive_count) = DRD_(s_segments_alive_count);
 
   sg = VG_(malloc)("drd.segment.sn.1", sizeof(*sg));
   tl_assert(sg);
-  sg_init(sg, creator, created);
+  DRD_(sg_init)(sg, creator, created);
   return sg;
 }
 
-static
-void sg_delete(Segment* const sg)
+static void DRD_(sg_delete)(Segment* const sg)
 {
 #if 1
-  if (sg_get_trace())
+  if (DRD_(sg_get_trace)())
   {
     char msg[256];
     VG_(snprintf)(msg, sizeof(msg),
@@ -137,15 +136,15 @@ void sg_delete(Segment* const sg)
   }
 #endif
 
-  s_alive_segments_count--;
+  DRD_(s_segments_alive_count)--;
 
   tl_assert(sg);
-  sg_cleanup(sg);
+  DRD_(sg_cleanup)(sg);
   VG_(free)(sg);
 }
 
 /** Query the reference count of the specified segment. */
-int sg_get_refcnt(const Segment* const sg)
+int DRD_(sg_get_refcnt)(const Segment* const sg)
 {
   tl_assert(sg);
 
@@ -153,7 +152,7 @@ int sg_get_refcnt(const Segment* const sg)
 }
 
 /** Increment the reference count of the specified segment. */
-Segment* sg_get(Segment* const sg)
+Segment* DRD_(sg_get)(Segment* const sg)
 {
   tl_assert(sg);
 
@@ -161,15 +160,16 @@ Segment* sg_get(Segment* const sg)
   return sg;
 }
 
-/** Decrement the reference count of the specified segment and deallocate the
- *  segment if the reference count became zero.
+/**
+ * Decrement the reference count of the specified segment and deallocate the
+ * segment if the reference count became zero.
  */
-void sg_put(Segment* const sg)
+void DRD_(sg_put)(Segment* const sg)
 {
   if (sg == 0)
     return;
 
-  if (drd_trace_segment)
+  if (DRD_(s_trace_segment))
   {
     char msg[256];
     VG_(snprintf)(msg, sizeof(msg),
@@ -184,19 +184,19 @@ void sg_put(Segment* const sg)
 
   if (--sg->refcnt == 0)
   {
-    sg_delete(sg);
+    DRD_(sg_delete)(sg);
   }
 }
 
 /** Merge sg1 and sg2 into sg1. */
-void sg_merge(const Segment* const sg1, Segment* const sg2)
+void DRD_(sg_merge)(const Segment* const sg1, Segment* const sg2)
 {
   tl_assert(sg1);
   tl_assert(sg1->refcnt == 1);
   tl_assert(sg2);
   tl_assert(sg2->refcnt == 1);
 
-  if (drd_trace_segment)
+  if (DRD_(s_trace_segment))
   {
       char msg[256];
 
@@ -216,7 +216,8 @@ void sg_merge(const Segment* const sg1, Segment* const sg2)
   bm_merge2(sg1->bm, sg2->bm);
 }
 
-void sg_print(const Segment* const sg)
+/** Print the vector clock and the bitmap of the specified segment. */
+void DRD_(sg_print)(const Segment* const sg)
 {
   tl_assert(sg);
   VG_(printf)("vc: ");
@@ -225,28 +226,30 @@ void sg_print(const Segment* const sg)
   bm_print(sg->bm);
 }
 
-Bool sg_get_trace(void)
+/** Query whether segment tracing has been enabled. */
+Bool DRD_(sg_get_trace)(void)
 {
-  return drd_trace_segment;
+  return DRD_(s_trace_segment);
 }
 
-void sg_set_trace(Bool const trace_segment)
+/** Enable or disable segment tracing. */
+void DRD_(sg_set_trace)(Bool const trace_segment)
 {
   tl_assert(trace_segment == False || trace_segment == True);
-  drd_trace_segment = trace_segment;
+  DRD_(s_trace_segment) = trace_segment;
 }
 
-ULong sg_get_created_segments_count(void)
+ULong DRD_(sg_get_segments_created_count)(void)
 {
-  return s_created_segments_count;
+  return DRD_(s_segments_created_count);
 }
 
-ULong sg_get_alive_segments_count(void)
+ULong DRD_(sg_get_segments_alive_count)(void)
 {
-  return s_alive_segments_count;
+  return DRD_(s_segments_alive_count);
 }
 
-ULong sg_get_max_alive_segments_count(void)
+ULong DRD_(sg_get_max_segments_alive_count)(void)
 {
-  return s_max_alive_segments_count;
+  return DRD_(s_max_segments_alive_count);
 }

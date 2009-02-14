@@ -215,7 +215,7 @@ static void rwlock_cleanup(struct rwlock_info* p)
   VG_(OSetGen_ResetIter)(p->thread_info);
   for ( ; (q = VG_(OSetGen_Next)(p->thread_info)) != 0; )
   {
-    sg_put(q->last_unlock_segment);
+    DRD_(sg_put)(q->last_unlock_segment);
   }
   VG_(OSetGen_Destroy)(p->thread_info);
 }

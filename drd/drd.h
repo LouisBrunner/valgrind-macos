@@ -13,7 +13,8 @@
    This file is part of drd, a Valgrind tool for verification of
    multithreaded programs.
 
-   Copyright (C) 2006-2008 Bart Van Assche.  All rights reserved.
+   Copyright (C) 2006-2009 Bart Van Assche <bart.vanassche@gmail.com>.
+   All rights reserved.
 
    Redistribution and use in source and binary forms, with or without
    modification, are permitted provided that the following conditions

@@ -39,7 +39,7 @@ UInt VG_(printf)(const HChar *format, ...)
 { UInt ret; va_list vargs; va_start(vargs, format); ret = vprintf(format, vargs); va_end(vargs); return ret; }
 UInt VG_(message)(VgMsgKind kind, const HChar* format, ...)
 { UInt ret; va_list vargs; va_start(vargs, format); ret = vprintf(format, vargs); va_end(vargs); printf("\n"); return ret; }
-Bool drd_is_suppressed(const Addr a1, const Addr a2)
+Bool DRD_(is_suppressed)(const Addr a1, const Addr a2)
 { assert(0); }
 
 

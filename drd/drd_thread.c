@@ -266,9 +266,9 @@ void DRD_(thread_post_join)(DrdThreadId drd_joiner, DrdThreadId drd_joinee)
 
   if (!  DRD_(get_check_stack_accesses)())
   {
-    drd_finish_suppression(thread_get_stack_max(drd_joinee)
-                           - thread_get_stack_size(drd_joinee),
-                           thread_get_stack_max(drd_joinee));
+    DRD_(finish_suppression)(thread_get_stack_max(drd_joinee)
+                             - thread_get_stack_size(drd_joinee),
+                             thread_get_stack_max(drd_joinee));
   }
   thread_delete(drd_joinee);
   mutex_thread_delete(drd_joinee);

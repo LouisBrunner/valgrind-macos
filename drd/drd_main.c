@@ -53,23 +53,17 @@
 #include "pub_tool_tooliface.h"
 
 
-// Function declarations.
+/* Local variables. */
 
-static void drd_start_client_code(const ThreadId tid, const ULong bbs_done);
-
-
-// Local variables.
-
-static Bool s_drd_print_stats          = False;
-static Bool s_drd_var_info             = False;
-static Bool s_show_stack_usage         = False;
+static Bool DRD_(s_print_stats)      = False;
+static Bool DRD_(s_var_info)         = False;
+static Bool DRD_(s_show_stack_usage) = False;
 
 
-//
-// Implement the needs_command_line_options for drd.
-//
-
-static Bool drd_process_cmd_line_option(Char* arg)
+/**
+ * Implement the needs_command_line_options for drd.
+ */
+static Bool DRD_(process_cmd_line_option)(Char* arg)
 {
   int check_stack_accesses   = -1;
   int exclusive_threshold_ms = -1;
@@ -90,11 +84,11 @@ static Bool drd_process_cmd_line_option(Char* arg)
   Char* trace_address        = 0;
 
   VG_BOOL_CLO     (arg, "--check-stack-var",     check_stack_accesses)
-  else VG_BOOL_CLO(arg, "--drd-stats",           s_drd_print_stats)
+  else VG_BOOL_CLO(arg, "--drd-stats",           DRD_(s_print_stats))
   else VG_BOOL_CLO(arg,"--report-signal-unlocked",s_drd_report_signal_unlocked)
   else VG_BOOL_CLO(arg, "--segment-merging",     segment_merging)
   else VG_BOOL_CLO(arg, "--show-confl-seg",      show_confl_seg)
-  else VG_BOOL_CLO(arg, "--show-stack-usage",    s_show_stack_usage)
+  else VG_BOOL_CLO(arg, "--show-stack-usage",    DRD_(s_show_stack_usage))
   else VG_BOOL_CLO(arg, "--trace-barrier",       trace_barrier)
   else VG_BOOL_CLO(arg, "--trace-clientobj",     trace_clientobj)
   else VG_BOOL_CLO(arg, "--trace-cond",          trace_cond)
@@ -106,7 +100,7 @@ static Bool drd_process_cmd_line_option(Char* arg)
   else VG_BOOL_CLO(arg, "--trace-segment",       trace_segment)
   else VG_BOOL_CLO(arg, "--trace-semaphore",     trace_semaphore)
   else VG_BOOL_CLO(arg, "--trace-suppr",         trace_suppression)
-  else VG_BOOL_CLO(arg, "--var-info",            s_drd_var_info)
+  else VG_BOOL_CLO(arg, "--var-info",            DRD_(s_var_info))
   else VG_NUM_CLO (arg, "--exclusive-threshold", exclusive_threshold_ms)
   else VG_NUM_CLO (arg, "--shared-threshold",    shared_threshold_ms)
   else VG_STR_CLO (arg, "--trace-addr",          trace_address)
@@ -131,7 +125,7 @@ static Bool drd_process_cmd_line_option(Char* arg)
   if (trace_address)
   {
     const Addr addr = VG_(strtoll16)(trace_address, 0);
-    drd_start_tracing_address_range(addr, addr + 1);
+    DRD_(start_tracing_address_range)(addr, addr + 1);
   }
   if (trace_barrier != -1)
     barrier_set_trace(trace_barrier);
@@ -154,12 +148,12 @@ static Bool drd_process_cmd_line_option(Char* arg)
   if (trace_semaphore != -1)
     semaphore_set_trace(trace_semaphore);
   if (trace_suppression != -1)
-    suppression_set_trace(trace_suppression);
+    DRD_(suppression_set_trace)(trace_suppression);
 
   return True;
 }
 
-static void drd_print_usage(void)
+static void DRD_(print_usage)(void)
 {
   VG_(printf)(
 "    --check-stack-var=yes|no  Whether or not to report data races on\n"
@@ -198,7 +192,7 @@ static void drd_print_usage(void)
    VG_(replacement_malloc_print_usage)();
 }
 
-static void drd_print_debug_usage(void)
+static void DRD_(print_debug_usage)(void)
 {  
   VG_(printf)(
 "    --drd-stats=yes|no        Print statistics about DRD activity [no].\n"
@@ -268,9 +262,9 @@ void drd_start_using_mem(const Addr a1, const SizeT len)
 {
   tl_assert(a1 < a1 + len);
 
-  if (UNLIKELY(drd_any_address_is_traced()))
+  if (UNLIKELY(DRD_(any_address_is_traced)()))
   {
-    drd_trace_mem_access(a1, len, eStart);
+    DRD_(trace_mem_access)(a1, len, eStart);
   }
 }
 
@@ -296,15 +290,15 @@ void drd_stop_using_mem(const Addr a1, const SizeT len,
 
   tl_assert(a1 < a2);
 
-  if (UNLIKELY(drd_any_address_is_traced()))
+  if (UNLIKELY(DRD_(any_address_is_traced)()))
   {
-    drd_trace_mem_access(a1, len, eEnd);
+    DRD_(trace_mem_access)(a1, len, eEnd);
   }
   if (! is_stack_mem || DRD_(get_check_stack_accesses)())
   {
     thread_stop_using_mem(a1, a2);
     clientobj_stop_using_mem(a1, a2);
-    drd_suppression_stop_using_mem(a1, a2);
+    DRD_(suppression_stop_using_mem)(a1, a2);
   }
 }
 
@@ -314,16 +308,17 @@ void drd_stop_using_nonstack_mem(const Addr a1, const SizeT len)
   drd_stop_using_mem(a1, len, False);
 }
 
-/** Suppress data race reports on all addresses contained in .plt and
- *  .got.plt sections inside the address range [ a, a + len [. The data in
- *  these sections is modified by _dl_relocate_object() every time a function
- *  in a shared library is called for the first time. Since the first call
- *  to a function in a shared library can happen from a multithreaded context,
- *  such calls can cause conflicting accesses. See also Ulrich Drepper's
- *  paper "How to Write Shared Libraries" for more information about relocation
- *  (http://people.redhat.com/drepper/dsohowto.pdf).
+/**
+ * Suppress data race reports on all addresses contained in .plt and
+ * .got.plt sections inside the address range [ a, a + len [. The data in
+ * these sections is modified by _dl_relocate_object() every time a function
+ * in a shared library is called for the first time. Since the first call
+ * to a function in a shared library can happen from a multithreaded context,
+ * such calls can cause conflicting accesses. See also Ulrich Drepper's
+ * paper "How to Write Shared Libraries" for more information about relocation
+ * (http://people.redhat.com/drepper/dsohowto.pdf).
  */
-static void suppress_relocation_conflicts(const Addr a, const SizeT len)
+static void DRD_(suppress_relocation_conflicts)(const Addr a, const SizeT len)
 {
   const DebugInfo* di;
 
@@ -345,7 +340,7 @@ static void suppress_relocation_conflicts(const Addr a, const SizeT len)
       VG_(printf)("Suppressing .plt @ 0x%lx size %ld\n", avma, size);
 #endif
       tl_assert(VG_(seginfo_sect_kind)(NULL, 0, avma) == Vg_SectPLT);
-      drd_start_suppression(avma, avma + size, ".plt");
+      DRD_(start_suppression)(avma, avma + size, ".plt");
     }
 
     avma = VG_(seginfo_get_gotplt_avma)(di);
@@ -357,7 +352,7 @@ static void suppress_relocation_conflicts(const Addr a, const SizeT len)
       VG_(printf)("Suppressing .got.plt @ 0x%lx size %ld\n", avma, size);
 #endif
       tl_assert(VG_(seginfo_sect_kind)(NULL, 0, avma) == Vg_SectGOTPLT);
-      drd_start_suppression(avma, avma + size, ".gotplt");
+      DRD_(start_suppression)(avma, avma + size, ".gotplt");
     }
   }
 }
@@ -371,7 +366,7 @@ void drd_start_using_mem_w_perms(const Addr a, const SizeT len,
 
   drd_start_using_mem(a, len);
 
-  suppress_relocation_conflicts(a, len);
+  DRD_(suppress_relocation_conflicts)(a, len);
 }
 
 /* Called by the core when the stack of a thread grows, to indicate that */
@@ -447,10 +442,10 @@ void drd_post_thread_create(const ThreadId vg_created)
   }
   if (! DRD_(get_check_stack_accesses)())
   {
-    drd_start_suppression(thread_get_stack_max(drd_created)
-                          - thread_get_stack_size(drd_created),
-                          thread_get_stack_max(drd_created),
-                          "stack");
+    DRD_(start_suppression)(thread_get_stack_max(drd_created)
+                            - thread_get_stack_size(drd_created),
+                            thread_get_stack_max(drd_created),
+                            "stack");
   }
 }
 
@@ -472,7 +467,7 @@ static void drd_thread_finished(ThreadId vg_tid)
                  ? ""
                  : " (which is a detached thread)");
   }
-  if (s_show_stack_usage)
+  if (DRD_(s_show_stack_usage))
   {
     const SizeT stack_size = thread_get_stack_size(drd_tid);
     const SizeT used_stack
@@ -502,8 +497,7 @@ static void drd_thread_finished(ThreadId vg_tid)
 // Implementation of the tool interface.
 //
 
-static
-void drd_post_clo_init(void)
+static void DRD_(post_clo_init)(void)
 {
 #  if defined(VGP_x86_linux) || defined(VGP_amd64_linux) \
       || defined(VGP_ppc32_linux) || defined(VGP_ppc64_linux)
@@ -512,7 +506,7 @@ void drd_post_clo_init(void)
   VG_(printf)("\nWARNING: DRD has only been tested on Linux.\n\n");
 #  endif
 
-  if (s_drd_var_info)
+  if (DRD_(s_var_info))
   {
     VG_(needs_var_info)();
   }
@@ -524,11 +518,10 @@ static void drd_start_client_code(const ThreadId tid, const ULong bbs_done)
   thread_set_vg_running_tid(tid);
 }
 
-static
-void drd_fini(Int exitcode)
+static void DRD_(fini)(Int exitcode)
 {
   // thread_print_all();
-  if (VG_(clo_verbosity) > 1 || s_drd_print_stats)
+  if (VG_(clo_verbosity) > 1 || DRD_(s_print_stats))
   {
     ULong update_conflict_set_count;
     ULong dsnsc;
@@ -585,17 +578,17 @@ void drd_pre_clo_init(void)
                                 " by Bart Van Assche.");
   VG_(details_bug_reports_to)  (VG_BUGS_TO);
 
-  VG_(basic_tool_funcs)        (drd_post_clo_init,
-                                drd_instrument,
-                                drd_fini);
+  VG_(basic_tool_funcs)        (DRD_(post_clo_init),
+                                DRD_(instrument),
+                                DRD_(fini));
 
   // Command line stuff.
-  VG_(needs_command_line_options)(drd_process_cmd_line_option,
-                                  drd_print_usage,
-                                  drd_print_debug_usage);
+  VG_(needs_command_line_options)(DRD_(process_cmd_line_option),
+                                  DRD_(print_usage),
+                                  DRD_(print_debug_usage));
 
   // Error handling.
-  drd_register_error_handlers();
+  DRD_(register_error_handlers)();
 
   // Core event tracking.
   VG_(track_pre_mem_read)         (drd_pre_mem_read);
@@ -621,7 +614,7 @@ void drd_pre_clo_init(void)
 
   DRD_(clientreq_init)();
 
-  drd_suppression_init();
+  DRD_(suppression_init)();
 
   clientobj_init();
 }

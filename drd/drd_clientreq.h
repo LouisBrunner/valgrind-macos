@@ -22,6 +22,7 @@
   The GNU General Public License is contained in the file COPYING.
 */
 
+
 /*
  * This header file contains the tool-internal interface for the code that
  * processes client requests.

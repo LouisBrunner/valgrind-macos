@@ -115,11 +115,11 @@ Bool DRD_(handle_client_request)(ThreadId vg_tid, UWord* arg, UWord* ret)
     break;
 
   case VG_USERREQ__DRD_START_SUPPRESSION:
-    drd_start_suppression(arg[1], arg[1] + arg[2], "client");
+    DRD_(start_suppression)(arg[1], arg[1] + arg[2], "client");
     break;
 
   case VG_USERREQ__DRD_FINISH_SUPPRESSION:
-    drd_finish_suppression(arg[1], arg[1] + arg[2]);
+    DRD_(finish_suppression)(arg[1], arg[1] + arg[2]);
     break;
 
   case VG_USERREQ__DRD_SUPPRESS_CURRENT_STACK:
@@ -143,8 +143,8 @@ Bool DRD_(handle_client_request)(ThreadId vg_tid, UWord* arg, UWord* ret)
     }
 #endif
     thread_set_stack_startup(drd_tid, VG_(get_SP)(vg_tid));
-    drd_start_suppression(topmost_sp, VG_(thread_get_stack_max)(vg_tid),
-                          "stack top");
+    DRD_(start_suppression)(topmost_sp, VG_(thread_get_stack_max)(vg_tid),
+                            "stack top");
     break;
   }
 
@@ -153,11 +153,11 @@ Bool DRD_(handle_client_request)(ThreadId vg_tid, UWord* arg, UWord* ret)
     break;
 
   case VG_USERREQ__DRD_START_TRACE_ADDR:
-    drd_start_tracing_address_range(arg[1], arg[1] + arg[2]);
+    DRD_(start_tracing_address_range)(arg[1], arg[1] + arg[2]);
     break;
 
   case VG_USERREQ__DRD_STOP_TRACE_ADDR:
-    drd_stop_tracing_address_range(arg[1], arg[1] + arg[2]);
+    DRD_(stop_tracing_address_range)(arg[1], arg[1] + arg[2]);
     break;
 
   case VG_USERREQ__DRD_STOP_RECORDING:

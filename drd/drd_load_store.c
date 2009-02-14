@@ -67,10 +67,10 @@ void DRD_(set_check_stack_accesses)(const Bool c)
   s_drd_check_stack_accesses = c;
 }
 
-void drd_trace_mem_access(const Addr addr, const SizeT size,
+void DRD_(trace_mem_access)(const Addr addr, const SizeT size,
                           const BmAccessTypeT access_type)
 {
-  if (drd_is_any_traced(addr, addr + size))
+  if (DRD_(is_any_traced)(addr, addr + size))
   {
     char vc[80];
     vc_snprint(vc, sizeof(vc), thread_get_vc(thread_get_running_tid()));
@@ -99,12 +99,12 @@ void drd_trace_mem_access(const Addr addr, const SizeT size,
 
 static VG_REGPARM(2) void drd_trace_mem_load(const Addr addr, const SizeT size)
 {
-  return drd_trace_mem_access(addr, size, eLoad);
+  return DRD_(trace_mem_access)(addr, size, eLoad);
 }
 
 static VG_REGPARM(2) void drd_trace_mem_store(const Addr addr,const SizeT size)
 {
-  return drd_trace_mem_access(addr, size, eStore);
+  return DRD_(trace_mem_access)(addr, size, eStore);
 }
 
 static void drd_report_race(const Addr addr, const SizeT size,
@@ -134,7 +134,7 @@ VG_REGPARM(2) void drd_trace_load(Addr addr, SizeT size)
   if (running_thread_is_recording()
       && (s_drd_check_stack_accesses || ! thread_address_on_stack(addr))
       && bm_access_load_triggers_conflict(addr, addr + size)
-      && ! drd_is_suppressed(addr, addr + size))
+      && ! DRD_(is_suppressed)(addr, addr + size))
   {
     drd_report_race(addr, size, eLoad);
   }
@@ -145,7 +145,7 @@ static VG_REGPARM(1) void drd_trace_load_1(Addr addr)
   if (running_thread_is_recording()
       && (s_drd_check_stack_accesses || ! thread_address_on_stack(addr))
       && bm_access_load_1_triggers_conflict(addr)
-      && ! drd_is_suppressed(addr, addr + 1))
+      && ! DRD_(is_suppressed)(addr, addr + 1))
   {
     drd_report_race(addr, 1, eLoad);
   }
@@ -156,7 +156,7 @@ static VG_REGPARM(1) void drd_trace_load_2(Addr addr)
   if (running_thread_is_recording()
       && (s_drd_check_stack_accesses || ! thread_address_on_stack(addr))
       && bm_access_load_2_triggers_conflict(addr)
-      && ! drd_is_suppressed(addr, addr + 2))
+      && ! DRD_(is_suppressed)(addr, addr + 2))
   {
     drd_report_race(addr, 2, eLoad);
   }
@@ -167,7 +167,7 @@ static VG_REGPARM(1) void drd_trace_load_4(Addr addr)
   if (running_thread_is_recording()
       && (s_drd_check_stack_accesses || ! thread_address_on_stack(addr))
       && bm_access_load_4_triggers_conflict(addr)
-      && ! drd_is_suppressed(addr, addr + 4))
+      && ! DRD_(is_suppressed)(addr, addr + 4))
   {
     drd_report_race(addr, 4, eLoad);
   }
@@ -178,7 +178,7 @@ static VG_REGPARM(1) void drd_trace_load_8(Addr addr)
   if (running_thread_is_recording()
       && (s_drd_check_stack_accesses || ! thread_address_on_stack(addr))
       && bm_access_load_8_triggers_conflict(addr)
-      && ! drd_is_suppressed(addr, addr + 8))
+      && ! DRD_(is_suppressed)(addr, addr + 8))
   {
     drd_report_race(addr, 8, eLoad);
   }
@@ -195,7 +195,7 @@ VG_REGPARM(2) void drd_trace_store(Addr addr, SizeT size)
   if (running_thread_is_recording()
       && (s_drd_check_stack_accesses || ! thread_address_on_stack(addr))
       && bm_access_store_triggers_conflict(addr, addr + size)
-      && ! drd_is_suppressed(addr, addr + size))
+      && ! DRD_(is_suppressed)(addr, addr + size))
   {
     drd_report_race(addr, size, eStore);
   }
@@ -206,7 +206,7 @@ static VG_REGPARM(1) void drd_trace_store_1(Addr addr)
   if (running_thread_is_recording()
       && (s_drd_check_stack_accesses || ! thread_address_on_stack(addr))
       && bm_access_store_1_triggers_conflict(addr)
-      && ! drd_is_suppressed(addr, addr + 1))
+      && ! DRD_(is_suppressed)(addr, addr + 1))
   {
     drd_report_race(addr, 1, eStore);
   }
@@ -217,7 +217,7 @@ static VG_REGPARM(1) void drd_trace_store_2(Addr addr)
   if (running_thread_is_recording()
       && (s_drd_check_stack_accesses || ! thread_address_on_stack(addr))
       && bm_access_store_2_triggers_conflict(addr)
-      && ! drd_is_suppressed(addr, addr + 2))
+      && ! DRD_(is_suppressed)(addr, addr + 2))
   {
     drd_report_race(addr, 2, eStore);
   }
@@ -228,7 +228,7 @@ static VG_REGPARM(1) void drd_trace_store_4(Addr addr)
   if (running_thread_is_recording()
       && (s_drd_check_stack_accesses || ! thread_address_on_stack(addr))
       && bm_access_store_4_triggers_conflict(addr)
-      && ! drd_is_suppressed(addr, addr + 4))
+      && ! DRD_(is_suppressed)(addr, addr + 4))
   {
     drd_report_race(addr, 4, eStore);
   }
@@ -239,7 +239,7 @@ static VG_REGPARM(1) void drd_trace_store_8(Addr addr)
   if (running_thread_is_recording()
       && (s_drd_check_stack_accesses || ! thread_address_on_stack(addr))
       && bm_access_store_8_triggers_conflict(addr)
-      && ! drd_is_suppressed(addr, addr + 8))
+      && ! DRD_(is_suppressed)(addr, addr + 8))
   {
     drd_report_race(addr, 8, eStore);
   }
@@ -285,7 +285,7 @@ static void instrument_load(IRSB* const bb,
   IRExpr** argv;
   IRDirty* di;
 
-  if (UNLIKELY(drd_any_address_is_traced()))
+  if (UNLIKELY(DRD_(any_address_is_traced)()))
   {
     addStmtToIRSB(bb,
 		  IRStmt_Dirty(
@@ -350,7 +350,7 @@ static void instrument_store(IRSB* const bb,
   IRExpr** argv;
   IRDirty* di;
 
-  if (UNLIKELY(drd_any_address_is_traced()))
+  if (UNLIKELY(DRD_(any_address_is_traced)()))
   {
     addStmtToIRSB(bb,
 		  IRStmt_Dirty(
@@ -407,7 +407,7 @@ static void instrument_store(IRSB* const bb,
   addStmtToIRSB(bb, IRStmt_Dirty(di));
 }
 
-IRSB* drd_instrument(VgCallbackClosure* const closure,
+IRSB* DRD_(instrument)(VgCallbackClosure* const closure,
                      IRSB* const bb_in,
                      VexGuestLayout* const layout,
                      VexGuestExtents* const vge, 

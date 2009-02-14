@@ -858,7 +858,7 @@ int bm_has_races(struct bitmap* const lhs,
           | ((bm1r->bm0_r[k] & bm0_mask(b)) ? RHS_R : 0)
           | ((bm1r->bm0_w[k] & bm0_mask(b)) ? RHS_W : 0);
         Addr const a = MAKE_ADDRESS(bm2l->addr, k * BITS_PER_UWORD | b);
-        if (HAS_RACE(access_mask) && ! drd_is_suppressed(a, a + 1))
+        if (HAS_RACE(access_mask) && ! DRD_(is_suppressed)(a, a + 1))
         {
           return 1;
         }

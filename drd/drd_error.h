@@ -148,7 +148,7 @@ typedef struct {
 
 
 void set_show_conflicting_segments(const Bool scs);
-void drd_register_error_handlers(void);
+void DRD_(register_error_handlers)(void);
 
 
 #endif /* __DRD_ERROR_H */

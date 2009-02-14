@@ -413,7 +413,7 @@ static void drd_tool_error_print_extra(Error* e)
   }
 }
 
-void drd_register_error_handlers(void)
+void DRD_(register_error_handlers)(void)
 {
   // Tool error reporting.
   VG_(needs_tool_errors)(drd_tool_error_eq,

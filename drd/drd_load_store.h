@@ -37,14 +37,14 @@
 
 Bool DRD_(get_check_stack_accesses)(void);
 void DRD_(set_check_stack_accesses)(const Bool c);
-IRSB* drd_instrument(VgCallbackClosure* const closure,
-                     IRSB* const bb_in,
-                     VexGuestLayout* const layout,
-                     VexGuestExtents* const vge, 
-                     IRType const gWordTy,
-                     IRType const hWordTy);
-void drd_trace_mem_access(const Addr addr, const SizeT size,
-                          const BmAccessTypeT access_type);
+IRSB* DRD_(instrument)(VgCallbackClosure* const closure,
+                       IRSB* const bb_in,
+                       VexGuestLayout* const layout,
+                       VexGuestExtents* const vge, 
+                       IRType const gWordTy,
+                       IRType const hWordTy);
+void DRD_(trace_mem_access)(const Addr addr, const SizeT size,
+                            const BmAccessTypeT access_type);
 VG_REGPARM(2) void drd_trace_load(Addr addr, SizeT size);
 VG_REGPARM(2) void drd_trace_store(Addr addr, SizeT size);
 

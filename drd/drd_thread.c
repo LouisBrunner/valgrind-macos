@@ -304,7 +304,7 @@ void DRD_(thread_post_join)(DrdThreadId drd_joiner, DrdThreadId drd_joinee)
   mutex_thread_delete(drd_joinee);
   cond_thread_delete(drd_joinee);
   semaphore_thread_delete(drd_joinee);
-  barrier_thread_delete(drd_joinee);
+  DRD_(barrier_thread_delete)(drd_joinee);
 }
 
 /* NPTL hack: NPTL allocates the 'struct pthread' on top of the stack,     */

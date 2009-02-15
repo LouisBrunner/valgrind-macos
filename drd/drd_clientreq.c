@@ -303,7 +303,7 @@ Bool DRD_(handle_client_request)(ThreadId vg_tid, UWord* arg, UWord* ret)
 
   case VG_USERREQ__PRE_BARRIER_INIT:
     if (thread_enter_synchr(drd_tid) == 0)
-      barrier_init(arg[1], arg[2], arg[3], arg[4]);
+      DRD_(barrier_init)(arg[1], arg[2], arg[3], arg[4]);
     break;
 
   case VG_USERREQ__POST_BARRIER_INIT:
@@ -316,17 +316,17 @@ Bool DRD_(handle_client_request)(ThreadId vg_tid, UWord* arg, UWord* ret)
 
   case VG_USERREQ__POST_BARRIER_DESTROY:
     if (thread_leave_synchr(drd_tid) == 0)
-      barrier_destroy(arg[1], arg[2]);
+      DRD_(barrier_destroy)(arg[1], arg[2]);
     break;
 
   case VG_USERREQ__PRE_BARRIER_WAIT:
     if (thread_enter_synchr(drd_tid) == 0)
-      barrier_pre_wait(drd_tid, arg[1], arg[2]);
+      DRD_(barrier_pre_wait)(drd_tid, arg[1], arg[2]);
     break;
 
   case VG_USERREQ__POST_BARRIER_WAIT:
     if (thread_leave_synchr(drd_tid) == 0)
-      barrier_post_wait(drd_tid, arg[1], arg[2], arg[3]);
+      DRD_(barrier_post_wait)(drd_tid, arg[1], arg[2], arg[3]);
     break;
 
   case VG_USERREQ__PRE_RWLOCK_INIT:

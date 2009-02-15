@@ -36,7 +36,7 @@
 #include "pub_tool_threadstate.h" // VG_(get_running_tid)()
 
 
-// Type definitions.
+/* Type definitions. */
 
 /** Information associated with one thread participating in a barrier. */
 struct barrier_thread_info
@@ -49,31 +49,32 @@ struct barrier_thread_info
 };
 
 
-// Local functions.
+/* Local functions. */
 
-static void barrier_cleanup(struct barrier_info* p);
-static const char* barrier_get_typename(struct barrier_info* const p);
-static const char* barrier_type_name(const BarrierT bt);
-
-
-// Local variables.
-
-static Bool s_trace_barrier = False;
-static ULong s_barrier_segment_creation_count;
+static void DRD_(barrier_cleanup)(struct barrier_info* p);
+static const char* DRD_(barrier_get_typename)(struct barrier_info* const p);
+static const char* DRD_(barrier_type_name)(const BarrierT bt);
 
 
-// Function definitions.
+/* Local variables. */
 
-void barrier_set_trace(const Bool trace_barrier)
+static Bool DRD_(s_trace_barrier) = False;
+static ULong DRD_(s_barrier_segment_creation_count);
+
+
+/* Function definitions. */
+
+void DRD_(barrier_set_trace)(const Bool trace_barrier)
 {
-  s_trace_barrier = trace_barrier;
+  DRD_(s_trace_barrier) = trace_barrier;
 }
 
 /** Initialize the structure *p with the specified thread ID and iteration
  *  information. */
-static void barrier_thread_initialize(struct barrier_thread_info* const p,
-                                      const DrdThreadId tid,
-                                      const Word iteration)
+static
+void DRD_(barrier_thread_initialize)(struct barrier_thread_info* const p,
+                                     const DrdThreadId tid,
+                                     const Word iteration)
 {
   p->tid = tid;
   p->iteration = iteration;
@@ -82,7 +83,7 @@ static void barrier_thread_initialize(struct barrier_thread_info* const p,
 }
 
 /** Deallocate the memory that was allocated in barrier_thread_initialize(). */
-static void barrier_thread_destroy(struct barrier_thread_info* const p)
+static void DRD_(barrier_thread_destroy)(struct barrier_thread_info* const p)
 {
   tl_assert(p);
   DRD_(sg_put)(p->sg[0]);
@@ -92,16 +93,16 @@ static void barrier_thread_destroy(struct barrier_thread_info* const p)
 /** Initialize the structure *p with the specified client-side barrier address,
  *  barrier object size and number of participants in each barrier. */
 static
-void barrier_initialize(struct barrier_info* const p,
-                        const Addr barrier,
-                        const BarrierT barrier_type,
-                        const Word count)
+void DRD_(barrier_initialize)(struct barrier_info* const p,
+                              const Addr barrier,
+                              const BarrierT barrier_type,
+                              const Word count)
 {
   tl_assert(barrier != 0);
   tl_assert(barrier_type == pthread_barrier || barrier_type == gomp_barrier);
   tl_assert(p->a1 == barrier);
 
-  p->cleanup           = (void(*)(DrdClientobj*))barrier_cleanup;
+  p->cleanup           = (void(*)(DrdClientobj*))DRD_(barrier_cleanup);
   p->barrier_type      = barrier_type;
   p->count             = count;
   p->pre_iteration     = 0;
@@ -118,7 +119,7 @@ void barrier_initialize(struct barrier_info* const p,
 /** Deallocate the memory allocated by barrier_initialize() and in p->oset. 
  *  Called by clientobj_destroy().
  */
-void barrier_cleanup(struct barrier_info* p)
+void DRD_(barrier_cleanup)(struct barrier_info* p)
 {
   struct barrier_thread_info* q;
 
@@ -138,7 +139,7 @@ void barrier_cleanup(struct barrier_info* p)
   VG_(OSetGen_ResetIter)(p->oset);
   for ( ; (q = VG_(OSetGen_Next)(p->oset)) != 0; )
   {
-    barrier_thread_destroy(q);
+    DRD_(barrier_thread_destroy)(q);
   }
   VG_(OSetGen_Destroy)(p->oset);
 }
@@ -147,38 +148,38 @@ void barrier_cleanup(struct barrier_info* p)
  *  found, add it. */
 static
 struct barrier_info*
-barrier_get_or_allocate(const Addr barrier,
-                        const BarrierT barrier_type, const Word count)
+DRD_(barrier_get_or_allocate)(const Addr barrier,
+                              const BarrierT barrier_type, const Word count)
 {
   struct barrier_info *p;
 
   tl_assert(barrier_type == pthread_barrier || barrier_type == gomp_barrier);
 
   tl_assert(offsetof(DrdClientobj, barrier) == 0);
-  p = &clientobj_get(barrier, ClientBarrier)->barrier;
+  p = &(clientobj_get(barrier, ClientBarrier)->barrier);
   if (p == 0)
   {
-    p = &clientobj_add(barrier, ClientBarrier)->barrier;
-    barrier_initialize(p, barrier, barrier_type, count);
+    p = &(clientobj_add(barrier, ClientBarrier)->barrier);
+    DRD_(barrier_initialize)(p, barrier, barrier_type, count);
   }
   return p;
 }
 
 /** Look up the address of the information associated with the client-side
  *  barrier object. */
-static struct barrier_info* barrier_get(const Addr barrier)
+static struct barrier_info* DRD_(barrier_get)(const Addr barrier)
 {
   tl_assert(offsetof(DrdClientobj, barrier) == 0);
-  return &clientobj_get(barrier, ClientBarrier)->barrier;
+  return &(clientobj_get(barrier, ClientBarrier)->barrier);
 }
 
 /** Initialize a barrier with client address barrier, client size size, and
  *  where count threads participate in each barrier.
  *  Called before pthread_barrier_init().
  */
-void barrier_init(const Addr barrier,
-                  const BarrierT barrier_type, const Word count,
-                  const Bool reinitialization)
+void DRD_(barrier_init)(const Addr barrier,
+                        const BarrierT barrier_type, const Word count,
+                        const Bool reinitialization)
 {
   struct barrier_info* p;
 
@@ -196,7 +197,7 @@ void barrier_init(const Addr barrier,
 
   if (! reinitialization && barrier_type == pthread_barrier)
   {
-    p = barrier_get(barrier);
+    p = DRD_(barrier_get)(barrier);
     if (p)
     {
       BarrierErrInfo bei = { barrier };
@@ -207,9 +208,9 @@ void barrier_init(const Addr barrier,
                               &bei);
     }
   }
-  p = barrier_get_or_allocate(barrier, barrier_type, count);
+  p = DRD_(barrier_get_or_allocate)(barrier, barrier_type, count);
 
-  if (s_trace_barrier)
+  if (DRD_(s_trace_barrier))
   {
     if (reinitialization)
     {
@@ -217,7 +218,7 @@ void barrier_init(const Addr barrier,
                    "[%d/%d] barrier_reinit    %s 0x%lx count %ld -> %ld",
                    VG_(get_running_tid)(),
                    thread_get_running_tid(),
-                   barrier_get_typename(p),
+                   DRD_(barrier_get_typename)(p),
                    barrier,
                    p->count,
                    count);
@@ -228,7 +229,7 @@ void barrier_init(const Addr barrier,
                    "[%d/%d] barrier_init      %s 0x%lx",
                    VG_(get_running_tid)(),
                    thread_get_running_tid(),
-                   barrier_get_typename(p),
+                   DRD_(barrier_get_typename)(p),
                    barrier);
     }
   }
@@ -250,19 +251,19 @@ void barrier_init(const Addr barrier,
 }
 
 /** Called after pthread_barrier_destroy(). */
-void barrier_destroy(const Addr barrier, const BarrierT barrier_type)
+void DRD_(barrier_destroy)(const Addr barrier, const BarrierT barrier_type)
 {
   struct barrier_info* p;
 
-  p = barrier_get(barrier);
+  p = DRD_(barrier_get)(barrier);
 
-  if (s_trace_barrier)
+  if (DRD_(s_trace_barrier))
   {
     VG_(message)(Vg_UserMsg,
                  "[%d/%d] barrier_destroy   %s 0x%lx",
                  VG_(get_running_tid)(),
                  thread_get_running_tid(),
-                 barrier_get_typename(p),
+                 DRD_(barrier_get_typename)(p),
                  barrier);
   }
 
@@ -291,14 +292,14 @@ void barrier_destroy(const Addr barrier, const BarrierT barrier_type)
 }
 
 /** Called before pthread_barrier_wait(). */
-void barrier_pre_wait(const DrdThreadId tid, const Addr barrier,
-                      const BarrierT barrier_type)
+void DRD_(barrier_pre_wait)(const DrdThreadId tid, const Addr barrier,
+                            const BarrierT barrier_type)
 {
   struct barrier_info* p;
   struct barrier_thread_info* q;
   const UWord word_tid = tid;
 
-  p = barrier_get(barrier);
+  p = DRD_(barrier_get)(barrier);
   if (p == 0 && barrier_type == gomp_barrier)
   {
     VG_(message)(Vg_UserMsg, "");
@@ -311,13 +312,13 @@ void barrier_pre_wait(const DrdThreadId tid, const Addr barrier,
   }
   tl_assert(p);
 
-  if (s_trace_barrier)
+  if (DRD_(s_trace_barrier))
   {
     VG_(message)(Vg_UserMsg,
                  "[%d/%d] barrier_pre_wait  %s 0x%lx iteration %ld",
                  VG_(get_running_tid)(),
                  thread_get_running_tid(),
-                 barrier_get_typename(p),
+                 DRD_(barrier_get_typename)(p),
                  barrier,
                  p->pre_iteration);
   }
@@ -326,7 +327,7 @@ void barrier_pre_wait(const DrdThreadId tid, const Addr barrier,
   if (q == 0)
   {
     q = VG_(OSetGen_AllocNode)(p->oset, sizeof(*q));
-    barrier_thread_initialize(q, tid, p->pre_iteration);
+    DRD_(barrier_thread_initialize)(q, tid, p->pre_iteration);
     VG_(OSetGen_Insert)(p->oset, q);
     tl_assert(VG_(OSetGen_Lookup)(p->oset, &word_tid) == q);
   }
@@ -340,20 +341,20 @@ void barrier_pre_wait(const DrdThreadId tid, const Addr barrier,
 }
 
 /** Called after pthread_barrier_wait(). */
-void barrier_post_wait(const DrdThreadId tid, const Addr barrier,
-                       const BarrierT barrier_type, const Bool waited)
+void DRD_(barrier_post_wait)(const DrdThreadId tid, const Addr barrier,
+                             const BarrierT barrier_type, const Bool waited)
 {
   struct barrier_info* p;
 
-  p = barrier_get(barrier);
+  p = DRD_(barrier_get)(barrier);
 
-  if (s_trace_barrier)
+  if (DRD_(s_trace_barrier))
   {
     VG_(message)(Vg_UserMsg,
                  "[%d/%d] barrier_post_wait %s 0x%lx iteration %ld",
                  VG_(get_running_tid)(),
                  tid,
-                 p ? barrier_get_typename(p) : "(?)",
+                 p ? DRD_(barrier_get_typename)(p) : "(?)",
                  barrier,
                  p ? p->post_iteration : -1);
   }
@@ -384,7 +385,7 @@ void barrier_post_wait(const DrdThreadId tid, const Addr barrier,
                               &bei);
 
       q = VG_(OSetGen_AllocNode)(p->oset, sizeof(*q));
-      barrier_thread_initialize(q, tid, p->pre_iteration);
+      DRD_(barrier_thread_initialize)(q, tid, p->pre_iteration);
       VG_(OSetGen_Insert)(p->oset, q);
       tl_assert(VG_(OSetGen_Lookup)(p->oset, &word_tid) == q);
     }
@@ -399,7 +400,7 @@ void barrier_post_wait(const DrdThreadId tid, const Addr barrier,
     }
 
     thread_new_segment(tid);
-    s_barrier_segment_creation_count++;
+    DRD_(s_barrier_segment_creation_count)++;
 
     if (--p->post_waiters_left <= 0)
     {
@@ -410,7 +411,7 @@ void barrier_post_wait(const DrdThreadId tid, const Addr barrier,
 }
 
 /** Call this function when thread tid stops to exist. */
-void barrier_thread_delete(const DrdThreadId tid)
+void DRD_(barrier_thread_delete)(const DrdThreadId tid)
 {
   struct barrier_info* p;
 
@@ -425,20 +426,20 @@ void barrier_thread_delete(const DrdThreadId tid)
      */
     if (q)
     {
-      barrier_thread_destroy(q);
+      DRD_(barrier_thread_destroy)(q);
       VG_(OSetGen_FreeNode)(p->oset, q);
     }
   }
 }
 
-static const char* barrier_get_typename(struct barrier_info* const p)
+static const char* DRD_(barrier_get_typename)(struct barrier_info* const p)
 {
   tl_assert(p);
 
-  return barrier_type_name(p->barrier_type);
+  return DRD_(barrier_type_name)(p->barrier_type);
 }
 
-static const char* barrier_type_name(const BarrierT bt)
+static const char* DRD_(barrier_type_name)(const BarrierT bt)
 {
   switch (bt)
   {
@@ -450,7 +451,7 @@ static const char* barrier_type_name(const BarrierT bt)
   return "?";
 }
 
-ULong get_barrier_segment_creation_count(void)
+ULong DRD_(get_barrier_segment_creation_count)(void)
 {
-  return s_barrier_segment_creation_count;
+  return DRD_(s_barrier_segment_creation_count);
 }

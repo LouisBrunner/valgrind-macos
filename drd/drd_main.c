@@ -127,7 +127,7 @@ static Bool DRD_(process_cmd_line_option)(Char* arg)
     DRD_(start_tracing_address_range)(addr, addr + 1);
   }
   if (trace_barrier != -1)
-    barrier_set_trace(trace_barrier);
+    DRD_(barrier_set_trace)(trace_barrier);
   if (trace_clientobj != -1)
     clientobj_set_trace(trace_clientobj);
   if (trace_cond != -1)
@@ -550,7 +550,7 @@ static void DRD_(fini)(Int exitcode)
                  get_mutex_segment_creation_count(),
                  get_rwlock_segment_creation_count(),
                  get_semaphore_segment_creation_count(),
-                 get_barrier_segment_creation_count());
+                 DRD_(get_barrier_segment_creation_count)());
     VG_(message)(Vg_UserMsg,
                  "  bitmaps: %lld level 1 / %lld level 2 bitmap refs",
                  bm_get_bitmap_creation_count(),

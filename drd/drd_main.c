@@ -129,7 +129,7 @@ static Bool DRD_(process_cmd_line_option)(Char* arg)
   if (trace_barrier != -1)
     DRD_(barrier_set_trace)(trace_barrier);
   if (trace_clientobj != -1)
-    clientobj_set_trace(trace_clientobj);
+    DRD_(clientobj_set_trace)(trace_clientobj);
   if (trace_cond != -1)
     cond_set_trace(trace_cond);
   if (trace_csw != -1)
@@ -296,7 +296,7 @@ void drd_stop_using_mem(const Addr a1, const SizeT len,
   if (! is_stack_mem || DRD_(get_check_stack_accesses)())
   {
     thread_stop_using_mem(a1, a2);
-    clientobj_stop_using_mem(a1, a2);
+    DRD_(clientobj_stop_using_mem)(a1, a2);
     DRD_(suppression_stop_using_mem)(a1, a2);
   }
 }
@@ -615,7 +615,7 @@ void drd_pre_clo_init(void)
 
   DRD_(suppression_init)();
 
-  clientobj_init();
+  DRD_(clientobj_init)();
 }
 
 

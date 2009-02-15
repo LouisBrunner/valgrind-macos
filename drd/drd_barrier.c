@@ -116,8 +116,9 @@ void DRD_(barrier_initialize)(struct barrier_info* const p,
                                       VG_(free));
 }
 
-/** Deallocate the memory allocated by barrier_initialize() and in p->oset. 
- *  Called by clientobj_destroy().
+/**
+ * Deallocate the memory allocated by barrier_initialize() and in p->oset. 
+ * Called by clientobj_destroy().
  */
 void DRD_(barrier_cleanup)(struct barrier_info* p)
 {
@@ -156,10 +157,10 @@ DRD_(barrier_get_or_allocate)(const Addr barrier,
   tl_assert(barrier_type == pthread_barrier || barrier_type == gomp_barrier);
 
   tl_assert(offsetof(DrdClientobj, barrier) == 0);
-  p = &(clientobj_get(barrier, ClientBarrier)->barrier);
+  p = &(DRD_(clientobj_get)(barrier, ClientBarrier)->barrier);
   if (p == 0)
   {
-    p = &(clientobj_add(barrier, ClientBarrier)->barrier);
+    p = &(DRD_(clientobj_add)(barrier, ClientBarrier)->barrier);
     DRD_(barrier_initialize)(p, barrier, barrier_type, count);
   }
   return p;
@@ -170,7 +171,7 @@ DRD_(barrier_get_or_allocate)(const Addr barrier,
 static struct barrier_info* DRD_(barrier_get)(const Addr barrier)
 {
   tl_assert(offsetof(DrdClientobj, barrier) == 0);
-  return &(clientobj_get(barrier, ClientBarrier)->barrier);
+  return &(DRD_(clientobj_get)(barrier, ClientBarrier)->barrier);
 }
 
 /** Initialize a barrier with client address barrier, client size size, and
@@ -288,7 +289,7 @@ void DRD_(barrier_destroy)(const Addr barrier, const BarrierT barrier_type)
                             &bei);
   }
 
-  clientobj_remove(p->a1, ClientBarrier);
+  DRD_(clientobj_remove)(p->a1, ClientBarrier);
 }
 
 /** Called before pthread_barrier_wait(). */
@@ -415,8 +416,8 @@ void DRD_(barrier_thread_delete)(const DrdThreadId tid)
 {
   struct barrier_info* p;
 
-  clientobj_resetiter();
-  for ( ; (p = &clientobj_next(ClientBarrier)->barrier) != 0; )
+  DRD_(clientobj_resetiter)();
+  for ( ; (p = &(DRD_(clientobj_next)(ClientBarrier)->barrier)) != 0; )
   {
     struct barrier_thread_info* q;
     const UWord word_tid = tid;

@@ -102,8 +102,9 @@ void semaphore_initialize(struct semaphore_info* const p, const Addr semaphore)
                                     VG_(free), sizeof(Segment*));
 }
 
-/** Free the memory that was allocated by semaphore_initialize(). Called by
- *  clientobj_remove().
+/**
+ * Free the memory that was allocated by semaphore_initialize(). Called by
+ * DRD_(clientobj_remove)().
  */
 static void semaphore_cleanup(struct semaphore_info* p)
 {
@@ -131,11 +132,11 @@ semaphore_get_or_allocate(const Addr semaphore)
   struct semaphore_info *p;
 
   tl_assert(offsetof(DrdClientobj, semaphore) == 0);
-  p = &clientobj_get(semaphore, ClientSemaphore)->semaphore;
+  p = &(DRD_(clientobj_get)(semaphore, ClientSemaphore)->semaphore);
   if (p == 0)
   {
     tl_assert(offsetof(DrdClientobj, semaphore) == 0);
-    p = &clientobj_add(semaphore, ClientSemaphore)->semaphore;
+    p = &(DRD_(clientobj_add)(semaphore, ClientSemaphore)->semaphore);
     semaphore_initialize(p, semaphore);
   }
   return p;
@@ -144,7 +145,7 @@ semaphore_get_or_allocate(const Addr semaphore)
 static struct semaphore_info* semaphore_get(const Addr semaphore)
 {
   tl_assert(offsetof(DrdClientobj, semaphore) == 0);
-  return &clientobj_get(semaphore, ClientSemaphore)->semaphore;
+  return &(DRD_(clientobj_get)(semaphore, ClientSemaphore)->semaphore);
 }
 
 /** Called before sem_init(). */
@@ -217,7 +218,7 @@ void semaphore_destroy(const Addr semaphore)
     return;
   }
 
-  clientobj_remove(semaphore, ClientSemaphore);
+  DRD_(clientobj_remove)(semaphore, ClientSemaphore);
 }
 
 /** Called before sem_wait(). */

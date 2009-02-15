@@ -70,8 +70,9 @@ void cond_initialize(struct cond_info* const p, const Addr cond)
   p->mutex        = 0;
 }
 
-/** Free the memory that was allocated by cond_initialize(). Called by
- *  clientobj_remove().
+/**
+ * Free the memory that was allocated by cond_initialize(). Called by
+ * DRD_(clientobj_remove)().
  */
 static void cond_cleanup(struct cond_info* p)
 {
@@ -79,7 +80,7 @@ static void cond_cleanup(struct cond_info* p)
   if (p->mutex)
   {
     struct mutex_info* q;
-    q = &clientobj_get(p->mutex, ClientMutex)->mutex;
+    q = &(DRD_(clientobj_get)(p->mutex, ClientMutex)->mutex);
     tl_assert(q);
     {
       CondDestrErrInfo cde = { p->a1, q->a1, q->owner };
@@ -98,10 +99,10 @@ static struct cond_info* cond_get_or_allocate(const Addr cond)
   struct cond_info *p;
 
   tl_assert(offsetof(DrdClientobj, cond) == 0);
-  p = &clientobj_get(cond, ClientCondvar)->cond;
+  p = &(DRD_(clientobj_get)(cond, ClientCondvar)->cond);
   if (p == 0)
   {
-    p = &clientobj_add(cond, ClientCondvar)->cond;
+    p = &(DRD_(clientobj_add)(cond, ClientCondvar)->cond);
     cond_initialize(p, cond);
   }
   return p;
@@ -110,7 +111,7 @@ static struct cond_info* cond_get_or_allocate(const Addr cond)
 static struct cond_info* cond_get(const Addr cond)
 {
   tl_assert(offsetof(DrdClientobj, cond) == 0);
-  return &clientobj_get(cond, ClientCondvar)->cond;
+  return &(DRD_(clientobj_get)(cond, ClientCondvar)->cond);
 }
 
 /** Called before pthread_cond_init(). */
@@ -179,7 +180,7 @@ void cond_post_destroy(const Addr cond)
                             &cei);
   }
 
-  clientobj_remove(p->a1, ClientCondvar);
+  DRD_(clientobj_remove)(p->a1, ClientCondvar);
 }
 
 /** Called before pthread_cond_wait(). Note: before this function is called,

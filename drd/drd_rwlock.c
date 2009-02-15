@@ -227,13 +227,13 @@ rwlock_get_or_allocate(const Addr rwlock)
   struct rwlock_info* p;
 
   tl_assert(offsetof(DrdClientobj, rwlock) == 0);
-  p = &clientobj_get(rwlock, ClientRwlock)->rwlock;
+  p = &(DRD_(clientobj_get)(rwlock, ClientRwlock)->rwlock);
   if (p)
   {
     return p;
   }
 
-  if (clientobj_present(rwlock, rwlock + 1))
+  if (DRD_(clientobj_present)(rwlock, rwlock + 1))
   {
     GenericErrInfo GEI;
     VG_(maybe_record_error)(VG_(get_running_tid)(),
@@ -244,7 +244,7 @@ rwlock_get_or_allocate(const Addr rwlock)
     return 0;
   }
 
-  p = &clientobj_add(rwlock, ClientRwlock)->rwlock;
+  p = &(DRD_(clientobj_add)(rwlock, ClientRwlock)->rwlock);
   rwlock_initialize(p, rwlock);
   return p;
 }
@@ -252,7 +252,7 @@ rwlock_get_or_allocate(const Addr rwlock)
 static struct rwlock_info* rwlock_get(const Addr rwlock)
 {
   tl_assert(offsetof(DrdClientobj, rwlock) == 0);
-  return &clientobj_get(rwlock, ClientRwlock)->rwlock;
+  return &(DRD_(clientobj_get)(rwlock, ClientRwlock)->rwlock);
 }
 
 /** Called before pthread_rwlock_init(). */
@@ -306,7 +306,7 @@ void rwlock_post_destroy(const Addr rwlock)
     return;
   }
 
-  clientobj_remove(rwlock, ClientRwlock);
+  DRD_(clientobj_remove)(rwlock, ClientRwlock);
 }
 
 /** Called before pthread_rwlock_rdlock() is invoked. If a data structure for
@@ -562,8 +562,8 @@ void rwlock_thread_delete(const DrdThreadId tid)
 {
   struct rwlock_info* p;
 
-  clientobj_resetiter();
-  for ( ; (p = &clientobj_next(ClientRwlock)->rwlock) != 0; )
+  DRD_(clientobj_resetiter)();
+  for ( ; (p = &(DRD_(clientobj_next)(ClientRwlock)->rwlock)) != 0; )
   {
     struct rwlock_thread_info* q;
     if (rwlock_is_locked_by(p, tid))

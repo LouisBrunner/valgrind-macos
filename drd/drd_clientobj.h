@@ -27,20 +27,20 @@
 #define __DRD_CLIENTOBJ_H
 
 
+#include "drd_basics.h"          /* DrdThreadId */
 #include "drd_clientreq.h"       /* MutexT */
-#include "drd_thread.h"          /* DrdThreadId */
 #include "pub_tool_basics.h"
 #include "pub_tool_execontext.h" /* ExeContext */
 #include "pub_tool_oset.h"
 #include "pub_tool_xarray.h"
 
 
-// Forward declarations.
+/* Forward declarations. */
 
 union drd_clientobj;
 
 
-// Type definitions.
+/* Type definitions. */
 
 typedef enum {
   ClientMutex     = 1,
@@ -60,16 +60,16 @@ struct any
 
 struct mutex_info
 {
-  Addr        a1;
-  ObjType     type;
-  void        (*cleanup)(union drd_clientobj*);
-  ExeContext* first_observed_at;
-  MutexT      mutex_type;      // pthread_mutex_t or pthread_spinlock_t.
-  int         recursion_count; // 0 if free, >= 1 if locked.
-  DrdThreadId owner;           // owner if locked, last owner if free.
-  Segment*    last_locked_segment;
-  ULong       acquiry_time_ms;
-  ExeContext* acquired_at;
+  Addr            a1;
+  ObjType         type;
+  void            (*cleanup)(union drd_clientobj*);
+  ExeContext*     first_observed_at;
+  MutexT          mutex_type;      // pthread_mutex_t or pthread_spinlock_t.
+  int             recursion_count; // 0 if free, >= 1 if locked.
+  DrdThreadId     owner;           // owner if locked, last owner if free.
+  struct segment* last_locked_segment;
+  ULong           acquiry_time_ms;
+  ExeContext*     acquired_at;
 };
 
 struct cond_info
@@ -134,20 +134,20 @@ typedef union drd_clientobj
 } DrdClientobj;
 
 
-// Function declarations.
+/* Function declarations. */
 
-void clientobj_set_trace(const Bool trace);
-void clientobj_init(void);
-void clientobj_cleanup(void);
-DrdClientobj* clientobj_get_any(const Addr addr);
-DrdClientobj* clientobj_get(const Addr addr, const ObjType t);
-Bool clientobj_present(const Addr a1, const Addr a2);
-DrdClientobj* clientobj_add(const Addr a1, const ObjType t);
-Bool clientobj_remove(const Addr addr, const ObjType t);
-void clientobj_stop_using_mem(const Addr a1, const Addr a2);
-void clientobj_resetiter(void);
-DrdClientobj* clientobj_next(const ObjType t);
-const char* clientobj_type_name(const ObjType t);
+void DRD_(clientobj_set_trace)(const Bool trace);
+void DRD_(clientobj_init)(void);
+void DRD_(clientobj_cleanup)(void);
+DrdClientobj* DRD_(clientobj_get_any)(const Addr addr);
+DrdClientobj* DRD_(clientobj_get)(const Addr addr, const ObjType t);
+Bool DRD_(clientobj_present)(const Addr a1, const Addr a2);
+DrdClientobj* DRD_(clientobj_add)(const Addr a1, const ObjType t);
+Bool DRD_(clientobj_remove)(const Addr addr, const ObjType t);
+void DRD_(clientobj_stop_using_mem)(const Addr a1, const Addr a2);
+void DRD_(clientobj_resetiter)(void);
+DrdClientobj* DRD_(clientobj_next)(const ObjType t);
+const char* DRD_(clientobj_type_name)(const ObjType t);
 
 
 #endif /* __DRD_CLIENTOBJ_H */

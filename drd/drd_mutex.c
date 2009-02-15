@@ -129,13 +129,13 @@ mutex_get_or_allocate(const Addr mutex, const MutexT mutex_type)
   struct mutex_info* p;
 
   tl_assert(offsetof(DrdClientobj, mutex) == 0);
-  p = &clientobj_get(mutex, ClientMutex)->mutex;
+  p = &(DRD_(clientobj_get)(mutex, ClientMutex)->mutex);
   if (p)
   {
     return p;
   }
 
-  if (clientobj_present(mutex, mutex + 1))
+  if (DRD_(clientobj_present)(mutex, mutex + 1))
   {
     not_a_mutex(mutex);
     return 0;
@@ -143,7 +143,7 @@ mutex_get_or_allocate(const Addr mutex, const MutexT mutex_type)
 
   tl_assert(mutex_type != mutex_type_unknown);
 
-  p = &clientobj_add(mutex, ClientMutex)->mutex;
+  p = &(DRD_(clientobj_add)(mutex, ClientMutex)->mutex);
   mutex_initialize(p, mutex, mutex_type);
   return p;
 }
@@ -151,7 +151,7 @@ mutex_get_or_allocate(const Addr mutex, const MutexT mutex_type)
 struct mutex_info* mutex_get(const Addr mutex)
 {
   tl_assert(offsetof(DrdClientobj, mutex) == 0);
-  return &clientobj_get(mutex, ClientMutex)->mutex;
+  return &(DRD_(clientobj_get)(mutex, ClientMutex)->mutex);
 }
 
 /** Called before pthread_mutex_init(). */
@@ -208,7 +208,7 @@ void mutex_post_destroy(const Addr mutex)
     return;
   }
 
-  clientobj_remove(mutex, ClientMutex);
+  DRD_(clientobj_remove)(mutex, ClientMutex);
 }
 
 /** Called before pthread_mutex_lock() is invoked. If a data structure for
@@ -497,8 +497,8 @@ void mutex_thread_delete(const DrdThreadId tid)
 {
   struct mutex_info* p;
 
-  clientobj_resetiter();
-  for ( ; (p = &clientobj_next(ClientMutex)->mutex) != 0; )
+  DRD_(clientobj_resetiter)();
+  for ( ; (p = &(DRD_(clientobj_next)(ClientMutex)->mutex)) != 0; )
   {
     if (p->owner == tid && p->recursion_count > 0)
     {

@@ -36,21 +36,21 @@
 #include "pub_tool_threadstate.h" // VG_(get_running_tid)()
 
 
-// Local variables.
+/* Local variables. */
 
 static OSet* s_clientobj;
 static Bool s_trace_clientobj;
 
 
-// Function definitions.
+/* Function definitions. */
 
-void clientobj_set_trace(const Bool trace)
+void DRD_(clientobj_set_trace)(const Bool trace)
 {
   s_trace_clientobj = trace;
 }
 
 /** Initialize the client object set. */
-void clientobj_init(void)
+void DRD_(clientobj_init)(void)
 {
   tl_assert(s_clientobj == 0);
   s_clientobj = VG_(OSetGen_Create)(0, 0, VG_(malloc), "drd.clientobj.ci.1",
@@ -58,10 +58,12 @@ void clientobj_init(void)
   tl_assert(s_clientobj);
 }
 
-/** Free the memory allocated for the client object set.
- *  @pre Client object set is empty.
+/**
+ * Free the memory allocated for the client object set.
+ *
+ * @pre Client object set is empty.
  */
-void clientobj_cleanup(void)
+void DRD_(clientobj_cleanup)(void)
 {
   tl_assert(s_clientobj);
   tl_assert(VG_(OSetGen_Size)(s_clientobj) == 0);
@@ -73,7 +75,7 @@ void clientobj_cleanup(void)
  *  Return 0 if there is no client object in the set with the specified start
  *  address.
  */
-DrdClientobj* clientobj_get_any(const Addr addr)
+DrdClientobj* DRD_(clientobj_get_any)(const Addr addr)
 {
   return VG_(OSetGen_Lookup)(s_clientobj, &addr);
 }
@@ -82,7 +84,7 @@ DrdClientobj* clientobj_get_any(const Addr addr)
  *  and that has object type t. Return 0 if there is no client object in the
  *  set with the specified start address.
  */
-DrdClientobj* clientobj_get(const Addr addr, const ObjType t)
+DrdClientobj* DRD_(clientobj_get)(const Addr addr, const ObjType t)
 {
   DrdClientobj* p;
   p = VG_(OSetGen_Lookup)(s_clientobj, &addr);
@@ -94,7 +96,7 @@ DrdClientobj* clientobj_get(const Addr addr, const ObjType t)
 /** Return true if and only if the address range of any client object overlaps
  *  with the specified address range.
  */
-Bool clientobj_present(const Addr a1, const Addr a2)
+Bool DRD_(clientobj_present)(const Addr a1, const Addr a2)
 {
   DrdClientobj *p;
 
@@ -114,12 +116,11 @@ Bool clientobj_present(const Addr a1, const Addr a2)
  *  of type t. Suppress data race reports on the address range [addr,addr+size[.
  *  @pre No other client object is present in the address range [addr,addr+size[.
  */
-DrdClientobj*
-clientobj_add(const Addr a1, const ObjType t)
+DrdClientobj* DRD_(clientobj_add)(const Addr a1, const ObjType t)
 {
   DrdClientobj* p;
 
-  tl_assert(! clientobj_present(a1, a1 + 1));
+  tl_assert(! DRD_(clientobj_present)(a1, a1 + 1));
   tl_assert(VG_(OSetGen_Lookup)(s_clientobj, &a1) == 0);
 
   if (s_trace_clientobj)
@@ -138,7 +139,7 @@ clientobj_add(const Addr a1, const ObjType t)
   return p;
 }
 
-Bool clientobj_remove(const Addr addr, const ObjType t)
+Bool DRD_(clientobj_remove)(const Addr addr, const ObjType t)
 {
   DrdClientobj* p;
 
@@ -166,7 +167,7 @@ Bool clientobj_remove(const Addr addr, const ObjType t)
   return False;
 }
 
-void clientobj_stop_using_mem(const Addr a1, const Addr a2)
+void DRD_(clientobj_stop_using_mem)(const Addr a1, const Addr a2)
 {
   Addr removed_at;
   DrdClientobj* p;
@@ -183,7 +184,7 @@ void clientobj_stop_using_mem(const Addr a1, const Addr a2)
     if (a1 <= p->any.a1 && p->any.a1 < a2)
     {
       removed_at = p->any.a1;
-      clientobj_remove(p->any.a1, p->any.type);
+      DRD_(clientobj_remove)(p->any.a1, p->any.type);
       /* The above call removes an element from the oset and hence */
       /* invalidates the iterator. Set the iterator back.          */
       VG_(OSetGen_ResetIter)(s_clientobj);
@@ -198,12 +199,12 @@ void clientobj_stop_using_mem(const Addr a1, const Addr a2)
   }
 }
 
-void clientobj_resetiter(void)
+void DRD_(clientobj_resetiter)(void)
 {
   VG_(OSetGen_ResetIter)(s_clientobj);
 }
 
-DrdClientobj* clientobj_next(const ObjType t)
+DrdClientobj* DRD_(clientobj_next)(const ObjType t)
 {
   DrdClientobj* p;
   while ((p = VG_(OSetGen_Next)(s_clientobj)) != 0 && p->any.type != t)
@@ -211,7 +212,7 @@ DrdClientobj* clientobj_next(const ObjType t)
   return p;
 }
 
-const char* clientobj_type_name(const ObjType t)
+const char* DRD_(clientobj_type_name)(const ObjType t)
 {
   switch (t)
   {

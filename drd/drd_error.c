@@ -78,13 +78,13 @@ static void first_observed(const Addr obj)
 {
   DrdClientobj* cl;
 
-  cl = clientobj_get_any(obj);
+  cl = DRD_(clientobj_get_any)(obj);
   if (cl)
   {
     tl_assert(cl->any.first_observed_at);
     VG_(message)(Vg_UserMsg,
                  "%s 0x%lx was first observed at:",
-                 clientobj_type_name(cl->any.type),
+                 DRD_(clientobj_type_name)(cl->any.type),
                  obj);
     VG_(pp_ExeContext)(cl->any.first_observed_at);
   }

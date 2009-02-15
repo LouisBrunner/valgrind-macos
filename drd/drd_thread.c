@@ -213,6 +213,14 @@ static Bool sane_ThreadInfo(const ThreadInfo* const ti)
 }
 #endif
 
+/**
+ * Create the first segment for a newly started thread.
+ *
+ * This function is called from the handler installed via
+ * VG_(track_pre_thread_ll_create)(). The Valgrind core invokes this handler
+ * from the context of the creator thread, before the new thread has been
+ * created.
+ */
 DrdThreadId thread_pre_create(const DrdThreadId creator,
                               const ThreadId vg_created)
 {
@@ -230,6 +238,28 @@ DrdThreadId thread_pre_create(const DrdThreadId creator,
   return created;
 }
 
+/**
+ * Initialize s_threadinfo[] for a newly created thread. Must be called after
+ * the thread has been created and before any client instructioins are run
+ * on the newly created thread, e.g. from the handler installed via
+ * VG_(track_pre_thread_first_insn)().
+ */
+DrdThreadId thread_post_create(const ThreadId vg_created)
+{
+  const DrdThreadId created = VgThreadIdToDrdThreadId(vg_created);
+
+  tl_assert(0 <= (int)created && created < DRD_N_THREADS
+            && created != DRD_INVALID_THREADID);
+
+  s_threadinfo[created].stack_max     = VG_(thread_get_stack_max)(vg_created);
+  s_threadinfo[created].stack_startup = s_threadinfo[created].stack_max;
+  s_threadinfo[created].stack_min     = s_threadinfo[created].stack_max;
+  s_threadinfo[created].stack_min_min = s_threadinfo[created].stack_max;
+  s_threadinfo[created].stack_size    = VG_(thread_get_stack_size)(vg_created);
+  tl_assert(s_threadinfo[created].stack_max != 0);
+
+  return created;
+}
 
 /* Process VG_USERREQ__POST_THREAD_JOIN. This client request is invoked just */
 /* after thread drd_joiner joined thread drd_joinee.                         */
@@ -275,26 +305,6 @@ void DRD_(thread_post_join)(DrdThreadId drd_joiner, DrdThreadId drd_joinee)
   cond_thread_delete(drd_joinee);
   semaphore_thread_delete(drd_joinee);
   barrier_thread_delete(drd_joinee);
-}
-
-/** Allocate the first segment for a thread. Call this just after
- *  pthread_create().
- */
-DrdThreadId thread_post_create(const ThreadId vg_created)
-{
-  const DrdThreadId created = VgThreadIdToDrdThreadId(vg_created);
-
-  tl_assert(0 <= (int)created && created < DRD_N_THREADS
-            && created != DRD_INVALID_THREADID);
-
-  s_threadinfo[created].stack_max     = VG_(thread_get_stack_max)(vg_created);
-  s_threadinfo[created].stack_startup = s_threadinfo[created].stack_max;
-  s_threadinfo[created].stack_min     = s_threadinfo[created].stack_max;
-  s_threadinfo[created].stack_min_min = s_threadinfo[created].stack_max;
-  s_threadinfo[created].stack_size    = VG_(thread_get_stack_size)(vg_created);
-  tl_assert(s_threadinfo[created].stack_max != 0);
-
-  return created;
 }
 
 /* NPTL hack: NPTL allocates the 'struct pthread' on top of the stack,     */

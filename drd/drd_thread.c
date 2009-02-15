@@ -304,9 +304,9 @@ void DRD_(thread_post_join)(DrdThreadId drd_joiner, DrdThreadId drd_joinee)
                              DRD_(thread_get_stack_max)(drd_joinee));
   }
   DRD_(thread_delete)(drd_joinee);
-  mutex_thread_delete(drd_joinee);
-  cond_thread_delete(drd_joinee);
-  semaphore_thread_delete(drd_joinee);
+  DRD_(mutex_thread_delete)(drd_joinee);
+  DRD_(cond_thread_delete)(drd_joinee);
+  DRD_(semaphore_thread_delete)(drd_joinee);
   DRD_(barrier_thread_delete)(drd_joinee);
 }
 

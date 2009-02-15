@@ -38,15 +38,15 @@ struct cond_info;
 
 /* Function declarations. */
 
-void cond_set_report_signal_unlocked(const Bool r);
-void cond_set_trace(const Bool trace_cond);
-void cond_pre_init(const Addr cond);
-void cond_post_destroy(const Addr cond);
-int cond_pre_wait(const Addr cond, const Addr mutex);
-int cond_post_wait(const Addr cond);
-void cond_pre_signal(const Addr cond);
-void cond_pre_broadcast(const Addr cond);
-void cond_thread_delete(const DrdThreadId tid);
+void DRD_(cond_set_report_signal_unlocked)(const Bool r);
+void DRD_(cond_set_trace)(const Bool trace_cond);
+void DRD_(cond_pre_init)(const Addr cond);
+void DRD_(cond_post_destroy)(const Addr cond);
+int DRD_(cond_pre_wait)(const Addr cond, const Addr mutex);
+int DRD_(cond_post_wait)(const Addr cond);
+void DRD_(cond_pre_signal)(const Addr cond);
+void DRD_(cond_pre_broadcast)(const Addr cond);
+void DRD_(cond_thread_delete)(const DrdThreadId tid);
 
 
 #endif /* __DRD_COND_H */

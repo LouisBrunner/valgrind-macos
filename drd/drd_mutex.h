@@ -35,26 +35,25 @@
 struct mutex_info;
 
 
-void mutex_set_trace(const Bool trace_mutex);
-void mutex_set_lock_threshold(const UInt lock_threshold_ms);
-struct mutex_info* mutex_init(const Addr mutex,
-                              const MutexT mutex_type);
-void mutex_post_destroy(const Addr mutex);
-void not_a_mutex(const Addr mutex);
-struct mutex_info* mutex_get(const Addr mutex);
-void mutex_pre_lock(const Addr mutex, const MutexT mutex_type,
-                    const Bool trylock);
-void mutex_post_lock(const Addr mutex, const Bool took_lock,
-                     const Bool post_cond_wait);
-void mutex_unlock(const Addr mutex, const MutexT mutex_type);
+void DRD_(mutex_set_trace)(const Bool trace_mutex);
+void DRD_(mutex_set_lock_threshold)(const UInt lock_threshold_ms);
+struct mutex_info* DRD_(mutex_init)(const Addr mutex, const MutexT mutex_type);
+void DRD_(mutex_post_destroy)(const Addr mutex);
+void DRD_(not_a_mutex)(const Addr mutex);
+struct mutex_info* DRD_(mutex_get)(const Addr mutex);
+void DRD_(mutex_pre_lock)(const Addr mutex, const MutexT mutex_type,
+                          const Bool trylock);
+void DRD_(mutex_post_lock)(const Addr mutex, const Bool took_lock,
+                           const Bool post_cond_wait);
+void DRD_(mutex_unlock)(const Addr mutex, const MutexT mutex_type);
 void DRD_(spinlock_init_or_unlock)(const Addr spinlock);
-const char* mutex_get_typename(struct mutex_info* const p);
-const char* mutex_type_name(const MutexT mt);
-Bool mutex_is_locked_by(const Addr mutex, const DrdThreadId tid);
-int mutex_get_recursion_count(const Addr mutex);
-void mutex_thread_delete(const DrdThreadId tid);
-ULong get_mutex_lock_count(void);
-ULong get_mutex_segment_creation_count(void);
+const char* DRD_(mutex_get_typename)(struct mutex_info* const p);
+const char* DRD_(mutex_type_name)(const MutexT mt);
+Bool DRD_(mutex_is_locked_by)(const Addr mutex, const DrdThreadId tid);
+int DRD_(mutex_get_recursion_count)(const Addr mutex);
+void DRD_(mutex_thread_delete)(const DrdThreadId tid);
+ULong DRD_(get_mutex_lock_count)(void);
+ULong DRD_(get_mutex_segment_creation_count)(void);
 
 
 #endif /* __DRD_MUTEX_H */

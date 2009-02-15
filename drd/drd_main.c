@@ -111,16 +111,16 @@ static Bool DRD_(process_cmd_line_option)(Char* arg)
     DRD_(set_check_stack_accesses)(check_stack_accesses);
   if (exclusive_threshold_ms != -1)
   {
-    mutex_set_lock_threshold(exclusive_threshold_ms);
-    rwlock_set_exclusive_threshold(exclusive_threshold_ms);
+    DRD_(mutex_set_lock_threshold)(exclusive_threshold_ms);
+    DRD_(rwlock_set_exclusive_threshold)(exclusive_threshold_ms);
   }
   if (report_signal_unlocked != -1)
   {
-    cond_set_report_signal_unlocked(report_signal_unlocked);
+    DRD_(cond_set_report_signal_unlocked)(report_signal_unlocked);
   }
   if (shared_threshold_ms != -1)
   {
-    rwlock_set_shared_threshold(shared_threshold_ms);
+    DRD_(rwlock_set_shared_threshold)(shared_threshold_ms);
   }
   if (segment_merging != -1)
     DRD_(thread_set_segment_merging)(segment_merging);
@@ -136,7 +136,7 @@ static Bool DRD_(process_cmd_line_option)(Char* arg)
   if (trace_clientobj != -1)
     DRD_(clientobj_set_trace)(trace_clientobj);
   if (trace_cond != -1)
-    cond_set_trace(trace_cond);
+    DRD_(cond_set_trace)(trace_cond);
   if (trace_csw != -1)
     DRD_(thread_trace_context_switches)(trace_csw);
   if (trace_fork_join != -1)
@@ -144,13 +144,13 @@ static Bool DRD_(process_cmd_line_option)(Char* arg)
   if (trace_conflict_set != -1)
     DRD_(thread_trace_conflict_set)(trace_conflict_set);
   if (trace_mutex != -1)
-    mutex_set_trace(trace_mutex);
+    DRD_(mutex_set_trace)(trace_mutex);
   if (trace_rwlock != -1)
-    rwlock_set_trace(trace_rwlock);
+    DRD_(rwlock_set_trace)(trace_rwlock);
   if (trace_segment != -1)
     DRD_(sg_set_trace)(trace_segment);
   if (trace_semaphore != -1)
-    semaphore_set_trace(trace_semaphore);
+    DRD_(semaphore_set_trace)(trace_semaphore);
   if (trace_suppression != -1)
     DRD_(suppression_set_trace)(trace_suppression);
 
@@ -554,9 +554,9 @@ static void DRD_(fini)(Int exitcode)
                  DRD_(thread_get_discard_ordered_segments_count)());
     VG_(message)(Vg_UserMsg,
                  "           (%lld m, %lld rw, %lld s, %lld b)",
-                 get_mutex_segment_creation_count(),
-                 get_rwlock_segment_creation_count(),
-                 get_semaphore_segment_creation_count(),
+                 DRD_(get_mutex_segment_creation_count)(),
+                 DRD_(get_rwlock_segment_creation_count)(),
+                 DRD_(get_semaphore_segment_creation_count)(),
                  DRD_(get_barrier_segment_creation_count)());
     VG_(message)(Vg_UserMsg,
                  "  bitmaps: %lld level 1 / %lld level 2 bitmap refs",
@@ -567,7 +567,7 @@ static void DRD_(fini)(Int exitcode)
                  bm_get_bitmap2_creation_count());
     VG_(message)(Vg_UserMsg,
                  "    mutex: %lld non-recursive lock/unlock events.",
-                 get_mutex_lock_count());
+                 DRD_(get_mutex_lock_count)());
     drd_print_malloc_stats();
   }
 }

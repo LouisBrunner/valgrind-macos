@@ -37,18 +37,19 @@
 struct semaphore_info;
 
 
-void semaphore_set_trace(const Bool trace_semaphore);
-struct semaphore_info* semaphore_init(const Addr semaphore,
-                                      const Word pshared, const UInt value);
-void semaphore_destroy(const Addr semaphore);
-void semaphore_pre_wait(const Addr semaphore);
-void semaphore_post_wait(const DrdThreadId tid, const Addr semaphore,
-                         const Bool waited);
-void semaphore_pre_post(const DrdThreadId tid, const Addr semaphore);
-void semaphore_post_post(const DrdThreadId tid, const Addr semaphore,
-                         const Bool waited);
-void semaphore_thread_delete(const DrdThreadId tid);
-ULong get_semaphore_segment_creation_count(void);
+void DRD_(semaphore_set_trace)(const Bool trace_semaphore);
+struct semaphore_info* DRD_(semaphore_init)(const Addr semaphore,
+                                            const Word pshared,
+                                            const UInt value);
+void DRD_(semaphore_destroy)(const Addr semaphore);
+void DRD_(semaphore_pre_wait)(const Addr semaphore);
+void DRD_(semaphore_post_wait)(const DrdThreadId tid, const Addr semaphore,
+                               const Bool waited);
+void DRD_(semaphore_pre_post)(const DrdThreadId tid, const Addr semaphore);
+void DRD_(semaphore_post_post)(const DrdThreadId tid, const Addr semaphore,
+                               const Bool waited);
+void DRD_(semaphore_thread_delete)(const DrdThreadId tid);
+ULong DRD_(get_semaphore_segment_creation_count)(void);
 
 
 #endif /* __DRD_SEMAPHORE_H */

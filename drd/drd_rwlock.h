@@ -38,18 +38,18 @@
 struct rwlock_info;
 
 
-void rwlock_set_trace(const Bool trace_rwlock);
-void rwlock_set_exclusive_threshold(const UInt exclusive_threshold_ms);
-void rwlock_set_shared_threshold(const UInt shared_threshold_ms);
-struct rwlock_info* rwlock_pre_init(const Addr rwlock);
-void rwlock_post_destroy(const Addr rwlock);
-void rwlock_pre_rdlock(const Addr rwlock);
-void rwlock_post_rdlock(const Addr rwlock, const Bool took_lock);
-void rwlock_pre_wrlock(const Addr rwlock);
-void rwlock_post_wrlock(const Addr rwlock, const Bool took_lock);
-void rwlock_pre_unlock(const Addr rwlock);
-void rwlock_thread_delete(const DrdThreadId tid);
-ULong get_rwlock_segment_creation_count(void);
+void DRD_(rwlock_set_trace)(const Bool trace_rwlock);
+void DRD_(rwlock_set_exclusive_threshold)(const UInt exclusive_threshold_ms);
+void DRD_(rwlock_set_shared_threshold)(const UInt shared_threshold_ms);
+struct rwlock_info* DRD_(rwlock_pre_init)(const Addr rwlock);
+void DRD_(rwlock_post_destroy)(const Addr rwlock);
+void DRD_(rwlock_pre_rdlock)(const Addr rwlock);
+void DRD_(rwlock_post_rdlock)(const Addr rwlock, const Bool took_lock);
+void DRD_(rwlock_pre_wrlock)(const Addr rwlock);
+void DRD_(rwlock_post_wrlock)(const Addr rwlock, const Bool took_lock);
+void DRD_(rwlock_pre_unlock)(const Addr rwlock);
+void DRD_(rwlock_thread_delete)(const DrdThreadId tid);
+ULong DRD_(get_rwlock_segment_creation_count)(void);
 
 
 #endif /* __DRD_RWLOCK_H */

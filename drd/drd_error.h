@@ -147,7 +147,7 @@ typedef struct {
 } GenericErrInfo;
 
 
-void set_show_conflicting_segments(const Bool scs);
+void DRD_(set_show_conflicting_segments)(const Bool scs);
 void DRD_(register_error_handlers)(void);
 
 

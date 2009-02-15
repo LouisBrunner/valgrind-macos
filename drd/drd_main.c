@@ -125,7 +125,7 @@ static Bool DRD_(process_cmd_line_option)(Char* arg)
   if (segment_merging != -1)
     DRD_(thread_set_segment_merging)(segment_merging);
   if (show_confl_seg != -1)
-    set_show_conflicting_segments(show_confl_seg);
+    DRD_(set_show_conflicting_segments)(show_confl_seg);
   if (trace_address)
   {
     const Addr addr = VG_(strtoll16)(trace_address, 0);
@@ -568,7 +568,7 @@ static void DRD_(fini)(Int exitcode)
     VG_(message)(Vg_UserMsg,
                  "    mutex: %lld non-recursive lock/unlock events.",
                  DRD_(get_mutex_lock_count)());
-    drd_print_malloc_stats();
+    DRD_(print_malloc_stats)();
   }
 }
 
@@ -615,8 +615,8 @@ void drd_pre_clo_init(void)
   VG_(track_pre_thread_ll_exit)   (drd_thread_finished);
 
   // Other stuff.
-  drd_register_malloc_wrappers(drd_start_using_mem_w_ecu,
-                               drd_stop_using_nonstack_mem);
+  DRD_(register_malloc_wrappers)(drd_start_using_mem_w_ecu,
+                                 drd_stop_using_nonstack_mem);
 
   DRD_(clientreq_init)();
 

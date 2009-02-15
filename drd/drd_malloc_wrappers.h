@@ -26,21 +26,22 @@
 #define __MALLOC_WRAPPERS_H
 
 
-#include "pub_tool_basics.h"     // Bool
-#include "pub_tool_execontext.h" // ExeContext
+#include "drd_basics.h"          /* DRD_() */
+#include "pub_tool_basics.h"     /* Bool */
+#include "pub_tool_execontext.h" /* ExeContext */
 
 
 typedef void (*StartUsingMem)(const Addr a1, const Addr a2, UInt ec_uniq);
 typedef void (*StopUsingMem)(const Addr a1, const Addr a2);
 
 
-void drd_register_malloc_wrappers(const StartUsingMem start_using_mem_callback,
-                                  const StopUsingMem stop_using_mem_callback);
-Bool drd_heap_addrinfo(Addr const a,
-                       Addr* const data,
-                       SizeT* const size,
-                       ExeContext** const where);
-void drd_print_malloc_stats(void);
+void DRD_(register_malloc_wrappers)(const StartUsingMem start_callback,
+                                    const StopUsingMem stop_callback);
+Bool DRD_(heap_addrinfo)(Addr const a,
+                         Addr* const data,
+                         SizeT* const size,
+                         ExeContext** const where);
+void DRD_(print_malloc_stats)(void);
 
 
 #endif // __MALLOC_WRAPPERS_H

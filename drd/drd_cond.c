@@ -41,17 +41,18 @@
 static void cond_cleanup(struct cond_info* p);
 
 
-/* Global variables. */
-
-Bool s_drd_report_signal_unlocked = True;
-
-
 /* Local variables. */
 
+static Bool s_drd_report_signal_unlocked = True;
 static Bool s_trace_cond;
 
 
 /* Function definitions. */
+
+void cond_set_report_signal_unlocked(const Bool r)
+{
+  s_drd_report_signal_unlocked = r;
+}
 
 void cond_set_trace(const Bool trace_cond)
 {

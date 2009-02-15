@@ -66,6 +66,7 @@ static Bool DRD_(process_cmd_line_option)(Char* arg)
 {
   int check_stack_accesses   = -1;
   int exclusive_threshold_ms = -1;
+  int report_signal_unlocked = -1;
   int segment_merging        = -1;
   int shared_threshold_ms    = -1;
   int show_confl_seg         = -1;
@@ -84,7 +85,7 @@ static Bool DRD_(process_cmd_line_option)(Char* arg)
 
   VG_BOOL_CLO     (arg, "--check-stack-var",     check_stack_accesses)
   else VG_BOOL_CLO(arg, "--drd-stats",           DRD_(s_print_stats))
-  else VG_BOOL_CLO(arg,"--report-signal-unlocked",s_drd_report_signal_unlocked)
+  else VG_BOOL_CLO(arg,"--report-signal-unlocked",report_signal_unlocked)
   else VG_BOOL_CLO(arg, "--segment-merging",     segment_merging)
   else VG_BOOL_CLO(arg, "--show-confl-seg",      show_confl_seg)
   else VG_BOOL_CLO(arg, "--show-stack-usage",    DRD_(s_show_stack_usage))
@@ -112,6 +113,10 @@ static Bool DRD_(process_cmd_line_option)(Char* arg)
   {
     mutex_set_lock_threshold(exclusive_threshold_ms);
     rwlock_set_exclusive_threshold(exclusive_threshold_ms);
+  }
+  if (report_signal_unlocked != -1)
+  {
+    cond_set_report_signal_unlocked(report_signal_unlocked);
   }
   if (shared_threshold_ms != -1)
   {

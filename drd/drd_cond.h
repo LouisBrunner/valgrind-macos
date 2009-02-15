@@ -36,13 +36,9 @@
 struct cond_info;
 
 
-/* Global variables. */
-
-extern Bool s_drd_report_signal_unlocked;
-
-
 /* Function declarations. */
 
+void cond_set_report_signal_unlocked(const Bool r);
 void cond_set_trace(const Bool trace_cond);
 void cond_pre_init(const Addr cond);
 void cond_post_destroy(const Addr cond);

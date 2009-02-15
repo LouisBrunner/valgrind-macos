@@ -40,9 +40,9 @@
    ------------------------------------------------------------------ */
 
 /*
-  Define _GNU_SOURCE to make sure that pthread_spinlock_t is available when
-  compiling with older glibc versions (2.3 or before).
-*/
+ * Define _GNU_SOURCE to make sure that pthread_spinlock_t is available when
+ * compiling with older glibc versions (2.3 or before).
+ */
 #ifndef _GNU_SOURCE
 #define _GNU_SOURCE
 #endif
@@ -73,7 +73,8 @@ typedef struct
   void* (*start)(void*);
   void* arg;
   int   detachstate;
-} VgPosixThreadArgs;
+  int   wrapper_started;
+} DrdPosixThreadArgs;
 
 
 /* Local function declarations. */
@@ -173,20 +174,15 @@ static void DRD_(set_joinable)(const pthread_t tid, const int joinable)
 static void* DRD_(thread_wrapper)(void* arg)
 {
   int res;
-  VgPosixThreadArgs* arg_ptr;
-  VgPosixThreadArgs arg_copy;
+  DrdPosixThreadArgs* arg_ptr;
+  DrdPosixThreadArgs arg_copy;
 
   VALGRIND_DO_CLIENT_REQUEST(res, 0, VG_USERREQ__DRD_SUPPRESS_CURRENT_STACK,
                              0, 0, 0, 0, 0);
 
-  arg_ptr = (VgPosixThreadArgs*)arg;
+  arg_ptr = (DrdPosixThreadArgs*)arg;
   arg_copy = *arg_ptr;
-
-  /*
-   * Free the memory 'arg_ptr' points at now such that it does not get
-   * leaked when the function called below throws a C++ exception.
-   */
-  free(arg_ptr);
+  arg_ptr->wrapper_started = 1;
 
   VALGRIND_DO_CLIENT_REQUEST(res, -1, VG_USERREQ__SET_PTHREADID,
                              pthread_self(), 0, 0, 0, 0);
@@ -276,42 +272,52 @@ PTH_FUNC(int, pthreadZucreateZa, // pthread_create*
   int    res;
   int    ret;
   OrigFn fn;
-  VgPosixThreadArgs* vgargs;
+  DrdPosixThreadArgs thread_args;
 
   VALGRIND_GET_ORIG_FN(fn);
 
-  vgargs = malloc(sizeof *vgargs);
-  assert(vgargs);
-  vgargs->start = start;
-  vgargs->arg   = arg;
+  DRD_IGNORE_VAR(thread_args.wrapper_started);
+  thread_args.start           = start;
+  thread_args.arg             = arg;
+  thread_args.wrapper_started = 0;
   /*
    * Find out whether the thread will be started as a joinable thread
    * or as a detached thread. If no thread attributes have been specified,
    * the new thread will be started as a joinable thread.
    */
-  vgargs->detachstate = PTHREAD_CREATE_JOINABLE;
+  thread_args.detachstate = PTHREAD_CREATE_JOINABLE;
   if (attr)
   {
-    if (pthread_attr_getdetachstate(attr, &vgargs->detachstate) != 0)
+    if (pthread_attr_getdetachstate(attr, &thread_args.detachstate) != 0)
     {
       assert(0);
     }
   }
-  assert(vgargs->detachstate == PTHREAD_CREATE_JOINABLE
-         || vgargs->detachstate == PTHREAD_CREATE_DETACHED);
+  assert(thread_args.detachstate == PTHREAD_CREATE_JOINABLE
+         || thread_args.detachstate == PTHREAD_CREATE_DETACHED);
 
   /* Suppress NPTL-specific conflicts between creator and created thread. */
   VALGRIND_DO_CLIENT_REQUEST(res, -1, VG_USERREQ__DRD_STOP_RECORDING,
                              0, 0, 0, 0, 0);
 
-  CALL_FN_W_WWWW(ret, fn, thread, attr, DRD_(thread_wrapper), vgargs);
+  CALL_FN_W_WWWW(ret, fn, thread, attr, DRD_(thread_wrapper), &thread_args);
 
   VALGRIND_DO_CLIENT_REQUEST(res, -1, VG_USERREQ__DRD_START_RECORDING,
                              0, 0, 0, 0, 0);
 
-  /* Free the memory 'vgargs' points at if pthread_create() failed. */
-  if (ret != 0)
-    free(vgargs);
+  if (ret == 0)
+  {
+    /*
+     * Wait until the thread wrapper started.
+     * @todo Find out why some regression tests fail if thread arguments are
+     *   passed via dynamically allocated memory and if the loop below is
+     *   removed.
+     */
+    while (! thread_args.wrapper_started)
+    {
+      sched_yield();
+    }
+  }
 
   return ret;
 }

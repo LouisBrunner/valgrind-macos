@@ -94,67 +94,67 @@ extern struct bitmap* DRD_(g_conflict_set);
 
 /* Function declarations. */
 
-void thread_trace_context_switches(const Bool t);
-void thread_trace_conflict_set(const Bool t);
+void DRD_(thread_trace_context_switches)(const Bool t);
+void DRD_(thread_trace_conflict_set)(const Bool t);
 Bool DRD_(thread_get_trace_fork_join)(void);
 void DRD_(thread_set_trace_fork_join)(const Bool t);
-void thread_set_segment_merging(const Bool m);
+void DRD_(thread_set_segment_merging)(const Bool m);
 
-DrdThreadId VgThreadIdToDrdThreadId(const ThreadId tid);
-DrdThreadId NewVgThreadIdToDrdThreadId(const ThreadId tid);
-DrdThreadId PtThreadIdToDrdThreadId(const PThreadId tid);
-ThreadId DrdThreadIdToVgThreadId(const DrdThreadId tid);
-DrdThreadId thread_pre_create(const DrdThreadId creator,
+DrdThreadId DRD_(VgThreadIdToDrdThreadId)(const ThreadId tid);
+DrdThreadId DRD_(NewVgThreadIdToDrdThreadId)(const ThreadId tid);
+DrdThreadId DRD_(PtThreadIdToDrdThreadId)(const PThreadId tid);
+ThreadId DRD_(DrdThreadIdToVgThreadId)(const DrdThreadId tid);
+DrdThreadId DRD_(thread_pre_create)(const DrdThreadId creator,
                               const ThreadId vg_created);
-DrdThreadId thread_post_create(const ThreadId vg_created);
+DrdThreadId DRD_(thread_post_create)(const ThreadId vg_created);
 void DRD_(thread_post_join)(DrdThreadId drd_joiner, DrdThreadId drd_joinee);
-void thread_delete(const DrdThreadId tid);
-void thread_finished(const DrdThreadId tid);
-void thread_pre_cancel(const DrdThreadId tid);
-void thread_set_stack_startup(const DrdThreadId tid, const Addr stack_startup);
-Addr thread_get_stack_min(const DrdThreadId tid);
-Addr thread_get_stack_min_min(const DrdThreadId tid);
-Addr thread_get_stack_max(const DrdThreadId tid);
-SizeT thread_get_stack_size(const DrdThreadId tid);
-void thread_set_pthreadid(const DrdThreadId tid, const PThreadId ptid);
-Bool thread_get_joinable(const DrdThreadId tid);
-void thread_set_joinable(const DrdThreadId tid, const Bool joinable);
-void thread_set_vg_running_tid(const ThreadId vg_tid);
-void thread_set_running_tid(const ThreadId vg_tid,
+void DRD_(thread_delete)(const DrdThreadId tid);
+void DRD_(thread_finished)(const DrdThreadId tid);
+void DRD_(thread_pre_cancel)(const DrdThreadId tid);
+void DRD_(thread_set_stack_startup)(const DrdThreadId tid, const Addr stack_startup);
+Addr DRD_(thread_get_stack_min)(const DrdThreadId tid);
+Addr DRD_(thread_get_stack_min_min)(const DrdThreadId tid);
+Addr DRD_(thread_get_stack_max)(const DrdThreadId tid);
+SizeT DRD_(thread_get_stack_size)(const DrdThreadId tid);
+void DRD_(thread_set_pthreadid)(const DrdThreadId tid, const PThreadId ptid);
+Bool DRD_(thread_get_joinable)(const DrdThreadId tid);
+void DRD_(thread_set_joinable)(const DrdThreadId tid, const Bool joinable);
+void DRD_(thread_set_vg_running_tid)(const ThreadId vg_tid);
+void DRD_(thread_set_running_tid)(const ThreadId vg_tid,
                             const DrdThreadId drd_tid);
-int thread_enter_synchr(const DrdThreadId tid);
-int thread_leave_synchr(const DrdThreadId tid);
-int thread_get_synchr_nesting_count(const DrdThreadId tid);
-void thread_new_segment(const DrdThreadId tid);
-VectorClock* thread_get_vc(const DrdThreadId tid);
-void thread_get_latest_segment(Segment** sg, const DrdThreadId tid);
-void thread_combine_vc(const DrdThreadId joiner, const DrdThreadId joinee);
-void thread_combine_vc2(const DrdThreadId tid, const VectorClock* const vc);
+int DRD_(thread_enter_synchr)(const DrdThreadId tid);
+int DRD_(thread_leave_synchr)(const DrdThreadId tid);
+int DRD_(thread_get_synchr_nesting_count)(const DrdThreadId tid);
+void DRD_(thread_new_segment)(const DrdThreadId tid);
+VectorClock* DRD_(thread_get_vc)(const DrdThreadId tid);
+void DRD_(thread_get_latest_segment)(Segment** sg, const DrdThreadId tid);
+void DRD_(thread_combine_vc)(const DrdThreadId joiner, const DrdThreadId joinee);
+void DRD_(thread_combine_vc2)(const DrdThreadId tid, const VectorClock* const vc);
 
-void thread_stop_using_mem(const Addr a1, const Addr a2);
-void thread_start_recording(const DrdThreadId tid);
-void thread_stop_recording(const DrdThreadId tid);
-void thread_print_all(void);
-void thread_report_races(const DrdThreadId tid);
-void thread_report_races_segment(const DrdThreadId tid,
+void DRD_(thread_stop_using_mem)(const Addr a1, const Addr a2);
+void DRD_(thread_start_recording)(const DrdThreadId tid);
+void DRD_(thread_stop_recording)(const DrdThreadId tid);
+void DRD_(thread_print_all)(void);
+void DRD_(thread_report_races)(const DrdThreadId tid);
+void DRD_(thread_report_races_segment)(const DrdThreadId tid,
                                  const Segment* const p);
-void thread_report_all_races(void);
-void thread_report_conflicting_segments(const DrdThreadId tid,
+void DRD_(thread_report_all_races)(void);
+void DRD_(thread_report_conflicting_segments)(const DrdThreadId tid,
                                         const Addr addr,
                                         const SizeT size,
                                         const BmAccessTypeT access_type);
-ULong thread_get_context_switch_count(void);
-ULong thread_get_report_races_count(void);
-ULong thread_get_discard_ordered_segments_count(void);
-ULong thread_get_update_conflict_set_count(ULong* dsnsc, ULong* dscvc);
-ULong thread_get_conflict_set_bitmap_creation_count(void);
-ULong thread_get_conflict_set_bitmap2_creation_count(void);
+ULong DRD_(thread_get_context_switch_count)(void);
+ULong DRD_(thread_get_report_races_count)(void);
+ULong DRD_(thread_get_discard_ordered_segments_count)(void);
+ULong DRD_(thread_get_update_conflict_set_count)(ULong* dsnsc, ULong* dscvc);
+ULong DRD_(thread_get_conflict_set_bitmap_creation_count)(void);
+ULong DRD_(thread_get_conflict_set_bitmap2_creation_count)(void);
 
 
 /* Inline function definitions. */
 
 static __inline__
-Bool IsValidDrdThreadId(const DrdThreadId tid)
+Bool DRD_(IsValidDrdThreadId)(const DrdThreadId tid)
 {
   return (0 <= (int)tid && tid < DRD_N_THREADS && tid != DRD_INVALID_THREADID
           && ! (DRD_(g_threadinfo)[tid].vg_thread_exists == False
@@ -163,20 +163,20 @@ Bool IsValidDrdThreadId(const DrdThreadId tid)
 }
 
 static __inline__
-DrdThreadId thread_get_running_tid(void)
+DrdThreadId DRD_(thread_get_running_tid)(void)
 {
   tl_assert(DRD_(g_drd_running_tid) != DRD_INVALID_THREADID);
   return DRD_(g_drd_running_tid);
 }
 
 static __inline__
-struct bitmap* thread_get_conflict_set(void)
+struct bitmap* DRD_(thread_get_conflict_set)(void)
 {
   return DRD_(g_conflict_set);
 }
 
 static __inline__
-Bool running_thread_is_recording(void)
+Bool DRD_(running_thread_is_recording)(void)
 {
 #ifdef ENABLE_DRD_CONSISTENCY_CHECKS
   tl_assert(0 <= (int)DRD_(g_drd_running_tid) && DRD_(g_drd_running_tid) < DRD_N_THREADS
@@ -187,7 +187,7 @@ Bool running_thread_is_recording(void)
 }
 
 static __inline__
-void thread_set_stack_min(const DrdThreadId tid, const Addr stack_min)
+void DRD_(thread_set_stack_min)(const DrdThreadId tid, const Addr stack_min)
 {
 #ifdef ENABLE_DRD_CONSISTENCY_CHECKS
   tl_assert(0 <= (int)tid
@@ -212,7 +212,7 @@ void thread_set_stack_min(const DrdThreadId tid, const Addr stack_min)
  * currently scheduled thread.
  */
 static __inline__
-Bool thread_address_on_stack(const Addr a)
+Bool DRD_(thread_address_on_stack)(const Addr a)
 {
   return (DRD_(g_threadinfo)[DRD_(g_drd_running_tid)].stack_min <= a
 	  && a < DRD_(g_threadinfo)[DRD_(g_drd_running_tid)].stack_max);
@@ -220,7 +220,7 @@ Bool thread_address_on_stack(const Addr a)
 
 /** Return a pointer to the latest segment for the specified thread. */
 static __inline__
-Segment* thread_get_segment(const DrdThreadId tid)
+Segment* DRD_(thread_get_segment)(const DrdThreadId tid)
 {
 #ifdef ENABLE_DRD_CONSISTENCY_CHECKS
   tl_assert(0 <= (int)tid && tid < DRD_N_THREADS
@@ -232,9 +232,9 @@ Segment* thread_get_segment(const DrdThreadId tid)
 
 /** Return a pointer to the latest segment for the running thread. */
 static __inline__
-Segment* running_thread_get_segment(void)
+Segment* DRD_(running_thread_get_segment)(void)
 {
-  return thread_get_segment(DRD_(g_drd_running_tid));
+  return DRD_(thread_get_segment)(DRD_(g_drd_running_tid));
 }
 
 #endif // __THREAD_H

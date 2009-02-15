@@ -218,7 +218,7 @@ void DRD_(barrier_init)(const Addr barrier,
       VG_(message)(Vg_UserMsg,
                    "[%d/%d] barrier_reinit    %s 0x%lx count %ld -> %ld",
                    VG_(get_running_tid)(),
-                   thread_get_running_tid(),
+                   DRD_(thread_get_running_tid)(),
                    DRD_(barrier_get_typename)(p),
                    barrier,
                    p->count,
@@ -229,7 +229,7 @@ void DRD_(barrier_init)(const Addr barrier,
       VG_(message)(Vg_UserMsg,
                    "[%d/%d] barrier_init      %s 0x%lx",
                    VG_(get_running_tid)(),
-                   thread_get_running_tid(),
+                   DRD_(thread_get_running_tid)(),
                    DRD_(barrier_get_typename)(p),
                    barrier);
     }
@@ -263,7 +263,7 @@ void DRD_(barrier_destroy)(const Addr barrier, const BarrierT barrier_type)
     VG_(message)(Vg_UserMsg,
                  "[%d/%d] barrier_destroy   %s 0x%lx",
                  VG_(get_running_tid)(),
-                 thread_get_running_tid(),
+                 DRD_(thread_get_running_tid)(),
                  DRD_(barrier_get_typename)(p),
                  barrier);
   }
@@ -318,7 +318,7 @@ void DRD_(barrier_pre_wait)(const DrdThreadId tid, const Addr barrier,
     VG_(message)(Vg_UserMsg,
                  "[%d/%d] barrier_pre_wait  %s 0x%lx iteration %ld",
                  VG_(get_running_tid)(),
-                 thread_get_running_tid(),
+                 DRD_(thread_get_running_tid)(),
                  DRD_(barrier_get_typename)(p),
                  barrier,
                  p->pre_iteration);
@@ -332,7 +332,7 @@ void DRD_(barrier_pre_wait)(const DrdThreadId tid, const Addr barrier,
     VG_(OSetGen_Insert)(p->oset, q);
     tl_assert(VG_(OSetGen_Lookup)(p->oset, &word_tid) == q);
   }
-  thread_get_latest_segment(&q->sg[p->pre_iteration], tid);
+  DRD_(thread_get_latest_segment)(&q->sg[p->pre_iteration], tid);
 
   if (--p->pre_waiters_left <= 0)
   {
@@ -396,11 +396,11 @@ void DRD_(barrier_post_wait)(const DrdThreadId tid, const Addr barrier,
       if (r != q)
       {
         tl_assert(r->sg[p->post_iteration]);
-        thread_combine_vc2(tid, &r->sg[p->post_iteration]->vc);
+        DRD_(thread_combine_vc2)(tid, &r->sg[p->post_iteration]->vc);
       }
     }
 
-    thread_new_segment(tid);
+    DRD_(thread_new_segment)(tid);
     DRD_(s_barrier_segment_creation_count)++;
 
     if (--p->post_waiters_left <= 0)

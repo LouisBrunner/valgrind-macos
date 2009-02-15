@@ -56,13 +56,14 @@ void DRD_(sg_init)(Segment* const sg,
                    DrdThreadId const created)
 {
   Segment* creator_sg;
-  ThreadId vg_created = DrdThreadIdToVgThreadId(created);
+  ThreadId vg_created = DRD_(DrdThreadIdToVgThreadId)(created);
 
   tl_assert(sg);
-  tl_assert(creator == DRD_INVALID_THREADID || IsValidDrdThreadId(creator));
+  tl_assert(creator == DRD_INVALID_THREADID
+            || DRD_(IsValidDrdThreadId)(creator));
 
   creator_sg = (creator != DRD_INVALID_THREADID
-                ? thread_get_segment(creator) : 0);
+                ? DRD_(thread_get_segment)(creator) : 0);
 
   sg->next = 0;
   sg->prev = 0;
@@ -86,7 +87,7 @@ void DRD_(sg_init)(Segment* const sg,
     VG_(snprintf)(msg, sizeof(msg),
                   "New segment for thread %d/%d with vc ",
                   created != VG_INVALID_THREADID
-                  ? DrdThreadIdToVgThreadId(created)
+                  ? DRD_(DrdThreadIdToVgThreadId)(created)
                   : DRD_INVALID_THREADID,
                   created);
     DRD_(vc_snprint)(msg + VG_(strlen)(msg), sizeof(msg) - VG_(strlen)(msg),

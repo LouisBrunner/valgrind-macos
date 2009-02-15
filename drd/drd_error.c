@@ -114,7 +114,7 @@ void drd_report_data_race2(Error* const err, const DataRaceErrInfo* const dri)
   VG_(message)(Vg_UserMsg,
                "Conflicting %s by thread %d/%d at 0x%08lx size %ld",
                dri->access_type == eStore ? "store" : "load",
-               DrdThreadIdToVgThreadId(dri->tid),
+               DRD_(DrdThreadIdToVgThreadId)(dri->tid),
                dri->tid,
                dri->addr,
                dri->size);
@@ -152,8 +152,9 @@ void drd_report_data_race2(Error* const err, const DataRaceErrInfo* const dri)
   }
   if (s_drd_show_conflicting_segments)
   {
-    thread_report_conflicting_segments(dri->tid,
-                                       dri->addr, dri->size, dri->access_type);
+    DRD_(thread_report_conflicting_segments)(dri->tid,
+                                             dri->addr, dri->size,
+                                             dri->access_type);
   }
 
   VG_(free)(descr2);
@@ -211,7 +212,7 @@ static void drd_tool_error_pp(Error* const e)
                  "%s: cond 0x%lx, mutex 0x%lx locked by thread %d/%d",
                  VG_(get_error_string)(e),
                  cdi->cond, cdi->mutex,
-                 DrdThreadIdToVgThreadId(cdi->tid), cdi->tid);
+                 DRD_(DrdThreadIdToVgThreadId)(cdi->tid), cdi->tid);
     VG_(pp_ExeContext)(VG_(get_error_where)(e));
     first_observed(cdi->mutex);
     break;

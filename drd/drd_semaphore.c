@@ -160,7 +160,7 @@ struct semaphore_info* semaphore_init(const Addr semaphore,
     VG_(message)(Vg_UserMsg,
                  "[%d/%d] semaphore_init      0x%lx value %u",
                  VG_(get_running_tid)(),
-                 thread_get_running_tid(),
+                 DRD_(thread_get_running_tid)(),
                  semaphore,
                  value);
   }
@@ -202,7 +202,7 @@ void semaphore_destroy(const Addr semaphore)
     VG_(message)(Vg_UserMsg,
                  "[%d/%d] semaphore_destroy   0x%lx value %u",
                  VG_(get_running_tid)(),
-                 thread_get_running_tid(),
+                 DRD_(thread_get_running_tid)(),
                  semaphore,
                  p ? p->value : 0);
   }
@@ -249,7 +249,7 @@ void semaphore_post_wait(const DrdThreadId tid, const Addr semaphore,
     VG_(message)(Vg_UserMsg,
                  "[%d/%d] semaphore_wait      0x%lx value %u -> %u",
                  VG_(get_running_tid)(),
-                 thread_get_running_tid(),
+                 DRD_(thread_get_running_tid)(),
                  semaphore,
                  p ? p->value : 0,
                  p ? p->value - 1 : 0);
@@ -282,10 +282,10 @@ void semaphore_post_wait(const DrdThreadId tid, const Addr semaphore,
       if (p->last_sem_post_tid != tid
           && p->last_sem_post_tid != DRD_INVALID_THREADID)
       {
-        thread_combine_vc2(tid, &sg->vc);
+        DRD_(thread_combine_vc2)(tid, &sg->vc);
       }
       DRD_(sg_put)(sg);
-      thread_new_segment(tid);
+      DRD_(thread_new_segment)(tid);
       s_semaphore_segment_creation_count++;
     }
   }
@@ -305,15 +305,15 @@ void semaphore_pre_post(const DrdThreadId tid, const Addr semaphore)
     VG_(message)(Vg_UserMsg,
                  "[%d/%d] semaphore_post      0x%lx value %u -> %u",
                  VG_(get_running_tid)(),
-                 thread_get_running_tid(),
+                 DRD_(thread_get_running_tid)(),
                  semaphore,
                  p->value - 1, p->value);
   }
 
   p->last_sem_post_tid = tid;
-  thread_new_segment(tid);
+  DRD_(thread_new_segment)(tid);
   sg = 0;
-  thread_get_latest_segment(&sg, tid);
+  DRD_(thread_get_latest_segment)(&sg, tid);
   tl_assert(sg);
   segment_push(p, sg);
   s_semaphore_segment_creation_count++;

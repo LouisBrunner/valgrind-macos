@@ -66,10 +66,10 @@ static
 Bool DRD_(handle_client_request)(ThreadId vg_tid, UWord* arg, UWord* ret)
 {
   UWord result = 0;
-  const DrdThreadId drd_tid = thread_get_running_tid();
+  const DrdThreadId drd_tid = DRD_(thread_get_running_tid)();
 
   tl_assert(vg_tid == VG_(get_running_tid()));
-  tl_assert(VgThreadIdToDrdThreadId(vg_tid) == drd_tid);
+  tl_assert(DRD_(VgThreadIdToDrdThreadId)(vg_tid) == drd_tid);
 
   switch (arg[0])
   {
@@ -109,14 +109,14 @@ Bool DRD_(handle_client_request)(ThreadId vg_tid, UWord* arg, UWord* ret)
                    i, sps[i], fps[i], desc);
     }
 #endif
-    thread_set_stack_startup(drd_tid, VG_(get_SP)(vg_tid));
+    DRD_(thread_set_stack_startup)(drd_tid, VG_(get_SP)(vg_tid));
     DRD_(start_suppression)(topmost_sp, VG_(thread_get_stack_max)(vg_tid),
                             "stack top");
     break;
   }
 
   case VG_USERREQ__DRD_START_NEW_SEGMENT:
-    thread_new_segment(PtThreadIdToDrdThreadId(arg[1]));
+    DRD_(thread_new_segment)(DRD_(PtThreadIdToDrdThreadId)(arg[1]));
     break;
 
   case VG_USERREQ__DRD_START_TRACE_ADDR:
@@ -128,31 +128,32 @@ Bool DRD_(handle_client_request)(ThreadId vg_tid, UWord* arg, UWord* ret)
     break;
 
   case VG_USERREQ__DRD_STOP_RECORDING:
-    thread_stop_recording(drd_tid);
+    DRD_(thread_stop_recording)(drd_tid);
     break;
 
   case VG_USERREQ__DRD_START_RECORDING:
-    thread_start_recording(drd_tid);
+    DRD_(thread_start_recording)(drd_tid);
     break;
 
   case VG_USERREQ__SET_PTHREADID:
     // pthread_self() returns 0 for programs not linked with libpthread.so.
     if (arg[1] != INVALID_POSIX_THREADID)
-      thread_set_pthreadid(drd_tid, arg[1]);
+      DRD_(thread_set_pthreadid)(drd_tid, arg[1]);
     break;
 
   case VG_USERREQ__SET_JOINABLE:
-    thread_set_joinable(PtThreadIdToDrdThreadId(arg[1]), (Bool)arg[2]);
+    DRD_(thread_set_joinable)(DRD_(PtThreadIdToDrdThreadId)(arg[1]),
+                              (Bool)arg[2]);
     break;
 
   case VG_USERREQ__POST_THREAD_JOIN:
     tl_assert(arg[1]);
-    DRD_(thread_post_join)(drd_tid, PtThreadIdToDrdThreadId(arg[1]));
+    DRD_(thread_post_join)(drd_tid, DRD_(PtThreadIdToDrdThreadId)(arg[1]));
     break;
 
   case VG_USERREQ__PRE_THREAD_CANCEL:
     tl_assert(arg[1]);
-    thread_pre_cancel(drd_tid);
+    DRD_(thread_pre_cancel)(drd_tid);
     break;
 
   case VG_USERREQ__POST_THREAD_CANCEL:
@@ -160,71 +161,71 @@ Bool DRD_(handle_client_request)(ThreadId vg_tid, UWord* arg, UWord* ret)
     break;
 
   case VG_USERREQ__PRE_MUTEX_INIT:
-    if (thread_enter_synchr(drd_tid) == 0)
+    if (DRD_(thread_enter_synchr)(drd_tid) == 0)
       mutex_init(arg[1], arg[2]);
     break;
 
   case VG_USERREQ__POST_MUTEX_INIT:
-    thread_leave_synchr(drd_tid);
+    DRD_(thread_leave_synchr)(drd_tid);
     break;
 
   case VG_USERREQ__PRE_MUTEX_DESTROY:
-    thread_enter_synchr(drd_tid);
+    DRD_(thread_enter_synchr)(drd_tid);
     break;
 
   case VG_USERREQ__POST_MUTEX_DESTROY:
-    if (thread_leave_synchr(drd_tid) == 0)
+    if (DRD_(thread_leave_synchr)(drd_tid) == 0)
       mutex_post_destroy(arg[1]);
     break;
 
   case VG_USERREQ__PRE_MUTEX_LOCK:
-    if (thread_enter_synchr(drd_tid) == 0)
+    if (DRD_(thread_enter_synchr)(drd_tid) == 0)
       mutex_pre_lock(arg[1], arg[2], arg[3]);
     break;
 
   case VG_USERREQ__POST_MUTEX_LOCK:
-    if (thread_leave_synchr(drd_tid) == 0)
+    if (DRD_(thread_leave_synchr)(drd_tid) == 0)
       mutex_post_lock(arg[1], arg[2], False/*post_cond_wait*/);
     break;
 
   case VG_USERREQ__PRE_MUTEX_UNLOCK:
-    if (thread_enter_synchr(drd_tid) == 0)
+    if (DRD_(thread_enter_synchr)(drd_tid) == 0)
       mutex_unlock(arg[1], arg[2]);
     break;
 
   case VG_USERREQ__POST_MUTEX_UNLOCK:
-    thread_leave_synchr(drd_tid);
+    DRD_(thread_leave_synchr)(drd_tid);
     break;
 
   case VG_USERREQ__PRE_SPIN_INIT_OR_UNLOCK:
-    if (thread_enter_synchr(drd_tid) == 0)
+    if (DRD_(thread_enter_synchr)(drd_tid) == 0)
       DRD_(spinlock_init_or_unlock)(arg[1]);
     break;
 
   case VG_USERREQ__POST_SPIN_INIT_OR_UNLOCK:
-    thread_leave_synchr(drd_tid);
+    DRD_(thread_leave_synchr)(drd_tid);
     break;
 
   case VG_USERREQ__PRE_COND_INIT:
-    if (thread_enter_synchr(drd_tid) == 0)
+    if (DRD_(thread_enter_synchr)(drd_tid) == 0)
       cond_pre_init(arg[1]);
     break;
 
   case VG_USERREQ__POST_COND_INIT:
-    thread_leave_synchr(drd_tid);
+    DRD_(thread_leave_synchr)(drd_tid);
     break;
 
   case VG_USERREQ__PRE_COND_DESTROY:
-    thread_enter_synchr(drd_tid);
+    DRD_(thread_enter_synchr)(drd_tid);
     break;
 
   case VG_USERREQ__POST_COND_DESTROY:
-    if (thread_leave_synchr(drd_tid) == 0)
+    if (DRD_(thread_leave_synchr)(drd_tid) == 0)
       cond_post_destroy(arg[1]);
     break;
 
   case VG_USERREQ__PRE_COND_WAIT:
-    if (thread_enter_synchr(drd_tid) == 0)
+    if (DRD_(thread_enter_synchr)(drd_tid) == 0)
     {
       const Addr cond = arg[1];
       const Addr mutex = arg[2];
@@ -235,7 +236,7 @@ Bool DRD_(handle_client_request)(ThreadId vg_tid, UWord* arg, UWord* ret)
     break;
 
   case VG_USERREQ__POST_COND_WAIT:
-    if (thread_leave_synchr(drd_tid) == 0)
+    if (DRD_(thread_leave_synchr)(drd_tid) == 0)
     {
       const Addr cond = arg[1];
       const Addr mutex = arg[2];
@@ -246,86 +247,86 @@ Bool DRD_(handle_client_request)(ThreadId vg_tid, UWord* arg, UWord* ret)
     break;
 
   case VG_USERREQ__PRE_COND_SIGNAL:
-    if (thread_enter_synchr(drd_tid) == 0)
+    if (DRD_(thread_enter_synchr)(drd_tid) == 0)
       cond_pre_signal(arg[1]);
     break;
 
   case VG_USERREQ__POST_COND_SIGNAL:
-    thread_leave_synchr(drd_tid);
+    DRD_(thread_leave_synchr)(drd_tid);
     break;
 
   case VG_USERREQ__PRE_COND_BROADCAST:
-    if (thread_enter_synchr(drd_tid) == 0)
+    if (DRD_(thread_enter_synchr)(drd_tid) == 0)
       cond_pre_broadcast(arg[1]);
     break;
 
   case VG_USERREQ__POST_COND_BROADCAST:
-    thread_leave_synchr(drd_tid);
+    DRD_(thread_leave_synchr)(drd_tid);
     break;
 
   case VG_USERREQ__PRE_SEM_INIT:
-    if (thread_enter_synchr(drd_tid) == 0)
+    if (DRD_(thread_enter_synchr)(drd_tid) == 0)
       semaphore_init(arg[1], arg[2], arg[3]);
     break;
 
   case VG_USERREQ__POST_SEM_INIT:
-    thread_leave_synchr(drd_tid);
+    DRD_(thread_leave_synchr)(drd_tid);
     break;
 
   case VG_USERREQ__PRE_SEM_DESTROY:
-    thread_enter_synchr(drd_tid);
+    DRD_(thread_enter_synchr)(drd_tid);
     break;
 
   case VG_USERREQ__POST_SEM_DESTROY:
-    if (thread_leave_synchr(drd_tid) == 0)
+    if (DRD_(thread_leave_synchr)(drd_tid) == 0)
       semaphore_destroy(arg[1]);
     break;
 
   case VG_USERREQ__PRE_SEM_WAIT:
-    if (thread_enter_synchr(drd_tid) == 0)
+    if (DRD_(thread_enter_synchr)(drd_tid) == 0)
       semaphore_pre_wait(arg[1]);
     break;
 
   case VG_USERREQ__POST_SEM_WAIT:
-    if (thread_leave_synchr(drd_tid) == 0)
+    if (DRD_(thread_leave_synchr)(drd_tid) == 0)
       semaphore_post_wait(drd_tid, arg[1], arg[2]);
     break;
 
   case VG_USERREQ__PRE_SEM_POST:
-    if (thread_enter_synchr(drd_tid) == 0)
+    if (DRD_(thread_enter_synchr)(drd_tid) == 0)
       semaphore_pre_post(drd_tid, arg[1]);
     break;
 
   case VG_USERREQ__POST_SEM_POST:
-    if (thread_leave_synchr(drd_tid) == 0)
+    if (DRD_(thread_leave_synchr)(drd_tid) == 0)
       semaphore_post_post(drd_tid, arg[1], arg[2]);
     break;
 
   case VG_USERREQ__PRE_BARRIER_INIT:
-    if (thread_enter_synchr(drd_tid) == 0)
+    if (DRD_(thread_enter_synchr)(drd_tid) == 0)
       DRD_(barrier_init)(arg[1], arg[2], arg[3], arg[4]);
     break;
 
   case VG_USERREQ__POST_BARRIER_INIT:
-    thread_leave_synchr(drd_tid);
+    DRD_(thread_leave_synchr)(drd_tid);
     break;
 
   case VG_USERREQ__PRE_BARRIER_DESTROY:
-    thread_enter_synchr(drd_tid);
+    DRD_(thread_enter_synchr)(drd_tid);
     break;
 
   case VG_USERREQ__POST_BARRIER_DESTROY:
-    if (thread_leave_synchr(drd_tid) == 0)
+    if (DRD_(thread_leave_synchr)(drd_tid) == 0)
       DRD_(barrier_destroy)(arg[1], arg[2]);
     break;
 
   case VG_USERREQ__PRE_BARRIER_WAIT:
-    if (thread_enter_synchr(drd_tid) == 0)
+    if (DRD_(thread_enter_synchr)(drd_tid) == 0)
       DRD_(barrier_pre_wait)(drd_tid, arg[1], arg[2]);
     break;
 
   case VG_USERREQ__POST_BARRIER_WAIT:
-    if (thread_leave_synchr(drd_tid) == 0)
+    if (DRD_(thread_leave_synchr)(drd_tid) == 0)
       DRD_(barrier_post_wait)(drd_tid, arg[1], arg[2], arg[3]);
     break;
 
@@ -338,32 +339,32 @@ Bool DRD_(handle_client_request)(ThreadId vg_tid, UWord* arg, UWord* ret)
     break;
 
   case VG_USERREQ__PRE_RWLOCK_RDLOCK:
-    if (thread_enter_synchr(drd_tid) == 0)
+    if (DRD_(thread_enter_synchr)(drd_tid) == 0)
       rwlock_pre_rdlock(arg[1]);
     break;
 
   case VG_USERREQ__POST_RWLOCK_RDLOCK:
-    if (thread_leave_synchr(drd_tid) == 0)
+    if (DRD_(thread_leave_synchr)(drd_tid) == 0)
       rwlock_post_rdlock(arg[1], arg[2]);
     break;
 
   case VG_USERREQ__PRE_RWLOCK_WRLOCK:
-    if (thread_enter_synchr(drd_tid) == 0)
+    if (DRD_(thread_enter_synchr)(drd_tid) == 0)
       rwlock_pre_wrlock(arg[1]);
     break;
 
   case VG_USERREQ__POST_RWLOCK_WRLOCK:
-    if (thread_leave_synchr(drd_tid) == 0)
+    if (DRD_(thread_leave_synchr)(drd_tid) == 0)
       rwlock_post_wrlock(arg[1], arg[2]);
     break;
 
   case VG_USERREQ__PRE_RWLOCK_UNLOCK:
-    if (thread_enter_synchr(drd_tid) == 0)
+    if (DRD_(thread_enter_synchr)(drd_tid) == 0)
       rwlock_pre_unlock(arg[1]);
     break;
       
   case VG_USERREQ__POST_RWLOCK_UNLOCK:
-    thread_leave_synchr(drd_tid);
+    DRD_(thread_leave_synchr)(drd_tid);
     break;
 
   default:

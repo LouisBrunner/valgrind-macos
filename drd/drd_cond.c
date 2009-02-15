@@ -124,7 +124,7 @@ void cond_pre_init(const Addr cond)
     VG_(message)(Vg_UserMsg,
                  "[%d/%d] cond_init       cond 0x%lx",
                  VG_(get_running_tid)(),
-                 thread_get_running_tid(),
+                 DRD_(thread_get_running_tid)(),
                  cond);
   }
 
@@ -153,7 +153,7 @@ void cond_post_destroy(const Addr cond)
     VG_(message)(Vg_UserMsg,
                  "[%d/%d] cond_destroy    cond 0x%lx",
                  VG_(get_running_tid)(),
-                 thread_get_running_tid(),
+                 DRD_(thread_get_running_tid)(),
                  cond);
   }
 
@@ -196,7 +196,7 @@ int cond_pre_wait(const Addr cond, const Addr mutex)
     VG_(message)(Vg_UserMsg,
                  "[%d/%d] cond_pre_wait   cond 0x%lx",
                  VG_(get_running_tid)(),
-                 thread_get_running_tid(),
+                 DRD_(thread_get_running_tid)(),
                  cond);
   }
 
@@ -220,7 +220,7 @@ int cond_pre_wait(const Addr cond, const Addr mutex)
   }
   tl_assert(p->mutex);
   q = mutex_get(p->mutex);
-  if (q && q->owner == thread_get_running_tid() && q->recursion_count > 0)
+  if (q && q->owner == DRD_(thread_get_running_tid)() && q->recursion_count > 0)
   {
     const ThreadId vg_tid = VG_(get_running_tid)();
     MutexErrInfo MEI = { q->a1, q->recursion_count, q->owner };
@@ -248,7 +248,7 @@ int cond_post_wait(const Addr cond)
     VG_(message)(Vg_UserMsg,
                  "[%d/%d] cond_post_wait  cond 0x%lx",
                  VG_(get_running_tid)(),
-                 thread_get_running_tid(),
+                 DRD_(thread_get_running_tid)(),
                  cond);
   }
 
@@ -271,7 +271,7 @@ int cond_post_wait(const Addr cond)
 static void cond_signal(Addr const cond)
 {
   const ThreadId vg_tid = VG_(get_running_tid)();
-  const DrdThreadId drd_tid = VgThreadIdToDrdThreadId(vg_tid);
+  const DrdThreadId drd_tid = DRD_(VgThreadIdToDrdThreadId)(vg_tid);
   struct cond_info* const cond_p = cond_get(cond);
 
   if (cond_p && cond_p->waiter_count > 0)
@@ -306,7 +306,7 @@ void cond_pre_signal(Addr const cond)
     VG_(message)(Vg_UserMsg,
                  "[%d/%d] cond_signal     cond 0x%lx",
                  VG_(get_running_tid)(),
-                 thread_get_running_tid(),
+                 DRD_(thread_get_running_tid)(),
                  cond);
   }
 
@@ -321,7 +321,7 @@ void cond_pre_broadcast(Addr const cond)
     VG_(message)(Vg_UserMsg,
                  "[%d/%d] cond_broadcast  cond 0x%lx",
                  VG_(get_running_tid)(),
-                 thread_get_running_tid(),
+                 DRD_(thread_get_running_tid)(),
                  cond);
   }
 

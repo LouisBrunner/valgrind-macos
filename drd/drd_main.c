@@ -222,7 +222,7 @@ static void drd_pre_mem_read(const CorePart part,
 {
   if (size > 0)
   {
-    drd_trace_load(a, size);
+    DRD_(trace_load)(a, size);
   }
 }
 
@@ -245,7 +245,7 @@ static void drd_pre_mem_read_asciiz(const CorePart part,
   tl_assert(size < 4096);
   if (size > 0)
   {
-    drd_trace_load(a, size);
+    DRD_(trace_load)(a, size);
   }
 }
 
@@ -257,7 +257,7 @@ static void drd_post_mem_write(const CorePart part,
   DRD_(thread_set_vg_running_tid)(VG_(get_running_tid)());
   if (size > 0)
   {
-    drd_trace_store(a, size);
+    DRD_(trace_store)(a, size);
   }
 }
 
@@ -560,11 +560,11 @@ static void DRD_(fini)(Int exitcode)
                  DRD_(get_barrier_segment_creation_count)());
     VG_(message)(Vg_UserMsg,
                  "  bitmaps: %lld level 1 / %lld level 2 bitmap refs",
-                 bm_get_bitmap_creation_count(),
-                 bm_get_bitmap2_node_creation_count());
+                 DRD_(bm_get_bitmap_creation_count)(),
+                 DRD_(bm_get_bitmap2_node_creation_count)());
     VG_(message)(Vg_UserMsg,
                  "           and %lld level 2 bitmaps were allocated.",
-                 bm_get_bitmap2_creation_count());
+                 DRD_(bm_get_bitmap2_creation_count)());
     VG_(message)(Vg_UserMsg,
                  "    mutex: %lld non-recursive lock/unlock events.",
                  DRD_(get_mutex_lock_count)());

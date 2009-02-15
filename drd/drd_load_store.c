@@ -125,7 +125,7 @@ static void drd_report_race(const Addr addr, const SizeT size,
                           &drei);
 }
 
-VG_REGPARM(2) void drd_trace_load(Addr addr, SizeT size)
+VG_REGPARM(2) void DRD_(trace_load)(Addr addr, SizeT size)
 {
 #ifdef ENABLE_DRD_CONSISTENCY_CHECKS
   /* The assert below has been commented out because of performance reasons.*/
@@ -191,7 +191,7 @@ static VG_REGPARM(1) void drd_trace_load_8(Addr addr)
   }
 }
 
-VG_REGPARM(2) void drd_trace_store(Addr addr, SizeT size)
+VG_REGPARM(2) void DRD_(trace_store)(Addr addr, SizeT size)
 {
 #ifdef ENABLE_DRD_CONSISTENCY_CHECKS
   /* The assert below has been commented out because of performance reasons.*/
@@ -347,7 +347,7 @@ static void instrument_load(IRSB* const bb,
     argv = mkIRExprVec_2(addr_expr, size_expr);
     di = unsafeIRDirty_0_N(/*regparms*/2,
                            "drd_trace_load",
-                           VG_(fnptr_to_fnentry)(drd_trace_load),
+                           VG_(fnptr_to_fnentry)(DRD_(trace_load)),
                            argv);
     break;
   }
@@ -412,7 +412,7 @@ static void instrument_store(IRSB* const bb,
     argv = mkIRExprVec_2(addr_expr, size_expr);
     di = unsafeIRDirty_0_N(/*regparms*/2,
                            "drd_trace_store",
-                           VG_(fnptr_to_fnentry)(drd_trace_store),
+                           VG_(fnptr_to_fnentry)(DRD_(trace_store)),
                            argv);
     break;
   }
@@ -524,7 +524,7 @@ IRSB* DRD_(instrument)(VgCallbackClosure* const closure,
             di = unsafeIRDirty_0_N(
                                    /*regparms*/2,
                                    "drd_trace_load",
-                                   VG_(fnptr_to_fnentry)(drd_trace_load),
+                                   VG_(fnptr_to_fnentry)(DRD_(trace_load)),
                                    argv);
             addStmtToIRSB(bb, IRStmt_Dirty(di));
           }
@@ -534,7 +534,7 @@ IRSB* DRD_(instrument)(VgCallbackClosure* const closure,
             di = unsafeIRDirty_0_N(
                                    /*regparms*/2,
                                    "drd_trace_store",
-                                   VG_(fnptr_to_fnentry)(drd_trace_store),
+                                   VG_(fnptr_to_fnentry)(DRD_(trace_store)),
                                    argv);
             addStmtToIRSB(bb, IRStmt_Dirty(di));
           }

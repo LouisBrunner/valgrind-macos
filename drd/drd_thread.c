@@ -867,13 +867,13 @@ void DRD_(thread_stop_using_mem)(const Addr a1, const Addr a2)
       if (other_user == DRD_INVALID_THREADID
           && i != DRD_(g_drd_running_tid))
       {
-        if (UNLIKELY(bm_test_and_clear(p->bm, a1, a2)))
+        if (UNLIKELY(DRD_(bm_test_and_clear)(p->bm, a1, a2)))
         {
           other_user = i;
         }
         continue;
       }
-      bm_clear(p->bm, a1, a2);
+      DRD_(bm_clear)(p->bm, a1, a2);
     }
   }
 
@@ -882,7 +882,7 @@ void DRD_(thread_stop_using_mem)(const Addr a1, const Addr a2)
    * conflict set.
    */
   if (other_user != DRD_INVALID_THREADID
-      && bm_has_any_access(DRD_(g_conflict_set), a1, a2))
+      && DRD_(bm_has_any_access)(DRD_(g_conflict_set), a1, a2))
   {
     DRD_(thread_compute_conflict_set)(&DRD_(g_conflict_set),
                                       DRD_(thread_get_running_tid)());
@@ -989,7 +989,8 @@ thread_report_conflicting_segments_segment(const DrdThreadId tid,
           break;
         if (! DRD_(vc_lte)(&p->vc, &q->vc))
         {
-          if (bm_has_conflict_with(q->bm, addr, addr + size, access_type))
+          if (DRD_(bm_has_conflict_with)(q->bm, addr, addr + size,
+                                         access_type))
           {
             tl_assert(q->stacktrace);
             show_call_stack(i,        "Other segment start",
@@ -1015,7 +1016,7 @@ void DRD_(thread_report_conflicting_segments)(const DrdThreadId tid,
 
   for (p = DRD_(g_threadinfo)[tid].first; p; p = p->next)
   {
-    if (bm_has(p->bm, addr, addr + size, access_type))
+    if (DRD_(bm_has)(p->bm, addr, addr + size, access_type))
     {
       thread_report_conflicting_segments_segment(tid, addr, size,
                                                  access_type, p);
@@ -1042,8 +1043,8 @@ static Bool DRD_(thread_conflict_set_up_to_date)(const DrdThreadId tid)
     return True;
 
   DRD_(thread_compute_conflict_set)(&computed_conflict_set, tid);
-  result = bm_equal(DRD_(g_conflict_set), computed_conflict_set);
-  bm_delete(computed_conflict_set);
+  result = DRD_(bm_equal)(DRD_(g_conflict_set), computed_conflict_set);
+  DRD_(bm_delete)(computed_conflict_set);
   return result;
 }
 
@@ -1061,14 +1062,14 @@ static void DRD_(thread_compute_conflict_set)(struct bitmap** conflict_set,
   tl_assert(tid == DRD_(g_drd_running_tid));
 
   DRD_(s_update_conflict_set_count)++;
-  DRD_(s_conflict_set_bitmap_creation_count)  -= bm_get_bitmap_creation_count();
-  DRD_(s_conflict_set_bitmap2_creation_count) -= bm_get_bitmap2_creation_count();
+  DRD_(s_conflict_set_bitmap_creation_count)  -= DRD_(bm_get_bitmap_creation_count)();
+  DRD_(s_conflict_set_bitmap2_creation_count) -= DRD_(bm_get_bitmap2_creation_count)();
 
   if (*conflict_set)
   {
-    bm_delete(*conflict_set);
+    DRD_(bm_delete)(*conflict_set);
   }
-  *conflict_set = bm_new();
+  *conflict_set = DRD_(bm_new)();
 
   if (DRD_(s_trace_conflict_set))
   {
@@ -1119,7 +1120,7 @@ static void DRD_(thread_compute_conflict_set)(struct bitmap** conflict_set,
                                &q->vc);
               VG_(message)(Vg_UserMsg, "%s", msg);
             }
-            bm_merge2(*conflict_set, q->bm);
+            DRD_(bm_merge2)(*conflict_set, q->bm);
           }
           else
           {
@@ -1139,13 +1140,13 @@ static void DRD_(thread_compute_conflict_set)(struct bitmap** conflict_set,
     }
   }
 
-  DRD_(s_conflict_set_bitmap_creation_count)  += bm_get_bitmap_creation_count();
-  DRD_(s_conflict_set_bitmap2_creation_count) += bm_get_bitmap2_creation_count();
+  DRD_(s_conflict_set_bitmap_creation_count)  += DRD_(bm_get_bitmap_creation_count)();
+  DRD_(s_conflict_set_bitmap2_creation_count) += DRD_(bm_get_bitmap2_creation_count)();
 
   if (0 && DRD_(s_trace_conflict_set))
   {
     VG_(message)(Vg_UserMsg, "[%d] new conflict set:", tid);
-    bm_print(*conflict_set);
+    DRD_(bm_print)(*conflict_set);
     VG_(message)(Vg_UserMsg, "[%d] end of new conflict set.", tid);
   }
 }

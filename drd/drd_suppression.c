@@ -52,7 +52,7 @@ void DRD_(suppression_set_trace)(const Bool trace_suppression)
 void DRD_(suppression_init)(void)
 {
   tl_assert(DRD_(s_suppressed) == 0);
-  DRD_(s_suppressed) = bm_new();
+  DRD_(s_suppressed) = DRD_(bm_new)();
   tl_assert(DRD_(s_suppressed));
 }
 
@@ -67,7 +67,7 @@ void DRD_(start_suppression)(const Addr a1, const Addr a2,
 
   tl_assert(a1 < a2);
   // tl_assert(! drd_is_any_suppressed(a1, a2));
-  bm_access_range_store(DRD_(s_suppressed), a1, a2);
+  DRD_(bm_access_range_store)(DRD_(s_suppressed), a1, a2);
 }
 
 void DRD_(finish_suppression)(const Addr a1, const Addr a2)
@@ -86,7 +86,7 @@ void DRD_(finish_suppression)(const Addr a1, const Addr a2)
      VG_(get_and_pp_StackTrace)(VG_(get_running_tid)(), 12);
      tl_assert(False);
   }
-  bm_clear_store(DRD_(s_suppressed), a1, a2);
+  DRD_(bm_clear_store)(DRD_(s_suppressed), a1, a2);
 }
 
 /**
@@ -96,7 +96,7 @@ void DRD_(finish_suppression)(const Addr a1, const Addr a2)
  */
 Bool DRD_(is_suppressed)(const Addr a1, const Addr a2)
 {
-  return bm_has(DRD_(s_suppressed), a1, a2, eStore);
+  return DRD_(bm_has)(DRD_(s_suppressed), a1, a2, eStore);
 }
 
 /**
@@ -106,14 +106,14 @@ Bool DRD_(is_suppressed)(const Addr a1, const Addr a2)
  */
 Bool DRD_(is_any_suppressed)(const Addr a1, const Addr a2)
 {
-  return bm_has_any_store(DRD_(s_suppressed), a1, a2);
+  return DRD_(bm_has_any_store)(DRD_(s_suppressed), a1, a2);
 }
 
 void DRD_(start_tracing_address_range)(const Addr a1, const Addr a2)
 {
   tl_assert(a1 < a2);
 
-  bm_access_range_load(DRD_(s_suppressed), a1, a2);
+  DRD_(bm_access_range_load)(DRD_(s_suppressed), a1, a2);
   if (! DRD_(g_any_address_traced))
   {
     DRD_(g_any_address_traced) = True;
@@ -124,17 +124,17 @@ void DRD_(stop_tracing_address_range)(const Addr a1, const Addr a2)
 {
   tl_assert(a1 < a2);
 
-  bm_clear_load(DRD_(s_suppressed), a1, a2);
+  DRD_(bm_clear_load)(DRD_(s_suppressed), a1, a2);
   if (DRD_(g_any_address_traced))
   {
     DRD_(g_any_address_traced)
-      = bm_has_any_load(DRD_(s_suppressed), 0, ~(Addr)0);
+      = DRD_(bm_has_any_load)(DRD_(s_suppressed), 0, ~(Addr)0);
   }
 }
 
 Bool DRD_(is_any_traced)(const Addr a1, const Addr a2)
 {
-  return bm_has_any_load(DRD_(s_suppressed), a1, a2);
+  return DRD_(bm_has_any_load)(DRD_(s_suppressed), a1, a2);
 }
 
 void DRD_(suppression_stop_using_mem)(const Addr a1, const Addr a2)
@@ -144,7 +144,7 @@ void DRD_(suppression_stop_using_mem)(const Addr a1, const Addr a2)
     Addr b;
     for (b = a1; b < a2; b++)
     {
-      if (bm_has_1(DRD_(s_suppressed), b, eStore))
+      if (DRD_(bm_has_1)(DRD_(s_suppressed), b, eStore))
       {
         VG_(message)(Vg_DebugMsg,
                      "stop_using_mem(0x%lx, %ld) finish suppression of 0x%lx",
@@ -154,5 +154,5 @@ void DRD_(suppression_stop_using_mem)(const Addr a1, const Addr a2)
   }
   tl_assert(a1);
   tl_assert(a1 < a2);
-  bm_clear(DRD_(s_suppressed), a1, a2);
+  DRD_(bm_clear)(DRD_(s_suppressed), a1, a2);
 }

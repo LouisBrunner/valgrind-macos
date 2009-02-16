@@ -1,5 +1,5 @@
 /*
-  This file is part of DRD, a data race detector.
+  This file is part of DRD, a thread error detector.
 
   Copyright (C) 2009 Bart Van Assche <bart.vanassche@gmail.com>.
 

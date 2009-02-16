@@ -40,7 +40,7 @@ EXTRA_DIST = $(noinst_SCRIPTS) \
 	badpoll.stderr.exp badpoll.vgtest \
 	badrw.stderr.exp badrw.vgtest \
 	brk2.stderr.exp brk2.vgtest \
-	buflen_check.stderr.exp buflen_check.stderr.exp2 buflen_check.vgtest \
+	buflen_check.stderr.exp buflen_check.vgtest \
 	clientperm.stderr.exp \
 	clientperm.stdout.exp clientperm.vgtest \
 	custom_alloc.stderr.exp custom_alloc.vgtest \
@@ -52,11 +52,11 @@ EXTRA_DIST = $(noinst_SCRIPTS) \
 	error_counts.stderr.exp error_counts.stdout.exp error_counts.vgtest \
 	errs1.stderr.exp errs1.vgtest \
 	exitprog.stderr.exp exitprog.vgtest \
-	execve.stderr.exp execve.stderr.exp2 execve.vgtest \
-	execve2.stderr.exp execve2.stderr.exp2 execve2.vgtest \
+	execve.stderr.exp execve.vgtest \
+	execve2.stderr.exp execve2.vgtest \
 	file_locking.stderr.exp file_locking.vgtest \
 	fprw.stderr.exp fprw.vgtest \
-	fwrite.stderr.exp fwrite.stderr.exp2 fwrite.vgtest \
+	fwrite.stderr.exp fwrite.vgtest \
 	inits.stderr.exp inits.vgtest \
 	inline.stderr.exp inline.stdout.exp inline.vgtest \
 	leak-0.vgtest leak-0.stderr.exp \
@@ -174,9 +174,9 @@ EXTRA_DIST = $(noinst_SCRIPTS) \
 	wrap7.vgtest wrap7.stdout.exp wrap7.stderr.exp \
 	wrap8.vgtest wrap8.stdout.exp wrap8.stderr.exp \
 	wrap8.stdout.exp2 wrap8.stderr.exp2 \
-	writev.stderr.exp writev.stderr.exp2 writev.stderr.exp3 writev.vgtest \
-	xml1.stderr.exp xml1.stderr.exp2 xml1.stderr.exp3 \
-	xml1.stderr.exp64 xml1.stderr.exp64_2 xml1.stdout.exp \
+	writev.stderr.exp writev.vgtest \
+	xml1.stderr.exp xml1.stderr.exp2 \
+	xml1.stderr.exp64 xml1.stdout.exp \
 	xml1.vgtest \
 	zeropage.stderr.exp zeropage.stderr.exp2 zeropage.stdout.exp \
 	zeropage.vgtest

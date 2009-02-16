@@ -7,8 +7,6 @@ $dir/../../tests/filter_stderr_basic                    |
 # Anonymise addresses
 $dir/../../tests/filter_addresses                       |
 
-$dir/../../tests/filter_test_paths                      |
-
 # Anonymise paths like "(in /foo/bar/libc-baz.so)"
 sed "s/(in \/.*libc.*)$/(in \/...libc...)/"             |
 sed "s/(in \/.*libpthread.*)$/(in \/...libpthread...)/"             |
@@ -25,13 +23,13 @@ sed \
 # Tidy up in cases where glibc (+ libdl + libpthread + ld) have
 # been built with debugging information, hence source locs are present
 sed \
--e "s/vfprintf ([a-z]*printf.c:[0-9]*)/.../" \
--e "s/vsprintf ([a-z]*printf.c:[0-9]*)/.../" \
--e "s/sprintf (sprintf.c:[0-9]*)/.../" \
--e "s/printf (printf.c:[0-9]*)/.../" \
--e "s/strdup (strdup.c:[0-9]*)/.../" \
--e "s/pthread_key_create.c:[0-9]*/in \/...libpthread.../" \
--e "s/genops.c:[0-9]*/in \/...libc.../" |
+-e "s/ vfprintf (.*)/ .../" \
+-e "s/ vsprintf (.*)/ .../" \
+-e "s/ sprintf (.*)/ .../" \
+-e "s/ printf (.*)/ .../" \
+-e "s/ strdup (.*)/ .../" \
+-e "s/ pthread_key_create.c:[0-9]*/ in \/...libpthread.../" \
+-e "s/ genops.c:[0-9]*/ in \/...libc.../" |
 
 # Anonymise line numbers in h_intercepts.c.
 sed "s/h_intercepts.c:[0-9]*/h_intercepts.c:.../" 

@@ -9,7 +9,6 @@ noinst_SCRIPTS = \
 	filter_numbers \
 	filter_stderr_basic \
 	filter_sink \
-	filter_test_paths \
 	os_test \
 	platform_test \
 	vg_regtest

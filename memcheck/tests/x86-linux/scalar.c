@@ -1,5 +1,9 @@
 #include "../../memcheck.h"
 #include "scalar.h"
+#include <unistd.h>
+#include <sched.h>
+#include <signal.h>
+
 
 // Here we are trying to trigger every syscall error (scalar errors and
 // memory errors) for every syscall.  We do this by passing a lot of bogus
@@ -13,10 +17,6 @@
 // when memory is unaddressable, and so tries to dereference it when doing
 // PRE_MEM_READ/PRE_MEM_WRITE calls.  (Note that Memcheck will
 // always issue an error message immediately before these seg faults occur).
-
-//#include <asm/ipc.h>
-#include <sched.h>
-#include <signal.h>
 
 int main(void)
 {
@@ -52,10 +52,11 @@ int main(void)
    GO(__NR_open, "(2-args) 2s 1m");
    SY(__NR_open, x0, x0); FAIL;
 
-   // Only 1s 0m errors, because 2s 1m are ignored, being dups of the
-   // earlier 2-arg open call.
+   // Only 1s 0m errors -- the other 2s 1m have been checked in the previous
+   // open test, and if we test them they may be commoned up but they also
+   // may not.
    GO(__NR_open, "(3-args) 1s 0m");    
-   SY(__NR_open, x0, x0+O_CREAT, x0); FAIL;
+   SY(__NR_open, "scalar.c", O_CREAT|O_EXCL, x0); FAIL;
 
    // __NR_close 6
    GO(__NR_close, "1s 0m");
@@ -263,13 +264,17 @@ int main(void)
    GO(__NR_fcntl, "(GETFD) 2s 0m");
    SY(__NR_fcntl, x0-1, x0+F_GETFD, x0); FAILx(EBADF);
 
-   // For F_DUPFD the 3rd arg is 'arg'
+   // For F_DUPFD the 3rd arg is 'arg'.  We don't check the 1st two args
+   // because any errors may or may not be commoned up with the ones from
+   // the previous fcntl call.
    GO(__NR_fcntl, "(DUPFD) 1s 0m");
-   SY(__NR_fcntl, x0-1, x0+F_DUPFD, x0); FAILx(EBADF);
+   SY(__NR_fcntl, -1, F_DUPFD, x0); FAILx(EBADF);
 
-   // For F_GETLK the 3rd arg is 'lock'.  On x86, this fails w/EBADF.  But on 
-   GO(__NR_fcntl, "(GETLK) 1s 0m"); // amd64 in 32-bit mode it fails w/EFAULT.
-   SY(__NR_fcntl, x0-1, x0+F_GETLK, x0); FAIL; //FAILx(EBADF);
+   // For F_GETLK the 3rd arg is 'lock'.  On x86, this fails w/EBADF.  But
+   // on amd64 in 32-bit mode it fails w/EFAULT.  We don't check the 1st two
+   // args for the reason given above.
+   GO(__NR_fcntl, "(GETLK) 1s 0m");
+   SY(__NR_fcntl, -1, F_GETLK, x0); FAIL; //FAILx(EBADF);
 
    // __NR_mpx 56
    GO(__NR_mpx, "ni");
@@ -379,7 +384,7 @@ int main(void)
    // __NR_select 82
    {
       long args[5] = { x0+8, x0+0xffffffee, x0+1, x0+1, x0+1 };
-      GO(__NR_select, "1s 4m");
+      GO(__NR_select, "1s 5m");
       SY(__NR_select, args+x0); FAIL;
    }
 
@@ -414,7 +419,7 @@ int main(void)
    // __NR_mmap 90
    {
       long args[6] = { x0, x0, x0, x0, x0-1, x0 };
-      GO(__NR_mmap, "1s 0m");
+      GO(__NR_mmap, "1s 1m");
       SY(__NR_mmap, args+x0); FAIL;
    }
 
@@ -719,7 +724,7 @@ int main(void)
 
    // __NR_mremap 163
    GO(__NR_mremap, "5s 0m");
-   SY(__NR_mremap, x0+1, x0, x0, x0, x0); FAILx(EINVAL);
+   SY(__NR_mremap, x0+1, x0, x0, x0+MREMAP_FIXED, x0); FAILx(EINVAL);
 
    // __NR_setresuid 164
    GO(__NR_setresuid, "3s 0m");
@@ -849,7 +854,7 @@ int main(void)
    SY(__NR_ugetrlimit, x0, x0); FAIL;
 
    // __NR_mmap2 192
-   GO(__NR_mmap2, "5s 0m");
+   GO(__NR_mmap2, "6s 0m");
    SY(__NR_mmap2, x0, x0, x0, x0, x0-1, x0); FAIL;
 
    // __NR_truncate64 193
@@ -965,18 +970,21 @@ int main(void)
    SY(__NR_getdents64, x0, x0, x0+1); FAIL;
 
    // __NR_fcntl64 221
-   // As with sys_open(), the 'fd' error is suppressed for the later ones.
-   // For F_GETFD the 3rd arg is ignored
+   // As with sys_open(), we don't trigger errors for the 1st two args for
+   // the later ones.
+   // For F_GETFD the 3rd arg is ignored.
    GO(__NR_fcntl64, "(GETFD) 2s 0m");
    SY(__NR_fcntl64, x0-1, x0+F_GETFD, x0); FAILx(EBADF);
 
    // For F_DUPFD the 3rd arg is 'arg'
    GO(__NR_fcntl64, "(DUPFD) 1s 0m");
-   SY(__NR_fcntl64, x0-1, x0+F_DUPFD, x0); FAILx(EBADF);
+   SY(__NR_fcntl64, -1, F_DUPFD, x0); FAILx(EBADF);
 
-   // For F_GETLK the 3rd arg is 'lock'.  // On x86, this fails w/EBADF.  But on
-   GO(__NR_fcntl64, "(GETLK) 1s 0m"); // amd64 in 32-bit mode it fails w/EFAULT.
-   SY(__NR_fcntl64, x0-1, x0+F_GETLK, x0); FAIL; //FAILx(EBADF);
+   // For F_GETLK the 3rd arg is 'lock'.
+   // On x86, this fails w/EBADF.  But on amd64 in 32-bit mode it fails
+   // w/EFAULT.
+   GO(__NR_fcntl64, "(GETLK) 1s 0m"); 
+   SY(__NR_fcntl64, -1, +F_GETLK, x0); FAIL; //FAILx(EBADF);
 
    // 222
    GO(222, "ni");

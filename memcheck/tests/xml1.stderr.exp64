@@ -342,23 +342,6 @@
   <tid>...</tid>
   <kind>SyscallParam</kind>
   <what>Syscall param exit_group(exit_code) contains uninitialised byte(s)</what>
-  <stack>
-    <frame>
-      <ip>0x........</ip>
-      <obj>...</obj>
-      <fn>_Exit</fn>
-    </frame>
-    <frame>
-      <ip>0x........</ip>
-      <obj>...</obj>
-      <fn>exit</fn>
-    </frame>
-    <frame>
-      <ip>0x........</ip>
-      <obj>...</obj>
-      <fn>(below main)</fn>
-    </frame>
-  </stack>
 </error>
 
 <errorcounts>

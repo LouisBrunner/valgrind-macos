@@ -5,60 +5,65 @@
 #include <stdio.h>
 #include <assert.h>
 #include <stdlib.h>
+#include "../memcheck.h"
 
 int main ( void )
 {
   int *r, *oldr, *a;
 
+#define TEST(x, exp_x, desc) \
+  VALGRIND_MAKE_MEM_DEFINED(&x, sizeof(int)); \
+  if (x == exp_x) { \
+     fprintf(stderr, "PASSED: " desc "\n"); \
+  } else { \
+     fprintf(stderr, "FAILED: " desc "\n"); \
+  }
 
+  //-------------------------------------------------------------
   fprintf(stderr, "test simple malloc/free:\n");
 
   a = malloc(10 * sizeof(int)); assert(a);
-  fprintf(stderr, "(should be malloc-filled)     a[4] = %x\n", a[4]);
+  TEST(a[4], 0x55555555, "malloc-filled");
 
   free(a);
-  fprintf(stderr, "(should be free-filled)       a[5] = %x\n", a[5]);
+  TEST(a[5], 0x77777777, "  free-filled");
 
-
-
-  fprintf(stderr, "test realloc-larger:\n");
+  //-------------------------------------------------------------
+  fprintf(stderr, "\ntest realloc-larger:\n");
 
   r = malloc(30 * sizeof(int)); assert(r);
-  fprintf(stderr, "(should be malloc-filled)    r[25] = %x\n", r[25]);
+  TEST(r[25], 0x55555555, "malloc-filled");
 
   /* Make larger */
   oldr = r;
   r = realloc(r, 40 * sizeof(int)); assert(r);
 
-  fprintf(stderr, "(should be free-filled)   oldr[26] = %x\n", oldr[26]);
-  fprintf(stderr, "(should be malloc-filled)    r[35] = %x\n", r[35]);
+  TEST(oldr[26], 0x77777777, "  free-filled");
+  TEST(   r[35], 0x55555555, "malloc-filled");
 
   free(r);
 
-
-
-  fprintf(stderr, "test realloc-smaller:\n");
+  //-------------------------------------------------------------
+  fprintf(stderr, "\ntest realloc-smaller:\n");
 
   r = malloc(30 * sizeof(int)); assert(r);
-  fprintf(stderr, "(should be malloc-filled)    r[25] = %x\n", r[25]);
+  TEST(r[25], 0x55555555,   "malloc-filled");
 
   /* Make smaller */
   oldr = r;
   r = realloc(r, 20 * sizeof(int)); assert(r);
 
-  fprintf(stderr, "(should be free-filled)   oldr[26] = %x\n", oldr[26]);
+  TEST(oldr[26], 0x77777777, "  free-filled");
 
   free(r);
 
-
-
-  fprintf(stderr, "test calloc:\n");
+  //-------------------------------------------------------------
+  fprintf(stderr, "\ntest calloc:\n");
   a = calloc(100, sizeof(int)); assert(r);
 
-  fprintf(stderr, "(should be zero)             a[42] = %x\n", a[42]);
+  TEST(a[42], 0x00000000, "zero");
 
   free(a);
-
 
   return 0;
 }

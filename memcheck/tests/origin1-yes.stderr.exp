@@ -48,7 +48,7 @@ Conditional jump or move depends on uninitialised value(s)
    at 0x........: main (origin1-yes.c:93)
  Uninitialised value was created
    at 0x........: brk (in /...libc...)
-   by 0x........: ...
+   by 0x........: sbrk (in /...libc...)
    by 0x........: main (origin1-yes.c:90)
 
 Undef 8 of 8 (MAKE_MEM_UNDEFINED)

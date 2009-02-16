@@ -16,4 +16,20 @@ sed "s/mc_replace_strmem.c:[0-9]*/mc_replace_strmem.c:.../"  |
 # Remove the size in "The main thread stack size..." message.
 sed "s/The main thread stack size used in this run was [0-9]*/The main thread stack size used in this run was .../" |
 
-$dir/../../tests/filter_test_paths
+# Stack traces ending in syscalls often cause problems, with lots of libc
+# variations: different numbers of entries, line numbers or not depending on
+# whether libc debug info is present, 'writev' vs 'do_writev', 'main' vs.
+# '(below main)', etc.  
+#
+# So we just cut out the entire stack trace.  It's coarse but effective, and
+# there aren't that many cases like this, and the error line gives the
+# syscall name.  
+#
+# The '<' is to avoid matching the XML case;  we don't use '>' because that
+# appears in some of the syscall parameter names (eg "act->sa_handler").
+perl -p -0 -e 's/(Syscall param[^\n<]*)\n(   (at|by)[^\n]*\n)*/$1\n   ...\n/gs' |
+
+# Something similar for XML output.  Chops everything within
+# <stack>...</stack>.
+perl -p -0 -e 's/(<what>Syscall param[^\n]*)\n([^\n]*(stack|frame|ip|obj|fn)[^\n]*\n)*/$1\n/gs'
+

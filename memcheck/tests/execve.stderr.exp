@@ -1,14 +1,11 @@
 Syscall param execve(filename) points to unaddressable byte(s)
-   at 0x........: execve (in /...libc...)
-   by 0x........: main (execve.c:9)
+   ...
  Address 0x........ is not stack'd, malloc'd or (recently) free'd
 
 Syscall param execve(argv[i]) points to unaddressable byte(s)
-   at 0x........: execve (in /...libc...)
-   by 0x........: main (execve.c:9)
+   ...
  Address 0x........ is not stack'd, malloc'd or (recently) free'd
 
 Syscall param execve(envp[i]) points to unaddressable byte(s)
-   at 0x........: execve (in /...libc...)
-   by 0x........: main (execve.c:9)
+   ...
  Address 0x........ is not stack'd, malloc'd or (recently) free'd

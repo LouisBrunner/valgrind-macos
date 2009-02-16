@@ -2,7 +2,7 @@
 Conflicting load by thread 1/1 at 0x........ size 8
    at 0x........: main (fp_race.c:?)
 Location 0x........ is 0 bytes inside local var "s_d3"
-declared at fp_race.c:47, in frame #? of thread 1
+declared at fp_race.c:24, in frame #? of thread 1
 Other segment start (thread 0/2)
    (thread finished, call stack no longer available)
 Other segment end (thread 0/2)
@@ -11,7 +11,7 @@ Other segment end (thread 0/2)
 Conflicting store by thread 1/1 at 0x........ size 8
    at 0x........: main (fp_race.c:?)
 Location 0x........ is 0 bytes inside local var "s_d3"
-declared at fp_race.c:47, in frame #? of thread 1
+declared at fp_race.c:24, in frame #? of thread 1
 Other segment start (thread 0/2)
    (thread finished, call stack no longer available)
 Other segment end (thread 0/2)

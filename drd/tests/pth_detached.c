@@ -1,6 +1,4 @@
-/** Test whether detached threads are handled properly.
- *  Copyright (c) 2006-2008 by Bart Van Assche (bart.vanassche@gmail.com).
- */
+/* Test whether detached threads are handled properly. */
 
 
 #include <assert.h>

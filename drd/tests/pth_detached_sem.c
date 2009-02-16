@@ -1,9 +1,9 @@
-/** Test whether detached threads are handled properly.
- *  This test program is based on pth_detached.c, with the difference that
- *  in this test program the main thread uses a counting semaphore instead
- *  of a counter protected by a mutex to wait until all detached threads
- *  finished.
- *  Copyright (c) 2006-2008 by Bart Van Assche (bart.vanassche@gmail.com).
+/**
+ * Test whether detached threads are handled properly.
+ * This test program is based on pth_detached.c, with the difference that
+ * in this test program the main thread uses a counting semaphore instead
+ * of a counter protected by a mutex to wait until all detached threads
+ * finished.
  */
 
 

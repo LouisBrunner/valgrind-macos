@@ -1,0 +1,29 @@
+#! /bin/sh
+
+# This script determines which OSes that this Valgrind installation
+# supports, which depends on the machine's OS.
+# We return:
+# - 0 if the machine matches the asked-for OS
+# - 1 if it didn't match, but did match the name of another OS
+# - 2 otherwise
+
+# Nb: When updating this file for a new OS, add the name to 'all_OSes'.
+
+all_OSes="linux aix5 darwin"
+
+if [ $# -ne 1 ] ; then
+    echo "usage: os_test <os-type>"
+    exit 2;
+fi
+
+if [ $1 = @VGCONF_OS@ ] ; then
+    exit 0;         # Matches this OS.
+fi
+
+for os in $all_OSes ; do
+    if [ $1 = $os ] ; then
+        exit 1;     # Matches another Valgrind-supported OS.
+    fi
+done
+
+exit 2;             # Doesn't match any Valgrind-supported OS.

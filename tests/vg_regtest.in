@@ -378,14 +378,18 @@ sub test_one_dir($$)
     # Ignore dirs into which we should not recurse.
     if ($dir =~ /^(BitKeeper|CVS|SCCS|docs|doc)$/) { return; }
 
-    (-x "$tests_dir/tests/cputest") or die 
-        "vg_regtest: 'cputest' is missing.  Did you forget to 'make check'?\n";
+    (-x "$tests_dir/tests/arch_test") or die 
+        "vg_regtest: 'arch_test' is missing.  Did you forget to 'make check'?\n";
     
     # Ignore any dir whose name matches that of an architecture which is not
-    # the architecture we are running on (eg. when running on x86, ignore ppc/
-    # directories).
+    # the architecture we are running on.  Eg. when running on x86, ignore
+    # ppc/ directories ('arch_test' returns 1 for this case).  Likewise for
+    # the OS and platform.
     # Nb: weird Perl-ism -- exit code of '1' is seen by Perl as 256...
-    if (256 == system("$tests_dir/tests/cputest $dir")) { return; }
+    if (256 == system(   "$tests_dir/tests/arch_test     $dir"))  { return; }
+    if (256 == system("sh $tests_dir/tests/os_test       $dir"))  { return; }
+    if ($dir =~ /(\w+)-(\w+)/ &&
+        256 == system("sh $tests_dir/tests/platform_test $1 $2")) { return; }
     
     chdir($dir) or die "Could not change into $dir\n";
 

@@ -156,7 +156,7 @@ From coregrind/m_signals.c
 #  error VG_UCONTEXT_SYSCALL_RET undefined for ARM/Linux
 
 =============================================================================
-From tests/cputest.c
+From tests/arch_test.c
 =============================================================================
 - You'll need to add "arm" to all_archs[].
 

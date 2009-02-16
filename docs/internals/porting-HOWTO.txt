@@ -68,8 +68,9 @@ Once it compiles ok, get it to run:
 
 Once it runs ok:
 
-- Add the cpu to the tests/cputest.c file so the reg test script will work.
-  (Don't forget to add it to all_archs[].)
+- Add the arch to the tests/arch_test.c file so the reg test script will work.
+  (Don't forget to add it to all_archs[].)  Likewise for os_test.in and
+  platform_test.
 
 - Ensure the regression tests work, and add some arch-specific tests to
   none/tests directory.

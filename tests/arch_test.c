@@ -92,9 +92,39 @@ static void cpuid ( unsigned int n,
 #endif   // VGP_x86_linux || VGP_amd64_linux
 
 //---------------------------------------------------------------------------
-// {x86,amd64}-{linux} (part 2 of 2)
+// {x86,amd64}-darwin (part 1 of 2)
 //---------------------------------------------------------------------------
-#if defined(VGP_x86_linux)  || defined(VGP_amd64_linux)
+#if defined(VGP_x86_darwin) || defined(VGP_amd64_darwin)
+static void cpuid ( unsigned int n,
+                    unsigned int* a, unsigned int* b,
+                    unsigned int* c, unsigned int* d )
+{
+   __asm__ __volatile__ (
+       "pushl %%eax\n\t"
+       "pushl %%ebx\n\t"
+       "pushl %%ecx\n\t"
+       "pushl %%edx\n\t"
+       "movl %4, %%eax\n\t"
+       "cpuid\n\t"
+       "movl %%eax,%0\n\t"
+       "movl %%ebx,%1\n\t"
+       "movl %%ecx,%2\n\t"
+       "movl %%edx,%3\n\t"
+       "popl %%edx\n\t"
+       "popl %%ecx\n\t"
+       "popl %%ebx\n\t"
+       "popl %%eax\n\t"
+       : "=m" (*a), "=m" (*b), "=m" (*c), "=m" (*d)
+       : "mr" (n)
+       );
+}
+#endif   // VGP_x86_darwin || VGP_amd64_darwin
+
+//---------------------------------------------------------------------------
+// {x86,amd64}-{linux,darwin} (part 2 of 2)
+//---------------------------------------------------------------------------
+#if defined(VGP_x86_linux)  || defined(VGP_amd64_linux) || \
+    defined(VGP_x86_darwin) || defined(VGP_amd64_darwin)
 static Bool go(char* cpu)
 { 
    unsigned int level = 0, cmask = 0, dmask = 0, a, b, c, d;
@@ -152,7 +182,8 @@ static Bool go(char* cpu)
    }
    return False;
 }
-#endif   // VGP_x86_linux  || VGP_amd64_linux
+#endif   // VGP_x86_linux  || VGP_amd64_linux ||
+         // VGP_x86_darwin || VGP_amd64_darwin
 
 
 //---------------------------------------------------------------------------
@@ -162,7 +193,7 @@ int main(int argc, char **argv)
 {
    int i;
    if ( argc != 2 ) {
-      fprintf( stderr, "usage: cputest <cpu-type>\n" );
+      fprintf( stderr, "usage: arch_test <cpu-type>\n" );
       exit( 2 );
    }
    if (go( argv[1] )) {

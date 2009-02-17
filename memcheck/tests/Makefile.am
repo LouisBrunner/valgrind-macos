@@ -25,8 +25,8 @@ endif
 DIST_SUBDIRS = x86 amd64 linux x86-linux .
 
 noinst_SCRIPTS = filter_allocs filter_leak_check_size \
-		 filter_stderr filter_stderr_backtrace filter_xml \
-		 filter_varinfo3 filter_malloc_free_fill
+		 filter_stderr filter_xml \
+		 filter_varinfo3
 
 EXTRA_DIST = $(noinst_SCRIPTS) \
 	addressable.stderr.exp addressable.stdout.exp addressable.vgtest \

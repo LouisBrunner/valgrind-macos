@@ -1,5 +1,0 @@
-#! /bin/sh
-
-./filter_stderr |
-sed -e 's|^Use of uninitialised value of size [0-9]*$|Use of uninitialised value of size .|g' \
-    -e 's|^ *at 0x\.*: _itoa_word (in /\.\.\.libc\.\.\.)$|   at 0x........: (within /...libc...)|g'

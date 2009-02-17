@@ -56,26 +56,16 @@ EXTRA_DIST = $(noinst_SCRIPTS) \
 	execve.vgtest execve.stdout.exp execve.stderr.exp \
 	faultstatus.vgtest faultstatus.stderr.exp \
 	fcntl_setown.vgtest fcntl_setown.stdout.exp fcntl_setown.stderr.exp \
-	fdleak_cmsg.stderr.exp fdleak_cmsg.stderr.exp2 \
-	fdleak_cmsg.stderr.exp3 fdleak_cmsg.stderr.exp4 \
-	fdleak_cmsg.vgtest \
-	fdleak_creat.stderr.exp fdleak_creat.stderr.exp2 \
-	fdleak_creat.stderr.exp3 fdleak_creat.vgtest \
-	fdleak_dup.stderr.exp fdleak_dup.stderr.exp2 \
-	fdleak_dup.stderr.exp3 fdleak_dup.vgtest \
-	fdleak_dup2.stderr.exp fdleak_dup2.stderr.exp2 \
-	fdleak_dup2.stderr.exp3 fdleak_dup2.vgtest \
-	fdleak_fcntl.stderr.exp fdleak_fcntl.stderr.exp2 \
-	fdleak_fcntl.stderr.exp3 fdleak_fcntl.stderr.exp4 \
-	fdleak_fcntl.vgtest \
-	fdleak_ipv4.stderr.exp fdleak_ipv4.stderr.exp2 \
-	fdleak_ipv4.stdout.exp fdleak_ipv4.vgtest \
-	fdleak_open.stderr.exp fdleak_open.stderr.exp2 fdleak_open.vgtest \
-	fdleak_pipe.stderr.exp fdleak_pipe.stderr.exp2 fdleak_pipe.vgtest \
-	fdleak_socketpair.stderr.exp fdleak_socketpair.stderr.exp2 \
-	fdleak_socketpair.vgtest \
-	floored.stderr.exp floored.stdout.exp \
-	floored.vgtest \
+	fdleak_cmsg.stderr.exp fdleak_cmsg.vgtest \
+	fdleak_creat.stderr.exp fdleak_creat.vgtest \
+	fdleak_dup.stderr.exp fdleak_dup.vgtest \
+	fdleak_dup2.stderr.exp fdleak_dup2.vgtest \
+	fdleak_fcntl.stderr.exp fdleak_fcntl.vgtest \
+	fdleak_ipv4.stderr.exp fdleak_ipv4.stdout.exp fdleak_ipv4.vgtest \
+	fdleak_open.stderr.exp fdleak_open.vgtest \
+	fdleak_pipe.stderr.exp fdleak_pipe.vgtest \
+	fdleak_socketpair.stderr.exp fdleak_socketpair.vgtest \
+	floored.stderr.exp floored.stdout.exp floored.vgtest \
 	fork.stderr.exp fork.stdout.exp fork.vgtest \
 	fucomip.stderr.exp fucomip.vgtest \
 	gxx304.stderr.exp gxx304.vgtest \

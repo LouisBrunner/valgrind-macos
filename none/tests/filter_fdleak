@@ -9,4 +9,15 @@ sed s/"^Open \(AF_UNIX socket\|file descriptor\) [0-9]*: \/dev\/null/Open \\1 .:
 sed s/"^Open \(AF_UNIX socket\|file descriptor\) [0-9]*: \/tmp\/\(sock\|data1\|data2\|file\)\.[0-9]*/Open \\1 .: \/tmp\/\\2/" |
 sed s/"^Open file descriptor [0-9]*: .*/Open file descriptor .: ./" |
 sed s/"^Open file descriptor [0-9]*:$/Open file descriptor .:/" |
-sed s/"127.0.0.1:[0-9]*/127.0.0.1:.../g"
+sed s/"127.0.0.1:[0-9]*/127.0.0.1:.../g" |
+
+# Stack traces showing where fds were created have lots of variations:
+# different numbers of entries, line numbers or not depending on whether
+# libc debug info is present, 'main' vs.  '(below main)', etc.  
+#
+# So we just cut out the entire stack trace.  It's coarse but effective;
+# before we did this we had a plethora of expected outputs, with only
+# painfully minor variations between them.
+perl -p -0 -e 's/(Open[^\n]*)\n(   (at|by)[^\n]*\n)+/$1\n   ...\n/gs'
+
+

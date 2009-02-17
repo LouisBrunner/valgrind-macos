@@ -2,16 +2,13 @@
 
 FILE DESCRIPTORS: 6 open at exit.
 Open file descriptor .: /dev/null
-   at 0x........: dup2 (in /...libc...)
-   by 0x........: (below main)
+   ...
 
 Open file descriptor .: /dev/null
-   at 0x........: dup2 (in /...libc...)
-   by 0x........: (below main)
+   ...
 
 Open file descriptor .: /dev/null
-   at 0x........: open (in /...libc...)
-   by 0x........: (below main)
+   ...
 
 Open file descriptor .: .
    <inherited from parent>

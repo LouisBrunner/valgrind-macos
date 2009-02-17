@@ -641,13 +641,13 @@ PRE(sys_getsockopt)
    PRE_REG_READ5(long, "getsockopt",
                  int, s, int, level, int, optname,
                  void *, optval, int, *optlen);
-   ML_(generic_PRE_sys_getsockopt)(tid, ARG1,ARG2,ARG3,ARG4,ARG5);
+   ML_(linux_PRE_sys_getsockopt)(tid, ARG1,ARG2,ARG3,ARG4,ARG5);
 }
 POST(sys_getsockopt)
 {
    vg_assert(SUCCESS);
-   ML_(generic_POST_sys_getsockopt)(tid, VG_(mk_SysRes_Success)(RES),
-                                         ARG1,ARG2,ARG3,ARG4,ARG5);
+   ML_(linux_POST_sys_getsockopt)(tid, VG_(mk_SysRes_Success)(RES),
+                                       ARG1,ARG2,ARG3,ARG4,ARG5);
 }
 
 PRE(sys_connect)

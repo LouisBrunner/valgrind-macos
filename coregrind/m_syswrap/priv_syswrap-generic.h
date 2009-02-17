@@ -69,6 +69,13 @@ void
 ML_(notify_aspacem_and_tool_of_mmap) ( Addr a, SizeT len, UInt prot, 
                                        UInt mm_flags, Int fd, Off64T offset );
 
+extern void
+ML_(buf_and_len_pre_check) ( ThreadId tid, Addr buf_p, Addr buflen_p,
+                             Char* buf_s, Char* buflen_s );
+extern void
+ML_(buf_and_len_post_check) ( ThreadId tid, SysRes res,
+                              Addr buf_p, Addr buflen_p, Char* s );
+
 
 DECL_TEMPLATE(generic, sys_ni_syscall);            // * P -- unimplemented
 DECL_TEMPLATE(generic, sys_exit);
@@ -220,8 +227,6 @@ extern void   ML_(generic_PRE_sys_recv)         ( TId, UW, UW, UW );
 extern void   ML_(generic_POST_sys_recv)        ( TId, UW, UW, UW, UW );
 extern void   ML_(generic_PRE_sys_connect)      ( TId, UW, UW, UW );
 extern void   ML_(generic_PRE_sys_setsockopt)   ( TId, UW, UW, UW, UW, UW );
-extern void   ML_(generic_PRE_sys_getsockopt)   ( TId, UW, UW, UW, UW, UW );
-extern void   ML_(generic_POST_sys_getsockopt)  ( TId, SR, UW, UW, UW, UW, UW );
 extern void   ML_(generic_PRE_sys_getsockname)  ( TId, UW, UW, UW );
 extern void   ML_(generic_POST_sys_getsockname) ( TId, SR, UW, UW, UW );
 extern void   ML_(generic_PRE_sys_getpeername)  ( TId, UW, UW, UW );

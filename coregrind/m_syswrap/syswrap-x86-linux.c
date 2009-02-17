@@ -1512,8 +1512,8 @@ PRE(sys_socketcall)
       /* int getsockopt(int s, int level, int optname, 
                         void *optval, socklen_t *optlen); */
       PRE_MEM_READ( "socketcall.getsockopt(args)", ARG2, 5*sizeof(Addr) );
-      ML_(generic_PRE_sys_getsockopt)( tid, ARG2_0, ARG2_1, ARG2_2, 
-                                       ARG2_3, ARG2_4 );
+      ML_(linux_PRE_sys_getsockopt)( tid, ARG2_0, ARG2_1, ARG2_2, 
+                                     ARG2_3, ARG2_4 );
       break;
 
    case VKI_SYS_GETSOCKNAME:
@@ -1633,9 +1633,9 @@ POST(sys_socketcall)
       break;
 
    case VKI_SYS_GETSOCKOPT:
-      ML_(generic_POST_sys_getsockopt)( tid, VG_(mk_SysRes_Success)(RES),
-                                             ARG2_0, ARG2_1, 
-                                             ARG2_2, ARG2_3, ARG2_4 );
+      ML_(linux_POST_sys_getsockopt)( tid, VG_(mk_SysRes_Success)(RES),
+                                      ARG2_0, ARG2_1, 
+                                      ARG2_2, ARG2_3, ARG2_4 );
       break;
 
    case VKI_SYS_GETSOCKNAME:

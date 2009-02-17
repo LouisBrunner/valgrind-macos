@@ -5,10 +5,16 @@
 
 int main(void)
 {
-   // Since our allocations are in multiples of 8, 99 will round up to 104.
+   // Because Memcheck marks any slop as inaccessible, it doesn't round up
+   // sizes for malloc_usable_size().
    int* x = malloc(99);
+
+   // DDD: would be better to have a HAVE_MALLOC_USABLE_SIZE variable here
 #  if !defined(_AIX)
-   assert(104 == malloc_usable_size(x));
+   assert(99 == malloc_usable_size(x));
+   assert( 0 == malloc_usable_size(NULL));
+   assert( 0 == malloc_usable_size((void*)0xdeadbeef));
 #  endif
+
    return 0;
 }

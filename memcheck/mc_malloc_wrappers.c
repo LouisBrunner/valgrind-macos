@@ -483,6 +483,15 @@ void* MC_(realloc) ( ThreadId tid, void* p_old, SizeT new_szB )
    return p_new;
 }
 
+SizeT MC_(malloc_usable_size) ( ThreadId tid, void* p )
+{
+   MC_Chunk* mc = VG_(HT_lookup) ( MC_(malloc_list), (UWord)p );
+
+   // There may be slop, but pretend there isn't because only the asked-for
+   // area will be marked as addressable.
+   return ( mc ? mc->szB : 0 );
+}
+
 /* Memory pool stuff. */
 
 void MC_(create_mempool)(Addr pool, UInt rzB, Bool is_zeroed)

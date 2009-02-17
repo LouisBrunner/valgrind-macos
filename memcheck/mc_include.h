@@ -121,6 +121,7 @@ void  MC_(free)                 ( ThreadId tid, void* p );
 void  MC_(__builtin_delete)     ( ThreadId tid, void* p );
 void  MC_(__builtin_vec_delete) ( ThreadId tid, void* p );
 void* MC_(realloc)              ( ThreadId tid, void* p, SizeT new_size );
+SizeT MC_(malloc_usable_size)   ( ThreadId tid, void* p );
 
 
 /*------------------------------------------------------------*/

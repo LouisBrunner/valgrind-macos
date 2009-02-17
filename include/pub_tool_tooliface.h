@@ -433,6 +433,7 @@ extern void VG_(needs_malloc_replacement)(
    void  (*p__builtin_delete)     ( ThreadId tid, void* p ),
    void  (*p__builtin_vec_delete) ( ThreadId tid, void* p ),
    void* (*prealloc)              ( ThreadId tid, void* p, SizeT new_size ),
+   SizeT (*pmalloc_usable_size)   ( ThreadId tid, void* p), 
    SizeT client_malloc_redzone_szB
 );
 

@@ -166,6 +166,7 @@ static void pc_pre_clo_init(void)
                                   h_replace___builtin_delete,
                                   h_replace___builtin_vec_delete,
                                   h_replace_realloc,
+                                  h_replace_malloc_usable_size,
                                   0 /* no need for client heap redzones */ );
 
    VG_(needs_var_info)          ();

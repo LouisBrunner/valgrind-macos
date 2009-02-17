@@ -1372,8 +1372,8 @@ void do_client_request ( ThreadId tid )
 	 info->tl_free                 = VG_(tdict).tool_free;
 	 info->tl___builtin_delete     = VG_(tdict).tool___builtin_delete;
 	 info->tl___builtin_vec_delete = VG_(tdict).tool___builtin_vec_delete;
+         info->tl_malloc_usable_size   = VG_(tdict).tool_malloc_usable_size;
 
-	 info->arena_payload_szB       = VG_(arena_payload_szB);
 	 info->mallinfo                = VG_(mallinfo);
 	 info->clo_trace_malloc        = VG_(clo_trace_malloc);
 

@@ -298,6 +298,7 @@ void VG_(needs_malloc_replacement)(
    void  (*__builtin_delete)     ( ThreadId, void* ),
    void  (*__builtin_vec_delete) ( ThreadId, void* ),
    void* (*realloc)              ( ThreadId, void*, SizeT ),
+   SizeT (*malloc_usable_size)   ( ThreadId, void* ), 
    SizeT client_malloc_redzone_szB
 )
 {
@@ -311,6 +312,7 @@ void VG_(needs_malloc_replacement)(
    VG_(tdict).tool___builtin_delete     = __builtin_delete;
    VG_(tdict).tool___builtin_vec_delete = __builtin_vec_delete;
    VG_(tdict).tool_realloc              = realloc;
+   VG_(tdict).tool_malloc_usable_size   = malloc_usable_size;
    VG_(tdict).tool_client_redzone_szB   = client_malloc_redzone_szB;
 }
 

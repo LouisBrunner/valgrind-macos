@@ -1664,8 +1664,7 @@ void* VG_(arena_memalign) ( ArenaId aid, HChar* cc,
 }
 
 
-// The ThreadId doesn't matter, it's not used.
-SizeT VG_(arena_payload_szB) ( ThreadId tid, ArenaId aid, void* ptr )
+SizeT VG_(arena_malloc_usable_size) ( ArenaId aid, void* ptr )
 {
    Arena* a = arenaId_to_ArenaP(aid);
    Block* b = get_payload_block(a, ptr);
@@ -1853,7 +1852,7 @@ Char* VG_(strdup) ( HChar* cc, const Char* s )
 // Useful for querying user blocks.           
 SizeT VG_(malloc_usable_size) ( void* p )                    
 {                                                            
-   return VG_(arena_payload_szB)(VG_INVALID_THREADID, VG_AR_CLIENT, p);    
+   return VG_(arena_malloc_usable_size)(VG_AR_CLIENT, p);    
 }                                                            
   
 

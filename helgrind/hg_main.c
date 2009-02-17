@@ -3475,6 +3475,15 @@ static void* hg_cli__realloc ( ThreadId tid, void* payloadV, SizeT new_size )
    }  
 }
 
+static SizeT hg_cli_malloc_usable_size ( ThreadId tid, void* p )
+{
+   MallocMeta *md = VG_(HT_lookup)( hg_mallocmeta_table, (UWord)p );
+
+   // There may be slop, but pretend there isn't because only the asked-for
+   // area will have been shadowed properly.
+   return ( md ? md->szB : 0 );
+}
+
 
 /*--------------------------------------------------------------*/
 /*--- Instrumentation                                        ---*/
@@ -4222,6 +4231,7 @@ static void hg_pre_clo_init ( void )
                                    hg_cli____builtin_delete,
                                    hg_cli____builtin_vec_delete,
                                    hg_cli__realloc,
+                                   hg_cli_malloc_usable_size,
                                    HG_CLI__MALLOC_REDZONE_SZB );
 
    /* 21 Dec 08: disabled this; it mostly causes H to start more

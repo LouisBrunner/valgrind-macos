@@ -999,6 +999,15 @@ void* h_replace_realloc ( ThreadId tid, void* p_old, SizeT new_size )
    }
 }
 
+SizeT h_replace_malloc_usable_size ( ThreadId tid, void* p )
+{
+   Seg* seg = find_Seg_by_addr( (Addr)p );
+
+   // There may be slop, but pretend there isn't because only the asked-for
+   // area will have been shadowed properly.
+   return ( seg ? seg->szB : 0 );
+}
+
 
 /*------------------------------------------------------------*/
 /*--- Memory events                                        ---*/

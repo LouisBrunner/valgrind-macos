@@ -155,6 +155,7 @@ typedef struct {
    void  (*tool___builtin_delete)    (ThreadId, void*);
    void  (*tool___builtin_vec_delete)(ThreadId, void*);
    void* (*tool_realloc)             (ThreadId, void*, SizeT);
+   SizeT (*tool_malloc_usable_size)  (ThreadId, void*);
    SizeT tool_client_redzone_szB;
 
    // VG_(needs).final_IR_tidy_pass

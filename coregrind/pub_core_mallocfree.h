@@ -100,6 +100,8 @@ extern Char* VG_(arena_strdup)  ( ArenaId aid, HChar* cc,
 // Nb: The ThreadId doesn't matter, it's not used.
 extern SizeT VG_(arena_payload_szB) ( ThreadId tid, ArenaId aid, void* payload );
 
+extern SizeT VG_(arena_malloc_usable_size) ( ArenaId aid, void* payload );
+
 extern void  VG_(mallinfo) ( ThreadId tid, struct vg_mallinfo* mi );
 
 extern void  VG_(sanity_check_malloc_all) ( void );

@@ -65,6 +65,7 @@ void  h_replace_free ( ThreadId tid, void* p );
 void  h_replace___builtin_delete ( ThreadId tid, void* p );
 void  h_replace___builtin_vec_delete ( ThreadId tid, void* p );
 void* h_replace_realloc ( ThreadId tid, void* p_old, SizeT new_size );
+SizeT h_replace_malloc_usable_size ( ThreadId tid, void* p );
 
 void h_new_mem_startup( Addr a, SizeT len,
                         Bool rr, Bool ww, Bool xx, ULong di_handle );

@@ -1,3 +1,0 @@
-#! /bin/sh
-
-sed "s/^valgrind-.*/valgrind-XXX/g"

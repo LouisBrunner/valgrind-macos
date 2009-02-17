@@ -6,11 +6,7 @@ SUBDIRS = .
 DIST_SUBDIRS = .
 
 noinst_SCRIPTS =		\
-	filter_cmdline0		\
 	filter_error_summary	\
-	filter_fdleak		\
-	filter_linenos		\
-	filter_none_discards	\
 	filter_stderr           \
 	run_openmp_test         \
 	supported_libpthread

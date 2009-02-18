@@ -6,7 +6,7 @@ ms_print arguments: massif.out
 
 
     KB
-7.312^                                      #                                 
+14.34^                                      #                                 
      |                                      #                                 
      |                                      #                                 
      |                                      #                                 
@@ -27,7 +27,7 @@ ms_print arguments: massif.out
      |         @          @       @         #       @        @       @       @
      |         @          @       @         #       @        @       @       @
    0 +----------------------------------------------------------------------->KB
-     0                                                                   13.81
+     0                                                                   27.09
 
 Number of snapshots: 9
  Detailed snapshots: [0, 1, 2, 3, 4 (peak), 5, 6, 7, 8]
@@ -41,56 +41,56 @@ Number of snapshots: 9
 --------------------------------------------------------------------------------
   n        time(B)         total(B)   useful-heap(B) extra-heap(B)    stacks(B)
 --------------------------------------------------------------------------------
-  1          1,872            1,872            1,800            72            0
-96.15% (1,800B) (heap allocation functions) malloc/new/new[], --alloc-fns, etc.
-->96.15% (1,800B) 0x........: main (basic.c:14)
+  1          3,672            3,672            3,600            72            0
+98.04% (3,600B) (heap allocation functions) malloc/new/new[], --alloc-fns, etc.
+->98.04% (3,600B) 0x........: main (basic.c:14)
   
 --------------------------------------------------------------------------------
   n        time(B)         total(B)   useful-heap(B) extra-heap(B)    stacks(B)
 --------------------------------------------------------------------------------
-  2          3,952            3,952            3,800           152            0
-96.15% (3,800B) (heap allocation functions) malloc/new/new[], --alloc-fns, etc.
-->96.15% (3,800B) 0x........: main (basic.c:14)
+  2          7,752            7,752            7,600           152            0
+98.04% (7,600B) (heap allocation functions) malloc/new/new[], --alloc-fns, etc.
+->98.04% (7,600B) 0x........: main (basic.c:14)
   
 --------------------------------------------------------------------------------
   n        time(B)         total(B)   useful-heap(B) extra-heap(B)    stacks(B)
 --------------------------------------------------------------------------------
-  3          5,616            5,616            5,400           216            0
-96.15% (5,400B) (heap allocation functions) malloc/new/new[], --alloc-fns, etc.
-->96.15% (5,400B) 0x........: main (basic.c:14)
+  3         11,016           11,016           10,800           216            0
+98.04% (10,800B) (heap allocation functions) malloc/new/new[], --alloc-fns, etc.
+->98.04% (10,800B) 0x........: main (basic.c:14)
   
 --------------------------------------------------------------------------------
   n        time(B)         total(B)   useful-heap(B) extra-heap(B)    stacks(B)
 --------------------------------------------------------------------------------
-  4          7,488            7,488            7,200           288            0
-96.15% (7,200B) (heap allocation functions) malloc/new/new[], --alloc-fns, etc.
-->96.15% (7,200B) 0x........: main (basic.c:14)
+  4         14,688           14,688           14,400           288            0
+98.04% (14,400B) (heap allocation functions) malloc/new/new[], --alloc-fns, etc.
+->98.04% (14,400B) 0x........: main (basic.c:14)
   
 --------------------------------------------------------------------------------
   n        time(B)         total(B)   useful-heap(B) extra-heap(B)    stacks(B)
 --------------------------------------------------------------------------------
-  5          9,152            5,824            5,600           224            0
-96.15% (5,600B) (heap allocation functions) malloc/new/new[], --alloc-fns, etc.
-->96.15% (5,600B) 0x........: main (basic.c:14)
+  5         17,952           11,424           11,200           224            0
+98.04% (11,200B) (heap allocation functions) malloc/new/new[], --alloc-fns, etc.
+->98.04% (11,200B) 0x........: main (basic.c:14)
   
 --------------------------------------------------------------------------------
   n        time(B)         total(B)   useful-heap(B) extra-heap(B)    stacks(B)
 --------------------------------------------------------------------------------
-  6         10,816            4,160            4,000           160            0
-96.15% (4,000B) (heap allocation functions) malloc/new/new[], --alloc-fns, etc.
-->96.15% (4,000B) 0x........: main (basic.c:14)
+  6         21,216            8,160            8,000           160            0
+98.04% (8,000B) (heap allocation functions) malloc/new/new[], --alloc-fns, etc.
+->98.04% (8,000B) 0x........: main (basic.c:14)
   
 --------------------------------------------------------------------------------
   n        time(B)         total(B)   useful-heap(B) extra-heap(B)    stacks(B)
 --------------------------------------------------------------------------------
-  7         12,480            2,496            2,400            96            0
-96.15% (2,400B) (heap allocation functions) malloc/new/new[], --alloc-fns, etc.
-->96.15% (2,400B) 0x........: main (basic.c:14)
+  7         24,480            4,896            4,800            96            0
+98.04% (4,800B) (heap allocation functions) malloc/new/new[], --alloc-fns, etc.
+->98.04% (4,800B) 0x........: main (basic.c:14)
   
 --------------------------------------------------------------------------------
   n        time(B)         total(B)   useful-heap(B) extra-heap(B)    stacks(B)
 --------------------------------------------------------------------------------
-  8         14,144              832              800            32            0
-96.15% (800B) (heap allocation functions) malloc/new/new[], --alloc-fns, etc.
-->96.15% (800B) 0x........: main (basic.c:14)
+  8         27,744            1,632            1,600            32            0
+98.04% (1,600B) (heap allocation functions) malloc/new/new[], --alloc-fns, etc.
+->98.04% (1,600B) 0x........: main (basic.c:14)
   

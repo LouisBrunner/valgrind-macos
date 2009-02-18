@@ -32,7 +32,7 @@ int main(void)
 
    // This one exceeds the default --depth.
    for (i = 0; i < 10; i++)
-      a1(200);    // divisible by 8 -- no slop
+      a1(400);    // divisible by 16 -- no slop
 
    return 0;
 }

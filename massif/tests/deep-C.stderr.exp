@@ -24,16 +24,16 @@ Massif:   21: a10
 Massif:   22: a11
 Massif:   23: a12
 Massif: startup S.  0 (t:0, hp:0, ex:0, st:0)
-Massif:   alloc S.  1 (t:208, hp:200, ex:8, st:0)
-Massif:   alloc S.  2 (t:416, hp:400, ex:16, st:0)
-Massif:   alloc S.  3 (t:624, hp:600, ex:24, st:0)
-Massif:   alloc S.  4 (t:832, hp:800, ex:32, st:0)
-Massif:   alloc S.  5 (t:1040, hp:1000, ex:40, st:0)
-Massif:   alloc S.  6 (t:1248, hp:1200, ex:48, st:0)
-Massif:   alloc S.  7 (t:1456, hp:1400, ex:56, st:0)
-Massif:   alloc S.  8 (t:1664, hp:1600, ex:64, st:0)
-Massif:   alloc Sd  9 (t:1872, hp:1800, ex:72, st:0)
-Massif:   alloc S. 10 (t:2080, hp:2000, ex:80, st:0)
+Massif:   alloc S.  1 (t:408, hp:400, ex:8, st:0)
+Massif:   alloc S.  2 (t:816, hp:800, ex:16, st:0)
+Massif:   alloc S.  3 (t:1224, hp:1200, ex:24, st:0)
+Massif:   alloc S.  4 (t:1632, hp:1600, ex:32, st:0)
+Massif:   alloc S.  5 (t:2040, hp:2000, ex:40, st:0)
+Massif:   alloc S.  6 (t:2448, hp:2400, ex:48, st:0)
+Massif:   alloc S.  7 (t:2856, hp:2800, ex:56, st:0)
+Massif:   alloc S.  8 (t:3264, hp:3200, ex:64, st:0)
+Massif:   alloc Sd  9 (t:3672, hp:3600, ex:72, st:0)
+Massif:   alloc S. 10 (t:4080, hp:4000, ex:80, st:0)
 Massif: heap allocs:          10
 Massif: heap reallocs:        0
 Massif: heap frees:           0

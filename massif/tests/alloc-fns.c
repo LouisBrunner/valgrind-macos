@@ -22,14 +22,14 @@ void d1(int n) { d2(n); }
 
 int main(void)
 {
-   a1(200); // We use a number that's a multiple of 8, so there's no slop
-   a1(200); // bytes.
-   a1(200);
-   b1(200);
-   c1(200);
-   d1(200);
-   d2(200);
-   d3(200);
-   d4(200);
+   a1(400); // We use a number that's a multiple of 16, so there's no slop
+   a1(400); // bytes.
+   a1(400);
+   b1(400);
+   c1(400);
+   d1(400);
+   d2(400);
+   d3(400);
+   d4(400);
    return 0;
 }

@@ -5,8 +5,8 @@ ms_print arguments: --threshold=0 massif.out
 --------------------------------------------------------------------------------
 
 
-     B
-  600^                                    #                                   
+    KB
+1.172^                                    #                                   
      |                                    #                                   
      |                                    #                                   
      |                                    #                                   
@@ -27,7 +27,7 @@ ms_print arguments: --threshold=0 massif.out
      |                        @           #                                   
      |                        @           #                                   
    0 +----------------------------------------------------------------------->KB
-     0                                                                   1.172
+     0                                                                   2.344
 
 Number of snapshots: 8
  Detailed snapshots: [3, 6 (peak)]
@@ -36,22 +36,22 @@ Number of snapshots: 8
   n        time(B)         total(B)   useful-heap(B) extra-heap(B)    stacks(B)
 --------------------------------------------------------------------------------
   0              0                0                0             0            0
-  1            400              400              400             0            0
-  2            400              400              400             0            0
-  3            400              400              400             0            0
-100.00% (400B) (heap allocation functions) malloc/new/new[], --alloc-fns, etc.
-->100.00% (400B) 0x........: main (realloc.c:8)
+  1            800              800              800             0            0
+  2            800              800              800             0            0
+  3            800              800              800             0            0
+100.00% (800B) (heap allocation functions) malloc/new/new[], --alloc-fns, etc.
+->100.00% (800B) 0x........: main (realloc.c:8)
 | 
 ->00.00% (0B) 0x........: main (realloc.c:5)
   
 --------------------------------------------------------------------------------
   n        time(B)         total(B)   useful-heap(B) extra-heap(B)    stacks(B)
 --------------------------------------------------------------------------------
-  4            400              400              200           200            0
-  5            600              600              600             0            0
-  6            600              600              600             0            0
-100.00% (600B) (heap allocation functions) malloc/new/new[], --alloc-fns, etc.
-->100.00% (600B) 0x........: main (realloc.c:12)
+  4            800              800              400           400            0
+  5          1,200            1,200            1,200             0            0
+  6          1,200            1,200            1,200             0            0
+100.00% (1,200B) (heap allocation functions) malloc/new/new[], --alloc-fns, etc.
+->100.00% (1,200B) 0x........: main (realloc.c:12)
 | 
 ->00.00% (0B) 0x........: main (realloc.c:5)
 | 
@@ -62,4 +62,4 @@ Number of snapshots: 8
 --------------------------------------------------------------------------------
   n        time(B)         total(B)   useful-heap(B) extra-heap(B)    stacks(B)
 --------------------------------------------------------------------------------
-  7          1,200                0                0             0            0
+  7          2,400                0                0             0            0

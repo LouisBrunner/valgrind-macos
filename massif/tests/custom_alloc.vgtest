@@ -1,4 +1,4 @@
 prog: custom_alloc
-vgopts: --stacks=no --time-unit=B --massif-out-file=massif.out
+vgopts: --stacks=no --time-unit=B --heap-admin=16 --massif-out-file=massif.out
 post: perl ../../massif/ms_print massif.out | ../../tests/filter_addresses
 cleanup: rm massif.out

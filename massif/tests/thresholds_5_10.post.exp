@@ -6,7 +6,7 @@ ms_print arguments: massif.out --threshold=10
 
 
     KB
-39.06^                                                                       @
+78.12^                                                                       @
      |                                                                       @
      |                                                                       @
      |                                                                       @
@@ -27,7 +27,7 @@ ms_print arguments: massif.out --threshold=10
      |                                           :     : :::   :             @
      |                                           :     : :::   :             @
    0 +----------------------------------------------------------------------->KB
-     0                                                                   39.06
+     0                                                                   78.12
 
 Number of snapshots: 10
  Detailed snapshots: [9]
@@ -36,26 +36,26 @@ Number of snapshots: 10
   n        time(B)         total(B)   useful-heap(B) extra-heap(B)    stacks(B)
 --------------------------------------------------------------------------------
   0              0                0                0             0            0
-  1         24,000           24,000           24,000             0            0
-  2         27,600           27,600           27,600             0            0
-  3         28,800           28,800           28,800             0            0
-  4         29,200           29,200           29,200             0            0
-  5         29,600           29,600           29,600             0            0
-  6         29,800           29,800           29,800             0            0
-  7         31,800           31,800           31,800             0            0
-  8         39,800           39,800           39,800             0            0
-  9         40,000           40,000           40,000             0            0
-100.00% (40,000B) (heap allocation functions) malloc/new/new[], --alloc-fns, etc.
-->66.50% (26,600B) 0x........: my_malloc1 (thresholds.c:23)
-| ->60.00% (24,000B) 0x........: a7550 (thresholds.c:38)
-| | ->60.00% (24,000B) 0x........: main (thresholds.c:52)
+  1         48,000           48,000           48,000             0            0
+  2         55,200           55,200           55,200             0            0
+  3         57,600           57,600           57,600             0            0
+  4         58,400           58,400           58,400             0            0
+  5         59,200           59,200           59,200             0            0
+  6         59,600           59,600           59,600             0            0
+  7         63,600           63,600           63,600             0            0
+  8         79,600           79,600           79,600             0            0
+  9         80,000           80,000           80,000             0            0
+100.00% (80,000B) (heap allocation functions) malloc/new/new[], --alloc-fns, etc.
+->66.50% (53,200B) 0x........: my_malloc1 (thresholds.c:23)
+| ->60.00% (48,000B) 0x........: a7550 (thresholds.c:38)
+| | ->60.00% (48,000B) 0x........: main (thresholds.c:52)
 | |   
-| ->06.50% (2,600B) in 2+ places, all below ms_print's threshold (10.00%)
+| ->06.50% (5,200B) in 2+ places, all below ms_print's threshold (10.00%)
 | 
-->20.00% (8,000B) 0x........: main (thresholds.c:55)
+->20.00% (16,000B) 0x........: main (thresholds.c:55)
 | 
-->13.00% (5,200B) 0x........: my_malloc2 (thresholds.c:28)
-| ->13.00% (5,200B) in 2+ places, all below ms_print's threshold (10.00%)
+->13.00% (10,400B) 0x........: my_malloc2 (thresholds.c:28)
+| ->13.00% (10,400B) in 2+ places, all below ms_print's threshold (10.00%)
 | 
-->00.50% (200B) in 1+ places, all below ms_print's threshold (10.00%)
+->00.50% (400B) in 1+ places, all below ms_print's threshold (10.00%)
 

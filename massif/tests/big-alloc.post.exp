@@ -46,7 +46,7 @@ Number of snapshots: 11
   8     83,886,144       83,886,144       83,886,080            64            0
   9     94,371,912       94,371,912       94,371,840            72            0
 100.00% (94,371,840B) (heap allocation functions) malloc/new/new[], --alloc-fns, etc.
-->100.00% (94,371,840B) 0x........: main (big-alloc.c:13)
+->100.00% (94,371,840B) 0x........: main (big-alloc.c:12)
   
 --------------------------------------------------------------------------------
   n        time(B)         total(B)   useful-heap(B) extra-heap(B)    stacks(B)

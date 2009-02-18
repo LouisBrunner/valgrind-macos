@@ -1886,18 +1886,6 @@ Char FP_buf[BUF_LEN];
    VG_(write)(fd, (void*)FP_buf, VG_(strlen)(FP_buf)); \
 })
 
-// Same as FP, but guarantees a '\n' at the end.  (At one point we were
-// truncating without adding the '\n', which caused bug #155929.)
-#define FPn(format, args...) ({ \
-   VG_(snprintf)(FP_buf, BUF_LEN, format, ##args); \
-   FP_buf[BUF_LEN-5] = '.';   /* "..." at the end make the truncation */ \
-   FP_buf[BUF_LEN-4] = '.';   /*  more obvious */ \
-   FP_buf[BUF_LEN-3] = '.'; \
-   FP_buf[BUF_LEN-2] = '\n';  /* Make sure the last char is a newline. */ \
-   FP_buf[BUF_LEN-1] = '\0';  /* Make sure the string is terminated. */ \
-   VG_(write)(fd, (void*)FP_buf, VG_(strlen)(FP_buf)); \
-})
-
 // Nb: uses a static buffer, each call trashes the last string returned.
 static Char* make_perc(ULong x, ULong y)
 {
@@ -1917,7 +1905,7 @@ static void pp_snapshot_SXPt(Int fd, SXPt* sxpt, Int depth, Char* depth_str,
                             Int depth_str_len,
                             SizeT snapshot_heap_szB, SizeT snapshot_total_szB)
 {
-   Int   i, n_insig_children_sxpts;
+   Int   i, j, n_insig_children_sxpts;
    Char* perc;
    SXPt* pred  = NULL;
    SXPt* child = NULL;
@@ -1948,11 +1936,44 @@ static void pp_snapshot_SXPt(Int fd, SXPt* sxpt, Int depth, Char* depth_str,
          ip_desc = VG_(describe_IP)(sxpt->Sig.ip-1, ip_desc, BUF_LEN);
       }
       perc = make_perc(sxpt->szB, snapshot_total_szB);
-      // Nb: we deliberately use 'FPn', not 'FP'.  So if the ip_desc is
-      // too long (eg. due to a long C++ function name), it'll get
-      // truncated, but the '\n' is still there so its a valid file.
-      FPn("%sn%d: %lu %s\n",     
-         depth_str, sxpt->Sig.n_children, sxpt->szB, ip_desc);
+      
+      // Do the non-ip_desc part first...
+      FP("%sn%d: %lu ", depth_str, sxpt->Sig.n_children, sxpt->szB);
+
+      // For ip_descs beginning with "0xABCD...:" addresses, we first
+      // measure the length of the "0xabcd: " address at the start of the
+      // ip_desc.
+      j = 0;
+      if ('0' == ip_desc[0] && 'x' == ip_desc[1]) {
+         j = 2;
+         while (True) {
+            if (ip_desc[j]) {
+               if (':' == ip_desc[j]) break;
+               j++;
+            } else {
+               tl_assert2(0, "ip_desc has unexpected form: %s\n", ip_desc);
+            }
+         }
+      }
+      // Nb: We treat this specially (ie. we don't use FP) so that if the
+      // ip_desc is too long (eg. due to a long C++ function name), it'll
+      // get truncated, but the '\n' is still there so its a valid file.
+      // (At one point we were truncating without adding the '\n', which
+      // caused bug #155929.)
+      //
+      // Also, we account for the length of the address in ip_desc when
+      // truncating.  (The longest address we could have is 18 chars:  "0x"
+      // plus 16 address digits.)  This ensures that the truncated function
+      // name always has the same length, which makes truncation
+      // deterministic and thus makes testing easier.
+      tl_assert(j <= 18);
+      VG_(snprintf)(FP_buf, BUF_LEN, "%s\n", ip_desc);
+      FP_buf[BUF_LEN-18+j-5] = '.';    // "..." at the end make the
+      FP_buf[BUF_LEN-18+j-4] = '.';    //   truncation more obvious.
+      FP_buf[BUF_LEN-18+j-3] = '.';
+      FP_buf[BUF_LEN-18+j-2] = '\n';   // The last char is '\n'.
+      FP_buf[BUF_LEN-18+j-1] = '\0';   // The string is terminated.
+      VG_(write)(fd, (void*)FP_buf, VG_(strlen)(FP_buf));
 
       // Indent.
       tl_assert(depth+1 < depth_str_len-1);    // -1 for end NUL char

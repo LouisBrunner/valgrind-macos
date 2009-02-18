@@ -35,24 +35,24 @@ void my_malloc3(int n)
 
 void a7550(void)
 {
-   my_malloc1(24000);
-   my_malloc2( 3600);
+   my_malloc1(48000);
+   my_malloc2( 7200);
 }
 
 void a450(void)
 {
-   my_malloc2(1200);
+   my_malloc2(2400);
+   my_malloc1( 800);
+   my_malloc2( 800);
    my_malloc1( 400);
-   my_malloc2( 400);
-   my_malloc1( 200);
 }
 
 int main(void)
 {
    a7550(); 
    a450(); 
-   my_malloc1(2000);
-   malloc(8000);
-   my_malloc3(200);
+   my_malloc1(4000);       // All sizes are divisible by 16 -- no slop.
+   malloc(16000);
+   my_malloc3(400);
    return 0;
 }

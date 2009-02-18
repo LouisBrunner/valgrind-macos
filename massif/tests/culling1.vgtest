@@ -1,4 +1,4 @@
 prog: culling1
-vgopts: -v -v --stacks=no --time-unit=B --massif-out-file=massif.out
+vgopts: -v -v --stacks=no --time-unit=B --heap-admin=16 --massif-out-file=massif.out
 stderr_filter: filter_verbose
 cleanup: rm massif.out

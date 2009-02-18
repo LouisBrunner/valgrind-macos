@@ -58,7 +58,7 @@ abcdefghijABCDEFGHIJabcdefghijABCDEFGHIJabcdefghij
 void A2500(int n)
 {
    if (n > 0) {
-      malloc(1000);
+      malloc(2000);     // Divisible by 16 -- no slop.
       A2500(n-1);
    }
 }

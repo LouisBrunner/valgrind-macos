@@ -14,6 +14,7 @@
 
 #include <assert.h>
 #include <math.h>
+#include <limits.h>  // PTHREAD_STACK_MIN
 #include <pthread.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -236,8 +237,7 @@ static void gj(elem_t* const a, const int rows, const int cols)
   pthread_barrier_init(&b, 0, s_nthread);
 
   pthread_attr_init(&attr);
-  /* To do: replace the stack size argument by PTHREAD_STACK_MIN + 4096. */
-  err = pthread_attr_setstacksize(&attr, 32768);
+  err = pthread_attr_setstacksize(&attr, PTHREAD_STACK_MIN + 4096);
   assert(err == 0);
 
   for (i = 0; i < s_nthread; i++)

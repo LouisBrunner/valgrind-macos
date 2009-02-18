@@ -343,6 +343,7 @@ static Int get_otrack_shadow_offset_wrk ( Int offset, Int szB )
    if (o == GOF(CIA_AT_SC) && sz == 4) return -1;
    if (o == GOF(RESVN)     && sz == 4) return -1;
    if (o == GOF(FPROUND)   && sz == 4) return -1;
+   if (o == GOF(VRSAVE)    && sz == 4) return -1;
    if (o == GOF(EMWARN)    && sz == 4) return -1;
    if (o == GOF(TISTART)   && sz == 4) return -1;
    if (o == GOF(TILEN)     && sz == 4) return -1;

@@ -1,3 +1,6 @@
+
+include $(top_srcdir)/Makefile.tool-tests.am
+
 noinst_SCRIPTS = filter_stderr
 
 noinst_HEADERS = 
@@ -23,10 +26,9 @@ check_PROGRAMS = bt_everything bug132146 defcfaexpr fxsave-amd64 \
 		int3-amd64 \
 		more_x87_fp sse_memory xor-undef-amd64
 
-AM_CPPFLAGS = -I$(top_srcdir)/include
-AM_CFLAGS   = $(WERROR) -Winline -Wall -Wshadow -g -I$(top_srcdir)/include
-		@FLAG_M64@
-AM_CXXFLAGS = $(AM_CFLAGS)
+AM_CFLAGS   += @FLAG_M64@
+AM_CXXFLAGS += @FLAG_M64@
+AM_CCASFLAGS = @FLAG_M64@
 
 more_x87_fp_CFLAGS	= $(AM_CFLAGS) -O -ffast-math -mfpmath=387 \
 				-mfancy-math-387

@@ -1,2 +1,2 @@
 prereq: ./supported_libpthread
-prog: hg01_all_ok
+prog: ../../helgrind/tests/hg01_all_ok

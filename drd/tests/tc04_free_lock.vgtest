@@ -1,3 +1,3 @@
 prereq: ./supported_libpthread
 vgopts: --check-stack-var=yes
-prog: tc04_free_lock
+prog: ../../helgrind/tests/tc04_free_lock

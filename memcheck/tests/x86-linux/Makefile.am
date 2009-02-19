@@ -1,3 +1,6 @@
+
+include $(top_srcdir)/Makefile.tool-tests.am
+
 noinst_SCRIPTS = filter_stderr
 
 noinst_HEADERS = scalar.h
@@ -14,8 +17,7 @@ EXTRA_DIST = $(noinst_SCRIPTS) \
 check_PROGRAMS = \
 	scalar scalar_exit_group scalar_fork scalar_supp scalar_vfork
 
-AM_CPPFLAGS  = -I$(top_srcdir)/include
-AM_CFLAGS    = $(WERROR) @FLAG_M32@ -Winline -Wall -Wshadow -g \
-		$(FLAG_MMMX) $(FLAG_MSSE)
-AM_CXXFLAGS  = $(AM_CFLAGS)
-AM_CCASFLAGS = @FLAG_M32@
+AM_CFLAGS    += @FLAG_M32@ $(FLAG_MMMX) $(FLAG_MSSE)
+AM_CXXFLAGS  += @FLAG_M32@ $(FLAG_MMMX) $(FLAG_MSSE)
+AM_CCASFLAGS  = @FLAG_M32@
+

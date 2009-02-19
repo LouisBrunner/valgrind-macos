@@ -1,2 +1,2 @@
 prereq: ./supported_libpthread
-prog: tc15_laog_lockdel
+prog: ../../helgrind/tests/tc15_laog_lockdel

@@ -1,6 +1,5 @@
 
-# For AM_FLAG_M3264_PRI
-include $(top_srcdir)/Makefile.flags.am
+include $(top_srcdir)/Makefile.tool-tests.am
 
 #SUBDIRS = .
 #if VGCONF_ARCHS_INCLUDE_X86
@@ -76,57 +75,18 @@ check_PROGRAMS = \
 	stackerr \
 	strcpy strlen sub supp syscall tricky unaligned xor zero
 
-AM_CPPFLAGS = -I$(top_srcdir) -I$(top_srcdir)/include \
-		-I$(top_srcdir)/coregrind -I$(top_builddir)/include \
-		-I@VEX_DIR@/pub
-AM_CFLAGS   = $(WERROR) -Winline -Wall -Wshadow -g $(AM_FLAG_M3264_PRI)
-AM_CXXFLAGS = $(AM_CFLAGS)
-
 # To make it a bit more realistic, build hackedbz2.c with at 
 # least some optimisation.
-hackedbz2_CFLAGS	= $(AM_FLAG_M3264_PRI) $(AM_CFLAGS) -O -g
+hackedbz2_CFLAGS	= $(AM_CFLAGS) -O
 
 # C ones
-add_SOURCES		= add.c
-and_SOURCES		= and.c
-arith_SOURCES		= arith.c
-bad_percentify_SOURCES	= bad_percentify.c
-base_SOURCES		= base.c
-cmp_SOURCES		= cmp.c
-fp_SOURCES		= fp.c
-globalerr_SOURCE	= globalerr.c
-hackedbz2_SOURCES	= hackedbz2.c
-hp_bounds_SOURCES	= hp_bounds.c
-hp_dangle_SOURCES	= hp_dangle.c
-idiv_SOURCES		= idiv.c
-imul_SOURCES		= imul.c
-justify_SOURCES		= justify.c
-mm_SOURCES		= mm.c
-neg_SOURCES		= neg.c
-not_SOURCES		= not.c
-or_SOURCES		= or.c
-partial_SOURCES		= partial.c
-pth_create_SOURCES	= pth_create.c
 pth_create_LDADD	= -lpthread
-pth_specific_SOURCES	= pth_specific.c
 pth_specific_LDADD	= -lpthread
-realloc_SOURCES		= realloc.c
-stackerr_SOURCES	= stackerr.c
-strcpy_SOURCES		= strcpy.c
-strlen_SOURCES		= strlen.c
-sub_SOURCES		= sub.c
-supp_SOURCES		= supp.c
-syscall_SOURCES		= syscall.c
-tricky_SOURCES		= tricky.c
-unaligned_SOURCES	= unaligned.c
-xor_SOURCES		= xor.c
-zero_SOURCES		= zero.c
 
 # C++ ones
 ccc_SOURCES		= ccc.cpp
 
 # Build shared object for preen_invars
-preen_invars_SOURCES           = preen_invars.c
 preen_invars_DEPENDENCIES      = preen_invars_so.so
 if VGCONF_PLATFORMS_INCLUDE_PPC64_AIX5 
  preen_invars_LDADD            = -ldl
@@ -142,10 +102,7 @@ else
 endif
 endif
 
-preen_invars_so_so_SOURCES      = preen_invars_so.c
-preen_invars_so_so_LDADD        = 
-preen_invars_so_so_DEPENDENCIES = 
-preen_invars_so_so_CFLAGS       = -fpic $(AM_FLAG_M3264_PRI) -g
+preen_invars_so_so_CFLAGS       = $(AM_CFLAGS) -fpic
 if VGCONF_PLATFORMS_INCLUDE_PPC64_AIX5
  preen_invars_so_so_LDFLAGS     = -fpic $(AM_FLAG_M3264_PRI) -shared
 else

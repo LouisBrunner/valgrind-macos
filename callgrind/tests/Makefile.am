@@ -1,5 +1,5 @@
-# For AM_FLAG_M3264_PRI
-include $(top_srcdir)/Makefile.flags.am
+
+include $(top_srcdir)/Makefile.tool-tests.am
 
 SUBDIRS = .
 DIST_SUBDIRS = .
@@ -18,8 +18,5 @@ EXTRA_DIST = $(noinst_SCRIPTS) \
              threads.vgtest threads.stderr.exp
 
 check_PROGRAMS = clreq simwork threads
-
-AM_CPPFLAGS = -I$(top_srcdir)/include
-AM_CFLAGS   = $(WERROR) -Winline -Wall -Wshadow -g $(AM_FLAG_M3264_PRI)
 
 threads_LDADD = -lpthread

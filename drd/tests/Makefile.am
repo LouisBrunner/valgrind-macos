@@ -1,5 +1,5 @@
-# For AM_FLAG_M3264_PRI
-include $(top_srcdir)/Makefile.flags.am
+
+include $(top_srcdir)/Makefile.tool-tests.am
 
 SUBDIRS = .
 
@@ -193,24 +193,11 @@ EXTRA_DIST =                                        \
 	trylock.stderr.exp                          \
 	trylock.vgtest
 
-AM_CFLAGS   = $(WERROR) -Wall @FLAG_W_EXTRA@ -Wno-inline -Wno-unused-parameter\
-              -g $(AM_FLAG_M3264_PRI) -DVGA_$(VGCONF_ARCH_PRI)=1 \
-	      -DVGO_$(VGCONF_OS)=1 -DVGP_$(VGCONF_ARCH_PRI)_$(VGCONF_OS)=1
-AM_CPPFLAGS = -I$(top_srcdir) -I$(top_srcdir)/include \
-              -I$(top_builddir)/include -I$(top_srcdir)/VEX/pub
-AM_CXXFLAGS = $(AM_CFLAGS)
-
 check_PROGRAMS =      \
   atomic_var          \
   circular_buffer     \
   drd_bitmap_test     \
   fp_race             \
-  hg01_all_ok         \
-  hg02_deadlock       \
-  hg03_inherit        \
-  hg04_race           \
-  hg05_race2          \
-  hg06_readshared     \
   hold_lock           \
   linuxthreads_det    \
   memory_allocation   \
@@ -224,32 +211,8 @@ check_PROGRAMS =      \
   pth_detached_sem    \
   pth_inconsistent_cond_wait \
   recursive_mutex     \
-  rwlock_race         \
-  rwlock_test         \
   sem_as_mutex        \
   sigalrm             \
-  tc01_simple_race    \
-  tc02_simple_tls     \
-  tc03_re_excl        \
-  tc04_free_lock      \
-  tc05_simple_race    \
-  tc06_two_races      \
-  tc07_hbl1           \
-  tc08_hbl2           \
-  tc09_bad_unlock     \
-  tc10_rec_lock       \
-  tc11_XCHG           \
-  tc12_rwl_trivial    \
-  tc13_laog1          \
-  tc15_laog_lockdel   \
-  tc16_byterace       \
-  tc17_sembar         \
-  tc18_semabuse       \
-  tc19_shadowmem      \
-  tc21_pthonce        \
-  tc22_exit_w_lock    \
-  tc23_bogus_condwait \
-  tc24_nonzero_sem    \
   trylock
 
 if HAVE_BOOST_1_35
@@ -261,11 +224,7 @@ check_PROGRAMS += omp_matinv omp_prime omp_printf
 endif
 
 if HAVE_PTHREAD_BARRIER
-check_PROGRAMS += bar_bad bar_trivial matinv pth_barrier pth_barrier_reinit
-endif
-
-if HAVE_PTHREAD_MUTEX_TIMEDLOCK
-check_PROGRAMS += tc20_verifywrap
+check_PROGRAMS += matinv pth_barrier_reinit
 endif
 
 if HAVE_PTHREAD_SPINLOCK
@@ -277,155 +236,17 @@ check_PROGRAMS += qt4_mutex qt4_rwlock qt4_semaphore
 endif
 
 
-atomic_var_SOURCES          = atomic_var.c
-atomic_var_LDADD            = -lpthread
+AM_CFLAGS += @FLAG_W_EXTRA@ -Wno-inline -Wno-unused-parameter
+LDADD = -lpthread
 
-circular_buffer_SOURCES     = circular_buffer.c
-circular_buffer_LDADD       = -lpthread
 
-drd_bitmap_test_SOURCES     = drd_bitmap_test.c
 drd_bitmap_test_CFLAGS      = $(AM_CFLAGS) -O2 \
                               -DENABLE_DRD_CONSISTENCY_CHECKS\
                               @FLAG_UNLIMITED_INLINE_UNIT_GROWTH@
-
-fp_race_SOURCES             = fp_race.c
-fp_race_LDADD               = -lpthread
-
-hg01_all_ok_SOURCES         = ../../helgrind/tests/hg01_all_ok.c
-hg01_all_ok_LDADD           = -lpthread
-
-hg02_deadlock_SOURCES       = ../../helgrind/tests/hg02_deadlock.c
-hg02_deadlock_LDADD         = -lpthread
-
-hg03_inherit_SOURCES        = ../../helgrind/tests/hg03_inherit.c
-hg03_inherit_LDADD          = -lpthread
-
-hg04_race_SOURCES           = ../../helgrind/tests/hg04_race.c
-hg04_race_LDADD             = -lpthread
-
-hg05_race2_SOURCES          = ../../helgrind/tests/hg05_race2.c
-hg05_race2_LDADD            = -lpthread
-
-hg06_readshared_SOURCES     = ../../helgrind/tests/hg06_readshared.c
-hg06_readshared_LDADD       = -lpthread
-
-hold_lock_SOURCES           = hold_lock.c
-hold_lock_LDADD             = -lpthread
-
-linuxthreads_det_SOURCES    = linuxthreads_det.c
-linuxthreads_det_LDADD      = -lpthread
-
-memory_allocation_SOURCES   = memory_allocation.c
+drd_bitmap_test_LDADD       = # nothing, ie. not -lpthread
 
 monitor_example_SOURCES     = monitor_example.cpp
-monitor_example_LDADD       = -lpthread
-
 new_delete_SOURCES          = new_delete.cpp
-
-pth_broadcast_SOURCES       = pth_broadcast.c
-pth_broadcast_LDADD         = -lpthread
-
-pth_cancel_locked_SOURCES   = pth_cancel_locked.c
-pth_cancel_locked_LDADD     = -lpthread
-
-pth_cond_race_SOURCES       = pth_cond_race.c
-pth_cond_race_LDADD         = -lpthread
-
-pth_create_chain_SOURCES    = pth_create_chain.c
-pth_create_chain_LDADD      = -lpthread
-
-pth_detached_SOURCES        = pth_detached.c
-pth_detached_LDADD          = -lpthread
-
-pth_detached_sem_SOURCES    = pth_detached_sem.c
-pth_detached_sem_LDADD      = -lpthread
-
-pth_inconsistent_cond_wait_SOURCES = pth_inconsistent_cond_wait.c
-pth_inconsistent_cond_wait_LDADD   = -lpthread
-
-recursive_mutex_SOURCES     = recursive_mutex.c
-recursive_mutex_LDADD       = -lpthread
-
-rwlock_race_SOURCES         = rwlock_race.c
-rwlock_race_LDADD           = -lpthread
-
-rwlock_test_SOURCES         = rwlock_test.c
-rwlock_test_LDADD           = -lpthread
-
-sem_as_mutex_SOURCES        = sem_as_mutex.c
-sem_as_mutex_LDADD          = -lpthread
-
-sigalrm_SOURCES             = sigalrm.c
-sigalrm_LDADD               = -lpthread
-
-tc01_simple_race_SOURCES    = ../../helgrind/tests/tc01_simple_race.c
-tc01_simple_race_LDADD      = -lpthread
-
-tc02_simple_tls_SOURCES     = ../../helgrind/tests/tc02_simple_tls.c
-tc02_simple_tls_LDADD       = -lpthread
-
-tc03_re_excl_SOURCES        = ../../helgrind/tests/tc03_re_excl.c
-tc03_re_excl_LDADD          = -lpthread
-
-tc04_free_lock_SOURCES      = ../../helgrind/tests/tc04_free_lock.c
-tc04_free_lock_LDADD        = -lpthread
-
-tc05_simple_race_SOURCES    = ../../helgrind/tests/tc05_simple_race.c
-tc05_simple_race_LDADD      = -lpthread
-
-tc06_two_races_SOURCES      = ../../helgrind/tests/tc06_two_races.c
-tc06_two_races_LDADD        = -lpthread
-
-tc07_hbl1_SOURCES           = ../../helgrind/tests/tc07_hbl1.c
-tc07_hbl1_LDADD             = -lpthread
-
-tc08_hbl2_SOURCES           = ../../helgrind/tests/tc08_hbl2.c
-tc08_hbl2_LDADD             = -lpthread
-
-tc09_bad_unlock_SOURCES     = ../../helgrind/tests/tc09_bad_unlock.c
-tc09_bad_unlock_LDADD       = -lpthread
-
-tc10_rec_lock_SOURCES       = ../../helgrind/tests/tc10_rec_lock.c
-tc10_rec_lock_LDADD         = -lpthread
-
-tc11_XCHG_SOURCES           = ../../helgrind/tests/tc11_XCHG.c
-tc11_XCHG_LDADD             = -lpthread
-
-tc12_rwl_trivial_SOURCES    = ../../helgrind/tests/tc12_rwl_trivial.c
-tc12_rwl_trivial_LDADD      = -lpthread
-
-tc13_laog1_SOURCES          = ../../helgrind/tests/tc13_laog1.c
-tc13_laog1_LDADD            = -lpthread
-
-tc15_laog_lockdel_SOURCES   = ../../helgrind/tests/tc15_laog_lockdel.c
-tc15_laog_lockdel_LDADD     = -lpthread
-
-tc16_byterace_SOURCES       = ../../helgrind/tests/tc16_byterace.c
-tc16_byterace_LDADD         = -lpthread
-
-tc17_sembar_SOURCES         = ../../helgrind/tests/tc17_sembar.c
-tc17_sembar_LDADD           = -lpthread
-
-tc18_semabuse_SOURCES       = ../../helgrind/tests/tc18_semabuse.c
-tc18_semabuse_LDADD         = -lpthread
-
-tc19_shadowmem_SOURCES      = ../../helgrind/tests/tc19_shadowmem.c
-tc19_shadowmem_LDADD        = -lpthread
-
-tc21_pthonce_SOURCES        = ../../helgrind/tests/tc21_pthonce.c
-tc21_pthonce_LDADD          = -lpthread
-
-tc22_exit_w_lock_SOURCES    = ../../helgrind/tests/tc22_exit_w_lock.c
-tc22_exit_w_lock_LDADD      = -lpthread
-
-tc23_bogus_condwait_SOURCES = ../../helgrind/tests/tc23_bogus_condwait.c
-tc23_bogus_condwait_LDADD   = -lpthread
-
-tc24_nonzero_sem_SOURCES    = ../../helgrind/tests/tc24_nonzero_sem.c
-tc24_nonzero_sem_LDADD      = -lpthread
-
-trylock_SOURCES             = trylock.c
-trylock_LDADD               = -lpthread
 
 if HAVE_BOOST_1_35
 boost_thread_SOURCES        = boost_thread.cpp
@@ -434,59 +255,33 @@ boost_thread_LDADD          = $(BOOST_LIBS)
 endif
 
 if HAVE_OPENMP
-omp_matinv_SOURCES          = omp_matinv.c
 omp_matinv_CFLAGS           = $(AM_CFLAGS) -fopenmp
 omp_matinv_LDFLAGS          = -fopenmp
-omp_matinv_LDADD            = -lm
+omp_matinv_LDADD            = $(LDADD) -lm
 
-omp_prime_SOURCES           = omp_prime.c
 omp_prime_CFLAGS            = $(AM_CFLAGS) -fopenmp
 omp_prime_LDFLAGS           = -fopenmp
-omp_prime_LDADD             = -lm
+omp_prime_LDADD             = $(LDADD) -lm
 
-omp_printf_SOURCES          = omp_printf.c
 omp_printf_CFLAGS           = $(AM_CFLAGS) -fopenmp
 omp_printf_LDFLAGS          = -fopenmp
-omp_printf_LDADD            = -lm
+omp_printf_LDADD            = $(LDADD) -lm
 endif
 
 if HAVE_PTHREAD_BARRIER
-bar_bad_SOURCES             = ../../helgrind/tests/bar_bad.c
-bar_bad_LDADD               = -lpthread
-
-bar_trivial_SOURCES         = ../../helgrind/tests/bar_trivial.c
-bar_trivial_LDADD           = -lpthread
-
-matinv_SOURCES              = matinv.c
-matinv_LDADD                = -lpthread -lm
-
-pth_barrier_SOURCES         = pth_barrier.c
-pth_barrier_LDADD           = -lpthread
-
-pth_barrier_reinit_SOURCES  = pth_barrier_reinit.c
-pth_barrier_reinit_LDADD    = -lpthread
-endif
-
-if HAVE_PTHREAD_MUTEX_TIMEDLOCK
-tc20_verifywrap_SOURCES     = ../../helgrind/tests/tc20_verifywrap.c
-tc20_verifywrap_LDADD       = -lpthread
-endif
-
-if HAVE_PTHREAD_SPINLOCK
-pth_spinlock_SOURCES        = pth_spinlock.c
-pth_spinlock_LDADD          = -lpthread
+matinv_LDADD                = $(LDADD) -lm
 endif
 
 if HAVE_QTCORE
 qt4_mutex_SOURCES           = qt4_mutex.cpp
 qt4_mutex_CXXFLAGS          = $(AM_CXXFLAGS) $(QTCORE_CFLAGS)
-qt4_mutex_LDADD             = $(QTCORE_LIBS)
+qt4_mutex_LDADD             = $(LDADD) $(QTCORE_LIBS)
 
 qt4_rwlock_SOURCES          = qt4_rwlock.cpp
 qt4_rwlock_CXXFLAGS         = $(AM_CXXFLAGS) $(QTCORE_CFLAGS)
-qt4_rwlock_LDADD            = $(QTCORE_LIBS)
+qt4_rwlock_LDADD            = $(LDADD) $(QTCORE_LIBS)
 
 qt4_semaphore_SOURCES       = qt4_semaphore.cpp
 qt4_semaphore_CXXFLAGS      = $(AM_CXXFLAGS) $(QTCORE_CFLAGS)
-qt4_semaphore_LDADD         = $(QTCORE_LIBS)
+qt4_semaphore_LDADD         = $(LDADD) $(QTCORE_LIBS)
 endif

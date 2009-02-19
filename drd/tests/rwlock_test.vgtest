@@ -1,1 +1,1 @@
-prog: rwlock_vgtest
+prog: ../../helgrind/tests/rwlock_test

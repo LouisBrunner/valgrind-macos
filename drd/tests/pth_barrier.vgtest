@@ -1,4 +1,4 @@
-prereq: test -e pth_barrier && ./supported_libpthread
-prog: pth_barrier
+prereq: test -e ../../helgrind/tests/pth_barrier && ./supported_libpthread
+prog: ../../helgrind/tests/pth_barrier
 args: 2 1 1
 stderr_filter: filter_error_summary

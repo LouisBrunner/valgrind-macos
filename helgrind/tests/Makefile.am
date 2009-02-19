@@ -1,6 +1,5 @@
 
-# For AM_FLAG_M3264_PRI
-include $(top_srcdir)/Makefile.flags.am
+include $(top_srcdir)/Makefile.tool-tests.am
 
 noinst_SCRIPTS = filter_stderr
 
@@ -159,15 +158,5 @@ check_PROGRAMS += bar_bad bar_trivial pth_barrier
 endif
 
 
-AM_CPPFLAGS = -I$(top_srcdir) -I$(top_srcdir)/include \
-                -I$(top_srcdir)/coregrind -I$(top_builddir)/include \
-                -I@VEX_DIR@/pub
+LDADD = -lpthread
 
-# are these necessary?
-AM_CFLAGS	= $(WERROR) -Winline -Wall -Wshadow -g $(AM_FLAG_M3264_PRI)
-LDADD		= -lpthread
-
-# only needed because of referencing sources in drd/tests
-pth_barrier_SOURCES	= ../../drd/tests/pth_barrier.c
-rwlock_race_SOURCES	= ../../drd/tests/rwlock_race.c
-rwlock_test_SOURCES	= ../../drd/tests/rwlock_test.c

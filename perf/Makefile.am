@@ -18,13 +18,12 @@ EXTRA_DIST = $(noinst_SCRIPTS) \
 check_PROGRAMS = \
 	bigcode bz2 fbench ffbench heap sarp tinycc
 
-AM_CFLAGS   = $(WERROR) -Winline -Wall -Wshadow -g -O $(AM_FLAG_M3264_PRI)
 AM_CPPFLAGS = -I$(top_srcdir) -I$(top_srcdir)/include -I$(top_builddir)/include
+AM_CFLAGS   = $(WERROR) -Winline -Wall -Wshadow -g -O $(AM_FLAG_M3264_PRI)
 AM_CXXFLAGS = $(AM_CFLAGS)
 
 # Extra stuff
 fbench_CFLAGS   = $(AM_FLAG_M3264_PRI) -g -O2
-fbench_LDADD	= 
 ffbench_LDADD	= -lm
 
 tinycc_CFLAGS	= $(AM_CFLAGS) -Wno-shadow

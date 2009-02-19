@@ -1,2 +1,2 @@
 prereq: ./supported_libpthread
-prog: tc13_laog1
+prog: ../../helgrind/tests/tc13_laog1

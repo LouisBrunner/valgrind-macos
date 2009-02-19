@@ -1,3 +1,3 @@
 prereq: ./supported_libpthread
 vgopts: --var-info=yes
-prog: tc16_byterace
+prog: ../../helgrind/tests/tc16_byterace

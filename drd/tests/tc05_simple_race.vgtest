@@ -1,3 +1,3 @@
 prereq: ./supported_libpthread
-prog: tc05_simple_race
+prog: ../../helgrind/tests/tc05_simple_race
 stderr_filter: filter_error_summary

@@ -1,3 +1,3 @@
-prereq: test -e tc20_verifywrap && ./supported_libpthread
+prereq: test -e ../../helgrind/tests/tc20_verifywrap && ./supported_libpthread
 vgopts: --var-info=yes --check-stack-var=yes
-prog: tc20_verifywrap
+prog: ../../helgrind/tests/tc20_verifywrap

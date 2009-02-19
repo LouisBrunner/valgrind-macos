@@ -1,3 +1,6 @@
+
+include $(top_srcdir)/Makefile.tool-tests.am
+
 noinst_SCRIPTS = filter_cpuid filter_stderr gen_insn_test.pl
 
 CLEANFILES = $(addsuffix .c,$(INSN_TESTS))
@@ -73,11 +76,10 @@ if BUILD_SSSE3_TESTS
  check_PROGRAMS += ssse3_misaligned
 endif
 
-AM_CFLAGS    = $(WERROR) -Winline -Wall -Wshadow \
-		@FLAG_M32@ -g -I$(top_srcdir)/include \
-		$(FLAG_MMMX) $(FLAG_MSSE)
-AM_CXXFLAGS  = $(AM_CFLAGS)
+AM_CFLAGS   += @FLAG_M32@ $(FLAG_MMMX) $(FLAG_MSSE)
+AM_CXXFLAGS += @FLAG_M32@ $(FLAG_MMMX) $(FLAG_MSSE)
 AM_CCASFLAGS = @FLAG_M32@
+
 
 # generic C ones
 cpuid_SOURCES 		= cpuid_c.c cpuid_s.s

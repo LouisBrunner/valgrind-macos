@@ -1,2 +1,2 @@
 prereq: ./supported_libpthread
-prog: tc08_hbl2
+prog: ../../helgrind/tests/tc08_hbl2

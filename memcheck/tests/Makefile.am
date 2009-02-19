@@ -1,6 +1,5 @@
 
-# For AM_FLAG_M3264_PRI
-include $(top_srcdir)/Makefile.flags.am
+include $(top_srcdir)/Makefile.tool-tests.am
 
 SUBDIRS = .
 
@@ -190,7 +189,7 @@ check_PROGRAMS = \
 	describe-block \
 	doublefree error_counts errs1 exitprog execve execve2 erringfds \
 	file_locking \
-	fprw fwrite hello inits inline \
+	fprw fwrite inits inline \
 	leak-0 leak-cycle leak-pool leak-tree leak-regroot leakotron \
 	linux-syslog-syscall \
 	linux-syscalls-2007 \
@@ -226,23 +225,13 @@ check_PROGRAMS = \
 	writev zeropage
 
 
-AM_CPPFLAGS = -I$(top_srcdir) -I$(top_srcdir)/include \
-		-I$(top_srcdir)/coregrind -I$(top_builddir)/include \
-		-I@VEX_DIR@/pub
-AM_CFLAGS   = $(WERROR) -Winline -Wall -Wshadow -g $(AM_FLAG_M3264_PRI)
-AM_CXXFLAGS = $(AM_CFLAGS)
-
 # Extra stuff for C tests
-memcmptest_CFLAGS	= $(AM_FLAG_M3264_PRI) $(AM_CFLAGS) -fno-builtin-memcmp
-oset_test_CFLAGS	= $(AM_FLAG_M3264_PRI) \
-				-DVGA_$(VGCONF_ARCH_PRI)=1 \
-				-DVGO_$(VGCONF_OS)=1 \
-				-DVGP_$(VGCONF_ARCH_PRI)_$(VGCONF_OS)=1
-vcpu_bz2_CFLAGS		= $(AM_FLAG_M3264_PRI) $(AM_CFLAGS) -O2 -g
-vcpu_fbench_CFLAGS	= $(AM_FLAG_M3264_PRI) $(AM_CFLAGS) -O2 -g
-vcpu_fnfns_CFLAGS	= $(AM_FLAG_M3264_PRI) $(AM_CFLAGS) -O2 -g
+memcmptest_CFLAGS	= $(AM_CFLAGS) -fno-builtin-memcmp
+vcpu_bz2_CFLAGS		= $(AM_CFLAGS) -O2
+vcpu_fbench_CFLAGS	= $(AM_CFLAGS) -O2
+vcpu_fnfns_CFLAGS	= $(AM_CFLAGS) -O2
 vcpu_fnfns_LDADD	= -lm
-wrap6_CFLAGS		= $(AM_FLAG_M3264_PRI) $(AM_CFLAGS) -O2 -g
+wrap6_CFLAGS		= $(AM_CFLAGS) -O2
 
 # Don't allow GCC to inline memcpy(), because then we can't intercept it
 overlap_CFLAGS		= $(AM_CFLAGS) -fno-builtin-memcpy
@@ -252,17 +241,17 @@ supp1_SOURCES		= supp.c
 supp2_SOURCES		= supp.c
 # To make it a bit more realistic, have some optimisation enabled
 # for the varinfo tests.  We still expect sane results.
-varinfo1_CFLAGS		= $(AM_FLAG_M3264_PRI) $(AM_CFLAGS) -O -g
-varinfo2_CFLAGS		= $(AM_FLAG_M3264_PRI) $(AM_CFLAGS) -O -g -Wno-shadow
-varinfo3_CFLAGS		= $(AM_FLAG_M3264_PRI) $(AM_CFLAGS) -O -g
-varinfo4_CFLAGS		= $(AM_FLAG_M3264_PRI) $(AM_CFLAGS) -O -g
-varinfo5_CFLAGS		= $(AM_FLAG_M3264_PRI) $(AM_CFLAGS) -O -g
-varinfo6_CFLAGS		= $(AM_FLAG_M3264_PRI) $(AM_CFLAGS) -O -g
-# This requires optimisation in order to get just one resulting error
-origin4_many_CFLAGS	= $(AM_FLAG_M3264_PRI) $(AM_CFLAGS) -O -g
-# Apply -O so as to run in reasonable time
-origin5_bz2_CFLAGS	= $(AM_FLAG_M3264_PRI) $(AM_CFLAGS) -O -g
-origin6_fp_CFLAGS	= $(AM_FLAG_M3264_PRI) $(AM_CFLAGS) -O -g
+varinfo1_CFLAGS		= $(AM_CFLAGS) -O
+varinfo2_CFLAGS		= $(AM_CFLAGS) -O -Wno-shadow
+varinfo3_CFLAGS		= $(AM_CFLAGS) -O
+varinfo4_CFLAGS		= $(AM_CFLAGS) -O
+varinfo5_CFLAGS		= $(AM_CFLAGS) -O
+varinfo6_CFLAGS		= $(AM_CFLAGS) -O
+# This requires optimisation in order to get just one resulting error.
+origin4_many_CFLAGS	= $(AM_CFLAGS) -O
+# Apply -O so as to run in reasonable time.
+origin5_bz2_CFLAGS	= $(AM_CFLAGS) -O
+origin6_fp_CFLAGS	= $(AM_CFLAGS) -O
 
 # C++ tests
 mismatches_SOURCES	= mismatches.cpp
@@ -270,7 +259,7 @@ new_nothrow_SOURCES 	= new_nothrow.cpp
 new_override_SOURCES 	= new_override.cpp
 deep_templates_SOURCES	= deep_templates.cpp
 long_namespace_xml_SOURCES = long_namespace_xml.cpp
-deep_templates_CXXFLAGS	= $(AM_FLAG_M3264_PRI) $(AM_CFLAGS) -O -gstabs
+deep_templates_CXXFLAGS	= $(AM_CFLAGS) -O -gstabs
 
 if VGCONF_PLATFORMS_INCLUDE_PPC32_AIX5
 if VGCONF_PLATFORMS_INCLUDE_PPC64_AIX5
@@ -279,13 +268,13 @@ else
  # function descriptors.  Unfortunately -Wl,-G -Wl,-bnogc
  # produces a link error on 64-bit AIX, hence only 32-bit
  # gets these flags.
- wrap1_LDFLAGS		= $(AM_FLAG_M3264_PRI) -Wl,-G -Wl,-bnogc
- wrap2_LDFLAGS		= $(AM_FLAG_M3264_PRI) -Wl,-G -Wl,-bnogc
- wrap3_LDFLAGS		= $(AM_FLAG_M3264_PRI) -Wl,-G -Wl,-bnogc
- wrap4_LDFLAGS		= $(AM_FLAG_M3264_PRI) -Wl,-G -Wl,-bnogc
- wrap5_LDFLAGS		= $(AM_FLAG_M3264_PRI) -Wl,-G -Wl,-bnogc
- wrap6_LDFLAGS		= $(AM_FLAG_M3264_PRI) -Wl,-G -Wl,-bnogc
- wrap8_LDFLAGS		= $(AM_FLAG_M3264_PRI) -Wl,-G -Wl,-bnogc
+ wrap1_LDFLAGS = $(AM_FLAG_M3264_PRI) -Wl,-G -Wl,-bnogc
+ wrap2_LDFLAGS = $(AM_FLAG_M3264_PRI) -Wl,-G -Wl,-bnogc
+ wrap3_LDFLAGS = $(AM_FLAG_M3264_PRI) -Wl,-G -Wl,-bnogc
+ wrap4_LDFLAGS = $(AM_FLAG_M3264_PRI) -Wl,-G -Wl,-bnogc
+ wrap5_LDFLAGS = $(AM_FLAG_M3264_PRI) -Wl,-G -Wl,-bnogc
+ wrap6_LDFLAGS = $(AM_FLAG_M3264_PRI) -Wl,-G -Wl,-bnogc
+ wrap8_LDFLAGS = $(AM_FLAG_M3264_PRI) -Wl,-G -Wl,-bnogc
 endif
 endif
 
@@ -309,7 +298,7 @@ endif
 wrap7so_so_SOURCES      = wrap7so.c
 wrap7so_so_LDADD        = 
 wrap7so_so_DEPENDENCIES = 
-wrap7so_so_CFLAGS       = -fpic $(AM_FLAG_M3264_PRI)
+wrap7so_so_CFLAGS       = $(AM_CFLAGS) -fpic
 if VGCONF_PLATFORMS_INCLUDE_PPC64_AIX5
  wrap7so_so_LDFLAGS     = -fpic $(AM_FLAG_M3264_PRI) -shared
 else
@@ -342,7 +331,7 @@ endif
 varinfo5so_so_SOURCES   = varinfo5so.c
 varinfo5so_so_LDADD     = 
 varinfo5so_so_DEPENDENCIES = 
-varinfo5so_so_CFLAGS    = -fpic $(AM_FLAG_M3264_PRI) -g -O
+varinfo5so_so_CFLAGS    = $(AM_CFLAGS) -fpic -O
 if VGCONF_PLATFORMS_INCLUDE_PPC64_AIX5
  varinfo5so_so_LDFLAGS  = -fpic $(AM_FLAG_M3264_PRI) -shared
 else
@@ -354,9 +343,4 @@ else
 				-Wl,-soname -Wl,varinfo5so.so
 endif
 endif
-
-# Valgrind unit self-tests
-#hello_LDFLAGS		= -Wl,-defsym,valt_load_address=0x50000000 \
-#			  -Wl,-T,$(top_builddir)/valt_load_address.lds
-#hello_DEPENDENCIES 	= $(top_builddir)/valt_load_address.lds
 

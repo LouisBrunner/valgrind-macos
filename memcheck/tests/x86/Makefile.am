@@ -1,3 +1,6 @@
+
+include $(top_srcdir)/Makefile.tool-tests.am
+
 noinst_SCRIPTS = filter_stderr filter_pushfpopf filter_tronical
 
 INSN_TESTS = insn_basic insn_fpu insn_cmov insn_mmx insn_mmxext insn_sse insn_sse2
@@ -34,11 +37,9 @@ check_PROGRAMS = \
 	pushpopmem sse_memory tronical \
 	more_x86_fp fprem xor-undef-x86
 
-AM_CPPFLAGS  = -I$(top_srcdir)/include
-AM_CFLAGS    = $(WERROR) @FLAG_M32@ -Winline -Wall -Wshadow -g \
-		$(FLAG_MMMX) $(FLAG_MSSE)
-AM_CXXFLAGS  = $(AM_CFLAGS)
-AM_CCASFLAGS = @FLAG_M32@
+AM_CFLAGS    += @FLAG_M32@ $(FLAG_MMMX) $(FLAG_MSSE)
+AM_CXXFLAGS  += @FLAG_M32@ $(FLAG_MMMX) $(FLAG_MSSE)
+AM_CCASFLAGS  = @FLAG_M32@
 
 # must be built with these flags -- bug only occurred with them
 fpeflags_CFLAGS		= $(AM_CFLAGS) -march=i686

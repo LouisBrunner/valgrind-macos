@@ -1,6 +1,5 @@
 
-# For AM_FLAG_M3264_PRI
-include $(top_srcdir)/Makefile.flags.am
+include $(top_srcdir)/Makefile.tool-tests.am
 
 SUBDIRS = .
 
@@ -150,18 +149,14 @@ check_PROGRAMS = \
 	tls tls.so tls2.so vgprintf \
 	coolo_sigaction gxx304
 
-AM_CFLAGS   = $(WERROR) -Winline -Wall -Wshadow -g $(AM_FLAG_M3264_PRI)
-AM_CPPFLAGS = -I$(top_srcdir) -I$(top_srcdir)/include -I$(top_builddir)/include
-AM_CXXFLAGS = $(AM_CFLAGS)
-
 # Extra stuff for C tests
-ansi_CFLAGS		= $(AM_FLAG_M3264_PRI) -ansi
+ansi_CFLAGS		= $(AM_CFLAGS) -ansi
 floored_LDADD 		= -lm
 manythreads_LDADD	= -lpthread
 mq_LDADD		= -lrt
 pth_atfork1_LDADD	= -lpthread
 pth_blockedsig_LDADD	= -lpthread
-pth_cancel1_CFLAGS	= $(AM_FLAG_M3264_PRI) -Wno-shadow
+pth_cancel1_CFLAGS	= $(AM_CFLAGS) -Wno-shadow
 pth_cancel1_LDADD	= -lpthread
 pth_cancel2_LDADD	= -lpthread
 pth_cvsimple_LDADD	= -lpthread
@@ -199,7 +194,7 @@ else
  tls_so_LDFLAGS		= -Wl,-rpath,$(top_builddir)/none/tests -shared -fPIC
  tls_so_LDADD		= tls2.so
 endif
-tls_so_CFLAGS		= $(AM_FLAG_M3264_PRI) -fPIC
+tls_so_CFLAGS		= $(AM_CFLAGS) -fPIC
 tls2_so_SOURCES		= tls2_so.c
 tls2_so_LDFLAGS		= -shared
 

@@ -24,8 +24,6 @@
  *  See also http://www.xmailserver.org/timerfd-test2.c
  */
 
-#if defined(__linux__)
-
 #define _GNU_SOURCE
 
 #include "../../../config.h"
@@ -297,14 +295,3 @@ int main(int ac, char **av)
 
   return 0;
 }
-
-#endif /* __linux__ */
-
-#if defined(_AIX)
-#include <stdio.h>
-int main(int ac, char **av)
-{
-   fprintf(stderr, "This test does not work on AIX5.\n");
-   return 0;
-}
-#endif /* _AIX */

@@ -1,2 +1,2 @@
 prereq: ./supported_libpthread
-prog: tc12_rwl_trivial
+prog: ../../helgrind/tests/tc12_rwl_trivial

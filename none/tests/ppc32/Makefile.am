@@ -1,4 +1,6 @@
 
+include $(top_srcdir)/Makefile.tool-tests.am
+
 noinst_SCRIPTS = filter_stderr
 
 EXTRA_DIST = $(noinst_SCRIPTS) \
@@ -27,9 +29,9 @@ check_PROGRAMS = \
 	ldstrev lsw jm-insns mftocrf mcrfs round test_fx test_gx \
 	testVMX twi tw xlc_dbl_u32
 
-AM_CFLAGS   = $(WERROR) -Winline -Wall -Wshadow -g -I$(top_srcdir)/include \
-		@FLAG_M32@
-AM_CXXFLAGS = $(AM_CFLAGS) @FLAG_M32@
+AM_CFLAGS   += @FLAG_M32@
+AM_CXXFLAGS += @FLAG_M32@
+AM_CCASFLAGS = @FLAG_M32@
 
 jm_insns_CFLAGS = -Winline -Wall -O -g -mregnames -maltivec @FLAG_M32@
 testVMX_CFLAGS  = -O -g -Wall -maltivec -mabi=altivec -DALTIVEC \

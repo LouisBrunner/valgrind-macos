@@ -47,25 +47,28 @@ extern Bool VG_(isdigit) ( Char c );
 // accepts an initial "0x" or "0X" prefix, but only if it's followed by a
 // hex digit (if not, the '0' will be read and then it will stop on the
 // "x"/"X".)  If 'endptr' isn't NULL, it gets filled in with the first
-// non-digit char.  None of them test that the number fits into 64 bits.
+// non-digit char.  Returns 0 if no number could be converted, and 'endptr'
+// is set to the start of the string.  None of them test that the number
+// fits into 64 bits.
 //
 // Nb: if you're wondering why we don't just have a single VG_(strtol) which
 // takes a base, it's because I wanted it to assert if it was given a bogus
 // base (the standard glibc one sets 'errno' in this case).  But
 // m_libcbase.c doesn't import any code, not even vg_assert. --njn
-extern Long  VG_(strtoll8)  ( Char* str, Char** endptr );
 extern Long  VG_(strtoll10) ( Char* str, Char** endptr );
 extern Long  VG_(strtoll16) ( Char* str, Char** endptr );
-extern Long  VG_(strtoll36) ( Char* str, Char** endptr );
 
-   // Convert a string to a double.  After leading whitespace is ignored,
-   // it accepts a non-empty sequence of decimal digits possibly containing
-   // a '.'.
+   // Convert a string to a double.  After leading whitespace is ignored, a
+   // '+' or '-' is allowed, and then it accepts a non-empty sequence of
+   // decimal digits possibly containing a '.'.  Hexadecimal floats are not
+   // accepted, nor are "fancy" floats (eg. "3.4e-5", "NAN").
 extern double VG_(strtod)  ( Char* str, Char** endptr );
 
+   // These are just like their VG_(strtoll*) counterparts, except that you
+   // cannot tell if an error occurred (because 0 is returned) or if there
+   // is any trailing non-numeric characterws (eg. in "123xyz").
 extern Long  VG_(atoll)   ( Char* str ); // base 10
 extern Long  VG_(atoll16) ( Char* str ); // base 16; leading 0x accepted
-extern Long  VG_(atoll36) ( Char* str ); // base 36
 
 /* ---------------------------------------------------------------------
    String functions and macros

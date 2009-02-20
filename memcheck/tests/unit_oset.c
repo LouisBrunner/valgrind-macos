@@ -213,7 +213,6 @@ void example1b(void)
    Int  i, n;
    Word v = 0, prev;
    Word vs[NN];
-   Word *pv;
 
    // Create a static OSet of Ints.  This one uses fast (built-in)
    // comparisons.

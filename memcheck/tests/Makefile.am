@@ -92,6 +92,7 @@ EXTRA_DIST = $(noinst_SCRIPTS) \
 	memcmptest.stderr.exp memcmptest.stderr.exp2 \
 	memcmptest.stdout.exp memcmptest.vgtest \
 	mempool.stderr.exp mempool.stderr.exp64 mempool.vgtest \
+	metadata.stderr.exp metadata.stdout.exp metadata.vgtest \
 	mismatches.stderr.exp mismatches.stderr.exp64 mismatches.vgtest \
 	mmaptest.stderr.exp mmaptest.vgtest \
 	nanoleak.stderr.exp nanoleak.vgtest \
@@ -117,7 +118,6 @@ EXTRA_DIST = $(noinst_SCRIPTS) \
 	origin6-fp.vgtest origin6-fp.stdout.exp \
 	origin6-fp.stderr.exp-glibc25-amd64 \
 	origin6-fp.stderr.exp-glibc27-ppc64 \
-	oset_test.stderr.exp oset_test.stdout.exp oset_test.vgtest \
 	overlap.stderr.exp overlap.stdout.exp overlap.vgtest \
 	partiallydefinedeq.vgtest partiallydefinedeq.stderr.exp \
 	partiallydefinedeq.stderr.exp2 \
@@ -151,7 +151,8 @@ EXTRA_DIST = $(noinst_SCRIPTS) \
 	suppfree.stderr.exp suppfree.vgtest \
 	toobig-allocs.stderr.exp toobig-allocs.vgtest \
 	trivialleak.stderr.exp trivialleak.vgtest \
-	metadata.stderr.exp metadata.stdout.exp metadata.vgtest \
+	unit_libcbase.stderr.exp unit_libcbase.stdout.exp unit_libcbase.vgtest \
+	unit_oset.stderr.exp unit_oset.stdout.exp unit_oset.vgtest \
 	varinfo1.vgtest varinfo1.stdout.exp varinfo1.stderr.exp \
 	varinfo2.vgtest varinfo2.stdout.exp varinfo2.stderr.exp \
 	varinfo3.vgtest varinfo3.stdout.exp varinfo3.stderr.exp \
@@ -200,9 +201,10 @@ check_PROGRAMS = \
 	malloc_usable malloc1 malloc2 malloc3 manuel1 manuel2 manuel3 \
 	match-overrun \
 	memalign_test memalign2 memcmptest mempool mmaptest \
+	mismatches new_override metadata \
 	nanoleak nanoleak2 new_nothrow \
 	noisy_child \
-	null_socket oset_test \
+	null_socket \
 	origin1-yes origin2-not-quite origin3-no \
 	origin4-many origin5-bz2 origin6-fp \
 	overlap \
@@ -216,7 +218,7 @@ check_PROGRAMS = \
 	stack_changes strchr str_tester \
 	supp_unknown supp1 supp2 suppfree \
 	trivialleak \
-	mismatches new_override metadata \
+	unit_libcbase unit_oset \
 	varinfo1 varinfo2 varinfo3 varinfo4 \
 	varinfo5 varinfo5so.so varinfo6 \
 	vcpu_fbench vcpu_fnfns \

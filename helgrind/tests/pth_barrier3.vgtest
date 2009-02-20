@@ -1,4 +1,4 @@
 prereq: test -e bar_trivial
-prog: pth_barrier
+prog: ../../drd/tests/pth_barrier
 args: 32 1 1
 vgopts: -q

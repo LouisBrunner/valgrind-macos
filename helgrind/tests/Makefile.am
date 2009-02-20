@@ -126,8 +126,6 @@ check_PROGRAMS = \
 	hg04_race \
 	hg05_race2 \
 	hg06_readshared \
-	rwlock_race \
-	rwlock_test \
 	tc01_simple_race \
 	tc02_simple_tls \
 	tc03_re_excl \
@@ -154,7 +152,7 @@ check_PROGRAMS = \
 	tc24_nonzero_sem
 
 if HAVE_PTHREAD_BARRIER
-check_PROGRAMS += bar_bad bar_trivial pth_barrier
+check_PROGRAMS += bar_bad bar_trivial
 endif
 
 

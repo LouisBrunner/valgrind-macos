@@ -1,1 +1,1 @@
-prog: rwlock_test
+prog: ../../drd/tests/rwlock_test

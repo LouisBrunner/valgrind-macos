@@ -203,6 +203,8 @@ check_PROGRAMS =      \
   memory_allocation   \
   monitor_example     \
   new_delete          \
+  rwlock_race         \
+  rwlock_test         \
   pth_broadcast       \
   pth_cancel_locked   \
   pth_cond_race       \
@@ -224,7 +226,7 @@ check_PROGRAMS += omp_matinv omp_prime omp_printf
 endif
 
 if HAVE_PTHREAD_BARRIER
-check_PROGRAMS += matinv pth_barrier_reinit
+check_PROGRAMS += matinv pth_barrier pth_barrier_reinit
 endif
 
 if HAVE_PTHREAD_SPINLOCK

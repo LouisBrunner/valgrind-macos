@@ -1,2 +1,2 @@
-prog: oset_test
+prog: unit_oset
 vgopts: -q

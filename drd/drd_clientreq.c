@@ -327,7 +327,7 @@ Bool DRD_(handle_client_request)(ThreadId vg_tid, UWord* arg, UWord* ret)
 
   case VG_USERREQ__POST_BARRIER_WAIT:
     if (DRD_(thread_leave_synchr)(drd_tid) == 0)
-      DRD_(barrier_post_wait)(drd_tid, arg[1], arg[2], arg[3]);
+      DRD_(barrier_post_wait)(drd_tid, arg[1], arg[2], arg[3], arg[4]);
     break;
 
   case VG_USERREQ__PRE_RWLOCK_INIT:

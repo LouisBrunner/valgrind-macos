@@ -178,7 +178,7 @@ enum {
   /* args: Addr barrier, BarrierT type. */
   /* To notify the drd tool of a pthread_barrier_wait call. */
   VG_USERREQ__POST_BARRIER_WAIT,
-  /* args: Addr barrier, BarrierT type, Word has_waited */
+  /* args: Addr barrier, BarrierT type, Word has_waited, Word serializing */
 
   /* To notify the drd tool of a pthread_rwlock_init call. */
   VG_USERREQ__PRE_RWLOCK_INIT,

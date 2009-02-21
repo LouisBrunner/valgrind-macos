@@ -194,8 +194,10 @@ static void* DRD_(thread_wrapper)(void* arg)
 }
 
 /**
- * Return 1 if the LinuxThread implementation has been detected, and 0
- * otherwise. For more information about the confstr() function, see also
+ * Return 1 if the LinuxThreads implementation of POSIX Threads has been
+ * detected, and 0 otherwise.
+ *
+ * @see For more information about the confstr() function, see also
  * http://www.opengroup.org/onlinepubs/009695399/functions/confstr.html
  */
 static int DRD_(detected_linuxthreads)(void)
@@ -283,7 +285,7 @@ PTH_FUNC(int, pthreadZucreateZa, // pthread_create*
   /*
    * Find out whether the thread will be started as a joinable thread
    * or as a detached thread. If no thread attributes have been specified,
-   * the new thread will be started as a joinable thread.
+   * this means that the new thread will be started as a joinable thread.
    */
   thread_args.detachstate = PTHREAD_CREATE_JOINABLE;
   if (attr)
@@ -706,7 +708,7 @@ PTH_FUNC(int, pthreadZubarrierZuwait, // pthread_barrier_wait
   VALGRIND_DO_CLIENT_REQUEST(res, -1, VG_USERREQ__POST_BARRIER_WAIT,
                              barrier, pthread_barrier,
                              ret == 0 || ret == PTHREAD_BARRIER_SERIAL_THREAD,
-                             0, 0);
+                             ret == PTHREAD_BARRIER_SERIAL_THREAD, 0);
   return ret;
 }
 

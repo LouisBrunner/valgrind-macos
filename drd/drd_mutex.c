@@ -38,16 +38,17 @@
 
 /* Local functions. */
 
-static void DRD_(mutex_cleanup)(struct mutex_info* p);
-static Bool DRD_(mutex_is_locked)(struct mutex_info* const p);
+static void mutex_cleanup(struct mutex_info* p);
+static Bool mutex_is_locked(struct mutex_info* const p);
+static void mutex_delete_thread(struct mutex_info* p, const DrdThreadId tid);
 
 
 /* Local variables. */
 
-static Bool DRD_(s_trace_mutex);
-static ULong DRD_(s_mutex_lock_count);
-static ULong DRD_(s_mutex_segment_creation_count);
-static UInt DRD_(s_mutex_lock_threshold_ms) = 1000 * 1000;
+static Bool s_trace_mutex;
+static ULong s_mutex_lock_count;
+static ULong s_mutex_segment_creation_count;
+static UInt s_mutex_lock_threshold_ms = 1000 * 1000;
 
 
 /* Function definitions. */
@@ -55,12 +56,12 @@ static UInt DRD_(s_mutex_lock_threshold_ms) = 1000 * 1000;
 void DRD_(mutex_set_trace)(const Bool trace_mutex)
 {
   tl_assert(!! trace_mutex == trace_mutex);
-  DRD_(s_trace_mutex) = trace_mutex;
+  s_trace_mutex = trace_mutex;
 }
 
 void DRD_(mutex_set_lock_threshold)(const UInt lock_threshold_ms)
 {
-  DRD_(s_mutex_lock_threshold_ms) = lock_threshold_ms;
+  s_mutex_lock_threshold_ms = lock_threshold_ms;
 }
 
 static
@@ -71,7 +72,9 @@ void DRD_(mutex_initialize)(struct mutex_info* const p,
   tl_assert(mutex_type != mutex_type_unknown);
   tl_assert(p->a1 == mutex);
 
-  p->cleanup             = (void(*)(DrdClientobj*))&(DRD_(mutex_cleanup));
+  p->cleanup             = (void(*)(DrdClientobj*))mutex_cleanup;
+  p->delete_thread
+    = (void(*)(DrdClientobj*, DrdThreadId))mutex_delete_thread;
   p->mutex_type          = mutex_type;
   p->recursion_count     = 0;
   p->owner               = DRD_INVALID_THREADID;
@@ -81,11 +84,11 @@ void DRD_(mutex_initialize)(struct mutex_info* const p,
 }
 
 /** Deallocate the memory that was allocated by mutex_initialize(). */
-static void DRD_(mutex_cleanup)(struct mutex_info* p)
+static void mutex_cleanup(struct mutex_info* p)
 {
   tl_assert(p);
 
-  if (DRD_(s_trace_mutex))
+  if (s_trace_mutex)
   {
     VG_(message)(Vg_UserMsg,
                  "[%d/%d] mutex_destroy   %s 0x%lx rc %d owner %d",
@@ -97,7 +100,7 @@ static void DRD_(mutex_cleanup)(struct mutex_info* p)
                  p ? p->owner : DRD_INVALID_THREADID);
   }
 
-  if (DRD_(mutex_is_locked)(p))
+  if (mutex_is_locked(p))
   {
     MutexErrInfo MEI = { p->a1, p->recursion_count, p->owner };
     VG_(maybe_record_error)(VG_(get_running_tid)(),
@@ -162,7 +165,7 @@ DRD_(mutex_init)(const Addr mutex, const MutexT mutex_type)
 
   tl_assert(mutex_type != mutex_type_unknown);
 
-  if (DRD_(s_trace_mutex))
+  if (s_trace_mutex)
   {
     VG_(message)(Vg_UserMsg,
                  "[%d/%d] mutex_init      %s 0x%lx",
@@ -225,7 +228,7 @@ void DRD_(mutex_pre_lock)(const Addr mutex, MutexT mutex_type,
   if (mutex_type == mutex_type_unknown)
     mutex_type = p->mutex_type;
 
-  if (DRD_(s_trace_mutex))
+  if (s_trace_mutex)
   {
     VG_(message)(Vg_UserMsg,
                  "[%d/%d] %s %s 0x%lx rc %d owner %d",
@@ -279,7 +282,7 @@ void DRD_(mutex_post_lock)(const Addr mutex, const Bool took_lock,
 
   p = DRD_(mutex_get)(mutex);
 
-  if (DRD_(s_trace_mutex))
+  if (s_trace_mutex)
   {
     VG_(message)(Vg_UserMsg,
                  "[%d/%d] %s %s 0x%lx rc %d owner %d%s",
@@ -306,12 +309,12 @@ void DRD_(mutex_post_lock)(const Addr mutex, const Bool took_lock,
       DRD_(thread_combine_vc2)(drd_tid, &p->last_locked_segment->vc);
     }
     DRD_(thread_new_segment)(drd_tid);
-    DRD_(s_mutex_segment_creation_count)++;
+    s_mutex_segment_creation_count++;
 
     p->owner           = drd_tid;
     p->acquiry_time_ms = VG_(read_millisecond_timer)();
     p->acquired_at     = VG_(record_ExeContext)(VG_(get_running_tid)(), 0);
-    DRD_(s_mutex_lock_count)++;
+    s_mutex_lock_count++;
   }
   else if (p->owner != drd_tid)
   {
@@ -346,7 +349,7 @@ void DRD_(mutex_unlock)(const Addr mutex, MutexT mutex_type)
   if (mutex_type == mutex_type_unknown)
     mutex_type = p->mutex_type;
 
-  if (DRD_(s_trace_mutex))
+  if (s_trace_mutex)
   {
     VG_(message)(Vg_UserMsg,
                  "[%d/%d] mutex_unlock    %s 0x%lx rc %d",
@@ -399,13 +402,13 @@ void DRD_(mutex_unlock)(const Addr mutex, MutexT mutex_type)
 
   if (p->recursion_count == 0)
   {
-    if (DRD_(s_mutex_lock_threshold_ms) > 0)
+    if (s_mutex_lock_threshold_ms > 0)
     {
       ULong held = VG_(read_millisecond_timer)() - p->acquiry_time_ms;
-      if (held > DRD_(s_mutex_lock_threshold_ms))
+      if (held > s_mutex_lock_threshold_ms)
       {
         HoldtimeErrInfo HEI
-          = { mutex, p->acquired_at, held, DRD_(s_mutex_lock_threshold_ms) };
+          = { mutex, p->acquired_at, held, s_mutex_lock_threshold_ms };
         VG_(maybe_record_error)(vg_tid,
                                 HoldtimeErr,
                                 VG_(get_IP)(vg_tid),
@@ -421,7 +424,7 @@ void DRD_(mutex_unlock)(const Addr mutex, MutexT mutex_type)
     DRD_(thread_get_latest_segment)(&p->last_locked_segment, drd_tid);
     DRD_(thread_new_segment)(drd_tid);
     p->acquired_at = 0;
-    DRD_(s_mutex_segment_creation_count)++;
+    s_mutex_segment_creation_count++;
   }
 }
 
@@ -466,7 +469,7 @@ const char* DRD_(mutex_type_name)(const MutexT mt)
 }
 
 /** Return true if the specified mutex is locked by any thread. */
-static Bool DRD_(mutex_is_locked)(struct mutex_info* const p)
+static Bool mutex_is_locked(struct mutex_info* const p)
 {
   tl_assert(p);
   return (p->recursion_count > 0);
@@ -493,33 +496,29 @@ int DRD_(mutex_get_recursion_count)(const Addr mutex)
  * Call this function when thread tid stops to exist, such that the
  * "last owner" field can be cleared if it still refers to that thread.
  */
-void DRD_(mutex_thread_delete)(const DrdThreadId tid)
+static void mutex_delete_thread(struct mutex_info* p, const DrdThreadId tid)
 {
-  struct mutex_info* p;
+  tl_assert(p);
 
-  DRD_(clientobj_resetiter)();
-  for ( ; (p = &(DRD_(clientobj_next)(ClientMutex)->mutex)) != 0; )
+  if (p->owner == tid && p->recursion_count > 0)
   {
-    if (p->owner == tid && p->recursion_count > 0)
-    {
-      MutexErrInfo MEI
-        = { p->a1, p->recursion_count, p->owner };
-      VG_(maybe_record_error)(VG_(get_running_tid)(),
-                              MutexErr,
-                              VG_(get_IP)(VG_(get_running_tid)()),
-                              "Mutex still locked at thread exit",
-                              &MEI);
-      p->owner = VG_INVALID_THREADID;
-    }
+    MutexErrInfo MEI
+      = { p->a1, p->recursion_count, p->owner };
+    VG_(maybe_record_error)(VG_(get_running_tid)(),
+                            MutexErr,
+                            VG_(get_IP)(VG_(get_running_tid)()),
+                            "Mutex still locked at thread exit",
+                            &MEI);
+    p->owner = VG_INVALID_THREADID;
   }
 }
 
 ULong DRD_(get_mutex_lock_count)(void)
 {
-  return DRD_(s_mutex_lock_count);
+  return s_mutex_lock_count;
 }
 
 ULong DRD_(get_mutex_segment_creation_count)(void)
 {
-  return DRD_(s_mutex_segment_creation_count);
+  return s_mutex_segment_creation_count;
 }

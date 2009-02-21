@@ -47,7 +47,6 @@ void DRD_(semaphore_post_wait)(const DrdThreadId tid, const Addr semaphore,
 void DRD_(semaphore_pre_post)(const DrdThreadId tid, const Addr semaphore);
 void DRD_(semaphore_post_post)(const DrdThreadId tid, const Addr semaphore,
                                const Bool waited);
-void DRD_(semaphore_thread_delete)(const DrdThreadId tid);
 ULong DRD_(get_semaphore_segment_creation_count)(void);
 
 

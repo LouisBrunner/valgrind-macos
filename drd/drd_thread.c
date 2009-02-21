@@ -24,6 +24,7 @@
 
 #include "drd_error.h"
 #include "drd_barrier.h"
+#include "drd_clientobj.h"
 #include "drd_cond.h"
 #include "drd_mutex.h"
 #include "drd_segment.h"
@@ -302,11 +303,8 @@ void DRD_(thread_post_join)(DrdThreadId drd_joiner, DrdThreadId drd_joinee)
                              - DRD_(thread_get_stack_size)(drd_joinee),
                              DRD_(thread_get_stack_max)(drd_joinee));
   }
+  DRD_(clientobj_delete_thread)(drd_joinee);
   DRD_(thread_delete)(drd_joinee);
-  DRD_(mutex_thread_delete)(drd_joinee);
-  DRD_(cond_thread_delete)(drd_joinee);
-  DRD_(semaphore_thread_delete)(drd_joinee);
-  DRD_(barrier_thread_delete)(drd_joinee);
 }
 
 /**

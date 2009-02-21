@@ -65,9 +65,10 @@ void DRD_(cond_initialize)(struct cond_info* const p, const Addr cond)
   tl_assert(p->a1         == cond);
   tl_assert(p->type       == ClientCondvar);
 
-  p->cleanup      = (void(*)(DrdClientobj*))(DRD_(cond_cleanup));
-  p->waiter_count = 0;
-  p->mutex        = 0;
+  p->cleanup       = (void(*)(DrdClientobj*))(DRD_(cond_cleanup));
+  p->delete_thread = 0;
+  p->waiter_count  = 0;
+  p->mutex         = 0;
 }
 
 /**
@@ -328,7 +329,3 @@ void DRD_(cond_pre_broadcast)(Addr const cond)
 
   DRD_(cond_signal)(cond);
 }
-
-/** Called after pthread_cond_destroy(). */
-void DRD_(cond_thread_delete)(const DrdThreadId tid)
-{ }

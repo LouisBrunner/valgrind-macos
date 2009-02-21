@@ -47,7 +47,6 @@ void DRD_(rwlock_post_rdlock)(const Addr rwlock, const Bool took_lock);
 void DRD_(rwlock_pre_wrlock)(const Addr rwlock);
 void DRD_(rwlock_post_wrlock)(const Addr rwlock, const Bool took_lock);
 void DRD_(rwlock_pre_unlock)(const Addr rwlock);
-void DRD_(rwlock_thread_delete)(const DrdThreadId tid);
 ULong DRD_(get_rwlock_segment_creation_count)(void);
 
 

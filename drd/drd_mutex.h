@@ -50,7 +50,6 @@ const char* DRD_(mutex_get_typename)(struct mutex_info* const p);
 const char* DRD_(mutex_type_name)(const MutexT mt);
 Bool DRD_(mutex_is_locked_by)(const Addr mutex, const DrdThreadId tid);
 int DRD_(mutex_get_recursion_count)(const Addr mutex);
-void DRD_(mutex_thread_delete)(const DrdThreadId tid);
 ULong DRD_(get_mutex_lock_count)(void);
 ULong DRD_(get_mutex_segment_creation_count)(void);
 

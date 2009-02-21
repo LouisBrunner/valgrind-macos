@@ -128,7 +128,9 @@ typedef struct {
 } SemaphoreErrInfo;
 
 typedef struct {
-   Addr barrier;
+   Addr        barrier;
+   DrdThreadId other_tid;
+   ExeContext* other_context;
 } BarrierErrInfo;
 
 typedef struct {

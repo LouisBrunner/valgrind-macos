@@ -42,12 +42,12 @@
 
 /* Local variables. */
 
-static Bool DRD_(s_show_conflicting_segments) = True;
+static Bool s_show_conflicting_segments = True;
 
 
 void DRD_(set_show_conflicting_segments)(const Bool scs)
 {
-  DRD_(s_show_conflicting_segments) = scs;
+  s_show_conflicting_segments = scs;
 }
 
 /**
@@ -55,8 +55,7 @@ void DRD_(set_show_conflicting_segments)(const Bool scs)
  * messages, putting the result in ai.
  */
 static
-void DRD_(describe_malloced_addr)(Addr const a, SizeT const len,
-                                  AddrInfo* const ai)
+void describe_malloced_addr(Addr const a, SizeT const len, AddrInfo* const ai)
 {
   Addr data;
 
@@ -76,7 +75,7 @@ void DRD_(describe_malloced_addr)(Addr const a, SizeT const len,
  * call stack will either refer to a pthread_*_init() or a pthread_*lock()
  * call.
  */
-static void DRD_(first_observed)(const Addr obj)
+static void first_observed(const Addr obj)
 {
   DrdClientobj* cl;
 
@@ -93,8 +92,7 @@ static void DRD_(first_observed)(const Addr obj)
 }
 
 static
-void DRD_(drd_report_data_race)(Error* const err,
-                                const DataRaceErrInfo* const dri)
+void drd_report_data_race(Error* const err, const DataRaceErrInfo* const dri)
 {
   AddrInfo ai;
   const unsigned descr_size = 256;
@@ -112,7 +110,7 @@ void DRD_(drd_report_data_race)(Error* const err,
   VG_(get_data_description)(descr1, descr2, descr_size, dri->addr);
   if (descr1[0] == 0)
   {
-    DRD_(describe_malloced_addr)(dri->addr, dri->size, &ai);
+    describe_malloced_addr(dri->addr, dri->size, &ai);
   }
   VG_(message)(Vg_UserMsg,
                "Conflicting %s by thread %d/%d at 0x%08lx size %ld",
@@ -153,7 +151,7 @@ void DRD_(drd_report_data_race)(Error* const err,
       VG_(message)(Vg_UserMsg, "Allocation context: unknown.");
     }
   }
-  if (DRD_(s_show_conflicting_segments))
+  if (s_show_conflicting_segments)
   {
     DRD_(thread_report_conflicting_segments)(dri->tid,
                                              dri->addr, dri->size,
@@ -164,17 +162,17 @@ void DRD_(drd_report_data_race)(Error* const err,
   VG_(free)(descr1);
 }
 
-static Bool DRD_(drd_tool_error_eq)(VgRes res, Error* e1, Error* e2)
+static Bool drd_tool_error_eq(VgRes res, Error* e1, Error* e2)
 {
   return False;
 }
 
-static void DRD_(drd_tool_error_pp)(Error* const e)
+static void drd_tool_error_pp(Error* const e)
 {
   switch (VG_(get_error_kind)(e))
   {
   case DataRaceErr: {
-    DRD_(drd_report_data_race)(e, VG_(get_error_extra)(e));
+    drd_report_data_race(e, VG_(get_error_extra)(e));
     break;
   }
   case MutexErr: {
@@ -196,7 +194,7 @@ static void DRD_(drd_tool_error_pp)(Error* const e)
                    p->mutex);
     }
     VG_(pp_ExeContext)(VG_(get_error_where)(e));
-    DRD_(first_observed)(p->mutex);
+    first_observed(p->mutex);
     break;
   }
   case CondErr: {
@@ -206,7 +204,7 @@ static void DRD_(drd_tool_error_pp)(Error* const e)
                  VG_(get_error_string)(e),
                  cdei->cond);
     VG_(pp_ExeContext)(VG_(get_error_where)(e));
-    DRD_(first_observed)(cdei->cond);
+    first_observed(cdei->cond);
     break;
   }
   case CondDestrErr: {
@@ -217,7 +215,7 @@ static void DRD_(drd_tool_error_pp)(Error* const e)
                  cdi->cond, cdi->mutex,
                  DRD_(DrdThreadIdToVgThreadId)(cdi->tid), cdi->tid);
     VG_(pp_ExeContext)(VG_(get_error_where)(e));
-    DRD_(first_observed)(cdi->mutex);
+    first_observed(cdi->mutex);
     break;
   }
   case CondRaceErr: {
@@ -228,8 +226,8 @@ static void DRD_(drd_tool_error_pp)(Error* const e)
                  " by the signalling thread.",
                  cei->cond, cei->mutex);
     VG_(pp_ExeContext)(VG_(get_error_where)(e));
-    DRD_(first_observed)(cei->cond);
-    DRD_(first_observed)(cei->mutex);
+    first_observed(cei->cond);
+    first_observed(cei->mutex);
     break;
   }
   case CondWaitErr: {
@@ -241,9 +239,9 @@ static void DRD_(drd_tool_error_pp)(Error* const e)
                  cwei->mutex1,
                  cwei->mutex2);
     VG_(pp_ExeContext)(VG_(get_error_where)(e));
-    DRD_(first_observed)(cwei->cond);
-    DRD_(first_observed)(cwei->mutex1);
-    DRD_(first_observed)(cwei->mutex2);
+    first_observed(cwei->cond);
+    first_observed(cwei->mutex1);
+    first_observed(cwei->mutex2);
     break;
   }
   case SemaphoreErr: {
@@ -254,18 +252,26 @@ static void DRD_(drd_tool_error_pp)(Error* const e)
                  VG_(get_error_string)(e),
                  sei->semaphore);
     VG_(pp_ExeContext)(VG_(get_error_where)(e));
-    DRD_(first_observed)(sei->semaphore);
+    first_observed(sei->semaphore);
     break;
   }
   case BarrierErr: {
-    BarrierErrInfo* bei =(BarrierErrInfo*)(VG_(get_error_extra)(e));
+    BarrierErrInfo* bei = (BarrierErrInfo*)(VG_(get_error_extra)(e));
     tl_assert(bei);
     VG_(message)(Vg_UserMsg,
                  "%s: barrier 0x%lx",
                  VG_(get_error_string)(e),
                  bei->barrier);
     VG_(pp_ExeContext)(VG_(get_error_where)(e));
-    DRD_(first_observed)(bei->barrier);
+    if (bei->other_context)
+    {
+      VG_(message)(Vg_UserMsg,
+                   "Conflicting wait call by thread %d/%d:",
+                   DRD_(DrdThreadIdToVgThreadId)(bei->other_tid),
+                   bei->other_tid);
+      VG_(pp_ExeContext)(bei->other_context);
+    }
+    first_observed(bei->barrier);
     break;
   }
   case RwlockErr: {
@@ -276,7 +282,7 @@ static void DRD_(drd_tool_error_pp)(Error* const e)
                  VG_(get_error_string)(e),
                  p->rwlock);
     VG_(pp_ExeContext)(VG_(get_error_where)(e));
-    DRD_(first_observed)(p->rwlock);
+    first_observed(p->rwlock);
     break;
   }
   case HoldtimeErr: {
@@ -292,7 +298,7 @@ static void DRD_(drd_tool_error_pp)(Error* const e)
                  p->hold_time_ms,
                  p->threshold_ms);
     VG_(pp_ExeContext)(VG_(get_error_where)(e));
-    DRD_(first_observed)(p->synchronization_object);
+    first_observed(p->synchronization_object);
     break;
   }
   case GenericErr: {
@@ -310,7 +316,7 @@ static void DRD_(drd_tool_error_pp)(Error* const e)
   }
 }
 
-static UInt DRD_(drd_tool_error_update_extra)(Error* e)
+static UInt drd_tool_error_update_extra(Error* e)
 {
   switch (VG_(get_error_kind)(e))
   {
@@ -342,7 +348,7 @@ static UInt DRD_(drd_tool_error_update_extra)(Error* e)
   }
 }
 
-static Bool DRD_(drd_tool_error_recog)(Char* const name, Supp* const supp)
+static Bool drd_tool_error_recog(Char* const name, Supp* const supp)
 {
   SuppKind skind = 0;
 
@@ -376,12 +382,12 @@ static Bool DRD_(drd_tool_error_recog)(Char* const name, Supp* const supp)
 }
 
 static
-Bool DRD_(drd_tool_error_read_extra)(Int fd, Char* buf, Int nBuf, Supp* supp)
+Bool drd_tool_error_read_extra(Int fd, Char* buf, Int nBuf, Supp* supp)
 {
   return True;
 }
 
-static Bool DRD_(drd_tool_error_matches)(Error* const e, Supp* const supp)
+static Bool drd_tool_error_matches(Error* const e, Supp* const supp)
 {
   switch (VG_(get_supp_kind)(supp))
   {
@@ -389,7 +395,7 @@ static Bool DRD_(drd_tool_error_matches)(Error* const e, Supp* const supp)
   return True;
 }
 
-static Char* DRD_(drd_tool_error_name)(Error* e)
+static Char* drd_tool_error_name(Error* e)
 {
   switch (VG_(get_error_kind)(e))
   {
@@ -410,19 +416,19 @@ static Char* DRD_(drd_tool_error_name)(Error* e)
   return 0;
 }
 
-static void DRD_(drd_tool_error_print_extra)(Error* e)
+static void drd_tool_error_print_extra(Error* e)
 { }
 
 void DRD_(register_error_handlers)(void)
 {
   // Tool error reporting.
-  VG_(needs_tool_errors)(DRD_(drd_tool_error_eq),
-                         DRD_(drd_tool_error_pp),
+  VG_(needs_tool_errors)(drd_tool_error_eq,
+                         drd_tool_error_pp,
                          True,
-                         DRD_(drd_tool_error_update_extra),
-                         DRD_(drd_tool_error_recog),
-                         DRD_(drd_tool_error_read_extra),
-                         DRD_(drd_tool_error_matches),
-                         DRD_(drd_tool_error_name),
-                         DRD_(drd_tool_error_print_extra));
+                         drd_tool_error_update_extra,
+                         drd_tool_error_recog,
+                         drd_tool_error_read_extra,
+                         drd_tool_error_matches,
+                         drd_tool_error_name,
+                         drd_tool_error_print_extra);
 }

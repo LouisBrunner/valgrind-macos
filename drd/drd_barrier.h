@@ -45,8 +45,8 @@ void DRD_(barrier_destroy)(const Addr barrier, const BarrierT barrier_type);
 void DRD_(barrier_pre_wait)(const DrdThreadId tid, const Addr barrier,
                             const BarrierT barrier_type);
 void DRD_(barrier_post_wait)(const DrdThreadId tid, const Addr barrier,
-                             const BarrierT barrier_type, const Bool waited);
-void DRD_(barrier_thread_delete)(const DrdThreadId threadid);
+                             const BarrierT barrier_type, const Bool waited,
+                             const Bool serializing);
 void DRD_(barrier_stop_using_mem)(const Addr a1, const Addr a2);
 ULong DRD_(get_barrier_segment_creation_count)(void);
 

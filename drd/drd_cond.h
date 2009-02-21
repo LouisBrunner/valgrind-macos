@@ -45,7 +45,6 @@ int DRD_(cond_pre_wait)(const Addr cond, const Addr mutex);
 int DRD_(cond_post_wait)(const Addr cond);
 void DRD_(cond_pre_signal)(const Addr cond);
 void DRD_(cond_pre_broadcast)(const Addr cond);
-void DRD_(cond_thread_delete)(const DrdThreadId tid);
 
 
 #endif /* __DRD_COND_H */

@@ -29,6 +29,9 @@ The object at address 0x........ is not a mutex.
 Destroying locked mutex: mutex 0x........, recursion count 1, owner 1.
    at 0x........: pthread_mutex_destroy (drd_pthread_intercepts.c:?)
    by 0x........: main (tc20_verifywrap.c:102)
+mutex 0x........ was first observed at:
+   at 0x........: pthread_mutex_init (drd_pthread_intercepts.c:?)
+   by 0x........: main (tc20_verifywrap.c:100)
 [1/1] mutex_trylock   invalid mutex 0x........ rc 0 owner 0
 
 The object at address 0x........ is not a mutex.

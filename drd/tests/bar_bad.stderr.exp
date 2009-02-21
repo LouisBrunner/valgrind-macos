@@ -34,6 +34,9 @@ barrier 0x........ was first observed at:
 Destruction of barrier that is being waited upon: barrier 0x........
    at 0x........: pthread_barrier_destroy (drd_pthread_intercepts.c:?)
    by 0x........: main (bar_bad.c:?)
+barrier 0x........ was first observed at:
+   at 0x........: pthread_barrier_init (drd_pthread_intercepts.c:?)
+   by 0x........: main (bar_bad.c:?)
 
 destroy a barrier that was never initialised
 
@@ -43,4 +46,7 @@ Not a barrier
 
 Destruction of barrier that is being waited upon: barrier 0x........
    at 0x........: free (vg_replace_malloc.c:...)
+   by 0x........: main (bar_bad.c:?)
+barrier 0x........ was first observed at:
+   at 0x........: pthread_barrier_init (drd_pthread_intercepts.c:?)
    by 0x........: main (bar_bad.c:?)

@@ -85,9 +85,10 @@ DrdClientobj* DRD_(clientobj_get_any)(const Addr addr)
   return VG_(OSetGen_Lookup)(s_clientobj_set, &addr);
 }
 
-/** Return the data associated with the client object at client address addr
- *  and that has object type t. Return 0 if there is no client object in the
- *  set with the specified start address.
+/**
+ * Return the data associated with the client object at client address addr
+ * and that has object type t. Return 0 if there is no client object in the
+ * set with the specified start address.
  */
 DrdClientobj* DRD_(clientobj_get)(const Addr addr, const ObjType t)
 {
@@ -144,6 +145,12 @@ DrdClientobj* DRD_(clientobj_add)(const Addr a1, const ObjType t)
   return p;
 }
 
+/**
+ * Remove the information that was stored about the client object.
+ *
+ * @param[in] addr Address of the client object in the client address space.
+ * @param[in] t    Type of the client object.
+ */
 Bool DRD_(clientobj_remove)(const Addr addr, const ObjType t)
 {
   DrdClientobj* p;
@@ -154,27 +161,28 @@ Bool DRD_(clientobj_remove)(const Addr addr, const ObjType t)
   return clientobj_remove_obj(p);
 }
 
+/**
+ * Remove the information that was stored about the client object p.
+ *
+ * @note The order of operations below is important. The client object is
+ *   removed from the client object set after the cleanup function has been
+ *   called such that if the cleanup function can still use the function
+ *   DRD_(clientobj_get_any)(). This happens e.g. in the function
+ *   first_observed() in drd_error.c.
+ */
 static Bool clientobj_remove_obj(DrdClientobj* const p)
 {
-  DrdClientobj* q;
+  tl_assert(p);
 
   if (s_trace_clientobj)
   {
     VG_(message)(Vg_UserMsg, "Removing client object 0x%lx of type %d",
                  p->any.a1, p->any.type);
-#if 0
-    VG_(get_and_pp_StackTrace)(VG_(get_running_tid)(),
-                               VG_(clo_backtrace_size));
-#endif
   }
 
-  tl_assert(p);
-  q = VG_(OSetGen_Remove)(s_clientobj_set, &p->any.a1);
-  tl_assert(p == q);
-
-  tl_assert(VG_(OSetGen_Lookup)(s_clientobj_set, &p->any.a1) == 0);
   tl_assert(p->any.cleanup);
   (*p->any.cleanup)(p);
+  VG_(OSetGen_Remove)(s_clientobj_set, &p->any.a1);
   VG_(OSetGen_FreeNode)(s_clientobj_set, p);
   return True;
 }
@@ -196,13 +204,10 @@ void DRD_(clientobj_stop_using_mem)(const Addr a1, const Addr a2)
     if (a1 <= p->any.a1 && p->any.a1 < a2)
     {
       removed_at = p->any.a1;
-      DRD_(clientobj_remove)(p->any.a1, p->any.type);
+      clientobj_remove_obj(p);
       /* The above call removes an element from the oset and hence */
       /* invalidates the iterator. Set the iterator back.          */
-      VG_(OSetGen_ResetIter)(s_clientobj_set);
-      while ((p = VG_(OSetGen_Next)(s_clientobj_set)) != 0
-             && p->any.a1 <= removed_at)
-      { }
+      VG_(OSetGen_ResetIterAt)(s_clientobj_set, &removed_at);
     }
     else
     {

@@ -1,28 +1,34 @@
 How to test DRD
 ~~~~~~~~~~~~~~~
 
-1. Run the regression tests. After having compiled DRD, run the following
-   command:
+1. Start with compiling DRD.
+2. Check as follows that all global symbols in DRD have been wrapped by the
+   DRD_() macro (output must be empty):
+     nm -A drd*.o|grep ' T '|grep -v ' T vgDrd_'
+3. Check as follows that all global symbols in the preloaded shared library
+   are redirected functions (output must be empty):
+     nm -A vgpreload*.o|grep ' T '|grep -v ' T _vg'
+4. Run the regression tests as follows:
      perl tests/vg_regtest drd
-2. Run Konstantin's regression tests:
+5. Run Konstantin's regression tests:
      svn checkout http://data-race-test.googlecode.com/svn/trunk drt
      make -C drt/unittest -s build
      ./vg-in-place --tool=drd --check-stack-var=yes drt/unittest/racecheck_unittest 2>&1|less
-3. Test the slowdown for matinv for various matrix sizes via the script
+6. Test the slowdown for matinv for various matrix sizes via the script
    drd/scripts/run-matinv (must be about 24 for i == 1 and about
    31 for i == 10 with n == 200).
-4. Test whether DRD works with standard KDE applications and whether it does
+7. Test whether DRD works with standard KDE applications and whether it does
    not print any false positives. Test this both with KDE3 and KDE4.
      ./vg-in-place --tool=drd --var-info=yes kate
      ./vg-in-place --tool=drd --var-info=yes --check-stack-var=yes kate
      ./vg-in-place --tool=drd --var-info=yes --trace-children=yes knode
      ./vg-in-place --tool=drd --var-info=yes --check-stack-var=yes --trace-children=yes knode
      ./vg-in-place --tool=drd --var-info=yes --check-stack-var=yes /usr/bin/designer
-5. Test whether DRD works with standard GNOME applications. Expect
+8. Test whether DRD works with standard GNOME applications. Expect
    race reports triggered by ORBit_RootObject_duplicate() and after
    having closed the GNOME terminal window:
      ./vg-in-place --tool=drd --var-info=yes --trace-children=yes gnome-terminal
-6. Test DRD with Firefox. First of all, make sure that Valgrind is patched
+9. Test DRD with Firefox. First of all, make sure that Valgrind is patched
    such that it supports libjemalloc.so:
      drd/scripts/add-libjemalloc-support
    Next, build and install Firefox 3:

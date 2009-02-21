@@ -808,9 +808,6 @@ void VG_(OSetGen_ResetIterAt)(AvlTree* oset, void* k)
       if (oset->cmp) {
          cmpresS = (Word)slow_cmp(oset, k, t);
       } else {
-         /* this is believed to be correct, but really needs testing
-            before the assertion is removed. */
-         vg_assert(0);
          cmpresS = fast_cmp(k, t);
       }
 

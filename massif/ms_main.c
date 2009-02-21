@@ -1925,7 +1925,7 @@ static void pp_snapshot_SXPt(Int fd, SXPt* sxpt, Int depth, Char* depth_str,
    switch (sxpt->tag) {
     case SigSXPt:
       // Print the SXPt itself.
-      if (sxpt->Sig.ip == 0) {
+      if (0 == depth) {
          ip_desc =
             "(heap allocation functions) malloc/new/new[], --alloc-fns, etc.";
       } else {

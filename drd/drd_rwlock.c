@@ -464,12 +464,13 @@ void DRD_(rwlock_post_wrlock)(const Addr rwlock, const Bool took_lock)
 
 /**
  * Update rwlock_info state when unlocking the pthread_rwlock_t rwlock.
- * Note: this function must be called before pthread_rwlock_unlock() is called,
- * or a race condition is triggered !
- * @return New value of the rwlock recursion count.
+ *
  * @param rwlock Pointer to pthread_rwlock_t data structure in the client space.
- * @param tid ThreadId of the thread calling pthread_rwlock_unlock().
- * @param vc Pointer to the current vector clock of thread tid.
+ *
+ * @return New value of the rwlock recursion count.
+ *
+ * @note This function must be called before pthread_rwlock_unlock() is called,
+ *   or a race condition is triggered !
  */
 void DRD_(rwlock_pre_unlock)(const Addr rwlock)
 {

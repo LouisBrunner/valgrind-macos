@@ -328,9 +328,8 @@ void DRD_(mutex_post_lock)(const Addr mutex, const Bool took_lock,
 /**
  * Update mutex_info state when unlocking the pthread_mutex_t mutex.
  *
- * @param mutex Pointer to pthread_mutex_t data structure in the client space.
- * @param tid ThreadId of the thread calling pthread_mutex_unlock().
- * @param vc Pointer to the current vector clock of thread tid.
+ * @param[in] mutex      Address of the client mutex.
+ * @param[in] mutex_type Mutex type.
  *
  * @return New value of the mutex recursion count.
  *

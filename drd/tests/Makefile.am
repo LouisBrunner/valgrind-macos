@@ -81,6 +81,8 @@ EXTRA_DIST =                                        \
 	pth_barrier2.vgtest                         \
 	pth_barrier3.stderr.exp                     \
 	pth_barrier3.vgtest                         \
+	pth_barrier_race.stderr.exp                 \
+	pth_barrier_race.vgtest                     \
 	pth_barrier_reinit.stderr.exp               \
 	pth_barrier_reinit.vgtest                   \
 	pth_broadcast.stderr.exp                    \
@@ -226,7 +228,7 @@ check_PROGRAMS += omp_matinv omp_prime omp_printf
 endif
 
 if HAVE_PTHREAD_BARRIER
-check_PROGRAMS += matinv pth_barrier pth_barrier_reinit
+check_PROGRAMS += matinv pth_barrier pth_barrier_race pth_barrier_reinit
 endif
 
 if HAVE_PTHREAD_SPINLOCK

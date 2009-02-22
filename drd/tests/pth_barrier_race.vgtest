@@ -1,0 +1,2 @@
+prereq: test -e pth_barrier_race && ./supported_libpthread
+prog: pth_barrier_race

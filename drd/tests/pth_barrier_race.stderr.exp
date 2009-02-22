@@ -1,0 +1,15 @@
+
+Destruction of barrier not synchronized with barrier wait call: barrier 0x........
+   at 0x........: pthread_barrier_destroy (drd_pthread_intercepts.c:?)
+   by 0x........: main (pth_barrier_race.c:?)
+Conflicting wait call by thread 0/2:
+   at 0x........: pthread_barrier_wait (drd_pthread_intercepts.c:?)
+   by 0x........: thread (pth_barrier_race.c:?)
+   by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
+   by 0x........: (within libpthread-?.?.so)
+   by 0x........: clone (in /...libc...)
+barrier 0x........ was first observed at:
+   at 0x........: pthread_barrier_init (drd_pthread_intercepts.c:?)
+   by 0x........: main (pth_barrier_race.c:?)
+
+ERROR SUMMARY: 1 errors from 1 contexts (suppressed: 0 from 0)

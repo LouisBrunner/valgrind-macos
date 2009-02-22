@@ -2781,7 +2781,6 @@ PRE(sys_fcntl)
    case VKI_F_GETLK64:
    case VKI_F_SETLK64:
    case VKI_F_SETLKW64:
-#  else
 #  endif
       PRINT("sys_fcntl[ARG3=='lock'] ( %ld, %ld, %#lx )", ARG1,ARG2,ARG3);
       PRE_REG_READ3(long, "fcntl",
@@ -2790,7 +2789,11 @@ PRE(sys_fcntl)
       break;
    }
 
+#  if defined(VGP_x86_linux)
+   if (ARG2 == VKI_F_SETLKW || ARG2 == VKI_F_SETLKW64)
+#  else
    if (ARG2 == VKI_F_SETLKW)
+#  endif
       *flags |= SfMayBlock;
 }
 
@@ -2853,11 +2856,10 @@ PRE(sys_fcntl64)
    
 #  if defined(VGP_x86_linux)
    if (ARG2 == VKI_F_SETLKW || ARG2 == VKI_F_SETLKW64)
-      *flags |= SfMayBlock;
 #  else
    if (ARG2 == VKI_F_SETLKW)
-      *flags |= SfMayBlock;
 #  endif
+      *flags |= SfMayBlock;
 }
 
 POST(sys_fcntl64)

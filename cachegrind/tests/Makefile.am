@@ -20,6 +20,9 @@ EXTRA_DIST = $(noinst_SCRIPTS) \
 check_PROGRAMS = \
 	chdir clreq dlclose myprint.so
 
+AM_CFLAGS   += $(AM_FLAG_M3264_PRI)
+AM_CXXFLAGS += $(AM_FLAG_M3264_PRI)
+
 # C ones
 dlclose_LDADD		= -ldl
 myprint_so_LDFLAGS	= $(AM_FLAG_M3264_PRI) -shared -fPIC

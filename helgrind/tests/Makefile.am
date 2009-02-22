@@ -155,6 +155,8 @@ if HAVE_PTHREAD_BARRIER
 check_PROGRAMS += bar_bad bar_trivial
 endif
 
+AM_CFLAGS   += $(AM_FLAG_M3264_PRI)
+AM_CXXFLAGS += $(AM_FLAG_M3264_PRI)
 
 LDADD = -lpthread
 

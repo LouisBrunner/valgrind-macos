@@ -75,6 +75,9 @@ check_PROGRAMS = \
 	stackerr \
 	strcpy strlen sub supp syscall tricky unaligned xor zero
 
+AM_CFLAGS   += $(AM_FLAG_M3264_PRI)
+AM_CXXFLAGS += $(AM_FLAG_M3264_PRI)
+
 # To make it a bit more realistic, build hackedbz2.c with at 
 # least some optimisation.
 hackedbz2_CFLAGS	= $(AM_CFLAGS) -O

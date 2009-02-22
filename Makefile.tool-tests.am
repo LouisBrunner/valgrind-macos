@@ -6,7 +6,8 @@ AM_CPPFLAGS = -I$(top_srcdir) -I$(top_srcdir)/include \
 		-DVGA_$(VGCONF_ARCH_PRI)=1 \
 		-DVGO_$(VGCONF_OS)=1 \
 		-DVGP_$(VGCONF_ARCH_PRI)_$(VGCONF_OS)=1
-AM_CFLAGS   = $(WERROR) -Winline -Wall -Wshadow -g $(AM_FLAG_M3264_PRI)
-AM_CXXFLAGS = $(AM_CFLAGS)
-
+# Nb: Tools need to augment these flags with an arch-selection option, such
+# as $(AM_FLAG_M3264_PRI).
+AM_CFLAGS   = $(WERROR) -Winline -Wall -Wshadow -g
+AM_CXXFLAGS = $(WERROR) -Winline -Wall -Wshadow -g
 

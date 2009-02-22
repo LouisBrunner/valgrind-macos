@@ -226,6 +226,8 @@ check_PROGRAMS = \
 	wrap1 wrap2 wrap3 wrap4 wrap5 wrap6 wrap7 wrap7so.so wrap8 \
 	writev zeropage
 
+AM_CFLAGS   += $(AM_FLAG_M3264_PRI)
+AM_CXXFLAGS += $(AM_FLAG_M3264_PRI)
 
 # Extra stuff for C tests
 memcmptest_CFLAGS	= $(AM_CFLAGS) -fno-builtin-memcmp

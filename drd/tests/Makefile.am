@@ -240,7 +240,9 @@ check_PROGRAMS += qt4_mutex qt4_rwlock qt4_semaphore
 endif
 
 
-AM_CFLAGS += @FLAG_W_EXTRA@ -Wno-inline -Wno-unused-parameter
+AM_CFLAGS   += $(AM_FLAG_M3264_PRI) @FLAG_W_EXTRA@ -Wno-inline -Wno-unused-parameter
+AM_CXXFLAGS += $(AM_FLAG_M3264_PRI) @FLAG_W_EXTRA@ -Wno-inline -Wno-unused-parameter
+
 LDADD = -lpthread
 
 

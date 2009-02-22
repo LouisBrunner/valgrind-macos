@@ -149,6 +149,9 @@ check_PROGRAMS = \
 	tls tls.so tls2.so vgprintf \
 	coolo_sigaction gxx304
 
+AM_CFLAGS   += $(AM_FLAG_M3264_PRI)
+AM_CXXFLAGS += $(AM_FLAG_M3264_PRI)
+
 # Extra stuff for C tests
 ansi_CFLAGS		= $(AM_CFLAGS) -ansi
 floored_LDADD 		= -lm

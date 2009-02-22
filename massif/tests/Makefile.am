@@ -61,6 +61,9 @@ check_PROGRAMS = \
 	thresholds \
 	zero
 
+AM_CFLAGS   += $(AM_FLAG_M3264_PRI)
+AM_CXXFLAGS += $(AM_FLAG_M3264_PRI)
+
 # C++ tests
 new_cpp_SOURCES		= new-cpp.cpp
 overloaded_new_SOURCES	= overloaded-new.cpp

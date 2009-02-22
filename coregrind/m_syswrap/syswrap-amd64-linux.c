@@ -1034,7 +1034,7 @@ const SyscallTableEntry ML_(syscall_table)[] = {
    LINXY(__NR_rt_sigprocmask,    sys_rt_sigprocmask), // 14 
 
    PLAX_(__NR_rt_sigreturn,      sys_rt_sigreturn),   // 15 
-   GENXY(__NR_ioctl,             sys_ioctl),          // 16 
+   LINXY(__NR_ioctl,             sys_ioctl),          // 16 
    GENXY(__NR_pread64,           sys_pread64_on64bitplat),  // 17 
    GENX_(__NR_pwrite64,          sys_pwrite64_on64bitplat), // 18 
    GENXY(__NR_readv,             sys_readv),          // 19 
@@ -1101,7 +1101,7 @@ const SyscallTableEntry ML_(syscall_table)[] = {
 
    PLAXY(__NR_msgrcv,            sys_msgrcv),         // 70 
    PLAXY(__NR_msgctl,            sys_msgctl),         // 71 
-   GENXY(__NR_fcntl,             sys_fcntl),          // 72 
+   LINXY(__NR_fcntl,             sys_fcntl),          // 72 
    GENX_(__NR_flock,             sys_flock),          // 73 
    GENX_(__NR_fsync,             sys_fsync),          // 74 
 

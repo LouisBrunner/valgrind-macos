@@ -1557,9 +1557,9 @@ const SyscallTableEntry ML_(syscall_table)[] = {
 //..    GENX_(__NR_acct,              sys_acct),              // 51
    LINX_(__NR_umount2,           sys_umount),            // 52
 //..    GENX_(__NR_lock,              sys_ni_syscall),        // 53
-   GENXY(__NR_ioctl,             sys_ioctl),             // 54
+   LINXY(__NR_ioctl,             sys_ioctl),             // 54
 //.. 
-   GENXY(__NR_fcntl,             sys_fcntl),             // 55
+   LINXY(__NR_fcntl,             sys_fcntl),             // 55
 //..    GENX_(__NR_mpx,               sys_ni_syscall),        // 56
    GENX_(__NR_setpgid,           sys_setpgid),           // 57
 //..    GENX_(__NR_ulimit,            sys_ni_syscall),        // 58
@@ -1741,7 +1741,7 @@ const SyscallTableEntry ML_(syscall_table)[] = {
 
    GENXY(__NR_getdents64,        sys_getdents64),        // 202
 //..    //   (__NR_pivot_root,        sys_pivot_root),        // 203 */Linux
-   GENXY(__NR_fcntl64,           sys_fcntl64),           // 204
+   LINXY(__NR_fcntl64,           sys_fcntl64),           // 204
    GENX_(__NR_madvise,           sys_madvise),           // 205
    GENXY(__NR_mincore,           sys_mincore),           // 206
    LINX_(__NR_gettid,            sys_gettid),            // 207

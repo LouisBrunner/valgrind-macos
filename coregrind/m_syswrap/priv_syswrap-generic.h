@@ -52,6 +52,7 @@ extern Bool ML_(client_signal_OK)(Int sigNo);
 extern
 Bool ML_(fd_allowed)(Int fd, const Char *syscallname, ThreadId tid, Bool soft);
 
+extern void ML_(record_fd_open_named)          (ThreadId tid, Int fd);
 extern void ML_(record_fd_open_nameless)       (ThreadId tid, Int fd);
 extern void ML_(record_fd_open_with_given_name)(ThreadId tid, Int fd,
                                                 char *pathname);
@@ -103,7 +104,6 @@ DECL_TEMPLATE(generic, sys_mkdir);
 DECL_TEMPLATE(generic, sys_rmdir);
 DECL_TEMPLATE(generic, sys_dup);
 DECL_TEMPLATE(generic, sys_times);
-DECL_TEMPLATE(generic, sys_fcntl);        // POSIX (but complicated)
 DECL_TEMPLATE(generic, sys_setpgid);
 DECL_TEMPLATE(generic, sys_umask);
 DECL_TEMPLATE(generic, sys_dup2);
@@ -178,7 +178,6 @@ DECL_TEMPLATE(generic, sys_newfstat);              // * P (SVr4,BSD4.3)
 // For the remainder, not really sure yet
 DECL_TEMPLATE(generic, sys_ptrace);                // (x86?) (almost-P)
 DECL_TEMPLATE(generic, sys_setrlimit);             // SVr4, 4.3BSD
-DECL_TEMPLATE(generic, sys_ioctl);                 // x86? (various)
 DECL_TEMPLATE(generic, sys_old_getrlimit);         // SVr4, 4.3BSD L?
 DECL_TEMPLATE(generic, sys_statfs);                // * L?
 DECL_TEMPLATE(generic, sys_fstatfs);               // * L?
@@ -198,7 +197,6 @@ DECL_TEMPLATE(generic, sys_ftruncate64);           // %% (P?)
 DECL_TEMPLATE(generic, sys_lchown);                // * (L?)
 DECL_TEMPLATE(generic, sys_mincore);               // * L?
 DECL_TEMPLATE(generic, sys_getdents64);            // * (SVr4,SVID?)
-DECL_TEMPLATE(generic, sys_fcntl64);               // * P?
 DECL_TEMPLATE(generic, sys_statfs64);              // * (?)
 DECL_TEMPLATE(generic, sys_fstatfs64);             // * (?)
 

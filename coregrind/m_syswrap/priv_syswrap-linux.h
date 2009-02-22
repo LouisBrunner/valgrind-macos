@@ -48,6 +48,11 @@ DECL_TEMPLATE(linux, sys_mount);
 DECL_TEMPLATE(linux, sys_oldumount);
 DECL_TEMPLATE(linux, sys_umount);
 
+// POSIX, but various sub-cases differ between Linux and Darwin.
+DECL_TEMPLATE(linux, sys_fcntl);
+DECL_TEMPLATE(linux, sys_fcntl64);
+DECL_TEMPLATE(linux, sys_ioctl);
+
 DECL_TEMPLATE(linux, sys_setfsuid16);
 DECL_TEMPLATE(linux, sys_setfsuid);
 DECL_TEMPLATE(linux, sys_setfsgid16);

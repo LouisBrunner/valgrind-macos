@@ -1204,9 +1204,9 @@ const SyscallTableEntry ML_(syscall_table)[] = {
 // _____(__NR_acct,              sys_acct),               //  51
    LINX_(__NR_umount2,           sys_umount),             //  52
 // _____(__NR_lock,              sys_lock),               //  53
-   GENXY(__NR_ioctl,             sys_ioctl),              //  54
+   LINXY(__NR_ioctl,             sys_ioctl),              //  54
 
-   GENXY(__NR_fcntl,             sys_fcntl),              //  55
+   LINXY(__NR_fcntl,             sys_fcntl),              //  55
 // _____(__NR_mpx,               sys_mpx),                //  56
    GENX_(__NR_setpgid,           sys_setpgid),            //  57
 // _____(__NR_ulimit,            sys_ulimit),             //  58
@@ -1384,7 +1384,7 @@ const SyscallTableEntry ML_(syscall_table)[] = {
 // _____(__NR_multiplexer,       sys_multiplexer),        // 201
    GENXY(__NR_getdents64,        sys_getdents64),         // 202
 // _____(__NR_pivot_root,        sys_pivot_root),         // 203
-   GENXY(__NR_fcntl64,           sys_fcntl64),            // 204 !!!!?? 32bit only */
+   LINXY(__NR_fcntl64,           sys_fcntl64),            // 204 !!!!?? 32bit only */
 
    GENX_(__NR_madvise,           sys_madvise),            // 205
 // _____(__NR_mincore,           sys_mincore),            // 206

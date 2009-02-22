@@ -108,58 +108,58 @@ libvex.a: $(LIB_OBJS)
 	$(AR) clq libvex.a $(LIB_OBJS)
 
 
-# The idea with these TAG_s is to mark the flavour of libvex.a 
+# The idea with these TAG-s is to mark the flavour of libvex.a 
 # most recently built, so if the same target is re-requested, we
 # don't rebuild everything, but if a different one is requested
 # then we scrub everything and start over.
 
-libvex_x86_linux.a: TAG_x86_linux libvex.a
-	mv -f libvex.a libvex_x86_linux.a
-TAG_x86_linux:
-	if [ ! -f TAG_x86_linux ] ; then rm -f $(LIB_OBJS) TAG_* libvex.a ; fi
-	touch TAG_x86_linux
+libvex-x86-linux.a: TAG-x86-linux libvex.a
+	mv -f libvex.a libvex-x86-linux.a
+TAG-x86-linux:
+	if [ ! -f TAG-x86-linux ] ; then rm -f $(LIB_OBJS) TAG-* libvex.a ; fi
+	touch TAG-x86-linux
 
-libvex_amd64_linux.a: TAG_amd64_linux libvex.a
-	mv -f libvex.a libvex_amd64_linux.a
-TAG_amd64_linux:
-	if [ ! -f TAG_amd64_linux ] ; then rm -f $(LIB_OBJS) TAG_* libvex.a ; fi
-	touch TAG_amd64_linux
+libvex-amd64-linux.a: TAG-amd64-linux libvex.a
+	mv -f libvex.a libvex-amd64-linux.a
+TAG-amd64-linux:
+	if [ ! -f TAG-amd64-linux ] ; then rm -f $(LIB_OBJS) TAG-* libvex.a ; fi
+	touch TAG-amd64-linux
 
-libvex_x86_darwin.a: TAG_x86_darwin libvex.a
-	mv -f libvex.a libvex_x86_darwin.a
-TAG_x86_darwin:
-	if [ ! -f TAG_x86_darwin ] ; then rm -f $(LIB_OBJS) TAG_* libvex.a ; fi
-	touch TAG_x86_darwin
+libvex-ppc32-linux.a: TAG-ppc32-linux libvex.a
+	mv -f libvex.a libvex-ppc32-linux.a
+TAG-ppc32-linux:
+	if [ ! -f TAG-ppc32-linux ] ; then rm -f $(LIB_OBJS) TAG-* libvex.a ; fi
+	touch TAG-ppc32-linux
 
-libvex_amd64_darwin.a: TAG_amd64_darwin libvex.a
-	mv -f libvex.a libvex_amd64_darwin.a
-TAG_amd64_darwin:
-	if [ ! -f TAG_amd64_darwin ] ; then rm -f $(LIB_OBJS) TAG_* libvex.a ; fi
-	touch TAG_amd64_darwin
+libvex-ppc64-linux.a: TAG-ppc64-linux libvex.a
+	mv -f libvex.a libvex-ppc64-linux.a
+TAG-ppc64-linux:
+	if [ ! -f TAG-ppc64-linux ] ; then rm -f $(LIB_OBJS) TAG-* libvex.a ; fi
+	touch TAG-ppc64-linux
 
-libvex_ppc32_linux.a: TAG_ppc32_linux libvex.a
-	mv -f libvex.a libvex_ppc32_linux.a
-TAG_ppc32_linux:
-	if [ ! -f TAG_ppc32_linux ] ; then rm -f $(LIB_OBJS) TAG_* libvex.a ; fi
-	touch TAG_ppc32_linux
+libvex-ppc32-aix5.a: TAG-ppc32-aix5 libvex.a
+	mv -f libvex.a libvex-ppc32-aix5.a
+TAG-ppc32-aix5:
+	if [ ! -f TAG-ppc32-aix5 ] ; then rm -f $(LIB_OBJS) TAG-* libvex.a ; fi
+	touch TAG-ppc32-aix5
 
-libvex_ppc64_linux.a: TAG_ppc64_linux libvex.a
-	mv -f libvex.a libvex_ppc64_linux.a
-TAG_ppc64_linux:
-	if [ ! -f TAG_ppc64_linux ] ; then rm -f $(LIB_OBJS) TAG_* libvex.a ; fi
-	touch TAG_ppc64_linux
+libvex-ppc64-aix5.a: TAG-ppc64-aix5 libvex.a
+	mv -f libvex.a libvex-ppc64-aix5.a
+TAG-ppc64-aix5:
+	if [ ! -f TAG-ppc64-aix5 ] ; then rm -f $(LIB_OBJS) TAG-* libvex.a ; fi
+	touch TAG-ppc64-aix5
 
-libvex_ppc32_aix5.a: TAG_ppc32_aix5 libvex.a
-	mv -f libvex.a libvex_ppc32_aix5.a
-TAG_ppc32_aix5:
-	if [ ! -f TAG_ppc32_aix5 ] ; then rm -f $(LIB_OBJS) TAG_* libvex.a ; fi
-	touch TAG_ppc32_aix5
+libvex-x86-darwin.a: TAG-x86-darwin libvex.a
+	mv -f libvex.a libvex-x86-darwin.a
+TAG-x86-darwin:
+	if [ ! -f TAG-x86-darwin ] ; then rm -f $(LIB_OBJS) TAG-* libvex.a ; fi
+	touch TAG-x86-darwin
 
-libvex_ppc64_aix5.a: TAG_ppc64_aix5 libvex.a
-	mv -f libvex.a libvex_ppc64_aix5.a
-TAG_ppc64_aix5:
-	if [ ! -f TAG_ppc64_aix5 ] ; then rm -f $(LIB_OBJS) TAG_* libvex.a ; fi
-	touch TAG_ppc64_aix5
+libvex-amd64-darwin.a: TAG-amd64-darwin libvex.a
+	mv -f libvex.a libvex-amd64-darwin.a
+TAG-amd64-darwin:
+	if [ ! -f TAG-amd64-darwin ] ; then rm -f $(LIB_OBJS) TAG-* libvex.a ; fi
+	touch TAG-amd64-darwin
 
 
 # This doesn't get rid of priv/main/vex_svnversion.h, because
@@ -167,7 +167,7 @@ TAG_ppc64_aix5:
 # so if 'make clean' did get rid of it, then in the tarball,
 # doing 'make ; make clean ; make' (or distclean) would fail.
 clean:
-	rm -f $(LIB_OBJS) *.a vex test_main.o TAG_* \
+	rm -f $(LIB_OBJS) *.a vex test_main.o TAG-* \
 		pub/libvex_guest_offsets.h \
 		auxprogs/genoffsets.s
 

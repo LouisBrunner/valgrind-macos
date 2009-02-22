@@ -35,38 +35,38 @@ LIBVEX =
 
 if VGCONF_PLATFORMS_INCLUDE_X86_LINUX
 noinst_PROGRAMS  += vgpreload_core-x86-linux.so
-pkglib_LIBRARIES += libcoregrind_x86_linux.a libreplacemalloc_toolpreload_x86_linux.a
-LIBVEX           += libvex_x86_linux.a
+pkglib_LIBRARIES += libcoregrind-x86-linux.a libreplacemalloc_toolpreload-x86-linux.a
+LIBVEX           += libvex-x86-linux.a
 endif
 
 if VGCONF_PLATFORMS_INCLUDE_AMD64_LINUX
 noinst_PROGRAMS  += vgpreload_core-amd64-linux.so
-pkglib_LIBRARIES += libcoregrind_amd64_linux.a libreplacemalloc_toolpreload_amd64_linux.a
-LIBVEX           += libvex_amd64_linux.a
+pkglib_LIBRARIES += libcoregrind-amd64-linux.a libreplacemalloc_toolpreload-amd64-linux.a
+LIBVEX           += libvex-amd64-linux.a
 endif
 
 if VGCONF_PLATFORMS_INCLUDE_PPC32_LINUX
 noinst_PROGRAMS  += vgpreload_core-ppc32-linux.so
-pkglib_LIBRARIES += libcoregrind_ppc32_linux.a libreplacemalloc_toolpreload_ppc32_linux.a
-LIBVEX           += libvex_ppc32_linux.a
+pkglib_LIBRARIES += libcoregrind-ppc32-linux.a libreplacemalloc_toolpreload-ppc32-linux.a
+LIBVEX           += libvex-ppc32-linux.a
 endif
 
 if VGCONF_PLATFORMS_INCLUDE_PPC64_LINUX
 noinst_PROGRAMS  += vgpreload_core-ppc64-linux.so
-pkglib_LIBRARIES += libcoregrind_ppc64_linux.a libreplacemalloc_toolpreload_ppc64_linux.a
-LIBVEX           += libvex_ppc64_linux.a
+pkglib_LIBRARIES += libcoregrind-ppc64-linux.a libreplacemalloc_toolpreload-ppc64-linux.a
+LIBVEX           += libvex-ppc64-linux.a
 endif
 
 if VGCONF_PLATFORMS_INCLUDE_PPC32_AIX5
 noinst_PROGRAMS  += vgpreload_core-ppc32-aix5.so
-pkglib_LIBRARIES += libcoregrind_ppc32_aix5.a libreplacemalloc_toolpreload_ppc32_aix5.a
-LIBVEX           += libvex_ppc32_aix5.a
+pkglib_LIBRARIES += libcoregrind-ppc32-aix5.a libreplacemalloc_toolpreload-ppc32-aix5.a
+LIBVEX           += libvex-ppc32-aix5.a
 endif
 
 if VGCONF_PLATFORMS_INCLUDE_PPC64_AIX5
 noinst_PROGRAMS  += vgpreload_core-ppc64-aix5.so
-pkglib_LIBRARIES += libcoregrind_ppc64_aix5.a libreplacemalloc_toolpreload_ppc64_aix5.a
-LIBVEX           += libvex_ppc64_aix5.a
+pkglib_LIBRARIES += libcoregrind-ppc64-aix5.a libreplacemalloc_toolpreload-ppc64-aix5.a
+LIBVEX           += libvex-ppc64-aix5.a
 endif
 
 

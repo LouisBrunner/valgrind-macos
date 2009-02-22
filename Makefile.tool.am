@@ -7,84 +7,84 @@ include $(top_srcdir)/Makefile.install.am
 
 
 LIBREPLACEMALLOC_X86_LINUX = \
-	$(top_builddir)/coregrind/libreplacemalloc_toolpreload_x86_linux.a
+	$(top_builddir)/coregrind/libreplacemalloc_toolpreload-x86-linux.a
 
 LIBREPLACEMALLOC_AMD64_LINUX = \
-	$(top_builddir)/coregrind/libreplacemalloc_toolpreload_amd64_linux.a
+	$(top_builddir)/coregrind/libreplacemalloc_toolpreload-amd64-linux.a
 
 LIBREPLACEMALLOC_PPC32_LINUX = \
-	$(top_builddir)/coregrind/libreplacemalloc_toolpreload_ppc32_linux.a
+	$(top_builddir)/coregrind/libreplacemalloc_toolpreload-ppc32-linux.a
 
 LIBREPLACEMALLOC_PPC64_LINUX = \
-	$(top_builddir)/coregrind/libreplacemalloc_toolpreload_ppc64_linux.a
+	$(top_builddir)/coregrind/libreplacemalloc_toolpreload-ppc64-linux.a
 
 LIBREPLACEMALLOC_PPC32_AIX5 = \
-	$(top_builddir)/coregrind/libreplacemalloc_toolpreload_ppc32_aix5.a
+	$(top_builddir)/coregrind/libreplacemalloc_toolpreload-ppc32-aix5.a
 
 LIBREPLACEMALLOC_PPC64_AIX5 = \
-	$(top_builddir)/coregrind/libreplacemalloc_toolpreload_ppc64_aix5.a
+	$(top_builddir)/coregrind/libreplacemalloc_toolpreload-ppc64-aix5.a
 
 
 COREGRIND_LIBS_X86_LINUX = \
-	$(top_builddir)/coregrind/libcoregrind_x86_linux.a \
-	@VEX_DIR@/libvex_x86_linux.a
+	$(top_builddir)/coregrind/libcoregrind-x86-linux.a \
+	@VEX_DIR@/libvex-x86-linux.a
 
 COREGRIND_LIBS_AMD64_LINUX = \
-	$(top_builddir)/coregrind/libcoregrind_amd64_linux.a \
-	@VEX_DIR@/libvex_amd64_linux.a
+	$(top_builddir)/coregrind/libcoregrind-amd64-linux.a \
+	@VEX_DIR@/libvex-amd64-linux.a
 
 COREGRIND_LIBS_PPC32_LINUX = \
-	$(top_builddir)/coregrind/libcoregrind_ppc32_linux.a \
-	@VEX_DIR@/libvex_ppc32_linux.a
+	$(top_builddir)/coregrind/libcoregrind-ppc32-linux.a \
+	@VEX_DIR@/libvex-ppc32-linux.a
 
 COREGRIND_LIBS_PPC64_LINUX = \
-	$(top_builddir)/coregrind/libcoregrind_ppc64_linux.a \
-	@VEX_DIR@/libvex_ppc64_linux.a
+	$(top_builddir)/coregrind/libcoregrind-ppc64-linux.a \
+	@VEX_DIR@/libvex-ppc64-linux.a
 
 COREGRIND_LIBS_PPC32_AIX5 = \
-	$(top_builddir)/coregrind/libcoregrind_ppc32_aix5.a \
-	@VEX_DIR@/libvex_ppc32_aix5.a
+	$(top_builddir)/coregrind/libcoregrind-ppc32-aix5.a \
+	@VEX_DIR@/libvex-ppc32-aix5.a
 
 COREGRIND_LIBS_PPC64_AIX5 = \
-	$(top_builddir)/coregrind/libcoregrind_ppc64_aix5.a \
-	@VEX_DIR@/libvex_ppc64_aix5.a
+	$(top_builddir)/coregrind/libcoregrind-ppc64-aix5.a \
+	@VEX_DIR@/libvex-ppc64-aix5.a
 
 
 ##.PHONY:  @VEX_DIR@/libvex.a
 
-@VEX_DIR@/libvex_x86_linux.a: @VEX_DIR@/priv/main/vex_svnversion.h
+@VEX_DIR@/libvex-x86-linux.a: @VEX_DIR@/priv/main/vex_svnversion.h
 	$(MAKE) -C @VEX_DIR@ CC="$(CC)" AR="$(AR)" \
-	libvex_x86_linux.a \
+	libvex-x86-linux.a \
 	EXTRA_CFLAGS="$(AM_CFLAGS_X86_LINUX) @FLAG_WDECL_AFTER_STMT@ \
 			@FLAG_FNO_STACK_PROTECTOR@"
 
-@VEX_DIR@/libvex_amd64_linux.a: @VEX_DIR@/priv/main/vex_svnversion.h
+@VEX_DIR@/libvex-amd64-linux.a: @VEX_DIR@/priv/main/vex_svnversion.h
 	$(MAKE) -C @VEX_DIR@ CC="$(CC)" AR="$(AR)" \
-	libvex_amd64_linux.a \
+	libvex-amd64-linux.a \
 	EXTRA_CFLAGS="$(AM_CFLAGS_AMD64_LINUX) @FLAG_WDECL_AFTER_STMT@ \
 			@FLAG_FNO_STACK_PROTECTOR@"
 
-@VEX_DIR@/libvex_ppc32_linux.a: @VEX_DIR@/priv/main/vex_svnversion.h
+@VEX_DIR@/libvex-ppc32-linux.a: @VEX_DIR@/priv/main/vex_svnversion.h
 	$(MAKE) -C @VEX_DIR@ CC="$(CC)" AR="$(AR)" \
-	libvex_ppc32_linux.a \
+	libvex-ppc32-linux.a \
 	EXTRA_CFLAGS="$(AM_CFLAGS_PPC32_LINUX) @FLAG_WDECL_AFTER_STMT@ \
 			@FLAG_FNO_STACK_PROTECTOR@"
 
-@VEX_DIR@/libvex_ppc64_linux.a: @VEX_DIR@/priv/main/vex_svnversion.h
+@VEX_DIR@/libvex-ppc64-linux.a: @VEX_DIR@/priv/main/vex_svnversion.h
 	$(MAKE) -C @VEX_DIR@ CC="$(CC)" AR="$(AR)" \
-	libvex_ppc64_linux.a \
+	libvex-ppc64-linux.a \
 	EXTRA_CFLAGS="$(AM_CFLAGS_PPC64_LINUX) @FLAG_WDECL_AFTER_STMT@ \
 			@FLAG_FNO_STACK_PROTECTOR@"
 
-@VEX_DIR@/libvex_ppc32_aix5.a: @VEX_DIR@/priv/main/vex_svnversion.h
+@VEX_DIR@/libvex-ppc32-aix5.a: @VEX_DIR@/priv/main/vex_svnversion.h
 	$(MAKE) -C @VEX_DIR@ CC="$(CC)" AR="$(AR) -X32" \
-	libvex_ppc32_aix5.a \
+	libvex-ppc32-aix5.a \
 	EXTRA_CFLAGS="$(AM_CFLAGS_PPC32_AIX5) @FLAG_WDECL_AFTER_STMT@ \
 			@FLAG_FNO_STACK_PROTECTOR@"
 
-@VEX_DIR@/libvex_ppc64_aix5.a: @VEX_DIR@/priv/main/vex_svnversion.h
+@VEX_DIR@/libvex-ppc64-aix5.a: @VEX_DIR@/priv/main/vex_svnversion.h
 	$(MAKE) -C @VEX_DIR@ CC="$(CC)" AR="$(AR) -X64" \
-	libvex_ppc64_aix5.a \
+	libvex-ppc64-aix5.a \
 	EXTRA_CFLAGS="$(AM_CFLAGS_PPC64_AIX5) @FLAG_WDECL_AFTER_STMT@ \
 			@FLAG_FNO_STACK_PROTECTOR@"
 

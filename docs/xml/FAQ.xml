@@ -572,7 +572,7 @@ int main(void)
     <para>Is it possible to attach Valgrind to a program that is already
     running?</para>
   </question>
-  <answer id="a-undeferrors">
+  <answer id="a-attach">
     <para>No.  The environment that Valgrind provides for running programs
     is significantly different to that for normal programs, e.g. due to
     different layout of memory.  Therefore Valgrind has to have full control

@@ -509,6 +509,10 @@ static void barrier_delete_thread(struct barrier_info* const p,
 /**
  * Report that *_barrier_destroy() has been called but that this call was
  * not synchronized with the last *_barrier_wait() call on the same barrier.
+ *
+ * This topic has been discussed extensively on comp.programming.threads
+ * (February 3, 2009). See also
+ * <a href="http://groups.google.com/group/comp.programming.threads/browse_thread/thread/4f65535d6192aa50/a5f4bf1e3b437c4d">Immediately destroying pthread barriers</a>.
  */
 static
 void barrier_report_wait_delete_race(const struct barrier_info* const p,

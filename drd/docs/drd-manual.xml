@@ -799,6 +799,11 @@ output reports that the lock acquired at line 51 in source file
     </listitem>
     <listitem>
       <para>
+        Missing synchronization between barrier wait and barrier destruction.
+      </para>
+    </listitem>
+    <listitem>
+      <para>
         Exiting a thread without first unlocking the spinlocks,
         mutexes or reader-writer locks that were locked by that
         thread.

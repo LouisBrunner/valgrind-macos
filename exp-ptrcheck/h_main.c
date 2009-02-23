@@ -2214,6 +2214,7 @@ static void setup_post_syscall_table ( void )
       ADD(0, __NR_exit); /* hmm, why are we still alive? */
       ADD(0, __NR_exit_group);
       ADD(0, __NR_fadvise64);
+      ADD(0, __NR_fallocate);
       ADD(0, __NR_fchmod);
       ADD(0, __NR_fchown);
 #     if defined(__NR_fchown32)
@@ -2261,6 +2262,9 @@ static void setup_post_syscall_table ( void )
       ADD(0, __NR_getppid);
       ADD(0, __NR_getresgid);
       ADD(0, __NR_getresuid);
+#     if defined(__NR_getresuid32)
+      ADD(0, __NR_getresuid32);
+#     endif
       ADD(0, __NR_getrlimit);
       ADD(0, __NR_getrusage);
 #     if defined(__NR_getsockname)

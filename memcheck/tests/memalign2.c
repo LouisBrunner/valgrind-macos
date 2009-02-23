@@ -19,6 +19,10 @@
 
 int main ( void )
 {
+#  if defined(_AIX)
+   printf("AIX 5.2 knows about neither memalign() nor posix_memalign().\n");
+
+#  else
    // Nb: assuming VG_MIN_MALLOC_SZB is 8!
    // Should work with both 32-bit and 64-bit pointers, though.
 
@@ -26,10 +30,6 @@ int main ( void )
    int  res;
    assert(sizeof(long int) == sizeof(void*));
 
-#  if defined(_AIX)
-   printf("AIX 5.2 knows about neither memalign() nor posix_memalign().\n");
-
-#  else
    p = memalign(0, 100);      assert(0 == (long)p % 8);
    p = memalign(1, 100);      assert(0 == (long)p % 8);
    p = memalign(2, 100);      assert(0 == (long)p % 8);

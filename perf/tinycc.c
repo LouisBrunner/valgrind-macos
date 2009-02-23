@@ -20606,7 +20606,7 @@ static int rt_get_caller_pc(unsigned long *paddr,
 void rt_error(ucontext_t *uc, const char *fmt, ...)
 {
     va_list ap;
-    unsigned long pc;
+    unsigned long pc = 0;  // shut gcc up
     int i;
 
     va_start(ap, fmt);

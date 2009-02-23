@@ -37,9 +37,9 @@ check_PROGRAMS = \
 	pushpopmem sse_memory tronical \
 	more_x86_fp fprem xor-undef-x86
 
-AM_CFLAGS    += @FLAG_M32@ $(FLAG_MMMX) $(FLAG_MSSE)
-AM_CXXFLAGS  += @FLAG_M32@ $(FLAG_MMMX) $(FLAG_MSSE)
-AM_CCASFLAGS  = @FLAG_M32@
+AM_CFLAGS   += @FLAG_M32@ $(FLAG_MMMX) $(FLAG_MSSE)
+AM_CXXFLAGS += @FLAG_M32@ $(FLAG_MMMX) $(FLAG_MSSE)
+AM_CCASFLAGS = @FLAG_M32@
 
 # must be built with these flags -- bug only occurred with them
 fpeflags_CFLAGS		= $(AM_CFLAGS) -march=i686

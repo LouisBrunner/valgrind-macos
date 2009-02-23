@@ -12,3 +12,7 @@ check_PROGRAMS = \
 	mremap \
 	mremap2
 
+
+AM_CFLAGS   += $(AM_FLAG_M3264_PRI)
+AM_CXXFLAGS += $(AM_FLAG_M3264_PRI)
+

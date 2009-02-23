@@ -205,8 +205,6 @@ check_PROGRAMS =      \
   memory_allocation   \
   monitor_example     \
   new_delete          \
-  rwlock_race         \
-  rwlock_test         \
   pth_broadcast       \
   pth_cancel_locked   \
   pth_cond_race       \
@@ -215,6 +213,8 @@ check_PROGRAMS =      \
   pth_detached_sem    \
   pth_inconsistent_cond_wait \
   recursive_mutex     \
+  rwlock_race         \
+  rwlock_test         \
   sem_as_mutex        \
   sigalrm             \
   trylock

@@ -17,7 +17,6 @@
    exp-ptrcheck:Arith
    obj:/*lib*/ld-2.*so*
    obj:/*lib*/ld-2.*so*
-   obj:/*lib*/ld-2.*so*
 }
 
 {
@@ -38,7 +37,6 @@
 {
    If I had to guess, inlined or nameless strlen etc in ld.so
    exp-ptrcheck:Heap
-   obj:/*lib*/ld-2.*so*
    obj:/*lib*/ld-2.*so*
    obj:/*lib*/ld-2.*so*
 }

@@ -174,7 +174,7 @@ void* fast_key_of_node(AvlNode* n)
 }
 
 // Compare the first word of each element.  Inlining is *crucial*.
-static inline Word fast_cmp(void* k, AvlNode* n)
+static inline Word fast_cmp(const void* k, const AvlNode* n)
 {
    UWord w1 = *(UWord*)k;
    UWord w2 = *(UWord*)elem_of_node(n);
@@ -785,7 +785,7 @@ Bool VG_(OSetWord_Next)(AvlTree* t, UWord* val)
 // produced VG_(OSetGen_Next) is the smallest key in the map 
 // >= start_at.  Naturally ">=" is defined by the comparison 
 // function supplied to VG_(OSetGen_Create).
-void VG_(OSetGen_ResetIterAt)(AvlTree* oset, void* k)
+void VG_(OSetGen_ResetIterAt)(AvlTree* oset, const void* k)
 {
    Int     i;
    AvlNode *n, *t;

@@ -3880,6 +3880,7 @@ VALGRIND_PRINTF_BACKTRACE(const char *format, ...)
 
 /* Return 1 if a mempool exists, else 0. */
 #define VALGRIND_MEMPOOL_EXISTS(pool)                             \
+   __extension__                                                  \
    ({unsigned int _qzz_res;                                       \
     VALGRIND_DO_CLIENT_REQUEST(_qzz_res, 0,                       \
                                VG_USERREQ__MEMPOOL_EXISTS,        \
@@ -3889,6 +3890,7 @@ VALGRIND_PRINTF_BACKTRACE(const char *format, ...)
 
 /* Mark a piece of memory as being a stack. Returns a stack id. */
 #define VALGRIND_STACK_REGISTER(start, end)                       \
+   __extension__                                                  \
    ({unsigned int _qzz_res;                                       \
     VALGRIND_DO_CLIENT_REQUEST(_qzz_res, 0,                       \
                                VG_USERREQ__STACK_REGISTER,        \

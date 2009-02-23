@@ -187,6 +187,13 @@ static Bool clientobj_remove_obj(DrdClientobj* const p)
   return True;
 }
 
+/**
+ * Clean up all client objects p for which their start address p->any.a1 fits
+ * inside the address range [ a1, a2 [.
+ *
+ * @note The implementation of this function relies on the fact that the
+ *   data in s_clientobj_set is sorted on the start address of client objects.
+ */
 void DRD_(clientobj_stop_using_mem)(const Addr a1, const Addr a2)
 {
   Addr removed_at;
@@ -197,22 +204,17 @@ void DRD_(clientobj_stop_using_mem)(const Addr a1, const Addr a2)
   if (! DRD_(is_any_suppressed)(a1, a2))
     return;
 
-  VG_(OSetGen_ResetIter)(s_clientobj_set);
-  p = VG_(OSetGen_Next)(s_clientobj_set);
-  for ( ; p != 0; )
+  VG_(OSetGen_ResetIterAt)(s_clientobj_set, &a1);
+  for ( ; (p = VG_(OSetGen_Next)(s_clientobj_set)) != 0 && p->any.a1 < a2; )
   {
-    if (a1 <= p->any.a1 && p->any.a1 < a2)
-    {
-      removed_at = p->any.a1;
-      clientobj_remove_obj(p);
-      /* The above call removes an element from the oset and hence */
-      /* invalidates the iterator. Set the iterator back.          */
-      VG_(OSetGen_ResetIterAt)(s_clientobj_set, &removed_at);
-    }
-    else
-    {
-      p = VG_(OSetGen_Next)(s_clientobj_set);
-    }
+    tl_assert(a1 <= p->any.a1);
+    removed_at = p->any.a1;
+    clientobj_remove_obj(p);
+    /*
+     * The above call removes an element from the oset and hence
+     * invalidates the iterator. Restore the iterator.
+     */
+    VG_(OSetGen_ResetIterAt)(s_clientobj_set, &removed_at);
   }
 }
 

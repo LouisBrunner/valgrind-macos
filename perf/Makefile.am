@@ -23,7 +23,9 @@ AM_CFLAGS   = $(WERROR) -Winline -Wall -Wshadow -g -O $(AM_FLAG_M3264_PRI)
 AM_CXXFLAGS = $(AM_CFLAGS)
 
 # Extra stuff
-fbench_CFLAGS   = $(AM_FLAG_M3264_PRI) -g -O2
+bz2_CFLAGS	= $(AM_CFLAGS) -Wno-inline
+
+fbench_CFLAGS   = $(AM_CFLAGS) -O2
 ffbench_LDADD	= -lm
 
-tinycc_CFLAGS	= $(AM_CFLAGS) -Wno-shadow
+tinycc_CFLAGS	= $(AM_CFLAGS) -Wno-shadow -Wno-inline

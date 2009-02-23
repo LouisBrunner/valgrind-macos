@@ -226,23 +226,44 @@ check_PROGRAMS = \
 	wrap1 wrap2 wrap3 wrap4 wrap5 wrap6 wrap7 wrap7so.so wrap8 \
 	writev zeropage
 
+
 AM_CFLAGS   += $(AM_FLAG_M3264_PRI)
 AM_CXXFLAGS += $(AM_FLAG_M3264_PRI)
 
-# Extra stuff for C tests
+deep_templates_SOURCES	= deep_templates.cpp
+deep_templates_CXXFLAGS	= $(AM_CFLAGS) -O -gstabs
+
+long_namespace_xml_SOURCES = long_namespace_xml.cpp
+
 memcmptest_CFLAGS	= $(AM_CFLAGS) -fno-builtin-memcmp
+
+mismatches_SOURCES	= mismatches.cpp
+
+new_nothrow_SOURCES 	= new_nothrow.cpp
+new_override_SOURCES 	= new_override.cpp
+
+# This requires optimisation in order to get just one resulting error.
+origin4_many_CFLAGS	= $(AM_CFLAGS) -O
+
+# Apply -O so as to run in reasonable time.
+origin5_bz2_CFLAGS	= $(AM_CFLAGS) -O -Wno-inline
+origin6_fp_CFLAGS	= $(AM_CFLAGS) -O
+
+# Don't allow GCC to inline memcpy(), because then we can't intercept it
+overlap_CFLAGS		= $(AM_CFLAGS) -fno-builtin-memcpy
+
+str_tester_CFLAGS	= $(AM_CFLAGS) -Wno-shadow
+
+supp_unknown_SOURCES	= badjump.c
+supp1_SOURCES		= supp.c
+supp2_SOURCES		= supp.c
+
 vcpu_bz2_CFLAGS		= $(AM_CFLAGS) -O2
 vcpu_fbench_CFLAGS	= $(AM_CFLAGS) -O2
 vcpu_fnfns_CFLAGS	= $(AM_CFLAGS) -O2
 vcpu_fnfns_LDADD	= -lm
 wrap6_CFLAGS		= $(AM_CFLAGS) -O2
 
-# Don't allow GCC to inline memcpy(), because then we can't intercept it
-overlap_CFLAGS		= $(AM_CFLAGS) -fno-builtin-memcpy
-str_tester_CFLAGS	= $(AM_CFLAGS) -Wno-shadow
-supp_unknown_SOURCES	= badjump.c
-supp1_SOURCES		= supp.c
-supp2_SOURCES		= supp.c
 # To make it a bit more realistic, have some optimisation enabled
 # for the varinfo tests.  We still expect sane results.
 varinfo1_CFLAGS		= $(AM_CFLAGS) -O
@@ -251,19 +272,6 @@ varinfo3_CFLAGS		= $(AM_CFLAGS) -O
 varinfo4_CFLAGS		= $(AM_CFLAGS) -O
 varinfo5_CFLAGS		= $(AM_CFLAGS) -O
 varinfo6_CFLAGS		= $(AM_CFLAGS) -O
-# This requires optimisation in order to get just one resulting error.
-origin4_many_CFLAGS	= $(AM_CFLAGS) -O
-# Apply -O so as to run in reasonable time.
-origin5_bz2_CFLAGS	= $(AM_CFLAGS) -O
-origin6_fp_CFLAGS	= $(AM_CFLAGS) -O
-
-# C++ tests
-mismatches_SOURCES	= mismatches.cpp
-new_nothrow_SOURCES 	= new_nothrow.cpp
-new_override_SOURCES 	= new_override.cpp
-deep_templates_SOURCES	= deep_templates.cpp
-long_namespace_xml_SOURCES = long_namespace_xml.cpp
-deep_templates_CXXFLAGS	= $(AM_CFLAGS) -O -gstabs
 
 if VGCONF_PLATFORMS_INCLUDE_PPC32_AIX5
 if VGCONF_PLATFORMS_INCLUDE_PPC64_AIX5
@@ -279,39 +287,6 @@ else
  wrap5_LDFLAGS = $(AM_FLAG_M3264_PRI) -Wl,-G -Wl,-bnogc
  wrap6_LDFLAGS = $(AM_FLAG_M3264_PRI) -Wl,-G -Wl,-bnogc
  wrap8_LDFLAGS = $(AM_FLAG_M3264_PRI) -Wl,-G -Wl,-bnogc
-endif
-endif
-
-# Build shared object for wrap7
-wrap7_SOURCES           = wrap7.c
-wrap7_DEPENDENCIES      = wrap7so.so
-if VGCONF_PLATFORMS_INCLUDE_PPC64_AIX5 
- wrap7_LDADD            = `pwd`/wrap7so.so
- wrap7_LDFLAGS          = $(AM_FLAG_M3264_PRI)
-else
-if VGCONF_PLATFORMS_INCLUDE_PPC32_AIX5
- wrap7_LDADD            = `pwd`/wrap7so.so
- wrap7_LDFLAGS          = $(AM_FLAG_M3264_PRI) -Wl,-G -Wl,-bnogc
-else
- wrap7_LDADD            = wrap7so.so
- wrap7_LDFLAGS          = $(AM_FLAG_M3264_PRI) \
-				-Wl,-rpath,$(top_builddir)/memcheck/tests
-endif
-endif
-
-wrap7so_so_SOURCES      = wrap7so.c
-wrap7so_so_LDADD        = 
-wrap7so_so_DEPENDENCIES = 
-wrap7so_so_CFLAGS       = $(AM_CFLAGS) -fpic
-if VGCONF_PLATFORMS_INCLUDE_PPC64_AIX5
- wrap7so_so_LDFLAGS     = -fpic $(AM_FLAG_M3264_PRI) -shared
-else
-if VGCONF_PLATFORMS_INCLUDE_PPC32_AIX5
- wrap7so_so_LDFLAGS     = -fpic $(AM_FLAG_M3264_PRI) -shared \
-				-Wl,-G -Wl,-bnogc
-else
- wrap7so_so_LDFLAGS     = -fpic $(AM_FLAG_M3264_PRI) -shared \
-				-Wl,-soname -Wl,wrap7so.so
 endif
 endif
 
@@ -333,9 +308,7 @@ endif
 endif
 
 varinfo5so_so_SOURCES   = varinfo5so.c
-varinfo5so_so_LDADD     = 
-varinfo5so_so_DEPENDENCIES = 
-varinfo5so_so_CFLAGS    = $(AM_CFLAGS) -fpic -O
+varinfo5so_so_CFLAGS    = $(AM_CFLAGS) -fpic -O -Wno-shadow
 if VGCONF_PLATFORMS_INCLUDE_PPC64_AIX5
  varinfo5so_so_LDFLAGS  = -fpic $(AM_FLAG_M3264_PRI) -shared
 else
@@ -347,4 +320,35 @@ else
 				-Wl,-soname -Wl,varinfo5so.so
 endif
 endif
+# Build shared object for wrap7
+wrap7_SOURCES           = wrap7.c
+wrap7_DEPENDENCIES      = wrap7so.so
+if VGCONF_PLATFORMS_INCLUDE_PPC64_AIX5 
+ wrap7_LDADD            = `pwd`/wrap7so.so
+ wrap7_LDFLAGS          = $(AM_FLAG_M3264_PRI)
+else
+if VGCONF_PLATFORMS_INCLUDE_PPC32_AIX5
+ wrap7_LDADD            = `pwd`/wrap7so.so
+ wrap7_LDFLAGS          = $(AM_FLAG_M3264_PRI) -Wl,-G -Wl,-bnogc
+else
+ wrap7_LDADD            = wrap7so.so
+ wrap7_LDFLAGS          = $(AM_FLAG_M3264_PRI) \
+				-Wl,-rpath,$(top_builddir)/memcheck/tests
+endif
+endif
+
+wrap7so_so_SOURCES      = wrap7so.c
+wrap7so_so_CFLAGS       = $(AM_CFLAGS) -fpic
+if VGCONF_PLATFORMS_INCLUDE_PPC64_AIX5
+ wrap7so_so_LDFLAGS     = -fpic $(AM_FLAG_M3264_PRI) -shared
+else
+if VGCONF_PLATFORMS_INCLUDE_PPC32_AIX5
+ wrap7so_so_LDFLAGS     = -fpic $(AM_FLAG_M3264_PRI) -shared \
+				-Wl,-G -Wl,-bnogc
+else
+ wrap7so_so_LDFLAGS     = -fpic $(AM_FLAG_M3264_PRI) -shared \
+				-Wl,-soname -Wl,wrap7so.so
+endif
+endif
+
 

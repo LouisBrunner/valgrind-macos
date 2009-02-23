@@ -59,6 +59,12 @@
 
 //#endif /* !CONFIG_TCCBOOT */
 
+// Dummy variables used to avoid warnings like these: 
+// warning: ignoring return value of ‘fwrite’, declared with attribute
+//    warn_unused_result
+char* dummy_char_star;
+size_t dummy_size_t;
+
 // njn: inlined elf.h
 //#include "elf.h"
 //---------------------------------------------------------------------------
@@ -14839,7 +14845,7 @@ static int tcc_compile(TCCState *s1)
         section_sym = put_elf_sym(symtab_section, 0, 0, 
                                   ELF32_ST_INFO(STB_LOCAL, STT_SECTION), 0, 
                                   text_section->sh_num, NULL);
-        getcwd(buf, sizeof(buf));
+        dummy_char_star = getcwd(buf, sizeof(buf));
         pstrcat(buf, sizeof(buf), "/");
         put_stabs_r(buf, N_SO, 0, 0, 
                     text_section->data_offset, text_section, section_sym);
@@ -19193,7 +19199,7 @@ static void tcc_output_binary(TCCState *s1, FILE *f,
                 offset++;
             }
             size = s->sh_size;
-            fwrite(s->data, 1, size, f);
+            dummy_size_t = fwrite(s->data, 1, size, f);
             offset += size;
         }
     }
@@ -19776,8 +19782,8 @@ int tcc_output_file(TCCState *s1, const char *filename)
         ehdr.e_shnum = shnum;
         ehdr.e_shstrndx = shnum - 1;
         
-        fwrite(&ehdr, 1, sizeof(Elf32_Ehdr), f);
-        fwrite(phdr, 1, phnum * sizeof(Elf32_Phdr), f);
+        dummy_size_t = fwrite(&ehdr, 1, sizeof(Elf32_Ehdr), f);
+        dummy_size_t = fwrite(phdr, 1, phnum * sizeof(Elf32_Phdr), f);
         offset = sizeof(Elf32_Ehdr) + phnum * sizeof(Elf32_Phdr);
 
         for(i=1;i<s1->nb_sections;i++) {
@@ -19788,7 +19794,7 @@ int tcc_output_file(TCCState *s1, const char *filename)
                     offset++;
                 }
                 size = s->sh_size;
-                fwrite(s->data, 1, size, f);
+                dummy_size_t = fwrite(s->data, 1, size, f);
                 offset += size;
             }
         }
@@ -19816,7 +19822,7 @@ int tcc_output_file(TCCState *s1, const char *filename)
                 sh->sh_offset = s->sh_offset;
                 sh->sh_size = s->sh_size;
             }
-            fwrite(sh, 1, sizeof(Elf32_Shdr), f);
+            dummy_size_t = fwrite(sh, 1, sizeof(Elf32_Shdr), f);
         }
     } else {
         tcc_output_binary(s1, f, section_order);
@@ -19838,7 +19844,7 @@ static void *load_data(int fd, unsigned long file_offset, unsigned long size)
 
     data = tcc_malloc(size);
     lseek(fd, file_offset, SEEK_SET);
-    read(fd, data, size);
+    dummy_size_t = read(fd, data, size);
     return data;
 }
 
@@ -19975,7 +19981,7 @@ static int tcc_load_object_file(TCCState *s1,
             unsigned char *ptr;
             lseek(fd, file_offset + sh->sh_offset, SEEK_SET);
             ptr = section_ptr_add(s, size);
-            read(fd, ptr, size);
+            dummy_size_t = read(fd, ptr, size);
         } else {
             s->data_offset += size;
         }
@@ -20157,7 +20163,7 @@ static int tcc_load_archive(TCCState *s1, int fd)
     unsigned long file_offset;
 
     /* skip magic which was already checked */
-    read(fd, magic, sizeof(magic));
+    dummy_size_t = read(fd, magic, sizeof(magic));
     
     for(;;) {
         len = read(fd, &hdr, sizeof(hdr));
@@ -20212,7 +20218,7 @@ static int tcc_load_dll(TCCState *s1, int fd, const char *filename, int level)
     const char *name, *soname, *p;
     DLLReference *dllref;
     
-    read(fd, &ehdr, sizeof(ehdr));
+    dummy_size_t = read(fd, &ehdr, sizeof(ehdr));
 
     /* test CPU specific stuff */
     if (ehdr.e_ident[5] != ELFDATA2LSB ||

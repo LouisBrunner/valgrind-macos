@@ -43,10 +43,11 @@ int main ( void )
   for (i = 0; i < 7+1; i++) {
      a[i] = 0;
   }
-  char beforebuf[8];
+ {char beforebuf[8];
   char buf[8];
   char afterbuf[8];
   sprintf(buf, "%d", 123456789);
   return 1 & ((a[4] + beforea[1] + aftera[1] + beforebuf[1] 
                     + buf[2] + afterbuf[3]) / 100000) ;
+ }
 }

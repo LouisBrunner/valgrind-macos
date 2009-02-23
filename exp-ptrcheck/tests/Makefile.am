@@ -80,7 +80,7 @@ AM_CXXFLAGS += $(AM_FLAG_M3264_PRI)
 
 # To make it a bit more realistic, build hackedbz2.c with at 
 # least some optimisation.
-hackedbz2_CFLAGS	= $(AM_CFLAGS) -O
+hackedbz2_CFLAGS	= $(AM_CFLAGS) -O -Wno-inline
 
 # C ones
 pth_create_LDADD	= -lpthread

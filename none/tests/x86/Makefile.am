@@ -28,8 +28,8 @@ EXTRA_DIST = $(noinst_SCRIPTS) \
 	bug137714-x86.stderr.exp bug137714-x86.stdout.exp bug137714-x86.vgtest \
 	bug152818-x86.vgtest bug152818-x86.stdout.exp \
 	bug152818-x86.stderr.exp \
-	cpuid.stderr.exp cpuid.stdout.exp cpuid.vgtest \
 	cmpxchg8b.stderr.exp cmpxchg8b.stdout.exp cmpxchg8b.vgtest \
+	cpuid.stderr.exp cpuid.stdout.exp cpuid.vgtest \
 	cse_fail.stderr.exp cse_fail.stdout.exp cse_fail.vgtest \
 	faultstatus.disabled faultstatus.stderr.exp \
 	fcmovnu.vgtest fcmovnu.stderr.exp fcmovnu.stdout.exp \

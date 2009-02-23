@@ -1,3 +1,6 @@
+
+include $(top_srcdir)/Makefile.tool-tests.am
+
 noinst_SCRIPTS = filter_stderr
 
 EXTRA_DIST = $(noinst_SCRIPTS) \
@@ -6,7 +9,9 @@ EXTRA_DIST = $(noinst_SCRIPTS) \
 check_PROGRAMS = \
 	fpu-28-108
 
-AM_CFLAGS    = $(WERROR) @FLAG_M32@ -Winline -Wall -Wshadow -g
+
+AM_CFLAGS   += @FLAG_M32@ $(FLAG_MMMX) $(FLAG_MSSE)
+AM_CXXFLAGS += @FLAG_M32@ $(FLAG_MMMX) $(FLAG_MSSE)
 AM_CCASFLAGS = @FLAG_M32@
 
 fpu_28_108_SOURCES	= fpu-28-108.S

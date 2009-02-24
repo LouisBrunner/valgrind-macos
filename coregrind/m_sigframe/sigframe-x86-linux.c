@@ -438,7 +438,6 @@ static Bool extend ( ThreadState *tst, Addr addr, SizeT size )
 
 static void build_vg_sigframe(struct vg_sigframe *frame,
 			      ThreadState *tst,
-			      const vki_sigset_t *mask,
 			      UInt flags,
 			      Int sigNo)
 {
@@ -459,7 +458,7 @@ static Addr build_sigframe(ThreadState *tst,
 			   Addr esp_top_of_frame,
 			   const vki_siginfo_t *siginfo,
                            const struct vki_ucontext *siguc,
-			   void *handler, UInt flags,
+			   UInt flags,
 			   const vki_sigset_t *mask,
 			   void *restorer)
 {
@@ -507,7 +506,7 @@ static Addr build_sigframe(ThreadState *tst,
    VG_TRACK( post_mem_write, Vg_CoreSignal, tst->tid, 
              esp, offsetof(struct sigframe, vg) );
 
-   build_vg_sigframe(&frame->vg, tst, mask, flags, sigNo);
+   build_vg_sigframe(&frame->vg, tst, flags, sigNo);
    
    return esp;
 }
@@ -517,7 +516,7 @@ static Addr build_rt_sigframe(ThreadState *tst,
 			      Addr esp_top_of_frame,
 			      const vki_siginfo_t *siginfo,
                               const struct vki_ucontext *siguc,
-			      void *handler, UInt flags,
+			      UInt flags,
 			      const vki_sigset_t *mask,
 			      void *restorer)
 {
@@ -570,7 +569,7 @@ static Addr build_rt_sigframe(ThreadState *tst,
    VG_TRACK( post_mem_write,  Vg_CoreSignal, tst->tid, 
              esp, offsetof(struct rt_sigframe, vg) );
 
-   build_vg_sigframe(&frame->vg, tst, mask, flags, sigNo);
+   build_vg_sigframe(&frame->vg, tst, flags, sigNo);
    
    return esp;
 }
@@ -591,10 +590,10 @@ void VG_(sigframe_create)( ThreadId tid,
 
    if (flags & VKI_SA_SIGINFO)
       esp = build_rt_sigframe(tst, esp_top_of_frame, siginfo, siguc,
-                                   handler, flags, mask, restorer);
+                                   flags, mask, restorer);
    else
       esp = build_sigframe(tst, esp_top_of_frame, siginfo, siguc,
-                                handler, flags, mask, restorer);
+                                flags, mask, restorer);
 
    /* Set the thread so it will next run the handler. */
    /* tst->m_esp  = esp;  also notify the tool we've updated ESP */

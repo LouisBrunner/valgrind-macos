@@ -304,8 +304,7 @@ static void early_process_cmd_line_options ( /*OUT*/Int* need_help,
 /* The main processing for command line options.  See comments above
    on early_process_cmd_line_options. 
 */
-static Bool main_process_cmd_line_options( UInt* client_auxv,
-                                           const HChar* toolname )
+static Bool main_process_cmd_line_options( const HChar* toolname )
 {
    // VG_(clo_log_fd) is used by all the messaging.  It starts as 2 (stderr)
    // and we cannot change it until we know what we are changing it to is
@@ -1182,7 +1181,6 @@ Int valgrind_main ( Int argc, HChar **argv, HChar **envp )
 {
    HChar*  toolname           = "memcheck";    // default to Memcheck
    Int     need_help          = 0; // 0 = no, 1 = --help, 2 = --help-debug
-   UInt*   client_auxv        = NULL;
    ThreadId tid_main          = VG_INVALID_THREADID;
    Int     loglevel, i;
    Bool    logging_to_fd;
@@ -1625,7 +1623,7 @@ Int valgrind_main ( Int argc, HChar **argv, HChar **envp )
    VG_(debugLog)(1, "main",
                     "(main_) Process Valgrind's command line options, "
                     "setup logging\n");
-   logging_to_fd = main_process_cmd_line_options(client_auxv, toolname);
+   logging_to_fd = main_process_cmd_line_options(toolname);
 
    //--------------------------------------------------------------
    // Zeroise the millisecond counter by doing a first read of it.

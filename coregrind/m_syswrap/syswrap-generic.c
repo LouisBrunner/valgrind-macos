@@ -65,8 +65,7 @@ static
 void notify_aspacem_of_mmap(Addr a, SizeT len, UInt prot,
                             UInt flags, Int fd, Off64T offset);
 static
-void notify_tool_of_mmap(Addr a, SizeT len, UInt prot, Off64T offset,
-                         ULong di_handle);
+void notify_tool_of_mmap(Addr a, SizeT len, UInt prot, ULong di_handle);
 
 
 /* Returns True iff address range is something the client can
@@ -167,7 +166,7 @@ ML_(notify_aspacem_and_tool_of_mmap) ( Addr a, SizeT len, UInt prot,
                                        UInt flags, Int fd, Off64T offset )
 {
    notify_aspacem_of_mmap(a, len, prot, flags, fd, offset);
-   notify_tool_of_mmap(a, len, prot, offset, 0/*di_handle*/);
+   notify_tool_of_mmap(a, len, prot, 0/*di_handle*/);
 }
 
 static
@@ -189,8 +188,7 @@ void notify_aspacem_of_mmap(Addr a, SizeT len, UInt prot,
 }
 
 static
-void notify_tool_of_mmap(Addr a, SizeT len, UInt prot, Off64T offset,
-                         ULong di_handle)
+void notify_tool_of_mmap(Addr a, SizeT len, UInt prot, ULong di_handle)
 {
    Bool rr, ww, xx;
 
@@ -504,7 +502,7 @@ static Int fd_count = 0;
 
 /* Note the fact that a file descriptor was just closed. */
 static
-void record_fd_close(ThreadId tid, Int fd)
+void record_fd_close(Int fd)
 {
    OpenFd *i = allocated_fds;
 
@@ -1917,7 +1915,6 @@ ML_(generic_PRE_sys_mmap) ( ThreadId tid,
          (Addr)sres.res, /* addr kernel actually assigned */
          arg2, /* length */
          arg3, /* prot */
-         arg6, /* offset */
          di_handle /* so the tool can refer to the read debuginfo later,
                       if it wants. */
       );
@@ -2692,7 +2689,7 @@ PRE(sys_close)
 
 POST(sys_close)
 {
-   if (VG_(clo_track_fds)) record_fd_close(tid, ARG1);
+   if (VG_(clo_track_fds)) record_fd_close(ARG1);
 }
 
 PRE(sys_dup)

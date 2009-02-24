@@ -3640,7 +3640,7 @@ void check_mem_is_addressable ( CorePart part, ThreadId tid, Char* s,
          break;
 
       case Vg_CoreSignal:
-         MC_(record_core_mem_error)( tid, /*isAddrErr*/True, s );
+         MC_(record_core_mem_error)( tid, s );
          break;
 
       default:
@@ -4411,7 +4411,6 @@ void MC_(helperc_value_checkN_fail_no_o) ( HWord sz ) {
    but we took them out because they ranged from not-very-helpful to
    downright annoying, and they complicated the error data structures. */
 static Int mc_get_or_set_vbits_for_client ( 
-   ThreadId tid,
    Addr a, 
    Addr vbits, 
    SizeT szB, 
@@ -4983,12 +4982,12 @@ static Bool mc_handle_client_request ( ThreadId tid, UWord* arg, UWord* ret )
 
       case VG_USERREQ__GET_VBITS:
          *ret = mc_get_or_set_vbits_for_client
-                   ( tid, arg[1], arg[2], arg[3], False /* get them */ );
+                   ( arg[1], arg[2], arg[3], False /* get them */ );
          break;
 
       case VG_USERREQ__SET_VBITS:
          *ret = mc_get_or_set_vbits_for_client
-                   ( tid, arg[1], arg[2], arg[3], True /* set them */ );
+                   ( arg[1], arg[2], arg[3], True /* set them */ );
          break;
 
       case VG_USERREQ__COUNT_LEAKS: { /* count leaked bytes */
@@ -5008,10 +5007,10 @@ static Bool mc_handle_client_request ( ThreadId tid, UWord* arg, UWord* ret )
       case VG_USERREQ__MALLOCLIKE_BLOCK: {
          Addr p         = (Addr)arg[1];
          SizeT sizeB    =       arg[2];
-         UInt rzB       =       arg[3];
+         //UInt rzB       =       arg[3];    XXX: unused!
          Bool is_zeroed = (Bool)arg[4];
 
-         MC_(new_block) ( tid, p, sizeB, /*ignored*/0, rzB, is_zeroed, 
+         MC_(new_block) ( tid, p, sizeB, /*ignored*/0, is_zeroed, 
                           MC_AllocCustom, MC_(malloc_list) );
          return True;
       }

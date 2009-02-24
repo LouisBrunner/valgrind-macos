@@ -402,25 +402,25 @@ Block* get_predecessor_block ( Block* b )
 
 // Read and write the lower and upper red-zone bytes of a block.
 static __inline__
-void set_rz_lo_byte ( Arena* a, Block* b, UInt rz_byteno, UByte v )
+void set_rz_lo_byte ( Block* b, UInt rz_byteno, UByte v )
 {
    UByte* b2 = (UByte*)b;
    b2[hp_overhead_szB() + sizeof(SizeT) + rz_byteno] = v;
 }
 static __inline__
-void set_rz_hi_byte ( Arena* a, Block* b, UInt rz_byteno, UByte v )
+void set_rz_hi_byte ( Block* b, UInt rz_byteno, UByte v )
 {
    UByte* b2 = (UByte*)b;
    b2[get_bszB(b) - sizeof(SizeT) - rz_byteno - 1] = v;
 }
 static __inline__
-UByte get_rz_lo_byte ( Arena* a, Block* b, UInt rz_byteno )
+UByte get_rz_lo_byte ( Block* b, UInt rz_byteno )
 {
    UByte* b2 = (UByte*)b;
    return b2[hp_overhead_szB() + sizeof(SizeT) + rz_byteno];
 }
 static __inline__
-UByte get_rz_hi_byte ( Arena* a, Block* b, UInt rz_byteno )
+UByte get_rz_hi_byte ( Block* b, UInt rz_byteno )
 {
    UByte* b2 = (UByte*)b;
    return b2[get_bszB(b) - sizeof(SizeT) - rz_byteno - 1];
@@ -888,10 +888,10 @@ Bool blockSane ( Arena* a, Block* b )
    // to get_rz_hi_byte().
    if (!a->clientmem && is_inuse_block(b)) {
       for (i = 0; i < a->rz_szB; i++) {
-         if (get_rz_lo_byte(a, b, i) != 
+         if (get_rz_lo_byte(b, i) != 
             (UByte)(((Addr)b&0xff) ^ REDZONE_LO_MASK))
                {BLEAT("redzone-lo");return False;}
-         if (get_rz_hi_byte(a, b, i) != 
+         if (get_rz_hi_byte(b, i) != 
             (UByte)(((Addr)b&0xff) ^ REDZONE_HI_MASK))
                {BLEAT("redzone-hi");return False;}
       }      
@@ -1213,8 +1213,8 @@ void mkInuseBlock ( Arena* a, Block* b, SizeT bszB )
    set_next_b(b, NULL);    // ditto
    if (!a->clientmem) {
       for (i = 0; i < a->rz_szB; i++) {
-         set_rz_lo_byte(a, b, i, (UByte)(((Addr)b&0xff) ^ REDZONE_LO_MASK));
-         set_rz_hi_byte(a, b, i, (UByte)(((Addr)b&0xff) ^ REDZONE_HI_MASK));
+         set_rz_lo_byte(b, i, (UByte)(((Addr)b&0xff) ^ REDZONE_LO_MASK));
+         set_rz_hi_byte(b, i, (UByte)(((Addr)b&0xff) ^ REDZONE_HI_MASK));
       }
    }
 #  ifdef DEBUG_MALLOC

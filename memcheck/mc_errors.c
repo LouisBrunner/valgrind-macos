@@ -715,9 +715,8 @@ void MC_(record_cond_error) ( ThreadId tid, UInt otag )
 
 /* --- Called from non-generated code --- */
 
-/* This is for memory errors in pthread functions, as opposed to pthread API
-   errors which are found by the core. */
-void MC_(record_core_mem_error) ( ThreadId tid, Bool isAddrErr, Char* msg )
+/* This is for memory errors in signal-related memory. */
+void MC_(record_core_mem_error) ( ThreadId tid, Char* msg )
 {
    VG_(maybe_record_error)( tid, Err_CoreMem, /*addr*/0, msg, /*extra*/NULL );
 }

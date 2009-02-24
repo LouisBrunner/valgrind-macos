@@ -960,8 +960,7 @@ static
 void read_unitinfo_dwarf2( /*OUT*/UnitInfo* ui,
                                   UChar*    unitblock_img,
                                   UChar*    debugabbrev_img,
-                                  UChar*    debugstr_img,
-                                  struct _DebugInfo* di )
+                                  UChar*    debugstr_img )
 {
    UInt   acode, abcode;
    ULong  atoffs, blklen;
@@ -1177,7 +1176,7 @@ void ML_(read_debuginfo_dwarf3)
          VG_(printf)( "Reading UnitInfo at 0x%lx.....\n",
                       block_img - debug_info_img + 0UL );
       read_unitinfo_dwarf2( &ui, block_img, 
-                                 debug_abbv_img, debug_str_img, di );
+                                 debug_abbv_img, debug_str_img );
       if (0)
          VG_(printf)( "   => LINES=0x%llx    NAME=%s     DIR=%s\n", 
                       ui.stmt_list, ui.name, ui.compdir );

@@ -79,7 +79,7 @@ typedef
 
 
 void* MC_(new_block)  ( ThreadId tid,
-                        Addr p, SizeT size, SizeT align, UInt rzB,
+                        Addr p, SizeT size, SizeT align,
                         Bool is_zeroed, MC_AllocKind kind,
                         VgHashTable table);
 void MC_(handle_free) ( ThreadId tid,
@@ -322,7 +322,7 @@ void MC_(record_freemismatch_error)    ( ThreadId tid, MC_Chunk* mc );
 
 void MC_(record_overlap_error)  ( ThreadId tid, Char* function,
                                   Addr src, Addr dst, SizeT szB );
-void MC_(record_core_mem_error) ( ThreadId tid, Bool isAddrErr, Char* msg );
+void MC_(record_core_mem_error) ( ThreadId tid, Char* msg );
 void MC_(record_regparam_error) ( ThreadId tid, Char* msg, UInt otag );
 void MC_(record_memparam_error) ( ThreadId tid, Addr a, 
                                   Bool isAddrErr, Char* msg, UInt otag );

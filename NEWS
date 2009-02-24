@@ -1,4 +1,43 @@
 
+Release 3.4.1 (XX February 2009)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+3.4.1 is a bug-fix release that fixes some regressions and assertion
+failures in debug info reading in 3.4.0, most notably incorrect stack
+traces on amd64-linux on older (glibc-2.3 based) systems. Various
+other debug info problems are also fixed.  A number of bugs in the
+exp-ptrcheck tool introduced in 3.4.0 have been fixed.
+
+In view of the fact that 3.4.0 contains some user-visible regressions
+relative to 3.3.x, upgrading to 3.4.1 is recommended.  Packagers are
+encouraged to ship 3.4.1 in preference to 3.4.0.
+
+The fixed bugs are as follows.  Note that "n-i-bz" stands for "not in
+bugzilla" -- that is, a bug that was reported to us but never got a
+bugzilla entry.  We encourage you to file bugs in bugzilla
+(http://bugs.kde.org/enter_valgrind_bug.cgi) rather than mailing the
+developers (or mailing lists) directly -- bugs that are not entered
+into bugzilla tend to get forgotten about or ignored.
+
+n-i-bz  Fix various bugs reading icc-11 generated debug info
+n-i-bz  Fix various bugs reading gcc-4.4 generated debug info
+n-i-bz  Preliminary support for glibc-2.10 / Fedora 11
+179618  exp-ptrcheck crashed / exit prematurely
+179624  helgrind: false positive races with pthread_create and
+        recv/open/close/read
+134207  pkg-config output contains @VG_PLATFORM@
+176926  floating point exception at valgrind startup with PPC 440EPX
+181594  Bogus warning for empty text segment
+173751  amd64->IR: 0x48 0xF 0x6F 0x45 (even more redundant rex prefixes)
+181707  Dwarf3 doesn't require enumerations to have name
+185038  exp-ptrcheck: "unhandled syscall: 285" (fallocate) on x86_64
+185050  exp-ptrcheck: sg_main.c:727 (add_block_to_GlobalTree):
+        Assertion '!already_present' failed.
+185359  exp-ptrcheck unhandled syscall getresuid()
+
+(3.4.1.RC1:  24 Feb 2008, vex r1884, valgrind r9253).
+
+
+
 Release 3.4.0 (2 January 2009)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 3.4.0 is a feature release with many significant improvements and the

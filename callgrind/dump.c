@@ -787,7 +787,7 @@ static Bool fprint_bbcc(Int fd, BBCC* bbcc, AddrPos* last)
   CLG_ASSERT(bbcc->cxt != 0);
   CLG_DEBUGIF(1) {
     VG_(printf)("+ fprint_bbcc (Instr %d): ", bb->instr_count);
-    CLG_(print_bbcc)(15, bbcc, False);
+    CLG_(print_bbcc)(15, bbcc);
   }
 
   CLG_ASSERT(currSum == 0 || currSum == 1);
@@ -1473,7 +1473,7 @@ static int new_dumpfile(Char buf[BUF_LEN], int tid, Char* trigger)
 }
 
 
-static void close_dumpfile(Char buf[BUF_LEN], int fd, int tid)
+static void close_dumpfile(int fd)
 {
     if (fd <0) return;
 
@@ -1575,7 +1575,7 @@ static void print_bbccs_of_thread(thread_info* ti)
     p++;
   }
 
-  close_dumpfile(print_buf, print_fd, CLG_(current_tid));
+  close_dumpfile(print_fd);
   if (array) VG_(free)(array);
   
   /* set counters of last dump */

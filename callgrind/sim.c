@@ -491,7 +491,7 @@ void prefetch_clear(void)
  * One stream can be detected per 4k page.
  */
 static __inline__
-void prefetch_L2_doref(Addr a, UChar size)
+void prefetch_L2_doref(Addr a)
 {
   UInt stream = (a >> PF_PAGEBITS) % PF_STREAMS;
   UInt block = ( a >> L2.line_size_bits);
@@ -531,7 +531,7 @@ static
 CacheModelResult prefetch_I1_ref(Addr a, UChar size)
 {
     if ( cachesim_ref( &I1, a, size) == Hit ) return L1_Hit;
-    prefetch_L2_doref(a,size);
+    prefetch_L2_doref(a);
     if ( cachesim_ref( &L2, a, size) == Hit ) return L2_Hit;
     return MemAccess;
 }
@@ -540,7 +540,7 @@ static
 CacheModelResult prefetch_D1_ref(Addr a, UChar size)
 {
     if ( cachesim_ref( &D1, a, size) == Hit ) return L1_Hit;
-    prefetch_L2_doref(a,size);
+    prefetch_L2_doref(a);
     if ( cachesim_ref( &L2, a, size) == Hit ) return L2_Hit;
     return MemAccess;
 }
@@ -552,7 +552,7 @@ static
 CacheModelResult prefetch_I1_Read(Addr a, UChar size)
 {
     if ( cachesim_ref( &I1, a, size) == Hit ) return L1_Hit;
-    prefetch_L2_doref(a,size);
+    prefetch_L2_doref(a);
     switch( cachesim_ref_wb( &L2, Read, a, size) ) {
 	case Hit: return L2_Hit;
 	case Miss: return MemAccess;
@@ -565,7 +565,7 @@ static
 CacheModelResult prefetch_D1_Read(Addr a, UChar size)
 {
     if ( cachesim_ref( &D1, a, size) == Hit ) return L1_Hit;
-    prefetch_L2_doref(a,size);
+    prefetch_L2_doref(a);
     switch( cachesim_ref_wb( &L2, Read, a, size) ) {
 	case Hit: return L2_Hit;
 	case Miss: return MemAccess;
@@ -577,7 +577,7 @@ CacheModelResult prefetch_D1_Read(Addr a, UChar size)
 static
 CacheModelResult prefetch_D1_Write(Addr a, UChar size)
 {
-    prefetch_L2_doref(a,size);
+    prefetch_L2_doref(a);
     if ( cachesim_ref( &D1, a, size) == Hit ) {
 	/* Even for a L1 hit, the write-trough L1 passes
 	 * the write to the L2 to make the L2 line dirty.

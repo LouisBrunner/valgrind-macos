@@ -855,7 +855,7 @@ extern ThreadId   CLG_(current_tid);
 void CLG_(print_bbno)(void);
 void CLG_(print_context)(void);
 void CLG_(print_jcc)(int s, jCC* jcc);
-void CLG_(print_bbcc)(int s, BBCC* bbcc, Bool);
+void CLG_(print_bbcc)(int s, BBCC* bbcc);
 void CLG_(print_bbcc_fn)(BBCC* bbcc);
 void CLG_(print_execstate)(int s, exec_state* es);
 void CLG_(print_eventset)(int s, EventSet* es);

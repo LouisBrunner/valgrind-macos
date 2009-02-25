@@ -6,7 +6,6 @@ noinst_SCRIPTS = filter_stderr filter_pushfpopf filter_tronical
 INSN_TESTS = insn_basic insn_fpu insn_cmov insn_mmx insn_mmxext insn_sse insn_sse2
 
 EXTRA_DIST = $(noinst_SCRIPTS) \
-	bug133694.vgtest bug133694.stderr.exp bug133694.stdout.exp \
 	bug152022.vgtest bug152022.stderr.exp bug152022.stdout.exp \
 	espindola2.vgtest espindola2.stderr.exp \
 	fpeflags.stderr.exp fpeflags.vgtest \
@@ -27,7 +26,6 @@ EXTRA_DIST = $(noinst_SCRIPTS) \
 	xor-undef-x86.vgtest
 
 check_PROGRAMS = \
-	bug133694 \
 	bug152022 \
 	espindola2 \
 	fxsave \

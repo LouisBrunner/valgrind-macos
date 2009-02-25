@@ -6,6 +6,7 @@ noinst_SCRIPTS = filter_stderr
 noinst_HEADERS = scalar.h
 
 EXTRA_DIST = $(noinst_SCRIPTS) \
+	bug133694.vgtest bug133694.stderr.exp bug133694.stdout.exp \
 	scalar.stderr.exp scalar.vgtest \
 	scalar_fork.stderr.exp scalar_fork.vgtest \
 	scalar_exit_group.stderr.exp \
@@ -15,6 +16,7 @@ EXTRA_DIST = $(noinst_SCRIPTS) \
 	scalar_vfork.stderr.exp scalar_vfork.vgtest
 
 check_PROGRAMS = \
+	bug133694 \
 	scalar scalar_exit_group scalar_fork scalar_supp scalar_vfork
 
 

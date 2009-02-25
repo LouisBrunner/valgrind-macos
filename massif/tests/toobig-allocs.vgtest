@@ -1,3 +1,0 @@
-prog: ../../tests/toobig-allocs
-vgopts: --massif-out-file=massif.out
-cleanup: rm massif.out

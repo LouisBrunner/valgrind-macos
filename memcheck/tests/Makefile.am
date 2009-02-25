@@ -149,7 +149,6 @@ EXTRA_DIST = $(noinst_SCRIPTS) \
 	supp2.stderr.exp supp2.vgtest \
 	supp.supp \
 	suppfree.stderr.exp suppfree.vgtest \
-	toobig-allocs.stderr.exp toobig-allocs.vgtest \
 	trivialleak.stderr.exp trivialleak.vgtest \
 	unit_libcbase.stderr.exp unit_libcbase.stdout.exp unit_libcbase.vgtest \
 	unit_oset.stderr.exp unit_oset.stdout.exp unit_oset.vgtest \

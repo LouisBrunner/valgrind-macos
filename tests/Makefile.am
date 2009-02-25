@@ -16,7 +16,6 @@ EXTRA_DIST = $(noinst_SCRIPTS)
 
 check_PROGRAMS = \
 	arch_test \
-	toobig-allocs \
 	true
 
 AM_CFLAGS   += $(AM_FLAG_M3264_PRI)

@@ -177,9 +177,7 @@ EXTRA_DIST = $(noinst_SCRIPTS) \
 	writev.stderr.exp writev.vgtest \
 	xml1.stderr.exp xml1.stderr.exp2 \
 	xml1.stderr.exp64 xml1.stdout.exp \
-	xml1.vgtest \
-	zeropage.stderr.exp zeropage.stderr.exp2 zeropage.stdout.exp \
-	zeropage.vgtest
+	xml1.vgtest
 
 check_PROGRAMS = \
 	addressable \
@@ -224,7 +222,7 @@ check_PROGRAMS = \
 	vcpu_fbench vcpu_fnfns \
 	xml1 \
 	wrap1 wrap2 wrap3 wrap4 wrap5 wrap6 wrap7 wrap7so.so wrap8 \
-	writev zeropage
+	writev
 
 
 AM_CFLAGS   += $(AM_FLAG_M3264_PRI)

@@ -152,6 +152,7 @@
 {
    helgrind-qt4---QMutex::lock()-QMutex::lock()
    Helgrind:Race
+   ...
    fun:_ZN6QMutex4lockEv
    fun:_ZN6QMutex4lockEv
 }
@@ -159,6 +160,7 @@
 {                                                               
    helgrind-qt4---QMutex::unlock()-QMutex::unlock()
    Helgrind:Race                                                
+   ...
    fun:_ZN6QMutex6unlockEv                                      
    fun:_ZN6QMutex6unlockEv
 }

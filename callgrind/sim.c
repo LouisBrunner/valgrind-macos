@@ -1506,40 +1506,33 @@ void cachesim_print_opts(void)
 	      );
 }
 
-static void parse_opt ( cache_t* cache, char* orig_opt, int opt_len )
+static void parse_opt ( cache_t* cache, char* opt )
 {
-   int   i1, i2, i3;
-   int   i;
-   char *opt = VG_(strdup)("cl.sim.po.1", orig_opt);
+   Long i1, i2, i3;
+   Char* endptr;
 
-   i = i1 = opt_len;
+   // Option argument looks like "65536,2,64".  Extract them.
+   i1 = VG_(strtoll10)(opt,      &endptr); if (*endptr != ',')  goto bad;
+   i2 = VG_(strtoll10)(endptr+1, &endptr); if (*endptr != ',')  goto bad;
+   i3 = VG_(strtoll10)(endptr+1, &endptr); if (*endptr != '\0') goto bad;
 
-   /* Option looks like "--I1=65536,2,64".
-    * Find commas, replace with NULs to make three independent 
-    * strings, then extract numbers.  Yuck. */
-   while (VG_(isdigit)(opt[i])) i++;
-   if (',' == opt[i]) {
-      opt[i++] = '\0';
-      i2 = i;
-   } else goto bad;
-   while (VG_(isdigit)(opt[i])) i++;
-   if (',' == opt[i]) {
-      opt[i++] = '\0';
-      i3 = i;
-   } else goto bad;
-   while (VG_(isdigit)(opt[i])) i++;
-   if ('\0' != opt[i]) goto bad;
-
-   cache->size      = (Int)VG_(atoll)(opt + i1);
-   cache->assoc     = (Int)VG_(atoll)(opt + i2);
-   cache->line_size = (Int)VG_(atoll)(opt + i3);
-
-   VG_(free)(opt);
+   // Check for overflow.
+   cache->size      = (Int)i1;
+   cache->assoc     = (Int)i2;
+   cache->line_size = (Int)i3;
+   if (cache->size      != i1) goto overflow;
+   if (cache->assoc     != i2) goto overflow;
+   if (cache->line_size != i3) goto overflow;
 
    return;
 
+  overflow:
+   VG_(message)(Vg_UserMsg,
+                "one of the cache parameters was too large and overflowed\n");
   bad:
-   VG_(err_bad_option)(orig_opt);
+   // XXX: this omits the "--I1/D1/L2=" part from the message, but that's
+   // not a big deal.
+   VG_(err_bad_option)(opt);
 }
 
 /* Check for command line option for cache configuration.
@@ -1549,36 +1542,25 @@ static void parse_opt ( cache_t* cache, char* orig_opt, int opt_len )
  */
 static Bool cachesim_parse_opt(Char* arg)
 {
-  if (0 == VG_(strcmp)(arg, "--simulate-wb=yes"))
-    clo_simulate_writeback = True;
-  else if (0 == VG_(strcmp)(arg, "--simulate-wb=no"))
-    clo_simulate_writeback = False;
+   Char* tmp_str;
 
-  else if (0 == VG_(strcmp)(arg, "--simulate-hwpref=yes"))
-    clo_simulate_hwpref = True;
-  else if (0 == VG_(strcmp)(arg, "--simulate-hwpref=no"))
-    clo_simulate_hwpref = False;
+   if      VG_BOOL_CLO(arg, "--simulate-wb",      clo_simulate_writeback) {}
+   else if VG_BOOL_CLO(arg, "--simulate-hwpref",  clo_simulate_hwpref)    {}
+   else if VG_BOOL_CLO(arg, "--simulate-sectors", clo_simulate_sectors)   {}
 
-  else if (0 == VG_(strcmp)(arg, "--simulate-sectors=yes"))
-    clo_simulate_sectors = True;
-  else if (0 == VG_(strcmp)(arg, "--simulate-sectors=no"))
-    clo_simulate_sectors = False;
+   else if VG_BOOL_CLO(arg, "--cacheuse", clo_collect_cacheuse) {
+      if (clo_collect_cacheuse) {
+         /* Use counters only make sense with fine dumping */
+         CLG_(clo).dump_instr = True;
+      }
+   }
 
-  else if (0 == VG_(strcmp)(arg, "--cacheuse=yes")) {
-    clo_collect_cacheuse = True;
-    /* Use counters only make sense with fine dumping */
-    CLG_(clo).dump_instr = True;
-  }
-  else if (0 == VG_(strcmp)(arg, "--cacheuse=no"))
-    clo_collect_cacheuse = False;
-
-  /* 5 is length of "--I1=" */
-  else if (0 == VG_(strncmp)(arg, "--I1=", 5))
-    parse_opt(&clo_I1_cache, arg,   5);
-  else if (0 == VG_(strncmp)(arg, "--D1=", 5))
-    parse_opt(&clo_D1_cache, arg,   5);
-  else if (0 == VG_(strncmp)(arg, "--L2=", 5))
-    parse_opt(&clo_L2_cache, arg,   5);
+   else if VG_STR_CLO(arg, "--I1", tmp_str)
+      parse_opt(&clo_I1_cache, tmp_str);
+   else if VG_STR_CLO(arg, "--D1", tmp_str)
+      parse_opt(&clo_D1_cache, tmp_str);
+   else if VG_STR_CLO(arg, "--L2", tmp_str)
+      parse_opt(&clo_L2_cache, tmp_str);
   else
     return False;
 

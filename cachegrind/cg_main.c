@@ -1645,50 +1645,48 @@ void cg_discard_superblock_info ( Addr64 orig_addr64, VexGuestExtents vge )
 
 static void parse_cache_opt ( cache_t* cache, Char* opt )
 {
-   Int i = 0, i2, i3;
+   Long i1, i2, i3;
+   Char* endptr;
 
-   // Option argument looks like "65536,2,64".
-   // Find commas, replace with NULs to make three independent 
-   // strings, then extract numbers, put NULs back.  Yuck.
-   while (VG_(isdigit)(opt[i])) i++;
-   if (',' == opt[i]) {
-      opt[i++] = '\0';
-      i2 = i;
-   } else goto bad;
-   while (VG_(isdigit)(opt[i])) i++;
-   if (',' == opt[i]) {
-      opt[i++] = '\0';
-      i3 = i;
-   } else goto bad;
-   while (VG_(isdigit)(opt[i])) i++;
-   if ('\0' != opt[i]) goto bad;
+   // Option argument looks like "65536,2,64".  Extract them.
+   i1 = VG_(strtoll10)(opt,      &endptr); if (*endptr != ',')  goto bad;
+   i2 = VG_(strtoll10)(endptr+1, &endptr); if (*endptr != ',')  goto bad;
+   i3 = VG_(strtoll10)(endptr+1, &endptr); if (*endptr != '\0') goto bad;
 
-   cache->size      = (Int)VG_(atoll)(opt);
-   cache->assoc     = (Int)VG_(atoll)(opt + i2);
-   cache->line_size = (Int)VG_(atoll)(opt + i3);
+   // Check for overflow.
+   cache->size      = (Int)i1;
+   cache->assoc     = (Int)i2;
+   cache->line_size = (Int)i3;
+   if (cache->size      != i1) goto overflow;
+   if (cache->assoc     != i2) goto overflow;
+   if (cache->line_size != i3) goto overflow;
 
-   opt[i2-1] = ',';
-   opt[i3-1] = ',';
    return;
 
+  overflow:
+   VG_(message)(Vg_UserMsg,
+                "one of the cache parameters was too large and overflowed\n");
   bad:
+   // XXX: this omits the "--I1/D1/L2=" part from the message, but that's
+   // not a big deal.
    VG_(err_bad_option)(opt);
 }
 
 static Bool cg_process_cmd_line_option(Char* arg)
 {
+   Char* tmp_str;
+
    // 5 is length of "--I1="
-   if      (VG_CLO_STREQN(5, arg, "--I1="))
-      parse_cache_opt(&clo_I1_cache, &arg[5]);
-   else if (VG_CLO_STREQN(5, arg, "--D1="))
-      parse_cache_opt(&clo_D1_cache, &arg[5]);
-   else if (VG_CLO_STREQN(5, arg, "--L2="))
-      parse_cache_opt(&clo_L2_cache, &arg[5]);
-   else if (VG_CLO_STREQN(22, arg, "--cachegrind-out-file=")) {
-      clo_cachegrind_out_file = &arg[22];
-   }
-   else VG_BOOL_CLO(arg, "--cache-sim",  clo_cache_sim)
-   else VG_BOOL_CLO(arg, "--branch-sim", clo_branch_sim)
+   if      VG_STR_CLO(arg, "--I1", tmp_str)
+      parse_cache_opt(&clo_I1_cache, tmp_str);
+   else if VG_STR_CLO(arg, "--D1", tmp_str)
+      parse_cache_opt(&clo_D1_cache, tmp_str);
+   else if VG_STR_CLO(arg, "--L2", tmp_str)
+      parse_cache_opt(&clo_L2_cache, tmp_str);
+
+   else if VG_STR_CLO( arg, "--cachegrind-out-file", clo_cachegrind_out_file) {}
+   else if VG_BOOL_CLO(arg, "--cache-sim",  clo_cache_sim)  {}
+   else if VG_BOOL_CLO(arg, "--branch-sim", clo_branch_sim) {}
    else
       return False;
 

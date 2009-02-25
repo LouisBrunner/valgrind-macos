@@ -196,11 +196,11 @@ static Char* clo_fnname = "_dl_runtime_resolve";
 
 static Bool lk_process_cmd_line_option(Char* arg)
 {
-   VG_STR_CLO(arg, "--fnname", clo_fnname)
-   else VG_BOOL_CLO(arg, "--basic-counts",      clo_basic_counts)
-   else VG_BOOL_CLO(arg, "--detailed-counts",   clo_detailed_counts)
-   else VG_BOOL_CLO(arg, "--trace-mem",         clo_trace_mem)
-   else VG_BOOL_CLO(arg, "--trace-superblocks", clo_trace_sbs)
+   if VG_STR_CLO(arg, "--fnname", clo_fnname) {}
+   else if VG_BOOL_CLO(arg, "--basic-counts",      clo_basic_counts) {}
+   else if VG_BOOL_CLO(arg, "--detailed-counts",   clo_detailed_counts) {}
+   else if VG_BOOL_CLO(arg, "--trace-mem",         clo_trace_mem) {}
+   else if VG_BOOL_CLO(arg, "--trace-superblocks", clo_trace_sbs) {}
    else
       return False;
    

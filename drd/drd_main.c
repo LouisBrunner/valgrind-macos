@@ -83,27 +83,27 @@ static Bool DRD_(process_cmd_line_option)(Char* arg)
   int trace_suppression      = -1;
   Char* trace_address        = 0;
 
-  VG_BOOL_CLO     (arg, "--check-stack-var",     check_stack_accesses)
-  else VG_BOOL_CLO(arg, "--drd-stats",           DRD_(s_print_stats))
-  else VG_BOOL_CLO(arg,"--report-signal-unlocked",report_signal_unlocked)
-  else VG_BOOL_CLO(arg, "--segment-merging",     segment_merging)
-  else VG_BOOL_CLO(arg, "--show-confl-seg",      show_confl_seg)
-  else VG_BOOL_CLO(arg, "--show-stack-usage",    DRD_(s_show_stack_usage))
-  else VG_BOOL_CLO(arg, "--trace-barrier",       trace_barrier)
-  else VG_BOOL_CLO(arg, "--trace-clientobj",     trace_clientobj)
-  else VG_BOOL_CLO(arg, "--trace-cond",          trace_cond)
-  else VG_BOOL_CLO(arg, "--trace-conflict-set",  trace_conflict_set)
-  else VG_BOOL_CLO(arg, "--trace-csw",           trace_csw)
-  else VG_BOOL_CLO(arg, "--trace-fork-join",     trace_fork_join)
-  else VG_BOOL_CLO(arg, "--trace-mutex",         trace_mutex)
-  else VG_BOOL_CLO(arg, "--trace-rwlock",        trace_rwlock)
-  else VG_BOOL_CLO(arg, "--trace-segment",       trace_segment)
-  else VG_BOOL_CLO(arg, "--trace-semaphore",     trace_semaphore)
-  else VG_BOOL_CLO(arg, "--trace-suppr",         trace_suppression)
-  else VG_BOOL_CLO(arg, "--var-info",            DRD_(s_var_info))
-  else VG_NUM_CLO (arg, "--exclusive-threshold", exclusive_threshold_ms)
-  else VG_NUM_CLO (arg, "--shared-threshold",    shared_threshold_ms)
-  else VG_STR_CLO (arg, "--trace-addr",          trace_address)
+  if     VG_BOOL_CLO(arg, "--check-stack-var",     check_stack_accesses) {}
+  else if VG_BOOL_CLO(arg, "--drd-stats",           DRD_(s_print_stats)) {}
+  else if VG_BOOL_CLO(arg,"--report-signal-unlocked",report_signal_unlocked) {}
+  else if VG_BOOL_CLO(arg, "--segment-merging",     segment_merging) {}
+  else if VG_BOOL_CLO(arg, "--show-confl-seg",      show_confl_seg) {}
+  else if VG_BOOL_CLO(arg, "--show-stack-usage",    DRD_(s_show_stack_usage)) {}
+  else if VG_BOOL_CLO(arg, "--trace-barrier",       trace_barrier) {}
+  else if VG_BOOL_CLO(arg, "--trace-clientobj",     trace_clientobj) {}
+  else if VG_BOOL_CLO(arg, "--trace-cond",          trace_cond) {}
+  else if VG_BOOL_CLO(arg, "--trace-conflict-set",  trace_conflict_set) {}
+  else if VG_BOOL_CLO(arg, "--trace-csw",           trace_csw) {}
+  else if VG_BOOL_CLO(arg, "--trace-fork-join",     trace_fork_join) {}
+  else if VG_BOOL_CLO(arg, "--trace-mutex",         trace_mutex) {}
+  else if VG_BOOL_CLO(arg, "--trace-rwlock",        trace_rwlock) {}
+  else if VG_BOOL_CLO(arg, "--trace-segment",       trace_segment) {}
+  else if VG_BOOL_CLO(arg, "--trace-semaphore",     trace_semaphore) {}
+  else if VG_BOOL_CLO(arg, "--trace-suppr",         trace_suppression) {}
+  else if VG_BOOL_CLO(arg, "--var-info",            DRD_(s_var_info)) {}
+  else if VG_INT_CLO (arg, "--exclusive-threshold", exclusive_threshold_ms) {}
+  else if VG_INT_CLO (arg, "--shared-threshold",    shared_threshold_ms)    {}
+  else if VG_STR_CLO (arg, "--trace-addr",          trace_address) {}
   else
     return VG_(replacement_malloc_process_cmd_line_option)(arg);
 

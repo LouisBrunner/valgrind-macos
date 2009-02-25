@@ -401,8 +401,13 @@ Int VG_(gettid)(void)
       res = VG_(do_syscall3)(__NR_readlink, (UWord)"/proc/self",
                              (UWord)pid, sizeof(pid));
       if (!res.isError && res.res > 0) {
+         Char* s;
          pid[res.res] = '\0';
-         res.res = VG_(atoll)(pid);
+         res.res = VG_(strtoll10)(pid, &s);
+         if (*s != '\0') {
+            VG_(message)(Vg_DebugMsg, 
+               "Warning: invalid file name linked to by /proc/self: %s", pid);
+         }
       }
    }
 

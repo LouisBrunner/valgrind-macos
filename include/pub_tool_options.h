@@ -34,71 +34,110 @@
 #include "libvex.h"              // for VexControl
 
 
-/* Use these for recognising tool command line options -- stops comparing
-   once whitespace is reached. */
-#define VG_CLO_STREQ(s1,s2)     (0==VG_(strcmp_ws)((s1),(s2)))
-#define VG_CLO_STREQN(nn,s1,s2) (0==VG_(strncmp_ws)((s1),(s2),(nn)))
+// Higher-level command-line option recognisers;  use in if/else chains. 
+// Note that they assign a value to the 'qq_var' argument.  So often they
+// can be used like this:
+//
+//   if VG_STR_CLO(arg, "--foo", clo_foo) { }
+//
+// But if you want to do further checking or processing, you can do this:
+//
+//   if VG_STR_CLO(arg, "--foo", clo_foo) { <further checking or processing> }
+//
+// They use GNU statement expressions to do the qq_var assignment within a
+// conditional expression.
 
-/* Higher-level command-line option recognisers;  use in if/else chains */
-
+// String argument, eg. --foo=yes or --foo=no
 #define VG_BOOL_CLO(qq_arg, qq_option, qq_var) \
-        if (VG_CLO_STREQ(qq_arg, qq_option"=yes")) { (qq_var) = True; } \
-   else if (VG_CLO_STREQ(qq_arg, qq_option"=no"))  { (qq_var) = False; }
+   (VG_STREQN(VG_(strlen)(qq_option)+1, qq_arg, qq_option"=") && \
+    ({ \
+      Char* val = &(qq_arg)[ VG_(strlen)(qq_option)+1 ]; \
+      if      VG_STREQ(val, "yes") (qq_var) = True; \
+      else if VG_STREQ(val, "no")  (qq_var) = False; \
+      True; \
+    }) \
+   )
 
+// String argument, eg. --foo=bar
 #define VG_STR_CLO(qq_arg, qq_option, qq_var) \
-   if (VG_CLO_STREQN(VG_(strlen)(qq_option)+1, qq_arg, qq_option"=")) { \
-      (qq_var) = &qq_arg[ VG_(strlen)(qq_option)+1 ]; \
-   }
+   (VG_STREQN(VG_(strlen)(qq_option)+1, qq_arg, qq_option"=") && \
+    ({ \
+      Char* val = &(qq_arg)[ VG_(strlen)(qq_option)+1 ]; \
+      (qq_var) = val; \
+      True; \
+    }) \
+   )
 
-/* Unbounded integer arg */
-#define VG_NUM_CLO(qq_arg, qq_option, qq_var) \
-   if (VG_CLO_STREQN(VG_(strlen)(qq_option)+1, qq_arg, qq_option"=")) { \
+// Unbounded integer arg, eg. --foo=10
+#define VG_INT_CLO(qq_arg, qq_option, qq_var) \
+   (VG_STREQN(VG_(strlen)(qq_option)+1, qq_arg, qq_option"=") && \
+    ({ \
+      Char* val = &(qq_arg)[ VG_(strlen)(qq_option)+1 ]; \
       Char* s; \
-      Long n = VG_(strtoll10)( &qq_arg[ VG_(strlen)(qq_option)+1 ], &s );\
+      Long n = VG_(strtoll10)( val, &s ); \
       (qq_var) = n; \
-      /* Check for non-numeralness, or overflow */ \
+      /* Check for non-numeralness, or overflow. */ \
       if ('\0' != s[0] || (qq_var) != n) VG_(err_bad_option)(qq_arg); \
-   }
+      True; \
+     }) \
+    )
 
-/* Bounded integer arg */
-#define VG_BNUM_CLO(qq_arg, qq_option, qq_var, qq_lo, qq_hi) \
-   if (VG_CLO_STREQN(VG_(strlen)(qq_option)+1, qq_arg, qq_option"=")) { \
+// Bounded integer arg, eg. --foo=10 ;  if the value exceeds the bounds it
+// causes an abort.  'qq_base' can be 10 or 16.
+#define VG_BINTN_CLO(qq_base, qq_arg, qq_option, qq_var, qq_lo, qq_hi) \
+   (VG_STREQN(VG_(strlen)(qq_option)+1, qq_arg, qq_option"=") && \
+    ({ \
+      Char* val = &(qq_arg)[ VG_(strlen)(qq_option)+1 ]; \
       Char* s; \
-      Long n = VG_(strtoll10)( &qq_arg[ VG_(strlen)(qq_option)+1 ], &s );\
+      Long n = VG_(strtoll##qq_base)( val, &s ); \
       (qq_var) = n; \
-      /* Check for non-numeralness, or overflow */ \
+      /* Check for non-numeralness, or overflow. */ \
+      /* Nb: it will overflow if qq_var is unsigned and qq_val is negative! */ \
       if ('\0' != s[0] || (qq_var) != n) VG_(err_bad_option)(qq_arg); \
-      if ((qq_var) < (qq_lo)) (qq_var) = (qq_lo); \
-      if ((qq_var) > (qq_hi)) (qq_var) = (qq_hi); \
-   }
+      /* Check bounds. */ \
+      if ((qq_var) < (qq_lo) || (qq_var) > (qq_hi)) { \
+         VG_(message)(Vg_UserMsg, \
+                      "'%s' argument must be between %lld and %lld", \
+                      (qq_option), (Long)(qq_lo), (Long)(qq_hi)); \
+         VG_(err_bad_option)(qq_arg); \
+      } \
+      True; \
+     }) \
+    )
 
-/* Bounded hexadecimal arg */
+// Bounded decimal integer arg, eg. --foo=100
+#define VG_BINT_CLO(qq_arg, qq_option, qq_var, qq_lo, qq_hi) \
+   VG_BINTN_CLO(10, (qq_arg), qq_option, (qq_var), (qq_lo), (qq_hi))
+
+// Bounded hexadecimal integer arg, eg. --foo=0x1fa8
 #define VG_BHEX_CLO(qq_arg, qq_option, qq_var, qq_lo, qq_hi) \
-   if (VG_CLO_STREQN(VG_(strlen)(qq_option)+1, qq_arg, qq_option"=")) { \
-      Char* s; \
-      Long n = VG_(strtoll16)( &qq_arg[ VG_(strlen)(qq_option)+1 ], &s );\
-      (qq_var) = n; \
-      /* Check for non-numeralness, or overflow */ \
-      if ('\0' != s[0] || (qq_var) != n) VG_(err_bad_option)(qq_arg); \
-      if ((qq_var) < (qq_lo)) (qq_var) = (qq_lo); \
-      if ((qq_var) > (qq_hi)) (qq_var) = (qq_hi); \
-   }
+   VG_BINTN_CLO(16, (qq_arg), qq_option, (qq_var), (qq_lo), (qq_hi))
 
-/* Double arg */
+// Double (decimal) arg, eg. --foo=4.6
+// XXX: there's not VG_BDBL_CLO because we don't have a good way of printing
+// floats at the moment!
 #define VG_DBL_CLO(qq_arg, qq_option, qq_var) \
-   if (VG_CLO_STREQN(VG_(strlen)(qq_option)+1, qq_arg, qq_option"=")) { \
+   (VG_STREQN(VG_(strlen)(qq_option)+1, qq_arg, qq_option"=") && \
+    ({ \
+      Char* val = &(qq_arg)[ VG_(strlen)(qq_option)+1 ]; \
       Char* s; \
-      double n = VG_(strtod)( &qq_arg[ VG_(strlen)(qq_option)+1 ], &s );\
+      double n = VG_(strtod)( val, &s ); \
       (qq_var) = n; \
       /* Check for non-numeralness */ \
       if ('\0' != s[0]) VG_(err_bad_option)(qq_arg); \
-   }
+      True; \
+     }) \
+    )
 
-/* Bool arg whose value is denoted by the exact presence of the given string. */
-#define VG_XACT_CLO(qq_arg, qq_option, qq_var) \
-   if (VG_CLO_STREQ(qq_arg, qq_option)) { \
-      (qq_var) = True; \
-   } /* else leave it alone */
+// Arg whose value is denoted by the exact presence of the given string;
+// if it matches, qq_var is assigned the value in qq_val.
+#define VG_XACT_CLO(qq_arg, qq_option, qq_var, qq_val) \
+   (VG_STREQ((qq_arg), (qq_option)) && \
+    ({ \
+      (qq_var) = (qq_val); \
+      True; \
+    }) \
+   )
 
 /* Verbosity level: 0 = silent, 1 (default), > 1 = more verbose. */
 extern Int  VG_(clo_verbosity);
@@ -125,9 +164,10 @@ extern Bool VG_(clo_show_below_main);
 
 /* Call this if a recognised option was bad for some reason.  Note:
    don't use it just because an option was unrecognised -- return
-   'False' from VG_(tdict).tool_process_cmd_line_option) to indicate
-   that.  This function prints an error message, then shuts down the
-   entire system. */
+   'False' from VG_(tdict).tool_process_cmd_line_option) to indicate that --
+   use it if eg. an option was given an inappropriate argument.
+   This function prints an error message, then shuts down the entire system.
+   It returns a Bool so it can be used in the _CLO_ macros. */
 __attribute__((noreturn))
 extern void VG_(err_bad_option) ( Char* opt );
 

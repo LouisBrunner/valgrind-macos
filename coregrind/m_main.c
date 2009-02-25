@@ -273,31 +273,25 @@ static void early_process_cmd_line_options ( /*OUT*/Int* need_help,
       str = * (HChar**) VG_(indexXA)( VG_(args_for_valgrind), i );
       vg_assert(str);
 
-      if (VG_STREQ(str, "--version")) {
-         // Ensure the version string goes to stdout
-         VG_(clo_log_fd) = 1;
+      // Nb: the version string goes to stdout.
+      if VG_XACT_CLO(str, "--version", VG_(clo_log_fd), 1) {
          VG_(printf)("valgrind-" VERSION "\n");
          VG_(exit)(0);
+      }
+      else if VG_XACT_CLO(str, "--help", *need_help, 1) {}
+      else if VG_XACT_CLO(str, "-h",     *need_help, 1) {}
 
-      } else if (VG_CLO_STREQ(str, "--help") ||
-                 VG_CLO_STREQ(str, "-h")) {
-         *need_help = 1;
-
-      } else if (VG_CLO_STREQ(str, "--help-debug")) {
-         *need_help = 2;
+      else if VG_XACT_CLO(str, "--help-debug", *need_help, 2) {}
 
       // The tool has already been determined, but we need to know the name
       // here.
-      } else if (VG_CLO_STREQN(7, str, "--tool=")) {
-         *tool = &str[7];
+      else if VG_STR_CLO(str, "--tool", *tool) {} 
 
       // Set up VG_(clo_max_stackframe) and VG_(clo_main_stacksize).
       // These are needed by VG_(ii_create_image), which happens
       // before main_process_cmd_line_options().
-      } 
-      else VG_NUM_CLO(str, "--max-stackframe", VG_(clo_max_stackframe))
-      else VG_NUM_CLO(str, "--main-stacksize", VG_(clo_main_stacksize));
-
+      else if VG_INT_CLO(str, "--max-stackframe", VG_(clo_max_stackframe)) {}
+      else if VG_INT_CLO(str, "--main-stacksize", VG_(clo_main_stacksize)) {}
    }
 }
 
@@ -312,6 +306,7 @@ static Bool main_process_cmd_line_options( const HChar* toolname )
    SysRes sres;
    Int    i, tmp_log_fd;
    Int    toolname_len = VG_(strlen)(toolname);
+   Char*  tmp_str;         // Used in a couple of places.
    enum {
       VgLogTo_Fd,
       VgLogTo_File,
@@ -341,9 +336,9 @@ static Bool main_process_cmd_line_options( const HChar* toolname )
       // in case someone has combined a prefix with a core-specific option,
       // eg.  "--memcheck:verbose".
       if (*colon == ':') {
-         if (VG_CLO_STREQN(2,            arg,                "--") && 
-             VG_CLO_STREQN(toolname_len, arg+2,              toolname) &&
-             VG_CLO_STREQN(1,            arg+2+toolname_len, ":"))
+         if (VG_STREQN(2,            arg,                "--") && 
+             VG_STREQN(toolname_len, arg+2,              toolname) &&
+             VG_STREQN(1,            arg+2+toolname_len, ":"))
          {
             // Prefix matches, convert "--toolname:foo" to "--foo".
             // Two things to note:
@@ -373,134 +368,124 @@ static Bool main_process_cmd_line_options( const HChar* toolname )
       }
       
       /* Ignore these options - they've already been handled */
-      if      (VG_CLO_STREQN( 7, arg, "--tool="))              { }
-      else if (VG_CLO_STREQN(20, arg, "--command-line-only=")) { }
-      else if (VG_CLO_STREQ(arg, "--"))                        { }
-      else if (VG_CLO_STREQ(arg, "-d"))                        { }
+      if      VG_STREQN( 7, arg, "--tool=")              {}
+      else if VG_STREQN(20, arg, "--command-line-only=") {}
+      else if VG_STREQ(     arg, "--")                   {}
+      else if VG_STREQ(     arg, "-d")                   {}
+      else if VG_STREQN(16, arg, "--max-stackframe")     {}
+      else if VG_STREQN(16, arg, "--main-stacksize")     {}
+      else if VG_STREQN(14, arg, "--profile-heap")       {}
 
-      else if (VG_CLO_STREQ(arg, "-v") ||
-               VG_CLO_STREQ(arg, "--verbose"))
+      // These options are new.
+      else if (VG_STREQ(arg, "-v") ||
+               VG_STREQ(arg, "--verbose"))
          VG_(clo_verbosity)++;
 
-      else if (VG_CLO_STREQ(arg, "-q") ||
-               VG_CLO_STREQ(arg, "--quiet"))
+      else if (VG_STREQ(arg, "-q") ||
+               VG_STREQ(arg, "--quiet"))
          VG_(clo_verbosity)--;
 
-      else VG_BOOL_CLO(arg, "--xml",              VG_(clo_xml))
-      else VG_BOOL_CLO(arg, "--db-attach",        VG_(clo_db_attach))
-      else VG_BOOL_CLO(arg, "--demangle",         VG_(clo_demangle))
-      else VG_BOOL_CLO(arg, "--error-limit",      VG_(clo_error_limit))
-      else VG_NUM_CLO (arg, "--error-exitcode",   VG_(clo_error_exitcode))
-      else VG_BOOL_CLO(arg, "--show-emwarns",     VG_(clo_show_emwarns))
+      else if VG_BOOL_CLO(arg, "--xml",            VG_(clo_xml)) {}
+      else if VG_BOOL_CLO(arg, "--db-attach",      VG_(clo_db_attach)) {}
+      else if VG_BOOL_CLO(arg, "--demangle",       VG_(clo_demangle)) {}
+      else if VG_BOOL_CLO(arg, "--error-limit",    VG_(clo_error_limit)) {}
+      else if VG_INT_CLO (arg, "--error-exitcode", VG_(clo_error_exitcode)) {}
+      else if VG_BOOL_CLO(arg, "--show-emwarns",   VG_(clo_show_emwarns)) {}
 
-      /* The next two are already done in
-         early_process_cmd_line_options, but we need to redundantly
-         handle them again, so they do not get rejected as invalid. */
-      else VG_NUM_CLO (arg, "--max-stackframe",   VG_(clo_max_stackframe))
-      else VG_NUM_CLO (arg, "--main-stacksize",   VG_(clo_main_stacksize))
+      else if VG_BOOL_CLO(arg, "--run-libc-freeres", VG_(clo_run_libc_freeres)) {}
+      else if VG_BOOL_CLO(arg, "--show-below-main",  VG_(clo_show_below_main)) {}
+      else if VG_BOOL_CLO(arg, "--time-stamp",       VG_(clo_time_stamp)) {}
+      else if VG_BOOL_CLO(arg, "--track-fds",        VG_(clo_track_fds)) {}
+      else if VG_BOOL_CLO(arg, "--trace-children",   VG_(clo_trace_children)) {}
+      else if VG_BOOL_CLO(arg, "--child-silent-after-fork",
+                            VG_(clo_child_silent_after_fork)) {}
+      else if VG_BOOL_CLO(arg, "--trace-sched",      VG_(clo_trace_sched)) {}
+      else if VG_BOOL_CLO(arg, "--trace-signals",    VG_(clo_trace_signals)) {}
+      else if VG_BOOL_CLO(arg, "--trace-symtab",     VG_(clo_trace_symtab)) {}
+      else if VG_STR_CLO (arg, "--trace-symtab-patt", VG_(clo_trace_symtab_patt)) {}
+      else if VG_BOOL_CLO(arg, "--trace-cfi",        VG_(clo_trace_cfi)) {}
+      else if VG_XACT_CLO(arg, "--debug-dump=syms",  VG_(clo_debug_dump_syms),
+                                                     True) {}
+      else if VG_XACT_CLO(arg, "--debug-dump=line",  VG_(clo_debug_dump_line),
+                                                     True) {}
+      else if VG_XACT_CLO(arg, "--debug-dump=frames",
+                               VG_(clo_debug_dump_frames), True) {}
+      else if VG_BOOL_CLO(arg, "--trace-redir",      VG_(clo_trace_redir)) {}
 
-      else VG_BOOL_CLO(arg, "--run-libc-freeres", VG_(clo_run_libc_freeres))
-      else VG_BOOL_CLO(arg, "--show-below-main",  VG_(clo_show_below_main))
-      else VG_BOOL_CLO(arg, "--time-stamp",       VG_(clo_time_stamp))
-      else VG_BOOL_CLO(arg, "--track-fds",        VG_(clo_track_fds))
-      else VG_BOOL_CLO(arg, "--trace-children",   VG_(clo_trace_children))
-      else VG_BOOL_CLO(arg, "--child-silent-after-fork",
-                            VG_(clo_child_silent_after_fork))
-      else VG_BOOL_CLO(arg, "--trace-sched",      VG_(clo_trace_sched))
-      else VG_BOOL_CLO(arg, "--trace-signals",    VG_(clo_trace_signals))
-      else VG_BOOL_CLO(arg, "--trace-symtab",     VG_(clo_trace_symtab))
-      else VG_STR_CLO (arg, "--trace-symtab-patt", VG_(clo_trace_symtab_patt))
-      else VG_BOOL_CLO(arg, "--trace-cfi",        VG_(clo_trace_cfi))
-      else VG_XACT_CLO(arg, "--debug-dump=syms",  VG_(clo_debug_dump_syms))
-      else VG_XACT_CLO(arg, "--debug-dump=line",  VG_(clo_debug_dump_line))
-      else VG_XACT_CLO(arg, "--debug-dump=frames", VG_(clo_debug_dump_frames))
-      else VG_BOOL_CLO(arg, "--trace-redir",      VG_(clo_trace_redir))
+      else if VG_BOOL_CLO(arg, "--trace-syscalls",   VG_(clo_trace_syscalls)) {}
+      else if VG_BOOL_CLO(arg, "--wait-for-gdb",     VG_(clo_wait_for_gdb)) {}
+      else if VG_STR_CLO (arg, "--db-command",       VG_(clo_db_command)) {}
+      else if VG_STR_CLO (arg, "--sim-hints",        VG_(clo_sim_hints)) {}
+      else if VG_BOOL_CLO(arg, "--sym-offsets",      VG_(clo_sym_offsets)) {}
+      else if VG_BOOL_CLO(arg, "--read-var-info",    VG_(clo_read_var_info)) {}
 
-      else VG_BOOL_CLO(arg, "--trace-syscalls",   VG_(clo_trace_syscalls))
-      else VG_BOOL_CLO(arg, "--wait-for-gdb",     VG_(clo_wait_for_gdb))
-      else VG_STR_CLO (arg, "--db-command",       VG_(clo_db_command))
-      else VG_STR_CLO (arg, "--sim-hints",        VG_(clo_sim_hints))
-      else VG_BOOL_CLO(arg, "--sym-offsets",      VG_(clo_sym_offsets))
-      else VG_BOOL_CLO(arg, "--read-var-info",    VG_(clo_read_var_info))
+      else if VG_INT_CLO (arg, "--dump-error",       VG_(clo_dump_error))   {}
+      else if VG_INT_CLO (arg, "--input-fd",         VG_(clo_input_fd))     {}
+      else if VG_INT_CLO (arg, "--sanity-level",     VG_(clo_sanity_level)) {}
+      else if VG_BINT_CLO(arg, "--num-callers",      VG_(clo_backtrace_size), 1,
+                                                     VG_DEEPEST_BACKTRACE) {}
 
-      else VG_NUM_CLO (arg, "--dump-error",       VG_(clo_dump_error))
-      else VG_NUM_CLO (arg, "--input-fd",         VG_(clo_input_fd))
-      else VG_NUM_CLO (arg, "--sanity-level",     VG_(clo_sanity_level))
-      else VG_BNUM_CLO(arg, "--num-callers",      VG_(clo_backtrace_size), 1,
-                                                  VG_DEEPEST_BACKTRACE)
+      else if VG_XACT_CLO(arg, "--smc-check=none",  VG_(clo_smc_check),
+                                                    Vg_SmcNone);
+      else if VG_XACT_CLO(arg, "--smc-check=stack", VG_(clo_smc_check),
+                                                    Vg_SmcStack);
+      else if VG_XACT_CLO(arg, "--smc-check=all",   VG_(clo_smc_check),
+                                                    Vg_SmcAll);
 
-      else if (VG_CLO_STREQ(arg, "--smc-check=none"))
-         VG_(clo_smc_check) = Vg_SmcNone;
-      else if (VG_CLO_STREQ(arg, "--smc-check=stack"))
-         VG_(clo_smc_check) = Vg_SmcStack;
-      else if (VG_CLO_STREQ(arg, "--smc-check=all"))
-         VG_(clo_smc_check) = Vg_SmcAll;
+      else if VG_STR_CLO (arg, "--kernel-variant",   VG_(clo_kernel_variant)) {}
 
-      else if (VG_CLO_STREQ(arg, "--profile-heap=no"))
-         ; /* We already handled it right at the top of valgrind_main.
-              Just ignore. */
-      else if (VG_CLO_STREQ(arg, "--profile-heap=yes"))
-         ; /* ditto */
+      else if VG_BINT_CLO(arg, "--vex-iropt-verbosity",
+                       VG_(clo_vex_control).iropt_verbosity, 0, 10) {}
+      else if VG_BINT_CLO(arg, "--vex-iropt-level",
+                       VG_(clo_vex_control).iropt_level, 0, 2) {}
+      else if VG_BOOL_CLO(arg, "--vex-iropt-precise-memory-exns",
+                       VG_(clo_vex_control).iropt_precise_memory_exns) {}
+      else if VG_BINT_CLO(arg, "--vex-iropt-unroll-thresh",
+                       VG_(clo_vex_control).iropt_unroll_thresh, 0, 400) {}
+      else if VG_BINT_CLO(arg, "--vex-guest-max-insns",
+                       VG_(clo_vex_control).guest_max_insns, 1, 100) {}
+      else if VG_BINT_CLO(arg, "--vex-guest-chase-thresh",
+                       VG_(clo_vex_control).guest_chase_thresh, 0, 99) {}
 
-      else VG_STR_CLO (arg, "--kernel-variant",   VG_(clo_kernel_variant))
-
-      else VG_BNUM_CLO(arg, "--vex-iropt-verbosity",
-                       VG_(clo_vex_control).iropt_verbosity, 0, 10)
-      else VG_BNUM_CLO(arg, "--vex-iropt-level",
-                       VG_(clo_vex_control).iropt_level, 0, 2)
-      else VG_BOOL_CLO(arg, "--vex-iropt-precise-memory-exns",
-                       VG_(clo_vex_control).iropt_precise_memory_exns)
-      else VG_BNUM_CLO(arg, "--vex-iropt-unroll-thresh",
-                       VG_(clo_vex_control).iropt_unroll_thresh, 0, 400)
-      else VG_BNUM_CLO(arg, "--vex-guest-max-insns",
-                       VG_(clo_vex_control).guest_max_insns, 1, 100)
-      else VG_BNUM_CLO(arg, "--vex-guest-chase-thresh",
-                       VG_(clo_vex_control).guest_chase_thresh, 0, 99)
-
-      else if (VG_CLO_STREQN(9,  arg, "--log-fd=")) {
-         log_to            = VgLogTo_Fd;
+      else if VG_INT_CLO(arg, "--log-fd", tmp_log_fd) {
+         log_to = VgLogTo_Fd;
          VG_(clo_log_name) = NULL;
-         tmp_log_fd        = (Int)VG_(atoll)(&arg[9]);
       }
 
-      else if (VG_CLO_STREQN(11, arg, "--log-file=")) {
-         log_to            = VgLogTo_File;
-         VG_(clo_log_name) = &arg[11];
+      else if VG_STR_CLO(arg, "--log-file", VG_(clo_log_name)) {
+         log_to = VgLogTo_File;
       }
 
-      else if (VG_CLO_STREQN(13, arg, "--log-socket=")) {
-         log_to            = VgLogTo_Socket;
-         VG_(clo_log_name) = &arg[13];
+      else if VG_STR_CLO(arg, "--log-socket", VG_(clo_log_name)) {
+         log_to = VgLogTo_Socket;
       }
 
-      else if (VG_CLO_STREQN(19, arg, "--xml-user-comment=")) {
-         VG_(clo_xml_user_comment) = &arg[19];
-      }
+      else if VG_STR_CLO(arg, "--xml-user-comment",
+                              VG_(clo_xml_user_comment)) {}
 
-      else if (VG_CLO_STREQN(15, arg, "--suppressions=")) {
+      else if VG_STR_CLO(arg, "--suppressions", tmp_str) {
          if (VG_(clo_n_suppressions) >= VG_CLO_MAX_SFILES) {
             VG_(message)(Vg_UserMsg, "Too many suppression files specified.");
             VG_(message)(Vg_UserMsg, 
                          "Increase VG_CLO_MAX_SFILES and recompile.");
             VG_(err_bad_option)(arg);
          }
-         VG_(clo_suppressions)[VG_(clo_n_suppressions)] = &arg[15];
+         VG_(clo_suppressions)[VG_(clo_n_suppressions)] = tmp_str;
          VG_(clo_n_suppressions)++;
       }
 
       /* "stuvwxyz" --> stuvwxyz (binary) */
-      else if (VG_CLO_STREQN(14, arg, "--trace-flags=")) {
+      else if VG_STR_CLO(arg, "--trace-flags", tmp_str) {
          Int j;
-         char* opt = & arg[14];
    
-         if (8 != VG_(strlen)(opt)) {
+         if (8 != VG_(strlen)(tmp_str)) {
             VG_(message)(Vg_UserMsg, 
                          "--trace-flags argument must have 8 digits");
             VG_(err_bad_option)(arg);
          }
          for (j = 0; j < 8; j++) {
-            if      ('0' == opt[j]) { /* do nothing */ }
-            else if ('1' == opt[j]) VG_(clo_trace_flags) |= (1 << (7-j));
+            if      ('0' == tmp_str[j]) { /* do nothing */ }
+            else if ('1' == tmp_str[j]) VG_(clo_trace_flags) |= (1 << (7-j));
             else {
                VG_(message)(Vg_UserMsg, "--trace-flags argument can only "
                                         "contain 0s and 1s");
@@ -510,18 +495,17 @@ static Bool main_process_cmd_line_options( const HChar* toolname )
       }
 
       /* "stuvwxyz" --> stuvwxyz (binary) */
-      else if (VG_CLO_STREQN(16, arg, "--profile-flags=")) {
+      else if VG_STR_CLO(arg, "--profile-flags", tmp_str) {
          Int j;
-         char* opt = & arg[16];
    
-         if (8 != VG_(strlen)(opt)) {
+         if (8 != VG_(strlen)(tmp_str)) {
             VG_(message)(Vg_UserMsg, 
                          "--profile-flags argument must have 8 digits");
             VG_(err_bad_option)(arg);
          }
          for (j = 0; j < 8; j++) {
-            if      ('0' == opt[j]) { /* do nothing */ }
-            else if ('1' == opt[j]) VG_(clo_profile_flags) |= (1 << (7-j));
+            if      ('0' == tmp_str[j]) { /* do nothing */ }
+            else if ('1' == tmp_str[j]) VG_(clo_profile_flags) |= (1 << (7-j));
             else {
                VG_(message)(Vg_UserMsg, "--profile-flags argument can only "
                                         "contain 0s and 1s");
@@ -530,14 +514,14 @@ static Bool main_process_cmd_line_options( const HChar* toolname )
          }
       }
 
-      else VG_NUM_CLO (arg, "--trace-notbelow",   VG_(clo_trace_notbelow))
+      else if VG_INT_CLO (arg, "--trace-notbelow", VG_(clo_trace_notbelow)) {}
 
-      else if (VG_CLO_STREQ(arg, "--gen-suppressions=no"))
-         VG_(clo_gen_suppressions) = 0;
-      else if (VG_CLO_STREQ(arg, "--gen-suppressions=yes"))
-         VG_(clo_gen_suppressions) = 1;
-      else if (VG_CLO_STREQ(arg, "--gen-suppressions=all"))
-         VG_(clo_gen_suppressions) = 2;
+      else if VG_XACT_CLO(arg, "--gen-suppressions=no",
+                               VG_(clo_gen_suppressions), 0) {}
+      else if VG_XACT_CLO(arg, "--gen-suppressions=yes",
+                               VG_(clo_gen_suppressions), 1) {}
+      else if VG_XACT_CLO(arg, "--gen-suppressions=all",
+                               VG_(clo_gen_suppressions), 2) {}
 
       else if ( ! VG_(needs).command_line_options
              || ! VG_TDICT_CALL(tool_process_cmd_line_option, arg) ) {
@@ -1206,19 +1190,15 @@ Int valgrind_main ( Int argc, HChar **argv, HChar **envp )
    //   p: none
    //--------------------------------------------------------------
    /* Start the debugging-log system ASAP.  First find out how many 
-      "-d"s were specified.  This is a pre-scan of the command line. */
+      "-d"s were specified.  This is a pre-scan of the command line.  Also
+      get --profile-heap=yes which is needed by the time we start up dynamic
+      memory management.  */
    loglevel = 0;
    for (i = 1; i < argc; i++) {
-      if (argv[i][0] != '-')
-         break;
-      if (VG_STREQ(argv[i], "--")) 
-         break;
-      if (VG_STREQ(argv[i], "-d")) 
-         loglevel++;
-      if (VG_STREQ(argv[i], "--profile-heap=yes"))
-         VG_(clo_profile_heap) = True;
-      if (VG_STREQ(argv[i], "--profile-heap=no"))
-         VG_(clo_profile_heap) = False;
+      if (argv[i][0] != '-') break;
+      if VG_STREQ(argv[i], "--") break;
+      if VG_STREQ(argv[i], "-d") loglevel++;
+      if VG_BOOL_CLO(argv[i], "--profile-heap", VG_(clo_profile_heap)) {}
    }
 
    /* ... and start the debug logger.  Now we can safely emit logging
@@ -1330,6 +1310,7 @@ Int valgrind_main ( Int argc, HChar **argv, HChar **envp )
    //--------------------------------------------------------------
    // Start up the dynamic memory manager
    //   p: address space management
+   //   p: getting --profile-heap
    //   In fact m_mallocfree is self-initialising, so there's no
    //   initialisation call to do.  Instead, try a simple malloc/
    //   free pair right now to check that nothing is broken.
@@ -1481,7 +1462,9 @@ Int valgrind_main ( Int argc, HChar **argv, HChar **envp )
 
    //--------------------------------------------------------------
    // Load client executable, finding in $PATH if necessary
-   //   p: early_process_cmd_line_options()  [for 'exec', 'need_help']
+   //   p: early_process_cmd_line_options()  [for 'exec', 'need_help',
+   //                                         clo_max_stackframe,
+   //                                         clo_main_stacksize]
    //   p: layout_remaining_space            [so there's space]
    //
    // Set up client's environment

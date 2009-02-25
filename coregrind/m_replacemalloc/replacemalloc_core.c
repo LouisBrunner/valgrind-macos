@@ -53,13 +53,11 @@ UInt VG_(clo_alignment)     = VG_MIN_MALLOC_SZB;
 
 Bool VG_(replacement_malloc_process_cmd_line_option)(Char* arg)
 {
-   if (VG_CLO_STREQN(12, arg, "--alignment=")) {
-      VG_(clo_alignment) = (UInt)VG_(atoll)(&arg[12]);
-
-      if (VG_(clo_alignment) < VG_MIN_MALLOC_SZB
-          || VG_(clo_alignment) > 4096
-          || VG_(log2)( VG_(clo_alignment) ) == -1 /* not a power of 2 */) {
-         VG_(message)(Vg_UserMsg, "");
+   if VG_INT_CLO(arg, "--alignment", VG_(clo_alignment)) {
+      if (VG_(clo_alignment) < VG_MIN_MALLOC_SZB ||
+          VG_(clo_alignment) > 4096 ||
+          VG_(log2)( VG_(clo_alignment) ) == -1 /* not a power of 2 */)
+      {
          VG_(message)(Vg_UserMsg, 
             "Invalid --alignment= setting.  "
             "Should be a power of 2, >= %d, <= 4096.", VG_MIN_MALLOC_SZB);
@@ -67,7 +65,7 @@ Bool VG_(replacement_malloc_process_cmd_line_option)(Char* arg)
       }
    }
 
-   else VG_BOOL_CLO(arg, "--trace-malloc",  VG_(clo_trace_malloc))
+   else if VG_BOOL_CLO(arg, "--trace-malloc",  VG_(clo_trace_malloc)) {}
    else 
       return False;
 

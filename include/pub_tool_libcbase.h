@@ -51,32 +51,33 @@ extern Bool VG_(isdigit) ( Char c );
 // is set to the start of the string.  None of them test that the number
 // fits into 64 bits.
 //
-// Nb: if you're wondering why we don't just have a single VG_(strtol) which
+// Nb: if you're wondering why we don't just have a single VG_(strtoll) which
 // takes a base, it's because I wanted it to assert if it was given a bogus
 // base (the standard glibc one sets 'errno' in this case).  But
 // m_libcbase.c doesn't import any code, not even vg_assert. --njn
+// 
+// Nb: we also don't provide VG_(atoll*);  these functions are worse than
+// useless because they don't do any error checking and so accept malformed
+// numbers and non-numbers -- eg. "123xyz" gives 123, and "foo" gives 0!
+// If you really want that behaviour, you can use "VG_(strtoll10)(str, NULL)".
 extern Long  VG_(strtoll10) ( Char* str, Char** endptr );
 extern Long  VG_(strtoll16) ( Char* str, Char** endptr );
 
-   // Convert a string to a double.  After leading whitespace is ignored, a
-   // '+' or '-' is allowed, and then it accepts a non-empty sequence of
-   // decimal digits possibly containing a '.'.  Hexadecimal floats are not
-   // accepted, nor are "fancy" floats (eg. "3.4e-5", "NAN").
+// Convert a string to a double.  After leading whitespace is ignored, a
+// '+' or '-' is allowed, and then it accepts a non-empty sequence of
+// decimal digits possibly containing a '.'.  Hexadecimal floats are not
+// accepted, nor are "fancy" floats (eg. "3.4e-5", "NAN").
 extern double VG_(strtod)  ( Char* str, Char** endptr );
-
-   // These are just like their VG_(strtoll*) counterparts, except that you
-   // cannot tell if an error occurred (because 0 is returned) or if there
-   // is any trailing non-numeric characterws (eg. in "123xyz").
-extern Long  VG_(atoll)   ( Char* str ); // base 10
-extern Long  VG_(atoll16) ( Char* str ); // base 16; leading 0x accepted
 
 /* ---------------------------------------------------------------------
    String functions and macros
    ------------------------------------------------------------------ */
 
-/* Use this for normal null-termination-style string comparison */
+/* Use this for normal null-termination-style string comparison. */
 #define VG_STREQ(s1,s2) ( (s1 != NULL && s2 != NULL \
                            && VG_(strcmp)((s1),(s2))==0) ? True : False )
+#define VG_STREQN(n,s1,s2) ( (s1 != NULL && s2 != NULL \
+                             && VG_(strncmp)((s1),(s2),(n))==0) ? True : False )
 
 extern SizeT VG_(strlen)         ( const Char* str );
 extern Char* VG_(strcat)         ( Char* dest, const Char* src );

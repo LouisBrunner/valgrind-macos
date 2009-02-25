@@ -750,11 +750,16 @@ void VG_(init_preopened_fds)(void)
          goto out;
 
       if (VG_(strcmp)(d.d_name, ".") && VG_(strcmp)(d.d_name, "..")) {
-         Int fno = VG_(atoll)(d.d_name);
-
-         if (fno != f.res)
-            if (VG_(clo_track_fds))
-               ML_(record_fd_open_named)(-1, fno);
+         Char* s;
+         Int fno = VG_(strtoll10)(d.d_name, &s);
+         if (*s == '\0') {
+            if (fno != f.res)
+               if (VG_(clo_track_fds))
+                  ML_(record_fd_open_named)(-1, fno);
+         } else {
+            VG_(message)(Vg_DebugMsg, 
+               "Warning: invalid file name in /proc/self/fd: %s", d.d_name);
+         }
       }
 
       VG_(lseek)(f.res, d.d_off, VKI_SEEK_SET);

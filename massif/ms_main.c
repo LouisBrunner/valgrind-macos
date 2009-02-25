@@ -358,46 +358,45 @@ static Bool clo_heap            = True;
    // word-sized type -- it ended up with a value of 4.2 billion.  Sigh.
 static SSizeT clo_heap_admin      = 8;
 static Bool   clo_stacks          = False;
-static UInt   clo_depth           = 30;
+static Int    clo_depth           = 30;
 static double clo_threshold       = 1.0;  // percentage
 static double clo_peak_inaccuracy = 1.0;  // percentage
-static UInt   clo_time_unit       = TimeI;
-static UInt   clo_detailed_freq   = 10;
-static UInt   clo_max_snapshots   = 100;
+static Int    clo_time_unit       = TimeI;
+static Int    clo_detailed_freq   = 10;
+static Int    clo_max_snapshots   = 100;
 static Char*  clo_massif_out_file = "massif.out.%p";
 
 static XArray* args_for_massif;
 
 static Bool ms_process_cmd_line_option(Char* arg)
 {
+   Char* tmp_str;
+
    // Remember the arg for later use.
    VG_(addToXA)(args_for_massif, &arg);
 
-        VG_BOOL_CLO(arg, "--heap",   clo_heap)
-   else VG_BOOL_CLO(arg, "--stacks", clo_stacks)
+        if VG_BOOL_CLO(arg, "--heap",   clo_heap)   {}
+   else if VG_BOOL_CLO(arg, "--stacks", clo_stacks) {}
 
-   else VG_NUM_CLO(arg, "--heap-admin", clo_heap_admin)
-   else VG_NUM_CLO(arg, "--depth",      clo_depth)
+   else if VG_BINT_CLO(arg, "--heap-admin", clo_heap_admin, 0, 1024) {}
+   else if VG_BINT_CLO(arg, "--depth",      clo_depth, 1, MAX_DEPTH) {}
 
-   else VG_DBL_CLO(arg, "--threshold",  clo_threshold)
+   else if VG_DBL_CLO(arg, "--threshold",  clo_threshold) {}
 
-   else VG_DBL_CLO(arg, "--peak-inaccuracy", clo_peak_inaccuracy)
+   else if VG_DBL_CLO(arg, "--peak-inaccuracy", clo_peak_inaccuracy) {}
 
-   else VG_NUM_CLO(arg, "--detailed-freq", clo_detailed_freq)
-   else VG_NUM_CLO(arg, "--max-snapshots", clo_max_snapshots)
+   else if VG_BINT_CLO(arg, "--detailed-freq", clo_detailed_freq, 1, 10000) {}
+   else if VG_BINT_CLO(arg, "--max-snapshots", clo_max_snapshots, 10, 1000) {}
 
-   else if (VG_CLO_STREQ(arg, "--time-unit=i"))  clo_time_unit = TimeI;
-   else if (VG_CLO_STREQ(arg, "--time-unit=ms")) clo_time_unit = TimeMS;
-   else if (VG_CLO_STREQ(arg, "--time-unit=B"))  clo_time_unit = TimeB;
+   else if VG_XACT_CLO(arg, "--time-unit=i",  clo_time_unit, TimeI)  {}
+   else if VG_XACT_CLO(arg, "--time-unit=ms", clo_time_unit, TimeMS) {}
+   else if VG_XACT_CLO(arg, "--time-unit=B",  clo_time_unit, TimeB)  {}
 
-   else if (VG_CLO_STREQN(11, arg, "--alloc-fn=")) {
-      Char* alloc_fn = &arg[11];
-      VG_(addToXA)(alloc_fns, &alloc_fn);
+   else if VG_STR_CLO(arg, "--alloc-fn", tmp_str) {
+      VG_(addToXA)(alloc_fns, &tmp_str);
    }
 
-   else if (VG_CLO_STREQN(18, arg, "--massif-out-file=")) {
-      clo_massif_out_file = &arg[18];
-   }
+   else if VG_STR_CLO(arg, "--massif-out-file", clo_massif_out_file) {}
 
    else
       return VG_(replacement_malloc_process_cmd_line_option)(arg);
@@ -2164,25 +2163,9 @@ static void ms_post_clo_init(void)
    Int i;
 
    // Check options.
-   if (clo_heap_admin < 0 || clo_heap_admin > 1024) {
-      VG_(message)(Vg_UserMsg, "--heap-admin must be between 0 and 1024");
-      VG_(err_bad_option)("--heap-admin");
-   }
-   if (clo_depth < 1 || clo_depth > MAX_DEPTH) {
-      VG_(message)(Vg_UserMsg, "--depth must be between 1 and %d", MAX_DEPTH);
-      VG_(err_bad_option)("--depth");
-   }
    if (clo_threshold < 0 || clo_threshold > 100) {
       VG_(message)(Vg_UserMsg, "--threshold must be between 0.0 and 100.0");
       VG_(err_bad_option)("--threshold");
-   }
-   if (clo_detailed_freq < 1 || clo_detailed_freq > 10000) {
-      VG_(message)(Vg_UserMsg, "--detailed-freq must be between 1 and 10000");
-      VG_(err_bad_option)("--detailed-freq");
-   }
-   if (clo_max_snapshots < 10 || clo_max_snapshots > 1000) {
-      VG_(message)(Vg_UserMsg, "--max-snapshots must be between 10 and 1000");
-      VG_(err_bad_option)("--max-snapshots");
    }
 
    // If we have --heap=no, set --heap-admin to zero, just to make sure we

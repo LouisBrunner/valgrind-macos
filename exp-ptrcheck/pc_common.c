@@ -64,9 +64,9 @@ Bool sg_clo_enable_sg_checks = True;   /* user visible */
 
 Bool pc_process_cmd_line_options(Char* arg)
 {
-        VG_BOOL_CLO(arg, "--partial-loads-ok", h_clo_partial_loads_ok)
-   /* else VG_BOOL_CLO(arg, "--lossage-check",    h_clo_lossage_check) */
-   else VG_BOOL_CLO(arg, "--enable-sg-checks", sg_clo_enable_sg_checks)
+        if VG_BOOL_CLO(arg, "--partial-loads-ok", h_clo_partial_loads_ok) {}
+   /* else if VG_BOOL_CLO(arg, "--lossage-check",    h_clo_lossage_check) {} */
+   else if VG_BOOL_CLO(arg, "--enable-sg-checks", sg_clo_enable_sg_checks) {}
    else
       return VG_(replacement_malloc_process_cmd_line_option)(arg);
 

@@ -155,16 +155,6 @@ double VG_(strtod) ( Char* str, Char** endptr )
    return n;
 }
 
-Long VG_(atoll) ( Char* str )
-{
-   return VG_(strtoll10)(str, NULL);
-}
-
-Long VG_(atoll16) ( Char* str )
-{
-   return VG_(strtoll16)(str, NULL);
-}
-
 /* ---------------------------------------------------------------------
    String functions
    ------------------------------------------------------------------ */

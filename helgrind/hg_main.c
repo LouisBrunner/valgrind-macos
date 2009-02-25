@@ -4009,39 +4009,32 @@ Bool hg_handle_client_request ( ThreadId tid, UWord* args, UWord* ret)
 
 static Bool hg_process_cmd_line_option ( Char* arg )
 {
-   if      (VG_CLO_STREQ(arg, "--track-lockorders=no"))
-      HG_(clo_track_lockorders) = False;
-   else if (VG_CLO_STREQ(arg, "--track-lockorders=yes"))
-      HG_(clo_track_lockorders) = True;
+   Char* tmp_str;
 
-   else if (VG_CLO_STREQ(arg, "--cmp-race-err-addrs=no"))
-      HG_(clo_cmp_race_err_addrs) = False;
-   else if (VG_CLO_STREQ(arg, "--cmp-race-err-addrs=yes"))
-      HG_(clo_cmp_race_err_addrs) = True;
-
-   else if (VG_CLO_STREQ(arg, "--show-conflicts=no"))
-      HG_(clo_show_conflicts) = False;
-   else if (VG_CLO_STREQ(arg, "--show-conflicts=yes"))
-      HG_(clo_show_conflicts) = True;
+   if      VG_BOOL_CLO(arg, "--track-lockorders",
+                            HG_(clo_track_lockorders)) {}
+   else if VG_BOOL_CLO(arg, "--cmp-race-err-addrs",
+                            HG_(clo_cmp_race_err_addrs)) {}
+   else if VG_BOOL_CLO(arg, "--show-conflicts",
+                            HG_(clo_show_conflicts)) {}
 
    /* If you change the 10k/10mill limits, remember to also change
       them in assertions at the top of event_map_maybe_GC. */
-   else VG_BNUM_CLO(arg, "--conflict-cache-size",
-                         HG_(clo_conflict_cache_size), 10*1000, 10*1000*1000)
+   else if VG_BINT_CLO(arg, "--conflict-cache-size",
+                       HG_(clo_conflict_cache_size), 10*1000, 10*1000*1000) {}
 
    /* "stuvwx" --> stuvwx (binary) */
-   else if (VG_CLO_STREQN(18, arg, "--hg-sanity-flags=")) {
+   else if VG_STR_CLO(arg, "--hg-sanity-flags", tmp_str) {
       Int j;
-      Char* opt = & arg[18];
    
-      if (6 != VG_(strlen)(opt)) {
+      if (6 != VG_(strlen)(tmp_str)) {
          VG_(message)(Vg_UserMsg, 
                       "--hg-sanity-flags argument must have 6 digits");
          return False;
       }
       for (j = 0; j < 6; j++) {
-         if      ('0' == opt[j]) { /* do nothing */ }
-         else if ('1' == opt[j]) HG_(clo_sanity_flags) |= (1 << (6-1-j));
+         if      ('0' == tmp_str[j]) { /* do nothing */ }
+         else if ('1' == tmp_str[j]) HG_(clo_sanity_flags) |= (1 << (6-1-j));
          else {
             VG_(message)(Vg_UserMsg, "--hg-sanity-flags argument can "
                                      "only contain 0s and 1s");

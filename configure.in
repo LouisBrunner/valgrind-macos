@@ -114,6 +114,23 @@ case "${sed_firstline}" in
 esac
 
 
+# Check if 'diff' supports -u (universal diffs) and use it if possible.
+
+AC_MSG_CHECKING([for diff -u])
+AC_SUBST(DIFF)
+
+# Comparing two identical files results in 0, unless -u isn't supported (as
+# it's not on AIX).
+touch tmp-xxx;
+if diff -u tmp-xxx tmp-xxx ; then
+    AC_MSG_RESULT([yes])
+    DIFF="diff -u"
+else
+    AC_MSG_RESULT([no])
+    DIFF="diff"
+fi
+
+
 # We don't want gcc < 3.0
 AC_MSG_CHECKING([for a supported version of gcc])
 

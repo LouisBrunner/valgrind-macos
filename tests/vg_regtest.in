@@ -277,7 +277,7 @@ sub do_diffs($$$$)
                 ($f_exp eq "/dev/null") or die "Unexpected .exp file: $f_exp\n";
             }
 
-            mysystem("diff $f_exp $name.$mid.out > $name.$mid.diff$n");
+            mysystem("@DIFF@ $f_exp $name.$mid.out > $name.$mid.diff$n");
 
             if (not -s "$name.$mid.diff$n") {
                 # A match;  remove .out and any previously created .diff files.

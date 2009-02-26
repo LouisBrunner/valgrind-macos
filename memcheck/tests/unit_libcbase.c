@@ -11,11 +11,6 @@
    if (!x) { fprintf(stderr, "failure: %s:%d\n", __FILE__, __LINE__); }
 
 
-#if ! defined(VKI_PAGE_SIZE)
-unsigned long VKI_PAGE_SIZE = VKI_MAX_PAGE_SIZE;
-#endif
-
-
 void test_VG_STREQ(void)
 {
    CHECK( ! VG_STREQ(NULL,    NULL) );  // Nb: strcmp() considers these equal
@@ -58,6 +53,11 @@ void test_VG_STREQN(void)
    CHECK( VG_STREQN(1, "ab",   "ac"));
    CHECK( VG_STREQN(3, "abcd", "abce"));
 }
+
+// On PPC/Linux VKI_PAGE_SIZE is a variable, not a macro.
+#if defined(VGP_ppc32_linux) || defined(VGP_ppc64_linux)
+unsigned long VKI_PAGE_SIZE  = 1UL << 12;
+#endif
 
 void test_VG_IS_XYZ_ALIGNED(void)
 {

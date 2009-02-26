@@ -886,12 +886,12 @@ static void lk_fini(Int exitcode)
       VG_(message)(Vg_UserMsg, "");
       VG_(message)(Vg_UserMsg, "Ratios:");
       tl_assert(n_SBs_entered); // Paranoia time.
-      VG_(message)(Vg_UserMsg, "  guest instrs : SB entered  = %3llu : 10",
+      VG_(message)(Vg_UserMsg, "  guest instrs : SB entered  = %'llu : 10",
          10 * n_guest_instrs / n_SBs_entered);
-      VG_(message)(Vg_UserMsg, "       IRStmts : SB entered  = %3llu : 10",
+      VG_(message)(Vg_UserMsg, "       IRStmts : SB entered  = %'llu : 10",
          10 * n_IRStmts / n_SBs_entered);
       tl_assert(n_guest_instrs); // Paranoia time.
-      VG_(message)(Vg_UserMsg, "       IRStmts : guest instr = %3llu : 10",
+      VG_(message)(Vg_UserMsg, "       IRStmts : guest instr = %'llu : 10",
          10 * n_IRStmts / n_guest_instrs);
    }
 

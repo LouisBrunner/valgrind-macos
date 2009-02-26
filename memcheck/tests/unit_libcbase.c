@@ -442,7 +442,6 @@ void test_log2(void)
    CHECK( -1 == VG_(log2)(2147483649U) );
 
    CHECK( -1 == VG_(log2)(4294967295U) );    // Max UInt
-   CHECK( -1 == VG_(log2)(4294967296U) );    // Wraps to 0, so answer is -1
 }
 
 void test_random(void)

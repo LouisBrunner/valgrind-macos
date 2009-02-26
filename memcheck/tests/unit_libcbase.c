@@ -53,7 +53,7 @@ void test_VG_STREQN(void)
    CHECK( VG_STREQN(3, "abcd", "abce"));
 }
 
-void test_VG_IS_XXX_ALIGNED(void)
+void test_VG_IS_XYZ_ALIGNED(void)
 {
    CHECK(   VG_IS_2_ALIGNED(0x0) );
    CHECK( ! VG_IS_2_ALIGNED(0x1) );
@@ -465,7 +465,7 @@ int main(void)
    //--------------------------------------------------------------------
    test_VG_STREQ();
    test_VG_STREQN();
-   test_VG_IS_XXX_ALIGNED();
+   test_VG_IS_XYZ_ALIGNED();
    test_VG_ROUND_et_al();
 
    //--------------------------------------------------------------------

@@ -93,10 +93,6 @@ extern Char* VG_(strrchr)        ( const Char* s, Char c );
 extern SizeT VG_(strspn)         ( const Char* s, const Char* accept );
 extern SizeT VG_(strcspn)        ( const Char* s, const char* reject );
 
-/* Like strcmp() and strncmp(), but stop comparing at any whitespace. */
-extern Int   VG_(strcmp_ws)      ( const Char* s1, const Char* s2 );
-extern Int   VG_(strncmp_ws)     ( const Char* s1, const Char* s2, SizeT nmax );
-
 /* Like strncpy(), but if 'src' is longer than 'ndest' inserts a '\0' as the
    last character. */
 extern void  VG_(strncpy_safely) ( Char* dest, const Char* src, SizeT ndest );
@@ -139,7 +135,7 @@ extern void VG_(ssort)( void* base, SizeT nmemb, SizeT size,
                         Int (*compar)(void*, void*) );
 
 /* Returns the base-2 logarithm of x.  Returns -1 if x is not a power
-   of two. */
+   of two.  Nb: VG_(log2)(1) == 0.  */
 extern Int VG_(log2) ( UInt x );
 
 // A pseudo-random number generator returning a random UInt.  If pSeed

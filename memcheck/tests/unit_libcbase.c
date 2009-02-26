@@ -10,6 +10,12 @@
 #define  CHECK(x) \
    if (!x) { fprintf(stderr, "failure: %s:%d\n", __FILE__, __LINE__); }
 
+
+#if ! defined(VKI_PAGE_SIZE)
+unsigned long VKI_PAGE_SIZE = VKI_MAX_PAGE_SIZE;
+#endif
+
+
 void test_VG_STREQ(void)
 {
    CHECK( ! VG_STREQ(NULL,    NULL) );  // Nb: strcmp() considers these equal

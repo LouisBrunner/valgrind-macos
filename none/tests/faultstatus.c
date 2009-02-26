@@ -9,6 +9,19 @@
 #include <sys/mman.h>
 #include <unistd.h>
 
+/*
+ * Division by zero triggers a SIGFPE on x86 and x86_64,
+ * but not on the PowerPC architecture.
+ */
+#if defined(__powerpc__)
+#define DIVISION_BY_ZERO_TRIGGERS_FPE 0
+#define DIVISION_BY_ZERO_SI_CODE      SI_TKILL
+#else
+#define DIVISION_BY_ZERO_TRIGGERS_FPE 1
+#define DIVISION_BY_ZERO_SI_CODE      FPE_INTDIV
+#endif
+
+
 struct test {
 	void (*test)(void);
 	int sig;
@@ -93,6 +106,9 @@ static void test4()
 	volatile int v = 44/zero();
 
 	(void)v;
+#if DIVISION_BY_ZERO_TRIGGERS_FPE == 0
+	raise(SIGFPE);
+#endif
 }
 
 int main()
@@ -125,7 +141,7 @@ int main()
 			T(1, SIGSEGV,	SEGV_MAPERR,	BADADDR),
 			T(2, SIGSEGV,	SEGV_ACCERR,	mapping),
 			T(3, SIGBUS,	BUS_ADRERR,	&mapping[FILESIZE+10]),
-			T(4, SIGFPE,	FPE_INTDIV,	0),
+			T(4, SIGFPE,    DIVISION_BY_ZERO_SI_CODE, 0),
 #undef T
 		};
 

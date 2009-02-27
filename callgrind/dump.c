@@ -1640,7 +1640,6 @@ void init_cmdbuf(void)
   Int i,j,size = 0;
   HChar* argv;
 
-#if VG_CORE_INTERFACE_VERSION > 8
   if (VG_(args_the_exename))
       size = VG_(sprintf)(cmdbuf, " %s", VG_(args_the_exename));
 
@@ -1651,15 +1650,6 @@ void init_cmdbuf(void)
       for(j=0;argv[j]!=0;j++)
 	  if (size < BUF_LEN) cmdbuf[size++] = argv[j];
   }
-#else
-  for(i = 0; i < VG_(client_argc); i++) {
-    argv = VG_(client_argv)[i];
-    if (!argv) continue;
-    if ((size>0) && (size < BUF_LEN)) cmdbuf[size++] = ' ';
-    for(j=0;argv[j]!=0;j++)
-      if (size < BUF_LEN) cmdbuf[size++] = argv[j];
-  }
-#endif
 
   if (size == BUF_LEN) size--;
   cmdbuf[size] = 0;

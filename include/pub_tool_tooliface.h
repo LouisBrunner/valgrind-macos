@@ -37,38 +37,22 @@
 /* ------------------------------------------------------------------ */
 /* The interface version */
 
-/* The version number indicates binary-incompatible changes to the
-   interface;  if the core and tool versions don't match, Valgrind
-   will abort.  */
-#define VG_CORE_INTERFACE_VERSION   11
+/* Initialise tool.   Must do the following:
+   - initialise the `details' struct, via the VG_(details_*)() functions
+   - register the basic tool functions, via VG_(basic_tool_funcs)().
+   May do the following:
+   - initialise the `needs' struct to indicate certain requirements, via
+     the VG_(needs_*)() functions
+   - any other tool-specific initialisation
+*/
+extern void (*VG_(tl_pre_clo_init)) ( void );
 
-typedef struct _ToolInfo {
-   Int	sizeof_ToolInfo;
-   Int	interface_version;
-
-   /* Initialise tool.   Must do the following:
-      - initialise the `details' struct, via the VG_(details_*)() functions
-      - register any helpers called by generated code
-      
-      May do the following:
-      - initialise the `needs' struct to indicate certain requirements, via
-      the VG_(needs_*)() functions
-      - initialize all the tool's entrypoints via the VG_(init_*)() functions
-      - register any tool-specific profiling events
-      - any other tool-specific initialisation
-   */
-   void (*tl_pre_clo_init) ( void );
-} ToolInfo;
-
-extern const ToolInfo VG_(tool_info);
-
-/* Every tool must include this macro somewhere, exactly once. */
-#define VG_DETERMINE_INTERFACE_VERSION(pre_clo_init)           \
-   const ToolInfo VG_(tool_info) = {                           \
-      .sizeof_ToolInfo   = sizeof(ToolInfo),                   \
-      .interface_version = VG_CORE_INTERFACE_VERSION,          \
-      .tl_pre_clo_init   = pre_clo_init,                       \
-   };
+/* Every tool must include this macro somewhere, exactly once.  The
+   interface version is no longer relevant, but we kept the same name
+   to avoid requiring changes to tools.
+*/
+#define VG_DETERMINE_INTERFACE_VERSION(pre_clo_init) \
+   void (*VG_(tl_pre_clo_init)) ( void ) = pre_clo_init;
 
 /* ------------------------------------------------------------------ */
 /* Basic tool functions */

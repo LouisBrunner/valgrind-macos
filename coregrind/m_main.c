@@ -1585,7 +1585,7 @@ Int valgrind_main ( Int argc, HChar **argv, HChar **envp )
    //   p: setup_file_descriptors()  [for 'VG_(fd_xxx_limit)']
    //--------------------------------------------------------------
    VG_(debugLog)(1, "main", "Initialise the tool part 1 (pre_clo_init)\n");
-   (VG_(tool_info).tl_pre_clo_init)();
+   VG_(tl_pre_clo_init)();
 
    //--------------------------------------------------------------
    // If --tool and --help/--help-debug was given, now give the core+tool

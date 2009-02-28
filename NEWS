@@ -1,5 +1,5 @@
 
-Release 3.4.1 (XX February 2009)
+Release 3.4.1 (28 February 2009)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 3.4.1 is a bug-fix release that fixes some regressions and assertion
 failures in debug info reading in 3.4.0, most notably incorrect stack
@@ -7,7 +7,7 @@ traces on amd64-linux on older (glibc-2.3 based) systems. Various
 other debug info problems are also fixed.  A number of bugs in the
 exp-ptrcheck tool introduced in 3.4.0 have been fixed.
 
-In view of the fact that 3.4.0 contains some user-visible regressions
+In view of the fact that 3.4.0 contains user-visible regressions
 relative to 3.3.x, upgrading to 3.4.1 is recommended.  Packagers are
 encouraged to ship 3.4.1 in preference to 3.4.0.
 
@@ -21,6 +21,8 @@ into bugzilla tend to get forgotten about or ignored.
 n-i-bz  Fix various bugs reading icc-11 generated debug info
 n-i-bz  Fix various bugs reading gcc-4.4 generated debug info
 n-i-bz  Preliminary support for glibc-2.10 / Fedora 11
+n-i-bz  Cachegrind and Callgrind: handle non-power-of-two cache sizes,
+        so as to support (eg) 24k Atom D1 and Core2 with 3/6/12MB L2.
 179618  exp-ptrcheck crashed / exit prematurely
 179624  helgrind: false positive races with pthread_create and
         recv/open/close/read
@@ -35,6 +37,7 @@ n-i-bz  Preliminary support for glibc-2.10 / Fedora 11
 185359  exp-ptrcheck unhandled syscall getresuid()
 
 (3.4.1.RC1:  24 Feb 2008, vex r1884, valgrind r9253).
+(3.4.1:      28 Feb 2008, vex r1884, valgrind r9293).
 
 
 

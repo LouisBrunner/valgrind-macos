@@ -1896,7 +1896,7 @@ Bool ML_(read_elf_debug_info) ( struct _DebugInfo* di )
          we ignore it. */
 #     if !defined(VGP_amd64_linux)
       if (stab_img && stabstr_img) {
-         ML_(read_debuginfo_stabs) ( di, di->text_bias, stab_img, stab_sz, 
+         ML_(read_debuginfo_stabs) ( di, stab_img, stab_sz, 
                                          stabstr_img, stabstr_sz );
       }
 #     endif

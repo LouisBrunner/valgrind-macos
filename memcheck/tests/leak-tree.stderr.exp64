@@ -2,7 +2,7 @@
 searching for pointers to 11 not-freed blocks.
 checked ... bytes.
 
-80 (16 direct, 64 indirect) bytes in 1 blocks are definitely lost in loss record 11 of 11
+80 (16 direct, 64 indirect) bytes in 1 blocks are definitely lost in loss record ... of ...
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: mk (leak-tree.c:11)
    by 0x........: main (leak-tree.c:25)
@@ -19,19 +19,19 @@ searching for pointers to 14 not-freed blocks.
 checked ... bytes.
 
 
-16 bytes in 1 blocks are definitely lost in loss record 1 of 14
+16 bytes in 1 blocks are definitely lost in loss record ... of ...
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: mk (leak-tree.c:11)
    by 0x........: main (leak-tree.c:39)
 
 
-16 bytes in 1 blocks are definitely lost in loss record 2 of 14
+16 bytes in 1 blocks are definitely lost in loss record ... of ...
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: mk (leak-tree.c:11)
    by 0x........: main (leak-tree.c:38)
 
 
-80 (16 direct, 64 indirect) bytes in 1 blocks are definitely lost in loss record 14 of 14
+80 (16 direct, 64 indirect) bytes in 1 blocks are definitely lost in loss record ... of ...
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: mk (leak-tree.c:11)
    by 0x........: main (leak-tree.c:25)

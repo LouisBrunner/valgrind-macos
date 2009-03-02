@@ -1,3 +1,2 @@
 prog: leak-cycle
-vgopts: --leak-resolution=high
-stderr_filter: filter_leak_check_size
+vgopts: -q --leak-check=yes --leak-resolution=high

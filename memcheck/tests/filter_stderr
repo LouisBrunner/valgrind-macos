@@ -31,5 +31,13 @@ perl -p -0 -e 's/(Syscall param[^\n<]*)\n(   (at|by)[^\n]*\n)*/$1\n   ...\n/gs' 
 
 # Something similar for XML output.  Chops everything within
 # <stack>...</stack>.
-perl -p -0 -e 's/(<what>Syscall param[^\n]*)\n([^\n]*(stack|frame|ip|obj|fn)[^\n]*\n)*/$1\n/gs'
+perl -p -0 -e 's/(<what>Syscall param[^\n]*)\n([^\n]*(stack|frame|ip|obj|fn)[^\n]*\n)*/$1\n/gs' |
+
+# Leak check filtering.
+sed "s/checked [0-9,]* bytes./checked ... bytes./" |
+
+# More leak check filtering.  For systems that do extra libc allocations
+# (eg. Darwin) there may be extra (reachable, and thus not shown) loss
+# records.  So we filter out the loss record numbers.
+perl -p -e "s/lost in loss record \d+ of \d+/lost in loss record ... of .../" 
 

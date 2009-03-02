@@ -1,6 +1,11 @@
 
 Release 3.5.0 (???)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+* A new Memcheck client request VALGRIND_COUNT_LEAK_BLOCKS has been added.
+  It is similar to VALGRIND_COUNT_LEAKS but counts blocks instead of bytes.
+  [XXX: consider adding VALGRIND_COUNT_LEAK_BYTES as a synonym and
+  deprecating VALGRIND_COUNT_LEAKS, which wasn't a good name to begin with]
+
 * The location of some install files has changed.  This should not affect
   most users.  Those who might be affected:
 

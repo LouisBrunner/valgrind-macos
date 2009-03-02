@@ -1,5 +1,15 @@
 errors: 0
+
 errors: 1
-leaks: 0B, 0B, 0B, 0B
-leaks: 77B, 88B, 99B, 0B
+
+leaked:       0 bytes in  0 blocks
+dubious:      0 bytes in  0 blocks
+reachable:    0 bytes in  0 blocks
+suppressed:   0 bytes in  0 blocks
+
+leaked:      77 bytes in  1 blocks
+dubious:     88 bytes in  1 blocks
+reachable:   99 bytes in  1 blocks
+suppressed:   0 bytes in  0 blocks
+
 errors: 1

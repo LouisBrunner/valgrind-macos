@@ -211,6 +211,12 @@ SizeT MC_(bytes_dubious)    = 0;
 SizeT MC_(bytes_reachable)  = 0;
 SizeT MC_(bytes_suppressed) = 0;
 
+SizeT MC_(blocks_leaked)     = 0;
+SizeT MC_(blocks_indirect)   = 0;
+SizeT MC_(blocks_dubious)    = 0;
+SizeT MC_(blocks_reachable)  = 0;
+SizeT MC_(blocks_suppressed) = 0;
+
 static Int lc_compar(void* n1, void* n2)
 {
    MC_Chunk* mc1 = *(MC_Chunk**)n1;
@@ -399,12 +405,6 @@ static void lc_do_leakcheck(Int clique)
    }
 }
 
-static SizeT blocks_leaked;
-static SizeT blocks_indirect;
-static SizeT blocks_dubious;
-static SizeT blocks_reachable;
-static SizeT blocks_suppressed;
-
 static void full_report(ThreadId tid)
 {
    Int i;
@@ -515,24 +515,24 @@ static void full_report(ThreadId tid)
                                   print_record );
 
       if (is_suppressed) {
-         blocks_suppressed     += p_min->num_blocks;
-         MC_(bytes_suppressed) += p_min->total_bytes;
+         MC_(blocks_suppressed) += p_min->num_blocks;
+         MC_(bytes_suppressed)  += p_min->total_bytes;
 
       } else if (Unreached == p_min->loss_mode) {
-         blocks_leaked       += p_min->num_blocks;
-         MC_(bytes_leaked)   += p_min->total_bytes;
+         MC_(blocks_leaked) += p_min->num_blocks;
+         MC_(bytes_leaked)  += p_min->total_bytes;
 
       } else if (IndirectLeak == p_min->loss_mode) {
-         blocks_indirect     += p_min->num_blocks;
-         MC_(bytes_indirect) += p_min->total_bytes;
+         MC_(blocks_indirect) += p_min->num_blocks;
+         MC_(bytes_indirect)  += p_min->total_bytes;
 
-      } else if (Interior   == p_min->loss_mode) {
-         blocks_dubious     += p_min->num_blocks;
-         MC_(bytes_dubious) += p_min->total_bytes;
+      } else if (Interior == p_min->loss_mode) {
+         MC_(blocks_dubious) += p_min->num_blocks;
+         MC_(bytes_dubious)  += p_min->total_bytes;
 
-      } else if (Proper       == p_min->loss_mode) {
-         blocks_reachable     += p_min->num_blocks;
-         MC_(bytes_reachable) += p_min->total_bytes;
+      } else if (Proper == p_min->loss_mode) {
+         MC_(blocks_reachable) += p_min->num_blocks;
+         MC_(bytes_reachable)  += p_min->total_bytes;
 
       } else {
          VG_(tool_panic)("generic_detect_memory_leaks: unknown loss mode");
@@ -551,22 +551,22 @@ static void make_summary(void)
 
       switch(lc_markstack[i].state) {
       case Unreached:
-	 blocks_leaked++;
+	 MC_(blocks_leaked)++;
 	 MC_(bytes_leaked) += size;
 	 break;
 
       case Proper:
-	 blocks_reachable++;
+	 MC_(blocks_reachable)++;
 	 MC_(bytes_reachable) += size;
 	 break;
 
       case Interior:
-	 blocks_dubious++;
+	 MC_(blocks_dubious)++;
 	 MC_(bytes_dubious) += size;
 	 break;
 	 
       case IndirectLeak:	/* shouldn't happen */
-	 blocks_indirect++;
+	 MC_(blocks_indirect)++;
 	 MC_(bytes_indirect) += size;
 	 break;
       }
@@ -812,11 +812,11 @@ void MC_(do_detect_memory_leaks) (
    if (VG_(clo_verbosity) > 0 && !VG_(clo_xml))
       VG_(message)(Vg_UserMsg, "checked %'lu bytes.", lc_scanned);
 
-   blocks_leaked     = MC_(bytes_leaked)     = 0;
-   blocks_indirect   = MC_(bytes_indirect)   = 0;
-   blocks_dubious    = MC_(bytes_dubious)    = 0;
-   blocks_reachable  = MC_(bytes_reachable)  = 0;
-   blocks_suppressed = MC_(bytes_suppressed) = 0;
+   MC_(blocks_leaked)     = MC_(bytes_leaked)     = 0;
+   MC_(blocks_indirect)   = MC_(bytes_indirect)   = 0;
+   MC_(blocks_dubious)    = MC_(bytes_dubious)    = 0;
+   MC_(blocks_reachable)  = MC_(bytes_reachable)  = 0;
+   MC_(blocks_suppressed) = MC_(bytes_suppressed) = 0;
 
    if (mode == LC_Full)
       full_report(tid);
@@ -827,23 +827,23 @@ void MC_(do_detect_memory_leaks) (
       VG_(message)(Vg_UserMsg, "");
       VG_(message)(Vg_UserMsg, "LEAK SUMMARY:");
       VG_(message)(Vg_UserMsg, "   definitely lost: %'lu bytes in %'lu blocks.",
-                               MC_(bytes_leaked), blocks_leaked );
-      if (blocks_indirect > 0)
+                               MC_(bytes_leaked), MC_(blocks_leaked) );
+      if (MC_(blocks_indirect) > 0)
 	 VG_(message)(Vg_UserMsg, "   indirectly lost: %'lu bytes in %'lu blocks.",
-		      MC_(bytes_indirect), blocks_indirect );
+		      MC_(bytes_indirect), MC_(blocks_indirect) );
       VG_(message)(Vg_UserMsg, "     possibly lost: %'lu bytes in %'lu blocks.",
-                               MC_(bytes_dubious), blocks_dubious );
+                               MC_(bytes_dubious), MC_(blocks_dubious) );
       VG_(message)(Vg_UserMsg, "   still reachable: %'lu bytes in %'lu blocks.",
-                               MC_(bytes_reachable), blocks_reachable );
+                               MC_(bytes_reachable), MC_(blocks_reachable) );
       VG_(message)(Vg_UserMsg, "        suppressed: %'lu bytes in %'lu blocks.",
-                               MC_(bytes_suppressed), blocks_suppressed );
+                               MC_(bytes_suppressed), MC_(blocks_suppressed) );
       if (mode == LC_Summary 
-          && (blocks_leaked + blocks_indirect 
-              + blocks_dubious + blocks_reachable) > 0) {
+          && (MC_(blocks_leaked) + MC_(blocks_indirect) 
+              + MC_(blocks_dubious) + MC_(blocks_reachable)) > 0) {
          VG_(message)(Vg_UserMsg,
                       "Rerun with --leak-check=full to see details of leaked memory.");
       }
-      if (blocks_reachable > 0 && !MC_(clo_show_reachable) && mode == LC_Full) {
+      if (MC_(blocks_reachable) > 0 && !MC_(clo_show_reachable) && mode == LC_Full) {
          VG_(message)(Vg_UserMsg, 
            "Reachable blocks (those to which a pointer was found) are not shown.");
          VG_(message)(Vg_UserMsg, 

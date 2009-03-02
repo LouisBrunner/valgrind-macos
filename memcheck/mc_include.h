@@ -249,6 +249,13 @@ extern SizeT MC_(bytes_dubious);
 extern SizeT MC_(bytes_reachable);
 extern SizeT MC_(bytes_suppressed);
 
+/* For VALGRIND_COUNT_LEAK_BLOCKS client request */
+extern SizeT MC_(blocks_leaked);
+extern SizeT MC_(blocks_indirect);
+extern SizeT MC_(blocks_dubious);
+extern SizeT MC_(blocks_reachable);
+extern SizeT MC_(blocks_suppressed);
+
 typedef
    enum {
       LC_Off,

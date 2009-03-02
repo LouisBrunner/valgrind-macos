@@ -1056,9 +1056,9 @@ INLINE Bool MC_(in_ignored_range) ( Addr a )
 
 static Bool isHex ( UChar c )
 {
-  return ((c >= '0' && c <= '9')
-	  || (c >= 'a' && c <= 'f')
-	  || (c >= 'A' && c <= 'F'));
+  return ((c >= '0' && c <= '9') ||
+	  (c >= 'a' && c <= 'f') ||
+	  (c >= 'A' && c <= 'F'));
 }
 
 static UInt fromHex ( UChar c )
@@ -5005,7 +5005,23 @@ static Bool mc_handle_client_request ( ThreadId tid, UWord* arg, UWord* ret )
          *argp[4] = MC_(bytes_suppressed);
          // there is no argp[5]
          //*argp[5] = MC_(bytes_indirect);
-         // XXX need to make *argp[1-4] defined
+         // XXX need to make *argp[1-4] defined;  currently done in the
+         // VALGRIND_COUNT_LEAKS_MACRO by initialising them to zero.
+         *ret = 0;
+         return True;
+      }
+      case VG_USERREQ__COUNT_LEAK_BLOCKS: { /* count leaked blocks */
+         UWord** argp = (UWord**)arg;
+         // MC_(blocks_leaked) et al were set by the last leak check (or zero
+         // if no prior leak checks performed).
+         *argp[1] = MC_(blocks_leaked) + MC_(blocks_indirect);
+         *argp[2] = MC_(blocks_dubious);
+         *argp[3] = MC_(blocks_reachable);
+         *argp[4] = MC_(blocks_suppressed);
+         // there is no argp[5]
+         //*argp[5] = MC_(blocks_indirect);
+         // XXX need to make *argp[1-4] defined;  currently done in the
+         // VALGRIND_COUNT_LEAK_BLOCKS_MACRO by initialising them to zero.
          *ret = 0;
          return True;
       }

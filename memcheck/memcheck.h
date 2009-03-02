@@ -93,6 +93,9 @@ typedef
 
       VG_USERREQ__MAKE_MEM_DEFINED_IF_ADDRESSABLE,
 
+      /* Not next to VG_USERREQ__COUNT_LEAKS because it was added later. */
+      VG_USERREQ__COUNT_LEAK_BLOCKS,
+
       /* This is just for memcheck's internal use - don't use it */
       _VG_USERREQ__MEMCHECK_RECORD_OVERLAP_ERROR 
          = VG_USERREQ_TOOL_BASE('M','C') + 256
@@ -228,12 +231,34 @@ typedef
       specified, which works no matter what type 'leaked', 'dubious', etc
       are.  We also initialise '_qzz_leaked', etc because
       VG_USERREQ__COUNT_LEAKS doesn't mark the values returned as
-      initialised. */                                                    \
+      defined. */                                                        \
    {unsigned long _qzz_res;                                              \
     unsigned long _qzz_leaked    = 0, _qzz_dubious    = 0;               \
     unsigned long _qzz_reachable = 0, _qzz_suppressed = 0;               \
     VALGRIND_DO_CLIENT_REQUEST(_qzz_res, 0,                              \
                                VG_USERREQ__COUNT_LEAKS,                  \
+                               &_qzz_leaked, &_qzz_dubious,              \
+                               &_qzz_reachable, &_qzz_suppressed, 0);    \
+    leaked     = _qzz_leaked;                                            \
+    dubious    = _qzz_dubious;                                           \
+    reachable  = _qzz_reachable;                                         \
+    suppressed = _qzz_suppressed;                                        \
+   }
+
+/* Return number of leaked, dubious, reachable and suppressed bytes found by
+   all previous leak checks.  They must be lvalues.  */
+#define VALGRIND_COUNT_LEAK_BLOCKS(leaked, dubious, reachable, suppressed) \
+   /* For safety on 64-bit platforms we assign the results to private
+      unsigned long variables, then assign these to the lvalues the user
+      specified, which works no matter what type 'leaked', 'dubious', etc
+      are.  We also initialise '_qzz_leaked', etc because
+      VG_USERREQ__COUNT_LEAKS doesn't mark the values returned as
+      defined. */                                                        \
+   {unsigned long _qzz_res;                                              \
+    unsigned long _qzz_leaked    = 0, _qzz_dubious    = 0;               \
+    unsigned long _qzz_reachable = 0, _qzz_suppressed = 0;               \
+    VALGRIND_DO_CLIENT_REQUEST(_qzz_res, 0,                              \
+                               VG_USERREQ__COUNT_LEAK_BLOCKS,            \
                                &_qzz_leaked, &_qzz_dubious,              \
                                &_qzz_reachable, &_qzz_suppressed, 0);    \
     leaked     = _qzz_leaked;                                            \

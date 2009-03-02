@@ -1178,6 +1178,13 @@ arguments.</para>
   </listitem>
 
   <listitem>
+    <para><varname>VALGRIND_COUNT_LEAK_BLOCKS</varname>: identical to
+    <varname>VALGRIND_COUNT_LEAKS</varname> except that it returns the
+    number of blocks rather than the number of bytes in each
+    category.</para>
+  </listitem>
+
+  <listitem>
     <para><varname>VALGRIND_GET_VBITS</varname> and
     <varname>VALGRIND_SET_VBITS</varname>: allow you to get and set the
     V (validity) bits for an address range.  You should probably only

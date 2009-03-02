@@ -1,2 +1,0 @@
-prog: leak-regroot
-stderr_filter: filter_leak_check_size

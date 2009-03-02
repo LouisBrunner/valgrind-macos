@@ -35,25 +35,25 @@ Invalid write of size 1
    by 0x........: main (mempool.c:148)
 
 
-10 bytes in 1 blocks are definitely lost in loss record 1 of 5
+10 bytes in 1 blocks are definitely lost in loss record ... of ...
    at 0x........: allocate (mempool.c:99)
    by 0x........: test (mempool.c:135)
    by 0x........: main (mempool.c:148)
 
 
-10 bytes in 1 blocks are definitely lost in loss record 2 of 5
+10 bytes in 1 blocks are definitely lost in loss record ... of ...
    at 0x........: allocate (mempool.c:99)
    by 0x........: test (mempool.c:115)
    by 0x........: main (mempool.c:148)
 
 
-20 bytes in 1 blocks are definitely lost in loss record 4 of 5
+20 bytes in 1 blocks are definitely lost in loss record ... of ...
    at 0x........: allocate (mempool.c:99)
    by 0x........: test (mempool.c:116)
    by 0x........: main (mempool.c:148)
 
 
-48 (32 direct, 16 indirect) bytes in 1 blocks are definitely lost in loss record 5 of 5
+48 (32 direct, 16 indirect) bytes in 1 blocks are definitely lost in loss record ... of ...
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: make_pool (mempool.c:37)
    by 0x........: test (mempool.c:111)

@@ -382,7 +382,7 @@
   <unique>0x........</unique>
   <tid>...</tid>
   <kind>Leak_DefinitelyLost</kind>
-  <what>396 bytes in 1 blocks are definitely lost in loss record 1 of 1</what>
+  <what>396 bytes in 1 blocks are definitely lost in loss record ... of ...</what>
   <leakedbytes>396</leakedbytes>
   <leakedblocks>1</leakedblocks>
   <stack>

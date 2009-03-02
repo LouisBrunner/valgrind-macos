@@ -1,14 +1,18 @@
+#include <stdio.h>
 #include <stdlib.h>
+#include "leak.h"
 #include "../memcheck.h"
 
 struct n {
 	struct n *l;
 	struct n *r;
+        // This ensures it's the same size on 32-bit and 64-bit platforms.
+        char padding[ 2 * (8 - sizeof(struct n*)) ];
 };
 
 struct n *mk(struct n *l, struct n *r)
 {
-	struct n *n = malloc(sizeof(*n));
+	struct n *n = malloc(sizeof(struct n));
 	n->l = l;
 	n->r = r;
 
@@ -27,18 +31,20 @@ static struct n *mkcycle()
 	return a;
 }
 
+
 int main()
 {
+	DECLARE_LEAK_COUNTERS;
 
 	struct n *volatile c1, *volatile c2;
+
+        GET_INITIAL_LEAK_COUNTS;
 
 	/* two simple cycles */
 	c1 = mkcycle();
 	c2 = mkcycle();
 
 	c1 = c2 = 0;
-
-	//VALGRIND_DO_LEAK_CHECK;
 
 	/* one cycle linked to another */
 	c1 = mkcycle();
@@ -53,8 +59,6 @@ int main()
 
 	c1 = c2 = 0;
 
-	//VALGRIND_DO_LEAK_CHECK;
-
 	/* two linked cycles */
 	c1 = mkcycle();
 	c2 = mkcycle();
@@ -64,7 +68,9 @@ int main()
 
 	c1 = c2 = 0;
 
-	VALGRIND_DO_LEAK_CHECK;
+	GET_FINAL_LEAK_COUNTS;
+
+	PRINT_LEAK_COUNTS(stderr);
 
 	return 0;
 }

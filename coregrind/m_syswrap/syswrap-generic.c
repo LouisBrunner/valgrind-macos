@@ -1973,17 +1973,12 @@ ML_(generic_PRE_sys_mmap) ( ThreadId tid,
 // Combine two 32-bit values into a 64-bit value
 #define LOHI64(lo,hi)   ( ((ULong)(lo)) | (((ULong)(hi)) << 32) )
 
-//zz //PRE(sys_exit_group, Special)
-//zz //{
-//zz //   VG_(core_panic)("syscall exit_group() not caught by the scheduler?!");
-//zz //}
-
 PRE(sys_exit)
 {
    ThreadState* tst;
    /* simple; just make this thread exit */
    PRINT("exit( %ld )", ARG1);
-   PRE_REG_READ1(void, "exit", int, exitcode);
+   PRE_REG_READ1(void, "exit", int, status);
    tst = VG_(get_ThreadState)(tid);
    /* Set the thread's status to be exiting, then claim that the
       syscall succeeded. */

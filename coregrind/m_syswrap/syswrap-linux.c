@@ -553,7 +553,7 @@ PRE(sys_exit_group)
    ThreadState* tst;
 
    PRINT("exit_group( %ld )", ARG1);
-   PRE_REG_READ1(void, "exit_group", int, exit_code);
+   PRE_REG_READ1(void, "exit_group", int, status);
 
    tst = VG_(get_ThreadState)(tid);
 

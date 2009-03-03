@@ -46,7 +46,7 @@ Conditional jump or move depends on uninitialised value(s)
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (origin4-many.c:39)
 
-Syscall param exit_group(exit_code) contains uninitialised byte(s)
+Syscall param exit_group(status) contains uninitialised byte(s)
    ...
  Uninitialised value was created by a heap allocation
    at 0x........: malloc (vg_replace_malloc.c:...)

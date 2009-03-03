@@ -3244,5 +3244,5 @@ it at http://valgrind.org/support/bug_reports.html.
   1:           __NR_exit 1s 0m
 -----------------------------------------------------
 
-Syscall param exit(exitcode) contains uninitialised byte(s)
+Syscall param exit(status) contains uninitialised byte(s)
    ...

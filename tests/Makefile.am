@@ -8,7 +8,6 @@ noinst_SCRIPTS = \
 	filter_numbers \
 	filter_stderr_basic \
 	filter_sink \
-	os_test \
 	platform_test \
 	vg_regtest
 
@@ -16,7 +15,9 @@ EXTRA_DIST = $(noinst_SCRIPTS)
 
 check_PROGRAMS = \
 	arch_test \
-	true
+	os_test \
+	true \
+	x86_amd64_features
 
 AM_CFLAGS   += $(AM_FLAG_M3264_PRI)
 AM_CXXFLAGS += $(AM_FLAG_M3264_PRI)

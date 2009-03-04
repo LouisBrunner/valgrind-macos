@@ -1,4 +1,4 @@
 prog: sse_memory
 vgopts: -q
 args: sse2
-prereq: ../../../tests/arch_test x86-sse2
+prereq: ../../../tests/x86_amd64_features x86-sse2

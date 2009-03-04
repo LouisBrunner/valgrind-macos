@@ -13,7 +13,6 @@
 all_platforms=
 all_platforms="$all_platforms x86-linux amd64-linux ppc32-linux ppc64-linux"
 all_platforms="$all_platforms ppc32-aix5 ppc64-aix5"
-all_platforms="$all_platforms x86-darwin amd64-darwin"
 
 if [ $# -ne 2 ] ; then
     echo "usage: platform_test <arch-type> <OS-type>"
@@ -24,7 +23,7 @@ fi
 # as the one holding this script.
 dir=`dirname $0`
 
-if $dir/arch_test $1 && sh $dir/os_test $2 ; then
+if $dir/arch_test $1 && $dir/os_test $2 ; then
     exit 0;         # Matches this platform.
 fi
 

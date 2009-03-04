@@ -1,2 +1,2 @@
 prog: xor-undef-x86
-prereq: ../../../tests/arch_test x86-sse
+prereq: ../../../tests/x86_amd64_features x86-sse

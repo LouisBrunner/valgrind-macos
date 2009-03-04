@@ -49,8 +49,8 @@ our %SubTypeSuffixes = (
 
 our %RegNums = (
                 al => 0, ax => 0, eax => 0,
-                bl => 1, bx => 1, ebx => 1,
                 cl => 2, cx => 2, ecx => 2,
+                bl => 1, bx => 1, ebx => 1,
                 dl => 3, dx => 3, edx => 3,
                 ah => 4,
                 bh => 5,
@@ -62,15 +62,15 @@ our %RegNums = (
 
 our %RegTypes = (
                  al => "r8", ah => "r8", ax => "r16", eax => "r32",
-                 bl => "r8", bh => "r8", bx => "r16", ebx => "r32",
                  cl => "r8", ch => "r8", cx => "r16", ecx => "r32",
+                 bl => "r8", bh => "r8", bx => "r16", ebx => "r32",
                  dl => "r8", dh => "r8", dx => "r16", edx => "r32"
                  );
 
 our @IntRegs = (
                 { r8 => "al", r16 => "ax", r32 => "eax" },
-                { r8 => "bl", r16 => "bx", r32 => "ebx" },
                 { r8 => "cl", r16 => "cx", r32 => "ecx" },
+                { r8 => "bl", r16 => "bx", r32 => "ebx" },
                 { r8 => "dl", r16 => "dx", r32 => "edx" },
                 { r8 => "ah" },
                 { r8 => "bh" },

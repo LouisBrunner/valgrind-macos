@@ -67,12 +67,19 @@
 # one stderr.exp* file.  Any .exp* file that ends in '~' or '#' is ignored;
 # this is because Emacs creates temporary files of these names.
 #
-# The prerequisite command, if present, must return 0 otherwise the test is
-# skipped.  The post-test command, if present, must return 0 and its stdout
-# must match the expected stdout which is kept in <test>.post.exp*.
-#
 # If results don't match, the output can be found in <test>.std<strm>.out,
 # and the diff between expected and actual in <test>.std<strm>.diff*.
+#
+# The prerequisite command, if present, works like this:
+# - if it returns 0 the test is run
+# - if it returns 1 the test is skipped
+# - if it returns anything else the script aborts.
+# The idea here is results other than 0 or 1 are likely to be due to
+# problems with the commands, and you don't want to conflate them with the 1
+# case, which would happen if you just tested for zero or non-zero.
+#
+# The post-test command, if present, must return 0 and its stdout must match
+# the expected stdout which is kept in <test>.post.exp*.
 #
 # Sometimes it is useful to run all the tests at a high sanity check
 # level or with arbitrary other flags.  To make this simple, extra 
@@ -308,9 +315,18 @@ sub do_one_test($$)
     read_vgtest_file($vgtest);
 
     if (defined $prereq) {
-        if (system("$prereq") != 0) {
+        my $prereq_res = system("$prereq");
+        if (0 == $prereq_res) {
+            # Do nothing (ie. continue with the test)
+        } elsif (256 == $prereq_res) {
+            # Nb: weird Perl-ism -- exit code of '1' is seen by Perl as 256...
+            # Prereq failed, skip.
             printf("%-16s (skipping, prereq failed: $prereq)\n", "$name:");
             return;
+        } else {
+            # Bad prereq; abort.
+            $prereq_res /= 256;
+            die "prereq returned $prereq_res: $prereq\n";
         }
     }
 
@@ -386,8 +402,8 @@ sub test_one_dir($$)
     # ppc/ directories ('arch_test' returns 1 for this case).  Likewise for
     # the OS and platform.
     # Nb: weird Perl-ism -- exit code of '1' is seen by Perl as 256...
-    if (256 == system(   "$tests_dir/tests/arch_test     $dir"))  { return; }
-    if (256 == system("sh $tests_dir/tests/os_test       $dir"))  { return; }
+    if (256 == system("$tests_dir/tests/arch_test $dir"))  { return; }
+    if (256 == system("$tests_dir/tests/os_test   $dir"))  { return; }
     if ($dir =~ /(\w+)-(\w+)/ &&
         256 == system("sh $tests_dir/tests/platform_test $1 $2")) { return; }
     

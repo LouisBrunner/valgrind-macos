@@ -1709,7 +1709,6 @@ AC_OUTPUT(
    docs/xml/Makefile
    tests/Makefile 
    tests/vg_regtest 
-   tests/os_test 
    perf/Makefile 
    perf/vg_perf
    include/Makefile 

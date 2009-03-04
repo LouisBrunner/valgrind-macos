@@ -1,3 +1,3 @@
 prog: ../../../none/tests/x86/insn_mmxext
-prereq: ../../../tests/arch_test x86-mmxext
+prereq: ../../../tests/x86_amd64_features x86-mmxext
 vgopts: -q

@@ -1,0 +1,57 @@
+leaked:      80 bytes in  5 blocks
+dubious:     96 bytes in  6 blocks
+reachable:   64 bytes in  4 blocks
+suppressed:   0 bytes in  0 blocks
+
+16 bytes in 1 blocks are possibly lost in loss record ... of ...
+   at 0x........: malloc (vg_replace_malloc.c:...)
+   by 0x........: mk (leak-cases.c:52)
+   by 0x........: main (leak-cases.c:91)
+
+
+16 bytes in 1 blocks are possibly lost in loss record ... of ...
+   at 0x........: malloc (vg_replace_malloc.c:...)
+   by 0x........: mk (leak-cases.c:52)
+   by 0x........: main (leak-cases.c:91)
+
+
+16 bytes in 1 blocks are possibly lost in loss record ... of ...
+   at 0x........: malloc (vg_replace_malloc.c:...)
+   by 0x........: mk (leak-cases.c:52)
+   by 0x........: main (leak-cases.c:88)
+
+
+16 bytes in 1 blocks are possibly lost in loss record ... of ...
+   at 0x........: malloc (vg_replace_malloc.c:...)
+   by 0x........: mk (leak-cases.c:52)
+   by 0x........: main (leak-cases.c:88)
+
+
+16 bytes in 1 blocks are possibly lost in loss record ... of ...
+   at 0x........: malloc (vg_replace_malloc.c:...)
+   by 0x........: mk (leak-cases.c:52)
+   by 0x........: main (leak-cases.c:85)
+
+
+16 bytes in 1 blocks are possibly lost in loss record ... of ...
+   at 0x........: malloc (vg_replace_malloc.c:...)
+   by 0x........: mk (leak-cases.c:52)
+   by 0x........: main (leak-cases.c:82)
+
+
+16 bytes in 1 blocks are definitely lost in loss record ... of ...
+   at 0x........: malloc (vg_replace_malloc.c:...)
+   by 0x........: mk (leak-cases.c:52)
+   by 0x........: main (leak-cases.c:78)
+
+
+32 (16 direct, 16 indirect) bytes in 1 blocks are definitely lost in loss record ... of ...
+   at 0x........: malloc (vg_replace_malloc.c:...)
+   by 0x........: mk (leak-cases.c:52)
+   by 0x........: main (leak-cases.c:80)
+
+
+32 (16 direct, 16 indirect) bytes in 1 blocks are definitely lost in loss record ... of ...
+   at 0x........: malloc (vg_replace_malloc.c:...)
+   by 0x........: mk (leak-cases.c:52)
+   by 0x........: main (leak-cases.c:95)

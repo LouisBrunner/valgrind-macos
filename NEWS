@@ -6,6 +6,15 @@ Release 3.5.0 (???)
   [XXX: consider adding VALGRIND_COUNT_LEAK_BYTES as a synonym and
   deprecating VALGRIND_COUNT_LEAKS, which wasn't a good name to begin with]
 
+* Memcheck's leak checker has been improved.  
+  - The results for --leak-check=summary now match the summary results for
+    --leak-check=full.  Previously they could differ because
+    --leak-check=summary counted "indirectly lost" blocks and "suppressed"
+    blocks as "definitely lost".
+  - Blocks that are only reachable via at least one interior-pointer, but
+    are directly pointed to by a start-pointer, were previously marked as
+    "still reachable".  They are now correctly marked as "possibly lost".
+
 * The location of some install files has changed.  This should not affect
   most users.  Those who might be affected:
 

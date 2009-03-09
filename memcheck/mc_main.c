@@ -4459,8 +4459,7 @@ static Int mc_get_or_set_vbits_for_client (
    address space is possibly in use, or not.  If in doubt return
    True.
 */
-static
-Bool mc_is_within_valid_secondary ( Addr a )
+Bool MC_(is_within_valid_secondary) ( Addr a )
 {
    SecMap* sm = maybe_get_secmap_for ( a );
    if (sm == NULL || sm == &sm_distinguished[SM_DIST_NOACCESS]
@@ -4475,35 +4474,16 @@ Bool mc_is_within_valid_secondary ( Addr a )
 
 /* For the memory leak detector, say whether or not a given word
    address is to be regarded as valid. */
-static
-Bool mc_is_valid_aligned_word ( Addr a )
+Bool MC_(is_valid_aligned_word) ( Addr a )
 {
    tl_assert(sizeof(UWord) == 4 || sizeof(UWord) == 8);
-   if (sizeof(UWord) == 4) {
-      tl_assert(VG_IS_4_ALIGNED(a));
-   } else {
-      tl_assert(VG_IS_8_ALIGNED(a));
-   }
+   tl_assert(VG_IS_WORD_ALIGNED(a));
    if (is_mem_defined( a, sizeof(UWord), NULL, NULL) == MC_Ok
        && !MC_(in_ignored_range)(a)) {
       return True;
    } else {
       return False;
    }
-}
-
-
-/* Leak detector for this tool.  We don't actually do anything, merely
-   run the generic leak detector with suitable parameters for this
-   tool. */
-static void mc_detect_memory_leaks ( ThreadId tid, LeakCheckMode mode )
-{
-   MC_(do_detect_memory_leaks) ( 
-      tid, 
-      mode, 
-      mc_is_within_valid_secondary, 
-      mc_is_valid_aligned_word 
-   );
 }
 
 
@@ -4933,7 +4913,7 @@ static Bool mc_handle_client_request ( ThreadId tid, UWord* arg, UWord* ret )
       }
 
       case VG_USERREQ__DO_LEAK_CHECK:
-         mc_detect_memory_leaks(tid, arg[1] ? LC_Summary : LC_Full);
+         MC_(detect_memory_leaks)(tid, arg[1] ? LC_Summary : LC_Full);
          *ret = 0; /* return value is meaningless */
          break;
 
@@ -5590,7 +5570,7 @@ static void mc_fini ( Int exitcode )
    }
 
    if (MC_(clo_leak_check) != LC_Off)
-      mc_detect_memory_leaks(1/*bogus ThreadId*/, MC_(clo_leak_check));
+      MC_(detect_memory_leaks)(1/*bogus ThreadId*/, MC_(clo_leak_check));
 
    done_prof_mem();
 

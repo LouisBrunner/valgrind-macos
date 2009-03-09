@@ -65,11 +65,11 @@ the following problems:</para>
       <option><![CDATA[--undef-value-errors=<yes|no> [default: yes] ]]></option>
     </term>
     <listitem>
-      <para>Controls whether <constant>memcheck</constant> reports
+      <para>Controls whether Memcheck reports
       uses of undefined value errors.  Set this to
       <varname>no</varname> if you don't want to see undefined value
       errors.  It also has the side effect of speeding up
-      <constant>memcheck</constant> somewhat.
+      memcheck somewhat.
       </para>
     </listitem>
   </varlistentry>
@@ -79,7 +79,7 @@ the following problems:</para>
       <option><![CDATA[--track-origins=<yes|no> [default: no] ]]></option>
     </term>
       <listitem>
-        <para>Controls whether <constant>memcheck</constant> tracks
+        <para>Controls whether Memcheck tracks
         the origin of uninitialised values.  By default, it does not,
         which means that although it can tell you that an
         uninitialised value is being used in a dangerous way, it
@@ -87,43 +87,42 @@ the following problems:</para>
         often makes it difficult to track down the root problem.
         </para>
         <para>When set
-        to <varname>yes</varname>, <constant>memcheck</constant> keeps
+        to <varname>yes</varname>, Memcheck keeps
         track of the origins of all uninitialised values.  Then, when
         an uninitialised value error is
-        reported, <constant>memcheck</constant> will try to show the
+        reported, Memcheck will try to show the
         origin of the value.  An origin can be one of the following
         four places: a heap block, a stack allocation, a client
         request, or miscellaneous other sources (eg, a call
         to <varname>brk</varname>).
         </para>
         <para>For uninitialised values originating from a heap
-        block, <constant>memcheck</constant> shows where the block was
+        block, Memcheck shows where the block was
         allocated.  For uninitialised values originating from a stack
-        allocation, <constant>memcheck</constant> can tell you which
+        allocation, Memcheck can tell you which
         function allocated the value, but no more than that -- typically
         it shows you the source location of the opening brace of the
         function.  So you should carefully check that all of the
         function's local variables are initialised properly.
         </para>
         <para>Performance overhead: origin tracking is expensive.  It
-        halves <constant>memcheck</constant>'s speed and increases
+        halves Memcheck's speed and increases
         memory use by a minimum of 100MB, and possibly more.
         Nevertheless it can drastically reduce the effort required to
         identify the root cause of uninitialised value errors, and so
         is often a programmer productivity win, despite running
         more slowly.
         </para>
-        <para>Accuracy: <constant>memcheck</constant> tracks origins
+        <para>Accuracy: Memcheck tracks origins
         quite accurately.  To avoid very large space and time
         overheads, some approximations are made.  It is possible,
-        although unlikely, that
-        <constant>memcheck</constant> will report an incorrect origin,
-        or not be able to identify any origin.
+        although unlikely, that Memcheck will report an incorrect origin, or
+        not be able to identify any origin.
         </para>
         <para>Note that the combination
         <option>--track-origins=yes</option>
         and <option>--undef-value-errors=no</option> is
-        nonsensical.  <constant>memcheck</constant> checks for and
+        nonsensical.  Memcheck checks for and
         rejects this combination at startup.
         </para>
         <para>Origin tracking is a new feature, introduced in Valgrind
@@ -138,12 +137,9 @@ the following problems:</para>
     </term>
     <listitem>
       <para>When enabled, search for memory leaks when the client
-      program finishes.  A memory leak means a malloc'd block, which has
-      not yet been free'd, but to which no pointer can be found.  Such a
-      block can never be free'd by the program, since no pointer to it
-      exists.  If set to <varname>summary</varname>, it says how many
-      leaks occurred.  If set to <varname>full</varname> or
-      <varname>yes</varname>, it gives details of each individual
+      program finishes.  If set to <varname>summary</varname>, it says how
+      many leaks occurred.  If set to <varname>full</varname> or
+      <varname>yes</varname>, it also gives details of each individual
       leak.</para>
     </listitem>
   </varlistentry>
@@ -153,17 +149,12 @@ the following problems:</para>
       <option><![CDATA[--show-reachable=<yes|no> [default: no] ]]></option>
     </term>
     <listitem>
-      <para>When disabled, the memory leak detector only shows blocks
-      for which it cannot find a pointer to at all, or it can only find
-      a pointer to the middle of.  These blocks are prime candidates for
-      memory leaks.  When enabled, the leak detector also reports on
-      blocks which it could find a pointer to.  Your program could, at
-      least in principle, have freed such blocks before exit.  Contrast
-      this to blocks for which no pointer, or only an interior pointer
-      could be found: they are more likely to indicate memory leaks,
-      because you do not actually have a pointer to the start of the
-      block which you can hand to <function>free</function>, even if you
-      wanted to.</para>
+      <para>When disabled, the memory leak detector only shows "definitely
+      lost" and "possibly lost" blocks.  When enabled, the leak detector also
+      shows "reachable" and "indirectly lost" blocks.  (In other words, it
+      shows all blocks, except suppressed ones, so
+      <computeroutput>--show-all</computeroutput> would be a better name for
+      it.)
     </listitem>
   </varlistentry>
 
@@ -173,7 +164,7 @@ the following problems:</para>
     </term>
     <listitem>
       <para>When doing leak checking, determines how willing
-      <constant>memcheck</constant> is to consider different backtraces to
+      Memcheck is to consider different backtraces to
       be the same.  When set to <varname>low</varname>, only the first
       two entries need match.  When <varname>med</varname>, four entries
       have to match.  When <varname>high</varname>, all entries need to
@@ -183,11 +174,11 @@ the following problems:</para>
       <option>--leak-resolution=high</option> together with
       <option>--num-callers=40</option> or some such large number.  Note
       however that this can give an overwhelming amount of information,
-      which is why the defaults are 4 callers and low-resolution
-      matching.</para>
+      which is why the defaults give less information.
+      </para>
 
       <para>Note that the <option>--leak-resolution=</option> setting
-      does not affect <constant>memcheck's</constant> ability to find
+      does not affect Memcheck's ability to find
       leaks.  It only changes how the results are presented.</para>
     </listitem>
   </varlistentry>
@@ -204,14 +195,14 @@ the following problems:</para>
       and placed in a queue of freed blocks.  The purpose is to defer as
       long as possible the point at which freed-up memory comes back
       into circulation.  This increases the chance that
-      <constant>memcheck</constant> will be able to detect invalid
+      Memcheck will be able to detect invalid
       accesses to blocks for some significant period of time after they
       have been freed.</para>
 
       <para>This flag specifies the maximum total size, in bytes, of the
       blocks in the queue.  The default value is ten million bytes.
       Increasing this increases the total amount of memory used by
-      <constant>memcheck</constant> but may detect invalid uses of freed
+      Memcheck but may detect invalid uses of freed
       blocks which would otherwise go undetected.</para>
     </listitem>
   </varlistentry>
@@ -245,7 +236,7 @@ the following problems:</para>
       <option><![CDATA[--partial-loads-ok=<yes|no> [default: no] ]]></option>
     </term>
     <listitem>
-      <para>Controls how <constant>memcheck</constant> handles word-sized,
+      <para>Controls how Memcheck handles word-sized,
       word-aligned loads from addresses for which some bytes are
       addressable and others are not.  When <varname>yes</varname>, such
       loads do not produce an address error.  Instead, loaded bytes
@@ -632,45 +623,126 @@ which blocks have not been freed.
 </para>
 
 <para>If <option>--leak-check</option> is set appropriately, for each
-remaining block, Memcheck scans the entire address space of the process,
-looking for pointers to the block.  Each block fits into one of the
-three following categories.</para>
+remaining block, Memcheck determines if the block is reachable from pointers
+within the root-set.  The root-set consists of (a) general purpose registers
+of all threads, and (b) initialised, aligned, pointer-sized data words in
+accessible client memory, including stacks.</para>
+
+<para>There are two ways a block can be reached.  The first is with a
+"start-pointer", i.e. a pointer to the start of the block.  The second is
+with an "interior-pointer", i.e. a pointer to the middle of the block.  The
+pointer might have originally been a start-pointer and have been moved
+along, or it might be entirely unrelated, just a coincidence.  It's unclear
+whether such a pointer should be considered as genuinely pointing to the
+block.</para>
+
+<para>With that in mind, consider the nine possible cases described by the
+following figure.</para>
+
+<programlisting><![CDATA[
+     Pointer chain            AAA Category    BBB Category
+     -------------            ------------    ------------
+(1)  RRR ------------> BBB                    DR
+(2)  RRR ---> AAA ---> BBB    DR              IR
+(3)  RRR               BBB                    DL
+(4)  RRR      AAA ---> BBB    DL              IL
+(5)  RRR ------?-----> BBB                    (y)DR, (n)DL
+(6)  RRR ---> AAA -?-> BBB    DR              (y)IR, (n)DL
+(7)  RRR -?-> AAA ---> BBB    (y)DR, (n)DL    (y)IR, (n)IL
+(8)  RRR -?-> AAA -?-> BBB    (y)DR, (n)DL    (y,y)IR, (n,y)IL, (_,n)DL
+(9)  RRR      AAA -?-> BBB    DL              (y)IL, (n)DL
+
+Pointer chain legend:
+- RRR: a root set node or DR block
+- AAA, BBB: heap blocks
+- --->: a start-pointer
+- -?->: an interior-pointer
+
+Category legend:
+- DR: Directly reachable
+- IR: Indirectly reachable
+- DL: Directly lost
+- IL: Indirectly lost
+- (y)XY: it's XY if the interior-pointer is a real pointer
+- (n)XY: it's XY if the interior-pointer is not a real pointer
+- (_)XY: it's XY in either case
+]]></programlisting>
+
+<para>Every possible case can be reduced to one of the above nine.  Memcheck
+merges some of these cases in its output, resulting in the following four
+categories.</para>
+
 
 <itemizedlist>
 
   <listitem>
-    <para>Still reachable: A pointer to the start of the block is found.
-    This usually indicates programming sloppiness.  Since the block is
-    still pointed at, the programmer could, at least in principle, free
-    it before program exit.  Because these are very common and arguably
-    not a problem, Memcheck won't report such blocks unless
-    <option>--show-reachable=yes</option> is specified.</para>
+    <para>"Still reachable". This covers cases 1 and 2 (for the BBB blocks)
+    above.  A start-pointer or chain of start-pointers to the block is
+    found.  Since the block is still pointed at, the programmer could, at
+    least in principle, have freed it before program exit.  Because these
+    are very common and arguably not a problem, Memcheck won't report such
+    blocks individually unless <option>--show-reachable=yes</option> is
+    specified.</para>
   </listitem>
 
   <listitem>
-    <para>Possibly lost, or "dubious": A pointer to the interior of the
-    block is found.  The pointer might originally have pointed to the
-    start and have been moved along, or it might be entirely unrelated.
-    Memcheck deems such a block as "dubious", because it's unclear
-    whether or not a pointer to it still exists.</para>
-  </listitem>
-
-  <listitem>
-    <para>Definitely lost, or "leaked": The worst outcome is that no
-    pointer to the block can be found.  The block is classified as
-    "leaked", because the programmer could not possibly have freed it at
-    program exit, since no pointer to it exists.  This is likely a
-    symptom of having lost the pointer at some earlier point in the
-    program.</para>
+    <para>"Definitely lost".  This covers case 3 (for the BBB blocks) above.
+    This means that no pointer to the block can be found.  The block is
+    classified as "lost", because the programmer could not possibly have
+    freed it at program exit, since no pointer to it exists.  This is likely
+    a symptom of having lost the pointer at some earlier point in the
+    program.  Such cases should be fixed by the programmer.</para>
     </listitem>
+
+  <listitem>
+    <para>"Indirectly lost".  This covers cases 4 and 9 (for the BBB blocks)
+    above.  This means that the block is lost, not because there are no
+    pointers to it, but rather because all the blocks that point to it are
+    themselves lost.  For example, if you have a binary tree and the root
+    node is lost, all its children nodes will be indirectly lost.  Because
+    the problem will disappear if the definitely lost block that caused the
+    indirect leak is fixed, Memcheck won't report such blocks individually
+    unless <option>--show-reachable=yes</option> is specified.</para>
+  </listitem>
+
+  <listitem>
+    <para>"Possibly lost".  This covers cases 5--8 (for the BBB blocks)
+    above.  This means that a chain of one or more pointers to the block has
+    been found, but at least one of the pointers is an interior-pointer.
+    This could just be a random value in memory that happens to point into a
+    block, and so you shouldn't consider this ok unless you know you have
+    interior-pointers.</para>
+  </listitem>
 
 </itemizedlist>
 
-<para>For each block mentioned, Memcheck will also tell you where the
-block was allocated.  It cannot tell you how or why the pointer to a
-leaked block has been lost; you have to work that out for yourself.  In
-general, you should attempt to ensure your programs do not have any
-leaked or dubious blocks at exit.</para>
+<para>(Note: This mapping of the nine possible cases onto four categories is
+not necessarily the best way that leaks could be reported;  in particular,
+interior-pointers are treated inconsistently.  It is possible the
+categorisation may be improved in the future.)</para>
+
+<para>Furthermore, if suppressions exists for a block, it will be reported
+as "suppressed" no matter what which of the above four categories it belongs
+to.</para>
+
+
+<para>The following is an example leak summary.</para>
+
+<programlisting><![CDATA[
+LEAK SUMMARY:
+   definitely lost: 48 bytes in 3 blocks.
+   indirectly lost: 32 bytes in 2 blocks.
+     possibly lost: 96 bytes in 6 blocks.
+   still reachable: 64 bytes in 4 blocks.
+        suppressed: 0 bytes in 0 blocks.
+]]></programlisting>
+
+<para>If <computeroutput>--leak-check=full</computeroutput> is specified,
+Memcheck will give details for each definitely lost or possibly lost block,
+including where it was allocated.  It cannot tell you when or how or why the
+pointer to a leaked block was lost; you have to work that out for yourself.
+In general, you should attempt to ensure your programs do not have any
+definitely lost or possibly lost blocks at exit.</para>
 
 <para>For example:</para>
 <programlisting><![CDATA[
@@ -679,23 +751,32 @@ leaked or dubious blocks at exit.</para>
    by 0x........: mk (leak-tree.c:11)
    by 0x........: main (leak-tree.c:39)
 
-88 (8 direct, 80 indirect) bytes in 1 blocks are definitely lost 
-                           in loss record 13 of 14
+88 (8 direct, 80 indirect) bytes in 1 blocks are definitely lost in loss record 13 of 14
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: mk (leak-tree.c:11)
    by 0x........: main (leak-tree.c:25)
 ]]></programlisting>
 
 <para>The first message describes a simple case of a single 8 byte block
-that has been definitely lost.  The second case mentions both "direct"
-and "indirect" leaks.  The distinction is that a direct leak is a block
-which has no pointers to it.  An indirect leak is a block which is only
-pointed to by other leaked blocks.  Both kinds of leak are bad.</para>
+that has been definitely lost.  The second case mentions another 8 byte
+block that has been definitely lost;  the difference is that a further 80
+bytes in other blocks are indirectly lost because of this lost block.</para>
 
-<para>The precise area of memory in which Memcheck searches for pointers
-is: all naturally-aligned machine-word-sized words found in memory
-that Memcheck's records indicate is both accessible and initialised.
-</para>
+<para>If you specify <computeroutput>--show-reachable=yes</computeroutput>,
+reachable and indirectly lost blocks will also be shown, as the following
+two examples show.</para>
+
+<programlisting><![CDATA[
+64 bytes in 4 blocks are still reachable in loss record 2 of 4
+   at 0x........: malloc (vg_replace_malloc.c:177)
+   by 0x........: mk (leak-cases.c:52)
+   by 0x........: main (leak-cases.c:74)
+
+32 bytes in 2 blocks are indirectly lost in loss record 1 of 4
+   at 0x........: malloc (vg_replace_malloc.c:177)
+   by 0x........: mk (leak-cases.c:52)
+   by 0x........: main (leak-cases.c:80)
+]]></programlisting>
 
 </sect2>
 
@@ -1159,22 +1240,30 @@ arguments.</para>
     <para><varname>VALGRIND_CHECK_VALUE_IS_DEFINED</varname>: a quick and easy
     way to find out whether Valgrind thinks a particular value
     (lvalue, to be precise) is addressable and defined.  Prints an error
-    message if not.  Returns no value.</para>
+    message if not.  It has no return value.</para>
   </listitem>
 
   <listitem>
-    <para><varname>VALGRIND_DO_LEAK_CHECK</varname>: runs the memory
-    leak detector right now.  Is useful for incrementally checking for
-    leaks between arbitrary places in the program's execution.  Returns
-    no value.</para>
+    <para><varname>VALGRIND_DO_LEAK_CHECK</varname>: does a full memory leak
+    check (like <computeroutput>--leak-check=full</computeroutput> right now.
+    This is useful for incrementally checking for leaks between arbitrary
+    places in the program's execution.  It has no return value.</para>
+  </listitem>
+
+  <listitem>
+    <para><varname>VALGRIND_DO_QUICK_LEAK_CHECK</varname>: like
+    <varname>VALGRIND_DO_LEAK_CHECK</varname>, except it produces only a leak
+    summary (like <computeroutput>--leak-check=summary</computeroutput>).
+    It has no return value.</para>
   </listitem>
 
   <listitem>
     <para><varname>VALGRIND_COUNT_LEAKS</varname>: fills in the four
     arguments with the number of bytes of memory found by the previous
-    leak check to be leaked, dubious, reachable and suppressed.  Again,
-    useful in test harness code, after calling
-    <varname>VALGRIND_DO_LEAK_CHECK</varname>.</para>
+    leak check to be leaked (i.e. the sum of direct leaks and indirect leaks),
+    dubious, reachable and suppressed.  Again, useful in test harness code,
+    after calling <varname>VALGRIND_DO_LEAK_CHECK</varname> or
+    <varname>VALGRIND_DO_QUICK_LEAK_CHECK</varname>.</para>
   </listitem>
 
   <listitem>

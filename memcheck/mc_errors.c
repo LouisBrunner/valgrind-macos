@@ -355,8 +355,8 @@ static const HChar* str_leak_lossmode ( Reachedness lossmode )
    switch (lossmode) {
       case Unreached:    loss = "definitely lost"; break;
       case IndirectLeak: loss = "indirectly lost"; break;
-      case Interior:     loss = "possibly lost"; break;
-      case Proper:       loss = "still reachable"; break;
+      case Possible:     loss = "possibly lost"; break;
+      case Reachable:    loss = "still reachable"; break;
    }
    return loss;
 }
@@ -367,8 +367,8 @@ static const HChar* xml_leak_kind ( Reachedness lossmode )
    switch (lossmode) {
       case Unreached:    loss = "Leak_DefinitelyLost"; break;
       case IndirectLeak: loss = "Leak_IndirectlyLost"; break;
-      case Interior:     loss = "Leak_PossiblyLost"; break;
-      case Proper:       loss = "Leak_StillReachable"; break;
+      case Possible:     loss = "Leak_PossiblyLost"; break;
+      case Reachable:    loss = "Leak_StillReachable"; break;
    }
    return loss;
 }
@@ -574,20 +574,20 @@ void MC_(pp_Error) ( Error* err )
             VG_(message)(Vg_UserMsg, "");
          }
 
-         if (l->indirect_bytes) {
+         if (l->indirect_szB) {
             VG_(message)(Vg_UserMsg, 
                "%s%'lu (%'lu direct, %'lu indirect) bytes in %'u blocks"
                " are %s in loss record %'u of %'u%s",
                xpre,
-               l->total_bytes + l->indirect_bytes, 
-               l->total_bytes, l->indirect_bytes, l->num_blocks,
+               l->total_bytes + l->indirect_szB, 
+               l->total_bytes, l->indirect_szB, l->num_blocks,
                str_leak_lossmode(l->loss_mode), n_this_record, n_total_records,
                xpost
             );
             if (VG_(clo_xml)) {
                // Nb: don't put commas in these XML numbers 
                VG_(message)(Vg_UserMsg, "  <leakedbytes>%lu</leakedbytes>", 
-                                        l->total_bytes + l->indirect_bytes);
+                                        l->total_bytes + l->indirect_szB);
                VG_(message)(Vg_UserMsg, "  <leakedblocks>%u</leakedblocks>", 
                                         l->num_blocks);
             }

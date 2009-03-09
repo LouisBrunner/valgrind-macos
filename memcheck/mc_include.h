@@ -55,14 +55,15 @@ typedef
    }
    MC_AllocKind;
    
-/* Nb: first two fields must match core's VgHashNode. */
+/* This describes a heap block. Nb: first two fields must match core's
+ * VgHashNode. */
 typedef
    struct _MC_Chunk {
       struct _MC_Chunk* next;
-      Addr         data;            // ptr to actual block
-      SizeT        szB : (sizeof(UWord)*8)-2; // size requested; 30 or 62 bits
-      MC_AllocKind allockind : 2;   // which wrapper did the allocation
-      ExeContext*  where;           // where it was allocated
+      Addr         data;            // Address of the actual block.
+      SizeT        szB : (sizeof(SizeT)*8)-2; // Size requested; 30 or 62 bits.
+      MC_AllocKind allockind : 2;   // Which operation did the allocation.
+      ExeContext*  where;           // Where it was allocated.
    }
    MC_Chunk;
 
@@ -227,18 +228,15 @@ HChar* MC_(event_ctr_name)[N_PROF_EVENTS];
 /*--- Leak checking                                        ---*/
 /*------------------------------------------------------------*/
 
-/* A block is either 
-   -- Proper-ly reached; a pointer to its start has been found
-   -- Interior-ly reached; only an interior pointer to it has been found
-   -- Unreached; so far, no pointers to any part of it have been found. 
-   -- IndirectLeak; leaked, but referred to by another leaked block
-*/
 typedef 
    enum { 
-      Unreached    =0, 
-      IndirectLeak =1,
-      Interior     =2, 
-      Proper       =3
+      Unreached    =0,  // Not reached, ie. leaked. 
+                        //   (At best, only reachable from itself via a cycle.
+      IndirectLeak =1,  // Leaked, but reachable from another leaked block
+                        //   (be it Unreached or IndirectLeak).
+      Possible     =2,  // Possibly reachable from root-set;  involves at
+                        //   least one interior-pointer along the way.
+      Reachable    =3   // Definitely reachable from root-set.
   }
   Reachedness;
 
@@ -274,16 +272,15 @@ typedef
       Reachedness  loss_mode;
       /* Number of blocks and total # bytes involved. */
       SizeT        total_bytes;
-      SizeT        indirect_bytes;
+      SizeT        indirect_szB;
       UInt         num_blocks;
    }
    LossRecord;
 
-void MC_(do_detect_memory_leaks) (
-        ThreadId tid, LeakCheckMode mode,
-        Bool (*is_within_valid_secondary) ( Addr ),
-        Bool (*is_valid_aligned_word)     ( Addr )
-     );
+void MC_(detect_memory_leaks) ( ThreadId tid, LeakCheckMode mode );
+
+Bool MC_(is_valid_aligned_word)     ( Addr a );
+Bool MC_(is_within_valid_secondary) ( Addr a );
 
 void MC_(pp_LeakError)(UInt n_this_record, UInt n_total_records,
                        LossRecord* l);

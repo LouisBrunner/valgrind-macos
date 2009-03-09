@@ -206,7 +206,7 @@ typedef
                       (unsigned long)(sizeof (__lvalue)))
 
 
-/* Do a memory leak check mid-execution.  */
+/* Do a full memory leak check (like --leak-check=full) mid-execution. */
 #define VALGRIND_DO_LEAK_CHECK                                   \
    {unsigned long _qzz_res;                                      \
     VALGRIND_DO_CLIENT_REQUEST(_qzz_res, 0,                      \
@@ -214,8 +214,7 @@ typedef
                             0, 0, 0, 0, 0);                      \
    }
 
-/* Just display summaries of leaked memory, rather than all the
-   details */
+/* Do a summary memory leak check (like --leak-check=summary) mid-execution. */
 #define VALGRIND_DO_QUICK_LEAK_CHECK				 \
    {unsigned long _qzz_res;                                      \
     VALGRIND_DO_CLIENT_REQUEST(_qzz_res, 0,                      \

@@ -500,21 +500,28 @@ int main(void)
 <qandaentry id="faq.deflost">
   <question id="q-deflost">
     <para>With Memcheck's memory leak detector, what's the
-    difference between "definitely lost", "possibly lost", "still
-    reachable", and "suppressed"?</para>
+    difference between "definitely lost", "indirectly lost", "possibly
+    lost", "still reachable", and "suppressed"?</para>
   </question>
   <answer id="a-deflost">
-    <para>The details are in the Memcheck section of the user
-    manual.</para>
+    <para>The details are in the Memcheck section of the user manual.</para>
 
     <para>In short:</para>
     <itemizedlist>
       <listitem>
         <para>"definitely lost" means your program is leaking memory --
-        fix it!</para>
+        fix those leaks!</para>
       </listitem>
       <listitem>
-        <para>"possibly lost" means your program is probably leaking
+        <para>"indirectly lost" means your program is leaking memory in
+        a pointer-based structure.  (E.g. if the root node of a binary tree
+        is "definitely lost", all the children will be "indirectly lost".) 
+        If you fix the "definitely lost" leaks, the "indirectly lost" leaks
+        should go away.
+        </para>
+      </listitem>
+      <listitem>
+        <para>"possibly lost" means your program is leaking
         memory, unless you're doing funny things with pointers.</para>
       </listitem>
       <listitem>

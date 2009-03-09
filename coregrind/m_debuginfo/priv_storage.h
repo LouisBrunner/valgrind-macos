@@ -354,36 +354,48 @@ struct _DebugInfo {
    Addr     text_svma;
    SizeT    text_size;
    PtrdiffT text_bias;
+   Addr     text_debug_svma;
+   PtrdiffT text_debug_bias;
    /* .data */
    Bool     data_present;
    Addr     data_svma;
    Addr     data_avma;
    SizeT    data_size;
    PtrdiffT data_bias;
+   Addr     data_debug_svma;
+   PtrdiffT data_debug_bias;
    /* .sdata */
    Bool     sdata_present;
    Addr     sdata_svma;
    Addr     sdata_avma;
    SizeT    sdata_size;
    PtrdiffT sdata_bias;
+   Addr     sdata_debug_svma;
+   PtrdiffT sdata_debug_bias;
    /* .rodata */
    Bool     rodata_present;
    Addr     rodata_svma;
    Addr     rodata_avma;
    SizeT    rodata_size;
    PtrdiffT rodata_bias;
+   Addr     rodata_debug_svma;
+   PtrdiffT rodata_debug_bias;
    /* .bss */
    Bool     bss_present;
    Addr     bss_svma;
    Addr     bss_avma;
    SizeT    bss_size;
    PtrdiffT bss_bias;
+   Addr     bss_debug_svma;
+   PtrdiffT bss_debug_bias;
    /* .sbss */
    Bool     sbss_present;
    Addr     sbss_svma;
    Addr     sbss_avma;
    SizeT    sbss_size;
    PtrdiffT sbss_bias;
+   Addr     sbss_debug_svma;
+   PtrdiffT sbss_debug_bias;
    /* .plt */
    Bool   plt_present;
    Addr	  plt_avma;

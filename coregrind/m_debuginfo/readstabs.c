@@ -336,7 +336,7 @@ void ML_(read_debuginfo_stabs) ( DebugInfo* di,
                line.first = True;
 
                /* line ends at start of next function */
-               addr = di->text_bias + st->n_value;
+               addr = di->text_debug_bias + st->n_value;
 
                func.start = addr;
             }

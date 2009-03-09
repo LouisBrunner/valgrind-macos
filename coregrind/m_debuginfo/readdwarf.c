@@ -362,7 +362,7 @@ Word process_extended_line_op( struct _DebugInfo* di,
    switch (op_code) {
       case DW_LNE_end_sequence:
          if (0) VG_(printf)("1001: si->o %#lx, smr.a %#lx\n",
-                            di->text_bias, state_machine_regs.address );
+                            di->text_debug_bias, state_machine_regs.address );
          /* JRS: added for compliance with spec; is pointless due to
             reset_state_machine below */
          state_machine_regs.end_sequence = 1; 
@@ -380,8 +380,8 @@ Word process_extended_line_op( struct _DebugInfo* di,
                   filename, 
                   lookupDir( state_machine_regs.last_file,
                              fnidx2dir, dirnames ),
-                  di->text_bias + state_machine_regs.last_address, 
-                  di->text_bias + state_machine_regs.address, 
+                  di->text_debug_bias + state_machine_regs.last_address, 
+                  di->text_debug_bias + state_machine_regs.address, 
                   state_machine_regs.last_line, 0
                );
             }
@@ -724,7 +724,7 @@ void read_dwarf2_lineblock ( struct _DebugInfo* di,
          if (0) VG_(printf)("smr.a += %#x\n", adv );
          adv = (op_code % info.li_line_range) + info.li_line_base;
          if (0) VG_(printf)("1002: di->o %#lx, smr.a %#lx\n",
-                            di->text_bias, state_machine_regs.address );
+                            di->text_debug_bias, state_machine_regs.address );
          state_machine_regs.line += adv;
 
          if (di->ddump_line)
@@ -747,8 +747,8 @@ void read_dwarf2_lineblock ( struct _DebugInfo* di,
                   filename,
                   lookupDir( state_machine_regs.last_file,
                              &fnidx2dir, &dirnames ),
-                  di->text_bias + state_machine_regs.last_address, 
-                  di->text_bias + state_machine_regs.address, 
+                  di->text_debug_bias + state_machine_regs.last_address, 
+                  di->text_debug_bias + state_machine_regs.address, 
                   state_machine_regs.last_line, 
                   0
                );
@@ -771,7 +771,7 @@ void read_dwarf2_lineblock ( struct _DebugInfo* di,
 
          case DW_LNS_copy:
             if (0) VG_(printf)("1002: di->o %#lx, smr.a %#lx\n",
-                               di->text_bias, state_machine_regs.address );
+                               di->text_debug_bias, state_machine_regs.address );
             if (state_machine_regs.is_stmt) {
                /* only add a statement if there was a previous boundary */
                if (state_machine_regs.last_address) {
@@ -786,8 +786,8 @@ void read_dwarf2_lineblock ( struct _DebugInfo* di,
                      filename,
                      lookupDir( state_machine_regs.last_file,
                                 &fnidx2dir, &dirnames ),
-                     di->text_bias + state_machine_regs.last_address, 
-                     di->text_bias + state_machine_regs.address,
+                     di->text_debug_bias + state_machine_regs.last_address, 
+                     di->text_debug_bias + state_machine_regs.address,
                      state_machine_regs.last_line, 
                      0
                   );
@@ -3629,7 +3629,7 @@ void ML_(read_callframe_info_dwarf3)
             adi.encoding      = the_CIEs[this_CIE].address_encoding;
             adi.ehframe_image = ehframe_image;
             adi.ehframe_avma  = di->ehframe_avma;
-            adi.text_bias     = di->text_bias;
+            adi.text_bias     = di->text_debug_bias;
             show_CF_instructions( the_CIEs[this_CIE].instrs, 
                                   the_CIEs[this_CIE].ilen, &adi,
                                   the_CIEs[this_CIE].code_a_f,
@@ -3676,7 +3676,7 @@ void ML_(read_callframe_info_dwarf3)
          adi.encoding      = the_CIEs[cie].address_encoding;
          adi.ehframe_image = ehframe_image;
          adi.ehframe_avma  = di->ehframe_avma;
-         adi.text_bias     = di->text_bias;
+         adi.text_bias     = di->text_debug_bias;
          fde_initloc = read_encoded_Addr(&nbytes, &adi, data);
          data += nbytes;
          if (di->trace_cfi) 
@@ -3685,7 +3685,7 @@ void ML_(read_callframe_info_dwarf3)
          adi.encoding      = the_CIEs[cie].address_encoding & 0xf;
          adi.ehframe_image = ehframe_image;
          adi.ehframe_avma  = di->ehframe_avma;
-         adi.text_bias     = di->text_bias;
+         adi.text_bias     = di->text_debug_bias;
 
          /* WAS (incorrectly):
             fde_arange = read_encoded_Addr(&nbytes, &adi, data);
@@ -3714,8 +3714,8 @@ void ML_(read_callframe_info_dwarf3)
                         (Addr)ciefde_len,
                         (Addr)(UWord)cie_pointer,
                         (Addr)look_for, 
-                        ((Addr)fde_initloc) - di->text_bias, 
-                        ((Addr)fde_initloc) - di->text_bias + fde_arange);
+                        ((Addr)fde_initloc) - di->text_debug_bias, 
+                        ((Addr)fde_initloc) - di->text_debug_bias + fde_arange);
 
          if (the_CIEs[cie].saw_z_augmentation) {
             UInt length = read_leb128( data, &nbytes, 0);
@@ -3747,7 +3747,7 @@ void ML_(read_callframe_info_dwarf3)
          adi.encoding      = the_CIEs[cie].address_encoding;
          adi.ehframe_image = ehframe_image;
          adi.ehframe_avma  = di->ehframe_avma;
-         adi.text_bias     = di->text_bias;
+         adi.text_bias     = di->text_debug_bias;
 
          if (di->trace_cfi)
             show_CF_instructions( fde_instrs, fde_ilen, &adi,

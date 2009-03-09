@@ -474,97 +474,8 @@ typedef
    it more logically belongs. */
 
 
-/* "Comment_Regarding_DWARF3_Text_Biasing" (is referred to elsewhere)
-    -----------------------------------------------------------------
-    apply_kludgey_text_bias() is our mechanism for biasing text
-    addresses found in DWARF3 .debug_info, .debug_ranges, .debug_loc
-    sections.  This is a nasty and unprincipled hack.
-
-    Biasing the text svmas, so as to obtain text avmas, should be
-    straightforward, right?  We just add on di->text_bias, as
-    carefully computed by readelf.c.
-
-    That works OK most of the time.  But in the following case it fails:
-    1. The object is made in the usual way (gcc -g, etc)
-    2. The DWARF3 stuff removed from it and parked in a .debuginfo object
-    3. The remaining (base) object is then prelinked.
-
-    Prelinking changes the text svmas throughout an object by some
-    constant amount, including the DWARF3 stuff.  So if the DWARF3
-    stuff remains attached to the original object, then there is no
-    problem.  However, if the DWARF3 stuff is detached, and the
-    remaining object is prelinked and the debuginfo object isn't, then
-    we have a problem: the text bias computed for the main object
-    isn't correct for the debuginfo object.
-
-    So the following kludged is used to bias text svmas.
-
-    1. First, try with the text bias computed for the main object.  If
-       that gives an avma inside the area in which the text segment is
-       known to have been mapped, then all well and good.
-
-    2. If not, try using the avma of the text mapped area as a bias.
-       Again, if that works out, fine.  This is the heart of the
-       kludge.  It implicitly treats the svma-s to be biased as if
-       they had been prelinked to zero.
-
-    3. If even that doesn't work, just return the avma unchanged.
-
-    For each object/object-pair, we count the number of times each
-    case occurs.  We flag an error (which the user gets to see) if (3)
-    ever occurs, or if a mixture of (1) and (2) occurs.  That should
-    at least catch the most obvious snafus.
-
-    Caveats: the main remaining worry is whether this problem somehow
-    also affects the data-biasing done for case DW_OP_addr in
-    ML_(evaluate_Dwarf3_Expr) in d3basics.c.  This is currently
-    unknown.
-
-    Possible sources of info: canonical description seems to be:
-
-       http://people.redhat.com/jakub/prelink.pdf
-
-    See para at line 337 starting "DWARF 2 debugging information ..."
-
-    This thread looks like the gdb people hitting the same issue:
-
-       http://sourceware.org/ml/gdb-patches/2007-01/msg00278.html
-*/
-typedef
-   struct {
-      /* FIXED */
-      Addr     rx_map_avma;
-      SizeT    rx_map_size;
-      PtrdiffT text_bias;
-      /* VARIABLE -- count stats */
-      UWord n_straightforward_biasings;
-      UWord n_kludgey_biasings;
-      UWord n_failed_biasings;
-   }
-   KludgeyTextBiaser;
-
-static Addr apply_kludgey_text_bias ( KludgeyTextBiaser* ktb,
-                                      Addr allegedly_text_svma ) {
-   Addr res;
-   res = allegedly_text_svma + ktb->text_bias;
-   if (res >= ktb->rx_map_avma 
-       && res < ktb->rx_map_avma + ktb->rx_map_size) {
-      ktb->n_straightforward_biasings++;
-      return res;
-   }
-   res = allegedly_text_svma + ktb->rx_map_avma;
-   if (res >= ktb->rx_map_avma 
-       && res < ktb->rx_map_avma + ktb->rx_map_size) {
-      ktb->n_kludgey_biasings++;
-      return res;
-   }
-   ktb->n_failed_biasings++;
-   return allegedly_text_svma; /* this svma is a luzer */
-}
-
-
-/* Apply a text bias to a GX.  Kludgily :-( */
-static void bias_GX ( /*MOD*/GExpr* gx, KludgeyTextBiaser* ktb )
+/* Apply a text bias to a GX. */
+static void bias_GX ( /*MOD*/GExpr* gx, struct _DebugInfo* di )
 {
    UShort nbytes;
    Addr*  pA;
@@ -582,11 +493,11 @@ static void bias_GX ( /*MOD*/GExpr* gx, KludgeyTextBiaser* ktb )
       vg_assert(uc == 0);
       /* t-bias aMin */
       pA = (Addr*)p;
-      *pA = apply_kludgey_text_bias( ktb, *pA );
+      *pA += di->text_debug_bias;
       p += sizeof(Addr);
       /* t-bias aMax */
       pA = (Addr*)p;
-      *pA = apply_kludgey_text_bias( ktb, *pA );
+      *pA += di->text_debug_bias;
       p += sizeof(Addr);
       /* nbytes, and actual expression */
       nbytes = * (UShort*)p; p += sizeof(UShort);
@@ -3206,8 +3117,6 @@ void new_dwarf3_reader_wrk (
    Word  i, j, n;
    Bool td3 = di->trace_symtab;
    XArray* /* of TempVar* */ dioff_lookup_tab;
-   Bool text_biasing_borked;
-   KludgeyTextBiaser ktb;
 #if 0
    /* This doesn't work properly because it assumes all entries are
       packed end to end, with no holes.  But that doesn't always
@@ -3628,19 +3537,14 @@ void new_dwarf3_reader_wrk (
    vg_assert(!di->admin_tyents);
    di->admin_tyents = tyents_to_keep;
 
-   /* Bias all the location expressions.  See
-      "Comment_Regarding_DWARF3_Text_Biasing" above. */
+   /* Bias all the location expressions. */
    TRACE_D3("\n");
    TRACE_D3("------ Biasing the location expressions ------\n" );
-   VG_(memset)( &ktb, 0, sizeof(ktb ));
-   ktb.rx_map_avma = di->rx_map_avma;
-   ktb.rx_map_size = di->rx_map_size;
-   ktb.text_bias   = di->text_bias;
 
    n = VG_(sizeXA)( gexprs );
    for (i = 0; i < n; i++) {
       gexpr = *(GExpr**)VG_(indexXA)( gexprs, i );
-      bias_GX( gexpr, &ktb );
+      bias_GX( gexpr, di );
    }
 
    TRACE_D3("\n");
@@ -3830,8 +3734,8 @@ void new_dwarf3_reader_wrk (
 
            /* Apply text biasing, for non-global variables. */
            if (varp->level > 0) {
-              pcMin = apply_kludgey_text_bias( &ktb, pcMin );
-              pcMax = apply_kludgey_text_bias( &ktb, pcMax );
+              pcMin += di->text_debug_bias;
+              pcMax += di->text_debug_bias;
            } 
 
            if (i > 0 && (i%2) == 0) 
@@ -3851,27 +3755,6 @@ void new_dwarf3_reader_wrk (
       TRACE_D3("\n\n");
       /* and move on to the next var */
    }
-
-   /* For the text biasing to work out, we expect that:
-      - there were no failures, and
-      - either all were done straightforwardly, or all kludgily,
-        but not with a mixture
-   */ 
-   text_biasing_borked 
-      = ktb.n_failed_biasings > 0 
-        || (ktb.n_straightforward_biasings > 0 && ktb.n_kludgey_biasings > 0);
-
-   if (td3 || text_biasing_borked) {
-      VG_(printf)("TEXT SVMA BIASING STATISTICS:\n");
-      VG_(printf)("   straightforward biasings: %lu\n",
-                  ktb.n_straightforward_biasings );
-      VG_(printf)("           kludgey biasings: %lu\n",
-                  ktb.n_kludgey_biasings );
-      VG_(printf)("            failed biasings: %lu\n\n",
-                  ktb.n_failed_biasings );
-   }
-   if (text_biasing_borked)
-      barf("couldn't make sense of DWARF3 text-svma biasing; details above");
 
    /* Now free all the TempVars */
    n = VG_(sizeXA)( tempvars );

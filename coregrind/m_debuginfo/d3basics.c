@@ -406,33 +406,33 @@ static Bool bias_address( Addr* a, const DebugInfo* di )
 {
    if (di->text_present
        && di->text_size > 0
-       && *a >= di->text_svma && *a < di->text_svma + di->text_size) {
-      *a += di->text_bias;
+       && *a >= di->text_debug_svma && *a < di->text_debug_svma + di->text_size) {
+      *a += di->text_debug_bias;
    }
    else if (di->data_present
             && di->data_size > 0
-            && *a >= di->data_svma && *a < di->data_svma + di->data_size) {
-      *a += di->data_bias;
+            && *a >= di->data_debug_svma && *a < di->data_debug_svma + di->data_size) {
+      *a += di->data_debug_bias;
    }
    else if (di->sdata_present
             && di->sdata_size > 0
-            && *a >= di->sdata_svma && *a < di->sdata_svma + di->sdata_size) {
-      *a += di->sdata_bias;
+            && *a >= di->sdata_debug_svma && *a < di->sdata_debug_svma + di->sdata_size) {
+      *a += di->sdata_debug_bias;
    }
    else if (di->rodata_present
             && di->rodata_size > 0
-            && *a >= di->rodata_svma && *a < di->rodata_svma + di->rodata_size) {
-      *a += di->rodata_bias;
+            && *a >= di->rodata_debug_svma && *a < di->rodata_debug_svma + di->rodata_size) {
+      *a += di->rodata_debug_bias;
    }
    else if (di->bss_present
             && di->bss_size > 0
-            && *a >= di->bss_svma && *a < di->bss_svma + di->bss_size) {
-      *a += di->bss_bias;
+            && *a >= di->bss_debug_svma && *a < di->bss_debug_svma + di->bss_size) {
+      *a += di->bss_debug_bias;
    }
    else if (di->sbss_present
             && di->sbss_size > 0
-            && *a >= di->sbss_svma && *a < di->sbss_svma + di->sbss_size) {
-      *a += di->sbss_bias;
+            && *a >= di->sbss_debug_svma && *a < di->sbss_debug_svma + di->sbss_size) {
+      *a += di->sbss_debug_bias;
    }
    else {
       return False;
@@ -541,14 +541,8 @@ GXResult ML_(evaluate_Dwarf3_Expr) ( UChar* expr, UWord exprszB,
       switch (opcode) {
          case DW_OP_addr:
             /* Presumably what is given in the Dwarf3 is a SVMA (how
-               could it be otherwise?)  So we add the data bias on
-               before pushing the result.  FIXME: how can we be sure
-               the data bias is intended, not the text bias?  I don't
-               know. */
-            /* Furthermore, do we need to take into account the
-               horrible prelinking-induced complications as described
-               in "Comment_Regarding_DWARF3_Text_Biasing" in
-               readdwarf3.c?  Currently I don't know. */
+               could it be otherwise?)  So we add the appropriate bias
+               on before pushing the result. */
             a1 = *(Addr*)expr;
             if (bias_address(&a1, di)) {
                PUSH( a1 ); 

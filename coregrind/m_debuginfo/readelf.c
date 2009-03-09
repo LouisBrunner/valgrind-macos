@@ -1352,6 +1352,8 @@ Bool ML_(read_elf_debug_info) ( struct _DebugInfo* di )
             di->text_avma = svma + rx_bias;
             di->text_size = size;
             di->text_bias = rx_bias;
+            di->text_debug_svma = svma;
+            di->text_debug_bias = rx_bias;
             TRACE_SYMTAB("acquiring .text svma = %#lx .. %#lx\n",
                          di->text_svma, 
                          di->text_svma + di->text_size - 1);
@@ -1372,6 +1374,8 @@ Bool ML_(read_elf_debug_info) ( struct _DebugInfo* di )
             di->data_avma = svma + rw_bias;
             di->data_size = size;
             di->data_bias = rw_bias;
+            di->data_debug_svma = svma;
+            di->data_debug_bias = rw_bias;
             TRACE_SYMTAB("acquiring .data svma = %#lx .. %#lx\n",
                          di->data_svma,
                          di->data_svma + di->data_size - 1);
@@ -1392,6 +1396,8 @@ Bool ML_(read_elf_debug_info) ( struct _DebugInfo* di )
             di->sdata_avma = svma + rw_bias;
             di->sdata_size = size;
             di->sdata_bias = rw_bias;
+            di->sdata_debug_svma = svma;
+            di->sdata_debug_bias = rw_bias;
             TRACE_SYMTAB("acquiring .sdata svma = %#lx .. %#lx\n",
                          di->sdata_svma,
                          di->sdata_svma + di->sdata_size - 1);
@@ -1412,6 +1418,8 @@ Bool ML_(read_elf_debug_info) ( struct _DebugInfo* di )
             di->rodata_avma = svma + rx_bias;
             di->rodata_size = size;
             di->rodata_bias = rx_bias;
+            di->rodata_debug_svma = svma;
+            di->rodata_debug_bias = rw_bias;
             TRACE_SYMTAB("acquiring .rodata svma = %#lx .. %#lx\n",
                          di->rodata_svma,
                          di->rodata_svma + di->rodata_size - 1);
@@ -1432,6 +1440,8 @@ Bool ML_(read_elf_debug_info) ( struct _DebugInfo* di )
             di->bss_avma = svma + rw_bias;
             di->bss_size = size;
             di->bss_bias = rw_bias;
+            di->bss_debug_svma = svma;
+            di->bss_debug_bias = rw_bias;
             TRACE_SYMTAB("acquiring .bss svma = %#lx .. %#lx\n",
                          di->bss_svma,
                          di->bss_svma + di->bss_size - 1);
@@ -1451,6 +1461,8 @@ Bool ML_(read_elf_debug_info) ( struct _DebugInfo* di )
             di->bss_avma = 0;
             di->bss_size = 0;
             di->bss_bias = 0;
+            di->bss_debug_svma = 0;
+            di->bss_debug_bias = 0;
             if (!VG_(clo_xml)) {
                VG_(message)(Vg_UserMsg, "Warning: the following file's .bss is "
                                        "mapped r-x only - ignoring .bss syms");
@@ -1480,6 +1492,8 @@ Bool ML_(read_elf_debug_info) ( struct _DebugInfo* di )
             di->sbss_avma = svma + rw_bias;
             di->sbss_size = size;
             di->sbss_bias = rw_bias;
+            di->sbss_debug_svma = svma;
+            di->sbss_debug_bias = rw_bias;
             TRACE_SYMTAB("acquiring .sbss svma = %#lx .. %#lx\n",
                          di->sbss_svma,
                          di->sbss_svma + di->sbss_size - 1);
@@ -1748,6 +1762,14 @@ Bool ML_(read_elf_debug_info) ( struct _DebugInfo* di )
             UWord       shdr_dent_szB    = ehdr_dimg->e_shentsize;
             UChar*      shdr_strtab_dimg = NULL;
 
+            /* SVMAs covered by rx and rw segments and corresponding bias. */
+            Addr     rx_dsvma_base = 0;
+            Addr     rx_dsvma_limit = 0;
+            PtrdiffT rx_dbias = 0;
+            Addr     rw_dsvma_base = 0;
+            Addr     rw_dsvma_limit = 0;
+            PtrdiffT rw_dbias = 0;
+
             Bool need_symtab, need_stabs, need_dwarf2, need_dwarf1;
 
             if (phdr_dnent == 0
@@ -1797,21 +1819,62 @@ Bool ML_(read_elf_debug_info) ( struct _DebugInfo* di )
                   = INDEX_BIS( (void*)(dimage + ehdr_dimg->e_phoff), 
                                           i, phdr_ent_szB );
                if (phdr->p_type == PT_LOAD) {
-                  //offset_dimage = di->text_avma - phdr->p_vaddr;
-                  // FIXME: update di->text_bias at this point?
-                  // or can we assume the SVMAs in the debuginfo
-                  // file (hence, the biases) are the same as
-                  // established from the main file?
-                  break;
+                  if (rx_dsvma_limit == 0
+                      && phdr->p_offset >= di->rx_map_foff
+                      && phdr->p_offset < di->rx_map_foff + di->rx_map_size
+                      && phdr->p_offset + phdr->p_filesz <= di->rx_map_foff + di->rx_map_size) {
+                     rx_dsvma_base = phdr->p_vaddr;
+                     rx_dsvma_limit = phdr->p_vaddr + phdr->p_memsz;
+                     rx_dbias = di->rx_map_avma - di->rx_map_foff + phdr->p_offset - phdr->p_vaddr;
+                  }
+                  else if (rw_dsvma_limit == 0
+                           && phdr->p_offset >= di->rw_map_foff
+                           && phdr->p_offset < di->rw_map_foff + di->rw_map_size
+                           && phdr->p_offset + phdr->p_filesz <= di->rw_map_foff + di->rw_map_size) {
+                     rw_dsvma_base = phdr->p_vaddr;
+                     rw_dsvma_limit = phdr->p_vaddr + phdr->p_memsz;
+                     rw_dbias = di->rw_map_avma - di->rw_map_foff + phdr->p_offset - phdr->p_vaddr;
+                  }
                }
             }
 
-            /* Same deal as previous FIND, except only do it for those
-               sections for which we didn't find anything useful in
-               the main file. */
-
             /* Find all interesting sections */
             for (i = 0; i < ehdr_dimg->e_shnum; i++) {
+
+               /* Find debug svma and bias information for sections
+                  we found in the main file. */ 
+
+#              define FIND(sec, seg) \
+               do { ElfXX_Shdr* shdr \
+                       = INDEX_BIS( shdr_dimg, i, shdr_dent_szB ); \
+                  if (di->sec##_present \
+                      && 0 == VG_(strcmp)("." #sec, \
+                                          shdr_strtab_dimg + shdr->sh_name)) { \
+                     vg_assert(di->sec##_size == shdr->sh_size); \
+                     vg_assert(di->sec##_avma +  shdr->sh_addr + seg##_dbias); \
+                     di->sec##_debug_svma = shdr->sh_addr; \
+                     di->sec##_debug_bias = seg##_dbias; \
+                     TRACE_SYMTAB("acquiring ." #sec " debug svma = %#lx .. %#lx\n", \
+                                  di->sec##_debug_svma, \
+                                  di->sec##_debug_svma + di->sec##_size - 1); \
+                     TRACE_SYMTAB("acquiring ." #sec " debug bias = %#lx\n", \
+                                  di->sec##_debug_bias); \
+                  } \
+               } while (0);
+
+               /* SECTION   SEGMENT */
+               FIND(text,   rx)
+               FIND(data,   rw)
+               FIND(sdata,  rw)
+               FIND(rodata, rw)
+               FIND(bss,    rw)
+               FIND(sbss,   rw)
+
+#              undef FIND
+
+               /* Same deal as previous FIND, except only do it for those
+                  sections for which we didn't find anything useful in
+                  the main file. */
 
 #              define FIND(condition, sec_name, sec_size, sec_img) \
                do { ElfXX_Shdr* shdr \

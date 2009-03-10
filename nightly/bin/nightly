@@ -192,4 +192,4 @@ fi
 conf/$ABT_MACHINE.sendmail \
    "$changed_str$ABT_START nightly build ($ABT_MACHINE, $ABT_DETAILS)" \
    final \
-   diffs
+   diffs > sendmail.log 2>&1

@@ -8,7 +8,7 @@
    This file is part of Omega, a Valgrind tool for instantly detecting
    memory leaks.
 
-   Copyright (C) 2006-2008 Bryan "Brain Murders" Meredith
+   Copyright (C) 2006-2009 Bryan "Brain Murders" Meredith
 
    Derived from mac_replace_strmem.c
    Copyright (C) 2000-2006 Julian Seward 

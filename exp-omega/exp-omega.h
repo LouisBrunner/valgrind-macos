@@ -8,7 +8,7 @@
    This file is part of Omega, a Valgrind tool for instantly detecting
    memory leaks.
 
-   Copyright (C) 2006-2008 Bryan "Brain Murders" Meredith
+   Copyright (C) 2006-2009 Bryan "Brain Murders" Meredith
 
    This program is free software; you can redistribute it and/or
    modify it under the terms of the GNU General Public License as

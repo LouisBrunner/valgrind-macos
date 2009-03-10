@@ -313,6 +313,17 @@ void drd_stop_using_nonstack_mem(const Addr a1, const SizeT len)
 }
 
 /**
+ * Discard all information DRD has about memory accesses and client objects
+ * in the specified address range.
+ */
+void DRD_(clean_memory)(const Addr a1, const SizeT len)
+{
+  const Bool is_stack_memory = DRD_(thread_address_on_any_stack)(a1);
+  drd_stop_using_mem(a1, len, is_stack_memory);
+  drd_start_using_mem(a1, len);
+}
+
+/**
  * Suppress data race reports on all addresses contained in .plt and
  * .got.plt sections inside the address range [ a, a + len [. The data in
  * these sections is modified by _dl_relocate_object() every time a function

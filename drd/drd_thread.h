@@ -253,6 +253,27 @@ Bool DRD_(thread_address_on_stack)(const Addr a)
 	  && a < DRD_(g_threadinfo)[DRD_(g_drd_running_tid)].stack_max);
 }
 
+/**
+ * Return true if and only if the specified address is on the stack of any
+ * thread.
+ */
+static __inline__
+Bool DRD_(thread_address_on_any_stack)(const Addr a)
+{
+  int i;
+
+  for (i = 1; i < DRD_N_THREADS; i++)
+  {
+    if (DRD_(g_threadinfo)[i].vg_thread_exists
+        && DRD_(g_threadinfo)[i].stack_min <= a
+	&& a < DRD_(g_threadinfo)[i].stack_max)
+    {
+      return True;
+    }
+  }
+  return False;
+}
+
 /** Return a pointer to the latest segment for the specified thread. */
 static __inline__
 Segment* DRD_(thread_get_segment)(const DrdThreadId tid)

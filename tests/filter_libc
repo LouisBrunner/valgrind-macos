@@ -37,6 +37,10 @@ while (<>)
     s/(at.*)__builtin_vec_delete/$1...operator delete[].../;
     s/(at.*)operator delete\[\]\(void\*\)/$1...operator delete[].../;
 
+    # Tidy up in cases where glibc (+ libdl + libpthread + ld) have
+    # been built with debugging information, hence source locs are present.
+    s/\((exit|_exit|brk|sbrk).c:[0-9]*\)/(in \/...libc...)/;
+
     print;
 }
 

@@ -21,15 +21,15 @@ sed \
 -e "/^Copyright (C) 2003-200., and GNU GPL'd, by OpenWorks Ltd et al.$/d" |
 
 # Tidy up in cases where glibc (+ libdl + libpthread + ld) have
-# been built with debugging information, hence source locs are present
+# been built with debugging information, hence source locs are present.
 sed \
 -e "s/ vfprintf (.*)/ .../" \
 -e "s/ vsprintf (.*)/ .../" \
 -e "s/ sprintf (.*)/ .../" \
 -e "s/ printf (.*)/ .../" \
 -e "s/ strdup (.*)/ .../" \
--e "s/ pthread_key_create.c:[0-9]*/ in \/...libpthread.../" \
--e "s/ genops.c:[0-9]*/ in \/...libc.../" |
+-e "s/(pthread_key_create.c:[0-9]*)/(in \/...libpthread...)/" \
+-e "s/(genops.c:[0-9]*)/(in \/...libc...)/" |
 
 # Anonymise line numbers in h_intercepts.c.
 sed "s/h_intercepts.c:[0-9]*/h_intercepts.c:.../" 

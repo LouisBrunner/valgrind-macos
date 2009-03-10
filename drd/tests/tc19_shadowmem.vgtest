@@ -1,3 +1,4 @@
 prereq: ./supported_libpthread
 prog: ../../helgrind/tests/tc19_shadowmem
-vgopts: --cmp-race-err-addrs=yes --error-limit=no
+vgopts: --error-limit=no --var-info=yes
+stderr_filter: filter_stderr_and_thread_no

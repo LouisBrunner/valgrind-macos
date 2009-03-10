@@ -65,12 +65,8 @@ Node* p7;
 Node* p8;
 Node* p9;
 
-int main(void)
+void f(void)
 {
-   DECLARE_LEAK_COUNTERS;
-
-   GET_INITIAL_LEAK_COUNTS;
-
    p1 = mk(NULL);       // Case 1: 16/1 still reachable
 
    p2 = mk(mk(NULL));   // Case 2: 16/1 still reachable
@@ -95,6 +91,20 @@ int main(void)
    p9 = mk(mk(NULL));   // Case 9: 16/1 indirectly lost (counted again below!)
    (p9->next)++;                // 32(16d,16i)/1 definitely lost (double count!)
    p9 = NULL;
+}
+
+int main(void)
+{
+   DECLARE_LEAK_COUNTERS;
+
+   GET_INITIAL_LEAK_COUNTS;
+
+   // Originally, this program did all the work in main(), but on some
+   // platforms (x86/Darwin and AMD64/Linux with --enable-only32bit) stray
+   // pointers to supposedly-lost heap blocks were being left on the stack,
+   // thus making them reachable.  Doing the allocations in f() and the leak
+   // counting in main() avoids the problem.
+   f();
 
    GET_FINAL_LEAK_COUNTS;
 

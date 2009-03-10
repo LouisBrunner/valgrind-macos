@@ -5,10 +5,11 @@ SUBDIRS = .
 
 DIST_SUBDIRS = .
 
-noinst_SCRIPTS =		\
-	filter_error_summary	\
-	filter_stderr           \
-	run_openmp_test         \
+noinst_SCRIPTS =		    \
+	filter_error_summary	    \
+	filter_stderr               \
+	filter_stderr_and_thread_no \
+	run_openmp_test             \
 	supported_libpthread
 
 EXTRA_DIST =                                        \

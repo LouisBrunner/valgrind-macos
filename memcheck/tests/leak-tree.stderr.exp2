@@ -9,6 +9,7 @@ checked ... bytes.
 
 LEAK SUMMARY:
    definitely lost: 8 bytes in 1 blocks.
+   indirectly lost: 0 bytes in 0 blocks.
      possibly lost: 0 bytes in 0 blocks.
    still reachable: 80 bytes in 10 blocks.
         suppressed: 0 bytes in 0 blocks.

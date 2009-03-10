@@ -739,10 +739,14 @@ LEAK SUMMARY:
 
 <para>If <computeroutput>--leak-check=full</computeroutput> is specified,
 Memcheck will give details for each definitely lost or possibly lost block,
-including where it was allocated.  It cannot tell you when or how or why the
-pointer to a leaked block was lost; you have to work that out for yourself.
-In general, you should attempt to ensure your programs do not have any
-definitely lost or possibly lost blocks at exit.</para>
+including where it was allocated.  (Actually, it merges results for all
+blocks that have the same category and sufficiently similar stack traces
+into a single "loss record".  The
+<computeroutput>--leak-resolution</computeroutput> lets you control the
+meaning of "sufficiently similar".)  It cannot tell you when or how or why
+the pointer to a leaked block was lost; you have to work that out for
+yourself.  In general, you should attempt to ensure your programs do not
+have any definitely lost or possibly lost blocks at exit.</para>
 
 <para>For example:</para>
 <programlisting><![CDATA[
@@ -760,7 +764,9 @@ definitely lost or possibly lost blocks at exit.</para>
 <para>The first message describes a simple case of a single 8 byte block
 that has been definitely lost.  The second case mentions another 8 byte
 block that has been definitely lost;  the difference is that a further 80
-bytes in other blocks are indirectly lost because of this lost block.</para>
+bytes in other blocks are indirectly lost because of this lost block.
+The loss records are not presented in any notable order, so the loss record
+numbers aren't particularly meaningful.</para>
 
 <para>If you specify <computeroutput>--show-reachable=yes</computeroutput>,
 reachable and indirectly lost blocks will also be shown, as the following

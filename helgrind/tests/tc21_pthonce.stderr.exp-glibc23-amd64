@@ -2,14 +2,14 @@
 Thread #x was created
    at 0x........: clone (in /...libc...)
    by 0x........: ...
-   by 0x........: pthread_create@GLIBC_ (in /lib/libpthread...)
+   by 0x........: pthread_create@GLIBC_ (in /...libpthread...)
    by 0x........: pthread_create@* (hg_intercepts.c:...)
    by 0x........: main (tc21_pthonce.c:86)
 
 Thread #x was created
    at 0x........: clone (in /...libc...)
    by 0x........: ...
-   by 0x........: pthread_create@GLIBC_ (in /lib/libpthread...)
+   by 0x........: pthread_create@GLIBC_ (in /...libpthread...)
    by 0x........: pthread_create@* (hg_intercepts.c:...)
    by 0x........: main (tc21_pthonce.c:86)
 

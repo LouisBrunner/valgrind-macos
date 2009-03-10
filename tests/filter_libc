@@ -24,6 +24,19 @@ while (<>)
 
     s/($libc_symbols) \(.+\.[cS]:\d+\)$/$1 (in \/...libc...)/;
 
+    # Merge the different C++ operator variations.
+    s/(at.*)__builtin_new/$1...operator new.../;
+    s/(at.*)operator new\(unsigned(| int| long)\)/$1...operator new.../;
+
+    s/(at.*)__builtin_vec_new/$1...operator new.../;
+    s/(at.*)operator new\[\]\(unsigned(| int| long)\)/$1...operator new[].../;
+
+    s/(at.*)__builtin_delete/$1...operator delete.../;
+    s/(at.*)operator delete\(void\*\)/$1...operator delete.../;
+
+    s/(at.*)__builtin_vec_delete/$1...operator delete[].../;
+    s/(at.*)operator delete\[\]\(void\*\)/$1...operator delete[].../;
+
     print;
 }
 

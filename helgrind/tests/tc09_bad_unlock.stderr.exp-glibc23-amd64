@@ -13,7 +13,7 @@ Thread #1 unlocked a not-locked lock at 0x........
 Thread #2 was created
    at 0x........: clone (in /...libc...)
    by 0x........: ...
-   by 0x........: pthread_create@GLIBC_ (in /lib/libpthread...)
+   by 0x........: pthread_create@GLIBC_ (in /...libpthread...)
    by 0x........: pthread_create@* (hg_intercepts.c:...)
    by 0x........: nearly_main (tc09_bad_unlock.c:35)
    by 0x........: main (tc09_bad_unlock.c:49)
@@ -54,7 +54,7 @@ Thread #1 unlocked a not-locked lock at 0x........
 Thread #3 was created
    at 0x........: clone (in /...libc...)
    by 0x........: ...
-   by 0x........: pthread_create@GLIBC_ (in /lib/libpthread...)
+   by 0x........: pthread_create@GLIBC_ (in /...libpthread...)
    by 0x........: pthread_create@* (hg_intercepts.c:...)
    by 0x........: nearly_main (tc09_bad_unlock.c:35)
    by 0x........: main (tc09_bad_unlock.c:50)

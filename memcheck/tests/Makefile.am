@@ -94,7 +94,7 @@ EXTRA_DIST = $(noinst_SCRIPTS) \
 	memcmptest.stdout.exp memcmptest.vgtest \
 	mempool.stderr.exp mempool.stderr.exp64 mempool.vgtest \
 	metadata.stderr.exp metadata.stdout.exp metadata.vgtest \
-	mismatches.stderr.exp mismatches.stderr.exp64 mismatches.vgtest \
+	mismatches.stderr.exp mismatches.vgtest \
 	mmaptest.stderr.exp mmaptest.vgtest \
 	nanoleak.stderr.exp nanoleak.vgtest \
 	nanoleak_supp.stderr.exp nanoleak_supp.vgtest nanoleak.supp \

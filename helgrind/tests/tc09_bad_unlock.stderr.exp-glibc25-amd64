@@ -12,8 +12,8 @@ Thread #x unlocked a not-locked lock at 0x........
 
 Thread #x was created
    at 0x........: clone (in /...libc...)
-   by 0x........: do_clone (in /lib/libpthread...)
-   by 0x........: pthread_create@GLIBC_ (in /lib/libpthread...)
+   by 0x........: do_clone (in /...libpthread...)
+   by 0x........: pthread_create@GLIBC_ (in /...libpthread...)
    by 0x........: pthread_create@* (hg_intercepts.c:...)
    by 0x........: nearly_main (tc09_bad_unlock.c:35)
    by 0x........: main (tc09_bad_unlock.c:49)
@@ -22,7 +22,7 @@ Thread #x unlocked lock at 0x........ currently held by thread #x
    at 0x........: pthread_mutex_unlock (hg_intercepts.c:...)
    by 0x........: child_fn (tc09_bad_unlock.c:11)
    by 0x........: mythread_wrapper (hg_intercepts.c:...)
-   by 0x........: start_thread (in /lib/libpthread...)
+   by 0x........: start_thread (in /...libpthread...)
    by 0x........: clone (in /...libc...)
   Lock at 0x........ was first observed
    at 0x........: pthread_mutex_init (hg_intercepts.c:...)
@@ -62,8 +62,8 @@ Thread #x: Bug in libpthread: recursive write lock granted on mutex/wrlock which
 
 Thread #x was created
    at 0x........: clone (in /...libc...)
-   by 0x........: do_clone (in /lib/libpthread...)
-   by 0x........: pthread_create@GLIBC_ (in /lib/libpthread...)
+   by 0x........: do_clone (in /...libpthread...)
+   by 0x........: pthread_create@GLIBC_ (in /...libpthread...)
    by 0x........: pthread_create@* (hg_intercepts.c:...)
    by 0x........: nearly_main (tc09_bad_unlock.c:35)
    by 0x........: main (tc09_bad_unlock.c:50)
@@ -72,7 +72,7 @@ Thread #x unlocked lock at 0x........ currently held by thread #x
    at 0x........: pthread_mutex_unlock (hg_intercepts.c:...)
    by 0x........: child_fn (tc09_bad_unlock.c:11)
    by 0x........: mythread_wrapper (hg_intercepts.c:...)
-   by 0x........: start_thread (in /lib/libpthread...)
+   by 0x........: start_thread (in /...libpthread...)
    by 0x........: clone (in /...libc...)
   Lock at 0x........ was first observed
    at 0x........: pthread_mutex_init (hg_intercepts.c:...)

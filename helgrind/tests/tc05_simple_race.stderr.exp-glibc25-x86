@@ -3,7 +3,7 @@ Thread #1 is the program's root thread
 
 Thread #2 was created
    at 0x........: clone (in /...libc...)
-   by 0x........: pthread_create@GLIBC_ (in /lib/libpthread...)
+   by 0x........: pthread_create@GLIBC_ (in /...libpthread...)
    by 0x........: pthread_create@* (hg_intercepts.c:...)
    by 0x........: main (tc05_simple_race.c:27)
 

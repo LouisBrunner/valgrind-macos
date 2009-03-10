@@ -7,7 +7,7 @@
   This file is part of Valgrind, a dynamic binary instrumentation
   framework.
 
-  Copyright (C) 2006-2008 OpenWorks LLP
+  Copyright (C) 2006-2009 OpenWorks LLP
      info@open-works.co.uk
 
   Derived from Paul Mackerras' implementation of same for ppc32-linux

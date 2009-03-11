@@ -1,3 +1,7 @@
+// Test program that allows to verify whether Drd works fine for programs that
+// use the boost::thread, boost::mutex and boost::condition classes.
+
+
 #include <boost/thread/condition.hpp>
 #include <boost/thread/mutex.hpp>
 #include <boost/thread/thread.hpp>

@@ -16,7 +16,7 @@ pthread_barrier_t bar;
 
 void* child_fn ( void* arg )
 {
-   long r, n = *(long*)arg;
+   long r, n = (long)arg;
 
    if (n == 1) x++;
 
@@ -36,14 +36,12 @@ int main ( void )
 {
    long i, r;
    pthread_t thr[NTHR];
-   long thread_arg[NTHR];
 
    r = pthread_barrier_init(&bar, NULL, NTHR);
    assert(!r);
 
    for (i = 0; i < NTHR; i++) {
-      thread_arg[i] = i;
-      r = pthread_create(&thr[i], NULL, child_fn, &(thread_arg[i]));
+      r = pthread_create(&thr[i], NULL, child_fn, (void*)i);
       assert(!r);
    }
 

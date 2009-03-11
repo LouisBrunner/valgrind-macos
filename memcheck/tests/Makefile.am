@@ -78,7 +78,7 @@ EXTRA_DIST = $(noinst_SCRIPTS) \
 	lsframe1.vgtest lsframe1.stdout.exp lsframe1.stderr.exp \
 	lsframe2.vgtest lsframe2.stdout.exp lsframe2.stderr.exp \
 	mallinfo.stderr.exp mallinfo.vgtest \
-	malloc_free_fill.vgtest malloc_free_fill.stdout.exp \
+	malloc_free_fill.vgtest \
 	malloc_free_fill.stderr.exp \
 	malloc_usable.stderr.exp malloc_usable.vgtest \
 	malloc1.stderr.exp malloc1.vgtest \
@@ -110,8 +110,7 @@ EXTRA_DIST = $(noinst_SCRIPTS) \
 	origin3-no.vgtest origin3-no.stdout.exp \
 	origin3-no.stderr.exp \
 	origin4-many.vgtest origin4-many.stdout.exp \
-	origin4-many.stderr.exp-glibc25-x86 \
-	origin4-many.stderr.exp-glibc25-amd64 \
+	origin4-many.stderr.exp \
 	origin5-bz2.vgtest origin5-bz2.stdout.exp \
 	origin5-bz2.stderr.exp-glibc25-x86 \
 	origin5-bz2.stderr.exp-glibc25-amd64 \
@@ -129,7 +128,7 @@ EXTRA_DIST = $(noinst_SCRIPTS) \
 	pdb-realloc2.stderr.exp pdb-realloc2.stdout.exp pdb-realloc2.vgtest \
 	pipe.stderr.exp pipe.vgtest \
 	pointer-trace.vgtest \
-	pointer-trace.stderr.exp pointer-trace.stderr.exp64 \
+	pointer-trace.stderr.exp \
 	post-syscall.stderr.exp post-syscall.stdout.exp post-syscall.vgtest \
 	realloc1.stderr.exp realloc1.vgtest \
 	realloc2.stderr.exp realloc2.vgtest \
@@ -151,7 +150,7 @@ EXTRA_DIST = $(noinst_SCRIPTS) \
 	supp.supp \
 	suppfree.stderr.exp suppfree.vgtest \
 	trivialleak.stderr.exp trivialleak.vgtest \
-	unit_libcbase.stderr.exp unit_libcbase.stdout.exp unit_libcbase.vgtest \
+	unit_libcbase.stderr.exp unit_libcbase.vgtest \
 	unit_oset.stderr.exp unit_oset.stdout.exp unit_oset.vgtest \
 	varinfo1.vgtest varinfo1.stdout.exp varinfo1.stderr.exp \
 	varinfo2.vgtest varinfo2.stdout.exp varinfo2.stderr.exp \

@@ -26,7 +26,6 @@ EXTRA_DIST = $(noinst_SCRIPTS) \
 	null.post.exp null.stderr.exp null.vgtest \
 	one.post.exp one.stderr.exp one.vgtest \
 	overloaded-new.post.exp overloaded-new.stderr.exp overloaded-new.vgtest \
-	params.post.exp params.stderr.exp params.vgtest \
 	peak.post.exp peak.stderr.exp peak.vgtest \
 	peak2.post.exp peak2.stderr.exp peak2.vgtest \
 	realloc.post.exp realloc.stderr.exp realloc.vgtest \

@@ -31,7 +31,6 @@
 #include "drd_semaphore.h"
 #include "drd_suppression.h"      // drd_start_suppression()
 #include "drd_thread.h"
-#include "../helgrind/helgrind.h"
 #include "pub_tool_basics.h"      // Bool
 #include "pub_tool_debuginfo.h"   // VG_(describe_IP)()
 #include "pub_tool_libcassert.h"
@@ -369,7 +368,7 @@ Bool DRD_(handle_client_request)(ThreadId vg_tid, UWord* arg, UWord* ret)
     DRD_(thread_leave_synchr)(drd_tid);
     break;
 
-  case VG_USERREQ__HG_CLEAN_MEMORY:
+  case VG_USERREQ__DRD_CLEAN_MEMORY:
     if (arg[2] > 0)
       DRD_(clean_memory)(arg[1], arg[2]);
     break;

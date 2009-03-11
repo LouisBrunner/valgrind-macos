@@ -93,6 +93,12 @@ enum
   /* To ask the drd tool to stop tracing accesses to the specified range. */
   VG_USERREQ__DRD_STOP_TRACE_ADDR,
   /* args: Addr, SizeT. */
+
+  /* To ask the drd tool to discard all information about memory accesses */
+  /* and client objects for the specified range. This client request is   */
+  /* binary compatible with the similarly named Helgrind client request.  */
+  VG_USERREQ__DRD_CLEAN_MEMORY = VG_USERREQ_TOOL_BASE('H','G'),
+  /* args: Addr, SizeT. */
 };
 
 

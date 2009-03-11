@@ -29,10 +29,6 @@ sed "s/The main thread stack size used in this run was [0-9]*/The main thread st
 # appears in some of the syscall parameter names (eg "act->sa_handler").
 perl -p -0 -e 's/(Syscall param[^\n<]*)\n(   (at|by)[^\n]*\n)*/$1\n   ...\n/gs' |
 
-# Something similar for XML output.  Chops everything within
-# <stack>...</stack>.
-perl -p -0 -e 's/(<what>Syscall param[^\n]*)\n([^\n]*(stack|frame|ip|obj|fn)[^\n]*\n)*/$1\n/gs' |
-
 # Leak check filtering.
 sed "s/checked [0-9,]* bytes./checked ... bytes./" |
 

@@ -419,14 +419,18 @@ void DRD_(thread_finished)(const DrdThreadId tid)
 
   if (DRD_(g_threadinfo)[tid].detached_posix_thread)
   {
-    /* Once a detached thread has finished, its stack is deallocated and   */
-    /* should no longer be taken into account when computing the conflict set*/
+    /*
+     * Once a detached thread has finished, its stack is deallocated and
+     * should no longer be taken into account when computing the conflict set.
+     */
     DRD_(g_threadinfo)[tid].stack_min = DRD_(g_threadinfo)[tid].stack_max;
 
-    /* For a detached thread, calling pthread_exit() invalidates the     */
-    /* POSIX thread ID associated with the detached thread. For joinable */
-    /* POSIX threads however, the POSIX thread ID remains live after the */
-    /* pthread_exit() call until pthread_join() is called.               */
+    /*
+     * For a detached thread, calling pthread_exit() invalidates the
+     * POSIX thread ID associated with the detached thread. For joinable
+     * POSIX threads however, the POSIX thread ID remains live after the
+     * pthread_exit() call until pthread_join() is called.
+     */
     DRD_(g_threadinfo)[tid].posix_thread_exists = False;
   }
 }
@@ -1065,7 +1069,8 @@ static void thread_compute_conflict_set(struct bitmap** conflict_set,
       VG_(message)(Vg_UserMsg, "%s", msg);
     }
 
-    for (j = 0; j < sizeof(DRD_(g_threadinfo)) / sizeof(DRD_(g_threadinfo)[0]); j++)
+    for (j = 0; j < sizeof(DRD_(g_threadinfo)) / sizeof(DRD_(g_threadinfo)[0]);
+         j++)
     {
       if (j != tid && DRD_(IsValidDrdThreadId)(j))
       {

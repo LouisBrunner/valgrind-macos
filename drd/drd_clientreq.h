@@ -58,10 +58,10 @@ enum {
   VG_USERREQ__DRD_START_RECORDING,
   /* args: none. */
 
-  /* Tell the core the pthread_t of the running thread */
+  /* Tell drd the pthread_t of the running thread. */
   VG_USERREQ__SET_PTHREADID,
   /* args: pthread_t. */
-  /* Ask the core that a the thread's state transition from */
+  /* Ask drd that a the thread's state transition from */
   /* VgTs_Zombie to VgTs_Empty is delayed until */
   /* VG_USERREQ__POST_THREAD_JOIN is performed. */
   VG_USERREQ__SET_JOINABLE,

@@ -71,6 +71,8 @@ int main(int argc, char** argv)
 
   pthread_create(&threadid, 0, thread_func, 0);
 
+  sleep(1); /* Wait until thread_func() finished. */
+
   {
     if (s_do_mutual_exclusion) sem_wait(&s_sem);
     s_d3++;

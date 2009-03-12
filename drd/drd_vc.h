@@ -70,7 +70,6 @@ void DRD_(vc_init)(VectorClock* const vc,
 void DRD_(vc_cleanup)(VectorClock* const vc);
 void DRD_(vc_copy)(VectorClock* const new, const VectorClock* const rhs);
 void DRD_(vc_assign)(VectorClock* const lhs, const VectorClock* const rhs);
-UInt DRD_(vc_get)(VectorClock* const vc, const DrdThreadId tid);
 void DRD_(vc_increment)(VectorClock* const vc, DrdThreadId const tid);
 static __inline__
 Bool DRD_(vc_lte)(const VectorClock* const vc1,

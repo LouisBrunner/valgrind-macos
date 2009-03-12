@@ -217,7 +217,7 @@ Number of snapshots: 50
 // Used for printing things when clo_verbosity > 1.
 #define VERB(verb, format, args...) \
    if (VG_(clo_verbosity) > verb) { \
-      VG_(message)(Vg_DebugMsg, "Massif: " format, ##args); \
+      VG_DMSG("Massif: " format, ##args); \
    }
 
 //------------------------------------------------------------//
@@ -919,16 +919,16 @@ static XPt* get_XCon( ThreadId tid, Bool is_custom_alloc )
    if (0 != xpt->n_children) {
       static Int n_moans = 0;
       if (n_moans < 3) {
-         VG_(message)(Vg_UserMsg,
+         VG_UMSG(
             "Warning: Malformed stack trace detected.  In Massif's output,");
-         VG_(message)(Vg_UserMsg,
+         VG_UMSG(
             "         the size of an entry's child entries may not sum up");
-         VG_(message)(Vg_UserMsg,
+         VG_UMSG(
             "         to the entry's size as they normally do.");
          n_moans++;
          if (3 == n_moans)
-            VG_(message)(Vg_UserMsg,
-               "         (And Massif now won't warn about this again.)");
+            VG_UMSG(
+            "         (And Massif now won't warn about this again.)");
       }
    }
    return xpt;
@@ -2075,10 +2075,8 @@ static void write_snapshots_to_file(void)
    if (sres.isError) {
       // If the file can't be opened for whatever reason (conflict
       // between multiple cachegrinded processes?), give up now.
-      VG_(message)(Vg_UserMsg,
-         "error: can't open output file '%s'", massif_out_file );
-      VG_(message)(Vg_UserMsg,
-         "       ... so profiling results will be missing.");
+      VG_UMSG("error: can't open output file '%s'", massif_out_file );
+      VG_UMSG("       ... so profiling results will be missing.");
       VG_(free)(massif_out_file);
       return;
    } else {
@@ -2164,7 +2162,7 @@ static void ms_post_clo_init(void)
 
    // Check options.
    if (clo_threshold < 0 || clo_threshold > 100) {
-      VG_(message)(Vg_UserMsg, "--threshold must be between 0.0 and 100.0");
+      VG_UMSG("--threshold must be between 0.0 and 100.0");
       VG_(err_bad_option)("--threshold");
    }
 

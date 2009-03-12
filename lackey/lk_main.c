@@ -368,17 +368,14 @@ static void instrument_detail(IRSB* sb, Op op, IRType type)
 static void print_details ( void )
 {
    Int typeIx;
-   VG_(message)(Vg_UserMsg,
-                "   Type        Loads       Stores       AluOps");
-   VG_(message)(Vg_UserMsg,
-                "   -------------------------------------------");
+   VG_UMSG("   Type        Loads       Stores       AluOps");
+   VG_UMSG("   -------------------------------------------");
    for (typeIx = 0; typeIx < N_TYPES; typeIx++) {
-      VG_(message)(Vg_UserMsg,
-                   "   %4s %'12llu %'12llu %'12llu",
-                   nameOfTypeIndex( typeIx ),
-                   detailCounts[OpLoad ][typeIx],
-                   detailCounts[OpStore][typeIx],
-                   detailCounts[OpAlu  ][typeIx]
+      VG_UMSG("   %4s %'12llu %'12llu %'12llu",
+              nameOfTypeIndex( typeIx ),
+              detailCounts[OpLoad ][typeIx],
+              detailCounts[OpStore][typeIx],
+              detailCounts[OpAlu  ][typeIx]
       );
    }
 }
@@ -865,45 +862,44 @@ static void lk_fini(Int exitcode)
       ULong total_Jccs = n_Jccs + n_IJccs;
       ULong taken_Jccs = (n_Jccs - n_Jccs_untaken) + n_IJccs_untaken;
 
-      VG_(message)(Vg_UserMsg,
-         "Counted %'llu calls to %s()", n_func_calls, clo_fnname);
+      VG_UMSG("Counted %'llu calls to %s()", n_func_calls, clo_fnname);
 
-      VG_(message)(Vg_UserMsg, "");
-      VG_(message)(Vg_UserMsg, "Jccs:");
-      VG_(message)(Vg_UserMsg, "  total:         %'llu", total_Jccs);
+      VG_UMSG("");
+      VG_UMSG("Jccs:");
+      VG_UMSG("  total:         %'llu", total_Jccs);
       VG_(percentify)(taken_Jccs, (total_Jccs ? total_Jccs : 1),
          percentify_decs, percentify_size, percentify_buf);
-      VG_(message)(Vg_UserMsg, "  taken:         %'llu (%s)",
+      VG_UMSG("  taken:         %'llu (%s)",
          taken_Jccs, percentify_buf);
       
-      VG_(message)(Vg_UserMsg, "");
-      VG_(message)(Vg_UserMsg, "Executed:");
-      VG_(message)(Vg_UserMsg, "  SBs entered:   %'llu", n_SBs_entered);
-      VG_(message)(Vg_UserMsg, "  SBs completed: %'llu", n_SBs_completed);
-      VG_(message)(Vg_UserMsg, "  guest instrs:  %'llu", n_guest_instrs);
-      VG_(message)(Vg_UserMsg, "  IRStmts:       %'llu", n_IRStmts);
+      VG_UMSG("");
+      VG_UMSG("Executed:");
+      VG_UMSG("  SBs entered:   %'llu", n_SBs_entered);
+      VG_UMSG("  SBs completed: %'llu", n_SBs_completed);
+      VG_UMSG("  guest instrs:  %'llu", n_guest_instrs);
+      VG_UMSG("  IRStmts:       %'llu", n_IRStmts);
       
-      VG_(message)(Vg_UserMsg, "");
-      VG_(message)(Vg_UserMsg, "Ratios:");
+      VG_UMSG("");
+      VG_UMSG("Ratios:");
       tl_assert(n_SBs_entered); // Paranoia time.
-      VG_(message)(Vg_UserMsg, "  guest instrs : SB entered  = %'llu : 10",
+      VG_UMSG("  guest instrs : SB entered  = %'llu : 10",
          10 * n_guest_instrs / n_SBs_entered);
-      VG_(message)(Vg_UserMsg, "       IRStmts : SB entered  = %'llu : 10",
+      VG_UMSG("       IRStmts : SB entered  = %'llu : 10",
          10 * n_IRStmts / n_SBs_entered);
       tl_assert(n_guest_instrs); // Paranoia time.
-      VG_(message)(Vg_UserMsg, "       IRStmts : guest instr = %'llu : 10",
+      VG_UMSG("       IRStmts : guest instr = %'llu : 10",
          10 * n_IRStmts / n_guest_instrs);
    }
 
    if (clo_detailed_counts) {
-      VG_(message)(Vg_UserMsg, "");
-      VG_(message)(Vg_UserMsg, "IR-level counts by type:");
+      VG_UMSG("");
+      VG_UMSG("IR-level counts by type:");
       print_details();
    }
 
    if (clo_basic_counts) {
-      VG_(message)(Vg_UserMsg, "");
-      VG_(message)(Vg_UserMsg, "Exit code:       %d", exitcode);
+      VG_UMSG("");
+      VG_UMSG("Exit code:       %d", exitcode);
    }
 }
 

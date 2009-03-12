@@ -98,7 +98,9 @@ extern UInt VG_(message)( VgMsgKind kind, const HChar* format, ... )
 extern UInt VG_(vmessage)( VgMsgKind kind, const HChar* format, va_list vargs )
   PRINTF_CHECK(2, 0);
 
-
+// Short-cuts for VG_(message)().
+#define VG_UMSG( format, args... )  VG_(message)(Vg_UserMsg,  format, ##args)
+#define VG_DMSG( format, args... )  VG_(message)(Vg_DebugMsg, format, ##args)
 
 #endif   // __PUB_TOOL_LIBCPRINT_H
 

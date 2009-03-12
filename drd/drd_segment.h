@@ -58,7 +58,7 @@ typedef struct segment
 } Segment;
 
 
-Segment* DRD_(sg_new)(const ThreadId creator, const ThreadId created);
+Segment* DRD_(sg_new)(const DrdThreadId creator, const DrdThreadId created);
 int DRD_(sg_get_refcnt)(const Segment* const sg);
 Segment* DRD_(sg_get)(Segment* const sg);
 void DRD_(sg_put)(Segment* const sg);

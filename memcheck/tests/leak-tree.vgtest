@@ -1,2 +1,2 @@
 prog: leak-tree
-vgopts: --leak-resolution=high
+vgopts: -q --leak-check=full --leak-resolution=high

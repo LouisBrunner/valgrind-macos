@@ -1,2 +1,0 @@
-prog: leakotron
-stderr_filter: ../../tests/filter_sink

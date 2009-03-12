@@ -69,8 +69,6 @@ EXTRA_DIST = $(noinst_SCRIPTS) \
 	leak-pool-4.vgtest leak-pool-4.stderr.exp \
 	leak-pool-5.vgtest leak-pool-5.stderr.exp \
 	leak-tree.vgtest leak-tree.stderr.exp \
-	leak-tree.stderr.exp2 leak-tree.stderr.exp64 \
-	leakotron.vgtest leakotron.stdout.exp leakotron.stderr.exp \
 	linux-syslog-syscall linux-syslog-syscall.stderr.exp \
 	linux-syscalls-2007 linux-syscalls-2007.stderr.exp \
 	long_namespace_xml.vgtest long_namespace_xml.stdout.exp \
@@ -190,7 +188,7 @@ check_PROGRAMS = \
 	fprw fwrite inits inline \
 	leak-0 \
 	leak-cases \
-	leak-cycle leak-pool leak-tree leakotron \
+	leak-cycle leak-pool leak-tree \
 	linux-syslog-syscall \
 	linux-syscalls-2007 \
 	long_namespace_xml \

@@ -32,36 +32,15 @@ Destroying locked mutex: mutex 0x........, recursion count 1, owner 1.
 mutex 0x........ was first observed at:
    at 0x........: pthread_mutex_init (drd_pthread_intercepts.c:?)
    by 0x........: main (tc20_verifywrap.c:100)
-[1/1] mutex_trylock   invalid mutex 0x........ rc 0 owner 0
+[1/1] mutex_trylock   mutex 0x........ rc 0 owner 0
+[1/1] post_mutex_lock mutex 0x........ rc 0 owner 0 (locking failed)
+[1/1] pre_mutex_lock  mutex 0x........ rc 0 owner 0
+[1/1] post_mutex_lock mutex 0x........ rc 0 owner 0 (locking failed)
+[1/1] mutex_trylock   mutex 0x........ rc 0 owner 0
+[1/1] post_mutex_lock mutex 0x........ rc 0 owner 0 (locking failed)
+[1/1] mutex_unlock    mutex 0x........ rc 0
 
-The object at address 0x........ is not a mutex.
-   at 0x........: pthread_mutex_lock (drd_pthread_intercepts.c:?)
-   by 0x........: main (tc20_verifywrap.c:108)
-mutex 0x........ was first observed at:
-   at 0x........: pthread_mutex_lock (drd_pthread_intercepts.c:?)
-   by 0x........: main (tc20_verifywrap.c:108)
-[1/1] post_mutex_lock invalid mutex 0x........ rc 0 owner 0 (locking failed)
-[1/1] pre_mutex_lock  invalid mutex 0x........ rc 0 owner 0
-
-The object at address 0x........ is not a mutex.
-   at 0x........: pthread_mutex_trylock (drd_pthread_intercepts.c:?)
-   by 0x........: main (tc20_verifywrap.c:116)
-mutex 0x........ was first observed at:
-   at 0x........: pthread_mutex_lock (drd_pthread_intercepts.c:?)
-   by 0x........: main (tc20_verifywrap.c:108)
-[1/1] post_mutex_lock invalid mutex 0x........ rc 0 owner 0 (locking failed)
-[1/1] mutex_trylock   invalid mutex 0x........ rc 0 owner 0
-
-The object at address 0x........ is not a mutex.
-   at 0x........: pthread_mutex_timedlock (drd_pthread_intercepts.c:?)
-   by 0x........: main (tc20_verifywrap.c:121)
-mutex 0x........ was first observed at:
-   at 0x........: pthread_mutex_lock (drd_pthread_intercepts.c:?)
-   by 0x........: main (tc20_verifywrap.c:108)
-[1/1] post_mutex_lock invalid mutex 0x........ rc 0 owner 0 (locking failed)
-[1/1] mutex_unlock    invalid mutex 0x........ rc 0
-
-The object at address 0x........ is not a mutex.
+Mutex not locked: mutex 0x........, recursion count 0, owner 0.
    at 0x........: pthread_mutex_unlock (drd_pthread_intercepts.c:?)
    by 0x........: main (tc20_verifywrap.c:125)
 mutex 0x........ was first observed at:

@@ -110,6 +110,8 @@ EXTRA_DIST =                                        \
 	pth_inconsistent_cond_wait.stderr.exp1      \
 	pth_inconsistent_cond_wait.stderr.exp2      \
 	pth_inconsistent_cond_wait.vgtest           \
+	pth_process_shared_mutex.vgtest             \
+	pth_process_shared_mutex.c                  \
 	pth_spinlock.stderr.exp                     \
 	pth_spinlock.vgtest                         \
 	qt4_mutex.stderr.exp                        \
@@ -211,6 +213,7 @@ check_PROGRAMS =      \
   pth_create_chain    \
   pth_detached        \
   pth_detached_sem    \
+  pth_process_shared_mutex   \
   pth_inconsistent_cond_wait \
   recursive_mutex     \
   rwlock_race         \

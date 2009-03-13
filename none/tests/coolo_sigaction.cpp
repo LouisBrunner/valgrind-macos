@@ -8,7 +8,7 @@ static struct sigaction oldChildHandlerData;
 
 void theHandler(int arg)
 {
-  printf("handled %d\n", arg);
+  printf("handled %s\n", arg == SIGCHLD ? "SIGCHLD" : "?!unexpected signal?!" );
 }
 
 void setupHandlers()

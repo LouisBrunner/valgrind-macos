@@ -11,9 +11,7 @@ Thread #x unlocked a not-locked lock at 0x........
    by 0x........: main (tc09_bad_unlock.c:49)
 
 Thread #x was created
-   at 0x........: clone (in /...libc...)
-   by 0x........: do_clone (in /...libpthread...)
-   by 0x........: pthread_create@GLIBC_ (in /...libpthread...)
+   ...
    by 0x........: pthread_create@* (hg_intercepts.c:...)
    by 0x........: nearly_main (tc09_bad_unlock.c:35)
    by 0x........: main (tc09_bad_unlock.c:49)
@@ -22,8 +20,7 @@ Thread #x unlocked lock at 0x........ currently held by thread #x
    at 0x........: pthread_mutex_unlock (hg_intercepts.c:...)
    by 0x........: child_fn (tc09_bad_unlock.c:11)
    by 0x........: mythread_wrapper (hg_intercepts.c:...)
-   by 0x........: start_thread (in /...libpthread...)
-   by 0x........: clone (in /...libc...)
+   ...
   Lock at 0x........ was first observed
    at 0x........: pthread_mutex_init (hg_intercepts.c:...)
    by 0x........: nearly_main (tc09_bad_unlock.c:31)
@@ -61,9 +58,7 @@ Thread #x: Bug in libpthread: recursive write lock granted on mutex/wrlock which
    by 0x........: main (tc09_bad_unlock.c:50)
 
 Thread #x was created
-   at 0x........: clone (in /...libc...)
-   by 0x........: do_clone (in /...libpthread...)
-   by 0x........: pthread_create@GLIBC_ (in /...libpthread...)
+   ...
    by 0x........: pthread_create@* (hg_intercepts.c:...)
    by 0x........: nearly_main (tc09_bad_unlock.c:35)
    by 0x........: main (tc09_bad_unlock.c:50)
@@ -72,8 +67,7 @@ Thread #x unlocked lock at 0x........ currently held by thread #x
    at 0x........: pthread_mutex_unlock (hg_intercepts.c:...)
    by 0x........: child_fn (tc09_bad_unlock.c:11)
    by 0x........: mythread_wrapper (hg_intercepts.c:...)
-   by 0x........: start_thread (in /...libpthread...)
-   by 0x........: clone (in /...libc...)
+   ...
   Lock at 0x........ was first observed
    at 0x........: pthread_mutex_init (hg_intercepts.c:...)
    by 0x........: nearly_main (tc09_bad_unlock.c:31)
@@ -91,8 +85,6 @@ Thread #x's call to pthread_mutex_unlock failed
    by 0x........: main (tc09_bad_unlock.c:50)
 
 Thread #x: Exiting thread still holds 1 lock
-   at 0x........: _Exit (in /...libc...)
-   by 0x........: exit (in /...libc...)
-   by 0x........: (below main)
+   ...
 
 ERROR SUMMARY: 11 errors from 11 contexts (suppressed: 0 from 0)

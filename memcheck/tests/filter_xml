@@ -15,7 +15,7 @@ perl -0 -p -e "s/<vargv>.*<\/vargv>/<vargv>...<\/vargv>/s" |
 
 # Remove stack traces for Syscall param errors (see filter_stderr for more).  
 # Chops everything within <stack>...</stack>.
-perl -p -0 -e 's/(<what>Syscall param[^\n]*)\n([^\n]*(stack|frame|ip|obj|fn|dir|file|line)[^\n]*\n)*/$1\n/gs'
+perl -p -0 -e 's/(<what>Syscall param[^\n]*\n)([^\n]*(stack|frame|ip|obj|fn|dir|file|line)[^\n]*\n)+/$1/gs'
 
 # Collected wisdom re Perl magic incantation:
 #

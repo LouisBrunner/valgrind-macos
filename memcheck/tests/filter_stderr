@@ -27,7 +27,7 @@ sed "s/The main thread stack size used in this run was [0-9]*/The main thread st
 #
 # The '<' is to avoid matching the XML case;  we don't use '>' because that
 # appears in some of the syscall parameter names (eg "act->sa_handler").
-perl -p -0 -e 's/(Syscall param[^\n<]*)\n(   (at|by)[^\n]*\n)*/$1\n   ...\n/gs' |
+perl -p -0 -e 's/(Syscall param[^\n<]*\n)(   (at|by)[^\n]*\n)+/$1   ...\n/gs' |
 
 # Leak check filtering.
 sed "s/checked [0-9,]* bytes./checked ... bytes./" |

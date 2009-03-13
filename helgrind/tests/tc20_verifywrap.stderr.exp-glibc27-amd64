@@ -8,8 +8,7 @@
 Thread #x is the program's root thread
 
 Thread #x was created
-   at 0x........: clone (in /...libc...)
-   by 0x........: pthread_create@GLIBC_ (in /...libpthread...)
+   ...
    by 0x........: pthread_create@* (hg_intercepts.c:...)
    by 0x........: main (tc20_verifywrap.c:76)
 
@@ -18,8 +17,7 @@ Possible data race during write of size 2 at 0x........ by thread #x
  This conflicts with a previous write of size 2 by thread #x
    at 0x........: racy_child (tc20_verifywrap.c:34)
    by 0x........: mythread_wrapper (hg_intercepts.c:...)
-   by 0x........: start_thread (in /...libpthread...)
-   by 0x........: clone (in /...libc...)
+   ...
  Location 0x........ is 0 bytes inside global var "unprotected"
  declared at tc20_verifywrap.c:27
 
@@ -157,8 +155,6 @@ FIXME: can't figure out how to verify wrap of sem_post
 
 
 Thread #x: Exiting thread still holds 1 lock
-   at 0x........: _Exit (in /...libc...)
-   by 0x........: exit (in /...libc...)
-   by 0x........: (below main)
+   ...
 
 ERROR SUMMARY: 21 errors from 21 contexts (suppressed: 0 from 0)

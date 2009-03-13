@@ -2,8 +2,6 @@
 Thread #x is the program's root thread
 
 Thread #x: Exiting thread still holds 2 locks
-   at 0x........: _Exit (in /...libc...)
-   by 0x........: exit (in /...libc...)
-   by 0x........: (below main)
+   ...
 
 ERROR SUMMARY: 1 errors from 1 contexts (suppressed: 0 from 0)

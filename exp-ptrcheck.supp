@@ -46,3 +46,12 @@
    exp-ptrcheck:SorG
    fun:getenv
 }
+
+{
+   Occurs on Fedora 7--9?
+   exp-ptrcheck:SorG
+   fun:_dl_fini
+   fun:exit
+   fun:(below main)
+}
+

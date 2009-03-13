@@ -19,9 +19,8 @@ EXTRA_DIST = $(noinst_SCRIPTS) \
 	bad_percentify.stdout.exp bad_percentify.stderr.exp-glibc28-amd64 \
 	base.vgtest \
 	base.stderr.exp-glibc25-amd64 base.stderr.exp-glibc25-x86 \
-	ccc.vgtest \
-	ccc.stderr.exp-glibc25-x86 ccc.stderr.exp-glibc25-amd64 \
-	ccc.stderr.exp-glibc27-x86 ccc.stderr.exp-glibc28-amd64 \
+	ccc.vgtest ccc.stderr.exp-glibc25-amd64 \
+	    ccc.stderr.exp-glibc27-x86 ccc.stderr.exp-glibc28-amd64 \
 	cmp.vgtest-disabled cmp.stderr.exp \
 	globalerr.vgtest globalerr.stdout.exp \
 	globalerr.stderr.exp-glibc28-amd64 \

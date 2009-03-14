@@ -144,7 +144,7 @@ FIXME: can't figure out how to verify wrap of sem_post
 
 ------------ dealloc of mem holding locks ------------
 
-[1/1] mutex_destroy   invalid mutex 0x........ rc 0 owner 0
+[1/1] mutex_destroy   mutex 0x........ rc 0 owner 0
 [1/1] mutex_destroy   error checking mutex 0x........ rc 1 owner 1
 
 Destroying locked mutex: mutex 0x........, recursion count 1, owner 1.

@@ -132,15 +132,18 @@ static MutexT pthread_to_drd_mutex_type(const int kind)
 
 /** @note The function mutex_type() has been declared inline in order
  *  to avoid that it shows up in call stacks.
+ * @note glibc stores the mutex type in the lowest two bits, and uses the
+ *   higher bits for flags like PTHREAD_MUTEXATTR_FLAG_ROBUST and
+ *   PTHREAD_MUTEXATTR_FLAG_PSHARED.
  */
 static __inline__ MutexT mutex_type(pthread_mutex_t* mutex)
 {
 #if defined(HAVE_PTHREAD_MUTEX_T__M_KIND)
   /* LinuxThreads. */
-  const int kind = mutex->__m_kind;
+  const int kind = mutex->__m_kind & 3;
 #elif defined(HAVE_PTHREAD_MUTEX_T__DATA__KIND)
   /* NPTL. */
-  const int kind = mutex->__data.__kind;
+  const int kind = mutex->__data.__kind & 3;
 #else
   /* Another POSIX threads implementation. Regression tests will fail. */
   const int kind = PTHREAD_MUTEX_DEFAULT;

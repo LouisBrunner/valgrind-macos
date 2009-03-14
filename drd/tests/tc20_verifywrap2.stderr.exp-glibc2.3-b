@@ -163,7 +163,7 @@ Destroying locked rwlock: rwlock 0x.........
 
 Destroying locked mutex: mutex 0x........, recursion count 1, owner 1.
    at 0x........: main (tc20_verifywrap.c:262)
-[1/1] mutex_destroy   invalid mutex 0x........ rc 0 owner 0
+[1/1] mutex_destroy   mutex 0x........ rc 0 owner 0
 [1/1] mutex_trylock   recursive mutex 0x........ rc 0 owner 0
 [1/1] post_mutex_lock recursive mutex 0x........ rc 0 owner 0
 [1/1] mutex_unlock    recursive mutex 0x........ rc 1

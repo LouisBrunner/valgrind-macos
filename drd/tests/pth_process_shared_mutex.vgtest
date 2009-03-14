@@ -1,0 +1,3 @@
+prereq: ./supported_libpthread
+prog: pth_process_shared_mutex
+vgopts: --var-info=yes --check-stack-var=yes

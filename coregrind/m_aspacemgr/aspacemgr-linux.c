@@ -912,9 +912,10 @@ static void sync_check_mapping_callback ( Addr addr, SizeT len, UInt prot,
       have a sloppyXcheck mode which we enable on x86 - in this mode we
       allow the kernel to report execute permission when we weren't
       expecting it but not vice versa. */
-   sloppyXcheck = False;
 #  if defined(VGA_x86)
    sloppyXcheck = True;
+#  else
+   sloppyXcheck = False;
 #  endif
 
    /* NSegments iLo .. iHi inclusive should agree with the presented

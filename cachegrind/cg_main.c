@@ -1341,7 +1341,6 @@ static void fprint_CC_table_and_calc_totals(void)
          VG_(sprintf)(buf, "fn=%s\n", currFn);
          VG_(write)(fd, (void*)buf, VG_(strlen)(buf));
          distinct_fns++;
-         just_hit_a_new_file = False;
       }
 
       // Print the LineCC
@@ -1454,8 +1453,7 @@ static void cg_fini(Int exitcode)
    BranchCC B_total;
    ULong L2_total_m, L2_total_mr, L2_total_mw,
          L2_total, L2_total_r, L2_total_w;
-   Int l1, l2, l3, l4;
-   Int p;
+   Int l1, l2, l3;
 
    /* Running with both cache and branch simulation disabled is not
       allowed (checked during command line option processing). */
@@ -1466,12 +1464,13 @@ static void cg_fini(Int exitcode)
    if (VG_(clo_verbosity) == 0) 
       return;
 
+   #define MAX(a, b)  ((a) >= (b) ? (a) : (b))
+
    /* I cache results.  Use the I_refs value to determine the first column
     * width. */
    l1 = ULong_width(Ir_total.a);
-   l2 = ULong_width(Dr_total.a);
-   l3 = ULong_width(Dw_total.a);
-   l4 = ULong_width(Bc_total.b + Bi_total.b);
+   l2 = ULong_width(MAX(Dr_total.a, Bc_total.b));
+   l3 = ULong_width(MAX(Dw_total.a, Bi_total.b));
 
    /* Make format string, getting width right for numbers */
    VG_(sprintf)(fmt, "%%s %%,%dllu", l1);
@@ -1484,8 +1483,6 @@ static void cg_fini(Int exitcode)
    if (clo_cache_sim) {
       VG_UMSG(fmt, "I1  misses:   ", Ir_total.m1);
       VG_UMSG(fmt, "L2i misses:   ", Ir_total.m2);
-
-      p = 100;
 
       if (0 == Ir_total.a) Ir_total.a = 1;
       VG_(percentify)(Ir_total.m1, Ir_total.a, 2, l1+1, buf1);
@@ -1510,8 +1507,6 @@ static void cg_fini(Int exitcode)
                    D_total.m1, Dr_total.m1, Dw_total.m1);
       VG_UMSG(fmt, "L2d misses:   ",
                    D_total.m2, Dr_total.m2, Dw_total.m2);
-
-      p = 10;
 
       if (0 == D_total.a)  D_total.a = 1;
       if (0 == Dr_total.a) Dr_total.a = 1;

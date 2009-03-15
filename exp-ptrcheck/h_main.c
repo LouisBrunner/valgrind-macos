@@ -1163,7 +1163,6 @@ static void pre_mem_access2 ( CorePart part, ThreadId tid, Char* str,
                               Addr s/*tart*/, Addr e/*nd*/ )
 {
    Seg  *seglo, *seghi;
-   Bool s_in_seglo, s_in_seghi, e_in_seglo, e_in_seghi;
 
    // Don't check code being translated -- very slow, and not much point
    if (Vg_CoreTranslate == part) return;
@@ -1183,22 +1182,7 @@ static void pre_mem_access2 ( CorePart part, ThreadId tid, Char* str,
    tl_assert( BOTTOM != seglo && NONPTR != seglo );
    tl_assert( BOTTOM != seghi && NONPTR != seghi );
 
-   /* so seglo and seghi are either UNKNOWN or P(..) */
-   s_in_seglo
-      = is_known_segment(seglo)
-        && seglo->addr <= s && s < seglo->addr + seglo->szB;
-   s_in_seghi
-      = is_known_segment(seghi)
-        && seghi->addr <= s && s < seghi->addr + seghi->szB;
-   e_in_seglo
-      = is_known_segment(seglo)
-        && seglo->addr <= e && e < seglo->addr + seglo->szB;
-   e_in_seghi
-      = is_known_segment(seghi)
-        && seghi->addr <= e && e < seghi->addr + seghi->szB;
-
-   /* record an error if start and end are in different, but known
-      segments */
+   /* record an error if start and end are in different, but known segments */
    if (is_known_segment(seglo) && is_known_segment(seghi)
        && seglo != seghi) {
       h_record_sysparam_error(tid, part, str, s, e, seglo, seghi);

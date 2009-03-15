@@ -1903,8 +1903,6 @@ static void pp_snapshot_SXPt(Int fd, SXPt* sxpt, Int depth, Char* depth_str,
                             SizeT snapshot_heap_szB, SizeT snapshot_total_szB)
 {
    Int   i, j, n_insig_children_sxpts;
-   Char* perc;
-   SXPt* pred  = NULL;
    SXPt* child = NULL;
 
    // Used for printing function names.  Is made static to keep it out
@@ -1932,7 +1930,6 @@ static void pp_snapshot_SXPt(Int fd, SXPt* sxpt, Int depth, Char* depth_str,
          // We need the -1 to get the line number right, But I'm not sure why.
          ip_desc = VG_(describe_IP)(sxpt->Sig.ip-1, ip_desc, BUF_LEN);
       }
-      perc = make_perc(sxpt->szB, snapshot_total_szB);
       
       // Do the non-ip_desc part first...
       FP("%sn%d: %lu ", depth_str, sxpt->Sig.n_children, sxpt->szB);
@@ -1989,7 +1986,6 @@ static void pp_snapshot_SXPt(Int fd, SXPt* sxpt, Int depth, Char* depth_str,
       // Print the SXPt's children.  They should already be in sorted order.
       n_insig_children_sxpts = 0;
       for (i = 0; i < sxpt->Sig.n_children; i++) {
-         pred  = child;
          child = sxpt->Sig.children[i];
 
          if (InsigSXPt == child->tag)
@@ -2012,7 +2008,6 @@ static void pp_snapshot_SXPt(Int fd, SXPt* sxpt, Int depth, Char* depth_str,
 
     case InsigSXPt: {
       Char* s = ( 1 == sxpt->Insig.n_xpts ? "," : "s, all" );
-      perc = make_perc(sxpt->szB, snapshot_total_szB);
       FP("%sn0: %lu in %d place%s below massif's threshold (%s)\n",
          depth_str, sxpt->szB, sxpt->Insig.n_xpts, s,
          make_perc((ULong)clo_threshold, 100));

@@ -951,7 +951,7 @@ static void canonicaliseVarInfo ( struct _DebugInfo* di )
       /* All the rest of this is for the local-scope case. */
       /* iterate over all entries in 'scope' */
       nInThisScope = 0;
-      range = rangep = NULL;
+      rangep = NULL;
       VG_(OSetGen_ResetIter)(scope);
       while (True) {
          range = VG_(OSetGen_Next)(scope);
@@ -1035,7 +1035,6 @@ static Int compare_DiSym ( void* va, void* vb )
 static DiSym* prefersym ( struct _DebugInfo* di, DiSym* a, DiSym* b )
 {
    Word cmp;
-   Word lena, lenb;		/* full length */
    Word vlena, vlenb;		/* length without version */
    const UChar *vpa, *vpb;
 
@@ -1044,8 +1043,8 @@ static DiSym* prefersym ( struct _DebugInfo* di, DiSym* a, DiSym* b )
 
    vg_assert(a->addr == b->addr);
 
-   vlena = lena = VG_(strlen)(a->name);
-   vlenb = lenb = VG_(strlen)(b->name);
+   vlena = VG_(strlen)(a->name);
+   vlenb = VG_(strlen)(b->name);
 
    vpa = VG_(strchr)(a->name, '@');
    vpb = VG_(strchr)(b->name, '@');

@@ -344,7 +344,6 @@ static UWord get_UWord ( Cursor* c ) {
    vg_assert(0);
 }
 
-
 /* Read a DWARF3 'Initial Length' field */
 static ULong get_Initial_Length ( /*OUT*/Bool* is64,
                                   Cursor* c, 
@@ -898,13 +897,13 @@ void set_abbv_Cursor ( /*OUT*/Cursor* c, Bool td3,
    /* Now iterate though the table until we find the requested
       entry. */
    while (True) {
-      ULong atag;
-      UInt  has_children;
+      //ULong atag;
+      //UInt  has_children;
       acode = get_ULEB128( c );
       if (acode == 0) break; /* end of the table */
       if (acode == abbv_code) break; /* found it */
-      atag         = get_ULEB128( c );
-      has_children = get_UChar( c );
+      /*atag         = */ get_ULEB128( c );
+      /*has_children = */ get_UChar( c );
       //TRACE_D3("   %llu      %s    [%s]\n", 
       //         acode, pp_DW_TAG(atag), pp_DW_children(has_children));
       while (True) {
@@ -1303,13 +1302,7 @@ void read_filename_table( /*MOD*/D3VarParser* parser,
    Bool   is_dw64;
    Cursor c;
    Word   i;
-   ULong  unit_length;
    UShort version;
-   ULong  header_length;
-   UChar  minimum_instruction_length;
-   UChar  default_is_stmt;
-   Char   line_base;
-   UChar  line_range;
    UChar  opcode_base;
    UChar* str;
 
@@ -1322,18 +1315,18 @@ void read_filename_table( /*MOD*/D3VarParser* parser,
                 cc->debug_line_sz, debug_line_offset, cc->barf, 
                 "Overrun whilst reading .debug_line section(1)" );
 
-   unit_length 
-      = get_Initial_Length( &is_dw64, &c,
+   /* unit_length = */
+      get_Initial_Length( &is_dw64, &c,
            "read_filename_table: invalid initial-length field" );
    version = get_UShort( &c );
    if (version != 2)
      cc->barf("read_filename_table: Only DWARF version 2 line info "
               "is currently supported.");
-   header_length = (ULong)get_Dwarfish_UWord( &c, is_dw64 );
-   minimum_instruction_length = get_UChar( &c );
-   default_is_stmt            = get_UChar( &c );
-   line_base                  = (Char)get_UChar( &c );
-   line_range                 = get_UChar( &c );
+   /*header_length              = (ULong)*/ get_Dwarfish_UWord( &c, is_dw64 );
+   /*minimum_instruction_length = */ get_UChar( &c );
+   /*default_is_stmt            = */ get_UChar( &c );
+   /*line_base                  = (Char)*/ get_UChar( &c );
+   /*line_range                 = */ get_UChar( &c );
    opcode_base                = get_UChar( &c );
    /* skip over "standard_opcode_lengths" */
    for (i = 1; i < (Word)opcode_base; i++)
@@ -1584,7 +1577,6 @@ static void parse_var_DIE (
       GExpr* gexpr       = NULL;
       Int    n_attrs     = 0;
       UWord  abs_ori     = (UWord)D3_INVALID_CUOFF;
-      Bool   declaration = False;
       Int    lineNo      = 0;
       UChar* fileName    = NULL;
       while (True) {
@@ -1614,7 +1606,7 @@ static void parse_var_DIE (
             abs_ori = (UWord)cts;
          }
          if (attr == DW_AT_declaration && ctsSzB > 0 && cts > 0) {
-            declaration = True;
+            /*declaration = True;*/
          }
          if (attr == DW_AT_decl_line && ctsSzB > 0) {
             lineNo = (Int)cts;
@@ -2433,7 +2425,6 @@ static void parse_type_DIE ( /*MOD*/XArray* /* of TyEnt */ tyents,
       Bool have_count = False;
       Long lower = 0;
       Long upper = 0;
-      Long count = 0;
 
       switch (parser->language) {
          case 'C': have_lower = True;  lower = 0; break;
@@ -2461,7 +2452,7 @@ static void parse_type_DIE ( /*MOD*/XArray* /* of TyEnt */ tyents,
             have_upper = True;
          }
          if (attr == DW_AT_count && ctsSzB > 0) {
-            count      = cts;
+            /*count    = (Long)cts;*/
             have_count = True;
          }
       }

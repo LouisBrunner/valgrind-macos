@@ -956,7 +956,6 @@ static void load_one_suppressions_file ( Char* filename )
    Char*  err_str = NULL;
    SuppLoc tmp_callers[VG_MAX_SUPP_CALLERS];
 
-   fd   = -1;
    sres = VG_(open)( filename, VKI_O_RDONLY, 0 );
    if (sres.isError) {
       if (VG_(clo_xml))

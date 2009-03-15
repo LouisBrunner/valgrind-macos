@@ -480,7 +480,6 @@ static void handleUnderflow(BB* bb)
   /* RET at top of call stack */
   BBCC* source_bbcc;
   BB* source_bb;
-  jCC* jcc;
   Bool seen_before;
   fn_node* caller;
   int fn_number, *pactive;
@@ -533,7 +532,6 @@ static void handleUnderflow(BB* bb)
 		       (Addr)-1, False);
   call_entry_up = 
     &(CLG_(current_call_stack).entry[CLG_(current_call_stack).sp -1]);
-  jcc = call_entry_up->jcc;
   /* assume this call is lasting since last dump or
    * for a signal handler since it's call */
   if (CLG_(current_state).sig == 0)

@@ -219,7 +219,10 @@ Bool get_elf_symbol_info (
         Bool*  is_text_out     /* is this a text symbol? */
      )
 {
-   Bool plausible, is_in_opd;
+   Bool plausible;
+#  if defined(VGP_ppc64_linux)
+   Bool is_in_opd;
+#  endif
    Bool in_text, in_data, in_sdata, in_rodata, in_bss, in_sbss;
 
    /* Set defaults */
@@ -365,7 +368,9 @@ Bool get_elf_symbol_info (
       See thread starting at
       http://gcc.gnu.org/ml/gcc-patches/2004-08/msg00557.html
    */
+#  if defined(VGP_ppc64_linux)
    is_in_opd = False;
+#  endif
 
    if (di->opd_present
        && di->opd_size > 0
@@ -644,7 +649,7 @@ void read_elf_symtab__ppc64_linux(
    Addr        sym_svma, sym_avma_really;
    Char       *sym_name, *sym_name_really;
    Int         sym_size;
-   Addr        sym_tocptr, old_tocptr;
+   Addr        sym_tocptr;
    Bool        from_opd, modify_size, modify_tocptr, is_text;
    DiSym       risym;
    ElfXX_Sym  *sym;
@@ -699,7 +704,6 @@ void read_elf_symtab__ppc64_linux(
             modify_size   = False;
             modify_tocptr = False;
             old_size   = 0;
-            old_tocptr = 0;
 
             if (prev->from_opd && !from_opd 
                 && (prev->size == 24 || prev->size == 16)
@@ -720,7 +724,6 @@ void read_elf_symtab__ppc64_linux(
                   shouldn't currently have an known TOC ptr. */
                vg_assert(prev->tocptr == 0);
                modify_tocptr = True;
-               old_tocptr = prev->tocptr;
                prev->tocptr = sym_tocptr;
             }
             else {

@@ -1006,7 +1006,8 @@ static void complainIfUndefined ( MCEnv* mce, IRAtom* atom )
             nargs = 0;
          }
          break;
-      default:
+      case 2:
+      case 16:
          if (origin) {
             fn    = &MC_(helperc_value_checkN_fail_w_o);
             nm    = "MC_(helperc_value_checkN_fail_w_o)";
@@ -1019,6 +1020,8 @@ static void complainIfUndefined ( MCEnv* mce, IRAtom* atom )
             nargs = 1;
          }
          break;
+      default:
+         VG_(tool_panic)("unexpected szB");
    }
 
    tl_assert(fn);
@@ -2921,10 +2924,6 @@ void do_shadow_Store ( MCEnv* mce,
 {
    IROp     mkAdd;
    IRType   ty, tyAddr;
-   IRDirty  *di, *diLo64, *diHi64;
-   IRAtom   *addrAct, *addrLo64, *addrHi64;
-   IRAtom   *vdataLo64, *vdataHi64;
-   IRAtom   *eBias, *eBiasLo64, *eBiasHi64;
    void*    helper = NULL;
    Char*    hname = NULL;
    IRConst* c;
@@ -2933,11 +2932,6 @@ void do_shadow_Store ( MCEnv* mce,
    mkAdd  = tyAddr==Ity_I32 ? Iop_Add32 : Iop_Add64;
    tl_assert( tyAddr == Ity_I32 || tyAddr == Ity_I64 );
    tl_assert( end == Iend_LE || end == Iend_BE );
-
-   di = diLo64 = diHi64 = NULL;
-   eBias = eBiasLo64 = eBiasHi64 = NULL;
-   addrAct = addrLo64 = addrHi64 = NULL;
-   vdataLo64 = vdataHi64 = NULL;
 
    if (data) {
       tl_assert(!vdata);
@@ -3016,7 +3010,12 @@ void do_shadow_Store ( MCEnv* mce,
       /* See comment in next clause re 64-bit regparms */
       /* also, need to be careful about endianness */
 
-      Int offLo64, offHi64;
+      Int     offLo64, offHi64;
+      IRDirty *diLo64, *diHi64;
+      IRAtom  *addrLo64, *addrHi64;
+      IRAtom  *vdataLo64, *vdataHi64;
+      IRAtom  *eBiasLo64, *eBiasHi64;
+
       if (end == Iend_LE) {
          offLo64 = 0;
          offHi64 = 8;
@@ -3048,12 +3047,15 @@ void do_shadow_Store ( MCEnv* mce,
 
    } else {
 
+      IRDirty *di;
+      IRAtom  *addrAct;
+
       /* 8/16/32/64-bit cases */
       /* Generate the actual address into addrAct. */
       if (bias == 0) {
          addrAct = addr;
       } else {
-         eBias   = tyAddr==Ity_I32 ? mkU32(bias) : mkU64(bias);
+         IRAtom* eBias   = tyAddr==Ity_I32 ? mkU32(bias) : mkU64(bias);
          addrAct = assignNew('V', mce, tyAddr, binop(mkAdd, addr, eBias));
       }
 
@@ -3099,9 +3101,9 @@ static IRType szToITy ( Int n )
 static
 void do_shadow_Dirty ( MCEnv* mce, IRDirty* d )
 {
-   Int       i, n, offset, toDo, gSz, gOff;
+   Int       i, n, toDo, gSz, gOff;
    IRAtom    *src, *here, *curr;
-   IRType    tyAddr, tySrc, tyDst;
+   IRType    tySrc, tyDst;
    IRTemp    dst;
    IREndness end;
 
@@ -3168,13 +3170,13 @@ void do_shadow_Dirty ( MCEnv* mce, IRDirty* d )
 
    /* Inputs: memory.  First set up some info needed regardless of
       whether we're doing reads or writes. */
-   tyAddr = Ity_INVALID;
 
    if (d->mFx != Ifx_None) {
       /* Because we may do multiple shadow loads/stores from the same
          base address, it's best to do a single test of its
          definedness right now.  Post-instrumentation optimisation
          should remove all but this test. */
+      IRType tyAddr;
       tl_assert(d->mAddr);
       complainIfUndefined(mce, d->mAddr);
 
@@ -3185,7 +3187,6 @@ void do_shadow_Dirty ( MCEnv* mce, IRDirty* d )
 
    /* Deal with memory inputs (reads or modifies) */
    if (d->mFx == Ifx_Read || d->mFx == Ifx_Modify) {
-      offset = 0;
       toDo   = d->mSize;
       /* chew off 32-bit chunks.  We don't care about the endianness
          since it's all going to be condensed down to a single bit,
@@ -3255,7 +3256,6 @@ void do_shadow_Dirty ( MCEnv* mce, IRDirty* d )
    /* Outputs: memory that we write or modify.  Same comments about
       endianness as above apply. */
    if (d->mFx == Ifx_Write || d->mFx == Ifx_Modify) {
-      offset = 0;
       toDo   = d->mSize;
       /* chew off 32-bit chunks */
       while (toDo >= 4) {
@@ -4081,19 +4081,9 @@ static IRAtom* schemeE ( MCEnv* mce, IRExpr* e )
 static void do_origins_Dirty ( MCEnv* mce, IRDirty* d )
 {
    // This is a hacked version of do_shadow_Dirty
-   Int       i, n, offset, toDo, gSz, gOff;
+   Int       i, n, toDo, gSz, gOff;
    IRAtom    *here, *curr;
    IRTemp    dst;
-   IREndness end;
-
-   /* What's the native endianness?  We need to know this. */
-#  if defined(VG_BIGENDIAN)
-   end = Iend_BE;
-#  elif defined(VG_LITTLEENDIAN)
-   end = Iend_LE;
-#  else
-#    error "Unknown endianness"
-#  endif
 
    /* First check the guard. */
    curr = schemeE( mce, d->guard );
@@ -4164,7 +4154,6 @@ static void do_origins_Dirty ( MCEnv* mce, IRDirty* d )
 
    /* Deal with memory inputs (reads or modifies) */
    if (d->mFx == Ifx_Read || d->mFx == Ifx_Modify) {
-      offset = 0;
       toDo   = d->mSize;
       /* chew off 32-bit chunks.  We don't care about the endianness
          since it's all going to be condensed down to a single bit,
@@ -4228,7 +4217,6 @@ static void do_origins_Dirty ( MCEnv* mce, IRDirty* d )
    /* Outputs: memory that we write or modify.  Same comments about
       endianness as above apply. */
    if (d->mFx == Ifx_Write || d->mFx == Ifx_Modify) {
-      offset = 0;
       toDo   = d->mSize;
       /* chew off 32-bit chunks */
       while (toDo >= 4) {
@@ -4242,7 +4230,6 @@ static void do_origins_Dirty ( MCEnv* mce, IRDirty* d )
       }
       tl_assert(toDo == 0); /* also need to handle 1-byte excess */
    }
-
 }
 
 static void schemeS ( MCEnv* mce, IRStmt* st )

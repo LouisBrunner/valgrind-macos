@@ -883,7 +883,7 @@ void read_dwarf2_lineblock ( struct _DebugInfo* di,
             break;
 
          case DW_LNS_set_isa:
-            adv = read_leb128 (data, & bytes_read, 0);
+            /*adv =*/ read_leb128 (data, & bytes_read, 0);
             data += bytes_read;
             if (di->ddump_line)
                VG_(printf)("  DWARF2-line: set_isa\n");
@@ -2915,7 +2915,7 @@ static Int run_CF_instruction ( /*MOD*/UnwindContext* ctx,
       case DW_CFA_GNU_args_size:
          /* No idea what is supposed to happen.  gdb-6.3 simply
             ignores these. */
-         off = read_leb128( &instr[i], &nleb, 0 );
+         /*off = */ read_leb128( &instr[i], &nleb, 0 );
          i += nleb;
          if (di->ddump_frames)
             VG_(printf)("  rci:DW_CFA_GNU_args_size (ignored)\n");

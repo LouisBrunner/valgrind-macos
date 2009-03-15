@@ -179,6 +179,10 @@ static void load_client ( /*OUT*/ExeInfo* info,
 
    VG_(memset)(info, 0, sizeof(*info));
    ret = VG_(do_exec)(exe_name, info);
+   if (ret < 0) {
+      VG_(printf)("valgrind: could not execute '%s'\n", exe_name);
+      VG_(exit)(1);
+   }
 
    // The client was successfully loaded!  Continue.
 
@@ -240,6 +244,8 @@ static HChar** setup_client_env ( HChar** origenv, const HChar* toolname)
    Int preload_string_len    = preload_core_path_len + preload_tool_path_len;
    HChar* preload_string     = VG_(malloc)("initimg-linux.sce.1",
                                            preload_string_len);
+   vg_assert(origenv);
+   vg_assert(toolname);
    vg_assert(preload_string);
 
    /* Determine if there's a vgpreload_<tool>_<platform>.so file, and setup

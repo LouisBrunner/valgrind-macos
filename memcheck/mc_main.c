@@ -1158,7 +1158,7 @@ ULong mc_LOADVn_slow ( Addr a, SizeT nBits, Bool bigendian )
       least. */
    ULong vbits64     = V_BITS64_UNDEFINED;
    SizeT szB         = nBits / 8;
-   SSizeT i          = szB-1;    // Must be signed
+   SSizeT i;                        // Must be signed.
    SizeT n_addrs_bad = 0;
    Addr  ai;
    Bool  partial_load_exemption_applies;
@@ -1493,6 +1493,7 @@ static void set_address_range_perms ( Addr a, SizeT lenT, UWord vabits16,
   part2:
    // 64KB-aligned, 64KB steps.
    // Nb: we can reach here with lenB < SM_SIZE
+   tl_assert(0 == lenA);
    while (True) {
       if (lenB < SM_SIZE) break;
       tl_assert(is_start_of_sm(a));
@@ -5441,7 +5442,7 @@ static void ocache_sarp_Set_Origins ( Addr a, UWord len, UInt otag ) {
    }
    if (len >= 1) {
       MC_(helperc_b_store1)( a, otag );
-      a++;
+      //a++;
       len--;
    }
    tl_assert(len == 0);
@@ -5473,7 +5474,7 @@ static void ocache_sarp_Clear_Origins ( Addr a, UWord len ) {
    }
    if (len >= 1) {
       MC_(helperc_b_store1)( a, 0 );
-      a++;
+      //a++;
       len--;
    }
    tl_assert(len == 0);

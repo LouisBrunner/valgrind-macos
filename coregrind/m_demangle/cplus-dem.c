@@ -1295,7 +1295,7 @@ demangle_signature (struct work_stuff *work,
 	  break;
 
         case 'K':
-	  oldmangled = *mangled;
+	  //oldmangled = *mangled;
 	  success = demangle_qualified (work, mangled, declp, 1, 0);
 	  if (AUTO_DEMANGLING || GNU_DEMANGLING)
 	    {

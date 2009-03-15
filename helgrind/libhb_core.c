@@ -1724,7 +1724,6 @@ VTS* VTS__join ( VTS* a, VTS* b )
    ULong    tyma, tymb, tymMax;
    Thr*     thr;
    VTS*     res;
-   ScalarTS *tmpa, *tmpb;
 
    tl_assert(a && a->ts);
    tl_assert(b && b->ts);
@@ -1742,43 +1741,38 @@ VTS* VTS__join ( VTS* a, VTS* b )
          scalar timestamps, taking into account implicit zeroes. */
       tl_assert(ia >= 0 && ia <= useda);
       tl_assert(ib >= 0 && ib <= usedb);
-      tmpa = tmpb = NULL;
 
-      if (ia == useda && ib == usedb) {
+      if        (ia == useda && ib == usedb) {
          /* both empty - done */
          break;
-      }
-      else
-      if (ia == useda && ib != usedb) {
+
+      } else if (ia == useda && ib != usedb) {
          /* a empty, use up b */
-         tmpb = VG_(indexXA)( b->ts, ib );
+         ScalarTS* tmpb = VG_(indexXA)( b->ts, ib );
          thr  = tmpb->thr;
          tyma = 0;
          tymb = tmpb->tym;
          ib++;
-      }
-      else
-      if (ia != useda && ib == usedb) {
+
+      } else if (ia != useda && ib == usedb) {
          /* b empty, use up a */
-         tmpa = VG_(indexXA)( a->ts, ia );
+         ScalarTS* tmpa = VG_(indexXA)( a->ts, ia );
          thr  = tmpa->thr;
          tyma = tmpa->tym;
          tymb = 0;
          ia++;
-      }
-      else {
+
+      } else {
          /* both not empty; extract lowest-Thr*'d triple */
-         tmpa = VG_(indexXA)( a->ts, ia );
-         tmpb = VG_(indexXA)( b->ts, ib );
+         ScalarTS* tmpa = VG_(indexXA)( a->ts, ia );
+         ScalarTS* tmpb = VG_(indexXA)( b->ts, ib );
          if (tmpa->thr < tmpb->thr) {
             /* a has the lowest unconsidered Thr* */
             thr  = tmpa->thr;
             tyma = tmpa->tym;
             tymb = 0;
             ia++;
-         }
-         else
-         if (tmpa->thr > tmpb->thr) {
+         } else if (tmpa->thr > tmpb->thr) {
             /* b has the lowest unconsidered Thr* */
             thr  = tmpb->thr;
             tyma = 0;
@@ -1819,8 +1813,6 @@ POrd VTS__cmp ( VTS* a, VTS* b )
 {
    Word     ia, ib, useda, usedb;
    ULong    tyma, tymb;
-   Thr*     thr;
-   ScalarTS *tmpa, *tmpb;
 
    Bool all_leq = True;
    Bool all_geq = True;
@@ -1834,43 +1826,36 @@ POrd VTS__cmp ( VTS* a, VTS* b )
 
    while (1) {
 
-      /* This logic is to enumerate triples (thr, tyma, tymb) drawn
-         from a and b in order, where thr is the next Thr*
-         occurring in either a or b, and tyma/b are the relevant
+      /* This logic is to enumerate doubles (tyma, tymb) drawn
+         from a and b in order, and tyma/b are the relevant
          scalar timestamps, taking into account implicit zeroes. */
       tl_assert(ia >= 0 && ia <= useda);
       tl_assert(ib >= 0 && ib <= usedb);
-      tmpa = tmpb = NULL;
 
-      if (ia == useda && ib == usedb) {
+      if        (ia == useda && ib == usedb) {
          /* both empty - done */
          break;
-      }
-      else
-      if (ia == useda && ib != usedb) {
+
+      } else if (ia == useda && ib != usedb) {
          /* a empty, use up b */
-         tmpb = VG_(indexXA)( b->ts, ib );
-         thr  = tmpb->thr;
+         ScalarTS* tmpb = VG_(indexXA)( b->ts, ib );
          tyma = 0;
          tymb = tmpb->tym;
          ib++;
-      }
-      else
-      if (ia != useda && ib == usedb) {
+
+      } else if (ia != useda && ib == usedb) {
          /* b empty, use up a */
-         tmpa = VG_(indexXA)( a->ts, ia );
-         thr  = tmpa->thr;
+         ScalarTS* tmpa = VG_(indexXA)( a->ts, ia );
          tyma = tmpa->tym;
          tymb = 0;
          ia++;
-      }
-      else {
+
+      } else {
          /* both not empty; extract lowest-Thr*'d triple */
-         tmpa = VG_(indexXA)( a->ts, ia );
-         tmpb = VG_(indexXA)( b->ts, ib );
+         ScalarTS* tmpa = VG_(indexXA)( a->ts, ia );
+         ScalarTS* tmpb = VG_(indexXA)( b->ts, ib );
          if (tmpa->thr < tmpb->thr) {
             /* a has the lowest unconsidered Thr* */
-            thr  = tmpa->thr;
             tyma = tmpa->tym;
             tymb = 0;
             ia++;
@@ -1878,14 +1863,12 @@ POrd VTS__cmp ( VTS* a, VTS* b )
          else
          if (tmpa->thr > tmpb->thr) {
             /* b has the lowest unconsidered Thr* */
-            thr  = tmpb->thr;
             tyma = 0;
             tymb = tmpb->tym;
             ib++;
          } else {
             /* they both next mention the same Thr* */
             tl_assert(tmpa->thr == tmpb->thr);
-            thr  = tmpa->thr; /* == tmpb->thr */
             tyma = tmpa->tym;
             tymb = tmpb->tym;
             ia++;
@@ -1893,7 +1876,7 @@ POrd VTS__cmp ( VTS* a, VTS* b )
          }
       }
 
-      /* having laboriously determined (thr, tyma, tymb), do something
+      /* having laboriously determined (tyma, tymb), do something
          useful with it. */
       if (tyma < tymb)
          all_geq = False;
@@ -4002,7 +3985,8 @@ void zsm_apply32___msm_write ( Thr* thr, Addr a ) {
 
 void zsm_apply64___msm_read ( Thr* thr, Addr a ) {
    CacheLine* cl; 
-   UWord      cloff, tno, toff;
+   UWord      cloff, tno;
+   //UWord      toff;
    SVal       svOld, svNew;
    UShort     descr;
    stats__cline_read64s++;
@@ -4010,7 +3994,7 @@ void zsm_apply64___msm_read ( Thr* thr, Addr a ) {
    cl    = get_cacheline(a);
    cloff = get_cacheline_offset(a);
    tno   = get_treeno(a);
-   toff  = get_tree_offset(a); /* == 0, unused */
+   //toff  = get_tree_offset(a); /* == 0, unused */
    descr = cl->descrs[tno];
    if (UNLIKELY( !(descr & TREE_DESCR_64) )) {
       goto slowcase;
@@ -4028,7 +4012,8 @@ void zsm_apply64___msm_read ( Thr* thr, Addr a ) {
 
 void zsm_apply64___msm_write ( Thr* thr, Addr a ) {
    CacheLine* cl; 
-   UWord      cloff, tno, toff;
+   UWord      cloff, tno;
+   //UWord      toff;
    SVal       svOld, svNew;
    UShort     descr;
    stats__cline_read64s++;
@@ -4036,7 +4021,7 @@ void zsm_apply64___msm_write ( Thr* thr, Addr a ) {
    cl    = get_cacheline(a);
    cloff = get_cacheline_offset(a);
    tno   = get_treeno(a);
-   toff  = get_tree_offset(a); /* == 0, unused */
+   //toff  = get_tree_offset(a); /* == 0, unused */
    descr = cl->descrs[tno];
    if (UNLIKELY( !(descr & TREE_DESCR_64) )) {
       goto slowcase;
@@ -4162,13 +4147,14 @@ void zsm_write32 ( Addr a, SVal svNew ) {
 static
 void zsm_write64 ( Addr a, SVal svNew ) {
    CacheLine* cl; 
-   UWord      cloff, tno, toff;
+   UWord      cloff, tno;
+   //UWord    toff;
    stats__cline_set64s++;
    if (UNLIKELY(!aligned64(a))) goto slowcase;
    cl    = get_cacheline(a);
    cloff = get_cacheline_offset(a);
    tno   = get_treeno(a);
-   toff  = get_tree_offset(a); /* == 0 */
+   //toff  = get_tree_offset(a); /* == 0, unused */
    cl->descrs[tno] = TREE_DESCR_64;
    tl_assert(svNew != SVal_INVALID);
    cl->svals[cloff + 0] = svNew;
@@ -4286,7 +4272,7 @@ void zsm_apply_range___msm_read ( Thr* thr,
 
    if (len >= 1) {
       zsm_apply8___msm_read( thr, a );
-      a += 1;
+      //a += 1;
       len -= 1;
    }
    tl_assert(len == 0);
@@ -4365,7 +4351,7 @@ void zsm_apply_range___msm_write ( Thr* thr,
 
    if (len >= 1) {
       zsm_apply8___msm_write( thr, a );
-      a += 1;
+      //a += 1;
       len -= 1;
    }
    tl_assert(len == 0);
@@ -4475,7 +4461,7 @@ void zsm_set_range_SMALL ( Addr a, SizeT len, SVal svNew )
 
    if (len >= 1) {
       zsm_write8( a, svNew );
-      a += 1;
+      //a += 1;
       len -= 1;
    }
    tl_assert(len == 0);

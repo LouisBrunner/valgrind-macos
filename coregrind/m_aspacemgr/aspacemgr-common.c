@@ -50,6 +50,7 @@
 // Simple assert and assert-like fns, which avoid dependence on
 // m_libcassert, and hence on the entire debug-info reader swamp
 
+__attribute__ ((noreturn))
 void ML_(am_exit)( Int status )
 {
 #  if defined(VGO_linux)

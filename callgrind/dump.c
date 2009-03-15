@@ -185,19 +185,19 @@ static void my_fwrite(Int fd, Char* buf, Int len)
 
 static void print_obj(Char* buf, obj_node* obj)
 {
-    int n;
+    //int n;
 
     if (CLG_(clo).compress_strings) {
 	CLG_ASSERT(obj_dumped != 0);
 	if (obj_dumped[obj->number])
-	    n = VG_(sprintf)(buf, "(%d)\n", obj->number);
+	    /*n =*/ VG_(sprintf)(buf, "(%d)\n", obj->number);
 	else {
-	    n = VG_(sprintf)(buf, "(%d) %s\n",
+	    /*n =*/ VG_(sprintf)(buf, "(%d) %s\n",
 			     obj->number, obj->name);
 	}
     }
     else
-	n = VG_(sprintf)(buf, "%s\n", obj->name);
+	/*n =*/ VG_(sprintf)(buf, "%s\n", obj->name);
 
 #if 0
     /* add mapping parameters the first time a object is dumped
@@ -1296,7 +1296,7 @@ static int new_dumpfile(Char buf[BUF_LEN], int tid, Char* trigger)
 	    i += VG_(sprintf)(filename+i, ".%d", out_counter);
 
 	if (CLG_(clo).separate_threads)
-	    i += VG_(sprintf)(filename+i, "-%02d", tid);
+	    VG_(sprintf)(filename+i, "-%02d", tid);
 
 	res = VG_(open)(filename, VKI_O_WRONLY|VKI_O_TRUNC, 0);
     }

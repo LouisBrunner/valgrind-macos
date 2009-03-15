@@ -63,10 +63,12 @@
    This is important since most of the system itself depends on
    aspacem, so we have to do this to avoid a circular dependency. */
 
+__attribute__ ((noreturn))
 extern void   ML_(am_exit) ( Int status );
 extern void   ML_(am_barf) ( HChar* what );
 extern void   ML_(am_barf_toolow) ( HChar* what );
 
+__attribute__ ((noreturn))
 extern void   ML_(am_assert_fail) ( const HChar* expr,
                                     const Char* file,
                                     Int line, 

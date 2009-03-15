@@ -602,6 +602,7 @@ void ensure_mm_init ( ArenaId aid )
 /*--- Superblock management                                ---*/
 /*------------------------------------------------------------*/
 
+__attribute__((noreturn))
 void VG_(out_of_memory_NORETURN) ( HChar* who, SizeT szB )
 {
    static Bool alreadyCrashing = False;

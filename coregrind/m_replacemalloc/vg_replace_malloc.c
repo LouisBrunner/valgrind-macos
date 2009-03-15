@@ -66,6 +66,7 @@
    executable too.
 */
 
+__attribute__ ((__noreturn__))
 extern void _exit(int);
 
 /* Apparently it is necessary to make ourselves free of any dependency

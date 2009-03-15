@@ -411,10 +411,8 @@ static void pp_admin_threads ( Int d )
 
 static void pp_map_threads ( Int d )
 {
-   Int i, n;
-   n = 0;
+   Int i, n = 0;
    space(d); VG_(printf)("map_threads ");
-   n = 0;
    for (i = 0; i < VG_N_THREADS; i++) {
       if (map_threads[i] != NULL)
          n++;

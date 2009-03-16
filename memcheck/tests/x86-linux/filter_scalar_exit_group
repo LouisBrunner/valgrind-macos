@@ -1,0 +1,12 @@
+#! /bin/sh
+
+# ../filter_stderr replaces exit_group() with exit().  We don't want that in
+# this case, so we temporariliy transform exit_group() to EXIT_GROUP() to
+# avoid it, then transform back.
+
+perl -p -e "s/exit_group/EXIT_GROUP/" |
+
+../filter_stderr |
+
+perl -p -e "s/EXIT_GROUP/exit_group/"
+

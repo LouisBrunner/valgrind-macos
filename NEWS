@@ -15,6 +15,29 @@ Release 3.5.0 (???)
     are directly pointed to by a start-pointer, were previously marked as
     "still reachable".  They are now correctly marked as "possibly lost".
 
+* The format of some (non-XML) stack trace entries has changed a little.
+  Previously there were six possible forms:
+
+    0x80483BF: really (a.c:20)
+    0x80483BF: really (in /foo/a.out)
+    0x80483BF: really
+    0x80483BF: (within /foo/a.out)
+    0x80483BF: ??? (a.c:20)
+    0x80483BF: ???
+
+  The third and fourth of these forms have been made more consistent with
+  the others.  The six possible forms are now:
+  
+    0x80483BF: really (a.c:20)
+    0x80483BF: really (in /foo/a.out)
+    0x80483BF: really (in ???)
+    0x80483BF: ??? (in /foo/a.out)
+    0x80483BF: ??? (a.c:20)
+    0x80483BF: ???
+
+  Stack traces produced when --xml=yes is specified are different and
+  unchanged.
+
 * The location of some install files has changed.  This should not affect
   most users.  Those who might be affected:
 

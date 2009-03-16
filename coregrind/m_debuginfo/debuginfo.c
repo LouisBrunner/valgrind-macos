@@ -1605,19 +1605,20 @@ Char* VG_(describe_IP)(Addr eip, Char* buf, Int n_buf)
    } else {
 
       /* Print for humans to read */
+      //
+      // Possible forms:
+      //
+      //   0x80483BF: really (a.c:20)
+      //   0x80483BF: really (in /foo/a.out)
+      //   0x80483BF: really (in ???)
+      //   0x80483BF: ??? (in /foo/a.out)
+      //   0x80483BF: ??? (a.c:20)
+      //   0x80483BF: ???
+      //
       VG_(sprintf)(ibuf,"0x%llX: ", (ULong)eip);
       APPEND(ibuf);
-      if (know_fnname) { 
+      if (know_fnname) {
          APPEND(buf_fn);
-         if (!know_srcloc && know_objname) {
-            APPEND(" (in ");
-            APPEND(buf_obj);
-            APPEND(")");
-         }
-      } else if (know_objname && !know_srcloc) {
-         APPEND("(within ");
-         APPEND(buf_obj);
-         APPEND(")");
       } else {
          APPEND("???");
       }
@@ -1627,6 +1628,14 @@ Char* VG_(describe_IP)(Addr eip, Char* buf, Int n_buf)
          APPEND(":");
          VG_(sprintf)(ibuf,"%d",lineno);
          APPEND(ibuf);
+         APPEND(")");
+      } else if (know_objname) {
+         APPEND(" (in ");
+         APPEND(buf_obj);
+         APPEND(")");
+      } else if (know_fnname) {
+         // Nb: do this in two steps because "??)" is a trigraph!
+         APPEND(" (in ???");
          APPEND(")");
       }
 

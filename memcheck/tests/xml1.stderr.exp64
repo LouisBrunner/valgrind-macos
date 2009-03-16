@@ -341,7 +341,7 @@
   <unique>0x........</unique>
   <tid>...</tid>
   <kind>SyscallParam</kind>
-  <what>Syscall param exit_group(status) contains uninitialised byte(s)</what>
+  <what>Syscall param exit(status) contains uninitialised byte(s)</what>
 </error>
 
 <errorcounts>

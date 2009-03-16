@@ -1,7 +1,9 @@
 
 include $(top_srcdir)/Makefile.tool-tests.am
 
-noinst_SCRIPTS = filter_stderr
+noinst_SCRIPTS = \
+	filter_scalar_exit_group \
+	filter_stderr
 
 noinst_HEADERS = scalar.h
 

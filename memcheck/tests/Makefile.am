@@ -172,8 +172,7 @@ EXTRA_DIST = $(noinst_SCRIPTS) \
 	wrap8.vgtest wrap8.stdout.exp wrap8.stderr.exp \
 	wrap8.stdout.exp2 wrap8.stderr.exp2 \
 	writev.stderr.exp writev.vgtest \
-	xml1.stderr.exp xml1.stderr.exp2 \
-	xml1.stderr.exp64 xml1.stdout.exp \
+	xml1.stderr.exp32 xml1.stderr.exp64 xml1.stdout.exp \
 	xml1.vgtest
 
 check_PROGRAMS = \

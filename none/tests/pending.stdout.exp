@@ -1,7 +1,7 @@
 1: sending signal
 2: sleeping
 3: unblocking
-4: got signal 10
+4: got signal SIGUSR1
 5: unblocked...
 6: checking SIGUSR2 still pending...
 OK

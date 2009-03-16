@@ -10,13 +10,15 @@
 #include <stdio.h>
 #include <unistd.h>
 #include <stdlib.h>
+#include "config.h"
 
 static volatile int gotsig = 0;
 static volatile int early = 1;
 
 static void handler(int sig)
 {
-	printf("4: got signal %d\n", sig);
+	printf("4: got signal %s\n",
+		( sig == SIGUSR1 ? "SIGUSR1" : "unexpected signal" ));
 
 	if (sig != SIGUSR1) {
 		fprintf(stderr, "FAILED: got signal %d instead\n", sig);
@@ -35,7 +37,6 @@ int main()
 {
 	sigset_t all;
 	sigset_t sigusr1;
-	siginfo_t info;
 	
 	sigfillset(&all);
 	sigemptyset(&sigusr1);
@@ -69,15 +70,20 @@ int main()
 	}
 
 	printf("6: checking SIGUSR2 still pending...\n");
-	if (sigwaitinfo(&all, &info) == -1) {
-		perror("FAILED: sigwaitinfo failed");
-		return 1;
+#	if HAVE_SIGWAITINFO
+	{
+		siginfo_t info;
+		if (sigwaitinfo(&all, &info) == -1) {
+			perror("FAILED: sigwaitinfo failed");
+			return 1;
+		}
+		if (info.si_signo != SIGUSR2) {
+			fprintf(stderr, "FAILED: SIGUSR2 not still pending; got signal %d\n", 
+				info.si_signo);
+			return 1;
+		}
 	}
-	if (info.si_signo != SIGUSR2) {
-		fprintf(stderr, "FAILED: SIGUSR2 not still pending; got signal %d\n", 
-			info.si_signo);
-		return 1;
-	}
+#	endif
 
 	printf("OK\n");
 	return 0;

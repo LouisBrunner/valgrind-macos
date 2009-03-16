@@ -1381,6 +1381,7 @@ AC_CHECK_FUNCS([     \
         pthread_spin_lock          \
         semtimedop   \
         signalfd     \
+        sigwaitinfo  \
         syscall      \
         strchr       \
         strdup       \

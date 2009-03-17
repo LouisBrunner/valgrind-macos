@@ -45,11 +45,11 @@ int main()
 	sigprocmask(SIG_BLOCK, &all, NULL);
 
 	signal(SIGUSR1, handler);
-	signal(SIGUSR2, handler);
+	signal(SIGHUP,  handler);
 
 	printf("1: sending signal\n");
 	kill(getpid(), SIGUSR1);
-	kill(getpid(), SIGUSR2);
+	kill(getpid(), SIGHUP);
 
 	printf("2: sleeping\n");
 	sleep(1);
@@ -69,7 +69,7 @@ int main()
 		return 1;
 	}
 
-	printf("6: checking SIGUSR2 still pending...\n");
+	printf("6: checking SIGHUP still pending...\n");
 #	if HAVE_SIGWAITINFO
 	{
 		siginfo_t info;
@@ -77,8 +77,8 @@ int main()
 			perror("FAILED: sigwaitinfo failed");
 			return 1;
 		}
-		if (info.si_signo != SIGUSR2) {
-			fprintf(stderr, "FAILED: SIGUSR2 not still pending; got signal %d\n", 
+		if (info.si_signo != SIGHUP) {
+			fprintf(stderr, "FAILED: SIGHUP not still pending; got signal %d\n", 
 				info.si_signo);
 			return 1;
 		}

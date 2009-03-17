@@ -1853,7 +1853,7 @@ Char* VG_(strdup) ( HChar* cc, const Char* s )
 // Useful for querying user blocks.           
 SizeT VG_(malloc_usable_size) ( void* p )                    
 {                                                            
-   return VG_(arena_malloc_usable_size)(VG_AR_CLIENT, p);    
+   return VG_(arena_malloc_usable_size)(VG_AR_CLIENT, p);
 }                                                            
   
 

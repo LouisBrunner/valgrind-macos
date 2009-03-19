@@ -228,9 +228,10 @@ typedef
       /* 964 */ UInt guest_REDIR_SP;
       /* 968 */ UInt guest_REDIR_STACK[VEX_GUEST_PPC32_REDIR_STACK_SIZE];
 
-      /* Needed for AIX: CIA at the last SC insn.  Used when backing up
-         to restart a syscall that has been interrupted by a signal. */
-      /* ??? */ UInt guest_CIA_AT_SC; 
+      /* Needed for AIX (but mandated for all guest architectures):
+         CIA at the last SC insn.  Used when backing up to restart a
+         syscall that has been interrupted by a signal. */
+      /* ??? */ UInt guest_IP_AT_SYSCALL; 
 
       /* SPRG3, which AIUI is readonly in user space.  Needed for
          threading on AIX. */

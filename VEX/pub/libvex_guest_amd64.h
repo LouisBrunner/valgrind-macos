@@ -161,6 +161,12 @@ typedef
          of the %fs-zero hack for amd64-linux). */
       ULong guest_GS_0x60;
 
+      /* Needed for Darwin (but mandated for all guest architectures):
+         RIP at the last syscall insn (int 0x80/81/82, sysenter,
+         syscall).  Used when backing up to restart a syscall that has
+         been interrupted by a signal. */
+      ULong guest_IP_AT_SYSCALL;
+
       /* Padding to make it have an 16-aligned size */
       ULong padding;
    }

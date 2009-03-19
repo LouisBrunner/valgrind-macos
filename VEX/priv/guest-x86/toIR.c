@@ -254,6 +254,8 @@ static IRSB* irsb;
 #define OFFB_TILEN     offsetof(VexGuestX86State,guest_TILEN)
 #define OFFB_NRADDR    offsetof(VexGuestX86State,guest_NRADDR)
 
+#define OFFB_IP_AT_SYSCALL offsetof(VexGuestX86State,guest_IP_AT_SYSCALL)
+
 
 /*------------------------------------------------------------*/
 /*--- Helper bits and pieces for deconstructing the        ---*/
@@ -12592,20 +12594,28 @@ DisResult disInstr_X86_WRK (
       }
 
       /* Handle int $0x80 (linux syscalls), int $0x81 and $0x82
-         (darwin syscalls). */
+         (darwin syscalls).  As part of this, note where we are, so we
+         can back up the guest to this point if the syscall needs to
+         be restarted. */
       if (d32 == 0x80) {
+         stmt( IRStmt_Put( OFFB_IP_AT_SYSCALL,
+                           mkU32(guest_EIP_curr_instr) ) );
          jmp_lit(Ijk_Sys_int128,((Addr32)guest_EIP_bbstart)+delta);
          dres.whatNext = Dis_StopHere;
          DIP("int $0x80\n");
          break;
       }
       if (d32 == 0x81) {
+         stmt( IRStmt_Put( OFFB_IP_AT_SYSCALL,
+                           mkU32(guest_EIP_curr_instr) ) );
          jmp_lit(Ijk_Sys_int129,((Addr32)guest_EIP_bbstart)+delta);
          dres.whatNext = Dis_StopHere;
          DIP("int $0x81\n");
          break;
       }
       if (d32 == 0x82) {
+         stmt( IRStmt_Put( OFFB_IP_AT_SYSCALL,
+                           mkU32(guest_EIP_curr_instr) ) );
          jmp_lit(Ijk_Sys_int130,((Addr32)guest_EIP_bbstart)+delta);
          dres.whatNext = Dis_StopHere;
          DIP("int $0x82\n");
@@ -14275,7 +14285,12 @@ DisResult disInstr_X86_WRK (
             before resuming execution.  If that doesn't happen, the
             thread will jump to address zero, which is probably
             fatal. 
-         */ 
+         */
+
+         /* Note where we are, so we can back up the guest to this
+            point if the syscall needs to be restarted. */
+         stmt( IRStmt_Put( OFFB_IP_AT_SYSCALL,
+                           mkU32(guest_EIP_curr_instr) ) );
          jmp_lit(Ijk_Sys_sysenter, 0/*bogus next EIP value*/);
          dres.whatNext = Dis_StopHere;
          DIP("sysenter");

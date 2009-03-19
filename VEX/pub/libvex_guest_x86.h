@@ -223,8 +223,16 @@ typedef
       /* Used for Darwin syscall dispatching. */
       UInt guest_SC_CLASS;
 
+      /* Needed for Darwin (but mandated for all guest architectures):
+         EIP at the last syscall insn (int 0x80/81/82, sysenter,
+         syscall).  Used when backing up to restart a syscall that has
+         been interrupted by a signal. */
+      UInt guest_IP_AT_SYSCALL;
+
       /* Padding to make it have an 16-aligned size */
-      /* UInt padding; */
+      UInt padding1;
+      UInt padding2;
+      UInt padding3;
    }
    VexGuestX86State;
 

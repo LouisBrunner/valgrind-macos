@@ -329,7 +329,7 @@ extern void LibVEX_ShowAllocStats ( void );
 
 /* The max number of guest state chunks which we can describe as
    always defined (for the benefit of Memcheck). */
-#define VEXGLO_N_ALWAYSDEFD  22
+#define VEXGLO_N_ALWAYSDEFD  24
 
 typedef
    struct {

@@ -13259,7 +13259,7 @@ DisResult disInstr_AMD64_WRK (
                                      nameMMXReg(eregLO3ofRM(modrm)),
                                      nameMMXReg(gregLO3ofRM(modrm)));
       } else {
-         addr = disAMode ( &alen, vbi, pfx, delta+3, dis_buf, 0 );
+         addr = disAMode ( &alen, vbi, pfx, delta+3, dis_buf, 1 );
          assign( sV, loadLE(Ity_I64, mkexpr(addr)) );
          d64 = (Long)insn[3+alen];
          delta += 3+alen+1;
@@ -13318,7 +13318,7 @@ DisResult disInstr_AMD64_WRK (
                                     nameXMMReg(eregOfRexRM(pfx,modrm)),
                                     nameXMMReg(gregOfRexRM(pfx,modrm)));
       } else {
-         addr = disAMode ( &alen, vbi, pfx, delta+3, dis_buf, 0 );
+         addr = disAMode ( &alen, vbi, pfx, delta+3, dis_buf, 1 );
          gen_SEGV_if_not_16_aligned( addr );
          assign( sV, loadLE(Ity_V128, mkexpr(addr)) );
          d64 = (Long)insn[3+alen];

@@ -2316,7 +2316,7 @@ void LibVEX_GuestAMD64_initialise ( /*OUT*/VexGuestAMD64State* vex_state )
    vex_state->guest_GS_0x60  = 0;
 
    vex_state->guest_IP_AT_SYSCALL = 0;
-   vex_state->padding = 0;
+   /* vex_state->padding = 0; */
 }
 
 

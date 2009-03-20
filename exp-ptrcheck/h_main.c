@@ -1533,7 +1533,7 @@ static void get_IntRegInfo ( /*OUT*/IntRegInfo* iii, Int offset, Int szB )
    if (o == GOF(LR)        && is4) goto exactly1;
    if (o == GOF(CTR)       && is4) goto exactly1;
    if (o == GOF(CIA)       && is4) goto none;
-   if (o == GOF(CIA_AT_SC) && is4) goto none;
+   if (o == GOF(IP_AT_SYSCALL) && is4) goto none;
    if (o == GOF(RESVN)     && is4) goto none;
    if (o == GOF(TISTART)   && is4) goto none;
    if (o == GOF(TILEN)     && is4) goto none;
@@ -1697,7 +1697,7 @@ static void get_IntRegInfo ( /*OUT*/IntRegInfo* iii, Int offset, Int szB )
    if (o == GOF(LR)        && is8) goto exactly1;
    if (o == GOF(CTR)       && is8) goto exactly1;
    if (o == GOF(CIA)       && is8) goto none;
-   if (o == GOF(CIA_AT_SC) && is8) goto none;
+   if (o == GOF(IP_AT_SYSCALL) && is8) goto none;
    if (o == GOF(RESVN)     && is8) goto none;
    if (o == GOF(TISTART)   && is8) goto none;
    if (o == GOF(TILEN)     && is8) goto none;

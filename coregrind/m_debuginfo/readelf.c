@@ -206,6 +206,7 @@ Bool get_elf_symbol_info (
         ElfXX_Sym* sym,        /* ELF symbol */
         Char*      sym_name,   /* name */
         Addr       sym_svma,   /* address as stated in the object file */
+        Bool       symtab_in_debug, /* symbol table is in the debug file */
         UChar*     opd_img,    /* oimage of .opd sec (ppc64-linux only) */
         PtrdiffT   opd_bias,   /* for biasing AVMAs found in .opd */
         /* OUTPUTS */
@@ -224,6 +225,8 @@ Bool get_elf_symbol_info (
    Bool is_in_opd;
 #  endif
    Bool in_text, in_data, in_sdata, in_rodata, in_bss, in_sbss;
+   Addr text_svma, data_svma, sdata_svma, rodata_svma, bss_svma, sbss_svma;
+   PtrdiffT text_bias, data_bias, sdata_bias, rodata_bias, bss_bias, sbss_bias;
 
    /* Set defaults */
    *sym_name_out   = sym_name;
@@ -245,67 +248,85 @@ Bool get_elf_symbol_info (
          || ELFXX_ST_TYPE(sym->st_info) == STT_OBJECT
         );
 
-   /* Now bias sym_avma_out accordingly */
-#if 0
-   /* This works, but seems a bit crude */
-   if (ELFXX_ST_TYPE(sym->st_info) == STT_OBJECT) {
-      *is_text_out = False;
-      *sym_avma_out += di->data_bias;
+   /* Work out the svma and bias for each section as it will appear in
+      addresses in the symbol table. */
+   if (symtab_in_debug) {
+      text_svma = di->text_debug_svma;
+      text_bias = di->text_debug_bias;
+      data_svma = di->data_debug_svma;
+      data_bias = di->data_debug_bias;
+      sdata_svma = di->sdata_debug_svma;
+      sdata_bias = di->sdata_debug_bias;
+      rodata_svma = di->rodata_debug_svma;
+      rodata_bias = di->rodata_debug_bias;
+      bss_svma = di->bss_debug_svma;
+      bss_bias = di->bss_debug_bias;
+      sbss_svma = di->sbss_debug_svma;
+      sbss_bias = di->sbss_debug_bias;
    } else {
-      *is_text_out = True;
-      *sym_avma_out += di->text_bias;
+      text_svma = di->text_svma;
+      text_bias = di->text_bias;
+      data_svma = di->data_svma;
+      data_bias = di->data_bias;
+      sdata_svma = di->sdata_svma;
+      sdata_bias = di->sdata_bias;
+      rodata_svma = di->rodata_svma;
+      rodata_bias = di->rodata_bias;
+      bss_svma = di->bss_svma;
+      bss_bias = di->bss_bias;
+      sbss_svma = di->sbss_svma;
+      sbss_bias = di->sbss_bias;
    }
-#else
-   /* Try to figure out exactly which section the symbol is from and
-      bias accordingly.  Screws up if the previously deduced section
-      svma address ranges are wrong. */
+
+   /* Now bias sym_avma_out accordingly by figuring out exactly which
+      section the symbol is from and bias accordingly.  Screws up if
+      the previously deduced section svma address ranges are wrong. */
    if (di->text_present
        && di->text_size > 0
-       && sym_svma >= di->text_svma 
-       && sym_svma < di->text_svma + di->text_size) {
+       && sym_svma >= text_svma 
+       && sym_svma < text_svma + di->text_size) {
       *is_text_out = True;
-      *sym_avma_out += di->text_bias;
+      *sym_avma_out += text_bias;
    } else
    if (di->data_present
        && di->data_size > 0
-       && sym_svma >= di->data_svma 
-       && sym_svma < di->data_svma + di->data_size) {
+       && sym_svma >= data_svma 
+       && sym_svma < data_svma + di->data_size) {
       *is_text_out = False;
-      *sym_avma_out += di->data_bias;
+      *sym_avma_out += data_bias;
    } else
    if (di->sdata_present
        && di->sdata_size > 0
-       && sym_svma >= di->sdata_svma 
-       && sym_svma < di->sdata_svma + di->sdata_size) {
+       && sym_svma >= sdata_svma 
+       && sym_svma < sdata_svma + di->sdata_size) {
       *is_text_out = False;
-      *sym_avma_out += di->sdata_bias;
+      *sym_avma_out += sdata_bias;
    } else
    if (di->rodata_present
        && di->rodata_size > 0
-       && sym_svma >= di->rodata_svma 
-       && sym_svma < di->rodata_svma + di->rodata_size) {
+       && sym_svma >= rodata_svma 
+       && sym_svma < rodata_svma + di->rodata_size) {
       *is_text_out = False;
-      *sym_avma_out += di->rodata_bias;
+      *sym_avma_out += rodata_bias;
    } else
    if (di->bss_present
        && di->bss_size > 0
-       && sym_svma >= di->bss_svma 
-       && sym_svma < di->bss_svma + di->bss_size) {
+       && sym_svma >= bss_svma 
+       && sym_svma < bss_svma + di->bss_size) {
       *is_text_out = False;
-      *sym_avma_out += di->bss_bias;
+      *sym_avma_out += bss_bias;
    } else
    if (di->sbss_present
        && di->sbss_size > 0
-       && sym_svma >= di->sbss_svma 
-       && sym_svma < di->sbss_svma + di->sbss_size) {
+       && sym_svma >= sbss_svma 
+       && sym_svma < sbss_svma + di->sbss_size) {
       *is_text_out = False;
-      *sym_avma_out += di->sbss_bias;
+      *sym_avma_out += sbss_bias;
    } else {
       /* Assume it's in .text.  Is this a good idea? */
       *is_text_out = True;
-      *sym_avma_out += di->text_bias;
+      *sym_avma_out += text_bias;
    }
-#endif
 
 #  if defined(VGP_ppc64_linux)
    /* Allow STT_NOTYPE in the very special case where we're running on
@@ -522,7 +543,7 @@ Bool get_elf_symbol_info (
 #  if defined(VGP_ppc64_linux)
    /* It's crucial that we never add symbol addresses in the .opd
       section.  This would completely mess up function redirection and
-      intercepting.  This assert ensures that any symbols that make it
+      intercepting.  This assert ensures that anysymbols that make it
       into the symbol table on ppc64-linux don't point into .opd. */
    if (di->opd_present && di->opd_size > 0) {
       vg_assert(*sym_avma_out + *sym_size_out <= di->opd_avma
@@ -543,6 +564,7 @@ void read_elf_symtab__normal(
         struct _DebugInfo* di, UChar* tab_name,
         ElfXX_Sym* symtab_img, SizeT symtab_szB,
         UChar*     strtab_img, SizeT strtab_szB,
+        Bool       symtab_in_debug,
         UChar*     opd_img /* ppc64-linux only */ 
      )
 {
@@ -577,6 +599,7 @@ void read_elf_symtab__normal(
          show_raw_elf_symbol(i, sym, sym_name, sym_svma, False);
 
       if (get_elf_symbol_info(di, sym, sym_name, sym_svma,
+                              symtab_in_debug,
                               opd_img, di->text_bias,
                               &sym_name_really, 
                               &sym_avma_really,
@@ -641,6 +664,7 @@ void read_elf_symtab__ppc64_linux(
         struct _DebugInfo* di, UChar* tab_name,
         ElfXX_Sym* symtab_img, SizeT symtab_szB,
         UChar*     strtab_img, SizeT strtab_szB,
+        Bool       symtab_in_debug,
         UChar*     opd_img /* ppc64-linux only */ 
      )
 {
@@ -686,6 +710,7 @@ void read_elf_symtab__ppc64_linux(
          show_raw_elf_symbol(i, sym, sym_name, sym_svma, True);
 
       if (get_elf_symbol_info(di, sym, sym_name, sym_svma,
+                              symtab_in_debug,
                               opd_img, di->text_bias,
                               &sym_name_really, 
                               &sym_avma_really,
@@ -1934,21 +1959,24 @@ Bool ML_(read_elf_debug_info) ( struct _DebugInfo* di )
          void (*read_elf_symtab)(struct _DebugInfo*,UChar*,
                                  ElfXX_Sym*,SizeT,
                                  UChar*,SizeT,
-                                 UChar*);
+                                 Bool,UChar*);
+         Bool symtab_in_debug;
 #        if defined(VGP_ppc64_linux)
          read_elf_symtab = read_elf_symtab__ppc64_linux;
 #        else
          read_elf_symtab = read_elf_symtab__normal;
 #        endif
+         symtab_in_debug = (Addr)symtab_img >= dimage
+                           && (Addr)symtab_img < dimage + n_dimage;
          read_elf_symtab(di, "symbol table",
                          symtab_img, symtab_sz,
                          strtab_img, strtab_sz, 
-                         opd_img);
+                         symtab_in_debug, opd_img);
 
          read_elf_symtab(di, "dynamic symbol table",
                          dynsym_img, dynsym_sz,
                          dynstr_img, dynstr_sz, 
-                         opd_img);
+                         False, opd_img);
       }
 
       /* Read .eh_frame (call-frame-info) if any */

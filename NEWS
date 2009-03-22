@@ -55,6 +55,14 @@ Release 3.5.0 (???)
   Now, only default.supp is installed.  This should not affect users as the
   other installed suppression files were not read.
 
+n-i-bz DRD - race conditions between pthread_barrier_wait() and
+       pthread_barrier_destroy() calls are now reported.
+n-i-bz DRD - added "first observed at" information in error
+       messages related to synchronization objects.
+n-i-bz DRD - added new client request, VG_USERREQ__DRD_CLEAN_MEMORY.
+187048 DRD - the mutex attribute PTHREAD_PROCESS_SHARED is now
+       interpreted correctly.
+
 
 
 Release 3.4.1 (28 February 2009)

@@ -19,7 +19,6 @@ Data-race detection algorithm
   all operations on FILE objects and by associating mutex semantics with FILE objects. Verify
   that races on unsynchronized *_unlocked() operations are reported. Remove FILE-I/O suppression
   patterns from glibc-2.X-drd.supp. See also http://www.unix.org/whitepapers/reentrant.html.
-- Find out why drd/tests/pth_inconsistent_cond_wait sometimes fails on Fedora Core 6.
 
 
 Testing

@@ -1,3 +1,4 @@
+/* -*- mode: C; c-basic-offset: 3; -*- */
 /*
   This file is part of drd, a thread error detector.
 
@@ -138,10 +139,10 @@ typedef struct {
 } RwlockErrInfo;
 
 typedef struct {
-  Addr        synchronization_object;
-  ExeContext* acquired_at;
-  UInt        hold_time_ms;
-  UInt        threshold_ms;
+   Addr        synchronization_object;
+   ExeContext* acquired_at;
+   UInt        hold_time_ms;
+   UInt        threshold_ms;
 } HoldtimeErrInfo;
 
 typedef struct {

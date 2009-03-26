@@ -1,3 +1,4 @@
+/* -*- mode: C; c-basic-offset: 3; -*- */
 /*
   This file is part of drd, a thread error detector.
 
@@ -42,8 +43,8 @@
 #define LHS_W (1<<1)
 #define RHS_R (1<<2)
 #define RHS_W (1<<3)
-#define HAS_RACE(a) ((((a) & RHS_W) && ((a) & (LHS_R | LHS_W))) \
-                  || (((a) & LHS_W) && ((a) & (RHS_R | RHS_W))))
+#define HAS_RACE(a) ((((a) & RHS_W) && ((a) & (LHS_R | LHS_W)))         \
+                     || (((a) & LHS_W) && ((a) & (RHS_R | RHS_W))))
 
 
 /* Forward declarations. */

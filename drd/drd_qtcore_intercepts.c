@@ -1,3 +1,4 @@
+/* -*- mode: C; c-basic-offset: 3; -*- */
 
 /*--------------------------------------------------------------------*/
 /*--- Client-space code for drd.           drd_qtcore_intercepts.c ---*/
@@ -46,9 +47,9 @@
 
 // Defines.
 
-#define QT4CORE_FUNC(ret_ty, f, args...)                       \
-  ret_ty VG_WRAP_FUNCTION_ZU(libQtCoreZdsoZd4,f)(args);        \
-  ret_ty VG_WRAP_FUNCTION_ZU(libQtCoreZdsoZd4,f)(args)
+#define QT4CORE_FUNC(ret_ty, f, args...)                        \
+   ret_ty VG_WRAP_FUNCTION_ZU(libQtCoreZdsoZd4,f)(args);        \
+   ret_ty VG_WRAP_FUNCTION_ZU(libQtCoreZdsoZd4,f)(args)
 
 
 
@@ -63,14 +64,14 @@ typedef enum { qt_nonrecursive = 0, qt_recursive = 1 } qt_mutex_mode;
 /** Convert a Qt4 mutex type to a DRD mutex type. */
 static MutexT qt_to_drd_mutex_type(qt_mutex_mode mode)
 {
-  switch (mode)
-  {
-  case qt_nonrecursive:
-    return mutex_type_default_mutex;
-  case qt_recursive:
-    return mutex_type_recursive_mutex;
-  }
-  return mutex_type_invalid_mutex;
+   switch (mode)
+   {
+   case qt_nonrecursive:
+      return mutex_type_default_mutex;
+   case qt_recursive:
+      return mutex_type_recursive_mutex;
+   }
+   return mutex_type_invalid_mutex;
 }
 
 /** Find out the type of a Qt4 mutex (recursive or not).
@@ -79,7 +80,7 @@ static MutexT qt_to_drd_mutex_type(qt_mutex_mode mode)
  */
 static MutexT mutex_type(void* qt4_mutex)
 {
-  return mutex_type_unknown;
+   return mutex_type_unknown;
 }
 
 
@@ -88,15 +89,15 @@ QT4CORE_FUNC(void, _ZN6QMutexC1ENS_13RecursionModeE,
              void* mutex,
              qt_mutex_mode mode)
 {
-  int    ret;
-  int    res;
-  OrigFn fn;
-  VALGRIND_GET_ORIG_FN(fn);
-  VALGRIND_DO_CLIENT_REQUEST(res, -1, VG_USERREQ__PRE_MUTEX_INIT,
-                             mutex, qt_to_drd_mutex_type(mode), 0, 0, 0);
-  CALL_FN_W_WW(ret, fn, mutex, mode);
-  VALGRIND_DO_CLIENT_REQUEST(res, -1, VG_USERREQ__POST_MUTEX_INIT,
-                             mutex, 0, 0, 0, 0);
+   int    ret;
+   int    res;
+   OrigFn fn;
+   VALGRIND_GET_ORIG_FN(fn);
+   VALGRIND_DO_CLIENT_REQUEST(res, -1, VG_USERREQ__PRE_MUTEX_INIT,
+                              mutex, qt_to_drd_mutex_type(mode), 0, 0, 0);
+   CALL_FN_W_WW(ret, fn, mutex, mode);
+   VALGRIND_DO_CLIENT_REQUEST(res, -1, VG_USERREQ__POST_MUTEX_INIT,
+                              mutex, 0, 0, 0, 0);
 }
 
 // QMutex::QMutex(RecursionMode) -- _ZN6QMutexC2ENS_13RecursionModeE
@@ -104,76 +105,76 @@ QT4CORE_FUNC(void, _ZN6QMutexC2ENS_13RecursionModeE,
              void* mutex,
              qt_mutex_mode mode)
 {
-  int    ret;
-  int    res;
-  OrigFn fn;
-  VALGRIND_GET_ORIG_FN(fn);
-  VALGRIND_DO_CLIENT_REQUEST(res, -1, VG_USERREQ__PRE_MUTEX_INIT,
-                             mutex, qt_to_drd_mutex_type(mode), 0, 0, 0);
-  CALL_FN_W_WW(ret, fn, mutex, mode);
-  VALGRIND_DO_CLIENT_REQUEST(res, -1, VG_USERREQ__POST_MUTEX_INIT,
-                             mutex, 0, 0, 0, 0);
+   int    ret;
+   int    res;
+   OrigFn fn;
+   VALGRIND_GET_ORIG_FN(fn);
+   VALGRIND_DO_CLIENT_REQUEST(res, -1, VG_USERREQ__PRE_MUTEX_INIT,
+                              mutex, qt_to_drd_mutex_type(mode), 0, 0, 0);
+   CALL_FN_W_WW(ret, fn, mutex, mode);
+   VALGRIND_DO_CLIENT_REQUEST(res, -1, VG_USERREQ__POST_MUTEX_INIT,
+                              mutex, 0, 0, 0, 0);
 }
 
 // QMutex::~QMutex() -- _ZN6QMutexD1Ev
 QT4CORE_FUNC(void, _ZN6QMutexD1Ev,
              void* mutex)
 {
-  int    ret;
-  int    res;
-  OrigFn fn;
-  VALGRIND_GET_ORIG_FN(fn);
-  VALGRIND_DO_CLIENT_REQUEST(res, -1, VG_USERREQ__PRE_MUTEX_DESTROY,
-                             mutex, 0, 0, 0, 0);
-  CALL_FN_W_W(ret, fn, mutex);
-  VALGRIND_DO_CLIENT_REQUEST(res, -1, VG_USERREQ__POST_MUTEX_DESTROY,
-                             mutex, mutex_type(mutex), 0, 0, 0);
+   int    ret;
+   int    res;
+   OrigFn fn;
+   VALGRIND_GET_ORIG_FN(fn);
+   VALGRIND_DO_CLIENT_REQUEST(res, -1, VG_USERREQ__PRE_MUTEX_DESTROY,
+                              mutex, 0, 0, 0, 0);
+   CALL_FN_W_W(ret, fn, mutex);
+   VALGRIND_DO_CLIENT_REQUEST(res, -1, VG_USERREQ__POST_MUTEX_DESTROY,
+                              mutex, mutex_type(mutex), 0, 0, 0);
 }
 
 // QMutex::~QMutex() -- _ZN6QMutexD2Ev
 QT4CORE_FUNC(void, _ZN6QMutexD2Ev,
              void** mutex)
 {
-  int    ret;
-  int    res;
-  OrigFn fn;
-  VALGRIND_GET_ORIG_FN(fn);
-  VALGRIND_DO_CLIENT_REQUEST(res, -1, VG_USERREQ__PRE_MUTEX_DESTROY,
-                             mutex, 0, 0, 0, 0);
-  CALL_FN_W_W(ret, fn, mutex);
-  VALGRIND_DO_CLIENT_REQUEST(res, -1, VG_USERREQ__POST_MUTEX_DESTROY,
-                             mutex, mutex_type(mutex), 0, 0, 0);
+   int    ret;
+   int    res;
+   OrigFn fn;
+   VALGRIND_GET_ORIG_FN(fn);
+   VALGRIND_DO_CLIENT_REQUEST(res, -1, VG_USERREQ__PRE_MUTEX_DESTROY,
+                              mutex, 0, 0, 0, 0);
+   CALL_FN_W_W(ret, fn, mutex);
+   VALGRIND_DO_CLIENT_REQUEST(res, -1, VG_USERREQ__POST_MUTEX_DESTROY,
+                              mutex, mutex_type(mutex), 0, 0, 0);
 }
 
 // QMutex::lock() -- _ZN6QMutex4lockEv
 QT4CORE_FUNC(void, _ZN6QMutex4lockEv,
              void* mutex)
 {
-  int   ret;
-  int   res;
-  OrigFn fn;
-  VALGRIND_GET_ORIG_FN(fn);
-  VALGRIND_DO_CLIENT_REQUEST(res, 0, VG_USERREQ__PRE_MUTEX_LOCK,
-                             mutex, mutex_type(mutex), 0, 0, 0);
-  CALL_FN_W_W(ret, fn, mutex);
-  VALGRIND_DO_CLIENT_REQUEST(res, 0, VG_USERREQ__POST_MUTEX_LOCK,
-                             mutex, 1, 0, 0, 0);
+   int   ret;
+   int   res;
+   OrigFn fn;
+   VALGRIND_GET_ORIG_FN(fn);
+   VALGRIND_DO_CLIENT_REQUEST(res, 0, VG_USERREQ__PRE_MUTEX_LOCK,
+                              mutex, mutex_type(mutex), 0, 0, 0);
+   CALL_FN_W_W(ret, fn, mutex);
+   VALGRIND_DO_CLIENT_REQUEST(res, 0, VG_USERREQ__POST_MUTEX_LOCK,
+                              mutex, 1, 0, 0, 0);
 }
 
 // QMutex::tryLock() -- _ZN6QMutex7tryLockEv
 QT4CORE_FUNC(int, _ZN6QMutex7tryLockEv,
              void* mutex)
 {
-  int    ret;
-  int    res;
-  OrigFn fn;
-  VALGRIND_GET_ORIG_FN(fn);
-  VALGRIND_DO_CLIENT_REQUEST(res, 0, VG_USERREQ__PRE_MUTEX_LOCK,
-                             mutex, mutex_type(mutex), 1, 0, 0);
-  CALL_FN_W_W(ret, fn, mutex);
-  VALGRIND_DO_CLIENT_REQUEST(res, -1, VG_USERREQ__POST_MUTEX_LOCK,
-                             mutex, ret, 0, 0, 0);
-  return ret;
+   int    ret;
+   int    res;
+   OrigFn fn;
+   VALGRIND_GET_ORIG_FN(fn);
+   VALGRIND_DO_CLIENT_REQUEST(res, 0, VG_USERREQ__PRE_MUTEX_LOCK,
+                              mutex, mutex_type(mutex), 1, 0, 0);
+   CALL_FN_W_W(ret, fn, mutex);
+   VALGRIND_DO_CLIENT_REQUEST(res, -1, VG_USERREQ__POST_MUTEX_LOCK,
+                              mutex, ret, 0, 0, 0);
+   return ret;
 }
 
 // QMutex::tryLock(int) -- _ZN6QMutex7tryLockEi
@@ -181,31 +182,31 @@ QT4CORE_FUNC(int, _ZN6QMutex7tryLockEi,
              void* mutex,
              int timeout_ms)
 {
-  int    ret;
-  int    res;
-  OrigFn fn;
-  VALGRIND_GET_ORIG_FN(fn);
-  VALGRIND_DO_CLIENT_REQUEST(res, 0, VG_USERREQ__PRE_MUTEX_LOCK,
-                             mutex, mutex_type(mutex), 1, 0, 0);
-  CALL_FN_W_WW(ret, fn, mutex, timeout_ms);
-  VALGRIND_DO_CLIENT_REQUEST(res, -1, VG_USERREQ__POST_MUTEX_LOCK,
-                             mutex, ret, 0, 0, 0);
-  return ret;
+   int    ret;
+   int    res;
+   OrigFn fn;
+   VALGRIND_GET_ORIG_FN(fn);
+   VALGRIND_DO_CLIENT_REQUEST(res, 0, VG_USERREQ__PRE_MUTEX_LOCK,
+                              mutex, mutex_type(mutex), 1, 0, 0);
+   CALL_FN_W_WW(ret, fn, mutex, timeout_ms);
+   VALGRIND_DO_CLIENT_REQUEST(res, -1, VG_USERREQ__POST_MUTEX_LOCK,
+                              mutex, ret, 0, 0, 0);
+   return ret;
 }
 
 // QMutex::unlock() -- _ZN6QMutex6unlockEv
 QT4CORE_FUNC(void, _ZN6QMutex6unlockEv,
              void* mutex)
 {
-  int    ret;
-  int    res;
-  OrigFn fn;
-  VALGRIND_GET_ORIG_FN(fn);
-  VALGRIND_DO_CLIENT_REQUEST(res, -1,
-                             VG_USERREQ__PRE_MUTEX_UNLOCK,
-                             mutex, mutex_type(mutex), 0, 0, 0);
-  CALL_FN_W_W(ret, fn, mutex);
-  VALGRIND_DO_CLIENT_REQUEST(res, -1,
-                             VG_USERREQ__POST_MUTEX_UNLOCK,
-                             mutex, 0, 0, 0, 0);
+   int    ret;
+   int    res;
+   OrigFn fn;
+   VALGRIND_GET_ORIG_FN(fn);
+   VALGRIND_DO_CLIENT_REQUEST(res, -1,
+                              VG_USERREQ__PRE_MUTEX_UNLOCK,
+                              mutex, mutex_type(mutex), 0, 0, 0);
+   CALL_FN_W_W(ret, fn, mutex);
+   VALGRIND_DO_CLIENT_REQUEST(res, -1,
+                              VG_USERREQ__POST_MUTEX_UNLOCK,
+                              mutex, 0, 0, 0, 0);
 }

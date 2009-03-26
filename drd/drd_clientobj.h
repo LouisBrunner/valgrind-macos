@@ -1,3 +1,4 @@
+/* -*- mode: C; c-basic-offset: 3; -*- */
 /*
   This file is part of drd, a thread error detector.
 
@@ -42,100 +43,100 @@ union drd_clientobj;
 /* Type definitions. */
 
 typedef enum {
-  ClientMutex     = 1,
-  ClientCondvar   = 2,
-  ClientSemaphore = 3,
-  ClientBarrier   = 4,
-  ClientRwlock    = 5,
+   ClientMutex     = 1,
+   ClientCondvar   = 2,
+   ClientSemaphore = 3,
+   ClientBarrier   = 4,
+   ClientRwlock    = 5,
 } ObjType;
 
 struct any
 {
-  Addr        a1;
-  ObjType     type;
-  void        (*cleanup)(union drd_clientobj*);
-  void        (*delete_thread)(union drd_clientobj*, DrdThreadId);
-  ExeContext* first_observed_at;
+   Addr        a1;
+   ObjType     type;
+   void        (*cleanup)(union drd_clientobj*);
+   void        (*delete_thread)(union drd_clientobj*, DrdThreadId);
+   ExeContext* first_observed_at;
 };
 
 struct mutex_info
 {
-  Addr            a1;
-  ObjType         type;
-  void            (*cleanup)(union drd_clientobj*);
-  void            (*delete_thread)(union drd_clientobj*, DrdThreadId);
-  ExeContext*     first_observed_at;
-  MutexT          mutex_type;      // pthread_mutex_t or pthread_spinlock_t.
-  int             recursion_count; // 0 if free, >= 1 if locked.
-  DrdThreadId     owner;           // owner if locked, last owner if free.
-  struct segment* last_locked_segment;
-  ULong           acquiry_time_ms;
-  ExeContext*     acquired_at;
+   Addr            a1;
+   ObjType         type;
+   void            (*cleanup)(union drd_clientobj*);
+   void            (*delete_thread)(union drd_clientobj*, DrdThreadId);
+   ExeContext*     first_observed_at;
+   MutexT          mutex_type;      // pthread_mutex_t or pthread_spinlock_t.
+   int             recursion_count; // 0 if free, >= 1 if locked.
+   DrdThreadId     owner;           // owner if locked, last owner if free.
+   struct segment* last_locked_segment;
+   ULong           acquiry_time_ms;
+   ExeContext*     acquired_at;
 };
 
 struct cond_info
 {
-  Addr        a1;
-  ObjType     type;
-  void        (*cleanup)(union drd_clientobj*);
-  void        (*delete_thread)(union drd_clientobj*, DrdThreadId);
-  ExeContext* first_observed_at;
-  int         waiter_count;
-  Addr        mutex; // Client mutex specified in pthread_cond_wait() call, and
-           // null if no client threads are currently waiting on this cond.var.
+   Addr        a1;
+   ObjType     type;
+   void        (*cleanup)(union drd_clientobj*);
+   void        (*delete_thread)(union drd_clientobj*, DrdThreadId);
+   ExeContext* first_observed_at;
+   int         waiter_count;
+   Addr        mutex; // Client mutex specified in pthread_cond_wait() call, and
+   // null if no client threads are currently waiting on this cond.var.
 };
 
 struct semaphore_info
 {
-  Addr        a1;
-  ObjType     type;
-  void        (*cleanup)(union drd_clientobj*);
-  void        (*delete_thread)(union drd_clientobj*, DrdThreadId);
-  ExeContext* first_observed_at;
-  UInt        waits_to_skip;     // Number of sem_wait() calls to skip
-                                 // (due to the value assigned by sem_init()).
-  UInt        value;             // Semaphore value.
-  UWord       waiters;           // Number of threads inside sem_wait().
-  DrdThreadId last_sem_post_tid; // Thread ID associated with last sem_post().
-  XArray*     last_sem_post_seg; // array of Segment*, used as a stack.
+   Addr        a1;
+   ObjType     type;
+   void        (*cleanup)(union drd_clientobj*);
+   void        (*delete_thread)(union drd_clientobj*, DrdThreadId);
+   ExeContext* first_observed_at;
+   UInt        waits_to_skip;     // Number of sem_wait() calls to skip
+   // (due to the value assigned by sem_init()).
+   UInt        value;             // Semaphore value.
+   UWord       waiters;           // Number of threads inside sem_wait().
+   DrdThreadId last_sem_post_tid; // Thread ID associated with last sem_post().
+   XArray*     last_sem_post_seg; // array of Segment*, used as a stack.
 };
 
 struct barrier_info
 {
-  Addr     a1;
-  ObjType  type;
-  void     (*cleanup)(union drd_clientobj*);
-  void     (*delete_thread)(union drd_clientobj*, DrdThreadId);
-  ExeContext* first_observed_at;
-  BarrierT barrier_type;      // pthread_barrier or gomp_barrier.
-  Word     count;             // Participant count in a barrier wait.
-  Word     pre_iteration;     // pre barrier completion count modulo two.
-  Word     post_iteration;    // post barrier completion count modulo two.
-  Word     pre_waiters_left;  // number of waiters left for a complete barrier.
-  Word     post_waiters_left; // number of waiters left for a complete barrier.
-  OSet*    oset;              // Per-thread barrier information.
+   Addr     a1;
+   ObjType  type;
+   void     (*cleanup)(union drd_clientobj*);
+   void     (*delete_thread)(union drd_clientobj*, DrdThreadId);
+   ExeContext* first_observed_at;
+   BarrierT barrier_type;      // pthread_barrier or gomp_barrier.
+   Word     count;             // Participant count in a barrier wait.
+   Word     pre_iteration;     // pre barrier completion count modulo two.
+   Word     post_iteration;    // post barrier completion count modulo two.
+   Word     pre_waiters_left;  // number of waiters left for a complete barrier.
+   Word     post_waiters_left; // number of waiters left for a complete barrier.
+   OSet*    oset;              // Per-thread barrier information.
 };
 
 struct rwlock_info
 {
-  Addr        a1;
-  ObjType     type;
-  void        (*cleanup)(union drd_clientobj*);
-  void        (*delete_thread)(union drd_clientobj*, DrdThreadId);
-  ExeContext* first_observed_at;
-  OSet*       thread_info;
-  ULong       acquiry_time_ms;
-  ExeContext* acquired_at;
+   Addr        a1;
+   ObjType     type;
+   void        (*cleanup)(union drd_clientobj*);
+   void        (*delete_thread)(union drd_clientobj*, DrdThreadId);
+   ExeContext* first_observed_at;
+   OSet*       thread_info;
+   ULong       acquiry_time_ms;
+   ExeContext* acquired_at;
 };
 
 typedef union drd_clientobj
 {
-  struct any            any;
-  struct mutex_info     mutex;
-  struct cond_info      cond;
-  struct semaphore_info semaphore;
-  struct barrier_info   barrier;
-  struct rwlock_info    rwlock;
+   struct any            any;
+   struct mutex_info     mutex;
+   struct cond_info      cond;
+   struct semaphore_info semaphore;
+   struct barrier_info   barrier;
+   struct rwlock_info    rwlock;
 } DrdClientobj;
 
 

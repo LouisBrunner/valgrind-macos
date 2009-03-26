@@ -1,3 +1,4 @@
+/* -*- mode: C; c-basic-offset: 3; -*- */
 /*
   This file is part of drd, a thread error detector.
 
@@ -66,28 +67,28 @@ typedef UWord PThreadId;
 /** Per-thread information managed by DRD. */
 typedef struct
 {
-  Segment*  first;         /**< Pointer to first segment. */
-  Segment*  last;          /**< Pointer to last segment. */
-  ThreadId  vg_threadid;   /**< Valgrind thread ID. */
-  PThreadId pt_threadid;   /**< POSIX thread ID. */
-  Addr      stack_min_min; /**< Lowest value stack pointer ever had. */
-  Addr      stack_min;     /**< Current stack pointer. */
-  Addr      stack_startup; /**<Stack pointer after pthread_create() finished.*/
-  Addr      stack_max;     /**< Top of stack. */
-  SizeT     stack_size;    /**< Maximum size of stack. */
-  /** Indicates whether the Valgrind core knows about this thread. */
-  Bool      vg_thread_exists;
-  /** Indicates whether there is an associated POSIX thread ID. */
-  Bool      posix_thread_exists;
-  /**
-   * If true, indicates that there is a corresponding POSIX thread ID and
-   * a corresponding OS thread that is detached.
-   */
-  Bool      detached_posix_thread;
-  /** Wether recording of memory accesses is active. */
-  Bool      is_recording;
-  /** Nesting level of synchronization functions called by the client. */
-  Int       synchr_nesting;
+   Segment*  first;         /**< Pointer to first segment. */
+   Segment*  last;          /**< Pointer to last segment. */
+   ThreadId  vg_threadid;   /**< Valgrind thread ID. */
+   PThreadId pt_threadid;   /**< POSIX thread ID. */
+   Addr      stack_min_min; /**< Lowest value stack pointer ever had. */
+   Addr      stack_min;     /**< Current stack pointer. */
+   Addr      stack_startup; /**<Stack pointer after pthread_create() finished.*/
+   Addr      stack_max;     /**< Top of stack. */
+   SizeT     stack_size;    /**< Maximum size of stack. */
+   /** Indicates whether the Valgrind core knows about this thread. */
+   Bool      vg_thread_exists;
+   /** Indicates whether there is an associated POSIX thread ID. */
+   Bool      posix_thread_exists;
+   /**
+    * If true, indicates that there is a corresponding POSIX thread ID and
+    * a corresponding OS thread that is detached.
+    */
+   Bool      detached_posix_thread;
+   /** Wether recording of memory accesses is active. */
+   Bool      is_recording;
+   /** Nesting level of synchronization functions called by the client. */
+   Int       synchr_nesting;
 } ThreadInfo;
 
 
@@ -121,13 +122,14 @@ DrdThreadId DRD_(NewVgThreadIdToDrdThreadId)(const ThreadId tid);
 DrdThreadId DRD_(PtThreadIdToDrdThreadId)(const PThreadId tid);
 ThreadId DRD_(DrdThreadIdToVgThreadId)(const DrdThreadId tid);
 DrdThreadId DRD_(thread_pre_create)(const DrdThreadId creator,
-                              const ThreadId vg_created);
+                                    const ThreadId vg_created);
 DrdThreadId DRD_(thread_post_create)(const ThreadId vg_created);
 void DRD_(thread_post_join)(DrdThreadId drd_joiner, DrdThreadId drd_joinee);
 void DRD_(thread_delete)(const DrdThreadId tid);
 void DRD_(thread_finished)(const DrdThreadId tid);
 void DRD_(thread_pre_cancel)(const DrdThreadId tid);
-void DRD_(thread_set_stack_startup)(const DrdThreadId tid, const Addr stack_startup);
+void DRD_(thread_set_stack_startup)(const DrdThreadId tid,
+                                    const Addr stack_startup);
 Addr DRD_(thread_get_stack_min)(const DrdThreadId tid);
 Addr DRD_(thread_get_stack_min_min)(const DrdThreadId tid);
 Addr DRD_(thread_get_stack_max)(const DrdThreadId tid);
@@ -137,15 +139,17 @@ Bool DRD_(thread_get_joinable)(const DrdThreadId tid);
 void DRD_(thread_set_joinable)(const DrdThreadId tid, const Bool joinable);
 void DRD_(thread_set_vg_running_tid)(const ThreadId vg_tid);
 void DRD_(thread_set_running_tid)(const ThreadId vg_tid,
-                            const DrdThreadId drd_tid);
+                                  const DrdThreadId drd_tid);
 int DRD_(thread_enter_synchr)(const DrdThreadId tid);
 int DRD_(thread_leave_synchr)(const DrdThreadId tid);
 int DRD_(thread_get_synchr_nesting_count)(const DrdThreadId tid);
 void DRD_(thread_new_segment)(const DrdThreadId tid);
 VectorClock* DRD_(thread_get_vc)(const DrdThreadId tid);
 void DRD_(thread_get_latest_segment)(Segment** sg, const DrdThreadId tid);
-void DRD_(thread_combine_vc)(const DrdThreadId joiner, const DrdThreadId joinee);
-void DRD_(thread_combine_vc2)(const DrdThreadId tid, const VectorClock* const vc);
+void DRD_(thread_combine_vc)(const DrdThreadId joiner,
+                             const DrdThreadId joinee);
+void DRD_(thread_combine_vc2)(const DrdThreadId tid,
+                              const VectorClock* const vc);
 
 void DRD_(thread_stop_using_mem)(const Addr a1, const Addr a2);
 void DRD_(thread_start_recording)(const DrdThreadId tid);
@@ -153,12 +157,12 @@ void DRD_(thread_stop_recording)(const DrdThreadId tid);
 void DRD_(thread_print_all)(void);
 void DRD_(thread_report_races)(const DrdThreadId tid);
 void DRD_(thread_report_races_segment)(const DrdThreadId tid,
-                                 const Segment* const p);
+                                       const Segment* const p);
 void DRD_(thread_report_all_races)(void);
 void DRD_(thread_report_conflicting_segments)(const DrdThreadId tid,
-                                        const Addr addr,
-                                        const SizeT size,
-                                        const BmAccessTypeT access_type);
+                                              const Addr addr,
+                                              const SizeT size,
+                                              const BmAccessTypeT access_type);
 ULong DRD_(thread_get_context_switch_count)(void);
 ULong DRD_(thread_get_report_races_count)(void);
 ULong DRD_(thread_get_discard_ordered_segments_count)(void);
@@ -181,25 +185,25 @@ ULong DRD_(thread_get_conflict_set_bitmap2_creation_count)(void);
 static __inline__
 Bool DRD_(IsValidDrdThreadId)(const DrdThreadId tid)
 {
-  return (0 <= (int)tid && tid < DRD_N_THREADS && tid != DRD_INVALID_THREADID
-          && ! (DRD_(g_threadinfo)[tid].vg_thread_exists == False
-                && DRD_(g_threadinfo)[tid].posix_thread_exists == False
-                && DRD_(g_threadinfo)[tid].detached_posix_thread == False));
+   return (0 <= (int)tid && tid < DRD_N_THREADS && tid != DRD_INVALID_THREADID
+           && ! (DRD_(g_threadinfo)[tid].vg_thread_exists == False
+                 && DRD_(g_threadinfo)[tid].posix_thread_exists == False
+                 && DRD_(g_threadinfo)[tid].detached_posix_thread == False));
 }
 
 /** Returns the DRD thread ID of the currently running thread. */
 static __inline__
 DrdThreadId DRD_(thread_get_running_tid)(void)
 {
-  tl_assert(DRD_(g_drd_running_tid) != DRD_INVALID_THREADID);
-  return DRD_(g_drd_running_tid);
+   tl_assert(DRD_(g_drd_running_tid) != DRD_INVALID_THREADID);
+   return DRD_(g_drd_running_tid);
 }
 
 /** Returns a pointer to the conflict set for the currently running thread. */
 static __inline__
 struct bitmap* DRD_(thread_get_conflict_set)(void)
 {
-  return DRD_(g_conflict_set);
+   return DRD_(g_conflict_set);
 }
 
 /**
@@ -210,11 +214,12 @@ static __inline__
 Bool DRD_(running_thread_is_recording)(void)
 {
 #ifdef ENABLE_DRD_CONSISTENCY_CHECKS
-  tl_assert(0 <= (int)DRD_(g_drd_running_tid) && DRD_(g_drd_running_tid) < DRD_N_THREADS
-            && DRD_(g_drd_running_tid) != DRD_INVALID_THREADID);
+   tl_assert(0 <= (int)DRD_(g_drd_running_tid)
+             && DRD_(g_drd_running_tid) < DRD_N_THREADS
+             && DRD_(g_drd_running_tid) != DRD_INVALID_THREADID);
 #endif
-  return (DRD_(g_threadinfo)[DRD_(g_drd_running_tid)].synchr_nesting == 0
-          && DRD_(g_threadinfo)[DRD_(g_drd_running_tid)].is_recording);
+   return (DRD_(g_threadinfo)[DRD_(g_drd_running_tid)].synchr_nesting == 0
+           && DRD_(g_threadinfo)[DRD_(g_drd_running_tid)].is_recording);
 }
 
 /**
@@ -225,21 +230,22 @@ static __inline__
 void DRD_(thread_set_stack_min)(const DrdThreadId tid, const Addr stack_min)
 {
 #ifdef ENABLE_DRD_CONSISTENCY_CHECKS
-  tl_assert(0 <= (int)tid
-            && tid < DRD_N_THREADS
-            && tid != DRD_INVALID_THREADID);
+   tl_assert(0 <= (int)tid
+             && tid < DRD_N_THREADS
+             && tid != DRD_INVALID_THREADID);
 #endif
-  DRD_(g_threadinfo)[tid].stack_min = stack_min;
+   DRD_(g_threadinfo)[tid].stack_min = stack_min;
 #ifdef ENABLE_DRD_CONSISTENCY_CHECKS
-  /* This function can be called after the thread has been created but */
-  /* before drd_post_thread_create() has filled in stack_max.          */
-  tl_assert(DRD_(g_threadinfo)[tid].stack_min < DRD_(g_threadinfo)[tid].stack_max
-            || DRD_(g_threadinfo)[tid].stack_max == 0);
+   /* This function can be called after the thread has been created but */
+   /* before drd_post_thread_create() has filled in stack_max.          */
+   tl_assert(DRD_(g_threadinfo)[tid].stack_min
+             < DRD_(g_threadinfo)[tid].stack_max
+             || DRD_(g_threadinfo)[tid].stack_max == 0);
 #endif
-  if (UNLIKELY(stack_min < DRD_(g_threadinfo)[tid].stack_min_min))
-  {
-    DRD_(g_threadinfo)[tid].stack_min_min = stack_min;
-  }
+   if (UNLIKELY(stack_min < DRD_(g_threadinfo)[tid].stack_min_min))
+   {
+      DRD_(g_threadinfo)[tid].stack_min_min = stack_min;
+   }
 }
 
 /**
@@ -249,8 +255,8 @@ void DRD_(thread_set_stack_min)(const DrdThreadId tid, const Addr stack_min)
 static __inline__
 Bool DRD_(thread_address_on_stack)(const Addr a)
 {
-  return (DRD_(g_threadinfo)[DRD_(g_drd_running_tid)].stack_min <= a
-	  && a < DRD_(g_threadinfo)[DRD_(g_drd_running_tid)].stack_max);
+   return (DRD_(g_threadinfo)[DRD_(g_drd_running_tid)].stack_min <= a
+           && a < DRD_(g_threadinfo)[DRD_(g_drd_running_tid)].stack_max);
 }
 
 /**
@@ -260,18 +266,18 @@ Bool DRD_(thread_address_on_stack)(const Addr a)
 static __inline__
 Bool DRD_(thread_address_on_any_stack)(const Addr a)
 {
-  int i;
+   int i;
 
-  for (i = 1; i < DRD_N_THREADS; i++)
-  {
-    if (DRD_(g_threadinfo)[i].vg_thread_exists
-        && DRD_(g_threadinfo)[i].stack_min <= a
-	&& a < DRD_(g_threadinfo)[i].stack_max)
-    {
-      return True;
-    }
-  }
-  return False;
+   for (i = 1; i < DRD_N_THREADS; i++)
+   {
+      if (DRD_(g_threadinfo)[i].vg_thread_exists
+          && DRD_(g_threadinfo)[i].stack_min <= a
+          && a < DRD_(g_threadinfo)[i].stack_max)
+      {
+         return True;
+      }
+   }
+   return False;
 }
 
 /** Return a pointer to the latest segment for the specified thread. */
@@ -279,18 +285,18 @@ static __inline__
 Segment* DRD_(thread_get_segment)(const DrdThreadId tid)
 {
 #ifdef ENABLE_DRD_CONSISTENCY_CHECKS
-  tl_assert(0 <= (int)tid && tid < DRD_N_THREADS
-            && tid != DRD_INVALID_THREADID);
-  tl_assert(DRD_(g_threadinfo)[tid].last);
+   tl_assert(0 <= (int)tid && tid < DRD_N_THREADS
+             && tid != DRD_INVALID_THREADID);
+   tl_assert(DRD_(g_threadinfo)[tid].last);
 #endif
-  return DRD_(g_threadinfo)[tid].last;
+   return DRD_(g_threadinfo)[tid].last;
 }
 
 /** Return a pointer to the latest segment for the running thread. */
 static __inline__
 Segment* DRD_(running_thread_get_segment)(void)
 {
-  return DRD_(thread_get_segment)(DRD_(g_drd_running_tid));
+   return DRD_(thread_get_segment)(DRD_(g_drd_running_tid));
 }
 
 #endif /* __THREAD_H */

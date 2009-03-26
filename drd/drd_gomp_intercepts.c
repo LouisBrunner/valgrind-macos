@@ -1,3 +1,4 @@
+/* -*- mode: C; c-basic-offset: 3; -*- */
 
 /*--------------------------------------------------------------------*/
 /*--- Client-space code for drd.             drd_gomp_intercepts.c ---*/
@@ -46,9 +47,9 @@
 
 // Defines.
 
-#define GOMP_FUNC(ret_ty, f, args...)                   \
-  ret_ty VG_WRAP_FUNCTION_ZZ(libgompZdsoZd1Za,f)(args); \
-  ret_ty VG_WRAP_FUNCTION_ZZ(libgompZdsoZd1Za,f)(args)
+#define GOMP_FUNC(ret_ty, f, args...)                           \
+   ret_ty VG_WRAP_FUNCTION_ZZ(libgompZdsoZd1Za,f)(args);        \
+   ret_ty VG_WRAP_FUNCTION_ZZ(libgompZdsoZd1Za,f)(args)
 
 
 // Type definitions
@@ -61,56 +62,56 @@ typedef void* gomp_barrier_t;
 GOMP_FUNC(void, gompZubarrierZuinit, // gomp_barrier_init
           gomp_barrier_t* barrier, unsigned count)
 {
-  int    ret;
-  int    res;
-  OrigFn fn;
+   int    ret;
+   int    res;
+   OrigFn fn;
 
-  VALGRIND_DO_CLIENT_REQUEST(res, -1, VG_USERREQ__PRE_BARRIER_INIT,
-                             barrier, gomp_barrier, count, 0, 0);
-  VALGRIND_GET_ORIG_FN(fn);
-  CALL_FN_W_WW(ret, fn, barrier, count);
-  VALGRIND_DO_CLIENT_REQUEST(res, -1, VG_USERREQ__POST_BARRIER_INIT,
-                             barrier, gomp_barrier, 0, 0, 0);
+   VALGRIND_DO_CLIENT_REQUEST(res, -1, VG_USERREQ__PRE_BARRIER_INIT,
+                              barrier, gomp_barrier, count, 0, 0);
+   VALGRIND_GET_ORIG_FN(fn);
+   CALL_FN_W_WW(ret, fn, barrier, count);
+   VALGRIND_DO_CLIENT_REQUEST(res, -1, VG_USERREQ__POST_BARRIER_INIT,
+                              barrier, gomp_barrier, 0, 0, 0);
 }
 
 GOMP_FUNC(void, gompZubarrierZureinit, // gomp_barrier_reinit
           gomp_barrier_t* barrier, unsigned count)
 {
-  int    ret;
-  int    res;
-  OrigFn fn;
-  VALGRIND_DO_CLIENT_REQUEST(res, -1, VG_USERREQ__PRE_BARRIER_INIT,
-                             barrier, gomp_barrier, count, 1, 0);
-  VALGRIND_GET_ORIG_FN(fn);
-  CALL_FN_W_WW(ret, fn, barrier, count);
-  VALGRIND_DO_CLIENT_REQUEST(res, -1, VG_USERREQ__POST_BARRIER_INIT,
-                             barrier, gomp_barrier, 0, 0, 0);
+   int    ret;
+   int    res;
+   OrigFn fn;
+   VALGRIND_DO_CLIENT_REQUEST(res, -1, VG_USERREQ__PRE_BARRIER_INIT,
+                              barrier, gomp_barrier, count, 1, 0);
+   VALGRIND_GET_ORIG_FN(fn);
+   CALL_FN_W_WW(ret, fn, barrier, count);
+   VALGRIND_DO_CLIENT_REQUEST(res, -1, VG_USERREQ__POST_BARRIER_INIT,
+                              barrier, gomp_barrier, 0, 0, 0);
 }
 
 GOMP_FUNC(void, gompZubarrierZudestroy, // gomp_barrier_destroy
           gomp_barrier_t* barrier)
 {
-  int    ret;
-  int    res;
-  OrigFn fn;
-  VALGRIND_GET_ORIG_FN(fn);
-  VALGRIND_DO_CLIENT_REQUEST(res, -1, VG_USERREQ__PRE_BARRIER_DESTROY,
-                             barrier, gomp_barrier, 0, 0, 0);
-  CALL_FN_W_W(ret, fn, barrier);
-  VALGRIND_DO_CLIENT_REQUEST(res, -1, VG_USERREQ__POST_BARRIER_DESTROY,
-                             barrier, gomp_barrier, 0, 0, 0);
+   int    ret;
+   int    res;
+   OrigFn fn;
+   VALGRIND_GET_ORIG_FN(fn);
+   VALGRIND_DO_CLIENT_REQUEST(res, -1, VG_USERREQ__PRE_BARRIER_DESTROY,
+                              barrier, gomp_barrier, 0, 0, 0);
+   CALL_FN_W_W(ret, fn, barrier);
+   VALGRIND_DO_CLIENT_REQUEST(res, -1, VG_USERREQ__POST_BARRIER_DESTROY,
+                              barrier, gomp_barrier, 0, 0, 0);
 }
 
 GOMP_FUNC(void, gompZubarrierZuwait, // gomp_barrier_wait
           gomp_barrier_t* barrier)
 {
-  int    ret;
-  int    res;
-  OrigFn fn;
-  VALGRIND_GET_ORIG_FN(fn);
-  VALGRIND_DO_CLIENT_REQUEST(res, -1, VG_USERREQ__PRE_BARRIER_WAIT,
-                             barrier, gomp_barrier, 0, 0, 0);
-  CALL_FN_W_W(ret, fn, barrier);
-  VALGRIND_DO_CLIENT_REQUEST(res, -1, VG_USERREQ__POST_BARRIER_WAIT,
-                             barrier, gomp_barrier, 1, 0, 0);
+   int    ret;
+   int    res;
+   OrigFn fn;
+   VALGRIND_GET_ORIG_FN(fn);
+   VALGRIND_DO_CLIENT_REQUEST(res, -1, VG_USERREQ__PRE_BARRIER_WAIT,
+                              barrier, gomp_barrier, 0, 0, 0);
+   CALL_FN_W_W(ret, fn, barrier);
+   VALGRIND_DO_CLIENT_REQUEST(res, -1, VG_USERREQ__POST_BARRIER_WAIT,
+                              barrier, gomp_barrier, 1, 0, 0);
 }

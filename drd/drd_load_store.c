@@ -1,3 +1,4 @@
+/* -*- mode: C; c-basic-offset: 3; -*- */
 /*
   This file is part of drd, a thread error detector.
 
@@ -59,202 +60,202 @@ static Bool DRD_(s_check_stack_accesses) = False;
 
 Bool DRD_(get_check_stack_accesses)()
 {
-  return DRD_(s_check_stack_accesses);
+   return DRD_(s_check_stack_accesses);
 }
 
 void DRD_(set_check_stack_accesses)(const Bool c)
 {
-  tl_assert(c == False || c == True);
-  DRD_(s_check_stack_accesses) = c;
+   tl_assert(c == False || c == True);
+   DRD_(s_check_stack_accesses) = c;
 }
 
 void DRD_(trace_mem_access)(const Addr addr, const SizeT size,
-                          const BmAccessTypeT access_type)
+                            const BmAccessTypeT access_type)
 {
-  if (DRD_(is_any_traced)(addr, addr + size))
-  {
-    char vc[80];
-    DRD_(vc_snprint)(vc, sizeof(vc),
-                     DRD_(thread_get_vc)(DRD_(thread_get_running_tid)()));
-    VG_(message)(Vg_UserMsg,
-                 "%s 0x%lx size %ld (vg %d / drd %d / vc %s)",
-                 access_type == eLoad
-                 ? "load "
-                 : access_type == eStore
-                 ? "store"
-                 : access_type == eStart
-                 ? "start"
-                 : access_type == eEnd
-                 ? "end  "
-                 : "????",
-                 addr,
-                 size,
-                 VG_(get_running_tid)(),
-                 DRD_(thread_get_running_tid)(),
-                 vc);
-    VG_(get_and_pp_StackTrace)(VG_(get_running_tid)(),
-                               VG_(clo_backtrace_size));
-    tl_assert(DRD_(DrdThreadIdToVgThreadId)(DRD_(thread_get_running_tid)())
-              == VG_(get_running_tid)());
-  }
+   if (DRD_(is_any_traced)(addr, addr + size))
+   {
+      char vc[80];
+      DRD_(vc_snprint)(vc, sizeof(vc),
+                       DRD_(thread_get_vc)(DRD_(thread_get_running_tid)()));
+      VG_(message)(Vg_UserMsg,
+                   "%s 0x%lx size %ld (vg %d / drd %d / vc %s)",
+                   access_type == eLoad
+                   ? "load "
+                   : access_type == eStore
+                   ? "store"
+                   : access_type == eStart
+                   ? "start"
+                   : access_type == eEnd
+                   ? "end  "
+                   : "????",
+                   addr,
+                   size,
+                   VG_(get_running_tid)(),
+                   DRD_(thread_get_running_tid)(),
+                   vc);
+      VG_(get_and_pp_StackTrace)(VG_(get_running_tid)(),
+                                 VG_(clo_backtrace_size));
+      tl_assert(DRD_(DrdThreadIdToVgThreadId)(DRD_(thread_get_running_tid)())
+                == VG_(get_running_tid)());
+   }
 }
 
 static VG_REGPARM(2) void drd_trace_mem_load(const Addr addr, const SizeT size)
 {
-  return DRD_(trace_mem_access)(addr, size, eLoad);
+   return DRD_(trace_mem_access)(addr, size, eLoad);
 }
 
 static VG_REGPARM(2) void drd_trace_mem_store(const Addr addr,const SizeT size)
 {
-  return DRD_(trace_mem_access)(addr, size, eStore);
+   return DRD_(trace_mem_access)(addr, size, eStore);
 }
 
 static void drd_report_race(const Addr addr, const SizeT size,
                             const BmAccessTypeT access_type)
 {
-  DataRaceErrInfo drei;
+   DataRaceErrInfo drei;
 
-  drei.tid  = DRD_(thread_get_running_tid)();
-  drei.addr = addr;
-  drei.size = size;
-  drei.access_type = access_type;
-  VG_(maybe_record_error)(VG_(get_running_tid)(),
-                          DataRaceErr,
-                          VG_(get_IP)(VG_(get_running_tid)()),
-                          "Conflicting accesses",
-                          &drei);
+   drei.tid  = DRD_(thread_get_running_tid)();
+   drei.addr = addr;
+   drei.size = size;
+   drei.access_type = access_type;
+   VG_(maybe_record_error)(VG_(get_running_tid)(),
+                           DataRaceErr,
+                           VG_(get_IP)(VG_(get_running_tid)()),
+                           "Conflicting accesses",
+                           &drei);
 }
 
 VG_REGPARM(2) void DRD_(trace_load)(Addr addr, SizeT size)
 {
 #ifdef ENABLE_DRD_CONSISTENCY_CHECKS
-  /* The assert below has been commented out because of performance reasons.*/
-  tl_assert(thread_get_running_tid()
-            == VgThreadIdToDrdThreadId(VG_(get_running_tid())));
+   /* The assert below has been commented out because of performance reasons.*/
+   tl_assert(thread_get_running_tid()
+             == VgThreadIdToDrdThreadId(VG_(get_running_tid())));
 #endif
 
-  if (DRD_(running_thread_is_recording)()
-      && (DRD_(s_check_stack_accesses)
-          || ! DRD_(thread_address_on_stack)(addr))
-      && bm_access_load_triggers_conflict(addr, addr + size)
-      && ! DRD_(is_suppressed)(addr, addr + size))
-  {
-    drd_report_race(addr, size, eLoad);
-  }
+   if (DRD_(running_thread_is_recording)()
+       && (DRD_(s_check_stack_accesses)
+           || ! DRD_(thread_address_on_stack)(addr))
+       && bm_access_load_triggers_conflict(addr, addr + size)
+       && ! DRD_(is_suppressed)(addr, addr + size))
+   {
+      drd_report_race(addr, size, eLoad);
+   }
 }
 
 static VG_REGPARM(1) void drd_trace_load_1(Addr addr)
 {
-  if (DRD_(running_thread_is_recording)()
-      && (DRD_(s_check_stack_accesses)
-          || ! DRD_(thread_address_on_stack)(addr))
-      && bm_access_load_1_triggers_conflict(addr)
-      && ! DRD_(is_suppressed)(addr, addr + 1))
-  {
-    drd_report_race(addr, 1, eLoad);
-  }
+   if (DRD_(running_thread_is_recording)()
+       && (DRD_(s_check_stack_accesses)
+           || ! DRD_(thread_address_on_stack)(addr))
+       && bm_access_load_1_triggers_conflict(addr)
+       && ! DRD_(is_suppressed)(addr, addr + 1))
+   {
+      drd_report_race(addr, 1, eLoad);
+   }
 }
 
 static VG_REGPARM(1) void drd_trace_load_2(Addr addr)
 {
-  if (DRD_(running_thread_is_recording)()
-      && (DRD_(s_check_stack_accesses)
-          || ! DRD_(thread_address_on_stack)(addr))
-      && bm_access_load_2_triggers_conflict(addr)
-      && ! DRD_(is_suppressed)(addr, addr + 2))
-  {
-    drd_report_race(addr, 2, eLoad);
-  }
+   if (DRD_(running_thread_is_recording)()
+       && (DRD_(s_check_stack_accesses)
+           || ! DRD_(thread_address_on_stack)(addr))
+       && bm_access_load_2_triggers_conflict(addr)
+       && ! DRD_(is_suppressed)(addr, addr + 2))
+   {
+      drd_report_race(addr, 2, eLoad);
+   }
 }
 
 static VG_REGPARM(1) void drd_trace_load_4(Addr addr)
 {
-  if (DRD_(running_thread_is_recording)()
-      && (DRD_(s_check_stack_accesses)
-          || ! DRD_(thread_address_on_stack)(addr))
-      && bm_access_load_4_triggers_conflict(addr)
-      && ! DRD_(is_suppressed)(addr, addr + 4))
-  {
-    drd_report_race(addr, 4, eLoad);
-  }
+   if (DRD_(running_thread_is_recording)()
+       && (DRD_(s_check_stack_accesses)
+           || ! DRD_(thread_address_on_stack)(addr))
+       && bm_access_load_4_triggers_conflict(addr)
+       && ! DRD_(is_suppressed)(addr, addr + 4))
+   {
+      drd_report_race(addr, 4, eLoad);
+   }
 }
 
 static VG_REGPARM(1) void drd_trace_load_8(Addr addr)
 {
-  if (DRD_(running_thread_is_recording)()
-      && (DRD_(s_check_stack_accesses)
-          || ! DRD_(thread_address_on_stack)(addr))
-      && bm_access_load_8_triggers_conflict(addr)
-      && ! DRD_(is_suppressed)(addr, addr + 8))
-  {
-    drd_report_race(addr, 8, eLoad);
-  }
+   if (DRD_(running_thread_is_recording)()
+       && (DRD_(s_check_stack_accesses)
+           || ! DRD_(thread_address_on_stack)(addr))
+       && bm_access_load_8_triggers_conflict(addr)
+       && ! DRD_(is_suppressed)(addr, addr + 8))
+   {
+      drd_report_race(addr, 8, eLoad);
+   }
 }
 
 VG_REGPARM(2) void DRD_(trace_store)(Addr addr, SizeT size)
 {
 #ifdef ENABLE_DRD_CONSISTENCY_CHECKS
-  /* The assert below has been commented out because of performance reasons.*/
-  tl_assert(thread_get_running_tid()
-            == VgThreadIdToDrdThreadId(VG_(get_running_tid())));
+   /* The assert below has been commented out because of performance reasons.*/
+   tl_assert(thread_get_running_tid()
+             == VgThreadIdToDrdThreadId(VG_(get_running_tid())));
 #endif
 
-  if (DRD_(running_thread_is_recording)()
-      && (DRD_(s_check_stack_accesses)
-          || ! DRD_(thread_address_on_stack)(addr))
-      && bm_access_store_triggers_conflict(addr, addr + size)
-      && ! DRD_(is_suppressed)(addr, addr + size))
-  {
-    drd_report_race(addr, size, eStore);
-  }
+   if (DRD_(running_thread_is_recording)()
+       && (DRD_(s_check_stack_accesses)
+           || ! DRD_(thread_address_on_stack)(addr))
+       && bm_access_store_triggers_conflict(addr, addr + size)
+       && ! DRD_(is_suppressed)(addr, addr + size))
+   {
+      drd_report_race(addr, size, eStore);
+   }
 }
 
 static VG_REGPARM(1) void drd_trace_store_1(Addr addr)
 {
-  if (DRD_(running_thread_is_recording)()
-      && (DRD_(s_check_stack_accesses)
-          || ! DRD_(thread_address_on_stack)(addr))
-      && bm_access_store_1_triggers_conflict(addr)
-      && ! DRD_(is_suppressed)(addr, addr + 1))
-  {
-    drd_report_race(addr, 1, eStore);
-  }
+   if (DRD_(running_thread_is_recording)()
+       && (DRD_(s_check_stack_accesses)
+           || ! DRD_(thread_address_on_stack)(addr))
+       && bm_access_store_1_triggers_conflict(addr)
+       && ! DRD_(is_suppressed)(addr, addr + 1))
+   {
+      drd_report_race(addr, 1, eStore);
+   }
 }
 
 static VG_REGPARM(1) void drd_trace_store_2(Addr addr)
 {
-  if (DRD_(running_thread_is_recording)()
-      && (DRD_(s_check_stack_accesses)
-          || ! DRD_(thread_address_on_stack)(addr))
-      && bm_access_store_2_triggers_conflict(addr)
-      && ! DRD_(is_suppressed)(addr, addr + 2))
-  {
-    drd_report_race(addr, 2, eStore);
-  }
+   if (DRD_(running_thread_is_recording)()
+       && (DRD_(s_check_stack_accesses)
+           || ! DRD_(thread_address_on_stack)(addr))
+       && bm_access_store_2_triggers_conflict(addr)
+       && ! DRD_(is_suppressed)(addr, addr + 2))
+   {
+      drd_report_race(addr, 2, eStore);
+   }
 }
 
 static VG_REGPARM(1) void drd_trace_store_4(Addr addr)
 {
-  if (DRD_(running_thread_is_recording)()
-      && (DRD_(s_check_stack_accesses)
-          || ! DRD_(thread_address_on_stack)(addr))
-      && bm_access_store_4_triggers_conflict(addr)
-      && ! DRD_(is_suppressed)(addr, addr + 4))
-  {
-    drd_report_race(addr, 4, eStore);
-  }
+   if (DRD_(running_thread_is_recording)()
+       && (DRD_(s_check_stack_accesses)
+           || ! DRD_(thread_address_on_stack)(addr))
+       && bm_access_store_4_triggers_conflict(addr)
+       && ! DRD_(is_suppressed)(addr, addr + 4))
+   {
+      drd_report_race(addr, 4, eStore);
+   }
 }
 
 static VG_REGPARM(1) void drd_trace_store_8(Addr addr)
 {
-  if (DRD_(running_thread_is_recording)()
-      && (DRD_(s_check_stack_accesses)
-          || ! DRD_(thread_address_on_stack)(addr))
-      && bm_access_store_8_triggers_conflict(addr)
-      && ! DRD_(is_suppressed)(addr, addr + 8))
-  {
-    drd_report_race(addr, 8, eStore);
-  }
+   if (DRD_(running_thread_is_recording)()
+       && (DRD_(s_check_stack_accesses)
+           || ! DRD_(thread_address_on_stack)(addr))
+       && bm_access_store_8_triggers_conflict(addr)
+       && ! DRD_(is_suppressed)(addr, addr + 8))
+   {
+      drd_report_race(addr, 8, eStore);
+   }
 }
 
 /**
@@ -263,297 +264,297 @@ static VG_REGPARM(1) void drd_trace_store_8(Addr addr)
  */
 static Bool is_stack_access(IRSB* const bb, IRExpr* const addr_expr)
 {
-  Bool result = False;
+   Bool result = False;
 
-  if (addr_expr->tag == Iex_RdTmp)
-  {
-    int i;
-    for (i = 0; i < bb->stmts_size; i++)
-    {
-      if (bb->stmts[i]
-          && bb->stmts[i]->tag == Ist_WrTmp
-          && bb->stmts[i]->Ist.WrTmp.tmp == addr_expr->Iex.RdTmp.tmp)
+   if (addr_expr->tag == Iex_RdTmp)
+   {
+      int i;
+      for (i = 0; i < bb->stmts_size; i++)
       {
-        IRExpr* e = bb->stmts[i]->Ist.WrTmp.data;
-        if (e->tag == Iex_Get && e->Iex.Get.offset == STACK_POINTER_OFFSET)
-        {
-          result = True;
-        }
+         if (bb->stmts[i]
+             && bb->stmts[i]->tag == Ist_WrTmp
+             && bb->stmts[i]->Ist.WrTmp.tmp == addr_expr->Iex.RdTmp.tmp)
+         {
+            IRExpr* e = bb->stmts[i]->Ist.WrTmp.data;
+            if (e->tag == Iex_Get && e->Iex.Get.offset == STACK_POINTER_OFFSET)
+            {
+               result = True;
+            }
 
-        //ppIRExpr(e);
-        //VG_(printf)(" (%s)\n", result ? "True" : "False");
-        break;
+            //ppIRExpr(e);
+            //VG_(printf)(" (%s)\n", result ? "True" : "False");
+            break;
+         }
       }
-    }
-  }
-  return result;
+   }
+   return result;
 }
 
 static void instrument_load(IRSB* const bb,
                             IRExpr* const addr_expr,
                             const HWord size)
 {
-  IRExpr* size_expr;
-  IRExpr** argv;
-  IRDirty* di;
+   IRExpr* size_expr;
+   IRExpr** argv;
+   IRDirty* di;
 
-  if (UNLIKELY(DRD_(any_address_is_traced)()))
-  {
-    addStmtToIRSB(bb,
-		  IRStmt_Dirty(
-		    unsafeIRDirty_0_N(/*regparms*/2,
-				      "drd_trace_load",
-				      VG_(fnptr_to_fnentry)
-				      (drd_trace_mem_load),
-				      mkIRExprVec_2(addr_expr,
-						    mkIRExpr_HWord(size)))));
-  }
+   if (UNLIKELY(DRD_(any_address_is_traced)()))
+   {
+      addStmtToIRSB(bb,
+         IRStmt_Dirty(
+            unsafeIRDirty_0_N(/*regparms*/2,
+                              "drd_trace_load",
+                              VG_(fnptr_to_fnentry)
+                              (drd_trace_mem_load),
+                              mkIRExprVec_2(addr_expr,
+                                            mkIRExpr_HWord(size)))));
+   }
 
-  if (! DRD_(s_check_stack_accesses) && is_stack_access(bb, addr_expr))
-    return;
+   if (! DRD_(s_check_stack_accesses) && is_stack_access(bb, addr_expr))
+      return;
 
-  switch (size)
-  {
-  case 1:
-    argv = mkIRExprVec_1(addr_expr);
-    di = unsafeIRDirty_0_N(/*regparms*/1,
-                           "drd_trace_load_1",
-                           VG_(fnptr_to_fnentry)(drd_trace_load_1),
-                           argv);
-    break;
-  case 2:
-    argv = mkIRExprVec_1(addr_expr);
-    di = unsafeIRDirty_0_N(/*regparms*/1,
-                           "drd_trace_load_2",
-                           VG_(fnptr_to_fnentry)(drd_trace_load_2),
-                           argv);
-    break;
-  case 4:
-    argv = mkIRExprVec_1(addr_expr);
-    di = unsafeIRDirty_0_N(/*regparms*/1,
-                           "drd_trace_load_4",
-                           VG_(fnptr_to_fnentry)(drd_trace_load_4),
-                           argv);
-    break;
-  case 8:
-    argv = mkIRExprVec_1(addr_expr);
-    di = unsafeIRDirty_0_N(/*regparms*/1,
-                           "drd_trace_load_8",
-                           VG_(fnptr_to_fnentry)(drd_trace_load_8),
-                           argv);
-    break;
-  default:
-    size_expr = mkIRExpr_HWord(size);
-    argv = mkIRExprVec_2(addr_expr, size_expr);
-    di = unsafeIRDirty_0_N(/*regparms*/2,
-                           "drd_trace_load",
-                           VG_(fnptr_to_fnentry)(DRD_(trace_load)),
-                           argv);
-    break;
-  }
-  addStmtToIRSB(bb, IRStmt_Dirty(di));
+   switch (size)
+   {
+   case 1:
+      argv = mkIRExprVec_1(addr_expr);
+      di = unsafeIRDirty_0_N(/*regparms*/1,
+                             "drd_trace_load_1",
+                             VG_(fnptr_to_fnentry)(drd_trace_load_1),
+                             argv);
+      break;
+   case 2:
+      argv = mkIRExprVec_1(addr_expr);
+      di = unsafeIRDirty_0_N(/*regparms*/1,
+                             "drd_trace_load_2",
+                             VG_(fnptr_to_fnentry)(drd_trace_load_2),
+                             argv);
+      break;
+   case 4:
+      argv = mkIRExprVec_1(addr_expr);
+      di = unsafeIRDirty_0_N(/*regparms*/1,
+                             "drd_trace_load_4",
+                             VG_(fnptr_to_fnentry)(drd_trace_load_4),
+                             argv);
+      break;
+   case 8:
+      argv = mkIRExprVec_1(addr_expr);
+      di = unsafeIRDirty_0_N(/*regparms*/1,
+                             "drd_trace_load_8",
+                             VG_(fnptr_to_fnentry)(drd_trace_load_8),
+                             argv);
+      break;
+   default:
+      size_expr = mkIRExpr_HWord(size);
+      argv = mkIRExprVec_2(addr_expr, size_expr);
+      di = unsafeIRDirty_0_N(/*regparms*/2,
+                             "drd_trace_load",
+                             VG_(fnptr_to_fnentry)(DRD_(trace_load)),
+                             argv);
+      break;
+   }
+   addStmtToIRSB(bb, IRStmt_Dirty(di));
 }
 
 static void instrument_store(IRSB* const bb,
                              IRExpr* const addr_expr,
                              const HWord size)
 {
-  IRExpr* size_expr;
-  IRExpr** argv;
-  IRDirty* di;
+   IRExpr* size_expr;
+   IRExpr** argv;
+   IRDirty* di;
 
-  if (UNLIKELY(DRD_(any_address_is_traced)()))
-  {
-    addStmtToIRSB(bb,
-		  IRStmt_Dirty(
-		    unsafeIRDirty_0_N(/*regparms*/2,
-				      "drd_trace_store",
-				      VG_(fnptr_to_fnentry)
-				      (drd_trace_mem_store),
-				      mkIRExprVec_2(addr_expr,
-						    mkIRExpr_HWord(size)))));
-  }
+   if (UNLIKELY(DRD_(any_address_is_traced)()))
+   {
+      addStmtToIRSB(bb,
+                    IRStmt_Dirty(
+                                 unsafeIRDirty_0_N(/*regparms*/2,
+                                                   "drd_trace_store",
+                                                   VG_(fnptr_to_fnentry)
+                                                   (drd_trace_mem_store),
+                                                   mkIRExprVec_2(addr_expr,
+                                                                 mkIRExpr_HWord(size)))));
+   }
 
-  if (! DRD_(s_check_stack_accesses) && is_stack_access(bb, addr_expr))
-    return;
+   if (! DRD_(s_check_stack_accesses) && is_stack_access(bb, addr_expr))
+      return;
 
-  switch (size)
-  {
-  case 1:
-    argv = mkIRExprVec_1(addr_expr);
-    di = unsafeIRDirty_0_N(/*regparms*/1,
-                           "drd_trace_store_1",
-                           VG_(fnptr_to_fnentry)(drd_trace_store_1),
-                           argv);
-    break;
-  case 2:
-    argv = mkIRExprVec_1(addr_expr);
-    di = unsafeIRDirty_0_N(/*regparms*/1,
-                           "drd_trace_store_2",
-                           VG_(fnptr_to_fnentry)(drd_trace_store_2),
-                           argv);
-    break;
-  case 4:
-    argv = mkIRExprVec_1(addr_expr);
-    di = unsafeIRDirty_0_N(/*regparms*/1,
-                           "drd_trace_store_4",
-                           VG_(fnptr_to_fnentry)(drd_trace_store_4),
-                           argv);
-    break;
-  case 8:
-    argv = mkIRExprVec_1(addr_expr);
-    di = unsafeIRDirty_0_N(/*regparms*/1,
-                           "drd_trace_store_8",
-                           VG_(fnptr_to_fnentry)(drd_trace_store_8),
-                           argv);
-    break;
-  default:
-    size_expr = mkIRExpr_HWord(size);
-    argv = mkIRExprVec_2(addr_expr, size_expr);
-    di = unsafeIRDirty_0_N(/*regparms*/2,
-                           "drd_trace_store",
-                           VG_(fnptr_to_fnentry)(DRD_(trace_store)),
-                           argv);
-    break;
-  }
-  addStmtToIRSB(bb, IRStmt_Dirty(di));
+   switch (size)
+   {
+   case 1:
+      argv = mkIRExprVec_1(addr_expr);
+      di = unsafeIRDirty_0_N(/*regparms*/1,
+                             "drd_trace_store_1",
+                             VG_(fnptr_to_fnentry)(drd_trace_store_1),
+                             argv);
+      break;
+   case 2:
+      argv = mkIRExprVec_1(addr_expr);
+      di = unsafeIRDirty_0_N(/*regparms*/1,
+                             "drd_trace_store_2",
+                             VG_(fnptr_to_fnentry)(drd_trace_store_2),
+                             argv);
+      break;
+   case 4:
+      argv = mkIRExprVec_1(addr_expr);
+      di = unsafeIRDirty_0_N(/*regparms*/1,
+                             "drd_trace_store_4",
+                             VG_(fnptr_to_fnentry)(drd_trace_store_4),
+                             argv);
+      break;
+   case 8:
+      argv = mkIRExprVec_1(addr_expr);
+      di = unsafeIRDirty_0_N(/*regparms*/1,
+                             "drd_trace_store_8",
+                             VG_(fnptr_to_fnentry)(drd_trace_store_8),
+                             argv);
+      break;
+   default:
+      size_expr = mkIRExpr_HWord(size);
+      argv = mkIRExprVec_2(addr_expr, size_expr);
+      di = unsafeIRDirty_0_N(/*regparms*/2,
+                             "drd_trace_store",
+                             VG_(fnptr_to_fnentry)(DRD_(trace_store)),
+                             argv);
+      break;
+   }
+   addStmtToIRSB(bb, IRStmt_Dirty(di));
 }
 
 IRSB* DRD_(instrument)(VgCallbackClosure* const closure,
-                     IRSB* const bb_in,
-                     VexGuestLayout* const layout,
-                     VexGuestExtents* const vge, 
-                     IRType const gWordTy,
-                     IRType const hWordTy)
+                       IRSB* const bb_in,
+                       VexGuestLayout* const layout,
+                       VexGuestExtents* const vge, 
+                       IRType const gWordTy,
+                       IRType const hWordTy)
 {
-  IRDirty* di;
-  Int      i;
-  IRSB*    bb;
-  IRExpr** argv;
-  Bool     instrument = True;
-  Bool     bus_locked = False;
+   IRDirty* di;
+   Int      i;
+   IRSB*    bb;
+   IRExpr** argv;
+   Bool     instrument = True;
+   Bool     bus_locked = False;
 
-  /* Set up BB */
-  bb           = emptyIRSB();
-  bb->tyenv    = deepCopyIRTypeEnv(bb_in->tyenv);
-  bb->next     = deepCopyIRExpr(bb_in->next);
-  bb->jumpkind = bb_in->jumpkind;
+   /* Set up BB */
+   bb           = emptyIRSB();
+   bb->tyenv    = deepCopyIRTypeEnv(bb_in->tyenv);
+   bb->next     = deepCopyIRExpr(bb_in->next);
+   bb->jumpkind = bb_in->jumpkind;
 
-  for (i = 0; i < bb_in->stmts_used; i++)
-  {
-    IRStmt* const st = bb_in->stmts[i];
-    tl_assert(st);
-    if (st->tag == Ist_NoOp)
-      continue;
+   for (i = 0; i < bb_in->stmts_used; i++)
+   {
+      IRStmt* const st = bb_in->stmts[i];
+      tl_assert(st);
+      if (st->tag == Ist_NoOp)
+         continue;
 
-    switch (st->tag)
-    {
-    /* Note: the code for not instrumenting the code in .plt          */
-    /* sections is only necessary on CentOS 3.0 x86 (kernel 2.4.21    */
-    /* + glibc 2.3.2 + NPTL 0.60 + binutils 2.14.90.0.4).             */
-    /* This is because on this platform dynamic library symbols are   */
-    /* relocated in another way than by later binutils versions. The  */
-    /* linker e.g. does not generate .got.plt sections on CentOS 3.0. */
-    case Ist_IMark:
-      instrument = VG_(seginfo_sect_kind)(NULL, 0, st->Ist.IMark.addr)
-        != Vg_SectPLT;
-      addStmtToIRSB(bb, st);
-      break;
-
-    case Ist_MBE:
-      switch (st->Ist.MBE.event)
+      switch (st->tag)
       {
-      case Imbe_Fence:
-        break; /* not interesting */
-      case Imbe_BusLock:
-      case Imbe_SnoopedStoreBegin:
-        tl_assert(! bus_locked);
-        bus_locked = True;
-        break;
-      case Imbe_BusUnlock:
-      case Imbe_SnoopedStoreEnd:
-        tl_assert(bus_locked);
-        bus_locked = False;
-        break;
+         /* Note: the code for not instrumenting the code in .plt          */
+         /* sections is only necessary on CentOS 3.0 x86 (kernel 2.4.21    */
+         /* + glibc 2.3.2 + NPTL 0.60 + binutils 2.14.90.0.4).             */
+         /* This is because on this platform dynamic library symbols are   */
+         /* relocated in another way than by later binutils versions. The  */
+         /* linker e.g. does not generate .got.plt sections on CentOS 3.0. */
+      case Ist_IMark:
+         instrument = VG_(seginfo_sect_kind)(NULL, 0, st->Ist.IMark.addr)
+            != Vg_SectPLT;
+         addStmtToIRSB(bb, st);
+         break;
+
+      case Ist_MBE:
+         switch (st->Ist.MBE.event)
+         {
+         case Imbe_Fence:
+            break; /* not interesting */
+         case Imbe_BusLock:
+         case Imbe_SnoopedStoreBegin:
+            tl_assert(! bus_locked);
+            bus_locked = True;
+            break;
+         case Imbe_BusUnlock:
+         case Imbe_SnoopedStoreEnd:
+            tl_assert(bus_locked);
+            bus_locked = False;
+            break;
+         default:
+            tl_assert(0);
+         }
+         addStmtToIRSB(bb, st);
+         break;
+
+      case Ist_Store:
+         if (instrument && ! bus_locked)
+         {
+            instrument_store(bb,
+                             st->Ist.Store.addr,
+                             sizeofIRType(typeOfIRExpr(bb->tyenv,
+                                                       st->Ist.Store.data)));
+         }
+         addStmtToIRSB(bb, st);
+         break;
+
+      case Ist_WrTmp:
+         if (instrument)
+         {
+            const IRExpr* const data = st->Ist.WrTmp.data;
+            if (data->tag == Iex_Load)
+            {
+               instrument_load(bb,
+                               data->Iex.Load.addr,
+                               sizeofIRType(data->Iex.Load.ty));
+            }
+         }
+         addStmtToIRSB(bb, st);
+         break;
+
+      case Ist_Dirty:
+         if (instrument)
+         {
+            IRDirty* d = st->Ist.Dirty.details;
+            IREffect const mFx = d->mFx;
+            switch (mFx) {
+            case Ifx_None:
+               break;
+            case Ifx_Read:
+            case Ifx_Write:
+            case Ifx_Modify:
+               tl_assert(d->mAddr);
+               tl_assert(d->mSize > 0);
+               argv = mkIRExprVec_2(d->mAddr, mkIRExpr_HWord(d->mSize));
+               if (mFx == Ifx_Read || mFx == Ifx_Modify) {
+                  di = unsafeIRDirty_0_N(
+                          /*regparms*/2,
+                          "drd_trace_load",
+                          VG_(fnptr_to_fnentry)(DRD_(trace_load)),
+                          argv);
+                  addStmtToIRSB(bb, IRStmt_Dirty(di));
+               }
+               if ((mFx == Ifx_Write || mFx == Ifx_Modify)
+                   && ! bus_locked)
+               {
+                  di = unsafeIRDirty_0_N(
+                          /*regparms*/2,
+                          "drd_trace_store",
+                          VG_(fnptr_to_fnentry)(DRD_(trace_store)),
+                          argv);
+                  addStmtToIRSB(bb, IRStmt_Dirty(di));
+               }
+               break;
+            default:
+               tl_assert(0);
+            }
+         }
+         addStmtToIRSB(bb, st);
+         break;
+
       default:
-        tl_assert(0);
+         addStmtToIRSB(bb, st);
+         break;
       }
-      addStmtToIRSB(bb, st);
-      break;
+   }
 
-    case Ist_Store:
-      if (instrument && ! bus_locked)
-      {
-        instrument_store(bb,
-                         st->Ist.Store.addr,
-                         sizeofIRType(typeOfIRExpr(bb->tyenv,
-                                                   st->Ist.Store.data)));
-      }
-      addStmtToIRSB(bb, st);
-      break;
+   tl_assert(! bus_locked);
 
-    case Ist_WrTmp:
-      if (instrument)
-      {
-        const IRExpr* const data = st->Ist.WrTmp.data;
-        if (data->tag == Iex_Load)
-        {
-          instrument_load(bb,
-                          data->Iex.Load.addr,
-                          sizeofIRType(data->Iex.Load.ty));
-        }
-      }
-      addStmtToIRSB(bb, st);
-      break;
-
-    case Ist_Dirty:
-      if (instrument)
-      {
-        IRDirty* d = st->Ist.Dirty.details;
-        IREffect const mFx = d->mFx;
-        switch (mFx) {
-        case Ifx_None:
-          break;
-        case Ifx_Read:
-        case Ifx_Write:
-        case Ifx_Modify:
-          tl_assert(d->mAddr);
-          tl_assert(d->mSize > 0);
-          argv = mkIRExprVec_2(d->mAddr, mkIRExpr_HWord(d->mSize));
-          if (mFx == Ifx_Read || mFx == Ifx_Modify) {
-            di = unsafeIRDirty_0_N(
-                                   /*regparms*/2,
-                                   "drd_trace_load",
-                                   VG_(fnptr_to_fnentry)(DRD_(trace_load)),
-                                   argv);
-            addStmtToIRSB(bb, IRStmt_Dirty(di));
-          }
-          if ((mFx == Ifx_Write || mFx == Ifx_Modify)
-              && ! bus_locked)
-          {
-            di = unsafeIRDirty_0_N(
-                                   /*regparms*/2,
-                                   "drd_trace_store",
-                                   VG_(fnptr_to_fnentry)(DRD_(trace_store)),
-                                   argv);
-            addStmtToIRSB(bb, IRStmt_Dirty(di));
-          }
-          break;
-        default:
-          tl_assert(0);
-        }
-      }
-      addStmtToIRSB(bb, st);
-      break;
-
-    default:
-      addStmtToIRSB(bb, st);
-      break;
-    }
-  }
-
-  tl_assert(! bus_locked);
-
-  return bb;
+   return bb;
 }
 

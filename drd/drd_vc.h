@@ -1,3 +1,4 @@
+/* -*- mode: C; c-basic-offset: 3; -*- */
 /*
   This file is part of drd, a thread error detector.
 
@@ -52,15 +53,15 @@
 /** Vector clock element. */
 typedef struct
 {
-  DrdThreadId threadid;
-  UInt        count;
+   DrdThreadId threadid;
+   UInt        count;
 } VCElem;
 
 typedef struct
 {
-  unsigned capacity; /**< number of elements allocated for array vc. */
-  unsigned size;     /**< number of elements used of array vc. */
-  VCElem*  vc;       /**< vector clock elements. */
+   unsigned capacity; /**< number of elements allocated for array vc. */
+   unsigned size;     /**< number of elements used of array vc. */
+   VCElem*  vc;       /**< vector clock elements. */
 } VectorClock;
 
 
@@ -99,26 +100,26 @@ void DRD_(vc_test)(void);
 static __inline__
 Bool DRD_(vc_lte)(const VectorClock* const vc1, const VectorClock* const vc2)
 {
-  unsigned i;
-  unsigned j = 0;
+   unsigned i;
+   unsigned j = 0;
 
-  for (i = 0; i < vc1->size; i++)
-  {
-    while (j < vc2->size && vc2->vc[j].threadid < vc1->vc[i].threadid)
-    {
-      j++;
-    }
-    if (j >= vc2->size || vc2->vc[j].threadid > vc1->vc[i].threadid)
-      return False;
+   for (i = 0; i < vc1->size; i++)
+   {
+      while (j < vc2->size && vc2->vc[j].threadid < vc1->vc[i].threadid)
+      {
+         j++;
+      }
+      if (j >= vc2->size || vc2->vc[j].threadid > vc1->vc[i].threadid)
+         return False;
 #ifdef ENABLE_DRD_CONSISTENCY_CHECKS
-    /* This assert statement has been commented out because of performance */
-    /* reasons.*/
-    tl_assert(j < vc2->size && vc2->vc[j].threadid == vc1->vc[i].threadid);
+      /* This assert statement has been commented out because of performance */
+      /* reasons.*/
+      tl_assert(j < vc2->size && vc2->vc[j].threadid == vc1->vc[i].threadid);
 #endif
-    if (vc1->vc[i].count > vc2->vc[j].count)
-      return False;
-  }
-  return True;
+      if (vc1->vc[i].count > vc2->vc[j].count)
+         return False;
+   }
+   return True;
 }
 
 

@@ -1,3 +1,4 @@
+/* -*- mode: C; c-basic-offset: 3; -*- */
 /*
   This file is part of drd, a thread error detector.
 
@@ -41,20 +42,20 @@
 
 typedef struct segment
 {
-  /** Pointers to next and previous segments executed by the same thread. */
-  struct segment*    next;
-  struct segment*    prev;
-  /** Reference count: number of pointers that point to this segment. */
-  int                refcnt;
-  /** Stack trace of the first instruction of the segment. */
-  ExeContext*        stacktrace;
-  /** Vector clock associated with the segment. */
-  VectorClock        vc;
-  /**
-   * Bitmap representing the memory accesses by the instructions associated
-   * with the segment.
-   */
-  struct bitmap*     bm;
+   /** Pointers to next and previous segments executed by the same thread. */
+   struct segment*    next;
+   struct segment*    prev;
+   /** Reference count: number of pointers that point to this segment. */
+   int                refcnt;
+   /** Stack trace of the first instruction of the segment. */
+   ExeContext*        stacktrace;
+   /** Vector clock associated with the segment. */
+   VectorClock        vc;
+   /**
+    * Bitmap representing the memory accesses by the instructions associated
+    * with the segment.
+    */
+   struct bitmap*     bm;
 } Segment;
 
 

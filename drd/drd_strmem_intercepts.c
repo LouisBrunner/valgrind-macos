@@ -1,3 +1,4 @@
+/* -*- mode: C; c-basic-offset: 3; -*- */
 
 /*--------------------------------------------------------------------*/
 /*--- Replacements for strlen() and strnlen(), which run on the    ---*/
@@ -5,30 +6,30 @@
 /*--------------------------------------------------------------------*/
 
 /*
-   This file is part of DRD, a heavyweight Valgrind tool for
-   detecting threading errors. The code below has been extracted
-   from memchec/mc_replace_strmem.c, which has the following copyright
-   notice:
+  This file is part of DRD, a heavyweight Valgrind tool for
+  detecting threading errors. The code below has been extracted
+  from memchec/mc_replace_strmem.c, which has the following copyright
+  notice:
 
-   Copyright (C) 2000-2009 Julian Seward 
-      jseward@acm.org
+  Copyright (C) 2000-2009 Julian Seward 
+  jseward@acm.org
 
-   This program is free software; you can redistribute it and/or
-   modify it under the terms of the GNU General Public License as
-   published by the Free Software Foundation; either version 2 of the
-   License, or (at your option) any later version.
+  This program is free software; you can redistribute it and/or
+  modify it under the terms of the GNU General Public License as
+  published by the Free Software Foundation; either version 2 of the
+  License, or (at your option) any later version.
 
-   This program is distributed in the hope that it will be useful, but
-   WITHOUT ANY WARRANTY; without even the implied warranty of
-   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-   General Public License for more details.
+  This program is distributed in the hope that it will be useful, but
+  WITHOUT ANY WARRANTY; without even the implied warranty of
+  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+  General Public License for more details.
 
-   You should have received a copy of the GNU General Public License
-   along with this program; if not, write to the Free Software
-   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
-   02111-1307, USA.
+  You should have received a copy of the GNU General Public License
+  along with this program; if not, write to the Free Software
+  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
+  02111-1307, USA.
 
-   The GNU General Public License is contained in the file COPYING.
+  The GNU General Public License is contained in the file COPYING.
 */
 
 #include "pub_tool_basics.h"
@@ -38,13 +39,13 @@
 #include "valgrind.h"
 
 
-#define STRNLEN(soname, fnname) \
+#define STRNLEN(soname, fnname)                                         \
    SizeT VG_REPLACE_FUNCTION_ZU(soname,fnname) ( const char* str, SizeT n ); \
    SizeT VG_REPLACE_FUNCTION_ZU(soname,fnname) ( const char* str, SizeT n ) \
-   { \
-      SizeT i = 0; \
-      while (i < n && str[i] != 0) i++; \
-      return i; \
+   {                                                                    \
+      SizeT i = 0;                                                      \
+      while (i < n && str[i] != 0) i++;                                 \
+      return i;                                                         \
    }
 
 STRNLEN(VG_Z_LIBC_SONAME, strnlen)
@@ -54,13 +55,13 @@ STRNLEN(VG_Z_LIBC_SONAME, strnlen)
 // calls to strlen() with its own built-in version.  This can be very
 // confusing if you aren't expecting it.  Other small functions in this file
 // may also be inline by gcc.
-#define STRLEN(soname, fnname) \
-   SizeT VG_REPLACE_FUNCTION_ZU(soname,fnname)( const char* str ); \
-   SizeT VG_REPLACE_FUNCTION_ZU(soname,fnname)( const char* str ) \
-   { \
-      SizeT i = 0; \
-      while (str[i] != 0) i++; \
-      return i; \
+#define STRLEN(soname, fnname)                                          \
+   SizeT VG_REPLACE_FUNCTION_ZU(soname,fnname)( const char* str );      \
+   SizeT VG_REPLACE_FUNCTION_ZU(soname,fnname)( const char* str )       \
+   {                                                                    \
+      SizeT i = 0;                                                      \
+      while (str[i] != 0) i++;                                          \
+      return i;                                                         \
    }
 
 STRLEN(VG_Z_LIBC_SONAME,          strlen)

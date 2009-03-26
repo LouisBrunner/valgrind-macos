@@ -1,3 +1,4 @@
+/* -*- mode: C; c-basic-offset: 3; -*- */
 /*
   This file is part of drd, a thread error detector.
 
@@ -47,7 +48,7 @@ static Bool s_show_conflicting_segments = True;
 
 void DRD_(set_show_conflicting_segments)(const Bool scs)
 {
-  s_show_conflicting_segments = scs;
+   s_show_conflicting_segments = scs;
 }
 
 /**
@@ -57,17 +58,17 @@ void DRD_(set_show_conflicting_segments)(const Bool scs)
 static
 void describe_malloced_addr(Addr const a, SizeT const len, AddrInfo* const ai)
 {
-  Addr data;
+   Addr data;
 
-  if (DRD_(heap_addrinfo)(a, &data, &ai->size, &ai->lastchange))
-  {
-    ai->akind = eMallocd;
-    ai->rwoffset = a - data;
-  }
-  else
-  {
-    ai->akind = eUnknown;
-  }
+   if (DRD_(heap_addrinfo)(a, &data, &ai->size, &ai->lastchange))
+   {
+      ai->akind = eMallocd;
+      ai->rwoffset = a - data;
+   }
+   else
+   {
+      ai->akind = eUnknown;
+   }
 }
 
 /**
@@ -77,343 +78,344 @@ void describe_malloced_addr(Addr const a, SizeT const len, AddrInfo* const ai)
  */
 static void first_observed(const Addr obj)
 {
-  DrdClientobj* cl;
+   DrdClientobj* cl;
 
-  cl = DRD_(clientobj_get_any)(obj);
-  if (cl)
-  {
-    tl_assert(cl->any.first_observed_at);
-    VG_(message)(Vg_UserMsg,
-                 "%s 0x%lx was first observed at:",
-                 DRD_(clientobj_type_name)(cl->any.type),
-                 obj);
-    VG_(pp_ExeContext)(cl->any.first_observed_at);
-  }
+   cl = DRD_(clientobj_get_any)(obj);
+   if (cl)
+   {
+      tl_assert(cl->any.first_observed_at);
+      VG_(message)(Vg_UserMsg,
+                   "%s 0x%lx was first observed at:",
+                   DRD_(clientobj_type_name)(cl->any.type),
+                   obj);
+      VG_(pp_ExeContext)(cl->any.first_observed_at);
+   }
 }
 
 static
 void drd_report_data_race(Error* const err, const DataRaceErrInfo* const dri)
 {
-  AddrInfo ai;
-  const unsigned descr_size = 256;
-  Char* descr1 = VG_(malloc)("drd.error.drdr2.1", descr_size);
-  Char* descr2 = VG_(malloc)("drd.error.drdr2.2", descr_size);
+   AddrInfo ai;
+   const unsigned descr_size = 256;
+   Char* descr1 = VG_(malloc)("drd.error.drdr2.1", descr_size);
+   Char* descr2 = VG_(malloc)("drd.error.drdr2.2", descr_size);
 
-  tl_assert(dri);
-  tl_assert(dri->addr);
-  tl_assert(dri->size > 0);
-  tl_assert(descr1);
-  tl_assert(descr2);
+   tl_assert(dri);
+   tl_assert(dri->addr);
+   tl_assert(dri->size > 0);
+   tl_assert(descr1);
+   tl_assert(descr2);
 
-  descr1[0] = 0;
-  descr2[0] = 0;
-  VG_(get_data_description)(descr1, descr2, descr_size, dri->addr);
-  if (descr1[0] == 0)
-  {
-    describe_malloced_addr(dri->addr, dri->size, &ai);
-  }
-  VG_(message)(Vg_UserMsg,
-               "Conflicting %s by thread %d/%d at 0x%08lx size %ld",
-               dri->access_type == eStore ? "store" : "load",
-               DRD_(DrdThreadIdToVgThreadId)(dri->tid),
-               dri->tid,
-               dri->addr,
-               dri->size);
-  VG_(pp_ExeContext)(VG_(get_error_where)(err));
-  if (descr1[0])
-  {
-    VG_(message)(Vg_UserMsg, "%s", descr1);
-    VG_(message)(Vg_UserMsg, "%s", descr2);
-  }
-  else if (ai.akind == eMallocd && ai.lastchange)
-  {
-    VG_(message)(Vg_UserMsg,
-                 "Address 0x%lx is at offset %ld from 0x%lx."
-                 " Allocation context:",
-                 dri->addr, ai.rwoffset, dri->addr - ai.rwoffset);
-    VG_(pp_ExeContext)(ai.lastchange);
-  }
-  else
-  {
-    char sect_name[64];
-    VgSectKind sect_kind;
-
-    sect_kind = VG_(seginfo_sect_kind)(sect_name, sizeof(sect_name), dri->addr);
-    if (sect_kind != Vg_SectUnknown)
-    {
+   descr1[0] = 0;
+   descr2[0] = 0;
+   VG_(get_data_description)(descr1, descr2, descr_size, dri->addr);
+   if (descr1[0] == 0)
+   {
+      describe_malloced_addr(dri->addr, dri->size, &ai);
+   }
+   VG_(message)(Vg_UserMsg,
+                "Conflicting %s by thread %d/%d at 0x%08lx size %ld",
+                dri->access_type == eStore ? "store" : "load",
+                DRD_(DrdThreadIdToVgThreadId)(dri->tid),
+                dri->tid,
+                dri->addr,
+                dri->size);
+   VG_(pp_ExeContext)(VG_(get_error_where)(err));
+   if (descr1[0])
+   {
+      VG_(message)(Vg_UserMsg, "%s", descr1);
+      VG_(message)(Vg_UserMsg, "%s", descr2);
+   }
+   else if (ai.akind == eMallocd && ai.lastchange)
+   {
       VG_(message)(Vg_UserMsg,
-                   "Allocation context: %s section of %s",
-                   VG_(pp_SectKind)(sect_kind),
-                   sect_name);
-    }
-    else
-    {
-      VG_(message)(Vg_UserMsg, "Allocation context: unknown.");
-    }
-  }
-  if (s_show_conflicting_segments)
-  {
-    DRD_(thread_report_conflicting_segments)(dri->tid,
-                                             dri->addr, dri->size,
-                                             dri->access_type);
-  }
+                   "Address 0x%lx is at offset %ld from 0x%lx."
+                   " Allocation context:",
+                   dri->addr, ai.rwoffset, dri->addr - ai.rwoffset);
+      VG_(pp_ExeContext)(ai.lastchange);
+   }
+   else
+   {
+      char sect_name[64];
+      VgSectKind sect_kind;
 
-  VG_(free)(descr2);
-  VG_(free)(descr1);
+      sect_kind = VG_(seginfo_sect_kind)(sect_name, sizeof(sect_name),
+                                         dri->addr);
+      if (sect_kind != Vg_SectUnknown)
+      {
+         VG_(message)(Vg_UserMsg,
+                      "Allocation context: %s section of %s",
+                      VG_(pp_SectKind)(sect_kind),
+                      sect_name);
+      }
+      else
+      {
+         VG_(message)(Vg_UserMsg, "Allocation context: unknown.");
+      }
+   }
+   if (s_show_conflicting_segments)
+   {
+      DRD_(thread_report_conflicting_segments)(dri->tid,
+                                               dri->addr, dri->size,
+                                               dri->access_type);
+   }
+
+   VG_(free)(descr2);
+   VG_(free)(descr1);
 }
 
 static Bool drd_tool_error_eq(VgRes res, Error* e1, Error* e2)
 {
-  return False;
+   return False;
 }
 
 static void drd_tool_error_pp(Error* const e)
 {
-  switch (VG_(get_error_kind)(e))
-  {
-  case DataRaceErr: {
-    drd_report_data_race(e, VG_(get_error_extra)(e));
-    break;
-  }
-  case MutexErr: {
-    MutexErrInfo* p = (MutexErrInfo*)(VG_(get_error_extra)(e));
-    tl_assert(p);
-    if (p->recursion_count >= 0)
-    {
+   switch (VG_(get_error_kind)(e))
+   {
+   case DataRaceErr: {
+      drd_report_data_race(e, VG_(get_error_extra)(e));
+      break;
+   }
+   case MutexErr: {
+      MutexErrInfo* p = (MutexErrInfo*)(VG_(get_error_extra)(e));
+      tl_assert(p);
+      if (p->recursion_count >= 0)
+      {
+         VG_(message)(Vg_UserMsg,
+                      "%s: mutex 0x%lx, recursion count %d, owner %d.",
+                      VG_(get_error_string)(e),
+                      p->mutex,
+                      p->recursion_count,
+                      p->owner);
+      }
+      else
+      {
+         VG_(message)(Vg_UserMsg,
+                      "The object at address 0x%lx is not a mutex.",
+                      p->mutex);
+      }
+      VG_(pp_ExeContext)(VG_(get_error_where)(e));
+      first_observed(p->mutex);
+      break;
+   }
+   case CondErr: {
+      CondErrInfo* cdei =(CondErrInfo*)(VG_(get_error_extra)(e));
       VG_(message)(Vg_UserMsg,
-                   "%s: mutex 0x%lx, recursion count %d, owner %d.",
+                   "%s: cond 0x%lx",
                    VG_(get_error_string)(e),
-                   p->mutex,
-                   p->recursion_count,
-                   p->owner);
-    }
-    else
-    {
+                   cdei->cond);
+      VG_(pp_ExeContext)(VG_(get_error_where)(e));
+      first_observed(cdei->cond);
+      break;
+   }
+   case CondDestrErr: {
+      CondDestrErrInfo* cdi = (CondDestrErrInfo*)(VG_(get_error_extra)(e));
       VG_(message)(Vg_UserMsg,
-                   "The object at address 0x%lx is not a mutex.",
-                   p->mutex);
-    }
-    VG_(pp_ExeContext)(VG_(get_error_where)(e));
-    first_observed(p->mutex);
-    break;
-  }
-  case CondErr: {
-    CondErrInfo* cdei =(CondErrInfo*)(VG_(get_error_extra)(e));
-    VG_(message)(Vg_UserMsg,
-                 "%s: cond 0x%lx",
-                 VG_(get_error_string)(e),
-                 cdei->cond);
-    VG_(pp_ExeContext)(VG_(get_error_where)(e));
-    first_observed(cdei->cond);
-    break;
-  }
-  case CondDestrErr: {
-    CondDestrErrInfo* cdi = (CondDestrErrInfo*)(VG_(get_error_extra)(e));
-    VG_(message)(Vg_UserMsg,
-                 "%s: cond 0x%lx, mutex 0x%lx locked by thread %d/%d",
-                 VG_(get_error_string)(e),
-                 cdi->cond, cdi->mutex,
-                 DRD_(DrdThreadIdToVgThreadId)(cdi->tid), cdi->tid);
-    VG_(pp_ExeContext)(VG_(get_error_where)(e));
-    first_observed(cdi->mutex);
-    break;
-  }
-  case CondRaceErr: {
-    CondRaceErrInfo* cei = (CondRaceErrInfo*)(VG_(get_error_extra)(e));
-    VG_(message)(Vg_UserMsg,
-                 "Probably a race condition: condition variable 0x%lx has been"
-                 " signaled but the associated mutex 0x%lx is not locked"
-                 " by the signalling thread.",
-                 cei->cond, cei->mutex);
-    VG_(pp_ExeContext)(VG_(get_error_where)(e));
-    first_observed(cei->cond);
-    first_observed(cei->mutex);
-    break;
-  }
-  case CondWaitErr: {
-    CondWaitErrInfo* cwei = (CondWaitErrInfo*)(VG_(get_error_extra)(e));
-    VG_(message)(Vg_UserMsg,
-                 "%s: condition variable 0x%lx, mutexes 0x%lx and 0x%lx",
-                 VG_(get_error_string)(e),
-                 cwei->cond,
-                 cwei->mutex1,
-                 cwei->mutex2);
-    VG_(pp_ExeContext)(VG_(get_error_where)(e));
-    first_observed(cwei->cond);
-    first_observed(cwei->mutex1);
-    first_observed(cwei->mutex2);
-    break;
-  }
-  case SemaphoreErr: {
-    SemaphoreErrInfo* sei = (SemaphoreErrInfo*)(VG_(get_error_extra)(e));
-    tl_assert(sei);
-    VG_(message)(Vg_UserMsg,
-                 "%s: semaphore 0x%lx",
-                 VG_(get_error_string)(e),
-                 sei->semaphore);
-    VG_(pp_ExeContext)(VG_(get_error_where)(e));
-    first_observed(sei->semaphore);
-    break;
-  }
-  case BarrierErr: {
-    BarrierErrInfo* bei = (BarrierErrInfo*)(VG_(get_error_extra)(e));
-    tl_assert(bei);
-    VG_(message)(Vg_UserMsg,
-                 "%s: barrier 0x%lx",
-                 VG_(get_error_string)(e),
-                 bei->barrier);
-    VG_(pp_ExeContext)(VG_(get_error_where)(e));
-    if (bei->other_context)
-    {
+                   "%s: cond 0x%lx, mutex 0x%lx locked by thread %d/%d",
+                   VG_(get_error_string)(e),
+                   cdi->cond, cdi->mutex,
+                   DRD_(DrdThreadIdToVgThreadId)(cdi->tid), cdi->tid);
+      VG_(pp_ExeContext)(VG_(get_error_where)(e));
+      first_observed(cdi->mutex);
+      break;
+   }
+   case CondRaceErr: {
+      CondRaceErrInfo* cei = (CondRaceErrInfo*)(VG_(get_error_extra)(e));
       VG_(message)(Vg_UserMsg,
-                   "Conflicting wait call by thread %d/%d:",
-                   DRD_(DrdThreadIdToVgThreadId)(bei->other_tid),
-                   bei->other_tid);
-      VG_(pp_ExeContext)(bei->other_context);
-    }
-    first_observed(bei->barrier);
-    break;
-  }
-  case RwlockErr: {
-    RwlockErrInfo* p = (RwlockErrInfo*)(VG_(get_error_extra)(e));
-    tl_assert(p);
-    VG_(message)(Vg_UserMsg,
-                 "%s: rwlock 0x%lx.",
-                 VG_(get_error_string)(e),
-                 p->rwlock);
-    VG_(pp_ExeContext)(VG_(get_error_where)(e));
-    first_observed(p->rwlock);
-    break;
-  }
-  case HoldtimeErr: {
-    HoldtimeErrInfo* p =(HoldtimeErrInfo*)(VG_(get_error_extra)(e));
-    tl_assert(p);
-    tl_assert(p->acquired_at);
-    VG_(message)(Vg_UserMsg, "Acquired at:");
-    VG_(pp_ExeContext)(p->acquired_at);
-    VG_(message)(Vg_UserMsg,
-                 "Lock on %s 0x%lx was held during %d ms (threshold: %d ms).",
-                 VG_(get_error_string)(e),
-                 p->synchronization_object,
-                 p->hold_time_ms,
-                 p->threshold_ms);
-    VG_(pp_ExeContext)(VG_(get_error_where)(e));
-    first_observed(p->synchronization_object);
-    break;
-  }
-  case GenericErr: {
-    //GenericErrInfo* gei =(GenericErrInfo*)(VG_(get_error_extra)(e));
-    VG_(message)(Vg_UserMsg, "%s", VG_(get_error_string)(e));
-    VG_(pp_ExeContext)(VG_(get_error_where)(e));
-    break;
-  }
-  default:
-    VG_(message)(Vg_UserMsg,
-                 "%s",
-                 VG_(get_error_string)(e));
-    VG_(pp_ExeContext)(VG_(get_error_where)(e));
-    break;
-  }
+                   "Probably a race condition: condition variable 0x%lx has"
+                   " been signaled but the associated mutex 0x%lx is not"
+                   " locked by the signalling thread.",
+                   cei->cond, cei->mutex);
+      VG_(pp_ExeContext)(VG_(get_error_where)(e));
+      first_observed(cei->cond);
+      first_observed(cei->mutex);
+      break;
+   }
+   case CondWaitErr: {
+      CondWaitErrInfo* cwei = (CondWaitErrInfo*)(VG_(get_error_extra)(e));
+      VG_(message)(Vg_UserMsg,
+                   "%s: condition variable 0x%lx, mutexes 0x%lx and 0x%lx",
+                   VG_(get_error_string)(e),
+                   cwei->cond,
+                   cwei->mutex1,
+                   cwei->mutex2);
+      VG_(pp_ExeContext)(VG_(get_error_where)(e));
+      first_observed(cwei->cond);
+      first_observed(cwei->mutex1);
+      first_observed(cwei->mutex2);
+      break;
+   }
+   case SemaphoreErr: {
+      SemaphoreErrInfo* sei = (SemaphoreErrInfo*)(VG_(get_error_extra)(e));
+      tl_assert(sei);
+      VG_(message)(Vg_UserMsg,
+                   "%s: semaphore 0x%lx",
+                   VG_(get_error_string)(e),
+                   sei->semaphore);
+      VG_(pp_ExeContext)(VG_(get_error_where)(e));
+      first_observed(sei->semaphore);
+      break;
+   }
+   case BarrierErr: {
+      BarrierErrInfo* bei = (BarrierErrInfo*)(VG_(get_error_extra)(e));
+      tl_assert(bei);
+      VG_(message)(Vg_UserMsg,
+                   "%s: barrier 0x%lx",
+                   VG_(get_error_string)(e),
+                   bei->barrier);
+      VG_(pp_ExeContext)(VG_(get_error_where)(e));
+      if (bei->other_context)
+      {
+         VG_(message)(Vg_UserMsg,
+                      "Conflicting wait call by thread %d/%d:",
+                      DRD_(DrdThreadIdToVgThreadId)(bei->other_tid),
+                      bei->other_tid);
+         VG_(pp_ExeContext)(bei->other_context);
+      }
+      first_observed(bei->barrier);
+      break;
+   }
+   case RwlockErr: {
+      RwlockErrInfo* p = (RwlockErrInfo*)(VG_(get_error_extra)(e));
+      tl_assert(p);
+      VG_(message)(Vg_UserMsg,
+                   "%s: rwlock 0x%lx.",
+                   VG_(get_error_string)(e),
+                   p->rwlock);
+      VG_(pp_ExeContext)(VG_(get_error_where)(e));
+      first_observed(p->rwlock);
+      break;
+   }
+   case HoldtimeErr: {
+      HoldtimeErrInfo* p =(HoldtimeErrInfo*)(VG_(get_error_extra)(e));
+      tl_assert(p);
+      tl_assert(p->acquired_at);
+      VG_(message)(Vg_UserMsg, "Acquired at:");
+      VG_(pp_ExeContext)(p->acquired_at);
+      VG_(message)(Vg_UserMsg,
+                   "Lock on %s 0x%lx was held during %d ms (threshold: %d ms).",
+                   VG_(get_error_string)(e),
+                   p->synchronization_object,
+                   p->hold_time_ms,
+                   p->threshold_ms);
+      VG_(pp_ExeContext)(VG_(get_error_where)(e));
+      first_observed(p->synchronization_object);
+      break;
+   }
+   case GenericErr: {
+      //GenericErrInfo* gei =(GenericErrInfo*)(VG_(get_error_extra)(e));
+      VG_(message)(Vg_UserMsg, "%s", VG_(get_error_string)(e));
+      VG_(pp_ExeContext)(VG_(get_error_where)(e));
+      break;
+   }
+   default:
+      VG_(message)(Vg_UserMsg,
+                   "%s",
+                   VG_(get_error_string)(e));
+      VG_(pp_ExeContext)(VG_(get_error_where)(e));
+      break;
+   }
 }
 
 static UInt drd_tool_error_update_extra(Error* e)
 {
-  switch (VG_(get_error_kind)(e))
-  {
-  case DataRaceErr:
-    return sizeof(DataRaceErrInfo);
-  case MutexErr:
-    return sizeof(MutexErrInfo);
-  case CondErr:
-    return sizeof(CondErrInfo);
-  case CondDestrErr:
-    return sizeof(CondDestrErrInfo);
-  case CondRaceErr:
-    return sizeof(CondRaceErrInfo);
-  case CondWaitErr:
-    return sizeof(CondWaitErrInfo);
-  case SemaphoreErr:
-    return sizeof(SemaphoreErrInfo);
-  case BarrierErr:
-    return sizeof(BarrierErrInfo);
-  case RwlockErr:
-    return sizeof(RwlockErrInfo);
-  case HoldtimeErr:
-    return sizeof(HoldtimeErrInfo);
-  case GenericErr:
-    return sizeof(GenericErrInfo);
-  default:
-    tl_assert(False);
-    break;
-  }
+   switch (VG_(get_error_kind)(e))
+   {
+   case DataRaceErr:
+      return sizeof(DataRaceErrInfo);
+   case MutexErr:
+      return sizeof(MutexErrInfo);
+   case CondErr:
+      return sizeof(CondErrInfo);
+   case CondDestrErr:
+      return sizeof(CondDestrErrInfo);
+   case CondRaceErr:
+      return sizeof(CondRaceErrInfo);
+   case CondWaitErr:
+      return sizeof(CondWaitErrInfo);
+   case SemaphoreErr:
+      return sizeof(SemaphoreErrInfo);
+   case BarrierErr:
+      return sizeof(BarrierErrInfo);
+   case RwlockErr:
+      return sizeof(RwlockErrInfo);
+   case HoldtimeErr:
+      return sizeof(HoldtimeErrInfo);
+   case GenericErr:
+      return sizeof(GenericErrInfo);
+   default:
+      tl_assert(False);
+      break;
+   }
 }
 
 static Bool drd_tool_error_recog(Char* const name, Supp* const supp)
 {
-  SuppKind skind = 0;
+   SuppKind skind = 0;
 
-  if (VG_(strcmp)(name, STR_DataRaceErr) == 0)
-    ;
-  else if (VG_(strcmp)(name, STR_MutexErr) == 0)
-    ;
-  else if (VG_(strcmp)(name, STR_CondErr) == 0)
-    ;
-  else if (VG_(strcmp)(name, STR_CondDestrErr) == 0)
-    ;
-  else if (VG_(strcmp)(name, STR_CondRaceErr) == 0)
-    ;
-  else if (VG_(strcmp)(name, STR_CondWaitErr) == 0)
-    ;
-  else if (VG_(strcmp)(name, STR_SemaphoreErr) == 0)
-    ;
-  else if (VG_(strcmp)(name, STR_BarrierErr) == 0)
-    ;
-  else if (VG_(strcmp)(name, STR_RwlockErr) == 0)
-    ;
-  else if (VG_(strcmp)(name, STR_HoldtimeErr) == 0)
-    ;
-  else if (VG_(strcmp)(name, STR_GenericErr) == 0)
-    ;
-  else
-    return False;
+   if (VG_(strcmp)(name, STR_DataRaceErr) == 0)
+      ;
+   else if (VG_(strcmp)(name, STR_MutexErr) == 0)
+      ;
+   else if (VG_(strcmp)(name, STR_CondErr) == 0)
+      ;
+   else if (VG_(strcmp)(name, STR_CondDestrErr) == 0)
+      ;
+   else if (VG_(strcmp)(name, STR_CondRaceErr) == 0)
+      ;
+   else if (VG_(strcmp)(name, STR_CondWaitErr) == 0)
+      ;
+   else if (VG_(strcmp)(name, STR_SemaphoreErr) == 0)
+      ;
+   else if (VG_(strcmp)(name, STR_BarrierErr) == 0)
+      ;
+   else if (VG_(strcmp)(name, STR_RwlockErr) == 0)
+      ;
+   else if (VG_(strcmp)(name, STR_HoldtimeErr) == 0)
+      ;
+   else if (VG_(strcmp)(name, STR_GenericErr) == 0)
+      ;
+   else
+      return False;
 
-  VG_(set_supp_kind)(supp, skind);
-  return True;
+   VG_(set_supp_kind)(supp, skind);
+   return True;
 }
 
 static
 Bool drd_tool_error_read_extra(Int fd, Char* buf, Int nBuf, Supp* supp)
 {
-  return True;
+   return True;
 }
 
 static Bool drd_tool_error_matches(Error* const e, Supp* const supp)
 {
-  switch (VG_(get_supp_kind)(supp))
-  {
-  }
-  return True;
+   switch (VG_(get_supp_kind)(supp))
+   {
+   }
+   return True;
 }
 
 static Char* drd_tool_error_name(Error* e)
 {
-  switch (VG_(get_error_kind)(e))
-  {
-  case DataRaceErr:  return VGAPPEND(STR_, DataRaceErr);
-  case MutexErr:     return VGAPPEND(STR_, MutexErr);
-  case CondErr:      return VGAPPEND(STR_, CondErr);
-  case CondDestrErr: return VGAPPEND(STR_, CondDestrErr);
-  case CondRaceErr:  return VGAPPEND(STR_, CondRaceErr);
-  case CondWaitErr:  return VGAPPEND(STR_, CondWaitErr);
-  case SemaphoreErr: return VGAPPEND(STR_, SemaphoreErr);
-  case BarrierErr:   return VGAPPEND(STR_, BarrierErr);
-  case RwlockErr:    return VGAPPEND(STR_, RwlockErr);
-  case HoldtimeErr:  return VGAPPEND(STR_, HoldtimeErr);
-  case GenericErr:   return VGAPPEND(STR_, GenericErr);
-  default:
-    tl_assert(0);
-  }
-  return 0;
+   switch (VG_(get_error_kind)(e))
+   {
+   case DataRaceErr:  return VGAPPEND(STR_, DataRaceErr);
+   case MutexErr:     return VGAPPEND(STR_, MutexErr);
+   case CondErr:      return VGAPPEND(STR_, CondErr);
+   case CondDestrErr: return VGAPPEND(STR_, CondDestrErr);
+   case CondRaceErr:  return VGAPPEND(STR_, CondRaceErr);
+   case CondWaitErr:  return VGAPPEND(STR_, CondWaitErr);
+   case SemaphoreErr: return VGAPPEND(STR_, SemaphoreErr);
+   case BarrierErr:   return VGAPPEND(STR_, BarrierErr);
+   case RwlockErr:    return VGAPPEND(STR_, RwlockErr);
+   case HoldtimeErr:  return VGAPPEND(STR_, HoldtimeErr);
+   case GenericErr:   return VGAPPEND(STR_, GenericErr);
+   default:
+      tl_assert(0);
+   }
+   return 0;
 }
 
 static void drd_tool_error_print_extra(Error* e)
@@ -421,14 +423,14 @@ static void drd_tool_error_print_extra(Error* e)
 
 void DRD_(register_error_handlers)(void)
 {
-  // Tool error reporting.
-  VG_(needs_tool_errors)(drd_tool_error_eq,
-                         drd_tool_error_pp,
-                         True,
-                         drd_tool_error_update_extra,
-                         drd_tool_error_recog,
-                         drd_tool_error_read_extra,
-                         drd_tool_error_matches,
-                         drd_tool_error_name,
-                         drd_tool_error_print_extra);
+   // Tool error reporting.
+   VG_(needs_tool_errors)(drd_tool_error_eq,
+                          drd_tool_error_pp,
+                          True,
+                          drd_tool_error_update_extra,
+                          drd_tool_error_recog,
+                          drd_tool_error_read_extra,
+                          drd_tool_error_matches,
+                          drd_tool_error_name,
+                          drd_tool_error_print_extra);
 }

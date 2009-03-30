@@ -1322,6 +1322,7 @@ static void get_IntRegInfo ( /*OUT*/IntRegInfo* iii, Int offset, Int szB )
    if (o == GOF(ESI)     && is4) goto exactly1;
    if (o == GOF(EDI)     && is4) goto exactly1;
    if (o == GOF(EIP)     && is4) goto none;
+   if (o == GOF(IP_AT_SYSCALL) && is4) goto none;
    if (o == GOF(CC_OP)   && is4) goto none;
    if (o == GOF(CC_DEP1) && is4) goto none;
    if (o == GOF(CC_DEP2) && is4) goto none;
@@ -1412,6 +1413,7 @@ static void get_IntRegInfo ( /*OUT*/IntRegInfo* iii, Int offset, Int szB )
    if (o == GOF(R14)     && is8) goto exactly1;
    if (o == GOF(R15)     && is8) goto exactly1;
    if (o == GOF(RIP)     && is8) goto exactly1;
+   if (o == GOF(IP_AT_SYSCALL) && is8) goto none;
    if (o == GOF(CC_OP)   && is8) goto none;
    if (o == GOF(CC_DEP1) && is8) goto none;
    if (o == GOF(CC_DEP2) && is8) goto none;

@@ -181,7 +181,7 @@ static Int get_otrack_shadow_offset_wrk ( Int offset, Int szB )
    if (o == GOF(CTR) && sz == 8) return o;
 
    if (o == GOF(CIA)       && sz == 8) return -1;
-   if (o == GOF(IP_AT_SYSCALL) && sz == 8) return -1;
+   if (o == GOF(IP_AT_SYSCALL) && sz == 8) return -1; /* slot unused */
    if (o == GOF(RESVN)     && sz == 8) return -1;
    if (o == GOF(FPROUND)   && sz == 4) return -1;
    if (o == GOF(EMWARN)    && sz == 4) return -1;
@@ -340,7 +340,7 @@ static Int get_otrack_shadow_offset_wrk ( Int offset, Int szB )
    if (o == GOF(CTR) && sz == 4) return o;
 
    if (o == GOF(CIA)       && sz == 4) return -1;
-   if (o == GOF(IP_AT_SYSCALL) && sz == 4) return -1;
+   if (o == GOF(IP_AT_SYSCALL) && sz == 4) return -1; /* slot unused */
    if (o == GOF(RESVN)     && sz == 4) return -1;
    if (o == GOF(FPROUND)   && sz == 4) return -1;
    if (o == GOF(VRSAVE)    && sz == 4) return -1;
@@ -488,6 +488,7 @@ static Int get_otrack_shadow_offset_wrk ( Int offset, Int szB )
    if (o == GOF(CC_NDEP) && sz == 8) return -1; /* slot used for %BH */
    if (o == GOF(DFLAG)   && sz == 8) return -1; /* slot used for %CH */
    if (o == GOF(RIP)     && sz == 8) return -1; /* slot unused */
+   if (o == GOF(IP_AT_SYSCALL) && sz == 8) return -1; /* slot unused */
    if (o == GOF(IDFLAG)  && sz == 8) return -1; /* slot used for %DH */
    if (o == GOF(FS_ZERO) && sz == 8) return -1; /* slot unused */
    if (o == GOF(TISTART) && sz == 8) return -1; /* slot unused */
@@ -598,6 +599,7 @@ static Int get_otrack_shadow_offset_wrk ( Int offset, Int szB )
    if (o == GOF(CC_NDEP) && sz == 4) return -1; /* slot used for %BH */
    if (o == GOF(DFLAG)   && sz == 4) return -1; /* slot used for %CH */
    if (o == GOF(EIP)     && sz == 4) return -1; /* slot unused */
+   if (o == GOF(IP_AT_SYSCALL) && sz == 4) return -1; /* slot unused */
    if (o == GOF(IDFLAG)  && sz == 4) return -1; /* slot used for %DH */
    if (o == GOF(ACFLAG)  && sz == 4) return -1; /* slot unused */
    if (o == GOF(TISTART) && sz == 4) return -1; /* slot unused */

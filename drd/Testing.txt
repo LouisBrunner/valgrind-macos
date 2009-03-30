@@ -12,7 +12,7 @@ How to test DRD
      perl tests/vg_regtest drd
 5. Run Konstantin's regression tests:
      svn checkout http://data-race-test.googlecode.com/svn/trunk drt
-     make -C drt/unittest -s build
+     make -C drt/unittest -s all
      ./vg-in-place --tool=drd --check-stack-var=yes drt/unittest/racecheck_unittest 2>&1|less
 6. Test the slowdown for matinv for various matrix sizes via the script
    drd/scripts/run-matinv (must be about 24 for i == 1 and about

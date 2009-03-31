@@ -342,9 +342,10 @@ struct vki_sigcontext {
 #define VKI_SOL_SOCKET	1
 #define VKI_SO_TYPE	3
 
-#define VKI_SIOCSPGRP	0x8902
-#define VKI_SIOCGPGRP	0x8904
-#define VKI_SIOCGSTAMP	0x8906          /* Get stamp */
+#define VKI_SIOCSPGRP		0x8902
+#define VKI_SIOCGPGRP		0x8904
+#define VKI_SIOCGSTAMP		0x8906          /* Get stamp (timeval) */
+#define VKI_SIOCGSTAMPNS	0x8907          /* Get stamp (timespec) */
 
 //----------------------------------------------------------------------
 // From linux-2.6.10/include/asm-ppc/stat.h

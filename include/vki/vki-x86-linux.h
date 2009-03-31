@@ -318,9 +318,10 @@ struct vki_sigcontext {
 // From linux-2.6.8.1/include/asm-i386/sockios.h
 //----------------------------------------------------------------------
 
-#define VKI_SIOCSPGRP	0x8902
-#define VKI_SIOCGPGRP	0x8904
-#define VKI_SIOCGSTAMP	0x8906		/* Get stamp */
+#define VKI_SIOCSPGRP		0x8902
+#define VKI_SIOCGPGRP		0x8904
+#define VKI_SIOCGSTAMP		0x8906		/* Get stamp (timeval) */
+#define VKI_SIOCGSTAMPNS	0x8907		/* Get stamp (timespec) */
 
 //----------------------------------------------------------------------
 // From linux-2.6.8.1/include/asm-i386/stat.h

@@ -3526,6 +3526,9 @@ PRE(sys_ioctl)
    case VKI_SIOCGSTAMP:
       PRE_MEM_WRITE( "ioctl(SIOCGSTAMP)", ARG3, sizeof(struct vki_timeval));
       break;
+   case VKI_SIOCGSTAMPNS:
+      PRE_MEM_WRITE( "ioctl(SIOCGSTAMPNS)", ARG3, sizeof(struct vki_timespec));
+      break;
       /* SIOCOUTQ is an ioctl that, when called on a socket, returns
 	 the number of bytes currently in that socket's send buffer.
 	 It writes this value as an int to the memory location
@@ -4568,6 +4571,9 @@ POST(sys_ioctl)
       break;
    case VKI_SIOCGSTAMP:
       POST_MEM_WRITE( ARG3, sizeof(struct vki_timeval) );
+      break;
+   case VKI_SIOCGSTAMPNS:
+      POST_MEM_WRITE( ARG3, sizeof(struct vki_timespec) );
       break;
       /* SIOCOUTQ is an ioctl that, when called on a socket, returns
 	 the number of bytes currently in that socket's send buffer.

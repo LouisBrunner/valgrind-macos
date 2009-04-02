@@ -91,5 +91,7 @@ int main(int argc, char** argv)
 
   pthread_mutex_destroy(&s_mutex);
 
+  sleep(1);
+
   return 0;
 }

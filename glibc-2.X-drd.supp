@@ -336,7 +336,6 @@
    fun:_ZN14QReadWriteLock12lockForWriteEv
    fun:_ZN14QObjectPrivate11clearGuardsEP7QObject
    fun:_ZN7QObjectD2Ev
-   fun:_ZN20QEventDispatcherGlibD0Ev
 }
 {
    libQtCore-QObjectPrivate::clearGuards(QObject*)

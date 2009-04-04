@@ -67,7 +67,7 @@ AC_PROG_RANLIB
 # If no AR variable was specified, look up the name of the archiver. Otherwise
 # do not touch the AR variable.
 if test "x$AR" = "x"; then
-  AC_PATH_PROGS([AR], ["${LD%ld}ar" "ar"], [ar])
+  AC_PATH_PROGS([AR], [`echo $LD | sed 's/ld$/ar/'` "ar"], [ar])
 fi
 AC_ARG_VAR([AR],[Archiver command])
 

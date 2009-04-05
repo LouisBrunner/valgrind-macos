@@ -41,7 +41,7 @@ runcmd () {
 #----------------------------------------------------------------------------
 # Must have exactly two arguments
 if [ $# -ne 2 ] ; then
-    echo "usage: bin/night /path/to/valgrind/nightly <tag>"
+    echo "usage: $0 /path/to/valgrind/nightly <tag>"
     exit 1
 fi
 

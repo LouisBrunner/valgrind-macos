@@ -2912,6 +2912,17 @@ static Int run_CF_instruction ( /*MOD*/UnwindContext* ctx,
             VG_(printf)("  rci:DW_CFA_undefined\n");
          break;
 
+      case DW_CFA_same_value:
+         reg = read_leb128( &instr[i], &nleb, 0);
+         i += nleb;
+         if (reg < 0 || reg >= N_CFI_REGS) 
+            return 0; /* fail */
+         ctx->reg[reg].tag = RR_Same;
+         ctx->reg[reg].arg = 0;
+         if (di->ddump_frames)
+            VG_(printf)("  rci:DW_CFA_same_value\n");
+         break;
+
       case DW_CFA_GNU_args_size:
          /* No idea what is supposed to happen.  gdb-6.3 simply
             ignores these. */

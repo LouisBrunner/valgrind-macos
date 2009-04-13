@@ -314,7 +314,6 @@
    libglib-g_get_language_names
    drd:ConflictingAccess
    fun:g_slice_free_chain_with_offset
-   fun:g_get_language_names
 }
 {
    libQtCore-deref-that-calls-QThreadData-destructor

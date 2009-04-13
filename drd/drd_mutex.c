@@ -405,7 +405,7 @@ void DRD_(mutex_unlock)(const Addr mutex, MutexT mutex_type)
    {
       if (s_mutex_lock_threshold_ms > 0)
       {
-         ULong held = VG_(read_millisecond_timer)() - p->acquiry_time_ms;
+         Long held = VG_(read_millisecond_timer)() - p->acquiry_time_ms;
          if (held > s_mutex_lock_threshold_ms)
          {
             HoldtimeErrInfo HEI

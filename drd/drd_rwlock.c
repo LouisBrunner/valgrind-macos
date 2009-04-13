@@ -521,7 +521,7 @@ void DRD_(rwlock_pre_unlock)(const Addr rwlock)
       q->reader_nesting_count--;
       if (q->reader_nesting_count == 0 && DRD_(s_shared_threshold_ms) > 0)
       {
-         ULong held = VG_(read_millisecond_timer)() - p->acquiry_time_ms;
+         Long held = VG_(read_millisecond_timer)() - p->acquiry_time_ms;
          if (held > DRD_(s_shared_threshold_ms))
          {
             HoldtimeErrInfo HEI
@@ -539,7 +539,7 @@ void DRD_(rwlock_pre_unlock)(const Addr rwlock)
       q->writer_nesting_count--;
       if (q->writer_nesting_count == 0 && DRD_(s_exclusive_threshold_ms) > 0)
       {
-         ULong held = VG_(read_millisecond_timer)() - p->acquiry_time_ms;
+         Long held = VG_(read_millisecond_timer)() - p->acquiry_time_ms;
          if (held > DRD_(s_exclusive_threshold_ms))
          {
             HoldtimeErrInfo HEI

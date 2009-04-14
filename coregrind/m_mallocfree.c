@@ -1588,8 +1588,10 @@ void* VG_(arena_memalign) ( ArenaId aid, HChar* cc,
    if (req_alignB < VG_MIN_MALLOC_SZB
        || req_alignB > 1048576
        || VG_(log2)( req_alignB ) == -1 /* not a power of 2 */) {
-      VG_(printf)("VG_(arena_memalign)(%p, %lu, %lu)\nbad alignment", 
-                  a, req_alignB, req_pszB );
+      VG_(printf)("VG_(arena_memalign)(%p, %lu, %lu)\n"
+                  "bad alignment value %lu\n"
+                  "(it is too small, too big, or not a power of two)",
+                  a, req_alignB, req_pszB, req_alignB );
       VG_(core_panic)("VG_(arena_memalign)");
       /*NOTREACHED*/
    }

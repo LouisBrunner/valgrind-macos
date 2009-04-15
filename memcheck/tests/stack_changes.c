@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <ucontext.h>
-#include <sys/mman.h>
+#include "tests/sys_mman.h"
 
 #include "valgrind.h"
 
@@ -39,7 +39,7 @@ int init_context(mycontext *uc)
     }
 
     stack = (void *)mmap(0, STACK_SIZE, PROT_READ|PROT_WRITE|PROT_EXEC,
-                                        MAP_ANON|MAP_PRIVATE, -1, 0);
+                                        MAP_ANONYMOUS|MAP_PRIVATE, -1, 0);
 
     if (stack == (void*)-1) {
         perror("mmap");

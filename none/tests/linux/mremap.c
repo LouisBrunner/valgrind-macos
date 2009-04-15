@@ -1,5 +1,5 @@
 #define _GNU_SOURCE
-#include <sys/mman.h>
+#include "tests/sys_mman.h"
 #include <stdio.h>
 #include <stdlib.h>
 

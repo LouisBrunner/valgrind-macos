@@ -1,6 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include <sys/mman.h>
+#include "tests/sys_mman.h"
 
 int main(int argc, char **argv)
 {

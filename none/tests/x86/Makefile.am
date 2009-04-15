@@ -59,19 +59,36 @@ EXTRA_DIST = $(noinst_SCRIPTS) \
 	yield.stderr.exp yield.stdout.exp yield.disabled
 
 check_PROGRAMS = \
-	badseg bt_everything bt_literal \
+	badseg \
+	bt_everything \
+	bt_literal \
 	bug125959-x86 \
 	bug126147-x86 \
 	bug132813-x86 \
 	bug135421-x86 \
 	bug137714-x86 \
 	bug152818-x86 \
-	cmpxchg8b cpuid cse_fail \
-	faultstatus fcmovnu fpu_lazy_eflags fxtract \
-	getseg incdec_alt $(INSN_TESTS) \
+	cmpxchg8b \
+        cpuid \
+        cse_fail \
+	faultstatus \
+        fcmovnu \
+        fpu_lazy_eflags \
+        fxtract \
+	getseg \
+        incdec_alt \
+        $(INSN_TESTS) \
+        int \
 	jcxz \
-	lahf looper movx int pushpopseg sbbmisc \
-	seg_override sigcontext smc1 yield
+	lahf \
+        looper \
+        movx \
+        pushpopseg \
+        sbbmisc \
+	seg_override \
+        sigcontext \
+        smc1 \
+        yield
 if BUILD_SSSE3_TESTS
  check_PROGRAMS += ssse3_misaligned
 endif

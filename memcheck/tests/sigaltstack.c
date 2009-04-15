@@ -3,7 +3,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <signal.h>
-#include <sys/mman.h>
+#include "tests/sys_mman.h"
 
 void sig_handler(int sig){
   int var;
@@ -19,7 +19,7 @@ int main(int argv, char** argc) {
   // ask for an alt stack with EXEC permissions,
   // since signal returning requires execution of code on the stack.      
   char *stk = (char *)mmap(0, size, PROT_READ|PROT_WRITE|PROT_EXEC, 
-                                    MAP_ANON|MAP_PRIVATE, -1, 0);
+                                    MAP_ANONYMOUS|MAP_PRIVATE, -1, 0);
   sigstk.ss_sp = stk;
 
   sigstk.ss_size = size;

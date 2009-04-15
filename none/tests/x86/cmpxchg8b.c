@@ -1,4 +1,4 @@
-
+#include "tests/asm.h"
 #include <stdio.h>
 
 typedef unsigned long long int ULong;
@@ -14,7 +14,7 @@ UInt zout;
 
 extern void foo ( void );
 asm("\n"
-    "foo:\n"
+    VG_SYM(foo) ":\n"
     "\tpushl %eax\n"
     "\tpushl %ebx\n"
     "\tpushl %ecx\n"
@@ -22,18 +22,18 @@ asm("\n"
 
     "\txorl %eax, %eax\n" // get eflags in a known state
 
-    "\tmovl eax,%eax\n"
-    "\tmovl ebx,%ebx\n"
-    "\tmovl ecx,%ecx\n"
-    "\tmovl edx,%edx\n"
-    "\tcmpxchg8b m64\n"
-    "\tmovl %eax,eax\n"
-    "\tmovl %ebx,ebx\n"
-    "\tmovl %ecx,ecx\n"
-    "\tmovl %edx,edx\n"
+    "\tmovl " VG_SYM(eax) ",%eax\n"
+    "\tmovl " VG_SYM(ebx) ",%ebx\n"
+    "\tmovl " VG_SYM(ecx) ",%ecx\n"
+    "\tmovl " VG_SYM(edx) ",%edx\n"
+    "\tcmpxchg8b " VG_SYM(m64) "\n"
+    "\tmovl %eax," VG_SYM(eax) "\n"
+    "\tmovl %ebx," VG_SYM(ebx) "\n"
+    "\tmovl %ecx," VG_SYM(ecx) "\n"
+    "\tmovl %edx," VG_SYM(edx) "\n"
     "\tpushfl\n"
     "\tpopl %eax\n"
-    "\tmovl %eax,zout\n"
+    "\tmovl %eax," VG_SYM(zout) "\n"
 
     "\tpopl %edx\n"
     "\tpopl %ecx\n"

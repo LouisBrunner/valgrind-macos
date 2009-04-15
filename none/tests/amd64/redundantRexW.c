@@ -8,6 +8,7 @@
 #include <stdio.h>
 #include <malloc.h>  /* for memalign */
 #include <assert.h>
+#include "tests/malloc.h"
 
 typedef  unsigned char  UChar;
 
@@ -168,12 +169,8 @@ int main ( void )
 {
    XMMRegs* regs;
    Mem*     mem;
-   regs = memalign(16, sizeof(XMMRegs)); assert(regs);
-   mem  = memalign(16, sizeof(Mem)); assert(mem);
-
-   /* Both have to be 16-aligned so we can do movapd et al */
-   assert( 0 == (0xFL & (unsigned long int)regs) );
-   assert( 0 == (0xFL & (unsigned long int)mem) );
+   regs = memalign16(sizeof(XMMRegs) + 16);
+   mem  = memalign16(sizeof(Mem) + 16);
 
    /* addpd mem, reg   66 49 0f 58 48 00  rex.WB addpd  0x0(%r8),%xmm1 */
    {

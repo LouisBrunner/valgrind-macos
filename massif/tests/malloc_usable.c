@@ -1,11 +1,11 @@
 #include <assert.h>
-#include <malloc.h>
+#include "tests/malloc.h"
 #include <stdlib.h>
 #include <stdio.h>
 
 int main(void)
 {
-#  if !defined(_AIX)
+#  if !defined(VGO_aix5)
    // Because our allocations are in multiples of 8 or 16, 99 will round up
    // to 104 or 112.
    int* x = malloc(99);

@@ -6,7 +6,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <assert.h>
-#include <malloc.h>
+#include "tests/malloc.h"
 #include <string.h>
 
 typedef  unsigned char  V128[16];
@@ -148,7 +148,7 @@ void do_##insn ( void )                    \
    }                                       \
    for (i = 0; i < 5; i++) {               \
       randRMArgs(&margs);                  \
-      buf = memalign(16,mem_size);         \
+      buf = memalign16(mem_size);          \
       randomise(buf,mem_size);             \
       r_m_##insn(&margs,buf);              \
       showRM(#insn, &margs, buf, mem_size, res_mask);\

@@ -1,6 +1,6 @@
 
 #include <stdio.h>
-#include <malloc.h>
+#include "tests/malloc.h"
 
 /* This is a Marie Celeste instruction.  Some IBM documents think it
    exists, others don't.  The same appears to be true for

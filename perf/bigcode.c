@@ -10,7 +10,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <assert.h>
-#include <sys/mman.h>
+#include "tests/sys_mman.h"
 
 #define FN_SIZE   996      // Must be big enough to hold the compiled f()
 #define N_LOOPS   20000    // Should be divisible by four

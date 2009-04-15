@@ -5,7 +5,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
-#include <sys/mman.h>
+#include "tests/sys_mman.h"
 #include "memcheck/memcheck.h"
 
 // All the sizes here are in *bytes*, not bits.

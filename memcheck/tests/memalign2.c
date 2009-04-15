@@ -14,16 +14,17 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <assert.h>
-#include <malloc.h>
+#include "tests/malloc.h"
 #include <errno.h>
 
 int main ( void )
 {
-#  if defined(_AIX)
+#  if defined(VGO_aix5)
    // AIX 5.2 has neither memalign() nor posix_memalign();  do nothing.
 
 #  else
    // Nb: assuming VG_MIN_MALLOC_SZB is 8!
+   // DDD: (this is no longer true)
    // Should work with both 32-bit and 64-bit pointers, though.
 
    int* p;

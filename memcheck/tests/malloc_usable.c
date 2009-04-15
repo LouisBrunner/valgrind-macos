@@ -1,11 +1,11 @@
 #include <assert.h>
-#include <malloc.h>
+#include "tests/malloc.h"
 #include <stdlib.h>
 #include <stdio.h>
 
 int main(void)
 {
-#  if !defined(_AIX)
+#  if !defined(VGO_aix5)
    // Because Memcheck marks any slop as inaccessible, it doesn't round up
    // sizes for malloc_usable_size().
    int* x = malloc(99);

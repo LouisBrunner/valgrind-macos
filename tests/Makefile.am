@@ -11,6 +11,11 @@ noinst_SCRIPTS = \
 	platform_test \
 	vg_regtest
 
+noinst_HEADERS = \
+	asm.h \
+	malloc.h \
+	sys_mman.h
+
 EXTRA_DIST = $(noinst_SCRIPTS)
 
 check_PROGRAMS = \

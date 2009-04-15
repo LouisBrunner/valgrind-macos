@@ -1,6 +1,6 @@
 /* Test different kinds of addressability and definedness */
 #include "../memcheck.h"
-#include <sys/mman.h>
+#include "tests/sys_mman.h"
 #include <stdio.h>
 #include <sys/resource.h>
 #include <unistd.h>

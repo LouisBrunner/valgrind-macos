@@ -463,6 +463,7 @@ test_strchr (void)
    }
 }
 
+// DDD: better done by testing for the function.
 #if !defined(_AIX)
 static void
 test_strchrnul (void)
@@ -499,6 +500,7 @@ test_strchrnul (void)
 }
 #endif /* !defined(_AIX) */
 
+// DDD: better done by testing for the function.
 #if !defined(_AIX)
 static void
 test_rawmemchr (void)
@@ -574,6 +576,7 @@ test_strrchr (void)
    }
 }
 
+// DDD: better done by testing for the function.
 #if !defined(_AIX)
 static void
 test_memrchr (void)

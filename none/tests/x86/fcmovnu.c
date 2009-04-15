@@ -1,4 +1,4 @@
-
+#include "tests/asm.h"
 #include <stdio.h>
 
 double zzz;
@@ -15,7 +15,7 @@ int main ( void )
     "movl $0,%esi\n\t"
     "add %esi,%esi\n\t"
     "fcmovnu %st(1), %st(0)\n\t"
-    "fstl zzz\n\t"
+    "fstl " VG_SYM(zzz) "\n\t"
     "finit\n\t"
     "popl %esi\n\t"
     );

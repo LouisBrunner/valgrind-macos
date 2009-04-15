@@ -1,5 +1,5 @@
 
-#include <malloc.h>
+#include "tests/malloc.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -8,9 +8,7 @@
 
 void maybe_fault ( int delta )
 {
-   char* x = memalign(16/*alignment*/,32/*size*/);
-   assert(x);
-   assert(0 == ((16-1) & (unsigned long)x));
+   char* x = memalign16(32);
    memset(x, 0, 32);
    __asm__ __volatile__(
       "pabsb (%0),%%xmm7"

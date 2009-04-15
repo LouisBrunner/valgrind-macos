@@ -31,7 +31,7 @@
 
 #include <stdio.h>
 #include <assert.h>
-#include <sys/mman.h>
+#include "tests/sys_mman.h"
 
 typedef unsigned long long int Addr;
 typedef unsigned char UChar;

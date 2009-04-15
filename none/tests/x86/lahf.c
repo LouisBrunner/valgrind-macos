@@ -1,9 +1,9 @@
-
+#include "tests/asm.h"
 #include <stdio.h>
 
 extern int foo_1 ( void );
 asm("\n"
-"foo_1:\n"
+VG_SYM(foo_1) ":\n"
 "\tpushl $0\n"
 "\tpopfl\n"
 "\tmovl $0xFFFFFFFF, %eax\n"
@@ -15,7 +15,7 @@ asm("\n"
 
 extern int foo_0 ( void );
 asm("\n"
-"foo_0:\n"
+VG_SYM(foo_0) ":\n"
 "\tpushl $0\n"
 "\tpopfl\n"
 "\tmovl $0x0, %eax\n"

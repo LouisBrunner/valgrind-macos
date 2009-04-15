@@ -2,7 +2,7 @@
 
 #include <stdio.h>
 
-#include <sys/mman.h>
+#include "tests/sys_mman.h"
 #include <assert.h>
 #include <stdlib.h>
 #include <sys/types.h>

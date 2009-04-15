@@ -5,7 +5,7 @@
 
 #include <stdio.h>
 #include "memcheck/memcheck.h"
-#include <sys/mman.h>
+#include "tests/sys_mman.h"
 #include <stdlib.h>
 #include <fcntl.h>
 #include <unistd.h>

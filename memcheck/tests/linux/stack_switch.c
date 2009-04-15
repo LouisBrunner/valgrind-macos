@@ -6,7 +6,7 @@
 #include <sched.h>
 #include <stdlib.h>
 #include <string.h>
-#include <sys/mman.h>
+#include "tests/sys_mman.h"
 #include <sys/syscall.h>
 #include <sys/wait.h>
 #include <unistd.h>

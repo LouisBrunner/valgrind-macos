@@ -1,4 +1,4 @@
-
+#include "tests/asm.h"
 #include <stdio.h>
 
 char in_b, out_b1, out_b2, in_b2;
@@ -9,17 +9,17 @@ int in_l, out_l1, out_l2;
 
 extern void sbb_ib_al ( void );
 asm("\n"
-"sbb_ib_al:\n"
+VG_SYM(sbb_ib_al) ":\n"
 
-"\tmovb in_b, %al\n"
+"\tmovb " VG_SYM(in_b) ", %al\n"
 "\tclc\n"
 "\tsbbb $5, %al\n"
-"\tmovb %al, out_b1\n"
+"\tmovb %al, " VG_SYM(out_b1) "\n"
 
-"\tmovb in_b, %al\n"
+"\tmovb " VG_SYM(in_b) ", %al\n"
 "\tstc\n"
 "\tsbbb $5, %al\n"
-"\tmovb %al, out_b2\n"
+"\tmovb %al, " VG_SYM(out_b2) "\n"
 
 "\tret\n"
 );
@@ -27,17 +27,17 @@ asm("\n"
 
 extern void sbb_iw_ax ( void );
 asm("\n"
-"sbb_iw_ax:\n"
+VG_SYM(sbb_iw_ax) ":\n"
 
-"\tmovw in_w, %ax\n"
+"\tmovw " VG_SYM(in_w) ", %ax\n"
 "\tclc\n"
 "\tsbbw $555, %ax\n"
-"\tmovw %ax, out_w1\n"
+"\tmovw %ax, " VG_SYM(out_w1) "\n"
 
-"\tmovw in_w, %ax\n"
+"\tmovw " VG_SYM(in_w) ", %ax\n"
 "\tstc\n"
 "\tsbbw $555, %ax\n"
-"\tmovw %ax, out_w2\n"
+"\tmovw %ax, " VG_SYM(out_w2) "\n"
 
 "\tret\n"
 );
@@ -45,17 +45,17 @@ asm("\n"
 
 extern void sbb_il_eax ( void );
 asm("\n"
-"sbb_il_eax:\n"
+VG_SYM(sbb_il_eax) ":\n"
 
-"\tmovl in_l, %eax\n"
+"\tmovl " VG_SYM(in_l) ", %eax\n"
 "\tclc\n"
 "\tsbbl $555666, %eax\n"
-"\tmovl %eax, out_l1\n"
+"\tmovl %eax, " VG_SYM(out_l1) "\n"
 
-"\tmovl in_l, %eax\n"
+"\tmovl " VG_SYM(in_l) ", %eax\n"
 "\tstc\n"
 "\tsbbl $555666, %eax\n"
-"\tmovl %eax, out_l2\n"
+"\tmovl %eax, " VG_SYM(out_l2) "\n"
 
 "\tret\n"
 );
@@ -63,17 +63,17 @@ asm("\n"
 
 extern void sbb_eb_gb ( void );
 asm("\n"
-"sbb_eb_gb:\n"
+VG_SYM(sbb_eb_gb) ":\n"
 
-"\tmovb in_b, %al\n"
+"\tmovb " VG_SYM(in_b) ", %al\n"
 "\tclc\n"
-"\tsbbb in_b2, %al\n"
-"\tmovb %al, out_b1\n"
+"\tsbbb " VG_SYM(in_b2) ", %al\n"
+"\tmovb %al, " VG_SYM(out_b1) "\n"
 
-"\tmovb in_b, %al\n"
+"\tmovb " VG_SYM(in_b) ", %al\n"
 "\tstc\n"
-"\tsbbb in_b2, %al\n"
-"\tmovb %al, out_b2\n"
+"\tsbbb " VG_SYM(in_b2) ", %al\n"
+"\tmovb %al, " VG_SYM(out_b2) "\n"
 
 "\tret\n"
 );
@@ -81,20 +81,20 @@ asm("\n"
 
 extern void sbb_eb_gb_2 ( void );
 asm("\n"
-"sbb_eb_gb_2:\n"
+VG_SYM(sbb_eb_gb_2) ":\n"
 "\tpushl %ecx\n"
 
-"\tmovb in_b, %cl\n"
-"\tmovb in_b2, %dh\n"
+"\tmovb " VG_SYM(in_b) ", %cl\n"
+"\tmovb " VG_SYM(in_b2) ", %dh\n"
 "\tclc\n"
 "\tsbbb %dh,%cl\n"
-"\tmovb %cl, out_b1\n"
+"\tmovb %cl, " VG_SYM(out_b1) "\n"
 
-"\tmovb in_b, %cl\n"
-"\tmovb in_b2, %dh\n"
+"\tmovb " VG_SYM(in_b) ", %cl\n"
+"\tmovb " VG_SYM(in_b2) ", %dh\n"
 "\tstc\n"
 "\tsbbb %dh,%cl\n"
-"\tmovb %cl, out_b2\n"
+"\tmovb %cl, " VG_SYM(out_b2) "\n"
 
 "\tpopl %ecx\n"
 "\tret\n"
@@ -103,17 +103,17 @@ asm("\n"
 
 extern void adc_eb_gb ( void );
 asm("\n"
-"adc_eb_gb:\n"
+VG_SYM(adc_eb_gb) ":\n"
 
-"\tmovb in_b, %al\n"
+"\tmovb " VG_SYM(in_b) ", %al\n"
 "\tclc\n"
-"\tadcb in_b2, %al\n"
-"\tmovb %al, out_b1\n"
+"\tadcb " VG_SYM(in_b2) ", %al\n"
+"\tmovb %al, " VG_SYM(out_b1) "\n"
 
-"\tmovb in_b, %al\n"
+"\tmovb " VG_SYM(in_b) ", %al\n"
 "\tstc\n"
-"\tadcb in_b2, %al\n"
-"\tmovb %al, out_b2\n"
+"\tadcb " VG_SYM(in_b2) ", %al\n"
+"\tmovb %al, " VG_SYM(out_b2) "\n"
 
 "\tret\n"
 );
@@ -121,20 +121,20 @@ asm("\n"
 
 extern void adc_eb_gb_2 ( void );
 asm("\n"
-"adc_eb_gb_2:\n"
+VG_SYM(adc_eb_gb_2) ":\n"
 "\tpushl %ecx\n"
 
-"\tmovb in_b, %cl\n"
-"\tmovb in_b2, %dh\n"
+"\tmovb " VG_SYM(in_b) ", %cl\n"
+"\tmovb " VG_SYM(in_b2) ", %dh\n"
 "\tclc\n"
 "\tadcb %dh,%cl\n"
-"\tmovb %cl, out_b1\n"
+"\tmovb %cl, " VG_SYM(out_b1) "\n"
 
-"\tmovb in_b, %cl\n"
-"\tmovb in_b2, %dh\n"
+"\tmovb " VG_SYM(in_b) ", %cl\n"
+"\tmovb " VG_SYM(in_b2) ", %dh\n"
 "\tstc\n"
 "\tadcb %dh,%cl\n"
-"\tmovb %cl, out_b2\n"
+"\tmovb %cl, " VG_SYM(out_b2) "\n"
 
 "\tpopl %ecx\n"
 "\tret\n"

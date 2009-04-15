@@ -1,7 +1,8 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#include <malloc.h>
+#include "tests/asm.h"
+#include "tests/malloc.h"
 #include <string.h>
 
 const unsigned int vec0[4]
@@ -34,14 +35,14 @@ void do_zeroise ( void )
     "fldz\n\t"
     "fldz\n\t"
     "finit\n");
-   asm __volatile__("movups vecZ, %xmm0");
-   asm __volatile__("movups vecZ, %xmm1");
-   asm __volatile__("movups vecZ, %xmm2");
-   asm __volatile__("movups vecZ, %xmm3");
-   asm __volatile__("movups vecZ, %xmm4");
-   asm __volatile__("movups vecZ, %xmm5");
-   asm __volatile__("movups vecZ, %xmm6");
-   asm __volatile__("movups vecZ, %xmm7");
+   asm __volatile__("movups " VG_SYM(vecZ) ", %xmm0");
+   asm __volatile__("movups " VG_SYM(vecZ) ", %xmm1");
+   asm __volatile__("movups " VG_SYM(vecZ) ", %xmm2");
+   asm __volatile__("movups " VG_SYM(vecZ) ", %xmm3");
+   asm __volatile__("movups " VG_SYM(vecZ) ", %xmm4");
+   asm __volatile__("movups " VG_SYM(vecZ) ", %xmm5");
+   asm __volatile__("movups " VG_SYM(vecZ) ", %xmm6");
+   asm __volatile__("movups " VG_SYM(vecZ) ", %xmm7");
    asm __volatile__(
       "pushl $0\n\t"
       "ldmxcsr 0(%esp)\n\t"
@@ -58,8 +59,8 @@ void do_setup_then_fxsave ( void* p )
    asm __volatile__("fldlg2");
    asm __volatile__("fld %st(3)");
    asm __volatile__("fld %st(3)");
-   asm __volatile__("movups vec0, %xmm0");
-   asm __volatile__("movups vec1, %xmm1");
+   asm __volatile__("movups " VG_SYM(vec0) ", %xmm0");
+   asm __volatile__("movups " VG_SYM(vec1) ", %xmm1");
    asm __volatile__("xorps %xmm2, %xmm2");
    asm __volatile__("movaps %xmm2, %xmm3");
    asm __volatile__("movaps %xmm2, %xmm4");
@@ -102,9 +103,9 @@ void show ( unsigned char* buf, int xx )
 
 int main ( int argc, char** argv )
 {
-   unsigned char* buf1 = memalign(16,512);
-   unsigned char* buf2 = memalign(16,512);
-   unsigned char* buf3 = memalign(16,512);
+   unsigned char* buf1 = memalign16(512);
+   unsigned char* buf2 = memalign16(512);
+   unsigned char* buf3 = memalign16(512);
    int xx = argc > 1;
    printf("Re-run with any arg to suppress least-significant\n"
           "   16 bits of FP numbers\n");

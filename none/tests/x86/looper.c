@@ -1,4 +1,4 @@
-
+#include "tests/asm.h"
 #include <stdio.h>
 
 int arg = 0;
@@ -7,19 +7,18 @@ int res = 0;
 extern void loop_plain ( void );
 asm("\n"
 ".text\n"
-".globl loop_plain\n"
-"loop_plain:\n"
+VG_SYM(loop_plain) ":\n"
 "\tpushl %ecx\n"
 "\tmovl $999, %eax\n"
-"\tmovl arg, %ecx\n"
+"\tmovl " VG_SYM(arg) ", %ecx\n"
 
-".Lmn123plain:\n"
+"0:\n"
 "\tdecl %eax\n"
 "\tdecl %eax\n"
 "\tdecl %eax\n"
-"\tloop .Lmn123plain\n"
+"\tloop 0b\n"
 
-"\tmovl %eax, res\n"
+"\tmovl %eax, " VG_SYM(res) "\n"
 "\tpopl %ecx\n"
 "\tret\n"
 );
@@ -27,19 +26,18 @@ asm("\n"
 extern void loop_ne ( void );
 asm("\n"
 ".text\n"
-".globl loop_ne\n"
-"loop_ne:\n"
+VG_SYM(loop_ne) ":\n"
 "\tpushl %ecx\n"
 "\tmovl $999, %eax\n"
-"\tmovl arg, %ecx\n"
+"\tmovl " VG_SYM(arg) ", %ecx\n"
 
-".Lmn123ne:\n"
+"0:\n"
 "\tdecl %eax\n"
 "\tdecl %eax\n"
 "\tdecl %eax\n"
-"\tloopne .Lmn123ne\n"
+"\tloopne 0b\n"
 
-"\tmovl %eax, res\n"
+"\tmovl %eax, " VG_SYM(res) "\n"
 "\tpopl %ecx\n"
 "\tret\n"
 );
@@ -47,13 +45,12 @@ asm("\n"
 extern void loop_e ( void );
 asm("\n"
 ".text\n"
-".globl loop_e\n"
-"loop_e:\n"
+VG_SYM(loop_e) ":\n"
 "\tpushl %ecx\n"
 "\tmovl $999, %eax\n"
-"\tmovl arg, %ecx\n"
+"\tmovl " VG_SYM(arg) ", %ecx\n"
 
-".Lmn123e:\n"
+"0:\n"
 "\tdecl %eax\n"
 "\tdecl %eax\n"
 "\tdecl %eax\n"
@@ -61,9 +58,9 @@ asm("\n"
 "\tpushfl\n"
 "\txorl $64, 0(%esp)\n"
 "\tpopfl\n"
-"\tloope .Lmn123e\n"
+"\tloope 0b\n"
 
-"\tmovl %eax, res\n"
+"\tmovl %eax, " VG_SYM(res) "\n"
 "\tpopl %ecx\n"
 "\tret\n"
 );

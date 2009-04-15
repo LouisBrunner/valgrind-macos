@@ -6,7 +6,7 @@
 #include <stdlib.h>
 #include <fcntl.h>
 #include <setjmp.h>
-#include <sys/mman.h>
+#include "tests/sys_mman.h"
 #include <unistd.h>
 
 /*

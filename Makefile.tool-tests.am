@@ -1,3 +1,5 @@
+# This file is used for tool tests, and also in perf/Makefile.am.
+
 include $(top_srcdir)/Makefile.flags.am     # For AM_FLAG_M3264_PRI
 
 AM_CPPFLAGS = -I$(top_srcdir) -I$(top_srcdir)/include \

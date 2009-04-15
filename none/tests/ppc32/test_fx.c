@@ -1,6 +1,6 @@
 
 #include <stdio.h>
-#include <malloc.h>
+#include <stdlib.h>
 
 double do_fsqrt ( double x )
 {

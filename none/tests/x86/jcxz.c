@@ -11,12 +11,12 @@ UInt test_jcxz ( UInt arg )
    __asm__ __volatile__(
       "movl %0,%%ecx\n\t"
       "movl $0,%%eax\n"
-      ".Lxyzzy1:\n\t"
-      "jcxz .Lfoobar1\n\t"
+      "0:\n\t"
+      "jcxz 1f\n\t"
       "addl $1, %%eax\n\t"
       "subl $1, %%ecx\n\t"
-      "jmp .Lxyzzy1\n"
-      ".Lfoobar1:\n\t"
+      "jmp 0b\n"
+      "1:\n\t"
       "movl %%eax, %1"
       : /*out*/ : /*in*/ "m"(block[0]),
                          "m"(block[1]) : /*trash*/ "eax","ecx","cc","memory"
@@ -32,12 +32,12 @@ UInt test_jecxz ( UInt arg )
    __asm__ __volatile__(
       "movl %0,%%ecx\n\t"
       "movl $0,%%eax\n"
-      ".Lxyzzy2:\n\t"
-      "jecxz .Lfoobar2\n\t"
+      "0:\n\t"
+      "jecxz 1f\n\t"
       "addl $1, %%eax\n\t"
       "subl $1, %%ecx\n\t"
-      "jmp .Lxyzzy2\n"
-      ".Lfoobar2:\n\t"
+      "jmp 0b\n"
+      "1:\n\t"
       "movl %%eax, %1"
       : /*out*/ : /*in*/ "m"(block[0]),
                          "m"(block[1]) : /*trash*/ "eax","ecx","cc","memory"

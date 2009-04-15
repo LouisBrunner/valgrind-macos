@@ -1,4 +1,4 @@
-#include <sys/mman.h>
+#include "tests/sys_mman.h"
 #include <unistd.h>
 #include "arith_include1.c"
 

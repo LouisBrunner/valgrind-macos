@@ -1,3 +1,4 @@
+#include "tests/sys_mman.h"
 
 int main ( void )
 {
@@ -7,12 +8,13 @@ int main ( void )
       uniform behaviour on all supported targets - a jump to 0xE000000
       - the following is needed. */
    unsigned long long int fake_fndescr[3];
-   fake_fndescr[0] = 0xE000000;
+   fake_fndescr[0] = (unsigned long long int)get_unmapped_page();
    fake_fndescr[1] = 0;
    fake_fndescr[2] = 0;
    return ((int(*)(void)) fake_fndescr) ();
 #else
-   char* p = (char*)0xE000000;
+   char* p = get_unmapped_page();
    return ((int(*)(void)) p) ();
 #endif
 }
+

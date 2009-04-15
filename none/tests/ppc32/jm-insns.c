@@ -166,7 +166,7 @@ case I chased).
 
 
 #include <stdint.h>
-#include <sys/mman.h>
+#include "tests/sys_mman.h"
 
 /* Something of the same size as void*, so can be safely be coerced
    to/from a pointer type. Also same size as the host's gp registers. */
@@ -229,8 +229,6 @@ register HWord_t r17 __asm__ ("r17");
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>    // getopt
-#include <malloc.h>
-
 
 
 #ifndef __powerpc64__
@@ -4403,7 +4401,7 @@ static void build_viargs_table (void)
 {
 #if !defined (ALTIVEC_ARGS_LARGE)
    unsigned int i=2;
-   viargs = memalign(16, i * sizeof(vector unsigned int));
+   viargs = memalign16(i * sizeof(vector unsigned int));
    viargs[0] = (vector unsigned int) { 0x01020304,0x05060708,0x090A0B0C,0x0E0D0E0F };
    AB_DPRINTF_VEC32x4( viargs[0] );
    viargs[1] = (vector unsigned int) { 0xF1F2F3F4,0xF5F6F7F8,0xF9FAFBFC,0xFEFDFEFF };
@@ -4459,7 +4457,7 @@ static void build_vfargs_table (void)
 
 #if !defined (ALTIVEC_ARGS_LARGE)
    nb_vfargs = 12;
-   vfargs = memalign(16, nb_vfargs * sizeof(vector float));
+   vfargs = memalign16(nb_vfargs * sizeof(vector float));
 
    // 4 values:
    for (s=0; s<2; s++) {
@@ -4474,7 +4472,7 @@ static void build_vfargs_table (void)
    }
 #else
    nb_vfargs = 50;
-   vfargs = memalign(16, nb_vfargs * sizeof(vector float));
+   vfargs = memalign16(nb_vfargs * sizeof(vector float));
 
    for (s=0; s<2; s++) {
       for (_exp=0x0; ; _exp += 0x3F ) {
@@ -6763,7 +6761,7 @@ static void test_av_int_st_three_regs (const char *name,
    vector unsigned int* viargs_priv;
 
    // private viargs table to store to
-   viargs_priv = memalign(16,(nb_viargs * sizeof(vector unsigned int)));
+   viargs_priv = memalign16(nb_viargs * sizeof(vector unsigned int));
    for (i=0; i<nb_viargs; i++)
       viargs_priv[i] = (vector unsigned int) { 0,0,0,0 };
 

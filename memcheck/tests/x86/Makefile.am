@@ -28,12 +28,17 @@ EXTRA_DIST = $(noinst_SCRIPTS) \
 check_PROGRAMS = \
 	bug152022 \
 	espindola2 \
-	fxsave \
 	int3-x86 \
-	fpeflags pushfpopf \
+	fpeflags \
+        fprem \
+        fxsave \
+	more_x86_fp \
+        pushfpopf \
 	pushfw_x86 \
-	pushpopmem sse_memory tronical \
-	more_x86_fp fprem xor-undef-x86
+	pushpopmem \
+        sse_memory \
+        tronical \
+        xor-undef-x86
 
 AM_CFLAGS   += @FLAG_M32@ $(FLAG_MMMX) $(FLAG_MSSE)
 AM_CXXFLAGS += @FLAG_M32@ $(FLAG_MMMX) $(FLAG_MSSE)

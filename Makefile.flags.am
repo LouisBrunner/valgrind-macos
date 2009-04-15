@@ -13,9 +13,20 @@ AM_CFLAGS_BASE = -O2 -g -Wmissing-prototypes -Wall -Wshadow \
 AM_CFLAGS_PIC = -O -g -fpic -fno-omit-frame-pointer -fno-strict-aliasing
 
 # Flags for specific targets.
+#
 # Nb: the AM_CPPFLAGS_* values are suitable for building tools and auxprogs.
 # For building the core, coregrind/Makefile.am files add some extra things.
+#
+# Also: in newer versions of automake (1.10 onwards?) asm files ending with
+# '.S' are considered "pre-processed" (as opposed to those ending in '.s')
+# and so the CPPFLAGS are passed to the assembler.  But this is not true for
+# older automakes (e.g. 1.8.5, 1.9.6), sigh.  So we include
+# AM_CPPFLAGS_<PLATFORM> in each AM_CCASFLAGS_<PLATFORM> variable.  This
+# means some of the flags are duplicated on systems with newer versions of
+# automake, but this does not really matter and seems hard to avoid.
+
 AM_CPPFLAGS_COMMON = \
+		-I$(top_srcdir) \
 		-I$(top_srcdir)/include \
 		-I@VEX_DIR@/pub
 
@@ -26,7 +37,7 @@ AM_CPPFLAGS_X86_LINUX 	  = $(AM_CPPFLAGS_COMMON) \
 			    -DVGP_x86_linux=1
 AM_CFLAGS_X86_LINUX       = @FLAG_M32@ @PREFERRED_STACK_BOUNDARY@ \
 			 	$(AM_CFLAGS_BASE)
-AM_CCASFLAGS_X86_LINUX    = @FLAG_M32@ -g
+AM_CCASFLAGS_X86_LINUX    = $(AM_CPPFLAGS_X86_LINUX) @FLAG_M32@ -g
 
 AM_FLAG_M3264_AMD64_LINUX = @FLAG_M64@
 AM_CPPFLAGS_AMD64_LINUX   = $(AM_CPPFLAGS_COMMON) \
@@ -35,7 +46,7 @@ AM_CPPFLAGS_AMD64_LINUX   = $(AM_CPPFLAGS_COMMON) \
 			    -DVGP_amd64_linux=1
 AM_CFLAGS_AMD64_LINUX     = @FLAG_M64@ -fomit-frame-pointer \
 				@PREFERRED_STACK_BOUNDARY@ $(AM_CFLAGS_BASE)
-AM_CCASFLAGS_AMD64_LINUX  = @FLAG_M64@ -g
+AM_CCASFLAGS_AMD64_LINUX  = $(AM_CPPFLAGS_AMD64_LINUX) @FLAG_M64@ -g
 
 AM_FLAG_M3264_PPC32_LINUX = @FLAG_M32@
 AM_CPPFLAGS_PPC32_LINUX = $(AM_CPPFLAGS_COMMON) \
@@ -43,7 +54,7 @@ AM_CPPFLAGS_PPC32_LINUX = $(AM_CPPFLAGS_COMMON) \
 		-DVGO_linux=1 \
 		-DVGP_ppc32_linux=1
 AM_CFLAGS_PPC32_LINUX     = @FLAG_M32@ $(AM_CFLAGS_BASE)
-AM_CCASFLAGS_PPC32_LINUX  = @FLAG_M32@ -g
+AM_CCASFLAGS_PPC32_LINUX  = $(AM_CPPFLAGS_PPC32_LINUX) @FLAG_M32@ -g
 
 AM_FLAG_M3264_PPC64_LINUX = @FLAG_M64@
 AM_CPPFLAGS_PPC64_LINUX   = $(AM_CPPFLAGS_COMMON) \
@@ -51,7 +62,7 @@ AM_CPPFLAGS_PPC64_LINUX   = $(AM_CPPFLAGS_COMMON) \
 			    -DVGO_linux=1 \
 			    -DVGP_ppc64_linux=1
 AM_CFLAGS_PPC64_LINUX     = @FLAG_M64@ $(AM_CFLAGS_BASE)
-AM_CCASFLAGS_PPC64_LINUX  = @FLAG_M64@ -g
+AM_CCASFLAGS_PPC64_LINUX  = $(AM_CPPFLAGS_PPC64_LINUX) @FLAG_M64@ -g
 
 AM_FLAG_M3264_PPC32_AIX5  = @FLAG_MAIX32@
 AM_CPPFLAGS_PPC32_AIX5 	  = $(AM_CPPFLAGS_COMMON) \
@@ -59,7 +70,8 @@ AM_CPPFLAGS_PPC32_AIX5 	  = $(AM_CPPFLAGS_COMMON) \
 			    -DVGO_aix5=1 \
 			    -DVGP_ppc32_aix5=1
 AM_CFLAGS_PPC32_AIX5      = @FLAG_MAIX32@ -mcpu=powerpc $(AM_CFLAGS_BASE)
-AM_CCASFLAGS_PPC32_AIX5   = @FLAG_MAIX32@ -mcpu=powerpc -g
+AM_CCASFLAGS_PPC32_AIX5   = $(AM_CPPFLAGS_PPC32_AIX5) \
+			    @FLAG_MAIX32@ -mcpu=powerpc -g
 
 AM_FLAG_M3264_PPC64_AIX5  = @FLAG_MAIX64@
 AM_CPPFLAGS_PPC64_AIX5    = $(AM_CPPFLAGS_COMMON) \
@@ -67,7 +79,8 @@ AM_CPPFLAGS_PPC64_AIX5    = $(AM_CPPFLAGS_COMMON) \
 			    -DVGO_aix5=1 \
 			    -DVGP_ppc64_aix5=1
 AM_CFLAGS_PPC64_AIX5      = @FLAG_MAIX64@ -mcpu=powerpc64 $(AM_CFLAGS_BASE)
-AM_CCASFLAGS_PPC64_AIX5   = @FLAG_MAIX64@ -mcpu=powerpc64 -g
+AM_CCASFLAGS_PPC64_AIX5   = $(AM_CPPFLAGS_PPC64_AIX5) \
+			    @FLAG_MAIX64@ -mcpu=powerpc64 -g
 
 # Flags for the primary target.  These must be used to build the
 # regtests and performance tests.  In fact, these must be used to

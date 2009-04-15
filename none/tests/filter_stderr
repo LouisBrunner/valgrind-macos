@@ -7,9 +7,6 @@ $dir/../../tests/filter_stderr_basic |
 # Remove "Nulgrind, ..." line and the following copyright line.
 sed "/^Nulgrind, a binary JIT-compiler./ , /./ d" |
 
-# Remove the size in "The main thread stack size..." message.
-sed "s/The main thread stack size used in this run was [0-9]*/The main thread stack size used in this run was .../" |
-
 # Anonymise addresses
 $dir/../../tests/filter_addresses
 

@@ -46,4 +46,8 @@ sed -r "/^(Segmentation fault|Alarm clock|Aborted|Bus error)( \(core dumped\))?$
 
 # Remove any ": dumping core" message as the user might have a
 # limit set that prevents the core dump
-sed "s/\(signal [0-9]* (SIG[A-Z]*)\): dumping core/\1/"
+sed "s/\(signal [0-9]* (SIG[A-Z]*)\): dumping core/\1/" |
+
+# Remove the size in "The main thread stack size..." message.
+sed "s/The main thread stack size used in this run was [0-9]*/The main thread stack size used in this run was .../"
+

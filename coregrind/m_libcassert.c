@@ -47,8 +47,8 @@
 
 #if defined(VGP_x86_linux)
 #  define GET_REAL_PC_SP_AND_FP(pc, sp, fp)      \
-      asm("call m_libcassert_get_ip;" \
-          "m_libcassert_get_ip: popl %0;" \
+      asm("call 0f;" \
+          "0: popl %0;" \
           "movl %%esp, %1;" \
           "movl %%ebp, %2;" \
           : "=r" (pc),\

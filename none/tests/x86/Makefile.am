@@ -50,8 +50,6 @@ EXTRA_DIST = $(noinst_SCRIPTS) \
 	movx.stderr.exp movx.stdout.exp movx.vgtest \
 	pushpopseg.stderr.exp pushpopseg.stdout.exp pushpopseg.vgtest \
 	sbbmisc.stderr.exp sbbmisc.stdout.exp sbbmisc.vgtest \
-	seg_override.stderr.exp seg_override.stdout.exp seg_override.vgtest \
-	sigcontext.stdout.exp sigcontext.stderr.exp sigcontext.vgtest \
 	smc1.stderr.exp smc1.stdout.exp smc1.vgtest \
 	ssse3_misaligned.stderr.exp ssse3_misaligned.stdout.exp \
 	ssse3_misaligned.vgtest \
@@ -85,8 +83,6 @@ check_PROGRAMS = \
         movx \
         pushpopseg \
         sbbmisc \
-	seg_override \
-        sigcontext \
         smc1 \
         yield
 if BUILD_SSSE3_TESTS

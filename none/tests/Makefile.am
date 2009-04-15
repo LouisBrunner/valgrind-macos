@@ -22,6 +22,11 @@ if VGCONF_OS_IS_LINUX
 SUBDIRS += linux
 endif
 
+# Platform-specific tests
+if VGCONF_PLATFORMS_INCLUDE_X86_LINUX
+SUBDIRS += x86-linux
+endif
+
 DIST_SUBDIRS = x86 amd64 ppc32 ppc64 linux .
 
 noinst_SCRIPTS = \

@@ -87,7 +87,7 @@ To install from a tar.bz2 distribution:
      options are documented in the INSTALL file.  The only interesting
      one is the usual --prefix=/where/you/want/it/installed.
 
-  5. Do "make".
+  5. Do "make".  (Nb: this cannot be combined with the next step.)
 
   6. Do "make install", possibly as root if the destination permissions
      require that.

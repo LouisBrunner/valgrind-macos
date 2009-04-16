@@ -140,6 +140,7 @@ top-level directory <computeroutput>valgrind/</computeroutput>.</para>
 <programlisting><![CDATA[
   autogen.sh
   ./configure --prefix=`pwd`/inst
+  make          # Nb: this cannot be combined with the next step
   make install]]></programlisting>
 
    <para>It should automake, configure and compile without errors,

@@ -94,7 +94,6 @@ EXTRA_DIST = $(noinst_SCRIPTS) \
 	metadata.stderr.exp metadata.stdout.exp metadata.vgtest \
 	mismatches.stderr.exp mismatches.vgtest \
 	mmaptest.stderr.exp mmaptest.vgtest \
-	nanoleak.stderr.exp nanoleak.vgtest \
 	nanoleak_supp.stderr.exp nanoleak_supp.vgtest nanoleak.supp \
 	nanoleak2.stderr.exp nanoleak2.vgtest \
 	new_nothrow.stderr.exp new_nothrow.vgtest \
@@ -198,7 +197,7 @@ check_PROGRAMS = \
 	match-overrun \
 	memalign_test memalign2 memcmptest mempool mmaptest \
 	mismatches new_override metadata \
-	nanoleak nanoleak2 new_nothrow \
+	nanoleak_supp nanoleak2 new_nothrow \
 	noisy_child \
 	null_socket \
 	origin1-yes origin2-not-quite origin3-no \

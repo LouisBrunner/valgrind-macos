@@ -142,7 +142,11 @@ collect2: ld returned 1 exit status
 <qandaentry id="faq.bugdeath">
   <question id="q-bugdeath">
     <para>My (buggy) program dies like this:</para>
-<screen>valgrind: m_mallocfree.c:442 (bszW_to_pszW): Assertion 'pszW >= 0' failed.</screen>
+<screen>valgrind: m_mallocfree.c:248 (get_bszB_as_is): Assertion 'bszB_lo == bszB_hi' failed.</screen>
+    <para>or like this:</para>
+<screen>valgrind: m_mallocfree.c:442 (mk_inuse_bszB): Assertion 'bszB != 0' failed.</screen>
+    <para>or otherwise aborts or crashes in m_mallocfree.c.<para/>
+
   </question>
   <answer id="a-bugdeath">
     <para>If Memcheck (the memory checker) shows any invalid reads,
@@ -162,16 +166,20 @@ collect2: ld returned 1 exit status
 <screen>vex x86->IR: unhandled instruction bytes: 0x66 0xF 0x2E 0x5</screen>
   </question>
   <answer id="a-msgdeath">
-    <para>Older versions did not support some x86 and amd64 instructions,
-    particularly SSE/SSE2/SSE3 instructions.  Try a newer Valgrind; we now
-    support almost all instructions.  If it still breaks, file a bug
+    <para>One possibility is that your program has a bug and erroneously
+    jumps to a non-code address, in which case you'll get a SIGILL signal.
+    Memcheck may issue a warning just before this happens, but it might not
+    if the jump happens to land in addressable memory.</para>
+
+    <para>Another possibility is that Valgrind does not handle the
+    instruction.  If you are using an older Valgrind, a newer version might
+    handle the instruction.  However, all instruction sets have some
+    obscure, rarely used instructions.  Also, on amd64 there are an almost
+    limitless number of combinations of redundant instruction prefixes, many
+    of them undocumented but accepted by CPUs.  So Valgrind will still have
+    decoding failures from time to time.  If this happens, please file a bug
     report.</para>
 
-    <para>Another possibility is that your program has a bug and
-    erroneously jumps to a non-code address, in which case you'll get a
-    SIGILL signal.  Memcheck may issue a warning just before
-    this happens, but it might not if the jump happens to land in
-    addressable memory.</para>
   </answer>
 </qandaentry>
 

@@ -200,23 +200,29 @@ typedef
 
 #define SIZE_T_0x1      ((SizeT)0x1)
 
+static char* probably_your_fault =
+   "This is probably caused by your program erroneously writing past the\n"
+   "end of a heap block and corrupting heap metadata.  If you fix any\n"
+   "invalid writes reported by Memcheck, this assertion failure will\n"
+   "probably go away.  Please try that before reporting this as a bug.\n";
+
 // Mark a bszB as in-use, and not in-use, and remove the in-use attribute.
 static __inline__
 SizeT mk_inuse_bszB ( SizeT bszB )
 {
-   vg_assert(bszB != 0);
+   vg_assert2(bszB != 0, probably_your_fault);
    return bszB & (~SIZE_T_0x1);
 }
 static __inline__
 SizeT mk_free_bszB ( SizeT bszB )
 {
-   vg_assert(bszB != 0);
+   vg_assert2(bszB != 0, probably_your_fault);
    return bszB | SIZE_T_0x1;
 }
 static __inline__
 SizeT mk_plain_bszB ( SizeT bszB )
 {
-   vg_assert(bszB != 0);
+   vg_assert2(bszB != 0, probably_your_fault);
    return bszB & (~SIZE_T_0x1);
 }
 
@@ -238,9 +244,8 @@ SizeT get_bszB_as_is ( Block* b )
    SizeT bszB_lo = *(SizeT*)&b2[0 + hp_overhead_szB()];
    SizeT bszB_hi = *(SizeT*)&b2[mk_plain_bszB(bszB_lo) - sizeof(SizeT)];
    vg_assert2(bszB_lo == bszB_hi, 
-      "Heap block lo/hi size mismatch: lo = %llu, hi = %llu.\n"
-      "Probably caused by overrunning/underrunning a heap block's bounds.\n",
-      (ULong)bszB_lo, (ULong)bszB_hi);
+      "Heap block lo/hi size mismatch: lo = %llu, hi = %llu.\n%s",
+      (ULong)bszB_lo, (ULong)bszB_hi, probably_your_fault);
    return bszB_lo;
 }
 
@@ -267,7 +272,7 @@ static __inline__
 Bool is_inuse_block ( Block* b )
 {
    SizeT bszB = get_bszB_as_is(b);
-   vg_assert(bszB != 0);
+   vg_assert2(bszB != 0, probably_your_fault);
    return (0 != (bszB & SIZE_T_0x1)) ? False : True;
 }
 
@@ -312,7 +317,7 @@ SizeT pszB_to_bszB ( Arena* a, SizeT pszB )
 static __inline__
 SizeT bszB_to_pszB ( Arena* a, SizeT bszB )
 {
-   vg_assert(bszB >= overhead_szB(a));
+   vg_assert2(bszB >= overhead_szB(a), probably_your_fault);
    return bszB - overhead_szB(a);
 }
 

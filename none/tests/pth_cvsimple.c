@@ -12,7 +12,7 @@
  * Demonstrates pthread condvars.
  *
  */
-
+#include <unistd.h>
 #include <stdio.h>
 #include <pthread.h>
 
@@ -65,6 +65,7 @@ main(void)
   pthread_t threads[3];
 
   pthread_create(&threads[0], NULL, watch_count, NULL);
+  sleep(1);
   pthread_create(&threads[1], NULL, inc_count,   NULL);
   pthread_create(&threads[2], NULL, inc_count,   NULL);
 
@@ -77,6 +78,7 @@ main(void)
   // pthread_cond_wait() is never called.  Or, we could get a spurious
   // wake-up in watch_count().  Nonetheless, it's very likely that things
   // will work out as expected, since we're starting watch_count() first.
+  // (Also since the sleep() call was added after watch_count()!)
   if (condvar_was_hit == 1)
     printf("condvar was hit!\n");
   else if (condvar_was_hit > 1)

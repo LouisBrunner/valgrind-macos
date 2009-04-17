@@ -7,7 +7,8 @@ EXTRA_DIST = $(noinst_SCRIPTS) \
 	brk.stderr.exp brk.vgtest \
 	capget capget.stderr.exp \
 	stack_switch.stderr.exp stack_switch.vgtest \
-	timerfd-syscall timerfd-syscall.stderr.exp
+	timerfd-syscall timerfd-syscall.stderr.exp \
+	with-space.stderr.exp with-space.stdout.exp with-space.vgtest
 
 check_PROGRAMS = \
 	brk \

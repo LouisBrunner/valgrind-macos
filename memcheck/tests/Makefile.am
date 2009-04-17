@@ -160,7 +160,6 @@ EXTRA_DIST = $(noinst_SCRIPTS) \
 	vcpu_fbench.stdout.exp vcpu_fbench.stderr.exp vcpu_fbench.vgtest \
 	vcpu_fnfns.stdout.exp vcpu_fnfns.stdout.exp-glibc28-amd64 \
 	vcpu_fnfns.stderr.exp vcpu_fnfns.vgtest \
-	with-space.stderr.exp with-space.stdout.exp with-space.vgtest \
 	wrap1.vgtest wrap1.stdout.exp wrap1.stderr.exp \
 	wrap2.vgtest wrap2.stdout.exp wrap2.stderr.exp \
 	wrap3.vgtest wrap3.stdout.exp wrap3.stderr.exp \

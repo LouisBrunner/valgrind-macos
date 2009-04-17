@@ -1,0 +1,14 @@
+# Use the "prereq" command to copy manuel1 to a filename containing a space.
+# This used to not work properly, because the debug info would not be read
+# correctly for filenames containing spaces (bug #88678).
+#
+# Nb: we only run this test on Linux.  This is because on Darwin you can't
+# easily rename an executable with a .dSYM -- the original executable name
+# gets baked into the .dSYM, so renaming the .dSYM as well isn't enough, you
+# have to modify the contents of the .dSYM.  Another idea would be to avoid
+# the renaming in the first place by just using 'with space' as the
+# filename, but automake doesn't seem to like files containing spaces.
+prereq: cp ../manuel1 'with space'
+prog: 'with space'
+vgopts: -q
+cleanup: rm 'with space'

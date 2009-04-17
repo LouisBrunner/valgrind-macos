@@ -8,7 +8,6 @@ EXTRA_DIST = $(noinst_SCRIPTS) \
 	alloc-fns-B.post.exp alloc-fns-B.stderr.exp alloc-fns-B.vgtest \
 	basic.post.exp basic.stderr.exp basic.vgtest \
 	basic2.post.exp basic2.stderr.exp basic2.vgtest \
-	insig.post.exp insig.stderr.exp insig.vgtest \
 	big-alloc.post.exp big-alloc.stderr.exp big-alloc.vgtest \
 	deep-A.post.exp deep-A.stderr.exp deep-A.vgtest \
 	deep-B.post.exp deep-B.stderr.exp deep-B.vgtest \
@@ -17,7 +16,9 @@ EXTRA_DIST = $(noinst_SCRIPTS) \
         culling1.stderr.exp culling1.vgtest \
         culling2.stderr.exp culling2.vgtest \
 	custom_alloc.post.exp custom_alloc.stderr.exp custom_alloc.vgtest \
+	ignored.post.exp ignored.stderr.exp ignored.vgtest \
 	ignoring.post.exp ignoring.stderr.exp ignoring.vgtest \
+	insig.post.exp insig.stderr.exp insig.vgtest \
 	long-names.post.exp long-names.stderr.exp long-names.vgtest \
 	long-time.post.exp long-time.stderr.exp long-time.vgtest \
 	malloc_usable.stderr.exp malloc_usable.vgtest \
@@ -45,6 +46,7 @@ check_PROGRAMS = \
 	culling1 culling2 \
 	custom_alloc \
 	deep \
+	ignored \
 	ignoring \
 	insig \
 	long-names \

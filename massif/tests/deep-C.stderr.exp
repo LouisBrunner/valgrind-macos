@@ -23,6 +23,11 @@ Massif:   20: a9
 Massif:   21: a10
 Massif:   22: a11
 Massif:   23: a12
+Massif: ignore-fns:
+Massif:   0: __part_load_locale
+Massif:   1: __time_load_locale
+Massif:   2: dwarf2_unwind_dyld_add_image_hook
+Massif:   3: get_or_create_key_element
 Massif: startup S.  0 (t:0, hp:0, ex:0, st:0)
 Massif:   alloc S.  1 (t:408, hp:400, ex:8, st:0)
 Massif:   alloc S.  2 (t:816, hp:800, ex:16, st:0)
@@ -34,20 +39,23 @@ Massif:   alloc S.  7 (t:2856, hp:2800, ex:56, st:0)
 Massif:   alloc S.  8 (t:3264, hp:3200, ex:64, st:0)
 Massif:   alloc Sd  9 (t:3672, hp:3600, ex:72, st:0)
 Massif:   alloc S. 10 (t:4080, hp:4000, ex:80, st:0)
-Massif: heap allocs:          10
-Massif: heap reallocs:        0
-Massif: heap frees:           0
-Massif: stack allocs:         0
-Massif: stack frees:          0
+Massif: heap allocs:           10
+Massif: heap reallocs:         0
+Massif: heap frees:            0
+Massif: ignored heap allocs:   ...
+Massif: ignored heap frees:    ...
+Massif: ignored heap reallocs: ...
+Massif: stack allocs:          0
+Massif: stack frees:           0
 Massif: XPts:                 ...
 Massif: top-XPts:             ...
 Massif: XPt init expansions:  ...
 Massif: XPt later expansions: ...
 Massif: SXPt allocs:          ...
 Massif: SXPt frees:           ...
-Massif: skipped snapshots:    0
-Massif: real snapshots:       11
-Massif: detailed snapshots:   1
-Massif: peak snapshots:       0
-Massif: cullings:             0
+Massif: skipped snapshots:     0
+Massif: real snapshots:        11
+Massif: detailed snapshots:    1
+Massif: peak snapshots:        0
+Massif: cullings:              0
 Massif: XCon redos:           ...

@@ -1,4 +1,5 @@
 prog: culling1
 vgopts: -v -v --stacks=no --time-unit=B --heap-admin=16 --massif-out-file=massif.out
+vgopts: --ignore-fn=__part_load_locale --ignore-fn=__time_load_locale --ignore-fn=dwarf2_unwind_dyld_add_image_hook --ignore-fn=get_or_create_key_element
 stderr_filter: filter_verbose
 cleanup: rm massif.out

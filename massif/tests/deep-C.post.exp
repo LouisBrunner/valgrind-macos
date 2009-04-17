@@ -1,6 +1,6 @@
 --------------------------------------------------------------------------------
 Command:            ./deep
-Massif arguments:   --stacks=no --time-unit=B --alloc-fn=a3 --alloc-fn=a4 --alloc-fn=a5 --alloc-fn=a6 --alloc-fn=a7 --alloc-fn=a8 --alloc-fn=a9 --alloc-fn=a10 --alloc-fn=a11 --alloc-fn=a12 --depth=8 --massif-out-file=massif.out
+Massif arguments:   --stacks=no --time-unit=B --alloc-fn=a3 --alloc-fn=a4 --alloc-fn=a5 --alloc-fn=a6 --alloc-fn=a7 --alloc-fn=a8 --alloc-fn=a9 --alloc-fn=a10 --alloc-fn=a11 --alloc-fn=a12 --depth=8 --massif-out-file=massif.out --ignore-fn=__part_load_locale --ignore-fn=__time_load_locale --ignore-fn=dwarf2_unwind_dyld_add_image_hook --ignore-fn=get_or_create_key_element
 ms_print arguments: massif.out
 --------------------------------------------------------------------------------
 

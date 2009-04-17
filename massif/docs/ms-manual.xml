@@ -614,6 +614,33 @@ operator new[](unsigned long, std::nothrow_t const&)
       </listitem>
   </varlistentry>
 
+  <varlistentry id="opt.ignore-fn" xreflabel="--ignore-fn">
+    <term>
+      <option><![CDATA[--ignore-fn=<name> ]]></option>
+    </term>
+    <listitem>
+      <para>Any direct heap allocation (i.e. a call to
+      <function>malloc</function>, <function>new</function>, etc, or a call
+      to a function name in a <computeroutput>--alloc-fn</computeroutput>
+      option) that occurs in a function specified by this option will be
+      ignored.  This is mostly useful for testing purposes.  This option can
+      be specified multiple times on the command line, to name multiple
+      functions.
+      </para>
+      
+      <para>Any <function>realloc</function> of an ignored block will
+      also be ignored, even if the <function>realloc</function> call does
+      not occur in an ignored function.  This avoids the possibility of
+      negative heap sizes if ignored blocks are shrunk with
+      <function>realloc</function>.
+      </para>
+      
+      <para>Note that overloaded C++ names must be written in full, as for
+      <computeroutput>--alloc-fn</computeroutput> above.
+      </para>
+      </listitem>
+  </varlistentry>
+
   <varlistentry id="opt.threshold" xreflabel="--threshold">
     <term>
       <option><![CDATA[--threshold=<m.n> [default: 1.0] ]]></option>

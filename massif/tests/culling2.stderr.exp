@@ -13,6 +13,11 @@ Massif:   10: operator new(unsigned, std::nothrow_t const&)
 Massif:   11: operator new[](unsigned, std::nothrow_t const&)
 Massif:   12: operator new(unsigned long, std::nothrow_t const&)
 Massif:   13: operator new[](unsigned long, std::nothrow_t const&)
+Massif: ignore-fns:
+Massif:   0: __part_load_locale
+Massif:   1: __time_load_locale
+Massif:   2: dwarf2_unwind_dyld_add_image_hook
+Massif:   3: get_or_create_key_element
 Massif: startup S.  0 (t:0, hp:0, ex:0, st:0)
 Massif:   alloc S.  1 (t:16, hp:0, ex:16, st:0)
 Massif:   alloc S.  2 (t:432, hp:400, ex:32, st:0)
@@ -522,20 +527,23 @@ Massif:   post-cull S. 47 (t:7491504, hp:7488400, ex:3104, st:0)
 Massif:   post-cull S. 48 (t:7647136, hp:7644000, ex:3136, st:0)
 Massif:   post-cull Sd 49 (t:7883584, hp:7880400, ex:3184, st:0)
 Massif: New time interval = 113728 (between snapshots 1 and 2)
-Massif: heap allocs:          200
-Massif: heap reallocs:        0
-Massif: heap frees:           0
-Massif: stack allocs:         0
-Massif: stack frees:          0
+Massif: heap allocs:           200
+Massif: heap reallocs:         0
+Massif: heap frees:            0
+Massif: ignored heap allocs:   ...
+Massif: ignored heap frees:    ...
+Massif: ignored heap reallocs: ...
+Massif: stack allocs:          0
+Massif: stack frees:           0
 Massif: XPts:                 ...
 Massif: top-XPts:             ...
 Massif: XPt init expansions:  ...
 Massif: XPt later expansions: ...
 Massif: SXPt allocs:          ...
 Massif: SXPt frees:           ...
-Massif: skipped snapshots:    1
-Massif: real snapshots:       200
-Massif: detailed snapshots:   20
-Massif: peak snapshots:       0
-Massif: cullings:             3
+Massif: skipped snapshots:     1
+Massif: real snapshots:        200
+Massif: detailed snapshots:    20
+Massif: peak snapshots:        0
+Massif: cullings:              3
 Massif: XCon redos:           ...

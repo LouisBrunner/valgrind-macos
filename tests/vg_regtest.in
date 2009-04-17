@@ -51,7 +51,8 @@
 # following lines, in any order:
 #   - prog:   <prog to run>                         (compulsory)
 #   - args:   <args for prog>                       (default: none)
-#   - vgopts: <Valgrind options>                    (default: none)
+#   - vgopts: <Valgrind options>                    (default: none;
+#                                                    multiple are allowed)
 #   - stdout_filter: <filter to run stdout through> (default: none)
 #   - stderr_filter: <filter to run stderr through> (default: ./filter_stderr)
 #   - prereq: <prerequisite command>                (default: none)
@@ -216,7 +217,7 @@ sub read_vgtest_file($)
         if      ($line =~ /^\s*#/ || $line =~ /^\s*$/) {
 	    next;
 	} elsif ($line =~ /^\s*vgopts:\s*(.*)$/) {
-            $vgopts = $1;
+            $vgopts = $vgopts . " " . $1;   # Nb: Make sure there's a space!
         } elsif ($line =~ /^\s*prog:\s*(.*)$/) {
             $prog = validate_program(".", $1, 0, 0);
         } elsif ($line =~ /^\s*args:\s*(.*)$/) {

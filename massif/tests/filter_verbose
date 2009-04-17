@@ -11,6 +11,11 @@ $dir/filter_stderr |
 # lines by default, and the 'p' means do print those that match the pattern.
 sed -n "/Massif:/p" |
 
+# These ignored heap counts could vary from machine to machine.
+sed "s/\(Massif: ignored heap allocs:\).*/\1   .../" |
+sed "s/\(Massif: ignored heap frees:\).*/\1    .../" |
+sed "s/\(Massif: ignored heap reallocs:\).*/\1 .../" |
+
 # These XPt counts vary from machine to machine, because the size of the
 # stack trace can vary -- eg. some machines have more stack frames below
 # zero than other machines.  So filter them out.

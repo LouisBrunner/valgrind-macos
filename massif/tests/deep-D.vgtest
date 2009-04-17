@@ -1,4 +1,5 @@
 prog: deep
 vgopts: --stacks=no --time-unit=B --alloc-fn=a1 --alloc-fn=a2 --alloc-fn=a3 --alloc-fn=a4 --alloc-fn=a5 --alloc-fn=a6 --alloc-fn=a7 --alloc-fn=a8 --alloc-fn=a9 --alloc-fn=a10 --alloc-fn=a11 --alloc-fn=a12 --alloc-fn=main --depth=20 --massif-out-file=massif.out
+vgopts: --ignore-fn=__part_load_locale --ignore-fn=__time_load_locale --ignore-fn=dwarf2_unwind_dyld_add_image_hook --ignore-fn=get_or_create_key_element
 post: perl ../../massif/ms_print massif.out | ../../tests/filter_addresses | ../../tests/filter_libc
 cleanup: rm massif.out

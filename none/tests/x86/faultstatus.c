@@ -6,8 +6,9 @@
 #include <stdlib.h>
 #include <fcntl.h>
 #include <setjmp.h>
-#include "tests/sys_mman.h"
 #include <unistd.h>
+#include "tests/asm.h"
+#include "tests/sys_mman.h"
 
 struct test {
 	void (*test)(void);
@@ -76,7 +77,7 @@ static void handler(int sig, siginfo_t *si, void *uc)
 extern char test1_ill;
 static void test1()
 {
-	asm volatile("test1_ill: ud2");
+	asm volatile(VG_SYM(test1_ill) ": ud2");
 }
 
 static void test2()

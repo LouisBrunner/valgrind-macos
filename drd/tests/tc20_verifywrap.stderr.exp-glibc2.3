@@ -28,21 +28,7 @@ Destroying locked mutex: mutex 0x........, recursion count 1, owner 1.
 make pthread_mutex_lock fail: skipped on glibc < 2.4
 
 
-The object at address 0x........ is not a mutex.
-   at 0x........: pthread_mutex_trylock (drd_pthread_intercepts.c:?)
-   by 0x........: main (tc20_verifywrap.c:116)
-mutex 0x........ was first observed at:
-   at 0x........: pthread_mutex_trylock (drd_pthread_intercepts.c:?)
-   by 0x........: main (tc20_verifywrap.c:116)
-
-The object at address 0x........ is not a mutex.
-   at 0x........: pthread_mutex_timedlock (drd_pthread_intercepts.c:?)
-   by 0x........: main (tc20_verifywrap.c:121)
-mutex 0x........ was first observed at:
-   at 0x........: pthread_mutex_trylock (drd_pthread_intercepts.c:?)
-   by 0x........: main (tc20_verifywrap.c:116)
-
-The object at address 0x........ is not a mutex.
+Mutex not locked: mutex 0x........, recursion count 0, owner 0.
    at 0x........: pthread_mutex_unlock (drd_pthread_intercepts.c:?)
    by 0x........: main (tc20_verifywrap.c:125)
 mutex 0x........ was first observed at:
@@ -136,4 +122,4 @@ Destroying locked rwlock: rwlock 0x.........
 Destroying locked mutex: mutex 0x........, recursion count 1, owner 1.
    at 0x........: main (tc20_verifywrap.c:262)
 
-ERROR SUMMARY: 15 errors from 15 contexts (suppressed: 0 from 0)
+ERROR SUMMARY: 13 errors from 13 contexts (suppressed: 0 from 0)

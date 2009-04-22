@@ -62,6 +62,11 @@ extern ULong VG_(di_notify_mmap)( Addr a, Bool allow_SkFileV );
 extern void VG_(di_notify_munmap)( Addr a, SizeT len );
 
 extern void VG_(di_notify_mprotect)( Addr a, SizeT len, UInt prot );
+
+/* this should really return ULong, as per VG_(di_notify_mmap). */
+extern void VG_(di_notify_pdb_debuginfo)( Int fd, Addr avma,
+                                          SizeT total_size,
+                                          PtrdiffT unknown_purpose__reloc );
 #endif
 
 #if defined(VGO_aix5)
@@ -106,6 +111,13 @@ extern Bool VG_(use_CF_info) ( /*MOD*/Addr* ipP,
                                /*MOD*/Addr* fpP,
                                Addr min_accessible,
                                Addr max_accessible );
+
+/* Use MSVC FPO data to do one step of stack unwinding. */
+extern Bool VG_(use_FPO_info) ( /*MOD*/Addr* ipP,
+                                /*MOD*/Addr* spP,
+                                /*MOD*/Addr* fpP,
+                                Addr min_accessible,
+                                Addr max_accessible );
 
 /* ppc64-linux only: find the TOC pointer (R2 value) that should be in
    force at the entry point address of the function containing

@@ -208,6 +208,29 @@ extern Int ML_(CfiExpr_DwReg) ( XArray* dst, Int reg );
 
 extern void ML_(ppCfiExpr)( XArray* src, Int ix );
 
+/* ---------------- FPO INFO (Windows PE) -------------- */
+
+/* for apps using Wine: MSVC++ PDB FramePointerOmitted: somewhat like
+   a primitive CFI */
+typedef
+   struct _FPO_DATA {  /* 16 bytes */
+      UInt   ulOffStart; /* offset of 1st byte of function code */
+      UInt   cbProcSize; /* # bytes in function */
+      UInt   cdwLocals;  /* # bytes/4 in locals */
+      UShort cdwParams;  /* # bytes/4 in params */
+      UChar  cbProlog;   /* # bytes in prolog */
+      UChar  cbRegs :3;  /* # regs saved */
+      UChar  fHasSEH:1;  /* Structured Exception Handling */
+      UChar  fUseBP :1;  /* EBP has been used */
+      UChar  reserved:1;
+      UChar  cbFrame:2;  /* frame type */
+   }
+   FPO_DATA;
+
+#define PDB_FRAME_FPO  0
+#define PDB_FRAME_TRAP 1
+#define PDB_FRAME_TSS  2
+
 /* --------------------- VARIABLES --------------------- */
 
 typedef
@@ -441,6 +464,13 @@ struct _DebugInfo {
    Addr    cfsi_maxavma;
    XArray* cfsi_exprs; /* XArray of CfiExpr */
 
+   /* Optimized code under Wine x86: MSVC++ PDB FramePointerOmitted
+      data.  Non-expandable array, hence .size == .used. */
+   FPO_DATA* fpo;
+   UWord     fpo_size;
+   Addr      fpo_minavma;
+   Addr      fpo_maxavma;
+
    /* Expandable arrays of characters -- the string table.  Pointers
       into this are stable (the arrays are not reallocated). */
    struct strchunk {
@@ -538,6 +568,10 @@ extern Word ML_(search_one_loctab) ( struct _DebugInfo* di, Addr ptr );
 /* Find a CFI-table index containing the specified pointer, or -1 if
    not found.  Binary search.  */
 extern Word ML_(search_one_cfitab) ( struct _DebugInfo* di, Addr ptr );
+
+/* Find a FPO-table index containing the specified pointer, or -1
+   if not found.  Binary search.  */
+extern Word ML_(search_one_fpotab) ( struct _DebugInfo* di, Addr ptr );
 
 /* ------ Misc ------ */
 

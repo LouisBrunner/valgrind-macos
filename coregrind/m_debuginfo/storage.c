@@ -1509,6 +1509,31 @@ Word ML_(search_one_cfitab) ( struct _DebugInfo* di, Addr ptr )
 }
 
 
+/* Find a FPO-table index containing the specified pointer, or -1
+   if not found.  Binary search.  */
+
+Word ML_(search_one_fpotab) ( struct _DebugInfo* di, Addr ptr )
+{
+   Addr const addr = ptr - di->rx_map_avma;
+   Addr a_mid_lo, a_mid_hi;
+   Word mid, size,
+        lo = 0,
+        hi = di->fpo_size-1;
+   while (True) {
+      /* current unsearched space is from lo to hi, inclusive. */
+      if (lo > hi) return -1; /* not found */
+      mid      = (lo + hi) / 2;
+      a_mid_lo = di->fpo[mid].ulOffStart;
+      size     = di->fpo[mid].cbProcSize;
+      a_mid_hi = a_mid_lo + size - 1;
+      vg_assert(a_mid_hi >= a_mid_lo);
+      if (addr < a_mid_lo) { hi = mid-1; continue; }
+      if (addr > a_mid_hi) { lo = mid+1; continue; }
+      vg_assert(addr >= a_mid_lo && addr <= a_mid_hi);
+      return mid;
+   }
+}
+
 /*--------------------------------------------------------------------*/
 /*--- end                                                          ---*/
 /*--------------------------------------------------------------------*/

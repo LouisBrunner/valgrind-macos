@@ -1114,6 +1114,8 @@ Bool ML_(read_elf_debug_info) ( struct _DebugInfo* di )
       plt, and toc.
       ---------------------------------------------------------- */
 
+   res = False;
+
    oimage = (Addr)NULL;
    if (VG_(clo_verbosity) > 1 || VG_(clo_trace_redir))
       VG_(message)(Vg_DebugMsg, "Reading syms from %s (%#lx)",

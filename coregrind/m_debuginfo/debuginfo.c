@@ -61,6 +61,7 @@
 #if defined(VGO_linux)
 # include "priv_readelf.h"
 # include "priv_readdwarf3.h"
+# include "priv_readpdb.h"
 #elif defined(VGO_aix5)
 # include "pub_core_debuglog.h"
 # include "pub_core_libcproc.h"
@@ -217,6 +218,7 @@ static void free_DebugInfo ( DebugInfo* di )
    if (di->loctab)     ML_(dinfo_free)(di->loctab);
    if (di->cfsi)       ML_(dinfo_free)(di->cfsi);
    if (di->cfsi_exprs) VG_(deleteXA)(di->cfsi_exprs);
+   if (di->fpo)        ML_(dinfo_free)(di->fpo);
 
    for (chunk = di->strchunks; chunk != NULL; chunk = next) {
       next = chunk->next;
@@ -870,6 +872,143 @@ void VG_(di_notify_mprotect)( Addr a, SizeT len, UInt prot )
       if (anyFound)
          cfsi_cache__invalidate();
    }
+}
+
+/*--------- PDB (windows debug info) reading --------- */
+
+/* this should really return ULong, as per VG_(di_notify_mmap). */
+void VG_(di_notify_pdb_debuginfo)( Int fd_obj, Addr avma_obj,
+                                   SizeT total_size,
+                                   PtrdiffT unknown_purpose__reloc )
+{
+   Int    r, sz_exename;
+   ULong  obj_mtime, pdb_mtime;
+   Char   exename[VKI_PATH_MAX];
+   Char*  pdbname = NULL;
+   Char*  dot;
+   SysRes sres;
+   Int    fd_pdbimage;
+   SizeT  n_pdbimage;
+   struct vg_stat stat_buf;
+
+   if (VG_(clo_verbosity) > 0) {
+      VG_(message)(Vg_UserMsg, "");
+      VG_(message)(Vg_UserMsg,
+         "LOAD_PDB_DEBUGINFO(fd=%d, avma=%#lx, total_size=%lu, "
+         "uu_reloc=%#lx)", 
+         fd_obj, avma_obj, total_size, unknown_purpose__reloc
+      );
+   }
+
+   /* 'fd' refers to the .exe/.dll we're dealing with.  Get its modification
+      time into obj_mtime. */
+   r = VG_(fstat)(fd_obj, &stat_buf);
+   if (r == -1)
+      goto out; /* stat failed ?! */
+   vg_assert(r == 0);
+   obj_mtime = stat_buf.st_mtime;
+
+   /* and get its name into exename[]. */
+   vg_assert(VKI_PATH_MAX > 100); /* to ensure /proc/self/fd/%d is safe */
+   VG_(memset)(exename, 0, sizeof(exename));
+   VG_(sprintf)(exename, "/proc/self/fd/%d", fd_obj);
+   /* convert exename from a symlink to real name .. overwrites the
+      old contents of the buffer.  Ick. */
+   sz_exename = VG_(readlink)(exename, exename, sizeof(exename)-2 );
+   if (sz_exename == -1)
+      goto out; /* readlink failed ?! */
+   vg_assert(sz_exename >= 0 && sz_exename < sizeof(exename));
+   vg_assert(exename[sizeof(exename)-1] == 0);
+
+   if (VG_(clo_verbosity) > 0) {
+      VG_(message)(Vg_UserMsg, "LOAD_PDB_DEBUGINFO: objname: %s", exename);
+   }
+
+   /* Try to find a matching PDB file from which to read debuginfo.
+      Windows PE files have symbol tables and line number information,
+      but MSVC doesn't seem to use them. */
+   /* Why +5 ?  Because in the worst case, we could find a dot as the
+      last character of pdbname, and we'd then put "pdb" right after
+      it, hence extending it a bit. */
+   pdbname = ML_(dinfo_zalloc)("di.debuginfo.lpd1", sz_exename+5);
+   VG_(strcpy)(pdbname, exename);
+   vg_assert(pdbname[sz_exename+5-1] == 0);
+   dot = VG_(strrchr)(pdbname, '.');
+   if (!dot)
+      goto out; /* there's no dot in the exe's name ?! */
+   if (dot[1] == 0)
+      goto out; /* hmm, path ends in "." */
+
+   if ('A' <= dot[1] && dot[1] <= 'Z')
+      VG_(strcpy)(dot, ".PDB");
+   else
+      VG_(strcpy)(dot, ".pdb");
+
+   vg_assert(pdbname[sz_exename+5-1] == 0);
+
+   /* See if we can find it, and check it's in-dateness. */
+   sres = VG_(stat)(pdbname, &stat_buf);
+   if (sres.isError) {
+      VG_(message)(Vg_UserMsg, "Warning: Missing or un-stat-able %s",
+                               pdbname);
+   if (VG_(clo_verbosity) > 0)
+      VG_(message)(Vg_UserMsg, "LOAD_PDB_DEBUGINFO: missing: %s", pdbname);
+      goto out;
+   }
+   pdb_mtime = stat_buf.st_mtime;
+   if (pdb_mtime < obj_mtime ) {
+      /* PDB file is older than PE file - ignore it or we will either
+         (a) print wrong stack traces or more likely (b) crash. */
+      VG_(message)(Vg_UserMsg, "Warning: Ignoring %s since it is older than %s",
+                               pdbname, exename);
+      goto out;
+   }
+
+   sres = VG_(open)(pdbname, VKI_O_RDONLY, 0);
+   if (sres.isError) {
+      VG_(message)(Vg_UserMsg, "Warning: Can't open %s", pdbname);
+      goto out;
+   }
+
+   /* Looks promising; go on to try and read stuff from it. */
+   fd_pdbimage = sres.res;
+   n_pdbimage  = stat_buf.st_size;
+   sres = VG_(am_mmap_file_float_valgrind)( n_pdbimage, VKI_PROT_READ,
+                                            fd_pdbimage, 0 );
+   if (sres.isError) {
+      VG_(close)(fd_pdbimage);
+      goto out;
+   }
+
+   if (VG_(clo_verbosity) > 0)
+      VG_(message)(Vg_UserMsg, "LOAD_PDB_DEBUGINFO: pdbname: %s", pdbname);
+
+   /* play safe; always invalidate the CFI cache.  I don't know if
+      this is necessary, but anyway .. */
+   cfsi_cache__invalidate();
+   /* dump old info for this range, if any */
+   discard_syms_in_range( avma_obj, total_size );
+
+   { void* pdbimage = (void*)sres.res;
+     DebugInfo* di = find_or_create_DebugInfo_for(exename, NULL/*membername*/ );
+
+     /* this di must be new, since we just nuked any old stuff in the range */
+     vg_assert(di && !di->have_rx_map && !di->have_rw_map);
+     vg_assert(!di->have_dinfo);
+
+     /* don't set up any of the di-> fields; let
+        ML_(read_pdb_debug_info) do it. */
+     ML_(read_pdb_debug_info)( di, avma_obj, unknown_purpose__reloc,
+                               pdbimage, n_pdbimage, pdbname, pdb_mtime );
+     // JRS fixme: take notice of return value from read_pdb_debug_info,
+     // and handle failure
+     vg_assert(di->have_dinfo); // fails if PDB read failed
+     VG_(am_munmap_valgrind)( (Addr)pdbimage, n_pdbimage );
+     VG_(close)(fd_pdbimage);
+   }
+
+  out:
+   if (pdbname) ML_(dinfo_free)(pdbname);
 }
 
 #endif /* defined(VGO_linux) */
@@ -1983,6 +2122,127 @@ Bool VG_(use_CF_info) ( /*MOD*/Addr* ipP,
 
 /*--------------------------------------------------------------*/
 /*---                                                        ---*/
+/*--- TOP LEVEL: FOR UNWINDING THE STACK USING               ---*/
+/*---            MSVC FPO INFO                               ---*/
+/*---                                                        ---*/
+/*--------------------------------------------------------------*/
+
+Bool VG_(use_FPO_info) ( /*MOD*/Addr* ipP,
+                         /*MOD*/Addr* spP,
+                         /*MOD*/Addr* fpP,
+                         Addr min_accessible,
+                         Addr max_accessible )
+{
+   Word       i;
+   DebugInfo* di;
+   FPO_DATA*  fpo = NULL;
+   Addr       spHere;
+
+   static UWord n_search = 0;
+   static UWord n_steps = 0;
+   n_search++;
+
+   if (0) VG_(printf)("search FPO for %#lx\n", *ipP);
+
+   for (di = debugInfo_list; di != NULL; di = di->next) {
+      n_steps++;
+
+      /* Use the per-DebugInfo summary address ranges to skip
+         inapplicable DebugInfos quickly. */
+      if (di->fpo == NULL)
+         continue;
+      if (*ipP < di->fpo_minavma || *ipP > di->fpo_maxavma)
+         continue;
+
+      i = ML_(search_one_fpotab)( di, *ipP );
+      if (i != -1) {
+         Word j;
+         if (0) {
+            /* debug printing only */
+            VG_(printf)("look for %#lx  size %ld i %ld\n",
+                        *ipP, di->fpo_size, i);
+            for (j = 0; j < di->fpo_size; j++)
+               VG_(printf)("[%02ld] %#x %d\n", 
+                            j, di->fpo[j].ulOffStart, di->fpo[j].cbProcSize);
+         }
+         vg_assert(i >= 0 && i < di->fpo_size);
+         fpo = &di->fpo[i];
+         break;
+      }
+   }
+
+   if (fpo == NULL)
+      return False;
+
+   if (0 && ((n_search & 0x7FFFF) == 0))
+      VG_(printf)("VG_(use_FPO_info): %lu searches, "
+                  "%lu DebugInfos looked at\n",
+                  n_search, n_steps);
+
+
+   /* Start of performance-enhancing hack: once every 64 (chosen
+      hackily after profiling) successful searches, move the found
+      DebugInfo one step closer to the start of the list.  This makes
+      future searches cheaper.  For starting konqueror on amd64, this
+      in fact reduces the total amount of searching done by the above
+      find-the-right-DebugInfo loop by more than a factor of 20. */
+   if ((n_search & 0x3F) == 0) {
+      /* Move si one step closer to the start of the list. */
+      //move_DebugInfo_one_step_forward( di );
+   }
+   /* End of performance-enhancing hack. */
+
+   if (0) {
+      VG_(printf)("found fpo: ");
+      //ML_(ppFPO)(fpo);
+   }
+
+   /*
+   Stack layout is:
+   %esp->
+      4*.cbRegs  {%edi, %esi, %ebp, %ebx}
+      4*.cdwLocals
+      return_pc
+      4*.cdwParams
+   prior_%esp->
+
+   Typical code looks like:
+      sub $4*.cdwLocals,%esp
+         Alternative to above for >=4KB (and sometimes for smaller):
+            mov $size,%eax
+            call __chkstk  # WinNT performs page-by-page probe!
+               __chkstk is much like alloc(), except that on return
+               %eax= 5+ &CALL.  Thus it could be used as part of
+               Position Independent Code to locate the Global Offset Table.
+      push %ebx
+      push %ebp
+      push %esi
+         Other once-only instructions often scheduled >here<.
+      push %edi
+
+   If the pc is within the first .cbProlog bytes of the function,
+   then you must disassemble to see how many registers have been pushed,
+   because instructions in the prolog may be scheduled for performance.
+   The order of PUSH is always %ebx, %ebp, %esi, %edi, with trailing
+   registers not pushed when .cbRegs < 4.  This seems somewhat strange
+   because %ebp is the register whose usage you want to minimize,
+   yet it is in the first half of the PUSH list.
+
+   I don't know what happens when the compiler constructs an outgoing CALL.
+   %esp could move if outgoing parameters are PUSHed, and this affects
+   traceback for errors during the PUSHes. */
+ 
+   spHere = *spP;
+
+   *ipP = *(Addr *)(spHere + 4*(fpo->cbRegs + fpo->cdwLocals));
+   *spP =           spHere + 4*(fpo->cbRegs + fpo->cdwLocals + 1 + fpo->cdwParams);
+   *fpP = *(Addr *)(spHere + 4*2);
+   return True;
+}
+
+
+/*--------------------------------------------------------------*/
+/*---                                                        ---*/
 /*--- TOP LEVEL: GENERATE DESCRIPTION OF DATA ADDRESSES      ---*/
 /*---            FROM DWARF3 DEBUG INFO                      ---*/
 /*---                                                        ---*/
@@ -2912,7 +3172,6 @@ void* /* really, XArray* of GlobalBlock */
 
    return gvars;
 }
-
 
 
 /*------------------------------------------------------------*/

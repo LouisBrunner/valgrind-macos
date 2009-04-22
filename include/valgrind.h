@@ -3625,7 +3625,10 @@ typedef
           /* Stack support. */
           VG_USERREQ__STACK_REGISTER   = 0x1501,
           VG_USERREQ__STACK_DEREGISTER = 0x1502,
-          VG_USERREQ__STACK_CHANGE     = 0x1503
+          VG_USERREQ__STACK_CHANGE     = 0x1503,
+
+          /* Wine support */
+          VG_USERREQ__LOAD_PDB_DEBUGINFO = 0x1601
    } Vg_ClientRequest;
 
 #if !defined(__GNUC__)
@@ -3913,6 +3916,14 @@ VALGRIND_PRINTF_BACKTRACE(const char *format, ...)
     VALGRIND_DO_CLIENT_REQUEST(_qzz_res, 0,                       \
                                VG_USERREQ__STACK_CHANGE,          \
                                id, start, end, 0, 0);             \
+   }
+
+/* Load PDB debug info for Wine PE image_map. */
+#define VALGRIND_LOAD_PDB_DEBUGINFO(fd, ptr, total_size, delta)   \
+   {unsigned int _qzz_res;                                        \
+    VALGRIND_DO_CLIENT_REQUEST(_qzz_res, 0,                       \
+                               VG_USERREQ__LOAD_PDB_DEBUGINFO,    \
+                               fd, ptr, total_size, delta, 0);    \
    }
 
 

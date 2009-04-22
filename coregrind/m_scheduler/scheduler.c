@@ -83,10 +83,9 @@
 #include "pub_core_tooliface.h"
 #include "pub_core_translate.h"     // For VG_(translate)()
 #include "pub_core_transtab.h"
+#include "pub_core_debuginfo.h"     // VG_(di_notify_pdb_debuginfo)
 #include "priv_sema.h"
 #include "pub_core_scheduler.h"     // self
-
-/* #include "pub_core_debuginfo.h" */   // DEBUGGING HACK ONLY
 
 
 /* ---------------------------------------------------------------------
@@ -1399,6 +1398,11 @@ void do_client_request ( ThreadId tid )
 
       case VG_USERREQ__COUNT_ERRORS:  
          SET_CLREQ_RETVAL( tid, VG_(get_n_errs_found)() );
+         break;
+
+      case VG_USERREQ__LOAD_PDB_DEBUGINFO:
+         VG_(di_notify_pdb_debuginfo)( arg[1], arg[2], arg[3], arg[4] );
+         SET_CLREQ_RETVAL( tid, 0 );     /* return value is meaningless */
          break;
 
       default:

@@ -184,6 +184,17 @@ UInt VG_(get_StackTrace_wrk) ( ThreadId tid_if_known,
          continue;
       }
 
+      /* And, similarly, try for MSVC FPO unwind info. */
+      if ( VG_(use_FPO_info)( &ip, &sp, &fp, fp_min, fp_max ) ) {
+         if (sps) sps[i] = sp;
+         if (fps) fps[i] = fp;
+         ips[i++] = ip;
+         if (debug)
+            VG_(printf)("     ipsC[%d]=0x%08lx\n", i-1, ips[i-1]);
+         ip = ip - 1;
+         continue;
+      }
+
       /* No luck.  We have to give up. */
       break;
    }

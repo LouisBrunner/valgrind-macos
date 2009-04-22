@@ -297,6 +297,24 @@ static void DRD_(set_main_thread_state)(void)
 
 }
 
+
+/*
+ * Note: as of today there exist three different versions of pthread_create:
+ * - pthread_create@GLIBC_2.0
+ * - pthread_create@@GLIBC_2.1
+ * - pthread_create@@GLIBC_2.2.5
+ * As an example, in libpthread-2.3.4 both pthread_create@GLIBC_2.0 and
+ * pthread_create@@GLIBC_2.1 are defined, while in libpthread-2.9 all three
+ * versions have been implemented. In any glibc version where more than one
+ * pthread_create function has been implemented, older versions call the
+ * newer versions. Or: the pthread_create* wrapper defined below can be
+ * called recursively. Any code in this wrapper should take this in account.
+ * As an example, it is not safe to invoke the DRD_STOP_RECORDING
+ * / DRD_START_RECORDING client requests from the pthread_create wrapper.
+ * See also the implementation of pthread_create@GLIBC_2.0 in
+ * glibc-2.9/nptl/pthread_create.c.
+ */
+
 // pthread_create
 PTH_FUNC(int, pthreadZucreateZa, // pthread_create*
          pthread_t *thread, const pthread_attr_t *attr,
@@ -341,14 +359,7 @@ PTH_FUNC(int, pthreadZucreateZa, // pthread_create*
    assert(thread_args_p->detachstate == PTHREAD_CREATE_JOINABLE
           || thread_args_p->detachstate == PTHREAD_CREATE_DETACHED);
 
-   /* Suppress NPTL-specific conflicts between creator and created thread. */
-   VALGRIND_DO_CLIENT_REQUEST(res, -1, VG_USERREQ__DRD_STOP_RECORDING,
-                              0, 0, 0, 0, 0);
-
    CALL_FN_W_WWWW(ret, fn, thread, attr, DRD_(thread_wrapper), thread_args_p);
-
-   VALGRIND_DO_CLIENT_REQUEST(res, -1, VG_USERREQ__DRD_START_RECORDING,
-                              0, 0, 0, 0, 0);
 
 #if defined(WAIT_UNTIL_CREATED_THREAD_STARTED)
    if (ret == 0)

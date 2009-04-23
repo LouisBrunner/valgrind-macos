@@ -255,15 +255,14 @@ void DRD_(bm_access_store_8)(struct bitmap* const bm, const Addr a1)
 Bool DRD_(bm_has)(struct bitmap* const bm, const Addr a1, const Addr a2,
                   const BmAccessTypeT access_type)
 {
-   Addr b;
-   for (b = a1; b < a2; b++)
-   {
-      if (! DRD_(bm_has_1)(bm, b, access_type))
-      {
-         return False;
-      }
-   }
-   return True;
+#ifdef ENABLE_DRD_CONSISTENCY_CHECKS
+   tl_assert(access_type == eLoad || access_type == eStore);
+#endif
+
+   if (access_type == eLoad)
+      return DRD_(bm_has_any_load)(bm, a1, a2);
+   else
+      return DRD_(bm_has_any_store)(bm, a1, a2);
 }
 
 Bool

@@ -283,7 +283,6 @@ PTH_FUNC(int, pthreadZucreateZa, // pthread_create*
          pthread_t *thread, const pthread_attr_t *attr,
          void *(*start) (void *), void *arg)
 {
-  int    res;
   int    ret;
   OrigFn fn;
   VgPosixThreadArgs vgargs;

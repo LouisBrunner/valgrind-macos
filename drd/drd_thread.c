@@ -331,11 +331,19 @@ void thread_pre_cancel(const DrdThreadId tid)
   s_threadinfo[tid].synchr_nesting = 0;
 }
 
+/**
+ * Store the POSIX thread ID for the specified thread.
+ *
+ * @note This function can be called two times for the same thread -- see also
+ * the comment block preceding the pthread_create() wrapper in
+ * drd_pthread_intercepts.c.
+ */
 void thread_set_pthreadid(const DrdThreadId tid, const PThreadId ptid)
 {
   tl_assert(0 <= (int)tid && tid < DRD_N_THREADS
             && tid != DRD_INVALID_THREADID);
-  tl_assert(s_threadinfo[tid].pt_threadid == INVALID_POSIX_THREADID);
+  tl_assert(s_threadinfo[tid].pt_threadid == INVALID_POSIX_THREADID
+            || s_threadinfo[tid].pt_threadid == ptid);
   tl_assert(ptid != INVALID_POSIX_THREADID);
   s_threadinfo[tid].posix_thread_exists = True;
   s_threadinfo[tid].pt_threadid         = ptid;

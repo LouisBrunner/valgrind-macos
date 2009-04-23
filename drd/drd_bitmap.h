@@ -428,41 +428,6 @@ bm2_lookup_exclusive(struct bitmap* const bm, const UWord a1)
    return bm2;
 }
 
-/** Look up the first address in bitmap bm that is greater than or equal to
- *  a1 and return a pointer to a second level bitmap that is not shared and
- *  hence may be modified.
- *
- *  @param a1 client address shifted right by ADDR0_BITS.
- *  @param bm bitmap pointer.
- */
-static __inline__
-struct bitmap2ref*
-bm2_lookup_next_exclusive(struct bitmap* const bm, const UWord a1)
-{
-   struct bitmap2ref* bm2ref;
-   struct bitmap2* bm2;
-
-   bm2ref = 0;
-   bm2 = 0;
-
-   VG_(OSetGen_ResetIterAt)(bm->oset, &a1);
-   bm2ref = VG_(OSetGen_Next)(bm->oset);
-
-   if (bm2ref)
-   {
-      bm2 = bm2ref->bm2;
-      if (bm2->refcnt > 1)
-      {
-#ifdef ENABLE_DRD_CONSISTENCY_CHECKS
-	 tl_assert(bm2ref);
-#endif
-	 bm2 = bm2_make_exclusive(*(struct bitmap**)&bm, bm2ref);
-      }
-   }
-
-   return bm2ref;
-}
-
 /** Look up the address a1 in bitmap bm. The returned second level bitmap has
  *  reference count one and hence may be modified.
  *

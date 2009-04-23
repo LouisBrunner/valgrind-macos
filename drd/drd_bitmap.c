@@ -459,9 +459,14 @@ void DRD_(bm_clear)(struct bitmap* const bm, const Addr a1, const Addr a2)
    tl_assert(a1);
    tl_assert(a1 <= a2);
 
+#if 0
+   if (a2 - a1 >= ADDR0_COUNT)
+      VG_(message)(Vg_DebugMsg, "bm_clear(bm = %p, a1 = 0x%lx, a2 = 0x%lx, delta = 0x%lx",
+                   bm, a1, a2, a2 - a1);
+#endif
+
    for (b = a1; b < a2; b = b_next)
    {
-      struct bitmap2ref* p2ref;
       struct bitmap2* p2;
       Addr c;
 
@@ -469,29 +474,16 @@ void DRD_(bm_clear)(struct bitmap* const bm, const Addr a1, const Addr a2)
       tl_assert(a1 <= b && b < a2);
 #endif
 
-      p2ref = bm2_lookup_next_exclusive(bm, b >> ADDR0_BITS);
-      if (p2ref == 0)
-	 break;
-
-      p2 = p2ref->bm2;
-
-#ifdef ENABLE_DRD_CONSISTENCY_CHECKS
-      tl_assert(p2ref->addr >= (b >> ADDR0_BITS));
-#endif
-      b = p2ref->addr << ADDR0_BITS;
-      if (b < a1)
-         b = a1;
-#ifdef ENABLE_DRD_CONSISTENCY_CHECKS
-      tl_assert(a1 <= b);
-#endif
-      if (b >= a2)
-         break;
+      p2 = bm2_lookup_exclusive(bm, b >> ADDR0_BITS);
 
       b_next = (b & ~ADDR0_MASK) + ADDR0_COUNT;
       if (b_next > a2)
       {
          b_next = a2;
       }
+
+      if (p2 == 0)
+         continue;
 
       c = b;
       /* If the first address in the bitmap that must be cleared does not */
@@ -545,9 +537,14 @@ void DRD_(bm_clear_load)(struct bitmap* const bm, const Addr a1, const Addr a2)
    tl_assert(a1);
    tl_assert(a1 <= a2);
 
+#if 0
+   if (a2 - a1 >= ADDR0_COUNT)
+      VG_(message)(Vg_DebugMsg, "bm_clear_load(bm = %p, a1 = 0x%lx, a2 = 0x%lx, delta = 0x%lx",
+                   bm, a1, a2, a2 - a1);
+#endif
+
    for (b = a1; b < a2; b = b_next)
    {
-      struct bitmap2ref* p2ref;
       struct bitmap2* p2;
       Addr c;
 
@@ -555,29 +552,16 @@ void DRD_(bm_clear_load)(struct bitmap* const bm, const Addr a1, const Addr a2)
       tl_assert(a1 <= b && b < a2);
 #endif
 
-      p2ref = bm2_lookup_next_exclusive(bm, b >> ADDR0_BITS);
-      if (p2ref == 0)
-	 break;
-
-      p2 = p2ref->bm2;
-
-#ifdef ENABLE_DRD_CONSISTENCY_CHECKS
-      tl_assert(p2ref->addr >= (b >> ADDR0_BITS));
-#endif
-      b = p2ref->addr << ADDR0_BITS;
-      if (b < a1)
-         b = a1;
-#ifdef ENABLE_DRD_CONSISTENCY_CHECKS
-      tl_assert(a1 <= b);
-#endif
-      if (b >= a2)
-         break;
+      p2 = bm2_lookup_exclusive(bm, b >> ADDR0_BITS);
 
       b_next = (b & ~ADDR0_MASK) + ADDR0_COUNT;
       if (b_next > a2)
       {
          b_next = a2;
       }
+
+      if (p2 == 0)
+         continue;
 
       c = b;
       /* If the first address in the bitmap that must be cleared does not */
@@ -642,9 +626,14 @@ void DRD_(bm_clear_store)(struct bitmap* const bm,
    tl_assert(a1);
    tl_assert(a1 <= a2);
 
+#if 0
+   if (a2 - a1 >= ADDR0_COUNT)
+      VG_(message)(Vg_DebugMsg, "bm_clear_store(bm = %p, a1 = 0x%lx, a2 = 0x%lx, delta = 0x%lx",
+                   bm, a1, a2, a2 - a1);
+#endif
+
    for (b = a1; b < a2; b = b_next)
    {
-      struct bitmap2ref* p2ref;
       struct bitmap2* p2;
       Addr c;
 
@@ -652,29 +641,16 @@ void DRD_(bm_clear_store)(struct bitmap* const bm,
       tl_assert(a1 <= b && b < a2);
 #endif
 
-      p2ref = bm2_lookup_next_exclusive(bm, b >> ADDR0_BITS);
-      if (p2ref == 0)
-	 break;
-
-      p2 = p2ref->bm2;
-
-#ifdef ENABLE_DRD_CONSISTENCY_CHECKS
-      tl_assert(p2ref->addr >= (b >> ADDR0_BITS));
-#endif
-      b = p2ref->addr << ADDR0_BITS;
-      if (b < a1)
-         b = a1;
-#ifdef ENABLE_DRD_CONSISTENCY_CHECKS
-      tl_assert(a1 <= b);
-#endif
-      if (b >= a2)
-         break;
+      p2 = bm2_lookup_exclusive(bm, b >> ADDR0_BITS);
 
       b_next = (b & ~ADDR0_MASK) + ADDR0_COUNT;
       if (b_next > a2)
       {
 	b_next = a2;
       }
+
+      if (p2 == 0)
+         continue;
 
       c = b;
       /* If the first address in the bitmap that must be cleared does not */

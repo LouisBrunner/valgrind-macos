@@ -1,4 +1,4 @@
 prereq: ./supported_libpthread
 prog: ../../helgrind/tests/tc19_shadowmem
-vgopts: --error-limit=no --var-info=yes
+vgopts: --error-limit=no --var-info=yes --show-confl-seg=no
 stderr_filter: filter_stderr_and_thread_no

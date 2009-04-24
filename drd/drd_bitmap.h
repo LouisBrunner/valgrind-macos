@@ -137,9 +137,9 @@ static __inline__ void bm0_clear_range(UWord* bm0,
 {
 #ifdef ENABLE_DRD_CONSISTENCY_CHECKS
    tl_assert(a1 < ADDR0_COUNT);
-   tl_assert(size > 0);
+   tl_assert(size >= 0);
    tl_assert(a1 + size <= ADDR0_COUNT);
-   tl_assert(UWORD_MSB(a1) == UWORD_MSB(a1 + size - 1));
+   tl_assert(size == 0 || UWORD_MSB(a1) == UWORD_MSB(a1 + size - 1));
 #endif
    bm0[a1 >> BITS_PER_BITS_PER_UWORD]
       &= ~((((UWord)1 << size) - 1) << UWORD_LSB(a1));

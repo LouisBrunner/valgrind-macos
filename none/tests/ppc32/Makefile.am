@@ -33,6 +33,6 @@ AM_CFLAGS   += @FLAG_M32@
 AM_CXXFLAGS += @FLAG_M32@
 AM_CCASFLAGS = @FLAG_M32@
 
-jm_insns_CFLAGS = -Winline -Wall -O -g -mregnames -maltivec @FLAG_M32@
-testVMX_CFLAGS  = -O -g -Wall -maltivec -mabi=altivec -DALTIVEC \
+jm_insns_CFLAGS = $(AM_CFLAGS) -Winline -Wall -O -g -mregnames -maltivec @FLAG_M32@
+testVMX_CFLAGS  = $(AM_CFLAGS) -O -g -Wall -maltivec -mabi=altivec -DALTIVEC \
 			-DGCC_COMPILER @FLAG_M32@

@@ -106,7 +106,7 @@ all-local: default.supp
 	rm -f $(inplacedir)/default.supp
 	ln -s ../default.supp $(inplacedir)
 
-distclean-local:
+clean-local:
 	rm -rf $(inplacedir)
 
 # These list the bits of vex we need to install

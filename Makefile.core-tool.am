@@ -1,3 +1,6 @@
+# This file contains things shared by coregrind/Makefile.am and tool
+# Makefile.am files.
+
 # This is used by coregrind/Makefile.am and Makefile.tool.am for doing
 # "in-place" installs.  It copies $(noinst_PROGRAMS) into $inplacedir.
 # It needs to be depended on by an 'all-local' rule.

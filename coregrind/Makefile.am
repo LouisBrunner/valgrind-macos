@@ -5,7 +5,7 @@
 
 include $(top_srcdir)/Makefile.all.am
 include $(top_srcdir)/Makefile.flags.am
-include $(top_srcdir)/Makefile.install.am
+include $(top_srcdir)/Makefile.core-tool.am
 
 
 AM_CPPFLAGS_CORE_COMMON = \

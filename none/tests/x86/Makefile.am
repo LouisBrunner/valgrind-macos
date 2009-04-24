@@ -97,7 +97,7 @@ AM_CCASFLAGS = @FLAG_M32@
 # generic C ones
 cpuid_SOURCES 		= cpuid_c.c cpuid_s.s
 # fpu_lazy_eflags must use these flags -- the bug only occurred with them
-fpu_lazy_eflags_CFLAGS	= @FLAG_M32@ -O2 -march=pentiumpro
+fpu_lazy_eflags_CFLAGS	= $(AM_CFLAGS) -O2 -march=pentiumpro
 fxtract_LDADD		= -lm
 insn_basic_SOURCES	= insn_basic.def
 insn_basic_LDADD	= -lm

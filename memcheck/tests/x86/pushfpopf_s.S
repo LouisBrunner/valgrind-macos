@@ -1,11 +1,11 @@
-	.file	"twoparams.c"
+#include "tests/asm.h"
+
 	.version	"01.01"
 gcc2_compiled.:
 .text
 	.align 4
-.globl fooble
-	.type	 fooble,@function
-fooble:
+.globl VG_SYM_ASM(fooble)
+VG_SYM_ASM(fooble):
 	pushl	%ebp
 	movl	%esp, %ebp
 	movl	8(%ebp), %eax
@@ -37,5 +37,4 @@ theend:
 	popl	%ebp
 	ret
 .Lfe1:
-	.size	 fooble,.Lfe1-fooble
 	.ident	"GCC: (GNU) 2.96 20000731 (Red Hat Linux 7.1 2.96-98)"

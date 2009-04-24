@@ -67,8 +67,8 @@ check_PROGRAMS = \
 	bug137714-x86 \
 	bug152818-x86 \
 	cmpxchg8b \
-        cpuid \
-        cse_fail \
+	cpuid \
+	cse_fail \
 	faultstatus \
         fcmovnu \
         fpu_lazy_eflags \
@@ -89,13 +89,14 @@ if BUILD_SSSE3_TESTS
  check_PROGRAMS += ssse3_misaligned
 endif
 
+
 AM_CFLAGS   += @FLAG_M32@ $(FLAG_MMMX) $(FLAG_MSSE)
 AM_CXXFLAGS += @FLAG_M32@ $(FLAG_MMMX) $(FLAG_MSSE)
-AM_CCASFLAGS = @FLAG_M32@
+AM_CCASFLAGS = $(AM_CPPFLAGS) @FLAG_M32@
 
 
 # generic C ones
-cpuid_SOURCES 		= cpuid_c.c cpuid_s.s
+cpuid_SOURCES 		= cpuid_c.c cpuid_s.S
 # fpu_lazy_eflags must use these flags -- the bug only occurred with them
 fpu_lazy_eflags_CFLAGS	= $(AM_CFLAGS) -O2 -march=pentiumpro
 fxtract_LDADD		= -lm

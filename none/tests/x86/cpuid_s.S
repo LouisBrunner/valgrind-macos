@@ -1,4 +1,4 @@
-
+#include "tests/asm.h"
 	
 	.file	"oneparam.c"
 	.version	"01.01"
@@ -6,9 +6,8 @@ gcc2_compiled.:
 .text
 	.align 4
 
-.globl get_cpuid0
-	.type	 get_cpuid0,@function
-get_cpuid0:
+.globl VG_SYM_ASM(get_cpuid0)
+VG_SYM_ASM(get_cpuid0):
 	pushl	%ebp
 	movl	%esp, %ebp
 	movl	8(%ebp), %eax
@@ -35,13 +34,10 @@ get_cpuid0:
 	
 	popl	%ebp
 	ret
-.Lfe1:
-	.size	 get_cpuid0,.Lfe1-get_cpuid0
 
 
-.globl get_cpuid1
-	.type	 get_cpuid1,@function
-get_cpuid1:
+.globl VG_SYM_ASM(get_cpuid1)
+VG_SYM_ASM(get_cpuid1):
 	pushl	%ebp
 	movl	%esp, %ebp
 	movl	8(%ebp), %eax
@@ -68,8 +64,6 @@ get_cpuid1:
 	
 	popl	%ebp
 	ret
-.Lfe2:
-	.size	 get_cpuid1,.Lfe2-get_cpuid1
 
 
 

@@ -63,9 +63,9 @@ if BUILD_SSSE3_TESTS
  check_PROGRAMS += ssse3_misaligned
 endif
 
-AM_CFLAGS   += @FLAG_M64@
-AM_CXXFLAGS += @FLAG_M64@
-AM_CCASFLAGS = @FLAG_M64@
+AM_CFLAGS    += @FLAG_M64@
+AM_CXXFLAGS  += @FLAG_M64@
+AM_CCASFLAGS += @FLAG_M64@
 
 # generic C ones
 bug132918_LDADD		= -lm

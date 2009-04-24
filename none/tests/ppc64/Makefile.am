@@ -16,8 +16,8 @@ EXTRA_DIST = $(noinst_SCRIPTS) \
 check_PROGRAMS = \
 	jm-insns lsw round std_reg_imm twi_tdi tw_td
 
-AM_CFLAGS   += @FLAG_M64@
-AM_CXXFLAGS += @FLAG_M64@
-AM_CCASFLAGS = @FLAG_M64@
+AM_CFLAGS    += @FLAG_M64@
+AM_CXXFLAGS  += @FLAG_M64@
+AM_CCASFLAGS += @FLAG_M64@
 
 jm_insns_CFLAGS = $(AM_CFLAGS) -Winline -Wall -O -g -mregnames -maltivec @FLAG_M64@

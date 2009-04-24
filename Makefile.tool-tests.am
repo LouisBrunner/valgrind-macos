@@ -12,4 +12,7 @@ AM_CPPFLAGS = -I$(top_srcdir) -I$(top_srcdir)/include \
 # as $(AM_FLAG_M3264_PRI).
 AM_CFLAGS   = -Winline -Wall -Wshadow -g
 AM_CXXFLAGS = -Winline -Wall -Wshadow -g
+# Include AM_CPPFLAGS in AM_CCASFLAGS to allow for older versions of
+# automake;  see comments in Makefile.flags.am for more detail.
+AM_CCASFLAGS = $(AM_CPPFLAGS)
 

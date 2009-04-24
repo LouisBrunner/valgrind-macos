@@ -27,9 +27,9 @@ check_PROGRAMS = bt_everything bug132146 defcfaexpr fxsave-amd64 \
 		more_x87_fp sse_memory xor-undef-amd64
 
 
-AM_CFLAGS   += @FLAG_M64@
-AM_CXXFLAGS += @FLAG_M64@
-AM_CCASFLAGS = @FLAG_M64@
+AM_CFLAGS    += @FLAG_M64@
+AM_CXXFLAGS  += @FLAG_M64@
+AM_CCASFLAGS += @FLAG_M64@
 
 more_x87_fp_CFLAGS	= $(AM_CFLAGS) -O -ffast-math -mfpmath=387 \
 				-mfancy-math-387

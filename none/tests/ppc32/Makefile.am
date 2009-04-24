@@ -29,9 +29,9 @@ check_PROGRAMS = \
 	ldstrev lsw jm-insns mftocrf mcrfs round test_fx test_gx \
 	testVMX twi tw xlc_dbl_u32
 
-AM_CFLAGS   += @FLAG_M32@
-AM_CXXFLAGS += @FLAG_M32@
-AM_CCASFLAGS = @FLAG_M32@
+AM_CFLAGS    += @FLAG_M32@
+AM_CXXFLAGS  += @FLAG_M32@
+AM_CCASFLAGS += @FLAG_M32@
 
 jm_insns_CFLAGS = $(AM_CFLAGS) -Winline -Wall -O -g -mregnames -maltivec @FLAG_M32@
 testVMX_CFLAGS  = $(AM_CFLAGS) -O -g -Wall -maltivec -mabi=altivec -DALTIVEC \

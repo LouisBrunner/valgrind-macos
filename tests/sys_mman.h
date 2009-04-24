@@ -2,10 +2,6 @@
 
 #include <sys/mman.h>
 
-#if defined(VGO_darwin)
-#  define MAP_ANONYMOUS MAP_ANON
-#endif
-
 
 #include <assert.h>
 #include <unistd.h>

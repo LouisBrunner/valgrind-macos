@@ -8,4 +8,4 @@
 #define VG_SYM(x) #x
 
 // This one is for use in asm files.
-#define VG_SYM_ASM(x) _#x
+#define VG_SYM_ASM(x) x

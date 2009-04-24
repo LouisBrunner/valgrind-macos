@@ -45,5 +45,7 @@ int main(void)
    ignore2(x, ignored_x);
 
    x = realloc(ignored_x, 0);    // equivalent to 'free(ignored_x)'.
+
+   return 0;
 }
 

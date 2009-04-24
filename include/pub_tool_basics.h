@@ -46,14 +46,32 @@
 // Addr32, Addr64, HWord, HChar, Bool, False and True.
 #include "libvex_basictypes.h"
 
-// For the VG_() macro
-#include "pub_tool_basics_asm.h"
-
 // For varargs types
 #include <stdarg.h>
 
 /* For HAVE_BUILTIN_EXPECT */
 #include "config.h"
+
+
+/* ---------------------------------------------------------------------
+   symbol prefixing
+   ------------------------------------------------------------------ */
+ 
+// All symbols externally visible from Valgrind are prefixed
+// as specified here to avoid namespace conflict problems.
+//
+// VG_ is for symbols exported from modules.  ML_ (module-local) is
+// for symbols which are not intended to be visible outside modules,
+// but which cannot be declared as C 'static's since they need to be
+// visible across C files within a given module.  It is a mistake for
+// a ML_ name to appear in a pub_core_*.h or pub_tool_*.h file.
+// Likewise it is a mistake for a VG_ name to appear in a priv_*.h
+// file. 
+
+#define VGAPPEND(str1,str2) str1##str2
+
+#define VG_(str)    VGAPPEND(vgPlain_,          str)
+#define ML_(str)    VGAPPEND(vgModuleLocal_,    str)
 
 
 /* ---------------------------------------------------------------------

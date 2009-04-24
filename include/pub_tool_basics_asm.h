@@ -1,7 +1,6 @@
 
 /*--------------------------------------------------------------------*/
-/*--- Header imported directly by every tool asm file, and         ---*/
-/*--- (via pub_tool_basics.h) by every tool C file.                ---*/
+/*--- Header imported directly by every tool asm file.             ---*/
 /*---                                        pub_tool_basics_asm.h ---*/
 /*--------------------------------------------------------------------*/
 
@@ -33,19 +32,22 @@
 #ifndef __PUB_TOOL_BASICS_ASM_H
 #define __PUB_TOOL_BASICS_ASM_H
 
-/* All symbols externally visible from Valgrind are prefixed
-   as specified here to avoid namespace conflict problems.  */
+// See pub_tool_basics.h for the purpose of these macros.
+//
+// Note that although the macros here (which are used in asm files) have the
+// same name as those in pub_tool_basics.h (which are used in C files), they
+// have different definitions.  Actually, on Linux the definitions are the
+// same, but on Darwin they are different.  The reason is that C names on
+// Darwin always get a '_' prepended to them by the compiler.  But in order to
+// refer to them from asm code, we have to add the '_' ourselves.  Having two
+// versions of these macros makes that difference transparent, so we can use
+// VG_/ML_ in both asm and C files.
+//
+// Note also that the exact prefixes used have to match those used in
+// pub_tool_basics.h.
 
 #define VGAPPEND(str1,str2) str1##str2
-
-/* VG_ is for symbols exported from modules.  ML_ (module-local) is
-   for symbols which are not intended to be visible outside modules,
-   but which cannot be declared as C 'static's since they need to be
-   visible across C files within a given module.  It is a mistake for
-   a ML_ name to appear in a pub_core_*.h or pub_tool_*.h file.
-   Likewise it is a mistake for a VG_ name to appear in a priv_*.h
-   file. 
-*/
+ 
 #define VG_(str)    VGAPPEND(vgPlain_,          str)
 #define ML_(str)    VGAPPEND(vgModuleLocal_,    str)
 

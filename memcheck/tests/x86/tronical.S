@@ -49,13 +49,14 @@ int main()
 
 */
 
+#include "tests/asm.h"
+
 	.file	"tronical.c"
 	.version	"01.01"
 gcc2_compiled.:
 .text
 	.align 4
 .globl set
-	.type	 set,@function
 set:
 	pushl	%ebp
 	movl	foo, %eax
@@ -64,14 +65,11 @@ set:
 	popl	%ebp
 	ret
 .Lfe1:
-	.size	 set,.Lfe1-set
-	.section	.rodata
 .LC0:
-	.string	"blieb\n"
+	.ascii	"blieb\n"
 .text
 	.align 4
 .globl get
-	.type	 get,@function
 get:
 	pushl	%ebp
 	movl	%esp, %ebp
@@ -81,22 +79,20 @@ get:
 	js	.L4
 	subl	$12, %esp
 	pushl	$.LC0
-	call	printf
+	call	VG_SYM_ASM(printf)
 	addl	$16, %esp
 .L4:
 	leave
 	ret
 .Lfe2:
-	.size	 get,.Lfe2-get
 	.align 4
-.globl main
-	.type	 main,@function
-main:
+.globl VG_SYM_ASM(main)
+VG_SYM_ASM(main):
 	pushl	%ebp
 	movl	%esp, %ebp
 	subl	$20, %esp
 	pushl	$4
-	call	malloc
+	call	VG_SYM_ASM(malloc)
 	movl	%eax, foo
 	call	set
 	call	get
@@ -104,6 +100,5 @@ main:
 	leave
 	ret
 .Lfe3:
-	.size	 main,.Lfe3-main
 	.comm	foo,4,4
 	.ident	"GCC: (GNU) 2.96 20000731 (Red Hat Linux 7.1 2.96-98)"

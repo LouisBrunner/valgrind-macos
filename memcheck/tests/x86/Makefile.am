@@ -30,15 +30,15 @@ check_PROGRAMS = \
 	espindola2 \
 	int3-x86 \
 	fpeflags \
-        fprem \
-        fxsave \
+	fprem \
+	fxsave \
 	more_x86_fp \
-        pushfpopf \
+	pushfpopf \
 	pushfw_x86 \
 	pushpopmem \
-        sse_memory \
-        tronical \
-        xor-undef-x86
+	sse_memory \
+	tronical \
+	xor-undef-x86
 
 AM_CFLAGS   += @FLAG_M32@ $(FLAG_MMMX) $(FLAG_MSSE)
 AM_CXXFLAGS += @FLAG_M32@ $(FLAG_MMMX) $(FLAG_MSSE)

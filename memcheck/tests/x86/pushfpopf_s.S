@@ -5,6 +5,9 @@ gcc2_compiled.:
 .text
 	.align 4
 .globl VG_SYM_ASM(fooble)
+#if defined(VGO_linux)
+	.type	VG_SYM_ASM(fooble),@function
+#endif
 VG_SYM_ASM(fooble):
 	pushl	%ebp
 	movl	%esp, %ebp
@@ -37,4 +40,7 @@ theend:
 	popl	%ebp
 	ret
 .Lfe1:
+#if defined(VGO_linux)
+	.size	VG_SYM_ASM(fooble),.Lfe1-VG_SYM_ASM(fooble)
+#endif
 	.ident	"GCC: (GNU) 2.96 20000731 (Red Hat Linux 7.1 2.96-98)"

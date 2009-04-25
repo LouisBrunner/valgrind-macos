@@ -37,8 +37,9 @@ function get_cache_size {
   fi
 }
 
-## Read a stream of numbers from stdin (one per line), and print the average
-#  and standard deviation.
+## Read zero or more lines from stdin, and print the average and standard
+#  deviation per column. n is the number of lines, m the number of columns.
+#  Each line must have the same number of columns.
 function avgstddev {
   awk '{n++;m=NF;for(i=1;i<=NF;i++){sum[i]+=$i;sumsq[i]+=$i*$i}}END{for(i=1;i<=m;i++){d=sumsq[i]/n-sum[i]*sum[i]/n/n;printf "%.2f %.2f ",sum[i]/n,(d>=0.0001?sqrt(d):0.01)}}'
 }
@@ -54,6 +55,11 @@ function query_cmd_vsz {
     return 1
   fi
 
+  if ! { dump-acct -h 2>&1 | grep -q -w format; }; then
+    echo "Error: the installed version of dump-acct is not recent enough." >&2
+    return 1
+  fi
+
   if [ -e /var/log/account/pacct ]; then
     pacct=/var/log/account/pacct
   elif [ -e /var/account/pacct ]; then
@@ -65,7 +71,8 @@ function query_cmd_vsz {
   /usr/sbin/dump-acct "${pacct}" | \
     grep -- "^$(basename "$1").*|v3|" | \
     cut -f8 -d'|' | \
-    tail -n 1
+    tail -n 1 | \
+    { read vsz; echo ${vsz:-0}; }
 }
 
 ## Query the virtual memory size for the last invocation of command $1 from

@@ -112,6 +112,17 @@ void DRD_(bm_access_range)(struct bitmap* const bm,
                            const Addr a1, const Addr a2,
                            const BmAccessTypeT access_type)
 {
+   tl_assert(access_type == eLoad || access_type == eStore);
+
+   if (access_type == eLoad)
+      return DRD_(bm_access_range_load)(bm, a1, a2);
+   else
+      return DRD_(bm_access_range_store)(bm, a1, a2);
+}
+
+void DRD_(bm_access_range_load)(struct bitmap* const bm,
+                                const Addr a1, const Addr a2)
+{
    Addr b, b_next;
 
    tl_assert(bm);
@@ -155,27 +166,11 @@ void DRD_(bm_access_range)(struct bitmap* const bm,
       tl_assert(b_start < b_end);
       tl_assert((b_start & ADDR0_MASK) <= ((b_end - 1) & ADDR0_MASK));
       
-      if (access_type == eLoad)
+      for (b0 = b_start & ADDR0_MASK; b0 <= ((b_end - 1) & ADDR0_MASK); b0++)
       {
-         for (b0 = b_start & ADDR0_MASK; b0 <= ((b_end - 1) & ADDR0_MASK); b0++)
-         {
-            bm0_set(bm2->bm1.bm0_r, b0);
-         }
-      }
-      else
-      {
-         for (b0 = b_start & ADDR0_MASK; b0 <= ((b_end - 1) & ADDR0_MASK); b0++)
-         {
-            bm0_set(bm2->bm1.bm0_w, b0);
-         }
+         bm0_set(bm2->bm1.bm0_r, b0);
       }
    }
-}
-
-void DRD_(bm_access_range_load)(struct bitmap* const bm,
-                                const Addr a1, const Addr a2)
-{
-   DRD_(bm_access_range)(bm, a1, a2, eLoad);
 }
 
 void DRD_(bm_access_load_1)(struct bitmap* const bm, const Addr a1)
@@ -215,7 +210,54 @@ void DRD_(bm_access_load_8)(struct bitmap* const bm, const Addr a1)
 void DRD_(bm_access_range_store)(struct bitmap* const bm,
                                  const Addr a1, const Addr a2)
 {
-   DRD_(bm_access_range)(bm, a1, a2, eStore);
+   Addr b, b_next;
+
+   tl_assert(bm);
+   tl_assert(a1 < a2);
+   /* The current implementation of bm_access_range does not work for the   */
+   /* ADDR0_COUNT highest addresses in the address range. At least on Linux */
+   /* this is not a problem since the upper part of the address space is    */
+   /* reserved for the kernel.                                              */
+   tl_assert(a2 + ADDR0_COUNT > a2);
+
+   for (b = a1; b < a2; b = b_next)
+   {
+      Addr b_start;
+      Addr b_end;
+      struct bitmap2* bm2;
+      SPLIT_ADDRESS(b);
+
+      b_next = (b & ~ADDR0_MASK) + ADDR0_COUNT;
+      if (b_next > a2)
+      {
+         b_next = a2;
+      }
+
+      bm2 = bm2_lookup_or_insert_exclusive(bm, b1);
+      tl_assert(bm2);
+
+      if ((bm2->addr << ADDR0_BITS) < a1)
+         b_start = a1;
+      else
+         if ((bm2->addr << ADDR0_BITS) < a2)
+            b_start = (bm2->addr << ADDR0_BITS);
+         else
+            break;
+      tl_assert(a1 <= b_start && b_start <= a2);
+
+      if ((bm2->addr << ADDR0_BITS) + ADDR0_COUNT < a2)
+         b_end = (bm2->addr << ADDR0_BITS) + ADDR0_COUNT;
+      else
+         b_end = a2;
+      tl_assert(a1 <= b_end && b_end <= a2);
+      tl_assert(b_start < b_end);
+      tl_assert((b_start & ADDR0_MASK) <= ((b_end - 1) & ADDR0_MASK));
+      
+      for (b0 = b_start & ADDR0_MASK; b0 <= ((b_end - 1) & ADDR0_MASK); b0++)
+      {
+         bm0_set(bm2->bm1.bm0_w, b0);
+      }
+   }
 }
 
 void DRD_(bm_access_store_1)(struct bitmap* const bm, const Addr a1)
@@ -255,9 +297,7 @@ void DRD_(bm_access_store_8)(struct bitmap* const bm, const Addr a1)
 Bool DRD_(bm_has)(struct bitmap* const bm, const Addr a1, const Addr a2,
                   const BmAccessTypeT access_type)
 {
-#ifdef ENABLE_DRD_CONSISTENCY_CHECKS
    tl_assert(access_type == eLoad || access_type == eStore);
-#endif
 
    if (access_type == eLoad)
       return DRD_(bm_has_any_load)(bm, a1, a2);
@@ -646,7 +686,7 @@ void DRD_(bm_clear_store)(struct bitmap* const bm,
       b_next = (b & ~ADDR0_MASK) + ADDR0_COUNT;
       if (b_next > a2)
       {
-        b_next = a2;
+         b_next = a2;
       }
 
       if (p2 == 0)
@@ -660,15 +700,15 @@ void DRD_(bm_clear_store)(struct bitmap* const bm,
 #endif
       if (UWORD_LSB(c))
       {
-        Addr c_next = UWORD_MSB(c) + BITS_PER_UWORD;
-        if (c_next > b_next)
-          c_next = b_next;
+         Addr c_next = UWORD_MSB(c) + BITS_PER_UWORD;
+         if (c_next > b_next)
+            c_next = b_next;
 #ifdef ENABLE_DRD_CONSISTENCY_CHECKS
-        tl_assert(a1 <= b && b <= c && c < c_next && c_next <= b_next
-                  && b_next <= a2);
+         tl_assert(a1 <= b && b <= c && c < c_next && c_next <= b_next
+                   && b_next <= a2);
 #endif
-        bm0_clear_range(p2->bm1.bm0_w, c & ADDR0_MASK, c_next - c);
-        c = c_next;
+         bm0_clear_range(p2->bm1.bm0_w, c & ADDR0_MASK, c_next - c);
+         c = c_next;
       }
       /* If some UWords have to be cleared entirely, do this now. */
 #ifdef ENABLE_DRD_CONSISTENCY_CHECKS
@@ -676,19 +716,19 @@ void DRD_(bm_clear_store)(struct bitmap* const bm,
 #endif
       if (UWORD_LSB(c) == 0)
       {
-        const Addr c_next = UWORD_MSB(b_next);
+         const Addr c_next = UWORD_MSB(b_next);
 #ifdef ENABLE_DRD_CONSISTENCY_CHECKS
-        tl_assert(UWORD_LSB(c) == 0);
-        tl_assert(UWORD_LSB(c_next) == 0);
-        tl_assert(a1 <= b && b <= c && c <= c_next && c_next <= b_next
-                  && b_next <= a2);
+         tl_assert(UWORD_LSB(c) == 0);
+         tl_assert(UWORD_LSB(c_next) == 0);
+         tl_assert(a1 <= b && b <= c && c <= c_next && c_next <= b_next
+                   && b_next <= a2);
 #endif
-        if (c_next > c)
-        {
-           UWord idx = (c & ADDR0_MASK) >> BITS_PER_BITS_PER_UWORD;
-           VG_(memset)(&p2->bm1.bm0_w[idx], 0, (c_next - c) / 8);
-           c = c_next;
-        }
+         if (c_next > c)
+         {
+            UWord idx = (c & ADDR0_MASK) >> BITS_PER_BITS_PER_UWORD;
+            VG_(memset)(&p2->bm1.bm0_w[idx], 0, (c_next - c) / 8);
+            c = c_next;
+         }
       }
       /* If the last address in the bitmap that must be cleared does not */
       /* fall on an UWord boundary, clear the last addresses.            */

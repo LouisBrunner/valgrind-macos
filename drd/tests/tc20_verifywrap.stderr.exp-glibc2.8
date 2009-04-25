@@ -86,19 +86,29 @@ rwlock 0x........ was first observed at:
 Reader-writer lock not locked by calling thread: rwlock 0x.........
    at 0x........: pthread_rwlock_unlock* (drd_pthread_intercepts.c:?)
    by 0x........: main (tc20_verifywrap.c:212)
+rwlock 0x........ was first observed at:
+   at 0x........: pthread_rwlock_init* (drd_pthread_intercepts.c:?)
+   by 0x........: main (tc20_verifywrap.c:186)
 
 ---------------- sem_* ----------------
 
+
+Semaphore reinitialization: semaphore 0x........
+   at 0x........: sem_init* (drd_pthread_intercepts.c:?)
+   by 0x........: main (tc20_verifywrap.c:231)
+semaphore 0x........ was first observed at:
+   at 0x........: sem_init* (drd_pthread_intercepts.c:?)
+   by 0x........: main (tc20_verifywrap.c:228)
 
 FIXME: can't figure out how to verify wrap of sem_destroy
 
 
 Invalid semaphore: semaphore 0x........
+   at 0x........: sem_wait* (drd_pthread_intercepts.c:?)
+   by 0x........: main (tc20_verifywrap.c:242)
 semaphore 0x........ was first observed at:
    at 0x........: sem_init* (drd_pthread_intercepts.c:?)
    by 0x........: main (tc20_verifywrap.c:228)
-   at 0x........: sem_wait* (drd_pthread_intercepts.c:?)
-   by 0x........: main (tc20_verifywrap.c:242)
 
 FIXME: can't figure out how to verify wrap of sem_post
 
@@ -106,10 +116,4 @@ FIXME: can't figure out how to verify wrap of sem_post
 ------------ dealloc of mem holding locks ------------
 
 
-Destroying locked mutex: mutex 0x........, recursion count 1, owner 1.
-   at 0x........: pthread_mutex_lock (drd_pthread_intercepts.c:?)
-   by 0x........: (within ld-?.?.so)
-   by 0x........: exit (in /...libc...)
-   by 0x........: (below main)
-
-ERROR SUMMARY: 14 errors from 14 contexts (suppressed: 0 from 0)
+ERROR SUMMARY: 11 errors from 11 contexts (suppressed: 0 from 0)

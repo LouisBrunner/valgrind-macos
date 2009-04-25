@@ -63,6 +63,8 @@ n-i-bz DRD - added new client request, VG_USERREQ__DRD_CLEAN_MEMORY.
 187048 DRD - the mutex attribute PTHREAD_PROCESS_SHARED is now
        interpreted correctly.
 188046 Removed a bashism from the configure script.
+189763 DRD - pthread_create@GLIBC_2.0() no longer triggers an assertion
+       failure.
 
 
 

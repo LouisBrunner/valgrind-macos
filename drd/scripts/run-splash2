@@ -10,51 +10,67 @@ function run_test {
   local tmp avg1 stddev1 avg2 stddev2 avg4 stddev4 p
 
   tmp="/tmp/test-timing.$$"
-  rm -f "${tmp}"
 
+  rm -f "${tmp}"
   p=1
   test_output="${1}-p${p}.out" measure_runtime "$@" -p${psep}${p} "${test_args}" | avgstddev > "$tmp"
-  read avg1 stddev1 vsz1 vszdev1 < "$tmp"
+  read avg1 stddev1 vsz1 vszdev1 rest < "$tmp"
   echo "Average time: ${avg1} +/- ${stddev1} seconds." \
        " VSZ: ${vsz1} +/- ${vszdev1} KB"
 
+  if [ "${rest}" != "" ]; then
+    echo "Internal error ($rest)"
+    exit 1
+  fi
+
+  rm -f "${tmp}"
   p=2
   test_output="${1}-p${p}.out" measure_runtime "$@" -p${psep}${p} "${test_args}" | avgstddev > "$tmp"
-  read avg2 stddev2 vsz2 vszdev2 < "$tmp"
+  read avg2 stddev2 vsz2 vszdev2 rest < "$tmp"
   echo "Average time: ${avg2} +/- ${stddev2} seconds." \
        " VSZ: ${vsz2} +/- ${vszdev2} KB"
 
+  if [ "${rest}" != "" ]; then
+    echo "Internal error ($rest)"
+    exit 1
+  fi
+
+  rm -f "${tmp}"
   p=4
   test_output="${1}-p${p}.out" measure_runtime "$@" -p${psep}${p} "${test_args}" | avgstddev > "$tmp"
-  read avg4 stddev4 vsz4 vszdev4 < "$tmp"
+  read avg4 stddev4 vsz4 vszdev4 rest < "$tmp"
   echo "Average time: ${avg4} +/- ${stddev4} seconds." \
        " VSZ: ${vsz4} +/- ${vszdev4} KB"
+  rm -f "$tmp"
+
+  if [ "${rest}" != "" ]; then
+    echo "Internal error ($rest)"
+    exit 1
+  fi
 
   p=1
   test_output="/dev/null" \
-  print_runtime_ratio ${avg1} ${stddev1} ${vsz1} ${vszdev1} $VG --tool=none "$@" -p${psep}${p} "${test_args}"
+  print_runtime_ratio "${avg1}" "${stddev1}" "${vsz1}" "${vszdev1}" "$VG" --tool=none "$@" -p${psep}${p} "${test_args}"
 
   p=4
   test_output="/dev/null" \
-  print_runtime_ratio ${avg4} ${stddev4} ${vsz4} ${vszdev4} $VG --tool=none "$@" -p${psep}${p} "${test_args}"
+  print_runtime_ratio "${avg4}" "${stddev4}" "${vsz4}" "${vszdev4}" "$VG" --tool=none "$@" -p${psep}${p} "${test_args}"
 
   p=4
   test_output="${1}-drd-with-stack-var-4.out" \
-  print_runtime_ratio ${avg4} ${stddev4} ${vsz4} ${vszdev4} \
-    $VG --tool=drd --check-stack-var=yes "$@" -p${psep}${p} "${test_args}"
+  print_runtime_ratio "${avg4}" "${stddev4}" "${vsz4}" "${vszdev4}" \
+    "$VG" --tool=drd --check-stack-var=yes "$@" -p${psep}${p} "${test_args}"
 
   p=4
   test_output="${1}-drd-without-stack-var-4.out" \
-  print_runtime_ratio ${avg4} ${stddev4} ${vsz4} ${vszdev4} \
-    $VG --tool=drd --check-stack-var=no  "$@" -p${psep}${p} "${test_args}"
+  print_runtime_ratio "${avg4}" "${stddev4}" "${vsz4}" "${vszdev4}" \
+    "$VG" --tool=drd --check-stack-var=no  "$@" -p${psep}${p} "${test_args}"
 
   p=4
   test_output="${1}-helgrind-4.out" \
-  print_runtime_ratio ${avg4} ${stddev4} ${vsz4} ${vszdev4} $VG --tool=helgrind "$@" -p${psep}${p} "${test_args}"
+  print_runtime_ratio "${avg4}" "${stddev4}" "${vsz4}" "${vszdev4}" "$VG" --tool=helgrind "$@" -p${psep}${p} "${test_args}"
 
   echo ''
-
-  rm -f "$tmp"
 }
 
 

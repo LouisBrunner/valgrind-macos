@@ -136,13 +136,20 @@ static __inline__ void bm0_clear_range(UWord* bm0,
                                        const Addr a1, const SizeT size)
 {
 #ifdef ENABLE_DRD_CONSISTENCY_CHECKS
-   tl_assert(a1 < ADDR0_COUNT);
-   tl_assert(size >= 0);
+   tl_assert(a1 <= ADDR0_COUNT);
    tl_assert(a1 + size <= ADDR0_COUNT);
    tl_assert(size == 0 || UWORD_MSB(a1) == UWORD_MSB(a1 + size - 1));
 #endif
-   bm0[a1 >> BITS_PER_BITS_PER_UWORD]
-      &= ~((((UWord)1 << size) - 1) << UWORD_LSB(a1));
+   /*
+    * Note: although the expression below yields a correct result even if 
+    * size == 0, do not touch bm0[] if size == 0 because this might otherwise
+    * cause an access of memory just past the end of the bm0[] array.
+    */
+   if (size > 0)
+   {
+      bm0[a1 >> BITS_PER_BITS_PER_UWORD]
+         &= ~((((UWord)1 << size) - 1) << UWORD_LSB(a1));
+   }
 }
 
 static __inline__ UWord bm0_is_set(const UWord* bm0, const Addr a)

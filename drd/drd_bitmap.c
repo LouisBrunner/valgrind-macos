@@ -156,19 +156,30 @@ void DRD_(bm_access_range_load)(struct bitmap* const bm,
             b_start = (bm2->addr << ADDR0_BITS);
          else
             break;
-      tl_assert(a1 <= b_start && b_start <= a2);
 
       if ((bm2->addr << ADDR0_BITS) + ADDR0_COUNT < a2)
          b_end = (bm2->addr << ADDR0_BITS) + ADDR0_COUNT;
       else
          b_end = a2;
-      tl_assert(a1 <= b_end && b_end <= a2);
-      tl_assert(b_start < b_end);
+
+      tl_assert(a1 <= b_start && b_start < b_end && b_end && b_end <= a2);
       tl_assert((b_start & ADDR0_MASK) <= ((b_end - 1) & ADDR0_MASK));
-      
-      for (b0 = b_start & ADDR0_MASK; b0 <= ((b_end - 1) & ADDR0_MASK); b0++)
+
+      if (b_end - b_start == ADDR0_COUNT)
       {
-         bm0_set(bm2->bm1.bm0_r, b0);
+         unsigned k;
+
+         for (k = 0; k < BITMAP1_UWORD_COUNT; k++)
+         {
+            bm2->bm1.bm0_r[k] = ~(UWord)0;
+         }
+      }
+      else
+      {
+         for (b0 = b_start & ADDR0_MASK; b0 <= ((b_end - 1) & ADDR0_MASK); b0++)
+         {
+            bm0_set(bm2->bm1.bm0_r, b0);
+         }
       }
    }
 }
@@ -243,19 +254,30 @@ void DRD_(bm_access_range_store)(struct bitmap* const bm,
             b_start = (bm2->addr << ADDR0_BITS);
          else
             break;
-      tl_assert(a1 <= b_start && b_start <= a2);
 
       if ((bm2->addr << ADDR0_BITS) + ADDR0_COUNT < a2)
          b_end = (bm2->addr << ADDR0_BITS) + ADDR0_COUNT;
       else
          b_end = a2;
-      tl_assert(a1 <= b_end && b_end <= a2);
-      tl_assert(b_start < b_end);
+
+      tl_assert(a1 <= b_start && b_start < b_end && b_end && b_end <= a2);
       tl_assert((b_start & ADDR0_MASK) <= ((b_end - 1) & ADDR0_MASK));
-      
-      for (b0 = b_start & ADDR0_MASK; b0 <= ((b_end - 1) & ADDR0_MASK); b0++)
+
+      if (b_end - b_start == ADDR0_COUNT)
       {
-         bm0_set(bm2->bm1.bm0_w, b0);
+         unsigned k;
+
+         for (k = 0; k < BITMAP1_UWORD_COUNT; k++)
+         {
+            bm2->bm1.bm0_w[k] = ~(UWord)0;
+         }
+      }
+      else
+      {
+         for (b0 = b_start & ADDR0_MASK; b0 <= ((b_end - 1) & ADDR0_MASK); b0++)
+         {
+            bm0_set(bm2->bm1.bm0_w, b0);
+         }
       }
    }
 }
@@ -500,8 +522,8 @@ void DRD_(bm_clear)(struct bitmap* const bm, const Addr a1, const Addr a2)
 
 #if 0
    if (a2 - a1 >= ADDR0_COUNT)
-      VG_(message)(Vg_DebugMsg, "bm_clear(bm = %p, a1 = 0x%lx, a2 = 0x%lx, delta = 0x%lx",
-                   bm, a1, a2, a2 - a1);
+      VG_(message)(Vg_DebugMsg, "bm_clear(bm = %p, a1 = 0x%lx, a2 = 0x%lx,"
+                   " delta = 0x%lx", bm, a1, a2, a2 - a1);
 #endif
 
    for (b = a1; b < a2; b = b_next)
@@ -582,8 +604,8 @@ void DRD_(bm_clear_load)(struct bitmap* const bm, const Addr a1, const Addr a2)
 
 #if 0
    if (a2 - a1 >= ADDR0_COUNT)
-      VG_(message)(Vg_DebugMsg, "bm_clear_load(bm = %p, a1 = 0x%lx, a2 = 0x%lx, delta = 0x%lx",
-                   bm, a1, a2, a2 - a1);
+      VG_(message)(Vg_DebugMsg, "bm_clear_load(bm = %p, a1 = 0x%lx, a2 = 0x%lx,"
+                   " delta = 0x%lx", bm, a1, a2, a2 - a1);
 #endif
 
    for (b = a1; b < a2; b = b_next)
@@ -668,8 +690,8 @@ void DRD_(bm_clear_store)(struct bitmap* const bm,
 
 #if 0
    if (a2 - a1 >= ADDR0_COUNT)
-      VG_(message)(Vg_DebugMsg, "bm_clear_store(bm = %p, a1 = 0x%lx, a2 = 0x%lx, delta = 0x%lx",
-                   bm, a1, a2, a2 - a1);
+      VG_(message)(Vg_DebugMsg, "bm_clear_store(bm = %p, a1 = 0x%lx, a2 = 0x%lx,"
+                   " delta = 0x%lx", bm, a1, a2, a2 - a1);
 #endif
 
    for (b = a1; b < a2; b = b_next)

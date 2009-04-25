@@ -96,8 +96,8 @@ void test_fcvt(double a)
     la = a;
     printf("(float)%f = %f\n", a, fa);
     printf("(long double)%f = %Lf\n", a, la);
-    printf("a=%016Lx\n", *(long long *)&a);
-    printf("la=%016Lx %04x\n", *(long long *)&la, 
+    printf("a=%016llx\n", *(long long *)&a);
+    printf("la=%016llx %04x\n", *(long long *)&la, 
            *(unsigned short *)((char *)(&la) + 8));
 
     /* test all roundings */
@@ -112,7 +112,7 @@ void test_fcvt(double a)
         asm volatile ("fldcw %0" : : "m" (fpuc));
         printf("(short)a = %d\n", wa);
         printf("(int)a = %d\n", ia);
-        printf("(int64_t)a = %Ld\n", lla);
+        printf("(int64_t)a = %lld\n", lla);
         printf("rint(a) = %f\n", ra);
     }
 }

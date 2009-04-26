@@ -948,15 +948,23 @@ Bool DRD_(bm_equal)(struct bitmap* const lhs, struct bitmap* const rhs)
       VG_(message)(Vg_DebugMsg, "bm_equal: at 0x%lx", bm2l->addr << ADDR0_BITS);
 #endif
 
-      bm2r_ref = VG_(OSetGen_Next)(rhs->oset);
-      if (bm2r_ref == 0)
+      do
       {
+         bm2r_ref = VG_(OSetGen_Next)(rhs->oset);
+         if (bm2r_ref == 0)
+         {
 #if 0
-         VG_(message)(Vg_DebugMsg, "bm_equal: no match found");
+            VG_(message)(Vg_DebugMsg, "bm_equal: no match found");
 #endif
-         return False;
+            return False;
+         }
+         bm2r = bm2r_ref->bm2;
+         tl_assert(bm2r);
       }
-      bm2r = bm2r_ref->bm2;
+      while (! DRD_(bm_has_any_access)(rhs,
+                                       bm2r->addr << ADDR0_BITS,
+                                       (bm2r->addr + 1) << ADDR0_BITS));
+
       tl_assert(bm2r);
       tl_assert(DRD_(bm_has_any_access)(rhs,
                                         bm2r->addr << ADDR0_BITS,
@@ -973,7 +981,13 @@ Bool DRD_(bm_equal)(struct bitmap* const lhs, struct bitmap* const rhs)
          return False;
       }
    }
-   bm2r = VG_(OSetGen_Next)(rhs->oset);
+
+   do
+   {
+      bm2r = VG_(OSetGen_Next)(rhs->oset);
+   } while (bm2r && ! DRD_(bm_has_any_access)(rhs,
+                                              bm2r->addr << ADDR0_BITS,
+                                              (bm2r->addr + 1) << ADDR0_BITS));
    if (bm2r)
    {
       tl_assert(DRD_(bm_has_any_access)(rhs,

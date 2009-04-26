@@ -886,13 +886,16 @@ AM_CONDITIONAL([HAVE_ALTIVEC_H], [test x$ac_have_altivec = xyes])
 # Check for pthread_create@GLIBC2.0
 AC_MSG_CHECKING([for pthread_create@GLIBC2.0()])
 
+safe_CFLAGS=$CFLAGS
+CFLAGS="-lpthread"
 AC_TRY_LINK(
 [
 extern int pthread_create_glibc_2_0(void*, const void*,
                                     void *(*)(void*), void*);
 __asm__(".symver pthread_create_glibc_2_0, pthread_create@GLIBC_2.0");
 ], [
-  return &pthread_create_glibc_2_0 != 0;
+  pthread_create_glibc_2_0(0, 0, 0, 0);
+  return 0;
 ],
 [
 ac_have_pthread_create_glibc_2_0=yes
@@ -903,6 +906,7 @@ AC_DEFINE([HAVE_PTHREAD_CREATE_GLIBC_2_0], 1,
 ac_have_pthread_create_glibc_2_0=no
 AC_MSG_RESULT([no])
 ])
+CFLAGS=$safe_CFLAGS
 
 AM_CONDITIONAL(HAVE_PTHREAD_CREATE_GLIBC_2_0,
 	       test x$ac_have_pthread_create_glibc_2_0 = yes)

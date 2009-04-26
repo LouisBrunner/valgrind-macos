@@ -99,7 +99,7 @@ typedef void  (*OSetFree_t)        ( void* p );
 //   called.
 
 extern OSet* VG_(OSetWord_Create)       ( OSetAlloc_t alloc, HChar* ec, 
-                                          OSetFree_t free );
+                                          OSetFree_t _free );
 extern void  VG_(OSetWord_Destroy)      ( OSet* os );
 
 /*--------------------------------------------------------------------*/
@@ -185,7 +185,7 @@ extern Bool  VG_(OSetWord_Next)         ( OSet* os, /*OUT*/UWord* val );
 
 extern OSet* VG_(OSetGen_Create)    ( PtrdiffT keyOff, OSetCmp_t cmp,
                                       OSetAlloc_t alloc, HChar* ec,
-                                      OSetFree_t free );
+                                      OSetFree_t _free );
 extern void  VG_(OSetGen_Destroy)   ( OSet* os );
 extern void* VG_(OSetGen_AllocNode) ( OSet* os, SizeT elemSize );
 extern void  VG_(OSetGen_FreeNode)  ( OSet* os, void* elem );

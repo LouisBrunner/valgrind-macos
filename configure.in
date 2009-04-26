@@ -909,7 +909,7 @@ AC_MSG_RESULT([no])
 CFLAGS=$safe_CFLAGS
 
 AM_CONDITIONAL(HAVE_PTHREAD_CREATE_GLIBC_2_0,
-	       test x$ac_have_pthread_create_glibc_2_0 = yes)
+	       test x$ac_have_pthread_create_glibc_2_0 = xyes)
 
 
 # Check for eventfd_t, eventfd() and eventfd_read()

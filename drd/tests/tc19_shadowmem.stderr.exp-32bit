@@ -3255,10 +3255,6 @@ Conflicting store by thread x/x at 0x........ size 4
 Address 0x........ is at offset 0 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
-Other segment start (thread x/x)
-   (thread finished, call stack no longer available)
-Other segment end (thread x/x)
-   (thread finished, call stack no longer available)
 
 Conflicting store by thread x/x at 0x........ size 4
    at 0x........: child64 (tc19_shadowmem.c:105)
@@ -3280,10 +3276,6 @@ Conflicting store by thread x/x at 0x........ size 4
 Address 0x........ is at offset 1 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
-Other segment start (thread x/x)
-   (thread finished, call stack no longer available)
-Other segment end (thread x/x)
-   (thread finished, call stack no longer available)
 
 Conflicting store by thread x/x at 0x........ size 4
    at 0x........: child64 (tc19_shadowmem.c:105)
@@ -3305,10 +3297,6 @@ Conflicting store by thread x/x at 0x........ size 4
 Address 0x........ is at offset 2 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
-Other segment start (thread x/x)
-   (thread finished, call stack no longer available)
-Other segment end (thread x/x)
-   (thread finished, call stack no longer available)
 
 Conflicting store by thread x/x at 0x........ size 4
    at 0x........: child64 (tc19_shadowmem.c:105)
@@ -3330,10 +3318,6 @@ Conflicting store by thread x/x at 0x........ size 4
 Address 0x........ is at offset 3 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
-Other segment start (thread x/x)
-   (thread finished, call stack no longer available)
-Other segment end (thread x/x)
-   (thread finished, call stack no longer available)
 
 Conflicting store by thread x/x at 0x........ size 4
    at 0x........: child64 (tc19_shadowmem.c:105)
@@ -3355,10 +3339,6 @@ Conflicting store by thread x/x at 0x........ size 4
 Address 0x........ is at offset 4 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
-Other segment start (thread x/x)
-   (thread finished, call stack no longer available)
-Other segment end (thread x/x)
-   (thread finished, call stack no longer available)
 
 Conflicting store by thread x/x at 0x........ size 4
    at 0x........: child64 (tc19_shadowmem.c:105)
@@ -3380,10 +3360,6 @@ Conflicting store by thread x/x at 0x........ size 4
 Address 0x........ is at offset 5 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
-Other segment start (thread x/x)
-   (thread finished, call stack no longer available)
-Other segment end (thread x/x)
-   (thread finished, call stack no longer available)
 
 Conflicting store by thread x/x at 0x........ size 4
    at 0x........: child64 (tc19_shadowmem.c:105)
@@ -3405,10 +3381,6 @@ Conflicting store by thread x/x at 0x........ size 4
 Address 0x........ is at offset 6 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
-Other segment start (thread x/x)
-   (thread finished, call stack no longer available)
-Other segment end (thread x/x)
-   (thread finished, call stack no longer available)
 
 Conflicting store by thread x/x at 0x........ size 4
    at 0x........: child64 (tc19_shadowmem.c:105)
@@ -3430,10 +3402,6 @@ Conflicting store by thread x/x at 0x........ size 4
 Address 0x........ is at offset 7 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
-Other segment start (thread x/x)
-   (thread finished, call stack no longer available)
-Other segment end (thread x/x)
-   (thread finished, call stack no longer available)
 
 Conflicting store by thread x/x at 0x........ size 4
    at 0x........: child64 (tc19_shadowmem.c:105)
@@ -3455,10 +3423,6 @@ Conflicting store by thread x/x at 0x........ size 4
 Address 0x........ is at offset 8 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
-Other segment start (thread x/x)
-   (thread finished, call stack no longer available)
-Other segment end (thread x/x)
-   (thread finished, call stack no longer available)
 
 Conflicting store by thread x/x at 0x........ size 4
    at 0x........: child64 (tc19_shadowmem.c:105)
@@ -3480,10 +3444,6 @@ Conflicting store by thread x/x at 0x........ size 4
 Address 0x........ is at offset 9 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
-Other segment start (thread x/x)
-   (thread finished, call stack no longer available)
-Other segment end (thread x/x)
-   (thread finished, call stack no longer available)
 
 Conflicting store by thread x/x at 0x........ size 4
    at 0x........: child64 (tc19_shadowmem.c:105)
@@ -3505,10 +3465,6 @@ Conflicting store by thread x/x at 0x........ size 4
 Address 0x........ is at offset 10 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
-Other segment start (thread x/x)
-   (thread finished, call stack no longer available)
-Other segment end (thread x/x)
-   (thread finished, call stack no longer available)
 
 Conflicting store by thread x/x at 0x........ size 4
    at 0x........: child64 (tc19_shadowmem.c:105)
@@ -3530,10 +3486,6 @@ Conflicting store by thread x/x at 0x........ size 4
 Address 0x........ is at offset 11 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
-Other segment start (thread x/x)
-   (thread finished, call stack no longer available)
-Other segment end (thread x/x)
-   (thread finished, call stack no longer available)
 
 Conflicting store by thread x/x at 0x........ size 4
    at 0x........: child64 (tc19_shadowmem.c:105)
@@ -3555,10 +3507,6 @@ Conflicting store by thread x/x at 0x........ size 4
 Address 0x........ is at offset 12 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
-Other segment start (thread x/x)
-   (thread finished, call stack no longer available)
-Other segment end (thread x/x)
-   (thread finished, call stack no longer available)
 
 Conflicting store by thread x/x at 0x........ size 4
    at 0x........: child64 (tc19_shadowmem.c:105)
@@ -3580,10 +3528,6 @@ Conflicting store by thread x/x at 0x........ size 4
 Address 0x........ is at offset 13 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
-Other segment start (thread x/x)
-   (thread finished, call stack no longer available)
-Other segment end (thread x/x)
-   (thread finished, call stack no longer available)
 
 Conflicting store by thread x/x at 0x........ size 4
    at 0x........: child64 (tc19_shadowmem.c:105)
@@ -3605,10 +3549,6 @@ Conflicting store by thread x/x at 0x........ size 4
 Address 0x........ is at offset 14 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
-Other segment start (thread x/x)
-   (thread finished, call stack no longer available)
-Other segment end (thread x/x)
-   (thread finished, call stack no longer available)
 
 Conflicting store by thread x/x at 0x........ size 4
    at 0x........: child64 (tc19_shadowmem.c:105)
@@ -3630,10 +3570,6 @@ Conflicting store by thread x/x at 0x........ size 4
 Address 0x........ is at offset 15 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
-Other segment start (thread x/x)
-   (thread finished, call stack no longer available)
-Other segment end (thread x/x)
-   (thread finished, call stack no longer available)
 
 Conflicting store by thread x/x at 0x........ size 4
    at 0x........: child64 (tc19_shadowmem.c:105)
@@ -3655,10 +3591,6 @@ Conflicting store by thread x/x at 0x........ size 4
 Address 0x........ is at offset 16 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
-Other segment start (thread x/x)
-   (thread finished, call stack no longer available)
-Other segment end (thread x/x)
-   (thread finished, call stack no longer available)
 
 Conflicting store by thread x/x at 0x........ size 4
    at 0x........: child64 (tc19_shadowmem.c:105)
@@ -3680,10 +3612,6 @@ Conflicting store by thread x/x at 0x........ size 4
 Address 0x........ is at offset 17 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
-Other segment start (thread x/x)
-   (thread finished, call stack no longer available)
-Other segment end (thread x/x)
-   (thread finished, call stack no longer available)
 
 Conflicting store by thread x/x at 0x........ size 4
    at 0x........: child64 (tc19_shadowmem.c:105)
@@ -3705,10 +3633,6 @@ Conflicting store by thread x/x at 0x........ size 4
 Address 0x........ is at offset 18 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
-Other segment start (thread x/x)
-   (thread finished, call stack no longer available)
-Other segment end (thread x/x)
-   (thread finished, call stack no longer available)
 
 Conflicting store by thread x/x at 0x........ size 4
    at 0x........: child64 (tc19_shadowmem.c:105)
@@ -3730,10 +3654,6 @@ Conflicting store by thread x/x at 0x........ size 4
 Address 0x........ is at offset 19 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
-Other segment start (thread x/x)
-   (thread finished, call stack no longer available)
-Other segment end (thread x/x)
-   (thread finished, call stack no longer available)
 
 Conflicting store by thread x/x at 0x........ size 4
    at 0x........: child64 (tc19_shadowmem.c:105)
@@ -3755,10 +3675,6 @@ Conflicting store by thread x/x at 0x........ size 4
 Address 0x........ is at offset 20 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
-Other segment start (thread x/x)
-   (thread finished, call stack no longer available)
-Other segment end (thread x/x)
-   (thread finished, call stack no longer available)
 
 Conflicting store by thread x/x at 0x........ size 4
    at 0x........: child64 (tc19_shadowmem.c:105)
@@ -3780,10 +3696,6 @@ Conflicting store by thread x/x at 0x........ size 4
 Address 0x........ is at offset 21 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
-Other segment start (thread x/x)
-   (thread finished, call stack no longer available)
-Other segment end (thread x/x)
-   (thread finished, call stack no longer available)
 
 Conflicting store by thread x/x at 0x........ size 4
    at 0x........: child64 (tc19_shadowmem.c:105)
@@ -3805,10 +3717,6 @@ Conflicting store by thread x/x at 0x........ size 4
 Address 0x........ is at offset 22 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
-Other segment start (thread x/x)
-   (thread finished, call stack no longer available)
-Other segment end (thread x/x)
-   (thread finished, call stack no longer available)
 
 Conflicting store by thread x/x at 0x........ size 4
    at 0x........: child64 (tc19_shadowmem.c:105)
@@ -3830,10 +3738,6 @@ Conflicting store by thread x/x at 0x........ size 4
 Address 0x........ is at offset 23 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
-Other segment start (thread x/x)
-   (thread finished, call stack no longer available)
-Other segment end (thread x/x)
-   (thread finished, call stack no longer available)
 
 Conflicting store by thread x/x at 0x........ size 4
    at 0x........: child64 (tc19_shadowmem.c:105)
@@ -3855,10 +3759,6 @@ Conflicting store by thread x/x at 0x........ size 4
 Address 0x........ is at offset 24 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
-Other segment start (thread x/x)
-   (thread finished, call stack no longer available)
-Other segment end (thread x/x)
-   (thread finished, call stack no longer available)
 
 Conflicting store by thread x/x at 0x........ size 4
    at 0x........: child64 (tc19_shadowmem.c:105)
@@ -3880,10 +3780,6 @@ Conflicting store by thread x/x at 0x........ size 4
 Address 0x........ is at offset 25 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
-Other segment start (thread x/x)
-   (thread finished, call stack no longer available)
-Other segment end (thread x/x)
-   (thread finished, call stack no longer available)
 
 Conflicting store by thread x/x at 0x........ size 4
    at 0x........: child64 (tc19_shadowmem.c:105)
@@ -3905,10 +3801,6 @@ Conflicting store by thread x/x at 0x........ size 4
 Address 0x........ is at offset 26 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
-Other segment start (thread x/x)
-   (thread finished, call stack no longer available)
-Other segment end (thread x/x)
-   (thread finished, call stack no longer available)
 
 Conflicting store by thread x/x at 0x........ size 4
    at 0x........: child64 (tc19_shadowmem.c:105)
@@ -3930,10 +3822,6 @@ Conflicting store by thread x/x at 0x........ size 4
 Address 0x........ is at offset 27 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
-Other segment start (thread x/x)
-   (thread finished, call stack no longer available)
-Other segment end (thread x/x)
-   (thread finished, call stack no longer available)
 
 Conflicting store by thread x/x at 0x........ size 4
    at 0x........: child64 (tc19_shadowmem.c:105)
@@ -3955,10 +3843,6 @@ Conflicting store by thread x/x at 0x........ size 4
 Address 0x........ is at offset 28 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
-Other segment start (thread x/x)
-   (thread finished, call stack no longer available)
-Other segment end (thread x/x)
-   (thread finished, call stack no longer available)
 
 Conflicting store by thread x/x at 0x........ size 4
    at 0x........: child64 (tc19_shadowmem.c:105)
@@ -3980,10 +3864,6 @@ Conflicting store by thread x/x at 0x........ size 4
 Address 0x........ is at offset 29 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
-Other segment start (thread x/x)
-   (thread finished, call stack no longer available)
-Other segment end (thread x/x)
-   (thread finished, call stack no longer available)
 
 Conflicting store by thread x/x at 0x........ size 4
    at 0x........: child64 (tc19_shadowmem.c:105)
@@ -4005,10 +3885,6 @@ Conflicting store by thread x/x at 0x........ size 4
 Address 0x........ is at offset 30 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
-Other segment start (thread x/x)
-   (thread finished, call stack no longer available)
-Other segment end (thread x/x)
-   (thread finished, call stack no longer available)
 
 Conflicting store by thread x/x at 0x........ size 4
    at 0x........: child64 (tc19_shadowmem.c:105)
@@ -4030,10 +3906,6 @@ Conflicting store by thread x/x at 0x........ size 4
 Address 0x........ is at offset 31 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
-Other segment start (thread x/x)
-   (thread finished, call stack no longer available)
-Other segment end (thread x/x)
-   (thread finished, call stack no longer available)
 
 Conflicting store by thread x/x at 0x........ size 4
    at 0x........: child64 (tc19_shadowmem.c:105)
@@ -4055,10 +3927,6 @@ Conflicting store by thread x/x at 0x........ size 4
 Address 0x........ is at offset 32 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
-Other segment start (thread x/x)
-   (thread finished, call stack no longer available)
-Other segment end (thread x/x)
-   (thread finished, call stack no longer available)
 
 Conflicting store by thread x/x at 0x........ size 4
    at 0x........: child64 (tc19_shadowmem.c:105)
@@ -4080,10 +3948,6 @@ Conflicting store by thread x/x at 0x........ size 4
 Address 0x........ is at offset 33 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
-Other segment start (thread x/x)
-   (thread finished, call stack no longer available)
-Other segment end (thread x/x)
-   (thread finished, call stack no longer available)
 
 Conflicting store by thread x/x at 0x........ size 4
    at 0x........: child64 (tc19_shadowmem.c:105)
@@ -4105,10 +3969,6 @@ Conflicting store by thread x/x at 0x........ size 4
 Address 0x........ is at offset 34 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
-Other segment start (thread x/x)
-   (thread finished, call stack no longer available)
-Other segment end (thread x/x)
-   (thread finished, call stack no longer available)
 
 Conflicting store by thread x/x at 0x........ size 4
    at 0x........: child64 (tc19_shadowmem.c:105)
@@ -4130,10 +3990,6 @@ Conflicting store by thread x/x at 0x........ size 4
 Address 0x........ is at offset 35 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
-Other segment start (thread x/x)
-   (thread finished, call stack no longer available)
-Other segment end (thread x/x)
-   (thread finished, call stack no longer available)
 
 Conflicting store by thread x/x at 0x........ size 4
    at 0x........: child64 (tc19_shadowmem.c:105)
@@ -4155,10 +4011,6 @@ Conflicting store by thread x/x at 0x........ size 4
 Address 0x........ is at offset 36 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
-Other segment start (thread x/x)
-   (thread finished, call stack no longer available)
-Other segment end (thread x/x)
-   (thread finished, call stack no longer available)
 
 Conflicting store by thread x/x at 0x........ size 4
    at 0x........: child64 (tc19_shadowmem.c:105)
@@ -4180,10 +4032,6 @@ Conflicting store by thread x/x at 0x........ size 4
 Address 0x........ is at offset 37 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
-Other segment start (thread x/x)
-   (thread finished, call stack no longer available)
-Other segment end (thread x/x)
-   (thread finished, call stack no longer available)
 
 Conflicting store by thread x/x at 0x........ size 4
    at 0x........: child64 (tc19_shadowmem.c:105)
@@ -4205,10 +4053,6 @@ Conflicting store by thread x/x at 0x........ size 4
 Address 0x........ is at offset 38 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
-Other segment start (thread x/x)
-   (thread finished, call stack no longer available)
-Other segment end (thread x/x)
-   (thread finished, call stack no longer available)
 
 Conflicting store by thread x/x at 0x........ size 4
    at 0x........: child64 (tc19_shadowmem.c:105)
@@ -4230,10 +4074,6 @@ Conflicting store by thread x/x at 0x........ size 4
 Address 0x........ is at offset 39 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
-Other segment start (thread x/x)
-   (thread finished, call stack no longer available)
-Other segment end (thread x/x)
-   (thread finished, call stack no longer available)
 
 Conflicting store by thread x/x at 0x........ size 4
    at 0x........: child64 (tc19_shadowmem.c:105)
@@ -4255,10 +4095,6 @@ Conflicting store by thread x/x at 0x........ size 4
 Address 0x........ is at offset 40 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
-Other segment start (thread x/x)
-   (thread finished, call stack no longer available)
-Other segment end (thread x/x)
-   (thread finished, call stack no longer available)
 
 Conflicting store by thread x/x at 0x........ size 4
    at 0x........: child64 (tc19_shadowmem.c:105)
@@ -4280,10 +4116,6 @@ Conflicting store by thread x/x at 0x........ size 4
 Address 0x........ is at offset 41 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
-Other segment start (thread x/x)
-   (thread finished, call stack no longer available)
-Other segment end (thread x/x)
-   (thread finished, call stack no longer available)
 
 Conflicting store by thread x/x at 0x........ size 4
    at 0x........: child64 (tc19_shadowmem.c:105)
@@ -4305,10 +4137,6 @@ Conflicting store by thread x/x at 0x........ size 4
 Address 0x........ is at offset 42 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
-Other segment start (thread x/x)
-   (thread finished, call stack no longer available)
-Other segment end (thread x/x)
-   (thread finished, call stack no longer available)
 
 Conflicting store by thread x/x at 0x........ size 4
    at 0x........: child64 (tc19_shadowmem.c:105)
@@ -4330,10 +4158,6 @@ Conflicting store by thread x/x at 0x........ size 4
 Address 0x........ is at offset 43 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
-Other segment start (thread x/x)
-   (thread finished, call stack no longer available)
-Other segment end (thread x/x)
-   (thread finished, call stack no longer available)
 
 Conflicting store by thread x/x at 0x........ size 4
    at 0x........: child64 (tc19_shadowmem.c:105)
@@ -4355,10 +4179,6 @@ Conflicting store by thread x/x at 0x........ size 4
 Address 0x........ is at offset 44 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
-Other segment start (thread x/x)
-   (thread finished, call stack no longer available)
-Other segment end (thread x/x)
-   (thread finished, call stack no longer available)
 
 Conflicting store by thread x/x at 0x........ size 4
    at 0x........: child64 (tc19_shadowmem.c:105)
@@ -4380,10 +4200,6 @@ Conflicting store by thread x/x at 0x........ size 4
 Address 0x........ is at offset 45 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
-Other segment start (thread x/x)
-   (thread finished, call stack no longer available)
-Other segment end (thread x/x)
-   (thread finished, call stack no longer available)
 
 Conflicting store by thread x/x at 0x........ size 4
    at 0x........: child64 (tc19_shadowmem.c:105)
@@ -4405,10 +4221,6 @@ Conflicting store by thread x/x at 0x........ size 4
 Address 0x........ is at offset 46 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
-Other segment start (thread x/x)
-   (thread finished, call stack no longer available)
-Other segment end (thread x/x)
-   (thread finished, call stack no longer available)
 
 Conflicting store by thread x/x at 0x........ size 4
    at 0x........: child64 (tc19_shadowmem.c:105)
@@ -4430,10 +4242,6 @@ Conflicting store by thread x/x at 0x........ size 4
 Address 0x........ is at offset 47 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
-Other segment start (thread x/x)
-   (thread finished, call stack no longer available)
-Other segment end (thread x/x)
-   (thread finished, call stack no longer available)
 
 Conflicting store by thread x/x at 0x........ size 4
    at 0x........: child64 (tc19_shadowmem.c:105)
@@ -4455,10 +4263,6 @@ Conflicting store by thread x/x at 0x........ size 4
 Address 0x........ is at offset 48 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
-Other segment start (thread x/x)
-   (thread finished, call stack no longer available)
-Other segment end (thread x/x)
-   (thread finished, call stack no longer available)
 
 Conflicting store by thread x/x at 0x........ size 4
    at 0x........: child64 (tc19_shadowmem.c:105)
@@ -4480,10 +4284,6 @@ Conflicting store by thread x/x at 0x........ size 4
 Address 0x........ is at offset 49 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
-Other segment start (thread x/x)
-   (thread finished, call stack no longer available)
-Other segment end (thread x/x)
-   (thread finished, call stack no longer available)
 
 Conflicting store by thread x/x at 0x........ size 4
    at 0x........: child64 (tc19_shadowmem.c:105)
@@ -4505,10 +4305,6 @@ Conflicting store by thread x/x at 0x........ size 4
 Address 0x........ is at offset 50 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
-Other segment start (thread x/x)
-   (thread finished, call stack no longer available)
-Other segment end (thread x/x)
-   (thread finished, call stack no longer available)
 
 Conflicting store by thread x/x at 0x........ size 4
    at 0x........: child64 (tc19_shadowmem.c:105)
@@ -4530,10 +4326,6 @@ Conflicting store by thread x/x at 0x........ size 4
 Address 0x........ is at offset 51 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
-Other segment start (thread x/x)
-   (thread finished, call stack no longer available)
-Other segment end (thread x/x)
-   (thread finished, call stack no longer available)
 
 Conflicting store by thread x/x at 0x........ size 4
    at 0x........: child64 (tc19_shadowmem.c:105)
@@ -4555,10 +4347,6 @@ Conflicting store by thread x/x at 0x........ size 4
 Address 0x........ is at offset 52 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
-Other segment start (thread x/x)
-   (thread finished, call stack no longer available)
-Other segment end (thread x/x)
-   (thread finished, call stack no longer available)
 
 Conflicting store by thread x/x at 0x........ size 4
    at 0x........: child64 (tc19_shadowmem.c:105)
@@ -4580,10 +4368,6 @@ Conflicting store by thread x/x at 0x........ size 4
 Address 0x........ is at offset 53 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
-Other segment start (thread x/x)
-   (thread finished, call stack no longer available)
-Other segment end (thread x/x)
-   (thread finished, call stack no longer available)
 
 Conflicting store by thread x/x at 0x........ size 4
    at 0x........: child64 (tc19_shadowmem.c:105)
@@ -4605,10 +4389,6 @@ Conflicting store by thread x/x at 0x........ size 4
 Address 0x........ is at offset 54 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
-Other segment start (thread x/x)
-   (thread finished, call stack no longer available)
-Other segment end (thread x/x)
-   (thread finished, call stack no longer available)
 
 Conflicting store by thread x/x at 0x........ size 4
    at 0x........: child64 (tc19_shadowmem.c:105)
@@ -4630,10 +4410,6 @@ Conflicting store by thread x/x at 0x........ size 4
 Address 0x........ is at offset 55 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
-Other segment start (thread x/x)
-   (thread finished, call stack no longer available)
-Other segment end (thread x/x)
-   (thread finished, call stack no longer available)
 
 Conflicting store by thread x/x at 0x........ size 4
    at 0x........: child64 (tc19_shadowmem.c:105)
@@ -4655,10 +4431,6 @@ Conflicting store by thread x/x at 0x........ size 4
 Address 0x........ is at offset 56 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
-Other segment start (thread x/x)
-   (thread finished, call stack no longer available)
-Other segment end (thread x/x)
-   (thread finished, call stack no longer available)
 
 Conflicting store by thread x/x at 0x........ size 4
    at 0x........: child64 (tc19_shadowmem.c:105)
@@ -4680,10 +4452,6 @@ Conflicting store by thread x/x at 0x........ size 4
 Address 0x........ is at offset 57 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
-Other segment start (thread x/x)
-   (thread finished, call stack no longer available)
-Other segment end (thread x/x)
-   (thread finished, call stack no longer available)
 
 Conflicting store by thread x/x at 0x........ size 4
    at 0x........: child64 (tc19_shadowmem.c:105)
@@ -4705,10 +4473,6 @@ Conflicting store by thread x/x at 0x........ size 4
 Address 0x........ is at offset 58 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
-Other segment start (thread x/x)
-   (thread finished, call stack no longer available)
-Other segment end (thread x/x)
-   (thread finished, call stack no longer available)
 
 Conflicting store by thread x/x at 0x........ size 4
    at 0x........: child64 (tc19_shadowmem.c:105)
@@ -4730,10 +4494,6 @@ Conflicting store by thread x/x at 0x........ size 4
 Address 0x........ is at offset 59 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
-Other segment start (thread x/x)
-   (thread finished, call stack no longer available)
-Other segment end (thread x/x)
-   (thread finished, call stack no longer available)
 
 Conflicting store by thread x/x at 0x........ size 4
    at 0x........: child64 (tc19_shadowmem.c:105)
@@ -4755,10 +4515,6 @@ Conflicting store by thread x/x at 0x........ size 4
 Address 0x........ is at offset 60 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
-Other segment start (thread x/x)
-   (thread finished, call stack no longer available)
-Other segment end (thread x/x)
-   (thread finished, call stack no longer available)
 
 Conflicting store by thread x/x at 0x........ size 4
    at 0x........: child64 (tc19_shadowmem.c:105)
@@ -4780,10 +4536,6 @@ Conflicting store by thread x/x at 0x........ size 4
 Address 0x........ is at offset 61 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
-Other segment start (thread x/x)
-   (thread finished, call stack no longer available)
-Other segment end (thread x/x)
-   (thread finished, call stack no longer available)
 
 Conflicting store by thread x/x at 0x........ size 4
    at 0x........: child64 (tc19_shadowmem.c:105)
@@ -4805,10 +4557,6 @@ Conflicting store by thread x/x at 0x........ size 4
 Address 0x........ is at offset 62 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
-Other segment start (thread x/x)
-   (thread finished, call stack no longer available)
-Other segment end (thread x/x)
-   (thread finished, call stack no longer available)
 
 Conflicting store by thread x/x at 0x........ size 4
    at 0x........: child64 (tc19_shadowmem.c:105)
@@ -4830,10 +4578,6 @@ Conflicting store by thread x/x at 0x........ size 4
 Address 0x........ is at offset 63 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
-Other segment start (thread x/x)
-   (thread finished, call stack no longer available)
-Other segment end (thread x/x)
-   (thread finished, call stack no longer available)
 
 Conflicting store by thread x/x at 0x........ size 4
    at 0x........: child64 (tc19_shadowmem.c:105)
@@ -4855,10 +4599,6 @@ Conflicting store by thread x/x at 0x........ size 4
 Address 0x........ is at offset 64 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
-Other segment start (thread x/x)
-   (thread finished, call stack no longer available)
-Other segment end (thread x/x)
-   (thread finished, call stack no longer available)
 
 Conflicting store by thread x/x at 0x........ size 4
    at 0x........: child64 (tc19_shadowmem.c:105)
@@ -4880,10 +4620,6 @@ Conflicting store by thread x/x at 0x........ size 4
 Address 0x........ is at offset 65 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
-Other segment start (thread x/x)
-   (thread finished, call stack no longer available)
-Other segment end (thread x/x)
-   (thread finished, call stack no longer available)
 
 Conflicting store by thread x/x at 0x........ size 4
    at 0x........: child64 (tc19_shadowmem.c:105)
@@ -4905,10 +4641,6 @@ Conflicting store by thread x/x at 0x........ size 4
 Address 0x........ is at offset 66 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
-Other segment start (thread x/x)
-   (thread finished, call stack no longer available)
-Other segment end (thread x/x)
-   (thread finished, call stack no longer available)
 
 Conflicting store by thread x/x at 0x........ size 4
    at 0x........: child64 (tc19_shadowmem.c:105)
@@ -4930,10 +4662,6 @@ Conflicting store by thread x/x at 0x........ size 4
 Address 0x........ is at offset 67 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
-Other segment start (thread x/x)
-   (thread finished, call stack no longer available)
-Other segment end (thread x/x)
-   (thread finished, call stack no longer available)
 
 Conflicting store by thread x/x at 0x........ size 4
    at 0x........: child64 (tc19_shadowmem.c:105)
@@ -4955,10 +4683,6 @@ Conflicting store by thread x/x at 0x........ size 4
 Address 0x........ is at offset 68 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
-Other segment start (thread x/x)
-   (thread finished, call stack no longer available)
-Other segment end (thread x/x)
-   (thread finished, call stack no longer available)
 
 Conflicting store by thread x/x at 0x........ size 4
    at 0x........: child64 (tc19_shadowmem.c:105)
@@ -4980,10 +4704,6 @@ Conflicting store by thread x/x at 0x........ size 4
 Address 0x........ is at offset 69 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
-Other segment start (thread x/x)
-   (thread finished, call stack no longer available)
-Other segment end (thread x/x)
-   (thread finished, call stack no longer available)
 
 Conflicting store by thread x/x at 0x........ size 4
    at 0x........: child64 (tc19_shadowmem.c:105)
@@ -5005,10 +4725,6 @@ Conflicting store by thread x/x at 0x........ size 4
 Address 0x........ is at offset 70 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
-Other segment start (thread x/x)
-   (thread finished, call stack no longer available)
-Other segment end (thread x/x)
-   (thread finished, call stack no longer available)
 
 Conflicting store by thread x/x at 0x........ size 4
    at 0x........: child64 (tc19_shadowmem.c:105)
@@ -5030,10 +4746,6 @@ Conflicting store by thread x/x at 0x........ size 4
 Address 0x........ is at offset 71 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
-Other segment start (thread x/x)
-   (thread finished, call stack no longer available)
-Other segment end (thread x/x)
-   (thread finished, call stack no longer available)
 
 Conflicting store by thread x/x at 0x........ size 4
    at 0x........: child64 (tc19_shadowmem.c:105)
@@ -5055,10 +4767,6 @@ Conflicting store by thread x/x at 0x........ size 4
 Address 0x........ is at offset 72 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
-Other segment start (thread x/x)
-   (thread finished, call stack no longer available)
-Other segment end (thread x/x)
-   (thread finished, call stack no longer available)
 
 Conflicting store by thread x/x at 0x........ size 4
    at 0x........: child64 (tc19_shadowmem.c:105)
@@ -5080,10 +4788,6 @@ Conflicting store by thread x/x at 0x........ size 4
 Address 0x........ is at offset 73 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
-Other segment start (thread x/x)
-   (thread finished, call stack no longer available)
-Other segment end (thread x/x)
-   (thread finished, call stack no longer available)
 
 Conflicting store by thread x/x at 0x........ size 4
    at 0x........: child64 (tc19_shadowmem.c:105)
@@ -5105,10 +4809,6 @@ Conflicting store by thread x/x at 0x........ size 4
 Address 0x........ is at offset 74 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
-Other segment start (thread x/x)
-   (thread finished, call stack no longer available)
-Other segment end (thread x/x)
-   (thread finished, call stack no longer available)
 
 Conflicting store by thread x/x at 0x........ size 4
    at 0x........: child64 (tc19_shadowmem.c:105)
@@ -5130,10 +4830,6 @@ Conflicting store by thread x/x at 0x........ size 4
 Address 0x........ is at offset 75 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
-Other segment start (thread x/x)
-   (thread finished, call stack no longer available)
-Other segment end (thread x/x)
-   (thread finished, call stack no longer available)
 
 Conflicting store by thread x/x at 0x........ size 4
    at 0x........: child64 (tc19_shadowmem.c:105)
@@ -5155,10 +4851,6 @@ Conflicting store by thread x/x at 0x........ size 4
 Address 0x........ is at offset 76 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
-Other segment start (thread x/x)
-   (thread finished, call stack no longer available)
-Other segment end (thread x/x)
-   (thread finished, call stack no longer available)
 
 Conflicting store by thread x/x at 0x........ size 4
    at 0x........: child64 (tc19_shadowmem.c:105)
@@ -5180,10 +4872,6 @@ Conflicting store by thread x/x at 0x........ size 4
 Address 0x........ is at offset 77 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
-Other segment start (thread x/x)
-   (thread finished, call stack no longer available)
-Other segment end (thread x/x)
-   (thread finished, call stack no longer available)
 
 Conflicting store by thread x/x at 0x........ size 4
    at 0x........: child64 (tc19_shadowmem.c:105)
@@ -5205,10 +4893,6 @@ Conflicting store by thread x/x at 0x........ size 4
 Address 0x........ is at offset 78 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
-Other segment start (thread x/x)
-   (thread finished, call stack no longer available)
-Other segment end (thread x/x)
-   (thread finished, call stack no longer available)
 
 Conflicting store by thread x/x at 0x........ size 4
    at 0x........: child64 (tc19_shadowmem.c:105)
@@ -5230,10 +4914,6 @@ Conflicting store by thread x/x at 0x........ size 4
 Address 0x........ is at offset 79 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
-Other segment start (thread x/x)
-   (thread finished, call stack no longer available)
-Other segment end (thread x/x)
-   (thread finished, call stack no longer available)
 
 Conflicting store by thread x/x at 0x........ size 4
    at 0x........: child64 (tc19_shadowmem.c:105)
@@ -5255,10 +4935,6 @@ Conflicting store by thread x/x at 0x........ size 4
 Address 0x........ is at offset 80 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
-Other segment start (thread x/x)
-   (thread finished, call stack no longer available)
-Other segment end (thread x/x)
-   (thread finished, call stack no longer available)
 
 Conflicting store by thread x/x at 0x........ size 4
    at 0x........: child64 (tc19_shadowmem.c:105)
@@ -5280,10 +4956,6 @@ Conflicting store by thread x/x at 0x........ size 4
 Address 0x........ is at offset 81 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
-Other segment start (thread x/x)
-   (thread finished, call stack no longer available)
-Other segment end (thread x/x)
-   (thread finished, call stack no longer available)
 
 Conflicting store by thread x/x at 0x........ size 4
    at 0x........: child64 (tc19_shadowmem.c:105)
@@ -5305,10 +4977,6 @@ Conflicting store by thread x/x at 0x........ size 4
 Address 0x........ is at offset 82 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
-Other segment start (thread x/x)
-   (thread finished, call stack no longer available)
-Other segment end (thread x/x)
-   (thread finished, call stack no longer available)
 
 Conflicting store by thread x/x at 0x........ size 4
    at 0x........: child64 (tc19_shadowmem.c:105)
@@ -5330,10 +4998,6 @@ Conflicting store by thread x/x at 0x........ size 4
 Address 0x........ is at offset 83 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
-Other segment start (thread x/x)
-   (thread finished, call stack no longer available)
-Other segment end (thread x/x)
-   (thread finished, call stack no longer available)
 
 Conflicting store by thread x/x at 0x........ size 4
    at 0x........: child64 (tc19_shadowmem.c:105)
@@ -5355,10 +5019,6 @@ Conflicting store by thread x/x at 0x........ size 4
 Address 0x........ is at offset 84 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
-Other segment start (thread x/x)
-   (thread finished, call stack no longer available)
-Other segment end (thread x/x)
-   (thread finished, call stack no longer available)
 
 Conflicting store by thread x/x at 0x........ size 4
    at 0x........: child64 (tc19_shadowmem.c:105)
@@ -5380,10 +5040,6 @@ Conflicting store by thread x/x at 0x........ size 4
 Address 0x........ is at offset 85 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
-Other segment start (thread x/x)
-   (thread finished, call stack no longer available)
-Other segment end (thread x/x)
-   (thread finished, call stack no longer available)
 
 Conflicting store by thread x/x at 0x........ size 4
    at 0x........: child64 (tc19_shadowmem.c:105)
@@ -5405,10 +5061,6 @@ Conflicting store by thread x/x at 0x........ size 4
 Address 0x........ is at offset 86 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
-Other segment start (thread x/x)
-   (thread finished, call stack no longer available)
-Other segment end (thread x/x)
-   (thread finished, call stack no longer available)
 
 Conflicting store by thread x/x at 0x........ size 4
    at 0x........: child64 (tc19_shadowmem.c:105)
@@ -5430,10 +5082,6 @@ Conflicting store by thread x/x at 0x........ size 4
 Address 0x........ is at offset 87 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
-Other segment start (thread x/x)
-   (thread finished, call stack no longer available)
-Other segment end (thread x/x)
-   (thread finished, call stack no longer available)
 
 Conflicting store by thread x/x at 0x........ size 4
    at 0x........: child64 (tc19_shadowmem.c:105)
@@ -5455,10 +5103,6 @@ Conflicting store by thread x/x at 0x........ size 4
 Address 0x........ is at offset 88 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
-Other segment start (thread x/x)
-   (thread finished, call stack no longer available)
-Other segment end (thread x/x)
-   (thread finished, call stack no longer available)
 
 Conflicting store by thread x/x at 0x........ size 4
    at 0x........: child64 (tc19_shadowmem.c:105)
@@ -5480,10 +5124,6 @@ Conflicting store by thread x/x at 0x........ size 4
 Address 0x........ is at offset 89 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
-Other segment start (thread x/x)
-   (thread finished, call stack no longer available)
-Other segment end (thread x/x)
-   (thread finished, call stack no longer available)
 
 Conflicting store by thread x/x at 0x........ size 4
    at 0x........: child64 (tc19_shadowmem.c:105)
@@ -5505,10 +5145,6 @@ Conflicting store by thread x/x at 0x........ size 4
 Address 0x........ is at offset 90 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
-Other segment start (thread x/x)
-   (thread finished, call stack no longer available)
-Other segment end (thread x/x)
-   (thread finished, call stack no longer available)
 
 Conflicting store by thread x/x at 0x........ size 4
    at 0x........: child64 (tc19_shadowmem.c:105)
@@ -5540,9 +5176,5 @@ Conflicting store by thread x/x at 0x........ size 4
 Address 0x........ is at offset 95 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
-Other segment start (thread x/x)
-   (thread finished, call stack no longer available)
-Other segment end (thread x/x)
-   (thread finished, call stack no longer available)
 
 ERROR SUMMARY: 477 errors from 477 contexts (suppressed: 0 from 0)

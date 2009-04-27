@@ -6,8 +6,13 @@
 #----------------------------------------------------------------------------
 
 #----------------------------------------------------------------------------
-# Helper function
+# Helper functions
 #----------------------------------------------------------------------------
+
+# Returns the revision number of the source files with date $1.
+get_svn_revision() {
+  svn info -r "{$1}" "${valgrind_svn_repo}" | sed -n 's/^Revision: //p'
+}
 
 runcmd () {
    logfile=$1
@@ -39,6 +44,9 @@ runcmd () {
 #----------------------------------------------------------------------------
 # Startup
 #----------------------------------------------------------------------------
+
+valgrind_svn_repo="svn://svn.valgrind.org/valgrind/trunk"
+
 # Must have exactly two arguments
 if [ $# -ne 2 ] ; then
     echo "usage: $0 /path/to/valgrind/nightly <tag>"
@@ -57,6 +65,10 @@ svn_new_date=`date --date=today     +%Y-%m-%dT%H:%M:%S`
 
 cd $ABT_TOP
 
+# Clean up output files produced by a previous run.
+rm -rf diffs diff.short final Inst new.short new.verbose old.short old.verbose
+rm -rf sendmail.log unchanged.log valgrind
+
 # Setup any relevant environment variables from conf/<tag>.conf.
 . conf/$ABT_MACHINE.conf
 if [ "${ABT_JOBS}" = "" ]; then
@@ -74,12 +86,20 @@ fi
 # Check out, build, test
 #----------------------------------------------------------------------------
 
+svn_old_rev="`get_svn_revision ${svn_old_date}`"
+svn_new_rev="`get_svn_revision ${svn_new_date}`"
+if [ "${svn_old_rev}" = "${svn_new_rev}" ]; then
+  echo "Both {$svn_old_date} and {$svn_new_date} correspond to r${svn_new_rev}"\
+       "-- skipping nightly build." >unchanged.log
+  exit 0
+fi
+
 # Do everything twice -- once for the 24 hours old Valgrind, and once 
 # for the current one.
 for logfile in old new ; do
 
-   # Remove the old valgrind/ and vex/ directories
-   rm -rf valgrind vex
+   # Remove the old valgrind directory.
+   rm -rf valgrind
 
    # Remove old short and verbose log files, and start the new ones
    for ext in short verbose ; do
@@ -98,7 +118,7 @@ for logfile in old new ; do
    # Check out, build, run tests
    runcmd $logfile \
           "Checking out valgrind source tree" \
-          "svn co svn://svn.valgrind.org/valgrind/trunk -r {$svn_date} valgrind" && \
+          "svn co ${valgrind_svn_repo} -r {$svn_date} valgrind" && \
    \
    runcmd $logfile \
           "Configuring valgrind             " \
@@ -170,7 +190,6 @@ fi
 # Gather up the diffs (at most the first 100 lines for each one) into a
 # single file.
 MAX_LINES=100
-rm -f diffs
 diff_files=`find . -name '*.diff*' | sort`
 if [ z"$diff_files" = z ] ; then
    echo "Congratulations, all tests passed!" >> diffs

@@ -333,6 +333,8 @@ struct _DebugInfo {
       Certainly text_ is mandatory on all platforms; not sure about
       the rest though. 
 
+      --------------------------------------------------------
+
       Comment_on_IMPORTANT_CFSI_REPRESENTATIONAL_INVARIANTS: we require that
  
       either (rx_map_size == 0 && cfsi == NULL) (the degenerate case)
@@ -370,6 +372,89 @@ struct _DebugInfo {
       (2) follows from (4) and (3).  It is ensured by canonicaliseCFI.
       (3) is ensured by ML_(addDiCfSI).
       (4) is ensured by canonicaliseCFI.
+
+      --------------------------------------------------------
+
+      Comment_on_DEBUG_SVMA_and_DEBUG_BIAS_fields:
+
+      The _debug_{svma,bias} fields were added as part of a fix to
+      #185816.  The problem encompassed in that bug report was that it
+      wasn't correct to use apply the bias values deduced for a
+      primary object to its associated debuginfo object, because the
+      debuginfo object (or the primary) could have been prelinked to a
+      different SVMA.  Hence debuginfo and primary objects need to
+      have their own biases.
+
+      ------ JRS: (referring to r9329): ------
+      Let me see if I understand the workings correctly.  Initially
+      the _debug_ values are set to the same values as the "normal"
+      ones, as there's a bunch of bits of code like this (in
+      readelf.c)
+
+         di->text_svma = svma;
+         ...
+         di->text_bias = rx_bias;
+         di->text_debug_svma = svma;
+         di->text_debug_bias = rx_bias;
+
+      If a debuginfo object subsequently shows up then the
+      _debug_svma/bias are set for the debuginfo object.  Result is
+      that if there's no debuginfo object then the values are the same
+      as the primary-object values, and if there is a debuginfo object
+      then they will (or at least may) be different.
+
+      Then when we need to actually bias something, we'll have to
+      decide whether to use the primary bias or the debuginfo bias.
+      And the strategy is to use the primary bias for ELF symbols but
+      the debuginfo bias for anything pulled out of Dwarf.
+
+      ------ THH: ------
+      Correct - the debug_svma and bias values apply to any address
+      read from the debug data regardless of where that debug data is
+      stored and the other values are used for addresses from other
+      places (primarily the symbol table).
+
+      ------ JRS: ------ 
+      Ok; so this was my only area of concern.  Are there any
+      corner-case scenarios where this wouldn't be right?  It sounds
+      like we're assuming the ELF symbols come from the primary object
+      and, if there is a debug object, then all the Dwarf comes from
+      there.  But what if (eg) both symbols and Dwarf come from the
+      debug object?  Is that even possible or allowable?
+
+      ------ THH: ------
+      You may have a point...
+
+      The current logic is to try and take any one set of data from
+      either the base object or the debug object. There are four sets
+      of data we consider:
+
+         - Symbol Table
+         - Stabs
+         - DWARF1
+         - DWARF2
+
+      If we see the primary section for a given set in the base object
+      then we ignore all sections relating to that set in the debug
+      object.
+
+      Now in principle if we saw a secondary section (like debug_line
+      say) in the base object, but not the main section (debug_info in
+      this case) then we would take debug_info from the debug object
+      but would use the debug_line from the base object unless we saw
+      a replacement copy in the debug object. That's probably unlikely
+      however.
+
+      A bigger issue might be, as you say, the symbol table as we will
+      pick that up from the debug object if it isn't in the base. The
+      dynamic symbol table will always have to be in the base object
+      though so we will have to be careful when processing symbols to
+      know which table we are reading in that case.
+
+      What we probably need to do is tell read_elf_symtab which object
+      the symbols it is being asked to read came from.
+
+      (A followup patch to deal with this was committed in r9469).
    */
    /* .text */
    Bool     text_present;

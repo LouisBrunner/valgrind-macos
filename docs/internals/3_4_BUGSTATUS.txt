@@ -1,0 +1,130 @@
+
+Bugs reported after the release of 3.4.1.  Not sure what happened to
+any record of bugs reported after the release of 3.4.0.  Oh well.
+
+For ref:
+
+(3.4.1.RC1:  24 Feb 2009, vex r1884, valgrind r9253).
+(3.4.1:      28 Feb 2009, vex r1884, valgrind r9293).
+
+-------------------
+
+185128  Helgrind: hg_main.c:3860 (hg_handle_client_request):
+        Assertion 'found' failed.
+
+185499  testcase usability kde brainfuck
+
+185517  Wrong write detection
+
+185794  "WARNING: unhandled syscall: 285" (fallocate) on x86_64
+        in several tools
+
+185801  exp-ptrcheck: evaluate_Dwarf3_Expr: unhandled DW_OP_ 0x93
+
+185816  Valgrind is unable to handle debug info for files with
+        split debug info that are prelinked afterwards
+
+186238  bbToIR_AMD64: disInstr miscalculated next %rip
+
+186248  Support full AMD floating-point implementation.
+
+186507  exp-ptrcheck unhandled syscalls prctl, etc.
+
+186790  Suppression pattern used for leaks are not reported
+
+186796  Symbols with length>200 in suppression files are ignored
+
+157154  documentation (leak-resolution doc speaks about num-callers
+        def=4) + what is a loss record
+
+186963  Report mutexes humanic names
+
+187043  sched_getcpu() produces Segmentation Fault
+
+187048  mutex PTHREAD_PROCESS_SHARED attribute missinterpretation
+
+187416  support for __NR_{setregid,setreuid,setresuid} in
+        exp-ptrcheck
+
+187680  valgrind: the 'impossible' happened (probably invalid)
+
+187760  valgrind: the 'impossible' happened: VG_(arena_memalign)
+
+188038  Helgrind internal error
+
+188046  bashisms in the configure script
+
+188127  vex amd64->IR: unhandled instruction bytes: 0xF0 0xF 0xB0 0xA
+        (ancient cmpxchg stuff, probably invalid now)
+
+188161  valgrind --track-origins=yes asserts (transient trunk
+        stuff, now fixed?)
+
+188248  pthread_cleanup_push, pthread_rwlock_unlock, assertion
+        fail "!lock->heldBy"
+
+188258  javascript fragment gives different result under valgrind
+        (requires SSSE3 exns; cant easily fix?)
+
+188427  Add support for epoll_create1 (with patch)
+
+188530  Support for SIOCGSTAMPNS
+
+188560  Include valgrind.spec in the tarball
+
+188572  Valgrind on Mac should suppress setenv() mem leak
+
+188656  valgrind doesn't build on x86_64 machine (INVALID)
+
+188657  Massif: ms_main.c:1700 (update_stack_stats): Assertion
+        'stacks_szB >= -stack_szB_delta' failed
+
+188735  Cachegrind fails to produce any output on java apps
+
+188969  thread's stack is not computed correctly
+
+188984  Data corruption for returned from function long double
+        (fp grumblings)
+
+189028  impossible happend in unlinkBlock (m_mallocfree.c:206)
+        (usual memory corruption) -- invalid
+
+189054  Valgrind fails to build because of duplicate non-local
+        asm labels
+
+189143  crash when running using wine to run vcsetup.exe under
+        valgrind
+
+189183  valgrind core dump on aix5.3 platform
+
+189232  Illegal opcode - unhandled instruction bytes: 0xCB 0x55
+        0x8B 0xEC
+
+189361  Cache simulation slightly wrong
+
+189661  Valgrind on Mac hangs on a race-condition
+
+189737  vex amd64->IR: unhandled instruction bytes: 0xAC (lods)
+
+189762  epoll_create syscall not handled (in ptrcheck)
+
+189763  drd assertion failure: s_threadinfo[tid].is_recording
+
+190219  unhandled syscall: 328 (x86-linux, __NR_eventfd2 ?)
+
+190390  Allow to set the number of frames for helgrind conflicts
+
+190391  okular crashes helgrind
+        ==181394
+
+190429  Valgrind reports lost of errors in ld.so with x86_64
+        2.9.90 glibc
+
+(next 2 are wine-specific)
+190660  False warnings for _strlen
+190675  Spurious error "Wrong time stamp of .PDB file"
+
+190820  No debug information on powerpc-linux
+
+(-- 27 Apr 09 --)
+

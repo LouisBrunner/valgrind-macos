@@ -187,8 +187,8 @@ void test_fenv(void)
     for(i=0;i<8;i++)
         dtab[i] = i + 1;
 
-    TEST_ENV(&float_env16, "data16 fnstenv", "data16 fldenv");
-    TEST_ENV(&float_env16, "data16 fnsave", "data16 frstor");
+    TEST_ENV(&float_env16, "data16/fnstenv", "data16/fldenv");
+    TEST_ENV(&float_env16, "data16/fnsave", "data16/frstor");
     TEST_ENV(&float_env32, "fnstenv", "fldenv");
     TEST_ENV(&float_env32, "fnsave", "frstor");
 

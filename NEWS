@@ -38,13 +38,19 @@ Release 3.5.0 (???)
   Stack traces produced when --xml=yes is specified are different and
   unchanged.
 
+* The graphs drawn by Massif's ms_print program have changed slightly:
+  - The half-height chars '.' and ',' are no longer drawn, because they are
+    confusing.  The --y option can be used if the default y-resolution is
+    not high enough.
+  - Horizontal lines are now drawn after the top of a snapshot if there is a
+    gap until the next snapshot.  This makes it clear that the memory
+    usage has not dropped to zero between snapshots.
+
 * The location of some install files has changed.  This should not affect
   most users.  Those who might be affected:
-
   - For people who use Valgrind with MPI programs, the installed
     libmpiwrap.so library has moved from $(INSTALL)/<platform>/libmpiwrap.so
     to $(INSTALL)/libmpiwrap-<platform>.so.
-
   - For people who distribute standalone Valgrind tools, the installed
     libraries such as $(INSTALL)/<platform>/libcoregrind.a have moved to
     $(INSTALL)/libcoregrind-<platform>.a.

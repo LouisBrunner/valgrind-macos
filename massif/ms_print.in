@@ -507,25 +507,20 @@ sub read_input_file()
     # Each row represents K bytes, which is 1/graph_y of the peak size
     # (and K can be non-integral).  When drawing the column for a snapshot,
     # in order to fill the slot in row y (where the first row drawn on is
-    # row 1) with a half-char (eg. '.'), it must be >= (y - 1/2)*K.  In
-    # order to fill a row/column spot with a full-char (eg. ':'), it must be
-    # >= y*K.  For example, if K = 10 bytes, then the values 0, 4, 5, 9, 10,
-    # 14, 15, 19, 20, 24, 25, 29, 30 would be drawn like this (showing one
-    # per column):
+    # row 1) with a full-char (eg. ':'), it must be >= y*K.  For example, if
+    # K = 10 bytes, then the values 0, 4, 5, 9, 10, 14, 15, 19, 20, 24, 25,
+    # 29, 30 would be drawn like this (showing one per column):
     #
-    #                       y    (y - 1/2) * K          y * K
-    #                       -    -------------          -----------
-    # 30 |          ..:     3    (3 - 1/2) * 10 = 25    3 * 10 = 30
-    # 20 |      ..:::::     2    (2 - 1/2) * 10 = 15    2 * 10 = 20
-    # 10 |  ..:::::::::     1    (1 - 1/2) * 10 = 5     1 * 10 = 10
+    #                       y    y * K
+    #                       -    -----------
+    # 30 |            :     3    3 * 10 = 30
+    # 20 |        :::::     2    2 * 10 = 20
+    # 10 |    :::::::::     1    1 * 10 = 10
     # 0  +-------------
 
-    my $peak_full_char     = '#';                            
-    my $detailed_full_char = '@';
-    my $normal_full_char   = ':';
-    my $peak_half_char     = ',';                            
-    my $detailed_half_char = ',';
-    my $normal_half_char   = '.';
+    my $peak_char     = '#';                            
+    my $detailed_char = '@';
+    my $normal_char   = ':';
 
     # Work out how many bytes each row represents.  If the peak size was 0,
     # make it 1 so that the Y-axis covers a non-zero range of values.
@@ -534,9 +529,15 @@ sub read_input_file()
     if (0 == $end_time          ) { $end_time           = 1; }
     my $K = $peak_mem_total_szB / $graph_y;
 
+       $x          = 0;
+    my $prev_x     = 0;
+    my $prev_y_max = 0;
+    my $prev_char  = ':';
+
     for (my $i = 0; $i < $n_snapshots; $i++) {
  
         # Work out which column this snapshot belongs to.  
+        $prev_x = $x;
         my $x_pos_frac = ($times[$i] / ($end_time)) * $graph_x;
         $x = int($x_pos_frac) + 1;    # +1 due to Y-axis
         # The final snapshot will spill over into the n+1th column, which
@@ -547,41 +548,49 @@ sub read_input_file()
             $x = $graph_x;
         }
 
-        # Draw the column if:                                
-        # - it's the peak column, or                         
-        # - it's a detailed column, and we won't overwrite the peak column, or
-        # - it's a normal column, and we won't overwrite the peak column or a 
-        #   detailed column. 
-        my $should_draw_column = 
-            (($i == $peak_num) or                            
-             ($is_detaileds[$i] and $graph[$x][1] ne $peak_full_char) or   
-             ($graph[$x][1] ne $peak_full_char and           
-              $graph[$x][1] ne $detailed_full_char));        
-
-        if ($should_draw_column) {
-            # If it's detailed, mark the X-axis.  Also choose the full-slot
-            # char.
-            my ($full_char, $half_char);
-            if ($i == $peak_num)  {                          
-                $full_char = $peak_full_char;                
-                $half_char = $peak_half_char;
-            } elsif ($is_detaileds[$i])  {    
-                $full_char = $detailed_full_char;
-                $half_char = $detailed_half_char;
-            } else {
-                $full_char = $normal_full_char;
-                $half_char = $normal_half_char;
-            }
-            # Grow this snapshot bar from bottom to top.
-            for ($y = 1; $y <= $graph_y; $y++) {
-                if ($mem_total_Bs[$i] >= ($y - 1/2) * $K) {
-                    $graph[$x][$y] = $half_char;
-                } 
-                if ($mem_total_Bs[$i] >= $y * $K) {
-                    $graph[$x][$y] = $full_char;
-                }
+        # If there was a gap between the previous snapshot's column and this
+        # one, we draw a horizontal line in the gap (so long as it doesn't
+        # trash the x-axis).  Without this, graphs with a few sparse
+        # snapshots look funny -- as if the memory usage is in temporary
+        # spikes.
+        if ($prev_y_max > 0) {
+            for (my $x2 = $prev_x + 1; $x2 < $x; $x2++) {
+                $graph[$x2][$prev_y_max] = $prev_char;
             }
         }
+
+        # Choose the column char.
+        my $char;
+        if    ($i == $peak_num)   { $char = $peak_char;     }
+        elsif ($is_detaileds[$i]) { $char = $detailed_char; }
+        else                      { $char = $normal_char;   }
+
+        # Grow this snapshot bar from bottom to top.
+        my $y_max = 0;
+        for ($y = 1; $y <= $graph_y; $y++) {
+            if ($mem_total_Bs[$i] >= $y * $K) {
+                # Priority order for chars: peak > detailed > normal
+                my $should_draw_char = 
+                    (($char eq $peak_char)
+                     or
+                     ($char eq $detailed_char and 
+                      $graph[$x][$y] ne $peak_char
+                     )
+                     or
+                     ($char eq $normal_char and
+                      $graph[$x][$y] ne $peak_char and
+                      $graph[$x][$y] ne $detailed_char
+                     )
+                    );
+
+                if ($should_draw_char) {
+                    $graph[$x][$y] = $char;
+                }
+                $y_max = $y;
+            }
+        }
+        $prev_y_max = $y_max;
+        $prev_char = $char;
     }
 
     #-------------------------------------------------------------------------
@@ -669,5 +678,3 @@ read_input_file();
 ##--------------------------------------------------------------------##
 ##--- end                                              ms_print.in ---##
 ##--------------------------------------------------------------------##
-
-

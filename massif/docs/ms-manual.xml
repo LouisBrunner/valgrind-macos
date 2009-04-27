@@ -174,14 +174,14 @@ as the program executed:</para>
      |                                                                       #
      |                                                                       #
      |                                                                       #
+     |                                                                       #
+     |                                                                       #
+     |                                                                       #
      |                                                                      :#
      |                                                                      :#
      |                                                                      :#
-     |                                                                      :#
-     |                                                                      :#
-     |                                                                      :#
-   0 +----------------------------------------------------------------------->ki
-     0                                                                   121.8
+   0 +----------------------------------------------------------------------->ki     0                                                                   113.4
+
 
 Number of snapshots: 25
  Detailed snapshots: [9, 14 (peak), 24]
@@ -201,40 +201,40 @@ allocated/deallocated on the heap and stack(s).</para>
 re-run ms_print, we get this more useful graph:</para>
 
 <screen><![CDATA[
-    KB
-19.63^                                               #                        
-     |                                               #  .                     
-     |                                               #  : .                   
-     |                                               #  : :  .                
-     |                                      :        #  : :  : .              
-     |                                      :        #  : :  : : .            
-     |                                      :        #  : :  : : :  .         
-     |                                      :        #  : :  : : :  : .       
-     |                            :         :        #  : :  : : :  : :  .    
-     |                            :         :        #  : :  : : :  : :  : .  
-     |                        :   :         :        #  : :  : : :  : :  : : ,
-     |                     @  :   :         :        #  : :  : : :  : :  : : @
-     |                   : @  :   :         :        #  : :  : : :  : :  : : @
-     |                :  : @  :   :         :        #  : :  : : :  : :  : : @
-     |              : :  : @  :   :         :        #  : :  : : :  : :  : : @
-     |            : : :  : @  :   :         :        #  : :  : : :  : :  : : @
-     |         :  : : :  : @  :   :         :        #  : :  : : :  : :  : : @
-     |       : :  : : :  : @  :   :         :        #  : :  : : :  : :  : : @
-     |    :  : :  : : :  : @  :   :         :        #  : :  : : :  : :  : : @
-     |  : :  : :  : : :  : @  :   :         :        #  : :  : : :  : :  : : @
-   0 +----------------------------------------------------------------------->KB
-     0                                                                   29.48
+19.63^                                               ###                      
+     |                                               #                        
+     |                                               #  ::                    
+     |                                               #  : :::                 
+     |                                      :::::::::#  : :  ::               
+     |                                      :        #  : :  : ::             
+     |                                      :        #  : :  : : :::          
+     |                                      :        #  : :  : : :  ::        
+     |                            :::::::::::        #  : :  : : :  : :::     
+     |                            :         :        #  : :  : : :  : :  ::   
+     |                        :::::         :        #  : :  : : :  : :  : :: 
+     |                     @@@:   :         :        #  : :  : : :  : :  : : @
+     |                   ::@  :   :         :        #  : :  : : :  : :  : : @
+     |                :::: @  :   :         :        #  : :  : : :  : :  : : @
+     |              :::  : @  :   :         :        #  : :  : : :  : :  : : @
+     |            ::: :  : @  :   :         :        #  : :  : : :  : :  : : @
+     |         :::: : :  : @  :   :         :        #  : :  : : :  : :  : : @
+     |       :::  : : :  : @  :   :         :        #  : :  : : :  : :  : : @
+     |    :::: :  : : :  : @  :   :         :        #  : :  : : :  : :  : : @
+     |  :::  : :  : : :  : @  :   :         :        #  : :  : : :  : :  : : @
+   0 +----------------------------------------------------------------------->KB     0                                                                   29.48
 
 Number of snapshots: 25
  Detailed snapshots: [9, 14 (peak), 24]
 ]]></screen>
 
 <para>Each vertical bar represents a snapshot, i.e. a measurement of the
-memory usage at a certain point in time.  The text at the bottom show that
-25 snapshots were taken for this program, which is one per heap
-allocation/deallocation, plus a couple of extras.  Massif starts by taking
-snapshots for every heap allocation/deallocation, but as a program runs for
-longer, it takes snapshots less frequently.  It also discards older
+memory usage at a certain point in time.  If the next snapshot is more than
+one column away, a horizontal line of characters is drawn from the top of
+the snapshot to just before the next snapshot column.  The text at the
+bottom show that 25 snapshots were taken for this program, which is one per
+heap allocation/deallocation, plus a couple of extras.  Massif starts by
+taking snapshots for every heap allocation/deallocation, but as a program
+runs for longer, it takes snapshots less frequently.  It also discards older
 snapshots as the program goes on;  when it reaches the maximum number of
 snapshots (100 by default, although changeable with the
 <computeroutput>--max-snapshots</computeroutput> option) half of them are
@@ -243,12 +243,12 @@ maintained.</para>
 
 <para>Most snapshots are <emphasis>normal</emphasis>, and only basic
 information is recorded for them.  Normal snapshots are represented in the
-graph by bars consisting of ':' and '.' characters.</para>
+graph by bars consisting of ':' characters.</para>
 
 <para>Some snapshots are <emphasis>detailed</emphasis>.  Information about
 where allocations happened are recorded for these snapshots, as we will see
 shortly.  Detailed snapshots are represented in the graph by bars consisting
-of '@' and ',' characters.  The text at the bottom show that 3 detailed
+of '@' characters.  The text at the bottom show that 3 detailed
 snapshots were taken for this program (snapshots 9, 14 and 24).  By default,
 every 10th snapshot is detailed, although this can be changed via the
 <computeroutput>--detailed-freq</computeroutput> option.</para>
@@ -256,7 +256,7 @@ every 10th snapshot is detailed, although this can be changed via the
 <para>Finally, there is at most one <emphasis>peak</emphasis> snapshot.  The
 peak snapshot is a detailed snapshot, and records the point where memory
 consumption was greatest.  The peak snapshot is represented in the graph by
-a bar consisting of '#' and ',' characters.  The text at the bottom shows
+a bar consisting of '#' characters.  The text at the bottom shows
 that snapshot 14 was the peak.  Note that for tiny programs that never
 deallocate heap memory, Massif will not record a peak snapshot.</para>
 
@@ -272,26 +272,26 @@ details.</para>
 browser.  It shows what graphs for larger programs look like.</para>
 <screen><![CDATA[
     MB
-3.952^                                                                    #.
-     |                                                                  ,@#:
-     |                                                            , .. :@@#:
-     |                                                            @ :: :@@#:.
-     |                                                           ,@ :: :@@#::
-     |                                                       , .@@@ :: :@@#:.
-     |                                                      .@ :@@@ :: :@@#::
+3.952^                                                                    # 
+     |                                                                   @#:
+     |                                                                 :@@#:
+     |                                                            @@::::@@#: 
+     |                                                            @ :: :@@#::
+     |                                                          @@@ :: :@@#::
+     |                                                       @@:@@@ :: :@@#::
+     |                                                    :::@ :@@@ :: :@@#::
      |                                                    : :@ :@@@ :: :@@#::
-     |                                                   ,: :@ :@@@ :: :@@#::
-     |                                                 ,:@: :@ :@@@ :: :@@#::.
+     |                                                  :@: :@ :@@@ :: :@@#:: 
      |                                                @@:@: :@ :@@@ :: :@@#:::
-     |                         ,,:      .::   . ,  .::@@:@: :@ :@@@ :: :@@#:::
-     |                       .:@@:   .: ::: ::: @  :::@@:@: :@ :@@@ :: :@@#:::
-     |                    ,: ::@@:  ::: ::::::: @  :::@@:@: :@ :@@@ :: :@@#:::
-     |                    @: ::@@:  ::: ::::::: @  :::@@:@: :@ :@@@ :: :@@#::.
+     |                           :       ::         ::@@:@: :@ :@@@ :: :@@#:::
+     |                        :@@:    ::::: ::::@@@:::@@:@: :@ :@@@ :: :@@#:::
+     |                     ::::@@:  ::: ::::::: @  :::@@:@: :@ :@@@ :: :@@#:::
      |                    @: ::@@:  ::: ::::::: @  :::@@:@: :@ :@@@ :: :@@#:::
-     |                  , @: ::@@:: ::: ::::::: @  :::@@:@: :@ :@@@ :: :@@#:::
-     |                ::@ @: ::@@:: ::: ::::::: @  :::@@:@: :@ :@@@ :: :@@#:::
-     |           , :::::@ @: ::@@:: ::: ::::::: @  :::@@:@: :@ :@@@ :: :@@#:::
-     |         ..@ :::::@ @: ::@@:: ::: ::::::: @  :::@@:@: :@ :@@@ :: :@@#:::
+     |                    @: ::@@:  ::: ::::::: @  :::@@:@: :@ :@@@ :: :@@#:::
+     |                    @: ::@@:::::: ::::::: @  :::@@:@: :@ :@@@ :: :@@#:::
+     |                ::@@@: ::@@:: ::: ::::::: @  :::@@:@: :@ :@@@ :: :@@#:::
+     |             :::::@ @: ::@@:: ::: ::::::: @  :::@@:@: :@ :@@@ :: :@@#:::
+     |           @@:::::@ @: ::@@:: ::: ::::::: @  :::@@:@: :@ :@@@ :: :@@#:::
    0 +----------------------------------------------------------------------->Mi
      0                                                                   626.4
 
@@ -424,8 +424,9 @@ of the 8,000B asked for by line 5, half of it was due to a call from line
 11, and half was due to a call from line 25.</para>
 
 <para>In short, Massif collates the stack trace of every single allocation
-point in the program into a single tree, which gives a complete picture of
-how and why all heap memory was allocated.</para>
+point in the program into a single tree, which gives a complete picture at
+a particular point in time of how and why all heap memory was
+allocated.</para>
 
 <para>Note that the tree entries correspond not to functions, but to
 individual code locations.  For example, if function <function>A</function>
@@ -436,16 +437,16 @@ contrast, if <function>B</function> calls <function>A</function> repeatedly
 from line 15 (e.g. due to a loop), then each of those calls will be
 represented by the same stack trace in the tree.</para>
 
-<para>Note also that tree entry with children in the example satisfies an
+<para>Note also that each tree entry with children in the example satisfies an
 invariant: the entry's size is equal to the sum of its children's sizes.
 For example, the first entry has size 20,000B, and its children have sizes
 10,000B, 8,000B, and 2,000B.  In general, this invariant almost always
 holds.  However, in rare circumstances stack traces can be malformed, in
 which case a stack trace can be a sub-trace of another stack trace.  This
 means that some entries in the tree may not satisfy the invariant -- the
-entry's size will be greater than the sum of its children's sizes.  Massif
-can sometimes detect when this happens;  if it does, it issues a
-warning:</para>
+entry's size will be greater than the sum of its children's sizes.  This is
+not a big problem, but could make the results confusing.  Massif can
+sometimes detect when this happens;  if it does, it issues a warning:</para>
 
 <screen><![CDATA[
 Warning: Malformed stack trace detected.  In Massif's output,

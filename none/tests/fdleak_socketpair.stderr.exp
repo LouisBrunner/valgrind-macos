@@ -1,19 +1,19 @@
 
 
 FILE DESCRIPTORS: 5 open at exit.
-Open AF_UNIX socket .: <unknown>
+Open AF_UNIX socket ...: <unknown>
    ...
 
-Open AF_UNIX socket .: <unknown>
+Open AF_UNIX socket ...: <unknown>
    ...
 
-Open file descriptor .: .
+Open file descriptor ...: ...
    <inherited from parent>
 
-Open file descriptor .: .
+Open file descriptor ...: ...
    <inherited from parent>
 
-Open file descriptor .: /dev/null
+Open file descriptor ...: /dev/null
    <inherited from parent>
 
 

@@ -33,44 +33,22 @@ char filea[24];
 char fileb[24];
 char sock[24];
 
-void
-server (void)
+void server (void)
 {
    int s, fd1, fd2;
    struct sockaddr_un addr;
    
-   fd1 = open(filea, O_RDWR | O_CREAT | O_TRUNC, 0750);
-   if(fd1 == -1) {
-      perror("open");
-      exit(1);
-   }
-
-   fd2 = open(fileb, O_RDWR | O_CREAT | O_TRUNC, 0750);
-   if(fd2 == -1) {
-      perror("open");
-      exit(1);
-   }
-
-   s = socket(PF_UNIX, SOCK_STREAM, 0);
-   if(s == -1) {
-      perror("socket");
-      exit(1);
-   }
+   fd1 = DO( open(filea, O_RDWR | O_CREAT | O_TRUNC, 0750) );
+   fd2 = DO( open(fileb, O_RDWR | O_CREAT | O_TRUNC, 0750) );
+   s   = DO( socket(PF_UNIX, SOCK_STREAM, 0) );
 
    memset(&addr, 0, sizeof(addr));
    addr.sun_family = AF_UNIX;
    sprintf(addr.sun_path, "%s", sock);
 
-   unlink(addr.sun_path);
-   if(bind(s, (struct sockaddr *)&addr, sizeof(addr)) == -1) {
-      perror("bind");
-      exit(1);
-   }
-
-   if(listen(s, 5) == -1) {
-      perror("listen");
-      exit(1);
-   }
+   unlink(sock);
+   DO( bind(s, (struct sockaddr *)&addr, sizeof(addr)) );
+   DO( listen(s, 5) );
 
    {
       int x;
@@ -82,11 +60,7 @@ server (void)
       struct iovec iov[1];
 
       memset(&baddr, 0, sizeof(baddr));
-      x = accept(s, (struct sockaddr *)&baddr, &baddrsize);
-      if(x == -1) {
-         perror("accept");
-         exit(1);
-      }
+      x = DO( accept(s, (struct sockaddr *)&baddr, &baddrsize) );
 
       msg.msg_control = buf;
       msg.msg_controllen = sizeof(buf);
@@ -103,15 +77,11 @@ server (void)
       msg.msg_iov = iov;
       msg.msg_iovlen = 1;
 
-      if(sendmsg(x, &msg, 0) == -1) {
-         perror("sendmsg");
-         exit(1);
-      }
+      DO( sendmsg(x, &msg, 0) );
    }
 }
 
-void
-client (void)
+void client (void)
 {
    int s, fd1 = -1, fd2 = -1, size, count = 0, ret;
    struct sockaddr_un addr;
@@ -129,7 +99,7 @@ client (void)
    iov[0].iov_len = sizeof(buf);
 
    s = socket(PF_UNIX, SOCK_STREAM, 0);
-   if(s == -1) {
+   if (s == -1) {
       perror("socket");
       exit(1);
    }
@@ -140,16 +110,16 @@ client (void)
    do {
      count++;
      ret = connect(s, (struct sockaddr *)&addr, sizeof(addr));
-     if(ret == -1) sleep(1);
+     if (ret == -1) sleep(1);
    } while (count < 10 && ret == -1);
 
-   if(ret == -1) {
+   if (ret == -1) {
       perror("connect");
       exit(1);
    }
 
   again:
-   if((size = recvmsg(s, &msg, 0)) == -1) {
+   if ((size = recvmsg(s, &msg, 0)) == -1) {
       if (errno == EINTR)
 	 goto again;		/* SIGCHLD from server exiting could interrupt */
       perror("recvmsg");
@@ -158,8 +128,8 @@ client (void)
 
 
    cmsg = CMSG_FIRSTHDR(&msg);
-   while(cmsg) {
-      if(cmsg->cmsg_level == SOL_SOCKET &&
+   while (cmsg) {
+      if (cmsg->cmsg_level == SOL_SOCKET &&
          cmsg->cmsg_type == SCM_RIGHTS &&
          cmsg->cmsg_len == CMSG_LEN(sizeof(int) * 2)) {
          fd1 = ((int *)CMSG_DATA(cmsg))[0];
@@ -169,20 +139,14 @@ client (void)
       cmsg = CMSG_NXTHDR(&msg, cmsg);
    }
 
-   if(fd1 != -1) write(fd1, "Yeah 1\n", 8);
-   if(fd2 != -1) write(fd2, "Yeah 2\n", 8);
+   if (fd1 != -1) write(fd1, "Yeah 1\n", 8);
+   if (fd2 != -1) write(fd2, "Yeah 2\n", 8);
 }
 
 
-int
-main (int argc, char **argv)
+int main (int argc, char **argv)
 {
    int pid, status;
-
-
-
-
-
 
    CLOSE_INHERITED_FDS;
 
@@ -191,7 +155,7 @@ main (int argc, char **argv)
    sprintf(fileb, "/tmp/data2.%d", pid);
    sprintf(sock, "/tmp/sock.%d", pid);
 
-   if((pid = fork()) == 0) {
+   if ((pid = fork()) == 0) {
       server();
       return 0;
    }
@@ -200,8 +164,8 @@ main (int argc, char **argv)
 
    wait(&status);
 
-   unlink(filea);
-   unlink(fileb);
-   unlink(sock);
+   DO( unlink(filea) );
+   DO( unlink(fileb) );
+   DO( unlink(sock) );
    return 0;
 }

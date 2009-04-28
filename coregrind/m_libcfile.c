@@ -74,15 +74,20 @@ Int VG_(safe_fd)(Int oldfd)
    or if it doesn't exist, we return False. */
 Bool VG_(resolve_filename) ( Int fd, HChar* buf, Int n_buf )
 {
+#  if defined(VGO_linux)
    HChar tmp[64];
-
    VG_(sprintf)(tmp, "/proc/self/fd/%d", fd);
    VG_(memset)(buf, 0, n_buf);
-
    if (VG_(readlink)(tmp, buf, n_buf) > 0 && buf[0] == '/')
       return True;
    else
       return False;
+#  elif defined(VGO_aix5)
+   I_die_here; /* maybe just return False? */
+   return False;
+#  else
+#     error "need fd-to-filename for this OS"
+#  endif
 }
 
 SysRes VG_(open) ( const Char* pathname, Int flags, Int mode )

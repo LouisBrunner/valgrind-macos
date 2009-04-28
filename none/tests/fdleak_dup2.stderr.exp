@@ -1,22 +1,22 @@
 
 
 FILE DESCRIPTORS: 6 open at exit.
-Open file descriptor .: /dev/null
+Open file descriptor ...: /dev/null
    ...
 
-Open file descriptor .: /dev/null
+Open file descriptor ...: /dev/null
    ...
 
-Open file descriptor .: /dev/null
+Open file descriptor ...: /dev/null
    ...
 
-Open file descriptor .: .
+Open file descriptor ...: ...
    <inherited from parent>
 
-Open file descriptor .: .
+Open file descriptor ...: ...
    <inherited from parent>
 
-Open file descriptor .: /dev/null
+Open file descriptor ...: /dev/null
    <inherited from parent>
 
 

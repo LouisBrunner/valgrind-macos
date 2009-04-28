@@ -1,46 +1,46 @@
 
 
 FILE DESCRIPTORS: 7 open at exit.
-Open AF_UNIX socket .: /tmp/sock
+Open AF_UNIX socket ...: /tmp/sock
    ...
 
-Open AF_UNIX socket .: /tmp/sock
+Open AF_UNIX socket ...: /tmp/sock
    ...
 
-Open file descriptor .: /tmp/data2
+Open file descriptor ...: /tmp/data2
    ...
 
-Open file descriptor .: /tmp/data1
+Open file descriptor ...: /tmp/data1
    ...
 
-Open file descriptor .: .
+Open file descriptor ...: ...
    <inherited from parent>
 
-Open file descriptor .: .
+Open file descriptor ...: ...
    <inherited from parent>
 
-Open file descriptor .: /dev/null
+Open file descriptor ...: /dev/null
    <inherited from parent>
 
 
 
 FILE DESCRIPTORS: 6 open at exit.
-Open file descriptor .: /tmp/data2
+Open file descriptor ...: /tmp/data2
    ...
 
-Open file descriptor .: /tmp/data1
+Open file descriptor ...: /tmp/data1
    ...
 
-Open AF_UNIX socket .: <unknown>
+Open AF_UNIX socket ...: <unknown>
    ...
 
-Open file descriptor .: .
+Open file descriptor ...: ...
    <inherited from parent>
 
-Open file descriptor .: .
+Open file descriptor ...: ...
    <inherited from parent>
 
-Open file descriptor .: /dev/null
+Open file descriptor ...: /dev/null
    <inherited from parent>
 
 

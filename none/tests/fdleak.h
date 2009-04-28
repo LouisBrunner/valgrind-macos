@@ -1,6 +1,19 @@
 #ifndef _FDLEAK_H_
 #define _FDLEAK_H_
 
+#include <stdlib.h>
+#include <stdio.h>
+
+#define DO(op) \
+   ({ \
+      long res = op; \
+      if (res < 0) { \
+         perror(#op); \
+         exit(1); \
+      }; \
+      res; \
+   })
+
 /*
  * The macro below closes file descriptors inherited from the process
  * that forked the current process. Close these file descriptors right

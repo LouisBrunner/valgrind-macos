@@ -704,13 +704,12 @@ void VG_(show_open_fds) (void)
    VG_(message)(Vg_UserMsg, "");
 }
 
-/* If /proc/self/fd doesn't exist for some weird reason (like you've
-   got a kernel that doesn't have /proc support compiled in), then we
-   need to find out what file descriptors we inherited from our parent
-   process the hard way - by checking each fd in turn. */
-
+/* If /proc/self/fd doesn't exist (e.g. you've got a Linux kernel that doesn't
+   have /proc support compiled in, or a non-Linux kernel), then we need to
+   find out what file descriptors we inherited from our parent process the
+   hard way - by checking each fd in turn. */
 static
-void do_hacky_preopened(void)
+void init_preopened_fds_without_proc_self_fd(void)
 {
    struct vki_rlimit lim;
    UInt count;
@@ -719,15 +718,15 @@ void do_hacky_preopened(void)
    if (VG_(getrlimit) (VKI_RLIMIT_NOFILE, &lim) == -1) {
       /* Hmm.  getrlimit() failed.  Now we're screwed, so just choose
          an arbitrarily high number.  1024 happens to be the limit in
-         the 2.4 kernels. */
+         the 2.4 Linux kernels. */
       count = 1024;
    } else {
       count = lim.rlim_cur;
    }
 
    for (i = 0; i < count; i++)
-      if(VG_(fcntl)(i, VKI_F_GETFL, 0) != -1)
-         ML_(record_fd_open_nameless)(-1, i);
+      if (VG_(fcntl)(i, VKI_F_GETFL, 0) != -1)
+         ML_(record_fd_open_named)(-1, i);
 }
 
 /* Initialize the list of open file descriptors with the file descriptors
@@ -735,13 +734,15 @@ void do_hacky_preopened(void)
 
 void VG_(init_preopened_fds)(void)
 {
+// Nb: AIX5 is handled in syswrap-aix5.c.
+#if defined(VGO_linux)
    Int ret;
    struct vki_dirent d;
    SysRes f;
 
    f = VG_(open)("/proc/self/fd", VKI_O_RDONLY, 0);
    if (f.isError) {
-      do_hacky_preopened();
+      init_preopened_fds_without_proc_self_fd();
       return;
    }
 
@@ -767,6 +768,10 @@ void VG_(init_preopened_fds)(void)
 
   out:
    VG_(close)(f.res);
+
+#else
+#  error Unknown OS
+#endif
 }
 
 static
@@ -1989,6 +1994,7 @@ PRE(sys_exit)
 
 PRE(sys_ni_syscall)
 {
+   // Nb: AIX5 is handled in syswrap-aix5.c.
    PRINT("non-existent syscall! (ni_syscall)");
    PRE_REG_READ0(long, "ni_syscall");
    SET_STATUS_Failure( VKI_ENOSYS );

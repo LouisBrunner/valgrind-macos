@@ -1155,6 +1155,11 @@ static Bool is_signal_from_kernel(int si_code)
 #endif
 }
 
+// This is an arbitrary si_code that we only use internally.  It corresponds
+// to the value SI_KERNEL on Linux, but that's not really of any significance
+// as far as I can determine.
+#define VKI_SEGV_MADE_UP_GPF    0x80
+
 /* 
    Perform the default action of a signal.  If the signal is fatal, it
    marks all threads as needing to exit, but it doesn't actually kill
@@ -1245,7 +1250,7 @@ static void default_action(const vki_siginfo_t *info, ThreadId tid)
 	    switch(info->si_code) {
 	    case VKI_SEGV_MAPERR: event = "Access not within mapped region"; break;
 	    case VKI_SEGV_ACCERR: event = "Bad permissions for mapped region"; break;
-	    case 128:
+	    case VKI_SEGV_MADE_UP_GPF:
 	       /* General Protection Fault: The CPU/kernel
 		  isn't telling us anything useful, but this
 		  is commonly the result of exceeding a
@@ -1477,19 +1482,19 @@ static void synth_fault_common(ThreadId tid, Addr addr, Int si_code)
 // permissions are bad.
 void VG_(synth_fault_perms)(ThreadId tid, Addr addr)
 {
-   synth_fault_common(tid, addr, 2);
+   synth_fault_common(tid, addr, VKI_SEGV_ACCERR);
 }
 
 // Synthesize a fault where the address there's nothing mapped at the address.
 void VG_(synth_fault_mapping)(ThreadId tid, Addr addr)
 {
-   synth_fault_common(tid, addr, 1);
+   synth_fault_common(tid, addr, VKI_SEGV_MAPERR);
 }
 
 // Synthesize a misc memory fault.
 void VG_(synth_fault)(ThreadId tid)
 {
-   synth_fault_common(tid, 0, 0x80);
+   synth_fault_common(tid, 0, VKI_SEGV_MADE_UP_GPF);
 }
 
 // Synthesise a SIGILL.

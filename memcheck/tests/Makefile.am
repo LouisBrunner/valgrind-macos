@@ -23,9 +23,11 @@ endif
 
 DIST_SUBDIRS = x86 amd64 linux x86-linux .
 
-noinst_SCRIPTS = filter_allocs \
-		 filter_stderr filter_xml \
-		 filter_varinfo3
+noinst_SCRIPTS = \
+	filter_addressable \
+	filter_allocs \
+	filter_stderr filter_xml \
+	filter_varinfo3
 
 EXTRA_DIST = $(noinst_SCRIPTS) \
 	addressable.stderr.exp addressable.stdout.exp addressable.vgtest \

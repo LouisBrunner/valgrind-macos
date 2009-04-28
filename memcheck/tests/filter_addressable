@@ -1,0 +1,7 @@
+#! /bin/sh
+
+./filter_allocs |
+perl -p -e 's/(default action of signal) [0-9]+ \(SIG(SEGV|BUS)\)/$1 N \(SIGSEGV or SIGBUS\)/' |
+perl -p -e 's/(Bad permissions for mapped region|Access not within mapped region|Non-existent physical address) at address 0x/Bad memory (SIGSEGV or SIGBUS) at address 0x/'
+
+

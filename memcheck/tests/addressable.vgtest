@@ -1,2 +1,2 @@
 prog: addressable
-stderr_filter: filter_allocs
+stderr_filter: filter_addressable

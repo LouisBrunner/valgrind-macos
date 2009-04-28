@@ -1137,6 +1137,24 @@ void VG_(kill_self)(Int sigNo)
    VG_(sigprocmask)(VKI_SIG_SETMASK, &origmask, NULL);
 }
 
+// The si_code describes where the signal came from.  Some come from the
+// kernel, eg.: seg faults, illegal opcodes.  Some come from the user, eg.:
+// from kill() (SI_USER), or timer_settime() (SI_TIMER), or an async I/O
+// request (SI_ASYNCIO).  There's lots of implementation-defined leeway in
+// POSIX, but the user vs. kernal distinction is what we want here.
+static Bool is_signal_from_kernel(int si_code)
+{
+#if defined(VGO_linux) || defined(VGO_aix5)
+   // On Linux, SI_USER is zero, negative values are from the user, positive
+   // values are from the kernel.  There are SI_FROMUSER and SI_FROMKERNEL
+   // macros but we don't use them here because other platforms don't have
+   // them.
+   return ( si_code > VKI_SI_USER ? True : False );
+#else
+#  error Unknown OS
+#endif
+}
+
 /* 
    Perform the default action of a signal.  If the signal is fatal, it
    marks all threads as needing to exit, but it doesn't actually kill
@@ -1208,15 +1226,17 @@ static void default_action(const vki_siginfo_t *info, ThreadId tid)
 	 core = False;
    }
 
-   if ( (VG_(clo_verbosity) > 1 || (could_core && info->si_code > VKI_SI_USER)) 
-        && !VG_(clo_xml) ) {
+   if ( (VG_(clo_verbosity) > 1 ||
+         (could_core && is_signal_from_kernel(info->si_code))
+        ) &&
+        !VG_(clo_xml) ) {
       VG_(message)(Vg_UserMsg, "");
       VG_(message)(Vg_UserMsg, 
                    "Process terminating with default action of signal %d (%s)%s", 
 		   sigNo, signame(sigNo), core ? ": dumping core" : "");
 
       /* Be helpful - decode some more details about this fault */
-      if (info->si_code > VKI_SI_USER) {
+      if (is_signal_from_kernel(info->si_code)) {
 	 const Char *event = NULL;
 	 Bool haveaddr = True;
 
@@ -1299,7 +1319,7 @@ static void default_action(const vki_siginfo_t *info, ThreadId tid)
          VG_(pp_ExeContext)( ec );
       }
       if (sigNo == VKI_SIGSEGV 
-          && info && info->si_code > VKI_SI_USER 
+          && info && is_signal_from_kernel(info->si_code)
           && info->si_code == VKI_SEGV_MAPERR) {
          VG_(message)(Vg_UserMsg, " If you believe this happened as a "
                                   "result of a stack overflow in your");
@@ -1744,7 +1764,24 @@ void sync_signalhandler ( Int sigNo, vki_siginfo_t *info, struct vki_ucontext *u
    info->si_code = (Short)info->si_code;
 #endif
 
-   if (info->si_code <= VKI_SI_USER) {
+   /* // debug code:
+   if (0) {
+      VG_(printf)("info->si_signo  %d\n", info->si_signo);
+      VG_(printf)("info->si_errno  %d\n", info->si_errno);
+      VG_(printf)("info->si_code   %d\n", info->si_code);
+      VG_(printf)("info->si_pid    %d\n", info->si_pid);
+      VG_(printf)("info->si_uid    %d\n", info->si_uid);
+      VG_(printf)("info->si_status %d\n", info->si_status);
+      VG_(printf)("info->si_addr   %p\n", info->si_addr);
+   }
+   */
+
+   /* Figure out if the signal is being sent from outside the process.
+      (Why do we care?)  If the signal is from the user rather than the
+      kernel,, then treat it more like an async signal than a sync signal --
+      that is, merely queue it for later delivery. */
+
+   if (!is_signal_from_kernel(info->si_code)) {
       /* If some user-process sent us one of these signals (ie,
 	 they're not the result of a faulting instruction), then treat
 	 it as an async signal.  This is tricky because we could get
@@ -1812,7 +1849,7 @@ void sync_signalhandler ( Int sigNo, vki_siginfo_t *info, struct vki_ucontext *u
 	 queue_signal(0, info);	/* shared pending */
 
       return;
-   } 
+   } /* if (!is_signal_from_kernel(info->si_code)) */
 
    if (VG_(clo_trace_signals)) {
       VG_(message)(Vg_DebugMsg, "signal %d arrived ... si_code=%d, "

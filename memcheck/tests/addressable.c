@@ -93,12 +93,12 @@ static void test5()
 
 static struct test {
 	void (*test)(void);
-	int sig;
+	int faults;
 } tests[] = {
 	{ test1, 0 },
-	{ test2, SIGSEGV },
+	{ test2, 1 },
 	{ test3, 0 },
-	{ test4, SIGSEGV },
+	{ test4, 1 },
 	{ test5, 0 },
 };
 static const int n_tests = sizeof(tests)/sizeof(*tests);
@@ -140,18 +140,19 @@ int main()
 			if (WIFSIGNALED(status)) {
 				assert(WTERMSIG(status) != 0);
 
-				if (WTERMSIG(status) == tests[i].sig)
+				if (1 == tests[i].faults &&
+				    (WTERMSIG(status) == SIGSEGV ||
+				     WTERMSIG(status) == SIGBUS))
 					printf("PASS\n");
 				else
 					printf("died with unexpected signal %d\n", 
 					       WTERMSIG(status));
 			} else if (WIFEXITED(status)) {
 				if (WEXITSTATUS(status) == 0) {
-					if (tests[i].sig == 0)
+					if (tests[i].faults == 0)
 						printf("PASS\n");
 					else
-						printf("exited without expected signal %d\n",
-						       tests[i].sig);
+						printf("exited without expected SIGSEGV or SIGBUS signal\n");
 				} else
 					printf("exited with unexpected status %d\n",
 					       WEXITSTATUS(status));

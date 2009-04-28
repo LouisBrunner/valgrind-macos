@@ -1,4 +1,9 @@
-/* Test program that invokes pthread_create@GLIBC_2.0(). */
+/*
+ * Test program that invokes pthread_create@GLIBC_2.0().
+ *
+ * Note: pthread_create@GLIBC_2.0() is only available in 32-bit glibc versions,
+ * not in 64-bit versions.
+ */
 
 
 #include <pthread.h>

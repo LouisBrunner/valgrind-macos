@@ -4,8 +4,8 @@
 
 static void handler(int sig, siginfo_t *info, void *v)
 {
-	printf("info: sig=%d code=%d addr=%p\n",
-	       info->si_signo, info->si_code, info->si_addr);
+	printf("info: sig=%d code=%d addr=0x%lx\n",
+	       info->si_signo, info->si_code, (unsigned long)info->si_addr);
 	exit(0);
 }
 

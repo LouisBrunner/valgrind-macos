@@ -2189,11 +2189,11 @@ Bool ML_(read_pdb_debug_info)(
 
    if (VG_(clo_verbosity) > 1) {
       VG_(message)(Vg_DebugMsg,
-                   "rx_map: avma %#lx size %7lu foff %lu\n",
-                   di->rx_map_avma, di->rx_map_size, di->rx_map_foff);
+                   "rx_map: avma %#lx size %7lu foff %llu\n",
+                   di->rx_map_avma, di->rx_map_size, (Off64T)di->rx_map_foff);
       VG_(message)(Vg_DebugMsg,
-                   "rw_map: avma %#lx size %7lu foff %lu\n",
-                   di->rw_map_avma, di->rw_map_size, di->rw_map_foff);
+                   "rw_map: avma %#lx size %7lu foff %llu\n",
+                   di->rw_map_avma, di->rw_map_size, (Off64T)di->rw_map_foff);
 
       VG_(message)(Vg_DebugMsg,
                    "  text: avma %#lx svma %#lx size %7lu bias %#lx\n",

@@ -24,7 +24,7 @@ void server ()
    memset(&addr, 0, sizeof(addr));
    addr.sin_family = AF_INET;
    addr.sin_addr.s_addr = inet_addr("127.0.0.1");
-   addr.sin_port = 12321;
+   addr.sin_port = htons(12321);
 
    DO( bind(s, (struct sockaddr *)&addr, sizeof(addr)) );
 
@@ -42,16 +42,20 @@ void client ()
    struct sockaddr_in addr;
    char buf[1024];
 
-   s = DO( socket(PF_INET, SOCK_STREAM, 0) );
-
    addr.sin_family = AF_INET;
    addr.sin_addr.s_addr = inet_addr("127.0.0.1");
-   addr.sin_port = 12321;
+   addr.sin_port = htons(12321);
 
    do {
      count++;
+     s = DO( socket(PF_INET, SOCK_STREAM, 0) );
      ret = connect(s, (struct sockaddr *)&addr, sizeof(addr));
-     if (ret == -1) sleep(1);
+     if (ret == -1) {
+       // If the connect() failed, we close the socket and reopen it before
+       // trying again.  This isn't necessary on Linux, but it is on Darwin.
+       DO( close(s) );
+       sleep(1);
+     }
    } while (count < 10 && ret == -1);
 
    if (ret == -1) {

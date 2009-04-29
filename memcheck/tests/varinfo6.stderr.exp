@@ -1,4 +1,3 @@
-
 Uninitialised byte(s) found during client check request
    at 0x........: croak (varinfo6.c:34)
    by 0x........: mainSort (varinfo6.c:2999)
@@ -19,10 +18,3 @@ Uninitialised byte(s) found during client check request
    by 0x........: main (varinfo6.c:6532)
  Location 0x........ is 2 bytes inside local var "i"
  declared at varinfo6.c:1517, in frame #1 of thread 1
-
-ERROR SUMMARY: 10216 errors from 2 contexts (suppressed: 0 from 0)
-malloc/free: in use at exit: 0 bytes in 0 blocks.
-malloc/free: 10,253 allocs, 10,253 frees, 24,368,716 bytes allocated.
-For a detailed leak analysis,  rerun with: --leak-check=yes
-For counts of detected errors, rerun with: -v
-Use --track-origins=yes to see where uninitialised values come from

@@ -1,2 +1,2 @@
 prog: varinfo4
-vgopts: --read-var-info=yes
+vgopts: --read-var-info=yes -q

@@ -1,4 +1,3 @@
-
 Uninitialised byte(s) found during client check request
    at 0x........: croak (varinfo5so.c:29)
    by 0x........: varinfo1_main (varinfo5so.c:52)
@@ -178,10 +177,3 @@ Uninitialised byte(s) found during client check request
  Location 0x........ is 1 byte inside a[3].xyzzy[21].c2[2],
  declared at varinfo5so.c:135, in frame #1 of thread 1
 answer is 0
-
-ERROR SUMMARY: 20 errors from 20 contexts (suppressed: 0 from 0)
-malloc/free: in use at exit: 0 bytes in 0 blocks.
-malloc/free: 21 allocs, 21 frees, 23 bytes allocated.
-For a detailed leak analysis,  rerun with: --leak-check=yes
-For counts of detected errors, rerun with: -v
-Use --track-origins=yes to see where uninitialised values come from

@@ -113,7 +113,6 @@ EXTRA_DIST = $(noinst_SCRIPTS) \
 	shell_valid2 shell_valid2.vgtest shell_valid2.stderr.exp \
 	shell_valid3 shell_valid3.vgtest shell_valid3.stderr.exp \
 	shell_zerolength shell_zerolength.vgtest shell_zerolength.stderr.exp \
-	susphello.stdout.exp susphello.stderr.exp susphello.vgtest \
 	sha1_test.stderr.exp sha1_test.vgtest \
 	shortpush.stderr.exp shortpush.vgtest \
 	shorts.stderr.exp shorts.vgtest \
@@ -147,7 +146,7 @@ check_PROGRAMS = \
 	pth_stackalign \
 	rcrl readline1 res_search resolv \
 	rlimit_nofile selfrun sem semlimit sha1_test \
-	shortpush shorts stackgrowth sigstackgrowth susphello \
+	shortpush shorts stackgrowth sigstackgrowth \
 	syscall-restart1 syscall-restart2 system \
 	thread-exits threaded-fork threadederrno \
 	tls tls.so tls2.so vgprintf \
@@ -180,7 +179,6 @@ else
  res_search_LDADD       = -lresolv -lpthread
 endif
 semlimit_LDADD		= -lpthread
-susphello_LDADD		= -lpthread
 thread_exits_LDADD	= -lpthread
 threaded_fork_LDADD	= -lpthread
 threadederrno_LDADD	= -lpthread

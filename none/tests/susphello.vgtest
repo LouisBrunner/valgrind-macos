@@ -1,3 +1,0 @@
-prog: susphello
-# susphello seems broken; sometimes it just doesn't terminate (even natively)
-prereq: false

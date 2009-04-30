@@ -1809,6 +1809,7 @@ void sync_signalhandler ( Int sigNo,
       that is, merely queue it for later delivery. */
 
    if (from_outside) {
+      ThreadId qtid;
       /* If some user-process sent us one of these signals (ie,
 	 they're not the result of a faulting instruction), then treat
 	 it as an async signal.  This is tricky because we could get
@@ -1833,6 +1834,7 @@ void sync_signalhandler ( Int sigNo,
 	 VG_(core_panic)("async_signalhandler returned!?\n");
       }
 
+#     if defined(VGO_linux)
       if (info->VKI_SIGINFO_si_pid == 0) {
 	 /* There's a per-user limit of pending siginfo signals.  If
 	    you exceed this, by having more than that number of
@@ -1865,6 +1867,7 @@ void sync_signalhandler ( Int sigNo,
 	 resume_scheduler(tid);
 	 VG_(exit)(99);		/* If we can't resume, then just exit */
       }
+#     endif
 
       if (VG_(clo_trace_signals))
          VG_DMSG("Routing user-sent sync signal %d via queue", sigNo);
@@ -1872,10 +1875,12 @@ void sync_signalhandler ( Int sigNo,
       /* Since every thread has these signals unblocked, we can't rely
 	 on the kernel to route them properly, so we need to queue
 	 them manually. */
+      qtid = 0;         /* shared pending by default */
+#     if defined(VGO_linux)
       if (info->si_code == VKI_SI_TKILL)
-	 queue_signal(tid, info); /* directed to us specifically */
-      else
-	 queue_signal(0, info);	/* shared pending */
+	 qtid = tid;    /* directed to us specifically */
+#     endif
+      queue_signal(qtid, info);
 
       return;
    } /* if (!is_signal_from_kernel(info->si_code)) */

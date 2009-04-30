@@ -19,9 +19,10 @@ Process terminating with default action of signal N (SIGSEGV or SIGBUS)
  Bad memory (SIGSEGV or SIGBUS) at address 0x........
    at 0x........: test2 (addressable.c:51)
    by 0x........: main (addressable.c:125)
- If you believe this happened as a result of a stack overflow in your
- program's main thread (unlikely but possible), you can try to increase
- the size of the main thread stack using the --main-stacksize= flag.
+ If you believe this happened as a result of a stack
+ overflow in your program's main thread (unlikely but
+ possible), you can try to increase the size of the
+ main thread stack using the --main-stacksize= flag.
  The main thread stack size used in this run was ....
 
 ERROR SUMMARY: 2 errors from 2 contexts (suppressed: 0 from 0)

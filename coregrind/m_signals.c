@@ -1330,10 +1330,10 @@ static void default_action(const vki_siginfo_t *info, ThreadId tid)
       if (sigNo == VKI_SIGSEGV 
           && info && is_signal_from_kernel(info->si_code)
           && info->si_code == VKI_SEGV_MAPERR) {
-         VG_UMSG("If you believe this happened as a result of a stack" );
-         VG_UMSG("overflow in your program's main thread (unlikely but");
-         VG_UMSG("possible), you can try to increase the size of the"  );
-         VG_UMSG("main thread stack using the --main-stacksize= flag." );
+         VG_UMSG(" If you believe this happened as a result of a stack" );
+         VG_UMSG(" overflow in your program's main thread (unlikely but");
+         VG_UMSG(" possible), you can try to increase the size of the"  );
+         VG_UMSG(" main thread stack using the --main-stacksize= flag." );
          // FIXME: assumes main ThreadId == 1
          if (VG_(is_valid_tid)(1)) {
             VG_UMSG(" The main thread stack size used in this run was %d.",

@@ -1241,7 +1241,7 @@ static void default_action(const vki_siginfo_t *info, ThreadId tid)
          (could_core && is_signal_from_kernel(info->si_code))
         ) &&
         !VG_(clo_xml) ) {
-      VG_(message)(Vg_UserMsg, "");
+      VG_UMSG("");
       VG_UMSG("Process terminating with default action of signal %d (%s)%s", 
               sigNo, signame(sigNo), core ? ": dumping core" : "");
 
@@ -1311,10 +1311,9 @@ static void default_action(const vki_siginfo_t *info, ThreadId tid)
 
 	 if (event != NULL) {
 	    if (haveaddr)
-	       VG_(message)(Vg_UserMsg, " %s at address %p", 
-			    event, info->VKI_SIGINFO_si_addr);
+               VG_UMSG(" %s at address %p", event, info->VKI_SIGINFO_si_addr);
 	    else
-	       VG_(message)(Vg_UserMsg, " %s", event);
+               VG_UMSG(" %s", event);
 	 }
       }
       /* Print a stack trace.  Be cautious if the thread's SP is in an
@@ -1331,12 +1330,10 @@ static void default_action(const vki_siginfo_t *info, ThreadId tid)
       if (sigNo == VKI_SIGSEGV 
           && info && is_signal_from_kernel(info->si_code)
           && info->si_code == VKI_SEGV_MAPERR) {
-         VG_(message)(Vg_UserMsg, " If you believe this happened as a "
-                                  "result of a stack overflow in your");
-         VG_(message)(Vg_UserMsg, " program's main thread (unlikely but"
-                                  " possible), you can try to increase");
-         VG_(message)(Vg_UserMsg, " the size of the main thread stack"
-                                  " using the --main-stacksize= flag.");
+         VG_UMSG("If you believe this happened as a result of a stack" );
+         VG_UMSG("overflow in your program's main thread (unlikely but");
+         VG_UMSG("possible), you can try to increase the size of the"  );
+         VG_UMSG("main thread stack using the --main-stacksize= flag." );
          // FIXME: assumes main ThreadId == 1
          if (VG_(is_valid_tid)(1)) {
             VG_UMSG(" The main thread stack size used in this run was %d.",
@@ -1579,8 +1576,8 @@ void queue_signal(ThreadId tid, const vki_siginfo_t *si)
       least a non-siginfo signal gets deliviered.
    */
    if (sq->sigs[sq->next].si_signo != 0)
-      VG_(message)(Vg_UserMsg, "Signal %d being dropped from thread %d's queue",
-		   sq->sigs[sq->next].si_signo, tid);
+      VG_UMSG("Signal %d being dropped from thread %d's queue",
+              sq->sigs[sq->next].si_signo, tid);
 
    sq->sigs[sq->next] = *si;
    sq->next = (sq->next+1) % N_QUEUED_SIGNALS;
@@ -1848,12 +1845,11 @@ void sync_signalhandler ( Int sigNo,
 	    Since we depend on siginfo to work out why we were sent a
 	    signal and what we should do about it, we really can't
 	    continue unless we get it. */
-	 VG_(message)(Vg_UserMsg, "Signal %d (%s) appears to have lost its siginfo; I can't go on.",
-		      sigNo, signame(sigNo));
-	 VG_(message)(Vg_UserMsg, "  This may be because one of your programs has consumed your");
-	 VG_(message)(Vg_UserMsg, "  ration of siginfo structures.");
+         VG_UMSG("Signal %d (%s) appears to have lost its siginfo; "
+                 "I can't go on.", sigNo, signame(sigNo));
          VG_(printf)(
-"  For more information, see:\n"
+"  This may be because one of your programs has consumed your ration of\n"
+"  siginfo structures.  For more information, see:\n"
 "    http://kerneltrap.org/mailarchive/1/message/25599/thread\n"
 "  Basically, some program on your system is building up a large queue of\n"
 "  pending signals, and this causes the siginfo data for other signals to\n"

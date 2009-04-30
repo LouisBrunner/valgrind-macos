@@ -112,9 +112,12 @@
    Forwards decls.
    ------------------------------------------------------------------ */
 
-static void sync_signalhandler  ( Int sigNo, vki_siginfo_t *info, struct vki_ucontext * );
-static void async_signalhandler ( Int sigNo, vki_siginfo_t *info, struct vki_ucontext * );
-static void sigvgkill_handler	( Int sigNo, vki_siginfo_t *info, struct vki_ucontext * );
+static void sync_signalhandler  ( Int sigNo, vki_siginfo_t *info,
+                                             struct vki_ucontext * );
+static void async_signalhandler ( Int sigNo, vki_siginfo_t *info,
+                                             struct vki_ucontext * );
+static void sigvgkill_handler	( Int sigNo, vki_siginfo_t *info,
+                                             struct vki_ucontext * );
 
 static const Char *signame(Int sigNo);
 
@@ -130,6 +133,18 @@ typedef struct SigQueue {
 
 /* ------ Macros for pulling stuff out of ucontexts ------ */
 
+/* Q: what does UCONTEXT_SYSCALL_SYSRES do?  A: let's suppose the
+   machine context (uc) reflects the situation that a syscall had just
+   completed, quite literally -- that is, that the program counter was
+   now at the instruction following the syscall.  (or we're slightly
+   downstream, but we're sure no relevant register has yet changed
+   value.)  Then UCONTEXT_SYSCALL_SYSRES returns a SysRes reflecting
+   the result of the syscall; it does this by fishing relevant bits of
+   the machine state out of the uc.  Of course if the program counter
+   was somewhere else entirely then the result is likely to be
+   meaningless, so the caller of UCONTEXT_SYSCALL_SYSRES has to be
+   very careful to pay attention to the results only when it is sure
+   that the said constraint on the program counter is indeed valid. */
 #if defined(VGP_x86_linux)
 #  define VG_UCONTEXT_INSTR_PTR(uc)       ((uc)->uc_mcontext.eip)
 #  define VG_UCONTEXT_STACK_PTR(uc)       ((uc)->uc_mcontext.esp)
@@ -474,13 +489,13 @@ void calculate_SKSS_from_SCSS ( SKSS* dst )
       case VKI_SIGCONT:
 	 /* Let the kernel handle SIGCONT unless the client is actually
 	    catching it. */
-      case VKI_SIGCHLD:                                                        
-      case VKI_SIGWINCH:                                                       
-      case VKI_SIGURG:                                                         
-         /* For signals which are have a default action of Ignore,             
-            only set a handler if the client has set a signal handler.         
-            Otherwise the kernel will interrupt a syscall which                
-            wouldn't have otherwise been interrupted. */                 
+      case VKI_SIGCHLD:
+      case VKI_SIGWINCH:
+      case VKI_SIGURG:
+         /* For signals which are have a default action of Ignore,
+            only set a handler if the client has set a signal handler.
+            Otherwise the kernel will interrupt a syscall which
+            wouldn't have otherwise been interrupted. */
 	 if (scss.scss_per_sig[sig].scss_handler == VKI_SIG_DFL)
 	    skss_handler = VKI_SIG_DFL;
 	 else if (scss.scss_per_sig[sig].scss_handler == VKI_SIG_IGN)
@@ -557,28 +572,28 @@ void calculate_SKSS_from_SCSS ( SKSS* dst )
 extern void my_sigreturn(void);
 
 #if defined(VGP_x86_linux)
-#  define _MYSIG(name) \
+#  define _MY_SIGRETURN(name) \
    ".text\n" \
    "my_sigreturn:\n" \
    "	movl	$" #name ", %eax\n" \
    "	int	$0x80\n" \
    ".previous\n"
 #elif defined(VGP_amd64_linux)
-#  define _MYSIG(name) \
+#  define _MY_SIGRETURN(name) \
    ".text\n" \
    "my_sigreturn:\n" \
    "	movq	$" #name ", %rax\n" \
    "	syscall\n" \
    ".previous\n"
 #elif defined(VGP_ppc32_linux)
-#  define _MYSIG(name) \
+#  define _MY_SIGRETURN(name) \
    ".text\n" \
    "my_sigreturn:\n" \
    "	li	0, " #name "\n" \
    "	sc\n" \
    ".previous\n"
 #elif defined(VGP_ppc64_linux)
-#  define _MYSIG(name) \
+#  define _MY_SIGRETURN(name) \
    ".align   2\n" \
    ".globl   my_sigreturn\n" \
    ".section \".opd\",\"aw\"\n" \
@@ -592,12 +607,12 @@ extern void my_sigreturn(void);
    "	li	0, " #name "\n" \
    "	sc\n"
 #elif defined(VGP_ppc32_aix5)
-#  define _MYSIG(name) \
+#  define _MY_SIGRETURN(name) \
    ".globl my_sigreturn\n" \
    "my_sigreturn:\n" \
    ".long 0\n"
 #elif defined(VGP_ppc64_aix5)
-#  define _MYSIG(name) \
+#  define _MY_SIGRETURN(name) \
    ".globl my_sigreturn\n" \
    "my_sigreturn:\n" \
    ".long 0\n"
@@ -605,9 +620,9 @@ extern void my_sigreturn(void);
 #  error Unknown platform
 #endif
 
-#define MYSIG(name)  _MYSIG(name)
+#define MY_SIGRETURN(name)  _MY_SIGRETURN(name)
 asm(
-   MYSIG(__NR_rt_sigreturn)
+   MY_SIGRETURN(__NR_rt_sigreturn)
 );
 
 
@@ -701,7 +716,7 @@ static Bool on_sig_stack ( ThreadId tid, Addr m_SP )
 {
    ThreadState *tst = VG_(get_ThreadState)(tid);
 
-   return (m_SP - (Addr)tst->altstack.ss_sp < tst->altstack.ss_size);
+   return (m_SP - (Addr)tst->altstack.ss_sp < (Addr)tst->altstack.ss_size);
 }
 
 static Int sas_ss_flags ( ThreadId tid, Addr m_SP )
@@ -724,13 +739,18 @@ SysRes VG_(do_sys_sigaltstack) ( ThreadId tid, vki_stack_t* ss, vki_stack_t* oss
    if (VG_(clo_trace_signals))
       VG_(message)(Vg_DebugExtraMsg, 
          "sys_sigaltstack: tid %d, "
-         "ss %p, oss %p (current SP %p)",
-         tid, (void*)ss, (void*)oss, (void*)m_SP );
+         "ss %p{%p,sz=%llu,flags=0x%llx}, oss %p (current SP %p)",
+         tid, (void*)ss, 
+                   ss ? ss->ss_sp : 0,
+                   (ULong)(ss ? ss->ss_size : 0),
+                   (ULong)(ss ? ss->ss_flags : 0),
+         (void*)oss, (void*)m_SP );
 
    if (oss != NULL) {
       oss->ss_sp    = VG_(threads)[tid].altstack.ss_sp;
       oss->ss_size  = VG_(threads)[tid].altstack.ss_size;
-      oss->ss_flags = VG_(threads)[tid].altstack.ss_flags | sas_ss_flags(tid, m_SP);
+      oss->ss_flags = VG_(threads)[tid].altstack.ss_flags
+                      | sas_ss_flags(tid, m_SP);
    }
 
    if (ss != NULL) {
@@ -875,9 +895,9 @@ void do_sigprocmask_bitops ( Int vki_how,
 }
 
 static
-const Char *format_sigset ( const vki_sigset_t* set )
+HChar* format_sigset ( const vki_sigset_t* set )
 {
-   static Char buf[128];
+   static HChar buf[128];
    int w;
 
    VG_(strcpy)(buf, "");
@@ -913,12 +933,12 @@ void do_setmask ( ThreadId tid,
 {
    if (VG_(clo_trace_signals))
       VG_(message)(Vg_DebugExtraMsg, 
-		   "do_setmask: tid = %d how = %d (%s), set = %p %s", 
+		   "do_setmask: tid = %d how = %d (%s), newset = %p (%s)", 
 		   tid, how,
 		   how==VKI_SIG_BLOCK ? "SIG_BLOCK" : (
 		      how==VKI_SIG_UNBLOCK ? "SIG_UNBLOCK" : (
 			 how==VKI_SIG_SETMASK ? "SIG_SETMASK" : "???")),
-		   newset, format_sigset(newset));
+		   newset, newset ? format_sigset(newset) : "NULL" );
 
    /* Just do this thread. */
    vg_assert(VG_(is_valid_tid)(tid));
@@ -1004,7 +1024,8 @@ void VG_(clear_out_queued_signals)( ThreadId tid, vki_sigset_t* saved_mask )
 /* Set up a stack frame (VgSigContext) for the client's signal
    handler. */
 static
-void push_signal_frame ( ThreadId tid, const vki_siginfo_t *siginfo, const struct vki_ucontext *uc )
+void push_signal_frame ( ThreadId tid, const vki_siginfo_t *siginfo,
+                                       const struct vki_ucontext *uc )
 {
    Addr         esp_top_of_frame;
    ThreadState* tst;
@@ -1031,7 +1052,8 @@ void push_signal_frame ( ThreadId tid, const vki_siginfo_t *siginfo, const struc
          = (Addr)(tst->altstack.ss_sp) + tst->altstack.ss_size;
       if (VG_(clo_trace_signals))
          VG_(message)(Vg_DebugMsg,
-		      "delivering signal %d (%s) to thread %d: on ALT STACK (%p-%p; %ld bytes)",
+		      "delivering signal %d (%s) to thread %d: "
+                      "on ALT STACK (%p-%p; %ld bytes)",
 		      sigNo, signame(sigNo), tid, 
 		      tst->altstack.ss_sp,
 		      (UChar *)tst->altstack.ss_sp + tst->altstack.ss_size,
@@ -1063,7 +1085,7 @@ void push_signal_frame ( ThreadId tid, const vki_siginfo_t *siginfo, const struc
 
 static const Char *signame(Int sigNo)
 {
-   static Char buf[10];
+   static Char buf[20];
 
    switch(sigNo) {
       case VKI_SIGHUP:    return "SIGHUP";
@@ -1213,8 +1235,10 @@ static void default_action(const vki_siginfo_t *info, ThreadId tid)
    vg_assert(!core || (core && terminate));
 
    if (VG_(clo_trace_signals))
-      VG_(message)(Vg_DebugMsg, "delivering %d (code %d) to default handler; action: %s%s",
-		   sigNo, info->si_code, terminate ? "terminate" : "ignore", core ? "+core" : "");
+      VG_(message)(Vg_DebugMsg,
+         "delivering %d (code %d) to default handler; action: %s%s",
+         sigNo, info->si_code, terminate ? "terminate" : "ignore",
+         core ? "+core" : "");
 
    if (!terminate)
       return;			/* nothing to do */
@@ -1373,7 +1397,8 @@ static void default_action(const vki_siginfo_t *info, ThreadId tid)
    This updates the thread state, but it does not set it to be
    Runnable.
 */
-static void deliver_signal ( ThreadId tid, const vki_siginfo_t *info, const struct vki_ucontext *uc )
+static void deliver_signal ( ThreadId tid, const vki_siginfo_t *info,
+                                           const struct vki_ucontext *uc )
 {
    Int			sigNo = info->si_signo;
    SCSS_Per_Signal	*handler = &scss.scss_per_sig[sigNo];
@@ -1467,6 +1492,7 @@ static void synth_fault_common(ThreadId tid, Addr addr, Int si_code)
 
    vg_assert(VG_(threads)[tid].status == VgTs_Runnable);
 
+   VG_(memset)(&info, 0, sizeof(info));
    info.si_signo = VKI_SIGSEGV;
    info.si_code = si_code;
    info.VKI_SIGINFO_si_addr = (void*)addr;
@@ -1504,6 +1530,7 @@ void VG_(synth_sigill)(ThreadId tid, Addr addr)
 
    vg_assert(VG_(threads)[tid].status == VgTs_Runnable);
 
+   VG_(memset)(&info, 0, sizeof(info));
    info.si_signo = VKI_SIGILL;
    info.si_code  = VKI_ILL_ILLOPC; /* jrs: no idea what this should be */
    info.VKI_SIGINFO_si_addr = (void*)addr;
@@ -1520,6 +1547,8 @@ void VG_(synth_sigtrap)(ThreadId tid)
 
    vg_assert(VG_(threads)[tid].status == VgTs_Runnable);
 
+   VG_(memset)(&info, 0, sizeof(info));
+   VG_(memset)(&uc,   0, sizeof(uc));
    info.si_signo = VKI_SIGTRAP;
    info.si_code = VKI_TRAP_BRKPT; /* tjh: only ever called for a brkpt ins */
 #if defined(VGA_x86) || defined(VGA_amd64)
@@ -1625,12 +1654,17 @@ static vki_siginfo_t *next_queued(ThreadId tid, const vki_sigset_t *set)
    since that's the only time this set of signals is unblocked.
 */
 static 
-void async_signalhandler ( Int sigNo, vki_siginfo_t *info, struct vki_ucontext *uc )
+void async_signalhandler ( Int sigNo,
+                           vki_siginfo_t *info, struct vki_ucontext *uc )
 {
-   ThreadId tid = VG_(lwpid_to_vgtid)(VG_(gettid)());
-   ThreadState *tst = VG_(get_ThreadState)(tid);
+   ThreadId     tid = VG_(lwpid_to_vgtid)(VG_(gettid)());
+   ThreadState* tst = VG_(get_ThreadState)(tid);
 
-#ifdef VGO_linux
+   /* The thread isn't currently running, make it so before going on */
+   vg_assert(tst->status == VgTs_WaitSys);
+   VG_(acquire_BigLock)(tid, "async_signalhandler");
+
+#  if defined(VGO_linux)
    /* The linux kernel uses the top 16 bits of si_code for it's own
       use and only exports the bottom 16 bits to user space - at least
       that is the theory, but it turns out that there are some kernels
@@ -1640,16 +1674,11 @@ void async_signalhandler ( Int sigNo, vki_siginfo_t *info, struct vki_ucontext *
       mask them off) sign extends them when exporting to user space so
       we do the same thing here. */
    info->si_code = (Short)info->si_code;
-#endif
+#  endif
 
    if (VG_(clo_trace_signals))
       VG_(message)(Vg_DebugMsg, "Async handler got signal %d for tid %d info %d",
 		   sigNo, tid, info->si_code);
-
-   vg_assert(tst->status == VgTs_WaitSys);
-
-   /* The thread isn't currently running, make it so before going on */
-   VG_(acquire_BigLock)(tid, "async_signalhandler");
 
    /* Update thread state properly */
    VG_(fixup_guest_state_after_syscall_interrupted)(
@@ -1668,7 +1697,8 @@ void async_signalhandler ( Int sigNo, vki_siginfo_t *info, struct vki_ucontext *
       handler. */
    resume_scheduler(tid);
 
-   VG_(core_panic)("async_signalhandler: got unexpected signal while outside of scheduler");
+   VG_(core_panic)("async_signalhandler: got unexpected signal "
+                   "while outside of scheduler");
 }
 
 /* Extend the stack to cover addr.  maxsize is the limit the stack can grow to.
@@ -1745,9 +1775,13 @@ void VG_(set_fault_catcher)(void (*catcher)(Int, Addr))
    Receive a sync signal from the host. 
 */
 static
-void sync_signalhandler ( Int sigNo, vki_siginfo_t *info, struct vki_ucontext *uc )
+void sync_signalhandler ( Int sigNo,
+                          vki_siginfo_t *info, struct vki_ucontext *uc )
 {
    ThreadId tid = VG_(lwpid_to_vgtid)(VG_(gettid)());
+
+   if (0) 
+      VG_(printf)("sync_sighandler(%d, %p, %p)\n", sigNo, info, uc);
 
    vg_assert(info != NULL);
    vg_assert(info->si_signo == sigNo);
@@ -1757,7 +1791,7 @@ void sync_signalhandler ( Int sigNo, vki_siginfo_t *info, struct vki_ucontext *u
 	     sigNo == VKI_SIGILL  ||
 	     sigNo == VKI_SIGTRAP);
 
-#ifdef VGO_linux
+#  if defined(VGO_linux)
    /* The linux kernel uses the top 16 bits of si_code for it's own
       use and only exports the bottom 16 bits to user space - at least
       that is the theory, but it turns out that there are some kernels
@@ -1767,7 +1801,7 @@ void sync_signalhandler ( Int sigNo, vki_siginfo_t *info, struct vki_ucontext *u
       mask them off) sign extends them when exporting to user space so
       we do the same thing here. */
    info->si_code = (Short)info->si_code;
-#endif
+#  endif
 
    /* // debug code:
    if (0) {
@@ -1955,7 +1989,8 @@ void sync_signalhandler ( Int sigNo, vki_siginfo_t *info, struct vki_ucontext *u
 	 Valgrind internally.
        */
       VG_(message)(Vg_DebugMsg, 
-		   "VALGRIND INTERNAL ERROR: Valgrind received a signal %d (%s) - exiting",
+		   "VALGRIND INTERNAL ERROR: Valgrind received "
+                   "a signal %d (%s) - exiting",
 		   sigNo, signame(sigNo));
 
       VG_(message)(Vg_DebugMsg, 
@@ -1984,7 +2019,8 @@ void sync_signalhandler ( Int sigNo, vki_siginfo_t *info, struct vki_ucontext *u
    blocked in, and return to the scheduler.  This doesn't mark the thread
    as exiting; that's the caller's job.
  */
-static void sigvgkill_handler(int signo, vki_siginfo_t *si, struct vki_ucontext *uc)
+static void sigvgkill_handler(int signo, vki_siginfo_t *si,
+                                         struct vki_ucontext *uc)
 {
    ThreadId     tid = VG_(lwpid_to_vgtid)(VG_(gettid)());
    ThreadStatus at_signal = VG_(threads)[tid].status;
@@ -2166,7 +2202,8 @@ void VG_(sigstartup_actions) ( void )
    }
 
    if (VG_(clo_trace_signals))
-      VG_(message)(Vg_DebugMsg, "Max kernel-supported signal is %d", VG_(max_signal));
+      VG_(message)(Vg_DebugMsg, "Max kernel-supported signal is %d",
+                                VG_(max_signal));
 
    /* Our private internal signals are treated as ignored */
    scss.scss_per_sig[VG_SIGVGKILL].scss_handler = VKI_SIG_IGN;

@@ -278,8 +278,7 @@ struct vki_sigaction {
 
 #define VKI_MINSIGSTKSZ 1168
 
-#define VKI_SI_TKILL 0 /* AIX doesn't have this */
-#define VKI_SI_USER  0 /* but it does have this */
+#define VKI_SI_USER  0
 
 #define VKI_SIG_BLOCK      0
 #define VKI_SIG_SETMASK    2

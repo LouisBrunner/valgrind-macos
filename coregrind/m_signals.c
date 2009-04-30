@@ -1756,6 +1756,204 @@ void VG_(set_fault_catcher)(void (*catcher)(Int, Addr))
    fault_catcher = catcher;
 }
 
+static
+void sync_signalhandler_from_outside ( ThreadId tid,
+         Int sigNo, vki_siginfo_t *info, struct vki_ucontext *uc )
+{
+   ThreadId qtid;
+
+   /* If some user-process sent us a sync signal (ie, they're not the result
+      of a faulting instruction), then how we treat it depends on when it
+      arrives... */
+
+   if (VG_(threads)[tid].status == VgTs_WaitSys) {
+      /* Signal arrived while we're blocked in a syscall.  This means that
+         the client's signal mask was applied.  In other words, so we can't
+         get here unless the client wants this signal right now.  This means
+         we can simply use the async_signalhandler. */
+      if (VG_(clo_trace_signals))
+         VG_DMSG("Delivering user-sent sync signal %d as async signal", sigNo);
+
+      async_signalhandler(sigNo, info, uc);
+      VG_(core_panic)("async_signalhandler returned!?\n");
+
+   } else {
+      /* Signal arrived while in generated client code, or while running
+         Valgrind core code.  That means that every thread has these signals
+         unblocked, so we can't rely on the kernel to route them properly, so
+         we need to queue them manually. */
+      if (VG_(clo_trace_signals))
+         VG_DMSG("Routing user-sent sync signal %d via queue", sigNo);
+
+#     if defined(VGO_linux)
+      /* On Linux, first we have to do a sanity check of the siginfo. */
+      if (info->VKI_SIGINFO_si_pid == 0) {
+         /* There's a per-user limit of pending siginfo signals.  If
+            you exceed this, by having more than that number of
+            pending signals with siginfo, then new signals are
+            delivered without siginfo.  This condition can be caused
+            by any unrelated program you're running at the same time
+            as Valgrind, if it has a large number of pending siginfo
+            signals which it isn't taking delivery of.
+
+            Since we depend on siginfo to work out why we were sent a
+            signal and what we should do about it, we really can't
+            continue unless we get it. */
+         VG_UMSG("Signal %d (%s) appears to have lost its siginfo; "
+                 "I can't go on.", sigNo, signame(sigNo));
+         VG_(printf)(
+"  This may be because one of your programs has consumed your ration of\n"
+"  siginfo structures.  For more information, see:\n"
+"    http://kerneltrap.org/mailarchive/1/message/25599/thread\n"
+"  Basically, some program on your system is building up a large queue of\n"
+"  pending signals, and this causes the siginfo data for other signals to\n"
+"  be dropped because it's exceeding a system limit.  However, Valgrind\n"
+"  absolutely needs siginfo for SIGSEGV.  A workaround is to track down the\n"
+"  offending program and avoid running it while using Valgrind, but there\n"
+"  is no easy way to do this.  Apparently the problem was fixed in kernel\n"
+"  2.6.12.\n");
+
+         /* It's a fatal signal, so we force the default handler. */
+         VG_(set_default_handler)(sigNo);
+         deliver_signal(tid, info, uc);
+         resume_scheduler(tid);
+         VG_(exit)(99);       /* If we can't resume, then just exit */
+      }
+#     endif
+
+      qtid = 0;         /* shared pending by default */
+#     if defined(VGO_linux)
+      if (info->si_code == VKI_SI_TKILL)
+         qtid = tid;    /* directed to us specifically */
+#     endif
+      queue_signal(qtid, info);
+   }
+}
+
+/* Returns True if the sync signal was due to the stack requiring extension
+   and the extension was successful.
+*/
+static Bool extend_stack_if_appropriate(ThreadId tid, vki_siginfo_t* info)
+{
+   Addr fault;
+   Addr esp;
+   NSegment const* seg;
+   NSegment const* seg_next;
+
+   if (info->si_signo != VKI_SIGSEGV)
+      return False;
+
+   fault    = (Addr)info->VKI_SIGINFO_si_addr;
+   esp      = VG_(get_SP)(tid);
+   seg      = VG_(am_find_nsegment)(fault);
+   seg_next = seg ? VG_(am_next_nsegment)( (NSegment*)seg, True/*fwds*/ )
+                  : NULL;
+
+   if (VG_(clo_trace_signals)) {
+      if (seg == NULL)
+         VG_DMSG("SIGSEGV: si_code=%d faultaddr=%#lx tid=%d ESP=%#lx "
+                 "seg=NULL",
+                 info->si_code, fault, tid, esp);
+      else
+         VG_DMSG("SIGSEGV: si_code=%d faultaddr=%#lx tid=%d ESP=%#lx "
+                 "seg=%#lx-%#lx",
+                 info->si_code, fault, tid, esp, seg->start, seg->end);
+   }
+
+   if (info->si_code == VKI_SEGV_MAPERR
+       && seg
+       && seg->kind == SkResvn
+       && seg->smode == SmUpper
+       && seg_next
+       && seg_next->kind == SkAnonC
+       && seg->end+1 == seg_next->start
+       && fault >= (esp - VG_STACK_REDZONE_SZB)) {
+      /* If the fault address is above esp but below the current known
+         stack segment base, and it was a fault because there was
+         nothing mapped there (as opposed to a permissions fault),
+         then extend the stack segment. 
+       */
+      Addr base = VG_PGROUNDDN(esp - VG_STACK_REDZONE_SZB);
+      if (VG_(extend_stack)(base, VG_(threads)[tid].client_stack_szB)) {
+         if (VG_(clo_trace_signals))
+            VG_DMSG("       -> extended stack base to %#lx",
+                    VG_PGROUNDDN(fault));
+         return True;
+      } else {
+         VG_UMSG("Stack overflow in thread %d: can't grow stack to %#lx",
+                 tid, fault);
+         return False;
+      }
+   } else {
+      return False;
+   }
+}
+
+static
+void sync_signalhandler_from_inside ( ThreadId tid,
+         Int sigNo, vki_siginfo_t *info, struct vki_ucontext *uc )
+{
+   /* Check to see if some part of Valgrind itself is interested in faults.
+      The fault catcher should never be set whilst we're in generated code, so
+      check for that.  AFAIK the only use of the catcher right now is
+      memcheck's leak detector. */
+   if (fault_catcher) {
+      vg_assert(VG_(in_generated_code) == False);
+
+      (*fault_catcher)(sigNo, (Addr)info->VKI_SIGINFO_si_addr);
+      /* If the catcher returns, then it didn't handle the fault,
+         so carry on panicking. */
+   }
+
+   if (extend_stack_if_appropriate(tid, info)) {
+      /* Stack extension occurred, so we don't need to do anything else; upon
+         returning from this function, we'll restart the host (hence guest)
+         instruction. */
+   } else {
+      /* OK, this is a signal we really have to deal with.  If it came
+         from the client's code, then we can jump back into the scheduler
+         and have it delivered.  Otherwise it's a Valgrind bug. */
+      ThreadState *tst = VG_(get_ThreadState)(tid);
+
+      if (VG_(sigismember)(&tst->sig_mask, sigNo)) {
+         /* signal is blocked, but they're not allowed to block faults */
+         VG_(set_default_handler)(sigNo);
+      }
+
+      if (VG_(in_generated_code)) {
+         /* Can't continue; must longjmp back to the scheduler and thus
+            enter the sighandler immediately. */
+         deliver_signal(tid, info, uc);
+         resume_scheduler(tid);
+      }
+
+      /* If resume_scheduler returns or its our fault, it means we
+         don't have longjmp set up, implying that we weren't running
+         client code, and therefore it was actually generated by
+         Valgrind internally.
+       */
+      VG_DMSG("VALGRIND INTERNAL ERROR: Valgrind received "
+              "a signal %d (%s) - exiting",
+              sigNo, signame(sigNo));
+
+      VG_DMSG("si_code=%x;  Faulting address: %p;  sp: %#lx",
+              info->si_code, info->VKI_SIGINFO_si_addr,
+              VG_UCONTEXT_STACK_PTR(uc));
+
+      if (0)
+         VG_(kill_self)(sigNo);  /* generate a core dump */
+
+      //if (tid == 0)            /* could happen after everyone has exited */
+      //  tid = VG_(master_tid);
+      vg_assert(tid != 0);
+
+      VG_(core_panic_at)("Killed by fatal signal",
+                         VG_UCONTEXT_INSTR_PTR(uc),
+                         VG_UCONTEXT_STACK_PTR(uc),
+                         VG_UCONTEXT_FRAME_PTR(uc),
+                         VG_UCONTEXT_LINK_REG(uc));
+   }
+}
 
 /* 
    Receive a sync signal from the host. 
@@ -1805,192 +2003,12 @@ void sync_signalhandler ( Int sigNo,
 
    /* Figure out if the signal is being sent from outside the process.
       (Why do we care?)  If the signal is from the user rather than the
-      kernel,, then treat it more like an async signal than a sync signal --
+      kernel, then treat it more like an async signal than a sync signal --
       that is, merely queue it for later delivery. */
-
    if (from_outside) {
-      ThreadId qtid;
-      /* If some user-process sent us one of these signals (ie,
-	 they're not the result of a faulting instruction), then treat
-	 it as an async signal.  This is tricky because we could get
-	 this almost anywhere:
-	  - while generated client code
-	    Action: queue signal and return
-	  - while running Valgrind code
-	    Action: queue signal and return
-	  - while blocked in a syscall
-	    Action: make thread runnable, queue signal, resume scheduler
-      */
-      if (VG_(threads)[tid].status == VgTs_WaitSys) {
-	 /* Since this signal interrupted a syscall, it means the
-	    client's signal mask was applied, so we can't get here
-	    unless the client wants this signal right now.  This means
-	    we can simply use the async_signalhandler. */
-         if (VG_(clo_trace_signals))
-            VG_DMSG("Delivering user-sent sync signal %d as async signal",
-                    sigNo);
-
-	 async_signalhandler(sigNo, info, uc);
-	 VG_(core_panic)("async_signalhandler returned!?\n");
-      }
-
-#     if defined(VGO_linux)
-      if (info->VKI_SIGINFO_si_pid == 0) {
-	 /* There's a per-user limit of pending siginfo signals.  If
-	    you exceed this, by having more than that number of
-	    pending signals with siginfo, then new signals are
-	    delivered without siginfo.  This condition can be caused
-	    by any unrelated program you're running at the same time
-	    as Valgrind, if it has a large number of pending siginfo
-	    signals which it isn't taking delivery of.
-
-	    Since we depend on siginfo to work out why we were sent a
-	    signal and what we should do about it, we really can't
-	    continue unless we get it. */
-         VG_UMSG("Signal %d (%s) appears to have lost its siginfo; "
-                 "I can't go on.", sigNo, signame(sigNo));
-         VG_(printf)(
-"  This may be because one of your programs has consumed your ration of\n"
-"  siginfo structures.  For more information, see:\n"
-"    http://kerneltrap.org/mailarchive/1/message/25599/thread\n"
-"  Basically, some program on your system is building up a large queue of\n"
-"  pending signals, and this causes the siginfo data for other signals to\n"
-"  be dropped because it's exceeding a system limit.  However, Valgrind\n"
-"  absolutely needs siginfo for SIGSEGV.  A workaround is to track down the\n"
-"  offending program and avoid running it while using Valgrind, but there\n"
-"  is no easy way to do this.  Apparently the problem was fixed in kernel\n"
-"  2.6.12.\n");
-
-	 /* It's a fatal signal, so we force the default handler. */
-	 VG_(set_default_handler)(sigNo);
-	 deliver_signal(tid, info, uc);
-	 resume_scheduler(tid);
-	 VG_(exit)(99);		/* If we can't resume, then just exit */
-      }
-#     endif
-
-      if (VG_(clo_trace_signals))
-         VG_DMSG("Routing user-sent sync signal %d via queue", sigNo);
-
-      /* Since every thread has these signals unblocked, we can't rely
-	 on the kernel to route them properly, so we need to queue
-	 them manually. */
-      qtid = 0;         /* shared pending by default */
-#     if defined(VGO_linux)
-      if (info->si_code == VKI_SI_TKILL)
-	 qtid = tid;    /* directed to us specifically */
-#     endif
-      queue_signal(qtid, info);
-
-      return;
-   } /* if (!is_signal_from_kernel(info->si_code)) */
-
-   /* Check to see if someone is interested in faults.  The fault
-      catcher should never be set whilst we're in generated code, so
-      check for that.  AFAIK the only use of the catcher right now is
-      memcheck's leak detector.
-   */
-   if (fault_catcher) {
-      vg_assert(VG_(in_generated_code) == False);
-
-      (*fault_catcher)(sigNo, (Addr)info->VKI_SIGINFO_si_addr);
-      /* If the catcher returns, then it didn't handle the fault,
-         so carry on panicing. */
-   }
-
-   /* Special fault-handling case. We can now get signals which can
-      act upon and immediately restart the faulting instruction.
-    */
-   if (info->si_signo == VKI_SIGSEGV) {
-      Addr fault = (Addr)info->VKI_SIGINFO_si_addr;
-      Addr esp   =  VG_(get_SP)(tid);
-      NSegment const* seg
-         = VG_(am_find_nsegment)(fault);
-      NSegment const* seg_next 
-         = seg ? VG_(am_next_nsegment)( (NSegment*)seg, True/*fwds*/ )
-               : NULL;
-
-      if (VG_(clo_trace_signals)) {
-	 if (seg == NULL)
-            VG_DMSG("SIGSEGV: si_code=%d faultaddr=%#lx tid=%d ESP=%#lx "
-                    "seg=NULL",
-                    info->si_code, fault, tid, esp);
-	 else
-            VG_DMSG("SIGSEGV: si_code=%d faultaddr=%#lx tid=%d ESP=%#lx "
-                    "seg=%#lx-%#lx",
-                    info->si_code, fault, tid, esp, seg->start, seg->end);
-      }
-      if (info->si_code == VKI_SEGV_MAPERR
-          && seg
-          && seg->kind == SkResvn
-          && seg->smode == SmUpper
-          && seg_next
-          && seg_next->kind == SkAnonC
-          && seg->end+1 == seg_next->start
-	  && fault >= (esp - VG_STACK_REDZONE_SZB)) {
-	 /* If the fault address is above esp but below the current known
-	    stack segment base, and it was a fault because there was
-	    nothing mapped there (as opposed to a permissions fault),
-	    then extend the stack segment. 
-	 */
-         Addr base = VG_PGROUNDDN(esp - VG_STACK_REDZONE_SZB);
-	 if (VG_(extend_stack)(base, VG_(threads)[tid].client_stack_szB)) {
-	    if (VG_(clo_trace_signals))
-               VG_DMSG("       -> extended stack base to %#lx",
-                       VG_PGROUNDDN(fault));
-            return; // extension succeeded, restart host (hence guest)
-                    // instruction
-	 } else
-            VG_UMSG("Stack overflow in thread %d: can't grow stack to %#lx",
-                    tid, fault);
-      }
-      /* Fall into normal signal handling for all other cases */
-   }
-
-   /* OK, this is a signal we really have to deal with.  If it came
-      from the client's code, then we can jump back into the scheduler
-      and have it delivered.  Otherwise it's a Valgrind bug. */
-   {   
-      ThreadState *tst 
-         = VG_(get_ThreadState)(VG_(lwpid_to_vgtid)(VG_(gettid)()));
-
-      if (VG_(sigismember)(&tst->sig_mask, sigNo)) {
-	 /* signal is blocked, but they're not allowed to block faults */
-	 VG_(set_default_handler)(sigNo);
-      }
-
-      if (VG_(in_generated_code)) {
-	 /* Can't continue; must longjmp back to the scheduler and thus
-	    enter the sighandler immediately. */
-	 deliver_signal(tid, info, uc);
-	 resume_scheduler(tid);
-      }
-
-      /* If resume_scheduler returns or its our fault, it means we
-	 don't have longjmp set up, implying that we weren't running
-	 client code, and therefore it was actually generated by
-	 Valgrind internally.
-       */
-      VG_DMSG("VALGRIND INTERNAL ERROR: Valgrind received "
-              "a signal %d (%s) - exiting",
-              sigNo, signame(sigNo));
-
-      VG_DMSG("si_code=%x;  Faulting address: %p;  sp: %#lx",
-              info->si_code, info->VKI_SIGINFO_si_addr,
-              VG_UCONTEXT_STACK_PTR(uc));
-
-      if (0)
-	 VG_(kill_self)(sigNo);		/* generate a core dump */
-
-      //if (tid == 0)            /* could happen after everyone has exited */
-      //  tid = VG_(master_tid);
-      vg_assert(tid != 0);
-
-      VG_(core_panic_at)("Killed by fatal signal",
-                         VG_UCONTEXT_INSTR_PTR(uc),
-                         VG_UCONTEXT_STACK_PTR(uc),
-                         VG_UCONTEXT_FRAME_PTR(uc),
-                         VG_UCONTEXT_LINK_REG(uc));
+      sync_signalhandler_from_outside(tid, sigNo, info, uc);
+   } else {
+      sync_signalhandler_from_inside( tid, sigNo, info, uc);
    }
 }
 

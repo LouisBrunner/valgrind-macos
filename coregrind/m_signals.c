@@ -1647,6 +1647,23 @@ static vki_siginfo_t *next_queued(ThreadId tid, const vki_sigset_t *set)
    return ret;
 }
 
+static int sanitize_si_code(int si_code)
+{
+#if defined(VGO_linux)
+   /* The linux kernel uses the top 16 bits of si_code for it's own
+      use and only exports the bottom 16 bits to user space - at least
+      that is the theory, but it turns out that there are some kernels
+      around that forget to mask out the top 16 bits so we do it here.
+
+      The kernel treats the bottom 16 bits as signed and (when it does
+      mask them off) sign extends them when exporting to user space so
+      we do the same thing here. */
+   return (Short)si_code;
+#elif defined(VGO_aix5)
+   return si_code;
+#endif
+}
+
 /* 
    Receive an async signal from the kernel.
 
@@ -1664,17 +1681,7 @@ void async_signalhandler ( Int sigNo,
    vg_assert(tst->status == VgTs_WaitSys);
    VG_(acquire_BigLock)(tid, "async_signalhandler");
 
-#  if defined(VGO_linux)
-   /* The linux kernel uses the top 16 bits of si_code for it's own
-      use and only exports the bottom 16 bits to user space - at least
-      that is the theory, but it turns out that there are some kernels
-      around that forget to mask out the top 16 bits so we do it here.
-
-      The kernel treats the bottom 16 bits as signed and (when it does
-      mask them off) sign extends them when exporting to user space so
-      we do the same thing here. */
-   info->si_code = (Short)info->si_code;
-#  endif
+   info->si_code = sanitize_si_code(info->si_code);
 
    if (VG_(clo_trace_signals))
       VG_(message)(Vg_DebugMsg, "Async handler got signal %d for tid %d info %d",
@@ -1791,17 +1798,7 @@ void sync_signalhandler ( Int sigNo,
 	     sigNo == VKI_SIGILL  ||
 	     sigNo == VKI_SIGTRAP);
 
-#  if defined(VGO_linux)
-   /* The linux kernel uses the top 16 bits of si_code for it's own
-      use and only exports the bottom 16 bits to user space - at least
-      that is the theory, but it turns out that there are some kernels
-      around that forget to mask out the top 16 bits so we do it here.
-
-      The kernel treats the bottom 16 bits as signed and (when it does
-      mask them off) sign extends them when exporting to user space so
-      we do the same thing here. */
-   info->si_code = (Short)info->si_code;
-#  endif
+   info->si_code = sanitize_si_code(info->si_code);
 
    /* // debug code:
    if (0) {

@@ -1684,7 +1684,8 @@ void async_signalhandler ( Int sigNo,
    info->si_code = sanitize_si_code(info->si_code);
 
    if (VG_(clo_trace_signals))
-      VG_(message)(Vg_DebugMsg, "Async handler got signal %d for tid %d info %d",
+      VG_(message)(Vg_DebugMsg,
+                   "async signal handler: signal=%d, tid=%d, si_code=%d",
 		   sigNo, tid, info->si_code);
 
    /* Update thread state properly */
@@ -1786,6 +1787,7 @@ void sync_signalhandler ( Int sigNo,
                           vki_siginfo_t *info, struct vki_ucontext *uc )
 {
    ThreadId tid = VG_(lwpid_to_vgtid)(VG_(gettid)());
+   Bool from_outside;
 
    if (0) 
       VG_(printf)("sync_sighandler(%d, %p, %p)\n", sigNo, info, uc);
@@ -1799,6 +1801,17 @@ void sync_signalhandler ( Int sigNo,
 	     sigNo == VKI_SIGTRAP);
 
    info->si_code = sanitize_si_code(info->si_code);
+
+   from_outside = !is_signal_from_kernel(info->si_code);
+
+   if (VG_(clo_trace_signals)) {
+      VG_DMSG("sync signal handler: "
+              "signal=%d, si_code=%d, EIP=%#lx, eip=%#lx, from %s",
+              sigNo, info->si_code, VG_(get_IP)(tid), 
+              VG_UCONTEXT_INSTR_PTR(uc),
+              ( from_outside ? "outside" : "inside" ));
+   }
+   vg_assert(sigNo >= 1 && sigNo <= VG_(max_signal));
 
    /* // debug code:
    if (0) {
@@ -1817,7 +1830,7 @@ void sync_signalhandler ( Int sigNo,
       kernel,, then treat it more like an async signal than a sync signal --
       that is, merely queue it for later delivery. */
 
-   if (!is_signal_from_kernel(info->si_code)) {
+   if (from_outside) {
       /* If some user-process sent us one of these signals (ie,
 	 they're not the result of a faulting instruction), then treat
 	 it as an async signal.  This is tricky because we could get
@@ -1834,6 +1847,10 @@ void sync_signalhandler ( Int sigNo,
 	    client's signal mask was applied, so we can't get here
 	    unless the client wants this signal right now.  This means
 	    we can simply use the async_signalhandler. */
+         if (VG_(clo_trace_signals))
+            VG_DMSG("Delivering user-sent sync signal %d as async signal",
+                    sigNo);
+
 	 async_signalhandler(sigNo, info, uc);
 	 VG_(core_panic)("async_signalhandler returned!?\n");
       }
@@ -1886,14 +1903,6 @@ void sync_signalhandler ( Int sigNo,
 
       return;
    } /* if (!is_signal_from_kernel(info->si_code)) */
-
-   if (VG_(clo_trace_signals)) {
-      VG_(message)(Vg_DebugMsg, "signal %d arrived ... si_code=%d, "
-                                "EIP=%#lx, eip=%#lx",
-                   sigNo, info->si_code, VG_(get_IP)(tid), 
-		   VG_UCONTEXT_INSTR_PTR(uc) );
-   }
-   vg_assert(sigNo >= 1 && sigNo <= VG_(max_signal));
 
    /* Check to see if someone is interested in faults.  The fault
       catcher should never be set whilst we're in generated code, so

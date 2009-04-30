@@ -101,6 +101,8 @@ extern UInt VG_(vmessage)( VgMsgKind kind, const HChar* format, va_list vargs )
 // Short-cuts for VG_(message)().
 #define VG_UMSG( format, args... )  VG_(message)(Vg_UserMsg,  format, ##args)
 #define VG_DMSG( format, args... )  VG_(message)(Vg_DebugMsg, format, ##args)
+#define VG_EMSG( format, args... )  VG_(message)(Vg_DebugExtraMsg, \
+                                                              format, ##args)
 
 #endif   // __PUB_TOOL_LIBCPRINT_H
 

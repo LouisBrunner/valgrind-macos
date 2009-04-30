@@ -1661,6 +1661,8 @@ static int sanitize_si_code(int si_code)
    return (Short)si_code;
 #elif defined(VGO_aix5)
    return si_code;
+#else
+#  error Unknown OS
 #endif
 }
 

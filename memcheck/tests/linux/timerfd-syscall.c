@@ -57,14 +57,23 @@
 #ifndef __NR_timerfd_create
 #if defined(__x86_64__)
 #define __NR_timerfd_create  283
+#elif defined(__i386__)
+#define __NR_timerfd_create  322
+#elif defined(__powerpc__)
+#define __NR_timerfd_create  306
+#else
+#error Cannot detect your architecture!
+#endif
+#endif
+
+#ifndef __NR_timerfd_settime
+#if defined(__x86_64__)
 #define __NR_timerfd_settime 286
 #define __NR_timerfd_gettime 287
 #elif defined(__i386__)
-#define __NR_timerfd_create  322
 #define __NR_timerfd_settime 325
 #define __NR_timerfd_gettime 326
 #elif defined(__powerpc__)
-#define __NR_timerfd_create  306
 #define __NR_timerfd_settime 311
 #define __NR_timerfd_gettime 312
 #else

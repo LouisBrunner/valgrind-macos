@@ -38,7 +38,7 @@ noinst_HEADERS = fdleak.h
 EXTRA_DIST = $(noinst_SCRIPTS) \
 	ansi.stderr.exp ansi.vgtest \
 	args.stderr.exp args.stdout.exp args.vgtest \
-	async-sigs.stderr.exp async-sigs.stdout.exp async-sigs.vgtest \
+	async-sigs.stderr.exp async-sigs.vgtest \
 	bitfield1.stderr.exp bitfield1.vgtest \
 	bug129866.vgtest bug129866.stderr.exp bug129866.stdout.exp \
 	closeall.stderr.exp closeall.vgtest \

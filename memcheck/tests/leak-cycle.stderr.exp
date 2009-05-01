@@ -7,21 +7,14 @@ suppressed:   0 bytes in  0 blocks
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: mk (leak-cycle.c:15)
    by 0x........: mkcycle (leak-cycle.c:26)
-   by 0x........: main (leak-cycle.c:44)
+   by 0x........: main (leak-cycle.c:45)
 
 
 48 (16 direct, 32 indirect) bytes in 1 blocks are definitely lost in loss record ... of ...
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: mk (leak-cycle.c:15)
    by 0x........: mkcycle (leak-cycle.c:26)
-   by 0x........: main (leak-cycle.c:45)
-
-
-96 (16 direct, 80 indirect) bytes in 1 blocks are definitely lost in loss record ... of ...
-   at 0x........: malloc (vg_replace_malloc.c:...)
-   by 0x........: mk (leak-cycle.c:15)
-   by 0x........: mkcycle (leak-cycle.c:26)
-   by 0x........: main (leak-cycle.c:51)
+   by 0x........: main (leak-cycle.c:44)
 
 
 96 (16 direct, 80 indirect) bytes in 1 blocks are definitely lost in loss record ... of ...
@@ -29,3 +22,10 @@ suppressed:   0 bytes in  0 blocks
    by 0x........: mk (leak-cycle.c:15)
    by 0x........: mkcycle (leak-cycle.c:26)
    by 0x........: main (leak-cycle.c:63)
+
+
+96 (16 direct, 80 indirect) bytes in 1 blocks are definitely lost in loss record ... of ...
+   at 0x........: malloc (vg_replace_malloc.c:...)
+   by 0x........: mk (leak-cycle.c:15)
+   by 0x........: mkcycle (leak-cycle.c:26)
+   by 0x........: main (leak-cycle.c:51)

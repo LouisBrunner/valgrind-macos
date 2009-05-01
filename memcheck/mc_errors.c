@@ -242,7 +242,7 @@ struct _MC_Error {
       struct {
          UInt        n_this_record;
          UInt        n_total_records;
-         LossRecord* lossRecord;
+         LossRecord* lr;
       } Leak;
 
       // A memory pool error.
@@ -565,49 +565,49 @@ void MC_(pp_Error) ( Error* err )
          HChar*      xpost = VG_(clo_xml) ? "</what>"  : "";
          UInt        n_this_record   = extra->Err.Leak.n_this_record;
          UInt        n_total_records = extra->Err.Leak.n_total_records;
-         LossRecord* l               = extra->Err.Leak.lossRecord;
+         LossRecord* lr              = extra->Err.Leak.lr;
 
          if (VG_(clo_xml)) {
             VG_(message_no_f_c)(Vg_UserMsg, "  <kind>%t</kind>",
-                                xml_leak_kind(l->loss_mode));
+                                xml_leak_kind(lr->state));
          } else {
             VG_(message)(Vg_UserMsg, "");
          }
 
-         if (l->indirect_szB) {
+         if (lr->indirect_szB > 0) {
             VG_(message)(Vg_UserMsg, 
                "%s%'lu (%'lu direct, %'lu indirect) bytes in %'u blocks"
                " are %s in loss record %'u of %'u%s",
                xpre,
-               l->total_bytes + l->indirect_szB, 
-               l->total_bytes, l->indirect_szB, l->num_blocks,
-               str_leak_lossmode(l->loss_mode), n_this_record, n_total_records,
+               lr->szB + lr->indirect_szB, lr->szB, lr->indirect_szB,
+               lr->num_blocks,
+               str_leak_lossmode(lr->state), n_this_record, n_total_records,
                xpost
             );
             if (VG_(clo_xml)) {
                // Nb: don't put commas in these XML numbers 
                VG_(message)(Vg_UserMsg, "  <leakedbytes>%lu</leakedbytes>", 
-                                        l->total_bytes + l->indirect_szB);
+                                        lr->szB + lr->indirect_szB);
                VG_(message)(Vg_UserMsg, "  <leakedblocks>%u</leakedblocks>", 
-                                        l->num_blocks);
+                                        lr->num_blocks);
             }
          } else {
             VG_(message)(
                Vg_UserMsg, 
                "%s%'lu bytes in %'u blocks are %s in loss record %'u of %'u%s",
                xpre,
-               l->total_bytes, l->num_blocks,
-               str_leak_lossmode(l->loss_mode), n_this_record, n_total_records,
+               lr->szB, lr->num_blocks,
+               str_leak_lossmode(lr->state), n_this_record, n_total_records,
                xpost
             );
             if (VG_(clo_xml)) {
                VG_(message)(Vg_UserMsg, "  <leakedbytes>%ld</leakedbytes>",
-                                        l->total_bytes);
+                                        lr->szB);
                VG_(message)(Vg_UserMsg, "  <leakedblocks>%d</leakedblocks>", 
-                                        l->num_blocks);
+                                        lr->num_blocks);
             }
          }
-         VG_(pp_ExeContext)(l->allocated_at);
+         VG_(pp_ExeContext)(lr->allocated_at);
          break;
       }
 
@@ -802,16 +802,16 @@ void MC_(record_overlap_error) ( ThreadId tid, Char* function,
 }
 
 Bool MC_(record_leak_error) ( ThreadId tid, UInt n_this_record,
-                              UInt n_total_records, LossRecord* lossRecord,
+                              UInt n_total_records, LossRecord* lr,
                               Bool print_record )
 {
    MC_Error extra;
    extra.Err.Leak.n_this_record   = n_this_record;
    extra.Err.Leak.n_total_records = n_total_records;
-   extra.Err.Leak.lossRecord      = lossRecord;
+   extra.Err.Leak.lr              = lr;
    return
    VG_(unique_error) ( tid, Err_Leak, /*Addr*/0, /*s*/NULL, &extra,
-                       lossRecord->allocated_at, print_record,
+                       lr->allocated_at, print_record,
                        /*allow_GDB_attach*/False, /*count_error*/False );
 }
 

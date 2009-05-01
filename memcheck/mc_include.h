@@ -262,18 +262,17 @@ typedef
    }
    LeakCheckMode;
 
-/* A block record, used for generating err msgs. */
+/* A loss record, used for generating err msgs.  Multiple leaked blocks can be
+ * merged into a single loss record if they have the same state and similar
+ * enough allocation points (controlled by --leak-resolution). */
 typedef
    struct _LossRecord {
       struct _LossRecord* next;
-      /* Where these lost blocks were allocated. */
-      ExeContext*  allocated_at;
-      /* Their reachability. */
-      Reachedness  loss_mode;
-      /* Number of blocks and total # bytes involved. */
-      SizeT        total_bytes;
-      SizeT        indirect_szB;
-      UInt         num_blocks;
+      ExeContext*  allocated_at; // Where they were allocated.
+      Reachedness  state;        // LC_Extra.state value shared by all blocks.
+      SizeT        szB;          // Sum of all MC_Chunk.szB values.
+      SizeT        indirect_szB; // Sum of all LC_Extra.indirect_szB values.
+      UInt         num_blocks;   // Number of blocks represented by the record.
    }
    LossRecord;
 

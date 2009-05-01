@@ -173,7 +173,7 @@ void VG_(pp_ExeContext) ( ExeContext* ec )
 }
 
 
-/* Compare two ExeContexts, comparing all callers. */
+/* Compare two ExeContexts.  Number of callers considered depends on res. */
 Bool VG_(eq_ExeContext) ( VgRes res, ExeContext* e1, ExeContext* e2 )
 {
    Int i;

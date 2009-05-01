@@ -55,12 +55,12 @@ suppressed:   0 bytes in  0 blocks
 32 (16 direct, 16 indirect) bytes in 1 blocks are definitely lost in loss record ... of ...
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: mk (leak-cases.c:52)
-   by 0x........: f (leak-cases.c:76)
+   by 0x........: f (leak-cases.c:91)
    by 0x........: main (leak-cases.c:107)
 
 
 32 (16 direct, 16 indirect) bytes in 1 blocks are definitely lost in loss record ... of ...
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: mk (leak-cases.c:52)
-   by 0x........: f (leak-cases.c:91)
+   by 0x........: f (leak-cases.c:76)
    by 0x........: main (leak-cases.c:107)

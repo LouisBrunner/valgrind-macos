@@ -753,39 +753,44 @@ static void lc_process_markstack(Int clique)
 static void print_results(ThreadId tid, Bool is_full_check)
 {
    Int         i, n_lossrecords;
-   LossRecord* errlist;
-   LossRecord* p;
+   LossRecord* lr_list;
+   LossRecord* lr;
    Bool        is_suppressed;
 
    // Common up the lost blocks so we can print sensible error messages.
    n_lossrecords = 0;
-   errlist       = NULL;
+   lr_list       = NULL;
    for (i = 0; i < lc_n_chunks; i++) {
       MC_Chunk* ch = lc_chunks[i];
       LC_Extra* ex = &(lc_extras)[i];
 
-      for (p = errlist; p != NULL; p = p->next) {
-         if (p->loss_mode == ex->state
+      // Determine if this chunk is sufficiently similar to any of our
+      // previously-created loss records to merge.  
+      // XXX: This is quadratic! (see bug #191182)
+      for (lr = lr_list; lr != NULL; lr = lr->next) {
+         if (lr->state == ex->state
              && VG_(eq_ExeContext) ( MC_(clo_leak_resolution),
-                                     p->allocated_at, 
+                                     lr->allocated_at, 
                                      ch->where) ) {
             break;
          }
       }
-      if (p != NULL) {
-         p->num_blocks++;
-         p->total_bytes  += ch->szB;
-         p->indirect_szB += ex->indirect_szB;
+      if (lr != NULL) {
+         // Similar to a previous loss record;  merge.
+         lr->num_blocks++;
+         lr->szB          += ch->szB;
+         lr->indirect_szB += ex->indirect_szB;
       } else {
+         // Create a new loss record.
          n_lossrecords++;
-         p = VG_(malloc)( "mc.fr.1", sizeof(LossRecord));
-         p->loss_mode    = ex->state;
-         p->allocated_at = ch->where;
-         p->total_bytes  = ch->szB;
-         p->indirect_szB = ex->indirect_szB;
-         p->num_blocks   = 1;
-         p->next         = errlist;
-         errlist         = p;
+         lr = VG_(malloc)( "mc.fr.1", sizeof(LossRecord));
+         lr->state        = ex->state;
+         lr->allocated_at = ch->where;
+         lr->szB          = ch->szB;
+         lr->indirect_szB = ex->indirect_szB;
+         lr->num_blocks   = 1;
+         lr->next         = lr_list;
+         lr_list          = lr;
       }
    }
 
@@ -795,18 +800,26 @@ static void print_results(ThreadId tid, Bool is_full_check)
    MC_(blocks_reachable)  = MC_(bytes_reachable)  = 0;
    MC_(blocks_suppressed) = MC_(bytes_suppressed) = 0;
 
-   // Print out the commoned-up blocks and collect summary stats.
+   // Print out the loss records and collect summary stats.
    for (i = 0; i < n_lossrecords; i++) {
       Bool        print_record;
-      LossRecord* p_min = NULL;
-      SizeT       n_min = ~(0x0L);
-      for (p = errlist; p != NULL; p = p->next) {
-         if (p->num_blocks > 0 && p->total_bytes < n_min) {
-            n_min = p->total_bytes + p->indirect_szB;
-            p_min = p;
+      LossRecord* lr_min = NULL;
+      SizeT       total_szB_min = ~(0x0L);
+      // Find the loss record covering the smallest number of directly-lost
+      // bytes.  Note that we set lr_min->num_blocks to zero after printing it;
+      // that combined with the "lr->num_blocks > 0" test ensures that each
+      // loss record is only printed once.
+      // XXX: This is quadratic! (see bug #191182)
+      // XXX: why do we show the smallest loss records first -- biggest first
+      //      would make more sense?
+      for (lr = lr_list; lr != NULL; lr = lr->next) {
+         SizeT total_szB = lr->szB + lr->indirect_szB;
+         if (lr->num_blocks > 0 && total_szB < total_szB_min) {
+            total_szB_min = total_szB;
+            lr_min = lr;
          }
       }
-      tl_assert(p_min != NULL);
+      tl_assert(lr_min != NULL);
 
       // Rules for printing:
       // - We don't show suppressed loss records ever (and that's controlled
@@ -822,36 +835,36 @@ static void print_results(ThreadId tid, Bool is_full_check)
       //
       print_record = is_full_check &&
                      ( MC_(clo_show_reachable) || 
-                       Unreached == p_min->loss_mode || 
-                       Possible == p_min->loss_mode );
+                       Unreached == lr_min->state || 
+                       Possible  == lr_min->state );
       is_suppressed = 
-         MC_(record_leak_error) ( tid, i+1, n_lossrecords, p_min,
+         MC_(record_leak_error) ( tid, i+1, n_lossrecords, lr_min,
                                   print_record );
 
       if (is_suppressed) {
-         MC_(blocks_suppressed) += p_min->num_blocks;
-         MC_(bytes_suppressed)  += p_min->total_bytes;
+         MC_(blocks_suppressed) += lr_min->num_blocks;
+         MC_(bytes_suppressed)  += lr_min->szB;
 
-      } else if (Unreached == p_min->loss_mode) {
-         MC_(blocks_leaked)     += p_min->num_blocks;
-         MC_(bytes_leaked)      += p_min->total_bytes;
+      } else if (Unreached == lr_min->state) {
+         MC_(blocks_leaked)     += lr_min->num_blocks;
+         MC_(bytes_leaked)      += lr_min->szB;
 
-      } else if (IndirectLeak == p_min->loss_mode) {
-         MC_(blocks_indirect)   += p_min->num_blocks;
-         MC_(bytes_indirect)    += p_min->total_bytes;
+      } else if (IndirectLeak == lr_min->state) {
+         MC_(blocks_indirect)   += lr_min->num_blocks;
+         MC_(bytes_indirect)    += lr_min->szB;
 
-      } else if (Possible == p_min->loss_mode) {
-         MC_(blocks_dubious)    += p_min->num_blocks;
-         MC_(bytes_dubious)     += p_min->total_bytes;
+      } else if (Possible == lr_min->state) {
+         MC_(blocks_dubious)    += lr_min->num_blocks;
+         MC_(bytes_dubious)     += lr_min->szB;
 
-      } else if (Reachable == p_min->loss_mode) {
-         MC_(blocks_reachable)  += p_min->num_blocks;
-         MC_(bytes_reachable)   += p_min->total_bytes;
+      } else if (Reachable == lr_min->state) {
+         MC_(blocks_reachable)  += lr_min->num_blocks;
+         MC_(bytes_reachable)   += lr_min->szB;
 
       } else {
          VG_(tool_panic)("unknown loss mode");
       }
-      p_min->num_blocks = 0;
+      lr_min->num_blocks = 0;
    }
 
    if (VG_(clo_verbosity) > 0 && !VG_(clo_xml)) {

@@ -26,7 +26,9 @@
 #include "drd_barrier.h"
 #include "drd_clientreq.h"
 #include "drd_cond.h"
+#include "drd_error.h"
 #include "drd_load_store.h"
+#include "drd_malloc_wrappers.h"
 #include "drd_mutex.h"
 #include "drd_rwlock.h"
 #include "drd_semaphore.h"
@@ -44,9 +46,8 @@
 
 /* Local function declarations. */
 
-static
-Bool DRD_(handle_client_request)(ThreadId vg_tid, UWord* arg, UWord* ret);
-static Addr DRD_(highest_used_stack_address)(const ThreadId vg_tid);
+static Bool handle_client_request(ThreadId vg_tid, UWord* arg, UWord* ret);
+static Addr highest_used_stack_address(const ThreadId vg_tid);
 
 
 /* Function definitions. */
@@ -57,15 +58,14 @@ static Addr DRD_(highest_used_stack_address)(const ThreadId vg_tid);
  */
 void DRD_(clientreq_init)(void)
 {
-   VG_(needs_client_requests)(DRD_(handle_client_request));
+   VG_(needs_client_requests)(handle_client_request);
 }
 
 /**
  * DRD's handler for Valgrind client requests. The code below handles both
  * DRD's public and tool-internal client requests.
  */
-static
-Bool DRD_(handle_client_request)(ThreadId vg_tid, UWord* arg, UWord* ret)
+static Bool handle_client_request(ThreadId vg_tid, UWord* arg, UWord* ret)
 {
    UWord result = 0;
    const DrdThreadId drd_tid = DRD_(thread_get_running_tid)();
@@ -75,6 +75,32 @@ Bool DRD_(handle_client_request)(ThreadId vg_tid, UWord* arg, UWord* ret)
 
    switch (arg[0])
    {
+   case VG_USERREQ__MALLOCLIKE_BLOCK:
+      if (arg[1])
+         DRD_(malloclike_block)(vg_tid, arg[1]/*addr*/, arg[2]/*size*/);
+      break;
+
+   case VG_USERREQ__FREELIKE_BLOCK:
+      if (arg[1] && ! DRD_(freelike_block)(vg_tid, arg[1]/*addr*/))
+      {
+	 VG_(maybe_record_error)(vg_tid,
+				 GenericErr,
+				 VG_(get_IP)(vg_tid),
+				 "Invalid VG_USERREQ__FREELIKE_BLOCK request",
+				 NULL);
+      }
+      break;
+
+   case VG_USERREQ__CREATE_MEMPOOL:
+   case VG_USERREQ__DESTROY_MEMPOOL:
+   case VG_USERREQ__MEMPOOL_ALLOC:
+   case VG_USERREQ__MEMPOOL_FREE:
+   case VG_USERREQ__MEMPOOL_TRIM:
+   case VG_USERREQ__MOVE_MEMPOOL:
+   case VG_USERREQ__MEMPOOL_CHANGE:
+   case VG_USERREQ__MEMPOOL_EXISTS:
+      break;
+
    case VG_USERREQ__DRD_GET_VALGRIND_THREAD_ID:
       result = vg_tid;
       break;
@@ -93,7 +119,7 @@ Bool DRD_(handle_client_request)(ThreadId vg_tid, UWord* arg, UWord* ret)
 
    case VG_USERREQ__DRD_SUPPRESS_CURRENT_STACK:
       {
-         const Addr topmost_sp = DRD_(highest_used_stack_address)(vg_tid);
+         const Addr topmost_sp = highest_used_stack_address(vg_tid);
 #if 0
          UInt nframes;
          const UInt n_ips = 20;
@@ -375,9 +401,6 @@ Bool DRD_(handle_client_request)(ThreadId vg_tid, UWord* arg, UWord* ret)
       break;
 
    default:
-      VG_(message)(Vg_DebugMsg, "Unrecognized client request 0x%lx 0x%lx",
-                   arg[0], arg[1]);
-      tl_assert(0);
       return False;
    }
 
@@ -393,7 +416,7 @@ Bool DRD_(handle_client_request)(ThreadId vg_tid, UWord* arg, UWord* ret)
  * in vgpreload_exp-drd-*.so or from the thread wrapper for a newly created
  * thread. See also drd_pthread_intercepts.c.
  */
-static Addr DRD_(highest_used_stack_address)(const ThreadId vg_tid)
+static Addr highest_used_stack_address(const ThreadId vg_tid)
 {
    UInt nframes;
    const UInt n_ips = 10;

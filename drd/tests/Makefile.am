@@ -27,6 +27,8 @@ EXTRA_DIST =                                        \
 	circular_buffer.stderr.exp-with-atomic-builtins		\
 	circular_buffer.stderr.exp-without-atomic-builtins	\
 	circular_buffer.vgtest			    \
+	custom_alloc.vgtest			    \
+	custom_alloc.stderr.exp			    \
 	drd_bitmap_test.stderr.exp                  \
 	drd_bitmap_test.stdout.exp                  \
 	drd_bitmap_test.vgtest                      \

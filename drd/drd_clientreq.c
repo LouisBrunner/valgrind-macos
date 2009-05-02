@@ -91,16 +91,6 @@ static Bool handle_client_request(ThreadId vg_tid, UWord* arg, UWord* ret)
       }
       break;
 
-   case VG_USERREQ__CREATE_MEMPOOL:
-   case VG_USERREQ__DESTROY_MEMPOOL:
-   case VG_USERREQ__MEMPOOL_ALLOC:
-   case VG_USERREQ__MEMPOOL_FREE:
-   case VG_USERREQ__MEMPOOL_TRIM:
-   case VG_USERREQ__MOVE_MEMPOOL:
-   case VG_USERREQ__MEMPOOL_CHANGE:
-   case VG_USERREQ__MEMPOOL_EXISTS:
-      break;
-
    case VG_USERREQ__DRD_GET_VALGRIND_THREAD_ID:
       result = vg_tid;
       break;
@@ -401,6 +391,11 @@ static Bool handle_client_request(ThreadId vg_tid, UWord* arg, UWord* ret)
       break;
 
    default:
+#if 0
+      VG_(message)(Vg_DebugMsg, "Unrecognized client request 0x%lx 0x%lx",
+                   arg[0], arg[1]);
+      tl_assert(0);
+#endif
       return False;
    }
 

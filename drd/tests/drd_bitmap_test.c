@@ -74,7 +74,7 @@ int bm_equal_print_diffs(struct bitmap* bm1, struct bitmap* bm2)
   int equal;
 
   equal = DRD_(bm_equal)(bm1, bm2);
-  if (! equal)
+  if (s_verbose && ! equal)
   {
     VG_(printf)("Bitmaps are different.\n");
     VG_(printf)("Bitmap 1:\n");
@@ -167,16 +167,17 @@ void bm_test3(const int outer_loop_step, const int inner_loop_step)
   struct bitmap* bm1;
   struct bitmap* bm2;
 
+  const Addr lb = ADDR0_COUNT - 2 * BITS_PER_UWORD;
+  const Addr ub = ADDR0_COUNT + 2 * BITS_PER_UWORD;
+
   assert(outer_loop_step >= 1);
   assert(inner_loop_step >= 1);
 
   bm1 = DRD_(bm_new)();
   bm2 = DRD_(bm_new)();
-  for (i = ADDR0_COUNT - 2 * BITS_PER_UWORD;
-       i < ADDR0_COUNT + 2 * BITS_PER_UWORD;
-       i += outer_loop_step)
+  for (i = lb; i < ub; i += outer_loop_step)
   {
-    for (j = i + 1; j < ADDR0_COUNT + 2 * BITS_PER_UWORD; j += inner_loop_step)
+    for (j = i + 1; j < ub; j += inner_loop_step)
     {
       DRD_(bm_access_range_load)(bm1, i, j);
       DRD_(bm_clear_load)(bm1, i, j);
@@ -240,7 +241,7 @@ void bm_test3(const int outer_loop_step, const int inner_loop_step)
        i < ADDR0_COUNT + 2 * BITS_PER_UWORD;
        i += outer_loop_step)
   {
-    for (j = i + 1; j < ADDR0_COUNT + 2 * BITS_PER_UWORD; j += inner_loop_step)
+    for (j = i + 1; j < ub; j += inner_loop_step)
     {
       DRD_(bm_clear_load)(bm1, i, j);
       DRD_(bm_access_range_load)(bm1, i, j);
@@ -257,6 +258,7 @@ void bm_test3(const int outer_loop_step, const int inner_loop_step)
       DRD_(bm_clear_load)(bm1, i, i+8);
       DRD_(bm_access_load_8)(bm1, i);
       assert(bm_equal_print_diffs(bm1, bm2));
+
       DRD_(bm_clear_store)(bm1, i, j);
       DRD_(bm_access_range_store)(bm1, i, j);
       assert(bm_equal_print_diffs(bm1, bm2));
@@ -271,6 +273,11 @@ void bm_test3(const int outer_loop_step, const int inner_loop_step)
       assert(bm_equal_print_diffs(bm1, bm2));
       DRD_(bm_clear_store)(bm1, i, i+8);
       DRD_(bm_access_store_8)(bm1, i);
+      assert(bm_equal_print_diffs(bm1, bm2));
+
+      DRD_(bm_clear)(bm1, i, j);
+      DRD_(bm_access_range_load)(bm1, i, j);
+      DRD_(bm_access_range_store)(bm1, i, j);
       assert(bm_equal_print_diffs(bm1, bm2));
     }
   }

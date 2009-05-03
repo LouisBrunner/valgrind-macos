@@ -1757,12 +1757,12 @@ void VG_(set_fault_catcher)(void (*catcher)(Int, Addr))
 }
 
 static
-void sync_signalhandler_from_outside ( ThreadId tid,
+void sync_signalhandler_from_user ( ThreadId tid,
          Int sigNo, vki_siginfo_t *info, struct vki_ucontext *uc )
 {
    ThreadId qtid;
 
-   /* If some user-process sent us a sync signal (ie, they're not the result
+   /* If some user-process sent us a sync signal (ie. it's not the result
       of a faulting instruction), then how we treat it depends on when it
       arrives... */
 
@@ -1890,7 +1890,7 @@ static Bool extend_stack_if_appropriate(ThreadId tid, vki_siginfo_t* info)
 }
 
 static
-void sync_signalhandler_from_inside ( ThreadId tid,
+void sync_signalhandler_from_kernel ( ThreadId tid,
          Int sigNo, vki_siginfo_t *info, struct vki_ucontext *uc )
 {
    /* Check to see if some part of Valgrind itself is interested in faults.
@@ -1963,7 +1963,7 @@ void sync_signalhandler ( Int sigNo,
                           vki_siginfo_t *info, struct vki_ucontext *uc )
 {
    ThreadId tid = VG_(lwpid_to_vgtid)(VG_(gettid)());
-   Bool from_outside;
+   Bool from_user;
 
    if (0) 
       VG_(printf)("sync_sighandler(%d, %p, %p)\n", sigNo, info, uc);
@@ -1978,14 +1978,14 @@ void sync_signalhandler ( Int sigNo,
 
    info->si_code = sanitize_si_code(info->si_code);
 
-   from_outside = !is_signal_from_kernel(info->si_code);
+   from_user = !is_signal_from_kernel(info->si_code);
 
    if (VG_(clo_trace_signals)) {
       VG_DMSG("sync signal handler: "
               "signal=%d, si_code=%d, EIP=%#lx, eip=%#lx, from %s",
               sigNo, info->si_code, VG_(get_IP)(tid), 
               VG_UCONTEXT_INSTR_PTR(uc),
-              ( from_outside ? "outside" : "inside" ));
+              ( from_user ? "user" : "kernel" ));
    }
    vg_assert(sigNo >= 1 && sigNo <= VG_(max_signal));
 
@@ -2005,10 +2005,10 @@ void sync_signalhandler ( Int sigNo,
       (Why do we care?)  If the signal is from the user rather than the
       kernel, then treat it more like an async signal than a sync signal --
       that is, merely queue it for later delivery. */
-   if (from_outside) {
-      sync_signalhandler_from_outside(tid, sigNo, info, uc);
+   if (from_user) {
+      sync_signalhandler_from_user(tid, sigNo, info, uc);
    } else {
-      sync_signalhandler_from_inside( tid, sigNo, info, uc);
+      sync_signalhandler_from_kernel( tid, sigNo, info, uc);
    }
 }
 

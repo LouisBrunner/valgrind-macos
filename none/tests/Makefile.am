@@ -130,7 +130,8 @@ EXTRA_DIST = $(noinst_SCRIPTS) \
 
 check_PROGRAMS = \
 	ansi args \
-	async-sigs bitfield1 \
+	async-sigs \
+	bitfield1 \
 	bug129866 \
 	closeall coolo_strlen \
 	discard exec-sigmask execve faultstatus fcntl_setown \

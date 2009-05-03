@@ -53,20 +53,32 @@
 
 /* Local variables. */
 
-static Bool DRD_(s_check_stack_accesses) = False;
+static Bool s_check_stack_accesses = False;
+static Bool s_first_race_only      = False;
 
 
 /* Function definitions. */
 
 Bool DRD_(get_check_stack_accesses)()
 {
-   return DRD_(s_check_stack_accesses);
+   return s_check_stack_accesses;
 }
 
 void DRD_(set_check_stack_accesses)(const Bool c)
 {
    tl_assert(c == False || c == True);
-   DRD_(s_check_stack_accesses) = c;
+   s_check_stack_accesses = c;
+}
+
+Bool DRD_(get_first_race_only)()
+{
+   return s_first_race_only;
+}
+
+void DRD_(set_first_race_only)(const Bool fro)
+{
+   tl_assert(fro == False || fro == True);
+   s_first_race_only = fro;
 }
 
 void DRD_(trace_mem_access)(const Addr addr, const SizeT size,
@@ -124,6 +136,11 @@ static void drd_report_race(const Addr addr, const SizeT size,
                            VG_(get_IP)(VG_(get_running_tid)()),
                            "Conflicting accesses",
                            &drei);
+
+   if (s_first_race_only)
+   {
+      DRD_(start_suppression)(addr, addr + size, "first race only");
+   }
 }
 
 VG_REGPARM(2) void DRD_(trace_load)(Addr addr, SizeT size)
@@ -135,7 +152,7 @@ VG_REGPARM(2) void DRD_(trace_load)(Addr addr, SizeT size)
 #endif
 
    if (DRD_(running_thread_is_recording)()
-       && (DRD_(s_check_stack_accesses)
+       && (s_check_stack_accesses
            || ! DRD_(thread_address_on_stack)(addr))
        && bm_access_load_triggers_conflict(addr, addr + size)
        && ! DRD_(is_suppressed)(addr, addr + size))
@@ -147,7 +164,7 @@ VG_REGPARM(2) void DRD_(trace_load)(Addr addr, SizeT size)
 static VG_REGPARM(1) void drd_trace_load_1(Addr addr)
 {
    if (DRD_(running_thread_is_recording)()
-       && (DRD_(s_check_stack_accesses)
+       && (s_check_stack_accesses
            || ! DRD_(thread_address_on_stack)(addr))
        && bm_access_load_1_triggers_conflict(addr)
        && ! DRD_(is_suppressed)(addr, addr + 1))
@@ -159,7 +176,7 @@ static VG_REGPARM(1) void drd_trace_load_1(Addr addr)
 static VG_REGPARM(1) void drd_trace_load_2(Addr addr)
 {
    if (DRD_(running_thread_is_recording)()
-       && (DRD_(s_check_stack_accesses)
+       && (s_check_stack_accesses
            || ! DRD_(thread_address_on_stack)(addr))
        && bm_access_load_2_triggers_conflict(addr)
        && ! DRD_(is_suppressed)(addr, addr + 2))
@@ -171,7 +188,7 @@ static VG_REGPARM(1) void drd_trace_load_2(Addr addr)
 static VG_REGPARM(1) void drd_trace_load_4(Addr addr)
 {
    if (DRD_(running_thread_is_recording)()
-       && (DRD_(s_check_stack_accesses)
+       && (s_check_stack_accesses
            || ! DRD_(thread_address_on_stack)(addr))
        && bm_access_load_4_triggers_conflict(addr)
        && ! DRD_(is_suppressed)(addr, addr + 4))
@@ -183,7 +200,7 @@ static VG_REGPARM(1) void drd_trace_load_4(Addr addr)
 static VG_REGPARM(1) void drd_trace_load_8(Addr addr)
 {
    if (DRD_(running_thread_is_recording)()
-       && (DRD_(s_check_stack_accesses)
+       && (s_check_stack_accesses
            || ! DRD_(thread_address_on_stack)(addr))
        && bm_access_load_8_triggers_conflict(addr)
        && ! DRD_(is_suppressed)(addr, addr + 8))
@@ -201,7 +218,7 @@ VG_REGPARM(2) void DRD_(trace_store)(Addr addr, SizeT size)
 #endif
 
    if (DRD_(running_thread_is_recording)()
-       && (DRD_(s_check_stack_accesses)
+       && (s_check_stack_accesses
            || ! DRD_(thread_address_on_stack)(addr))
        && bm_access_store_triggers_conflict(addr, addr + size)
        && ! DRD_(is_suppressed)(addr, addr + size))
@@ -213,7 +230,7 @@ VG_REGPARM(2) void DRD_(trace_store)(Addr addr, SizeT size)
 static VG_REGPARM(1) void drd_trace_store_1(Addr addr)
 {
    if (DRD_(running_thread_is_recording)()
-       && (DRD_(s_check_stack_accesses)
+       && (s_check_stack_accesses
            || ! DRD_(thread_address_on_stack)(addr))
        && bm_access_store_1_triggers_conflict(addr)
        && ! DRD_(is_suppressed)(addr, addr + 1))
@@ -225,7 +242,7 @@ static VG_REGPARM(1) void drd_trace_store_1(Addr addr)
 static VG_REGPARM(1) void drd_trace_store_2(Addr addr)
 {
    if (DRD_(running_thread_is_recording)()
-       && (DRD_(s_check_stack_accesses)
+       && (s_check_stack_accesses
            || ! DRD_(thread_address_on_stack)(addr))
        && bm_access_store_2_triggers_conflict(addr)
        && ! DRD_(is_suppressed)(addr, addr + 2))
@@ -237,7 +254,7 @@ static VG_REGPARM(1) void drd_trace_store_2(Addr addr)
 static VG_REGPARM(1) void drd_trace_store_4(Addr addr)
 {
    if (DRD_(running_thread_is_recording)()
-       && (DRD_(s_check_stack_accesses)
+       && (s_check_stack_accesses
            || ! DRD_(thread_address_on_stack)(addr))
        && bm_access_store_4_triggers_conflict(addr)
        && ! DRD_(is_suppressed)(addr, addr + 4))
@@ -249,7 +266,7 @@ static VG_REGPARM(1) void drd_trace_store_4(Addr addr)
 static VG_REGPARM(1) void drd_trace_store_8(Addr addr)
 {
    if (DRD_(running_thread_is_recording)()
-       && (DRD_(s_check_stack_accesses)
+       && (s_check_stack_accesses
            || ! DRD_(thread_address_on_stack)(addr))
        && bm_access_store_8_triggers_conflict(addr)
        && ! DRD_(is_suppressed)(addr, addr + 8))
@@ -310,7 +327,7 @@ static void instrument_load(IRSB* const bb,
                                             mkIRExpr_HWord(size)))));
    }
 
-   if (! DRD_(s_check_stack_accesses) && is_stack_access(bb, addr_expr))
+   if (! s_check_stack_accesses && is_stack_access(bb, addr_expr))
       return;
 
    switch (size)
@@ -375,7 +392,7 @@ static void instrument_store(IRSB* const bb,
                                                                  mkIRExpr_HWord(size)))));
    }
 
-   if (! DRD_(s_check_stack_accesses) && is_stack_access(bb, addr_expr))
+   if (! s_check_stack_accesses && is_stack_access(bb, addr_expr))
       return;
 
    switch (size)

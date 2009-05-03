@@ -38,6 +38,8 @@
 
 Bool DRD_(get_check_stack_accesses)(void);
 void DRD_(set_check_stack_accesses)(const Bool c);
+Bool DRD_(get_first_race_only)(void);
+void DRD_(set_first_race_only)(const Bool fro);
 IRSB* DRD_(instrument)(VgCallbackClosure* const closure,
                        IRSB* const bb_in,
                        VexGuestLayout* const layout,

@@ -1,3 +1,4 @@
 prereq: ./supported_libpthread
+vgopts: --check-stack-var=yes --var-info=yes
 prog: sem_as_mutex
 args: -m

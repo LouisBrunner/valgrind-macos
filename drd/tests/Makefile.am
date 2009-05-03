@@ -136,6 +136,8 @@ EXTRA_DIST =                                        \
 	sem_as_mutex.vgtest                         \
 	sem_as_mutex2.stderr.exp                    \
 	sem_as_mutex2.vgtest                        \
+	sem_as_mutex3.stderr.exp                    \
+	sem_as_mutex3.vgtest                        \
 	sigalrm.stderr.exp                          \
 	sigalrm.vgtest                              \
 	tc01_simple_race.stderr.exp                 \

@@ -70,6 +70,7 @@ void DRD_(sg_set_trace)(const Bool trace_segment);
 ULong DRD_(sg_get_segments_created_count)(void);
 ULong DRD_(sg_get_segments_alive_count)(void);
 ULong DRD_(sg_get_max_segments_alive_count)(void);
+ULong DRD_(sg_get_segment_merge_count)(void);
 
 
 #endif // __SEGMENT_H

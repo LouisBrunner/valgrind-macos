@@ -55,6 +55,7 @@
 
 /* Local variables. */
 
+static Bool DRD_(s_first_race_only)  = False;
 static Bool DRD_(s_print_stats)      = False;
 static Bool DRD_(s_var_info)         = False;
 static Bool DRD_(s_show_stack_usage) = False;
@@ -86,6 +87,7 @@ static Bool DRD_(process_cmd_line_option)(Char* arg)
 
    if      VG_BOOL_CLO(arg, "--check-stack-var",     check_stack_accesses) {}
    else if VG_BOOL_CLO(arg, "--drd-stats",           DRD_(s_print_stats)) {}
+   else if VG_BOOL_CLO(arg, "--first-race-only",     DRD_(s_first_race_only)) {}
    else if VG_BOOL_CLO(arg,"--report-signal-unlocked",report_signal_unlocked) {}
    else if VG_BOOL_CLO(arg, "--segment-merging",     segment_merging) {}
    else if VG_BOOL_CLO(arg, "--show-confl-seg",      show_confl_seg) {}
@@ -166,6 +168,8 @@ static void DRD_(print_usage)(void)
 "                              stack variables [no].\n"
 "    --exclusive-threshold=<n> Print an error message if any mutex or\n"
 "        writer lock is held longer than the specified time (in milliseconds).\n"
+"    --first-race-only=yes|no  Only report the first data race that occurs on\n"
+"                              a memory location instead of all races [no].\n"
 "    --report-signal-unlocked=yes|no Whether to report calls to\n"
 "                              pthread_cond_signal() where the mutex associated\n"
 "                              with the signal via pthread_cond_wait() is not\n"
@@ -573,6 +577,9 @@ static void DRD_(fini)(Int exitcode)
                    DRD_(sg_get_segments_created_count)(),
                    DRD_(sg_get_max_segments_alive_count)(),
                    DRD_(thread_get_discard_ordered_segments_count)());
+      VG_(message)(Vg_UserMsg,
+                   "           %lld merges.",
+                   DRD_(sg_get_segment_merge_count)());
       VG_(message)(Vg_UserMsg,
                    "           (%lld m, %lld rw, %lld s, %lld b)",
                    DRD_(get_mutex_segment_creation_count)(),

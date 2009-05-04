@@ -82,11 +82,13 @@ Bool VG_(resolve_filename) ( Int fd, HChar* buf, Int n_buf )
       return True;
    else
       return False;
+
 #  elif defined(VGO_aix5)
    I_die_here; /* maybe just return False? */
    return False;
+
 #  else
-#     error "need fd-to-filename for this OS"
+#     error Unknown OS
 #  endif
 }
 

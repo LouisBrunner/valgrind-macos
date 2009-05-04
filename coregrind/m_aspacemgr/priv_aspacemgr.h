@@ -43,7 +43,7 @@
 
 #include "pub_core_debuglog.h"   // VG_(debugLog)
 
-#include "pub_core_libcbase.h"   // VG_(strlen), VG_(strcmp)
+#include "pub_core_libcbase.h"   // VG_(strlen), VG_(strcmp), VG_(strncpy)
                                  // VG_IS_PAGE_ALIGNED
                                  // VG_PGROUNDDN, VG_PGROUNDUP
 
@@ -109,13 +109,17 @@ extern SysRes ML_(am_open)  ( const Char* pathname, Int flags, Int mode );
 extern void   ML_(am_close) ( Int fd );
 extern Int    ML_(am_read)  ( Int fd, void* buf, Int count);
 extern Int    ML_(am_readlink) ( HChar* path, HChar* buf, UInt bufsiz );
+extern Int    ML_(am_fcntl) ( Int fd, Int cmd, Addr arg );
 
 /* Get the dev, inode and mode info for a file descriptor, if
    possible.  Returns True on success. */
 extern
 Bool ML_(am_get_fd_d_i_m)( Int fd, 
-                                /*OUT*/ULong* dev, 
-                                /*OUT*/ULong* ino, /*OUT*/UInt* mode );
+                           /*OUT*/ULong* dev, 
+                           /*OUT*/ULong* ino, /*OUT*/UInt* mode );
+
+extern
+Bool ML_(am_resolve_filename) ( Int fd, /*OUT*/HChar* buf, Int nbuf );
 
 /* ------ Implemented seperately in aspacemgr-{linux,aix5}.c ------ */
 

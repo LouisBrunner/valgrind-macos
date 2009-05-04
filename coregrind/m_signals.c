@@ -42,7 +42,7 @@
    client process stack, it is extended in the same way the kernel
    would, and the fault is never reported to the client program.
 
-   2. Asynchronous varients of the above signals: If the kernel tries
+   2. Asynchronous variants of the above signals: If the kernel tries
    to deliver a sync signal while it is blocked, it just kills the
    process.  Therefore, we can't block those signals if we want to be
    able to report on bugs in Valgrind.  This means that we're also
@@ -77,6 +77,124 @@
    signals get delivered in the same way as in the non-Valgrind case
    (the exception being for the sync signal set, since they're almost
    always unblocked).
+ */
+
+/*
+   Some more details...
+
+   First off, we take note of the client's requests (via sys_sigaction
+   and sys_sigprocmask) to set the signal state (handlers for each
+   signal, which are process-wide, + a mask for each signal, which is
+   per-thread).  This info is duly recorded in the SCSS (static Client
+   signal state) in m_signals.c, and if the client later queries what
+   the state is, we merely fish the relevant info out of SCSS and give
+   it back.
+
+   However, we set the real signal state in the kernel to something
+   entirely different.  This is recorded in SKSS, the static Kernel
+   signal state.  What's nice (to the extent that anything is nice w.r.t
+   signals) is that there's a pure function to calculate SKSS from SCSS,
+   calculate_SKSS_from_SCSS.  So when the client changes SCSS then we
+   recompute the associated SKSS and apply any changes from the previous
+   SKSS through to the kernel.
+
+   Now, that said, the general scheme we have now is, that regardless of
+   what the client puts into the SCSS (viz, asks for), what we would
+   like to do is as follows:
+
+   (1) run code on the virtual CPU with all signals blocked
+
+   (2) at convenient moments for us (that is, when the VCPU stops, and
+      control is back with the scheduler), ask the kernel "do you have
+      any signals for me?"  and if it does, collect up the info, and
+      deliver them to the client (by building sigframes).
+
+   And that's almost what we do.  The signal polling is done by
+   VG_(poll_signals), which calls through to VG_(sigtimedwait_zero) to
+   do the dirty work.  (of which more later).
+
+   By polling signals, rather than catching them, we get to deal with
+   them only at convenient moments, rather than having to recover from
+   taking a signal while generated code is running.
+
+   Now unfortunately .. the above scheme only works for so-called async
+   signals.  An async signal is one which isn't associated with any
+   particular instruction, eg Control-C (SIGINT).  For those, it doesn't
+   matter if we don't deliver the signal to the client immediately; it
+   only matters that we deliver it eventually.  Hence polling is OK.
+
+   But the other group -- sync signals -- are all related by the fact
+   that they are various ways for the host CPU to fail to execute an
+   instruction: SIGILL, SIGSEGV, SIGFPU.  And they can't be deferred,
+   because obviously if a host instruction can't execute, well then we
+   have to immediately do Plan B, whatever that is.
+
+   So the next approximation of what happens is:
+
+   (1) run code on vcpu with all async signals blocked
+
+   (2) at convenient moments (when NOT running the vcpu), poll for async
+      signals.
+
+   (1) and (2) together imply that if the host does deliver a signal to
+      async_signalhandler while the VCPU is running, something's
+      seriously wrong.
+
+   (3) when running code on vcpu, don't block sync signals.  Instead
+      register sync_signalhandler and catch any such via that.  Of
+      course, that means an ugly recovery path if we do -- the
+      sync_signalhandler has to longjump, exiting out of the generated
+      code, and the assembly-dispatcher thingy that runs it, and gets
+      caught in m_scheduler, which then tells m_signals to deliver the
+      signal.
+
+   Now naturally (ha ha) even that might be tolerable, but there's
+   something worse: dealing with signals delivered to threads in
+   syscalls.
+
+   Obviously from the above, SKSS's signal mask (viz, what we really run
+   with) is way different from SCSS's signal mask (viz, what the client
+   thread thought it asked for).  (eg) It may well be that the client
+   did not block control-C, so that it just expects to drop dead if it
+   receives ^C whilst blocked in a syscall, but by default we are
+   running with all async signals blocked, and so that signal could be
+   arbitrarily delayed, or perhaps even lost (not sure).
+
+   So what we have to do, when doing any syscall which SfMayBlock, is to
+   quickly switch in the SCSS-specified signal mask just before the
+   syscall, and switch it back just afterwards, and hope that we don't
+   get caught up in some wierd race condition.  This is the primary
+   purpose of the ultra-magical pieces of assembly code in
+   coregrind/m_syswrap/syscall-<plat>.S
+
+   -----------
+
+   The ways in which V can come to hear of signals that need to be
+   forwarded to the client as are follows:
+
+    sync signals: can arrive at any time whatsoever.  These are caught
+                  by sync_signalhandler
+
+    async signals:
+
+       if    running generated code
+       then  these are blocked, so we don't expect to catch them in
+             async_signalhandler
+
+       else
+       if    thread is blocked in a syscall marked SfMayBlock
+       then  signals may be delivered to async_sighandler, since we
+             temporarily unblocked them for the duration of the syscall,
+             by using the real (SCSS) mask for this thread
+
+       else  we're doing misc housekeeping activities (eg, making a translation,
+             washing our hair, etc).  As in the normal case, these signals are
+             blocked, but we can  and do poll for them using VG_(poll_signals).
+
+   Now, re VG_(poll_signals), it polls the kernel by doing
+   VG_(sigtimedwait_zero).  This is trivial on Linux, since it's just a
+   syscall.  But on Darwin and AIX, we have to cobble together the
+   functionality in a tedious, longwinded and probably error-prone way.
  */
 
 #include "pub_core_basics.h"

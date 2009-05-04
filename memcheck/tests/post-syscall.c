@@ -29,10 +29,10 @@ int main()
 	ret = nanosleep(&req, &rem);
 	
 	if (ret != -1 || errno != EINTR) {
-		printf("FAILED: expected nanosleep to be interrupted\n");
+		fprintf(stderr, "FAILED: expected nanosleep to be interrupted\n");
 	} else {
 		VALGRIND_CHECK_VALUE_IS_DEFINED(rem);
-		printf("PASSED\n"); /* assuming CHECK_VALUE_IS_DEFINED doesn't print anything */
+		fprintf(stderr, "PASSED\n"); /* assuming CHECK_VALUE_IS_DEFINED doesn't print anything */
 	}
 
 	return 0;

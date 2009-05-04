@@ -128,7 +128,7 @@ EXTRA_DIST = $(noinst_SCRIPTS) \
 	pipe.stderr.exp pipe.vgtest \
 	pointer-trace.vgtest \
 	pointer-trace.stderr.exp \
-	post-syscall.stderr.exp post-syscall.stdout.exp post-syscall.vgtest \
+	post-syscall.stderr.exp post-syscall.vgtest \
 	realloc1.stderr.exp realloc1.vgtest \
 	realloc2.stderr.exp realloc2.vgtest \
 	realloc3.stderr.exp realloc3.vgtest \

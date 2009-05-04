@@ -65,8 +65,10 @@ STRNLEN(VG_Z_LIBC_SONAME, strnlen)
    }
 
 STRLEN(VG_Z_LIBC_SONAME,          strlen)
+#if defined(VGO_linux)
 STRLEN(VG_Z_LD_LINUX_SO_2,        strlen)
 STRLEN(VG_Z_LD_LINUX_X86_64_SO_2, strlen)
+#endif
 
 /*--------------------------------------------------------------------*/
 /*--- end                                                          ---*/

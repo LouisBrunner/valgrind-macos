@@ -1608,11 +1608,13 @@ QT4_FUNC(void*, _ZN6QMutexD2Ev, void* mutex)
 
 // Apparently index() is the same thing as strchr()
 STRCHR(VG_Z_LIBC_SONAME,          strchr)
-STRCHR(VG_Z_LD_LINUX_SO_2,        strchr)
-STRCHR(VG_Z_LD_LINUX_X86_64_SO_2, strchr)
 STRCHR(VG_Z_LIBC_SONAME,          index)
+#if defined(VGO_linux)
+STRCHR(VG_Z_LD_LINUX_SO_2,        strchr)
 STRCHR(VG_Z_LD_LINUX_SO_2,        index)
+STRCHR(VG_Z_LD_LINUX_X86_64_SO_2, strchr)
 STRCHR(VG_Z_LD_LINUX_X86_64_SO_2, index)
+#endif
 
 
 // Note that this replacement often doesn't get used because gcc inlines
@@ -1629,8 +1631,10 @@ STRCHR(VG_Z_LD_LINUX_X86_64_SO_2, index)
    }
 
 STRLEN(VG_Z_LIBC_SONAME,          strlen)
+#if defined(VGO_linux)
 STRLEN(VG_Z_LD_LINUX_SO_2,        strlen)
 STRLEN(VG_Z_LD_LINUX_X86_64_SO_2, strlen)
+#endif
 
 
 #define STRCPY(soname, fnname) \
@@ -1669,8 +1673,10 @@ STRCPY(VG_Z_LIBC_SONAME, strcpy)
    }
 
 STRCMP(VG_Z_LIBC_SONAME,          strcmp)
+#if defined(VGO_linux)
 STRCMP(VG_Z_LD_LINUX_X86_64_SO_2, strcmp)
 STRCMP(VG_Z_LD64_SO_1,            strcmp)
+#endif
 
 
 #define MEMCPY(soname, fnname) \
@@ -1716,8 +1722,10 @@ STRCMP(VG_Z_LD64_SO_1,            strcmp)
    }
 
 MEMCPY(VG_Z_LIBC_SONAME,    memcpy)
+#if defined(VGO_linux)
 MEMCPY(VG_Z_LD_SO_1,        memcpy) /* ld.so.1 */
 MEMCPY(VG_Z_LD64_SO_1,      memcpy) /* ld64.so.1 */
+#endif
 /* icc9 blats these around all over the place.  Not only in the main
    executable but various .so's.  They are highly tuned and read
    memory beyond the source boundary (although work correctly and

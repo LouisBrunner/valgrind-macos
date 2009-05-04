@@ -160,6 +160,15 @@
 
 /* --------- Some handy Z-encoded names. --------- */
 
+// Nb: ALL THESE NAMES MUST BEGIN WITH "VG_Z_".  Why?  If we applied
+// conditional compilation inconsistently we could accidentally use an
+// undefined constant like VG_Z_LIBC_DOT_A, resulting in a bogus Z-encoded
+// name like "_vgrZU_VG_Z_LIBC_DOT_A_foo".  This can't be detected at
+// compile-time, because both the constant's name and its value are
+// identifiers.  However, by always using "VG_Z_" as a prefix, we can do a
+// run-time check and abort if any name has "VG_Z_" in it, because that
+// indicates that the constant has been used without being defined.
+
 /* --- Soname of the standard C library. --- */
 
 #if defined(VGO_linux)
@@ -175,8 +184,7 @@
 
 /* --- Soname of the GNU C++ library. --- */
 
-// DDD: this one and those below should probably be conditionally compiled,
-// as should all the redirects in the tools that use them.
+// Valid on all platforms(?)
 #define  VG_Z_LIBSTDCXX_SONAME  libstdcZpZpZa           // libstdc++*
 
 /* --- Soname of XLC's C++ library. --- */
@@ -192,11 +200,12 @@
 
 /* --- Sonames for Linux ELF linkers. --- */
 
+#if defined(VGO_linux)
 #define  VG_Z_LD_LINUX_SO_2         ldZhlinuxZdsoZd2           // ld-linux.so.2
 #define  VG_Z_LD_LINUX_X86_64_SO_2  ldZhlinuxZhx86Zh64ZdsoZd2  // ld-linux-x86-64.so.2
 #define  VG_Z_LD64_SO_1             ld64ZdsoZd1                // ld64.so.1
 #define  VG_Z_LD_SO_1               ldZdsoZd1                  // ld.so.1
-
+#endif
 
 #endif   // __PUB_TOOL_REDIR_H
 

@@ -167,7 +167,7 @@ Bool VG_(maybe_Z_demangle) ( const HChar* sym,
          }                                     \
       } while (0)
 
-   Bool error, oflow, valid, fn_is_encoded;
+   Bool error, oflow, valid, fn_is_encoded, is_VG_Z_prefixed;
    Int  soi, fni, i;
 
    vg_assert(soLen > 0 || (soLen == 0 && so == NULL));
@@ -191,6 +191,19 @@ Bool VG_(maybe_Z_demangle) ( const HChar* sym,
 
    if (isWrap)
       *isWrap = sym[3] == 'w';
+
+   /* Now check the soname prefix isn't "VG_Z_", as described in
+      pub_tool_redir.h. */
+   is_VG_Z_prefixed =
+      sym[ 7] == 'V' &&
+      sym[ 8] == 'G' &&
+      sym[ 9] == '_' &&
+      sym[10] == 'Z' &&
+      sym[11] == '_';
+   if (is_VG_Z_prefixed) {
+      vg_assert2(0, "symbol with a 'VG_Z_' prefix: %s.\n"
+                    "see pub_tool_redir.h for an explanation.", sym);
+   }
 
    /* Now scan the Z-encoded soname. */
    i = 7;

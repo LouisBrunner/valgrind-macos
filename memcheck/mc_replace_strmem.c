@@ -115,7 +115,9 @@ Bool is_overlap ( void* dst, const void* src, SizeT dstlen, SizeT srclen )
 // Apparently rindex() is the same thing as strrchr()
 STRRCHR(VG_Z_LIBC_SONAME,   strrchr)
 STRRCHR(VG_Z_LIBC_SONAME,   rindex)
+#if defined(VGO_linux)
 STRRCHR(VG_Z_LD_LINUX_SO_2, rindex)
+#endif
    
 
 #define STRCHR(soname, fnname) \
@@ -133,11 +135,13 @@ STRRCHR(VG_Z_LD_LINUX_SO_2, rindex)
 
 // Apparently index() is the same thing as strchr()
 STRCHR(VG_Z_LIBC_SONAME,          strchr)
-STRCHR(VG_Z_LD_LINUX_SO_2,        strchr)
-STRCHR(VG_Z_LD_LINUX_X86_64_SO_2, strchr)
 STRCHR(VG_Z_LIBC_SONAME,          index)
+#if defined(VGO_linux)
+STRCHR(VG_Z_LD_LINUX_SO_2,        strchr)
 STRCHR(VG_Z_LD_LINUX_SO_2,        index)
+STRCHR(VG_Z_LD_LINUX_X86_64_SO_2, strchr)
 STRCHR(VG_Z_LD_LINUX_X86_64_SO_2, index)
+#endif
 
 
 #define STRCAT(soname, fnname) \
@@ -217,9 +221,11 @@ STRNLEN(VG_Z_LIBC_SONAME, strnlen)
       return i; \
    }
 
-STRLEN(VG_Z_LIBC_SONAME,       strlen)
+STRLEN(VG_Z_LIBC_SONAME,          strlen)
+#if defined(VGO_linux)
 STRLEN(VG_Z_LD_LINUX_SO_2,        strlen)
 STRLEN(VG_Z_LD_LINUX_X86_64_SO_2, strlen)
+#endif
 
 
 #define STRCPY(soname, fnname) \
@@ -313,8 +319,10 @@ STRNCMP(VG_Z_LIBC_SONAME, strncmp)
    }
 
 STRCMP(VG_Z_LIBC_SONAME,          strcmp)
+#if defined(VGO_linux)
 STRCMP(VG_Z_LD_LINUX_X86_64_SO_2, strcmp)
 STRCMP(VG_Z_LD64_SO_1,            strcmp)
+#endif
 
 
 #define MEMCHR(soname, fnname) \
@@ -378,8 +386,10 @@ MEMCHR(VG_Z_LIBC_SONAME, memchr)
    }
 
 MEMCPY(VG_Z_LIBC_SONAME, memcpy)
+#if defined(VGO_linux)
 MEMCPY(VG_Z_LD_SO_1,     memcpy) /* ld.so.1 */
 MEMCPY(VG_Z_LD64_SO_1,   memcpy) /* ld64.so.1 */
+#endif
 /* icc9 blats these around all over the place.  Not only in the main
    executable but various .so's.  They are highly tuned and read
    memory beyond the source boundary (although work correctly and
@@ -418,7 +428,9 @@ MEMCPY(NONE, _intel_fast_memcpy)
 
 MEMCMP(VG_Z_LIBC_SONAME, memcmp)
 MEMCMP(VG_Z_LIBC_SONAME, bcmp)
+#if defined(VGO_linux)
 MEMCMP(VG_Z_LD_SO_1,     bcmp)
+#endif
 
 
 /* Copy SRC to DEST, returning the address of the terminating '\0' in
@@ -445,9 +457,11 @@ MEMCMP(VG_Z_LD_SO_1,     bcmp)
    }
 
 STPCPY(VG_Z_LIBC_SONAME,          stpcpy)
+#if defined(VGO_linux)
 STPCPY(VG_Z_LD_LINUX_SO_2,        stpcpy)
 STPCPY(VG_Z_LD_LINUX_X86_64_SO_2, stpcpy)
-   
+#endif
+
 
 #define MEMSET(soname, fnname) \
    void* VG_REPLACE_FUNCTION_ZU(soname,fnname)(void *s, Int c, SizeT n); \
@@ -653,7 +667,9 @@ GLIBC25___STPCPY_CHK(VG_Z_LIBC_SONAME, __stpcpy_chk)
    }
 
 GLIBC25_MEMPCPY(VG_Z_LIBC_SONAME, mempcpy)
+#if defined(VGO_linux)
 GLIBC25_MEMPCPY(VG_Z_LD_SO_1,     mempcpy) /* ld.so.1 */
+#endif
 
 
 #define GLIBC26___MEMCPY_CHK(soname, fnname) \

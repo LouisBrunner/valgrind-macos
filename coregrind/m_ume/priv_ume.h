@@ -30,17 +30,6 @@
 #ifndef __PRIV_UME_H
 #define __PRIV_UME_H
 
-#if defined(VGO_linux) 
-#  define HAVE_ELF
-#  define HAVE_SCRIPT
-
-#elif defined(VGO_aix5)
-// The AIX port doesn't use UME.
-
-#else
-#error unknown architecture
-#endif
-
 extern int VG_(do_exec_inner)(const HChar *exe, ExeInfo *info);
 
 #if defined(HAVE_ELF)

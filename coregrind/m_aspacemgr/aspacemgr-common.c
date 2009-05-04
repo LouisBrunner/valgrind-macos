@@ -306,17 +306,6 @@ Bool ML_(am_resolve_filename) ( Int fd, /*OUT*/HChar* buf, Int nbuf )
    I_die_here; /* maybe just return False? */
    return False;
 
-#elif defined(VGO_darwin)
-   HChar tmp[VKI_MAXPATHLEN+1];
-   if (0 == ML_(am_fcntl)(fd, VKI_F_GETPATH, (UWord)tmp)) {
-      if (nbuf > 0) {
-         VG_(strncpy)( buf, tmp, nbuf < sizeof(tmp) ? nbuf : sizeof(tmp) );
-         buf[nbuf-1] = 0;
-      }
-      if (tmp[0] == '/') return True;
-   }
-   return False;
-
 #  else
 #     error Unknown OS
 #  endif

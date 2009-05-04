@@ -36,6 +36,17 @@
 // and exec'ing.
 //--------------------------------------------------------------------
 
+#if defined(VGO_linux) 
+#  define HAVE_ELF
+#  define HAVE_SCRIPT
+
+#elif defined(VGO_aix5)
+// The AIX port doesn't use UME.
+
+#else
+#error unknown architecture
+#endif
+
 /*------------------------------------------------------------*/
 /*--- Loading files                                        ---*/
 /*------------------------------------------------------------*/

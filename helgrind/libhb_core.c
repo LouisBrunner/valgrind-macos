@@ -2729,7 +2729,8 @@ typedef
       struct _RCEC* next;
       UWord rc;
       UWord rcX; /* used for crosschecking */
-      UWord frames[1 + N_FRAMES]; /* first word is hash of all the rest */
+      UWord frames_hash;          /* hash of all the frames */
+      UWord frames[N_FRAMES];
    }
    RCEC;
 
@@ -2741,11 +2742,11 @@ static Word RCEC__cmp_by_frames ( RCEC* ec1, RCEC* ec2 ) {
    Word i;
    tl_assert(ec1 && ec1->magic == RCEC_MAGIC);
    tl_assert(ec2 && ec2->magic == RCEC_MAGIC);
-   if (ec1->frames[0] < ec2->frames[0]) return -1;
-   if (ec1->frames[0] > ec2->frames[0]) return 1;
-   for (i = 1; i < 1 + N_FRAMES; i++) {
+   if (ec1->frames_hash < ec2->frames_hash) return -1;
+   if (ec1->frames_hash > ec2->frames_hash) return  1;
+   for (i = 0; i < N_FRAMES; i++) {
       if (ec1->frames[i] < ec2->frames[i]) return -1;
-      if (ec1->frames[i] > ec2->frames[i]) return 1;
+      if (ec1->frames[i] > ec2->frames[i]) return  1;
    }
    return 0;
 }
@@ -2841,7 +2842,7 @@ static RCEC* ctxt__find_or_add ( RCEC* example )
 
    /* Search the hash table to see if we already have it. */
    stats__ctxt_tab_qs++;
-   hent = example->frames[0] % N_RCEC_TAB;
+   hent = example->frames_hash % N_RCEC_TAB;
    copy = contextTab[hent];
    while (1) {
       if (!copy) break;
@@ -2886,13 +2887,13 @@ static RCEC* get_RCEC ( Thr* thr )
    example.magic = RCEC_MAGIC;
    example.rc = 0;
    example.rcX = 0;
-   main_get_stacktrace( thr, &example.frames[1], N_FRAMES );
+   main_get_stacktrace( thr, &example.frames[0], N_FRAMES );
    hash = 0;
-   for (i = 1; i < 1 + N_FRAMES; i++) {
+   for (i = 0; i < N_FRAMES; i++) {
       hash ^= example.frames[i];
       hash = ROLW(hash, 19);
    }
-   example.frames[0] = hash;
+   example.frames_hash = hash;
    return ctxt__find_or_add( &example );
 }
 
@@ -3189,7 +3190,7 @@ Bool libhb_event_map_lookup ( /*OUT*/ExeContext** resEC,
          tl_assert(cand_rcec->magic == RCEC_MAGIC);
          tl_assert(cand_szB >= 1);
          *resEC  = VG_(make_ExeContext_from_StackTrace)(
-                      &cand_rcec->frames[1],
+                      &cand_rcec->frames[0],
                       min_UInt(N_FRAMES, VG_(clo_backtrace_size))
                    );
          *resThr = cand_thr;

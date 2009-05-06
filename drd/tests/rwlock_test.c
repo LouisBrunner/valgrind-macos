@@ -36,6 +36,7 @@ int main(int argc, char** argv)
   pthread_t tid[thread_count];
   int i;
 
+  pthread_rwlock_init(&s_rwlock, NULL);
   for (i = 0; i < thread_count; i++)
   {
     pthread_create(&tid[i], 0, thread_func, 0);

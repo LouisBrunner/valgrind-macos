@@ -782,6 +782,15 @@ static Int cmp_LossRecords(void* va, void* vb)
    // If size are equal, compare by states.
    if (lr_a->key.state < lr_b->key.state) return -1;
    if (lr_a->key.state > lr_b->key.state) return  1;
+   // If they're still equal here, it doesn't matter that much, but we keep
+   // comparing other things so that regtests are as deterministic as
+   // possible.  So:  compare num_blocks.
+   if (lr_a->num_blocks < lr_b->num_blocks) return -1;
+   if (lr_a->num_blocks > lr_b->num_blocks) return  1;
+   // Finally, compare ExeContext addresses... older ones are likely to have
+   // lower addresses.
+   if (lr_a->key.allocated_at < lr_b->key.allocated_at) return -1;
+   if (lr_a->key.allocated_at > lr_b->key.allocated_at) return  1;
    return 0;
 }
 

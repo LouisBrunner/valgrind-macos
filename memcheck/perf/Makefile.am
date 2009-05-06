@@ -2,11 +2,10 @@
 include $(top_srcdir)/Makefile.tool-tests.am
 
 EXTRA_DIST = \
-	many-xpts.vgperf
+	many-loss-records.vgperf
 
 check_PROGRAMS = \
-	many-xpts
+	many-loss-records
 
 AM_CFLAGS   += -O $(AM_FLAG_M3264_PRI)
 AM_CXXFLAGS += -O $(AM_FLAG_M3264_PRI)
-

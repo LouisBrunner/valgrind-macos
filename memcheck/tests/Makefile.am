@@ -92,7 +92,7 @@ EXTRA_DIST = $(noinst_SCRIPTS) \
 	memalign2.stderr.exp memalign2.vgtest \
 	memcmptest.stderr.exp memcmptest.stderr.exp2 \
 	memcmptest.stdout.exp memcmptest.vgtest \
-	mempool.stderr.exp mempool.stderr.exp64 mempool.vgtest \
+	mempool.stderr.exp mempool.vgtest \
 	metadata.stderr.exp metadata.stdout.exp metadata.vgtest \
 	mismatches.stderr.exp mismatches.vgtest \
 	mmaptest.stderr.exp mmaptest.vgtest \

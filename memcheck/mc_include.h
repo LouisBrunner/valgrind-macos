@@ -230,13 +230,15 @@ HChar* MC_(event_ctr_name)[N_PROF_EVENTS];
 
 typedef 
    enum { 
-      Unreached    =0,  // Not reached, ie. leaked. 
-                        //   (At best, only reachable from itself via a cycle.
-      IndirectLeak =1,  // Leaked, but reachable from another leaked block
-                        //   (be it Unreached or IndirectLeak).
-      Possible     =2,  // Possibly reachable from root-set;  involves at
+      // Nb: the order is important -- it dictates the order of loss records
+      // of equal sizes.
+      Reachable    =0,  // Definitely reachable from root-set.
+      Possible     =1,  // Possibly reachable from root-set;  involves at
                         //   least one interior-pointer along the way.
-      Reachable    =3   // Definitely reachable from root-set.
+      IndirectLeak =2,  // Leaked, but reachable from another leaked block
+                        //   (be it Unreached or IndirectLeak).
+      Unreached    =3,  // Not reached, ie. leaked. 
+                        //   (At best, only reachable from itself via a cycle.)
   }
   Reachedness;
 
@@ -262,17 +264,23 @@ typedef
    }
    LeakCheckMode;
 
+/* When a LossRecord is put into an OSet, these elements represent the key. */
+typedef
+   struct _LossRecordKey {
+      Reachedness  state;        // LC_Extra.state value shared by all blocks.
+      ExeContext*  allocated_at; // Where they were allocated.
+   } 
+   LossRecordKey;
+
 /* A loss record, used for generating err msgs.  Multiple leaked blocks can be
  * merged into a single loss record if they have the same state and similar
  * enough allocation points (controlled by --leak-resolution). */
 typedef
    struct _LossRecord {
-      struct _LossRecord* next;
-      ExeContext*  allocated_at; // Where they were allocated.
-      Reachedness  state;        // LC_Extra.state value shared by all blocks.
-      SizeT        szB;          // Sum of all MC_Chunk.szB values.
-      SizeT        indirect_szB; // Sum of all LC_Extra.indirect_szB values.
-      UInt         num_blocks;   // Number of blocks represented by the record.
+      LossRecordKey key;  // Key, when used in an OSet.
+      SizeT szB;          // Sum of all MC_Chunk.szB values.
+      SizeT indirect_szB; // Sum of all LC_Extra.indirect_szB values.
+      UInt  num_blocks;   // Number of blocks represented by the record.
    }
    LossRecord;
 

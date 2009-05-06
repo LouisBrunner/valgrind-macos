@@ -14,13 +14,19 @@ typedef struct _level_list
 {
    struct _level_list *next;
    char *where;
+   // Padding ensures the struct is the same size on 32-bit and 64-bit
+   // machines.
+   char padding[16 - 2*sizeof(char*)];
 } level_list;
 
 typedef struct _pool {
    char *mem;
    char *where; 
-   int size, left;
    level_list *levels;
+   int size, left;
+   // Padding ensures the struct is the same size on 32-bit and 64-bit
+   // machines.
+   char padding[24 - 3*sizeof(char*)];
 } pool;
 
 pool *make_pool()

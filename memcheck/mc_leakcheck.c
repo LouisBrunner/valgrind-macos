@@ -40,6 +40,7 @@
 #include "pub_tool_machine.h"
 #include "pub_tool_mallocfree.h"
 #include "pub_tool_options.h"
+#include "pub_tool_oset.h"
 #include "pub_tool_signals.h"
 #include "pub_tool_tooliface.h"     // Needed for mc_include.h
 
@@ -750,77 +751,108 @@ static void lc_process_markstack(Int clique)
    }
 }
 
+static Word cmp_LossRecordKey_LossRecord(const void* key, const void* elem)
+{
+   LossRecordKey* a = (LossRecordKey*)key;
+   LossRecordKey* b = &(((LossRecord*)elem)->key);
+
+   // Compare on states first because that's fast.
+   if (a->state < b->state) return -1;
+   if (a->state > b->state) return  1;
+   // Ok, the states are equal.  Now compare the locations, which is slower.
+   if (VG_(eq_ExeContext)(
+            MC_(clo_leak_resolution), a->allocated_at, b->allocated_at))
+      return 0;
+   // Different locations.  Ordering is arbitrary, just use the ec pointer.
+   if (a->allocated_at < b->allocated_at) return -1;
+   if (a->allocated_at > b->allocated_at) return  1;
+   VG_(tool_panic)("bad LossRecord comparison");
+}
+
+static Int cmp_LossRecords(void* va, void* vb)
+{
+   LossRecord* lr_a = *(LossRecord**)va;
+   LossRecord* lr_b = *(LossRecord**)vb;
+   SizeT total_szB_a = lr_a->szB + lr_a->indirect_szB;
+   SizeT total_szB_b = lr_b->szB + lr_b->indirect_szB;
+
+   // First compare by sizes.
+   if (total_szB_a < total_szB_b) return -1;
+   if (total_szB_a > total_szB_b) return  1;
+   // If size are equal, compare by states.
+   if (lr_a->key.state < lr_b->key.state) return -1;
+   if (lr_a->key.state > lr_b->key.state) return  1;
+   return 0;
+}
+
 static void print_results(ThreadId tid, Bool is_full_check)
 {
-   Int         i, n_lossrecords;
-   LossRecord* lr_list;
-   LossRecord* lr;
-   Bool        is_suppressed;
+   Int          i, n_lossrecords;
+   OSet*        lr_table;
+   LossRecord** lr_array;
+   LossRecord*  lr;
+   Bool         is_suppressed;
 
-   // Common up the lost blocks so we can print sensible error messages.
-   n_lossrecords = 0;
-   lr_list       = NULL;
+   // Create the lr_table, which holds the loss records.
+   lr_table =
+      VG_(OSetGen_Create)(offsetof(LossRecord, key),
+                          cmp_LossRecordKey_LossRecord,
+                          VG_(malloc), "mc.pr.1",
+                          VG_(free)); 
+
+   // Convert the chunks into loss records, merging them where appropriate.
    for (i = 0; i < lc_n_chunks; i++) {
-      MC_Chunk* ch = lc_chunks[i];
-      LC_Extra* ex = &(lc_extras)[i];
+      MC_Chunk*     ch = lc_chunks[i];
+      LC_Extra*     ex = &(lc_extras)[i];
+      LossRecord*   old_lr;
+      LossRecordKey lrkey;
+      lrkey.state        = ex->state;
+      lrkey.allocated_at = ch->where;
 
-      // Determine if this chunk is sufficiently similar to any of our
-      // previously-created loss records to merge.  
-      // XXX: This is quadratic! (see bug #191182)
-      for (lr = lr_list; lr != NULL; lr = lr->next) {
-         if (lr->state == ex->state
-             && VG_(eq_ExeContext) ( MC_(clo_leak_resolution),
-                                     lr->allocated_at, 
-                                     ch->where) ) {
-            break;
-         }
-      }
-      if (lr != NULL) {
-         // Similar to a previous loss record;  merge.
-         lr->num_blocks++;
-         lr->szB          += ch->szB;
-         lr->indirect_szB += ex->indirect_szB;
+      old_lr = VG_(OSetGen_Lookup)(lr_table, &lrkey);
+      if (old_lr) {
+         // We found an existing loss record matching this chunk.  Update the
+         // loss record's details in-situ.  This is safe because we don't
+         // change the elements used as the OSet key.
+         old_lr->szB          += ch->szB;
+         old_lr->indirect_szB += ex->indirect_szB;
+         old_lr->num_blocks++;
       } else {
-         // Create a new loss record.
-         n_lossrecords++;
-         lr = VG_(malloc)( "mc.fr.1", sizeof(LossRecord));
-         lr->state        = ex->state;
-         lr->allocated_at = ch->where;
-         lr->szB          = ch->szB;
-         lr->indirect_szB = ex->indirect_szB;
-         lr->num_blocks   = 1;
-         lr->next         = lr_list;
-         lr_list          = lr;
+         // No existing loss record matches this chunk.  Create a new loss
+         // record, initialise it from the chunk, and insert it into lr_table.
+         lr = VG_(OSetGen_AllocNode)(lr_table, sizeof(LossRecord));
+         lr->key              = lrkey;
+         lr->szB              = ch->szB;
+         lr->indirect_szB     = ex->indirect_szB;
+         lr->num_blocks       = 1;
+         VG_(OSetGen_Insert)(lr_table, lr);
       }
    }
+   n_lossrecords = VG_(OSetGen_Size)(lr_table);
 
+   // Create an array of pointers to the loss records.
+   lr_array = VG_(malloc)("mc.pr.2", n_lossrecords * sizeof(LossRecord*));
+   i = 0;
+   VG_(OSetGen_ResetIter)(lr_table);
+   while ( (lr = VG_(OSetGen_Next)(lr_table)) ) {
+      lr_array[i++] = lr;
+   }
+   tl_assert(i == n_lossrecords);
+
+   // Sort the array by loss record sizes.
+   VG_(ssort)(lr_array, n_lossrecords, sizeof(LossRecord*),
+              cmp_LossRecords);
+
+   // Zero totals.
    MC_(blocks_leaked)     = MC_(bytes_leaked)     = 0;
    MC_(blocks_indirect)   = MC_(bytes_indirect)   = 0;
    MC_(blocks_dubious)    = MC_(bytes_dubious)    = 0;
    MC_(blocks_reachable)  = MC_(bytes_reachable)  = 0;
    MC_(blocks_suppressed) = MC_(bytes_suppressed) = 0;
 
-   // Print out the loss records and collect summary stats.
+   // Print the loss records (in size order) and collect summary stats.
    for (i = 0; i < n_lossrecords; i++) {
-      Bool        print_record;
-      LossRecord* lr_min = NULL;
-      SizeT       total_szB_min = ~(0x0L);
-      // Find the loss record covering the smallest number of directly-lost
-      // bytes.  Note that we set lr_min->num_blocks to zero after printing it;
-      // that combined with the "lr->num_blocks > 0" test ensures that each
-      // loss record is only printed once.
-      // XXX: This is quadratic! (see bug #191182)
-      // XXX: why do we show the smallest loss records first -- biggest first
-      //      would make more sense?
-      for (lr = lr_list; lr != NULL; lr = lr->next) {
-         SizeT total_szB = lr->szB + lr->indirect_szB;
-         if (lr->num_blocks > 0 && total_szB < total_szB_min) {
-            total_szB_min = total_szB;
-            lr_min = lr;
-         }
-      }
-      tl_assert(lr_min != NULL);
-
+      Bool print_record;
       // Rules for printing:
       // - We don't show suppressed loss records ever (and that's controlled
       //   within the error manager).
@@ -833,38 +865,37 @@ static void print_results(ThreadId tid, Bool is_full_check)
       // this is different to "still reachable" used elsewhere because it
       // includes indirectly lost blocks!
       //
+      lr = lr_array[i];
       print_record = is_full_check &&
                      ( MC_(clo_show_reachable) || 
-                       Unreached == lr_min->state || 
-                       Possible  == lr_min->state );
+                       Unreached == lr->key.state || 
+                       Possible  == lr->key.state );
       is_suppressed = 
-         MC_(record_leak_error) ( tid, i+1, n_lossrecords, lr_min,
-                                  print_record );
+         MC_(record_leak_error) ( tid, i+1, n_lossrecords, lr, print_record );
 
       if (is_suppressed) {
-         MC_(blocks_suppressed) += lr_min->num_blocks;
-         MC_(bytes_suppressed)  += lr_min->szB;
+         MC_(blocks_suppressed) += lr->num_blocks;
+         MC_(bytes_suppressed)  += lr->szB;
 
-      } else if (Unreached == lr_min->state) {
-         MC_(blocks_leaked)     += lr_min->num_blocks;
-         MC_(bytes_leaked)      += lr_min->szB;
+      } else if (Unreached == lr->key.state) {
+         MC_(blocks_leaked)     += lr->num_blocks;
+         MC_(bytes_leaked)      += lr->szB;
 
-      } else if (IndirectLeak == lr_min->state) {
-         MC_(blocks_indirect)   += lr_min->num_blocks;
-         MC_(bytes_indirect)    += lr_min->szB;
+      } else if (IndirectLeak == lr->key.state) {
+         MC_(blocks_indirect)   += lr->num_blocks;
+         MC_(bytes_indirect)    += lr->szB;
 
-      } else if (Possible == lr_min->state) {
-         MC_(blocks_dubious)    += lr_min->num_blocks;
-         MC_(bytes_dubious)     += lr_min->szB;
+      } else if (Possible == lr->key.state) {
+         MC_(blocks_dubious)    += lr->num_blocks;
+         MC_(bytes_dubious)     += lr->szB;
 
-      } else if (Reachable == lr_min->state) {
-         MC_(blocks_reachable)  += lr_min->num_blocks;
-         MC_(bytes_reachable)   += lr_min->szB;
+      } else if (Reachable == lr->key.state) {
+         MC_(blocks_reachable)  += lr->num_blocks;
+         MC_(bytes_reachable)   += lr->szB;
 
       } else {
          VG_(tool_panic)("unknown loss mode");
       }
-      lr_min->num_blocks = 0;
    }
 
    if (VG_(clo_verbosity) > 0 && !VG_(clo_xml)) {

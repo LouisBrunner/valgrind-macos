@@ -67,10 +67,9 @@ extern void* VG_(HT_lookup) ( VgHashTable table, UWord key );
 /* Removes a VgHashNode from the table.  Returns NULL if not found. */
 extern void* VG_(HT_remove) ( VgHashTable table, UWord key );
 
-/* Allocates a suitably-sized array, copies all the hashtable elements
-   into it, then returns both the array and the size of it.  This is
-   used by the memory-leak detector.  The array must be freed with
-   VG_(free). */
+/* Allocates a suitably-sized array, copies pointers to all the hashtable
+   elements into it, then returns both the array and the size of it.  The
+   array must be freed with VG_(free). */
 extern VgHashNode** VG_(HT_to_array) ( VgHashTable t, /*OUT*/ UInt* n_elems );
 
 /* Reset the table's iterator to point to the first element. */

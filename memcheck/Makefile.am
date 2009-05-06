@@ -1,5 +1,7 @@
 include $(top_srcdir)/Makefile.tool.am
 
+SUBDIRS += perf
+
 noinst_PROGRAMS = 
 if VGCONF_PLATFORMS_INCLUDE_X86_LINUX
 noinst_PROGRAMS += memcheck-x86-linux vgpreload_memcheck-x86-linux.so

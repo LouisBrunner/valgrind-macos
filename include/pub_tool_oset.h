@@ -72,9 +72,9 @@
 
 typedef struct _OSet     OSet;
 
-// - Cmp: returns -1, 0 or 1 if key is <, == or > elem.
+// - Cmp:   returns -1, 0 or 1 if key is <, == or > elem.
 // - Alloc: allocates a chunk of memory.
-// - Free: frees a chunk of memory allocated with Alloc.
+// - Free:  frees a chunk of memory allocated with Alloc.
 
 typedef Word  (*OSetCmp_t)         ( const void* key, const void* elem );
 typedef void* (*OSetAlloc_t)       ( HChar* ec, SizeT szB );
@@ -219,6 +219,11 @@ extern void  VG_(OSetGen_FreeNode)  ( OSet* os, void* elem );
 // * ResetIter: Each OSet has an iterator.  This resets it to point to the
 //   first element in the OSet.
 // 
+// * ResetIterAt: Like ResetIter, but instead of resetting the iterator to the
+//   smallest element, it resets the iterator to point to the smallest element
+//   in the set whose key is greater-than-or-equal to the given key.  (In many
+//   cases this will be the element whose key equals that of the given key.)
+//
 // * Next: Returns a pointer to the element pointed to by the OSet's
 //   iterator, and advances the iterator by one;  the elements are visited
 //   in order.  Or, returns NULL if the iterator has reached the OSet's end.
@@ -238,19 +243,15 @@ extern void  VG_(OSetGen_FreeNode)  ( OSet* os, void* elem );
 
 extern Word  VG_(OSetGen_Size)         ( const OSet* os );
 extern void  VG_(OSetGen_Insert)       ( OSet* os, void* elem );
-extern Bool  VG_(OSetGen_Contains)     ( const OSet* os, const void* key  );
-extern void* VG_(OSetGen_Lookup)       ( const OSet* os, const void* key  );
+extern Bool  VG_(OSetGen_Contains)     ( const OSet* os, const void* key );
+extern void* VG_(OSetGen_Lookup)       ( const OSet* os, const void* key );
 extern void* VG_(OSetGen_LookupWithCmp)( OSet* os,
                                          const void* key, OSetCmp_t cmp );
-extern void* VG_(OSetGen_Remove)       ( OSet* os, const void* key  );
+extern void* VG_(OSetGen_Remove)       ( OSet* os, const void* key );
 extern void  VG_(OSetGen_ResetIter)    ( OSet* os );
+extern void  VG_(OSetGen_ResetIterAt)  ( OSet* os, const void* key );
 extern void* VG_(OSetGen_Next)         ( OSet* os );
 
-// set up 'oset' for iteration so that the first key subsequently
-// produced VG_(OSetGen_Next) is the smallest key in the map 
-// >= start_at.  Naturally ">=" is defined by the comparison 
-// function supplied to VG_(OSetGen_Create).
-extern void VG_(OSetGen_ResetIterAt) ( OSet* oset, const void* key );
 
 #endif   // __PUB_TOOL_OSET_H
 

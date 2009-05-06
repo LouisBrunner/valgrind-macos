@@ -569,7 +569,7 @@ void MC_(pp_Error) ( Error* err )
 
          if (VG_(clo_xml)) {
             VG_(message_no_f_c)(Vg_UserMsg, "  <kind>%t</kind>",
-                                xml_leak_kind(lr->state));
+                                xml_leak_kind(lr->key.state));
          } else {
             VG_(message)(Vg_UserMsg, "");
          }
@@ -581,7 +581,7 @@ void MC_(pp_Error) ( Error* err )
                xpre,
                lr->szB + lr->indirect_szB, lr->szB, lr->indirect_szB,
                lr->num_blocks,
-               str_leak_lossmode(lr->state), n_this_record, n_total_records,
+               str_leak_lossmode(lr->key.state), n_this_record, n_total_records,
                xpost
             );
             if (VG_(clo_xml)) {
@@ -597,7 +597,7 @@ void MC_(pp_Error) ( Error* err )
                "%s%'lu bytes in %'u blocks are %s in loss record %'u of %'u%s",
                xpre,
                lr->szB, lr->num_blocks,
-               str_leak_lossmode(lr->state), n_this_record, n_total_records,
+               str_leak_lossmode(lr->key.state), n_this_record, n_total_records,
                xpost
             );
             if (VG_(clo_xml)) {
@@ -607,7 +607,7 @@ void MC_(pp_Error) ( Error* err )
                                         lr->num_blocks);
             }
          }
-         VG_(pp_ExeContext)(lr->allocated_at);
+         VG_(pp_ExeContext)(lr->key.allocated_at);
          break;
       }
 
@@ -811,7 +811,7 @@ Bool MC_(record_leak_error) ( ThreadId tid, UInt n_this_record,
    extra.Err.Leak.lr              = lr;
    return
    VG_(unique_error) ( tid, Err_Leak, /*Addr*/0, /*s*/NULL, &extra,
-                       lr->allocated_at, print_record,
+                       lr->key.allocated_at, print_record,
                        /*allow_GDB_attach*/False, /*count_error*/False );
 }
 

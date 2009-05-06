@@ -8,7 +8,7 @@
 // fixed it took about 2 seconds, and the leak checking was only a small
 // fraction of that. --njn
 
-#include <malloc.h>
+#include <stdlib.h>
 #include <strings.h>
 #include <stdio.h>
 #include <math.h>

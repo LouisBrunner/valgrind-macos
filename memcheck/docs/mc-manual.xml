@@ -183,8 +183,7 @@ the following problems:</para>
       <option>--leak-resolution=high</option> together with
       <option>--num-callers=40</option> or some such large number.  Note
       however that this can give an overwhelming amount of information,
-      which is why the defaults are 4 callers and low-resolution
-      matching.</para>
+      which is why the defaults give less information.</para>
 
       <para>Note that the <option>--leak-resolution=</option> setting
       does not affect <constant>memcheck's</constant> ability to find

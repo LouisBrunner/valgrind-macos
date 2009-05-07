@@ -48,7 +48,7 @@
 /*--- Exported functions.                                  ---*/
 /*------------------------------------------------------------*/
 
-/* Take a snapshot of the client's stack, putting the up to 'n_ips'
+/* Take a snapshot of the client's stack, putting up to 'max_n_ips'
    IPs into 'ips'.  In order to be thread-safe, we pass in the
    thread's IP SP, FP if that's meaningful, and LR if that's
    meaningful.  Returns number of IPs put in 'ips'.
@@ -58,7 +58,7 @@
    traces on ppc64-linux and has no effect on other platforms.
 */
 UInt VG_(get_StackTrace_wrk) ( ThreadId tid_if_known,
-                               /*OUT*/Addr* ips, UInt n_ips,
+                               /*OUT*/Addr* ips, UInt max_n_ips,
                                /*OUT*/Addr* sps, /*OUT*/Addr* fps,
                                Addr ip, Addr sp, Addr fp, Addr lr,
                                Addr fp_min, Addr fp_max_orig )
@@ -82,7 +82,7 @@ UInt VG_(get_StackTrace_wrk) ( ThreadId tid_if_known,
    vg_assert(sizeof(Addr) == sizeof(UWord));
    vg_assert(sizeof(Addr) == sizeof(void*));
 
-   /* Snaffle IPs from the client's stack into ips[0 .. n_ips-1],
+   /* Snaffle IPs from the client's stack into ips[0 .. max_n_ips-1],
       stopping when the trail goes cold, which we guess to be
       when FP is not a reasonable stack location. */
 
@@ -94,9 +94,9 @@ UInt VG_(get_StackTrace_wrk) ( ThreadId tid_if_known,
       fp_max -= sizeof(Addr);
 
    if (debug)
-      VG_(printf)("n_ips=%d fp_min=0x%lx fp_max_orig=0x%lx, "
+      VG_(printf)("max_n_ips=%d fp_min=0x%lx fp_max_orig=0x%lx, "
                   "fp_max=0x%lx ip=0x%lx fp=0x%lx\n",
-		  n_ips, fp_min, fp_max_orig, fp_max, ip, fp);
+		  max_n_ips, fp_min, fp_max_orig, fp_max, ip, fp);
 
    /* Assertion broken before main() is reached in pthreaded programs;  the
     * offending stack traces only have one item.  --njn, 2002-aug-16 */
@@ -143,7 +143,7 @@ UInt VG_(get_StackTrace_wrk) ( ThreadId tid_if_known,
     */
    while (True) {
 
-      if (i >= n_ips)
+      if (i >= max_n_ips)
          break;
 
       /* Try to derive a new (ip,sp,fp) triple from the current
@@ -156,10 +156,18 @@ UInt VG_(get_StackTrace_wrk) ( ThreadId tid_if_known,
          fails, and is expensive. */
       /* Deal with frames resulting from functions which begin "pushl%
          ebp ; movl %esp, %ebp" which is the ABI-mandated preamble. */
-      if (fp_min <= fp && fp <= fp_max
-                                - 1 * sizeof(UWord)/*see comment below*/) {
+      if (fp_min <= fp &&
+          fp <= fp_max - 1 * sizeof(UWord)/*see comment below*/)
+      {
          /* fp looks sane, so use it. */
          ip = (((UWord*)fp)[1]);
+         // We stop if we hit a zero (the traditional end-of-stack
+         // marker) or a one -- these correspond to recorded IPs of 0 or -1.
+         // The latter because r8818 (in this file) changes the meaning of
+         // entries [1] and above in a stack trace, by subtracting 1 from
+         // them.  Hence stacks that used to end with a zero value now end in
+         // -1 and so we must detect that too.
+         if (0 == ip || 1 == ip) break;
          sp = fp + sizeof(Addr) /*saved %ebp*/ 
                  + sizeof(Addr) /*ra*/;
          fp = (((UWord*)fp)[0]);
@@ -175,6 +183,7 @@ UInt VG_(get_StackTrace_wrk) ( ThreadId tid_if_known,
       /* That didn't work out, so see if there is any CF info to hand
          which can be used. */
       if ( VG_(use_CF_info)( &ip, &sp, &fp, fp_min, fp_max ) ) {
+         if (0 == ip || 1 == ip) break;
          if (sps) sps[i] = sp;
          if (fps) fps[i] = fp;
          ips[i++] = ip - 1; /* -1: refer to calling insn, not the RA */
@@ -186,6 +195,7 @@ UInt VG_(get_StackTrace_wrk) ( ThreadId tid_if_known,
 
       /* And, similarly, try for MSVC FPO unwind info. */
       if ( VG_(use_FPO_info)( &ip, &sp, &fp, fp_min, fp_max ) ) {
+         if (0 == ip || 1 == ip) break;
          if (sps) sps[i] = sp;
          if (fps) fps[i] = fp;
          ips[i++] = ip;
@@ -227,15 +237,15 @@ UInt VG_(get_StackTrace_wrk) ( ThreadId tid_if_known,
     */
    while (True) {
 
-      if (i >= n_ips)
+      if (i >= max_n_ips)
          break;
 
-      /* Try to derive a new (ip,sp,fp) triple from the current
-         set. */
+      /* Try to derive a new (ip,sp,fp) triple from the current set. */
 
       /* First off, see if there is any CFI info to hand which can
          be used. */
       if ( VG_(use_CF_info)( &ip, &sp, &fp, fp_min, fp_max ) ) {
+         if (0 == ip || 1 == ip) break;
          if (sps) sps[i] = sp;
          if (fps) fps[i] = fp;
          ips[i++] = ip - 1; /* -1: refer to calling insn, not the RA */
@@ -260,6 +270,7 @@ UInt VG_(get_StackTrace_wrk) ( ThreadId tid_if_known,
       if (fp_min <= fp && fp <= fp_max - 1 * sizeof(UWord)) {
          /* fp looks sane, so use it. */
          ip = (((UWord*)fp)[1]);
+         if (0 == ip || 1 == ip) break;
          sp = fp + sizeof(Addr) /*saved %rbp*/ 
                  + sizeof(Addr) /*ra*/;
          fp = (((UWord*)fp)[0]);
@@ -286,6 +297,7 @@ UInt VG_(get_StackTrace_wrk) ( ThreadId tid_if_known,
       */
       if (fp_min <= sp && sp < fp_max) {
          ip = ((UWord*)sp)[0];
+         if (0 == ip || 1 == ip) break;
          if (sps) sps[i] = sp;
          if (fps) fps[i] = fp;
          ips[i++] = ip == 0 
@@ -377,7 +389,7 @@ UInt VG_(get_StackTrace_wrk) ( ThreadId tid_if_known,
          const Int lr_offset = 1;
 #        endif
 
-         if (i >= n_ips)
+         if (i >= max_n_ips)
             break;
 
          /* Try to derive a new (ip,fp) pair from the current set. */
@@ -413,6 +425,7 @@ UInt VG_(get_StackTrace_wrk) ( ThreadId tid_if_known,
             }
 #           endif
 
+            if (0 == ip || 1 == ip) break;
             fp = (((UWord*)fp)[0]);
             if (sps) sps[i] = fp; /* NB. not sp */
             if (fps) fps[i] = fp;
@@ -439,7 +452,7 @@ UInt VG_(get_StackTrace_wrk) ( ThreadId tid_if_known,
 }
 
 UInt VG_(get_StackTrace) ( ThreadId tid, 
-                           /*OUT*/StackTrace ips, UInt n_ips,
+                           /*OUT*/StackTrace ips, UInt max_n_ips,
                            /*OUT*/StackTrace sps,
                            /*OUT*/StackTrace fps,
                            Word first_ip_delta )
@@ -491,7 +504,7 @@ UInt VG_(get_StackTrace) ( ThreadId tid,
                   "sp=0x%08lx fp=0x%08lx\n",
 		  tid, stack_highest_word, ip, sp, fp);
 
-   return VG_(get_StackTrace_wrk)(tid, ips, n_ips, 
+   return VG_(get_StackTrace_wrk)(tid, ips, max_n_ips, 
                                        sps, fps,
                                        ip, sp, fp, lr, sp, 
                                        stack_highest_word);
@@ -527,15 +540,15 @@ void VG_(pp_StackTrace) ( StackTrace ips, UInt n_ips )
 }
 
 /* Get and immediately print a StackTrace. */
-void VG_(get_and_pp_StackTrace) ( ThreadId tid, UInt n_ips )
+void VG_(get_and_pp_StackTrace) ( ThreadId tid, UInt max_n_ips )
 {
-   Addr ips[n_ips];
-   UInt n_ips_obtained 
-      = VG_(get_StackTrace)(tid, ips, n_ips,
+   Addr ips[max_n_ips];
+   UInt n_ips
+      = VG_(get_StackTrace)(tid, ips, max_n_ips,
                             NULL/*array to dump SP values in*/,
                             NULL/*array to dump FP values in*/,
                             0/*first_ip_delta*/);
-   VG_(pp_StackTrace)(ips, n_ips_obtained);
+   VG_(pp_StackTrace)(ips, n_ips);
 }
 
 
@@ -563,13 +576,7 @@ void VG_(apply_StackTrace)( void(*action)(UInt n, Addr ip),
       action(i, ip);
 
       i++;
-      // re 'while' condition: stop if we hit a zero value (the traditional
-      // end-of-stack marker) or a ~0 value.  The latter because r8818 
-      // (in this file) changes the meaning of entries [1] and above in a
-      // stack trace, by subtracting 1 from them.  Hence stacks that used
-      // to end with a zero value now end in -1 and so we must detect
-      // that too.
-   } while (i < n_ips && ips[i] != 0 && ips[i] != ~(Addr)0 && !main_done);
+   } while (i < n_ips && !main_done);
 
    #undef MYBUF_LEN
 }

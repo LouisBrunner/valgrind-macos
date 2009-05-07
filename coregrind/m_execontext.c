@@ -319,7 +319,7 @@ static ExeContext* record_ExeContext_wrk ( ThreadId tid, Word first_ip_delta,
                                    first_ip_delta );
    }
 
-   return record_ExeContext_wrk2 ( &ips[0], n_ips );
+   return record_ExeContext_wrk2 ( ips, n_ips );
 }
 
 /* Do the second part of getting a stack trace: ips[0 .. n_ips-1]

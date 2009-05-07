@@ -415,11 +415,6 @@ static void printSuppForIp(UInt n, Addr ip)
 static void gen_suppression(Error* err)
 {
    ExeContext* ec      = VG_(get_error_where)(err);
-   Int         stop_at = VG_(clo_backtrace_size);
-
-   /* At most VG_MAX_SUPP_CALLERS names */
-   if (stop_at > VG_MAX_SUPP_CALLERS) stop_at = VG_MAX_SUPP_CALLERS;
-   vg_assert(stop_at > 0);
 
       //(example code, see comment on CoreSuppKind above)
    if (0) {    
@@ -443,7 +438,8 @@ static void gen_suppression(Error* err)
 
    // Print stack trace elements
    VG_(apply_StackTrace)(printSuppForIp,
-                         VG_(get_ExeContext_StackTrace)(ec), stop_at);
+                         VG_(get_ExeContext_StackTrace)(ec),
+                         VG_(get_ExeContext_n_ips)(ec));
 
    VG_(printf)("}\n");
 }

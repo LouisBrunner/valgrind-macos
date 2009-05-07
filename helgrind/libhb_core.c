@@ -3184,15 +3184,18 @@ Bool libhb_event_map_lookup ( /*OUT*/ExeContext** resEC,
       tl_assert(i >= 0 && i <= N_OLDREF_ACCS);
 
       if (i < N_OLDREF_ACCS) {
+         Int n, maxNFrames;
          /* return with success */
          tl_assert(cand_thr);
          tl_assert(cand_rcec);
          tl_assert(cand_rcec->magic == RCEC_MAGIC);
          tl_assert(cand_szB >= 1);
-         *resEC  = VG_(make_ExeContext_from_StackTrace)(
-                      &cand_rcec->frames[0],
-                      min_UInt(N_FRAMES, VG_(clo_backtrace_size))
-                   );
+         /* Count how many non-zero frames we have. */
+         maxNFrames = min_UInt(N_FRAMES, VG_(clo_backtrace_size));
+         for (n = 0; n < maxNFrames; n++) {
+            if (0 == cand_rcec->frames[n]) break;
+         }
+         *resEC  = VG_(make_ExeContext_from_StackTrace)(cand_rcec->frames, n);
          *resThr = cand_thr;
          *resSzB = cand_szB;
          *resIsW = cand_isW;

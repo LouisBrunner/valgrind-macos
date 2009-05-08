@@ -30,6 +30,7 @@
 
 #include "pub_tool_basics.h"
 #include "pub_tool_vki.h"
+#include "pub_tool_aspacehl.h"
 #include "pub_tool_aspacemgr.h"
 #include "pub_tool_execontext.h"
 #include "pub_tool_hashtable.h"
@@ -465,40 +466,6 @@ SizeT MC_(blocks_indirect)   = 0;
 SizeT MC_(blocks_dubious)    = 0;
 SizeT MC_(blocks_reachable)  = 0;
 SizeT MC_(blocks_suppressed) = 0;
-
-
-/* TODO: GIVE THIS A PROPER HOME
-   TODO: MERGE THIS WITH DUPLICATE IN m_main.c and coredump-elf.c.
-   Extract from aspacem a vector of the current segment start
-   addresses.  The vector is dynamically allocated and should be freed
-   by the caller when done.  REQUIRES m_mallocfree to be running.
-   Writes the number of addresses required into *n_acquired. */
-
-static Addr* get_seg_starts ( /*OUT*/Int* n_acquired )
-{
-   Addr* starts;
-   Int   n_starts, r = 0;
-
-   n_starts = 1;
-   while (True) {
-      starts = VG_(malloc)( "mc.gss.1", n_starts * sizeof(Addr) );
-      if (starts == NULL)
-         break;
-      r = VG_(am_get_segment_starts)( starts, n_starts );
-      if (r >= 0)
-         break;
-      VG_(free)(starts);
-      n_starts *= 2;
-   }
-
-   if (starts == NULL) {
-     *n_acquired = 0;
-     return NULL;
-   }
-
-   *n_acquired = r;
-   return starts;
-}
 
 
 // Determines if a pointer is to a chunk.  Returns the chunk number et al
@@ -1007,7 +974,7 @@ void MC_(detect_memory_leaks) ( ThreadId tid, LeakCheckMode mode )
    // pointed to.
    {
       Int   n_seg_starts;
-      Addr* seg_starts = get_seg_starts( &n_seg_starts );
+      Addr* seg_starts = VG_(get_segment_starts)( &n_seg_starts );
 
       tl_assert(seg_starts && n_seg_starts > 0);
 

@@ -30,6 +30,7 @@
 
 #include "pub_core_basics.h"
 #include "pub_core_vki.h"
+#include "pub_core_aspacehl.h"
 #include "pub_core_aspacemgr.h"
 #include "pub_core_libcbase.h"
 #include "pub_core_machine.h"
@@ -64,39 +65,6 @@
 #else
 #error VG_WORDSIZE needs to ==4 or ==8
 #endif
-
-/* TODO: GIVE THIS A PROPER HOME
-   TODO: MERGE THIS WITH DUPLICATES IN m_main.c and mc_leakcheck.c
-   Extract from aspacem a vector of the current segment start
-   addresses.  The vector is dynamically allocated and should be freed
-   by the caller when done.  REQUIRES m_mallocfree to be running.
-   Writes the number of addresses required into *n_acquired. */
-
-static Addr* get_seg_starts ( /*OUT*/Int* n_acquired )
-{
-   Addr* starts;
-   Int   n_starts, r = 0;
-
-   n_starts = 1;
-   while (True) {
-      starts = VG_(malloc)( "coredump-elf.gss.1", n_starts * sizeof(Addr) );
-      if (starts == NULL)
-         break;
-      r = VG_(am_get_segment_starts)( starts, n_starts );
-      if (r >= 0)
-         break;
-      VG_(free)(starts);
-      n_starts *= 2;
-   }
-
-   if (starts == NULL) {
-     *n_acquired = 0;
-     return NULL;
-   }
-
-   *n_acquired = r;
-   return starts;
-}
 
 /* If true, then this Segment may be mentioned in the core */
 static Bool may_dump(const NSegment *seg)
@@ -342,7 +310,7 @@ void make_elf_coredump(ThreadId tid, const vki_siginfo_t *si, UInt max_size)
    }
 
    /* Get the segments */
-   seg_starts = get_seg_starts(&n_seg_starts);
+   seg_starts = VG_(get_segment_starts)(&n_seg_starts);
 
    /* First, count how many memory segments to dump */
    num_phdrs = 1;		/* start with notes */

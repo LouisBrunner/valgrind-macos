@@ -102,6 +102,7 @@ no_op_client_for_valgrind_LDFLAGS   = $(AM_CFLAGS_PRI)
 
 
 noinst_HEADERS = \
+	pub_core_aspacehl.h	\
 	pub_core_aspacemgr.h	\
 	pub_core_basics.h	\
 	pub_core_basics_asm.h	\
@@ -221,6 +222,7 @@ COREGRIND_SOURCES_COMMON = \
 	m_vkiscnums.c \
 	m_wordfm.c \
 	m_xarray.c \
+	m_aspacehl.c \
 	m_aspacemgr/aspacemgr-common.c \
 	m_debuginfo/misc.c \
 	m_debuginfo/d3basics.c \

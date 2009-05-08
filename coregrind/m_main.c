@@ -35,6 +35,7 @@
 #include "pub_core_xarray.h"
 #include "pub_core_clientstate.h"
 #include "pub_core_aspacemgr.h"
+#include "pub_core_aspacehl.h"
 #include "pub_core_commandline.h"
 #include "pub_core_debuglog.h"
 #include "pub_core_errormgr.h"
@@ -1122,40 +1123,6 @@ void shutdown_actions_NORETURN( ThreadId tid,
 /* --- end of Forwards decls to do with shutdown --- */
 
 
-/* TODO: GIVE THIS A PROPER HOME
-   TODO: MERGE THIS WITH DUPLICATE IN mc_leakcheck.c and coredump-elf.c.
-   Extract from aspacem a vector of the current segment start
-   addresses.  The vector is dynamically allocated and should be freed
-   by the caller when done.  REQUIRES m_mallocfree to be running.
-   Writes the number of addresses required into *n_acquired. */
-
-static Addr* get_seg_starts ( /*OUT*/Int* n_acquired )
-{
-   Addr* starts;
-   Int   n_starts, r = 0;
-
-   n_starts = 1;
-   while (True) {
-      starts = VG_(malloc)( "main.gss.1", n_starts * sizeof(Addr) );
-      if (starts == NULL)
-         break;
-      r = VG_(am_get_segment_starts)( starts, n_starts );
-      if (r >= 0)
-         break;
-      VG_(free)(starts);
-      n_starts *= 2;
-   }
-
-   if (starts == NULL) {
-     *n_acquired = 0;
-     return NULL;
-   }
-
-   *n_acquired = r;
-   return starts;
-}
-
-
 /* By the time we get to valgrind_main, the_iicii should already have
    been filled in with any important details as required by whatever
    OS we have been built for.
@@ -1730,7 +1697,7 @@ Int valgrind_main ( Int argc, HChar **argv, HChar **envp )
      Int   n_seg_starts;
      Addr_n_ULong anu;
 
-     seg_starts = get_seg_starts( &n_seg_starts );
+     seg_starts = VG_(get_segment_starts)( &n_seg_starts );
      vg_assert(seg_starts && n_seg_starts >= 0);
 
      /* show them all to the debug info reader.  allow_SkFileV has to
@@ -1842,7 +1809,7 @@ Int valgrind_main ( Int argc, HChar **argv, HChar **envp )
      tl_assert(VG_(running_tid) == VG_INVALID_THREADID);
      VG_(running_tid) = tid_main;
 
-     seg_starts = get_seg_starts( &n_seg_starts );
+     seg_starts = VG_(get_segment_starts)( &n_seg_starts );
      vg_assert(seg_starts && n_seg_starts >= 0);
 
      /* show interesting ones to the tool */

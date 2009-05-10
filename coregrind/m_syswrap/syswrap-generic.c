@@ -59,15 +59,6 @@
 #include "priv_syswrap-generic.h"
 
 
-/* Local function declarations. */
-
-static
-void notify_aspacem_of_mmap(Addr a, SizeT len, UInt prot,
-                            UInt flags, Int fd, Off64T offset);
-static
-void notify_tool_of_mmap(Addr a, SizeT len, UInt prot, ULong di_handle);
-
-
 /* Returns True iff address range is something the client can
    plausibly mess with: all of it is either already belongs to the
    client or is free or a reservation. */
@@ -125,11 +116,6 @@ Bool ML_(safe_to_deref) ( void* start, SizeT size )
    Doing mmap, mremap
    ------------------------------------------------------------------ */
 
-// Nb: this isn't done as precisely as possible, but it seems that programs
-// are usually sufficiently well-behaved that the more obscure corner cases
-// aren't important.  Various comments in the few functions below give more
-// details... njn 2002-Sep-17
-
 /* AFAICT from kernel sources (mm/mprotect.c) and general experimentation,
    munmap, mprotect (and mremap??) work at the page level.  So addresses
    and lengths must be adjusted for this. */
@@ -148,30 +134,8 @@ void page_align_addr_and_len( Addr* a, SizeT* len)
    *a = ra;
 }
 
-/* When a client mmap has been successfully done, this function must
-   be called.  It notifies both aspacem and the tool of the new
-   mapping.
-
-   JRS 2008-Aug-14: But notice this is *very* obscure.  The only place
-   it is called from is POST(sys_io_setup).  In particular,
-   ML_(generic_PRE_sys_mmap), further down in this file, is the
-   "normal case" handler for client mmap.  But it doesn't call this
-   function; instead it does the relevant notifications itself.  Here,
-   we just pass di_handle=0 to notify_tool_of_mmap as we have no
-   better information.  But really this function should be done away
-   with; problem is I don't understand what POST(sys_io_setup) does or
-   how it works. */
-void 
-ML_(notify_aspacem_and_tool_of_mmap) ( Addr a, SizeT len, UInt prot, 
-                                       UInt flags, Int fd, Off64T offset )
-{
-   notify_aspacem_of_mmap(a, len, prot, flags, fd, offset);
-   notify_tool_of_mmap(a, len, prot, 0/*di_handle*/);
-}
-
-static
-void notify_aspacem_of_mmap(Addr a, SizeT len, UInt prot,
-                            UInt flags, Int fd, Off64T offset)
+static void notify_core_of_mmap(Addr a, SizeT len, UInt prot,
+                                UInt flags, Int fd, Off64T offset)
 {
    Bool d;
 
@@ -184,11 +148,10 @@ void notify_aspacem_of_mmap(Addr a, SizeT len, UInt prot,
 
    if (d)
       VG_(discard_translations)( (Addr64)a, (ULong)len,
-                                 "ML_(notify_aspacem_of_mmap)" );
+                                 "notify_core_of_mmap" );
 }
 
-static
-void notify_tool_of_mmap(Addr a, SizeT len, UInt prot, ULong di_handle)
+static void notify_tool_of_mmap(Addr a, SizeT len, UInt prot, ULong di_handle)
 {
    Bool rr, ww, xx;
 
@@ -203,6 +166,67 @@ void notify_tool_of_mmap(Addr a, SizeT len, UInt prot, ULong di_handle)
 
    VG_TRACK( new_mem_mmap, a, len, rr, ww, xx, di_handle );
 }
+
+
+/* When a client mmap has been successfully done, this function must
+   be called.  It notifies both aspacem and the tool of the new
+   mapping.
+
+   JRS 2008-Aug-14: But notice this is *very* obscure.  The only place
+   it is called from is POST(sys_io_setup).  In particular,
+   ML_(generic_PRE_sys_mmap), in m_syswrap, is the "normal case" handler for
+   client mmap.  But it doesn't call this function; instead it does the
+   relevant notifications itself.  Here, we just pass di_handle=0 to
+   notify_tool_of_mmap as we have no better information.  But really this
+   function should be done away with; problem is I don't understand what
+   POST(sys_io_setup) does or how it works. 
+   
+   [However, this function is used lots for Darwin, because
+    ML_(generic_PRE_sys_mmap) cannot be used for Darwin.] 
+ */
+void 
+ML_(notify_core_and_tool_of_mmap) ( Addr a, SizeT len, UInt prot, 
+                                    UInt flags, Int fd, Off64T offset )
+{
+   // XXX: unlike the other notify_core_and_tool* functions, this one doesn't
+   // do anything with debug info (ie. it doesn't call VG_(di_notify_mmap)).
+   // Should it?  --njn
+   notify_core_of_mmap(a, len, prot, flags, fd, offset);
+   notify_tool_of_mmap(a, len, prot, 0/*di_handle*/);
+}
+
+void 
+ML_(notify_core_and_tool_of_munmap) ( Addr a, SizeT len )
+{
+   Bool d;
+
+   page_align_addr_and_len(&a, &len);
+   d = VG_(am_notify_munmap)(a, len);
+   VG_TRACK( die_mem_munmap, a, len );
+   VG_(di_notify_munmap)( a, len );
+   if (d)
+      VG_(discard_translations)( (Addr64)a, (ULong)len, 
+                                 "ML_(notify_core_and_tool_of_munmap)" );
+}
+
+void 
+ML_(notify_core_and_tool_of_mprotect) ( Addr a, SizeT len, Int prot )
+{
+   Bool rr = toBool(prot & VKI_PROT_READ);
+   Bool ww = toBool(prot & VKI_PROT_WRITE);
+   Bool xx = toBool(prot & VKI_PROT_EXEC);
+   Bool d;
+
+   page_align_addr_and_len(&a, &len);
+   d = VG_(am_notify_mprotect)(a, len, prot);
+   VG_TRACK( change_mem_mprotect, a, len, rr, ww, xx );
+   VG_(di_notify_mprotect)( a, len, prot );
+   if (d)
+      VG_(discard_translations)( (Addr64)a, (ULong)len, 
+                                 "ML_(notify_core_and_tool_of_mprotect)" );
+}
+
+
 
 /* Expand (or shrink) an existing mapping, potentially moving it at
    the same time (controlled by the MREMAP_MAYMOVE flag).  Nightmare.
@@ -1910,7 +1934,7 @@ ML_(generic_PRE_sys_mmap) ( ThreadId tid,
    if (!sres.isError) {
       ULong di_handle;
       /* Notify aspacem. */
-      notify_aspacem_of_mmap(
+      notify_core_of_mmap(
          (Addr)sres.res, /* addr kernel actually assigned */
          arg2, /* length */
          arg3, /* prot */
@@ -3235,18 +3259,8 @@ POST(sys_mprotect)
    Addr a    = ARG1;
    SizeT len = ARG2;
    Int  prot = ARG3;
-   Bool rr = toBool(prot & VKI_PROT_READ);
-   Bool ww = toBool(prot & VKI_PROT_WRITE);
-   Bool xx = toBool(prot & VKI_PROT_EXEC);
-   Bool d;
 
-   page_align_addr_and_len(&a, &len);
-   d = VG_(am_notify_mprotect)(a, len, prot);
-   VG_TRACK( change_mem_mprotect, a, len, rr, ww, xx );
-   VG_(di_notify_mprotect)( a, len, prot );
-   if (d)
-      VG_(discard_translations)( (Addr64)a, (ULong)len, 
-                                 "POST(sys_mprotect)" );
+   ML_(notify_core_and_tool_of_mprotect)(a, len, prot);
 }
 
 PRE(sys_munmap)
@@ -3263,15 +3277,8 @@ POST(sys_munmap)
 {
    Addr  a   = ARG1;
    SizeT len = ARG2;
-   Bool  d;
 
-   page_align_addr_and_len(&a, &len);
-   d = VG_(am_notify_munmap)(a, len);
-   VG_TRACK( die_mem_munmap, a, len );
-   VG_(di_notify_munmap)( a, len );
-   if (d)
-      VG_(discard_translations)( (Addr64)a, (ULong)len,
-                                 "POST(sys_munmap)" );
+   ML_(notify_core_and_tool_of_munmap)( (Addr64)a, (ULong)len );
 }
 
 PRE(sys_mincore)

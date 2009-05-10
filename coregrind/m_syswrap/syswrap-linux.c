@@ -1273,9 +1273,9 @@ POST(sys_io_setup)
    r = *(struct vki_aio_ring **)ARG2;
    vg_assert(ML_(valid_client_addr)((Addr)r, size, tid, "io_setup"));
 
-   ML_(notify_aspacem_and_tool_of_mmap)( (Addr)r, size,
-                                         VKI_PROT_READ | VKI_PROT_WRITE,
-                                         VKI_MAP_ANONYMOUS, -1, 0 );
+   ML_(notify_core_and_tool_of_mmap)( (Addr)r, size,
+                                      VKI_PROT_READ | VKI_PROT_WRITE,
+                                      VKI_MAP_ANONYMOUS, -1, 0 );
 
    POST_MEM_WRITE( ARG2, sizeof(vki_aio_context_t) );
 }

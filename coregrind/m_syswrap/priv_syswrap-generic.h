@@ -62,13 +62,15 @@ extern void ML_(record_fd_open_with_given_name)(ThreadId tid, Int fd,
 extern
 Bool ML_(do_sigkill)(Int pid, Int tgid);
 
-/* So that it can be seen from syswrap-x86-linux.c. */
-/* When a client mmap has been successfully done, both aspacem and the
-   tool need to be notified of the new mapping.  Hence this fn. */
-extern 
-void 
-ML_(notify_aspacem_and_tool_of_mmap) ( Addr a, SizeT len, UInt prot, 
-                                       UInt mm_flags, Int fd, Off64T offset );
+/* When a client mmap or munmap has been successfully done, both the core 
+   and the tool need to be notified of the new mapping.  Hence this fn. */
+extern void 
+ML_(notify_core_and_tool_of_mmap) ( Addr a, SizeT len, UInt prot, 
+                                    UInt mm_flags, Int fd, Off64T offset );
+extern void 
+ML_(notify_core_and_tool_of_munmap) ( Addr a, SizeT len );
+extern void 
+ML_(notify_core_and_tool_of_mprotect) ( Addr a, SizeT len, Int prot );
 
 extern void
 ML_(buf_and_len_pre_check) ( ThreadId tid, Addr buf_p, Addr buflen_p,

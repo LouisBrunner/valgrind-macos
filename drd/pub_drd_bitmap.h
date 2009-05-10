@@ -124,7 +124,5 @@ ULong DRD_(bm_get_bitmap_creation_count)(void);
 ULong DRD_(bm_get_bitmap2_node_creation_count)(void);
 ULong DRD_(bm_get_bitmap2_creation_count)(void);
 
-void DRD_(bm_test)(void);
-
 
 #endif /* __PUB_DRD_BITMAP_H */

@@ -520,12 +520,6 @@ void DRD_(bm_clear)(struct bitmap* const bm, const Addr a1, const Addr a2)
    tl_assert(a1);
    tl_assert(a1 <= a2);
 
-#if 0
-   if (a2 - a1 >= ADDR0_COUNT)
-      VG_(message)(Vg_DebugMsg, "bm_clear(bm = %p, a1 = 0x%lx, a2 = 0x%lx,"
-                   " delta = 0x%lx", bm, a1, a2, a2 - a1);
-#endif
-
    for (b = a1; b < a2; b = b_next)
    {
       struct bitmap2* p2;
@@ -601,12 +595,6 @@ void DRD_(bm_clear_load)(struct bitmap* const bm, const Addr a1, const Addr a2)
    tl_assert(bm);
    tl_assert(a1);
    tl_assert(a1 <= a2);
-
-#if 0
-   if (a2 - a1 >= ADDR0_COUNT)
-      VG_(message)(Vg_DebugMsg, "bm_clear_load(bm = %p, a1 = 0x%lx, a2 = 0x%lx,"
-                   " delta = 0x%lx", bm, a1, a2, a2 - a1);
-#endif
 
    for (b = a1; b < a2; b = b_next)
    {
@@ -687,12 +675,6 @@ void DRD_(bm_clear_store)(struct bitmap* const bm,
    tl_assert(bm);
    tl_assert(a1);
    tl_assert(a1 <= a2);
-
-#if 0
-   if (a2 - a1 >= ADDR0_COUNT)
-      VG_(message)(Vg_DebugMsg, "bm_clear_store(bm = %p, a1 = 0x%lx, a2 = 0x%lx,"
-                   " delta = 0x%lx", bm, a1, a2, a2 - a1);
-#endif
 
    for (b = a1; b < a2; b = b_next)
    {
@@ -944,18 +926,12 @@ Bool DRD_(bm_equal)(struct bitmap* const lhs, struct bitmap* const rhs)
       if (bm2l_ref == 0)
          break;
       tl_assert(bm2l);
-#if 0
-      VG_(message)(Vg_DebugMsg, "bm_equal: at 0x%lx", bm2l->addr << ADDR0_BITS);
-#endif
 
       do
       {
          bm2r_ref = VG_(OSetGen_Next)(rhs->oset);
          if (bm2r_ref == 0)
          {
-#if 0
-            VG_(message)(Vg_DebugMsg, "bm_equal: no match found");
-#endif
             return False;
          }
          bm2r = bm2r_ref->bm2;
@@ -974,10 +950,6 @@ Bool DRD_(bm_equal)(struct bitmap* const lhs, struct bitmap* const rhs)
           && (bm2l->addr != bm2r->addr
               || VG_(memcmp)(&bm2l->bm1, &bm2r->bm1, sizeof(bm2l->bm1)) != 0))
       {
-#if 0
-         VG_(message)(Vg_DebugMsg, "bm_equal: rhs 0x%lx -- returning false",
-                      bm2r->addr << ADDR0_BITS);
-#endif
          return False;
       }
    }
@@ -993,11 +965,6 @@ Bool DRD_(bm_equal)(struct bitmap* const lhs, struct bitmap* const rhs)
       tl_assert(DRD_(bm_has_any_access)(rhs,
                                         bm2r->addr << ADDR0_BITS,
                                         (bm2r->addr + 1) << ADDR0_BITS));
-#if 0
-      VG_(message)(Vg_DebugMsg,
-                   "bm_equal: remaining rhs 0x%lx -- returning false",
-                   bm2r->addr << ADDR0_BITS);
-#endif
       return False;
    }
    return True;

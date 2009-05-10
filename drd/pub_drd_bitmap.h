@@ -34,6 +34,7 @@
 #define __PUB_DRD_BITMAP_H
 
 
+#include "drd_basics.h"  /* DRD_() */
 #include "pub_tool_basics.h" /* Addr, SizeT */
 
 
@@ -123,6 +124,6 @@ void DRD_(bm_print)(struct bitmap* bm);
 ULong DRD_(bm_get_bitmap_creation_count)(void);
 ULong DRD_(bm_get_bitmap2_node_creation_count)(void);
 ULong DRD_(bm_get_bitmap2_creation_count)(void);
-
+ULong DRD_(bm_get_bitmap2_merge_count)(void);
 
 #endif /* __PUB_DRD_BITMAP_H */

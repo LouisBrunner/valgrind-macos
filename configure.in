@@ -894,7 +894,15 @@ extern int pthread_create_glibc_2_0(void*, const void*,
                                     void *(*)(void*), void*);
 __asm__(".symver pthread_create_glibc_2_0, pthread_create@GLIBC_2.0");
 ], [
+#ifdef __powerpc__
+/*
+ * Apparently on PowerPC linking this program succeeds and generates an
+ * executable with the undefined symbol pthread_create@GLIBC_2.0.
+ */
+#error This test does not work properly on PowerPC.
+#else
   pthread_create_glibc_2_0(0, 0, 0, 0);
+#endif
   return 0;
 ],
 [

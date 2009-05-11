@@ -59,8 +59,8 @@
 /*----------------------------------------------------------------*/
 
 #define PTH_FUNC(ret_ty, f, args...) \
-   ret_ty I_WRAP_SONAME_FNNAME_ZZ(libpthreadZdsoZd0,f)(args); \
-   ret_ty I_WRAP_SONAME_FNNAME_ZZ(libpthreadZdsoZd0,f)(args)
+   ret_ty I_WRAP_SONAME_FNNAME_ZZ(VG_Z_LIBPTHREAD_SONAME,f)(args); \
+   ret_ty I_WRAP_SONAME_FNNAME_ZZ(VG_Z_LIBPTHREAD_SONAME,f)(args)
 
 // Do a client request.  This is a macro rather than a function 
 // so as to avoid having an extra function in the stack trace.

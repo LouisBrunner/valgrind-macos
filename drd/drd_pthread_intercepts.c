@@ -79,8 +79,8 @@
 #define ALLOCATE_THREAD_ARGS_ON_THE_STACK
 
 #define PTH_FUNC(ret_ty, f, args...)                            \
-   ret_ty VG_WRAP_FUNCTION_ZZ(libpthreadZdsoZd0,f)(args);       \
-   ret_ty VG_WRAP_FUNCTION_ZZ(libpthreadZdsoZd0,f)(args)
+   ret_ty VG_WRAP_FUNCTION_ZZ(VG_Z_LIBPTHREAD_SONAME,f)(args);  \
+   ret_ty VG_WRAP_FUNCTION_ZZ(VG_Z_LIBPTHREAD_SONAME,f)(args)
 
 
 /* Local data structures. */

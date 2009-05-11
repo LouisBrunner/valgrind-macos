@@ -130,6 +130,7 @@ static void report_and_quit ( const Char* report,
 {
    Addr stacktop;
    Addr ips[BACKTRACE_DEPTH];
+   Int  n_ips;
    ThreadState *tst 
       = VG_(get_ThreadState)( VG_(lwpid_to_vgtid)( VG_(gettid)() ) );
  
@@ -142,14 +143,15 @@ static void report_and_quit ( const Char* report,
  
    stacktop = tst->os_state.valgrind_stack_init_SP;
  
-   VG_(get_StackTrace_wrk)(
-      0/*tid is unknown*/, 
-      ips, BACKTRACE_DEPTH, 
-      NULL/*array to dump SP values in*/,
-      NULL/*array to dump FP values in*/,
-      ip, sp, fp, lr, sp, stacktop
-   );
-   VG_(pp_StackTrace)  (ips, BACKTRACE_DEPTH);
+   n_ips =
+      VG_(get_StackTrace_wrk)(
+         0/*tid is unknown*/, 
+         ips, BACKTRACE_DEPTH, 
+         NULL/*array to dump SP values in*/,
+         NULL/*array to dump FP values in*/,
+         ip, sp, fp, lr, sp, stacktop
+      );
+   VG_(pp_StackTrace) (ips, n_ips);
  
    VG_(show_sched_status)();
    VG_(printf)(

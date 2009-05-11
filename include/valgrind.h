@@ -581,11 +581,15 @@ typedef
 /* Use these to write the name of your wrapper.  NOTE: duplicates
    VG_WRAP_FUNCTION_Z{U,Z} in pub_tool_redir.h. */
 
+/* Use an extra level of macroisation so as to ensure the soname/fnname
+   args are fully macro-expanded before pasting them together. */
+#define VG_CONCAT4(_aa,_bb,_cc,_dd) _aa##_bb##_cc##_dd
+
 #define I_WRAP_SONAME_FNNAME_ZU(soname,fnname)                    \
-   _vgwZU_##soname##_##fnname
+   VG_CONCAT4(_vgwZU_,soname,_,fnname)
 
 #define I_WRAP_SONAME_FNNAME_ZZ(soname,fnname)                    \
-   _vgwZZ_##soname##_##fnname
+   VG_CONCAT4(_vgwZZ_,soname,_,fnname)
 
 /* Use this macro from within a wrapper function to collect the
    context (address and possibly other info) of the original function.

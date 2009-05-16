@@ -193,6 +193,7 @@ DRD_(mutex_init)(const Addr mutex, const MutexT mutex_type)
                               VG_(get_IP)(vg_tid),
                               "Mutex reinitialization",
                               &MEI);
+      p->mutex_type = mutex_type;
       return p;
    }
    p = DRD_(mutex_get_or_allocate)(mutex, mutex_type);

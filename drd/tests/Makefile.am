@@ -19,16 +19,16 @@ EXTRA_DIST =                                        \
 	atomic_var.vgtest			    \
 	bar_bad.stderr.exp			    \
 	bar_bad.vgtest				    \
-	bar_trivial.stdout.exp			    \
 	bar_trivial.stderr.exp			    \
+	bar_trivial.stdout.exp			    \
 	bar_trivial.vgtest			    \
 	boost_thread.stderr.exp			    \
 	boost_thread.vgtest			    \
 	circular_buffer.stderr.exp-with-atomic-builtins		\
 	circular_buffer.stderr.exp-without-atomic-builtins	\
 	circular_buffer.vgtest			    \
-	custom_alloc.vgtest			    \
 	custom_alloc.stderr.exp			    \
+	custom_alloc.vgtest			    \
 	drd_bitmap_test.stderr.exp                  \
 	drd_bitmap_test.stdout.exp                  \
 	drd_bitmap_test.vgtest                      \
@@ -114,8 +114,10 @@ EXTRA_DIST =                                        \
 	pth_inconsistent_cond_wait.stderr.exp1      \
 	pth_inconsistent_cond_wait.stderr.exp2      \
 	pth_inconsistent_cond_wait.vgtest           \
-	pth_process_shared_mutex.vgtest             \
+	pth_mutex_reinit.stderr.exp		    \
+	pth_mutex_reinit.vgtest			    \
 	pth_process_shared_mutex.c                  \
+	pth_process_shared_mutex.vgtest             \
 	pth_spinlock.stderr.exp                     \
 	pth_spinlock.vgtest                         \
 	qt4_mutex.stderr.exp                        \
@@ -220,8 +222,9 @@ check_PROGRAMS =      \
   pth_create_chain    \
   pth_detached        \
   pth_detached_sem    \
-  pth_process_shared_mutex   \
   pth_inconsistent_cond_wait \
+  pth_mutex_reinit    \
+  pth_process_shared_mutex   \
   recursive_mutex     \
   rwlock_race         \
   rwlock_test         \

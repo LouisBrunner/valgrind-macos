@@ -101,6 +101,10 @@ if HAVE_PTHREAD_BARRIER
 check_PROGRAMS += bar_bad bar_trivial
 endif
 
+if HAVE_PTHREAD_MUTEX_TIMEDLOCK
+check_PROGRAMS += tc20_verifywrap
+endif
+
 AM_CFLAGS   += $(AM_FLAG_M3264_PRI)
 AM_CXXFLAGS += $(AM_FLAG_M3264_PRI)
 

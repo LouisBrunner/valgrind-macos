@@ -91,7 +91,6 @@ check_PROGRAMS = \
 	tc17_sembar \
 	tc18_semabuse \
 	tc19_shadowmem \
-	tc20_verifywrap \
 	tc21_pthonce \
 	tc22_exit_w_lock \
 	tc23_bogus_condwait \

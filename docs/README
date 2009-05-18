@@ -119,6 +119,24 @@ Catalog/Stylesheet Location
 in recent distros.
 
 
+Notes [May 2009]
+-----------------
+For Ubuntu 9.04, to do non-print-docs builds (ie. with BUILD_ALL_DOCS
+commented out) I had to:
+
+  sudo apt-get install docbook docbook-xsl
+
+Actually, I'm not sure if the 'docbook' is necessary, but 'docbook-xsl'
+definitely is.
+
+Then I had to change the value of XSL_MAN_STYLE from this:
+
+    /usr/share/xml/docbook/stylesheet/nwalsh/current/manpages/docbook.xsl
+
+to this:
+
+    /usr/share/xml/docbook/stylesheet/nwalsh/manpages/docbook.xsl
+
 Notes [Mar. 2007]
 -----------------
 For SuSE 10.1, I have to install the following packages to get a

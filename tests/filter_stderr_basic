@@ -2,11 +2,15 @@
 
 # This filter should be applied to *every* stderr result.  It removes
 # Valgrind startup stuff and pid numbers.
+#
+# Nb: The GNU and BSD implementations of 'sed' are quite different, so
+# anything remotely complicated (e.g. "\(a\|b\)" alternatives) can't be
+# easily done.  Use Perl instead for any such cases.
 
 dir=`dirname $0`
 
 # Remove ==pid== and --pid-- and ++pid++ and **pid** strings 
-sed "s/\(==\|--\|\+\+\|\*\*\)[0-9]\{1,7\}\1 //"             |
+perl -p -e 's/(==|--|\+\+|\*\*)[0-9]{1,7}\1 //' |
 
 # Remove any --pid:0: strings (debuglog level zero output)
 sed "/^--[0-9]\{1,7\}:0:*/d" |
@@ -22,27 +26,26 @@ sed "/^Using valgrind-.*, a dynamic binary instrumentation framework/ , /./ d" |
 sed "/^Using LibVEX rev .*, a library for dynamic binary translation/ , /./ d" |
 
 # Remove other introductory lines
-sed "/Estimated CPU clock rate is [0-9]* MHz/d"                       |
-sed "/For more details, rerun with: -v/d"                             |
+sed "/Estimated CPU clock rate is [0-9]* MHz/d" |
+sed "/For more details, rerun with: -v/d"       |
 
 # Anonymise line numbers in vg_replace_malloc.c, remove dirname if present
-sed "s/\(m_replacemalloc\/\)\?vg_replace_malloc.c:[0-9]*/vg_replace_malloc.c:.../"           |
+perl -p -e "s/(m_replacemalloc\/)?vg_replace_malloc.c:[0-9]*/vg_replace_malloc.c:.../" |
 
 # Hide suppressed error counts
 sed "s/^\(ERROR SUMMARY[^(]*(suppressed: \)[0-9]*\( from \)[0-9]*)$/\10\20)/" |
 
-
 # Reduce some libc incompatibility
-$dir/filter_libc                                                       |
+$dir/filter_libc |
 
 # Remove line info out of order warnings
-sed "/warning: line info addresses out of order/d"                     |
+sed "/warning: line info addresses out of order/d" |
 
 # Older bash versions print abnormal termination messages on the stderr
 # of the bash process. Newer bash versions redirect such messages properly.
 # Suppress any redirected abnormal termination messages. You can find the
 # complete list of messages in the bash source file siglist.c.
-sed -r "/^(Segmentation fault|Alarm clock|Aborted|Bus error)( \(core dumped\))?$/d" |
+perl -n -e 'print if !/^(Segmentation fault|Alarm clock|Aborted|Bus error)( \(core dumped\))?$/' |
 
 # Remove any ": dumping core" message as the user might have a
 # limit set that prevents the core dump

@@ -27,7 +27,7 @@ if VGCONF_PLATFORMS_INCLUDE_X86_LINUX
 SUBDIRS += x86-linux
 endif
 
-DIST_SUBDIRS = x86 amd64 ppc32 ppc64 linux .
+DIST_SUBDIRS = x86 amd64 ppc32 ppc64 linux x86-linux .
 
 noinst_SCRIPTS = \
 	filter_cmdline0 filter_linenos \

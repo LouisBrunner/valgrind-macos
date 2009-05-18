@@ -29,6 +29,8 @@ noinst_SCRIPTS = \
 	filter_stderr filter_xml \
 	filter_varinfo3
 
+noinst_HEADERS = leak.h
+
 EXTRA_DIST = $(noinst_SCRIPTS) \
 	addressable.stderr.exp addressable.stdout.exp addressable.vgtest \
 	badaddrvalue.stderr.exp \

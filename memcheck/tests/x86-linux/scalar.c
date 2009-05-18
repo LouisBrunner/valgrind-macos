@@ -17,6 +17,10 @@
 // when memory is unaddressable, and so tries to dereference it when doing
 // PRE_MEM_READ/PRE_MEM_WRITE calls.  (Note that Memcheck will
 // always issue an error message immediately before these seg faults occur).
+//
+// The output has numbers like "3s 2m" for each syscall.  "s" is short for
+// "scalar", ie. the argument itself is undefined.  "m" is short for "memory",
+// ie. the argument points to memory which is unaddressable.
 
 int main(void)
 {

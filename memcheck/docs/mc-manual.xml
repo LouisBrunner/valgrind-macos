@@ -154,7 +154,7 @@ the following problems:</para>
       shows "reachable" and "indirectly lost" blocks.  (In other words, it
       shows all blocks, except suppressed ones, so
       <computeroutput>--show-all</computeroutput> would be a better name for
-      it.)
+      it.)</para>
     </listitem>
   </varlistentry>
 

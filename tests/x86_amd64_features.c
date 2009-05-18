@@ -17,10 +17,8 @@
 #define True   1
 typedef int    Bool;
 
-//---------------------------------------------------------------------------
-// {x86,amd64}-linux (part 1 of 2)
-//---------------------------------------------------------------------------
-#if defined(VGP_x86_linux) || defined(VGP_amd64_linux)
+
+#if defined(VGA_x86) || defined(VGA_amd64)
 static void cpuid ( unsigned int n,
                     unsigned int* a, unsigned int* b,
                     unsigned int* c, unsigned int* d )
@@ -31,12 +29,6 @@ static void cpuid ( unsigned int n,
       : "0" (n)         /* input */
    );
 }
-#endif   // VGP_x86_linux || VGP_amd64_linux
-
-//---------------------------------------------------------------------------
-// {x86,amd64}-linux (part 2 of 2)
-//---------------------------------------------------------------------------
-#if defined(VGA_x86)  || defined(VGA_amd64)
 static Bool go(char* cpu)
 { 
    unsigned int level = 0, cmask = 0, dmask = 0, a, b, c, d;

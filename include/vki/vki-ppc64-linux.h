@@ -164,12 +164,18 @@ struct vki_old_sigaction {
   __vki_sigrestore_t sa_restorer;
 };
 
-struct vki_sigaction {
+struct vki_sigaction_base {
   __vki_sighandler_t ksa_handler;
   unsigned long sa_flags;
   __vki_sigrestore_t sa_restorer;
   vki_sigset_t sa_mask;               /* mask last for extensibility */
 };
+
+/* On Linux we use the same type for passing sigactions to
+   and from the kernel.  Hence: */
+typedef  struct vki_sigaction_base  vki_sigaction_toK_t;
+typedef  struct vki_sigaction_base  vki_sigaction_fromK_t;
+
 
 typedef struct vki_sigaltstack {
   void __user *ss_sp;

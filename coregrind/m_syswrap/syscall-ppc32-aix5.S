@@ -72,7 +72,7 @@
 				  void* guest_state,		// r4
 				  const vki_sigset_t *sysmask,	// r5
 				  const vki_sigset_t *postmask,	// r6
-				  Int nsigwords,		// r7
+				  Int sigsetSzB,		// r7
 				  Int __nr_sigprocmask)		// r8
 */
 	.file	"syscall-ppc32-aix6.S"
@@ -101,7 +101,7 @@ ML_(do_syscall_for_client_WRK):
         mr      31,3            /* syscall number */
         mr      30,4            /* guest_state */
         mr      29,6            /* postmask */
-        mr      28,7            /* nsigwords */
+        mr      28,7            /* sigsetSzB */
 	mr	27,8		/* __nr_sigprocmask */
 
 Lvg1:   /* Even though we can't take a signal until the sigprocmask 
@@ -114,7 +114,7 @@ Lvg1:   /* Even though we can't take a signal until the sigprocmask
         li      3,VKI_SIG_SETMASK
         mr      4,5
         mr      5,6
-	mr	6,7	/* nsigwords -- needed on AIX ? */
+	mr	6,7	/* sigsetSzB -- needed on AIX ? */
 
 	/* actually do the sigprocmask */
 	crorc	6,6,6
@@ -164,7 +164,7 @@ Lvg4:   mr	2,27
         li      3,VKI_SIG_SETMASK
         mr      4,29
         li      5,0
-        mr      6,28	/* nsigwords -- needed on AIX ? */
+        mr      6,28	/* sigsetSzB -- needed on AIX ? */
 
 	/* actually do the sigprocmask */
 	crorc	6,6,6

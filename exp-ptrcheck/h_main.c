@@ -2549,7 +2549,7 @@ void h_post_syscall ( ThreadId tid, UInt sysno, SysRes res )
        || (sysno == __NR_AIX5_kload && __NR_AIX5_kload != __NR_AIX5_UNKNOWN)
 #      endif
       ) {
-      if (res.isError) {
+      if (sr_isError(res)) {
          // mmap() had an error, return value is a small negative integer
          VG_(set_syscall_return_shadows)( tid, /*val*/ (UWord)NONPTR, 0,
                                                /*err*/ (UWord)NONPTR, 0 );
@@ -2566,7 +2566,7 @@ void h_post_syscall ( ThreadId tid, UInt sysno, SysRes res )
    // notification via new_mem_mmap.  Just set the return value shadow.
 #  if defined(__NR_shmat)
    if (sysno == __NR_shmat) {
-      if (res.isError) {
+      if (sr_isError(res)) {
          VG_(set_syscall_return_shadows)( tid, /*val*/ (UWord)NONPTR, 0,
                                                /*err*/ (UWord)NONPTR, 0 );
          if (0) VG_(printf)("ZZZZZZZ shmat res -> NONPTR\n");

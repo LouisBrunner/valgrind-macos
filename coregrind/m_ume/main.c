@@ -52,12 +52,12 @@ typedef struct {
 } ExeHandler;
 
 static ExeHandler exe_handlers[] = {
-#if defined(HAVE_ELF)
+#  if defined(HAVE_ELF)
    { "ELF",    VG_(match_ELF),    VG_(load_ELF) },
-#endif
-#if defined(HAVE_SCRIPT)
+#  endif
+#  if defined(HAVE_SCRIPT)
    { "script", VG_(match_script), VG_(load_script) },
-#endif
+#  endif
 };
 #define EXE_HANDLER_COUNT (sizeof(exe_handlers)/sizeof(exe_handlers[0]))
 
@@ -74,10 +74,10 @@ VG_(pre_exec_check)(const HChar* exe_name, Int* out_fd, Bool allow_setuid)
 
    // Check it's readable
    res = VG_(open)(exe_name, VKI_O_RDONLY, 0);
-   if (res.isError) {
+   if (sr_isError(res)) {
       return res;
    }
-   fd = res.res;
+   fd = sr_Res(res);
 
    // Check we have execute permissions
    ret = VG_(check_executable)(&is_setuid, (HChar*)exe_name, allow_setuid);
@@ -100,11 +100,11 @@ VG_(pre_exec_check)(const HChar* exe_name, Int* out_fd, Bool allow_setuid)
       bufsz = fsz;
 
    res = VG_(pread)(fd, buf, bufsz, 0);
-   if (res.isError || res.res != bufsz) {
+   if (sr_isError(res) || sr_Res(res) != bufsz) {
       VG_(close)(fd);
       return VG_(mk_SysRes_Error)(VKI_EACCES);
    }
-   bufsz = res.res;
+   bufsz = sr_Res(res);
 
    // Look for a matching executable format
    for (i = 0; i < EXE_HANDLER_COUNT; i++) {
@@ -119,7 +119,7 @@ VG_(pre_exec_check)(const HChar* exe_name, Int* out_fd, Bool allow_setuid)
    }
 
    // Write the 'out_fd' param if necessary, or close the file.
-   if (!res.isError && out_fd) {
+   if (!sr_isError(res) && out_fd) {
       *out_fd = fd; 
    } else { 
       VG_(close)(fd);
@@ -140,13 +140,13 @@ Int VG_(do_exec_inner)(const HChar* exe, ExeInfo* info)
    Int ret;
 
    res = VG_(pre_exec_check)(exe, &fd, False/*allow_setuid*/);
-   if (res.isError)
-      return res.err;
+   if (sr_isError(res))
+      return sr_Err(res);
 
-   vg_assert2(res.res >= 0 && res.res < EXE_HANDLER_COUNT, 
+   vg_assert2(sr_Res(res) >= 0 && sr_Res(res) < EXE_HANDLER_COUNT, 
               "invalid VG_(pre_exec_check) result");
 
-   ret = (*exe_handlers[res.res].load_fn)(fd, exe, info);
+   ret = (*exe_handlers[sr_Res(res)].load_fn)(fd, exe, info);
 
    VG_(close)(fd);
 
@@ -157,9 +157,9 @@ Int VG_(do_exec_inner)(const HChar* exe, ExeInfo* info)
 static Bool is_hash_bang_file(Char* f)
 {
    SysRes res = VG_(open)(f, VKI_O_RDONLY, 0);
-   if (!res.isError) {
+   if (!sr_isError(res)) {
       Char buf[3] = {0,0,0};
-      Int fd = res.res;
+      Int fd = sr_Res(res);
       Int n  = VG_(read)(fd, buf, 2); 
       if (n == 2 && VG_STREQ("#!", buf))
          return True;
@@ -173,9 +173,9 @@ static Bool is_hash_bang_file(Char* f)
 static Bool is_binary_file(Char* f)
 {
    SysRes res = VG_(open)(f, VKI_O_RDONLY, 0);
-   if (!res.isError) {
+   if (!sr_isError(res)) {
       UChar buf[80];
-      Int fd = res.res;
+      Int fd = sr_Res(res);
       Int n  = VG_(read)(fd, buf, 80); 
       Int i;
       for (i = 0; i < n; i++) {
@@ -235,7 +235,7 @@ static Int do_exec_shell_followup(Int ret, HChar* exe_name, ExeInfo* info)
    
       // Was it a directory?
       res = VG_(stat)(exe_name, &st);
-      if (!res.isError && VKI_S_ISDIR(st.st_mode)) {
+      if (!sr_isError(res) && VKI_S_ISDIR(st.st_mode)) {
          VG_(printf)("valgrind: %s: is a directory\n", exe_name);
       
       // Was it not executable?

@@ -41,6 +41,10 @@
    success and -1 on error.  */
 /* I believe the indexing scheme in ->sig[] is also correct for
    32- and 64-bit AIX (verified 27 July 06). */
+/* In the sigset routines below, be aware that _VKI_NSIG_BPW can be
+   either 32 or 64, and hence the sig[] words can either be 32- or
+   64-bits.  And which they are it doesn't necessarily follow from the
+   host word size. */
 
 Int VG_(sigfillset)( vki_sigset_t* set )
 {
@@ -48,7 +52,7 @@ Int VG_(sigfillset)( vki_sigset_t* set )
    if (set == NULL)
       return -1;
    for (i = 0; i < _VKI_NSIG_WORDS; i++)
-      set->sig[i] = ~(UWord)0x0;
+      set->sig[i] = ~0;
    return 0;
 }
 
@@ -58,7 +62,7 @@ Int VG_(sigemptyset)( vki_sigset_t* set )
    if (set == NULL)
       return -1;
    for (i = 0; i < _VKI_NSIG_WORDS; i++)
-      set->sig[i] = 0x0;
+      set->sig[i] = 0;
    return 0;
 }
 
@@ -67,7 +71,7 @@ Bool VG_(isemptysigset)( const vki_sigset_t* set )
    Int i;
    vg_assert(set != NULL);
    for (i = 0; i < _VKI_NSIG_WORDS; i++)
-      if (set->sig[i] != 0x0) return False;
+      if (set->sig[i] != 0) return False;
    return True;
 }
 
@@ -76,7 +80,7 @@ Bool VG_(isfullsigset)( const vki_sigset_t* set )
    Int i;
    vg_assert(set != NULL);
    for (i = 0; i < _VKI_NSIG_WORDS; i++)
-      if (set->sig[i] != ~(UWord)0x0) return False;
+      if (set->sig[i] != ~0) return False;
    return True;
 }
 
@@ -97,7 +101,7 @@ Int VG_(sigaddset)( vki_sigset_t* set, Int signum )
    if (signum < 1 || signum > _VKI_NSIG)
       return -1;
    signum--;
-   set->sig[signum / _VKI_NSIG_BPW] |= (1UL << (signum % _VKI_NSIG_BPW));
+   set->sig[signum / _VKI_NSIG_BPW] |= (1ULL << (signum % _VKI_NSIG_BPW));
    return 0;
 }
 
@@ -108,7 +112,7 @@ Int VG_(sigdelset)( vki_sigset_t* set, Int signum )
    if (signum < 1 || signum > _VKI_NSIG)
       return -1;
    signum--;
-   set->sig[signum / _VKI_NSIG_BPW] &= ~(1UL << (signum % _VKI_NSIG_BPW));
+   set->sig[signum / _VKI_NSIG_BPW] &= ~(1ULL << (signum % _VKI_NSIG_BPW));
    return 0;
 }
 
@@ -143,45 +147,100 @@ void VG_(sigdelset_from_set)( vki_sigset_t* dst, vki_sigset_t* src )
       dst->sig[i] &= ~(src->sig[i]);
 }
 
+/* dst = dst `intersect` src. */
+void VG_(sigintersectset)( vki_sigset_t* dst, vki_sigset_t* src )
+{
+   Int i;
+   vg_assert(dst != NULL && src != NULL);
+   for (i = 0; i < _VKI_NSIG_WORDS; i++)
+      dst->sig[i] &= src->sig[i];
+}
+
+/* dst = ~src */
+void VG_(sigcomplementset)( vki_sigset_t* dst, vki_sigset_t* src )
+{
+   Int i;
+   vg_assert(dst != NULL && src != NULL);
+   for (i = 0; i < _VKI_NSIG_WORDS; i++)
+      dst->sig[i] = ~ src->sig[i];
+}
+
 
 /* The functions sigaction, sigprocmask, sigpending and sigsuspend
    return 0 on success and -1 on error.  
 */
 Int VG_(sigprocmask)( Int how, const vki_sigset_t* set, vki_sigset_t* oldset)
 {
+#  if defined(VGO_linux) || defined(VGO_aix5)
+#  if defined(__NR_rt_sigprocmask)
    SysRes res = VG_(do_syscall4)(__NR_rt_sigprocmask, 
                                  how, (UWord)set, (UWord)oldset, 
                                  _VKI_NSIG_WORDS * sizeof(UWord));
-   return res.isError ? -1 : 0;
+#  else
+   SysRes res = VG_(do_syscall3)(__NR_sigprocmask, 
+                                 how, (UWord)set, (UWord)oldset);
+#  endif
+
+#  else
+#    error "Unknown OS"
+#  endif
+   return sr_isError(res) ? -1 : 0;
 }
 
 
-Int VG_(sigaction) ( Int signum, const struct vki_sigaction* act,  
-                     struct vki_sigaction* oldact)
+Int VG_(sigaction) ( Int signum, 
+                     const vki_sigaction_toK_t* act,  
+                     vki_sigaction_fromK_t* oldact)
 {
+#  if defined(VGO_linux) || defined(VGO_aix5)
+   /* Normal case: vki_sigaction_toK_t and vki_sigaction_fromK_t are
+      identical types. */
    SysRes res = VG_(do_syscall4)(__NR_rt_sigaction,
                                  signum, (UWord)act, (UWord)oldact, 
                                  _VKI_NSIG_WORDS * sizeof(UWord));
-   return res.isError ? -1 : 0;
+   return sr_isError(res) ? -1 : 0;
+
+#  else
+#    error "Unsupported OS"
+#  endif
+}
+
+
+/* See explanation in pub_core_libcsignal.h. */
+void 
+VG_(convert_sigaction_fromK_to_toK)( vki_sigaction_fromK_t* fromK,
+                                     /*OUT*/vki_sigaction_toK_t* toK )
+{
+#  if defined(VGO_linux) || defined(VGO_aix5)
+   *toK = *fromK;
+#  else
+#    error "Unsupported OS"
+#  endif
 }
 
 
 Int VG_(kill)( Int pid, Int signo )
 {
    SysRes res = VG_(do_syscall2)(__NR_kill, pid, signo);
-   return res.isError ? -1 : 0;
+   return sr_isError(res) ? -1 : 0;
 }
 
 
 Int VG_(tkill)( ThreadId tid, Int signo )
 {
+#  if defined(__NR_tkill)
    SysRes res = VG_(mk_SysRes_Error)(VKI_ENOSYS);
    res = VG_(do_syscall2)(__NR_tkill, tid, signo);
-   if (res.isError && res.err == VKI_ENOSYS)
+   if (sr_isError(res) && sr_Err(res) == VKI_ENOSYS)
       res = VG_(do_syscall2)(__NR_kill, tid, signo);
-   return res.isError ? -1 : 0;
+   return sr_isError(res) ? -1 : 0;
+
+#  else
+#    error "Unsupported plat"
+#  endif
 }
 
+/* ---------------------- sigtimedwait_zero ----------------------- */
 
 /* A cut-down version of POSIX sigtimedwait: poll for pending signals
    mentioned in the sigset_t, and if any are present, select one
@@ -199,6 +258,8 @@ Int VG_(tkill)( ThreadId tid, Int signo )
    obscure ways.  I suspect it's only thread-safe because V forces
    single-threadedness. */
 
+/* ---------- sigtimedwait_zero: Linux ----------- */
+
 #if defined(VGO_linux)
 Int VG_(sigtimedwait_zero)( const vki_sigset_t *set, 
                             vki_siginfo_t *info )
@@ -206,8 +267,10 @@ Int VG_(sigtimedwait_zero)( const vki_sigset_t *set,
    static const struct vki_timespec zero = { 0, 0 };
    SysRes res = VG_(do_syscall4)(__NR_rt_sigtimedwait, (UWord)set, (UWord)info, 
                                  (UWord)&zero, sizeof(*set));
-   return res.isError ? -1 : res.res;
+   return sr_isError(res) ? -1 : sr_Res(res);
 }
+
+/* ---------- sigtimedwait_zero: AIX5 ----------- */
 
 #elif defined(VGO_aix5)
 /* The general idea is:
@@ -254,8 +317,7 @@ Int VG_(sigtimedwait_zero)( const vki_sigset_t *set,
   vg_assert(ir == 0);
 
   /* pending = pending `intersect` blocked */
-  for (i = 0; i < _VKI_NSIG_WORDS; i++)
-     pending.sig[i] &= blocked.sig[i];
+  VG_(sigintersectset)(&pending, blocked);
 
   /* decide which signal we're going to snarf */
   for (i = 1; i < _VKI_NSIG; i++)

@@ -300,12 +300,12 @@ void make_elf_coredump(ThreadId tid, const vki_siginfo_t *si, UInt max_size)
       sres = VG_(open)(buf, 			   
                        VKI_O_CREAT|VKI_O_WRONLY|VKI_O_EXCL|VKI_O_TRUNC, 
                        VKI_S_IRUSR|VKI_S_IWUSR);
-      if (!sres.isError) {
-         core_fd = sres.res;
+      if (!sr_isError(sres)) {
+         core_fd = sr_Res(sres);
 	 break;
       }
 
-      if (sres.isError && sres.err != VKI_EEXIST)
+      if (sr_isError(sres) && sr_Err(sres) != VKI_EEXIST)
 	 return;		/* can't create file */
    }
 

@@ -189,8 +189,8 @@ static void load_client ( /*OUT*/ExeInfo* info,
    /* Get hold of a file descriptor which refers to the client
       executable.  This is needed for attaching to GDB. */
    res = VG_(open)(exe_name, VKI_O_RDONLY, VKI_S_IRUSR);
-   if (!res.isError)
-      VG_(cl_exec_fd) = res.res;
+   if (!sr_isError(res))
+      VG_(cl_exec_fd) = sr_Res(res);
 
    /* Copy necessary bits of 'info' that were filled in */
    *client_ip  = info->init_ip;
@@ -625,7 +625,7 @@ Addr setup_client_stack( void*  init_sp,
 	         VKI_PROT_READ|VKI_PROT_WRITE|VKI_PROT_EXEC
 	      );
      }
-     if ((!ok) || res.isError) {
+     if ((!ok) || sr_isError(res)) {
         /* Allocation of the stack failed.  We have to stop. */
         VG_(printf)("valgrind: "
                     "I failed to allocate space for the application's stack.\n");
@@ -636,7 +636,7 @@ Addr setup_client_stack( void*  init_sp,
      }
 
      vg_assert(ok);
-     vg_assert(!res.isError); 
+     vg_assert(!sr_isError(res)); 
    }
 
    /* ==================== create client stack ==================== */
@@ -866,8 +866,8 @@ static void setup_client_dataseg ( SizeT max_size )
              anon_size, 
              VKI_PROT_READ|VKI_PROT_WRITE|VKI_PROT_EXEC
           );
-   vg_assert(!sres.isError);
-   vg_assert(sres.res == anon_start);
+   vg_assert(!sr_isError(sres));
+   vg_assert(sr_Res(sres) == anon_start);
 }
 
 

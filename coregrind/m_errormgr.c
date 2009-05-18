@@ -953,13 +953,13 @@ static void load_one_suppressions_file ( Char* filename )
    SuppLoc tmp_callers[VG_MAX_SUPP_CALLERS];
 
    sres = VG_(open)( filename, VKI_O_RDONLY, 0 );
-   if (sres.isError) {
+   if (sr_isError(sres)) {
       if (VG_(clo_xml))
          VG_UMSG("</valgrindoutput>\n");
       VG_UMSG("FATAL: can't open suppressions file \"%s\"", filename );
       VG_(exit)(1);
    }
-   fd = sres.res;
+   fd = sr_Res(sres);
 
 #  define BOMB(S)  { err_str = S;  goto syntax_error; }
 

@@ -74,6 +74,9 @@ extern Int VG_(access) ( HChar* path, Bool irusr, Bool iwusr, Bool ixusr );
 extern Int VG_(check_executable)(/*OUT*/Bool* is_setuid,
                                  HChar* f, Bool allow_setuid);
 
+/* Note this moves (or at least, is believed to move) the file pointer
+   on Linux and AIX5 but doesn't on Darwin.  This inconsistency should
+   be fixed. */
 extern SysRes VG_(pread) ( Int fd, void* buf, Int count, OffT offset );
 
 /* Create and open (-rw------) a tmp file name incorporating said arg.

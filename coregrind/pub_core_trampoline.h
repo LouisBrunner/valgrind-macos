@@ -111,7 +111,7 @@ extern void VG_(ppctoc_magic_redirect_return_stub);
 /* See comment for ppc32_aix5 equivalent above. */
 extern void VG_(ppc64_aix5_do_preloads_then_start_client);
 #endif
- 
+
 #endif   // __PUB_CORE_TRAMPOLINE_H
 
 /*--------------------------------------------------------------------*/

@@ -149,6 +149,10 @@ typedef struct {
 #define VKI_SS_ONSTACK	1
 #define VKI_SS_DISABLE	2
 
+/* These are 'legacy' sigactions in which the size of sa_mask is fixed
+   (cannot be expanded at any future point) because it is sandwiched
+   between two other fields.
+   (there is identical kludgery in vki-ppc32-linux.h) */
 struct vki_old_sigaction {
         // [[Nb: a 'k' prefix is added to "sa_handler" because
         // bits/sigaction.h (which gets dragged in somehow via signal.h)
@@ -160,13 +164,19 @@ struct vki_old_sigaction {
         __vki_sigrestore_t sa_restorer;
 };
 
-struct vki_sigaction {
+struct vki_sigaction_base {
         // [[See comment about extra 'k' above]]
 	__vki_sighandler_t ksa_handler;
 	unsigned long sa_flags;
 	__vki_sigrestore_t sa_restorer;
 	vki_sigset_t sa_mask;		/* mask last for extensibility */
 };
+
+/* On Linux we use the same type for passing sigactions to
+   and from the kernel.  Hence: */
+typedef  struct vki_sigaction_base  vki_sigaction_toK_t;
+typedef  struct vki_sigaction_base  vki_sigaction_fromK_t;
+
 
 typedef struct vki_sigaltstack {
 	void __user *ss_sp;

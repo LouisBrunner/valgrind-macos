@@ -95,8 +95,8 @@ void ML_(am_assert_fail)( const HChar* expr,
 Int ML_(am_getpid)( void )
 {
    SysRes sres = VG_(do_syscall0)(__NR_getpid);
-   aspacem_assert(!sres.isError);
-   return sres.res;
+   aspacem_assert(!sr_isError(sres));
+   return sr_Res(sres);
 }
 
 
@@ -238,7 +238,7 @@ SysRes ML_(am_open) ( const Char* pathname, Int flags, Int mode )
 Int ML_(am_read) ( Int fd, void* buf, Int count)
 {
    SysRes res = VG_(do_syscall3)(__NR_read, fd, (UWord)buf, count);
-   return res.isError ? -1 : res.res;
+   return sr_isError(res) ? -1 : sr_Res(res);
 }
 
 void ML_(am_close) ( Int fd )
@@ -250,13 +250,17 @@ Int ML_(am_readlink)(HChar* path, HChar* buf, UInt bufsiz)
 {
    SysRes res;
    res = VG_(do_syscall3)(__NR_readlink, (UWord)path, (UWord)buf, bufsiz);
-   return res.isError ? -1 : res.res;
+   return sr_isError(res) ? -1 : sr_Res(res);
 }
 
 Int ML_(am_fcntl) ( Int fd, Int cmd, Addr arg )
 {
+#  if defined(VGO_linux) || defined(VGO_aix5)
    SysRes res = VG_(do_syscall3)(__NR_fcntl, fd, cmd, arg);
-   return res.isError ? -1 : res.res;
+#  else
+#  error "Unknown OS"
+#  endif
+   return sr_isError(res) ? -1 : sr_Res(res);
 }
 
 /* Get the dev, inode and mode info for a file descriptor, if
@@ -273,7 +277,7 @@ Bool ML_(am_get_fd_d_i_m)( Int fd,
       binaries on amd64 systems where fstat seems to be broken. */
    struct vki_stat64 buf64;
    res = VG_(do_syscall2)(__NR_fstat64, fd, (UWord)&buf64);
-   if (!res.isError) {
+   if (!sr_isError(res)) {
       *dev  = (ULong)buf64.st_dev;
       *ino  = (ULong)buf64.st_ino;
       *mode = (UInt) buf64.st_mode;
@@ -281,7 +285,7 @@ Bool ML_(am_get_fd_d_i_m)( Int fd,
    }
 #  endif
    res = VG_(do_syscall2)(__NR_fstat, fd, (UWord)&buf);
-   if (!res.isError) {
+   if (!sr_isError(res)) {
       *dev  = (ULong)buf.st_dev;
       *ino  = (ULong)buf.st_ino;
       *mode = (UInt) buf.st_mode;
@@ -339,10 +343,10 @@ VgStack* VG_(am_alloc_VgStack)( /*OUT*/Addr* initial_sp )
          + VG_STACK_ACTIVE_SZB + VG_STACK_GUARD_SZB;
 
    sres = VG_(am_mmap_anon_float_valgrind)( szB );
-   if (sres.isError)
+   if (sr_isError(sres))
       return NULL;
 
-   stack = (VgStack*)sres.res;
+   stack = (VgStack*)(AddrH)sr_Res(sres);
 
    aspacem_assert(VG_IS_PAGE_ALIGNED(szB));
    aspacem_assert(VG_IS_PAGE_ALIGNED(stack));
@@ -352,7 +356,7 @@ VgStack* VG_(am_alloc_VgStack)( /*OUT*/Addr* initial_sp )
              (Addr) &stack[0], 
              VG_STACK_GUARD_SZB, VKI_PROT_NONE 
           );
-   if (sres.isError) goto protect_failed;
+   if (sr_isError(sres)) goto protect_failed;
    VG_(am_notify_mprotect)( 
       (Addr) &stack->bytes[0], 
       VG_STACK_GUARD_SZB, VKI_PROT_NONE 
@@ -362,7 +366,7 @@ VgStack* VG_(am_alloc_VgStack)( /*OUT*/Addr* initial_sp )
              (Addr) &stack->bytes[VG_STACK_GUARD_SZB + VG_STACK_ACTIVE_SZB], 
              VG_STACK_GUARD_SZB, VKI_PROT_NONE 
           );
-   if (sres.isError) goto protect_failed;
+   if (sr_isError(sres)) goto protect_failed;
    VG_(am_notify_mprotect)( 
       (Addr) &stack->bytes[VG_STACK_GUARD_SZB + VG_STACK_ACTIVE_SZB],
       VG_STACK_GUARD_SZB, VKI_PROT_NONE 
@@ -377,7 +381,7 @@ VgStack* VG_(am_alloc_VgStack)( /*OUT*/Addr* initial_sp )
 
    *initial_sp = (Addr)&stack->bytes[VG_STACK_GUARD_SZB + VG_STACK_ACTIVE_SZB];
    *initial_sp -= 8;
-   *initial_sp &= ~((Addr)0xF);
+   *initial_sp &= ~((Addr)0x1F); /* 32-align it */
 
    VG_(debugLog)( 1,"aspacem","allocated thread stack at 0x%llx size %d\n",
                   (ULong)(Addr)stack, szB);

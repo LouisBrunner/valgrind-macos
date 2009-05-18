@@ -143,7 +143,7 @@ typedef __vki_restorefn_t __user *__vki_sigrestore_t;
 #define VKI_SIG_DFL	((__vki_sighandler_t)0)	/* default signal handling */
 #define VKI_SIG_IGN	((__vki_sighandler_t)1)	/* ignore signal */
 
-struct vki_sigaction {
+struct vki_sigaction_base {
         // [[Nb: a 'k' prefix is added to "sa_handler" because
         // bits/sigaction.h (which gets dragged in somehow via signal.h)
         // #defines it as something else.  Since that is done for glibc's
@@ -153,6 +153,12 @@ struct vki_sigaction {
 	__vki_sigrestore_t sa_restorer;
 	vki_sigset_t sa_mask;		/* mask last for extensibility */
 };
+
+/* On Linux we use the same type for passing sigactions to
+   and from the kernel.  Hence: */
+typedef  struct vki_sigaction_base  vki_sigaction_toK_t;
+typedef  struct vki_sigaction_base  vki_sigaction_fromK_t;
+
 
 typedef struct vki_sigaltstack {
 	void __user *ss_sp;

@@ -251,16 +251,16 @@ typedef struct SigQueue {
 
 /* ------ Macros for pulling stuff out of ucontexts ------ */
 
-/* Q: what does UCONTEXT_SYSCALL_SYSRES do?  A: let's suppose the
+/* Q: what does VG_UCONTEXT_SYSCALL_SYSRES do?  A: let's suppose the
    machine context (uc) reflects the situation that a syscall had just
    completed, quite literally -- that is, that the program counter was
    now at the instruction following the syscall.  (or we're slightly
    downstream, but we're sure no relevant register has yet changed
-   value.)  Then UCONTEXT_SYSCALL_SYSRES returns a SysRes reflecting
+   value.)  Then VG_UCONTEXT_SYSCALL_SYSRES returns a SysRes reflecting
    the result of the syscall; it does this by fishing relevant bits of
    the machine state out of the uc.  Of course if the program counter
    was somewhere else entirely then the result is likely to be
-   meaningless, so the caller of UCONTEXT_SYSCALL_SYSRES has to be
+   meaningless, so the caller of VG_UCONTEXT_SYSCALL_SYSRES has to be
    very careful to pay attention to the results only when it is sure
    that the said constraint on the program counter is indeed valid. */
 #if defined(VGP_x86_linux)
@@ -491,6 +491,10 @@ typedef
       UInt  scss_flags;
       vki_sigset_t scss_mask;
       void* scss_restorer; /* where sigreturn goes */
+      void* scss_sa_tramp; /* sa_tramp setting, Darwin only */
+      /* re _restorer and _sa_tramp, we merely record the values
+         supplied when the client does 'sigaction' and give them back
+         when requested.  Otherwise they are simply ignored. */
    }
    SCSS_Per_Signal;
 
@@ -748,7 +752,8 @@ static void handle_SCSS_change ( Bool force_update )
 {
    Int  res, sig;
    SKSS skss_old;
-   struct vki_sigaction ksa, ksa_old;
+   vki_sigaction_toK_t   ksa;
+   vki_sigaction_fromK_t ksa_old;
 
    /* Remember old SKSS and calculate new one. */
    skss_old = skss;
@@ -775,7 +780,7 @@ static void handle_SCSS_change ( Bool force_update )
       ksa.ksa_handler = skss.skss_per_sig[sig].skss_handler;
       ksa.sa_flags    = skss.skss_per_sig[sig].skss_flags;
 #     if !defined(VGP_ppc32_linux) && !defined(VGP_ppc32_aix5) \
-                                   && !defined(VGP_ppc64_aix5)
+         && !defined(VGP_ppc64_aix5)
       ksa.sa_restorer = my_sigreturn;
 #     endif
       /* Re above ifdef (also the assertion below), PaulM says:
@@ -791,11 +796,12 @@ static void handle_SCSS_change ( Bool force_update )
 
       if (VG_(clo_trace_signals) && VG_(clo_verbosity) > 2)
          VG_DMSG("setting ksig %d to: hdlr %p, flags 0x%lx, "
-                 "mask(63..0) 0x%lx 0x%lx",
+                 "mask(msb..lsb) 0x%llx 0x%llx",
                  sig, ksa.ksa_handler,
                  (UWord)ksa.sa_flags,
-                 (UWord)ksa.sa_mask.sig[1], 
-                 (UWord)ksa.sa_mask.sig[0]);
+                 _VKI_NSIG_WORDS > 1 ? (ULong)ksa.sa_mask.sig[1] : 0,
+                 (ULong)ksa.sa_mask.sig[0]
+         );
 
       res = VG_(sigaction)( sig, &ksa, &ksa_old );
       vg_assert(res == 0);
@@ -808,7 +814,7 @@ static void handle_SCSS_change ( Bool force_update )
          vg_assert(ksa_old.sa_flags 
                    == skss_old.skss_per_sig[sig].skss_flags);
 #        if !defined(VGP_ppc32_linux) && !defined(VGP_ppc32_aix5) \
-                                      && !defined(VGP_ppc64_aix5)
+            && !defined(VGP_ppc64_aix5)
          vg_assert(ksa_old.sa_restorer 
                    == my_sigreturn);
 #        endif
@@ -894,8 +900,8 @@ SysRes VG_(do_sys_sigaltstack) ( ThreadId tid, vki_stack_t* ss, vki_stack_t* oss
 
 
 SysRes VG_(do_sys_sigaction) ( Int signo, 
-                               const struct vki_sigaction *new_act, 
-                               struct vki_sigaction *old_act )
+                               const vki_sigaction_toK_t* new_act, 
+                               vki_sigaction_fromK_t* old_act )
 {
    if (VG_(clo_trace_signals))
       VG_EMSG("sys_sigaction: sigNo %d, "
@@ -940,10 +946,12 @@ SysRes VG_(do_sys_sigaction) ( Int signo,
       scss.scss_per_sig[signo].scss_flags    = new_act->sa_flags;
       scss.scss_per_sig[signo].scss_mask     = new_act->sa_mask;
 
-      scss.scss_per_sig[signo].scss_restorer = 0;
+      scss.scss_per_sig[signo].scss_restorer = NULL;
 #     if !defined(VGP_ppc32_aix5) && !defined(VGP_ppc64_aix5)
       scss.scss_per_sig[signo].scss_restorer = new_act->sa_restorer;
 #     endif
+
+      scss.scss_per_sig[signo].scss_sa_tramp = NULL;
 
       VG_(sigdelset)(&scss.scss_per_sig[signo].scss_mask, VKI_SIGKILL);
       VG_(sigdelset)(&scss.scss_per_sig[signo].scss_mask, VKI_SIGSTOP);
@@ -1069,16 +1077,16 @@ SysRes VG_(do_sys_sigprocmask) ( ThreadId tid,
                                  vki_sigset_t* oldset )
 {
    switch(how) {
-   case VKI_SIG_BLOCK:
-   case VKI_SIG_UNBLOCK:
-   case VKI_SIG_SETMASK:
-      vg_assert(VG_(is_valid_tid)(tid));
-      do_setmask ( tid, how, set, oldset );
-      return VG_(mk_SysRes_Success)( 0 );
+      case VKI_SIG_BLOCK:
+      case VKI_SIG_UNBLOCK:
+      case VKI_SIG_SETMASK:
+         vg_assert(VG_(is_valid_tid)(tid));
+         do_setmask ( tid, how, set, oldset );
+         return VG_(mk_SysRes_Success)( 0 );
 
-   default:
-      VG_DMSG("sigprocmask: unknown 'how' field %d", how);
-      return VG_(mk_SysRes_Error)( VKI_EINVAL );
+      default:
+         VG_DMSG("sigprocmask: unknown 'how' field %d", how);
+         return VG_(mk_SysRes_Error)( VKI_EINVAL );
    }
 }
 
@@ -1220,14 +1228,18 @@ static const Char *signame(Int sigNo)
       case VKI_SIGPROF:   return "SIGPROF";
       case VKI_SIGWINCH:  return "SIGWINCH";
       case VKI_SIGIO:     return "SIGIO";
+#     if defined(VKI_SIGPWR)
       case VKI_SIGPWR:    return "SIGPWR";
+#     endif
 #     if defined(VKI_SIGUNUSED)
       case VKI_SIGUNUSED: return "SIGUNUSED";
 #     endif
 
+#  if defined(VKI_SIGRTMIN) && defined(VKI_SIGRTMAX)
    case VKI_SIGRTMIN ... VKI_SIGRTMAX:
       VG_(sprintf)(buf, "SIGRT%d", sigNo-VKI_SIGRTMIN);
       return buf;
+#  endif
 
    default:
       VG_(sprintf)(buf, "SIG%d", sigNo);
@@ -1238,8 +1250,9 @@ static const Char *signame(Int sigNo)
 /* Hit ourselves with a signal using the default handler */
 void VG_(kill_self)(Int sigNo)
 {
-   vki_sigset_t	        mask, origmask;
-   struct vki_sigaction sa, origsa;   
+   vki_sigset_t	         mask, origmask;
+   vki_sigaction_toK_t   sa, origsa2;
+   vki_sigaction_fromK_t origsa;   
 
    sa.ksa_handler = VKI_SIG_DFL;
    sa.sa_flags = 0;
@@ -1256,7 +1269,8 @@ void VG_(kill_self)(Int sigNo)
 
    VG_(kill)(VG_(getpid)(), sigNo);
 
-   VG_(sigaction)(sigNo, &origsa, NULL);
+   VG_(convert_sigaction_fromK_to_toK)( &origsa, &origsa2 );
+   VG_(sigaction)(sigNo, &origsa2, NULL);
    VG_(sigprocmask)(VKI_SIG_SETMASK, &origmask, NULL);
 }
 
@@ -1302,35 +1316,39 @@ static void default_action(const vki_siginfo_t *info, ThreadId tid)
    vg_assert(VG_(is_running_thread)(tid));
    
    switch(sigNo) {
-   case VKI_SIGQUIT:	/* core */
-   case VKI_SIGILL:	/* core */
-   case VKI_SIGABRT:	/* core */
-   case VKI_SIGFPE:	/* core */
-   case VKI_SIGSEGV:	/* core */
-   case VKI_SIGBUS:	/* core */
-   case VKI_SIGTRAP:	/* core */
-   case VKI_SIGXCPU:	/* core */
-   case VKI_SIGXFSZ:	/* core */
-      terminate = True;
-      core = True;
-      break;
+      case VKI_SIGQUIT:	/* core */
+      case VKI_SIGILL:	/* core */
+      case VKI_SIGABRT:	/* core */
+      case VKI_SIGFPE:	/* core */
+      case VKI_SIGSEGV:	/* core */
+      case VKI_SIGBUS:	/* core */
+      case VKI_SIGTRAP:	/* core */
+      case VKI_SIGXCPU:	/* core */
+      case VKI_SIGXFSZ:	/* core */
+         terminate = True;
+         core = True;
+         break;
 
-   case VKI_SIGHUP:	/* term */
-   case VKI_SIGINT:	/* term */
-   case VKI_SIGKILL:	/* term - we won't see this */
-   case VKI_SIGPIPE:	/* term */
-   case VKI_SIGALRM:	/* term */
-   case VKI_SIGTERM:	/* term */
-   case VKI_SIGUSR1:	/* term */
-   case VKI_SIGUSR2:	/* term */
-   case VKI_SIGIO:	/* term */
-   case VKI_SIGPWR:	/* term */
-   case VKI_SIGSYS:	/* term */
-   case VKI_SIGPROF:	/* term */
-   case VKI_SIGVTALRM:	/* term */
-   case VKI_SIGRTMIN ... VKI_SIGRTMAX: /* term */
-      terminate = True;
-      break;
+      case VKI_SIGHUP:	/* term */
+      case VKI_SIGINT:	/* term */
+      case VKI_SIGKILL:	/* term - we won't see this */
+      case VKI_SIGPIPE:	/* term */
+      case VKI_SIGALRM:	/* term */
+      case VKI_SIGTERM:	/* term */
+      case VKI_SIGUSR1:	/* term */
+      case VKI_SIGUSR2:	/* term */
+      case VKI_SIGIO:	/* term */
+#     if defined(VKI_SIGPWR)
+      case VKI_SIGPWR:	/* term */
+#     endif
+      case VKI_SIGSYS:	/* term */
+      case VKI_SIGPROF:	/* term */
+      case VKI_SIGVTALRM:	/* term */
+#     if defined(VKI_SIGRTMIN) && defined(VKI_SIGRTMAX)
+      case VKI_SIGRTMIN ... VKI_SIGRTMAX: /* term */
+#     endif
+         terminate = True;
+         break;
    }
 
    vg_assert(!core || (core && terminate));
@@ -1560,7 +1578,6 @@ static void deliver_signal ( ThreadId tid, const vki_siginfo_t *info,
       if (!(handler->scss_flags & VKI_SA_NOMASK)) {
 	 VG_(sigaddset_from_set)(&tst->sig_mask, &handler->scss_mask);
 	 VG_(sigaddset)(&tst->sig_mask, sigNo);
-
 	 tst->tmp_sig_mask = tst->sig_mask;
       }
    }
@@ -1646,12 +1663,13 @@ void VG_(synth_sigtrap)(ThreadId tid)
    VG_(memset)(&uc,   0, sizeof(uc));
    info.si_signo = VKI_SIGTRAP;
    info.si_code = VKI_TRAP_BRKPT; /* tjh: only ever called for a brkpt ins */
-#if defined(VGA_x86) || defined(VGA_amd64)
+
+#  if defined(VGP_x86_linux) || defined(VGP_amd64_linux)
    uc.uc_mcontext.trapno = 3;     /* tjh: this is the x86 trap number
                                           for a breakpoint trap... */
    uc.uc_mcontext.err = 0;        /* tjh: no error code for x86
                                           breakpoint trap... */
-#endif
+#  endif
 
    resume_scheduler(tid);
    deliver_signal(tid, &info, &uc);
@@ -1773,6 +1791,7 @@ void async_signalhandler ( Int sigNo,
 {
    ThreadId     tid = VG_(lwpid_to_vgtid)(VG_(gettid)());
    ThreadState* tst = VG_(get_ThreadState)(tid);
+   SysRes       sres;
 
    /* The thread isn't currently running, make it so before going on */
    vg_assert(tst->status == VgTs_WaitSys);
@@ -1784,18 +1803,58 @@ void async_signalhandler ( Int sigNo,
       VG_DMSG("async signal handler: signal=%d, tid=%d, si_code=%d",
               sigNo, tid, info->si_code);
 
-   /* Update thread state properly */
+   /* Update thread state properly.  The signal can only have been
+      delivered whilst we were in
+      coregrind/m_syswrap/syscall-<PLAT>.S, and only then in the
+      window between the two sigprocmask calls, since at all other
+      times, we run with async signals on the host blocked.  Hence
+      make enquiries on the basis that we were in or very close to a
+      syscall, and attempt to fix up the guest state accordingly.
+
+      (normal async signals occurring during computation are blocked,
+      but periodically polled for using VG_(sigtimedwait_zero), and
+      delivered at a point convenient for us.  Hence this routine only
+      deals with signals that are delivered to a thread during a
+      syscall.) */
+
+   /* First, extract a SysRes from the ucontext_t* given to this
+      handler.  If it is subsequently established by
+      VG_(fixup_guest_state_after_syscall_interrupted) that the
+      syscall was complete but the results had not been committed yet
+      to the guest state, then it'll have to commit the results itself
+      "by hand", and so we need to extract the SysRes.  Of course if
+      the thread was not in that particular window then the
+      SysRes will be meaningless, but that's OK too because
+      VG_(fixup_guest_state_after_syscall_interrupted) will detect
+      that the thread was not in said window and ignore the SysRes. */
+
+   sres = VG_UCONTEXT_SYSCALL_SYSRES(uc);
+
+   /* (1) */
    VG_(fixup_guest_state_after_syscall_interrupted)(
       tid, 
       VG_UCONTEXT_INSTR_PTR(uc), 
-      VG_UCONTEXT_SYSCALL_NUM(uc), 
-      VG_UCONTEXT_SYSCALL_SYSRES(uc),  
+      sres,  
       !!(scss.scss_per_sig[sigNo].scss_flags & VKI_SA_RESTART)
    );
 
+   /* (2) */
    /* Set up the thread's state to deliver a signal */
    if (!is_sig_ign(info->si_signo))
       deliver_signal(tid, info, uc);
+
+   /* It's crucial that (1) and (2) happen in the order (1) then (2)
+      and not the other way around.  (1) fixes up the guest thread
+      state to reflect the fact that the syscall was interrupted --
+      either to restart the syscall or to return EINTR.  (2) then sets
+      up the thread state to deliver the signal.  Then we resume
+      execution.  First, the signal handler is run, since that's the
+      second adjustment we made to the thread state.  If that returns,
+      then we resume at the guest state created by (1), viz, either
+      the syscall returns EINTR or is restarted.
+
+      If (2) was done before (1) the outcome would be completely
+      different, and wrong. */
 
    /* longjmp back to the thread's main loop to start executing the
       handler. */
@@ -2007,6 +2066,7 @@ static Bool extend_stack_if_appropriate(ThreadId tid, vki_siginfo_t* info)
    }
 }
 
+
 static
 void sync_signalhandler_from_kernel ( ThreadId tid,
          Int sigNo, vki_siginfo_t *info, struct vki_ucontext *uc )
@@ -2170,7 +2230,7 @@ static void sigvgkill_handler(int signo, vki_siginfo_t *si,
 }
 
 static __attribute((unused))
-void pp_ksigaction ( struct vki_sigaction* sa )
+void pp_ksigaction ( vki_sigaction_toK_t* sa )
 {
    Int i;
    VG_(printf)("pp_ksigaction: handler %p, flags 0x%x, restorer %p\n", 
@@ -2194,7 +2254,7 @@ void pp_ksigaction ( struct vki_sigaction* sa )
  */
 void VG_(set_default_handler)(Int signo)
 {
-   struct vki_sigaction sa;   
+   vki_sigaction_toK_t sa;   
 
    sa.ksa_handler = VKI_SIG_DFL;
    sa.sa_flags = 0;
@@ -2214,14 +2274,11 @@ void VG_(poll_signals)(ThreadId tid)
    vki_siginfo_t si, *sip;
    vki_sigset_t pollset;
    ThreadState *tst = VG_(get_ThreadState)(tid);
-   Int i;
    vki_sigset_t saved_mask;
 
    /* look for all the signals this thread isn't blocking */
-   for(i = 0; i < _VKI_NSIG_WORDS; i++)
-      pollset.sig[i] = ~tst->sig_mask.sig[i];
-
-   //VG_(printf)("tid %d pollset=%08x%08x\n", tid, pollset.sig[1], pollset.sig[0]);
+   /* pollset = ~tst->sig_mask */
+   VG_(sigcomplementset)( &pollset, &tst->sig_mask );
 
    block_all_host_signals(&saved_mask); // protect signal queue
 
@@ -2261,9 +2318,18 @@ void VG_(poll_signals)(ThreadId tid)
 */
 void VG_(sigstartup_actions) ( void )
 {
-   Int i, ret;
+   Int i, ret, vKI_SIGRTMIN;
    vki_sigset_t saved_procmask;
-   struct vki_sigaction sa;
+   vki_sigaction_fromK_t sa;
+
+   VG_(memset)(&scss, 0, sizeof(scss));
+   VG_(memset)(&skss, 0, sizeof(skss));
+
+#  if defined(VKI_SIGRTMIN)
+   vKI_SIGRTMIN = VKI_SIGRTMIN;
+#  else
+   vKI_SIGRTMIN = 0; /* eg Darwin */
+#  endif
 
    /* VG_(printf)("SIGSTARTUP\n"); */
    /* Block all signals.  saved_procmask remembers the previous mask,
@@ -2281,8 +2347,9 @@ void VG_(sigstartup_actions) ( void )
 
       /* Try setting it back to see if this signal is really
 	 available */
-      if (i >= VKI_SIGRTMIN) {
-	 struct vki_sigaction tsa;
+      if (vKI_SIGRTMIN > 0 /* it actually exists on this platform */
+          && i >= vKI_SIGRTMIN) {
+         vki_sigaction_toK_t tsa, sa2;
 
 	 tsa.ksa_handler = (void *)sync_signalhandler;
 	 tsa.sa_flags = VKI_SA_SIGINFO;
@@ -2297,7 +2364,8 @@ void VG_(sigstartup_actions) ( void )
 	    break;
 	 }
 
-	 ret = VG_(sigaction)(i, &sa, NULL);
+         VG_(convert_sigaction_fromK_to_toK)( &sa, &sa2 );
+	 ret = VG_(sigaction)(i, &sa2, NULL);
 	 vg_assert(ret == 0);
       }
 
@@ -2310,10 +2378,13 @@ void VG_(sigstartup_actions) ( void )
       scss.scss_per_sig[i].scss_handler  = sa.ksa_handler;
       scss.scss_per_sig[i].scss_flags    = sa.sa_flags;
       scss.scss_per_sig[i].scss_mask     = sa.sa_mask;
-      scss.scss_per_sig[i].scss_restorer = 0;
+
+      scss.scss_per_sig[i].scss_restorer = NULL;
 #     if !defined(VGP_ppc32_aix5) && !defined(VGP_ppc64_aix5)
       scss.scss_per_sig[i].scss_restorer = sa.sa_restorer;
 #     endif
+
+      scss.scss_per_sig[i].scss_sa_tramp = NULL;
    }
 
    if (VG_(clo_trace_signals))

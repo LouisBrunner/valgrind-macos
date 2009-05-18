@@ -51,7 +51,6 @@ extern void VG_(clear_syscallInfo) ( Int tid );
 extern void VG_(fixup_guest_state_after_syscall_interrupted)(
                ThreadId tid,
                Addr     ip, 
-               UWord    sysnum,
                SysRes   sysret,
                Bool     restart
             );

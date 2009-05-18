@@ -379,7 +379,7 @@ static SysRes do_clone ( ThreadId ptid,
    VG_(sigprocmask)(VKI_SIG_SETMASK, &savedmask, NULL);
 
   out:
-   if (res.isError) {
+   if (sr_isError(res)) {
       /* clone failed */
       VG_(cleanup_thread)(&ctst->arch);
       ctst->status = VgTs_Empty;

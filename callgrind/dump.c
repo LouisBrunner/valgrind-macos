@@ -1303,20 +1303,20 @@ static int new_dumpfile(Char buf[BUF_LEN], int tid, Char* trigger)
     else {
 	VG_(sprintf)(filename, "%s", out_file);
         res = VG_(open)(filename, VKI_O_WRONLY|VKI_O_APPEND, 0);
-	if (!res.isError && out_counter>1)
+	if (!sr_isError(res) && out_counter>1)
 	    appending = True;
     }
 
-    if (res.isError) {
+    if (sr_isError(res)) {
 	res = VG_(open)(filename, VKI_O_CREAT|VKI_O_WRONLY,
 			VKI_S_IRUSR|VKI_S_IWUSR);
-	if (res.isError) {
+	if (sr_isError(res)) {
 	    /* If the file can not be opened for whatever reason (conflict
 	       between multiple supervised processes?), give up now. */
 	    file_err();
 	}
     }
-    fd = (Int) res.res;
+    fd = (Int) sr_Res(res);
 
     CLG_DEBUG(2, "  new_dumpfile '%s'\n", filename);
 
@@ -1724,14 +1724,14 @@ void CLG_(init_dumps)()
     */ 
     VG_(strcpy)(filename, out_file);
     res = VG_(open)(filename, VKI_O_WRONLY|VKI_O_TRUNC, 0);
-    if (res.isError) { 
+    if (sr_isError(res)) { 
 	res = VG_(open)(filename, VKI_O_CREAT|VKI_O_WRONLY,
 		       VKI_S_IRUSR|VKI_S_IWUSR);
-	if (res.isError) {
+	if (sr_isError(res)) {
 	    file_err(); 
 	}
     }
-    if (!res.isError) VG_(close)( (Int)res.res );
+    if (!sr_isError(res)) VG_(close)( (Int)sr_Res(res) );
 
     if (!dumps_initialized)
 	init_cmdbuf();

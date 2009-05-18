@@ -481,7 +481,7 @@ SysRes do_mremap( Addr old_addr, SizeT old_len,
   shrink_in_place:
    {
    SysRes sres = VG_(am_munmap_client)( &d, old_addr+new_len, old_len-new_len );
-   if (sres.isError)
+   if (sr_isError(sres))
       return sres;
    VG_TRACK( die_mem_munmap, old_addr+new_len, old_len-new_len );
    if (d)
@@ -765,12 +765,12 @@ void VG_(init_preopened_fds)(void)
    SysRes f;
 
    f = VG_(open)("/proc/self/fd", VKI_O_RDONLY, 0);
-   if (f.isError) {
+   if (sr_isError(f)) {
       init_preopened_fds_without_proc_self_fd();
       return;
    }
 
-   while ((ret = VG_(getdents)(f.res, &d, sizeof(d))) != 0) {
+   while ((ret = VG_(getdents)(sr_Res(f), &d, sizeof(d))) != 0) {
       if (ret == -1)
          goto out;
 
@@ -778,7 +778,7 @@ void VG_(init_preopened_fds)(void)
          Char* s;
          Int fno = VG_(strtoll10)(d.d_name, &s);
          if (*s == '\0') {
-            if (fno != f.res)
+            if (fno != sr_Res(f))
                if (VG_(clo_track_fds))
                   ML_(record_fd_open_named)(-1, fno);
          } else {
@@ -787,11 +787,11 @@ void VG_(init_preopened_fds)(void)
          }
       }
 
-      VG_(lseek)(f.res, d.d_off, VKI_SEEK_SET);
+      VG_(lseek)(sr_Res(f), d.d_off, VKI_SEEK_SET);
    }
 
   out:
-   VG_(close)(f.res);
+   VG_(close)(sr_Res(f));
 
 #else
 #  error Unknown OS
@@ -985,7 +985,8 @@ void ML_(buf_and_len_pre_check) ( ThreadId tid, Addr buf_p, Addr buflen_p,
    if (VG_(tdict).track_pre_mem_write) {
       UInt buflen_in = deref_UInt( tid, buflen_p, buflen_s);
       if (buflen_in > 0) {
-         VG_(tdict).track_pre_mem_write( Vg_CoreSysCall, tid, buf_s, buf_p, buflen_in );
+         VG_(tdict).track_pre_mem_write(
+            Vg_CoreSysCall, tid, buf_s, buf_p, buflen_in );
       }
    }
 }
@@ -993,7 +994,7 @@ void ML_(buf_and_len_pre_check) ( ThreadId tid, Addr buf_p, Addr buflen_p,
 void ML_(buf_and_len_post_check) ( ThreadId tid, SysRes res,
                                    Addr buf_p, Addr buflen_p, Char* s )
 {
-   if (!res.isError && VG_(tdict).track_post_mem_write) {
+   if (!sr_isError(res) && VG_(tdict).track_post_mem_write) {
       UInt buflen_out = deref_UInt( tid, buflen_p, s);
       if (buflen_out > 0 && buf_p != (Addr)NULL) {
          VG_(tdict).track_post_mem_write( Vg_CoreSysCall, tid, buf_p, buflen_out );
@@ -1216,7 +1217,7 @@ ML_(generic_POST_sys_socketpair) ( ThreadId tid,
    SysRes r = res;
    Int fd1 = ((Int*)arg3)[0];
    Int fd2 = ((Int*)arg3)[1];
-   vg_assert(!res.isError); /* guaranteed by caller */
+   vg_assert(!sr_isError(res)); /* guaranteed by caller */
    POST_MEM_WRITE( arg3, 2*sizeof(int) );
    if (!ML_(fd_allowed)(fd1, "socketcall.socketpair", tid, True) ||
        !ML_(fd_allowed)(fd2, "socketcall.socketpair", tid, True)) {
@@ -1239,13 +1240,13 @@ SysRes
 ML_(generic_POST_sys_socket) ( ThreadId tid, SysRes res )
 {
    SysRes r = res;
-   vg_assert(!res.isError); /* guaranteed by caller */
-   if (!ML_(fd_allowed)(res.res, "socket", tid, True)) {
-      VG_(close)(res.res);
+   vg_assert(!sr_isError(res)); /* guaranteed by caller */
+   if (!ML_(fd_allowed)(sr_Res(res), "socket", tid, True)) {
+      VG_(close)(sr_Res(res));
       r = VG_(mk_SysRes_Error)( VKI_EMFILE );
    } else {
       if (VG_(clo_track_fds))
-         ML_(record_fd_open_nameless)(tid, res.res);
+         ML_(record_fd_open_nameless)(tid, sr_Res(res));
    }
    return r;
 }
@@ -1285,9 +1286,9 @@ ML_(generic_POST_sys_accept) ( ThreadId tid,
                                UWord arg0, UWord arg1, UWord arg2 )
 {
    SysRes r = res;
-   vg_assert(!res.isError); /* guaranteed by caller */
-   if (!ML_(fd_allowed)(res.res, "accept", tid, True)) {
-      VG_(close)(res.res);
+   vg_assert(!sr_isError(res)); /* guaranteed by caller */
+   if (!ML_(fd_allowed)(sr_Res(res), "accept", tid, True)) {
+      VG_(close)(sr_Res(res));
       r = VG_(mk_SysRes_Error)( VKI_EMFILE );
    } else {
       Addr addr_p     = arg1;
@@ -1296,7 +1297,7 @@ ML_(generic_POST_sys_accept) ( ThreadId tid,
          ML_(buf_and_len_post_check) ( tid, res, addr_p, addrlen_p,
                                        "socketcall.accept(addrlen_out)" );
       if (VG_(clo_track_fds))
-          ML_(record_fd_open_nameless)(tid, res.res);
+          ML_(record_fd_open_nameless)(tid, sr_Res(res));
    }
    return r;
 }
@@ -1364,7 +1365,7 @@ ML_(generic_POST_sys_recvfrom) ( ThreadId tid,
    Addr from_p     = arg4;
    Addr fromlen_p  = arg5;
 
-   vg_assert(!res.isError); /* guaranteed by caller */
+   vg_assert(!sr_isError(res)); /* guaranteed by caller */
    if (from_p != (Addr)NULL) 
       ML_(buf_and_len_post_check) ( tid, res, from_p, fromlen_p,
                                     "socketcall.recvfrom(fromlen_out)" );
@@ -1451,7 +1452,7 @@ ML_(generic_POST_sys_getsockname) ( ThreadId tid,
 {
    Addr name_p     = arg1;
    Addr namelen_p  = arg2;
-   vg_assert(!res.isError); /* guaranteed by caller */
+   vg_assert(!sr_isError(res)); /* guaranteed by caller */
    ML_(buf_and_len_post_check) ( tid, res, name_p, namelen_p,
                                  "socketcall.getsockname(namelen_out)" );
 }
@@ -1478,7 +1479,7 @@ ML_(generic_POST_sys_getpeername) ( ThreadId tid,
 {
    Addr name_p     = arg1;
    Addr namelen_p  = arg2;
-   vg_assert(!res.isError); /* guaranteed by caller */
+   vg_assert(!sr_isError(res)); /* guaranteed by caller */
    ML_(buf_and_len_post_check) ( tid, res, name_p, namelen_p,
                                  "socketcall.getpeername(namelen_out)" );
 }
@@ -1565,7 +1566,7 @@ UInt get_sem_count( Int semid )
    res = VG_(do_syscall5)(__NR_ipc, 3 /* IPCOP_semctl */, semid, 0,
                           VKI_IPC_STAT, (UWord)&arg);
 #  endif
-   if (res.isError)
+   if (sr_isError(res))
       return 0;
 
    return buf.sem_nsems;
@@ -1658,15 +1659,20 @@ ML_(generic_POST_sys_semctl) ( ThreadId tid,
 static
 UInt get_shm_size ( Int shmid )
 {
-#  ifdef __NR_shmctl
+#ifdef __NR_shmctl
+#  ifdef VKI_IPC_64
    struct vki_shmid64_ds buf;
    SysRes __res = VG_(do_syscall3)(__NR_shmctl, shmid, VKI_IPC_STAT, (UWord)&buf);
 #  else
    struct vki_shmid_ds buf;
+   SysRes __res = VG_(do_syscall3)(__NR_shmctl, shmid, VKI_IPC_STAT, (UWord)&buf);
+#  endif
+#else
+   struct vki_shmid_ds buf;
    SysRes __res = VG_(do_syscall5)(__NR_ipc, 24 /* IPCOP_shmctl */, shmid,
                                  VKI_IPC_STAT, 0, (UWord)&buf);
-#  endif
-   if (__res.isError)
+#endif
+   if (sr_isError(__res))
       return 0;
  
    return buf.shm_segsz;
@@ -1916,7 +1922,7 @@ ML_(generic_PRE_sys_mmap) ( ThreadId tid,
       of address.  If we were originally asked for a hinted mapping,
       there is still a last chance: try again at any address.
       Hence: */
-   if (mreq.rkind == MHint && sres.isError) {
+   if (mreq.rkind == MHint && sr_isError(sres)) {
       mreq.start = 0;
       mreq.len   = arg2;
       mreq.rkind = MAny;
@@ -1931,11 +1937,11 @@ ML_(generic_PRE_sys_mmap) ( ThreadId tid,
                                        arg5, arg6);
    }
 
-   if (!sres.isError) {
+   if (!sr_isError(sres)) {
       ULong di_handle;
       /* Notify aspacem. */
       notify_core_of_mmap(
-         (Addr)sres.res, /* addr kernel actually assigned */
+         (Addr)sr_Res(sres), /* addr kernel actually assigned */
          arg2, /* length */
          arg3, /* prot */
          arg4, /* the original flags value */
@@ -1943,10 +1949,11 @@ ML_(generic_PRE_sys_mmap) ( ThreadId tid,
          arg6  /* offset */
       );
       /* Load symbols? */
-      di_handle = VG_(di_notify_mmap)( (Addr)sres.res, False/*allow_SkFileV*/ );
+      di_handle = VG_(di_notify_mmap)( (Addr)sr_Res(sres), 
+                                       False/*allow_SkFileV*/ );
       /* Notify the tool. */
       notify_tool_of_mmap(
-         (Addr)sres.res, /* addr kernel actually assigned */
+         (Addr)sr_Res(sres), /* addr kernel actually assigned */
          arg2, /* length */
          arg3, /* prot */
          di_handle /* so the tool can refer to the read debuginfo later,
@@ -1955,8 +1962,8 @@ ML_(generic_PRE_sys_mmap) ( ThreadId tid,
    }
 
    /* Stay sane */
-   if (!sres.isError && (arg4 & VKI_MAP_FIXED))
-      vg_assert(sres.res == arg1);
+   if (!sr_isError(sres) && (arg4 & VKI_MAP_FIXED))
+      vg_assert(sr_Res(sres) == arg1);
 
    return sres;
 }
@@ -2429,8 +2436,8 @@ PRE(sys_execve)
    // we are not simulating them, that is, they to be run natively.
    setuid_allowed = VG_(clo_trace_children)  ? False  : True;
    res = VG_(pre_exec_check)((const Char*)ARG1, NULL, setuid_allowed);
-   if (res.isError) {
-      SET_STATUS_Failure( res.err );
+   if (sr_isError(res)) {
+      SET_STATUS_Failure( sr_Err(res) );
       return;
    }
 
@@ -2572,14 +2579,20 @@ PRE(sys_execve)
       vki_sigset_t allsigs;
       vki_siginfo_t info;
 
+      /* What this loop does: it queries SCSS (the signal state that
+         the client _thinks_ the kernel is in) by calling
+         VG_(do_sys_sigaction), and modifies the real kernel signal
+         state accordingly. */
       for (i = 1; i < VG_(max_signal); i++) {
-         struct vki_sigaction sa;
-         VG_(do_sys_sigaction)(i, NULL, &sa);
-         if (sa.ksa_handler == VKI_SIG_IGN)
-            VG_(sigaction)(i, &sa, NULL);
+         vki_sigaction_fromK_t sa_f;
+         vki_sigaction_toK_t   sa_t;
+         VG_(do_sys_sigaction)(i, NULL, &sa_f);
+         VG_(convert_sigaction_fromK_to_toK)(&sa_f, &sa_t);
+         if (sa_t.ksa_handler == VKI_SIG_IGN)
+            VG_(sigaction)(i, &sa_t, NULL);
          else {
-            sa.ksa_handler = VKI_SIG_DFL;
-            VG_(sigaction)(i, &sa, NULL);
+            sa_t.ksa_handler = VKI_SIG_DFL;
+            VG_(sigaction)(i, &sa_t, NULL);
          }
       }
 
@@ -2792,6 +2805,7 @@ static vki_sigset_t fork_saved_mask;
 // ignore the various args it gets, and so it looks arch-neutral.  Hmm.
 PRE(sys_fork)
 {
+   UWord result;
    vki_sigset_t mask;
 
    PRINT("sys_fork ( )");
@@ -2803,6 +2817,10 @@ PRE(sys_fork)
    VG_(sigprocmask)(VKI_SIG_SETMASK, &mask, &fork_saved_mask);
 
    SET_STATUS_from_SysRes( VG_(do_syscall0)(__NR_fork) );
+
+   if (!SUCCESS) return;
+
+   result = RES;
 
    VG_(do_atfork_pre)(tid);
 
@@ -3148,7 +3166,11 @@ PRE(sys_kill)
    if (ARG2 == VKI_SIGKILL && ML_(do_sigkill)(ARG1, -1))
       SET_STATUS_Success(0);
    else
-      SET_STATUS_from_SysRes( VG_(do_syscall2)(SYSNO, ARG1, ARG2) );
+      /* re syscall3: Darwin has a 3rd arg, which is a flag (boolean)
+         affecting how posix-compliant the call is.  I guess it is
+         harmless to pass the 3rd arg on other platforms; hence pass
+         it on all. */
+      SET_STATUS_from_SysRes( VG_(do_syscall3)(SYSNO, ARG1, ARG2, ARG3) );
 
    if (VG_(clo_trace_signals))
       VG_(message)(Vg_DebugMsg, "kill: sent signal %ld to pid %ld",
@@ -3341,8 +3363,8 @@ PRE(sys_open)
            || VG_(strcmp)((Char *)ARG1, "/proc/self/cmdline") == 0)) {
       sres = VG_(dup)( VG_(cl_cmdline_fd) );
       SET_STATUS_from_SysRes( sres );
-      if (!sres.isError) {
-         OffT off = VG_(lseek)( sres.res, 0, VKI_SEEK_SET );
+      if (!sr_isError(sres)) {
+         OffT off = VG_(lseek)( sr_Res(sres), 0, VKI_SEEK_SET );
          if (off < 0)
             SET_STATUS_Failure( VKI_EMFILE );
       }
@@ -3848,7 +3870,6 @@ PRE(sys_pause)
    PRE_REG_READ0(long, "pause");
 }
 
-// XXX: x86-specific
 PRE(sys_sigaltstack)
 {
    PRINT("sigaltstack ( %#lx, %#lx )",ARG1,ARG2);

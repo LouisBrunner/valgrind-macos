@@ -37,7 +37,9 @@
    Building syscall return values.
    ------------------------------------------------------------------ */
 
-/* Make a SysRes value from an syscall return value.  This is
+#if defined(VGO_linux)
+
+/* Make a SysRes value from a syscall return value.  This is
    Linux-specific.
 
    From:
@@ -56,29 +58,26 @@
    syscall returns a value in -1 .. -4095 as a valid result so we can
    safely test with -4095.
 */
-SysRes VG_(mk_SysRes_x86_linux) ( UInt val ) {
+
+SysRes VG_(mk_SysRes_x86_linux) ( Int val ) {
    SysRes res;
-   res.isError = val >= -4095 && val <= -1;
-   if (res.isError) {
-      res.err = -val;
-      res.res = 0;
+   res._isError = val >= -4095 && val <= -1;
+   if (res._isError) {
+      res._val = (UInt)(-val);
    } else {
-      res.err = 0;
-      res.res = val;
+      res._val = (UInt)val;
    }
    return res;
 }
 
 /* Similarly .. */
-SysRes VG_(mk_SysRes_amd64_linux) ( ULong val ) {
+SysRes VG_(mk_SysRes_amd64_linux) ( Long val ) {
    SysRes res;
-   res.isError = val >= -4095 && val <= -1;
-   if (res.isError) {
-      res.err = -val;
-      res.res = 0;
+   res._isError = val >= -4095 && val <= -1;
+   if (res._isError) {
+      res._val = (ULong)(-val);
    } else {
-      res.err = 0;
-      res.res = val;
+      res._val = (ULong)val;
    }
    return res;
 }
@@ -87,30 +86,36 @@ SysRes VG_(mk_SysRes_amd64_linux) ( ULong val ) {
 /* Note this must be in the bottom bit of the second arg */
 SysRes VG_(mk_SysRes_ppc32_linux) ( UInt val, UInt cr0so ) {
    SysRes res;
-   res.isError = (cr0so & 1) != 0;
-   if (res.isError) {
-      res.err = val;
-      res.res = 0;
-   } else {
-      res.err = 0;
-      res.res = val;
-   }
+   res._isError = (cr0so & 1) != 0;
+   res._val     = val;
    return res;
 }
 
 /* As per ppc32 version, cr0.so must be in l.s.b. of 2nd arg */
 SysRes VG_(mk_SysRes_ppc64_linux) ( ULong val, ULong cr0so ) {
    SysRes res;
-   res.isError = (cr0so & 1) != 0;
-   if (res.isError) {
-      res.err = val;
-      res.res = 0;
-   } else {
-      res.err = 0;
-      res.res = val;
-   }
+   res._isError = (cr0so & 1) != 0;
+   res._val     = val;
    return res;
 }
+
+/* Generic constructors. */
+SysRes VG_(mk_SysRes_Error) ( UWord err ) {
+   SysRes r;
+   r._isError = True;
+   r._val     = err;
+   return r;
+}
+
+SysRes VG_(mk_SysRes_Success) ( UWord res ) {
+   SysRes r;
+   r._isError = False;
+   r._val     = res;
+   return r;
+}
+
+
+#elif defined(VGO_aix5)
 
 /* AIX scheme: we have to record both 'res' (r3) and 'err' (r4).  If
    'err' is nonzero then the call has failed, but it could still be
@@ -135,23 +140,28 @@ SysRes VG_(mk_SysRes_ppc64_aix5) ( ULong res, ULong err ) {
 /* Generic constructors. */
 SysRes VG_(mk_SysRes_Error) ( UWord err ) {
    SysRes r;
-   r.res     = 0;
-   r.err     = err;
-   r.isError = True;
+   r._res     = 0;
+   r._err     = err;
+   r._isError = True;
    return r;
 }
 
 SysRes VG_(mk_SysRes_Success) ( UWord res ) {
    SysRes r;
-   r.res     = res;
-   r.err     = 0;
-   r.isError = False;
+   r._res     = res;
+   r._err     = 0;
+   r._isError = False;
    return r;
 }
 
 
+#else
+#  error "Unknown OS"
+#endif
+
+
 /* ---------------------------------------------------------------------
-   A function for doing syscalls.
+   VG_(do_syscall): A function for doing syscalls.
    ------------------------------------------------------------------ */
 
 #if defined(VGP_x86_linux)
@@ -268,7 +278,7 @@ asm(
    different from the ppc32 case.  The single arg register points to a
    7-word block containing the syscall # and the 6 args.  The syscall
    result proper is put in [0] of the block, and %cr0.so is in the
-   bottom but of [1]. */
+   bottom bit of [1]. */
 extern void do_syscall_WRK ( ULong* argblock );
 asm(
 ".align   2\n"
@@ -455,37 +465,40 @@ static void do_syscall_WRK ( UWord* res_r3, UWord* res_r4,
 #endif
 
 
+/* Finally, the generic code.  This sends the call to the right
+   helper. */
+
 SysRes VG_(do_syscall) ( UWord sysno, UWord a1, UWord a2, UWord a3,
                                       UWord a4, UWord a5, UWord a6,
                                       UWord a7, UWord a8 )
 {
-#if defined(VGP_x86_linux)
-  UWord val = do_syscall_WRK(sysno,a1,a2,a3,a4,a5,a6);
-  return VG_(mk_SysRes_x86_linux)( val );
+#  if defined(VGP_x86_linux)
+   UWord val = do_syscall_WRK(sysno,a1,a2,a3,a4,a5,a6);
+   return VG_(mk_SysRes_x86_linux)( val );
 
-#elif defined(VGP_amd64_linux)
-  UWord val = do_syscall_WRK(sysno,a1,a2,a3,a4,a5,a6);
-  return VG_(mk_SysRes_amd64_linux)( val );
+#  elif defined(VGP_amd64_linux)
+   UWord val = do_syscall_WRK(sysno,a1,a2,a3,a4,a5,a6);
+   return VG_(mk_SysRes_amd64_linux)( val );
 
-#elif defined(VGP_ppc32_linux)
-  ULong ret     = do_syscall_WRK(sysno,a1,a2,a3,a4,a5,a6);
-  UInt  val     = (UInt)(ret>>32);
-  UInt  cr0so   = (UInt)(ret);
-  return VG_(mk_SysRes_ppc32_linux)( val, cr0so );
+#  elif defined(VGP_ppc32_linux)
+   ULong ret     = do_syscall_WRK(sysno,a1,a2,a3,a4,a5,a6);
+   UInt  val     = (UInt)(ret>>32);
+   UInt  cr0so   = (UInt)(ret);
+   return VG_(mk_SysRes_ppc32_linux)( val, cr0so );
 
-#elif defined(VGP_ppc64_linux)
-  ULong argblock[7];
-  argblock[0] = sysno;
-  argblock[1] = a1;
-  argblock[2] = a2;
-  argblock[3] = a3;
-  argblock[4] = a4;
-  argblock[5] = a5;
-  argblock[6] = a6;
-  do_syscall_WRK( &argblock[0] );
-  return VG_(mk_SysRes_ppc64_linux)( argblock[0], argblock[1] );
+#  elif defined(VGP_ppc64_linux)
+   ULong argblock[7];
+   argblock[0] = sysno;
+   argblock[1] = a1;
+   argblock[2] = a2;
+   argblock[3] = a3;
+   argblock[4] = a4;
+   argblock[5] = a5;
+   argblock[6] = a6;
+   do_syscall_WRK( &argblock[0] );
+   return VG_(mk_SysRes_ppc64_linux)( argblock[0], argblock[1] );
 
-#elif defined(VGP_ppc32_aix5)
+#  elif defined(VGP_ppc32_aix5)
    UWord res;
    UWord err;
    do_syscall_WRK( &res, &err, 
@@ -502,10 +515,9 @@ SysRes VG_(do_syscall) ( UWord sysno, UWord a1, UWord a2, UWord a3,
       if (res == 0)
          err = 0;
    }
-
    return VG_(mk_SysRes_ppc32_aix5)( res, err );
 
-#elif defined(VGP_ppc64_aix5)
+#  elif defined(VGP_ppc64_aix5)
    UWord res;
    UWord err;
    do_syscall_WRK( &res, &err, 
@@ -522,7 +534,6 @@ SysRes VG_(do_syscall) ( UWord sysno, UWord a1, UWord a2, UWord a3,
       if (res == 0)
          err = 0;
    }
-
    return VG_(mk_SysRes_ppc64_aix5)( res, err );
 
 #else
@@ -556,7 +567,9 @@ const HChar* VG_(strerror) ( UWord errnum )
       case VKI_EMFILE:      return "Too many open files";
       case VKI_ENOSYS:      return "Function not implemented";
       case VKI_EOVERFLOW:   return "Value too large for defined data type";
+#     if defined(VKI_ERESTARTSYS)
       case VKI_ERESTARTSYS: return "ERESTARTSYS";
+#     endif
       default:              return "VG_(strerror): unknown error";
    }
 }

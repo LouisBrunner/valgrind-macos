@@ -401,12 +401,19 @@ Bool VG_(machine_get_hwcaps)( void )
         AT_PLATFORM entries in the ELF auxiliary table -- see also
         the_iifii.client_auxv in m_main.c.
       */
-     vki_sigset_t         saved_set, tmp_set;
-     struct vki_sigaction saved_sigill_act, tmp_sigill_act;
-     struct vki_sigaction saved_sigfpe_act, tmp_sigfpe_act;
+     vki_sigset_t          saved_set, tmp_set;
+     vki_sigaction_fromK_t saved_sigill_act, saved_sigfpe_act;
+     vki_sigaction_toK_t     tmp_sigill_act,   tmp_sigfpe_act;
 
      volatile Bool have_F, have_V, have_FX, have_GX;
      Int r;
+
+     /* This is a kludge.  Really we ought to back-convert saved_act
+        into a toK_t using VG_(convert_sigaction_fromK_to_toK), but
+        since that's a no-op on all ppc32 platforms so far supported,
+        it's not worth the typing effort.  At least include most basic
+        sanity check: */
+     vg_assert(sizeof(vki_sigaction_fromK_t) == sizeof(vki_sigaction_toK_t));
 
      VG_(sigemptyset)(&tmp_set);
      VG_(sigaddset)(&tmp_set, VKI_SIGILL);
@@ -512,19 +519,29 @@ Bool VG_(machine_get_hwcaps)( void )
 #elif defined(VGA_ppc64)
    {
      /* Same instruction set detection algorithm as for ppc32. */
-     vki_sigset_t         saved_set, tmp_set;
-     struct vki_sigaction saved_sigill_act, tmp_sigill_act;
-     struct vki_sigaction saved_sigfpe_act, tmp_sigfpe_act;
+     vki_sigset_t          saved_set, tmp_set;
+     vki_sigaction_fromK_t saved_sigill_act, saved_sigfpe_act;
+     vki_sigaction_toK_t     tmp_sigill_act,   tmp_sigfpe_act;
 
      volatile Bool have_F, have_V, have_FX, have_GX;
+     Int r;
+
+     /* This is a kludge.  Really we ought to back-convert saved_act
+        into a toK_t using VG_(convert_sigaction_fromK_to_toK), but
+        since that's a no-op on all ppc64 platforms so far supported,
+        it's not worth the typing effort.  At least include most basic
+        sanity check: */
+     vg_assert(sizeof(vki_sigaction_fromK_t) == sizeof(vki_sigaction_toK_t));
 
      VG_(sigemptyset)(&tmp_set);
      VG_(sigaddset)(&tmp_set, VKI_SIGILL);
      VG_(sigaddset)(&tmp_set, VKI_SIGFPE);
 
-     VG_(sigprocmask)(VKI_SIG_UNBLOCK, &tmp_set, &saved_set);
+     r = VG_(sigprocmask)(VKI_SIG_UNBLOCK, &tmp_set, &saved_set);
+     vg_assert(r == 0);
 
-     VG_(sigaction)(VKI_SIGILL, NULL, &saved_sigill_act);
+     r = VG_(sigaction)(VKI_SIGILL, NULL, &saved_sigill_act);
+     vg_assert(r == 0);
      tmp_sigill_act = saved_sigill_act;
 
      VG_(sigaction)(VKI_SIGFPE, NULL, &saved_sigfpe_act);

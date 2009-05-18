@@ -299,7 +299,7 @@ static SysRes do_clone ( ThreadId ptid,
 		     ptst->arch.vex.guest_ESP,
 		     ctst->arch.vex.guest_FS, ctst->arch.vex.guest_GS);
       res = sys_set_thread_area(ctid, tlsinfo);
-      if (res.isError)
+      if (sr_isError(res))
 	 goto out;
    }
 
@@ -318,7 +318,7 @@ static SysRes do_clone ( ThreadId ptid,
    VG_(sigprocmask)(VKI_SIG_SETMASK, &savedmask, NULL);
 
   out:
-   if (res.isError) {
+   if (sr_isError(res)) {
       /* clone failed */
       VG_(cleanup_thread)(&ctst->arch);
       ctst->status = VgTs_Empty;
@@ -1680,8 +1680,8 @@ void convert_sigset_to_rt(const vki_old_sigset_t *oldset, vki_sigset_t *set)
 }
 PRE(sys_sigaction)
 {
-   struct vki_sigaction new, old;
-   struct vki_sigaction *newp, *oldp;
+   vki_sigaction_toK_t   new, *newp;
+   vki_sigaction_fromK_t old, *oldp;
 
    PRINT("sys_sigaction ( %ld, %#lx, %#lx )", ARG1,ARG2,ARG3);
    PRE_REG_READ3(int, "sigaction",
@@ -1711,9 +1711,8 @@ PRE(sys_sigaction)
 
    if (ARG2 != 0) {
       struct vki_old_sigaction *oldnew = (struct vki_old_sigaction *)ARG2;
-
       new.ksa_handler = oldnew->ksa_handler;
-      new.sa_flags = oldnew->sa_flags;
+      new.sa_flags    = oldnew->sa_flags;
       new.sa_restorer = oldnew->sa_restorer;
       convert_sigset_to_rt(&oldnew->sa_mask, &new.sa_mask);
       newp = &new;
@@ -1723,9 +1722,8 @@ PRE(sys_sigaction)
 
    if (ARG3 != 0 && SUCCESS && RES == 0) {
       struct vki_old_sigaction *oldold = (struct vki_old_sigaction *)ARG3;
-
       oldold->ksa_handler = oldp->ksa_handler;
-      oldold->sa_flags = oldp->sa_flags;
+      oldold->sa_flags    = oldp->sa_flags;
       oldold->sa_restorer = oldp->sa_restorer;
       oldold->sa_mask = oldp->sa_mask.sig[0];
    }

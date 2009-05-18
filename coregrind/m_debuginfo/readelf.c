@@ -919,11 +919,11 @@ Addr open_debug_file( Char* name, UInt crc, /*OUT*/UWord* size )
    UInt calccrc;
 
    fd = VG_(open)(name, VKI_O_RDONLY, 0);
-   if (fd.isError)
+   if (sr_isError(fd))
       return 0;
 
-   if (VG_(fstat)(fd.res, &stat_buf) != 0) {
-      VG_(close)(fd.res);
+   if (VG_(fstat)(sr_Res(fd), &stat_buf) != 0) {
+      VG_(close)(sr_Res(fd));
       return 0;
    }
 
@@ -933,24 +933,24 @@ Addr open_debug_file( Char* name, UInt crc, /*OUT*/UWord* size )
    *size = stat_buf.st_size;
    
    sres = VG_(am_mmap_file_float_valgrind)
-             ( *size, VKI_PROT_READ, fd.res, 0 );
+             ( *size, VKI_PROT_READ, sr_Res(fd), 0 );
 
-   VG_(close)(fd.res);
+   VG_(close)(sr_Res(fd));
    
-   if (sres.isError)
+   if (sr_isError(sres))
       return 0;
 
-   calccrc = calc_gnu_debuglink_crc32(0, (UChar*)sres.res, *size);
+   calccrc = calc_gnu_debuglink_crc32(0, (UChar*)sr_Res(sres), *size);
    if (calccrc != crc) {
-      SysRes res = VG_(am_munmap_valgrind)(sres.res, *size);
-      vg_assert(!res.isError);
+      SysRes res = VG_(am_munmap_valgrind)(sr_Res(sres), *size);
+      vg_assert(!sr_isError(res));
       if (VG_(clo_verbosity) > 1)
          VG_(message)(Vg_DebugMsg, 
             ".. CRC mismatch (computed %08x wanted %08x)", calccrc, crc);
       return 0;
    }
    
-   return sres.res;
+   return sr_Res(sres);
 }
 
 /*
@@ -1126,32 +1126,32 @@ Bool ML_(read_elf_debug_info) ( struct _DebugInfo* di )
       thereafter; it is only aboard transiently. */
 
    fd = VG_(open)(di->filename, VKI_O_RDONLY, 0);
-   if (fd.isError) {
+   if (sr_isError(fd)) {
       ML_(symerr)(di, True, "Can't open .so/.exe to read symbols?!");
       return False;
    }
 
-   { Long n_oimageLL = VG_(fsize)(fd.res);
+   { Long n_oimageLL = VG_(fsize)(sr_Res(fd));
      if (n_oimageLL <= 0) {
         ML_(symerr)(di, True, "Can't stat .so/.exe (to determine its size)?!");
-        VG_(close)(fd.res);
+        VG_(close)(sr_Res(fd));
         return False;
      }
      n_oimage = (UWord)(ULong)n_oimageLL;
    }
 
    sres = VG_(am_mmap_file_float_valgrind)
-             ( n_oimage, VKI_PROT_READ, fd.res, 0 );
+             ( n_oimage, VKI_PROT_READ, sr_Res(fd), 0 );
 
-   VG_(close)(fd.res);
+   VG_(close)(sr_Res(fd));
 
-   if (sres.isError) {
+   if (sr_isError(sres)) {
       VG_(message)(Vg_UserMsg, "warning: mmap failed on %s", di->filename );
       VG_(message)(Vg_UserMsg, "         no symbols or debug info loaded" );
       return False;
    }
 
-   oimage = sres.res;
+   oimage = sr_Res(sres);
    /* Check against wraparound.  am_mmap_file_float_valgrind should
       not produce a wrapped-around mapping. */
    vg_assert(n_oimage > 0);
@@ -2040,10 +2040,10 @@ Bool ML_(read_elf_debug_info) ( struct _DebugInfo* di )
    /* Last, but not least, heave the image(s) back overboard. */
    if (dimage) {
       m_res = VG_(am_munmap_valgrind) ( dimage, n_dimage );
-      vg_assert(!m_res.isError);
+      vg_assert(!sr_isError(m_res));
    }
    m_res = VG_(am_munmap_valgrind) ( oimage, n_oimage );
-   vg_assert(!m_res.isError);
+   vg_assert(!sr_isError(m_res));
    return res;
   } 
 }

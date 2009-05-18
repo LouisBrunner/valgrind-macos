@@ -91,6 +91,7 @@
 
 // Offsets for the Vex state
 #define VG_O_STACK_PTR        (offsetof(VexGuestArchState, VG_STACK_PTR))
+#define VG_O_INSTR_PTR        (offsetof(VexGuestArchState, VG_INSTR_PTR))
 
 
 //-------------------------------------------------------------

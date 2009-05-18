@@ -135,32 +135,88 @@ typedef UInt ThreadId;
 
 /* An abstraction of syscall return values.
    Linux:
-      When .isError == False, 
-         res holds the return value, and err is zero.
-      When .isError == True,  
-         err holds the error code, and res is zero.
+      When _isError == False, 
+         _val holds the return value.
+      When _isError == True,  
+         _err holds the error code.
 
    AIX:
-      res is the POSIX result of the syscall.
-      err is the corresponding errno value.
-      isError === err==0
+      _res is the POSIX result of the syscall.
+      _err is the corresponding errno value.
+      _isError === _err==0
 
-      Unlike on Linux, it is possible for 'err' to be nonzero (thus an
-      error has occurred), nevertheless 'res' is also nonzero.  AIX
-      userspace does not appear to consistently inspect 'err' to
+      Unlike on Linux, it is possible for _err to be nonzero (thus an
+      error has occurred), nevertheless _res is also nonzero.  AIX
+      userspace does not appear to consistently inspect _err to
       determine whether or not an error has occurred.  For example,
-      sys_open() will return -1 for 'val' if a file cannot be opened,
-      as well as the relevant errno value in 'err', but AIX userspace
-      then consults 'val' to figure out if the syscall failed, rather
-      than looking at 'err'.  Hence we need to represent them both.
+      sys_open() will return -1 for _val if a file cannot be opened,
+      as well as the relevant errno value in _err, but AIX userspace
+      then consults _val to figure out if the syscall failed, rather
+      than looking at _err.  Hence we need to represent them both.
+
+   Darwin:
+      Interpretation depends on _mode:
+      MACH, MDEP:
+         these can never 'fail' (apparently).  The result of the
+         syscall is a single host word, _wLO.
+      UNIX:
+         Can record a double-word error or a double-word result:
+         When _mode is SysRes_UNIX_OK,  _wHI:_wLO holds the result.
+         When _mode is SysRes_UNIX_ERR, _wHI:_wLO holds the error code.
+         Probably the high word of an error is always ignored by
+         userspace, but we have to record it, so that we can correctly
+         update both EDX and EAX (in guest state) given a SysRes, if
+         we're required to.
 */
+#if defined(VGO_linux)
 typedef
    struct {
-      UWord res;
-      UWord err;
-      Bool  isError;
+      UWord _val;
+      Bool  _isError;
    }
    SysRes;
+#elif defined(VGO_aix5)
+typedef
+   struct {
+      UWord _res;
+      UWord _err;
+      Bool  _isError;
+   }
+   SysRes;
+#else
+#  error "Unknown OS"
+#endif
+
+
+/* ---- And now some basic accessor functions for it. ---- */
+
+#if defined(VGO_linux)
+
+static inline Bool sr_isError ( SysRes sr ) {
+   return sr._isError;
+}
+static inline UWord sr_Res ( SysRes sr ) {
+   return sr._isError ? 0 : sr._val;
+}
+static inline UWord sr_ResHI ( SysRes sr ) {
+   return 0;
+}
+static inline UWord sr_Err ( SysRes sr ) {
+   return sr._isError ? sr._val : 0;
+}
+static inline Bool sr_EQ ( SysRes sr1, SysRes sr2 ) {
+   return sr1._val == sr2._val 
+          && ((sr1._isError && sr2._isError) 
+              || (!sr1._isError && !sr2._isError));
+}
+
+#elif defined(VGO_aix5)
+#  error "need to define SysRes accessors on AIX5 (copy from 3.4.1 sources)"
+
+
+#else
+#  error "Unknown OS"
+#endif
 
 
 /* ---------------------------------------------------------------------

@@ -67,7 +67,7 @@
 				  void* guest_state,		// 4
 				  const vki_sigset_t *sysmask,	// 8
 				  const vki_sigset_t *postmask,	// 12
-				  Int nsigwords)		// 16
+				  Int sigsetSzB)		// 16
 				   
 */
 

@@ -2141,7 +2141,7 @@ static void write_snapshots_to_file(void)
 
    sres = VG_(open)(massif_out_file, VKI_O_CREAT|VKI_O_TRUNC|VKI_O_WRONLY,
                                      VKI_S_IRUSR|VKI_S_IWUSR);
-   if (sres.isError) {
+   if (sr_isError(sres)) {
       // If the file can't be opened for whatever reason (conflict
       // between multiple cachegrinded processes?), give up now.
       VG_UMSG("error: can't open output file '%s'", massif_out_file );
@@ -2149,7 +2149,7 @@ static void write_snapshots_to_file(void)
       VG_(free)(massif_out_file);
       return;
    } else {
-      fd = sres.res;
+      fd = sr_Res(sres);
       VG_(free)(massif_out_file);
    }
 

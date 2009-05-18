@@ -90,11 +90,11 @@ Int VG_(load_script)(Int fd, const HChar* name, ExeInfo* info)
 
    // Read the first part of the file.
    res = VG_(pread)(fd, hdr, len, 0);
-   if (res.isError) {
+   if (sr_isError(res)) {
       VG_(close)(fd);
       return VKI_EACCES;
    } else {
-      len = res.res;
+      len = sr_Res(res);
    }
 
    vg_assert('#' == hdr[0] && '!' == hdr[1]);

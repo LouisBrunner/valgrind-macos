@@ -1262,7 +1262,7 @@ static void fprint_CC_table_and_calc_totals(void)
 
    sres = VG_(open)(cachegrind_out_file, VKI_O_CREAT|VKI_O_TRUNC|VKI_O_WRONLY,
                                          VKI_S_IRUSR|VKI_S_IWUSR);
-   if (sres.isError) {
+   if (sr_isError(sres)) {
       // If the file can't be opened for whatever reason (conflict
       // between multiple cachegrinded processes?), give up now.
       VG_UMSG("error: can't open cache simulation output file '%s'",
@@ -1271,7 +1271,7 @@ static void fprint_CC_table_and_calc_totals(void)
       VG_(free)(cachegrind_out_file);
       return;
    } else {
-      fd = sres.res;
+      fd = sr_Res(sres);
       VG_(free)(cachegrind_out_file);
    }
 

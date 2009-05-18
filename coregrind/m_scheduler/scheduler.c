@@ -1148,13 +1148,11 @@ VgSchedReturnCode VG_(scheduler) ( ThreadId tid )
             guest_EIP to point at the code to execute after the
             sysenter, since Vex-generated code will not have set it --
             vex does not know what it should be.  Vex sets the next
-            address to zero, so if you don't guest_EIP, the thread will
-            jump to zero afterwards and probably die as a result. */
-#        if defined(VGA_x86)
-         //FIXME: VG_(threads)[tid].arch.vex.guest_EIP = ....
-         //handle_sysenter_x86(tid);
+            address to zero, so if you don't set guest_EIP, the thread
+            will jump to zero afterwards and probably die as a result. */
+#        if defined(VGP_x86_linux)
          vg_assert2(0, "VG_(scheduler), phase 3: "
-                       "sysenter_x86 on not yet implemented");
+                       "sysenter_x86 on x86-linux is not supported");
 #        else
          vg_assert2(0, "VG_(scheduler), phase 3: "
                        "sysenter_x86 on non-x86 platform?!?!");

@@ -43,6 +43,12 @@
 
 #include "pub_tool_vki.h"
 
+/* Do initial consistency checks on some of the definitions to do with
+   signals (vki_sigset_t and vki_sigaction_{toK,fromK}_t).  This stuff
+   is fragile enough that it's important to check at startup that
+   the world looks like what we expect it to look like. */
+void VG_(vki_do_initial_consistency_checks)(void);
+
 #endif // __PUB_CORE_VKI_H
 
 /*--------------------------------------------------------------------*/

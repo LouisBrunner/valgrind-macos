@@ -349,7 +349,7 @@ static SysRes do_clone ( ThreadId ptid,
    VG_(sigprocmask)(VKI_SIG_SETMASK, &savedmask, NULL);
 
   out:
-   if (res.isError) {
+   if (sr_isError(res)) {
       /* clone failed */
       VG_(cleanup_thread)(&ctst->arch);
       ctst->status = VgTs_Empty;
@@ -1379,8 +1379,8 @@ void convert_sigset_to_rt(const vki_old_sigset_t *oldset, vki_sigset_t *set)
 }
 PRE(sys_sigaction)
 {
-   struct vki_sigaction new, old;
-   struct vki_sigaction *newp, *oldp;
+   vki_sigaction_toK_t   new, *newp;
+   vki_sigaction_fromK_t old, *oldp;
 
    PRINT("sys_sigaction ( %ld, %#lx, %#lx )", ARG1,ARG2,ARG3);
    PRE_REG_READ3(int, "sigaction",

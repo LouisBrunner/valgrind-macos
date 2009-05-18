@@ -4,6 +4,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#include "pub_tool_basics.h"  /* UInt et al, needed for pub_tool_vki.h */
 #include "pub_tool_vki.h"
 #include "m_libcbase.c"
 

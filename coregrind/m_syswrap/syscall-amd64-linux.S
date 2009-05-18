@@ -66,7 +66,7 @@
 				  void* guest_state,		// rsi
 				  const vki_sigset_t *sysmask,	// rdx
 				  const vki_sigset_t *postmask,	// rcx
-				  Int nsigwords)		// r8
+				  Int sigsetSzB)		// r8
 				   
 */
 
@@ -113,7 +113,7 @@ ML_(do_syscall_for_client_WRK):
 	movq	$VKI_SIG_SETMASK, %rdi		// how
 	movq	%rdx, %rsi			// sysmask
 	movq	%rcx, %rdx			// postmask
-	movq	%r8, %r10			// nsigwords
+	movq	%r8, %r10			// sigsetSzB
 	syscall
 
 	POP_di_si_dx_cx_8
@@ -155,7 +155,7 @@ ML_(do_syscall_for_client_WRK):
 	movq	$VKI_SIG_SETMASK, %rdi		// how
 	movq	%rcx, %rsi			// postmask
 	xorq	%rdx, %rdx			// NULL
-	movq	%r8, %r10			// nsigwords
+	movq	%r8, %r10			// sigsetSzB
 	syscall
 
 	POP_di_si_dx_cx_8

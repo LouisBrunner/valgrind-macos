@@ -641,6 +641,7 @@ void VG_(out_of_memory_NORETURN) ( HChar* who, SizeT szB )
    } else {
       VG_(debugLog)(0,"mallocfree", s1, who, (ULong)szB, tot_alloc);
    }
+
    VG_(exit)(1);
 }
 
@@ -672,9 +673,9 @@ Superblock* newSuperblock ( Arena* a, SizeT cszB )
       // client allocation -- return 0 to client if it fails
       sres = VG_(am_sbrk_anon_float_client)
                 ( cszB, VKI_PROT_READ|VKI_PROT_WRITE|VKI_PROT_EXEC );
-      if (sres.isError)
+      if (sr_isError(sres))
          return 0;
-      sb = (Superblock*)sres.res;
+      sb = (Superblock*)(AddrH)sr_Res(sres);
       // Mark this segment as containing client heap.  The leak
       // checker needs to be able to identify such segments so as not
       // to use them as sources of roots during leak checks.
@@ -684,12 +685,12 @@ Superblock* newSuperblock ( Arena* a, SizeT cszB )
    } else {
       // non-client allocation -- abort if it fails
       sres = VG_(am_sbrk_anon_float_valgrind)( cszB );
-      if (sres.isError) {
+      if (sr_isError(sres)) {
          VG_(out_of_memory_NORETURN)("newSuperblock", cszB);
          /* NOTREACHED */
          sb = NULL; /* keep gcc happy */
       } else {
-         sb = (Superblock*)sres.res;
+         sb = (Superblock*)(AddrH)sr_Res(sres);
       }
    }
    vg_assert(NULL != sb);
@@ -1327,12 +1328,12 @@ void* VG_(arena_malloc) ( ArenaId aid, HChar* cc, SizeT req_pszB )
       Superblock ** array;
       SysRes sres = VG_(am_sbrk_anon_float_valgrind)(sizeof(Superblock *) *
                                                      a->sblocks_size * 2);
-      if (sres.isError) {
+      if (sr_isError(sres)) {
          VG_(out_of_memory_NORETURN)("arena_init", sizeof(Superblock *) * 
                                                    a->sblocks_size * 2);
          /* NOTREACHED */
       }
-      array = (Superblock**) sres.res;
+      array = (Superblock**)(AddrH)sr_Res(sres);
       for (i = 0; i < a->sblocks_used; ++i) array[i] = a->sblocks[i];
 
       a->sblocks_size *= 2;

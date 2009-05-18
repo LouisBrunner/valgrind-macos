@@ -30,6 +30,7 @@
 */
 
 #include "pub_core_basics.h"
+#include "pub_core_libcassert.h"
 #include "pub_core_vki.h"     /* self */
 
 /* We have pub_{core,tool}_vki.h.  This is the matching implementation
@@ -45,6 +46,52 @@
 unsigned long VKI_PAGE_SHIFT = 12;
 unsigned long VKI_PAGE_SIZE  = 1UL << 12;
 #endif
+
+
+/* Do initial consistency checks on some of the definitions to do with
+   signals (vki_sigset_t and vki_sigaction_{toK,fromK}_t).  This stuff
+   is fragile enough that it's important to check at startup that
+   the world looks like what we expect it to look like. 
+
+   The most important thing is to check that the definition of signal
+   sets for this platform is right.  A signal set consists of some
+   number _VKI_NSIG_WORDS of 32- or 64-bit words.  Because the kernel
+   itself has some indexing scheme to set/clear individual bits in the
+   set, we must make sure we use the same layout/scheme: where this
+   requirement bites us is in the VG_(sigfillset) etc functions in
+   m_libcsignal.c.  So we check carefully here that it's all sensible.
+*/
+void VG_(vki_do_initial_consistency_checks) ( void )
+{
+   /* --- Platform-independent checks on signal sets --- */
+
+   vki_sigset_t set;
+   // Set's size must agree with _VKI_NSIG
+   vg_assert( 8 * sizeof(set) == _VKI_NSIG );
+   // Set's word size must agree with _VKI_NSIG_BPW
+   vg_assert( 8 * sizeof(set.sig[0]) == _VKI_NSIG_BPW );
+   // The set elements are 32- or 64-bit
+   vg_assert( _VKI_NSIG_BPW == 32 || _VKI_NSIG_BPW == 64 );
+
+   /* --- Platform-specific checks on signal sets --- */
+
+#  if defined(VGO_linux) || defined(VGO_aix5)
+   /* nothing to check */
+#  else
+#    error "Unknown plat"
+#  endif
+
+   /* --- Platform-specific checks on sigactions --- */
+
+#  if defined(VGO_linux) || defined(VGO_aix5)
+   /* the toK- and fromK- forms are identical */
+   vg_assert( sizeof(vki_sigaction_toK_t) 
+              == sizeof(vki_sigaction_fromK_t) );
+
+#  else
+#     error "Unknown OS" 
+#  endif
+}
 
 
 /*--------------------------------------------------------------------*/

@@ -47,6 +47,7 @@ struct pattern
 /* Scan for a pattern in the code of an ELF object.
  * If found, return true and set runtime_resolve_{addr,length}
  */
+__attribute__((unused))    // Possibly;  depends on the platform.
 static Bool check_code(obj_node* obj,
 		       unsigned char code[], struct pattern* pat)
 {

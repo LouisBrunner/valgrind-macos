@@ -39,6 +39,7 @@
 
 #include "pub_tool_machine.h"
 
+// XXX: this is *really* the wrong spot for these things
 #if defined(VGP_x86_linux)
 #  define VG_ELF_DATA2XXX     ELFDATA2LSB
 #  define VG_ELF_MACHINE      EM_386

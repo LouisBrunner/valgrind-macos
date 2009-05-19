@@ -71,6 +71,7 @@ n-i-bz DRD - added new client request, VG_USERREQ__DRD_CLEAN_MEMORY.
 188046 Removed a bashism from the configure script.
 189763 DRD - pthread_create@GLIBC_2.0() no longer triggers an assertion
        failure.
+n-i-bz DRD - fixed assertion failure triggered by mutex reinitialization.
 
 
 

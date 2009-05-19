@@ -110,7 +110,7 @@ EXTRA_DIST =                                        \
 	pth_inconsistent_cond_wait.stderr.exp       \
 	pth_inconsistent_cond_wait.vgtest           \
 	pth_process_shared_mutex.vgtest             \
-	pth_process_shared_mutex.c                  \
+	pth_process_shared_mutex.stderr.exp         \
 	pth_spinlock.stderr.exp                     \
 	pth_spinlock.vgtest                         \
 	qt4_mutex.stderr.exp                        \

@@ -76,15 +76,16 @@ endif
 bin_PROGRAMS = \
 	valgrind no_op_client_for_valgrind
 
+if VGCONF_OS_IS_LINUX
+valgrind_SOURCES = \
+	launcher-linux.c \
+	m_debuglog.c
+endif
 if VGCONF_OS_IS_AIX5
 valgrind_SOURCES = \
 	launcher-aix5.c \
 	m_debuglog.c \
 	m_vkiscnums.c
-else
-valgrind_SOURCES = \
-	launcher-linux.c \
-	m_debuglog.c
 endif
 
 valgrind_CPPFLAGS  = $(AM_CPPFLAGS_PRI)

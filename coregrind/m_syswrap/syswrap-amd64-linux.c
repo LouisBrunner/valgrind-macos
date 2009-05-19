@@ -1035,8 +1035,8 @@ const SyscallTableEntry ML_(syscall_table)[] = {
 
    PLAX_(__NR_rt_sigreturn,      sys_rt_sigreturn),   // 15 
    LINXY(__NR_ioctl,             sys_ioctl),          // 16 
-   GENXY(__NR_pread64,           sys_pread64_on64bitplat),  // 17 
-   GENX_(__NR_pwrite64,          sys_pwrite64_on64bitplat), // 18 
+   GENXY(__NR_pread64,           sys_pread64),        // 17 
+   GENX_(__NR_pwrite64,          sys_pwrite64),       // 18 
    GENXY(__NR_readv,             sys_readv),          // 19 
 
    GENX_(__NR_writev,            sys_writev),         // 20 

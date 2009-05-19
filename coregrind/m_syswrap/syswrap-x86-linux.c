@@ -2055,8 +2055,8 @@ const SyscallTableEntry ML_(syscall_table)[] = {
    LINXY(__NR_rt_sigqueueinfo,   sys_rt_sigqueueinfo),// 178
    LINX_(__NR_rt_sigsuspend,     sys_rt_sigsuspend),  // 179
 
-   GENXY(__NR_pread64,           sys_pread64_on32bitplat),  // 180
-   GENX_(__NR_pwrite64,          sys_pwrite64_on32bitplat), // 181
+   GENXY(__NR_pread64,           sys_pread64),        // 180
+   GENX_(__NR_pwrite64,          sys_pwrite64),       // 181
    LINX_(__NR_chown,             sys_chown16),        // 182
    GENXY(__NR_getcwd,            sys_getcwd),         // 183
    LINXY(__NR_capget,            sys_capget),         // 184

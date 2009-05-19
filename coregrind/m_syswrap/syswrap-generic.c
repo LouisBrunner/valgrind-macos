@@ -2232,32 +2232,24 @@ PRE(sys_getpriority)
    PRE_REG_READ2(long, "getpriority", int, which, int, who);
 }
 
-PRE(sys_pwrite64_on64bitplat)
+PRE(sys_pwrite64)
 {
-   vg_assert(sizeof(UWord) == 8);
    *flags |= SfMayBlock;
-   PRINT("sys_pwrite64 ( %ld, %#lx, %llu, %ld )",
-         ARG1, ARG2, (ULong)ARG3, ARG4);
-   PRE_REG_READ4(ssize_t, "pwrite64",
-                 unsigned int, fd, const char *, buf,
-                 vki_size_t, count, vki_loff_t, offset);
-   PRE_MEM_READ( "pwrite64(buf)", ARG2, ARG3 );
-}
-
-// The actual kernel definition of this routine takes a
-// single 64 bit offset argument. This version is for 32 bit
-// platforms only and treats the offset as two values - the
-// kernel relies on stack based argument passing conventions
-// to merge the two together.
-PRE(sys_pwrite64_on32bitplat)
-{
-   vg_assert(sizeof(UWord) == 4);
-   *flags |= SfMayBlock;
+#if VG_WORDSIZE == 4
    PRINT("sys_pwrite64 ( %ld, %#lx, %llu, %lld )",
          ARG1, ARG2, (ULong)ARG3, LOHI64(ARG4,ARG5));
    PRE_REG_READ5(ssize_t, "pwrite64",
                  unsigned int, fd, const char *, buf, vki_size_t, count,
                  vki_u32, offset_low32, vki_u32, offset_high32);
+#elif VG_WORDSIZE == 8
+   PRINT("sys_pwrite64 ( %ld, %#lx, %llu, %lld )",
+         ARG1, ARG2, (ULong)ARG3, (Long)ARG4);
+   PRE_REG_READ4(ssize_t, "pwrite64",
+                 unsigned int, fd, const char *, buf, vki_size_t, count,
+                 Word, offset);
+#else
+#  error Unexpected word size
+#endif
    PRE_MEM_READ( "pwrite64(buf)", ARG2, ARG3 );
 }
 
@@ -2299,45 +2291,28 @@ PRE(sys_getsid)
    PRE_REG_READ1(long, "getsid", vki_pid_t, pid);
 }
 
-PRE(sys_pread64_on64bitplat)
+PRE(sys_pread64)
 {
-   vg_assert(sizeof(UWord) == 8);
    *flags |= SfMayBlock;
-   PRINT("sys_pread64 ( %ld, %#lx, %llu, %ld )",
-         ARG1, ARG2, (ULong)ARG3, ARG4);
-   PRE_REG_READ4(ssize_t, "pread64",
-                 unsigned int, fd, char *, buf,
-                 vki_size_t, count, vki_loff_t, offset);
-   PRE_MEM_WRITE( "pread64(buf)", ARG2, ARG3 );
-}
-POST(sys_pread64_on64bitplat)
-{
-   vg_assert(sizeof(UWord) == 8);
-   vg_assert(SUCCESS);
-   if (RES > 0) {
-      POST_MEM_WRITE( ARG2, RES );
-   }
-}
-
-// The actual kernel definition of this routine takes a
-// single 64 bit offset argument. This version is for 32 bit
-// platforms only and treats the offset as two values - the
-// kernel relies on stack based argument passing conventions
-// to merge the two together.
-PRE(sys_pread64_on32bitplat)
-{
-   vg_assert(sizeof(UWord) == 4);
-   *flags |= SfMayBlock;
+#if VG_WORDSIZE == 4
    PRINT("sys_pread64 ( %ld, %#lx, %llu, %lld )",
          ARG1, ARG2, (ULong)ARG3, LOHI64(ARG4,ARG5));
    PRE_REG_READ5(ssize_t, "pread64",
                  unsigned int, fd, char *, buf, vki_size_t, count,
                  vki_u32, offset_low32, vki_u32, offset_high32);
+#elif VG_WORDSIZE == 8
+   PRINT("sys_pread64 ( %ld, %#lx, %llu, %lld )",
+         ARG1, ARG2, (ULong)ARG3, (Long)ARG4);
+   PRE_REG_READ4(ssize_t, "pread64",
+                 unsigned int, fd, char *, buf, vki_size_t, count,
+                 Word, offset);
+#else
+#  error Unexpected word size
+#endif
    PRE_MEM_WRITE( "pread64(buf)", ARG2, ARG3 );
 }
-POST(sys_pread64_on32bitplat)
+POST(sys_pread64)
 {
-   vg_assert(sizeof(UWord) == 4);
    vg_assert(SUCCESS);
    if (RES > 0) {
       POST_MEM_WRITE( ARG2, RES );

@@ -186,10 +186,8 @@ DECL_TEMPLATE(generic, sys_fstatfs);               // * L?
 DECL_TEMPLATE(generic, sys_iopl);                  // (x86/amd64) L
 DECL_TEMPLATE(generic, sys_ipc);                   // (x86) L
 DECL_TEMPLATE(generic, sys_newuname);              // * P
-DECL_TEMPLATE(generic, sys_pread64_on32bitplat);   // * (Unix98?)
-DECL_TEMPLATE(generic, sys_pread64_on64bitplat);   // * (Unix98?)
-DECL_TEMPLATE(generic, sys_pwrite64_on32bitplat);  // * (Unix98?)
-DECL_TEMPLATE(generic, sys_pwrite64_on64bitplat);  // * (Unix98?)
+DECL_TEMPLATE(generic, sys_pread64);               // * (Unix98?)
+DECL_TEMPLATE(generic, sys_pwrite64);              // * (Unix98?)
 DECL_TEMPLATE(generic, sys_sigaltstack);           // (x86) (XPG4-UNIX)
 DECL_TEMPLATE(generic, sys_getpmsg);               // (?) (?)
 DECL_TEMPLATE(generic, sys_putpmsg);               // (?) (?)

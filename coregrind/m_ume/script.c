@@ -32,13 +32,13 @@
 #include "pub_core_vki.h"
 
 #include "pub_core_libcbase.h"
-#include "pub_core_libcassert.h"  // VG_(exit), vg_assert
+#include "pub_core_libcassert.h"    // VG_(exit), vg_assert
 #include "pub_core_libcfile.h"      // VG_(close) et al
 #include "pub_core_libcprint.h"
 #include "pub_core_mallocfree.h"    // VG_(strdup)
 #include "pub_core_ume.h"           // self
 
-#include "priv_ume.h"               // self
+#include "priv_ume.h"
 
 
 #if defined(HAVE_SCRIPT)

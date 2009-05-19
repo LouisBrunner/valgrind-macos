@@ -239,7 +239,10 @@ COREGRIND_SOURCES_COMMON = \
 	m_replacemalloc/replacemalloc_core.c \
 	m_scheduler/scheduler.c \
 	m_scheduler/sema.c \
-	m_syswrap/syswrap-main.c
+	m_syswrap/syswrap-main.c \
+	m_ume/elf.c \
+	m_ume/main.c \
+	m_ume/script.c
 
 COREGRIND_LINUX_SOURCE = \
 	m_aspacemgr/aspacemgr-linux.c \
@@ -253,10 +256,7 @@ COREGRIND_LINUX_SOURCE = \
 	m_initimg/initimg-pathscan.c \
 	m_syswrap/syswrap-linux.c \
 	m_syswrap/syswrap-linux-variants.c \
-	m_syswrap/syswrap-generic.c \
-	m_ume/elf.c \
-	m_ume/main.c \
-	m_ume/script.c
+	m_syswrap/syswrap-generic.c
 
 COREGRIND_AIX5_SOURCE = \
 	m_aspacemgr/aspacemgr-aix5.c \

@@ -145,7 +145,6 @@ Int VG_(pipe) ( Int fd[2] )
 OffT VG_(lseek) ( Int fd, OffT offset, Int whence )
 {
 #if defined(VGO_linux) || defined(VGO_aix5)
-   /* all other platforms */
    SysRes res = VG_(do_syscall3)(__NR_lseek, fd, offset, whence);
    vg_assert(sizeof(OffT) == sizeof(Word));
 #  else

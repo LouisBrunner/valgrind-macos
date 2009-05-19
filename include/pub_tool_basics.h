@@ -165,8 +165,8 @@ typedef UInt ThreadId;
          When _mode is SysRes_UNIX_ERR, _wHI:_wLO holds the error code.
          Probably the high word of an error is always ignored by
          userspace, but we have to record it, so that we can correctly
-         update both EDX and EAX (in guest state) given a SysRes, if
-         we're required to.
+         update both {R,E}DX and {R,E}AX (in guest state) given a SysRes,
+         if we're required to.
 */
 #if defined(VGO_linux)
 typedef
@@ -235,6 +235,8 @@ static inline Bool sr_EQ ( SysRes sr1, SysRes sr2 ) {
 #  define VG_LITTLEENDIAN 1
 #elif defined(VGA_ppc32) || defined(VGA_ppc64)
 #  define VG_BIGENDIAN 1
+#else
+#  error Unknown arch
 #endif
 
 /* Regparmness */

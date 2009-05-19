@@ -1551,10 +1551,8 @@ void* new_block ( ThreadId tid, void* p, SizeT req_szB, SizeT req_alignB,
 static __inline__
 void die_block ( void* p, Bool custom_free )
 {
-   HP_Chunk* hc;
-
    // Remove HP_Chunk from malloc_list
-   hc = VG_(HT_remove)(malloc_list, (UWord)p);
+   HP_Chunk* hc = VG_(HT_remove)(malloc_list, (UWord)p);
    if (NULL == hc) {
       return;   // must have been a bogus free()
    }

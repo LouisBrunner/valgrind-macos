@@ -1,12 +1,12 @@
 #include <stdio.h>
+#include <sys/types.h>
 #include <sys/uio.h>
 #include <fcntl.h>
 #include <errno.h>
 #include <unistd.h>
 #include <string.h>
 
-#define K_1     8192
-                                                                                
+#define K_1             8192
 #define NBUFS           2
 #define CHUNK           K_1             /* single chunk */
 #define MAX_IOVEC       2

@@ -6,7 +6,6 @@
 
 #include <stdlib.h>
 #include <stdio.h>
-#include <malloc.h>  /* for memalign */
 #include <assert.h>
 #include "tests/malloc.h"
 

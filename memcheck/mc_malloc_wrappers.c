@@ -155,6 +155,7 @@ MC_Chunk* create_MC_Chunk ( ExeContext* ec, Addr p, SizeT szB,
 /*--- client_malloc(), etc                                 ---*/
 /*------------------------------------------------------------*/
 
+// XXX: should make this a proper error (bug #79311).
 static Bool complain_about_silly_args(SizeT sizeB, Char* fn)
 {
    // Cast to a signed type to catch any unexpectedly negative args.  We're
@@ -486,6 +487,7 @@ SizeT MC_(malloc_usable_size) ( ThreadId tid, void* p )
    // area will be marked as addressable.
    return ( mc ? mc->szB : 0 );
 }
+
 
 /* Memory pool stuff. */
 

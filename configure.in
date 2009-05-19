@@ -94,26 +94,6 @@ AC_SUBST(ASFLAGS)
 ])
 
 
-# Check we have GNU sed: some of the stuff done by "make install" relies
-# on some pretty fancy sed expressions, and AIX sed doesn't produce the
-# same results, causing install to fail
-
-AC_MSG_CHECKING([for GNU sed])
-
-[sed_firstline=`sed --version | head -n 1`]
-
-case "${sed_firstline}" in
-    GNU*)
-	AC_MSG_RESULT([ok, looks like GNU sed])
-	;;
-    *)
-	AC_MSG_RESULT([please ensure first 'sed' in your path is GNU sed])
-	AC_MSG_RESULT([note: GNU sed is only required at build/install time])
-	AC_MSG_ERROR([build/install requires that 'sed' is GNU sed])
-	;;
-esac
-
-
 # Check if 'diff' supports -u (universal diffs) and use it if possible.
 
 AC_MSG_CHECKING([for diff -u])

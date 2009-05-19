@@ -99,14 +99,15 @@
 /* Pull down the entire world */
 void VG_(exit)( Int status )
 {
-#  if defined(VGO_linux)
+#if defined(VGO_linux)
    (void)VG_(do_syscall1)(__NR_exit_group, status );
-#  endif
+#elif defined(VGO_aix5)
    (void)VG_(do_syscall1)(__NR_exit, status );
-   /* Why are we still alive here? */
+#else
+#  error Unknown OS
+#endif
    /*NOTREACHED*/
-   *(volatile Int *)0 = 'x';
-   vg_assert(2+2 == 5);
+   VG_(core_panic)("VG_(exit) didn't work?");
 }
 
 // Print the scheduler status.

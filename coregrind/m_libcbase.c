@@ -184,11 +184,11 @@ Char* VG_(strncat) ( Char* dest, const Char* src, SizeT n )
    return dest_orig;
 }
 
-Char* VG_(strpbrk) ( const Char* s, const Char* accept )
+Char* VG_(strpbrk) ( const Char* s, const Char* accpt )
 {
    const Char* a;
    while (*s) {
-      a = accept;
+      a = accpt;
       while (*a)
          if (*a++ == *s)
             return (Char *) s;
@@ -296,12 +296,12 @@ Char* VG_(strrchr) ( const Char* s, Char c )
    return NULL;
 }
 
-SizeT VG_(strspn) ( const Char* s, const Char* accept )
+SizeT VG_(strspn) ( const Char* s, const Char* accpt )
 {
    const Char *p, *a;
    SizeT count = 0;
    for (p = s; *p != '\0'; ++p) {
-      for (a = accept; *a != '\0'; ++a)
+      for (a = accpt; *a != '\0'; ++a)
          if (*p == *a)
             break;
       if (*a == '\0')

@@ -90,7 +90,7 @@ extern Int   VG_(strncmp)        ( const Char* s1, const Char* s2, SizeT nmax );
 extern Char* VG_(strstr)         ( const Char* haystack, Char* needle );
 extern Char* VG_(strchr)         ( const Char* s, Char c );
 extern Char* VG_(strrchr)        ( const Char* s, Char c );
-extern SizeT VG_(strspn)         ( const Char* s, const Char* accept );
+extern SizeT VG_(strspn)         ( const Char* s, const Char* accpt );
 extern SizeT VG_(strcspn)        ( const Char* s, const char* reject );
 
 /* Like strncpy(), but if 'src' is longer than 'ndest' inserts a '\0' as the

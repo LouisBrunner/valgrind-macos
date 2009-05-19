@@ -550,8 +550,8 @@ POSIX_MEMALIGN(VG_Z_LIBC_SONAME, memalign_common);
 
 #define MALLOC_USABLE_SIZE(soname, fnname) \
    \
-   int VG_REPLACE_FUNCTION_ZU(soname, fnname) ( void* p ); \
-   int VG_REPLACE_FUNCTION_ZU(soname, fnname) ( void* p )  \
+   SizeT VG_REPLACE_FUNCTION_ZU(soname, fnname) ( void* p ); \
+   SizeT VG_REPLACE_FUNCTION_ZU(soname, fnname) ( void* p )  \
    {  \
       SizeT pszB; \
       \

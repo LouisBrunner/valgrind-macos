@@ -30,10 +30,20 @@ SUPP_FILES = \
 	exp-ptrcheck.supp
 DEFAULT_SUPP_FILES = @DEFAULT_SUPP@
 
-# We include all .supp files in the distribution, but only install
-# default.supp.
-dist_val_DATA    = default.supp
+# We include all the base .supp files in the distribution, but not
+# default.supp, as it is built from the base .supp files at compile-time.
+# The "val" in "val_DATA" ties in with $(valdir), defined in
+# Makefile.all.am.  From the automake info pages:
+#
+#   Sometimes the standard directories--even as augmented by Automake--are
+#   not enough.  In particular it is sometimes useful, for clarity, to
+#   install objects in a subdirectory of some predefined directory.  To this
+#   end, Automake allows you to extend the list of possible installation
+#   directories.  A given prefix (e.g., `zar') is valid if a variable of the
+#   same name with `dir' appended is defined (e.g., `zardir').
+#
 dist_noinst_DATA = $(SUPP_FILES)
+val_DATA    = default.supp
 
 pkgconfigdir = $(libdir)/pkgconfig
 pkgconfig_DATA = valgrind.pc
@@ -42,8 +52,7 @@ incincdir = $(includedir)/valgrind
 nodist_incinc_HEADERS = $(VEX_PUBLIC_HDRS)
 
 BUILT_SOURCES  = default.supp valgrind.pc
-CLEANFILES     = 
-DISTCLEANFILES = default.supp
+CLEANFILES     = default.supp
 
 if VGCONF_PLATFORMS_INCLUDE_X86_LINUX
 BUILT_SOURCES += valt_load_address_x86_linux.lds

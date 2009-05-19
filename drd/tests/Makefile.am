@@ -116,8 +116,8 @@ EXTRA_DIST =                                        \
 	pth_inconsistent_cond_wait.vgtest           \
 	pth_mutex_reinit.stderr.exp		    \
 	pth_mutex_reinit.vgtest			    \
-	pth_process_shared_mutex.vgtest             \
 	pth_process_shared_mutex.stderr.exp         \
+	pth_process_shared_mutex.vgtest             \
 	pth_spinlock.stderr.exp                     \
 	pth_spinlock.vgtest                         \
 	qt4_mutex.stderr.exp                        \

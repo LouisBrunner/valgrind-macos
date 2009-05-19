@@ -259,8 +259,8 @@ COREGRIND_LINUX_SOURCE = \
 
 COREGRIND_AIX5_SOURCE = \
 	m_aspacemgr/aspacemgr-aix5.c \
-	m_initimg/initimg-aix5.c \
 	m_debuginfo/readxcoff.c \
+	m_initimg/initimg-aix5.c \
 	m_syswrap/syswrap-aix5.c
 
 libcoregrind_x86_linux_a_SOURCES = \

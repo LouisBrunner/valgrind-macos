@@ -704,7 +704,7 @@ lc_scan_memory(Addr start, SizeT len, Bool is_prior_definite, Int clique)
 // Process the mark stack until empty.
 static void lc_process_markstack(Int clique)
 {
-   Int  top;
+   Int  top = -1;    // shut gcc up
    Bool is_prior_definite;
 
    while (lc_pop(&top)) {

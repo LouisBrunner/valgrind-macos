@@ -109,8 +109,8 @@ static int init_done;
 static void init(void) __attribute__((constructor));
 
 #define MALLOC_TRACE(format, args...)  \
-   if (info.clo_trace_malloc)          \
-      VALGRIND_INTERNAL_PRINTF(format, ## args )
+   if (info.clo_trace_malloc) {        \
+      VALGRIND_INTERNAL_PRINTF(format, ## args ); }
 
 /* Below are new versions of malloc, __builtin_new, free, 
    __builtin_delete, calloc, realloc, memalign, and friends.

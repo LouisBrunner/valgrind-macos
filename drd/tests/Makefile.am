@@ -22,8 +22,8 @@ EXTRA_DIST =                                        \
 	atomic_var.vgtest			    \
 	bar_bad.stderr.exp			    \
 	bar_bad.vgtest				    \
-	bar_trivial.stdout.exp			    \
 	bar_trivial.stderr.exp			    \
+	bar_trivial.stdout.exp			    \
 	bar_trivial.vgtest			    \
 	boost_thread.stderr.exp			    \
 	boost_thread.vgtest			    \
@@ -109,8 +109,10 @@ EXTRA_DIST =                                        \
 	pth_detached_sem.vgtest                     \
 	pth_inconsistent_cond_wait.stderr.exp       \
 	pth_inconsistent_cond_wait.vgtest           \
-	pth_process_shared_mutex.vgtest             \
+	pth_mutex_reinit.stderr.exp		    \
+	pth_mutex_reinit.vgtest			    \
 	pth_process_shared_mutex.stderr.exp         \
+	pth_process_shared_mutex.vgtest             \
 	pth_spinlock.stderr.exp                     \
 	pth_spinlock.vgtest                         \
 	qt4_mutex.stderr.exp                        \
@@ -230,8 +232,9 @@ check_PROGRAMS =      \
   pth_create_chain    \
   pth_detached        \
   pth_detached_sem    \
-  pth_process_shared_mutex   \
   pth_inconsistent_cond_wait \
+  pth_mutex_reinit    \
+  pth_process_shared_mutex   \
   pth_spinlock        \
   recursive_mutex     \
   rwlock_race         \
@@ -356,6 +359,9 @@ pth_detached_sem_LDADD      = -lpthread
 
 pth_inconsistent_cond_wait_SOURCES = pth_inconsistent_cond_wait.c
 pth_inconsistent_cond_wait_LDADD   = -lpthread
+
+pth_mutex_reinit_SOURCES    = pth_mutex_reinit.c
+pth_mutex_reinit_LDADD      = -lpthread
 
 pth_process_shared_mutex_SOURCES = pth_process_shared_mutex.c
 pth_process_shared_mutex_LDADD   = -lpthread

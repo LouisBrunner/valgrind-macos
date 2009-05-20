@@ -18,7 +18,7 @@
 # include <memory.h>
 #endif
 
-
+#include <string.h>
 #include <sys/types.h>
 #include <sys/wait.h>
 #include <sys/un.h>

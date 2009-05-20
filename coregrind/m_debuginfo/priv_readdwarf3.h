@@ -38,7 +38,7 @@
 #define __PRIV_READDWARF3_H
 
 
-/* Read DWARF3 ".debug_info" sections. */
+/* Read variables and types from DWARF3 ".debug_info" sections. */
 void 
 ML_(new_dwarf3_reader) (
    struct _DebugInfo* di,

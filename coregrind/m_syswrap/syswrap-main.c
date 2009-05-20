@@ -802,7 +802,7 @@ static void ensure_initialised ( void )
 
 void VG_(client_syscall) ( ThreadId tid )
 {
-   UWord                    sysno;
+   Word                     sysno;
    ThreadState*             tst;
    const SyscallTableEntry* ent;
    SyscallArgLayout         layout;
@@ -1158,7 +1158,7 @@ void VG_(post_syscall) (ThreadId tid)
    const SyscallTableEntry* ent;
    SyscallStatus            test_status;
    ThreadState*             tst;
-   UWord sysno;
+   Word sysno;
 
    /* Preliminaries */
    vg_assert(VG_(is_valid_tid)(tid));

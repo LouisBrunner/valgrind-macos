@@ -1,7 +1,6 @@
 
 /*--------------------------------------------------------------------*/
-/*--- Top level for kernel interface system call numbers.          ---*/
-/*---                                         pub_tool_vkiscnums.h ---*/
+/*--- Syscall numbers and related operations. pub_tool_vkiscnums.h ---*/
 /*--------------------------------------------------------------------*/
 
 /*

@@ -129,11 +129,12 @@ void ML_(read_debuginfo_stabs) ( DebugInfo* di,
       const struct nlist *st = &stab[i];
       Char *string;
 
-      if (debug && 1) {
-         VG_(printf) ( "%2d  type=%d   othr=%d   desc=%d   value=0x%x   strx=%d  %s\n", i,
+      if (di->trace_symtab) {
+         VG_(printf) ( "%2d  type=%d   othr=%d   desc=%d   "
+                       "value=0x%x   strx=%d  %s\n", i,
                        st->n_type, st->n_other, st->n_desc, 
-                       (int)st->n_value,
-                       (int)st->n_un.n_strx, 
+                       (Int)st->n_value,
+                       (Int)st->n_un.n_strx, 
                        stabstr + st->n_un.n_strx );
       }
 

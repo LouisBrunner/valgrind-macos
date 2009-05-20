@@ -982,9 +982,9 @@ void VG_(client_syscall) ( ThreadId tid )
       /* The pre-handler completed the syscall itself, declaring
          success. */
       if (sci->flags & SfNoWriteResult) {
-         PRINT(" --> [pre-success] NoWriteResult\n");
+         PRINT(" --> [pre-success] NoWriteResult");
       } else {
-         PRINT(" --> [pre-success] Success(0x%llx:0x%llx)\n",
+         PRINT(" --> [pre-success] Success(0x%llx:0x%llx)",
                (ULong)sr_ResHI(sci->status.sres),
                (ULong)sr_Res(sci->status.sres));
       }                                      
@@ -999,7 +999,7 @@ void VG_(client_syscall) ( ThreadId tid )
    else
    if (sci->status.what == SsComplete && sr_isError(sci->status.sres)) {
       /* The pre-handler decided to fail syscall itself. */
-      PRINT(" --> [pre-fail] Failure(0x%llx)\n", (ULong)sr_Err(sci->status.sres));
+      PRINT(" --> [pre-fail] Failure(0x%llx)", (ULong)sr_Err(sci->status.sres));
       /* In this case, the pre-handler is also allowed to ask for the
          post-handler to be run anyway.  Changing the args is not
          allowed. */
@@ -1075,12 +1075,12 @@ void VG_(client_syscall) ( ThreadId tid )
             Bool failed = sr_isError(sci->status.sres);
             Word tmp_sysno = sysno;
             if (failed) {
-               PRINT("SYSCALL[%d,%d](%3ld) ... [async] --> Failure(0x%llx)\n",
+               PRINT("SYSCALL[%d,%d](%3ld) ... [async] --> Failure(0x%llx)",
                      VG_(getpid)(), tid, tmp_sysno, 
                      (ULong)sr_Err(sci->status.sres));
             } else {
                PRINT("SYSCALL[%d,%d](%3ld) ... [async] --> "
-                     "Success(0x%llx:0x%llx)\n",
+                     "Success(0x%llx:0x%llx)",
                      VG_(getpid)(), tid, tmp_sysno, 
                      (ULong)sr_ResHI(sci->status.sres),
                      (ULong)sr_Res(sci->status.sres) );
@@ -1106,10 +1106,10 @@ void VG_(client_syscall) ( ThreadId tid )
          if (VG_(clo_trace_syscalls)) {
             Bool failed = sr_isError(sci->status.sres);
             if (failed) {
-               PRINT("[sync] --> Failure(0x%llx)\n",
+               PRINT("[sync] --> Failure(0x%llx)",
                      (ULong)sr_Err(sci->status.sres) );
             } else {
-               PRINT("[sync] --> Success(0x%llx:0x%llx)\n",
+               PRINT("[sync] --> Success(0x%llx:0x%llx)",
                      (ULong)sr_ResHI(sci->status.sres),
                      (ULong)sr_Res(sci->status.sres) );
             }
@@ -1133,7 +1133,9 @@ void VG_(client_syscall) ( ThreadId tid )
 
       Now go on to do the post-syscall actions (read on down ..)
    */
+   PRINT(" ");
    VG_(post_syscall)(tid);
+   PRINT("\n");
 }
 
 

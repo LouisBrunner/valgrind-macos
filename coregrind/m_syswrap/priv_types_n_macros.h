@@ -366,16 +366,16 @@ static inline UWord getERR ( SyscallStatus* st ) {
    since the least significant parts of the guest register are stored
    in memory at the lowest address.
 */
-#define PRRAn_LE(n,s,t,a)                            \
-    do {                                             \
-       Int here = layout->o_arg##n;                  \
-       vg_assert(sizeof(t) <= sizeof(UWord));        \
-       vg_assert(here >= 0);                         \
-       VG_(tdict).track_pre_reg_read(                \
-          Vg_CoreSysCall, tid, s"("#a")",            \
-          here, sizeof(t)                            \
-       );                                            \
-    } while (0)
+#define PRRAn_LE(n,s,t,a)                          \
+   do {                                            \
+      Int here = layout->o_arg##n;                 \
+      vg_assert(sizeof(t) <= sizeof(UWord));       \
+      vg_assert(here >= 0);                        \
+      VG_(tdict).track_pre_reg_read(               \
+         Vg_CoreSysCall, tid, s"("#a")",           \
+         here, sizeof(t)                           \
+      );                                           \
+   } while (0)
 
 /* big-endian: the part of the guest state being read is
       let next = offset_of_reg + sizeof(reg) 
@@ -383,17 +383,17 @@ static inline UWord getERR ( SyscallStatus* st ) {
    since the least significant parts of the guest register are stored
    in memory at the highest address.
 */
-#define PRRAn_BE(n,s,t,a)                            \
-    do {                                             \
-       Int here = layout->o_arg##n;                  \
-       Int next = layout->o_arg##n + sizeof(UWord);  \
-       vg_assert(sizeof(t) <= sizeof(UWord));        \
-       vg_assert(here >= 0);                         \
-       VG_(tdict).track_pre_reg_read(                \
-          Vg_CoreSysCall, tid, s"("#a")",            \
-          next-sizeof(t), sizeof(t)                  \
-       );                                            \
-    } while (0)
+#define PRRAn_BE(n,s,t,a)                          \
+   do {                                            \
+      Int here = layout->o_arg##n;                 \
+      Int next = layout->o_arg##n + sizeof(UWord); \
+      vg_assert(sizeof(t) <= sizeof(UWord));       \
+      vg_assert(here >= 0);                        \
+      VG_(tdict).track_pre_reg_read(               \
+         Vg_CoreSysCall, tid, s"("#a")",           \
+         next-sizeof(t), sizeof(t)                 \
+      );                                           \
+   } while (0)
 
 #if defined(VG_BIGENDIAN)
 #  define PRRAn(n,s,t,a) PRRAn_BE(n,s,t,a)

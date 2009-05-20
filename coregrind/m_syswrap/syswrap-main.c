@@ -1075,11 +1075,11 @@ void VG_(client_syscall) ( ThreadId tid )
             Bool failed = sr_isError(sci->status.sres);
             Word tmp_sysno = sysno;
             if (failed) {
-               PRINT("SYSCALL[%d,%d](%5ld) ... [async] --> Failure(0x%llx)\n",
+               PRINT("SYSCALL[%d,%d](%3ld) ... [async] --> Failure(0x%llx)\n",
                      VG_(getpid)(), tid, tmp_sysno, 
                      (ULong)sr_Err(sci->status.sres));
             } else {
-               PRINT("SYSCALL[%d,%d](%5ld) ... [async] --> "
+               PRINT("SYSCALL[%d,%d](%3ld) ... [async] --> "
                      "Success(0x%llx:0x%llx)\n",
                      VG_(getpid)(), tid, tmp_sysno, 
                      (ULong)sr_ResHI(sci->status.sres),

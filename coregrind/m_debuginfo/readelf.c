@@ -930,7 +930,7 @@ Addr open_debug_file( Char* name, UInt crc, /*OUT*/UWord* size )
    if (VG_(clo_verbosity) > 1)
       VG_(message)(Vg_DebugMsg, "Reading debug info from %s ..", name);
 
-   *size = stat_buf.st_size;
+   *size = stat_buf.size;
    
    sres = VG_(am_mmap_file_float_valgrind)
              ( *size, VKI_PROT_READ, sr_Res(fd), 0 );

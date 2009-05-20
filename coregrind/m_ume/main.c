@@ -235,7 +235,7 @@ static Int do_exec_shell_followup(Int ret, HChar* exe_name, ExeInfo* info)
    
       // Was it a directory?
       res = VG_(stat)(exe_name, &st);
-      if (!sr_isError(res) && VKI_S_ISDIR(st.st_mode)) {
+      if (!sr_isError(res) && VKI_S_ISDIR(st.mode)) {
          VG_(printf)("valgrind: %s: is a directory\n", exe_name);
       
       // Was it not executable?

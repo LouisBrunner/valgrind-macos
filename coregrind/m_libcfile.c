@@ -162,22 +162,22 @@ OffT VG_(lseek) ( Int fd, OffT offset, Int whence )
 
 #define TRANSLATE_TO_vg_stat(_p_vgstat, _p_vkistat) \
    do { \
-      (_p_vgstat)->st_dev        = (ULong)( (_p_vkistat)->st_dev ); \
-      (_p_vgstat)->st_ino        = (ULong)( (_p_vkistat)->st_ino ); \
-      (_p_vgstat)->st_nlink      = (ULong)( (_p_vkistat)->st_nlink ); \
-      (_p_vgstat)->st_mode       = (UInt) ( (_p_vkistat)->st_mode ); \
-      (_p_vgstat)->st_uid        = (UInt) ( (_p_vkistat)->st_uid ); \
-      (_p_vgstat)->st_gid        = (UInt) ( (_p_vkistat)->st_gid ); \
-      (_p_vgstat)->st_rdev       = (ULong)( (_p_vkistat)->st_rdev ); \
-      (_p_vgstat)->st_size       = (Long) ( (_p_vkistat)->st_size ); \
-      (_p_vgstat)->st_blksize    = (ULong)( (_p_vkistat)->st_blksize ); \
-      (_p_vgstat)->st_blocks     = (ULong)( (_p_vkistat)->st_blocks ); \
-      (_p_vgstat)->st_atime      = (ULong)( (_p_vkistat)->st_atime ); \
-      (_p_vgstat)->st_atime_nsec = (ULong)( (_p_vkistat)->st_atime_nsec ); \
-      (_p_vgstat)->st_mtime      = (ULong)( (_p_vkistat)->st_mtime ); \
-      (_p_vgstat)->st_mtime_nsec = (ULong)( (_p_vkistat)->st_mtime_nsec ); \
-      (_p_vgstat)->st_ctime      = (ULong)( (_p_vkistat)->st_ctime ); \
-      (_p_vgstat)->st_ctime_nsec = (ULong)( (_p_vkistat)->st_ctime_nsec ); \
+      (_p_vgstat)->dev        = (ULong)( (_p_vkistat)->st_dev ); \
+      (_p_vgstat)->ino        = (ULong)( (_p_vkistat)->st_ino ); \
+      (_p_vgstat)->nlink      = (ULong)( (_p_vkistat)->st_nlink ); \
+      (_p_vgstat)->mode       = (UInt) ( (_p_vkistat)->st_mode ); \
+      (_p_vgstat)->uid        = (UInt) ( (_p_vkistat)->st_uid ); \
+      (_p_vgstat)->gid        = (UInt) ( (_p_vkistat)->st_gid ); \
+      (_p_vgstat)->rdev       = (ULong)( (_p_vkistat)->st_rdev ); \
+      (_p_vgstat)->size       = (Long) ( (_p_vkistat)->st_size ); \
+      (_p_vgstat)->blksize    = (ULong)( (_p_vkistat)->st_blksize ); \
+      (_p_vgstat)->blocks     = (ULong)( (_p_vkistat)->st_blocks ); \
+      (_p_vgstat)->atime      = (ULong)( (_p_vkistat)->st_atime ); \
+      (_p_vgstat)->atime_nsec = (ULong)( (_p_vkistat)->st_atime_nsec ); \
+      (_p_vgstat)->mtime      = (ULong)( (_p_vkistat)->st_mtime ); \
+      (_p_vgstat)->mtime_nsec = (ULong)( (_p_vkistat)->st_mtime_nsec ); \
+      (_p_vgstat)->ctime      = (ULong)( (_p_vkistat)->st_ctime ); \
+      (_p_vgstat)->ctime_nsec = (ULong)( (_p_vkistat)->st_ctime_nsec ); \
    } while (0)
 
 SysRes VG_(stat) ( const Char* file_name, struct vg_stat* vgbuf )
@@ -215,12 +215,12 @@ SysRes VG_(stat) ( const Char* file_name, struct vg_stat* vgbuf )
                             VKI_STX_NORMAL);
      if (!sr_isError(res)) {
         VG_(memset)(vgbuf, 0, sizeof(*vgbuf));
-        vgbuf->st_dev  = (ULong)buf.st_dev;
-        vgbuf->st_ino  = (ULong)buf.st_ino;
-        vgbuf->st_mode = (UInt)buf.st_mode;
-        vgbuf->st_uid  = (UInt)buf.st_uid;
-        vgbuf->st_gid  = (UInt)buf.st_gid;
-        vgbuf->st_size = (Long)buf.st_size;
+        vgbuf->dev  = (ULong)buf.st_dev;
+        vgbuf->ino  = (ULong)buf.st_ino;
+        vgbuf->mode = (UInt)buf.st_mode;
+        vgbuf->uid  = (UInt)buf.st_uid;
+        vgbuf->gid  = (UInt)buf.st_gid;
+        vgbuf->size = (Long)buf.st_size;
      }
      return res;
    }
@@ -271,7 +271,7 @@ Long VG_(fsize) ( Int fd )
 {
    struct vg_stat buf;
    Int res = VG_(fstat)( fd, &buf );
-   return (res == -1) ? (-1LL) : buf.st_size;
+   return (res == -1) ? (-1LL) : buf.size;
 }
 
 Bool VG_(is_dir) ( HChar* f )
@@ -279,7 +279,7 @@ Bool VG_(is_dir) ( HChar* f )
    struct vg_stat buf;
    SysRes res = VG_(stat)(f, &buf);
    return sr_isError(res) ? False
-                      : VKI_S_ISDIR(buf.st_mode) ? True : False;
+                      : VKI_S_ISDIR(buf.mode) ? True : False;
 }
 
 SysRes VG_(dup) ( Int oldfd )
@@ -464,19 +464,19 @@ Int VG_(check_executable)(/*OUT*/Bool* is_setuid,
       return sr_Err(res);
    }
 
-   if ( (st.st_mode & (VKI_S_ISUID | VKI_S_ISGID)) && !allow_setuid ) {
+   if ( (st.mode & (VKI_S_ISUID | VKI_S_ISGID)) && !allow_setuid ) {
       if (is_setuid)
          *is_setuid = True;
       return VKI_EACCES;
    }
 
-   if (VG_(geteuid)() == st.st_uid) {
-      if (!(st.st_mode & VKI_S_IXUSR))
+   if (VG_(geteuid)() == st.uid) {
+      if (!(st.mode & VKI_S_IXUSR))
          return VKI_EACCES;
    } else {
       Int grpmatch = 0;
 
-      if (VG_(getegid)() == st.st_gid)
+      if (VG_(getegid)() == st.gid)
 	 grpmatch = 1;
       else {
 	 UInt groups[32];
@@ -484,7 +484,7 @@ Int VG_(check_executable)(/*OUT*/Bool* is_setuid,
 	 Int i;
          /* ngrp will be -1 if VG_(getgroups) failed. */
          for (i = 0; i < ngrp; i++) {
-	    if (groups[i] == st.st_gid) {
+	    if (groups[i] == st.gid) {
 	       grpmatch = 1;
 	       break;
 	    }
@@ -492,10 +492,10 @@ Int VG_(check_executable)(/*OUT*/Bool* is_setuid,
       }
 
       if (grpmatch) {
-	 if (!(st.st_mode & VKI_S_IXGRP)) {
+	 if (!(st.mode & VKI_S_IXGRP)) {
             return VKI_EACCES;
          }
-      } else if (!(st.st_mode & VKI_S_IXOTH)) {
+      } else if (!(st.mode & VKI_S_IXOTH)) {
          return VKI_EACCES;
       }
    }

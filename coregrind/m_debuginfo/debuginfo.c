@@ -645,7 +645,7 @@ ULong VG_(di_notify_mmap)( Addr a, Bool allow_SkFileV )
 
    /* stat dereferences symlinks, so we don't expect it to succeed and
       yet produce something that is a symlink. */
-   vg_assert(sr_isError(statres) || ! VKI_S_ISLNK(statbuf.st_mode));
+   vg_assert(sr_isError(statres) || ! VKI_S_ISLNK(statbuf.mode));
 
    /* Don't let the stat call fail silently.  Filter out some known
       sources of noise before complaining, though. */
@@ -662,7 +662,7 @@ ULong VG_(di_notify_mmap)( Addr a, Bool allow_SkFileV )
 
    /* Finally, the point of all this stattery: if it's not a regular file,
       don't try to read debug info from it. */
-   if (! VKI_S_ISREG(statbuf.st_mode))
+   if (! VKI_S_ISREG(statbuf.mode))
       return 0;
 
    /* no uses of statbuf below here. */
@@ -905,7 +905,7 @@ void VG_(di_notify_pdb_debuginfo)( Int fd_obj, Addr avma_obj,
    if (r == -1)
       goto out; /* stat failed ?! */
    vg_assert(r == 0);
-   obj_mtime = stat_buf.st_mtime;
+   obj_mtime = stat_buf.mtime;
 
    /* and get its name into exename[]. */
    vg_assert(VKI_PATH_MAX > 100); /* to ensure /proc/self/fd/%d is safe */
@@ -954,7 +954,7 @@ void VG_(di_notify_pdb_debuginfo)( Int fd_obj, Addr avma_obj,
       VG_(message)(Vg_UserMsg, "LOAD_PDB_DEBUGINFO: missing: %s", pdbname);
       goto out;
    }
-   pdb_mtime = stat_buf.st_mtime;
+   pdb_mtime = stat_buf.mtime;
    if (pdb_mtime < obj_mtime ) {
       /* PDB file is older than PE file - ignore it or we will either
          (a) print wrong stack traces or more likely (b) crash. */
@@ -971,7 +971,7 @@ void VG_(di_notify_pdb_debuginfo)( Int fd_obj, Addr avma_obj,
 
    /* Looks promising; go on to try and read stuff from it. */
    fd_pdbimage = sr_Res(sres);
-   n_pdbimage  = stat_buf.st_size;
+   n_pdbimage  = stat_buf.size;
    sres = VG_(am_mmap_file_float_valgrind)( n_pdbimage, VKI_PROT_READ,
                                             fd_pdbimage, 0 );
    if (sr_isError(sres)) {

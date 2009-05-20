@@ -43,24 +43,29 @@
    specific vki_stat{,64} kernel structure will work and is
    consistently available on different architectures on Linux, so we
    have to use this 'struct vg_stat' impedance-matching type
-   instead. */
+   instead.
+
+   Also note that the fieldnames aren't prefixed with "st_".  This is because
+   st_atime et al are macros in sys/stat.h on Darwin, and using those names
+   screws things up.
+*/
 struct vg_stat {
-   ULong   st_dev;
-   ULong   st_ino;
-   ULong   st_nlink;
-   UInt    st_mode;
-   UInt    st_uid;
-   UInt    st_gid;
-   ULong   st_rdev;
-   Long    st_size;
-   ULong   st_blksize;
-   ULong   st_blocks;
-   ULong   st_atime;
-   ULong   st_atime_nsec;
-   ULong   st_mtime;
-   ULong   st_mtime_nsec;
-   ULong   st_ctime;
-   ULong   st_ctime_nsec;
+   ULong   dev;
+   ULong   ino;
+   ULong   nlink;
+   UInt    mode;
+   UInt    uid;
+   UInt    gid;
+   ULong   rdev;
+   Long    size;
+   ULong   blksize;
+   ULong   blocks;
+   ULong   atime;
+   ULong   atime_nsec;
+   ULong   mtime;
+   ULong   mtime_nsec;
+   ULong   ctime;
+   ULong   ctime_nsec;
 };
 
 extern SysRes VG_(open)   ( const Char* pathname, Int flags, Int mode );

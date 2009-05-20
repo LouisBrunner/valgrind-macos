@@ -67,14 +67,14 @@ static HChar* read_dot_valgrindrc ( HChar* dir )
    if ( !sr_isError(fd) ) {
       Int res = VG_(fstat)( sr_Res(fd), &stat_buf );
       // Ignore if not owned by current user or world writeable (CVE-2008-4865)
-      if (!res && stat_buf.st_uid == VG_(geteuid)()
-          && (!(stat_buf.st_mode & VKI_S_IWOTH))) {
-         if ( stat_buf.st_size > 0 ) {
-            f_clo = VG_(malloc)("commandline.rdv.1", stat_buf.st_size+1);
+      if (!res && stat_buf.uid == VG_(geteuid)()
+          && (!(stat_buf.mode & VKI_S_IWOTH))) {
+         if ( stat_buf.size > 0 ) {
+            f_clo = VG_(malloc)("commandline.rdv.1", stat_buf.size+1);
             vg_assert(f_clo);
-            n = VG_(read)(sr_Res(fd), f_clo, stat_buf.st_size);
+            n = VG_(read)(sr_Res(fd), f_clo, stat_buf.size);
             if (n == -1) n = 0;
-            vg_assert(n >= 0 && n <= stat_buf.st_size+1);
+            vg_assert(n >= 0 && n <= stat_buf.size+1);
             f_clo[n] = '\0';
          }
       }

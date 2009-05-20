@@ -147,7 +147,7 @@ UInt ML_(am_sprintf) ( HChar* buf, const HChar *format, ... )
 
 /* Note: this is VG_, not ML_. */
 SysRes VG_(am_do_mmap_NO_NOTIFY)( Addr start, SizeT length, UInt prot, 
-                                  UInt flags, UInt fd, Off64T offset)
+                                  UInt flags, Int fd, Off64T offset)
 {
    SysRes res;
    aspacem_assert(VG_IS_PAGE_ALIGNED(offset));

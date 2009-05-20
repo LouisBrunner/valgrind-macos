@@ -1,7 +1,6 @@
 
 /*--------------------------------------------------------------------*/
-/*--- Top level for kernel interface declarations.                 ---*/
-/*---                                         pub_core_vkiscnums.h ---*/
+/*--- Syscall numbers and related operations. pub_core_vkiscnums.h ---*/
 /*--------------------------------------------------------------------*/
 
 /*
@@ -47,13 +46,19 @@
 /* Make it possible to include this file in assembly sources. */
 #if !defined(VG_IN_ASSEMBLY_SOURCE)
 
-#if defined(VGO_aix5)
+#if defined(VGO_linux)
+   // Nothing
+
+#elif defined(VGO_aix5)
 /* Bind the given syscall name to the given number.  Returns True if
    successful, False if the name is unknown. */
 extern Bool VG_(aix5_register_syscall)( Int, UChar* );
-#endif
 
-#endif /* !defined(VG_IN_ASSEMBLY_SOURCE) */
+#else
+#  error Unknown OS
+#endif // defined(VGO_*)
+
+#endif // !defined(VG_IN_ASSEMBLY_SOURCE)
 
 #endif // __PUB_CORE_VKISCNUMS_H
 

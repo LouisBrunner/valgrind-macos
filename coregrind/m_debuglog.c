@@ -71,7 +71,7 @@ static UInt local_sys_write_stderr ( HChar* buf, Int n )
       "movl  0(%%ebx), %%ecx\n" /* %ecx = buf */
       "movl  4(%%ebx), %%edx\n" /* %edx = n */
       "movl  $"VG_STRINGIFY(__NR_write)", %%eax\n" /* %eax = __NR_write */
-      "movl  $1, %%ebx\n"       /* %ebx = stderr */
+      "movl  $2, %%ebx\n"       /* %ebx = stderr */
       "int   $0x80\n"           /* write(stderr, buf, n) */
       "popl  %%ebx\n"           /* reestablish &block */
       "movl  %%eax, 0(%%ebx)\n" /* block[0] = result */

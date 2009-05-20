@@ -274,7 +274,7 @@ Long VG_(fsize) ( Int fd )
    return (res == -1) ? (-1LL) : buf.size;
 }
 
-Bool VG_(is_dir) ( HChar* f )
+Bool VG_(is_dir) ( const HChar* f )
 {
    struct vg_stat buf;
    SysRes res = VG_(stat)(f, &buf);
@@ -305,13 +305,13 @@ Int VG_(fcntl) ( Int fd, Int cmd, Int arg )
    return sr_isError(res) ? -1 : sr_Res(res);
 }
 
-Int VG_(rename) ( Char* old_name, Char* new_name )
+Int VG_(rename) ( const Char* old_name, const Char* new_name )
 {
    SysRes res = VG_(do_syscall2)(__NR_rename, (UWord)old_name, (UWord)new_name);
    return sr_isError(res) ? (-1) : 0;
 }
 
-Int VG_(unlink) ( Char* file_name )
+Int VG_(unlink) ( const Char* file_name )
 {
    SysRes res = VG_(do_syscall1)(__NR_unlink, (UWord)file_name);
    return sr_isError(res) ? (-1) : 0;
@@ -384,7 +384,7 @@ Bool VG_(get_startup_wd) ( Char* buf, SizeT size )
    return True;
 }
 
-Int VG_(readlink) (Char* path, Char* buf, UInt bufsiz)
+Int VG_(readlink) (const Char* path, Char* buf, UInt bufsiz)
 {
    SysRes res;
    /* res = readlink( path, buf, bufsiz ); */
@@ -406,7 +406,7 @@ Int VG_(getdents) (Int fd, struct vki_dirent *dirp, UInt count)
 
 /* Check accessibility of a file.  Returns zero for access granted,
    nonzero otherwise. */
-Int VG_(access) ( HChar* path, Bool irusr, Bool iwusr, Bool ixusr )
+Int VG_(access) ( const HChar* path, Bool irusr, Bool iwusr, Bool ixusr )
 {
 #  if defined(VGO_linux)
    /* Very annoyingly, I cannot find any definition for R_OK et al in
@@ -452,7 +452,7 @@ Int VG_(access) ( HChar* path, Bool irusr, Bool iwusr, Bool ixusr )
 */
 /* returns: 0 = success, non-0 is failure */
 Int VG_(check_executable)(/*OUT*/Bool* is_setuid,
-                          HChar* f, Bool allow_setuid)
+                          const HChar* f, Bool allow_setuid)
 {
    struct vg_stat st;
    SysRes res = VG_(stat)(f, &st);

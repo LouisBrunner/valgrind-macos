@@ -79,10 +79,10 @@ extern SysRes VG_(stat)   ( const Char* file_name, struct vg_stat* buf );
 extern Int    VG_(fstat)  ( Int   fd,        struct vg_stat* buf );
 extern SysRes VG_(dup)    ( Int oldfd );
 extern SysRes VG_(dup2)   ( Int oldfd, Int newfd );
-extern Int    VG_(rename) ( Char* old_name, Char* new_name );
-extern Int    VG_(unlink) ( Char* file_name );
+extern Int    VG_(rename) ( const Char* old_name, const Char* new_name );
+extern Int    VG_(unlink) ( const Char* file_name );
 
-extern Int    VG_(readlink)( Char* path, Char* buf, UInt bufsize );
+extern Int    VG_(readlink)( const Char* path, Char* buf, UInt bufsize );
 extern Int    VG_(getdents)( Int fd, struct vki_dirent *dirp, UInt count );
 
 /* Copy the working directory at startup into buf[0 .. size-1], or return

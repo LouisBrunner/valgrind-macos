@@ -1351,7 +1351,7 @@ static void set_address_range_perms ( Addr a, SizeT lenT, UWord vabits16,
    if (lenT == 0)
       return;
 
-   if (lenT > 100 * 1000 * 1000) {
+   if (lenT > 256 * 1024 * 1024) {
       if (VG_(clo_verbosity) > 0 && !VG_(clo_xml)) {
          Char* s = "unknown???";
          if (vabits16 == VA_BITS16_NOACCESS ) s = "noaccess";

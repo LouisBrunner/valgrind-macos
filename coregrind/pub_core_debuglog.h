@@ -74,11 +74,11 @@ void VG_(debugLog) ( Int level, const HChar* modulename,
                                 const HChar* format, ... );
 
 
-/* A simple vprintf().  For each emitted byte, (*send) is called with
+/* A simple vprintf().  For each emitted byte, (*send_fn) is called with
    that byte, and 'send_arg2' as its second param. */
 extern
 UInt VG_(debugLog_vprintf) ( 
-        void (*send)(HChar,void*),   /* byte sink */
+        void (*send_fn)(HChar,void*),/* byte sink */
         void* send_arg2,             /* 2nd arg for byte sink */
         const HChar *format, 
         va_list vargs

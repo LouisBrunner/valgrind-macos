@@ -2168,9 +2168,9 @@ void sync_signalhandler ( Int sigNo,
       kernel, then treat it more like an async signal than a sync signal --
       that is, merely queue it for later delivery. */
    if (from_user) {
-      sync_signalhandler_from_user(tid, sigNo, info, uc);
+      sync_signalhandler_from_user(  tid, sigNo, info, uc);
    } else {
-      sync_signalhandler_from_kernel( tid, sigNo, info, uc);
+      sync_signalhandler_from_kernel(tid, sigNo, info, uc);
    }
 }
 

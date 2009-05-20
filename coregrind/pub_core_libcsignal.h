@@ -76,7 +76,7 @@ extern void VG_(convert_sigaction_fromK_to_toK)(
 
 
 extern Int VG_(kill)        ( Int pid, Int signo );
-extern Int VG_(tkill)       ( ThreadId tid, Int signo );
+extern Int VG_(tkill)       ( Int lwpid, Int signo );
 
 /* A cut-down version of POSIX sigtimedwait: poll for pending signals
    mentioned in the sigset_t, and if any are present, select one

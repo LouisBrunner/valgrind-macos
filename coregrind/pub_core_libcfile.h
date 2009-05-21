@@ -56,17 +56,18 @@ extern Bool VG_(is_dir) ( const HChar* f );
    none specified. */
 #define VG_CLO_DEFAULT_LOGPORT 1500
 
+extern Int VG_(connect_via_socket)( UChar* str );
+
 extern UInt   VG_(htonl) ( UInt x );
 extern UInt   VG_(ntohl) ( UInt x );
 extern UShort VG_(htons) ( UShort x );
 extern UShort VG_(ntohs) ( UShort x );
 
 extern Int VG_(write_socket)( Int sd, void *msg, Int count );
-extern Int VG_(connect_via_socket)( UChar* str );
 extern Int VG_(getsockname) ( Int sd, struct vki_sockaddr *name, Int *namelen );
 extern Int VG_(getpeername) ( Int sd, struct vki_sockaddr *name, Int *namelen );
-extern Int VG_(getsockopt)  ( Int sd, Int level, Int optname, void *optval,
-                              Int *optlen );
+extern Int VG_(getsockopt)  ( Int sd, Int level, Int optname, 
+                              void *optval, Int *optlen );
 
 extern Int VG_(access) ( const HChar* path, Bool irusr, Bool iwusr,
                                             Bool ixusr );
@@ -75,9 +76,10 @@ extern Int VG_(access) ( const HChar* path, Bool irusr, Bool iwusr,
 extern Int VG_(check_executable)(/*OUT*/Bool* is_setuid,
                                  const HChar* f, Bool allow_setuid);
 
-/* Note this moves (or at least, is believed to move) the file pointer
+/* DDD: Note this moves (or at least, is believed to move) the file pointer
    on Linux and AIX5 but doesn't on Darwin.  This inconsistency should
-   be fixed. */
+   be fixed.  (In other words, why isn't the Linux/AIX5 version implemented in
+   terms of pread()?) */
 extern SysRes VG_(pread) ( Int fd, void* buf, Int count, OffT offset );
 
 /* Create and open (-rw------) a tmp file name incorporating said arg.

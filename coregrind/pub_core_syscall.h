@@ -35,7 +35,7 @@
 // PURPOSE: This module contains the code for actually executing syscalls.
 //--------------------------------------------------------------------
 
-/* Do a syscall on this platform, with 6 args, and return the result
+/* Do a syscall on this platform, with 8 args, and return the result
    in canonical format in a SysRes value. */
 
 // We use a full prototype for VG_(do_syscall) rather than "..." to ensure
@@ -58,12 +58,16 @@ extern SysRes VG_(do_syscall) ( UWord sysno,
                                                            0,0,0,0,0,0)
 #define vgPlain_do_syscall3(s,a,b,c)       VG_(do_syscall)((s),(a),(b),(c),\
                                                            0,0,0,0,0)
-#define vgPlain_do_syscall4(s,a,b,c,d)     VG_(do_syscall)((s),(a),(b),\
-                                                           (c),(d),0,0,0,0)
-#define vgPlain_do_syscall5(s,a,b,c,d,e)   VG_(do_syscall)((s),(a),(b),\
-                                                           (c),(d),(e),0,0,0)
+#define vgPlain_do_syscall4(s,a,b,c,d)     VG_(do_syscall)((s),(a),(b),(c),\
+                                                           (d),0,0,0,0)
+#define vgPlain_do_syscall5(s,a,b,c,d,e)   VG_(do_syscall)((s),(a),(b),(c),\
+                                                           (d),(e),0,0,0)
 #define vgPlain_do_syscall6(s,a,b,c,d,e,f) VG_(do_syscall)((s),(a),(b),(c),\
                                                            (d),(e),(f),0,0)
+#define vgPlain_do_syscall7(s,a,b,c,d,e,f,g) VG_(do_syscall)((s),(a),(b),(c),\
+                                                           (d),(e),(f),(g),0)
+#define vgPlain_do_syscall8(s,a,b,c,d,e,f,g,h) VG_(do_syscall)((s),(a),(b),(c),\
+                                                           (d),(e),(f),(g),(h))
 
 extern SysRes VG_(mk_SysRes_x86_linux)   ( Int  val );
 extern SysRes VG_(mk_SysRes_amd64_linux) ( Long val );

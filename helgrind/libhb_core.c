@@ -3670,18 +3670,21 @@ static inline SVal msm_read ( SVal svOld,
          /* assert on sanity of constraints. */
          POrd  ordxx = VtsID__getOrdering(rmini,wmini);
          tl_assert(ordxx == POrd_EQ || ordxx == POrd_LT);
-         svNew = MSM_RACE2ERR
-                    ? SVal__mkE()
-                    /* see comments on corresponding fragment in
-                       msm_write for explanation. */
-                    /* aggressive setting: */
-                    /* 
-                    : SVal__mkC( VtsID__join2(wmini,tviR),
-                                 VtsID__join2(wmini,tviW) );
-                    */
-                    /* "consistent" setting: */ 
-                    : SVal__mkC( VtsID__join2(rmini,tviR),
-                                 VtsID__join2(wmini,tviW) );
+         /* Compute svNew following the race.  This isn't so
+            simple. */
+         /* see comments on corresponding fragment in
+            msm_write for explanation. */
+         if (MSM_RACE2ERR) {
+            /* XXX UNUSED; this should be deleted */
+            tl_assert(0);
+            svNew = SVal__mkE();
+         } else {
+            VtsID r_joined = VtsID__join2(rmini,tviR);
+            VtsID w_joined = VtsID__join2(wmini,tviW);
+            /* ensure that r_joined <= w_joined */
+            w_joined = VtsID__join2( w_joined, r_joined );
+            svNew = SVal__mkC( r_joined, w_joined );
+         }
          record_race_info( acc_thr, acc_addr, szB, False/*!isWrite*/ );
          goto out;
       }
@@ -3747,22 +3750,40 @@ static inline SVal msm_write ( SVal svOld,
          /* assert on sanity of constraints. */
          POrd  ordxx = VtsID__getOrdering(rmini,wmini);
          tl_assert(ordxx == POrd_EQ || ordxx == POrd_LT);
-         svNew = MSM_RACE2ERR
-                    ? SVal__mkE()
-                    /* One possibility is, after a race is seen, to
-                       set the location's constraints as aggressively
-                       (as far ahead) as possible.  However, that just
-                       causes lots more races to be reported, which is
-                       very confusing.  Hence don't do this. */
-                    /*
-                    : SVal__mkC( VtsID__join2(wmini,tviR),
-                                 VtsID__join2(wmini,tviW) );
-                    */
-                    /* instead, re-set the constraints in a way which
-                       is consistent with (ie, as they would have been
-                       computed anyway) had no race been detected. */
-                    : SVal__mkC( VtsID__join2(rmini,tviR),
-                                 VtsID__join2(wmini,tviW) );
+         /* Compute svNew following the race.  This isn't so
+            simple. */
+         if (MSM_RACE2ERR) {
+            /* XXX UNUSED; this should be deleted */
+            tl_assert(0);
+            svNew = SVal__mkE();
+            /* One possibility is, after a race is seen, to
+               set the location's constraints as aggressively
+               (as far ahead) as possible.  However, that just
+               causes lots more races to be reported, which is
+               very confusing.  Hence don't do this. */
+            /*
+                  = SVal__mkC( VtsID__join2(wmini,tviR),
+                               VtsID__join2(wmini,tviW) );
+            */
+         } else {
+            /* instead, re-set the constraints in a way which is
+               consistent with (ie, as they would have been computed
+               anyway) the case where no race was detected. */
+            VtsID r_joined = VtsID__join2(rmini,tviR);
+            VtsID w_joined = VtsID__join2(wmini,tviW);
+            /* Because of the race, the "normal" ordering constraint
+               wmini(constraint) <= tviW(actual access) no longer
+               holds.  Hence it can be that the required constraint
+               (on SVal_Cs) r_joined <= w_joined does not hold either.
+               To fix this and guarantee we're not generating invalid
+               SVal_Cs, do w_joined = w_joined `join` r_joined, so as
+               to force r_joined <= w_joined in the arguments to
+               SVal__mkC.  I think this is only important when we're
+               dealing with reader-writer locks.
+            */
+            w_joined = VtsID__join2( w_joined, r_joined );
+            svNew = SVal__mkC( r_joined, w_joined );
+         }
          record_race_info( acc_thr, acc_addr, szB, True/*isWrite*/ );
          goto out;
       }

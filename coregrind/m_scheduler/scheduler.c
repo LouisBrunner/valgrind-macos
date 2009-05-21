@@ -1103,8 +1103,9 @@ VgSchedReturnCode VG_(scheduler) ( ThreadId tid )
          break;
 
       case VEX_TRC_JMP_NODECODE:
-   VG_(message)(Vg_UserMsg,
-      "valgrind: Unrecognised instruction at address %#lx.", VG_(get_IP)(tid));
+         VG_(message)(Vg_UserMsg,
+            "valgrind: Unrecognised instruction at address %#lx.",
+            VG_(get_IP)(tid));
 #define M(a) VG_(message)(Vg_UserMsg, a);
    M("Your program just tried to execute an instruction that Valgrind" );
    M("did not recognise.  There are two possible reasons for this."    );

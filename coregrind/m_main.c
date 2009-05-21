@@ -2251,7 +2251,7 @@ static void final_tidyup(ThreadId tid)
 
 
 /*====================================================================*/
-/*=== Getting to main() alive: LINUX (for AIX5 see below)          ===*/
+/*=== Getting to main() alive: LINUX                               ===*/
 /*====================================================================*/
 
 #if defined(VGO_linux)
@@ -2420,7 +2420,7 @@ asm("\n"
     "\ttrap\n"
 );
 #else
-#error "_start: needs implementation on this platform"
+#  error "Unknown linux platform"
 #endif
 
 /* --- !!! --- EXTERNAL HEADERS start --- !!! --- */
@@ -2469,14 +2469,12 @@ void _start_in_C_linux ( UWord* pArgc )
    VG_(exit)(r);
 }
 
-#endif /* defined(VGO_linux) */
-
 
 /*====================================================================*/
 /*=== Getting to main() alive: AIX5                                ===*/
 /*====================================================================*/
 
-#if defined(VGP_ppc32_aix5) || defined(VGP_ppc64_aix5)
+#elif defined(VGO_aix5)
 
 /* This is somewhat simpler than the Linux case.  _start_valgrind
    receives control from the magic piece of code created in this
@@ -2586,7 +2584,11 @@ void max_history_size     ( void ) { vg_assert(0); }
 void getpass_auto         ( void ) { vg_assert(0); }
 void max_pw_passlen       ( void ) { vg_assert(0); }
 
-#endif /* defined(VGP_ppc{32,64}_aix5) */
+
+#else
+
+#  error "Unknown OS"
+#endif
 
 
 /*--------------------------------------------------------------------*/

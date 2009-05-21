@@ -69,7 +69,18 @@ typedef Int ArenaId;
 // This is both the minimum payload size of a malloc'd block, and its
 // minimum alignment.  Must be a power of 2 greater than 4, and should be
 // greater than 8.
-#define VG_MIN_MALLOC_SZB        8
+#if   defined(VGP_x86_linux)   || \
+      defined(VGP_ppc32_linux) || \
+      defined(VGP_ppc32_aix5)
+#  define VG_MIN_MALLOC_SZB        8
+#elif defined(VGP_amd64_linux) || \
+      defined(VGP_ppc64_linux) || \
+      defined(VGP_ppc64_aix5)
+#  define VG_MIN_MALLOC_SZB       16
+#else
+#  error Unknown platform
+#endif
+
 
 /* This struct definition MUST match the system one. */
 /* SVID2/XPG mallinfo structure */

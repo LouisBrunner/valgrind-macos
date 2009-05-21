@@ -1,0 +1,39 @@
+--------------------------------------------------------------------------------
+Command:            ./one
+Massif arguments:   --stacks=no --time-unit=B --heap-admin=0 --massif-out-file=massif.out --ignore-fn=__part_load_locale --ignore-fn=__time_load_locale --ignore-fn=dwarf2_unwind_dyld_add_image_hook --ignore-fn=get_or_create_key_element
+ms_print arguments: massif.out
+--------------------------------------------------------------------------------
+
+
+     B
+   16^                                                                       :
+     |                                                                       :
+     |                                                                       :
+     |                                                                       :
+     |                                                                       :
+     |                                                                       :
+     |                                                                       :
+     |                                                                       :
+     |                                                                       :
+     |                                                                       :
+     |                                                                       :
+     |                                                                       :
+     |                                                                       :
+     |                                                                       :
+     |                                                                       :
+     |                                                                       :
+     |                                                                       :
+     |                                                                       :
+     |                                                                       :
+     |                                                                       :
+   0 +----------------------------------------------------------------------->B
+     0                                                                      16
+
+Number of snapshots: 2
+ Detailed snapshots: []
+
+--------------------------------------------------------------------------------
+  n        time(B)         total(B)   useful-heap(B) extra-heap(B)    stacks(B)
+--------------------------------------------------------------------------------
+  0              0                0                0             0            0
+  1             16               16                1            15            0

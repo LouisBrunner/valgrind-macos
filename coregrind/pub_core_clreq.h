@@ -56,10 +56,9 @@ typedef
 // sim'd CPU.  Must be a function rather than macros so that va_list can
 // be used.
 
-int VALGRIND_INTERNAL_PRINTF(char *format, ...);
-__attribute__((format(__printf__, 1, 2)))
-__attribute__((weak))
-int VALGRIND_INTERNAL_PRINTF(char *format, ...)
+static int VALGRIND_INTERNAL_PRINTF(const char *format, ...)
+   __attribute__((format(__printf__, 1, 2), __unused__));
+static int VALGRIND_INTERNAL_PRINTF(const char *format, ...)
 {
    unsigned long _qzz_res = 0;
    va_list vargs;

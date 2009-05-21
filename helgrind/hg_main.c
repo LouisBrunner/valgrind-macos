@@ -1370,9 +1370,29 @@ void evhH__pre_thread_releases_lock ( Thread* thr,
       else
          tl_assert(!HG_(elemWS)( univ_lsets, thr->locksetW, (Word)lock ));
    } else {
-      /* We no longer hold the lock. */
-      tl_assert(!lock->heldBy);
-      tl_assert(lock->heldW == False);
+      /* n is zero.  This means we don't hold the lock any more.  But
+         if it's a rwlock held in r-mode, someone else could still
+         hold it.  Just do whatever sanity checks we can. */
+      if (lock->kind == LK_rdwr && lock->heldBy) {
+         /* It's a rwlock.  We no longer hold it but we used to;
+            nevertheless it still appears to be held by someone else.
+            The implication is that, prior to this release, it must
+            have been shared by us and and whoever else is holding it;
+            which in turn implies it must be r-held, since a lock
+            can't be w-held by more than one thread. */
+         /* The lock is now R-held by somebody else: */
+         tl_assert(lock->heldW == False);
+      } else {
+         /* Normal case.  It's either not a rwlock, or it's a rwlock
+            that we used to hold in w-mode (which is pretty much the
+            same thing as a non-rwlock.)  Since this transaction is
+            atomic (V does not allow multiple threads to run
+            simultaneously), it must mean the lock is now not held by
+            anybody.  Hence assert for it. */
+         /* The lock is now not held by anybody: */
+         tl_assert(!lock->heldBy);
+         tl_assert(lock->heldW == False);
+      }
       //if (lock->heldBy) {
       //   tl_assert(0 == VG_(elemBag)( lock->heldBy, (Word)thr ));
       //}

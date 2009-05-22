@@ -453,6 +453,16 @@ static inline UWord getERR ( SyscallStatus* st ) {
    VG_TRACK( post_mem_write, Vg_CoreSysCall, tid, zzaddr, zzlen)
 
 
+#define PRE_FIELD_READ(zzname, zzfield) \
+    PRE_MEM_READ(zzname, (UWord)&zzfield, sizeof(zzfield))
+
+#define PRE_FIELD_WRITE(zzname, zzfield) \
+    PRE_MEM_WRITE(zzname, (UWord)&zzfield, sizeof(zzfield))
+
+#define POST_FIELD_WRITE(zzfield) \
+    POST_MEM_WRITE((UWord)&zzfield, sizeof(zzfield))
+
+
 #endif   // __PRIV_TYPES_N_MACROS_H
 
 /*--------------------------------------------------------------------*/

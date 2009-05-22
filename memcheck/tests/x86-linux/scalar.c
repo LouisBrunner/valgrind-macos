@@ -371,11 +371,11 @@ int main(void)
 
    // __NR_gettimeofday 78
    GO(__NR_gettimeofday, "2s 2m");
-   SY(__NR_gettimeofday, x0, x0+1); FAIL;
+   SY(__NR_gettimeofday, x0+1, x0+1); FAIL;
 
    // __NR_settimeofday 79
    GO(__NR_settimeofday, "2s 2m");
-   SY(__NR_settimeofday, x0, x0+1); FAIL;
+   SY(__NR_settimeofday, x0+1, x0+1); FAIL;
 
    // __NR_getgroups 80
    GO(__NR_getgroups, "2s 1m");

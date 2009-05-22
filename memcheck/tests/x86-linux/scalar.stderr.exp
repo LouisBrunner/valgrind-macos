@@ -978,11 +978,19 @@ Syscall param setitimer(value) contains uninitialised byte(s)
 Syscall param setitimer(ovalue) contains uninitialised byte(s)
    ...
 
-Syscall param setitimer(value) points to unaddressable byte(s)
+Syscall param setitimer(&value->it_interval) points to unaddressable byte(s)
    ...
  Address 0x........ is not stack'd, malloc'd or (recently) free'd
 
-Syscall param setitimer(ovalue) points to unaddressable byte(s)
+Syscall param setitimer(&value->it_value) points to unaddressable byte(s)
+   ...
+ Address 0x........ is not stack'd, malloc'd or (recently) free'd
+
+Syscall param setitimer(&ovalue->it_interval) points to unaddressable byte(s)
+   ...
+ Address 0x........ is not stack'd, malloc'd or (recently) free'd
+
+Syscall param setitimer(&ovalue->it_value) points to unaddressable byte(s)
    ...
  Address 0x........ is not stack'd, malloc'd or (recently) free'd
 -----------------------------------------------------
@@ -995,7 +1003,11 @@ Syscall param getitimer(which) contains uninitialised byte(s)
 Syscall param getitimer(value) contains uninitialised byte(s)
    ...
 
-Syscall param getitimer(value) points to unaddressable byte(s)
+Syscall param getitimer(&value->it_interval) points to unaddressable byte(s)
+   ...
+ Address 0x........ is not stack'd, malloc'd or (recently) free'd
+
+Syscall param getitimer(&value->it_value) points to unaddressable byte(s)
    ...
  Address 0x........ is not stack'd, malloc'd or (recently) free'd
 -----------------------------------------------------
@@ -3085,7 +3097,11 @@ Syscall param utimes(filename) points to unaddressable byte(s)
    ...
  Address 0x........ is not stack'd, malloc'd or (recently) free'd
 
-Syscall param utimes(tvp) points to unaddressable byte(s)
+Syscall param utimes(tvp[0]) points to unaddressable byte(s)
+   ...
+ Address 0x........ is not stack'd, malloc'd or (recently) free'd
+
+Syscall param utimes(tvp[1]) points to unaddressable byte(s)
    ...
  Address 0x........ is not stack'd, malloc'd or (recently) free'd
 -----------------------------------------------------

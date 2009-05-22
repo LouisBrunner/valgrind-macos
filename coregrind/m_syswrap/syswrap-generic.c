@@ -2129,14 +2129,19 @@ PRE(sys_putpmsg)
 
 PRE(sys_getitimer)
 {
+   struct vki_itimerval *value = (struct vki_itimerval*)ARG2;
    PRINT("sys_getitimer ( %ld, %#lx )", ARG1, ARG2);
    PRE_REG_READ2(long, "getitimer", int, which, struct itimerval *, value);
-   PRE_MEM_WRITE( "getitimer(value)", ARG2, sizeof(struct vki_itimerval) );
+
+   PRE_timeval_WRITE( "getitimer(&value->it_interval)", &(value->it_interval));
+   PRE_timeval_WRITE( "getitimer(&value->it_value)",    &(value->it_value));
 }
 POST(sys_getitimer)
 {
    if (ARG2 != (Addr)NULL) {
-      POST_MEM_WRITE(ARG2, sizeof(struct vki_itimerval));
+      struct vki_itimerval *value = (struct vki_itimerval*)ARG2;
+      POST_timeval_WRITE( &(value->it_interval) );
+      POST_timeval_WRITE( &(value->it_value) );
    }
 }
 
@@ -2146,16 +2151,28 @@ PRE(sys_setitimer)
    PRE_REG_READ3(long, "setitimer", 
                  int, which,
                  struct itimerval *, value, struct itimerval *, ovalue);
-   if (ARG2 != (Addr)NULL)
-      PRE_MEM_READ( "setitimer(value)", ARG2, sizeof(struct vki_itimerval) );
-   if (ARG3 != (Addr)NULL)
-      PRE_MEM_WRITE( "setitimer(ovalue)", ARG3, sizeof(struct vki_itimerval));
+   if (ARG2 != (Addr)NULL) {
+      struct vki_itimerval *value = (struct vki_itimerval*)ARG2;
+      PRE_timeval_READ( "setitimer(&value->it_interval)",
+                         &(value->it_interval));
+      PRE_timeval_READ( "setitimer(&value->it_value)",
+                         &(value->it_value));
+   }
+   if (ARG3 != (Addr)NULL) {
+      struct vki_itimerval *ovalue = (struct vki_itimerval*)ARG3;
+      PRE_timeval_WRITE( "setitimer(&ovalue->it_interval)",
+                         &(ovalue->it_interval));
+      PRE_timeval_WRITE( "setitimer(&ovalue->it_value)",
+                         &(ovalue->it_value));
+   }
 }
 
 POST(sys_setitimer)
 {
    if (ARG3 != (Addr)NULL) {
-      POST_MEM_WRITE(ARG3, sizeof(struct vki_itimerval));
+      struct vki_itimerval *ovalue = (struct vki_itimerval*)ARG3;
+      POST_timeval_WRITE( &(ovalue->it_interval) );
+      POST_timeval_WRITE( &(ovalue->it_value) );
    }
 }
 
@@ -3046,7 +3063,8 @@ PRE(sys_gettimeofday)
    PRINT("sys_gettimeofday ( %#lx, %#lx )", ARG1,ARG2);
    PRE_REG_READ2(long, "gettimeofday",
                  struct timeval *, tv, struct timezone *, tz);
-   PRE_MEM_WRITE( "gettimeofday(tv)", ARG1, sizeof(struct vki_timeval) );
+   if (ARG1 != 0)
+      PRE_timeval_WRITE( "gettimeofday(tv)", ARG1 );
    if (ARG2 != 0)
       PRE_MEM_WRITE( "gettimeofday(tz)", ARG2, sizeof(struct vki_timezone) );
 }
@@ -3055,7 +3073,8 @@ POST(sys_gettimeofday)
 {
    vg_assert(SUCCESS);
    if (RES == 0) {
-      POST_MEM_WRITE( ARG1, sizeof(struct vki_timeval) );
+      if (ARG1 != 0)
+         POST_timeval_WRITE( ARG1 );
       if (ARG2 != 0)
 	 POST_MEM_WRITE( ARG2, sizeof(struct vki_timezone) );
    }
@@ -3066,7 +3085,8 @@ PRE(sys_settimeofday)
    PRINT("sys_settimeofday ( %#lx, %#lx )", ARG1,ARG2);
    PRE_REG_READ2(long, "settimeofday",
                  struct timeval *, tv, struct timezone *, tz);
-   PRE_MEM_READ( "settimeofday(tv)", ARG1, sizeof(struct vki_timeval) );
+   if (ARG1 != 0)
+      PRE_MEM_READ( "settimeofday(tv)", ARG1, sizeof(struct vki_timeval) );
    if (ARG2 != 0) {
       PRE_MEM_READ( "settimeofday(tz)", ARG2, sizeof(struct vki_timezone) );
       /* maybe should warn if tz->tz_dsttime is non-zero? */
@@ -3632,7 +3652,7 @@ PRE(sys_select)
       PRE_MEM_READ( "select(exceptfds)", 
 		     ARG4, ARG1/8 /* __FD_SETSIZE/8 */ );
    if (ARG5 != 0)
-      PRE_MEM_READ( "select(timeout)", ARG5, sizeof(struct vki_timeval) );
+      PRE_timeval_READ( "select(timeout)", ARG5 );
 }
 
 PRE(sys_setgid)
@@ -3895,8 +3915,11 @@ PRE(sys_utimes)
    PRINT("sys_utimes ( %#lx(%s), %#lx )", ARG1,(char*)ARG1,ARG2);
    PRE_REG_READ2(long, "utimes", char *, filename, struct timeval *, tvp);
    PRE_MEM_RASCIIZ( "utimes(filename)", ARG1 );
-   if (ARG2 != 0)
-      PRE_MEM_READ( "utimes(tvp)", ARG2, 2 * sizeof(struct vki_timeval) );
+   if (ARG2 != 0) {
+      PRE_timeval_READ( "utimes(tvp[0])", ARG2 );
+      PRE_timeval_READ( "utimes(tvp[1])", ARG2+sizeof(struct vki_timeval) );
+   }
+
 }
 
 PRE(sys_acct)

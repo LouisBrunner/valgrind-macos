@@ -575,11 +575,7 @@ Int my_socket ( Int domain, Int type, Int protocol );
 
 static
 Int my_connect ( Int sockfd, 
-#                if defined(VGO_linux)
-                   struct vki_sockaddr_in* serv_addr, 
-#                else
-                   void* serv_addr,
-#                endif
+                 /* struct vki_sockaddr_in* */ void* serv_addr,
                  Int addrlen );
 
 UInt VG_(htonl) ( UInt x )
@@ -664,8 +660,7 @@ Int VG_(connect_via_socket)( UChar* str )
    }
 		
    /* connect to server */
-   res = my_connect(sd, (struct vki_sockaddr_in *) &servAddr, 
-                        sizeof(servAddr));
+   res = my_connect(sd, &servAddr, sizeof(servAddr));
    if (res < 0) {
       /* connection failed */
       return -2;
@@ -754,12 +749,8 @@ Int my_socket ( Int domain, Int type, Int protocol )
 
 
 static
-Int my_connect ( Int sockfd,
-#                if defined(VGO_linux)
-                   struct vki_sockaddr_in* serv_addr, 
-#                else
-                   void* serv_addr,
-#                endif
+Int my_connect ( Int sockfd, 
+                 /* struct vki_sockaddr_in* */ void* serv_addr,
                  Int addrlen )
 {
 #  if defined(VGP_x86_linux) || defined(VGP_ppc32_linux) \

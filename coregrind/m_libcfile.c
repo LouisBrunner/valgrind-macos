@@ -575,9 +575,6 @@ static
 Int parse_inet_addr_and_port ( UChar* str, UInt* ip_addr, UShort* port );
 
 static
-Int my_socket ( Int domain, Int type, Int protocol );
-
-static
 Int my_connect ( Int sockfd, struct vki_sockaddr_in* serv_addr, Int addrlen );
 
 UInt VG_(htonl) ( UInt x )
@@ -655,7 +652,7 @@ Int VG_(connect_via_socket)( UChar* str )
    servAddr.sin_port = VG_(htons)(port);
 
    /* create socket */
-   sd = my_socket(VKI_AF_INET, VKI_SOCK_STREAM, 0 /* IPPROTO_IP ? */);
+   sd = VG_(socket)(VKI_AF_INET, VKI_SOCK_STREAM, 0 /* IPPROTO_IP ? */);
    if (sd < 0) {
       /* this shouldn't happen ... nevertheless */
       return -2;
@@ -723,8 +720,8 @@ static Int parse_inet_addr_and_port ( UChar* str, UInt* ip_addr, UShort* port )
 #  undef GET_CH
 }
 
-static
-Int my_socket ( Int domain, Int type, Int protocol )
+// GrP fixme safe_fd?
+Int VG_(socket) ( Int domain, Int type, Int protocol )
 {
 #  if defined(VGP_x86_linux) || defined(VGP_ppc32_linux) \
       || defined(VGP_ppc64_linux)

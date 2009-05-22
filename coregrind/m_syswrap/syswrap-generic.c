@@ -1180,9 +1180,13 @@ Bool ML_(fd_allowed)(Int fd, const Char *syscallname, ThreadId tid, Bool isNewFd
       VG_(message)(Vg_UserMsg, 
          "Warning: invalid file descriptor %d in syscall %s()",
          fd, syscallname);
-      if (fd == VG_(clo_log_fd))
+      if (fd == VG_(clo_log_fd)) {
 	 VG_(message)(Vg_UserMsg, 
             "   Use --log-fd=<number> to select an alternative log fd.");
+      }
+      // DDD: consider always printing this stack trace, it's useful.
+      // Also consider also making this a proper core error, ie.
+      // suppressible and all that.
       if (VG_(clo_verbosity) > 1) {
          VG_(get_and_pp_StackTrace)(tid, VG_(clo_backtrace_size));
       }

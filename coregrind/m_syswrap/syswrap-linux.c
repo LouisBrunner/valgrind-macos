@@ -3199,6 +3199,11 @@ PRE(sys_fcntl)
                     unsigned int, fd, unsigned int, cmd,
                     struct flock64 *, lock);
       break;
+
+   default:
+      PRINT("sys_fcntl[UNKNOWN] ( %ld, %ld, %ld )", ARG1,ARG2,ARG3);
+      I_die_here;
+      break;
    }
 
 #  if defined(VGP_x86_linux)

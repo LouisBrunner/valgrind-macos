@@ -3075,6 +3075,70 @@ PRE(sys_getuid)
    PRE_REG_READ0(long, "getuid");
 }
 
+void ML_(PRE_unknown_ioctl)(ThreadId tid, UWord request, UWord arg)
+{         
+   /* We don't have any specific information on it, so
+      try to do something reasonable based on direction and
+      size bits.  The encoding scheme is described in
+      /usr/include/asm/ioctl.h or /usr/include/sys/ioccom.h .
+      
+      According to Simon Hausmann, _IOC_READ means the kernel
+      writes a value to the ioctl value passed from the user
+      space and the other way around with _IOC_WRITE. */
+   
+   UInt dir  = _VKI_IOC_DIR(request);
+   UInt size = _VKI_IOC_SIZE(request);
+   if (VG_(strstr)(VG_(clo_sim_hints), "lax-ioctls") != NULL) {
+      /* 
+       * Be very lax about ioctl handling; the only
+       * assumption is that the size is correct. Doesn't
+       * require the full buffer to be initialized when
+       * writing.  Without this, using some device
+       * drivers with a large number of strange ioctl
+       * commands becomes very tiresome.
+       */
+   } else if (/* size == 0 || */ dir == _VKI_IOC_NONE) {
+      //VG_(message)(Vg_UserMsg, "UNKNOWN ioctl %#lx\n", request);
+      //VG_(get_and_pp_StackTrace)(tid, VG_(clo_backtrace_size));
+      static Int moans = 3;
+      if (moans > 0 && !VG_(clo_xml)) {
+         moans--;
+         VG_UMSG("Warning: noted but unhandled ioctl 0x%lx"
+                 " with no size/direction hints", request); 
+         VG_UMSG("   This could cause spurious value errors to appear.");
+         VG_UMSG("   See README_MISSING_SYSCALL_OR_IOCTL for "
+                 "guidance on writing a proper wrapper." );
+      }
+   } else {
+      //VG_(message)(Vg_UserMsg, "UNKNOWN ioctl %#lx\n", request);
+      //VG_(get_and_pp_StackTrace)(tid, VG_(clo_backtrace_size));
+      if ((dir & _VKI_IOC_WRITE) && size > 0)
+         PRE_MEM_READ( "ioctl(generic)", arg, size);
+      if ((dir & _VKI_IOC_READ) && size > 0)
+         PRE_MEM_WRITE( "ioctl(generic)", arg, size);
+   }
+}
+
+void ML_(POST_unknown_ioctl)(ThreadId tid, UInt res, UWord request, UWord arg)
+{
+   /* We don't have any specific information on it, so
+      try to do something reasonable based on direction and
+      size bits.  The encoding scheme is described in
+      /usr/include/asm/ioctl.h or /usr/include/sys/ioccom.h .
+      
+      According to Simon Hausmann, _IOC_READ means the kernel
+      writes a value to the ioctl value passed from the user
+      space and the other way around with _IOC_WRITE. */
+   
+   UInt dir  = _VKI_IOC_DIR(request);
+   UInt size = _VKI_IOC_SIZE(request);
+   if (size > 0 && (dir & _VKI_IOC_READ)
+       && res == 0 
+       && arg != (Addr)NULL)
+   {
+      POST_MEM_WRITE(arg, size);
+   }
+}
 
 /* 
    If we're sending a SIGKILL to one of our own threads, then simulate

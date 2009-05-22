@@ -79,6 +79,12 @@ extern void
 ML_(buf_and_len_post_check) ( ThreadId tid, SysRes res,
                               Addr buf_p, Addr buflen_p, Char* s );
 
+/* PRE and POST for unknown ioctls based on ioctl request encoding */
+extern 
+void ML_(PRE_unknown_ioctl)(ThreadId tid, UWord request, UWord arg);
+extern 
+void ML_(POST_unknown_ioctl)(ThreadId tid, UInt res, UWord request, UWord arg);
+
 
 DECL_TEMPLATE(generic, sys_ni_syscall);            // * P -- unimplemented
 DECL_TEMPLATE(generic, sys_exit);

@@ -4353,49 +4353,9 @@ PRE(sys_ioctl)
       }
       break;
 
-      /* We don't have any specific information on it, so
-	 try to do something reasonable based on direction and
-	 size bits.  The encoding scheme is described in
-	 /usr/include/asm/ioctl.h.  
-
-	 According to Simon Hausmann, _IOC_READ means the kernel
-	 writes a value to the ioctl value passed from the user
-	 space and the other way around with _IOC_WRITE. */
-   default: {
-      UInt dir  = _VKI_IOC_DIR(ARG2);
-      UInt size = _VKI_IOC_SIZE(ARG2);
-      if (VG_(strstr)(VG_(clo_sim_hints), "lax-ioctls") != NULL) {
-	 /* 
-	  * Be very lax about ioctl handling; the only
-	  * assumption is that the size is correct. Doesn't
-	  * require the full buffer to be initialized when
-	  * writing.  Without this, using some device
-	  * drivers with a large number of strange ioctl
-	  * commands becomes very tiresome.
-	  */
-      } else if (/* size == 0 || */ dir == _VKI_IOC_NONE) {
-	 static Int moans = 3;
-	 if (moans > 0 && !VG_(clo_xml)) {
-	    moans--;
-	    VG_(message)(Vg_UserMsg, 
-			 "Warning: noted but unhandled ioctl 0x%lx"
-			 " with no size/direction hints",
-			 ARG2); 
-	    VG_(message)(Vg_UserMsg, 
-			 "   This could cause spurious value errors"
-			 " to appear.");
-	    VG_(message)(Vg_UserMsg, 
-			 "   See README_MISSING_SYSCALL_OR_IOCTL for "
-			 "guidance on writing a proper wrapper." );
-	 }
-      } else {
-	 if ((dir & _VKI_IOC_WRITE) && size > 0)
-	    PRE_MEM_READ( "ioctl(generic)", ARG3, size);
-	 if ((dir & _VKI_IOC_READ) && size > 0)
-	    PRE_MEM_WRITE( "ioctl(generic)", ARG3, size);
-      }
+   default:
+      ML_(PRE_unknown_ioctl)(tid, ARG2, ARG3);
       break;
-   }
    }   
 }
 
@@ -5159,23 +5119,9 @@ POST(sys_ioctl)
       }
       break;
 
-      /* We don't have any specific information on it, so
-	 try to do something reasonable based on direction and
-	 size bits.  The encoding scheme is described in
-	 /usr/include/asm/ioctl.h.  
-
-	 According to Simon Hausmann, _IOC_READ means the kernel
-	 writes a value to the ioctl value passed from the user
-	 space and the other way around with _IOC_WRITE. */
-   default: {
-      UInt dir  = _VKI_IOC_DIR(ARG2);
-      UInt size = _VKI_IOC_SIZE(ARG2);
-      if (size > 0 && (dir & _VKI_IOC_READ)
-	  && RES == 0 
-	  && ARG3 != (Addr)NULL)
-	 POST_MEM_WRITE(ARG3, size);
+   default:
+      ML_(POST_unknown_ioctl)(tid, RES, ARG2, ARG3);
       break;
-   }
    }
 }
 

@@ -564,8 +564,12 @@ Int VG_(mkstemp) ( HChar* part_of_name, /*OUT*/HChar* fullname )
 
 
 /* ---------------------------------------------------------------------
-   Socket-related stuff.  This is very Linux-kernel specific.
+   Socket-related stuff.
    ------------------------------------------------------------------ */
+
+#if defined(VGO_aix5)
+struct vki_sockaddr_in;
+#endif
 
 static
 Int parse_inet_addr_and_port ( UChar* str, UInt* ip_addr, UShort* port );
@@ -574,9 +578,7 @@ static
 Int my_socket ( Int domain, Int type, Int protocol );
 
 static
-Int my_connect ( Int sockfd, 
-                 /* struct vki_sockaddr_in* */ void* serv_addr,
-                 Int addrlen );
+Int my_connect ( Int sockfd, struct vki_sockaddr_in* serv_addr, Int addrlen );
 
 UInt VG_(htonl) ( UInt x )
 {
@@ -749,9 +751,7 @@ Int my_socket ( Int domain, Int type, Int protocol )
 
 
 static
-Int my_connect ( Int sockfd, 
-                 /* struct vki_sockaddr_in* */ void* serv_addr,
-                 Int addrlen )
+Int my_connect ( Int sockfd, struct vki_sockaddr_in* serv_addr, Int addrlen )
 {
 #  if defined(VGP_x86_linux) || defined(VGP_ppc32_linux) \
       || defined(VGP_ppc64_linux)

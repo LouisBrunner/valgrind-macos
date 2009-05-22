@@ -299,7 +299,7 @@ SysRes VG_(dup2) ( Int oldfd, Int newfd )
 }
 
 /* Returns -1 on error. */
-Int VG_(fcntl) ( Int fd, Int cmd, Int arg )
+Int VG_(fcntl) ( Int fd, Int cmd, Addr arg )
 {
    SysRes res = VG_(do_syscall3)(__NR_fcntl, fd, cmd, arg);
    return sr_isError(res) ? -1 : sr_Res(res);

@@ -3540,8 +3540,7 @@ POST(sys_poll)
 
 PRE(sys_readlink)
 {
-   HChar name[25];
-   Word  saved = SYSNO;
+   Word saved = SYSNO;
 
    PRINT("sys_readlink ( %#lx(%s), %#lx, %llu )", ARG1,(char*)ARG1,ARG2,(ULong)ARG3);
    PRE_REG_READ3(long, "readlink",
@@ -3549,20 +3548,26 @@ PRE(sys_readlink)
    PRE_MEM_RASCIIZ( "readlink(path)", ARG1 );
    PRE_MEM_WRITE( "readlink(buf)", ARG2,ARG3 );
 
-   /*
-    * Handle the case where readlink is looking at /proc/self/exe or
-    * /proc/<pid>/exe.
-    */
-   VG_(sprintf)(name, "/proc/%d/exe", VG_(getpid)());
-   if (ML_(safe_to_deref)((void*)ARG1, 1)
-       && (VG_(strcmp)((Char *)ARG1, name) == 0 
-           || VG_(strcmp)((Char *)ARG1, "/proc/self/exe") == 0)) {
-      VG_(sprintf)(name, "/proc/self/fd/%d", VG_(cl_exec_fd));
-      SET_STATUS_from_SysRes( VG_(do_syscall3)(saved, (UWord)name, 
-                                                      ARG2, ARG3));
-   } else {
-      /* Normal case */
-      SET_STATUS_from_SysRes( VG_(do_syscall3)(saved, ARG1, ARG2, ARG3));
+   {
+      /*
+       * Handle the case where readlink is looking at /proc/self/exe or
+       * /proc/<pid>/exe.
+       */
+      HChar name[25];
+      Char* arg1s = (Char*) ARG1;
+      VG_(sprintf)(name, "/proc/%d/exe", VG_(getpid)());
+      if (ML_(safe_to_deref)(arg1s, 1) &&
+          (VG_STREQ(arg1s, name) || VG_STREQ(arg1s, "/proc/self/exe"))
+         )
+      {
+         VG_(sprintf)(name, "/proc/self/fd/%d", VG_(cl_exec_fd));
+         SET_STATUS_from_SysRes( VG_(do_syscall3)(saved, (UWord)name, 
+                                                         ARG2, ARG3));
+      } else
+      {
+         /* Normal case */
+         SET_STATUS_from_SysRes( VG_(do_syscall3)(saved, ARG1, ARG2, ARG3));
+      }
    }
 
    if (SUCCESS && RES > 0)

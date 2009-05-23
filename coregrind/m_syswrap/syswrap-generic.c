@@ -911,6 +911,9 @@ void pre_mem_read_sockaddr ( ThreadId tid,
                              struct vki_sockaddr *sa, UInt salen )
 {
    Char *outmsg;
+   struct vki_sockaddr_un*  sun  = (struct vki_sockaddr_un *)sa;
+   struct vki_sockaddr_in*  sin  = (struct vki_sockaddr_in *)sa;
+   struct vki_sockaddr_in6* sin6 = (struct vki_sockaddr_in6 *)sa;
 
    /* NULL/zero-length sockaddrs are legal */
    if ( sa == NULL || salen == 0 ) return;
@@ -918,45 +921,36 @@ void pre_mem_read_sockaddr ( ThreadId tid,
    outmsg = VG_(arena_malloc) ( VG_AR_CORE, "di.syswrap.pmr_sockaddr.1",
                                 VG_(strlen)( description ) + 30 );
 
-   VG_(sprintf) ( outmsg, description, ".sa_family" );
+   VG_(sprintf) ( outmsg, description, "sa_family" );
    PRE_MEM_READ( outmsg, (Addr) &sa->sa_family, sizeof(vki_sa_family_t));
 
    switch (sa->sa_family) {
                   
       case VKI_AF_UNIX:
-         VG_(sprintf) ( outmsg, description, ".sun_path" );
-         PRE_MEM_RASCIIZ( outmsg,
-            (Addr) ((struct vki_sockaddr_un *) sa)->sun_path);
+         VG_(sprintf) ( outmsg, description, "sun_path" );
+         PRE_MEM_RASCIIZ( outmsg, (Addr) sun->sun_path );
          break;
                      
       case VKI_AF_INET:
-         VG_(sprintf) ( outmsg, description, ".sin_port" );
-         PRE_MEM_READ( outmsg,
-            (Addr) &((struct vki_sockaddr_in *) sa)->sin_port,
-            sizeof (((struct vki_sockaddr_in *) sa)->sin_port));
-         VG_(sprintf) ( outmsg, description, ".sin_addr" );
-         PRE_MEM_READ( outmsg,
-            (Addr) &((struct vki_sockaddr_in *) sa)->sin_addr,
-            sizeof (struct vki_in_addr));
+         VG_(sprintf) ( outmsg, description, "sin_port" );
+         PRE_MEM_READ( outmsg, (Addr) &sin->sin_port, sizeof (sin->sin_port) );
+         VG_(sprintf) ( outmsg, description, "sin_addr" );
+         PRE_MEM_READ( outmsg, (Addr) &sin->sin_addr, sizeof (sin->sin_addr) );
          break;
                            
       case VKI_AF_INET6:
-         VG_(sprintf) ( outmsg, description, ".sin6_port" );
+         VG_(sprintf) ( outmsg, description, "sin6_port" );
          PRE_MEM_READ( outmsg,
-            (Addr) &((struct vki_sockaddr_in6 *) sa)->sin6_port,
-            sizeof (((struct vki_sockaddr_in6 *) sa)->sin6_port));
-         VG_(sprintf) ( outmsg, description, ".sin6_flowinfo" );
+            (Addr) &sin6->sin6_port, sizeof (sin6->sin6_port) );
+         VG_(sprintf) ( outmsg, description, "sin6_flowinfo" );
          PRE_MEM_READ( outmsg,
-            (Addr) &((struct vki_sockaddr_in6 *) sa)->sin6_flowinfo,
-            sizeof (__vki_u32));
-         VG_(sprintf) ( outmsg, description, ".sin6_addr" );
+            (Addr) &sin6->sin6_flowinfo, sizeof (sin6->sin6_flowinfo) );
+         VG_(sprintf) ( outmsg, description, "sin6_addr" );
          PRE_MEM_READ( outmsg,
-            (Addr) &((struct vki_sockaddr_in6 *) sa)->sin6_addr,
-            sizeof (struct vki_in6_addr));
-         VG_(sprintf) ( outmsg, description, ".sin6_scope_id" );
+            (Addr) &sin6->sin6_addr, sizeof (sin6->sin6_addr) );
+         VG_(sprintf) ( outmsg, description, "sin6_scope_id" );
          PRE_MEM_READ( outmsg,
-            (Addr) &((struct vki_sockaddr_in6 *) sa)->sin6_scope_id,
-			sizeof (__vki_u32));
+            (Addr) &sin6->sin6_scope_id, sizeof (sin6->sin6_scope_id) );
          break;
                
       default:

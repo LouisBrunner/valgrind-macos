@@ -2001,8 +2001,11 @@ ML_(generic_PRE_sys_mmap) ( ThreadId tid,
 #define PRE(name)      DEFN_PRE_TEMPLATE(generic, name)
 #define POST(name)     DEFN_POST_TEMPLATE(generic, name)
 
+#if VG_WORDSIZE == 4
 // Combine two 32-bit values into a 64-bit value
+// Always use with low-numbered arg first (e.g. LOHI64(ARG1,ARG2) )
 #define LOHI64(lo,hi)   ( ((ULong)(lo)) | (((ULong)(hi)) << 32) )
+#endif
 
 PRE(sys_exit)
 {
@@ -2853,30 +2856,36 @@ PRE(sys_truncate)
    PRE_MEM_RASCIIZ( "truncate(path)", ARG1 );
 }
 
-// XXX: this wrapper is only suitable for 32-bit platforms
-#if defined(VGP_x86_linux) || defined(VGP_ppc32_linux)
 PRE(sys_ftruncate64)
 {
    *flags |= SfMayBlock;
+#if VG_WORDSIZE == 4
    PRINT("sys_ftruncate64 ( %ld, %lld )", ARG1, LOHI64(ARG2,ARG3));
    PRE_REG_READ3(long, "ftruncate64",
                  unsigned int, fd,
-                 vki_u32, length_low32, vki_u32, length_high32);
-}
+                 UWord, length_low32, UWord, length_high32);
+#else
+   PRINT("sys_ftruncate64 ( %ld, %lld )", ARG1, (Long)ARG2);
+   PRE_REG_READ2(long, "ftruncate64",
+                 unsigned int,fd, UWord,length);
 #endif
+}
 
-// XXX: this wrapper is only suitable for 32-bit platforms
-#if defined(VGP_x86_linux) || defined(VGP_ppc32_linux)
 PRE(sys_truncate64)
 {
    *flags |= SfMayBlock;
-   PRINT("sys_truncate64 ( %#lx, %lld )", ARG1, LOHI64(ARG2, ARG3));
+#if VG_WORDSIZE == 4
+   PRINT("sys_truncate64 ( %#lx, %lld )", ARG1, (Long)LOHI64(ARG2, ARG3));
    PRE_REG_READ3(long, "truncate64",
                  const char *, path,
-                 vki_u32, length_low32, vki_u32, length_high32);
+                 UWord, length_low32, UWord, length_high32);
+#else
+   PRINT("sys_truncate64 ( %#lx, %lld )", ARG1, (Long)ARG2);
+   PRE_REG_READ2(long, "truncate64",
+                 const char *,path, UWord,length);
+#endif
    PRE_MEM_RASCIIZ( "truncate64(path)", ARG1 );
 }
-#endif
 
 PRE(sys_getdents)
 {
@@ -3006,7 +3015,7 @@ static void common_post_getrlimit(ThreadId tid, UWord a1, UWord a2)
    case VKI_RLIMIT_STACK:
       *((struct vki_rlimit *)a2) = VG_(client_rlimit_stack);
       break;
-    }
+   }
 }
 
 PRE(sys_old_getrlimit)

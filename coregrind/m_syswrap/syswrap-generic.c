@@ -1406,9 +1406,6 @@ ML_(generic_PRE_sys_connect) ( ThreadId tid,
 {
    /* int connect(int sockfd, 
                   struct sockaddr *serv_addr, int addrlen ); */
-   PRE_MEM_READ( "socketcall.connect(serv_addr.sa_family)",
-                 arg1, /* serv_addr */
-                 sizeof(vki_sa_family_t));
    pre_mem_read_sockaddr( tid,
                           "socketcall.connect(serv_addr.%s)",
                           (struct vki_sockaddr *) arg1, arg2);

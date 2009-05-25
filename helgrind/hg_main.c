@@ -3718,7 +3718,7 @@ IRSB* hg_instrument ( VgCallbackClosure* closure,
                   True/*isStore*/,
                   sizeofIRType(hWordTy)
                );
-               break;
+            break;
 
          case Ist_WrTmp: {
             IRExpr* data = st->Ist.WrTmp.data;

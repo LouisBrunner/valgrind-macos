@@ -3086,7 +3086,7 @@ PRE(sys_settimeofday)
    PRE_REG_READ2(long, "settimeofday",
                  struct timeval *, tv, struct timezone *, tz);
    if (ARG1 != 0)
-      PRE_MEM_READ( "settimeofday(tv)", ARG1, sizeof(struct vki_timeval) );
+      PRE_timeval_READ( "settimeofday(tv)", ARG1 );
    if (ARG2 != 0) {
       PRE_MEM_READ( "settimeofday(tz)", ARG2, sizeof(struct vki_timezone) );
       /* maybe should warn if tz->tz_dsttime is non-zero? */

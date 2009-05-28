@@ -40,7 +40,7 @@
 // as if the thread had been set up by clone()
 extern void VG_(main_thread_wrapper_NORETURN)(ThreadId tid);
 
-extern void VG_(client_syscall) ( ThreadId tid );
+extern void VG_(client_syscall) ( ThreadId tid, UInt trc );
 
 extern void VG_(post_syscall)   ( ThreadId tid );
 

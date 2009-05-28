@@ -25,5 +25,9 @@ AM_CXXFLAGS += $(AM_FLAG_M3264_PRI)
 
 # C ones
 dlclose_LDADD		= -ldl
-myprint_so_LDFLAGS	= $(AM_FLAG_M3264_PRI) -shared -fPIC
+if VGCONF_OS_IS_DARWIN
+myprint_so_LDFLAGS	= $(AM_CFLAGS) -dynamic -dynamiclib -all_load -fpic
+else
+myprint_so_LDFLAGS	= $(AM_CFLAGS) -shared -fPIC
+endif
 myprint_so_CFLAGS	= $(AM_CFLAGS) -fPIC

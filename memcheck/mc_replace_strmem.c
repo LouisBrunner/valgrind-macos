@@ -117,6 +117,9 @@ STRRCHR(VG_Z_LIBC_SONAME,   strrchr)
 STRRCHR(VG_Z_LIBC_SONAME,   rindex)
 #if defined(VGO_linux)
 STRRCHR(VG_Z_LD_LINUX_SO_2, rindex)
+#elif defined(VGO_darwin)
+STRRCHR(VG_Z_DYLD,          strrchr)
+STRRCHR(VG_Z_DYLD,          rindex)
 #endif
    
 
@@ -141,6 +144,9 @@ STRCHR(VG_Z_LD_LINUX_SO_2,        strchr)
 STRCHR(VG_Z_LD_LINUX_SO_2,        index)
 STRCHR(VG_Z_LD_LINUX_X86_64_SO_2, strchr)
 STRCHR(VG_Z_LD_LINUX_X86_64_SO_2, index)
+#elif defined(VGO_darwin)
+STRCHR(VG_Z_DYLD,                 strchr)
+STRCHR(VG_Z_DYLD,                 index)
 #endif
 
 
@@ -194,6 +200,51 @@ STRCAT(VG_Z_LIBC_SONAME, strcat)
    }
 
 STRNCAT(VG_Z_LIBC_SONAME, strncat)
+#if defined(VGO_darwin)
+STRNCAT(VG_Z_DYLD,        strncat)
+#endif
+
+
+/* Append src to dst. n is the size of dst's buffer. dst is guaranteed 
+   to be nul-terminated after the copy, unless n <= strlen(dst_orig). 
+   Returns min(n, strlen(dst_orig)) + strlen(src_orig). 
+   Truncation occurred if retval >= n. 
+*/
+#define STRLCAT(soname, fnname) \
+    SizeT VG_REPLACE_FUNCTION_ZU(soname,fnname) \
+        ( char* dst, const char* src, SizeT n ); \
+    SizeT VG_REPLACE_FUNCTION_ZU(soname,fnname) \
+        ( char* dst, const char* src, SizeT n ) \
+   { \
+      const Char* src_orig = src; \
+      Char* dst_orig = dst; \
+      SizeT m = 0; \
+\
+      while (m < n && *dst) { m++; dst++; } \
+      if (m < n) { \
+         /* Fill as far as dst_orig[n-2], then nul-terminate. */ \
+         while (m < n-1 && *src) { m++; *dst++ = *src++; } \
+         *dst = 0; \
+      } else { \
+         /* No space to copy anything to dst. m == n */ \
+      } \
+      /* Finish counting min(n, strlen(dst_orig)) + strlen(src_orig) */ \
+      while (*src) { m++; src++; } \
+      /* This checks for overlap after copying, unavoidable without */ \
+      /* pre-counting lengths... should be ok */ \
+      if (is_overlap(dst_orig,  \
+                     src_orig,  \
+                     (Addr)dst-(Addr)dst_orig+1,  \
+                     (Addr)src-(Addr)src_orig+1)) \
+         RECORD_OVERLAP_ERROR("strlcat", dst_orig, src_orig, n); \
+\
+      return m; \
+   }
+
+#if defined(VGO_darwin)
+STRLCAT(VG_Z_LIBC_SONAME, strlcat)
+STRLCAT(VG_Z_DYLD,        strlcat)
+#endif
 
 
 #define STRNLEN(soname, fnname) \
@@ -250,6 +301,9 @@ STRLEN(VG_Z_LD_LINUX_X86_64_SO_2, strlen)
    }
 
 STRCPY(VG_Z_LIBC_SONAME, strcpy)
+#if defined(VGO_darwin)
+STRCPY(VG_Z_DYLD,        strcpy)
+#endif
 
 
 #define STRNCPY(soname, fnname) \
@@ -273,6 +327,40 @@ STRCPY(VG_Z_LIBC_SONAME, strcpy)
    }
 
 STRNCPY(VG_Z_LIBC_SONAME, strncpy)
+#if defined(VGO_darwin)
+STRNCPY(VG_Z_DYLD,        strncpy)
+#endif
+
+
+/* Copy up to n-1 bytes from src to dst. Then nul-terminate dst if n > 0. 
+   Returns strlen(src). Does not zero-fill the remainder of dst. */
+#define STRLCPY(soname, fnname) \
+   SizeT VG_REPLACE_FUNCTION_ZU(soname, fnname) \
+       ( char* dst, const char* src, SizeT n ); \
+   SizeT VG_REPLACE_FUNCTION_ZU(soname, fnname) \
+       ( char* dst, const char* src, SizeT n ) \
+   { \
+      const char* src_orig = src; \
+      char* dst_orig = dst; \
+      SizeT m = 0; \
+\
+      while (m < n-1 && *src) { m++; *dst++ = *src++; } \
+      /* m non-nul bytes have now been copied, and m <= n-1. */ \
+      /* Check for overlap after copying; all n bytes of dst are relevant, */ \
+      /* but only m+1 bytes of src if terminator was found */ \
+      if (is_overlap(dst_orig, src_orig, n, (m < n) ? m+1 : n)) \
+          RECORD_OVERLAP_ERROR("strlcpy", dst, src, n); \
+      /* Nul-terminate dst. */ \
+      if (n > 0) *dst = 0; \
+      /* Finish counting strlen(src). */ \
+      while (*src) src++; \
+      return src - src_orig; \
+   }
+
+#if defined(VGO_darwin)
+STRLCPY(VG_Z_LIBC_SONAME, strlcpy)
+STRLCPY(VG_Z_DYLD,        strlcpy)
+#endif
 
 
 #define STRNCMP(soname, fnname) \
@@ -296,6 +384,9 @@ STRNCPY(VG_Z_LIBC_SONAME, strncpy)
    }
 
 STRNCMP(VG_Z_LIBC_SONAME, strncmp)
+#if defined(VGO_darwin)
+STRNCMP(VG_Z_DYLD,        strncmp)
+#endif
 
 
 #define STRCMP(soname, fnname) \
@@ -338,6 +429,9 @@ STRCMP(VG_Z_LD64_SO_1,            strcmp)
    }
 
 MEMCHR(VG_Z_LIBC_SONAME, memchr)
+#if defined(VGO_darwin)
+MEMCHR(VG_Z_DYLD,        memchr)
+#endif
 
 
 #define MEMCPY(soname, fnname) \
@@ -389,6 +483,8 @@ MEMCPY(VG_Z_LIBC_SONAME, memcpy)
 #if defined(VGO_linux)
 MEMCPY(VG_Z_LD_SO_1,     memcpy) /* ld.so.1 */
 MEMCPY(VG_Z_LD64_SO_1,   memcpy) /* ld64.so.1 */
+#elif defined(VGO_darwin)
+MEMCPY(VG_Z_DYLD,        memcpy)
 #endif
 /* icc9 blats these around all over the place.  Not only in the main
    executable but various .so's.  They are highly tuned and read
@@ -430,6 +526,9 @@ MEMCMP(VG_Z_LIBC_SONAME, memcmp)
 MEMCMP(VG_Z_LIBC_SONAME, bcmp)
 #if defined(VGO_linux)
 MEMCMP(VG_Z_LD_SO_1,     bcmp)
+#elif defined(VGO_darwin)
+MEMCMP(VG_Z_DYLD,        memcmp)
+MEMCMP(VG_Z_DYLD,        bcmp)
 #endif
 
 
@@ -460,6 +559,8 @@ STPCPY(VG_Z_LIBC_SONAME,          stpcpy)
 #if defined(VGO_linux)
 STPCPY(VG_Z_LD_LINUX_SO_2,        stpcpy)
 STPCPY(VG_Z_LD_LINUX_X86_64_SO_2, stpcpy)
+#elif defined(VGO_darwin)
+STPCPY(VG_Z_DYLD,                 stpcpy)
 #endif
 
 
@@ -483,6 +584,9 @@ STPCPY(VG_Z_LD_LINUX_X86_64_SO_2, stpcpy)
    }
 
 MEMSET(VG_Z_LIBC_SONAME, memset)
+#if defined(VGO_darwin)
+MEMSET(VG_Z_DYLD,        memset)
+#endif
 
 
 #define MEMMOVE(soname, fnname) \
@@ -507,6 +611,35 @@ MEMSET(VG_Z_LIBC_SONAME, memset)
    }
 
 MEMMOVE(VG_Z_LIBC_SONAME, memmove)
+#if defined(VGO_darwin)
+MEMMOVE(VG_Z_DYLD,        memmove)
+#endif
+
+
+#define BCOPY(soname, fnname) \
+   void VG_REPLACE_FUNCTION_ZU(soname,fnname) \
+            (const void *srcV, void *dstV, SizeT n); \
+   void VG_REPLACE_FUNCTION_ZU(soname,fnname) \
+            (const void *srcV, void *dstV, SizeT n) \
+   { \
+      SizeT i; \
+      Char* dst = (Char*)dstV; \
+      Char* src = (Char*)srcV; \
+      if (dst < src) { \
+         for (i = 0; i < n; i++) \
+            dst[i] = src[i]; \
+      } \
+      else  \
+      if (dst > src) { \
+         for (i = 0; i < n; i++) \
+            dst[n-i-1] = src[n-i-1]; \
+      } \
+   }
+
+#if defined(VGO_darwin)
+BCOPY(VG_Z_LIBC_SONAME, bcopy)
+BCOPY(VG_Z_DYLD,        bcopy)
+#endif
 
 
 /* glibc 2.5 variant of memmove which checks the dest is big enough.

@@ -708,6 +708,14 @@ static Bool translations_allowable_from_seg ( NSegment const* seg )
 
 static Bool self_check_required ( NSegment const* seg, ThreadId tid )
 {
+#if defined(VGO_darwin)
+   // GrP fixme hack - dyld i386 IMPORT gets rewritten
+   // to really do this correctly, we'd need to flush the 
+   // translation cache whenever a segment became +WX
+   if (seg->hasX  && seg->hasW) {
+      return True;
+   }
+#endif
    switch (VG_(clo_smc_check)) {
       case Vg_SmcNone:  return False;
       case Vg_SmcAll:   return True;
@@ -1416,6 +1424,9 @@ Bool VG_(translate) ( ThreadId tid,
 
 #  if defined(VGP_amd64_linux)
    vex_abiinfo.guest_amd64_assume_fs_is_zero  = True;
+#  endif
+#  if defined(VGP_amd64_darwin)
+   vex_abiinfo.guest_amd64_assume_gs_is_0x60  = True;
 #  endif
 #  if defined(VGP_ppc32_linux)
    vex_abiinfo.guest_ppc_zap_RZ_at_blr        = False;

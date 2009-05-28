@@ -15,13 +15,16 @@ endif
 if VGCONF_OS_IS_LINUX
 SUBDIRS += linux
 endif
+if VGCONF_OS_IS_DARWIN
+SUBDIRS += darwin
+endif
 
 # Platform-specific tests
 if VGCONF_PLATFORMS_INCLUDE_X86_LINUX
 SUBDIRS += x86-linux
 endif
 
-DIST_SUBDIRS = x86 amd64 linux x86-linux .
+DIST_SUBDIRS = x86 amd64 linux darwin x86-linux .
 
 noinst_SCRIPTS = \
 	filter_addressable \
@@ -105,7 +108,7 @@ EXTRA_DIST = $(noinst_SCRIPTS) \
 	noisy_child.vgtest noisy_child.stderr.exp noisy_child.stdout.exp \
 	null_socket.stderr.exp null_socket.vgtest \
 	origin1-yes.vgtest origin1-yes.stdout.exp \
-	origin1-yes.stderr.exp \
+	    origin1-yes.stderr.exp origin1-yes.stderr.exp-darwin \
 	origin2-not-quite.vgtest origin2-not-quite.stdout.exp \
 	origin2-not-quite.stderr.exp \
 	origin3-no.vgtest origin3-no.stdout.exp \
@@ -138,12 +141,13 @@ EXTRA_DIST = $(noinst_SCRIPTS) \
 	sh-mem-random.stderr.exp sh-mem-random.stdout.exp64 \
 	sh-mem-random.stdout.exp sh-mem-random.vgtest \
 	sigaltstack.stderr.exp sigaltstack.vgtest \
-	sigkill.stderr.exp sigkill.vgtest \
+	sigkill.stderr.exp sigkill.stderr.exp-darwin sigkill.vgtest \
 	signal2.stderr.exp signal2.stdout.exp signal2.vgtest \
 	sigprocmask.stderr.exp sigprocmask.stderr.exp2 sigprocmask.vgtest \
 	stack_changes.stderr.exp stack_changes.stdout.exp \
 	stack_changes.stdout.exp2 stack_changes.vgtest \
-	strchr.stderr.exp strchr.stderr.exp2 strchr.vgtest \
+	strchr.stderr.exp strchr.stderr.exp2 strchr.stderr.exp-darwin \
+	    strchr.vgtest \
 	str_tester.stderr.exp str_tester.vgtest \
 	supp_unknown.stderr.exp supp_unknown.vgtest supp_unknown.supp \
 	supp1.stderr.exp supp1.vgtest \
@@ -298,6 +302,10 @@ if VGCONF_PLATFORMS_INCLUDE_PPC32_AIX5
  varinfo5_LDADD         = `pwd`/varinfo5so.so
  varinfo5_LDFLAGS       = $(AM_FLAG_M3264_PRI) -Wl,-G -Wl,-bnogc
 else
+if VGCONF_OS_IS_DARWIN
+ varinfo5_LDADD         = `pwd`/varinfo5so.so
+ varinfo5_LDFLAGS       = $(AM_FLAG_M3264_PRI)
+else
  varinfo5_LDADD         = varinfo5so.so
  varinfo5_LDFLAGS       = $(AM_FLAG_M3264_PRI) \
 				-Wl,-rpath,$(top_builddir)/memcheck/tests
@@ -313,10 +321,16 @@ if VGCONF_PLATFORMS_INCLUDE_PPC32_AIX5
  varinfo5so_so_LDFLAGS  = -fpic $(AM_FLAG_M3264_PRI) -shared \
 				-Wl,-G -Wl,-bnogc
 else
+if VGCONF_OS_IS_DARWIN
+ varinfo5so_so_LDFLAGS  = -fpic $(AM_FLAG_M3264_PRI) -dynamic \
+				-dynamiclib -all_load
+else
  varinfo5so_so_LDFLAGS  = -fpic $(AM_FLAG_M3264_PRI) -shared \
 				-Wl,-soname -Wl,varinfo5so.so
 endif
 endif
+endif
+
 # Build shared object for wrap7
 wrap7_SOURCES           = wrap7.c
 wrap7_DEPENDENCIES      = wrap7so.so
@@ -328,9 +342,14 @@ if VGCONF_PLATFORMS_INCLUDE_PPC32_AIX5
  wrap7_LDADD            = `pwd`/wrap7so.so
  wrap7_LDFLAGS          = $(AM_FLAG_M3264_PRI) -Wl,-G -Wl,-bnogc
 else
+if VGCONF_OS_IS_DARWIN
+ wrap7_LDADD            = `pwd`/wrap7so.so
+ wrap7_LDFLAGS          = $(AM_FLAG_M3264_PRI)
+else
  wrap7_LDADD            = wrap7so.so
  wrap7_LDFLAGS          = $(AM_FLAG_M3264_PRI) \
 				-Wl,-rpath,$(top_builddir)/memcheck/tests
+endif
 endif
 endif
 
@@ -343,9 +362,15 @@ if VGCONF_PLATFORMS_INCLUDE_PPC32_AIX5
  wrap7so_so_LDFLAGS     = -fpic $(AM_FLAG_M3264_PRI) -shared \
 				-Wl,-G -Wl,-bnogc
 else
+if VGCONF_OS_IS_DARWIN
+ wrap7so_so_LDFLAGS     = -fpic $(AM_FLAG_M3264_PRI) -dynamic \
+				-dynamiclib -all_load
+else
  wrap7so_so_LDFLAGS     = -fpic $(AM_FLAG_M3264_PRI) -shared \
 				-Wl,-soname -Wl,wrap7so.so
 endif
 endif
+endif
 
+endif
 

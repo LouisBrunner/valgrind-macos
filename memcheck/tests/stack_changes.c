@@ -10,7 +10,7 @@
 // This test is checking the libc context calls (setcontext, etc.) and
 // checks that Valgrind notices their stack changes properly.
 
-#if defined(_AIX)
+#if defined(_AIX) || defined(__APPLE__)
 typedef  ucontext_t  mycontext;
 #else /* linux */
 typedef  struct ucontext  mycontext;

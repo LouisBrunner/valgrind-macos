@@ -1,0 +1,136 @@
+
+Valgrind-developer notes, re the MacOSX port
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+JRS 22 Mar 09: re these comments in m_libc* and m_debuglog:
+
+/* IMPORTANT: on Darwin it is essential to use the _nocancel versions
+   of syscalls rather than the vanilla version, if a _nocancel version
+   is available.  See docs/internals/Darwin-notes.txt for the reason
+   why. */
+
+when Valgrind does (for its own purposes, not for the client)
+read/write/open/close etc syscalls, it really is critical to use the
+_nocancel versions of syscalls rather than the vanilla versions.  This
+holds throughout the entire code base: whenever V does a syscall for
+its own purposes, we must use the _nocancel version if it exists.
+This is of course most prevalent in m_libc* since all of our
+own-purpose (non-client) syscalls should get routed through there.
+
+Why?  Because on Darwin, pthread cancellation is done within the
+kernel (unlike on Linux, iiuc).  And read/write/open/close and a whole
+bunch of other syscalls to do with stream I/O are cancellation points.
+So what can happen is, client informs the kernel that a given thread
+is to be cancelled.  Then at the next (eg) VG_(printf) call by that
+thread, which leads to a sys_write, the write syscall gets hit by the
+cancellation request, and is duly nuked by the kernel.  Of course from
+the outside it looks as if the thread had mysteriously disappeared off
+the radar for no reason.
+
+In short, we need to use _nocancel versions in order to ensure that
+cancellation requests only take effect at the places where the client
+does a syscall, and not the places where Valgrind does syscalls.
+
+How observed: using the standard pipe-based implementation in
+coregrind/m_scheduler/sema.c, none/tests/pth_cancel1 would hang
+(compared to succeeding using native Darwin semaphores).  And if the
+"pause()" call in said test is turned into a spin ("while (1) ;") then
+the entire Valgrind run mysteriously disappears, rather than spinning
+using native Darwin semaphores.
+
+Because the pipe-based semaphore intensively uses sys_read/sys_write,
+it is not surprising that it inadvertantly was eating up cancellation
+requests directed to client threads.  With abovementioned change in
+force the pipe-based semaphore appears to work correctly.
+
+
+
+Valgrind-developer notes, things removed from the original MacOSX port
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+There was a broken debugstub implementation.  It was removed over several
+commits: r9477, which removed most of it, and r9711, r9759, and r10012,
+which cleaned up remaining bits.
+
+There was machinery to read function names from Dwarf3 debug info.  But we
+already read function names from the symbol tables, so this was duplicated
+functionality.  Furthermore, a Darwin-specific hack was required in
+storage.c to choose between symbol table names vs. Dwarf3 names.  So this
+machinery was removed in r10155.
+
+
+Valgrind-developer notes, todos re the MacOSX port
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+* m_syswrap/syscall-amd64-darwin.S
+  - correct signal mask is not applied during syscall
+  - restart-labels are completely bogus
+
+* m_syswrap/syswrap-darwin.c:
+  - PRE(sys_posix_spawn) completely ignores signal issues, and
+    also ignores the file_actions argument
+
+* env var handling w/ exec on Darwin: is there something odd?  Compare
+  "valgrind env" on Darwin and Linux.  On the former there are
+  settings VALGRIND_LIB and VALGRIND_LIB_INNER, but not for the
+  former.
+  There's a suspicious-looking "#if defined(VGO_darwin)" in 
+  VG_(env_remove_valgrind_env_stuff).  Maybe related?
+
+* Cleanups: sort wrappers in syswrap-darwin.c and priv_syswrap-darwin.h
+  alphabetically.  Also, some aren't properly implemented -- check and
+  print warnings
+
+* Cleanups: m_scheduler/sema.c: use pipe implementation
+  (but this apparently causes none/tests/pth_cancel1 to hang.
+  I have no idea why, despite quite some investigation).
+
+* Cleanups: m_debugstub: move to attic
+
+* syswrap-darwin.c: sys_{f,}chmod_extended: handling of ARG5 is way
+  wrong
+
+* Cleanups (Linux,AIX5): bogus launcher-path mangling logic in
+  PRE(sys_execve)
+
+* Cleanups (ALL PLATFORMS): m_signals.c: are the _MY_SIGRETURN
+  assembly stubs actually necessary for anything?  I don't know.
+
+* Cleanups: check that changes to VG_(stat) and VG_(stat64) have
+  not broken 64-bit statting on 32-bit Linux
+
+* Cleanups: #if !HAVE_PROC in m_main (to do with /proc/<pid>/cmdline
+
+--------
+
+m_main doesn't read symbols for the valgrind exe itself, which is
+annoying.  On minimal investigation it seems that the executable isn't
+even listed by aspacem.  This is very strange and not in accordance
+with the Linux or AIX ports.
+
+
+m_main: relatedly, Darwin version does not collect/give out
+initial debuginfo handles; hence ptrcheck won't work
+
+
+m_main: Darwin port relies on blocking out big sections of address
+space with mmap at startup.  We know from history that this is a bad
+idea.  (It's also really slow on 64-bit builds, taking 3--4 seconds.)
+Also, startup is not done on the interim startup stack -- why not?
+
+
+VG_(di_notify_mmap): Linux version is also used for Darwin, and
+contains some ifdeffery.  Clean up.
+
+
+PRE(sys_fork), #ifdeffery
+
+
+syswrap-generic.c: VG_(init_preopened_fds) is #ifdefd for Darwin
+
+
+scheduler.c: #ifdeffery in VG_(get_thread_out_of_syscall)
+
+
+look at notes in coregrind/Makefile.am re Mach RPC interface
+definitions.  See if we can get rid of any more stuff now that
+m_debugstub is gone.

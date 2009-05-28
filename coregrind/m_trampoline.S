@@ -735,11 +735,313 @@ VG_(trampoline_stuff_end):
 #	undef UD2_256
 #	undef UD2_1024
 #	undef UD2_PAGE
+
+/*---------------- x86-darwin ----------------*/
+#else
+#if defined(VGP_x86_darwin)
+
+        /* a leading page of unexecutable code */
+.fill 2048, 2, 0x0b0f /* `ud2` */
+
+.globl VG_(trampoline_stuff_start)
+VG_(trampoline_stuff_start):
+
+.globl VG_(x86_darwin_SUBST_FOR_sigreturn)
+VG_(x86_darwin_SUBST_FOR_sigreturn):
+        /* XXX does this need to have any special form? (cf x86-linux
+	version) */
+        movl    $ __NR_DARWIN_FAKE_SIGRETURN, %eax
+        int     $0x80
+        ud2
+
+.globl VG_(darwin_REDIR_FOR_strlen)
+VG_(darwin_REDIR_FOR_strlen):
+        movl    4(%esp), %edx
+        movl    %edx, %eax
+        jmp     1f
+0:
+        incl    %eax
+1:
+        cmpb    $0, (%eax)
+        jne     0b
+        subl    %edx, %eax
+        ret
+
+.globl VG_(darwin_REDIR_FOR_strcat)
+VG_(darwin_REDIR_FOR_strcat):
+        pushl   %esi
+        movl    8(%esp), %esi
+        movl    12(%esp), %ecx
+        movl    %esi, %edx
+        jmp     1f
+0:
+        incl    %edx
+1:
+        cmpb    $0, (%edx)
+        jne     0b
+2:
+        movzbl  (%ecx), %eax
+        incl    %ecx
+        movb    %al, (%edx)
+        incl    %edx
+        testb   %al, %al
+        jne     2b
+        movl    %esi, %eax
+        popl    %esi
+        ret
+
+
+.globl VG_(darwin_REDIR_FOR_strcmp)
+VG_(darwin_REDIR_FOR_strcmp):
+        movl    4(%esp), %edx
+        movl    8(%esp), %ecx
+        jmp     1f
+0:
+        incl    %edx
+        incl    %ecx
+1:
+        movzbl  (%edx), %eax
+        testb   %al, %al
+        je      2f
+        cmpb    (%ecx), %al
+        je      0b
+2:
+        movzbl  (%ecx),%edx
+        movzbl  %al,%eax
+        subl    %edx, %eax
+        ret
+
+
+.globl VG_(darwin_REDIR_FOR_strcpy)
+VG_(darwin_REDIR_FOR_strcpy):
+	pushl	%ebp
+	movl	%esp, %ebp
+	pushl	%esi
+	movl	8(%ebp), %esi
+	movl	12(%ebp), %ecx
+	movl	%esi, %edx
+	jmp	1f
+0:
+	incl	%ecx
+	incl	%edx
+1:
+	movzbl	(%ecx), %eax
+	testb	%al, %al
+	movb	%al, (%edx)
+	jne	0b
+	movl	%esi, %eax
+	popl	%esi
+	leave
+	ret
+
+.globl VG_(darwin_REDIR_FOR_strlcat)
+VG_(darwin_REDIR_FOR_strlcat):
+	pushl	%ebp
+	movl	%esp, %ebp
+	pushl	%edi
+	pushl	%esi
+	subl	$16, %esp
+	movl	8(%ebp), %esi
+	movl	16(%ebp), %ecx
+	movl	%esi, %edx
+	leal	(%ecx,%esi), %eax
+	jmp	1f
+0:
+	incl	%edx
+1:
+	cmpl	%edx, %eax
+	je	2f
+	cmpb	$0, (%edx)
+	jne	0b
+2:
+	movl	%edx, %edi
+	subl	%esi, %edi
+	movl	%ecx, %esi
+	subl	%edi, %esi
+	je	3f
+	movl	12(%ebp), %eax
+	jmp	6f
+3:
+	movl	12(%ebp), %eax
+	movl	%eax, (%esp)
+	call	VG_(darwin_REDIR_FOR_strlen)
+	jmp	7f
+4:
+	cmpl	$1, %esi
+	je	5f
+	movb	%cl, (%edx)
+	decl	%esi
+	incl	%edx
+5:
+	incl	%eax
+6:
+	movzbl	(%eax), %ecx
+	testb	%cl, %cl
+	jne	4b
+	movb	$0, (%edx)
+	subl	12(%ebp), %eax
+7:
+	addl	$16, %esp
+	leal	(%edi,%eax), %eax
+	popl	%esi
+	popl	%edi
+	leave
+	ret
 	
+	
+.globl VG_(trampoline_stuff_end)
+VG_(trampoline_stuff_end):
+
+        /* a trailing page of unexecutable code */
+.fill 2048, 2, 0x0b0f /* `ud2` */
+
+
+/*---------------- amd64-darwin ----------------*/
+#else
+#if defined(VGP_amd64_darwin)
+
+        /* a leading page of unexecutable code */
+.fill 2048, 2, 0x0b0f /* `ud2` */
+
+.globl VG_(trampoline_stuff_start)
+VG_(trampoline_stuff_start):
+
+.globl VG_(darwin_REDIR_FOR_strlen)
+VG_(darwin_REDIR_FOR_strlen):
+        movq    %rdi, %rax
+        jmp     1f
+0:
+        incq    %rax
+1:
+        cmpb    $0, (%rax)
+        jne     0b
+        subq    %rdi, %rax
+        ret
+
+.globl VG_(darwin_REDIR_FOR_strcat)
+VG_(darwin_REDIR_FOR_strcat):
+	movq	%rdi, %rdx
+	jmp	1f
+0:
+	incq	%rdx
+1:
+	cmpb	$0, (%rdx)
+	jne	0b
+2:
+	movzbl	(%rsi), %eax
+	incq	%rsi
+	movb	%al, (%rdx)
+	incq	%rdx
+	testb	%al, %al
+	jne	2b
+	movq	%rdi, %rax
+	ret
+
+
+.globl VG_(darwin_REDIR_FOR_strcmp)
+VG_(darwin_REDIR_FOR_strcmp):
+	jmp	1f
+0:
+	incq	%rdi
+	incq	%rsi
+1:
+	movzbl	(%rdi), %eax
+	testb	%al, %al
+	je	2f
+	cmpb	(%rsi), %al
+	je	0b
+2:
+	movzbl	(%rsi), %edx
+	movzbl	%al, %eax
+	subl	%edx, %eax
+	ret
+
+.globl VG_(darwin_REDIR_FOR_strcpy)
+VG_(darwin_REDIR_FOR_strcpy):
+	pushq	%rbp
+	movq	%rdi, %rdx
+	movq	%rsp, %rbp
+	jmp	1f
+0:
+	incq	%rsi
+	incq	%rdx
+1:
+	movzbl	(%rsi), %eax
+	testb	%al, %al
+	movb	%al, (%rdx)
+	jne	0b
+	leave
+	movq	%rdi, %rax
+	ret
+	
+.globl VG_(darwin_REDIR_FOR_strlcat)
+VG_(darwin_REDIR_FOR_strlcat):
+	pushq	%rbp
+	leaq	(%rdx,%rdi), %rax
+	movq	%rdi, %rcx
+	movq	%rsp, %rbp
+	pushq	%rbx
+	subq	$8, %rsp
+	jmp	1f
+0:
+	incq	%rcx
+1:
+	cmpq	%rcx, %rax
+	je	2f
+	cmpb	$0, (%rcx)
+	jne	0b
+2:
+	movq	%rcx, %rbx
+	subq	%rdi, %rbx
+	movq	%rdx, %rdi
+	subq	%rbx, %rdi
+	je	3f
+	movq	%rsi, %rax
+	jmp	6f
+3:
+	movq	%rsi, %rdi
+	call	VG_(darwin_REDIR_FOR_strlen)
+	jmp	7f
+4:
+	cmpq	$1, %rdi
+	je	5f
+	movb	%dl, (%rcx)
+	decq	%rdi
+	incq	%rcx
+5:
+	incq	%rax
+6:
+	movzbl	(%rax), %edx
+	testb	%dl, %dl
+	jne	4b
+	movb	$0, (%rcx)
+	subq	%rsi, %rax
+7:
+	leaq	(%rbx,%rax), %rax
+	addq	$8, %rsp
+	popq	%rbx
+	leave
+	ret
+
+.globl VG_(darwin_REDIR_FOR_arc4random)
+VG_(darwin_REDIR_FOR_arc4random):
+	/* not very random, hope dyld won't mind */
+	movq	$0x76616c6772696e64, %rax
+	ret
+
+.globl VG_(trampoline_stuff_end)
+VG_(trampoline_stuff_end):
+
+        /* a trailing page of unexecutable code */
+.fill 2048, 2, 0x0b0f /* `ud2` */
+
+
 /*---------------- unknown ----------------*/
 #else
 #  error Unknown platform
 
+#endif
+#endif
 #endif
 #endif
 #endif

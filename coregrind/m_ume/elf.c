@@ -44,7 +44,6 @@
 
 #include "priv_ume.h"
 
-
 #if defined(HAVE_ELF)
 
 /* --- !!! --- EXTERNAL HEADERS start --- !!! --- */

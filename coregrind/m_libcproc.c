@@ -42,6 +42,17 @@
 #include "pub_core_xarray.h"
 #include "pub_core_clientstate.h"
 
+#if defined(VGO_darwin)
+/* --- !!! --- EXTERNAL HEADERS start --- !!! --- */
+#include <mach/mach.h>   /* mach_thread_self */
+/* --- !!! --- EXTERNAL HEADERS end --- !!! --- */
+#endif
+
+/* IMPORTANT: on Darwin it is essential to use the _nocancel versions
+   of syscalls rather than the vanilla version, if a _nocancel version
+   is available.  See docs/internals/Darwin-notes.txt for the reason
+   why. */
+
 /* ---------------------------------------------------------------------
    Command line and environment stuff
    ------------------------------------------------------------------ */
@@ -194,17 +205,32 @@ static void mash_colon_env(Char *varp, const Char *remove_pattern)
 // when starting child processes, so they don't see that added stuff.
 void VG_(env_remove_valgrind_env_stuff)(Char** envp)
 {
+
+#if defined(VGO_darwin)
+
+   // Environment cleanup is also handled during parent launch 
+   // in vg_preloaded.c:vg_cleanup_env().
+
+#endif
+
    Int i;
    Char* ld_preload_str = NULL;
    Char* ld_library_path_str = NULL;
+   Char* dyld_insert_libraries_str = NULL;
    Char* buf;
 
    // Find LD_* variables
+   // DDD: should probably conditionally compiled some of this:
+   // - LD_LIBRARY_PATH is universal?
+   // - LD_PRELOAD is on Linux, not on Darwin, not sure about AIX
+   // - DYLD_INSERT_LIBRARIES and DYLD_SHARED_REGION are Darwin-only
    for (i = 0; envp[i] != NULL; i++) {
       if (VG_(strncmp)(envp[i], "LD_PRELOAD=", 11) == 0)
          ld_preload_str = &envp[i][11];
       if (VG_(strncmp)(envp[i], "LD_LIBRARY_PATH=", 16) == 0)
          ld_library_path_str = &envp[i][16];
+      if (VG_(strncmp)(envp[i], "DYLD_INSERT_LIBRARIES=", 22) == 0)
+         dyld_insert_libraries_str = &envp[i][22];
    }
 
    buf = VG_(arena_malloc)(VG_AR_CORE, "libcproc.erves.1",
@@ -213,11 +239,15 @@ void VG_(env_remove_valgrind_env_stuff)(Char** envp)
    // Remove Valgrind-specific entries from LD_*.
    VG_(sprintf)(buf, "%s*/vgpreload_*.so", VG_(libdir));
    mash_colon_env(ld_preload_str, buf);
+   mash_colon_env(dyld_insert_libraries_str, buf);
    VG_(sprintf)(buf, "%s*", VG_(libdir));
    mash_colon_env(ld_library_path_str, buf);
 
    // Remove VALGRIND_LAUNCHER variable.
    VG_(env_unsetenv)(envp, VALGRIND_LAUNCHER);
+
+   // Remove DYLD_SHARED_REGION variable.
+   VG_(env_unsetenv)(envp, "DYLD_SHARED_REGION");
 
    // XXX if variable becomes empty, remove it completely?
 
@@ -231,7 +261,12 @@ void VG_(env_remove_valgrind_env_stuff)(Char** envp)
 Int VG_(waitpid)(Int pid, Int *status, Int options)
 {
 #  if defined(VGO_linux)
-   SysRes res = VG_(do_syscall4)(__NR_wait4, pid, (UWord)status, options, 0);
+   SysRes res = VG_(do_syscall4)(__NR_wait4,
+                                 pid, (UWord)status, options, 0);
+   return sr_isError(res) ? -1 : sr_Res(res);
+#  elif defined(VGO_darwin)
+   SysRes res = VG_(do_syscall4)(__NR_wait4_nocancel,
+                                 pid, (UWord)status, options, 0);
    return sr_isError(res) ? -1 : sr_Res(res);
 #  elif defined(VGO_aix5)
    /* magic number 4 obtained by truss-ing a C program doing
@@ -415,6 +450,11 @@ Int VG_(gettid)(void)
    r = sr_Res(res);
    return r;
 
+#  elif defined(VGO_darwin)
+   // Darwin's gettid syscall is something else.
+   // Use Mach thread ports for lwpid instead.
+   return mach_thread_self();
+
 #  else
 #    error "Unknown OS"
 #  endif
@@ -489,7 +529,8 @@ Int VG_(getgroups)( Int size, UInt* list )
    return sr_Res(sres);
 
 #  elif defined(VGP_amd64_linux) || defined(VGP_ppc64_linux) \
-        || defined(VGP_ppc32_aix5) || defined(VGP_ppc64_aix5)
+        || defined(VGP_ppc32_aix5) || defined(VGP_ppc64_aix5) \
+        || defined(VGO_darwin)
    SysRes sres;
    sres = VG_(do_syscall2)(__NR_getgroups, size, (Addr)list);
    if (sr_isError(sres))
@@ -525,6 +566,17 @@ Int VG_(fork) ( void )
    res = VG_(do_syscall0)(__NR_fork);
    if (sr_isError(res))
       return -1;
+   return sr_Res(res);
+
+#  elif defined(VGO_darwin)
+   SysRes res;
+   res = VG_(do_syscall0)(__NR_fork); /* __NR_fork is UX64 */
+   if (sr_isError(res))
+      return -1;
+   /* on success: wLO = child pid; wHI = 1 for child, 0 for parent */
+   if (sr_ResHI(res) != 0) {
+      return 0;  /* this is child: return 0 instead of child pid */
+   }
    return sr_Res(res);
 
 #  else
@@ -575,6 +627,14 @@ UInt VG_(read_millisecond_timer) ( void )
    vg_assert(nsec < 1000*1000*1000);
    now  = ((ULong)sec1) * 1000000ULL;
    now += (ULong)(nsec / 1000);
+
+#  elif defined(VGO_darwin)
+   { SysRes res;
+     struct vki_timeval tv_now;
+     res = VG_(do_syscall2)(__NR_gettimeofday, (UWord)&tv_now, (UWord)NULL);
+     vg_assert(! sr_isError(res));
+     now = tv_now.tv_sec * 1000000ULL + tv_now.tv_usec;
+   }
 
 #  else
 #    error "Unknown OS"
@@ -651,6 +711,7 @@ void VG_(do_atfork_child)(ThreadId tid)
       if (atforks[i].child != NULL)
          (*atforks[i].child)(tid);
 }
+
 
 /*--------------------------------------------------------------------*/
 /*--- end                                                          ---*/

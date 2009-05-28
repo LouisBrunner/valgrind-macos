@@ -195,9 +195,13 @@ static void* mythread_wrapper ( void* xargsV )
 }
 
 // pthread_create
-PTH_FUNC(int, pthreadZucreateZAZa, // pthread_create@*
-              pthread_t *thread, const pthread_attr_t *attr,
-              void *(*start) (void *), void *arg)
+// glibc-2.8.90 has "pthread_create@@GLIBC_2.2.5".
+// Darwin has "pthread_create".
+//
+// DDD: for Darwin, need to have non-"@*"-suffixed versions for all pthread
+// functions that currently have them.
+static int pthread_create_WRK(pthread_t *thread, const pthread_attr_t *attr,
+                              void *(*start) (void *), void *arg)
 {
    int    ret;
    OrigFn fn;
@@ -233,6 +237,16 @@ PTH_FUNC(int, pthreadZucreateZAZa, // pthread_create@*
       fprintf(stderr, " :: pth_create -> %d >>\n", ret);
    }
    return ret;
+}
+PTH_FUNC(int, pthreadZucreate, // pthread_create
+              pthread_t *thread, const pthread_attr_t *attr,
+              void *(*start) (void *), void *arg) {
+   return pthread_create_WRK(thread, attr, start, arg);
+}
+PTH_FUNC(int, pthreadZucreateZAZa, // pthread_create@*
+              pthread_t *thread, const pthread_attr_t *attr,
+              void *(*start) (void *), void *arg) {
+   return pthread_create_WRK(thread, attr, start, arg);
 }
 
 // pthread_join
@@ -756,6 +770,8 @@ PTH_FUNC(int, pthreadZucondZudestroyZAZa, // pthread_cond_destroy@*
 /*--- pthread_barrier_t functions                              ---*/
 /*----------------------------------------------------------------*/
 
+#if defined(HAVE_PTHREAD_BARRIER_INIT)
+
 /* Handled:   pthread_barrier_init
               pthread_barrier_wait
               pthread_barrier_destroy
@@ -860,6 +876,8 @@ PTH_FUNC(int, pthreadZubarrierZudestroy, // pthread_barrier_destroy
 
    return ret;
 }
+
+#endif   // defined(HAVE_PTHREAD_BARRIER_INIT)
 
 /*----------------------------------------------------------------*/
 /*--- pthread_rwlock_t functions                               ---*/

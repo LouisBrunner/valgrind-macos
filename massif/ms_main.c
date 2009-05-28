@@ -1288,8 +1288,10 @@ static Time get_time(void)
 
 // Take a snapshot, and only that -- decisions on whether to take a
 // snapshot, or what kind of snapshot, are made elsewhere.
+// Nb: we call the arg "my_time" because "time" shadows a global declaration
+// in /usr/include/time.h on Darwin.
 static void
-take_snapshot(Snapshot* snapshot, SnapshotKind kind, Time time,
+take_snapshot(Snapshot* snapshot, SnapshotKind kind, Time my_time,
               Bool is_detailed)
 {
    tl_assert(!is_snapshot_in_use(snapshot));
@@ -1314,7 +1316,7 @@ take_snapshot(Snapshot* snapshot, SnapshotKind kind, Time time,
 
    // Rest of snapshot.
    snapshot->kind = kind;
-   snapshot->time = time;
+   snapshot->time = my_time;
    sanity_check_snapshot(snapshot);
 
    // Update stats.
@@ -1341,12 +1343,14 @@ maybe_take_snapshot(SnapshotKind kind, Char* what)
 
    Snapshot* snapshot;
    Bool      is_detailed;
-   Time      time = get_time();
+   // Nb: we call this variable "my_time" because "time" shadows a global
+   // declaration in /usr/include/time.h on Darwin.
+   Time      my_time = get_time();
 
    switch (kind) {
     case Normal: 
       // Only do a snapshot if it's time.
-      if (time < earliest_possible_time_of_next_snapshot) {
+      if (my_time < earliest_possible_time_of_next_snapshot) {
          n_skipped_snapshots++;
          n_skipped_snapshots_since_last_snapshot++;
          return;
@@ -1376,7 +1380,7 @@ maybe_take_snapshot(SnapshotKind kind, Char* what)
 
    // Take the snapshot.
    snapshot = & snapshots[next_snapshot_i];
-   take_snapshot(snapshot, kind, time, is_detailed);
+   take_snapshot(snapshot, kind, my_time, is_detailed);
 
    // Record if it was detailed.
    if (is_detailed) {
@@ -1422,7 +1426,7 @@ maybe_take_snapshot(SnapshotKind kind, Char* what)
    }
 
    // Work out the earliest time when the next snapshot can happen.
-   earliest_possible_time_of_next_snapshot = time + min_time_interval;
+   earliest_possible_time_of_next_snapshot = my_time + min_time_interval;
 }
 
 

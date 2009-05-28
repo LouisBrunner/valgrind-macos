@@ -45,18 +45,18 @@ Conditional jump or move depends on uninitialised value(s)
 Undef 7 of 8 (brk)
 
 Conditional jump or move depends on uninitialised value(s)
-   at 0x........: main (origin1-yes.c:93)
+   at 0x........: main (origin1-yes.c:101)
  Uninitialised value was created
    at 0x........: brk (in /...libc...)
    by 0x........: sbrk (in /...libc...)
-   by 0x........: main (origin1-yes.c:90)
+   by 0x........: main (origin1-yes.c:98)
 
 Undef 8 of 8 (MAKE_MEM_UNDEFINED)
 
 Conditional jump or move depends on uninitialised value(s)
-   at 0x........: main (origin1-yes.c:101)
+   at 0x........: main (origin1-yes.c:110)
  Uninitialised value was created by a client request
-   at 0x........: main (origin1-yes.c:99)
+   at 0x........: main (origin1-yes.c:108)
 
 Def 1 of 3
 

@@ -68,6 +68,17 @@
 #  define VG_MAX_INSTR_SZB          4 
 #  define VG_CLREQ_SZB             20
 #  define VG_STACK_REDZONE_SZB    288 // is this right?
+#elif defined(VGP_x86_darwin)
+#  define VG_MIN_INSTR_SZB          1  // min length of native instruction
+#  define VG_MAX_INSTR_SZB         16  // max length of native instruction
+#  define VG_CLREQ_SZB             14  // length of a client request, may
+                                       //   be larger than VG_MAX_INSTR_SZB
+#  define VG_STACK_REDZONE_SZB      0  // number of addressable bytes below %RSP
+#elif defined(VGP_amd64_darwin)
+#  define VG_MIN_INSTR_SZB          1
+#  define VG_MAX_INSTR_SZB         16
+#  define VG_CLREQ_SZB             19
+#  define VG_STACK_REDZONE_SZB    128
 #else
 #  error Unknown platform
 #endif

@@ -137,6 +137,7 @@
 {
    helgrind-glibc2X-112
    Helgrind:Race
+   fun:pthread_create_WRK
    fun:pthread_create@*
 }
 {

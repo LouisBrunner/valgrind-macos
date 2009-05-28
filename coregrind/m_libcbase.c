@@ -155,6 +155,15 @@ double VG_(strtod) ( Char* str, Char** endptr )
    return n;
 }
 
+Char VG_(tolower) ( Char c )
+{
+   if ( c >= 'A'  &&  c <= 'Z' ) {
+      return c - 'A' + 'a';
+   } else {
+      return c;
+   }
+}
+
 /* ---------------------------------------------------------------------
    String functions
    ------------------------------------------------------------------ */
@@ -247,6 +256,22 @@ Int VG_(strcmp) ( const Char* s1, const Char* s2 )
    }
 }
 
+Int VG_(strcasecmp) ( const Char* s1, const Char* s2 )
+{
+   while (True) {
+      UChar c1 = (UChar)VG_(tolower)(*s1);
+      UChar c2 = (UChar)VG_(tolower)(*s2);
+      if (c1 == 0 && c2 == 0) return 0;
+      if (c1 == 0) return -1;
+      if (c2 == 0) return 1;
+
+      if (c1 < c2) return -1;
+      if (c1 > c2) return 1;
+
+      s1++; s2++;
+   }
+}
+
 Int VG_(strncmp) ( const Char* s1, const Char* s2, SizeT nmax )
 {
    SizeT n = 0;
@@ -263,6 +288,26 @@ Int VG_(strncmp) ( const Char* s1, const Char* s2, SizeT nmax )
    }
 }
 
+Int VG_(strncasecmp) ( const Char* s1, const Char* s2, SizeT nmax )
+{
+   Int n = 0;
+   while (True) {
+      UChar c1;
+      UChar c2;
+      if (n >= nmax) return 0;
+      c1 = (UChar)VG_(tolower)(*s1);
+      c2 = (UChar)VG_(tolower)(*s2);
+      if (c1 == 0 && c2 == 0) return 0;
+      if (c1 == 0) return -1;
+      if (c2 == 0) return 1;
+
+      if (c1 < c2) return -1;
+      if (c1 > c2) return 1;
+
+      s1++; s2++; n++;
+   }
+}
+
 Char* VG_(strstr) ( const Char* haystack, Char* needle )
 {
    SizeT n; 
@@ -273,6 +318,21 @@ Char* VG_(strstr) ( const Char* haystack, Char* needle )
       if (haystack[0] == 0) 
          return NULL;
       if (VG_(strncmp)(haystack, needle, n) == 0) 
+         return (Char*)haystack;
+      haystack++;
+   }
+}
+
+Char* VG_(strcasestr) ( const Char* haystack, Char* needle )
+{
+   Int n; 
+   if (haystack == NULL)
+      return NULL;
+   n = VG_(strlen)(needle);
+   while (True) {
+      if (haystack[0] == 0) 
+         return NULL;
+      if (VG_(strncasecmp)(haystack, needle, n) == 0) 
          return (Char*)haystack;
       haystack++;
    }

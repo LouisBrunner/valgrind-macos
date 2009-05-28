@@ -24,6 +24,12 @@ LIBREPLACEMALLOC_PPC32_AIX5 = \
 LIBREPLACEMALLOC_PPC64_AIX5 = \
 	$(top_builddir)/coregrind/libreplacemalloc_toolpreload-ppc64-aix5.a
 
+LIBREPLACEMALLOC_X86_DARWIN = \
+	$(top_builddir)/coregrind/libreplacemalloc_toolpreload-x86-darwin.a
+
+LIBREPLACEMALLOC_AMD64_DARWIN = \
+	$(top_builddir)/coregrind/libreplacemalloc_toolpreload-amd64-darwin.a
+
 
 COREGRIND_LIBS_X86_LINUX = \
 	$(top_builddir)/coregrind/libcoregrind-x86-linux.a \
@@ -48,6 +54,14 @@ COREGRIND_LIBS_PPC32_AIX5 = \
 COREGRIND_LIBS_PPC64_AIX5 = \
 	$(top_builddir)/coregrind/libcoregrind-ppc64-aix5.a \
 	@VEX_DIR@/libvex-ppc64-aix5.a
+
+COREGRIND_LIBS_X86_DARWIN = \
+	$(top_builddir)/coregrind/libcoregrind-x86-darwin.a \
+	@VEX_DIR@/libvex-x86-darwin.a
+
+COREGRIND_LIBS_AMD64_DARWIN = \
+	$(top_builddir)/coregrind/libcoregrind-amd64-darwin.a \
+	@VEX_DIR@/libvex-amd64-darwin.a
 
 
 ##.PHONY:  @VEX_DIR@/libvex.a
@@ -88,6 +102,18 @@ COREGRIND_LIBS_PPC64_AIX5 = \
 	EXTRA_CFLAGS="$(AM_CFLAGS_PPC64_AIX5) @FLAG_WDECL_AFTER_STMT@ \
 			@FLAG_FNO_STACK_PROTECTOR@"
 
+@VEX_DIR@/libvex-x86-darwin.a: @VEX_DIR@/priv/main/vex_svnversion.h
+	$(MAKE) -C @VEX_DIR@ CC="$(CC)" AR="$(AR)" \
+	libvex-x86-darwin.a \
+	EXTRA_CFLAGS="$(AM_CFLAGS_X86_DARWIN) @FLAG_WDECL_AFTER_STMT@ \
+		@FLAG_FNO_STACK_PROTECTOR@"
+
+@VEX_DIR@/libvex-amd64-darwin.a: @VEX_DIR@/priv/main/vex_svnversion.h
+	$(MAKE) -C @VEX_DIR@ CC="$(CC)" AR="$(AR)" \
+	libvex-amd64-darwin.a \
+	EXTRA_CFLAGS="$(AM_CFLAGS_AMD64_DARWIN) @FLAG_WDECL_AFTER_STMT@ \
+		@FLAG_FNO_STACK_PROTECTOR@"
+
 @VEX_DIR@/priv/main/vex_svnversion.h:
 	$(MAKE) -C @VEX_DIR@ CC="$(CC)" version
 
@@ -97,7 +123,8 @@ TOOL_LDFLAGS_COMMON_LINUX = -static \
 	-Wl,-defsym,valt_load_address=@VALT_LOAD_ADDRESS@ \
 	-nodefaultlibs -nostartfiles -u _start
 TOOL_LDFLAGS_COMMON_AIX5 = -static -Wl,-e_start_valgrind
-
+TOOL_LDFLAGS_COMMON_DARWIN = -nodefaultlibs -nostartfiles \
+	-Wl,-u,__start -Wl,-e,__start -Wl,-bind_at_load /usr/lib/dyld
 
 TOOL_LDADD_X86_LINUX = $(COREGRIND_LIBS_X86_LINUX) $(TOOL_LDADD_COMMON)
 TOOL_LDFLAGS_X86_LINUX = \
@@ -127,6 +154,23 @@ TOOL_LDADD_PPC64_AIX5 = $(COREGRIND_LIBS_PPC64_AIX5) $(TOOL_LDADD_COMMON)
 TOOL_LDFLAGS_PPC64_AIX5 = \
 	$(TOOL_LDFLAGS_COMMON_AIX5) @FLAG_MAIX64@ -Wl,-bbigtoc
 
+TOOL_LDADD_X86_DARWIN = $(COREGRIND_LIBS_X86_DARWIN) $(TOOL_LDADD_COMMON)
+TOOL_LDFLAGS_X86_DARWIN = \
+	$(TOOL_LDFLAGS_COMMON_DARWIN) -arch i386 \
+	-Wl,-seg1addr,0xf0080000 \
+	-Wl,-stack_addr,0xf0080000 -Wl,-stack_size,0x80000 \
+	-Wl,-pagezero_size,0xf0000000
+
+# pagezero can't be unmapped and remapped. Use stack instead.
+# GrP fixme no stack guard
+TOOL_LDADD_AMD64_DARWIN = $(COREGRIND_LIBS_AMD64_DARWIN) $(TOOL_LDADD_COMMON)
+TOOL_LDFLAGS_AMD64_DARWIN = \
+	$(TOOL_LDFLAGS_COMMON_DARWIN) -arch x86_64 \
+	-Wl,-seg1addr,0x7fff55000000 \
+	-Wl,-stack_addr,0x7fff50080000 -Wl,-stack_size,0x7ffe50080000 \
+	-Wl,-pagezero_size,0x100000000
+
+
 LIBREPLACEMALLOC_LDFLAGS_X86_LINUX = \
 	-Wl,--whole-archive \
 	$(LIBREPLACEMALLOC_X86_LINUX) \
@@ -153,8 +197,17 @@ LIBREPLACEMALLOC_LDFLAGS_PPC32_AIX5 = \
 LIBREPLACEMALLOC_LDFLAGS_PPC64_AIX5 = \
 	$(LIBREPLACEMALLOC_PPC64_AIX5)
 
+LIBREPLACEMALLOC_LDFLAGS_X86_DARWIN = \
+	$(LIBREPLACEMALLOC_X86_DARWIN)
 
-all-local: inplace-noinst_PROGRAMS
+LIBREPLACEMALLOC_LDFLAGS_AMD64_DARWIN = \
+	$(LIBREPLACEMALLOC_AMD64_DARWIN)
 
-install-exec-local: install-noinst_PROGRAMS
+
+
+all-local: inplace-noinst_PROGRAMS inplace-noinst_DSYMS
+
+clean-local: clean-noinst_DSYMS
+
+install-exec-local: install-noinst_PROGRAMS install-noinst_DSYMS
 

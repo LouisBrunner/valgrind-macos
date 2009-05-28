@@ -1,6 +1,7 @@
 include $(top_srcdir)/Makefile.tool.am
 
 noinst_PROGRAMS = 
+noinst_DSYMS =
 if VGCONF_PLATFORMS_INCLUDE_X86_LINUX
 noinst_PROGRAMS += helgrind-x86-linux vgpreload_helgrind-x86-linux.so
 endif
@@ -18,6 +19,14 @@ noinst_PROGRAMS += helgrind-ppc32-aix5 vgpreload_helgrind-ppc32-aix5.so
 endif
 if VGCONF_PLATFORMS_INCLUDE_PPC64_AIX5
 noinst_PROGRAMS += helgrind-ppc64-aix5 vgpreload_helgrind-ppc64-aix5.so
+endif
+if VGCONF_PLATFORMS_INCLUDE_X86_DARWIN
+noinst_PROGRAMS += helgrind-x86-darwin vgpreload_helgrind-x86-darwin.so
+noinst_DSYMS    +=                     vgpreload_helgrind-x86-darwin.so
+endif
+if VGCONF_PLATFORMS_INCLUDE_AMD64_DARWIN
+noinst_PROGRAMS += helgrind-amd64-darwin vgpreload_helgrind-amd64-darwin.so
+noinst_DSYMS    +=                       vgpreload_helgrind-amd64-darwin.so
 endif
 
 VGPRELOAD_HELGRIND_SOURCES_COMMON = hg_intercepts.c
@@ -70,6 +79,22 @@ vgpreload_helgrind_ppc64_aix5_so_LDFLAGS      = \
 	$(PRELOAD_LDFLAGS_PPC64_AIX5) \
 	$(LIBREPLACEMALLOC_LDFLAGS_PPC64_AIX5)
 
+vgpreload_helgrind_x86_darwin_so_SOURCES      = $(VGPRELOAD_HELGRIND_SOURCES_COMMON)
+vgpreload_helgrind_x86_darwin_so_CPPFLAGS     = $(AM_CPPFLAGS_X86_DARWIN)
+vgpreload_helgrind_x86_darwin_so_CFLAGS       = $(AM_CFLAGS_X86_DARWIN) $(AM_CFLAGS_PIC)
+vgpreload_helgrind_x86_darwin_so_DEPENDENCIES = $(LIBREPLACEMALLOC_X86_DARWIN)
+vgpreload_helgrind_x86_darwin_so_LDFLAGS      = \
+	$(PRELOAD_LDFLAGS_X86_DARWIN) \
+	$(LIBREPLACEMALLOC_LDFLAGS_X86_DARWIN)
+
+vgpreload_helgrind_amd64_darwin_so_SOURCES      = $(VGPRELOAD_HELGRIND_SOURCES_COMMON)
+vgpreload_helgrind_amd64_darwin_so_CPPFLAGS     = $(AM_CPPFLAGS_AMD64_DARWIN)
+vgpreload_helgrind_amd64_darwin_so_CFLAGS       = $(AM_CFLAGS_AMD64_DARWIN) $(AM_CFLAGS_PIC)
+vgpreload_helgrind_amd64_darwin_so_DEPENDENCIES = $(LIBREPLACEMALLOC_AMD64_DARWIN)
+vgpreload_helgrind_amd64_darwin_so_LDFLAGS      = \
+	$(PRELOAD_LDFLAGS_AMD64_DARWIN) \
+	$(LIBREPLACEMALLOC_LDFLAGS_AMD64_DARWIN)
+
 HELGRIND_SOURCES_COMMON = \
 	hg_basics.c hg_lock_n_thread.c hg_wordset.c libhb_core.c \
 	hg_errors.c hg_main.c
@@ -115,6 +140,20 @@ helgrind_ppc64_aix5_CFLAGS       = $(AM_CFLAGS_PPC64_AIX5) -O2
 helgrind_ppc64_aix5_DEPENDENCIES = $(COREGRIND_LIBS_PPC64_AIX5)
 helgrind_ppc64_aix5_LDADD        = $(TOOL_LDADD_PPC64_AIX5)
 helgrind_ppc64_aix5_LDFLAGS      = $(TOOL_LDFLAGS_PPC64_AIX5)
+
+helgrind_x86_darwin_SOURCES      = $(HELGRIND_SOURCES_COMMON)
+helgrind_x86_darwin_CPPFLAGS     = $(AM_CPPFLAGS_X86_DARWIN)
+helgrind_x86_darwin_CFLAGS       = $(AM_CFLAGS_X86_DARWIN) -O2
+helgrind_x86_darwin_DEPENDENCIES = $(COREGRIND_LIBS_X86_DARWIN)
+helgrind_x86_darwin_LDADD        = $(TOOL_LDADD_X86_DARWIN)
+helgrind_x86_darwin_LDFLAGS      = $(TOOL_LDFLAGS_X86_DARWIN)
+
+helgrind_amd64_darwin_SOURCES      = $(HELGRIND_SOURCES_COMMON)
+helgrind_amd64_darwin_CPPFLAGS     = $(AM_CPPFLAGS_AMD64_DARWIN)
+helgrind_amd64_darwin_CFLAGS       = $(AM_CFLAGS_AMD64_DARWIN) -O2
+helgrind_amd64_darwin_DEPENDENCIES = $(COREGRIND_LIBS_AMD64_DARWIN)
+helgrind_amd64_darwin_LDADD        = $(TOOL_LDADD_AMD64_DARWIN)
+helgrind_amd64_darwin_LDFLAGS      = $(TOOL_LDFLAGS_AMD64_DARWIN)
 
 hgincludedir = $(includedir)/valgrind
 

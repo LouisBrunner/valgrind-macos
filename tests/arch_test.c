@@ -32,10 +32,10 @@ char* all_archs[] = {
 
 static Bool go(char* arch)
 { 
-#if defined(VGP_x86_linux)
+#if defined(VGP_x86_linux) || defined(VGP_x86_darwin)
    if ( 0 == strcmp( arch, "x86"   ) ) return True;
 
-#elif defined(VGP_amd64_linux)
+#elif defined(VGP_amd64_linux) || defined(VGP_amd64_darwin)
    if ( 0 == strcmp( arch, "x86"   ) ) return True;
    if ( 0 == strcmp( arch, "amd64" ) ) return True;
 

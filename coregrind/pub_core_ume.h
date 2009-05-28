@@ -43,6 +43,10 @@
 #elif defined(VGO_aix5)
 // The AIX port doesn't use UME.
 
+#elif defined(VGO_darwin)
+#  define HAVE_MACHO
+#  define HAVE_SCRIPT
+
 #else
 #error unknown architecture
 #endif
@@ -60,9 +64,18 @@ typedef
       Addr exe_base;     // INOUT: lowest (allowed) address of exe
       Addr exe_end;      // INOUT: highest (allowed) address
 
+#if !defined(VGO_darwin)
       Addr phdr;         // OUT: address phdr was mapped at
       Int  phnum;        // OUT: number of phdrs
       Addr interp_base;  // OUT: where interpreter (ld.so) was mapped
+#else
+      Addr  stack_start;      // OUT: address of start of stack segment (hot)
+      Addr  stack_end;        // OUT: address of end of stack segment (cold)
+      Addr  text;             // OUT: address of executable's Mach header
+      Bool  dynamic;          // OUT: False iff executable is static
+      char* executable_path;  // OUT: path passed to execve()
+#endif
+
       Addr entry;        // OUT: entrypoint in main executable
       Addr init_ip;      // OUT: address of first instruction to execute
       Addr brkbase;      // OUT: base address of brk segment

@@ -51,6 +51,7 @@
 #include "pub_core_xarray.h"
 #include "pub_core_oset.h"
 #include "pub_core_stacktrace.h" // VG_(get_StackTrace) XXX: circular dependency
+#include "pub_core_ume.h"
 
 #include "priv_misc.h"           /* dinfo_zalloc/free */
 #include "priv_d3basics.h"       /* ML_(pp_GX) */
@@ -67,6 +68,9 @@
 # include "pub_core_libcproc.h"
 # include "pub_core_libcfile.h"
 # include "priv_readxcoff.h"
+#elif defined(VGO_darwin)
+# include "priv_readmacho.h"
+# include "priv_readpdb.h"
 #endif
 
 
@@ -576,7 +580,7 @@ void VG_(di_initialise) ( void )
 /*---                                                        ---*/
 /*--------------------------------------------------------------*/
 
-#if defined(VGO_linux)
+#if defined(VGO_linux)  ||  defined(VGO_darwin)
 
 /* The debug info system is driven by notifications that a text
    segment has been mapped in, or unmapped.  When that happens it
@@ -703,11 +707,10 @@ ULong VG_(di_notify_mmap)( Addr a, Bool allow_SkFileV )
    */
    is_rx_map = False;
    is_rw_map = False;
-#  if defined(VGP_x86_linux)
+#  if defined(VGA_x86)
    is_rx_map = seg->hasR && seg->hasX;
    is_rw_map = seg->hasR && seg->hasW;
-#  elif defined(VGP_amd64_linux) \
-        || defined(VGP_ppc32_linux) || defined(VGP_ppc64_linux)
+#  elif defined(VGA_amd64) || defined(VGA_ppc32) || defined(VGA_ppc64)
    is_rx_map = seg->hasR && seg->hasX && !seg->hasW;
    is_rw_map = seg->hasR && seg->hasW && !seg->hasX;
 #  else
@@ -750,8 +753,15 @@ ULong VG_(di_notify_mmap)( Addr a, Bool allow_SkFileV )
    vg_assert(nread > 0 && nread <= sizeof(buf1k) );
 
    /* We're only interested in mappings of ELF object files. */
+#if defined(HAVE_ELF)
    if (!ML_(is_elf_object_file)( buf1k, (SizeT)nread ))
       return 0;
+#elif defined(HAVE_MACHO)
+   if (!ML_(is_macho_object_file)( buf1k, (SizeT)nread ))
+      return 0;
+#else
+#  error "unknown executable type"
+#endif
 
    /* See if we have a DebugInfo for this filename.  If not,
       create one. */
@@ -803,7 +813,13 @@ ULong VG_(di_notify_mmap)( Addr a, Bool allow_SkFileV )
    discard_DebugInfos_which_overlap_with( di );
 
    /* .. and acquire new info. */
+#if defined(HAVE_ELF)
    ok = ML_(read_elf_debug_info)( di );
+#elif defined(HAVE_MACHO)
+   ok = ML_(read_macho_debug_info)( di );
+#else
+#  error "unknown executable type"
+#endif
 
    if (ok) {
 
@@ -863,7 +879,7 @@ void VG_(di_notify_munmap)( Addr a, SizeT len )
 void VG_(di_notify_mprotect)( Addr a, SizeT len, UInt prot )
 {
    Bool exe_ok = toBool(prot & VKI_PROT_EXEC);
-#  if defined(VGP_x86_linux)
+#  if defined(VGA_x86)
    exe_ok = exe_ok || toBool(prot & VKI_PROT_READ);
 #  endif
    if (0 && !exe_ok) {
@@ -1383,6 +1399,9 @@ Vg_FnNameKind VG_(get_fnname_kind) ( Char* name )
        VG_STREQ("generic_start_main", name) ||  // Yellow Dog doggedness
 #elif defined(VGO_aix5)
        VG_STREQ("__start", name)            ||  // AIX aches
+#elif defined(VGO_darwin)
+       // See readmacho.c for an explanation of this.
+       VG_STREQ("start_according_to_valgrind", name) ||  // Darwin, darling
 #else
 #      error Unknown OS
 #endif
@@ -3383,7 +3402,6 @@ VgSectKind VG_(seginfo_sect_kind)( /*OUT*/UChar* name, SizeT n_name,
    return res;
 
 }
-
 
 /*--------------------------------------------------------------------*/
 /*--- end                                                          ---*/

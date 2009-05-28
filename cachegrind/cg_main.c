@@ -1464,13 +1464,14 @@ static void cg_fini(Int exitcode)
    if (VG_(clo_verbosity) == 0) 
       return;
 
-   #define MAX(a, b)  ((a) >= (b) ? (a) : (b))
+   // Nb: this isn't called "MAX" because that overshadows a global on Darwin.
+   #define CG_MAX(a, b)  ((a) >= (b) ? (a) : (b))
 
    /* I cache results.  Use the I_refs value to determine the first column
     * width. */
    l1 = ULong_width(Ir_total.a);
-   l2 = ULong_width(MAX(Dr_total.a, Bc_total.b));
-   l3 = ULong_width(MAX(Dw_total.a, Bi_total.b));
+   l2 = ULong_width(CG_MAX(Dr_total.a, Bc_total.b));
+   l3 = ULong_width(CG_MAX(Dw_total.a, Bi_total.b));
 
    /* Make format string, getting width right for numbers */
    VG_(sprintf)(fmt, "%%s %%,%dllu", l1);

@@ -178,6 +178,8 @@
 #  define  VG_Z_LIBC_SONAME  libcZaZdaZLshrZdoZR     // libc*.a(shr.o)
 #elif defined(VGP_ppc64_aix5)
 #  define  VG_Z_LIBC_SONAME  libcZaZdaZLshrZu64ZdoZR // libc*.a(shr_64.o)
+#elif defined(VGO_darwin)
+#  define  VG_Z_LIBC_SONAME  libSystemZdZaZddylib    // libSystem.*.dylib
 #else
 #  error "Unknown platform"
 #endif
@@ -202,6 +204,8 @@
 
 #if defined(VGO_linux) || defined(VGO_aix5)
 #  define  VG_Z_LIBPTHREAD_SONAME  libpthreadZdsoZd0     // libpthread.so.0
+#elif defined(VGO_darwin)
+#  define  VG_Z_LIBPTHREAD_SONAME  libSystemZdZaZddylib  // libSystem.*.dylib
 #else
 #  error "Unknown platform"
 #endif
@@ -214,6 +218,13 @@
 #define  VG_Z_LD64_SO_1             ld64ZdsoZd1                // ld64.so.1
 #define  VG_Z_LD_SO_1               ldZdsoZd1                  // ld.so.1
 #endif
+
+/* --- Executable name for Darwin Mach-O linker. --- */
+
+#if defined(VGO_darwin)
+#define  VG_Z_DYLD               dyld                       // dyld
+#endif
+
 
 #endif   // __PUB_TOOL_REDIR_H
 

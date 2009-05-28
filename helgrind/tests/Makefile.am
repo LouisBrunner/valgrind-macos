@@ -92,9 +92,14 @@ check_PROGRAMS = \
 	tc18_semabuse \
 	tc19_shadowmem \
 	tc21_pthonce \
-	tc22_exit_w_lock \
 	tc23_bogus_condwait \
 	tc24_nonzero_sem
+
+# DDD: it seg faults, and then the Valgrind exit path hangs
+if ! VGCONF_PLATFORMS_INCLUDE_X86_DARWIN
+   check_PROGRAMS += \
+	tc22_exit_w_lock
+endif
 
 if HAVE_PTHREAD_BARRIER
 check_PROGRAMS += bar_bad bar_trivial

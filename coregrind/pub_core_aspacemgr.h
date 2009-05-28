@@ -120,7 +120,6 @@ extern void VG_(am_show_nsegments) ( Int logLevel, HChar* who );
 extern Bool VG_(am_do_sync_check) ( const HChar* fn, 
                                     const HChar* file, Int line );
 
-
 //--------------------------------------------------------------
 // Functions pertaining to the central query-notify mechanism
 // used to handle mmap/munmap/mprotect resulting from client
@@ -250,6 +249,8 @@ extern Bool VG_(am_aix5_sbrk_allowed);
    segment array accordingly. */
 extern SysRes VG_(am_mmap_file_fixed_client)
    ( Addr start, SizeT length, UInt prot, Int fd, Off64T offset );
+extern SysRes VG_(am_mmap_named_file_fixed_client)
+   ( Addr start, SizeT length, UInt prot, Int fd, Off64T offset, const HChar *name );
 
 /* Map anonymously at a fixed address for the client, and update
    the segment array accordingly. */
@@ -400,6 +401,22 @@ extern VgStack* VG_(am_alloc_VgStack)( /*OUT*/Addr* initial_sp );
 
 extern Int VG_(am_get_VgStack_unused_szB)( VgStack* stack ); 
 
+// DDD: this is ugly
+#if defined(VGO_darwin)
+typedef 
+   struct {
+      Bool   is_added;  // Added or removed seg?
+      Addr   start;
+      SizeT  end;
+      UInt   prot;      // Not used for removed segs.
+      Off64T offset;    // Not used for removed segs.
+   }
+   ChangedSeg;
+
+extern void VG_(get_changed_segments)(
+      const HChar* when, const HChar* where, /*OUT*/ChangedSeg* css,
+      Int css_size, /*OUT*/Int* css_used);
+#endif
 
 #endif   // __PUB_CORE_ASPACEMGR_H
 

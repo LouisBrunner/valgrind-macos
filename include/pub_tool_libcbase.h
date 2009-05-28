@@ -37,6 +37,7 @@
 
 extern Bool VG_(isspace) ( Char c );
 extern Bool VG_(isdigit) ( Char c );
+extern Char VG_(tolower) ( Char c );
 
 /* ---------------------------------------------------------------------
    Converting strings to numbers
@@ -86,8 +87,11 @@ extern Char* VG_(strpbrk)        ( const Char* s, const Char* accpt );
 extern Char* VG_(strcpy)         ( Char* dest, const Char* src );
 extern Char* VG_(strncpy)        ( Char* dest, const Char* src, SizeT ndest );
 extern Int   VG_(strcmp)         ( const Char* s1, const Char* s2 );
+extern Int   VG_(strcasecmp)     ( const Char* s1, const Char* s2 );
 extern Int   VG_(strncmp)        ( const Char* s1, const Char* s2, SizeT nmax );
+extern Int   VG_(strncasecmp)    ( const Char* s1, const Char* s2, SizeT nmax );
 extern Char* VG_(strstr)         ( const Char* haystack, Char* needle );
+extern Char* VG_(strcasestr)     ( const Char* haystack, Char* needle );
 extern Char* VG_(strchr)         ( const Char* s, Char c );
 extern Char* VG_(strrchr)        ( const Char* s, Char c );
 extern SizeT VG_(strspn)         ( const Char* s, const Char* accpt );
@@ -115,6 +119,7 @@ extern Int   VG_(memcmp) ( const void* s1, const void* s2, SizeT n );
 #define VG_IS_4_ALIGNED(aaa_p)    (0 == (((Addr)(aaa_p)) & ((Addr)0x3)))
 #define VG_IS_8_ALIGNED(aaa_p)    (0 == (((Addr)(aaa_p)) & ((Addr)0x7)))
 #define VG_IS_16_ALIGNED(aaa_p)   (0 == (((Addr)(aaa_p)) & ((Addr)0xf)))
+#define VG_IS_32_ALIGNED(aaa_p)   (0 == (((Addr)(aaa_p)) & ((Addr)0x1f)))
 #define VG_IS_WORD_ALIGNED(aaa_p) (0 == (((Addr)(aaa_p)) & ((Addr)(sizeof(Addr)-1))))
 #define VG_IS_PAGE_ALIGNED(aaa_p) (0 == (((Addr)(aaa_p)) & ((Addr)(VKI_PAGE_SIZE-1))))
 

@@ -182,6 +182,10 @@ extern VgSmc VG_(clo_smc_check);
    so they can be properly handled by m_syswrap. */
 extern HChar* VG_(clo_kernel_variant);
 
+/* Darwin-specific: automatically run /usr/bin/dsymutil to update
+   .dSYM directories as necessary? */
+extern Bool VG_(clo_auto_run_dsymutil);
+
 /* --------- Functions --------- */
 
 /* Call this if the executable is missing.  This function prints an

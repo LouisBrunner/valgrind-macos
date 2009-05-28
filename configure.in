@@ -62,6 +62,7 @@ AC_PROG_CC
 AM_PROG_CC_C_O
 AC_PROG_CPP
 AC_PROG_CXX
+AC_PROG_OBJC
 AC_PROG_RANLIB
 
 # If no AR variable was specified, look up the name of the archiver. Otherwise
@@ -219,6 +220,8 @@ fi
 AC_MSG_CHECKING([for a supported OS])
 AC_SUBST(VGCONF_OS)
 
+DEFAULT_SUPP=""
+
 case "${host_os}" in
      *linux*)
 	AC_MSG_RESULT([ok (${host_os})])
@@ -264,6 +267,34 @@ case "${host_os}" in
      *freebsd*)
         AC_MSG_RESULT([ok (${host_os})])
         VGCONF_OS="freebsd"
+        ;;
+
+     *darwin*)
+        AC_MSG_RESULT([ok (${host_os})])
+        VGCONF_OS="darwin"
+
+	AC_MSG_CHECKING([for the kernel version])
+	kernel=`uname -r`
+
+        # Nb: for Darwin we set DEFAULT_SUPP here.  That's because Darwin
+        # has only one relevant version, the OS version. The `uname` check
+        # is a good way to get that version (i.e. "Darwin 9.6.0" is Mac OS
+        # X 10.5.6, and "Darwin 10.x" would presumably be Mac OS X 10.6.x
+        # Snow Leopard and darwin10.supp), and we don't know of an macros
+        # similar to __GLIBC__ to get that info.
+        #
+        # XXX: `uname -r` won't do the right thing for cross-compiles, but
+        # that's not a problem yet.
+	case "${kernel}" in
+	     9.*)
+		  AC_MSG_RESULT([Darwin 9.x (${kernel}) / Mac OS X 10.5 Leopard])
+		  DEFAULT_SUPP="darwin9.supp ${DEFAULT_SUPP}"
+		  ;;
+     *) 
+		  AC_MSG_RESULT([unsupported (${kernel})])
+		  AC_MSG_ERROR([Valgrind works on Darwin 9.x (Mac OS X 10.5)])
+		  ;;
+	esac
         ;;
 
      *) 
@@ -405,6 +436,33 @@ case "$ARCH_MAX-$VGCONF_OS" in
         valt_load_address_inner="0x28000000"
         AC_MSG_RESULT([ok (${ARCH_MAX}-${VGCONF_OS})])
 	;;
+     x86-darwin)
+        VGCONF_ARCH_PRI="x86"
+	VGCONF_PLATFORM_PRI_CAPS="X86_DARWIN"
+	VGCONF_PLATFORM_SEC_CAPS=""
+        valt_load_address_normal="0x0"
+        valt_load_address_inner="0x0"
+        AC_MSG_RESULT([ok (${ARCH_MAX}-${VGCONF_OS})])
+	;;
+     amd64-darwin)
+	if test x$vg_cv_only64bit = xyes; then
+           VGCONF_ARCH_PRI="amd64"
+	   VGCONF_PLATFORM_PRI_CAPS="AMD64_DARWIN"
+	   VGCONF_PLATFORM_SEC_CAPS=""
+	elif test x$vg_cv_only32bit = xyes; then
+           VGCONF_ARCH_PRI="x86"
+	   VGCONF_PLATFORM_PRI_CAPS="X86_DARWIN"
+	   VGCONF_PLATFORM_SEC_CAPS=""
+	   VGCONF_ARCH_PRI_CAPS="x86"
+	else
+           VGCONF_ARCH_PRI="amd64"
+	   VGCONF_PLATFORM_PRI_CAPS="AMD64_DARWIN"
+	   VGCONF_PLATFORM_SEC_CAPS="X86_DARWIN"
+	fi
+        valt_load_address_normal="0x0"
+        valt_load_address_inner="0x0"
+        AC_MSG_RESULT([ok (${ARCH_MAX}-${VGCONF_OS})])
+	;;
     *)
         VGCONF_ARCH_PRI="unknown"
 	VGCONF_PLATFORM_PRI_CAPS="UNKNOWN"
@@ -420,9 +478,12 @@ esac
 # defined.
 AM_CONDITIONAL(VGCONF_ARCHS_INCLUDE_X86,   
                test x$VGCONF_PLATFORM_PRI_CAPS = xX86_LINUX \
-                 -o x$VGCONF_PLATFORM_SEC_CAPS = xX86_LINUX )
+                 -o x$VGCONF_PLATFORM_SEC_CAPS = xX86_LINUX \
+                 -o x$VGCONF_PLATFORM_PRI_CAPS = xX86_DARWIN \
+                 -o x$VGCONF_PLATFORM_SEC_CAPS = xX86_DARWIN )
 AM_CONDITIONAL(VGCONF_ARCHS_INCLUDE_AMD64, 
-               test x$VGCONF_PLATFORM_PRI_CAPS = xAMD64_LINUX )
+               test x$VGCONF_PLATFORM_PRI_CAPS = xAMD64_LINUX \
+                 -o x$VGCONF_PLATFORM_PRI_CAPS = xAMD64_DARWIN )
 AM_CONDITIONAL(VGCONF_ARCHS_INCLUDE_PPC32, 
                test x$VGCONF_PLATFORM_PRI_CAPS = xPPC32_LINUX \ 
                  -o x$VGCONF_PLATFORM_SEC_CAPS = xPPC32_LINUX \
@@ -444,11 +505,19 @@ AM_CONDITIONAL(VGCONF_PLATFORMS_INCLUDE_PPC32_LINUX,
                  -o x$VGCONF_PLATFORM_SEC_CAPS = xPPC32_LINUX)
 AM_CONDITIONAL(VGCONF_PLATFORMS_INCLUDE_PPC64_LINUX, 
                test x$VGCONF_PLATFORM_PRI_CAPS = xPPC64_LINUX)
+
 AM_CONDITIONAL(VGCONF_PLATFORMS_INCLUDE_PPC32_AIX5, 
                test x$VGCONF_PLATFORM_PRI_CAPS = xPPC32_AIX5 \ 
                  -o x$VGCONF_PLATFORM_SEC_CAPS = xPPC32_AIX5)
 AM_CONDITIONAL(VGCONF_PLATFORMS_INCLUDE_PPC64_AIX5, 
                test x$VGCONF_PLATFORM_PRI_CAPS = xPPC64_AIX5)
+
+AM_CONDITIONAL(VGCONF_PLATFORMS_INCLUDE_X86_DARWIN,   
+               test x$VGCONF_PLATFORM_PRI_CAPS = xX86_DARWIN \
+                 -o x$VGCONF_PLATFORM_SEC_CAPS = xX86_DARWIN)
+AM_CONDITIONAL(VGCONF_PLATFORMS_INCLUDE_AMD64_DARWIN, 
+               test x$VGCONF_PLATFORM_PRI_CAPS = xAMD64_DARWIN)
+
 
 # Similarly, set up VGCONF_OF_IS_<os>.  Exactly one of these becomes defined.
 # Relies on the assumption that the primary and secondary targets are 
@@ -461,6 +530,9 @@ AM_CONDITIONAL(VGCONF_OS_IS_LINUX,
 AM_CONDITIONAL(VGCONF_OS_IS_AIX5,
                test x$VGCONF_PLATFORM_PRI_CAPS = xPPC32_AIX5 \
                  -o x$VGCONF_PLATFORM_PRI_CAPS = xPPC64_AIX5)
+AM_CONDITIONAL(VGCONF_OS_IS_DARWIN,
+               test x$VGCONF_PLATFORM_PRI_CAPS = xX86_DARWIN \
+                 -o x$VGCONF_PLATFORM_PRI_CAPS = xAMD64_DARWIN)
 
 
 # Sometimes, in the Makefile.am files, it's useful to know whether or not
@@ -493,7 +565,6 @@ fi
 # Libc and suppressions
 #----------------------------------------------------------------------------
 # This variable will collect the suppression files to be used.
-DEFAULT_SUPP=""
 AC_SUBST(DEFAULT_SUPP)
 
 GLIBC_VERSION=""
@@ -596,6 +667,15 @@ AC_EGREP_CPP([AIX5_LIBC], [
 ],
 GLIBC_VERSION="aix5")
 
+# not really a version check
+AC_EGREP_CPP([DARWIN_LIBC], [
+#include <sys/cdefs.h>
+#if defined(__DARWIN_VERS_1050)
+  DARWIN_LIBC
+#endif
+],
+GLIBC_VERSION="darwin")
+
 AC_MSG_CHECKING([the GLIBC_VERSION version])
 
 case "${GLIBC_VERSION}" in
@@ -670,11 +750,17 @@ case "${GLIBC_VERSION}" in
 	AC_DEFINE([AIX5_LIBC], 1, [Define to 1 if you're using AIX 5.1 or 5.2 or 5.3])
 	DEFAULT_SUPP="aix5libc.supp ${DEFAULT_SUPP}"
 	;;
+     darwin)
+	AC_MSG_RESULT(Darwin)
+	AC_DEFINE([DARWIN_LIBC], 1, [Define to 1 if you're using Darwin])
+	# DEFAULT_SUPP set by kernel version check above.
+	;;
 
      *)
 	AC_MSG_RESULT(unsupported version)
 	AC_MSG_ERROR([Valgrind requires glibc version 2.2 - 2.10])
 	AC_MSG_ERROR([or AIX 5.1 or 5.2 or 5.3 GLIBC_VERSION])
+	AC_MSG_ERROR([or Darwin libc])
 	;;
 esac
 
@@ -1341,6 +1427,14 @@ fi
 
 
 #----------------------------------------------------------------------------
+# Check for /proc filesystem
+#----------------------------------------------------------------------------
+AC_CHECK_FILES(/proc/self/fd /proc/self/exe /proc/self/maps, 
+    [ AC_DEFINE([HAVE_PROC], 1, [can use /proc filesystem]) ], 
+    [])
+
+
+#----------------------------------------------------------------------------
 # Checks for C header files.
 #----------------------------------------------------------------------------
 
@@ -1389,6 +1483,7 @@ AC_CHECK_FUNCS([     \
         memchr       \
         memset       \
         mkdir        \
+        mremap       \
         ppoll        \
         pthread_barrier_init       \
         pthread_condattr_setclock  \
@@ -1738,6 +1833,7 @@ AC_OUTPUT(
    memcheck/tests/amd64/Makefile
    memcheck/tests/x86/Makefile
    memcheck/tests/linux/Makefile
+   memcheck/tests/darwin/Makefile
    memcheck/tests/x86-linux/Makefile
    memcheck/perf/Makefile
    memcheck/docs/Makefile
@@ -1769,6 +1865,7 @@ AC_OUTPUT(
    none/tests/ppc64/Makefile
    none/tests/x86/Makefile
    none/tests/linux/Makefile
+   none/tests/darwin/Makefile
    none/tests/x86-linux/Makefile
    none/docs/Makefile
    exp-omega/Makefile

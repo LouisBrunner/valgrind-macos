@@ -98,6 +98,8 @@ void VG_(set_syscall_return_shadows) ( ThreadId tid,
    VG_(threads)[tid].arch.vex_shadow2.guest_GPR3 = s2res;
    VG_(threads)[tid].arch.vex_shadow1.guest_GPR4 = s1err;
    VG_(threads)[tid].arch.vex_shadow2.guest_GPR4 = s2err;
+#  elif defined(VGO_darwin)
+   // GrP fixme darwin syscalls may return more values (2 registers plus error)
 #  else
 #    error "Unknown plat"
 #  endif
@@ -672,8 +674,8 @@ void VG_(machine_get_VexArchInfo)( /*OUT*/VexArch* pVa,
 // produce a pointer to the actual entry point for the function.
 void* VG_(fnptr_to_fnentry)( void* f )
 {
-#if defined(VGP_x86_linux) || defined(VGP_amd64_linux) \
-                           || defined(VGP_ppc32_linux)
+#if defined(VGP_x86_linux)   || defined(VGP_amd64_linux) || \
+    defined(VGP_ppc32_linux) || defined(VGO_darwin)
    return f;
 #elif defined(VGP_ppc64_linux) || defined(VGP_ppc32_aix5) \
                                || defined(VGP_ppc64_aix5)

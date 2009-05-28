@@ -229,6 +229,24 @@ void ML_(addSym) ( struct _DebugInfo* di, DiSym* sym )
 }
 
 
+/* Resize the symbol table to save memory.
+*/
+void ML_(shrinkSym)( struct _DebugInfo* di )
+{
+   DiSym* new_tab;
+   UInt new_sz = di->symtab_used;
+   if (new_sz == di->symtab_size) return;
+
+   new_tab = ML_(dinfo_zalloc)( "di.storage.shrinkSym", 
+                                new_sz * sizeof(DiSym) );
+   VG_(memcpy)(new_tab, di->symtab, new_sz * sizeof(DiSym));
+
+   ML_(dinfo_free)(di->symtab);
+   di->symtab = new_tab;
+   di->symtab_size = new_sz;
+}
+
+
 /* Add a location to the location table. 
 */
 static void addLoc ( struct _DebugInfo* di, DiLoc* loc )
@@ -256,6 +274,24 @@ static void addLoc ( struct _DebugInfo* di, DiLoc* loc )
    di->loctab[di->loctab_used] = *loc;
    di->loctab_used++;
    vg_assert(di->loctab_used <= di->loctab_size);
+}
+
+
+/* Resize the lineinfo table to save memory.
+*/
+void ML_(shrinkLineInfo)( struct _DebugInfo* di )
+{
+   DiLoc* new_tab;
+   UInt new_sz = di->loctab_used;
+   if (new_sz == di->loctab_size) return;
+
+   new_tab = ML_(dinfo_zalloc)( "di.storage.shrinkLineInfo", 
+                                new_sz * sizeof(DiLoc) );
+   VG_(memcpy)(new_tab, di->loctab, new_sz * sizeof(DiLoc));
+
+   ML_(dinfo_free)(di->loctab);
+   di->loctab = new_tab;
+   di->loctab_size = new_sz;
 }
 
 
@@ -1060,6 +1096,8 @@ static DiSym* prefersym ( struct _DebugInfo* di, DiSym* a, DiSym* b )
 
 #if defined(VGO_linux) || defined(VGO_aix5)
 #  define VERSION_CHAR '@'
+#elif defined(VGO_darwin)
+#  define VERSION_CHAR '$'
 #else
 #  error Unknown OS
 #endif
@@ -1145,6 +1183,7 @@ static DiSym* prefersym ( struct _DebugInfo* di, DiSym* a, DiSym* b )
    if (cmp > 0) {
       preferB = True; goto out;
    }
+
    /* If we get here, they are the same name. */
 
    /* In this case we could choose either (arbitrarily), but might as
@@ -1195,7 +1234,8 @@ static void canonicaliseSymtab ( struct _DebugInfo* di )
       for (i = 0; i < j; i++) {
          if (i < j-1
              && di->symtab[i].addr   == di->symtab[i+1].addr
-             && di->symtab[i].size   == di->symtab[i+1].size) {
+             && di->symtab[i].size   == di->symtab[i+1].size
+             ) {
             n_merged++;
             /* merge the two into one */
 	    di->symtab[di->symtab_used++] 

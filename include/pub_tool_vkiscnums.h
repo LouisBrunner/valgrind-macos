@@ -42,6 +42,10 @@
    different for each process (in principle; in practice they rarely
    change).  32- and 64-bit AIX5 share a common "implementation".
 
+   On Darwin the __NR_name consts are #define'd constants which are
+   computed using various macros.  32- and 64-bit Darwin share a common
+   "implementation" also.
+
    This file is merely a top-level "steering" file, which pulls in the
    correct bits for the relevant platform.  You should not directly
    #include any file in include/vki; instead #include only this one or
@@ -72,9 +76,30 @@
 /* Look up the name of a syscall, using the bindings previously
    created by VG_(aix5_register_syscall), for the purposes of making
    error messages. */
+// DDD: should combine this and VG_DARWIN_SYSNO_PRINT into a single generic
+// function which returns a string, something like VG_(pprint_sysno)().
 extern UChar* VG_(aix5_sysno_to_sysname)( Int sysno );
 
 #endif /* !defined(VG_IN_ASSEMBLY_SOURCE) */
+
+#elif defined(VGP_x86_darwin) || defined(VGP_amd64_darwin)
+#  include "vki/vki-scnums-darwin.h"
+
+// Convert a syscall number into a nice form for printing.  Unix syscalls
+// get positive numbers (0..400-odd), Mach traps get negative numbers
+// (-10..-127).  
+// DDD: Machine-dependent ones get positive numbers which will overlap with
+// Unix ones!  So eg. both 'pthread_set_self' and 'read' are reported as
+// "3".
+#define VG_DARWIN_SYSNO_PRINT(sysno) \
+    ((VG_DARWIN_SYSNO_CLASS(sysno) == VG_DARWIN_SYSCALL_CLASS_MACH) \
+    ? -VG_DARWIN_SYSNO_INDEX(sysno) \
+    :  VG_DARWIN_SYSNO_INDEX(sysno) \
+    )
+
+/* Macros for working out which syscall a syscall number refers to. */
+#define VG_DARWIN_SYSNO_INDEX(sysno) ((sysno) & VG_DARWIN_SYSCALL_NUMBER_MASK)
+#define VG_DARWIN_SYSNO_CLASS(sysno) ((sysno) >> VG_DARWIN_SYSCALL_CLASS_SHIFT)
 
 #else
 #  error Unknown platform

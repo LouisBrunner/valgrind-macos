@@ -22,6 +22,7 @@ typedef int    Bool;
 char* all_OSes[] = {
    "linux",
    "aix5",
+   "darwin",
    NULL
 };
 
@@ -31,7 +32,10 @@ static Bool go(char* OS)
    if ( 0 == strcmp( OS, "linux" ) ) return True;
 
 #elif defined(VGO_aix5)
-   if ( 0 == strcmp( OS, "aix5"  ) ) return True;
+   if ( 0 == strcmp( OS, "aix5" ) ) return True;
+
+#elif defined(VGO_darwin)
+   if ( 0 == strcmp( OS, "darwin" ) ) return True;
 
 #else
 #  error Unknown OS

@@ -112,7 +112,15 @@ typedef  Word                 PtrdiffT;   // 32             64
 // - off_t is "used for file sizes".
 // At one point we were using it for memory offsets, but PtrdiffT should be
 // used in those cases.
+// Nb: on Linux and AIX, off_t is a signed word-sized int.  On Darwin it's
+// always a signed 64-bit int.  So we defined our own Off64T as well.
+#if defined(VGO_linux) || defined(VGO_aix5)
 typedef Word                   OffT;      // 32             64
+#elif defined(VGO_darwin)
+typedef Long                   OffT;      // 64             64
+#else
+#  error Unknown OS
+#endif
 typedef Long                 Off64T;      // 64             64
 
 #if !defined(NULL)
@@ -183,6 +191,19 @@ typedef
       Bool  _isError;
    }
    SysRes;
+#elif defined(VGO_darwin)
+typedef
+   struct {
+      UWord _wLO;
+      UWord _wHI;
+      enum { 
+         SysRes_MACH=40,  // MACH, result is _wLO
+         SysRes_MDEP,     // MDEP, result is _wLO
+         SysRes_UNIX_OK,  // UNIX, success, result is _wHI:_wLO
+         SysRes_UNIX_ERR  // UNIX, error,   error  is _wHI:_wLO
+      } _mode;
+   }
+   SysRes;
 #else
 #  error "Unknown OS"
 #endif
@@ -213,6 +234,44 @@ static inline Bool sr_EQ ( SysRes sr1, SysRes sr2 ) {
 #elif defined(VGO_aix5)
 #  error "need to define SysRes accessors on AIX5 (copy from 3.4.1 sources)"
 
+
+#elif defined(VGO_darwin)
+
+static inline Bool sr_isError ( SysRes sr ) {
+   switch (sr._mode) {
+      case SysRes_UNIX_ERR: return True;
+      default:              return False;
+      /* should check tags properly and assert here, but we can't here */
+   }
+}
+
+static inline UWord sr_Res ( SysRes sr ) {
+   switch (sr._mode) {
+      case SysRes_MACH:
+      case SysRes_MDEP:
+      case SysRes_UNIX_OK: return sr._wLO;
+      default: return 0; /* should assert, but we can't here */
+   }
+}
+
+static inline UWord sr_ResHI ( SysRes sr ) {
+   switch (sr._mode) {
+      case SysRes_UNIX_OK: return sr._wHI;
+      default: return 0; /* should assert, but we can't here */
+   }
+}
+
+static inline UWord sr_Err ( SysRes sr ) {
+   switch (sr._mode) {
+      case SysRes_UNIX_ERR: return sr._wLO;
+      default: return 0; /* should assert, but we can't here */
+   }
+}
+
+static inline Bool sr_EQ ( SysRes sr1, SysRes sr2 ) {
+   return sr1._mode == sr2._mode
+          && sr1._wLO == sr2._wLO && sr1._wHI == sr2._wHI;
+}
 
 #else
 #  error "Unknown OS"

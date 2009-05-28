@@ -439,8 +439,14 @@ extern void VG_(needs_final_IR_tidy_pass) ( IRSB*(*final_tidy)(IRSB*) );
    what kind of error message should be emitted. */
 typedef
    enum { Vg_CoreStartup=1, Vg_CoreSignal, Vg_CoreSysCall,
-          Vg_CoreTranslate, Vg_CoreClientReq }
-   CorePart;
+          // This is for platforms where syscall args are passed on the
+          // stack; although pre_mem_read is the callback that will be
+          // called, such an arg should be treated (with respect to
+          // presenting information to the user) as if it was passed in a
+          // register, ie. like pre_reg_read.
+          Vg_CoreSysCallArgInMem,  
+          Vg_CoreTranslate, Vg_CoreClientReq
+   } CorePart;
 
 /* Events happening in core to track.  To be notified, pass a callback
    function to the appropriate function.  To ignore an event, don't do

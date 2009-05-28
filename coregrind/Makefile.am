@@ -7,29 +7,40 @@ include $(top_srcdir)/Makefile.all.am
 include $(top_srcdir)/Makefile.flags.am
 include $(top_srcdir)/Makefile.core-tool.am
 
-
 AM_CPPFLAGS_CORE_COMMON = \
 	-I$(top_srcdir)/coregrind \
 	-DVG_LIBDIR="\"$(valdir)"\"
 
 AM_CPPFLAGS_X86_LINUX   += \
     $(AM_CPPFLAGS_CORE_COMMON) -DVG_PLATFORM="\"x86-linux\""
+
 AM_CPPFLAGS_AMD64_LINUX += \
     $(AM_CPPFLAGS_CORE_COMMON) -DVG_PLATFORM="\"amd64-linux\""
+
 AM_CPPFLAGS_PPC32_LINUX += \
     $(AM_CPPFLAGS_CORE_COMMON) -DVG_PLATFORM="\"ppc32-linux\""
+
 AM_CPPFLAGS_PPC64_LINUX += \
     $(AM_CPPFLAGS_CORE_COMMON) -DVG_PLATFORM="\"ppc64-linux\""
+
 AM_CPPFLAGS_PPC32_AIX5  += \
     $(AM_CPPFLAGS_CORE_COMMON) -DVG_PLATFORM="\"ppc32-aix5\""
+
 AM_CPPFLAGS_PPC64_AIX5  += \
     $(AM_CPPFLAGS_CORE_COMMON) -DVG_PLATFORM="\"ppc64-aix5\""
+
+AM_CPPFLAGS_X86_DARWIN   += \
+    $(AM_CPPFLAGS_CORE_COMMON) -DVG_PLATFORM="\"x86-darwin\""
+
+AM_CPPFLAGS_AMD64_DARWIN += \
+    $(AM_CPPFLAGS_CORE_COMMON) -DVG_PLATFORM="\"amd64-darwin\""
 
 
 default.supp: $(SUPP_FILES)
 
 
 noinst_PROGRAMS =
+noinst_DSYMS =
 pkglib_LIBRARIES =
 LIBVEX =
 
@@ -69,6 +80,20 @@ pkglib_LIBRARIES += libcoregrind-ppc64-aix5.a libreplacemalloc_toolpreload-ppc64
 LIBVEX           += libvex-ppc64-aix5.a
 endif
 
+if VGCONF_PLATFORMS_INCLUDE_X86_DARWIN
+noinst_PROGRAMS  += vgpreload_core-x86-darwin.so
+noinst_DSYMS     += vgpreload_core-x86-darwin.so
+pkglib_LIBRARIES += libcoregrind-x86-darwin.a libreplacemalloc_toolpreload-x86-darwin.a
+LIBVEX           += libvex-x86-darwin.a
+endif
+
+if VGCONF_PLATFORMS_INCLUDE_AMD64_DARWIN
+noinst_PROGRAMS  += vgpreload_core-amd64-darwin.so
+noinst_DSYMS     += vgpreload_core-amd64-darwin.so
+pkglib_LIBRARIES += libcoregrind-amd64-darwin.a libreplacemalloc_toolpreload-amd64-darwin.a
+LIBVEX           += libvex-amd64-darwin.a
+endif
+
 
 #------------------------- launcher -----------------------
 # Build the launcher (valgrind) for the primary target only.
@@ -87,6 +112,46 @@ valgrind_SOURCES = \
 	m_debuglog.c \
 	m_vkiscnums.c
 endif
+if VGCONF_OS_IS_DARWIN
+valgrind_SOURCES = \
+	launcher-darwin.c \
+	m_debuglog.c
+endif
+
+# Mach RPC interface definitions
+# Here are some more .defs files that are not used, but could be in the
+# future:
+#	clock.defs \
+#	clock_priv.defs \
+#	clock_reply.defs \
+#	exc.defs \
+#	host_priv.defs \
+#	host_security.defs \
+#	ledger.defs \
+#	lock_set.defs \
+#	mach_host.defs \
+#	mach_port.defs \
+#	notify.defs \
+#	processor.defs \
+#	processor_set.defs \
+#
+if VGCONF_OS_IS_DARWIN
+mach_defs = \
+	mach_vm.defs \
+	task.defs \
+	thread_act.defs \
+	vm_map.defs
+else
+mach_defs =
+endif
+
+mach_srcs = $(addprefix m_mach/,$(mach_defs:.defs=User.c))
+mach_server_srcs = $(addprefix m_mach/,$(mach_defs:.defs=Server.c))
+mach_hdrs = $(addprefix m_mach/,$(mach_defs:.defs=.h))
+mach_files = $(addprefix /usr/include/mach/,$(mach_defs))
+
+$(mach_srcs) $(mach_hdrs): $(mach_files)
+	(cd m_mach && mig $(mach_files))
 
 valgrind_CPPFLAGS  = $(AM_CPPFLAGS_PRI)
 valgrind_CFLAGS    = $(AM_CFLAGS_PRI)
@@ -103,6 +168,7 @@ no_op_client_for_valgrind_LDFLAGS   = $(AM_CFLAGS_PRI)
 
 
 noinst_HEADERS = \
+	$(mach_hdrs) \
 	launcher-aix5-bootblock.h \
 	pub_core_aspacehl.h	\
 	pub_core_aspacemgr.h	\
@@ -129,6 +195,7 @@ noinst_HEADERS = \
 	pub_core_libcprint.h	\
 	pub_core_libcproc.h	\
 	pub_core_libcsignal.h	\
+	pub_core_mach.h	\
 	pub_core_machine.h	\
 	pub_core_mallocfree.h	\
 	pub_core_options.h	\
@@ -166,6 +233,7 @@ noinst_HEADERS = \
 	m_debuginfo/priv_readdwarf.h	\
 	m_debuginfo/priv_readdwarf3.h	\
 	m_debuginfo/priv_readelf.h	\
+	m_debuginfo/priv_readmacho.h	\
 	m_debuginfo/priv_readxcoff.h	\
 	m_demangle/ansidecl.h	\
 	m_demangle/cp-demangle.h \
@@ -181,17 +249,22 @@ noinst_HEADERS = \
 	m_syswrap/priv_syswrap-linux.h \
 	m_syswrap/priv_syswrap-linux-variants.h \
 	m_syswrap/priv_syswrap-aix5.h \
+	m_syswrap/priv_syswrap-darwin.h \
 	m_syswrap/priv_syswrap-main.h \
 	m_ume/priv_ume.h
 
 BUILT_SOURCES = 
 CLEANFILES = 
+if VGCONF_OS_IS_DARWIN
+BUILT_SOURCES += $(COREGRIND_DARWIN_BUILT_SOURCES)
+CLEANFILES    += $(COREGRIND_DARWIN_BUILT_SOURCES)
+endif
 
 
 COREGRIND_SOURCES_COMMON = \
 	m_commandline.c \
-	m_cpuid.S \
 	m_clientstate.c \
+	m_cpuid.S \
 	m_debugger.c \
 	m_debuglog.c \
 	m_errormgr.c \
@@ -241,6 +314,7 @@ COREGRIND_SOURCES_COMMON = \
 	m_scheduler/sema.c \
 	m_syswrap/syswrap-main.c \
 	m_ume/elf.c \
+	m_ume/macho.c \
 	m_ume/main.c \
 	m_ume/script.c
 
@@ -263,6 +337,28 @@ COREGRIND_AIX5_SOURCE = \
 	m_debuginfo/readxcoff.c \
 	m_initimg/initimg-aix5.c \
 	m_syswrap/syswrap-aix5.c
+
+    # Note that the *User.c files are generated using 'mig' from $mach_defs
+    # above.
+COREGRIND_DARWIN_SOURCE = \
+	m_aspacemgr/aspacemgr-linux.c \
+	m_debuginfo/readdwarf.c \
+	m_debuginfo/readdwarf3.c \
+	m_debuginfo/readstabs.c \
+	m_debuginfo/readmacho.c \
+	m_debuginfo/readpdb.c \
+	m_mach/mach_basics.c \
+	m_mach/mach_msg.c \
+	m_initimg/initimg-darwin.c \
+	m_initimg/initimg-pathscan.c \
+	m_syswrap/syswrap-darwin.c \
+	m_syswrap/syswrap-generic.c
+
+COREGRIND_DARWIN_BUILT_SOURCES = \
+	m_mach/mach_vmUser.c \
+	m_mach/taskUser.c \
+	m_mach/thread_actUser.c \
+	m_mach/vm_mapUser.c
 
 libcoregrind_x86_linux_a_SOURCES = \
 	$(COREGRIND_SOURCES_COMMON) \
@@ -338,6 +434,37 @@ libcoregrind_ppc64_aix5_a_CFLAGS = $(AM_CFLAGS_PPC64_AIX5)
 libcoregrind_ppc64_aix5_a_CCASFLAGS = $(AM_CCASFLAGS_PPC64_AIX5)
 libcoregrind_ppc64_aix5_a_AR = $(AR) -X64 cru
 
+libcoregrind_x86_darwin_a_SOURCES = \
+	$(COREGRIND_SOURCES_COMMON) \
+	$(COREGRIND_DARWIN_SOURCE) \
+	m_coredump/coredump-x86-darwin.c \
+	m_dispatch/dispatch-x86-darwin.S \
+	m_mach/mach_traps-x86-darwin.S \
+	m_sigframe/sigframe-x86-darwin.c \
+	m_start-x86-darwin.S \
+	m_syswrap/syscall-x86-darwin.S \
+	m_syswrap/syswrap-x86-darwin.c
+nodist_libcoregrind_x86_darwin_a_SOURCES = $(COREGRIND_DARWIN_BUILT_SOURCES)
+libcoregrind_x86_darwin_a_CPPFLAGS = $(AM_CPPFLAGS_X86_DARWIN)
+libcoregrind_x86_darwin_a_CFLAGS = $(AM_CFLAGS_X86_DARWIN)
+libcoregrind_x86_darwin_a_CCASFLAGS = $(AM_CCASFLAGS_X86_DARWIN)
+
+
+libcoregrind_amd64_darwin_a_SOURCES = \
+	$(COREGRIND_SOURCES_COMMON) \
+	$(COREGRIND_DARWIN_SOURCE) \
+	m_coredump/coredump-amd64-darwin.c \
+	m_dispatch/dispatch-amd64-darwin.S \
+	m_mach/mach_traps-amd64-darwin.S \
+	m_sigframe/sigframe-amd64-darwin.c \
+	m_start-amd64-darwin.S \
+	m_syswrap/syscall-amd64-darwin.S \
+	m_syswrap/syswrap-amd64-darwin.c
+nodist_libcoregrind_amd64_darwin_a_SOURCES = $(COREGRIND_DARWIN_BUILT_SOURCES)
+libcoregrind_amd64_darwin_a_CPPFLAGS = $(AM_CPPFLAGS_AMD64_DARWIN)
+libcoregrind_amd64_darwin_a_CFLAGS = $(AM_CFLAGS_AMD64_DARWIN)
+libcoregrind_amd64_darwin_a_CCASFLAGS = $(AM_CCASFLAGS_AMD64_DARWIN)
+
 
 libreplacemalloc_toolpreload_x86_linux_a_SOURCES = m_replacemalloc/vg_replace_malloc.c
 libreplacemalloc_toolpreload_x86_linux_a_CPPFLAGS = $(AM_CPPFLAGS_X86_LINUX)
@@ -365,18 +492,30 @@ libreplacemalloc_toolpreload_ppc64_aix5_a_CPPFLAGS = $(AM_CPPFLAGS_PPC64_AIX5)
 libreplacemalloc_toolpreload_ppc64_aix5_a_CFLAGS = $(AM_CFLAGS_PPC64_AIX5) $(AM_CFLAGS_PIC)
 libreplacemalloc_toolpreload_ppc64_aix5_a_AR = $(AR) -X64 cru
 
+libreplacemalloc_toolpreload_x86_darwin_a_SOURCES = m_replacemalloc/vg_replace_malloc.c
+libreplacemalloc_toolpreload_x86_darwin_a_CPPFLAGS = $(AM_CPPFLAGS_X86_DARWIN)
+libreplacemalloc_toolpreload_x86_darwin_a_CFLAGS = $(AM_CFLAGS_X86_DARWIN) $(AM_CFLAGS_PIC)
+
+libreplacemalloc_toolpreload_amd64_darwin_a_SOURCES = m_replacemalloc/vg_replace_malloc.c
+libreplacemalloc_toolpreload_amd64_darwin_a_CPPFLAGS = $(AM_CPPFLAGS_AMD64_DARWIN)
+libreplacemalloc_toolpreload_amd64_darwin_a_CFLAGS = $(AM_CFLAGS_AMD64_DARWIN) $(AM_CFLAGS_PIC)
+
 m_dispatch/dispatch-x86-linux.S:	 libvex_guest_offsets.h
 m_dispatch/dispatch-amd64-linux.S:	 libvex_guest_offsets.h
 m_dispatch/dispatch-ppc32-linux.S:	 libvex_guest_offsets.h
 m_dispatch/dispatch-ppc64-linux.S:	 libvex_guest_offsets.h
 m_dispatch/dispatch-ppc32-aix5.S:	 libvex_guest_offsets.h
 m_dispatch/dispatch-ppc64-aix5.S:	 libvex_guest_offsets.h
+m_dispatch/dispatch-x86-darwin.S:	 libvex_guest_offsets.h
+m_dispatch/dispatch-amd64-darwin.S:	 libvex_guest_offsets.h
 m_syswrap/syscall-x86-linux.S:		 libvex_guest_offsets.h
 m_syswrap/syscall-amd64-linux.S:	 libvex_guest_offsets.h
 m_syswrap/syscall-ppc32-linux.S:	 libvex_guest_offsets.h
 m_syswrap/syscall-ppc64-linux.S:	 libvex_guest_offsets.h
 m_syswrap/syscall-ppc32-aix5.S:		 libvex_guest_offsets.h
 m_syswrap/syscall-ppc64-aix5.S:		 libvex_guest_offsets.h
+m_syswrap/syscall-x86-darwin.S:		 libvex_guest_offsets.h
+m_syswrap/syscall-amd64-darwin.S:	 libvex_guest_offsets.h
 m_syswrap/syswrap-main.c: 		 libvex_guest_offsets.h
 
 libvex_guest_offsets.h:
@@ -414,14 +553,25 @@ vgpreload_core_ppc64_aix5_so_CPPFLAGS = $(AM_CPPFLAGS_PPC64_AIX5)
 vgpreload_core_ppc64_aix5_so_CFLAGS = $(AM_CFLAGS_PPC64_AIX5) $(AM_CFLAGS_PIC)
 vgpreload_core_ppc64_aix5_so_LDFLAGS = $(PRELOAD_LDFLAGS_PPC64_AIX5)
 
-all-local: inplace-noinst_PROGRAMS
+vgpreload_core_x86_darwin_so_SOURCES = $(VGPRELOAD_CORE_SOURCES_COMMON)
+vgpreload_core_x86_darwin_so_CPPFLAGS = $(AM_CPPFLAGS_X86_DARWIN)
+vgpreload_core_x86_darwin_so_CFLAGS = $(AM_CFLAGS_X86_DARWIN) $(AM_CFLAGS_PIC)
+vgpreload_core_x86_darwin_so_LDFLAGS = $(PRELOAD_LDFLAGS_X86_DARWIN)
 
-clean-local:
+vgpreload_core_amd64_darwin_so_SOURCES = $(VGPRELOAD_CORE_SOURCES_COMMON)
+vgpreload_core_amd64_darwin_so_CPPFLAGS = $(AM_CPPFLAGS_AMD64_DARWIN)
+vgpreload_core_amd64_darwin_so_CFLAGS = $(AM_CFLAGS_AMD64_DARWIN) $(AM_CFLAGS_PIC)
+vgpreload_core_amd64_darwin_so_LDFLAGS = $(PRELOAD_LDFLAGS_AMD64_DARWIN)
+
+all-local: inplace-noinst_PROGRAMS inplace-noinst_DSYMS
+
+clean-local: clean-noinst_DSYMS
 	$(MAKE) -C @VEX_DIR@ CC="$(CC)" AR="$(AR)" clean
+	rm -f $(mach_srcs) $(mach_server_srcs) $(mach_hdrs)
 
 # Nb: The loop installs the libvex library for possible use by standalone
 # tools.
-install-exec-local: install-noinst_PROGRAMS
+install-exec-local: install-noinst_PROGRAMS install-noinst_DSYMS
 	for v in $(LIBVEX) ; do \
 	  $(INSTALL_DATA) @VEX_DIR@/$$v $(DESTDIR)$(valdir) ; \
 	done

@@ -1,6 +1,22 @@
 
 Release 3.5.0 (???)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+* XXX: Mac OS X support
+  - x86/Darwin.
+  - probably amd64/Darwin.
+  - Requires Mac OS X 10.5 Leopard or later.
+  - No support for Mac OS X on PowerPC machines.
+  - Many thanks to Greg Parker for developing this port over several years.
+
+  Things that don't work
+  - Objective-C garbage collection
+  - --db-attach=yes
+  - Messages like the following indicate a mismatch between Valgrind's
+    memory map and the kernel. Occasional failures are expected in
+    multithreaded programs. If the failure repeats for the same address
+    range, then there may be a problem causing false errors or crashes.
+        sync check at ...: FAILED
+
 * A new Memcheck client request VALGRIND_COUNT_LEAK_BLOCKS has been added.
   It is similar to VALGRIND_COUNT_LEAKS but counts blocks instead of bytes.
   [XXX: consider adding VALGRIND_COUNT_LEAK_BYTES as a synonym and

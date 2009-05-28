@@ -144,6 +144,12 @@ static void pc_post_clo_init ( void )
 
 static void pc_pre_clo_init(void)
 {
+#if defined(VGO_darwin)
+   // This makes the (all-failing) regtests run much faster.
+   VG_(printf)("Ptrcheck doesn't work on Darwin yet, sorry.\n");
+   VG_(exit)(1);
+#endif
+
    VG_(details_name)            ("exp-ptrcheck");
    VG_(details_version)         (NULL);
    VG_(details_description)     ("a heap, stack & global array "

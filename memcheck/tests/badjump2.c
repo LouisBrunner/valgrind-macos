@@ -24,7 +24,7 @@ int main(void)
    /* Install own SIGSEGV handler */
    sigsegv_new.sa_handler  = SIGSEGV_handler;
    sigsegv_new.sa_flags    = 0;
-#if !defined(_AIX)
+#if !defined(_AIX) && !defined(__APPLE__)
    sigsegv_new.sa_restorer = NULL;
 #endif
    res = sigemptyset( &sigsegv_new.sa_mask );

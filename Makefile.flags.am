@@ -10,7 +10,12 @@ AM_CFLAGS_BASE = -O2 -g -Wmissing-prototypes -Wall -Wshadow \
 # The aim is to give reasonable performance but also to have good
 # stack traces, since users often see stack traces extending 
 # into (and through) the preloads.
-AM_CFLAGS_PIC = -O -g -fpic -fno-omit-frame-pointer -fno-strict-aliasing
+if VGCONF_OS_IS_DARWIN
+AM_CFLAGS_PIC = -dynamic -O -g -fno-omit-frame-pointer -fno-strict-aliasing -mno-dynamic-no-pic
+else
+AM_CFLAGS_PIC = -fpic -O -g -fno-omit-frame-pointer -fno-strict-aliasing
+endif
+
 
 # Flags for specific targets.
 #
@@ -82,6 +87,25 @@ AM_CFLAGS_PPC64_AIX5      = @FLAG_MAIX64@ -mcpu=powerpc64 $(AM_CFLAGS_BASE)
 AM_CCASFLAGS_PPC64_AIX5   = $(AM_CPPFLAGS_PPC64_AIX5) \
 			    @FLAG_MAIX64@ -mcpu=powerpc64 -g
 
+AM_FLAG_M3264_X86_DARWIN = -arch i386
+AM_CPPFLAGS_X86_DARWIN	  = $(AM_CPPFLAGS_COMMON) \
+			    -DVGA_x86=1 \
+			    -DVGO_darwin=1 \
+			    -DVGP_x86_darwin=1
+AM_CFLAGS_X86_DARWIN     = $(WERROR) -arch i386 $(AM_CFLAGS_BASE) \
+			    -mmacosx-version-min=10.5 -fno-stack-protector \
+			    -mdynamic-no-pic
+AM_CCASFLAGS_X86_DARWIN  = $(AM_CPPFLAGS_X86_DARWIN) -arch i386 -g
+
+AM_FLAG_M3264_AMD64_DARWIN = -arch x86_64
+AM_CPPFLAGS_AMD64_DARWIN  = $(AM_CPPFLAGS_COMMON) \
+			    -DVGA_amd64=1 \
+			    -DVGO_darwin=1 \
+			    -DVGP_amd64_darwin=1
+AM_CFLAGS_AMD64_DARWIN     = $(WERROR) -arch x86_64 $(AM_CFLAGS_BASE) \
+			    -mmacosx-version-min=10.5 -fno-stack-protector
+AM_CCASFLAGS_AMD64_DARWIN  = $(AM_CPPFLAGS_AMD64_DARWIN) -arch x86_64 -g
+
 # Flags for the primary target.  These must be used to build the
 # regtests and performance tests.  In fact, these must be used to
 # build anything which is built only once on a dual-arch build.
@@ -102,9 +126,12 @@ endif
 #
 PRELOAD_LDFLAGS_COMMON_LINUX = -nodefaultlibs -shared -Wl,-z,interpose,-z,initfirst
 PRELOAD_LDFLAGS_COMMON_AIX5  = -nodefaultlibs -shared -Wl,-G -Wl,-bnogc
+PRELOAD_LDFLAGS_COMMON_DARWIN = -dynamic -dynamiclib -all_load
 PRELOAD_LDFLAGS_X86_LINUX   = $(PRELOAD_LDFLAGS_COMMON_LINUX) @FLAG_M32@
 PRELOAD_LDFLAGS_AMD64_LINUX = $(PRELOAD_LDFLAGS_COMMON_LINUX) @FLAG_M64@
 PRELOAD_LDFLAGS_PPC32_LINUX = $(PRELOAD_LDFLAGS_COMMON_LINUX) @FLAG_M32@
 PRELOAD_LDFLAGS_PPC64_LINUX = $(PRELOAD_LDFLAGS_COMMON_LINUX) @FLAG_M64@
 PRELOAD_LDFLAGS_PPC32_AIX5  = $(PRELOAD_LDFLAGS_COMMON_AIX5)  @FLAG_MAIX32@
 PRELOAD_LDFLAGS_PPC64_AIX5  = $(PRELOAD_LDFLAGS_COMMON_AIX5)  @FLAG_MAIX64@
+PRELOAD_LDFLAGS_X86_DARWIN   = $(PRELOAD_LDFLAGS_COMMON_DARWIN) -arch i386
+PRELOAD_LDFLAGS_AMD64_DARWIN = $(PRELOAD_LDFLAGS_COMMON_DARWIN) -arch x86_64

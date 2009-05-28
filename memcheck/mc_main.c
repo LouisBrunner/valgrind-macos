@@ -92,8 +92,9 @@ static void ocache_sarp_Clear_Origins ( Addr, UWord ); /* fwds */
 /* Conceptually, every byte value has 8 V bits, which track whether Memcheck
    thinks the corresponding value bit is defined.  And every memory byte
    has an A bit, which tracks whether Memcheck thinks the program can access
-   it safely.   So every N-bit register is shadowed with N V bits, and every
-   memory byte is shadowed with 8 V bits and one A bit.
+   it safely (ie. it's mapped, and has at least one of the RWX permission bits
+   set).  So every N-bit register is shadowed with N V bits, and every memory
+   byte is shadowed with 8 V bits and one A bit.
 
    In the implementation, we use two forms of compression (compressed V bits
    and distinguished secondary maps) to avoid the 9-bit-per-byte overhead
@@ -3667,6 +3668,10 @@ void check_mem_is_defined ( CorePart part, ThreadId tid, Char* s,
                                       isAddrErr ? 0 : otag );
          break;
       
+      case Vg_CoreSysCallArgInMem:
+         MC_(record_regparam_error) ( tid, s, otag );
+         break;
+
       /* If we're being asked to jump to a silly address, record an error 
          message before potentially crashing the entire system. */
       case Vg_CoreTranslate:
@@ -3697,10 +3702,19 @@ void check_mem_is_defined_asciiz ( CorePart part, ThreadId tid,
 }
 
 static
+void mc_new_mem_mmap ( Addr a, SizeT len, Bool rr, Bool ww, Bool xx,
+                       ULong di_handle )
+{
+   if (rr || ww || xx)
+      MC_(make_mem_defined)(a, len);
+   else
+      MC_(make_mem_noaccess)(a, len);
+}
+
+static
 void mc_new_mem_startup( Addr a, SizeT len,
                          Bool rr, Bool ww, Bool xx, ULong di_handle )
 {
-   /* Ignore the permissions, just make it defined.  Seems to work... */
    // Because code is defined, initialised variables get put in the data
    // segment and are defined, and uninitialised variables get put in the
    // bss segment and are auto-zeroed (and so defined).  
@@ -3711,16 +3725,14 @@ void mc_new_mem_startup( Addr a, SizeT len,
    // false negative, but it's a grey area -- the behaviour is defined (the
    // padding is zeroed) but it's probably not what the user intended.  And
    // we can't avoid it.
+   //
+   // Note: we generally ignore RWX permissions, because we can't track them
+   // without requiring more than one A bit which would slow things down a
+   // lot.  But on Darwin the 0th page is mapped but !R and !W and !X.
+   // So we mark any such pages as "unaddressable".
    DEBUG("mc_new_mem_startup(%#lx, %llu, rr=%u, ww=%u, xx=%u)\n",
          a, (ULong)len, rr, ww, xx);
-   MC_(make_mem_defined)(a, len);
-}
-
-static
-void mc_new_mem_mmap ( Addr a, SizeT len, Bool rr, Bool ww, Bool xx,
-                       ULong di_handle )
-{
-   MC_(make_mem_defined)(a, len);
+   mc_new_mem_mmap(a, len, rr, ww, xx, di_handle);
 }
 
 static
@@ -5109,6 +5121,7 @@ static Bool mc_handle_client_request ( ThreadId tid, UWord* arg, UWord* ret )
    }
    return True;
 }
+
 
 /*------------------------------------------------------------*/
 /*--- Crude profiling machinery.                           ---*/

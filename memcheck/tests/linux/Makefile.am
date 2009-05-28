@@ -22,3 +22,4 @@ AM_CXXFLAGS += $(AM_FLAG_M3264_PRI)
 
 stack_switch_LDADD    = -lpthread
 timerfd_syscall_LDADD = -lrt
+

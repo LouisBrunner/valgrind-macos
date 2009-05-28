@@ -42,6 +42,11 @@ extern Bool VG_(match_script) ( Char *hdr, Int len );
 extern Int  VG_(load_script)  ( Int fd, const HChar *name, ExeInfo *info );
 #endif
 
+#if defined(HAVE_MACHO)
+extern Bool VG_(match_macho) ( Char *hdr, Int len );
+extern Int  VG_(load_macho)  ( Int fd, const HChar *name, ExeInfo *info );
+#endif
+
 #endif /* __PRIV_UME_H */
 
 /*--------------------------------------------------------------------*/

@@ -211,6 +211,12 @@ static Int ptrace_setregs(Int pid, VexGuestArchState* vex)
 #elif defined(VGP_ppc64_aix5)
    I_die_here;
 
+#elif defined(VGP_x86_darwin)
+   I_die_here;
+
+#elif defined(VGP_amd64_darwin)
+   I_die_here;
+
 #else
 #  error Unknown arch
 #endif

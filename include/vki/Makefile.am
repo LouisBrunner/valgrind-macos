@@ -3,6 +3,7 @@ incincdir = $(includedir)/valgrind/vki
 
 incinc_HEADERS = \
 	vki-linux.h			\
+	vki-darwin.h			\
 	vki-posixtypes-amd64-linux.h	\
 	vki-posixtypes-ppc32-linux.h	\
 	vki-posixtypes-ppc64-linux.h	\
@@ -14,7 +15,8 @@ incinc_HEADERS = \
 	vki-scnums-amd64-linux.h	\
 	vki-scnums-ppc32-linux.h	\
 	vki-scnums-ppc64-linux.h	\
-	vki-scnums-x86-linux.h
+	vki-scnums-x86-linux.h		\
+	vki-scnums-darwin.h
 
 noinst_HEADERS = \
 	vki-ppc32-aix5.h		\

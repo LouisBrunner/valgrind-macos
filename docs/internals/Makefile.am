@@ -3,6 +3,7 @@ EXTRA_DIST = \
 	3_2_BUGSTATUS.txt 3_3_BUGSTATUS.txt \
 	3_4_BUGSTATUS.txt \
 	BIG_APP_NOTES.txt \
+	Darwin-notes.txt \
 	directory-structure.txt \
 	howto_BUILD_KDE42.txt \
 	howto_oprofile.txt \

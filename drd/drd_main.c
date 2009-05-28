@@ -607,8 +607,13 @@ static void DRD_(fini)(Int exitcode)
 static
 void drd_pre_clo_init(void)
 {
-   // Basic tool stuff.
+#if defined(VGO_darwin)
+   // This makes the (all-failing) regtests run much faster.
+   VG_(printf)("DRD doesn't work on Darwin yet, sorry.\n");
+   VG_(exit)(1);
+#endif
 
+   // Basic tool stuff.
    VG_(details_name)            ("drd");
    VG_(details_version)         (NULL);
    VG_(details_description)     ("a thread error detector");

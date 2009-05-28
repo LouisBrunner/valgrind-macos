@@ -22,10 +22,18 @@ EXTRA_DIST = $(noinst_SCRIPTS) \
 	xor-undef-amd64.stderr.exp xor-undef-amd64.stdout.exp \
 	xor-undef-amd64.vgtest
 
-check_PROGRAMS = bt_everything bug132146 defcfaexpr fxsave-amd64 \
-		int3-amd64 \
-		more_x87_fp sse_memory xor-undef-amd64
+check_PROGRAMS = bt_everything bug132146 fxsave-amd64 \
+		xor-undef-amd64
 
+# DDD: not sure if these ones should work on Darwin or not... if not, should
+# be moved into amd64-linux/.
+if ! VGCONF_OS_IS_DARWIN
+   check_PROGRAMS += \
+	defcfaexpr \
+	int3-amd64 \
+	more_x87_fp \
+	sse_memory
+endif
 
 AM_CFLAGS    += @FLAG_M64@
 AM_CXXFLAGS  += @FLAG_M64@

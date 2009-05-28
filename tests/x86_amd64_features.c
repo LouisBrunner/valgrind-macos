@@ -83,7 +83,7 @@ static Bool go(char* cpu)
    return 1;                                          // Feature not present.
 }
 
-#else    // defined(VGA_x86)  || defined(VGA_amd64)
+#else
 
 static Bool go(char* cpu)
 {

@@ -71,6 +71,9 @@
 #include "pub_core_libcprint.h"
 #include "pub_core_libcproc.h"
 #include "pub_core_libcsignal.h"
+#if defined(VGO_darwin)
+#include "pub_core_mach.h"
+#endif
 #include "pub_core_machine.h"
 #include "pub_core_mallocfree.h"
 #include "pub_core_options.h"
@@ -154,6 +157,8 @@ HChar* name_of_sched_event ( UInt event )
       case VEX_TRC_JMP_SYS_SYSCALL:   return "SYSCALL";
       case VEX_TRC_JMP_SYS_INT32:     return "INT32";
       case VEX_TRC_JMP_SYS_INT128:    return "INT128";
+      case VEX_TRC_JMP_SYS_INT129:    return "INT129";
+      case VEX_TRC_JMP_SYS_INT130:    return "INT130";
       case VEX_TRC_JMP_SYS_SYSENTER:  return "SYSENTER";
       case VEX_TRC_JMP_CLIENTREQ:     return "CLIENTREQ";
       case VEX_TRC_JMP_YIELD:         return "YIELD";
@@ -211,7 +216,7 @@ void VG_(acquire_BigLock)(ThreadId tid, HChar* who)
    /* First, acquire the_BigLock.  We can't do anything else safely
       prior to this point.  Even doing debug printing prior to this
       point is, technically, wrong. */
-   ML_(sema_down)(&the_BigLock);
+   ML_(sema_down)(&the_BigLock, False/*not LL*/);
 
    tst = VG_(get_ThreadState)(tid);
 
@@ -267,8 +272,21 @@ void VG_(release_BigLock)(ThreadId tid, ThreadStatus sleepstate, HChar* who)
 
    /* Release the_BigLock; this will reschedule any runnable
       thread. */
-   ML_(sema_up)(&the_BigLock);
+   ML_(sema_up)(&the_BigLock, False/*not LL*/);
 }
+
+/* See pub_core_scheduler.h for description */
+void VG_(acquire_BigLock_LL) ( HChar* who )
+{
+  ML_(sema_down)(&the_BigLock, True/*LL*/);
+}
+
+/* See pub_core_scheduler.h for description */
+void VG_(release_BigLock_LL) ( HChar* who )
+{
+   ML_(sema_up)(&the_BigLock, True/*LL*/);
+}
+
 
 /* Clear out the ThreadState and release the semaphore. Leaves the
    ThreadState in VgTs_Zombie state, so that it doesn't get
@@ -288,7 +306,7 @@ void VG_(exit_thread)(ThreadId tid)
    if (VG_(clo_trace_sched))
       print_sched_event(tid, "release lock in VG_(exit_thread)");
 
-   ML_(sema_up)(&the_BigLock);
+   ML_(sema_up)(&the_BigLock, False/*not LL*/);
 }
 
 /* If 'tid' is blocked in a syscall, send it SIGVGKILL so as to get it
@@ -300,11 +318,39 @@ void VG_(get_thread_out_of_syscall)(ThreadId tid)
    vg_assert(!VG_(is_running_thread)(tid));
 
    if (VG_(threads)[tid].status == VgTs_WaitSys) {
-      if (VG_(clo_trace_signals))
+      if (VG_(clo_trace_signals)) {
 	 VG_(message)(Vg_DebugMsg, 
                       "get_thread_out_of_syscall zaps tid %d lwp %d",
 		      tid, VG_(threads)[tid].os_state.lwpid);
-      VG_(tkill)(VG_(threads)[tid].os_state.lwpid, VG_SIGVGKILL);
+      }
+#     if defined(VGO_darwin)
+      {
+         // GrP fixme use mach primitives on darwin?
+         // GrP fixme thread_abort_safely?
+         // GrP fixme race for thread with WaitSys set but not in syscall yet?
+         extern kern_return_t thread_abort(mach_port_t);
+         thread_abort(VG_(threads)[tid].os_state.lwpid);
+      }
+#     else
+      {
+         __attribute__((unused))
+         Int r = VG_(tkill)(VG_(threads)[tid].os_state.lwpid, VG_SIGVGKILL);
+         /* JRS 2009-Mar-20: should we assert for r==0 (tkill succeeded)?
+            I'm really not sure.  Here's a race scenario which argues
+            that we shoudn't; but equally I'm not sure the scenario is
+            even possible, because of constraints caused by the question
+            of who holds the BigLock when.
+
+            Target thread tid does sys_read on a socket and blocks.  This
+            function gets called, and we observe correctly that tid's
+            status is WaitSys but then for whatever reason this function
+            goes very slowly for a while.  Then data arrives from
+            wherever, tid's sys_read returns, tid exits.  Then we do
+            tkill on tid, but tid no longer exists; tkill returns an
+            error code and the assert fails. */
+         /* vg_assert(r == 0); */
+      }
+#     endif
    }
 }
 
@@ -355,10 +401,24 @@ static void os_state_clear(ThreadState *tst)
 {
    tst->os_state.lwpid       = 0;
    tst->os_state.threadgroup = 0;
-#  if defined(VGO_aix5)
+#  if defined(VGO_linux)
+   /* no other fields to clear */
+#  elif defined(VGO_aix5)
    tst->os_state.cancel_async    = False;
    tst->os_state.cancel_disabled = False;
    tst->os_state.cancel_progress = Canc_NoRequest;
+#  elif defined(VGO_darwin)
+   tst->os_state.post_mach_trap_fn = NULL;
+   tst->os_state.pthread           = 0;
+   tst->os_state.func_arg          = 0;
+   VG_(memset)(&tst->os_state.child_go, 0, sizeof(tst->os_state.child_go));
+   VG_(memset)(&tst->os_state.child_done, 0, sizeof(tst->os_state.child_done));
+   tst->os_state.wq_jmpbuf_valid   = False;
+   tst->os_state.remote_port       = 0;
+   tst->os_state.msgh_id           = 0;
+   VG_(memset)(&tst->os_state.mach_args, 0, sizeof(tst->os_state.mach_args));
+#  else
+#    error "Unknown OS"
 #  endif
 }
 
@@ -419,6 +479,11 @@ static void sched_fork_cleanup(ThreadId me)
    ThreadId tid;
    vg_assert(VG_(running_tid) == me);
 
+#  if defined(VGO_darwin)
+   // GrP fixme hack reset Mach ports
+   VG_(mach_init)();
+#  endif
+
    VG_(threads)[me].os_state.lwpid = VG_(gettid)();
    VG_(threads)[me].os_state.threadgroup = VG_(getpid)();
 
@@ -434,7 +499,7 @@ static void sched_fork_cleanup(ThreadId me)
    /* re-init and take the sema */
    ML_(sema_deinit)(&the_BigLock);
    ML_(sema_init)(&the_BigLock);
-   ML_(sema_down)(&the_BigLock);
+   ML_(sema_down)(&the_BigLock, False/*not LL*/);
 }
 
 
@@ -807,7 +872,7 @@ static void handle_tt_miss ( ThreadId tid )
    }
 }
 
-static void handle_syscall(ThreadId tid)
+static void handle_syscall(ThreadId tid, UInt trc)
 {
    ThreadState * volatile tst = VG_(get_ThreadState)(tid);
    Bool jumped; 
@@ -820,7 +885,7 @@ static void handle_syscall(ThreadId tid)
    if (VG_(clo_sanity_level >= 3))
       VG_(am_do_sync_check)("(BEFORE SYSCALL)",__FILE__,__LINE__);
 
-   SCHEDSETJMP(tid, jumped, VG_(client_syscall)(tid));
+   SCHEDSETJMP(tid, jumped, VG_(client_syscall)(tid, trc));
 
    if (VG_(clo_sanity_level >= 3))
       VG_(am_do_sync_check)("(AFTER SYSCALL)",__FILE__,__LINE__);
@@ -1013,8 +1078,10 @@ VgSchedReturnCode VG_(scheduler) ( ThreadId tid )
 	 break;
 
       case VEX_TRC_JMP_SYS_INT128:  /* x86-linux */
-      case VEX_TRC_JMP_SYS_SYSCALL: /* amd64-linux, ppc32-linux */
-	 handle_syscall(tid);
+      case VEX_TRC_JMP_SYS_INT129:  /* x86-darwin */
+      case VEX_TRC_JMP_SYS_INT130:  /* x86-darwin */
+      case VEX_TRC_JMP_SYS_SYSCALL: /* amd64-linux, ppc32-linux, amd64-darwin */
+	 handle_syscall(tid, trc);
 	 if (VG_(clo_sanity_level) > 2)
 	    VG_(sanity_check_general)(True); /* sanity-check every syscall */
 	 break;
@@ -1154,10 +1221,16 @@ VgSchedReturnCode VG_(scheduler) ( ThreadId tid )
 #        if defined(VGP_x86_linux)
          vg_assert2(0, "VG_(scheduler), phase 3: "
                        "sysenter_x86 on x86-linux is not supported");
+#        elif defined(VGP_x86_darwin)
+         /* return address in client edx */
+         VG_(threads)[tid].arch.vex.guest_EIP
+            = VG_(threads)[tid].arch.vex.guest_EDX;
+         handle_syscall(tid, trc);
 #        else
          vg_assert2(0, "VG_(scheduler), phase 3: "
                        "sysenter_x86 on non-x86 platform?!?!");
 #        endif
+         break;
 
       default: 
 	 vg_assert2(0, "VG_(scheduler), phase 3: "
@@ -1466,12 +1539,15 @@ void scheduler_sanity ( ThreadId tid )
       bad = True;
    }
 
+#if !defined(VGO_darwin)
+   // GrP fixme
    if (lwpid != the_BigLock.owner_lwpid) {
       VG_(message)(Vg_DebugMsg,
                    "Thread (LWPID) %d doesn't own the_BigLock\n",
                    tid);
       bad = True;
    }
+#endif
 
    /* Periodically show the state of all threads, for debugging
       purposes. */

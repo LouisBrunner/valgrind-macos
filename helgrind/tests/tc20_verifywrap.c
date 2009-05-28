@@ -18,7 +18,7 @@
 #include <pthread.h>
 #include <semaphore.h>
 
-#if !defined(_AIX)
+#if !defined(_AIX) && !defined(__APPLE__)
 
 #if !defined(__GLIBC_PREREQ)
 # error "This program needs __GLIBC_PREREQ (in /usr/include/features.h)"

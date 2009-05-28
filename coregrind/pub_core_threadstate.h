@@ -87,6 +87,9 @@ typedef
 #  error Unknown architecture
 #endif
 
+/* Forward declarations */
+struct SyscallStatus;
+struct SyscallArgs;
 
 /* Architecture-specific thread state */
 typedef 
@@ -120,7 +123,7 @@ typedef
 typedef
    struct {
       /* who we are */
-      Int lwpid;        // PID of kernel task
+      Int lwpid;        // PID of kernel task  (Darwin: Mach thread)
       Int threadgroup;  // thread group id
 
       ThreadId parent;  // parent tid (if any)
@@ -146,6 +149,135 @@ typedef
            cancel_progress;
       /* Initial state is False, False, Canc_Normal. */
 #     endif
+
+#     if defined(VGO_darwin)
+      // Mach trap POST handler as chosen by PRE
+      void (*post_mach_trap_fn)(ThreadId tid,
+                                struct SyscallArgs *, struct SyscallStatus *);
+    
+      // This thread's pthread
+      Addr pthread;
+    
+      // Argument passed when thread started
+      Addr func_arg;
+
+      // Synchronization between child thread and parent thread's POST wrapper
+      semaphore_t child_go;
+      semaphore_t child_done;
+
+      // Workqueue re-entry 
+      // (setjmp in PRE(workq_ops), longjmp in wqthread_hijack)
+      // DDD: JRS fixme: this comment is no longer correct; wq_jmpbuf is
+      // never used, and there is no such setjmp or longjmp pair.
+      // I guess we could leave wq_jmpbuf_valid in place though, since
+      // it does allow for an assertion in ML_(wqthread_continue_NORETURN).
+      Bool wq_jmpbuf_valid;
+      //jmp_buf wq_jmpbuf;
+
+      // Values saved from transient Mach RPC messages
+      Addr remote_port;  // destination for original message
+      Int msgh_id;       // outgoing message id
+      union {
+         struct {
+            Addr port;
+         } mach_port;
+         struct {
+            Int right;
+         } mach_port_allocate;
+         struct {
+            Addr port;
+            Int right;
+            Int delta;
+         } mach_port_mod_refs;
+         struct {
+            Addr task;
+            Addr name;
+            Int disposition;
+         } mach_port_insert_right;
+         struct {
+            Addr size;
+            int flags;
+         } vm_allocate;
+         struct {
+            Addr address;
+            Addr size;
+         } vm_deallocate;
+         struct {
+            Addr src;
+            Addr dst;
+            Addr size;
+         } vm_copy;
+         struct {
+            Addr address;
+            Addr size;
+            int set_maximum;
+            UWord new_protection;
+         } vm_protect;
+         struct {
+            Addr addr;
+            SizeT size;
+         } vm_read;
+         struct {
+            ULong addr;
+            ULong size;
+         } mach_vm_read;
+         struct {
+            Addr addr;
+            SizeT size;
+            Addr data;
+         } vm_read_overwrite;
+         struct {
+            Addr size;
+            int copy;
+            UWord protection;
+         } vm_map;
+         struct {
+            Addr size;
+         } vm_remap;
+         struct {
+            ULong size;
+            int flags;
+         } mach_vm_allocate;
+         struct {
+            ULong address;
+            ULong size;
+         } mach_vm_deallocate;
+         struct {
+            ULong address;
+            ULong size;
+            int set_maximum;
+            unsigned int new_protection;
+         } mach_vm_protect;
+         struct {
+            ULong size;
+            int copy;
+            UWord protection;
+         } mach_vm_map;
+         struct {
+            Addr thread;
+            UWord flavor;
+         } thread_get_state;
+         struct {
+            Addr address;
+         } io_connect_unmap_memory;
+         struct {
+            int which_port;
+         } task_get_special_port;
+         struct {
+            char *service_name;
+         } bootstrap_look_up;
+         struct {
+            vki_size_t size;
+         } WindowServer_29828;
+         struct {
+            Int access_rights;
+         } WindowServer_29831;
+         struct {
+            char *path;
+         } io_registry_entry_from_path;
+      } mach_args;
+#     endif
+
    }
    ThreadOSstate;
 
@@ -237,6 +369,7 @@ extern ThreadState VG_(threads)[VG_N_THREADS];
 // The running thread.  m_scheduler should be the only other module
 // to write to this.
 extern ThreadId VG_(running_tid);
+
 
 /*------------------------------------------------------------*/
 /*--- Basic operations on the thread table.                ---*/

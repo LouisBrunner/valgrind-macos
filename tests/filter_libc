@@ -15,8 +15,9 @@ while (<>)
     s/ __GI___/ __/;
     s/ __([a-z]*)_nocancel / $1 /;
 
-    s/\(in \/.*libc.*\)$/(in \/...libc...)/;
-    s/\(within \/.*libc.*\)$/(within \/...libc...)/;
+    # "libSystem*" occurs on Darwin.
+    s/\(in \/.*(libc|libSystem).*\)$/(in \/...libc...)/;
+    s/\(within \/.*(libc|libSystem).*\)$/(within \/...libc...)/;
 
     # Remove the filename -- on some platforms (eg. Linux) it will be in
     # libc, on some (eg. Darwin) it will be in the main executable.

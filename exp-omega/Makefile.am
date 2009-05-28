@@ -30,6 +30,12 @@ EXTRA_DIST = exp-omega.h o_main.c o_replace_memops.c
 ##zz if VGCONF_PLATFORMS_INCLUDE_PPC64_AIX5
 ##zz noinst_PROGRAMS += exp-omega-ppc64-aix5 vgpreload_exp-omega-ppc64-aix5.so
 ##zz endif
+##zz if VGCONF_PLATFORMS_INCLUDE_X86_DARWIN
+##zz noinst_PROGRAMS += exp-omega-x86-darwin vgpreload_exp-omega-x86-darwin.so
+##zz endif
+##zz if VGCONF_PLATFORMS_INCLUDE_AMD64_DARWIN
+##zz noinst_PROGRAMS += exp-omega-amd64-darwin vgpreload_exp-omega-amd64-darwin.so
+##zz endif
 ##zz 
 ##zz VGPRELOAD_OMEGA_SOURCES_COMMON = o_replace_memops.c
 ##zz 
@@ -87,6 +93,24 @@ EXTRA_DIST = exp-omega.h o_main.c o_replace_memops.c
 ##zz 	$(PRELOAD_LDFLAGS_PPC64_AIX5) \
 ##zz 	$(LIBREPLACEMALLOC_LDFLAGS_PPC64_AIX5)
 ##zz 
+##zz vgpreload_exp_omega_x86_darwin_so_SOURCES      = $(VGPRELOAD_OMEGA_SOURCES_COMMON)
+##zz vgpreload_exp_omega_x86_darwin_so_CPPFLAGS     = $(AM_CPPFLAGS_X86_DARWIN)
+##zz vgpreload_exp_omega_x86_darwin_so_CFLAGS       = $(AM_CFLAGS_X86_DARWIN) $(AM_CFLAGS_PIC) -O2
+##zz vgpreload_exp_omega_x86_darwin_so_CCASFLAGS    = $(AM_CCASFLAGS_X86_DARWIN)
+##zz vgpreload_exp_omega_x86_darwin_so_DEPENDENCIES = $(LIBREPLACEMALLOC_X86_DARWIN)
+##zz vgpreload_exp_omega_x86_darwin_so_LDFLAGS      = \
+##zz 	$(PRELOAD_LDFLAGS_X86_DARWIN) \
+##zz 	$(LIBREPLACEMALLOC_LDFLAGS_X86_DARWIN)
+##zz 
+##zz vgpreload_exp_omega_amd64_darwin_so_SOURCES      = $(VGPRELOAD_OMEGA_SOURCES_COMMON)
+##zz vgpreload_exp_omega_amd64_darwin_so_CPPFLAGS     = $(AM_CPPFLAGS_AMD64_DARWIN)
+##zz vgpreload_exp_omega_amd64_darwin_so_CFLAGS       = $(AM_CFLAGS_AMD64_DARWIN) $(AM_CFLAGS_PIC) -O2
+##zz vgpreload_exp_omega_amd64_darwin_so_CCASFLAGS    = $(AM_CCASFLAGS_AMD64_DARWIN)
+##zz vgpreload_exp_omega_amd64_darwin_so_DEPENDENCIES = $(LIBREPLACEMALLOC_AMD64_DARWIN)
+##zz vgpreload_exp_omega_amd64_darwin_so_LDFLAGS      = \
+##zz 	$(PRELOAD_LDFLAGS_AMD64_DARWIN) \
+##zz 	$(LIBREPLACEMALLOC_LDFLAGS_AMD64_DARWIN)
+##zz 
 ##zz OMEGA_SOURCES_COMMON = \
 ##zz 	o_main.c
 ##zz 
@@ -137,6 +161,22 @@ EXTRA_DIST = exp-omega.h o_main.c o_replace_memops.c
 ##zz exp_omega_ppc64_aix5_DEPENDENCIES = $(COREGRIND_LIBS_PPC64_AIX5)
 ##zz exp_omega_ppc64_aix5_LDADD        = $(TOOL_LDADD_PPC64_AIX5)
 ##zz exp_omega_ppc64_aix5_LDFLAGS      = $(TOOL_LDFLAGS_PPC64_AIX5)
+##zz 
+##zz exp_omega_x86_darwin_SOURCES      = $(OMEGA_SOURCES_COMMON)
+##zz exp_omega_x86_darwin_CPPFLAGS     = $(AM_CPPFLAGS_X86_DARWIN)
+##zz exp_omega_x86_darwin_CFLAGS       = $(AM_CFLAGS_X86_DARWIN) -O2
+##zz exp_omega_x86_darwin_CCASFLAGS    = $(AM_CCASFLAGS_X86_DARWIN)
+##zz exp_omega_x86_darwin_DEPENDENCIES = $(COREGRIND_LIBS_X86_DARWIN)
+##zz exp_omega_x86_darwin_LDADD        = $(TOOL_LDADD_X86_DARWIN)
+##zz exp_omega_x86_darwin_LDFLAGS      = $(TOOL_LDFLAGS_X86_DARWIN)
+##zz 
+##zz exp_omega_amd64_darwin_SOURCES      = $(OMEGA_SOURCES_COMMON)
+##zz exp_omega_amd64_darwin_CPPFLAGS     = $(AM_CPPFLAGS_AMD64_DARWIN)
+##zz exp_omega_amd64_darwin_CFLAGS       = $(AM_CFLAGS_AMD64_DARWIN) -g -O0 #-O2
+##zz exp_omega_amd64_darwin_CCASFLAGS    = $(AM_CCASFLAGS_AMD64_DARWIN)
+##zz exp_omega_amd64_darwin_DEPENDENCIES = $(COREGRIND_LIBS_AMD64_DARWIN)
+##zz exp_omega_amd64_darwin_LDADD        = $(TOOL_LDADD_AMD64_DARWIN)
+##zz exp_omega_amd64_darwin_LDFLAGS      = $(TOOL_LDFLAGS_AMD64_DARWIN)
 ##zz 
 ##zz oincludedir = $(includedir)/valgrind
 ##zz 

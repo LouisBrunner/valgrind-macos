@@ -11,6 +11,8 @@
    Copyright (C) 2007-2009 OpenWorks LLP
       info@open-works.co.uk
 
+   Copyright (C) 2007-2009 Apple, Inc.
+
    This program is free software; you can redistribute it and/or
    modify it under the terms of the GNU General Public License as
    published by the Free Software Foundation; either version 2 of the
@@ -4201,6 +4203,7 @@ ExeContext*  for_libhb__get_EC ( Thr* hbt )
 static void hg_pre_clo_init ( void )
 {
    Thr* hbthr_root;
+
    VG_(details_name)            ("Helgrind");
    VG_(details_version)         (NULL);
    VG_(details_description)     ("a thread error detector");

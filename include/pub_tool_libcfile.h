@@ -85,6 +85,9 @@ extern Int    VG_(unlink) ( const Char* file_name );
 extern Int    VG_(readlink)( const Char* path, Char* buf, UInt bufsize );
 extern Int    VG_(getdents)( Int fd, struct vki_dirent *dirp, UInt count );
 
+extern Char*  VG_(basename)( const Char* path );
+extern Char*  VG_(dirname) ( const Char* path );
+
 /* Copy the working directory at startup into buf[0 .. size-1], or return
    False if buf is too small. */
 extern Bool VG_(get_startup_wd) ( Char* buf, SizeT size );

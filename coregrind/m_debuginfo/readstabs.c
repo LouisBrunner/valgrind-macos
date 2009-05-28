@@ -46,7 +46,17 @@
 #include "priv_readstabs.h"        /* self */
 
 /* --- !!! --- EXTERNAL HEADERS start --- !!! --- */
-#include <a.out.h> /* stabs defns */
+#if defined(VGO_linux)
+#  include <a.out.h> /* stabs defns */
+#elif defined(VGO_darwin)
+#  include <mach-o/nlist.h>
+#  define n_other n_sect
+#  if VG_WORDSIZE == 8
+#     define nlist nlist_64
+#  endif
+#else
+#  error "Unknown OS"
+#endif
 /* --- !!! --- EXTERNAL HEADERS end --- !!! --- */
 
 /*------------------------------------------------------------*/

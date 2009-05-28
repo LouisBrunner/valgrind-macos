@@ -16,3 +16,25 @@ AM_CXXFLAGS = -Winline -Wall -Wshadow -g
 # automake;  see comments in Makefile.flags.am for more detail.
 AM_CCASFLAGS = $(AM_CPPFLAGS)
 
+
+# On Darwin, for a program 'p', the DWARF debug info is stored in the
+# directory 'p.dSYM'.  This must be generated after the executable is
+# created, with 'dsymutil p'.  We could redefine LINK with a script that
+# executes 'dsymutil' after linking, but that's a pain.  Instead we use this
+# hook so that every time "make check" is run, we subsequently invoke
+# 'dsymutil' on all the executables that lack a .dSYM directory, or that are
+# newer than their corresponding .dSYM directory.
+if VGCONF_OS_IS_DARWIN
+check-local:
+	for f in $(check_PROGRAMS) ; do \
+	    if [ ! -e $$f.dSYM  -o  $$f -nt $$f.dSYM ] ; then \
+	        echo "dsymutil $$f"; \
+	        dsymutil $$f; \
+	    fi \
+	done
+
+clean-local:
+	for f in $(check_PROGRAMS) ; do \
+	    rm -rf $$f.dSYM; \
+	done
+endif  

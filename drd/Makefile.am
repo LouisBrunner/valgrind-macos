@@ -1,6 +1,7 @@
 include $(top_srcdir)/Makefile.tool.am
 
 noinst_PROGRAMS =
+noinst_DSYMS =
 if VGCONF_PLATFORMS_INCLUDE_X86_LINUX
   noinst_PROGRAMS += drd-x86-linux   vgpreload_drd-x86-linux.so
 endif
@@ -18,6 +19,14 @@ if VGCONF_PLATFORMS_INCLUDE_PPC32_AIX5
 endif
 if VGCONF_PLATFORMS_INCLUDE_PPC64_AIX5
   noinst_PROGRAMS += drd-ppc64-aix5  vgpreload_drd-ppc64-aix5.so
+endif
+if VGCONF_PLATFORMS_INCLUDE_X86_DARWIN
+  noinst_PROGRAMS += drd-x86-darwin  vgpreload_drd-x86-darwin.so
+  noinst_DSYMS    +=                 vgpreload_drd-x86-darwin.so
+endif
+if VGCONF_PLATFORMS_INCLUDE_AMD64_DARWIN
+  noinst_PROGRAMS += drd-amd64-darwin vgpreload_drd-amd64-darwin.so
+  noinst_DSYMS    +=                  vgpreload_drd-amd64-darwin.so
 endif
 
 
@@ -90,6 +99,22 @@ vgpreload_drd_ppc64_aix5_so_CCASFLAGS    = $(AM_CCASFLAGS_PPC64_AIX5)
 vgpreload_drd_ppc64_aix5_so_DEPENDENCIES =
 vgpreload_drd_ppc64_aix5_so_LDFLAGS      = $(PRELOAD_LDFLAGS_PPC64_AIX5)\
                                         $(LIBREPLACEMALLOC_LDFLAGS_PPC64_AIX5)
+
+vgpreload_drd_x86_darwin_so_SOURCES      = $(VGPRELOAD_DRD_SOURCES)
+vgpreload_drd_x86_darwin_so_CPPFLAGS     = $(AM_CPPFLAGS_X86_DARWIN)
+vgpreload_drd_x86_darwin_so_CFLAGS       = $(AM_CFLAGS_X86_DARWIN) $(AM_CFLAGS_PIC)
+vgpreload_drd_x86_darwin_so_CCASFLAGS    = $(AM_CCASFLAGS_X86_DARWIN)
+vgpreload_drd_x86_darwin_so_DEPENDENCIES = $(LIBREPLACEMALLOC_X86_DARWIN)
+vgpreload_drd_x86_darwin_so_LDFLAGS      = $(PRELOAD_LDFLAGS_X86_DARWIN)\
+                                        $(LIBREPLACEMALLOC_LDFLAGS_X86_DARWIN)
+
+vgpreload_drd_amd64_darwin_so_SOURCES      = $(VGPRELOAD_DRD_SOURCES)
+vgpreload_drd_amd64_darwin_so_CPPFLAGS     = $(AM_CPPFLAGS_AMD64_DARWIN)
+vgpreload_drd_amd64_darwin_so_CFLAGS       = $(AM_CFLAGS_AMD64_DARWIN) $(AM_CFLAGS_PIC)
+vgpreload_drd_amd64_darwin_so_CCASFLAGS    = $(AM_CCASFLAGS_AMD64_DARWIN)
+vgpreload_drd_amd64_darwin_so_DEPENDENCIES =
+vgpreload_drd_amd64_darwin_so_LDFLAGS      = $(PRELOAD_LDFLAGS_AMD64_DARWIN)\
+                                        $(LIBREPLACEMALLOC_LDFLAGS_AMD64_DARWIN)
 
 
 DRD_SOURCES =           \
@@ -175,3 +200,19 @@ drd_ppc64_aix5_CFLAGS       = $(AM_CFLAGS_PPC64_AIX5)
 drd_ppc64_aix5_DEPENDENCIES = $(COREGRIND_LIBS_PPC64_AIX5)
 drd_ppc64_aix5_LDADD        = $(TOOL_LDADD_PPC64_AIX5)
 drd_ppc64_aix5_LDFLAGS      = $(TOOL_LDFLAGS_PPC64_AIX5)
+
+drd_x86_darwin_SOURCES        = $(DRD_SOURCES)
+drd_x86_darwin_CPPFLAGS       = $(AM_CPPFLAGS_X86_DARWIN)
+drd_x86_darwin_CFLAGS         = $(AM_CFLAGS_X86_DARWIN)
+drd_x86_darwin_DEPENDENCIES   = $(COREGRIND_LIBS_X86_DARWIN)
+drd_x86_darwin_LDADD          = $(TOOL_LDADD_X86_DARWIN)
+drd_x86_darwin_LDFLAGS        = $(TOOL_LDFLAGS_X86_DARWIN)
+
+drd_amd64_darwin_SOURCES      = $(DRD_SOURCES)
+drd_amd64_darwin_CPPFLAGS     = $(AM_CPPFLAGS_AMD64_DARWIN)
+drd_amd64_darwin_CFLAGS       = $(AM_CFLAGS_AMD64_DARWIN)
+drd_amd64_darwin_DEPENDENCIES = $(COREGRIND_LIBS_AMD64_DARWIN)
+drd_amd64_darwin_LDADD        = $(TOOL_LDADD_AMD64_DARWIN)
+drd_amd64_darwin_LDFLAGS      = $(TOOL_LDFLAGS_AMD64_DARWIN)
+
+

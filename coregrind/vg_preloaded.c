@@ -51,6 +51,8 @@
    Hook for running __libc_freeres once the program exits.
    ------------------------------------------------------------------ */
 
+#if defined(VGO_linux) || defined(VGO_aix5)
+
 void VG_NOTIFY_ON_LOAD(freeres)( void );
 void VG_NOTIFY_ON_LOAD(freeres)( void )
 {
@@ -66,6 +68,94 @@ void VG_NOTIFY_ON_LOAD(freeres)( void )
    *(int *)0 = 'x';
 }
 
+#elif defined(VGO_darwin)
+
+/* ---------------------------------------------------------------------
+   Darwin crash log hints
+   ------------------------------------------------------------------ */
+
+/* This string will be inserted into crash logs, so crashes while 
+   running under Valgrind can be distinguished from other crashes. */
+__private_extern__ char *__crashreporter_info__ = "Instrumented by Valgrind " VERSION;
+
+/* ---------------------------------------------------------------------
+   Darwin environment cleanup
+   ------------------------------------------------------------------ */
+
+/* Scrubbing DYLD_INSERT_LIBRARIES from envp during exec is insufficient, 
+   as there are other ways to launch a process with environment that 
+   valgrind can't catch easily (i.e. launchd). 
+   Instead, scrub DYLD_INSERT_LIBRARIES from the parent process once 
+   dyld is done loading vg_preload.so.
+*/
+#include <string.h>
+#include <crt_externs.h>
+
+// GrP fixme copied from m_libcproc
+static void env_unsetenv ( Char **env, const Char *varname )
+{
+   Char **from;
+   Char **to = NULL;
+   Int len = strlen(varname);
+
+   for (from = to = env; from && *from; from++) {
+      if (!(strncmp(varname, *from, len) == 0 && (*from)[len] == '=')) {
+	 *to = *from;
+	 to++;
+      }
+   }
+   *(to++) = *(from++);
+   /* fix the 4th "char* apple" pointer (aka. executable path pointer) */
+   *(to++) = *(from++);
+   *to = NULL;
+}
+
+static void vg_cleanup_env(void)  __attribute__((constructor));
+static void vg_cleanup_env(void)
+{
+    Char **envp = (Char**)*_NSGetEnviron();
+    env_unsetenv(envp, "VALGRIND_LAUNCHER");
+    env_unsetenv(envp, "DYLD_SHARED_REGION");
+    // GrP fixme should be more like mash_colon_env()
+    env_unsetenv(envp, "DYLD_INSERT_LIBRARIES");
+}   
+
+/* ---------------------------------------------------------------------
+   Darwin arc4random (rdar://6166275)
+   ------------------------------------------------------------------ */
+
+#include <stdio.h>
+
+int VG_REPLACE_FUNCTION_ZU(libSystemZdZaZddylib, arc4random)(void);
+int VG_REPLACE_FUNCTION_ZU(libSystemZdZaZddylib, arc4random)(void)
+{
+    static FILE *rnd = 0;
+    int result;
+
+    if (!rnd) rnd = fopen("/dev/random", "r");
+    
+    fread(&result, sizeof(result), 1, rnd);
+    return result;
+}
+
+void VG_REPLACE_FUNCTION_ZU(libSystemZdZaZddylib, arc4random_stir)(void);
+void VG_REPLACE_FUNCTION_ZU(libSystemZdZaZddylib, arc4random_stir)(void)
+{
+    // do nothing
+}
+
+void VG_REPLACE_FUNCTION_ZU(libSystemZdZaZddylib, arc4random_addrandom)(unsigned char *dat, int datlen);
+void VG_REPLACE_FUNCTION_ZU(libSystemZdZaZddylib, arc4random_addrandom)(unsigned char *dat, int datlen)
+{
+    // do nothing
+    // GrP fixme ought to check [dat..dat+datlen) is defined
+    // but don't care if it's initialized
+}
+
+#else
+
+#  error Unknown OS
+#endif
 
 /*--------------------------------------------------------------------*/
 /*--- end                                                          ---*/

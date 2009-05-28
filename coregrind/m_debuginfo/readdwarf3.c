@@ -138,6 +138,7 @@
 #include "pub_core_libcassert.h"
 #include "pub_core_libcprint.h"
 #include "pub_core_options.h"
+#include "pub_core_tooliface.h"    /* VG_(needs) */
 #include "pub_core_xarray.h"
 #include "pub_core_wordfm.h"
 #include "priv_misc.h"             /* dinfo_zalloc/free */
@@ -3902,6 +3903,7 @@ ML_(new_dwarf3_reader) (
    }
    TRACE_SYMTAB("\n");
 #endif
+
 
 /*--------------------------------------------------------------------*/
 /*--- end                                             readdwarf3.c ---*/

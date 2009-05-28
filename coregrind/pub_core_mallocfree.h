@@ -73,14 +73,17 @@ typedef Int ArenaId;
       defined(VGP_ppc32_linux) || \
       defined(VGP_ppc32_aix5)
 #  define VG_MIN_MALLOC_SZB        8
+// Nb: We always use 16 bytes for Darwin, even on 32-bits, so it can be used
+// for any AltiVec- or SSE-related type.  This matches the Darwin libc.
 #elif defined(VGP_amd64_linux) || \
       defined(VGP_ppc64_linux) || \
-      defined(VGP_ppc64_aix5)
+      defined(VGP_ppc64_aix5)  || \
+      defined(VGP_x86_darwin)  || \
+      defined(VGP_amd64_darwin)
 #  define VG_MIN_MALLOC_SZB       16
 #else
 #  error Unknown platform
 #endif
-
 
 /* This struct definition MUST match the system one. */
 /* SVID2/XPG mallinfo structure */

@@ -58,6 +58,9 @@ static ExeHandler exe_handlers[] = {
 #  if defined(HAVE_SCRIPT)
    { "script", VG_(match_script), VG_(load_script) },
 #  endif
+#  if defined(HAVE_MACHO)
+   { "Mach-O", VG_(match_macho),  VG_(load_macho) },
+#  endif
 };
 #define EXE_HANDLER_COUNT (sizeof(exe_handlers)/sizeof(exe_handlers[0]))
 

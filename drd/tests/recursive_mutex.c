@@ -10,6 +10,7 @@
 #include "../../config.h"
 
 
+#if !defined(VGO_darwin)
 static void lock_twice(pthread_mutex_t* const p)
 {
   pthread_mutex_lock(p);
@@ -17,6 +18,7 @@ static void lock_twice(pthread_mutex_t* const p)
   pthread_mutex_unlock(p);
   pthread_mutex_unlock(p);
 }
+#endif
 
 int main(int argc, char** argv)
 {
@@ -60,6 +62,10 @@ int main(int argc, char** argv)
     pthread_mutex_destroy(&m);
   }
 #endif
+
+// DDD: Darwin doesn't support signals yet, so the alarm() call doesn't kick
+// in, which causes it to hang.
+#if !defined(VGO_darwin)
   {
     pthread_mutex_t m = PTHREAD_MUTEX_INITIALIZER;
 
@@ -68,5 +74,6 @@ int main(int argc, char** argv)
     lock_twice(&m);
   }
   printf("Done.\n");
+#endif
   return 0;
 }

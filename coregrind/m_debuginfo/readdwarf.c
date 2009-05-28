@@ -1785,6 +1785,14 @@ void ML_(read_debuginfo_dwarf1) (
 #  define FP_REG         1
 #  define SP_REG         1
 #  define RA_REG_DEFAULT 8     // CAB: What's a good default ?
+#elif defined(VGP_x86_darwin)
+#  define FP_REG         5
+#  define SP_REG         4
+#  define RA_REG_DEFAULT 8
+#elif defined(VGP_amd64_darwin)
+#  define FP_REG         6
+#  define SP_REG         7
+#  define RA_REG_DEFAULT 16
 #else
 #  error "Unknown platform"
 #endif

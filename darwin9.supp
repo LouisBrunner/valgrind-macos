@@ -1,0 +1,167 @@
+
+##----------------------------------------------------------------------##
+#
+# Suppressions for Darwin 9.x / Mac OS X 10.5 Leopard
+#
+
+{
+   mach_msg_trap-1
+   Memcheck:Param
+   mach_msg(msg.msgh_remote_port)
+   fun:mach_msg_trap
+   obj:/System/Library/Frameworks/CoreFoundation*
+   obj:/System/Library/Frameworks/ApplicationServices*
+}
+
+{
+   mach_msg_trap-2
+   Memcheck:Param
+   mach_msg(msg.msgh_remote_port)
+   fun:mach_msg_trap
+   obj:/System/Library/Frameworks/CoreFoundation*
+   obj:/System/Library/Frameworks/CoreServices*
+}
+
+{
+   mach_msg_trap-3
+   Memcheck:Param
+   mach_msg(msg.msgh_remote_port)
+   fun:mach_msg_trap
+   obj:/System/Library/Frameworks/CoreFoundation*
+   obj:/System/Library/Frameworks/Carbon*
+}
+
+{
+   mach_msg_trap-4
+   Memcheck:Param
+   mach_msg(msg.msgh_remote_port)
+   fun:mach_msg_trap
+   obj:/System/Library/Frameworks/CoreFoundation*
+   obj:/System/Library/Frameworks/CoreFoundation*
+}
+
+{
+   mach_msg_trap-5
+   Memcheck:Param
+   mach_msg(msg.msgh_remote_port)
+   fun:mach_msg_trap
+   obj:/System/Library/Frameworks/CoreFoundation*
+   obj:/System/Library/Frameworks/AppKit*
+}
+
+{
+   macos-Cond-1
+   Memcheck:Cond
+   fun:GetVariationInfoFromName
+   obj:/System/Library/Frameworks/ApplicationServices*
+   obj:/System/Library/Frameworks/ApplicationServices*
+}
+
+{
+   macos-Cond-2
+   Memcheck:Cond
+   fun:*PMMutex*Lock*
+   obj:/System/Library/Frameworks/ApplicationServices*
+   obj:/System/Library/Frameworks/ApplicationServices*
+}
+
+{
+   macos-Cond-3
+   Memcheck:Cond
+   fun:sseCGSBlendXXXX8888
+   obj:/System/Library/Frameworks/ApplicationServices*
+   obj:/System/Library/Frameworks/ApplicationServices*
+}
+
+{
+   macos-Cond-4
+   Memcheck:Cond
+   fun:*CASettingsStorage*RefreshSettings*
+   obj:/System/Library/Frameworks/CoreAudio*
+   obj:/System/Library/Frameworks/CoreAudio*
+}
+
+{
+   macos-Cond-5
+   Memcheck:Cond
+   fun:gle*
+   obj:/System/Library/Frameworks/OpenGL*
+   obj:/System/Library/Frameworks/OpenGL*
+}
+
+{
+   futimes-1
+   Memcheck:Param
+   futimes(tvp[1])
+   fun:futimes
+   obj:/usr/lib/libSystem*
+   obj:/usr/lib/libSystem*
+}
+
+##----------------------------------------------------------------------##
+#
+# Suppressions for Helgrind.
+
+# These ones were necessary to give no errors on a tiny non-threaded
+# program.  I don't know if they're real problems or false positives (njn).
+
+# keymgr seems to deliberately do some bogus actions, and if they are bogus,
+# it passes the error codes back to the caller.
+{
+   __keymgr_initializer lock failed
+   Helgrind:PthAPIerror
+   fun:pthread_mutex_lock
+   fun:_dyld_register_func_for_*_image
+   fun:__keymgr_initializer
+   fun:libSystem_initializer
+}
+{
+   __keymgr_initializer unlock failed
+   Helgrind:PthAPIerror
+   fun:pthread_mutex_unlock
+   fun:_dyld_register_func_for_*_image
+   fun:__keymgr_initializer
+   fun:libSystem_initializer
+}
+{
+   __keymgr_initializer bogus unlock
+   Helgrind:UnlockBogus
+   fun:pthread_mutex_unlock
+   fun:_dyld_register_func_for_*_image
+   fun:__keymgr_initializer
+   fun:libSystem_initializer
+}
+
+# These ones were necessary to give no errors on a tiny threaded program.
+# I don't know if they're real problems or false positives (njn).
+
+{
+   crude1
+   Helgrind:Race
+   obj:/usr/lib/dyld
+}
+{
+   crude2
+   Helgrind:Race
+   obj:/usr/lib/libSystem.B.dylib
+}
+# This would be better as "fun:\?\?\?" but string matching doesn't seem to
+# allow escaping meta-chars.
+{
+   crude3
+   Helgrind:Race
+   fun:???
+}
+{
+   crude4
+   Helgrind:Race
+   fun:mythread_wrapper
+}
+{
+   crude5
+   Helgrind:Race
+   ...
+   fun:pthread_create_WRK
+   fun:pthread_create
+}
+

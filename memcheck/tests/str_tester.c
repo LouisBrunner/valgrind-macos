@@ -264,6 +264,8 @@ test_stpcpy (void)
   SIMPLE_COPY(stpcpy, 16, "6666666666666666", 59);
 }
 
+// DDD: better done by testing for the function.
+#if !defined(__APPLE__)
 static void
 test_stpncpy (void)
 {
@@ -278,6 +280,7 @@ test_stpncpy (void)
   check (stpncpy (one, "abcd", 6) == one + 4, 7);
   check (one[4] == '\0' && one[5] == '\0' && one[6] == 'x', 8);
 }
+#endif
 
 static void
 test_strcat (void)
@@ -464,7 +467,7 @@ test_strchr (void)
 }
 
 // DDD: better done by testing for the function.
-#if !defined(_AIX)
+#if !defined(_AIX) && !defined(__APPLE__)
 static void
 test_strchrnul (void)
 {
@@ -501,7 +504,7 @@ test_strchrnul (void)
 #endif /* !defined(_AIX) */
 
 // DDD: better done by testing for the function.
-#if !defined(_AIX)
+#if !defined(_AIX) && !defined(__APPLE__)
 static void
 test_rawmemchr (void)
 {
@@ -577,7 +580,7 @@ test_strrchr (void)
 }
 
 // DDD: better done by testing for the function.
-#if !defined(_AIX)
+#if !defined(_AIX) && !defined(__APPLE__)
 static void
 test_memrchr (void)
 {
@@ -899,7 +902,7 @@ test_strsep (void)
   equal(one+4, "c", 50);
 
   {
-#   if !defined(_AIX)
+#   if !defined(_AIX) && !defined(__APPLE__)
     char text[] = "This,is,a,test";
     char *list = strdupa (text);
     equal (strsep (&list, ","), "This", 51);
@@ -1060,7 +1063,7 @@ test_memcpy (void)
     }
 }
 
-#if !defined(_AIX)
+#if !defined(_AIX) && !defined(__APPLE__)
 static void
 test_mempcpy (void)
 {
@@ -1276,6 +1279,7 @@ test_bzero (void)
   equal(one, "abcdef", 4);		/* Zero-length copy. */
 }
 
+#if !defined(__APPLE__)
 static void
 test_strndup (void)
 {
@@ -1299,6 +1303,7 @@ test_strndup (void)
     equal(p, "abc", 6);
   free (p);
 }
+#endif
 
 static void
 test_bcmp (void)
@@ -1382,8 +1387,10 @@ main (void)
   /* A closely related function is stpcpy.  */
   test_stpcpy ();
 
+#if !defined(__APPLE__)
   /* stpncpy.  */
   test_stpncpy ();
+#endif
 
   /* strcat.  */
   test_strcat ();
@@ -1403,12 +1410,12 @@ main (void)
   /* strchr.  */
   test_strchr ();
 
-# if !defined(_AIX)
+# if !defined(_AIX) && !defined(__APPLE__)
   /* strchrnul.  */
   test_strchrnul ();
 # endif
 
-# if !defined(_AIX)
+# if !defined(_AIX) && !defined(__APPLE__)
   /* rawmemchr.  */
   test_rawmemchr ();
 # endif
@@ -1419,7 +1426,7 @@ main (void)
   /* strrchr.  */
   test_strrchr ();
 
-# if !defined(_AIX)
+# if !defined(_AIX) && !defined(__APPLE__)
   /* memrchr.  */
   test_memrchr ();
 # endif
@@ -1460,7 +1467,7 @@ main (void)
   /* memmove - must work on overlap.  */
   test_memmove ();
 
-# if !defined(_AIX)
+# if !defined(_AIX) && !defined(__APPLE__)
   /* mempcpy */
   test_mempcpy ();
 # endif
@@ -1480,8 +1487,10 @@ main (void)
   /* bcmp - somewhat like memcmp.  */
   test_bcmp ();
 
+#if !defined(__APPLE__)
   /* strndup.  */
   test_strndup ();
+#endif
 
   /* strerror - VERY system-dependent.  */
   test_strerror ();

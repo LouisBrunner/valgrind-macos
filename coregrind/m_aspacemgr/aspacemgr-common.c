@@ -160,6 +160,18 @@ SysRes VG_(am_do_mmap_NO_NOTIFY)( Addr start, SizeT length, UInt prot,
         || defined(VGP_ppc32_aix5) || defined(VGP_ppc64_aix5)
    res = VG_(do_syscall6)(__NR_mmap, (UWord)start, length, 
                          prot, flags, fd, offset);
+#  elif defined(VGP_x86_darwin)
+   if (fd == 0  &&  (flags & VKI_MAP_ANONYMOUS)) {
+       fd = -1;  // MAP_ANON with fd==0 is EINVAL
+   }
+   res = VG_(do_syscall7)(__NR_mmap, (UWord)start, length,
+                          prot, flags, fd, offset & 0xffffffff, offset >> 32);
+#  elif defined(VGP_amd64_darwin)
+   if (fd == 0  &&  (flags & VKI_MAP_ANONYMOUS)) {
+       fd = -1;  // MAP_ANON with fd==0 is EINVAL
+   }
+   res = VG_(do_syscall6)(__NR_mmap, (UWord)start, length,
+                          prot, flags, (UInt)fd, offset);
 #  else
 #    error Unknown platform
 #  endif
@@ -176,6 +188,9 @@ SysRes ML_(am_do_munmap_NO_NOTIFY)(Addr start, SizeT length)
 {
    return VG_(do_syscall2)(__NR_munmap, (UWord)start, length );
 }
+
+#if HAVE_MREMAP
+/* The following are used only to implement mremap(). */
 
 SysRes ML_(am_do_extend_mapping_NO_NOTIFY)( 
           Addr  old_addr, 
@@ -227,6 +242,8 @@ SysRes ML_(am_do_relocate_nooverlap_mapping_NO_NOTIFY)(
 #  endif
 }
 
+#endif
+
 /* --- Pertaining to files --- */
 
 SysRes ML_(am_open) ( const Char* pathname, Int flags, Int mode )
@@ -257,6 +274,8 @@ Int ML_(am_fcntl) ( Int fd, Int cmd, Addr arg )
 {
 #  if defined(VGO_linux) || defined(VGO_aix5)
    SysRes res = VG_(do_syscall3)(__NR_fcntl, fd, cmd, arg);
+#  elif defined(VGO_darwin)
+   SysRes res = VG_(do_syscall3)(__NR_fcntl_nocancel, fd, cmd, arg);
 #  else
 #  error "Unknown OS"
 #  endif
@@ -308,6 +327,17 @@ Bool ML_(am_resolve_filename) ( Int fd, /*OUT*/HChar* buf, Int nbuf )
 
 #elif defined(VGO_aix5)
    I_die_here; /* maybe just return False? */
+   return False;
+
+#elif defined(VGO_darwin)
+   HChar tmp[VKI_MAXPATHLEN+1];
+   if (0 == ML_(am_fcntl)(fd, VKI_F_GETPATH, (UWord)tmp)) {
+      if (nbuf > 0) {
+         VG_(strncpy)( buf, tmp, nbuf < sizeof(tmp) ? nbuf : sizeof(tmp) );
+         buf[nbuf-1] = 0;
+      }
+      if (tmp[0] == '/') return True;
+   }
    return False;
 
 #  else

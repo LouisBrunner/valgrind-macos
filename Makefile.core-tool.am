@@ -1,6 +1,15 @@
 # This file contains things shared by coregrind/Makefile.am and tool
 # Makefile.am files.
 
+# See Makefile.tool-tests.am for an explanation of dSYMs.
+build-noinst_DSYMS:
+	for f in $(noinst_DSYMS); do \
+	  if [ ! -e $$f.dSYM  -o  $$f -nt $$f.dSYM ] ; then \
+	      echo "dsymutil $$f"; \
+	      dsymutil $$f; \
+	  fi; \
+	done
+
 # This is used by coregrind/Makefile.am and Makefile.tool.am for doing
 # "in-place" installs.  It copies $(noinst_PROGRAMS) into $inplacedir.
 # It needs to be depended on by an 'all-local' rule.
@@ -10,6 +19,16 @@ inplace-noinst_PROGRAMS:
 	  for f in $(noinst_PROGRAMS) ; do \
 	    rm -f $(inplacedir)/$$f; \
 	    ln -f -s ../$(subdir)/$$f $(inplacedir); \
+	  done ; \
+	fi
+
+# Similar to inplace-noinst_PROGRAMS
+inplace-noinst_DSYMS: build-noinst_DSYMS
+	if [ -n "$(noinst_DSYMS)" ] ; then \
+	  mkdir -p $(inplacedir); \
+	  for f in $(noinst_DSYMS); do \
+	    rm -f $(inplacedir)/$$f.dSYM; \
+	    ln -f -s ../$(subdir)/$$f.dSYM $(inplacedir); \
 	  done ; \
 	fi
 
@@ -23,4 +42,24 @@ install-noinst_PROGRAMS:
 	    $(INSTALL_PROGRAM) $$f $(DESTDIR)$(valdir); \
 	  done ; \
 	fi
+
+# Similar to install-noinst_PROGRAMS.
+# Nb: we don't use $(INSTALL_PROGRAM) here because it doesn't work with
+# directories.  XXX: not sure whether the resulting permissions will be
+# correct when using 'cp -R'...
+install-noinst_DSYMS: build-noinst_DSYMS
+	if [ -n "$(noinst_DSYMS)" ] ; then \
+	  $(mkinstalldirs) $(DESTDIR)$(valdir); \
+	  for f in $(noinst_DSYMS); do \
+	    cp -R $$f.dSYM $(DESTDIR)$(valdir); \
+	  done ; \
+	fi
+
+# This needs to be depended on by a 'clean-local' rule.
+clean-noinst_DSYMS:
+	for f in $(noinst_DSYMS); do \
+	  rm -rf $$f.dSYM; \
+	done
+
+
 

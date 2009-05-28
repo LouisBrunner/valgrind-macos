@@ -23,6 +23,12 @@ endif
 if VGCONF_PLATFORMS_INCLUDE_PPC64_AIX5
 noinst_PROGRAMS += cachegrind-ppc64-aix5
 endif
+if VGCONF_PLATFORMS_INCLUDE_X86_DARWIN
+noinst_PROGRAMS += cachegrind-x86-darwin
+endif
+if VGCONF_PLATFORMS_INCLUDE_AMD64_DARWIN
+noinst_PROGRAMS += cachegrind-amd64-darwin
+endif
 
 # Build cg_merge for the primary target only.
 bin_PROGRAMS = cg_merge
@@ -80,3 +86,17 @@ cachegrind_ppc64_aix5_CFLAGS       = $(AM_CFLAGS_PPC64_AIX5)
 cachegrind_ppc64_aix5_DEPENDENCIES = $(COREGRIND_LIBS_PPC64_AIX5)
 cachegrind_ppc64_aix5_LDADD        = $(TOOL_LDADD_PPC64_AIX5)
 cachegrind_ppc64_aix5_LDFLAGS      = $(TOOL_LDFLAGS_PPC64_AIX5)
+
+cachegrind_x86_darwin_SOURCES      = $(CACHEGRIND_SOURCES_COMMON) $(CACHEGRIND_SOURCES_X86)
+cachegrind_x86_darwin_CPPFLAGS     = $(AM_CPPFLAGS_X86_DARWIN)
+cachegrind_x86_darwin_CFLAGS       = $(AM_CFLAGS_X86_DARWIN)
+cachegrind_x86_darwin_DEPENDENCIES = $(COREGRIND_LIBS_X86_DARWIN)
+cachegrind_x86_darwin_LDADD        = $(TOOL_LDADD_X86_DARWIN)
+cachegrind_x86_darwin_LDFLAGS      = $(TOOL_LDFLAGS_X86_DARWIN)
+
+cachegrind_amd64_darwin_SOURCES      = $(CACHEGRIND_SOURCES_COMMON) $(CACHEGRIND_SOURCES_AMD64)
+cachegrind_amd64_darwin_CPPFLAGS     = $(AM_CPPFLAGS_AMD64_DARWIN)
+cachegrind_amd64_darwin_CFLAGS       = $(AM_CFLAGS_AMD64_DARWIN)
+cachegrind_amd64_darwin_DEPENDENCIES = $(COREGRIND_LIBS_AMD64_DARWIN)
+cachegrind_amd64_darwin_LDADD        = $(TOOL_LDADD_AMD64_DARWIN)
+cachegrind_amd64_darwin_LDFLAGS      = $(TOOL_LDFLAGS_AMD64_DARWIN)

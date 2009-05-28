@@ -48,8 +48,15 @@
 
 #define VGAPPEND(str1,str2) str1##str2
  
-#define VG_(str)    VGAPPEND(vgPlain_,          str)
-#define ML_(str)    VGAPPEND(vgModuleLocal_,    str)
+#if defined(VGO_linux) || defined(VGO_aix5)
+#  define VG_(str)    VGAPPEND( vgPlain_,          str)
+#  define ML_(str)    VGAPPEND( vgModuleLocal_,    str)
+#elif defined(VGO_darwin)
+#  define VG_(str)    VGAPPEND(_vgPlain_,          str)
+#  define ML_(str)    VGAPPEND(_vgModuleLocal_,    str)
+#else
+#  error Unknown OS
+#endif
 
 #endif /* __PUB_TOOL_BASICS_ASM_H */
 

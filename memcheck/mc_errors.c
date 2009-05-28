@@ -268,7 +268,7 @@ static void mc_pp_AddrInfo ( Addr a, AddrInfo* ai, Bool maybe_gcc )
          if (maybe_gcc) {
             VG_(message)(Vg_UserMsg, 
                "%sAddress 0x%llx is just below the stack ptr.  "
-               "To suppress, use: --workaround-gcc296-bugs=yes%s",
+               "To suppress, use: --workaround-gcc296-bugs=yes%s", 
                xpre, (ULong)a, xpost
             );
 	 } else {

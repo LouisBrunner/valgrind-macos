@@ -940,6 +940,27 @@ void VG_(redir_initialise) ( void )
 #  elif defined(VGP_ppc64_aix5)
    /* nothing so far */
 
+#  elif defined(VGO_darwin)
+   /* If we're using memcheck, use these intercepts right from
+      the start, otherwise dyld makes a lot of noise. */
+   if (0==VG_(strcmp)("Memcheck", VG_(details).name)) {
+      add_hardwired_spec("dyld", "strcmp",
+                         (Addr)&VG_(darwin_REDIR_FOR_strcmp), NULL);
+      add_hardwired_spec("dyld", "strlen",
+                         (Addr)&VG_(darwin_REDIR_FOR_strlen), NULL);
+      add_hardwired_spec("dyld", "strcat",
+                         (Addr)&VG_(darwin_REDIR_FOR_strcat), NULL);
+      add_hardwired_spec("dyld", "strcpy",
+                         (Addr)&VG_(darwin_REDIR_FOR_strcpy), NULL);
+      add_hardwired_spec("dyld", "strlcat",
+                         (Addr)&VG_(darwin_REDIR_FOR_strlcat), NULL);
+#if defined(VGP_amd64_darwin)
+      // DDD: #warning fixme rdar://6166275
+      add_hardwired_spec("dyld", "arc4random",
+                         (Addr)&VG_(darwin_REDIR_FOR_arc4random), NULL);
+#endif
+   }
+
 #  else
 #    error Unknown platform
 #  endif

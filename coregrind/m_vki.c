@@ -77,6 +77,12 @@ void VG_(vki_do_initial_consistency_checks) ( void )
 
 #  if defined(VGO_linux) || defined(VGO_aix5)
    /* nothing to check */
+#  elif defined(VGP_x86_darwin) || defined(VGP_amd64_darwin)
+   vg_assert(_VKI_NSIG == NSIG);
+   vg_assert(_VKI_NSIG == 32);
+   vg_assert(_VKI_NSIG_WORDS == 1);
+   vg_assert(sizeof(sigset_t) /* defined by Darwin */ 
+             == sizeof(vki_sigset_t) /* what we actually use */);
 #  else
 #    error "Unknown plat"
 #  endif
@@ -87,6 +93,39 @@ void VG_(vki_do_initial_consistency_checks) ( void )
    /* the toK- and fromK- forms are identical */
    vg_assert( sizeof(vki_sigaction_toK_t) 
               == sizeof(vki_sigaction_fromK_t) );
+#  elif defined(VGO_darwin)
+   /* the toK- and fromK- forms differ by one function-pointer field
+      (sa_tramp) */
+   vg_assert( sizeof(vki_sigaction_toK_t) 
+              == sizeof(vki_sigaction_fromK_t) + sizeof(void*) );
+
+   vg_assert(sizeof(struct sigaction) == sizeof(vki_sigaction_fromK_t));
+   vg_assert(sizeof(struct __sigaction) == sizeof(vki_sigaction_toK_t));
+   { struct __sigaction    t1;
+     vki_sigaction_toK_t   t2;
+     struct sigaction      f1;
+     vki_sigaction_fromK_t f2;
+     vg_assert(sizeof(t1.sa_handler) == sizeof(t2.ksa_handler));
+     vg_assert(sizeof(t1.sa_tramp)   == sizeof(t2.sa_tramp));
+     vg_assert(sizeof(t1.sa_mask)    == sizeof(t2.sa_mask));
+     vg_assert(sizeof(t1.sa_flags)   == sizeof(t2.sa_flags));
+     vg_assert(sizeof(f1.sa_handler) == sizeof(f2.ksa_handler));
+     vg_assert(sizeof(f1.sa_mask)    == sizeof(f2.sa_mask));
+     vg_assert(sizeof(f1.sa_flags)   == sizeof(f2.sa_flags));
+#    if 0
+     vg_assert(offsetof(t1,sa_handler) == offsetof(t2.ksa_handler));
+     vg_assert(offsetof(t1.sa_tramp)   == offsetof(t2.sa_tramp));
+     vg_assert(offsetof(t1.sa_mask)    == offsetof(t2.sa_mask));
+     vg_assert(offsetof(t1.sa_flags)   == offsetof(t2.sa_flags));
+     vg_assert(offsetof(f1.sa_handler) == offsetof(f2.ksa_handler));
+     vg_assert(offsetof(f1.sa_mask)    == offsetof(f2.sa_mask));
+     vg_assert(offsetof(f1.sa_flags)   == offsetof(f2.sa_flags));
+#    endif
+   }
+   /* also .. */
+   /* VKI_SET_SIGMASK is hardwired into syscall-x86-darwin.S and
+      syscall-amd64-darwin.S */
+   vg_assert(VKI_SIG_SETMASK == 3);
 
 #  else
 #     error "Unknown OS" 

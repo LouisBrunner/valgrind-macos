@@ -1957,6 +1957,8 @@ static void post_reg_write_nonptr ( ThreadId tid, PtrdiffT offset, SizeT size )
    if (is_integer_guest_reg( (Int)offset, (Int)size )) {
       put_guest_intreg( tid, 1, offset, size, (UWord)NONPTR );
    } else {
+      // DDD: on Darwin, this assertion fails because we currently do a
+      // 'post_reg_write' on the 'guest_CC_DEP1' pseudo-register.
       tl_assert(0);
    }
    //   VG_(set_thread_shadow_archreg)( tid, reg, (UInt)NONPTR );
@@ -2127,16 +2129,16 @@ void h_pre_syscall ( ThreadId tid, UInt sysno )
    syscall-specific handling is is required.  No further details of it
    are stored in the table.
 
-   On Linux, 'number' is a __NR_xxx constant.
+   On Linux and Darwin, 'number' is a __NR_xxx constant.
 
    On AIX5, 'number' is an Int*, which points to the Int variable
    holding the currently assigned number for this syscall.
 
    When querying the table, we compare the supplied syscall number
-   with the 'number' field (directly on Linux, after dereferencing on
-   AIX5), to find the relevant entry.  This requires a linear search
-   of the table.  To stop the costs getting too high, the table is
-   incrementally rearranged after each search, to move commonly
+   with the 'number' field (directly on Linux and Darwin, after
+   dereferencing on AIX5), to find the relevant entry.  This requires a
+   linear search of the table.  To stop the costs getting too high, the
+   table is incrementally rearranged after each search, to move commonly
    requested items a bit closer to the front.
 
    The table is built once, the first time it is used.  After that we
@@ -2439,6 +2441,30 @@ static void setup_post_syscall_table ( void )
       ADD(1, __NR_AIX5_kload); /* not sure what to do here */
       ADD(0, __NR_AIX5_kwrite);
 
+   /* --------------- DARWIN ------------- */
+
+#  elif defined(VGO_darwin)
+
+#     define ADD(_flag, _syscallname) \
+         do { UWordPair p; p.uw1 = (_syscallname); p.uw2 = (_flag); \
+              VG_(addToXA)( post_syscall_table, &p ); \
+         } while (0)
+
+      // DDD: a desultory attempt thus far...
+
+      // Unix/BSD syscalls.
+
+      // Mach traps.
+      ADD(0, __NR_host_self_trap);
+      ADD(0, __NR_mach_msg_trap);
+      ADD(0, __NR_mach_reply_port);
+      ADD(0, __NR_task_self_trap);
+
+      // Machine-dependent syscalls.
+      ADD(0, __NR_pthread_set_self);
+
+   /* ------------------------------------ */
+
 #  else
 #     error "Unsupported OS"
 #  endif
@@ -2459,7 +2485,7 @@ void h_post_syscall ( ThreadId tid, UInt sysno, SysRes res )
    n = VG_(sizeXA)( post_syscall_table );
    for (i = 0; i < n; i++) {
       pair = VG_(indexXA)( post_syscall_table, i );
-#     if defined(VGO_linux)
+#     if defined(VGO_linux) || defined(VGO_darwin)
       if (pair->uw1 == (UWord)sysno)
          break;
 #     elif defined(VGO_aix5)
@@ -2473,10 +2499,17 @@ void h_post_syscall ( ThreadId tid, UInt sysno, SysRes res )
    tl_assert(i >= 0 && i <= n);
 
    if (i == n) {
+// DDD: genericise this
+#     if defined(VGO_linux)
       VG_(printf)("sysno == %u\n", sysno);
-#     if defined(VGO_aix5)
+#     elif defined(VGO_aix5)
+      VG_(printf)("sysno == %u\n", sysno);
       VG_(printf)("syscallnm == %s\n",
                   VG_(aix5_sysno_to_sysname)(sysno));
+#     elif defined(VGO_darwin)
+      VG_(printf)("sysno == %d\n", VG_DARWIN_SYSNO_PRINT(sysno));
+#     else
+#        error "Unsupported OS"
 #     endif
       VG_(tool_panic)("unhandled syscall");
    }

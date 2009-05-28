@@ -22,6 +22,9 @@ int main ( void )
 #  if defined(VGO_aix5)
    // AIX 5.2 has neither memalign() nor posix_memalign();  do nothing.
 
+#  elif defined(VGO_darwin)
+   // Likewise for Mac OS X.
+
 #  else
    // Nb: assuming VG_MIN_MALLOC_SZB is 8 or more...
    int* p;

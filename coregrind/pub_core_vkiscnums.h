@@ -54,6 +54,17 @@
    successful, False if the name is unknown. */
 extern Bool VG_(aix5_register_syscall)( Int, UChar* );
 
+#elif defined(VGO_darwin)
+
+/* Convert a syscall number into a nicer form(?) */
+#if defined(VGA_x86)
+#  define VG_DARWIN_SYSNO_NUM(sysno) VG_DARWIN_SYSNO_PRINT(sysno)
+#elif defined(VGA_amd64)
+#  define VG_DARWIN_SYSNO_NUM(sysno) (sysno)
+#else
+#  error unknown arch
+#endif
+
 #else
 #  error Unknown OS
 #endif // defined(VGO_*)

@@ -50,17 +50,29 @@ EXTRA_DIST = $(noinst_SCRIPTS) \
 	slahf-amd64.vgtest
 
 check_PROGRAMS = \
-	bug127521-64 bug132813-amd64 bug137714-amd64 bug132918 \
-	bug156404-amd64 \
+	bug127521-64 bug132813-amd64 bug132918 \
 	clc \
-	faultstatus fcmovnu fxtract $(INSN_TESTS) looper jrcxz \
+	$(INSN_TESTS) \
 	rcl-amd64 \
 	redundantRexW \
-	smc1 shrld \
-	nibz_bennee_mmap \
-	slahf-amd64
+	smc1 \
+	nibz_bennee_mmap
 if BUILD_SSSE3_TESTS
  check_PROGRAMS += ssse3_misaligned
+endif
+
+# DDD: these need to be made to work on Darwin like the x86/ ones were.
+if ! VGCONF_OS_IS_DARWIN
+   check_PROGRAMS += \
+	bug137714-amd64 \
+	bug156404-amd64 \
+	faultstatus \
+	fcmovnu \
+	fxtract \
+	looper \
+	jrcxz \
+	shrld \
+	slahf-amd64
 endif
 
 AM_CFLAGS    += @FLAG_M64@

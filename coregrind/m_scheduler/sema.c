@@ -87,7 +87,7 @@ void ML_(sema_deinit)(vg_sema_t *sema)
 }
 
 /* get a token */
-void ML_(sema_down)(vg_sema_t *sema)
+void ML_(sema_down)( vg_sema_t *sema, Bool as_LL )
 {
    Char buf[2];
    Int ret;
@@ -114,13 +114,15 @@ void ML_(sema_down)(vg_sema_t *sema)
    if (sema_char == 'Z') sema_char = 'A'; else sema_char++;
 
    sema->owner_lwpid = lwpid;
+   sema->held_as_LL = as_LL;
 }
 
 /* put token back */
-void ML_(sema_up)(vg_sema_t *sema)
+void ML_(sema_up)( vg_sema_t *sema, Bool as_LL )
 {
    Int ret;
    Char buf[2];
+   vg_assert(as_LL == sema->held_as_LL);
    buf[0] = sema_char; 
    buf[1] = 0;
    vg_assert(sema->owner_lwpid != -1); /* must be initialised */

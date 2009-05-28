@@ -92,26 +92,26 @@
 #undef PLAT_ppc32_aix5
 #undef PLAT_ppc64_aix5
 
-#if !defined(_AIX) && defined(__i386__)
-#  define PLAT_x86_linux 1
-#elif !defined(_AIX) && defined(__x86_64__)
-#  define PLAT_amd64_linux 1
-#elif !defined(_AIX) && defined(__powerpc__) && !defined(__powerpc64__)
-#  define PLAT_ppc32_linux 1
-#elif !defined(_AIX) && defined(__powerpc__) && defined(__powerpc64__)
-#  define PLAT_ppc64_linux 1
-#elif defined(_AIX) && defined(__64BIT__)
+
+#if defined(_AIX) && defined(__64BIT__)
 #  define PLAT_ppc64_aix5 1
 #elif defined(_AIX) && !defined(__64BIT__)
 #  define PLAT_ppc32_aix5 1
-#endif
-
-
+#elif defined(__APPLE__) && defined(__i386__)
+#  define PLAT_x86_darwin 1
+#elif defined(__APPLE__) && defined(__x86_64__)
+#  define PLAT_amd64_darwin 1
+#elif defined(__i386__)
+#  define PLAT_x86_linux 1
+#elif defined(__x86_64__)
+#  define PLAT_amd64_linux 1
+#elif defined(__powerpc__) && !defined(__powerpc64__)
+#  define PLAT_ppc32_linux 1
+#elif defined(__powerpc__) && defined(__powerpc64__)
+#  define PLAT_ppc64_linux 1
+#else
 /* If we're not compiling for our target platform, don't generate
    any inline asms.  */
-#if !defined(PLAT_x86_linux) && !defined(PLAT_amd64_linux) \
-    && !defined(PLAT_ppc32_linux) && !defined(PLAT_ppc64_linux) \
-    && !defined(PLAT_ppc32_aix5) && !defined(PLAT_ppc64_aix5)
 #  if !defined(NVALGRIND)
 #    define NVALGRIND 1
 #  endif
@@ -172,9 +172,9 @@
    inline asm stuff to be useful.
 */
 
-/* ------------------------- x86-linux ------------------------- */
+/* ------------------------- x86-{linux,darwin} ---------------- */
 
-#if defined(PLAT_x86_linux)
+#if defined(PLAT_x86_linux)  ||  defined(PLAT_x86_darwin)
 
 typedef
    struct { 
@@ -224,11 +224,11 @@ typedef
                      __SPECIAL_INSTRUCTION_PREAMBLE               \
                      /* call-noredir *%EAX */                     \
                      "xchgl %%edx,%%edx\n\t"
-#endif /* PLAT_x86_linux */
+#endif /* PLAT_x86_linux || PLAT_x86_darwin */
 
-/* ------------------------ amd64-linux ------------------------ */
+/* ------------------------ amd64-{linux,darwin} --------------- */
 
-#if defined(PLAT_amd64_linux)
+#if defined(PLAT_amd64_linux)  ||  defined(PLAT_amd64_darwin)
 
 typedef
    struct { 
@@ -278,7 +278,7 @@ typedef
                      __SPECIAL_INSTRUCTION_PREAMBLE               \
                      /* call-noredir *%RAX */                     \
                      "xchgq %%rdx,%%rdx\n\t"
-#endif /* PLAT_amd64_linux */
+#endif /* PLAT_amd64_linux || PLAT_amd64_darwin */
 
 /* ------------------------ ppc32-linux ------------------------ */
 
@@ -632,9 +632,9 @@ typedef
    do { volatile unsigned long _junk;                             \
         CALL_FN_W_7W(_junk,fnptr,arg1,arg2,arg3,arg4,arg5,arg6,arg7); } while (0)
 
-/* ------------------------- x86-linux ------------------------- */
+/* ------------------------- x86-{linux,darwin} ---------------- */
 
-#if defined(PLAT_x86_linux)
+#if defined(PLAT_x86_linux)  ||  defined(PLAT_x86_darwin)
 
 /* These regs are trashed by the hidden call.  No need to mention eax
    as gcc can already see that, plus causes gcc to bomb. */
@@ -1027,11 +1027,11 @@ typedef
       lval = (__typeof__(lval)) _res;                             \
    } while (0)
 
-#endif /* PLAT_x86_linux */
+#endif /* PLAT_x86_linux || PLAT_x86_darwin */
 
-/* ------------------------ amd64-linux ------------------------ */
+/* ------------------------ amd64-{linux,darwin} --------------- */
 
-#if defined(PLAT_amd64_linux)
+#if defined(PLAT_amd64_linux)  ||  defined(PLAT_amd64_darwin)
 
 /* ARGREGS: rdi rsi rdx rcx r8 r9 (the rest on stack in R-to-L order) */
 
@@ -1465,7 +1465,7 @@ typedef
       lval = (__typeof__(lval)) _res;                             \
    } while (0)
 
-#endif /* PLAT_amd64_linux */
+#endif /* PLAT_amd64_linux || PLAT_amd64_darwin */
 
 /* ------------------------ ppc32-linux ------------------------ */
 

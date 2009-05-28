@@ -27,3 +27,7 @@ check_PROGRAMS = \
 AM_CFLAGS   += $(AM_FLAG_M3264_PRI)
 AM_CXXFLAGS += $(AM_FLAG_M3264_PRI)
 
+if VGCONF_OS_IS_DARWIN
+x86_amd64_features_CFLAGS = $(AM_CFLAGS) -mdynamic-no-pic
+endif
+

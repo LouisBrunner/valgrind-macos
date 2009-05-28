@@ -248,6 +248,10 @@ static HChar** setup_client_env ( HChar** origenv, const HChar* toolname)
 #define AT_UCACHEBSIZE		21
 #endif /* AT_UCACHEBSIZE */
 
+#ifndef AT_RANDOM
+#define AT_RANDOM		25
+#endif /* AT_RANDOM */
+
 #ifndef AT_SYSINFO
 #define AT_SYSINFO		32
 #endif /* AT_SYSINFO */
@@ -426,6 +430,8 @@ Addr setup_client_stack( void*  init_sp,
    for (cauxv = orig_auxv; cauxv->a_type != AT_NULL; cauxv++) {
       if (cauxv->a_type == AT_PLATFORM)
 	 stringsize += VG_(strlen)(cauxv->u.a_ptr) + 1;
+      else if (cauxv->a_type == AT_RANDOM)
+	 stringsize += 16;
       auxsize += sizeof(*cauxv);
    }
 
@@ -684,6 +690,15 @@ Addr setup_client_stack( void*  init_sp,
 #        endif
             /* Trash this, because we don't reproduce it */
             auxv->a_type = AT_IGNORE;
+            break;
+
+         case AT_RANDOM:
+            /* points to 16 random bytes - we need to ensure this is
+               propagated to the client as glibc will assume it is
+               present if it is built for kernel 2.6.29 or later */
+            auxv->u.a_ptr = strtab;
+            VG_(memcpy)(strtab, orig_auxv->u.a_ptr, 16);
+            strtab += 16;
             break;
 
          default:

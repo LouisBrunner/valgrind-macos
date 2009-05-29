@@ -1,5 +1,5 @@
 # This file contains things shared by coregrind/Makefile.am and tool
-# Makefile.am files.
+# Makefile.am files.  Also auxprogs/Makefile.am.
 
 # See Makefile.tool-tests.am for an explanation of dSYMs.
 build-noinst_DSYMS:

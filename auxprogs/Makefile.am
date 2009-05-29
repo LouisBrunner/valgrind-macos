@@ -1,5 +1,6 @@
 include $(top_srcdir)/Makefile.all.am
 include $(top_srcdir)/Makefile.flags.am
+include $(top_srcdir)/Makefile.core-tool.am
 
 bin_PROGRAMS = valgrind-listener
 
@@ -67,15 +68,22 @@ endif
 ## First, we have to say how to build the .so's ..
 ##
 noinst_PROGRAMS =
+noinst_DSYMS =
 if BUILD_MPIWRAP_PRI
-noinst_PROGRAMS       += libmpiwrap-@VGCONF_ARCH_PRI@-@VGCONF_OS@.so
+noinst_PROGRAMS += libmpiwrap-@VGCONF_ARCH_PRI@-@VGCONF_OS@.so
+if VGCONF_OS_IS_DARWIN
+noinst_DSYMS    += libmpiwrap-@VGCONF_ARCH_PRI@-@VGCONF_OS@.so
+endif
 libmpiwrap-@VGCONF_ARCH_PRI@-@VGCONF_OS@.so: libmpiwrap.c
 	$(MPI_CC) $(HACKY_FLAGS_PRI) \
 		-I../include \
 		-o libmpiwrap-@VGCONF_ARCH_PRI@-@VGCONF_OS@.so libmpiwrap.c
 endif
 if BUILD_MPIWRAP_SEC
-noinst_PROGRAMS       += libmpiwrap-@VGCONF_ARCH_SEC@-@VGCONF_OS@.so
+noinst_PROGRAMS += libmpiwrap-@VGCONF_ARCH_SEC@-@VGCONF_OS@.so
+if VGCONF_OS_IS_DARWIN
+noinst_DSYMS    += libmpiwrap-@VGCONF_ARCH_SEC@-@VGCONF_OS@.so
+endif
 libmpiwrap-@VGCONF_ARCH_SEC@-@VGCONF_OS@.so: libmpiwrap.c
 	$(MPI_CC) $(HACKY_FLAGS_SEC) \
 		-I../include \
@@ -89,15 +97,9 @@ endif
 # Hence force -j 1.
 .NOTPARALLEL:
 
-install-exec-local:
-if BUILD_MPIWRAP_PRI
-	$(mkinstalldirs) $(DESTDIR)$(valdir); \
-	$(INSTALL_PROGRAM) ./libmpiwrap-@VGCONF_ARCH_PRI@-@VGCONF_OS@.so $(DESTDIR)$(valdir);
-endif
-if BUILD_MPIWRAP_SEC
-	$(mkinstalldirs) $(DESTDIR)$(valdir); \
-	$(INSTALL_PROGRAM) ./libmpiwrap-@VGCONF_ARCH_SEC@-@VGCONF_OS@.so $(DESTDIR)$(valdir);
-endif
+clean-local: clean-noinst_DSYMS
+
+install-exec-local: install-noinst_PROGRAMS install-noinst_DSYMS
 
 
 ## And some hacks to keep 'make dist' happy.
@@ -119,15 +121,6 @@ if VGCONF_HAVE_PLATFORM_SEC_CAPS
 libmpiwrap-@VGCONF_ARCH_SEC@-@VGCONF_OS@.c:
 	rm -f libmpiwrap-@VGCONF_ARCH_SEC@-@VGCONF_OS@.c
 	touch libmpiwrap-@VGCONF_ARCH_SEC@-@VGCONF_OS@.c
-endif
-
-## cleanery
-clean-local:
-	rm -f libmpiwrap-.c \
-	    libmpiwrap-@VGCONF_ARCH_PRI@-@VGCONF_OS@.c \
-	    libmpiwrap-@VGCONF_ARCH_SEC@-@VGCONF_OS@.c
-if VGCONF_OS_IS_DARWIN
-	rm -rf libmpiwrap-*.dSYM
 endif
 
 #

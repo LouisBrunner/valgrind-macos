@@ -6,6 +6,10 @@
 //
 // it gives the y/n/c suppression prompt for errors that aren't shown.  This
 // test checks that is fixed.
+//
+// [The .vgtest file was later changed to use --leak-check=all so that if a
+// suppression is (erroneously?) generated, the test doesn't wait for the user
+// to press 'y', because that pauses the entire regtest system.]
 
 #include <stdlib.h>
 

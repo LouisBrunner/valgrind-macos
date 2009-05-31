@@ -1819,14 +1819,18 @@ AC_TRY_LINK(,
           && __sync_add_and_fetch(&variable, 1) ? 1 : 0)
 ],
 [
+  ac_have_builtin_atomic=yes
   AC_MSG_RESULT([yes])
   AC_DEFINE(HAVE_BUILTIN_ATOMIC, 1, [Define to 1 if gcc supports __sync_bool_compare_and_swap() a.o.])
 ],
 [
+  ac_have_builtin_atomic=no
   AC_MSG_RESULT([no])
 ])
 
 CFLAGS=$safe_CFLAGS
+
+AM_CONDITIONAL([HAVE_BUILTIN_ATOMIC], [test x$ac_have_builtin_atomic = xyes])
 
 
 #----------------------------------------------------------------------------

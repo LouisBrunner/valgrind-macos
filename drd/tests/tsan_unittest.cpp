@@ -1515,7 +1515,7 @@ void Writer() {
     for (int j = i; j < N; j++) {
       GLOB[j] = j;
     }
-    ANNOTATE_HAPPENS_BEFORE(reinterpret_cast<void*>(BOUNDARY+1));
+    ANNOTATE_CONDVAR_SIGNAL(reinterpret_cast<void*>(BOUNDARY+1));
     BOUNDARY++;
     usleep(1000);
   }
@@ -1526,7 +1526,7 @@ void Reader() {
   do {
     n = BOUNDARY;
     if (n == 0) continue; 
-    ANNOTATE_HAPPENS_AFTER_REPEATEDLY(reinterpret_cast<void*>(n));
+    ANNOTATE_CONDVAR_WAIT(reinterpret_cast<void*>(n));
     for (int i = 0; i < n; i++) {
       CHECK(GLOB[i] == i);
     }
@@ -1568,7 +1568,7 @@ void Writer1() {
     for (int j = i; j < N; j++) {
       GLOB[j] = j;
     }
-    ANNOTATE_HAPPENS_BEFORE(reinterpret_cast<void*>(BOUNDARY+1));
+    ANNOTATE_CONDVAR_SIGNAL(reinterpret_cast<void*>(BOUNDARY+1));
     BOUNDARY++;
     usleep(1000);
   }
@@ -1579,7 +1579,7 @@ void Writer2() {
   do {
     n = BOUNDARY;
     if (n == 0) continue; 
-    ANNOTATE_HAPPENS_AFTER_REPEATEDLY(reinterpret_cast<void*>(n));
+    ANNOTATE_CONDVAR_WAIT(reinterpret_cast<void*>(n));
     for (int i = 0; i < n; i++) {
       if(GLOB[i] == i) {
         GLOB[i]++;

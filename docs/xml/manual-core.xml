@@ -1054,6 +1054,67 @@ that can report errors, e.g. Memcheck, but not Cachegrind.</para>
     </listitem>
   </varlistentry>
 
+  <varlistentry id="opt.auto-run-dsymutil" xreflabel="--auto-run-dsymutil">
+    <term>
+      <option><![CDATA[--auto-run-dsymutil=no|yes [no] ]]></option>
+    </term>
+    <listitem>
+      <para>This flag is only relevant when running Valgrind on
+      MacOS X.</para>
+
+      <para>MacOS X uses a deferred debug information (debuginfo)
+      linking scheme.  When object files containing debuginfo are
+      linked into a <computeroutput>.dylib</computeroutput> or an
+      executable, the debuginfo is not copied into the final file.
+      Instead, the debuginfo must be linked manually by
+      running <computeroutput>dsymutil</computeroutput>, a
+      system-provided utility, on the executable
+      or <computeroutput>.dylib</computeroutput>.  The resulting
+      combined debuginfo is placed in a directory alongside the
+      executable or <computeroutput>.dylib</computeroutput>, but with
+      the extension <computeroutput>.dSYM</computeroutput>.</para>
+
+      <para>With <option>--auto-run-dsymutil=no</option>, Valgrind
+      will detect cases where the
+      <computeroutput>.dSYM</computeroutput> directory is either
+      missing, or is present but does not appear to match the
+      associated executable or <computeroutput>.dylib</computeroutput>,
+      most likely because it is out of date.  In these cases, Valgrind
+      will print a warning message but take no further action.</para>
+
+      <para>With <option>--auto-run-dsymutil=yes</option>, Valgrind
+      will, in such cases, automatically
+      run <computeroutput>dsymutil</computeroutput> as necessary to
+      bring the debuginfo up to date.  For all practical purposes, if
+      you always use <option>--auto-run-dsymutil=yes</option>, then
+      there is never any need to
+      run <computeroutput>dsymutil</computeroutput> manually or as part
+      of your applications's build system, since Valgrind will run it
+      as necessary.</para>
+
+      <para>Valgrind will not attempt to
+      run <computeroutput>dsymutil</computeroutput> on any 
+      executable or library in
+      <computeroutput>/usr</computeroutput>,
+      <computeroutput>/bin</computeroutput>,
+      <computeroutput>/sbin</computeroutput>,
+      <computeroutput>/opt</computeroutput>,
+      <computeroutput>/sw</computeroutput>,
+      <computeroutput>/System</computeroutput> or
+      <computeroutput>/Library</computeroutput>
+      since <computeroutput>dsymutil</computeroutput> will always fail
+      in such situations.  It fails both because the debuginfo for
+      such pre-installed system components is not available anywhere,
+      and also because it would require write priviledges in those
+      directories.</para>
+
+      <para>Be careful when
+      using <option>--auto-run-dsymutil=yes</option>, since it will
+      cause pre-existing <computeroutput>.dSYM</computeroutput>
+      directories to be silently deleted and re-created.</para>
+    </listitem>
+  </varlistentry>
+
   <varlistentry id="opt.max-stackframe" xreflabel="--max-stackframe">
     <term>
       <option><![CDATA[--max-stackframe=<number> [default: 2000000] ]]></option>

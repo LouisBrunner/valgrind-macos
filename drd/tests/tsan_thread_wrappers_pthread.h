@@ -64,6 +64,8 @@ using namespace std;
 #include "../../drd/drd.h"
 #define ANNOTATE_NO_OP(arg) do { } while(0)
 #define ANNOTATE_EXPECT_RACE(addr, descr) DRDCL_(ignore_range)(addr, 4)
+#define ANNOTATE_PUBLISH_MEMORY_RANGE(addr, size) do { } while(0)
+#define ANNOTATE_UNPUBLISH_MEMORY_RANGE(addr, size) do { } while(0)
 static inline bool RunningOnValgrind() { return RUNNING_ON_VALGRIND; }
 
 #include <assert.h>

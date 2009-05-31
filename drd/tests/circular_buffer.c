@@ -16,7 +16,11 @@
 
 
 /** gcc versions 4.1.0 and later have support for atomic builtins. */
-#if defined(HAVE_BUILTIN_ATOMIC)
+
+#ifndef HAVE_BUILTIN_ATOMIC
+#error Sorry, but this test program can only be compiled by a compiler that\
+has built-in functions for atomic memory access.
+#endif
 
 
 #define BUFFER_MAX (2)
@@ -188,18 +192,3 @@ int main(int argc, char** argv)
 
   return 0;
 }
-
-
-#else
-
-
-int main(int argc, char** argv)
-{
-  fprintf(stderr,
-          "Sorry, but your compiler does not have built-in support for atomic"
-          " operations.\n");
-  return 0;
-}
-
-
-#endif

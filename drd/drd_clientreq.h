@@ -52,12 +52,6 @@ enum {
    /* To ask the drd tool to start a new segment in the specified thread. */
    VG_USERREQ__DRD_START_NEW_SEGMENT,
    /* args: POSIX thread ID. */
-   /* Let the drd tool stop recording memory accesses in the calling thread. */
-   VG_USERREQ__DRD_STOP_RECORDING,
-   /* args: none. */
-   /* Let the drd tool start recording memory accesses in the calling thread. */
-   VG_USERREQ__DRD_START_RECORDING,
-   /* args: none. */
 
    /* Tell drd the pthread_t of the running thread. */
    VG_USERREQ__SET_PTHREADID,
@@ -183,56 +177,65 @@ enum {
 
    /* To notify the drd tool of a pthread_rwlock_init call. */
    VG_USERREQ__PRE_RWLOCK_INIT,
-   /* args: Addr rwlock */
+   /* args: Addr rwlock, RwLockT */
    /* To notify the drd tool of a pthread_rwlock_destroy call. */
    VG_USERREQ__POST_RWLOCK_DESTROY,
-   /* args: Addr rwlock */
+   /* args: Addr rwlock, RwLockT */
    /* To notify the drd tool of a pthread_rwlock_rdlock call. */
    VG_USERREQ__PRE_RWLOCK_RDLOCK,
-   /* args: Addr rwlock */
+   /* args: Addr rwlock, RwLockT */
    /* To notify the drd tool of a pthread_rwlock_rdlock call. */
    VG_USERREQ__POST_RWLOCK_RDLOCK,
-   /* args: Addr rwlock, Bool took_lock */
+   /* args: Addr rwlock, RwLockT, Bool took_lock */
    /* To notify the drd tool of a pthread_rwlock_wrlock call. */
    VG_USERREQ__PRE_RWLOCK_WRLOCK,
-   /* args: Addr rwlock */
+   /* args: Addr rwlock, RwLockT */
    /* To notify the drd tool of a pthread_rwlock_wrlock call. */
    VG_USERREQ__POST_RWLOCK_WRLOCK,
-   /* args: Addr rwlock, Bool took_lock */
+   /* args: Addr rwlock, RwLockT, Bool took_lock */
    /* To notify the drd tool of a pthread_rwlock_unlock call. */
    VG_USERREQ__PRE_RWLOCK_UNLOCK,
-   /* args: Addr rwlock */
+   /* args: Addr rwlock, RwLockT */
    /* To notify the drd tool of a pthread_rwlock_unlock call. */
    VG_USERREQ__POST_RWLOCK_UNLOCK
-   /* args: Addr rwlock, Bool unlocked */
+   /* args: Addr rwlock, RwLockT, Bool unlocked */
 
 };
 
-/*
+/**
  * Error checking on POSIX recursive mutexes, POSIX error checking mutexes,
- * POSIX default mutexes and POSIX spinlocks happens by the same code. The
- * values defined below specify which of these types a mutex really is.
+ * POSIX default mutexes and POSIX spinlocks happens the code in drd_mutex.c.
+ * The values defined below specify the mutex type.
  */
-typedef enum
-   {
-      mutex_type_unknown          = -1,
-      mutex_type_invalid_mutex    = 0,
-      mutex_type_recursive_mutex  = 1,
-      mutex_type_errorcheck_mutex = 2,
-      mutex_type_default_mutex    = 3,
-      mutex_type_spinlock         = 4
-   } MutexT;
+typedef enum {
+   mutex_type_unknown          = -1,
+   mutex_type_invalid_mutex    = 0,
+   mutex_type_recursive_mutex  = 1,
+   mutex_type_errorcheck_mutex = 2,
+   mutex_type_default_mutex    = 3,
+   mutex_type_spinlock         = 4,
+   mutex_type_order_annotation = 5,
+} MutexT;
+
+/**
+ * Error checking on POSIX reader/writer locks and user-defined reader/writer
+ * locks happens by the code in drd_rwlock.c. The values defined below specify
+ * the rwlock type.
+ */
+typedef enum {
+   pthread_rwlock = 1,
+   user_rwlock    = 2,
+} RwLockT;
 
 /*
  * Error checking on POSIX barriers and GOMP barriers happens by the same
  * code. The integer values defined below specify the type of a barrier with
  * a given client address.
  */
-typedef enum
-   {
-      pthread_barrier = 1,
-      gomp_barrier = 2
-   } BarrierT;
+typedef enum {
+   pthread_barrier = 1,
+   gomp_barrier    = 2,
+} BarrierT;
 
 
 void DRD_(clientreq_init)(void);

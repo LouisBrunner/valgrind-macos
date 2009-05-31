@@ -524,7 +524,8 @@ static void drd_thread_finished(ThreadId vg_tid)
                       DRD_(thread_get_stack_max)(drd_tid)
                       - DRD_(thread_get_stack_min)(drd_tid),
                       True);
-   DRD_(thread_stop_recording)(drd_tid);
+   DRD_(thread_set_record_loads)(drd_tid, False);
+   DRD_(thread_set_record_stores)(drd_tid, False);
    DRD_(thread_finished)(drd_tid);
 }
 

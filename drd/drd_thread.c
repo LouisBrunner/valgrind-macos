@@ -156,7 +156,9 @@ static DrdThreadId DRD_(VgThreadIdToNewDrdThreadId)(const ThreadId tid)
          DRD_(g_threadinfo)[i].stack_min_min = 0;
          DRD_(g_threadinfo)[i].stack_startup = 0;
          DRD_(g_threadinfo)[i].stack_max     = 0;
-         DRD_(g_threadinfo)[i].is_recording  = True;
+         DRD_(thread_set_name)(i, "");
+         DRD_(g_threadinfo)[i].is_recording_loads  = True;
+         DRD_(g_threadinfo)[i].is_recording_stores = True;
          DRD_(g_threadinfo)[i].synchr_nesting = 0;
          tl_assert(DRD_(g_threadinfo)[i].first == 0);
          tl_assert(DRD_(g_threadinfo)[i].last == 0);
@@ -492,6 +494,34 @@ void DRD_(thread_set_joinable)(const DrdThreadId tid, const Bool joinable)
                 joinable ? "joinable" : "detached");
 #endif
    DRD_(g_threadinfo)[tid].detached_posix_thread = ! joinable;
+}
+
+/** Obtain the thread number and the user-assigned thread name. */
+const char* DRD_(thread_get_name)(const DrdThreadId tid)
+{
+   tl_assert(0 <= (int)tid && tid < DRD_N_THREADS
+             && tid != DRD_INVALID_THREADID);
+
+   return DRD_(g_threadinfo)[tid].name;
+}
+
+/** Set the name of the specified thread. */
+void DRD_(thread_set_name)(const DrdThreadId tid, const char* const name)
+{
+   tl_assert(0 <= (int)tid && tid < DRD_N_THREADS
+             && tid != DRD_INVALID_THREADID);
+   
+   if (name == NULL || name[0] == 0)
+      VG_(snprintf)(DRD_(g_threadinfo)[tid].name,
+                    sizeof(DRD_(g_threadinfo)[tid].name),
+                    "Thread %d",
+                    tid);
+   else
+      VG_(snprintf)(DRD_(g_threadinfo)[tid].name,
+                    sizeof(DRD_(g_threadinfo)[tid].name),
+                    "Thread %d (%s)",
+                    tid, name);
+   DRD_(g_threadinfo)[tid].name[sizeof(DRD_(g_threadinfo)[tid].name) - 1] = 0;
 }
 
 /**
@@ -884,22 +914,24 @@ void DRD_(thread_stop_using_mem)(const Addr a1, const Addr a2)
    }
 }
 
-/** Start recording memory access information. */
-void DRD_(thread_start_recording)(const DrdThreadId tid)
+/** Specify whether memory loads should be recorded. */
+void DRD_(thread_set_record_loads)(const DrdThreadId tid, const Bool enabled)
 {
    tl_assert(0 <= (int)tid && tid < DRD_N_THREADS
              && tid != DRD_INVALID_THREADID);
-   tl_assert(! DRD_(g_threadinfo)[tid].is_recording);
-   DRD_(g_threadinfo)[tid].is_recording = True;
+   tl_assert(enabled == !! enabled);
+
+   DRD_(g_threadinfo)[tid].is_recording_loads = enabled;
 }
 
-/** Stop recording memory access information. */
-void DRD_(thread_stop_recording)(const DrdThreadId tid)
+/** Specify whether memory stores should be recorded. */
+void DRD_(thread_set_record_stores)(const DrdThreadId tid, const Bool enabled)
 {
    tl_assert(0 <= (int)tid && tid < DRD_N_THREADS
              && tid != DRD_INVALID_THREADID);
-   tl_assert(DRD_(g_threadinfo)[tid].is_recording);
-   DRD_(g_threadinfo)[tid].is_recording = False;
+   tl_assert(enabled == !! enabled);
+
+   DRD_(g_threadinfo)[tid].is_recording_stores = enabled;
 }
 
 /**

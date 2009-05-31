@@ -85,7 +85,8 @@ static void DRD_(cond_cleanup)(struct cond_info* p)
       q = &(DRD_(clientobj_get)(p->mutex, ClientMutex)->mutex);
       tl_assert(q);
       {
-         CondDestrErrInfo cde = { p->a1, q->a1, q->owner };
+         CondDestrErrInfo cde = { DRD_(thread_get_running_tid)(),
+                                  p->a1, q->a1, q->owner };
          VG_(maybe_record_error)(VG_(get_running_tid)(),
                                  CondDestrErr,
                                  VG_(get_IP)(VG_(get_running_tid)()),
@@ -96,7 +97,7 @@ static void DRD_(cond_cleanup)(struct cond_info* p)
    }
 }
 
-static struct cond_info* DRD_(cond_get_or_allocate)(const Addr cond)
+static struct cond_info* cond_get_or_allocate(const Addr cond)
 {
    struct cond_info *p;
 
@@ -110,7 +111,7 @@ static struct cond_info* DRD_(cond_get_or_allocate)(const Addr cond)
    return p;
 }
 
-static struct cond_info* DRD_(cond_get)(const Addr cond)
+struct cond_info* DRD_(cond_get)(const Addr cond)
 {
    tl_assert(offsetof(DrdClientobj, cond) == 0);
    return &(DRD_(clientobj_get)(cond, ClientCondvar)->cond);
@@ -134,7 +135,7 @@ void DRD_(cond_pre_init)(const Addr cond)
 
    if (p)
    {
-      CondErrInfo cei = { .cond = cond };
+      CondErrInfo cei = { .tid = DRD_(thread_get_running_tid)(), .cond = cond };
       VG_(maybe_record_error)(VG_(get_running_tid)(),
                               CondErr,
                               VG_(get_IP)(VG_(get_running_tid)()),
@@ -142,7 +143,7 @@ void DRD_(cond_pre_init)(const Addr cond)
                               &cei);
    }
 
-   p = DRD_(cond_get_or_allocate)(cond);
+   p = cond_get_or_allocate(cond);
 }
 
 /** Called after pthread_cond_destroy(). */
@@ -162,7 +163,7 @@ void DRD_(cond_post_destroy)(const Addr cond)
    p = DRD_(cond_get)(cond);
    if (p == 0)
    {
-      CondErrInfo cei = { .cond = cond };
+      CondErrInfo cei = { .tid = DRD_(thread_get_running_tid)(), .cond = cond };
       VG_(maybe_record_error)(VG_(get_running_tid)(),
                               CondErr,
                               VG_(get_IP)(VG_(get_running_tid)()),
@@ -173,7 +174,7 @@ void DRD_(cond_post_destroy)(const Addr cond)
 
    if (p->waiter_count != 0)
    {
-      CondErrInfo cei = { .cond = cond };
+      CondErrInfo cei = { .tid = DRD_(thread_get_running_tid)(), .cond = cond };
       VG_(maybe_record_error)(VG_(get_running_tid)(),
                               CondErr,
                               VG_(get_IP)(VG_(get_running_tid)()),
@@ -202,7 +203,7 @@ int DRD_(cond_pre_wait)(const Addr cond, const Addr mutex)
                    cond);
    }
 
-   p = DRD_(cond_get_or_allocate)(cond);
+   p = cond_get_or_allocate(cond);
    tl_assert(p);
 
    if (p->waiter_count == 0)
@@ -212,7 +213,8 @@ int DRD_(cond_pre_wait)(const Addr cond, const Addr mutex)
    else if (p->mutex != mutex)
    {
       CondWaitErrInfo cwei
-         = { .cond = cond, .mutex1 = p->mutex, .mutex2 = mutex };
+         = { .tid = DRD_(thread_get_running_tid)(),
+             .cond = cond, .mutex1 = p->mutex, .mutex2 = mutex };
       VG_(maybe_record_error)(VG_(get_running_tid)(),
                               CondWaitErr,
                               VG_(get_IP)(VG_(get_running_tid)()),
@@ -226,7 +228,8 @@ int DRD_(cond_pre_wait)(const Addr cond, const Addr mutex)
        && q->owner == DRD_(thread_get_running_tid)() && q->recursion_count > 0)
    {
       const ThreadId vg_tid = VG_(get_running_tid)();
-      MutexErrInfo MEI = { q->a1, q->recursion_count, q->owner };
+      MutexErrInfo MEI = { DRD_(thread_get_running_tid)(),
+                           q->a1, q->recursion_count, q->owner };
       VG_(maybe_record_error)(vg_tid,
                               MutexErr,
                               VG_(get_IP)(vg_tid),
@@ -284,9 +287,10 @@ static void DRD_(cond_signal)(Addr const cond)
       {
          /* A signal is sent while the associated mutex has not been locked. */
          /* This can indicate but is not necessarily a race condition.       */
-         CondRaceErrInfo cei;
-         cei.cond  = cond;
-         cei.mutex = cond_p->mutex;
+         CondRaceErrInfo cei = { .tid = DRD_(thread_get_running_tid)(),
+                                 .cond  = cond,
+                                 .mutex = cond_p->mutex,
+                               };
          VG_(maybe_record_error)(vg_tid,
                                  CondRaceErr,
                                  VG_(get_IP)(vg_tid),

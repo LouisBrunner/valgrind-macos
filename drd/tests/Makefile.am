@@ -14,6 +14,16 @@ noinst_SCRIPTS =		    \
 
 EXTRA_DIST =                                        \
 	$(noinst_SCRIPTS)                           \
+	annotate_order_1.stderr.exp		    \
+	annotate_order_1.vgtest			    \
+	annotate_order_2.stderr.exp		    \
+	annotate_order_2.vgtest			    \
+	annotate_rwlock.stderr.exp		    \
+	annotate_rwlock.vgtest			    \
+	annotate_ignore_read.stderr.exp		    \
+	annotate_ignore_read.vgtest		    \
+	annotate_trace_memory.stderr.exp	    \
+	annotate_trace_memory.vgtest		    \
 	atomic_var.stderr.exp-with-atomic-builtins  \
 	atomic_var.stderr.exp-without-atomic-builtins \
 	atomic_var.vgtest			    \
@@ -203,12 +213,12 @@ EXTRA_DIST =                                        \
 	tc23_bogus_condwait.vgtest                  \
 	tc24_nonzero_sem.stderr.exp                 \
 	tc24_nonzero_sem.vgtest                     \
+	thread_name.stderr.exp			    \
+	thread_name.vgtest			    \
 	trylock.stderr.exp                          \
 	trylock.vgtest
 
 check_PROGRAMS =      \
-  atomic_var          \
-  circular_buffer     \
   drd_bitmap_test     \
   fp_race             \
   hold_lock           \
@@ -230,10 +240,16 @@ check_PROGRAMS =      \
   rwlock_test         \
   sem_as_mutex        \
   sigalrm             \
-  trylock
+  thread_name         \
+  trylock             \
+  tsan_unittest
 
 if HAVE_BOOST_1_35
 check_PROGRAMS += boost_thread
+endif
+
+if HAVE_BUILTIN_ATOMIC
+check_PROGRAMS += annotate_rwlock atomic_var circular_buffer
 endif
 
 if HAVE_OPENMP
@@ -266,10 +282,14 @@ LDADD = -lpthread
 drd_bitmap_test_CFLAGS      = $(AM_CFLAGS) -O2 \
                               -DENABLE_DRD_CONSISTENCY_CHECKS\
                               @FLAG_UNLIMITED_INLINE_UNIT_GROWTH@
-drd_bitmap_test_LDADD       = # nothing, ie. not -lpthread
+drd_bitmap_test_LDADD       = # nothing, i.e. not -lpthread
 
 monitor_example_SOURCES     = monitor_example.cpp
 new_delete_SOURCES          = new_delete.cpp
+
+tsan_unittest_SOURCES       = tsan_unittest.cpp
+tsan_unittest_CXXFLAGS      = $(AM_CXXFLAGS) -Wno-deprecated -Wno-sign-compare\
+			      -Wno-shadow @FLAG_W_NO_EMPTY_BODY@
 
 if HAVE_BOOST_1_35
 boost_thread_SOURCES        = boost_thread.cpp

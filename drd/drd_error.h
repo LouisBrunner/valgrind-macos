@@ -87,9 +87,12 @@ struct {                      // Used by:
    DebugInfo*  debuginfo;     //   Segment
    Char        name[256];     //   Segment
    Char        descr[256];    //   Segment
-}
-   AddrInfo;
+} AddrInfo;
 
+/*
+ * NOTE: the first member of each error info structure MUST be the thread ID
+ * in which the error has been observed.
+ */
 typedef struct {
    DrdThreadId   tid;         // Thread ID of the running thread.
    Addr          addr;        // Conflicting address in current thread.
@@ -98,47 +101,56 @@ typedef struct {
 } DataRaceErrInfo;
 
 typedef struct {
-   Addr mutex;
-   Int recursion_count;
+   DrdThreadId tid;
+   Addr        mutex;
+   Int         recursion_count;
    DrdThreadId owner;
 } MutexErrInfo;
 
 typedef struct {
-   Addr cond;
+   DrdThreadId tid;
+   Addr        cond;
 } CondErrInfo;
 
 typedef struct {
+   DrdThreadId tid;
    Addr        cond;
    Addr        mutex;
-   DrdThreadId tid;
+   DrdThreadId owner;
 } CondDestrErrInfo;
 
 typedef struct {
-   Addr cond;
-   Addr mutex;
+   DrdThreadId tid;
+   Addr        cond;
+   Addr        mutex;
 } CondRaceErrInfo;
 
 typedef struct {
-   Addr cond;
-   Addr mutex1;
-   Addr mutex2;
+   DrdThreadId tid;
+   Addr        cond;
+   Addr        mutex1;
+   Addr        mutex2;
 } CondWaitErrInfo;
 
 typedef struct {
-   Addr semaphore;
+   DrdThreadId tid;
+   Addr        semaphore;
 } SemaphoreErrInfo;
 
 typedef struct {
+   DrdThreadId tid;
    Addr        barrier;
    DrdThreadId other_tid;
    ExeContext* other_context;
 } BarrierErrInfo;
 
 typedef struct {
-   Addr rwlock;
+   DrdThreadId tid;
+   Addr        rwlock;
 } RwlockErrInfo;
 
 typedef struct {
+   DrdThreadId tid;
    Addr        synchronization_object;
    ExeContext* acquired_at;
    UInt        hold_time_ms;
@@ -146,6 +158,7 @@ typedef struct {
 } HoldtimeErrInfo;
 
 typedef struct {
+   DrdThreadId tid;
 } GenericErrInfo;
 
 

@@ -10,7 +10,6 @@
  * in different cache lines in a different order.
  */
 
-
 #define _GNU_SOURCE
 
 #include <pthread.h>
@@ -18,10 +17,11 @@
 #include <stdlib.h>  /* atoi() */
 #include "../../config.h"
 
-
 /* Atomic builtins are only supported by gcc 4.1.0 and later. */
-
-#if defined(HAVE_BUILTIN_ATOMIC)
+#ifndef HAVE_BUILTIN_ATOMIC
+#error Sorry, but this test program can only be compiled by a compiler that\
+has built-in functions for atomic memory access.
+#endif
 
 static __inline__
 int sync_add_and_fetch(int* p, int i)
@@ -64,15 +64,3 @@ int main(int argc, char** argv)
 
   return 0;
 }
-
-#else
-
-int main(int argc, char** argv)
-{
-  fprintf(stderr,
-          "Sorry, but your compiler does not have built-in support for atomic"
-          " operations.\n");
-  return 0;
-}
-
-#endif

@@ -76,6 +76,7 @@ typedef struct
    Addr      stack_startup; /**<Stack pointer after pthread_create() finished.*/
    Addr      stack_max;     /**< Top of stack. */
    SizeT     stack_size;    /**< Maximum size of stack. */
+   char      name[64];      /**< User-assigned thread name. */
    /** Indicates whether the Valgrind core knows about this thread. */
    Bool      vg_thread_exists;
    /** Indicates whether there is an associated POSIX thread ID. */
@@ -85,8 +86,10 @@ typedef struct
     * a corresponding OS thread that is detached.
     */
    Bool      detached_posix_thread;
-   /** Wether recording of memory accesses is active. */
-   Bool      is_recording;
+   /** Wether recording of memory load accesses is currently enabled. */
+   Bool      is_recording_loads;
+   /** Wether recording of memory load accesses is currently enabled. */
+   Bool      is_recording_stores;
    /** Nesting level of synchronization functions called by the client. */
    Int       synchr_nesting;
 } ThreadInfo;
@@ -137,6 +140,8 @@ SizeT DRD_(thread_get_stack_size)(const DrdThreadId tid);
 void DRD_(thread_set_pthreadid)(const DrdThreadId tid, const PThreadId ptid);
 Bool DRD_(thread_get_joinable)(const DrdThreadId tid);
 void DRD_(thread_set_joinable)(const DrdThreadId tid, const Bool joinable);
+const char* DRD_(thread_get_name)(const DrdThreadId tid);
+void DRD_(thread_set_name)(const DrdThreadId tid, const char* const name);
 void DRD_(thread_set_vg_running_tid)(const ThreadId vg_tid);
 void DRD_(thread_set_running_tid)(const ThreadId vg_tid,
                                   const DrdThreadId drd_tid);
@@ -152,8 +157,8 @@ void DRD_(thread_combine_vc2)(const DrdThreadId tid,
                               const VectorClock* const vc);
 
 void DRD_(thread_stop_using_mem)(const Addr a1, const Addr a2);
-void DRD_(thread_start_recording)(const DrdThreadId tid);
-void DRD_(thread_stop_recording)(const DrdThreadId tid);
+void DRD_(thread_set_record_loads)(const DrdThreadId tid, const Bool enabled);
+void DRD_(thread_set_record_stores)(const DrdThreadId tid, const Bool enabled);
 void DRD_(thread_print_all)(void);
 void DRD_(thread_report_races)(const DrdThreadId tid);
 void DRD_(thread_report_races_segment)(const DrdThreadId tid,
@@ -211,7 +216,7 @@ struct bitmap* DRD_(thread_get_conflict_set)(void)
  * currently running thread.
  */
 static __inline__
-Bool DRD_(running_thread_is_recording)(void)
+Bool DRD_(running_thread_is_recording_loads)(void)
 {
 #ifdef ENABLE_DRD_CONSISTENCY_CHECKS
    tl_assert(0 <= (int)DRD_(g_drd_running_tid)
@@ -219,7 +224,19 @@ Bool DRD_(running_thread_is_recording)(void)
              && DRD_(g_drd_running_tid) != DRD_INVALID_THREADID);
 #endif
    return (DRD_(g_threadinfo)[DRD_(g_drd_running_tid)].synchr_nesting == 0
-           && DRD_(g_threadinfo)[DRD_(g_drd_running_tid)].is_recording);
+           && DRD_(g_threadinfo)[DRD_(g_drd_running_tid)].is_recording_loads);
+}
+
+static __inline__
+Bool DRD_(running_thread_is_recording_stores)(void)
+{
+#ifdef ENABLE_DRD_CONSISTENCY_CHECKS
+   tl_assert(0 <= (int)DRD_(g_drd_running_tid)
+             && DRD_(g_drd_running_tid) < DRD_N_THREADS
+             && DRD_(g_drd_running_tid) != DRD_INVALID_THREADID);
+#endif
+   return (DRD_(g_threadinfo)[DRD_(g_drd_running_tid)].synchr_nesting == 0
+           && DRD_(g_threadinfo)[DRD_(g_drd_running_tid)].is_recording_stores);
 }
 
 /**

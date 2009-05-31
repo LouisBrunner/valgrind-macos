@@ -2,34 +2,60 @@ How to test DRD
 ~~~~~~~~~~~~~~~
 
 1. Start with compiling DRD.
+
 2. Check as follows that all global symbols in DRD have been wrapped by the
    DRD_() macro (output must be empty):
-     nm -A drd*.o|grep ' T '|grep -v ' T vgDrd_'
+     ( cd drd && nm -A drd*.o|grep ' T '|grep -v ' T vgDrd_' )
+
 3. Check as follows that all global symbols in the preloaded shared library
-   are redirected functions (output must be empty):
-     nm -A vgpreload*.o|grep ' T '|grep -v ' T _vg'
-4. Run the regression tests as follows:
+   are redirected functions (output must contain one symbol that starts with
+   a double underscore, something like __i686.get_pc_thunk.bx):
+     ( cd drd && nm -A vgpreload*.o|grep ' T '|grep -v ' T _vg' )
+
+4. Verify that all files needed for the regression tests are included in
+   drd/tests/Makefile.am:
+     (
+       cd drd/tests;
+       for f in *.vgtest *.exp*; do grep -q "$f" Makefile.am || echo $f; done
+     )
+
+5. Verify that all files referenced in EXTRA_DIST in drd/tests/Makefile.am
+   exist:
+     (
+       cd drd/tests;
+       for e in $(awk '/\\$/{n=$0; sub("\\\\$", "", n); if (line != "") { line = line " " n } else { line=n }} /[^\\]$/{if (line != ""){print line;line=""};print}' < Makefile.am | sed -n 's/^EXTRA_DIST *=//p' | sed 's/..noinst_SCRIPTS.//')
+       do
+         [ -e "$e" ] || echo "$e"
+       done
+     )
+     
+6. Run the regression tests as follows:
      perl tests/vg_regtest drd
-5. Run Konstantin's regression tests:
+
+7. Run Konstantin's regression tests:
      mkdir -p drt/unittest
      svn checkout http://data-race-test.googlecode.com/svn/trunk/unittest drt/unittest
      make -C drt/unittest -s all
      ./vg-in-place --tool=drd --check-stack-var=yes drt/unittest/racecheck_unittest 2>&1|less
-6. Test the slowdown for matinv for various matrix sizes via the script
+
+8. Test the slowdown for matinv for various matrix sizes via the script
    drd/scripts/run-matinv (must be about 24 for i == 1 and about
    31 for i == 10 with n == 200).
-7. Test whether DRD works with standard KDE applications and whether it does
+
+9. Test whether DRD works with standard KDE applications and whether it does
    not print any false positives. Test this both with KDE3 and KDE4.
      ./vg-in-place --tool=drd --var-info=yes kate
      ./vg-in-place --tool=drd --var-info=yes --check-stack-var=yes kate
      ./vg-in-place --tool=drd --var-info=yes --trace-children=yes knode
      ./vg-in-place --tool=drd --var-info=yes --check-stack-var=yes --trace-children=yes knode
      ./vg-in-place --tool=drd --var-info=yes --check-stack-var=yes /usr/bin/designer
-8. Test whether DRD works with standard GNOME applications. Expect
+
+10. Test whether DRD works with standard GNOME applications. Expect
    race reports triggered by ORBit_RootObject_duplicate() and after
    having closed the GNOME terminal window:
      ./vg-in-place --tool=drd --var-info=yes --trace-children=yes gnome-terminal
-9. Test DRD with Firefox. First of all, make sure that Valgrind is patched
+
+11. Test DRD with Firefox. First of all, make sure that Valgrind is patched
    such that it supports libjemalloc.so:
      drd/scripts/add-libjemalloc-support
    Next, build and install Firefox 3:

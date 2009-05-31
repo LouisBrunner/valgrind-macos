@@ -214,7 +214,7 @@ static void rwlock_cleanup(struct rwlock_info* p)
 
    if (DRD_(rwlock_is_locked)(p))
    {
-      RwlockErrInfo REI = { p->a1 };
+      RwlockErrInfo REI = { DRD_(thread_get_running_tid)(), p->a1 };
       VG_(maybe_record_error)(VG_(get_running_tid)(),
                               RwlockErr,
                               VG_(get_IP)(VG_(get_running_tid)()),
@@ -245,7 +245,7 @@ DRD_(rwlock_get_or_allocate)(const Addr rwlock)
 
    if (DRD_(clientobj_present)(rwlock, rwlock + 1))
    {
-      GenericErrInfo GEI;
+      GenericErrInfo GEI = { DRD_(thread_get_running_tid)() };
       VG_(maybe_record_error)(VG_(get_running_tid)(),
                               GenericErr,
                               VG_(get_IP)(VG_(get_running_tid)()),
@@ -266,7 +266,8 @@ static struct rwlock_info* DRD_(rwlock_get)(const Addr rwlock)
 }
 
 /** Called before pthread_rwlock_init(). */
-struct rwlock_info* DRD_(rwlock_pre_init)(const Addr rwlock)
+struct rwlock_info* DRD_(rwlock_pre_init)(const Addr rwlock,
+                                          const RwLockT rwlock_type)
 {
    struct rwlock_info* p;
 
@@ -284,8 +285,7 @@ struct rwlock_info* DRD_(rwlock_pre_init)(const Addr rwlock)
    if (p)
    {
       const ThreadId vg_tid = VG_(get_running_tid)();
-      RwlockErrInfo REI
-         = { p->a1 };
+      RwlockErrInfo REI = { DRD_(thread_get_running_tid)(), p->a1 };
       VG_(maybe_record_error)(vg_tid,
                               RwlockErr,
                               VG_(get_IP)(vg_tid),
@@ -300,14 +300,14 @@ struct rwlock_info* DRD_(rwlock_pre_init)(const Addr rwlock)
 }
 
 /** Called after pthread_rwlock_destroy(). */
-void DRD_(rwlock_post_destroy)(const Addr rwlock)
+void DRD_(rwlock_post_destroy)(const Addr rwlock, const RwLockT rwlock_type)
 {
    struct rwlock_info* p;
 
    p = DRD_(rwlock_get)(rwlock);
    if (p == 0)
    {
-      GenericErrInfo GEI;
+      GenericErrInfo GEI = { DRD_(thread_get_running_tid)() };
       VG_(maybe_record_error)(VG_(get_running_tid)(),
                               GenericErr,
                               VG_(get_IP)(VG_(get_running_tid)()),
@@ -325,7 +325,7 @@ void DRD_(rwlock_post_destroy)(const Addr rwlock)
  * an attempt is made to lock recursively a synchronization object that must
  * not be locked recursively.
  */
-void DRD_(rwlock_pre_rdlock)(const Addr rwlock)
+void DRD_(rwlock_pre_rdlock)(const Addr rwlock, const RwLockT rwlock_type)
 {
    struct rwlock_info* p;
 
@@ -355,7 +355,8 @@ void DRD_(rwlock_pre_rdlock)(const Addr rwlock)
  * Note: this function must be called after pthread_rwlock_rdlock() has been
  * called, or a race condition is triggered !
  */
-void DRD_(rwlock_post_rdlock)(const Addr rwlock, const Bool took_lock)
+void DRD_(rwlock_post_rdlock)(const Addr rwlock, const RwLockT rwlock_type,
+                              const Bool took_lock)
 {
    const DrdThreadId drd_tid = DRD_(thread_get_running_tid)();
    struct rwlock_info* p;
@@ -396,7 +397,7 @@ void DRD_(rwlock_post_rdlock)(const Addr rwlock, const Bool took_lock)
  * an attempt is made to lock recursively a synchronization object that must
  * not be locked recursively.
  */
-void DRD_(rwlock_pre_wrlock)(const Addr rwlock)
+void DRD_(rwlock_pre_wrlock)(const Addr rwlock, const RwLockT rwlock_type)
 {
    struct rwlock_info* p;
 
@@ -420,7 +421,7 @@ void DRD_(rwlock_pre_wrlock)(const Addr rwlock)
 
    if (DRD_(rwlock_is_wrlocked_by)(p, DRD_(thread_get_running_tid)()))
    {
-      RwlockErrInfo REI = { p->a1 };
+      RwlockErrInfo REI = { DRD_(thread_get_running_tid)(), p->a1 };
       VG_(maybe_record_error)(VG_(get_running_tid)(),
                               RwlockErr,
                               VG_(get_IP)(VG_(get_running_tid)()),
@@ -434,7 +435,8 @@ void DRD_(rwlock_pre_wrlock)(const Addr rwlock)
  * Note: this function must be called after pthread_rwlock_wrlock() has
  * finished, or a race condition is triggered !
  */
-void DRD_(rwlock_post_wrlock)(const Addr rwlock, const Bool took_lock)
+void DRD_(rwlock_post_wrlock)(const Addr rwlock, const RwLockT rwlock_type,
+                              const Bool took_lock)
 {
    const DrdThreadId drd_tid = DRD_(thread_get_running_tid)();
    struct rwlock_info* p;
@@ -477,7 +479,7 @@ void DRD_(rwlock_post_wrlock)(const Addr rwlock, const Bool took_lock)
  * @note This function must be called before pthread_rwlock_unlock() is called,
  *   or a race condition is triggered !
  */
-void DRD_(rwlock_pre_unlock)(const Addr rwlock)
+void DRD_(rwlock_pre_unlock)(const Addr rwlock, const RwLockT rwlock_type)
 {
    const DrdThreadId drd_tid = DRD_(thread_get_running_tid)();
    const ThreadId vg_tid = VG_(get_running_tid)();
@@ -496,7 +498,7 @@ void DRD_(rwlock_pre_unlock)(const Addr rwlock)
    p = DRD_(rwlock_get)(rwlock);
    if (p == 0)
    {
-      GenericErrInfo GEI;
+      GenericErrInfo GEI = { DRD_(thread_get_running_tid)() };
       VG_(maybe_record_error)(VG_(get_running_tid)(),
                               GenericErr,
                               VG_(get_IP)(VG_(get_running_tid)()),
@@ -506,7 +508,7 @@ void DRD_(rwlock_pre_unlock)(const Addr rwlock)
    }
    if (! DRD_(rwlock_is_locked_by)(p, drd_tid))
    {
-      RwlockErrInfo REI = { p->a1 };
+      RwlockErrInfo REI = { DRD_(thread_get_running_tid)(), p->a1 };
       VG_(maybe_record_error)(vg_tid,
                               RwlockErr,
                               VG_(get_IP)(vg_tid),
@@ -525,7 +527,8 @@ void DRD_(rwlock_pre_unlock)(const Addr rwlock)
          if (held > DRD_(s_shared_threshold_ms))
          {
             HoldtimeErrInfo HEI
-               = { rwlock, p->acquired_at, held, DRD_(s_shared_threshold_ms) };
+               = { DRD_(thread_get_running_tid)(),
+                   rwlock, p->acquired_at, held, DRD_(s_shared_threshold_ms) };
             VG_(maybe_record_error)(vg_tid,
                                     HoldtimeErr,
                                     VG_(get_IP)(vg_tid),
@@ -543,7 +546,8 @@ void DRD_(rwlock_pre_unlock)(const Addr rwlock)
          if (held > DRD_(s_exclusive_threshold_ms))
          {
             HoldtimeErrInfo HEI
-               = { rwlock, p->acquired_at, held,
+               = { DRD_(thread_get_running_tid)(),
+                   rwlock, p->acquired_at, held,
                    DRD_(s_exclusive_threshold_ms) };
             VG_(maybe_record_error)(vg_tid,
                                     HoldtimeErr,
@@ -580,7 +584,7 @@ static void rwlock_delete_thread(struct rwlock_info* const p,
    struct rwlock_thread_info* q;
    if (DRD_(rwlock_is_locked_by)(p, tid))
    {
-      RwlockErrInfo REI = { p->a1 };
+      RwlockErrInfo REI = { DRD_(thread_get_running_tid)(), p->a1 };
       VG_(maybe_record_error)(VG_(get_running_tid)(),
                               RwlockErr,
                               VG_(get_IP)(VG_(get_running_tid)()),

@@ -1,5 +1,8 @@
-/** Multithreaded test program that triggers various access patterns without
- *  triggering any race conditions.
+/**
+ * @file  rwlock_test.c
+ *
+ * @brief Multithreaded test program that triggers various access patterns
+ *        without triggering any race conditions.
  */
 
 

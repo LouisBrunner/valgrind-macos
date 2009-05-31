@@ -171,6 +171,17 @@ static Bool drd_tool_error_eq(VgRes res, Error* e1, Error* e2)
 
 static void drd_tool_error_pp(Error* const e)
 {
+   static DrdThreadId s_last_tid_printed = 1;
+   DrdThreadId* err_extra;
+
+   err_extra = VG_(get_error_extra)(e);
+
+   if (err_extra && *err_extra != s_last_tid_printed)
+   {
+      VG_UMSG("%s:", DRD_(thread_get_name)(*err_extra));
+      s_last_tid_printed = *err_extra;
+   }
+
    switch (VG_(get_error_kind)(e))
    {
    case DataRaceErr: {
@@ -215,7 +226,7 @@ static void drd_tool_error_pp(Error* const e)
                    "%s: cond 0x%lx, mutex 0x%lx locked by thread %d/%d",
                    VG_(get_error_string)(e),
                    cdi->cond, cdi->mutex,
-                   DRD_(DrdThreadIdToVgThreadId)(cdi->tid), cdi->tid);
+                   DRD_(DrdThreadIdToVgThreadId)(cdi->owner), cdi->owner);
       VG_(pp_ExeContext)(VG_(get_error_where)(e));
       first_observed(cdi->mutex);
       break;
@@ -426,7 +437,7 @@ void DRD_(register_error_handlers)(void)
    // Tool error reporting.
    VG_(needs_tool_errors)(drd_tool_error_eq,
                           drd_tool_error_pp,
-                          True,
+                          False,
                           drd_tool_error_update_extra,
                           drd_tool_error_recog,
                           drd_tool_error_read_extra,

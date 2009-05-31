@@ -121,7 +121,7 @@ static void semaphore_cleanup(struct semaphore_info* p)
 
    if (p->waiters > 0)
    {
-      SemaphoreErrInfo sei = { p->a1 };
+      SemaphoreErrInfo sei = { DRD_(thread_get_running_tid)(), p->a1 };
       VG_(maybe_record_error)(VG_(get_running_tid)(),
                               SemaphoreErr,
                               VG_(get_IP)(VG_(get_running_tid)()),
@@ -160,7 +160,7 @@ DRD_(semaphore_get_or_allocate)(const Addr semaphore)
  * Return a pointer to the structure with information about the specified
  * client semaphore, or null if no such structure was found.
  */
-static struct semaphore_info* DRD_(semaphore_get)(const Addr semaphore)
+static struct semaphore_info* semaphore_get(const Addr semaphore)
 {
    tl_assert(offsetof(DrdClientobj, semaphore) == 0);
    return &(DRD_(clientobj_get)(semaphore, ClientSemaphore)->semaphore);
@@ -183,11 +183,11 @@ struct semaphore_info* DRD_(semaphore_init)(const Addr semaphore,
                    semaphore,
                    value);
    }
-   p = DRD_(semaphore_get)(semaphore);
+   p = semaphore_get(semaphore);
    if (p)
    {
       const ThreadId vg_tid = VG_(get_running_tid)();
-      SemaphoreErrInfo SEI = { semaphore };
+      SemaphoreErrInfo SEI = { DRD_(thread_get_running_tid)(), semaphore };
       VG_(maybe_record_error)(vg_tid,
                               SemaphoreErr,
                               VG_(get_IP)(vg_tid),
@@ -214,7 +214,7 @@ void DRD_(semaphore_destroy)(const Addr semaphore)
 {
    struct semaphore_info* p;
 
-   p = DRD_(semaphore_get)(semaphore);
+   p = semaphore_get(semaphore);
 
    if (s_trace_semaphore)
    {
@@ -228,7 +228,7 @@ void DRD_(semaphore_destroy)(const Addr semaphore)
 
    if (p == 0)
    {
-      GenericErrInfo GEI;
+      GenericErrInfo GEI = { DRD_(thread_get_running_tid)() };
       VG_(maybe_record_error)(VG_(get_running_tid)(),
                               GenericErr,
                               VG_(get_IP)(VG_(get_running_tid)()),
@@ -263,7 +263,7 @@ void DRD_(semaphore_post_wait)(const DrdThreadId tid, const Addr semaphore,
    struct semaphore_info* p;
    Segment* sg;
 
-   p = DRD_(semaphore_get)(semaphore);
+   p = semaphore_get(semaphore);
    if (s_trace_semaphore)
    {
       VG_(message)(Vg_UserMsg,
@@ -281,7 +281,7 @@ void DRD_(semaphore_post_wait)(const DrdThreadId tid, const Addr semaphore,
    tl_assert((int)p->value >= 0);
    if (p->value == 0)
    {
-      SemaphoreErrInfo sei = { semaphore };
+      SemaphoreErrInfo sei = { DRD_(thread_get_running_tid)(), semaphore };
       VG_(maybe_record_error)(VG_(get_running_tid)(),
                               SemaphoreErr,
                               VG_(get_IP)(VG_(get_running_tid)()),
@@ -339,19 +339,21 @@ void DRD_(semaphore_pre_post)(const DrdThreadId tid, const Addr semaphore)
    s_semaphore_segment_creation_count++;
 }
 
-/** Called after sem_post() finished successfully. */
+/** Called after sem_post() finished. */
 void DRD_(semaphore_post_post)(const DrdThreadId tid, const Addr semaphore,
-                               const Bool waited)
+                               const Bool succeeded)
 {
-   /* Note: it is hard to implement the sem_post() wrapper correctly in     */
-   /* case sem_post() returns an error code. This is because handling this  */
-   /* case correctly requires restoring the vector clock associated with    */
-   /* the semaphore to its original value here. In order to do that without */
-   /* introducing a race condition, extra locking has to be added around    */
-   /* each semaphore call. Such extra locking would have to be added in     */
-   /* drd_intercepts.c. However, it is hard to implement synchronization    */
-   /* in drd_intercepts.c in a portable way without calling already         */
-   /* redirected functions.                                                 */
+   /*
+    * Note: it is hard to implement the sem_post() wrapper correctly in    
+    * case sem_post() returns an error code. This is because handling this 
+    * case correctly requires restoring the vector clock associated with   
+    * the semaphore to its original value here. In order to do that without
+    * introducing a race condition, extra locking has to be added around   
+    * each semaphore call. Such extra locking would have to be added in    
+    * drd_pthread_intercepts.c. However, it is hard to implement
+    * synchronization in drd_pthread_intercepts.c in a portable way without
+    * calling already redirected functions.
+    */
 }
 
 ULong DRD_(get_semaphore_segment_creation_count)(void)

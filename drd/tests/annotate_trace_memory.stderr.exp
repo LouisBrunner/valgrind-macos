@@ -1,0 +1,24 @@
+
+FLAGS [phb=1, fm=0]
+test01: positive
+store 0x........ size 4 (vg 2 / drd 2 / vc [ 5, 1 ])
+   at 0x........: test01::Worker() (tsan_unittest.cpp:?)
+   by 0x........: MyThread::ThreadBody(MyThread*) (tsan_thread_wrappers_pthread.h:?)
+   by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
+   by 0x........: (within libpthread-?.?.so)
+   by 0x........: clone (in /...libc...)
+store 0x........ size 4 (vg 1 / drd 1 / vc [ 7 ])
+   at 0x........: test01::Parent() (tsan_unittest.cpp:?)
+   by 0x........: test01::Run() (tsan_unittest.cpp:?)
+   by 0x........: main (tsan_unittest.cpp:?)
+Conflicting store by thread x/x at 0x........ size 4
+   at 0x........: test01::Parent() (tsan_unittest.cpp:?)
+   by 0x........: test01::Run() (tsan_unittest.cpp:?)
+   by 0x........: main (tsan_unittest.cpp:?)
+Allocation context: BSS section of /home/bart/software/valgrind/drd/tests/tsan_unittest
+load  0x........ size 4 (vg 1 / drd 1 / vc [ 9, 2 ])
+   at 0x........: test01::Run() (tsan_unittest.cpp:?)
+   by 0x........: main (tsan_unittest.cpp:?)
+	GLOB=2
+
+ERROR SUMMARY: 1 errors from 1 contexts (suppressed: 0 from 0)

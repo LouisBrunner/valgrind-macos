@@ -1,29 +1,34 @@
-Last updated July 1, 2008.
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Last updated May 30, 2009.
+~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 
-Data-race detection algorithm
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-- Memory pool support.
-- Find out why DRD reports an error on the POSIX implementation of libgomp.so.
+The DRD tool
+~~~~~~~~~~~~
+- Eliminate Valgrind's thread ID's from DRD's output, and only keep the
+  DrdThreadId.
+- Add support for Ist_CAS once the DCAS branch has been merged to the trunk.
 - Add locking order checking. Start from the following information:
   * http://sourceforge.net/mailarchive/message.php?msg_id=alpine.LNX.1.10.0803270822080.17890%40mudge.stoecker.eu
   * http://lwn.net/Articles/185605/
   * http://git.kernel.org/?p=linux/kernel/git/torvalds/linux-2.6.git;a=blob;f=Documentation/lockdep-design.txt;h=488773018152056ea159685e732e42452a7ae142;hb=HEAD
-- Make sure tc14_laog_dinphils is run during exp-drd regression tests
+- Make sure tc14_laog_dinphils is run during drd regression tests
   (only possible after locking order checking is implemented).
+- Evaluate whether integration of drd with one of the available Valgrind GUI's
+  makes sense (http://valgrind.org/downloads/guis.html).
 - Find out why no variable name information is printed for races
   detected in parallel sections of OpenMP programs. An example:
-  ./vg-in-place --tool=exp-drd exp-drd/tests/omp_prime 4 -t 2
-- Improve the code for suppressing races reported on glibc FILE objects, e.g. by intercepting
-  all operations on FILE objects and by associating mutex semantics with FILE objects. Verify
-  that races on unsynchronized *_unlocked() operations are reported. Remove FILE-I/O suppression
-  patterns from glibc-2.X-drd.supp. See also http://www.unix.org/whitepapers/reentrant.html.
+  ./vg-in-place --tool=drd drd/tests/omp_prime 4 -t 2
+- Improve the code for suppressing races reported on glibc FILE objects, e.g. by
+  intercepting all operations on FILE objects and by associating mutex semantics
+  with FILE objects. Verify that races on unsynchronized *_unlocked() operations
+  are reported. Remove FILE-I/O suppression patterns from glibc-2.X-drd.supp.
+  See also http://www.unix.org/whitepapers/reentrant.html.
+- Find out why DRD reports an error on the POSIX implementation of libgomp.so.
 
 
 Testing
 ~~~~~~~
-- Measure the performance and the memory overhead of exp-drd on the PARSEC
+- Measure the performance and the memory overhead of drd on the PARSEC
   benchmark (http://parsec.cs.princeton.edu/license.htm).
 - Test with Synfig Studio (see also http://bugs.kde.org/show_bug.cgi?id=158555)
 - Test with a multithreaded Python application.
@@ -31,8 +36,9 @@ Testing
 
 Documentation
 ~~~~~~~~~~~~~
+- Document the features added after the 3.4.0 release.
+- Document the algorithms used in drd.
 - Add comment on double checked locking.
-- Add comment on circular buffers.
+- Add comment on lockless algorithms in general and circular buffers in
+  particular.
 - Explain how to handle transactions (with regard to locking order).
-- Continue the discussion on the Valgrind mailing list about docbook and
-  'make dist'. See also http://bugs.kde.org/show_bug.cgi?id=162121.

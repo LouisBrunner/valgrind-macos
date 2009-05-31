@@ -46,7 +46,7 @@
 // This test must not include any other file specific to threading library,
 // everything should be inside THREAD_WRAPPERS. 
 #ifndef THREAD_WRAPPERS 
-# define THREAD_WRAPPERS "thread_wrappers_pthread.h"
+# define THREAD_WRAPPERS "tsan_thread_wrappers_pthread.h"
 #endif 
 #include THREAD_WRAPPERS
 
@@ -208,7 +208,7 @@ static bool ArgIsTrue(bool *arg) { return *arg == true; };
     ANNOTATE_EXPECT_RACE_FOR_MACHINE(mem, descr, "MSM_THREAD_SANITIZER")
 
 inline bool Tsan_PureHappensBefore() {
-  return getenv("TSAN_PURE_HAPPENS_BEFORE") != NULL;
+  return true;
 }
 
 inline bool Tsan_FastMode()           {
@@ -1515,7 +1515,7 @@ void Writer() {
     for (int j = i; j < N; j++) {
       GLOB[j] = j;
     }
-    ANNOTATE_CONDVAR_SIGNAL(reinterpret_cast<void*>(BOUNDARY+1));
+    ANNOTATE_HAPPENS_BEFORE(reinterpret_cast<void*>(BOUNDARY+1));
     BOUNDARY++;
     usleep(1000);
   }
@@ -1526,7 +1526,7 @@ void Reader() {
   do {
     n = BOUNDARY;
     if (n == 0) continue; 
-    ANNOTATE_CONDVAR_WAIT(reinterpret_cast<void*>(n));
+    ANNOTATE_HAPPENS_AFTER_REPEATEDLY(reinterpret_cast<void*>(n));
     for (int i = 0; i < n; i++) {
       CHECK(GLOB[i] == i);
     }
@@ -1568,7 +1568,7 @@ void Writer1() {
     for (int j = i; j < N; j++) {
       GLOB[j] = j;
     }
-    ANNOTATE_CONDVAR_SIGNAL(reinterpret_cast<void*>(BOUNDARY+1));
+    ANNOTATE_HAPPENS_BEFORE(reinterpret_cast<void*>(BOUNDARY+1));
     BOUNDARY++;
     usleep(1000);
   }
@@ -1579,7 +1579,7 @@ void Writer2() {
   do {
     n = BOUNDARY;
     if (n == 0) continue; 
-    ANNOTATE_CONDVAR_WAIT(reinterpret_cast<void*>(n));
+    ANNOTATE_HAPPENS_AFTER_REPEATEDLY(reinterpret_cast<void*>(n));
     for (int i = 0; i < n; i++) {
       if(GLOB[i] == i) {
         GLOB[i]++;

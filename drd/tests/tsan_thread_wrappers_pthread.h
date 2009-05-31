@@ -61,7 +61,10 @@ using namespace std;
 #include <sys/time.h>
 #include <time.h>
 
-#include "dynamic_annotations.h"
+#include "../../drd/drd.h"
+#define ANNOTATE_NO_OP(arg) do { } while(0)
+#define ANNOTATE_EXPECT_RACE(addr, descr) DRDCL_(ignore_range)(addr, 4)
+static inline bool RunningOnValgrind() { return RUNNING_ON_VALGRIND; }
 
 #include <assert.h>
 #ifdef NDEBUG

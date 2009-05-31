@@ -569,7 +569,7 @@ class BlockingCounter {
  public:
   explicit BlockingCounter(int initial_count) :
     count_(initial_count) {}
-  bool DecrementCount() {
+  void DecrementCount() {
     MutexLock lock(&mu_);
     count_--;
   }

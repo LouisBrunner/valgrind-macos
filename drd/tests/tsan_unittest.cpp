@@ -337,7 +337,8 @@ void Run() {
   ANNOTATE_TRACE_MEMORY(&GLOB);
   printf("test01: positive\n");
   Parent();
-  printf("\tGLOB=%d\n", GLOB);
+  const int tmp = GLOB;
+  printf("\tGLOB=%d\n", tmp);
 }
 REGISTER_TEST(Run, 1);
 }  // namespace test01

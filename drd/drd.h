@@ -84,6 +84,11 @@
  */
 #define DRD_TRACE_VAR(x) DRDCL_(trace_range)(&(x), sizeof(x))
 
+/* !! APIWARNING !! APIWARNING !! APIWARNING !! APIWARNING !!
+   The semantics and the names of the macro's defined below are still
+   under discussion and subject to change without notice.
+*/
+
 /**
  * Tell DRD to insert a mark. addr is either the address of a pthread condition
  * variable or the address of an object that is not a pthread synchronization
@@ -209,6 +214,11 @@
  * be used in error messages printed by DRD.
  */
 #define ANNOTATE_THREAD_NAME(name) DRDCL_(set_thread_name)(name)
+
+/* !! APIWARNING !! APIWARNING !! APIWARNING !! APIWARNING !!
+   The semantics and the names of the macro's defined above are still
+   under discussion and subject to change without notice.
+*/
 
 
 /* !! ABIWARNING !! ABIWARNING !! ABIWARNING !! ABIWARNING !!

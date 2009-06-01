@@ -117,7 +117,7 @@ libmpiwrap-@VGCONF_ARCH_PRI@-@VGCONF_OS@.c:
 	rm -f libmpiwrap-@VGCONF_ARCH_PRI@-@VGCONF_OS@.c
 	touch libmpiwrap-@VGCONF_ARCH_PRI@-@VGCONF_OS@.c
 
-if VGCONF_HAVE_PLATFORM_SEC_CAPS
+if VGCONF_HAVE_PLATFORM_SEC
 libmpiwrap-@VGCONF_ARCH_SEC@-@VGCONF_OS@.c:
 	rm -f libmpiwrap-@VGCONF_ARCH_SEC@-@VGCONF_OS@.c
 	touch libmpiwrap-@VGCONF_ARCH_SEC@-@VGCONF_OS@.c

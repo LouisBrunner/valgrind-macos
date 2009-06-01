@@ -537,7 +537,7 @@ AM_CONDITIONAL(VGCONF_OS_IS_DARWIN,
 
 # Sometimes, in the Makefile.am files, it's useful to know whether or not
 # there is a secondary target.
-AM_CONDITIONAL(VGCONF_HAVE_PLATFORM_SEC_CAPS,
+AM_CONDITIONAL(VGCONF_HAVE_PLATFORM_SEC,
                test x$VGCONF_PLATFORM_SEC_CAPS != x)
 
 

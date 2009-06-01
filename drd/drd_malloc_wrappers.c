@@ -94,6 +94,7 @@ static void* new_block(ThreadId tid, SizeT size, SizeT align, Bool is_zeroed)
    }
    if (is_zeroed) VG_(memset)((void*)p, 0, size);
 
+   tl_assert(p <= p + size);
    DRD_(malloclike_block)(tid, p, size);
 
    return (void*)p;
@@ -107,7 +108,7 @@ void DRD_(malloclike_block)(const ThreadId tid, const Addr p, const SizeT size)
 {
    tl_assert(p);
 
-   s_start_using_mem_callback(p, p + size, 0/*ec_uniq*/);
+   s_start_using_mem_callback(p, size, 0/*ec_uniq*/);
 
    // Only update this stat if allocation succeeded.
    s_cmalloc_bs_mallocd += size;
@@ -220,8 +221,7 @@ static void* DRD_(realloc)(ThreadId tid, void* p_old, SizeT new_size)
 
          // Allocate a new chunk.
          mc = create_chunk(tid, a_new, new_size);
-         s_start_using_mem_callback(a_new, a_new + new_size,
-                                          0/*ec_uniq*/);
+         s_start_using_mem_callback(a_new, new_size, 0/*ec_uniq*/);
       }
       else
       {

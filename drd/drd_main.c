@@ -274,7 +274,7 @@ static void drd_post_mem_write(const CorePart part,
 static __inline__
 void drd_start_using_mem(const Addr a1, const SizeT len)
 {
-   tl_assert(a1 < a1 + len);
+   tl_assert(a1 <= a1 + len);
 
    if (UNLIKELY(DRD_(any_address_is_traced)()))
    {

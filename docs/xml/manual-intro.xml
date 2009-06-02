@@ -94,19 +94,6 @@ summary, these are:</para>
    </listitem>
 
    <listitem>
-     <para><command>Massif</command> is a heap profiler.
-     It measures how much heap memory programs use.  In particular,
-     it can give you information about heap blocks, heap 
-     administration overheads, and stack sizes.</para>
-
-     <para>Heap profiling can help you reduce the amount of
-     memory your program uses.  On modern machines with virtual
-     memory, this reduces the chances that your program will run out
-     of memory, and may make it faster by reducing the amount of
-     paging needed.</para>
-   </listitem>
-
-   <listitem>
      <para><command>Helgrind</command> detects synchronisation errors
      in programs that use the POSIX pthreads threading primitives.  It
      detects the following three classes of errors:</para>
@@ -127,8 +114,33 @@ summary, these are:</para>
     <para>Problems like these often result in unreproducible,
     timing-dependent crashes, deadlocks and other misbehaviour, and
     can be difficult to find by other means.</para>
-
    </listitem>
+
+   <listitem>
+     <para><command>DRD</command> is similar to Helgrind, but uses a
+     different analysis technique and so may find different problems.
+     </para>
+   </listitem>
+
+   <listitem>
+     <para><command>Massif</command> is a heap profiler.
+     It measures how much heap memory programs use.  In particular,
+     it can give you information about heap blocks, heap 
+     administration overheads, and stack sizes.</para>
+
+     <para>Heap profiling can help you reduce the amount of
+     memory your program uses.  On modern machines with virtual
+     memory, this reduces the chances that your program will run out
+     of memory, and may make it faster by reducing the amount of
+     paging needed.</para>
+   </listitem>
+
+   <listitem>
+     <para><command>Ptrcheck</command> is an experimental pointer checking
+     tool.  Its functionality overlaps somewhat with Memcheck's, but it can
+     find some problems that Memcheck would miss.</para>
+   </listitem>
+
 
 </orderedlist>
   
@@ -158,7 +170,7 @@ it works on machines with Linux kernel 2.4.X or 2.6.X and glibc
 version 2.  The <computeroutput>valgrind/*.h</computeroutput> headers
 that you may wish to include in your code (eg.
 <filename>valgrind.h</filename>, <filename>memcheck.h</filename>,
-<filename>helgrind.h</filename>) are
+<filename>helgrind.h</filename>, etc.) are
 distributed under a BSD-style license, so you may include them in your
 code without worrying about license conflicts.  Some of the PThreads
 test cases, <filename>pth_*.c</filename>, are taken from "Pthreads

@@ -25,56 +25,47 @@ default.supp: $(SUPP_FILES)
 noinst_PROGRAMS =
 noinst_DSYMS =
 pkglib_LIBRARIES =
-LIBVEX =
 
 if VGCONF_PLATFORMS_INCLUDE_X86_LINUX
 noinst_PROGRAMS  += vgpreload_core-x86-linux.so
 pkglib_LIBRARIES += libcoregrind-x86-linux.a libreplacemalloc_toolpreload-x86-linux.a
-LIBVEX           += libvex-x86-linux.a
 endif
 
 if VGCONF_PLATFORMS_INCLUDE_AMD64_LINUX
 noinst_PROGRAMS  += vgpreload_core-amd64-linux.so
 pkglib_LIBRARIES += libcoregrind-amd64-linux.a libreplacemalloc_toolpreload-amd64-linux.a
-LIBVEX           += libvex-amd64-linux.a
 endif
 
 if VGCONF_PLATFORMS_INCLUDE_PPC32_LINUX
 noinst_PROGRAMS  += vgpreload_core-ppc32-linux.so
 pkglib_LIBRARIES += libcoregrind-ppc32-linux.a libreplacemalloc_toolpreload-ppc32-linux.a
-LIBVEX           += libvex-ppc32-linux.a
 endif
 
 if VGCONF_PLATFORMS_INCLUDE_PPC64_LINUX
 noinst_PROGRAMS  += vgpreload_core-ppc64-linux.so
 pkglib_LIBRARIES += libcoregrind-ppc64-linux.a libreplacemalloc_toolpreload-ppc64-linux.a
-LIBVEX           += libvex-ppc64-linux.a
 endif
 
 if VGCONF_PLATFORMS_INCLUDE_PPC32_AIX5
 noinst_PROGRAMS  += vgpreload_core-ppc32-aix5.so
 pkglib_LIBRARIES += libcoregrind-ppc32-aix5.a libreplacemalloc_toolpreload-ppc32-aix5.a
-LIBVEX           += libvex-ppc32-aix5.a
 endif
 
 if VGCONF_PLATFORMS_INCLUDE_PPC64_AIX5
 noinst_PROGRAMS  += vgpreload_core-ppc64-aix5.so
 pkglib_LIBRARIES += libcoregrind-ppc64-aix5.a libreplacemalloc_toolpreload-ppc64-aix5.a
-LIBVEX           += libvex-ppc64-aix5.a
 endif
 
 if VGCONF_PLATFORMS_INCLUDE_X86_DARWIN
 noinst_PROGRAMS  += vgpreload_core-x86-darwin.so
 noinst_DSYMS     += vgpreload_core-x86-darwin.so
 pkglib_LIBRARIES += libcoregrind-x86-darwin.a libreplacemalloc_toolpreload-x86-darwin.a
-LIBVEX           += libvex-x86-darwin.a
 endif
 
 if VGCONF_PLATFORMS_INCLUDE_AMD64_DARWIN
 noinst_PROGRAMS  += vgpreload_core-amd64-darwin.so
 noinst_DSYMS     += vgpreload_core-amd64-darwin.so
 pkglib_LIBRARIES += libcoregrind-amd64-darwin.a libreplacemalloc_toolpreload-amd64-darwin.a
-LIBVEX           += libvex-amd64-darwin.a
 endif
 
 
@@ -551,6 +542,11 @@ all-local: inplace-noinst_PROGRAMS inplace-noinst_DSYMS
 clean-local: clean-noinst_DSYMS
 	$(MAKE) -C @VEX_DIR@ CC="$(CC)" AR="$(AR)" clean
 	rm -f $(mach_srcs) $(mach_server_srcs) $(mach_hdrs)
+
+LIBVEX  = libvex-@VGCONF_ARCH_PRI@-@VGCONF_OS@.a
+if VGCONF_HAVE_PLATFORM_SEC
+LIBVEX += libvex-@VGCONF_ARCH_SEC@-@VGCONF_OS@.a
+endif
 
 # Nb: The loop installs the libvex library for possible use by standalone
 # tools.

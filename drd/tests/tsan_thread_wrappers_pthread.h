@@ -51,8 +51,10 @@
 #include <stdio.h>
 #include <limits.h>   // INT_MAX
 
-#ifdef OS_MACOSX
+#ifdef _APPLE_
 #include <libkern/OSAtomic.h>
+#define NO_BARRIER
+#define NO_TLS
 #endif
 
 #include <string>
@@ -105,7 +107,7 @@ class CondVar;
 #ifndef NO_SPINLOCK
 /// helgrind does not (yet) support spin locks, so we annotate them.
 
-#ifndef OS_MACOSX
+#ifndef _APPLE_
 class SpinLock {
  public:
   SpinLock() {
@@ -150,7 +152,7 @@ class SpinLock {
  private:
   OSSpinLock mu_;
 };
-#endif // OS_MACOSX
+#endif // _APPLE_
 
 #endif // NO_SPINLOCK
 
@@ -587,7 +589,7 @@ class BlockingCounter {
 
 int AtomicIncrement(volatile int *value, int increment);
 
-#ifndef OS_MACOSX
+#ifndef _APPLE_
 inline int AtomicIncrement(volatile int *value, int increment) {
   return __sync_add_and_fetch(value, increment);
 }
@@ -606,7 +608,7 @@ int posix_memalign(void **out, size_t al, size_t size) {
   *out = memalign(al, size);
   return (*out == 0);
 }
-#endif // OS_MACOSX
+#endif // _APPLE_
 
 #endif // THREAD_WRAPPERS_PTHREAD_H
 // vim:shiftwidth=2:softtabstop=2:expandtab:foldmethod=marker

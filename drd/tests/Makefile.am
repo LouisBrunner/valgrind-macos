@@ -241,15 +241,14 @@ check_PROGRAMS =      \
   sem_as_mutex        \
   sigalrm             \
   thread_name         \
-  trylock             \
-  tsan_unittest
+  trylock
 
 if HAVE_BOOST_1_35
 check_PROGRAMS += boost_thread
 endif
 
 if HAVE_BUILTIN_ATOMIC
-check_PROGRAMS += annotate_rwlock atomic_var circular_buffer
+check_PROGRAMS += annotate_rwlock atomic_var circular_buffer tsan_unittest
 endif
 
 if HAVE_OPENMP

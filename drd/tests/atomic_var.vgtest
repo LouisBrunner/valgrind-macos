@@ -1,4 +1,4 @@
-prereq: ./supported_libpthread
+prereq: test -e atomic_var && ./supported_libpthread
 vgopts: --var-info=yes --check-stack-var=yes --show-confl-seg=no
 prog: atomic_var
 stderr_filter: filter_stderr_and_thread_no

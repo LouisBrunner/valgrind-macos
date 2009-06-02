@@ -68,8 +68,9 @@ noinst_DSYMS     += vgpreload_core-amd64-darwin.so
 pkglib_LIBRARIES += libcoregrind-amd64-darwin.a libreplacemalloc_toolpreload-amd64-darwin.a
 endif
 
-
-#------------------------- launcher -----------------------
+#----------------------------------------------------------------------------
+# The launcher
+#----------------------------------------------------------------------------
 # Build the launcher (valgrind) for the primary target only.
 #
 bin_PROGRAMS = \
@@ -137,9 +138,10 @@ no_op_client_for_valgrind_CPPFLAGS  = $(AM_CPPFLAGS_PRI)
 no_op_client_for_valgrind_CFLAGS    = $(AM_CFLAGS_PRI)
 no_op_client_for_valgrind_CCASFLAGS = $(AM_CCASFLAGS_PRI)
 no_op_client_for_valgrind_LDFLAGS   = $(AM_CFLAGS_PRI)
-#
-#----------------------------------------------------------
 
+#----------------------------------------------------------------------------
+# Headers
+#----------------------------------------------------------------------------
 
 noinst_HEADERS = \
 	$(mach_hdrs) \
@@ -234,6 +236,9 @@ BUILT_SOURCES += $(COREGRIND_DARWIN_BUILT_SOURCES)
 CLEANFILES    += $(COREGRIND_DARWIN_BUILT_SOURCES)
 endif
 
+#----------------------------------------------------------------------------
+# libcoregrind_<platform>.so
+#----------------------------------------------------------------------------
 
 COREGRIND_SOURCES_COMMON = \
 	m_commandline.c \
@@ -439,6 +444,9 @@ libcoregrind_amd64_darwin_a_CPPFLAGS = $(AM_CPPFLAGS_AMD64_DARWIN)
 libcoregrind_amd64_darwin_a_CFLAGS = $(AM_CFLAGS_AMD64_DARWIN)
 libcoregrind_amd64_darwin_a_CCASFLAGS = $(AM_CCASFLAGS_AMD64_DARWIN)
 
+#----------------------------------------------------------------------------
+# libreplacemalloc_toolpreload_<platform>.so
+#----------------------------------------------------------------------------
 
 libreplacemalloc_toolpreload_x86_linux_a_SOURCES = m_replacemalloc/vg_replace_malloc.c
 libreplacemalloc_toolpreload_x86_linux_a_CPPFLAGS = $(AM_CPPFLAGS_X86_LINUX)
@@ -495,6 +503,10 @@ m_syswrap/syswrap-main.c: 		 libvex_guest_offsets.h
 libvex_guest_offsets.h:
 	$(MAKE) -C @VEX_DIR@ CC="$(CC)" AR="$(AR)" pub/libvex_guest_offsets.h
 
+#----------------------------------------------------------------------------
+# vgpreload_core_<platform>.so
+#----------------------------------------------------------------------------
+
 VGPRELOAD_CORE_SOURCES_COMMON = vg_preloaded.c
 
 vgpreload_core_x86_linux_so_SOURCES = $(VGPRELOAD_CORE_SOURCES_COMMON)
@@ -536,6 +548,10 @@ vgpreload_core_amd64_darwin_so_SOURCES = $(VGPRELOAD_CORE_SOURCES_COMMON)
 vgpreload_core_amd64_darwin_so_CPPFLAGS = $(AM_CPPFLAGS_AMD64_DARWIN)
 vgpreload_core_amd64_darwin_so_CFLAGS = $(AM_CFLAGS_AMD64_DARWIN) $(AM_CFLAGS_PIC)
 vgpreload_core_amd64_darwin_so_LDFLAGS = $(PRELOAD_LDFLAGS_AMD64_DARWIN)
+
+#----------------------------------------------------------------------------
+# General stuff
+#----------------------------------------------------------------------------
 
 all-local: inplace-noinst_PROGRAMS inplace-noinst_DSYMS
 

@@ -7,33 +7,16 @@ include $(top_srcdir)/Makefile.all.am
 include $(top_srcdir)/Makefile.flags.am
 include $(top_srcdir)/Makefile.core-tool.am
 
-AM_CPPFLAGS_CORE_COMMON = \
-	-I$(top_srcdir)/coregrind \
-	-DVG_LIBDIR="\"$(valdir)"\"
-
-AM_CPPFLAGS_X86_LINUX   += \
-    $(AM_CPPFLAGS_CORE_COMMON) -DVG_PLATFORM="\"x86-linux\""
-
-AM_CPPFLAGS_AMD64_LINUX += \
-    $(AM_CPPFLAGS_CORE_COMMON) -DVG_PLATFORM="\"amd64-linux\""
-
-AM_CPPFLAGS_PPC32_LINUX += \
-    $(AM_CPPFLAGS_CORE_COMMON) -DVG_PLATFORM="\"ppc32-linux\""
-
-AM_CPPFLAGS_PPC64_LINUX += \
-    $(AM_CPPFLAGS_CORE_COMMON) -DVG_PLATFORM="\"ppc64-linux\""
-
-AM_CPPFLAGS_PPC32_AIX5  += \
-    $(AM_CPPFLAGS_CORE_COMMON) -DVG_PLATFORM="\"ppc32-aix5\""
-
-AM_CPPFLAGS_PPC64_AIX5  += \
-    $(AM_CPPFLAGS_CORE_COMMON) -DVG_PLATFORM="\"ppc64-aix5\""
-
-AM_CPPFLAGS_X86_DARWIN   += \
-    $(AM_CPPFLAGS_CORE_COMMON) -DVG_PLATFORM="\"x86-darwin\""
-
-AM_CPPFLAGS_AMD64_DARWIN += \
-    $(AM_CPPFLAGS_CORE_COMMON) -DVG_PLATFORM="\"amd64-darwin\""
+AM_CPPFLAGS_@VGCONF_PLATFORM_PRI_CAPS@ += \
+ 	-I$(top_srcdir)/coregrind \
+	-DVG_LIBDIR="\"$(valdir)"\" \
+	-DVG_PLATFORM="\"@VGCONF_ARCH_PRI@-@VGCONF_OS@\""
+if VGCONF_HAVE_PLATFORM_SEC
+AM_CPPFLAGS_@VGCONF_PLATFORM_SEC_CAPS@ += \
+ 	-I$(top_srcdir)/coregrind \
+	-DVG_LIBDIR="\"$(valdir)"\" \
+	-DVG_PLATFORM="\"@VGCONF_ARCH_SEC@-@VGCONF_OS@\""
+endif
 
 
 default.supp: $(SUPP_FILES)

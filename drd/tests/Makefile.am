@@ -241,7 +241,8 @@ check_PROGRAMS =      \
   sem_as_mutex        \
   sigalrm             \
   thread_name         \
-  trylock
+  trylock             \
+  tsan_unittest
 
 if HAVE_BOOST_1_35
 check_PROGRAMS += boost_thread
@@ -271,9 +272,6 @@ if HAVE_QTCORE
 check_PROGRAMS += qt4_mutex qt4_rwlock qt4_semaphore
 endif
 
-if ! VGCONF_OS_IS_DARWIN
-check_PROGRAMS += tsan_unittest
-endif
 
 AM_CFLAGS   += $(AM_FLAG_M3264_PRI) @FLAG_W_EXTRA@ -Wno-inline -Wno-unused-parameter
 AM_CXXFLAGS += $(AM_FLAG_M3264_PRI) @FLAG_W_EXTRA@ -Wno-inline -Wno-unused-parameter

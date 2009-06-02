@@ -30,56 +30,78 @@ endif
 # means some of the flags are duplicated on systems with newer versions of
 # automake, but this does not really matter and seems hard to avoid.
 
-AM_CPPFLAGS_@VGCONF_PLATFORM_PRI_CAPS@ = \
- 		-I$(top_srcdir)/include \
-		-I@VEX_DIR@/pub \
-		-DVGA_@VGCONF_ARCH_PRI@=1 \
-		-DVGO_@VGCONF_OS@=1 \
-		-DVGP_@VGCONF_ARCH_PRI@_@VGCONF_OS@=1
-if VGCONF_HAVE_PLATFORM_SEC
-AM_CPPFLAGS_@VGCONF_PLATFORM_SEC_CAPS@ = \
- 		-I$(top_srcdir)/include \
-		-I@VEX_DIR@/pub \
-		-DVGA_@VGCONF_ARCH_SEC@=1 \
-		-DVGO_@VGCONF_OS@=1 \
-		-DVGP_@VGCONF_ARCH_SEC@_@VGCONF_OS@=1
-endif
+AM_CPPFLAGS_COMMON = \
+		-I$(top_srcdir) \
+		-I$(top_srcdir)/include \
+		-I@VEX_DIR@/pub
 
 AM_FLAG_M3264_X86_LINUX   = @FLAG_M32@
+AM_CPPFLAGS_X86_LINUX 	  = $(AM_CPPFLAGS_COMMON) \
+			    -DVGA_x86=1 \
+			    -DVGO_linux=1 \
+			    -DVGP_x86_linux=1
 AM_CFLAGS_X86_LINUX       = @FLAG_M32@ @PREFERRED_STACK_BOUNDARY@ \
 			 	$(AM_CFLAGS_BASE)
 AM_CCASFLAGS_X86_LINUX    = $(AM_CPPFLAGS_X86_LINUX) @FLAG_M32@ -g
 
 AM_FLAG_M3264_AMD64_LINUX = @FLAG_M64@
+AM_CPPFLAGS_AMD64_LINUX   = $(AM_CPPFLAGS_COMMON) \
+			    -DVGA_amd64=1 \
+			    -DVGO_linux=1 \
+			    -DVGP_amd64_linux=1
 AM_CFLAGS_AMD64_LINUX     = @FLAG_M64@ -fomit-frame-pointer \
 				@PREFERRED_STACK_BOUNDARY@ $(AM_CFLAGS_BASE)
 AM_CCASFLAGS_AMD64_LINUX  = $(AM_CPPFLAGS_AMD64_LINUX) @FLAG_M64@ -g
 
 AM_FLAG_M3264_PPC32_LINUX = @FLAG_M32@
+AM_CPPFLAGS_PPC32_LINUX = $(AM_CPPFLAGS_COMMON) \
+		-DVGA_ppc32=1 \
+		-DVGO_linux=1 \
+		-DVGP_ppc32_linux=1
 AM_CFLAGS_PPC32_LINUX     = @FLAG_M32@ $(AM_CFLAGS_BASE)
 AM_CCASFLAGS_PPC32_LINUX  = $(AM_CPPFLAGS_PPC32_LINUX) @FLAG_M32@ -g
 
 AM_FLAG_M3264_PPC64_LINUX = @FLAG_M64@
+AM_CPPFLAGS_PPC64_LINUX   = $(AM_CPPFLAGS_COMMON) \
+			    -DVGA_ppc64=1 \
+			    -DVGO_linux=1 \
+			    -DVGP_ppc64_linux=1
 AM_CFLAGS_PPC64_LINUX     = @FLAG_M64@ $(AM_CFLAGS_BASE)
 AM_CCASFLAGS_PPC64_LINUX  = $(AM_CPPFLAGS_PPC64_LINUX) @FLAG_M64@ -g
 
 AM_FLAG_M3264_PPC32_AIX5  = @FLAG_MAIX32@
+AM_CPPFLAGS_PPC32_AIX5 	  = $(AM_CPPFLAGS_COMMON) \
+			    -DVGA_ppc32=1 \
+			    -DVGO_aix5=1 \
+			    -DVGP_ppc32_aix5=1
 AM_CFLAGS_PPC32_AIX5      = @FLAG_MAIX32@ -mcpu=powerpc $(AM_CFLAGS_BASE)
 AM_CCASFLAGS_PPC32_AIX5   = $(AM_CPPFLAGS_PPC32_AIX5) \
 			    @FLAG_MAIX32@ -mcpu=powerpc -g
 
 AM_FLAG_M3264_PPC64_AIX5  = @FLAG_MAIX64@
+AM_CPPFLAGS_PPC64_AIX5    = $(AM_CPPFLAGS_COMMON) \
+			    -DVGA_ppc64=1 \
+			    -DVGO_aix5=1 \
+			    -DVGP_ppc64_aix5=1
 AM_CFLAGS_PPC64_AIX5      = @FLAG_MAIX64@ -mcpu=powerpc64 $(AM_CFLAGS_BASE)
 AM_CCASFLAGS_PPC64_AIX5   = $(AM_CPPFLAGS_PPC64_AIX5) \
 			    @FLAG_MAIX64@ -mcpu=powerpc64 -g
 
 AM_FLAG_M3264_X86_DARWIN = -arch i386
+AM_CPPFLAGS_X86_DARWIN	  = $(AM_CPPFLAGS_COMMON) \
+			    -DVGA_x86=1 \
+			    -DVGO_darwin=1 \
+			    -DVGP_x86_darwin=1
 AM_CFLAGS_X86_DARWIN     = $(WERROR) -arch i386 $(AM_CFLAGS_BASE) \
 			    -mmacosx-version-min=10.5 -fno-stack-protector \
 			    -mdynamic-no-pic
 AM_CCASFLAGS_X86_DARWIN  = $(AM_CPPFLAGS_X86_DARWIN) -arch i386 -g
 
 AM_FLAG_M3264_AMD64_DARWIN = -arch x86_64
+AM_CPPFLAGS_AMD64_DARWIN  = $(AM_CPPFLAGS_COMMON) \
+			    -DVGA_amd64=1 \
+			    -DVGO_darwin=1 \
+			    -DVGP_amd64_darwin=1
 AM_CFLAGS_AMD64_DARWIN     = $(WERROR) -arch x86_64 $(AM_CFLAGS_BASE) \
 			    -mmacosx-version-min=10.5 -fno-stack-protector
 AM_CCASFLAGS_AMD64_DARWIN  = $(AM_CPPFLAGS_AMD64_DARWIN) -arch x86_64 -g

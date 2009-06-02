@@ -7,62 +7,95 @@ include $(top_srcdir)/Makefile.all.am
 include $(top_srcdir)/Makefile.flags.am
 include $(top_srcdir)/Makefile.core-tool.am
 
-#----------------------------------------------------------------------------
-# Basics, flags
-#----------------------------------------------------------------------------
+AM_CPPFLAGS_CORE_COMMON = \
+	-I$(top_srcdir)/coregrind \
+	-DVG_LIBDIR="\"$(valdir)"\"
 
-AM_CPPFLAGS_@VGCONF_PLATFORM_PRI_CAPS@ += \
- 	-I$(top_srcdir)/coregrind \
-	-DVG_LIBDIR="\"$(valdir)"\" \
-	-DVG_PLATFORM="\"@VGCONF_ARCH_PRI@-@VGCONF_OS@\""
-if VGCONF_HAVE_PLATFORM_SEC
-AM_CPPFLAGS_@VGCONF_PLATFORM_SEC_CAPS@ += \
- 	-I$(top_srcdir)/coregrind \
-	-DVG_LIBDIR="\"$(valdir)"\" \
-	-DVG_PLATFORM="\"@VGCONF_ARCH_SEC@-@VGCONF_OS@\""
-endif
+AM_CPPFLAGS_X86_LINUX   += \
+    $(AM_CPPFLAGS_CORE_COMMON) -DVG_PLATFORM="\"x86-linux\""
+
+AM_CPPFLAGS_AMD64_LINUX += \
+    $(AM_CPPFLAGS_CORE_COMMON) -DVG_PLATFORM="\"amd64-linux\""
+
+AM_CPPFLAGS_PPC32_LINUX += \
+    $(AM_CPPFLAGS_CORE_COMMON) -DVG_PLATFORM="\"ppc32-linux\""
+
+AM_CPPFLAGS_PPC64_LINUX += \
+    $(AM_CPPFLAGS_CORE_COMMON) -DVG_PLATFORM="\"ppc64-linux\""
+
+AM_CPPFLAGS_PPC32_AIX5  += \
+    $(AM_CPPFLAGS_CORE_COMMON) -DVG_PLATFORM="\"ppc32-aix5\""
+
+AM_CPPFLAGS_PPC64_AIX5  += \
+    $(AM_CPPFLAGS_CORE_COMMON) -DVG_PLATFORM="\"ppc64-aix5\""
+
+AM_CPPFLAGS_X86_DARWIN   += \
+    $(AM_CPPFLAGS_CORE_COMMON) -DVG_PLATFORM="\"x86-darwin\""
+
+AM_CPPFLAGS_AMD64_DARWIN += \
+    $(AM_CPPFLAGS_CORE_COMMON) -DVG_PLATFORM="\"amd64-darwin\""
 
 
 default.supp: $(SUPP_FILES)
 
 
+noinst_PROGRAMS =
+noinst_DSYMS =
 pkglib_LIBRARIES =
+LIBVEX =
 
 if VGCONF_PLATFORMS_INCLUDE_X86_LINUX
-pkglib_LIBRARIES += libcoregrind-x86-linux.a
+noinst_PROGRAMS  += vgpreload_core-x86-linux.so
+pkglib_LIBRARIES += libcoregrind-x86-linux.a libreplacemalloc_toolpreload-x86-linux.a
+LIBVEX           += libvex-x86-linux.a
 endif
 
 if VGCONF_PLATFORMS_INCLUDE_AMD64_LINUX
-pkglib_LIBRARIES += libcoregrind-amd64-linux.a
+noinst_PROGRAMS  += vgpreload_core-amd64-linux.so
+pkglib_LIBRARIES += libcoregrind-amd64-linux.a libreplacemalloc_toolpreload-amd64-linux.a
+LIBVEX           += libvex-amd64-linux.a
 endif
 
 if VGCONF_PLATFORMS_INCLUDE_PPC32_LINUX
-pkglib_LIBRARIES += libcoregrind-ppc32-linux.a
+noinst_PROGRAMS  += vgpreload_core-ppc32-linux.so
+pkglib_LIBRARIES += libcoregrind-ppc32-linux.a libreplacemalloc_toolpreload-ppc32-linux.a
+LIBVEX           += libvex-ppc32-linux.a
 endif
 
 if VGCONF_PLATFORMS_INCLUDE_PPC64_LINUX
-pkglib_LIBRARIES += libcoregrind-ppc64-linux.a
+noinst_PROGRAMS  += vgpreload_core-ppc64-linux.so
+pkglib_LIBRARIES += libcoregrind-ppc64-linux.a libreplacemalloc_toolpreload-ppc64-linux.a
+LIBVEX           += libvex-ppc64-linux.a
 endif
 
 if VGCONF_PLATFORMS_INCLUDE_PPC32_AIX5
-pkglib_LIBRARIES += libcoregrind-ppc32-aix5.a
+noinst_PROGRAMS  += vgpreload_core-ppc32-aix5.so
+pkglib_LIBRARIES += libcoregrind-ppc32-aix5.a libreplacemalloc_toolpreload-ppc32-aix5.a
+LIBVEX           += libvex-ppc32-aix5.a
 endif
 
 if VGCONF_PLATFORMS_INCLUDE_PPC64_AIX5
-pkglib_LIBRARIES += libcoregrind-ppc64-aix5.a
+noinst_PROGRAMS  += vgpreload_core-ppc64-aix5.so
+pkglib_LIBRARIES += libcoregrind-ppc64-aix5.a libreplacemalloc_toolpreload-ppc64-aix5.a
+LIBVEX           += libvex-ppc64-aix5.a
 endif
 
 if VGCONF_PLATFORMS_INCLUDE_X86_DARWIN
-pkglib_LIBRARIES += libcoregrind-x86-darwin.a
+noinst_PROGRAMS  += vgpreload_core-x86-darwin.so
+noinst_DSYMS     += vgpreload_core-x86-darwin.so
+pkglib_LIBRARIES += libcoregrind-x86-darwin.a libreplacemalloc_toolpreload-x86-darwin.a
+LIBVEX           += libvex-x86-darwin.a
 endif
 
 if VGCONF_PLATFORMS_INCLUDE_AMD64_DARWIN
-pkglib_LIBRARIES += libcoregrind-amd64-darwin.a
+noinst_PROGRAMS  += vgpreload_core-amd64-darwin.so
+noinst_DSYMS     += vgpreload_core-amd64-darwin.so
+pkglib_LIBRARIES += libcoregrind-amd64-darwin.a libreplacemalloc_toolpreload-amd64-darwin.a
+LIBVEX           += libvex-amd64-darwin.a
 endif
 
-#----------------------------------------------------------------------------
-# The launcher
-#----------------------------------------------------------------------------
+
+#------------------------- launcher -----------------------
 # Build the launcher (valgrind) for the primary target only.
 #
 bin_PROGRAMS = \
@@ -84,21 +117,6 @@ valgrind_SOURCES = \
 	launcher-darwin.c \
 	m_debuglog.c
 endif
-
-valgrind_CPPFLAGS  = $(AM_CPPFLAGS_PRI)
-valgrind_CFLAGS    = $(AM_CFLAGS_PRI)
-valgrind_CCASFLAGS = $(AM_CCASFLAGS_PRI)
-valgrind_LDFLAGS   = $(AM_CFLAGS_PRI)
-
-no_op_client_for_valgrind_SOURCES = no_op_client_for_valgrind.c
-no_op_client_for_valgrind_CPPFLAGS  = $(AM_CPPFLAGS_PRI)
-no_op_client_for_valgrind_CFLAGS    = $(AM_CFLAGS_PRI)
-no_op_client_for_valgrind_CCASFLAGS = $(AM_CCASFLAGS_PRI)
-no_op_client_for_valgrind_LDFLAGS   = $(AM_CFLAGS_PRI)
-
-#----------------------------------------------------------------------------
-# Darwin Mach stuff
-#----------------------------------------------------------------------------
 
 # Mach RPC interface definitions
 # Here are some more .defs files that are not used, but could be in the
@@ -135,9 +153,19 @@ mach_files = $(addprefix /usr/include/mach/,$(mach_defs))
 $(mach_srcs) $(mach_hdrs): $(mach_files)
 	(cd m_mach && mig $(mach_files))
 
-#----------------------------------------------------------------------------
-# Headers
-#----------------------------------------------------------------------------
+valgrind_CPPFLAGS  = $(AM_CPPFLAGS_PRI)
+valgrind_CFLAGS    = $(AM_CFLAGS_PRI)
+valgrind_CCASFLAGS = $(AM_CCASFLAGS_PRI)
+valgrind_LDFLAGS   = $(AM_CFLAGS_PRI)
+
+no_op_client_for_valgrind_SOURCES = no_op_client_for_valgrind.c
+no_op_client_for_valgrind_CPPFLAGS  = $(AM_CPPFLAGS_PRI)
+no_op_client_for_valgrind_CFLAGS    = $(AM_CFLAGS_PRI)
+no_op_client_for_valgrind_CCASFLAGS = $(AM_CCASFLAGS_PRI)
+no_op_client_for_valgrind_LDFLAGS   = $(AM_CFLAGS_PRI)
+#
+#----------------------------------------------------------
+
 
 noinst_HEADERS = \
 	$(mach_hdrs) \
@@ -225,16 +253,13 @@ noinst_HEADERS = \
 	m_syswrap/priv_syswrap-main.h \
 	m_ume/priv_ume.h
 
-#----------------------------------------------------------------------------
-# libcoregrind_<platform>.so
-#----------------------------------------------------------------------------
-
 BUILT_SOURCES = 
 CLEANFILES = 
 if VGCONF_OS_IS_DARWIN
 BUILT_SOURCES += $(COREGRIND_DARWIN_BUILT_SOURCES)
 CLEANFILES    += $(COREGRIND_DARWIN_BUILT_SOURCES)
 endif
+
 
 COREGRIND_SOURCES_COMMON = \
 	m_commandline.c \
@@ -441,6 +466,40 @@ libcoregrind_amd64_darwin_a_CFLAGS = $(AM_CFLAGS_AMD64_DARWIN)
 libcoregrind_amd64_darwin_a_CCASFLAGS = $(AM_CCASFLAGS_AMD64_DARWIN)
 
 
+libreplacemalloc_toolpreload_x86_linux_a_SOURCES = m_replacemalloc/vg_replace_malloc.c
+libreplacemalloc_toolpreload_x86_linux_a_CPPFLAGS = $(AM_CPPFLAGS_X86_LINUX)
+libreplacemalloc_toolpreload_x86_linux_a_CFLAGS = $(AM_CFLAGS_X86_LINUX) $(AM_CFLAGS_PIC)
+
+libreplacemalloc_toolpreload_amd64_linux_a_SOURCES = m_replacemalloc/vg_replace_malloc.c
+libreplacemalloc_toolpreload_amd64_linux_a_CPPFLAGS = $(AM_CPPFLAGS_AMD64_LINUX)
+libreplacemalloc_toolpreload_amd64_linux_a_CFLAGS = $(AM_CFLAGS_AMD64_LINUX) $(AM_CFLAGS_PIC)
+
+libreplacemalloc_toolpreload_ppc32_linux_a_SOURCES = m_replacemalloc/vg_replace_malloc.c
+libreplacemalloc_toolpreload_ppc32_linux_a_CPPFLAGS = $(AM_CPPFLAGS_PPC32_LINUX)
+libreplacemalloc_toolpreload_ppc32_linux_a_CFLAGS = $(AM_CFLAGS_PPC32_LINUX) $(AM_CFLAGS_PIC)
+
+libreplacemalloc_toolpreload_ppc64_linux_a_SOURCES = m_replacemalloc/vg_replace_malloc.c
+libreplacemalloc_toolpreload_ppc64_linux_a_CPPFLAGS = $(AM_CPPFLAGS_PPC64_LINUX)
+libreplacemalloc_toolpreload_ppc64_linux_a_CFLAGS = $(AM_CFLAGS_PPC64_LINUX) $(AM_CFLAGS_PIC)
+
+libreplacemalloc_toolpreload_ppc32_aix5_a_SOURCES = m_replacemalloc/vg_replace_malloc.c
+libreplacemalloc_toolpreload_ppc32_aix5_a_CPPFLAGS = $(AM_CPPFLAGS_PPC32_AIX5)
+libreplacemalloc_toolpreload_ppc32_aix5_a_CFLAGS = $(AM_CFLAGS_PPC32_AIX5) $(AM_CFLAGS_PIC)
+libreplacemalloc_toolpreload_ppc32_aix5_a_AR = $(AR) -X32 cru
+
+libreplacemalloc_toolpreload_ppc64_aix5_a_SOURCES = m_replacemalloc/vg_replace_malloc.c
+libreplacemalloc_toolpreload_ppc64_aix5_a_CPPFLAGS = $(AM_CPPFLAGS_PPC64_AIX5)
+libreplacemalloc_toolpreload_ppc64_aix5_a_CFLAGS = $(AM_CFLAGS_PPC64_AIX5) $(AM_CFLAGS_PIC)
+libreplacemalloc_toolpreload_ppc64_aix5_a_AR = $(AR) -X64 cru
+
+libreplacemalloc_toolpreload_x86_darwin_a_SOURCES = m_replacemalloc/vg_replace_malloc.c
+libreplacemalloc_toolpreload_x86_darwin_a_CPPFLAGS = $(AM_CPPFLAGS_X86_DARWIN)
+libreplacemalloc_toolpreload_x86_darwin_a_CFLAGS = $(AM_CFLAGS_X86_DARWIN) $(AM_CFLAGS_PIC)
+
+libreplacemalloc_toolpreload_amd64_darwin_a_SOURCES = m_replacemalloc/vg_replace_malloc.c
+libreplacemalloc_toolpreload_amd64_darwin_a_CPPFLAGS = $(AM_CPPFLAGS_AMD64_DARWIN)
+libreplacemalloc_toolpreload_amd64_darwin_a_CFLAGS = $(AM_CFLAGS_AMD64_DARWIN) $(AM_CFLAGS_PIC)
+
 m_dispatch/dispatch-x86-linux.S:	 libvex_guest_offsets.h
 m_dispatch/dispatch-amd64-linux.S:	 libvex_guest_offsets.h
 m_dispatch/dispatch-ppc32-linux.S:	 libvex_guest_offsets.h
@@ -462,78 +521,53 @@ m_syswrap/syswrap-main.c: 		 libvex_guest_offsets.h
 libvex_guest_offsets.h:
 	$(MAKE) -C @VEX_DIR@ CC="$(CC)" AR="$(AR)" pub/libvex_guest_offsets.h
 
-#----------------------------------------------------------------------------
-# libreplacemalloc_toolpreload_<platform>.so
-#----------------------------------------------------------------------------
+VGPRELOAD_CORE_SOURCES_COMMON = vg_preloaded.c
 
-pkglib_LIBRARIES += libreplacemalloc_toolpreload-@VGCONF_ARCH_PRI@-@VGCONF_OS@.a
-if VGCONF_HAVE_PLATFORM_SEC
-pkglib_LIBRARIES += libreplacemalloc_toolpreload-@VGCONF_ARCH_SEC@-@VGCONF_OS@.a
-endif
+vgpreload_core_x86_linux_so_SOURCES = $(VGPRELOAD_CORE_SOURCES_COMMON)
+vgpreload_core_x86_linux_so_CPPFLAGS = $(AM_CPPFLAGS_X86_LINUX)
+vgpreload_core_x86_linux_so_CFLAGS = $(AM_CFLAGS_X86_LINUX) $(AM_CFLAGS_PIC)
+vgpreload_core_x86_linux_so_LDFLAGS = $(PRELOAD_LDFLAGS_X86_LINUX)
 
-libreplacemalloc_toolpreload_@VGCONF_ARCH_PRI@_@VGCONF_OS@_a_SOURCES = \
-	m_replacemalloc/vg_replace_malloc.c
-libreplacemalloc_toolpreload_@VGCONF_ARCH_PRI@_@VGCONF_OS@_a_CPPFLAGS = \
-	$(AM_CPPFLAGS_@VGCONF_PLATFORM_PRI_CAPS@)
-libreplacemalloc_toolpreload_@VGCONF_ARCH_PRI@_@VGCONF_OS@_a_CFLAGS = \
-	$(AM_CFLAGS_@VGCONF_PLATFORM_PRI_CAPS@) $(AM_CFLAGS_PIC)
-if VGCONF_HAVE_PLATFORM_SEC
-libreplacemalloc_toolpreload_@VGCONF_ARCH_SEC@_@VGCONF_OS@_a_SOURCES = \
-	m_replacemalloc/vg_replace_malloc.c
-libreplacemalloc_toolpreload_@VGCONF_ARCH_SEC@_@VGCONF_OS@_a_CPPFLAGS = \
-	$(AM_CPPFLAGS_@VGCONF_PLATFORM_SEC_CAPS@)
-libreplacemalloc_toolpreload_@VGCONF_ARCH_SEC@_@VGCONF_OS@_a_CFLAGS = \
-	$(AM_CFLAGS_@VGCONF_PLATFORM_SEC_CAPS@) $(AM_CFLAGS_PIC)
-endif
+vgpreload_core_amd64_linux_so_SOURCES = $(VGPRELOAD_CORE_SOURCES_COMMON)
+vgpreload_core_amd64_linux_so_CPPFLAGS = $(AM_CPPFLAGS_AMD64_LINUX)
+vgpreload_core_amd64_linux_so_CFLAGS = $(AM_CFLAGS_AMD64_LINUX) $(AM_CFLAGS_PIC)
+vgpreload_core_amd64_linux_so_LDFLAGS = $(PRELOAD_LDFLAGS_AMD64_LINUX)
 
-# Special AR for AIX.
-libreplacemalloc_toolpreload_ppc32_aix5_a_AR = $(AR) -X32 cru
-libreplacemalloc_toolpreload_ppc64_aix5_a_AR = $(AR) -X64 cru
+vgpreload_core_ppc32_linux_so_SOURCES = $(VGPRELOAD_CORE_SOURCES_COMMON)
+vgpreload_core_ppc32_linux_so_CPPFLAGS = $(AM_CPPFLAGS_PPC32_LINUX)
+vgpreload_core_ppc32_linux_so_CFLAGS = $(AM_CFLAGS_PPC32_LINUX) $(AM_CFLAGS_PIC)
+vgpreload_core_ppc32_linux_so_LDFLAGS = $(PRELOAD_LDFLAGS_PPC32_LINUX)
 
-#----------------------------------------------------------------------------
-# vgpreload_core_<platform>.so
-#----------------------------------------------------------------------------
+vgpreload_core_ppc64_linux_so_SOURCES = $(VGPRELOAD_CORE_SOURCES_COMMON)
+vgpreload_core_ppc64_linux_so_CPPFLAGS = $(AM_CPPFLAGS_PPC64_LINUX)
+vgpreload_core_ppc64_linux_so_CFLAGS = $(AM_CFLAGS_PPC64_LINUX) $(AM_CFLAGS_PIC)
+vgpreload_core_ppc64_linux_so_LDFLAGS = $(PRELOAD_LDFLAGS_PPC64_LINUX)
 
-noinst_PROGRAMS  = vgpreload_core-@VGCONF_ARCH_PRI@-@VGCONF_OS@.so
-if VGCONF_HAVE_PLATFORM_SEC
-noinst_PROGRAMS += vgpreload_core-@VGCONF_ARCH_SEC@-@VGCONF_OS@.so
-endif
+vgpreload_core_ppc32_aix5_so_SOURCES = $(VGPRELOAD_CORE_SOURCES_COMMON)
+vgpreload_core_ppc32_aix5_so_CPPFLAGS = $(AM_CPPFLAGS_PPC32_AIX5)
+vgpreload_core_ppc32_aix5_so_CFLAGS = $(AM_CFLAGS_PPC32_AIX5) $(AM_CFLAGS_PIC)
+vgpreload_core_ppc32_aix5_so_LDFLAGS = $(PRELOAD_LDFLAGS_PPC32_AIX5)
 
-if VGCONF_OS_IS_DARWIN
-noinst_DSYMS = $(noinst_PROGRAMS)
-endif
+vgpreload_core_ppc64_aix5_so_SOURCES = $(VGPRELOAD_CORE_SOURCES_COMMON)
+vgpreload_core_ppc64_aix5_so_CPPFLAGS = $(AM_CPPFLAGS_PPC64_AIX5)
+vgpreload_core_ppc64_aix5_so_CFLAGS = $(AM_CFLAGS_PPC64_AIX5) $(AM_CFLAGS_PIC)
+vgpreload_core_ppc64_aix5_so_LDFLAGS = $(PRELOAD_LDFLAGS_PPC64_AIX5)
 
-vgpreload_core_@VGCONF_ARCH_PRI@_@VGCONF_OS@_so_SOURCES = vg_preloaded.c
-vgpreload_core_@VGCONF_ARCH_PRI@_@VGCONF_OS@_so_CPPFLAGS = \
-	$(AM_CPPFLAGS_@VGCONF_PLATFORM_PRI_CAPS@)
-vgpreload_core_@VGCONF_ARCH_PRI@_@VGCONF_OS@_so_CFLAGS = \
-	$(AM_CFLAGS_@VGCONF_PLATFORM_PRI_CAPS@) $(AM_CFLAGS_PIC)
-vgpreload_core_@VGCONF_ARCH_PRI@_@VGCONF_OS@_so_LDFLAGS = \
-	$(PRELOAD_LDFLAGS_@VGCONF_PLATFORM_PRI_CAPS@)
-if VGCONF_HAVE_PLATFORM_SEC
-vgpreload_core_@VGCONF_ARCH_SEC@_@VGCONF_OS@_so_SOURCES = vg_preloaded.c
-vgpreload_core_@VGCONF_ARCH_SEC@_@VGCONF_OS@_so_CPPFLAGS = \
-	$(AM_CPPFLAGS_@VGCONF_PLATFORM_SEC_CAPS@)
-vgpreload_core_@VGCONF_ARCH_SEC@_@VGCONF_OS@_so_CFLAGS = \
-	$(AM_CFLAGS_@VGCONF_PLATFORM_SEC_CAPS@) $(AM_CFLAGS_PIC)
-vgpreload_core_@VGCONF_ARCH_SEC@_@VGCONF_OS@_so_LDFLAGS = \
-	$(PRELOAD_LDFLAGS_@VGCONF_PLATFORM_SEC_CAPS@)
-endif
+vgpreload_core_x86_darwin_so_SOURCES = $(VGPRELOAD_CORE_SOURCES_COMMON)
+vgpreload_core_x86_darwin_so_CPPFLAGS = $(AM_CPPFLAGS_X86_DARWIN)
+vgpreload_core_x86_darwin_so_CFLAGS = $(AM_CFLAGS_X86_DARWIN) $(AM_CFLAGS_PIC)
+vgpreload_core_x86_darwin_so_LDFLAGS = $(PRELOAD_LDFLAGS_X86_DARWIN)
 
-#----------------------------------------------------------------------------
-# General stuff
-#----------------------------------------------------------------------------
+vgpreload_core_amd64_darwin_so_SOURCES = $(VGPRELOAD_CORE_SOURCES_COMMON)
+vgpreload_core_amd64_darwin_so_CPPFLAGS = $(AM_CPPFLAGS_AMD64_DARWIN)
+vgpreload_core_amd64_darwin_so_CFLAGS = $(AM_CFLAGS_AMD64_DARWIN) $(AM_CFLAGS_PIC)
+vgpreload_core_amd64_darwin_so_LDFLAGS = $(PRELOAD_LDFLAGS_AMD64_DARWIN)
 
 all-local: inplace-noinst_PROGRAMS inplace-noinst_DSYMS
 
 clean-local: clean-noinst_DSYMS
 	$(MAKE) -C @VEX_DIR@ CC="$(CC)" AR="$(AR)" clean
 	rm -f $(mach_srcs) $(mach_server_srcs) $(mach_hdrs)
-
-LIBVEX  = libvex-@VGCONF_ARCH_PRI@-@VGCONF_OS@.a
-if VGCONF_HAVE_PLATFORM_SEC
-LIBVEX += libvex-@VGCONF_ARCH_SEC@-@VGCONF_OS@.a
-endif
 
 # Nb: The loop installs the libvex library for possible use by standalone
 # tools.

@@ -287,7 +287,7 @@ monitor_example_SOURCES     = monitor_example.cpp
 new_delete_SOURCES          = new_delete.cpp
 
 tsan_unittest_SOURCES       = tsan_unittest.cpp
-tsan_unittest_CXXFLAGS      = $(AM_CXXFLAGS) -Wno-deprecated -Wno-sign-compare\
+tsan_unittest_CXXFLAGS      = $(AM_CXXFLAGS) -Wno-sign-compare\
 			      -Wno-shadow @FLAG_W_NO_EMPTY_BODY@
 
 if HAVE_BOOST_1_35

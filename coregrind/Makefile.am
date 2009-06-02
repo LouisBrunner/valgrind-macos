@@ -22,49 +22,37 @@ endif
 default.supp: $(SUPP_FILES)
 
 
-noinst_PROGRAMS =
-noinst_DSYMS =
 pkglib_LIBRARIES =
 
 if VGCONF_PLATFORMS_INCLUDE_X86_LINUX
-noinst_PROGRAMS  += vgpreload_core-x86-linux.so
 pkglib_LIBRARIES += libcoregrind-x86-linux.a libreplacemalloc_toolpreload-x86-linux.a
 endif
 
 if VGCONF_PLATFORMS_INCLUDE_AMD64_LINUX
-noinst_PROGRAMS  += vgpreload_core-amd64-linux.so
 pkglib_LIBRARIES += libcoregrind-amd64-linux.a libreplacemalloc_toolpreload-amd64-linux.a
 endif
 
 if VGCONF_PLATFORMS_INCLUDE_PPC32_LINUX
-noinst_PROGRAMS  += vgpreload_core-ppc32-linux.so
 pkglib_LIBRARIES += libcoregrind-ppc32-linux.a libreplacemalloc_toolpreload-ppc32-linux.a
 endif
 
 if VGCONF_PLATFORMS_INCLUDE_PPC64_LINUX
-noinst_PROGRAMS  += vgpreload_core-ppc64-linux.so
 pkglib_LIBRARIES += libcoregrind-ppc64-linux.a libreplacemalloc_toolpreload-ppc64-linux.a
 endif
 
 if VGCONF_PLATFORMS_INCLUDE_PPC32_AIX5
-noinst_PROGRAMS  += vgpreload_core-ppc32-aix5.so
 pkglib_LIBRARIES += libcoregrind-ppc32-aix5.a libreplacemalloc_toolpreload-ppc32-aix5.a
 endif
 
 if VGCONF_PLATFORMS_INCLUDE_PPC64_AIX5
-noinst_PROGRAMS  += vgpreload_core-ppc64-aix5.so
 pkglib_LIBRARIES += libcoregrind-ppc64-aix5.a libreplacemalloc_toolpreload-ppc64-aix5.a
 endif
 
 if VGCONF_PLATFORMS_INCLUDE_X86_DARWIN
-noinst_PROGRAMS  += vgpreload_core-x86-darwin.so
-noinst_DSYMS     += vgpreload_core-x86-darwin.so
 pkglib_LIBRARIES += libcoregrind-x86-darwin.a libreplacemalloc_toolpreload-x86-darwin.a
 endif
 
 if VGCONF_PLATFORMS_INCLUDE_AMD64_DARWIN
-noinst_PROGRAMS  += vgpreload_core-amd64-darwin.so
-noinst_DSYMS     += vgpreload_core-amd64-darwin.so
 pkglib_LIBRARIES += libcoregrind-amd64-darwin.a libreplacemalloc_toolpreload-amd64-darwin.a
 endif
 
@@ -507,47 +495,31 @@ libvex_guest_offsets.h:
 # vgpreload_core_<platform>.so
 #----------------------------------------------------------------------------
 
-VGPRELOAD_CORE_SOURCES_COMMON = vg_preloaded.c
+noinst_PROGRAMS  = vgpreload_core-@VGCONF_ARCH_PRI@-@VGCONF_OS@.so
+if VGCONF_HAVE_PLATFORM_SEC
+noinst_PROGRAMS += vgpreload_core-@VGCONF_ARCH_SEC@-@VGCONF_OS@.so
+endif
 
-vgpreload_core_x86_linux_so_SOURCES = $(VGPRELOAD_CORE_SOURCES_COMMON)
-vgpreload_core_x86_linux_so_CPPFLAGS = $(AM_CPPFLAGS_X86_LINUX)
-vgpreload_core_x86_linux_so_CFLAGS = $(AM_CFLAGS_X86_LINUX) $(AM_CFLAGS_PIC)
-vgpreload_core_x86_linux_so_LDFLAGS = $(PRELOAD_LDFLAGS_X86_LINUX)
+if VGCONF_OS_IS_DARWIN
+noinst_DSYMS = $(noinst_PROGRAMS)
+endif
 
-vgpreload_core_amd64_linux_so_SOURCES = $(VGPRELOAD_CORE_SOURCES_COMMON)
-vgpreload_core_amd64_linux_so_CPPFLAGS = $(AM_CPPFLAGS_AMD64_LINUX)
-vgpreload_core_amd64_linux_so_CFLAGS = $(AM_CFLAGS_AMD64_LINUX) $(AM_CFLAGS_PIC)
-vgpreload_core_amd64_linux_so_LDFLAGS = $(PRELOAD_LDFLAGS_AMD64_LINUX)
-
-vgpreload_core_ppc32_linux_so_SOURCES = $(VGPRELOAD_CORE_SOURCES_COMMON)
-vgpreload_core_ppc32_linux_so_CPPFLAGS = $(AM_CPPFLAGS_PPC32_LINUX)
-vgpreload_core_ppc32_linux_so_CFLAGS = $(AM_CFLAGS_PPC32_LINUX) $(AM_CFLAGS_PIC)
-vgpreload_core_ppc32_linux_so_LDFLAGS = $(PRELOAD_LDFLAGS_PPC32_LINUX)
-
-vgpreload_core_ppc64_linux_so_SOURCES = $(VGPRELOAD_CORE_SOURCES_COMMON)
-vgpreload_core_ppc64_linux_so_CPPFLAGS = $(AM_CPPFLAGS_PPC64_LINUX)
-vgpreload_core_ppc64_linux_so_CFLAGS = $(AM_CFLAGS_PPC64_LINUX) $(AM_CFLAGS_PIC)
-vgpreload_core_ppc64_linux_so_LDFLAGS = $(PRELOAD_LDFLAGS_PPC64_LINUX)
-
-vgpreload_core_ppc32_aix5_so_SOURCES = $(VGPRELOAD_CORE_SOURCES_COMMON)
-vgpreload_core_ppc32_aix5_so_CPPFLAGS = $(AM_CPPFLAGS_PPC32_AIX5)
-vgpreload_core_ppc32_aix5_so_CFLAGS = $(AM_CFLAGS_PPC32_AIX5) $(AM_CFLAGS_PIC)
-vgpreload_core_ppc32_aix5_so_LDFLAGS = $(PRELOAD_LDFLAGS_PPC32_AIX5)
-
-vgpreload_core_ppc64_aix5_so_SOURCES = $(VGPRELOAD_CORE_SOURCES_COMMON)
-vgpreload_core_ppc64_aix5_so_CPPFLAGS = $(AM_CPPFLAGS_PPC64_AIX5)
-vgpreload_core_ppc64_aix5_so_CFLAGS = $(AM_CFLAGS_PPC64_AIX5) $(AM_CFLAGS_PIC)
-vgpreload_core_ppc64_aix5_so_LDFLAGS = $(PRELOAD_LDFLAGS_PPC64_AIX5)
-
-vgpreload_core_x86_darwin_so_SOURCES = $(VGPRELOAD_CORE_SOURCES_COMMON)
-vgpreload_core_x86_darwin_so_CPPFLAGS = $(AM_CPPFLAGS_X86_DARWIN)
-vgpreload_core_x86_darwin_so_CFLAGS = $(AM_CFLAGS_X86_DARWIN) $(AM_CFLAGS_PIC)
-vgpreload_core_x86_darwin_so_LDFLAGS = $(PRELOAD_LDFLAGS_X86_DARWIN)
-
-vgpreload_core_amd64_darwin_so_SOURCES = $(VGPRELOAD_CORE_SOURCES_COMMON)
-vgpreload_core_amd64_darwin_so_CPPFLAGS = $(AM_CPPFLAGS_AMD64_DARWIN)
-vgpreload_core_amd64_darwin_so_CFLAGS = $(AM_CFLAGS_AMD64_DARWIN) $(AM_CFLAGS_PIC)
-vgpreload_core_amd64_darwin_so_LDFLAGS = $(PRELOAD_LDFLAGS_AMD64_DARWIN)
+vgpreload_core_@VGCONF_ARCH_PRI@_@VGCONF_OS@_so_SOURCES = vg_preloaded.c
+vgpreload_core_@VGCONF_ARCH_PRI@_@VGCONF_OS@_so_CPPFLAGS = \
+	$(AM_CPPFLAGS_@VGCONF_PLATFORM_PRI_CAPS@)
+vgpreload_core_@VGCONF_ARCH_PRI@_@VGCONF_OS@_so_CFLAGS = \
+	$(AM_CFLAGS_@VGCONF_PLATFORM_PRI_CAPS@) $(AM_CFLAGS_PIC)
+vgpreload_core_@VGCONF_ARCH_PRI@_@VGCONF_OS@_so_LDFLAGS = \
+	$(PRELOAD_LDFLAGS_@VGCONF_PLATFORM_PRI_CAPS@)
+if VGCONF_HAVE_PLATFORM_SEC
+vgpreload_core_@VGCONF_ARCH_SEC@_@VGCONF_OS@_so_SOURCES = vg_preloaded.c
+vgpreload_core_@VGCONF_ARCH_SEC@_@VGCONF_OS@_so_CPPFLAGS = \
+	$(AM_CPPFLAGS_@VGCONF_PLATFORM_SEC_CAPS@)
+vgpreload_core_@VGCONF_ARCH_SEC@_@VGCONF_OS@_so_CFLAGS = \
+	$(AM_CFLAGS_@VGCONF_PLATFORM_SEC_CAPS@) $(AM_CFLAGS_PIC)
+vgpreload_core_@VGCONF_ARCH_SEC@_@VGCONF_OS@_so_LDFLAGS = \
+	$(PRELOAD_LDFLAGS_@VGCONF_PLATFORM_SEC_CAPS@)
+endif
 
 #----------------------------------------------------------------------------
 # General stuff

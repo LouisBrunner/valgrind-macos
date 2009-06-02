@@ -25,35 +25,35 @@ default.supp: $(SUPP_FILES)
 pkglib_LIBRARIES =
 
 if VGCONF_PLATFORMS_INCLUDE_X86_LINUX
-pkglib_LIBRARIES += libcoregrind-x86-linux.a libreplacemalloc_toolpreload-x86-linux.a
+pkglib_LIBRARIES += libcoregrind-x86-linux.a
 endif
 
 if VGCONF_PLATFORMS_INCLUDE_AMD64_LINUX
-pkglib_LIBRARIES += libcoregrind-amd64-linux.a libreplacemalloc_toolpreload-amd64-linux.a
+pkglib_LIBRARIES += libcoregrind-amd64-linux.a
 endif
 
 if VGCONF_PLATFORMS_INCLUDE_PPC32_LINUX
-pkglib_LIBRARIES += libcoregrind-ppc32-linux.a libreplacemalloc_toolpreload-ppc32-linux.a
+pkglib_LIBRARIES += libcoregrind-ppc32-linux.a
 endif
 
 if VGCONF_PLATFORMS_INCLUDE_PPC64_LINUX
-pkglib_LIBRARIES += libcoregrind-ppc64-linux.a libreplacemalloc_toolpreload-ppc64-linux.a
+pkglib_LIBRARIES += libcoregrind-ppc64-linux.a
 endif
 
 if VGCONF_PLATFORMS_INCLUDE_PPC32_AIX5
-pkglib_LIBRARIES += libcoregrind-ppc32-aix5.a libreplacemalloc_toolpreload-ppc32-aix5.a
+pkglib_LIBRARIES += libcoregrind-ppc32-aix5.a
 endif
 
 if VGCONF_PLATFORMS_INCLUDE_PPC64_AIX5
-pkglib_LIBRARIES += libcoregrind-ppc64-aix5.a libreplacemalloc_toolpreload-ppc64-aix5.a
+pkglib_LIBRARIES += libcoregrind-ppc64-aix5.a
 endif
 
 if VGCONF_PLATFORMS_INCLUDE_X86_DARWIN
-pkglib_LIBRARIES += libcoregrind-x86-darwin.a libreplacemalloc_toolpreload-x86-darwin.a
+pkglib_LIBRARIES += libcoregrind-x86-darwin.a
 endif
 
 if VGCONF_PLATFORMS_INCLUDE_AMD64_DARWIN
-pkglib_LIBRARIES += libcoregrind-amd64-darwin.a libreplacemalloc_toolpreload-amd64-darwin.a
+pkglib_LIBRARIES += libcoregrind-amd64-darwin.a
 endif
 
 #----------------------------------------------------------------------------
@@ -436,39 +436,29 @@ libcoregrind_amd64_darwin_a_CCASFLAGS = $(AM_CCASFLAGS_AMD64_DARWIN)
 # libreplacemalloc_toolpreload_<platform>.so
 #----------------------------------------------------------------------------
 
-libreplacemalloc_toolpreload_x86_linux_a_SOURCES = m_replacemalloc/vg_replace_malloc.c
-libreplacemalloc_toolpreload_x86_linux_a_CPPFLAGS = $(AM_CPPFLAGS_X86_LINUX)
-libreplacemalloc_toolpreload_x86_linux_a_CFLAGS = $(AM_CFLAGS_X86_LINUX) $(AM_CFLAGS_PIC)
+pkglib_LIBRARIES += libreplacemalloc_toolpreload-@VGCONF_ARCH_PRI@-@VGCONF_OS@.a
+if VGCONF_HAVE_PLATFORM_SEC
+pkglib_LIBRARIES += libreplacemalloc_toolpreload-@VGCONF_ARCH_SEC@-@VGCONF_OS@.a
+endif
 
-libreplacemalloc_toolpreload_amd64_linux_a_SOURCES = m_replacemalloc/vg_replace_malloc.c
-libreplacemalloc_toolpreload_amd64_linux_a_CPPFLAGS = $(AM_CPPFLAGS_AMD64_LINUX)
-libreplacemalloc_toolpreload_amd64_linux_a_CFLAGS = $(AM_CFLAGS_AMD64_LINUX) $(AM_CFLAGS_PIC)
+libreplacemalloc_toolpreload_@VGCONF_ARCH_PRI@_@VGCONF_OS@_a_SOURCES = \
+	m_replacemalloc/vg_replace_malloc.c
+libreplacemalloc_toolpreload_@VGCONF_ARCH_PRI@_@VGCONF_OS@_a_CPPFLAGS = \
+	$(AM_CPPFLAGS_@VGCONF_PLATFORM_PRI_CAPS@)
+libreplacemalloc_toolpreload_@VGCONF_ARCH_PRI@_@VGCONF_OS@_a_CFLAGS = \
+	$(AM_CFLAGS_@VGCONF_PLATFORM_PRI_CAPS@) $(AM_CFLAGS_PIC)
+if VGCONF_HAVE_PLATFORM_SEC
+libreplacemalloc_toolpreload_@VGCONF_ARCH_SEC@_@VGCONF_OS@_a_SOURCES = \
+	m_replacemalloc/vg_replace_malloc.c
+libreplacemalloc_toolpreload_@VGCONF_ARCH_SEC@_@VGCONF_OS@_a_CPPFLAGS = \
+	$(AM_CPPFLAGS_@VGCONF_PLATFORM_SEC_CAPS@)
+libreplacemalloc_toolpreload_@VGCONF_ARCH_SEC@_@VGCONF_OS@_a_CFLAGS = \
+	$(AM_CFLAGS_@VGCONF_PLATFORM_SEC_CAPS@) $(AM_CFLAGS_PIC)
+endif
 
-libreplacemalloc_toolpreload_ppc32_linux_a_SOURCES = m_replacemalloc/vg_replace_malloc.c
-libreplacemalloc_toolpreload_ppc32_linux_a_CPPFLAGS = $(AM_CPPFLAGS_PPC32_LINUX)
-libreplacemalloc_toolpreload_ppc32_linux_a_CFLAGS = $(AM_CFLAGS_PPC32_LINUX) $(AM_CFLAGS_PIC)
-
-libreplacemalloc_toolpreload_ppc64_linux_a_SOURCES = m_replacemalloc/vg_replace_malloc.c
-libreplacemalloc_toolpreload_ppc64_linux_a_CPPFLAGS = $(AM_CPPFLAGS_PPC64_LINUX)
-libreplacemalloc_toolpreload_ppc64_linux_a_CFLAGS = $(AM_CFLAGS_PPC64_LINUX) $(AM_CFLAGS_PIC)
-
-libreplacemalloc_toolpreload_ppc32_aix5_a_SOURCES = m_replacemalloc/vg_replace_malloc.c
-libreplacemalloc_toolpreload_ppc32_aix5_a_CPPFLAGS = $(AM_CPPFLAGS_PPC32_AIX5)
-libreplacemalloc_toolpreload_ppc32_aix5_a_CFLAGS = $(AM_CFLAGS_PPC32_AIX5) $(AM_CFLAGS_PIC)
+# Special AR for AIX.
 libreplacemalloc_toolpreload_ppc32_aix5_a_AR = $(AR) -X32 cru
-
-libreplacemalloc_toolpreload_ppc64_aix5_a_SOURCES = m_replacemalloc/vg_replace_malloc.c
-libreplacemalloc_toolpreload_ppc64_aix5_a_CPPFLAGS = $(AM_CPPFLAGS_PPC64_AIX5)
-libreplacemalloc_toolpreload_ppc64_aix5_a_CFLAGS = $(AM_CFLAGS_PPC64_AIX5) $(AM_CFLAGS_PIC)
 libreplacemalloc_toolpreload_ppc64_aix5_a_AR = $(AR) -X64 cru
-
-libreplacemalloc_toolpreload_x86_darwin_a_SOURCES = m_replacemalloc/vg_replace_malloc.c
-libreplacemalloc_toolpreload_x86_darwin_a_CPPFLAGS = $(AM_CPPFLAGS_X86_DARWIN)
-libreplacemalloc_toolpreload_x86_darwin_a_CFLAGS = $(AM_CFLAGS_X86_DARWIN) $(AM_CFLAGS_PIC)
-
-libreplacemalloc_toolpreload_amd64_darwin_a_SOURCES = m_replacemalloc/vg_replace_malloc.c
-libreplacemalloc_toolpreload_amd64_darwin_a_CPPFLAGS = $(AM_CPPFLAGS_AMD64_DARWIN)
-libreplacemalloc_toolpreload_amd64_darwin_a_CFLAGS = $(AM_CFLAGS_AMD64_DARWIN) $(AM_CFLAGS_PIC)
 
 m_dispatch/dispatch-x86-linux.S:	 libvex_guest_offsets.h
 m_dispatch/dispatch-amd64-linux.S:	 libvex_guest_offsets.h

@@ -7,6 +7,10 @@ include $(top_srcdir)/Makefile.all.am
 include $(top_srcdir)/Makefile.flags.am
 include $(top_srcdir)/Makefile.core-tool.am
 
+#----------------------------------------------------------------------------
+# Basics, flags
+#----------------------------------------------------------------------------
+
 AM_CPPFLAGS_@VGCONF_PLATFORM_PRI_CAPS@ += \
  	-I$(top_srcdir)/coregrind \
 	-DVG_LIBDIR="\"$(valdir)"\" \
@@ -81,6 +85,21 @@ valgrind_SOURCES = \
 	m_debuglog.c
 endif
 
+valgrind_CPPFLAGS  = $(AM_CPPFLAGS_PRI)
+valgrind_CFLAGS    = $(AM_CFLAGS_PRI)
+valgrind_CCASFLAGS = $(AM_CCASFLAGS_PRI)
+valgrind_LDFLAGS   = $(AM_CFLAGS_PRI)
+
+no_op_client_for_valgrind_SOURCES = no_op_client_for_valgrind.c
+no_op_client_for_valgrind_CPPFLAGS  = $(AM_CPPFLAGS_PRI)
+no_op_client_for_valgrind_CFLAGS    = $(AM_CFLAGS_PRI)
+no_op_client_for_valgrind_CCASFLAGS = $(AM_CCASFLAGS_PRI)
+no_op_client_for_valgrind_LDFLAGS   = $(AM_CFLAGS_PRI)
+
+#----------------------------------------------------------------------------
+# Darwin Mach stuff
+#----------------------------------------------------------------------------
+
 # Mach RPC interface definitions
 # Here are some more .defs files that are not used, but could be in the
 # future:
@@ -115,17 +134,6 @@ mach_files = $(addprefix /usr/include/mach/,$(mach_defs))
 
 $(mach_srcs) $(mach_hdrs): $(mach_files)
 	(cd m_mach && mig $(mach_files))
-
-valgrind_CPPFLAGS  = $(AM_CPPFLAGS_PRI)
-valgrind_CFLAGS    = $(AM_CFLAGS_PRI)
-valgrind_CCASFLAGS = $(AM_CCASFLAGS_PRI)
-valgrind_LDFLAGS   = $(AM_CFLAGS_PRI)
-
-no_op_client_for_valgrind_SOURCES = no_op_client_for_valgrind.c
-no_op_client_for_valgrind_CPPFLAGS  = $(AM_CPPFLAGS_PRI)
-no_op_client_for_valgrind_CFLAGS    = $(AM_CFLAGS_PRI)
-no_op_client_for_valgrind_CCASFLAGS = $(AM_CCASFLAGS_PRI)
-no_op_client_for_valgrind_LDFLAGS   = $(AM_CFLAGS_PRI)
 
 #----------------------------------------------------------------------------
 # Headers
@@ -217,16 +225,16 @@ noinst_HEADERS = \
 	m_syswrap/priv_syswrap-main.h \
 	m_ume/priv_ume.h
 
+#----------------------------------------------------------------------------
+# libcoregrind_<platform>.so
+#----------------------------------------------------------------------------
+
 BUILT_SOURCES = 
 CLEANFILES = 
 if VGCONF_OS_IS_DARWIN
 BUILT_SOURCES += $(COREGRIND_DARWIN_BUILT_SOURCES)
 CLEANFILES    += $(COREGRIND_DARWIN_BUILT_SOURCES)
 endif
-
-#----------------------------------------------------------------------------
-# libcoregrind_<platform>.so
-#----------------------------------------------------------------------------
 
 COREGRIND_SOURCES_COMMON = \
 	m_commandline.c \
@@ -432,6 +440,28 @@ libcoregrind_amd64_darwin_a_CPPFLAGS = $(AM_CPPFLAGS_AMD64_DARWIN)
 libcoregrind_amd64_darwin_a_CFLAGS = $(AM_CFLAGS_AMD64_DARWIN)
 libcoregrind_amd64_darwin_a_CCASFLAGS = $(AM_CCASFLAGS_AMD64_DARWIN)
 
+
+m_dispatch/dispatch-x86-linux.S:	 libvex_guest_offsets.h
+m_dispatch/dispatch-amd64-linux.S:	 libvex_guest_offsets.h
+m_dispatch/dispatch-ppc32-linux.S:	 libvex_guest_offsets.h
+m_dispatch/dispatch-ppc64-linux.S:	 libvex_guest_offsets.h
+m_dispatch/dispatch-ppc32-aix5.S:	 libvex_guest_offsets.h
+m_dispatch/dispatch-ppc64-aix5.S:	 libvex_guest_offsets.h
+m_dispatch/dispatch-x86-darwin.S:	 libvex_guest_offsets.h
+m_dispatch/dispatch-amd64-darwin.S:	 libvex_guest_offsets.h
+m_syswrap/syscall-x86-linux.S:		 libvex_guest_offsets.h
+m_syswrap/syscall-amd64-linux.S:	 libvex_guest_offsets.h
+m_syswrap/syscall-ppc32-linux.S:	 libvex_guest_offsets.h
+m_syswrap/syscall-ppc64-linux.S:	 libvex_guest_offsets.h
+m_syswrap/syscall-ppc32-aix5.S:		 libvex_guest_offsets.h
+m_syswrap/syscall-ppc64-aix5.S:		 libvex_guest_offsets.h
+m_syswrap/syscall-x86-darwin.S:		 libvex_guest_offsets.h
+m_syswrap/syscall-amd64-darwin.S:	 libvex_guest_offsets.h
+m_syswrap/syswrap-main.c: 		 libvex_guest_offsets.h
+
+libvex_guest_offsets.h:
+	$(MAKE) -C @VEX_DIR@ CC="$(CC)" AR="$(AR)" pub/libvex_guest_offsets.h
+
 #----------------------------------------------------------------------------
 # libreplacemalloc_toolpreload_<platform>.so
 #----------------------------------------------------------------------------
@@ -459,27 +489,6 @@ endif
 # Special AR for AIX.
 libreplacemalloc_toolpreload_ppc32_aix5_a_AR = $(AR) -X32 cru
 libreplacemalloc_toolpreload_ppc64_aix5_a_AR = $(AR) -X64 cru
-
-m_dispatch/dispatch-x86-linux.S:	 libvex_guest_offsets.h
-m_dispatch/dispatch-amd64-linux.S:	 libvex_guest_offsets.h
-m_dispatch/dispatch-ppc32-linux.S:	 libvex_guest_offsets.h
-m_dispatch/dispatch-ppc64-linux.S:	 libvex_guest_offsets.h
-m_dispatch/dispatch-ppc32-aix5.S:	 libvex_guest_offsets.h
-m_dispatch/dispatch-ppc64-aix5.S:	 libvex_guest_offsets.h
-m_dispatch/dispatch-x86-darwin.S:	 libvex_guest_offsets.h
-m_dispatch/dispatch-amd64-darwin.S:	 libvex_guest_offsets.h
-m_syswrap/syscall-x86-linux.S:		 libvex_guest_offsets.h
-m_syswrap/syscall-amd64-linux.S:	 libvex_guest_offsets.h
-m_syswrap/syscall-ppc32-linux.S:	 libvex_guest_offsets.h
-m_syswrap/syscall-ppc64-linux.S:	 libvex_guest_offsets.h
-m_syswrap/syscall-ppc32-aix5.S:		 libvex_guest_offsets.h
-m_syswrap/syscall-ppc64-aix5.S:		 libvex_guest_offsets.h
-m_syswrap/syscall-x86-darwin.S:		 libvex_guest_offsets.h
-m_syswrap/syscall-amd64-darwin.S:	 libvex_guest_offsets.h
-m_syswrap/syswrap-main.c: 		 libvex_guest_offsets.h
-
-libvex_guest_offsets.h:
-	$(MAKE) -C @VEX_DIR@ CC="$(CC)" AR="$(AR)" pub/libvex_guest_offsets.h
 
 #----------------------------------------------------------------------------
 # vgpreload_core_<platform>.so

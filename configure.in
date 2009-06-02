@@ -343,6 +343,12 @@ fi
 # -VGP_$(VGCONF_ARCH_PRI)_$(VGCONF_OS).
 AC_SUBST(VGCONF_ARCH_PRI)
 
+# VGCONF_ARCH_SEC is the arch for the secondary build target, eg. "x86".
+# It is passed in to compilation of many C files via -VGA_$(VGCONF_ARCH_SEC)
+# and -VGP_$(VGCONF_ARCH_SEC)_$(VGCONF_OS), if there is a secondary target.
+# It is empty if there is no secondary target.
+AC_SUBST(VGCONF_ARCH_SEC)
+
 # VGCONF_PLATFORM_PRI_CAPS is the primary build target, eg. "AMD64_LINUX".
 # The entire system, including regression and performance tests, will be
 # built for this target.  The "_CAPS" indicates that the name is in capital
@@ -367,6 +373,7 @@ AC_MSG_CHECKING([for a supported CPU/OS combination])
 case "$ARCH_MAX-$VGCONF_OS" in
      x86-linux)
         VGCONF_ARCH_PRI="x86"
+        VGCONF_ARCH_SEC=""
 	VGCONF_PLATFORM_PRI_CAPS="X86_LINUX"
 	VGCONF_PLATFORM_SEC_CAPS=""
         valt_load_address_normal="0x38000000"
@@ -376,14 +383,17 @@ case "$ARCH_MAX-$VGCONF_OS" in
      amd64-linux)
 	if test x$vg_cv_only64bit = xyes; then
            VGCONF_ARCH_PRI="amd64"
+           VGCONF_ARCH_SEC=""
 	   VGCONF_PLATFORM_PRI_CAPS="AMD64_LINUX"
 	   VGCONF_PLATFORM_SEC_CAPS=""
 	elif test x$vg_cv_only32bit = xyes; then
 	   VGCONF_ARCH_PRI="x86"
+           VGCONF_ARCH_SEC=""
 	   VGCONF_PLATFORM_PRI_CAPS="X86_LINUX"
 	   VGCONF_PLATFORM_SEC_CAPS=""
 	else
            VGCONF_ARCH_PRI="amd64"
+           VGCONF_ARCH_SEC="x86"
 	   VGCONF_PLATFORM_PRI_CAPS="AMD64_LINUX"
 	   VGCONF_PLATFORM_SEC_CAPS="X86_LINUX"
 	fi
@@ -393,6 +403,7 @@ case "$ARCH_MAX-$VGCONF_OS" in
 	;;
      ppc32-linux)
         VGCONF_ARCH_PRI="ppc32"
+        VGCONF_ARCH_SEC=""
 	VGCONF_PLATFORM_PRI_CAPS="PPC32_LINUX"
 	VGCONF_PLATFORM_SEC_CAPS=""
         valt_load_address_normal="0x38000000"
@@ -402,14 +413,17 @@ case "$ARCH_MAX-$VGCONF_OS" in
      ppc64-aix5)
 	if test x$vg_cv_only64bit = xyes; then
            VGCONF_ARCH_PRI="ppc64"
+           VGCONF_ARCH_SEC=""
 	   VGCONF_PLATFORM_PRI_CAPS="PPC64_AIX5"
 	   VGCONF_PLATFORM_SEC_CAPS=""
 	elif test x$vg_cv_only32bit = xyes; then
 	   VGCONF_ARCH_PRI="ppc32"
+           VGCONF_ARCH_SEC=""
 	   VGCONF_PLATFORM_PRI_CAPS="PPC32_AIX5"
 	   VGCONF_PLATFORM_SEC_CAPS=""
 	else
 	   VGCONF_ARCH_PRI="ppc64"
+           VGCONF_ARCH_SEC="ppc32"
 	   VGCONF_PLATFORM_PRI_CAPS="PPC64_AIX5"
 	   VGCONF_PLATFORM_SEC_CAPS="PPC32_AIX5"
 	fi
@@ -420,15 +434,17 @@ case "$ARCH_MAX-$VGCONF_OS" in
      ppc64-linux)
 	if test x$vg_cv_only64bit = xyes; then
 	   VGCONF_ARCH_PRI="ppc64"
+           VGCONF_ARCH_SEC=""
 	   VGCONF_PLATFORM_PRI_CAPS="PPC64_LINUX"
 	   VGCONF_PLATFORM_SEC_CAPS=""
 	elif test x$vg_cv_only32bit = xyes; then
 	   VGCONF_ARCH_PRI="ppc32"
+           VGCONF_ARCH_SEC=""
 	   VGCONF_PLATFORM_PRI_CAPS="PPC32_LINUX"
 	   VGCONF_PLATFORM_SEC_CAPS=""
-	   VGCONF_ARCH_PRI="ppc32"
 	else
 	   VGCONF_ARCH_PRI="ppc64"
+           VGCONF_ARCH_SEC="ppc32"
 	   VGCONF_PLATFORM_PRI_CAPS="PPC64_LINUX"
 	   VGCONF_PLATFORM_SEC_CAPS="PPC32_LINUX"
 	fi
@@ -438,6 +454,7 @@ case "$ARCH_MAX-$VGCONF_OS" in
 	;;
      x86-darwin)
         VGCONF_ARCH_PRI="x86"
+        VGCONF_ARCH_SEC=""
 	VGCONF_PLATFORM_PRI_CAPS="X86_DARWIN"
 	VGCONF_PLATFORM_SEC_CAPS=""
         valt_load_address_normal="0x0"
@@ -447,15 +464,18 @@ case "$ARCH_MAX-$VGCONF_OS" in
      amd64-darwin)
 	if test x$vg_cv_only64bit = xyes; then
            VGCONF_ARCH_PRI="amd64"
+           VGCONF_ARCH_SEC=""
 	   VGCONF_PLATFORM_PRI_CAPS="AMD64_DARWIN"
 	   VGCONF_PLATFORM_SEC_CAPS=""
 	elif test x$vg_cv_only32bit = xyes; then
            VGCONF_ARCH_PRI="x86"
+           VGCONF_ARCH_SEC=""
 	   VGCONF_PLATFORM_PRI_CAPS="X86_DARWIN"
 	   VGCONF_PLATFORM_SEC_CAPS=""
 	   VGCONF_ARCH_PRI_CAPS="x86"
 	else
            VGCONF_ARCH_PRI="amd64"
+           VGCONF_ARCH_SEC="x86"
 	   VGCONF_PLATFORM_PRI_CAPS="AMD64_DARWIN"
 	   VGCONF_PLATFORM_SEC_CAPS="X86_DARWIN"
 	fi
@@ -465,6 +485,7 @@ case "$ARCH_MAX-$VGCONF_OS" in
 	;;
     *)
         VGCONF_ARCH_PRI="unknown"
+        VGCONF_ARCH_SEC="unknown"
 	VGCONF_PLATFORM_PRI_CAPS="UNKNOWN"
 	VGCONF_PLATFORM_SEC_CAPS="UNKNOWN"
         AC_MSG_RESULT([no (${ARCH_MAX}-${VGCONF_OS})])
@@ -1911,6 +1932,7 @@ cat<<EOF
 
          Maximum build arch: ${ARCH_MAX}
          Primary build arch: ${VGCONF_ARCH_PRI}
+       Secondary build arch: ${VGCONF_ARCH_SEC}
                    Build OS: ${VGCONF_OS}
        Primary build target: ${VGCONF_PLATFORM_PRI_CAPS}
      Secondary build target: ${VGCONF_PLATFORM_SEC_CAPS}

@@ -41,12 +41,12 @@
 #  error This file should be included in AIX5 builds only.
 #endif
 
+// WARNING: note that this file, unlike other vki-scnums-PLATFORM.h files,
+// isn't suitable for inclusion in asm files.
+
 //--------------------------------------------------------------
 // Syscalls for AIX 5.2 running on ppc32
 //--------------------------------------------------------------
-
-/* Make it possible to include this file in assembly sources. */
-#if !defined(VG_IN_ASSEMBLY_SOURCE)
 
 /* This is the initial value for a syscall number, when we don't
    know what it is. */
@@ -1607,8 +1607,6 @@ extern Int VG_(aix5_NR_FAKE_SIGRETURN);
 #define __NR_gettid          9999
 #define __NR_getpgrp         9999
 #define __NR_geteuid         9999
-
-#endif /* !defined(VG_IN_ASSEMBLY_SOURCE) */
 
 
 #endif /* __VKI_SCNUMS_AIX5_H */

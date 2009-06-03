@@ -2106,17 +2106,8 @@ PRE(sys_exit)
 
 PRE(sys_ni_syscall)
 {
-   PRINT("unimplemented (by the kernel) syscall %ld! (ni_syscall)\n",
-// Nb: AIX5 is handled in syswrap-aix5.c.
-// DDD: make this generic
-#if defined(VGO_linux)
-      SYSNO
-#elif defined(VGO_darwin)
-      VG_DARWIN_SYSNO_PRINT(SYSNO)
-#else
-#  error Unknown OS
-#endif
-   );
+   PRINT("unimplemented (by the kernel) syscall: %s! (ni_syscall)\n",
+      VG_SYSNUM_STRING(SYSNO));
    PRE_REG_READ0(long, "ni_syscall");
    SET_STATUS_Failure( VKI_ENOSYS );
 }

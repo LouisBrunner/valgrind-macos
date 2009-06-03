@@ -1,11 +1,12 @@
-#include "vki/vki-scnums-darwin.h"
-#include "pub_tool_vkiscnums.h"
-
 #include <assert.h>
 #include <errno.h>
 #include <fcntl.h>
 #include <stdio.h>
 #include <stdlib.h>
+
+#include "pub_tool_basics.h"
+#include "vki/vki-scnums-darwin.h"
+#include "pub_tool_vkiscnums.h"
 
 // Since we use vki_unistd.h, we can't include <unistd.h>.  So we have to
 // declare this ourselves.
@@ -17,9 +18,10 @@ extern int syscall (int __sysno, ...);
 
 #define GO(__NR_xxx, s) \
    fprintf(stderr, "-----------------------------------------------------\n"  \
-                   "%3d:%20s %s\n"                                            \
+                   "x%lx(%d):%20s %s\n"                                       \
                    "-----------------------------------------------------\n", \
-                   VG_DARWIN_SYSNO_PRINT(__NR_xxx), #__NR_xxx, s);
+                   (unsigned long)__NR_xxx,                                   \
+                   VG_DARWIN_SYSNO_FOR_KERNEL(__NR_xxx), #__NR_xxx, s);
 
 #define SY(__NR_xxx, args...)    res = syscall(__NR_xxx, ##args);
 

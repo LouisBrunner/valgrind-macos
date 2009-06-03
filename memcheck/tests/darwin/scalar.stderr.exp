@@ -1,11 +1,11 @@
 -----------------------------------------------------
-  1:           __NR_exit below
+x2000001(1):           __NR_exit below
 -----------------------------------------------------
 -----------------------------------------------------
-  2:           __NR_fork other
+x2000002(2):           __NR_fork other
 -----------------------------------------------------
 -----------------------------------------------------
-  3:           __NR_read 1+3s 1m
+x2000003(3):           __NR_read 1+3s 1m
 -----------------------------------------------------
 Syscall param (syscallno) contains uninitialised byte(s)
    ...
@@ -23,7 +23,7 @@ Syscall param read(buf) points to unaddressable byte(s)
    ...
  Address 0x........ is not stack'd, malloc'd or (recently) free'd
 -----------------------------------------------------
-  4:          __NR_write 3s 1m
+x2000004(4):          __NR_write 3s 1m
 -----------------------------------------------------
 
 Syscall param write(fd) contains uninitialised byte(s)
@@ -39,7 +39,7 @@ Syscall param write(buf) points to unaddressable byte(s)
    ...
  Address 0x........ is not stack'd, malloc'd or (recently) free'd
 -----------------------------------------------------
-105:     __NR_setsockopt 5s 1m
+x2000069(105):     __NR_setsockopt 5s 1m
 -----------------------------------------------------
 
 Syscall param setsockopt(s) contains uninitialised byte(s)
@@ -61,7 +61,7 @@ Syscall param socketcall.setsockopt(optval) points to unaddressable byte(s)
    ...
  Address 0x........ is not stack'd, malloc'd or (recently) free'd
 -----------------------------------------------------
-118:     __NR_getsockopt 5s 1m
+x2000076(118):     __NR_getsockopt 5s 1m
 -----------------------------------------------------
 
 Syscall param getsockopt(s) contains uninitialised byte(s)
@@ -85,7 +85,7 @@ Syscall param socketcall.getsockopt(optlen) points to unaddressable byte(s)
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (scalar.c:13)
 -----------------------------------------------------
-169:          __NR_csops 4s 1m
+x20000a9(169):          __NR_csops 4s 1m
 -----------------------------------------------------
 
 Syscall param csops(pid) contains uninitialised byte(s)
@@ -104,7 +104,7 @@ Syscall param csops(addr) points to unaddressable byte(s)
    ...
  Address 0x........ is not stack'd, malloc'd or (recently) free'd
 -----------------------------------------------------
-265:         __NR_shmget 3s 0m
+x2000109(265):         __NR_shmget 3s 0m
 -----------------------------------------------------
 
 Syscall param shmget(key) contains uninitialised byte(s)
@@ -116,7 +116,7 @@ Syscall param shmget(size) contains uninitialised byte(s)
 Syscall param shmget(shmflg) contains uninitialised byte(s)
    ...
 -----------------------------------------------------
-268:       __NR_sem_open 2s 1m
+x200010c(268):       __NR_sem_open 2s 1m
 -----------------------------------------------------
 
 Syscall param sem_open(name) contains uninitialised byte(s)
@@ -129,7 +129,7 @@ Syscall param sem_open(name) points to unaddressable byte(s)
    ...
  Address 0x........ is not stack'd, malloc'd or (recently) free'd
 -----------------------------------------------------
-268:       __NR_sem_open (4-args) 2s 0m
+x200010c(268):       __NR_sem_open (4-args) 2s 0m
 -----------------------------------------------------
 
 Syscall param sem_open(mode) contains uninitialised byte(s)
@@ -138,13 +138,13 @@ Syscall param sem_open(mode) contains uninitialised byte(s)
 Syscall param sem_open(value) contains uninitialised byte(s)
    ...
 -----------------------------------------------------
-269:      __NR_sem_close 1s 0m
+x200010d(269):      __NR_sem_close 1s 0m
 -----------------------------------------------------
 
 Syscall param sem_close(sem) contains uninitialised byte(s)
    ...
 -----------------------------------------------------
-270:     __NR_sem_unlink 1s 1m
+x200010e(270):     __NR_sem_unlink 1s 1m
 -----------------------------------------------------
 
 Syscall param sem_unlink(name) contains uninitialised byte(s)
@@ -154,13 +154,13 @@ Syscall param sem_unlink(name) points to unaddressable byte(s)
    ...
  Address 0x........ is not stack'd, malloc'd or (recently) free'd
 -----------------------------------------------------
-273:       __NR_sem_post 1s 0m
+x2000111(273):       __NR_sem_post 1s 0m
 -----------------------------------------------------
 
 Syscall param sem_post(sem) contains uninitialised byte(s)
    ...
 -----------------------------------------------------
-275:       __NR_sem_init 3s 1m
+x2000113(275):       __NR_sem_init 3s 1m
 -----------------------------------------------------
 
 Syscall param sem_init(sem) contains uninitialised byte(s)
@@ -176,7 +176,7 @@ Syscall param sem_init(sem) points to unaddressable byte(s)
    ...
  Address 0x........ is not stack'd, malloc'd or (recently) free'd
 -----------------------------------------------------
-276:    __NR_sem_destroy 1s 1m
+x2000114(276):    __NR_sem_destroy 1s 1m
 -----------------------------------------------------
 
 Syscall param sem_destroy(sem) contains uninitialised byte(s)
@@ -186,22 +186,23 @@ Syscall param sem_destroy(sem) points to unaddressable byte(s)
    ...
  Address 0x........ is not stack'd, malloc'd or (recently) free'd
 -----------------------------------------------------
-420:__NR_sem_wait_nocancel 1s 0m
+x20001a4(420):__NR_sem_wait_nocancel 1s 0m
 -----------------------------------------------------
 
 Syscall param sem_wait_nocancel(sem) contains uninitialised byte(s)
    ...
 -----------------------------------------------------
-9999:                9999 1e
+x270f(9999):                9999 1e
 -----------------------------------------------------
-WARNING: unhandled syscall: 33564431
-           a.k.a.: 9999
+WARNING: unhandled syscall: unix:9999
+   at 0x........: syscall (in /...libc...)
+   by 0x........: (below main)
 You may be able to write your own handler.
 Read the file README_MISSING_SYSCALL_OR_IOCTL.
 Nevertheless we consider this a bug.  Please report
 it at http://valgrind.org/support/bug_reports.html.
 -----------------------------------------------------
-  1:           __NR_exit 1s 0m
+x2000001(1):           __NR_exit 1s 0m
 -----------------------------------------------------
 
 Syscall param exit(status) contains uninitialised byte(s)

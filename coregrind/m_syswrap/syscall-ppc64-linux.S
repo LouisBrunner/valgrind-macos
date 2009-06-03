@@ -28,7 +28,7 @@
 */
 
 #include "pub_core_basics_asm.h"
-#include "pub_core_vkiscnums.h"
+#include "pub_core_vkiscnums_asm.h"
 #include "libvex_guest_offsets.h"
 		
 

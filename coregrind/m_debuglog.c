@@ -400,10 +400,10 @@ static UInt local_sys_getpid ( void )
 
 #elif defined(VGP_x86_darwin)
 
-/* Using _SYSNO_INDEX rather than _SYSNO_NUM assumes that these are
-   Unix-class syscalls (which they are).  Unfortunately _SYSNO_NUM
-   involves a C-style "cond ? :" expression which doesn't impress the
-   Darwin assembler very much. */
+/* We would use VG_DARWIN_SYSNO_TO_KERNEL instead of VG_DARWIN_SYSNO_INDEX
+   except that the former has a C ternary ?: operator which isn't valid in
+   asm code.  Both macros give the same results for Unix-class syscalls (which
+   these all are, as identified by the use of 'int 0x80'). */
 __attribute__((noinline))
 static UInt local_sys_write_stderr ( HChar* buf, Int n )
 {
@@ -454,7 +454,7 @@ static UInt local_sys_write_stderr ( HChar* buf, Int n )
       "movq  $2, %%rdi\n"    /* push stderr */
       "movq  %1, %%rsi\n"    /* push buf */
       "movl  %2, %%edx\n"    /* push n */
-      "movl  $"VG_STRINGIFY(VG_DARWIN_SYSNO_NUM(__NR_write_nocancel))
+      "movl  $"VG_STRINGIFY(VG_DARWIN_SYSNO_FOR_KERNEL(__NR_write_nocancel))
              ", %%eax\n"
       "syscall\n"            /* write(stderr, buf, n) */
       "jnc   1f\n"           /* jump if no error */
@@ -471,7 +471,7 @@ static UInt local_sys_getpid ( void )
 {
    UInt __res;
    __asm__ volatile (
-      "movl $"VG_STRINGIFY(VG_DARWIN_SYSNO_NUM(__NR_getpid))", %%eax\n"
+      "movl $"VG_STRINGIFY(VG_DARWIN_SYSNO_FOR_KERNEL(__NR_getpid))", %%eax\n"
       "syscall\n"          /* getpid() */
       "movl %%eax, %0\n"   /* set __res = eax */
       : "=mr" (__res)

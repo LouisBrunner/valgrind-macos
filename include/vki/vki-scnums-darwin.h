@@ -34,12 +34,29 @@
 
 // osfmk/mach/i386/syscall_sw.h
 
-// x86_64's syscall numbering system is used for all architectures. 
-// Don't pass __NR_something directly to any syscall instruction.
+// There are two syscall number encodings in Darwin.
+//
+// The 64-bit encoding is that the top 8-bits are the syscall class.  The low
+// 24 are the syscall number (index) within that class.
+//
+// The 32-bit encoding is that the syscall number (index) is stored as-is and
+// the syscall class is encoded as the argument to the 'int' instruction used
+// to trigger the syscall:
+// - 0x80: Unix
+// - 0x81: Mach
+// - 0x82: Machine-dependent
+// - 0x83: Diagnostic
+// Furthermore, just to make life interesting, for Mach traps the number is
+// negative.
+//
+// Within Valgrind we only use the 64-bit encoding -- on 32-bit systems, we
+// convert any syscall number to 64-bit encoding when we receive it, and
+// convert back with VG_DARWIN_SYSNO_FOR_KERNEL when passing any syscall
+// number back to the kernel (__NR_something shouldn't be passed directly to
+// the kernel).
+//
 // Hack: x86 `int $0x80` (unix, 64-bit result) are special.
-
-// Encoding: the top 8-bits are the syscall class.  The low 24 are the
-// syscall number (index) within that class.
+// [I haven't worked out why... --njn]
 
 #define VG_DARWIN_SYSCALL_CLASS_SHIFT     24
 #define VG_DARWIN_SYSCALL_CLASS_MASK      (0xFF << VG_DARWIN_SYSCALL_CLASS_SHIFT)
@@ -51,6 +68,7 @@
 #define VG_DARWIN_SYSCALL_CLASS_MDEP      3       /* Machine-dependent */
 #define VG_DARWIN_SYSCALL_CLASS_DIAG      4       /* Diagnostics */
 
+// Macros for encoding syscall numbers in the 64-bit encoding scheme.
 #define VG_DARWIN_SYSCALL_CONSTRUCT_MACH(syscall_number) \
     ((VG_DARWIN_SYSCALL_CLASS_MACH << VG_DARWIN_SYSCALL_CLASS_SHIFT) | \
      (VG_DARWIN_SYSCALL_NUMBER_MASK & (syscall_number)))
@@ -67,6 +85,30 @@
     ((VG_DARWIN_SYSCALL_CLASS_DIAG << VG_DARWIN_SYSCALL_CLASS_SHIFT) | \
      (VG_DARWIN_SYSCALL_NUMBER_MASK & (syscall_number)))
 
+
+/* Macros for decoding syscall numbers from the 64-bit encoding scheme. */
+#define VG_DARWIN_SYSNO_INDEX(sysno) ((sysno) & VG_DARWIN_SYSCALL_NUMBER_MASK)
+#define VG_DARWIN_SYSNO_CLASS(sysno) ((sysno) >> VG_DARWIN_SYSCALL_CLASS_SHIFT)
+
+
+/* Macros for converting syscall numbers to the form expected by the kernel.*/
+#if defined(VGA_x86)
+   // This converts the 64-bit syscall number encoding, which we use
+   // throughout Valgrind, into the 32-bit syscall number encoding, which is
+   // suitable for passing to the (32-bit) kernel.
+#  define VG_DARWIN_SYSNO_FOR_KERNEL(sysno) \
+    ((VG_DARWIN_SYSNO_CLASS(sysno) == VG_DARWIN_SYSCALL_CLASS_MACH) \
+    ? -VG_DARWIN_SYSNO_INDEX(sysno) \
+    :  VG_DARWIN_SYSNO_INDEX(sysno) \
+    )
+
+#elif defined(VGA_amd64)
+   // For 64-bit systems, we don't need to do anything to the syscall number.
+#  define VG_DARWIN_SYSNO_FOR_KERNEL(sysno) (sysno)
+
+#else
+#  error Unknown architecture
+#endif
 
 
 // mdep syscalls

@@ -1,6 +1,6 @@
 
 /*--------------------------------------------------------------------*/
-/*--- Syscall numbers and related operations. pub_tool_vkiscnums.h ---*/
+/*--- asm-only vkiscnums stuff.           pub_tool_vkiscnums_asm.h ---*/
 /*--------------------------------------------------------------------*/
 
 /*
@@ -30,45 +30,35 @@
    The GNU General Public License is contained in the file COPYING.
 */
 
-#ifndef __PUB_TOOL_VKISCNUMS_H
-#define __PUB_TOOL_VKISCNUMS_H
+#ifndef __PUB_TOOL_VKISCNUMS_ASM_H
+#define __PUB_TOOL_VKISCNUMS_ASM_H
 
-#include "pub_tool_vkiscnums_asm.h"
+#if defined(VGP_x86_linux)
+#  include "vki/vki-scnums-x86-linux.h"
 
+#elif defined(VGP_amd64_linux)
+#  include "vki/vki-scnums-amd64-linux.h"
 
-// This converts a syscall number into a string, suitable for printing.  It is
-// needed because some platforms (AIX, Darwin) munge sysnums in various ways.
-// It is used in places where the sycall name will be printed alongside.
-extern Char* VG_(sysnum_string)      (Word sysnum, SizeT n_buf, Char* buf);
+#elif defined(VGP_ppc32_linux)
+#  include "vki/vki-scnums-ppc32-linux.h"
 
-// This is like VG_(sysnum_string), but prints extra info if needed.  It is
-// called in places where the syscall name will *not* be printed alongside.
-extern Char* VG_(sysnum_string_extra)(Word sysnum, SizeT n_buf, Char* buf);
+#elif defined(VGP_ppc64_linux)
+#  include "vki/vki-scnums-ppc64-linux.h"
 
-// Macros that make the above functions easier to use by declaring a local
-// buffer.
-#define VG_SYSNUM_STRING(sysnum) \
-   ({ Char qq_zz_buf[32]; VG_(sysnum_string)(sysnum, 32, qq_zz_buf); })
-#define VG_SYSNUM_STRING_EXTRA(sysnum) \
-   ({ Char qq_zz_buf[64]; VG_(sysnum_string_extra)(sysnum, 64, qq_zz_buf); })
+#elif defined(VGP_ppc32_aix5) || defined(VGP_ppc64_aix5)
+   // Nothing:  vki-scnums-aix5.h only contains stuff suitable for inclusion
+   // in C files, not asm files.  So unlike all the other
+   // vki-scnums-PLATFORM.h files, we include it in pub_tool_vkiscnums.h
+   // rather than in include/pub_tool_vkiscnums_asm.h.
 
-
-#if defined(VGO_linux)
-   // Nothing.
-
-#elif defined(VGO_aix5)
-   // See the AIX5-specific case in pub_tool_vkiscnums_asm.h for an
-   // explanation of why we include this here rather than there.
-#  include "vki/vki-scnums-aix5.h"
-
-#elif defined(VGO_darwin)
-   // Nothing.
+#elif defined(VGP_x86_darwin) || defined(VGP_amd64_darwin)
+#  include "vki/vki-scnums-darwin.h"
 
 #else
-#  error Unknown OS
+#  error Unknown platform
 #endif
 
-#endif   // __PUB_TOOL_VKISCNUMS_H
+#endif   // __PUB_TOOL_VKISCNUMS_ASM_H
 
 /*--------------------------------------------------------------------*/
 /*--- end                                                          ---*/

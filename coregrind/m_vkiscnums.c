@@ -30,6 +30,9 @@
 */
 
 #include "pub_core_basics.h"
+#include "pub_core_libcassert.h"
+#include "pub_core_libcprint.h"
+
 #include "pub_core_vkiscnums.h"     /* self */
 
 /* We have pub_{core,tool}_vkiscnums.h.  This is the matching implementation
@@ -52,7 +55,25 @@
    those variables.
 */
 
-#if defined(VGO_aix5)
+//---------------------------------------------------------------------------
+#if defined(VGO_linux)
+//---------------------------------------------------------------------------
+
+Char* VG_(sysnum_string)(Word sysnum, SizeT n_buf, Char* buf)
+{
+   VG_(snprintf)(buf, n_buf, "%3ld", sysnum);
+   return buf;
+}
+
+Char* VG_(sysnum_string_extra)(Word sysnum, SizeT n_buf, Char* buf)
+{
+   return VG_(sysnum_string)(sysnum, n_buf, buf);
+}
+
+//---------------------------------------------------------------------------
+#elif defined(VGO_aix5)
+//---------------------------------------------------------------------------
+
 /* These ones are for AIX 5.2. */
 Int VG_(aix5_NR_utrchook_sc) = __NR_AIX5_UNKNOWN;
 Int VG_(aix5_NR_thread_create) = __NR_AIX5_UNKNOWN;
@@ -575,12 +596,24 @@ static Int    bindings_used = 0;
 static Int    bindings_sysno[N_BINDINGS];
 static UChar* bindings_sysname[N_BINDINGS];
 
-UChar* VG_(aix5_sysno_to_sysname)( Int sysno ) {
+Char* VG_(sysnum_string)(Word sysnum, SizeT n_buf, Char* buf)
+{
+   VG_(snprintf)(buf, n_buf, "%3ld", sysnum);
+   return buf;
+}
+
+Char* VG_(sysnum_string_extra)(Word sysnum, SizeT n_buf, Char* buf)
+{
    Int i;
-   for (i = 0; i < bindings_used; i++)
-      if (bindings_sysno[i] == sysno)
-         return bindings_sysname[i];
-   return "(unknown name)";
+   Char* name = "(unknown name)";
+   for (i = 0; i < bindings_used; i++) {
+      if (bindings_sysno[i] == sysnum) {
+         name = bindings_sysname[i];
+         break;
+      }
+   }
+   VG_(snprintf)(buf, n_buf, "%3ld (%s)", sysnum, name);
+   return buf;
 }
 
 static Bool local_streq ( UChar* s1, UChar* s2 ); /* fwds */
@@ -1122,7 +1155,36 @@ static Bool local_streq ( UChar* s1, UChar* s2 )
    }
 }
 
-#endif /* defined(VGO_aix5) */
+//---------------------------------------------------------------------------
+#elif defined(VGO_darwin)
+//---------------------------------------------------------------------------
+
+Char* VG_(sysnum_string)(Word sysnum, SizeT n_buf, Char* buf)
+{
+   Char* classname = NULL;
+   switch (VG_DARWIN_SYSNO_CLASS(sysnum)) {
+    case VG_DARWIN_SYSCALL_CLASS_MACH: classname = "mach"; break;
+    case VG_DARWIN_SYSCALL_CLASS_UNIX: classname = "unix"; break;
+    case VG_DARWIN_SYSCALL_CLASS_MDEP: classname = "mdep"; break;
+    case VG_DARWIN_SYSCALL_CLASS_DIAG: classname = "diag"; break;
+    default:
+      VG_(core_panic)("unknown Darwin sysnum class");
+   }
+   VG_(snprintf)(buf, n_buf, "%s:%3ld",
+                             classname, VG_DARWIN_SYSNO_INDEX(sysnum));
+   return buf;
+}
+
+Char* VG_(sysnum_string_extra)(Word sysnum, SizeT n_buf, Char* buf)
+{
+   return VG_(sysnum_string)(sysnum, n_buf, buf);
+}
+
+//---------------------------------------------------------------------------
+#else
+//---------------------------------------------------------------------------
+#  error Unknown OS
+#endif
 
 /*--------------------------------------------------------------------*/
 /*--- end                                                          ---*/

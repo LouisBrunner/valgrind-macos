@@ -319,19 +319,19 @@ void do_syscall_for_client ( Int syscallno,
    switch (VG_DARWIN_SYSNO_CLASS(syscallno)) {
       case VG_DARWIN_SYSCALL_CLASS_UNIX:
          err = ML_(do_syscall_for_client_unix_WRK)(
-                  VG_DARWIN_SYSNO_NUM(syscallno), &tst->arch.vex, 
+                  VG_DARWIN_SYSNO_FOR_KERNEL(syscallno), &tst->arch.vex, 
                   syscall_mask, &saved, 0/*unused:sigsetSzB*/
                );
          break;
       case VG_DARWIN_SYSCALL_CLASS_MACH:
          err = ML_(do_syscall_for_client_mach_WRK)(
-                  VG_DARWIN_SYSNO_NUM(syscallno), &tst->arch.vex, 
+                  VG_DARWIN_SYSNO_FOR_KERNEL(syscallno), &tst->arch.vex, 
                   syscall_mask, &saved, 0/*unused:sigsetSzB*/
                );
          break;
       case VG_DARWIN_SYSCALL_CLASS_MDEP:
          err = ML_(do_syscall_for_client_mdep_WRK)(
-                  VG_DARWIN_SYSNO_NUM(syscallno), &tst->arch.vex, 
+                  VG_DARWIN_SYSNO_FOR_KERNEL(syscallno), &tst->arch.vex, 
                   syscall_mask, &saved, 0/*unused:sigsetSzB*/
                );
          break;
@@ -515,10 +515,15 @@ void getSyscallArgsFromGuestState ( /*OUT*/SyscallArgs*       canonical,
       canonical->arg7  = stack[8];
       canonical->arg8  = stack[9];
       
-      PRINT("SYSCALL[%d,?](%3lld) syscall(#%ld, ...); please stand by...\n",
-            VG_(getpid)(), /*tid,*/ (Long)0, canonical->sysno);
+      PRINT("SYSCALL[%d,?](%s) syscall(%s, ...); please stand by...\n",
+            VG_(getpid)(), /*tid,*/
+            VG_SYSNUM_STRING(0), VG_SYSNUM_STRING(canonical->sysno));
    }
 
+   // Here we determine what kind of syscall it was by looking at the
+   // interrupt kind, and then encode the syscall number using the 64-bit
+   // encoding for Valgrind's internal use.
+   //
    // DDD: Would it be better to stash the JMP kind into the Darwin
    // thread state rather than passing in the trc?
    switch (trc) {
@@ -531,7 +536,7 @@ void getSyscallArgsFromGuestState ( /*OUT*/SyscallArgs*       canonical,
       // syscall = Unix, 32-bit result
       // OR        Mach, 32-bit result
       if (canonical->sysno >= 0) {
-         // GrP fixme hack  I386_SYSCALL_NUMBER_MASK
+         // GrP fixme hack:  0xffff == I386_SYSCALL_NUMBER_MASK
          canonical->sysno = VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(canonical->sysno
                                                              & 0xffff);
       } else {
@@ -589,9 +594,9 @@ void getSyscallArgsFromGuestState ( /*OUT*/SyscallArgs*       canonical,
       canonical->arg7  = stack[2];
       canonical->arg8  = stack[3];
       
-      PRINT("SYSCALL[%d,?](%3lld) syscall(#%lx, ...); please stand by...\n",
-            VG_(getpid)(), /*tid,*/ (Long)0,
-            VG_DARWIN_SYSNO_PRINT(canonical->sysno));
+      PRINT("SYSCALL[%d,?](%s) syscall(%s, ...); please stand by...\n",
+            VG_(getpid)(), /*tid,*/
+            VG_SYSNUM_STRING(0), VG_SYSNUM_STRING(canonical->sysno));
    }
 
    // no canonical->sysno adjustment needed
@@ -673,7 +678,7 @@ void putSyscallArgsIntoGuestState ( /*IN*/ SyscallArgs*       canonical,
    VexGuestX86State* gst = (VexGuestX86State*)gst_vanilla;
    UWord *stack = (UWord *)gst->guest_ESP;
 
-   gst->guest_EAX = VG_DARWIN_SYSNO_NUM(canonical->sysno);
+   gst->guest_EAX = VG_DARWIN_SYSNO_FOR_KERNEL(canonical->sysno);
 
    // GrP fixme? gst->guest_TEMP_EFLAG_C = 0;
    // stack[0] is return address
@@ -690,7 +695,7 @@ void putSyscallArgsIntoGuestState ( /*IN*/ SyscallArgs*       canonical,
    VexGuestAMD64State* gst = (VexGuestAMD64State*)gst_vanilla;
    UWord *stack = (UWord *)gst->guest_RSP;
 
-   gst->guest_RAX = VG_DARWIN_SYSNO_NUM(canonical->sysno);
+   gst->guest_RAX = VG_DARWIN_SYSNO_FOR_KERNEL(canonical->sysno);
    // GrP fixme? gst->guest_TEMP_EFLAG_C = 0;
 
    // stack[0] is return address
@@ -1094,33 +1099,13 @@ void bad_before ( ThreadId              tid,
                   /*OUT*/SyscallStatus* status,
                   /*OUT*/UWord*         flags )
 {
-   VG_(message)
-      (Vg_DebugMsg,"WARNING: unhandled syscall: %lld", (Long)args->sysno);
-   // DDD: make this generic with a common function.
-#  if defined(VGO_linux)
-   // nothing
-#  elif defined(VGO_aix5)
-   VG_(message)
-      (Vg_DebugMsg,"           name of syscall: \"%s\"",
-                    VG_(aix5_sysno_to_sysname)(args->sysno));
-#  elif defined(VGO_darwin)
-   VG_(message)
-      (Vg_DebugMsg,"           a.k.a.: %lld",
-                    (Long)VG_DARWIN_SYSNO_PRINT(args->sysno));
-#  else
-#     error unknown OS
-#  endif
-   if (VG_(clo_verbosity) > 1) {
-      VG_(get_and_pp_StackTrace)(tid, VG_(clo_backtrace_size));
-   }
-   VG_(message)
-      (Vg_DebugMsg,"You may be able to write your own handler.");
-   VG_(message)
-      (Vg_DebugMsg,"Read the file README_MISSING_SYSCALL_OR_IOCTL.");
-   VG_(message)
-      (Vg_DebugMsg,"Nevertheless we consider this a bug.  Please report");
-   VG_(message)
-      (Vg_DebugMsg,"it at http://valgrind.org/support/bug_reports.html.");
+   VG_DMSG("WARNING: unhandled syscall: %s",
+      VG_SYSNUM_STRING_EXTRA(args->sysno));
+   VG_(get_and_pp_StackTrace)(tid, VG_(clo_backtrace_size));
+   VG_DMSG("You may be able to write your own handler.");
+   VG_DMSG("Read the file README_MISSING_SYSCALL_OR_IOCTL.");
+   VG_DMSG("Nevertheless we consider this a bug.  Please report");
+   VG_DMSG("it at http://valgrind.org/support/bug_reports.html.");
 
    SET_STATUS_Failure(VKI_ENOSYS);
 }
@@ -1385,16 +1370,8 @@ void VG_(client_syscall) ( ThreadId tid, UInt trc )
         sci->flags        is zero.
    */
 
-   PRINT("SYSCALL[%d,%d](%3lld) ", VG_(getpid)(), tid,
-   // DDD: make this generic
-   #if defined(VGO_linux) || defined(VGO_aix5)
-      (Long)sysno
-   #elif defined(VGO_darwin)
-      (Long)VG_DARWIN_SYSNO_PRINT(sysno)
-   #else
-   #  error Unknown OS
-   #endif
-   );
+   PRINT("SYSCALL[%d,%d](%s) ",
+      VG_(getpid)(), tid, VG_SYSNUM_STRING(sysno));
 
    /* Do any pre-syscall actions */
    if (VG_(needs).syscall_wrapper) {
@@ -1527,19 +1504,14 @@ void VG_(client_syscall) ( ThreadId tid, UInt trc )
          /* Be decorative, if required. */
          if (VG_(clo_trace_syscalls)) {
             Bool failed = sr_isError(sci->status.sres);
-            Word tmp_sysno = sysno;
-#           if defined(VGO_darwin)
-            // DDD: genericise this
-            tmp_sysno = VG_DARWIN_SYSNO_PRINT(tmp_sysno);
-#           endif
             if (failed) {
-               PRINT("SYSCALL[%d,%d](%3ld) ... [async] --> Failure(0x%llx)",
-                     VG_(getpid)(), tid, tmp_sysno, 
+               PRINT("SYSCALL[%d,%d](%s) ... [async] --> Failure(0x%llx)",
+                     VG_(getpid)(), tid, VG_SYSNUM_STRING(sysno),
                      (ULong)sr_Err(sci->status.sres));
             } else {
-               PRINT("SYSCALL[%d,%d](%3ld) ... [async] --> "
+               PRINT("SYSCALL[%d,%d](%s) ... [async] --> "
                      "Success(0x%llx:0x%llx)",
-                     VG_(getpid)(), tid, tmp_sysno, 
+                     VG_(getpid)(), tid, VG_SYSNUM_STRING(sysno),
                      (ULong)sr_ResHI(sci->status.sres),
                      (ULong)sr_Res(sci->status.sres) );
             }
@@ -2089,8 +2061,8 @@ void ML_(wqthread_continue_NORETURN)(ThreadId tid)
 
    VG_(acquire_BigLock)(tid, "wqthread_continue_NORETURN");
 
-   PRINT("SYSCALL[%d,%d](%3lld) workq_ops() starting new workqueue item\n", 
-         VG_(getpid)(), tid, (Long)VG_DARWIN_SYSNO_PRINT(__NR_workq_ops));
+   PRINT("SYSCALL[%d,%d](%s) workq_ops() starting new workqueue item\n", 
+         VG_(getpid)(), tid, VG_SYSNUM_STRING(__NR_workq_ops));
 
    vg_assert(VG_(is_valid_tid)(tid));
    vg_assert(tid >= 1 && tid < VG_N_THREADS);

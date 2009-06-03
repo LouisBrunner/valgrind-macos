@@ -220,6 +220,7 @@ noinst_HEADERS = \
 	pub_core_ume.h		\
 	pub_core_vki.h		\
 	pub_core_vkiscnums.h	\
+	pub_core_vkiscnums_asm.h\
 	pub_core_wordfm.h	\
 	pub_core_xarray.h	\
 	m_aspacemgr/priv_aspacemgr.h \

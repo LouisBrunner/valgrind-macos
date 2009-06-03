@@ -31,13 +31,7 @@
 */
 
 #include "pub_core_basics_asm.h"
-
-/* We need pub_core_vkiscnums.h, but the AIX5 formulation
-   brings in a load of C declarations.  Defining this macro
-   makes them invisible.  Yes, a nasty hack. */
-#define VG_IN_ASSEMBLY_SOURCE
-#  include "pub_core_vkiscnums.h"
-#undef VG_IN_ASSEMBLY_SOURCE
+#include "pub_core_vkiscnums_asm.h"
 
 /* ------------------ SIMULATED CPU HELPERS ------------------ */
 /* 

@@ -2499,18 +2499,7 @@ void h_post_syscall ( ThreadId tid, UInt sysno, SysRes res )
    tl_assert(i >= 0 && i <= n);
 
    if (i == n) {
-// DDD: genericise this
-#     if defined(VGO_linux)
-      VG_(printf)("sysno == %u\n", sysno);
-#     elif defined(VGO_aix5)
-      VG_(printf)("sysno == %u\n", sysno);
-      VG_(printf)("syscallnm == %s\n",
-                  VG_(aix5_sysno_to_sysname)(sysno));
-#     elif defined(VGO_darwin)
-      VG_(printf)("sysno == %d\n", VG_DARWIN_SYSNO_PRINT(sysno));
-#     else
-#        error "Unsupported OS"
-#     endif
+      VG_(printf)("sysno == %s", VG_SYSNUM_STRING_EXTRA(sysno));
       VG_(tool_panic)("unhandled syscall");
    }
 

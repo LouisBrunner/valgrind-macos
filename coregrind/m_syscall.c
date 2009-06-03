@@ -765,18 +765,18 @@ SysRes VG_(do_syscall) ( UWord sysno, UWord a1, UWord a2, UWord a3,
    switch (scclass) {
       case VG_DARWIN_SYSCALL_CLASS_UNIX:
          u64 = do_syscall_unix_WRK(a1,a2,a3,a4,a5,a6,a7,a8,
-                                   VG_DARWIN_SYSNO_NUM(sysno), &err);
+                                   VG_DARWIN_SYSNO_FOR_KERNEL(sysno), &err);
          wLO = (UInt)u64;
          wHI = (UInt)(u64 >> 32);
          break;
       case VG_DARWIN_SYSCALL_CLASS_MACH:
          wLO = do_syscall_mach_WRK(a1,a2,a3,a4,a5,a6,a7,a8, 
-                                   VG_DARWIN_SYSNO_NUM(sysno));
+                                   VG_DARWIN_SYSNO_FOR_KERNEL(sysno));
          err = 0;
          break;
       case VG_DARWIN_SYSCALL_CLASS_MDEP:
          wLO = do_syscall_mdep_WRK(a1,a2,a3,a4,a5,a6,a7,a8, 
-                                   VG_DARWIN_SYSNO_NUM(sysno));
+                                   VG_DARWIN_SYSNO_FOR_KERNEL(sysno));
          err = 0;
          break;
       default:
@@ -791,12 +791,12 @@ SysRes VG_(do_syscall) ( UWord sysno, UWord a1, UWord a2, UWord a3,
    switch (scclass) {
       case VG_DARWIN_SYSCALL_CLASS_UNIX:
          wLO = do_syscall_unix_WRK(a1,a2,a3,a4,a5,a6,a7,a8,
-                                   VG_DARWIN_SYSNO_NUM(sysno), &err, &wHI);
+                                   VG_DARWIN_SYSNO_FOR_KERNEL(sysno), &err, &wHI);
          break;
       case VG_DARWIN_SYSCALL_CLASS_MACH:
       case VG_DARWIN_SYSCALL_CLASS_MDEP:
          wLO = do_syscall_mach_WRK(a1,a2,a3,a4,a5,a6,a7,a8, 
-                                   VG_DARWIN_SYSNO_NUM(sysno));
+                                   VG_DARWIN_SYSNO_FOR_KERNEL(sysno));
          err = 0;
          break;
       default:

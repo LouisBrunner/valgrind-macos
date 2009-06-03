@@ -90,31 +90,21 @@
 */
 
 /**
- * Tell DRD to insert a mark. addr is either the address of a pthread condition
- * variable or the address of an object that is not a pthread synchronization
- * object. Inserting two 'happens before' annotations while
- * no thread has passed by a 'happens after' annotation is an error.
+ * Tell DRD to insert a mark. addr is the address of an object that is not a
+ * pthread synchronization object. Inserting two 'happens before' annotations
+ * while no thread has passed by a 'happens after' annotation is an error.
  */
 #define ANNOTATE_HAPPENS_BEFORE(addr) DRDCL_(annotate_happens_before)(addr)
 
 /**
  * Tell DRD that the memory accesses executed after this annotation will happen
  * after the memory accesses performed before the most recent
- * ANNOTATE_HAPPENS_BEFORE(addr). addr is either the address of a pthread
- * condition variable or the address of an object that is not a pthread
- * synchronization object. Inserting a 'happens after' annotation before any
- * other thread has passed by a 'happens before' annotation for the same
- * address or inserting two 'happens after' annotations while no thread has
- * passed by a 'happens before' annotation is an error.
+ * ANNOTATE_HAPPENS_BEFORE(addr). addr is the address of an object that is not
+ * a pthread synchronization object. Inserting a 'happens after' annotation
+ * before any other thread has passed by a 'happens before' annotation for the
+ * same address is an error.
  */
 #define ANNOTATE_HAPPENS_AFTER(addr) DRDCL_(annotate_happens_after)(addr)
-
-/**
- * Tell DRD that no more ANNOTATE_HAPPENS_AFTER(addr) annotations
- * will be inserted before the next ANNOTATE_HAPPENS_BEFORE(addr).
- */
-#define ANNOTATE_HAPPENS_AFTER_DONE(addr) \
-   DRDCL_(annotate_happens_after_done)(addr)
 
 /**
  * Tell DRD that waiting on the condition variable at address cv has succeeded
@@ -122,30 +112,43 @@
  * a happens before relation between the pthread_cond_signal() or
  * pthread_cond_broadcast() call that wakes up a pthread_cond_wait() or
  * pthread_cond_timedwait() call and the woken up thread, this macro has been
- * left empty.
+ * defined such that it has no effect.
  */
-#define ANNOTATE_CONDVAR_LOCK_WAIT(cv, mtx)
+#define ANNOTATE_CONDVAR_LOCK_WAIT(cv, mtx) do { } while(0)
 
 /**
  * Tell DRD that the condition variable at address cv is about to be signaled.
- * cv is either the address of a condition variable or the address of an object
- * that is not a POSIX synchronization object.
  */
-#define ANNOTATE_CONDVAR_SIGNAL(cv) ANNOTATE_HAPPENS_BEFORE(cv)
+#define ANNOTATE_CONDVAR_SIGNAL(cv) do { } while(0)
 
 /**
- * Tell DRD that waiting on condition variable at address cv succeeded.
- * cv is either the address of a condition variable or the address of an object
- * that is not a POSIX synchronization object.
+ * Tell DRD that waiting on condition variable at address cv succeeded and that
+ * the memory operations performed after this annotation should be considered
+ * to happen after the matching ANNOTATE_CONDVAR_SIGNAL(cv). Since this is the
+ * default behavior of DRD, this macro and the macro above have been defined
+ * such that they have no effect.
  */
-#define ANNOTATE_CONDVAR_WAIT(cv) ANNOTATE_HAPPENS_AFTER(cv)
+#define ANNOTATE_CONDVAR_WAIT(cv) do { } while(0)
 
 /**
  * Tell DRD to consider the memory operations that happened before a mutex
  * unlock event and after the subsequent mutex lock event on the same mutex as
- * ordered. This is how DRD always behaves, so this macro has been left empty.
+ * ordered. This is how DRD always behaves, so this macro has been defined
+ * such that it has no effect.
  */
-#define ANNOTATE_MUTEX_IS_USED_AS_CONDVAR(mtx)
+#define ANNOTATE_MUTEX_IS_USED_AS_CONDVAR(mtx) do { } while(0)
+
+/**
+ * Tell DRD to handle the specified memory range like a pure happens-before
+ * detector would do. Since this is how DRD always behaves, this annotation
+ * has been defined such that it has no effect.
+ */
+#define ANNOTATE_PUBLISH_MEMORY_RANGE(addr, size) do { } while(0)
+
+/**
+ * Tell DRD to undo the effect of ANNOTATE_PUBLISH_MEMORY_RANGE().
+ */
+#define ANNOTATE_UNPUBLISH_MEMORY_RANGE(addr, size) do { } while(0)
 
 /** Tell DRD that a reader-writer lock object has been initialized. */
 #define ANNOTATE_RWLOCK_CREATE(rwlock) \
@@ -170,6 +173,18 @@
  */
 #define ANNOTATE_RWLOCK_RELEASED(rwlock, is_w) \
    DRDCL_(annotate_rwlock)(rwlock, 3, is_w)
+
+/** @todo Implement this annotation. */
+#define ANNOTATE_PCQ_CREATE(pcq) do { } while(0)
+
+/** @todo Implement this annotation. */
+#define ANNOTATE_PCQ_DESTROY(pcq) do { } while(0)
+
+/** @todo Implement this annotation. */
+#define ANNOTATE_PCQ_PUT(pcq) do { } while(0)
+
+/** @todo Implement this annotation. */
+#define ANNOTATE_PCQ_GET(pcq) do { } while(0)
 
 /**
  * Tell DRD that data races in the specified address range are expected and
@@ -273,10 +288,6 @@ enum {
    /* Tell DRD to insert a happens after annotation. */
    VG_USERREQ__DRD_ANNOTATE_HAPPENS_AFTER,
    /* args: Addr. */
-   /* Tell DRD that no more happens after annotations will follow until the
-    * next happens before annotation. */
-   VG_USERREQ__DRD_ANNOTATE_HAPPENS_AFTER_DONE,
-   /* args: Addr. */
 
    /* Tell DRD about an operation performed on a user-defined reader-writer
     * synchronization object. */
@@ -370,15 +381,6 @@ void DRDCL_(annotate_happens_after)(const void* const addr)
 {
    int res;
    VALGRIND_DO_CLIENT_REQUEST(res, 0, VG_USERREQ__DRD_ANNOTATE_HAPPENS_AFTER,
-                              addr, 0, 0, 0, 0);
-}
-
-static __inline__
-void DRDCL_(annotate_happens_after_done)(const void* const addr)
-{
-   int res;
-   VALGRIND_DO_CLIENT_REQUEST(res, 0,
-                              VG_USERREQ__DRD_ANNOTATE_HAPPENS_AFTER_DONE,
                               addr, 0, 0, 0, 0);
 }
 

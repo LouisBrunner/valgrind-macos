@@ -7,6 +7,9 @@ The DRD tool
 - Eliminate Valgrind's thread ID's from DRD's output, and only keep the
   DrdThreadId.
 - Add support for Ist_CAS once the DCAS branch has been merged to the trunk.
+- Update the description of DRD in docs/xml/manual-intro.xml before 3.4.2 or
+  3.5.0 is released, whichever is released first.
+- Update the DRD manual before 3.5.0 is released.
 - Add locking order checking. Start from the following information:
   * http://sourceforge.net/mailarchive/message.php?msg_id=alpine.LNX.1.10.0803270822080.17890%40mudge.stoecker.eu
   * http://lwn.net/Articles/185605/

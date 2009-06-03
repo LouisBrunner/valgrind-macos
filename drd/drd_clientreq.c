@@ -137,14 +137,6 @@ static Bool handle_client_request(ThreadId vg_tid, UWord* arg, UWord* ret)
       }
       break;
 
-   case VG_USERREQ__DRD_ANNOTATE_HAPPENS_AFTER_DONE:
-      {
-         struct cond_info* const cond_p = DRD_(cond_get)(arg[1]);
-         if (! cond_p)
-            DRD_(mutex_post_destroy)(arg[1]);
-      }
-      break;
-
    case VG_USERREQ__DRD_ANNOTATE_RWLOCK:
       {
          struct mutex_info* const mutex_p = DRD_(mutex_get)(arg[1]);

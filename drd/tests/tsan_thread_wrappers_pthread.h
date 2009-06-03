@@ -66,8 +66,6 @@ using namespace std;
 #include "../../drd/drd.h"
 #define ANNOTATE_NO_OP(arg) do { } while(0)
 #define ANNOTATE_EXPECT_RACE(addr, descr) DRDCL_(ignore_range)(addr, 4)
-#define ANNOTATE_PUBLISH_MEMORY_RANGE(addr, size) do { } while(0)
-#define ANNOTATE_UNPUBLISH_MEMORY_RANGE(addr, size) do { } while(0)
 static inline bool RunningOnValgrind() { return RUNNING_ON_VALGRIND; }
 
 #include <assert.h>
@@ -512,7 +510,7 @@ class ThreadPool {
 
   //! Start all threads. 
   void StartWorkers() {
-    for (int i = 0; i < workers_.size(); i++) {
+    for (size_t i = 0; i < workers_.size(); i++) {
       workers_[i]->Start();
     }
   }
@@ -526,10 +524,10 @@ class ThreadPool {
 
   //! Wait workers to finish, then join all threads.
   ~ThreadPool() {
-    for (int i = 0; i < workers_.size(); i++) {
+    for (size_t i = 0; i < workers_.size(); i++) {
       Add(NULL);
     }
-    for (int i = 0; i < workers_.size(); i++) {
+    for (size_t i = 0; i < workers_.size(); i++) {
       workers_[i]->Join();
       delete workers_[i];
     }
@@ -573,9 +571,10 @@ class BlockingCounter {
  public:
   explicit BlockingCounter(int initial_count) :
     count_(initial_count) {}
-  void DecrementCount() {
+  bool DecrementCount() {
     MutexLock lock(&mu_);
     count_--;
+    return count_ == 0;
   }
   void Wait() {
     mu_.LockWhen(Condition(&IsZero, &count_));

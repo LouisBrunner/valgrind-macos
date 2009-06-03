@@ -174,16 +174,29 @@
 #define ANNOTATE_RWLOCK_RELEASED(rwlock, is_w) \
    DRDCL_(annotate_rwlock)(rwlock, 3, is_w)
 
-/** @todo Implement this annotation. */
+/**
+ * Tell DRD that a FIFO queue has been created. The abbreviation PCQ stands for
+ * <em>producer-consumer</em>.
+ */
 #define ANNOTATE_PCQ_CREATE(pcq) do { } while(0)
 
-/** @todo Implement this annotation. */
+/** Tell DRD that a FIFO queue has been destroyed. */
 #define ANNOTATE_PCQ_DESTROY(pcq) do { } while(0)
 
-/** @todo Implement this annotation. */
+/**
+ * Tell DRD that an element has been added to the FIFO queue at address pcq.
+ */
 #define ANNOTATE_PCQ_PUT(pcq) do { } while(0)
 
-/** @todo Implement this annotation. */
+/**
+ * Tell DRD that an element has been removed from the FIFO queue at address pcq,
+ * and that DRD should insert a happens-before relationship between the memory
+ * accesses that occurred before the corresponding ANNOTATE_PCQ_PUT(pcq)
+ * annotation and the memory accesses after this annotation. Correspondence
+ * between PUT and GET annotations happens in FIFO order. Since locking
+ * of the queue is needed anyway to add elements to or to remove elements from
+ * the queue, for DRD all four FIFO annotations are defined as no-ops.
+ */
 #define ANNOTATE_PCQ_GET(pcq) do { } while(0)
 
 /**

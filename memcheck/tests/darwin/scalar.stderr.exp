@@ -195,8 +195,6 @@ Syscall param sem_wait_nocancel(sem) contains uninitialised byte(s)
 x270f(9999):                9999 1e
 -----------------------------------------------------
 WARNING: unhandled syscall: unix:9999
-   at 0x........: syscall (in /...libc...)
-   by 0x........: (below main)
 You may be able to write your own handler.
 Read the file README_MISSING_SYSCALL_OR_IOCTL.
 Nevertheless we consider this a bug.  Please report

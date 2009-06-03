@@ -1101,7 +1101,9 @@ void bad_before ( ThreadId              tid,
 {
    VG_DMSG("WARNING: unhandled syscall: %s",
       VG_SYSNUM_STRING_EXTRA(args->sysno));
-   VG_(get_and_pp_StackTrace)(tid, VG_(clo_backtrace_size));
+   if (VG_(clo_verbosity) > 1) {
+      VG_(get_and_pp_StackTrace)(tid, VG_(clo_backtrace_size));
+   }
    VG_DMSG("You may be able to write your own handler.");
    VG_DMSG("Read the file README_MISSING_SYSCALL_OR_IOCTL.");
    VG_DMSG("Nevertheless we consider this a bug.  Please report");

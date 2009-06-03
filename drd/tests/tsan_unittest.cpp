@@ -60,13 +60,13 @@
 // Helgrind memory usage testing stuff
 // If not present in dynamic_annotations.h/.cc - ignore
 #ifndef ANNOTATE_RESET_STATS
-#define ANNOTATE_RESET_STATS()
+#define ANNOTATE_RESET_STATS() do { } while(0)
 #endif
 #ifndef ANNOTATE_PRINT_STATS
-#define ANNOTATE_PRINT_STATS()
+#define ANNOTATE_PRINT_STATS() do { } while(0)
 #endif
 #ifndef ANNOTATE_PRINT_MEMORY_USAGE
-#define ANNOTATE_PRINT_MEMORY_USAGE(a)
+#define ANNOTATE_PRINT_MEMORY_USAGE(a) do { } while(0)
 #endif
 //
 
@@ -2833,14 +2833,16 @@ int     FLAG2 = 0;
 void Worker2() {
   FLAG1=GLOB2;
 
-  while(!FLAG2);
+  while(!FLAG2)
+    ;
   GLOB2=FLAG2;
 }
 
 void Worker1() {
   FLAG2=GLOB1;
 
-  while(!FLAG1);
+  while(!FLAG1)
+    ;
   GLOB1=FLAG1;
 }
 

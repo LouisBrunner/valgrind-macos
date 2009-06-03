@@ -23,6 +23,7 @@ EXTRA_DIST =                                        \
 	annotate_ignore_read.stderr.exp		    \
 	annotate_ignore_read.vgtest		    \
 	annotate_trace_memory.stderr.exp	    \
+	annotate_trace_memory.stderr.exp-ppc	    \
 	annotate_trace_memory.vgtest		    \
 	atomic_var.stderr.exp-with-atomic-builtins  \
 	atomic_var.stderr.exp-without-atomic-builtins \

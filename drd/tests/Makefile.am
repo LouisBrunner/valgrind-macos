@@ -18,6 +18,10 @@ EXTRA_DIST =                                        \
 	annotate_order_1.vgtest			    \
 	annotate_order_2.stderr.exp		    \
 	annotate_order_2.vgtest			    \
+	annotate_order_3.stderr.exp		    \
+	annotate_order_3.vgtest			    \
+	annotate_spinlock.stderr.exp		    \
+	annotate_spinlock.vgtest		    \
 	annotate_rwlock.stderr.exp		    \
 	annotate_rwlock.vgtest			    \
 	annotate_ignore_read.stderr.exp		    \
@@ -25,8 +29,7 @@ EXTRA_DIST =                                        \
 	annotate_trace_memory.stderr.exp	    \
 	annotate_trace_memory.stderr.exp-ppc	    \
 	annotate_trace_memory.vgtest		    \
-	atomic_var.stderr.exp-with-atomic-builtins  \
-	atomic_var.stderr.exp-without-atomic-builtins \
+	atomic_var.stderr.exp			    \
 	atomic_var.vgtest			    \
 	bar_bad.stderr.exp			    \
 	bar_bad.vgtest				    \
@@ -35,8 +38,7 @@ EXTRA_DIST =                                        \
 	bar_trivial.vgtest			    \
 	boost_thread.stderr.exp			    \
 	boost_thread.vgtest			    \
-	circular_buffer.stderr.exp-with-atomic-builtins		\
-	circular_buffer.stderr.exp-without-atomic-builtins	\
+	circular_buffer.stderr.exp		    \
 	circular_buffer.vgtest			    \
 	custom_alloc.stderr.exp			    \
 	custom_alloc.vgtest			    \

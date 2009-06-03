@@ -357,7 +357,7 @@ int     GLOB = 0;
 //                              b. MU.Lock()
 //                              c. COND = 1
 //                         /--- d. CV.Signal()
-//  4. while(COND)        /     e. MU.Unock()
+//  4. while(COND)        /     e. MU.Unlock()
 //       CV.Wait(MU) <---/
 //  5. MU.Unlock()
 //  6. write(GLOB)
@@ -487,7 +487,7 @@ int     GLOB = 0;
 //                                          b. MU.Lock()
 //                                          c. COND = 1
 //                                          d. CV.Signal()
-//  4. while(COND)                          e. MU.Unock()
+//  4. while(COND)                          e. MU.Unlock()
 //       CV.Wait(MU) <<< not called   
 //  5. MU.Unlock()      
 //  6. write(GLOB)      
@@ -537,7 +537,7 @@ int     GLOB = 0;
 //                                                    b. MU.Lock()
 //                                                    c. COND = 1
 //                                           /------- d. CV.Signal()
-//  4. while(COND)                          /         e. MU.Unock()
+//  4. while(COND)                          /         e. MU.Unlock()
 //       CV.Wait(MU) <<< not called        /
 //  6. ANNOTATE_CONDVAR_WAIT(CV, MU) <----/
 //  5. MU.Unlock()      
@@ -2428,7 +2428,7 @@ Mutex   MU;
 //                              b. MU.Lock()
 //                              c. COND = 1
 //                         /--- d. CV.Signal()
-//  4. while(COND != 1)   /     e. MU.Unock()
+//  4. while(COND != 1)   /     e. MU.Unlock()
 //       CV.Wait(MU) <---/
 //  5. MU.Unlock()
 //  6. write(GLOB)              f. MU.Lock()
@@ -2497,7 +2497,7 @@ Mutex   MU;
 //                       \      b. MU.Lock()
 //                        \     c. COND = 1
 //                         \--- d. CV.Signal()
-//                              e. MU.Unock()
+//                              e. MU.Unlock()
 //                              
 //                              f. write(GLOB)
 //                              
@@ -2567,7 +2567,7 @@ Mutex   MU;
 //                              b. MU.Lock()
 //                              c. COND = 1
 //                    LOST<---- d. CV.Signal()
-//                              e. MU.Unock()
+//                              e. MU.Unlock()
 //                              
 // 2. MU.Lock()       
 // 3. while(COND)               
@@ -4470,7 +4470,7 @@ namespace test92 {
 // 4. MU1.Unlock()                       \           .
 //                                        \          a. MU1.Lock()
 //                                         \         b. Get GLOB
-//                                          \        c. MU1.Lock()
+//                                          \        c. MU1.Unlock()
 //                                           \-->    d. Access GLOB
 //
 //  A happens-before arc is created between ANNOTATE_PUBLISH_MEMORY_RANGE and 

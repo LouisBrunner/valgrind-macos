@@ -356,6 +356,11 @@ void DRD_(vc_reserve)(VectorClock* const vc, const unsigned new_capacity)
       }
       vc->capacity = new_capacity;
    }
+   else if (new_capacity == 0 && vc->vc)
+   {
+      VG_(free)(vc->vc);
+      vc->vc = 0;
+   }
    tl_assert(new_capacity == 0 || vc->vc != 0);
 }
 

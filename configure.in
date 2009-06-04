@@ -1893,9 +1893,6 @@ AC_OUTPUT(
    none/tests/darwin/Makefile
    none/tests/x86-linux/Makefile
    none/docs/Makefile
-   exp-omega/Makefile
-   exp-omega/tests/Makefile
-   exp-omega/docs/Makefile
    exp-ptrcheck/Makefile
    exp-ptrcheck/tests/Makefile
    exp-ptrcheck/docs/Makefile

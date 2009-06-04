@@ -75,6 +75,12 @@ Release 3.5.0 (???)
     gap until the next snapshot.  This makes it clear that the memory
     usage has not dropped to zero between snapshots.
 
+* exp-Omega, an experimental instantaneous leak-detecting tool, was disabled
+  in 3.4.0 due to a lack of interest and maintenance, although the source
+  code was still in the distribution.  The source code has now been removed
+  from the distribution.  For anyone interested, the removal occurred in SVN
+  revision r10247.
+
 * The location of some install files has changed.  This should not affect
   most users.  Those who might be affected:
   - For people who use Valgrind with MPI programs, the installed

@@ -52,7 +52,6 @@ Josef Weidendorfer, Josef.Weidendorfer@gmx.de.
 
 Josef wrote Callgrind and the associated KCachegrind GUI.
 
-Omega was written by Bryan Meredith and is maintained by Rich Coe.
 DRD was written by and is maintained by Bart Van Assche.
 
 Frederic Gobry helped with autoconf and automake.  Daniel Berlin

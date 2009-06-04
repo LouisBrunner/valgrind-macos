@@ -38,7 +38,6 @@ Clifton, for use in Valgrind.
 Michael Matz and Simon Hausmann modified the GNU binutils
 demangler(s) for use in Valgrind.
 
-Omega was written by Bryan Meredith and is maintained by Rich Coe.
 DRD was written by and is maintained by Bart Van Assche.
 
 And lots and lots of other people sent bug reports, patches, and very 

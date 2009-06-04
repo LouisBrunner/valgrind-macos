@@ -115,12 +115,21 @@ To set up nightly testing for a machine, do the following.
     You might be able to use /usr/bin/mail, or you might need something more
     elaborate like using Mutt to send mail via an external account.
 
+    At first, you should probably just send emails to yourself for testing
+    purposes.  After it's working, then sending it to others might be
+    appropriate.
+
 (5) To run the tests, execute:
 
        $DIR/bin/nightly $DIR $TAG
 
     You probably want to put this command into a cron file or equivalent
-    so it is run regularly (preferably every night).
+    so it is run regularly (preferably every night).  Actually, it's
+    probably better to put that command inside a script, and run the script
+    from cron, rather than running $DIR/bin/nightly directly.  That way you
+    can put any other configuration stuff that's necessary inside the
+    script (e.g. make sure that programs used by the mailer script are in
+    your PATH).
 
 
 OUTPUT FILES

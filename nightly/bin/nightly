@@ -66,7 +66,7 @@ svn_new_date=`date --date=today     +%Y-%m-%dT%H:%M:%S`
 cd $ABT_TOP
 
 # Clean up output files produced by a previous run.
-rm -rf diffs diff.short final Inst new.short new.verbose old.short old.verbose
+rm -rf diffs diff.short final new.short new.verbose old.short old.verbose
 rm -rf sendmail.log unchanged.log valgrind
 
 # Setup any relevant environment variables from conf/<tag>.conf.
@@ -78,7 +78,7 @@ if [ "${ABT_EVAL}" = "" ]; then
   ABT_EVAL="eval"
 fi
 if [ "${ABT_RUN_REGTEST}" = "" ]; then
-  ABT_RUN_REGTEST="cd valgrind && perl tests/vg_regtest --all"
+  ABT_RUN_REGTEST="cd valgrind && make regtest"
 fi
 
 
@@ -122,7 +122,7 @@ for logfile in old new ; do
    \
    runcmd $logfile \
           "Configuring valgrind             " \
-          "cd valgrind && ./autogen.sh  && ./configure --prefix=`pwd`/Inst ${ABT_CONFIGURE_OPTIONS}" && \
+          "cd valgrind && ./autogen.sh  && ./configure --prefix=`pwd`/valgrind/Inst ${ABT_CONFIGURE_OPTIONS}" && \
    \
    runcmd $logfile \
           "Building valgrind                " \

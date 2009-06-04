@@ -88,6 +88,13 @@ n-i-bz DRD - added new client request, VG_USERREQ__DRD_CLEAN_MEMORY.
 189763 DRD - pthread_create@GLIBC_2.0() no longer triggers an assertion
        failure.
 n-i-bz DRD - fixed assertion failure triggered by mutex reinitialization.
+       Note: DRD did report the mutex reinitialization before reporting the
+       assertion failure.
+n-i-bz DRD - fixed a bug that caused incorrect messages to be printed about
+       memory allocation events with memory access tracing enabled (fixed
+       in r10191).
+n-i-bz DRD - fixed a memory leak triggered by vector clock deallocation
+       (fixed in r10228).
 
 
 

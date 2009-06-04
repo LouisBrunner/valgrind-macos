@@ -56,11 +56,11 @@ if [ $# -ne 2 ] ; then
 fi
 
 # Get args from command line
-ABT_TOP=$1
-ABT_MACHINE=$2
+DIR=$1
+TAG=$2
 
 # Get times and date
-ABT_START=`date "+%F %H:%M:%S %Z"`
+START=`date "+%F %H:%M:%S %Z"`
 
 # This is one of the formats SVN accepts.  Yes, the 'T' appears in the final
 # string, it's supposed to be like that.
@@ -85,14 +85,14 @@ fi
 # The time-and-date for now is easy.
 svn_new_date=`date $svn_date_format`
 
-cd $ABT_TOP
+cd $DIR
 
 # Clean up output files produced by a previous run.
 rm -rf diffs diff.short final new.short new.verbose old.short old.verbose
-rm -rf sendmail.log unchanged.log valgrind
+rm -rf sendmail.log unchanged.log valgrind-old valgrind-new
 
 # Setup any relevant environment variables from conf/<tag>.conf.
-. conf/$ABT_MACHINE.conf
+. conf/$TAG.conf
 if [ "${ABT_JOBS}" = "" ]; then
   ABT_JOBS=1
 fi
@@ -100,7 +100,7 @@ if [ "${ABT_EVAL}" = "" ]; then
   ABT_EVAL="eval"
 fi
 if [ "${ABT_RUN_REGTEST}" = "" ]; then
-  ABT_RUN_REGTEST="cd valgrind && make regtest"
+  ABT_RUN_REGTEST="make regtest"
 fi
 
 
@@ -120,9 +120,6 @@ fi
 # for the current one.
 for logfile in old new ; do
 
-   # Remove the old valgrind directory.
-   rm -rf valgrind
-
    # Remove old short and verbose log files, and start the new ones
    for ext in short verbose ; do
       echo > $logfile.$ext
@@ -140,19 +137,19 @@ for logfile in old new ; do
    # Check out, build, run tests
    runcmd $logfile \
           "Checking out valgrind source tree" \
-          "svn co ${valgrind_svn_repo} -r {$svn_date} valgrind" && \
+          "svn co ${valgrind_svn_repo} -r {$svn_date} valgrind-$logfile" && \
    \
    runcmd $logfile \
           "Configuring valgrind             " \
-          "cd valgrind && ./autogen.sh  && ./configure --prefix=`pwd`/valgrind/Inst ${ABT_CONFIGURE_OPTIONS}" && \
+          "cd valgrind-$logfile && ./autogen.sh  && ./configure --prefix=`pwd`/valgrind-$logfile/Inst ${ABT_CONFIGURE_OPTIONS}" && \
    \
    runcmd $logfile \
           "Building valgrind                " \
-          "cd valgrind && make -j ${ABT_JOBS} && make -j ${ABT_JOBS} check && make install" && \
+          "cd valgrind-$logfile && make -j ${ABT_JOBS} && make -j ${ABT_JOBS} check && make install" && \
    \
    runcmd $logfile \
           "Running regression tests         " \
-          "${ABT_RUN_REGTEST}"
+          "cd valgrind-$logfile && ${ABT_RUN_REGTEST}"
 
    # Grab some indicative text for the short log file -- if the regtests
    # succeeded, show their results.  If we didn't make it that far, show the
@@ -175,13 +172,13 @@ done
 #----------------------------------------------------------------------------
 
 # Get times and date
-ABT_END=`date "+%F %H:%M:%S %Z"`
+END=`date "+%F %H:%M:%S %Z"`
 
 # 'final' shows the difference between the old and new results
-echo                                                      >  final
-echo "Nightly build on" $ABT_MACHINE "(" $ABT_DETAILS ")" >> final
-echo "Started at" $ABT_START                              >> final
-echo "Ended   at" $ABT_END                                >> final
+echo                                               >  final
+echo "Nightly build on" $TAG "(" $ABT_DETAILS ")" >> final
+echo "Started at" $START                          >> final
+echo "Ended   at" $END                            >> final
 
 # If the results differ from 24 hours ago, print extra stuff.
 diff -C1 old.short new.short > diff.short
@@ -234,7 +231,7 @@ else
 fi
 
 # Use the conf/<tag>.sendmail script to email the results.
-conf/$ABT_MACHINE.sendmail \
-   "$changed_str$ABT_START nightly build ($ABT_MACHINE, $ABT_DETAILS)" \
+conf/$TAG.sendmail \
+   "$changed_str$START nightly build ($TAG, $ABT_DETAILS)" \
    final \
    diffs > sendmail.log 2>&1

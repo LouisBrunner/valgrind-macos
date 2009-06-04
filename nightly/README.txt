@@ -156,9 +156,9 @@ If the tests are run, the following files are produced:
 - $DIR/sendmail.log contains the output (stdout and stderr) from
   $DIR/conf/$TAG.sendmail goes in $DIR/sendmail.log.  
 
-- $DIR/valgrind/ contains the tested tree (and $DIR/valgrind/Inst/ contains
-  the installed code).  It is used for both trees and so after the tests
-  have completed it will contain the newer tree.
+- $DIR/valgrind-old/ and $DIR/valgrind-new/ contain the tested trees (and
+  $DIR/valgrind-old/Inst/ and $DIR/valgrind-new/Inst/ contain the installed
+  code).
 
 If the tests aren't run, the following file is produced:
 

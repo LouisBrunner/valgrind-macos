@@ -1691,7 +1691,7 @@ void Run() {
 
   std::vector<MyThread*> vec(Nlog);
 
-  for (int i = 0; i < N_iter; i++) {
+  for (int j = 0; j < N_iter; j++) {
     // Create and start Nlog threads
     for (int i = 0; i < Nlog; i++) {
       vec[i] = new MyThread(Worker);
@@ -5413,11 +5413,11 @@ void Run() {
 
   // do few more random publishes.
   for (int i = 0; i < 20; i++) {
-    int beg = rand() % N;
-    int size = (rand() % (N - beg)) + 1;
+    const int begin = rand() % N;
+    const int size = (rand() % (N - begin)) + 1;
     CHECK(size > 0);
-    CHECK(beg + size <= N);
-    PublishRange(beg, beg + size);
+    CHECK(begin + size <= N);
+    PublishRange(begin, begin + size);
   }
 
   printf("GLOB = %d\n", (int)GLOB[0]);

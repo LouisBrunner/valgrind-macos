@@ -1,14 +1,17 @@
 
 Release 3.5.0 (???)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-* XXX: Mac OS X support
-  - x86/Darwin.
-  - probably amd64/Darwin.
-  - Requires Mac OS X 10.5 Leopard or later.
-  - No support for Mac OS X on PowerPC machines.
-  - Many thanks to Greg Parker for developing this port over several years.
+* Mac OS X is now supported.  (Note that Mac OS X is often called "Darwin"
+  because that is the name of the OS core.)  
 
-  Things that don't work
+  Supported machines:
+  - x86 machines are supported fairly well.
+  - AMD64 (a.k.a. x86-64) are supported, but not as well.
+  - Older PowerPC machines are not supported.
+  - It requires Mac OS X 10.5 Leopard or later.  Porting to 10.4 is not
+    planned because it would require work and 10.4 is only becoming less common.
+
+  Things that don't work:
   - Objective-C garbage collection
   - --db-attach=yes
   - Messages like the following indicate a mismatch between Valgrind's
@@ -16,6 +19,14 @@ Release 3.5.0 (???)
     multithreaded programs. If the failure repeats for the same address
     range, then there may be a problem causing false errors or crashes.
         sync check at ...: FAILED
+  - If you have Rogue Amoeba's "Instant Hijack" program installed, Valgrind
+    will fail with a SIGTRAP at start-up.  This is apparently Instant
+    Hijack's fault.  See https://bugs.kde.org/show_bug.cgi?id=193917 for
+    details and a simple work-around.
+
+  Many thanks to Greg Parker for developing this port over several years.
+
+* XXX: something about improved Wine support?
 
 * A new Memcheck client request VALGRIND_COUNT_LEAK_BLOCKS has been added.
   It is similar to VALGRIND_COUNT_LEAKS but counts blocks instead of bytes.
@@ -53,6 +64,8 @@ Release 3.5.0 (???)
 
   Stack traces produced when --xml=yes is specified are different and
   unchanged.
+
+* XXX: XML output has changed...
 
 * The graphs drawn by Massif's ms_print program have changed slightly:
   - The half-height chars '.' and ',' are no longer drawn, because they are

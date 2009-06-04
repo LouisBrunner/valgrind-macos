@@ -19,11 +19,13 @@ runcmd () {
    str=$2
    shift 2
 
-   # Header in short logfile
-   echo -n "   $str  ... " >> $logfile.short
+   # Header in short logfile.
+   # We use "printf" to avoid printing a newline;  "echo -n" isn't POSIX and
+   # so isn't supported on all systems.
+   printf "   $str  ... " >> $logfile.short
 
    # Header and command in verbose logfile
-   echo -n "   $str  ... " >> $logfile.verbose
+   printf "   $str  ... " >> $logfile.verbose
    echo "$*" >> $logfile.verbose
 
    # Run the command
@@ -60,8 +62,28 @@ ABT_MACHINE=$2
 # Get times and date
 ABT_START=`date "+%F %H:%M:%S %Z"`
 
-svn_old_date=`date --date=yesterday +%Y-%m-%dT%H:%M:%S`
-svn_new_date=`date --date=today     +%Y-%m-%dT%H:%M:%S`
+# This is one of the formats SVN accepts.  Yes, the 'T' appears in the final
+# string, it's supposed to be like that.
+svn_date_format="+%Y-%m-%dT%H:%M:%S"
+
+# The time-and-date from 24 hours ago is tricky;  Linux and Darwin have
+# different ways of getting it, so we try things until something works.
+svn_old_date=
+if [ "z" = "z${svn_old_date}" ] ; then
+    # Linux method.
+    svn_old_date=`date --date=yesterday $svn_date_format 2> /dev/null`
+fi
+if [ "z" = "z${svn_old_date}" ] ; then
+    # Darwin method.
+    svn_old_date=`date -v-24H $svn_date_format 2> /dev/null`
+fi
+if [ "z" = "z${svn_old_date}" ] ; then
+    echo "Sorry, can't work out the time and date for 24 hours ago, aborting"
+    exit 1;
+fi
+
+# The time-and-date for now is easy.
+svn_new_date=`date $svn_date_format`
 
 cd $ABT_TOP
 

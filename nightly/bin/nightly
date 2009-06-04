@@ -174,10 +174,14 @@ done
 # Prepare results and send
 #----------------------------------------------------------------------------
 
+# Get times and date
+ABT_END=`date "+%F %H:%M:%S %Z"`
+
 # 'final' shows the difference between the old and new results
-echo                                                     >  final
-echo "Nightly build on" $ABT_MACHINE "(" $ABT_DETAILS ")" \
-     "started at" $ABT_START                             >> final
+echo                                                      >  final
+echo "Nightly build on" $ABT_MACHINE "(" $ABT_DETAILS ")" >> final
+echo "Started at" $ABT_START                              >> final
+echo "Ended   at" $ABT_END                                >> final
 
 # If the results differ from 24 hours ago, print extra stuff.
 diff -C1 old.short new.short > diff.short

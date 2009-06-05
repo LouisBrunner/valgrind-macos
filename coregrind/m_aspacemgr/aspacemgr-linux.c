@@ -3374,6 +3374,8 @@ static void add_mapping_callback(Addr addr, SizeT len, UInt prot,
       else if (nsegments[i].kind == SkFree || nsegments[i].kind == SkResvn) {
           /* Add mapping for SkResvn regions */
          ChangedSeg* cs = &css_local[css_used_local];
+         // If this assert fails, the css_size arg passed to
+         // VG_(get_changed_segments) needs to be increased.
          aspacem_assert(css_used_local < css_size_local);
          cs->is_added = True;
          cs->start    = addr;
@@ -3433,8 +3435,9 @@ static void remove_mapping_callback(Addr addr, SizeT len)
       if (nsegments[i].kind != SkFree  &&  nsegments[i].kind != SkResvn) {
          // V has a mapping, kernel doesn't
          ChangedSeg* cs = &css_local[css_used_local];
+         // If this assert fails, the css_size arg passed to
+         // VG_(get_changed_segments) needs to be increased.
          aspacem_assert(css_used_local < css_size_local);
-         cs->is_added = True;
          cs->is_added = False;
          cs->start    = nsegments[i].start;
          cs->end      = nsegments[i].end;

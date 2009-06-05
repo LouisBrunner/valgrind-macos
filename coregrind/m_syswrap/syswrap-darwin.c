@@ -592,10 +592,13 @@ void VG_(show_open_ports)(void)
 
 static void sync_mappings(const HChar *when, const HChar *where, Int num)
 {
-   // I haven't seen more than 1 segment be added or removed in a single calls
-   // to sync_mappings().  So 20 seems generous.  The upper bound is the
-   // number of segments currently in use.  --njn
-   #define CSS_SIZE     20
+   // Usually the number of segments added/removed in a single calls is very
+   // small e.g. 1.  But the limit was 20 at one point, and that wasn't enough
+   // for at least one invocation of Firefox.  If we need to go much bigger,
+   // should probably make VG_(get_changed_segments) fail if the size isn't
+   // big enough, and repeatedly redo it with progressively bigger dynamically
+   // allocated buffers until it succeeds.
+   #define CSS_SIZE     100
    ChangedSeg css[CSS_SIZE];
    Int        css_used;
    Int        i;

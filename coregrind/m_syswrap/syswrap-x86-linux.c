@@ -647,8 +647,11 @@ static SysRes sys_set_thread_area ( ThreadId tid, vki_modify_ldt_t* info )
    idx = info->entry_number;
 
    if (idx == -1) {
-      /* Find and use the first free entry. */
-      for (idx = 0; idx < VEX_GUEST_X86_GDT_NENT; idx++) {
+      /* Find and use the first free entry.  Don't allocate entry
+         zero, because the hardware will never do that, and apparently
+         doing so confuses some code (perhaps stuff running on
+         Wine). */
+      for (idx = 1; idx < VEX_GUEST_X86_GDT_NENT; idx++) {
          if (gdt[idx].LdtEnt.Words.word1 == 0 
              && gdt[idx].LdtEnt.Words.word2 == 0)
             break;
@@ -656,7 +659,8 @@ static SysRes sys_set_thread_area ( ThreadId tid, vki_modify_ldt_t* info )
 
       if (idx == VEX_GUEST_X86_GDT_NENT)
          return VG_(mk_SysRes_Error)( VKI_ESRCH );
-   } else if (idx < 0 || idx >= VEX_GUEST_X86_GDT_NENT) {
+   } else if (idx < 0 || idx == 0 || idx >= VEX_GUEST_X86_GDT_NENT) {
+      /* Similarly, reject attempts to use GDT[0]. */
       return VG_(mk_SysRes_Error)( VKI_EINVAL );
    }
 

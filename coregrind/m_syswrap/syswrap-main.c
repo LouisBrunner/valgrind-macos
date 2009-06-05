@@ -1622,9 +1622,9 @@ void VG_(post_syscall) (ThreadId tid)
       when they really should call SET_STATUS_from_SysRes.  The former
       create a UNIX-class syscall result on Darwin, which may not be
       correct for the syscall; if that's the case then this assertion
-      fires.  See PRE(pthread_set_self) for an example.  On non-Darwin
-      platforms this assertion is should never fail, and this comment
-      is completely irrelevant. */
+      fires.  See PRE(thread_fast_set_cthread_self) for an example.  On
+      non-Darwin platforms this assertion is should never fail, and this
+      comment is completely irrelevant. */
    /* Ok, looks sane */
 
    /* Get the system call number.  Because the pre-handler isn't

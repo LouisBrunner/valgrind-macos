@@ -6873,13 +6873,12 @@ static VexGuestX86SegDescr* alloc_zeroed_x86_LDT ( void )
 }
 #endif
 
-PRE(pthread_set_self)
+PRE(thread_fast_set_cthread_self)
 {
-   PRINT("pthread_set_self ( %#lx )", ARG1);
-   PRE_REG_READ1(void, "pthread_set_self", struct pthread_t *, self);
+   PRINT("thread_fast_set_cthread_self ( %#lx )", ARG1);
+   PRE_REG_READ1(void, "thread_fast_set_cthread_self", struct pthread_t *, self);
 
 #if defined(VGA_x86)
-   // GrP fixme hack this isn't really pthread_set_self
    // Point the USER_CTHREAD ldt entry (slot 6, reg 0x37) at this pthread
    {
       VexGuestX86SegDescr *ldt;
@@ -6912,7 +6911,7 @@ PRE(pthread_set_self)
       // and use that to set the syscall return status.
       SET_STATUS_from_SysRes(
          VG_(mk_SysRes_x86_darwin)(
-            VG_DARWIN_SYSNO_CLASS(__NR_pthread_set_self),
+            VG_DARWIN_SYSNO_CLASS(__NR_thread_fast_set_cthread_self),
             False, 0, 0x37
          )
       );
@@ -6928,7 +6927,7 @@ PRE(pthread_set_self)
       // see comments on x86 case just above
       SET_STATUS_from_SysRes(
          VG_(mk_SysRes_amd64_darwin)(
-            VG_DARWIN_SYSNO_CLASS(__NR_pthread_set_self),
+            VG_DARWIN_SYSNO_CLASS(__NR_thread_fast_set_cthread_self),
             False, 0, 0x60
          )
       );
@@ -7524,11 +7523,11 @@ const SyscallTableEntry ML_(mach_trap_table)[] = {
 
 #if defined(VGA_x86)
 const SyscallTableEntry ML_(mdep_trap_table)[] = {
-   MACX_(__NR_pthread_set_self, pthread_set_self), 
+   MACX_(__NR_thread_fast_set_cthread_self, thread_fast_set_cthread_self), 
 };
 #elif defined(VGA_amd64)
 const SyscallTableEntry ML_(mdep_trap_table)[] = {
-   MACX_(__NR_pthread_set_self, pthread_set_self), 
+   MACX_(__NR_thread_fast_set_cthread_self, thread_fast_set_cthread_self), 
 };
 #else
 #error unknown architecture

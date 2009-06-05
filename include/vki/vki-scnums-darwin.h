@@ -116,18 +116,21 @@
 #if defined(VGA_x86)
 
 // osfmk/i386/machdep_call.c
-// #  define __NR_thread_get_cthread_self VG_DARWIN_SYSCALL_CONSTRUCT_MDEP(0)
-// #  define __NR_thread_set_cthread_self VG_DARWIN_SYSCALL_CONSTRUCT_MDEP(1)
-// #  define __NR_2 VG_DARWIN_SYSCALL_CONSTRUCT_MDEP(2)
-#  define __NR_pthread_set_self VG_DARWIN_SYSCALL_CONSTRUCT_MDEP(3)
-// #  define __NR_thread_set_user_ldt VG_DARWIN_SYSCALL_CONSTRUCT_MDEP(4)
-// #  define __NR_i386_set_ldt VG_DARWIN_SYSCALL_CONSTRUCT_MDEP(5)
-// #  define __NR_i386_get_ldt VG_DARWIN_SYSCALL_CONSTRUCT_MDEP(6)
+// DDD: the last two are BSD_CALL instead of CALL...
+//#define __NR_thread_get_cthread_self      VG_DARWIN_SYSCALL_CONSTRUCT_MDEP(0)
+//#define __NR_thread_set_cthread_self      VG_DARWIN_SYSCALL_CONSTRUCT_MDEP(1)
+// 2 is invalid
+#define __NR_thread_fast_set_cthread_self VG_DARWIN_SYSCALL_CONSTRUCT_MDEP(3)
+//#define __NR_thread_set_user_ldt          VG_DARWIN_SYSCALL_CONSTRUCT_MDEP(4)
+//#define __NR_i386_set_ldt                 VG_DARWIN_SYSCALL_CONSTRUCT_MDEP(5)
+//#define __NR_i386_get_ldt                 VG_DARWIN_SYSCALL_CONSTRUCT_MDEP(6)
 
 #elif defined(VGA_amd64)
 
 // osfmk/i386/machdep_call.c
-#  define __NR_pthread_set_self VG_DARWIN_SYSCALL_CONSTRUCT_MDEP(3)
+// 0, 1, 2 are invalid
+#define __NR_thread_fast_set_cthread_self VG_DARWIN_SYSCALL_CONSTRUCT_MDEP(3)
+// 4, 5, 6 are invalid
 
 #else
 #  error unknown architecture

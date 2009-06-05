@@ -2461,7 +2461,7 @@ static void setup_post_syscall_table ( void )
       ADD(0, __NR_task_self_trap);
 
       // Machine-dependent syscalls.
-      ADD(0, __NR_pthread_set_self);
+      ADD(0, __NR_thread_fast_set_cthread_self);
 
    /* ------------------------------------ */
 

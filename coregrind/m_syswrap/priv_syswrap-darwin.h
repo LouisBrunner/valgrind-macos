@@ -241,7 +241,7 @@ DECL_TEMPLATE(darwin, swtch);
 DECL_TEMPLATE(darwin, swtch_pri);
 
 // Machine-dependent traps
-DECL_TEMPLATE(darwin, pthread_set_self);
+DECL_TEMPLATE(darwin, thread_fast_set_cthread_self);
 
 // syswrap-<arch>-darwin.c
 #include <mach/mach.h>

@@ -32,11 +32,8 @@ How to test DRD
 6. Run the regression tests as follows:
      perl tests/vg_regtest drd
 
-7. Run Konstantin's regression tests:
-     mkdir -p drt/unittest
-     svn checkout http://data-race-test.googlecode.com/svn/trunk/unittest drt/unittest
-     make -C drt/unittest -s all
-     ./vg-in-place --tool=drd --check-stack-var=yes drt/unittest/racecheck_unittest 2>&1|less
+7. Run the regression tests that were developed for Thread Sanitizer:
+     ./vg-in-place --tool=drd --check-stack-var=yes drt/test/tsan_unittest 2>&1|less
 
 8. Test the slowdown for matinv for various matrix sizes via the script
    drd/scripts/run-matinv (must be about 24 for i == 1 and about
@@ -55,7 +52,25 @@ How to test DRD
    having closed the GNOME terminal window:
      ./vg-in-place --tool=drd --var-info=yes --trace-children=yes gnome-terminal
 
-11. Test DRD with Firefox. First of all, make sure that Valgrind is patched
+11. Rerun the GraphicsMagick test suite:
+    1. Recompile gcc via drd/scripts/download-and-build-gcc.
+    2. Replace the distro-provided libgomp.so* by the newly compiled versions:
+       cp $HOME/gcc-.../lib/libgomp.so.1.0.0.0 /usr/lib
+       cp $HOME/gcc-.../lib64/libgomp.so.1.0.0.0 /usr/lib64
+       rpm --verify libgomp43-32bit
+       rpm --verify libgomp43
+    3. Build and install Valgrind in /usr:
+       ./autogen.sh && ./configure --prefix=/usr CC=$HOME/gcc-4.4.0/bin/gcc \
+       && make -s && make -s install
+    4. Download the GraphicsMagick source code:
+       cvs -d :pserver:anonymous@cvs.graphicsmagick.org:/GraphicsMagick login
+       cvs -d :pserver:anonymous@cvs.graphicsmagick.org:/GraphicsMagick co GraphicsMagick
+       cd GraphicsMagick
+       ./configure --prefix=$HOME/GraphicsMagick-cvs
+       export OMP_NUM_THREADS=4
+       make -s drd
+
+12. Test DRD with Firefox. First of all, make sure that Valgrind is patched
    such that it supports libjemalloc.so:
      drd/scripts/add-libjemalloc-support
    Next, build and install Firefox 3:

@@ -37,14 +37,6 @@
     </literallayout>
     </chapter>
 
-  <chapter id="dist.install" xreflabel="Install">
-    <title>INSTALL</title>
-    <literallayout>
-      <xi:include href="../../INSTALL" parse="text"  
-          xmlns:xi="http://www.w3.org/2001/XInclude" />
-    </literallayout>
-    </chapter>
-
   <chapter id="dist.news" xreflabel="News">
     <title>NEWS</title>
     <literallayout>

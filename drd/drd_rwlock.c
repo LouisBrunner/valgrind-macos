@@ -368,10 +368,10 @@ void rwlock_post_rdlock(const Addr rwlock, const Bool took_lock)
   q = lookup_or_insert_node(p->thread_info, drd_tid);
   if (++q->reader_nesting_count == 1)
   {
-    rwlock_combine_other_vc(p, drd_tid, False);
     q->last_lock_was_writer_lock = False;
     thread_new_segment(drd_tid);
     s_rwlock_segment_creation_count++;
+    rwlock_combine_other_vc(p, drd_tid, False);
 
     p->acquiry_time_ms = VG_(read_millisecond_timer)();
     p->acquired_at     = VG_(record_ExeContext)(VG_(get_running_tid)(), 0);
@@ -446,9 +446,9 @@ void rwlock_post_wrlock(const Addr rwlock, const Bool took_lock)
   q->writer_nesting_count++;
   q->last_lock_was_writer_lock = True;
   tl_assert(q->writer_nesting_count == 1);
-  rwlock_combine_other_vc(p, drd_tid, True);
   thread_new_segment(drd_tid);
   s_rwlock_segment_creation_count++;
+  rwlock_combine_other_vc(p, drd_tid, True);
   p->acquiry_time_ms = VG_(read_millisecond_timer)();
   p->acquired_at     = VG_(record_ExeContext)(VG_(get_running_tid)(), 0);
 }

@@ -646,9 +646,10 @@ void drd_post_thread_join(DrdThreadId drd_joiner, DrdThreadId drd_joinee)
 {
   tl_assert(IsValidDrdThreadId(drd_joiner));
   tl_assert(IsValidDrdThreadId(drd_joinee));
-  thread_new_segment(drd_joinee);
-  thread_combine_vc(drd_joiner, drd_joinee);
+
   thread_new_segment(drd_joiner);
+  thread_combine_vc(drd_joiner, drd_joinee);
+  thread_new_segment(drd_joinee);
 
   if (s_drd_trace_fork_join)
   {

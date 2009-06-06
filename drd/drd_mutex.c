@@ -301,13 +301,14 @@ void mutex_post_lock(const Addr mutex, const Bool took_lock,
   {
     const DrdThreadId last_owner = p->owner;
 
+    thread_new_segment(drd_tid);
+    s_mutex_segment_creation_count++;
+
     if (last_owner != drd_tid && last_owner != DRD_INVALID_THREADID)
     {
       tl_assert(p->last_locked_segment);
       thread_combine_vc2(drd_tid, &p->last_locked_segment->vc);
     }
-    thread_new_segment(drd_tid);
-    s_mutex_segment_creation_count++;
 
     p->owner           = drd_tid;
     p->acquiry_time_ms = VG_(read_millisecond_timer)();

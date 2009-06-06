@@ -388,6 +388,10 @@ void barrier_post_wait(const DrdThreadId tid, const Addr barrier,
       VG_(OSetGen_Insert)(p->oset, q);
       tl_assert(VG_(OSetGen_Lookup)(p->oset, &word_tid) == q);
     }
+
+    thread_new_segment(tid);
+    s_barrier_segment_creation_count++;
+
     VG_(OSetGen_ResetIter)(p->oset);
     for ( ; (r = VG_(OSetGen_Next)(p->oset)) != 0; )
     {
@@ -397,9 +401,6 @@ void barrier_post_wait(const DrdThreadId tid, const Addr barrier,
         thread_combine_vc2(tid, &r->sg[p->post_iteration]->vc);
       }
     }
-
-    thread_new_segment(tid);
-    s_barrier_segment_creation_count++;
 
     if (--p->post_waiters_left <= 0)
     {

@@ -227,9 +227,17 @@ void semaphore_pre_wait(const Addr semaphore)
 
   p = semaphore_get_or_allocate(semaphore);
   tl_assert(p);
-  tl_assert((int)p->waiters >= 0);
   p->waiters++;
-  tl_assert(p->waiters > 0);
+
+   if ((int)p->waiters <= 0)
+   {
+      SemaphoreErrInfo sei = { semaphore };
+      VG_(maybe_record_error)(VG_(get_running_tid)(),
+                              SemaphoreErr,
+                              VG_(get_IP)(VG_(get_running_tid)()),
+                              "Invalid semaphore",
+                              &sei);
+   }
 }
 
 /** Called after sem_wait() finished.
@@ -253,12 +261,21 @@ void semaphore_post_wait(const DrdThreadId tid, const Addr semaphore,
                  p ? p->value : 0,
                  p ? p->value - 1 : 0);
   }
-  tl_assert(p);
-  tl_assert(p->waiters > 0);
-  p->waiters--;
-  tl_assert((int)p->waiters >= 0);
-  tl_assert((int)p->value >= 0);
-  if (p->value == 0)
+
+  if (p)
+  {
+    p->waiters--;
+    p->value--;
+  }
+
+  /*
+   * Note: if another thread destroyed and reinitialized a semaphore while
+   * the current thread was waiting in sem_wait, p->waiters may have been
+   * set to zero by semaphore_initialize() after
+   * semaphore_pre_wait() has finished before
+   * semaphore_post_wait() has been called.
+   */
+  if (p == NULL || (int)p->value < 0 || (int)p->waiters < 0)
   {
     SemaphoreErrInfo sei = { semaphore };
     VG_(maybe_record_error)(VG_(get_running_tid)(),
@@ -268,8 +285,7 @@ void semaphore_post_wait(const DrdThreadId tid, const Addr semaphore,
                             &sei);
     return;
   }
-  p->value--;
-  tl_assert((int)p->value >= 0);
+
   if (p->waits_to_skip > 0)
     p->waits_to_skip--;
   else
@@ -278,14 +294,15 @@ void semaphore_post_wait(const DrdThreadId tid, const Addr semaphore,
     tl_assert(sg);
     if (sg)
     {
+      thread_new_segment(tid);
+      s_semaphore_segment_creation_count++;
+
       if (p->last_sem_post_tid != tid
           && p->last_sem_post_tid != DRD_INVALID_THREADID)
       {
         thread_combine_vc2(tid, &sg->vc);
       }
       sg_put(sg);
-      thread_new_segment(tid);
-      s_semaphore_segment_creation_count++;
     }
   }
 }
@@ -310,11 +327,11 @@ void semaphore_pre_post(const DrdThreadId tid, const Addr semaphore)
   }
 
   p->last_sem_post_tid = tid;
-  thread_new_segment(tid);
   sg = 0;
   thread_get_latest_segment(&sg, tid);
   tl_assert(sg);
   segment_push(p, sg);
+  thread_new_segment(tid);
   s_semaphore_segment_creation_count++;
 }
 

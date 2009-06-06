@@ -262,7 +262,6 @@
    gomp
    drd:ConflictingAccess
    obj:/usr/lib*/libgomp.so*
-   obj:/usr/lib*/libgomp.so*
 }
 {
    libX11-XCreateFontSet

@@ -299,14 +299,15 @@ void DRD_(semaphore_post_wait)(const DrdThreadId tid, const Addr semaphore,
       tl_assert(sg);
       if (sg)
       {
+         DRD_(thread_new_segment)(tid);
+         s_semaphore_segment_creation_count++;
+
          if (p->last_sem_post_tid != tid
              && p->last_sem_post_tid != DRD_INVALID_THREADID)
          {
             DRD_(thread_combine_vc2)(tid, &sg->vc);
          }
          DRD_(sg_put)(sg);
-         DRD_(thread_new_segment)(tid);
-         s_semaphore_segment_creation_count++;
       }
    }
 }
@@ -331,11 +332,11 @@ void DRD_(semaphore_pre_post)(const DrdThreadId tid, const Addr semaphore)
    }
 
    p->last_sem_post_tid = tid;
-   DRD_(thread_new_segment)(tid);
    sg = 0;
    DRD_(thread_get_latest_segment)(&sg, tid);
    tl_assert(sg);
    DRD_(segment_push)(p, sg);
+   DRD_(thread_new_segment)(tid);
    s_semaphore_segment_creation_count++;
 }
 

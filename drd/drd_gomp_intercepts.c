@@ -59,6 +59,8 @@ typedef void* gomp_barrier_t;
 
 // Function definitions.
 
+#if 0
+
 GOMP_FUNC(void, gompZubarrierZuinit, // gomp_barrier_init
           gomp_barrier_t* barrier, unsigned count)
 {
@@ -115,3 +117,5 @@ GOMP_FUNC(void, gompZubarrierZuwait, // gomp_barrier_wait
    VALGRIND_DO_CLIENT_REQUEST(res, -1, VG_USERREQ__POST_BARRIER_WAIT,
                               barrier, gomp_barrier, 1, 0, 0);
 }
+
+#endif

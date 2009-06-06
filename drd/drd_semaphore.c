@@ -247,9 +247,17 @@ void DRD_(semaphore_pre_wait)(const Addr semaphore)
 
    p = DRD_(semaphore_get_or_allocate)(semaphore);
    tl_assert(p);
-   tl_assert((int)p->waiters >= 0);
    p->waiters++;
-   tl_assert(p->waiters > 0);
+
+   if ((int)p->waiters <= 0)
+   {
+      SemaphoreErrInfo sei = { DRD_(thread_get_running_tid)(), semaphore };
+      VG_(maybe_record_error)(VG_(get_running_tid)(),
+                              SemaphoreErr,
+                              VG_(get_IP)(VG_(get_running_tid)()),
+                              "Invalid semaphore",
+                              &sei);
+   }
 }
 
 /**

@@ -274,12 +274,21 @@ void DRD_(semaphore_post_wait)(const DrdThreadId tid, const Addr semaphore,
                    p ? p->value : 0,
                    p ? p->value - 1 : 0);
    }
-   tl_assert(p);
-   tl_assert(p->waiters > 0);
-   p->waiters--;
-   tl_assert((int)p->waiters >= 0);
-   tl_assert((int)p->value >= 0);
-   if (p->value == 0)
+
+   if (p)
+   {
+      p->waiters--;
+      p->value--;
+   }
+
+   /*
+    * Note: if another thread destroyed and reinitialized a semaphore while
+    * the current thread was waiting in sem_wait, p->waiters may have been
+    * set to zero by DRD_(semaphore_initialize)() after
+    * DRD_(semaphore_pre_wait)() has finished before
+    * DRD_(semaphore_post_wait)() has been called.
+    */
+   if (p == NULL || (int)p->value < 0 || (int)p->waiters < 0)
    {
       SemaphoreErrInfo sei = { DRD_(thread_get_running_tid)(), semaphore };
       VG_(maybe_record_error)(VG_(get_running_tid)(),
@@ -289,8 +298,7 @@ void DRD_(semaphore_post_wait)(const DrdThreadId tid, const Addr semaphore,
                               &sei);
       return;
    }
-   p->value--;
-   tl_assert((int)p->value >= 0);
+
    if (p->waits_to_skip > 0)
       p->waits_to_skip--;
    else

@@ -114,7 +114,8 @@ n-i-bz DRD - fixed a bug that caused incorrect messages to be printed about
        in r10191).
 n-i-bz DRD - fixed a memory leak triggered by vector clock deallocation
        (fixed in r10228).
-
+195169 DRD - added support for newer versions of gcc's OpenMP runtime (libgomp)
+       (fixed in r10261).
 
 
 Release 3.4.1 (28 February 2009)

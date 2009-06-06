@@ -67,6 +67,8 @@ How to test DRD
        cvs -d :pserver:anonymous@cvs.graphicsmagick.org:/GraphicsMagick co GraphicsMagick
        cd GraphicsMagick
        ./configure --prefix=$HOME/GraphicsMagick-cvs
+       vi Makefile # Add --check-stack-var=yes and --var-info=yes to the
+                   # drd: target.
        export OMP_NUM_THREADS=4
        make -s drd
 

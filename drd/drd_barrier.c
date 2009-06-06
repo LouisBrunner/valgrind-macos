@@ -456,6 +456,12 @@ void DRD_(barrier_post_wait)(const DrdThreadId tid, const Addr barrier,
       VG_(OSetGen_Insert)(p->oset, q);
       tl_assert(VG_(OSetGen_Lookup)(p->oset, &word_tid) == q);
    }
+
+   /* Create a new segment and store a pointer to that segment. */
+   DRD_(thread_new_segment)(tid);
+   DRD_(thread_get_latest_segment)(&q->post_wait_sg, tid);
+   s_barrier_segment_creation_count++;
+
    /*
     * Combine all vector clocks that were stored in the pre_barrier_wait
     * wrapper with the vector clock of the current thread.
@@ -469,11 +475,6 @@ void DRD_(barrier_post_wait)(const DrdThreadId tid, const Addr barrier,
          DRD_(thread_combine_vc2)(tid, &r->sg[p->post_iteration]->vc);
       }
    }
-
-   /* Create a new segment and store a pointer to that segment. */
-   DRD_(thread_new_segment)(tid);
-   DRD_(thread_get_latest_segment)(&q->post_wait_sg, tid);
-   s_barrier_segment_creation_count++;
 
    /*
     * If the same number of threads as the barrier count indicates have

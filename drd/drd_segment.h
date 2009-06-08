@@ -45,6 +45,7 @@ typedef struct segment
    /** Pointers to next and previous segments executed by the same thread. */
    struct segment*    next;
    struct segment*    prev;
+   DrdThreadId        tid;
    /** Reference count: number of pointers that point to this segment. */
    int                refcnt;
    /** Stack trace of the first instruction of the segment. */
@@ -55,22 +56,45 @@ typedef struct segment
     * Bitmap representing the memory accesses by the instructions associated
     * with the segment.
     */
-   struct bitmap*     bm;
+   struct bitmap      bm;
 } Segment;
 
 
 Segment* DRD_(sg_new)(const DrdThreadId creator, const DrdThreadId created);
-int DRD_(sg_get_refcnt)(const Segment* const sg);
+static int DRD_(sg_get_refcnt)(const Segment* const sg);
 Segment* DRD_(sg_get)(Segment* const sg);
 void DRD_(sg_put)(Segment* const sg);
-void DRD_(sg_merge)(const Segment* const sg1, Segment* const sg2);
-void DRD_(sg_print)(const Segment* const sg);
+static struct bitmap* DRD_(sg_bm)(Segment* const sg);
+void DRD_(sg_merge)(Segment* const sg1, Segment* const sg2);
+void DRD_(sg_print)(Segment* const sg);
 Bool DRD_(sg_get_trace)(void);
 void DRD_(sg_set_trace)(const Bool trace_segment);
 ULong DRD_(sg_get_segments_created_count)(void);
 ULong DRD_(sg_get_segments_alive_count)(void);
 ULong DRD_(sg_get_max_segments_alive_count)(void);
 ULong DRD_(sg_get_segment_merge_count)(void);
+
+
+/** Query the reference count of the specified segment. */
+static __inline__ int DRD_(sg_get_refcnt)(const Segment* const sg)
+{
+#ifdef ENABLE_DRD_CONSISTENCY_CHECKS
+   tl_assert(sg);
+#endif
+
+   return sg->refcnt;
+}
+
+/** Return the pointer to the bitmap of the segment. */
+static __inline__ struct bitmap* DRD_(sg_bm)(Segment* const sg)
+{
+#ifdef ENABLE_DRD_CONSISTENCY_CHECKS
+   tl_assert(sg);
+#endif
+
+   return &sg->bm;
+}
+
 
 
 #endif // __SEGMENT_H

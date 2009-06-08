@@ -1,0 +1,3 @@
+prog: unit_vc
+args:
+vgopts: -q --tool=memcheck --leak-check=full --show-reachable=yes

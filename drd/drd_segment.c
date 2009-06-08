@@ -72,6 +72,7 @@ static void sg_init(Segment* const sg,
 
    sg->next = 0;
    sg->prev = 0;
+   sg->tid = created;
    sg->refcnt = 1;
 
    if (vg_created != VG_INVALID_THREADID && VG_(get_SP)(vg_created) != 0)
@@ -84,20 +85,19 @@ static void sg_init(Segment* const sg,
    else
       DRD_(vc_init)(&sg->vc, 0, 0);
    DRD_(vc_increment)(&sg->vc, created);
-   sg->bm = DRD_(bm_new)();
+   DRD_(bm_init)(&sg->bm);
 
    if (s_trace_segment)
    {
-      char msg[256];
-      VG_(snprintf)(msg, sizeof(msg),
-                    "New segment for thread %d/%d with vc ",
-                    created != VG_INVALID_THREADID
-                    ? DRD_(DrdThreadIdToVgThreadId)(created)
-                    : DRD_INVALID_THREADID,
-                    created);
-      DRD_(vc_snprint)(msg + VG_(strlen)(msg), sizeof(msg) - VG_(strlen)(msg),
-                       &sg->vc);
-      VG_(message)(Vg_UserMsg, "%s", msg);
+      char* vc;
+
+      vc = DRD_(vc_aprint)(&sg->vc);
+      VG_(message)(Vg_DebugMsg, "New segment for thread %d/%d with vc %s",
+                   created != VG_INVALID_THREADID
+                   ? DRD_(DrdThreadIdToVgThreadId)(created)
+                   : DRD_INVALID_THREADID,
+                   created, vc);
+      VG_(free)(vc);
    }
 }
 
@@ -108,8 +108,7 @@ static void DRD_(sg_cleanup)(Segment* const sg)
    tl_assert(sg->refcnt == 0);
 
    DRD_(vc_cleanup)(&sg->vc);
-   DRD_(bm_delete)(sg->bm);
-   sg->bm = 0;
+   DRD_(bm_cleanup)(&sg->bm);
 }
 
 /** Allocate and initialize a new segment. */
@@ -130,31 +129,21 @@ Segment* DRD_(sg_new)(const DrdThreadId creator, const DrdThreadId created)
 
 static void DRD_(sg_delete)(Segment* const sg)
 {
-#if 1
    if (DRD_(sg_get_trace)())
    {
-      char msg[256];
-      VG_(snprintf)(msg, sizeof(msg),
-                    "Discarding the segment with vector clock ");
-      DRD_(vc_snprint)(msg + VG_(strlen)(msg), sizeof(msg) - VG_(strlen)(msg),
-                       &sg->vc);
-      VG_(message)(Vg_UserMsg, "%s", msg);
+      char* vc;
+
+      vc = DRD_(vc_aprint)(&sg->vc);
+      VG_(message)(Vg_DebugMsg, "Discarding the segment with vector clock %s",
+                   vc);
+      VG_(free)(vc);
    }
-#endif
 
    s_segments_alive_count--;
 
    tl_assert(sg);
    DRD_(sg_cleanup)(sg);
    VG_(free)(sg);
-}
-
-/** Query the reference count of the specified segment. */
-int DRD_(sg_get_refcnt)(const Segment* const sg)
-{
-   tl_assert(sg);
-
-   return sg->refcnt;
 }
 
 /** Increment the reference count of the specified segment. */
@@ -177,13 +166,13 @@ void DRD_(sg_put)(Segment* const sg)
 
    if (s_trace_segment)
    {
-      char msg[256];
-      VG_(snprintf)(msg, sizeof(msg),
-                    "Decrementing segment reference count %d -> %d with vc ",
-                    sg->refcnt, sg->refcnt - 1);
-      DRD_(vc_snprint)(msg + VG_(strlen)(msg), sizeof(msg) - VG_(strlen)(msg),
-                       &sg->vc);
-      VG_(message)(Vg_UserMsg, "%s", msg);
+      char* vc;
+
+      vc = DRD_(vc_aprint)(&sg->vc);
+      VG_(message)(Vg_DebugMsg,
+                   "Decrementing segment reference count %d -> %d with vc %s",
+                   sg->refcnt, sg->refcnt - 1, vc);
+      VG_(free)(vc);
    }
 
    tl_assert(sg->refcnt >= 1);
@@ -195,7 +184,7 @@ void DRD_(sg_put)(Segment* const sg)
 }
 
 /** Merge sg1 and sg2 into sg1. */
-void DRD_(sg_merge)(const Segment* const sg1, Segment* const sg2)
+void DRD_(sg_merge)(Segment* const sg1, Segment* const sg2)
 {
    tl_assert(sg1);
    tl_assert(sg1->refcnt == 1);
@@ -204,16 +193,15 @@ void DRD_(sg_merge)(const Segment* const sg1, Segment* const sg2)
 
    if (s_trace_segment)
    {
-      char msg[256];
+      char *vc1, *vc2;
 
-      VG_(snprintf)(msg, sizeof(msg), "Merging segments with vector clocks ");
-      DRD_(vc_snprint)(msg + VG_(strlen)(msg), sizeof(msg) - VG_(strlen)(msg),
-                       &sg1->vc);
-      VG_(snprintf)(msg + VG_(strlen)(msg), sizeof(msg) - VG_(strlen)(msg),
-                    " and ");
-      DRD_(vc_snprint)(msg + VG_(strlen)(msg), sizeof(msg) - VG_(strlen)(msg),
-                       &sg2->vc);
-      VG_(message)(Vg_UserMsg, "%s", msg);
+      vc1 = DRD_(vc_aprint)(&sg1->vc);
+      vc2 = DRD_(vc_aprint)(&sg2->vc);
+
+      VG_(message)(Vg_DebugMsg, "Merging segments with vector clocks %s and %s",
+                   vc1, vc2);
+      VG_(free)(vc1);
+      VG_(free)(vc2);
    }
 
    s_segment_merge_count++;
@@ -221,17 +209,17 @@ void DRD_(sg_merge)(const Segment* const sg1, Segment* const sg2)
    // Keep sg1->stacktrace.
    // Keep sg1->vc.
    // Merge sg2->bm into sg1->bm.
-   DRD_(bm_merge2)(sg1->bm, sg2->bm);
+   DRD_(bm_merge2)(&sg1->bm, &sg2->bm);
 }
 
 /** Print the vector clock and the bitmap of the specified segment. */
-void DRD_(sg_print)(const Segment* const sg)
+void DRD_(sg_print)(Segment* const sg)
 {
    tl_assert(sg);
    VG_(printf)("vc: ");
    DRD_(vc_print)(&sg->vc);
    VG_(printf)("\n");
-   DRD_(bm_print)(sg->bm);
+   DRD_(bm_print)(&sg->bm);
 }
 
 /** Query whether segment tracing has been enabled. */

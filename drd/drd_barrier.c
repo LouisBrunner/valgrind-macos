@@ -466,14 +466,22 @@ void DRD_(barrier_post_wait)(const DrdThreadId tid, const Addr barrier,
     * Combine all vector clocks that were stored in the pre_barrier_wait
     * wrapper with the vector clock of the current thread.
     */
-   VG_(OSetGen_ResetIter)(p->oset);
-   for ( ; (r = VG_(OSetGen_Next)(p->oset)) != 0; )
    {
-      if (r != q)
+      VectorClock old_vc;
+
+      DRD_(vc_copy)(&old_vc, &DRD_(g_threadinfo)[tid].last->vc);
+      VG_(OSetGen_ResetIter)(p->oset);
+      for ( ; (r = VG_(OSetGen_Next)(p->oset)) != 0; )
       {
-         tl_assert(r->sg[p->post_iteration]);
-         DRD_(thread_combine_vc2)(tid, &r->sg[p->post_iteration]->vc);
+         if (r != q)
+         {
+            tl_assert(r->sg[p->post_iteration]);
+            DRD_(vc_combine)(&DRD_(g_threadinfo)[tid].last->vc,
+                             &r->sg[p->post_iteration]->vc);
+         }
       }
+      DRD_(thread_update_conflict_set)(tid, &old_vc);
+      DRD_(vc_cleanup)(&old_vc);
    }
 
    /*

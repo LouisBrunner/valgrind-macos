@@ -116,9 +116,12 @@ extern struct bitmap* DRD_(g_conflict_set);
 
 void DRD_(thread_trace_context_switches)(const Bool t);
 void DRD_(thread_trace_conflict_set)(const Bool t);
+void DRD_(thread_trace_conflict_set_bm)(const Bool t);
 Bool DRD_(thread_get_trace_fork_join)(void);
 void DRD_(thread_set_trace_fork_join)(const Bool t);
 void DRD_(thread_set_segment_merging)(const Bool m);
+int DRD_(thread_get_segment_merge_interval)(void);
+void DRD_(thread_set_segment_merge_interval)(const int i);
 
 DrdThreadId DRD_(VgThreadIdToDrdThreadId)(const ThreadId tid);
 DrdThreadId DRD_(NewVgThreadIdToDrdThreadId)(const ThreadId tid);
@@ -151,10 +154,11 @@ int DRD_(thread_get_synchr_nesting_count)(const DrdThreadId tid);
 void DRD_(thread_new_segment)(const DrdThreadId tid);
 VectorClock* DRD_(thread_get_vc)(const DrdThreadId tid);
 void DRD_(thread_get_latest_segment)(Segment** sg, const DrdThreadId tid);
-void DRD_(thread_combine_vc)(const DrdThreadId joiner,
-                             const DrdThreadId joinee);
-void DRD_(thread_combine_vc2)(const DrdThreadId tid,
-                              const VectorClock* const vc);
+void DRD_(thread_combine_vc_join)(const DrdThreadId joiner,
+                                  const DrdThreadId joinee);
+void DRD_(thread_combine_vc_sync)(const DrdThreadId tid, const Segment* sg);
+void DRD_(thread_update_conflict_set)(const DrdThreadId tid,
+                                      const VectorClock* const old_vc);
 
 void DRD_(thread_stop_using_mem)(const Addr a1, const Addr a2);
 void DRD_(thread_set_record_loads)(const DrdThreadId tid, const Bool enabled);

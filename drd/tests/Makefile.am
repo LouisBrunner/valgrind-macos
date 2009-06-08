@@ -41,9 +41,6 @@ EXTRA_DIST =                                        \
 	circular_buffer.vgtest			    \
 	custom_alloc.stderr.exp			    \
 	custom_alloc.vgtest			    \
-	drd_bitmap_test.stderr.exp                  \
-	drd_bitmap_test.stdout.exp                  \
-	drd_bitmap_test.vgtest                      \
 	fp_race.stderr.exp                          \
 	fp_race.vgtest                              \
 	fp_race2.stderr.exp                         \
@@ -218,10 +215,14 @@ EXTRA_DIST =                                        \
 	thread_name.stderr.exp			    \
 	thread_name.vgtest			    \
 	trylock.stderr.exp                          \
-	trylock.vgtest
+	trylock.vgtest				    \
+	unit_bitmap.stderr.exp                      \
+	unit_bitmap.vgtest                          \
+	unit_vc.stderr.exp                          \
+	unit_vc.vgtest
+
 
 check_PROGRAMS =      \
-  drd_bitmap_test     \
   fp_race             \
   hold_lock           \
   linuxthreads_det    \
@@ -243,7 +244,9 @@ check_PROGRAMS =      \
   sem_as_mutex        \
   sigalrm             \
   thread_name         \
-  trylock
+  trylock             \
+  unit_bitmap         \
+  unit_vc
 
 if HAVE_BOOST_1_35
 check_PROGRAMS += boost_thread
@@ -283,17 +286,20 @@ AM_CXXFLAGS += $(AM_FLAG_M3264_PRI) @FLAG_W_EXTRA@ -Wno-inline -Wno-unused-param
 LDADD = -lpthread
 
 
-drd_bitmap_test_CFLAGS      = $(AM_CFLAGS) -O2 \
-                              -DENABLE_DRD_CONSISTENCY_CHECKS\
-                              @FLAG_UNLIMITED_INLINE_UNIT_GROWTH@
-drd_bitmap_test_LDADD       = # nothing, i.e. not -lpthread
-
 monitor_example_SOURCES     = monitor_example.cpp
 new_delete_SOURCES          = new_delete.cpp
 
 tsan_unittest_SOURCES       = tsan_unittest.cpp
 tsan_unittest_CXXFLAGS      = $(AM_CXXFLAGS) \
 			-DTHREAD_WRAPPERS='"tsan_thread_wrappers_pthread.h"'
+
+unit_bitmap_CFLAGS          = $(AM_CFLAGS) -O2 \
+                              -DENABLE_DRD_CONSISTENCY_CHECKS \
+                              @FLAG_UNLIMITED_INLINE_UNIT_GROWTH@
+unit_bitmap_LDADD           = # nothing, i.e. not -lpthread
+
+unit_vc_CFLAGS              = $(AM_CFLAGS) -DENABLE_DRD_CONSISTENCY_CHECKS
+unit_vc_LDADD               = # nothing, i.e. not -lpthread
 
 if HAVE_BOOST_1_35
 boost_thread_SOURCES        = boost_thread.cpp

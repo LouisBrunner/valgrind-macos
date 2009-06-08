@@ -1,3 +1,0 @@
-prog: drd_bitmap_test
-args: -s 93 -t 97 -q
-vgopts: -q --tool=memcheck

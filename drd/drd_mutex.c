@@ -314,7 +314,7 @@ void DRD_(mutex_post_lock)(const Addr mutex, const Bool took_lock,
       if (last_owner != drd_tid && last_owner != DRD_INVALID_THREADID)
       {
          tl_assert(p->last_locked_segment);
-         DRD_(thread_combine_vc2)(drd_tid, &p->last_locked_segment->vc);
+         DRD_(thread_combine_vc_sync)(drd_tid, p->last_locked_segment);
       }
 
       p->owner           = drd_tid;

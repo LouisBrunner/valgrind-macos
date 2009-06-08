@@ -10,6 +10,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>  // getopt()
+#include "../../drd/drd.h"
 
 
 static int is_prime(int* const pflag, int v)
@@ -35,6 +36,7 @@ int main(int argc, char **argv)
 {
   int i;
   int total = 0;
+  int trace_total = 0;
   int silent = 0;
   int n;
   int num_threads = 2;
@@ -42,12 +44,19 @@ int main(int argc, char **argv)
   int* primes;
   int* pflag;
 
-  while ((optchar = getopt(argc, argv, "qt:")) != EOF)
+  while ((optchar = getopt(argc, argv, "qt:v")) != EOF)
   {
     switch (optchar)
     {
-    case 'q': silent = 1; break;
-    case 't': num_threads = atoi(optarg); break;
+    case 'q':
+      silent = 1;
+      break;
+    case 't':
+      num_threads = atoi(optarg);
+      break;
+    case 'v':
+      trace_total = 1;
+      break;
     default:
       fprintf(stderr, "Error: unknown option '%c'.\n", optchar);
       return 1;
@@ -75,6 +84,9 @@ int main(int argc, char **argv)
   for (i = 0; i < n; i++) {
     pflag[i] = 1;
   }
+
+  if (trace_total)
+    DRD_TRACE_VAR(total);
 
 #pragma omp parallel for
   for (i = 2; i < n; i++)

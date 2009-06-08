@@ -168,15 +168,20 @@ static void DRD_(rwlock_combine_other_vc)(struct rwlock_info* const p,
                                           const Bool readers_too)
 {
    struct rwlock_thread_info* q;
+   VectorClock old_vc;
 
+   DRD_(vc_copy)(&old_vc, &DRD_(g_threadinfo)[tid].last->vc);
    VG_(OSetGen_ResetIter)(p->thread_info);
    for ( ; (q = VG_(OSetGen_Next)(p->thread_info)) != 0; )
    {
       if (q->tid != tid && (readers_too || q->last_lock_was_writer_lock))
       {
-         DRD_(thread_combine_vc2)(tid, &q->last_unlock_segment->vc);
+         DRD_(vc_combine)(&DRD_(g_threadinfo)[tid].last->vc,
+                          &q->last_unlock_segment->vc);
       }
    }
+   DRD_(thread_update_conflict_set)(tid, &old_vc);
+   DRD_(vc_cleanup)(&old_vc);
 }
 
 /** Initialize the rwlock_info data structure *p. */

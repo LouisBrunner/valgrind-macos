@@ -321,7 +321,7 @@ void DRD_(semaphore_post_wait)(const DrdThreadId tid, const Addr semaphore,
          if (p->last_sem_post_tid != tid
              && p->last_sem_post_tid != DRD_INVALID_THREADID)
          {
-            DRD_(thread_combine_vc2)(tid, &sg->vc);
+            DRD_(thread_combine_vc_sync)(tid, sg);
          }
          DRD_(sg_put)(sg);
       }

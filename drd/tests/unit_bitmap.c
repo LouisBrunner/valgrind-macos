@@ -1,3 +1,6 @@
+/** @brief Unit-test for DRD's bitmap implementation. */
+
+
 #include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -16,7 +19,7 @@
 #endif
 
 
-/* Replacements for core functionality. */
+/* Replacements for Valgrind core functionality. */
 
 void* VG_(malloc)(HChar* cc, SizeT nbytes)
 { return malloc(nbytes); }
@@ -328,13 +331,13 @@ int main(int argc, char** argv)
     }
   }
 
-  VG_(printf)("Start of DRD BM unit test.\n");
+  fprintf(stderr, "Start of DRD BM unit test.\n");
 
   bm_test1();
   bm_test2();
   bm_test3(outer_loop_step, inner_loop_step);
 
-  VG_(printf)("End of DRD BM unit test.\n");
+  fprintf(stderr, "End of DRD BM unit test.\n");
 
   return 0;
 }

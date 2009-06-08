@@ -86,9 +86,9 @@ void DRD_(trace_mem_access)(const Addr addr, const SizeT size,
 {
    if (DRD_(is_any_traced)(addr, addr + size))
    {
-      char vc[80];
-      DRD_(vc_snprint)(vc, sizeof(vc),
-                       DRD_(thread_get_vc)(DRD_(thread_get_running_tid)()));
+      char* vc;
+
+      vc = DRD_(vc_aprint)(DRD_(thread_get_vc)(DRD_(thread_get_running_tid)()));
       VG_(message)(Vg_UserMsg,
                    "%s 0x%lx size %ld (vg %d / drd %d / vc %s)",
                    access_type == eLoad
@@ -105,6 +105,7 @@ void DRD_(trace_mem_access)(const Addr addr, const SizeT size,
                    VG_(get_running_tid)(),
                    DRD_(thread_get_running_tid)(),
                    vc);
+      VG_(free)(vc);
       VG_(get_and_pp_StackTrace)(VG_(get_running_tid)(),
                                  VG_(clo_backtrace_size));
       tl_assert(DRD_(DrdThreadIdToVgThreadId)(DRD_(thread_get_running_tid)())

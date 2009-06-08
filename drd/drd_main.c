@@ -70,6 +70,7 @@ static Bool DRD_(process_cmd_line_option)(Char* arg)
    int first_race_only        = -1;
    int report_signal_unlocked = -1;
    int segment_merging        = -1;
+   int segment_merge_interval = -1;
    int shared_threshold_ms    = -1;
    int show_confl_seg         = -1;
    int trace_barrier          = -1;
@@ -78,6 +79,7 @@ static Bool DRD_(process_cmd_line_option)(Char* arg)
    int trace_csw              = -1;
    int trace_fork_join        = -1;
    int trace_conflict_set     = -1;
+   int trace_conflict_set_bm  = -1;
    int trace_mutex            = -1;
    int trace_rwlock           = -1;
    int trace_segment          = -1;
@@ -88,8 +90,11 @@ static Bool DRD_(process_cmd_line_option)(Char* arg)
    if      VG_BOOL_CLO(arg, "--check-stack-var",     check_stack_accesses) {}
    else if VG_BOOL_CLO(arg, "--drd-stats",           DRD_(s_print_stats)) {}
    else if VG_BOOL_CLO(arg, "--first-race-only",     first_race_only) {}
-   else if VG_BOOL_CLO(arg,"--report-signal-unlocked",report_signal_unlocked) {}
+   else if VG_BOOL_CLO(arg,"--report-signal-unlocked",report_signal_unlocked)
+   {}
    else if VG_BOOL_CLO(arg, "--segment-merging",     segment_merging) {}
+   else if VG_INT_CLO (arg, "--segment-merging-interval", segment_merge_interval)
+   {}
    else if VG_BOOL_CLO(arg, "--show-confl-seg",      show_confl_seg) {}
    else if VG_BOOL_CLO(arg, "--show-stack-usage",
                        DRD_(s_show_stack_usage)) {}
@@ -97,6 +102,7 @@ static Bool DRD_(process_cmd_line_option)(Char* arg)
    else if VG_BOOL_CLO(arg, "--trace-clientobj",     trace_clientobj) {}
    else if VG_BOOL_CLO(arg, "--trace-cond",          trace_cond) {}
    else if VG_BOOL_CLO(arg, "--trace-conflict-set",  trace_conflict_set) {}
+   else if VG_BOOL_CLO(arg, "--trace-conflict-set-bm", trace_conflict_set_bm){}
    else if VG_BOOL_CLO(arg, "--trace-csw",           trace_csw) {}
    else if VG_BOOL_CLO(arg, "--trace-fork-join",     trace_fork_join) {}
    else if VG_BOOL_CLO(arg, "--trace-mutex",         trace_mutex) {}
@@ -132,6 +138,8 @@ static Bool DRD_(process_cmd_line_option)(Char* arg)
    }
    if (segment_merging != -1)
       DRD_(thread_set_segment_merging)(segment_merging);
+   if (segment_merge_interval != 1)
+      DRD_(thread_set_segment_merge_interval)(segment_merge_interval);
    if (show_confl_seg != -1)
       DRD_(set_show_conflicting_segments)(show_confl_seg);
    if (trace_address)
@@ -151,6 +159,8 @@ static Bool DRD_(process_cmd_line_option)(Char* arg)
       DRD_(thread_set_trace_fork_join)(trace_fork_join);
    if (trace_conflict_set != -1)
       DRD_(thread_trace_conflict_set)(trace_conflict_set);
+   if (trace_conflict_set_bm != -1)
+      DRD_(thread_trace_conflict_set_bm)(trace_conflict_set_bm);
    if (trace_mutex != -1)
       DRD_(mutex_set_trace)(trace_mutex);
    if (trace_rwlock != -1)
@@ -183,6 +193,8 @@ static void DRD_(print_usage)(void)
 "        data race detection algorithm. Disabling segment merging may\n"
 "        improve the accuracy of the so-called 'other segments' displayed\n"
 "        in race reports but can also trigger an out of memory error.\n"
+"    --segment-merging-interval=<n> Perform segment merging every time n new\n"
+"        segments have been created. Default: %d.\n"
 "    --shared-threshold=<n>    Print an error message if a reader lock\n"
 "        is held longer than the specified time (in milliseconds).\n"
 "    --show-confl-seg=yes|no   Show conflicting segments in race reports [yes].\n"
@@ -201,7 +213,8 @@ static void DRD_(print_usage)(void)
 "    --trace-fork-join=yes|no  Trace all thread fork/join activity [no].\n"
 "    --trace-mutex=yes|no      Trace all mutex activity [no].\n"
 "    --trace-rwlock=yes|no     Trace all reader-writer lock activity[no].\n"
-"    --trace-semaphore=yes|no  Trace all semaphore activity [no].\n"
+"    --trace-semaphore=yes|no  Trace all semaphore activity [no].\n",
+DRD_(thread_get_segment_merge_interval)()
 );
    VG_(replacement_malloc_print_usage)();
 }
@@ -213,6 +226,9 @@ static void DRD_(print_debug_usage)(void)
 "    --trace-clientobj=yes|no  Trace all client object activity [no].\n"
 "    --trace-csw=yes|no        Trace all scheduler context switches [no].\n"
 "    --trace-conflict-set=yes|no Trace all conflict set updates [no].\n"
+"    --trace-conflict-set-bm=yes|no Trace all conflict set bitmap\n"
+"                              updates [no]. Note: enabling this option\n"
+"                              will generate a lot of output !\n"
 "    --trace-segment=yes|no    Trace segment actions [no].\n"
 "    --trace-suppr=yes|no      Trace all address suppression actions [no].\n"
 );
@@ -583,20 +599,19 @@ static void DRD_(fini)(Int exitcode)
                    DRD_(sg_get_max_segments_alive_count)(),
                    DRD_(thread_get_discard_ordered_segments_count)());
       VG_(message)(Vg_UserMsg,
-                   "           %lld merges.",
+                   "           %lld merges",
                    DRD_(sg_get_segment_merge_count)());
       VG_(message)(Vg_UserMsg,
-                   "           (%lld m, %lld rw, %lld s, %lld b)",
+                   "           (%lld mutex, %lld rwlock, %lld semaphore,"
+                   " %lld barrier).",
                    DRD_(get_mutex_segment_creation_count)(),
                    DRD_(get_rwlock_segment_creation_count)(),
                    DRD_(get_semaphore_segment_creation_count)(),
                    DRD_(get_barrier_segment_creation_count)());
       VG_(message)(Vg_UserMsg,
-                   "  bitmaps: %lld level 1 / %lld level 2 bitmap refs",
+                   "  bitmaps: %lld level 1"
+                   " and %lld level 2 bitmaps were allocated.",
                    DRD_(bm_get_bitmap_creation_count)(),
-                   DRD_(bm_get_bitmap2_node_creation_count)());
-      VG_(message)(Vg_UserMsg,
-                   "           and %lld level 2 bitmaps were allocated.",
                    DRD_(bm_get_bitmap2_creation_count)());
       VG_(message)(Vg_UserMsg,
                    "    mutex: %lld non-recursive lock/unlock events.",

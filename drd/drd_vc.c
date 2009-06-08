@@ -163,24 +163,10 @@ void DRD_(vc_min)(VectorClock* const result, const VectorClock* const rhs)
  */
 void DRD_(vc_combine)(VectorClock* const result, const VectorClock* const rhs)
 {
-   DRD_(vc_combine2)(result, rhs, -1);
-}
-
-/**
- * Compute elementwise maximum.
- *
- * @return True if *result and *rhs are equal, or if *result and *rhs only
- *         differ in the component with thread ID tid.
- */
-Bool DRD_(vc_combine2)(VectorClock* const result,
-                       const VectorClock* const rhs,
-                       const DrdThreadId tid)
-{
    unsigned i;
    unsigned j;
    unsigned shared;
    unsigned new_size;
-   Bool     almost_equal = True;
 
    tl_assert(result);
    tl_assert(rhs);
@@ -214,10 +200,6 @@ Bool DRD_(vc_combine2)(VectorClock* const result,
       /* is no corresponding clock in rhs->vc[].                         */
       while (i < result->size && result->vc[i].threadid < rhs->vc[j].threadid)
       {
-         if (result->vc[i].threadid != tid)
-         {
-            almost_equal = False;
-         }
          i++;
       }
       /* If the end of *result is met, append rhs->vc[j] to *result. */
@@ -225,10 +207,6 @@ Bool DRD_(vc_combine2)(VectorClock* const result,
       {
          result->size++;
          result->vc[i] = rhs->vc[j];
-         if (result->vc[i].threadid != tid)
-         {
-            almost_equal = False;
-         }
       }
       /* If clock rhs->vc[j] is not in *result, insert it. */
       else if (result->vc[i].threadid > rhs->vc[j].threadid)
@@ -240,21 +218,12 @@ Bool DRD_(vc_combine2)(VectorClock* const result,
          }
          result->size++;
          result->vc[i] = rhs->vc[j];
-         if (result->vc[i].threadid != tid)
-         {
-            almost_equal = False;
-         }
       }
       /* Otherwise, both *result and *rhs have a clock for thread            */
       /* result->vc[i].threadid == rhs->vc[j].threadid. Compute the maximum. */
       else
       {
          tl_assert(result->vc[i].threadid == rhs->vc[j].threadid);
-         if (result->vc[i].threadid != tid
-             && rhs->vc[j].count != result->vc[i].count)
-         {
-            almost_equal = False;
-         }
          if (rhs->vc[j].count > result->vc[i].count)
          {
             result->vc[i].count = rhs->vc[j].count;
@@ -263,50 +232,55 @@ Bool DRD_(vc_combine2)(VectorClock* const result,
    }
    DRD_(vc_check)(result);
    tl_assert(result->size == new_size);
-
-   return almost_equal;
 }
 
 /** Print the contents of vector clock 'vc'. */
 void DRD_(vc_print)(const VectorClock* const vc)
 {
-   unsigned i;
+   char* str;
 
-   tl_assert(vc);
-   VG_(printf)("[");
-   for (i = 0; i < vc->size; i++)
+   if ((str = DRD_(vc_aprint)(vc)) != NULL)
    {
-      tl_assert(vc->vc);
-      VG_(printf)("%s %d: %d", i > 0 ? "," : "",
-                  vc->vc[i].threadid, vc->vc[i].count);
+      VG_(printf)("%s", str);
+      VG_(free)(str);
    }
-   VG_(printf)(" ]");
 }
 
 /**
- * Print the contents of vector clock 'vc' to the character array 'str' that
- * has 'size' elements.
+ * Print the contents of vector clock 'vc' to a newly allocated string.
+ * The caller must call VG_(free)() on the return value of this function.
  */
-void DRD_(vc_snprint)(Char* const str, const Int size,
-                      const VectorClock* const vc)
+char* DRD_(vc_aprint)(const VectorClock* const vc)
 {
    unsigned i;
-   unsigned j = 1;
+   unsigned reserved;
+   unsigned size;
+   char* str = 0;
 
    tl_assert(vc);
-   VG_(snprintf)(str, size, "[");
+   reserved = 64;
+   size = 0;
+   str = VG_(realloc)("drd.vc.aprint.1", str, reserved);
+   if (! str)
+      return str;
+   size += VG_(snprintf)(str, reserved, "[");
    for (i = 0; i < vc->size; i++)
    {
       tl_assert(vc->vc);
-      for ( ; j <= vc->vc[i].threadid; j++)
+      if (VG_(strlen)(str) + 32 > reserved)
       {
-         VG_(snprintf)(str + VG_(strlen)(str), size - VG_(strlen)(str),
-                       "%s %d",
-                       i > 0 ? "," : "",
-                       (j == vc->vc[i].threadid) ? vc->vc[i].count : 0);
+         reserved *= 2;
+         str = VG_(realloc)("drd.vc.aprint.2", str, reserved);
+         if (! str)
+            return str;
       }
+      size += VG_(snprintf)(str + size, reserved - size,
+                            "%s %d: %d", i > 0 ? "," : "",
+                            vc->vc[i].threadid, vc->vc[i].count);
    }
-   VG_(snprintf)(str + VG_(strlen)(str), size - VG_(strlen)(str), " ]");
+   size += VG_(snprintf)(str + size, reserved - size, " ]");
+
+   return str;
 }
 
 /**
@@ -338,74 +312,63 @@ static
 void DRD_(vc_reserve)(VectorClock* const vc, const unsigned new_capacity)
 {
    tl_assert(vc);
+   tl_assert(vc->capacity > VC_PREALLOCATED
+             || vc->vc == 0
+             || vc->vc == vc->preallocated);
+
    if (new_capacity > vc->capacity)
    {
-      if (vc->vc)
+      if (vc->vc && vc->capacity > VC_PREALLOCATED)
       {
+         tl_assert(vc->vc
+                   && vc->vc != vc->preallocated
+                   && vc->capacity > VC_PREALLOCATED);
          vc->vc = VG_(realloc)("drd.vc.vr.1",
                                vc->vc, new_capacity * sizeof(vc->vc[0]));
       }
-      else if (new_capacity > 0)
+      else if (vc->vc && new_capacity > VC_PREALLOCATED)
       {
+         tl_assert((vc->vc == 0 || vc->vc == vc->preallocated)
+                   && new_capacity > VC_PREALLOCATED
+                   && vc->capacity <= VC_PREALLOCATED);
          vc->vc = VG_(malloc)("drd.vc.vr.2",
+                              new_capacity * sizeof(vc->vc[0]));
+         VG_(memcpy)(vc->vc, vc->preallocated,
+                     vc->capacity * sizeof(vc->vc[0]));
+      }
+      else if (vc->vc)
+      {
+         tl_assert(vc->vc == vc->preallocated
+                   && new_capacity <= VC_PREALLOCATED
+                   && vc->capacity <= VC_PREALLOCATED);
+      }
+      else if (new_capacity > VC_PREALLOCATED)
+      {
+         tl_assert(vc->vc == 0
+                   && new_capacity > VC_PREALLOCATED
+                   && vc->capacity == 0);
+         vc->vc = VG_(malloc)("drd.vc.vr.3",
                               new_capacity * sizeof(vc->vc[0]));
       }
       else
       {
-         tl_assert(vc->vc == 0 && new_capacity == 0);
+         tl_assert(vc->vc == 0
+                   && new_capacity <= VC_PREALLOCATED
+                   && vc->capacity == 0);
+         vc->vc = vc->preallocated;
       }
       vc->capacity = new_capacity;
    }
    else if (new_capacity == 0 && vc->vc)
    {
-      VG_(free)(vc->vc);
+      if (vc->capacity > VC_PREALLOCATED)
+         VG_(free)(vc->vc);
       vc->vc = 0;
+      vc->capacity = 0;
    }
+
    tl_assert(new_capacity == 0 || vc->vc != 0);
+   tl_assert(vc->capacity > VC_PREALLOCATED
+             || vc->vc == 0
+             || vc->vc == vc->preallocated);
 }
-
-#if 0
-/**
- * Unit test.
- */
-void DRD_(vc_test)(void)
-{
-   VectorClock vc1;
-   VCElem vc1elem[] = { { 3, 7 }, { 5, 8 }, };
-   VectorClock vc2;
-   VCElem vc2elem[] = { { 1, 4 }, { 3, 9 }, };
-   VectorClock vc3;
-   VCElem vc4elem[] = { { 1, 3 }, { 2, 1 }, };
-   VectorClock vc4;
-   VCElem vc5elem[] = { { 1, 4 }, };
-   VectorClock vc5;
-
-   vc_init(&vc1, vc1elem, sizeof(vc1elem)/sizeof(vc1elem[0]));
-   vc_init(&vc2, vc2elem, sizeof(vc2elem)/sizeof(vc2elem[0]));
-   vc_init(&vc3, 0, 0);
-   vc_init(&vc4, vc4elem, sizeof(vc4elem)/sizeof(vc4elem[0]));
-   vc_init(&vc5, vc5elem, sizeof(vc5elem)/sizeof(vc5elem[0]));
-
-   vc_combine(&vc3, &vc1);
-   vc_combine(&vc3, &vc2);
-
-   VG_(printf)("vc1: ");
-   vc_print(&vc1);
-   VG_(printf)("\nvc2: ");
-   vc_print(&vc2);
-   VG_(printf)("\nvc3: ");
-   vc_print(&vc3);
-   VG_(printf)("\n");
-   VG_(printf)("vc_lte(vc1, vc2) = %d, vc_lte(vc1, vc3) = %d,"
-               " vc_lte(vc2, vc3) = %d, vc_lte(",
-               vc_lte(&vc1, &vc2), vc_lte(&vc1, &vc3), vc_lte(&vc2, &vc3));
-   vc_print(&vc4);
-   VG_(printf)(", ");
-   vc_print(&vc5);
-   VG_(printf)(") = %d sw %d\n", vc_lte(&vc4, &vc5), vc_lte(&vc5, &vc4));
-              
-   vc_cleanup(&vc1);
-   vc_cleanup(&vc2);
-   vc_cleanup(&vc3);
-}
-#endif

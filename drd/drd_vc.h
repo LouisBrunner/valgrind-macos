@@ -47,7 +47,12 @@
  */
 
 
-#include "pub_tool_basics.h"    // Addr, SizeT
+#include "pub_tool_basics.h"     /* Addr, SizeT */
+#include "drd_basics.h"          /* DrdThreadId */
+#include "pub_tool_libcassert.h" /* tl_assert() */
+
+
+#define VC_PREALLOCATED 8
 
 
 /** Vector clock element. */
@@ -62,6 +67,7 @@ typedef struct
    unsigned capacity; /**< number of elements allocated for array vc. */
    unsigned size;     /**< number of elements used of array vc. */
    VCElem*  vc;       /**< vector clock elements. */
+   VCElem   preallocated[VC_PREALLOCATED];
 } VectorClock;
 
 
@@ -81,12 +87,8 @@ void DRD_(vc_min)(VectorClock* const result,
                   const VectorClock* const rhs);
 void DRD_(vc_combine)(VectorClock* const result,
                       const VectorClock* const rhs);
-Bool DRD_(vc_combine2)(VectorClock* const result,
-                       const VectorClock* const rhs,
-                       const DrdThreadId tid);
 void DRD_(vc_print)(const VectorClock* const vc);
-void DRD_(vc_snprint)(Char* const str, const Int size,
-                      const VectorClock* const vc);
+char* DRD_(vc_aprint)(const VectorClock* const vc);
 void DRD_(vc_check)(const VectorClock* const vc);
 void DRD_(vc_test)(void);
 

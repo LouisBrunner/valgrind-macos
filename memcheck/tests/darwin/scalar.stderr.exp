@@ -83,7 +83,7 @@ Syscall param socketcall.getsockopt(optlen) points to unaddressable byte(s)
    ...
  Address 0x........ is 0 bytes after a block of size 4 alloc'd
    at 0x........: malloc (vg_replace_malloc.c:...)
-   by 0x........: main (scalar.c:13)
+   by 0x........: main (scalar.c:14)
 -----------------------------------------------------
 x20000a9(169):          __NR_csops 4s 1m
 -----------------------------------------------------
@@ -101,6 +101,22 @@ Syscall param csops(usersize) contains uninitialised byte(s)
    ...
 
 Syscall param csops(addr) points to unaddressable byte(s)
+   ...
+ Address 0x........ is not stack'd, malloc'd or (recently) free'd
+-----------------------------------------------------
+x2000107(263):         __NR_shmctl 3s 1m
+-----------------------------------------------------
+
+Syscall param shmctl(shmid) contains uninitialised byte(s)
+   ...
+
+Syscall param shmctl(cmd) contains uninitialised byte(s)
+   ...
+
+Syscall param shmctl(buf) contains uninitialised byte(s)
+   ...
+
+Syscall param shmctl(IPC_STAT, buf) points to unaddressable byte(s)
    ...
  Address 0x........ is not stack'd, malloc'd or (recently) free'd
 -----------------------------------------------------

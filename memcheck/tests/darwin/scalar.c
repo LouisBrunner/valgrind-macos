@@ -3,6 +3,7 @@
 #include <unistd.h>
 #include <sched.h>
 #include <signal.h>
+#include <sys/shm.h>
 
 // See memcheck/tests/x86-linux/scalar.c for an explanation of what this test
 // is doing.
@@ -309,7 +310,11 @@ int main(void)
    // __NR_msgsnd 260
    // __NR_msgrcv 261
    // __NR_shmat 262
+
    // __NR_shmctl 263
+   GO(__NR_shmctl, "3s 1m");
+   SY(__NR_shmctl, x0, x0+IPC_STAT, x0+1); FAIL;
+
    // __NR_shmdt 264
 
    // __NR_shmget 265

@@ -1858,6 +1858,19 @@ PRE(sys_shmget)
    PRE_REG_READ3(long, "shmget", vki_key_t, key, vki_size_t, size, int, shmflg);
 }
 
+PRE(sys_shmctl)
+{
+   PRINT("sys_shmctl ( %ld, %ld, %#lx )",ARG1,ARG2,ARG3);
+   PRE_REG_READ3(long, "shmctl",
+                 int, shmid, int, cmd, struct vki_shmid_ds *, buf);
+   ML_(generic_PRE_sys_shmctl)(tid, ARG1,ARG2,ARG3);
+}
+
+POST(sys_shmctl)
+{
+   ML_(generic_POST_sys_shmctl)(tid, RES,ARG1,ARG2,ARG3);
+}
+
 PRE(sys_shm_open)
 {
    PRINT("shm_open(%#lx(%s), %ld, %ld)", ARG1, (char *)ARG1, ARG2, ARG3);
@@ -7226,7 +7239,7 @@ const SyscallTableEntry ML_(syscall_table)[] = {
 // _____(__NR_msgsnd),   // 260
 // _____(__NR_msgrcv), 
 // _____(__NR_shmat), 
-// _____(__NR_shmctl), 
+   MACXY(__NR_shmctl, sys_shmctl), 
 // _____(__NR_shmdt), 
    MACX_(__NR_shmget, sys_shmget), 
    MACXY(__NR_shm_open, sys_shm_open), 

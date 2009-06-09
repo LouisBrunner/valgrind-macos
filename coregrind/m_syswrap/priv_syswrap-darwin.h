@@ -81,6 +81,7 @@ DECL_TEMPLATE(darwin, sys_seteuid);
 DECL_TEMPLATE(darwin, sys_setegid);
 DECL_TEMPLATE(darwin, sys_listxattr);
 DECL_TEMPLATE(darwin, sys_flistxattr);
+DECL_TEMPLATE(darwin, sys_shmctl);
 DECL_TEMPLATE(darwin, sys_shmget);
 DECL_TEMPLATE(darwin, sys_shm_open);
 DECL_TEMPLATE(darwin, sys_statx);

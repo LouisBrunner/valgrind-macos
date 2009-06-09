@@ -105,7 +105,7 @@ vex: libvex.a test_main.o
 
 libvex.a: $(LIB_OBJS)
 	rm -f libvex.a
-	$(AR) clq libvex.a $(LIB_OBJS)
+	$(AR) crus libvex.a $(LIB_OBJS)
 
 
 # The idea with these TAG-s is to mark the flavour of libvex.a 

@@ -98,6 +98,45 @@
    obj:/usr/lib/libSystem*
 }
 
+# Still-reachable memory.
+
+# I chopped this one off at libSystem_initializer, there were more frames.
+{
+   darwin-still-reachable-1
+   Memcheck:Leak
+   fun:calloc
+   fun:dwarf2_unwind_dyld_add_image_hook
+   fun:_ZN4dyld19registerAddCallbackEPFvPK11mach_headerlE
+   fun:_dyld_register_func_for_add_image
+   fun:__keymgr_initializer
+   fun:libSystem_initializer
+}
+
+# I chopped this one off at libSystem_initializer, there were more frames.
+{
+   darwin-still-reachable-2
+   Memcheck:Leak
+   fun:malloc
+   fun:get_or_create_key_element
+   fun:_keymgr_get_and_lock_processwide_ptr_2
+   fun:dwarf2_unwind_dyld_add_image_hook
+   fun:_ZN4dyld19registerAddCallbackEPFvPK11mach_headerlE
+   fun:_dyld_register_func_for_add_image
+   fun:__keymgr_initializer
+   fun:libSystem_initializer
+}
+
+{
+   darwin-still-reachable-3
+   Memcheck:Leak
+   fun:malloc
+   fun:__smakebuf
+   fun:__swsetup
+   fun:__sfvwrite
+   fun:puts
+}
+
+
 ##----------------------------------------------------------------------##
 #
 # Suppressions for Helgrind.

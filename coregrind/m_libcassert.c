@@ -107,7 +107,10 @@ void VG_(exit)( Int status )
 #  error Unknown OS
 #endif
    /*NOTREACHED*/
-   VG_(core_panic)("VG_(exit) didn't work?");
+   // We really shouldn't reach here.  Just in case we do, use some very crude
+   // methods to force abort
+   __builtin_trap();
+   *(volatile Int*)0 = 'x';
 }
 
 // Print the scheduler status.

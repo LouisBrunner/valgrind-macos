@@ -198,7 +198,7 @@ static void* DRD_(realloc)(ThreadId tid, void* p_old, SizeT new_size)
    else if (old_size > new_size)
    {
       /* new size is smaller */
-      s_stop_using_mem_callback(mc->data + new_size, old_size);
+      s_stop_using_mem_callback(mc->data + new_size, old_size - new_size);
       mc->size = new_size;
       mc->where = VG_(record_ExeContext)(tid, 0);
       p_new = p_old;

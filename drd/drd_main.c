@@ -318,7 +318,7 @@ void drd_stop_using_mem(const Addr a1, const SizeT len,
 {
    const Addr a2 = a1 + len;
 
-   tl_assert(a1 < a2);
+   tl_assert(a1 <= a2);
 
    if (UNLIKELY(DRD_(any_address_is_traced)()))
    {

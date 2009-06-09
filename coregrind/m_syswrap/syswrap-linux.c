@@ -3684,6 +3684,8 @@ PRE(sys_ioctl)
       PRE_MEM_WRITE( "ioctl(SNDCTL_XXX|SOUND_XXX (SIOR, audio_buf_info))",
                      ARG3, sizeof(vki_audio_buf_info));
       break;
+   case VKI_SNDCTL_DSP_NONBLOCK:
+      break;
    case VKI_SNDCTL_DSP_SETTRIGGER:
       PRE_MEM_READ( "ioctl(SNDCTL_XXX|SOUND_XXX (SIOW, int))", 
 		     ARG3, sizeof(int));
@@ -4625,6 +4627,8 @@ POST(sys_ioctl)
    case VKI_SNDCTL_DSP_GETOSPACE:
    case VKI_SNDCTL_DSP_GETISPACE:
       POST_MEM_WRITE(ARG3, sizeof(vki_audio_buf_info));
+      break;
+   case VKI_SNDCTL_DSP_NONBLOCK:
       break;
    case VKI_SNDCTL_DSP_SETTRIGGER:
       break;

@@ -1859,7 +1859,7 @@ typedef struct vki_audio_buf_info {
 
 #define VKI_SNDCTL_DSP_GETOSPACE	_VKI_SIOR ('P',12, vki_audio_buf_info)
 #define VKI_SNDCTL_DSP_GETISPACE	_VKI_SIOR ('P',13, vki_audio_buf_info)
-//#define VKI_SNDCTL_DSP_NONBLOCK	_VKI_SIO  ('P',14)
+#define VKI_SNDCTL_DSP_NONBLOCK		_VKI_SIO  ('P',14)
 #define VKI_SNDCTL_DSP_GETCAPS		_VKI_SIOR ('P',15, int)
 
 #define VKI_SNDCTL_DSP_GETTRIGGER	_VKI_SIOR ('P',16, int)

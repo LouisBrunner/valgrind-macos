@@ -143,7 +143,19 @@ Char* VG_(expand_file_name)(Char* option_name, Char* format)
 
    if (VG_STREQ(format, "")) {
       // Empty name, bad.
-      VG_(message)(Vg_UserMsg, "%s: filename is empty", option_name);
+      VG_UMSG("%s: filename is empty", option_name);
+      goto bad;
+   }
+   
+   // If 'format' starts with a '~', abort -- the user probably expected the
+   // shell to expand but it didn't (see bug 195268 for details).  This means
+   // that we don't allow a legitimate filename beginning with '~' but that
+   // seems very unlikely.
+   if (format[0] == '~') {
+      VG_UMSG("%s: filename begins with '~'", option_name);
+      VG_UMSG("You probably expected the shell to expand the '~', but it");
+      VG_UMSG("didn't.  The rules for '~'-expansion vary from shell to shell.");
+      VG_UMSG("You might have more luck using $HOME instead.");
       goto bad;
    }
 

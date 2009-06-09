@@ -4219,23 +4219,56 @@ PRE(sys_ioctl)
          struct vki_usbdevfs_urb *vkuu = (struct vki_usbdevfs_urb *)ARG3;
 
          /* Not the whole struct needs to be initialized */
-         PRE_MEM_READ( "ioctl(USBDEVFS_SUBMITURB).ep", (Addr)&vkuu->endpoint, sizeof(vkuu->endpoint));
+         PRE_MEM_READ( "ioctl(USBDEVFS_SUBMITURB).endpoint", (Addr)&vkuu->endpoint, sizeof(vkuu->endpoint));
          PRE_MEM_READ( "ioctl(USBDEVFS_SUBMITURB).type", (Addr)&vkuu->type, sizeof(vkuu->type));
          PRE_MEM_READ( "ioctl(USBDEVFS_SUBMITURB).flags", (Addr)&vkuu->flags, sizeof(vkuu->flags));
          PRE_MEM_READ( "ioctl(USBDEVFS_SUBMITURB).buffer", (Addr)&vkuu->buffer, sizeof(vkuu->buffer));
-         PRE_MEM_READ( "ioctl(USBDEVFS_SUBMITURB).buffer_length", (Addr)&vkuu->buffer_length, sizeof(vkuu->buffer_length));
-         PRE_MEM_READ( "ioctl(USBDEVFS_SUBMITURB).usercontext", (Addr)&vkuu->usercontext, sizeof(vkuu->usercontext));
-         if (vkuu->endpoint & 0x80)
-            PRE_MEM_WRITE( "ioctl(USBDEVFS_URB).buffer", (Addr)vkuu->buffer, vkuu->buffer_length);
-         else
-            PRE_MEM_READ( "ioctl(USBDEVFS_URB).buffer", (Addr)vkuu->buffer, vkuu->buffer_length);
-         /* FIXME: Does not handle all cases this ioctl can do, ISOs are missing. */
+         PRE_MEM_READ( "ioctl(USBDEVFS_SUBMITURB).signr", (Addr)&vkuu->signr, sizeof(vkuu->signr));
+         PRE_MEM_WRITE( "ioctl(USBDEVFS_SUBMITURB).status", (Addr)&vkuu->status, sizeof(vkuu->status));
+         if (vkuu->type == VKI_USBDEVFS_URB_TYPE_CONTROL) {
+            struct vki_usbdevfs_setuppacket *vkusp = (struct vki_usbdevfs_setuppacket *)vkuu->buffer;
+            PRE_MEM_READ( "ioctl(USBDEVFS_SUBMITURB).buffer_length", (Addr)&vkuu->buffer_length, sizeof(vkuu->buffer_length));
+            PRE_MEM_READ( "ioctl(USBDEVFS_SUBMITURB).buffer.setup_packet", (Addr)vkusp, sizeof(*vkusp));
+            if (vkusp->bRequestType & 0x80)
+               PRE_MEM_WRITE( "ioctl(USBDEVFS_SUBMITURB).buffer.data", (Addr)(vkusp+1), vkuu->buffer_length - sizeof(*vkusp));
+            else
+               PRE_MEM_READ( "ioctl(USBDEVFS_SUBMITURB).buffer.data", (Addr)(vkusp+1), vkuu->buffer_length - sizeof(*vkusp));
+            PRE_MEM_WRITE( "ioctl(USBDEVFS_SUBMITURB).actual_length", (Addr)&vkuu->actual_length, sizeof(vkuu->actual_length));
+         } else if (vkuu->type == VKI_USBDEVFS_URB_TYPE_ISO) {
+            int total_length = 0;
+            int i;
+            PRE_MEM_READ( "ioctl(USBDEVFS_SUBMITURB).number_of_packets", (Addr)&vkuu->number_of_packets, sizeof(vkuu->number_of_packets));
+            for(i=0; i<vkuu->number_of_packets; i++) {
+               PRE_MEM_READ( "ioctl(USBDEVFS_SUBMITURB).iso_frame_desc[].length", (Addr)&vkuu->iso_frame_desc[i].length, sizeof(vkuu->iso_frame_desc[i].length));
+               PRE_MEM_WRITE( "ioctl(USBDEVFS_SUBMITURB).iso_frame_desc[].actual_length", (Addr)&vkuu->iso_frame_desc[i].actual_length, sizeof(vkuu->iso_frame_desc[i].actual_length));
+               PRE_MEM_WRITE( "ioctl(USBDEVFS_SUBMITURB).iso_frame_desc[].status", (Addr)&vkuu->iso_frame_desc[i].status, sizeof(vkuu->iso_frame_desc[i].status));
+               total_length += vkuu->iso_frame_desc[i].length;
+            }
+            if (vkuu->endpoint & 0x80)
+               PRE_MEM_WRITE( "ioctl(USBDEVFS_SUBMITURB).buffer", (Addr)vkuu->buffer, total_length);
+            else
+               PRE_MEM_READ( "ioctl(USBDEVFS_SUBMITURB).buffer", (Addr)vkuu->buffer, total_length);
+            PRE_MEM_WRITE( "ioctl(USBDEVFS_SUBMITURB).error_count", (Addr)&vkuu->error_count, sizeof(vkuu->error_count));
+         } else {
+            PRE_MEM_READ( "ioctl(USBDEVFS_SUBMITURB).buffer_length", (Addr)&vkuu->buffer_length, sizeof(vkuu->buffer_length));
+            if (vkuu->endpoint & 0x80)
+               PRE_MEM_WRITE( "ioctl(USBDEVFS_SUBMITURB).buffer", (Addr)vkuu->buffer, vkuu->buffer_length);
+            else
+               PRE_MEM_READ( "ioctl(USBDEVFS_SUBMITURB).buffer", (Addr)vkuu->buffer, vkuu->buffer_length);
+            PRE_MEM_WRITE( "ioctl(USBDEVFS_SUBMITURB).actual_length", (Addr)&vkuu->actual_length, sizeof(vkuu->actual_length));
+         }
          break;
       }
+   case VKI_USBDEVFS_DISCARDURB:
+      break;
    case VKI_USBDEVFS_REAPURB:
+      if ( ARG3 ) {
+         PRE_MEM_WRITE( "ioctl(USBDEVFS_REAPURB)", ARG3, sizeof(struct vki_usbdevfs_urb **));
+         break;
+      }
    case VKI_USBDEVFS_REAPURBNDELAY:
       if ( ARG3 ) {
-         PRE_MEM_READ( "ioctl(USBDEVFS_SUBMITURB)", ARG3, sizeof(struct vki_usbdevfs_urb *));
+         PRE_MEM_WRITE( "ioctl(USBDEVFS_REAPURBNDELAY)", ARG3, sizeof(struct vki_usbdevfs_urb **));
          break;
       }
    case VKI_USBDEVFS_CONNECTINFO:
@@ -5010,11 +5043,31 @@ POST(sys_ioctl)
    case VKI_USBDEVFS_REAPURBNDELAY:
       if ( ARG3 ) {
          struct vki_usbdevfs_urb **vkuu = (struct vki_usbdevfs_urb**)ARG3;
+         POST_MEM_WRITE((Addr)vkuu, sizeof(*vkuu));
          if (!*vkuu)
             break;
          POST_MEM_WRITE((Addr) &((*vkuu)->status),sizeof((*vkuu)->status));
-         if ((*vkuu)->endpoint & 0x80)
-            POST_MEM_WRITE((Addr)(*vkuu)->buffer, (*vkuu)->actual_length);
+         if ((*vkuu)->type == VKI_USBDEVFS_URB_TYPE_CONTROL) {
+            struct vki_usbdevfs_setuppacket *vkusp = (struct vki_usbdevfs_setuppacket *)(*vkuu)->buffer;
+            if (vkusp->bRequestType & 0x80)
+               POST_MEM_WRITE((Addr)(vkusp+1), (*vkuu)->buffer_length - sizeof(*vkusp));
+            POST_MEM_WRITE((Addr)&(*vkuu)->actual_length, sizeof((*vkuu)->actual_length));
+         } else if ((*vkuu)->type == VKI_USBDEVFS_URB_TYPE_ISO) {
+            char *bp = (*vkuu)->buffer;
+            int i;
+            for(i=0; i<(*vkuu)->number_of_packets; i++) {
+               POST_MEM_WRITE((Addr)&(*vkuu)->iso_frame_desc[i].actual_length, sizeof((*vkuu)->iso_frame_desc[i].actual_length));
+               POST_MEM_WRITE((Addr)&(*vkuu)->iso_frame_desc[i].status, sizeof((*vkuu)->iso_frame_desc[i].status));
+               if ((*vkuu)->endpoint & 0x80)
+                  POST_MEM_WRITE((Addr)bp, (*vkuu)->iso_frame_desc[i].actual_length);
+               bp += (*vkuu)->iso_frame_desc[i].length; // FIXME: or actual_length??
+            }
+            POST_MEM_WRITE((Addr)&(*vkuu)->error_count, sizeof((*vkuu)->error_count));
+         } else {
+            if ((*vkuu)->endpoint & 0x80)
+               POST_MEM_WRITE((Addr)(*vkuu)->buffer, (*vkuu)->actual_length);
+            POST_MEM_WRITE((Addr)&(*vkuu)->actual_length, sizeof((*vkuu)->actual_length));
+         }
          break;
       }
    case VKI_USBDEVFS_CONNECTINFO:

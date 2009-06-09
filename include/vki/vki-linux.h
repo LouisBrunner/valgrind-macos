@@ -2325,10 +2325,25 @@ struct vki_usbdevfs_ioctl {
 #define VKI_USBDEVFS_BULK              _VKI_IOWR('U', 2, struct vki_usbdevfs_bulktransfer)
 #define VKI_USBDEVFS_GETDRIVER         _VKI_IOW('U', 8, struct vki_usbdevfs_getdriver)
 #define VKI_USBDEVFS_SUBMITURB         _VKI_IOR('U', 10, struct vki_usbdevfs_urb)
+#define VKI_USBDEVFS_DISCARDURB        _VKI_IO('U', 11)
 #define VKI_USBDEVFS_REAPURB           _VKI_IOW('U', 12, void *)
 #define VKI_USBDEVFS_REAPURBNDELAY     _VKI_IOW('U', 13, void *)
 #define VKI_USBDEVFS_CONNECTINFO       _VKI_IOW('U', 17, struct vki_usbdevfs_connectinfo)
 #define VKI_USBDEVFS_IOCTL             _VKI_IOWR('U', 18, struct vki_usbdevfs_ioctl)
+
+#define VKI_USBDEVFS_URB_TYPE_ISO              0
+#define VKI_USBDEVFS_URB_TYPE_INTERRUPT        1
+#define VKI_USBDEVFS_URB_TYPE_CONTROL          2
+#define VKI_USBDEVFS_URB_TYPE_BULK             3
+
+// [[this is missing in usbdevice_fs.h]]
+struct vki_usbdevfs_setuppacket {
+       __vki_u8 bRequestType;
+       __vki_u8 bRequest;
+       __vki_u16 wValue;
+       __vki_u16 wIndex;
+       __vki_u16 wLength;
+};
 
 //----------------------------------------------------------------------
 // From linux-2.6.20.1/include/linux/i2c.h

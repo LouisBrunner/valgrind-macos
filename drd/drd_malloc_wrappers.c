@@ -40,11 +40,16 @@
 
 /* Local type definitions. */
 
+/**
+ * Node with per-allocation information that will be stored in a hash map.
+ * As specified in <pub_tool_hashtable.h>, the first member must be a pointer
+ * and the second member must be an UWord.
+ */
 typedef struct _DRD_Chunk {
    struct _DRD_Chunk* next;
-   Addr          data;            // ptr to actual block
-   SizeT         size : (sizeof(UWord)*8)-2; //size requested; 30 or 62 bits
-   ExeContext*   where;           // where it was allocated
+   UWord              data;   // pointer to actual block
+   SizeT              size;   // size requested
+   ExeContext*        where;  // where it was allocated
 } DRD_Chunk;
 
 
@@ -52,7 +57,7 @@ typedef struct _DRD_Chunk {
 
 static StartUsingMem s_start_using_mem_callback;
 static StopUsingMem  s_stop_using_mem_callback;
-/* Stats ... */
+/* Statistics. */
 static SizeT s_cmalloc_n_mallocs  = 0;
 static SizeT s_cmalloc_n_frees    = 0;
 static SizeT s_cmalloc_bs_mallocd = 0;
@@ -60,76 +65,56 @@ static SizeT s_cmalloc_bs_mallocd = 0;
 static VgHashTable s_malloc_list = NULL;
 
 
-/*------------------------------------------------------------*/
-/*--- Tracking malloc'd and free'd blocks                  ---*/
-/*------------------------------------------------------------*/
+/* Function definitions. */
 
-/** Allocate its shadow chunk, put it on the appropriate list. */
-static DRD_Chunk* create_chunk(ThreadId tid, Addr p, SizeT size)
-{
-   DRD_Chunk* mc = VG_(malloc)("drd.malloc_wrappers.cDC.1",
-                               sizeof(DRD_Chunk));
-   mc->data      = p;
-   mc->size      = size;
-   mc->where     = VG_(record_ExeContext)(tid, 0);
-
-   return mc;
-}
-
-/*------------------------------------------------------------*/
-/*--- client_malloc(), etc                                 ---*/
-/*------------------------------------------------------------*/
-
-/* Allocate memory and note change in memory available */
+/** Allocate client memory memory and update the hash map. */
 static void* new_block(ThreadId tid, SizeT size, SizeT align, Bool is_zeroed)
 {
-   Addr p;
+   void* p;
 
-   s_cmalloc_n_mallocs ++;
-
-   // Allocate and zero
-   p = (Addr)VG_(cli_malloc)(align, size);
-   if (!p) {
+   p = VG_(cli_malloc)(align, size);
+   if (!p)
       return NULL;
-   }
-   if (is_zeroed) VG_(memset)((void*)p, 0, size);
+   if (is_zeroed)
+      VG_(memset)(p, 0, size);
 
-   tl_assert(p <= p + size);
-   DRD_(malloclike_block)(tid, p, size);
+   DRD_(malloclike_block)(tid, (Addr)p, size);
 
-   return (void*)p;
+   return p;
 }
 
 /**
  * Store information about a memory block that has been allocated by
- * malloc() or a malloc() replacement.
+ * malloc() or a malloc() replacement in the hash map.
  */
 void DRD_(malloclike_block)(const ThreadId tid, const Addr p, const SizeT size)
 {
+   DRD_Chunk* mc;
+
    tl_assert(p);
 
-   s_start_using_mem_callback(p, size, 0/*ec_uniq*/);
+   if (size > 0)
+      s_start_using_mem_callback(p, size, 0/*ec_uniq*/);
 
+   s_cmalloc_n_mallocs++;
    // Only update this stat if allocation succeeded.
    s_cmalloc_bs_mallocd += size;
 
-   VG_(HT_add_node)(s_malloc_list, create_chunk(tid, p, size));
+   mc = VG_(malloc)("drd.malloc_wrappers.cDC.1", sizeof(DRD_Chunk));
+   mc->data  = p;
+   mc->size  = size;
+   mc->where = VG_(record_ExeContext)(tid, 0);
+   VG_(HT_add_node)(s_malloc_list, mc);
 }
 
-static void* DRD_(malloc)(ThreadId tid, SizeT n)
+static void handle_free(ThreadId tid, void* p)
 {
-   return new_block(tid, n, VG_(clo_alignment), /*is_zeroed*/False);
-}
+   tl_assert(p);
 
-static void* DRD_(memalign)(ThreadId tid, SizeT align, SizeT n)
-{
-   return new_block(tid, n, align, /*is_zeroed*/False);
-}
-
-static void* DRD_(calloc)(ThreadId tid, SizeT nmemb, SizeT size1)
-{
-   return new_block(tid, nmemb*size1, VG_(clo_alignment),
-                          /*is_zeroed*/True);
+   if (DRD_(freelike_block)(tid, (Addr)p))
+      VG_(cli_free)(p);
+   else
+      tl_assert(False);
 }
 
 /**
@@ -156,32 +141,61 @@ Bool DRD_(freelike_block)(const ThreadId tid, const Addr p)
    return False;
 }
 
-static void handle_free(ThreadId tid, Addr p)
+/** Wrapper for malloc(). */
+static void* drd_malloc(ThreadId tid, SizeT n)
 {
-   if (DRD_(freelike_block)(tid, p))
-      VG_(cli_free)((void*)p);
-   else
-      tl_assert(False);
+   return new_block(tid, n, VG_(clo_alignment), /*is_zeroed*/False);
 }
 
-static void DRD_(free)(ThreadId tid, void* p)
+/** Wrapper for memalign(). */
+static void* drd_memalign(ThreadId tid, SizeT align, SizeT n)
 {
-   handle_free(tid, (Addr)p);
+   return new_block(tid, n, align, /*is_zeroed*/False);
 }
 
-static void* DRD_(realloc)(ThreadId tid, void* p_old, SizeT new_size)
+/** Wrapper for calloc(). */
+static void* drd_calloc(ThreadId tid, SizeT nmemb, SizeT size1)
+{
+   return new_block(tid, nmemb*size1, VG_(clo_alignment),
+                          /*is_zeroed*/True);
+}
+
+/** Wrapper for free(). */
+static void drd_free(ThreadId tid, void* p)
+{
+   handle_free(tid, p);
+}
+
+/**
+ * Wrapper for realloc(). Returns a pointer to the new block of memory, or
+ * NULL if no new block could not be allocated. Notes:
+ * - realloc(NULL, size) has the same effect as malloc(size).
+ * - realloc(p, 0) has the same effect as free(p).
+ * - success is not guaranteed even if the requested size is smaller than the
+ *   allocated size.
+*/
+static void* drd_realloc(ThreadId tid, void* p_old, SizeT new_size)
 {
    DRD_Chunk* mc;
-   void*     p_new;
-   SizeT     old_size;
+   void*      p_new;
+   SizeT      old_size;
 
-   s_cmalloc_n_frees ++;
-   s_cmalloc_n_mallocs ++;
+   if (! p_old)
+      return drd_malloc(tid, new_size);
+
+   if (new_size == 0)
+   {
+      drd_free(tid, p_old);
+      return NULL;
+   }
+
+   s_cmalloc_n_mallocs++;
+   s_cmalloc_n_frees++;
    s_cmalloc_bs_mallocd += new_size;
 
-   /* Remove the old block */
-   mc = VG_(HT_remove)(s_malloc_list, (UWord)p_old);
-   if (mc == NULL) {
+   mc = VG_(HT_lookup)(s_malloc_list, (UWord)p_old);
+   if (mc == NULL)
+   {
       tl_assert(0);
       return NULL;
    }
@@ -193,109 +207,107 @@ static void* DRD_(realloc)(ThreadId tid, void* p_old, SizeT new_size)
       /* size unchanged */
       mc->where = VG_(record_ExeContext)(tid, 0);
       p_new = p_old;
-      
    }
-   else if (old_size > new_size)
+   else if (new_size < old_size)
    {
-      /* new size is smaller */
+      /* new size is smaller but nonzero */
       s_stop_using_mem_callback(mc->data + new_size, old_size - new_size);
       mc->size = new_size;
       mc->where = VG_(record_ExeContext)(tid, 0);
       p_new = p_old;
-
    }
    else
    {
       /* new size is bigger */
-      /* Get new memory */
-      const Addr a_new = (Addr)VG_(cli_malloc)(VG_(clo_alignment), new_size);
+      p_new = VG_(cli_malloc)(VG_(clo_alignment), new_size);
 
-      if (a_new)
+      if (p_new)
       {
-         /* Copy from old to new */
-         VG_(memcpy)((void*)a_new, p_old, mc->size);
-
-         /* Free old memory */
+         /* Copy from old to new. */
+         VG_(memcpy)(p_new, p_old, mc->size);
+         
+         /* Free old memory. */
+         VG_(cli_free)(p_old);
          s_stop_using_mem_callback(mc->data, mc->size);
-         VG_(free)(mc);
+         VG_(HT_remove)(s_malloc_list, (UWord)p_old);
 
-         // Allocate a new chunk.
-         mc = create_chunk(tid, a_new, new_size);
-         s_start_using_mem_callback(a_new, new_size, 0/*ec_uniq*/);
+         /* Update state information. */
+         mc->data  = (Addr)p_new;
+         mc->size  = new_size;
+         mc->where = VG_(record_ExeContext)(tid, 0);
+         VG_(HT_add_node)(s_malloc_list, mc);
+         s_start_using_mem_callback((Addr)p_new, new_size, 0/*ec_uniq*/);
       }
       else
       {
          /* Allocation failed -- leave original block untouched. */
       }
-
-      p_new = (void*)a_new;
    }  
-
-   // Now insert the new mc (with a possibly new 'data' field) into
-   // malloc_list.  If this realloc() did not increase the memory size, we
-   // will have removed and then re-added mc unnecessarily.  But that's ok
-   // because shrinking a block with realloc() is (presumably) much rarer
-   // than growing it, and this way simplifies the growing case.
-   VG_(HT_add_node)(s_malloc_list, mc);
 
    return p_new;
 }
 
-static void* DRD_(__builtin_new)(ThreadId tid, SizeT n)
-{
-   void* const result = new_block(tid, n, VG_(clo_alignment),
-                                        /*is_zeroed*/False);
-   //VG_(message)(Vg_DebugMsg, "__builtin_new(%d, %d) = %p", tid, n, result);
-   return result;
-}
-
-static void DRD_(__builtin_delete)(ThreadId tid, void* p)
-{
-   //VG_(message)(Vg_DebugMsg, "__builtin_delete(%d, %p)", tid, p);
-   handle_free(tid, (Addr)p);
-}
-
-static void* DRD_(__builtin_vec_new)(ThreadId tid, SizeT n)
+/** Wrapper for __builtin_new(). */
+static void* drd___builtin_new(ThreadId tid, SizeT n)
 {
    return new_block(tid, n, VG_(clo_alignment), /*is_zeroed*/False);
 }
 
-static void DRD_(__builtin_vec_delete)(ThreadId tid, void* p)
+/** Wrapper for __builtin_delete(). */
+static void drd___builtin_delete(ThreadId tid, void* p)
 {
-   handle_free(tid, (Addr)p);
+   handle_free(tid, p);
 }
 
-static SizeT DRD_(malloc_usable_size) ( ThreadId tid, void* p )
+/** Wrapper for __builtin_vec_new(). */
+static void* drd___builtin_vec_new(ThreadId tid, SizeT n)
 {
-   DRD_Chunk *mc = VG_(HT_lookup)( s_malloc_list, (UWord)p );
+   return new_block(tid, n, VG_(clo_alignment), /*is_zeroed*/False);
+}
 
-   // There may be slop, but pretend there isn't because only the asked-for
-   // area will have been shadowed properly.
-   return ( mc ? mc->size : 0 );
+/** Wrapper for __builtin_vec_delete(). */
+static void drd___builtin_vec_delete(ThreadId tid, void* p)
+{
+   handle_free(tid, p);
+}
+
+/**
+ * Wrapper for malloc_usable_size() / malloc_size(). This function takes
+ * a pointer to a block allocated by `malloc' and returns the amount of space
+ * that is available in the block. This may or may not be more than the size
+ * requested from `malloc', due to alignment or minimum size constraints.
+ */
+static SizeT drd_malloc_usable_size(ThreadId tid, void* p)
+{
+   DRD_Chunk* mc;
+
+   mc = VG_(HT_lookup)(s_malloc_list, (UWord)p);
+
+   return mc ? mc->size : 0;
 }
 
 void DRD_(register_malloc_wrappers)(const StartUsingMem start_callback,
                                     const StopUsingMem stop_callback)
 {
    tl_assert(s_malloc_list == 0);
-   s_malloc_list = VG_(HT_construct)("drd_malloc_list");   // a big prime
-   tl_assert(s_malloc_list != 0);
+   s_malloc_list = VG_(HT_construct)("drd_malloc_list");
+   tl_assert(s_malloc_list);
    tl_assert(start_callback);
    tl_assert(stop_callback);
 
    s_start_using_mem_callback = start_callback;
    s_stop_using_mem_callback  = stop_callback;
 
-   VG_(needs_malloc_replacement)(DRD_(malloc),
-                                 DRD_(__builtin_new),
-                                 DRD_(__builtin_vec_new),
-                                 DRD_(memalign),
-                                 DRD_(calloc),
-                                 DRD_(free),
-                                 DRD_(__builtin_delete),
-                                 DRD_(__builtin_vec_delete),
-                                 DRD_(realloc),
-                                 DRD_(malloc_usable_size),
+   VG_(needs_malloc_replacement)(drd_malloc,
+                                 drd___builtin_new,
+                                 drd___builtin_vec_new,
+                                 drd_memalign,
+                                 drd_calloc,
+                                 drd_free,
+                                 drd___builtin_delete,
+                                 drd___builtin_vec_delete,
+                                 drd_realloc,
+                                 drd_malloc_usable_size,
                                  0);
 }
 

@@ -104,6 +104,26 @@ Syscall param csops(addr) points to unaddressable byte(s)
    ...
  Address 0x........ is not stack'd, malloc'd or (recently) free'd
 -----------------------------------------------------
+x20000df(223):   __NR_exchangedata 3s 2m
+-----------------------------------------------------
+
+Syscall param exchangedata(path1) contains uninitialised byte(s)
+   ...
+
+Syscall param exchangedata(path2) contains uninitialised byte(s)
+   ...
+
+Syscall param exchangedata(options) contains uninitialised byte(s)
+   ...
+
+Syscall param exchangedata(path1) points to unaddressable byte(s)
+   ...
+ Address 0x........ is not stack'd, malloc'd or (recently) free'd
+
+Syscall param exchangedata(path2) points to unaddressable byte(s)
+   ...
+ Address 0x........ is not stack'd, malloc'd or (recently) free'd
+-----------------------------------------------------
 x2000107(263):         __NR_shmctl 3s 1m
 -----------------------------------------------------
 

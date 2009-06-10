@@ -278,7 +278,7 @@ DECL_TEMPLATE(darwin, __sysctl);                // 202
 DECL_TEMPLATE(darwin, getattrlist);             // 220
 DECL_TEMPLATE(darwin, setattrlist);             // 221
 DECL_TEMPLATE(darwin, getdirentriesattr);       // 222
-// NYI exchangedata 223
+DECL_TEMPLATE(darwin, exchangedata);            // 223
 // 224 checkuseraccess
 // NYI searchfs 225
 // GEN delete 226

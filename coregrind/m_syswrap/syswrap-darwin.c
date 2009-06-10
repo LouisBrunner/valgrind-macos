@@ -2002,8 +2002,8 @@ POST(fstat64)
 PRE(getfsstat)
 {
    PRINT("getfsstat(%#lx, %ld, %ld)", ARG1, ARG2, ARG3);
-   PRE_REG_READ3(int, "getfsstat", struct vki_statfs *, buf, 
-                 int, bufsize, int, flags);
+   PRE_REG_READ3(int, "getfsstat",
+                 struct vki_statfs *, buf, int, bufsize, int, flags);
    if (ARG1) {
       // ARG2 is a BYTE SIZE
       PRE_MEM_WRITE("getfsstat", ARG1, ARG2);
@@ -2225,7 +2225,6 @@ PRE(getdirentriesattr)
    PRE_MEM_WRITE("getdirentriesattr(basep)", ARG6, sizeof(unsigned int));
    PRE_MEM_WRITE("getdirentriesattr(newState)", ARG7, sizeof(unsigned int));
 }
-
 POST(getdirentriesattr) 
 {
    char *p, *end;
@@ -2250,6 +2249,16 @@ POST(getdirentriesattr)
    PRINT("got %d records, %d/%lu bytes\n", count, p-(char *)ARG3, ARG4);
 }
 
+
+PRE(exchangedata)
+{
+   PRINT("exchangedata(%#lx(%s), %#lx(%s), %lu)",
+         ARG1, (char*)ARG1, ARG2, (char*)ARG2, ARG3);
+   PRE_REG_READ3(int, "exchangedata", 
+                 char *, path1, char *, path2, unsigned long, options);
+   PRE_MEM_RASCIIZ( "exchangedata(path1)", ARG1 );
+   PRE_MEM_RASCIIZ( "exchangedata(path2)", ARG2 );
+}
 
 PRE(fsctl)
 {
@@ -7168,7 +7177,7 @@ const SyscallTableEntry ML_(syscall_table)[] = {
    MACXY(__NR_getattrlist, getattrlist),   // 220
    MACX_(__NR_setattrlist, setattrlist), 
    MACXY(__NR_getdirentriesattr, getdirentriesattr), 
-// _____(__NR_exchangedata), 
+   MACX_(__NR_exchangedata,      exchangedata), 
    _____(VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(224)),   // checkuseraccess
 // _____(__NR_searchfs), 
    GENX_(__NR_delete,      sys_unlink), 

@@ -270,7 +270,11 @@ int main(void)
    // __NR_getattrlist 220
    // __NR_setattrlist 221
    // __NR_getdirentriesattr 222
+
    // __NR_exchangedata 223
+   GO(__NR_exchangedata, "3s 2m");
+   SY(__NR_exchangedata, x0, x0, x0); FAIL;
+
    // /* 224  checkuseraccess */
    // __NR_searchfs 225
    // __NR_delete 226

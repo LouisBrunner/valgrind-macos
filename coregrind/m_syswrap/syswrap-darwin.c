@@ -1780,10 +1780,22 @@ POST(flistxattr)
    POST_MEM_WRITE( ARG2, (vki_ssize_t)RES );
 }
 
-PRE(shmget)
+
+PRE(shmat)
 {
-   PRINT("shmget ( %ld, %ld, %ld )",ARG1,ARG2,ARG3);
-   PRE_REG_READ3(long, "shmget", vki_key_t, key, vki_size_t, size, int, shmflg);
+   UWord arg2tmp;
+   PRINT("shmat ( %ld, %#lx, %ld )",ARG1,ARG2,ARG3);
+   PRE_REG_READ3(long, "shmat",
+                 int, shmid, const void *, shmaddr, int, shmflg);
+   arg2tmp = ML_(generic_PRE_sys_shmat)(tid, ARG1,ARG2,ARG3);
+   if (arg2tmp == 0)
+      SET_STATUS_Failure( VKI_EINVAL );
+   else
+      ARG2 = arg2tmp;  // used in POST
+}
+POST(shmat)
+{
+   ML_(generic_POST_sys_shmat)(tid, RES,ARG1,ARG2,ARG3);
 }
 
 PRE(shmctl)
@@ -1796,6 +1808,24 @@ PRE(shmctl)
 POST(shmctl)
 {
    ML_(generic_POST_sys_shmctl)(tid, RES,ARG1,ARG2,ARG3);
+}
+
+PRE(shmdt)
+{
+   PRINT("shmdt ( %#lx )",ARG1);
+   PRE_REG_READ1(long, "shmdt", const void *, shmaddr);
+   if (!ML_(generic_PRE_sys_shmdt)(tid, ARG1))
+      SET_STATUS_Failure( VKI_EINVAL );
+}
+POST(shmdt)
+{
+   ML_(generic_POST_sys_shmdt)(tid, RES,ARG1);
+}
+
+PRE(shmget)
+{
+   PRINT("shmget ( %ld, %ld, %ld )",ARG1,ARG2,ARG3);
+   PRE_REG_READ3(long, "shmget", vki_key_t, key, vki_size_t, size, int, shmflg);
 }
 
 PRE(shm_open)
@@ -7216,9 +7246,9 @@ const SyscallTableEntry ML_(syscall_table)[] = {
 // _____(__NR_msgget), 
 // _____(__NR_msgsnd),   // 260
 // _____(__NR_msgrcv), 
-// _____(__NR_shmat), 
+   MACXY(__NR_shmat,       shmat), 
    MACXY(__NR_shmctl,      shmctl), 
-// _____(__NR_shmdt), 
+   MACXY(__NR_shmdt,       shmdt), 
    MACX_(__NR_shmget,      shmget), 
    MACXY(__NR_shm_open,    shm_open), 
 // _____(__NR_shm_unlink), 

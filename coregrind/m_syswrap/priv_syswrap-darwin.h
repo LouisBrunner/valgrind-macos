@@ -317,9 +317,9 @@ DECL_TEMPLATE(darwin, semop);                   // 256
 // NYI msgget 259
 // NYI msgsnd 260
 // NYI msgrcv 261
-// NYI shmat 262
+DECL_TEMPLATE(darwin, shmat);                   // 262
 DECL_TEMPLATE(darwin, shmctl);                  // 263
-// NYI shmdt 264
+DECL_TEMPLATE(darwin, shmdt);                   // 264
 DECL_TEMPLATE(darwin, shmget);                  // 265
 DECL_TEMPLATE(darwin, shm_open);                // 266
 // NYI shm_unlink 267

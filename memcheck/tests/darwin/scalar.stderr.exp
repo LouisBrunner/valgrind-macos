@@ -124,6 +124,18 @@ Syscall param exchangedata(path2) points to unaddressable byte(s)
    ...
  Address 0x........ is not stack'd, malloc'd or (recently) free'd
 -----------------------------------------------------
+x2000106(262):          __NR_shmat 3s 0m
+-----------------------------------------------------
+
+Syscall param shmat(shmid) contains uninitialised byte(s)
+   ...
+
+Syscall param shmat(shmaddr) contains uninitialised byte(s)
+   ...
+
+Syscall param shmat(shmflg) contains uninitialised byte(s)
+   ...
+-----------------------------------------------------
 x2000107(263):         __NR_shmctl 3s 1m
 -----------------------------------------------------
 
@@ -139,6 +151,12 @@ Syscall param shmctl(buf) contains uninitialised byte(s)
 Syscall param shmctl(IPC_STAT, buf) points to unaddressable byte(s)
    ...
  Address 0x........ is not stack'd, malloc'd or (recently) free'd
+-----------------------------------------------------
+x2000108(264):          __NR_shmdt 1s 0m
+-----------------------------------------------------
+
+Syscall param shmdt(shmaddr) contains uninitialised byte(s)
+   ...
 -----------------------------------------------------
 x2000109(265):         __NR_shmget 3s 0m
 -----------------------------------------------------

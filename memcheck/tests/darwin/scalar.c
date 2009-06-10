@@ -313,13 +313,18 @@ int main(void)
    // __NR_msgget 259
    // __NR_msgsnd 260
    // __NR_msgrcv 261
+
    // __NR_shmat 262
+   GO(__NR_shmat, "3s 0m");
+   SY(__NR_shmat, x0, x0, x0); FAIL;
 
    // __NR_shmctl 263
    GO(__NR_shmctl, "3s 1m");
    SY(__NR_shmctl, x0, x0+IPC_STAT, x0+1); FAIL;
 
    // __NR_shmdt 264
+   GO(__NR_shmdt, "1s 0m");
+   SY(__NR_shmdt, x0); FAIL;
 
    // __NR_shmget 265
    GO(__NR_shmget, "3s 0m");

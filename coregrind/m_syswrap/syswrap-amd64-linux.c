@@ -906,7 +906,7 @@ PRE(wrap_sys_shmat)
    if (arg2tmp == 0)
       SET_STATUS_Failure( VKI_EINVAL );
    else
-      ARG2 = arg2tmp;
+      ARG2 = arg2tmp;  // used in POST
 }
 POST(wrap_sys_shmat)
 {

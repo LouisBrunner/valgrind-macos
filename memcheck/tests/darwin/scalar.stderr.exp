@@ -170,6 +170,18 @@ Syscall param sem_unlink(name) points to unaddressable byte(s)
    ...
  Address 0x........ is not stack'd, malloc'd or (recently) free'd
 -----------------------------------------------------
+x200010f(271):       __NR_sem_wait 1s 0m
+-----------------------------------------------------
+
+Syscall param sem_wait(sem) contains uninitialised byte(s)
+   ...
+-----------------------------------------------------
+x2000110(272):    __NR_sem_trywait 1s 0m
+-----------------------------------------------------
+
+Syscall param sem_trywait(sem) contains uninitialised byte(s)
+   ...
+-----------------------------------------------------
 x2000111(273):       __NR_sem_post 1s 0m
 -----------------------------------------------------
 

@@ -341,7 +341,12 @@ int main(void)
    SY(__NR_sem_unlink, x0); FAIL;
 
    // __NR_sem_wait 271
+   GO(__NR_sem_wait, "1s 0m");
+   SY(__NR_sem_wait, x0); FAIL;
+
    // __NR_sem_trywait 272
+   GO(__NR_sem_trywait, "1s 0m");
+   SY(__NR_sem_trywait, x0); FAIL;
 
    // __NR_sem_post 273
    GO(__NR_sem_post, "1s 0m");

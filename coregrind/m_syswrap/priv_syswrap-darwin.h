@@ -57,6 +57,8 @@ DECL_TEMPLATE(darwin, sys_semctl);
 DECL_TEMPLATE(darwin, sys_sem_open);
 DECL_TEMPLATE(darwin, sys_sem_close);
 DECL_TEMPLATE(darwin, sys_sem_unlink);
+DECL_TEMPLATE(darwin, sys_sem_wait);
+DECL_TEMPLATE(darwin, sys_sem_trywait);
 DECL_TEMPLATE(darwin, sys_sem_post);
 DECL_TEMPLATE(darwin, sys_sem_init);
 DECL_TEMPLATE(darwin, sys_sem_destroy);

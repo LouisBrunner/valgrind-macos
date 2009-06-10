@@ -1406,6 +1406,13 @@ POST(sys_sem_init)
   POST_MEM_WRITE(ARG1, sizeof(vki_sem_t));
 }
 
+PRE(sys_sem_wait)
+{
+   PRINT("sem_wait( %#lx )", ARG1);
+   PRE_REG_READ1(int, "sem_wait", vki_sem_t *, sem);
+   *flags |= SfMayBlock;
+}
+
 PRE(sys_sem_wait_nocancel)
 {
    PRINT("sem_wait_nocancel( %#lx )", ARG1);
@@ -7247,7 +7254,7 @@ const SyscallTableEntry ML_(syscall_table)[] = {
    MACX_(__NR_sem_open, sys_sem_open), 
    MACX_(__NR_sem_close, sys_sem_close), 
    MACX_(__NR_sem_unlink, sys_sem_unlink), 
-// _____(__NR_sem_wait), 
+   MACX_(__NR_sem_wait,    sys_sem_wait), 
    MACX_(__NR_sem_trywait, sys_sem_trywait), 
 // _____(__NR_sem_post), 
    MACX_(__NR_sem_post, sys_sem_post), 

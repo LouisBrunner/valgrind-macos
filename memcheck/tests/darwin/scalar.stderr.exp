@@ -358,9 +358,6 @@ Syscall param lstat64_extended(fsacl) points to unaddressable byte(s)
    ...
  Address 0x........ is not stack'd, malloc'd or (recently) free'd
 -----------------------------------------------------
-x20001a4(420):__NR_sem_wait_nocancel 0s* 0m
------------------------------------------------------
------------------------------------------------------
 x270f(9999):                9999 1e
 -----------------------------------------------------
 WARNING: unhandled syscall: unix:9999

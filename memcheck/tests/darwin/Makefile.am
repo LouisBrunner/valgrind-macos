@@ -8,10 +8,14 @@ noinst_HEADERS = scalar.h
 EXTRA_DIST = $(noinst_SCRIPTS) \
 	scalar.stderr.exp scalar.vgtest \
 	scalar_fork.stderr.exp scalar_fork.vgtest \
+	scalar_nocancel.stderr.exp scalar_nocancel.vgtest \
 	scalar_vfork.stderr.exp scalar_vfork.vgtest
 
 check_PROGRAMS = \
-	scalar scalar_fork scalar_vfork
+	scalar \
+	scalar_fork \
+	scalar_nocancel \
+	scalar_vfork
 
 
 AM_CFLAGS    += @FLAG_M32@ $(FLAG_MMMX) $(FLAG_MSSE)

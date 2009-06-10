@@ -520,7 +520,6 @@
 #define	__NR___pthread_kill VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(328)
 #define	__NR___pthread_sigmask VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(329)
 #define	__NR___sigwait        VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(330)
-#define	__NR_sigwait        VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(330) // GrP fixme hack
 #define	__NR___disable_threadsignal VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(331)
 #define	__NR___pthread_markcancel VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(332)
 #define	__NR___pthread_canceled VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(333)

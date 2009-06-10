@@ -667,10 +667,10 @@ static void sync_mappings(const HChar *when, const HChar *where, Int num)
    darwin ioctl wrapper
    ------------------------------------------------------------------ */
 
-PRE(sys_ioctl)
+PRE(ioctl)
 {
    *flags |= SfMayBlock;
-   PRINT("sys_ioctl ( %ld, 0x%lx, %#lx )",ARG1,ARG2,ARG3);
+   PRINT("ioctl ( %ld, 0x%lx, %#lx )",ARG1,ARG2,ARG3);
    PRE_REG_READ3(long, "ioctl",
                  unsigned int, fd, unsigned int, request, unsigned long, arg);
 
@@ -857,7 +857,7 @@ PRE(sys_ioctl)
 }
 
 
-POST(sys_ioctl)
+POST(ioctl)
 {
    vg_assert(SUCCESS);
    switch (ARG2 /* request */) {
@@ -1008,14 +1008,14 @@ static const char *name_for_fcntl(UWord cmd) {
 #undef F
 }
 
-PRE(sys_fcntl)
+PRE(fcntl)
 {
    switch (ARG2) {
    // These ones ignore ARG3.
    case VKI_F_GETFD:
    case VKI_F_GETFL:
    case VKI_F_GETOWN:
-      PRINT("sys_fcntl ( %ld, %ld )", ARG1,ARG2);
+      PRINT("fcntl ( %ld, %ld )", ARG1,ARG2);
       PRE_REG_READ2(long, "fcntl", unsigned int, fd, unsigned int, cmd);
       break;
 
@@ -1024,7 +1024,7 @@ PRE(sys_fcntl)
    case VKI_F_SETFD:
    case VKI_F_SETFL:
    case VKI_F_SETOWN:
-      PRINT("sys_fcntl[ARG3=='arg'] ( %ld, %ld, %ld )", ARG1,ARG2,ARG3);
+      PRINT("fcntl[ARG3=='arg'] ( %ld, %ld, %ld )", ARG1,ARG2,ARG3);
       PRE_REG_READ3(long, "fcntl",
                     unsigned int, fd, unsigned int, cmd, unsigned long, arg);
       break;
@@ -1033,7 +1033,7 @@ PRE(sys_fcntl)
    case VKI_F_GETLK:
    case VKI_F_SETLK:
    case VKI_F_SETLKW:
-      PRINT("sys_fcntl[ARG3=='lock'] ( %ld, %ld, %#lx )", ARG1,ARG2,ARG3);
+      PRINT("fcntl[ARG3=='lock'] ( %ld, %ld, %#lx )", ARG1,ARG2,ARG3);
       PRE_REG_READ3(long, "fcntl",
                     unsigned int, fd, unsigned int, cmd,
                     struct flock64 *, lock);
@@ -1050,13 +1050,13 @@ PRE(sys_fcntl)
    case VKI_F_FREEZE_FS:
    case VKI_F_THAW_FS:
    case VKI_F_GLOBAL_NOCACHE:
-      PRINT("sys_fcntl ( %ld, %s )", ARG1, name_for_fcntl(ARG1));
+      PRINT("fcntl ( %ld, %s )", ARG1, name_for_fcntl(ARG1));
       PRE_REG_READ2(long, "fcntl", unsigned int, fd, unsigned int, cmd);
       break;
 
        // struct fstore
    case VKI_F_PREALLOCATE:
-      PRINT("sys_fcntl ( %ld, %s, %#lx )", ARG1, name_for_fcntl(ARG2), ARG3);
+      PRINT("fcntl ( %ld, %s, %#lx )", ARG1, name_for_fcntl(ARG2), ARG3);
       PRE_REG_READ3(long, "fcntl",
                     unsigned int, fd, unsigned int, cmd,
                     struct fstore *, fstore);
@@ -1077,7 +1077,7 @@ PRE(sys_fcntl)
 
        // off_t
    case VKI_F_SETSIZE:
-      PRINT("sys_fcntl ( %ld, %s, %#lx )", ARG1, name_for_fcntl(ARG2), ARG3);
+      PRINT("fcntl ( %ld, %s, %#lx )", ARG1, name_for_fcntl(ARG2), ARG3);
       PRE_REG_READ3(long, "fcntl",
                     unsigned int, fd, unsigned int, cmd,
                     vki_off_t *, offset);
@@ -1085,7 +1085,7 @@ PRE(sys_fcntl)
 
        // struct radvisory
    case VKI_F_RDADVISE:
-      PRINT("sys_fcntl ( %ld, %s, %#lx )", ARG1, name_for_fcntl(ARG2), ARG3);
+      PRINT("fcntl ( %ld, %s, %#lx )", ARG1, name_for_fcntl(ARG2), ARG3);
       PRE_REG_READ3(long, "fcntl",
                     unsigned int, fd, unsigned int, cmd,
                     struct vki_radvisory *, radvisory);
@@ -1101,7 +1101,7 @@ PRE(sys_fcntl)
        // struct fbootstraptransfer
    case VKI_F_READBOOTSTRAP:
    case VKI_F_WRITEBOOTSTRAP:
-      PRINT("sys_fcntl ( %ld, %s, %#lx )", ARG1, name_for_fcntl(ARG2), ARG3);
+      PRINT("fcntl ( %ld, %s, %#lx )", ARG1, name_for_fcntl(ARG2), ARG3);
       PRE_REG_READ3(long, "fcntl",
                     unsigned int, fd, unsigned int, cmd,
                     struct fbootstraptransfer *, bootstrap);
@@ -1111,7 +1111,7 @@ PRE(sys_fcntl)
 
        // struct log2phys (out)
    case VKI_F_LOG2PHYS:
-      PRINT("sys_fcntl ( %ld, %s, %#lx )", ARG1, name_for_fcntl(ARG2), ARG3);
+      PRINT("fcntl ( %ld, %s, %#lx )", ARG1, name_for_fcntl(ARG2), ARG3);
       PRE_REG_READ3(long, "fcntl",
                     unsigned int, fd, unsigned int, cmd,
                     struct log2phys *, l2p);
@@ -1121,7 +1121,7 @@ PRE(sys_fcntl)
 
        // char[maxpathlen] (out)
    case VKI_F_GETPATH:
-      PRINT("sys_fcntl ( %ld, %s, %#lx )", ARG1, name_for_fcntl(ARG2), ARG3);
+      PRINT("fcntl ( %ld, %s, %#lx )", ARG1, name_for_fcntl(ARG2), ARG3);
       PRE_REG_READ3(long, "fcntl",
                     unsigned int, fd, unsigned int, cmd,
                     char *, pathbuf);
@@ -1131,7 +1131,7 @@ PRE(sys_fcntl)
 
        // char[maxpathlen] (in)
    case VKI_F_PATHPKG_CHECK:
-      PRINT("sys_fcntl ( %ld, %s, %#lx '%s')", ARG1, name_for_fcntl(ARG2), ARG3,
+      PRINT("fcntl ( %ld, %s, %#lx '%s')", ARG1, name_for_fcntl(ARG2), ARG3,
           (char *)ARG3);
       PRE_REG_READ3(long, "fcntl",
                     unsigned int, fd, unsigned int, cmd,
@@ -1140,7 +1140,7 @@ PRE(sys_fcntl)
       break;
 
    case VKI_F_ADDSIGS: /* Add detached signatures (for code signing) */
-      PRINT("sys_fcntl ( %ld, %s )", ARG1, name_for_fcntl(ARG2));
+      PRINT("fcntl ( %ld, %s )", ARG1, name_for_fcntl(ARG2));
       PRE_REG_READ3(long, "fcntl",
                     unsigned int, fd, unsigned int, cmd,
                     vki_fsignatures_t *, sigs);
@@ -1159,13 +1159,13 @@ PRE(sys_fcntl)
       break;
 
    default:
-      PRINT("sys_fcntl ( %ld, %ld [??] )", ARG1, ARG2);
+      PRINT("fcntl ( %ld, %ld [??] )", ARG1, ARG2);
       VG_(printf)("UNKNOWN fcntl %ld!", ARG2);
       break;
    }
 }
 
-POST(sys_fcntl)
+POST(fcntl)
 {
    vg_assert(SUCCESS);
    switch (ARG2) {
@@ -1212,84 +1212,13 @@ POST(sys_fcntl)
    }
 }
 
-// XXX: wrapper only suitable for 32-bit systems
-PRE(sys_fcntl64)
-{
-   switch (ARG2) {
-   // These ones ignore ARG3.
-   case VKI_F_GETFD:
-   case VKI_F_GETFL:
-   case VKI_F_GETOWN:
-      PRINT("sys_fcntl64 ( %ld, %ld )", ARG1,ARG2);
-      PRE_REG_READ2(long, "fcntl64", unsigned int, fd, unsigned int, cmd);
-      break;
-
-   // These ones use ARG3 as "arg".
-   case VKI_F_DUPFD:
-   case VKI_F_SETFD:
-   case VKI_F_SETFL:
-   case VKI_F_SETOWN:
-      PRINT("sys_fcntl64[ARG3=='arg'] ( %ld, %ld, %ld )", ARG1,ARG2,ARG3);
-      PRE_REG_READ3(long, "fcntl64",
-                    unsigned int, fd, unsigned int, cmd, unsigned long, arg);
-      break;
-
-   // These ones use ARG3 as "lock".
-   case VKI_F_GETLK:
-   case VKI_F_SETLK:
-   case VKI_F_SETLKW:
-      PRINT("sys_fcntl64[ARG3=='lock'] ( %ld, %ld, %#lx )", ARG1,ARG2,ARG3);
-      PRE_REG_READ3(long, "fcntl64",
-                    unsigned int, fd, unsigned int, cmd,
-                    struct flock64 *, lock);
-   if (ARG2 == VKI_F_SETLKW)
-      *flags |= SfMayBlock;
-      break;
-
-   default:
-      I_die_here;    // DDD: do something better here
-      break;
-   }
-}
-
-POST(sys_fcntl64)
-{
-   vg_assert(SUCCESS);
-   switch (ARG2) {
-   case VKI_F_DUPFD:
-      if (!ML_(fd_allowed)(RES, "fcntl64(DUPFD)", tid, True)) {
-         VG_(close)(RES);
-         SET_STATUS_Failure( VKI_EMFILE );
-      } else {
-         if (VG_(clo_track_fds))
-            ML_(record_fd_open_named)(tid, RES);
-      }
-      break;
-
-   case VKI_F_GETFD:
-   case VKI_F_GETFL:
-   case VKI_F_GETOWN:
-   case VKI_F_SETFD:
-   case VKI_F_SETFL:
-   case VKI_F_SETOWN:
-   case VKI_F_GETLK:
-   case VKI_F_SETLK:
-   case VKI_F_SETLKW:
-       break;
-
-   default:
-      I_die_here;    // DDD: do something better here
-      break;
-   }
-}
-
 /* ---------------------------------------------------------------------
    unix syscalls
    ------------------------------------------------------------------ */
 
-PRE(sys_futimes)
+PRE(futimes)
 {
-   PRINT("sys_futimes ( %ld, %#lx )", ARG1,ARG2);
+   PRINT("futimes ( %ld, %#lx )", ARG1,ARG2);
    PRE_REG_READ2(long, "futimes", int, fd, struct timeval *, tvp);
    if (ARG2 != 0) {
       PRE_timeval_READ( "futimes(tvp[0])", ARG2 );
@@ -1297,66 +1226,66 @@ PRE(sys_futimes)
    }
 }
 
-PRE(sys_semget)
+PRE(semget)
 {
-   PRINT("sys_semget ( %ld, %ld, %ld )",ARG1,ARG2,ARG3);
+   PRINT("semget ( %ld, %ld, %ld )",ARG1,ARG2,ARG3);
    PRE_REG_READ3(long, "semget", vki_key_t, key, int, nsems, int, semflg);
 }
 
-PRE(sys_semop)
+PRE(semop)
 {
    *flags |= SfMayBlock;
-   PRINT("sys_semop ( %ld, %#lx, %lu )",ARG1,ARG2,ARG3);
+   PRINT("semop ( %ld, %#lx, %lu )",ARG1,ARG2,ARG3);
    PRE_REG_READ3(long, "semop",
                  int, semid, struct sembuf *, sops, vki_size_t, nsoops);
    ML_(generic_PRE_sys_semop)(tid, ARG1,ARG2,ARG3);
 }
 
-PRE(sys_semctl)
+PRE(semctl)
 {
    switch (ARG3) {
    case VKI_IPC_STAT:
    case VKI_IPC_SET:
-      PRINT("sys_semctl ( %ld, %ld, %ld, %#lx )",ARG1,ARG2,ARG3,ARG4);
+      PRINT("semctl ( %ld, %ld, %ld, %#lx )",ARG1,ARG2,ARG3,ARG4);
       PRE_REG_READ4(long, "semctl",
                     int, semid, int, semnum, int, cmd, struct semid_ds *, arg);
       break;
    case VKI_GETALL:
    case VKI_SETALL:
-      PRINT("sys_semctl ( %ld, %ld, %ld, %#lx )",ARG1,ARG2,ARG3,ARG4);
+      PRINT("semctl ( %ld, %ld, %ld, %#lx )",ARG1,ARG2,ARG3,ARG4);
       PRE_REG_READ4(long, "semctl",
                     int, semid, int, semnum, int, cmd, unsigned short *, arg);
       break;
    case VKI_SETVAL:
-      PRINT("sys_semctl ( %ld, %ld, %ld, %#lx )",ARG1,ARG2,ARG3,ARG4);
+      PRINT("semctl ( %ld, %ld, %ld, %#lx )",ARG1,ARG2,ARG3,ARG4);
       PRE_REG_READ4(long, "semctl",
                     int, semid, int, semnum, int, cmd, int, arg);
       break;
    default:
-      PRINT("sys_semctl ( %ld, %ld, %ld )",ARG1,ARG2,ARG3);
+      PRINT("semctl ( %ld, %ld, %ld )",ARG1,ARG2,ARG3);
       PRE_REG_READ3(long, "semctl",
                     int, semid, int, semnum, int, cmd);
       break;
    }
    ML_(generic_PRE_sys_semctl)(tid, ARG1,ARG2,ARG3,ARG4);
 }
-POST(sys_semctl)
+POST(semctl)
 {
    ML_(generic_POST_sys_semctl)(tid, RES,ARG1,ARG2,ARG3,ARG4);
 }
 
-PRE(sys_sem_open)
+PRE(sem_open)
 {
    if (ARG2 & VKI_O_CREAT) {
       // 4-arg version
-      PRINT("sys_sem_open ( %#lx(%s), %ld, %ld, %ld )",
+      PRINT("sem_open ( %#lx(%s), %ld, %ld, %ld )",
             ARG1,(char*)ARG1,ARG2,ARG3,ARG4);
       PRE_REG_READ4(vki_sem_t *, "sem_open",
                     const char *, name, int, oflag, vki_mode_t, mode,
                     unsigned int, value);
    } else {
       // 2-arg version
-      PRINT("sys_sem_open ( %#lx(%s), %ld )",ARG1,(char*)ARG1,ARG2);
+      PRINT("sem_open ( %#lx(%s), %ld )",ARG1,(char*)ARG1,ARG2);
       PRE_REG_READ2(vki_sem_t *, "sem_open",
                     const char *, name, int, oflag);
    }
@@ -1366,34 +1295,34 @@ PRE(sys_sem_open)
    *flags |= SfMayBlock;
 }
 
-PRE(sys_sem_close)
+PRE(sem_close)
 {
    PRINT("sem_close( %#lx )", ARG1);
    PRE_REG_READ1(int, "sem_close", vki_sem_t *, sem);
 }
 
-PRE(sys_sem_unlink)
+PRE(sem_unlink)
 {
    PRINT("sem_unlink(  %#lx(%s) )", ARG1,(char*)ARG1);
    PRE_REG_READ1(int, "sem_unlink", const char *, name);
    PRE_MEM_RASCIIZ( "sem_unlink(name)", ARG1 );
 }
 
-PRE(sys_sem_post)
+PRE(sem_post)
 {
    PRINT("sem_post( %#lx )", ARG1);
    PRE_REG_READ1(int, "sem_post", vki_sem_t *, sem);
    *flags |= SfMayBlock;
 }
 
-PRE(sys_sem_destroy)
+PRE(sem_destroy)
 {
   PRINT("sem_destroy( %#lx )", ARG1);
   PRE_REG_READ1(int, "sem_destroy", vki_sem_t *, sem);
   PRE_MEM_READ("sem_destroy(sem)", ARG1, sizeof(vki_sem_t));
 }
 
-PRE(sys_sem_init)
+PRE(sem_init)
 {
   PRINT("sem_init( %#lx, %ld, %ld )", ARG1, ARG2, ARG3);
   PRE_REG_READ3(int, "sem_init", vki_sem_t *, sem,
@@ -1401,38 +1330,31 @@ PRE(sys_sem_init)
   PRE_MEM_WRITE("sem_init(sem)", ARG1, sizeof(vki_sem_t));
 }
 
-POST(sys_sem_init)
+POST(sem_init)
 {
   POST_MEM_WRITE(ARG1, sizeof(vki_sem_t));
 }
 
-PRE(sys_sem_wait)
+PRE(sem_wait)
 {
    PRINT("sem_wait( %#lx )", ARG1);
    PRE_REG_READ1(int, "sem_wait", vki_sem_t *, sem);
    *flags |= SfMayBlock;
 }
 
-PRE(sys_sem_wait_nocancel)
-{
-   PRINT("sem_wait_nocancel( %#lx )", ARG1);
-   PRE_REG_READ1(int, "sem_wait_nocancel", vki_sem_t *, sem);
-   *flags |= SfMayBlock;
-}
-
-PRE(sys_sem_trywait)
+PRE(sem_trywait)
 {
    PRINT("sem_trywait( %#lx )", ARG1);
    PRE_REG_READ1(int, "sem_trywait", vki_sem_t *, sem);
    *flags |= SfMayBlock;
 }
 
-PRE(sys_kqueue)
+PRE(kqueue)
 {
     PRINT("kqueue()");
 }
 
-POST(sys_kqueue)
+POST(kqueue)
 {
    if (!ML_(fd_allowed)(RES, "kqueue", tid, True)) {
       VG_(close)(RES);
@@ -1444,7 +1366,7 @@ POST(sys_kqueue)
    }
 }
 
-PRE(sys_kevent)
+PRE(kevent)
 {
    PRINT("kevent( %ld, %#lx, %ld, %#lx, %ld, %#lx )", 
          ARG1, ARG2, ARG3, ARG4, ARG5, ARG6);
@@ -1463,7 +1385,7 @@ PRE(sys_kevent)
    *flags |= SfMayBlock;
 }
 
-POST(sys_kevent)
+POST(kevent)
 {
    PRINT("kevent ret %ld dst %#lx (%zu)", RES, ARG4, sizeof(struct vki_kevent));
    if (RES > 0) POST_MEM_WRITE(ARG4, RES * sizeof(struct vki_kevent));
@@ -1474,7 +1396,7 @@ Addr pthread_starter = 0;
 Addr wqthread_starter = 0;
 SizeT pthread_structsize = 0;
 
-PRE(sys_bsdthread_register)
+PRE(bsdthread_register)
 {
    PRINT("bsdthread_register( %#lx, %#lx, %lu )", ARG1, ARG2, ARG3);
    PRE_REG_READ3(int,"__bsdthread_register", void *,"threadstart", 
@@ -1487,7 +1409,7 @@ PRE(sys_bsdthread_register)
    ARG2 = (Word)&wqthread_hijack_asm;
 }
 
-PRE(sys_workq_open)
+PRE(workq_open)
 {
    PRINT("workq_open()");
    PRE_REG_READ0(int, "workq_open");
@@ -1507,7 +1429,7 @@ static const char *workqop_name(int op)
 }
 
 
-PRE(sys_workq_ops)
+PRE(workq_ops)
 {
    PRINT("workq_ops( %ld(%s), %#lx, %ld )", ARG1, workqop_name(ARG1), ARG2,
       ARG3);
@@ -1543,8 +1465,7 @@ PRE(sys_workq_ops)
       break;
    }
 }
-
-POST(sys_workq_ops)
+POST(workq_ops)
 {
    ThreadState *tst = VG_(get_ThreadState)(tid);
    tst->os_state.wq_jmpbuf_valid = False;
@@ -1552,7 +1473,7 @@ POST(sys_workq_ops)
 
 
 
-PRE(sys___mac_syscall)
+PRE(__mac_syscall)
 {
    PRINT("__mac_syscall( %#lx, %ld, %#lx )", ARG1, ARG2, ARG3);
    PRE_REG_READ3(int,"__mac_syscall", char *,"policy", 
@@ -1563,9 +1484,9 @@ PRE(sys___mac_syscall)
 }
 
 
-/* Not syswrap-generic's sys_exit, which exits only one thread.
+/* Not like syswrap-generic's sys_exit, which exits only one thread.
    More like syswrap-generic's sys_exit_group. */
-PRE(sys_exit)
+PRE(exit)
 {
    ThreadId     t;
    ThreadState* tst;
@@ -1596,9 +1517,9 @@ PRE(sys_exit)
 }
 
 
-PRE(sys_sigaction)
+PRE(sigaction)
 {
-   PRINT("sys_sigaction ( %ld, %#lx, %#lx )", ARG1,ARG2,ARG3);
+   PRINT("sigaction ( %ld, %#lx, %#lx )", ARG1,ARG2,ARG3);
    PRE_REG_READ3(long, "sigaction",
                  int, signum, vki_sigaction_toK_t *, act,
                  vki_sigaction_fromK_t *, oldact);
@@ -1621,7 +1542,7 @@ PRE(sys_sigaction)
                                   (vki_sigaction_fromK_t *)ARG3)
    );
 }
-POST(sys_sigaction)
+POST(sigaction)
 {
    vg_assert(SUCCESS);
    if (RES == 0 && ARG3 != 0)
@@ -1629,7 +1550,7 @@ POST(sys_sigaction)
 }
 
 
-PRE(sys___pthread_sigmask)
+PRE(__pthread_sigmask)
 {
    // GrP fixme
    // JRS: arguments are identical to sigprocmask 
@@ -1644,7 +1565,7 @@ PRE(sys___pthread_sigmask)
 }
 
 
-PRE(sys___pthread_canceled)
+PRE(__pthread_canceled)
 {
    *flags |= SfMayBlock; /* might kill this thread??? */
    /* I don't think so -- I think it just changes the cancellation
@@ -1654,7 +1575,7 @@ PRE(sys___pthread_canceled)
 }
 
 
-PRE(sys___pthread_markcancel)
+PRE(__pthread_markcancel)
 {
    *flags |= SfMayBlock; /* might kill this thread??? */
    PRINT("__pthread_markcancel ( %#lx )", ARG1);
@@ -1663,7 +1584,7 @@ PRE(sys___pthread_markcancel)
 }
 
 
-PRE(sys___disable_threadsignal)
+PRE(__disable_threadsignal)
 {
    vki_sigset_t set;
    PRINT("__disable_threadsignal(%ld, %ld, %ld)", ARG1, ARG2, ARG3);
@@ -1683,7 +1604,7 @@ PRE(sys___disable_threadsignal)
 }
 
 
-PRE(sys_kdebug_trace)
+PRE(kdebug_trace)
 {
    PRINT("kdebug_trace(%ld, %ld, %ld, %ld, %ld, %ld)", 
          ARG1, ARG2, ARG3, ARG4, ARG5, ARG6);
@@ -1694,20 +1615,20 @@ PRE(sys_kdebug_trace)
 }
 
 
-PRE(sys_seteuid)
+PRE(seteuid)
 {
     PRINT("seteuid(%ld)", ARG1);
     PRE_REG_READ1(long, "seteuid", vki_uid_t, "uid");
 }
 
 
-PRE(sys_setegid)
+PRE(setegid)
 {
     PRINT("setegid(%ld)", ARG1);
     PRE_REG_READ1(long, "setegid", vki_uid_t, "uid");
 }
 
-PRE(sys_settid)
+PRE(settid)
 {
     PRINT("settid(%ld, %ld)", ARG1, ARG2);
     PRE_REG_READ2(long, "settid", vki_uid_t, "uid", vki_gid_t, "gid");
@@ -1716,7 +1637,7 @@ PRE(sys_settid)
 /* XXX need to check whether we need POST operations for
  * waitevent, watchevent, modwatch -- jpeach 
  */
-PRE(sys_watchevent)
+PRE(watchevent)
 {
     PRINT("watchevent(%#lx, %#lx)", ARG1, ARG2);
     PRE_REG_READ2(long, "watchevent",
@@ -1728,7 +1649,7 @@ PRE(sys_watchevent)
 }
 
 #define WAITEVENT_FAST_POLL ((Addr)(struct timeval *)-1)
-PRE(sys_waitevent)
+PRE(waitevent)
 {
    PRINT("waitevent(%#lx, %#lx)", ARG1, ARG2);
    PRE_REG_READ2(long, "waitevent",
@@ -1743,12 +1664,12 @@ PRE(sys_waitevent)
    *flags |= SfMayBlock;
 }
 
-POST(sys_waitevent)
+POST(waitevent)
 {
    POST_MEM_WRITE(ARG1, sizeof(vki_eventreq));
 }
 
-PRE(sys_modwatch)
+PRE(modwatch)
 {
    PRINT("modwatch(%#lx, %#lx)", ARG1, ARG2);
    PRE_REG_READ2(long, "modwatch",
@@ -1758,7 +1679,7 @@ PRE(sys_modwatch)
    PRE_MEM_READ("modwatch(eventmask)", ARG2, sizeof(unsigned int));
 }
 
-PRE(sys_getxattr)
+PRE(getxattr)
 {
    PRINT("getxattr(%#lx(%s), %#lx(%s), %#lx, %lu, %lu, %ld)",
          ARG1, (char *)ARG1, ARG2, (char *)ARG2, ARG3, ARG4, ARG5, ARG6);
@@ -1771,13 +1692,13 @@ PRE(sys_getxattr)
    PRE_MEM_WRITE( "getxattr(value)", ARG3, ARG4);
 }
 
-POST(sys_getxattr)
+POST(getxattr)
 {
    vg_assert((vki_ssize_t)RES >= 0);
    POST_MEM_WRITE(ARG3, (vki_ssize_t)RES);
 }
 
-PRE(sys_fgetxattr)
+PRE(fgetxattr)
 {
    PRINT("fgetxattr(%ld, %#lx(%s), %#lx, %lu, %lu, %ld)",
       ARG1, ARG2, (char *)ARG2, ARG3, ARG4, ARG5, ARG6);
@@ -1789,13 +1710,13 @@ PRE(sys_fgetxattr)
    PRE_MEM_WRITE( "getxattr(value)", ARG3, ARG4);
 }
 
-POST(sys_fgetxattr)
+POST(fgetxattr)
 {
    vg_assert((vki_ssize_t)RES >= 0);
    POST_MEM_WRITE(ARG3, (vki_ssize_t)RES);
 }
 
-PRE(sys_setxattr)
+PRE(setxattr)
 {
    PRINT("setxattr ( %#lx(%s), %#lx(%s), %#lx, %lu, %lu, %ld )", 
          ARG1, (char *)ARG1, ARG2, (char*)ARG2, ARG3, ARG4, ARG5, ARG6 );
@@ -1809,7 +1730,7 @@ PRE(sys_setxattr)
 }
 
 
-PRE(sys_fsetxattr)
+PRE(fsetxattr)
 {
    PRINT( "fsetxattr ( %ld, %#lx(%s), %#lx, %lu, %lu, %ld )", 
           ARG1, ARG2, (char*)ARG2, ARG3, ARG4, ARG5, ARG6 );
@@ -1822,7 +1743,7 @@ PRE(sys_fsetxattr)
 }
 
 
-PRE(sys_listxattr)
+PRE(listxattr)
 {
    PRINT( "listxattr ( %#lx(%s), %#lx, %lu, %ld )", 
           ARG1, (char *)ARG1, ARG2, ARG3, ARG4 );
@@ -1834,7 +1755,7 @@ PRE(sys_listxattr)
    PRE_MEM_WRITE( "listxattr(namebuf)", ARG2, ARG3 );
    *flags |= SfMayBlock;
 }
-POST(sys_listxattr)
+POST(listxattr)
 {
    vg_assert(SUCCESS);
    vg_assert((vki_ssize_t)RES >= 0);
@@ -1842,7 +1763,7 @@ POST(sys_listxattr)
 }
 
 
-PRE(sys_flistxattr)
+PRE(flistxattr)
 {
    PRINT( "flistxattr ( %ld, %#lx, %lu, %ld )", 
           ARG1, ARG2, ARG3, ARG4 );
@@ -1852,33 +1773,32 @@ PRE(sys_flistxattr)
    PRE_MEM_WRITE( "flistxattr(namebuf)", ARG2, ARG3 );
    *flags |= SfMayBlock;
 }
-POST(sys_flistxattr)
+POST(flistxattr)
 {
    vg_assert(SUCCESS);
    vg_assert((vki_ssize_t)RES >= 0);
    POST_MEM_WRITE( ARG2, (vki_ssize_t)RES );
 }
 
-PRE(sys_shmget)
+PRE(shmget)
 {
-   PRINT("sys_shmget ( %ld, %ld, %ld )",ARG1,ARG2,ARG3);
+   PRINT("shmget ( %ld, %ld, %ld )",ARG1,ARG2,ARG3);
    PRE_REG_READ3(long, "shmget", vki_key_t, key, vki_size_t, size, int, shmflg);
 }
 
-PRE(sys_shmctl)
+PRE(shmctl)
 {
-   PRINT("sys_shmctl ( %ld, %ld, %#lx )",ARG1,ARG2,ARG3);
+   PRINT("shmctl ( %ld, %ld, %#lx )",ARG1,ARG2,ARG3);
    PRE_REG_READ3(long, "shmctl",
                  int, shmid, int, cmd, struct vki_shmid_ds *, buf);
    ML_(generic_PRE_sys_shmctl)(tid, ARG1,ARG2,ARG3);
 }
-
-POST(sys_shmctl)
+POST(shmctl)
 {
    ML_(generic_POST_sys_shmctl)(tid, RES,ARG1,ARG2,ARG3);
 }
 
-PRE(sys_shm_open)
+PRE(shm_open)
 {
    PRINT("shm_open(%#lx(%s), %ld, %ld)", ARG1, (char *)ARG1, ARG2, ARG3);
    PRE_REG_READ3(long, "shm_open",
@@ -1888,8 +1808,7 @@ PRE(sys_shm_open)
 
    *flags |= SfMayBlock;
 }
-
-POST(sys_shm_open)
+POST(shm_open)
 {
    vg_assert(SUCCESS);
    if (!ML_(fd_allowed)(RES, "shm_open", tid, True)) {
@@ -1902,19 +1821,19 @@ POST(sys_shm_open)
 }
 
 
-PRE(sys_statx)
+PRE(stat_extended)
 {
-   PRINT("statx( %#lx(%s), %#lx, %#lx, %#lx )",
+   PRINT("stat_extended( %#lx(%s), %#lx, %#lx, %#lx )",
       ARG1, (char *)ARG1, ARG2, ARG3, ARG4);
-   PRE_REG_READ4(int, "statx", char *, file_name, struct stat *, buf, 
+   PRE_REG_READ4(int, "stat_extended", char *, file_name, struct stat *, buf, 
                  void *, fsacl, vki_size_t *, fsacl_size);
-   PRE_MEM_RASCIIZ( "statx(file_name)",  ARG1 );
-   PRE_MEM_READ(    "statx(fsacl_size)", ARG4, sizeof(vki_size_t) );
-   PRE_MEM_WRITE(   "statx(buf)",        ARG2, sizeof(struct vki_stat) );
-   PRE_MEM_WRITE(   "statx(fsacl_size)", ARG4, sizeof(vki_size_t) );
-   PRE_MEM_WRITE(   "statx(fsacl)",      ARG3, *(vki_size_t *)ARG4 );
+   PRE_MEM_RASCIIZ( "stat_extended(file_name)",  ARG1 );
+   PRE_MEM_READ(    "stat_extended(fsacl_size)", ARG4, sizeof(vki_size_t) );
+   PRE_MEM_WRITE(   "stat_extended(buf)",        ARG2, sizeof(struct vki_stat) );
+   PRE_MEM_WRITE(   "stat_extended(fsacl_size)", ARG4, sizeof(vki_size_t) );
+   PRE_MEM_WRITE(   "stat_extended(fsacl)",      ARG3, *(vki_size_t *)ARG4 );
 }
-POST(sys_statx)
+POST(stat_extended)
 {
    POST_MEM_WRITE( ARG2, sizeof(struct vki_stat) );
    POST_MEM_WRITE( ARG4, sizeof(vki_size_t) );
@@ -1922,11 +1841,11 @@ POST(sys_statx)
 }
 
 
-PRE(sys_fchmod_extended)
+PRE(fchmod_extended)
 {
    /* Note: this is not really correct.  Handling of
-      sys_chmod_extended is broken in the same way. */
-   PRINT("sys_fchmod_extended ( %ld, %ld, %ld, %ld, %#lx )",
+      chmod_extended is broken in the same way. */
+   PRINT("fchmod_extended ( %ld, %ld, %ld, %ld, %#lx )",
          ARG1, ARG2, ARG3, ARG4, ARG5);
    PRE_REG_READ5(long, "fchmod", 
                  unsigned int, fildes, 
@@ -1940,11 +1859,11 @@ PRE(sys_fchmod_extended)
                  sizeof(struct kauth_filesec) );
 }
 
-PRE(sys_chmod_extended)
+PRE(chmod_extended)
 {
    /* Note: this is not really correct.  Handling of
-      sys_fchmod_extended is broken in the same way. */
-   PRINT("sys_chmod_extended ( %#lx(%s), %ld, %ld, %ld, %#lx )",
+      fchmod_extended is broken in the same way. */
+   PRINT("chmod_extended ( %#lx(%s), %ld, %ld, %ld, %#lx )",
          ARG1, ARG1 ? (HChar*)ARG1 : "(null)", ARG2, ARG3, ARG4, ARG5);
    PRE_REG_READ5(long, "chmod", 
                  unsigned int, fildes, 
@@ -1960,75 +1879,59 @@ PRE(sys_chmod_extended)
 }
 
 
-PRE(sys_accessx)
+PRE(chflags)
 {
-    // GrP fixme difficult
-}
-
-POST(sys_accessx)
-{
-    // GrP fixme
-}
-
-PRE(sys_chflags)
-{
-   PRINT("sys_chflags ( %#lx(%s), %lu )", ARG1, (char *)ARG1, ARG2);
+   PRINT("chflags ( %#lx(%s), %lu )", ARG1, (char *)ARG1, ARG2);
    PRE_REG_READ2(int, "chflags", const char *,path, unsigned int,flags);
    PRE_MEM_RASCIIZ("chflags(path)", ARG1);
 
    // GrP fixme sanity-check flags value?
 }
 
-PRE(sys_fchflags)
+PRE(fchflags)
 {
-   PRINT("sys_fchflags ( %ld, %lu )", ARG1, ARG2);
+   PRINT("fchflags ( %ld, %lu )", ARG1, ARG2);
    PRE_REG_READ2(int, "fchflags", int,fd, unsigned int,flags);
 
    // GrP fixme sanity-check flags value?
 }
 
-POST(sys_stat64)
+PRE(stat64)
 {
-   POST_MEM_WRITE( ARG2, sizeof(struct vki_stat64) );
-}
-
-PRE(sys_stat64)
-{
-   PRINT("sys_stat64 ( %#lx(%s), %#lx )", ARG1, (char *)ARG1, ARG2);
+   PRINT("stat64 ( %#lx(%s), %#lx )", ARG1, (char *)ARG1, ARG2);
    PRE_REG_READ2(long, "stat", const char *,path, struct stat64 *,buf);
    PRE_MEM_RASCIIZ("stat64(path)", ARG1);
    PRE_MEM_WRITE( "stat64(buf)", ARG2, sizeof(struct vki_stat64) );
 }
-
-
-POST(sys_lstat64)
+POST(stat64)
 {
    POST_MEM_WRITE( ARG2, sizeof(struct vki_stat64) );
 }
 
-PRE(sys_lstat64)
+PRE(lstat64)
 {
-   PRINT("sys_lstat64 ( %#lx(%s), %#lx )", ARG1, (char *)ARG1, ARG2);
+   PRINT("lstat64 ( %#lx(%s), %#lx )", ARG1, (char *)ARG1, ARG2);
    PRE_REG_READ2(long, "stat", const char *,path, struct stat64 *,buf);
    PRE_MEM_RASCIIZ("lstat64(path)", ARG1);
    PRE_MEM_WRITE( "lstat64(buf)", ARG2, sizeof(struct vki_stat64) );
 }
-
-
-POST(sys_fstat64)
+POST(lstat64)
 {
    POST_MEM_WRITE( ARG2, sizeof(struct vki_stat64) );
 }
 
-PRE(sys_fstat64)
+PRE(fstat64)
 {
-   PRINT("sys_fstat64 ( %ld, %#lx )", ARG1,ARG2);
+   PRINT("fstat64 ( %ld, %#lx )", ARG1,ARG2);
    PRE_REG_READ2(long, "fstat", unsigned int, fd, struct stat64 *, buf);
    PRE_MEM_WRITE( "fstat64(buf)", ARG2, sizeof(struct vki_stat64) );
 }
+POST(fstat64)
+{
+   POST_MEM_WRITE( ARG2, sizeof(struct vki_stat64) );
+}
 
-
-PRE(sys_getfsstat)
+PRE(getfsstat)
 {
    PRINT("getfsstat(%#lx, %ld, %ld)", ARG1, ARG2, ARG3);
    PRE_REG_READ3(int, "getfsstat", struct vki_statfs *, buf, 
@@ -2039,7 +1942,7 @@ PRE(sys_getfsstat)
    }
 }
 
-POST(sys_getfsstat)
+POST(getfsstat)
 {
    if (ARG1) {
       // RES is a STRUCT COUNT
@@ -2201,7 +2104,7 @@ static void set1attr(ThreadId tid, void *attrData, SizeT attrDataSize)
    PRE_MEM_READ("setattrlist(attrBuf value)", (Addr)attrData, attrDataSize);
 }
 
-PRE(sys_getattrlist)
+PRE(getattrlist)
 {
    PRINT("getattrlist(%#lx(%s), %#lx, %#lx, %lu, %lu)", 
          ARG1, (char *)ARG1, ARG2, ARG3, ARG4, ARG5);
@@ -2213,7 +2116,7 @@ PRE(sys_getattrlist)
    PRE_MEM_WRITE("getattrlist(attrBuf)", ARG3, ARG4);
 }
 
-POST(sys_getattrlist) 
+POST(getattrlist) 
 {
    if (ARG4 > sizeof(vki_uint32_t)) {
       // attrBuf is uint32_t bytes written followed by attr data
@@ -2224,7 +2127,7 @@ POST(sys_getattrlist)
 }
 
 
-PRE(sys_setattrlist)
+PRE(setattrlist)
 {
    PRINT("setattrlist(%#lx(%s), %#lx, %#lx, %lu, %lu)", 
          ARG1, (char *)ARG1, ARG2, ARG3, ARG4, ARG5);
@@ -2237,7 +2140,7 @@ PRE(sys_setattrlist)
 }
 
 
-PRE(sys_getdirentriesattr)
+PRE(getdirentriesattr)
 {
    PRINT("getdirentriesattr(%ld, %#lx, %#lx, %ld, %#lx, %#lx, %#lx, %ld)", 
          ARG1, ARG2, ARG3, ARG4, ARG5, ARG6, ARG7, ARG8);
@@ -2255,7 +2158,7 @@ PRE(sys_getdirentriesattr)
    PRE_MEM_WRITE("getdirentriesattr(newState)", ARG7, sizeof(unsigned int));
 }
 
-POST(sys_getdirentriesattr) 
+POST(getdirentriesattr) 
 {
    char *p, *end;
    unsigned int count;
@@ -2280,7 +2183,7 @@ POST(sys_getdirentriesattr)
 }
 
 
-PRE(sys_fsctl)
+PRE(fsctl)
 {
    PRINT("fsctl ( %#lx(%s), %ld, %#lx, %ld )",
       ARG1, (char *)ARG1, ARG2, ARG3, ARG4);
@@ -2321,7 +2224,7 @@ PRE(sys_fsctl)
    }
 }
 
-POST(sys_fsctl)
+POST(fsctl)
 {
    switch (ARG2) {
    case VKI_afpfsByteRangeLock2FSCTL: {
@@ -2339,9 +2242,9 @@ POST(sys_fsctl)
    }
 }
 
-PRE(sys_initgroups)
+PRE(initgroups)
 {
-    PRINT("sys_initgroups(%s, %#lx, %lu)", (char *)ARG1, ARG2, ARG3);
+    PRINT("initgroups(%s, %#lx, %lu)", (char *)ARG1, ARG2, ARG3);
     PRE_REG_READ3(long, "initgroups",
         int, setlen, vki_gid_t *, gidset, vki_uid_t, gmuid);
     PRE_MEM_READ("gidset", ARG2, ARG1 * sizeof(vki_gid_t));
@@ -2390,7 +2293,7 @@ static SysRes simple_pre_exec_check(const HChar* exe_name)
    }
    return VG_(mk_SysRes_Success)(0);
 }
-PRE(sys_posix_spawn)
+PRE(posix_spawn)
 {
    Char*        path = NULL;       /* path to executable */
    Char**       envp = NULL;
@@ -2406,7 +2309,7 @@ PRE(sys_posix_spawn)
             char** argv
             char** envp
    */
-   PRINT("sys_posix_spawn( %#lx, %#lx(%s), %#lx, %#lx, %#lx )",
+   PRINT("posix_spawn( %#lx, %#lx(%s), %#lx, %#lx, %#lx )",
          ARG1, ARG2, ARG2 ? (HChar*)ARG2 : "(null)", ARG3, ARG4, ARG5 );
 
    /* Standard pre-syscall checks */
@@ -2424,7 +2327,7 @@ PRE(sys_posix_spawn)
                                 "posix_spawn(envp[i])" );
 
    if (0)
-   VG_(printf)("sys_posix_spawn( %#lx, %#lx(%s), %#lx, %#lx, %#lx )\n",
+   VG_(printf)("posix_spawn( %#lx, %#lx(%s), %#lx, %#lx, %#lx )\n",
          ARG1, ARG2, ARG2 ? (HChar*)ARG2 : "(null)", ARG3, ARG4, ARG5 );
 
    /* Now follows a bunch of logic copied from PRE(sys_execve) in
@@ -2571,20 +2474,20 @@ PRE(sys_posix_spawn)
    /* not to mention .. */
    *flags |= SfMayBlock;
 }
-POST(sys_posix_spawn)
+POST(posix_spawn)
 {
    vg_assert(SUCCESS);
    //POST_MEM_WRITE( ARG1, sizeof(vki_pid_t) );
 }
 
 
-PRE(sys_socket)
+PRE(socket)
 {
-   PRINT("sys_socket ( %ld, %ld, %ld )",ARG1,ARG2,ARG3);
+   PRINT("socket ( %ld, %ld, %ld )",ARG1,ARG2,ARG3);
    PRE_REG_READ3(long, "socket", int, domain, int, type, int, protocol);
 }
 
-POST(sys_socket)
+POST(socket)
 {
    SysRes r;
    vg_assert(SUCCESS);
@@ -2593,9 +2496,9 @@ POST(sys_socket)
 }
 
 
-PRE(sys_setsockopt)
+PRE(setsockopt)
 {
-   PRINT("sys_setsockopt ( %ld, %ld, %ld, %#lx, %ld )",
+   PRINT("setsockopt ( %ld, %ld, %ld, %#lx, %ld )",
       ARG1,ARG2,ARG3,ARG4,ARG5);
    PRE_REG_READ5(long, "setsockopt",
                  int, s, int, level, int, optname,
@@ -2604,11 +2507,11 @@ PRE(sys_setsockopt)
 }
 
 
-PRE(sys_getsockopt)
+PRE(getsockopt)
 {
    Addr optval_p = ARG4;
    Addr optlen_p = ARG5;
-   PRINT("sys_getsockopt ( %ld, %ld, %ld, %#lx, %#lx )",
+   PRINT("getsockopt ( %ld, %ld, %ld, %#lx, %#lx )",
       ARG1,ARG2,ARG3,ARG4,ARG5);
    PRE_REG_READ5(long, "getsockopt",
                  int, s, int, level, int, optname,
@@ -2625,7 +2528,7 @@ PRE(sys_getsockopt)
    // DDD: #warning GrP fixme darwin-specific sockopts
 }
 
-POST(sys_getsockopt)
+POST(getsockopt)
 {
    Addr optval_p = ARG4;
    Addr optlen_p = ARG5;
@@ -2639,26 +2542,26 @@ POST(sys_getsockopt)
 }
 
 
-PRE(sys_connect)
+PRE(connect)
 {
    *flags |= SfMayBlock;
-   PRINT("sys_connect ( %ld, %#lx, %ld )",ARG1,ARG2,ARG3);
+   PRINT("connect ( %ld, %#lx, %ld )",ARG1,ARG2,ARG3);
    PRE_REG_READ3(long, "connect",
                  int, sockfd, struct sockaddr *, serv_addr, int, addrlen);
    ML_(generic_PRE_sys_connect)(tid, ARG1,ARG2,ARG3);
 }
 
 
-PRE(sys_accept)
+PRE(accept)
 {
    *flags |= SfMayBlock;
-   PRINT("sys_accept ( %ld, %#lx, %ld )",ARG1,ARG2,ARG3);
+   PRINT("accept ( %ld, %#lx, %ld )",ARG1,ARG2,ARG3);
    PRE_REG_READ3(long, "accept",
                  int, s, struct sockaddr *, addr, int, *addrlen);
    ML_(generic_PRE_sys_accept)(tid, ARG1,ARG2,ARG3);
 }
 
-POST(sys_accept)
+POST(accept)
 {
    SysRes r;
    vg_assert(SUCCESS);
@@ -2668,10 +2571,10 @@ POST(sys_accept)
 }
 
 
-PRE(sys_sendto)
+PRE(sendto)
 {
    *flags |= SfMayBlock;
-   PRINT("sys_sendto ( %ld, %s, %ld, %lu, %#lx, %ld )",
+   PRINT("sendto ( %ld, %s, %ld, %lu, %#lx, %ld )",
       ARG1,(char *)ARG2,ARG3,ARG4,ARG5,ARG6);
    PRE_REG_READ6(long, "sendto",
                  int, s, const void *, msg, int, len, 
@@ -2680,10 +2583,10 @@ PRE(sys_sendto)
    ML_(generic_PRE_sys_sendto)(tid, ARG1,ARG2,ARG3,ARG4,ARG5,ARG6);
 }
 
-PRE(sys_sendfile)
+PRE(sendfile)
 {
 #if VG_WORDSIZE == 4
-   PRINT("sys_sendfile(%ld, %ld, %llu, %#lx, %#lx, %ld)",
+   PRINT("sendfile(%ld, %ld, %llu, %#lx, %#lx, %ld)",
          ARG1, ARG2, LOHI64(ARG3, ARG4), ARG5, ARG6, ARG7);
 
    PRE_REG_READ7(long, "sendfile",
@@ -2693,7 +2596,7 @@ PRE(sys_sendfile)
    PRE_MEM_WRITE("sendfile(nwritten)", ARG5, sizeof(vki_uint64_t));
    if (ARG6) PRE_MEM_WRITE("sendfile(sf_header)", ARG6, sizeof(struct sf_hdtr));
 #else
-   PRINT("sys_sendfile(%ld, %ld, %ld, %#lx, %#lx, %ld)",
+   PRINT("sendfile(%ld, %ld, %ld, %#lx, %#lx, %ld)",
       ARG1, ARG2, ARG3, ARG4, ARG5, ARG6);
 
    PRE_REG_READ6(long, "sendfile",
@@ -2706,8 +2609,7 @@ PRE(sys_sendfile)
 
    *flags |= SfMayBlock;
 }
-
-POST(sys_sendfile)
+POST(sendfile)
 {
 #if VG_WORDSIZE == 4
    POST_MEM_WRITE(ARG5, sizeof(vki_uint64_t));
@@ -2718,10 +2620,10 @@ POST(sys_sendfile)
 #endif
 }
 
-PRE(sys_recvfrom)
+PRE(recvfrom)
 {
    *flags |= SfMayBlock;
-   PRINT("sys_recvfrom ( %ld, %#lx, %ld, %lu, %#lx, %#lx )",
+   PRINT("recvfrom ( %ld, %#lx, %ld, %lu, %#lx, %#lx )",
       ARG1,ARG2,ARG3,ARG4,ARG5,ARG6);
    PRE_REG_READ6(long, "recvfrom",
                  int, s, void *, buf, int, len, unsigned int, flags,
@@ -2729,7 +2631,7 @@ PRE(sys_recvfrom)
    ML_(generic_PRE_sys_recvfrom)(tid, ARG1,ARG2,ARG3,ARG4,ARG5,ARG6);
 }
 
-POST(sys_recvfrom)
+POST(recvfrom)
 {
    vg_assert(SUCCESS);
    ML_(generic_POST_sys_recvfrom)(tid, VG_(mk_SysRes_Success)(RES),
@@ -2737,63 +2639,63 @@ POST(sys_recvfrom)
 }
 
 
-PRE(sys_sendmsg)
+PRE(sendmsg)
 {
    *flags |= SfMayBlock;
-   PRINT("sys_sendmsg ( %ld, %#lx, %ld )",ARG1,ARG2,ARG3);
+   PRINT("sendmsg ( %ld, %#lx, %ld )",ARG1,ARG2,ARG3);
    PRE_REG_READ3(long, "sendmsg",
                  int, s, const struct msghdr *, msg, int, flags);
    ML_(generic_PRE_sys_sendmsg)(tid, ARG1,ARG2);
 }
 
 
-PRE(sys_recvmsg)
+PRE(recvmsg)
 {
    *flags |= SfMayBlock;
-   PRINT("sys_recvmsg ( %ld, %#lx, %ld )",ARG1,ARG2,ARG3);
+   PRINT("recvmsg ( %ld, %#lx, %ld )",ARG1,ARG2,ARG3);
    PRE_REG_READ3(long, "recvmsg", int, s, struct msghdr *, msg, int, flags);
    ML_(generic_PRE_sys_recvmsg)(tid, ARG1,ARG2);
 }
 
-POST(sys_recvmsg)
+POST(recvmsg)
 {
    ML_(generic_POST_sys_recvmsg)(tid, ARG1,ARG2);
 }
 
 
-PRE(sys_shutdown)
+PRE(shutdown)
 {
    *flags |= SfMayBlock;
-   PRINT("sys_shutdown ( %ld, %ld )",ARG1,ARG2);
+   PRINT("shutdown ( %ld, %ld )",ARG1,ARG2);
    PRE_REG_READ2(int, "shutdown", int, s, int, how);
 }
 
 
-PRE(sys_bind)
+PRE(bind)
 {
-   PRINT("sys_bind ( %ld, %#lx, %ld )",ARG1,ARG2,ARG3);
+   PRINT("bind ( %ld, %#lx, %ld )",ARG1,ARG2,ARG3);
    PRE_REG_READ3(long, "bind",
                  int, sockfd, struct sockaddr *, my_addr, int, addrlen);
    ML_(generic_PRE_sys_bind)(tid, ARG1,ARG2,ARG3);
 }
 
 
-PRE(sys_listen)
+PRE(listen)
 {
-   PRINT("sys_listen ( %ld, %ld )",ARG1,ARG2);
+   PRINT("listen ( %ld, %ld )",ARG1,ARG2);
    PRE_REG_READ2(long, "listen", int, s, int, backlog);
 }
 
 
-PRE(sys_getsockname)
+PRE(getsockname)
 {
-   PRINT("sys_getsockname ( %ld, %#lx, %#lx )",ARG1,ARG2,ARG3);
+   PRINT("getsockname ( %ld, %#lx, %#lx )",ARG1,ARG2,ARG3);
    PRE_REG_READ3(long, "getsockname",
                  int, s, struct sockaddr *, name, int *, namelen);
    ML_(generic_PRE_sys_getsockname)(tid, ARG1,ARG2,ARG3);
 }
 
-POST(sys_getsockname)
+POST(getsockname)
 {
    vg_assert(SUCCESS);
    ML_(generic_POST_sys_getsockname)(tid, VG_(mk_SysRes_Success)(RES),
@@ -2801,15 +2703,15 @@ POST(sys_getsockname)
 }
 
 
-PRE(sys_getpeername)
+PRE(getpeername)
 {
-   PRINT("sys_getpeername ( %ld, %#lx, %#lx )",ARG1,ARG2,ARG3);
+   PRINT("getpeername ( %ld, %#lx, %#lx )",ARG1,ARG2,ARG3);
    PRE_REG_READ3(long, "getpeername",
                  int, s, struct sockaddr *, name, int *, namelen);
    ML_(generic_PRE_sys_getpeername)(tid, ARG1,ARG2,ARG3);
 }
 
-POST(sys_getpeername)
+POST(getpeername)
 {
    vg_assert(SUCCESS);
    ML_(generic_POST_sys_getpeername)(tid, VG_(mk_SysRes_Success)(RES),
@@ -2817,15 +2719,15 @@ POST(sys_getpeername)
 }
 
 
-PRE(sys_socketpair)
+PRE(socketpair)
 {
-   PRINT("sys_socketpair ( %ld, %ld, %ld, %#lx )",ARG1,ARG2,ARG3,ARG4);
+   PRINT("socketpair ( %ld, %ld, %ld, %#lx )",ARG1,ARG2,ARG3,ARG4);
    PRE_REG_READ4(long, "socketpair",
                  int, d, int, type, int, protocol, int *, sv);
    ML_(generic_PRE_sys_socketpair)(tid, ARG1,ARG2,ARG3,ARG4);
 }
 
-POST(sys_socketpair)
+POST(socketpair)
 {
    vg_assert(SUCCESS);
    ML_(generic_POST_sys_socketpair)(tid, VG_(mk_SysRes_Success)(RES),
@@ -2833,9 +2735,9 @@ POST(sys_socketpair)
 }
 
 
-PRE(sys_gethostuuid)
+PRE(gethostuuid)
 {
-   PRINT("sys_gethostuuid ( %#lx, %#lx )", ARG1, ARG2);
+   PRINT("gethostuuid ( %#lx, %#lx )", ARG1, ARG2);
    PRE_REG_READ2(int,"gethostuuid", 
                  char *,"uuid_buf", 
                  const struct vki_timespec *,"timeout");
@@ -2847,19 +2749,19 @@ PRE(sys_gethostuuid)
 }
 
 
-POST(sys_gethostuuid)
+POST(gethostuuid)
 {
    POST_MEM_WRITE(ARG1, 16);
 }
 
 /* Darwin pipe() returns the two descriptors in two registers. */
-PRE(sys_pipe)
+PRE(pipe)
 {
-   PRINT("sys_pipe ( )");
+   PRINT("pipe ( )");
    PRE_REG_READ0(int, "pipe");
 }
 
-POST(sys_pipe)
+POST(pipe)
 {
    Int p0, p1;
    vg_assert(SUCCESS);
@@ -2880,7 +2782,7 @@ POST(sys_pipe)
 }
 
 
-PRE(sys_getlogin)
+PRE(getlogin)
 {
    PRINT("getlogin ( %#lx, %ld )", ARG1, ARG2);
    PRE_REG_READ2(long, "getlogin", 
@@ -2889,13 +2791,13 @@ PRE(sys_getlogin)
    PRE_MEM_WRITE("getlogin(namebuf)", ARG1, ARG2);
 }
 
-POST(sys_getlogin)
+POST(getlogin)
 {
    POST_MEM_WRITE(ARG1, ARG2);
 }
 
 
-PRE(sys_ptrace)
+PRE(ptrace)
 {
    PRINT("ptrace ( %ld, %ld, %#lx, %ld )", ARG1, ARG2, ARG3, ARG4);
    PRE_REG_READ4(long, "ptrace", 
@@ -2908,26 +2810,26 @@ PRE(sys_ptrace)
 }
 
 
-PRE(sys_issetugid)
+PRE(issetugid)
 {
    PRINT("issetugid ( )");
    PRE_REG_READ0(long, "issetugid");
 }
 
 
-PRE(sys_getdtablesize)
+PRE(getdtablesize)
 {
    PRINT("getdtablesize ( )");
    PRE_REG_READ0(long, "getdtablesize");
 }
 
-POST(sys_getdtablesize)
+POST(getdtablesize)
 {
    // Subtract Valgrind's fd range from client's dtable
    if (RES > VG_(fd_hard_limit)) SET_STATUS_Success(VG_(fd_hard_limit));
 }
 
-PRE(sys_lseek)
+PRE(lseek)
 {
    PRINT("lseek ( %ld, %ld, %ld )", ARG1,ARG2,ARG3);
    PRE_REG_READ4(vki_off_t, "lseek",
@@ -2936,7 +2838,7 @@ PRE(sys_lseek)
 }
 
 
-PRE(sys_pathconf)
+PRE(pathconf)
 {
    PRINT("pathconf(%#lx(%s), %ld)", ARG1,(char *)ARG1,ARG2);
    PRE_REG_READ2(long,"pathconf", const char *,"path", int,"name");
@@ -2944,7 +2846,7 @@ PRE(sys_pathconf)
 }
 
 
-PRE(sys_fpathconf)
+PRE(fpathconf)
 {
    PRINT("fpathconf(%ld, %ld)", ARG1,ARG2);
    PRE_REG_READ2(long,"fpathconf", int,"fd", int,"name");
@@ -2954,7 +2856,7 @@ PRE(sys_fpathconf)
 }
 
 
-PRE(sys_getdirentries)
+PRE(getdirentries)
 {
    PRINT("getdirentries(%ld, %#lx, %ld, %#lx)", ARG1, ARG2, ARG3, ARG4);
    PRE_REG_READ4(int, "getdirentries", 
@@ -2963,7 +2865,7 @@ PRE(sys_getdirentries)
    PRE_MEM_WRITE("getdirentries(buf)", ARG2, ARG3);
 }
 
-POST(sys_getdirentries) 
+POST(getdirentries) 
 {
    POST_MEM_WRITE(ARG4, sizeof(long));
    // GrP fixme be specific about d_name?
@@ -2971,7 +2873,7 @@ POST(sys_getdirentries)
 }
 
 
-PRE(sys_getdirentries64)
+PRE(getdirentries64)
 {
    PRINT("getdirentries64(%ld, %#lx, %lu, %#lx)", ARG1, ARG2, ARG3, ARG4);
    PRE_REG_READ4(vki_ssize_t, "getdirentries", 
@@ -2979,8 +2881,7 @@ PRE(sys_getdirentries64)
    PRE_MEM_WRITE("getdirentries(position)", ARG4, sizeof(vki_off_t));
    PRE_MEM_WRITE("getdirentries(buf)", ARG2, ARG3);
 }
-
-POST(sys_getdirentries64) 
+POST(getdirentries64) 
 {
    POST_MEM_WRITE(ARG4, sizeof(vki_off_t));
    // GrP fixme be specific about d_name? (fixme copied from 32 bit version)
@@ -2988,36 +2889,34 @@ POST(sys_getdirentries64)
 }
 
 
-PRE(sys_statfs64)
+PRE(statfs64)
 {
-   PRINT("sys_statfs64 ( %#lx(%s), %#lx )",ARG1,(char *)ARG1,ARG2);
+   PRINT("statfs64 ( %#lx(%s), %#lx )",ARG1,(char *)ARG1,ARG2);
    PRE_REG_READ2(long, "statfs64", const char *, path, struct statfs64 *, buf);
    PRE_MEM_RASCIIZ( "statfs64(path)", ARG1 );
    PRE_MEM_WRITE( "statfs64(buf)", ARG2, sizeof(struct vki_statfs64) );
 }
-
-POST(sys_statfs64)
+POST(statfs64)
 {
    POST_MEM_WRITE( ARG2, sizeof(struct vki_statfs64) );
 }
 
 
-PRE(sys_fstatfs64)
+PRE(fstatfs64)
 {
-   PRINT("sys_fstatfs64 ( %ld, %#lx )",ARG1,ARG2);
+   PRINT("fstatfs64 ( %ld, %#lx )",ARG1,ARG2);
    PRE_REG_READ2(long, "fstatfs64",
                  unsigned int, fd, struct statfs *, buf);
    PRE_MEM_WRITE( "fstatfs64(buf)", ARG2, sizeof(struct vki_statfs64) );
 }
-
-POST(sys_fstatfs64)
+POST(fstatfs64)
 {
    POST_MEM_WRITE( ARG2, sizeof(struct vki_statfs64) );
 }
 
-PRE(sys_csops)
+PRE(csops)
 {
-   PRINT("sys_csops ( %ld, %#lx, %#lx, %lu )", ARG1, ARG2, ARG3, ARG4);
+   PRINT("csops ( %ld, %#lx, %#lx, %lu )", ARG1, ARG2, ARG3, ARG4);
    PRE_REG_READ4(int, "csops",
                  vki_pid_t, pid, uint32_t, ops,
                  void *, useraddr, vki_size_t, usersize);
@@ -3036,14 +2935,14 @@ PRE(sys_csops)
    }
 }
 
-POST(sys_csops)
+POST(csops)
 {
    POST_MEM_WRITE( ARG3, ARG4 );
 }
 
-PRE(sys_auditon)
+PRE(auditon)
 {
-   PRINT("sys_auditon ( %ld, %#lx, %ld )", ARG1, ARG2, ARG3);
+   PRINT("auditon ( %ld, %#lx, %ld )", ARG1, ARG2, ARG3);
    PRE_REG_READ3(int,"auditon", 
                  int,"cmd", void*,"data", unsigned int,"length");
 
@@ -3096,8 +2995,7 @@ PRE(sys_auditon)
       break;
    }
 }
-
-POST(sys_auditon)
+POST(auditon)
 {
    switch (ARG1) {
 
@@ -3147,12 +3045,12 @@ POST(sys_auditon)
 }
 
 
-PRE(sys_mmap)
+PRE(mmap)
 {
    // SysRes r;
 
 #if VG_WORDSIZE == 4
-   PRINT("sys_mmap ( %#lx, %lu, %ld, %ld, %ld, %lld )",
+   PRINT("mmap ( %#lx, %lu, %ld, %ld, %ld, %lld )",
          ARG1, ARG2, ARG3, ARG4, ARG5, LOHI64(ARG6, ARG7) );
    PRE_REG_READ7(Addr, "mmap",
                  Addr,start, vki_size_t,length, int,prot, int,flags, int,fd, 
@@ -3162,7 +3060,7 @@ PRE(sys_mmap)
    // r = ML_(generic_PRE_sys_mmap)( tid, ARG1, ARG2, ARG3, ARG4, ARG5, 
    // (Off64T)LOHI64(ARG6, ARG7) );
 #else
-   PRINT("sys_mmap ( %#lx, %lu, %ld, %ld, %ld, %ld )",
+   PRINT("mmap ( %#lx, %lu, %ld, %ld, %ld, %ld )",
          ARG1, ARG2, ARG3, ARG4, ARG5, ARG6 );
    PRE_REG_READ6(long, "mmap",
                  Addr,start, vki_size_t,length, int,prot, int,flags, int,fd, 
@@ -3174,7 +3072,7 @@ PRE(sys_mmap)
    // SET_STATUS_from_SysRes(r);
 }
 
-POST(sys_mmap)
+POST(mmap)
 {
    if (RES != -1) {
       ML_(notify_core_and_tool_of_mmap)(RES, ARG2, ARG3, ARG4, ARG5, ARG6);
@@ -3184,12 +3082,12 @@ POST(sys_mmap)
 }
 
 
-PRE(sys_sysctl)
+PRE(__sysctl)
 {
-   PRINT( "sysctl ( %#lx, %ld, %#lx, %#lx, %#lx, %ld )", 
+   PRINT( "__sysctl ( %#lx, %ld, %#lx, %#lx, %#lx, %ld )", 
           ARG1, ARG2, ARG3, ARG4, ARG5, ARG6 );
 
-   PRE_REG_READ6(int, "sysctl", int*, name, unsigned int, namelen, 
+   PRE_REG_READ6(int, "__sysctl", int*, name, unsigned int, namelen, 
                  void*, oldp, vki_size_t *, oldlenp, 
                  void*, newp, vki_size_t *, newlenp);
 
@@ -3265,7 +3163,7 @@ PRE(sys_sysctl)
    }
 }
 
-POST(sys_sysctl)
+POST(__sysctl)
 {
    if (SUCCESS  ||  ERR == VKI_ENOMEM) {
       // sysctl can write truncated data and return VKI_ENOMEM
@@ -3279,20 +3177,19 @@ POST(sys_sysctl)
 }
 
 
-PRE(sys_sigpending)
+PRE(sigpending)
 {
-   PRINT( "sys_sigpending ( %#lx )", ARG1 );
+   PRINT( "sigpending ( %#lx )", ARG1 );
    PRE_REG_READ1(long, "sigpending", vki_sigset_t *, set);
    PRE_MEM_WRITE( "sigpending(set)", ARG1, sizeof(vki_sigset_t));
 }
-
-POST(sys_sigpending)
+POST(sigpending)
 {
    POST_MEM_WRITE( ARG1, sizeof(vki_sigset_t) ) ;
 }
 
 
-PRE(sys_sigprocmask)
+PRE(sigprocmask)
 {
    UWord arg1;
    PRINT("sigprocmask ( %ld, %#lx, %#lx )", ARG1, ARG2, ARG3);
@@ -3328,7 +3225,7 @@ PRE(sys_sigprocmask)
       *flags |= SfPollAfter;
 }
 
-POST(sys_sigprocmask)
+POST(sigprocmask)
 {
    vg_assert(SUCCESS);
    if (RES == 0 && ARG3 != 0)
@@ -3336,7 +3233,7 @@ POST(sys_sigprocmask)
 }
 
 
-PRE(sys_sigsuspend)
+PRE(sigsuspend)
 {
    /* Just hand this off to the kernel.  Is that really correct?  And
       shouldn't we at least set SfPollAfter?  These questions apply to
@@ -3344,7 +3241,7 @@ PRE(sys_sigsuspend)
    /* I think the first arg is the 32-bit signal mask (by value), and
       the other two args are ignored. */
    *flags |= SfMayBlock;
-   PRINT("sys_sigsuspend ( mask=0x%08lx )", ARG1 );
+   PRINT("sigsuspend ( mask=0x%08lx )", ARG1 );
    PRE_REG_READ1(int, "sigsuspend", int, sigmask);
 }
 
@@ -5741,7 +5638,7 @@ POST(thread_create_running)
 }
 
 
-PRE(sys_bsdthread_create)
+PRE(bsdthread_create)
 {
    ThreadState *tst;
 
@@ -5762,14 +5659,14 @@ PRE(sys_bsdthread_create)
    ARG2 = (Word)tst;
 
    // Create a semaphore that pthread_hijack will signal once it starts
-   // POST(sys_bsdthread_create) needs to wait for the new memory map to appear
+   // POST(bsdthread_create) needs to wait for the new memory map to appear
    semaphore_create(mach_task_self(), &tst->os_state.child_go, 
                     SYNC_POLICY_FIFO, 0);
    semaphore_create(mach_task_self(), &tst->os_state.child_done, 
                     SYNC_POLICY_FIFO, 0);
 }
 
-POST(sys_bsdthread_create)
+POST(bsdthread_create)
 { 
    // Tell new thread's pthread_hijack to proceed, and wait for it to finish.
    // We hold V's lock on the child's behalf.
@@ -5794,7 +5691,7 @@ POST(sys_bsdthread_create)
 }
 
 
-PRE(sys_bsdthread_terminate)
+PRE(bsdthread_terminate)
 {
    ThreadState *tst;
 
@@ -6599,14 +6496,14 @@ PRE(semaphore_timedwait_signal)
 }
 
 
-PRE(sys___semwait_signal)
+PRE(__semwait_signal)
 {
    /* args: int cond_sem, int mutex_sem,
             int timeout, int relative,
             time_t tv_sec, time_t tv_nsec */
-   PRINT("sys___semwait_signal(wait %s, signal %s, %ld, %ld, %lds:%ldns)", 
+   PRINT("__semwait_signal(wait %s, signal %s, %ld, %ld, %lds:%ldns)", 
          name_for_port(ARG1), name_for_port(ARG2), ARG3, ARG4, ARG5, ARG6);
-   PRE_REG_READ6(long, "sys___semwait_signal", 
+   PRE_REG_READ6(long, "__semwait_signal", 
                  int,"cond_sem", int,"mutex_sem",
                  int,"timeout", int,"relative", 
                  vki_time_t,"tv_sec", int,"tv_nsec");
@@ -6780,13 +6677,13 @@ PRE(swtch_pri)
 }
 
 
-PRE(sys_FAKE_SIGRETURN)
+PRE(FAKE_SIGRETURN)
 {
    /* See comments on PRE(sys_rt_sigreturn) in syswrap-amd64-linux.c for
       an explanation of what follows. */
    /* This handles the fake signal-return system call created by
       sigframe-x86-darwin.c. */
-   /* See also comments just below on PRE(sys_sigreturn). */
+   /* See also comments just below on PRE(sigreturn). */
 
    PRINT("FAKE_SIGRETURN ( )");
 
@@ -6808,7 +6705,7 @@ PRE(sys_FAKE_SIGRETURN)
 }
 
 
-PRE(sys_sigreturn)
+PRE(sigreturn)
 {
    /* This is the "real" sigreturn.  But because we construct all the
       signal frames ourselves (of course, in m_sigframe), this cannot
@@ -6830,7 +6727,7 @@ PRE(sys_sigreturn)
          by this flag.  Just ignore it and claim success for the time
          being. */
       VG_(debugLog)(0, "syswrap-darwin",
-                       "WARNING: Ignoring sys_sigreturn( ..., "
+                       "WARNING: Ignoring sigreturn( ..., "
                        "UC_SET_ALT_STACK );\n");
       SET_STATUS_Success(0);
       return;
@@ -6838,7 +6735,7 @@ PRE(sys_sigreturn)
    if (ARG2 == VKI_UC_RESET_ALT_STACK) {
       /* Ditto */
       VG_(debugLog)(0, "syswrap-darwin",
-                       "WARNING: Ignoring sys_sigreturn( ..., "
+                       "WARNING: Ignoring sigreturn( ..., "
                        "UC_RESET_ALT_STACK );\n");
       SET_STATUS_Success(0);
       return;
@@ -6873,7 +6770,7 @@ PRE(sys_sigreturn)
    */
    /* But in the meantime ... */
    VG_(debugLog)(0, "syswrap-darwin",
-                    "WARNING: Ignoring sys_sigreturn( uctx=..., 0 );\n");
+                    "WARNING: Ignoring sigreturn( uctx=..., 0 );\n");
    VG_(debugLog)(0, "syswrap-darwin",
                     "WARNING: Thread/program/Valgrind "
                     "will likely segfault now.\n");
@@ -6979,169 +6876,166 @@ PRE(thread_fast_set_cthread_self)
         X_ : PRE handler only
         XY : PRE and POST handlers
 */
-// DDD: the "sys_" prefixes I think aren't necessary.  The name on the right
-// is meant to be the name of the function implementing the syscall in the
-// kernel.  On Darwin that seems to usually match the __NR_xyz name.
 const SyscallTableEntry ML_(syscall_table)[] = {
 // _____(__NR_syscall),   // 0
-   MACX_(__NR_exit, sys_exit), 
-   GENX_(__NR_fork, sys_fork), 
-   GENXY(__NR_read, sys_read), 
-   GENX_(__NR_write, sys_write), 
-   GENXY(__NR_open, sys_open), 
-   GENXY(__NR_close, sys_close), 
-   GENXY(__NR_wait4, sys_wait4), 
+   MACX_(__NR_exit,        exit), 
+   GENX_(__NR_fork,        sys_fork), 
+   GENXY(__NR_read,        sys_read), 
+   GENX_(__NR_write,       sys_write), 
+   GENXY(__NR_open,        sys_open), 
+   GENXY(__NR_close,       sys_close), 
+   GENXY(__NR_wait4,       sys_wait4), 
    _____(VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(8)),     // old creat
-   GENX_(__NR_link, sys_link), 
-   GENX_(__NR_unlink, sys_unlink), 
+   GENX_(__NR_link,        sys_link), 
+   GENX_(__NR_unlink,      sys_unlink), 
    _____(VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(11)),    // old execv
-   GENX_(__NR_chdir, sys_chdir), 
-   GENX_(__NR_fchdir, sys_fchdir), 
-   GENX_(__NR_mknod, sys_mknod), 
-   GENX_(__NR_chmod, sys_chmod), 
-   GENX_(__NR_chown, sys_chown), 
+   GENX_(__NR_chdir,       sys_chdir), 
+   GENX_(__NR_fchdir,      sys_fchdir), 
+   GENX_(__NR_mknod,       sys_mknod), 
+   GENX_(__NR_chmod,       sys_chmod), 
+   GENX_(__NR_chown,       sys_chown), 
    _____(VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(17)),    // old break
-   MACXY(__NR_getfsstat, sys_getfsstat), 
+   MACXY(__NR_getfsstat,   getfsstat), 
    _____(VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(19)),    // old lseek
-   GENX_(__NR_getpid, sys_getpid),     // 20
+   GENX_(__NR_getpid,      sys_getpid),     // 20
    _____(VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(21)),    // old mount 
    _____(VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(22)),    // old umount
-   GENX_(__NR_setuid, sys_setuid), 
-   GENX_(__NR_getuid, sys_getuid), 
-   GENX_(__NR_geteuid, sys_geteuid), 
-   MACX_(__NR_ptrace, sys_ptrace), 
-   MACXY(__NR_recvmsg, sys_recvmsg), 
-   MACX_(__NR_sendmsg, sys_sendmsg), 
-   MACXY(__NR_recvfrom, sys_recvfrom), 
-   MACXY(__NR_accept, sys_accept), 
-   MACXY(__NR_getpeername, sys_getpeername), 
-   MACXY(__NR_getsockname, sys_getsockname), 
-   GENX_(__NR_access, sys_access), 
-   MACX_(__NR_chflags, sys_chflags), 
-   MACX_(__NR_fchflags, sys_fchflags), 
-   GENX_(__NR_sync, sys_sync), 
-   GENX_(__NR_kill, sys_kill), 
+   GENX_(__NR_setuid,      sys_setuid), 
+   GENX_(__NR_getuid,      sys_getuid), 
+   GENX_(__NR_geteuid,     sys_geteuid), 
+   MACX_(__NR_ptrace,      ptrace), 
+   MACXY(__NR_recvmsg,     recvmsg), 
+   MACX_(__NR_sendmsg,     sendmsg), 
+   MACXY(__NR_recvfrom,    recvfrom), 
+   MACXY(__NR_accept,      accept), 
+   MACXY(__NR_getpeername, getpeername), 
+   MACXY(__NR_getsockname, getsockname), 
+   GENX_(__NR_access,      sys_access), 
+   MACX_(__NR_chflags,     chflags), 
+   MACX_(__NR_fchflags,    fchflags), 
+   GENX_(__NR_sync,        sys_sync), 
+   GENX_(__NR_kill,        sys_kill), 
    _____(VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(38)),    // old stat
-   GENX_(__NR_getppid, sys_getppid), 
+   GENX_(__NR_getppid,     sys_getppid), 
    _____(VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(40)),    // old lstat
-   GENXY(__NR_dup, sys_dup), 
-   MACXY(__NR_pipe, sys_pipe), 
-   GENX_(__NR_getegid, sys_getegid), 
+   GENXY(__NR_dup,         sys_dup), 
+   MACXY(__NR_pipe,        pipe), 
+   GENX_(__NR_getegid,     sys_getegid), 
 // _____(__NR_profil), 
    _____(VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(45)),    // old ktrace
-   MACXY(__NR_sigaction, sys_sigaction), 
-   GENX_(__NR_getgid, sys_getgid), 
-   MACXY(__NR_sigprocmask, sys_sigprocmask), 
-   MACXY(__NR_getlogin, sys_getlogin), 
+   MACXY(__NR_sigaction,   sigaction), 
+   GENX_(__NR_getgid,      sys_getgid), 
+   MACXY(__NR_sigprocmask, sigprocmask), 
+   MACXY(__NR_getlogin,    getlogin), 
 // _____(__NR_setlogin), 
 // _____(__NR_acct), 
-// _____(__NR_sigpending), 
+   MACXY(__NR_sigpending,  sigpending),
    GENXY(__NR_sigaltstack, sys_sigaltstack), 
-   MACXY(__NR_ioctl, sys_ioctl), 
+   MACXY(__NR_ioctl,       ioctl), 
 // _____(__NR_reboot), 
 // _____(__NR_revoke), 
 // _____(__NR_symlink), 
-   GENX_(__NR_readlink, sys_readlink), 
-   GENX_(__NR_execve, sys_execve), 
-   GENX_(__NR_umask, sys_umask),     // 60
-   GENX_(__NR_chroot, sys_chroot), 
+   GENX_(__NR_readlink,    sys_readlink), 
+   GENX_(__NR_execve,      sys_execve), 
+   GENX_(__NR_umask,       sys_umask),     // 60
+   GENX_(__NR_chroot,      sys_chroot), 
    _____(VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(62)),    // old fstat
    _____(VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(63)),    // used internally, reserved
    _____(VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(64)),    // old getpagesize
-   GENX_(__NR_msync, sys_msync), 
-   GENX_(__NR_vfork, sys_fork),              // (We treat vfork as fork.)
+   GENX_(__NR_msync,       sys_msync), 
+   GENX_(__NR_vfork,       sys_fork),              // (We treat vfork as fork.)
    _____(VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(67)),    // old vread
    _____(VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(68)),    // old vwrite
    _____(VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(69)),    // old sbrk
    _____(VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(70)),    // old sstk
    _____(VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(71)),    // old mmap
    _____(VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(72)),    // old vadvise
-   GENXY(__NR_munmap, sys_munmap), 
-   GENXY(__NR_mprotect, sys_mprotect), 
-   GENX_(__NR_madvise, sys_madvise), 
+   GENXY(__NR_munmap,      sys_munmap), 
+   GENXY(__NR_mprotect,    sys_mprotect), 
+   GENX_(__NR_madvise,     sys_madvise), 
    _____(VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(76)),    // old vhangup
    _____(VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(77)),    // old vlimit
 // _____(__NR_mincore), 
-   GENXY(__NR_getgroups, sys_getgroups), 
+   GENXY(__NR_getgroups,   sys_getgroups), 
 // _____(__NR_setgroups),   // 80
-   GENX_(__NR_getpgrp, sys_getpgrp), 
+   GENX_(__NR_getpgrp,     sys_getpgrp), 
 // _____(__NR_setpgid), 
-   GENXY(__NR_setitimer, sys_setitimer), 
+   GENXY(__NR_setitimer,   sys_setitimer), 
    _____(VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(84)),    // old wait
 // _____(__NR_swapon), 
-   GENXY(__NR_getitimer, sys_getitimer), 
+   GENXY(__NR_getitimer,   sys_getitimer), 
    _____(VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(87)),    // old gethostname
    _____(VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(88)),    // old sethostname
-   MACXY(__NR_getdtablesize, sys_getdtablesize), 
-   GENXY(__NR_dup2, sys_dup2), 
+   MACXY(__NR_getdtablesize, getdtablesize), 
+   GENXY(__NR_dup2,        sys_dup2), 
    _____(VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(91)),    // old getdopt
-   MACXY(__NR_fcntl, sys_fcntl), 
-   GENX_(__NR_select, sys_select), 
+   MACXY(__NR_fcntl,       fcntl), 
+   GENX_(__NR_select,      sys_select), 
    _____(VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(94)),    // old setdopt
-   GENX_(__NR_fsync, sys_fsync), 
+   GENX_(__NR_fsync,       sys_fsync), 
    GENX_(__NR_setpriority, sys_setpriority), 
-   MACXY(__NR_socket, sys_socket), 
-   MACX_(__NR_connect, sys_connect), 
+   MACXY(__NR_socket,      socket), 
+   MACX_(__NR_connect,     connect), 
    _____(VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(99)),    // old accept
    GENX_(__NR_getpriority, sys_getpriority),   // 100
    _____(VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(101)),   // old send
    _____(VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(102)),   // old recv
    _____(VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(103)),   // old sigreturn
-   MACX_(__NR_bind, sys_bind), 
-   MACX_(__NR_setsockopt, sys_setsockopt), 
-   MACX_(__NR_listen, sys_listen), 
+   MACX_(__NR_bind,        bind), 
+   MACX_(__NR_setsockopt,  setsockopt), 
+   MACX_(__NR_listen,      listen), 
    _____(VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(107)),   // old vtimes
    _____(VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(108)),   // old sigvec
    _____(VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(109)),   // old sigblock
    _____(VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(110)),   // old sigsetmask
-   MACX_(__NR_sigsuspend, sys_sigsuspend),         // old sigsuspend
+   MACX_(__NR_sigsuspend,  sigsuspend),            // old sigsuspend
    _____(VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(112)),   // old sigstack
    _____(VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(113)),   // old recvmsg
    _____(VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(114)),   // old sendmsg
    _____(VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(115)),   // old vtrace
    GENXY(__NR_gettimeofday, sys_gettimeofday), 
-   GENXY(__NR_getrusage, sys_getrusage), 
-   MACXY(__NR_getsockopt, sys_getsockopt), 
+   GENXY(__NR_getrusage,   sys_getrusage), 
+   MACXY(__NR_getsockopt,  getsockopt), 
    _____(VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(119)),   // old resuba
-   GENXY(__NR_readv, sys_readv),        // 120
-   GENX_(__NR_writev, sys_writev), 
+   GENXY(__NR_readv,       sys_readv),        // 120
+   GENX_(__NR_writev,      sys_writev), 
 // _____(__NR_settimeofday), 
-   GENX_(__NR_fchown, sys_fchown), 
-   GENX_(__NR_fchmod, sys_fchmod), 
+   GENX_(__NR_fchown,      sys_fchown), 
+   GENX_(__NR_fchmod,      sys_fchmod), 
    _____(VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(125)),   // old recvfrom
 // _____(__NR_setreuid), 
 // _____(__NR_setregid), 
-   GENX_(__NR_rename, sys_rename), 
+   GENX_(__NR_rename,      sys_rename), 
    _____(VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(129)),   // old truncate
    _____(VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(130)),   // old ftruncate
-   GENX_(__NR_flock, sys_flock), 
+   GENX_(__NR_flock,       sys_flock), 
 // _____(__NR_mkfifo), 
-   MACX_(__NR_sendto, sys_sendto), 
-   MACX_(__NR_shutdown, sys_shutdown), 
-   MACXY(__NR_socketpair, sys_socketpair), 
-   GENX_(__NR_mkdir, sys_mkdir), 
-   GENX_(__NR_rmdir, sys_rmdir), 
-   GENX_(__NR_utimes, sys_utimes), 
-   MACX_(__NR_futimes, sys_futimes), 
+   MACX_(__NR_sendto,      sendto), 
+   MACX_(__NR_shutdown,    shutdown), 
+   MACXY(__NR_socketpair,  socketpair), 
+   GENX_(__NR_mkdir,       sys_mkdir), 
+   GENX_(__NR_rmdir,       sys_rmdir), 
+   GENX_(__NR_utimes,      sys_utimes), 
+   MACX_(__NR_futimes,     futimes), 
 // _____(__NR_adjtime),     // 140
    _____(VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(141)),   // old getpeername
-   MACXY(__NR_gethostuuid, sys_gethostuuid), 
+   MACXY(__NR_gethostuuid, gethostuuid), 
    _____(VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(143)),   // old sethostid
    _____(VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(144)),   // old getrlimit
    _____(VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(145)),   // old setrlimit
    _____(VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(146)),   // old killpg
-   GENX_(__NR_setsid, sys_setsid), 
+   GENX_(__NR_setsid,      sys_setsid), 
    _____(VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(148)),   // old setquota
    _____(VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(149)),   // old qquota
    _____(VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(150)),   // old getsockname 
 // _____(__NR_getpgid), 
 // _____(__NR_setprivexec), 
-   GENXY(__NR_pread, sys_pread64), 
-   GENX_(__NR_pwrite, sys_pwrite64), 
+   GENXY(__NR_pread,       sys_pread64), 
+   GENX_(__NR_pwrite,      sys_pwrite64), 
 // _____(__NR_nfssvc), 
    _____(VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(156)),   // old getdirentries
-   GENXY(__NR_statfs, sys_statfs), 
-   GENXY(__NR_fstatfs, sys_fstatfs), 
+   GENXY(__NR_statfs,      sys_statfs), 
+   GENXY(__NR_fstatfs,     sys_fstatfs), 
 // _____(__NR_unmount), 
    _____(VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(160)),   // old async_daemon
 // _____(__NR_getfh), 
@@ -7152,7 +7046,7 @@ const SyscallTableEntry ML_(syscall_table)[] = {
    _____(VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(166)),   // old exportfs
 // _____(__NR_mount), 
    _____(VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(168)),   // old ustat
-   MACXY(__NR_csops, sys_csops),                   // code-signing ops
+   MACXY(__NR_csops,       csops),                 // code-signing ops
    _____(VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(170)),   // old table
    _____(VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(171)),   // old wait3
    _____(VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(172)),   // old rpause
@@ -7163,31 +7057,31 @@ const SyscallTableEntry ML_(syscall_table)[] = {
    _____(VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(177)),   // ???
    _____(VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(178)),   // ???
    _____(VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(179)),   // ???
-   MACX_(__NR_kdebug_trace, sys_kdebug_trace),   // 180
-   GENX_(__NR_setgid, sys_setgid), 
-   MACX_(__NR_setegid, sys_setegid), 
-   MACX_(__NR_seteuid, sys_seteuid), 
-   MACX_(__NR_sigreturn, sys_sigreturn), 
+   MACX_(__NR_kdebug_trace, kdebug_trace),     // 180
+   GENX_(__NR_setgid,      sys_setgid), 
+   MACX_(__NR_setegid,     setegid), 
+   MACX_(__NR_seteuid,     seteuid), 
+   MACX_(__NR_sigreturn,   sigreturn), 
 // _____(__NR_chud), 
    _____(VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(186)),   // ??? 
    _____(VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(187)),   // ??? 
-   GENXY(__NR_stat, sys_newstat), 
-   GENXY(__NR_fstat, sys_newfstat), 
-   GENXY(__NR_lstat, sys_newlstat), 
-   MACX_(__NR_pathconf, sys_pathconf), 
-   MACX_(__NR_fpathconf, sys_fpathconf), 
+   GENXY(__NR_stat,        sys_newstat), 
+   GENXY(__NR_fstat,       sys_newfstat), 
+   GENXY(__NR_lstat,       sys_newlstat), 
+   MACX_(__NR_pathconf,    pathconf), 
+   MACX_(__NR_fpathconf,   fpathconf), 
    _____(VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(193)),   // ???
-   GENXY(__NR_getrlimit, sys_getrlimit), 
-   GENX_(__NR_setrlimit, sys_setrlimit), 
-   MACXY(__NR_getdirentries, sys_getdirentries), 
-   MACXY(__NR_mmap, sys_mmap), 
+   GENXY(__NR_getrlimit,   sys_getrlimit), 
+   GENX_(__NR_setrlimit,   sys_setrlimit), 
+   MACXY(__NR_getdirentries, getdirentries), 
+   MACXY(__NR_mmap,        mmap), 
    _____(VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(198)),   // __syscall
-   MACX_(__NR_lseek, sys_lseek), 
-   GENX_(__NR_truncate, sys_truncate64),   // 200
-   GENX_(__NR_ftruncate, sys_ftruncate64), 
-   MACXY(__NR___sysctl, sys_sysctl), 
-   GENX_(__NR_mlock, sys_mlock), 
-   GENX_(__NR_munlock, sys_munlock), 
+   MACX_(__NR_lseek,       lseek), 
+   GENX_(__NR_truncate,    sys_truncate64),   // 200
+   GENX_(__NR_ftruncate,   sys_ftruncate64), 
+   MACXY(__NR___sysctl,    __sysctl), 
+   GENX_(__NR_mlock,       sys_mlock), 
+   GENX_(__NR_munlock,     sys_munlock), 
 // _____(__NR_undelete), 
 // _____(__NR_ATsocket), 
 // _____(__NR_ATgetmsg), 
@@ -7203,31 +7097,31 @@ const SyscallTableEntry ML_(syscall_table)[] = {
 // _____(__NR_statv), 
 // _____(__NR_lstatv), 
 // _____(__NR_fstatv), 
-   MACXY(__NR_getattrlist, sys_getattrlist),   // 220
-   MACX_(__NR_setattrlist, sys_setattrlist), 
-   MACXY(__NR_getdirentriesattr, sys_getdirentriesattr), 
+   MACXY(__NR_getattrlist, getattrlist),   // 220
+   MACX_(__NR_setattrlist, setattrlist), 
+   MACXY(__NR_getdirentriesattr, getdirentriesattr), 
 // _____(__NR_exchangedata), 
    _____(VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(224)),   // checkuseraccess
 // _____(__NR_searchfs), 
-   GENX_(__NR_delete, sys_unlink), 
+   GENX_(__NR_delete,      sys_unlink), 
 // _____(__NR_copyfile), 
    _____(VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(228)),   // ?? 
    _____(VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(229)),   // ?? 
-   GENXY(__NR_poll, sys_poll), 
-   MACX_(__NR_watchevent, sys_watchevent), 
-   MACXY(__NR_waitevent, sys_waitevent), 
-   MACX_(__NR_modwatch, sys_modwatch), 
-   MACXY(__NR_getxattr, sys_getxattr), 
-   MACXY(__NR_fgetxattr, sys_fgetxattr), 
-   MACX_(__NR_setxattr, sys_setxattr), 
-   MACX_(__NR_fsetxattr, sys_fsetxattr), 
+   GENXY(__NR_poll,        sys_poll), 
+   MACX_(__NR_watchevent,  watchevent), 
+   MACXY(__NR_waitevent,   waitevent), 
+   MACX_(__NR_modwatch,    modwatch), 
+   MACXY(__NR_getxattr,    getxattr), 
+   MACXY(__NR_fgetxattr,   fgetxattr), 
+   MACX_(__NR_setxattr,    setxattr), 
+   MACX_(__NR_fsetxattr,   fsetxattr), 
 // _____(__NR_removexattr), 
 // _____(__NR_fremovexattr), 
-   MACXY(__NR_listxattr, sys_listxattr),    // 240
-   MACXY(__NR_flistxattr, sys_flistxattr), 
-   MACXY(__NR_fsctl, sys_fsctl), 
-   MACX_(__NR_initgroups, sys_initgroups), 
-   MACXY(__NR_posix_spawn, sys_posix_spawn), 
+   MACXY(__NR_listxattr,   listxattr),    // 240
+   MACXY(__NR_flistxattr,  flistxattr), 
+   MACXY(__NR_fsctl,       fsctl), 
+   MACX_(__NR_initgroups,  initgroups), 
+   MACXY(__NR_posix_spawn, posix_spawn), 
    _____(VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(245)),   // ???
    _____(VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(246)),   // ???
 // _____(__NR_nfsclnt), 
@@ -7237,39 +7131,38 @@ const SyscallTableEntry ML_(syscall_table)[] = {
 // _____(__NR_semsys), 
 // _____(__NR_msgsys), 
 // _____(__NR_shmsys), 
-   MACXY(__NR_semctl, sys_semctl), 
-   MACX_(__NR_semget, sys_semget), 
-   MACX_(__NR_semop, sys_semop), 
+   MACXY(__NR_semctl,      semctl), 
+   MACX_(__NR_semget,      semget), 
+   MACX_(__NR_semop,       semop), 
    _____(VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(257)),   // ???
 // _____(__NR_msgctl), 
 // _____(__NR_msgget), 
 // _____(__NR_msgsnd),   // 260
 // _____(__NR_msgrcv), 
 // _____(__NR_shmat), 
-   MACXY(__NR_shmctl, sys_shmctl), 
+   MACXY(__NR_shmctl,      shmctl), 
 // _____(__NR_shmdt), 
-   MACX_(__NR_shmget, sys_shmget), 
-   MACXY(__NR_shm_open, sys_shm_open), 
+   MACX_(__NR_shmget,      shmget), 
+   MACXY(__NR_shm_open,    shm_open), 
 // _____(__NR_shm_unlink), 
-   MACX_(__NR_sem_open, sys_sem_open), 
-   MACX_(__NR_sem_close, sys_sem_close), 
-   MACX_(__NR_sem_unlink, sys_sem_unlink), 
-   MACX_(__NR_sem_wait,    sys_sem_wait), 
-   MACX_(__NR_sem_trywait, sys_sem_trywait), 
-// _____(__NR_sem_post), 
-   MACX_(__NR_sem_post, sys_sem_post), 
+   MACX_(__NR_sem_open,    sem_open), 
+   MACX_(__NR_sem_close,   sem_close), 
+   MACX_(__NR_sem_unlink,  sem_unlink), 
+   MACX_(__NR_sem_wait,    sem_wait), 
+   MACX_(__NR_sem_trywait, sem_trywait), 
+   MACX_(__NR_sem_post,    sem_post), 
 // _____(__NR_sem_getvalue), 
-   MACXY(__NR_sem_init, sys_sem_init), 
-   MACX_(__NR_sem_destroy, sys_sem_destroy), 
+   MACXY(__NR_sem_init,    sem_init), 
+   MACX_(__NR_sem_destroy, sem_destroy), 
 // _____(__NR_open_extended), 
 // _____(__NR_umask_extended), 
-   MACXY(__NR_stat_extended, sys_statx), 
+   MACXY(__NR_stat_extended,  stat_extended), 
 // _____(__NR_lstat_extended),   // 280
 // _____(__NR_fstat_extended), 
-   MACX_(__NR_chmod_extended, sys_chmod_extended), 
-   MACX_(__NR_fchmod_extended, sys_fchmod_extended), 
+   MACX_(__NR_chmod_extended,    chmod_extended), 
+   MACX_(__NR_fchmod_extended,   fchmod_extended), 
 // _____(__NR_access_extended), 
-   MACX_(__NR_settid, sys_settid), 
+   MACX_(__NR_settid,         settid), 
 // _____(__NR_gettid), 
 // _____(__NR_setsgroups), 
 // _____(__NR_getsgroups), 
@@ -7311,31 +7204,31 @@ const SyscallTableEntry ML_(syscall_table)[] = {
 // _____(__NR_mlockall), 
 // _____(__NR_munlockall), 
    _____(VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(326)),   // ???
-   MACX_(__NR_issetugid, sys_issetugid), 
+   MACX_(__NR_issetugid,               issetugid), 
 // _____(__NR___pthread_kill), 
-   MACX_(__NR___pthread_sigmask, sys___pthread_sigmask), 
+   MACX_(__NR___pthread_sigmask,       __pthread_sigmask), 
 // _____(__NR___sigwait), 
-   MACX_(__NR___disable_threadsignal, sys___disable_threadsignal), 
-   MACX_(__NR___pthread_markcancel, sys___pthread_markcancel), 
-   MACX_(__NR___pthread_canceled, sys___pthread_canceled),
-   MACX_(__NR___semwait_signal, sys___semwait_signal), 
+   MACX_(__NR___disable_threadsignal,  __disable_threadsignal), 
+   MACX_(__NR___pthread_markcancel,    __pthread_markcancel), 
+   MACX_(__NR___pthread_canceled,      __pthread_canceled),
+   MACX_(__NR___semwait_signal,        __semwait_signal), 
    _____(VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(335)),   // old utrace
 // _____(__NR_proc_info), 
-   MACXY(__NR_sendfile, sys_sendfile), 
-   MACXY(__NR_stat64, sys_stat64), 
-   MACXY(__NR_fstat64, sys_fstat64), 
-   MACXY(__NR_lstat64, sys_lstat64),    // 340
+   MACXY(__NR_sendfile,    sendfile), 
+   MACXY(__NR_stat64,      stat64), 
+   MACXY(__NR_fstat64,     fstat64), 
+   MACXY(__NR_lstat64,     lstat64),    // 340
 // _____(__NR_stat64_extended), 
 // _____(__NR_lstat64_extended), 
 // _____(__NR_fstat64_extended), 
-   MACXY(__NR_getdirentries64, sys_getdirentries64), 
-   MACXY(__NR_statfs64, sys_statfs64), 
-   MACXY(__NR_fstatfs64, sys_fstatfs64), 
+   MACXY(__NR_getdirentries64, getdirentries64), 
+   MACXY(__NR_statfs64,    statfs64), 
+   MACXY(__NR_fstatfs64,   fstatfs64), 
 // _____(__NR_getfsstat64), 
 // _____(__NR___pthread_chdir), 
 // _____(__NR___pthread_fchdir), 
 // _____(__NR_audit), 
-   MACXY(__NR_auditon, sys_auditon), 
+   MACXY(__NR_auditon,     auditon), 
    _____(VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(352)),   // ???
 // _____(__NR_getauid), 
 // _____(__NR_setauid), 
@@ -7344,15 +7237,15 @@ const SyscallTableEntry ML_(syscall_table)[] = {
 // _____(__NR_getaudit_addr), 
 // _____(__NR_setaudit_addr), 
 // _____(__NR_auditctl), 
-   MACXY(__NR_bsdthread_create, sys_bsdthread_create),   // 360
-   MACX_(__NR_bsdthread_terminate, sys_bsdthread_terminate), 
-   MACXY(__NR_kqueue, sys_kqueue), 
-   MACXY(__NR_kevent, sys_kevent), 
+   MACXY(__NR_bsdthread_create,     bsdthread_create),   // 360
+   MACX_(__NR_bsdthread_terminate,  bsdthread_terminate), 
+   MACXY(__NR_kqueue,      kqueue), 
+   MACXY(__NR_kevent,      kevent), 
 // _____(__NR_lchown), 
 // _____(__NR_stack_snapshot), 
-   MACX_(__NR_bsdthread_register, sys_bsdthread_register), 
-   MACX_(__NR_workq_open, sys_workq_open), 
-   MACXY(__NR_workq_ops, sys_workq_ops), 
+   MACX_(__NR_bsdthread_register, bsdthread_register), 
+   MACX_(__NR_workq_open,  workq_open), 
+   MACXY(__NR_workq_ops,   workq_ops), 
    _____(VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(369)),   // ???
    _____(VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(370)),   // ???
    _____(VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(371)),   // ???
@@ -7365,7 +7258,7 @@ const SyscallTableEntry ML_(syscall_table)[] = {
    _____(VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(378)),   // ???
    _____(VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(379)),   // ???
 // _____(__NR___mac_execve),   // 380
-   MACX_(__NR___mac_syscall, sys___mac_syscall),
+   MACX_(__NR___mac_syscall, __mac_syscall),
 // _____(__NR___mac_get_file),
 // _____(__NR___mac_set_file),
 // _____(__NR___mac_get_link),
@@ -7381,39 +7274,39 @@ const SyscallTableEntry ML_(syscall_table)[] = {
 // _____(__NR_setlcid),
 // _____(__NR_getlcid),
    // GrP fixme need any special nocancel handling?
-   GENXY(__NR_read_nocancel, sys_read),
-   GENX_(__NR_write_nocancel, sys_write),
-   GENXY(__NR_open_nocancel, sys_open),
-   GENXY(__NR_close_nocancel, sys_close),
-   GENXY(__NR_wait4_nocancel, sys_wait4),   // 400
-   MACXY(__NR_recvmsg_nocancel, sys_recvmsg),
-   MACX_(__NR_sendmsg_nocancel, sys_sendmsg),
-   MACXY(__NR_recvfrom_nocancel, sys_recvfrom),
-   MACXY(__NR_accept_nocancel, sys_accept),
-   GENX_(__NR_msync_nocancel, sys_msync),
-   MACXY(__NR_fcntl_nocancel, sys_fcntl),
-   GENX_(__NR_select_nocancel, sys_select),
-   GENX_(__NR_fsync_nocancel, sys_fsync),
-   MACX_(__NR_connect_nocancel, sys_connect),
+   GENXY(__NR_read_nocancel,     sys_read),
+   GENX_(__NR_write_nocancel,    sys_write),
+   GENXY(__NR_open_nocancel,     sys_open),
+   GENXY(__NR_close_nocancel,    sys_close),
+   GENXY(__NR_wait4_nocancel,    sys_wait4),   // 400
+   MACXY(__NR_recvmsg_nocancel,  recvmsg),
+   MACX_(__NR_sendmsg_nocancel,  sendmsg),
+   MACXY(__NR_recvfrom_nocancel, recvfrom),
+   MACXY(__NR_accept_nocancel,   accept),
+   GENX_(__NR_msync_nocancel,    sys_msync),
+   MACXY(__NR_fcntl_nocancel,    fcntl),
+   GENX_(__NR_select_nocancel,   sys_select),
+   GENX_(__NR_fsync_nocancel,    sys_fsync),
+   MACX_(__NR_connect_nocancel,  connect),
 // _____(__NR_sigsuspend_nocancel),
-   GENXY(__NR_readv_nocancel, sys_readv),
-   GENX_(__NR_writev_nocancel, sys_writev),
-   MACX_(__NR_sendto_nocancel, sys_sendto),
-   GENXY(__NR_pread_nocancel, sys_pread64),
-   GENX_(__NR_pwrite_nocancel, sys_pwrite64),
+   GENXY(__NR_readv_nocancel,    sys_readv),
+   GENX_(__NR_writev_nocancel,   sys_writev),
+   MACX_(__NR_sendto_nocancel,   sendto),
+   GENXY(__NR_pread_nocancel,    sys_pread64),
+   GENX_(__NR_pwrite_nocancel,   sys_pwrite64),
 // _____(__NR_waitid_nocancel),
-   GENXY(__NR_poll_nocancel, sys_poll),
+   GENXY(__NR_poll_nocancel,     sys_poll),
 // _____(__NR_msgsnd_nocancel),
 // _____(__NR_msgrcv_nocancel),
-   MACX_(__NR_sem_wait_nocancel, sys_sem_wait_nocancel), // 420
+   MACX_(__NR_sem_wait_nocancel, sem_wait), // 420
 // _____(__NR_aio_suspend_nocancel),
 // _____(__NR___sigwait_nocancel),
-   MACX_(__NR___semwait_signal_nocancel, sys___semwait_signal), 
+   MACX_(__NR___semwait_signal_nocancel, __semwait_signal), 
 // _____(__NR___mac_mount),
 // _____(__NR___mac_get_mount),
 // _____(__NR___mac_getfsstat),
 // _____(__NR_MAXSYSCALL)
-   MACX_(__NR_DARWIN_FAKE_SIGRETURN, sys_FAKE_SIGRETURN)
+   MACX_(__NR_DARWIN_FAKE_SIGRETURN, FAKE_SIGRETURN)
 };
 
 

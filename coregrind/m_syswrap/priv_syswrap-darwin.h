@@ -50,109 +50,438 @@ extern const UInt ML_(mdep_trap_table_size);
 
 void VG_(show_open_ports)(void);
 
-// Unix syscalls
-DECL_TEMPLATE(darwin, sys_semget);
-DECL_TEMPLATE(darwin, sys_semop);
-DECL_TEMPLATE(darwin, sys_semctl);
-DECL_TEMPLATE(darwin, sys_sem_open);
-DECL_TEMPLATE(darwin, sys_sem_close);
-DECL_TEMPLATE(darwin, sys_sem_unlink);
-DECL_TEMPLATE(darwin, sys_sem_wait);
-DECL_TEMPLATE(darwin, sys_sem_trywait);
-DECL_TEMPLATE(darwin, sys_sem_post);
-DECL_TEMPLATE(darwin, sys_sem_init);
-DECL_TEMPLATE(darwin, sys_sem_destroy);
-DECL_TEMPLATE(darwin, sys_sem_wait_nocancel);
-DECL_TEMPLATE(darwin, sys_sem_trywait);
-DECL_TEMPLATE(darwin, sys_bsdthread_create);
-DECL_TEMPLATE(darwin, sys_bsdthread_terminate);
-DECL_TEMPLATE(darwin, sys_kqueue);
-DECL_TEMPLATE(darwin, sys_kevent);
-DECL_TEMPLATE(darwin, sys_bsdthread_register);
-DECL_TEMPLATE(darwin, sys_workq_open);
-DECL_TEMPLATE(darwin, sys_workq_ops);
-DECL_TEMPLATE(darwin, sys___mac_syscall);
-DECL_TEMPLATE(darwin, sys_exit);
-DECL_TEMPLATE(darwin, sys_sigaction);
-DECL_TEMPLATE(darwin, sys___pthread_canceled);
-DECL_TEMPLATE(darwin, sys___pthread_markcancel);
-DECL_TEMPLATE(darwin, sys___pthread_sigmask);
-DECL_TEMPLATE(darwin, sys___disable_threadsignal);
-DECL_TEMPLATE(darwin, sys_kdebug_trace);
-DECL_TEMPLATE(darwin, sys_seteuid);
-DECL_TEMPLATE(darwin, sys_setegid);
-DECL_TEMPLATE(darwin, sys_listxattr);
-DECL_TEMPLATE(darwin, sys_flistxattr);
-DECL_TEMPLATE(darwin, sys_shmctl);
-DECL_TEMPLATE(darwin, sys_shmget);
-DECL_TEMPLATE(darwin, sys_shm_open);
-DECL_TEMPLATE(darwin, sys_statx);
-DECL_TEMPLATE(darwin, sys_fchmod_extended);
-DECL_TEMPLATE(darwin, sys_chmod_extended);
-DECL_TEMPLATE(darwin, sys_accessx);
-DECL_TEMPLATE(darwin, sys_chflags);
-DECL_TEMPLATE(darwin, sys_fchflags);
-DECL_TEMPLATE(darwin, sys_stat64);
-DECL_TEMPLATE(darwin, sys_lstat64);
-DECL_TEMPLATE(darwin, sys_fstat64);
-DECL_TEMPLATE(darwin, sys_getfsstat);
-DECL_TEMPLATE(darwin, sys_getattrlist);
-DECL_TEMPLATE(darwin, sys_setattrlist);
-DECL_TEMPLATE(darwin, sys_getdirentriesattr);
-DECL_TEMPLATE(darwin, sys_fsctl);
-DECL_TEMPLATE(darwin, sys_socket);
-DECL_TEMPLATE(darwin, sys_setsockopt);
-DECL_TEMPLATE(darwin, sys_getsockopt);
-DECL_TEMPLATE(darwin, sys_connect);
-DECL_TEMPLATE(darwin, sys_accept);
-DECL_TEMPLATE(darwin, sys_sendto);
-DECL_TEMPLATE(darwin, sys_recvfrom);
-DECL_TEMPLATE(darwin, sys_sendmsg);
-DECL_TEMPLATE(darwin, sys_recvmsg);
-DECL_TEMPLATE(darwin, sys_shutdown);
-DECL_TEMPLATE(darwin, sys_bind);
-DECL_TEMPLATE(darwin, sys_listen);
-DECL_TEMPLATE(darwin, sys_getsockname);
-DECL_TEMPLATE(darwin, sys_getpeername);
-DECL_TEMPLATE(darwin, sys_socketpair);
-DECL_TEMPLATE(darwin, sys_gethostuuid);
-DECL_TEMPLATE(darwin, sys_pipe);
-DECL_TEMPLATE(darwin, sys_getlogin);
-DECL_TEMPLATE(darwin, sys_ptrace);
-DECL_TEMPLATE(darwin, sys_issetugid);
-DECL_TEMPLATE(darwin, sys_getdtablesize);
-DECL_TEMPLATE(darwin, sys_lseek);
-DECL_TEMPLATE(darwin, sys_getdirentries);
-DECL_TEMPLATE(darwin, sys_getdirentries64);
-DECL_TEMPLATE(darwin, sys_statfs64);
-DECL_TEMPLATE(darwin, sys_fstatfs64);
-DECL_TEMPLATE(darwin, sys_csops);
-DECL_TEMPLATE(darwin, sys_auditon);
-DECL_TEMPLATE(darwin, sys_pathconf);
-DECL_TEMPLATE(darwin, sys_fpathconf);
-DECL_TEMPLATE(darwin, sys_shared_region_map_file_np);
-DECL_TEMPLATE(darwin, sys_mmap);
-DECL_TEMPLATE(darwin, sys_sysctl);
-DECL_TEMPLATE(darwin, sys_sigpending);
-DECL_TEMPLATE(darwin, sys_sigprocmask);
-DECL_TEMPLATE(darwin, sys_sigsuspend);
-DECL_TEMPLATE(darwin, sys_watchevent);
-DECL_TEMPLATE(darwin, sys_waitevent);
-DECL_TEMPLATE(darwin, sys_modwatch);
-DECL_TEMPLATE(darwin, sys_getxattr);
-DECL_TEMPLATE(darwin, sys_fgetxattr);
-DECL_TEMPLATE(darwin, sys_setxattr);
-DECL_TEMPLATE(darwin, sys_fsetxattr);
-DECL_TEMPLATE(darwin, sys_initgroups);
-DECL_TEMPLATE(darwin, sys_posix_spawn);
-DECL_TEMPLATE(darwin, sys_settid);
-DECL_TEMPLATE(darwin, sys_sendfile);
-DECL_TEMPLATE(darwin, sys_fcntl);
-DECL_TEMPLATE(darwin, sys_fcntl64);
-DECL_TEMPLATE(darwin, sys_ioctl);
-DECL_TEMPLATE(darwin, sys_futimes);
-DECL_TEMPLATE(darwin, sys_FAKE_SIGRETURN);
-DECL_TEMPLATE(darwin, sys_sigreturn);
+// Unix syscalls.  
+// GEN = it uses the generic wrapper
+// NYI = wrapper not yet implemented in Valgrind
+// NOC = the non-"_nocancel" wrapper is used
+// old = the syscall no longer exists in Darwin
+DECL_TEMPLATE(darwin, exit);                    // 1
+// GEN fork 2
+// GEN read 3
+// GEN write 4
+// GEN open 5
+// GEN close 6
+// GEN wait4 7
+// old creat 8
+// GEN link 9
+// GEN unlink 10
+// old execv 11
+// GEN chdir 12
+// GEN fchdir 13
+// GEN mknod 14
+// GEN chmod 15
+// GEN chown 16
+// old break 17
+DECL_TEMPLATE(darwin, getfsstat);               // 18
+// old lseek 19
+// GEN getpid 20
+// old mount 21
+// old umount 22
+// GEN setuid 23
+// GEN getuid 24
+// GEN geteuid 25
+DECL_TEMPLATE(darwin, ptrace);                  // 26
+DECL_TEMPLATE(darwin, recvmsg);                 // 27
+DECL_TEMPLATE(darwin, sendmsg);                 // 28
+DECL_TEMPLATE(darwin, recvfrom);                // 29
+DECL_TEMPLATE(darwin, accept);                  // 30
+DECL_TEMPLATE(darwin, getpeername);             // 31
+DECL_TEMPLATE(darwin, getsockname);             // 32
+// GEN access 33
+DECL_TEMPLATE(darwin, chflags);                 // 34
+DECL_TEMPLATE(darwin, fchflags);                // 35
+// GEN sync 36
+// GEN kill 37
+// old stat 38
+// GEN getppid 39
+// old lstat 40
+// GEN dup 41
+DECL_TEMPLATE(darwin, pipe);                    // 42
+// GEN getegid 43
+// NYI profil
+// old ktrace
+DECL_TEMPLATE(darwin, sigaction);               // 46
+// GEN getgid 47
+DECL_TEMPLATE(darwin, sigprocmask);             // 48
+DECL_TEMPLATE(darwin, getlogin);                // 49
+// NYI setlogin 50
+// NYI acct 51
+DECL_TEMPLATE(darwin, sigpending);              // 52
+// GEN sigaltstack 53
+DECL_TEMPLATE(darwin, ioctl);                   // 54
+// NYI reboot 55
+// NYI revoke 56
+// NYI symlink 57
+// GEN readlink 58
+// GEN execve 59
+// GEN umask 60
+// GEN chroot 61
+// old fstat
+// 63 used internally, reserved
+// old getpagesize 64
+// GEN msync 65
+// GEN vfork 66
+// old vread
+// old vwrite
+// old sbrk
+// old sstk
+// old mmap
+// old vadvise
+// GEN munmap 73
+// GEN mprotect 74
+// GEN madvise 75
+// old vhangup
+// old vlimit
+// NYI mincore 78
+// GEN getgroups 79
+// NYI setgroups 80
+// GEN getpgrp 81
+// NYI setpgid 82
+// GEN setitimer 83
+// old wait
+// NYI swapon 85
+// GEN getitimer 86
+// old gethostname
+// old sethostname
+DECL_TEMPLATE(darwin, getdtablesize);           // 89
+// GEN dup2 90
+// old getdopt
+DECL_TEMPLATE(darwin, fcntl);                   // 92
+// GEN select 93
+// old setdopt
+// GEN fsync 95
+// GEN setpriority 96
+DECL_TEMPLATE(darwin, socket);                  // 97
+DECL_TEMPLATE(darwin, connect);                 // 98
+// old accept
+// GEN getpriority 100
+// old send
+// old recv
+// old sigreturn
+DECL_TEMPLATE(darwin, bind);                    // 104
+DECL_TEMPLATE(darwin, setsockopt);              // 105
+DECL_TEMPLATE(darwin, listen);                  // 106
+// old vtimes
+// old sigvec
+// old sigblock
+// old sigsetmask
+DECL_TEMPLATE(darwin, sigsuspend);              // 111
+// old sigstack
+// old recvmsg
+// old sendmsg
+// old vtrace
+// GEN gettimeofday 116
+// GEN getrusage 117
+DECL_TEMPLATE(darwin, getsockopt);              // 118
+// old resuba
+// GEN readv 120
+// GEN writev 121
+// NYI settimeofday 122
+// GEN fchown 123
+// GEN fchmod 124
+// old recvfrom
+// NYI setreuid 126
+// NYI setregid 127
+// GEN rename 128
+// old truncate
+// old ftruncate
+// GEN flock 131
+// NYI mkfifo 132
+DECL_TEMPLATE(darwin, sendto);                  // 133
+DECL_TEMPLATE(darwin, shutdown);                // 134
+DECL_TEMPLATE(darwin, socketpair);              // 135
+// GEN mkdir 136
+// GEN rmdir 137
+// GEN utimes 138
+DECL_TEMPLATE(darwin, futimes);                 // 139
+// NYI adjtime 140
+// old getpeername
+DECL_TEMPLATE(darwin, gethostuuid);             // 142
+// old sethostid
+// old getrlimit
+// old setrlimit
+// old killpg
+// GEN setsid 147
+// old setquota
+// old qquota
+// old getsockname
+// NYI getpgid 151
+// NYI setprivexec 152
+// GEN pread 153
+// GEN pwrite 154
+// NYI nfssvc 155
+// old getdirentries
+// GEN statfs 157
+// GEN fstatfs 158
+// NYI unmount 159
+// old async_daemon
+// NYI getfh 161
+// old getdomainname
+// old setdomainname
+// 164
+// NYI quotactl 165
+// old exportfs
+// NYI mount 167
+// old ustat
+DECL_TEMPLATE(darwin, csops);                   // 169
+// old table
+// old wait3
+// old rpause
+// NYI waitid 173
+// old getdents
+// old gc_control
+// NYI add_profil 176
+// 177
+// 178
+// 179
+DECL_TEMPLATE(darwin, kdebug_trace);            // 180
+// GEN setgid 181
+DECL_TEMPLATE(darwin, setegid);                 // 182
+DECL_TEMPLATE(darwin, seteuid);                 // 183
+DECL_TEMPLATE(darwin, sigreturn);               // 184
+DECL_TEMPLATE(darwin, FAKE_SIGRETURN);
+// NYI chud 185
+// 186
+// 187
+// GEN stat 188
+// GEN fstat 189
+// GEN lstat 190
+DECL_TEMPLATE(darwin, pathconf);            // 191
+DECL_TEMPLATE(darwin, fpathconf);           // 192
+// 193
+// GEN getrlimit 194
+// GEN setrlimit 195
+DECL_TEMPLATE(darwin, getdirentries);       // 196
+DECL_TEMPLATE(darwin, mmap);                // 197
+// 198  __syscall
+DECL_TEMPLATE(darwin, lseek);               // 199 (was UX64)
+// GEN truncate 200
+// GEN ftruncate 201
+DECL_TEMPLATE(darwin, __sysctl);                // 202
+// GEN mlock 203
+// GEN munlock 204
+// NYI undelete 205
+// NYI ATsocket 206
+// NYI ATgetmsg 207
+// NYI ATputmsg 208
+// NYI ATPsndreq 209
+// NYI ATPsndrsp 210
+// NYI ATPgetreq 211
+// NYI ATPgetrsp 212
+// 213  Reserved for AppleTalk
+// NYI kqueue_from_portset_np 214
+// NYI kqueue_portset_np 215
+// NYI mkcomplex 216
+// NYI statv 217
+// NYI lstatv 218
+// NYI fstatv 219
+DECL_TEMPLATE(darwin, getattrlist);             // 220
+DECL_TEMPLATE(darwin, setattrlist);             // 221
+DECL_TEMPLATE(darwin, getdirentriesattr);       // 222
+// NYI exchangedata 223
+// 224 checkuseraccess
+// NYI searchfs 225
+// GEN delete 226
+// NYI copyfile 226
+// 228
+// 229
+// GEN poll 230
+DECL_TEMPLATE(darwin, watchevent);              // 231
+DECL_TEMPLATE(darwin, waitevent);               // 232
+DECL_TEMPLATE(darwin, modwatch);                // 233
+DECL_TEMPLATE(darwin, getxattr);                // 234
+DECL_TEMPLATE(darwin, fgetxattr);               // 235
+DECL_TEMPLATE(darwin, setxattr);                // 236
+DECL_TEMPLATE(darwin, fsetxattr);               // 237
+// NYI removexattr 238
+// NYI fremovexattr 239
+DECL_TEMPLATE(darwin, listxattr);               // 240
+DECL_TEMPLATE(darwin, flistxattr);              // 241
+DECL_TEMPLATE(darwin, fsctl);                   // 242
+DECL_TEMPLATE(darwin, initgroups);              // 243
+DECL_TEMPLATE(darwin, posix_spawn);             // 244
+// 245
+// 246
+// NYI nfsclnt 247
+// NYI fhopen 248
+// 249
+// NYI minherit 250
+// NYI semsys 251
+// NYI msgsys 252
+// NYI shmsys 253
+DECL_TEMPLATE(darwin, semctl);                  // 254
+DECL_TEMPLATE(darwin, semget);                  // 255
+DECL_TEMPLATE(darwin, semop);                   // 256
+// 257
+// NYI msgctl 258
+// NYI msgget 259
+// NYI msgsnd 260
+// NYI msgrcv 261
+// NYI shmat 262
+DECL_TEMPLATE(darwin, shmctl);                  // 263
+// NYI shmdt 264
+DECL_TEMPLATE(darwin, shmget);                  // 265
+DECL_TEMPLATE(darwin, shm_open);                // 266
+// NYI shm_unlink 267
+DECL_TEMPLATE(darwin, sem_open);                // 268
+DECL_TEMPLATE(darwin, sem_close);               // 269
+DECL_TEMPLATE(darwin, sem_unlink);              // 270
+DECL_TEMPLATE(darwin, sem_wait);                // 271
+DECL_TEMPLATE(darwin, sem_trywait);             // 272
+DECL_TEMPLATE(darwin, sem_post);                // 273
+// NYI sem_getvalue 274
+DECL_TEMPLATE(darwin, sem_init);                // 275
+DECL_TEMPLATE(darwin, sem_destroy);             // 276
+// NYI open_extended 277
+// NYI umask_extended 278
+DECL_TEMPLATE(darwin, stat_extended);           // 279
+// NYI lstat_extended 280
+// NYI fstat_extended 281
+DECL_TEMPLATE(darwin, chmod_extended);          // 282
+DECL_TEMPLATE(darwin, fchmod_extended);         // 283
+// NYI access_extended 284
+DECL_TEMPLATE(darwin, settid);                  // 285
+// NYI gettid 286
+// NYI setsgroups 287
+// NYI getsgroups 288
+// NYI setwgroups 289
+// NYI getwgroups 290
+// NYI mkfifo_extended 291
+// NYI mkdir_extended 292
+// NYI identitysvc 293
+// NYI shared_region_check_np 294
+// NYI shared_region_map_np 295
+// old load_shared_file
+// old reset_shared_file
+// old new_system_shared_regions
+// old shared_region_map_file_np
+// old shared_region_make_private_np
+// NYI __pthread_mutex_destroy 301
+// NYI __pthread_mutex_init 302
+// NYI __pthread_mutex_lock 303
+// NYI __pthread_mutex_trylock 304
+// NYI __pthread_mutex_unlock 305
+// NYI __pthread_cond_init 306
+// NYI __pthread_cond_destroy 307
+// NYI __pthread_cond_broadcast 308
+// NYI __pthread_cond_signal 309
+// NYI getsid 310
+// NYI settid_with_pid 311
+// NYI __pthread_cond_timedwait 312
+// NYI aio_fsync 313
+// NYI aio_return 314
+// NYI aio_suspend 315
+// NYI aio_cancel 316
+// NYI aio_error 317
+// NYI aio_read 318
+// NYI aio_write 319
+// NYI lio_listio 320
+// NYI __pthread_cond_wait 321
+// NYI iopolicysys 322
+// 323
+// NYI mlockall 324
+// NYI munlockall 325
+// 326
+DECL_TEMPLATE(darwin, issetugid);               // 327
+// NYI __pthread_kill 328
+DECL_TEMPLATE(darwin, __pthread_sigmask);       // 329
+// NYI __sigwait 330
+DECL_TEMPLATE(darwin, __disable_threadsignal);  // 331
+DECL_TEMPLATE(darwin, __pthread_markcancel);    // 332
+DECL_TEMPLATE(darwin, __pthread_canceled);      // 333
+DECL_TEMPLATE(darwin, __semwait_signal);        // 334
+// old utrace
+// NYI proc_info 336
+DECL_TEMPLATE(darwin, sendfile);                // 337
+DECL_TEMPLATE(darwin, stat64);                  // 338
+DECL_TEMPLATE(darwin, fstat64);                 // 339
+DECL_TEMPLATE(darwin, lstat64);                 // 340
+// NYI stat64_extended 341
+// NYI lstat64_extended 342
+// NYI fstat64_extended 343
+DECL_TEMPLATE(darwin, getdirentries64);         // 344
+DECL_TEMPLATE(darwin, statfs64);                // 345
+DECL_TEMPLATE(darwin, fstatfs64);               // 346
+// NYI getfsstat64 347
+// NYI __pthread_chdir 348
+// NYI __pthread_fchdir 349
+// NYI audit 350
+DECL_TEMPLATE(darwin, auditon);                 // 351
+// 352
+// NYI getauid 353
+// NYI setauid 354
+// NYI getaudit 355
+// NYI setaudit 356
+// NYI getaudit_addr 357
+// NYI setaudit_addr 358
+// NYI auditctl 359
+DECL_TEMPLATE(darwin, bsdthread_create);        // 360
+DECL_TEMPLATE(darwin, bsdthread_terminate);     // 361
+DECL_TEMPLATE(darwin, kqueue);                  // 362
+DECL_TEMPLATE(darwin, kevent);                  // 363
+// NYI lchown 364
+// NYI stack_snapshot 365
+DECL_TEMPLATE(darwin, bsdthread_register);      // 366
+DECL_TEMPLATE(darwin, workq_open);              // 367
+DECL_TEMPLATE(darwin, workq_ops);               // 368
+// 369
+// 370
+// 371
+// 372
+// 373
+// 374
+// 375
+// 376
+// 377
+// 378
+// 379
+// NYI __mac_execve 380
+DECL_TEMPLATE(darwin, __mac_syscall);           // 381
+// NYI __mac_get_file 382
+// NYI __mac_set_file 383
+// NYI __mac_get_link 384
+// NYI __mac_set_link 385
+// NYI __mac_get_proc 386
+// NYI __mac_set_proc 387
+// NYI __mac_get_fd 388
+// NYI __mac_set_fd 389
+// NYI __mac_get_pid 390
+// NYI __mac_get_lcid 391
+// NYI __mac_get_lctx 392
+// NYI __mac_set_lctx 393
+// NYI setlcid 394
+// NYI getlcid 395
+// GEN read_nocancel 396
+// GEN write_nocancel 397
+// GEN open_nocancel 398
+// GEN close_nocancel 399
+// GEN wait4_nocancel 400
+// NOC recvmsg_nocancel 401
+// NOC sendmsg_nocancel 402
+// NOC recvfrom_nocancel 403
+// NOC accept_nocancel 404
+// GEN msync_nocancel 405
+// NOC fcntl_nocancel 406
+// GEN select_nocancel 407
+// GEN fsync_nocancel 408
+// NOC connect_nocancel 409
+// NYI sigsuspend_nocancel 410
+// GEN readv_nocancel 411
+// GEN writev_nocancel 412
+// NOC sendto_nocancel 413
+// GEN pread_nocancel 414
+// GEN pwrite_nocancel 415
+// NYI waitid_nocancel 416
+// GEN poll_nocancel 417
+// NYI msgsnd_nocancel 418
+// NYI msgrcv_nocancel 419
+// NOC sem_wait_nocancel 420
+// NYI aio_suspend_nocancel 421
+// NYI __sigwait_nocancel 422
+// NOC __semwait_signal_nocancel 423
+// NYI __mac_mount 424
+// NYI __mac_get_mount 425
+// NYI __mac_getfsstat 426
 
 // Mach message helpers
 DECL_TEMPLATE(darwin, host_info);
@@ -230,7 +559,6 @@ DECL_TEMPLATE(darwin, semaphore_wait);
 DECL_TEMPLATE(darwin, semaphore_wait_signal);
 DECL_TEMPLATE(darwin, semaphore_timedwait);
 DECL_TEMPLATE(darwin, semaphore_timedwait_signal);
-DECL_TEMPLATE(darwin, sys___semwait_signal);
 DECL_TEMPLATE(darwin, task_for_pid);
 DECL_TEMPLATE(darwin, pid_for_task);
 DECL_TEMPLATE(darwin, mach_timebase_info);

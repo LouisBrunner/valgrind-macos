@@ -1828,22 +1828,90 @@ PRE(stat_extended)
    PRE_REG_READ4(int, "stat_extended", char *, file_name, struct stat *, buf, 
                  void *, fsacl, vki_size_t *, fsacl_size);
    PRE_MEM_RASCIIZ( "stat_extended(file_name)",  ARG1 );
-   PRE_MEM_READ(    "stat_extended(fsacl_size)", ARG4, sizeof(vki_size_t) );
    PRE_MEM_WRITE(   "stat_extended(buf)",        ARG2, sizeof(struct vki_stat) );
+   if (ML_(safe_to_deref)( (void*)ARG4, sizeof(vki_size_t) ))
+      PRE_MEM_WRITE("stat_extended(fsacl)",      ARG3, *(vki_size_t *)ARG4 );
+   PRE_MEM_READ(    "stat_extended(fsacl_size)", ARG4, sizeof(vki_size_t) );
    PRE_MEM_WRITE(   "stat_extended(fsacl_size)", ARG4, sizeof(vki_size_t) );
-   PRE_MEM_WRITE(   "stat_extended(fsacl)",      ARG3, *(vki_size_t *)ARG4 );
 }
 POST(stat_extended)
 {
    POST_MEM_WRITE( ARG2, sizeof(struct vki_stat) );
+   if (ML_(safe_to_deref)( (void*)ARG4, sizeof(vki_size_t) ))
+      POST_MEM_WRITE( ARG3, *(vki_size_t *)ARG4 );
    POST_MEM_WRITE( ARG4, sizeof(vki_size_t) );
-   POST_MEM_WRITE( ARG3, *(vki_size_t *)ARG4 );
+}
+
+
+PRE(lstat_extended)
+{
+   PRINT("lstat_extended( %#lx(%s), %#lx, %#lx, %#lx )",
+      ARG1, (char *)ARG1, ARG2, ARG3, ARG4);
+   PRE_REG_READ4(int, "lstat_extended", char *, file_name, struct stat *, buf, 
+                 void *, fsacl, vki_size_t *, fsacl_size);
+   PRE_MEM_RASCIIZ( "lstat_extended(file_name)",  ARG1 );
+   PRE_MEM_WRITE(   "lstat_extended(buf)",        ARG2, sizeof(struct vki_stat) );
+   if (ML_(safe_to_deref)( (void*)ARG4, sizeof(vki_size_t) ))
+      PRE_MEM_WRITE("lstat_extended(fsacl)",      ARG3, *(vki_size_t *)ARG4 );
+   PRE_MEM_READ(    "lstat_extended(fsacl_size)", ARG4, sizeof(vki_size_t) );
+   PRE_MEM_WRITE(   "lstat_extended(fsacl_size)", ARG4, sizeof(vki_size_t) );
+}
+POST(lstat_extended)
+{
+   POST_MEM_WRITE( ARG2, sizeof(struct vki_stat) );
+   if (ML_(safe_to_deref)( (void*)ARG4, sizeof(vki_size_t) ))
+      POST_MEM_WRITE( ARG3, *(vki_size_t *)ARG4 );
+   POST_MEM_WRITE( ARG4, sizeof(vki_size_t) );
+}
+
+
+PRE(stat64_extended)
+{
+   PRINT("stat64_extended( %#lx(%s), %#lx, %#lx, %#lx )",
+      ARG1, (char *)ARG1, ARG2, ARG3, ARG4);
+   PRE_REG_READ4(int, "stat64_extended", char *, file_name, struct stat64 *, buf, 
+                 void *, fsacl, vki_size_t *, fsacl_size);
+   PRE_MEM_RASCIIZ( "stat64_extended(file_name)",  ARG1 );
+   PRE_MEM_WRITE(   "stat64_extended(buf)",        ARG2, sizeof(struct vki_stat64) );
+   if (ML_(safe_to_deref)( (void*)ARG4, sizeof(vki_size_t) ))
+      PRE_MEM_WRITE("stat64_extended(fsacl)",      ARG3, *(vki_size_t *)ARG4 );
+   PRE_MEM_READ(    "stat64_extended(fsacl_size)", ARG4, sizeof(vki_size_t) );
+   PRE_MEM_WRITE(   "stat64_extended(fsacl_size)", ARG4, sizeof(vki_size_t) );
+}
+POST(stat64_extended)
+{
+   POST_MEM_WRITE( ARG2, sizeof(struct vki_stat64) );
+   if (ML_(safe_to_deref)( (void*)ARG4, sizeof(vki_size_t) ))
+      POST_MEM_WRITE( ARG3, *(vki_size_t *)ARG4 );
+   POST_MEM_WRITE( ARG4, sizeof(vki_size_t) );
+}
+
+
+PRE(lstat64_extended)
+{
+   PRINT("lstat64_extended( %#lx(%s), %#lx, %#lx, %#lx )",
+      ARG1, (char *)ARG1, ARG2, ARG3, ARG4);
+   PRE_REG_READ4(int, "lstat64_extended", char *, file_name, struct stat64 *, buf, 
+                 void *, fsacl, vki_size_t *, fsacl_size);
+   PRE_MEM_RASCIIZ( "lstat64_extended(file_name)",  ARG1 );
+   PRE_MEM_WRITE(   "lstat64_extended(buf)",        ARG2, sizeof(struct vki_stat64) );
+   if (ML_(safe_to_deref)( (void*)ARG4, sizeof(vki_size_t) ))
+      PRE_MEM_WRITE(   "lstat64_extended(fsacl)",   ARG3, *(vki_size_t *)ARG4 );
+   PRE_MEM_READ(    "lstat64_extended(fsacl_size)", ARG4, sizeof(vki_size_t) );
+   PRE_MEM_WRITE(   "lstat64_extended(fsacl_size)", ARG4, sizeof(vki_size_t) );
+}
+POST(lstat64_extended)
+{
+   POST_MEM_WRITE( ARG2, sizeof(struct vki_stat64) );
+   if (ML_(safe_to_deref)( (void*)ARG4, sizeof(vki_size_t) ))
+      POST_MEM_WRITE( ARG3, *(vki_size_t *)ARG4 );
+   POST_MEM_WRITE( ARG4, sizeof(vki_size_t) );
 }
 
 
 PRE(fchmod_extended)
 {
-   /* Note: this is not really correct.  Handling of
+   /* DDD: Note: this is not really correct.  Handling of
       chmod_extended is broken in the same way. */
    PRINT("fchmod_extended ( %ld, %ld, %ld, %ld, %#lx )",
          ARG1, ARG2, ARG3, ARG4, ARG5);
@@ -1853,7 +1921,7 @@ PRE(fchmod_extended)
                  gid_t, gid,
                  vki_mode_t, mode,
                  void* /*really,user_addr_t*/, xsecurity);
-   /* relative to the xnu sources (kauth_copyinfilesec), this
+   /* DDD: relative to the xnu sources (kauth_copyinfilesec), this
       is just way wrong. */
    PRE_MEM_READ( "fchmod_extended(xsecurity)", ARG5, 
                  sizeof(struct kauth_filesec) );
@@ -1861,7 +1929,7 @@ PRE(fchmod_extended)
 
 PRE(chmod_extended)
 {
-   /* Note: this is not really correct.  Handling of
+   /* DDD: Note: this is not really correct.  Handling of
       fchmod_extended is broken in the same way. */
    PRINT("chmod_extended ( %#lx(%s), %ld, %ld, %ld, %#lx )",
          ARG1, ARG1 ? (HChar*)ARG1 : "(null)", ARG2, ARG3, ARG4, ARG5);
@@ -1872,7 +1940,7 @@ PRE(chmod_extended)
                  vki_mode_t, mode,
                  void* /*really,user_addr_t*/, xsecurity);
    PRE_MEM_RASCIIZ("chmod_extended(path)", ARG1);
-   /* relative to the xnu sources (kauth_copyinfilesec), this
+   /* DDD: relative to the xnu sources (kauth_copyinfilesec), this
       is just way wrong. */
    PRE_MEM_READ( "chmod_extended(xsecurity)", ARG5, 
                  sizeof(struct kauth_filesec) );
@@ -7157,7 +7225,7 @@ const SyscallTableEntry ML_(syscall_table)[] = {
 // _____(__NR_open_extended), 
 // _____(__NR_umask_extended), 
    MACXY(__NR_stat_extended,  stat_extended), 
-// _____(__NR_lstat_extended),   // 280
+   MACXY(__NR_lstat_extended, lstat_extended),   // 280
 // _____(__NR_fstat_extended), 
    MACX_(__NR_chmod_extended,    chmod_extended), 
    MACX_(__NR_fchmod_extended,   fchmod_extended), 
@@ -7218,8 +7286,8 @@ const SyscallTableEntry ML_(syscall_table)[] = {
    MACXY(__NR_stat64,      stat64), 
    MACXY(__NR_fstat64,     fstat64), 
    MACXY(__NR_lstat64,     lstat64),    // 340
-// _____(__NR_stat64_extended), 
-// _____(__NR_lstat64_extended), 
+   MACXY(__NR_stat64_extended,  stat64_extended), 
+   MACXY(__NR_lstat64_extended, lstat64_extended), 
 // _____(__NR_fstat64_extended), 
    MACXY(__NR_getdirentries64, getdirentries64), 
    MACXY(__NR_statfs64,    statfs64), 

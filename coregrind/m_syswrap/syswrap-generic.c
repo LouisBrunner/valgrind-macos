@@ -109,7 +109,7 @@ Bool ML_(client_signal_OK)(Int sigNo)
 
 Bool ML_(safe_to_deref) ( void* start, SizeT size )
 {
-   return VG_(am_is_valid_for_client)( (Addr)start, size, VKI_PROT_NONE );
+   return VG_(am_is_valid_for_client)( (Addr)start, size, VKI_PROT_READ );
 }
 
 

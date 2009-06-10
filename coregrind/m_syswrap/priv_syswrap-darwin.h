@@ -335,7 +335,7 @@ DECL_TEMPLATE(darwin, sem_destroy);             // 276
 // NYI open_extended 277
 // NYI umask_extended 278
 DECL_TEMPLATE(darwin, stat_extended);           // 279
-// NYI lstat_extended 280
+DECL_TEMPLATE(darwin, lstat_extended);          // 280
 // NYI fstat_extended 281
 DECL_TEMPLATE(darwin, chmod_extended);          // 282
 DECL_TEMPLATE(darwin, fchmod_extended);         // 283
@@ -396,8 +396,8 @@ DECL_TEMPLATE(darwin, sendfile);                // 337
 DECL_TEMPLATE(darwin, stat64);                  // 338
 DECL_TEMPLATE(darwin, fstat64);                 // 339
 DECL_TEMPLATE(darwin, lstat64);                 // 340
-// NYI stat64_extended 341
-// NYI lstat64_extended 342
+DECL_TEMPLATE(darwin, stat64_extended);         // 341
+DECL_TEMPLATE(darwin, lstat64_extended);        // 342
 // NYI fstat64_extended 343
 DECL_TEMPLATE(darwin, getdirentries64);         // 344
 DECL_TEMPLATE(darwin, statfs64);                // 345

@@ -364,8 +364,24 @@ int main(void)
 
    // __NR_open_extended 277
    // __NR_umask_extended 278
+
    // __NR_stat_extended 279
+   {
+      size_t one = 1;
+      GO(__NR_stat_extended, "4s 4m");
+      SY(__NR_stat_extended, x0, x0, x0, x0); FAIL;
+      // Go again to get a complaint about where the 3rd arg points;  it
+      // requires the 4th arg to point to a valid value.
+      SY(__NR_stat_extended, 0, 0, 0, &one); FAIL;
+
    // __NR_lstat_extended 280
+      GO(__NR_lstat_extended, "4s 4m");
+      SY(__NR_lstat_extended, x0, x0, x0, x0); FAIL;
+      // Go again to get a complaint about where the 3rd arg points;  it
+      // requires the 4th arg to point to a valid value.
+      SY(__NR_lstat_extended, 0, 0, 0, &one); FAIL;
+   }
+
    // __NR_fstat_extended 281
    // __NR_chmod_extended 282
    // __NR_fchmod_extended 283
@@ -428,8 +444,24 @@ int main(void)
    // __NR_fstat64 339
    // __NR_lstat64 340
    // __NR_stat64_extended 341
+
    // __NR_lstat64_extended 342
+   {
+      size_t one = 1;
+      GO(__NR_stat64_extended, "4s 4m");
+      SY(__NR_stat64_extended, x0, x0, x0, x0); FAIL;
+      // Go again to get a complaint about where the 3rd arg points;  it
+      // requires the 4th arg to point to a valid value.
+      SY(__NR_stat64_extended, 0, 0, 0, &one); FAIL;
+
    // __NR_fstat64_extended 343
+      GO(__NR_lstat64_extended, "4s 4m");
+      SY(__NR_lstat64_extended, x0, x0, x0, x0); FAIL;
+      // Go again to get a complaint about where the 3rd arg points;  it
+      // requires the 4th arg to point to a valid value.
+      SY(__NR_lstat64_extended, 0, 0, 0, &one); FAIL;
+   }
+
    // __NR_getdirentries64 344
    // __NR_statfs64 345
    // __NR_fstatfs64 346

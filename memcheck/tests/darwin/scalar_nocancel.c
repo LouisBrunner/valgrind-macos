@@ -47,9 +47,8 @@ int main(void)
    // __NR_msgsnd_nocancel 418
    // __NR_msgrcv_nocancel 419
 
-   // __NR_sem_wait_nocancel 420
    // The error doesn't appear because it's a dup of the one from sem_wait.
-   GO(__NR_sem_wait_nocancel, "1s 0m");
+   GO(__NR_sem_wait_nocancel, 420, "1s 0m");
    SY(__NR_sem_wait_nocancel, x0); FAIL;
 
    // __NR_aio_suspend_nocancel 421

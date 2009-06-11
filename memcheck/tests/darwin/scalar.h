@@ -16,12 +16,17 @@ extern int syscall (int __sysno, ...);
 // for (very) basic syscall use.  Generally not trying to do anything
 // meaningful with the syscalls.
 
-#define GO(__NR_xxx, s) \
+#define GO(__NR_xxx, N, s) \
    fprintf(stderr, "-----------------------------------------------------\n"  \
                    "x%lx(%d):%20s %s\n"                                       \
                    "-----------------------------------------------------\n", \
-                   (unsigned long)__NR_xxx,                                   \
-                   VG_DARWIN_SYSNO_FOR_KERNEL(__NR_xxx), #__NR_xxx, s);
+                   (unsigned long)__NR_xxx, N, #__NR_xxx, s);
+
+#define GO_UNIMP(n, s) \
+   fprintf(stderr, "-----------------------------------------------------\n"  \
+                   "%-17s%s\n"                                                \
+                   "-----------------------------------------------------\n", \
+                   "("#n"):     ", s);
 
 #define SY(__NR_xxx, args...)    res = syscall(__NR_xxx, ##args);
 

@@ -20,42 +20,71 @@ int main(void)
    // __NR_syscall 0
    // XXX
 
-   // __NR_exit 1 
-   GO(__NR_exit, "below");
+   GO(__NR_exit, 1, "below");
    // (see below)
 
-   // __NR_fork 2
-   GO(__NR_fork, "other");
+   GO(__NR_fork, 2, "other");
    // (sse scalar_fork.c)
 
-   // __NR_read 3
    // Nb: here we are also getting an error from the syscall arg itself.
-   GO(__NR_read, "1+3s 1m");
+   GO(__NR_read, 3, "1+3s 1m");
    SY(__NR_read+(int)x0, x0, x0, x0+1); FAILx(EFAULT);
 
-   // __NR_write 4
-   GO(__NR_write, "3s 1m");
+   GO(__NR_write, 4, "3s 1m");
    SY(__NR_write, x0, x0, x0+1); FAIL;
    //res = write(x0, x0, x0+1); FAIL;
 
-   // __NR_open 5
-   // __NR_close 6
-   // __NR_wait4 7
-   // /* 8  old creat */
-   // __NR_link 9
-   // __NR_unlink 10
-   // /* 11  old execv */
-   // __NR_chdir 12
-   // __NR_fchdir 13
-   // __NR_mknod 14
-   // __NR_chmod 15
-   // __NR_chown 16
-   // /* 17  old break */
+   GO(__NR_open, 5, "(2-args) 2s 1m");
+   SY(__NR_open, x0, x0); FAIL;
+   // Only 1s 0m errors -- the other 2s 1m have been checked in the previous
+   // open test, and if we test them they may be commoned up but they also
+   // may not.
+   GO(__NR_open, 5, "(3-args) 1s 0m");    
+   SY(__NR_open, "scalar.c", O_CREAT|O_EXCL, x0); FAIL;
+
+   GO(__NR_close, 6, "1s 0m");
+   SY(__NR_close, x0-1); FAIL;
+
+   GO(__NR_wait4, 7, "4s 2m");
+   SY(__NR_wait4, x0, x0+1, x0, x0+1); FAIL;
+
+   GO_UNIMP(8, "old creat");
+
+   GO(__NR_link, 9, "2s 2m");
+   SY(__NR_link, x0, x0); FAIL;
+
+   GO(__NR_unlink, 10, "1s 1m");
+   SY(__NR_unlink, x0); FAIL;
+
+   GO_UNIMP(11, "old execv");
+
+   GO(__NR_chdir, 12, "1s 1m");
+   SY(__NR_chdir, x0); FAIL;
+
+   GO(__NR_fchdir, 13, "1s 0m");
+   SY(__NR_fchdir, x0-1); FAIL;
+
+   GO(__NR_mknod, 14, "3s 1m");
+   SY(__NR_mknod, x0, x0, x0); FAIL;
+
+   GO(__NR_chmod, 15, "2s 1m");
+   SY(__NR_chmod, x0, x0); FAIL;
+
+   GO(__NR_chown, 16, "3s 1m");
+   SY(__NR_chown, x0, x0, x0); FAIL;
+
+   GO_UNIMP(17, "old break");
+
    // __NR_getfsstat 18
-   // /* 19  old lseek */
+
+   GO_UNIMP(19, "old lseek");
+
    // __NR_getpid 20
-   // /* 21  old mount */
-   // /* 22  old umount */
+
+   GO_UNIMP(21, "old mount");
+
+   GO_UNIMP(22, "old umount");
+
    // __NR_setuid 23
    // __NR_getuid 24
    // __NR_geteuid 25
@@ -71,14 +100,20 @@ int main(void)
    // __NR_fchflags 35
    // __NR_sync 36
    // __NR_kill 37
-   // /* 38  old stat */
+
+   GO_UNIMP(38, "old stat");
+
    // __NR_getppid 39
-   // /* 40  old lstat */
+
+   GO_UNIMP(40, "old lstat");
+
    // __NR_dup 41
    // __NR_pipe           VG_DARWIN_SYSCALL_CONSTRUCT_UX64(42
    // __NR_getegid 43
    // __NR_profil 44
-   // /* 45  old ktrace */
+
+   GO_UNIMP(45, "old ktrace");
+
    // __NR_sigaction 46
    // __NR_getgid 47
    // __NR_sigprocmask 48
@@ -95,85 +130,128 @@ int main(void)
    // __NR_execve 59
    // __NR_umask 60
    // __NR_chroot 61
-   // /* 62  old fstat */
-   // /* 63  used internally , reserved */
-   // /* 64  old getpagesize */
+
+   GO_UNIMP(62, "old fstat");
+
+   GO_UNIMP(63, "used internally, reserved");
+
+   GO_UNIMP(64, "old getpagesize");
+
    // __NR_msync 65
    // __NR_vfork 66
-   // /* 67  old vread */
-   // /* 68  old vwrite */
-   // /* 69  old sbrk */
-   // /* 70  old sstk */
-   // /* 71  old mmap */
-   // /* 72  old vadvise */
+
+   GO_UNIMP(67, "old vread");
+
+   GO_UNIMP(68, "old vwrite");
+
+   GO_UNIMP(69, "old sbrk");
+
+   GO_UNIMP(70, "old sstk");
+
+   GO_UNIMP(71, "old mmap");
+
+   GO_UNIMP(72, "old vadvise");
+
    // __NR_munmap 73
    // __NR_mprotect 74
    // __NR_madvise 75
-   // /* 76  old vhangup */
-   // /* 77  old vlimit */
+
+   GO_UNIMP(76, "old vhangup");
+
+   GO_UNIMP(77, "old vlimit");
+
    // __NR_mincore 78
    // __NR_getgroups 79
    // __NR_setgroups 80
    // __NR_getpgrp 81
    // __NR_setpgid 82
    // __NR_setitimer 83
-   // /* 84  old wait */
+
+   GO_UNIMP(78, "old wait");
+
    // __NR_swapon 85
    // __NR_getitimer 86
-   // /* 87  old gethostname */
-   // /* 88  old sethostname */
+
+   GO_UNIMP(87, "old gethostname");
+
+   GO_UNIMP(88, "old sethostname");
+
    // __NR_getdtablesize 89
    // __NR_dup2 90
-   // /* 91  old getdopt */
+
+   GO_UNIMP(91, "old getdopt");
+
    // __NR_fcntl 92
    // __NR_select 93
-   // /* 94  old setdopt */
+
+   GO_UNIMP(94, "old setdopt");
+
    // __NR_fsync 95
    // __NR_setpriority 96
    // __NR_socket 97
    // __NR_connect 98
-   // /* 99  old accept */
+
+   GO_UNIMP(99, "old accept");
+
    // __NR_getpriority 100
-   // /* 101  old send */
-   // /* 102  old recv */
-   // /* 103  old sigreturn */
+
+   GO_UNIMP(101, "old send");
+
+   GO_UNIMP(102, "old recv");
+
+   GO_UNIMP(103, "old sigreturn");
+
    // __NR_bind 104
 
-   // __NR_setsockopt 105
-   GO(__NR_setsockopt, "5s 1m");
+   GO(__NR_setsockopt, 105, "5s 1m");
    SY(__NR_setsockopt, x0, x0, x0, x0+1, x0+1); FAIL;
 
    // __NR_listen 106
-   // /* 107  old vtimes */
-   // /* 108  old sigvec */
-   // /* 109  old sigblock */
-   // /* 110  old sigsetmask */
+
+   GO_UNIMP(107, "old vtimes");
+
+   GO_UNIMP(108, "old sigvec");
+
+   GO_UNIMP(109, "old sigblock");
+
+   GO_UNIMP(110, "old sigsetmask");
+
    // __NR_sigsuspend 111
-   // /* 112  old sigstack */
-   // /* 113  old recvmsg */
-   // /* 114  old sendmsg */
-   // /* 115  old vtrace */
+
+   GO_UNIMP(112, "old sigstack");
+
+   GO_UNIMP(113, "old recvmsg");
+
+   GO_UNIMP(114, "old sendmsg");
+
+   GO_UNIMP(115, "old vtrace");
+
    // __NR_gettimeofday 116
    // __NR_getrusage 117
 
-   // __NR_getsockopt 118
    // Nb: there's no "getsockopt(optlen) points to unaddressable byte(s)";
    // difficult to get with arg4 being checked with buf_and_len_pre_check.
-   GO(__NR_getsockopt, "5s 1m");
+   GO(__NR_getsockopt, 118, "5s 1m");
    SY(__NR_getsockopt, x0, x0, x0, x0+1, x0+&px[1]); FAIL;
 
-   // /* 119  old resuba */
+   GO_UNIMP(119, "old resuba");
+
    // __NR_readv 120
    // __NR_writev 121
    // __NR_settimeofday 122
    // __NR_fchown 123
    // __NR_fchmod 124
-   // /* 125  old recvfrom */
+
+   GO_UNIMP(125, "old recvfrom");
+
    // __NR_setreuid 126
    // __NR_setregid 127
    // __NR_rename 128
-   // /* 129  old truncate */
-   // /* 130  old ftruncate */
+
+   GO_UNIMP(129, "old truncate");
+
+   GO_UNIMP(130, "old ftruncate");
+
    // __NR_flock 131
    // __NR_mkfifo 132
    // __NR_sendto 133
@@ -184,68 +262,100 @@ int main(void)
    // __NR_utimes 138
    // __NR_futimes 139
    // __NR_adjtime 140
-   // /* 141  old getpeername */
+
+   GO_UNIMP(141, "old getpeername");
+
    // __NR_gethostuuid 142
-   // /* 143  old sethostid */
-   // /* 144  old getrlimit */
-   // /* 145  old setrlimit */
-   // /* 146  old killpg */
+
+   GO_UNIMP(143, "old sethostid");
+
+   GO_UNIMP(144, "old getrlimit");
+
+   GO_UNIMP(145, "old setrlimit");
+
+   GO_UNIMP(146, "old killpg");
+
    // __NR_setsid 147
-   // /* 148  old setquota */
-   // /* 149  old qquota */
-   // /* 150  old getsockname */
+
+   GO_UNIMP(148, "old setquota");
+
+   GO_UNIMP(149, "old qquota");
+
+   GO_UNIMP(150, "old getsockname");
+
    // __NR_getpgid 151
    // __NR_setprivexec 152
    // __NR_pread 153
    // __NR_pwrite 154
    // __NR_nfssvc 155
-   // /* 156  old getdirentries */
+
+   GO_UNIMP(156, "old getdirentries");
+
    // __NR_statfs 157
    // __NR_fstatfs 158
    // __NR_unmount 159
-   // /* 160  old async_daemon */
-   // __NR_getfh 161
-   // /* 162  old getdomainname */
-   // /* 163  old setdomainname */
-   // /* 164 */
-   // __NR_quotactl 165
-   // /* 166  old exportfs */
-   // __NR_mount 167
-   // /* 168  old ustat */
 
-   // __NR_csops 169
-   GO(__NR_csops, "4s 1m");
+   GO_UNIMP(160, "old async_daemon");
+
+   // __NR_getfh 161
+
+   GO_UNIMP(162, "old getdomainname");
+
+   GO_UNIMP(163, "old setdomainname");
+
+   // /* 164 */
+
+   // __NR_quotactl 165
+
+   GO_UNIMP(166, "old exportfs");
+
+   // __NR_mount 167
+
+   GO_UNIMP(168, "old ustat");
+
+   GO(__NR_csops, 169, "4s 1m");
    SY(__NR_csops, x0, x0, x0+1, x0+1); FAILx(EFAULT);
 
-   // /* 170  old table */
-   // /* 171  old wait3 */
-   // /* 172  old rpause */
+   GO_UNIMP(170, "old table");
+
+   GO_UNIMP(171, "old wait3");
+
+   GO_UNIMP(172, "old rpause");
+
    // __NR_waitid 173
-   // /* 174  old getdents */
-   // /* 175  old gc_control */
+
+   GO_UNIMP(174, "old getdents");
+
+   GO_UNIMP(175, "old gc_control");
+
    // __NR_add_profil 176
-   // /* 177 */
-   // /* 178 */
-   // /* 179 */
+
+   GO_UNIMP(177-179, "unused");
+
    // __NR_kdebug_trace 180
    // __NR_setgid 181
    // __NR_setegid 182
    // __NR_seteuid 183
    // __NR_sigreturn 184
    // __NR_chud 185
-   // /* 186 */
-   // /* 187 */
+
+   GO_UNIMP(186-187, "unused");
+
    // __NR_stat 188
    // __NR_fstat 189
    // __NR_lstat 190
    // __NR_pathconf 191
    // __NR_fpathconf 192
-   // /* 193 */
+
+   GO_UNIMP(193, "unused");
+
    // __NR_getrlimit 194
    // __NR_setrlimit 195
    // __NR_getdirentries 196
    // __NR_mmap 197
+
    // /* 198  __syscall */
+
    // __NR_lseek          VG_DARWIN_SYSCALL_CONSTRUCT_UX64(199
    // __NR_truncate 200
    // __NR_ftruncate 201
@@ -260,7 +370,9 @@ int main(void)
    // __NR_ATPsndrsp 210
    // __NR_ATPgetreq 211
    // __NR_ATPgetrsp 212
-   // /* 213  Reserved for AppleTalk */
+
+   GO_UNIMP(213, "reserved for AppleTalk");
+
    // __NR_kqueue_from_portset_np 214
    // __NR_kqueue_portset_np 215
    // __NR_mkcomplex 216
@@ -271,16 +383,17 @@ int main(void)
    // __NR_setattrlist 221
    // __NR_getdirentriesattr 222
 
-   // __NR_exchangedata 223
-   GO(__NR_exchangedata, "3s 2m");
+   GO(__NR_exchangedata, 223, "3s 2m");
    SY(__NR_exchangedata, x0, x0, x0); FAIL;
 
    // /* 224  checkuseraccess */
+
    // __NR_searchfs 225
    // __NR_delete 226
    // __NR_copyfile 227
-   // /* 228 */
-   // /* 229 */
+
+   GO_UNIMP(228-229, "unused");
+
    // __NR_poll 230
    // __NR_watchevent 231
    // __NR_waitevent 232
@@ -296,11 +409,14 @@ int main(void)
    // __NR_fsctl 242
    // __NR_initgroups 243
    // __NR_posix_spawn 244
-   // /* 245 */
-   // /* 246 */
+
+   GO_UNIMP(245-246, "unused");
+
    // __NR_nfsclnt 247
    // __NR_fhopen 248
-   // /* 249 */
+
+   GO_UNIMP(249, "unused");
+
    // __NR_minherit 250
    // __NR_semsys 251
    // __NR_msgsys 252
@@ -308,83 +424,71 @@ int main(void)
    // __NR_semctl 254
    // __NR_semget 255
    // __NR_semop 256
-   // /* 257 */
+
+   GO_UNIMP(257, "unused");
+
    // __NR_msgctl 258
    // __NR_msgget 259
    // __NR_msgsnd 260
    // __NR_msgrcv 261
 
-   // __NR_shmat 262
-   GO(__NR_shmat, "3s 0m");
+   GO(__NR_shmat, 262, "3s 0m");
    SY(__NR_shmat, x0, x0, x0); FAIL;
 
-   // __NR_shmctl 263
-   GO(__NR_shmctl, "3s 1m");
+   GO(__NR_shmctl, 263, "3s 1m");
    SY(__NR_shmctl, x0, x0+IPC_STAT, x0+1); FAIL;
 
-   // __NR_shmdt 264
-   GO(__NR_shmdt, "1s 0m");
+   GO(__NR_shmdt, 264, "1s 0m");
    SY(__NR_shmdt, x0); FAIL;
 
-   // __NR_shmget 265
-   GO(__NR_shmget, "3s 0m");
+   GO(__NR_shmget, 265, "3s 0m");
    SY(__NR_shmget, x0, x0, x0); FAIL;
 
    // __NR_shm_open 266
    // __NR_shm_unlink 267
 
-   // __NR_sem_open 268
-   GO(__NR_sem_open, "2s 1m");
+   GO(__NR_sem_open, 268, "2s 1m");
    SY(__NR_sem_open, x0, x0); FAIL;
 
-   GO(__NR_sem_open, "(4-args) 2s 0m");
+   GO(__NR_sem_open, 268, "(4-args) 2s 0m");
    SY(__NR_sem_open, "my_sem", O_CREAT|O_EXCL, x0, x0); SUCC_OR_FAIL;
 
-   // __NR_sem_close 269
    // Nb: we add 0x12345 to make sure it's not a valid semaphore descriptor.
-   GO(__NR_sem_close, "1s 0m");
+   GO(__NR_sem_close, 269, "1s 0m");
    SY(__NR_sem_close, x0+0x12345); FAIL;
 
-   // __NR_sem_unlink 270
-   GO(__NR_sem_unlink, "1s 1m");
+   GO(__NR_sem_unlink, 270, "1s 1m");
    SY(__NR_sem_unlink, x0); FAIL;
 
-   // __NR_sem_wait 271
-   GO(__NR_sem_wait, "1s 0m");
+   GO(__NR_sem_wait, 271, "1s 0m");
    SY(__NR_sem_wait, x0); FAIL;
 
-   // __NR_sem_trywait 272
-   GO(__NR_sem_trywait, "1s 0m");
+   GO(__NR_sem_trywait, 272, "1s 0m");
    SY(__NR_sem_trywait, x0); FAIL;
 
-   // __NR_sem_post 273
-   GO(__NR_sem_post, "1s 0m");
+   GO(__NR_sem_post, 273, "1s 0m");
    SY(__NR_sem_post, x0); FAIL;
 
    // __NR_sem_getvalue 274
 
-   // __NR_sem_init 275
-   GO(__NR_sem_init, "3s 1m");
+   GO(__NR_sem_init, 275, "3s 1m");
    SY(__NR_sem_init, x0+1, x0, x0); FAILx(ENOSYS);
 
-   // __NR_sem_destroy 276
-   GO(__NR_sem_destroy, "1s 1m");
+   GO(__NR_sem_destroy, 276, "1s 1m");
    SY(__NR_sem_destroy, x0+1); FAILx(ENOSYS);
 
    // __NR_open_extended 277
    // __NR_umask_extended 278
 
-   // __NR_stat_extended 279
    {
       size_t one = 1;
-      GO(__NR_stat_extended, "4s 4m");
+      GO(__NR_stat_extended, 279, "4s 4m");
       SY(__NR_stat_extended, x0, x0, x0, x0); FAIL;
       // Go again to get a complaint about where the 3rd arg points;  it
       // requires the 4th arg to point to a valid value.
       SY(__NR_stat_extended, 0, 0, 0, &one); FAIL;
 
-   // __NR_lstat_extended 280
-      GO(__NR_lstat_extended, "4s 4m");
+      GO(__NR_lstat_extended, 280, "4s 4m");
       SY(__NR_lstat_extended, x0, x0, x0, x0); FAIL;
       // Go again to get a complaint about where the 3rd arg points;  it
       // requires the 4th arg to point to a valid value.
@@ -406,11 +510,17 @@ int main(void)
    // __NR_identitysvc 293
    // __NR_shared_region_check_np 294
    // __NR_shared_region_map_np 295
-   // /* 296  old load_shared_file */
-   // /* 297  old reset_shared_file */
-   // /* 298  old new_system_shared_regions */
-   // /* 299  old shared_region_map_file_np */
-   // /* 300  old shared_region_make_private_np */
+
+   GO_UNIMP(296, "old load_shared_file");
+
+   GO_UNIMP(297, "old reset_shared_file");
+
+   GO_UNIMP(298, "old new_system_shared_regions");
+
+   GO_UNIMP(299, "old shared_region_map_file_np");
+
+   GO_UNIMP(300, "old shared_region_make_private_np");
+
    // __NR___pthread_mutex_destroy 301
    // __NR___pthread_mutex_init 302
    // __NR___pthread_mutex_lock 303
@@ -433,10 +543,14 @@ int main(void)
    // __NR_lio_listio 320
    // __NR___pthread_cond_wait 321
    // __NR_iopolicysys 322
-   // /* 323 */
+
+   GO_UNIMP(323, "unused");
+
    // __NR_mlockall 324
    // __NR_munlockall 325
-   // /* 326 */
+
+   GO_UNIMP(326, "unused");
+
    // __NR_issetugid 327
    // __NR___pthread_kill 328
    // __NR___pthread_sigmask 329
@@ -446,31 +560,31 @@ int main(void)
    // __NR___pthread_markcancel 332
    // __NR___pthread_canceled 333
    // __NR___semwait_signal 334
-   // /* 335  old utrace */
+
+   GO_UNIMP(335, "old utrace");
+
    // __NR_proc_info 336
    // __NR_sendfile 337
    // __NR_stat64 338
    // __NR_fstat64 339
    // __NR_lstat64 340
-   // __NR_stat64_extended 341
 
-   // __NR_lstat64_extended 342
    {
       size_t one = 1;
-      GO(__NR_stat64_extended, "4s 4m");
+      GO(__NR_stat64_extended, 341, "4s 4m");
       SY(__NR_stat64_extended, x0, x0, x0, x0); FAIL;
       // Go again to get a complaint about where the 3rd arg points;  it
       // requires the 4th arg to point to a valid value.
       SY(__NR_stat64_extended, 0, 0, 0, &one); FAIL;
 
-   // __NR_fstat64_extended 343
-      GO(__NR_lstat64_extended, "4s 4m");
+      GO(__NR_lstat64_extended, 342, "4s 4m");
       SY(__NR_lstat64_extended, x0, x0, x0, x0); FAIL;
       // Go again to get a complaint about where the 3rd arg points;  it
       // requires the 4th arg to point to a valid value.
       SY(__NR_lstat64_extended, 0, 0, 0, &one); FAIL;
    }
 
+   // __NR_fstat64_extended 343
    // __NR_getdirentries64 344
    // __NR_statfs64 345
    // __NR_fstatfs64 346
@@ -479,7 +593,9 @@ int main(void)
    // __NR___pthread_fchdir 349
    // __NR_audit 350
    // __NR_auditon 351
+
    // /* 352 */
+
    // __NR_getauid 353
    // __NR_setauid 354
    // __NR_getaudit 355
@@ -496,17 +612,9 @@ int main(void)
    // __NR_bsdthread_register 366
    // __NR_workq_open 367
    // __NR_workq_ops 368
-   // /* 369 */
-   // /* 370 */
-   // /* 371 */
-   // /* 372 */
-   // /* 373 */
-   // /* 374 */
-   // /* 375 */
-   // /* 376 */
-   // /* 377 */
-   // /* 378 */
-   // /* 379 */
+
+   GO_UNIMP(369-379, "unused");
+
    // __NR___mac_execve 380
    // __NR___mac_syscall 381
    // __NR___mac_get_file 382
@@ -534,35 +642,9 @@ int main(void)
 #if 0
    // XXX: all these are copied from x86-linux/scalar.c.
 
-   // __NR_open 5
-   GO(__NR_open, "(2-args) 2s 1m");
-   SY(__NR_open, x0, x0); FAIL;
-
-   // Only 1s 0m errors -- the other 2s 1m have been checked in the previous
-   // open test, and if we test them they may be commoned up but they also
-   // may not.
-   GO(__NR_open, "(3-args) 1s 0m");    
-   SY(__NR_open, "scalar.c", O_CREAT|O_EXCL, x0); FAIL;
-
-   // __NR_close 6
-   GO(__NR_close, "1s 0m");
-   SY(__NR_close, x0-1); FAIL;
-
-   // __NR_waitpid 7
-   GO(__NR_waitpid, "3s 1m");
-   SY(__NR_waitpid, x0, x0+1, x0); FAIL;
-
    // __NR_creat 8
    GO(__NR_creat, "2s 1m");
    SY(__NR_creat, x0, x0); FAIL;
-
-   // __NR_link 9
-   GO(__NR_link, "2s 2m");
-   SY(__NR_link, x0, x0); FAIL;
-
-   // __NR_unlink 10
-   GO(__NR_unlink, "1s 1m");
-   SY(__NR_unlink, x0); FAIL;
 
    // __NR_execve 11
    // Nb: could have 3 memory errors if we pass x0+1 as the 2nd and 3rd
@@ -570,21 +652,9 @@ int main(void)
    GO(__NR_execve, "3s 1m");
    SY(__NR_execve, x0, x0, x0); FAIL;
 
-   // __NR_chdir 12
-   GO(__NR_chdir, "1s 1m");
-   SY(__NR_chdir, x0); FAIL;
-
    // __NR_time 13
    GO(__NR_time, "1s 1m");
    SY(__NR_time, x0+1); FAIL;
-
-   // __NR_mknod 14
-   GO(__NR_mknod, "3s 1m");
-   SY(__NR_mknod, x0, x0, x0); FAIL;
-
-   // __NR_chmod 15
-   GO(__NR_chmod, "2s 1m");
-   SY(__NR_chmod, x0, x0); FAIL;
 
    // __NR_lchown 16
    GO(__NR_lchown, "n/a");
@@ -1001,10 +1071,6 @@ int main(void)
    GO(__NR_vm86old, "n/a");
    // (will probably never be handled by Valgrind)
 
-   // __NR_wait4 114
-   GO(__NR_wait4, "4s 2m");
-   SY(__NR_wait4, x0, x0+1, x0, x0+1); FAIL;
-
    // __NR_swapoff 115
    GO(__NR_swapoff, "n/a");
  //SY(__NR_swapoff); // (Not yet handled by Valgrind) FAIL;
@@ -1087,10 +1153,6 @@ int main(void)
    // __NR_getpgid 132
    GO(__NR_getpgid, "1s 0m");
    SY(__NR_getpgid, x0-1); FAIL;
-
-   // __NR_fchdir 133
-   GO(__NR_fchdir, "1s 0m");
-   SY(__NR_fchdir, x0-1); FAIL;
 
    // __NR_bdflush 134
    GO(__NR_bdflush, "n/a");
@@ -1283,10 +1345,6 @@ int main(void)
    // __NR_pwrite64 181
    GO(__NR_pwrite64, "5s 1m");
    SY(__NR_pwrite64, x0, x0, x0+1, x0, x0); FAIL;
-
-   // __NR_chown 182
-   GO(__NR_chown, "3s 1m");
-   SY(__NR_chown, x0, x0, x0); FAIL;
 
    // __NR_getcwd 183
    GO(__NR_getcwd, "2s 1m");
@@ -1736,11 +1794,11 @@ int main(void)
 #endif
 
    // no such syscall...
-   GO(9999, "1e");
+   GO(9999, 9999, "1e");
    SY(9999); FAIL;
 
    // __NR_exit 1
-   GO(__NR_exit, "1s 0m");
+   GO(__NR_exit, 1, "1s 0m");
    SY(__NR_exit, x0); FAIL;
 
    assert(0);

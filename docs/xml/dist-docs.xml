@@ -21,14 +21,6 @@
   <!-- Nb: because these are all text files, we have to wrap -->
   <!-- them in suitable XML.  Hence the chapter/title stuff  -->
 
-  <chapter id="dist.acknowledge" xreflabel="Acknowledgements">
-    <title>ACKNOWLEDGEMENTS</title>
-    <literallayout>
-      <xi:include href="../../ACKNOWLEDGEMENTS" parse="text"  
-          xmlns:xi="http://www.w3.org/2001/XInclude" />
-    </literallayout>
-    </chapter>
-
   <chapter id="dist.authors" xreflabel="Valgrind Developers">
     <title id="dist.authors.title">AUTHORS</title>
     <literallayout>

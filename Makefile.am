@@ -118,7 +118,6 @@ perf: check
 # Nb: no need to include any Makefile.am files here, or files included from
 # them, as automake includes them automatically.
 EXTRA_DIST = \
-	ACKNOWLEDGEMENTS \
 	README_DEVELOPERS \
 	README_PACKAGERS \
 	README_MISSING_SYSCALL_OR_IOCTL \

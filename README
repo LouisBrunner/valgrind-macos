@@ -9,52 +9,37 @@ some useful information.
 
 For instructions on how to build/install, see the end of this file.
 
-Valgrind works on most, reasonably recent Linux setups.  If you have
-problems, consult FAQ.txt to see if there are workarounds.
+If you have problems, consult the FAQ to see if there are workarounds.
+
 
 Executive Summary
 ~~~~~~~~~~~~~~~~~
-Valgrind is an award-winning suite of tools for debugging and profiling
-Linux programs. With the tools that come with Valgrind, you can
-automatically detect many memory management and threading bugs, avoiding
-hours of frustrating bug-hunting, making your programs more stable. You can
-also perform detailed profiling, to speed up and reduce memory use of your
-programs.
+Valgrind is an award-winning instrumentation framework for building
+dynamic analysis tools. There are Valgrind tools that can automatically
+detect many memory management and threading bugs, and profile your
+programs in detail. You can also use Valgrind to build new tools.
 
-The Valgrind distribution currently includes five production grade
-tools: a memory error detector, a thread error detector, a cache
-profiler, a call graph profiler and a heap profiler.  Experimental
-tools are also included.  They are distinguished by the "exp-" prefix
-on their names.
+The Valgrind distribution currently includes six production-quality
+tools: a memory error detector, two thread error detectors, a cache and
+branch-prediction profiler, a call-graph generating cache profiler, and
+a heap profiler. It also includes one experimental tool, which detects
+out of bounds reads and writes of stack, global and heap arrays.
 
-To give you an idea of what Valgrind tools do, when a program is run
-under the supervision of Memcheck, the memory error detector tool, all
-reads and writes of memory are checked, and calls to malloc/new/free/delete
-are intercepted.  As a result, Memcheck can detect if your program:
+Valgrind is closely tied to details of the CPU, operating system and to
+a lesser extent, compiler and basic C libraries. This makes it difficult
+to make it portable.  Nonetheless, it is available for the following
+platforms: 
 
-   - Accesses memory it shouldn't (areas not yet allocated, areas that have
-     been freed, areas past the end of heap blocks, inaccessible areas of
-     the stack).
+- x86/Linux
+- AMD64/Linux
+- PPC32/Linux
+- PPC64/Linux
+- x86/MacOSX
+- AMD64/MacOSX
 
-   - Uses uninitialised values in dangerous ways.
-
-   - Leaks memory.
-
-   - Does bad frees of heap blocks (double frees, mismatched frees).
-
-   - Passes overlapping source and destination memory blocks to memcpy() and
-     related functions.
-
-Problems like these can be difficult to find by other means, often
-lying undetected for long periods, then causing occasional,
-difficult-to-diagnose crashes.  When one of these errors occurs, you can
-attach GDB to your program, so you can poke around and see what's going
-on.
-
-Valgrind is closely tied to details of the CPU, operating system and
-to a less extent, compiler and basic C libraries. This makes it
-difficult to make it portable.  Nonetheless, it is available for
-the following platforms: x86/Linux, AMD64/Linux and PPC32/Linux.
+Note that AMD64 is just another name for x86-64, and Valgrind runs fine
+on Intel processors.  Also note that the core of MacOSX is called
+"Darwin" and this name is used sometimes.
 
 Valgrind is licensed under the GNU General Public License, version 2. 
 Read the file COPYING in the source distribution for details.

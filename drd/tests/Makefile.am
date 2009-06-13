@@ -107,7 +107,6 @@ EXTRA_DIST =                                        \
 	pth_cond_race3.stderr.exp                   \
 	pth_cond_race3.vgtest                       \
 	pth_create_chain.stderr.exp                 \
-	pth_create_chain.stderr.exp-ppc             \
 	pth_create_chain.vgtest                     \
 	pth_create_glibc_2_0.stderr.exp             \
 	pth_create_glibc_2_0.vgtest                 \

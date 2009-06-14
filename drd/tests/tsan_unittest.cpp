@@ -83,6 +83,7 @@
 #include <fcntl.h>
 #include <sys/mman.h>  // mmap
 #include <errno.h>
+#include <stdint.h>    // uintptr_t
 #include <stdlib.h>
 #include <dirent.h>
 

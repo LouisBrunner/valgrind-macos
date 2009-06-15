@@ -217,9 +217,9 @@ void CLG_(print_short_jcc)(jCC* jcc)
 		    bb_jmpaddr(jcc->from->bb),
 		    bb_addr(jcc->to->bb),
 		    jcc->call_counter,
-		    jcc->cost ? jcc->cost[CLG_(sets).off_sim_Ir]:0,
-		    jcc->cost ? jcc->cost[CLG_(sets).off_sim_Dr]:0,
-		    jcc->cost ? jcc->cost[CLG_(sets).off_sim_Dw]:0);
+		    jcc->cost ? jcc->cost[CLG_(sets).off_full_Ir]:0,
+		    jcc->cost ? jcc->cost[CLG_(sets).off_full_Dr]:0,
+		    jcc->cost ? jcc->cost[CLG_(sets).off_full_Dw]:0);
     else
 	VG_(printf)("[Skipped JCC]");
 }

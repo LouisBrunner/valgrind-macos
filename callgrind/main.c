@@ -94,223 +94,489 @@ static void CLG_(init_statistics)(Statistics* s)
 }
 
 
-    
-
 /*------------------------------------------------------------*/
-/*--- Cache simulation instrumentation phase               ---*/
+/*--- Instrumentation structures and event queue handling  ---*/
 /*------------------------------------------------------------*/
 
+/* Maintain an ordered list of memory events which are outstanding, in
+   the sense that no IR has yet been generated to do the relevant
+   helper calls.  The BB is scanned top to bottom and memory events
+   are added to the end of the list, merging with the most recent
+   notified event where possible (Dw immediately following Dr and
+   having the same size and EA can be merged).
 
-static Bool loadStoreAddrsMatch(IRExpr* loadAddrExpr, IRExpr* storeAddrExpr)
-{
-  // I'm assuming that for 'modify' instructions, that Vex always makes
-  // the loadAddrExpr and storeAddrExpr be of the same type, ie. both Tmp
-  // expressions, or both Const expressions.
-  CLG_ASSERT(isIRAtom(loadAddrExpr));
-  CLG_ASSERT(isIRAtom(storeAddrExpr));
-  return eqIRAtom(loadAddrExpr, storeAddrExpr);
+   This merging is done so that for architectures which have
+   load-op-store instructions (x86, amd64), the insn is treated as if
+   it makes just one memory reference (a modify), rather than two (a
+   read followed by a write at the same address).
+
+   At various points the list will need to be flushed, that is, IR
+   generated from it.  That must happen before any possible exit from
+   the block (the end, or an IRStmt_Exit).  Flushing also takes place
+   when there is no space to add a new event.
+
+   If we require the simulation statistics to be up to date with
+   respect to possible memory exceptions, then the list would have to
+   be flushed before each memory reference.  That would however lose
+   performance by inhibiting event-merging during flushing.
+
+   Flushing the list consists of walking it start to end and emitting
+   instrumentation IR for each event, in the order in which they
+   appear.  It may be possible to emit a single call for two adjacent
+   events in order to reduce the number of helper function calls made.
+   For example, it could well be profitable to handle two adjacent Ir
+   events with a single helper call.  */
+
+typedef
+   IRExpr
+   IRAtom;
+
+typedef
+   enum {
+      Ev_Ir,  // Instruction read
+      Ev_Dr,  // Data read
+      Ev_Dw,  // Data write
+      Ev_Dm,  // Data modify (read then write)
+   }
+   EventTag;
+
+typedef
+   struct {
+      EventTag   tag;
+      InstrInfo* inode;
+      union {
+	 struct {
+	 } Ir;
+	 struct {
+	    IRAtom* ea;
+	    Int     szB;
+	 } Dr;
+	 struct {
+	    IRAtom* ea;
+	    Int     szB;
+	 } Dw;
+	 struct {
+	    IRAtom* ea;
+	    Int     szB;
+	 } Dm;
+      } Ev;
+   }
+   Event;
+
+static void init_Event ( Event* ev ) {
+   VG_(memset)(ev, 0, sizeof(Event));
 }
 
-static
-EventSet* insert_simcall(IRSB* bbOut, InstrInfo* ii, UInt dataSize,
-			 Bool instrIssued,
-			 IRExpr* loadAddrExpr, IRExpr* storeAddrExpr)
-{
-    HChar*    helperName;
-    void*     helperAddr;
-    Int       argc;
-    EventSet* es;
-    IRExpr   *arg1, *arg2 = 0, *arg3 = 0, **argv;
-    IRDirty* di;
+static IRAtom* get_Event_dea ( Event* ev ) {
+   switch (ev->tag) {
+      case Ev_Dr: return ev->Ev.Dr.ea;
+      case Ev_Dw: return ev->Ev.Dw.ea;
+      case Ev_Dm: return ev->Ev.Dm.ea;
+      default:    tl_assert(0);
+   }
+}
 
-    /* Check type of original instruction regarding memory access,
-     * and collect info to be able to generate fitting helper call
-     */
-    if (!loadAddrExpr && !storeAddrExpr) {
-	// no load/store
-	CLG_ASSERT(0 == dataSize);
-	if (instrIssued) {
-	    helperName = 0;
-	    helperAddr = 0;
-	}
-	else {
-	    helperName = CLG_(cachesim).log_1I0D_name;
-	    helperAddr = CLG_(cachesim).log_1I0D;
-	}
-	argc = 1;
-	es = CLG_(sets).D0;
-	
-    } else if (loadAddrExpr && !storeAddrExpr) {
-	// load
-	CLG_ASSERT( isIRAtom(loadAddrExpr) );
-	if (instrIssued) {
+static Int get_Event_dszB ( Event* ev ) {
+   switch (ev->tag) {
+      case Ev_Dr: return ev->Ev.Dr.szB;
+      case Ev_Dw: return ev->Ev.Dw.szB;
+      case Ev_Dm: return ev->Ev.Dm.szB;
+      default:    tl_assert(0);
+   }
+}
+
+
+/* Up to this many unnotified events are allowed.  Number is
+   arbitrary.  Larger numbers allow more event merging to occur, but
+   potentially induce more spilling due to extending live ranges of
+   address temporaries. */
+#define N_EVENTS 16
+
+
+/* A struct which holds all the running state during instrumentation.
+   Mostly to avoid passing loads of parameters everywhere. */
+typedef struct {
+    /* The current outstanding-memory-event list. */
+    Event events[N_EVENTS];
+    Int   events_used;
+
+    /* The array of InstrInfo's is part of BB struct. */
+    BB* bb;
+
+    /* BB seen before (ie. re-instrumentation) */
+    Bool seen_before;
+
+    /* Number InstrInfo bins 'used' so far. */
+    UInt ii_index;
+
+    // current offset of guest instructions from BB start
+    UInt instr_offset;
+
+    /* The output SB being constructed. */
+    IRSB* sbOut;
+} ClgState;
+
+
+static void showEvent ( Event* ev )
+{
+   switch (ev->tag) {
+      case Ev_Ir:
+	 VG_(printf)("Ir (InstrInfo %p) at +%d\n",
+		     ev->inode, ev->inode->instr_offset);
+	 break;
+      case Ev_Dr:
+	 VG_(printf)("Dr (InstrInfo %p) at +%d %d EA=",
+		     ev->inode, ev->inode->instr_offset, ev->Ev.Dr.szB);
+	 ppIRExpr(ev->Ev.Dr.ea);
+	 VG_(printf)("\n");
+	 break;
+      case Ev_Dw:
+	 VG_(printf)("Dw (InstrInfo %p) at +%d %d EA=",
+		     ev->inode, ev->inode->instr_offset, ev->Ev.Dw.szB);
+	 ppIRExpr(ev->Ev.Dw.ea);
+	 VG_(printf)("\n");
+	 break;
+      case Ev_Dm:
+	 VG_(printf)("Dm (InstrInfo %p) at +%d %d EA=",
+		     ev->inode, ev->inode->instr_offset, ev->Ev.Dm.szB);
+	 ppIRExpr(ev->Ev.Dm.ea);
+	 VG_(printf)("\n");
+	 break;
+      default:
+	 tl_assert(0);
+	 break;
+   }
+}
+
+/* Generate code for all outstanding memory events, and mark the queue
+   empty.  Code is generated into cgs->sbOut, and this activity
+   'consumes' slots in cgs->bb. */
+
+static void flushEvents ( ClgState* clgs )
+{
+   Int        i, regparms, inew;
+   Char*      helperName;
+   void*      helperAddr;
+   IRExpr**   argv;
+   IRExpr*    i_node_expr;
+   IRDirty*   di;
+   Event*     ev;
+   Event*     ev2;
+   Event*     ev3;
+
+   if (!clgs->seen_before) {
+       // extend event sets as needed
+       // available sets: D0 Dr
+       for(i=0; i<clgs->events_used; i++) {
+	   ev  = &clgs->events[i];
+	   switch(ev->tag) {
+	   case Ev_Ir:
+	       // Ir event always is first for a guest instruction
+	       CLG_ASSERT(ev->inode->eventset == 0);
+	       ev->inode->eventset = CLG_(sets).UIr;
+	       break;
+	   case Ev_Dr:
+	       // extend event set by Dr counter
+	       if ((ev->inode->eventset == CLG_(sets).UIrDr)   ||
+		   (ev->inode->eventset == CLG_(sets).UIrDrDw) ||
+		   (ev->inode->eventset == CLG_(sets).UIrDwDr))
+		   break;
+	       if (ev->inode->eventset == CLG_(sets).UIrDw) {
+		   ev->inode->eventset = CLG_(sets).UIrDwDr;
+		   break;
+	       }
+	       CLG_ASSERT(ev->inode->eventset == CLG_(sets).UIr);
+	       ev->inode->eventset = CLG_(sets).UIrDr;
+	       break;
+	   case Ev_Dw:
+	   case Ev_Dm:
+	       // extend event set by Dw counter
+	       if ((ev->inode->eventset == CLG_(sets).UIrDw)   ||
+		   (ev->inode->eventset == CLG_(sets).UIrDwDr) ||
+		   (ev->inode->eventset == CLG_(sets).UIrDrDw))
+		   break;
+	       if (ev->inode->eventset == CLG_(sets).UIrDr) {
+		   ev->inode->eventset = CLG_(sets).UIrDrDw;
+		   break;
+	       }
+	       CLG_ASSERT(ev->inode->eventset == CLG_(sets).UIr);
+	       ev->inode->eventset = CLG_(sets).UIrDw;
+	       break;
+	   default:
+	       tl_assert(0);
+	   }
+       }
+   }
+
+   for(i = 0; i < clgs->events_used; i = inew) {
+
+      helperName = NULL;
+      helperAddr = NULL;
+      argv       = NULL;
+      regparms   = 0;
+
+      /* generate IR to notify event i and possibly the ones
+	 immediately following it. */
+      tl_assert(i >= 0 && i < clgs->events_used);
+
+      ev  = &clgs->events[i];
+      ev2 = ( i < clgs->events_used-1 ? &clgs->events[i+1] : NULL );
+      ev3 = ( i < clgs->events_used-2 ? &clgs->events[i+2] : NULL );
+
+      CLG_DEBUGIF(5) {
+	 VG_(printf)("   flush ");
+	 showEvent( ev );
+      }
+
+      i_node_expr = mkIRExpr_HWord( (HWord)ev->inode );
+
+      /* Decide on helper fn to call and args to pass it, and advance
+	 i appropriately.
+	 Dm events have same effect as Dw events */
+      switch (ev->tag) {
+	 case Ev_Ir:
+	    /* Merge an Ir with a following Dr. */
+	    if (ev2 && ev2->tag == Ev_Dr) {
+	       /* Why is this true?  It's because we're merging an Ir
+		  with a following Dr.  The Ir derives from the
+		  instruction's IMark and the Dr from data
+		  references which follow it.  In short it holds
+		  because each insn starts with an IMark, hence an
+		  Ev_Ir, and so these Dr must pertain to the
+		  immediately preceding Ir.  Same applies to analogous
+		  assertions in the subsequent cases. */
+	       tl_assert(ev2->inode == ev->inode);
+	       helperName = CLG_(cachesim).log_1I1Dr_name;
+	       helperAddr = CLG_(cachesim).log_1I1Dr;
+	       argv = mkIRExprVec_3( i_node_expr,
+				     get_Event_dea(ev2),
+				     mkIRExpr_HWord( get_Event_dszB(ev2) ) );
+	       regparms = 3;
+	       inew = i+2;
+	    }
+	    /* Merge an Ir with a following Dw/Dm. */
+	    else
+	    if (ev2 && (ev2->tag == Ev_Dw || ev2->tag == Ev_Dm)) {
+	       tl_assert(ev2->inode == ev->inode);
+	       helperName = CLG_(cachesim).log_1I1Dw_name;
+	       helperAddr = CLG_(cachesim).log_1I1Dw;
+	       argv = mkIRExprVec_3( i_node_expr,
+				     get_Event_dea(ev2),
+				     mkIRExpr_HWord( get_Event_dszB(ev2) ) );
+	       regparms = 3;
+	       inew = i+2;
+	    }
+	    /* Merge an Ir with two following Irs. */
+	    else
+	    if (ev2 && ev3 && ev2->tag == Ev_Ir && ev3->tag == Ev_Ir) {
+	       helperName = CLG_(cachesim).log_3I0D_name;
+	       helperAddr = CLG_(cachesim).log_3I0D;
+	       argv = mkIRExprVec_3( i_node_expr,
+				     mkIRExpr_HWord( (HWord)ev2->inode ),
+				     mkIRExpr_HWord( (HWord)ev3->inode ) );
+	       regparms = 3;
+	       inew = i+3;
+	    }
+	    /* Merge an Ir with one following Ir. */
+	    else
+	    if (ev2 && ev2->tag == Ev_Ir) {
+	       helperName = CLG_(cachesim).log_2I0D_name;
+	       helperAddr = CLG_(cachesim).log_2I0D;
+	       argv = mkIRExprVec_2( i_node_expr,
+				     mkIRExpr_HWord( (HWord)ev2->inode ) );
+	       regparms = 2;
+	       inew = i+2;
+	    }
+	    /* No merging possible; emit as-is. */
+	    else {
+	       helperName = CLG_(cachesim).log_1I0D_name;
+	       helperAddr = CLG_(cachesim).log_1I0D;
+	       argv = mkIRExprVec_1( i_node_expr );
+	       regparms = 1;
+	       inew = i+1;
+	    }
+	    break;
+	 case Ev_Dr:
+	    /* Data read or modify */
 	    helperName = CLG_(cachesim).log_0I1Dr_name;
 	    helperAddr = CLG_(cachesim).log_0I1Dr;
-	}
-	else {
-	    helperName = CLG_(cachesim).log_1I1Dr_name;
-	    helperAddr = CLG_(cachesim).log_1I1Dr;
-	}
-	argc = 2;
-	arg2 = loadAddrExpr;
-	es = CLG_(sets).D1r;
-
-    } else if (!loadAddrExpr && storeAddrExpr) {
-	// store
-	CLG_ASSERT( isIRAtom(storeAddrExpr) );
-	if (instrIssued) {
+	    argv = mkIRExprVec_3( i_node_expr,
+				  get_Event_dea(ev),
+				  mkIRExpr_HWord( get_Event_dszB(ev) ) );
+	    regparms = 3;
+	    inew = i+1;
+	    break;
+	 case Ev_Dw:
+	 case Ev_Dm:
+	    /* Data write */
 	    helperName = CLG_(cachesim).log_0I1Dw_name;
 	    helperAddr = CLG_(cachesim).log_0I1Dw;
-	}
-	else {
-	    helperName = CLG_(cachesim).log_1I1Dw_name;
-	    helperAddr = CLG_(cachesim).log_1I1Dw;
-	}
-	argc = 2;
-	arg2 = storeAddrExpr;
-	es = CLG_(sets).D1w;
-	
-    } else {
-	CLG_ASSERT( loadAddrExpr && storeAddrExpr );
-	CLG_ASSERT( isIRAtom(loadAddrExpr) );
-	CLG_ASSERT( isIRAtom(storeAddrExpr) );
-	
-	if ( loadStoreAddrsMatch(loadAddrExpr, storeAddrExpr) ) {
-	    /* modify: suppose write access, as this is
-	     * more resource consuming (as in callgrind for VG2)
-	     * Cachegrind does a read here (!)
-	     * DISCUSS: Best way depends on simulation model?
-	     */
-	    if (instrIssued) {
-		helperName = CLG_(cachesim).log_0I1Dw_name;
-		helperAddr = CLG_(cachesim).log_0I1Dw;
-	    }
-	    else {
-		helperName = CLG_(cachesim).log_1I1Dw_name;
-		helperAddr = CLG_(cachesim).log_1I1Dw;
-	    }
-	    argc = 2;
-	    arg2 = storeAddrExpr;
-	    es = CLG_(sets).D1w;
-	    
-	} else {
-	    // load/store
-	    if (instrIssued) {
-		helperName = CLG_(cachesim).log_0I2D_name;
-		helperAddr = CLG_(cachesim).log_0I2D;
-	    }
-	    else {
-		helperName = CLG_(cachesim).log_1I2D_name;
-		helperAddr = CLG_(cachesim).log_1I2D;
-	    }
-	    argc = 3;
-	    arg2 = loadAddrExpr;
-	    arg3 = storeAddrExpr;
-	    es = CLG_(sets).D2;
-	}
-    }
+	    argv = mkIRExprVec_3( i_node_expr,
+				  get_Event_dea(ev),
+				  mkIRExpr_HWord( get_Event_dszB(ev) ) );
+	    regparms = 3;
+	    inew = i+1;
+	    break;
+	 default:
+	    tl_assert(0);
+      }
 
-    /* helper could be unset depending on the simulator used */
-    if (helperAddr == 0) return 0;
-    
-    /* Setup 1st arg: InstrInfo */
-    arg1 = mkIRExpr_HWord( (HWord)ii );
-    
-    // Add call to the instrumentation function
-    if      (argc == 1)
-	argv = mkIRExprVec_1(arg1);
-    else if (argc == 2)
-	argv = mkIRExprVec_2(arg1, arg2);
-    else if (argc == 3)
-	argv = mkIRExprVec_3(arg1, arg2, arg3);
-    else
-	VG_(tool_panic)("argc... not 1 or 2 or 3?");
-    
-    di = unsafeIRDirty_0_N( argc, helperName, 
-                                  VG_(fnptr_to_fnentry)( helperAddr ), argv);
-    addStmtToIRSB( bbOut, IRStmt_Dirty(di) );
+      CLG_DEBUGIF(5) {
+	  if (inew > i+1) {
+	      VG_(printf)("   merge ");
+	      showEvent( ev2 );
+	  }
+	  if (inew > i+2) {
+	      VG_(printf)("   merge ");
+	      showEvent( ev3 );
+	  }
+	  if (helperAddr)
+	      VG_(printf)("   call  %s (%p)\n",
+			  helperName, helperAddr);
+      }
 
-    return es;
-}
+      /* helper could be unset depending on the simulator used */
+      if (helperAddr == 0) continue;
 
-
-/* Instrumentation before a conditional jump or at the end
- * of each original instruction.
- * Fills the InstrInfo struct if not seen before
- */
-static
-void endOfInstr(IRSB* bbOut, InstrInfo* ii, Bool bb_seen_before,
-		UInt instr_offset, UInt instrLen, UInt dataSize, 
-		UInt* cost_offset, Bool instrIssued,
-		IRExpr* loadAddrExpr, IRExpr* storeAddrExpr)
-{
-   IRType    wordTy;
-   EventSet* es;
-
-   // Stay sane ...
-   CLG_ASSERT(sizeof(HWord) == sizeof(void*));
-   if (sizeof(HWord) == 4) {
-      wordTy = Ity_I32;
-   } else
-   if (sizeof(HWord) == 8) {
-      wordTy = Ity_I64;
-   } else {
-      VG_(tool_panic)("endOfInstr: strange word size");
+      /* Add the helper. */
+      tl_assert(helperName);
+      tl_assert(helperAddr);
+      tl_assert(argv);
+      di = unsafeIRDirty_0_N( regparms,
+			      helperName, VG_(fnptr_to_fnentry)( helperAddr ),
+			      argv );
+      addStmtToIRSB( clgs->sbOut, IRStmt_Dirty(di) );
    }
 
-   if (loadAddrExpr) 
-      CLG_ASSERT(wordTy == typeOfIRExpr(bbOut->tyenv, loadAddrExpr));
-   if (storeAddrExpr) 
-      CLG_ASSERT(wordTy == typeOfIRExpr(bbOut->tyenv, storeAddrExpr));
+   clgs->events_used = 0;
+}
 
-   // Large (eg. 28B, 108B, 512B on x86) data-sized instructions will be
-   // done inaccurately, but they're very rare and this avoids errors from
-   // hitting more than two cache lines in the simulation.
-   if (dataSize > MIN_LINE_SIZE) dataSize = MIN_LINE_SIZE;
+static void addEvent_Ir ( ClgState* clgs, InstrInfo* inode )
+{
+   Event* evt;
+   tl_assert(clgs->seen_before || (inode->eventset == 0));
+   if (!CLG_(clo).simulate_cache) return;
 
-   /* returns 0 if simulator needs no instrumentation */
-   es = insert_simcall(bbOut, ii, dataSize, instrIssued,
-		       loadAddrExpr, storeAddrExpr);
+   if (clgs->events_used == N_EVENTS)
+      flushEvents(clgs);
+   tl_assert(clgs->events_used >= 0 && clgs->events_used < N_EVENTS);
+   evt = &clgs->events[clgs->events_used];
+   init_Event(evt);
+   evt->tag      = Ev_Ir;
+   evt->inode    = inode;
+   clgs->events_used++;
+}
 
-   CLG_DEBUG(5, "  Instr +%2d (Size %d, DSize %d): ESet %s (Size %d)\n",
-	     instr_offset, instrLen, dataSize, 
-	     es ? es->name : (Char*)"(no instrumentation)",
-	     es ? es->size : 0);
+static
+void addEvent_Dr ( ClgState* clgs, InstrInfo* inode, Int datasize, IRAtom* ea )
+{
+   Event* evt;
+   tl_assert(isIRAtom(ea));
+   tl_assert(datasize >= 1 && datasize <= MIN_LINE_SIZE);
+   if (!CLG_(clo).simulate_cache) return;
 
-   if (bb_seen_before) {
-       CLG_DEBUG(5, "   before: Instr +%2d (Size %d, DSize %d)\n",
-		 ii->instr_offset, ii->instr_size, ii->data_size);
+   if (clgs->events_used == N_EVENTS)
+      flushEvents(clgs);
+   tl_assert(clgs->events_used >= 0 && clgs->events_used < N_EVENTS);
+   evt = &clgs->events[clgs->events_used];
+   init_Event(evt);
+   evt->tag       = Ev_Dr;
+   evt->inode     = inode;
+   evt->Ev.Dr.szB = datasize;
+   evt->Ev.Dr.ea  = ea;
+   clgs->events_used++;
+}
 
-       CLG_ASSERT(ii->instr_offset == instr_offset);
-       CLG_ASSERT(ii->instr_size == instrLen);
-       CLG_ASSERT(ii->cost_offset == *cost_offset);
-       CLG_ASSERT(ii->eventset == es);
+static
+void addEvent_Dw ( ClgState* clgs, InstrInfo* inode, Int datasize, IRAtom* ea )
+{
+   Event* lastEvt;
+   Event* evt;
+   tl_assert(isIRAtom(ea));
+   tl_assert(datasize >= 1 && datasize <= MIN_LINE_SIZE);
+   if (!CLG_(clo).simulate_cache) return;
 
-       /* Only check size if data size >0.
-	* This is needed: e.g. for rep or cmov x86 instructions, the same InstrInfo
-	* is used both for 2 simulator calls: for the pure instruction fetch and
-        * separately for an memory access (which may not happen depending on flags).
-	* If checked always, this triggers an assertion failure on retranslation.
-	*/
-       if (dataSize>0) CLG_ASSERT(ii->data_size == dataSize);
+   /* Is it possible to merge this write with the preceding read? */
+   lastEvt = &clgs->events[clgs->events_used-1];
+   if (clgs->events_used > 0
+       && lastEvt->tag       == Ev_Dr
+       && lastEvt->Ev.Dr.szB == datasize
+       && lastEvt->inode     == inode
+       && eqIRAtom(lastEvt->Ev.Dr.ea, ea))
+   {
+      lastEvt->tag   = Ev_Dm;
+      return;
+   }
 
+   /* No.  Add as normal. */
+   if (clgs->events_used == N_EVENTS)
+      flushEvents(clgs);
+   tl_assert(clgs->events_used >= 0 && clgs->events_used < N_EVENTS);
+   evt = &clgs->events[clgs->events_used];
+   init_Event(evt);
+   evt->tag       = Ev_Dw;
+   evt->inode     = inode;
+   evt->Ev.Dw.szB = datasize;
+   evt->Ev.Dw.ea  = ea;
+   clgs->events_used++;
+}
+
+/* Initialise or check (if already seen before) an InstrInfo for next insn.
+   We only can set instr_offset/instr_size here. The required event set and
+   resulting cost offset depend on events (Ir/Dr/Dw/Dm) in guest
+   instructions. The event set is extended as required on flush of the event
+   queue (when Dm events were determined), cost offsets are determined at
+   end of BB instrumentation. */
+static
+InstrInfo* next_InstrInfo ( ClgState* clgs, UInt instr_size )
+{
+   InstrInfo* ii;
+   tl_assert(clgs->ii_index >= 0);
+   tl_assert(clgs->ii_index < clgs->bb->instr_count);
+   ii = &clgs->bb->instr[ clgs->ii_index ];
+
+   if (clgs->seen_before) {
+       CLG_ASSERT(ii->instr_offset == clgs->instr_offset);
+       CLG_ASSERT(ii->instr_size == instr_size);
    }
    else {
-       ii->instr_offset = instr_offset;
-       ii->instr_size = instrLen;
-       ii->cost_offset = *cost_offset;
-       ii->eventset = es;
-       
-       /* data size only relevant if >0 */
-       if (dataSize > 0) ii->data_size = dataSize;
-
-
-       CLG_(stat).distinct_instrs++;
+       ii->instr_offset = clgs->instr_offset;
+       ii->instr_size = instr_size;
+       ii->cost_offset = 0;
+       ii->eventset = 0;
    }
 
-   *cost_offset += es ? es->size : 0;
+   clgs->ii_index++;
+   clgs->instr_offset += instr_size;
+   CLG_(stat).distinct_instrs++;
 
+   return ii;
 }
+
+// return total number of cost values needed for this BB
+static
+UInt update_cost_offsets( ClgState* clgs )
+{
+    Int i;
+    InstrInfo* ii;
+    UInt cost_offset = 0;
+
+    CLG_ASSERT(clgs->bb->instr_count == clgs->ii_index);
+    for(i=0; i<clgs->ii_index; i++) {
+	ii = &clgs->bb->instr[i];
+	if (clgs->seen_before) {
+	    CLG_ASSERT(ii->cost_offset == cost_offset);
+	} else
+	    ii->cost_offset = cost_offset;
+	cost_offset += ii->eventset ? ii->eventset->size : 0;
+    }
+
+    return cost_offset;
+}
+
+/*------------------------------------------------------------*/
+/*--- Instrumentation                                      ---*/
+/*------------------------------------------------------------*/
 
 #if defined(VG_BIGENDIAN)
 # define CLGEndness Iend_BE
@@ -344,7 +610,7 @@ Addr IRConst2Addr(IRConst* con)
  *
  * Called from CLG_(get_bb)
  */
-void CLG_(collectBlockInfo)(IRSB* bbIn,
+void CLG_(collectBlockInfo)(IRSB* sbIn,
 			    /*INOUT*/ UInt* instrs,
 			    /*INOUT*/ UInt* cjmps,
 			    /*INOUT*/ Bool* cjmp_inverted)
@@ -360,10 +626,10 @@ void CLG_(collectBlockInfo)(IRSB* bbIn,
     // nothing to do with client code
     Bool inPreamble = True;
 
-    if (!bbIn) return;
+    if (!sbIn) return;
 
-    for (i = 0; i < bbIn->stmts_used; i++) {
-	  st = bbIn->stmts[i];
+    for (i = 0; i < sbIn->stmts_used; i++) {
+	  st = sbIn->stmts[i];
 	  if (Ist_IMark == st->tag) {
 	      inPreamble = False;
 
@@ -377,7 +643,7 @@ void CLG_(collectBlockInfo)(IRSB* bbIn,
 	  if (Ist_Exit == st->tag) {
 	      jumpDst = IRConst2Addr(st->Ist.Exit.dst);
 	      toNextInstr =  (jumpDst == instrAddr + instrLen);
-	      
+
 	      (*cjmps)++;
 	  }
     }
@@ -386,98 +652,6 @@ void CLG_(collectBlockInfo)(IRSB* bbIn,
      * (= first instruction of next BB in memory), this is a inverted by VEX.
      */
     *cjmp_inverted = toNextInstr;
-}
-
-static
-void collectStatementInfo(IRTypeEnv* tyenv, IRStmt* st,
-			  Addr* instrAddr, UInt* instrLen,
-			  IRExpr** loadAddrExpr, IRExpr** storeAddrExpr,
-			  UInt* dataSize)
-{
-   CLG_ASSERT(isFlatIRStmt(st));
-
-   switch (st->tag) {
-   case Ist_NoOp:
-      break;
-
-   case Ist_AbiHint:
-      /* ABI hints aren't interesting.  Ignore. */
-      break;
-
-   case Ist_IMark:
-      /* st->Ist.IMark.addr is a 64-bit int.  ULong_to_Ptr casts this
-         to the host's native pointer type; if that is 32 bits then it
-         discards the upper 32 bits.  If we are cachegrinding on a
-         32-bit host then we are also ensured that the guest word size
-         is 32 bits, due to the assertion in cg_instrument that the
-         host and guest word sizes must be the same.  Hence
-         st->Ist.IMark.addr will have been derived from a 32-bit guest
-         code address and truncation of it is safe.  I believe this
-         assignment should be correct for both 32- and 64-bit
-         machines. */
-      *instrAddr = (Addr)ULong_to_Ptr(st->Ist.IMark.addr);
-      *instrLen =        st->Ist.IMark.len;
-      break;
-
-   case Ist_WrTmp: {
-      IRExpr* data = st->Ist.WrTmp.data;
-      if (data->tag == Iex_Load) {
-         IRExpr* aexpr = data->Iex.Load.addr;
-         CLG_ASSERT( isIRAtom(aexpr) );
-         // Note also, endianness info is ignored.  I guess that's not
-         // interesting.
-         // XXX: repe cmpsb does two loads... the first one is ignored here!
-         //tl_assert( NULL == *loadAddrExpr );          // XXX: ???
-         *loadAddrExpr = aexpr;
-         *dataSize = sizeofIRType(data->Iex.Load.ty);
-      }
-      break;
-   }
-      
-   case Ist_Store: {
-      IRExpr* data  = st->Ist.Store.data;
-      IRExpr* aexpr = st->Ist.Store.addr;
-      CLG_ASSERT( isIRAtom(aexpr) );
-      if ( NULL == *storeAddrExpr ) {
-          /* this is a kludge: ignore all except the first store from
-             an instruction. */
-          *storeAddrExpr = aexpr;
-          *dataSize = sizeofIRType(typeOfIRExpr(tyenv, data));
-      }
-      break;
-   }
-   
-   case Ist_Dirty: {
-      IRDirty* d = st->Ist.Dirty.details;
-      if (d->mFx != Ifx_None) {
-         /* This dirty helper accesses memory.  Collect the
-            details. */
-         CLG_ASSERT(d->mAddr != NULL);
-         CLG_ASSERT(d->mSize != 0);
-         *dataSize = d->mSize;
-         if (d->mFx == Ifx_Read || d->mFx == Ifx_Modify)
-            *loadAddrExpr = d->mAddr;
-         if (d->mFx == Ifx_Write || d->mFx == Ifx_Modify)
-            *storeAddrExpr = d->mAddr;
-      } else {
-         CLG_ASSERT(d->mAddr == NULL);
-         CLG_ASSERT(d->mSize == 0);
-      }
-      break;
-   }
-
-   case Ist_Put:
-   case Ist_PutI:
-   case Ist_MBE:
-   case Ist_Exit:
-       break;
-
-   default:
-      VG_(printf)("\n");
-      ppIRStmt(st);
-      VG_(printf)("\n");
-      VG_(tool_panic)("Callgrind: unhandled IRStmt");
-   }
 }
 
 static
@@ -491,29 +665,56 @@ void addConstMemStoreStmt( IRSB* bbOut, UWord addr, UInt val, IRType hWordTy)
 				IRExpr_Const(IRConst_U32(val)) ));
 }   
 
+
+/* add helper call to setup_bbcc, with pointer to BB struct as argument
+ *
+ * precondition for setup_bbcc:
+ * - jmps_passed has number of cond.jumps passed in last executed BB
+ * - current_bbcc has a pointer to the BBCC of the last executed BB
+ *   Thus, if bbcc_jmpkind is != -1 (JmpNone),
+ *     current_bbcc->bb->jmp_addr
+ *   gives the address of the jump source.
+ *
+ * the setup does 2 things:
+ * - trace call:
+ *   * Unwind own call stack, i.e sync our ESP with real ESP
+ *     This is for ESP manipulation (longjmps, C++ exec handling) and RET
+ *   * For CALLs or JMPs crossing objects, record call arg +
+ *     push are on own call stack
+ *
+ * - prepare for cache log functions:
+ *   set current_bbcc to BBCC that gets the costs for this BB execution
+ *   attached
+ */
+static
+void addBBSetupCall(ClgState* clgs)
+{
+   IRDirty* di;
+   IRExpr  *arg1, **argv;
+
+   arg1 = mkIRExpr_HWord( (HWord)clgs->bb );
+   argv = mkIRExprVec_1(arg1);
+   di = unsafeIRDirty_0_N( 1, "setup_bbcc",
+			      VG_(fnptr_to_fnentry)( & CLG_(setup_bbcc) ),
+			      argv);
+   addStmtToIRSB( clgs->sbOut, IRStmt_Dirty(di) );
+}
+
+
 static
 IRSB* CLG_(instrument)( VgCallbackClosure* closure,
-			IRSB* bbIn,
+			IRSB* sbIn,
 			VexGuestLayout* layout,
 			VexGuestExtents* vge,
 			IRType gWordTy, IRType hWordTy )
 {
-   Int      i;
-   IRSB*    bbOut;
-   IRStmt*  st, *stnext;
-   Addr     instrAddr, origAddr;
-   UInt     instrLen = 0, dataSize;
-   UInt     instrCount, costOffset;
-   IRExpr  *loadAddrExpr, *storeAddrExpr;
+   Int      i, isize;
+   IRStmt*  st;
+   Addr     origAddr;
+   InstrInfo* curr_inode = NULL;
+   ClgState clgs;
+   UInt     cJumps = 0;
 
-   BB*         bb;
-
-   IRDirty* di;
-   IRExpr  *arg1, **argv;
-
-   Bool        bb_seen_before     = False;
-   UInt        cJumps = 0, cJumpsCorrected;
-   Bool        beforeIBoundary, instrIssued;
 
    if (gWordTy != hWordTy) {
       /* We don't currently support this case. */
@@ -524,173 +725,206 @@ IRSB* CLG_(instrument)( VgCallbackClosure* closure,
    if (! CLG_(instrument_state)) {
        CLG_DEBUG(5, "instrument(BB %#lx) [Instrumentation OFF]\n",
 		 (Addr)closure->readdr);
-       return bbIn;
+       return sbIn;
    }
 
    CLG_DEBUG(3, "+ instrument(BB %#lx)\n", (Addr)closure->readdr);
 
    /* Set up SB for instrumented IR */
-   bbOut = deepCopyIRSBExceptStmts(bbIn);
+   clgs.sbOut = deepCopyIRSBExceptStmts(sbIn);
 
    // Copy verbatim any IR preamble preceding the first IMark
    i = 0;
-   while (i < bbIn->stmts_used && bbIn->stmts[i]->tag != Ist_IMark) {
-      addStmtToIRSB( bbOut, bbIn->stmts[i] );
+   while (i < sbIn->stmts_used && sbIn->stmts[i]->tag != Ist_IMark) {
+      addStmtToIRSB( clgs.sbOut, sbIn->stmts[i] );
       i++;
    }
 
    // Get the first statement, and origAddr from it
-   CLG_ASSERT(bbIn->stmts_used > 0);
-   st = bbIn->stmts[i];
+   CLG_ASSERT(sbIn->stmts_used >0);
+   CLG_ASSERT(i < sbIn->stmts_used);
+   st = sbIn->stmts[i];
    CLG_ASSERT(Ist_IMark == st->tag);
-   instrAddr = origAddr = (Addr)st->Ist.IMark.addr;
+
+   origAddr = (Addr)st->Ist.IMark.addr;
    CLG_ASSERT(origAddr == st->Ist.IMark.addr);  // XXX: check no overflow
 
-   /* Get BB (creating if necessary).
+   /* Get BB struct (creating if necessary).
     * JS: The hash table is keyed with orig_addr_noredir -- important!
     * JW: Why? If it is because of different chasing of the redirection,
     *     this is not needed, as chasing is switched off in callgrind
     */
-   bb = CLG_(get_bb)(origAddr, bbIn, &bb_seen_before);
-   //bb = CLG_(get_bb)(orig_addr_noredir, bbIn, &bb_seen_before);
+   clgs.bb = CLG_(get_bb)(origAddr, sbIn, &(clgs.seen_before));
 
-   /* 
-    * Precondition:
-    * - jmps_passed has number of cond.jumps passed in last executed BB
-    * - current_bbcc has a pointer to the BBCC of the last executed BB
-    *   Thus, if bbcc_jmpkind is != -1 (JmpNone),
-    *     current_bbcc->bb->jmp_addr
-    *   gives the address of the jump source.
-    *   
-    * The BBCC setup does 2 things:
-    * - trace call:
-    *   * Unwind own call stack, i.e sync our ESP with real ESP
-    *     This is for ESP manipulation (longjmps, C++ exec handling) and RET
-    *   * For CALLs or JMPs crossing objects, record call arg +
-    *     push are on own call stack
-    *
-    * - prepare for cache log functions:
-    *   Set current_bbcc to BBCC that gets the costs for this BB execution
-    *   attached
-    */
+   addBBSetupCall(&clgs);
 
-   // helper call to setup_bbcc, with pointer to basic block info struct as argument
-   arg1 = mkIRExpr_HWord( (HWord)bb );
-   argv = mkIRExprVec_1(arg1);
-   di = unsafeIRDirty_0_N( 1, "setup_bbcc", 
-                              VG_(fnptr_to_fnentry)( & CLG_(setup_bbcc) ), 
-                              argv);
-   addStmtToIRSB( bbOut, IRStmt_Dirty(di) );
+   // Set up running state
+   clgs.events_used = 0;
+   clgs.ii_index = 0;
+   clgs.instr_offset = 0;
 
-   instrCount = 0;
-   costOffset = 0;
+   for (/*use current i*/; i < sbIn->stmts_used; i++) {
 
-   // loop for each host instruction (starting from 'i')
-   do {
+      st = sbIn->stmts[i];
+      CLG_ASSERT(isFlatIRStmt(st));
 
-      // We should be at an IMark statement
-      CLG_ASSERT(Ist_IMark == st->tag);
+      switch (st->tag) {
+	 case Ist_NoOp:
+	 case Ist_AbiHint:
+	 case Ist_Put:
+	 case Ist_PutI:
+	 case Ist_MBE:
+	    break;
 
-      // Reset stuff for this original instruction
-      loadAddrExpr = storeAddrExpr = NULL;
-      instrIssued = False;
-      dataSize = 0;
+	 case Ist_IMark: {
+	    CLG_ASSERT(clgs.instr_offset == (Addr)st->Ist.IMark.addr - origAddr);
+	    isize = st->Ist.IMark.len;
+	    // If Vex fails to decode an instruction, the size will be zero.
+	    // Pretend otherwise.
+	    if (isize == 0) isize = VG_MIN_INSTR_SZB;
 
-      // Process all the statements for this original instruction (ie. until
-      // the next IMark statement, or the end of the block)
-      do {
-	  i++;
-	  stnext = ( i < bbIn->stmts_used ? bbIn->stmts[i] : NULL );
-	  beforeIBoundary = !stnext || (Ist_IMark == stnext->tag);
-	  collectStatementInfo(bbIn->tyenv, st, &instrAddr, &instrLen,
-			       &loadAddrExpr, &storeAddrExpr, &dataSize);
+	    // Sanity-check size.
+	    tl_assert( (VG_MIN_INSTR_SZB <= isize && isize <= VG_MAX_INSTR_SZB)
+		     || VG_CLREQ_SZB == isize );
 
-	  // instrument a simulator call before conditional jumps
-	  if (st->tag == Ist_Exit) {
-	      // Nb: instrLen will be zero if Vex failed to decode it.
-	      // Also Client requests can appear to be very large (eg. 18
-	      // bytes on x86) because they are really multiple instructions.
-	      CLG_ASSERT( 0 == instrLen ||
-			  bbIn->jumpkind == Ijk_ClientReq ||
-			  (instrLen >= VG_MIN_INSTR_SZB && 
-			   instrLen <= VG_MAX_INSTR_SZB) );
+	    // Init the inode, record it as the current one.
+	    // Subsequent Dr/Dw/Dm events from the same instruction will
+	    // also use it.
+	    curr_inode = next_InstrInfo (&clgs, isize);
 
-              // Add instrumentation before this statement
-	      endOfInstr(bbOut, &(bb->instr[instrCount]), bb_seen_before,
-			 instrAddr - origAddr, instrLen, dataSize, &costOffset,
-			 instrIssued, loadAddrExpr, storeAddrExpr);
+	    addEvent_Ir( &clgs, curr_inode );
+	    break;
+	 }
 
-	      // prepare for a possible further simcall in same host instr
-	      loadAddrExpr = storeAddrExpr = NULL;
-	      instrIssued = True;
+	 case Ist_WrTmp: {
+	    IRExpr* data = st->Ist.WrTmp.data;
+	    if (data->tag == Iex_Load) {
+	       IRExpr* aexpr = data->Iex.Load.addr;
+	       // Note also, endianness info is ignored.  I guess
+	       // that's not interesting.
+	       addEvent_Dr( &clgs, curr_inode,
+			    sizeofIRType(data->Iex.Load.ty), aexpr );
+	    }
+	    break;
+	 }
 
-	      if (!bb_seen_before) {
-		  bb->jmp[cJumps].instr = instrCount;
-		  bb->jmp[cJumps].skip = False;
-	      }
-	      
-	      /* Update global variable jmps_passed (this is before the jump!)
-	       * A correction is needed if VEX inverted the last jump condition
-	       */
-	      cJumpsCorrected = cJumps;
-	      if ((cJumps+1 == bb->cjmp_count) && bb->cjmp_inverted) cJumpsCorrected++;
-	      addConstMemStoreStmt( bbOut, (UWord) &CLG_(current_state).jmps_passed,
-				    cJumpsCorrected, hWordTy);
+	 case Ist_Store: {
+	    IRExpr* data  = st->Ist.Store.data;
+	    IRExpr* aexpr = st->Ist.Store.addr;
+	    addEvent_Dw( &clgs, curr_inode,
+			 sizeofIRType(typeOfIRExpr(sbIn->tyenv, data)), aexpr );
+	    break;
+	 }
 
-	      cJumps++;
-	  }
+	 case Ist_Dirty: {
+	    Int      dataSize;
+	    IRDirty* d = st->Ist.Dirty.details;
+	    if (d->mFx != Ifx_None) {
+	       /* This dirty helper accesses memory.  Collect the details. */
+	       tl_assert(d->mAddr != NULL);
+	       tl_assert(d->mSize != 0);
+	       dataSize = d->mSize;
+	       // Large (eg. 28B, 108B, 512B on x86) data-sized
+	       // instructions will be done inaccurately, but they're
+	       // very rare and this avoids errors from hitting more
+	       // than two cache lines in the simulation.
+	       if (dataSize > MIN_LINE_SIZE)
+		  dataSize = MIN_LINE_SIZE;
+	       if (d->mFx == Ifx_Read || d->mFx == Ifx_Modify)
+		  addEvent_Dr( &clgs, curr_inode, dataSize, d->mAddr );
+	       if (d->mFx == Ifx_Write || d->mFx == Ifx_Modify)
+		  addEvent_Dw( &clgs, curr_inode, dataSize, d->mAddr );
+	    } else {
+	       tl_assert(d->mAddr == NULL);
+	       tl_assert(d->mSize == 0);
+	    }
+	    break;
+	 }
 
-	  addStmtToIRSB( bbOut, st );
-	  st = stnext;
-      } 
-      while (!beforeIBoundary);
+	 case Ist_Exit: {
+	    UInt jmps_passed;
 
-      // Add instrumentation for this original instruction.
-      if (!instrIssued || (loadAddrExpr != 0) || (storeAddrExpr !=0))
-	  endOfInstr(bbOut, &(bb->instr[instrCount]), bb_seen_before,
-		     instrAddr - origAddr, instrLen, dataSize, &costOffset,
-		     instrIssued, loadAddrExpr, storeAddrExpr);
+	    /* We may never reach the next statement, so need to flush
+	       all outstanding transactions now. */
+	    flushEvents( &clgs );
 
-      instrCount++;
+	    CLG_ASSERT(clgs.ii_index>0);
+	    if (!clgs.seen_before) {
+		clgs.bb->jmp[cJumps].instr = clgs.ii_index-1;
+		clgs.bb->jmp[cJumps].skip = False;
+	    }
+
+	    /* Update global variable jmps_passed before the jump
+	     * A correction is needed if VEX inverted the last jump condition
+	    */
+	    jmps_passed = cJumps;
+	    if ((cJumps+1 == clgs.bb->cjmp_count) && clgs.bb->cjmp_inverted)
+		jmps_passed++;
+	    addConstMemStoreStmt( clgs.sbOut,
+				  (UWord) &CLG_(current_state).jmps_passed,
+				  jmps_passed, hWordTy);
+	    cJumps++;
+
+	    break;
+	 }
+
+	 default:
+	    tl_assert(0);
+	    break;
+      }
+
+      /* Copy the original statement */
+      addStmtToIRSB( clgs.sbOut, st );
+
+      CLG_DEBUGIF(5) {
+	 VG_(printf)("   pass  ");
+	 ppIRStmt(st);
+	 VG_(printf)("\n");
+      }
    }
-   while (st);
 
-   /* Always update global variable jmps_passed (at end of BB)
+   /* At the end of the bb.  Flush outstandings. */
+   flushEvents( &clgs );
+
+   /* Always update global variable jmps_passed at end of bb.
     * A correction is needed if VEX inverted the last jump condition
     */
-   cJumpsCorrected = cJumps;
-   if (bb->cjmp_inverted) cJumpsCorrected--;
-   addConstMemStoreStmt( bbOut, (UWord) &CLG_(current_state).jmps_passed,
-			 cJumpsCorrected, hWordTy);
+   {
+      UInt jmps_passed = cJumps;
+      if (clgs.bb->cjmp_inverted) jmps_passed--;
+      addConstMemStoreStmt( clgs.sbOut,
+			    (UWord) &CLG_(current_state).jmps_passed,
+			    jmps_passed, hWordTy);
+   }
+   CLG_ASSERT(clgs.bb->cjmp_count == cJumps);
+   CLG_ASSERT(clgs.bb->instr_count = clgs.ii_index);
 
    /* This stores the instr of the call/ret at BB end */
-   bb->jmp[cJumps].instr = instrCount-1;
+   clgs.bb->jmp[cJumps].instr = clgs.ii_index-1;
 
-   CLG_ASSERT(bb->cjmp_count == cJumps);
-   CLG_ASSERT(bb->instr_count == instrCount);
-
-   instrAddr += instrLen;
-   if (bb_seen_before) {
-       CLG_ASSERT(bb->instr_len == instrAddr - origAddr);
-       CLG_ASSERT(bb->cost_count == costOffset);
-       CLG_ASSERT(bb->jmpkind == bbIn->jumpkind);
+   if (clgs.seen_before) {
+       CLG_ASSERT(clgs.bb->cost_count == update_cost_offsets(&clgs));
+       CLG_ASSERT(clgs.bb->instr_len = clgs.instr_offset);
+       CLG_ASSERT(clgs.bb->jmpkind == sbIn->jumpkind);
    }
    else {
-       bb->instr_len = instrAddr - origAddr;
-       bb->cost_count = costOffset;
-       bb->jmpkind = bbIn->jumpkind;
+       clgs.bb->cost_count = update_cost_offsets(&clgs);
+       clgs.bb->instr_len = clgs.instr_offset;
+       clgs.bb->jmpkind = sbIn->jumpkind;
    }
-   
+
    CLG_DEBUG(3, "- instrument(BB %#lx): byteLen %u, CJumps %u, CostLen %u\n",
-	     origAddr, bb->instr_len, bb->cjmp_count, bb->cost_count);
+	     origAddr, clgs.bb->instr_len,
+	     clgs.bb->cjmp_count, clgs.bb->cost_count);
    if (cJumps>0) {
        CLG_DEBUG(3, "                     [ ");
        for (i=0;i<cJumps;i++)
-	   CLG_DEBUG(3, "%d ", bb->jmp[i].instr);
-       CLG_DEBUG(3, "], last inverted: %s \n", bb->cjmp_inverted ? "yes":"no");
+	   CLG_DEBUG(3, "%d ", clgs.bb->jmp[i].instr);
+       CLG_DEBUG(3, "], last inverted: %s \n",
+		 clgs.bb->cjmp_inverted ? "yes":"no");
    }
 
-  return bbOut;
+  return clgs.sbOut;
 }
 
 /*--------------------------------------------------------------------*/

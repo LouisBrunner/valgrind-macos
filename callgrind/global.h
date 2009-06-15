@@ -270,7 +270,6 @@ typedef struct _InstrInfo InstrInfo;
 struct _InstrInfo {
   UInt instr_offset;
   UInt instr_size;
-  UInt data_size;
   UInt cost_offset;
   EventSet* eventset;
 };
@@ -657,19 +656,19 @@ struct cachesim_if
     void (*finish)(void);
     
     void (*log_1I0D)(InstrInfo*) VG_REGPARM(1);
+    void (*log_2I0D)(InstrInfo*, InstrInfo*) VG_REGPARM(2);
+    void (*log_3I0D)(InstrInfo*, InstrInfo*, InstrInfo*) VG_REGPARM(3);
 
-    void (*log_1I1Dr)(InstrInfo*, Addr) VG_REGPARM(2);
-    void (*log_1I1Dw)(InstrInfo*, Addr) VG_REGPARM(2);
-    void (*log_1I2D)(InstrInfo*, Addr, Addr) VG_REGPARM(3);
+    void (*log_1I1Dr)(InstrInfo*, Addr, Word) VG_REGPARM(3);
+    void (*log_1I1Dw)(InstrInfo*, Addr, Word) VG_REGPARM(3);
 
-    void (*log_0I1Dr)(InstrInfo*, Addr) VG_REGPARM(2);
-    void (*log_0I1Dw)(InstrInfo*, Addr) VG_REGPARM(2);
-    void (*log_0I2D)(InstrInfo*, Addr, Addr) VG_REGPARM(3);
+    void (*log_0I1Dr)(InstrInfo*, Addr, Word) VG_REGPARM(3);
+    void (*log_0I1Dw)(InstrInfo*, Addr, Word) VG_REGPARM(3);
 
     // function names of helpers (for debugging generated code)
-    Char *log_1I0D_name;
-    Char *log_1I1Dr_name, *log_1I1Dw_name, *log_1I2D_name;
-    Char *log_0I1Dr_name, *log_0I1Dw_name, *log_0I2D_name;
+    Char *log_1I0D_name, *log_2I0D_name, *log_3I0D_name;
+    Char *log_1I1Dr_name, *log_1I1Dw_name;
+    Char *log_0I1Dr_name, *log_0I1Dw_name;
 };
 
 
@@ -687,15 +686,13 @@ void CLG_(print_debug_usage)(void);
 
 /* from sim.c */
 struct event_sets {
-  EventSet *use, *Ir, *Dr, *Dw;
-  EventSet *D0, *D1r, *D1w, *D2;
-  EventSet *sim;
-  EventSet *full; /* sim plus user events */
+  EventSet *Use, *Ir, *Dr, *Dw;
+  EventSet *UIr, *UIrDr, *UIrDrDw, *UIrDw, *UIrDwDr;
+  EventSet *full;
 
   /* offsets into eventsets */  
-  Int off_sim_Ir, off_sim_Dr, off_sim_Dw;
   Int off_full_Ir, off_full_Dr, off_full_Dw;
-  Int off_full_user, off_full_alloc, off_full_systime;
+  Int off_full_alloc, off_full_systime;
 };
 
 extern struct event_sets CLG_(sets);

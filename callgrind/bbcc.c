@@ -601,7 +601,7 @@ void CLG_(setup_bbcc)(BB* bb)
 	  if (!CLG_(clo).simulate_cache) {
 	      /* update Ir cost */
 	      int instr_count = last_bb->jmp[passed].instr+1;
-	      CLG_(current_state).cost[CLG_(sets).off_sim_Ir] += instr_count;
+	      CLG_(current_state).cost[CLG_(sets).off_full_Ir] += instr_count;
 	  }
       }
 

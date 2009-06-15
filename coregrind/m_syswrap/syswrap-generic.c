@@ -3365,9 +3365,7 @@ PRE(sys_newlstat)
 POST(sys_newlstat)
 {
    vg_assert(SUCCESS);
-   if (RES == 0) {
-      POST_MEM_WRITE( ARG2, sizeof(struct vki_stat) );
-   }
+   POST_MEM_WRITE( ARG2, sizeof(struct vki_stat) );
 }
 
 PRE(sys_mkdir)

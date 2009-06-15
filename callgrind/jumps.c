@@ -139,7 +139,7 @@ static void resize_jcc_table(void)
  */
 static jCC* new_jcc(BBCC* from, UInt jmp, BBCC* to)
 {
-   jCC* new;
+   jCC* jcc;
    UInt new_idx;
 
    /* check fill degree of jcc hash table and resize if needed (>80%) */
@@ -147,40 +147,40 @@ static jCC* new_jcc(BBCC* from, UInt jmp, BBCC* to)
    if (10 * current_jccs.entries / current_jccs.size > 8)
        resize_jcc_table();
 
-   new = (jCC*) CLG_MALLOC("cl.jumps.nj.1", sizeof(jCC));
+   jcc = (jCC*) CLG_MALLOC("cl.jumps.nj.1", sizeof(jCC));
 
-   new->from      = from;
-   new->jmp       = jmp;
-   new->to        = to;
-   new->jmpkind   = Ijk_Call;
-   new->call_counter = 0;
-   new->cost = 0;
+   jcc->from      = from;
+   jcc->jmp       = jmp;
+   jcc->to        = to;
+   jcc->jmpkind   = Ijk_Call;
+   jcc->call_counter = 0;
+   jcc->cost = 0;
 
    /* insert into JCC chain of calling BBCC.
     * This list is only used at dumping time */
 
    if (from) {
-       new->next_from = from->jmp[jmp].jcc_list;
-       from->jmp[jmp].jcc_list = new;
+       jcc->next_from = from->jmp[jmp].jcc_list;
+       from->jmp[jmp].jcc_list = jcc;
    }
    else {
-       new->next_from = current_jccs.spontaneous;
-       current_jccs.spontaneous = new;
+       jcc->next_from = current_jccs.spontaneous;
+       current_jccs.spontaneous = jcc;
    }
 
    /* insert into JCC hash table */
    new_idx = jcc_hash_idx(from, jmp, to, current_jccs.size);
-   new->next_hash = current_jccs.table[new_idx];
-   current_jccs.table[new_idx] = new;
+   jcc->next_hash = current_jccs.table[new_idx];
+   current_jccs.table[new_idx] = jcc;
 
    CLG_(stat).distinct_jccs++;
 
    CLG_DEBUGIF(3) {
      VG_(printf)("  new_jcc (now %d): %p\n",
-		 CLG_(stat).distinct_jccs, new);
+		 CLG_(stat).distinct_jccs, jcc);
    }
 
-   return new;
+   return jcc;
 }
 
 

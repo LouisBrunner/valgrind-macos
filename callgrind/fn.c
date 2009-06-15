@@ -227,35 +227,35 @@ static __inline__
 obj_node* new_obj_node(DebugInfo* di, obj_node* next)
 {
    Int i;
-   obj_node* new;
+   obj_node* obj;
 
-   new = (obj_node*) CLG_MALLOC("cl.fn.non.1", sizeof(obj_node));
-   new->name  = di ? VG_(strdup)( "cl.fn.non.2",VG_(seginfo_filename)(di) )
+   obj = (obj_node*) CLG_MALLOC("cl.fn.non.1", sizeof(obj_node));
+   obj->name  = di ? VG_(strdup)( "cl.fn.non.2",VG_(seginfo_filename)(di) )
                      : anonymous_obj;
    for (i = 0; i < N_FILE_ENTRIES; i++) {
-      new->files[i] = NULL;
+      obj->files[i] = NULL;
    }
    CLG_(stat).distinct_objs ++;
-   new->number  = CLG_(stat).distinct_objs;
+   obj->number  = CLG_(stat).distinct_objs;
    /* JRS 2008 Feb 19: maybe rename .start/.size/.offset to
       .text_avma/.text_size/.test_bias to make it clearer what these
       fields really mean */
-   new->start   = di ? VG_(seginfo_get_text_avma)(di) : 0;
-   new->size    = di ? VG_(seginfo_get_text_size)(di) : 0;
-   new->offset  = di ? VG_(seginfo_get_text_bias)(di) : 0;
-   new->next    = next;
+   obj->start   = di ? VG_(seginfo_get_text_avma)(di) : 0;
+   obj->size    = di ? VG_(seginfo_get_text_size)(di) : 0;
+   obj->offset  = di ? VG_(seginfo_get_text_bias)(di) : 0;
+   obj->next    = next;
 
    // not only used for debug output (see static.c)
-   new->last_slash_pos = 0;
+   obj->last_slash_pos = 0;
    i = 0;
-   while(new->name[i]) {
-	if (new->name[i]=='/') new->last_slash_pos = i+1;
+   while(obj->name[i]) {
+	if (obj->name[i]=='/') obj->last_slash_pos = i+1;
 	i++;
    }
 
-   if (runtime_resolve_addr == 0) search_runtime_resolve(new);
-   
-   return new;
+   if (runtime_resolve_addr == 0) search_runtime_resolve(obj);
+
+   return obj;
 }
 
 obj_node* CLG_(get_obj_node)(DebugInfo* di)
@@ -287,17 +287,17 @@ file_node* new_file_node(Char filename[FILENAME_LEN],
 			 obj_node* obj, file_node* next)
 {
   Int i;
-  file_node* new = (file_node*) CLG_MALLOC("cl.fn.nfn.1",
+  file_node* file = (file_node*) CLG_MALLOC("cl.fn.nfn.1",
                                            sizeof(file_node));
-  new->name  = VG_(strdup)("cl.fn.nfn.2", filename);
+  file->name  = VG_(strdup)("cl.fn.nfn.2", filename);
   for (i = 0; i < N_FN_ENTRIES; i++) {
-    new->fns[i] = NULL;
+    file->fns[i] = NULL;
   }
   CLG_(stat).distinct_files++;
-  new->number  = CLG_(stat).distinct_files;
-  new->obj     = obj;
-  new->next      = next;
-  return new;
+  file->number  = CLG_(stat).distinct_files;
+  file->obj     = obj;
+  file->next      = next;
+  return file;
 }
 
  
@@ -330,39 +330,39 @@ static __inline__
 fn_node* new_fn_node(Char fnname[FILENAME_LEN],
 		     file_node* file, fn_node* next)
 {
-    fn_node* new = (fn_node*) CLG_MALLOC("cl.fn.nfnnd.1",
+    fn_node* fn = (fn_node*) CLG_MALLOC("cl.fn.nfnnd.1",
                                          sizeof(fn_node));
-    new->name = VG_(strdup)("cl.fn.nfnnd.2", fnname);
+    fn->name = VG_(strdup)("cl.fn.nfnnd.2", fnname);
 
     CLG_(stat).distinct_fns++;
-    new->number   = CLG_(stat).distinct_fns;
-    new->last_cxt = 0;
-    new->pure_cxt = 0;
-    new->file     = file;
-    new->next     = next;
+    fn->number   = CLG_(stat).distinct_fns;
+    fn->last_cxt = 0;
+    fn->pure_cxt = 0;
+    fn->file     = file;
+    fn->next     = next;
 
-    new->dump_before  = False;
-    new->dump_after   = False;
-    new->zero_before  = False;
-    new->toggle_collect = False;
-    new->skip         = False;
-    new->pop_on_jump  = CLG_(clo).pop_on_jump;
-    new->is_malloc    = False;
-    new->is_realloc   = False;
-    new->is_free      = False;
+    fn->dump_before  = False;
+    fn->dump_after   = False;
+    fn->zero_before  = False;
+    fn->toggle_collect = False;
+    fn->skip         = False;
+    fn->pop_on_jump  = CLG_(clo).pop_on_jump;
+    fn->is_malloc    = False;
+    fn->is_realloc   = False;
+    fn->is_free      = False;
 
-    new->group        = 0;
-    new->separate_callers    = CLG_(clo).separate_callers;
-    new->separate_recursions = CLG_(clo).separate_recursions;
+    fn->group        = 0;
+    fn->separate_callers    = CLG_(clo).separate_callers;
+    fn->separate_recursions = CLG_(clo).separate_recursions;
 
 #if CLG_ENABLE_DEBUG
-    new->verbosity    = -1;
+    fn->verbosity    = -1;
 #endif
 
     if (CLG_(stat).distinct_fns >= current_fn_active.size)
 	resize_fn_array();
 
-    return new;
+    return fn;
 }
 
 
@@ -654,7 +654,7 @@ void CLG_(set_current_fn_array)(fn_array* a)
  */
 static void resize_fn_array(void)
 {
-    UInt* new;
+    UInt* new_array;
     Int i, newsize;
 
     newsize = current_fn_active.size;
@@ -663,15 +663,15 @@ static void resize_fn_array(void)
     CLG_DEBUG(0, "Resize fn_active_array: %d => %d\n",
 	     current_fn_active.size, newsize);
 
-    new = (UInt*) CLG_MALLOC("cl.fn.rfa.1", newsize * sizeof(UInt));
+    new_array = (UInt*) CLG_MALLOC("cl.fn.rfa.1", newsize * sizeof(UInt));
     for(i=0;i<current_fn_active.size;i++)
-      new[i] = current_fn_active.array[i];
+      new_array[i] = current_fn_active.array[i];
     while(i<newsize)
-	new[i++] = 0;
+	new_array[i++] = 0;
 
     VG_(free)(current_fn_active.array);
     current_fn_active.size = newsize;
-    current_fn_active.array = new;
+    current_fn_active.array = new_array;
     CLG_(stat).fn_array_resizes++;
 }
 

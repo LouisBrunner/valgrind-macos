@@ -97,8 +97,8 @@ Bool CLG_(add_and_zero_cost)(EventSet*,ULong* dst, ULong* src);
 Bool CLG_(add_and_zero_cost_lz)(EventSet*,ULong** pdst, ULong* src);
 /* Adds difference of new and old to to dst, and set old to new.
  * Returns false if nothing changed */
-Bool CLG_(add_diff_cost)(EventSet*,ULong* dst, ULong* old, ULong* new);
-Bool CLG_(add_diff_cost_lz)(EventSet*,ULong** pdst, ULong* old, ULong* new);
+Bool CLG_(add_diff_cost)(EventSet*,ULong* dst, ULong* old, ULong* new_cost);
+Bool CLG_(add_diff_cost_lz)(EventSet*,ULong** pdst, ULong* old, ULong* new_cost);
 /* Returns number of characters written */
 Int CLG_(sprint_cost)(Char* buf, EventSet*, ULong*);
 

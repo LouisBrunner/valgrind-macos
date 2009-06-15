@@ -98,24 +98,24 @@ static config_node* fn_configs = 0;
 static __inline__ 
 fn_config* new_fnc(void)
 {
-   fn_config* new = (fn_config*) CLG_MALLOC("cl.clo.nf.1",
+   fn_config* fnc = (fn_config*) CLG_MALLOC("cl.clo.nf.1",
                                             sizeof(fn_config));
 
-   new->dump_before  = CONFIG_DEFAULT;
-   new->dump_after   = CONFIG_DEFAULT;
-   new->zero_before  = CONFIG_DEFAULT;
-   new->toggle_collect = CONFIG_DEFAULT;
-   new->skip         = CONFIG_DEFAULT;
-   new->pop_on_jump  = CONFIG_DEFAULT;
-   new->group        = CONFIG_DEFAULT;
-   new->separate_callers    = CONFIG_DEFAULT;
-   new->separate_recursions = CONFIG_DEFAULT;
+   fnc->dump_before  = CONFIG_DEFAULT;
+   fnc->dump_after   = CONFIG_DEFAULT;
+   fnc->zero_before  = CONFIG_DEFAULT;
+   fnc->toggle_collect = CONFIG_DEFAULT;
+   fnc->skip         = CONFIG_DEFAULT;
+   fnc->pop_on_jump  = CONFIG_DEFAULT;
+   fnc->group        = CONFIG_DEFAULT;
+   fnc->separate_callers    = CONFIG_DEFAULT;
+   fnc->separate_recursions = CONFIG_DEFAULT;
 
 #if CLG_ENABLE_DEBUG
-   new->verbosity    = CONFIG_DEFAULT;
+   fnc->verbosity    = CONFIG_DEFAULT;
 #endif
 
-   return new;
+   return fnc;
 }
 
 

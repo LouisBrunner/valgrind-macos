@@ -174,7 +174,7 @@ static Bool is_cxt(UWord hash, fn_node** fn, Context* cxt)
  */
 static Context* new_cxt(fn_node** fn)
 {
-    Context* new;
+    Context* cxt;
     UInt idx, offset;
     UWord hash;
     int size, recs;
@@ -193,7 +193,7 @@ static Context* new_cxt(fn_node** fn)
     if (10 * cxts.entries / cxts.size > 8)
         resize_cxt_table();
 
-    new = (Context*) CLG_MALLOC("cl.context.nc.1",
+    cxt = (Context*) CLG_MALLOC("cl.context.nc.1",
                                 sizeof(Context)+sizeof(fn_node*)*size);
 
     // hash value calculation similar to cxt_hash_val(), but additionally
@@ -202,33 +202,33 @@ static Context* new_cxt(fn_node** fn)
     offset = 0;
     while(*fn != 0) {
         hash = (hash<<7) + (hash>>25) + (UWord)(*fn);
-        new->fn[offset] = *fn;
+	cxt->fn[offset] = *fn;
         offset++;
         fn--;
         if (offset >= size) break;
     }
     if (offset < size) size = offset;
 
-    new->size        = size;
-    new->base_number = CLG_(stat).context_counter;
-    new->hash        = hash;
+    cxt->size        = size;
+    cxt->base_number = CLG_(stat).context_counter;
+    cxt->hash        = hash;
 
     CLG_(stat).context_counter += recs;
     CLG_(stat).distinct_contexts++;
 
     /* insert into Context hash table */
     idx = (UInt) (hash % cxts.size);
-    new->next = cxts.table[idx];
-    cxts.table[idx] = new;
+    cxt->next = cxts.table[idx];
+    cxts.table[idx] = cxt;
 
 #if CLG_ENABLE_DEBUG
     CLG_DEBUGIF(3) {
-      VG_(printf)("  new_cxt ox%p: ", new);
-      CLG_(print_cxt)(12, new, 0);
+      VG_(printf)("  new_cxt ox%p: ", cxt);
+      CLG_(print_cxt)(12, cxt, 0);
     }
 #endif
 
-    return new;
+    return cxt;
 }
 
 /* get the Context structure for current context */
@@ -302,14 +302,14 @@ void CLG_(push_cxt)(fn_node* fn)
   fn_entries = CLG_(current_fn_stack).top - CLG_(current_fn_stack).bottom;
   if (fn_entries == CLG_(current_fn_stack).size-1) {
     int new_size = CLG_(current_fn_stack).size *2;
-    fn_node** new = (fn_node**) CLG_MALLOC("cl.context.pc.1",
-                                           new_size * sizeof(fn_node*));
+    fn_node** new_array = (fn_node**) CLG_MALLOC("cl.context.pc.1",
+						 new_size * sizeof(fn_node*));
     int i;
     for(i=0;i<CLG_(current_fn_stack).size;i++)
-      new[i] = CLG_(current_fn_stack).bottom[i];
+      new_array[i] = CLG_(current_fn_stack).bottom[i];
     VG_(free)(CLG_(current_fn_stack).bottom);
-    CLG_(current_fn_stack).top = new + fn_entries;
-    CLG_(current_fn_stack).bottom = new;
+    CLG_(current_fn_stack).top = new_array + fn_entries;
+    CLG_(current_fn_stack).bottom = new_array;
 
     CLG_DEBUG(0, "Resize Context Stack: %d => %d (pushing '%s')\n", 
 	     CLG_(current_fn_stack).size, new_size,

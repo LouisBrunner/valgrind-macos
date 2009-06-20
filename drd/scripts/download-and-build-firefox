@@ -24,6 +24,11 @@ if [ ! -e /usr/include/libIDL-2.0/libIDL/IDL.h ]; then
   exit 1
 fi
 
+if [ ! -e /usr/include/valgrind/valgrind.h ]; then
+  echo "Please install the valgrind-devel package first."
+  exit 1
+fi
+
 rm -rf   ${BUILD}   || exit $?
 rm -rf   ${PREFIX}  || exit $?
 mkdir -p ${DOWNLOADS} || exit $?
@@ -45,13 +50,13 @@ ac_add_app_options browser --enable-application=browser
 ac_add_options --disable-optimize
 ac_add_options --disable-tests
 ac_add_options --enable-debug
+ac_add_options --enable-optimize="-O1 -g -pipe"
 ac_add_options --enable-static
 ac_add_options --prefix $PREFIX
-ac_add_options --enable-optimize="-O1 -g -pipe"
+ac_add_options --with-valgrind
 EOF
 
-# Note: apparently Firefox 3.0 doesn't compile with gcc 4.3.
-CC=~/gcc-4.2.4/bin/gcc CXX=~/gcc-4.2.4/bin/g++ ${SRC}/configure
+${SRC}/configure
 
 make -s -j2     || exit $?
 # make -s install || exit $?

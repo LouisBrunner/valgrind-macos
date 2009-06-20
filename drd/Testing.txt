@@ -66,16 +66,11 @@ How to test DRD
        cvs -d :pserver:anonymous@cvs.graphicsmagick.org:/GraphicsMagick login
        cvs -d :pserver:anonymous@cvs.graphicsmagick.org:/GraphicsMagick co GraphicsMagick
        cd GraphicsMagick
-       ./configure --prefix=$HOME/GraphicsMagick-cvs
-       vi Makefile # Add --check-stack-var=yes and --var-info=yes to the
-                   # drd: target.
+       ./configure
        export OMP_NUM_THREADS=4
-       make -s drd
+       make -j2 -s MEMCHECK="$HOME/software/valgrind/vg-in-place --tool=drd --check-stack-var=yes --var-info=yes --quiet" check
 
-12. Test DRD with Firefox. First of all, make sure that Valgrind is patched
-   such that it supports libjemalloc.so:
-     drd/scripts/add-libjemalloc-support
-   Next, build and install Firefox 3:
+12. Test DRD with Firefox. First build and install Firefox 3:
      drd/scripts/download-and-build-firefox
    Now run the following command:
-     LD_LIBRARY_PATH=$HOME/software/mozilla-build/dist/lib: ./vg-in-place --tool=drd --check-stack-var=yes --trace-children=yes $HOME/software/mozilla-build/dist/bin/firefox-bin
+     LD_LIBRARY_PATH=$HOME/software/mozilla-build/dist/lib: ./vg-in-place --tool=drd --check-stack-var=yes --trace-children=yes --show-confl-seg=no $HOME/software/mozilla-build/dist/bin/firefox-bin

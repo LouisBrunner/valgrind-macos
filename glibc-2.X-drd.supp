@@ -173,6 +173,7 @@
 {
    pthread
    drd:ConflictingAccess
+   ...
    fun:__free_tcb
 }
 {

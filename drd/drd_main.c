@@ -575,21 +575,38 @@ static void DRD_(fini)(Int exitcode)
    // thread_print_all();
    if (VG_(clo_verbosity) > 1 || DRD_(s_print_stats))
    {
+      ULong pu = DRD_(thread_get_update_conflict_set_count)();
+      ULong pu_seg_cr = DRD_(thread_get_update_conflict_set_new_sg_count)();
+      ULong pu_mtx_cv = DRD_(thread_get_update_conflict_set_sync_count)();
+      ULong pu_join   = DRD_(thread_get_update_conflict_set_join_count)();
+
       VG_(message)(Vg_UserMsg,
-                   "   thread: %lld context switches",
+                   "   thread: %lld context switches.",
                    DRD_(thread_get_context_switch_count)());
       VG_(message)(Vg_UserMsg,
-                   "confl set: %lld full updates and %lld partial updates.",
+                   "confl set: %lld full updates and %lld partial updates;",
 		   DRD_(thread_get_compute_conflict_set_count)(),
-		   DRD_(thread_get_update_conflict_set_count)());
+		   pu);
       VG_(message)(Vg_UserMsg,
-                   " segments: created %lld segments, max %lld alive,"
-                   " %lld discard points",
-                   DRD_(sg_get_segments_created_count)(),
+                   "           %lld partial updates during segment creation,",
+		   pu_seg_cr);
+      VG_(message)(Vg_UserMsg,
+                   "           %lld because of mutex/sema/cond.var. operations,",
+		   pu_mtx_cv);
+      VG_(message)(Vg_UserMsg,
+                   "           %lld because of barrier/rwlock operations and",
+		   pu - pu_seg_cr - pu_mtx_cv - pu_join);
+      VG_(message)(Vg_UserMsg,
+                   "           %lld partial updates because of thread join"
+		   " operations.",
+		   pu_join);
+      VG_(message)(Vg_UserMsg,
+                   " segments: created %lld segments, max %lld alive,",
                    DRD_(sg_get_max_segments_alive_count)(),
                    DRD_(thread_get_discard_ordered_segments_count)());
       VG_(message)(Vg_UserMsg,
-                   "           and %lld merges.",
+                   "           %lld discard points and %lld merges.",
+                   DRD_(sg_get_segments_created_count)(),
                    DRD_(sg_get_segment_merge_count)());
       VG_(message)(Vg_UserMsg,
                    "segmnt cr: %lld mutex, %lld rwlock, %lld semaphore and"

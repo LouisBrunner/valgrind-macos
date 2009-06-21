@@ -177,6 +177,9 @@ ULong DRD_(thread_get_report_races_count)(void);
 ULong DRD_(thread_get_discard_ordered_segments_count)(void);
 ULong DRD_(thread_get_compute_conflict_set_count)(void);
 ULong DRD_(thread_get_update_conflict_set_count)(void);
+ULong DRD_(thread_get_update_conflict_set_new_sg_count)(void);
+ULong DRD_(thread_get_update_conflict_set_sync_count)(void);
+ULong DRD_(thread_get_update_conflict_set_join_count)(void);
 ULong DRD_(thread_get_conflict_set_bitmap_creation_count)(void);
 ULong DRD_(thread_get_conflict_set_bitmap2_creation_count)(void);
 

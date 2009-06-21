@@ -61,6 +61,9 @@ static ULong    s_context_switch_count;
 static ULong    s_discard_ordered_segments_count;
 static ULong    s_compute_conflict_set_count;
 static ULong    s_update_conflict_set_count;
+static ULong    s_update_conflict_set_new_sg_count;
+static ULong    s_update_conflict_set_sync_count;
+static ULong    s_update_conflict_set_join_count;
 static ULong    s_conflict_set_bitmap_creation_count;
 static ULong    s_conflict_set_bitmap2_creation_count;
 static ThreadId s_vg_running_tid  = VG_INVALID_THREADID;
@@ -939,7 +942,10 @@ void DRD_(thread_new_segment)(const DrdThreadId tid)
    new_sg = DRD_(sg_new)(tid, tid);
    thread_append_segment(tid, new_sg);
    if (tid == DRD_(g_drd_running_tid) && last_sg)
+   {
       DRD_(thread_update_conflict_set)(tid, &last_sg->vc);
+      s_update_conflict_set_new_sg_count++;
+   }
 
    tl_assert(thread_conflict_set_up_to_date(DRD_(g_drd_running_tid)));
 
@@ -972,20 +978,31 @@ void DRD_(thread_combine_vc_join)(DrdThreadId joiner, DrdThreadId joinee)
       VG_(free)(str1);
       VG_(free)(str2);
    }
-   DRD_(vc_combine)(&DRD_(g_threadinfo)[joiner].last->vc,
-                    &DRD_(g_threadinfo)[joinee].last->vc);
+   if (joiner == DRD_(g_drd_running_tid))
+   {
+      VectorClock old_vc;
+
+      DRD_(vc_copy)(&old_vc, &DRD_(g_threadinfo)[joiner].last->vc);
+      DRD_(vc_combine)(&DRD_(g_threadinfo)[joiner].last->vc,
+		       &DRD_(g_threadinfo)[joinee].last->vc);
+      DRD_(thread_update_conflict_set)(joiner, &old_vc);
+      s_update_conflict_set_join_count++;
+      DRD_(vc_cleanup)(&old_vc);
+   }
+   else
+   {
+      DRD_(vc_combine)(&DRD_(g_threadinfo)[joiner].last->vc,
+		       &DRD_(g_threadinfo)[joinee].last->vc);
+   }
+
+   thread_discard_ordered_segments();
+
    if (DRD_(sg_get_trace)())
    {
       char* str;
       str = DRD_(vc_aprint)(&DRD_(g_threadinfo)[joiner].last->vc);
       VG_(message)(Vg_DebugMsg, "After join: %s", str);
       VG_(free)(str);
-   }
-   thread_discard_ordered_segments();
-
-   if (joiner == DRD_(g_drd_running_tid))
-   {
-      thread_compute_conflict_set(&DRD_(g_conflict_set), joiner);
    }
 }
 
@@ -1020,8 +1037,12 @@ void DRD_(thread_combine_vc_sync)(DrdThreadId tid, const Segment* sg)
          VG_(free)(str1);
          VG_(free)(str2);
       }
+
       thread_discard_ordered_segments();
+
       DRD_(thread_update_conflict_set)(tid, &old_vc);
+      s_update_conflict_set_sync_count++;
+
       DRD_(vc_cleanup)(&old_vc);
    }
    else
@@ -1485,6 +1506,34 @@ ULong DRD_(thread_get_compute_conflict_set_count)()
 ULong DRD_(thread_get_update_conflict_set_count)(void)
 {
    return s_update_conflict_set_count;
+}
+
+/**
+ * Return how many times the conflict set has been updated partially
+ * because a new segment has been created.
+ */
+ULong DRD_(thread_get_update_conflict_set_new_sg_count)(void)
+{
+   return s_update_conflict_set_new_sg_count;
+}
+
+/**
+ * Return how many times the conflict set has been updated partially
+ * because of combining vector clocks due to synchronization operations
+ * other than reader/writer lock or barrier operations.
+ */
+ULong DRD_(thread_get_update_conflict_set_sync_count)(void)
+{
+   return s_update_conflict_set_sync_count;
+}
+
+/**
+ * Return how many times the conflict set has been updated partially
+ * because of thread joins.
+ */
+ULong DRD_(thread_get_update_conflict_set_join_count)(void)
+{
+   return s_update_conflict_set_join_count;
 }
 
 /**

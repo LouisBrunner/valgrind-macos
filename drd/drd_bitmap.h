@@ -536,6 +536,16 @@ bm2_lookup_exclusive(struct bitmap* const bm, const UWord a1)
    return bm2;
 }
 
+/** Clear the content of the second-level bitmap. */
+static __inline__
+void bm2_clear(struct bitmap2* const bm2)
+{
+#ifdef ENABLE_DRD_CONSISTENCY_CHECKS
+   tl_assert(bm2);
+#endif
+   VG_(memset)(&bm2->bm1, 0, sizeof(bm2->bm1));
+}
+
 /**
  * Insert an uninitialized second level bitmap for the address a1.
  *

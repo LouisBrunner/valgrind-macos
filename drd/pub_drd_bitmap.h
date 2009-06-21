@@ -148,4 +148,7 @@ ULong DRD_(bm_get_bitmap_creation_count)(void);
 ULong DRD_(bm_get_bitmap2_creation_count)(void);
 ULong DRD_(bm_get_bitmap2_merge_count)(void);
 
+void* DRD_(bm2_alloc_node)(HChar* const ec, const SizeT szB);
+void  DRD_(bm2_free_node)(void* const bm2);
+
 #endif /* __PUB_DRD_BITMAP_H */

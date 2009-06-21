@@ -8,6 +8,7 @@
 #include <unistd.h>
 #include "coregrind/m_oset.c"
 #include "drd/drd_bitmap.c"
+#include "drd/drd_bitmap2_node.c"
 #include "drd/pub_drd_bitmap.h"
 
 

@@ -119,6 +119,7 @@ vgpreload_drd_amd64_darwin_so_LDFLAGS      = $(PRELOAD_LDFLAGS_AMD64_DARWIN)\
 
 DRD_SOURCES =           \
   drd_barrier.c         \
+  drd_bitmap2_node.c    \
   drd_clientobj.c       \
   drd_clientreq.c       \
   drd_cond.c            \

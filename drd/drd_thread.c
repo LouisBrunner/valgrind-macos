@@ -984,7 +984,7 @@ void DRD_(thread_combine_vc_join)(DrdThreadId joiner, DrdThreadId joinee)
 
       DRD_(vc_copy)(&old_vc, &DRD_(g_threadinfo)[joiner].last->vc);
       DRD_(vc_combine)(&DRD_(g_threadinfo)[joiner].last->vc,
-		       &DRD_(g_threadinfo)[joinee].last->vc);
+                       &DRD_(g_threadinfo)[joinee].last->vc);
       DRD_(thread_update_conflict_set)(joiner, &old_vc);
       s_update_conflict_set_join_count++;
       DRD_(vc_cleanup)(&old_vc);
@@ -992,7 +992,7 @@ void DRD_(thread_combine_vc_join)(DrdThreadId joiner, DrdThreadId joinee)
    else
    {
       DRD_(vc_combine)(&DRD_(g_threadinfo)[joiner].last->vc,
-		       &DRD_(g_threadinfo)[joinee].last->vc);
+                       &DRD_(g_threadinfo)[joinee].last->vc);
    }
 
    thread_discard_ordered_segments();
@@ -1008,11 +1008,9 @@ void DRD_(thread_combine_vc_join)(DrdThreadId joiner, DrdThreadId joinee)
 
 /**
  * Update the vector clock of the last segment of thread tid with the
- * the vector clock of segment sg. Call this function after thread tid had
- * to wait because of thread synchronization until the memory accesses in the
- * segment sg finished.
+ * the vector clock of segment sg.
  */
-void DRD_(thread_combine_vc_sync)(DrdThreadId tid, const Segment* sg)
+static void thread_combine_vc_sync(DrdThreadId tid, const Segment* sg)
 {
    const VectorClock* const vc = &sg->vc;
 
@@ -1048,6 +1046,31 @@ void DRD_(thread_combine_vc_sync)(DrdThreadId tid, const Segment* sg)
    else
    {
       tl_assert(DRD_(vc_lte)(vc, &DRD_(g_threadinfo)[tid].last->vc));
+   }
+}
+
+/**
+ * Create a new segment for thread tid and update the vector clock of the last
+ * segment of this thread with the the vector clock of segment sg. Call this
+ * function after thread tid had to wait because of thread synchronization
+ * until the memory accesses in the segment sg finished.
+ */
+void DRD_(thread_new_segment_and_combine_vc)(DrdThreadId tid, const Segment* sg)
+{
+   tl_assert(0 <= (int)tid && tid < DRD_N_THREADS
+             && tid != DRD_INVALID_THREADID);
+   tl_assert(thread_conflict_set_up_to_date(DRD_(g_drd_running_tid)));
+   tl_assert(sg);
+
+   thread_append_segment(tid, DRD_(sg_new)(tid, tid));
+
+   thread_combine_vc_sync(tid, sg);
+
+   if (s_segment_merging
+       && ++s_new_segments_since_last_merge >= s_segment_merge_interval)
+   {
+      thread_discard_ordered_segments();
+      thread_merge_segments();
    }
 }
 
@@ -1291,9 +1314,13 @@ static void thread_compute_conflict_set(struct bitmap** conflict_set,
 
    if (*conflict_set)
    {
-      DRD_(bm_delete)(*conflict_set);
+      DRD_(bm_cleanup)(*conflict_set);
+      DRD_(bm_init)(*conflict_set);
    }
-   *conflict_set = DRD_(bm_new)();
+   else
+   {
+      *conflict_set = DRD_(bm_new)();
+   }
 
    if (s_trace_conflict_set)
    {

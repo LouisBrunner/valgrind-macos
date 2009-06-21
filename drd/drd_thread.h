@@ -156,7 +156,8 @@ VectorClock* DRD_(thread_get_vc)(const DrdThreadId tid);
 void DRD_(thread_get_latest_segment)(Segment** sg, const DrdThreadId tid);
 void DRD_(thread_combine_vc_join)(const DrdThreadId joiner,
                                   const DrdThreadId joinee);
-void DRD_(thread_combine_vc_sync)(const DrdThreadId tid, const Segment* sg);
+void DRD_(thread_new_segment_and_combine_vc)(DrdThreadId tid,
+                                             const Segment* sg);
 void DRD_(thread_update_conflict_set)(const DrdThreadId tid,
                                       const VectorClock* const old_vc);
 

@@ -602,11 +602,11 @@ static void DRD_(fini)(Int exitcode)
 		   pu_join);
       VG_(message)(Vg_UserMsg,
                    " segments: created %lld segments, max %lld alive,",
-                   DRD_(sg_get_max_segments_alive_count)(),
-                   DRD_(thread_get_discard_ordered_segments_count)());
+                   DRD_(sg_get_segments_created_count)(),
+                   DRD_(sg_get_max_segments_alive_count)());
       VG_(message)(Vg_UserMsg,
                    "           %lld discard points and %lld merges.",
-                   DRD_(sg_get_segments_created_count)(),
+                   DRD_(thread_get_discard_ordered_segments_count)(),
                    DRD_(sg_get_segment_merge_count)());
       VG_(message)(Vg_UserMsg,
                    "segmnt cr: %lld mutex, %lld rwlock, %lld semaphore and"
@@ -616,8 +616,8 @@ static void DRD_(fini)(Int exitcode)
                    DRD_(get_semaphore_segment_creation_count)(),
                    DRD_(get_barrier_segment_creation_count)());
       VG_(message)(Vg_UserMsg,
-                   "  bitmaps: %lld level 1"
-                   " and %lld level 2 bitmaps were allocated.",
+                   "  bitmaps: %lld level one"
+                   " and %lld level two bitmaps were allocated.",
                    DRD_(bm_get_bitmap_creation_count)(),
                    DRD_(bm_get_bitmap2_creation_count)());
       VG_(message)(Vg_UserMsg,

@@ -575,35 +575,25 @@ static void DRD_(fini)(Int exitcode)
    // thread_print_all();
    if (VG_(clo_verbosity) > 1 || DRD_(s_print_stats))
    {
-      ULong update_conflict_set_count;
-      ULong dsnsc;
-      ULong dscvc;
-
-      update_conflict_set_count
-         = DRD_(thread_get_update_conflict_set_count)(&dsnsc, &dscvc);
-
       VG_(message)(Vg_UserMsg,
-                   "   thread: %lld context switches"
-                   " / %lld updates of the conflict set",
-                   DRD_(thread_get_context_switch_count)(),
-                   update_conflict_set_count);
+                   "   thread: %lld context switches",
+                   DRD_(thread_get_context_switch_count)());
       VG_(message)(Vg_UserMsg,
-                   "           (%lld new sg + %lld combine vc + %lld csw).",
-                   dsnsc,
-                   dscvc,
-                   update_conflict_set_count - dsnsc - dscvc);
+                   "confl set: %lld full updates and %lld partial updates.",
+		   DRD_(thread_get_compute_conflict_set_count)(),
+		   DRD_(thread_get_update_conflict_set_count)());
       VG_(message)(Vg_UserMsg,
                    " segments: created %lld segments, max %lld alive,"
-                   " %lld discard points.",
+                   " %lld discard points",
                    DRD_(sg_get_segments_created_count)(),
                    DRD_(sg_get_max_segments_alive_count)(),
                    DRD_(thread_get_discard_ordered_segments_count)());
       VG_(message)(Vg_UserMsg,
-                   "           %lld merges",
+                   "           and %lld merges.",
                    DRD_(sg_get_segment_merge_count)());
       VG_(message)(Vg_UserMsg,
-                   "           (%lld mutex, %lld rwlock, %lld semaphore,"
-                   " %lld barrier).",
+                   "segmnt cr: %lld mutex, %lld rwlock, %lld semaphore and"
+                   " %lld barrier.",
                    DRD_(get_mutex_segment_creation_count)(),
                    DRD_(get_rwlock_segment_creation_count)(),
                    DRD_(get_semaphore_segment_creation_count)(),

@@ -59,9 +59,8 @@ static Bool thread_conflict_set_up_to_date(const DrdThreadId tid);
 
 static ULong    s_context_switch_count;
 static ULong    s_discard_ordered_segments_count;
+static ULong    s_compute_conflict_set_count;
 static ULong    s_update_conflict_set_count;
-static ULong    s_conflict_set_new_segment_count;
-static ULong    s_conflict_set_combine_vc_count;
 static ULong    s_conflict_set_bitmap_creation_count;
 static ULong    s_conflict_set_bitmap2_creation_count;
 static ThreadId s_vg_running_tid  = VG_INVALID_THREADID;
@@ -1263,7 +1262,7 @@ static void thread_compute_conflict_set(struct bitmap** conflict_set,
              && tid != DRD_INVALID_THREADID);
    tl_assert(tid == DRD_(g_drd_running_tid));
 
-   s_update_conflict_set_count++;
+   s_compute_conflict_set_count++;
    s_conflict_set_bitmap_creation_count
       -= DRD_(bm_get_bitmap_creation_count)();
    s_conflict_set_bitmap2_creation_count
@@ -1452,7 +1451,7 @@ void DRD_(thread_update_conflict_set)(const DrdThreadId tid,
 
    DRD_(bm_remove_cleared_marked)(DRD_(g_conflict_set));
 
-   s_conflict_set_combine_vc_count++;
+   s_update_conflict_set_count++;
 
    if (s_trace_conflict_set_bm)
    {
@@ -1476,13 +1475,15 @@ ULong DRD_(thread_get_discard_ordered_segments_count)(void)
    return s_discard_ordered_segments_count;
 }
 
-/** Return how many times the conflict set has been updated. */
-ULong DRD_(thread_get_update_conflict_set_count)(ULong* dsnsc, ULong* dscvc)
+/** Return how many times the conflict set has been updated entirely. */
+ULong DRD_(thread_get_compute_conflict_set_count)()
 {
-   tl_assert(dsnsc);
-   tl_assert(dscvc);
-   *dsnsc = s_conflict_set_new_segment_count;
-   *dscvc = s_conflict_set_combine_vc_count;
+   return s_compute_conflict_set_count;
+}
+
+/** Return how many times the conflict set has been updated partially. */
+ULong DRD_(thread_get_update_conflict_set_count)(void)
+{
    return s_update_conflict_set_count;
 }
 

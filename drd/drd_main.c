@@ -138,7 +138,7 @@ static Bool DRD_(process_cmd_line_option)(Char* arg)
    }
    if (segment_merging != -1)
       DRD_(thread_set_segment_merging)(segment_merging);
-   if (segment_merge_interval != 1)
+   if (segment_merge_interval != -1)
       DRD_(thread_set_segment_merge_interval)(segment_merge_interval);
    if (show_confl_seg != -1)
       DRD_(set_show_conflicting_segments)(show_confl_seg);

@@ -35,46 +35,38 @@ build-noinst_DSYMS: $(noinst_DSYMS)
 # "in-place" installs.  It copies $(noinst_PROGRAMS) into $inplacedir.
 # It needs to be depended on by an 'all-local' rule.
 inplace-noinst_PROGRAMS: $(noinst_PROGRAMS)
-	if [ -n "$(noinst_PROGRAMS)" ] ; then \
-	  mkdir -p $(inplacedir); \
-	  for f in $(noinst_PROGRAMS) ; do \
-	    rm -f $(inplacedir)/$$f; \
-	    ln -f -s ../$(subdir)/$$f $(inplacedir); \
-	  done ; \
-	fi
+	mkdir -p $(inplacedir); \
+	for f in $(noinst_PROGRAMS) ; do \
+	  rm -f $(inplacedir)/$$f; \
+	  ln -f -s ../$(subdir)/$$f $(inplacedir); \
+	done
 
 # Similar to inplace-noinst_PROGRAMS
 inplace-noinst_DSYMS: build-noinst_DSYMS
-	if [ -n "$(noinst_DSYMS)" ] ; then \
-	  mkdir -p $(inplacedir); \
-	  for f in $(noinst_DSYMS); do \
-	    rm -f $(inplacedir)/$$f.dSYM; \
-	    ln -f -s ../$(subdir)/$$f.dSYM $(inplacedir); \
-	  done ; \
-	fi
+	mkdir -p $(inplacedir); \
+	for f in $(noinst_DSYMS); do \
+	  rm -f $(inplacedir)/$$f.dSYM; \
+	  ln -f -s ../$(subdir)/$$f.dSYM $(inplacedir); \
+	done
 
 # This is used by coregrind/Makefile.am and by <tool>/Makefile.am for doing
 # "make install".  It copies $(noinst_PROGRAMS) into $prefix/lib/valgrind/.
 # It needs to be depended on by an 'install-exec-local' rule.
 install-noinst_PROGRAMS: $(noinst_PROGRAMS)
-	if [ -n "$(noinst_PROGRAMS)" ] ; then \
-	  $(mkinstalldirs) $(DESTDIR)$(pkglibdir); \
-	  for f in $(noinst_PROGRAMS); do \
-	    $(INSTALL_PROGRAM) $$f $(DESTDIR)$(pkglibdir); \
-	  done ; \
-	fi
+	$(mkinstalldirs) $(DESTDIR)$(pkglibdir); \
+	for f in $(noinst_PROGRAMS); do \
+	  $(INSTALL_PROGRAM) $$f $(DESTDIR)$(pkglibdir); \
+	done
 
 # Similar to install-noinst_PROGRAMS.
 # Nb: we don't use $(INSTALL_PROGRAM) here because it doesn't work with
 # directories.  XXX: not sure whether the resulting permissions will be
 # correct when using 'cp -R'...
 install-noinst_DSYMS: build-noinst_DSYMS
-	if [ -n "$(noinst_DSYMS)" ] ; then \
-	  $(mkinstalldirs) $(DESTDIR)$(pkglibdir); \
-	  for f in $(noinst_DSYMS); do \
-	    cp -R $$f.dSYM $(DESTDIR)$(pkglibdir); \
-	  done ; \
-	fi
+	$(mkinstalldirs) $(DESTDIR)$(pkglibdir); \
+	for f in $(noinst_DSYMS); do \
+	  cp -R $$f.dSYM $(DESTDIR)$(pkglibdir); \
+	done
 
 # This needs to be depended on by a 'clean-local' rule.
 clean-noinst_DSYMS:

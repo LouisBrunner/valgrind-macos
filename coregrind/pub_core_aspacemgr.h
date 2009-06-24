@@ -413,7 +413,7 @@ typedef
    }
    ChangedSeg;
 
-extern void VG_(get_changed_segments)(
+extern Bool VG_(get_changed_segments)(
       const HChar* when, const HChar* where, /*OUT*/ChangedSeg* css,
       Int css_size, /*OUT*/Int* css_used);
 #endif

@@ -3342,6 +3342,7 @@ static void parse_procselfmaps (
       (*record_gap)(last, (Addr)-1 - last);
 }
 
+Bool        css_overflowed;
 ChangedSeg* css_local;
 Int         css_size_local;
 Int         css_used_local;
@@ -3376,15 +3377,16 @@ static void add_mapping_callback(Addr addr, SizeT len, UInt prot,
       else if (nsegments[i].kind == SkFree || nsegments[i].kind == SkResvn) {
           /* Add mapping for SkResvn regions */
          ChangedSeg* cs = &css_local[css_used_local];
-         // If this assert fails, the css_size arg passed to
-         // VG_(get_changed_segments) needs to be increased.
-         aspacem_assert(css_used_local < css_size_local);
-         cs->is_added = True;
-         cs->start    = addr;
-         cs->end      = addr + len - 1;
-         cs->prot     = prot;
-         cs->offset   = offset;
-         css_used_local++;
+         if (css_used_local < css_size_local) {
+            cs->is_added = True;
+            cs->start    = addr;
+            cs->end      = addr + len - 1;
+            cs->prot     = prot;
+            cs->offset   = offset;
+            css_used_local++;
+         } else {
+            css_overflowed = True;
+         }
          return;
 
       } else if (nsegments[i].kind == SkAnonC ||
@@ -3437,22 +3439,24 @@ static void remove_mapping_callback(Addr addr, SizeT len)
       if (nsegments[i].kind != SkFree  &&  nsegments[i].kind != SkResvn) {
          // V has a mapping, kernel doesn't
          ChangedSeg* cs = &css_local[css_used_local];
-         // If this assert fails, the css_size arg passed to
-         // VG_(get_changed_segments) needs to be increased.
-         aspacem_assert(css_used_local < css_size_local);
-         cs->is_added = False;
-         cs->start    = nsegments[i].start;
-         cs->end      = nsegments[i].end;
-         cs->prot     = 0;
-         cs->offset   = 0;
-         css_used_local++;
+         if (css_used_local < css_size_local) {
+            cs->is_added = False;
+            cs->start    = nsegments[i].start;
+            cs->end      = nsegments[i].end;
+            cs->prot     = 0;
+            cs->offset   = 0;
+            css_used_local++;
+         } else {
+            css_overflowed = True;
+         }
          return;
       }
    }
 }
 
 
-void VG_(get_changed_segments)(
+// Returns False if 'css' wasn't big enough.
+Bool VG_(get_changed_segments)(
       const HChar* when, const HChar* where, /*OUT*/ChangedSeg* css,
       Int css_size, /*OUT*/Int* css_used)
 {
@@ -3465,6 +3469,7 @@ void VG_(get_changed_segments)(
          stats_synccalls++, stats_machcalls, when, where
       );
 
+   css_overflowed = False;
    css_local = css;
    css_size_local = css_size;
    css_used_local = 0;
@@ -3473,6 +3478,12 @@ void VG_(get_changed_segments)(
    parse_procselfmaps(&add_mapping_callback, &remove_mapping_callback);
 
    *css_used = css_used_local;
+
+   if (css_overflowed) {
+      aspacem_assert(css_used_local == css_size_local);
+   }
+
+   return !css_overflowed;
 }
 
 #endif // HAVE_PROC

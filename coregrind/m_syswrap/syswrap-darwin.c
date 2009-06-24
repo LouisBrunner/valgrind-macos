@@ -595,17 +595,26 @@ void VG_(show_open_ports)(void)
 static void sync_mappings(const HChar *when, const HChar *where, Int num)
 {
    // Usually the number of segments added/removed in a single calls is very
-   // small e.g. 1.  But the limit was 20 at one point, and that wasn't enough
-   // for at least one invocation of Firefox.  If we need to go much bigger,
-   // should probably make VG_(get_changed_segments) fail if the size isn't
-   // big enough, and repeatedly redo it with progressively bigger dynamically
-   // allocated buffers until it succeeds.
-   #define CSS_SIZE     100
-   ChangedSeg css[CSS_SIZE];
-   Int        css_used;
-   Int        i;
+   // small e.g. 1.  But it sometimes gets up to at least 100 or so (eg. for
+   // Quicktime).  So we use a repeat-with-bigger-buffers-until-success model,
+   // because we can't do dynamic allocation within VG_(get_changed_segments),
+   // because it's in m_aspacemgr.
+   ChangedSeg* css = NULL;
+   Int         css_size;
+   Int         css_used;
+   Int         i;
+   Bool        ok;
 
-   VG_(get_changed_segments)(when, where, css, CSS_SIZE, &css_used);
+   // 16 is enough for most cases, but small enough that overflow happens
+   // occasionally and thus the overflow path gets some test coverage.
+   css_size = 16;
+   ok = False;
+   while (!ok) {
+      VG_(free)(css);   // css is NULL on first iteration;  that's ok.
+      css = VG_(malloc)("sys_wrap.sync_mappings", css_size*sizeof(ChangedSeg));
+      ok = VG_(get_changed_segments)(when, where, css, css_size, &css_used);
+      css_size *= 2;
+   } 
 
    // Now add/remove them.
    for (i = 0; i < css_used; i++) {
@@ -629,6 +638,8 @@ static void sync_mappings(const HChar *when, const HChar *where, Int num)
                         action, cs->start, cs->end + 1, where, when);
       }
    }
+
+   VG_(free)(css);
 }
 
 /* ---------------------------------------------------------------------

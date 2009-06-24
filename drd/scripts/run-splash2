@@ -60,13 +60,13 @@ function run_test {
   test_output="${1}-drd-with-stack-var-4.out" \
   print_runtime_ratio "${avg4}" "${stddev4}" "${vsz4}" "${vszdev4}" \
     "$VG" --tool=drd --first-race-only=yes --check-stack-var=yes \
-    "$@" -p${psep}${p} "${test_args}"
+    --drd-stats=yes "$@" -p${psep}${p} "${test_args}"
 
   p=4
   test_output="${1}-drd-without-stack-var-4.out" \
   print_runtime_ratio "${avg4}" "${stddev4}" "${vsz4}" "${vszdev4}" \
     "$VG" --tool=drd --first-race-only=yes --check-stack-var=no \
-    "$@" -p${psep}${p} "${test_args}"
+    --drd-stats=yes "$@" -p${psep}${p} "${test_args}"
 
   p=4
   test_output="${1}-helgrind-4.out" \

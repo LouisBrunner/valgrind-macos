@@ -160,7 +160,10 @@ int main(void)
 
    GO_UNIMP(77, "old vlimit");
 
-   // __NR_mincore 78
+   // __NR_mincore 218
+   GO(__NR_mincore, 218, "3s 1m");
+   SY(__NR_mincore, x0, x0+40960, x0); FAIL;
+
    // __NR_getgroups 79
    // __NR_setgroups 80
    // __NR_getpgrp 81

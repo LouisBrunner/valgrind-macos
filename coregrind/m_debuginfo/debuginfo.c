@@ -28,11 +28,6 @@
 
    The GNU General Public License is contained in the file COPYING.
 */
-/*
-   Stabs reader greatly improved by Nick Nethercote, Apr 02.
-   This module was also extensively hacked on by Jeremy Fitzhardinge
-   and Tom Hughes.
-*/
 
 #include "pub_core_basics.h"
 #include "pub_core_vki.h"
@@ -752,15 +747,16 @@ ULong VG_(di_notify_mmap)( Addr a, Bool allow_SkFileV )
    }
    vg_assert(nread > 0 && nread <= sizeof(buf1k) );
 
-   /* We're only interested in mappings of ELF object files. */
-#if defined(HAVE_ELF)
+   /* We're only interested in mappings of object files. */
+   // Nb: AIX5 doesn't use this file and so isn't represented here.
+#if defined(VGO_linux)
    if (!ML_(is_elf_object_file)( buf1k, (SizeT)nread ))
       return 0;
-#elif defined(HAVE_MACHO)
+#elif defined(VGO_darwin)
    if (!ML_(is_macho_object_file)( buf1k, (SizeT)nread ))
       return 0;
 #else
-#  error "unknown executable type"
+#  error "unknown OS"
 #endif
 
    /* See if we have a DebugInfo for this filename.  If not,
@@ -813,12 +809,13 @@ ULong VG_(di_notify_mmap)( Addr a, Bool allow_SkFileV )
    discard_DebugInfos_which_overlap_with( di );
 
    /* .. and acquire new info. */
-#if defined(HAVE_ELF)
+   // Nb: AIX5 doesn't use this file and so isn't represented here.
+#if defined(VGO_linux)
    ok = ML_(read_elf_debug_info)( di );
-#elif defined(HAVE_MACHO)
+#elif defined(VGO_darwin)
    ok = ML_(read_macho_debug_info)( di );
 #else
-#  error "unknown executable type"
+#  error "unknown OS"
 #endif
 
    if (ok) {
@@ -1026,7 +1023,7 @@ void VG_(di_notify_pdb_debuginfo)( Int fd_obj, Addr avma_obj,
    if (pdbname) ML_(dinfo_free)(pdbname);
 }
 
-#endif /* defined(VGO_linux) */
+#endif /* defined(VGO_linux) || defined(VGO_darwin) */
 
 
 /*-------------------------------------------------------------*/

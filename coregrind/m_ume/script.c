@@ -40,9 +40,6 @@
 
 #include "priv_ume.h"
 
-
-#if defined(HAVE_SCRIPT)
-
 Bool VG_(match_script)(Char *hdr, Int len)
 {
    Char* end    = hdr + len;
@@ -142,8 +139,6 @@ Int VG_(load_script)(Int fd, const HChar* name, ExeInfo* info)
 
    return VG_(do_exec_inner)(interp, info);
 }
-
-#endif /* defined(HAVE_SCRIPT) */
 
 /*--------------------------------------------------------------------*/
 /*--- end                                                          ---*/

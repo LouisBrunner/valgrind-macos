@@ -28,6 +28,8 @@
    The GNU General Public License is contained in the file COPYING.
 */
 
+#if defined(VGP_x86_darwin)
+
 #include "pub_core_basics.h"
 #include "pub_core_vki.h"
 #include "pub_core_threadstate.h"
@@ -497,6 +499,8 @@ void wqthread_hijack(Addr self, Addr kport, Addr stackaddr, Addr workitem,
    vg_assert(0);
 }
 
+#endif // defined(VGP_x86_darwin)
+
 /*--------------------------------------------------------------------*/
-/*--- end                                     syswrap-x86-darwin.c ---*/
+/*--- end                                                          ---*/
 /*--------------------------------------------------------------------*/

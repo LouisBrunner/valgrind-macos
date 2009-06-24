@@ -1,9 +1,7 @@
 
-SUBDIRS = vki
-
-incincdir = $(includedir)/valgrind
-
-incinc_HEADERS = \
+# The "nobase" means that the vki/ path on some of them will be preserved
+# when they are installed into $(includedir)/valgrind.
+nobase_pkginclude_HEADERS = \
 	pub_tool_basics.h 		\
 	pub_tool_basics_asm.h 		\
 	pub_tool_aspacehl.h 		\
@@ -38,4 +36,25 @@ incinc_HEADERS = \
 	pub_tool_vkiscnums_asm.h	\
 	pub_tool_wordfm.h		\
 	pub_tool_xarray.h		\
-	valgrind.h
+	valgrind.h			\
+	vki/vki-linux.h			\
+	vki/vki-darwin.h		\
+	vki/vki-posixtypes-amd64-linux.h\
+	vki/vki-posixtypes-ppc32-linux.h\
+	vki/vki-posixtypes-ppc64-linux.h\
+	vki/vki-posixtypes-x86-linux.h	\
+	vki/vki-amd64-linux.h		\
+	vki/vki-ppc32-linux.h		\
+	vki/vki-ppc64-linux.h		\
+	vki/vki-x86-linux.h		\
+	vki/vki-scnums-amd64-linux.h	\
+	vki/vki-scnums-ppc32-linux.h	\
+	vki/vki-scnums-ppc64-linux.h	\
+	vki/vki-scnums-x86-linux.h	\
+	vki/vki-scnums-darwin.h
+
+noinst_HEADERS = \
+	vki/vki-ppc32-aix5.h		\
+	vki/vki-ppc64-aix5.h		\
+	vki/vki-scnums-aix5.h
+

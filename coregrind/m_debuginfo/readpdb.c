@@ -35,6 +35,8 @@
    The GNU General Public License is contained in the file COPYING.
 */
 
+#if defined(VGO_linux) || defined(VGO_darwin)
+
 #include "pub_core_basics.h"
 #include "pub_core_debuginfo.h"
 #include "pub_core_vki.h"          // VKI_PAGE_SIZE
@@ -2261,7 +2263,8 @@ Bool ML_(read_pdb_debug_info)(
    return True;
 }
 
+#endif // defined(VGO_linux) || defined(VGO_darwin)
 
 /*--------------------------------------------------------------------*/
-/*--- end                                                readpdb.c ---*/
+/*--- end                                                          ---*/
 /*--------------------------------------------------------------------*/

@@ -3,7 +3,7 @@
           "http://www.oasis-open.org/docbook/xml/4.2/docbookx.dtd">
 
 
-<chapter id="new-tech-docs"
+<chapter id="design-impl"
          xreflabel="The design and implementation of Valgrind">
 
 <title>The Design and Implementation of Valgrind</title>

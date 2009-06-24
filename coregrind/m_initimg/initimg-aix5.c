@@ -34,6 +34,8 @@
    without prior written permission.
 */
 
+#if defined(VGO_aix5)
+
 #include "pub_core_basics.h"
 #include "pub_core_vki.h"
 #include "pub_core_vkiscnums.h"
@@ -540,6 +542,8 @@ static void diagnose_load_failure ( void )
             of the symbol was not found.
 */
 
+#endif // defined(VGO_aix5)
+
 /*--------------------------------------------------------------------*/
-/*---                                               initimg-aix5.c ---*/
+/*---                                                              ---*/
 /*--------------------------------------------------------------------*/

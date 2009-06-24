@@ -29,6 +29,8 @@
    The GNU General Public License is contained in the file COPYING.
 */
 
+#if defined(VGO_linux)
+
 #include "pub_core_basics.h"
 #include "pub_core_vki.h"
 #include "pub_core_debuglog.h"
@@ -986,7 +988,8 @@ void VG_(ii_finalise_image)( IIFinaliseImageInfo iifii )
              sizeof(VexGuestArchState));
 }
 
+#endif // defined(VGO_linux)
 
 /*--------------------------------------------------------------------*/
-/*---                                              initimg-linux.c ---*/
+/*---                                                              ---*/
 /*--------------------------------------------------------------------*/

@@ -1,7 +1,7 @@
 
 include $(top_srcdir)/Makefile.tool-tests.am
 
-noinst_SCRIPTS = \
+dist_noinst_SCRIPTS = \
 	filter_addresses \
 	filter_discards \
 	filter_libc \
@@ -15,8 +15,6 @@ noinst_HEADERS = \
 	asm.h \
 	malloc.h \
 	sys_mman.h
-
-EXTRA_DIST = $(noinst_SCRIPTS)
 
 check_PROGRAMS = \
 	arch_test \

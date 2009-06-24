@@ -29,6 +29,8 @@
    The GNU General Public License is contained in the file COPYING.
 */
 
+#if defined(VGO_darwin)
+
 #include "pub_core_basics.h"
 #include "pub_core_vki.h"
 #include "pub_core_debuglog.h"
@@ -619,3 +621,9 @@ void VG_(ii_finalise_image)( IIFinaliseImageInfo iifii )
    VG_TRACK( post_reg_write, Vg_CoreStartup, /*tid*/1, /*offset*/0,
              sizeof(VexGuestArchState));
 }
+
+#endif // defined(VGO_darwin)
+
+/*--------------------------------------------------------------------*/
+/*--- end                                                          ---*/
+/*--------------------------------------------------------------------*/

@@ -36,6 +36,8 @@
    without prior written permission.
 */
 
+#if defined(VGO_aix5)
+
 /* *************************************************************
    DO NOT INCLUDE ANY OTHER FILES HERE.
    ADD NEW INCLUDES ONLY TO priv_aspacemgr.h
@@ -2635,6 +2637,7 @@ static void parse_procselfmap ( /*OUT*/AixSegments* segs )
       show_AixSegments(0, "as read from procmap", segs);
 }
 
+#endif // defined(VGO_aix5)
 
 /*--------------------------------------------------------------------*/
 /*--- end                                                          ---*/

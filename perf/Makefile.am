@@ -1,9 +1,9 @@
 
 include $(top_srcdir)/Makefile.tool-tests.am
 
-noinst_SCRIPTS = vg_perf
+dist_noinst_SCRIPTS = vg_perf
 
-EXTRA_DIST = $(noinst_SCRIPTS) \
+EXTRA_DIST = \
 	bigcode1.vgperf \
 	bigcode2.vgperf \
 	bz2.vgperf \

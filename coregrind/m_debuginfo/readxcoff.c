@@ -33,6 +33,8 @@
    without prior written permission.
 */
 
+#if defined(VGO_aix5)
+
 /* This file reads XCOFF symbol tables and debug info.
    Known limitations:
 
@@ -2480,6 +2482,8 @@ Bool ML_(read_xcoff_debug_info) ( struct _DebugInfo* di,
 
    return ok;
 }
+
+#endif // defined(VGO_aix5)
 
 /*--------------------------------------------------------------------*/
 /*--- end                                                          ---*/

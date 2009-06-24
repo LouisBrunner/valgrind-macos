@@ -1,6 +1,7 @@
 
 /*--------------------------------------------------------------------*/
-/*--- Wrappers for generic Unix system calls     syswrap-generic.c ---*/
+/*--- Wrappers for generic (non-AIX5!) Unix system calls           ---*/
+/*---                                            syswrap-generic.c ---*/
 /*--------------------------------------------------------------------*/
 
 /*
@@ -27,6 +28,8 @@
 
    The GNU General Public License is contained in the file COPYING.
 */
+
+#if defined(VGO_linux) || defined(VGO_darwin)
 
 #include "pub_core_basics.h"
 #include "pub_core_vki.h"
@@ -4084,6 +4087,8 @@ POST(sys_sigaltstack)
 
 #undef PRE
 #undef POST
+
+#endif // defined(VGO_linux) || defined(VGO_darwin)
 
 /*--------------------------------------------------------------------*/
 /*--- end                                                          ---*/

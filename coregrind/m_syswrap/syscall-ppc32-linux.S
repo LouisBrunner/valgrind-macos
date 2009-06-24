@@ -27,6 +27,8 @@
   The GNU General Public License is contained in the file COPYING.
 */
 
+#if defined(VGP_ppc32_linux)
+
 #include "pub_core_basics_asm.h"
 #include "pub_core_vkiscnums_asm.h"
 #include "libvex_guest_offsets.h"
@@ -155,6 +157,8 @@ ML_(blksys_finished):  .long 5b
 		
 /* Let the linker know we don't need an executable stack */
 .section .note.GNU-stack,"",@progbits
+
+#endif // defined(VGP_ppc32_linux)
 
 /*--------------------------------------------------------------------*/
 /*--- end                                                          ---*/

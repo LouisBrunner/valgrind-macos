@@ -1,14 +1,14 @@
 
 /*--------------------------------------------------------------------*/
-/*--- Header for ELF core dump stuff.                   priv_elf.h ---*/
+/*--- Dumping core.                               coredump-xcoff.c ---*/
 /*--------------------------------------------------------------------*/
 
 /*
    This file is part of Valgrind, a dynamic binary instrumentation
    framework.
 
-   Copyright (C) 2000-2009 Julian Seward
-      jseward@acm.org
+   Copyright (C) 2006-2009 OpenWorks LLP
+      info@open-works.co.uk
 
    This program is free software; you can redistribute it and/or
    modify it under the terms of the GNU General Public License as
@@ -26,23 +26,26 @@
    02111-1307, USA.
 
    The GNU General Public License is contained in the file COPYING.
+
+   Neither the names of the U.S. Department of Energy nor the
+   University of California nor the names of its contributors may be
+   used to endorse or promote products derived from this software
+   without prior written permission.
 */
 
-#ifndef __PRIV_ELF_H
-#define __PRIV_ELF_H
+#if defined(VGO_aix5)
 
-void ML_(fill_elfregs_from_tst)(struct vki_user_regs_struct* regs, 
-                                const ThreadArchState* arch);
+#include "pub_core_basics.h"
+#include "pub_core_vki.h"
+#include "pub_core_libcassert.h"
+#include "pub_core_coredump.h"        /* self */
 
-void ML_(fill_elffpregs_from_tst)(vki_elf_fpregset_t* fpu,
-                                  const ThreadArchState* arch);
+void VG_(make_coredump)(ThreadId tid, const vki_siginfo_t *si, UInt max_size)
+{
+   /* not implemented */
+}
 
-#if defined(VGP_x86_linux)
-void ML_(fill_elffpxregs_from_tst)(vki_elf_fpxregset_t* xfpu,
-                                   const ThreadArchState* arch);
-#endif
-
-#endif   // __PRIV_ELF_H
+#endif // defined(VGO_aix5)
 
 /*--------------------------------------------------------------------*/
 /*--- end                                                          ---*/

@@ -32,6 +32,8 @@
    The GNU General Public License is contained in the file COPYING.
 */
 
+#if defined(VGO_linux) || defined(VGO_darwin)
+
 #ifndef __PRIV_READPDB_H
 #define __PRIV_READPDB_H
 
@@ -48,6 +50,8 @@ extern Bool ML_(read_pdb_debug_info)(
 
 #endif /* ndef __PRIV_READPDB_H */
 
+#endif // defined(VGO_linux) || defined(VGO_darwin)
+
 /*--------------------------------------------------------------------*/
-/*--- end                                           priv_readpdb.h ---*/
+/*--- end                                                          ---*/
 /*--------------------------------------------------------------------*/

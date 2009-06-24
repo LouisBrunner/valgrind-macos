@@ -26,7 +26,7 @@ endif
 
 DIST_SUBDIRS = x86 amd64 linux darwin x86-linux .
 
-noinst_SCRIPTS = \
+dist_noinst_SCRIPTS = \
 	filter_addressable \
 	filter_allocs \
 	filter_stderr filter_xml \
@@ -34,7 +34,7 @@ noinst_SCRIPTS = \
 
 noinst_HEADERS = leak.h
 
-EXTRA_DIST = $(noinst_SCRIPTS) \
+EXTRA_DIST = \
 	addressable.stderr.exp addressable.stdout.exp addressable.vgtest \
 	badaddrvalue.stderr.exp \
 	badaddrvalue.stdout.exp badaddrvalue.vgtest \

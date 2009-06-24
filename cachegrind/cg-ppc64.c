@@ -28,6 +28,8 @@
    The GNU General Public License is contained in the file COPYING.
 */
 
+#if defined(VGA_ppc64)
+
 #include "pub_tool_basics.h"
 #include "pub_tool_libcbase.h"
 #include "pub_tool_libcassert.h"
@@ -58,6 +60,8 @@ void VG_(configure_caches)(cache_t* I1c, cache_t* D1c, cache_t* L2c,
               "or more defaults ");
    }
 }
+
+#endif
 
 /*--------------------------------------------------------------------*/
 /*--- end                                                          ---*/

@@ -1,9 +1,9 @@
 
 include $(top_srcdir)/Makefile.tool-tests.am
 
-noinst_SCRIPTS = filter_stderr
+dist_noinst_SCRIPTS = filter_stderr
 
-EXTRA_DIST = $(noinst_SCRIPTS) \
+EXTRA_DIST = \
 	jm-int.stderr.exp jm-int.stdout.exp jm-int.vgtest \
 	jm-fp.stderr.exp  jm-fp.stdout.exp  jm-fp.vgtest \
 	jm-vmx.stderr.exp jm-vmx.stdout.exp jm-vmx.vgtest \

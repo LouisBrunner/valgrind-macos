@@ -1,5 +1,5 @@
 /*--------------------------------------------------------------------*/
-/*--- Basic Mach traps                                mach_traps.S ---*/
+/*--- Basic Mach traps.                  mach_traps-amd64-darwin.S ---*/
 /*--------------------------------------------------------------------*/
 
 /*
@@ -26,6 +26,8 @@
 
    The GNU General Public License is contained in the file COPYING.
 */
+
+#if defined(VGP_amd64_darwin)
 
 #include "vki/vki-scnums-darwin.h"
 
@@ -130,6 +132,7 @@ _semaphore_wait_signal:
 	syscall
 	ret
 
+#endif // defined(VGP_amd64_darwin)
 
 /*--------------------------------------------------------------------*/
 /*--- end                                                          ---*/

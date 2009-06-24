@@ -8,9 +8,9 @@ endif
 
 DIST_SUBDIRS = x86 .
 
-noinst_SCRIPTS = filter_stderr filter_cachesim_discards
+dist_noinst_SCRIPTS = filter_stderr filter_cachesim_discards
 
-EXTRA_DIST = $(noinst_SCRIPTS) \
+EXTRA_DIST = \
 	chdir.vgtest chdir.stderr.exp \
 	clreq.vgtest clreq.stderr.exp \
 	dlclose.vgtest dlclose.stderr.exp dlclose.stdout.exp \

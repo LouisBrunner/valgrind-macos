@@ -34,6 +34,8 @@
    without prior written permission.
 */
 
+#if defined(VGP_ppc32_aix5)
+
 #include "pub_core_basics.h"
 #include "pub_core_vki.h"
 #include "pub_core_vkiscnums.h"
@@ -230,6 +232,8 @@ void VG_(sigframe_destroy)( ThreadId tid, Bool isRT )
    VG_TRACK( post_deliver_signal, tid, sigNo );
 }
 
+#endif // defined(VGP_ppc32_aix5)
+
 /*--------------------------------------------------------------------*/
-/*--- end                                    sigframe-ppc32-aix5.c ---*/
+/*--- end                                                          ---*/
 /*--------------------------------------------------------------------*/

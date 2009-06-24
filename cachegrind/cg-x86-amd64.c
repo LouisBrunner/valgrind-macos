@@ -1,6 +1,6 @@
 
 /*--------------------------------------------------------------------*/
-/*--- x86-specific (and AMD64-specific) definitions.      cg-x86.c ---*/
+/*--- x86- and AMD64-specific definitions.          cg-x86-amd64.c ---*/
 /*--------------------------------------------------------------------*/
 
 /*
@@ -27,6 +27,8 @@
 
    The GNU General Public License is contained in the file COPYING.
 */
+
+#if defined(VGA_x86) || defined(VGA_amd64)
 
 #include "pub_tool_basics.h"
 #include "pub_tool_cpuid.h"
@@ -346,6 +348,8 @@ void VG_(configure_caches)(cache_t* I1c, cache_t* D1c, cache_t* L2c,
               "or more defaults ");
    }
 }
+
+#endif // defined(VGA_x86) || defined(VGA_amd64)
 
 /*--------------------------------------------------------------------*/
 /*--- end                                                          ---*/

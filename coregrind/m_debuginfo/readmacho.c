@@ -29,6 +29,8 @@
    The GNU General Public License is contained in the file COPYING.
 */
 
+#if defined(VGO_darwin)
+
 #include "pub_core_basics.h"
 #include "pub_core_vki.h"
 #include "pub_core_libcbase.h"
@@ -1092,6 +1094,8 @@ Bool ML_(read_macho_debug_info)( struct _DebugInfo* di )
    return False;
 }
 
+#endif // defined(VGO_darwin)
+
 /*--------------------------------------------------------------------*/
-/*--- end                                              readmacho.c ---*/
+/*--- end                                                          ---*/
 /*--------------------------------------------------------------------*/

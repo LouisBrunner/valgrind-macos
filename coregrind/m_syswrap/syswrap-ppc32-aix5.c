@@ -33,6 +33,8 @@
    without prior written permission.
 */
 
+#if defined(VGP_ppc32_aix5)
+
 #include "pub_core_basics.h"
 #include "pub_core_vki.h"
 #include "pub_core_vkiscnums.h"
@@ -907,6 +909,8 @@ SyscallTableEntry* ML_(get_ppc32_aix5_syscall_entry) ( UInt sysno )
    vg_assert(i >= 0 && i < tab_size);
    return &aix5_ppc32_syscall_table[i].wrappers;
 }
+
+#endif // defined(VGP_ppc32_aix5)
 
 /*--------------------------------------------------------------------*/
 /*--- end                                                          ---*/

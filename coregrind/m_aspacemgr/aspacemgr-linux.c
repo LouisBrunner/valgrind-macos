@@ -31,6 +31,8 @@
    The GNU General Public License is contained in the file COPYING.
 */
 
+#if defined(VGO_linux) || defined(VGO_darwin)
+
 /* *************************************************************
    DO NOT INCLUDE ANY OTHER FILES HERE.
    ADD NEW INCLUDES ONLY TO priv_aspacemgr.h
@@ -3473,7 +3475,10 @@ void VG_(get_changed_segments)(
    *css_used = css_used_local;
 }
 
-#endif
+#endif // HAVE_PROC
+
+
+#endif // defined(VGO_linux) || defined(VGO_darwin)
 
 /*--------------------------------------------------------------------*/
 /*--- end                                                          ---*/

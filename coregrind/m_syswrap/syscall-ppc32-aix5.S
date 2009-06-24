@@ -31,6 +31,8 @@
   The GNU General Public License is contained in the file COPYING.
 */
 
+#if defined(VGP_ppc32_aix5)
+
 #include "pub_core_basics_asm.h"
 #include "libvex_guest_offsets.h"
 
@@ -216,6 +218,7 @@ ML_(blksys_complete):  .long Lvg3
 ML_(blksys_committed): .long Lvg4
 ML_(blksys_finished):  .long Lvg5
 
+#endif // defined(VGP_ppc32_aix5)
 
 /*--------------------------------------------------------------------*/
 /*--- end                                                          ---*/

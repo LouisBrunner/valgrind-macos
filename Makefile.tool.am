@@ -2,9 +2,156 @@
 SUBDIRS = . tests docs
 
 include $(top_srcdir)/Makefile.all.am
-include $(top_srcdir)/Makefile.flags.am
-include $(top_srcdir)/Makefile.core-tool.am
 
+#----------------------------------------------------------------------------
+# <tool>-<platform> stuff
+#----------------------------------------------------------------------------
+
+TOOL_DEPENDENCIES_@VGCONF_PLATFORM_PRI_CAPS@ = \
+	$(top_builddir)/coregrind/libcoregrind-@VGCONF_ARCH_PRI@-@VGCONF_OS@.a \
+	$(top_builddir)/VEX/libvex-@VGCONF_ARCH_PRI@-@VGCONF_OS@.a
+if VGCONF_HAVE_PLATFORM_SEC
+TOOL_DEPENDENCIES_@VGCONF_PLATFORM_SEC_CAPS@ = \
+	$(top_builddir)/coregrind/libcoregrind-@VGCONF_ARCH_SEC@-@VGCONF_OS@.a \
+	$(top_builddir)/VEX/libvex-@VGCONF_ARCH_SEC@-@VGCONF_OS@.a
+endif
+
+
+TOOL_LDADD_COMMON = -lgcc
+TOOL_LDADD_@VGCONF_PLATFORM_PRI_CAPS@ = \
+	$(TOOL_DEPENDENCIES_@VGCONF_PLATFORM_PRI_CAPS@) $(TOOL_LDADD_COMMON)
+if VGCONF_HAVE_PLATFORM_SEC
+TOOL_LDADD_@VGCONF_PLATFORM_SEC_CAPS@ = \
+	$(TOOL_DEPENDENCIES_@VGCONF_PLATFORM_SEC_CAPS@) $(TOOL_LDADD_COMMON)
+endif
+
+
+TOOL_LDFLAGS_COMMON_LINUX = -static \
+	-Wl,-defsym,valt_load_address=@VALT_LOAD_ADDRESS@ \
+	-nodefaultlibs -nostartfiles -u _start
+TOOL_LDFLAGS_COMMON_AIX5 = -static -Wl,-e_start_valgrind
+TOOL_LDFLAGS_COMMON_DARWIN = -nodefaultlibs -nostartfiles \
+	-Wl,-u,__start -Wl,-e,__start -Wl,-bind_at_load /usr/lib/dyld
+
+TOOL_LDFLAGS_X86_LINUX = \
+	$(TOOL_LDFLAGS_COMMON_LINUX) @FLAG_M32@ \
+	-Wl,-T,$(top_builddir)/valt_load_address_x86_linux.lds
+
+TOOL_LDFLAGS_AMD64_LINUX = \
+	$(TOOL_LDFLAGS_COMMON_LINUX) @FLAG_M64@ \
+	-Wl,-T,$(top_builddir)/valt_load_address_amd64_linux.lds
+
+TOOL_LDFLAGS_PPC32_LINUX = \
+	$(TOOL_LDFLAGS_COMMON_LINUX) @FLAG_M32@ \
+	-Wl,-T,$(top_builddir)/valt_load_address_ppc32_linux.lds
+
+TOOL_LDFLAGS_PPC64_LINUX = \
+	$(TOOL_LDFLAGS_COMMON_LINUX) @FLAG_M64@ \
+	-Wl,-T,$(top_builddir)/valt_load_address_ppc64_linux.lds
+
+TOOL_LDFLAGS_PPC32_AIX5 = \
+	$(TOOL_LDFLAGS_COMMON_AIX5) @FLAG_MAIX32@
+
+TOOL_LDFLAGS_PPC64_AIX5 = \
+	$(TOOL_LDFLAGS_COMMON_AIX5) @FLAG_MAIX64@ -Wl,-bbigtoc
+
+TOOL_LDFLAGS_X86_DARWIN = \
+	$(TOOL_LDFLAGS_COMMON_DARWIN) -arch i386 \
+	-Wl,-seg1addr,0xf0080000 \
+	-Wl,-stack_addr,0xf0080000 -Wl,-stack_size,0x80000 \
+	-Wl,-pagezero_size,0xf0000000
+
+# pagezero can't be unmapped and remapped. Use stack instead.
+# GrP fixme no stack guard
+TOOL_LDFLAGS_AMD64_DARWIN = \
+	$(TOOL_LDFLAGS_COMMON_DARWIN) -arch x86_64 \
+	-Wl,-seg1addr,0x7fff55000000 \
+	-Wl,-stack_addr,0x7fff50080000 -Wl,-stack_size,0x7ffe50080000 \
+	-Wl,-pagezero_size,0x100000000
+
+
+BUILT_SOURCES =
+CLEANFILES =
+if VGCONF_PLATFORMS_INCLUDE_X86_LINUX
+BUILT_SOURCES += $(top_builddir)/valt_load_address_x86_linux.lds
+CLEANFILES    += $(top_builddir)/valt_load_address_x86_linux.lds
+endif
+if VGCONF_PLATFORMS_INCLUDE_AMD64_LINUX
+BUILT_SOURCES += $(top_builddir)/valt_load_address_amd64_linux.lds
+CLEANFILES    += $(top_builddir)/valt_load_address_amd64_linux.lds
+endif
+if VGCONF_PLATFORMS_INCLUDE_PPC32_LINUX
+BUILT_SOURCES += $(top_builddir)/valt_load_address_ppc32_linux.lds
+CLEANFILES    += $(top_builddir)/valt_load_address_ppc32_linux.lds
+endif
+if VGCONF_PLATFORMS_INCLUDE_PPC64_LINUX
+BUILT_SOURCES += $(top_builddir)/valt_load_address_ppc64_linux.lds
+CLEANFILES    += $(top_builddir)/valt_load_address_ppc64_linux.lds
+endif
+if VGCONF_PLATFORMS_INCLUDE_PPC32_AIX5
+# No need to generate $(top_builddir)/valt_load_address*.lds; the final
+# executables can be linked to be at any address.  They will be relocated by
+# AIX kernel when they are loaded.
+endif
+if VGCONF_PLATFORMS_INCLUDE_PPC64_AIX5
+# Ditto
+endif
+if VGCONF_OS_IS_DARWIN
+# GrP untested, possibly hopeless
+endif
+
+
+# Generate a linker script for linking the binaries.  This is the
+# standard gcc linker script, except hacked so that an alternative
+# load address can be specified by (1) asking gcc to use this script
+# (-Wl,-T,valt_load_address.lds) and (2) setting the symbol
+# valt_load_address to the required value
+# (-Wl,-defsym,valt_load_address=0x70000000).
+#
+# Extract ld's default linker script and hack it to our needs.
+# First we cut everything above and below the "=====..." lines at the top
+# and bottom.
+# Then we have to replace the load address with "valt_load_address".
+# The line to replace in has one of the following two forms:
+#
+#   . = 0x08048000 + SIZEOF_HEADERS;
+#
+# or
+#   PROVIDE (__executable_start = 0x08048000); . = 0x08048000 + SIZEOF_HEADERS;
+#
+# So we search for the line with a hex value "+ SIZEOF_HEADERS", and replace
+# all the hex values in that line with "valt_load_address".
+$(top_builddir)/valt_load_address_x86_linux.lds: Makefile
+	$(CC) @FLAG_M32@ -Wl,--verbose -nostdlib 2>&1 | sed \
+		-e '1,/^=====\+$$/d' \
+		-e '/^=====\+$$/,/.\*/d' \
+		-e '/\. = \(0x[0-9A-Fa-f]\+\|SEGMENT_START("[^"]\+", 0x[0-9A-Fa-f]\+)\) + SIZEOF_HEADERS/s/0x[0-9A-Fa-f]\+/valt_load_address/g' > $@ \
+	|| rm -f $@
+
+$(top_builddir)/valt_load_address_amd64_linux.lds: Makefile
+	$(CC) -m64 -Wl,--verbose -nostdlib 2>&1 | sed \
+		-e '1,/^=====\+$$/d' \
+		-e '/^=====\+$$/,/.\*/d' \
+		-e '/\. = \(0x[0-9A-Fa-f]\+\|SEGMENT_START("[^"]\+", 0x[0-9A-Fa-f]\+)\) + SIZEOF_HEADERS/s/0x[0-9A-Fa-f]\+/valt_load_address/g' > $@ \
+	|| rm -f $@
+
+$(top_builddir)/valt_load_address_ppc32_linux.lds: Makefile
+	$(CC) @FLAG_M32@ -Wl,--verbose -nostdlib 2>&1 | sed \
+		-e '1,/^=====\+$$/d' \
+		-e '/^=====\+$$/,/.\*/d' \
+		-e '/\. = \(0x[0-9A-Fa-f]\+\|SEGMENT_START("[^"]\+", 0x[0-9A-Fa-f]\+)\) + SIZEOF_HEADERS/s/0x[0-9A-Fa-f]\+/valt_load_address/g' > $@ \
+	|| rm -f $@
+
+$(top_builddir)/valt_load_address_ppc64_linux.lds: Makefile
+	$(CC) -m64 -Wl,--verbose -nostdlib 2>&1 | sed \
+		-e '1,/^=====\+$$/d' \
+		-e '/^=====\+$$/,/.\*/d' \
+		-e '/\. = \(0x[0-9A-Fa-f]\+\|SEGMENT_START("[^"]\+", 0x[0-9A-Fa-f]\+)\) + SIZEOF_HEADERS/s/0x[0-9A-Fa-f]\+/valt_load_address/g' > $@ \
+	|| rm -f $@
+
+#----------------------------------------------------------------------------
+# vgpreload_<tool>-<platform>.a stuff
+#----------------------------------------------------------------------------
 
 LIBREPLACEMALLOC_X86_LINUX = \
 	$(top_builddir)/coregrind/libreplacemalloc_toolpreload-x86-linux.a
@@ -29,146 +176,6 @@ LIBREPLACEMALLOC_X86_DARWIN = \
 
 LIBREPLACEMALLOC_AMD64_DARWIN = \
 	$(top_builddir)/coregrind/libreplacemalloc_toolpreload-amd64-darwin.a
-
-
-COREGRIND_LIBS_X86_LINUX = \
-	$(top_builddir)/coregrind/libcoregrind-x86-linux.a \
-	@VEX_DIR@/libvex-x86-linux.a
-
-COREGRIND_LIBS_AMD64_LINUX = \
-	$(top_builddir)/coregrind/libcoregrind-amd64-linux.a \
-	@VEX_DIR@/libvex-amd64-linux.a
-
-COREGRIND_LIBS_PPC32_LINUX = \
-	$(top_builddir)/coregrind/libcoregrind-ppc32-linux.a \
-	@VEX_DIR@/libvex-ppc32-linux.a
-
-COREGRIND_LIBS_PPC64_LINUX = \
-	$(top_builddir)/coregrind/libcoregrind-ppc64-linux.a \
-	@VEX_DIR@/libvex-ppc64-linux.a
-
-COREGRIND_LIBS_PPC32_AIX5 = \
-	$(top_builddir)/coregrind/libcoregrind-ppc32-aix5.a \
-	@VEX_DIR@/libvex-ppc32-aix5.a
-
-COREGRIND_LIBS_PPC64_AIX5 = \
-	$(top_builddir)/coregrind/libcoregrind-ppc64-aix5.a \
-	@VEX_DIR@/libvex-ppc64-aix5.a
-
-COREGRIND_LIBS_X86_DARWIN = \
-	$(top_builddir)/coregrind/libcoregrind-x86-darwin.a \
-	@VEX_DIR@/libvex-x86-darwin.a
-
-COREGRIND_LIBS_AMD64_DARWIN = \
-	$(top_builddir)/coregrind/libcoregrind-amd64-darwin.a \
-	@VEX_DIR@/libvex-amd64-darwin.a
-
-
-##.PHONY:  @VEX_DIR@/libvex.a
-
-@VEX_DIR@/libvex-x86-linux.a: @VEX_DIR@/priv/main/vex_svnversion.h
-	$(MAKE) -C @VEX_DIR@ CC="$(CC)" AR="$(AR)" \
-	libvex-x86-linux.a \
-	EXTRA_CFLAGS="$(AM_CFLAGS_X86_LINUX) @FLAG_WDECL_AFTER_STMT@ \
-			@FLAG_FNO_STACK_PROTECTOR@"
-
-@VEX_DIR@/libvex-amd64-linux.a: @VEX_DIR@/priv/main/vex_svnversion.h
-	$(MAKE) -C @VEX_DIR@ CC="$(CC)" AR="$(AR)" \
-	libvex-amd64-linux.a \
-	EXTRA_CFLAGS="$(AM_CFLAGS_AMD64_LINUX) @FLAG_WDECL_AFTER_STMT@ \
-			@FLAG_FNO_STACK_PROTECTOR@"
-
-@VEX_DIR@/libvex-ppc32-linux.a: @VEX_DIR@/priv/main/vex_svnversion.h
-	$(MAKE) -C @VEX_DIR@ CC="$(CC)" AR="$(AR)" \
-	libvex-ppc32-linux.a \
-	EXTRA_CFLAGS="$(AM_CFLAGS_PPC32_LINUX) @FLAG_WDECL_AFTER_STMT@ \
-			@FLAG_FNO_STACK_PROTECTOR@"
-
-@VEX_DIR@/libvex-ppc64-linux.a: @VEX_DIR@/priv/main/vex_svnversion.h
-	$(MAKE) -C @VEX_DIR@ CC="$(CC)" AR="$(AR)" \
-	libvex-ppc64-linux.a \
-	EXTRA_CFLAGS="$(AM_CFLAGS_PPC64_LINUX) @FLAG_WDECL_AFTER_STMT@ \
-			@FLAG_FNO_STACK_PROTECTOR@"
-
-@VEX_DIR@/libvex-ppc32-aix5.a: @VEX_DIR@/priv/main/vex_svnversion.h
-	$(MAKE) -C @VEX_DIR@ CC="$(CC)" AR="$(AR) -X32" \
-	libvex-ppc32-aix5.a \
-	EXTRA_CFLAGS="$(AM_CFLAGS_PPC32_AIX5) @FLAG_WDECL_AFTER_STMT@ \
-			@FLAG_FNO_STACK_PROTECTOR@"
-
-@VEX_DIR@/libvex-ppc64-aix5.a: @VEX_DIR@/priv/main/vex_svnversion.h
-	$(MAKE) -C @VEX_DIR@ CC="$(CC)" AR="$(AR) -X64" \
-	libvex-ppc64-aix5.a \
-	EXTRA_CFLAGS="$(AM_CFLAGS_PPC64_AIX5) @FLAG_WDECL_AFTER_STMT@ \
-			@FLAG_FNO_STACK_PROTECTOR@"
-
-@VEX_DIR@/libvex-x86-darwin.a: @VEX_DIR@/priv/main/vex_svnversion.h
-	$(MAKE) -C @VEX_DIR@ CC="$(CC)" AR="$(AR)" \
-	libvex-x86-darwin.a \
-	EXTRA_CFLAGS="$(AM_CFLAGS_X86_DARWIN) @FLAG_WDECL_AFTER_STMT@ \
-		@FLAG_FNO_STACK_PROTECTOR@"
-
-@VEX_DIR@/libvex-amd64-darwin.a: @VEX_DIR@/priv/main/vex_svnversion.h
-	$(MAKE) -C @VEX_DIR@ CC="$(CC)" AR="$(AR)" \
-	libvex-amd64-darwin.a \
-	EXTRA_CFLAGS="$(AM_CFLAGS_AMD64_DARWIN) @FLAG_WDECL_AFTER_STMT@ \
-		@FLAG_FNO_STACK_PROTECTOR@"
-
-@VEX_DIR@/priv/main/vex_svnversion.h:
-	$(MAKE) -C @VEX_DIR@ CC="$(CC)" version
-
-
-TOOL_LDADD_COMMON = -lgcc
-TOOL_LDFLAGS_COMMON_LINUX = -static \
-	-Wl,-defsym,valt_load_address=@VALT_LOAD_ADDRESS@ \
-	-nodefaultlibs -nostartfiles -u _start
-TOOL_LDFLAGS_COMMON_AIX5 = -static -Wl,-e_start_valgrind
-TOOL_LDFLAGS_COMMON_DARWIN = -nodefaultlibs -nostartfiles \
-	-Wl,-u,__start -Wl,-e,__start -Wl,-bind_at_load /usr/lib/dyld
-
-TOOL_LDADD_X86_LINUX = $(COREGRIND_LIBS_X86_LINUX) $(TOOL_LDADD_COMMON)
-TOOL_LDFLAGS_X86_LINUX = \
-	$(TOOL_LDFLAGS_COMMON_LINUX) @FLAG_M32@ \
-	-Wl,-T,$(top_builddir)/valt_load_address_x86_linux.lds
-
-TOOL_LDADD_AMD64_LINUX = $(COREGRIND_LIBS_AMD64_LINUX) $(TOOL_LDADD_COMMON)
-TOOL_LDFLAGS_AMD64_LINUX = \
-	$(TOOL_LDFLAGS_COMMON_LINUX) @FLAG_M64@ \
-	-Wl,-T,$(top_builddir)/valt_load_address_amd64_linux.lds
-
-TOOL_LDADD_PPC32_LINUX = $(COREGRIND_LIBS_PPC32_LINUX) $(TOOL_LDADD_COMMON)
-TOOL_LDFLAGS_PPC32_LINUX = \
-	$(TOOL_LDFLAGS_COMMON_LINUX) @FLAG_M32@ \
-	-Wl,-T,$(top_builddir)/valt_load_address_ppc32_linux.lds
-
-TOOL_LDADD_PPC64_LINUX = $(COREGRIND_LIBS_PPC64_LINUX) $(TOOL_LDADD_COMMON)
-TOOL_LDFLAGS_PPC64_LINUX = \
-	$(TOOL_LDFLAGS_COMMON_LINUX) @FLAG_M64@ \
-	-Wl,-T,$(top_builddir)/valt_load_address_ppc64_linux.lds
-
-TOOL_LDADD_PPC32_AIX5 = $(COREGRIND_LIBS_PPC32_AIX5) $(TOOL_LDADD_COMMON)
-TOOL_LDFLAGS_PPC32_AIX5 = \
-	$(TOOL_LDFLAGS_COMMON_AIX5) @FLAG_MAIX32@
-
-TOOL_LDADD_PPC64_AIX5 = $(COREGRIND_LIBS_PPC64_AIX5) $(TOOL_LDADD_COMMON)
-TOOL_LDFLAGS_PPC64_AIX5 = \
-	$(TOOL_LDFLAGS_COMMON_AIX5) @FLAG_MAIX64@ -Wl,-bbigtoc
-
-TOOL_LDADD_X86_DARWIN = $(COREGRIND_LIBS_X86_DARWIN) $(TOOL_LDADD_COMMON)
-TOOL_LDFLAGS_X86_DARWIN = \
-	$(TOOL_LDFLAGS_COMMON_DARWIN) -arch i386 \
-	-Wl,-seg1addr,0xf0080000 \
-	-Wl,-stack_addr,0xf0080000 -Wl,-stack_size,0x80000 \
-	-Wl,-pagezero_size,0xf0000000
-
-# pagezero can't be unmapped and remapped. Use stack instead.
-# GrP fixme no stack guard
-TOOL_LDADD_AMD64_DARWIN = $(COREGRIND_LIBS_AMD64_DARWIN) $(TOOL_LDADD_COMMON)
-TOOL_LDFLAGS_AMD64_DARWIN = \
-	$(TOOL_LDFLAGS_COMMON_DARWIN) -arch x86_64 \
-	-Wl,-seg1addr,0x7fff55000000 \
-	-Wl,-stack_addr,0x7fff50080000 -Wl,-stack_size,0x7ffe50080000 \
-	-Wl,-pagezero_size,0x100000000
 
 
 LIBREPLACEMALLOC_LDFLAGS_X86_LINUX = \
@@ -203,7 +210,9 @@ LIBREPLACEMALLOC_LDFLAGS_X86_DARWIN = \
 LIBREPLACEMALLOC_LDFLAGS_AMD64_DARWIN = \
 	$(LIBREPLACEMALLOC_AMD64_DARWIN)
 
-
+#----------------------------------------------------------------------------
+# General stuff
+#----------------------------------------------------------------------------
 
 all-local: inplace-noinst_PROGRAMS inplace-noinst_DSYMS
 

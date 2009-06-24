@@ -28,10 +28,10 @@
    The GNU General Public License is contained in the file COPYING.
 */
 
+#if defined(VGO_darwin) 
+
 #include "pub_core_basics.h"
 #include "pub_core_mach.h"
-
-#if defined(VGO_darwin) 
 
 #include <mach/mach.h>
 #include <mach/machine/ndr_def.h>
@@ -84,17 +84,7 @@ void VG_(mach_init)(void)
     vm_page_size = 4096;
 }
 
-
-#else
-
-// For platforms that don't actually have Mach kernel interfaces
-
-void VG_(mach_init)(void)
-{
-    // do nothing
-}
-
-#endif
+#endif // defined(VGO_darwin) 
 
 /*--------------------------------------------------------------------*/
 /*--- end                                                          ---*/

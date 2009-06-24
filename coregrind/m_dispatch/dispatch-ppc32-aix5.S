@@ -34,6 +34,8 @@
   without prior written permission.
 */
 
+#if defined(VGP_ppc32_aix5)
+
 #include "pub_core_basics_asm.h"
 #include "pub_core_dispatch_asm.h"
 #include "pub_core_transtab_asm.h"
@@ -672,6 +674,7 @@ void VG_(run_a_noredir_translation) ( UWord* argblock );
 	mr	1,4
 	blr
 
+#endif // defined(VGP_ppc32_aix5)
 
 /*--------------------------------------------------------------------*/
 /*--- end                                                          ---*/

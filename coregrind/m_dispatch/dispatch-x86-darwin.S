@@ -1,7 +1,7 @@
 
 /*--------------------------------------------------------------------*/
 /*--- The core dispatch loop, for jumping to a code address.       ---*/
-/*---                                               dispatch-x86.S ---*/
+/*---                                        dispatch-x86-darwin.S ---*/
 /*--------------------------------------------------------------------*/
 
 /*
@@ -28,6 +28,8 @@
 
   The GNU General Public License is contained in the file COPYING.
 */
+
+#if defined(VGP_x86_darwin)
 
 #include "pub_core_basics_asm.h"
 #include "pub_core_dispatch_asm.h"
@@ -312,6 +314,7 @@ VG_(run_a_noredir_translation__return_point):
 	popl %esi
 	ret
 
+#endif // defined(VGP_x86_darwin)
 			
 /*--------------------------------------------------------------------*/
 /*--- end                                                          ---*/

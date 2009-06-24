@@ -81,20 +81,34 @@ Release 3.5.0 (???)
   from the distribution.  For anyone interested, the removal occurred in SVN
   revision r10247.
 
-* The location of some install files has changed.  This should not affect
-  most users.  Those who might be affected:
-  - For people who use Valgrind with MPI programs, the installed
-    libmpiwrap.so library has moved from $(INSTALL)/<platform>/libmpiwrap.so
-    to $(INSTALL)/libmpiwrap-<platform>.so.
-  - For people who distribute standalone Valgrind tools, the installed
-    libraries such as $(INSTALL)/<platform>/libcoregrind.a have moved to
-    $(INSTALL)/libcoregrind-<platform>.a.
+* Some changes have been made to the build system.
 
-  These changes were made to simplify the build system.
+  - VEX/ is now integrated properly into the build system.  This means that
+    dependency tracking within VEX/ now works properly, "make install" will
+    work without requiring "make" before it, and parallel builds
+    (ie. 'make -j') now work (previously a .NOTPARALLEL directive was used
+    to serialize builds, ie. 'make -j' was effectively ignored).
 
-* Previously, all the distributed suppression (*.supp) files were installed.
-  Now, only default.supp is installed.  This should not affect users as the
-  other installed suppression files were not read.
+  - The --with-vex configure option has been removed.  It was of little use
+    and removing it simplified the build system.
+
+  - The location of some install files has changed.  This should not affect
+    most users.  Those who might be affected:
+
+    * For people who use Valgrind with MPI programs, the installed
+      libmpiwrap.so library has moved from $(INSTALL)/<platform>/libmpiwrap.so
+      to $(INSTALL)/libmpiwrap-<platform>.so.
+
+    * For people who distribute standalone Valgrind tools, the installed
+      libraries such as $(INSTALL)/<platform>/libcoregrind.a have moved to
+      $(INSTALL)/libcoregrind-<platform>.a.
+
+    These changes simplified the build system.
+
+  - Previously, all the distributed suppression (*.supp) files were installed.
+    Now, only default.supp is installed.  This should not affect users as the
+    other installed suppression files were not read;  the fact that they
+    were installed was a mistake.
 
 n-i-bz DRD - race conditions between pthread_barrier_wait() and
        pthread_barrier_destroy() calls are now reported.

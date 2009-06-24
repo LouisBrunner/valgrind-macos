@@ -16,43 +16,6 @@ AM_INIT_AUTOMAKE([foreign])
 AM_MAINTAINER_MODE
 
 #----------------------------------------------------------------------------
-# Where is VEX ?
-#----------------------------------------------------------------------------
-# Nb: For the 2nd arg, the help string, AS_HELP_STRING is the proper way, but
-#     older autoconfs don't support it... here's what it would say:
-#
-#    AS_HELP_STRING([--with-vex], [Vex directory]),
-#
-AC_ARG_WITH(vex, 
-    [  --with-vex=/path/to/vex/dir    Vex directory],
-[
-    AC_CHECK_FILE($withval/pub/libvex.h,
-        [VEX_DIR=$withval],
-        [AC_MSG_ERROR([Directory '$withval' does not exist, or does not contain Vex])])
-],
-[
-    VEX_DIR='$(top_srcdir)/VEX'
-])
-AC_SUBST(VEX_DIR)
-
-# "make distcheck" first builds a tarball, then extracts it.
-# Then it creates a build directory different from the extracted sources
-# (called _build), and issues
-#
-#   ../configure $(DISTCHECK_CONFIGURE_FLAGS)
-#
-# and then builds, runs "make check", installs using DESTDIR, runs make
-# installcheck, uninstalls, checks whether the installed base is empty
-# again, then does yet another "make dist" and compares the resulting
-# tarball with the one it started off with for identical content.  Then it
-# tests "make distclean" for no leftover files.  
-#
-# So this line means:  when doing "make dist", use the same --with-vex value
-# that you used when running configure to configure this tree in the first
-# place.
-AC_SUBST([DISTCHECK_CONFIGURE_FLAGS], [--with-vex=$VEX_DIR])
-
-#----------------------------------------------------------------------------
 # Checks for various programs.
 #----------------------------------------------------------------------------
 CFLAGS="-Wno-long-long"
@@ -1835,8 +1798,10 @@ AM_CONDITIONAL([HAVE_BUILTIN_ATOMIC], [test x$ac_have_builtin_atomic = xyes])
 # Ok.  We're done checking.
 #----------------------------------------------------------------------------
 
-AC_OUTPUT(
+# Nb: VEX/Makefile is generated from Makefile.vex.in.
+AC_CONFIG_FILES([
    Makefile 
+   VEX/Makefile:Makefile.vex.in
    valgrind.spec
    valgrind.pc
    glibc-2.X.supp
@@ -1850,8 +1815,8 @@ AC_OUTPUT(
    perf/Makefile 
    perf/vg_perf
    include/Makefile 
-   include/vki/Makefile 
    auxprogs/Makefile
+   mpi/Makefile
    coregrind/Makefile 
    memcheck/Makefile
    memcheck/tests/Makefile
@@ -1900,7 +1865,8 @@ AC_OUTPUT(
    drd/docs/Makefile
    drd/scripts/download-and-build-splash2
    drd/tests/Makefile
-)
+])
+AC_OUTPUT
 
 cat<<EOF
 

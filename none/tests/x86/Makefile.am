@@ -1,7 +1,7 @@
 
 include $(top_srcdir)/Makefile.tool-tests.am
 
-noinst_SCRIPTS = filter_cpuid filter_stderr gen_insn_test.pl
+dist_noinst_SCRIPTS = filter_cpuid filter_stderr gen_insn_test.pl
 
 CLEANFILES = $(addsuffix .c,$(INSN_TESTS))
 
@@ -17,7 +17,7 @@ endif
 # Explicitly include insn_sse3 even if ! BUILD_SSE3_TESTS, 
 # to avoid packaging screwups if 'make dist' is run on a machine
 # which failed the BUILD_SSE3_TESTS test in configure.in.
-EXTRA_DIST = $(noinst_SCRIPTS) \
+EXTRA_DIST = \
 	badseg.stderr.exp badseg.stdout.exp badseg.vgtest \
 	bt_everything.stderr.exp bt_everything.stdout.exp bt_everything.vgtest \
 	bt_literal.stderr.exp bt_literal.stdout.exp bt_literal.vgtest \

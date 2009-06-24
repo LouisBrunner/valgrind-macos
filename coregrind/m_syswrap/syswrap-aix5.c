@@ -33,6 +33,8 @@
    without prior written permission.
 */
 
+#if defined(VGO_aix5)
+
 #include "pub_core_basics.h"
 #include "pub_core_vki.h"
 #include "pub_core_vkiscnums.h"
@@ -2573,6 +2575,8 @@ PRE(sys_yield)
 
 #undef PRE
 #undef POST
+
+#endif // defined(VGO_aix5)
 
 /*--------------------------------------------------------------------*/
 /*--- end                                                          ---*/

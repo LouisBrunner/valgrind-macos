@@ -29,6 +29,8 @@
   The GNU General Public License is contained in the file COPYING.
 */
 
+#if defined(VGP_amd64_darwin)
+
 #include "pub_core_basics_asm.h"
 #include "pub_core_dispatch_asm.h"
 #include "pub_core_transtab_asm.h"
@@ -325,6 +327,8 @@ VG_(run_a_noredir_translation__return_point):
 	popq  %rbp
 	popq  %rbx
 	ret
+
+#endif // defined(VGP_amd64_darwin)
 
 /*--------------------------------------------------------------------*/
 /*--- end                                                          ---*/

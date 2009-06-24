@@ -28,6 +28,8 @@
   The GNU General Public License is contained in the file COPYING.
 */
 
+#if defined(VGP_amd64_darwin)
+
 #include "pub_core_basics_asm.h"
 #include "pub_core_vkiscnums_asm.h"
 #include "libvex_guest_offsets.h"
@@ -247,6 +249,7 @@ ML_(blksys_complete_UNIX):	.quad MK_L_SCCLASS_N(UNIX,3)
 ML_(blksys_committed_UNIX):	.quad MK_L_SCCLASS_N(UNIX,4)
 ML_(blksys_finished_UNIX):	.quad MK_L_SCCLASS_N(UNIX,5)
 
+#endif // defined(VGP_amd64_darwin)
 
 /*--------------------------------------------------------------------*/
 /*--- end                                                          ---*/

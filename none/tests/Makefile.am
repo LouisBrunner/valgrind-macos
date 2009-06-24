@@ -32,13 +32,13 @@ endif
 
 DIST_SUBDIRS = x86 amd64 ppc32 ppc64 linux darwin x86-linux .
 
-noinst_SCRIPTS = \
+dist_noinst_SCRIPTS = \
 	filter_cmdline0 filter_linenos \
 	filter_fdleak filter_none_discards filter_stderr
 
 noinst_HEADERS = fdleak.h
 
-EXTRA_DIST = $(noinst_SCRIPTS) \
+EXTRA_DIST = \
 	ansi.stderr.exp ansi.vgtest \
 	args.stderr.exp args.stdout.exp args.vgtest \
 	async-sigs.stderr.exp async-sigs.vgtest \

@@ -1,5 +1,5 @@
 /*--------------------------------------------------------------------*/
-/*--- Basic Mach traps                                mach_traps.S ---*/
+/*--- Basic Mach traps.                    mach_traps-x86-darwin.S ---*/
 /*--------------------------------------------------------------------*/
 
 /*
@@ -27,6 +27,10 @@
    The GNU General Public License is contained in the file COPYING.
 */
 
+#if defined(VGP_x86_darwin)
+
+// DDD: should use __NR_ constants in here instead of the trap numbers
+// directly!
 
 	// mach_port_name_t task_self_trap(void)
 	.text
@@ -118,6 +122,7 @@ _semaphore_wait_signal:
 	int	$0x81
 	ret
 
+#endif // defined(VGP_x86_darwin)
 
 /*--------------------------------------------------------------------*/
 /*--- end                                                          ---*/

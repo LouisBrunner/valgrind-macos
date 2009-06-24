@@ -1,9 +1,9 @@
 
 include $(top_srcdir)/Makefile.tool-tests.am
 
-noinst_SCRIPTS = filter_stderr
+dist_noinst_SCRIPTS = filter_stderr
 
-EXTRA_DIST = $(noinst_SCRIPTS) \
+EXTRA_DIST = \
 	bug129390-ppc32.stdout.exp bug129390-ppc32.stderr.exp \
 	bug129390-ppc32.vgtest \
 	bug139050-ppc32.stdout.exp bug139050-ppc32.stderr.exp \

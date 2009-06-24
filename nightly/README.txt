@@ -13,13 +13,14 @@ the script starts running, so if any commits happen while the tests are
 running they will not be tested.)
 
 If the two trees are different (i.e. there have been commits in the past 24
-hours) it builds ("make"), installs ("make install") and runs the regression
-tests ("make regtest") in both, and compares the results.  Note that the
-"make install" isn't necessary in order to run the tests because the
-regression tests use the code built (with "make") within the tree, but it's
-worth doing because it tests that "make install" isn't totally broken.
-After checking both trees, it emails a summary of the results to a
-recipient.  All this typically takes something like 30 minutes.
+hours, either to the trunk or a branch) it builds ("make"), installs ("make
+install") and runs the regression tests ("make regtest") in both, and
+compares the results.  Note that the "make install" isn't necessary in order
+to run the tests because the regression tests use the code built (with
+"make") within the tree, but it's worth doing because it tests that "make
+install" isn't totally broken.  After checking both trees, it emails a
+summary of the results to a recipient.  All this typically takes something
+like 30 minutes.
 
 If the two trees are identical, the tests are not run and no results are
 emailed.  This avoids spamming people with uninteresting results emails when
@@ -70,10 +71,10 @@ To set up nightly testing for a machine, do the following.
       empty.
 
     - ABT_EVAL: if provided, it must be the name of a shell script that
-      executes the shell command $1 with arguments $2 .. ${$#}. Allows to
+      executes the shell command $1 with arguments $2 .. ${$#}.  Allows to
       compile and run the Valgrind regression tests on another system than
-      the system the 'nightly' script runs on. It is assumed that the remote
-      system shares the local filesystem tree through e.g. NFS. It is the
+      the system the 'nightly' script runs on.  It is assumed that the remote
+      system shares the local filesystem tree through e.g. NFS.  It is the
       responsibility of the shell script to set the remote working directory
       such that it matches the local current directory ($PWD).
 
@@ -84,8 +85,6 @@ To set up nightly testing for a machine, do the following.
 
     - ABT_JOBS: allows parallel builds -- it's passed as the argument to
       "make -j" when building Valgrind and the tests.  The default is 1.
-      [XXX: the .NOTPARALLEL that currently resides in Makefile.all.am foils
-       this!]
 
     Note that the appropriate syntax to use in this file will depend on the
     shell from which the $DIR/bin/nightly script is run (which in turn may

@@ -31,6 +31,8 @@
    The GNU General Public License is contained in the file COPYING.
 */
 
+#if defined(VGP_ppc32_linux)
+
 #include "pub_core_basics.h"
 #include "pub_core_vki.h"
 #include "pub_core_vkiscnums.h"
@@ -973,6 +975,8 @@ void VG_(sigframe_destroy)( ThreadId tid, Bool isRT )
 //..    VG_TRACK( post_deliver_signal, tid, sigNo );
 }
 
+#endif // defined(VGP_ppc32_linux)
+
 /*--------------------------------------------------------------------*/
-/*--- end                                   sigframe-ppc32-linux.c ---*/
+/*--- end                                                          ---*/
 /*--------------------------------------------------------------------*/

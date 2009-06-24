@@ -1,140 +1,10 @@
 include $(top_srcdir)/Makefile.tool.am
 
-noinst_PROGRAMS =
-noinst_DSYMS =
-if VGCONF_PLATFORMS_INCLUDE_X86_LINUX
-  noinst_PROGRAMS += drd-x86-linux   vgpreload_drd-x86-linux.so
-endif
-if VGCONF_PLATFORMS_INCLUDE_AMD64_LINUX
-  noinst_PROGRAMS += drd-amd64-linux vgpreload_drd-amd64-linux.so
-endif
-if VGCONF_PLATFORMS_INCLUDE_PPC32_LINUX
-  noinst_PROGRAMS += drd-ppc32-linux vgpreload_drd-ppc32-linux.so
-endif
-if VGCONF_PLATFORMS_INCLUDE_PPC64_LINUX
-  noinst_PROGRAMS += drd-ppc64-linux vgpreload_drd-ppc64-linux.so
-endif
-if VGCONF_PLATFORMS_INCLUDE_PPC32_AIX5
-  noinst_PROGRAMS += drd-ppc32-aix5  vgpreload_drd-ppc32-aix5.so
-endif
-if VGCONF_PLATFORMS_INCLUDE_PPC64_AIX5
-  noinst_PROGRAMS += drd-ppc64-aix5  vgpreload_drd-ppc64-aix5.so
-endif
-if VGCONF_PLATFORMS_INCLUDE_X86_DARWIN
-  noinst_PROGRAMS += drd-x86-darwin  vgpreload_drd-x86-darwin.so
-  noinst_DSYMS    +=                 vgpreload_drd-x86-darwin.so
-endif
-if VGCONF_PLATFORMS_INCLUDE_AMD64_DARWIN
-  noinst_PROGRAMS += drd-amd64-darwin vgpreload_drd-amd64-darwin.so
-  noinst_DSYMS    +=                  vgpreload_drd-amd64-darwin.so
-endif
+#----------------------------------------------------------------------------
+# Headers, flags
+#----------------------------------------------------------------------------
 
-
-VGPRELOAD_DRD_SOURCES =    \
-  drd_gomp_intercepts.c    \
-  drd_pthread_intercepts.c \
-  drd_qtcore_intercepts.c  \
-  drd_strmem_intercepts.c
-
-
-DRD_CFLAGS =				\
-  @FLAG_UNLIMITED_INLINE_UNIT_GROWTH@	\
-  -O2					\
-  @FLAG_W_EXTRA@			\
-  -Wformat-nonliteral			\
-  -Wno-inline				\
-  -Wno-unused-parameter
-
-AM_CFLAGS_X86_LINUX   += $(DRD_CFLAGS)
-AM_CFLAGS_AMD64_LINUX += $(DRD_CFLAGS)
-AM_CFLAGS_PPC32_LINUX += $(DRD_CFLAGS)
-AM_CFLAGS_PPC64_LINUX += $(DRD_CFLAGS)
-AM_CFLAGS_PPC32_AIX5  += $(DRD_CFLAGS)
-AM_CFLAGS_PPC64_AIX5  += $(DRD_CFLAGS)
-
-vgpreload_drd_x86_linux_so_SOURCES      = $(VGPRELOAD_DRD_SOURCES)
-vgpreload_drd_x86_linux_so_CPPFLAGS     = $(AM_CPPFLAGS_X86_LINUX)
-vgpreload_drd_x86_linux_so_CFLAGS       = $(AM_CFLAGS_X86_LINUX) $(AM_CFLAGS_PIC)
-vgpreload_drd_x86_linux_so_CCASFLAGS    = $(AM_CCASFLAGS_X86_LINUX)
-vgpreload_drd_x86_linux_so_DEPENDENCIES = $(LIBREPLACEMALLOC_X86_LINUX)
-vgpreload_drd_x86_linux_so_LDFLAGS      = $(PRELOAD_LDFLAGS_X86_LINUX)\
-                                        $(LIBREPLACEMALLOC_LDFLAGS_X86_LINUX)
-
-vgpreload_drd_amd64_linux_so_SOURCES      = $(VGPRELOAD_DRD_SOURCES)
-vgpreload_drd_amd64_linux_so_CPPFLAGS     = $(AM_CPPFLAGS_AMD64_LINUX)
-vgpreload_drd_amd64_linux_so_CFLAGS       = $(AM_CFLAGS_AMD64_LINUX) $(AM_CFLAGS_PIC)
-vgpreload_drd_amd64_linux_so_CCASFLAGS    = $(AM_CCASFLAGS_AMD64_LINUX)
-vgpreload_drd_amd64_linux_so_DEPENDENCIES =
-vgpreload_drd_amd64_linux_so_LDFLAGS      = $(PRELOAD_LDFLAGS_AMD64_LINUX)\
-                                        $(LIBREPLACEMALLOC_LDFLAGS_AMD64_LINUX)
-
-vgpreload_drd_ppc32_linux_so_SOURCES      = $(VGPRELOAD_DRD_SOURCES)
-vgpreload_drd_ppc32_linux_so_CPPFLAGS     = $(AM_CPPFLAGS_PPC32_LINUX)
-vgpreload_drd_ppc32_linux_so_CFLAGS       = $(AM_CFLAGS_PPC32_LINUX) $(AM_CFLAGS_PIC)
-vgpreload_drd_ppc32_linux_so_CCASFLAGS    = $(AM_CCASFLAGS_PPC32_LINUX)
-vgpreload_drd_ppc32_linux_so_DEPENDENCIES =
-vgpreload_drd_ppc32_linux_so_LDFLAGS      = $(PRELOAD_LDFLAGS_PPC32_LINUX)\
-                                        $(LIBREPLACEMALLOC_LDFLAGS_PPC32_LINUX)
-
-vgpreload_drd_ppc64_linux_so_SOURCES      = $(VGPRELOAD_DRD_SOURCES)
-vgpreload_drd_ppc64_linux_so_CPPFLAGS     = $(AM_CPPFLAGS_PPC64_LINUX)
-vgpreload_drd_ppc64_linux_so_CFLAGS       = $(AM_CFLAGS_PPC64_LINUX) $(AM_CFLAGS_PIC)
-vgpreload_drd_ppc64_linux_so_CCASFLAGS    = $(AM_CCASFLAGS_PPC64_LINUX)
-vgpreload_drd_ppc64_linux_so_DEPENDENCIES =
-vgpreload_drd_ppc64_linux_so_LDFLAGS      = $(PRELOAD_LDFLAGS_PPC64_LINUX)\
-                                        $(LIBREPLACEMALLOC_LDFLAGS_PPC64_LINUX)
-
-vgpreload_drd_ppc32_aix5_so_SOURCES      = $(VGPRELOAD_DRD_SOURCES)
-vgpreload_drd_ppc32_aix5_so_CPPFLAGS     = $(AM_CPPFLAGS_PPC32_AIX5)
-vgpreload_drd_ppc32_aix5_so_CFLAGS       = $(AM_CFLAGS_PPC32_AIX5) $(AM_CFLAGS_PIC)
-vgpreload_drd_ppc32_aix5_so_CCASFLAGS    = $(AM_CCASFLAGS_PPC32_AIX5)
-vgpreload_drd_ppc32_aix5_so_DEPENDENCIES =
-vgpreload_drd_ppc32_aix5_so_LDFLAGS      = $(PRELOAD_LDFLAGS_PPC32_AIX5)\
-                                        $(LIBREPLACEMALLOC_LDFLAGS_PPC32_AIX5)
-
-vgpreload_drd_ppc64_aix5_so_SOURCES      = $(VGPRELOAD_DRD_SOURCES)
-vgpreload_drd_ppc64_aix5_so_CPPFLAGS     = $(AM_CPPFLAGS_PPC64_AIX5)
-vgpreload_drd_ppc64_aix5_so_CFLAGS       = $(AM_CFLAGS_PPC64_AIX5) $(AM_CFLAGS_PIC)
-vgpreload_drd_ppc64_aix5_so_CCASFLAGS    = $(AM_CCASFLAGS_PPC64_AIX5)
-vgpreload_drd_ppc64_aix5_so_DEPENDENCIES =
-vgpreload_drd_ppc64_aix5_so_LDFLAGS      = $(PRELOAD_LDFLAGS_PPC64_AIX5)\
-                                        $(LIBREPLACEMALLOC_LDFLAGS_PPC64_AIX5)
-
-vgpreload_drd_x86_darwin_so_SOURCES      = $(VGPRELOAD_DRD_SOURCES)
-vgpreload_drd_x86_darwin_so_CPPFLAGS     = $(AM_CPPFLAGS_X86_DARWIN)
-vgpreload_drd_x86_darwin_so_CFLAGS       = $(AM_CFLAGS_X86_DARWIN) $(AM_CFLAGS_PIC)
-vgpreload_drd_x86_darwin_so_CCASFLAGS    = $(AM_CCASFLAGS_X86_DARWIN)
-vgpreload_drd_x86_darwin_so_DEPENDENCIES = $(LIBREPLACEMALLOC_X86_DARWIN)
-vgpreload_drd_x86_darwin_so_LDFLAGS      = $(PRELOAD_LDFLAGS_X86_DARWIN)\
-                                        $(LIBREPLACEMALLOC_LDFLAGS_X86_DARWIN)
-
-vgpreload_drd_amd64_darwin_so_SOURCES      = $(VGPRELOAD_DRD_SOURCES)
-vgpreload_drd_amd64_darwin_so_CPPFLAGS     = $(AM_CPPFLAGS_AMD64_DARWIN)
-vgpreload_drd_amd64_darwin_so_CFLAGS       = $(AM_CFLAGS_AMD64_DARWIN) $(AM_CFLAGS_PIC)
-vgpreload_drd_amd64_darwin_so_CCASFLAGS    = $(AM_CCASFLAGS_AMD64_DARWIN)
-vgpreload_drd_amd64_darwin_so_DEPENDENCIES =
-vgpreload_drd_amd64_darwin_so_LDFLAGS      = $(PRELOAD_LDFLAGS_AMD64_DARWIN)\
-                                        $(LIBREPLACEMALLOC_LDFLAGS_AMD64_DARWIN)
-
-
-DRD_SOURCES =           \
-  drd_barrier.c         \
-  drd_bitmap2_node.c    \
-  drd_clientobj.c       \
-  drd_clientreq.c       \
-  drd_cond.c            \
-  drd_error.c           \
-  drd_load_store.c      \
-  drd_main.c            \
-  drd_malloc_wrappers.c \
-  drd_mutex.c           \
-  drd_rwlock.c          \
-  drd_semaphore.c       \
-  drd_suppression.c
-
-drdincludedir = $(includedir)/valgrind
-
-drdinclude_HEADERS = drd.h
+pkginclude_HEADERS = drd.h
 
 noinst_HEADERS =        \
   drd_barrier.h         \
@@ -160,60 +30,104 @@ noinst_HEADERS =        \
   drd_vc.h              \
   pub_drd_bitmap.h
 
-drd_x86_linux_SOURCES        = $(DRD_SOURCES)
-drd_x86_linux_CPPFLAGS       = $(AM_CPPFLAGS_X86_LINUX)
-drd_x86_linux_CFLAGS         = $(AM_CFLAGS_X86_LINUX)
-drd_x86_linux_DEPENDENCIES   = $(COREGRIND_LIBS_X86_LINUX)
-drd_x86_linux_LDADD          = $(TOOL_LDADD_X86_LINUX)
-drd_x86_linux_LDFLAGS        = $(TOOL_LDFLAGS_X86_LINUX)
+DRD_CFLAGS =				\
+  @FLAG_UNLIMITED_INLINE_UNIT_GROWTH@	\
+  -O2					\
+  @FLAG_W_EXTRA@			\
+  -Wformat-nonliteral			\
+  -Wno-inline				\
+  -Wno-unused-parameter
 
-drd_amd64_linux_SOURCES      = $(DRD_SOURCES)
-drd_amd64_linux_CPPFLAGS     = $(AM_CPPFLAGS_AMD64_LINUX)
-drd_amd64_linux_CFLAGS       = $(AM_CFLAGS_AMD64_LINUX)
-drd_amd64_linux_DEPENDENCIES = $(COREGRIND_LIBS_AMD64_LINUX)
-drd_amd64_linux_LDADD        = $(TOOL_LDADD_AMD64_LINUX)
-drd_amd64_linux_LDFLAGS      = $(TOOL_LDFLAGS_AMD64_LINUX)
+#----------------------------------------------------------------------------
+# drd-<platform>
+#----------------------------------------------------------------------------
 
-drd_ppc32_linux_SOURCES      = $(DRD_SOURCES)
-drd_ppc32_linux_CPPFLAGS     = $(AM_CPPFLAGS_PPC32_LINUX)
-drd_ppc32_linux_CFLAGS       = $(AM_CFLAGS_PPC32_LINUX)
-drd_ppc32_linux_DEPENDENCIES = $(COREGRIND_LIBS_PPC32_LINUX)
-drd_ppc32_linux_LDADD        = $(TOOL_LDADD_PPC32_LINUX)
-drd_ppc32_linux_LDFLAGS      = $(TOOL_LDFLAGS_PPC32_LINUX)
+noinst_PROGRAMS  = drd-@VGCONF_ARCH_PRI@-@VGCONF_OS@
+if VGCONF_HAVE_PLATFORM_SEC
+noinst_PROGRAMS += drd-@VGCONF_ARCH_SEC@-@VGCONF_OS@
+endif
 
-drd_ppc64_linux_SOURCES      = $(DRD_SOURCES)
-drd_ppc64_linux_CPPFLAGS     = $(AM_CPPFLAGS_PPC64_LINUX)
-drd_ppc64_linux_CFLAGS       = $(AM_CFLAGS_PPC64_LINUX)
-drd_ppc64_linux_DEPENDENCIES = $(COREGRIND_LIBS_PPC64_LINUX)
-drd_ppc64_linux_LDADD        = $(TOOL_LDADD_PPC64_LINUX)
-drd_ppc64_linux_LDFLAGS      = $(TOOL_LDFLAGS_PPC64_LINUX)
+DRD_SOURCES_COMMON =    \
+  drd_barrier.c         \
+  drd_bitmap2_node.c    \
+  drd_clientobj.c       \
+  drd_clientreq.c       \
+  drd_cond.c            \
+  drd_error.c           \
+  drd_load_store.c      \
+  drd_main.c            \
+  drd_malloc_wrappers.c \
+  drd_mutex.c           \
+  drd_rwlock.c          \
+  drd_semaphore.c       \
+  drd_suppression.c
 
-drd_ppc32_aix5_SOURCES      = $(DRD_SOURCES)
-drd_ppc32_aix5_CPPFLAGS     = $(AM_CPPFLAGS_PPC32_AIX5)
-drd_ppc32_aix5_CFLAGS       = $(AM_CFLAGS_PPC32_AIX5)
-drd_ppc32_aix5_DEPENDENCIES = $(COREGRIND_LIBS_PPC32_AIX5)
-drd_ppc32_aix5_LDADD        = $(TOOL_LDADD_PPC32_AIX5)
-drd_ppc32_aix5_LDFLAGS      = $(TOOL_LDFLAGS_PPC32_AIX5)
+drd_@VGCONF_ARCH_PRI@_@VGCONF_OS@_SOURCES      = $(DRD_SOURCES_COMMON)
+drd_@VGCONF_ARCH_PRI@_@VGCONF_OS@_CPPFLAGS     = \
+	$(AM_CPPFLAGS_@VGCONF_PLATFORM_PRI_CAPS@)
+drd_@VGCONF_ARCH_PRI@_@VGCONF_OS@_CFLAGS       = \
+	$(AM_CFLAGS_@VGCONF_PLATFORM_PRI_CAPS@) $(DRD_CFLAGS)
+drd_@VGCONF_ARCH_PRI@_@VGCONF_OS@_DEPENDENCIES = \
+	$(TOOL_DEPENDENCIES_@VGCONF_PLATFORM_PRI_CAPS@)
+drd_@VGCONF_ARCH_PRI@_@VGCONF_OS@_LDADD        = \
+	$(TOOL_LDADD_@VGCONF_PLATFORM_PRI_CAPS@)
+drd_@VGCONF_ARCH_PRI@_@VGCONF_OS@_LDFLAGS      = \
+	$(TOOL_LDFLAGS_@VGCONF_PLATFORM_PRI_CAPS@)
+if VGCONF_HAVE_PLATFORM_SEC
+drd_@VGCONF_ARCH_SEC@_@VGCONF_OS@_SOURCES      = $(DRD_SOURCES_COMMON)
+drd_@VGCONF_ARCH_SEC@_@VGCONF_OS@_CPPFLAGS     = \
+	$(AM_CPPFLAGS_@VGCONF_PLATFORM_SEC_CAPS@)
+drd_@VGCONF_ARCH_SEC@_@VGCONF_OS@_CFLAGS       = \
+	$(AM_CFLAGS_@VGCONF_PLATFORM_SEC_CAPS@) $(DRD_CFLAGS)
+drd_@VGCONF_ARCH_SEC@_@VGCONF_OS@_DEPENDENCIES = \
+	$(TOOL_DEPENDENCIES_@VGCONF_PLATFORM_SEC_CAPS@)
+drd_@VGCONF_ARCH_SEC@_@VGCONF_OS@_LDADD        = \
+	$(TOOL_LDADD_@VGCONF_PLATFORM_SEC_CAPS@)
+drd_@VGCONF_ARCH_SEC@_@VGCONF_OS@_LDFLAGS      = \
+	$(TOOL_LDFLAGS_@VGCONF_PLATFORM_SEC_CAPS@)
+endif
 
-drd_ppc64_aix5_SOURCES      = $(DRD_SOURCES)
-drd_ppc64_aix5_CPPFLAGS     = $(AM_CPPFLAGS_PPC64_AIX5)
-drd_ppc64_aix5_CFLAGS       = $(AM_CFLAGS_PPC64_AIX5)
-drd_ppc64_aix5_DEPENDENCIES = $(COREGRIND_LIBS_PPC64_AIX5)
-drd_ppc64_aix5_LDADD        = $(TOOL_LDADD_PPC64_AIX5)
-drd_ppc64_aix5_LDFLAGS      = $(TOOL_LDFLAGS_PPC64_AIX5)
+#----------------------------------------------------------------------------
+# vgpreload_drd-<platform>.so
+#----------------------------------------------------------------------------
 
-drd_x86_darwin_SOURCES        = $(DRD_SOURCES)
-drd_x86_darwin_CPPFLAGS       = $(AM_CPPFLAGS_X86_DARWIN)
-drd_x86_darwin_CFLAGS         = $(AM_CFLAGS_X86_DARWIN)
-drd_x86_darwin_DEPENDENCIES   = $(COREGRIND_LIBS_X86_DARWIN)
-drd_x86_darwin_LDADD          = $(TOOL_LDADD_X86_DARWIN)
-drd_x86_darwin_LDFLAGS        = $(TOOL_LDFLAGS_X86_DARWIN)
+noinst_PROGRAMS += vgpreload_drd-@VGCONF_ARCH_PRI@-@VGCONF_OS@.so
+if VGCONF_HAVE_PLATFORM_SEC
+noinst_PROGRAMS += vgpreload_drd-@VGCONF_ARCH_SEC@-@VGCONF_OS@.so
+endif
 
-drd_amd64_darwin_SOURCES      = $(DRD_SOURCES)
-drd_amd64_darwin_CPPFLAGS     = $(AM_CPPFLAGS_AMD64_DARWIN)
-drd_amd64_darwin_CFLAGS       = $(AM_CFLAGS_AMD64_DARWIN)
-drd_amd64_darwin_DEPENDENCIES = $(COREGRIND_LIBS_AMD64_DARWIN)
-drd_amd64_darwin_LDADD        = $(TOOL_LDADD_AMD64_DARWIN)
-drd_amd64_darwin_LDFLAGS      = $(TOOL_LDFLAGS_AMD64_DARWIN)
+if VGCONF_OS_IS_DARWIN
+noinst_DSYMS = $(noinst_PROGRAMS)
+endif
 
+VGPRELOAD_DRD_SOURCES_COMMON = \
+  drd_gomp_intercepts.c        \
+  drd_pthread_intercepts.c     \
+  drd_qtcore_intercepts.c      \
+  drd_strmem_intercepts.c
+
+vgpreload_drd_@VGCONF_ARCH_PRI@_@VGCONF_OS@_so_SOURCES      = \
+	$(VGPRELOAD_DRD_SOURCES_COMMON)
+vgpreload_drd_@VGCONF_ARCH_PRI@_@VGCONF_OS@_so_CPPFLAGS     = \
+	$(AM_CPPFLAGS_@VGCONF_PLATFORM_PRI_CAPS@)
+vgpreload_drd_@VGCONF_ARCH_PRI@_@VGCONF_OS@_so_CFLAGS       = \
+	$(AM_CFLAGS_@VGCONF_PLATFORM_PRI_CAPS@) $(AM_CFLAGS_PIC) $(DRD_CFLAGS)
+vgpreload_drd_@VGCONF_ARCH_PRI@_@VGCONF_OS@_so_DEPENDENCIES = \
+	$(LIBREPLACEMALLOC_@VGCONF_PLATFORM_PRI_CAPS@)
+vgpreload_drd_@VGCONF_ARCH_PRI@_@VGCONF_OS@_so_LDFLAGS      = \
+	$(PRELOAD_LDFLAGS_@VGCONF_PLATFORM_PRI_CAPS@) \
+	$(LIBREPLACEMALLOC_LDFLAGS_@VGCONF_PLATFORM_PRI_CAPS@)
+if VGCONF_HAVE_PLATFORM_SEC
+vgpreload_drd_@VGCONF_ARCH_SEC@_@VGCONF_OS@_so_SOURCES      = \
+	$(VGPRELOAD_DRD_SOURCES_COMMON)
+vgpreload_drd_@VGCONF_ARCH_SEC@_@VGCONF_OS@_so_CPPFLAGS     = \
+	$(AM_CPPFLAGS_@VGCONF_PLATFORM_SEC_CAPS@)
+vgpreload_drd_@VGCONF_ARCH_SEC@_@VGCONF_OS@_so_CFLAGS       = \
+	$(AM_CFLAGS_@VGCONF_PLATFORM_SEC_CAPS@) $(AM_CFLAGS_PIC) $(DRD_CFLAGS)
+vgpreload_drd_@VGCONF_ARCH_SEC@_@VGCONF_OS@_so_DEPENDENCIES = \
+	$(LIBREPLACEMALLOC_@VGCONF_PLATFORM_SEC_CAPS@)
+vgpreload_drd_@VGCONF_ARCH_SEC@_@VGCONF_OS@_so_LDFLAGS      = \
+	$(PRELOAD_LDFLAGS_@VGCONF_PLATFORM_SEC_CAPS@) \
+	$(LIBREPLACEMALLOC_LDFLAGS_@VGCONF_PLATFORM_SEC_CAPS@)
+endif
 

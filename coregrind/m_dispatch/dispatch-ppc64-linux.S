@@ -28,6 +28,8 @@
   The GNU General Public License is contained in the file COPYING.
 */
 
+#if defined(VGP_ppc64_linux)
+
 #include "pub_core_basics_asm.h"
 #include "pub_core_dispatch_asm.h"
 #include "pub_core_transtab_asm.h"
@@ -655,6 +657,8 @@ VG_(run_a_noredir_translation):
 
 /* Let the linker know we don't need an executable stack */
 .section .note.GNU-stack,"",@progbits
+
+#endif // defined(VGP_ppc64_linux)
 
 /*--------------------------------------------------------------------*/
 /*--- end                                                          ---*/

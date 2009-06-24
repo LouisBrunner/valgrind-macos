@@ -27,27 +27,30 @@
    The GNU General Public License is contained in the file COPYING.
 */
 
+#if defined(VGO_linux) || defined(VGO_darwin)
+
 #ifndef __PRIV_UME_H
 #define __PRIV_UME_H
 
 extern int VG_(do_exec_inner)(const HChar *exe, ExeInfo *info);
 
-#if defined(HAVE_ELF)
+#if defined(VGO_linux)
 extern Bool VG_(match_ELF) ( Char *hdr, Int len );
 extern Int  VG_(load_ELF)  ( Int fd, const HChar *name, ExeInfo *info );
-#endif
-
-#if defined(HAVE_SCRIPT)
-extern Bool VG_(match_script) ( Char *hdr, Int len );
-extern Int  VG_(load_script)  ( Int fd, const HChar *name, ExeInfo *info );
-#endif
-
-#if defined(HAVE_MACHO)
+#elif defined(VGO_darwin)
 extern Bool VG_(match_macho) ( Char *hdr, Int len );
 extern Int  VG_(load_macho)  ( Int fd, const HChar *name, ExeInfo *info );
+#else
+#  error Unknown OS
 #endif
 
-#endif /* __PRIV_UME_H */
+extern Bool VG_(match_script) ( Char *hdr, Int len );
+extern Int  VG_(load_script)  ( Int fd, const HChar *name, ExeInfo *info );
+
+
+#endif // __PRIV_UME_H
+
+#endif // defined(VGO_linux) || defined(VGO_darwin)
 
 /*--------------------------------------------------------------------*/
 /*--- end                                                          ---*/

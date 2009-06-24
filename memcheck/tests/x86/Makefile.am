@@ -1,11 +1,11 @@
 
 include $(top_srcdir)/Makefile.tool-tests.am
 
-noinst_SCRIPTS = filter_stderr filter_pushfpopf filter_tronical
+dist_noinst_SCRIPTS = filter_stderr filter_pushfpopf filter_tronical
 
 INSN_TESTS = insn_basic insn_fpu insn_cmov insn_mmx insn_mmxext insn_sse insn_sse2
 
-EXTRA_DIST = $(noinst_SCRIPTS) \
+EXTRA_DIST = \
 	bug152022.vgtest bug152022.stderr.exp bug152022.stdout.exp \
 	espindola2.vgtest espindola2.stderr.exp \
 	fpeflags.stderr.exp fpeflags.vgtest \

@@ -28,6 +28,8 @@
    The GNU General Public License is contained in the file COPYING.
 */
 
+#if defined(VGO_linux)
+
 #include "pub_core_basics.h"
 #include "pub_core_vki.h"
 #include "pub_core_aspacehl.h"
@@ -44,8 +46,6 @@
 #include "pub_core_xarray.h"
 #include "pub_core_clientstate.h"
 #include "pub_core_options.h"
-
-#include "priv_elf.h"
 
 /*
   Dump core
@@ -218,6 +218,7 @@ static void fill_prstatus(const ThreadState *tst,
 			  const vki_siginfo_t *si)
 {
    struct vki_user_regs_struct *regs;
+   ThreadArchState* arch = (ThreadArchState*)&tst->arch;
 
    VG_(memset)(prs, 0, sizeof(*prs));
 
@@ -236,18 +237,189 @@ static void fill_prstatus(const ThreadState *tst,
 
    vg_assert(sizeof(*regs) == sizeof(prs->pr_reg));
 
-   ML_(fill_elfregs_from_tst)(regs, &tst->arch);
+#if defined(VGP_x86_linux)
+   regs->eflags = LibVEX_GuestX86_get_eflags( &arch->vex );
+   regs->esp    = arch->vex.guest_ESP;
+   regs->eip    = arch->vex.guest_EIP;
+
+   regs->ebx    = arch->vex.guest_EBX;
+   regs->ecx    = arch->vex.guest_ECX;
+   regs->edx    = arch->vex.guest_EDX;
+   regs->esi    = arch->vex.guest_ESI;
+   regs->edi    = arch->vex.guest_EDI;
+   regs->ebp    = arch->vex.guest_EBP;
+   regs->eax    = arch->vex.guest_EAX;
+
+   regs->cs     = arch->vex.guest_CS;
+   regs->ds     = arch->vex.guest_DS;
+   regs->ss     = arch->vex.guest_SS;
+   regs->es     = arch->vex.guest_ES;
+   regs->fs     = arch->vex.guest_FS;
+   regs->gs     = arch->vex.guest_GS;
+
+#elif defined(VGP_amd64_linux)
+   regs->eflags = LibVEX_GuestAMD64_get_rflags( &((ThreadArchState*)arch)->vex );
+   regs->rsp    = arch->vex.guest_RSP;
+   regs->rip    = arch->vex.guest_RIP;
+
+   regs->rbx    = arch->vex.guest_RBX;
+   regs->rcx    = arch->vex.guest_RCX;
+   regs->rdx    = arch->vex.guest_RDX;
+   regs->rsi    = arch->vex.guest_RSI;
+   regs->rdi    = arch->vex.guest_RDI;
+   regs->rbp    = arch->vex.guest_RBP;
+   regs->rax    = arch->vex.guest_RAX;
+   regs->r8     = arch->vex.guest_R8;
+   regs->r9     = arch->vex.guest_R9;
+   regs->r10    = arch->vex.guest_R10;
+   regs->r11    = arch->vex.guest_R11;
+   regs->r12    = arch->vex.guest_R12;
+   regs->r13    = arch->vex.guest_R13;
+   regs->r14    = arch->vex.guest_R14;
+   regs->r15    = arch->vex.guest_R15;
+
+//::    regs->cs     = arch->vex.guest_CS;
+//::    regs->fs     = arch->vex.guest_FS;
+//::    regs->gs     = arch->vex.guest_GS;
+
+#elif defined(VGP_ppc32_linux)
+#  define DO(n)  regs->gpr[n] = arch->vex.guest_GPR##n
+   DO(0);  DO(1);  DO(2);  DO(3);  DO(4);  DO(5);  DO(6);  DO(7);
+   DO(8);  DO(9);  DO(10); DO(11); DO(12); DO(13); DO(14); DO(15);
+   DO(16); DO(17); DO(18); DO(19); DO(20); DO(21); DO(22); DO(23);
+   DO(24); DO(25); DO(26); DO(27); DO(28); DO(29); DO(30); DO(31);
+#  undef DO
+
+   regs->nip = arch->vex.guest_CIA;
+   regs->msr = 0xf032;   /* pretty arbitrary */
+   regs->orig_gpr3 = arch->vex.guest_GPR3;
+   regs->ctr = arch->vex.guest_CTR;
+   regs->link = arch->vex.guest_LR;
+   regs->xer = LibVEX_GuestPPC32_get_XER( &((ThreadArchState*)arch)->vex );
+   regs->ccr = LibVEX_GuestPPC32_get_CR( &((ThreadArchState*)arch)->vex );
+   regs->mq = 0;
+   regs->trap = 0;
+   regs->dar = 0; /* should be fault address? */
+   regs->dsisr = 0;
+   regs->result = 0;
+
+#elif defined(VGP_ppc64_linux)
+#  define DO(n)  regs->gpr[n] = arch->vex.guest_GPR##n
+   DO(0);  DO(1);  DO(2);  DO(3);  DO(4);  DO(5);  DO(6);  DO(7);
+   DO(8);  DO(9);  DO(10); DO(11); DO(12); DO(13); DO(14); DO(15);
+   DO(16); DO(17); DO(18); DO(19); DO(20); DO(21); DO(22); DO(23);
+   DO(24); DO(25); DO(26); DO(27); DO(28); DO(29); DO(30); DO(31);
+#  undef DO
+
+   regs->nip = arch->vex.guest_CIA;
+   regs->msr = 0xf032;   /* pretty arbitrary */
+   regs->orig_gpr3 = arch->vex.guest_GPR3;
+   regs->ctr = arch->vex.guest_CTR;
+   regs->link = arch->vex.guest_LR;
+   regs->xer = LibVEX_GuestPPC64_get_XER( &((ThreadArchState*)arch)->vex );
+   regs->ccr = LibVEX_GuestPPC64_get_CR( &((ThreadArchState*)arch)->vex );
+   /* regs->mq = 0; */
+   regs->trap = 0;
+   regs->dar = 0; /* should be fault address? */
+   regs->dsisr = 0;
+   regs->result = 0;
+
+#else
+#  error Unknown ELF platform
+#endif
 }
 
 static void fill_fpu(const ThreadState *tst, vki_elf_fpregset_t *fpu)
 {
-   ML_(fill_elffpregs_from_tst)(fpu, &tst->arch);
+   __attribute__((unused))
+   ThreadArchState* arch = (ThreadArchState*)&tst->arch;
+
+#if defined(VGP_x86_linux)
+//:: static void fill_fpu(vki_elf_fpregset_t *fpu, const Char *from)
+//:: {
+//::    if (VG_(have_ssestate)) {
+//::       UShort *to;
+//::       Int i;
+//:: 
+//::       /* This is what the kernel does */
+//::       VG_(memcpy)(fpu, from, 7*sizeof(long));
+//::    
+//::       to = (UShort *)&fpu->st_space[0];
+//::       from += 18 * sizeof(UShort);
+//:: 
+//::       for (i = 0; i < 8; i++, to += 5, from += 8) 
+//:: 	 VG_(memcpy)(to, from, 5*sizeof(UShort));
+//::    } else
+//::       VG_(memcpy)(fpu, from, sizeof(*fpu));
+//:: }
+
+//::    fill_fpu(fpu, (const Char *)&arch->m_sse);
+
+#elif defined(VGP_amd64_linux)
+//::    fpu->cwd = ?;
+//::    fpu->swd = ?;
+//::    fpu->twd = ?;
+//::    fpu->fop = ?;
+//::    fpu->rip = ?;
+//::    fpu->rdp = ?;
+//::    fpu->mxcsr = ?;
+//::    fpu->mxcsr_mask = ?;
+//::    fpu->st_space = ?;
+
+#  define DO(n)  VG_(memcpy)(fpu->xmm_space + n * 4, &arch->vex.guest_XMM##n, sizeof(arch->vex.guest_XMM##n))
+   DO(0);  DO(1);  DO(2);  DO(3);  DO(4);  DO(5);  DO(6);  DO(7);
+   DO(8);  DO(9);  DO(10); DO(11); DO(12); DO(13); DO(14); DO(15);
+#  undef DO
+
+   VG_(memset)(fpu->padding, 0, sizeof(fpu->padding));
+
+#elif defined(VGP_ppc32_linux)
+   /* The guest state has the FPR fields declared as ULongs, so need
+      to fish out the values without converting them. */
+#  define DO(n)  (*fpu)[n] = *(double*)(&arch->vex.guest_FPR##n)
+   DO(0);  DO(1);  DO(2);  DO(3);  DO(4);  DO(5);  DO(6);  DO(7);
+   DO(8);  DO(9);  DO(10); DO(11); DO(12); DO(13); DO(14); DO(15);
+   DO(16); DO(17); DO(18); DO(19); DO(20); DO(21); DO(22); DO(23);
+   DO(24); DO(25); DO(26); DO(27); DO(28); DO(29); DO(30); DO(31);
+#  undef DO
+
+#elif defined(VGP_ppc64_linux)
+   /* The guest state has the FPR fields declared as ULongs, so need
+      to fish out the values without converting them. */
+#  define DO(n)  (*fpu)[n] = *(double*)(&arch->vex.guest_FPR##n)
+   DO(0);  DO(1);  DO(2);  DO(3);  DO(4);  DO(5);  DO(6);  DO(7);
+   DO(8);  DO(9);  DO(10); DO(11); DO(12); DO(13); DO(14); DO(15);
+   DO(16); DO(17); DO(18); DO(19); DO(20); DO(21); DO(22); DO(23);
+   DO(24); DO(25); DO(26); DO(27); DO(28); DO(29); DO(30); DO(31);
+#  undef DO
+
+#else
+#  error Unknown ELF platform
+#endif
 }
 
 #if defined(VGP_x86_linux)
 static void fill_xfpu(const ThreadState *tst, vki_elf_fpxregset_t *xfpu)
 {
-   ML_(fill_elffpxregs_from_tst)(xfpu, &tst->arch);
+   ThreadArchState* arch = (ThreadArchState*)&tst->arch;
+
+//::    xfpu->cwd = ?;
+//::    xfpu->swd = ?;
+//::    xfpu->twd = ?;
+//::    xfpu->fop = ?;
+//::    xfpu->fip = ?;
+//::    xfpu->fcs = ?;
+//::    xfpu->foo = ?;
+//::    xfpu->fos = ?;
+//::    xfpu->mxcsr = ?;
+   xfpu->reserved = 0;
+//::    xfpu->st_space = ?;
+
+#  define DO(n)  VG_(memcpy)(xfpu->xmm_space + n * 4, &arch->vex.guest_XMM##n, sizeof(arch->vex.guest_XMM##n))
+   DO(0);  DO(1);  DO(2);  DO(3);  DO(4);  DO(5);  DO(6);  DO(7);
+#  undef DO
+
+   VG_(memset)(xfpu->padding, 0, sizeof(xfpu->padding));
 }
 #endif
 
@@ -331,16 +503,16 @@ void make_elf_coredump(ThreadId tid, const vki_siginfo_t *si, UInt max_size)
 
    for(i = 1; i < VG_N_THREADS; i++) {
       vki_elf_fpregset_t  fpu;
-#if defined(VGP_x86_linux)
-      vki_elf_fpxregset_t xfpu;
-#endif
 
       if (VG_(threads)[i].status == VgTs_Empty)
 	 continue;
 
 #if defined(VGP_x86_linux)
-      fill_xfpu(&VG_(threads)[i], &xfpu);
-      add_note(&notelist, "LINUX", NT_PRXFPREG, &xfpu, sizeof(xfpu));
+      {
+         vki_elf_fpxregset_t xfpu;
+         fill_xfpu(&VG_(threads)[i], &xfpu);
+         add_note(&notelist, "LINUX", NT_PRXFPREG, &xfpu, sizeof(xfpu));
+      }
 #endif
 
       fill_fpu(&VG_(threads)[i], &fpu);
@@ -417,6 +589,8 @@ void VG_(make_coredump)(ThreadId tid, const vki_siginfo_t *si, UInt max_size)
 {
    make_elf_coredump(tid, si, max_size);
 }
+
+#endif // defined(VGO_linux)
 
 /*--------------------------------------------------------------------*/
 /*--- end                                                          ---*/

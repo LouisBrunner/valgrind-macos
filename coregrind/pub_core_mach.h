@@ -28,6 +28,8 @@
    The GNU General Public License is contained in the file COPYING.
 */
 
+#if defined(VGO_darwin)
+
 #ifndef __PUB_CORE_MACH_H
 #define __PUB_CORE_MACH_H
 
@@ -36,12 +38,12 @@
 // for operating systems like Darwin / Mac OS X that use it.
 //--------------------------------------------------------------------
 
-#if defined(VGO_darwin)
 // Call this early in Valgrind's main(). It depends on nothing.
 extern void VG_(mach_init)(void);
-#endif
 
-#endif   // __PUB_CORE_MACH_H
+#endif // __PUB_CORE_MACH_H
+
+#endif // defined(VGO_darwin)
 
 /*--------------------------------------------------------------------*/
 /*--- end                                                          ---*/

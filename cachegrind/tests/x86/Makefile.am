@@ -1,9 +1,9 @@
 
 include $(top_srcdir)/Makefile.tool-tests.am
 
-noinst_SCRIPTS = filter_stderr
+dist_noinst_SCRIPTS = filter_stderr
 
-EXTRA_DIST = $(noinst_SCRIPTS) \
+EXTRA_DIST = \
 	fpu-28-108.vgtest fpu-28-108.stderr.exp
 
 check_PROGRAMS = \

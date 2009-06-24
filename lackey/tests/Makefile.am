@@ -1,4 +1,3 @@
-noinst_SCRIPTS = filter_stderr
+dist_noinst_SCRIPTS = filter_stderr
 
-EXTRA_DIST = $(noinst_SCRIPTS) \
-	true.stderr.exp true.vgtest
+EXTRA_DIST = true.stderr.exp true.vgtest

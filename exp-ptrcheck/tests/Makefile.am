@@ -1,16 +1,10 @@
 
 include $(top_srcdir)/Makefile.tool-tests.am
 
-#SUBDIRS = .
-#if VGCONF_ARCHS_INCLUDE_X86
-#SUBDIRS += x86
-
-#DIST_SUBDIRS = x86 .
-
-noinst_SCRIPTS = filter_stderr filter_add filter_suppgen \
+dist_noinst_SCRIPTS = filter_stderr filter_add filter_suppgen \
 	sh_script
 
-EXTRA_DIST = $(noinst_SCRIPTS) \
+EXTRA_DIST = \
 	add.vgtest-disabled add.stderr.exp \
 	and.vgtest-disabled and.stderr.exp \
 	arith.vgtest-disabled arith.stderr.exp \

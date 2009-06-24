@@ -28,6 +28,8 @@
    The GNU General Public License is contained in the file COPYING.
 */
 
+#if defined(VGO_linux)
+
 #include "pub_core_basics.h"
 #include "pub_core_vki.h"
 
@@ -43,8 +45,6 @@
 #include "pub_core_ume.h"           // self
 
 #include "priv_ume.h"
-
-#if defined(HAVE_ELF)
 
 /* --- !!! --- EXTERNAL HEADERS start --- !!! --- */
 #define _GNU_SOURCE
@@ -511,7 +511,7 @@ Int VG_(load_ELF)(Int fd, const HChar* name, /*MOD*/ExeInfo* info)
    return 0;
 }
 
-#endif /* defined(HAVE_ELF) */
+#endif // defined(VGO_linux)
 
 /*--------------------------------------------------------------------*/
 /*--- end                                                          ---*/

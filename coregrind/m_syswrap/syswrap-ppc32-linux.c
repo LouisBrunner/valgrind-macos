@@ -28,6 +28,8 @@
    The GNU General Public License is contained in the file COPYING.
 */
 
+#if defined(VGP_ppc32_linux)
+
 #include "pub_core_basics.h"
 #include "pub_core_vki.h"
 #include "pub_core_vkiscnums.h"
@@ -1869,6 +1871,8 @@ const SyscallTableEntry ML_(syscall_table)[] = {
 
 const UInt ML_(syscall_table_size) = 
             sizeof(ML_(syscall_table)) / sizeof(ML_(syscall_table)[0]);
+
+#endif // defined(VGP_ppc32_linux)
 
 /*--------------------------------------------------------------------*/
 /*--- end                                                          ---*/

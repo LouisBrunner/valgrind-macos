@@ -28,11 +28,8 @@
 
    The GNU General Public License is contained in the file COPYING.
 */
-/*
-   Stabs reader greatly improved by Nick Nethercote, Apr 02.
-   This module was also extensively hacked on by Jeremy Fitzhardinge
-   and Tom Hughes.
-*/
+
+#if defined(VGO_linux)
 
 #include "pub_core_basics.h"
 #include "pub_core_vki.h"
@@ -2048,6 +2045,7 @@ Bool ML_(read_elf_debug_info) ( struct _DebugInfo* di )
   } 
 }
 
+#endif // defined(VGO_linux)
 
 /*--------------------------------------------------------------------*/
 /*--- end                                                          ---*/

@@ -1,13 +1,11 @@
 
 include $(top_srcdir)/Makefile.tool-tests.am
 
-noinst_SCRIPTS = filter_stderr
-
-noinst_HEADERS = 
+dist_noinst_SCRIPTS = filter_stderr
 
 INSN_TESTS = insn_basic insn_mmx insn_sse insn_sse2 insn_fpu
 
-EXTRA_DIST = $(noinst_SCRIPTS) \
+EXTRA_DIST = \
 	$(addsuffix .stderr.exp,$(INSN_TESTS)) \
 	$(addsuffix .stdout.exp,$(INSN_TESTS)) \
 	$(addsuffix .vgtest,$(INSN_TESTS)) \

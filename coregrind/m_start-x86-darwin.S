@@ -28,6 +28,8 @@
    The GNU General Public License is contained in the file COPYING.
 */
 
+#if defined(VGP_x86_darwin)
+
 #include "pub_core_basics_asm.h"
 
 	.text
@@ -78,3 +80,9 @@ __start:
 	// should not reach here
 	int $3
 	int $3
+
+#endif // defined(VGP_x86_darwin)
+
+/*--------------------------------------------------------------------*/
+/*--- end                                                          ---*/
+/*--------------------------------------------------------------------*/

@@ -1,8 +1,3 @@
-#include "pub_core_basics.h"
-#include "pub_core_mach.h"
-
-#if defined(VGO_darwin) 
-
 /* 
  * Mach Operating System
  * Copyright (c) 1991,1990,1989 Carnegie Mellon University
@@ -41,6 +36,11 @@
  * [92/01/15            rpd]
  * 
  */
+
+#if defined(VGO_darwin) 
+
+#include "pub_core_basics.h"
+#include "pub_core_mach.h"
 
 #include <mach/port.h>
 #include <mach/message.h>
@@ -103,4 +103,8 @@ mach_msg(msg, option, send_size, rcv_size, rcv_name, timeout, notify)
     return mr;
 }
 
-#endif
+#endif // defined(VGO_darwin) 
+
+/*--------------------------------------------------------------------*/
+/*--- end                                                          ---*/
+/*--------------------------------------------------------------------*/

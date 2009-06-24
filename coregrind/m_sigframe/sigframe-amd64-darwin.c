@@ -29,6 +29,8 @@
    The GNU General Public License is contained in the file COPYING.
 */
 
+#if defined(VGP_amd64_darwin)
+
 #include "pub_core_basics.h"
 #include "pub_core_vki.h"
 #include "pub_core_vkiscnums.h"
@@ -62,6 +64,8 @@ void VG_(sigframe_destroy)( ThreadId tid, Bool isRT )
 {
    I_die_here;
 }
+
+#endif // defined(VGP_amd64_darwin)
 
 /*--------------------------------------------------------------------*/
 /*--- end                                  sigframe-amd64-darwin.c ---*/

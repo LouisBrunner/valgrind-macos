@@ -1,13 +1,212 @@
 
-## This file should be included by *every* Makefile.am, except those for docs/
-## and tests/ subdirectories.
+# This file should be included (directly or indirectly) by every
+# Makefile.am that builds programs.  And also the top-level Makefile.am.
 
-valdir = $(libdir)/valgrind
+#----------------------------------------------------------------------------
+# Global stuff
+#----------------------------------------------------------------------------
+
 inplacedir = $(top_builddir)/.in_place
 
+# This used to be required when Vex had a handwritten Makefile.  It
+# shouldn't be needed any more, though.
+##.NOTPARALLEL:
 
-# The kludge that passes for vex's build system can't handle parallel
-# builds.  So, for the time being, serialise all Valgrind building.
-# (this is equivalent to enforcing "make -j 1".
-.NOTPARALLEL:
+#----------------------------------------------------------------------------
+# noinst_PROGRAMS and noinst_DSYMS targets
+#----------------------------------------------------------------------------
+
+# On Darwin, for a program 'p', the DWARF debug info is stored in the
+# directory 'p.dSYM'.  This must be generated after the executable is
+# created, with 'dsymutil p'.  We could redefine LINK with a script that
+# executes 'dsymutil' after linking, but that's a pain.  Instead we use this
+# hook so that every time "make check" is run, we subsequently invoke
+# 'dsymutil' on all the executables that lack a .dSYM directory, or that are
+# newer than their corresponding .dSYM directory.
+build-noinst_DSYMS: $(noinst_DSYMS)
+	for f in $(noinst_DSYMS); do \
+	  if [ ! -e $$f.dSYM  -o  $$f -nt $$f.dSYM ] ; then \
+	      echo "dsymutil $$f"; \
+	      dsymutil $$f; \
+	  fi; \
+	done
+
+# This is used by coregrind/Makefile.am and Makefile.tool.am for doing
+# "in-place" installs.  It copies $(noinst_PROGRAMS) into $inplacedir.
+# It needs to be depended on by an 'all-local' rule.
+inplace-noinst_PROGRAMS: $(noinst_PROGRAMS)
+	if [ -n "$(noinst_PROGRAMS)" ] ; then \
+	  mkdir -p $(inplacedir); \
+	  for f in $(noinst_PROGRAMS) ; do \
+	    rm -f $(inplacedir)/$$f; \
+	    ln -f -s ../$(subdir)/$$f $(inplacedir); \
+	  done ; \
+	fi
+
+# Similar to inplace-noinst_PROGRAMS
+inplace-noinst_DSYMS: build-noinst_DSYMS
+	if [ -n "$(noinst_DSYMS)" ] ; then \
+	  mkdir -p $(inplacedir); \
+	  for f in $(noinst_DSYMS); do \
+	    rm -f $(inplacedir)/$$f.dSYM; \
+	    ln -f -s ../$(subdir)/$$f.dSYM $(inplacedir); \
+	  done ; \
+	fi
+
+# This is used by coregrind/Makefile.am and by <tool>/Makefile.am for doing
+# "make install".  It copies $(noinst_PROGRAMS) into $prefix/lib/valgrind/.
+# It needs to be depended on by an 'install-exec-local' rule.
+install-noinst_PROGRAMS: $(noinst_PROGRAMS)
+	if [ -n "$(noinst_PROGRAMS)" ] ; then \
+	  $(mkinstalldirs) $(DESTDIR)$(pkglibdir); \
+	  for f in $(noinst_PROGRAMS); do \
+	    $(INSTALL_PROGRAM) $$f $(DESTDIR)$(pkglibdir); \
+	  done ; \
+	fi
+
+# Similar to install-noinst_PROGRAMS.
+# Nb: we don't use $(INSTALL_PROGRAM) here because it doesn't work with
+# directories.  XXX: not sure whether the resulting permissions will be
+# correct when using 'cp -R'...
+install-noinst_DSYMS: build-noinst_DSYMS
+	if [ -n "$(noinst_DSYMS)" ] ; then \
+	  $(mkinstalldirs) $(DESTDIR)$(pkglibdir); \
+	  for f in $(noinst_DSYMS); do \
+	    cp -R $$f.dSYM $(DESTDIR)$(pkglibdir); \
+	  done ; \
+	fi
+
+# This needs to be depended on by a 'clean-local' rule.
+clean-noinst_DSYMS:
+	for f in $(noinst_DSYMS); do \
+	  rm -rf $$f.dSYM; \
+	done
+
+#----------------------------------------------------------------------------
+# Flags
+#----------------------------------------------------------------------------
+
+# Baseline flags for all compilations.  Aim here is to maximise
+# performance and get whatever useful warnings we can out of gcc.
+AM_CFLAGS_BASE = \
+	-O2 -g \
+	-Wall \
+	-Wmissing-prototypes \
+	-Wshadow \
+	-Wpointer-arith \
+	-Wstrict-prototypes \
+	-Wmissing-declarations \
+	@FLAG_W_NO_FORMAT_ZERO_LENGTH@ \
+	-fno-strict-aliasing
+
+# These flags are used for building the preload shared objects.
+# The aim is to give reasonable performance but also to have good
+# stack traces, since users often see stack traces extending 
+# into (and through) the preloads.
+if VGCONF_OS_IS_DARWIN
+AM_CFLAGS_PIC = -dynamic -O -g -fno-omit-frame-pointer -fno-strict-aliasing -mno-dynamic-no-pic
+else
+AM_CFLAGS_PIC = -fpic -O -g -fno-omit-frame-pointer -fno-strict-aliasing
+endif
+
+
+# Flags for specific targets.
+#
+# Nb: the AM_CPPFLAGS_* values are suitable for building tools and auxprogs.
+# For building the core, coregrind/Makefile.am files add some extra things.
+#
+# Also: in newer versions of automake (1.10 onwards?) asm files ending with
+# '.S' are considered "pre-processed" (as opposed to those ending in '.s')
+# and so the CPPFLAGS are passed to the assembler.  But this is not true for
+# older automakes (e.g. 1.8.5, 1.9.6), sigh.  So we include
+# AM_CPPFLAGS_<PLATFORM> in each AM_CCASFLAGS_<PLATFORM> variable.  This
+# means some of the flags are duplicated on systems with newer versions of
+# automake, but this does not really matter and seems hard to avoid.
+
+AM_CPPFLAGS_@VGCONF_PLATFORM_PRI_CAPS@ = \
+ 	-I$(top_srcdir) \
+ 	-I$(top_srcdir)/include \
+	-I$(top_srcdir)/VEX/pub \
+	-DVGA_@VGCONF_ARCH_PRI@=1 \
+	-DVGO_@VGCONF_OS@=1 \
+	-DVGP_@VGCONF_ARCH_PRI@_@VGCONF_OS@=1
+if VGCONF_HAVE_PLATFORM_SEC
+AM_CPPFLAGS_@VGCONF_PLATFORM_SEC_CAPS@ = \
+ 	-I$(top_srcdir) \
+ 	-I$(top_srcdir)/include \
+	-I$(top_srcdir)/VEX/pub \
+	-DVGA_@VGCONF_ARCH_SEC@=1 \
+	-DVGO_@VGCONF_OS@=1 \
+	-DVGP_@VGCONF_ARCH_SEC@_@VGCONF_OS@=1
+endif
+
+AM_FLAG_M3264_X86_LINUX   = @FLAG_M32@
+AM_CFLAGS_X86_LINUX       = @FLAG_M32@ @PREFERRED_STACK_BOUNDARY@ \
+			 	$(AM_CFLAGS_BASE)
+AM_CCASFLAGS_X86_LINUX    = $(AM_CPPFLAGS_X86_LINUX) @FLAG_M32@ -g
+
+AM_FLAG_M3264_AMD64_LINUX = @FLAG_M64@
+AM_CFLAGS_AMD64_LINUX     = @FLAG_M64@ -fomit-frame-pointer \
+				@PREFERRED_STACK_BOUNDARY@ $(AM_CFLAGS_BASE)
+AM_CCASFLAGS_AMD64_LINUX  = $(AM_CPPFLAGS_AMD64_LINUX) @FLAG_M64@ -g
+
+AM_FLAG_M3264_PPC32_LINUX = @FLAG_M32@
+AM_CFLAGS_PPC32_LINUX     = @FLAG_M32@ $(AM_CFLAGS_BASE)
+AM_CCASFLAGS_PPC32_LINUX  = $(AM_CPPFLAGS_PPC32_LINUX) @FLAG_M32@ -g
+
+AM_FLAG_M3264_PPC64_LINUX = @FLAG_M64@
+AM_CFLAGS_PPC64_LINUX     = @FLAG_M64@ $(AM_CFLAGS_BASE)
+AM_CCASFLAGS_PPC64_LINUX  = $(AM_CPPFLAGS_PPC64_LINUX) @FLAG_M64@ -g
+
+AM_FLAG_M3264_PPC32_AIX5  = @FLAG_MAIX32@
+AM_CFLAGS_PPC32_AIX5      = @FLAG_MAIX32@ -mcpu=powerpc $(AM_CFLAGS_BASE)
+AM_CCASFLAGS_PPC32_AIX5   = $(AM_CPPFLAGS_PPC32_AIX5) \
+			    @FLAG_MAIX32@ -mcpu=powerpc -g
+
+AM_FLAG_M3264_PPC64_AIX5  = @FLAG_MAIX64@
+AM_CFLAGS_PPC64_AIX5      = @FLAG_MAIX64@ -mcpu=powerpc64 $(AM_CFLAGS_BASE)
+AM_CCASFLAGS_PPC64_AIX5   = $(AM_CPPFLAGS_PPC64_AIX5) \
+			    @FLAG_MAIX64@ -mcpu=powerpc64 -g
+
+AM_FLAG_M3264_X86_DARWIN = -arch i386
+AM_CFLAGS_X86_DARWIN     = $(WERROR) -arch i386 $(AM_CFLAGS_BASE) \
+			    -mmacosx-version-min=10.5 -fno-stack-protector \
+			    -mdynamic-no-pic
+AM_CCASFLAGS_X86_DARWIN  = $(AM_CPPFLAGS_X86_DARWIN) -arch i386 -g
+
+AM_FLAG_M3264_AMD64_DARWIN = -arch x86_64
+AM_CFLAGS_AMD64_DARWIN     = $(WERROR) -arch x86_64 $(AM_CFLAGS_BASE) \
+			    -mmacosx-version-min=10.5 -fno-stack-protector
+AM_CCASFLAGS_AMD64_DARWIN  = $(AM_CPPFLAGS_AMD64_DARWIN) -arch x86_64 -g
+
+# Flags for the primary target.  These must be used to build the
+# regtests and performance tests.  In fact, these must be used to
+# build anything which is built only once on a dual-arch build.
+#
+AM_FLAG_M3264_PRI = $(AM_FLAG_M3264_@VGCONF_PLATFORM_PRI_CAPS@)
+AM_CPPFLAGS_PRI   = $(AM_CPPFLAGS_@VGCONF_PLATFORM_PRI_CAPS@)
+AM_CFLAGS_PRI     = $(AM_CFLAGS_@VGCONF_PLATFORM_PRI_CAPS@)
+AM_CCASFLAGS_PRI  = $(AM_CCASFLAGS_@VGCONF_PLATFORM_PRI_CAPS@)
+
+if VGCONF_HAVE_PLATFORM_SEC
+ AM_FLAG_M3264_SEC = $(AM_FLAG_M3264_@VGCONF_PLATFORM_SEC_CAPS@)
+else
+ AM_FLAG_M3264_SEC = 
+endif
+
+
+# Baseline link flags for making vgpreload shared objects.
+#
+PRELOAD_LDFLAGS_COMMON_LINUX  = -nodefaultlibs -shared -Wl,-z,interpose,-z,initfirst
+PRELOAD_LDFLAGS_COMMON_AIX5   = -nodefaultlibs -shared -Wl,-G -Wl,-bnogc
+PRELOAD_LDFLAGS_COMMON_DARWIN = -dynamic -dynamiclib -all_load
+
+PRELOAD_LDFLAGS_X86_LINUX    = $(PRELOAD_LDFLAGS_COMMON_LINUX) @FLAG_M32@
+PRELOAD_LDFLAGS_AMD64_LINUX  = $(PRELOAD_LDFLAGS_COMMON_LINUX) @FLAG_M64@
+PRELOAD_LDFLAGS_PPC32_LINUX  = $(PRELOAD_LDFLAGS_COMMON_LINUX) @FLAG_M32@
+PRELOAD_LDFLAGS_PPC64_LINUX  = $(PRELOAD_LDFLAGS_COMMON_LINUX) @FLAG_M64@
+PRELOAD_LDFLAGS_PPC32_AIX5   = $(PRELOAD_LDFLAGS_COMMON_AIX5)  @FLAG_MAIX32@
+PRELOAD_LDFLAGS_PPC64_AIX5   = $(PRELOAD_LDFLAGS_COMMON_AIX5)  @FLAG_MAIX64@
+PRELOAD_LDFLAGS_X86_DARWIN   = $(PRELOAD_LDFLAGS_COMMON_DARWIN) -arch i386
+PRELOAD_LDFLAGS_AMD64_DARWIN = $(PRELOAD_LDFLAGS_COMMON_DARWIN) -arch x86_64
 

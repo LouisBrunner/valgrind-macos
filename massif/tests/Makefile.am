@@ -1,9 +1,9 @@
 
 include $(top_srcdir)/Makefile.tool-tests.am
 
-noinst_SCRIPTS = filter_stderr filter_verbose
+dist_noinst_SCRIPTS = filter_stderr filter_verbose
 
-EXTRA_DIST = $(noinst_SCRIPTS) \
+EXTRA_DIST = \
 	alloc-fns-A.post.exp alloc-fns-A.stderr.exp alloc-fns-A.vgtest \
 	alloc-fns-B.post.exp alloc-fns-B.stderr.exp alloc-fns-B.vgtest \
 	basic.post.exp basic.stderr.exp basic.vgtest \

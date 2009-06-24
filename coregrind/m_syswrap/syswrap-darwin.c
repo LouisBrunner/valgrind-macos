@@ -28,6 +28,8 @@
    The GNU General Public License is contained in the file COPYING.
 */
 
+#if defined(VGO_darwin)
+
 #include "pub_core_basics.h"
 #include "pub_core_vki.h"
 #include "pub_core_vkiscnums.h"
@@ -7565,7 +7567,8 @@ const UInt ML_(mach_trap_table_size) =
 const UInt ML_(mdep_trap_table_size) = 
             sizeof(ML_(mdep_trap_table)) / sizeof(ML_(mdep_trap_table)[0]);
 
+#endif // defined(VGO_darwin)
 
 /*--------------------------------------------------------------------*/
-/*--- end                                         syswrap-darwin.c ---*/
+/*--- end                                                          ---*/
 /*--------------------------------------------------------------------*/

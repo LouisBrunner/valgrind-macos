@@ -952,6 +952,15 @@ static void load_one_suppressions_file ( Char* filename )
    Char*  err_str = NULL;
    SuppLoc tmp_callers[VG_MAX_SUPP_CALLERS];
 
+   // Check it's not a directory.
+   if (VG_(is_dir)( filename )) {
+      if (VG_(clo_xml))
+         VG_UMSG("</valgrindoutput>\n");
+      VG_UMSG("FATAL: suppressions file \"%s\" is a directory", filename );
+      VG_(exit)(1);
+   }
+
+   // Open the suppression file.
    sres = VG_(open)( filename, VKI_O_RDONLY, 0 );
    if (sr_isError(sres)) {
       if (VG_(clo_xml))

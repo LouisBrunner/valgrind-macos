@@ -369,12 +369,12 @@ DECL_TEMPLATE(darwin, settid);                  // 285
 // NYI settid_with_pid 311
 // NYI __pthread_cond_timedwait 312
 // NYI aio_fsync 313
-// NYI aio_return 314
-// NYI aio_suspend 315
+DECL_TEMPLATE(darwin, aio_return);             // 314
+DECL_TEMPLATE(darwin, aio_suspend);            // 315
 // NYI aio_cancel 316
-// NYI aio_error 317
-// NYI aio_read 318
-// NYI aio_write 319
+DECL_TEMPLATE(darwin, aio_error);              // 317
+DECL_TEMPLATE(darwin, aio_read);               // 318
+DECL_TEMPLATE(darwin, aio_write);              // 319
 // NYI lio_listio 320
 // NYI __pthread_cond_wait 321
 // NYI iopolicysys 322

@@ -537,12 +537,24 @@ int main(void)
    // __NR_settid_with_pid 311
    // __NR___pthread_cond_timedwait 312
    // __NR_aio_fsync 313
-   // __NR_aio_return 314
-   // __NR_aio_suspend 315
+
+   GO(__NR_aio_return, 314, "1s 0m");
+   SY(__NR_aio_return, x0); FAIL;
+
+   GO(__NR_aio_suspend, 315, "1s 0m");
+   SY(__NR_aio_suspend, x0, x0+1, x0); FAIL;
+
    // __NR_aio_cancel 316
-   // __NR_aio_error 317
-   // __NR_aio_read 318
-   // __NR_aio_write 319
+
+   GO(__NR_aio_error, 317, "1s 0m");
+   SY(__NR_aio_error, x0); FAIL;
+
+   GO(__NR_aio_read, 318, "1s 1m");
+   SY(__NR_aio_read, x0); FAIL;
+
+   GO(__NR_aio_write, 319, "1s 1m");
+   SY(__NR_aio_write, x0); FAIL;
+
    // __NR_lio_listio 320
    // __NR___pthread_cond_wait 321
    // __NR_iopolicysys 322

@@ -688,6 +688,54 @@ Syscall param lstat_extended(fsacl) points to unaddressable byte(s)
 (300):           old shared_region_make_private_np
 -----------------------------------------------------
 -----------------------------------------------------
+x200013a(314):     __NR_aio_return 1s 0m
+-----------------------------------------------------
+
+Syscall param aio_return(aiocbp) contains uninitialised byte(s)
+   ...
+-----------------------------------------------------
+x200013b(315):    __NR_aio_suspend 1s 0m
+-----------------------------------------------------
+
+Syscall param aio_suspend(aiocbp) contains uninitialised byte(s)
+   ...
+
+Syscall param aio_suspend(nent) contains uninitialised byte(s)
+   ...
+
+Syscall param aio_suspend(timeout) contains uninitialised byte(s)
+   ...
+
+Syscall param aio_suspend(list) points to unaddressable byte(s)
+   ...
+ Address 0x........ is not stack'd, malloc'd or (recently) free'd
+-----------------------------------------------------
+x200013d(317):      __NR_aio_error 1s 0m
+-----------------------------------------------------
+
+Syscall param aio_error(aiocbp) contains uninitialised byte(s)
+   ...
+-----------------------------------------------------
+x200013e(318):       __NR_aio_read 1s 1m
+-----------------------------------------------------
+
+Syscall param aio_read(aiocbp) contains uninitialised byte(s)
+   ...
+
+Syscall param aio_read(aiocbp) points to unaddressable byte(s)
+   ...
+ Address 0x........ is not stack'd, malloc'd or (recently) free'd
+-----------------------------------------------------
+x200013f(319):      __NR_aio_write 1s 1m
+-----------------------------------------------------
+
+Syscall param aio_write(aiocbp) contains uninitialised byte(s)
+   ...
+
+Syscall param aio_write(aiocbp) points to unaddressable byte(s)
+   ...
+ Address 0x........ is not stack'd, malloc'd or (recently) free'd
+-----------------------------------------------------
 (323):           unused
 -----------------------------------------------------
 -----------------------------------------------------

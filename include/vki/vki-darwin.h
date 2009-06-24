@@ -1020,4 +1020,8 @@ struct ByteRangeLockPB2
 #define	VKI_A_SETKAUDIT	A_SETKAUDIT	
 
 
+#include <sys/aio.h>
+
+#define vki_aiocb aiocb
+
 #endif

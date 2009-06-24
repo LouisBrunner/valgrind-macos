@@ -3355,6 +3355,51 @@ PRE(sigsuspend)
 }
 
 
+PRE(aio_return)
+{
+   // This assumes that the kernel looks at the struct pointer, but not the
+   // contents of the struct.
+   PRINT( "aio_return ( %#lx )", ARG1 );
+   PRE_REG_READ1(long, "aio_return", struct vki_aiocb*, aiocbp);
+}
+
+PRE(aio_suspend)
+{
+   // This assumes that the kernel looks at the struct pointers in the list,
+   // but not the contents of the structs.
+   PRINT( "aio_suspend ( %#lx )", ARG1 );
+   PRE_REG_READ3(long, "aio_suspend",
+                 const struct vki_aiocb *, aiocbp, int, nent,
+                 const struct vki_timespec *, timeout);
+   if (ARG2 > 0)
+      PRE_MEM_READ("aio_suspend(list)", ARG1, ARG2 * sizeof(struct vki_aiocb *));
+   if (ARG3)
+      PRE_MEM_READ ("aio_suspend(timeout)", ARG3, sizeof(struct vki_timespec));
+}
+
+PRE(aio_error)
+{
+   // This assumes that the kernel looks at the struct pointer, but not the
+   // contents of the struct.
+   PRINT( "aio_error ( %#lx )", ARG1 );
+   PRE_REG_READ1(long, "aio_error", struct vki_aiocb*, aiocbp);
+}
+
+PRE(aio_read)
+{
+   PRINT( "aio_read ( %#lx )", ARG1 );
+   PRE_REG_READ1(long, "aio_read", struct vki_aiocb*, aiocbp);
+   PRE_MEM_READ( "aio_read(aiocbp)", ARG1, sizeof(struct vki_aiocb));
+}
+
+PRE(aio_write)
+{
+   PRINT( "aio_write ( %#lx )", ARG1 );
+   PRE_REG_READ1(long, "aio_write", struct vki_aiocb*, aiocbp);
+   PRE_MEM_READ( "aio_write(aiocbp)", ARG1, sizeof(struct vki_aiocb));
+}
+
+
 /* ---------------------------------------------------------------------
    mach_msg: formatted messages
    ------------------------------------------------------------------ */
@@ -7300,12 +7345,12 @@ const SyscallTableEntry ML_(syscall_table)[] = {
 // _____(__NR_settid_with_pid), 
 // _____(__NR___pthread_cond_timedwait), 
 // _____(__NR_aio_fsync), 
-// _____(__NR_aio_return), 
-// _____(__NR_aio_suspend), 
+   MACX_(__NR_aio_return,     aio_return), 
+   MACX_(__NR_aio_suspend,    aio_suspend), 
 // _____(__NR_aio_cancel), 
-// _____(__NR_aio_error), 
-// _____(__NR_aio_read), 
-// _____(__NR_aio_write), 
+   MACX_(__NR_aio_error,      aio_error), 
+   MACX_(__NR_aio_read,       aio_read), 
+   MACX_(__NR_aio_write,      aio_write), 
 // _____(__NR_lio_listio),   // 320
 // _____(__NR___pthread_cond_wait), 
 // _____(__NR_iopolicysys), 

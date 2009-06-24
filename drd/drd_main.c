@@ -683,6 +683,12 @@ void drd_pre_clo_init(void)
    DRD_(suppression_init)();
 
    DRD_(clientobj_init)();
+
+   {
+      Char* const smi = VG_(getenv)("DRD_SEGMENT_MERGING_INTERVAL");
+      if (smi)
+         DRD_(thread_set_segment_merge_interval)(VG_(strtoll10)(smi, NULL));
+   }
 }
 
 

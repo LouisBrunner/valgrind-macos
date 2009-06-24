@@ -6,12 +6,14 @@ dist_noinst_SCRIPTS = filter_stderr
 noinst_HEADERS = scalar.h
 
 EXTRA_DIST = \
+	pth-supp.stderr.exp pth-supp.vgtest \
 	scalar.stderr.exp scalar.vgtest \
 	scalar_fork.stderr.exp scalar_fork.vgtest \
 	scalar_nocancel.stderr.exp scalar_nocancel.vgtest \
 	scalar_vfork.stderr.exp scalar_vfork.vgtest
 
 check_PROGRAMS = \
+	pth-supp \
 	scalar \
 	scalar_fork \
 	scalar_nocancel \

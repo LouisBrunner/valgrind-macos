@@ -111,6 +111,7 @@ endif
 endif
 endif
 
+preen_invars_so_so_SOURCES      = preen_invars_so.c	# For automake-1.7.
 preen_invars_so_so_CFLAGS       = $(AM_CFLAGS) -fpic
 if VGCONF_PLATFORMS_INCLUDE_PPC64_AIX5
  preen_invars_so_so_LDFLAGS     = -fpic $(AM_FLAG_M3264_PRI) -shared

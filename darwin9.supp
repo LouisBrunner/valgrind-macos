@@ -143,6 +143,18 @@
    fun:puts
 }
 
+# Genuine leaks.
+# See https://bugs.kde.org/show_bug.cgi?id=188572 about this;  it's
+# unavoidable due to BSD setenv() semantics.
+{
+   <insert a suppression name here>
+   Memcheck:Leak
+   fun:malloc_zone_malloc
+   fun:__setenv
+   fun:setenv$UNIX2003
+   fun:main
+}
+
 
 ##----------------------------------------------------------------------##
 #

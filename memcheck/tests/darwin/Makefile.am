@@ -6,6 +6,7 @@ dist_noinst_SCRIPTS = filter_stderr
 noinst_HEADERS = scalar.h
 
 EXTRA_DIST = \
+	env.stderr.exp env.vgtest \
 	pth-supp.stderr.exp pth-supp.vgtest \
 	scalar.stderr.exp scalar.vgtest \
 	scalar_fork.stderr.exp scalar_fork.vgtest \
@@ -13,6 +14,7 @@ EXTRA_DIST = \
 	scalar_vfork.stderr.exp scalar_vfork.vgtest
 
 check_PROGRAMS = \
+	env \
 	pth-supp \
 	scalar \
 	scalar_fork \

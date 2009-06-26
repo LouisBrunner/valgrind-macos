@@ -17,8 +17,9 @@ is the default tool.</para>
 
 <para>Memcheck is Valgrind's heavyweight memory checking tool.  All
 reads and writes of memory are checked, and calls to
-malloc/new/free/delete are intercepted. As a result, Memcheck can detect
-the following problems:</para>
+<function>malloc</function>/<computeroutput>new</computeroutput>/<function>free</function>/<computeroutput>delete</computeroutput>
+are intercepted. As a result, Memcheck can detect the following
+problems:</para>
 
 <itemizedlist>
   <listitem>
@@ -38,8 +39,10 @@ the following problems:</para>
    lost forever</para>
   </listitem>
   <listitem>
-    <para>Mismatched use of malloc/new/new [] vs
-    free/delete/delete []</para>
+    <para>Mismatched use of
+    <function>malloc</function>/<computeroutput>new</computeroutput>/<computeroutput>new[]</computeroutput>
+    versus
+    <function>free</function>/<computeroutput>delete</computeroutput>/<computeroutput>delete[]</computeroutput></para>
   </listitem>
   <listitem>
     <para>Overlapping <computeroutput>src</computeroutput> and
@@ -189,7 +192,8 @@ the following problems:</para>
     </term>
     <listitem>
       <para>When the client program releases memory using
-      <function>free</function> (in <literal>C</literal>) or delete
+      <function>free</function> (in <literal>C</literal>) or
+      <computeroutput>delete</computeroutput>
       (<literal>C++</literal>), that memory is not immediately made
       available for re-allocation.  Instead, it is marked inaccessible
       and placed in a queue of freed blocks.  The purpose is to defer as
@@ -399,9 +403,10 @@ complains.</para>
   </listitem>
   <listitem>
     <para>The contents of malloc'd blocks, before you write something
-    there.  In C++, the new operator is a wrapper round malloc, so if
-    you create an object with new, its fields will be uninitialised
-    until you (or the constructor) fill them in.</para>
+    there.  In C++, the new operator is a wrapper round
+    <function>malloc</function>, so if you create an object with new,
+    its fields will be uninitialised until you (or the constructor)
+    fill them in.</para>
   </listitem>
 </itemizedlist>
 
@@ -427,12 +432,14 @@ Invalid free()
    by 0x80484C7: main (tests/doublefree.c:10)
 ]]></programlisting>
 
-<para>Memcheck keeps track of the blocks allocated by your program with
-malloc/new, so it can know exactly whether or not the argument to
-free/delete is legitimate or not.  Here, this test program has freed the
-same block twice.  As with the illegal read/write errors, Memcheck
-attempts to make sense of the address free'd.  If, as here, the address
-is one which has previously been freed, you wil be told that -- making
+<para>Memcheck keeps track of the blocks allocated by your program
+with <function>malloc</function>/<computeroutput>new</computeroutput>,
+so it can know exactly whether or not the argument to
+<function>free</function>/<computeroutput>delete</computeroutput> is
+legitimate or not.  Here, this test program has freed the same block
+twice.  As with the illegal read/write errors, Memcheck attempts to
+make sense of the address free'd.  If, as here, the address is one
+which has previously been freed, you wil be told that -- making
 duplicate frees of the same block easy to spot.</para>
 
 </sect2>
@@ -618,8 +625,9 @@ implementation.</para>
 <title>Memory leak detection</title>
 
 <para>Memcheck keeps track of all memory blocks issued in response to
-calls to malloc/calloc/realloc/new.  So when the program exits, it knows
-which blocks have not been freed.
+calls to
+<function>malloc</function>/<function>calloc</function>/<function>realloc</function>/<computeroutput>new</computeroutput>.
+So when the program exits, it knows which blocks have not been freed.
 </para>
 
 <para>If <option>--leak-check</option> is set appropriately, for each
@@ -1031,10 +1039,11 @@ themselves do not change the A bits, only consult them.</para>
   </listitem>
 
   <listitem>
-    <para>When the program does malloc/new, the A bits for exactly the
-    area allocated, and not a byte more, are marked as accessible.  Upon
-    freeing the area the A bits are changed to indicate
-    inaccessibility.</para>
+    <para>When the program does
+    <function>malloc</function>/<computeroutput>new</computeroutput>,
+    the A bits for exactly the area allocated, and not a byte more,
+    are marked as accessible.  Upon freeing the area the A bits are
+    changed to indicate inaccessibility.</para>
   </listitem>
 
   <listitem>
@@ -1142,43 +1151,53 @@ follows:</para>
 </itemizedlist>
 
 
-<para>Memcheck intercepts calls to malloc, calloc, realloc, valloc,
-memalign, free, new, new[], delete and delete[].  The behaviour you get
+<para>Memcheck intercepts calls to <function>malloc</function>,
+<function>calloc</function>, <function>realloc</function>,
+<function>valloc</function>, <function>memalign</function>,
+<function>free</function>, <computeroutput>new</computeroutput>,
+<computeroutput>new[]</computeroutput>,
+<computeroutput>delete</computeroutput> and
+<computeroutput>delete[]</computeroutput>.  The behaviour you get
 is:</para>
 
 <itemizedlist>
 
   <listitem>
-    <para>malloc/new/new[]: the returned memory is marked as addressable
-    but not having valid values.  This means you have to write to it
-    before you can read it.</para>
+    <para><function>malloc</function>/<function>new</function>/<computeroutput>new[]</computeroutput>:
+    the returned memory is marked as addressable but not having valid
+    values.  This means you have to write to it before you can read
+    it.</para>
   </listitem>
 
   <listitem>
-    <para>calloc: returned memory is marked both addressable and valid,
-    since calloc clears the area to zero.</para>
+    <para><function>calloc</function>: returned memory is marked both
+    addressable and valid, since <function>calloc</function> clears
+    the area to zero.</para>
   </listitem>
 
   <listitem>
-    <para>realloc: if the new size is larger than the old, the new
-    section is addressable but invalid, as with malloc.</para>
+    <para><function>realloc</function>: if the new size is larger than
+    the old, the new section is addressable but invalid, as with
+    <function>malloc</function>.</para>
   </listitem>
 
   <listitem>
-    <para>If the new size is smaller, the dropped-off section is marked
-    as unaddressable.  You may only pass to realloc a pointer previously
-    issued to you by malloc/calloc/realloc.</para>
+    <para>If the new size is smaller, the dropped-off section is
+    marked as unaddressable.  You may only pass to
+    <function>realloc</function> a pointer previously issued to you by
+    <function>malloc</function>/<function>calloc</function>/<function>realloc</function>.</para>
   </listitem>
 
   <listitem>
-    <para>free/delete/delete[]: you may only pass to these functions a
-    pointer previously issued to you by the corresponding allocation
-    function.  Otherwise, Memcheck complains.  If the pointer is indeed
-    valid, Memcheck marks the entire area it points at as unaddressable,
-    and places the block in the freed-blocks-queue.  The aim is to defer
-    as long as possible reallocation of this block.  Until that happens,
-    all attempts to access it will elicit an invalid-address error, as
-    you would hope.</para>
+    <para><function>free</function>/<computeroutput>delete</computeroutput>/<computeroutput>delete[]</computeroutput>:
+    you may only pass to these functions a pointer previously issued
+    to you by the corresponding allocation function.  Otherwise,
+    Memcheck complains.  If the pointer is indeed valid, Memcheck
+    marks the entire area it points at as unaddressable, and places
+    the block in the freed-blocks-queue.  The aim is to defer as long
+    as possible reallocation of this block.  Until that happens, all
+    attempts to access it will elicit an invalid-address error, as you
+    would hope.</para>
   </listitem>
 
 </itemizedlist>
@@ -1326,7 +1345,9 @@ systems:</para>
   </listitem>
   <listitem>
     <para>Typically the pool's chunks are drawn from a contiguous
-    "superblock" acquired through the system malloc() or mmap().</para>
+    "superblock" acquired through the system
+    <function>malloc()</function> or
+    <function>mmap()</function>.</para>
   </listitem>
 
 </itemizedlist>
@@ -1460,22 +1481,23 @@ inform Memcheck about changes to the state of a mempool:</para>
   </listitem>
 
   <listitem>
-    <para><varname>VALGRIND_MOVE_MEMPOOL(poolA, poolB)</varname>:
-    This request informs Memcheck that the pool previously anchored at
-    address "poolA" has moved to anchor address "poolB". This is a rare
-    request, typically only needed if you realloc() the header of 
-    a mempool.</para>
+    <para><varname>VALGRIND_MOVE_MEMPOOL(poolA, poolB)</varname>: This
+    request informs Memcheck that the pool previously anchored at
+    address "poolA" has moved to anchor address "poolB". This is a
+    rare request, typically only needed if you
+    <function>realloc()</function> the header of a mempool.</para>
     <para>No memory-status bits are altered by this request.</para>
   </listitem>
 
   <listitem>
     <para>
-    <varname>VALGRIND_MEMPOOL_CHANGE(pool, addrA, addrB, size)</varname>:
-    This request informs Memcheck that the chunk previously allocated at
-    address "addrA" within "pool" has been moved and/or resized, and should
-    be changed to cover the region [addrB,addrB+size). This is a rare
-    request, typically only needed if you realloc() a superblock or wish
-    to extend a chunk without changing its memory-status bits.
+    <varname>VALGRIND_MEMPOOL_CHANGE(pool, addrA, addrB,
+    size)</varname>: This request informs Memcheck that the chunk
+    previously allocated at address "addrA" within "pool" has been
+    moved and/or resized, and should be changed to cover the region
+    [addrB,addrB+size). This is a rare request, typically only needed
+    if you <function>realloc()</function> a superblock or wish to
+    extend a chunk without changing its memory-status bits.
     </para>
     <para>No memory-status bits are altered by this request.
     </para>

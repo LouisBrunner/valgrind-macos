@@ -148,9 +148,9 @@ static const char *select_arch(const char *clientname, cpu_type_t default_cputyp
       barf("%s: %s", clientname, strerror(errno));
    }
 
-   bytes = pread(fd, buf, sizeof(buf), 0);
+   bytes = read(fd, buf, sizeof(buf));
+   close(fd);
    if (bytes != sizeof(buf)) {
-      close(fd);
       return NULL;
    }
    

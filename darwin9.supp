@@ -152,7 +152,6 @@
    fun:malloc_zone_malloc
    fun:__setenv
    fun:setenv$UNIX2003
-   fun:main
 }
 
 

@@ -106,7 +106,8 @@ static struct vg_mallocfunc_info info;
 static int init_done;
 
 /* Startup hook - called as init section */
-static void init(void) __attribute__((constructor));
+__attribute__((constructor))
+static void init(void);
 
 #define MALLOC_TRACE(format, args...)  \
    if (info.clo_trace_malloc) {        \
@@ -794,10 +795,27 @@ ZONE_CHECK(VG_Z_LIBC_SONAME, malloc_zone_check);
 
 /* All the code in here is unused until this function is called */
 
+__attribute__((constructor))
 static void init(void)
 {
    int res;
 
+   // This doesn't look thread-safe, but it should be ok... Bart says:
+   //   
+   //   Every program I know of calls malloc() at least once before calling
+   //   pthread_create().  So init_done gets initialized before any thread is
+   //   created, and is only read when multiple threads are active
+   //   simultaneously.  Such an access pattern is safe.
+   //
+   //   If the assignment to the variable init_done would be triggering a race
+   //   condition, both DRD and Helgrind would report this race.
+   // 
+   //   By the way, although the init() function in
+   //   coregrind/m_replacemalloc/vg_replace_malloc.c has been declared
+   //   __attribute__((constructor)), it is not safe to remove the variable
+   //   init_done. This is because it is possible that malloc() and hence
+   //   init() gets called before shared library initialization finished.
+   //
    if (init_done)
       return;
 
@@ -808,5 +826,5 @@ static void init(void)
 }
 
 /*--------------------------------------------------------------------*/
-/*--- end                                      vg_replace_malloc.c ---*/
+/*--- end                                                          ---*/
 /*--------------------------------------------------------------------*/

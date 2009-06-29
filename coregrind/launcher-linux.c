@@ -112,7 +112,8 @@ static const char *find_client(const char *clientname)
 static const char *select_platform(const char *clientname)
 {
    int fd;
-   unsigned char *header;
+   uint8_t header[4096];
+   ssize_t bytes;
    const char *platform = NULL;
    long pagesize = sysconf(_SC_PAGESIZE);
 
@@ -123,11 +124,11 @@ static const char *select_platform(const char *clientname)
       return NULL;
    //   barf("open(%s): %s", clientname, strerror(errno));
 
-   if ((header = mmap(NULL, pagesize, PROT_READ|PROT_WRITE, MAP_PRIVATE, fd, 0)) == MAP_FAILED)
-      return NULL;
-   //   barf("mmap(%s): %s", clientname, strerror(errno));
-
+   bytes = read(fd, header, sizeof(header));
    close(fd);
+   if (bytes != sizeof(header)) {
+      return NULL;
+   }
 
    if (header[0] == '#' && header[1] == '!') {
       char *interp = (char *)header + 2;

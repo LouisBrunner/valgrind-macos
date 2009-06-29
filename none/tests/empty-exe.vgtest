@@ -1,0 +1,9 @@
+# Bug 162020: running an empty executable used to crash Valgrind.  Note that
+# the (old) crash message gets filtered out, so it's the presence of the
+# blank two lines in the .stderr.exp file that are important -- they
+# indicate it ran to completion.  If the crash occurs, the .stderr.out file
+# is empty.
+prereq: touch empty-exe && chmod u+x empty-exe
+prog: empty-exe
+vgopts:
+cleanup: rm -f empty-exe

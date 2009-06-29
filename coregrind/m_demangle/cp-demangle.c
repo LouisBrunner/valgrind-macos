@@ -4426,16 +4426,11 @@ d_demangle_callback (const char *mangled, int options,
   cplus_demangle_init_info (mangled, options, strlen (mangled), &di);
 
   {
-#ifdef CP_DYNAMIC_ARRAYS
-    __extension__ struct demangle_component comps[di.num_comps];
-    __extension__ struct demangle_component *subs[di.num_subs];
-
-    di.comps = comps;
-    di.subs = subs;
-#else
-    di.comps = alloca (di.num_comps * sizeof (*di.comps));
-    di.subs = alloca (di.num_subs * sizeof (*di.subs));
-#endif
+    /* The original demangler uses alloca here with large allocations
+       for template-heavy code, e.g. when using Boost. This
+       is bad for Valgrind tools with limited stack size */
+    di.comps = xmalloc(di.num_comps * sizeof (*di.comps));
+    di.subs = xmalloc(di.num_subs * sizeof (*di.subs));
 
     if (type)
       dc = cplus_demangle_type (&di);
@@ -4456,6 +4451,9 @@ d_demangle_callback (const char *mangled, int options,
     status = (dc != NULL)
              ? cplus_demangle_print_callback (options, dc, callback, opaque)
              : 0;
+
+    free(di.comps);
+    free(di.subs);
   }
 
   return status;

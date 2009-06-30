@@ -113,9 +113,8 @@ static const char *select_platform(const char *clientname)
 {
    int fd;
    uint8_t header[4096];
-   ssize_t bytes;
+   ssize_t n_bytes;
    const char *platform = NULL;
-   long pagesize = sysconf(_SC_PAGESIZE);
 
    if (strchr(clientname, '/') == NULL)
       clientname = find_client(clientname);
@@ -124,28 +123,38 @@ static const char *select_platform(const char *clientname)
       return NULL;
    //   barf("open(%s): %s", clientname, strerror(errno));
 
-   bytes = read(fd, header, sizeof(header));
+   n_bytes = read(fd, header, sizeof(header));
    close(fd);
-   if (bytes != sizeof(header)) {
+   if (n_bytes < 2) {
       return NULL;
    }
 
    if (header[0] == '#' && header[1] == '!') {
+      int i = 2;
       char *interp = (char *)header + 2;
-      char *interpend;
 
-      while (*interp == ' ' || *interp == '\t')
-         interp++;
+      // Skip whitespace.
+      while (1) {
+         if (i == n_bytes) return NULL;
+         if (' ' != header[i] && '\t' == header[i]) break;
+         i++;
+      }
 
-      for (interpend = interp; !isspace(*interpend); interpend++)
-         ;
-
-      *interpend = '\0';
+      // Get the interpreter name.
+      interp = &header[i];
+      while (1) {
+         if (i == n_bytes) break;
+         if (isspace(header[i])) break;
+         i++;
+      }
+      if (i == n_bytes) return NULL;
+      header[i] = '\0';
 
       platform = select_platform(interp);
-   } else if (memcmp(header, ELFMAG, SELFMAG) == 0) {
 
-      if (header[EI_CLASS] == ELFCLASS32) {
+   } else if (n_bytes >= SELFMAG && memcmp(header, ELFMAG, SELFMAG) == 0) {
+
+      if (n_bytes >= sizeof(Elf32_Ehdr) && header[EI_CLASS] == ELFCLASS32) {
          const Elf32_Ehdr *ehdr = (Elf32_Ehdr *)header;
 
          if (header[EI_DATA] == ELFDATA2LSB) {
@@ -160,7 +169,7 @@ static const char *select_platform(const char *clientname)
                platform = "ppc32-linux";
             }
          }
-      } else if (header[EI_CLASS] == ELFCLASS64) {
+      } else if (n_bytes >= sizeof(Elf64_Ehdr) && header[EI_CLASS] == ELFCLASS64) {
          const Elf64_Ehdr *ehdr = (Elf64_Ehdr *)header;
 
          if (header[EI_DATA] == ELFDATA2LSB) {
@@ -176,8 +185,6 @@ static const char *select_platform(const char *clientname)
          }
       }
    }
-
-   munmap(header, pagesize);
 
    return platform;
 }
@@ -266,7 +273,7 @@ int main(int argc, char** argv, char** envp)
    
    /* Figure out the name of this executable (viz, the launcher), so
       we can tell stage2.  stage2 will use the name for recursive
-      invokations of valgrind on child processes. */
+      invocations of valgrind on child processes. */
    memset(launcher_name, 0, PATH_MAX+1);
    r = readlink("/proc/self/exe", launcher_name, PATH_MAX);
    if (r == -1) {
@@ -306,7 +313,7 @@ int main(int argc, char** argv, char** envp)
    if (cp != NULL)
       valgrind_lib = cp;
 
-   /* Build the stage2 invokation, and execve it.  Bye! */
+   /* Build the stage2 invocation, and execve it.  Bye! */
    toolfile = malloc(strlen(valgrind_lib) + strlen(toolname) + strlen(platform) + 3);
    if (toolfile == NULL)
       barf("malloc of toolfile failed.");

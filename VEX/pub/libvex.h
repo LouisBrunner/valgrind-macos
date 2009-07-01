@@ -375,7 +375,7 @@ typedef
    16-aligned size and be 16-aligned, and placed back-to-back.
 */
 
-#define LibVEX_N_SPILL_BYTES 2048
+#define LibVEX_N_SPILL_BYTES 4096
 
 
 /*-------------------------------------------------------*/

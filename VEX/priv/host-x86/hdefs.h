@@ -367,6 +367,8 @@ typedef
       Xin_Set32,     /* convert condition code to 32-bit value */
       Xin_Bsfr32,    /* 32-bit bsf/bsr */
       Xin_MFence,    /* mem fence (not just sse2, but sse0 and 1 too) */
+      Xin_ACAS,      /* 8/16/32-bit lock;cmpxchg */
+      Xin_DACAS,     /* lock;cmpxchg8b (doubleword ACAS, 2 x 32-bit only) */
 
       Xin_FpUnary,   /* FP fake unary op */
       Xin_FpBinary,  /* FP fake binary op */
@@ -502,6 +504,17 @@ typedef
          struct {
             UInt hwcaps;
          } MFence;
+         /* "lock;cmpxchg": mem address in .addr,
+             expected value in %eax, new value in %ebx */
+         struct {
+            X86AMode* addr;
+            UChar     sz; /* 1, 2 or 4 */
+         } ACAS;
+         /* "lock;cmpxchg8b": mem address in .addr, expected value in
+            %edx:%eax, new value in %ecx:%ebx */
+         struct {
+            X86AMode* addr;
+         } DACAS;
 
          /* X86 Floating point (fake 3-operand, "flat reg file" insns) */
          struct {
@@ -638,6 +651,8 @@ extern X86Instr* X86Instr_Store     ( UChar sz, HReg src, X86AMode* dst );
 extern X86Instr* X86Instr_Set32     ( X86CondCode cond, HReg dst );
 extern X86Instr* X86Instr_Bsfr32    ( Bool isFwds, HReg src, HReg dst );
 extern X86Instr* X86Instr_MFence    ( UInt hwcaps );
+extern X86Instr* X86Instr_ACAS      ( X86AMode* addr, UChar sz );
+extern X86Instr* X86Instr_DACAS     ( X86AMode* addr );
 
 extern X86Instr* X86Instr_FpUnary   ( X86FpOp op, HReg src, HReg dst );
 extern X86Instr* X86Instr_FpBinary  ( X86FpOp op, HReg srcL, HReg srcR, HReg dst );

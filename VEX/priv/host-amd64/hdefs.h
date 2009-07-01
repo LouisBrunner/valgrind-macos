@@ -383,6 +383,10 @@ typedef
       Ain_Set64,       /* convert condition code to 64-bit value */
       Ain_Bsfr64,      /* 64-bit bsf/bsr */
       Ain_MFence,      /* mem fence */
+      Ain_ACAS,        /* 8/16/32/64-bit lock;cmpxchg */
+      Ain_DACAS,       /* lock;cmpxchg8b/16b (doubleword ACAS, 2 x
+                          32-bit or 2 x 64-bit only) */
+
       Ain_A87Free,     /* free up x87 registers */
       Ain_A87PushPop,  /* x87 loads/stores */
       Ain_A87FpOp,     /* x87 operations */
@@ -534,6 +538,14 @@ typedef
             On AMD64 we emit a real "mfence". */
          struct {
          } MFence;
+         struct {
+            AMD64AMode* addr;
+            UChar       sz; /* 1, 2, 4 or 8 */
+         } ACAS;
+         struct {
+            AMD64AMode* addr;
+            UChar       sz; /* 4 or 8 only */
+         } DACAS;
 
          /* --- X87 --- */
 
@@ -689,6 +701,9 @@ extern AMD64Instr* AMD64Instr_Store      ( UChar sz, HReg src, AMD64AMode* dst )
 extern AMD64Instr* AMD64Instr_Set64      ( AMD64CondCode cond, HReg dst );
 extern AMD64Instr* AMD64Instr_Bsfr64     ( Bool isFwds, HReg src, HReg dst );
 extern AMD64Instr* AMD64Instr_MFence     ( void );
+extern AMD64Instr* AMD64Instr_ACAS       ( AMD64AMode* addr, UChar sz );
+extern AMD64Instr* AMD64Instr_DACAS      ( AMD64AMode* addr, UChar sz );
+
 extern AMD64Instr* AMD64Instr_A87Free    ( Int nregs );
 extern AMD64Instr* AMD64Instr_A87PushPop ( AMD64AMode* addr, Bool isPush );
 extern AMD64Instr* AMD64Instr_A87FpOp    ( A87FpOp op );

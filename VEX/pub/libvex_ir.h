@@ -1036,10 +1036,20 @@ struct _IRExpr {
          IRExpr* arg;      /* operand */
       } Unop;
 
-      /* A load from memory.
+      /* A load from memory.  If .isLL is True then this load also
+         lodges a reservation (ppc-style lwarx/ldarx operation).  If
+         .isLL is True, then also, the address must be naturally
+         aligned - any misaligned addresses should be caught by a
+         dominating IR check and side exit.  This alignment
+         restriction exists because on at least some LL/SC platforms
+         (ppc), lwarx etc will trap w/ SIGBUS on misaligned addresses,
+         and we have to actually generate lwarx on the host, and we
+         don't want it trapping on the host.
+
          ppIRExpr output: LD<end>:<ty>(<addr>), eg. LDle:I32(t1)
       */
       struct {
+         Bool      isLL;   /* True iff load makes a reservation */
          IREndness end;    /* Endian-ness of the load */
          IRType    ty;     /* Type of the loaded value */
          IRExpr*   addr;   /* Address being loaded from */
@@ -1123,7 +1133,8 @@ extern IRExpr* IRExpr_Triop  ( IROp op, IRExpr* arg1,
                                         IRExpr* arg2, IRExpr* arg3 );
 extern IRExpr* IRExpr_Binop  ( IROp op, IRExpr* arg1, IRExpr* arg2 );
 extern IRExpr* IRExpr_Unop   ( IROp op, IRExpr* arg );
-extern IRExpr* IRExpr_Load   ( IREndness end, IRType ty, IRExpr* addr );
+extern IRExpr* IRExpr_Load   ( Bool isLL, IREndness end,
+                               IRType ty, IRExpr* addr );
 extern IRExpr* IRExpr_Const  ( IRConst* con );
 extern IRExpr* IRExpr_CCall  ( IRCallee* cee, IRType retty, IRExpr** args );
 extern IRExpr* IRExpr_Mux0X  ( IRExpr* cond, IRExpr* expr0, IRExpr* exprX );
@@ -1219,6 +1230,7 @@ typedef
       Ijk_NoRedir,        /* Jump to un-redirected guest addr */
       Ijk_SigTRAP,        /* current instruction synths SIGTRAP */
       Ijk_SigSEGV,        /* current instruction synths SIGSEGV */
+      Ijk_SigBUS,         /* current instruction synths SIGBUS */
       /* Unfortunately, various guest-dependent syscall kinds.  They
 	 all mean: do a syscall before continuing. */
       Ijk_Sys_syscall,    /* amd64 'syscall', ppc 'sc' */
@@ -1348,15 +1360,98 @@ IRDirty* unsafeIRDirty_1_N ( IRTemp dst,
 typedef
    enum { 
       Imbe_Fence=0x18000, 
-      Imbe_BusLock, 
-      Imbe_BusUnlock,
-      Imbe_SnoopedStoreBegin,
-      Imbe_SnoopedStoreEnd
    }
    IRMBusEvent;
 
 extern void ppIRMBusEvent ( IRMBusEvent );
 
+
+/* --------------- Compare and Swap --------------- */
+
+/* This denotes an atomic compare and swap operation, either
+   a single-element one or a double-element one.
+
+   In the single-element case:
+
+     .addr is the memory address.
+     .end  is the endianness with which memory is accessed
+
+     If .addr contains the same value as .expdLo, then .dataLo is
+     written there, else there is no write.  In both cases, the
+     original value at .addr is copied into .oldLo.
+
+     Types: .expdLo, .dataLo and .oldLo must all have the same type.
+     It may be any integral type, viz: I8, I16, I32 or, for 64-bit
+     guests, I64.
+
+     .oldHi must be IRTemp_INVALID, and .expdHi and .dataHi must
+     be NULL.
+
+   In the double-element case:
+
+     .addr is the memory address.
+     .end  is the endianness with which memory is accessed
+
+     The operation is the same:
+
+     If .addr contains the same value as .expdHi:.expdLo, then
+     .dataHi:.dataLo is written there, else there is no write.  In
+     both cases the original value at .addr is copied into
+     .oldHi:.oldLo.
+
+     Types: .expdHi, .expdLo, .dataHi, .dataLo, .oldHi, .oldLo must
+     all have the same type, which may be any integral type, viz: I8,
+     I16, I32 or, for 64-bit guests, I64.
+
+     The double-element case is complicated by the issue of
+     endianness.  In all cases, the two elements are understood to be
+     located adjacently in memory, starting at the address .addr.
+
+       If .end is Iend_LE, then the .xxxLo component is at the lower
+       address and the .xxxHi component is at the higher address, and
+       each component is itself stored little-endianly.
+
+       If .end is Iend_BE, then the .xxxHi component is at the lower
+       address and the .xxxLo component is at the higher address, and
+       each component is itself stored big-endianly.
+
+   This allows representing more cases than most architectures can
+   handle.  For example, x86 cannot do DCAS on 8- or 16-bit elements.
+
+   How to know if the CAS succeeded?
+
+   * if .oldLo == .expdLo (resp. .oldHi:.oldLo == .expdHi:.expdLo),
+     then the CAS succeeded, .dataLo (resp. .dataHi:.dataLo) is now
+     stored at .addr, and the original value there was .oldLo (resp
+     .oldHi:.oldLo).
+
+   * if .oldLo != .expdLo (resp. .oldHi:.oldLo != .expdHi:.expdLo),
+     then the CAS failed, and the original value at .addr was .oldLo
+     (resp. .oldHi:.oldLo).
+
+   Hence it is easy to know whether or not the CAS succeeded.
+*/
+typedef
+   struct {
+      IRTemp    oldHi;  /* old value of *addr is written here */
+      IRTemp    oldLo;
+      IREndness end;    /* endianness of the data in memory */
+      IRExpr*   addr;   /* store address */
+      IRExpr*   expdHi; /* expected old value at *addr */
+      IRExpr*   expdLo;
+      IRExpr*   dataHi; /* new value for *addr */
+      IRExpr*   dataLo;
+   }
+   IRCAS;
+
+extern void ppIRCAS ( IRCAS* cas );
+
+extern IRCAS* mkIRCAS ( IRTemp oldHi, IRTemp oldLo,
+                        IREndness end, IRExpr* addr, 
+                        IRExpr* expdHi, IRExpr* expdLo,
+                        IRExpr* dataHi, IRExpr* dataLo );
+
+extern IRCAS* deepCopyIRCAS ( IRCAS* );
 
 /* ------------------ Statements ------------------ */
 
@@ -1379,6 +1474,7 @@ typedef
       Ist_PutI,
       Ist_WrTmp,
       Ist_Store,
+      Ist_CAS,
       Ist_Dirty,
       Ist_MBE,       /* META (maybe) */
       Ist_Exit
@@ -1392,7 +1488,7 @@ typedef
    'st.Ist.Store.<fieldname>'.
 
    For each kind of statement, we show what it looks like when
-   pretty-printed with ppIRExpr().
+   pretty-printed with ppIRStmt().
 */
 typedef
    struct _IRStmt {
@@ -1401,7 +1497,7 @@ typedef
          /* A no-op (usually resulting from IR optimisation).  Can be
             omitted without any effect.
 
-            ppIRExpr output: IR-NoOp
+            ppIRStmt output: IR-NoOp
          */
          struct {
 	 } NoOp;
@@ -1412,7 +1508,7 @@ typedef
             the IRSB).  Contains the address and length of the
             instruction.
 
-            ppIRExpr output: ------ IMark(<addr>, <len>) ------,
+            ppIRStmt output: ------ IMark(<addr>, <len>) ------,
                          eg. ------ IMark(0x4000792, 5) ------,
          */
          struct {
@@ -1431,7 +1527,7 @@ typedef
             next (dynamic) instruction that will be executed.  This is
             to help Memcheck to origin tracking.
 
-            ppIRExpr output: ====== AbiHint(<base>, <len>, <nia>) ======
+            ppIRStmt output: ====== AbiHint(<base>, <len>, <nia>) ======
                          eg. ====== AbiHint(t1, 16, t2) ======
          */
          struct {
@@ -1441,7 +1537,7 @@ typedef
          } AbiHint;
 
          /* Write a guest register, at a fixed offset in the guest state.
-            ppIRExpr output: PUT(<offset>) = <data>, eg. PUT(60) = t1
+            ppIRStmt output: PUT(<offset>) = <data>, eg. PUT(60) = t1
          */
          struct {
             Int     offset;   /* Offset into the guest state */
@@ -1452,7 +1548,7 @@ typedef
             state.  See the comment for GetI expressions for more
             information.
 
-            ppIRExpr output: PUTI<descr>[<ix>,<bias>] = <data>,
+            ppIRStmt output: PUTI<descr>[<ix>,<bias>] = <data>,
                          eg. PUTI(64:8xF64)[t5,0] = t1
          */
          struct {
@@ -1467,27 +1563,62 @@ typedef
             reject any block containing a temporary which is not assigned
             to exactly once.
 
-            ppIRExpr output: t<tmp> = <data>, eg. t1 = 3
+            ppIRStmt output: t<tmp> = <data>, eg. t1 = 3
          */
          struct {
             IRTemp  tmp;   /* Temporary  (LHS of assignment) */
             IRExpr* data;  /* Expression (RHS of assignment) */
          } WrTmp;
 
-         /* Write a value to memory.
-            ppIRExpr output: ST<end>(<addr>) = <data>, eg. STle(t1) = t2
+         /* Write a value to memory.  Normally scRes is
+            IRTemp_INVALID, denoting a normal store.  If scRes is not
+            IRTemp_INVALID, then this is a store-conditional, which
+            may fail or succeed depending on the outcome of a
+            previously lodged reservation on this address.  scRes is
+            written 1 if the store succeeds and 0 if it fails, and
+            must have type Ity_I1.
+
+            If scRes is not IRTemp_INVALID, then also, the address
+            must be naturally aligned - any misaligned addresses
+            should be caught by a dominating IR check and side exit.
+            This alignment restriction exists because on at least some
+            LL/SC platforms (ppc), stwcx. etc will trap w/ SIGBUS on
+            misaligned addresses, and we have to actually generate
+            stwcx. on the host, and we don't want it trapping on the
+            host.
+
+            ppIRStmt output: ST<end>(<addr>) = <data>, eg. STle(t1) = t2
          */
          struct {
             IREndness end;    /* Endianness of the store */
+            IRTemp    resSC;  /* result of SC goes here (1 == success) */
             IRExpr*   addr;   /* store address */
             IRExpr*   data;   /* value to write */
          } Store;
+
+         /* Do an atomic compare-and-swap operation.  Semantics are
+            described above on a comment at the definition of IRCAS.
+
+            ppIRStmt output:
+               t<tmp> = CAS<end>(<addr> :: <expected> -> <new>)
+            eg
+               t1 = CASle(t2 :: t3->Add32(t3,1))
+               which denotes a 32-bit atomic increment 
+               of a value at address t2
+
+            A double-element CAS may also be denoted, in which case <tmp>,
+            <expected> and <new> are all pairs of items, separated by
+            commas.
+         */
+         struct {
+            IRCAS* details;
+         } CAS;
 
          /* Call (possibly conditionally) a C function that has side
             effects (ie. is "dirty").  See the comments above the
             IRDirty type declaration for more information.
 
-            ppIRExpr output:
+            ppIRStmt output:
                t<tmp> = DIRTY <guard> <effects> 
                   ::: <callee>(<args>)
             eg.
@@ -1501,7 +1632,7 @@ typedef
          /* A memory bus event - a fence, or acquisition/release of the
             hardware bus lock.  IR optimisation treats all these as fences
             across which no memory references may be moved.
-            ppIRExpr output: MBusEvent-Fence,
+            ppIRStmt output: MBusEvent-Fence,
                              MBusEvent-BusLock, MBusEvent-BusUnlock.
          */
          struct {
@@ -1509,7 +1640,7 @@ typedef
          } MBE;
 
          /* Conditional exit from the middle of an IRSB.
-            ppIRExpr output: if (<guard>) goto {<jk>} <dst>
+            ppIRStmt output: if (<guard>) goto {<jk>} <dst>
                          eg. if (t69) goto {Boring} 0x4000AAA:I32
          */
          struct {
@@ -1529,7 +1660,9 @@ extern IRStmt* IRStmt_Put     ( Int off, IRExpr* data );
 extern IRStmt* IRStmt_PutI    ( IRRegArray* descr, IRExpr* ix, Int bias, 
                                 IRExpr* data );
 extern IRStmt* IRStmt_WrTmp   ( IRTemp tmp, IRExpr* data );
-extern IRStmt* IRStmt_Store   ( IREndness end, IRExpr* addr, IRExpr* data );
+extern IRStmt* IRStmt_Store   ( IREndness end,
+                                IRTemp resSC, IRExpr* addr, IRExpr* data );
+extern IRStmt* IRStmt_CAS     ( IRCAS* details );
 extern IRStmt* IRStmt_Dirty   ( IRDirty* details );
 extern IRStmt* IRStmt_MBE     ( IRMBusEvent event );
 extern IRStmt* IRStmt_Exit    ( IRExpr* guard, IRJumpKind jk, IRConst* dst );

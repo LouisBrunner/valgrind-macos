@@ -74,15 +74,6 @@ Bool matchWrk ( MatchInfo* mi, IRExpr* p/*attern*/, IRExpr* e/*xpr*/ )
       case Iex_Binder: /* aha, what we were looking for. */
          setBindee(mi, p->Iex.Binder.binder, e);
          return True;
-#if 0
-      case Iex_GetI:
-         if (e->tag != Iex_GetI) return False;
-         if (p->Iex.GetI.ty != e->Iex.GetI.ty) return False;
-         /* we ignore the offset limit hints .. */
-         if (!matchWrk(mi, p->Iex.GetI.offset, e->Iex.GetI.offset))
-            return False;
-         return True;
-#endif
       case Iex_Unop:
          if (e->tag != Iex_Unop) return False;
          if (p->Iex.Unop.op != e->Iex.Unop.op) return False;
@@ -99,6 +90,7 @@ Bool matchWrk ( MatchInfo* mi, IRExpr* p/*attern*/, IRExpr* e/*xpr*/ )
          return True;
       case Iex_Load:
          if (e->tag != Iex_Load) return False;
+         if (p->Iex.Load.isLL != e->Iex.Load.isLL) return False;
          if (p->Iex.Load.end != e->Iex.Load.end) return False;
          if (p->Iex.Load.ty != e->Iex.Load.ty) return False;
          if (!matchWrk(mi, p->Iex.Load.addr, e->Iex.Load.addr))

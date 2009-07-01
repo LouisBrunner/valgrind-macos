@@ -78,25 +78,28 @@ typedef
    but not SSE1).  LibVEX_Translate will check for nonsensical
    combinations. */
 
-/* x86: baseline capability is Pentium-1 (FPU, MMX, but no SSE) */
+/* x86: baseline capability is Pentium-1 (FPU, MMX, but no SSE), with
+   cmpxchg8b. */
 #define VEX_HWCAPS_X86_SSE1   (1<<1)  /* SSE1 support (Pentium III) */
 #define VEX_HWCAPS_X86_SSE2   (1<<2)  /* SSE2 support (Pentium 4) */
 #define VEX_HWCAPS_X86_SSE3   (1<<3)  /* SSE3 support (>= Prescott) */
 
-/* amd64: baseline capability is SSE2 */
+/* amd64: baseline capability is SSE2, with cmpxchg8b but not
+   cmpxchg16b. */
 #define VEX_HWCAPS_AMD64_SSE3 (1<<4)  /* SSE3 support */
+#define VEX_HWCAPS_AMD64_CX16 (1<<5)  /* cmpxchg16b support */
 
 /* ppc32: baseline capability is integer only */
-#define VEX_HWCAPS_PPC32_F    (1<<5)  /* basic (non-optional) FP */
-#define VEX_HWCAPS_PPC32_V    (1<<6)  /* Altivec (VMX) */
-#define VEX_HWCAPS_PPC32_FX   (1<<7)  /* FP extns (fsqrt, fsqrts) */
-#define VEX_HWCAPS_PPC32_GX   (1<<8)  /* Graphics extns
+#define VEX_HWCAPS_PPC32_F    (1<<6)  /* basic (non-optional) FP */
+#define VEX_HWCAPS_PPC32_V    (1<<7)  /* Altivec (VMX) */
+#define VEX_HWCAPS_PPC32_FX   (1<<8)  /* FP extns (fsqrt, fsqrts) */
+#define VEX_HWCAPS_PPC32_GX   (1<<9)  /* Graphics extns
                                          (fres,frsqrte,fsel,stfiwx) */
 
 /* ppc64: baseline capability is integer and basic FP insns */
-#define VEX_HWCAPS_PPC64_V    (1<<9)  /* Altivec (VMX) */
-#define VEX_HWCAPS_PPC64_FX   (1<<10) /* FP extns (fsqrt, fsqrts) */
-#define VEX_HWCAPS_PPC64_GX   (1<<11) /* Graphics extns
+#define VEX_HWCAPS_PPC64_V    (1<<10) /* Altivec (VMX) */
+#define VEX_HWCAPS_PPC64_FX   (1<<11) /* FP extns (fsqrt, fsqrts) */
+#define VEX_HWCAPS_PPC64_GX   (1<<12) /* Graphics extns
                                          (fres,frsqrte,fsel,stfiwx) */
 
 /* arm: baseline capability is ARMv4 */

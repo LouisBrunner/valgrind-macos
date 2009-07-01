@@ -790,12 +790,28 @@ AMD64Instr* AMD64Instr_Bsfr64 ( Bool isFwds, HReg src, HReg dst ) {
    i->Ain.Bsfr64.dst    = dst;
    return i;
 }
-AMD64Instr* AMD64Instr_MFence ( void )
-{
+AMD64Instr* AMD64Instr_MFence ( void ) {
    AMD64Instr* i = LibVEX_Alloc(sizeof(AMD64Instr));
    i->tag        = Ain_MFence;
    return i;
 }
+AMD64Instr* AMD64Instr_ACAS ( AMD64AMode* addr, UChar sz ) {
+   AMD64Instr* i    = LibVEX_Alloc(sizeof(AMD64Instr));
+   i->tag           = Ain_ACAS;
+   i->Ain.ACAS.addr = addr;
+   i->Ain.ACAS.sz   = sz;
+   vassert(sz == 8 || sz == 4 || sz == 2 || sz == 1);
+   return i;
+}
+AMD64Instr* AMD64Instr_DACAS ( AMD64AMode* addr, UChar sz ) {
+   AMD64Instr* i     = LibVEX_Alloc(sizeof(AMD64Instr));
+   i->tag            = Ain_DACAS;
+   i->Ain.DACAS.addr = addr;
+   i->Ain.DACAS.sz   = sz;
+   vassert(sz == 8 || sz == 4);
+   return i;
+}
+
 AMD64Instr* AMD64Instr_A87Free ( Int nregs )
 {
    AMD64Instr* i        = LibVEX_Alloc(sizeof(AMD64Instr));
@@ -1174,6 +1190,18 @@ void ppAMD64Instr ( AMD64Instr* i, Bool mode64 )
       case Ain_MFence:
          vex_printf("mfence" );
          return;
+      case Ain_ACAS:
+         vex_printf("lock cmpxchg%c ",
+                     i->Ain.ACAS.sz==1 ? 'b' : i->Ain.ACAS.sz==2 ? 'w' 
+                     : i->Ain.ACAS.sz==4 ? 'l' : 'q' );
+         vex_printf("{%%rax->%%rbx},");
+         ppAMD64AMode(i->Ain.ACAS.addr);
+         return;
+      case Ain_DACAS:
+         vex_printf("lock cmpxchg%db {%%rdx:%%rax->%%rcx:%%rbx},",
+                    (Int)(2 * i->Ain.DACAS.sz));
+         ppAMD64AMode(i->Ain.DACAS.addr);
+         return;
       case Ain_A87Free:
          vex_printf("ffree %%st(7..%d)", 8 - i->Ain.A87Free.nregs );
          break;
@@ -1511,6 +1539,18 @@ void getRegUsage_AMD64Instr ( HRegUsage* u, AMD64Instr* i, Bool mode64 )
          return;
       case Ain_MFence:
          return;
+      case Ain_ACAS:
+         addRegUsage_AMD64AMode(u, i->Ain.ACAS.addr);
+         addHRegUse(u, HRmRead, hregAMD64_RBX());
+         addHRegUse(u, HRmModify, hregAMD64_RAX());
+         return;
+      case Ain_DACAS:
+         addRegUsage_AMD64AMode(u, i->Ain.DACAS.addr);
+         addHRegUse(u, HRmRead, hregAMD64_RCX());
+         addHRegUse(u, HRmRead, hregAMD64_RBX());
+         addHRegUse(u, HRmModify, hregAMD64_RDX());
+         addHRegUse(u, HRmModify, hregAMD64_RAX());
+         return;
       case Ain_A87Free:
          return;
       case Ain_A87PushPop:
@@ -1728,6 +1768,12 @@ void mapRegs_AMD64Instr ( HRegRemap* m, AMD64Instr* i, Bool mode64 )
          mapReg(m, &i->Ain.Bsfr64.dst);
          return;
       case Ain_MFence:
+         return;
+      case Ain_ACAS:
+         mapRegs_AMD64AMode(m, i->Ain.ACAS.addr);
+         return;
+      case Ain_DACAS:
+         mapRegs_AMD64AMode(m, i->Ain.DACAS.addr);
          return;
       case Ain_A87Free:
          return;
@@ -2846,6 +2892,40 @@ Int emit_AMD64Instr ( UChar* buf, Int nbuf, AMD64Instr* i,
    case Ain_MFence:
       /* mfence */
       *p++ = 0x0F; *p++ = 0xAE; *p++ = 0xF0;
+      goto done;
+
+   case Ain_ACAS:
+      /* lock */
+      *p++ = 0xF0;
+      if (i->Ain.ACAS.sz == 2) *p++ = 0x66; 
+      /* cmpxchg{b,w,l,q} %rbx,mem.  Expected-value in %rax, new value
+         in %rbx.  The new-value register is hardwired to be %rbx
+         since dealing with byte integer registers is too much hassle,
+         so we force the register operand to %rbx (could equally be
+         %rcx or %rdx). */
+      rex = rexAMode_M( hregAMD64_RBX(), i->Ain.ACAS.addr );
+      if (i->Ain.ACAS.sz != 8)
+         rex = clearWBit(rex);
+
+      *p++ = rex; /* this can emit 0x40, which is pointless. oh well. */
+      *p++ = 0x0F;
+      if (i->Ain.ACAS.sz == 1) *p++ = 0xB0; else *p++ = 0xB1;
+      p = doAMode_M(p, hregAMD64_RBX(), i->Ain.ACAS.addr);
+      goto done;
+
+   case Ain_DACAS:
+      /* lock */
+      *p++ = 0xF0;
+      /* cmpxchg{8,16}b m{64,128}.  Expected-value in %rdx:%rax, new
+         value in %rcx:%rbx.  All 4 regs are hardwired in the ISA, so
+         aren't encoded in the insn. */
+      rex = rexAMode_M( fake(1), i->Ain.ACAS.addr );
+      if (i->Ain.ACAS.sz != 8)
+         rex = clearWBit(rex);
+      *p++ = rex;
+      *p++ = 0x0F;
+      *p++ = 0xC7;
+      p = doAMode_M(p, fake(1), i->Ain.DACAS.addr);
       goto done;
 
    case Ain_A87Free:

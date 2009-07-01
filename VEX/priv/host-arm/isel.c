@@ -757,8 +757,9 @@ static void iselStmt ( ISelEnv* env, IRStmt* stmt )
        IRType tya = typeOfIRExpr(env->type_env, stmt->Ist.Store.addr);
        IRType tyd = typeOfIRExpr(env->type_env, stmt->Ist.Store.data);
        IREndness end = stmt->Ist.Store.end;
+       IRTemp    resSC = stmt->Ist.Store.resSC;
 
-       if (tya != Ity_I32 || end != Iend_LE) 
+       if (tya != Ity_I32 || end != Iend_LE || resSC != IRTemp_INVALID) 
           goto stmt_fail;
 
        reg = iselIntExpr_R(env, stmt->Ist.Store.data);

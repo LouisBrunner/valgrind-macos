@@ -1799,7 +1799,85 @@ void amd64g_dirtyhelper_FSTENV ( /*IN*/VexGuestAMD64State* vex_state,
 /*--- Misc integer helpers, including rotates and CPUID.      ---*/
 /*---------------------------------------------------------------*/
 
-/* Claim to be the following CPU (2 x ...):
+/* Claim to be the following CPU, which is probably representative of
+   the lowliest (earliest) amd64 offerings.  It can do neither sse3
+   nor cx16.
+
+   vendor_id       : AuthenticAMD  
+   cpu family      : 15  
+   model           : 5  
+   model name      : AMD Opteron (tm) Processor 848  
+   stepping        : 10  
+   cpu MHz         : 1797.682  
+   cache size      : 1024 KB  
+   fpu             : yes  
+   fpu_exception   : yes  
+   cpuid level     : 1  
+   wp              : yes  
+   flags           : fpu vme de pse tsc msr pae mce cx8 apic sep
+                     mtrr pge mca cmov pat pse36 clflush mmx fxsr
+                     sse sse2 syscall nx mmxext lm 3dnowext 3dnow  
+   bogomips        : 3600.62  
+   TLB size        : 1088 4K pages  
+   clflush size    : 64  
+   cache_alignment : 64  
+   address sizes   : 40 bits physical, 48 bits virtual  
+   power management: ts fid vid ttp  
+*/
+void amd64g_dirtyhelper_CPUID_baseline ( VexGuestAMD64State* st )
+{
+#  define SET_ABCD(_a,_b,_c,_d)                \
+      do { st->guest_RAX = (ULong)(_a);        \
+           st->guest_RBX = (ULong)(_b);        \
+           st->guest_RCX = (ULong)(_c);        \
+           st->guest_RDX = (ULong)(_d);        \
+      } while (0)
+
+   switch (0xFFFFFFFF & st->guest_RAX) {
+      case 0x00000000:
+         SET_ABCD(0x00000001, 0x68747541, 0x444d4163, 0x69746e65);
+         break;
+      case 0x00000001:
+         SET_ABCD(0x00000f5a, 0x01000800, 0x00000000, 0x078bfbff);
+         break;
+      case 0x80000000:
+         SET_ABCD(0x80000018, 0x68747541, 0x444d4163, 0x69746e65);
+         break;
+      case 0x80000001:
+         SET_ABCD(0x00000f5a, 0x00000505, 0x00000000, 0xe1d3fbff);
+         break;
+      case 0x80000002:
+         SET_ABCD(0x20444d41, 0x6574704f, 0x206e6f72, 0x296d7428);
+         break;
+      case 0x80000003:
+         SET_ABCD(0x6f725020, 0x73736563, 0x3820726f, 0x00003834);
+         break;
+      case 0x80000004:
+         SET_ABCD(0x00000000, 0x00000000, 0x00000000, 0x00000000);
+         break;
+      case 0x80000005:
+         SET_ABCD(0xff08ff08, 0xff20ff20, 0x40020140, 0x40020140);
+         break;
+      case 0x80000006:
+         SET_ABCD(0x00000000, 0x42004200, 0x04008140, 0x00000000);
+         break;
+      case 0x80000007:
+         SET_ABCD(0x00000000, 0x00000000, 0x00000000, 0x0000000f);
+         break;
+      case 0x80000008:
+         SET_ABCD(0x00003028, 0x00000000, 0x00000000, 0x00000000);
+         break;
+      default:
+         SET_ABCD(0x00000000, 0x00000000, 0x00000000, 0x00000000);
+         break;
+   }
+#  undef SET_ABCD
+}
+
+
+/* Claim to be the following CPU (2 x ...), which is sse3 and cx16
+   capable.
+
    vendor_id       : GenuineIntel
    cpu family      : 6
    model           : 15
@@ -1826,7 +1904,7 @@ void amd64g_dirtyhelper_FSTENV ( /*IN*/VexGuestAMD64State* vex_state,
    address sizes   : 36 bits physical, 48 bits virtual
    power management:
 */
-void amd64g_dirtyhelper_CPUID ( VexGuestAMD64State* st )
+void amd64g_dirtyhelper_CPUID_sse3_and_cx16 ( VexGuestAMD64State* st )
 {
 #  define SET_ABCD(_a,_b,_c,_d)                \
       do { st->guest_RAX = (ULong)(_a);        \

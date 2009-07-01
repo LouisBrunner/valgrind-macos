@@ -44,6 +44,8 @@
    without prior written permission.
 */
 
+/* Translates x86 code to IR. */
+
 /* TODO:
 
    All Puts to CC_OP/CC_DEP1/CC_DEP2/CC_NDEP should really be checked
@@ -76,8 +78,6 @@
      zeroes all the FP registers.  It should leave the registers
      unchanged.
 
-   RDTSC returns one, always.
-
    SAHF should cause eflags[1] == 1, and in fact it produces 0.  As
    per Intel docs this bit has no meaning anyway.  Since PUSHF is the
    only way to observe eflags[1], a proper fix would be to make that
@@ -90,14 +90,14 @@
    happen.  Programs that set it to 1 and then rely on the resulting
    SIGBUSs to inform them of misaligned accesses will not work.
 
-   Implementation sysenter is necessarily partial.  sysenter is a kind
-   of system call entry.  When doing a sysenter, the return address is
-   not known -- that is something that is beyond Vex's knowledge.  So
-   the generated IR forces a return to the scheduler, which can do
-   what it likes to simulate the systemter, but it MUST set this
-   thread's guest_EIP field with the continuation address before
-   resuming execution.  If that doesn't happen, the thread will jump
-   to address zero, which is probably fatal.
+   Implementation of sysenter is necessarily partial.  sysenter is a
+   kind of system call entry.  When doing a sysenter, the return
+   address is not known -- that is something that is beyond Vex's
+   knowledge.  So the generated IR forces a return to the scheduler,
+   which can do what it likes to simulate the systenter, but it MUST
+   set this thread's guest_EIP field with the continuation address
+   before resuming execution.  If that doesn't happen, the thread will
+   jump to address zero, which is probably fatal.
 
    This module uses global variables and so is not MT-safe (if that
    should ever become relevant).
@@ -105,7 +105,20 @@
    The delta values are 32-bit ints, not 64-bit ints.  That means
    this module may not work right if run on a 64-bit host.  That should
    be fixed properly, really -- if anyone ever wants to use Vex to
-   translate x86 code for execution on a 64-bit host.  */
+   translate x86 code for execution on a 64-bit host.
+
+   casLE (implementation of lock-prefixed insns) and rep-prefixed
+   insns: the side-exit back to the start of the insn is done with
+   Ijk_Boring.  This is quite wrong, it should be done with
+   Ijk_NoRedir, since otherwise the side exit, which is intended to
+   restart the instruction for whatever reason, could go somewhere
+   entirely else.  Doing it right (with Ijk_NoRedir jumps) would make
+   no-redir jumps performance critical, at least for rep-prefixed
+   instructions, since all iterations thereof would involve such a
+   jump.  It's not such a big deal with casLE since the side exit is
+   only taken if the CAS fails, that is, the location is contended,
+   which is relatively unlikely.
+*/
 
 /* Performance holes:
 
@@ -145,8 +158,24 @@
    No prefixes may precede a "Special" instruction.
 */
 
+/* LOCK prefixed instructions.  These are translated using IR-level
+   CAS statements (IRCAS) and are believed to preserve atomicity, even
+   from the point of view of some other process racing against a
+   simulated one (presumably they communicate via a shared memory
+   segment).
 
-/* Translates x86 code to IR. */
+   Handlers which are aware of LOCK prefixes are:
+      dis_op2_G_E      (add, or, adc, sbb, and, sub, xor)
+      dis_cmpxchg_G_E  (cmpxchg)
+      dis_Grp1         (add, or, adc, sbb, and, sub, xor)
+      dis_Grp3         (not, neg)
+      dis_Grp4         (inc, dec)
+      dis_Grp5         (inc, dec)
+      dis_Grp8_Imm     (bts, btc, btr)
+      dis_bt_G_E       (bts, btc, btr)
+      dis_xadd_G_E     (xadd)
+*/
+
 
 #include "libvex_basictypes.h"
 #include "libvex_ir.h"
@@ -612,7 +641,7 @@ static void assign ( IRTemp dst, IRExpr* e )
 
 static void storeLE ( IRExpr* addr, IRExpr* data )
 {
-   stmt( IRStmt_Store(Iend_LE,addr,data) );
+   stmt( IRStmt_Store(Iend_LE, IRTemp_INVALID, addr, data) );
 }
 
 static IRExpr* unop ( IROp op, IRExpr* a )
@@ -674,7 +703,7 @@ static IRExpr* mkV128 ( UShort mask )
 
 static IRExpr* loadLE ( IRType ty, IRExpr* data )
 {
-   return IRExpr_Load(Iend_LE,ty,data);
+   return IRExpr_Load(False, Iend_LE, ty, data);
 }
 
 static IROp mkSizedOp ( IRType ty, IROp op8 )
@@ -713,6 +742,33 @@ static IRExpr* mkAnd1 ( IRExpr* x, IRExpr* y )
                binop(Iop_And32, 
                      unop(Iop_1Uto32,x), 
                      unop(Iop_1Uto32,y)));
+}
+
+/* Generate a compare-and-swap operation, operating on memory at
+   'addr'.  The expected value is 'expVal' and the new value is
+   'newVal'.  If the operation fails, then transfer control (with a
+   no-redir jump (XXX no -- see comment at top of this file)) to
+   'restart_point', which is presumably the address of the guest
+   instruction again -- retrying, essentially. */
+static void casLE ( IRExpr* addr, IRExpr* expVal, IRExpr* newVal,
+                    Addr32 restart_point )
+{
+   IRCAS* cas;
+   IRType tyE    = typeOfIRExpr(irsb->tyenv, expVal);
+   IRType tyN    = typeOfIRExpr(irsb->tyenv, newVal);
+   IRTemp oldTmp = newTemp(tyE);
+   IRTemp expTmp = newTemp(tyE);
+   vassert(tyE == tyN);
+   vassert(tyE == Ity_I32 || tyE == Ity_I16 || tyE == Ity_I8);
+   assign(expTmp, expVal);
+   cas = mkIRCAS( IRTemp_INVALID, oldTmp, Iend_LE, addr, 
+                  NULL, mkexpr(expTmp), NULL, newVal );
+   stmt( IRStmt_CAS(cas) );
+   stmt( IRStmt_Exit(
+            binop( mkSizedOp(tyE,Iop_CmpNE8), mkexpr(oldTmp), mkexpr(expTmp) ),
+            Ijk_Boring, /*Ijk_NoRedir*/
+            IRConst_U32( restart_point ) 
+         ));
 }
 
 
@@ -1039,9 +1095,28 @@ X86Condcode positiveIse_X86Condcode ( X86Condcode  cond,
 
 /* Given ta1, ta2 and tres, compute tres = ADC(ta1,ta2) and set flags
    appropriately.
+
+   Optionally, generate a store for the 'tres' value.  This can either
+   be a normal store, or it can be a cas-with-possible-failure style
+   store:
+
+   if taddr is IRTemp_INVALID, then no store is generated.
+
+   if taddr is not IRTemp_INVALID, then a store (using taddr as
+   the address) is generated:
+
+     if texpVal is IRTemp_INVALID then a normal store is
+     generated, and restart_point must be zero (it is irrelevant).
+
+     if texpVal is not IRTemp_INVALID then a cas-style store is
+     generated.  texpVal is the expected value, restart_point
+     is the restart point if the store fails, and texpVal must
+     have the same type as tres.   
 */
 static void helper_ADC ( Int sz,
-                         IRTemp tres, IRTemp ta1, IRTemp ta2 )
+                         IRTemp tres, IRTemp ta1, IRTemp ta2,
+                         /* info about optional store: */
+                         IRTemp taddr, IRTemp texpVal, Addr32 restart_point )
 {
    UInt    thunkOp;
    IRType  ty    = szToITy(sz);
@@ -1050,6 +1125,7 @@ static void helper_ADC ( Int sz,
    IROp    plus  = mkSizedOp(ty, Iop_Add8);
    IROp    xor   = mkSizedOp(ty, Iop_Xor8);
 
+   vassert(typeOfIRTemp(irsb->tyenv, tres) == ty);
    vassert(sz == 1 || sz == 2 || sz == 4);
    thunkOp = sz==4 ? X86G_CC_OP_ADCL 
                    : (sz==2 ? X86G_CC_OP_ADCW : X86G_CC_OP_ADCB);
@@ -1065,6 +1141,20 @@ static void helper_ADC ( Int sz,
                        binop(plus,mkexpr(ta1),mkexpr(ta2)),
                        mkexpr(oldcn)) );
 
+   /* Possibly generate a store of 'tres' to 'taddr'.  See comment at
+      start of this function. */
+   if (taddr != IRTemp_INVALID) {
+      if (texpVal == IRTemp_INVALID) {
+         vassert(restart_point == 0);
+         storeLE( mkexpr(taddr), mkexpr(tres) );
+      } else {
+         vassert(typeOfIRTemp(irsb->tyenv, texpVal) == ty);
+         /* .. and hence 'texpVal' has the same type as 'tres'. */
+         casLE( mkexpr(taddr),
+                mkexpr(texpVal), mkexpr(tres), restart_point );
+      }
+   }
+
    stmt( IRStmt_Put( OFFB_CC_OP,   mkU32(thunkOp) ) );
    stmt( IRStmt_Put( OFFB_CC_DEP1, widenUto32(mkexpr(ta1)) ));
    stmt( IRStmt_Put( OFFB_CC_DEP2, widenUto32(binop(xor, mkexpr(ta2), 
@@ -1074,10 +1164,13 @@ static void helper_ADC ( Int sz,
 
 
 /* Given ta1, ta2 and tres, compute tres = SBB(ta1,ta2) and set flags
-   appropriately.
+   appropriately.  As with helper_ADC, possibly generate a store of
+   the result -- see comments on helper_ADC for details.
 */
 static void helper_SBB ( Int sz,
-                         IRTemp tres, IRTemp ta1, IRTemp ta2 )
+                         IRTemp tres, IRTemp ta1, IRTemp ta2,
+                         /* info about optional store: */
+                         IRTemp taddr, IRTemp texpVal, Addr32 restart_point )
 {
    UInt    thunkOp;
    IRType  ty    = szToITy(sz);
@@ -1086,6 +1179,7 @@ static void helper_SBB ( Int sz,
    IROp    minus = mkSizedOp(ty, Iop_Sub8);
    IROp    xor   = mkSizedOp(ty, Iop_Xor8);
 
+   vassert(typeOfIRTemp(irsb->tyenv, tres) == ty);
    vassert(sz == 1 || sz == 2 || sz == 4);
    thunkOp = sz==4 ? X86G_CC_OP_SBBL 
                    : (sz==2 ? X86G_CC_OP_SBBW : X86G_CC_OP_SBBB);
@@ -1100,6 +1194,20 @@ static void helper_SBB ( Int sz,
    assign( tres, binop(minus,
                        binop(minus,mkexpr(ta1),mkexpr(ta2)),
                        mkexpr(oldcn)) );
+
+   /* Possibly generate a store of 'tres' to 'taddr'.  See comment at
+      start of this function. */
+   if (taddr != IRTemp_INVALID) {
+      if (texpVal == IRTemp_INVALID) {
+         vassert(restart_point == 0);
+         storeLE( mkexpr(taddr), mkexpr(tres) );
+      } else {
+         vassert(typeOfIRTemp(irsb->tyenv, texpVal) == ty);
+         /* .. and hence 'texpVal' has the same type as 'tres'. */
+         casLE( mkexpr(taddr),
+                mkexpr(texpVal), mkexpr(tres), restart_point );
+      }
+   }
 
    stmt( IRStmt_Put( OFFB_CC_OP,   mkU32(thunkOp) ) );
    stmt( IRStmt_Put( OFFB_CC_DEP1, widenUto32(mkexpr(ta1) )) );
@@ -1723,11 +1831,13 @@ UInt dis_op2_E_G ( UChar       sorb,
       assign( src,  getIReg(size,eregOfRM(rm)) );
 
       if (addSubCarry && op8 == Iop_Add8) {
-         helper_ADC( size, dst1, dst0, src );
+         helper_ADC( size, dst1, dst0, src,
+                     /*no store*/IRTemp_INVALID, IRTemp_INVALID, 0 );
          putIReg(size, gregOfRM(rm), mkexpr(dst1));
       } else
       if (addSubCarry && op8 == Iop_Sub8) {
-         helper_SBB( size, dst1, dst0, src );
+         helper_SBB( size, dst1, dst0, src,
+                     /*no store*/IRTemp_INVALID, IRTemp_INVALID, 0 );
          putIReg(size, gregOfRM(rm), mkexpr(dst1));
       } else {
          assign( dst1, binop(mkSizedOp(ty,op8), mkexpr(dst0), mkexpr(src)) );
@@ -1750,11 +1860,13 @@ UInt dis_op2_E_G ( UChar       sorb,
       assign( src,  loadLE(szToITy(size), mkexpr(addr)) );
 
       if (addSubCarry && op8 == Iop_Add8) {
-         helper_ADC( size, dst1, dst0, src );
+         helper_ADC( size, dst1, dst0, src,
+                     /*no store*/IRTemp_INVALID, IRTemp_INVALID, 0 );
          putIReg(size, gregOfRM(rm), mkexpr(dst1));
       } else
       if (addSubCarry && op8 == Iop_Sub8) {
-         helper_SBB( size, dst1, dst0, src );
+         helper_SBB( size, dst1, dst0, src,
+                     /*no store*/IRTemp_INVALID, IRTemp_INVALID, 0 );
          putIReg(size, gregOfRM(rm), mkexpr(dst1));
       } else {
          assign( dst1, binop(mkSizedOp(ty,op8), mkexpr(dst0), mkexpr(src)) );
@@ -1795,6 +1907,7 @@ UInt dis_op2_E_G ( UChar       sorb,
 */
 static
 UInt dis_op2_G_E ( UChar       sorb,
+                   Bool        locked,
                    Bool        addSubCarry,
                    IROp        op8, 
                    Bool        keep,
@@ -1831,11 +1944,13 @@ UInt dis_op2_G_E ( UChar       sorb,
       assign(src,  getIReg(size,gregOfRM(rm)));
 
       if (addSubCarry && op8 == Iop_Add8) {
-         helper_ADC( size, dst1, dst0, src );
+         helper_ADC( size, dst1, dst0, src,
+                     /*no store*/IRTemp_INVALID, IRTemp_INVALID, 0 );
          putIReg(size, eregOfRM(rm), mkexpr(dst1));
       } else
       if (addSubCarry && op8 == Iop_Sub8) {
-         helper_SBB( size, dst1, dst0, src );
+         helper_SBB( size, dst1, dst0, src,
+                     /*no store*/IRTemp_INVALID, IRTemp_INVALID, 0 );
          putIReg(size, eregOfRM(rm), mkexpr(dst1));
       } else {
          assign(dst1, binop(mkSizedOp(ty,op8), mkexpr(dst0), mkexpr(src)));
@@ -1860,20 +1975,43 @@ UInt dis_op2_G_E ( UChar       sorb,
       assign(src,  getIReg(size,gregOfRM(rm)));
 
       if (addSubCarry && op8 == Iop_Add8) {
-         helper_ADC( size, dst1, dst0, src );
-         storeLE(mkexpr(addr), mkexpr(dst1));
+         if (locked) {
+            /* cas-style store */
+            helper_ADC( size, dst1, dst0, src,
+                        /*store*/addr, dst0/*expVal*/, guest_EIP_curr_instr );
+         } else {
+            /* normal store */
+            helper_ADC( size, dst1, dst0, src,
+                        /*store*/addr, IRTemp_INVALID, 0 );
+         }
       } else
       if (addSubCarry && op8 == Iop_Sub8) {
-         helper_SBB( size, dst1, dst0, src );
-         storeLE(mkexpr(addr), mkexpr(dst1));
+         if (locked) {
+            /* cas-style store */
+            helper_SBB( size, dst1, dst0, src,
+                        /*store*/addr, dst0/*expVal*/, guest_EIP_curr_instr );
+         } else {
+            /* normal store */
+            helper_SBB( size, dst1, dst0, src,
+                        /*store*/addr, IRTemp_INVALID, 0 );
+         }
       } else {
          assign(dst1, binop(mkSizedOp(ty,op8), mkexpr(dst0), mkexpr(src)));
+         if (keep) {
+            if (locked) {
+               if (0) vex_printf("locked case\n" );
+               casLE( mkexpr(addr),
+                      mkexpr(dst0)/*expval*/, 
+                      mkexpr(dst1)/*newval*/, guest_EIP_curr_instr );
+            } else {
+               if (0) vex_printf("nonlocked case\n");
+               storeLE(mkexpr(addr), mkexpr(dst1));
+            }
+         }
          if (isAddSub(op8))
             setFlags_DEP1_DEP2(op8, dst0, src, ty);
          else
             setFlags_DEP1(op8, dst1, ty);
-         if (keep)
-            storeLE(mkexpr(addr), mkexpr(dst1));
       }
 
       DIP("%s%c %s,%s\n", t_x86opc, nameISize(size), 
@@ -2000,11 +2138,13 @@ UInt dis_op_imm_A ( Int    size,
    } 
    else
    if (op8 == Iop_Add8 && carrying) {
-      helper_ADC( size, dst1, dst0, src );
+      helper_ADC( size, dst1, dst0, src,
+                  /*no store*/IRTemp_INVALID, IRTemp_INVALID, 0 );
    }
    else
    if (op8 == Iop_Sub8 && carrying) {
-      helper_SBB( size, dst1, dst0, src );
+      helper_SBB( size, dst1, dst0, src,
+                  /*no store*/IRTemp_INVALID, IRTemp_INVALID, 0 );
    }
    else
       vpanic("dis_op_imm_A(x86,guest)");
@@ -2099,7 +2239,7 @@ void codegen_div ( Int sz, IRTemp t, Bool signed_divide )
 
 
 static 
-UInt dis_Grp1 ( UChar sorb,
+UInt dis_Grp1 ( UChar sorb, Bool locked,
                 Int delta, UChar modrm, 
                 Int am_sz, Int d_sz, Int sz, UInt d32 )
 {
@@ -2130,10 +2270,12 @@ UInt dis_Grp1 ( UChar sorb,
       assign(src,  mkU(ty,d32 & mask));
 
       if (gregOfRM(modrm) == 2 /* ADC */) {
-         helper_ADC( sz, dst1, dst0, src );
+         helper_ADC( sz, dst1, dst0, src,
+                     /*no store*/IRTemp_INVALID, IRTemp_INVALID, 0 );
       } else 
       if (gregOfRM(modrm) == 3 /* SBB */) {
-         helper_SBB( sz, dst1, dst0, src );
+         helper_SBB( sz, dst1, dst0, src,
+                     /*no store*/IRTemp_INVALID, IRTemp_INVALID, 0 );
       } else {
          assign(dst1, binop(mkSizedOp(ty,op8), mkexpr(dst0), mkexpr(src)));
          if (isAddSub(op8))
@@ -2155,20 +2297,42 @@ UInt dis_Grp1 ( UChar sorb,
       assign(src, mkU(ty,d32 & mask));
 
       if (gregOfRM(modrm) == 2 /* ADC */) {
-         helper_ADC( sz, dst1, dst0, src );
+         if (locked) {
+            /* cas-style store */
+            helper_ADC( sz, dst1, dst0, src,
+                       /*store*/addr, dst0/*expVal*/, guest_EIP_curr_instr );
+         } else {
+            /* normal store */
+            helper_ADC( sz, dst1, dst0, src,
+                        /*store*/addr, IRTemp_INVALID, 0 );
+         }
       } else 
       if (gregOfRM(modrm) == 3 /* SBB */) {
-         helper_SBB( sz, dst1, dst0, src );
+         if (locked) {
+            /* cas-style store */
+            helper_SBB( sz, dst1, dst0, src,
+                       /*store*/addr, dst0/*expVal*/, guest_EIP_curr_instr );
+         } else {
+            /* normal store */
+            helper_SBB( sz, dst1, dst0, src,
+                        /*store*/addr, IRTemp_INVALID, 0 );
+         }
       } else {
          assign(dst1, binop(mkSizedOp(ty,op8), mkexpr(dst0), mkexpr(src)));
+         if (gregOfRM(modrm) < 7) {
+            if (locked) {
+               casLE( mkexpr(addr), mkexpr(dst0)/*expVal*/, 
+                                    mkexpr(dst1)/*newVal*/,
+                                    guest_EIP_curr_instr );
+            } else {
+               storeLE(mkexpr(addr), mkexpr(dst1));
+            }
+         }
          if (isAddSub(op8))
             setFlags_DEP1_DEP2(op8, dst0, src, ty);
          else
             setFlags_DEP1(op8, dst1, ty);
       }
-
-      if (gregOfRM(modrm) < 7)
-          storeLE(mkexpr(addr), mkexpr(dst1));
 
       delta += (len+d_sz);
       DIP("%s%c $0x%x, %s\n", nameGrp1(gregOfRM(modrm)), nameISize(sz),
@@ -2421,6 +2585,7 @@ UInt dis_Grp2 ( UChar sorb,
 /* Group 8 extended opcodes (but BT/BTS/BTC/BTR only). */
 static
 UInt dis_Grp8_Imm ( UChar sorb,
+                    Bool locked,
                     Int delta, UChar modrm,
                     Int am_sz, Int sz, UInt src_val,
                     Bool* decode_OK )
@@ -2477,20 +2642,6 @@ UInt dis_Grp8_Imm ( UChar sorb,
                               src_val, dis_buf);
    }
 
-   /* Copy relevant bit from t2 into the carry flag. */
-   /* Flags: C=selected bit, O,S,Z,A,P undefined, so are set to zero. */
-   stmt( IRStmt_Put( OFFB_CC_OP,   mkU32(X86G_CC_OP_COPY) ));
-   stmt( IRStmt_Put( OFFB_CC_DEP2, mkU32(0) ));
-   stmt( IRStmt_Put( 
-            OFFB_CC_DEP1,
-            binop(Iop_And32,
-                  binop(Iop_Shr32, mkexpr(t2), mkU8(src_val)),
-                  mkU32(1))
-       ));
-   /* Set NDEP even though it isn't used.  This makes redundant-PUT
-      elimination of previous stores to this field work better. */
-   stmt( IRStmt_Put( OFFB_CC_NDEP, mkU32(0) ));
-
    /* Compute the new value into t2m, if non-BT. */
    switch (gregOfRM(modrm)) {
       case 4: /* BT */
@@ -2509,14 +2660,37 @@ UInt dis_Grp8_Imm ( UChar sorb,
          vassert(0);
    }
 
-   /* Write the result back, if non-BT. */
+   /* Write the result back, if non-BT.  If the CAS fails then we
+      side-exit from the trace at this point, and so the flag state is
+      not affected.  This is of course as required. */
    if (gregOfRM(modrm) != 4 /* BT */) {
       if (epartIsReg(modrm)) {
-	putIReg(sz, eregOfRM(modrm), narrowTo(ty, mkexpr(t2m)));
+         putIReg(sz, eregOfRM(modrm), narrowTo(ty, mkexpr(t2m)));
       } else {
-	storeLE(mkexpr(t_addr), narrowTo(ty, mkexpr(t2m)));
+         if (locked) {
+            casLE( mkexpr(t_addr),
+                   narrowTo(ty, mkexpr(t2))/*expd*/,
+                   narrowTo(ty, mkexpr(t2m))/*new*/,
+                   guest_EIP_curr_instr );
+         } else {
+            storeLE(mkexpr(t_addr), narrowTo(ty, mkexpr(t2m)));
+         }
       }
    }
+
+   /* Copy relevant bit from t2 into the carry flag. */
+   /* Flags: C=selected bit, O,S,Z,A,P undefined, so are set to zero. */
+   stmt( IRStmt_Put( OFFB_CC_OP,   mkU32(X86G_CC_OP_COPY) ));
+   stmt( IRStmt_Put( OFFB_CC_DEP2, mkU32(0) ));
+   stmt( IRStmt_Put( 
+            OFFB_CC_DEP1,
+            binop(Iop_And32,
+                  binop(Iop_Shr32, mkexpr(t2), mkU8(src_val)),
+                  mkU32(1))
+       ));
+   /* Set NDEP even though it isn't used.  This makes redundant-PUT
+      elimination of previous stores to this field work better. */
+   stmt( IRStmt_Put( OFFB_CC_NDEP, mkU32(0) ));
 
    return delta;
 }
@@ -2585,7 +2759,7 @@ static void codegen_mulL_A_D ( Int sz, Bool syned,
 
 /* Group 3 extended opcodes. */
 static 
-UInt dis_Grp3 ( UChar sorb, Int sz, Int delta, Bool* decode_OK )
+UInt dis_Grp3 ( UChar sorb, Bool locked, Int sz, Int delta, Bool* decode_OK )
 {
    UInt    d32;
    UChar   modrm;
@@ -2599,6 +2773,13 @@ UInt dis_Grp3 ( UChar sorb, Int sz, Int delta, Bool* decode_OK )
    *decode_OK = True; /* may change this later */
 
    modrm = getIByte(delta);
+
+   if (locked && (gregOfRM(modrm) != 2 && gregOfRM(modrm) != 3)) {
+      /* LOCK prefix only allowed with not and neg subopcodes */
+      *decode_OK = False;
+      return delta;
+   }
+
    if (epartIsReg(modrm)) {
       switch (gregOfRM(modrm)) {
          case 0: { /* TEST */
@@ -2686,7 +2867,14 @@ UInt dis_Grp3 ( UChar sorb, Int sz, Int delta, Bool* decode_OK )
            *decode_OK = False;
            break;
          case 2: /* NOT */
-            storeLE( mkexpr(addr), unop(mkSizedOp(ty,Iop_Not8), mkexpr(t1)));
+            dst1 = newTemp(ty);
+            assign(dst1, unop(mkSizedOp(ty,Iop_Not8), mkexpr(t1)));
+            if (locked) {
+               casLE( mkexpr(addr), mkexpr(t1)/*expd*/, mkexpr(dst1)/*new*/,
+                                    guest_EIP_curr_instr );
+            } else {
+               storeLE( mkexpr(addr), mkexpr(dst1) );
+            }
             DIP("not%c %s\n", nameISize(sz), dis_buf);
             break;
          case 3: /* NEG */
@@ -2695,9 +2883,15 @@ UInt dis_Grp3 ( UChar sorb, Int sz, Int delta, Bool* decode_OK )
             dst1 = newTemp(ty);
             assign(dst0, mkU(ty,0));
             assign(src,  mkexpr(t1));
-            assign(dst1, binop(mkSizedOp(ty,Iop_Sub8), mkexpr(dst0), mkexpr(src)));
+            assign(dst1, binop(mkSizedOp(ty,Iop_Sub8),
+                               mkexpr(dst0), mkexpr(src)));
+            if (locked) {
+               casLE( mkexpr(addr), mkexpr(t1)/*expd*/, mkexpr(dst1)/*new*/,
+                                    guest_EIP_curr_instr );
+            } else {
+               storeLE( mkexpr(addr), mkexpr(dst1) );
+            }
             setFlags_DEP1_DEP2(Iop_Sub8, dst0, src, ty);
-            storeLE( mkexpr(addr), mkexpr(dst1) );
             DIP("neg%c %s\n", nameISize(sz), dis_buf);
             break;
          case 4: /* MUL */
@@ -2725,7 +2919,7 @@ UInt dis_Grp3 ( UChar sorb, Int sz, Int delta, Bool* decode_OK )
 
 /* Group 4 extended opcodes. */
 static
-UInt dis_Grp4 ( UChar sorb, Int delta, Bool* decode_OK )
+UInt dis_Grp4 ( UChar sorb, Bool locked, Int delta, Bool* decode_OK )
 {
    Int   alen;
    UChar modrm;
@@ -2737,6 +2931,13 @@ UInt dis_Grp4 ( UChar sorb, Int delta, Bool* decode_OK )
    *decode_OK = True;
 
    modrm = getIByte(delta);
+
+   if (locked && (gregOfRM(modrm) != 0 && gregOfRM(modrm) != 1)) {
+      /* LOCK prefix only allowed with inc and dec subopcodes */
+      *decode_OK = False;
+      return delta;
+   }
+
    if (epartIsReg(modrm)) {
       assign(t1, getIReg(1, eregOfRM(modrm)));
       switch (gregOfRM(modrm)) {
@@ -2763,12 +2964,22 @@ UInt dis_Grp4 ( UChar sorb, Int delta, Bool* decode_OK )
       switch (gregOfRM(modrm)) {
          case 0: /* INC */
             assign(t2, binop(Iop_Add8, mkexpr(t1), mkU8(1)));
-            storeLE( mkexpr(addr), mkexpr(t2) );
+            if (locked) {
+               casLE( mkexpr(addr), mkexpr(t1)/*expd*/, mkexpr(t2)/*new*/, 
+                      guest_EIP_curr_instr );
+            } else {
+               storeLE( mkexpr(addr), mkexpr(t2) );
+            }
             setFlags_INC_DEC( True, t2, ty );
             break;
          case 1: /* DEC */
             assign(t2, binop(Iop_Sub8, mkexpr(t1), mkU8(1)));
-            storeLE( mkexpr(addr), mkexpr(t2) );
+            if (locked) {
+               casLE( mkexpr(addr), mkexpr(t1)/*expd*/, mkexpr(t2)/*new*/, 
+                      guest_EIP_curr_instr );
+            } else {
+               storeLE( mkexpr(addr), mkexpr(t2) );
+            }
             setFlags_INC_DEC( False, t2, ty );
             break;
          default: 
@@ -2784,7 +2995,7 @@ UInt dis_Grp4 ( UChar sorb, Int delta, Bool* decode_OK )
 
 /* Group 5 extended opcodes. */
 static
-UInt dis_Grp5 ( UChar sorb, Int sz, Int delta, 
+UInt dis_Grp5 ( UChar sorb, Bool locked, Int sz, Int delta, 
                 DisResult* dres, Bool* decode_OK )
 {
    Int     len;
@@ -2798,6 +3009,13 @@ UInt dis_Grp5 ( UChar sorb, Int sz, Int delta,
    *decode_OK = True;
 
    modrm = getIByte(delta);
+
+   if (locked && (gregOfRM(modrm) != 0 && gregOfRM(modrm) != 1)) {
+      /* LOCK prefix only allowed with inc and dec subopcodes */
+      *decode_OK = False;
+      return delta;
+   }
+
    if (epartIsReg(modrm)) {
       assign(t1, getIReg(sz,eregOfRM(modrm)));
       switch (gregOfRM(modrm)) {
@@ -2853,15 +3071,25 @@ UInt dis_Grp5 ( UChar sorb, Int sz, Int delta,
             t2 = newTemp(ty);
             assign(t2, binop(mkSizedOp(ty,Iop_Add8),
                              mkexpr(t1), mkU(ty,1)));
+            if (locked) {
+               casLE( mkexpr(addr),
+                      mkexpr(t1), mkexpr(t2), guest_EIP_curr_instr );
+            } else {
+               storeLE(mkexpr(addr),mkexpr(t2));
+            }
             setFlags_INC_DEC( True, t2, ty );
-            storeLE(mkexpr(addr),mkexpr(t2));
             break;
          case 1: /* DEC */ 
             t2 = newTemp(ty);
             assign(t2, binop(mkSizedOp(ty,Iop_Sub8),
                              mkexpr(t1), mkU(ty,1)));
+            if (locked) {
+               casLE( mkexpr(addr),
+                      mkexpr(t1), mkexpr(t2), guest_EIP_curr_instr );
+            } else {
+               storeLE(mkexpr(addr),mkexpr(t2));
+            }
             setFlags_INC_DEC( False, t2, ty );
-            storeLE(mkexpr(addr),mkexpr(t2));
             break;
          case 2: /* call Ev */
             vassert(sz == 4);
@@ -5898,20 +6126,22 @@ static HChar* nameBtOp ( BtOp op )
 
 
 static
-UInt dis_bt_G_E ( UChar sorb, Int sz, Int delta, BtOp op )
+UInt dis_bt_G_E ( UChar sorb, Bool locked, Int sz, Int delta, BtOp op )
 {
    HChar  dis_buf[50];
    UChar  modrm;
    Int    len;
    IRTemp t_fetched, t_bitno0, t_bitno1, t_bitno2, t_addr0, 
-          t_addr1, t_esp, t_mask;
+          t_addr1, t_esp, t_mask, t_new;
 
    vassert(sz == 2 || sz == 4);
 
    t_fetched = t_bitno0 = t_bitno1 = t_bitno2 
-             = t_addr0 = t_addr1 = t_esp = t_mask = IRTemp_INVALID;
+             = t_addr0 = t_addr1 = t_esp 
+             = t_mask = t_new = IRTemp_INVALID;
 
    t_fetched = newTemp(Ity_I8);
+   t_new     = newTemp(Ity_I8);
    t_bitno0  = newTemp(Ity_I32);
    t_bitno1  = newTemp(Ity_I32);
    t_bitno2  = newTemp(Ity_I8);
@@ -5976,23 +6206,28 @@ UInt dis_bt_G_E ( UChar sorb, Int sz, Int delta, BtOp op )
 
    if (op != BtOpNone) {
       switch (op) {
-         case BtOpSet: 
-            storeLE( mkexpr(t_addr1), 
-                     binop(Iop_Or8, mkexpr(t_fetched), 
-                                    mkexpr(t_mask)) );
+         case BtOpSet:
+            assign( t_new,
+                    binop(Iop_Or8, mkexpr(t_fetched), mkexpr(t_mask)) );
             break;
-         case BtOpComp: 
-            storeLE( mkexpr(t_addr1), 
-                     binop(Iop_Xor8, mkexpr(t_fetched), 
-                                     mkexpr(t_mask)) );
+         case BtOpComp:
+            assign( t_new,
+                    binop(Iop_Xor8, mkexpr(t_fetched), mkexpr(t_mask)) );
             break;
-         case BtOpReset: 
-            storeLE( mkexpr(t_addr1), 
-                     binop(Iop_And8, mkexpr(t_fetched), 
-                                     unop(Iop_Not8, mkexpr(t_mask))) );
+         case BtOpReset:
+            assign( t_new,
+                    binop(Iop_And8, mkexpr(t_fetched), 
+                                    unop(Iop_Not8, mkexpr(t_mask))) );
             break;
          default: 
             vpanic("dis_bt_G_E(x86)");
+      }
+      if (locked && !epartIsReg(modrm)) {
+         casLE( mkexpr(t_addr1), mkexpr(t_fetched)/*expd*/,
+                                 mkexpr(t_new)/*new*/,
+                                 guest_EIP_curr_instr );
+      } else {
+         storeLE( mkexpr(t_addr1), mkexpr(t_new) );
       }
    }
  
@@ -6208,6 +6443,7 @@ void codegen_LAHF ( void  )
 
 static
 UInt dis_cmpxchg_G_E ( UChar       sorb,
+                       Bool        locked,
                        Int         size, 
                        Int         delta0 )
 {
@@ -6217,7 +6453,6 @@ UInt dis_cmpxchg_G_E ( UChar       sorb,
    IRType ty    = szToITy(size);
    IRTemp acc   = newTemp(ty);
    IRTemp src   = newTemp(ty);
-   //IRTemp res   = newTemp(ty);
    IRTemp dest  = newTemp(ty);
    IRTemp dest2 = newTemp(ty);
    IRTemp acc2  = newTemp(ty);
@@ -6225,105 +6460,73 @@ UInt dis_cmpxchg_G_E ( UChar       sorb,
    IRTemp addr  = IRTemp_INVALID;
    UChar  rm    = getUChar(delta0);
 
+   /* There are 3 cases to consider:
+
+      reg-reg: ignore any lock prefix, generate sequence based
+               on Mux0X
+
+      reg-mem, not locked: ignore any lock prefix, generate sequence
+                           based on Mux0X
+
+      reg-mem, locked: use IRCAS
+   */
    if (epartIsReg(rm)) {
+      /* case 1 */
       assign( dest, getIReg(size, eregOfRM(rm)) );
       delta0++;
+      assign( src, getIReg(size, gregOfRM(rm)) );
+      assign( acc, getIReg(size, R_EAX) );
+      setFlags_DEP1_DEP2(Iop_Sub8, acc, dest, ty);
+      assign( cond8, unop(Iop_1Uto8, mk_x86g_calculate_condition(X86CondZ)) );
+      assign( dest2, IRExpr_Mux0X(mkexpr(cond8), mkexpr(dest), mkexpr(src)) );
+      assign( acc2,  IRExpr_Mux0X(mkexpr(cond8), mkexpr(dest), mkexpr(acc)) );
+      putIReg(size, R_EAX, mkexpr(acc2));
+      putIReg(size, eregOfRM(rm), mkexpr(dest2));
       DIP("cmpxchg%c %s,%s\n", nameISize(size),
                                nameIReg(size,gregOfRM(rm)),
                                nameIReg(size,eregOfRM(rm)) );
-   } else {
+   } 
+   else if (!epartIsReg(rm) && !locked) {
+      /* case 2 */
       addr = disAMode ( &len, sorb, delta0, dis_buf );
       assign( dest, loadLE(ty, mkexpr(addr)) );
       delta0 += len;
+      assign( src, getIReg(size, gregOfRM(rm)) );
+      assign( acc, getIReg(size, R_EAX) );
+      setFlags_DEP1_DEP2(Iop_Sub8, acc, dest, ty);
+      assign( cond8, unop(Iop_1Uto8, mk_x86g_calculate_condition(X86CondZ)) );
+      assign( dest2, IRExpr_Mux0X(mkexpr(cond8), mkexpr(dest), mkexpr(src)) );
+      assign( acc2,  IRExpr_Mux0X(mkexpr(cond8), mkexpr(dest), mkexpr(acc)) );
+      putIReg(size, R_EAX, mkexpr(acc2));
+      storeLE( mkexpr(addr), mkexpr(dest2) );
       DIP("cmpxchg%c %s,%s\n", nameISize(size), 
                                nameIReg(size,gregOfRM(rm)), dis_buf);
    }
-
-   assign( src, getIReg(size, gregOfRM(rm)) );
-   assign( acc, getIReg(size, R_EAX) );
-   //assign( res, binop( mkSizedOp(ty,Iop_Sub8), mkexpr(acc), mkexpr(dest) ));
-   setFlags_DEP1_DEP2(Iop_Sub8, acc, dest, ty);
-   assign( cond8, unop(Iop_1Uto8, mk_x86g_calculate_condition(X86CondZ)) );
-   assign( dest2, IRExpr_Mux0X(mkexpr(cond8), mkexpr(dest), mkexpr(src)) );
-   assign( acc2,  IRExpr_Mux0X(mkexpr(cond8), mkexpr(dest), mkexpr(acc)) );
-   putIReg(size, R_EAX, mkexpr(acc2));
-
-   if (epartIsReg(rm)) {
-      putIReg(size, eregOfRM(rm), mkexpr(dest2));
-   } else {
-      storeLE( mkexpr(addr), mkexpr(dest2) );
+   else if (!epartIsReg(rm) && locked) {
+      /* case 3 */
+      /* src is new value.  acc is expected value.  dest is old value.
+         Compute success from the output of the IRCAS, and steer the
+         new value for EAX accordingly: in case of success, EAX is
+         unchanged. */
+      addr = disAMode ( &len, sorb, delta0, dis_buf );
+      delta0 += len;
+      assign( src, getIReg(size, gregOfRM(rm)) );
+      assign( acc, getIReg(size, R_EAX) );
+      stmt( IRStmt_CAS( 
+         mkIRCAS( IRTemp_INVALID, dest, Iend_LE, mkexpr(addr), 
+                  NULL, mkexpr(acc), NULL, mkexpr(src) )
+      ));
+      setFlags_DEP1_DEP2(Iop_Sub8, acc, dest, ty);
+      assign( cond8, unop(Iop_1Uto8, mk_x86g_calculate_condition(X86CondZ)) );
+      assign( acc2,  IRExpr_Mux0X(mkexpr(cond8), mkexpr(dest), mkexpr(acc)) );
+      putIReg(size, R_EAX, mkexpr(acc2));
+      DIP("lock cmpxchg%c %s,%s\n", nameISize(size), 
+                                    nameIReg(size,gregOfRM(rm)), dis_buf);
    }
+   else vassert(0);
 
    return delta0;
 }
-
-
-//-- static
-//-- Addr dis_cmpxchg8b ( UCodeBlock* cb, 
-//--                      UChar       sorb,
-//--                      Addr        eip0 )
-//-- {
-//--    Int   tal, tah, junkl, junkh, destl, desth, srcl, srch, accl, acch;
-//--    HChar dis_buf[50];
-//--    UChar rm;
-//--    UInt  pair;
-//-- 
-//--    rm    = getUChar(eip0);
-//--    accl  = newTemp(cb);
-//--    acch  = newTemp(cb);
-//--    srcl  = newTemp(cb);
-//--    srch  = newTemp(cb);
-//--    destl = newTemp(cb);
-//--    desth = newTemp(cb);
-//--    junkl = newTemp(cb);
-//--    junkh = newTemp(cb);
-//-- 
-//--    vg_assert(!epartIsReg(rm));
-//-- 
-//--    pair = disAMode ( cb, sorb, eip0, dis_buf );
-//--    tal = LOW24(pair);
-//--    tah = newTemp(cb);
-//--    uInstr2(cb, MOV, 4, TempReg, tal, TempReg, tah);
-//--    uInstr2(cb, ADD, 4, Literal, 0, TempReg, tah);
-//--    uLiteral(cb, 4);
-//--    eip0 += HI8(pair);
-//--    DIP("cmpxchg8b %s\n", dis_buf);
-//--    
-//--    uInstr0(cb, CALLM_S, 0);
-//-- 
-//--    uInstr2(cb, LOAD,  4, TempReg, tah, TempReg, desth);
-//--    uInstr1(cb, PUSH,  4, TempReg, desth);
-//--    uInstr2(cb, LOAD,  4, TempReg, tal, TempReg, destl);
-//--    uInstr1(cb, PUSH,  4, TempReg, destl);
-//--    uInstr2(cb, GET,   4, ArchReg, R_ECX, TempReg, srch);
-//--    uInstr1(cb, PUSH,  4, TempReg, srch);
-//--    uInstr2(cb, GET,   4, ArchReg, R_EBX, TempReg, srcl);
-//--    uInstr1(cb, PUSH,  4, TempReg, srcl);
-//--    uInstr2(cb, GET,   4, ArchReg, R_EDX, TempReg, acch);
-//--    uInstr1(cb, PUSH,  4, TempReg, acch);
-//--    uInstr2(cb, GET,   4, ArchReg, R_EAX, TempReg, accl);
-//--    uInstr1(cb, PUSH,  4, TempReg, accl);
-//--    
-//--    uInstr1(cb, CALLM, 0, Lit16,   VGOFF_(helper_cmpxchg8b));
-//--    uFlagsRWU(cb, FlagsEmpty, FlagZ, FlagsEmpty);
-//--    
-//--    uInstr1(cb, POP,   4, TempReg, accl);
-//--    uInstr2(cb, PUT,   4, TempReg, accl, ArchReg, R_EAX);
-//--    uInstr1(cb, POP,   4, TempReg, acch);
-//--    uInstr2(cb, PUT,   4, TempReg, acch, ArchReg, R_EDX);
-//--    uInstr1(cb, POP,   4, TempReg, srcl);
-//--    uInstr2(cb, PUT,   4, TempReg, srcl, ArchReg, R_EBX);
-//--    uInstr1(cb, POP,   4, TempReg, srch);
-//--    uInstr2(cb, PUT,   4, TempReg, srch, ArchReg, R_ECX);
-//--    uInstr1(cb, POP,   4, TempReg, destl);
-//--    uInstr2(cb, STORE, 4, TempReg, destl, TempReg, tal);
-//--    uInstr1(cb, POP,   4, TempReg, desth);
-//--    uInstr2(cb, STORE, 4, TempReg, desth, TempReg, tah);
-//-- 
-//--    uInstr0(cb, CALLM_E, 0);
-//--    
-//--    return eip0;
-//-- }
 
 
 /* Handle conditional move instructions of the form
@@ -6397,48 +6600,67 @@ UInt dis_cmov_E_G ( UChar       sorb,
 
 
 static
-UInt dis_xadd_G_E ( UChar sorb, Int sz, Int delta0, Bool* decodeOK )
+UInt dis_xadd_G_E ( UChar sorb, Bool locked, Int sz, Int delta0,
+                    Bool* decodeOK )
 {
    Int   len;
    UChar rm = getIByte(delta0);
    HChar dis_buf[50];
-
-   //   Int tmpd = newTemp(cb);
-   //Int tmpt = newTemp(cb);
 
    IRType ty    = szToITy(sz);
    IRTemp tmpd  = newTemp(ty);
    IRTemp tmpt0 = newTemp(ty);
    IRTemp tmpt1 = newTemp(ty);
 
+   /* There are 3 cases to consider:
+
+      reg-reg: currently unhandled
+
+      reg-mem, not locked: ignore any lock prefix, generate 'naive'
+                           (non-atomic) sequence
+
+      reg-mem, locked: use IRCAS
+   */
+
    if (epartIsReg(rm)) {
+      /* case 1 */
       *decodeOK = False;
       return delta0;
       /* Currently we don't handle xadd_G_E with register operand. */
-#if 0
-      uInstr2(cb, GET, sz, ArchReg, eregOfRM(rm), TempReg, tmpd);
-      uInstr2(cb, GET, sz, ArchReg, gregOfRM(rm), TempReg, tmpt);
-      uInstr2(cb, ADD, sz, TempReg, tmpd, TempReg, tmpt);
-      setFlagsFromUOpcode(cb, ADD);
-      uInstr2(cb, PUT, sz, TempReg, tmpd, ArchReg, gregOfRM(rm));
-      uInstr2(cb, PUT, sz, TempReg, tmpt, ArchReg, eregOfRM(rm));
-      DIP("xadd%c %s, %s\n",
-          nameISize(sz), nameIReg(sz,gregOfRM(rm)), nameIReg(sz,eregOfRM(rm)));
-      return 1+eip0;
-#endif
-   } else {
+   }
+   else if (!epartIsReg(rm) && !locked) {
+      /* case 2 */
       IRTemp addr = disAMode ( &len, sorb, delta0, dis_buf );
       assign( tmpd,  loadLE(ty, mkexpr(addr)) );
       assign( tmpt0, getIReg(sz, gregOfRM(rm)) );
-      assign( tmpt1, binop(mkSizedOp(ty,Iop_Add8), mkexpr(tmpd), mkexpr(tmpt0)) );
-      setFlags_DEP1_DEP2( Iop_Add8, tmpd, tmpt0, ty );
+      assign( tmpt1, binop(mkSizedOp(ty,Iop_Add8),
+                           mkexpr(tmpd), mkexpr(tmpt0)) );
       storeLE( mkexpr(addr), mkexpr(tmpt1) );
+      setFlags_DEP1_DEP2( Iop_Add8, tmpd, tmpt0, ty );
       putIReg(sz, gregOfRM(rm), mkexpr(tmpd));
       DIP("xadd%c %s, %s\n",
           nameISize(sz), nameIReg(sz,gregOfRM(rm)), dis_buf);
       *decodeOK = True;
       return len+delta0;
    }
+   else if (!epartIsReg(rm) && locked) {
+      /* case 3 */
+      IRTemp addr = disAMode ( &len, sorb, delta0, dis_buf );
+      assign( tmpd,  loadLE(ty, mkexpr(addr)) );
+      assign( tmpt0, getIReg(sz, gregOfRM(rm)) );
+      assign( tmpt1, binop(mkSizedOp(ty,Iop_Add8), 
+                           mkexpr(tmpd), mkexpr(tmpt0)) );
+      casLE( mkexpr(addr), mkexpr(tmpd)/*expVal*/,
+                           mkexpr(tmpt1)/*newVal*/, guest_EIP_curr_instr );
+      setFlags_DEP1_DEP2( Iop_Add8, tmpd, tmpt0, ty );
+      putIReg(sz, gregOfRM(rm), mkexpr(tmpd));
+      DIP("xadd%c %s, %s\n",
+          nameISize(sz), nameIReg(sz,gregOfRM(rm)), dis_buf);
+      *decodeOK = True;
+      return len+delta0;
+   }
+   /*UNREACHED*/
+   vassert(0);
 }
 
 /* Move 16 bits from Ew (ireg or mem) to G (a segment register). */
@@ -7424,16 +7646,15 @@ static void gen_SEGV_if_not_16_aligned ( IRTemp effective_addr )
 /* Helper for deciding whether a given insn (starting at the opcode
    byte) may validly be used with a LOCK prefix.  The following insns
    may be used with LOCK when their destination operand is in memory.
-   Note, this is slightly too permissive.  Oh well.  Note also, AFAICS
-   this is exactly the same for both 32-bit and 64-bit mode.
+   AFAICS this is exactly the same for both 32-bit and 64-bit mode.
 
-   ADD        80 /0,  81 /0,  83 /0,  00, 01, 02, 03
-   OR         80 /1,  81 /1,  83 /1,  08, 09, 0A, 0B
-   ADC        80 /2,  81 /2,  83 /2,  10, 11, 12, 13
-   SBB        81 /3,  81 /3,  83 /3,  18, 19, 1A, 1B
-   AND        80 /4,  81 /4,  83 /4,  20, 21, 22, 23
-   SUB        80 /5,  81 /5,  83 /5,  28, 29, 2A, 2B
-   XOR        80 /6,  81 /6,  83 /6,  30, 31, 32, 33
+   ADD        80 /0,  81 /0,  82 /0,  83 /0,  00,  01
+   OR         80 /1,  81 /1,  82 /x,  83 /1,  08,  09
+   ADC        80 /2,  81 /2,  82 /2,  83 /2,  10,  11
+   SBB        81 /3,  81 /3,  82 /x,  83 /3,  18,  19
+   AND        80 /4,  81 /4,  82 /x,  83 /4,  20,  21
+   SUB        80 /5,  81 /5,  82 /x,  83 /5,  28,  29
+   XOR        80 /6,  81 /6,  82 /x,  83 /6,  30,  31
 
    DEC        FE /1,  FF /1
    INC        FE /0,  FF /0
@@ -7441,7 +7662,7 @@ static void gen_SEGV_if_not_16_aligned ( IRTemp effective_addr )
    NEG        F6 /3,  F7 /3
    NOT        F6 /2,  F7 /2
 
-   XCHG       86, 87 
+   XCHG       86, 87
 
    BTC        0F BB,  0F BA /7
    BTR        0F B3,  0F BA /6
@@ -7451,52 +7672,93 @@ static void gen_SEGV_if_not_16_aligned ( IRTemp effective_addr )
    CMPXCHG8B  0F C7 /1
 
    XADD       0F C0,  0F C1
+
+   ------------------------------
+
+   80 /0  =  addb $imm8,  rm8
+   81 /0  =  addl $imm32, rm32  and  addw $imm16, rm16
+   82 /0  =  addb $imm8,  rm8
+   83 /0  =  addl $simm8, rm32  and  addw $simm8, rm16
+
+   00     =  addb r8,  rm8
+   01     =  addl r32, rm32  and  addw r16, rm16
+
+   Same for ADD OR ADC SBB AND SUB XOR
+
+   FE /1  = dec rm8
+   FF /1  = dec rm32  and  dec rm16
+
+   FE /0  = inc rm8
+   FF /0  = inc rm32  and  inc rm16
+
+   F6 /3  = neg rm8
+   F7 /3  = neg rm32  and  neg rm16
+
+   F6 /2  = not rm8
+   F7 /2  = not rm32  and  not rm16
+
+   0F BB     = btcw r16, rm16    and  btcl r32, rm32
+   OF BA /7  = btcw $imm8, rm16  and  btcw $imm8, rm32
+
+   Same for BTS, BTR
 */
 static Bool can_be_used_with_LOCK_prefix ( UChar* opc )
 {
    switch (opc[0]) {
-      case 0x00: case 0x01: case 0x02: case 0x03: return True;
-      case 0x08: case 0x09: case 0x0A: case 0x0B: return True;
-      case 0x10: case 0x11: case 0x12: case 0x13: return True;
-      case 0x18: case 0x19: case 0x1A: case 0x1B: return True;
-      case 0x20: case 0x21: case 0x22: case 0x23: return True;
-      case 0x28: case 0x29: case 0x2A: case 0x2B: return True;
-      case 0x30: case 0x31: case 0x32: case 0x33: return True;
+      case 0x00: case 0x01: case 0x08: case 0x09:
+      case 0x10: case 0x11: case 0x18: case 0x19:
+      case 0x20: case 0x21: case 0x28: case 0x29:
+      case 0x30: case 0x31:
+         if (!epartIsReg(opc[1]))
+            return True;
+         break;
 
-      case 0x80: case 0x81: case 0x83:
-         if (gregOfRM(opc[1]) >= 0 && gregOfRM(opc[1]) <= 6) 
+      case 0x80: case 0x81: case 0x82: case 0x83:
+         if (gregOfRM(opc[1]) >= 0 && gregOfRM(opc[1]) <= 6
+             && !epartIsReg(opc[1]))
             return True;
          break;
 
       case 0xFE: case 0xFF:
-         if (gregOfRM(opc[1]) >= 0 && gregOfRM(opc[1]) <= 1) 
+         if (gregOfRM(opc[1]) >= 0 && gregOfRM(opc[1]) <= 1
+             && !epartIsReg(opc[1]))
             return True;
          break;
 
       case 0xF6: case 0xF7:
-         if (gregOfRM(opc[1]) >= 2 && gregOfRM(opc[1]) <= 3) 
+         if (gregOfRM(opc[1]) >= 2 && gregOfRM(opc[1]) <= 3
+             && !epartIsReg(opc[1]))
             return True;
          break;
 
       case 0x86: case 0x87:
-         return True;
+         if (!epartIsReg(opc[1]))
+            return True;
+         break;
 
       case 0x0F: {
          switch (opc[1]) {
             case 0xBB: case 0xB3: case 0xAB:
-               return True;
+               if (!epartIsReg(opc[2]))
+                  return True;
+               break;
             case 0xBA: 
-               if (gregOfRM(opc[2]) >= 5 && gregOfRM(opc[2]) <= 7) 
+               if (gregOfRM(opc[2]) >= 5 && gregOfRM(opc[2]) <= 7
+                   && !epartIsReg(opc[2]))
                   return True;
                break;
             case 0xB0: case 0xB1:
-               return True;
+               if (!epartIsReg(opc[2]))
+                  return True;
+               break;
             case 0xC7: 
-               if (gregOfRM(opc[2]) == 1) 
+               if (gregOfRM(opc[2]) == 1 && !epartIsReg(opc[2]) )
                   return True;
                break;
             case 0xC0: case 0xC1:
-               return True;
+               if (!epartIsReg(opc[2]))
+                  return True;
+               break;
             default:
                break;
          } /* switch (opc[1]) */
@@ -7515,11 +7777,20 @@ static Bool can_be_used_with_LOCK_prefix ( UChar* opc )
 /*--- Disassemble a single instruction                     ---*/
 /*------------------------------------------------------------*/
 
-/* Disassemble a single instruction into IR.  The instruction
-   is located in host memory at &guest_code[delta]. */
-
+/* Disassemble a single instruction into IR.  The instruction is
+   located in host memory at &guest_code[delta].  *expect_CAS is set
+   to True if the resulting IR is expected to contain an IRCAS
+   statement, and False if it's not expected to.  This makes it
+   possible for the caller of disInstr_X86_WRK to check that
+   LOCK-prefixed instructions are at least plausibly translated, in
+   that it becomes possible to check that a (validly) LOCK-prefixed
+   instruction generates a translation containing an IRCAS, and
+   instructions without LOCK prefixes don't generate translations
+   containing an IRCAS.
+*/
 static
-DisResult disInstr_X86_WRK ( 
+DisResult disInstr_X86_WRK (
+             /*OUT*/Bool* expect_CAS,
              Bool         put_IP,
              Bool         (*resteerOkFn) ( /*opaque*/void*, Addr64 ),
              void*        callback_opaque,
@@ -7556,16 +7827,16 @@ DisResult disInstr_X86_WRK (
    /* Gets set to True if a LOCK prefix is seen. */
    Bool pfx_lock = False;
 
-   /* do we need follow the insn with MBusEvent(BusUnlock) ? */
-   Bool unlock_bus_after_insn = False;
-
    /* Set result defaults. */
    dres.whatNext   = Dis_Continue;
    dres.len        = 0;
    dres.continueAt = 0;
 
+   *expect_CAS = False;
+
    addr = t0 = t1 = t2 = t3 = t4 = t5 = t6 = IRTemp_INVALID; 
 
+   vassert(guest_EIP_bbstart + delta == guest_EIP_curr_instr);
    DIP("\t0x%x:  ", guest_EIP_bbstart+delta);
 
    /* We may be asked to update the guest EIP before going further. */
@@ -7666,6 +7937,7 @@ DisResult disInstr_X86_WRK (
             break;
          case 0xF0: 
             pfx_lock = True; 
+            *expect_CAS = True;
             break;
          case 0x3E: /* %DS: */
          case 0x26: /* %ES: */
@@ -7706,41 +7978,11 @@ DisResult disInstr_X86_WRK (
       leading F2 or F3.  Check that any LOCK prefix is actually
       allowed. */
 
-   /* Kludge re LOCK prefixes.  We assume here that all code generated
-      by Vex is going to be run in a single-threaded context, in other
-      words that concurrent executions of Vex-generated translations
-      will not happen.  So we don't need to worry too much about
-      preserving atomicity.  However, mark the fact that the notional
-      hardware bus lock is being acquired (and, after the insn,
-      released), so that thread checking tools know this is a locked
-      insn. 
-
-      We check for, and immediately reject, (most) inappropriate uses
-      of the LOCK prefix.  Later (at decode_failure: and
-      decode_success:), if we've added a BusLock event, then we will
-      follow up with a BusUnlock event.  How do we know execution will
-      actually ever get to the BusUnlock event?  Because
-      can_be_used_with_LOCK_prefix rejects all control-flow changing
-      instructions.
-
-      One loophole, though: if a LOCK prefix insn (seg)faults, then
-      the BusUnlock event will never be reached.  This could cause
-      tools which track bus hardware lock to lose track.  Really, we
-      should explicitly release the lock after every insn, but that's
-      obviously way too expensive.  Really, any tool which tracks the
-      state of the bus lock needs to ask V's core/tool interface to
-      notify it of signal deliveries.  On delivery of SIGSEGV to the
-      guest, the tool will be notified, in which case it should
-      release the bus hardware lock if it is held.
-
-      Note, guest-amd64/toIR.c contains identical logic.
-   */
    if (pfx_lock) {
       if (can_be_used_with_LOCK_prefix( (UChar*)&guest_code[delta] )) {
-         stmt( IRStmt_MBE(Imbe_BusLock) );
-         unlock_bus_after_insn = True;
          DIP("lock ");
       } else {
+         *expect_CAS = False;
          goto decode_failure;
       }
    }
@@ -13006,59 +13248,75 @@ DisResult disInstr_X86_WRK (
    /* ------------------------ opl Gv, Ev ----------------- */
 
    case 0x00: /* ADD Gb,Eb */
-      delta = dis_op2_G_E ( sorb, False, Iop_Add8, True, 1, delta, "add" );
+      delta = dis_op2_G_E ( sorb, pfx_lock, False,
+                            Iop_Add8, True, 1, delta, "add" );
       break;
    case 0x01: /* ADD Gv,Ev */
-      delta = dis_op2_G_E ( sorb, False, Iop_Add8, True, sz, delta, "add" );
+      delta = dis_op2_G_E ( sorb, pfx_lock, False,
+                            Iop_Add8, True, sz, delta, "add" );
       break;
 
    case 0x08: /* OR Gb,Eb */
-      delta = dis_op2_G_E ( sorb, False, Iop_Or8, True, 1, delta, "or" );
+      delta = dis_op2_G_E ( sorb, pfx_lock, False,
+                            Iop_Or8, True, 1, delta, "or" );
       break;
    case 0x09: /* OR Gv,Ev */
-      delta = dis_op2_G_E ( sorb, False, Iop_Or8, True, sz, delta, "or" );
+      delta = dis_op2_G_E ( sorb, pfx_lock, False,
+                            Iop_Or8, True, sz, delta, "or" );
       break;
 
    case 0x10: /* ADC Gb,Eb */
-      delta = dis_op2_G_E ( sorb, True, Iop_Add8, True, 1, delta, "adc" );
+      delta = dis_op2_G_E ( sorb, pfx_lock, True,
+                            Iop_Add8, True, 1, delta, "adc" );
       break;
    case 0x11: /* ADC Gv,Ev */
-      delta = dis_op2_G_E ( sorb, True, Iop_Add8, True, sz, delta, "adc" );
+      delta = dis_op2_G_E ( sorb, pfx_lock, True,
+                            Iop_Add8, True, sz, delta, "adc" );
       break;
 
    case 0x18: /* SBB Gb,Eb */
-      delta = dis_op2_G_E ( sorb, True, Iop_Sub8, True, 1, delta, "sbb" );
+      delta = dis_op2_G_E ( sorb, pfx_lock, True,
+                            Iop_Sub8, True, 1, delta, "sbb" );
       break;
    case 0x19: /* SBB Gv,Ev */
-      delta = dis_op2_G_E ( sorb, True, Iop_Sub8, True, sz, delta, "sbb" );
+      delta = dis_op2_G_E ( sorb, pfx_lock, True,
+                            Iop_Sub8, True, sz, delta, "sbb" );
       break;
 
    case 0x20: /* AND Gb,Eb */
-      delta = dis_op2_G_E ( sorb, False, Iop_And8, True, 1, delta, "and" );
+      delta = dis_op2_G_E ( sorb, pfx_lock, False,
+                            Iop_And8, True, 1, delta, "and" );
       break;
    case 0x21: /* AND Gv,Ev */
-      delta = dis_op2_G_E ( sorb, False, Iop_And8, True, sz, delta, "and" );
+      delta = dis_op2_G_E ( sorb, pfx_lock, False,
+                            Iop_And8, True, sz, delta, "and" );
       break;
 
    case 0x28: /* SUB Gb,Eb */
-      delta = dis_op2_G_E ( sorb, False, Iop_Sub8, True, 1, delta, "sub" );
+      delta = dis_op2_G_E ( sorb, pfx_lock, False,
+                            Iop_Sub8, True, 1, delta, "sub" );
       break;
    case 0x29: /* SUB Gv,Ev */
-      delta = dis_op2_G_E ( sorb, False, Iop_Sub8, True, sz, delta, "sub" );
+      delta = dis_op2_G_E ( sorb, pfx_lock, False,
+                            Iop_Sub8, True, sz, delta, "sub" );
       break;
 
    case 0x30: /* XOR Gb,Eb */
-      delta = dis_op2_G_E ( sorb, False, Iop_Xor8, True, 1, delta, "xor" );
+      delta = dis_op2_G_E ( sorb, pfx_lock, False,
+                            Iop_Xor8, True, 1, delta, "xor" );
       break;
    case 0x31: /* XOR Gv,Ev */
-      delta = dis_op2_G_E ( sorb, False, Iop_Xor8, True, sz, delta, "xor" );
+      delta = dis_op2_G_E ( sorb, pfx_lock, False,
+                            Iop_Xor8, True, sz, delta, "xor" );
       break;
 
    case 0x38: /* CMP Gb,Eb */
-      delta = dis_op2_G_E ( sorb, False, Iop_Sub8, False, 1, delta, "cmp" );
+      delta = dis_op2_G_E ( sorb, pfx_lock, False,
+                            Iop_Sub8, False, 1, delta, "cmp" );
       break;
    case 0x39: /* CMP Gv,Ev */
-      delta = dis_op2_G_E ( sorb, False, Iop_Sub8, False, sz, delta, "cmp" );
+      delta = dis_op2_G_E ( sorb, pfx_lock, False,
+                            Iop_Sub8, False, sz, delta, "cmp" );
       break;
 
    /* ------------------------ POP ------------------------ */
@@ -13527,22 +13785,12 @@ DisResult disInstr_X86_WRK (
              nameISize(sz), nameIReg(sz,gregOfRM(modrm)), 
                             nameIReg(sz,eregOfRM(modrm)));
       } else {
-         /* Need to add IRStmt_MBE(Imbe_BusLock). */
-         if (pfx_lock) {
-            /* check it's already been taken care of */
-            vassert(unlock_bus_after_insn);
-         } else {
-            vassert(!unlock_bus_after_insn);
-            stmt( IRStmt_MBE(Imbe_BusLock) );
-            unlock_bus_after_insn = True;
-         }
-         /* Because unlock_bus_after_insn is now True, generic logic
-            at the bottom of disInstr will add the
-            IRStmt_MBE(Imbe_BusUnlock). */
+         *expect_CAS = True;
          addr = disAMode ( &alen, sorb, delta, dis_buf );
          assign( t1, loadLE(ty,mkexpr(addr)) );
          assign( t2, getIReg(sz,gregOfRM(modrm)) );
-         storeLE( mkexpr(addr), mkexpr(t2) );
+         casLE( mkexpr(addr),
+                mkexpr(t1), mkexpr(t2), guest_EIP_curr_instr );
          putIReg( sz, gregOfRM(modrm), mkexpr(t1) );
          delta += alen;
          DIP("xchg%c %s, %s\n", nameISize(sz), 
@@ -13687,7 +13935,7 @@ DisResult disInstr_X86_WRK (
       sz    = 1;
       d_sz  = 1;
       d32   = getUChar(delta + am_sz);
-      delta = dis_Grp1 ( sorb, delta, modrm, am_sz, d_sz, sz, d32 );
+      delta = dis_Grp1 ( sorb, pfx_lock, delta, modrm, am_sz, d_sz, sz, d32 );
       break;
 
    case 0x81: /* Grp1 Iv,Ev */
@@ -13695,7 +13943,7 @@ DisResult disInstr_X86_WRK (
       am_sz = lengthAMode(delta);
       d_sz  = sz;
       d32   = getUDisp(d_sz, delta + am_sz);
-      delta = dis_Grp1 ( sorb, delta, modrm, am_sz, d_sz, sz, d32 );
+      delta = dis_Grp1 ( sorb, pfx_lock, delta, modrm, am_sz, d_sz, sz, d32 );
       break;
 
    case 0x83: /* Grp1 Ib,Ev */
@@ -13703,7 +13951,7 @@ DisResult disInstr_X86_WRK (
       am_sz = lengthAMode(delta);
       d_sz  = 1;
       d32   = getSDisp8(delta + am_sz);
-      delta = dis_Grp1 ( sorb, delta, modrm, am_sz, d_sz, sz, d32 );
+      delta = dis_Grp1 ( sorb, pfx_lock, delta, modrm, am_sz, d_sz, sz, d32 );
       break;
 
    /* ------------------------ (Grp2 extensions) ---------- */
@@ -13786,14 +14034,14 @@ DisResult disInstr_X86_WRK (
 
    case 0xF6: { /* Grp3 Eb */
       Bool decode_OK = True;
-      delta = dis_Grp3 ( sorb, 1, delta, &decode_OK );
+      delta = dis_Grp3 ( sorb, pfx_lock, 1, delta, &decode_OK );
       if (!decode_OK)
          goto decode_failure;
       break;
    }
    case 0xF7: { /* Grp3 Ev */
       Bool decode_OK = True;
-      delta = dis_Grp3 ( sorb, sz, delta, &decode_OK );
+      delta = dis_Grp3 ( sorb, pfx_lock, sz, delta, &decode_OK );
       if (!decode_OK)
          goto decode_failure;
       break;
@@ -13803,7 +14051,7 @@ DisResult disInstr_X86_WRK (
 
    case 0xFE: { /* Grp4 Eb */
       Bool decode_OK = True;
-      delta = dis_Grp4 ( sorb, delta, &decode_OK );
+      delta = dis_Grp4 ( sorb, pfx_lock, delta, &decode_OK );
       if (!decode_OK)
          goto decode_failure;
       break;
@@ -13813,7 +14061,7 @@ DisResult disInstr_X86_WRK (
 
    case 0xFF: { /* Grp5 Ev */
       Bool decode_OK = True;
-      delta = dis_Grp5 ( sorb, sz, delta, &dres, &decode_OK );
+      delta = dis_Grp5 ( sorb, pfx_lock, sz, delta, &dres, &decode_OK );
       if (!decode_OK)
          goto decode_failure;
       break;
@@ -13832,8 +14080,8 @@ DisResult disInstr_X86_WRK (
          modrm = getUChar(delta);
          am_sz = lengthAMode(delta);
          d32   = getSDisp8(delta + am_sz);
-         delta = dis_Grp8_Imm ( sorb, delta, modrm, am_sz, sz, d32,
-                                &decode_OK );
+         delta = dis_Grp8_Imm ( sorb, pfx_lock, delta, modrm, 
+                                am_sz, sz, d32, &decode_OK );
          if (!decode_OK)
             goto decode_failure;
          break;
@@ -13885,16 +14133,16 @@ DisResult disInstr_X86_WRK (
       /* =-=-=-=-=-=-=-=-=- BT/BTS/BTR/BTC =-=-=-=-=-=-= */
 
       case 0xA3: /* BT Gv,Ev */
-         delta = dis_bt_G_E ( sorb, sz, delta, BtOpNone );
+         delta = dis_bt_G_E ( sorb, pfx_lock, sz, delta, BtOpNone );
          break;
       case 0xB3: /* BTR Gv,Ev */
-         delta = dis_bt_G_E ( sorb, sz, delta, BtOpReset );
+         delta = dis_bt_G_E ( sorb, pfx_lock, sz, delta, BtOpReset );
          break;
       case 0xAB: /* BTS Gv,Ev */
-         delta = dis_bt_G_E ( sorb, sz, delta, BtOpSet );
+         delta = dis_bt_G_E ( sorb, pfx_lock, sz, delta, BtOpSet );
          break;
       case 0xBB: /* BTC Gv,Ev */
-         delta = dis_bt_G_E ( sorb, sz, delta, BtOpComp );
+         delta = dis_bt_G_E ( sorb, pfx_lock, sz, delta, BtOpComp );
          break;
 
       /* =-=-=-=-=-=-=-=-=- CMOV =-=-=-=-=-=-=-=-=-=-=-= */
@@ -13921,51 +14169,80 @@ DisResult disInstr_X86_WRK (
       /* =-=-=-=-=-=-=-=-=- CMPXCHG -=-=-=-=-=-=-=-=-=-= */
 
       case 0xB0: /* CMPXCHG Gb,Eb */
-         delta = dis_cmpxchg_G_E ( sorb, 1, delta );
+         delta = dis_cmpxchg_G_E ( sorb, pfx_lock, 1, delta );
          break;
       case 0xB1: /* CMPXCHG Gv,Ev */
-         delta = dis_cmpxchg_G_E ( sorb, sz, delta );
+         delta = dis_cmpxchg_G_E ( sorb, pfx_lock, sz, delta );
          break;
 
       case 0xC7: { /* CMPXCHG8B Gv (0F C7 /1) */
-         IRTemp   m64_old = newTemp(Ity_I64);
-         IRTemp   m64_new = newTemp(Ity_I64);
-         IRTemp    da_old = newTemp(Ity_I64);
-         IRTemp    da_new = newTemp(Ity_I64);
-         IRTemp    cb_old = newTemp(Ity_I64);
+         IRTemp expdHi    = newTemp(Ity_I32);
+         IRTemp expdLo    = newTemp(Ity_I32);
+         IRTemp dataHi    = newTemp(Ity_I32);
+         IRTemp dataLo    = newTemp(Ity_I32);
+         IRTemp oldHi     = newTemp(Ity_I32);
+         IRTemp oldLo     = newTemp(Ity_I32);
          IRTemp flags_old = newTemp(Ity_I32);
          IRTemp flags_new = newTemp(Ity_I32);
-         IRTemp      cond = newTemp(Ity_I8);
+         IRTemp success   = newTemp(Ity_I1);
+
+         /* Translate this using a DCAS, even if there is no LOCK
+            prefix.  Life is too short to bother with generating two
+            different translations for the with/without-LOCK-prefix
+            cases. */
+         *expect_CAS = True;
 
 	 /* Decode, and generate address. */
+         if (sz != 4) goto decode_failure;
          modrm = getIByte(delta);
          if (epartIsReg(modrm)) goto decode_failure;
          if (gregOfRM(modrm) != 1) goto decode_failure;
          addr = disAMode ( &alen, sorb, delta, dis_buf );
          delta += alen;
 
-	 /* Fetch the old 64-bit values and compute the guard. */
-         assign( m64_old, loadLE(Ity_I64, mkexpr(addr) ));
-         assign( da_old,  binop(Iop_32HLto64, 
-                                getIReg(4,R_EDX), getIReg(4,R_EAX)) );
-         assign( cb_old,  binop(Iop_32HLto64, 
-                                getIReg(4,R_ECX), getIReg(4,R_EBX)) );
+         /* Get the expected and new values. */
+         assign( expdHi, getIReg(4,R_EDX) );
+         assign( expdLo, getIReg(4,R_EAX) );
+         assign( dataHi, getIReg(4,R_ECX) );
+         assign( dataLo, getIReg(4,R_EBX) );
 
-	 assign( cond, 
-                 unop(Iop_1Uto8, 
-                      binop(Iop_CmpEQ64, mkexpr(da_old), mkexpr(m64_old))) );
+         /* Do the DCAS */
+         stmt( IRStmt_CAS(
+                  mkIRCAS( oldHi, oldLo, 
+                           Iend_LE, mkexpr(addr), 
+                           mkexpr(expdHi), mkexpr(expdLo),
+                           mkexpr(dataHi), mkexpr(dataLo)
+               )));
 
-         /* Compute new %edx:%eax and m64 values, and put in place */
-         assign( da_new, 
-                 IRExpr_Mux0X(mkexpr(cond), mkexpr(m64_old), mkexpr(da_old)));
-         assign( m64_new,
-                 IRExpr_Mux0X(mkexpr(cond), mkexpr(m64_old), mkexpr(cb_old)));
+         /* success when oldHi:oldLo == expdHi:expdLo */
+         assign( success,
+                 binop(Iop_CmpEQ32,
+                       binop(Iop_Or32,
+                             binop(Iop_Xor32, mkexpr(oldHi), mkexpr(expdHi)),
+                             binop(Iop_Xor32, mkexpr(oldLo), mkexpr(expdLo))
+                       ),
+                       mkU32(0)
+                 ));
 
-         putIReg(4, R_EDX, unop(Iop_64HIto32, mkexpr(da_new)) );
-         putIReg(4, R_EAX, unop(Iop_64to32, mkexpr(da_new)) );
-         storeLE( mkexpr(addr), mkexpr(m64_new) );
+         /* If the DCAS is successful, that is to say oldHi:oldLo ==
+            expdHi:expdLo, then put expdHi:expdLo back in EDX:EAX,
+            which is where they came from originally.  Both the actual
+            contents of these two regs, and any shadow values, are
+            unchanged.  If the DCAS fails then we're putting into
+            EDX:EAX the value seen in memory. */
+         putIReg(4, R_EDX,
+                    IRExpr_Mux0X( unop(Iop_1Uto8, mkexpr(success)),
+                                  mkexpr(oldHi),
+                                  mkexpr(expdHi)
+                ));
+         putIReg(4, R_EAX,
+                    IRExpr_Mux0X( unop(Iop_1Uto8, mkexpr(success)),
+                                  mkexpr(oldLo),
+                                  mkexpr(expdLo)
+                ));
 
-         /* Copy the guard into the Z flag and leave the others unchanged */
+         /* Copy the success bit into the Z flag and leave the others
+            unchanged */
          assign( flags_old, widenUto32(mk_x86g_calculate_eflags_all()));
          assign( 
             flags_new,
@@ -13974,7 +14251,7 @@ DisResult disInstr_X86_WRK (
                                    mkU32(~X86G_CC_MASK_Z)),
                   binop(Iop_Shl32, 
                         binop(Iop_And32, 
-                              unop(Iop_8Uto32, mkexpr(cond)), mkU32(1)), 
+                              unop(Iop_1Uto32, mkexpr(success)), mkU32(1)), 
                         mkU8(X86G_CC_SHIFT_Z)) ));
 
          stmt( IRStmt_Put( OFFB_CC_OP,   mkU32(X86G_CC_OP_COPY) ));
@@ -14300,13 +14577,13 @@ DisResult disInstr_X86_WRK (
 
       case 0xC0: { /* XADD Gb,Eb */
          Bool decodeOK;
-         delta = dis_xadd_G_E ( sorb, 1, delta, &decodeOK );
+         delta = dis_xadd_G_E ( sorb, pfx_lock, 1, delta, &decodeOK );
          if (!decodeOK) goto decode_failure;
          break;
       }
       case 0xC1: { /* XADD Gv,Ev */
          Bool decodeOK;
-         delta = dis_xadd_G_E ( sorb, sz, delta, &decodeOK );
+         delta = dis_xadd_G_E ( sorb, pfx_lock, sz, delta, &decodeOK );
          if (!decodeOK) goto decode_failure;
          break;
       }
@@ -14432,11 +14709,15 @@ DisResult disInstr_X86_WRK (
       insn, but nevertheless be paranoid and update it again right
       now. */
    stmt( IRStmt_Put( OFFB_EIP, mkU32(guest_EIP_curr_instr) ) );
-   if (unlock_bus_after_insn)
-      stmt( IRStmt_MBE(Imbe_BusUnlock) );
    jmp_lit(Ijk_NoDecode, guest_EIP_curr_instr);
    dres.whatNext = Dis_StopHere;
    dres.len = 0;
+   /* We also need to say that a CAS is not expected now, regardless
+      of what it might have been set to at the start of the function,
+      since the IR that we've emitted just above (to synthesis a
+      SIGILL) does not involve any CAS, and presumably no other IR has
+      been emitted for this (non-decoded) insn. */
+   *expect_CAS = False;
    return dres;
 
    } /* switch (opc) for the main (primary) opcode switch. */
@@ -14444,8 +14725,6 @@ DisResult disInstr_X86_WRK (
   decode_success:
    /* All decode successes end up here. */
    DIP("\n");
-   if (unlock_bus_after_insn)
-      stmt( IRStmt_MBE(Imbe_BusUnlock) );
    dres.len = delta - delta_start;
    return dres;
 }
@@ -14473,6 +14752,8 @@ DisResult disInstr_X86 ( IRSB*        irsb_IN,
                          VexAbiInfo*  abiinfo,
                          Bool         host_bigendian_IN )
 {
+   Int       i, x1, x2;
+   Bool      expect_CAS, has_CAS;
    DisResult dres;
 
    /* Set globals (see top of this file) */
@@ -14483,8 +14764,37 @@ DisResult disInstr_X86 ( IRSB*        irsb_IN,
    guest_EIP_curr_instr = (Addr32)guest_IP;
    guest_EIP_bbstart    = (Addr32)toUInt(guest_IP - delta);
 
-   dres = disInstr_X86_WRK ( put_IP, resteerOkFn, callback_opaque,
-                             delta, archinfo );
+   x1 = irsb_IN->stmts_used;
+   expect_CAS = False;
+   dres = disInstr_X86_WRK ( &expect_CAS, put_IP, resteerOkFn,
+                             callback_opaque, delta, archinfo );
+   x2 = irsb_IN->stmts_used;
+   vassert(x2 >= x1);
+
+   /* See comment at the top of disInstr_X86_WRK for meaning of
+      expect_CAS.  Here, we (sanity-)check for the presence/absence of
+      IRCAS as directed by the returned expect_CAS value. */
+   has_CAS = False;
+   for (i = x1; i < x2; i++) {
+      if (irsb_IN->stmts[i]->tag == Ist_CAS)
+         has_CAS = True;
+   }
+
+   if (expect_CAS != has_CAS) {
+      /* inconsistency detected.  re-disassemble the instruction so as
+         to generate a useful error message; then assert. */
+      vex_traceflags |= VEX_TRACE_FE;
+      dres = disInstr_X86_WRK ( &expect_CAS, put_IP, resteerOkFn,
+                                callback_opaque, delta, archinfo );
+      for (i = x1; i < x2; i++) {
+         vex_printf("\t\t");
+         ppIRStmt(irsb_IN->stmts[i]);
+         vex_printf("\n");
+      }
+      /* Failure of this assertion is serious and denotes a bug in
+         disInstr. */
+      vpanic("disInstr_X86: inconsistency in LOCK prefix handling");
+   }
 
    return dres;
 }

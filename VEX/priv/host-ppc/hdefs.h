@@ -459,7 +459,9 @@ typedef
       Pin_Goto,       /* conditional/unconditional jmp to dst */
       Pin_CMov,       /* conditional move */
       Pin_Load,       /* zero-extending load a 8|16|32|64 bit value from mem */
+      Pin_LoadL,      /* load-linked (lwarx/ldarx) 32|64 bit value from mem */
       Pin_Store,      /* store a 8|16|32|64 bit value to mem */
+      Pin_StoreC,     /* store-conditional (stwcx./stdcx.) 32|64 bit val */
       Pin_Set,        /* convert condition code to value 0 or 1 */
       Pin_MfCR,       /* move from condition register to GPR */
       Pin_MFence,     /* mem fence */
@@ -604,12 +606,24 @@ typedef
             HReg      dst;
             PPCAMode* src;
          } Load;
+         /* Load-and-reserve (lwarx, ldarx) */
+         struct {
+            UChar sz; /* 4|8 */
+            HReg  dst;
+            HReg  src;
+         } LoadL;
          /* 64/32/16/8 bit stores */
          struct {
             UChar     sz; /* 1|2|4|8 */
             PPCAMode* dst;
             HReg      src;
          } Store;
+         /* Store-conditional (stwcx., stdcx.) */
+         struct {
+            UChar sz; /* 4|8 */
+            HReg  dst;
+            HReg  src;
+         } StoreC;
          /* Convert a ppc condition code to value 0 or 1. */
          struct {
             PPCCondCode cond;
@@ -791,8 +805,12 @@ extern PPCInstr* PPCInstr_Goto       ( IRJumpKind, PPCCondCode cond, PPCRI* dst 
 extern PPCInstr* PPCInstr_CMov       ( PPCCondCode, HReg dst, PPCRI* src );
 extern PPCInstr* PPCInstr_Load       ( UChar sz,
                                        HReg dst, PPCAMode* src, Bool mode64 );
+extern PPCInstr* PPCInstr_LoadL      ( UChar sz,
+                                       HReg dst, HReg src, Bool mode64 );
 extern PPCInstr* PPCInstr_Store      ( UChar sz, PPCAMode* dst,
                                        HReg src, Bool mode64 );
+extern PPCInstr* PPCInstr_StoreC     ( UChar sz, HReg dst, HReg src,
+                                       Bool mode64 );
 extern PPCInstr* PPCInstr_Set        ( PPCCondCode cond, HReg dst );
 extern PPCInstr* PPCInstr_MfCR       ( HReg dst );
 extern PPCInstr* PPCInstr_MFence     ( void );

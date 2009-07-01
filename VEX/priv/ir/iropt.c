@@ -334,7 +334,8 @@ static IRExpr* flatten_Expr ( IRSB* bb, IRExpr* ex )
       case Iex_Load:
          t1 = newIRTemp(bb->tyenv, ty);
          addStmtToIRSB(bb, IRStmt_WrTmp(t1,
-            IRExpr_Load(ex->Iex.Load.end,
+            IRExpr_Load(ex->Iex.Load.isLL,
+                        ex->Iex.Load.end,
                         ex->Iex.Load.ty, 
                         flatten_Expr(bb, ex->Iex.Load.addr))));
          return IRExpr_RdTmp(t1);
@@ -388,8 +389,9 @@ static IRExpr* flatten_Expr ( IRSB* bb, IRExpr* ex )
 static void flatten_Stmt ( IRSB* bb, IRStmt* st )
 {
    Int i;
-   IRExpr  *e1, *e2;
+   IRExpr  *e1, *e2, *e3, *e4, *e5;
    IRDirty *d,  *d2;
+   IRCAS   *cas, *cas2;
    switch (st->tag) {
       case Ist_Put:
          if (isIRAtom(st->Ist.Put.data)) {
@@ -424,7 +426,19 @@ static void flatten_Stmt ( IRSB* bb, IRStmt* st )
       case Ist_Store:
          e1 = flatten_Expr(bb, st->Ist.Store.addr);
          e2 = flatten_Expr(bb, st->Ist.Store.data);
-         addStmtToIRSB(bb, IRStmt_Store(st->Ist.Store.end, e1,e2));
+         addStmtToIRSB(bb, IRStmt_Store(st->Ist.Store.end,
+                                        st->Ist.Store.resSC, e1,e2));
+         break;
+      case Ist_CAS:
+         cas  = st->Ist.CAS.details;
+         e1   = flatten_Expr(bb, cas->addr);
+         e2   = cas->expdHi ? flatten_Expr(bb, cas->expdHi) : NULL;
+         e3   = flatten_Expr(bb, cas->expdLo);
+         e4   = cas->dataHi ? flatten_Expr(bb, cas->dataHi) : NULL;
+         e5   = flatten_Expr(bb, cas->dataLo);
+         cas2 = mkIRCAS( cas->oldHi, cas->oldLo, cas->end,
+                         e1, e2, e3, e4, e5 );
+         addStmtToIRSB(bb, IRStmt_CAS(cas2));
          break;
       case Ist_Dirty:
          d = st->Ist.Dirty.details;
@@ -710,13 +724,14 @@ static void handle_gets_Stmt (
          enough do a lot better if needed. */
       /* Probably also overly-conservative, but also dump everything
          if we hit a memory bus event (fence, lock, unlock).  Ditto
-         AbiHints.*/
+         AbiHints and CASs. */
       case Ist_AbiHint:
          vassert(isIRAtom(st->Ist.AbiHint.base));
          vassert(isIRAtom(st->Ist.AbiHint.nia));
          /* fall through */
       case Ist_MBE:
       case Ist_Dirty:
+      case Ist_CAS:
          for (j = 0; j < env->used; j++)
             env->inuse[j] = False;
          break;
@@ -1659,6 +1674,7 @@ static IRExpr* subst_Expr ( IRExpr** env, IRExpr* ex )
       case Iex_Load:
          vassert(isIRAtom(ex->Iex.Load.addr));
          return IRExpr_Load(
+                   ex->Iex.Load.isLL,
                    ex->Iex.Load.end,
                    ex->Iex.Load.ty,
                    subst_Expr(env, ex->Iex.Load.addr)
@@ -1747,9 +1763,29 @@ static IRStmt* subst_and_fold_Stmt ( IRExpr** env, IRStmt* st )
          vassert(isIRAtom(st->Ist.Store.data));
          return IRStmt_Store(
                    st->Ist.Store.end,
+                   st->Ist.Store.resSC,
                    fold_Expr(subst_Expr(env, st->Ist.Store.addr)),
                    fold_Expr(subst_Expr(env, st->Ist.Store.data))
                 );
+
+      case Ist_CAS: {
+         IRCAS *cas, *cas2;
+         cas = st->Ist.CAS.details;
+         vassert(isIRAtom(cas->addr));
+         vassert(cas->expdHi == NULL || isIRAtom(cas->expdHi));
+         vassert(isIRAtom(cas->expdLo));
+         vassert(cas->dataHi == NULL || isIRAtom(cas->dataHi));
+         vassert(isIRAtom(cas->dataLo));
+         cas2 = mkIRCAS(
+                   cas->oldHi, cas->oldLo, cas->end, 
+                   fold_Expr(subst_Expr(env, cas->addr)),
+                   cas->expdHi ? fold_Expr(subst_Expr(env, cas->expdHi)) : NULL,
+                   fold_Expr(subst_Expr(env, cas->expdLo)),
+                   cas->dataHi ? fold_Expr(subst_Expr(env, cas->dataHi)) : NULL,
+                   fold_Expr(subst_Expr(env, cas->dataLo))
+                );
+         return IRStmt_CAS(cas2);
+      }
 
       case Ist_Dirty: {
          Int     i;
@@ -1956,6 +1992,7 @@ static void addUses_Stmt ( Bool* set, IRStmt* st )
 {
    Int      i;
    IRDirty* d;
+   IRCAS*   cas;
    switch (st->tag) {
       case Ist_AbiHint:
          addUses_Expr(set, st->Ist.AbiHint.base);
@@ -1974,6 +2011,16 @@ static void addUses_Stmt ( Bool* set, IRStmt* st )
       case Ist_Store:
          addUses_Expr(set, st->Ist.Store.addr);
          addUses_Expr(set, st->Ist.Store.data);
+         return;
+      case Ist_CAS:
+         cas = st->Ist.CAS.details;
+         addUses_Expr(set, cas->addr);
+         if (cas->expdHi)
+            addUses_Expr(set, cas->expdHi);
+         addUses_Expr(set, cas->expdLo);
+         if (cas->dataHi)
+            addUses_Expr(set, cas->dataHi);
+         addUses_Expr(set, cas->dataLo);
          return;
       case Ist_Dirty:
          d = st->Ist.Dirty.details;
@@ -2561,7 +2608,7 @@ static Bool do_cse_BB ( IRSB* bb )
          to do the no-overlap assessments needed for Put/PutI.
       */
       switch (st->tag) {
-         case Ist_Dirty: case Ist_Store: case Ist_MBE:
+         case Ist_Dirty: case Ist_Store: case Ist_MBE: case Ist_CAS:
             paranoia = 2; break;
          case Ist_Put: case Ist_PutI: 
             paranoia = 1; break;
@@ -2986,6 +3033,13 @@ Bool guestAccessWhichMightOverlapPutI (
          /* just be paranoid ... these should be rare. */
          return True;
 
+      case Ist_CAS:
+         /* This is unbelievably lame, but it's probably not
+            significant from a performance point of view.  Really, a
+            CAS is a load-store op, so it should be safe to say False.
+            However .. */
+         return True;
+
       case Ist_Dirty:
          /* If the dirty call has any guest effects at all, give up.
             Probably could do better. */
@@ -3245,8 +3299,22 @@ static void deltaIRStmt ( IRStmt* st, Int delta )
          deltaIRExpr(st->Ist.Exit.guard, delta);
          break;
       case Ist_Store:
+         if (st->Ist.Store.resSC != IRTemp_INVALID)
+            st->Ist.Store.resSC += delta;
          deltaIRExpr(st->Ist.Store.addr, delta);
          deltaIRExpr(st->Ist.Store.data, delta);
+         break;
+      case Ist_CAS:
+         if (st->Ist.CAS.details->oldHi != IRTemp_INVALID)
+            st->Ist.CAS.details->oldHi += delta;
+         st->Ist.CAS.details->oldLo += delta;
+         deltaIRExpr(st->Ist.CAS.details->addr, delta);
+         if (st->Ist.CAS.details->expdHi)
+            deltaIRExpr(st->Ist.CAS.details->expdHi, delta);
+         deltaIRExpr(st->Ist.CAS.details->expdLo, delta);
+         if (st->Ist.CAS.details->dataHi)
+            deltaIRExpr(st->Ist.CAS.details->dataHi, delta);
+         deltaIRExpr(st->Ist.CAS.details->dataLo, delta);
          break;
       case Ist_Dirty:
          d = st->Ist.Dirty.details;
@@ -3682,6 +3750,7 @@ static void aoccCount_Stmt ( UShort* uses, IRStmt* st )
 {
    Int      i;
    IRDirty* d;
+   IRCAS*   cas;
    switch (st->tag) {
       case Ist_AbiHint:
          aoccCount_Expr(uses, st->Ist.AbiHint.base);
@@ -3700,6 +3769,16 @@ static void aoccCount_Stmt ( UShort* uses, IRStmt* st )
       case Ist_Store:
          aoccCount_Expr(uses, st->Ist.Store.addr);
          aoccCount_Expr(uses, st->Ist.Store.data);
+         return;
+      case Ist_CAS:
+         cas = st->Ist.CAS.details;
+         aoccCount_Expr(uses, cas->addr);
+         if (cas->expdHi)
+            aoccCount_Expr(uses, cas->expdHi);
+         aoccCount_Expr(uses, cas->expdLo);
+         if (cas->dataHi)
+            aoccCount_Expr(uses, cas->dataHi);
+         aoccCount_Expr(uses, cas->dataLo);
          return;
       case Ist_Dirty:
          d = st->Ist.Dirty.details;
@@ -3887,6 +3966,7 @@ static IRExpr* atbSubst_Expr ( ATmpInfo* env, IRExpr* e )
                 );
       case Iex_Load:
          return IRExpr_Load(
+                   e->Iex.Load.isLL,
                    e->Iex.Load.end,
                    e->Iex.Load.ty,
                    atbSubst_Expr(env, e->Iex.Load.addr)
@@ -3910,9 +3990,9 @@ static IRExpr* atbSubst_Expr ( ATmpInfo* env, IRExpr* e )
 
 static IRStmt* atbSubst_Stmt ( ATmpInfo* env, IRStmt* st )
 {
-   Int      i;
-   IRDirty* d;
-   IRDirty* d2;
+   Int     i;
+   IRDirty *d, *d2;
+   IRCAS   *cas, *cas2;
    switch (st->tag) {
       case Ist_AbiHint:
          return IRStmt_AbiHint(
@@ -3923,6 +4003,7 @@ static IRStmt* atbSubst_Stmt ( ATmpInfo* env, IRStmt* st )
       case Ist_Store:
          return IRStmt_Store(
                    st->Ist.Store.end,
+                   st->Ist.Store.resSC,
                    atbSubst_Expr(env, st->Ist.Store.addr),
                    atbSubst_Expr(env, st->Ist.Store.data)
                 );
@@ -3956,6 +4037,17 @@ static IRStmt* atbSubst_Stmt ( ATmpInfo* env, IRStmt* st )
          return IRStmt_NoOp();
       case Ist_MBE:
          return IRStmt_MBE(st->Ist.MBE.event);
+      case Ist_CAS:
+         cas  = st->Ist.CAS.details;
+         cas2 = mkIRCAS(
+                   cas->oldHi, cas->oldLo, cas->end, 
+                   atbSubst_Expr(env, cas->addr),
+                   cas->expdHi ? atbSubst_Expr(env, cas->expdHi) : NULL,
+                   atbSubst_Expr(env, cas->expdLo),
+                   cas->dataHi ? atbSubst_Expr(env, cas->dataHi) : NULL,
+                   atbSubst_Expr(env, cas->dataLo)
+                );
+         return IRStmt_CAS(cas2);
       case Ist_Dirty:
          d  = st->Ist.Dirty.details;
          d2 = emptyIRDirty();
@@ -4089,13 +4181,23 @@ static IRStmt* atbSubst_Stmt ( ATmpInfo* env, IRStmt* st )
          youngest. */
 
       /* stmtPuts/stmtStores characterise what the stmt under
-         consideration does. */
-      stmtPuts = toBool(st->tag == Ist_Put 
-                        || st->tag == Ist_PutI 
-                        || st->tag == Ist_Dirty);
+         consideration does, or might do (sidely safe @ True). */
+      stmtPuts
+         = toBool( st->tag == Ist_Put
+                   || st->tag == Ist_PutI 
+                   || st->tag == Ist_Dirty );
 
-      stmtStores = toBool(st->tag == Ist_Store
-                          || st->tag == Ist_Dirty);
+      /* be True if this stmt writes memory or might do (==> we don't
+         want to reorder other loads or stores relative to it).  Also,
+         a load-linked falls under this classification, since we
+         really ought to be conservative and not reorder any other
+         memory transactions relative to it. */
+      stmtStores
+         = toBool( st->tag == Ist_Store
+                   || (st->tag == Ist_WrTmp
+                       && st->Ist.WrTmp.data->tag == Iex_Load
+                       && st->Ist.WrTmp.data->Iex.Load.isLL)
+                   || st->tag == Ist_Dirty );
 
       for (k = A_NENV-1; k >= 0; k--) {
          if (env[k].bindee == NULL)
@@ -4239,9 +4341,10 @@ static void considerExpensives ( /*OUT*/Bool* hasGetIorPutI,
                                  /*OUT*/Bool* hasVorFtemps,
                                  IRSB* bb )
 {
-   Int i, j;
-   IRStmt* st;
+   Int      i, j;
+   IRStmt*  st;
    IRDirty* d;
+   IRCAS*   cas;
 
    *hasGetIorPutI = False;
    *hasVorFtemps  = False;
@@ -4276,6 +4379,14 @@ static void considerExpensives ( /*OUT*/Bool* hasGetIorPutI,
          case Ist_Store:
             vassert(isIRAtom(st->Ist.Store.addr));
             vassert(isIRAtom(st->Ist.Store.data));
+            break;
+         case Ist_CAS:
+            cas = st->Ist.CAS.details;
+            vassert(isIRAtom(cas->addr));
+            vassert(cas->expdHi == NULL || isIRAtom(cas->expdHi));
+            vassert(isIRAtom(cas->expdLo));
+            vassert(cas->dataHi == NULL || isIRAtom(cas->dataHi));
+            vassert(isIRAtom(cas->dataLo));
             break;
          case Ist_Dirty:
             d = st->Ist.Dirty.details;

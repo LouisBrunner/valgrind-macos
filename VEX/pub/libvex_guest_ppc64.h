@@ -249,36 +249,32 @@ typedef
       /* 1088 */ ULong guest_TISTART;
       /* 1096 */ ULong guest_TILEN;
 
-      /* For lwarx/stwcx.: 0 == no reservation exists, non-0 == a
-         reservation exists. */
-      /* 1104 */ ULong guest_RESVN;
-
       /* Used to record the unredirected guest address at the start of
          a translation whose start has been redirected.  By reading
          this pseudo-register shortly afterwards, the translation can
          find out what the corresponding no-redirection address was.
          Note, this is only set for wrap-style redirects, not for
          replace-style ones. */
-      /* 1112 */ ULong guest_NRADDR;
-      /* 1120 */ ULong guest_NRADDR_GPR2;
+      /* 1104 */ ULong guest_NRADDR;
+      /* 1112 */ ULong guest_NRADDR_GPR2;
 
      /* A grows-upwards stack for hidden saves/restores of LR and R2
         needed for function interception and wrapping on ppc64-linux.
         A horrible hack.  REDIR_SP points to the highest live entry,
         and so starts at -1. */
-      /* 1128 */ ULong guest_REDIR_SP;
-      /* 1136 */ ULong guest_REDIR_STACK[VEX_GUEST_PPC64_REDIR_STACK_SIZE];
+      /* 1120 */ ULong guest_REDIR_SP;
+      /* 1128 */ ULong guest_REDIR_STACK[VEX_GUEST_PPC64_REDIR_STACK_SIZE];
 
       /* Needed for AIX: CIA at the last SC insn.  Used when backing up
          to restart a syscall that has been interrupted by a signal. */
-      /* 1392 */ ULong guest_IP_AT_SYSCALL; 
+      /* 1384 */ ULong guest_IP_AT_SYSCALL; 
 
       /* SPRG3, which AIUI is readonly in user space.  Needed for
          threading on AIX. */
       /* ???? */ ULong guest_SPRG3_RO;
 
       /* Padding to make it have an 8-aligned size */
-      /* UInt  padding; */
+      /* ???? */ ULong padding2;
    }
    VexGuestPPC64State;
 

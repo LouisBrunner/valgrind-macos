@@ -590,7 +590,7 @@ PPCAMode* genGuestArrayOffset ( ISelEnv* env, IRRegArray* descr,
    addInstr(env, PPCInstr_Alu(
                     Palu_AND, 
                     rtmp, rtmp, 
-                    PPCRH_Imm(False/*signed*/, toUShort(nElems-1))));
+                    PPCRH_Imm(False/*unsigned*/, toUShort(nElems-1))));
    addInstr(env, PPCInstr_Shft(
                     Pshft_SHL, 
                     env->mode64 ? False : True/*F:64-bit, T:32-bit shift*/,
@@ -1169,14 +1169,34 @@ static HReg iselWordExpr_R_wrk ( ISelEnv* env, IRExpr* e )
 
    /* --------- LOAD --------- */
    case Iex_Load: {
-      HReg        r_dst   = newVRegI(env);
-      PPCAMode* am_addr = iselWordExpr_AMode( env, e->Iex.Load.addr, ty/*of xfer*/ );
+      HReg r_dst; 
+
       if (e->Iex.Load.end != Iend_BE)
          goto irreducible;
-      addInstr(env, PPCInstr_Load( toUChar(sizeofIRType(ty)), 
-                                   r_dst, am_addr, mode64 ));
+
+      r_dst = newVRegI(env);
+
+      if (e->Iex.Load.isLL) {
+         /* lwarx or ldarx.  Be simple; force address into a register. */
+         HReg r_addr = iselWordExpr_R( env, e->Iex.Load.addr );
+         if (ty == Ity_I32) {
+            addInstr(env, PPCInstr_LoadL( 4, r_dst, r_addr, mode64 ));
+         }
+         else if (ty == Ity_I64 && mode64) {
+            addInstr(env, PPCInstr_LoadL( 8, r_dst, r_addr, mode64 ));
+         }
+         else
+            goto irreducible;
+      } else {
+         /* Normal load; use whatever amodes we can. */
+         PPCAMode* am_addr
+            = iselWordExpr_AMode( env, e->Iex.Load.addr, ty/*of xfer*/ );
+         addInstr(env, PPCInstr_Load( toUChar(sizeofIRType(ty)), 
+                                      r_dst, am_addr, mode64 ));
+      }
+
       return r_dst;
-      break;
+      /*NOTREACHED*/
    }
 
    /* --------- BINARY OP --------- */
@@ -1531,10 +1551,11 @@ static HReg iselWordExpr_R_wrk ( ISelEnv* env, IRExpr* e )
          DECLARE_PATTERN(p_LDbe16_then_16Uto32);
          DEFINE_PATTERN(p_LDbe16_then_16Uto32,
                         unop(Iop_16Uto32,
-                             IRExpr_Load(Iend_BE,Ity_I16,bind(0))) );
+                             IRExpr_Load(False,Iend_BE,Ity_I16,bind(0))) );
          if (matchIRExpr(&mi,p_LDbe16_then_16Uto32,e)) {
             HReg r_dst = newVRegI(env);
-            PPCAMode* amode = iselWordExpr_AMode( env, mi.bindee[0], Ity_I16/*xfer*/ );
+            PPCAMode* amode
+               = iselWordExpr_AMode( env, mi.bindee[0], Ity_I16/*xfer*/ );
             addInstr(env, PPCInstr_Load(2,r_dst,amode, mode64));
             return r_dst;
          }
@@ -2588,7 +2609,7 @@ static void iselInt64Expr_wrk ( HReg* rHi, HReg* rLo,
    vassert(typeOfIRExpr(env->type_env,e) == Ity_I64);
 
    /* 64-bit load */
-   if (e->tag == Iex_Load) {
+   if (e->tag == Iex_Load && e->Iex.Load.end == Iend_BE && !e->Iex.Load.isLL) {
       HReg tLo    = newVRegI(env);
       HReg tHi    = newVRegI(env);
       HReg r_addr = iselWordExpr_R(env, e->Iex.Load.addr);
@@ -2946,7 +2967,7 @@ static HReg iselFltExpr_wrk ( ISelEnv* env, IRExpr* e )
       return lookupIRTemp(env, e->Iex.RdTmp.tmp);
    }
 
-   if (e->tag == Iex_Load && e->Iex.Load.end == Iend_BE) {
+   if (e->tag == Iex_Load && e->Iex.Load.end == Iend_BE && !e->Iex.Load.isLL) {
       PPCAMode* am_addr;
       HReg r_dst = newVRegF(env);
       vassert(e->Iex.Load.ty == Ity_F32);
@@ -3094,7 +3115,7 @@ static HReg iselDblExpr_wrk ( ISelEnv* env, IRExpr* e )
    }
 
    /* --------- LOAD --------- */
-   if (e->tag == Iex_Load && e->Iex.Load.end == Iend_BE) {
+   if (e->tag == Iex_Load && e->Iex.Load.end == Iend_BE && !e->Iex.Load.isLL) {
       HReg r_dst = newVRegF(env);
       PPCAMode* am_addr;
       vassert(e->Iex.Load.ty == Ity_F64);
@@ -3345,7 +3366,7 @@ static HReg iselVecExpr_wrk ( ISelEnv* env, IRExpr* e )
       return dst;
    }
 
-   if (e->tag == Iex_Load) {
+   if (e->tag == Iex_Load && e->Iex.Load.end == Iend_BE && !e->Iex.Load.isLL) {
       PPCAMode* am_addr;
       HReg v_dst = newVRegV(env);
       vassert(e->Iex.Load.ty == Ity_V128);
@@ -3746,14 +3767,45 @@ static void iselStmt ( ISelEnv* env, IRStmt* stmt )
 
    /* --------- STORE --------- */
    case Ist_Store: {
-      IRType    tya = typeOfIRExpr(env->type_env, stmt->Ist.Store.addr);
-      IRType    tyd = typeOfIRExpr(env->type_env, stmt->Ist.Store.data);
-      IREndness end = stmt->Ist.Store.end;
+      IRType    tya   = typeOfIRExpr(env->type_env, stmt->Ist.Store.addr);
+      IRType    tyd   = typeOfIRExpr(env->type_env, stmt->Ist.Store.data);
+      IREndness end   = stmt->Ist.Store.end;
+      IRTemp    resSC = stmt->Ist.Store.resSC;
 
-      if ( end != Iend_BE ||
-           (!mode64 && (tya != Ity_I32)) ||
-           ( mode64 && (tya != Ity_I64)) )
+      if (end != Iend_BE)
          goto stmt_fail;
+      if (!mode64 && (tya != Ity_I32))
+         goto stmt_fail;
+      if (mode64 && (tya != Ity_I64))
+         goto stmt_fail;
+
+      if (resSC != IRTemp_INVALID) {
+         /* deal with store-conditional */
+         HReg r_res = lookupIRTemp(env, resSC);
+         HReg r_a   = iselWordExpr_R(env, stmt->Ist.Store.addr);
+         HReg r_src = iselWordExpr_R(env, stmt->Ist.Store.data);
+         HReg r_tmp = newVRegI(env);
+         if (tyd == Ity_I32 || (tyd == Ity_I64 && mode64)) {
+            addInstr(env, PPCInstr_StoreC( tyd==Ity_I32 ? 4 : 8,
+                                           r_a, r_src, mode64 ));
+            addInstr(env, PPCInstr_MfCR( r_tmp ));
+            addInstr(env, PPCInstr_Shft(
+                             Pshft_SHR,
+                             env->mode64 ? False : True/*F:64-bit, T:32-bit shift*/,
+                             r_tmp, r_tmp, 
+                             PPCRH_Imm(False/*unsigned*/, 29)));
+            /* Probably unnecessary, since the IR dest type is Ity_I1,
+               and so we are entitled to leave whatever junk we like
+               drifting round in the upper 31 or 63 bits of r_res.
+               However, for the sake of conservativeness .. */
+            addInstr(env, PPCInstr_Alu(
+                             Palu_AND, 
+                             r_res, r_tmp, 
+                             PPCRH_Imm(False/*signed*/, 1)));
+            return;
+         }
+         goto stmt_fail;
+      }
 
       if (tyd == Ity_I8 || tyd == Ity_I16 || tyd == Ity_I32 ||
           (mode64 && (tyd == Ity_I64))) {
@@ -3971,11 +4023,6 @@ static void iselStmt ( ISelEnv* env, IRStmt* stmt )
       switch (stmt->Ist.MBE.event) {
          case Imbe_Fence:
             addInstr(env, PPCInstr_MFence());
-            return;
-         case Imbe_BusLock:
-         case Imbe_BusUnlock:
-         case Imbe_SnoopedStoreBegin:
-         case Imbe_SnoopedStoreEnd:
             return;
          default:
             break;

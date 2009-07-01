@@ -744,17 +744,22 @@ static HChar* show_hwcaps_x86 ( UInt hwcaps )
                   | VEX_HWCAPS_X86_SSE2 | VEX_HWCAPS_X86_SSE3))
       return "x86-sse1-sse2-sse3";
 
-   return False;
+   return NULL;
 }
 
 static HChar* show_hwcaps_amd64 ( UInt hwcaps )
 {
-   /* Monotonic, SSE3 > baseline. */
-   if (hwcaps == 0)
-      return "amd64-sse2";
-   if (hwcaps == VEX_HWCAPS_AMD64_SSE3)
-      return "amd64-sse3";
-   return False;
+   /* SSE3 and CX16 are orthogonal and > baseline, although we really
+      don't expect to come across anything which can do SSE3 but can't
+      do CX16.  Still, we can handle that case. */
+   const UInt SSE3 = VEX_HWCAPS_AMD64_SSE3;
+   const UInt CX16 = VEX_HWCAPS_AMD64_CX16;
+         UInt c    = hwcaps;
+   if (c == 0)           return "amd64-sse2";
+   if (c == SSE3)        return "amd64-sse3";
+   if (c == CX16)        return "amd64-sse2-cx16";
+   if (c == (SSE3|CX16)) return "amd64-sse3-cx16";
+   return NULL;
 }
 
 static HChar* show_hwcaps_ppc32 ( UInt hwcaps )

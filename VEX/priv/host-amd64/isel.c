@@ -145,7 +145,6 @@ typedef
 
       Int          vreg_ctr;
 
-      /* Currently (27 Jan 06) unused */
       UInt         hwcaps;
    }
    ISelEnv;
@@ -858,7 +857,10 @@ static HReg iselIntExpr_R_wrk ( ISelEnv* env, IRExpr* e )
       HReg dst = newVRegI(env);
       AMD64AMode* amode = iselIntExpr_AMode ( env, e->Iex.Load.addr );
 
+      /* We can't handle big-endian loads, nor load-linked. */
       if (e->Iex.Load.end != Iend_LE)
+         goto irreducible;
+      if (e->Iex.Load.isLL)
          goto irreducible;
 
       if (ty == Ity_I64) {
@@ -1960,7 +1962,8 @@ static AMD64RMI* iselIntExpr_RMI_wrk ( ISelEnv* env, IRExpr* e )
    }
 
    /* special case: 64-bit load from memory */
-   if (e->tag == Iex_Load && ty == Ity_I64 && e->Iex.Load.end == Iend_LE) {
+   if (e->tag == Iex_Load && ty == Ity_I64
+       && e->Iex.Load.end == Iend_LE && !e->Iex.Load.isLL) {
       AMD64AMode* am = iselIntExpr_AMode(env, e->Iex.Load.addr);
       return AMD64RMI_Mem(am);
    }
@@ -2739,7 +2742,7 @@ static HReg iselFltExpr_wrk ( ISelEnv* env, IRExpr* e )
       return lookupIRTemp(env, e->Iex.RdTmp.tmp);
    }
 
-   if (e->tag == Iex_Load && e->Iex.Load.end == Iend_LE) {
+   if (e->tag == Iex_Load && e->Iex.Load.end == Iend_LE && !e->Iex.Load.isLL) {
       AMD64AMode* am;
       HReg res = newVRegV(env);
       vassert(e->Iex.Load.ty == Ity_F32);
@@ -2863,7 +2866,7 @@ static HReg iselDblExpr_wrk ( ISelEnv* env, IRExpr* e )
       return res;
    }
 
-   if (e->tag == Iex_Load && e->Iex.Load.end == Iend_LE) {
+   if (e->tag == Iex_Load && e->Iex.Load.end == Iend_LE && !e->Iex.Load.isLL) {
       AMD64AMode* am;
       HReg res = newVRegV(env);
       vassert(e->Iex.Load.ty == Ity_F64);
@@ -3168,7 +3171,7 @@ static HReg iselVecExpr_wrk ( ISelEnv* env, IRExpr* e )
       return dst;
    }
 
-   if (e->tag == Iex_Load && e->Iex.Load.end == Iend_LE) {
+   if (e->tag == Iex_Load && e->Iex.Load.end == Iend_LE && !e->Iex.Load.isLL) {
       HReg        dst = newVRegV(env);
       AMD64AMode* am  = iselIntExpr_AMode(env, e->Iex.Load.addr);
       addInstr(env, AMD64Instr_SseLdSt( True/*load*/, 16, dst, am ));
@@ -3590,11 +3593,12 @@ static void iselStmt ( ISelEnv* env, IRStmt* stmt )
 
    /* --------- STORE --------- */
    case Ist_Store: {
-      IRType    tya = typeOfIRExpr(env->type_env, stmt->Ist.Store.addr);
-      IRType    tyd = typeOfIRExpr(env->type_env, stmt->Ist.Store.data);
-      IREndness end = stmt->Ist.Store.end;
+      IRType    tya   = typeOfIRExpr(env->type_env, stmt->Ist.Store.addr);
+      IRType    tyd   = typeOfIRExpr(env->type_env, stmt->Ist.Store.data);
+      IREndness end   = stmt->Ist.Store.end;
+      IRTemp    resSC = stmt->Ist.Store.resSC;
 
-      if (tya != Ity_I64 || end != Iend_LE) 
+      if (tya != Ity_I64 || end != Iend_LE || resSC != IRTemp_INVALID)
          goto stmt_fail;
 
       if (tyd == Ity_I64) {
@@ -3814,12 +3818,84 @@ static void iselStmt ( ISelEnv* env, IRStmt* stmt )
          case Imbe_Fence:
             addInstr(env, AMD64Instr_MFence());
             return;
-         case Imbe_BusLock:
-         case Imbe_BusUnlock:
-            return;
          default:
             break;
       }
+      break;
+
+   /* --------- ACAS --------- */
+   case Ist_CAS:
+      if (stmt->Ist.CAS.details->oldHi == IRTemp_INVALID) {
+         /* "normal" singleton CAS */
+         UChar  sz;
+         IRCAS* cas = stmt->Ist.CAS.details;
+         IRType ty  = typeOfIRExpr(env->type_env, cas->dataLo);
+         /* get: cas->expd into %rax, and cas->data into %rbx */
+         AMD64AMode* am = iselIntExpr_AMode(env, cas->addr);
+         HReg rData = iselIntExpr_R(env, cas->dataLo);
+         HReg rExpd = iselIntExpr_R(env, cas->expdLo);
+         HReg rOld  = lookupIRTemp(env, cas->oldLo);
+         vassert(cas->expdHi == NULL);
+         vassert(cas->dataHi == NULL);
+         addInstr(env, mk_iMOVsd_RR(rExpd, rOld));
+         addInstr(env, mk_iMOVsd_RR(rExpd, hregAMD64_RAX()));
+         addInstr(env, mk_iMOVsd_RR(rData, hregAMD64_RBX()));
+         switch (ty) { 
+            case Ity_I64: sz = 8; break;
+            case Ity_I32: sz = 4; break;
+            case Ity_I16: sz = 2; break;
+            case Ity_I8:  sz = 1; break; 
+            default: goto unhandled_cas;
+         }
+         addInstr(env, AMD64Instr_ACAS(am, sz));
+         addInstr(env, AMD64Instr_CMov64(
+                          Acc_NZ, AMD64RM_Reg(hregAMD64_RAX()), rOld));
+         return;
+      } else {
+         /* double CAS */
+         UChar  sz;
+         IRCAS* cas = stmt->Ist.CAS.details;
+         IRType ty  = typeOfIRExpr(env->type_env, cas->dataLo);
+         /* only 32-bit and 64-bit allowed in this case */
+         /* get: cas->expdLo into %rax, and cas->dataLo into %rbx */
+         /* get: cas->expdHi into %rdx, and cas->dataHi into %rcx */
+         AMD64AMode* am = iselIntExpr_AMode(env, cas->addr);
+         HReg rDataHi = iselIntExpr_R(env, cas->dataHi);
+         HReg rDataLo = iselIntExpr_R(env, cas->dataLo);
+         HReg rExpdHi = iselIntExpr_R(env, cas->expdHi);
+         HReg rExpdLo = iselIntExpr_R(env, cas->expdLo);
+         HReg rOldHi  = lookupIRTemp(env, cas->oldHi);
+         HReg rOldLo  = lookupIRTemp(env, cas->oldLo);
+         switch (ty) { 
+            case Ity_I64:
+               if (!(env->hwcaps & VEX_HWCAPS_AMD64_CX16))
+                  goto unhandled_cas; /* we'd have to generate
+                                         cmpxchg16b, but the host
+                                         doesn't support that */
+               sz = 8;
+               break;
+            case Ity_I32:
+               sz = 4;
+               break;
+            default:
+               goto unhandled_cas;
+         }
+         addInstr(env, mk_iMOVsd_RR(rExpdHi, rOldHi));
+         addInstr(env, mk_iMOVsd_RR(rExpdLo, rOldLo));
+         addInstr(env, mk_iMOVsd_RR(rExpdHi, hregAMD64_RDX()));
+         addInstr(env, mk_iMOVsd_RR(rExpdLo, hregAMD64_RAX()));
+         addInstr(env, mk_iMOVsd_RR(rDataHi, hregAMD64_RCX()));
+         addInstr(env, mk_iMOVsd_RR(rDataLo, hregAMD64_RBX()));
+         addInstr(env, AMD64Instr_DACAS(am, sz));
+         addInstr(env,
+                  AMD64Instr_CMov64(
+                     Acc_NZ, AMD64RM_Reg(hregAMD64_RDX()), rOldHi));
+         addInstr(env,
+                  AMD64Instr_CMov64(
+                     Acc_NZ, AMD64RM_Reg(hregAMD64_RAX()), rOldLo));
+         return;
+      }
+      unhandled_cas:
       break;
 
    /* --------- INSTR MARK --------- */
@@ -3893,7 +3969,8 @@ HInstrArray* iselSB_AMD64 ( IRSB* bb, VexArch      arch_host,
 
    /* sanity ... */
    vassert(arch_host == VexArchAMD64);
-   vassert(0 == (hwcaps_host & ~(VEX_HWCAPS_AMD64_SSE3)));
+   vassert(0 == (hwcaps_host & ~(VEX_HWCAPS_AMD64_SSE3
+                                 |VEX_HWCAPS_AMD64_CX16)));
 
    /* Make up an initial environment to use. */
    env = LibVEX_Alloc(sizeof(ISelEnv));

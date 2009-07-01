@@ -643,7 +643,8 @@ void ppIRExpr ( IRExpr* e )
       vex_printf( ")" );
       break;
     case Iex_Load:
-      vex_printf( "LD%s:", e->Iex.Load.end==Iend_LE ? "le" : "be" );
+      vex_printf( "LD%s%s:", e->Iex.Load.end==Iend_LE ? "le" : "be",
+                             e->Iex.Load.isLL ? "-LL" : "" );
       ppIRType(e->Iex.Load.ty);
       vex_printf( "(" );
       ppIRExpr(e->Iex.Load.addr);
@@ -723,6 +724,32 @@ void ppIRDirty ( IRDirty* d )
    vex_printf(")");
 }
 
+void ppIRCAS ( IRCAS* cas )
+{
+   /* Print even structurally invalid constructions, as an aid to
+      debugging. */
+   if (cas->oldHi != IRTemp_INVALID) {
+      ppIRTemp(cas->oldHi);
+      vex_printf(",");
+   }
+   ppIRTemp(cas->oldLo);
+   vex_printf(" = CAS%s(", cas->end==Iend_LE ? "le" : "be" );
+   ppIRExpr(cas->addr);
+   vex_printf("::");
+   if (cas->expdHi) {
+      ppIRExpr(cas->expdHi);
+      vex_printf(",");
+   }
+   ppIRExpr(cas->expdLo);
+   vex_printf("->");
+   if (cas->dataHi) {
+      ppIRExpr(cas->dataHi);
+      vex_printf(",");
+   }
+   ppIRExpr(cas->dataLo);
+   vex_printf(")");
+}
+
 void ppIRJumpKind ( IRJumpKind kind )
 {
    switch (kind) {
@@ -739,6 +766,7 @@ void ppIRJumpKind ( IRJumpKind kind )
       case Ijk_NoRedir:      vex_printf("NoRedir"); break;
       case Ijk_SigTRAP:      vex_printf("SigTRAP"); break;
       case Ijk_SigSEGV:      vex_printf("SigSEGV"); break;
+      case Ijk_SigBUS:       vex_printf("SigBUS"); break;
       case Ijk_Sys_syscall:  vex_printf("Sys_syscall"); break;
       case Ijk_Sys_int32:    vex_printf("Sys_int32"); break;
       case Ijk_Sys_int128:   vex_printf("Sys_int128"); break;
@@ -752,12 +780,8 @@ void ppIRJumpKind ( IRJumpKind kind )
 void ppIRMBusEvent ( IRMBusEvent event )
 {
    switch (event) {
-      case Imbe_Fence:             vex_printf("Fence"); break;
-      case Imbe_BusLock:           vex_printf("BusLock"); break;
-      case Imbe_BusUnlock:         vex_printf("BusUnlock"); break;
-      case Imbe_SnoopedStoreBegin: vex_printf("SnoopedStoreBegin"); break;
-      case Imbe_SnoopedStoreEnd:   vex_printf("SnoopedStoreEnd"); break;
-      default:                     vpanic("ppIRMBusEvent");
+      case Imbe_Fence: vex_printf("Fence"); break;
+      default:         vpanic("ppIRMBusEvent");
    }
 }
 
@@ -800,10 +824,19 @@ void ppIRStmt ( IRStmt* s )
          ppIRExpr(s->Ist.WrTmp.data);
          break;
       case Ist_Store:
+         if (s->Ist.Store.resSC != IRTemp_INVALID) {
+            ppIRTemp(s->Ist.Store.resSC);
+            vex_printf( " = SC( " );
+         }
          vex_printf( "ST%s(", s->Ist.Store.end==Iend_LE ? "le" : "be" );
          ppIRExpr(s->Ist.Store.addr);
          vex_printf( ") = ");
          ppIRExpr(s->Ist.Store.data);
+         if (s->Ist.Store.resSC != IRTemp_INVALID)
+            vex_printf( " )" );
+         break;
+      case Ist_CAS:
+         ppIRCAS(s->Ist.CAS.details);
          break;
       case Ist_Dirty:
          ppIRDirty(s->Ist.Dirty.details);
@@ -1023,9 +1056,10 @@ IRExpr* IRExpr_Unop ( IROp op, IRExpr* arg ) {
    e->Iex.Unop.arg = arg;
    return e;
 }
-IRExpr* IRExpr_Load ( IREndness end, IRType ty, IRExpr* addr ) {
+IRExpr* IRExpr_Load ( Bool isLL, IREndness end, IRType ty, IRExpr* addr ) {
    IRExpr* e        = LibVEX_Alloc(sizeof(IRExpr));
    e->tag           = Iex_Load;
+   e->Iex.Load.isLL = isLL;
    e->Iex.Load.end  = end;
    e->Iex.Load.ty   = ty;
    e->Iex.Load.addr = addr;
@@ -1151,6 +1185,25 @@ IRDirty* emptyIRDirty ( void ) {
 }
 
 
+/* Constructors -- IRCAS */
+
+IRCAS* mkIRCAS ( IRTemp oldHi, IRTemp oldLo,
+                 IREndness end, IRExpr* addr, 
+                 IRExpr* expdHi, IRExpr* expdLo,
+                 IRExpr* dataHi, IRExpr* dataLo ) {
+   IRCAS* cas = LibVEX_Alloc(sizeof(IRCAS));
+   cas->oldHi  = oldHi;
+   cas->oldLo  = oldLo;
+   cas->end    = end;
+   cas->addr   = addr;
+   cas->expdHi = expdHi;
+   cas->expdLo = expdLo;
+   cas->dataHi = dataHi;
+   cas->dataLo = dataLo;
+   return cas;
+}
+
+
 /* Constructors -- IRStmt */
 
 IRStmt* IRStmt_NoOp ( void )
@@ -1199,13 +1252,21 @@ IRStmt* IRStmt_WrTmp ( IRTemp tmp, IRExpr* data ) {
    s->Ist.WrTmp.data = data;
    return s;
 }
-IRStmt* IRStmt_Store ( IREndness end, IRExpr* addr, IRExpr* data ) {
-   IRStmt* s         = LibVEX_Alloc(sizeof(IRStmt));
-   s->tag            = Ist_Store;
-   s->Ist.Store.end  = end;
-   s->Ist.Store.addr = addr;
-   s->Ist.Store.data = data;
+IRStmt* IRStmt_Store ( IREndness end,
+                       IRTemp resSC, IRExpr* addr, IRExpr* data ) {
+   IRStmt* s          = LibVEX_Alloc(sizeof(IRStmt));
+   s->tag             = Ist_Store;
+   s->Ist.Store.end   = end;
+   s->Ist.Store.resSC = resSC;
+   s->Ist.Store.addr  = addr;
+   s->Ist.Store.data  = data;
    vassert(end == Iend_LE || end == Iend_BE);
+   return s;
+}
+IRStmt* IRStmt_CAS ( IRCAS* cas ) {
+   IRStmt* s          = LibVEX_Alloc(sizeof(IRStmt));
+   s->tag             = Ist_CAS;
+   s->Ist.CAS.details = cas;
    return s;
 }
 IRStmt* IRStmt_Dirty ( IRDirty* d )
@@ -1352,7 +1413,8 @@ IRExpr* deepCopyIRExpr ( IRExpr* e )
          return IRExpr_Unop(e->Iex.Unop.op,
                             deepCopyIRExpr(e->Iex.Unop.arg));
       case Iex_Load: 
-         return IRExpr_Load(e->Iex.Load.end,
+         return IRExpr_Load(e->Iex.Load.isLL,
+                            e->Iex.Load.end,
                             e->Iex.Load.ty,
                             deepCopyIRExpr(e->Iex.Load.addr));
       case Iex_Const: 
@@ -1389,6 +1451,16 @@ IRDirty* deepCopyIRDirty ( IRDirty* d )
    return d2;
 }
 
+IRCAS* deepCopyIRCAS ( IRCAS* cas )
+{
+   return mkIRCAS( cas->oldHi, cas->oldLo, cas->end,
+                   deepCopyIRExpr(cas->addr),
+                   deepCopyIRExpr(cas->expdHi),
+                   deepCopyIRExpr(cas->expdLo),
+                   deepCopyIRExpr(cas->dataHi),
+                   deepCopyIRExpr(cas->dataLo) );
+}
+
 IRStmt* deepCopyIRStmt ( IRStmt* s )
 {
    switch (s->tag) {
@@ -1413,8 +1485,11 @@ IRStmt* deepCopyIRStmt ( IRStmt* s )
                              deepCopyIRExpr(s->Ist.WrTmp.data));
       case Ist_Store: 
          return IRStmt_Store(s->Ist.Store.end,
+                             s->Ist.Store.resSC,
                              deepCopyIRExpr(s->Ist.Store.addr),
                              deepCopyIRExpr(s->Ist.Store.data));
+      case Ist_CAS:
+         return IRStmt_CAS(deepCopyIRCAS(s->Ist.CAS.details));
       case Ist_Dirty: 
          return IRStmt_Dirty(deepCopyIRDirty(s->Ist.Dirty.details));
       case Ist_MBE:
@@ -1996,6 +2071,7 @@ Bool isFlatIRStmt ( IRStmt* st )
    Int      i;
    IRExpr*  e;
    IRDirty* di;
+   IRCAS*   cas;
 
    switch (st->tag) {
       case Ist_AbiHint:
@@ -2046,6 +2122,13 @@ Bool isFlatIRStmt ( IRStmt* st )
       case Ist_Store:
          return toBool( isIRAtom(st->Ist.Store.addr) 
                         && isIRAtom(st->Ist.Store.data) );
+      case Ist_CAS:
+         cas = st->Ist.CAS.details;
+         return toBool( isIRAtom(cas->addr)
+                        && (cas->expdHi ? isIRAtom(cas->expdHi) : True)
+                        && isIRAtom(cas->expdLo)
+                        && (cas->dataHi ? isIRAtom(cas->dataHi) : True)
+                        && isIRAtom(cas->dataLo) );
       case Ist_Dirty:
          di = st->Ist.Dirty.details;
          if (!isIRAtom(di->guard)) 
@@ -2205,6 +2288,7 @@ void useBeforeDef_Stmt ( IRSB* bb, IRStmt* stmt, Int* def_counts )
 {
    Int      i;
    IRDirty* d;
+   IRCAS*   cas;
    switch (stmt->tag) {
       case Ist_IMark:
          break;
@@ -2225,6 +2309,16 @@ void useBeforeDef_Stmt ( IRSB* bb, IRStmt* stmt, Int* def_counts )
       case Ist_Store:
          useBeforeDef_Expr(bb,stmt,stmt->Ist.Store.addr,def_counts);
          useBeforeDef_Expr(bb,stmt,stmt->Ist.Store.data,def_counts);
+         break;
+      case Ist_CAS:
+         cas = stmt->Ist.CAS.details;
+         useBeforeDef_Expr(bb,stmt,cas->addr,def_counts);
+         if (cas->expdHi)
+            useBeforeDef_Expr(bb,stmt,cas->expdHi,def_counts);
+         useBeforeDef_Expr(bb,stmt,cas->expdLo,def_counts);
+         if (cas->dataHi)
+            useBeforeDef_Expr(bb,stmt,cas->dataHi,def_counts);
+         useBeforeDef_Expr(bb,stmt,cas->dataLo,def_counts);
          break;
       case Ist_Dirty:
          d = stmt->Ist.Dirty.details;
@@ -2452,6 +2546,8 @@ void tcStmt ( IRSB* bb, IRStmt* stmt, IRType gWordTy )
 {
    Int        i;
    IRDirty*   d;
+   IRCAS*     cas;
+   IRType     tyExpd, tyData;
    IRTypeEnv* tyenv = bb->tyenv;
    switch (stmt->tag) {
       case Ist_IMark:
@@ -2501,6 +2597,59 @@ void tcStmt ( IRSB* bb, IRStmt* stmt, IRType gWordTy )
             sanityCheckFail(bb,stmt,"IRStmt.Store.data: cannot Store :: Ity_I1");
          if (stmt->Ist.Store.end != Iend_LE && stmt->Ist.Store.end != Iend_BE)
             sanityCheckFail(bb,stmt,"Ist.Store.end: bogus endianness");
+         if (stmt->Ist.Store.resSC != IRTemp_INVALID
+             && typeOfIRTemp(tyenv, stmt->Ist.Store.resSC) != Ity_I1)
+            sanityCheckFail(bb,stmt,"Ist.Store.resSC: not :: Ity_I1");
+         break;
+      case Ist_CAS:
+         cas = stmt->Ist.CAS.details;
+         /* make sure it's definitely either a CAS or a DCAS */
+         if (cas->oldHi == IRTemp_INVALID 
+             && cas->expdHi == NULL && cas->dataHi == NULL) {
+            /* fine; it's a single cas */
+         }
+         else
+         if (cas->oldHi != IRTemp_INVALID 
+             && cas->expdHi != NULL && cas->dataHi != NULL) {
+            /* fine; it's a double cas */
+         }
+         else {
+            /* it's some el-mutanto hybrid */
+            goto bad_cas;
+         }
+         /* check the address type */
+         tcExpr( bb, stmt, cas->addr, gWordTy );
+         if (typeOfIRExpr(tyenv, cas->addr) != gWordTy) goto bad_cas;
+         /* check types on the {old,expd,data}Lo components agree */
+         tyExpd = typeOfIRExpr(tyenv, cas->expdLo);
+         tyData = typeOfIRExpr(tyenv, cas->dataLo);
+         if (tyExpd != tyData) goto bad_cas;
+         if (tyExpd != typeOfIRTemp(tyenv, cas->oldLo))
+            goto bad_cas;
+         /* check the base element type is sane */
+         if (tyExpd == Ity_I8 || tyExpd == Ity_I16 || tyExpd == Ity_I32
+             || (gWordTy == Ity_I64 && tyExpd == Ity_I64)) {
+            /* fine */
+         } else {
+            goto bad_cas;
+         }
+         /* If it's a DCAS, check types on the {old,expd,data}Hi
+            components too */
+         if (cas->oldHi != IRTemp_INVALID) {
+            tyExpd = typeOfIRExpr(tyenv, cas->expdHi);
+            tyData = typeOfIRExpr(tyenv, cas->dataHi);
+            if (tyExpd != tyData) goto bad_cas;
+            if (tyExpd != typeOfIRTemp(tyenv, cas->oldHi))
+               goto bad_cas;
+            /* and finally check that oldLo and oldHi have the same
+               type.  This forces equivalence amongst all 6 types. */
+            if (typeOfIRTemp(tyenv, cas->oldHi)
+                != typeOfIRTemp(tyenv, cas->oldLo))
+               goto bad_cas;
+         }
+         break;
+         bad_cas:
+         sanityCheckFail(bb,stmt,"IRStmt.CAS: ill-formed");
          break;
       case Ist_Dirty:
          /* Mostly check for various kinds of ill-formed dirty calls. */
@@ -2540,12 +2689,12 @@ void tcStmt ( IRSB* bb, IRStmt* stmt, IRType gWordTy )
          break;
          bad_dirty:
          sanityCheckFail(bb,stmt,"IRStmt.Dirty: ill-formed");
+         break;
       case Ist_NoOp:
          break;
       case Ist_MBE:
          switch (stmt->Ist.MBE.event) {
-            case Imbe_Fence: case Imbe_BusLock: case Imbe_BusUnlock:
-            case Imbe_SnoopedStoreBegin: case Imbe_SnoopedStoreEnd:
+            case Imbe_Fence:
                break;
             default: sanityCheckFail(bb,stmt,"IRStmt.MBE.event: unknown");
                break;
@@ -2614,10 +2763,15 @@ void sanityCheckIRSB ( IRSB* bb,          HChar* caller,
       def_counts[i] = 0;
 
    for (i = 0; i < bb->stmts_used; i++) {
+      IRDirty* d;
+      IRCAS*   cas;
       stmt = bb->stmts[i];
+      /* Check any temps used by this statement. */
       useBeforeDef_Stmt(bb,stmt,def_counts);
 
-      if (stmt->tag == Ist_WrTmp) {
+      /* Now make note of any temps defd by this statement. */
+      switch (stmt->tag) {
+      case Ist_WrTmp:
          if (stmt->Ist.WrTmp.tmp < 0 || stmt->Ist.WrTmp.tmp >= n_temps)
             sanityCheckFail(bb, stmt, 
                "IRStmt.Tmp: destination tmp is out of range");
@@ -2625,18 +2779,55 @@ void sanityCheckIRSB ( IRSB* bb,          HChar* caller,
          if (def_counts[stmt->Ist.WrTmp.tmp] > 1)
             sanityCheckFail(bb, stmt, 
                "IRStmt.Tmp: destination tmp is assigned more than once");
-      }
-      else 
-      if (stmt->tag == Ist_Dirty 
-          && stmt->Ist.Dirty.details->tmp != IRTemp_INVALID) {
-         IRDirty* d = stmt->Ist.Dirty.details;
-         if (d->tmp < 0 || d->tmp >= n_temps)
-            sanityCheckFail(bb, stmt, 
-               "IRStmt.Dirty: destination tmp is out of range");
-         def_counts[d->tmp]++;
-         if (def_counts[d->tmp] > 1)
-            sanityCheckFail(bb, stmt, 
-               "IRStmt.Dirty: destination tmp is assigned more than once");
+         break;
+      case Ist_Store:
+         if (stmt->Ist.Store.resSC != IRTemp_INVALID) {
+            IRTemp resSC = stmt->Ist.Store.resSC;
+            if (resSC < 0 || resSC >= n_temps)
+               sanityCheckFail(bb, stmt, 
+                  "IRStmt.Store.resSC: destination tmp is out of range");
+            def_counts[resSC]++;
+            if (def_counts[resSC] > 1)
+               sanityCheckFail(bb, stmt, 
+                  "IRStmt.Store.resSC: destination tmp "
+                   "is assigned more than once");
+         }
+         break;
+      case Ist_Dirty:
+         if (stmt->Ist.Dirty.details->tmp != IRTemp_INVALID) {
+            d = stmt->Ist.Dirty.details;
+            if (d->tmp < 0 || d->tmp >= n_temps)
+               sanityCheckFail(bb, stmt, 
+                  "IRStmt.Dirty: destination tmp is out of range");
+            def_counts[d->tmp]++;
+            if (def_counts[d->tmp] > 1)
+               sanityCheckFail(bb, stmt, 
+                  "IRStmt.Dirty: destination tmp is assigned more than once");
+         }
+         break;
+      case Ist_CAS:
+         cas = stmt->Ist.CAS.details;
+
+         if (cas->oldHi != IRTemp_INVALID) {
+            if (cas->oldHi < 0 || cas->oldHi >= n_temps)
+                sanityCheckFail(bb, stmt, 
+                   "IRStmt.CAS: destination tmpHi is out of range");
+             def_counts[cas->oldHi]++;
+             if (def_counts[cas->oldHi] > 1)
+                sanityCheckFail(bb, stmt, 
+                   "IRStmt.CAS: destination tmpHi is assigned more than once");
+         }
+         if (cas->oldLo < 0 || cas->oldLo >= n_temps)
+             sanityCheckFail(bb, stmt, 
+                "IRStmt.CAS: destination tmpLo is out of range");
+          def_counts[cas->oldLo]++;
+          if (def_counts[cas->oldLo] > 1)
+             sanityCheckFail(bb, stmt, 
+                "IRStmt.CAS: destination tmpLo is assigned more than once");
+          break;
+      default:
+          /* explicitly handle the rest, so as to keep gcc quiet */
+          break;
       }
    }
 

@@ -477,8 +477,6 @@ void LibVEX_GuestPPC32_initialise ( /*OUT*/VexGuestPPC32State* vex_state )
 
    vex_state->guest_EMWARN = EmWarn_NONE;
 
-   vex_state->guest_RESVN   = 0;
-
    vex_state->guest_TISTART = 0;
    vex_state->guest_TILEN   = 0;
 
@@ -636,7 +634,7 @@ void LibVEX_GuestPPC64_initialise ( /*OUT*/VexGuestPPC64State* vex_state )
 
    vex_state->guest_EMWARN = EmWarn_NONE;
 
-   vex_state->guest_RESVN   = 0;
+   vex_state->padding = 0;
 
    vex_state->guest_TISTART = 0;
    vex_state->guest_TILEN   = 0;
@@ -650,6 +648,8 @@ void LibVEX_GuestPPC64_initialise ( /*OUT*/VexGuestPPC64State* vex_state )
 
    vex_state->guest_IP_AT_SYSCALL = 0;
    vex_state->guest_SPRG3_RO = 0;
+
+   vex_state->padding2 = 0;
 }
 
 
@@ -767,7 +767,7 @@ VexGuestLayout
 
           /* Describe any sections to be regarded by Memcheck as
              'always-defined'. */
-          .n_alwaysDefd = 12,
+          .n_alwaysDefd = 11,
 
           .alwaysDefd 
 	  = { /*  0 */ ALWAYSDEFD32(guest_CIA),
@@ -776,12 +776,11 @@ VexGuestLayout
 	      /*  3 */ ALWAYSDEFD32(guest_TILEN),
 	      /*  4 */ ALWAYSDEFD32(guest_VSCR),
 	      /*  5 */ ALWAYSDEFD32(guest_FPROUND),
-	      /*  6 */ ALWAYSDEFD32(guest_RESVN),
-              /*  7 */ ALWAYSDEFD32(guest_NRADDR),
-	      /*  8 */ ALWAYSDEFD32(guest_NRADDR_GPR2),
-	      /*  9 */ ALWAYSDEFD32(guest_REDIR_SP),
-	      /* 10 */ ALWAYSDEFD32(guest_REDIR_STACK),
-	      /* 11 */ ALWAYSDEFD32(guest_IP_AT_SYSCALL)
+              /*  6 */ ALWAYSDEFD32(guest_NRADDR),
+	      /*  7 */ ALWAYSDEFD32(guest_NRADDR_GPR2),
+	      /*  8 */ ALWAYSDEFD32(guest_REDIR_SP),
+	      /*  9 */ ALWAYSDEFD32(guest_REDIR_STACK),
+	      /* 10 */ ALWAYSDEFD32(guest_IP_AT_SYSCALL)
             }
         };
 
@@ -818,12 +817,11 @@ VexGuestLayout
 	      /*  3 */ ALWAYSDEFD64(guest_TILEN),
 	      /*  4 */ ALWAYSDEFD64(guest_VSCR),
 	      /*  5 */ ALWAYSDEFD64(guest_FPROUND),
-	      /*  6 */ ALWAYSDEFD64(guest_RESVN),
-	      /*  7 */ ALWAYSDEFD64(guest_NRADDR),
-	      /*  8 */ ALWAYSDEFD64(guest_NRADDR_GPR2),
-	      /*  9 */ ALWAYSDEFD64(guest_REDIR_SP),
-	      /* 10 */ ALWAYSDEFD64(guest_REDIR_STACK),
-	      /* 11 */ ALWAYSDEFD64(guest_IP_AT_SYSCALL)
+	      /*  6 */ ALWAYSDEFD64(guest_NRADDR),
+	      /*  7 */ ALWAYSDEFD64(guest_NRADDR_GPR2),
+	      /*  8 */ ALWAYSDEFD64(guest_REDIR_SP),
+	      /*  9 */ ALWAYSDEFD64(guest_REDIR_STACK),
+	      /* 10 */ ALWAYSDEFD64(guest_IP_AT_SYSCALL)
             }
         };
 

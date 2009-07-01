@@ -844,7 +844,7 @@ PPCInstr* PPCInstr_Goto ( IRJumpKind jk,
 }
 PPCInstr* PPCInstr_CMov  ( PPCCondCode cond, 
                            HReg dst, PPCRI* src ) {
-   PPCInstr* i    = LibVEX_Alloc(sizeof(PPCInstr));
+   PPCInstr* i      = LibVEX_Alloc(sizeof(PPCInstr));
    i->tag           = Pin_CMov;
    i->Pin.CMov.cond = cond;
    i->Pin.CMov.src  = src;
@@ -863,6 +863,18 @@ PPCInstr* PPCInstr_Load ( UChar sz,
    if (sz == 8) vassert(mode64);
    return i;
 }
+PPCInstr* PPCInstr_LoadL ( UChar sz,
+                           HReg dst, HReg src, Bool mode64 )
+{
+   PPCInstr* i       = LibVEX_Alloc(sizeof(PPCInstr));
+   i->tag            = Pin_LoadL;
+   i->Pin.LoadL.sz   = sz;
+   i->Pin.LoadL.src  = src;
+   i->Pin.LoadL.dst  = dst;
+   vassert(sz == 4 || sz == 8);
+   if (sz == 8) vassert(mode64);
+   return i;
+}
 PPCInstr* PPCInstr_Store ( UChar sz, PPCAMode* dst, HReg src,
                            Bool mode64 ) {
    PPCInstr* i      = LibVEX_Alloc(sizeof(PPCInstr));
@@ -871,6 +883,16 @@ PPCInstr* PPCInstr_Store ( UChar sz, PPCAMode* dst, HReg src,
    i->Pin.Store.src = src;
    i->Pin.Store.dst = dst;
    vassert(sz == 1 || sz == 2 || sz == 4 || sz == 8);
+   if (sz == 8) vassert(mode64);
+   return i;
+}
+PPCInstr* PPCInstr_StoreC ( UChar sz, HReg dst, HReg src, Bool mode64 ) {
+   PPCInstr* i       = LibVEX_Alloc(sizeof(PPCInstr));
+   i->tag            = Pin_StoreC;
+   i->Pin.StoreC.sz  = sz;
+   i->Pin.StoreC.src = src;
+   i->Pin.StoreC.dst = dst;
+   vassert(sz == 4 || sz == 8);
    if (sz == 8) vassert(mode64);
    return i;
 }
@@ -1311,6 +1333,12 @@ void ppPPCInstr ( PPCInstr* i, Bool mode64 )
       ppPPCAMode(i->Pin.Load.src);
       return;
    }
+   case Pin_LoadL:
+      vex_printf("l%carx ", i->Pin.LoadL.sz==4 ? 'w' : 'd');
+      ppHRegPPC(i->Pin.LoadL.dst);
+      vex_printf(",%%r0,");
+      ppHRegPPC(i->Pin.LoadL.src);
+      return;
    case Pin_Store: {
       UChar sz = i->Pin.Store.sz;
       Bool idxd = toBool(i->Pin.Store.dst->tag == Pam_RR);
@@ -1321,6 +1349,12 @@ void ppPPCInstr ( PPCInstr* i, Bool mode64 )
       ppPPCAMode(i->Pin.Store.dst);
       return;
    }
+   case Pin_StoreC:
+      vex_printf("st%ccx. ", i->Pin.StoreC.sz==4 ? 'w' : 'd');
+      ppHRegPPC(i->Pin.StoreC.src);
+      vex_printf(",%%r0,");
+      ppHRegPPC(i->Pin.StoreC.dst);
+      return;
    case Pin_Set: {
       PPCCondCode cc = i->Pin.Set.cond;
       vex_printf("set (%s),", showPPCCondCode(cc));
@@ -1702,7 +1736,7 @@ void getRegUsage_PPCInstr ( HRegUsage* u, PPCInstr* i, Bool mode64 )
       /* Finally, there is the issue that the insn trashes a
          register because the literal target address has to be
          loaded into a register.  %r10 seems a suitable victim.
-         (Can't use %r0, as use ops that interpret it as value zero). */
+         (Can't use %r0, as some insns interpret it as value zero). */
       addHRegUse(u, HRmWrite, hregPPC_GPR10(mode64));
       /* Upshot of this is that the assembler really must use %r10,
          and no other, as a destination temporary. */
@@ -1728,9 +1762,17 @@ void getRegUsage_PPCInstr ( HRegUsage* u, PPCInstr* i, Bool mode64 )
       addRegUsage_PPCAMode(u, i->Pin.Load.src);
       addHRegUse(u, HRmWrite, i->Pin.Load.dst);
       return;
+   case Pin_LoadL:
+      addHRegUse(u, HRmRead,  i->Pin.LoadL.src);
+      addHRegUse(u, HRmWrite, i->Pin.LoadL.dst);
+      return;
    case Pin_Store:
       addHRegUse(u, HRmRead,  i->Pin.Store.src);
       addRegUsage_PPCAMode(u, i->Pin.Store.dst);
+      return;
+   case Pin_StoreC:
+      addHRegUse(u, HRmRead, i->Pin.StoreC.src);
+      addHRegUse(u, HRmRead, i->Pin.StoreC.dst);
       return;
    case Pin_Set:
       addHRegUse(u, HRmWrite, i->Pin.Set.dst);
@@ -1934,9 +1976,17 @@ void mapRegs_PPCInstr ( HRegRemap* m, PPCInstr* i, Bool mode64 )
       mapRegs_PPCAMode(m, i->Pin.Load.src);
       mapReg(m, &i->Pin.Load.dst);
       return;
+   case Pin_LoadL:
+      mapReg(m, &i->Pin.LoadL.src);
+      mapReg(m, &i->Pin.LoadL.dst);
+      return;
    case Pin_Store:
       mapReg(m, &i->Pin.Store.src);
       mapRegs_PPCAMode(m, i->Pin.Store.dst);
+      return;
+   case Pin_StoreC:
+      mapReg(m, &i->Pin.StoreC.src);
+      mapReg(m, &i->Pin.StoreC.dst);
       return;
    case Pin_Set:
       mapReg(m, &i->Pin.Set.dst);
@@ -2954,6 +3004,7 @@ Int emit_PPCInstr ( UChar* buf, Int nbuf, PPCInstr* i,
          case Ijk_TInval:      trc = VEX_TRC_JMP_TINVAL;      break;
          case Ijk_NoRedir:     trc = VEX_TRC_JMP_NOREDIR;     break;
          case Ijk_SigTRAP:     trc = VEX_TRC_JMP_SIGTRAP;     break;
+         case Ijk_SigBUS:      trc = VEX_TRC_JMP_SIGBUS;      break;
          case Ijk_Ret:
          case Ijk_Call:
          case Ijk_Boring:
@@ -3067,6 +3118,20 @@ Int emit_PPCInstr ( UChar* buf, Int nbuf, PPCInstr* i,
       }
    }
 
+   case Pin_LoadL: {
+      if (i->Pin.LoadL.sz == 4) {
+         p = mkFormX(p, 31, iregNo(i->Pin.LoadL.dst, mode64),
+                     0, iregNo(i->Pin.LoadL.src, mode64), 20, 0);
+         goto done;
+      }
+      if (i->Pin.LoadL.sz == 8 && mode64) {
+         p = mkFormX(p, 31, iregNo(i->Pin.LoadL.dst, mode64),
+                     0, iregNo(i->Pin.LoadL.src, mode64), 84, 0);
+         goto done;
+      }
+      goto bad;
+   }
+
    case Pin_Set: {
       /* Make the destination register be 1 or 0, depending on whether
          the relevant condition holds. */
@@ -3103,8 +3168,8 @@ Int emit_PPCInstr ( UChar* buf, Int nbuf, PPCInstr* i,
 
    case Pin_MFence: {
       p = mkFormX(p, 31, 0, 0, 0, 598, 0);   // sync, PPC32 p616
-// CAB: Should this be isync?
-//    p = mkFormXL(p, 19, 0, 0, 0, 150, 0);  // isync, PPC32 p467
+      // CAB: Should this be isync?
+      //    p = mkFormXL(p, 19, 0, 0, 0, 150, 0);  // isync, PPC32 p467
       goto done;
    }
 
@@ -3145,6 +3210,20 @@ Int emit_PPCInstr ( UChar* buf, Int nbuf, PPCInstr* i,
          goto bad;
       }
       goto done;
+   }
+
+   case Pin_StoreC: {
+      if (i->Pin.StoreC.sz == 4) {
+         p = mkFormX(p, 31, iregNo(i->Pin.StoreC.src, mode64),
+                     0, iregNo(i->Pin.StoreC.dst, mode64), 150, 1);
+         goto done;
+      }
+      if (i->Pin.StoreC.sz == 8 && mode64) {
+         p = mkFormX(p, 31, iregNo(i->Pin.StoreC.src, mode64),
+                     0, iregNo(i->Pin.StoreC.dst, mode64), 214, 1);
+         goto done;
+      }
+      goto bad;
    }
 
    case Pin_FpUnary: {

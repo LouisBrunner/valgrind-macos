@@ -710,13 +710,26 @@ X86Instr* X86Instr_Bsfr32 ( Bool isFwds, HReg src, HReg dst ) {
    i->Xin.Bsfr32.dst    = dst;
    return i;
 }
-X86Instr* X86Instr_MFence ( UInt hwcaps )
-{
+X86Instr* X86Instr_MFence ( UInt hwcaps ) {
    X86Instr* i          = LibVEX_Alloc(sizeof(X86Instr));
    i->tag               = Xin_MFence;
    i->Xin.MFence.hwcaps = hwcaps;
    vassert(0 == (hwcaps & ~(VEX_HWCAPS_X86_SSE1|VEX_HWCAPS_X86_SSE2
                                                |VEX_HWCAPS_X86_SSE3)));
+   return i;
+}
+X86Instr* X86Instr_ACAS ( X86AMode* addr, UChar sz ) {
+   X86Instr* i      = LibVEX_Alloc(sizeof(X86Instr));
+   i->tag           = Xin_ACAS;
+   i->Xin.ACAS.addr = addr;
+   i->Xin.ACAS.sz   = sz;
+   vassert(sz == 4 || sz == 2 || sz == 1);
+   return i;
+}
+X86Instr* X86Instr_DACAS ( X86AMode* addr ) {
+   X86Instr* i       = LibVEX_Alloc(sizeof(X86Instr));
+   i->tag            = Xin_DACAS;
+   i->Xin.DACAS.addr = addr;
    return i;
 }
 
@@ -1002,6 +1015,17 @@ void ppX86Instr ( X86Instr* i, Bool mode64 ) {
          vex_printf("mfence(%s)",
                     LibVEX_ppVexHwCaps(VexArchX86,i->Xin.MFence.hwcaps));
          return;
+      case Xin_ACAS:
+         vex_printf("lock cmpxchg%c ",
+                     i->Xin.ACAS.sz==1 ? 'b' 
+                                       : i->Xin.ACAS.sz==2 ? 'w' : 'l');
+         vex_printf("{%%eax->%%ebx},");
+         ppX86AMode(i->Xin.ACAS.addr);
+         return;
+      case Xin_DACAS:
+         vex_printf("lock cmpxchg8b {%%edx:%%eax->%%ecx:%%ebx},");
+         ppX86AMode(i->Xin.DACAS.addr);
+         return;
       case Xin_FpUnary:
          vex_printf("g%sD ", showX86FpOp(i->Xin.FpUnary.op));
          ppHRegX86(i->Xin.FpUnary.src);
@@ -1266,6 +1290,18 @@ void getRegUsage_X86Instr (HRegUsage* u, X86Instr* i, Bool mode64)
          return;
       case Xin_MFence:
          return;
+      case Xin_ACAS:
+         addRegUsage_X86AMode(u, i->Xin.ACAS.addr);
+         addHRegUse(u, HRmRead, hregX86_EBX());
+         addHRegUse(u, HRmModify, hregX86_EAX());
+         return;
+      case Xin_DACAS:
+         addRegUsage_X86AMode(u, i->Xin.DACAS.addr);
+         addHRegUse(u, HRmRead, hregX86_ECX());
+         addHRegUse(u, HRmRead, hregX86_EBX());
+         addHRegUse(u, HRmModify, hregX86_EDX());
+         addHRegUse(u, HRmModify, hregX86_EAX());
+         return;
       case Xin_FpUnary:
          addHRegUse(u, HRmRead, i->Xin.FpUnary.src);
          addHRegUse(u, HRmWrite, i->Xin.FpUnary.dst);
@@ -1449,6 +1485,12 @@ void mapRegs_X86Instr ( HRegRemap* m, X86Instr* i, Bool mode64 )
          mapReg(m, &i->Xin.Bsfr32.dst);
          return;
       case Xin_MFence:
+         return;
+      case Xin_ACAS:
+         mapRegs_X86AMode(m, i->Xin.ACAS.addr);
+         return;
+      case Xin_DACAS:
+         mapRegs_X86AMode(m, i->Xin.DACAS.addr);
          return;
       case Xin_FpUnary:
          mapReg(m, &i->Xin.FpUnary.src);
@@ -2494,6 +2536,35 @@ Int emit_X86Instr ( UChar* buf, Int nbuf, X86Instr* i,
       vpanic("emit_X86Instr:mfence:hwcaps");
       /*NOTREACHED*/
       break;
+
+   case Xin_ACAS:
+      /* lock */
+      *p++ = 0xF0;
+      /* cmpxchg{b,w,l} %ebx,mem.  Expected-value in %eax, new value
+         in %ebx.  The new-value register is hardwired to be %ebx
+         since letting it be any integer register gives the problem
+         that %sil and %dil are unaddressible on x86 and hence we
+         would have to resort to the same kind of trickery as with
+         byte-sized Xin.Store, just below.  Given that this isn't
+         performance critical, it is simpler just to force the
+         register operand to %ebx (could equally be %ecx or %edx).
+         (Although %ebx is more consistent with cmpxchg8b.) */
+      if (i->Xin.ACAS.sz == 2) *p++ = 0x66; 
+      *p++ = 0x0F;
+      if (i->Xin.ACAS.sz == 1) *p++ = 0xB0; else *p++ = 0xB1;
+      p = doAMode_M(p, hregX86_EBX(), i->Xin.ACAS.addr);
+      goto done;
+
+   case Xin_DACAS:
+      /* lock */
+      *p++ = 0xF0;
+      /* cmpxchg8b m64.  Expected-value in %edx:%eax, new value
+         in %ecx:%ebx.  All 4 regs are hardwired in the ISA, so
+         aren't encoded in the insn. */
+      *p++ = 0x0F;
+      *p++ = 0xC7;
+      p = doAMode_M(p, fake(1), i->Xin.DACAS.addr);
+      goto done;
 
    case Xin_Store:
       if (i->Xin.Store.sz == 2) {

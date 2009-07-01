@@ -1,25 +1,27 @@
 Massif: alloc-fns:
-Massif:   0: malloc
-Massif:   1: __builtin_new
-Massif:   2: operator new(unsigned)
-Massif:   3: operator new(unsigned long)
-Massif:   4: __builtin_vec_new
-Massif:   5: operator new[](unsigned)
-Massif:   6: operator new[](unsigned long)
-Massif:   7: calloc
-Massif:   8: realloc
-Massif:   9: memalign
-Massif:   10: operator new(unsigned, std::nothrow_t const&)
-Massif:   11: operator new[](unsigned, std::nothrow_t const&)
-Massif:   12: operator new(unsigned long, std::nothrow_t const&)
-Massif:   13: operator new[](unsigned long, std::nothrow_t const&)
-Massif:   14: a6
-Massif:   15: a7
-Massif:   16: a8
-Massif:   17: a9
-Massif:   18: a10
-Massif:   19: a11
-Massif:   20: a12
+Massif:   malloc
+Massif:   __builtin_new
+Massif:   operator new(unsigned)
+Massif:   operator new(unsigned long)
+Massif:   __builtin_vec_new
+Massif:   operator new[](unsigned)
+Massif:   operator new[](unsigned long)
+Massif:   calloc
+Massif:   realloc
+Massif:   memalign
+Massif:   posix_memalign
+Massif:   valloc
+Massif:   operator new(unsigned, std::nothrow_t const&)
+Massif:   operator new[](unsigned, std::nothrow_t const&)
+Massif:   operator new(unsigned long, std::nothrow_t const&)
+Massif:   operator new[](unsigned long, std::nothrow_t const&)
+Massif:   a6
+Massif:   a7
+Massif:   a8
+Massif:   a9
+Massif:   a10
+Massif:   a11
+Massif:   a12
 Massif: ignore-fns:
 Massif:   0: __part_load_locale
 Massif:   1: __time_load_locale

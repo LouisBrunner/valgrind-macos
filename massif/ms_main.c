@@ -298,7 +298,7 @@ static void init_alloc_fns(void)
                                        VG_(free), sizeof(Char*));
    #define DO(x)  { Char* s = x; VG_(addToXA)(alloc_fns, &s); }
 
-   // Ordered according to (presumed) frequency.
+   // Ordered roughly according to (presumed) frequency.
    // Nb: The C++ "operator new*" ones are overloadable.  We include them
    // always anyway, because even if they're overloaded, it would be a
    // prodigiously stupid overloading that caused them to not allocate
@@ -313,10 +313,24 @@ static void init_alloc_fns(void)
    DO("calloc"                                              );
    DO("realloc"                                             );
    DO("memalign"                                            );
+   DO("posix_memalign"                                      );
+   DO("valloc"                                              );
    DO("operator new(unsigned, std::nothrow_t const&)"       );
    DO("operator new[](unsigned, std::nothrow_t const&)"     );
    DO("operator new(unsigned long, std::nothrow_t const&)"  );
    DO("operator new[](unsigned long, std::nothrow_t const&)");
+#if defined(VGP_ppc32_aix5) || defined(VGP_ppc64_aix5)
+   DO("malloc_common"                                       );
+   DO("calloc_common"                                       );
+   DO("realloc_common"                                      );
+   DO("memalign_common"                                     );
+#elif defined(VGO_darwin)
+   DO("malloc_zone_malloc"                                  );
+   DO("malloc_zone_calloc"                                  );
+   DO("malloc_zone_realloc"                                 );
+   DO("malloc_zone_memalign"                                );
+   DO("malloc_zone_valloc"                                  );
+#endif
 }
 
 static void init_ignore_fns(void)
@@ -2251,7 +2265,7 @@ static void ms_post_clo_init(void)
       VERB(1, "alloc-fns:");
       for (i = 0; i < VG_(sizeXA)(alloc_fns); i++) {
          Char** fn_ptr = VG_(indexXA)(alloc_fns, i);
-         VERB(1, "  %d: %s", i, *fn_ptr);
+         VERB(1, "  %s", *fn_ptr);
       }
 
       VERB(1, "ignore-fns:");

@@ -303,6 +303,16 @@ static void init_alloc_fns(void)
    // always anyway, because even if they're overloaded, it would be a
    // prodigiously stupid overloading that caused them to not allocate
    // memory.
+   //
+   // XXX: because we don't look at the first stack entry (unless it's a
+   // custom allocation) there's not much point to having all these alloc
+   // functions here -- they should never appear anywhere (I think?) other
+   // than the top stack entry.  The only exceptions are those that in
+   // vg_replace_malloc.c are partly or fully implemented in terms of another
+   // alloc function: realloc (which uses malloc);  valloc,
+   // malloc_zone_valloc, posix_memalign and memalign_common (which use
+   // memalign).
+   //
    DO("malloc"                                              );
    DO("__builtin_new"                                       );
    DO("operator new(unsigned)"                              );

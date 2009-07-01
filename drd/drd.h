@@ -84,10 +84,13 @@
  */
 #define DRD_TRACE_VAR(x) DRDCL_(trace_range)(&(x), sizeof(x))
 
-/* !! APIWARNING !! APIWARNING !! APIWARNING !! APIWARNING !!
-   The semantics and the names of the macro's defined below are still
-   under discussion and subject to change without notice.
-*/
+/**
+ * @defgroup RaceDetectionAnnotations Data race detection annotations.
+ *
+ * @see See also the source file <a href="http://code.google.com/p/google-perftools/source/browse/trunk/src/base/dynamic_annotations.h">dynamic_annotations.h</a>
+ * in the ThreadSanitizer project.
+ */
+/*@{*/
 
 /**
  * Tell DRD to insert a mark. addr is the address of an object that is not a
@@ -167,12 +170,34 @@
    DRDCL_(annotate_rwlock)(rwlock, 2, is_w)
 
 /**
+ * Tell DRD that a reader lock has been acquired on a reader-writer
+ * synchronization object.
+ */
+#define ANNOTATE_READERLOCK_ACQUIRED(rwlock) ANNOTATE_RWLOCK_ACQUIRED(rwlock, 0)
+
+/**
+ * Tell DRD that a writer lock has been acquired on a reader-writer
+ * synchronization object.
+ */
+#define ANNOTATE_WRITERLOCK_ACQUIRED(rwlock) ANNOTATE_RWLOCK_ACQUIRED(rwlock, 1)
+
+/**
  * Tell DRD that a reader-writer lock is about to be released. is_w == 1 means
  * that a write lock is about to be released, is_w == 0 means that a read lock
  * is about to be released.
  */
 #define ANNOTATE_RWLOCK_RELEASED(rwlock, is_w) \
    DRDCL_(annotate_rwlock)(rwlock, 3, is_w)
+
+/**
+ * Tell DRD that a reader lock is about to be released.
+ */
+#define ANNOTATE_READERLOCK_RELEASED(rwlock) ANNOTATE_RWLOCK_RELEASED(rwlock, 0)
+
+/**
+ * Tell DRD that a writer lock is about to be released.
+ */
+#define ANNOTATE_WRITERLOCK_RELEASED(rwlock) ANNOTATE_RWLOCK_RELEASED(rwlock, 1)
 
 /**
  * Tell DRD that a FIFO queue has been created. The abbreviation PCQ stands for
@@ -243,10 +268,7 @@
  */
 #define ANNOTATE_THREAD_NAME(name) DRDCL_(set_thread_name)(name)
 
-/* !! APIWARNING !! APIWARNING !! APIWARNING !! APIWARNING !!
-   The semantics and the names of the macro's defined above are still
-   under discussion and subject to change without notice.
-*/
+/*@}*/
 
 
 /* !! ABIWARNING !! ABIWARNING !! ABIWARNING !! ABIWARNING !!

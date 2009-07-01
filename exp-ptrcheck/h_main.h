@@ -82,8 +82,10 @@ void h_post_reg_write_demux ( CorePart part, ThreadId tid,
 void h_post_reg_write_clientcall(ThreadId tid, PtrdiffT guest_state_offset,
                                  SizeT size, Addr f );
 
-void h_pre_syscall ( ThreadId tid, UInt syscallno );
-void h_post_syscall ( ThreadId tid, UInt syscallno, SysRes res );
+void h_pre_syscall ( ThreadId tid, UInt syscallno,
+                     UWord* args, UInt nArgs );
+void h_post_syscall ( ThreadId tid, UInt syscallno,
+                      UWord* args, UInt nArgs, SysRes res );
 
 /* Note that this also does the sg_ instrumentation. */
 IRSB* h_instrument ( VgCallbackClosure* closure,

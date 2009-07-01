@@ -784,6 +784,27 @@ IRSB* lk_instrument ( VgCallbackClosure* closure,
             break;
          }
 
+         case Ist_CAS: {
+            /* We treat it as a read and a write of the location.  I
+               think that is the same behaviour as it was before IRCAS
+               was introduced, since prior to that point, the Vex
+               front ends would translate a lock-prefixed instruction
+               into a (normal) read followed by a (normal) write. */
+            if (clo_trace_mem) {
+               Int    dataSize;
+               IRCAS* cas = st->Ist.CAS.details;
+               tl_assert(cas->addr != NULL);
+               tl_assert(cas->dataLo != NULL);
+               dataSize = sizeofIRType(typeOfIRExpr(tyenv, cas->dataLo));
+               if (cas->dataHi != NULL)
+                  dataSize *= 2; /* since it's a doubleword-CAS */
+               addEvent_Dr( sbOut, cas->addr, dataSize );
+               addEvent_Dw( sbOut, cas->addr, dataSize );
+            }
+            addStmtToIRSB( sbOut, st );
+            break;
+         }
+
          case Ist_Exit:
             if (clo_basic_counts) {
                // The condition of a branch was inverted by VEX if a taken

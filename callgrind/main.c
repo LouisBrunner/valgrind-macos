@@ -657,8 +657,14 @@ void CLG_(collectBlockInfo)(IRSB* sbIn,
 static
 void addConstMemStoreStmt( IRSB* bbOut, UWord addr, UInt val, IRType hWordTy)
 {
+    /* JRS 2009june01: re IRTemp_INVALID, am assuming that this
+       function is used only to create instrumentation, and not to
+       copy/reconstruct IRStmt_Stores that were in the incoming IR
+       superblock.  If that is not a correct assumption, then things
+       will break badly on PowerPC, esp w/ threaded apps. */
     addStmtToIRSB( bbOut,
 		   IRStmt_Store(CLGEndness,
+                                IRTemp_INVALID,
 				IRExpr_Const(hWordTy == Ity_I32 ?
 					     IRConst_U32( addr ) :
 					     IRConst_U64( addr )),
@@ -841,6 +847,24 @@ IRSB* CLG_(instrument)( VgCallbackClosure* closure,
 	    break;
 	 }
 
+         case Ist_CAS: {
+            /* We treat it as a read and a write of the location.  I
+               think that is the same behaviour as it was before IRCAS
+               was introduced, since prior to that point, the Vex
+               front ends would translate a lock-prefixed instruction
+               into a (normal) read followed by a (normal) write. */
+            Int    dataSize;
+            IRCAS* cas = st->Ist.CAS.details;
+            CLG_ASSERT(cas->addr && isIRAtom(cas->addr));
+            CLG_ASSERT(cas->dataLo);
+            dataSize = sizeofIRType(typeOfIRExpr(sbIn->tyenv, cas->dataLo));
+            if (cas->dataHi != NULL)
+               dataSize *= 2; /* since this is a doubleword-cas */
+            addEvent_Dr( &clgs, curr_inode, dataSize, cas->addr );
+            addEvent_Dw( &clgs, curr_inode, dataSize, cas->addr );
+            break;
+         }
+ 
 	 case Ist_Exit: {
 	    UInt jmps_passed;
 
@@ -1101,7 +1125,8 @@ UInt syscalltime[VG_N_THREADS];
 #endif
 
 static
-void CLG_(pre_syscalltime)(ThreadId tid, UInt syscallno)
+void CLG_(pre_syscalltime)(ThreadId tid, UInt syscallno,
+                           UWord* args, UInt nArgs)
 {
   if (CLG_(clo).collect_systime) {
 #if CLG_MICROSYSTIME
@@ -1115,7 +1140,8 @@ void CLG_(pre_syscalltime)(ThreadId tid, UInt syscallno)
 }
 
 static
-void CLG_(post_syscalltime)(ThreadId tid, UInt syscallno, SysRes res)
+void CLG_(post_syscalltime)(ThreadId tid, UInt syscallno,
+                            UWord* args, UInt nArgs, SysRes res)
 {
   if (CLG_(clo).collect_systime &&
       CLG_(current_state).bbcc) {

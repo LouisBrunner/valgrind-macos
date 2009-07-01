@@ -2226,6 +2226,33 @@ void sg_instrument_IRStmt ( /*MOD*/struct _SGEnv * env,
          break;
       }
 
+      case Ist_CAS: {
+         /* We treat it as a read and a write of the location.  I
+            think that is the same behaviour as it was before IRCAS
+            was introduced, since prior to that point, the Vex front
+            ends would translate a lock-prefixed instruction into a
+            (normal) read followed by a (normal) write. */
+         if (env->firstRef) {
+            Int    dataSize;
+            IRCAS* cas = st->Ist.CAS.details;
+            tl_assert(cas->addr != NULL);
+            tl_assert(cas->dataLo != NULL);
+            dataSize = sizeofIRType(typeOfIRExpr(sbOut->tyenv, cas->dataLo));
+            if (cas->dataHi != NULL)
+               dataSize *= 2; /* since it's a doubleword-CAS */
+            instrument_mem_access(
+               sbOut, cas->addr, dataSize, False/*!isStore*/,
+               sizeofIRType(hWordTy), env->curr_IP, layout
+            );
+            instrument_mem_access(
+               sbOut, cas->addr, dataSize, True/*isStore*/,
+               sizeofIRType(hWordTy), env->curr_IP, layout
+            );
+            env->firstRef = False;
+         }
+         break;
+      }
+
       default:
          tl_assert(0);
 

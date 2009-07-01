@@ -3603,40 +3603,6 @@ static void instrument_mem_access ( IRSB*   bbOut,
 }
 
 
-//static void instrument_memory_bus_event ( IRSB* bbOut, IRMBusEvent event )
-//{
-//   switch (event) {
-//      case Imbe_SnoopedStoreBegin:
-//      case Imbe_SnoopedStoreEnd:
-//         /* These arise from ppc stwcx. insns.  They should perhaps be
-//            handled better. */
-//         break;
-//      case Imbe_Fence:
-//         break; /* not interesting */
-//      case Imbe_BusLock:
-//      case Imbe_BusUnlock:
-//         addStmtToIRSB(
-//            bbOut,
-//            IRStmt_Dirty(
-//               unsafeIRDirty_0_N( 
-//                  0/*regparms*/, 
-//                  event == Imbe_BusLock ? "evh__bus_lock"
-//                                        : "evh__bus_unlock",
-//                  VG_(fnptr_to_fnentry)(
-//                     event == Imbe_BusLock ? &evh__bus_lock 
-//                                           : &evh__bus_unlock 
-//                  ),
-//                  mkIRExprVec_0() 
-//               )
-//            )
-//         );
-//         break;
-//      default:
-//         tl_assert(0);
-//   }
-//}
-
-
 static
 IRSB* hg_instrument ( VgCallbackClosure* closure,
                       IRSB* bbIn,
@@ -3644,10 +3610,10 @@ IRSB* hg_instrument ( VgCallbackClosure* closure,
                       VexGuestExtents* vge,
                       IRType gWordTy, IRType hWordTy )
 {
-   Int   i;
-   IRSB* bbOut;
-   Bool  x86busLocked   = False;
-   Bool  isSnoopedStore = False;
+   Int     i;
+   IRSB*   bbOut;
+   Addr64  cia; /* address of current insn */
+   IRStmt* st;
 
    if (gWordTy != hWordTy) {
       /* We don't currently support this case. */
@@ -3667,8 +3633,16 @@ IRSB* hg_instrument ( VgCallbackClosure* closure,
       i++;
    }
 
+   // Get the first statement, and initial cia from it
+   tl_assert(bbIn->stmts_used > 0);
+   tl_assert(i < bbIn->stmts_used);
+   st = bbIn->stmts[i];
+   tl_assert(Ist_IMark == st->tag);
+   cia = st->Ist.IMark.addr;
+   st = NULL;
+
    for (/*use current i*/; i < bbIn->stmts_used; i++) {
-      IRStmt* st = bbIn->stmts[i];
+      st = bbIn->stmts[i];
       tl_assert(st);
       tl_assert(isFlatIRStmt(st));
       switch (st->tag) {
@@ -3676,9 +3650,13 @@ IRSB* hg_instrument ( VgCallbackClosure* closure,
          case Ist_AbiHint:
          case Ist_Put:
          case Ist_PutI:
-         case Ist_IMark:
          case Ist_Exit:
             /* None of these can contain any memory references. */
+            break;
+
+         case Ist_IMark:
+            /* no mem refs, but note the insn address. */
+            cia = st->Ist.IMark.addr;
             break;
 
          case Ist_MBE:
@@ -3686,33 +3664,31 @@ IRSB* hg_instrument ( VgCallbackClosure* closure,
             switch (st->Ist.MBE.event) {
                case Imbe_Fence:
                   break; /* not interesting */
-               /* Imbe_Bus{Lock,Unlock} arise from x86/amd64 LOCK
-                  prefixed instructions. */
-               case Imbe_BusLock:
-                  tl_assert(x86busLocked == False);
-                  x86busLocked = True;
-                  break;
-               case Imbe_BusUnlock:
-                  tl_assert(x86busLocked == True);
-                  x86busLocked = False;
-                  break;
-                  /* Imbe_SnoopedStore{Begin,End} arise from ppc
-                     stwcx. instructions. */
-               case Imbe_SnoopedStoreBegin:
-                  tl_assert(isSnoopedStore == False);
-                  isSnoopedStore = True;
-                  break;
-               case Imbe_SnoopedStoreEnd:
-                  tl_assert(isSnoopedStore == True);
-                  isSnoopedStore = False;
-                  break;
                default:
                   goto unhandled;
             }
             break;
 
+         case Ist_CAS: {
+            /* Atomic read-modify-write cycle.  Just pretend it's a
+               read. */
+            IRCAS* cas    = st->Ist.CAS.details;
+            Bool   isDCAS = cas->dataHi != NULL;
+            instrument_mem_access(
+               bbOut,
+               cas->addr,
+               (isDCAS ? 2 : 1)
+                  * sizeofIRType(typeOfIRExpr(bbIn->tyenv, cas->dataLo)),
+               False/*!isStore*/,
+               sizeofIRType(hWordTy)
+            );
+            break;
+         }
+
          case Ist_Store:
-            if (!x86busLocked && !isSnoopedStore)
+            /* It seems we pretend that store-conditionals don't
+               exist, viz, just ignore them ... */
+            if (st->Ist.Store.resSC == IRTemp_INVALID) {
                instrument_mem_access( 
                   bbOut, 
                   st->Ist.Store.addr, 
@@ -3720,9 +3696,12 @@ IRSB* hg_instrument ( VgCallbackClosure* closure,
                   True/*isStore*/,
                   sizeofIRType(hWordTy)
                );
+            }
             break;
 
          case Ist_WrTmp: {
+            /* ... whereas here we don't care whether a load is a
+               vanilla one or a load-linked. */
             IRExpr* data = st->Ist.WrTmp.data;
             if (data->tag == Iex_Load) {
                instrument_mem_access(
@@ -3751,11 +3730,6 @@ IRSB* hg_instrument ( VgCallbackClosure* closure,
                      sizeofIRType(hWordTy)
                   );
                }
-               /* This isn't really correct.  Really the
-                  instrumentation should be only added when
-                  (!x86busLocked && !isSnoopedStore), just like with
-                  Ist_Store.  Still, I don't think this is
-                  particularly important. */
                if (d->mFx == Ifx_Write || d->mFx == Ifx_Modify) {
                   instrument_mem_access( 
                      bbOut, d->mAddr, dataSize, True/*isStore*/,

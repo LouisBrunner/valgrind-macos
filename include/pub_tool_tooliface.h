@@ -386,9 +386,19 @@ extern void VG_(needs_client_requests) (
 /* Tool does stuff before and/or after system calls? */
 // Nb: If either of the pre_ functions malloc() something to return, the
 // corresponding post_ function had better free() it!
+// Also, the args are the 'original args' -- that is, it may be
+// that the syscall pre-wrapper will modify the args before the
+// syscall happens.  So these args are the original, un-modified
+// args.  Finally, nArgs merely indicates the length of args[..],
+// it does not indicate how many of those values are actually
+// relevant to the syscall.  args[0 .. nArgs-1] is guaranteed
+// to be defined and to contain all the args for this syscall,
+// possibly including some trailing zeroes.
 extern void VG_(needs_syscall_wrapper) (
-   void (* pre_syscall)(ThreadId tid, UInt syscallno),
-   void (*post_syscall)(ThreadId tid, UInt syscallno, SysRes res)
+               void (* pre_syscall)(ThreadId tid, UInt syscallno,
+                                    UWord* args, UInt nArgs),
+               void (*post_syscall)(ThreadId tid, UInt syscallno,
+                                    UWord* args, UInt nArgs, SysRes res)
 );
 
 /* Are tool-state sanity checks performed? */

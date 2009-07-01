@@ -2393,7 +2393,7 @@ static POrd VtsID__getOrdering_WRK ( VtsID vi1, VtsID vi2 ) {
    return ord;
 }
 static inline POrd VtsID__getOrdering ( VtsID vi1, VtsID vi2 ) {
-   return vi1 == vi2  ? POrd_EQ  : VtsID__getOrdering_WRK(vi1, vi2);
+   return LIKELY(vi1 == vi2)  ? POrd_EQ  : VtsID__getOrdering_WRK(vi1, vi2);
 }
 
 /* compute binary join */
@@ -2424,7 +2424,7 @@ static VtsID VtsID__join2_WRK ( VtsID vi1, VtsID vi2 ) {
    return res;
 }
 static inline VtsID VtsID__join2 ( VtsID vi1, VtsID vi2 ) {
-   return vi1 == vi2  ? vi1  : VtsID__join2_WRK(vi1, vi2);
+   return LIKELY(vi1 == vi2)  ? vi1  : VtsID__join2_WRK(vi1, vi2);
 }
 
 /* create a singleton VTS, namely [thr:1] */
@@ -3653,7 +3653,7 @@ static inline SVal msm_read ( SVal svOld,
       tl_assert(is_sane_SVal_C(svOld));
    }
 
-   if (SVal__isC(svOld)) {
+   if (LIKELY(SVal__isC(svOld))) {
       POrd  ord;
       VtsID tviR  = acc_thr->viR;
       VtsID tviW  = acc_thr->viW;
@@ -3661,7 +3661,7 @@ static inline SVal msm_read ( SVal svOld,
       VtsID wmini = SVal__unC_Wmin(svOld);
 
       ord = VtsID__getOrdering(rmini,tviR);
-      if (ord == POrd_EQ || ord == POrd_LT) {
+      if (LIKELY(ord == POrd_EQ || ord == POrd_LT)) {
          /* no race */
          /* Note: RWLOCK subtlety: use tviW, not tviR */
          svNew = SVal__mkC( rmini, VtsID__join2(wmini, tviW) );
@@ -3708,9 +3708,10 @@ static inline SVal msm_read ( SVal svOld,
    if (CHECK_MSM) {
       tl_assert(is_sane_SVal_C(svNew));
    }
-   tl_assert(svNew != SVal_INVALID);
-   if (svNew != svOld && HG_(clo_show_conflicts)) {
-      if (SVal__isC(svOld) && SVal__isC(svNew)) {
+   if (UNLIKELY(svNew != svOld)) {
+      tl_assert(svNew != SVal_INVALID);
+      if (HG_(clo_show_conflicts)
+          && SVal__isC(svOld) && SVal__isC(svNew)) {
          event_map_bind( acc_addr, szB, False/*!isWrite*/, acc_thr );
          stats__msm_read_change++;
       }
@@ -3734,13 +3735,13 @@ static inline SVal msm_write ( SVal svOld,
       tl_assert(is_sane_SVal_C(svOld));
    }
 
-   if (SVal__isC(svOld)) {
+   if (LIKELY(SVal__isC(svOld))) {
       POrd  ord;
       VtsID tviW  = acc_thr->viW;
       VtsID wmini = SVal__unC_Wmin(svOld);
 
       ord = VtsID__getOrdering(wmini,tviW);
-      if (ord == POrd_EQ || ord == POrd_LT) {
+      if (LIKELY(ord == POrd_EQ || ord == POrd_LT)) {
          /* no race */
          svNew = SVal__mkC( tviW, tviW );
          goto out;
@@ -3807,9 +3808,10 @@ static inline SVal msm_write ( SVal svOld,
    if (CHECK_MSM) {
       tl_assert(is_sane_SVal_C(svNew));
    }
-   tl_assert(svNew != SVal_INVALID);
-   if (svNew != svOld && HG_(clo_show_conflicts)) {
-      if (SVal__isC(svOld) && SVal__isC(svNew)) {
+   if (UNLIKELY(svNew != svOld)) {
+      tl_assert(svNew != SVal_INVALID);
+      if (HG_(clo_show_conflicts)
+          && SVal__isC(svOld) && SVal__isC(svNew)) {
          event_map_bind( acc_addr, szB, True/*isWrite*/, acc_thr );
          stats__msm_write_change++;
       }
@@ -3845,7 +3847,8 @@ void zsm_apply8___msm_read ( Thr* thr, Addr a ) {
    }
    svOld = cl->svals[cloff];
    svNew = msm_read( svOld, thr,a,1 );
-   tl_assert(svNew != SVal_INVALID);
+   if (CHECK_ZSM)
+      tl_assert(svNew != SVal_INVALID);
    cl->svals[cloff] = svNew;
 }
 
@@ -3868,7 +3871,8 @@ void zsm_apply8___msm_write ( Thr* thr, Addr a ) {
    }
    svOld = cl->svals[cloff];
    svNew = msm_write( svOld, thr,a,1 );
-   tl_assert(svNew != SVal_INVALID);
+   if (CHECK_ZSM)
+      tl_assert(svNew != SVal_INVALID);
    cl->svals[cloff] = svNew;
 }
 
@@ -3898,7 +3902,8 @@ void zsm_apply16___msm_read ( Thr* thr, Addr a ) {
    }
    svOld = cl->svals[cloff];
    svNew = msm_read( svOld, thr,a,2 );
-   tl_assert(svNew != SVal_INVALID);
+   if (CHECK_ZSM)
+      tl_assert(svNew != SVal_INVALID);
    cl->svals[cloff] = svNew;
    return;
   slowcase: /* misaligned, or must go further down the tree */
@@ -3931,7 +3936,8 @@ void zsm_apply16___msm_write ( Thr* thr, Addr a ) {
    }
    svOld = cl->svals[cloff];
    svNew = msm_write( svOld, thr,a,2 );
-   tl_assert(svNew != SVal_INVALID);
+   if (CHECK_ZSM)
+      tl_assert(svNew != SVal_INVALID);
    cl->svals[cloff] = svNew;
    return;
   slowcase: /* misaligned, or must go further down the tree */
@@ -3965,7 +3971,8 @@ void zsm_apply32___msm_read ( Thr* thr, Addr a ) {
    }
    svOld = cl->svals[cloff];
    svNew = msm_read( svOld, thr,a,4 );
-   tl_assert(svNew != SVal_INVALID);
+   if (CHECK_ZSM)
+      tl_assert(svNew != SVal_INVALID);
    cl->svals[cloff] = svNew;
    return;
   slowcase: /* misaligned, or must go further down the tree */
@@ -3997,7 +4004,8 @@ void zsm_apply32___msm_write ( Thr* thr, Addr a ) {
    }
    svOld = cl->svals[cloff];
    svNew = msm_write( svOld, thr,a,4 );
-   tl_assert(svNew != SVal_INVALID);
+   if (CHECK_ZSM)
+      tl_assert(svNew != SVal_INVALID);
    cl->svals[cloff] = svNew;
    return;
   slowcase: /* misaligned, or must go further down the tree */
@@ -4026,7 +4034,8 @@ void zsm_apply64___msm_read ( Thr* thr, Addr a ) {
    }
    svOld = cl->svals[cloff];
    svNew = msm_read( svOld, thr,a,8 );
-   tl_assert(svNew != SVal_INVALID);
+   if (CHECK_ZSM)
+      tl_assert(svNew != SVal_INVALID);
    cl->svals[cloff] = svNew;
    return;
   slowcase: /* misaligned, or must go further down the tree */
@@ -4053,7 +4062,8 @@ void zsm_apply64___msm_write ( Thr* thr, Addr a ) {
    }
    svOld = cl->svals[cloff];
    svNew = msm_write( svOld, thr,a,8 );
-   tl_assert(svNew != SVal_INVALID);
+   if (CHECK_ZSM)
+      tl_assert(svNew != SVal_INVALID);
    cl->svals[cloff] = svNew;
    return;
   slowcase: /* misaligned, or must go further down the tree */

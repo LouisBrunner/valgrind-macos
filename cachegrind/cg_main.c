@@ -1032,6 +1032,27 @@ IRSB* cg_instrument ( VgCallbackClosure* closure,
             break;
          }
 
+         case Ist_CAS: {
+            /* We treat it as a read and a write of the location.  I
+               think that is the same behaviour as it was before IRCAS
+               was introduced, since prior to that point, the Vex
+               front ends would translate a lock-prefixed instruction
+               into a (normal) read followed by a (normal) write. */
+            Int    dataSize;
+            IRCAS* cas = st->Ist.CAS.details;
+            tl_assert(cas->addr != NULL);
+            tl_assert(cas->dataLo != NULL);
+            dataSize = sizeofIRType(typeOfIRExpr(tyenv, cas->dataLo));
+            if (cas->dataHi != NULL)
+               dataSize *= 2; /* since it's a doubleword-CAS */
+            /* I don't think this can ever happen, but play safe. */
+            if (dataSize > MIN_LINE_SIZE)
+               dataSize = MIN_LINE_SIZE;
+            addEvent_Dr( &cgs, curr_inode, dataSize, cas->addr );
+            addEvent_Dw( &cgs, curr_inode, dataSize, cas->addr );
+            break;
+         }
+
          case Ist_Exit: {
             /* Stuff to widen the guard expression to a host word, so
                we can pass it to the branch predictor simulation

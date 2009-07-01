@@ -1766,6 +1766,27 @@ void VG_(synth_sigill)(ThreadId tid, Addr addr)
    deliver_signal(tid, &info, NULL);
 }
 
+// Synthesise a SIGBUS.
+void VG_(synth_sigbus)(ThreadId tid)
+{
+   vki_siginfo_t info;
+
+   vg_assert(VG_(threads)[tid].status == VgTs_Runnable);
+
+   VG_(memset)(&info, 0, sizeof(info));
+   info.si_signo = VKI_SIGBUS;
+   /* There are several meanings to SIGBUS (as per POSIX, presumably),
+      but the most widely understood is "invalid address alignment",
+      so let's use that. */
+   info.si_code  = VKI_BUS_ADRALN;
+   /* If we knew the invalid address in question, we could put it
+      in .si_addr.  Oh well. */
+   /* info.VKI_SIGINFO_si_addr = (void*)addr; */
+
+   resume_scheduler(tid);
+   deliver_signal(tid, &info, NULL);
+}
+
 // Synthesise a SIGTRAP.
 void VG_(synth_sigtrap)(ThreadId tid)
 {

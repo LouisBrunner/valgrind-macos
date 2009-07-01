@@ -350,7 +350,7 @@ Bool VG_(machine_get_hwcaps)( void )
    LibVEX_default_VexArchInfo(&vai);
 
 #if defined(VGA_x86)
-   { Bool have_sse1, have_sse2;
+   { Bool have_sse1, have_sse2, have_cx8;
      UInt eax, ebx, ecx, edx;
 
      if (!VG_(has_cpuid)())
@@ -367,6 +367,13 @@ Bool VG_(machine_get_hwcaps)( void )
 
      have_sse1 = (edx & (1<<25)) != 0; /* True => have sse insns */
      have_sse2 = (edx & (1<<26)) != 0; /* True => have sse2 insns */
+
+     /* cmpxchg8b is a minimum requirement now; if we don't have it we
+        must simply give up.  But all CPUs since Pentium-I have it, so
+        that doesn't seem like much of a restriction. */
+     have_cx8 = (edx & (1<<8)) != 0; /* True => have cmpxchg8b */
+     if (!have_cx8)
+        return False;
 
      if (have_sse2 && have_sse1) {
         va          = VexArchX86;
@@ -390,10 +397,40 @@ Bool VG_(machine_get_hwcaps)( void )
    }
 
 #elif defined(VGA_amd64)
-   vg_assert(VG_(has_cpuid)());
-   va         = VexArchAMD64;
-   vai.hwcaps = 0; /*baseline - SSE2 */
-   return True;
+   { Bool have_sse1, have_sse2, have_sse3, have_cx8, have_cx16;
+     UInt eax, ebx, ecx, edx;
+
+     if (!VG_(has_cpuid)())
+        /* we can't do cpuid at all.  Give up. */
+        return False;
+
+     VG_(cpuid)(0, &eax, &ebx, &ecx, &edx);
+     if (eax < 1)
+        /* we can't ask for cpuid(x) for x > 0.  Give up. */
+        return False;
+
+     /* get capabilities bits into edx */
+     VG_(cpuid)(1, &eax, &ebx, &ecx, &edx);
+
+     have_sse1 = (edx & (1<<25)) != 0; /* True => have sse insns */
+     have_sse2 = (edx & (1<<26)) != 0; /* True => have sse2 insns */
+     have_sse3 = (ecx & (1<<9)) != 0;  /* True => have sse3 insns */
+
+     /* cmpxchg8b is a minimum requirement now; if we don't have it we
+        must simply give up.  But all CPUs since Pentium-I have it, so
+        that doesn't seem like much of a restriction. */
+     have_cx8 = (edx & (1<<8)) != 0; /* True => have cmpxchg8b */
+     if (!have_cx8)
+        return False;
+
+     /* on amd64 we tolerate older cpus, which don't have cmpxchg16b */
+     have_cx16 = (ecx & (1<<13)) != 0; /* True => have cmpxchg16b */
+
+     va         = VexArchAMD64;
+     vai.hwcaps = (have_sse3 ? VEX_HWCAPS_AMD64_SSE3 : 0)
+                  | (have_cx16 ? VEX_HWCAPS_AMD64_CX16 : 0);
+     return True;
+   }
 
 #elif defined(VGA_ppc32)
    {
@@ -548,7 +585,6 @@ Bool VG_(machine_get_hwcaps)( void )
 
      VG_(sigaction)(VKI_SIGFPE, NULL, &saved_sigfpe_act);
      tmp_sigfpe_act = saved_sigfpe_act;
-
 
      /* NODEFER: signal handler does not return (from the kernel's point of
         view), hence if it is to successfully catch a signal more than once,

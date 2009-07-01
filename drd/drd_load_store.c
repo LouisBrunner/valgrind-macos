@@ -450,7 +450,6 @@ IRSB* DRD_(instrument)(VgCallbackClosure* const closure,
    IRSB*    bb;
    IRExpr** argv;
    Bool     instrument = True;
-   Bool     bus_locked = False;
 
    /* Set up BB */
    bb           = emptyIRSB();
@@ -484,16 +483,6 @@ IRSB* DRD_(instrument)(VgCallbackClosure* const closure,
          {
          case Imbe_Fence:
             break; /* not interesting */
-         case Imbe_BusLock:
-         case Imbe_SnoopedStoreBegin:
-            tl_assert(! bus_locked);
-            bus_locked = True;
-            break;
-         case Imbe_BusUnlock:
-         case Imbe_SnoopedStoreEnd:
-            tl_assert(bus_locked);
-            bus_locked = False;
-            break;
          default:
             tl_assert(0);
          }
@@ -501,7 +490,8 @@ IRSB* DRD_(instrument)(VgCallbackClosure* const closure,
          break;
 
       case Ist_Store:
-         if (instrument && ! bus_locked)
+         if (instrument && /* ignore stores resulting from st{d,w}cx. */
+                           st->Ist.Store.resSC == IRTemp_INVALID)
          {
             instrument_store(bb,
                              st->Ist.Store.addr,
@@ -547,8 +537,7 @@ IRSB* DRD_(instrument)(VgCallbackClosure* const closure,
                           argv);
                   addStmtToIRSB(bb, IRStmt_Dirty(di));
                }
-               if ((mFx == Ifx_Write || mFx == Ifx_Modify)
-                   && ! bus_locked)
+               if (mFx == Ifx_Write || mFx == Ifx_Modify)
                {
                   di = unsafeIRDirty_0_N(
                           /*regparms*/2,
@@ -565,13 +554,31 @@ IRSB* DRD_(instrument)(VgCallbackClosure* const closure,
          addStmtToIRSB(bb, st);
          break;
 
+      case Ist_CAS:
+         if (instrument)
+         {
+            /* Just treat this as a read of the location.  I believe
+               this is equivalent to the previous logic, which
+               observed bus-lock/unlock Ist_MBEs, and ignored all
+               writes within sections bracketed by bus-lock and
+               bus-unlock annotations. */
+            Int    dataSize;
+            IRCAS* cas = st->Ist.CAS.details;
+            tl_assert(cas->addr != NULL);
+            tl_assert(cas->dataLo != NULL);
+            dataSize = sizeofIRType(typeOfIRExpr(bb->tyenv, cas->dataLo));
+            if (cas->dataHi != NULL)
+               dataSize *= 2; /* since it's a doubleword-CAS */
+            instrument_load(bb, cas->addr, dataSize);
+         }
+         addStmtToIRSB(bb, st);
+         break;
+
       default:
          addStmtToIRSB(bb, st);
          break;
       }
    }
-
-   tl_assert(! bus_locked);
 
    return bb;
 }

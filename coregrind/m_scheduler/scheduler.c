@@ -679,22 +679,6 @@ static UInt run_thread_for_a_while ( ThreadId tid )
    trc = 0;
    dispatch_ctr_SAVED = VG_(dispatch_ctr);
 
-#  if defined(VGA_ppc32) || defined(VGA_ppc64)
-   /* This is necessary due to the hacky way vex models reservations
-      on ppc.  It's really quite incorrect for each thread to have its
-      own reservation flag/address, since it's really something that
-      all threads share (that's the whole point).  But having shared
-      guest state is something we can't model with Vex.  However, as
-      per PaulM's 2.4.0ppc, the reservation is modelled using a
-      reservation flag which is cleared at each context switch.  So it
-      is indeed possible to get away with a per thread-reservation if
-      the thread's reservation is cleared before running it.
-   */
-   /* Clear any existing reservation that this thread might have made
-      last time it was running. */
-   VG_(threads)[tid].arch.vex.guest_RESVN = 0;
-#  endif   
-
 #  if defined(VGP_ppc32_aix5) || defined(VGP_ppc64_aix5)
    /* On AIX, we need to get a plausible value for SPRG3 for this
       thread, since it's used I think as a thread-state pointer.  It
@@ -1167,6 +1151,10 @@ VgSchedReturnCode VG_(scheduler) ( ThreadId tid )
 
       case VEX_TRC_JMP_SIGSEGV:
          VG_(synth_fault)(tid);
+         break;
+
+      case VEX_TRC_JMP_SIGBUS:
+         VG_(synth_sigbus)(tid);
          break;
 
       case VEX_TRC_JMP_NODECODE:

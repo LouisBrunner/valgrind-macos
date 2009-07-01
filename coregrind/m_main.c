@@ -1253,6 +1253,29 @@ Int valgrind_main ( Int argc, HChar **argv, HChar **envp )
    // (oversized pagezero or stack)
    //   p: none
    //--------------------------------------------------------------
+   // DDD:  comments from Greg Parker why these address-space-filling segments
+   // are necessary:
+   //
+   //   The memory maps are there to make sure that Valgrind's copies of libc
+   //   and dyld load in a non-default location, so that the inferior's own
+   //   libc and dyld do load in the default locations. (The kernel performs
+   //   the work of loading several things as described by the executable's
+   //   load commands, including the executable itself, dyld, the main
+   //   thread's stack, and the page-zero segment.) There might be a way to
+   //   fine-tune it so the maps are smaller but still do the job.
+   //
+   //   The post-launch mmap behavior can be cleaned up - looks like we don't
+   //   unmap as much as we should - which would improve post-launch
+   //   performance.
+   //
+   //   Hmm, there might be an extra-clever way to give Valgrind a custom
+   //   MH_DYLINKER that performs the "bootloader" work of loading dyld in an
+   //   acceptable place and then unloading itself. Then no mmaps would be
+   //   needed. I'll have to think about that one.
+   //
+   // [I can't work out where the address-space-filling segments are
+   // created in the first place. --njn]
+   //
 #if defined(VGO_darwin)
 # if VG_WORDSIZE == 4
    VG_(do_syscall2)(__NR_munmap, 0x00000000, 0xf0000000);

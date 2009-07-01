@@ -50,8 +50,7 @@
 #include <mach-o/loader.h>
 
 #include "pub_core_debuglog.h"
-#include "pub_core_vki.h"       // Avoids warnings from
-                                // pub_core_libcfile.h
+#include "pub_core_vki.h"       // Avoids warnings from pub_core_libcfile.h
 #include "pub_core_libcproc.h"  // For VALGRIND_LIB, VALGRIND_LAUNCHER
 #include "pub_core_ume.h"
 
@@ -60,11 +59,11 @@ static struct {
    const char *apple_name;     // e.g. x86_64
    const char *valgrind_name;  // e.g. amd64
 } valid_archs[] = {
-   { CPU_TYPE_X86, "i386", "x86" }, 
-   { CPU_TYPE_X86_64, "x86_64", "amd64" }, 
-   { CPU_TYPE_ARM, "arm", "arm" }, 
-   { CPU_TYPE_POWERPC, "ppc", "ppc32" }, 
-   { CPU_TYPE_POWERPC64, "ppc64", "ppc64" }, 
+   { CPU_TYPE_X86,       "i386",   "x86" }, 
+   { CPU_TYPE_X86_64,    "x86_64", "amd64" }, 
+   { CPU_TYPE_ARM,       "arm",    "arm" }, 
+   { CPU_TYPE_POWERPC,   "ppc",    "ppc32" }, 
+   { CPU_TYPE_POWERPC64, "ppc64",  "ppc64" }, 
 };
 static int valid_archs_count = sizeof(valid_archs)/sizeof(valid_archs[0]);
 
@@ -139,7 +138,9 @@ static int fat_has_cputype(struct fat_header *fh, cpu_type_t cputype)
 }
 
 /* Examine the client and work out which arch it is for */
-static const char *select_arch(const char *clientname, cpu_type_t default_cputype, const char *default_arch)
+static const char *select_arch(
+      const char *clientname, cpu_type_t default_cputype,
+      const char *default_arch)
 {
    uint8_t buf[4096];
    ssize_t bytes;

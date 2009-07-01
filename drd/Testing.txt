@@ -69,6 +69,8 @@ How to test DRD
        ./configure
        export OMP_NUM_THREADS=4
        make -j2 -s MEMCHECK="$HOME/software/valgrind/vg-in-place --tool=drd --check-stack-var=yes --var-info=yes --quiet" check
+    5. Expected result: 776 tests / 23 expected failures / 147m24s user time
+       on a E8400 CPU @ 3 GHz.
 
 12. Test DRD with Firefox. First build and install Firefox 3:
      drd/scripts/download-and-build-firefox

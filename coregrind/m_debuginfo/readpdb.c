@@ -2117,19 +2117,26 @@ Bool ML_(read_pdb_debug_info)(
              "   ::: mapped_avma is %#lx", mapped_avma);
 
       if (pe_sechdr_avma->Characteristics & IMAGE_SCN_CNT_CODE) {
-         di->have_rx_map = True;
-         if (di->rx_map_avma == 0) {
-            di->rx_map_avma = mapped_avma;
+         /* Ignore uninitialised code sections - if you have
+            incremental linking enabled in Visual Studio then you will
+            get a uninitialised code section called .textbss before
+            the real text section and valgrind will compute the wrong
+            avma value and hence the wrong bias. */
+         if (!(pe_sechdr_avma->Characteristics & IMAGE_SCN_CNT_UNINITIALIZED_DATA)) {
+            di->have_rx_map = True;
+            if (di->rx_map_avma == 0) {
+               di->rx_map_avma = mapped_avma;
+            }
+            if (di->rx_map_size==0) {
+               di->rx_map_foff = pe_sechdr_avma->PointerToRawData;
+            }
+            di->text_present = True;
+            if (di->text_avma==0) {
+               di->text_avma = mapped_avma;
+            }
+            di->text_size   += pe_sechdr_avma->Misc.VirtualSize;
+            di->rx_map_size += pe_sechdr_avma->Misc.VirtualSize;
          }
-         if (di->rx_map_size==0) {
-            di->rx_map_foff = pe_sechdr_avma->PointerToRawData;
-         }
-         di->text_present = True;
-         if (di->text_avma==0) {
-            di->text_avma = mapped_avma;
-         }
-         di->text_size   += pe_sechdr_avma->Misc.VirtualSize;
-         di->rx_map_size += pe_sechdr_avma->Misc.VirtualSize;
       }
       else if (pe_sechdr_avma->Characteristics 
                & IMAGE_SCN_CNT_INITIALIZED_DATA) {

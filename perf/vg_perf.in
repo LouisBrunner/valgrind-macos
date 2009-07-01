@@ -29,11 +29,6 @@
 #----------------------------------------------------------------------------
 # usage: see usage message.
 #
-# The easiest way is to run all tests in valgrind/ with (assuming you installed
-# in $PREFIX):
-#
-#   perl perf/vg_perf --all
-#
 # You can specify individual files to test, or whole directories, or both.
 # Directories are traversed recursively, except for ones named, for example, 
 # CVS/ or docs/.
@@ -61,7 +56,6 @@ usage: vg_perf [options] [files or dirs]
 
   options for the user, with defaults in [ ], are:
     -h --help             show this message
-    --all                 run all tests under this directory
     --reps=<n>            number of repeats for each program [1]
     --tools=<t1,t2,t3>    tools to run [Nulgrind and Memcheck]
     --vg                  Valgrind(s) to measure (can be specified multiple
@@ -131,14 +125,11 @@ sub add_vgdir($)
 
 sub process_command_line() 
 {
-    my $alldirs = 0;
     my @fs;
     
     for my $arg (@ARGV) {
         if ($arg =~ /^-/) {
-            if      ($arg =~ /^--all$/) {
-                $alldirs = 1;
-            } elsif ($arg =~ /^--reps=(\d+)$/) {
+            if ($arg =~ /^--reps=(\d+)$/) {
                 $n_reps = $1;
                 if ($n_reps < 1) { die "bad --reps value: $n_reps\n"; }
             } elsif ($arg =~ /^--vg=(.+)$/) {
@@ -157,13 +148,6 @@ sub process_command_line()
     # If no --vg options were specified, use the current tree.
     if (0 == @vgdirs) {
         add_vgdir($tests_dir);
-    }
-
-    if ($alldirs) {
-        @fs = ();
-        foreach my $f (glob "*") {
-            push(@fs, $f) if (-d $f);
-        }
     }
 
     (0 != @fs) or die "No test files or directories specified\n";

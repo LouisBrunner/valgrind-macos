@@ -276,7 +276,7 @@ Context* CLG_(get_cxt)(fn_node** fn)
 
 /**
  * Change execution context by calling a new function from current context
- *
+ * Pushing 0x0 specifies a marker for a signal handler entry
  */
 void CLG_(push_cxt)(fn_node* fn)
 {
@@ -294,7 +294,7 @@ void CLG_(push_cxt)(fn_node* fn)
   cs->entry[cs->sp].cxt = CLG_(current_state).cxt;
   cs->entry[cs->sp].fn_sp = CLG_(current_fn_stack).top - CLG_(current_fn_stack).bottom;
 
-  if (*(CLG_(current_fn_stack).top) == fn) return;
+  if (fn && (*(CLG_(current_fn_stack).top) == fn)) return;
   if (fn && (fn->group>0) &&
       ((*(CLG_(current_fn_stack).top))->group == fn->group)) return;
 
@@ -318,11 +318,10 @@ void CLG_(push_cxt)(fn_node* fn)
     CLG_(current_fn_stack).size = new_size;
   }
 
-  if (*(CLG_(current_fn_stack).top) == 0) {
+  if (fn && (*(CLG_(current_fn_stack).top) == 0)) {
     UInt *pactive;
 
     /* this is first function: increment its active count */
-    CLG_ASSERT(fn != 0);
     pactive = CLG_(get_fn_entry)(fn->number);
     (*pactive)++;
   }

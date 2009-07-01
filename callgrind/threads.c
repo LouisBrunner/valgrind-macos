@@ -208,17 +208,16 @@ void CLG_(pre_signal)(ThreadId tid, Int sigNum, Bool alt_stack)
     /* save current execution state */
     exec_state_save();
 
-    /* setup current state for a spontaneous call */
-    CLG_(init_exec_state)( &CLG_(current_state) );
-    CLG_(push_cxt)(0);
-
     /* setup new cxtinfo struct for this signal handler */
     es = push_exec_state(sigNum);
-    CLG_(init_cost)( CLG_(sets).full, es->cost);
+    // because of this, below call to init_exec_state will zero es->cost
     CLG_(current_state).cost = es->cost;
     es->call_stack_bottom = CLG_(current_call_stack).sp;
 
+    /* setup current state for a spontaneous call */
+    CLG_(init_exec_state)( &CLG_(current_state) );
     CLG_(current_state).sig = sigNum;
+    CLG_(push_cxt)(0);
 }
 
 /* Run post-signal if the stackpointer for call stack is at
@@ -418,6 +417,7 @@ exec_state* exec_state_save(void)
   es->jmps_passed = CLG_(current_state).jmps_passed;
   es->bbcc        = CLG_(current_state).bbcc;
   es->nonskipped  = CLG_(current_state).nonskipped;
+  CLG_ASSERT(es->cost == CLG_(current_state).cost);
 
   CLG_DEBUGIF(1) {
     CLG_DEBUG(1, "  cxtinfo_save(sig %d): collect %s, jmps_passed %d\n",

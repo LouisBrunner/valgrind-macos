@@ -12,13 +12,17 @@ opcontrol --stop ; opcontrol --dump
 
 # produce a flat profile
 opreport --merge=tgid --symbols -x \
-    /home/sewardj/VgTRUNK/hgdev/Inst/lib/valgrind/x86-linux/helgrind \
+    /home/sewardj/VgTRUNK/atomk/Inst/lib/valgrind/helgrind-amd64-linux \
     | less
 
 # produce a profile w/ callgraph
 opreport --merge=tgid --callgraph \
-    /home/sewardj/VgTRUNK/hgdev/Inst/lib/valgrind/x86-linux/helgrind \
+    /home/sewardj/VgTRUNK/atomk/Inst/lib/valgrind/helgrind-amd64-linux \
     | less
+
+# print annotated source
+opannotate --merge=tgid --source --include-file=libhb_core.c | less
+
 
 #### notes.
 

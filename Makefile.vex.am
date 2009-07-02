@@ -81,22 +81,24 @@ pub/libvex_guest_offsets.h:
 # it will be regenerated incorrectly, containing the string "exported"
 # instead of the SVN revision number.
 
-BUILT_SOURCES += priv/main/vex_svnversion.h
+BUILT_SOURCES += priv/main_vex_svnversion.h
 
 # Generate it at build time if not present.  Nb: generating a file and
 # putting it in $(srcdir) rather than $(builddir) seems like bad form.  But
 # because this file won't be regenerated post-distribution, then it's more
 # like a non-generated file and so is reasonable to put in $(srcdir).
-priv/main/vex_svnversion.h: version
-	if [ ! -f priv/main/vex_svnversion.h ] ; then \
-	    mv $(top_srcdir)/vex_svnversion.h $(srcdir)/priv/main/; \
+priv/main_vex_svnversion.h: version
+	if [ ! -f priv/main_vex_svnversion.h ] ; then \
+	    mv $(top_srcdir)/vex_svnversion.h \
+	       $(srcdir)/priv/main_vex_svnversion.h; \
 	else \
 	    rm -f $(top_srcdir)/vex_svnversion.h; \
 	fi
 
 # Regenerate it and copy it into the dist tarball at 'make dist' time.
 dist-hook: version
-	mv $(top_srcdir)/vex_svnversion.h $(distdir)/priv/main/
+	mv $(top_srcdir)/vex_svnversion.h \
+	   $(distdir)/priv/main_vex_svnversion.h
 
 # Generate it.
 version:

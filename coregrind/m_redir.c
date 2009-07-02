@@ -879,6 +879,20 @@ void VG_(redir_initialise) ( void )
       (Addr)&VG_(amd64_linux_REDIR_FOR_vtime) 
    );
 
+   /* If we're using memcheck, use these intercepts right from
+      the start, otherwise ld.so makes a lot of noise. */
+   if (0==VG_(strcmp)("Memcheck", VG_(details).name)) {
+
+      static const HChar croakage[]
+        = "Possible fix: install glibc's debuginfo package on this machine.";
+
+      /* this is mandatory - can't sanely continue without it */
+      add_hardwired_spec(
+         "ld-linux-x86-64.so.2", "strlen",
+         (Addr)&VG_(amd64_linux_REDIR_FOR_strlen),
+         croakage
+      );   
+   }
 #  elif defined(VGP_ppc32_linux)
    {
    static const HChar croakage[]

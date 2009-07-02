@@ -168,7 +168,29 @@ VG_(amd64_linux_REDIR_FOR_vtime):
 .LfnE3:
 .size VG_(amd64_linux_REDIR_FOR_vtime), .-.LfnB3
 
-/* A CIE for the above two functions, followed by their FDEs */
+/* There's no particular reason that this needs to be handwritten
+   assembly, but since that's what this file contains, here's a
+   simple strlen implementation (written in C and compiled by gcc.)
+*/
+.global VG_(amd64_linux_REDIR_FOR_strlen)
+.type   VG_(amd64_linux_REDIR_FOR_strlen), @function
+VG_(amd64_linux_REDIR_FOR_strlen):
+.LfnB4:
+	xorl	%eax, %eax
+	cmpb	$0, (%rdi)
+	movq	%rdi, %rdx
+	je	.L41
+.L40:	addq	$1, %rdx
+	cmpb	$0, (%rdx)
+	jne	.L40
+	movq	%rdx, %rax
+	subq	%rdi, %rax
+.L41:	ret
+.LfnE4:
+.size VG_(amd64_linux_REDIR_FOR_strlen), .-VG_(amd64_linux_REDIR_FOR_strlen)
+
+
+/* A CIE for the above three functions, followed by their FDEs */
 	.section .eh_frame,"a",@progbits
 .Lframe1:
         .long   .LEcie1-.LScie1
@@ -206,6 +228,15 @@ VG_(amd64_linux_REDIR_FOR_vtime):
         .uleb128 0x0
         .align 8
 .LEfde3:
+.LSfde4:
+        .long   .LEfde4-.LASfde4
+.LASfde4:
+        .long   .LASfde4-.Lframe1
+        .long   .LfnB4
+        .long   .LfnE4-.LfnB4
+        .uleb128 0x0
+        .align 8
+.LEfde4:
 	.previous
 
 .global VG_(trampoline_stuff_end)

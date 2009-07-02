@@ -66,7 +66,6 @@ extern Char* VG_(x86_linux_REDIR_FOR_index) ( const Char*, Int );
 extern void VG_(amd64_linux_SUBST_FOR_rt_sigreturn);
 extern void VG_(amd64_linux_REDIR_FOR_vgettimeofday);
 extern void VG_(amd64_linux_REDIR_FOR_vtime);
-extern UInt VG_(amd64_linux_REDIR_FOR_strlen)( void* );
 #endif
 
 #if defined(VGP_ppc32_linux)

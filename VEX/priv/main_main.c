@@ -83,7 +83,7 @@ static HChar* show_hwcaps ( VexArch arch, UInt hwcaps );
 const HChar* LibVEX_Version ( void )
 {
 return
-#include "main/vex_svnversion.h"
+#include "main_vex_svnversion.h"
     ;
 }
 

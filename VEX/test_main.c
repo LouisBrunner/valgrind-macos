@@ -436,7 +436,7 @@ static void MC_helperc_value_check4_fail( void ) { }
    This file is part of MemCheck, a heavyweight Valgrind tool for
    detecting memory errors.
 
-   Copyright (C) 2000-2008 Julian Seward 
+   Copyright (C) 2000-2009 Julian Seward 
       jseward@acm.org
 
    This program is free software; you can redistribute it and/or

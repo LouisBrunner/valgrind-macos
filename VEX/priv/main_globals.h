@@ -1,7 +1,7 @@
 
 /*---------------------------------------------------------------*/
 /*---                                                         ---*/
-/*--- This file (libvex_trc_values.h) is                      ---*/
+/*--- This file (main_globals.h) is                           ---*/
 /*--- Copyright (C) OpenWorks LLP.  All rights reserved.      ---*/
 /*---                                                         ---*/
 /*---------------------------------------------------------------*/
@@ -44,50 +44,52 @@
    without prior written permission.
 */
 
-#ifndef __LIBVEX_TRC_VALUES_H
-#define __LIBVEX_TRC_VALUES_H
+#ifndef __VEX_MAIN_GLOBALS_H
+#define __VEX_MAIN_GLOBALS_H
+
+#include "libvex_basictypes.h"
+#include "libvex.h"
 
 
-/* Magic values that the guest state pointer might be set to when
-   returning to the dispatcher.  The only other legitimate value is to
-   point to the start of the thread's VEX guest state.
+/* Global settings for the VEX library.  These are the
+   only library-wide globals. */
 
-   This file may get included in assembly code, so do not put
-   C-specific constructs in it.
+/* Are we started yet? */
+extern Bool vex_initdone;
 
-   These values should be 61 or above so as not to conflict
-   with Valgrind's VG_TRC_ values, which are 60 or below.
-*/
+/* failure exit function */
+__attribute__ ((noreturn))
+extern void (*vex_failure_exit) ( void );
 
-#define VEX_TRC_JMP_TINVAL     61  /* invalidate translations before
-                                      continuing */
-#define VEX_TRC_JMP_NOREDIR    81  /* jump to undirected guest addr */
-#define VEX_TRC_JMP_SIGTRAP    85  /* deliver trap (SIGTRAP) before
-                                      continuing */
-#define VEX_TRC_JMP_SIGSEGV    87  /* deliver segv (SIGSEGV) before
-                                      continuing */
-#define VEX_TRC_JMP_SIGBUS     93  /* deliver SIGBUS before continuing */
+/* logging output function */
+extern void (*vex_log_bytes) ( HChar*, Int nbytes );
 
-#define VEX_TRC_JMP_EMWARN     63  /* deliver emulation warning before
-                                      continuing */
-#define VEX_TRC_JMP_EMFAIL     83  /* emulation fatal error; abort system */
+/* debug paranoia level */
+extern Int vex_debuglevel;
 
-#define VEX_TRC_JMP_CLIENTREQ  65  /* do a client req before continuing */
-#define VEX_TRC_JMP_YIELD      67  /* yield to thread sched 
-                                      before continuing */
-#define VEX_TRC_JMP_NODECODE   69  /* next instruction is not decodable */
-#define VEX_TRC_JMP_MAPFAIL    71  /* address translation failed */
+/* trace flags */
+extern Int vex_traceflags;
 
-#define VEX_TRC_JMP_SYS_SYSCALL  73 /* do syscall before continuing */
-#define VEX_TRC_JMP_SYS_INT32    75 /* do syscall before continuing */
-#define VEX_TRC_JMP_SYS_INT128   77 /* do syscall before continuing */
-#define VEX_TRC_JMP_SYS_INT129   89 /* do syscall before continuing */
-#define VEX_TRC_JMP_SYS_INT130   91 /* do syscall before continuing */
+/* Are we supporting valgrind checking? */
+extern Bool vex_valgrind_support;
 
-#define VEX_TRC_JMP_SYS_SYSENTER 79 /* do syscall before continuing */
+/* Optimiser/front-end control */
+extern VexControl vex_control;
 
-#endif /* ndef __LIBVEX_TRC_VALUES_H */
+
+/* vex_traceflags values */
+#define VEX_TRACE_FE     (1 << 7)  /* show conversion into IR */
+#define VEX_TRACE_OPT1   (1 << 6)  /* show after initial opt */
+#define VEX_TRACE_INST   (1 << 5)  /* show after instrumentation */
+#define VEX_TRACE_OPT2   (1 << 4)  /* show after second opt */
+#define VEX_TRACE_TREES  (1 << 3)  /* show after tree building */
+#define VEX_TRACE_VCODE  (1 << 2)  /* show selected insns */
+#define VEX_TRACE_RCODE  (1 << 1)  /* show after reg-alloc */
+#define VEX_TRACE_ASM    (1 << 0)  /* show final assembly */
+
+
+#endif /* ndef __VEX_MAIN_GLOBALS_H */
 
 /*---------------------------------------------------------------*/
-/*---                                     libvex_trc_values.h ---*/
+/*--- end                                      main_globals.h ---*/
 /*---------------------------------------------------------------*/

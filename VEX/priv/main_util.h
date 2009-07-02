@@ -1,7 +1,7 @@
 
 /*---------------------------------------------------------------*/
 /*---                                                         ---*/
-/*--- This file (libvex_trc_values.h) is                      ---*/
+/*--- This file (main_util.h) is                              ---*/
 /*--- Copyright (C) OpenWorks LLP.  All rights reserved.      ---*/
 /*---                                                         ---*/
 /*---------------------------------------------------------------*/
@@ -44,50 +44,69 @@
    without prior written permission.
 */
 
-#ifndef __LIBVEX_TRC_VALUES_H
-#define __LIBVEX_TRC_VALUES_H
+#ifndef __VEX_MAIN_UTIL_H
+#define __VEX_MAIN_UTIL_H
+
+#include "libvex_basictypes.h"
 
 
-/* Magic values that the guest state pointer might be set to when
-   returning to the dispatcher.  The only other legitimate value is to
-   point to the start of the thread's VEX guest state.
+/* Misc. */
 
-   This file may get included in assembly code, so do not put
-   C-specific constructs in it.
+#define NULL ((void*)0)
 
-   These values should be 61 or above so as not to conflict
-   with Valgrind's VG_TRC_ values, which are 60 or below.
-*/
 
-#define VEX_TRC_JMP_TINVAL     61  /* invalidate translations before
-                                      continuing */
-#define VEX_TRC_JMP_NOREDIR    81  /* jump to undirected guest addr */
-#define VEX_TRC_JMP_SIGTRAP    85  /* deliver trap (SIGTRAP) before
-                                      continuing */
-#define VEX_TRC_JMP_SIGSEGV    87  /* deliver segv (SIGSEGV) before
-                                      continuing */
-#define VEX_TRC_JMP_SIGBUS     93  /* deliver SIGBUS before continuing */
+/* Stuff for panicking and assertion. */
 
-#define VEX_TRC_JMP_EMWARN     63  /* deliver emulation warning before
-                                      continuing */
-#define VEX_TRC_JMP_EMFAIL     83  /* emulation fatal error; abort system */
+#define VG__STRING(__str)  #__str
 
-#define VEX_TRC_JMP_CLIENTREQ  65  /* do a client req before continuing */
-#define VEX_TRC_JMP_YIELD      67  /* yield to thread sched 
-                                      before continuing */
-#define VEX_TRC_JMP_NODECODE   69  /* next instruction is not decodable */
-#define VEX_TRC_JMP_MAPFAIL    71  /* address translation failed */
+#define vassert(expr)                                           \
+  ((void) ((expr) ? 0 :                                         \
+           (vex_assert_fail (VG__STRING(expr),                  \
+                             __FILE__, __LINE__,                \
+                             __PRETTY_FUNCTION__), 0)))
 
-#define VEX_TRC_JMP_SYS_SYSCALL  73 /* do syscall before continuing */
-#define VEX_TRC_JMP_SYS_INT32    75 /* do syscall before continuing */
-#define VEX_TRC_JMP_SYS_INT128   77 /* do syscall before continuing */
-#define VEX_TRC_JMP_SYS_INT129   89 /* do syscall before continuing */
-#define VEX_TRC_JMP_SYS_INT130   91 /* do syscall before continuing */
+__attribute__ ((__noreturn__))
+extern void vex_assert_fail ( const HChar* expr, const HChar* file,
+                              Int line, const HChar* fn );
+__attribute__ ((__noreturn__))
+extern void vpanic ( HChar* str );
 
-#define VEX_TRC_JMP_SYS_SYSENTER 79 /* do syscall before continuing */
 
-#endif /* ndef __LIBVEX_TRC_VALUES_H */
+/* Printing */
+
+__attribute__ ((format (printf, 1, 2)))
+extern UInt vex_printf ( HChar *format, ... );
+
+__attribute__ ((format (printf, 2, 3)))
+extern UInt vex_sprintf ( HChar* buf, HChar *format, ... );
+
+
+/* String ops */
+
+extern Bool vex_streq ( const HChar* s1, const HChar* s2 );
+
+
+/* Storage management: clear the area, and allocate from it. */
+
+/* By default allocation occurs in the temporary area.  However, it is
+   possible to switch to permanent area allocation if that's what you
+   want.  Permanent area allocation is very limited, tho. */
+
+typedef
+   enum {
+      VexAllocModeTEMP, 
+      VexAllocModePERM 
+   }
+   VexAllocMode;
+
+extern void         vexSetAllocMode ( VexAllocMode );
+extern VexAllocMode vexGetAllocMode ( void );
+extern void         vexAllocSanityCheck ( void );
+
+extern void vexSetAllocModeTEMP_and_clear ( void );
+
+#endif /* ndef __VEX_MAIN_UTIL_H */
 
 /*---------------------------------------------------------------*/
-/*---                                     libvex_trc_values.h ---*/
+/*---                                             main_util.h ---*/
 /*---------------------------------------------------------------*/

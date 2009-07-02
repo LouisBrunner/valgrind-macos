@@ -1,7 +1,7 @@
 
 /*---------------------------------------------------------------*/
 /*---                                                         ---*/
-/*--- This file (libvex_trc_values.h) is                      ---*/
+/*--- This file (main_globals.c) is                           ---*/
 /*--- Copyright (C) OpenWorks LLP.  All rights reserved.      ---*/
 /*---                                                         ---*/
 /*---------------------------------------------------------------*/
@@ -44,50 +44,39 @@
    without prior written permission.
 */
 
-#ifndef __LIBVEX_TRC_VALUES_H
-#define __LIBVEX_TRC_VALUES_H
+#include "libvex_basictypes.h"
+
+#include "main_util.h"
+#include "main_globals.h"
 
 
-/* Magic values that the guest state pointer might be set to when
-   returning to the dispatcher.  The only other legitimate value is to
-   point to the start of the thread's VEX guest state.
+/* Global settings for the VEX library.  These are the
+   only library-wide globals. */
 
-   This file may get included in assembly code, so do not put
-   C-specific constructs in it.
+/* Are we started yet? */
+Bool vex_initdone = False;
 
-   These values should be 61 or above so as not to conflict
-   with Valgrind's VG_TRC_ values, which are 60 or below.
-*/
+/* failure exit function */
+__attribute__ ((noreturn))
+void (*vex_failure_exit) ( void ) = NULL;
 
-#define VEX_TRC_JMP_TINVAL     61  /* invalidate translations before
-                                      continuing */
-#define VEX_TRC_JMP_NOREDIR    81  /* jump to undirected guest addr */
-#define VEX_TRC_JMP_SIGTRAP    85  /* deliver trap (SIGTRAP) before
-                                      continuing */
-#define VEX_TRC_JMP_SIGSEGV    87  /* deliver segv (SIGSEGV) before
-                                      continuing */
-#define VEX_TRC_JMP_SIGBUS     93  /* deliver SIGBUS before continuing */
+/* logging output function */
+void (*vex_log_bytes) ( HChar*, Int nbytes ) = NULL;
 
-#define VEX_TRC_JMP_EMWARN     63  /* deliver emulation warning before
-                                      continuing */
-#define VEX_TRC_JMP_EMFAIL     83  /* emulation fatal error; abort system */
+/* debug paranoia level */
+Int vex_debuglevel = 0;
 
-#define VEX_TRC_JMP_CLIENTREQ  65  /* do a client req before continuing */
-#define VEX_TRC_JMP_YIELD      67  /* yield to thread sched 
-                                      before continuing */
-#define VEX_TRC_JMP_NODECODE   69  /* next instruction is not decodable */
-#define VEX_TRC_JMP_MAPFAIL    71  /* address translation failed */
+/* trace flags */
+Int vex_traceflags = 0;
 
-#define VEX_TRC_JMP_SYS_SYSCALL  73 /* do syscall before continuing */
-#define VEX_TRC_JMP_SYS_INT32    75 /* do syscall before continuing */
-#define VEX_TRC_JMP_SYS_INT128   77 /* do syscall before continuing */
-#define VEX_TRC_JMP_SYS_INT129   89 /* do syscall before continuing */
-#define VEX_TRC_JMP_SYS_INT130   91 /* do syscall before continuing */
+/* Are we supporting valgrind checking? */
+Bool vex_valgrind_support = False;
 
-#define VEX_TRC_JMP_SYS_SYSENTER 79 /* do syscall before continuing */
+/* Max # guest insns per bb */
+VexControl vex_control = { 0,0,False,0,0,0 };
 
-#endif /* ndef __LIBVEX_TRC_VALUES_H */
+
 
 /*---------------------------------------------------------------*/
-/*---                                     libvex_trc_values.h ---*/
+/*--- end                                      main_globals.c ---*/
 /*---------------------------------------------------------------*/

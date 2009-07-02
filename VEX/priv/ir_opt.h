@@ -1,7 +1,7 @@
 
 /*---------------------------------------------------------------*/
 /*---                                                         ---*/
-/*--- This file (libvex_trc_values.h) is                      ---*/
+/*--- This file (ir_opt.h) is                                 ---*/
 /*--- Copyright (C) OpenWorks LLP.  All rights reserved.      ---*/
 /*---                                                         ---*/
 /*---------------------------------------------------------------*/
@@ -44,50 +44,36 @@
    without prior written permission.
 */
 
-#ifndef __LIBVEX_TRC_VALUES_H
-#define __LIBVEX_TRC_VALUES_H
+#ifndef __VEX_IR_OPT_H
+#define __VEX_IR_OPT_H
 
+#include "libvex_basictypes.h"
+#include "libvex_ir.h"
+#include "libvex.h"
 
-/* Magic values that the guest state pointer might be set to when
-   returning to the dispatcher.  The only other legitimate value is to
-   point to the start of the thread's VEX guest state.
+/* Top level optimiser entry point.  Returns a new BB.  Operates
+   under the control of the global "vex_control" struct. */
+extern 
+IRSB* do_iropt_BB ( IRSB* bb,
+                    IRExpr* (*specHelper) (HChar*, IRExpr**),
+                    Bool (*preciseMemExnsFn)(Int,Int),
+                    Addr64 guest_addr );
 
-   This file may get included in assembly code, so do not put
-   C-specific constructs in it.
+/* Do a constant folding/propagation pass. */
+extern
+IRSB* cprop_BB ( IRSB* );
 
-   These values should be 61 or above so as not to conflict
-   with Valgrind's VG_TRC_ values, which are 60 or below.
-*/
+/* Do a dead-code removal pass.  bb is destructively modified. */
+extern
+void do_deadcode_BB ( IRSB* bb );
 
-#define VEX_TRC_JMP_TINVAL     61  /* invalidate translations before
-                                      continuing */
-#define VEX_TRC_JMP_NOREDIR    81  /* jump to undirected guest addr */
-#define VEX_TRC_JMP_SIGTRAP    85  /* deliver trap (SIGTRAP) before
-                                      continuing */
-#define VEX_TRC_JMP_SIGSEGV    87  /* deliver segv (SIGSEGV) before
-                                      continuing */
-#define VEX_TRC_JMP_SIGBUS     93  /* deliver SIGBUS before continuing */
+/* The tree-builder.  Make (approximately) maximal safe trees.  bb is
+   destructively modified. */
+extern
+void ado_treebuild_BB ( IRSB* bb );
 
-#define VEX_TRC_JMP_EMWARN     63  /* deliver emulation warning before
-                                      continuing */
-#define VEX_TRC_JMP_EMFAIL     83  /* emulation fatal error; abort system */
-
-#define VEX_TRC_JMP_CLIENTREQ  65  /* do a client req before continuing */
-#define VEX_TRC_JMP_YIELD      67  /* yield to thread sched 
-                                      before continuing */
-#define VEX_TRC_JMP_NODECODE   69  /* next instruction is not decodable */
-#define VEX_TRC_JMP_MAPFAIL    71  /* address translation failed */
-
-#define VEX_TRC_JMP_SYS_SYSCALL  73 /* do syscall before continuing */
-#define VEX_TRC_JMP_SYS_INT32    75 /* do syscall before continuing */
-#define VEX_TRC_JMP_SYS_INT128   77 /* do syscall before continuing */
-#define VEX_TRC_JMP_SYS_INT129   89 /* do syscall before continuing */
-#define VEX_TRC_JMP_SYS_INT130   91 /* do syscall before continuing */
-
-#define VEX_TRC_JMP_SYS_SYSENTER 79 /* do syscall before continuing */
-
-#endif /* ndef __LIBVEX_TRC_VALUES_H */
+#endif /* ndef __VEX_IR_OPT_H */
 
 /*---------------------------------------------------------------*/
-/*---                                     libvex_trc_values.h ---*/
+/*--- end                                            ir_opt.h ---*/
 /*---------------------------------------------------------------*/

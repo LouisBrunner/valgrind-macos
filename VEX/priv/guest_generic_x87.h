@@ -1,7 +1,7 @@
 
 /*---------------------------------------------------------------*/
 /*---                                                         ---*/
-/*--- This file (libvex_trc_values.h) is                      ---*/
+/*--- This file (guest_generic_x87.h) is                      ---*/
 /*--- Copyright (C) OpenWorks LLP.  All rights reserved.      ---*/
 /*---                                                         ---*/
 /*---------------------------------------------------------------*/
@@ -44,50 +44,74 @@
    without prior written permission.
 */
 
-#ifndef __LIBVEX_TRC_VALUES_H
-#define __LIBVEX_TRC_VALUES_H
-
-
-/* Magic values that the guest state pointer might be set to when
-   returning to the dispatcher.  The only other legitimate value is to
-   point to the start of the thread's VEX guest state.
-
-   This file may get included in assembly code, so do not put
-   C-specific constructs in it.
-
-   These values should be 61 or above so as not to conflict
-   with Valgrind's VG_TRC_ values, which are 60 or below.
+/* This file contains functions for doing some x87-specific
+   operations.  Both the amd64 and x86 front ends (guests) indirectly
+   call these functions via guest helper calls.  By putting them here,
+   code duplication is avoided.  Some of these functions are tricky
+   and hard to verify, so there is much to be said for only having one
+   copy thereof.
 */
 
-#define VEX_TRC_JMP_TINVAL     61  /* invalidate translations before
-                                      continuing */
-#define VEX_TRC_JMP_NOREDIR    81  /* jump to undirected guest addr */
-#define VEX_TRC_JMP_SIGTRAP    85  /* deliver trap (SIGTRAP) before
-                                      continuing */
-#define VEX_TRC_JMP_SIGSEGV    87  /* deliver segv (SIGSEGV) before
-                                      continuing */
-#define VEX_TRC_JMP_SIGBUS     93  /* deliver SIGBUS before continuing */
+#ifndef __VEX_GUEST_GENERIC_X87_H
+#define __VEX_GUEST_GENERIC_X87_H
 
-#define VEX_TRC_JMP_EMWARN     63  /* deliver emulation warning before
-                                      continuing */
-#define VEX_TRC_JMP_EMFAIL     83  /* emulation fatal error; abort system */
+#include "libvex_basictypes.h"
 
-#define VEX_TRC_JMP_CLIENTREQ  65  /* do a client req before continuing */
-#define VEX_TRC_JMP_YIELD      67  /* yield to thread sched 
-                                      before continuing */
-#define VEX_TRC_JMP_NODECODE   69  /* next instruction is not decodable */
-#define VEX_TRC_JMP_MAPFAIL    71  /* address translation failed */
 
-#define VEX_TRC_JMP_SYS_SYSCALL  73 /* do syscall before continuing */
-#define VEX_TRC_JMP_SYS_INT32    75 /* do syscall before continuing */
-#define VEX_TRC_JMP_SYS_INT128   77 /* do syscall before continuing */
-#define VEX_TRC_JMP_SYS_INT129   89 /* do syscall before continuing */
-#define VEX_TRC_JMP_SYS_INT130   91 /* do syscall before continuing */
+/* Convert an IEEE754 double (64-bit) into an x87 extended double
+   (80-bit), mimicing the hardware fairly closely.  Both numbers are
+   stored little-endian.  Limitations, all of which could be fixed,
+   given some level of hassle:
 
-#define VEX_TRC_JMP_SYS_SYSENTER 79 /* do syscall before continuing */
+   * Identity of NaNs is not preserved.
 
-#endif /* ndef __LIBVEX_TRC_VALUES_H */
+   See comments in the code for more details.
+*/
+extern
+void convert_f64le_to_f80le ( /*IN*/UChar* f64, /*OUT*/UChar* f80 );
+
+
+/* Convert an x87 extended double (80-bit) into an IEEE 754 double
+   (64-bit), mimicking the hardware fairly closely.  Both numbers are
+   stored little-endian.  Limitations, both of which could be fixed,
+   given some level of hassle:
+
+   * Rounding following truncation could be a bit better.
+
+   * Identity of NaNs is not preserved.
+
+   See comments in the code for more details.
+*/
+extern
+void convert_f80le_to_f64le ( /*IN*/UChar* f80, /*OUT*/UChar* f64 );
+
+
+/* Layout of the real x87 state. */
+typedef
+   struct {
+      UShort env[14];
+      UChar  reg[80];
+   }
+   Fpu_State;
+
+/* Offsets, in 16-bit ints, into the FPU environment (env) area. */
+#define FP_ENV_CTRL   0
+#define FP_ENV_STAT   2
+#define FP_ENV_TAG    4
+#define FP_ENV_IP     6 /* and 7 */
+#define FP_ENV_CS     8
+#define FP_ENV_OPOFF  10 /* and 11 */
+#define FP_ENV_OPSEL  12
+#define FP_REG(ii)    (10*(7-(ii)))
+
+
+/* Do the computations for x86/amd64 FXTRACT */
+extern ULong x86amd64g_calculate_FXTRACT ( ULong arg, HWord getExp );
+
+
+
+#endif /* ndef __VEX_GUEST_GENERIC_X87_H */
 
 /*---------------------------------------------------------------*/
-/*---                                     libvex_trc_values.h ---*/
+/*--- end                                 guest_generic_x87.h ---*/
 /*---------------------------------------------------------------*/

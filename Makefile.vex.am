@@ -28,22 +28,22 @@ pkginclude_HEADERS = \
 	pub/libvex_trc_values.h
 
 noinst_HEADERS = \
-	priv/main/vex_globals.h \
-	priv/main/vex_util.h \
-	priv/ir/irmatch.h \
-	priv/ir/iropt.h \
-	priv/guest-generic/bb_to_IR.h \
-	priv/guest-generic/g_generic_x87.h \
-	priv/guest-x86/gdefs.h \
-	priv/guest-amd64/gdefs.h \
-	priv/guest-ppc/gdefs.h \
-	priv/guest-arm/gdefs.h \
-	priv/host-generic/h_generic_regs.h \
-	priv/host-generic/h_generic_simd64.h \
-	priv/host-x86/hdefs.h \
-	priv/host-amd64/hdefs.h \
-	priv/host-ppc/hdefs.h \
-	priv/host-arm/hdefs.h
+	priv/main_globals.h \
+	priv/main_util.h \
+	priv/ir_match.h \
+	priv/ir_opt.h \
+	priv/guest_generic_bb_to_IR.h \
+	priv/guest_generic_x87.h \
+	priv/guest_x86_defs.h \
+	priv/guest_amd64_defs.h \
+	priv/guest_ppc_defs.h \
+	priv/guest_arm_defs.h \
+	priv/host_generic_regs.h \
+	priv/host_generic_simd64.h \
+	priv/host_x86_defs.h \
+	priv/host_amd64_defs.h \
+	priv/host_ppc_defs.h \
+	priv/host_arm_defs.h
 
 BUILT_SOURCES = pub/libvex_guest_offsets.h
 CLEANFILES    = pub/libvex_guest_offsets.h
@@ -114,140 +114,34 @@ if VGCONF_HAVE_PLATFORM_SEC
 pkglib_LIBRARIES += libvex-@VGCONF_ARCH_SEC@-@VGCONF_OS@.a
 endif
 
-# XXX: automake cannot handle having multiple files of the same name in
-# different directories.  The plan is to change the Vex filenames to avoid
-# this.  In the meantime, we use some hacky rules to copy the like-named
-# files to differently-named files.
-
 LIBVEX_SOURCES_COMMON = \
-	priv/main/vex_globals.c \
-	priv/main/vex_main.c \
-	priv/main/vex_util.c \
-	priv/ir/irdefs.c \
-	priv/ir/irmatch.c \
-	priv/ir/iropt.c \
-	priv/guest-generic/bb_to_IR.c \
-	priv/guest-generic/g_generic_x87.c \
-	priv/guest-x86/ghelpers-x86.c \
-	priv/guest-x86/toIR-x86.c \
-	priv/guest-amd64/ghelpers-amd64.c \
-	priv/guest-amd64/toIR-amd64.c \
-	priv/guest-ppc/ghelpers-ppc.c \
-	priv/guest-ppc/toIR-ppc.c \
-	priv/guest-arm/ghelpers-arm.c \
-	priv/guest-arm/toIR-arm.c \
-	priv/host-generic/h_generic_regs.c \
-	priv/host-generic/h_generic_simd64.c \
-	priv/host-generic/reg_alloc2.c \
-	priv/host-x86/hdefs-x86.c \
-	priv/host-x86/isel-x86.c \
-	priv/host-amd64/hdefs-amd64.c \
-	priv/host-amd64/isel-amd64.c \
-	priv/host-ppc/hdefs-ppc.c \
-	priv/host-ppc/isel-ppc.c \
-	priv/host-arm/hdefs-arm.c \
-	priv/host-arm/isel-arm.c
-
-# XXX: temporary
-TMP_FILES = \
-	priv/guest-x86/ghelpers-x86.c \
-	priv/guest-amd64/ghelpers-amd64.c \
-	priv/guest-ppc/ghelpers-ppc.c \
-	priv/guest-arm/ghelpers-arm.c \
-	\
-	priv/guest-x86/toIR-x86.c \
-	priv/guest-amd64/toIR-amd64.c \
-	priv/guest-ppc/toIR-ppc.c \
-	priv/guest-arm/toIR-arm.c \
-	\
-	priv/host-x86/hdefs-x86.c \
-	priv/host-amd64/hdefs-amd64.c \
-	priv/host-ppc/hdefs-ppc.c \
-	priv/host-arm/hdefs-arm.c \
-	\
-	priv/host-x86/isel-x86.c \
-	priv/host-amd64/isel-amd64.c \
-	priv/host-ppc/isel-ppc.c \
-	priv/host-arm/isel-arm.c
-
-BUILT_SOURCES += $(TMP_FILES)
-CLEANFILES    += $(TMP_FILES)
-
-# XXX: temporary
-EXTRA_DIST += \
-	priv/guest-x86/ghelpers.c \
-	priv/guest-amd64/ghelpers.c \
-	priv/guest-ppc/ghelpers.c \
-	priv/guest-arm/ghelpers.c \
-	\
-	priv/guest-x86/toIR.c \
-	priv/guest-amd64/toIR.c \
-	priv/guest-ppc/toIR.c \
-	priv/guest-arm/toIR.c \
-	\
-	priv/host-x86/hdefs.c \
-	priv/host-amd64/hdefs.c \
-	priv/host-ppc/hdefs.c \
-	priv/host-arm/hdefs.c \
-	\
-	priv/host-x86/isel.c \
-	priv/host-amd64/isel.c \
-	priv/host-ppc/isel.c \
-	priv/host-arm/isel.c
-
-
-# XXX: ghelpers
-priv/guest-x86/ghelpers-x86.c: priv/guest-x86/ghelpers.c
-	cp priv/guest-x86/ghelpers.c priv/guest-x86/ghelpers-x86.c
-
-priv/guest-amd64/ghelpers-amd64.c: priv/guest-amd64/ghelpers.c
-	cp priv/guest-amd64/ghelpers.c priv/guest-amd64/ghelpers-amd64.c
-
-priv/guest-ppc/ghelpers-ppc.c: priv/guest-ppc/ghelpers.c
-	cp priv/guest-ppc/ghelpers.c priv/guest-ppc/ghelpers-ppc.c
-
-priv/guest-arm/ghelpers-arm.c: priv/guest-arm/ghelpers.c
-	cp priv/guest-arm/ghelpers.c priv/guest-arm/ghelpers-arm.c
-
-# XXX: toIR
-priv/guest-x86/toIR-x86.c: priv/guest-x86/toIR.c
-	cp priv/guest-x86/toIR.c priv/guest-x86/toIR-x86.c
-
-priv/guest-amd64/toIR-amd64.c: priv/guest-amd64/toIR.c
-	cp priv/guest-amd64/toIR.c priv/guest-amd64/toIR-amd64.c
-
-priv/guest-ppc/toIR-ppc.c: priv/guest-ppc/toIR.c
-	cp priv/guest-ppc/toIR.c priv/guest-ppc/toIR-ppc.c
-
-priv/guest-arm/toIR-arm.c: priv/guest-arm/toIR.c
-	cp priv/guest-arm/toIR.c priv/guest-arm/toIR-arm.c
-
-# XXX: hdefs
-priv/host-x86/hdefs-x86.c: priv/host-x86/hdefs.c
-	cp priv/host-x86/hdefs.c priv/host-x86/hdefs-x86.c
-
-priv/host-amd64/hdefs-amd64.c: priv/host-amd64/hdefs.c
-	cp priv/host-amd64/hdefs.c priv/host-amd64/hdefs-amd64.c
-
-priv/host-ppc/hdefs-ppc.c: priv/host-ppc/hdefs.c
-	cp priv/host-ppc/hdefs.c priv/host-ppc/hdefs-ppc.c
-
-priv/host-arm/hdefs-arm.c: priv/host-arm/hdefs.c
-	cp priv/host-arm/hdefs.c priv/host-arm/hdefs-arm.c
-
-# XXX: isel
-priv/host-x86/isel-x86.c: priv/host-x86/isel.c
-	cp priv/host-x86/isel.c priv/host-x86/isel-x86.c
-
-priv/host-amd64/isel-amd64.c: priv/host-amd64/isel.c
-	cp priv/host-amd64/isel.c priv/host-amd64/isel-amd64.c
-
-priv/host-ppc/isel-ppc.c: priv/host-ppc/isel.c
-	cp priv/host-ppc/isel.c priv/host-ppc/isel-ppc.c
-
-priv/host-arm/isel-arm.c: priv/host-arm/isel.c
-	cp priv/host-arm/isel.c priv/host-arm/isel-arm.c
-
+	priv/main_globals.c \
+	priv/main_main.c \
+	priv/main_util.c \
+	priv/ir_defs.c \
+	priv/ir_match.c \
+	priv/ir_opt.c \
+	priv/guest_generic_bb_to_IR.c \
+	priv/guest_generic_x87.c \
+	priv/guest_x86_helpers.c \
+	priv/guest_x86_toIR.c \
+	priv/guest_amd64_helpers.c \
+	priv/guest_amd64_toIR.c \
+	priv/guest_ppc_helpers.c \
+	priv/guest_ppc_toIR.c \
+	priv/guest_arm_helpers.c \
+	priv/guest_arm_toIR.c \
+	priv/host_generic_regs.c \
+	priv/host_generic_simd64.c \
+	priv/host_generic_reg_alloc2.c \
+	priv/host_x86_defs.c \
+	priv/host_x86_isel.c \
+	priv/host_amd64_defs.c \
+	priv/host_amd64_isel.c \
+	priv/host_ppc_defs.c \
+	priv/host_ppc_isel.c \
+	priv/host_arm_defs.c \
+	priv/host_arm_isel.c
 
 LIBVEX_CFLAGS = \
 	-Wbad-function-cast \

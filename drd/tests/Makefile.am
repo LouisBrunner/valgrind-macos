@@ -98,6 +98,8 @@ EXTRA_DIST =                                        \
 	pth_broadcast.vgtest                        \
 	pth_cancel_locked.stderr.exp		    \
 	pth_cancel_locked.vgtest		    \
+	pth_cleanup_handler.stderr.exp		    \
+	pth_cleanup_handler.vgtest		    \
 	pth_cond_race.stderr.exp                    \
 	pth_cond_race.vgtest                        \
 	pth_cond_race2.stderr.exp                   \
@@ -228,6 +230,7 @@ check_PROGRAMS =      \
   new_delete          \
   pth_broadcast       \
   pth_cancel_locked   \
+  pth_cleanup_handler \
   pth_cond_race       \
   pth_create_chain    \
   pth_detached        \
@@ -285,6 +288,8 @@ LDADD = -lpthread
 
 monitor_example_SOURCES     = monitor_example.cpp
 new_delete_SOURCES          = new_delete.cpp
+
+pth_cleanup_handler_CFLAGS  = @FLAG_W_NO_EMPTY_BODY@
 
 tsan_unittest_SOURCES       = tsan_unittest.cpp
 tsan_unittest_CXXFLAGS      = $(AM_CXXFLAGS) \

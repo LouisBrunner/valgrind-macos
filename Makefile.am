@@ -89,13 +89,16 @@ perf: check
 # Nb: no need to include any Makefile.am files here, or files included from
 # them, as automake includes them automatically.  Also not COPYING, README
 # or NEWS.
+# We include valgrind.spec as well as valgrind.spec.in to save packagers
+# from having to run configure (bug 188560).
 EXTRA_DIST = \
 	COPYING.DOCS \
 	README_DEVELOPERS \
 	README_PACKAGERS \
 	README_MISSING_SYSCALL_OR_IOCTL \
 	valgrind.pc.in \
-	valgrind.spec.in
+	valgrind.spec.in \
+	valgrind.spec
 
 dist_noinst_SCRIPTS = \
 	vg-in-place

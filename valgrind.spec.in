@@ -6,22 +6,19 @@ Epoch: 1
 License: GPL
 URL: http://www.valgrind.org/
 Group: Development/Debuggers
-Packager: Jeremy Fitzhardinge <jeremy@goop.org>
+Packager: Julian Seward <jseward@acm.org>
 Source: @PACKAGE@-@VERSION@.tar.bz2
 
 Buildroot: %{_tmppath}/%{name}-root
 
 %description 
 
-Valgrind is an award-winning suite of tools for debugging and profiling
-Linux programs. With the tools that come with Valgrind, you can
-automatically detect many memory management and threading bugs, avoiding
-hours of frustrating bug-hunting, making your programs more stable. You can
-also perform detailed profiling, to speed up and reduce memory use of your
-programs.
-
-The Valgrind distribution currently includes five tools: two memory error
-detectors, a thread error detector, a cache profiler and a heap profiler.
+Valgrind is an award-winning instrumentation framework for building dynamic
+analysis tools. There are Valgrind tools that can automatically detect many
+memory management and threading bugs, and profile your programs in detail. You
+can also use Valgrind to build new tools.  Valgrind runs on the following
+platforms: x86/Linux, AMD64/Linux, PPC32/Linux, PPC64/Linux, x86/MacOSX,
+AMD64/MacOSX.
 
 %prep
 %setup -n @PACKAGE@-@VERSION@
@@ -39,7 +36,7 @@ mv $RPM_BUILD_ROOT%{_datadir}/doc/valgrind/* docs.installed/
 
 %files
 %defattr(-,root,root)
-%doc AUTHORS COPYING FAQ.txt INSTALL NEWS README*
+%doc AUTHORS COPYING FAQ.txt NEWS README*
 %doc docs.installed/html/*.html docs.installed/html/images/*.png
 %{_bindir}/*
 %{_includedir}/valgrind

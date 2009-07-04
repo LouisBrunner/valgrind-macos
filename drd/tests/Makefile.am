@@ -208,6 +208,7 @@ EXTRA_DIST =                                        \
 	tc22_exit_w_lock.stderr.exp-64bit           \
 	tc22_exit_w_lock.vgtest                     \
 	tc23_bogus_condwait.stderr.exp              \
+	tc23_bogus_condwait.stderr.exp2             \
 	tc23_bogus_condwait.vgtest                  \
 	tc24_nonzero_sem.stderr.exp                 \
 	tc24_nonzero_sem.vgtest                     \

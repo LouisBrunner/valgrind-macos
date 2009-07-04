@@ -17,6 +17,7 @@ endif
 # to avoid packaging screwups if 'make dist' is run on a machine
 # which failed the BUILD_SSE3_TESTS test in configure.in.
 EXTRA_DIST = \
+	amd64locked.vgtest amd64locked.stdout.exp amd64locked.stderr.exp \
 	bug127521-64.vgtest bug127521-64.stdout.exp bug127521-64.stderr.exp \
 	bug132813-amd64.vgtest bug132813-amd64.stdout.exp \
 	bug132813-amd64.stderr.exp \
@@ -50,6 +51,7 @@ EXTRA_DIST = \
 	slahf-amd64.vgtest
 
 check_PROGRAMS = \
+	amd64locked \
 	bug127521-64 bug132813-amd64 bug132918 \
 	clc \
 	$(INSN_TESTS) \
@@ -80,6 +82,7 @@ AM_CXXFLAGS  += @FLAG_M64@
 AM_CCASFLAGS += @FLAG_M64@
 
 # generic C ones
+amd64locked_CFLAGS	= $(AM_CFLAGS) -O
 bug132918_LDADD		= -lm
 insn_basic_SOURCES	= insn_basic.def
 insn_basic_LDADD	= -lm

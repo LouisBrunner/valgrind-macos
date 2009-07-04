@@ -36,6 +36,8 @@ noinst_HEADERS = leak.h
 
 EXTRA_DIST = \
 	addressable.stderr.exp addressable.stdout.exp addressable.vgtest \
+	atomic_incs.stderr.exp atomic_incs.vgtest \
+	atomic_incs.stdout.exp-32bit atomic_incs.stdout.exp-64bit \
 	badaddrvalue.stderr.exp \
 	badaddrvalue.stdout.exp badaddrvalue.vgtest \
 	badfree-2trace.stderr.exp badfree-2trace.vgtest \
@@ -183,6 +185,7 @@ EXTRA_DIST = \
 
 check_PROGRAMS = \
 	addressable \
+	atomic_incs \
 	badaddrvalue badfree badjump badjump2 \
 	badloop badpoll badrw brk2 buflen_check \
 	clientperm custom_alloc \

@@ -52,6 +52,7 @@ EXTRA_DIST = \
 	smc1.stderr.exp smc1.stdout.exp smc1.vgtest \
 	ssse3_misaligned.stderr.exp ssse3_misaligned.stdout.exp \
 	ssse3_misaligned.vgtest ssse3_misaligned.c \
+	x86locked.vgtest x86locked.stdout.exp x86locked.stderr.exp \
 	yield.stderr.exp yield.stdout.exp yield.disabled
 
 check_PROGRAMS = \
@@ -82,6 +83,7 @@ check_PROGRAMS = \
 	pushpopseg \
 	sbbmisc \
 	smc1 \
+	x86locked \
 	yield
 if BUILD_SSSE3_TESTS
    check_PROGRAMS += ssse3_misaligned
@@ -123,6 +125,7 @@ insn_sse3_SOURCES	= insn_sse3.def
 insn_sse3_LDADD		= -lm
 insn_ssse3_SOURCES	= insn_ssse3.def
 insn_ssse3_LDADD	= -lm
+x86locked_CFLAGS	= $(AM_CFLAGS) -O
 yield_LDADD		= -lpthread
 
 .def.c: $(srcdir)/gen_insn_test.pl

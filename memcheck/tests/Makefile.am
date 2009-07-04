@@ -185,6 +185,7 @@ EXTRA_DIST = \
 
 check_PROGRAMS = \
 	addressable \
+	atomic_incs \
 	badaddrvalue badfree badjump badjump2 \
 	badloop badpoll badrw brk2 buflen_check \
 	clientperm custom_alloc \
@@ -229,10 +230,6 @@ check_PROGRAMS = \
 	xml1 \
 	wrap1 wrap2 wrap3 wrap4 wrap5 wrap6 wrap7 wrap7so.so wrap8 \
 	writev
-
-if VGCONF_ARCHS_INCLUDE_X86
-check_PROGRAMS += atomic_incs
-endif
 
 
 AM_CFLAGS   += $(AM_FLAG_M3264_PRI)

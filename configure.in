@@ -1196,6 +1196,29 @@ if test x$declaration_after_statement = xyes; then
 fi
 
 
+# does this compiler support -Wno-empty-body ?
+
+AC_MSG_CHECKING([if gcc accepts -Wno-empty-body])
+
+safe_CFLAGS=$CFLAGS
+CFLAGS="-Wno-empty-body"
+
+AC_TRY_COMPILE(
+[ ],
+[
+  return 0;
+],
+[
+AC_SUBST([FLAG_W_NO_EMPTY_BODY], [-Wno-empty-body])
+AC_MSG_RESULT([yes])
+],
+[
+AC_SUBST([FLAG_W_NO_EMPTY_BODY], [])
+AC_MSG_RESULT([no])
+])
+CFLAGS=$safe_CFLAGS
+
+
 # does this compiler support -Wno-format-zero-length ?
 
 AC_MSG_CHECKING([if gcc accepts -Wno-format-zero-length])

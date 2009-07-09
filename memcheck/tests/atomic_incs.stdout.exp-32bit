@@ -1,0 +1,7 @@
+parent, pre-fork
+child
+parent, pre-fork
+parent
+FINAL VALUES:  8 bit -74,  16 bit 32694,  32 bit 6913974,  64 bit 0
+PASS
+parent exits

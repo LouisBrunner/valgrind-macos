@@ -3802,31 +3802,91 @@ VALGRIND_PRINTF_BACKTRACE(const char *format, ...)
     _qyy_res;                                                     \
    })
 
-/* Mark a block of memory as having been allocated by a malloc()-like
-   function.  `addr' is the start of the usable block (ie. after any
-   redzone) `rzB' is redzone size if the allocator can apply redzones;
-   use '0' if not.  Adding redzones makes it more likely Valgrind will spot
-   block overruns.  `is_zeroed' indicates if the memory is zeroed, as it is
-   for calloc().  Put it immediately after the point where a block is
-   allocated. 
-   
-   If you're using Memcheck: If you're allocating memory via superblocks,
-   and then handing out small chunks of each superblock, if you don't have
-   redzones on your small blocks, it's worth marking the superblock with
-   VALGRIND_MAKE_MEM_NOACCESS when it's created, so that block overruns are
-   detected.  But if you can put redzones on, it's probably better to not do
-   this, so that messages for small overruns are described in terms of the
-   small block rather than the superblock (but if you have a big overrun
-   that skips over a redzone, you could miss an error this way).  See
-   memcheck/tests/custom_alloc.c for an example.
+/* Several Valgrind tools (Memcheck, Massif, Helgrind, DRD) rely on knowing
+   when heap blocks are allocated in order to give accurate results.  This
+   happens automatically for the standard allocator functions such as
+   malloc(), calloc(), realloc(), memalign(), new, new[], free(), delete,
+   delete[], etc.
 
+   But if your program uses a custom allocator, this doesn't automatically
+   happen, and Valgrind will not do as well.  For example, if you allocate
+   superblocks with mmap() and then allocates chunks of the superblocks, all
+   Valgrind's observations will be at the mmap() level and it won't know that
+   the chunks should be considered separate entities.  In Memcheck's case,
+   that means you probably won't get heap block overrun detection (because
+   there won't be redzones marked as unaddressable) and you definitely won't
+   get any leak detection.
+
+   The following client requests allow a custom allocator to be annotated so
+   that it can be handled accurately by Valgrind.
+
+   VALGRIND_MALLOCLIKE_BLOCK marks a region of memory as having been allocated
+   by a malloc()-like function.  For Memcheck (an illustrative case), this
+   does two things:
+
+   - It records that the block has been allocated.  This means any addresses
+     within the block mentioned in error messages will be
+     identified as belonging to the block.  It also means that if the block
+     isn't freed it will be detected by the leak checker.
+
+   - It marks the block as being addressable and undefined (if 'is_zeroed' is
+     not set), or addressable and defined (if 'is_zeroed' is set).  This
+     controls how accesses to the block by the program are handled.
+   
+   'addr' is the start of the usable block (ie. after any
+   redzone), 'sizeB' is its size.  'rzB' is the redzone size if the allocator
+   can apply redzones -- these are blocks of padding at the start and end of
+   each block.  Adding redzones is recommended as it makes it much more likely
+   Valgrind will spot block overruns.  `is_zeroed' indicates if the memory is
+   zeroed (or filled with another predictable value), as is the case for
+   calloc().
+   
+   VALGRIND_MALLOCLIKE_BLOCK should be put immediately after the point where a
+   heap block -- that will be used by the client program -- is allocated.
+   It's best to put it at the outermost level of the allocator if possible;
+   for example, if you have a function my_alloc() which calls
+   internal_alloc(), and the client request is put inside internal_alloc(),
+   stack traces relating to the heap block will contain entries for both
+   my_alloc() and internal_alloc(), which is probably not what you want.
+
+   VALGRIND_FREELIKE_BLOCK is the partner to VALGRIND_MALLOCLIKE_BLOCK.  For
+   Memcheck, it does two things:
+
+   - It records that the block has been deallocated.  This assumes that the
+     block was annotated as having been allocated via
+     VALGRIND_MALLOCLIKE_BLOCK.  Otherwise, an error will be issued.
+
+   - It marks the block as being unaddressable.
+
+   VALGRIND_FREELIKE_BLOCK should be put immediately after the point where a
+   heap block is deallocated.
+
+   In many cases, these two client requests will not be enough to get your
+   allocator working well with Memcheck.  More specifically, if your allocator
+   writes to freed blocks in any way then a VALGRIND_MAKE_MEM_UNDEFINED call
+   will be necessary to mark the memory as addressable just before the zeroing
+   occurs, otherwise you'll get a lot of invalid write errors.  For example,
+   you'll need to do this if your allocator recycles freed blocks, but it
+   zeroes them before handing them back out (via VALGRIND_MALLOCLIKE_BLOCK).
+   Alternatively, if your allocator reuses freed blocks for allocator-internal
+   data structures, VALGRIND_MAKE_MEM_UNDEFINED calls will also be necessary.
+
+   Really, what's happening is a blurring of the lines between the client
+   program and the allocator... after VALGRIND_FREELIKE_BLOCK is called, the
+   memory should be considered unaddressable to the client program, but the
+   allocator knows more than the rest of the client program and so may be able
+   to safely access it.  Extra client requests are necessary for Valgrind to
+   understand the distinction between the allocator and the rest of the
+   program.
+
+   Note: there is currently no VALGRIND_REALLOCLIKE_BLOCK client request;  it
+   has to be emulated with MALLOCLIKE/FREELIKE and memory copying.
+   
    WARNING: if your allocator uses malloc() or 'new' to allocate
    superblocks, rather than mmap() or brk(), this will not work properly --
    you'll likely get assertion failures during leak detection.  This is
    because Valgrind doesn't like seeing overlapping heap blocks.  Sorry.
-
-   Nb: block must be freed via a free()-like function specified
-   with VALGRIND_FREELIKE_BLOCK or mismatch errors will occur. */
+*/
 #define VALGRIND_MALLOCLIKE_BLOCK(addr, sizeB, rzB, is_zeroed)    \
    {unsigned int _qzz_res;                                        \
     VALGRIND_DO_CLIENT_REQUEST(_qzz_res, 0,                       \
@@ -3834,10 +3894,7 @@ VALGRIND_PRINTF_BACKTRACE(const char *format, ...)
                                addr, sizeB, rzB, is_zeroed, 0);   \
    }
 
-/* Mark a block of memory as having been freed by a free()-like function.
-   `rzB' is redzone size;  it must match that given to
-   VALGRIND_MALLOCLIKE_BLOCK.  Memory not freed will be detected by the leak
-   checker.  Put it immediately after the point where the block is freed. */
+/* See the comment for VALGRIND_MALLOCLIKE_BLOCK for details. */
 #define VALGRIND_FREELIKE_BLOCK(addr, rzB)                        \
    {unsigned int _qzz_res;                                        \
     VALGRIND_DO_CLIENT_REQUEST(_qzz_res, 0,                       \

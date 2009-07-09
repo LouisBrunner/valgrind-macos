@@ -2012,12 +2012,16 @@ struct _SGEnv {
       we basically can't really handle properly; and so we ignore all
       but the first ref. */
    Bool firstRef;
+   /* READONLY */
+   IRTemp (*newIRTemp_cb)(IRType,void*);
+   void* newIRTemp_opaque;
 };
 
 
 /* --- Helper fns for instrumentation --- */
 
-static IRTemp gen_Get_SP ( IRSB*           bbOut,
+static IRTemp gen_Get_SP ( struct _SGEnv*  sge,
+                           IRSB*           bbOut,
                            VexGuestLayout* layout,
                            Int             hWordTy_szB )
 {
@@ -2029,12 +2033,13 @@ static IRTemp gen_Get_SP ( IRSB*           bbOut,
    tl_assert(hWordTy_szB == layout->sizeof_SP);
    sp_type = layout->sizeof_SP == 8 ? Ity_I64 : Ity_I32;
    sp_expr = IRExpr_Get( layout->offset_SP, sp_type );
-   sp_temp = newIRTemp( bbOut->tyenv, sp_type );
+   sp_temp = sge->newIRTemp_cb( sp_type, sge->newIRTemp_opaque );
    addStmtToIRSB( bbOut, IRStmt_WrTmp( sp_temp, sp_expr ) );
    return sp_temp;
 }
 
-static IRTemp gen_Get_FP ( IRSB*           bbOut,
+static IRTemp gen_Get_FP ( struct _SGEnv*  sge,
+                           IRSB*           bbOut,
                            VexGuestLayout* layout,
                            Int             hWordTy_szB )
 {
@@ -2046,12 +2051,13 @@ static IRTemp gen_Get_FP ( IRSB*           bbOut,
    tl_assert(hWordTy_szB == layout->sizeof_SP);
    fp_type = layout->sizeof_FP == 8 ? Ity_I64 : Ity_I32;
    fp_expr = IRExpr_Get( layout->offset_FP, fp_type );
-   fp_temp = newIRTemp( bbOut->tyenv, fp_type );
+   fp_temp = sge->newIRTemp_cb( fp_type, sge->newIRTemp_opaque );
    addStmtToIRSB( bbOut, IRStmt_WrTmp( fp_temp, fp_expr ) );
    return fp_temp;
 }
 
-static void instrument_mem_access ( IRSB*   bbOut, 
+static void instrument_mem_access ( struct _SGEnv* sge,
+                                    IRSB*   bbOut, 
                                     IRExpr* addr,
                                     Int     szB,
                                     Bool    isStore,
@@ -2088,8 +2094,8 @@ static void instrument_mem_access ( IRSB*   bbOut,
    /* Generate a call to "helperc__mem_access", passing:
          addr current_SP current_FP szB curr_IP frameBlocks
    */
-   { IRTemp t_SP = gen_Get_SP( bbOut, layout, hWordTy_szB );
-     IRTemp t_FP = gen_Get_FP( bbOut, layout, hWordTy_szB );
+   { IRTemp t_SP = gen_Get_SP( sge, bbOut, layout, hWordTy_szB );
+     IRTemp t_FP = gen_Get_FP( sge, bbOut, layout, hWordTy_szB );
      IRExpr** args
         = mkIRExprVec_6( addr,
                          IRExpr_RdTmp(t_SP),
@@ -2100,7 +2106,7 @@ static void instrument_mem_access ( IRSB*   bbOut,
      IRDirty* di
         = unsafeIRDirty_0_N( 3/*regparms*/, 
                              "helperc__mem_access", 
-                             VG_(fnptr_to_fnentry)( &helperc__mem_access ),
+                            VG_(fnptr_to_fnentry)( &helperc__mem_access ),
                              args );
 
      addStmtToIRSB( bbOut, IRStmt_Dirty(di) );
@@ -2110,14 +2116,17 @@ static void instrument_mem_access ( IRSB*   bbOut,
 
 /* --- Instrumentation main (4 fns) --- */
 
-struct _SGEnv *  sg_instrument_init ( void )
+struct _SGEnv * sg_instrument_init ( IRTemp (*newIRTemp_cb)(IRType,void*),
+                                     void* newIRTemp_opaque )
 {
    struct _SGEnv * env = sg_malloc("di.sg_main.sii.1",
                                    sizeof(struct _SGEnv));
    tl_assert(env);
-   env->curr_IP       = 0;
-   env->curr_IP_known = False;
-   env->firstRef      = True;
+   env->curr_IP          = 0;
+   env->curr_IP_known    = False;
+   env->firstRef         = True;
+   env->newIRTemp_cb     = newIRTemp_cb;
+   env->newIRTemp_opaque = newIRTemp_opaque;
    return env;
 }
 
@@ -2164,7 +2173,7 @@ void sg_instrument_IRStmt ( /*MOD*/struct _SGEnv * env,
          tl_assert(env->curr_IP_known);
          if (env->firstRef) {
             instrument_mem_access( 
-               sbOut, 
+               env, sbOut, 
                st->Ist.Store.addr, 
                sizeofIRType(typeOfIRExpr(sbOut->tyenv, st->Ist.Store.data)),
                True/*isStore*/,
@@ -2181,7 +2190,7 @@ void sg_instrument_IRStmt ( /*MOD*/struct _SGEnv * env,
             tl_assert(env->curr_IP_known);
             if (env->firstRef) {
                instrument_mem_access(
-                  sbOut,
+                  env, sbOut,
                   data->Iex.Load.addr,
                   sizeofIRType(data->Iex.Load.ty),
                   False/*!isStore*/,
@@ -2207,13 +2216,13 @@ void sg_instrument_IRStmt ( /*MOD*/struct _SGEnv * env,
                dataSize = d->mSize;
                if (d->mFx == Ifx_Read || d->mFx == Ifx_Modify) {
                   instrument_mem_access( 
-                     sbOut, d->mAddr, dataSize, False/*!isStore*/,
+                     env, sbOut, d->mAddr, dataSize, False/*!isStore*/,
                      sizeofIRType(hWordTy), env->curr_IP, layout
                   );
                }
                if (d->mFx == Ifx_Write || d->mFx == Ifx_Modify) {
                   instrument_mem_access( 
-                     sbOut, d->mAddr, dataSize, True/*isStore*/,
+                     env, sbOut, d->mAddr, dataSize, True/*isStore*/,
                      sizeofIRType(hWordTy), env->curr_IP, layout
                   );
                }
@@ -2241,11 +2250,11 @@ void sg_instrument_IRStmt ( /*MOD*/struct _SGEnv * env,
             if (cas->dataHi != NULL)
                dataSize *= 2; /* since it's a doubleword-CAS */
             instrument_mem_access(
-               sbOut, cas->addr, dataSize, False/*!isStore*/,
+               env, sbOut, cas->addr, dataSize, False/*!isStore*/,
                sizeofIRType(hWordTy), env->curr_IP, layout
             );
             instrument_mem_access(
-               sbOut, cas->addr, dataSize, True/*isStore*/,
+               env, sbOut, cas->addr, dataSize, True/*isStore*/,
                sizeofIRType(hWordTy), env->curr_IP, layout
             );
             env->firstRef = False;
@@ -2280,9 +2289,9 @@ void sg_instrument_final_jump ( /*MOD*/struct _SGEnv * env,
       IRExpr** args;
       IRDirty* di;
       sp_post_call_insn
-         = gen_Get_SP( sbOut, layout, sizeofIRType(hWordTy) );
+         = gen_Get_SP( env, sbOut, layout, sizeofIRType(hWordTy) );
       fp_post_call_insn
-         = gen_Get_FP( sbOut, layout, sizeofIRType(hWordTy) );
+         = gen_Get_FP( env, sbOut, layout, sizeofIRType(hWordTy) );
       tl_assert(env->curr_IP_known);
       frameBlocks = get_StackBlocks_for_IP( env->curr_IP );
       tl_assert(frameBlocks);

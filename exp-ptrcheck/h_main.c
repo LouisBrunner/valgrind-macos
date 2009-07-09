@@ -3447,24 +3447,61 @@ static VG_REGPARM(2) Seg* do_mulW(Seg* seg1, Seg* seg2)
    abstractify the sg_ instrumentation.  See comments in sg_main.c's
    instrumentation section for further details. */
 
+
+/* Carries info about a particular tmp.  The tmp's number is not
+   recorded, as this is implied by (equal to) its index in the tmpMap
+   in PCEnv.  The tmp's type is also not recorded, as this is present
+   in PCEnv.sb->tyenv.
+
+   When .kind is NonShad, .shadow may give the identity of the temp
+   currently holding the associated shadow value, or it may be
+   IRTemp_INVALID if code to compute the shadow has not yet been
+   emitted.
+
+   When .kind is Shad tmp holds a shadow value, and so .shadow must be
+   IRTemp_INVALID, since it is illogical for a shadow tmp itself to be
+   shadowed.
+*/
+typedef
+   enum { NonShad=1, Shad=2 }
+   TempKind;
+
+typedef
+   struct {
+      TempKind kind;
+      IRTemp   shadow;
+   }
+   TempMapEnt;
+
+
+
 /* Carries around state during Ptrcheck instrumentation. */
 typedef
    struct {
       /* MODIFIED: the superblock being constructed.  IRStmts are
          added. */
-      IRSB* bb;
+      IRSB* sb;
       Bool  trace;
 
-      /* MODIFIED: a table [0 .. #temps_in_original_bb-1] which maps
-         original temps to their current their current shadow temp.
-         Initially all entries are IRTemp_INVALID.  Entries are added
-         lazily since many original temps are not used due to
-         optimisation prior to instrumentation.  Note that only
-         integer temps of the guest word size are shadowed, since it
-         is impossible (or meaningless) to hold a pointer in any other
-         type of temp. */
-      IRTemp* tmpMap;
-      Int     n_originalTmps; /* for range checking */
+      /* MODIFIED: a table [0 .. #temps_in_sb-1] which gives the
+         current kind and possibly shadow temps for each temp in the
+         IRSB being constructed.  Note that it does not contain the
+         type of each tmp.  If you want to know the type, look at the
+         relevant entry in sb->tyenv.  It follows that at all times
+         during the instrumentation process, the valid indices for
+         tmpMap and sb->tyenv are identical, being 0 .. N-1 where N is
+         total number of NonShad and Shad temps allocated so far.
+
+         The reason for this strange split (types in one place, all
+         other info in another) is that we need the types to be
+         attached to sb so as to make it possible to do
+         "typeOfIRExpr(mce->bb->tyenv, ...)" at various places in the
+         instrumentation process.
+
+         Note that only integer temps of the guest word size are
+         shadowed, since it is impossible (or meaningless) to hold a
+         pointer in any other type of temp. */
+      XArray* /* of TempMapEnt */ qmpMap;
 
       /* READONLY: the host word type.  Needed for constructing
          arguments of type 'HWord' to be passed to helper functions.
@@ -3504,18 +3541,41 @@ typedef
    sanity checker should catch all such anomalies, however.
 */
 
+/* Create a new IRTemp of type 'ty' and kind 'kind', and add it to
+   both the table in pce->sb and to our auxiliary mapping.  Note that
+   newTemp may cause pce->tmpMap to resize, hence previous results
+   from VG_(indexXA)(pce->tmpMap) are invalidated. */
+static IRTemp newTemp ( PCEnv* pce, IRType ty, TempKind kind )
+{
+   Word       newIx;
+   TempMapEnt ent;
+   IRTemp     tmp = newIRTemp(pce->sb->tyenv, ty);
+   ent.kind   = kind;
+   ent.shadow = IRTemp_INVALID;
+   newIx = VG_(addToXA)( pce->qmpMap, &ent );
+   tl_assert(newIx == (Word)tmp);
+   return tmp;
+}
+
 /* Find the tmp currently shadowing the given original tmp.  If none
    so far exists, allocate one.  */
 static IRTemp findShadowTmp ( PCEnv* pce, IRTemp orig )
 {
-   tl_assert(orig < pce->n_originalTmps);
-   tl_assert(pce->bb->tyenv->types[orig] == pce->gWordTy);
-   if (pce->tmpMap[orig] == IRTemp_INVALID) {
-      tl_assert(0);
-      pce->tmpMap[orig]
-         = newIRTemp(pce->bb->tyenv, pce->gWordTy);
+   TempMapEnt* ent;
+   /* VG_(indexXA) range-checks 'orig', hence no need to check
+      here. */
+   ent = (TempMapEnt*)VG_(indexXA)( pce->qmpMap, (Word)orig );
+   tl_assert(ent->kind == NonShad);
+   if (ent->shadow == IRTemp_INVALID) {
+      IRTemp shadow = newTemp( pce, pce->gWordTy, Shad );
+      /* newTemp may cause pce->tmpMap to resize, hence previous results
+         from VG_(indexXA) are invalid. */
+      ent = (TempMapEnt*)VG_(indexXA)( pce->qmpMap, (Word)orig );
+      tl_assert(ent->kind == NonShad);
+      tl_assert(ent->shadow == IRTemp_INVALID);
+      ent->shadow = shadow;
    }
-   return pce->tmpMap[orig];
+   return ent->shadow;
 }
 
 /* Allocate a new shadow for the given original tmp.  This means any
@@ -3523,15 +3583,29 @@ static IRTemp findShadowTmp ( PCEnv* pce, IRTemp orig )
    necessary to give a new value to a shadow once it has been tested
    for undefinedness, but unfortunately IR's SSA property disallows
    this.  Instead we must abandon the old shadow, allocate a new one
-   and use that instead. */
-__attribute__((noinline))
+   and use that instead.
+
+   This is the same as findShadowTmp, except we don't bother to see
+   if a shadow temp already existed -- we simply allocate a new one
+   regardless. */
 static IRTemp newShadowTmp ( PCEnv* pce, IRTemp orig )
 {
-   tl_assert(orig < pce->n_originalTmps);
-   tl_assert(pce->bb->tyenv->types[orig] == pce->gWordTy);
-   pce->tmpMap[orig]
-      = newIRTemp(pce->bb->tyenv, pce->gWordTy);
-   return pce->tmpMap[orig];
+   TempMapEnt* ent;
+   /* VG_(indexXA) range-checks 'orig', hence no need to check
+      here. */
+   ent = (TempMapEnt*)VG_(indexXA)( pce->qmpMap, (Word)orig );
+   tl_assert(ent->kind == NonShad);
+   if (1) {
+      IRTemp shadow = newTemp( pce, pce->gWordTy, Shad );
+      /* newTemp may cause pce->tmpMap to resize, hence previous results
+         from VG_(indexXA) are invalid. */
+      ent = (TempMapEnt*)VG_(indexXA)( pce->qmpMap, (Word)orig );
+      tl_assert(ent->kind == NonShad);
+      ent->shadow = shadow;
+      return shadow;
+   }
+   /* NOTREACHED */
+   tl_assert(0);
 }
 
 
@@ -3593,7 +3667,7 @@ static inline void stmt ( HChar cat, PCEnv* pce, IRStmt* st ) {
       ppIRStmt(st);
       VG_(printf)("\n");
    }
-   addStmtToIRSB(pce->bb, st);
+   addStmtToIRSB(pce->sb, st);
 }
 
 /* assign value to tmp */
@@ -3622,9 +3696,9 @@ void assign ( HChar cat, PCEnv* pce, IRTemp tmp, IRExpr* expr ) {
    that the two types agree. */
 static IRAtom* assignNew ( HChar cat, PCEnv* pce, IRType ty, IRExpr* e ) {
    IRTemp t;
-   IRType tyE = typeOfIRExpr(pce->bb->tyenv, e);
+   IRType tyE = typeOfIRExpr(pce->sb->tyenv, e);
    tl_assert(tyE == ty); /* so 'ty' is redundant (!) */
-   t = newIRTemp(pce->bb->tyenv, ty);
+   t = newTemp(pce, ty, Shad);
    assign(cat, pce, t, e);
    return mkexpr(t);
 }
@@ -3704,8 +3778,8 @@ static IRTemp gen_dirty_W_W ( PCEnv* pce, void* h_fn, HChar* h_nm,
    IRTemp   res;
    IRDirty* di;
    tl_assert(isIRAtom(a1));
-   tl_assert(typeOfIRExpr(pce->bb->tyenv, a1) == pce->gWordTy);
-   res = newIRTemp(pce->bb->tyenv, pce->gWordTy);
+   tl_assert(typeOfIRExpr(pce->sb->tyenv, a1) == pce->gWordTy);
+   res = newTemp(pce, pce->gWordTy, Shad);
    di = unsafeIRDirty_1_N( res, 1/*regparms*/,
                            h_nm, VG_(fnptr_to_fnentry)( h_fn ),
                            mkIRExprVec_1( a1 ) );
@@ -3722,9 +3796,9 @@ static IRTemp gen_dirty_W_WW ( PCEnv* pce, void* h_fn, HChar* h_nm,
    IRDirty* di;
    tl_assert(isIRAtom(a1));
    tl_assert(isIRAtom(a2));
-   tl_assert(typeOfIRExpr(pce->bb->tyenv, a1) == pce->gWordTy);
-   tl_assert(typeOfIRExpr(pce->bb->tyenv, a2) == pce->gWordTy);
-   res = newIRTemp(pce->bb->tyenv, pce->gWordTy);
+   tl_assert(typeOfIRExpr(pce->sb->tyenv, a1) == pce->gWordTy);
+   tl_assert(typeOfIRExpr(pce->sb->tyenv, a2) == pce->gWordTy);
+   res = newTemp(pce, pce->gWordTy, Shad);
    di = unsafeIRDirty_1_N( res, 2/*regparms*/,
                            h_nm, VG_(fnptr_to_fnentry)( h_fn ),
                            mkIRExprVec_2( a1, a2 ) );
@@ -3742,10 +3816,10 @@ static IRTemp gen_dirty_W_WWW ( PCEnv* pce, void* h_fn, HChar* h_nm,
    tl_assert(isIRAtom(a1));
    tl_assert(isIRAtom(a2));
    tl_assert(isIRAtom(a3));
-   tl_assert(typeOfIRExpr(pce->bb->tyenv, a1) == pce->gWordTy);
-   tl_assert(typeOfIRExpr(pce->bb->tyenv, a2) == pce->gWordTy);
-   tl_assert(typeOfIRExpr(pce->bb->tyenv, a3) == pce->gWordTy);
-   res = newIRTemp(pce->bb->tyenv, pce->gWordTy);
+   tl_assert(typeOfIRExpr(pce->sb->tyenv, a1) == pce->gWordTy);
+   tl_assert(typeOfIRExpr(pce->sb->tyenv, a2) == pce->gWordTy);
+   tl_assert(typeOfIRExpr(pce->sb->tyenv, a3) == pce->gWordTy);
+   res = newTemp(pce, pce->gWordTy, Shad);
    di = unsafeIRDirty_1_N( res, 3/*regparms*/,
                            h_nm, VG_(fnptr_to_fnentry)( h_fn ),
                            mkIRExprVec_3( a1, a2, a3 ) );
@@ -3765,11 +3839,11 @@ static IRTemp gen_dirty_W_WWWW ( PCEnv* pce, void* h_fn, HChar* h_nm,
    tl_assert(isIRAtom(a2));
    tl_assert(isIRAtom(a3));
    tl_assert(isIRAtom(a4));
-   tl_assert(typeOfIRExpr(pce->bb->tyenv, a1) == pce->gWordTy);
-   tl_assert(typeOfIRExpr(pce->bb->tyenv, a2) == pce->gWordTy);
-   tl_assert(typeOfIRExpr(pce->bb->tyenv, a3) == pce->gWordTy);
-   tl_assert(typeOfIRExpr(pce->bb->tyenv, a4) == pce->gWordTy);
-   res = newIRTemp(pce->bb->tyenv, pce->gWordTy);
+   tl_assert(typeOfIRExpr(pce->sb->tyenv, a1) == pce->gWordTy);
+   tl_assert(typeOfIRExpr(pce->sb->tyenv, a2) == pce->gWordTy);
+   tl_assert(typeOfIRExpr(pce->sb->tyenv, a3) == pce->gWordTy);
+   tl_assert(typeOfIRExpr(pce->sb->tyenv, a4) == pce->gWordTy);
+   res = newTemp(pce, pce->gWordTy, Shad);
    di = unsafeIRDirty_1_N( res, 3/*regparms*/,
                            h_nm, VG_(fnptr_to_fnentry)( h_fn ),
                            mkIRExprVec_4( a1, a2, a3, a4 ) );
@@ -3785,8 +3859,8 @@ static void gen_dirty_v_WW ( PCEnv* pce, void* h_fn, HChar* h_nm,
    IRDirty* di;
    tl_assert(isIRAtom(a1));
    tl_assert(isIRAtom(a2));
-   tl_assert(typeOfIRExpr(pce->bb->tyenv, a1) == pce->gWordTy);
-   tl_assert(typeOfIRExpr(pce->bb->tyenv, a2) == pce->gWordTy);
+   tl_assert(typeOfIRExpr(pce->sb->tyenv, a1) == pce->gWordTy);
+   tl_assert(typeOfIRExpr(pce->sb->tyenv, a2) == pce->gWordTy);
    di = unsafeIRDirty_0_N( 2/*regparms*/,
                            h_nm, VG_(fnptr_to_fnentry)( h_fn ),
                            mkIRExprVec_2( a1, a2 ) );
@@ -3802,9 +3876,9 @@ static void gen_dirty_v_WWW ( PCEnv* pce, void* h_fn, HChar* h_nm,
    tl_assert(isIRAtom(a1));
    tl_assert(isIRAtom(a2));
    tl_assert(isIRAtom(a3));
-   tl_assert(typeOfIRExpr(pce->bb->tyenv, a1) == pce->gWordTy);
-   tl_assert(typeOfIRExpr(pce->bb->tyenv, a2) == pce->gWordTy);
-   tl_assert(typeOfIRExpr(pce->bb->tyenv, a3) == pce->gWordTy);
+   tl_assert(typeOfIRExpr(pce->sb->tyenv, a1) == pce->gWordTy);
+   tl_assert(typeOfIRExpr(pce->sb->tyenv, a2) == pce->gWordTy);
+   tl_assert(typeOfIRExpr(pce->sb->tyenv, a3) == pce->gWordTy);
    di = unsafeIRDirty_0_N( 3/*regparms*/,
                            h_nm, VG_(fnptr_to_fnentry)( h_fn ),
                            mkIRExprVec_3( a1, a2, a3 ) );
@@ -3822,10 +3896,10 @@ static void gen_dirty_v_WWWW ( PCEnv* pce, void* h_fn, HChar* h_nm,
    tl_assert(isIRAtom(a2));
    tl_assert(isIRAtom(a3));
    tl_assert(isIRAtom(a4));
-   tl_assert(typeOfIRExpr(pce->bb->tyenv, a1) == pce->gWordTy);
-   tl_assert(typeOfIRExpr(pce->bb->tyenv, a2) == pce->gWordTy);
-   tl_assert(typeOfIRExpr(pce->bb->tyenv, a3) == pce->gWordTy);
-   tl_assert(typeOfIRExpr(pce->bb->tyenv, a4) == pce->gWordTy);
+   tl_assert(typeOfIRExpr(pce->sb->tyenv, a1) == pce->gWordTy);
+   tl_assert(typeOfIRExpr(pce->sb->tyenv, a2) == pce->gWordTy);
+   tl_assert(typeOfIRExpr(pce->sb->tyenv, a3) == pce->gWordTy);
+   tl_assert(typeOfIRExpr(pce->sb->tyenv, a4) == pce->gWordTy);
    di = unsafeIRDirty_0_N( 3/*regparms*/,
                            h_nm, VG_(fnptr_to_fnentry)( h_fn ),
                            mkIRExprVec_4( a1, a2, a3, a4 ) );
@@ -3845,12 +3919,12 @@ static void gen_dirty_v_6W ( PCEnv* pce, void* h_fn, HChar* h_nm,
    tl_assert(isIRAtom(a4));
    tl_assert(isIRAtom(a5));
    tl_assert(isIRAtom(a6));
-   tl_assert(typeOfIRExpr(pce->bb->tyenv, a1) == pce->gWordTy);
-   tl_assert(typeOfIRExpr(pce->bb->tyenv, a2) == pce->gWordTy);
-   tl_assert(typeOfIRExpr(pce->bb->tyenv, a3) == pce->gWordTy);
-   tl_assert(typeOfIRExpr(pce->bb->tyenv, a4) == pce->gWordTy);
-   tl_assert(typeOfIRExpr(pce->bb->tyenv, a5) == pce->gWordTy);
-   tl_assert(typeOfIRExpr(pce->bb->tyenv, a6) == pce->gWordTy);
+   tl_assert(typeOfIRExpr(pce->sb->tyenv, a1) == pce->gWordTy);
+   tl_assert(typeOfIRExpr(pce->sb->tyenv, a2) == pce->gWordTy);
+   tl_assert(typeOfIRExpr(pce->sb->tyenv, a3) == pce->gWordTy);
+   tl_assert(typeOfIRExpr(pce->sb->tyenv, a4) == pce->gWordTy);
+   tl_assert(typeOfIRExpr(pce->sb->tyenv, a5) == pce->gWordTy);
+   tl_assert(typeOfIRExpr(pce->sb->tyenv, a6) == pce->gWordTy);
    di = unsafeIRDirty_0_N( 3/*regparms*/,
                            h_nm, VG_(fnptr_to_fnentry)( h_fn ),
                            mkIRExprVec_6( a1, a2, a3, a4, a5, a6 ) );
@@ -3859,7 +3933,7 @@ static void gen_dirty_v_6W ( PCEnv* pce, void* h_fn, HChar* h_nm,
 
 static IRAtom* uwiden_to_host_word ( PCEnv* pce, IRAtom* a )
 {
-   IRType a_ty = typeOfIRExpr(pce->bb->tyenv, a);
+   IRType a_ty = typeOfIRExpr(pce->sb->tyenv, a);
    tl_assert(isIRAtom(a));
    if (pce->hWordTy == Ity_I32) {
       switch (a_ty) {
@@ -3909,7 +3983,7 @@ static IRAtom* schemeEw_Atom ( PCEnv* pce, IRExpr* e )
          return mkexpr(t);
       }
       if (e->tag == Iex_RdTmp
-          && typeOfIRExpr(pce->bb->tyenv, e) == Ity_I32) {
+          && typeOfIRExpr(pce->sb->tyenv, e) == Ity_I32) {
          return mkexpr( findShadowTmp(pce, e->Iex.RdTmp.tmp) );
       }
       /* there are no other word-sized atom cases */
@@ -3922,7 +3996,7 @@ static IRAtom* schemeEw_Atom ( PCEnv* pce, IRExpr* e )
          return mkexpr(t);
       }
       if (e->tag == Iex_RdTmp
-          && typeOfIRExpr(pce->bb->tyenv, e) == Ity_I64) {
+          && typeOfIRExpr(pce->sb->tyenv, e) == Ity_I64) {
          return mkexpr( findShadowTmp(pce, e->Iex.RdTmp.tmp) );
       }
       /* there are no other word-sized atom cases */
@@ -4233,7 +4307,7 @@ static void schemeS ( PCEnv* pce, IRStmt* st )
          di = st->Ist.Dirty.details;
          /* deal with the return tmp, if any */
          if (di->tmp != IRTemp_INVALID
-             && typeOfIRTemp(pce->bb->tyenv, di->tmp) == pce->gWordTy) {
+             && typeOfIRTemp(pce->sb->tyenv, di->tmp) == pce->gWordTy) {
             /* di->tmp is shadowed.  Set it to NONPTR. */
             IRTemp dstv = newShadowTmp( pce, di->tmp );
             if (pce->gWordTy == Ity_I32) {
@@ -4331,7 +4405,7 @@ static void schemeS ( PCEnv* pce, IRStmt* st )
          IntRegInfo iii;
          IRType     ty;
          stmt( 'C', pce, st );
-         ty = typeOfIRExpr(pce->bb->tyenv, st->Ist.Put.data);
+         ty = typeOfIRExpr(pce->sb->tyenv, st->Ist.Put.data);
          get_IntRegInfo( &iii, st->Ist.Put.offset,
                          sizeofIRType(ty) );
          if (iii.n_offsets == -1) {
@@ -4376,11 +4450,11 @@ static void schemeS ( PCEnv* pce, IRStmt* st )
          */
          IRExpr* data  = st->Ist.Store.data;
          IRExpr* addr  = st->Ist.Store.addr;
-         IRType  d_ty  = typeOfIRExpr(pce->bb->tyenv, data);
+         IRType  d_ty  = typeOfIRExpr(pce->sb->tyenv, data);
          IRExpr* addrv = schemeEw_Atom( pce, addr );
          IRTemp  resSC = st->Ist.Store.resSC;
          if (resSC != IRTemp_INVALID) {
-            tl_assert(typeOfIRTemp(pce->bb->tyenv, resSC) == Ity_I1);
+            tl_assert(typeOfIRTemp(pce->sb->tyenv, resSC) == Ity_I1);
             /* viz, not something we want to shadow */
             /* also, throw out all store-conditional cases that
                we can't handle */
@@ -4600,7 +4674,7 @@ static void schemeS ( PCEnv* pce, IRStmt* st )
             appear, we in fact only get an atom (Iex_RdTmp or
             Iex_Const). */
          IRExpr* e      = st->Ist.WrTmp.data;
-         IRType  e_ty   = typeOfIRExpr( pce->bb->tyenv, e );
+         IRType  e_ty   = typeOfIRExpr( pce->sb->tyenv, e );
          Bool    isWord = e_ty == pce->gWordTy;
          IRTemp  dst    = st->Ist.WrTmp.tmp;
          IRTemp  dstv   = isWord ? newShadowTmp( pce, dst )
@@ -4822,6 +4896,13 @@ static void schemeS ( PCEnv* pce, IRStmt* st )
 }
 
 
+static IRTemp for_sg__newIRTemp_cb ( IRType ty, void* opaque )
+{
+   PCEnv* pce = (PCEnv*)opaque;
+   return newTemp( pce, ty, NonShad );
+}
+
+
 IRSB* h_instrument ( VgCallbackClosure* closure,
                      IRSB* sbIn,
                      VexGuestLayout* layout,
@@ -4848,21 +4929,33 @@ IRSB* h_instrument ( VgCallbackClosure* closure,
    tl_assert(sizeof(UInt)   == 4);
    tl_assert(sizeof(Int)    == 4);
 
-   /* Set up the running environment.  Only .bb is modified as we go
-      along. */
-   pce.bb                = deepCopyIRSBExceptStmts(sbIn);
+   /* Set up the running environment.  Both .sb and .tmpMap are
+      modified as we go along.  Note that tmps are added to both
+      .sb->tyenv and .tmpMap together, so the valid index-set for
+      those two arrays should always be identical. */
+   VG_(memset)(&pce, 0, sizeof(pce));
+   pce.sb                = deepCopyIRSBExceptStmts(sbIn);
    pce.trace             = verboze;
-   pce.n_originalTmps    = sbIn->tyenv->types_used;
    pce.hWordTy           = hWordTy;
    pce.gWordTy           = gWordTy;
    pce.guest_state_sizeB = layout->total_sizeB;
-   pce.tmpMap            = LibVEX_Alloc(pce.n_originalTmps * sizeof(IRTemp));
-   for (i = 0; i < pce.n_originalTmps; i++)
-      pce.tmpMap[i] = IRTemp_INVALID;
 
-   /* Also set up for the sg_ instrumenter.  See comments
-      at the top of this instrumentation section for details. */
-   sgenv = sg_instrument_init();
+   pce.qmpMap = VG_(newXA)( VG_(malloc), "pc.h_instrument.1", VG_(free),
+                            sizeof(TempMapEnt));
+   for (i = 0; i < sbIn->tyenv->types_used; i++) {
+      TempMapEnt ent;
+      ent.kind   = NonShad;
+      ent.shadow = IRTemp_INVALID;
+      VG_(addToXA)( pce.qmpMap, &ent );
+   }
+   tl_assert( VG_(sizeXA)( pce.qmpMap ) == sbIn->tyenv->types_used );
+
+   /* Also set up for the sg_ instrumenter.  See comments at the top
+      of this instrumentation section for details.  The two parameters
+      constitute a closure, which sg_ can use to correctly generate
+      new IRTemps as needed. */
+   sgenv = sg_instrument_init( for_sg__newIRTemp_cb,
+                               (void*)&pce );
 
    /* Stay sane.  These two should agree! */
    tl_assert(layout->total_sizeB == MC_SIZEOF_GUEST_STATE);
@@ -4925,20 +5018,25 @@ IRSB* h_instrument ( VgCallbackClosure* closure,
 
    for (/*use current i*/; i < sbIn->stmts_used; i++) {
       /* generate sg_ instrumentation for this stmt */
-      sg_instrument_IRStmt( sgenv, pce.bb, sbIn->stmts[i],
+      sg_instrument_IRStmt( sgenv, pce.sb, sbIn->stmts[i],
                             layout, gWordTy, hWordTy );
       /* generate h_ instrumentation for this stmt */
       schemeS( &pce, sbIn->stmts[i] );
    }
 
    /* generate sg_ instrumentation for the final jump */
-   sg_instrument_final_jump( sgenv, pce.bb, sbIn->next, sbIn->jumpkind,
+   sg_instrument_final_jump( sgenv, pce.sb, sbIn->next, sbIn->jumpkind,
                              layout, gWordTy, hWordTy );
 
    /* and finalise .. */
    sg_instrument_fini( sgenv );
 
-   return pce.bb;
+   /* If this fails, there's been some serious snafu with tmp management,
+      that should be investigated. */
+   tl_assert( VG_(sizeXA)( pce.qmpMap ) == pce.sb->tyenv->types_used );
+   VG_(deleteXA)( pce.qmpMap );
+
+   return pce.sb;
 }
 
 

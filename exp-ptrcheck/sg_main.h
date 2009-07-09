@@ -54,7 +54,8 @@ void sg_die_mem_munmap ( Addr a, SizeT len );
 
 struct _SGEnv;  /* abstract export */
 
-struct _SGEnv *  sg_instrument_init ( void );
+struct _SGEnv* sg_instrument_init ( IRTemp (*newIRTemp_cb)(IRType,void*),
+                                    void* newIRTemp_opaque );
 
 void sg_instrument_fini ( struct _SGEnv * env );
 

@@ -2996,7 +2996,7 @@ static inline UWord do_store_conditional_64( Addr m/*dst*/, ULong t/*val*/ )
 
 /* Apply nonptr_or_unknown to all the words intersecting
    [a, a+len). */
-static VG_REGPARM(2)
+static inline VG_REGPARM(2)
 void nonptr_or_unknown_range ( Addr a, SizeT len )
 {
    const SizeT wszB = sizeof(UWord);
@@ -3006,6 +3006,34 @@ void nonptr_or_unknown_range ( Addr a, SizeT len )
    tl_assert(wfirst <= wlast);
    for (a2 = wfirst ; a2 <= wlast; a2 += wszB) {
       set_mem_vseg( a2, nonptr_or_unknown( *(UWord*)a2 ));
+   }
+}
+
+// Write to shadow memory, for a 32-bit store.  Must only
+// be used on 32-bit targets.
+static inline VG_REGPARM(2)
+void do_shadow_store4_P( Addr m, Seg* vseg )
+{
+   tl_assert(sizeof(UWord) == 4); /* DO NOT REMOVE */
+   if (VG_IS_4_ALIGNED(m)) {
+      set_mem_vseg( m, vseg );
+   } else {
+      // straddling two words
+      nonptr_or_unknown_range(m, 4);
+   }
+}
+
+// Write to shadow memory, for a 64-bit store.  Must only
+// be used on 64-bit targets.
+static inline VG_REGPARM(2)
+void do_shadow_store8_P( Addr m, Seg* vseg )
+{
+   tl_assert(sizeof(UWord) == 8); /* DO NOT REMOVE */
+   if (VG_IS_8_ALIGNED(m)) {
+      set_mem_vseg( m, vseg );
+   } else {
+      // straddling two words
+      nonptr_or_unknown_range(m, 8);
    }
 }
 
@@ -3117,12 +3145,7 @@ void check_store8_P(Addr m, Seg* mptr_vseg, UWord t, Seg* t_vseg)
    check_load_or_store(/*is_write*/True, m, 8, mptr_vseg);
    // Actually *do* the STORE here
    *(ULong*)m = t;
-   if (VG_IS_8_ALIGNED(m)) {
-      set_mem_vseg( m, t_vseg );
-   } else {
-      // straddling two words
-      nonptr_or_unknown_range(m, 8);
-   }
+   do_shadow_store8_P( m, t_vseg );
 }
 
 // This handles 64 bit store-conditionals on 64 bit targets.  It must
@@ -3139,12 +3162,8 @@ UWord check_store8C_P(Addr m, Seg* mptr_vseg, UWord t, Seg* t_vseg)
    check_load_or_store(/*is_write*/True, m, 8, mptr_vseg);
    // Actually *do* the STORE here
    success = do_store_conditional_64( m, t );
-   if (VG_IS_8_ALIGNED(m)) {
-      set_mem_vseg( m, t_vseg );
-   } else {
-      // straddling two words
-      nonptr_or_unknown_range(m, 8);
-   }
+   if (success)
+      do_shadow_store8_P( m, t_vseg );
    return success;
 }
 
@@ -3161,12 +3180,7 @@ void check_store4_P(Addr m, Seg* mptr_vseg, UWord t, Seg* t_vseg)
    check_load_or_store(/*is_write*/True, m, 4, mptr_vseg);
    // Actually *do* the STORE here
    *(UInt*)m = t;
-   if (VG_IS_4_ALIGNED(m)) {
-      set_mem_vseg( m, t_vseg );
-   } else {
-      // straddling two words
-      nonptr_or_unknown_range(m, 4);
-   }
+   do_shadow_store4_P( m, t_vseg );
 }
 
 // This handles 32 bit store-conditionals on 32 bit targets.  It must
@@ -3183,12 +3197,8 @@ UWord check_store4C_P(Addr m, Seg* mptr_vseg, UWord t, Seg* t_vseg)
    check_load_or_store(/*is_write*/True, m, 4, mptr_vseg);
    // Actually *do* the STORE here
    success = do_store_conditional_32( m, t );
-   if (VG_IS_4_ALIGNED(m)) {
-      set_mem_vseg( m, t_vseg );
-   } else {
-      // straddling two words
-      nonptr_or_unknown_range(m, 4);
-   }
+   if (success)
+      do_shadow_store4_P( m, t_vseg );
    return success;
 }
 
@@ -3218,7 +3228,8 @@ UWord check_store4C(Addr m, Seg* mptr_vseg, UWord t)
    check_load_or_store(/*is_write*/True, m, 4, mptr_vseg);
    // Actually *do* the STORE here
    success = do_store_conditional_32( m, t );
-   nonptr_or_unknown_range(m, 4);
+   if (success)
+      nonptr_or_unknown_range(m, 4);
    return success;
 }
 
@@ -3852,8 +3863,10 @@ static IRTemp gen_dirty_W_WWWW ( PCEnv* pce, void* h_fn, HChar* h_nm,
 }
 
 /* Version of gen_dirty_W_WW with no return value.  Callee must be a
-   VG_REGPARM(2) function.*/
-static void gen_dirty_v_WW ( PCEnv* pce, void* h_fn, HChar* h_nm, 
+   VG_REGPARM(2) function.  If guard is non-NULL then it is used to
+   conditionalise the call. */
+static void gen_dirty_v_WW ( PCEnv* pce, IRExpr* guard,
+                             void* h_fn, HChar* h_nm, 
                              IRExpr* a1, IRExpr* a2 )
 {
    IRDirty* di;
@@ -3864,6 +3877,8 @@ static void gen_dirty_v_WW ( PCEnv* pce, void* h_fn, HChar* h_nm,
    di = unsafeIRDirty_0_N( 2/*regparms*/,
                            h_nm, VG_(fnptr_to_fnentry)( h_fn ),
                            mkIRExprVec_2( a1, a2 ) );
+   if (guard)
+      di->guard = guard;
    stmt( 'I', pce, IRStmt_Dirty(di) );
 }
 
@@ -4255,9 +4270,10 @@ void instrument_arithop ( PCEnv* pce,
 
 static 
 void gen_call_nonptr_or_unknown_range ( PCEnv* pce,
+                                        IRExpr* guard,
                                         IRAtom* addr, IRAtom* len )
 {
-   gen_dirty_v_WW( pce, 
+   gen_dirty_v_WW( pce, guard,
                    &nonptr_or_unknown_range,
                    "nonptr_or_unknown_range",
                    addr, len );
@@ -4297,6 +4313,220 @@ static void schemeS ( PCEnv* pce, IRStmt* st )
    tl_assert(isFlatIRStmt(st));
 
    switch (st->tag) {
+
+      case Ist_CAS: {
+         IRCAS* cas = st->Ist.CAS.details;
+         IRType elTy = typeOfIRExpr(pce->sb->tyenv, cas->expdLo);
+         if (cas->oldHi == IRTemp_INVALID) {
+            /* ------------ SINGLE CAS ------------ */
+            /* -- single cas -- 32 bits, on 32-bit host -- */
+            /* -- single cas -- 64 bits, on 64-bit host -- */
+            /* -- viz, single cas, native-word case -- */
+            if ( (pce->gWordTy == Ity_I32 && elTy == Ity_I32)
+                 || (pce->gWordTy == Ity_I64 && elTy == Ity_I64) ) {
+               // 32 bit host translation scheme; 64-bit is analogous
+               // old#    = check_load4_P(addr, addr#)
+               // old     = CAS(addr:expd->new) [COPY]
+               // success = CmpEQ32(old,expd)
+               // if (success) do_shadow_store4_P(addr, new#)
+               IRTemp  success;
+               Bool    is64  = elTy == Ity_I64;
+               IROp    cmpEQ = is64 ? Iop_CmpEQ64 : Iop_CmpEQ32;
+               void*   r_fn  = is64 ? &check_load8_P  : &check_load4_P;
+               HChar*  r_nm  = is64 ? "check_load8_P" : "check_load4_P";
+               void*   w_fn  = is64 ? &do_shadow_store8_P  : &do_shadow_store4_P;
+               void*   w_nm  = is64 ? "do_shadow_store8_P" : "do_shadow_store4_P";
+               IRExpr* addr  = cas->addr;
+               IRExpr* addrV = schemeEw_Atom(pce, addr);
+               IRTemp  old   = cas->oldLo;
+               IRTemp  oldV  = newShadowTmp(pce, old);
+               IRExpr* nyu   = cas->dataLo;
+               IRExpr* nyuV  = schemeEw_Atom(pce, nyu);
+               IRExpr* expd  = cas->expdLo;
+               assign( 'I', pce, oldV, 
+                       mkexpr( gen_dirty_W_WW( pce, r_fn, r_nm, addr, addrV )));
+               stmt( 'C', pce, st );
+               success = newTemp(pce, Ity_I1, NonShad);
+               assign('I', pce, success, binop(cmpEQ, mkexpr(old), expd));
+               gen_dirty_v_WW( pce, mkexpr(success), w_fn, w_nm, addr, nyuV );
+            }
+            else
+            /* -- single cas -- 8 or 16 bits, on 32-bit host -- */
+            /* -- viz, single cas, 32-bit subword cases -- */
+            if (pce->gWordTy == Ity_I32
+                && (elTy == Ity_I8 || elTy == Ity_I16)) {
+               // 8-bit translation scheme; 16-bit is analogous
+               // check_load1(addr, addr#)
+               // old     = CAS(addr:expd->new) [COPY]
+               // success = CmpEQ8(old,expd)
+               // if (success) nonptr_or_unknown_range(addr, 1)
+               IRTemp  success;
+               Bool    is16  = elTy == Ity_I16;
+               IRExpr* addr  = cas->addr;
+               IRExpr* addrV = schemeEw_Atom(pce, addr);
+               IRTemp  old   = cas->oldLo;
+               IRExpr* expd  = cas->expdLo;
+               void*   h_fn  = is16 ? &check_load2  : &check_load1;
+               HChar*  h_nm  = is16 ? "check_load2" : "check_load1";
+               IROp    cmpEQ = is16 ? Iop_CmpEQ16 : Iop_CmpEQ8;
+               Int     szB   = is16 ? 2 : 1;
+               gen_dirty_v_WW( pce, NULL, h_fn, h_nm, addr, addrV );
+               stmt( 'C', pce, st );
+               success = newTemp(pce, Ity_I1, NonShad);
+               assign('I', pce, success,
+                           binop(cmpEQ, mkexpr(old), expd));
+               gen_call_nonptr_or_unknown_range( pce, mkexpr(success),
+                                                 addr, mkIRExpr_HWord(szB) );
+            }
+            else
+            /* -- single cas -- 8, 16 or 32 bits, on 64-bit host -- */
+            /* -- viz, single cas, 64-bit subword cases -- */
+            if (pce->gWordTy == Ity_I64
+                && (elTy == Ity_I8 || elTy == Ity_I16 || elTy == Ity_I32)) {
+               // 8-bit translation scheme; 16/32-bit are analogous
+               // check_load1(addr, addr#)
+               // old     = CAS(addr:expd->new) [COPY]
+               // success = CmpEQ8(old,expd)
+               // if (success) nonptr_or_unknown_range(addr, 1)
+               IRTemp  success;
+               Bool    is16  = elTy == Ity_I16;
+               Bool    is32  = elTy == Ity_I32;
+               IRExpr* addr  = cas->addr;
+               IRExpr* addrV = schemeEw_Atom(pce, addr);
+               IRTemp  old   = cas->oldLo;
+               IRExpr* expd  = cas->expdLo;
+               void*   h_fn  = is32 ? &check_load4
+                                    : (is16 ? &check_load2 : &check_load1);
+               HChar*  h_nm  = is32 ? "check_load4" 
+                                    : (is16 ? "check_load2" : "check_load1");
+               IROp    cmpEQ = is32 ? Iop_CmpEQ32
+                                    : (is16 ? Iop_CmpEQ16 : Iop_CmpEQ8);
+               Int     szB   = is32 ? 4 : (is16 ? 2 : 1);
+               gen_dirty_v_WW( pce, NULL, h_fn, h_nm, addr, addrV );
+               stmt( 'C', pce, st );
+               success = newTemp(pce, Ity_I1, NonShad);
+               assign('I', pce, success,
+                           binop(cmpEQ, mkexpr(old), expd));
+               gen_call_nonptr_or_unknown_range( pce, mkexpr(success),
+                                                 addr, mkIRExpr_HWord(szB) );
+            }
+            else
+               goto unhandled;
+         } else {
+            /* ------------ DOUBLE CAS ------------ */
+            /* Punt on bigendian DCAS.  In fact it's probably trivial
+               to do; just swap the individual shadow loads/stores
+               around in memory, but we'd have to verify it, and there
+               is no use case.  So punt. */
+            if (cas->end != Iend_LE)
+               goto unhandled;
+            /* -- double cas -- 2 x 32 bits, on 32-bit host -- */
+            /* -- double cas -- 2 x 64 bits, on 64-bit host -- */
+            /* -- viz, double cas, native-word case -- */
+            if ( (pce->gWordTy == Ity_I32 && elTy == Ity_I32)
+                 || (pce->gWordTy == Ity_I64 && elTy == Ity_I64) ) {
+               // 32 bit host translation scheme; 64-bit is analogous
+               // oldHi#    = check_load4_P(addr+4, addr#)
+               // oldLo#    = check_load4_P(addr+0, addr#)
+               // oldHi/Lo  = DCAS(addr:expdHi/Lo->newHi/Lo) [COPY]
+               // success   = CmpEQ32(oldHi,expdHi) && CmpEQ32(oldLo,expdLo)
+               //           = ((oldHi ^ expdHi) | (oldLo ^ expdLo)) == 0
+               // if (success) do_shadow_store4_P(addr+4, newHi#)
+               // if (success) do_shadow_store4_P(addr+0, newLo#)
+               IRTemp  diffHi, diffLo, diff, success, addrpp;
+               Bool    is64    = elTy == Ity_I64;
+               void*   r_fn    = is64 ? &check_load8_P  : &check_load4_P;
+               HChar*  r_nm    = is64 ? "check_load8_P" : "check_load4_P";
+               void*   w_fn    = is64 ? &do_shadow_store8_P
+                                      : &do_shadow_store4_P;
+               void*   w_nm    = is64 ? "do_shadow_store8_P"
+                                      : "do_shadow_store4_P";
+               IROp    opADD   = is64 ? Iop_Add64 : Iop_Add32;
+               IROp    opXOR   = is64 ? Iop_Xor64 : Iop_Xor32;
+               IROp    opOR    = is64 ? Iop_Or64 : Iop_Or32;
+               IROp    opCmpEQ = is64 ? Iop_CmpEQ64 : Iop_CmpEQ32;
+               IRExpr* step    = is64 ? mkU64(8) : mkU32(4);
+               IRExpr* zero    = is64 ? mkU64(0) : mkU32(0);
+               IRExpr* addr    = cas->addr;
+               IRExpr* addrV   = schemeEw_Atom(pce, addr);
+               IRTemp  oldLo   = cas->oldLo;
+               IRTemp  oldLoV  = newShadowTmp(pce, oldLo);
+               IRTemp  oldHi   = cas->oldHi;
+               IRTemp  oldHiV  = newShadowTmp(pce, oldHi);
+               IRExpr* nyuLo   = cas->dataLo;
+               IRExpr* nyuLoV  = schemeEw_Atom(pce, nyuLo);
+               IRExpr* nyuHi   = cas->dataHi;
+               IRExpr* nyuHiV  = schemeEw_Atom(pce, nyuHi);
+               IRExpr* expdLo  = cas->expdLo;
+               IRExpr* expdHi  = cas->expdHi;
+               tl_assert(elTy == Ity_I32 || elTy == Ity_I64);
+               tl_assert(pce->gWordTy == elTy);
+               addrpp = newTemp(pce, elTy, NonShad);
+               assign('I', pce, addrpp, binop(opADD, addr, step));
+               assign('I', pce, oldHiV,
+                      mkexpr( gen_dirty_W_WW( pce, r_fn, r_nm,
+                                                   mkexpr(addrpp), addrV ))
+               );
+               assign('I', pce, oldLoV,
+                      mkexpr( gen_dirty_W_WW( pce, r_fn, r_nm,
+                                                   addr, addrV ))
+               );
+               stmt( 'C', pce, st );
+               diffHi = newTemp(pce, elTy, NonShad);
+               assign('I', pce, diffHi,
+                           binop(opXOR, mkexpr(oldHi), expdHi));
+               diffLo = newTemp(pce, elTy, NonShad);
+               assign('I', pce, diffLo,
+                           binop(opXOR, mkexpr(oldLo), expdLo));
+               diff = newTemp(pce, elTy, NonShad);
+               assign('I', pce, diff,
+                      binop(opOR, mkexpr(diffHi), mkexpr(diffLo)));
+               success = newTemp(pce, Ity_I1, NonShad);
+               assign('I', pce, success,
+                      binop(opCmpEQ, mkexpr(diff), zero));
+               gen_dirty_v_WW( pce, mkexpr(success),
+                                     w_fn, w_nm, mkexpr(addrpp), nyuHiV );
+               gen_dirty_v_WW( pce, mkexpr(success),
+                                    w_fn, w_nm, addr, nyuLoV );
+            }
+            else
+            /* -- double cas -- 2 x 32 bits, on 64-bit host -- */
+            if (pce->gWordTy == Ity_I64 && elTy == Ity_I32) {
+               // check_load8(addr, addr#)
+               // oldHi/Lo  = DCAS(addr:expdHi/Lo->newHi/Lo) [COPY]
+               // success   = CmpEQ32(oldHi,expdHi) && CmpEQ32(oldLo,expdLo)
+               //           = ((oldHi ^ expdHi) | (oldLo ^ expdLo)) == 0
+               // if (success) nonptr_or_unknown_range(addr, 8)
+               IRTemp  diffHi, diffLo, diff, success;
+               IRExpr* addr   = cas->addr;
+               IRExpr* addrV  = schemeEw_Atom(pce, addr);
+               IRTemp  oldLo  = cas->oldLo;
+               IRTemp  oldHi  = cas->oldHi;
+               IRExpr* expdLo = cas->expdLo;
+               IRExpr* expdHi = cas->expdHi;
+               gen_dirty_v_WW( pce, NULL, &check_load8, "check_load8",
+                               addr, addrV );
+               stmt( 'C', pce, st );
+               diffHi = newTemp(pce, Ity_I32, NonShad);
+               assign('I', pce, diffHi,
+                           binop(Iop_Xor32, mkexpr(oldHi), expdHi));
+               diffLo = newTemp(pce, Ity_I32, NonShad);
+               assign('I', pce, diffLo,
+                           binop(Iop_Xor32, mkexpr(oldLo), expdLo));
+               diff = newTemp(pce, Ity_I32, NonShad);
+               assign('I', pce, diff,
+                      binop(Iop_Or32, mkexpr(diffHi), mkexpr(diffLo)));
+               success = newTemp(pce, Ity_I1, NonShad);
+               assign('I', pce, success,
+                      binop(Iop_CmpEQ32, mkexpr(diff), mkU32(0)));
+               gen_call_nonptr_or_unknown_range( pce, mkexpr(success),
+                                                 addr, mkU64(8) );
+            }
+            else
+               goto unhandled;
+         }
+         break;
+      }
 
       case Ist_Dirty: {
          Int i;
@@ -4353,7 +4583,7 @@ static void schemeS ( PCEnv* pce, IRStmt* st )
          if (di->mFx != Ifx_None) {
             tl_assert(di->mAddr && isIRAtom(di->mAddr));
             tl_assert(di->mSize > 0);
-            gen_call_nonptr_or_unknown_range( pce, di->mAddr,
+            gen_call_nonptr_or_unknown_range( pce, NULL, di->mAddr,
                                               mkIRExpr_HWord(di->mSize));
          }
          break;
@@ -4750,7 +4980,7 @@ static void schemeS ( PCEnv* pce, IRStmt* st )
                               mkexpr( gen_dirty_W_WW( pce, h_fn, h_nm,
                                                            addr, addrv )) );
                   } else {
-                     gen_dirty_v_WW( pce, h_fn, h_nm, addr, addrv );
+                     gen_dirty_v_WW( pce, NULL, h_fn, h_nm, addr, addrv );
                   }
                } else {
                   /* 64 bit host/guest (cough, cough) */
@@ -4779,7 +5009,7 @@ static void schemeS ( PCEnv* pce, IRStmt* st )
                               mkexpr( gen_dirty_W_WW( pce, h_fn, h_nm,
                                                            addr, addrv )) );
                   } else {
-                     gen_dirty_v_WW( pce, h_fn, h_nm, addr, addrv );
+                     gen_dirty_v_WW( pce, NULL, h_fn, h_nm, addr, addrv );
                   }
                }
                /* copy the original -- must happen after the helper call */

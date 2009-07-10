@@ -4656,7 +4656,7 @@ static Bool mc_expensive_sanity_check ( void )
 Bool          MC_(clo_partial_loads_ok)       = False;
 Long          MC_(clo_freelist_vol)           = 10*1000*1000LL;
 LeakCheckMode MC_(clo_leak_check)             = LC_Summary;
-VgRes         MC_(clo_leak_resolution)        = Vg_LowRes;
+VgRes         MC_(clo_leak_resolution)        = Vg_HighRes;
 Bool          MC_(clo_show_reachable)         = False;
 Bool          MC_(clo_workaround_gcc296_bugs) = False;
 Int           MC_(clo_malloc_fill)            = -1;
@@ -4774,7 +4774,7 @@ static void mc_print_usage(void)
 {  
    VG_(printf)(
 "    --leak-check=no|summary|full     search for memory leaks at exit?  [summary]\n"
-"    --leak-resolution=low|med|high   how much bt merging in leak check [low]\n"
+"    --leak-resolution=low|med|high   differentiation of leak stack traces [high]\n"
 "    --show-reachable=no|yes          show reachable blocks in leak check? [no]\n"
 "    --undef-value-errors=no|yes      check for undefined value errors [yes]\n"
 "    --track-origins=no|yes           show origins of undefined values? [no]\n"

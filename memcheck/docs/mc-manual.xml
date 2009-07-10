@@ -163,7 +163,7 @@ problems:</para>
 
   <varlistentry id="opt.leak-resolution" xreflabel="--leak-resolution">
     <term>
-      <option><![CDATA[--leak-resolution=<low|med|high> [default: low] ]]></option>
+      <option><![CDATA[--leak-resolution=<low|med|high> [default: high] ]]></option>
     </term>
     <listitem>
       <para>When doing leak checking, determines how willing
@@ -171,13 +171,12 @@ problems:</para>
       be the same.  When set to <varname>low</varname>, only the first
       two entries need match.  When <varname>med</varname>, four entries
       have to match.  When <varname>high</varname>, all entries need to
-      match.</para>
+      match;  this is consistent with how merging occurs for other kinds of
+      errors.</para>
 
       <para>For hardcore leak debugging, you probably want to use
       <option>--leak-resolution=high</option> together with
-      <option>--num-callers=40</option> or some such large number.  Note
-      however that this can give an overwhelming amount of information,
-      which is why the defaults give less information.
+      <option>--num-callers=40</option> or some such large number.
       </para>
 
       <para>Note that the <option>--leak-resolution=</option> setting

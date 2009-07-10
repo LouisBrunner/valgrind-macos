@@ -41,6 +41,10 @@ Release 3.5.0 (???)
   - Blocks that are only reachable via at least one interior-pointer, but
     are directly pointed to by a start-pointer, were previously marked as
     "still reachable".  They are now correctly marked as "possibly lost".
+  - The default value for the --leak-resolution option has been changed from
+    "low" to "high".  In general, this means that more leak reports will be
+    produced, but each leak report will describe fewer leaked blocks.
+  - The documentation for the leak checker has also been improved.
 
 * The format of some (non-XML) stack trace entries has changed a little.
   Previously there were six possible forms:

@@ -1,4 +1,4 @@
 prereq: ./supported_libpthread
-vgopts: --check-stack-var=yes
+vgopts: --check-stack-var=yes --var-info=yes
 prog: recursive_mutex
-stderr_filter: filter_error_summary
+stderr_filter: filter_stderr_and_thread_no

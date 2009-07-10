@@ -1047,6 +1047,23 @@ POST(sys_epoll_create)
    }
 }
 
+PRE(sys_epoll_create1)
+{
+   PRINT("sys_epoll_create1 ( %ld )", ARG1);
+   PRE_REG_READ1(long, "epoll_create1", int, flags);
+}
+POST(sys_epoll_create1)
+{
+   vg_assert(SUCCESS);
+   if (!ML_(fd_allowed)(RES, "epoll_create1", tid, True)) {
+      VG_(close)(RES);
+      SET_STATUS_Failure( VKI_EMFILE );
+   } else {
+      if (VG_(clo_track_fds))
+         ML_(record_fd_open_nameless) (tid, RES);
+   }
+}
+
 PRE(sys_epoll_ctl)
 {
    static const HChar* epoll_ctl_s[3] = {

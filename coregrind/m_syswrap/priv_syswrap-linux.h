@@ -85,6 +85,7 @@ DECL_TEMPLATE(linux, sys_pselect6);
 DECL_TEMPLATE(linux, sys_ppoll);
 
 DECL_TEMPLATE(linux, sys_epoll_create);
+DECL_TEMPLATE(linux, sys_epoll_create1);
 DECL_TEMPLATE(linux, sys_epoll_ctl);
 DECL_TEMPLATE(linux, sys_epoll_wait);
 DECL_TEMPLATE(linux, sys_epoll_pwait);

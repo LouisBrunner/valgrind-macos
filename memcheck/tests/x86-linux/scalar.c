@@ -1252,6 +1252,10 @@ int main(void)
    GO(__NR_sys_kexec_load, "ni");
    SY(__NR_sys_kexec_load); FAIL;
 
+   // __NR_epoll_create1 329
+   GO(__NR_epoll_create1, "1s 0m");
+   SY(__NR_epoll_create1, x0); SUCC_OR_FAIL;
+
    // no such syscall...
    GO(9999, "1e");
    SY(9999); FAIL;

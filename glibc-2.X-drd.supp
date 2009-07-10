@@ -250,13 +250,13 @@
 {
    pthread-unwind
    drd:ConflictingAccess
-   fun:uw_update_context
-   fun:_Unwind_ForcedUnwind_Phase2
+   ...
+   fun:_Unwind_ForcedUnwind
 }
 {
    pthread-unwind
    drd:ConflictingAccess
-   fun:uw_frame_state_for
+   ...
    fun:_Unwind_ForcedUnwind_Phase2
 }
 {

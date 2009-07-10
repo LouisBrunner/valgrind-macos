@@ -14,13 +14,6 @@
    dl-2.6.*
    drd:ConflictingAccess
    obj:/lib*/ld-*.so
-   fun:exit
-}
-{
-   dl-2.6.*
-   drd:ConflictingAccess
-   obj:/lib*/ld-*.so
-   obj:/lib*/ld-*.so
 }
 {
    dl-dlsym-1

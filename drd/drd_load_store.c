@@ -557,11 +557,14 @@ IRSB* DRD_(instrument)(VgCallbackClosure* const closure,
       case Ist_CAS:
          if (instrument)
          {
-            /* Just treat this as a read of the location.  I believe
-               this is equivalent to the previous logic, which
-               observed bus-lock/unlock Ist_MBEs, and ignored all
-               writes within sections bracketed by bus-lock and
-               bus-unlock annotations. */
+            /*
+             * Treat compare-and-swap as a read. By handling atomic
+             * instructions as read instructions no data races are reported
+             * between conflicting atomic operations nor between atomic
+             * operations and non-atomic reads. Conflicts between atomic
+             * operations and non-atomic write operations are still reported
+             * however.
+             */
             Int    dataSize;
             IRCAS* cas = st->Ist.CAS.details;
             tl_assert(cas->addr != NULL);

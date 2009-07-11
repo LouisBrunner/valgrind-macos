@@ -70,6 +70,12 @@
 #endif
 //
 
+// A function that allows to suppress gcc's warnings about
+// unused return values in a portable way.
+template <typename T>
+static inline void IGNORE_RETURN_VALUE(T v)
+{ }
+
 #include <vector>
 #include <string>
 #include <map>
@@ -4750,7 +4756,7 @@ void Writer() {
   usleep(1000);
   GLOB = 1;
   const char *str = "Hey there!\n";
-  write(fd_out, str, strlen(str) + 1);
+  IGNORE_RETURN_VALUE(write(fd_out, str, strlen(str) + 1));
 }
 
 void Reader() {
@@ -4770,7 +4776,7 @@ void Run() {
   sprintf(in_name,  "/tmp/racecheck_unittest_in.%d", getpid());
   sprintf(out_name, "/tmp/racecheck_unittest_out.%d", getpid());
   fd_out = creat(out_name, O_WRONLY | S_IRWXU);
-  symlink(out_name, in_name);
+  IGNORE_RETURN_VALUE(symlink(out_name, in_name));
   fd_in  = open(in_name, 0, O_RDONLY);
   CHECK(fd_out >= 0);
   CHECK(fd_in  >= 0);
@@ -6532,7 +6538,7 @@ void Run() {
   printf("test141: FP. unlink/fopen, rmdir/opendir.\n");
 
   dir_name = strdup("/tmp/tsan-XXXXXX");
-  mkdtemp(dir_name);
+  IGNORE_RETURN_VALUE(mkdtemp(dir_name));
 
   filename = strdup((std::string() + dir_name + "/XXXXXX").c_str());
   const int fd = mkstemp(filename);

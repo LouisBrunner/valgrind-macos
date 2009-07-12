@@ -2390,7 +2390,6 @@ IRAtom* expr2vbits_Binop ( MCEnv* mce,
          complainIfUndefined(mce, atom2);
          return assignNew('V', mce, Ity_V128, binop(op, vatom1, atom2));
 
-
       /* I128-bit data-steering */
       case Iop_64HLto128:
          return assignNew('V', mce, Ity_I128, binop(op, vatom1, vatom2));
@@ -2548,6 +2547,14 @@ IRAtom* expr2vbits_Binop ( MCEnv* mce,
 
       case Iop_CmpEQ8: case Iop_CmpNE8:
          return mkPCastTo(mce, Ity_I1, mkUifU8(mce, vatom1,vatom2));
+
+      case Iop_CasCmpEQ8:  case Iop_CasCmpNE8:
+      case Iop_CasCmpEQ16: case Iop_CasCmpNE16:
+      case Iop_CasCmpEQ32: case Iop_CasCmpNE32:
+      case Iop_CasCmpEQ64: case Iop_CasCmpNE64:
+         /* Just say these all produce a defined result, regardless
+            of their arguments.  See COMMENT_ON_CasCmpEQ in this file. */
+         return assignNew('V', mce, Ity_I1, definedOfType(Ity_I1));
 
       case Iop_Shl64: case Iop_Shr64: case Iop_Sar64:
          return scalarShift( mce, Ity_I64, op, vatom1,vatom2, atom1,atom2 );
@@ -3488,22 +3495,14 @@ void do_shadow_CAS ( MCEnv* mce, IRCAS* cas )
 
       5. the CAS itself
 
-      6. complain if "expected == old" is undefined
+      6. compute "expected == old".  See COMMENT_ON_CasCmpEQ below.
 
-      7. if "expected == old"
+      7. if "expected == old" (as computed by (6))
             store data#,dataB to shadow memory
 
       Note that 5 reads 'old' but 4 reads 'old#'.  Similarly, 5 stores
       'data' but 7 stores 'data#'.  Hence it is possible for the
       shadow data to be incorrectly checked and/or updated:
-
-      * 6 could falsely complain if 4 read old# as undefined, but some
-        other thread wrote a defined value to the location after 4 but
-        before 5.
-
-      * 6 could falsely not-complain if 4 read old# as defined, but
-        some other thread wrote an undefined value to the location
-        after 4 but before 5.
 
       * 7 is at least gated correctly, since the 'expected == old'
         condition is derived from outputs of 5.  However, the shadow
@@ -3528,6 +3527,83 @@ void do_shadow_CAS ( MCEnv* mce, IRCAS* cas )
       would't work properly since it only guards us against other
       threads doing CASs on the same location, not against other
       threads doing normal reads and writes.
+
+      ------------------------------------------------------------
+
+      COMMENT_ON_CasCmpEQ:
+
+      Note two things.  Firstly, in the sequence above, we compute
+      "expected == old", but we don't check definedness of it.  Why
+      not?  Also, the x86 and amd64 front ends use
+      Iop_CmpCas{EQ,NE}{8,16,32,64} comparisons to make the equivalent
+      determination (expected == old ?) for themselves, and we also
+      don't check definedness for those primops; we just say that the
+      result is defined.  Why?  Details follow.
+
+      x86/amd64 contains various forms of locked insns:
+      * lock prefix before all basic arithmetic insn; 
+        eg lock xorl %reg1,(%reg2)
+      * atomic exchange reg-mem
+      * compare-and-swaps
+
+      Rather than attempt to represent them all, which would be a
+      royal PITA, I used a result from Maurice Herlihy
+      (http://en.wikipedia.org/wiki/Maurice_Herlihy), in which he
+      demonstrates that compare-and-swap is a primitive more general
+      than the other two, and so can be used to represent all of them.
+      So the translation scheme for (eg) lock incl (%reg) is as
+      follows:
+
+        again:
+         old = * %reg
+         new = old + 1
+         atomically { if (* %reg == old) { * %reg = new } else { goto again } }
+
+      The "atomically" is the CAS bit.  The scheme is always the same:
+      get old value from memory, compute new value, atomically stuff
+      new value back in memory iff the old value has not changed (iow,
+      no other thread modified it in the meantime).  If it has changed
+      then we've been out-raced and we have to start over.
+
+      Now that's all very neat, but it has the bad side effect of
+      introducing an explicit equality test into the translation.
+      Consider the behaviour of said code on a memory location which
+      is uninitialised.  We will wind up doing a comparison on
+      uninitialised data, and mc duly complains.
+
+      What's difficult about this is, the common case is that the
+      location is uncontended, and so we're usually comparing the same
+      value (* %reg) with itself.  So we shouldn't complain even if it
+      is undefined.  But mc doesn't know that.
+
+      My solution is to mark the == in the IR specially, so as to tell
+      mc that it almost certainly compares a value with itself, and we
+      should just regard the result as always defined.  Rather than
+      add a bit to all IROps, I just cloned Iop_CmpEQ{8,16,32,64} into
+      Iop_CasCmpEQ{8,16,32,64} so as not to disturb anything else.
+
+      So there's always the question of, can this give a false
+      negative?  eg, imagine that initially, * %reg is defined; and we
+      read that; but then in the gap between the read and the CAS, a
+      different thread writes an undefined (and different) value at
+      the location.  Then the CAS in this thread will fail and we will
+      go back to "again:", but without knowing that the trip back
+      there was based on an undefined comparison.  No matter; at least
+      the other thread won the race and the location is correctly
+      marked as undefined.  What if it wrote an uninitialised version
+      of the same value that was there originally, though?
+
+      etc etc.  Seems like there's a small corner case in which we
+      might lose the fact that something's defined -- we're out-raced
+      in between the "old = * reg" and the "atomically {", _and_ the
+      other thread is writing in an undefined version of what's
+      already there.  Well, that seems pretty unlikely.
+
+      ---
+
+      If we ever need to reinstate it .. code which generates a
+      definedness test for "expected == old" was removed at r10432 of
+      this file.
    */
    if (cas->oldHi == IRTemp_INVALID) {
       do_shadow_CAS_single( mce, cas );
@@ -3542,9 +3618,8 @@ static void do_shadow_CAS_single ( MCEnv* mce, IRCAS* cas )
    IRAtom *vdataLo = NULL, *bdataLo = NULL;
    IRAtom *vexpdLo = NULL, *bexpdLo = NULL;
    IRAtom *voldLo  = NULL, *boldLo  = NULL;
-   IRAtom *expd_eq_old_V = NULL, *expd_eq_old_B = NULL;
-   IRAtom *expd_eq_old   = NULL;
-   IROp   opCmpEQ;
+   IRAtom *expd_eq_old = NULL;
+   IROp   opCasCmpEQ;
    Int    elemSzB;
    IRType elemTy;
    Bool   otrak = MC_(clo_mc_level) >= 3; /* a shorthand */
@@ -3556,10 +3631,10 @@ static void do_shadow_CAS_single ( MCEnv* mce, IRCAS* cas )
 
    elemTy = typeOfIRExpr(mce->sb->tyenv, cas->expdLo);
    switch (elemTy) {
-      case Ity_I8:  elemSzB = 1; opCmpEQ = Iop_CmpEQ8;  break;
-      case Ity_I16: elemSzB = 2; opCmpEQ = Iop_CmpEQ16; break;
-      case Ity_I32: elemSzB = 4; opCmpEQ = Iop_CmpEQ32; break;
-      case Ity_I64: elemSzB = 8; opCmpEQ = Iop_CmpEQ64; break;
+      case Ity_I8:  elemSzB = 1; opCasCmpEQ = Iop_CasCmpEQ8;  break;
+      case Ity_I16: elemSzB = 2; opCasCmpEQ = Iop_CasCmpEQ16; break;
+      case Ity_I32: elemSzB = 4; opCasCmpEQ = Iop_CasCmpEQ32; break;
+      case Ity_I64: elemSzB = 8; opCasCmpEQ = Iop_CasCmpEQ64; break;
       default: tl_assert(0); /* IR defn disallows any other types */
    }
 
@@ -3595,46 +3670,24 @@ static void do_shadow_CAS_single ( MCEnv* mce, IRCAS* cas )
               mce,
               cas->end, elemTy, cas->addr, 0/*Addr bias*/
         ));
+   bind_shadow_tmp_to_orig('V', mce, mkexpr(cas->oldLo), voldLo);
    if (otrak) {
       boldLo
          = assignNew('B', mce, Ity_I32,
                      gen_load_b(mce, elemSzB, cas->addr, 0/*addr bias*/));
+      bind_shadow_tmp_to_orig('B', mce, mkexpr(cas->oldLo), boldLo);
    }
 
    /* 5. the CAS itself */
    stmt( 'C', mce, IRStmt_CAS(cas) );
 
-   /* 6. complain if "expected == old" is undefined */
-   /* Doing this directly interacts in a complex way with origin
-      tracking.  Much easier to make up an expression tree and hand
-      that off to expr2vbits_Binop.  We will need the expression
-      tree in any case in order to decide whether or not to do a
-      shadow store. */
+   /* 6. compute "expected == old" */
+   /* See COMMENT_ON_CasCmpEQ in this file background/rationale. */
    /* Note that 'C' is kinda faking it; it is indeed a non-shadow
       tree, but it's not copied from the input block. */
    expd_eq_old
       = assignNew('C', mce, Ity_I1,
-                  binop(opCmpEQ, cas->expdLo, mkexpr(cas->oldLo)));
-
-   /* Compute into expd_eq_old_V the definedness for expd_eq_old.
-      First we need to ensure that cas->oldLo's V-shadow is bound
-      voldLo, since expr2vbits_Binop will generate a use of it. */
-   bind_shadow_tmp_to_orig('V', mce, mkexpr(cas->oldLo), voldLo);
-   expd_eq_old_V
-     = expr2vbits_Binop( mce, opCmpEQ, cas->expdLo, mkexpr(cas->oldLo) );
-   if (otrak) {
-      bind_shadow_tmp_to_orig('B', mce, mkexpr(cas->oldLo), boldLo);
-      expd_eq_old_B
-         = gen_maxU32( mce, bexpdLo, boldLo );
-   }
-
-   /* Generate a complaint if expd_eq_old is undefined.  As above,
-      first force expd_eq_old's definedness to be bound to its
-      V-shadow tmp. */
-   bind_shadow_tmp_to_orig('V', mce, expd_eq_old, expd_eq_old_V);
-   if (otrak)
-      bind_shadow_tmp_to_orig('B', mce, expd_eq_old, expd_eq_old_B);
-   complainIfUndefined(mce, expd_eq_old);
+                  binop(opCasCmpEQ, cas->expdLo, mkexpr(cas->oldLo)));
 
    /* 7. if "expected == old"
             store data# to shadow memory */
@@ -3657,12 +3710,9 @@ static void do_shadow_CAS_double ( MCEnv* mce, IRCAS* cas )
    IRAtom *vexpdLo = NULL, *bexpdLo = NULL;
    IRAtom *voldHi  = NULL, *boldHi  = NULL;
    IRAtom *voldLo  = NULL, *boldLo  = NULL;
-   IRAtom *xHi   = NULL, *xLo   = NULL, *xHL   = NULL;
-   IRAtom *xHi_V = NULL, *xLo_V = NULL, *xHL_V = NULL;
-   IRAtom *xHi_B = NULL, *xLo_B = NULL, *xHL_B = NULL;
-   IRAtom *expd_eq_old_V = NULL, *expd_eq_old_B = NULL;
-   IRAtom *expd_eq_old   = NULL, *zero = NULL;
-   IROp   opCmpEQ, opOr, opXor;
+   IRAtom *xHi = NULL, *xLo = NULL, *xHL = NULL;
+   IRAtom *expd_eq_old = NULL, *zero = NULL;
+   IROp   opCasCmpEQ, opOr, opXor;
    Int    elemSzB, memOffsLo, memOffsHi;
    IRType elemTy;
    Bool   otrak = MC_(clo_mc_level) >= 3; /* a shorthand */
@@ -3675,19 +3725,19 @@ static void do_shadow_CAS_double ( MCEnv* mce, IRCAS* cas )
    elemTy = typeOfIRExpr(mce->sb->tyenv, cas->expdLo);
    switch (elemTy) {
       case Ity_I8:
-         opCmpEQ = Iop_CmpEQ8; opOr = Iop_Or8; opXor = Iop_Xor8; 
+         opCasCmpEQ = Iop_CasCmpEQ8; opOr = Iop_Or8; opXor = Iop_Xor8; 
          elemSzB = 1; zero = mkU8(0);
          break;
       case Ity_I16:
-         opCmpEQ = Iop_CmpEQ16; opOr = Iop_Or16; opXor = Iop_Xor16;
+         opCasCmpEQ = Iop_CasCmpEQ16; opOr = Iop_Or16; opXor = Iop_Xor16;
          elemSzB = 2; zero = mkU16(0);
          break;
       case Ity_I32:
-         opCmpEQ = Iop_CmpEQ32; opOr = Iop_Or32; opXor = Iop_Xor32;
+         opCasCmpEQ = Iop_CasCmpEQ32; opOr = Iop_Or32; opXor = Iop_Xor32;
          elemSzB = 4; zero = mkU32(0);
          break;
       case Ity_I64:
-         opCmpEQ = Iop_CmpEQ64; opOr = Iop_Or64; opXor = Iop_Xor64;
+         opCasCmpEQ = Iop_CasCmpEQ64; opOr = Iop_Or64; opXor = Iop_Xor64;
          elemSzB = 8; zero = mkU64(0);
          break;
       default:
@@ -3755,6 +3805,8 @@ static void do_shadow_CAS_double ( MCEnv* mce, IRCAS* cas )
               mce,
               cas->end, elemTy, cas->addr, memOffsLo/*Addr bias*/
         ));
+   bind_shadow_tmp_to_orig('V', mce, mkexpr(cas->oldHi), voldHi);
+   bind_shadow_tmp_to_orig('V', mce, mkexpr(cas->oldLo), voldLo);
    if (otrak) {
       boldHi
          = assignNew('B', mce, Ity_I32,
@@ -3764,17 +3816,15 @@ static void do_shadow_CAS_double ( MCEnv* mce, IRCAS* cas )
          = assignNew('B', mce, Ity_I32,
                      gen_load_b(mce, elemSzB, cas->addr,
                                 memOffsLo/*addr bias*/));
+      bind_shadow_tmp_to_orig('B', mce, mkexpr(cas->oldHi), boldHi);
+      bind_shadow_tmp_to_orig('B', mce, mkexpr(cas->oldLo), boldLo);
    }
 
    /* 5. the CAS itself */
    stmt( 'C', mce, IRStmt_CAS(cas) );
 
-   /* 6. complain if "expected == old" is undefined */
-   /* Doing this directly interacts in a complex way with origin
-      tracking.  Much easier to make up an expression tree and hand
-      that off to expr2vbits_Binop.  We will need the expression
-      tree in any case in order to decide whether or not to do a
-      shadow store. */
+   /* 6. compute "expected == old" */
+   /* See COMMENT_ON_CasCmpEQ in this file background/rationale. */
    /* Note that 'C' is kinda faking it; it is indeed a non-shadow
       tree, but it's not copied from the input block. */
    /*
@@ -3783,62 +3833,15 @@ static void do_shadow_CAS_double ( MCEnv* mce, IRCAS* cas )
       xHL = xHi | xLo;
       expd_eq_old = xHL == 0;
    */
-
-   /* --- xHi = oldHi ^ expdHi --- */
    xHi = assignNew('C', mce, elemTy,
                    binop(opXor, cas->expdHi, mkexpr(cas->oldHi))); 
-   bind_shadow_tmp_to_orig('V', mce, mkexpr(cas->oldHi), voldHi);
-   xHi_V
-      = expr2vbits_Binop( mce, opXor, cas->expdHi, mkexpr(cas->oldHi));
-   if (otrak) {
-      bind_shadow_tmp_to_orig('B', mce, mkexpr(cas->oldHi), boldHi);
-      xHi_B = gen_maxU32( mce, bexpdHi, boldHi );
-   }
-
-   /* --- xLo = oldLo ^ expdLo --- */
    xLo = assignNew('C', mce, elemTy,
                    binop(opXor, cas->expdLo, mkexpr(cas->oldLo)));
-   bind_shadow_tmp_to_orig('V', mce, mkexpr(cas->oldLo), voldLo);
-   xLo_V
-      = expr2vbits_Binop( mce, opXor, cas->expdLo, mkexpr(cas->oldLo));
-   if (otrak) {
-      bind_shadow_tmp_to_orig('B', mce, mkexpr(cas->oldLo), boldLo);
-      xLo_B = gen_maxU32( mce, bexpdLo, boldLo );
-   }
-
-   /* --- xHL = xHi | xLo --- */
    xHL = assignNew('C', mce, elemTy,
                    binop(opOr, xHi, xLo));
-   bind_shadow_tmp_to_orig('V', mce, xHi, xHi_V);
-   bind_shadow_tmp_to_orig('V', mce, xLo, xLo_V);
-   xHL_V
-      = expr2vbits_Binop( mce, opOr, xHi, xLo );
-   if (otrak) {
-      bind_shadow_tmp_to_orig('B', mce, xHi, xHi_B);
-      bind_shadow_tmp_to_orig('B', mce, xLo, xLo_B);
-      xHL_B = gen_maxU32( mce, xHi_B, xLo_B );
-   }
-
-   /* --- expd_eq_old = xHL == 0 --- */
    expd_eq_old
       = assignNew('C', mce, Ity_I1,
-                  binop(opCmpEQ, xHL, zero));
-   bind_shadow_tmp_to_orig('V', mce, xHL, xHL_V);
-   expd_eq_old_V
-      = expr2vbits_Binop( mce, opCmpEQ, xHL, zero);
-   if (otrak) {
-      expd_eq_old_B = xHL_B; /* since the zero literal isn't going to
-                                contribute any interesting origin */
-   }
-
-   /* The backend's register allocator is probably on fire by now :-) */
-   /* Generate a complaint if expd_eq_old is undefined.  As above,
-      first force expd_eq_old's definedness to be bound to its
-      V-shadow tmp. */
-   bind_shadow_tmp_to_orig('V', mce, expd_eq_old, expd_eq_old_V);
-   if (otrak)
-      bind_shadow_tmp_to_orig('B', mce, expd_eq_old, expd_eq_old_B);
-   complainIfUndefined(mce, expd_eq_old);
+                  binop(opCasCmpEQ, xHL, zero));
 
    /* 7. if "expected == old"
             store data# to shadow memory */
@@ -4682,9 +4685,23 @@ static IRAtom* schemeE ( MCEnv* mce, IRExpr* e )
          return gen_maxU32( mce, b1, gen_maxU32( mce, b2, b3 ) );
       }
       case Iex_Binop: {
-         IRAtom* b1 = schemeE( mce, e->Iex.Binop.arg1 );
-         IRAtom* b2 = schemeE( mce, e->Iex.Binop.arg2 );
-         return gen_maxU32( mce, b1, b2 );
+         switch (e->Iex.Binop.op) {
+            case Iop_CasCmpEQ8:  case Iop_CasCmpNE8:
+            case Iop_CasCmpEQ16: case Iop_CasCmpNE16:
+            case Iop_CasCmpEQ32: case Iop_CasCmpNE32:
+            case Iop_CasCmpEQ64: case Iop_CasCmpNE64:
+               /* Just say these all produce a defined result,
+                  regardless of their arguments.  See
+                  COMMENT_ON_CasCmpEQ in this file. */
+               return mkU32(0);
+            default: {
+               IRAtom* b1 = schemeE( mce, e->Iex.Binop.arg1 );
+               IRAtom* b2 = schemeE( mce, e->Iex.Binop.arg2 );
+               return gen_maxU32( mce, b1, b2 );
+            }
+         }
+         tl_assert(0);
+         /*NOTREACHED*/
       }
       case Iex_Unop: {
          IRAtom* b1 = schemeE( mce, e->Iex.Unop.arg );

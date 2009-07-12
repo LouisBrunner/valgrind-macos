@@ -4315,6 +4315,13 @@ static void schemeS ( PCEnv* pce, IRStmt* st )
    switch (st->tag) {
 
       case Ist_CAS: {
+         /* In all these CAS cases, the did-we-succeed? comparison is
+            done using Iop_CasCmpEQ{8,16,32,64} rather than the plain
+            Iop_CmpEQ equivalents.  This isn't actually necessary,
+            since the generated IR is not going to be subsequently
+            instrumented by Memcheck.  But it's done for consistency.
+            See COMMENT_ON_CasCmpEQ in memcheck/mc_translate.c for
+            background/rationale. */
          IRCAS* cas = st->Ist.CAS.details;
          IRType elTy = typeOfIRExpr(pce->sb->tyenv, cas->expdLo);
          if (cas->oldHi == IRTemp_INVALID) {
@@ -4327,11 +4334,11 @@ static void schemeS ( PCEnv* pce, IRStmt* st )
                // 32 bit host translation scheme; 64-bit is analogous
                // old#    = check_load4_P(addr, addr#)
                // old     = CAS(addr:expd->new) [COPY]
-               // success = CmpEQ32(old,expd)
+               // success = CasCmpEQ32(old,expd)
                // if (success) do_shadow_store4_P(addr, new#)
                IRTemp  success;
                Bool    is64  = elTy == Ity_I64;
-               IROp    cmpEQ = is64 ? Iop_CmpEQ64 : Iop_CmpEQ32;
+               IROp    cmpEQ = is64 ? Iop_CasCmpEQ64 : Iop_CasCmpEQ32;
                void*   r_fn  = is64 ? &check_load8_P  : &check_load4_P;
                HChar*  r_nm  = is64 ? "check_load8_P" : "check_load4_P";
                void*   w_fn  = is64 ? &do_shadow_store8_P  : &do_shadow_store4_P;
@@ -4358,7 +4365,7 @@ static void schemeS ( PCEnv* pce, IRStmt* st )
                // 8-bit translation scheme; 16-bit is analogous
                // check_load1(addr, addr#)
                // old     = CAS(addr:expd->new) [COPY]
-               // success = CmpEQ8(old,expd)
+               // success = CasCmpEQ8(old,expd)
                // if (success) nonptr_or_unknown_range(addr, 1)
                IRTemp  success;
                Bool    is16  = elTy == Ity_I16;
@@ -4368,7 +4375,7 @@ static void schemeS ( PCEnv* pce, IRStmt* st )
                IRExpr* expd  = cas->expdLo;
                void*   h_fn  = is16 ? &check_load2  : &check_load1;
                HChar*  h_nm  = is16 ? "check_load2" : "check_load1";
-               IROp    cmpEQ = is16 ? Iop_CmpEQ16 : Iop_CmpEQ8;
+               IROp    cmpEQ = is16 ? Iop_CasCmpEQ16 : Iop_CasCmpEQ8;
                Int     szB   = is16 ? 2 : 1;
                gen_dirty_v_WW( pce, NULL, h_fn, h_nm, addr, addrV );
                stmt( 'C', pce, st );
@@ -4386,7 +4393,7 @@ static void schemeS ( PCEnv* pce, IRStmt* st )
                // 8-bit translation scheme; 16/32-bit are analogous
                // check_load1(addr, addr#)
                // old     = CAS(addr:expd->new) [COPY]
-               // success = CmpEQ8(old,expd)
+               // success = CasCmpEQ8(old,expd)
                // if (success) nonptr_or_unknown_range(addr, 1)
                IRTemp  success;
                Bool    is16  = elTy == Ity_I16;
@@ -4399,8 +4406,8 @@ static void schemeS ( PCEnv* pce, IRStmt* st )
                                     : (is16 ? &check_load2 : &check_load1);
                HChar*  h_nm  = is32 ? "check_load4" 
                                     : (is16 ? "check_load2" : "check_load1");
-               IROp    cmpEQ = is32 ? Iop_CmpEQ32
-                                    : (is16 ? Iop_CmpEQ16 : Iop_CmpEQ8);
+               IROp    cmpEQ = is32 ? Iop_CasCmpEQ32
+                                    : (is16 ? Iop_CasCmpEQ16 : Iop_CasCmpEQ8);
                Int     szB   = is32 ? 4 : (is16 ? 2 : 1);
                gen_dirty_v_WW( pce, NULL, h_fn, h_nm, addr, addrV );
                stmt( 'C', pce, st );
@@ -4429,36 +4436,36 @@ static void schemeS ( PCEnv* pce, IRStmt* st )
                // oldHi#    = check_load4_P(addr+4, addr#)
                // oldLo#    = check_load4_P(addr+0, addr#)
                // oldHi/Lo  = DCAS(addr:expdHi/Lo->newHi/Lo) [COPY]
-               // success   = CmpEQ32(oldHi,expdHi) && CmpEQ32(oldLo,expdLo)
+               // success   = CasCmpEQ32(oldHi,expdHi) && CasCmpEQ32(oldLo,expdLo)
                //           = ((oldHi ^ expdHi) | (oldLo ^ expdLo)) == 0
                // if (success) do_shadow_store4_P(addr+4, newHi#)
                // if (success) do_shadow_store4_P(addr+0, newLo#)
                IRTemp  diffHi, diffLo, diff, success, addrpp;
-               Bool    is64    = elTy == Ity_I64;
-               void*   r_fn    = is64 ? &check_load8_P  : &check_load4_P;
-               HChar*  r_nm    = is64 ? "check_load8_P" : "check_load4_P";
-               void*   w_fn    = is64 ? &do_shadow_store8_P
-                                      : &do_shadow_store4_P;
-               void*   w_nm    = is64 ? "do_shadow_store8_P"
-                                      : "do_shadow_store4_P";
-               IROp    opADD   = is64 ? Iop_Add64 : Iop_Add32;
-               IROp    opXOR   = is64 ? Iop_Xor64 : Iop_Xor32;
-               IROp    opOR    = is64 ? Iop_Or64 : Iop_Or32;
-               IROp    opCmpEQ = is64 ? Iop_CmpEQ64 : Iop_CmpEQ32;
-               IRExpr* step    = is64 ? mkU64(8) : mkU32(4);
-               IRExpr* zero    = is64 ? mkU64(0) : mkU32(0);
-               IRExpr* addr    = cas->addr;
-               IRExpr* addrV   = schemeEw_Atom(pce, addr);
-               IRTemp  oldLo   = cas->oldLo;
-               IRTemp  oldLoV  = newShadowTmp(pce, oldLo);
-               IRTemp  oldHi   = cas->oldHi;
-               IRTemp  oldHiV  = newShadowTmp(pce, oldHi);
-               IRExpr* nyuLo   = cas->dataLo;
-               IRExpr* nyuLoV  = schemeEw_Atom(pce, nyuLo);
-               IRExpr* nyuHi   = cas->dataHi;
-               IRExpr* nyuHiV  = schemeEw_Atom(pce, nyuHi);
-               IRExpr* expdLo  = cas->expdLo;
-               IRExpr* expdHi  = cas->expdHi;
+               Bool    is64       = elTy == Ity_I64;
+               void*   r_fn       = is64 ? &check_load8_P  : &check_load4_P;
+               HChar*  r_nm       = is64 ? "check_load8_P" : "check_load4_P";
+               void*   w_fn       = is64 ? &do_shadow_store8_P
+                                         : &do_shadow_store4_P;
+               void*   w_nm       = is64 ? "do_shadow_store8_P"
+                                         : "do_shadow_store4_P";
+               IROp    opADD      = is64 ? Iop_Add64 : Iop_Add32;
+               IROp    opXOR      = is64 ? Iop_Xor64 : Iop_Xor32;
+               IROp    opOR       = is64 ? Iop_Or64 : Iop_Or32;
+               IROp    opCasCmpEQ = is64 ? Iop_CasCmpEQ64 : Iop_CasCmpEQ32;
+               IRExpr* step       = is64 ? mkU64(8) : mkU32(4);
+               IRExpr* zero       = is64 ? mkU64(0) : mkU32(0);
+               IRExpr* addr       = cas->addr;
+               IRExpr* addrV      = schemeEw_Atom(pce, addr);
+               IRTemp  oldLo      = cas->oldLo;
+               IRTemp  oldLoV     = newShadowTmp(pce, oldLo);
+               IRTemp  oldHi      = cas->oldHi;
+               IRTemp  oldHiV     = newShadowTmp(pce, oldHi);
+               IRExpr* nyuLo      = cas->dataLo;
+               IRExpr* nyuLoV     = schemeEw_Atom(pce, nyuLo);
+               IRExpr* nyuHi      = cas->dataHi;
+               IRExpr* nyuHiV     = schemeEw_Atom(pce, nyuHi);
+               IRExpr* expdLo     = cas->expdLo;
+               IRExpr* expdHi     = cas->expdHi;
                tl_assert(elTy == Ity_I32 || elTy == Ity_I64);
                tl_assert(pce->gWordTy == elTy);
                addrpp = newTemp(pce, elTy, NonShad);
@@ -4483,7 +4490,7 @@ static void schemeS ( PCEnv* pce, IRStmt* st )
                       binop(opOR, mkexpr(diffHi), mkexpr(diffLo)));
                success = newTemp(pce, Ity_I1, NonShad);
                assign('I', pce, success,
-                      binop(opCmpEQ, mkexpr(diff), zero));
+                      binop(opCasCmpEQ, mkexpr(diff), zero));
                gen_dirty_v_WW( pce, mkexpr(success),
                                      w_fn, w_nm, mkexpr(addrpp), nyuHiV );
                gen_dirty_v_WW( pce, mkexpr(success),
@@ -4494,7 +4501,7 @@ static void schemeS ( PCEnv* pce, IRStmt* st )
             if (pce->gWordTy == Ity_I64 && elTy == Ity_I32) {
                // check_load8(addr, addr#)
                // oldHi/Lo  = DCAS(addr:expdHi/Lo->newHi/Lo) [COPY]
-               // success   = CmpEQ32(oldHi,expdHi) && CmpEQ32(oldLo,expdLo)
+               // success   = CasCmpEQ32(oldHi,expdHi) && CasCmpEQ32(oldLo,expdLo)
                //           = ((oldHi ^ expdHi) | (oldLo ^ expdLo)) == 0
                // if (success) nonptr_or_unknown_range(addr, 8)
                IRTemp  diffHi, diffLo, diff, success;
@@ -4518,7 +4525,7 @@ static void schemeS ( PCEnv* pce, IRStmt* st )
                       binop(Iop_Or32, mkexpr(diffHi), mkexpr(diffLo)));
                success = newTemp(pce, Ity_I1, NonShad);
                assign('I', pce, success,
-                      binop(Iop_CmpEQ32, mkexpr(diff), mkU32(0)));
+                      binop(Iop_CasCmpEQ32, mkexpr(diff), mkU32(0)));
                gen_call_nonptr_or_unknown_range( pce, mkexpr(success),
                                                  addr, mkU64(8) );
             }

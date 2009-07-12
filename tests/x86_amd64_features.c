@@ -64,6 +64,9 @@ static Bool go(char* cpu)
    } else if ( strcmp( cpu, "amd64-ssse3" ) == 0 ) {
      level = 1;
      cmask = 1 << 9;
+   } else if ( strcmp( cpu, "amd64-cx16" ) == 0 ) {
+     level = 1;
+     cmask = 1 << 13;
 #endif
    } else {
      return 2;          // Unrecognised feature.

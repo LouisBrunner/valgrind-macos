@@ -11,7 +11,7 @@
 #include <assert.h>
 #include <unistd.h>
 #include <sys/wait.h>
-#include <sys/mman.h>
+#include "tests/sys_mman.h"
 
 #define NNN 3456987
 

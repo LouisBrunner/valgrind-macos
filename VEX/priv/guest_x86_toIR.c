@@ -6529,8 +6529,8 @@ UInt dis_cmpxchg_G_E ( UChar       sorb,
       assign( cond8, unop(Iop_1Uto8, mk_x86g_calculate_condition(X86CondZ)) );
       assign( acc2,  IRExpr_Mux0X(mkexpr(cond8), mkexpr(dest), mkexpr(acc)) );
       putIReg(size, R_EAX, mkexpr(acc2));
-      DIP("lock cmpxchg%c %s,%s\n", nameISize(size), 
-                                    nameIReg(size,gregOfRM(rm)), dis_buf);
+      DIP("cmpxchg%c %s,%s\n", nameISize(size), 
+                               nameIReg(size,gregOfRM(rm)), dis_buf);
    }
    else vassert(0);
 

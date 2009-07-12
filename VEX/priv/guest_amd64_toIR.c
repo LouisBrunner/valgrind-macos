@@ -7605,8 +7605,8 @@ ULong dis_cmpxchg_G_E ( /*OUT*/Bool* ok,
       assign( cond8, unop(Iop_1Uto8, mk_amd64g_calculate_condition(AMD64CondZ)) );
       assign( acc2,  IRExpr_Mux0X(mkexpr(cond8), mkexpr(dest), mkexpr(acc)) );
       putIRegRAX(size, mkexpr(acc2));
-      DIP("lock cmpxchg%c %s,%s\n", nameISize(size), 
-                                    nameIRegG(size,pfx,rm), dis_buf);
+      DIP("cmpxchg%c %s,%s\n", nameISize(size), 
+                               nameIRegG(size,pfx,rm), dis_buf);
    }
    else vassert(0);
 

@@ -414,7 +414,7 @@ Bool VG_(machine_get_hwcaps)( void )
 
      have_sse1 = (edx & (1<<25)) != 0; /* True => have sse insns */
      have_sse2 = (edx & (1<<26)) != 0; /* True => have sse2 insns */
-     have_sse3 = (ecx & (1<<9)) != 0;  /* True => have sse3 insns */
+     have_sse3 = (ecx & (1<<0)) != 0;  /* True => have sse3 insns */
 
      /* cmpxchg8b is a minimum requirement now; if we don't have it we
         must simply give up.  But all CPUs since Pentium-I have it, so

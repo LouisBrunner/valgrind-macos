@@ -1802,13 +1802,15 @@ static X86CondCode iselCondCode_wrk ( ISelEnv* env, IRExpr* e )
    /* CmpEQ8 / CmpNE8 */
    if (e->tag == Iex_Binop 
        && (e->Iex.Binop.op == Iop_CmpEQ8
-           || e->Iex.Binop.op == Iop_CmpNE8)) {
+           || e->Iex.Binop.op == Iop_CmpNE8
+           || e->Iex.Binop.op == Iop_CasCmpEQ8
+           || e->Iex.Binop.op == Iop_CasCmpNE8)) {
       if (isZeroU8(e->Iex.Binop.arg2)) {
          HReg    r1   = iselIntExpr_R(env, e->Iex.Binop.arg1);
          addInstr(env, X86Instr_Test32(0xFF,X86RM_Reg(r1)));
          switch (e->Iex.Binop.op) {
-            case Iop_CmpEQ8:  return Xcc_Z;
-            case Iop_CmpNE8:  return Xcc_NZ;
+            case Iop_CmpEQ8: case Iop_CasCmpEQ8: return Xcc_Z;
+            case Iop_CmpNE8: case Iop_CasCmpNE8: return Xcc_NZ;
             default: vpanic("iselCondCode(x86): CmpXX8(expr,0:I8)");
          }
       } else {
@@ -1819,8 +1821,8 @@ static X86CondCode iselCondCode_wrk ( ISelEnv* env, IRExpr* e )
          addInstr(env, X86Instr_Alu32R(Xalu_XOR,rmi2,r));
          addInstr(env, X86Instr_Test32(0xFF,X86RM_Reg(r)));
          switch (e->Iex.Binop.op) {
-            case Iop_CmpEQ8:  return Xcc_Z;
-            case Iop_CmpNE8:  return Xcc_NZ;
+            case Iop_CmpEQ8: case Iop_CasCmpEQ8: return Xcc_Z;
+            case Iop_CmpNE8: case Iop_CasCmpNE8: return Xcc_NZ;
             default: vpanic("iselCondCode(x86): CmpXX8(expr,expr)");
          }
       }
@@ -1829,7 +1831,9 @@ static X86CondCode iselCondCode_wrk ( ISelEnv* env, IRExpr* e )
    /* CmpEQ16 / CmpNE16 */
    if (e->tag == Iex_Binop 
        && (e->Iex.Binop.op == Iop_CmpEQ16
-           || e->Iex.Binop.op == Iop_CmpNE16)) {
+           || e->Iex.Binop.op == Iop_CmpNE16
+           || e->Iex.Binop.op == Iop_CasCmpEQ16
+           || e->Iex.Binop.op == Iop_CasCmpNE16)) {
       HReg    r1   = iselIntExpr_R(env, e->Iex.Binop.arg1);
       X86RMI* rmi2 = iselIntExpr_RMI(env, e->Iex.Binop.arg2);
       HReg    r    = newVRegI(env);
@@ -1837,8 +1841,8 @@ static X86CondCode iselCondCode_wrk ( ISelEnv* env, IRExpr* e )
       addInstr(env, X86Instr_Alu32R(Xalu_XOR,rmi2,r));
       addInstr(env, X86Instr_Test32(0xFFFF,X86RM_Reg(r)));
       switch (e->Iex.Binop.op) {
-         case Iop_CmpEQ16:  return Xcc_Z;
-         case Iop_CmpNE16:  return Xcc_NZ;
+         case Iop_CmpEQ16: case Iop_CasCmpEQ16: return Xcc_Z;
+         case Iop_CmpNE16: case Iop_CasCmpNE16: return Xcc_NZ;
          default: vpanic("iselCondCode(x86): CmpXX16");
       }
    }
@@ -1850,13 +1854,15 @@ static X86CondCode iselCondCode_wrk ( ISelEnv* env, IRExpr* e )
            || e->Iex.Binop.op == Iop_CmpLT32S
            || e->Iex.Binop.op == Iop_CmpLT32U
            || e->Iex.Binop.op == Iop_CmpLE32S
-           || e->Iex.Binop.op == Iop_CmpLE32U)) {
+           || e->Iex.Binop.op == Iop_CmpLE32U
+           || e->Iex.Binop.op == Iop_CasCmpEQ32
+           || e->Iex.Binop.op == Iop_CasCmpNE32)) {
       HReg    r1   = iselIntExpr_R(env, e->Iex.Binop.arg1);
       X86RMI* rmi2 = iselIntExpr_RMI(env, e->Iex.Binop.arg2);
       addInstr(env, X86Instr_Alu32R(Xalu_CMP,rmi2,r1));
       switch (e->Iex.Binop.op) {
-         case Iop_CmpEQ32:  return Xcc_Z;
-         case Iop_CmpNE32:  return Xcc_NZ;
+         case Iop_CmpEQ32: case Iop_CasCmpEQ32: return Xcc_Z;
+         case Iop_CmpNE32: case Iop_CasCmpNE32: return Xcc_NZ;
          case Iop_CmpLT32S: return Xcc_L;
          case Iop_CmpLT32U: return Xcc_B;
          case Iop_CmpLE32S: return Xcc_LE;
@@ -1880,8 +1886,8 @@ static X86CondCode iselCondCode_wrk ( ISelEnv* env, IRExpr* e )
       addInstr(env, X86Instr_Alu32R(Xalu_XOR,X86RMI_Reg(lo2), tLo));
       addInstr(env, X86Instr_Alu32R(Xalu_OR,X86RMI_Reg(tHi), tLo));
       switch (e->Iex.Binop.op) {
-         case Iop_CmpNE64:  return Xcc_NZ;
-         case Iop_CmpEQ64:  return Xcc_Z;
+         case Iop_CmpNE64: return Xcc_NZ;
+         case Iop_CmpEQ64: return Xcc_Z;
          default: vpanic("iselCondCode(x86): CmpXX64");
       }
    }

@@ -148,6 +148,13 @@
    jump.  It's not such a big deal with casLE since the side exit is
    only taken if the CAS fails, that is, the location is contended,
    which is relatively unlikely.
+
+   Note also, the test for CAS success vs failure is done using
+   Iop_CasCmp{EQ,NE}{8,16,32,64} rather than the ordinary
+   Iop_Cmp{EQ,NE} equivalents.  This is so as to tell Memcheck that it
+   shouldn't definedness-check these comparisons.  See
+   COMMENT_ON_CasCmpEQ in memcheck/mc_translate.c for
+   background/rationale.
 */
 
 /* LOCK prefixed instructions.  These are translated using IR-level
@@ -320,6 +327,7 @@ static IROp mkSizedOp ( IRType ty, IROp op8 )
            || op8 == Iop_Or8 || op8 == Iop_And8 || op8 == Iop_Xor8
            || op8 == Iop_Shl8 || op8 == Iop_Shr8 || op8 == Iop_Sar8
            || op8 == Iop_CmpEQ8 || op8 == Iop_CmpNE8
+           || op8 == Iop_CasCmpNE8
            || op8 == Iop_Not8 );
    switch (ty) {
       case Ity_I8:  return 0 +op8;
@@ -1436,7 +1444,8 @@ static void casLE ( IRExpr* addr, IRExpr* expVal, IRExpr* newVal,
                   NULL, mkexpr(expTmp), NULL, newVal );
    stmt( IRStmt_CAS(cas) );
    stmt( IRStmt_Exit(
-            binop( mkSizedOp(tyE,Iop_CmpNE8), mkexpr(oldTmp), mkexpr(expTmp) ),
+            binop( mkSizedOp(tyE,Iop_CasCmpNE8),
+                   mkexpr(oldTmp), mkexpr(expTmp) ),
             Ijk_Boring, /*Ijk_NoRedir*/
             IRConst_U64( restart_point ) 
          ));
@@ -15499,22 +15508,22 @@ DisResult disInstr_AMD64_WRK (
       }
 
       case 0xC7: { /* CMPXCHG8B Ev, CMPXCHG16B Ev */
-         IRType  elemTy    = sz==4 ? Ity_I32 : Ity_I64;
-         IRTemp  expdHi    = newTemp(elemTy);
-         IRTemp  expdLo    = newTemp(elemTy);
-         IRTemp  dataHi    = newTemp(elemTy);
-         IRTemp  dataLo    = newTemp(elemTy);
-         IRTemp  oldHi     = newTemp(elemTy);
-         IRTemp  oldLo     = newTemp(elemTy);
-         IRTemp  flags_old = newTemp(Ity_I64);
-         IRTemp  flags_new = newTemp(Ity_I64);
-         IRTemp  success   = newTemp(Ity_I1);
-         IROp    opOR      = sz==4 ? Iop_Or32    : Iop_Or64;
-         IROp    opXOR     = sz==4 ? Iop_Xor32   : Iop_Xor64;
-         IROp    opCmpEQ   = sz==4 ? Iop_CmpEQ32 : Iop_CmpEQ64;
-         IRExpr* zero      = sz==4 ? mkU32(0)    : mkU64(0);
-         IRTemp expdHi64   = newTemp(Ity_I64);
-         IRTemp expdLo64   = newTemp(Ity_I64);
+         IRType  elemTy     = sz==4 ? Ity_I32 : Ity_I64;
+         IRTemp  expdHi     = newTemp(elemTy);
+         IRTemp  expdLo     = newTemp(elemTy);
+         IRTemp  dataHi     = newTemp(elemTy);
+         IRTemp  dataLo     = newTemp(elemTy);
+         IRTemp  oldHi      = newTemp(elemTy);
+         IRTemp  oldLo      = newTemp(elemTy);
+         IRTemp  flags_old  = newTemp(Ity_I64);
+         IRTemp  flags_new  = newTemp(Ity_I64);
+         IRTemp  success    = newTemp(Ity_I1);
+         IROp    opOR       = sz==4 ? Iop_Or32    : Iop_Or64;
+         IROp    opXOR      = sz==4 ? Iop_Xor32   : Iop_Xor64;
+         IROp    opCasCmpEQ = sz==4 ? Iop_CasCmpEQ32 : Iop_CasCmpEQ64;
+         IRExpr* zero       = sz==4 ? mkU32(0)    : mkU64(0);
+         IRTemp expdHi64    = newTemp(Ity_I64);
+         IRTemp expdLo64    = newTemp(Ity_I64);
 
          /* Translate this using a DCAS, even if there is no LOCK
             prefix.  Life is too short to bother with generating two
@@ -15562,7 +15571,7 @@ DisResult disInstr_AMD64_WRK (
 
          /* success when oldHi:oldLo == expdHi:expdLo */
          assign( success,
-                 binop(opCmpEQ,
+                 binop(opCasCmpEQ,
                        binop(opOR,
                              binop(opXOR, mkexpr(oldHi), mkexpr(expdHi)),
                              binop(opXOR, mkexpr(oldLo), mkexpr(expdLo))

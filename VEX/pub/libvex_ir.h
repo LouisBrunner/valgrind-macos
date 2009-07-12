@@ -423,6 +423,14 @@ typedef
       /* Tags for unary ops */
       Iop_Not8,  Iop_Not16,  Iop_Not32,  Iop_Not64,
 
+      /* Exactly like CmpEQ8/16/32/64, but carrying the additional
+         hint that these compute the success/failure of a CAS
+         operation, and hence are almost certainly applied to two
+         copies of the same value, which in turn has implications for
+         Memcheck's instrumentation. */
+      Iop_CasCmpEQ8, Iop_CasCmpEQ16, Iop_CasCmpEQ32, Iop_CasCmpEQ64,
+      Iop_CasCmpNE8, Iop_CasCmpNE16, Iop_CasCmpNE32, Iop_CasCmpNE64,
+
       /* -- Ordering not important after here. -- */
 
       /* Widening multiplies */

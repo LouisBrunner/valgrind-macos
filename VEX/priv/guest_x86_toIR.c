@@ -118,6 +118,13 @@
    jump.  It's not such a big deal with casLE since the side exit is
    only taken if the CAS fails, that is, the location is contended,
    which is relatively unlikely.
+
+   Note also, the test for CAS success vs failure is done using
+   Iop_CasCmp{EQ,NE}{8,16,32,64} rather than the ordinary
+   Iop_Cmp{EQ,NE} equivalents.  This is so as to tell Memcheck that it
+   shouldn't definedness-check these comparisons.  See
+   COMMENT_ON_CasCmpEQ in memcheck/mc_translate.c for
+   background/rationale.
 */
 
 /* Performance holes:
@@ -715,6 +722,7 @@ static IROp mkSizedOp ( IRType ty, IROp op8 )
            || op8 == Iop_Or8 || op8 == Iop_And8 || op8 == Iop_Xor8
            || op8 == Iop_Shl8 || op8 == Iop_Shr8 || op8 == Iop_Sar8
            || op8 == Iop_CmpEQ8 || op8 == Iop_CmpNE8
+           || op8 == Iop_CasCmpNE8
            || op8 == Iop_Not8);
    adj = ty==Ity_I8 ? 0 : (ty==Ity_I16 ? 1 : 2);
    return adj + op8;
@@ -765,7 +773,8 @@ static void casLE ( IRExpr* addr, IRExpr* expVal, IRExpr* newVal,
                   NULL, mkexpr(expTmp), NULL, newVal );
    stmt( IRStmt_CAS(cas) );
    stmt( IRStmt_Exit(
-            binop( mkSizedOp(tyE,Iop_CmpNE8), mkexpr(oldTmp), mkexpr(expTmp) ),
+            binop( mkSizedOp(tyE,Iop_CasCmpNE8),
+                   mkexpr(oldTmp), mkexpr(expTmp) ),
             Ijk_Boring, /*Ijk_NoRedir*/
             IRConst_U32( restart_point ) 
          ));
@@ -13763,11 +13772,8 @@ DisResult disInstr_X86_WRK (
    /* ------------------------ XCHG ----------------------- */
 
    /* XCHG reg,mem automatically asserts LOCK# even without a LOCK
-      prefix.  Therefore, surround it with a IRStmt_MBE(Imbe_BusLock)
-      and IRStmt_MBE(Imbe_BusUnlock) pair.  But be careful; if it is
-      used with an explicit LOCK prefix, we don't want to end up with
-      two IRStmt_MBE(Imbe_BusLock)s -- one made here and one made by
-      the generic LOCK logic at the top of disInstr. */
+      prefix; hence it must be translated with an IRCAS (at least, the
+      memory variant). */
    case 0x86: /* XCHG Gb,Eb */
       sz = 1;
       /* Fall through ... */
@@ -14216,7 +14222,7 @@ DisResult disInstr_X86_WRK (
 
          /* success when oldHi:oldLo == expdHi:expdLo */
          assign( success,
-                 binop(Iop_CmpEQ32,
+                 binop(Iop_CasCmpEQ32,
                        binop(Iop_Or32,
                              binop(Iop_Xor32, mkexpr(oldHi), mkexpr(expdHi)),
                              binop(Iop_Xor32, mkexpr(oldLo), mkexpr(expdLo))

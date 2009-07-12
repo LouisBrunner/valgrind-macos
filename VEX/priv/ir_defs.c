@@ -144,6 +144,10 @@ void ppIROp ( IROp op )
          str = "CmpEQ"; base = Iop_CmpEQ8; break;
       case Iop_CmpNE8 ... Iop_CmpNE64:
          str = "CmpNE"; base = Iop_CmpNE8; break;
+      case Iop_CasCmpEQ8 ... Iop_CasCmpEQ64:
+         str = "CasCmpEQ"; base = Iop_CasCmpEQ8; break;
+      case Iop_CasCmpNE8 ... Iop_CasCmpNE64:
+         str = "CasCmpNE"; base = Iop_CasCmpNE8; break;
       case Iop_Not8 ... Iop_Not64:
          str = "Not"; base = Iop_Not8; break;
       /* other cases must explicitly "return;" */
@@ -574,7 +578,8 @@ void ppIROp ( IROp op )
 
       default: vpanic("ppIROp(1)");
    }
-  
+
+   vassert(str);  
    switch (op - base) {
       case 0: vex_printf("%s",str); vex_printf("8"); break;
       case 1: vex_printf("%s",str); vex_printf("16"); break;
@@ -1642,14 +1647,18 @@ void typeOfPrimop ( IROp op,
          UNARY(Ity_I64, Ity_I64);
 
       case Iop_CmpEQ8: case Iop_CmpNE8:
+      case Iop_CasCmpEQ8: case Iop_CasCmpNE8:
          COMPARISON(Ity_I8);
       case Iop_CmpEQ16: case Iop_CmpNE16:
+      case Iop_CasCmpEQ16: case Iop_CasCmpNE16:
          COMPARISON(Ity_I16);
       case Iop_CmpEQ32: case Iop_CmpNE32:
+      case Iop_CasCmpEQ32: case Iop_CasCmpNE32:
       case Iop_CmpLT32S: case Iop_CmpLE32S:
       case Iop_CmpLT32U: case Iop_CmpLE32U:
          COMPARISON(Ity_I32);
       case Iop_CmpEQ64: case Iop_CmpNE64:
+      case Iop_CasCmpEQ64: case Iop_CasCmpNE64:
       case Iop_CmpLT64S: case Iop_CmpLE64S:
       case Iop_CmpLT64U: case Iop_CmpLE64U:
          COMPARISON(Ity_I64);

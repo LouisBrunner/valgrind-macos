@@ -2197,7 +2197,9 @@ static AMD64CondCode iselCondCode_wrk ( ISelEnv* env, IRExpr* e )
    /* CmpEQ8 / CmpNE8 */
    if (e->tag == Iex_Binop 
        && (e->Iex.Binop.op == Iop_CmpEQ8
-           || e->Iex.Binop.op == Iop_CmpNE8)) {
+           || e->Iex.Binop.op == Iop_CmpNE8
+           || e->Iex.Binop.op == Iop_CasCmpEQ8
+           || e->Iex.Binop.op == Iop_CasCmpNE8)) {
       HReg      r1   = iselIntExpr_R(env, e->Iex.Binop.arg1);
       AMD64RMI* rmi2 = iselIntExpr_RMI(env, e->Iex.Binop.arg2);
       HReg      r    = newVRegI(env);
@@ -2205,8 +2207,8 @@ static AMD64CondCode iselCondCode_wrk ( ISelEnv* env, IRExpr* e )
       addInstr(env, AMD64Instr_Alu64R(Aalu_XOR,rmi2,r));
       addInstr(env, AMD64Instr_Alu64R(Aalu_AND,AMD64RMI_Imm(0xFF),r));
       switch (e->Iex.Binop.op) {
-         case Iop_CmpEQ8:  return Acc_Z;
-         case Iop_CmpNE8:  return Acc_NZ;
+         case Iop_CmpEQ8: case Iop_CasCmpEQ8: return Acc_Z;
+         case Iop_CmpNE8: case Iop_CasCmpNE8: return Acc_NZ;
          default: vpanic("iselCondCode(amd64): CmpXX8");
       }
    }
@@ -2214,7 +2216,9 @@ static AMD64CondCode iselCondCode_wrk ( ISelEnv* env, IRExpr* e )
    /* CmpEQ16 / CmpNE16 */
    if (e->tag == Iex_Binop 
        && (e->Iex.Binop.op == Iop_CmpEQ16
-           || e->Iex.Binop.op == Iop_CmpNE16)) {
+           || e->Iex.Binop.op == Iop_CmpNE16
+           || e->Iex.Binop.op == Iop_CasCmpEQ16
+           || e->Iex.Binop.op == Iop_CasCmpNE16)) {
       HReg      r1   = iselIntExpr_R(env, e->Iex.Binop.arg1);
       AMD64RMI* rmi2 = iselIntExpr_RMI(env, e->Iex.Binop.arg2);
       HReg      r    = newVRegI(env);
@@ -2222,8 +2226,8 @@ static AMD64CondCode iselCondCode_wrk ( ISelEnv* env, IRExpr* e )
       addInstr(env, AMD64Instr_Alu64R(Aalu_XOR,rmi2,r));
       addInstr(env, AMD64Instr_Alu64R(Aalu_AND,AMD64RMI_Imm(0xFFFF),r));
       switch (e->Iex.Binop.op) {
-         case Iop_CmpEQ16:  return Acc_Z;
-         case Iop_CmpNE16:  return Acc_NZ;
+         case Iop_CmpEQ16: case Iop_CasCmpEQ16: return Acc_Z;
+         case Iop_CmpNE16: case Iop_CasCmpNE16: return Acc_NZ;
          default: vpanic("iselCondCode(amd64): CmpXX16");
       }
    }
@@ -2231,7 +2235,9 @@ static AMD64CondCode iselCondCode_wrk ( ISelEnv* env, IRExpr* e )
    /* CmpEQ32 / CmpNE32 */
    if (e->tag == Iex_Binop 
        && (e->Iex.Binop.op == Iop_CmpEQ32
-           || e->Iex.Binop.op == Iop_CmpNE32)) {
+           || e->Iex.Binop.op == Iop_CmpNE32
+           || e->Iex.Binop.op == Iop_CasCmpEQ32
+           || e->Iex.Binop.op == Iop_CasCmpNE32)) {
       HReg      r1   = iselIntExpr_R(env, e->Iex.Binop.arg1);
       AMD64RMI* rmi2 = iselIntExpr_RMI(env, e->Iex.Binop.arg2);
       HReg      r    = newVRegI(env);
@@ -2239,8 +2245,8 @@ static AMD64CondCode iselCondCode_wrk ( ISelEnv* env, IRExpr* e )
       addInstr(env, AMD64Instr_Alu64R(Aalu_XOR,rmi2,r));
       addInstr(env, AMD64Instr_Sh64(Ash_SHL, 32, r));
       switch (e->Iex.Binop.op) {
-         case Iop_CmpEQ32:  return Acc_Z;
-         case Iop_CmpNE32:  return Acc_NZ;
+         case Iop_CmpEQ32: case Iop_CasCmpEQ32: return Acc_Z;
+         case Iop_CmpNE32: case Iop_CasCmpNE32: return Acc_NZ;
          default: vpanic("iselCondCode(amd64): CmpXX32");
       }
    }
@@ -2253,13 +2259,14 @@ static AMD64CondCode iselCondCode_wrk ( ISelEnv* env, IRExpr* e )
            || e->Iex.Binop.op == Iop_CmpLT64U
            || e->Iex.Binop.op == Iop_CmpLE64S
            || e->Iex.Binop.op == Iop_CmpLE64U
-          )) {
+           || e->Iex.Binop.op == Iop_CasCmpEQ64
+           || e->Iex.Binop.op == Iop_CasCmpNE64)) {
       HReg      r1   = iselIntExpr_R(env, e->Iex.Binop.arg1);
       AMD64RMI* rmi2 = iselIntExpr_RMI(env, e->Iex.Binop.arg2);
       addInstr(env, AMD64Instr_Alu64R(Aalu_CMP,rmi2,r1));
       switch (e->Iex.Binop.op) {
-         case Iop_CmpEQ64:  return Acc_Z;
-         case Iop_CmpNE64:  return Acc_NZ;
+         case Iop_CmpEQ64: case Iop_CasCmpEQ64: return Acc_Z;
+         case Iop_CmpNE64: case Iop_CasCmpNE64: return Acc_NZ;
 	 case Iop_CmpLT64S: return Acc_L;
 	 case Iop_CmpLT64U: return Acc_B;
 	 case Iop_CmpLE64S: return Acc_LE;

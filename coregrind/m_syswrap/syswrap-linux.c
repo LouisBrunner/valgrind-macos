@@ -4179,7 +4179,6 @@ PRE(sys_ioctl)
       PRE_MEM_READ( "ioctl(VT_SETMODE)", ARG3, sizeof(struct vki_vt_mode) );
       break;
    case VKI_VT_GETSTATE:
-      PRE_MEM_READ( "ioctl(VT_GETSTATE)", ARG3, sizeof(struct vki_vt_stat) );
       PRE_MEM_WRITE( "ioctl(VT_GETSTATE).v_active",
                      (Addr) &(((struct vki_vt_stat*) ARG3)->v_active),
                      sizeof(((struct vki_vt_stat*) ARG3)->v_active));

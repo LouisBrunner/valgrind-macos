@@ -1,8 +1,9 @@
 
-##----------------------------------------------------------------------##
-#
 # Suppressions for Darwin 9.x / Mac OS X 10.5 Leopard
-#
+
+##----------------------------------------------------------------------##
+# Memcheck
+##----------------------------------------------------------------------##
 
 {
    mach_msg_trap-1
@@ -105,6 +106,14 @@
    obj:/usr/lib/libSystem*
 }
 
+{
+   macos-vsyslog-hole
+   Memcheck:Param
+   socketcall.sendto(msg)
+   fun:sendto$NOCANCEL$UNIX2003
+   fun:vsyslog
+}
+
 # Still-reachable memory.
 
 # I chopped this one off at libSystem_initializer, there were more frames.
@@ -154,10 +163,9 @@
    fun:setenv$UNIX2003
 }
 
-
 ##----------------------------------------------------------------------##
-#
-# Suppressions for Helgrind.
+# Helgrind
+##----------------------------------------------------------------------##
 
 # These ones were necessary to give no errors on a tiny non-threaded
 # program.  I don't know if they're real problems or false positives (njn).

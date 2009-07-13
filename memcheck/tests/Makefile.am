@@ -237,6 +237,8 @@ AM_CXXFLAGS += $(AM_FLAG_M3264_PRI)
 
 if VGCONF_OS_IS_DARWIN
 atomic_incs_CFLAGS = $(AM_CFLAGS) -mdynamic-no-pic
+else
+atomic_incs_CFLAGS = $(AM_CFLAGS)
 endif
 
 deep_templates_SOURCES	= deep_templates.cpp

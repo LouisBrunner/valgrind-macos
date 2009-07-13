@@ -1954,9 +1954,17 @@ static void post_reg_write_nonptr ( ThreadId tid, PtrdiffT offset, SizeT size )
    //
    if (is_integer_guest_reg( (Int)offset, (Int)size )) {
       put_guest_intreg( tid, 1, offset, size, (UWord)NONPTR );
-   } else {
+   } 
+   else 
+   if (size == 1 || size == 2) {
+      /* can't possibly be an integer guest reg.  Ignore. */
+   }
+   else {
       // DDD: on Darwin, this assertion fails because we currently do a
       // 'post_reg_write' on the 'guest_CC_DEP1' pseudo-register.
+      // JRS 2009July13: we should change is_integer_guest_reg()
+      // to accept guest_CC_DEP* and guest_CC_NDEP
+      // as legitimate pointer-holding registers
       tl_assert(0);
    }
    //   VG_(set_thread_shadow_archreg)( tid, reg, (UInt)NONPTR );

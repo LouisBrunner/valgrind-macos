@@ -803,8 +803,8 @@ static void print_preamble(Bool logging_to_fd, const char* toolname)
 
       /* Core details */
       VG_(message)(Vg_UserMsg,
-         "%sUsing LibVEX rev %s, a library for dynamic binary translation.%s",
-         xpre, LibVEX_Version(), xpost );
+         "%sUsing LibVEX, a library for dynamic binary translation.%s",
+         xpre, xpost );
       VG_(message)(Vg_UserMsg, 
          "%sCopyright (C) 2004-2009, and GNU GPL'd, by OpenWorks LLP.%s",
          xpre, xpost );

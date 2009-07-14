@@ -3342,13 +3342,13 @@ PRE(sys_ioctl)
    case VKI_SNDRV_TIMER_IOCTL_STOP:
    case VKI_SNDRV_TIMER_IOCTL_CONTINUE:
    case VKI_SNDRV_TIMER_IOCTL_PAUSE:
-      PRINT("sys_ioctl ( %d, 0x%x )",ARG1,ARG2);
+      PRINT("sys_ioctl ( %ld, 0x%lx )",ARG1,ARG2);
       PRE_REG_READ2(long, "ioctl",
                     unsigned int, fd, unsigned int, request);
       return;
 
    default:
-      PRINT("sys_ioctl ( %d, 0x%x, %p )",ARG1,ARG2,ARG3);
+      PRINT("sys_ioctl ( %ld, 0x%lx, 0x%lx )",ARG1,ARG2,ARG3);
       PRE_REG_READ3(long, "ioctl",
                     unsigned int, fd, unsigned int, request, unsigned long, arg);
       break;

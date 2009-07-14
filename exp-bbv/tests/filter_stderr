@@ -1,0 +1,13 @@
+#! /bin/sh
+
+dir=`dirname $0`
+
+$dir/../../tests/filter_stderr_basic  |
+
+# Remove lines that don't start with #
+sed '/^[^#]/d' |
+
+# Remove all blank lines
+sed '/^$/d'
+
+

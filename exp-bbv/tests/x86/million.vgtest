@@ -1,0 +1,5 @@
+prog: million 
+vgopts: --interval-size=100000 --bb-out-file=million.out.bb --pc-out-file=million.out.pc
+post:	cat million.out.bb
+cleanup: rm million.out.bb million.out.pc
+

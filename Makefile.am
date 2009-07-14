@@ -12,7 +12,8 @@ TOOLS =		memcheck \
 		helgrind \
 		drd
 
-EXP_TOOLS = 	exp-ptrcheck
+EXP_TOOLS = 	exp-ptrcheck \
+		exp-bbv
 
 # DDD: once all tools work on Darwin, TEST_TOOLS and TEST_EXP_TOOLS can be
 # replaced with TOOLS and EXP_TOOLS.
@@ -27,7 +28,7 @@ else
 		lackey \
 		none
 
-  TEST_EXP_TOOLS =
+  TEST_EXP_TOOLS = exp-bbv
 endif
 
 # Put docs last because building the HTML is slow and we want to get

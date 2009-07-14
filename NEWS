@@ -29,6 +29,8 @@ Release 3.5.0 (???)
 
 * XXX: something about improved Wine support?
 
+* XXX: exp-bbv has been added...
+
 * A new Memcheck client request VALGRIND_COUNT_LEAK_BLOCKS has been added.
   It is similar to VALGRIND_COUNT_LEAKS but counts blocks instead of bytes.
   [XXX: consider adding VALGRIND_COUNT_LEAK_BYTES as a synonym and

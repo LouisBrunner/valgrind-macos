@@ -259,6 +259,14 @@ leaks.</para>
 
 </refsect1>
 
+<refsect1 id="bbv-options">
+<title>BBV Options</title>
+
+<xi:include href="../../exp-bbv/docs/bbv-manual.xml" 
+            xpointer="bbv.opts.list"
+            xmlns:xi="http://www.w3.org/2001/XInclude" />
+
+</refsect1>
 
 
 <refsect1 id="lackey-options">
@@ -269,7 +277,6 @@ leaks.</para>
             xmlns:xi="http://www.w3.org/2001/XInclude" />
 
 </refsect1>
-
 
 
 <refsect1 id="see_also">

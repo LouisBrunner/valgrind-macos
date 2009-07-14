@@ -1,0 +1,4 @@
+prog: rep_prefix
+vgopts: --interval-size=100000 --bb-out-file=rep_prefix.out.bb
+cleanup: rm rep_prefix.out.bb
+

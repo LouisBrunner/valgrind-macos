@@ -1,0 +1,6 @@
+.equ FREQUENT_CHAR,0
+.equ N,1024
+.equ F,64
+.equ THRESHOLD,2
+.equ P_BITS,10
+.equ POSITION_MASK,3

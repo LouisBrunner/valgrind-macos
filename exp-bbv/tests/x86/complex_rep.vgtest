@@ -1,0 +1,4 @@
+prog: complex_rep
+vgopts: --interval-size=100000 --bb-out-file=complex_rep.out.bb
+cleanup: rm complex_rep.out.bb
+

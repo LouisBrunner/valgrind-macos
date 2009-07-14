@@ -1,0 +1,12 @@
+#! /bin/sh
+
+dir=`dirname $0`
+
+$dir/../../tests/filter_stderr_basic  |
+
+# This attempts to filter out the basic block numbers
+# While keeping total count.  This is because the
+#  basic block number is non-deterministic on a
+#  multi-threaded benchmark
+
+sed s/:\[0-9\]\*:/' '/g

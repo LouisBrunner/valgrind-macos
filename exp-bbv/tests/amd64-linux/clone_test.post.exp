@@ -1,0 +1,58 @@
+T 4    996    5    2    3    98991   
+T 100000   
+T 100000   
+T 100000   
+T 100000   
+T 100000   
+T 100000   
+T 100000   
+T 100000   
+T 100000   
+T 1001    2    3    98994   
+T 100000   
+T 100000   
+T 100000   
+T 100000   
+
+
+# Thread 1
+#   Total intervals: 15 (Interval Size 100000)
+#   Total instructions: 1501007
+#   Total reps: 0
+#   Unique reps: 0
+#   Total fldcw instructions: 0
+
+T 2    3    99996   
+T 100000   
+T 100000   
+T 100000   
+T 100000   
+T 100000   
+T 100000   
+T 100000   
+T 100000   
+T 100000   
+T 100000   
+T 100000   
+T 100000   
+T 100000   
+T 100000   
+T 100000   
+T 100000   
+T 100000   
+T 100000   
+T 99996    4   
+T 100000   
+T 100000   
+T 100000   
+T 100000   
+T 99998    2   
+
+
+# Thread 2
+#   Total intervals: 25 (Interval Size 100000)
+#   Total instructions: 2500001
+#   Total reps: 0
+#   Unique reps: 0
+#   Total fldcw instructions: 0
+

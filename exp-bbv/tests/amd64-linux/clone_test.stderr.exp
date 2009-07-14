@@ -1,0 +1,12 @@
+# Thread 1
+#   Total intervals: 15 (Interval Size 100000)
+#   Total instructions: 1501007
+#   Total reps: 0
+#   Unique reps: 0
+#   Total fldcw instructions: 0
+# Thread 2
+#   Total intervals: 25 (Interval Size 100000)
+#   Total instructions: 2500001
+#   Total reps: 0
+#   Unique reps: 0
+#   Total fldcw instructions: 0

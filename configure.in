@@ -1900,6 +1900,13 @@ AC_CONFIG_FILES([
    drd/docs/Makefile
    drd/scripts/download-and-build-splash2
    drd/tests/Makefile
+   exp-bbv/Makefile
+   exp-bbv/docs/Makefile
+   exp-bbv/tests/Makefile
+   exp-bbv/tests/x86/Makefile
+   exp-bbv/tests/x86-linux/Makefile
+   exp-bbv/tests/amd64-linux/Makefile
+   exp-bbv/tests/ppc32-linux/Makefile
 ])
 AC_OUTPUT
 

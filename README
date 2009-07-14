@@ -22,8 +22,9 @@ programs in detail. You can also use Valgrind to build new tools.
 The Valgrind distribution currently includes six production-quality
 tools: a memory error detector, two thread error detectors, a cache and
 branch-prediction profiler, a call-graph generating cache profiler, and
-a heap profiler. It also includes one experimental tool, which detects
-out of bounds reads and writes of stack, global and heap arrays.
+a heap profiler. It also includes two experimental tools:  a
+heap/stack/global array overrun detector, and a SimPoint basic block vector
+generator.
 
 Valgrind is closely tied to details of the CPU, operating system and to
 a lesser extent, compiler and basic C libraries. This makes it difficult

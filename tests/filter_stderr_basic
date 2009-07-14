@@ -23,7 +23,7 @@ sed "/^WARNING: assuming toc 0x*/d" |
 sed "/^Using valgrind-.*, a dynamic binary instrumentation framework/ , /./ d" |
 
 # ... and also remove the "Using LibVEX..." line and the one after it.
-sed "/^Using LibVEX rev .*, a library for dynamic binary translation/ , /./ d" |
+sed "/^Using LibVEX, a library for dynamic binary translation/ , /./ d" |
 
 # Remove other introductory lines
 sed "/Estimated CPU clock rate is [0-9]* MHz/d" |

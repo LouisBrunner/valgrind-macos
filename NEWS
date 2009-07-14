@@ -12,6 +12,7 @@ Release 3.5.0 (???)
     planned because it would require work and 10.4 is only becoming less common.
 
   Things that don't work:
+  - Helgrind and DRD
   - Objective-C garbage collection
   - --db-attach=yes
   - Messages like the following indicate a mismatch between Valgrind's

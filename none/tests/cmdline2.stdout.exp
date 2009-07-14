@@ -96,10 +96,9 @@ usage: valgrind [options] prog-and-args
 
   Extra options read from ~/.valgrindrc, $VALGRIND_OPTS, ./.valgrindrc
 
-  Valgrind is Copyright (C) 2000-2009 Julian Seward et al.
-  and licensed under the GNU General Public License, version 2.
-  Bug reports, feedback, admiration, abuse, etc, to: www.valgrind.org.
+  Nulgrind is Copyright (C) 2002-2009, and GNU GPL'd, by Nicholas Nethercote.
+  Valgrind is Copyright (C) 2000-2009, and GNU GPL'd, by Julian Seward et al
+  LibVEX is Copyright (C) 2004-2009, and GNU GPL'd, by OpenWorks LLP
 
-  Tools are copyright and licensed by their authors.  See each
-  tool's start-up message for more information.
+  Bug reports, feedback, admiration, abuse, etc, to: www.valgrind.org.
 

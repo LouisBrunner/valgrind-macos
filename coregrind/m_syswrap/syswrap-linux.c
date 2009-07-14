@@ -3323,6 +3323,40 @@ PRE(sys_ioctl)
    PRE_REG_READ3(long, "ioctl",
                  unsigned int, fd, unsigned int, request, unsigned long, arg);
 
+   // We first handle the ones that don't use ARG3 (even as a
+   // scalar/non-pointer argument).
+   switch (ARG2 /* request */) {
+
+      /* linux/soundcard interface (ALSA) */
+   case VKI_SNDRV_PCM_IOCTL_HW_FREE:
+   case VKI_SNDRV_PCM_IOCTL_HWSYNC:
+   case VKI_SNDRV_PCM_IOCTL_PREPARE:
+   case VKI_SNDRV_PCM_IOCTL_RESET:
+   case VKI_SNDRV_PCM_IOCTL_START:
+   case VKI_SNDRV_PCM_IOCTL_DROP:
+   case VKI_SNDRV_PCM_IOCTL_DRAIN:
+   case VKI_SNDRV_PCM_IOCTL_RESUME:
+   case VKI_SNDRV_PCM_IOCTL_XRUN:
+   case VKI_SNDRV_PCM_IOCTL_UNLINK:
+   case VKI_SNDRV_TIMER_IOCTL_START:
+   case VKI_SNDRV_TIMER_IOCTL_STOP:
+   case VKI_SNDRV_TIMER_IOCTL_CONTINUE:
+   case VKI_SNDRV_TIMER_IOCTL_PAUSE:
+      PRINT("sys_ioctl ( %d, 0x%x )",ARG1,ARG2);
+      PRE_REG_READ2(long, "ioctl",
+                    unsigned int, fd, unsigned int, request);
+      return;
+
+   default:
+      PRINT("sys_ioctl ( %d, 0x%x, %p )",ARG1,ARG2,ARG3);
+      PRE_REG_READ3(long, "ioctl",
+                    unsigned int, fd, unsigned int, request, unsigned long, arg);
+      break;
+   }
+
+   // We now handle those that do look at ARG3 (and unknown ones fall into
+   // this category).  Nb: some of these may well belong in the
+   // doesn't-use-ARG3 switch above.
    switch (ARG2 /* request */) {
    case VKI_TCSETS:
    case VKI_TCSETSW:
@@ -3718,20 +3752,9 @@ PRE(sys_ioctl)
       break;
 
       /* linux/soundcard interface (ALSA) */
-   case VKI_SNDRV_PCM_IOCTL_HW_FREE:
-   case VKI_SNDRV_PCM_IOCTL_HWSYNC:
-   case VKI_SNDRV_PCM_IOCTL_PREPARE:
-   case VKI_SNDRV_PCM_IOCTL_RESET:
-   case VKI_SNDRV_PCM_IOCTL_START:
-   case VKI_SNDRV_PCM_IOCTL_DROP:
-   case VKI_SNDRV_PCM_IOCTL_DRAIN:
-   case VKI_SNDRV_PCM_IOCTL_RESUME:
-   case VKI_SNDRV_PCM_IOCTL_XRUN:
-   case VKI_SNDRV_PCM_IOCTL_UNLINK:
-   case VKI_SNDRV_TIMER_IOCTL_START:
-   case VKI_SNDRV_TIMER_IOCTL_STOP:
-   case VKI_SNDRV_TIMER_IOCTL_CONTINUE:
-   case VKI_SNDRV_TIMER_IOCTL_PAUSE:
+   case VKI_SNDRV_PCM_IOCTL_PAUSE:
+   case VKI_SNDRV_PCM_IOCTL_LINK:
+      /* these just take an int by value */
       break;
 
       /* Real Time Clock (/dev/rtc) ioctls */

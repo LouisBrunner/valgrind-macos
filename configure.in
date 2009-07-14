@@ -25,9 +25,10 @@ AC_PROG_CC
 AM_PROG_CC_C_O
 AC_PROG_CPP
 AC_PROG_CXX
-# AC_PROG_OBJC apparently causes problems on older Linux distros.  If we
-# ever have any Objective-C code in the Valgrind code base (eg. most likely
-# as Darwin-specific tests) we'll need one of the following:
+# AC_PROG_OBJC apparently causes problems on older Linux distros (eg. with
+# autoconf 2.59).  If we ever have any Objective-C code in the Valgrind code
+# base (eg. most likely as Darwin-specific tests) we'll need one of the
+# following:
 # - put AC_PROG_OBJC in a Darwin-specific part of this file
 # - Use AC_PROG_OBJC here and up the minimum autoconf version
 # - Use the following, which is apparently equivalent:

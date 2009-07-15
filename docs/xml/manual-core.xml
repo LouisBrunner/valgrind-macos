@@ -575,13 +575,19 @@ categories.</para>
 
 <para>The single most important option.</para>
 
-<itemizedlist>
-  <listitem id="tool_name">
-    <para><option>--tool=&lt;name&gt;</option> [default=memcheck]</para>
-    <para>Run the Valgrind tool called <emphasis>name</emphasis>,
-    e.g. Memcheck, Cachegrind, etc.</para>
-  </listitem>
-</itemizedlist>
+<variablelist>
+
+  <varlistentry id="tool_name" xreflabel="--tool">
+    <term>
+      <option><![CDATA[--tool=<name> [default: memcheck] ]]></option>
+    </term>
+    <listitem>
+      <para>Run the Valgrind tool called <emphasis>name</emphasis>,
+      e.g. Memcheck, Cachegrind, etc.</para>
+    </listitem>
+  </varlistentry>
+
+</variablelist>
 
 </sect2>
 
@@ -820,9 +826,91 @@ that can report errors, e.g. Memcheck, but not Cachegrind.</para>
     </term>
     <listitem>
       <para>When enabled, output will be in XML format.  This is aimed
-      at making life easier for tools that consume Valgrind's output as
-      input, such as GUI front ends.  Currently this option only works
-      with Memcheck.</para>
+      at making life easier for tools that consume Valgrind's output
+      as input, such as GUI front ends.  Currently this option works
+      with Memcheck, Helgrind and Ptrcheck.  The output format is
+      specified in the
+      file
+      <computeroutput>docs/internals/xml-output-protocol4.txt</computeroutput>
+      in the source tree for Valgrind 3.5.0 or later.</para>
+    </listitem>
+  </varlistentry>
+
+
+
+
+  <varlistentry id="opt.xml-fd" xreflabel="--xml-fd">
+    <term>
+      <option><![CDATA[--xml-fd=<number> [default: -1, disabled] ]]></option>
+    </term>
+    <listitem>
+      <para>Specifies that Valgrind should send its XML output to the
+      specified file descriptor.  By default, this is disabled.  To
+      use XML output, you need to give <option>--xml=yes</option> to
+      tell the tool you want XML output.  You also need to use one of
+      <option>--xml-fd=</option>, <option>--xml-file=</option>
+      or <option>--xml-socket=</option> to specify where the XML is to
+      be sent.  If you request XML output but do not specify a
+      destination for it, Valgrind will refuse to start up.</para>
+
+      <para>Note that XML output is sent on a different channel (file
+      descriptor) to normal text output.  It is entirely legitimate to
+      select XML output, use one
+      of <option>--xml-fd=</option>, <option>--xml-file=</option>
+      or <option>--xml-socket=</option> to specify where it should be
+      sent, and at the same time use one of
+      <option>--log-fd=</option>, <option>--log-file=</option>
+      or <option>--log-socket=</option> to specify where any residual
+      text messages should be sent.</para>
+
+      <para>The recommended flags for a GUI to pass, when requesting
+      XML output, are: <option>--xml=yes</option> to enable XML
+      output,
+      <option>--xml-file=</option> to send the XML output to a
+      (presumably GUI-selected) file, <option>--log-file=</option> to
+      send the text output to a second GUI-selected file,
+      and <option>-q</option> to restrict the text output to critical
+      error messages created by Valgrind itself.  For example, failure
+      to read a specified suppressions file counts as a critical error
+      message.  In this way, for a successful run the text output file
+      will be empty.  But if it isn't empty, then it will contain
+      important information which the GUI user should be made aware
+      of.
+    
+      <para>Note that GUIs are strongly recommended to also
+      specify <option>--child-silent-after-fork=yes</option>.
+      </para>
+
+      </para>
+    </listitem>
+  </varlistentry>
+
+  <varlistentry id="opt.xml-file" xreflabel="--xml-file">
+    <term>
+      <option><![CDATA[--xml-file=<filename> ]]></option>
+    </term>
+    <listitem>
+      <para>Specifies that Valgrind should send its XML output
+      to the specified file.  Any <option>%p</option>
+      or <option>%q</option> sequences appearing in the filename are
+      expanded in exactly the same way as they are
+      for <option>--log-file=</option>.  See the description
+      of <option>--log-file=</option> for details.
+      </para>
+    </listitem>
+  </varlistentry>
+
+  <varlistentry id="opt.xml-socket" xreflabel="--xml-socket">
+    <term>
+      <option><![CDATA[--xml-socket=<ip-address:port-number> ]]></option>
+    </term>
+    <listitem>
+      <para>Specifies that Valgrind should send its XML output the
+      specified port at the specified IP address.  This option behaves
+      identically to <option>--log-socket=</option>, except that it
+      specifies the destination for XML output rather than for text
+      output.  See the description of <option>--log-socket=</option>
+      for further details.</para>
     </listitem>
   </varlistentry>
 

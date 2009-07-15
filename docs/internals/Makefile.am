@@ -16,4 +16,5 @@ EXTRA_DIST = \
 	segments-seginfos.txt threads-syscalls-signals.txt \
 	tm-mutexstates.dot tm-threadstates.dot tracking-fn-entry-exit.txt \
 	why-no-libc.txt \
-	xml-output.txt
+	xml-output.txt \
+	xml-output-protocol4.txt

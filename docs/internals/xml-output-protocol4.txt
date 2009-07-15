@@ -1,0 +1,697 @@
+
+====================================================================
+
+11 May 2009
+
+Protocols 1 through 3 supported Memcheck only.  Protocol 4 provides
+XML output for Memcheck, Helgrind and Ptrcheck.  Technically there are
+three variants of Protocol 4, one for each tool, since they produce
+different errors.  The three variants differ only in the definition of
+the ERROR nonterminal and are otherwise identical.
+
+NOTE that Protocol 4 (for the current svn trunk, which will eventually
+become 3.5.x) is still under development.  The text herein should not
+be regarded as the final definition.
+
+
+Identification of Protocols
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+In Protocols 1 through 3, a <protocolversion>INT<protocolversion>
+close to the start of the stream makes it possible for parsers to
+ascertain the version, so they can tell whether or not they can handle
+it.  The presence of support for multiple tools brings a complication,
+though: it is not enough merely to state the protocol version -- the
+tool name must also be stated.  Hence in Protocol 4, the
+<protocolversion>INT<protocolversion> is followed immediately by
+<protocoltool>TEXT</protocoltool>, to identify the tool.
+
+This duplicates the tool name present later in the preamble, but it
+was felt important to place the tool name right at the front along
+with the protocol number, for easy determination of parseability.
+
+
+How this specification is structured
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The TOPLEVEL nonterminal specifies top level XML output structure.  It
+is common to all error producing tools.
+
+TOPLEVEL references TOOLSPECIFICs for each tool, and these are defined
+differently for each tool.  Each TOOLSPECIFIC is an error, which is
+tool-specific.  For Helgrind, a TOOLSPECIFIC may also contain a
+so-called thread-announcement record (described below).
+
+Overall there is a very high degree of format commonality between the
+three tools.  Once a GUI is able to display the output correctly for
+one tool, it should be easy to extend it for the other two.
+
+
+Protocol 4 changes for Memcheck
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Protocol 4 for Memcheck is similar to Protocol 3, but has a number
+of changes to make it fit in the common framework:
+
+- the SUPPCOUNTS nonterminal now appears after the "Zero or more
+  ERRORs" block, and not before it.
+
+- the abovementioned "Zero or more ERRORs" block now becomes
+  "Zero or more of (either ERROR or ERRORCOUNTS)".
+
+- ERRORs for Memcheck may contain a SUPPRESSION field, which gives
+  the corresponding suppression for it.
+
+- ERRORs for Memcheck now use the XWHAT and XAUXWHAT nonterminals, as
+  well as WHAT and XWHAT.
+
+- The ad-hoc blocks <leakedbytes> and <leakedblocks> used by Memcheck
+  have been moved inside the XWHAT for the relevant error kinds.  This
+  facilitates a common definition of ERROR across all three tools.
+
+The first two changes are required in order to correct a longstanding
+design flaw in the way Memcheck interacts with Valgrind's error
+management mechanism.  See bug #186790
+(https://bugs.kde.org/show_bug.cgi?id=186790).  The third change was
+requested in #191189 (https://bugs.kde.org/show_bug.cgi?id=191189).
+
+For GUI authors upgrading from Protocol 3 or earlier, the most
+significant new concept to grasp is the relationship between WHAT and
+XWHAT, and between AUXWHAT and XAUXWHAT.
+
+The definition of Protocol 4 now follows.  It is structured similarly
+to that of the previous protocols, except that there is a separate
+definition of a nonterminal called TOOLSPECIFIC for each of Memcheck,
+Helgrind and Ptrcheck.  The XWHAT and XAUXWHAT nonterminals also have
+tool-specific components.  Apart from that, the structure is common
+to all supported tools.
+
+
+====================================================================
+
+TOPLEVEL
+--------
+
+The first line output is always this:
+
+   <?xml version="1.0"?>
+
+All remaining output is contained within the tag-pair
+<valgrindoutput>.
+
+Inside that, the first entity is an indication of the protocol
+version.  This is provided so that existing parsers can identify XML
+created by future versions of Valgrind merely by observing that the
+protocol version is one they don't understand.  Hence TOPLEVEL is:
+
+  <?xml version="1.0"?>
+  <valgrindoutput>
+    <protocolversion>INT<protocolversion>
+    <protocoltool>TEXT</protocoltool>
+    PROTOCOL
+  </valgrindoutput>
+
+Valgrind versions 3.0.0 and 3.0.1 emit protocol version 1.  Versions
+3.1.X and 3.2.X [and 3.3.X ??] emit protocol version 2.  3.4.X emits
+protocol version 3.  3.5.X emits version 4.
+
+The TEXT in <protocoltool> is either "memcheck", "helgrind" or
+"exp-ptrcheck" and determines the allowed format of the ERROR
+nonterminal.  Note that <protocoltool> is only present when the
+protocol version is 4 or above.
+
+
+PROTOCOL for version 4
+----------------------
+
+This is the main top-level construction.  Roughly speaking, it
+contains a preamble, a program-started marker, the errors from the run
+of the program, a program-ended marker, and any further errors
+resulting from post-run analysis (eg, memory leak detection).  Hence
+the following in sequence:
+
+* Various preamble lines which give version info for the various
+  components.  The text in them can be anything; it is not intended
+  for interpretation by the GUI:
+
+     <preamble>
+        <line>Misc version/copyright text</line>  (zero or more of)
+     </preamble>
+
+* The PID of this process and of its parent:
+
+     <pid>INT</pid>
+     <ppid>INT</ppid>
+
+* The name of the tool being used:
+
+     <tool>TEXT</tool>
+
+  This can be anything, and it doesn't have to match the
+  <protocoltool> entry, although that might be wise.
+
+* Zero or more bindings of environment variable names to actual
+  values.  These describe precisely the instantiations of %q format
+  specifiers used in the --xml-file= argument for the run, if any.
+  There is one <logfilequalifier> entry for each %q expanded:
+
+     <logfilequalifier> <var>VAR</var> <value>$VAR</value>
+     </logfilequalifier>
+
+* OPTIONALLY, if --xml-user-comment=STRING was given:
+
+     <usercomment>STRING</usercomment>
+
+  STRING is not escaped in any way, so that it itself may be a piece
+  of XML with arbitrary tags etc.
+
+* The program and args: first those pertaining to Valgrind itself, and
+  then those pertaining to the program to be run under Valgrind (the
+  client):
+
+     <args>
+       <vargv>
+         <exe>TEXT</exe>
+         <arg>TEXT</arg> (zero or more of)
+       </vargv>
+       <argv>
+         <exe>TEXT</exe>
+         <arg>TEXT</arg> (zero or more of)
+       </argv>
+     </args>
+
+* The following, indicating that the program has now started:
+
+     <status> <state>RUNNING</state> 
+              <time>human-readable-time-string</time> 
+     </status>
+
+  The format of this string is not defined, but it is expected to be
+  human-understandable.  In current Valgrind versions it is the
+  elapsed wallclock time since process start.
+
+* Zero or more of (either ERRORCOUNTS or TOOLSPECIFIC).
+
+* The following, indicating that the program has now finished, and
+  that the any final wrapup (eg, for Memcheck, leak checking) is happening.
+
+     <status> <state>FINISHED</state> 
+              <time>human-readable-time-string</time> 
+     </status>
+
+* Zero or more of (either ERRORCOUNTS or TOOLSPECIFIC).  In Memcheck's
+  case these will be complaints from the leak checker.  For Ptrcheck
+  and Helgrind we don't expect any output here (but the spec does not
+  guarantee that either).
+
+* SUPPCOUNTS, indicating how many times each suppression was used.
+
+
+That's it.  The tool-specific definitions for TOOLSPECIFIC are below;
+however let's first continue with some smaller nonterminals used in
+the construction of errors for all the tool types.
+
+
+====================================================================
+
+Nonterminals used in construction of ERRORs
+-------------------------------------------
+
+STACK
+-----
+STACK indicates locations in the program being debugged.  A STACK
+is one or more FRAMEs.  The first is the innermost frame, the
+next its caller, etc.  
+
+   <stack>
+      one or more FRAME
+   </stack>
+
+
+FRAME
+-----
+FRAME records a single program location:
+
+   <frame>
+      <ip>HEX64</ip>
+      optionally <obj>TEXT</obj>
+      optionally <fn>TEXT</fn>
+      optionally <dir>TEXT</dir>
+      optionally <file>TEXT</file>
+      optionally <line>INT</line>
+   </frame>
+
+Only the <ip> field is guaranteed to be present.  It indicates a
+code ("instruction pointer") address.
+
+The optional fields, if present, appear in the order stated:
+
+* obj: gives the name of the ELF object containing the code address
+
+* fn: gives the name of the function containing the code address
+
+* dir: gives the source directory associated with the name specified
+       by <file>.  Note the current implementation often does not
+       put anything useful in this field.
+
+* file: gives the name of the source file containing the code address
+
+* line: gives the line number in the source file
+
+
+ERRORCOUNTS
+-----------
+This specifies, for each error that has been so far presented,
+the number of occurrences of that error.
+
+  <errorcounts>
+     zero or more of
+        <pair> <count>INT</count> <unique>HEX64</unique> </pair>
+  </errorcounts>
+
+Each <pair> gives the current error count <count> for the error with
+unique tag </unique>.  The counts do not have to give a count for each
+error so far presented - partial information is allowable.
+
+As at Valgrind rev 3793, error counts are only emitted at program
+termination.  However, it is perfectly acceptable to periodically emit
+error counts as the program is running.  Doing so would facilitate a
+GUI to dynamically update its error-count display as the program runs.
+
+
+SUPPCOUNTS
+----------
+A SUPPCOUNTS block appears exactly once, after the program terminates.
+It specifies the number of times each error-suppression was used.
+Suppressions not mentioned were used zero times.
+
+  <suppcounts>
+     zero or more of
+        <pair> <count>INT</count> <name>TEXT</name> </pair>
+  </suppcounts>
+
+The <name> is as specified in the suppression name fields in .supp
+files.
+
+
+SUPPRESSION
+-----------
+These are optionally emitted as part of ERRORs, and specify the
+suppression that would be needed to suppress the containing error.
+
+  <suppression>
+    <sname>TEXT</sname>    name of the suppression
+    <skind>TEXT</skind>    kind, eg                 "Memcheck:Param"
+    <skaux>TEXT</skaux>    (optional) aux kind, eg  "write(buf)"
+    SFRAME                 (one or more) frames
+  </suppression>
+
+
+SFRAME
+------
+Either
+
+  <sframe> <obj>TEXT</obj> </sframe>
+
+eg denoting "obj:/usr/X11R6/lib*/libX11.so.6.2", or
+
+  <sframe> <fun>TEXT</fun> </sframe>
+
+eg denoting "fun:*libc_write"
+
+
+WHAT and XWHAT
+--------------
+
+WHAT supplies a single line of text, which is a human-understandable,
+primary description of an error.
+
+XWHAT is an extended version of WHAT.  It also contains a piece of
+text intended for human reading, but in addition may contain arbitrary
+other tagged data.  This extra data is tool-specific.  One of its
+purposes is to supply GUIs with links to other data in the sequence of
+TOOLSPECIFICs, that are associated with the error.  Another purpose is
+wrap certain quantities (numbers, file names, etc) embedded in the
+message, so that the GUIs can get hold of them without having to parse
+the text itself.
+
+For example, we could get:
+
+  <what>Possible data race on address 0x12345678</what>
+
+or alternatively
+
+  <xwhat>
+     <text>Possible data race by thread #17 on address 0x12345678</text>
+     <threadid>17</threadid>
+  </xwhat>
+
+And presumably the <threadid>17</threadid> refers to some previously
+emitted entity in the stream of TOOLSPECIFICs for this tool.
+
+In an XWHAT, the <text> tag-pair is mandatory.  GUIs which don't want
+to handle the extra fields can just ignore them and display the text
+part.  In this way they have the option to present at least something
+useful to the user even in the case where the extra fields can't be
+handled, for whatever reason.
+
+A corollary of this is that the degenerate extended case
+
+   <xwhat> <text>T</text> </xwhat>
+
+is exactly equivalent to
+
+   <what>T</what>
+
+
+AUXWHAT and XAUXWHAT
+--------------------
+
+AUXWHAT is exactly like WHAT: a single line of text.  It provides
+additional, secondary description of an error, that should be shown to
+the user.
+
+XAUXWHAT relates to AUXWHAT in the same way XWHAT relates to WHAT: it
+wraps up extra tagged info along with the line of text that would be
+in the AUXWHAT.
+
+
+====================================================================
+
+ERROR definition -- common structure
+------------------------------------
+
+ERROR defines an error, and is the most complex nonterminal.  For all
+of the tools, the structure is common, and always conforms to the
+following:
+
+  <error>
+     <unique>HEX64</unique>
+     <tid>INT</tid>
+     <kind>KIND</kind>
+
+     (either WHAT or XWHAT)
+     optionally: (either WHAT or XWHAT)
+
+     STACK
+
+     zero or more: (either AUXWHAT or XAUXWHAT or STACK)
+
+     optionally: SUPPRESSION
+  </error>
+
+
+* Each error contains a unique, arbitrary 64-bit hex number.  This is
+  used to refer to the error in ERRORCOUNTS nonterminals (see above).
+
+* The <tid> tag indicates the Valgrind thread number.  This value
+  is arbitrary but may be used to determine which threads produced
+  which errors (at least, the first instance of each error).
+
+* The <kind> tag specifies one of a small number of fixed error types,
+  so that GUIs may roughly categorise errors by type if they want.
+  The tags themselves are tool-specific and are defined further
+  below, for each tool.
+
+* The "(either WHAT or XWHAT)" gives a primary description of the
+  error.  WHAT and XWHAT are defined earlier in this file.  Any XWHATs
+  appearing here may contain tool-specific subcomponents.
+
+* Optionally, a second line of primary description may be present.
+
+* A STACK gives the primary source location for the error.
+
+* There then follow zero or more of "(either AUXWHAT or XAUXWHAT or
+  STACK)".  These give further (auxiliary) information about the
+  error, possibly including stack traces.  They should be shown to the
+  user in the order they appear.  AUXWHAT and XAUXWHAT are defined
+  earlier in this file.  Any XAUXWHATs appearing here may contain
+  tool-specific subcomponents.
+
+* Optionally, as the last field, a SUPPRESSION may be provided.  This
+  contains a suppression that would hide the error.
+
+
+====================================================================
+
+TOOLSPECIFIC definition for Memcheck
+------------------------------------
+
+For Memcheck, a TOOLSPECIFIC is simply an ERROR:
+
+TOOLSPECIFIC = ERROR
+
+
+ERROR details for Memcheck
+--------------------------
+
+XWHATs (for definition, see above) may contain the following extra
+components (along with the mandatory <text>...</text> component):
+
+* <leakedbytes>INT</leakedbytes>
+
+* <leakedblocks>INT</leakedblocks>
+
+These fields are used in errors that have a <kind> tag specifying a
+KIND of the form "Leak_*", to indicate the number of leaked bytes and
+blocks.
+
+
+XAUXWHATs (for definition, see above) may contain the following extra
+components (along with the mandatory <text>...</text> component):
+
+* <file>TEXT</file>, as defined in FRAME
+
+* <line>INT</line>, as defined in FRAME
+
+* <dir>TEXT</dir>, as defined in FRAME
+
+
+KIND for Memcheck
+-----------------
+
+This is a small enumeration indicating roughly the nature of an error.
+The possible values are:
+
+   InvalidFree
+
+      free/delete/delete[] on an invalid pointer
+
+   MismatchedFree
+
+      free/delete/delete[] does not match allocation function
+      (eg doing new[] then free on the result)
+
+   InvalidRead
+
+      read of an invalid address
+
+   InvalidWrite
+
+      write of an invalid address
+
+   InvalidJump
+
+      jump to an invalid address
+
+   Overlap
+
+      args overlap other otherwise bogus in eg memcpy
+
+   InvalidMemPool
+
+      invalid mem pool specified in client request
+
+   UninitCondition
+
+      conditional jump/move depends on undefined value
+
+   UninitValue
+
+      other use of undefined value (primarily memory addresses)
+
+   SyscallParam
+
+      system call params are undefined or point to
+      undefined/unaddressible memory
+
+   ClientCheck
+
+      "error" resulting from a client check request
+
+   Leak_DefinitelyLost
+
+      memory leak; the referenced blocks are definitely lost
+
+   Leak_IndirectlyLost
+
+      memory leak; the referenced blocks are lost because all pointers
+      to them are also in leaked blocks
+
+   Leak_PossiblyLost
+
+      memory leak; only interior pointers to referenced blocks were
+      found
+
+   Leak_StillReachable
+
+      memory leak; pointers to un-freed blocks are still available
+
+
+====================================================================
+
+TOOLSPECIFIC definition for Ptrcheck
+------------------------------------
+
+For Ptrcheck, a TOOLSPECIFIC is simply an ERROR:
+
+TOOLSPECIFIC = ERROR
+
+
+ERROR details for Ptrcheck
+--------------------------
+
+Ptrcheck does not produce any XWHAT records, despite the fact that
+"ERROR definition -- common structure" says that tools may do so.
+
+
+XAUXWHATs (for definition, see above) may contain the following extra
+components (along with the mandatory <text>...</text> component):
+
+* <file>TEXT</file>, as defined in FRAME
+
+* <line>INT</line>, as defined in FRAME
+
+* <dir>TEXT</dir>, as defined in FRAME
+
+
+KIND for Ptrcheck
+-----------------
+This is a small enumeration indicating roughly the nature of an error.
+The possible values are:
+
+   SorG
+
+      Stack or global array inconsistency (roughly speaking, an
+      overrun of a stack or global array).  The <auxwhat> blocks give
+      further details.
+
+   Heap
+
+      Usage of a pointer derived from a heap block, to access 
+      outside that heap block
+
+   Arith
+
+      Doing arithmetic on pointers in a way that cannot possibly
+      result in another valid pointer.  Eg, adding two pointer values.
+
+   SysParam
+
+      Special case of "Heap", in which the invalidly-addressed memory
+      is presented as an argument to a system call which reads or
+      writes memory.
+
+
+====================================================================
+
+TOOLSPECIFIC definition for Helgrind
+-------------------------------------
+
+For Helgrind, a TOOLSPECIFIC may be one of two things:
+
+TOOLSPECIFIC = either ERROR or ANNOUNCETHREAD
+
+
+ANNOUNCETHREAD
+--------------
+
+The definition is
+
+   <announcethread>
+      <hthreadid>INT</hthreadid>
+      STACK
+   </announcethread>
+
+This states the creation point of a thread, and gives it a unique
+"hthreadid", which may be referred to in subsequent ERRORs.  Note that
+
+1. The appearance of ANNOUNCETHREAD does not mean that the thread was
+   actually created at that point relative to any preceding or
+   following ERRORs in the output stream -- in general the thread will
+   have been created arbitrarily earlier.  Helgrind only "announces" a
+   thread when it needs to refer to it for the first time, in a
+   subsequent ERROR.
+
+2. The "hthreadid" is a number which uniquely identifies the thread
+   for the run - no other thread will have the same hthreadid.  The
+   hthreadid is a Helgrind-specific piece of information and is
+   unrelated to the <tid> fields in the common part of an ERROR.
+   Be careful not to confuse the two.
+
+
+ERROR details for Helgrind
+--------------------------
+
+XWHATs (for definition, see above) may contain the following extra
+components (along with the mandatory <text>...</text> component):
+
+* <hthreadid>INT</hthreadid> fields.  These refer to ANNOUNCETHREADs
+  appearing previously in the scheme, and state the creation points of
+  the thread(s) concerned in the ERROR.  Hence it should be possible
+  for GUIs to show users stacks of the creation points of all threads
+  involved in each ERROR.
+
+
+XAUXWHATs (for definition, see above) may contain the following extra
+components (along with the mandatory <text>...</text> component):
+
+* <hthreadid>INT</hthreadid>, same meaning as when referred to in
+  XWHAT
+
+* <file>TEXT</file>, as defined in FRAME
+
+* <line>INT</line>, as defined in FRAME
+
+* <dir>TEXT</dir>, as defined in FRAME
+
+
+KIND for Helgrind
+-----------------
+This is a small enumeration indicating roughly the nature of an error.
+The possible values are:
+
+   Race
+
+      Data race.  Helgrind will try to show the stacks for both
+      conflicting accesses if it can; it will always show the stack
+      for at least one of them.
+
+   UnlockUnlocked
+
+      Unlocking a not-locked lock
+
+   UnlockForeign
+
+      Unlocking a lock held by some other thread
+
+   UnlockBogus
+
+      Unlocking an address which is not known to be a lock
+
+   PthAPIerror
+
+      One of the POSIX pthread_ functions that are intercepted
+      by Helgrind, failed with an error code.  Usually indicates
+      something bad happening.
+
+   LockOrder
+
+      An inconsistency in the acquisition order of locks was observed;
+      dangerous, as it can potentially lead to deadlocks
+
+   Misc
+
+      One of various miscellaneous noteworthy conditions was observed
+      (eg, thread exited whilst holding locks, "impossible" behaviour
+      from the underlying threading library, etc)

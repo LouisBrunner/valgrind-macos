@@ -3886,6 +3886,8 @@ VALGRIND_PRINTF_BACKTRACE(const char *format, ...)
    superblocks, rather than mmap() or brk(), this will not work properly --
    you'll likely get assertion failures during leak detection.  This is
    because Valgrind doesn't like seeing overlapping heap blocks.  Sorry.
+
+   Ignored if addr == 0.
 */
 #define VALGRIND_MALLOCLIKE_BLOCK(addr, sizeB, rzB, is_zeroed)    \
    {unsigned int _qzz_res;                                        \
@@ -3894,7 +3896,9 @@ VALGRIND_PRINTF_BACKTRACE(const char *format, ...)
                                addr, sizeB, rzB, is_zeroed, 0);   \
    }
 
-/* See the comment for VALGRIND_MALLOCLIKE_BLOCK for details. */
+/* See the comment for VALGRIND_MALLOCLIKE_BLOCK for details.
+   Ignored if addr == 0.
+*/
 #define VALGRIND_FREELIKE_BLOCK(addr, rzB)                        \
    {unsigned int _qzz_res;                                        \
     VALGRIND_DO_CLIENT_REQUEST(_qzz_res, 0,                       \

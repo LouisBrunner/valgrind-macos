@@ -1465,7 +1465,18 @@ void do_client_request ( ThreadId tid )
          SET_CLREQ_RETVAL( tid, 0 );     /* return value is meaningless */
          break;
 
+      case VG_USERREQ__MALLOCLIKE_BLOCK:
+      case VG_USERREQ__FREELIKE_BLOCK:
+         // Ignore them if the addr is NULL;  otherwise pass onto the tool.
+         if (!arg[1]) {
+            SET_CLREQ_RETVAL( tid, 0 );     /* return value is meaningless */
+            break;
+         } else {
+            goto my_default;
+         }
+
       default:
+       my_default:
 	 if (os_client_request(tid, arg)) {
 	    // do nothing, os_client_request() handled it
          } else if (VG_(needs).client_requests) {

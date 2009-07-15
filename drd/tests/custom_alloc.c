@@ -3,7 +3,7 @@
 #include <assert.h>
 #include <stdlib.h>
 
-#include "../memcheck.h"
+#include "../drd.h"
 
 #define SUPERBLOCK_SIZE    100000
 
@@ -17,12 +17,6 @@ void* get_superblock(void)
                    MAP_PRIVATE|MAP_ANONYMOUS, -1, 0 );
 
    assert(p != ((void*)(-1)));
-
-   // Mark it no access;  although it's addressible we don't want the 
-   // program to be using it unless its handed out by custom_alloc()
-
-   // with redzones, better not to have it
-   VALGRIND_MAKE_MEM_NOACCESS(p, SUPERBLOCK_SIZE);
 
    return p;
 }
@@ -70,8 +64,8 @@ void make_leak(void)
 
 int main(void)
 {
-   int *array, *array3;
-   int x;
+   int* array;
+   int* array3;
 
    array = custom_alloc(sizeof(int) * 10);
    array[8]  = 8;
@@ -80,24 +74,17 @@ int main(void)
 
    custom_free(array);  // ok
 
-   custom_free((void*)0x1);  // invalid free
+   custom_free(NULL);   // invalid free (ok without MALLOCLIKE)
 
    array3 = malloc(sizeof(int) * 10);
    custom_free(array3); // mismatched free (ok without MALLOCLIKE)
 
    make_leak();
-   x = array[0];        // use after free (ok without MALLOCLIKE/MAKE_MEM_NOACCESS)
+   return array[0];     // use after free (ok without MALLOCLIKE)
                         // (nb: initialised because is_zeroed==1 above)
                         // unfortunately not identified as being in a free'd
                         // block because the freeing of the block and shadow
                         // chunk isn't postponed.
-
-   // Bug 137073: passing 0 to MALLOCLIKE_BLOCK was causing an assertion
-   // failure.  Test for this (and likewise for FREELIKE_BLOCK).
-   //VALGRIND_MALLOCLIKE_BLOCK(0,0,0,0);
-   //VALGRIND_FREELIKE_BLOCK(0,0);
    
-   return x;
-
    // leak from make_leak()
 }

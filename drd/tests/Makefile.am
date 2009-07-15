@@ -222,6 +222,7 @@ EXTRA_DIST =                                        \
 
 
 check_PROGRAMS =      \
+  custom_alloc        \
   fp_race             \
   hold_lock           \
   linuxthreads_det    \

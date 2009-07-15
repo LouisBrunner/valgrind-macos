@@ -1,1 +1,1 @@
-prog: ../../memcheck/tests/custom_alloc
+prog: custom_alloc

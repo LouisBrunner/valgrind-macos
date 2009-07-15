@@ -259,13 +259,13 @@ BB* CLG_(get_bb)(Addr addr, IRSB* bbIn, /*OUT*/ Bool *seen_before)
   if (*seen_before) {
     if (bb->instr_count != n_instrs) {
       VG_(message)(Vg_DebugMsg, 
-		   "ERROR: BB Retranslation Mismatch at BB %#lx", addr);
+		   "ERROR: BB Retranslation Mismatch at BB %#lx\n", addr);
       VG_(message)(Vg_DebugMsg,
-		   "  new: Obj %s, Off %#lx, BBOff %#lx, Instrs %u",
+		   "  new: Obj %s, Off %#lx, BBOff %#lx, Instrs %u\n",
 		   obj->name, obj->offset,
 		   addr - obj->offset, n_instrs);
       VG_(message)(Vg_DebugMsg,
-		   "  old: Obj %s, Off %#lx, BBOff %#lx, Instrs %u",
+		   "  old: Obj %s, Off %#lx, BBOff %#lx, Instrs %u\n",
 		   bb->obj->name, bb->obj->offset,
 		   bb->offset, bb->instr_count);
       CLG_ASSERT(bb->instr_count == n_instrs );

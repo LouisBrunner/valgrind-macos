@@ -75,7 +75,8 @@ static Bool check_code(obj_node* obj,
 		if (len == 0) break;
 
 		CLG_ASSERT(len >2);
-                CLG_DEBUG(1, " found chunk %d at %#lx, checking %d bytes of [%x %x %x...]\n",
+                CLG_DEBUG(1, " found chunk %d at %#lx, checking %d bytes "
+                             "of [%x %x %x...]\n",
                           chunk-1, addr - obj->start, len,
 			  code[start], code[start+1], code[start+2]);
 
@@ -89,7 +90,8 @@ static Bool check_code(obj_node* obj,
             if (found) {
 		CLG_DEBUG(1, "found at offset %#lx.\n", addr - obj->start);
 		if (VG_(clo_verbosity) > 1)
-		    VG_(message)(Vg_DebugMsg, "Found runtime_resolve (%s): %s +%#lx=%#lx, length %d",
+		    VG_(message)(Vg_DebugMsg, "Found runtime_resolve (%s): "
+                                              "%s +%#lx=%#lx, length %d\n",
 				 pat->name, obj->name + obj->last_slash_pos,
 				 addr - obj->start, addr, pat->len);
 		    
@@ -566,7 +568,8 @@ fn_node* CLG_(get_fn_node)(BB* bb)
 	  fn->pop_on_jump = True;
 
 	  if (VG_(clo_verbosity) > 1)
-	      VG_(message)(Vg_DebugMsg, "Symbol match: found runtime_resolve: %s +%#lx=%#lx",
+	      VG_(message)(Vg_DebugMsg, "Symbol match: found runtime_resolve:"
+                                        " %s +%#lx=%#lx\n",
 		      bb->obj->name + bb->obj->last_slash_pos,
 		      bb->offset, bb_addr(bb));
       }

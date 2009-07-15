@@ -673,7 +673,7 @@ void cacheuse_initcache(cache_t2* c)
      */
     if ( (1<<c->tag_shift) < c->assoc) {
 	VG_(message)(Vg_DebugMsg,
-		     "error: Use associativity < %d for cache use statistics!",
+		     "error: Use associativity < %d for cache use statistics!\n",
 		     (1<<c->tag_shift) );
 	VG_(tool_panic)("Unsupported cache configuration");
     }
@@ -1307,13 +1307,13 @@ void check_cache(cache_t* cache, Char *name)
    if (( cache->size % (cache->line_size * cache->assoc) != 0) ||
        (-1 == VG_(log2)(cache->size/cache->line_size/cache->assoc))) {
       VG_(message)(Vg_UserMsg,
-         "error: %s set count not a power of two; aborting.",
+         "error: %s set count not a power of two; aborting.\n",
          name);
    }
 
    if (-1 == VG_(log2)(cache->line_size)) {
       VG_(message)(Vg_UserMsg,
-         "error: %s line size of %dB not a power of two; aborting.",
+         "error: %s line size of %dB not a power of two; aborting.\n",
          name, cache->line_size);
       VG_(exit)(1);
    }
@@ -1323,7 +1323,7 @@ void check_cache(cache_t* cache, Char *name)
    // stupid anyway.
    if (cache->line_size < MIN_LINE_SIZE) {
       VG_(message)(Vg_UserMsg,
-         "error: %s line size of %dB too small; aborting.",
+         "error: %s line size of %dB too small; aborting.\n",
          name, cache->line_size);
       VG_(exit)(1);
    }
@@ -1331,7 +1331,7 @@ void check_cache(cache_t* cache, Char *name)
    /* Then check cache size > line size (causes seg faults if not). */
    if (cache->size <= cache->line_size) {
       VG_(message)(Vg_UserMsg,
-         "error: %s cache size of %dB <= line size of %dB; aborting.",
+         "error: %s cache size of %dB <= line size of %dB; aborting.\n",
          name, cache->size, cache->line_size);
       VG_(exit)(1);
    }
@@ -1339,7 +1339,7 @@ void check_cache(cache_t* cache, Char *name)
    /* Then check assoc <= (size / line size) (seg faults otherwise). */
    if (cache->assoc > (cache->size / cache->line_size)) {
       VG_(message)(Vg_UserMsg,
-         "warning: %s associativity > (size / line size); aborting.", name);
+         "warning: %s associativity > (size / line size); aborting.\n", name);
       VG_(exit)(1);
    }
 }
@@ -1371,12 +1371,12 @@ void configure_caches(cache_t* I1c, cache_t* D1c, cache_t* L2c)
    check_cache(L2c, "L2");
 
    if (VG_(clo_verbosity) > 1) {
-      VG_(message)(Vg_UserMsg, "Cache configuration used:");
-      VG_(message)(Vg_UserMsg, "  I1: %dB, %d-way, %dB lines",
+      VG_(message)(Vg_UserMsg, "Cache configuration used:\n");
+      VG_(message)(Vg_UserMsg, "  I1: %dB, %d-way, %dB lines\n",
                                I1c->size, I1c->assoc, I1c->line_size);
-      VG_(message)(Vg_UserMsg, "  D1: %dB, %d-way, %dB lines",
+      VG_(message)(Vg_UserMsg, "  D1: %dB, %d-way, %dB lines\n",
                                D1c->size, D1c->assoc, D1c->line_size);
-      VG_(message)(Vg_UserMsg, "  L2: %dB, %d-way, %dB lines",
+      VG_(message)(Vg_UserMsg, "  L2: %dB, %d-way, %dB lines\n",
                                L2c->size, L2c->assoc, L2c->line_size);
    }
 #undef CMD_LINE_DEFINED
@@ -1446,13 +1446,15 @@ static void cachesim_post_clo_init(void)
       /* Output warning for not supported option combinations */
       if (clo_simulate_hwpref) {
 	  VG_(message)(Vg_DebugMsg,
-		       "warning: prefetch simulation can not be used with cache usage");
+		       "warning: prefetch simulation can not be "
+                       "used with cache usage\n");
 	  clo_simulate_hwpref = False;
       }
 
       if (clo_simulate_writeback) {
 	  VG_(message)(Vg_DebugMsg,
-		       "warning: write-back simulation can not be used with cache usage");
+		       "warning: write-back simulation can not be "
+                       "used with cache usage\n");
 	  clo_simulate_writeback = False;
       }
 
@@ -1652,25 +1654,25 @@ void cachesim_printstat(void)
   Int p;
 
   if ((VG_(clo_verbosity) >1) && clo_simulate_hwpref) {
-    VG_(message)(Vg_DebugMsg, "Prefetch Up:       %llu", 
+    VG_(message)(Vg_DebugMsg, "Prefetch Up:       %llu\n", 
 		 prefetch_up);
-    VG_(message)(Vg_DebugMsg, "Prefetch Down:     %llu", 
+    VG_(message)(Vg_DebugMsg, "Prefetch Down:     %llu\n", 
 		 prefetch_down);
-    VG_(message)(Vg_DebugMsg, "");
+    VG_(message)(Vg_DebugMsg, "\n");
   }
 
   /* I cache results.  Use the I_refs value to determine the first column
    * width. */
   l1 = commify(total[CLG_(sets).off_full_Ir], 0, buf1);
-  VG_(message)(Vg_UserMsg, "I   refs:      %s", buf1);
+  VG_(message)(Vg_UserMsg, "I   refs:      %s\n", buf1);
 
   if (!CLG_(clo).simulate_cache) return;
 
   commify(total[CLG_(sets).off_full_Ir +1], l1, buf1);
-  VG_(message)(Vg_UserMsg, "I1  misses:    %s", buf1);
+  VG_(message)(Vg_UserMsg, "I1  misses:    %s\n", buf1);
 
   commify(total[CLG_(sets).off_full_Ir +2], l1, buf1);
-  VG_(message)(Vg_UserMsg, "L2i misses:    %s", buf1);
+  VG_(message)(Vg_UserMsg, "L2i misses:    %s\n", buf1);
 
   p = 100;
 
@@ -1679,12 +1681,12 @@ void cachesim_printstat(void)
 
   percentify(total[CLG_(sets).off_full_Ir+1] * 100 * p /
 	     total[CLG_(sets).off_full_Ir], p, l1+1, buf1);
-  VG_(message)(Vg_UserMsg, "I1  miss rate: %s", buf1);
+  VG_(message)(Vg_UserMsg, "I1  miss rate: %s\n", buf1);
        
   percentify(total[CLG_(sets).off_full_Ir+2] * 100 * p /
 	     total[CLG_(sets).off_full_Ir], p, l1+1, buf1);
-  VG_(message)(Vg_UserMsg, "L2i miss rate: %s", buf1);
-  VG_(message)(Vg_UserMsg, "");
+  VG_(message)(Vg_UserMsg, "L2i miss rate: %s\n", buf1);
+  VG_(message)(Vg_UserMsg, "\n");
    
   /* D cache results.
      Use the D_refs.rd and D_refs.wr values to determine the
@@ -1698,19 +1700,19 @@ void cachesim_printstat(void)
   commify( D_total[0], l1, buf1);
   l2 = commify(total[CLG_(sets).off_full_Dr], 0,  buf2);
   l3 = commify(total[CLG_(sets).off_full_Dw], 0,  buf3);
-  VG_(message)(Vg_UserMsg, "D   refs:      %s  (%s rd + %s wr)",
+  VG_(message)(Vg_UserMsg, "D   refs:      %s  (%s rd + %s wr)\n",
 	       buf1,  buf2,  buf3);
 
   commify( D_total[1], l1, buf1);
   commify(total[CLG_(sets).off_full_Dr+1], l2, buf2);
   commify(total[CLG_(sets).off_full_Dw+1], l3, buf3);
-  VG_(message)(Vg_UserMsg, "D1  misses:    %s  (%s rd + %s wr)",
+  VG_(message)(Vg_UserMsg, "D1  misses:    %s  (%s rd + %s wr)\n",
 	       buf1, buf2, buf3);
 
   commify( D_total[2], l1, buf1);
   commify(total[CLG_(sets).off_full_Dr+2], l2, buf2);
   commify(total[CLG_(sets).off_full_Dw+2], l3, buf3);
-  VG_(message)(Vg_UserMsg, "L2d misses:    %s  (%s rd + %s wr)",
+  VG_(message)(Vg_UserMsg, "L2d misses:    %s  (%s rd + %s wr)\n",
 	       buf1, buf2, buf3);
 
   p = 10;
@@ -1724,15 +1726,17 @@ void cachesim_printstat(void)
 	     total[CLG_(sets).off_full_Dr], p, l2+1, buf2);
   percentify(total[CLG_(sets).off_full_Dw+1] * 100 * p /
 	     total[CLG_(sets).off_full_Dw], p, l3+1, buf3);
-  VG_(message)(Vg_UserMsg, "D1  miss rate: %s (%s   + %s  )", buf1, buf2,buf3);
+  VG_(message)(Vg_UserMsg, "D1  miss rate: %s (%s   + %s  )\n", 
+               buf1, buf2,buf3);
   
   percentify( D_total[2] * 100 * p / D_total[0],  p, l1+1, buf1);
   percentify(total[CLG_(sets).off_full_Dr+2] * 100 * p /
 	     total[CLG_(sets).off_full_Dr], p, l2+1, buf2);
   percentify(total[CLG_(sets).off_full_Dw+2] * 100 * p /
 	     total[CLG_(sets).off_full_Dw], p, l3+1, buf3);
-  VG_(message)(Vg_UserMsg, "L2d miss rate: %s (%s   + %s  )", buf1, buf2,buf3);
-  VG_(message)(Vg_UserMsg, "");
+  VG_(message)(Vg_UserMsg, "L2d miss rate: %s (%s   + %s  )\n", 
+               buf1, buf2,buf3);
+  VG_(message)(Vg_UserMsg, "\n");
 
 
   
@@ -1749,7 +1753,7 @@ void cachesim_printstat(void)
   commify(L2_total,   l1, buf1);
   commify(L2_total_r, l2, buf2);
   commify(L2_total_w, l3, buf3);
-  VG_(message)(Vg_UserMsg, "L2 refs:       %s  (%s rd + %s wr)",
+  VG_(message)(Vg_UserMsg, "L2 refs:       %s  (%s rd + %s wr)\n",
 	       buf1, buf2, buf3);
   
   L2_total_m  =
@@ -1763,7 +1767,7 @@ void cachesim_printstat(void)
   commify(L2_total_m,  l1, buf1);
   commify(L2_total_mr, l2, buf2);
   commify(L2_total_mw, l3, buf3);
-  VG_(message)(Vg_UserMsg, "L2 misses:     %s  (%s rd + %s wr)",
+  VG_(message)(Vg_UserMsg, "L2 misses:     %s  (%s rd + %s wr)\n",
 	       buf1, buf2, buf3);
   
   percentify(L2_total_m  * 100 * p /
@@ -1773,7 +1777,7 @@ void cachesim_printstat(void)
 	     p, l2+1, buf2);
   percentify(L2_total_mw * 100 * p /
 	     total[CLG_(sets).off_full_Dw], p, l3+1, buf3);
-  VG_(message)(Vg_UserMsg, "L2 miss rate:  %s (%s   + %s  )",
+  VG_(message)(Vg_UserMsg, "L2 miss rate:  %s (%s   + %s  )\n",
 	       buf1, buf2,buf3);
 }
 

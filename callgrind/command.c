@@ -113,7 +113,7 @@ static void setup_control(void)
 		   VKI_S_IRUSR|VKI_S_IWUSR);
     if (sr_isError(res)) {
       VG_(message)(Vg_DebugMsg, 
-		   "warning: can't write info file '%s'", info_file);
+		   "warning: can't write info file '%s'\n", info_file);
       info_file = 0;
       fd = -1;
     }
@@ -524,7 +524,8 @@ void CLG_(check_command)()
 
     if (do_kill) {
       VG_(message)(Vg_UserMsg,
-		   "Killed because of command from %s", current_command_file);
+		   "Killed because of command from %s\n",
+                   current_command_file);
       CLG_(fini)(0);
       VG_(exit)(1);
     }

@@ -1005,7 +1005,7 @@ static void zero_thread_cost(thread_info* t)
 void CLG_(zero_all_cost)(Bool only_current_thread)
 {
   if (VG_(clo_verbosity) > 1)
-    VG_(message)(Vg_DebugMsg, "  Zeroing costs...");
+    VG_(message)(Vg_DebugMsg, "  Zeroing costs...\n");
 
   if (only_current_thread)
     zero_thread_cost(CLG_(get_current_thread)());
@@ -1013,7 +1013,7 @@ void CLG_(zero_all_cost)(Bool only_current_thread)
     CLG_(forall_threads)(zero_thread_cost);
 
   if (VG_(clo_verbosity) > 1)
-    VG_(message)(Vg_DebugMsg, "  ...done");
+    VG_(message)(Vg_DebugMsg, "  ...done\n");
 }
 
 static
@@ -1055,7 +1055,7 @@ void CLG_(set_instrument_state)(Char* reason, Bool state)
     CLG_(forall_threads)(zero_thread_cost);
 
   if (VG_(clo_verbosity) > 1)
-    VG_(message)(Vg_DebugMsg, "%s: instrumentation switched %s",
+    VG_(message)(Vg_DebugMsg, "%s: instrumentation switched %s\n",
 		 reason, state ? "ON" : "OFF");
 }
   
@@ -1197,76 +1197,76 @@ void finish(void)
       CLG_(stat).file_line_debug_BBs +
       CLG_(stat).no_debug_BBs;
     
-    VG_(message)(Vg_DebugMsg, "");
-    VG_(message)(Vg_DebugMsg, "Distinct objects: %d",
+    VG_(message)(Vg_DebugMsg, "\n");
+    VG_(message)(Vg_DebugMsg, "Distinct objects: %d\n",
 		 CLG_(stat).distinct_objs);
-    VG_(message)(Vg_DebugMsg, "Distinct files:   %d",
+    VG_(message)(Vg_DebugMsg, "Distinct files:   %d\n",
 		 CLG_(stat).distinct_files);
-    VG_(message)(Vg_DebugMsg, "Distinct fns:     %d",
+    VG_(message)(Vg_DebugMsg, "Distinct fns:     %d\n",
 		 CLG_(stat).distinct_fns);
-    VG_(message)(Vg_DebugMsg, "Distinct contexts:%d",
+    VG_(message)(Vg_DebugMsg, "Distinct contexts:%d\n",
 		 CLG_(stat).distinct_contexts);
-    VG_(message)(Vg_DebugMsg, "Distinct BBs:     %d",
+    VG_(message)(Vg_DebugMsg, "Distinct BBs:     %d\n",
 		 CLG_(stat).distinct_bbs);
-    VG_(message)(Vg_DebugMsg, "Cost entries:     %d (Chunks %d)",
+    VG_(message)(Vg_DebugMsg, "Cost entries:     %d (Chunks %d)\n",
 		 CLG_(costarray_entries), CLG_(costarray_chunks));
-    VG_(message)(Vg_DebugMsg, "Distinct BBCCs:   %d",
+    VG_(message)(Vg_DebugMsg, "Distinct BBCCs:   %d\n",
 		 CLG_(stat).distinct_bbccs);
-    VG_(message)(Vg_DebugMsg, "Distinct JCCs:    %d",
+    VG_(message)(Vg_DebugMsg, "Distinct JCCs:    %d\n",
 		 CLG_(stat).distinct_jccs);
-    VG_(message)(Vg_DebugMsg, "Distinct skips:   %d",
+    VG_(message)(Vg_DebugMsg, "Distinct skips:   %d\n",
 		 CLG_(stat).distinct_skips);
-    VG_(message)(Vg_DebugMsg, "BB lookups:       %d",
+    VG_(message)(Vg_DebugMsg, "BB lookups:       %d\n",
 		 BB_lookups);
     if (BB_lookups>0) {
-      VG_(message)(Vg_DebugMsg, "With full      debug info:%3d%% (%d)", 
+      VG_(message)(Vg_DebugMsg, "With full      debug info:%3d%% (%d)\n", 
 		   CLG_(stat).full_debug_BBs    * 100 / BB_lookups,
 		   CLG_(stat).full_debug_BBs);
-      VG_(message)(Vg_DebugMsg, "With file/line debug info:%3d%% (%d)", 
+      VG_(message)(Vg_DebugMsg, "With file/line debug info:%3d%% (%d)\n", 
 		   CLG_(stat).file_line_debug_BBs * 100 / BB_lookups,
 		   CLG_(stat).file_line_debug_BBs);
-      VG_(message)(Vg_DebugMsg, "With fn name   debug info:%3d%% (%d)", 
+      VG_(message)(Vg_DebugMsg, "With fn name   debug info:%3d%% (%d)\n", 
 		   CLG_(stat).fn_name_debug_BBs * 100 / BB_lookups,
 		   CLG_(stat).fn_name_debug_BBs);
-      VG_(message)(Vg_DebugMsg, "With no        debug info:%3d%% (%d)", 
+      VG_(message)(Vg_DebugMsg, "With no        debug info:%3d%% (%d)\n", 
 		   CLG_(stat).no_debug_BBs      * 100 / BB_lookups,
 		   CLG_(stat).no_debug_BBs);
     }
-    VG_(message)(Vg_DebugMsg, "BBCC Clones:       %d",
+    VG_(message)(Vg_DebugMsg, "BBCC Clones:       %d\n",
 		 CLG_(stat).bbcc_clones);
-    VG_(message)(Vg_DebugMsg, "BBs Retranslated:  %d",
+    VG_(message)(Vg_DebugMsg, "BBs Retranslated:  %d\n",
 		 CLG_(stat).bb_retranslations);
-    VG_(message)(Vg_DebugMsg, "Distinct instrs:   %d",
+    VG_(message)(Vg_DebugMsg, "Distinct instrs:   %d\n",
 		 CLG_(stat).distinct_instrs);
     VG_(message)(Vg_DebugMsg, "");
     
-    VG_(message)(Vg_DebugMsg, "LRU Contxt Misses: %d",
+    VG_(message)(Vg_DebugMsg, "LRU Contxt Misses: %d\n",
 		 CLG_(stat).cxt_lru_misses);
-    VG_(message)(Vg_DebugMsg, "LRU BBCC Misses:   %d",
+    VG_(message)(Vg_DebugMsg, "LRU BBCC Misses:   %d\n",
 		 CLG_(stat).bbcc_lru_misses);
-    VG_(message)(Vg_DebugMsg, "LRU JCC Misses:    %d",
+    VG_(message)(Vg_DebugMsg, "LRU JCC Misses:    %d\n",
 		 CLG_(stat).jcc_lru_misses);
-    VG_(message)(Vg_DebugMsg, "BBs Executed:      %llu",
+    VG_(message)(Vg_DebugMsg, "BBs Executed:      %llu\n",
 		 CLG_(stat).bb_executions);
-    VG_(message)(Vg_DebugMsg, "Calls:             %llu",
+    VG_(message)(Vg_DebugMsg, "Calls:             %llu\n",
 		 CLG_(stat).call_counter);
-    VG_(message)(Vg_DebugMsg, "CondJMP followed:  %llu",
+    VG_(message)(Vg_DebugMsg, "CondJMP followed:  %llu\n",
 		 CLG_(stat).jcnd_counter);
-    VG_(message)(Vg_DebugMsg, "Boring JMPs:       %llu",
+    VG_(message)(Vg_DebugMsg, "Boring JMPs:       %llu\n",
 		 CLG_(stat).jump_counter);
-    VG_(message)(Vg_DebugMsg, "Recursive calls:   %llu",
+    VG_(message)(Vg_DebugMsg, "Recursive calls:   %llu\n",
 		 CLG_(stat).rec_call_counter);
-    VG_(message)(Vg_DebugMsg, "Returns:           %llu",
+    VG_(message)(Vg_DebugMsg, "Returns:           %llu\n",
 		 CLG_(stat).ret_counter);
 
     VG_(message)(Vg_DebugMsg, "");
   }
 
   CLG_(sprint_eventmapping)(buf, CLG_(dumpmap));
-  VG_(message)(Vg_UserMsg, "Events    : %s", buf);
+  VG_(message)(Vg_UserMsg, "Events    : %s\n", buf);
   CLG_(sprint_mappingcost)(buf, CLG_(dumpmap), CLG_(total_cost));
-  VG_(message)(Vg_UserMsg, "Collected : %s", buf);
-  VG_(message)(Vg_UserMsg, "");
+  VG_(message)(Vg_UserMsg, "Collected : %s\n", buf);
+  VG_(message)(Vg_UserMsg, "\n");
 
   //  if (CLG_(clo).simulate_cache)
   (*CLG_(cachesim).printstat)();
@@ -1308,7 +1308,7 @@ void CLG_(post_clo_init)(void)
    CLG_DEBUG(1, "  rec. sep. : %d\n", CLG_(clo).separate_recursions);
 
    if (!CLG_(clo).dump_line && !CLG_(clo).dump_instr && !CLG_(clo).dump_bb) {
-       VG_(message)(Vg_UserMsg, "Using source line as position.");
+       VG_(message)(Vg_UserMsg, "Using source line as position.\n");
        CLG_(clo).dump_line = True;
    }
 
@@ -1333,7 +1333,7 @@ void CLG_(post_clo_init)(void)
 
    if (VG_(clo_verbosity > 0)) {
       VG_(message)(Vg_UserMsg,
-                   "For interactive control, run 'callgrind_control -h'.");
+                   "For interactive control, run 'callgrind_control -h'.\n");
    }
 }
 

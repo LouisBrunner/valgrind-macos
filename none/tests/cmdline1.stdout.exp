@@ -29,8 +29,11 @@ usage: valgrind [options] prog-and-args
                               tools that make use of it (Memcheck, Helgrind)
 
   user options for Valgrind tools that report errors:
-    --xml=yes                 all output is in XML (some tools only)
-    --xml-user-comment=STR    copy STR verbatim to XML output
+    --xml=yes                 emit error output in XML (some tools only)
+    --xml-fd=<number>         XML output to file descriptor
+    --xml-file=<file>         XML output to <file>
+    --xml-socket=ipaddr:port  XML output to socket ipaddr:port
+    --xml-user-comment=STR    copy STR verbatim into XML output
     --demangle=no|yes         automatically demangle C++ names? [yes]
     --num-callers=<number>    show <number> callers in stack traces [12]
     --error-limit=no|yes      stop showing new errors if too many? [yes]

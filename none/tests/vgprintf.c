@@ -4,7 +4,7 @@
 int
 main (int argc, char **argv)
 {
-   int x = VALGRIND_PRINTF("Yo");
+   int x = VALGRIND_PRINTF("Yo\n");
    printf ("%d\n", x);
    return 0;
 }

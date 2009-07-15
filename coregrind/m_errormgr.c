@@ -261,7 +261,8 @@ Bool VG_(showing_core_errors)(void)
    return VG_(needs).core_errors && VG_(clo_verbosity) >= 1 && !VG_(clo_xml);
 }
 
-/* Compare errors, to detect duplicates. */
+/* Compare errors, to detect duplicates. 
+*/
 static Bool eq_Error ( VgRes res, Error* e1, Error* e2 )
 {
    if (e1->ekind != e2->ekind) 
@@ -286,54 +287,99 @@ static Bool eq_Error ( VgRes res, Error* e1, Error* e2 )
    }
 }
 
-static void pp_Error ( Error* err )
+
+/* Helper function for suppression generation: print a single line of
+   a suppression pseudo-stack-trace, either in XML or text mode.
+*/
+#define ERRTXT_LEN   4096
+
+static void printSuppForIp(UInt n, Addr ip)
 {
-   if (VG_(clo_xml)) {
-      VG_UMSG("<error>");
-      VG_UMSG("  <unique>0x%x</unique>", err->unique);
-      VG_UMSG("  <tid>%d</tid>", err->tid);
-   }
+   static UChar buf[ERRTXT_LEN];
 
-   if (!VG_(clo_xml)) {
-     if (VG_(tdict).tool_show_ThreadIDs_for_errors
-         && err->tid > 0 && err->tid != last_tid_printed) {
-         VG_UMSG("Thread %d:", err->tid );
-         last_tid_printed = err->tid;
-      }
-   }
+   if ( VG_(get_fnname_no_cxx_demangle) (ip, buf,  ERRTXT_LEN) ) {
+      if (VG_(clo_xml))
+         VG_(printf_xml_no_f_c)("    <sframe> <fun>%t</fun> </sframe>\n", buf);
+      else
+         VG_(printf)("   fun:%s\n", buf);
+ 
+  } else if ( VG_(get_objname)(ip, buf, ERRTXT_LEN) ) {
+      if (VG_(clo_xml))
+         VG_(printf_xml_no_f_c)("    <sframe> <obj>%t</obj> </sframe>\n", buf);
+      else
+         VG_(printf)("   obj:%s\n", buf);
 
-   switch (err->ekind) {
-      //(example code, see comment on CoreSuppKind above)
-      //case ThreadErr:
-      //   vg_assert(VG_(needs).core_errors);
-      //   VG_(tm_error_print)(err);
-      //   break;
-      default: 
-         if (VG_(needs).tool_errors)
-            VG_TDICT_CALL( tool_pp_Error, err );
-         else {
-            VG_(printf)("\nUnhandled error type: %u.  VG_(needs).tool_errors\n"
-                        "probably needs to be set?\n",
-                        err->ekind);
-            VG_(tool_panic)("unhandled error type");
-         }
+   } else {
+      if (VG_(clo_xml))
+         VG_(printf_xml_no_f_c)("    <sframe> <obj>*</obj> </sframe>\n");
+      else
+         VG_(printf)("   obj:*\n");
    }
-
-   if (VG_(clo_xml))
-      VG_UMSG("</error>");
 }
 
-/* Figure out if we want to perform a given action for this error, possibly
-   by asking the user. */
+
+/* Generate a suppression for an error, either in text or XML mode.
+*/
+static void gen_suppression(Error* err)
+{
+   ExeContext* ec      = VG_(get_error_where)(err);
+
+   //(example code, see comment on CoreSuppKind above)
+   if (0) {    
+   //if (0) ThreadErr == err->ekind) {
+   //   VG_(printf)("{\n");
+   //   VG_(printf)("   <insert a suppression name here>\n");
+   //   VG_(printf)("   core:Thread\n");
+
+   } else {
+      Char* name = VG_TDICT_CALL(tool_get_error_name, err);
+      if (NULL == name) {
+         VG_(umsg)("(%s does not allow error to be suppressed)\n",
+                   VG_(details).name);
+         return;
+      }
+      if (VG_(clo_xml)) {
+         VG_(printf_xml)("  <suppression>\n");
+         VG_(printf_xml)("    <sname>insert_a_suppression_name_here</sname>\n");
+         VG_(printf_xml)("    <skind>%s:%s</skind>\n", VG_(details).name, name);
+      } else {
+         VG_(printf)("{\n");
+         VG_(printf)("   <insert a suppression name here>\n");
+         VG_(printf)("   %s:%s\n", VG_(details).name, name);
+      }
+      VG_TDICT_CALL(tool_print_extra_suppression_info, err);
+   }
+
+   // Print stack trace elements
+   VG_(apply_StackTrace)(printSuppForIp,
+                         VG_(get_ExeContext_StackTrace)(ec),
+                         VG_(get_ExeContext_n_ips)(ec));
+
+   if (VG_(clo_xml)) {
+      VG_(printf_xml)("  </suppression>\n");
+   } else {
+      VG_(printf)("}\n");
+   }
+}
+
+
+/* Figure out if we want to perform a given action for this error,
+   possibly by asking the user.
+*/
 Bool VG_(is_action_requested) ( Char* action, Bool* clo )
 {
    Char ch, ch2;
    Int res;
 
+   /* First off, we shouldn't be asking the user anything if
+      we're in XML mode. */
+   if (VG_(clo_xml))
+      return False; /* That's a Nein, oder Nay as they say down here in B-W */
+
    if (*clo == False)
       return False;
 
-   VG_UMSG("");
+   VG_(umsg)("\n");
 
   again:
    VG_(printf)(
@@ -366,8 +412,120 @@ Bool VG_(is_action_requested) ( Char* action, Bool* clo )
 }
 
 
+/* Do text-mode actions on error, that is, immediately after an error
+   is printed.  These are:
+   * possibly, attach to a debugger
+   * possibly, generate a suppression.
+   Note this should not be called in XML mode! 
+*/
+static 
+void do_actions_on_error(Error* err, Bool allow_db_attach)
+{
+   Bool still_noisy = True;
+
+   /* Should be assured by caller */
+   vg_assert( ! VG_(clo_xml) );
+
+   /* Perhaps we want a debugger attach at this point? */
+   if (allow_db_attach &&
+       VG_(is_action_requested)( "Attach to debugger", & VG_(clo_db_attach) ))
+   {   
+      if (0) VG_(printf)("starting debugger\n");
+      VG_(start_debugger)( err->tid );
+   }  
+   /* Or maybe we want to generate the error's suppression? */
+   if (VG_(clo_gen_suppressions) == 2
+       || (VG_(clo_gen_suppressions) == 1
+           && VG_(is_action_requested)( "Print suppression", &still_noisy ))
+      ) {
+      gen_suppression(err);
+   }
+   if (VG_(clo_gen_suppressions) == 1 && !still_noisy)
+      VG_(clo_gen_suppressions) = 0;
+}
+
+
+/* Prints an error.  Not entirely simple because of the differences
+   between XML and text mode output.
+ 
+   In XML mode:
+
+   * calls the tool's pre-show method, so the tool can create any
+     preamble ahead of the message, if it wants.
+
+   * prints the opening tag, and the <unique> and <tid> fields
+
+   * prints the tool-specific parts of the message
+
+   * if suppression generation is required, a suppression
+
+   * the closing tag
+
+   In text mode:
+
+   * calls the tool's pre-show method, so the tool can create any
+     preamble ahead of the message, if it wants.
+
+   * prints the tool-specific parts of the message
+
+   * calls do_actions_on_error.  This optionally does a debugger
+     attach (and detach), and optionally prints a suppression; both
+     of these may require user input.
+*/
+static void pp_Error ( Error* err, Bool allow_db_attach )
+{
+   /* If this fails, you probably specified your tool's method
+      dictionary incorrectly. */
+   vg_assert(VG_(needs).tool_errors);
+
+   if (VG_(clo_xml)) {
+
+      /* Note, allow_db_attach is ignored in here. */
+ 
+      /* Ensure that suppression generation is either completely
+         enabled or completely disabled; either way, we won't require
+         any user input.  m_main.process_cmd_line_options should
+         ensure the asserted condition holds. */
+      vg_assert( VG_(clo_gen_suppressions) == 0 /* disabled */
+                 || VG_(clo_gen_suppressions) == 2 /* for all errors */ );
+
+      /* Pre-show it to the tool */
+      VG_TDICT_CALL( tool_before_pp_Error, err );
+   
+      /* standard preamble */
+      VG_(printf_xml)("<error>\n");
+      VG_(printf_xml)("  <unique>0x%x</unique>\n", err->unique);
+      VG_(printf_xml)("  <tid>%d</tid>\n", err->tid);
+
+      /* actually print it */
+      VG_TDICT_CALL( tool_pp_Error, err );
+
+      if (VG_(clo_gen_suppressions) > 0)
+        gen_suppression(err);
+
+      /* postamble */
+      VG_(printf_xml)("</error>\n");
+
+   } else {
+
+      VG_TDICT_CALL( tool_before_pp_Error, err );
+
+      if (VG_(tdict).tool_show_ThreadIDs_for_errors
+          && err->tid > 0 && err->tid != last_tid_printed) {
+         VG_(umsg)("Thread %d:\n", err->tid );
+         last_tid_printed = err->tid;
+      }
+   
+      VG_TDICT_CALL( tool_pp_Error, err );
+
+      do_actions_on_error(err, allow_db_attach);
+
+   }
+}
+
+
 /* Construct an error */
-static __inline__
+static
 void construct_error ( Error* err, ThreadId tid, ErrorKind ekind, Addr a,
                        Char* s, void* extra, ExeContext* where )
 {
@@ -397,75 +555,7 @@ void construct_error ( Error* err, ThreadId tid, ErrorKind ekind, Addr a,
    vg_assert( tid < VG_N_THREADS );
 }
 
-#define ERRTXT_LEN   4096
 
-static void printSuppForIp(UInt n, Addr ip)
-{
-   static UChar buf[ERRTXT_LEN];
-
-   if ( VG_(get_fnname_no_cxx_demangle) (ip, buf,  ERRTXT_LEN) ) {
-      VG_(printf)("   fun:%s\n", buf);
-   } else if ( VG_(get_objname)(ip, buf, ERRTXT_LEN) ) {
-      VG_(printf)("   obj:%s\n", buf);
-   } else {
-      VG_(printf)("   obj:*\n");
-   }
-}
-
-static void gen_suppression(Error* err)
-{
-   ExeContext* ec      = VG_(get_error_where)(err);
-
-      //(example code, see comment on CoreSuppKind above)
-   if (0) {    
-   //if (0) ThreadErr == err->ekind) {
-   //   VG_(printf)("{\n");
-   //   VG_(printf)("   <insert a suppression name here>\n");
-   //   VG_(printf)("   core:Thread\n");
-
-   } else {
-      Char* name = VG_TDICT_CALL(tool_get_error_name, err);
-      if (NULL == name) {
-         VG_UMSG("(%s does not allow error to be suppressed)",
-                 VG_(details).name);
-         return;
-      }
-      VG_(printf)("{\n");
-      VG_(printf)("   <insert a suppression name here>\n");
-      VG_(printf)("   %s:%s\n", VG_(details).name, name);
-      VG_TDICT_CALL(tool_print_extra_suppression_info, err);
-   }
-
-   // Print stack trace elements
-   VG_(apply_StackTrace)(printSuppForIp,
-                         VG_(get_ExeContext_StackTrace)(ec),
-                         VG_(get_ExeContext_n_ips)(ec));
-
-   VG_(printf)("}\n");
-}
-
-static 
-void do_actions_on_error(Error* err, Bool allow_db_attach)
-{
-   Bool still_noisy = True;
-
-   /* Perhaps we want a debugger attach at this point? */
-   if (allow_db_attach &&
-       VG_(is_action_requested)( "Attach to debugger", & VG_(clo_db_attach) ))
-   {   
-      if (0) VG_(printf)("starting debugger\n");
-      VG_(start_debugger)( err->tid );
-   }  
-   /* Or maybe we want to generate the error's suppression? */
-   if (VG_(clo_gen_suppressions) == 2
-       || (VG_(clo_gen_suppressions) == 1
-           && VG_(is_action_requested)( "Print suppression", &still_noisy ))
-      ) {
-      gen_suppression(err);
-   }
-   if (VG_(clo_gen_suppressions) == 1 && !still_noisy)
-      VG_(clo_gen_suppressions) = 0;
-}
 
 /* Shared between VG_(maybe_record_error)() and VG_(unique_error)(),
    just for pretty printing purposes. */
@@ -498,25 +588,29 @@ void VG_(maybe_record_error) ( ThreadId tid,
            || n_errs_found >= M_COLLECT_NO_ERRORS_AFTER_FOUND)
        && !VG_(clo_xml)) {
       if (!stopping_message) {
-         VG_UMSG("");
+         VG_(umsg)("\n");
 
 	 if (n_errs_shown >= M_COLLECT_NO_ERRORS_AFTER_SHOWN) {
-            VG_UMSG(
+            VG_(umsg)(
                "More than %d different errors detected.  "
-               "I'm not reporting any more.",
+               "I'm not reporting any more.\n",
                M_COLLECT_NO_ERRORS_AFTER_SHOWN );
          } else {
-            VG_UMSG(
+            VG_(umsg)(
                "More than %d total errors detected.  "
-               "I'm not reporting any more.",
+               "I'm not reporting any more.\n",
                M_COLLECT_NO_ERRORS_AFTER_FOUND );
 	 }
 
-         VG_UMSG("Final error counts will be inaccurate.  Go fix your program!");
-         VG_UMSG("Rerun with --error-limit=no to disable this cutoff.  Note");
-         VG_UMSG("that errors may occur in your program without prior warning from");
-         VG_UMSG("Valgrind, because errors are no longer being displayed.");
-         VG_UMSG("");
+         VG_(umsg)("Final error counts will be inaccurate.  "
+                   "Go fix your program!\n");
+         VG_(umsg)("Rerun with --error-limit=no to disable "
+                   "this cutoff.  Note\n");
+         VG_(umsg)("that errors may occur in your program without "
+                   "prior warning from\n");
+         VG_(umsg)("Valgrind, because errors are no longer "
+                   "being displayed.\n");
+         VG_(umsg)("\n");
          stopping_message = True;
       }
       return;
@@ -529,10 +623,11 @@ void VG_(maybe_record_error) ( ThreadId tid,
        && !VG_(clo_xml)) {
       exe_res = Vg_LowRes;
       if (!slowdown_message) {
-         VG_UMSG("");
-         VG_UMSG("More than %d errors detected.  Subsequent errors",
-                 M_COLLECT_ERRORS_SLOWLY_AFTER);
-         VG_UMSG("will still be recorded, but in less detail than before.");
+         VG_(umsg)("\n");
+         VG_(umsg)("More than %d errors detected.  Subsequent errors\n",
+                   M_COLLECT_ERRORS_SLOWLY_AFTER);
+         VG_(umsg)("will still be recorded, but in less "
+                   "detail than before.\n");
          slowdown_message = True;
       }
    }
@@ -618,12 +713,19 @@ void VG_(maybe_record_error) ( ThreadId tid,
    errors  = p;
    if (p->supp == NULL) {
       n_errs_found++;
-      if (!is_first_shown_context)
-         VG_UMSG("");
-      pp_Error(p);
+      /* A bit of prettyprinting, to ensure there's a blank line
+         in between each error. */
+      if (!is_first_shown_context) {
+         if (VG_(clo_xml))
+            VG_(printf_xml)("\n");
+         else
+            VG_(umsg)("\n");
+      }
+      /* Actually show the error; more complex than you might think. */
+      pp_Error( p, /*allow_db_attach*/True );
+      /* update stats */
       is_first_shown_context = False;
       n_errs_shown++;
-      do_actions_on_error(p, /*allow_db_attach*/True);
    } else {
       n_errs_suppressed++;
       p->supp->count++;
@@ -662,12 +764,19 @@ Bool VG_(unique_error) ( ThreadId tid, ErrorKind ekind, Addr a, Char* s,
          n_errs_found++;
 
       if (print_error) {
-         if (!is_first_shown_context)
-            VG_UMSG("");
-         pp_Error(&err);
+         /* A bit of prettyprinting, to ensure there's a blank line
+            in between each error. */
+         if (!is_first_shown_context) {
+            if (VG_(clo_xml))
+               VG_(printf_xml)("\n");
+            else
+               VG_(umsg)("\n");
+         }
+         /* Actually show the error; more complex than you might think. */
+         pp_Error(&err, allow_db_attach);
+         /* update stats */
          is_first_shown_context = False;
          n_errs_shown++;
-         do_actions_on_error(&err, allow_db_attach);
       }
       return False;
 
@@ -691,7 +800,7 @@ static Bool show_used_suppressions ( void )
    Bool  any_supp;
 
    if (VG_(clo_xml))
-      VG_UMSG("<suppcounts>");
+      VG_(printf_xml)("<suppcounts>\n");
 
    any_supp = False;
    for (su = suppressions; su != NULL; su = su->next) {
@@ -699,19 +808,18 @@ static Bool show_used_suppressions ( void )
          continue;
       any_supp = True;
       if (VG_(clo_xml)) {
-         VG_(message_no_f_c)(Vg_DebugMsg,
-                             "  <pair>\n"
-                             "    <count>%d</count>\n"
-                             "    <name>%t</name>\n"
-                             "  </pair>",
-                             su->count, su->sname);
+         VG_(printf_xml_no_f_c)( "  <pair>\n"
+                                 "    <count>%d</count>\n"
+                                 "    <name>%t</name>\n"
+                                 "  </pair>\n",
+                                 su->count, su->sname );
       } else {
-         VG_DMSG("supp: %6d %s", su->count, su->sname);
+         VG_(dmsg)("supp: %6d %s\n", su->count, su->sname);
       }
    }
 
    if (VG_(clo_xml))
-      VG_UMSG("</suppcounts>");
+      VG_(printf_xml)("</suppcounts>\n");
 
    return any_supp;
 }
@@ -750,10 +858,10 @@ void VG_(show_all_errors) ( void )
    }
 
    /* We only get here if not printing XML. */
-   VG_UMSG("ERROR SUMMARY: "
-           "%d errors from %d contexts (suppressed: %d from %d)",
-           n_errs_found, n_err_contexts, 
-           n_errs_suppressed, n_supp_contexts );
+   VG_(umsg)("ERROR SUMMARY: "
+             "%d errors from %d contexts (suppressed: %d from %d)\n",
+             n_errs_found, n_err_contexts, 
+             n_errs_suppressed, n_supp_contexts );
 
    if (VG_(clo_verbosity) <= 1)
       return;
@@ -771,10 +879,13 @@ void VG_(show_all_errors) ( void )
       }
       if (p_min == NULL) VG_(tool_panic)("show_all_errors()");
 
-      VG_UMSG("");
-      VG_UMSG("%d errors in context %d of %d:",
-              p_min->count, i+1, n_err_contexts);
-      pp_Error( p_min );
+      VG_(umsg)("\n");
+      VG_(umsg)("%d errors in context %d of %d:\n",
+                p_min->count, i+1, n_err_contexts);
+      pp_Error( p_min, False/*allow_db_attach*/ );
+
+      // We're not printing XML -- we'd have exited above if so.
+      vg_assert(! VG_(clo_xml));
 
       if ((i+1 == VG_(clo_dump_error))) {
          StackTrace ips = VG_(get_ExeContext_StackTrace)(p_min->where);
@@ -788,17 +899,17 @@ void VG_(show_all_errors) ( void )
    } 
 
    if (n_supp_contexts > 0) 
-      VG_UMSG( "");
+      VG_(umsg)("\n");
    any_supp = show_used_suppressions();
 
    if (n_err_contexts > 0) {
       if (any_supp) 
-         VG_UMSG("");
-      VG_UMSG("IN SUMMARY: "
-              "%d errors from %d contexts (suppressed: %d from %d)",
-              n_errs_found, n_err_contexts, n_errs_suppressed,
-              n_supp_contexts );
-      VG_UMSG("");
+         VG_(umsg)("\n");
+      VG_(umsg)("IN SUMMARY: "
+                "%d errors from %d contexts (suppressed: %d from %d)\n",
+                n_errs_found, n_err_contexts, n_errs_suppressed,
+                n_supp_contexts );
+      VG_(umsg)("\n");
    }
 }
 
@@ -807,18 +918,18 @@ void VG_(show_all_errors) ( void )
 void VG_(show_error_counts_as_XML) ( void )
 {
    Error* err;
-   VG_UMSG("<errorcounts>");
+   VG_(printf_xml)("<errorcounts>\n");
    for (err = errors; err != NULL; err = err->next) {
       if (err->supp != NULL)
          continue;
       if (err->count <= 0)
          continue;
-      VG_UMSG("  <pair>");
-      VG_UMSG("    <count>%d</count>", err->count);
-      VG_UMSG("    <unique>0x%x</unique>", err->unique);
-      VG_UMSG("  </pair>");
+      VG_(printf_xml)("  <pair>\n");
+      VG_(printf_xml)("    <count>%d</count>\n", err->count);
+      VG_(printf_xml)("    <unique>0x%x</unique>\n", err->unique);
+      VG_(printf_xml)("  </pair>\n");
    }
-   VG_UMSG("</errorcounts>");
+   VG_(printf_xml)("</errorcounts>\n");
 }
 
 
@@ -955,8 +1066,8 @@ static void load_one_suppressions_file ( Char* filename )
    // Check it's not a directory.
    if (VG_(is_dir)( filename )) {
       if (VG_(clo_xml))
-         VG_UMSG("</valgrindoutput>\n");
-      VG_UMSG("FATAL: suppressions file \"%s\" is a directory", filename );
+         VG_(umsg)("</valgrindoutput>\n");
+      VG_(umsg)("FATAL: suppressions file \"%s\" is a directory\n", filename );
       VG_(exit)(1);
    }
 
@@ -964,8 +1075,8 @@ static void load_one_suppressions_file ( Char* filename )
    sres = VG_(open)( filename, VKI_O_RDONLY, 0 );
    if (sr_isError(sres)) {
       if (VG_(clo_xml))
-         VG_UMSG("</valgrindoutput>\n");
-      VG_UMSG("FATAL: can't open suppressions file \"%s\"", filename );
+         VG_(umsg)("</valgrindoutput>\n");
+      VG_(umsg)("FATAL: can't open suppressions file \"%s\"\n", filename );
       VG_(exit)(1);
    }
    fd = sr_Res(sres);
@@ -1121,13 +1232,13 @@ static void load_one_suppressions_file ( Char* filename )
 
   syntax_error:
    if (VG_(clo_xml))
-      VG_UMSG("</valgrindoutput>\n");
-   VG_UMSG("FATAL: in suppressions file \"%s\" near line %d:",
+      VG_(umsg)("</valgrindoutput>\n");
+   VG_(umsg)("FATAL: in suppressions file \"%s\" near line %d:\n",
            filename, lineno );
-   VG_UMSG("   %s", err_str );
+   VG_(umsg)("   %s\n", err_str );
    
    VG_(close)(fd);
-   VG_UMSG("exiting now.");
+   VG_(umsg)("exiting now.\n");
    VG_(exit)(1);
 
 #  undef BOMB
@@ -1141,7 +1252,8 @@ void VG_(load_suppressions) ( void )
    suppressions = NULL;
    for (i = 0; i < VG_(clo_n_suppressions); i++) {
       if (VG_(clo_verbosity) > 1) {
-         VG_DMSG("Reading suppressions file: %s", VG_(clo_suppressions)[i] );
+         VG_(dmsg)("Reading suppressions file: %s\n", 
+                   VG_(clo_suppressions)[i] );
       }
       load_one_suppressions_file( VG_(clo_suppressions)[i] );
    }
@@ -1299,12 +1411,12 @@ static Supp* is_suppressible_error ( Error* err )
 */
 void VG_(print_errormgr_stats) ( void )
 {
-   VG_DMSG(
-      " errormgr: %'lu supplist searches, %'lu comparisons during search",
+   VG_(dmsg)(
+      " errormgr: %'lu supplist searches, %'lu comparisons during search\n",
       em_supplist_searches, em_supplist_cmps
    );
-   VG_DMSG(
-      " errormgr: %'lu errlist searches, %'lu comparisons during search",
+   VG_(dmsg)(
+      " errormgr: %'lu errlist searches, %'lu comparisons during search\n",
       em_errlist_searches, em_errlist_cmps
    );
 }

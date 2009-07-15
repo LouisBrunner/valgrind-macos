@@ -341,11 +341,15 @@ SysRes ML_(do_fork_clone) ( ThreadId tid, UInt flags,
       VG_(sigprocmask)(VKI_SIG_SETMASK, &fork_saved_mask, NULL);
 
       /* If --child-silent-after-fork=yes was specified, set the
-         logging file descriptor to an 'impossible' value.  This is
+         output file descriptors to 'impossible' values.  This is
          noticed by send_bytes_to_logging_sink in m_libcprint.c, which
-         duly stops writing any further logging output. */
-      if (!VG_(logging_to_socket) && VG_(clo_child_silent_after_fork))
-         VG_(clo_log_fd) = -1;
+         duly stops writing any further output. */
+      if (VG_(clo_child_silent_after_fork)) {
+         if (!VG_(log_output_sink).is_socket)
+            VG_(log_output_sink).fd = -1;
+         if (!VG_(xml_output_sink).is_socket)
+            VG_(xml_output_sink).fd = -1;
+      }
    } 
    else 
    if (!sr_isError(res) && sr_Res(res) > 0) {
@@ -1188,7 +1192,7 @@ PRE(sys_tkill)
    *flags |= SfPollAfter;
 
    if (VG_(clo_trace_signals))
-      VG_(message)(Vg_DebugMsg, "tkill: sending signal %ld to pid %ld",
+      VG_(message)(Vg_DebugMsg, "tkill: sending signal %ld to pid %ld\n",
 		   ARG2, ARG1);
 
    /* If we're sending SIGKILL, check to see if the target is one of
@@ -1212,7 +1216,7 @@ PRE(sys_tkill)
 POST(sys_tkill)
 {
    if (VG_(clo_trace_signals))
-      VG_(message)(Vg_DebugMsg, "tkill: sent signal %ld to pid %ld",
+      VG_(message)(Vg_DebugMsg, "tkill: sent signal %ld to pid %ld\n",
                    ARG2, ARG1);
 }
 
@@ -1229,7 +1233,8 @@ PRE(sys_tgkill)
    *flags |= SfPollAfter;
 
    if (VG_(clo_trace_signals))
-      VG_(message)(Vg_DebugMsg, "tgkill: sending signal %ld to pid %ld/%ld",
+      VG_(message)(Vg_DebugMsg,
+                   "tgkill: sending signal %ld to pid %ld/%ld\n",
 		   ARG3, ARG1, ARG2);
 
    /* If we're sending SIGKILL, check to see if the target is one of
@@ -1253,7 +1258,8 @@ PRE(sys_tgkill)
 POST(sys_tgkill)
 {
    if (VG_(clo_trace_signals))
-      VG_(message)(Vg_DebugMsg, "tgkill: sent signal %ld to pid %ld/%ld",
+      VG_(message)(Vg_DebugMsg,
+                   "tgkill: sent signal %ld to pid %ld/%ld\n",
                    ARG3, ARG1, ARG2);
 }
 
@@ -5297,7 +5303,8 @@ ML_(linux_POST_sys_getsockopt) ( ThreadId tid,
             else if (a->sa_family == VKI_AF_INET6)
                sl = sizeof(struct vki_sockaddr_in6);
             else {
-               VG_(message)(Vg_UserMsg, "Warning: getsockopt: unhandled address type %d", a->sa_family);
+               VG_(message)(Vg_UserMsg, "Warning: getsockopt: unhandled "
+                                        "address type %d\n", a->sa_family);
             }
             a = (struct vki_sockaddr*)((char*)a + sl);
          }

@@ -81,7 +81,7 @@ static HChar* read_dot_valgrindrc ( HChar* dir )
       else
          VG_(message)(Vg_UserMsg,
                "%s was not read as it is world writeable or not owned by the "
-               "current user", filename);
+               "current user\n", filename);
 
       VG_(close)(sr_Res(fd));
    }

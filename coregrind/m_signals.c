@@ -871,12 +871,12 @@ static void handle_SCSS_change ( Bool force_update )
       VG_(sigdelset)( &ksa.sa_mask, VKI_SIGSTOP );
 
       if (VG_(clo_trace_signals) && VG_(clo_verbosity) > 2)
-         VG_DMSG("setting ksig %d to: hdlr %p, flags 0x%lx, "
-                 "mask(msb..lsb) 0x%llx 0x%llx",
-                 sig, ksa.ksa_handler,
-                 (UWord)ksa.sa_flags,
-                 _VKI_NSIG_WORDS > 1 ? (ULong)ksa.sa_mask.sig[1] : 0,
-                 (ULong)ksa.sa_mask.sig[0]);
+         VG_(dmsg)("setting ksig %d to: hdlr %p, flags 0x%lx, "
+                   "mask(msb..lsb) 0x%llx 0x%llx\n",
+                   sig, ksa.ksa_handler,
+                   (UWord)ksa.sa_flags,
+                   _VKI_NSIG_WORDS > 1 ? (ULong)ksa.sa_mask.sig[1] : 0,
+                   (ULong)ksa.sa_mask.sig[0]);
 
       res = VG_(sigaction)( sig, &ksa, &ksa_old );
       vg_assert(res == 0);
@@ -935,13 +935,13 @@ SysRes VG_(do_sys_sigaltstack) ( ThreadId tid, vki_stack_t* ss, vki_stack_t* oss
    m_SP  = VG_(get_SP)(tid);
 
    if (VG_(clo_trace_signals))
-      VG_EMSG("sys_sigaltstack: tid %d, "
-              "ss %p{%p,sz=%llu,flags=0x%llx}, oss %p (current SP %p)",
-              tid, (void*)ss, 
-              ss ? ss->ss_sp : 0,
-              (ULong)(ss ? ss->ss_size : 0),
-              (ULong)(ss ? ss->ss_flags : 0),
-              (void*)oss, (void*)m_SP);
+      VG_(emsg)("sys_sigaltstack: tid %d, "
+                "ss %p{%p,sz=%llu,flags=0x%llx}, oss %p (current SP %p)\n",
+                tid, (void*)ss, 
+                ss ? ss->ss_sp : 0,
+                (ULong)(ss ? ss->ss_size : 0),
+                (ULong)(ss ? ss->ss_flags : 0),
+                (void*)oss, (void*)m_SP);
 
    if (oss != NULL) {
       oss->ss_sp    = VG_(threads)[tid].altstack.ss_sp;
@@ -980,10 +980,10 @@ SysRes VG_(do_sys_sigaction) ( Int signo,
                                vki_sigaction_fromK_t* old_act )
 {
    if (VG_(clo_trace_signals))
-      VG_EMSG("sys_sigaction: sigNo %d, "
-              "new %#lx, old %#lx, new flags 0x%llx",
-              signo, (UWord)new_act, (UWord)old_act,
-              (ULong)(new_act ? new_act->sa_flags : 0));
+      VG_(emsg)("sys_sigaction: sigNo %d, "
+                "new %#lx, old %#lx, new flags 0x%llx\n",
+                signo, (UWord)new_act, (UWord)old_act,
+                (ULong)(new_act ? new_act->sa_flags : 0));
 
    /* Rule out various error conditions.  The aim is to ensure that if
       when the call is passed to the kernel it will definitely
@@ -1046,25 +1046,25 @@ SysRes VG_(do_sys_sigaction) ( Int signo,
 
   bad_signo:
    if (VG_(showing_core_errors)() && !VG_(clo_xml)) {
-      VG_UMSG("Warning: bad signal number %d in sigaction()", signo);
+      VG_(umsg)("Warning: bad signal number %d in sigaction()\n", signo);
    }
    return VG_(mk_SysRes_Error)( VKI_EINVAL );
 
   bad_signo_reserved:
    if (VG_(showing_core_errors)() && !VG_(clo_xml)) {
-      VG_UMSG("Warning: ignored attempt to set %s handler in sigaction();",
-              signame(signo));
-      VG_UMSG("         the %s signal is used internally by Valgrind", 
-              signame(signo));
+      VG_(umsg)("Warning: ignored attempt to set %s handler in sigaction();\n",
+                signame(signo));
+      VG_(umsg)("         the %s signal is used internally by Valgrind\n", 
+                signame(signo));
    }
    return VG_(mk_SysRes_Error)( VKI_EINVAL );
 
   bad_sigkill_or_sigstop:
    if (VG_(showing_core_errors)() && !VG_(clo_xml)) {
-      VG_UMSG("Warning: ignored attempt to set %s handler in sigaction();",
-              signame(signo));
-      VG_UMSG("         the %s signal is uncatchable", 
-              signame(signo));
+      VG_(umsg)("Warning: ignored attempt to set %s handler in sigaction();\n",
+                signame(signo));
+      VG_(umsg)("         the %s signal is uncatchable\n", 
+                signame(signo));
    }
    return VG_(mk_SysRes_Error)( VKI_EINVAL );
 }
@@ -1129,19 +1129,19 @@ void do_setmask ( ThreadId tid,
 		  vki_sigset_t* oldset )
 {
    if (VG_(clo_trace_signals))
-      VG_EMSG("do_setmask: tid = %d how = %d (%s), newset = %p (%s)", 
-              tid, how,
-              how==VKI_SIG_BLOCK ? "SIG_BLOCK" : (
-                 how==VKI_SIG_UNBLOCK ? "SIG_UNBLOCK" : (
-                    how==VKI_SIG_SETMASK ? "SIG_SETMASK" : "???")),
-              newset, newset ? format_sigset(newset) : "NULL" );
+      VG_(emsg)("do_setmask: tid = %d how = %d (%s), newset = %p (%s)\n", 
+                tid, how,
+                how==VKI_SIG_BLOCK ? "SIG_BLOCK" : (
+                   how==VKI_SIG_UNBLOCK ? "SIG_UNBLOCK" : (
+                      how==VKI_SIG_SETMASK ? "SIG_SETMASK" : "???")),
+                newset, newset ? format_sigset(newset) : "NULL" );
 
    /* Just do this thread. */
    vg_assert(VG_(is_valid_tid)(tid));
    if (oldset) {
       *oldset = VG_(threads)[tid].sig_mask;
       if (VG_(clo_trace_signals))
-         VG_EMSG("\toldset=%p %s", oldset, format_sigset(oldset));
+         VG_(emsg)("\toldset=%p %s\n", oldset, format_sigset(oldset));
    }
    if (newset) {
       do_sigprocmask_bitops (how, &VG_(threads)[tid].sig_mask, newset );
@@ -1166,7 +1166,7 @@ SysRes VG_(do_sys_sigprocmask) ( ThreadId tid,
          return VG_(mk_SysRes_Success)( 0 );
 
       default:
-         VG_DMSG("sigprocmask: unknown 'how' field %d", how);
+         VG_(dmsg)("sigprocmask: unknown 'how' field %d\n", how);
          return VG_(mk_SysRes_Error)( VKI_EINVAL );
    }
 }
@@ -1229,7 +1229,7 @@ void push_signal_frame ( ThreadId tid, const vki_siginfo_t *siginfo,
    tst = & VG_(threads)[tid];
 
    if (VG_(clo_trace_signals)) {
-      VG_DMSG("push_signal_frame (thread %d): signal %d", tid, sigNo);
+      VG_(dmsg)("push_signal_frame (thread %d): signal %d\n", tid, sigNo);
       VG_(get_and_pp_StackTrace)(tid, 10);
    }
 
@@ -1243,11 +1243,11 @@ void push_signal_frame ( ThreadId tid, const vki_siginfo_t *siginfo,
       esp_top_of_frame 
          = (Addr)(tst->altstack.ss_sp) + tst->altstack.ss_size;
       if (VG_(clo_trace_signals))
-         VG_DMSG("delivering signal %d (%s) to thread %d: "
-                 "on ALT STACK (%p-%p; %ld bytes)",
-                 sigNo, signame(sigNo), tid, tst->altstack.ss_sp,
-                 (UChar *)tst->altstack.ss_sp + tst->altstack.ss_size,
-                 (unsigned long)tst->altstack.ss_size );
+         VG_(dmsg)("delivering signal %d (%s) to thread %d: "
+                   "on ALT STACK (%p-%p; %ld bytes)\n",
+                   sigNo, signame(sigNo), tid, tst->altstack.ss_sp,
+                   (UChar *)tst->altstack.ss_sp + tst->altstack.ss_size,
+                   (Word)tst->altstack.ss_size );
 
       /* Signal delivery to tools */
       VG_TRACK( pre_deliver_signal, tid, sigNo, /*alt_stack*/True );
@@ -1469,9 +1469,9 @@ static void default_action(const vki_siginfo_t *info, ThreadId tid)
    vg_assert(!core || (core && terminate));
 
    if (VG_(clo_trace_signals))
-      VG_DMSG("delivering %d (code %d) to default handler; action: %s%s",
-              sigNo, info->si_code, terminate ? "terminate" : "ignore",
-              core ? "+core" : "");
+      VG_(dmsg)("delivering %d (code %d) to default handler; action: %s%s\n",
+                sigNo, info->si_code, terminate ? "terminate" : "ignore",
+                core ? "+core" : "");
 
    if (!terminate)
       return;			/* nothing to do */
@@ -1492,9 +1492,10 @@ static void default_action(const vki_siginfo_t *info, ThreadId tid)
          (could_core && is_signal_from_kernel(tid, sigNo, info->si_code))
         ) &&
         !VG_(clo_xml) ) {
-      VG_UMSG("");
-      VG_UMSG("Process terminating with default action of signal %d (%s)%s", 
-              sigNo, signame(sigNo), core ? ": dumping core" : "");
+      VG_(umsg)("\n");
+      VG_(umsg)(
+         "Process terminating with default action of signal %d (%s)%s\n",
+         sigNo, signame(sigNo), core ? ": dumping core" : "");
 
       /* Be helpful - decode some more details about this fault */
       if (is_signal_from_kernel(tid, sigNo, info->si_code)) {
@@ -1504,8 +1505,10 @@ static void default_action(const vki_siginfo_t *info, ThreadId tid)
 	 switch(sigNo) {
 	 case VKI_SIGSEGV:
 	    switch(info->si_code) {
-	    case VKI_SEGV_MAPERR: event = "Access not within mapped region"; break;
-	    case VKI_SEGV_ACCERR: event = "Bad permissions for mapped region"; break;
+	    case VKI_SEGV_MAPERR: event = "Access not within mapped region";
+                                  break;
+	    case VKI_SEGV_ACCERR: event = "Bad permissions for mapped region";
+                                  break;
 	    case VKI_SEGV_MADE_UP_GPF:
 	       /* General Protection Fault: The CPU/kernel
 		  isn't telling us anything useful, but this
@@ -1562,9 +1565,10 @@ static void default_action(const vki_siginfo_t *info, ThreadId tid)
 
 	 if (event != NULL) {
 	    if (haveaddr)
-               VG_UMSG(" %s at address %p", event, info->VKI_SIGINFO_si_addr);
+               VG_(umsg)(" %s at address %p\n",
+                         event, info->VKI_SIGINFO_si_addr);
 	    else
-               VG_UMSG(" %s", event);
+               VG_(umsg)(" %s\n", event);
 	 }
       }
       /* Print a stack trace.  Be cautious if the thread's SP is in an
@@ -1581,14 +1585,15 @@ static void default_action(const vki_siginfo_t *info, ThreadId tid)
       if (sigNo == VKI_SIGSEGV 
           && info && is_signal_from_kernel(tid, sigNo, info->si_code)
           && info->si_code == VKI_SEGV_MAPERR) {
-         VG_UMSG(" If you believe this happened as a result of a stack" );
-         VG_UMSG(" overflow in your program's main thread (unlikely but");
-         VG_UMSG(" possible), you can try to increase the size of the"  );
-         VG_UMSG(" main thread stack using the --main-stacksize= flag." );
+         VG_(umsg)(" If you believe this happened as a result of a stack\n" );
+         VG_(umsg)(" overflow in your program's main thread (unlikely but\n");
+         VG_(umsg)(" possible), you can try to increase the size of the\n"  );
+         VG_(umsg)(" main thread stack using the --main-stacksize= flag.\n" );
          // FIXME: assumes main ThreadId == 1
          if (VG_(is_valid_tid)(1)) {
-            VG_UMSG(" The main thread stack size used in this run was %d.",
-                    (Int)VG_(threads)[1].client_stack_szB);
+            VG_(umsg)(
+               " The main thread stack size used in this run was %d.\n",
+               (Int)VG_(threads)[1].client_stack_szB);
          }
       }
    }
@@ -1634,8 +1639,8 @@ static void deliver_signal ( ThreadId tid, const vki_siginfo_t *info,
    ThreadState		*tst = VG_(get_ThreadState)(tid);
 
    if (VG_(clo_trace_signals))
-      VG_DMSG("delivering signal %d (%s):%d to thread %d", 
-              sigNo, signame(sigNo), info->si_code, tid );
+      VG_(dmsg)("delivering signal %d (%s):%d to thread %d\n", 
+                sigNo, signame(sigNo), info->si_code, tid );
 
    if (sigNo == VG_SIGVGKILL) {
       /* If this is a SIGVGKILL, we're expecting it to interrupt any
@@ -1849,8 +1854,8 @@ void queue_signal(ThreadId tid, const vki_siginfo_t *si)
    sq = tst->sig_queue;
 
    if (VG_(clo_trace_signals))
-      VG_DMSG("Queueing signal %d (idx %d) to thread %d",
-              si->si_signo, sq->next, tid);
+      VG_(dmsg)("Queueing signal %d (idx %d) to thread %d\n",
+                si->si_signo, sq->next, tid);
 
    /* Add signal to the queue.  If the queue gets overrun, then old
       queued signals may get lost. 
@@ -1859,8 +1864,8 @@ void queue_signal(ThreadId tid, const vki_siginfo_t *si)
       least a non-siginfo signal gets deliviered.
    */
    if (sq->sigs[sq->next].si_signo != 0)
-      VG_UMSG("Signal %d being dropped from thread %d's queue",
-              sq->sigs[sq->next].si_signo, tid);
+      VG_(umsg)("Signal %d being dropped from thread %d's queue\n",
+                sq->sigs[sq->next].si_signo, tid);
 
    sq->sigs[sq->next] = *si;
    sq->next = (sq->next+1) % N_QUEUED_SIGNALS;
@@ -1891,12 +1896,14 @@ static vki_siginfo_t *next_queued(ThreadId tid, const vki_sigset_t *set)
    do {
       if (0)
 	 VG_(printf)("idx=%d si_signo=%d inset=%d\n", idx,
-		     sq->sigs[idx].si_signo, VG_(sigismember)(set, sq->sigs[idx].si_signo));
+		     sq->sigs[idx].si_signo,
+                     VG_(sigismember)(set, sq->sigs[idx].si_signo));
 
-      if (sq->sigs[idx].si_signo != 0 && VG_(sigismember)(set, sq->sigs[idx].si_signo)) {
+      if (sq->sigs[idx].si_signo != 0 
+          && VG_(sigismember)(set, sq->sigs[idx].si_signo)) {
 	 if (VG_(clo_trace_signals))
-            VG_DMSG("Returning queued signal %d (idx %d) for thread %d",
-                    sq->sigs[idx].si_signo, idx, tid);
+            VG_(dmsg)("Returning queued signal %d (idx %d) for thread %d\n",
+                      sq->sigs[idx].si_signo, idx, tid);
 	 ret = &sq->sigs[idx];
 	 goto out;
       }
@@ -1947,8 +1954,8 @@ void async_signalhandler ( Int sigNo,
    info->si_code = sanitize_si_code(info->si_code);
 
    if (VG_(clo_trace_signals))
-      VG_DMSG("async signal handler: signal=%d, tid=%d, si_code=%d",
-              sigNo, tid, info->si_code);
+      VG_(dmsg)("async signal handler: signal=%d, tid=%d, si_code=%d\n",
+                sigNo, tid, info->si_code);
 
    /* Update thread state properly.  The signal can only have been
       delivered whilst we were in
@@ -2105,7 +2112,8 @@ void sync_signalhandler_from_user ( ThreadId tid,
          get here unless the client wants this signal right now.  This means
          we can simply use the async_signalhandler. */
       if (VG_(clo_trace_signals))
-         VG_DMSG("Delivering user-sent sync signal %d as async signal", sigNo);
+         VG_(dmsg)("Delivering user-sent sync signal %d as async signal\n",
+                   sigNo);
 
       async_signalhandler(sigNo, info, uc);
       VG_(core_panic)("async_signalhandler returned!?\n");
@@ -2116,7 +2124,7 @@ void sync_signalhandler_from_user ( ThreadId tid,
          unblocked, so we can't rely on the kernel to route them properly, so
          we need to queue them manually. */
       if (VG_(clo_trace_signals))
-         VG_DMSG("Routing user-sent sync signal %d via queue", sigNo);
+         VG_(dmsg)("Routing user-sent sync signal %d via queue\n", sigNo);
 
 #     if defined(VGO_linux)
       /* On Linux, first we have to do a sanity check of the siginfo. */
@@ -2132,8 +2140,8 @@ void sync_signalhandler_from_user ( ThreadId tid,
             Since we depend on siginfo to work out why we were sent a
             signal and what we should do about it, we really can't
             continue unless we get it. */
-         VG_UMSG("Signal %d (%s) appears to have lost its siginfo; "
-                 "I can't go on.", sigNo, signame(sigNo));
+         VG_(umsg)("Signal %d (%s) appears to have lost its siginfo; "
+                   "I can't go on.\n", sigNo, signame(sigNo));
          VG_(printf)(
 "  This may be because one of your programs has consumed your ration of\n"
 "  siginfo structures.  For more information, see:\n"
@@ -2184,13 +2192,13 @@ static Bool extend_stack_if_appropriate(ThreadId tid, vki_siginfo_t* info)
 
    if (VG_(clo_trace_signals)) {
       if (seg == NULL)
-         VG_DMSG("SIGSEGV: si_code=%d faultaddr=%#lx tid=%d ESP=%#lx "
-                 "seg=NULL",
-                 info->si_code, fault, tid, esp);
+         VG_(dmsg)("SIGSEGV: si_code=%d faultaddr=%#lx tid=%d ESP=%#lx "
+                   "seg=NULL\n",
+                   info->si_code, fault, tid, esp);
       else
-         VG_DMSG("SIGSEGV: si_code=%d faultaddr=%#lx tid=%d ESP=%#lx "
-                 "seg=%#lx-%#lx",
-                 info->si_code, fault, tid, esp, seg->start, seg->end);
+         VG_(dmsg)("SIGSEGV: si_code=%d faultaddr=%#lx tid=%d ESP=%#lx "
+                   "seg=%#lx-%#lx\n",
+                   info->si_code, fault, tid, esp, seg->start, seg->end);
    }
 
    if (info->si_code == VKI_SEGV_MAPERR
@@ -2209,12 +2217,12 @@ static Bool extend_stack_if_appropriate(ThreadId tid, vki_siginfo_t* info)
       Addr base = VG_PGROUNDDN(esp - VG_STACK_REDZONE_SZB);
       if (VG_(extend_stack)(base, VG_(threads)[tid].client_stack_szB)) {
          if (VG_(clo_trace_signals))
-            VG_DMSG("       -> extended stack base to %#lx",
-                    VG_PGROUNDDN(fault));
+            VG_(dmsg)("       -> extended stack base to %#lx\n",
+                      VG_PGROUNDDN(fault));
          return True;
       } else {
-         VG_UMSG("Stack overflow in thread %d: can't grow stack to %#lx",
-                 tid, fault);
+         VG_(umsg)("Stack overflow in thread %d: can't grow stack to %#lx\n",
+                   tid, fault);
          return False;
       }
    } else {
@@ -2265,13 +2273,13 @@ void sync_signalhandler_from_kernel ( ThreadId tid,
          client code, and therefore it was actually generated by
          Valgrind internally.
        */
-      VG_DMSG("VALGRIND INTERNAL ERROR: Valgrind received "
-              "a signal %d (%s) - exiting",
-              sigNo, signame(sigNo));
+      VG_(dmsg)("VALGRIND INTERNAL ERROR: Valgrind received "
+                "a signal %d (%s) - exiting\n",
+                sigNo, signame(sigNo));
 
-      VG_DMSG("si_code=%x;  Faulting address: %p;  sp: %#lx",
-              info->si_code, info->VKI_SIGINFO_si_addr,
-              VG_UCONTEXT_STACK_PTR(uc));
+      VG_(dmsg)("si_code=%x;  Faulting address: %p;  sp: %#lx\n",
+                info->si_code, info->VKI_SIGINFO_si_addr,
+                VG_UCONTEXT_STACK_PTR(uc));
 
       if (0)
          VG_(kill_self)(sigNo);  /* generate a core dump */
@@ -2314,11 +2322,11 @@ void sync_signalhandler ( Int sigNo,
    from_user = !is_signal_from_kernel(tid, sigNo, info->si_code);
 
    if (VG_(clo_trace_signals)) {
-      VG_DMSG("sync signal handler: "
-              "signal=%d, si_code=%d, EIP=%#lx, eip=%#lx, from %s",
-              sigNo, info->si_code, VG_(get_IP)(tid), 
-              VG_UCONTEXT_INSTR_PTR(uc),
-              ( from_user ? "user" : "kernel" ));
+      VG_(dmsg)("sync signal handler: "
+                "signal=%d, si_code=%d, EIP=%#lx, eip=%#lx, from %s\n",
+                sigNo, info->si_code, VG_(get_IP)(tid), 
+                VG_UCONTEXT_INSTR_PTR(uc),
+                ( from_user ? "user" : "kernel" ));
    }
    vg_assert(sigNo >= 1 && sigNo <= VG_(max_signal));
 
@@ -2358,7 +2366,7 @@ static void sigvgkill_handler(int signo, vki_siginfo_t *si,
    ThreadStatus at_signal = VG_(threads)[tid].status;
 
    if (VG_(clo_trace_signals))
-      VG_DMSG("sigvgkill for lwp %d tid %d", VG_(gettid)(), tid);
+      VG_(dmsg)("sigvgkill for lwp %d tid %d\n", VG_(gettid)(), tid);
 
    VG_(acquire_BigLock)(tid, "sigvgkill_handler");
 
@@ -2448,19 +2456,19 @@ void VG_(poll_signals)(ThreadId tid)
    /* If there was nothing queued, ask the kernel for a pending signal */
    if (sip == NULL && VG_(sigtimedwait_zero)(&pollset, &si) > 0) {
       if (VG_(clo_trace_signals))
-         VG_DMSG("poll_signals: got signal %d for thread %d",
-                 si.si_signo, tid);
+         VG_(dmsg)("poll_signals: got signal %d for thread %d\n",
+                   si.si_signo, tid);
       sip = &si;
    }
 
    if (sip != NULL) {
       /* OK, something to do; deliver it */
       if (VG_(clo_trace_signals))
-         VG_DMSG("Polling found signal %d for tid %d", sip->si_signo, tid);
+         VG_(dmsg)("Polling found signal %d for tid %d\n", sip->si_signo, tid);
       if (!is_sig_ign(sip->si_signo))
 	 deliver_signal(tid, sip, NULL);
       else if (VG_(clo_trace_signals))
-         VG_DMSG("   signal %d ignored", sip->si_signo);
+         VG_(dmsg)("   signal %d ignored\n", sip->si_signo);
 	 
       sip->si_signo = 0;	/* remove from signal queue, if that's
 				   where it came from */
@@ -2560,7 +2568,7 @@ void VG_(sigstartup_actions) ( void )
    }
 
    if (VG_(clo_trace_signals))
-      VG_DMSG("Max kernel-supported signal is %d", VG_(max_signal));
+      VG_(dmsg)("Max kernel-supported signal is %d\n", VG_(max_signal));
 
    /* Our private internal signals are treated as ignored */
    scss.scss_per_sig[VG_SIGVGKILL].scss_handler = VKI_SIG_IGN;

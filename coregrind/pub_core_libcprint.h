@@ -38,9 +38,15 @@
 
 #include "pub_tool_libcprint.h"
 
-/* Tell the logging mechanism whether we are logging to a file
-   descriptor or a socket descriptor. */
-extern Bool VG_(logging_to_socket);
+/* An output file descriptor wrapped up with a Bool indicating whether
+   or not the fd is a socket. */
+typedef
+   struct { Int fd; Bool is_socket; }
+   OutputSink;
+ 
+/* And the destinations for normal and XML output. */
+extern OutputSink VG_(log_output_sink);
+extern OutputSink VG_(xml_output_sink);
 
 /* Get the elapsed wallclock time since startup into buf, which must
    16 chars long.  This is unchecked.  It also relies on the

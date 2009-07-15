@@ -347,7 +347,7 @@ Word process_extended_line_op( struct _DebugInfo* di,
    if (len == 0) {
       VG_(message)(Vg_UserMsg,
                    "Warning: DWARF2 reader: "
-                   "Badly formed extended line op encountered");
+                   "Badly formed extended line op encountered\n");
       return (Word)bytes_read;
    }
 
@@ -2167,7 +2167,7 @@ static Bool summarise_context( /*OUT*/DiCfSI* si,
    if (VG_(clo_verbosity) > 2 || debuginfo->trace_cfi) {
       VG_(message)(Vg_DebugMsg,
                   "summarise_context(loc_start = %#lx)"
-                  ": cannot summarise(why=%d):   ", loc_start, why);
+                  ": cannot summarise(why=%d):   \n", loc_start, why);
       ppUnwindContext(ctx);
    }
    return False;
@@ -2648,7 +2648,7 @@ static Int dwarfexpr_to_dag ( UnwindContext* ctx,
             if (!VG_(clo_xml))
                VG_(message)(Vg_DebugMsg, 
                             "Warning: DWARF2 CFI reader: unhandled DW_OP_ "
-                            "opcode 0x%x", (Int)opcode); 
+                            "opcode 0x%x\n", (Int)opcode); 
             return -1;
       }
 
@@ -3089,7 +3089,7 @@ static Int run_CF_instruction ( /*MOD*/UnwindContext* ctx,
 
       default: 
          VG_(message)(Vg_DebugMsg, "DWARF2 CFI reader: unhandled CFI "
-                                   "instruction 0:%d", (Int)lo6); 
+                                   "instruction 0:%d\n", (Int)lo6); 
          if (di->ddump_frames)
             VG_(printf)("  rci:run_CF_instruction:default\n");
          i = 0;
@@ -3877,7 +3877,8 @@ void ML_(read_callframe_info_dwarf3)
 
    bad:
     if (!VG_(clo_xml) && VG_(clo_verbosity) > 1)
-       VG_(message)(Vg_UserMsg, "Warning: %s in DWARF2 CFI reading", how);
+       VG_(message)(Vg_UserMsg,
+                    "Warning: %s in DWARF2 CFI reading\n", how);
     return;
 }
 

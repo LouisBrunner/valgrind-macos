@@ -267,7 +267,8 @@ static SysRes do_clone ( ThreadId ptid,
 	 VG_(printf)("tid %d: guessed client stack range %#lx-%#lx\n",
 		     ctid, seg->start, VG_PGROUNDUP(rsp));
    } else {
-      VG_(message)(Vg_UserMsg, "!? New thread %d starts with RSP(%#lx) unmapped\n",
+      VG_(message)(Vg_UserMsg,
+                   "!? New thread %d starts with RSP(%#lx) unmapped\n",
 		   ctid, rsp);
       ctst->client_stack_szB  = 0;
    }
@@ -440,11 +441,16 @@ PRE(sys_clone)
 
    default:
       /* should we just ENOSYS? */
-      VG_(message)(Vg_UserMsg, "Unsupported clone() flags: 0x%lx", ARG1);
-      VG_(message)(Vg_UserMsg, "");
-      VG_(message)(Vg_UserMsg, "The only supported clone() uses are:");
-      VG_(message)(Vg_UserMsg, " - via a threads library (LinuxThreads or NPTL)");
-      VG_(message)(Vg_UserMsg, " - via the implementation of fork or vfork");
+      VG_(message)(Vg_UserMsg,
+                   "Unsupported clone() flags: 0x%lx\n", ARG1);
+      VG_(message)(Vg_UserMsg,
+                   "\n");
+      VG_(message)(Vg_UserMsg,
+                   "The only supported clone() uses are:\n");
+      VG_(message)(Vg_UserMsg,
+                   " - via a threads library (LinuxThreads or NPTL)\n");
+      VG_(message)(Vg_UserMsg,
+                   " - via the implementation of fork or vfork\n");
       VG_(unimplemented)
          ("Valgrind does not support general clone().");
    }

@@ -219,9 +219,9 @@ void ML_(aix5_set_threadstate_for_emergency_exit)(ThreadId tid, HChar* why)
    tst->os_state.exitcode = 1;
    if (!VG_(clo_xml)) {
       VG_(message)(Vg_UserMsg, 
-         "WARNING: AIX: %s", why);
+         "WARNING: AIX: %s\n", why);
       VG_(message)(Vg_UserMsg, 
-         "WARNING: (too difficult to continue past this point).");
+         "WARNING: (too difficult to continue past this point).\n");
       VG_(get_and_pp_StackTrace)(tid, 10);
    }
 }
@@ -1044,12 +1044,12 @@ PRE(sys_execve)
       too much of a mess to continue, so we have to abort. */
   hosed:
    vg_assert(FAILURE);
-   VG_(message)(Vg_UserMsg, "execve(%#lx(%s), %#lx, %#lx) failed, errno %ld",
+   VG_(message)(Vg_UserMsg, "execve(%#lx(%s), %#lx, %#lx) failed, errno %ld\n",
                 ARG1, (Char*)ARG1, ARG2, ARG3, ERR);
    VG_(message)(Vg_UserMsg, "EXEC FAILED: I can't recover from "
-                            "execve() failing, so I'm dying.");
+                            "execve() failing, so I'm dying.\n");
    VG_(message)(Vg_UserMsg, "Add more stringent tests in PRE(sys_execve), "
-                            "or work out how to recover.");
+                            "or work out how to recover.\n");
    VG_(exit)(101);
 }
 
@@ -1435,14 +1435,14 @@ PRE(sys_kioctl)
                moans--;
                VG_(message)(Vg_UserMsg, 
                             "Warning: noted but unhandled ioctl 0x%lx"
-                            " with no size/direction hints",
+                            " with no size/direction hints\n",
                             ARG2); 
                VG_(message)(Vg_UserMsg, 
                             "   This could cause spurious value errors"
-                            " to appear.");
+                            " to appear.\n");
                VG_(message)(Vg_UserMsg, 
                             "   See README_MISSING_SYSCALL_OR_IOCTL for "
-                            "guidance on writing a proper wrapper." );
+                            "guidance on writing a proper wrapper.\n" );
             }
          } else {
             if ((dir & _VKI_IOC_WRITE) && size > 0)

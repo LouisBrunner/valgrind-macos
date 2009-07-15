@@ -1675,7 +1675,7 @@ static void parse_var_DIE (
                if (0 && VG_(clo_verbosity) >= 0) {
                   VG_(message)(Vg_DebugMsg, 
                      "warning: parse_var_DIE: non-external variable "
-                     "outside DW_TAG_subprogram");
+                     "outside DW_TAG_subprogram\n");
                }
                /* goto bad_DIE; */
                /* This seems to happen a lot.  Just ignore it -- if,

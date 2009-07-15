@@ -117,6 +117,7 @@ typedef struct {
    
    // VG_(needs).tool_errors
    Bool  (*tool_eq_Error)                    (VgRes, Error*, Error*);
+   void  (*tool_before_pp_Error)             (Error*);
    void  (*tool_pp_Error)                    (Error*);
    Bool  tool_show_ThreadIDs_for_errors;
    UInt  (*tool_update_extra)                (Error*);
@@ -160,6 +161,9 @@ typedef struct {
 
    // VG_(needs).final_IR_tidy_pass
    IRSB* (*tool_final_IR_tidy_pass)  (IRSB*);
+
+   // VG_(needs).xml_output
+   // (none)
 
    // -- Event tracking functions ------------------------------------
    void (*track_new_mem_startup)     (Addr, SizeT, Bool, Bool, Bool, ULong);

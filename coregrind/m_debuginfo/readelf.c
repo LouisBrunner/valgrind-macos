@@ -925,7 +925,7 @@ Addr open_debug_file( Char* name, UInt crc, /*OUT*/UWord* size )
    }
 
    if (VG_(clo_verbosity) > 1)
-      VG_(message)(Vg_DebugMsg, "Reading debug info from %s ..", name);
+      VG_(message)(Vg_DebugMsg, "Reading debug info from %s ..\n", name);
 
    *size = stat_buf.size;
    
@@ -943,7 +943,7 @@ Addr open_debug_file( Char* name, UInt crc, /*OUT*/UWord* size )
       vg_assert(!sr_isError(res));
       if (VG_(clo_verbosity) > 1)
          VG_(message)(Vg_DebugMsg, 
-            ".. CRC mismatch (computed %08x wanted %08x)", calccrc, crc);
+            ".. CRC mismatch (computed %08x wanted %08x)\n", calccrc, crc);
       return 0;
    }
    
@@ -1115,7 +1115,7 @@ Bool ML_(read_elf_debug_info) ( struct _DebugInfo* di )
 
    oimage = (Addr)NULL;
    if (VG_(clo_verbosity) > 1 || VG_(clo_trace_redir))
-      VG_(message)(Vg_DebugMsg, "Reading syms from %s (%#lx)",
+      VG_(message)(Vg_DebugMsg, "Reading syms from %s (%#lx)\n",
                                 di->filename, di->rx_map_avma );
 
    /* mmap the object image aboard, so that we can read symbols and
@@ -1143,8 +1143,8 @@ Bool ML_(read_elf_debug_info) ( struct _DebugInfo* di )
    VG_(close)(sr_Res(fd));
 
    if (sr_isError(sres)) {
-      VG_(message)(Vg_UserMsg, "warning: mmap failed on %s", di->filename );
-      VG_(message)(Vg_UserMsg, "         no symbols or debug info loaded" );
+      VG_(message)(Vg_UserMsg, "warning: mmap failed on %s\n", di->filename );
+      VG_(message)(Vg_UserMsg, "         no symbols or debug info loaded\n" );
       return False;
    }
 
@@ -1491,11 +1491,12 @@ Bool ML_(read_elf_debug_info) ( struct _DebugInfo* di )
             di->bss_debug_svma = 0;
             di->bss_debug_bias = 0;
             if (!VG_(clo_xml)) {
-               VG_(message)(Vg_UserMsg, "Warning: the following file's .bss is "
-                                       "mapped r-x only - ignoring .bss syms");
-               VG_(message)(Vg_UserMsg,   " %s", di->filename 
-                                                    ? di->filename
-                                                    : (UChar*)"(null?!)" );
+               VG_(message)(Vg_UserMsg,
+                            "Warning: the following file's .bss is "
+                            "mapped r-x only - ignoring .bss syms\n");
+               VG_(message)(Vg_UserMsg,   " %s\n", di->filename 
+                                                      ? di->filename
+                                                      : (UChar*)"(null?!)" );
             }
          } else
 
@@ -1646,7 +1647,7 @@ Bool ML_(read_elf_debug_info) ( struct _DebugInfo* di )
                       di->text_avma, di->text_size, di->text_bias);
 
    if (VG_(clo_verbosity) > 2 || VG_(clo_trace_redir))
-      VG_(message)(Vg_DebugMsg, "   svma %#010lx, avma %#010lx",
+      VG_(message)(Vg_DebugMsg, "   svma %#010lx, avma %#010lx\n",
                                 di->text_avma - di->text_bias,
                                 di->text_avma );
 

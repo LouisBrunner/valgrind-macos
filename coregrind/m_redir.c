@@ -412,7 +412,7 @@ void VG_(redir_notify_new_DebugInfo)( DebugInfo* newsi )
 
          /* Complain */
          VG_(message)(Vg_DebugMsg,
-                      "WARNING: no TOC ptr for redir/wrap to %s %s",
+                      "WARNING: no TOC ptr for redir/wrap to %s %s\n",
                       demangled_sopatt, demangled_fnpatt);
       }
    }
@@ -653,7 +653,7 @@ static void maybe_add_active ( Active act )
   bad:
    vg_assert(what);
    if (VG_(clo_verbosity) > 1) {
-      VG_(message)(Vg_UserMsg, "WARNING: %s", what);
+      VG_(message)(Vg_UserMsg, "WARNING: %s\n", what);
       show_active(             "    new: ", &act);
    }
 }
@@ -1081,12 +1081,12 @@ void handle_maybe_load_notifier( const UChar* soname,
 
 static void show_spec ( HChar* left, Spec* spec )
 {
-   VG_(message)(Vg_DebugMsg, 
-                  "%s%25s %30s %s-> 0x%08llx",
-                  left,
-                  spec->from_sopatt, spec->from_fnpatt,
-                  spec->isWrap ? "W" : "R",
-                  (ULong)spec->to_addr );
+   VG_(message)( Vg_DebugMsg, 
+                 "%s%25s %30s %s-> 0x%08llx\n",
+                 left,
+                 spec->from_sopatt, spec->from_fnpatt,
+                 spec->isWrap ? "W" : "R",
+                 (ULong)spec->to_addr );
 }
 
 static void show_active ( HChar* left, Active* act )
@@ -1100,7 +1100,7 @@ static void show_active ( HChar* left, Active* act )
    ok = VG_(get_fnname_w_offset)(act->to_addr, name2, 64);
    if (!ok) VG_(strcpy)(name2, "???");
 
-   VG_(message)(Vg_DebugMsg, "%s0x%08llx (%20s) %s-> 0x%08llx %s", 
+   VG_(message)(Vg_DebugMsg, "%s0x%08llx (%20s) %s-> 0x%08llx %s\n", 
                              left, 
                              (ULong)act->from_addr, name1,
                              act->isWrap ? "W" : "R",
@@ -1112,23 +1112,23 @@ static void show_redir_state ( HChar* who )
    TopSpec* ts;
    Spec*    sp;
    Active*  act;
-   VG_(message)(Vg_DebugMsg, "<<");
-   VG_(message)(Vg_DebugMsg, "   ------ REDIR STATE %s ------", who);
+   VG_(message)(Vg_DebugMsg, "<<\n");
+   VG_(message)(Vg_DebugMsg, "   ------ REDIR STATE %s ------\n", who);
    for (ts = topSpecs; ts; ts = ts->next) {
       VG_(message)(Vg_DebugMsg, 
-                   "   TOPSPECS of soname %s",
+                   "   TOPSPECS of soname %s\n",
                    ts->seginfo ? (HChar*)VG_(seginfo_soname)(ts->seginfo)
                                : "(hardwired)" );
       for (sp = ts->specs; sp; sp = sp->next)
          show_spec("     ", sp);
    }
-   VG_(message)(Vg_DebugMsg, "   ------ ACTIVE ------");
+   VG_(message)(Vg_DebugMsg, "   ------ ACTIVE ------\n");
    VG_(OSetGen_ResetIter)( activeSet );
    while ( (act = VG_(OSetGen_Next)(activeSet)) ) {
       show_active("    ", act);
    }
 
-   VG_(message)(Vg_DebugMsg, ">>");
+   VG_(message)(Vg_DebugMsg, ">>\n");
 }
 
 /*--------------------------------------------------------------------*/

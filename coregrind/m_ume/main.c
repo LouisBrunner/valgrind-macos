@@ -86,13 +86,13 @@ VG_(pre_exec_check)(const HChar* exe_name, Int* out_fd, Bool allow_setuid)
    if (0 != ret) {
       VG_(close)(fd);
       if (is_setuid && !VG_(clo_xml)) {
-         VG_(message)(Vg_UserMsg, "");
+         VG_(message)(Vg_UserMsg, "\n");
          VG_(message)(Vg_UserMsg,
-                      "Warning: Can't execute setuid/setgid executable: %s",
+                      "Warning: Can't execute setuid/setgid executable: %s\n",
                       exe_name);
          VG_(message)(Vg_UserMsg, "Possible workaround: remove "
-                      "--trace-children=yes, if in effect");
-         VG_(message)(Vg_UserMsg, "");
+                      "--trace-children=yes, if in effect\n");
+         VG_(message)(Vg_UserMsg, "\n");
       }
       return VG_(mk_SysRes_Error)(ret);
    }

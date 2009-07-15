@@ -68,20 +68,20 @@ void ML_(symerr) ( struct _DebugInfo* di, Bool serious, HChar* msg )
    if (serious) {
 
       VG_(message)(Vg_DebugMsg, "WARNING: Serious error when "
-                                "reading debug info");
+                                "reading debug info\n");
       if (True || VG_(clo_verbosity) < 2) {
          /* Need to show what the file name is, at verbosity levels 2
             or below, since that won't already have been shown */
          VG_(message)(Vg_DebugMsg, 
-                      "When reading debug info from %s:",
+                      "When reading debug info from %s:\n",
                       (di && di->filename) ? di->filename : (UChar*)"???");
       }
-      VG_(message)(Vg_DebugMsg, "%s", msg);
+      VG_(message)(Vg_DebugMsg, "%s\n", msg);
 
    } else { /* !serious */
 
       if (VG_(clo_verbosity) >= 2)
-         VG_(message)(Vg_DebugMsg, "%s", msg);
+         VG_(message)(Vg_DebugMsg, "%s\n", msg);
 
    }
 }
@@ -90,11 +90,11 @@ void ML_(symerr) ( struct _DebugInfo* di, Bool serious, HChar* msg )
 /* Print a symbol. */
 void ML_(ppSym) ( Int idx, DiSym* sym )
 {
-  VG_(printf)( "%5d:  %#8lx .. %#8lx (%d)      %s\n",
-               idx,
-               sym->addr, 
-               sym->addr + sym->size - 1, sym->size,
-	       sym->name );
+   VG_(printf)( "%5d:  %#8lx .. %#8lx (%d)      %s\n",
+                idx,
+                sym->addr, 
+                sym->addr + sym->size - 1, sym->size,
+	        sym->name );
 }
 
 /* Print a call-frame-info summary. */
@@ -329,7 +329,7 @@ void ML_(addLineInfo) ( struct _DebugInfo* di,
        if (VG_(clo_verbosity) > 2) {
            VG_(message)(Vg_DebugMsg, 
                         "warning: line info addresses out of order "
-                        "at entry %d: 0x%lx 0x%lx", entry, this, next);
+                        "at entry %d: 0x%lx 0x%lx\n", entry, this, next);
        }
        size = 1;
    }
@@ -338,7 +338,7 @@ void ML_(addLineInfo) ( struct _DebugInfo* di,
        if (0)
        VG_(message)(Vg_DebugMsg, 
                     "warning: line info address range too large "
-                    "at entry %d: %d", entry, size);
+                    "at entry %d: %d\n", entry, size);
        size = 1;
    }
 
@@ -351,7 +351,7 @@ void ML_(addLineInfo) ( struct _DebugInfo* di,
        if (0)
           VG_(message)(Vg_DebugMsg, 
                        "warning: ignoring line info entry falling "
-                       "outside current DebugInfo: %#lx %#lx %#lx %#lx",
+                       "outside current DebugInfo: %#lx %#lx %#lx %#lx\n",
                        di->text_avma, 
                        di->text_avma + di->text_size, 
                        this, next-1);
@@ -365,12 +365,12 @@ void ML_(addLineInfo) ( struct _DebugInfo* di,
          complained = True;
          VG_(message)(Vg_UserMsg, 
                       "warning: ignoring line info entry with "
-                      "huge line number (%d)", lineno);
+                      "huge line number (%d)\n", lineno);
          VG_(message)(Vg_UserMsg, 
                       "         Can't handle line numbers "
-                      "greater than %d, sorry", MAX_LINENO);
+                      "greater than %d, sorry\n", MAX_LINENO);
          VG_(message)(Vg_UserMsg, 
-                      "(Nb: this message is only shown once)");
+                      "(Nb: this message is only shown once)\n");
       }
       return;
    }
@@ -382,7 +382,7 @@ void ML_(addLineInfo) ( struct _DebugInfo* di,
    loc.dirname   = dirname;
 
    if (0) VG_(message)(Vg_DebugMsg, 
-		       "addLoc: addr %#lx, size %d, line %d, file %s",
+		       "addLoc: addr %#lx, size %d, line %d, file %s\n",
 		       this,size,lineno,filename);
 
    addLoc ( di, &loc );
@@ -433,7 +433,7 @@ void ML_(addDiCfSI) ( struct _DebugInfo* di, DiCfSI* cfsi_orig )
          if (VG_(clo_verbosity) > 1) {
             VG_(message)(
                Vg_DebugMsg,
-               "warning: DiCfSI %#lx .. %#lx outside segment %#lx .. %#lx",
+               "warning: DiCfSI %#lx .. %#lx outside segment %#lx .. %#lx\n",
                cfsi.base, 
                cfsi.base + cfsi.len - 1,
                di->text_avma,
@@ -871,7 +871,7 @@ void ML_(addVar)( struct _DebugInfo* di,
       if (VG_(clo_verbosity) >= 0) {
          VG_(message)(Vg_DebugMsg, 
             "warning: addVar: in range %#lx .. %#lx outside "
-            "segment %#lx .. %#lx (%s)",
+            "segment %#lx .. %#lx (%s)\n",
             aMin, aMax,
             di->text_avma, di->text_avma + di->text_size -1,
             name
@@ -898,7 +898,7 @@ void ML_(addVar)( struct _DebugInfo* di,
    if (badness) {
       static Int complaints = 10;
       if (VG_(clo_verbosity) >= 2 && complaints > 0) {
-         VG_(message)(Vg_DebugMsg, "warning: addVar: %s (%s)",
+         VG_(message)(Vg_DebugMsg, "warning: addVar: %s (%s)\n",
                                    badness, name );
          complaints--;
       }

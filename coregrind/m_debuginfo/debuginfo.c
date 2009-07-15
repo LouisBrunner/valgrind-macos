@@ -306,7 +306,7 @@ static void discard_DebugInfo ( DebugInfo* di )
          if (curr->have_dinfo
              && (VG_(clo_verbosity) > 1 || VG_(clo_trace_redir)))
             VG_(message)(Vg_DebugMsg, 
-                         "Discarding syms at %#lx-%#lx in %s due to %s()",
+                         "Discarding syms at %#lx-%#lx in %s due to %s()\n",
                          di->text_avma, 
                          di->text_avma + di->text_size,
                          curr->filename ? curr->filename : (UChar*)"???",
@@ -904,10 +904,10 @@ void VG_(di_notify_pdb_debuginfo)( Int fd_obj, Addr avma_obj,
    struct vg_stat stat_buf;
 
    if (VG_(clo_verbosity) > 0) {
-      VG_(message)(Vg_UserMsg, "");
+      VG_(message)(Vg_UserMsg, "\n");
       VG_(message)(Vg_UserMsg,
          "LOAD_PDB_DEBUGINFO(fd=%d, avma=%#lx, total_size=%lu, "
-         "uu_reloc=%#lx)", 
+         "uu_reloc=%#lx)\n", 
          fd_obj, avma_obj, total_size, unknown_purpose__reloc
       );
    }
@@ -933,7 +933,7 @@ void VG_(di_notify_pdb_debuginfo)( Int fd_obj, Addr avma_obj,
    vg_assert(exename[sizeof(exename)-1] == 0);
 
    if (VG_(clo_verbosity) > 0) {
-      VG_(message)(Vg_UserMsg, "LOAD_PDB_DEBUGINFO: objname: %s", exename);
+      VG_(message)(Vg_UserMsg, "LOAD_PDB_DEBUGINFO: objname: %s\n", exename);
    }
 
    /* Try to find a matching PDB file from which to read debuginfo.
@@ -961,24 +961,25 @@ void VG_(di_notify_pdb_debuginfo)( Int fd_obj, Addr avma_obj,
    /* See if we can find it, and check it's in-dateness. */
    sres = VG_(stat)(pdbname, &stat_buf);
    if (sr_isError(sres)) {
-      VG_(message)(Vg_UserMsg, "Warning: Missing or un-stat-able %s",
+      VG_(message)(Vg_UserMsg, "Warning: Missing or un-stat-able %s\n",
                                pdbname);
    if (VG_(clo_verbosity) > 0)
-      VG_(message)(Vg_UserMsg, "LOAD_PDB_DEBUGINFO: missing: %s", pdbname);
+      VG_(message)(Vg_UserMsg, "LOAD_PDB_DEBUGINFO: missing: %s\n", pdbname);
       goto out;
    }
    pdb_mtime = stat_buf.mtime;
    if (pdb_mtime < obj_mtime ) {
       /* PDB file is older than PE file - ignore it or we will either
          (a) print wrong stack traces or more likely (b) crash. */
-      VG_(message)(Vg_UserMsg, "Warning: Ignoring %s since it is older than %s",
-                               pdbname, exename);
+      VG_(message)(Vg_UserMsg,
+                   "Warning: Ignoring %s since it is older than %s\n",
+                   pdbname, exename);
       goto out;
    }
 
    sres = VG_(open)(pdbname, VKI_O_RDONLY, 0);
    if (sr_isError(sres)) {
-      VG_(message)(Vg_UserMsg, "Warning: Can't open %s", pdbname);
+      VG_(message)(Vg_UserMsg, "Warning: Can't open %s\n", pdbname);
       goto out;
    }
 
@@ -993,7 +994,7 @@ void VG_(di_notify_pdb_debuginfo)( Int fd_obj, Addr avma_obj,
    }
 
    if (VG_(clo_verbosity) > 0)
-      VG_(message)(Vg_UserMsg, "LOAD_PDB_DEBUGINFO: pdbname: %s", pdbname);
+      VG_(message)(Vg_UserMsg, "LOAD_PDB_DEBUGINFO: pdbname: %s\n", pdbname);
 
    /* play safe; always invalidate the CFI cache.  I don't know if
       this is necessary, but anyway .. */
@@ -2250,7 +2251,8 @@ Bool VG_(use_FPO_info) ( /*MOD*/Addr* ipP,
    spHere = *spP;
 
    *ipP = *(Addr *)(spHere + 4*(fpo->cbRegs + fpo->cdwLocals));
-   *spP =           spHere + 4*(fpo->cbRegs + fpo->cdwLocals + 1 + fpo->cdwParams);
+   *spP =           spHere + 4*(fpo->cbRegs + fpo->cdwLocals + 1 
+                                            + fpo->cdwParams);
    *fpP = *(Addr *)(spHere + 4*2);
    return True;
 }
@@ -2262,6 +2264,35 @@ Bool VG_(use_FPO_info) ( /*MOD*/Addr* ipP,
 /*---            FROM DWARF3 DEBUG INFO                      ---*/
 /*---                                                        ---*/
 /*--------------------------------------------------------------*/
+
+/* Implement a "p2XA" function ("printf-to-XA"), which printfs into an
+   XArray of HChar, adding stuff at the end.  This is very convenient
+   for concocting result strings in format_message().  Note that the
+   resulting string is NOT zero-terminated.
+
+   Unfortunately no format check on p2XA, since we need to use %t
+   for XML escaped-string output, and gcc complains about that.
+*/
+static void add_char_to_XA ( HChar c, void* opaque )
+{
+   XArray* dst = (XArray*)opaque;
+   (void) VG_(addBytesToXA)( dst, &c, 1 );
+}
+static void p2XA ( XArray* dst, const HChar* format, ... )
+{
+   va_list vargs;
+   va_start(vargs, format);
+   VG_(vcbprintf)( add_char_to_XA, (void*)dst, format, vargs );
+   va_end(vargs);
+}
+
+/* Add a zero-terminating byte to DST. */
+static void zterm_XA ( XArray* dst )
+{
+   HChar zero = 0;
+   (void) VG_(addBytesToXA)( dst, &zero, 1 );
+}
+
 
 /* Evaluate the location expression/list for var, to see whether or
    not data_addr falls within the variable.  If so also return the
@@ -2329,13 +2360,14 @@ static Bool data_address_is_in_var ( /*OUT*/PtrdiffT* offset,
 }
 
 
-/* Format the acquired information into dname1[0 .. n_dname-1] and
-   dname2[0 .. n_dname-1] in an understandable way.  Not so easy.
-   If frameNo is -1, this is assumed to be a global variable; else
-   a local variable. */
-static void format_message ( /*OUT*/Char* dname1,
-                             /*OUT*/Char* dname2,
-                             Int      n_dname,
+/* Format the acquired information into DN(AME)1 and DN(AME)2, which
+   are XArray*s of HChar, that have been initialised by the caller.
+   Resulting strings will be zero terminated.  Information is
+   formatted in an understandable way.  Not so easy.  If frameNo is
+   -1, this is assumed to be a global variable; else a local
+   variable. */
+static void format_message ( /*MOD*/XArray* /* of HChar */ dn1,
+                             /*MOD*/XArray* /* of HChar */ dn2,
                              Addr     data_addr,
                              DiVariable* var,
                              PtrdiffT var_offset,
@@ -2344,19 +2376,35 @@ static void format_message ( /*OUT*/Char* dname1,
                              Int      frameNo, 
                              ThreadId tid )
 {
-   Bool have_descr, have_srcloc;
+   Bool   have_descr, have_srcloc;
+   Bool   xml       = VG_(clo_xml);
    UChar* vo_plural = var_offset == 1 ? "" : "s";
    UChar* ro_plural = residual_offset == 1 ? "" : "s";
+   UChar* basetag   = "auxwhat"; /* a constant */
+   UChar tagL[32], tagR[32], xagL[32], xagR[32];
 
    vg_assert(frameNo >= -1);
-   vg_assert(dname1 && dname2 && n_dname > 1);
+   vg_assert(dn1 && dn2);
    vg_assert(described);
    vg_assert(var && var->name);
    have_descr = VG_(sizeXA)(described) > 0
                 && *(UChar*)VG_(indexXA)(described,0) != '\0';
    have_srcloc = var->fileName && var->lineNo > 0;
 
-   dname1[0] = dname2[0] = '\0';
+   tagL[0] = tagR[0] = xagL[0] = xagR[0] = 0;
+   if (xml) {
+      VG_(sprintf)(tagL, "<%s>",   basetag); // <auxwhat>
+      VG_(sprintf)(tagR, "</%s>",  basetag); // </auxwhat>
+      VG_(sprintf)(xagL, "<x%s>",  basetag); // <xauxwhat>
+      VG_(sprintf)(xagR, "</x%s>", basetag); // </xauxwhat>
+   }
+
+#  define TAGL(_xa) p2XA(_xa, "%s", tagL)
+#  define TAGR(_xa) p2XA(_xa, "%s", tagR)
+#  define XAGL(_xa) p2XA(_xa, "%s", xagL)
+#  define XAGR(_xa) p2XA(_xa, "%s", xagR)
+#  define TXTL(_xa) p2XA(_xa, "%s", "<text>")
+#  define TXTR(_xa) p2XA(_xa, "%s", "</text>")
 
    /* ------ local cases ------ */
 
@@ -2365,13 +2413,23 @@ static void format_message ( /*OUT*/Char* dname1,
          Location 0x7fefff6cf is 543 bytes inside local var "a",
          in frame #1 of thread 1
       */
-      VG_(snprintf)(
-         dname1, n_dname,
-         "Location 0x%lx is %lu byte%s inside local var \"%s\",",
-         data_addr, var_offset, vo_plural, var->name );
-      VG_(snprintf)(
-         dname2, n_dname,
-         "in frame #%d of thread %d", frameNo, (Int)tid);
+      if (xml) {
+         TAGL( dn1 );
+         p2XA( dn1,
+               "Location 0x%lx is %lu byte%s inside local var \"%t\",",
+               data_addr, var_offset, vo_plural, var->name );
+         TAGR( dn1 );
+         TAGL( dn2 );
+         p2XA( dn2,
+               "in frame #%d of thread %d", frameNo, (Int)tid );
+         TAGR( dn2 );
+      } else {
+         p2XA( dn1,
+               "Location 0x%lx is %lu byte%s inside local var \"%s\",",
+               data_addr, var_offset, vo_plural, var->name );
+         p2XA( dn2,
+               "in frame #%d of thread %d", frameNo, (Int)tid );
+      }
    } 
    else
    if ( frameNo >= 0 && have_srcloc && (!have_descr) ) {
@@ -2379,14 +2437,31 @@ static void format_message ( /*OUT*/Char* dname1,
          Location 0x7fefff6cf is 543 bytes inside local var "a"
          declared at dsyms7.c:17, in frame #1 of thread 1
       */
-      VG_(snprintf)(
-         dname1, n_dname,
-         "Location 0x%lx is %lu byte%s inside local var \"%s\"",
-         data_addr, var_offset, vo_plural, var->name );
-      VG_(snprintf)(
-         dname2, n_dname,
-         "declared at %s:%d, in frame #%d of thread %d",
-         var->fileName, var->lineNo, frameNo, (Int)tid);
+      if (xml) {
+         TAGL( dn1 );
+         p2XA( dn1,
+               "Location 0x%lx is %lu byte%s inside local var \"%t\"",
+               data_addr, var_offset, vo_plural, var->name );
+         TAGR( dn1 );
+         XAGL( dn2 );
+         TXTL( dn2 );
+         p2XA( dn2,
+               "declared at %t:%d, in frame #%d of thread %d",
+               var->fileName, var->lineNo, frameNo, (Int)tid );
+         TXTR( dn2 );
+         // FIXME: also do <dir>
+         p2XA( dn2,
+               " <file>%t</file> <line>%d</line> ", 
+               var->fileName, var->lineNo );
+         XAGR( dn2 );
+      } else {
+         p2XA( dn1,
+               "Location 0x%lx is %lu byte%s inside local var \"%s\"",
+               data_addr, var_offset, vo_plural, var->name );
+         p2XA( dn2,
+               "declared at %s:%d, in frame #%d of thread %d",
+               var->fileName, var->lineNo, frameNo, (Int)tid );
+      }
    }
    else
    if ( frameNo >= 0 && (!have_srcloc) && have_descr ) {
@@ -2394,28 +2469,57 @@ static void format_message ( /*OUT*/Char* dname1,
          Location 0x7fefff6cf is 2 bytes inside a[3].xyzzy[21].c2
          in frame #1 of thread 1
       */
-      VG_(snprintf)(
-         dname1, n_dname,
-         "Location 0x%lx is %lu byte%s inside %s%s",
-         data_addr, residual_offset, ro_plural, var->name,
-         (char*)(VG_(indexXA)(described,0)) );
-      VG_(snprintf)(
-         dname2, n_dname,
-         "in frame #%d of thread %d", frameNo, (Int)tid);
+      if (xml) {
+         TAGL( dn1 );
+         p2XA( dn1,
+               "Location 0x%lx is %lu byte%s inside %t%t",
+               data_addr, residual_offset, ro_plural, var->name,
+               (HChar*)(VG_(indexXA)(described,0)) );
+         TAGR( dn1 );
+         TAGL( dn2 );
+         p2XA( dn2,
+               "in frame #%d of thread %d", frameNo, (Int)tid );
+         TAGR( dn2 );
+      } else {
+         p2XA( dn1,
+               "Location 0x%lx is %lu byte%s inside %s%s",
+               data_addr, residual_offset, ro_plural, var->name,
+               (HChar*)(VG_(indexXA)(described,0)) );
+         p2XA( dn2,
+               "in frame #%d of thread %d", frameNo, (Int)tid );
+      }
    } 
    else
    if ( frameNo >= 0 && have_srcloc && have_descr ) {
-     /* Location 0x7fefff6cf is 2 bytes inside a[3].xyzzy[21].c2,
-        declared at dsyms7.c:17, in frame #1 of thread 1 */
-      VG_(snprintf)(
-         dname1, n_dname,
-         "Location 0x%lx is %lu byte%s inside %s%s,",
-         data_addr, residual_offset, ro_plural, var->name,
-         (char*)(VG_(indexXA)(described,0)) );
-      VG_(snprintf)(
-         dname2, n_dname,
-         "declared at %s:%d, in frame #%d of thread %d",
-         var->fileName, var->lineNo, frameNo, (Int)tid);
+      /* Location 0x7fefff6cf is 2 bytes inside a[3].xyzzy[21].c2,
+         declared at dsyms7.c:17, in frame #1 of thread 1 */
+      if (xml) {
+         TAGL( dn1 );
+         p2XA( dn1,
+               "Location 0x%lx is %lu byte%s inside %t%t,",
+               data_addr, residual_offset, ro_plural, var->name,
+               (HChar*)(VG_(indexXA)(described,0)) );
+         TAGR( dn1 );
+         XAGL( dn2 );
+         TXTL( dn2 );
+         p2XA( dn2,
+               "declared at %t:%d, in frame #%d of thread %d",
+               var->fileName, var->lineNo, frameNo, (Int)tid );
+         TXTR( dn2 );
+         // FIXME: also do <dir>
+         p2XA( dn2,
+               " <file>%t</file> <line>%d</line> ",
+               var->fileName, var->lineNo );
+         XAGR( dn2 );
+      } else {
+         p2XA( dn1,
+               "Location 0x%lx is %lu byte%s inside %s%s,",
+               data_addr, residual_offset, ro_plural, var->name,
+               (HChar*)(VG_(indexXA)(described,0)) );
+         p2XA( dn2,
+               "declared at %s:%d, in frame #%d of thread %d",
+               var->fileName, var->lineNo, frameNo, (Int)tid );
+      }
    }
    else
    /* ------ global cases ------ */
@@ -2423,10 +2527,17 @@ static void format_message ( /*OUT*/Char* dname1,
       /* no srcloc, no description:
          Location 0x7fefff6cf is 543 bytes inside global var "a"
       */
-      VG_(snprintf)(
-         dname1, n_dname,
-         "Location 0x%lx is %lu byte%s inside global var \"%s\"",
-         data_addr, var_offset, vo_plural, var->name );
+      if (xml) {
+         TAGL( dn1 );
+         p2XA( dn1,
+               "Location 0x%lx is %lu byte%s inside global var \"%t\"",
+               data_addr, var_offset, vo_plural, var->name );
+         TAGR( dn1 );
+      } else {
+         p2XA( dn1,
+               "Location 0x%lx is %lu byte%s inside global var \"%s\"",
+               data_addr, var_offset, vo_plural, var->name );
+      }
    } 
    else
    if ( frameNo >= -1 && have_srcloc && (!have_descr) ) {
@@ -2434,14 +2545,31 @@ static void format_message ( /*OUT*/Char* dname1,
          Location 0x7fefff6cf is 543 bytes inside global var "a"
          declared at dsyms7.c:17
       */
-      VG_(snprintf)(
-         dname1, n_dname,
-         "Location 0x%lx is %lu byte%s inside global var \"%s\"",
-         data_addr, var_offset, vo_plural, var->name );
-      VG_(snprintf)(
-         dname2, n_dname,
-         "declared at %s:%d",
-         var->fileName, var->lineNo);
+      if (xml) {
+         TAGL( dn1 );
+         p2XA( dn1,
+               "Location 0x%lx is %lu byte%s inside global var \"%t\"",
+               data_addr, var_offset, vo_plural, var->name );
+         TAGR( dn1 );
+         XAGL( dn2 );
+         TXTL( dn2 );
+         p2XA( dn2,
+               "declared at %t:%d",
+               var->fileName, var->lineNo);
+         TXTR( dn2 );
+         // FIXME: also do <dir>
+         p2XA( dn2,
+               " <file>%t</file> <line>%d</line> ",
+               var->fileName, var->lineNo );
+         XAGR( dn2 );
+      } else {
+         p2XA( dn1,
+               "Location 0x%lx is %lu byte%s inside global var \"%s\"",
+               data_addr, var_offset, vo_plural, var->name );
+         p2XA( dn2,
+               "declared at %s:%d",
+               var->fileName, var->lineNo);
+      }
    }
    else
    if ( frameNo >= -1 && (!have_srcloc) && have_descr ) {
@@ -2449,43 +2577,82 @@ static void format_message ( /*OUT*/Char* dname1,
          Location 0x7fefff6cf is 2 bytes inside a[3].xyzzy[21].c2,
          a global variable
       */
-      VG_(snprintf)(
-         dname1, n_dname,
-         "Location 0x%lx is %lu byte%s inside %s%s,",
-         data_addr, residual_offset, ro_plural, var->name,
-         (char*)(VG_(indexXA)(described,0)) );
-      VG_(snprintf)(
-         dname2, n_dname,
-         "a global variable");
+      if (xml) {
+         TAGL( dn1 );
+         p2XA( dn1,
+               "Location 0x%lx is %lu byte%s inside %t%t,",
+               data_addr, residual_offset, ro_plural, var->name,
+               (HChar*)(VG_(indexXA)(described,0)) );
+         TAGR( dn1 );
+         TAGL( dn2 );
+         p2XA( dn2,
+               "a global variable");
+         TAGR( dn2 );
+      } else {
+         p2XA( dn1,
+               "Location 0x%lx is %lu byte%s inside %s%s,",
+               data_addr, residual_offset, ro_plural, var->name,
+               (char*)(VG_(indexXA)(described,0)) );
+         p2XA( dn2,
+               "a global variable");
+      }
    } 
    else
    if ( frameNo >= -1 && have_srcloc && have_descr ) {
-     /* Location 0x7fefff6cf is 2 bytes inside a[3].xyzzy[21].c2,
-        a global variable declared at dsyms7.c:17 */
-      VG_(snprintf)(
-         dname1, n_dname,
-         "Location 0x%lx is %lu byte%s inside %s%s,",
-         data_addr, residual_offset, ro_plural, var->name,
-         (char*)(VG_(indexXA)(described,0)) );
-      VG_(snprintf)(
-         dname2, n_dname,
-         "a global variable declared at %s:%d",
-         var->fileName, var->lineNo);
+      /* Location 0x7fefff6cf is 2 bytes inside a[3].xyzzy[21].c2,
+         a global variable declared at dsyms7.c:17 */
+      if (xml) {
+         TAGL( dn1 );
+         p2XA( dn1,
+               "Location 0x%lx is %lu byte%s inside %t%t,",
+               data_addr, residual_offset, ro_plural, var->name,
+               (HChar*)(VG_(indexXA)(described,0)) );
+         TAGR( dn1 );
+         XAGL( dn2 );
+         TXTL( dn2 );
+         p2XA( dn2,
+               "a global variable declared at %t:%d",
+               var->fileName, var->lineNo);
+         TXTR( dn2 );
+         // FIXME: also do <dir>
+         p2XA( dn2,
+               " <file>%t</file> <line>%d</line> ",
+               var->fileName, var->lineNo );
+         XAGR( dn2 );
+      } else {
+         p2XA( dn1,
+               "Location 0x%lx is %lu byte%s inside %s%s,",
+               data_addr, residual_offset, ro_plural, var->name,
+               (HChar*)(VG_(indexXA)(described,0)) );
+         p2XA( dn2,
+               "a global variable declared at %s:%d",
+               var->fileName, var->lineNo);
+      }
    }
    else 
       vg_assert(0);
 
-   dname1[n_dname-1] = dname2[n_dname-1] = 0;
+   /* Zero terminate both strings */
+   zterm_XA( dn1 );
+   zterm_XA( dn2 );
+
+#  undef TAGL
+#  undef TAGR
+#  undef XAGL
+#  undef XAGR
+#  undef TXTL
+#  undef TXTR
 }
 
+
 /* Determine if data_addr is a local variable in the frame
-   characterised by (ip,sp,fp), and if so write its description into
-   dname{1,2}[0..n_dname-1], and return True.  If not, return
-   False. */
+   characterised by (ip,sp,fp), and if so write its description at the
+   ends of DNAME{1,2}, which are XArray*s of HChar, that have been
+   initialised by the caller, zero terminate both, and return True.
+   If it's not a local variable in said frame, return False. */
 static 
-Bool consider_vars_in_frame ( /*OUT*/Char* dname1,
-                              /*OUT*/Char* dname2,
-                              Int n_dname,
+Bool consider_vars_in_frame ( /*MOD*/XArray* /* of HChar */ dname1,
+                              /*MOD*/XArray* /* of HChar */ dname2,
                               Addr data_addr,
                               Addr ip, Addr sp, Addr fp,
                               /* shown to user: */
@@ -2593,7 +2760,7 @@ Bool consider_vars_in_frame ( /*OUT*/Char* dname1,
             XArray* described = ML_(describe_type)( &residual_offset,
                                                     di->admin_tyents, 
                                                     var->typeR, offset );
-            format_message( dname1, dname2, n_dname, 
+            format_message( dname1, dname2,
                             data_addr, var, offset, residual_offset,
                             described, frameNo, tid );
             VG_(deleteXA)( described );
@@ -2605,15 +2772,24 @@ Bool consider_vars_in_frame ( /*OUT*/Char* dname1,
    return False;
 }
 
-/* Try to form some description of data_addr by looking at the DWARF3
+/* Try to form some description of DATA_ADDR by looking at the DWARF3
    debug info we have.  This considers all global variables, and all
-   frames in the stacks of all threads.  Result (or as much as will
-   fit) is put into into dname{1,2}[0 .. n_dname-1] and is guaranteed
-   to be zero terminated. */
-Bool VG_(get_data_description)( /*OUT*/Char* dname1,
-                                /*OUT*/Char* dname2,
-                                Int  n_dname,
-                                Addr data_addr )
+   frames in the stacks of all threads.  Result is written at the ends
+   of DNAME{1,2}V, which are XArray*s of HChar, that have been
+   initialised by the caller, and True is returned.  If no description
+   is created, False is returned.  Regardless of the return value,
+   DNAME{1,2}V are guaranteed to be zero terminated after the call.
+
+   Note that after the call, DNAME{1,2} may have more than one
+   trailing zero, so callers should establish the useful text length
+   using VG_(strlen) on the contents, rather than VG_(sizeXA) on the
+   XArray itself.
+*/
+Bool VG_(get_data_description)( 
+        /*MOD*/ void* /* really, XArray* of HChar */ dname1v,
+        /*MOD*/ void* /* really, XArray* of HChar */ dname2v,
+        Addr data_addr
+     )
 {
 #  define N_FRAMES 8
    Addr ips[N_FRAMES], sps[N_FRAMES], fps[N_FRAMES];
@@ -2625,8 +2801,8 @@ Bool VG_(get_data_description)( /*OUT*/Char* dname1,
    DebugInfo* di;
    Word       j;
 
-   vg_assert(n_dname > 1);
-   dname1[n_dname-1] = dname2[n_dname-1] = 0;
+   XArray*    dname1 = (XArray*)dname1v;
+   XArray*    dname2 = (XArray*)dname2v;
 
    if (0) VG_(printf)("get_data_description: dataaddr %#lx\n", data_addr);
    /* First, see if data_addr is (or is part of) a global variable.
@@ -2692,11 +2868,12 @@ Bool VG_(get_data_description)( /*OUT*/Char* dname1,
             XArray* described = ML_(describe_type)( &residual_offset,
                                                     di->admin_tyents,
                                                     var->typeR, offset );
-            format_message( dname1, dname2, n_dname, 
+            format_message( dname1, dname2,
                             data_addr, var, offset, residual_offset,
                             described, -1/*frameNo*/, tid );
             VG_(deleteXA)( described );
-            dname1[n_dname-1] = dname2[n_dname-1] = 0;
+            zterm_XA( dname1 );
+            zterm_XA( dname2 );
             return True;
          }
       }
@@ -2716,12 +2893,13 @@ Bool VG_(get_data_description)( /*OUT*/Char* dname1,
    while ( VG_(thread_stack_next)(&tid, &stack_min, &stack_max) ) {
       if (stack_min >= stack_max)
          continue; /* ignore obviously stupid cases */
-      if (consider_vars_in_frame( dname1, dname2, n_dname,
+      if (consider_vars_in_frame( dname1, dname2,
                                   data_addr,
                                   VG_(get_IP)(tid),
                                   VG_(get_SP)(tid), 
                                   VG_(get_FP)(tid), tid, 0 )) {
-         dname1[n_dname-1] = dname2[n_dname-1] = 0;
+         zterm_XA( dname1 );
+         zterm_XA( dname2 );
          return True;
       }
    }
@@ -2740,7 +2918,8 @@ Bool VG_(get_data_description)( /*OUT*/Char* dname1,
       }
    }
    if (!found) {
-      dname1[n_dname-1] = dname2[n_dname-1] = 0;
+      zterm_XA( dname1 );
+      zterm_XA( dname2 );
       return False;
    }
 
@@ -2755,11 +2934,12 @@ Bool VG_(get_data_description)( /*OUT*/Char* dname1,
       Oh well. */
    vg_assert(n_frames >= 0 && n_frames <= N_FRAMES);
    for (j = 0; j < n_frames; j++) {
-      if (consider_vars_in_frame( dname1, dname2, n_dname,
+      if (consider_vars_in_frame( dname1, dname2,
                                   data_addr,
                                   ips[j], 
                                   sps[j], fps[j], tid, j )) {
-         dname1[n_dname-1] = dname2[n_dname-1] = 0;
+         zterm_XA( dname1 );
+         zterm_XA( dname2 );
          return True;
       }
       /* Now, it appears that gcc sometimes appears to produce
@@ -2781,17 +2961,19 @@ Bool VG_(get_data_description)( /*OUT*/Char* dname1,
          either (1) I misunderstood something, or (2) GDB has an
          equivalent kludge. */
       if (j > 0 /* this is a non-innermost frame */
-          && consider_vars_in_frame( dname1, dname2, n_dname,
+          && consider_vars_in_frame( dname1, dname2,
                                      data_addr,
                                      ips[j] + 1, 
                                      sps[j], fps[j], tid, j )) {
-         dname1[n_dname-1] = dname2[n_dname-1] = 0;
+         zterm_XA( dname1 );
+         zterm_XA( dname2 );
          return True;
       }
    }
 
    /* We didn't find anything useful. */
-   dname1[n_dname-1] = dname2[n_dname-1] = 0;
+   zterm_XA( dname1 );
+   zterm_XA( dname2 );
    return False;
 #  undef N_FRAMES
 }

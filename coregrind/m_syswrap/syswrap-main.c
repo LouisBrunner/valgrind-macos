@@ -1096,15 +1096,15 @@ void bad_before ( ThreadId              tid,
                   /*OUT*/SyscallStatus* status,
                   /*OUT*/UWord*         flags )
 {
-   VG_DMSG("WARNING: unhandled syscall: %s",
+   VG_(dmsg)("WARNING: unhandled syscall: %s\n",
       VG_SYSNUM_STRING_EXTRA(args->sysno));
    if (VG_(clo_verbosity) > 1) {
       VG_(get_and_pp_StackTrace)(tid, VG_(clo_backtrace_size));
    }
-   VG_DMSG("You may be able to write your own handler.");
-   VG_DMSG("Read the file README_MISSING_SYSCALL_OR_IOCTL.");
-   VG_DMSG("Nevertheless we consider this a bug.  Please report");
-   VG_DMSG("it at http://valgrind.org/support/bug_reports.html.");
+   VG_(dmsg)("You may be able to write your own handler.\n");
+   VG_(dmsg)("Read the file README_MISSING_SYSCALL_OR_IOCTL.\n");
+   VG_(dmsg)("Nevertheless we consider this a bug.  Please report\n");
+   VG_(dmsg)("it at http://valgrind.org/support/bug_reports.html.\n");
 
    SET_STATUS_Failure(VKI_ENOSYS);
 }

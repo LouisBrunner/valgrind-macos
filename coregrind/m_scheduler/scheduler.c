@@ -127,12 +127,12 @@ static UInt sanity_slow_count = 0;
 void VG_(print_scheduler_stats)(void)
 {
    VG_(message)(Vg_DebugMsg,
-      "scheduler: %'llu jumps (bb entries).", bbs_done );
+      "scheduler: %'llu jumps (bb entries).\n", bbs_done );
    VG_(message)(Vg_DebugMsg,
-      "scheduler: %'llu/%'llu major/minor sched events.",
+      "scheduler: %'llu/%'llu major/minor sched events.\n",
       n_scheduling_events_MAJOR, n_scheduling_events_MINOR);
    VG_(message)(Vg_DebugMsg, 
-                "   sanity: %d cheap, %d expensive checks.",
+                "   sanity: %d cheap, %d expensive checks.\n",
                 sanity_fast_count, sanity_slow_count );
 }
 
@@ -147,7 +147,7 @@ static vg_sema_t the_BigLock;
 static
 void print_sched_event ( ThreadId tid, Char* what )
 {
-   VG_(message)(Vg_DebugMsg, "  SCHED[%d]: %s", tid, what );
+   VG_(message)(Vg_DebugMsg, "  SCHED[%d]: %s\n", tid, what );
 }
 
 static
@@ -320,7 +320,7 @@ void VG_(get_thread_out_of_syscall)(ThreadId tid)
    if (VG_(threads)[tid].status == VgTs_WaitSys) {
       if (VG_(clo_trace_signals)) {
 	 VG_(message)(Vg_DebugMsg, 
-                      "get_thread_out_of_syscall zaps tid %d lwp %d",
+                      "get_thread_out_of_syscall zaps tid %d lwp %d\n",
 		      tid, VG_(threads)[tid].os_state.lwpid);
       }
 #     if defined(VGO_darwin)
@@ -1024,8 +1024,8 @@ VgSchedReturnCode VG_(scheduler) ( ThreadId tid )
       n_scheduling_events_MINOR++;
 
       if (0)
-	 VG_(message)(Vg_DebugMsg, "thread %d: running for %d bbs", 
-		      tid, VG_(dispatch_ctr) - 1 );
+         VG_(message)(Vg_DebugMsg, "thread %d: running for %d bbs\n", 
+                                   tid, VG_(dispatch_ctr) - 1 );
 
       trc = run_thread_for_a_while ( tid );
 
@@ -1120,8 +1120,8 @@ VgSchedReturnCode VG_(scheduler) ( ThreadId tid )
                    : counts[ew]++ < 3;
          if (show && VG_(clo_show_emwarns) && !VG_(clo_xml)) {
             VG_(message)( Vg_UserMsg,
-                          "Emulation warning: unsupported action:");
-            VG_(message)( Vg_UserMsg, "  %s", what);
+                          "Emulation warning: unsupported action:\n");
+            VG_(message)( Vg_UserMsg, "  %s\n", what);
             VG_(get_and_pp_StackTrace)( tid, VG_(clo_backtrace_size) );
          }
          break;
@@ -1135,12 +1135,12 @@ VgSchedReturnCode VG_(scheduler) ( ThreadId tid )
                    ? "unknown (?!)"
                    : LibVEX_EmWarn_string(ew);
          VG_(message)( Vg_UserMsg,
-                       "Emulation fatal error -- Valgrind cannot continue:");
-         VG_(message)( Vg_UserMsg, "  %s", what);
+                       "Emulation fatal error -- Valgrind cannot continue:\n");
+         VG_(message)( Vg_UserMsg, "  %s\n", what);
          VG_(get_and_pp_StackTrace)( tid, VG_(clo_backtrace_size) );
-         VG_(message)(Vg_UserMsg, "");
-         VG_(message)(Vg_UserMsg, "Valgrind has to exit now.  Sorry.");
-         VG_(message)(Vg_UserMsg, "");
+         VG_(message)(Vg_UserMsg, "\n");
+         VG_(message)(Vg_UserMsg, "Valgrind has to exit now.  Sorry.\n");
+         VG_(message)(Vg_UserMsg, "\n");
          VG_(exit)(1);
          break;
       }
@@ -1158,10 +1158,10 @@ VgSchedReturnCode VG_(scheduler) ( ThreadId tid )
          break;
 
       case VEX_TRC_JMP_NODECODE:
-         VG_(message)(Vg_UserMsg,
-            "valgrind: Unrecognised instruction at address %#lx.",
+         VG_(umsg)(
+            "valgrind: Unrecognised instruction at address %#lx.\n",
             VG_(get_IP)(tid));
-#define M(a) VG_(message)(Vg_UserMsg, a);
+#define M(a) VG_(umsg)(a "\n");
    M("Your program just tried to execute an instruction that Valgrind" );
    M("did not recognise.  There are two possible reasons for this."    );
    M("1. Your program has a bug and erroneously jumped to a non-code"  );
@@ -1318,8 +1318,8 @@ static Bool os_client_request(ThreadId tid, UWord *args)
       /* This is equivalent to an exit() syscall, but we don't set the
 	 exitcode (since it might already be set) */
       if (0 || VG_(clo_trace_syscalls) || VG_(clo_trace_sched))
-	 VG_(message)(Vg_DebugMsg, 
-		      "__libc_freeres() done; really quitting!");
+         VG_(message)(Vg_DebugMsg, 
+                      "__libc_freeres() done; really quitting!\n");
       VG_(threads)[tid].exitreason = VgSrc_ExitThread;
       break;
 
@@ -1349,7 +1349,7 @@ void do_client_request ( ThreadId tid )
       case VG_USERREQ__CLIENT_CALL0: {
          UWord (*f)(ThreadId) = (void*)arg[1];
 	 if (f == NULL)
-	    VG_(message)(Vg_DebugMsg, "VG_USERREQ__CLIENT_CALL0: func=%p", f);
+	    VG_(message)(Vg_DebugMsg, "VG_USERREQ__CLIENT_CALL0: func=%p\n", f);
 	 else
 	    SET_CLCALL_RETVAL(tid, f ( tid ), (Addr)f);
          break;
@@ -1357,7 +1357,7 @@ void do_client_request ( ThreadId tid )
       case VG_USERREQ__CLIENT_CALL1: {
          UWord (*f)(ThreadId, UWord) = (void*)arg[1];
 	 if (f == NULL)
-	    VG_(message)(Vg_DebugMsg, "VG_USERREQ__CLIENT_CALL1: func=%p", f);
+	    VG_(message)(Vg_DebugMsg, "VG_USERREQ__CLIENT_CALL1: func=%p\n", f);
 	 else
 	    SET_CLCALL_RETVAL(tid, f ( tid, arg[2] ), (Addr)f );
          break;
@@ -1365,7 +1365,7 @@ void do_client_request ( ThreadId tid )
       case VG_USERREQ__CLIENT_CALL2: {
          UWord (*f)(ThreadId, UWord, UWord) = (void*)arg[1];
 	 if (f == NULL)
-	    VG_(message)(Vg_DebugMsg, "VG_USERREQ__CLIENT_CALL2: func=%p", f);
+	    VG_(message)(Vg_DebugMsg, "VG_USERREQ__CLIENT_CALL2: func=%p\n", f);
 	 else
 	    SET_CLCALL_RETVAL(tid, f ( tid, arg[2], arg[3] ), (Addr)f );
          break;
@@ -1373,7 +1373,7 @@ void do_client_request ( ThreadId tid )
       case VG_USERREQ__CLIENT_CALL3: {
          UWord (*f)(ThreadId, UWord, UWord, UWord) = (void*)arg[1];
 	 if (f == NULL)
-	    VG_(message)(Vg_DebugMsg, "VG_USERREQ__CLIENT_CALL3: func=%p", f);
+	    VG_(message)(Vg_DebugMsg, "VG_USERREQ__CLIENT_CALL3: func=%p\n", f);
 	 else
 	    SET_CLCALL_RETVAL(tid, f ( tid, arg[2], arg[3], arg[4] ), (Addr)f );
          break;
@@ -1388,18 +1388,21 @@ void do_client_request ( ThreadId tid )
       case VG_USERREQ__PRINTF: {
          Int count = 
             VG_(vmessage)( Vg_ClientMsg, (char *)arg[1], (void*)arg[2] );
+            VG_(message_flush)();
             SET_CLREQ_RETVAL( tid, count );
          break; }
 
       case VG_USERREQ__INTERNAL_PRINTF: {
          Int count = 
             VG_(vmessage)( Vg_DebugMsg, (char *)arg[1], (void*)arg[2] );
+            VG_(message_flush)();
             SET_CLREQ_RETVAL( tid, count );
          break; }
 
       case VG_USERREQ__PRINTF_BACKTRACE: {
          Int count =
             VG_(vmessage)( Vg_ClientMsg, (char *)arg[1], (void*)arg[2] );
+            VG_(message_flush)();
             VG_(get_and_pp_StackTrace)( tid, VG_(clo_backtrace_size) );
             SET_CLREQ_RETVAL( tid, count );
          break; }
@@ -1500,7 +1503,7 @@ void do_client_request ( ThreadId tid )
                if (c2 == 0) c2 = '_';
 	       VG_(message)(Vg_UserMsg, "Warning:\n"
                    "  unhandled client request: 0x%lx (%c%c+0x%lx).  Perhaps\n"
-		   "  VG_(needs).client_requests should be set?",
+		   "  VG_(needs).client_requests should be set?\n",
 			    arg[0], c1, c2, arg[0] & 0xffff);
 	       whined = True;
 	    }
@@ -1622,7 +1625,7 @@ void VG_(sanity_check_general) ( Bool force_expensive )
 	 if (remains < VKI_PAGE_SIZE)
 	    VG_(message)(Vg_DebugMsg, 
                          "WARNING: Thread %d is within %ld bytes "
-                         "of running out of stack!",
+                         "of running out of stack!\n",
 		         tid, remains);
       }
    }

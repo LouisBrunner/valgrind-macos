@@ -1538,7 +1538,7 @@ HChar* read_symbol_table (
                         "fixme-Name-printing(5)" /*s->name*/ );
 
 	 if (guessed_toc)
-            VG_(message)(Vg_DebugMsg, "WARNING: assuming toc 0x%lx for %s", 
+            VG_(message)(Vg_DebugMsg, "WARNING: assuming toc 0x%lx for %s\n", 
                                       s->r2value, dis.name);
       }
    }
@@ -2424,10 +2424,10 @@ Bool ML_(read_xcoff_debug_info) ( struct _DebugInfo* di,
 
    if (VG_(clo_verbosity) > 1 || VG_(clo_trace_redir)) {
       if (di->memname) {
-         VG_(message)(Vg_DebugMsg, "Reading syms from %s(%s) (%#lx)",
+         VG_(message)(Vg_DebugMsg, "Reading syms from %s(%s) (%#lx)\n",
                       di->filename, di->memname, di->text_avma);
       } else {
-         VG_(message)(Vg_DebugMsg, "Reading syms from %s (%#lx)",
+         VG_(message)(Vg_DebugMsg, "Reading syms from %s (%#lx)\n",
                       di->filename, di->text_avma);
       }
    }

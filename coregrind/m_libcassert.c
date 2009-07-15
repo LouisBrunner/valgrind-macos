@@ -146,8 +146,8 @@ static void report_and_quit ( const Char* report,
    }
  
    stacktop = tst->os_state.valgrind_stack_init_SP;
- 
-   n_ips =
+
+   n_ips = 
       VG_(get_StackTrace_wrk)(
          0/*tid is unknown*/, 
          ips, BACKTRACE_DEPTH, 
@@ -155,6 +155,7 @@ static void report_and_quit ( const Char* report,
          NULL/*array to dump FP values in*/,
          ip, sp, fp, lr, sp, stacktop
       );
+   VG_(clo_xml) = False;
    VG_(pp_StackTrace) (ips, n_ips);
  
    VG_(show_sched_status)();
@@ -200,7 +201,7 @@ void VG_(assert_fail) ( Bool isCore, const Char* expr, const Char* file,
    }
 
    if (VG_(clo_xml))
-      VG_UMSG("</valgrindoutput>\n");
+      VG_(printf_xml)("</valgrindoutput>\n");
 
    // Treat vg_assert2(0, "foo") specially, as a panicky abort
    if (VG_STREQ(expr, "0")) {
@@ -221,7 +222,7 @@ static void panic ( Char* name, Char* report, Char* str,
                     Addr ip, Addr sp, Addr fp, Addr lr )
 {
    if (VG_(clo_xml))
-      VG_UMSG("</valgrindoutput>\n");
+      VG_(printf_xml)("</valgrindoutput>\n");
    VG_(printf)("\n%s: the 'impossible' happened:\n   %s\n", name, str);
    report_and_quit(report, ip, sp, fp, lr);
 }
@@ -245,18 +246,20 @@ void VG_(tool_panic) ( Char* str )
 void VG_(unimplemented) ( Char* msg )
 {
    if (VG_(clo_xml))
-      VG_UMSG("</valgrindoutput>\n");
-   VG_UMSG("");
-   VG_UMSG("Valgrind detected that your program requires");
-   VG_UMSG("the following unimplemented functionality:");
-   VG_UMSG("   %s", msg);
-   VG_UMSG("This may be because the functionality is hard to implement,");
-   VG_UMSG("or because no reasonable program would behave this way,");
-   VG_UMSG("or because nobody has yet needed it.  In any case, let us know at");
-   VG_UMSG("%s and/or try to work around the problem, if you can.", VG_BUGS_TO);
-   VG_UMSG("");
-   VG_UMSG("Valgrind has to exit now.  Sorry.  Bye!");
-   VG_UMSG("");
+      VG_(printf_xml)("</valgrindoutput>\n");
+   VG_(umsg)("\n");
+   VG_(umsg)("Valgrind detected that your program requires\n");
+   VG_(umsg)("the following unimplemented functionality:\n");
+   VG_(umsg)("   %s\n", msg);
+   VG_(umsg)("This may be because the functionality is hard to implement,\n");
+   VG_(umsg)("or because no reasonable program would behave this way,\n");
+   VG_(umsg)("or because nobody has yet needed it.  "
+             "In any case, let us know at\n");
+   VG_(umsg)("%s and/or try to work around the problem, if you can.\n",
+             VG_BUGS_TO);
+   VG_(umsg)("\n");
+   VG_(umsg)("Valgrind has to exit now.  Sorry.  Bye!\n");
+   VG_(umsg)("\n");
    VG_(show_sched_status)();
    VG_(exit)(1);
 }

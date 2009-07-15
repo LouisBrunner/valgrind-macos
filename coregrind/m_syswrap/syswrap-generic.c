@@ -84,7 +84,7 @@ Bool ML_(valid_client_addr)(Addr start, SizeT size, ThreadId tid,
 
    if (!ret && syscallname != NULL) {
       VG_(message)(Vg_UserMsg, "Warning: client syscall %s tried "
-                               "to modify addresses %#lx-%#lx",
+                               "to modify addresses %#lx-%#lx\n",
                                syscallname, start, start+size-1);
       if (VG_(clo_verbosity) > 1) {
          VG_(get_and_pp_StackTrace)(tid, VG_(clo_backtrace_size));
@@ -671,30 +671,30 @@ getsockdetails(Int fd)
          struct vki_sockaddr_in paddr;
          UInt plen = sizeof(struct vki_sockaddr_in);
 
-         if(VG_(getpeername)(fd, (struct vki_sockaddr *)&paddr, &plen) != -1) {
-            VG_(message)(Vg_UserMsg, "Open AF_INET socket %d: %s <-> %s", fd,
+         if (VG_(getpeername)(fd, (struct vki_sockaddr *)&paddr, &plen) != -1) {
+            VG_(message)(Vg_UserMsg, "Open AF_INET socket %d: %s <-> %s\n", fd,
                          inet2name(&(laddr.in), llen, lname),
                          inet2name(&paddr, plen, pname));
          } else {
-            VG_(message)(Vg_UserMsg, "Open AF_INET socket %d: %s <-> unbound",
+            VG_(message)(Vg_UserMsg, "Open AF_INET socket %d: %s <-> unbound\n",
                          fd, inet2name(&(laddr.in), llen, lname));
          }
          return;
          }
       case VKI_AF_UNIX: {
          static char lname[256];
-         VG_(message)(Vg_UserMsg, "Open AF_UNIX socket %d: %s", fd,
+         VG_(message)(Vg_UserMsg, "Open AF_UNIX socket %d: %s\n", fd,
                       unix2name(&(laddr.un), llen, lname));
          return;
          }
       default:
-         VG_(message)(Vg_UserMsg, "Open pf-%d socket %d:",
+         VG_(message)(Vg_UserMsg, "Open pf-%d socket %d:\n",
                       laddr.a.sa_family, fd);
          return;
       }
    }
 
-   VG_(message)(Vg_UserMsg, "Open socket %d:", fd);
+   VG_(message)(Vg_UserMsg, "Open socket %d:\n", fd);
 }
 
 
@@ -703,18 +703,19 @@ void VG_(show_open_fds) (void)
 {
    OpenFd *i = allocated_fds;
 
-   VG_(message)(Vg_UserMsg, "FILE DESCRIPTORS: %d open at exit.", fd_count);
+   VG_(message)(Vg_UserMsg, "FILE DESCRIPTORS: %d open at exit.\n", fd_count);
 
-   while(i) {
-      if(i->pathname) {
-         VG_(message)(Vg_UserMsg, "Open file descriptor %d: %s", i->fd,
+   while (i) {
+      if (i->pathname) {
+         VG_(message)(Vg_UserMsg, "Open file descriptor %d: %s\n", i->fd,
                       i->pathname);
       } else {
          Int val;
          UInt len = sizeof(val);
 
-         if (VG_(getsockopt)(i->fd, VKI_SOL_SOCKET, VKI_SO_TYPE, &val, &len) == -1) {
-            VG_(message)(Vg_UserMsg, "Open file descriptor %d:", i->fd);
+         if (VG_(getsockopt)(i->fd, VKI_SOL_SOCKET, VKI_SO_TYPE, &val, &len)
+             == -1) {
+            VG_(message)(Vg_UserMsg, "Open file descriptor %d:\n", i->fd);
          } else {
             getsockdetails(i->fd);
          }
@@ -722,16 +723,16 @@ void VG_(show_open_fds) (void)
 
       if(i->where) {
          VG_(pp_ExeContext)(i->where);
-         VG_(message)(Vg_UserMsg, "");
+         VG_(message)(Vg_UserMsg, "\n");
       } else {
-         VG_(message)(Vg_UserMsg, "   <inherited from parent>");
-         VG_(message)(Vg_UserMsg, "");
+         VG_(message)(Vg_UserMsg, "   <inherited from parent>\n");
+         VG_(message)(Vg_UserMsg, "\n");
       }
 
       i = i->next;
    }
 
-   VG_(message)(Vg_UserMsg, "");
+   VG_(message)(Vg_UserMsg, "\n");
 }
 
 /* If /proc/self/fd doesn't exist (e.g. you've got a Linux kernel that doesn't
@@ -790,7 +791,8 @@ void VG_(init_preopened_fds)(void)
                   ML_(record_fd_open_named)(-1, fno);
          } else {
             VG_(message)(Vg_DebugMsg, 
-               "Warning: invalid file name in /proc/self/fd: %s", d.d_name);
+               "Warning: invalid file name in /proc/self/fd: %s\n",
+               d.d_name);
          }
       }
 
@@ -1154,8 +1156,8 @@ Bool ML_(fd_allowed)(Int fd, const Char *syscallname, ThreadId tid, Bool isNewFd
    if (fd < 0 || fd >= VG_(fd_hard_limit))
       allowed = False;
 
-   /* hijacking the logging fd is never allowed */
-   if (fd == VG_(clo_log_fd))
+   /* hijacking the output fds is never allowed */
+   if (fd == VG_(log_output_sink).fd || fd == VG_(xml_output_sink).fd)
       allowed = False;
 
    /* if creating a new fd (rather than using an existing one), the
@@ -1184,12 +1186,15 @@ Bool ML_(fd_allowed)(Int fd, const Char *syscallname, ThreadId tid, Bool isNewFd
    /* croak? */
    if ((!allowed) && VG_(showing_core_errors)() ) {
       VG_(message)(Vg_UserMsg, 
-         "Warning: invalid file descriptor %d in syscall %s()",
+         "Warning: invalid file descriptor %d in syscall %s()\n",
          fd, syscallname);
-      if (fd == VG_(clo_log_fd)) {
+      if (fd == VG_(log_output_sink).fd && VG_(log_output_sink).fd >= 0)
 	 VG_(message)(Vg_UserMsg, 
-            "   Use --log-fd=<number> to select an alternative log fd.");
-      }
+            "   Use --log-fd=<number> to select an alternative log fd.\n");
+      if (fd == VG_(xml_output_sink).fd && VG_(xml_output_sink).fd >= 0)
+	 VG_(message)(Vg_UserMsg, 
+            "   Use --xml-fd=<number> to select an alternative XML "
+            "output fd.\n");
       // DDD: consider always printing this stack trace, it's useful.
       // Also consider also making this a proper core error, ie.
       // suppressible and all that.
@@ -2700,12 +2705,12 @@ PRE(sys_execve)
       too much of a mess to continue, so we have to abort. */
   hosed:
    vg_assert(FAILURE);
-   VG_(message)(Vg_UserMsg, "execve(%#lx(%s), %#lx, %#lx) failed, errno %ld",
+   VG_(message)(Vg_UserMsg, "execve(%#lx(%s), %#lx, %#lx) failed, errno %ld\n",
                 ARG1, (char*)ARG1, ARG2, ARG3, ERR);
    VG_(message)(Vg_UserMsg, "EXEC FAILED: I can't recover from "
-                            "execve() failing, so I'm dying.");
+                            "execve() failing, so I'm dying.\n");
    VG_(message)(Vg_UserMsg, "Add more stringent tests in PRE(sys_execve), "
-                            "or work out how to recover.");
+                            "or work out how to recover.\n");
    VG_(exit)(101);
 }
 
@@ -2921,11 +2926,15 @@ PRE(sys_fork)
       VG_(sigprocmask)(VKI_SIG_SETMASK, &fork_saved_mask, NULL);
 
       /* If --child-silent-after-fork=yes was specified, set the
-         logging file descriptor to an 'impossible' value.  This is
+         output file descriptors to 'impossible' values.  This is
          noticed by send_bytes_to_logging_sink in m_libcprint.c, which
-         duly stops writing any further logging output. */
-      if (!VG_(logging_to_socket) && VG_(clo_child_silent_after_fork))
-         VG_(clo_log_fd) = -1;
+         duly stops writing any further output. */
+      if (VG_(clo_child_silent_after_fork)) {
+         if (!VG_(log_output_sink).is_socket)
+            VG_(log_output_sink).fd = -1;
+         if (!VG_(xml_output_sink).is_socket)
+            VG_(xml_output_sink).fd = -1;
+      }
 
    } else {
       VG_(do_atfork_parent)(tid);
@@ -3231,11 +3240,11 @@ void ML_(PRE_unknown_ioctl)(ThreadId tid, UWord request, UWord arg)
       static Int moans = 3;
       if (moans > 0 && !VG_(clo_xml)) {
          moans--;
-         VG_UMSG("Warning: noted but unhandled ioctl 0x%lx"
-                 " with no size/direction hints", request); 
-         VG_UMSG("   This could cause spurious value errors to appear.");
-         VG_UMSG("   See README_MISSING_SYSCALL_OR_IOCTL for "
-                 "guidance on writing a proper wrapper." );
+         VG_(umsg)("Warning: noted but unhandled ioctl 0x%lx"
+                   " with no size/direction hints\n", request); 
+         VG_(umsg)("   This could cause spurious value errors to appear.\n");
+         VG_(umsg)("   See README_MISSING_SYSCALL_OR_IOCTL for "
+                   "guidance on writing a proper wrapper.\n" );
       }
    } else {
       //VG_(message)(Vg_UserMsg, "UNKNOWN ioctl %#lx\n", request);
@@ -3306,8 +3315,9 @@ Bool ML_(do_sigkill)(Int pid, Int tgid)
    /* Check to see that the target isn't already exiting. */
    if (!VG_(is_exiting)(tid)) {
       if (VG_(clo_trace_signals))
-	 VG_(message)(Vg_DebugMsg, "Thread %d being killed with SIGKILL", 
-                                   tst->tid);
+	 VG_(message)(Vg_DebugMsg,
+                      "Thread %d being killed with SIGKILL\n", 
+                      tst->tid);
       
       tst->exitreason = VgSrc_FatalSig;
       tst->os_state.fatalsig = VKI_SIGKILL;
@@ -3340,7 +3350,7 @@ PRE(sys_kill)
       SET_STATUS_from_SysRes( VG_(do_syscall3)(SYSNO, ARG1, ARG2, ARG3) );
 
    if (VG_(clo_trace_signals))
-      VG_(message)(Vg_DebugMsg, "kill: sent signal %ld to pid %ld",
+      VG_(message)(Vg_DebugMsg, "kill: sent signal %ld to pid %ld\n",
 		   ARG2, ARG1);
 
    /* This kill might have given us a pending signal.  Ask for a check once 

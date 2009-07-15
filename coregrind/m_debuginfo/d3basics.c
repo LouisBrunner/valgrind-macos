@@ -641,7 +641,7 @@ GXResult ML_(evaluate_Dwarf3_Expr) ( UChar* expr, UWord exprszB,
             if (!VG_(clo_xml))
                VG_(message)(Vg_DebugMsg, 
                             "warning: evaluate_Dwarf3_Expr: unhandled "
-                            "DW_OP_ 0x%x", (Int)opcode); 
+                            "DW_OP_ 0x%x\n", (Int)opcode); 
             FAIL("evaluate_Dwarf3_Expr: unhandled DW_OP_");
             /*NOTREACHED*/
       }

@@ -150,12 +150,12 @@ static Bool extend ( ThreadState *tst, Addr addr, SizeT size )
    if (stackseg == NULL || !stackseg->hasR || !stackseg->hasW) {
       VG_(message)(
          Vg_UserMsg,
-         "Can't extend stack to %#lx during signal delivery for thread %d:",
+         "Can't extend stack to %#lx during signal delivery for thread %d:\n",
          addr, tid);
       if (stackseg == NULL)
-         VG_(message)(Vg_UserMsg, "  no stack segment");
+         VG_(message)(Vg_UserMsg, "  no stack segment\n");
       else
-         VG_(message)(Vg_UserMsg, "  too small or bad protection modes");
+         VG_(message)(Vg_UserMsg, "  too small or bad protection modes\n");
 
       /* set SIGSEGV to default handler */
       VG_(set_default_handler)(VKI_SIGSEGV);
@@ -377,7 +377,8 @@ void VG_(sigframe_destroy)( ThreadId tid, Bool isRT )
 
    if (VG_(clo_trace_signals))
       VG_(message)(Vg_DebugMsg,
-                   "vg_pop_signal_frame (thread %d): isRT=%d valid magic; EIP=%#llx",
+                   "vg_pop_signal_frame (thread %d): isRT=%d "
+                   "valid magic; EIP=%#llx\n",
                    tid, has_siginfo, tst->arch.vex.guest_CIA);
 
    /* tell the tools */

@@ -297,12 +297,14 @@ Bool VG_(maybe_Z_demangle) ( const HChar* sym,
 
    if (error) {
       /* Something's wrong.  Give up. */
-      VG_(message)(Vg_UserMsg, "m_demangle: error Z-demangling: %s", sym);
+      VG_(message)(Vg_UserMsg,
+                   "m_demangle: error Z-demangling: %s\n", sym);
       return False;
    }
    if (oflow) {
       /* It didn't fit.  Give up. */
-      VG_(message)(Vg_UserMsg, "m_demangle: oflow Z-demangling: %s", sym);
+      VG_(message)(Vg_UserMsg,
+                   "m_demangle: oflow Z-demangling: %s\n", sym);
       return False;
    }
 

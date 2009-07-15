@@ -221,7 +221,7 @@ void VG_(sigframe_destroy)( ThreadId tid, Bool isRT )
 
    if (VG_(clo_trace_signals))
       VG_(message)(Vg_DebugMsg,
-                   "vg_pop_signal_frame (thread %d): valid magic; CIA=%#x",
+                   "vg_pop_signal_frame (thread %d): valid magic; CIA=%#x\n",
                    tid, tst->arch.vex.guest_CIA);
 
    VG_TRACK( die_mem_stack_signal, 

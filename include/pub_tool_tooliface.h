@@ -284,6 +284,16 @@ extern void VG_(needs_tool_errors) (
    // similar errors occurring.
    Bool (*eq_Error)(VgRes res, Error* e1, Error* e2),
 
+   // We give tools a chance to have a look at errors
+   // just before they are printed.  That is, before_pp_Error is 
+   // called just before pp_Error itself.  This gives the tool a
+   // chance to look at the just-about-to-be-printed error, so as to 
+   // emit any arbitrary output if wants to, before the error itself
+   // is printed.  This functionality was added to allow Helgrind to
+   // print thread-announcement messages immediately before the 
+   // errors that refer to them.
+   void (*before_pp_Error)(Error* err),
+
    // Print error context.
    void (*pp_Error)(Error* err),
 
@@ -434,7 +444,7 @@ extern void VG_(needs_malloc_replacement)(
 /* Can the tool do XML output?  This is a slight misnomer, because the tool
  * is not requesting the core to do anything, rather saying "I can handle
  * it". */
-extern void VG_(needs_xml_output)( void );
+extern void VG_(needs_xml_output) ( void );
 
 /* Does the tool want to have one final pass over the IR after tree
    building but before instruction selection?  If so specify the

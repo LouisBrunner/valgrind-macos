@@ -95,15 +95,24 @@ extern Bool VG_(get_datasym_and_offset)( Addr data_addr,
                                          /*OUT*/Char* dname, Int n_dname,
                                          /*OUT*/PtrdiffT* offset );
 
-/* Try to form some description of data_addr by looking at the DWARF3
+/* Try to form some description of DATA_ADDR by looking at the DWARF3
    debug info we have.  This considers all global variables, and all
-   frames in the stacks of all threads.  Result (or as much as will
-   fit) is put into into dname{1,2}[0 .. n_dname-1] and is guaranteed
-   to be zero terminated. */
-extern Bool VG_(get_data_description)( /*OUT*/Char* dname1,
-                                       /*OUT*/Char* dname2,
-                                       Int  n_dname,
-                                       Addr data_addr );
+   frames in the stacks of all threads.  Result is written at the ends
+   of DNAME{1,2}V, which are XArray*s of HChar, that have been
+   initialised by the caller, and True is returned.  If no description
+   is created, False is returned.  Regardless of the return value,
+   DNAME{1,2}V are guaranteed to be zero terminated after the call.
+
+   Note that after the call, DNAME{1,2} may have more than one
+   trailing zero, so callers should establish the useful text length
+   using VG_(strlen) on the contents, rather than VG_(sizeXA) on the
+   XArray itself.
+*/
+Bool VG_(get_data_description)( 
+        /*MOD*/ void* /* really, XArray* of HChar */ dname1v,
+        /*MOD*/ void* /* really, XArray* of HChar */ dname2v,
+        Addr data_addr
+     );
 
 /* Succeeds if the address is within a shared object or the main executable.
    It doesn't matter if debug info is present or not. */

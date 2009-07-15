@@ -97,7 +97,7 @@
       /* Check bounds. */ \
       if ((qq_var) < (qq_lo) || (qq_var) > (qq_hi)) { \
          VG_(message)(Vg_UserMsg, \
-                      "'%s' argument must be between %lld and %lld", \
+                      "'%s' argument must be between %lld and %lld\n", \
                       (qq_option), (Long)(qq_lo), (Long)(qq_hi)); \
          VG_(err_bad_option)(qq_arg); \
       } \

@@ -276,15 +276,6 @@ void LibVEX_default_VexControl ( /*OUT*/ VexControl* vcon );
 
 
 /*-------------------------------------------------------*/
-/*--- Version information                             ---*/
-/*-------------------------------------------------------*/
-
-/* Returns the Vex SVN version, as a statically allocated string. */
-
-extern const HChar* LibVEX_Version ( void );
-
-
-/*-------------------------------------------------------*/
 /*--- Storage management control                      ---*/
 /*-------------------------------------------------------*/
 

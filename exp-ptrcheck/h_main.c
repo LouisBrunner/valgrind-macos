@@ -2227,7 +2227,10 @@ static void setup_post_syscall_table ( void )
       ADD(0, __NR_fstat64);
 #     endif
       ADD(0, __NR_fstatfs);
-      ADD(0, __NR_fsync);
+ #     if defined(__NR_fstatfs64)
+      ADD(0, __NR_fstatfs64);
+#     endif
+     ADD(0, __NR_fsync);
       ADD(0, __NR_ftruncate);
 #     if defined(__NR_ftruncate64)
       ADD(0, __NR_ftruncate64);
@@ -2249,6 +2252,9 @@ static void setup_post_syscall_table ( void )
       ADD(0, __NR_getgid32);
 #     endif
       ADD(0, __NR_getgroups);
+#     if defined(__NR_getgroups32)
+      ADD(0, __NR_getgroups32);
+#     endif
       ADD(0, __NR_getitimer);
 #     if defined(__NR_getpeername)
       ADD(0, __NR_getpeername);
@@ -2256,7 +2262,11 @@ static void setup_post_syscall_table ( void )
       ADD(0, __NR_getpid);
       ADD(0, __NR_getpgrp);
       ADD(0, __NR_getppid);
+      ADD(0, __NR_getpriority);
       ADD(0, __NR_getresgid);
+#     if defined(__NR_getresgid32)
+      ADD(0, __NR_getresgid32);
+#     endif
       ADD(0, __NR_getresuid);
 #     if defined(__NR_getresuid32)
       ADD(0, __NR_getresuid32);
@@ -2298,8 +2308,10 @@ static void setup_post_syscall_table ( void )
       ADD(0, __NR_munmap); // die_mem_munmap already called, segment remove);
       ADD(0, __NR_nanosleep);
       ADD(0, __NR_open);
+      ADD(0, __NR_personality);
       ADD(0, __NR_pipe);
       ADD(0, __NR_poll);
+      ADD(0, __NR_prctl);
       ADD(0, __NR_pread64);
       ADD(0, __NR_pwrite64);
       ADD(0, __NR_read);
@@ -2316,6 +2328,8 @@ static void setup_post_syscall_table ( void )
       ADD(0, __NR_rt_sigaction);
       ADD(0, __NR_rt_sigprocmask);
       ADD(0, __NR_rt_sigreturn); /* not sure if we should see this or not */
+      ADD(0, __NR_rt_sigsuspend);
+      ADD(0, __NR_rt_sigtimedwait);
       ADD(0, __NR_sched_get_priority_max);
       ADD(0, __NR_sched_get_priority_min);
       ADD(0, __NR_sched_getaffinity);
@@ -2350,6 +2364,7 @@ static void setup_post_syscall_table ( void )
       ADD(0, __NR_setgid);
       ADD(0, __NR_setitimer);
       ADD(0, __NR_setpgid);
+      ADD(0, __NR_setpriority);
       ADD(0, __NR_setresgid);
       ADD(0, __NR_setrlimit);
       ADD(0, __NR_setsid);
@@ -2401,6 +2416,7 @@ static void setup_post_syscall_table ( void )
       ADD(0, __NR_uname);
       ADD(0, __NR_unlink);
       ADD(0, __NR_utime);
+      ADD(0, __NR_vfork);
 #     if defined(__NR_waitpid)
       ADD(0, __NR_waitpid);
 #     endif

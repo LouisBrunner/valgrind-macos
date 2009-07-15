@@ -7124,7 +7124,7 @@ const SyscallTableEntry ML_(syscall_table)[] = {
    GENXY(__NR_getgroups,   sys_getgroups), 
 // _____(__NR_setgroups),   // 80
    GENX_(__NR_getpgrp,     sys_getpgrp), 
-// _____(__NR_setpgid), 
+   GENX_(__NR_setpgid,     sys_setpgid), 
    GENXY(__NR_setitimer,   sys_setitimer), 
    _____(VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(84)),    // old wait
 // _____(__NR_swapon), 

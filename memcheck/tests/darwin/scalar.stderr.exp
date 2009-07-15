@@ -235,7 +235,7 @@ Syscall param chown(path) points to unaddressable byte(s)
 (77):            old vlimit
 -----------------------------------------------------
 -----------------------------------------------------
-x200004e(218):        __NR_mincore 3s 1m
+x200004e(78):        __NR_mincore 3s 1m
 -----------------------------------------------------
 
 Syscall param mincore(start) contains uninitialised byte(s)
@@ -250,6 +250,15 @@ Syscall param mincore(vec) contains uninitialised byte(s)
 Syscall param mincore(vec) points to unaddressable byte(s)
    ...
  Address 0x........ is not stack'd, malloc'd or (recently) free'd
+-----------------------------------------------------
+x2000052(82):        __NR_setpgid 2s 0m
+-----------------------------------------------------
+
+Syscall param setpgid(pid) contains uninitialised byte(s)
+   ...
+
+Syscall param setpgid(pgid) contains uninitialised byte(s)
+   ...
 -----------------------------------------------------
 (78):            old wait
 -----------------------------------------------------
@@ -623,6 +632,9 @@ Syscall param stat_extended(fsacl) contains uninitialised byte(s)
 Syscall param stat_extended(fsacl_size) contains uninitialised byte(s)
    ...
 
+More than 100 errors detected.  Subsequent errors
+will still be recorded, but in less detail than before.
+
 Syscall param stat_extended(file_name) points to unaddressable byte(s)
    ...
  Address 0x........ is not stack'd, malloc'd or (recently) free'd
@@ -630,9 +642,6 @@ Syscall param stat_extended(file_name) points to unaddressable byte(s)
 Syscall param stat_extended(buf) points to unaddressable byte(s)
    ...
  Address 0x........ is not stack'd, malloc'd or (recently) free'd
-
-More than 100 errors detected.  Subsequent errors
-will still be recorded, but in less detail than before.
 
 Syscall param stat_extended(fsacl_size) points to unaddressable byte(s)
    ...

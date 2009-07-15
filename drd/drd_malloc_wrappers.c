@@ -360,14 +360,14 @@ void DRD_(print_malloc_stats)(void)
    }
 
    VG_(message)(Vg_DebugMsg, 
-                "malloc/free: in use at exit: %lu bytes in %lu blocks.",
+                "malloc/free: in use at exit: %lu bytes in %lu blocks.\n",
                 nbytes, nblocks);
    VG_(message)(Vg_DebugMsg, 
-                "malloc/free: %lu allocs, %lu frees, %lu bytes allocated.",
+                "malloc/free: %lu allocs, %lu frees, %lu bytes allocated.\n",
                 s_cmalloc_n_mallocs,
                 s_cmalloc_n_frees, s_cmalloc_bs_mallocd);
    if (VG_(clo_verbosity) > 1)
-      VG_(message)(Vg_DebugMsg, " ");
+      VG_(message)(Vg_DebugMsg, " \n");
 }
 
 /*--------------------------------------------------------------------*/

@@ -468,7 +468,7 @@ void drd_pre_thread_create(const ThreadId creator, const ThreadId created)
    if (DRD_(thread_get_trace_fork_join)())
    {
       VG_(message)(Vg_DebugMsg,
-                   "drd_pre_thread_create creator = %d/%d, created = %d",
+                   "drd_pre_thread_create creator = %d/%d, created = %d\n",
                    creator, drd_creator, created);
    }
 }
@@ -487,7 +487,7 @@ void drd_post_thread_create(const ThreadId vg_created)
    if (DRD_(thread_get_trace_fork_join)())
    {
       VG_(message)(Vg_DebugMsg,
-                   "drd_post_thread_create created = %d/%d",
+                   "drd_post_thread_create created = %d/%d\n",
                    vg_created, drd_created);
    }
    if (! DRD_(get_check_stack_accesses)())
@@ -510,7 +510,7 @@ static void drd_thread_finished(ThreadId vg_tid)
    if (DRD_(thread_get_trace_fork_join)())
    {
       VG_(message)(Vg_DebugMsg,
-                   "drd_thread_finished tid = %d/%d%s",
+                   "drd_thread_finished tid = %d/%d%s\n",
                    vg_tid,
                    drd_tid,
                    DRD_(thread_get_joinable)(drd_tid)
@@ -525,7 +525,7 @@ static void drd_thread_finished(ThreadId vg_tid)
             - DRD_(thread_get_stack_min_min)(drd_tid));
       VG_(message)(Vg_UserMsg,
                    "thread %d/%d%s finished and used %ld bytes out of %ld"
-                   " on its stack. Margin: %ld bytes.",
+                   " on its stack. Margin: %ld bytes.\n",
                    vg_tid,
                    drd_tid,
                    DRD_(thread_get_joinable)(drd_tid)
@@ -581,47 +581,47 @@ static void DRD_(fini)(Int exitcode)
       ULong pu_join   = DRD_(thread_get_update_conflict_set_join_count)();
 
       VG_(message)(Vg_UserMsg,
-                   "   thread: %lld context switches.",
+                   "   thread: %lld context switches.\n",
                    DRD_(thread_get_context_switch_count)());
       VG_(message)(Vg_UserMsg,
-                   "confl set: %lld full updates and %lld partial updates;",
+                   "confl set: %lld full updates and %lld partial updates;\n",
 		   DRD_(thread_get_compute_conflict_set_count)(),
 		   pu);
       VG_(message)(Vg_UserMsg,
-                   "           %lld partial updates during segment creation,",
+                   "           %lld partial updates during segment creation,\n",
 		   pu_seg_cr);
       VG_(message)(Vg_UserMsg,
-                   "           %lld because of mutex/sema/cond.var. operations,",
+                   "           %lld because of mutex/sema/cond.var. operations,\n",
 		   pu_mtx_cv);
       VG_(message)(Vg_UserMsg,
-                   "           %lld because of barrier/rwlock operations and",
+                   "           %lld because of barrier/rwlock operations and\n",
 		   pu - pu_seg_cr - pu_mtx_cv - pu_join);
       VG_(message)(Vg_UserMsg,
                    "           %lld partial updates because of thread join"
-		   " operations.",
+		   " operations.\n",
 		   pu_join);
       VG_(message)(Vg_UserMsg,
-                   " segments: created %lld segments, max %lld alive,",
+                   " segments: created %lld segments, max %lld alive,\n",
                    DRD_(sg_get_segments_created_count)(),
                    DRD_(sg_get_max_segments_alive_count)());
       VG_(message)(Vg_UserMsg,
-                   "           %lld discard points and %lld merges.",
+                   "           %lld discard points and %lld merges.\n",
                    DRD_(thread_get_discard_ordered_segments_count)(),
                    DRD_(sg_get_segment_merge_count)());
       VG_(message)(Vg_UserMsg,
                    "segmnt cr: %lld mutex, %lld rwlock, %lld semaphore and"
-                   " %lld barrier.",
+                   " %lld barrier.\n",
                    DRD_(get_mutex_segment_creation_count)(),
                    DRD_(get_rwlock_segment_creation_count)(),
                    DRD_(get_semaphore_segment_creation_count)(),
                    DRD_(get_barrier_segment_creation_count)());
       VG_(message)(Vg_UserMsg,
                    "  bitmaps: %lld level one"
-                   " and %lld level two bitmaps were allocated.",
+                   " and %lld level two bitmaps were allocated.\n",
                    DRD_(bm_get_bitmap_creation_count)(),
                    DRD_(bm_get_bitmap2_creation_count)());
       VG_(message)(Vg_UserMsg,
-                   "    mutex: %lld non-recursive lock/unlock events.",
+                   "    mutex: %lld non-recursive lock/unlock events.\n",
                    DRD_(get_mutex_lock_count)());
       DRD_(print_malloc_stats)();
    }

@@ -61,7 +61,7 @@ void DRD_(start_suppression)(const Addr a1, const Addr a2,
 {
    if (DRD_(s_trace_suppression))
    {
-      VG_(message)(Vg_DebugMsg, "start suppression of 0x%lx sz %ld (%s)",
+      VG_(message)(Vg_DebugMsg, "start suppression of 0x%lx sz %ld (%s)\n",
                    a1, a2 - a1, reason);
    }
 
@@ -74,7 +74,7 @@ void DRD_(finish_suppression)(const Addr a1, const Addr a2)
 {
    if (DRD_(s_trace_suppression))
    {
-      VG_(message)(Vg_DebugMsg, "finish suppression of 0x%lx sz %ld",
+      VG_(message)(Vg_DebugMsg, "finish suppression of 0x%lx sz %ld\n",
                    a1, a2 - a1);
       VG_(get_and_pp_StackTrace)(VG_(get_running_tid)(), 12);   
    }
@@ -82,7 +82,7 @@ void DRD_(finish_suppression)(const Addr a1, const Addr a2)
    tl_assert(a1 < a2);
    if (! DRD_(is_suppressed)(a1, a2))
    {
-      VG_(message)(Vg_DebugMsg, "?? [0x%lx,0x%lx[ not suppressed ??", a1, a2);
+      VG_(message)(Vg_DebugMsg, "?? [0x%lx,0x%lx[ not suppressed ??\n", a1, a2);
       VG_(get_and_pp_StackTrace)(VG_(get_running_tid)(), 12);
       tl_assert(False);
    }
@@ -148,7 +148,7 @@ void DRD_(suppression_stop_using_mem)(const Addr a1, const Addr a2)
          {
             VG_(message)(Vg_DebugMsg,
                          "stop_using_mem(0x%lx, %ld) finish suppression of"
-                         " 0x%lx", a1, a2 - a1, b);
+                         " 0x%lx\n", a1, a2 - a1, b);
          }
       }
    }

@@ -125,7 +125,7 @@ void DRD_(cond_pre_init)(const Addr cond)
    if (DRD_(s_trace_cond))
    {
       VG_(message)(Vg_UserMsg,
-                   "[%d/%d] cond_init       cond 0x%lx",
+                   "[%d/%d] cond_init       cond 0x%lx\n",
                    VG_(get_running_tid)(),
                    DRD_(thread_get_running_tid)(),
                    cond);
@@ -154,7 +154,7 @@ void DRD_(cond_post_destroy)(const Addr cond)
    if (DRD_(s_trace_cond))
    {
       VG_(message)(Vg_UserMsg,
-                   "[%d/%d] cond_destroy    cond 0x%lx",
+                   "[%d/%d] cond_destroy    cond 0x%lx\n",
                    VG_(get_running_tid)(),
                    DRD_(thread_get_running_tid)(),
                    cond);
@@ -197,7 +197,7 @@ int DRD_(cond_pre_wait)(const Addr cond, const Addr mutex)
    if (DRD_(s_trace_cond))
    {
       VG_(message)(Vg_UserMsg,
-                   "[%d/%d] cond_pre_wait   cond 0x%lx",
+                   "[%d/%d] cond_pre_wait   cond 0x%lx\n",
                    VG_(get_running_tid)(),
                    DRD_(thread_get_running_tid)(),
                    cond);
@@ -252,7 +252,7 @@ int DRD_(cond_post_wait)(const Addr cond)
    if (DRD_(s_trace_cond))
    {
       VG_(message)(Vg_UserMsg,
-                   "[%d/%d] cond_post_wait  cond 0x%lx",
+                   "[%d/%d] cond_post_wait  cond 0x%lx\n",
                    VG_(get_running_tid)(),
                    DRD_(thread_get_running_tid)(),
                    cond);
@@ -311,7 +311,7 @@ void DRD_(cond_pre_signal)(Addr const cond)
    if (DRD_(s_trace_cond))
    {
       VG_(message)(Vg_UserMsg,
-                   "[%d/%d] cond_signal     cond 0x%lx",
+                   "[%d/%d] cond_signal     cond 0x%lx\n",
                    VG_(get_running_tid)(),
                    DRD_(thread_get_running_tid)(),
                    cond);
@@ -326,7 +326,7 @@ void DRD_(cond_pre_broadcast)(Addr const cond)
    if (DRD_(s_trace_cond))
    {
       VG_(message)(Vg_UserMsg,
-                   "[%d/%d] cond_broadcast  cond 0x%lx",
+                   "[%d/%d] cond_broadcast  cond 0x%lx\n",
                    VG_(get_running_tid)(),
                    DRD_(thread_get_running_tid)(),
                    cond);

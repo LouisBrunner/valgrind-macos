@@ -92,7 +92,7 @@ static void mutex_cleanup(struct mutex_info* p)
    if (s_trace_mutex)
    {
       VG_(message)(Vg_UserMsg,
-                   "[%d/%d] mutex_destroy   %s 0x%lx rc %d owner %d",
+                   "[%d/%d] mutex_destroy   %s 0x%lx rc %d owner %d\n",
                    VG_(get_running_tid)(),
                    DRD_(thread_get_running_tid)(),
                    DRD_(mutex_get_typename)(p),
@@ -171,7 +171,7 @@ DRD_(mutex_init)(const Addr mutex, const MutexT mutex_type)
    if (s_trace_mutex)
    {
       VG_(message)(Vg_UserMsg,
-                   "[%d/%d] mutex_init      %s 0x%lx",
+                   "[%d/%d] mutex_init      %s 0x%lx\n",
                    VG_(get_running_tid)(),
                    DRD_(thread_get_running_tid)(),
                    DRD_(mutex_type_name)(mutex_type),
@@ -235,7 +235,7 @@ void DRD_(mutex_pre_lock)(const Addr mutex, MutexT mutex_type,
    if (s_trace_mutex)
    {
       VG_(message)(Vg_UserMsg,
-                   "[%d/%d] %s %s 0x%lx rc %d owner %d",
+                   "[%d/%d] %s %s 0x%lx rc %d owner %d\n",
                    VG_(get_running_tid)(),
                    DRD_(thread_get_running_tid)(),
                    trylock ? "pre_mutex_lock " : "mutex_trylock  ",
@@ -290,7 +290,7 @@ void DRD_(mutex_post_lock)(const Addr mutex, const Bool took_lock,
    if (s_trace_mutex)
    {
       VG_(message)(Vg_UserMsg,
-                   "[%d/%d] %s %s 0x%lx rc %d owner %d%s",
+                   "[%d/%d] %s %s 0x%lx rc %d owner %d%s\n",
                    VG_(get_running_tid)(),
                    drd_tid,
                    post_cond_wait ? "cond_post_wait " : "post_mutex_lock",
@@ -328,7 +328,7 @@ void DRD_(mutex_post_lock)(const Addr mutex, const Bool took_lock,
       VG_(message)(Vg_UserMsg,
                    "The impossible happened: mutex 0x%lx is locked"
                    " simultaneously by two threads (recursion count %d,"
-                   " owners %d and %d) !",
+                   " owners %d and %d) !\n",
                    p->a1, p->recursion_count, p->owner, drd_tid);
       p->owner = drd_tid;
    }
@@ -359,7 +359,7 @@ void DRD_(mutex_unlock)(const Addr mutex, MutexT mutex_type)
    if (s_trace_mutex)
    {
       VG_(message)(Vg_UserMsg,
-                   "[%d/%d] mutex_unlock    %s 0x%lx rc %d",
+                   "[%d/%d] mutex_unlock    %s 0x%lx rc %d\n",
                    vg_tid,
                    drd_tid,
                    p ? DRD_(mutex_get_typename)(p) : "(?)",
@@ -388,7 +388,7 @@ void DRD_(mutex_unlock)(const Addr mutex, MutexT mutex_type)
    tl_assert(p);
    if (p->mutex_type != mutex_type)
    {
-      VG_(message)(Vg_UserMsg, "??? mutex 0x%lx: type changed from %d into %d",
+      VG_(message)(Vg_UserMsg, "??? mutex 0x%lx: type changed from %d into %d\n",
                    p->a1, p->mutex_type, mutex_type);
    }
    tl_assert(p->mutex_type == mutex_type);

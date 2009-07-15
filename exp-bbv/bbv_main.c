@@ -113,7 +113,7 @@ static void dumpPcFile(void)
    sres = VG_(open)(pc_out_file, VKI_O_CREAT|VKI_O_TRUNC|VKI_O_WRONLY,
                               VKI_S_IRUSR|VKI_S_IWUSR|VKI_S_IRGRP|VKI_S_IWGRP);
    if (sr_isError(sres)) {
-      VG_UMSG("Error: cannot create pc file %s\n", pc_out_file);
+      VG_(umsg)("Error: cannot create pc file %s\n", pc_out_file);
       VG_(exit)(1);
    } else {
       pctrace_fd = sr_Res(sres);
@@ -153,7 +153,7 @@ static Int open_tracefile(Int thread_num)
                               VKI_S_IRUSR|VKI_S_IWUSR|VKI_S_IRGRP|VKI_S_IWGRP);
 
    if (sr_isError(sres)) {
-      VG_UMSG("Error: cannot create bb file %s\n",temp_string);
+      VG_(umsg)("Error: cannot create bb file %s\n",temp_string);
       VG_(exit)(1);
    }
 
@@ -586,7 +586,7 @@ static void bbv_fini(Int exitcode)
                 bbv_thread[i].fldcw_count);
 
             /* Print results to display */
-         VG_UMSG("%s", buf);
+         VG_(umsg)("%s\n", buf);
 
             /* open the output file if it hasn't already */
          if (bbv_thread[i].bbtrace_fd < 0) {

@@ -1182,13 +1182,13 @@ void check_cache(cache_t* cache, Char *name)
    /* Simulator requires line size and set count to be powers of two */
    if (( cache->size % (cache->line_size * cache->assoc) != 0) ||
        (-1 == VG_(log2)(cache->size/cache->line_size/cache->assoc))) {
-      VG_UMSG("error: %s set count not a power of two; aborting.", name);
+      VG_(umsg)("error: %s set count not a power of two; aborting.\n", name);
       VG_(exit)(1);
    }
 
    if (-1 == VG_(log2)(cache->line_size)) {
-      VG_UMSG("error: %s line size of %dB not a power of two; aborting.",
-              name, cache->line_size);
+      VG_(umsg)("error: %s line size of %dB not a power of two; aborting.\n",
+                name, cache->line_size);
       VG_(exit)(1);
    }
 
@@ -1196,22 +1196,22 @@ void check_cache(cache_t* cache, Char *name)
    // straddle three cache lines, which breaks a simulation assertion and is
    // stupid anyway.
    if (cache->line_size < MIN_LINE_SIZE) {
-      VG_UMSG("error: %s line size of %dB too small; aborting.", 
-              name, cache->line_size);
+      VG_(umsg)("error: %s line size of %dB too small; aborting.\n", 
+                name, cache->line_size);
       VG_(exit)(1);
    }
 
    /* Then check cache size > line size (causes seg faults if not). */
    if (cache->size <= cache->line_size) {
-      VG_UMSG("error: %s cache size of %dB <= line size of %dB; aborting.",
-              name, cache->size, cache->line_size);
+      VG_(umsg)("error: %s cache size of %dB <= line size of %dB; aborting.\n",
+                name, cache->size, cache->line_size);
       VG_(exit)(1);
    }
 
    /* Then check assoc <= (size / line size) (seg faults otherwise). */
    if (cache->assoc > (cache->size / cache->line_size)) {
-      VG_UMSG("warning: %s associativity > (size / line size); aborting.",
-              name);
+      VG_(umsg)("warning: %s associativity > (size / line size); aborting.\n",
+                name);
       VG_(exit)(1);
    }
 }
@@ -1243,13 +1243,13 @@ void configure_caches(cache_t* I1c, cache_t* D1c, cache_t* L2c)
    check_cache(L2c, "L2");
 
    if (VG_(clo_verbosity) >= 2) {
-      VG_UMSG("Cache configuration used:");
-      VG_UMSG("  I1: %dB, %d-way, %dB lines",
-              I1c->size, I1c->assoc, I1c->line_size);
-      VG_UMSG("  D1: %dB, %d-way, %dB lines",
-              D1c->size, D1c->assoc, D1c->line_size);
-      VG_UMSG("  L2: %dB, %d-way, %dB lines",
-              L2c->size, L2c->assoc, L2c->line_size);
+      VG_(umsg)("Cache configuration used:\n");
+      VG_(umsg)("  I1: %dB, %d-way, %dB lines\n",
+                I1c->size, I1c->assoc, I1c->line_size);
+      VG_(umsg)("  D1: %dB, %d-way, %dB lines\n",
+                D1c->size, D1c->assoc, D1c->line_size);
+      VG_(umsg)("  L2: %dB, %d-way, %dB lines\n",
+                L2c->size, L2c->assoc, L2c->line_size);
    }
 #undef CMD_LINE_DEFINED
 }
@@ -1286,9 +1286,9 @@ static void fprint_CC_table_and_calc_totals(void)
    if (sr_isError(sres)) {
       // If the file can't be opened for whatever reason (conflict
       // between multiple cachegrinded processes?), give up now.
-      VG_UMSG("error: can't open cache simulation output file '%s'",
-              cachegrind_out_file );
-      VG_UMSG("       ... so simulation results will be missing.");
+      VG_(umsg)("error: can't open cache simulation output file '%s'\n",
+                cachegrind_out_file );
+      VG_(umsg)("       ... so simulation results will be missing.\n");
       VG_(free)(cachegrind_out_file);
       return;
    } else {
@@ -1495,24 +1495,24 @@ static void cg_fini(Int exitcode)
    l3 = ULong_width(CG_MAX(Dw_total.a, Bi_total.b));
 
    /* Make format string, getting width right for numbers */
-   VG_(sprintf)(fmt, "%%s %%,%dllu", l1);
+   VG_(sprintf)(fmt, "%%s %%,%dllu\n", l1);
 
    /* Always print this */
-   VG_UMSG(fmt, "I   refs:     ", Ir_total.a);
+   VG_(umsg)(fmt, "I   refs:     ", Ir_total.a);
 
    /* If cache profiling is enabled, show D access numbers and all
       miss numbers */
    if (clo_cache_sim) {
-      VG_UMSG(fmt, "I1  misses:   ", Ir_total.m1);
-      VG_UMSG(fmt, "L2i misses:   ", Ir_total.m2);
+      VG_(umsg)(fmt, "I1  misses:   ", Ir_total.m1);
+      VG_(umsg)(fmt, "L2i misses:   ", Ir_total.m2);
 
       if (0 == Ir_total.a) Ir_total.a = 1;
       VG_(percentify)(Ir_total.m1, Ir_total.a, 2, l1+1, buf1);
-      VG_UMSG("I1  miss rate: %s", buf1);
+      VG_(umsg)("I1  miss rate: %s\n", buf1);
 
       VG_(percentify)(Ir_total.m2, Ir_total.a, 2, l1+1, buf1);
-      VG_UMSG("L2i miss rate: %s", buf1);
-      VG_UMSG("");
+      VG_(umsg)("L2i miss rate: %s\n", buf1);
+      VG_(umsg)("\n");
 
       /* D cache results.  Use the D_refs.rd and D_refs.wr values to
        * determine the width of columns 2 & 3. */
@@ -1521,14 +1521,15 @@ static void cg_fini(Int exitcode)
       D_total.m2 = Dr_total.m2 + Dw_total.m2;
 
       /* Make format string, getting width right for numbers */
-      VG_(sprintf)(fmt, "%%s %%,%dllu  (%%,%dllu rd   + %%,%dllu wr)", l1, l2, l3);
+      VG_(sprintf)(fmt, "%%s %%,%dllu  (%%,%dllu rd   + %%,%dllu wr)\n",
+                        l1, l2, l3);
 
-      VG_UMSG(fmt, "D   refs:     ", 
-                   D_total.a, Dr_total.a, Dw_total.a);
-      VG_UMSG(fmt, "D1  misses:   ",
-                   D_total.m1, Dr_total.m1, Dw_total.m1);
-      VG_UMSG(fmt, "L2d misses:   ",
-                   D_total.m2, Dr_total.m2, Dw_total.m2);
+      VG_(umsg)(fmt, "D   refs:     ", 
+                     D_total.a, Dr_total.a, Dw_total.a);
+      VG_(umsg)(fmt, "D1  misses:   ",
+                     D_total.m1, Dr_total.m1, Dw_total.m1);
+      VG_(umsg)(fmt, "L2d misses:   ",
+                     D_total.m2, Dr_total.m2, Dw_total.m2);
 
       if (0 == D_total.a)  D_total.a = 1;
       if (0 == Dr_total.a) Dr_total.a = 1;
@@ -1536,56 +1537,57 @@ static void cg_fini(Int exitcode)
       VG_(percentify)( D_total.m1,  D_total.a, 1, l1+1, buf1);
       VG_(percentify)(Dr_total.m1, Dr_total.a, 1, l2+1, buf2);
       VG_(percentify)(Dw_total.m1, Dw_total.a, 1, l3+1, buf3);
-      VG_UMSG("D1  miss rate: %s (%s     + %s  )", buf1, buf2,buf3);
+      VG_(umsg)("D1  miss rate: %s (%s     + %s  )\n", buf1, buf2,buf3);
 
       VG_(percentify)( D_total.m2,  D_total.a, 1, l1+1, buf1);
       VG_(percentify)(Dr_total.m2, Dr_total.a, 1, l2+1, buf2);
       VG_(percentify)(Dw_total.m2, Dw_total.a, 1, l3+1, buf3);
-      VG_UMSG("L2d miss rate: %s (%s     + %s  )", buf1, buf2,buf3);
-      VG_UMSG("");
+      VG_(umsg)("L2d miss rate: %s (%s     + %s  )\n", buf1, buf2,buf3);
+      VG_(umsg)("\n");
 
       /* L2 overall results */
 
       L2_total   = Dr_total.m1 + Dw_total.m1 + Ir_total.m1;
       L2_total_r = Dr_total.m1 + Ir_total.m1;
       L2_total_w = Dw_total.m1;
-      VG_UMSG(fmt, "L2 refs:      ",
-                   L2_total, L2_total_r, L2_total_w);
+      VG_(umsg)(fmt, "L2 refs:      ",
+                     L2_total, L2_total_r, L2_total_w);
 
       L2_total_m  = Dr_total.m2 + Dw_total.m2 + Ir_total.m2;
       L2_total_mr = Dr_total.m2 + Ir_total.m2;
       L2_total_mw = Dw_total.m2;
-      VG_UMSG(fmt, "L2 misses:    ",
-                   L2_total_m, L2_total_mr, L2_total_mw);
+      VG_(umsg)(fmt, "L2 misses:    ",
+                     L2_total_m, L2_total_mr, L2_total_mw);
 
       VG_(percentify)(L2_total_m,  (Ir_total.a + D_total.a),  1, l1+1, buf1);
       VG_(percentify)(L2_total_mr, (Ir_total.a + Dr_total.a), 1, l2+1, buf2);
       VG_(percentify)(L2_total_mw, Dw_total.a,                1, l3+1, buf3);
-      VG_UMSG("L2 miss rate:  %s (%s     + %s  )", buf1, buf2,buf3);
+      VG_(umsg)("L2 miss rate:  %s (%s     + %s  )\n", buf1, buf2,buf3);
    }
 
    /* If branch profiling is enabled, show branch overall results. */
    if (clo_branch_sim) {
       /* Make format string, getting width right for numbers */
-      VG_(sprintf)(fmt, "%%s %%,%dllu  (%%,%dllu cond + %%,%dllu ind)", l1, l2, l3);
+      VG_(sprintf)(fmt, "%%s %%,%dllu  (%%,%dllu cond + %%,%dllu ind)\n",
+                        l1, l2, l3);
 
       if (0 == Bc_total.b)  Bc_total.b = 1;
       if (0 == Bi_total.b)  Bi_total.b = 1;
       B_total.b  = Bc_total.b  + Bi_total.b;
       B_total.mp = Bc_total.mp + Bi_total.mp;
 
-      VG_UMSG("");
-      VG_UMSG(fmt, "Branches:     ",
-                   B_total.b, Bc_total.b, Bi_total.b);
+      VG_(umsg)("\n");
+      VG_(umsg)(fmt, "Branches:     ",
+                     B_total.b, Bc_total.b, Bi_total.b);
 
-      VG_UMSG(fmt, "Mispredicts:  ",
-                   B_total.mp, Bc_total.mp, Bi_total.mp);
+      VG_(umsg)(fmt, "Mispredicts:  ",
+                     B_total.mp, Bc_total.mp, Bi_total.mp);
 
       VG_(percentify)(B_total.mp,  B_total.b,  1, l1+1, buf1);
       VG_(percentify)(Bc_total.mp, Bc_total.b, 1, l2+1, buf2);
       VG_(percentify)(Bi_total.mp, Bi_total.b, 1, l3+1, buf3);
 
-      VG_UMSG("Mispred rate:  %s (%s     + %s   )", buf1, buf2,buf3);
+      VG_(umsg)("Mispred rate:  %s (%s     + %s   )\n", buf1, buf2,buf3);
    }
 
    // Various stats
@@ -1593,32 +1595,32 @@ static void cg_fini(Int exitcode)
       Int debug_lookups = full_debugs      + fn_debugs +
                           file_line_debugs + no_debugs;
 
-      VG_DMSG("");
-      VG_DMSG("cachegrind: distinct files: %d", distinct_files);
-      VG_DMSG("cachegrind: distinct fns:   %d", distinct_fns);
-      VG_DMSG("cachegrind: distinct lines: %d", distinct_lines);
-      VG_DMSG("cachegrind: distinct instrs:%d", distinct_instrs);
-      VG_DMSG("cachegrind: debug lookups      : %d", debug_lookups);
+      VG_(dmsg)("\n");
+      VG_(dmsg)("cachegrind: distinct files: %d\n", distinct_files);
+      VG_(dmsg)("cachegrind: distinct fns:   %d\n", distinct_fns);
+      VG_(dmsg)("cachegrind: distinct lines: %d\n", distinct_lines);
+      VG_(dmsg)("cachegrind: distinct instrs:%d\n", distinct_instrs);
+      VG_(dmsg)("cachegrind: debug lookups      : %d\n", debug_lookups);
       
       VG_(percentify)(full_debugs,      debug_lookups, 1, 6, buf1);
       VG_(percentify)(file_line_debugs, debug_lookups, 1, 6, buf2);
       VG_(percentify)(fn_debugs,        debug_lookups, 1, 6, buf3);
       VG_(percentify)(no_debugs,        debug_lookups, 1, 6, buf4);
-      VG_DMSG("cachegrind: with full      info:%s (%d)", 
-              buf1, full_debugs);
-      VG_DMSG("cachegrind: with file/line info:%s (%d)", 
-              buf2, file_line_debugs);
-      VG_DMSG("cachegrind: with fn name   info:%s (%d)", 
-              buf3, fn_debugs);
-      VG_DMSG("cachegrind: with zero      info:%s (%d)", 
-              buf4, no_debugs);
+      VG_(dmsg)("cachegrind: with full      info:%s (%d)\n", 
+                buf1, full_debugs);
+      VG_(dmsg)("cachegrind: with file/line info:%s (%d)\n", 
+                buf2, file_line_debugs);
+      VG_(dmsg)("cachegrind: with fn name   info:%s (%d)\n", 
+                buf3, fn_debugs);
+      VG_(dmsg)("cachegrind: with zero      info:%s (%d)\n", 
+                buf4, no_debugs);
 
-      VG_DMSG("cachegrind: string table size: %lu",
-              VG_(OSetGen_Size)(stringTable));
-      VG_DMSG("cachegrind: CC table size: %lu",
-              VG_(OSetGen_Size)(CC_table));
-      VG_DMSG("cachegrind: InstrInfo table size: %lu",
-              VG_(OSetGen_Size)(instrInfoTable));
+      VG_(dmsg)("cachegrind: string table size: %lu\n",
+                VG_(OSetGen_Size)(stringTable));
+      VG_(dmsg)("cachegrind: CC table size: %lu\n",
+                VG_(OSetGen_Size)(CC_table));
+      VG_(dmsg)("cachegrind: InstrInfo table size: %lu\n",
+                VG_(OSetGen_Size)(instrInfoTable));
    }
 }
 
@@ -1674,7 +1676,7 @@ static void parse_cache_opt ( cache_t* cache, Char* opt )
    return;
 
   overflow:
-   VG_UMSG("one of the cache parameters was too large and overflowed\n");
+   VG_(umsg)("one of the cache parameters was too large and overflowed\n");
   bad:
    // XXX: this omits the "--I1/D1/L2=" part from the message, but that's
    // not a big deal.
@@ -1753,8 +1755,9 @@ static void cg_post_clo_init(void)
 
    /* Can't disable both cache and branch profiling */
    if ((!clo_cache_sim) && (!clo_branch_sim)) {
-      VG_UMSG("ERROR: --cache-sim=no --branch-sim=no is not allowed.");
-      VG_UMSG("You must select cache profiling, or branch profiling, or both.");
+      VG_(umsg)("ERROR: --cache-sim=no --branch-sim=no is not allowed.\n");
+      VG_(umsg)("You must select cache profiling, "
+                "or branch profiling, or both.\n");
       VG_(exit)(2);
    }
 

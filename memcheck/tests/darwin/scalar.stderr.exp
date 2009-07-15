@@ -682,6 +682,33 @@ Syscall param lstat_extended(fsacl) points to unaddressable byte(s)
    ...
  Address 0x........ is not stack'd, malloc'd or (recently) free'd
 -----------------------------------------------------
+x2000119(280): __NR_fstat_extended 4s 3m
+-----------------------------------------------------
+
+Syscall param fstat_extended(fd) contains uninitialised byte(s)
+   ...
+
+Syscall param fstat_extended(buf) contains uninitialised byte(s)
+   ...
+
+Syscall param fstat_extended(fsacl) contains uninitialised byte(s)
+   ...
+
+Syscall param fstat_extended(fsacl_size) contains uninitialised byte(s)
+   ...
+
+Syscall param fstat_extended(buf) points to unaddressable byte(s)
+   ...
+ Address 0x........ is not stack'd, malloc'd or (recently) free'd
+
+Syscall param fstat_extended(fsacl_size) points to unaddressable byte(s)
+   ...
+ Address 0x........ is not stack'd, malloc'd or (recently) free'd
+
+Syscall param fstat_extended(fsacl) points to unaddressable byte(s)
+   ...
+ Address 0x........ is not stack'd, malloc'd or (recently) free'd
+-----------------------------------------------------
 (296):           old load_shared_file
 -----------------------------------------------------
 -----------------------------------------------------
@@ -813,6 +840,33 @@ Syscall param lstat64_extended(fsacl_size) points to unaddressable byte(s)
  Address 0x........ is not stack'd, malloc'd or (recently) free'd
 
 Syscall param lstat64_extended(fsacl) points to unaddressable byte(s)
+   ...
+ Address 0x........ is not stack'd, malloc'd or (recently) free'd
+-----------------------------------------------------
+x2000157(342):__NR_fstat64_extended 4s 3m
+-----------------------------------------------------
+
+Syscall param fstat64_extended(fd) contains uninitialised byte(s)
+   ...
+
+Syscall param fstat64_extended(buf) contains uninitialised byte(s)
+   ...
+
+Syscall param fstat64_extended(fsacl) contains uninitialised byte(s)
+   ...
+
+Syscall param fstat64_extended(fsacl_size) contains uninitialised byte(s)
+   ...
+
+Syscall param fstat64_extended(buf) points to unaddressable byte(s)
+   ...
+ Address 0x........ is not stack'd, malloc'd or (recently) free'd
+
+Syscall param fstat64_extended(fsacl_size) points to unaddressable byte(s)
+   ...
+ Address 0x........ is not stack'd, malloc'd or (recently) free'd
+
+Syscall param fstat64_extended(fsacl) points to unaddressable byte(s)
    ...
  Address 0x........ is not stack'd, malloc'd or (recently) free'd
 -----------------------------------------------------

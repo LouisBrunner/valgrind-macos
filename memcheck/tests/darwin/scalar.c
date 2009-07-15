@@ -498,9 +498,14 @@ int main(void)
       // Go again to get a complaint about where the 3rd arg points;  it
       // requires the 4th arg to point to a valid value.
       SY(__NR_lstat_extended, 0, 0, 0, &one); FAIL;
+
+      GO(__NR_fstat_extended, 280, "4s 3m");
+      SY(__NR_fstat_extended, x0, x0, x0, x0); FAIL;
+      // Go again to get a complaint about where the 3rd arg points;  it
+      // requires the 4th arg to point to a valid value.
+      SY(__NR_fstat_extended, 0, 0, 0, &one); FAIL;
    }
 
-   // __NR_fstat_extended 281
    // __NR_chmod_extended 282
    // __NR_fchmod_extended 283
    // __NR_access_extended 284
@@ -599,6 +604,12 @@ int main(void)
       // Go again to get a complaint about where the 3rd arg points;  it
       // requires the 4th arg to point to a valid value.
       SY(__NR_lstat64_extended, 0, 0, 0, &one); FAIL;
+
+      GO(__NR_fstat64_extended, 342, "4s 3m");
+      SY(__NR_fstat64_extended, x0, x0, x0, x0); FAIL;
+      // Go again to get a complaint about where the 3rd arg points;  it
+      // requires the 4th arg to point to a valid value.
+      SY(__NR_fstat64_extended, 0, 0, 0, &one); FAIL;
    }
 
    // __NR_fstat64_extended 343

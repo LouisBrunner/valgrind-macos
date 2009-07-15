@@ -2114,6 +2114,21 @@ POST(getfsstat64)
    }
 }
 
+PRE(mount)
+{
+   // Nb: depending on 'flags', the 'type' and 'data' args may be ignored.
+   // We are conservative and check everything, except the memory pointed to
+   // by 'data'.
+   *flags |= SfMayBlock;
+   PRINT("sys_mount( %#lx(%s), %#lx(%s), %#lx, %#lx )",
+         ARG1,(Char*)ARG1, ARG2,(Char*)ARG2, ARG3, ARG4);
+   PRE_REG_READ4(long, "mount",
+                 const char *, type, const char *, dir,
+                 int, flags, void *, data);
+   PRE_MEM_RASCIIZ( "mount(type)", ARG1);
+   PRE_MEM_RASCIIZ( "mount(dir)", ARG2);
+}
+
 
 static void scan_attrlist(ThreadId tid, struct vki_attrlist *attrList, 
                           void *attrBuf, SizeT attrBufSize, 
@@ -7261,7 +7276,7 @@ const SyscallTableEntry ML_(syscall_table)[] = {
    _____(VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(164)),   // ???
 // _____(__NR_quotactl), 
    _____(VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(166)),   // old exportfs
-// _____(__NR_mount), 
+   MACX_(__NR_mount,       mount), 
    _____(VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(168)),   // old ustat
    MACXY(__NR_csops,       csops),                 // code-signing ops
    _____(VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(170)),   // old table

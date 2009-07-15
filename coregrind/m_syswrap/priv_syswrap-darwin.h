@@ -221,7 +221,7 @@ DECL_TEMPLATE(darwin, gethostuuid);             // 142
 // 164
 // NYI quotactl 165
 // old exportfs
-// NYI mount 167
+DECL_TEMPLATE(darwin, mount);                   // 167
 // old ustat
 DECL_TEMPLATE(darwin, csops);                   // 169
 // old table

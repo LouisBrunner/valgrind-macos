@@ -424,6 +424,29 @@ Syscall param socketcall.getsockopt(optlen) points to unaddressable byte(s)
 (166):           old exportfs
 -----------------------------------------------------
 -----------------------------------------------------
+x20000a7(167):          __NR_mount 4s 2m
+-----------------------------------------------------
+
+Syscall param mount(type) contains uninitialised byte(s)
+   ...
+
+Syscall param mount(dir) contains uninitialised byte(s)
+   ...
+
+Syscall param mount(flags) contains uninitialised byte(s)
+   ...
+
+Syscall param mount(data) contains uninitialised byte(s)
+   ...
+
+Syscall param mount(type) points to unaddressable byte(s)
+   ...
+ Address 0x........ is not stack'd, malloc'd or (recently) free'd
+
+Syscall param mount(dir) points to unaddressable byte(s)
+   ...
+ Address 0x........ is not stack'd, malloc'd or (recently) free'd
+-----------------------------------------------------
 (168):           old ustat
 -----------------------------------------------------
 -----------------------------------------------------
@@ -610,6 +633,9 @@ Syscall param sem_post(sem) contains uninitialised byte(s)
 x2000113(275):       __NR_sem_init 3s 1m
 -----------------------------------------------------
 
+More than 100 errors detected.  Subsequent errors
+will still be recorded, but in less detail than before.
+
 Syscall param sem_init(sem) contains uninitialised byte(s)
    ...
 
@@ -635,9 +661,6 @@ Syscall param sem_destroy(sem) points to unaddressable byte(s)
 -----------------------------------------------------
 x2000117(279):  __NR_stat_extended 4s 4m
 -----------------------------------------------------
-
-More than 100 errors detected.  Subsequent errors
-will still be recorded, but in less detail than before.
 
 Syscall param stat_extended(file_name) contains uninitialised byte(s)
    ...

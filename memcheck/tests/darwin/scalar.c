@@ -315,7 +315,8 @@ int main(void)
 
    GO_UNIMP(166, "old exportfs");
 
-   // __NR_mount 167
+   GO(__NR_mount, 167, "4s 2m");
+   SY(__NR_mount, x0, x0, x0, x0); FAIL;
 
    GO_UNIMP(168, "old ustat");
 

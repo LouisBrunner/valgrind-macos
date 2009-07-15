@@ -1155,6 +1155,8 @@ PRE(sys_fallocate)
          ARG1, ARG2, (Long)ARG3, (Long)ARG4);
    PRE_REG_READ4(long, "fallocate",
                  int, fd, int, mode, vki_loff_t, offset, vki_loff_t, len);
+   if (!ML_(fd_allowed)(ARG1, "fallocate", tid, False))
+      SET_STATUS_Failure( VKI_EBADF );
 }
 
 /* ---------------------------------------------------------------------

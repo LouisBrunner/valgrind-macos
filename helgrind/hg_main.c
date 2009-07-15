@@ -4023,7 +4023,7 @@ static Bool hg_process_cmd_line_option ( Char* arg )
    
       if (6 != VG_(strlen)(tmp_str)) {
          VG_(message)(Vg_UserMsg, 
-                      "--hg-sanity-flags argument must have 6 digits");
+                      "--hg-sanity-flags argument must have 6 digits\n");
          return False;
       }
       for (j = 0; j < 6; j++) {
@@ -4031,7 +4031,7 @@ static Bool hg_process_cmd_line_option ( Char* arg )
          else if ('1' == tmp_str[j]) HG_(clo_sanity_flags) |= (1 << (6-1-j));
          else {
             VG_(message)(Vg_UserMsg, "--hg-sanity-flags argument can "
-                                     "only contain 0s and 1s");
+                                     "only contain 0s and 1s\n");
             return False;
          }
       }
@@ -4192,6 +4192,7 @@ static void hg_pre_clo_init ( void )
 
    VG_(needs_core_errors)         ();
    VG_(needs_tool_errors)         (HG_(eq_Error),
+                                   HG_(before_pp_Error),
                                    HG_(pp_Error),
                                    False,/*show TIDs for errors*/
                                    HG_(update_extra),
@@ -4200,6 +4201,8 @@ static void hg_pre_clo_init ( void )
                                    HG_(error_matches_suppression),
                                    HG_(get_error_name),
                                    HG_(print_extra_suppression_info));
+
+   VG_(needs_xml_output)          ();
 
    VG_(needs_command_line_options)(hg_process_cmd_line_option,
                                    hg_print_usage,

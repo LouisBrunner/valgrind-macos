@@ -58,7 +58,7 @@ Thread #x's call to pthread_mutex_timedlock failed
    at 0x........: pthread_mutex_timedlock (hg_intercepts.c:...)
    by 0x........: main (tc20_verifywrap.c:121)
 
-Thread #x unlocked an invalid lock at 0x........ 
+Thread #x unlocked an invalid lock at 0x........
    at 0x........: pthread_mutex_unlock (hg_intercepts.c:...)
    by 0x........: main (tc20_verifywrap.c:125)
 
@@ -97,7 +97,7 @@ Thread #x's call to pthread_cond_timedwait failed
 ---------------- pthread_rwlock_* ----------------
 
 
-Thread #x unlocked a not-locked lock at 0x........ 
+Thread #x unlocked a not-locked lock at 0x........
    at 0x........: pthread_rwlock_unlock (hg_intercepts.c:...)
    by 0x........: main (tc20_verifywrap.c:179)
   Lock at 0x........ was first observed
@@ -107,7 +107,7 @@ Thread #x unlocked a not-locked lock at 0x........
 (2) no error on next line
 (3)    ERROR on next line
 
-Thread #x unlocked a not-locked lock at 0x........ 
+Thread #x unlocked a not-locked lock at 0x........
    at 0x........: pthread_rwlock_unlock (hg_intercepts.c:...)
    by 0x........: main (tc20_verifywrap.c:196)
   Lock at 0x........ was first observed
@@ -119,7 +119,7 @@ Thread #x unlocked a not-locked lock at 0x........
 (7) no error on next line
 (8)    ERROR on next line
 
-Thread #x unlocked a not-locked lock at 0x........ 
+Thread #x unlocked a not-locked lock at 0x........
    at 0x........: pthread_rwlock_unlock (hg_intercepts.c:...)
    by 0x........: main (tc20_verifywrap.c:212)
   Lock at 0x........ was first observed

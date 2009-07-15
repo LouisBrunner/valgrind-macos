@@ -1,0 +1,318 @@
+<?xml version="1.0"?>
+
+<valgrindoutput>
+
+<protocolversion>4</protocolversion>
+<protocoltool>helgrind</protocoltool>
+
+<preamble>
+  <line>...</line>
+  <line>...</line>
+  <line>...</line>
+  <line>...</line>
+  <line>...</line>
+  <line>...</line>
+</preamble>
+
+<pid>...</pid>
+<ppid>...</ppid>
+<tool>helgrind</tool>
+
+<args>
+  <vargv>...</vargv>
+  <argv>
+    <exe>./tc06_two_races</exe>
+  </argv>
+</args>
+
+<status>
+  <state>RUNNING</state>
+  <time>...</time>
+</status>
+
+<announcethread>
+  <hthreadid>1</threadid>
+  <isrootthread></isrootthread>
+</announcethread>
+
+<announcethread>
+  <hthreadid>2</threadid>
+  <stack>
+    <frame>
+      <ip>0x........</ip>
+      <obj>...</obj>
+      <fn>clone</fn>
+    </frame>
+    <frame>
+      <ip>0x........</ip>
+      <obj>...</obj>
+      <fn>do_clone</fn>
+    </frame>
+    <frame>
+      <ip>0x........</ip>
+      <obj>...</obj>
+      <fn>pthread_create@@GLIBC_2.2.5</fn>
+    </frame>
+    <frame>
+      <ip>0x........</ip>
+      <obj>...</obj>
+      <fn>pthread_create@*</fn>
+      <dir>...</dir>
+      <file>hg_intercepts.c</file>
+      <line>...</line>
+    </frame>
+    <frame>
+      <ip>0x........</ip>
+      <obj>...</obj>
+      <fn>main</fn>
+      <dir>...</dir>
+      <file>tc06_two_races.c</file>
+      <line>...</line>
+    </frame>
+  </stack>
+</announcethread>
+
+<error>
+  <unique>0x........</unique>
+  <tid>...</tid>
+  <kind>Race</kind>
+  <xwhat>
+    <text>Possible data race during read of size 4 at 0x........ by thread #x</text>
+    <hthreadid>1</hthreadid>
+  </xwhat>
+  <stack>
+    <frame>
+      <ip>0x........</ip>
+      <obj>...</obj>
+      <fn>main</fn>
+      <dir>...</dir>
+      <file>tc06_two_races.c</file>
+      <line>...</line>
+    </frame>
+  </stack>
+  <xauxwhat>
+    <text>This conflicts with a previous write of size 4 by thread #x</text>
+    <hthreadid>2</hthreadid>
+  </xauxwhat>
+  <stack>
+    <frame>
+      <ip>0x........</ip>
+      <obj>...</obj>
+      <fn>child_fn</fn>
+      <dir>...</dir>
+      <file>tc06_two_races.c</file>
+      <line>...</line>
+    </frame>
+    <frame>
+      <ip>0x........</ip>
+      <obj>...</obj>
+      <fn>mythread_wrapper</fn>
+      <dir>...</dir>
+      <file>hg_intercepts.c</file>
+      <line>...</line>
+    </frame>
+    <frame>
+      <ip>0x........</ip>
+      <obj>...</obj>
+      <fn>start_thread</fn>
+    </frame>
+    <frame>
+      <ip>0x........</ip>
+      <obj>...</obj>
+      <fn>clone</fn>
+    </frame>
+  </stack>
+  <auxwhat>Location 0x........ is 0 bytes inside global var "unprot1"</auxwhat>
+  <xauxwhat><text>declared at tc06_two_races.c:9</text> <file>tc06_two_races.c</file> <line>...</line> </xauxwhat>
+</error>
+
+<error>
+  <unique>0x........</unique>
+  <tid>...</tid>
+  <kind>Race</kind>
+  <xwhat>
+    <text>Possible data race during write of size 4 at 0x........ by thread #x</text>
+    <hthreadid>1</hthreadid>
+  </xwhat>
+  <stack>
+    <frame>
+      <ip>0x........</ip>
+      <obj>...</obj>
+      <fn>main</fn>
+      <dir>...</dir>
+      <file>tc06_two_races.c</file>
+      <line>...</line>
+    </frame>
+  </stack>
+  <xauxwhat>
+    <text>This conflicts with a previous write of size 4 by thread #x</text>
+    <hthreadid>2</hthreadid>
+  </xauxwhat>
+  <stack>
+    <frame>
+      <ip>0x........</ip>
+      <obj>...</obj>
+      <fn>child_fn</fn>
+      <dir>...</dir>
+      <file>tc06_two_races.c</file>
+      <line>...</line>
+    </frame>
+    <frame>
+      <ip>0x........</ip>
+      <obj>...</obj>
+      <fn>mythread_wrapper</fn>
+      <dir>...</dir>
+      <file>hg_intercepts.c</file>
+      <line>...</line>
+    </frame>
+    <frame>
+      <ip>0x........</ip>
+      <obj>...</obj>
+      <fn>start_thread</fn>
+    </frame>
+    <frame>
+      <ip>0x........</ip>
+      <obj>...</obj>
+      <fn>clone</fn>
+    </frame>
+  </stack>
+  <auxwhat>Location 0x........ is 0 bytes inside global var "unprot1"</auxwhat>
+  <xauxwhat><text>declared at tc06_two_races.c:9</text> <file>tc06_two_races.c</file> <line>...</line> </xauxwhat>
+</error>
+
+<error>
+  <unique>0x........</unique>
+  <tid>...</tid>
+  <kind>Race</kind>
+  <xwhat>
+    <text>Possible data race during read of size 4 at 0x........ by thread #x</text>
+    <hthreadid>1</hthreadid>
+  </xwhat>
+  <stack>
+    <frame>
+      <ip>0x........</ip>
+      <obj>...</obj>
+      <fn>main</fn>
+      <dir>...</dir>
+      <file>tc06_two_races.c</file>
+      <line>...</line>
+    </frame>
+  </stack>
+  <xauxwhat>
+    <text>This conflicts with a previous write of size 4 by thread #x</text>
+    <hthreadid>2</hthreadid>
+  </xauxwhat>
+  <stack>
+    <frame>
+      <ip>0x........</ip>
+      <obj>...</obj>
+      <fn>child_fn</fn>
+      <dir>...</dir>
+      <file>tc06_two_races.c</file>
+      <line>...</line>
+    </frame>
+    <frame>
+      <ip>0x........</ip>
+      <obj>...</obj>
+      <fn>mythread_wrapper</fn>
+      <dir>...</dir>
+      <file>hg_intercepts.c</file>
+      <line>...</line>
+    </frame>
+    <frame>
+      <ip>0x........</ip>
+      <obj>...</obj>
+      <fn>start_thread</fn>
+    </frame>
+    <frame>
+      <ip>0x........</ip>
+      <obj>...</obj>
+      <fn>clone</fn>
+    </frame>
+  </stack>
+  <auxwhat>Location 0x........ is 0 bytes inside global var "unprot2"</auxwhat>
+  <xauxwhat><text>declared at tc06_two_races.c:9</text> <file>tc06_two_races.c</file> <line>...</line> </xauxwhat>
+</error>
+
+<error>
+  <unique>0x........</unique>
+  <tid>...</tid>
+  <kind>Race</kind>
+  <xwhat>
+    <text>Possible data race during write of size 4 at 0x........ by thread #x</text>
+    <hthreadid>1</hthreadid>
+  </xwhat>
+  <stack>
+    <frame>
+      <ip>0x........</ip>
+      <obj>...</obj>
+      <fn>main</fn>
+      <dir>...</dir>
+      <file>tc06_two_races.c</file>
+      <line>...</line>
+    </frame>
+  </stack>
+  <xauxwhat>
+    <text>This conflicts with a previous write of size 4 by thread #x</text>
+    <hthreadid>2</hthreadid>
+  </xauxwhat>
+  <stack>
+    <frame>
+      <ip>0x........</ip>
+      <obj>...</obj>
+      <fn>child_fn</fn>
+      <dir>...</dir>
+      <file>tc06_two_races.c</file>
+      <line>...</line>
+    </frame>
+    <frame>
+      <ip>0x........</ip>
+      <obj>...</obj>
+      <fn>mythread_wrapper</fn>
+      <dir>...</dir>
+      <file>hg_intercepts.c</file>
+      <line>...</line>
+    </frame>
+    <frame>
+      <ip>0x........</ip>
+      <obj>...</obj>
+      <fn>start_thread</fn>
+    </frame>
+    <frame>
+      <ip>0x........</ip>
+      <obj>...</obj>
+      <fn>clone</fn>
+    </frame>
+  </stack>
+  <auxwhat>Location 0x........ is 0 bytes inside global var "unprot2"</auxwhat>
+  <xauxwhat><text>declared at tc06_two_races.c:9</text> <file>tc06_two_races.c</file> <line>...</line> </xauxwhat>
+</error>
+
+<status>
+  <state>FINISHED</state>
+  <time>...</time>
+</status>
+
+<errorcounts>
+  <pair>
+    <count>...</count>
+    <unique>0x........</unique>
+  </pair>
+  <pair>
+    <count>...</count>
+    <unique>0x........</unique>
+  </pair>
+  <pair>
+    <count>...</count>
+    <unique>0x........</unique>
+  </pair>
+  <pair>
+    <count>...</count>
+    <unique>0x........</unique>
+  </pair>
+</errorcounts>
+
+<suppcounts>...</suppcounts>
+
+</valgrindoutput>
+

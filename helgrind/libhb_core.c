@@ -2289,7 +2289,7 @@ static void vts_tab__do_GC ( Bool show_stats )
       static UInt ctr = 0;
       tl_assert(nTab > 0);
       VG_(message)(Vg_DebugMsg,
-                  "libhb: VTS GC: #%u  old size %lu  live %lu  (%2llu%%)",
+                  "libhb: VTS GC: #%u  old size %lu  live %lu  (%2llu%%)\n",
                   ctr++, nTab, nLive, (100ULL * (ULong)nLive) / (ULong)nTab);
    }
 }
@@ -3484,7 +3484,7 @@ static void event_map_maybe_GC ( void )
       if (VG_(clo_verbosity) > 1) {
          VG_(message)(Vg_DebugMsg,
             "libhb: EvM GC: delete generations %lu and below, "
-            "retaining %lu entries",
+            "retaining %lu entries\n",
             maxGen, retained );
       }
 
@@ -3510,7 +3510,7 @@ static void event_map_maybe_GC ( void )
       if (VG_(clo_verbosity) > 1) {
          VG_(message)(Vg_DebugMsg,
             "libhb: EvM GC: randomly delete half the entries, "
-            "retaining %lu entries",
+            "retaining %lu entries\n",
             retained );
       }
 

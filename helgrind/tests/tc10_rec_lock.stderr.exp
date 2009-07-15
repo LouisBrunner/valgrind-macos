@@ -8,7 +8,7 @@ before unlock #3
 before unlock #4
 Thread #x is the program's root thread
 
-Thread #x unlocked a not-locked lock at 0x........ 
+Thread #x unlocked a not-locked lock at 0x........
    at 0x........: pthread_mutex_unlock (hg_intercepts.c:...)
    by 0x........: nearly_main (tc10_rec_lock.c:42)
    by 0x........: main (tc10_rec_lock.c:47)

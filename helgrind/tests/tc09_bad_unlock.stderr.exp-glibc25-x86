@@ -1,7 +1,7 @@
 
 Thread #x is the program's root thread
 
-Thread #x unlocked a not-locked lock at 0x........ 
+Thread #x unlocked a not-locked lock at 0x........
    at 0x........: pthread_mutex_unlock (hg_intercepts.c:...)
    by 0x........: nearly_main (tc09_bad_unlock.c:27)
    by 0x........: main (tc09_bad_unlock.c:49)
@@ -26,7 +26,7 @@ Thread #x unlocked lock at 0x........ currently held by thread #x
    by 0x........: nearly_main (tc09_bad_unlock.c:31)
    by 0x........: main (tc09_bad_unlock.c:49)
 
-Thread #x unlocked an invalid lock at 0x........ 
+Thread #x unlocked an invalid lock at 0x........
    at 0x........: pthread_mutex_unlock (hg_intercepts.c:...)
    by 0x........: nearly_main (tc09_bad_unlock.c:41)
    by 0x........: main (tc09_bad_unlock.c:49)
@@ -45,7 +45,7 @@ Thread #x deallocated location 0x........ containing a locked lock
    by 0x........: nearly_main (tc09_bad_unlock.c:31)
    by 0x........: main (tc09_bad_unlock.c:49)
 
-Thread #x unlocked a not-locked lock at 0x........ 
+Thread #x unlocked a not-locked lock at 0x........
    at 0x........: pthread_mutex_unlock (hg_intercepts.c:...)
    by 0x........: nearly_main (tc09_bad_unlock.c:27)
    by 0x........: main (tc09_bad_unlock.c:50)
@@ -70,7 +70,7 @@ Thread #x unlocked lock at 0x........ currently held by thread #x
    by 0x........: nearly_main (tc09_bad_unlock.c:31)
    by 0x........: main (tc09_bad_unlock.c:50)
 
-Thread #x unlocked an invalid lock at 0x........ 
+Thread #x unlocked an invalid lock at 0x........
    at 0x........: pthread_mutex_unlock (hg_intercepts.c:...)
    by 0x........: nearly_main (tc09_bad_unlock.c:41)
    by 0x........: main (tc09_bad_unlock.c:50)

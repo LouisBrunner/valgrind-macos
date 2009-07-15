@@ -1,7 +1,7 @@
 
 Thread #x is the program's root thread
 
-Thread #x unlocked a not-locked lock at 0x........ 
+Thread #x unlocked a not-locked lock at 0x........
    at 0x........: pthread_rwlock_unlock (hg_intercepts.c:...)
    by 0x........: main (tc12_rwl_trivial.c:29)
   Lock at 0x........ was first observed

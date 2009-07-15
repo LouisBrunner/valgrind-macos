@@ -217,7 +217,7 @@ Number of snapshots: 50
 // Used for printing things when clo_verbosity > 1.
 #define VERB(verb, format, args...) \
    if (VG_(clo_verbosity) > verb) { \
-      VG_DMSG("Massif: " format, ##args); \
+      VG_(dmsg)("Massif: " format, ##args); \
    }
 
 //------------------------------------------------------------//
@@ -974,16 +974,16 @@ static XPt* get_XCon( ThreadId tid, Bool is_custom_alloc )
    if (0 != xpt->n_children) {
       static Int n_moans = 0;
       if (n_moans < 3) {
-         VG_UMSG(
-            "Warning: Malformed stack trace detected.  In Massif's output,");
-         VG_UMSG(
-            "         the size of an entry's child entries may not sum up");
-         VG_UMSG(
-            "         to the entry's size as they normally do.");
+         VG_(umsg)(
+            "Warning: Malformed stack trace detected.  In Massif's output,\n");
+         VG_(umsg)(
+            "         the size of an entry's child entries may not sum up\n");
+         VG_(umsg)(
+            "         to the entry's size as they normally do.\n");
          n_moans++;
          if (3 == n_moans)
-            VG_UMSG(
-            "         (And Massif now won't warn about this again.)");
+            VG_(umsg)(
+            "         (And Massif now won't warn about this again.)\n");
       }
    }
    return xpt;
@@ -1134,7 +1134,7 @@ static void VERB_snapshot(Int verbosity, Char* prefix, Int i)
    default:
       tl_assert2(0, "VERB_snapshot: unknown snapshot kind: %d", snapshot->kind);
    }
-   VERB(verbosity, "%s S%s%3d (t:%lld, hp:%ld, ex:%ld, st:%ld)",
+   VERB(verbosity, "%s S%s%3d (t:%lld, hp:%ld, ex:%ld, st:%ld)\n",
       prefix, suffix, i,
       snapshot->time,
       snapshot->heap_szB,
@@ -1170,7 +1170,7 @@ static UInt cull_snapshots(void)
            j < clo_max_snapshots && !is_snapshot_in_use(&snapshots[j]); \
            j++) { }
 
-   VERB(2, "Culling...");
+   VERB(2, "Culling...\n");
 
    // First we remove enough snapshots by clearing them in-place.  Once
    // that's done, we can slide the remaining ones down.
@@ -1253,7 +1253,7 @@ static UInt cull_snapshots(void)
       if (is_uncullable_snapshot(&snapshots[i]) &&
           is_uncullable_snapshot(&snapshots[i-1]))
       {
-         VERB(2, "(Ignoring interval %d--%d when computing minimum)", i-1, i);
+         VERB(2, "(Ignoring interval %d--%d when computing minimum)\n", i-1, i);
       } else {
          Time timespan = snapshots[i].time - snapshots[i-1].time;
          tl_assert(timespan >= 0);
@@ -1267,12 +1267,12 @@ static UInt cull_snapshots(void)
 
    // Print remaining snapshots, if necessary.
    if (VG_(clo_verbosity) > 1) {
-      VERB(2, "Finished culling (%3d of %3d deleted)",
+      VERB(2, "Finished culling (%3d of %3d deleted)\n",
          n_deleted, clo_max_snapshots);
       for (i = 0; i < next_snapshot_i; i++) {
          VERB_snapshot(2, "  post-cull", i);
       }
-      VERB(2, "New time interval = %lld (between snapshots %d and %d)",
+      VERB(2, "New time interval = %lld (between snapshots %d and %d)\n",
          min_timespan, min_timespan_i-1, min_timespan_i);
    }
 
@@ -1436,7 +1436,7 @@ maybe_take_snapshot(SnapshotKind kind, Char* what)
 
    // Finish up verbosity and stats stuff.
    if (n_skipped_snapshots_since_last_snapshot > 0) {
-      VERB(2, "  (skipped %d snapshot%s)",
+      VERB(2, "  (skipped %d snapshot%s)\n",
          n_skipped_snapshots_since_last_snapshot,
          ( 1 == n_skipped_snapshots_since_last_snapshot ? "" : "s") );
    }
@@ -1546,7 +1546,7 @@ void* new_block ( ThreadId tid, void* p, SizeT req_szB, SizeT req_alignB,
    VG_(HT_add_node)(malloc_list, hc);
 
    if (clo_heap) {
-      VERB(3, "<<< new_mem_heap (%lu, %lu)", req_szB, slop_szB);
+      VERB(3, "<<< new_mem_heap (%lu, %lu)\n", req_szB, slop_szB);
 
       hc->where = get_XCon( tid, is_custom_alloc );
 
@@ -1567,10 +1567,10 @@ void* new_block ( ThreadId tid, void* p, SizeT req_szB, SizeT req_alignB,
          // Ignored allocation.
          n_ignored_heap_allocs++;
 
-         VERB(3, "(ignored)");
+         VERB(3, "(ignored)\n");
       }
 
-      VERB(3, ">>>");
+      VERB(3, ">>>\n");
    }
 
    return p;
@@ -1586,7 +1586,7 @@ void die_block ( void* p, Bool custom_free )
    }
 
    if (clo_heap) {
-      VERB(3, "<<< die_mem_heap");
+      VERB(3, "<<< die_mem_heap\n");
 
       if (hc->where) {
          // Update statistics.
@@ -1607,10 +1607,10 @@ void die_block ( void* p, Bool custom_free )
       } else {
          n_ignored_heap_frees++;
 
-         VERB(3, "(ignored)");
+         VERB(3, "(ignored)\n");
       }
 
-      VERB(3, ">>> (-%lu, -%lu)", hc->req_szB, hc->slop_szB);
+      VERB(3, ">>> (-%lu, -%lu)\n", hc->req_szB, hc->slop_szB);
    }
 
    // Actually free the chunk, and the heap block (if necessary)
@@ -1644,7 +1644,7 @@ void* renew_block ( ThreadId tid, void* p_old, SizeT new_req_szB )
    old_slop_szB = hc->slop_szB;
 
    if (clo_heap) {
-      VERB(3, "<<< renew_mem_heap (%lu)", new_req_szB);
+      VERB(3, "<<< renew_mem_heap (%lu)\n", new_req_szB);
 
       if (hc->where) {
          // Update statistics.
@@ -1724,10 +1724,10 @@ void* renew_block ( ThreadId tid, void* p_old, SizeT new_req_szB )
          maybe_take_snapshot(Normal, "realloc");
       } else {
 
-         VERB(3, "(ignored)");
+         VERB(3, "(ignored)\n");
       }
 
-      VERB(3, ">>> (%ld, %ld)",
+      VERB(3, ">>> (%ld, %ld)\n",
          new_req_szB - old_req_szB, new_slop_szB - old_slop_szB);
    }
 
@@ -1809,23 +1809,23 @@ static void update_stack_stats(SSizeT stack_szB_delta)
 static INLINE void new_mem_stack_2(SizeT len, Char* what)
 {
    if (have_started_executing_code) {
-      VERB(3, "<<< new_mem_stack (%ld)", len);
+      VERB(3, "<<< new_mem_stack (%ld)\n", len);
       n_stack_allocs++;
       update_stack_stats(len);
       maybe_take_snapshot(Normal, what);
-      VERB(3, ">>>");
+      VERB(3, ">>>\n");
    }
 }
 
 static INLINE void die_mem_stack_2(SizeT len, Char* what)
 {
    if (have_started_executing_code) {
-      VERB(3, "<<< die_mem_stack (%ld)", -len);
+      VERB(3, "<<< die_mem_stack (%ld)\n", -len);
       n_stack_frees++;
       maybe_take_snapshot(Peak,   "stkPEAK");
       update_stack_stats(-len);
       maybe_take_snapshot(Normal, what);
-      VERB(3, ">>>");
+      VERB(3, ">>>\n");
    }
 }
 
@@ -2172,8 +2172,8 @@ static void write_snapshots_to_file(void)
    if (sr_isError(sres)) {
       // If the file can't be opened for whatever reason (conflict
       // between multiple cachegrinded processes?), give up now.
-      VG_UMSG("error: can't open output file '%s'", massif_out_file );
-      VG_UMSG("       ... so profiling results will be missing.");
+      VG_(umsg)("error: can't open output file '%s'\n", massif_out_file );
+      VG_(umsg)("       ... so profiling results will be missing.\n");
       VG_(free)(massif_out_file);
       return;
    } else {
@@ -2227,28 +2227,28 @@ static void ms_fini(Int exit_status)
 
    // Stats
    tl_assert(n_xpts > 0);  // always have alloc_xpt
-   VERB(1, "heap allocs:           %u", n_heap_allocs);
-   VERB(1, "heap reallocs:         %u", n_heap_reallocs);
-   VERB(1, "heap frees:            %u", n_heap_frees);
-   VERB(1, "ignored heap allocs:   %u", n_ignored_heap_allocs);
-   VERB(1, "ignored heap frees:    %u", n_ignored_heap_frees);
-   VERB(1, "ignored heap reallocs: %u", n_ignored_heap_reallocs);
-   VERB(1, "stack allocs:          %u", n_stack_allocs);
-   VERB(1, "stack frees:           %u", n_stack_frees);
-   VERB(1, "XPts:                  %u", n_xpts);
-   VERB(1, "top-XPts:              %u (%d%%)",
+   VERB(1, "heap allocs:           %u\n", n_heap_allocs);
+   VERB(1, "heap reallocs:         %u\n", n_heap_reallocs);
+   VERB(1, "heap frees:            %u\n", n_heap_frees);
+   VERB(1, "ignored heap allocs:   %u\n", n_ignored_heap_allocs);
+   VERB(1, "ignored heap frees:    %u\n", n_ignored_heap_frees);
+   VERB(1, "ignored heap reallocs: %u\n", n_ignored_heap_reallocs);
+   VERB(1, "stack allocs:          %u\n", n_stack_allocs);
+   VERB(1, "stack frees:           %u\n", n_stack_frees);
+   VERB(1, "XPts:                  %u\n", n_xpts);
+   VERB(1, "top-XPts:              %u (%d%%)\n",
       alloc_xpt->n_children,
       ( n_xpts ? alloc_xpt->n_children * 100 / n_xpts : 0));
-   VERB(1, "XPt init expansions:   %u", n_xpt_init_expansions);
-   VERB(1, "XPt later expansions:  %u", n_xpt_later_expansions);
-   VERB(1, "SXPt allocs:           %u", n_sxpt_allocs);
-   VERB(1, "SXPt frees:            %u", n_sxpt_frees);
-   VERB(1, "skipped snapshots:     %u", n_skipped_snapshots);
-   VERB(1, "real snapshots:        %u", n_real_snapshots);
-   VERB(1, "detailed snapshots:    %u", n_detailed_snapshots);
-   VERB(1, "peak snapshots:        %u", n_peak_snapshots);
-   VERB(1, "cullings:              %u", n_cullings);
-   VERB(1, "XCon redos:            %u", n_XCon_redos);
+   VERB(1, "XPt init expansions:   %u\n", n_xpt_init_expansions);
+   VERB(1, "XPt later expansions:  %u\n", n_xpt_later_expansions);
+   VERB(1, "SXPt allocs:           %u\n", n_sxpt_allocs);
+   VERB(1, "SXPt frees:            %u\n", n_sxpt_frees);
+   VERB(1, "skipped snapshots:     %u\n", n_skipped_snapshots);
+   VERB(1, "real snapshots:        %u\n", n_real_snapshots);
+   VERB(1, "detailed snapshots:    %u\n", n_detailed_snapshots);
+   VERB(1, "peak snapshots:        %u\n", n_peak_snapshots);
+   VERB(1, "cullings:              %u\n", n_cullings);
+   VERB(1, "XCon redos:            %u\n", n_XCon_redos);
 }
 
 
@@ -2262,7 +2262,7 @@ static void ms_post_clo_init(void)
 
    // Check options.
    if (clo_threshold < 0 || clo_threshold > 100) {
-      VG_UMSG("--threshold must be between 0.0 and 100.0");
+      VG_(umsg)("--threshold must be between 0.0 and 100.0\n");
       VG_(err_bad_option)("--threshold");
    }
 
@@ -2274,19 +2274,19 @@ static void ms_post_clo_init(void)
 
    // Print alloc-fns and ignore-fns, if necessary.
    if (VG_(clo_verbosity) > 1) {
-      VERB(1, "alloc-fns:");
+      VERB(1, "alloc-fns:\n");
       for (i = 0; i < VG_(sizeXA)(alloc_fns); i++) {
          Char** fn_ptr = VG_(indexXA)(alloc_fns, i);
-         VERB(1, "  %s", *fn_ptr);
+         VERB(1, "  %s\n", *fn_ptr);
       }
 
-      VERB(1, "ignore-fns:");
+      VERB(1, "ignore-fns:\n");
       if (0 == VG_(sizeXA)(ignore_fns)) {
-         VERB(1, "  <empty>");
+         VERB(1, "  <empty>\n");
       }
       for (i = 0; i < VG_(sizeXA)(ignore_fns); i++) {
          Char** fn_ptr = VG_(indexXA)(ignore_fns, i);
-         VERB(1, "  %d: %s", i, *fn_ptr);
+         VERB(1, "  %d: %s\n", i, *fn_ptr);
       }
    }
 

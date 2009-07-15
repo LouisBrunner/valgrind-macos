@@ -636,12 +636,30 @@ of all threads, and (b) initialised, aligned, pointer-sized data words in
 accessible client memory, including stacks.</para>
 
 <para>There are two ways a block can be reached.  The first is with a
-"start-pointer", i.e. a pointer to the start of the block.  The second is
-with an "interior-pointer", i.e. a pointer to the middle of the block.  The
-pointer might have originally been a start-pointer and have been moved
-along, or it might be entirely unrelated, just a coincidence.  It's unclear
-whether such a pointer should be considered as genuinely pointing to the
-block.</para>
+"start-pointer", i.e. a pointer to the start of the block.  The second is with
+an "interior-pointer", i.e. a pointer to the middle of the block.  There are
+three possibilities we know of:</para>
+
+<itemizedlist>
+  <listitem>
+    <para>The pointer might have originally been a start-pointer and have been
+    moved along deliberately (or not deliberately) by the program.
+  </listitem>
+    
+  <listitem>
+    <para>It might be a random junk value in memory, entirely unrelated, just
+    a coincidence.</para>
+  </listitem>
+    
+  <listitem>
+    <para>It might be a pointer to an array of C++ objects (which possess
+    destructors) allocated with <computeroutput>new[]</computeroutput>.  In
+    this case, some compilers store a "magic cookie" containing the array
+    length at the start of the allocated block, and return a pointer to just
+    past that magic cookie, i.e. an interior-pointer.
+    See <ulink url="http://theory.uwinnipeg.ca/gnu/gcc/gxxint_14.html">this
+    page</ulink> for more information.</para>
+  </listitem>
 
 <para>With that in mind, consider the nine possible cases described by the
 following figure.</para>

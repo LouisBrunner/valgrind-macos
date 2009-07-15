@@ -75,7 +75,8 @@ int main(void)
 
    GO_UNIMP(17, "old break");
 
-   // __NR_getfsstat 18
+   GO(__NR_getfsstat, 18, "3s 1m");
+   SY(__NR_getfsstat, x0+1, x0+1, x0); SUCC; // This should fail...
 
    GO_UNIMP(19, "old lseek");
 
@@ -616,7 +617,10 @@ int main(void)
    // __NR_getdirentries64 344
    // __NR_statfs64 345
    // __NR_fstatfs64 346
-   // __NR_getfsstat64 347
+
+   GO(__NR_getfsstat64, 347, "3s 1m");
+   SY(__NR_getfsstat64, x0+1, x0+1, x0); SUCC; // This should fail...
+
    // __NR___pthread_chdir 348
    // __NR___pthread_fchdir 349
    // __NR_audit 350

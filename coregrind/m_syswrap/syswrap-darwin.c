@@ -2085,15 +2085,32 @@ PRE(getfsstat)
                  struct vki_statfs *, buf, int, bufsize, int, flags);
    if (ARG1) {
       // ARG2 is a BYTE SIZE
-      PRE_MEM_WRITE("getfsstat", ARG1, ARG2);
+      PRE_MEM_WRITE("getfsstat(buf)", ARG1, ARG2);
    }
 }
-
 POST(getfsstat)
 {
    if (ARG1) {
       // RES is a STRUCT COUNT
       POST_MEM_WRITE(ARG1, RES * sizeof(struct vki_statfs));
+   }
+}
+
+PRE(getfsstat64)
+{
+   PRINT("getfsstat64(%#lx, %ld, %ld)", ARG1, ARG2, ARG3);
+   PRE_REG_READ3(int, "getfsstat64",
+                 struct vki_statfs64 *, buf, int, bufsize, int, flags);
+   if (ARG1) {
+      // ARG2 is a BYTE SIZE
+      PRE_MEM_WRITE("getfsstat64(buf)", ARG1, ARG2);
+   }
+}
+POST(getfsstat64)
+{
+   if (ARG1) {
+      // RES is a STRUCT COUNT
+      POST_MEM_WRITE(ARG1, RES * sizeof(struct vki_statfs64));
    }
 }
 
@@ -3077,7 +3094,7 @@ PRE(csops)
                  vki_pid_t, pid, uint32_t, ops,
                  void *, useraddr, vki_size_t, usersize);
 
-   PRE_MEM_WRITE( "csops(addr)", ARG3, ARG4 );
+   PRE_MEM_WRITE( "csops(useraddr)", ARG3, ARG4 );
 
    // If the pid is ours, don't mark the program as KILL or HARD
    // Maybe we should keep track of this for later calls to STATUS
@@ -3090,7 +3107,6 @@ PRE(csops)
       }
    }
 }
-
 POST(csops)
 {
    POST_MEM_WRITE( ARG3, ARG4 );
@@ -7425,7 +7441,7 @@ const SyscallTableEntry ML_(syscall_table)[] = {
    MACXY(__NR_getdirentries64, getdirentries64), 
    MACXY(__NR_statfs64,    statfs64), 
    MACXY(__NR_fstatfs64,   fstatfs64), 
-// _____(__NR_getfsstat64), 
+   MACXY(__NR_getfsstat64, getfsstat64), 
 // _____(__NR___pthread_chdir), 
 // _____(__NR___pthread_fchdir), 
 // _____(__NR_audit), 

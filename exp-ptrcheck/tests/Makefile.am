@@ -23,6 +23,7 @@ EXTRA_DIST = \
 	hackedbz2.stderr.exp-glibc28-amd64 \
 	hp_bounds.vgtest hp_bounds.stderr.exp \
 	hp_dangle.vgtest hp_dangle.stderr.exp \
+	hsg.vgtest hsg.stdout.exp hsg.stderr.exp \
 	idiv.vgtest-disabled idiv.stderr.exp \
 	imul.vgtest-disabled imul.stderr.exp \
 	justify.vgtest justify.stderr.exp \
@@ -61,7 +62,7 @@ EXTRA_DIST = \
 check_PROGRAMS = \
 	add and arith bad_percentify base cmp fp \
 	globalerr hackedbz2 \
-	hp_bounds hp_dangle idiv imul \
+	hp_bounds hp_dangle hsg idiv imul \
 	justify mm not neg or partial \
 	preen_invars preen_invars_so.so \
 	pth_create pth_specific realloc \

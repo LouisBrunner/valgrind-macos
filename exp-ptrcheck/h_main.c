@@ -1023,7 +1023,8 @@ void set_mem ( Addr a, SizeT len, Seg* seg )
 
    if (len > 100 * 1000 * 1000)
       VG_(message)(Vg_UserMsg,
-                   "Warning: set address range state: large range %lu", len);
+                   "Warning: set address range state: large range %lu\n",
+                   len);
 
    a   = VG_ROUNDDN(a,       sizeof(UWord));
    end = VG_ROUNDUP(a + len, sizeof(UWord));
@@ -2061,7 +2062,7 @@ void h_post_reg_write_clientcall(ThreadId tid, PtrdiffT guest_state_offset,
    else if (f == (Addr)h_replace_free
             || f == (Addr)h_replace___builtin_delete
             || f == (Addr)h_replace___builtin_vec_delete
-   //            || f == (Addr)VG_(cli_block_size)
+         // || f == (Addr)VG_(cli_block_size)
             || f == (Addr)VG_(message))
    {
       // Probably best to set the (non-existent!) return value to
@@ -5308,25 +5309,25 @@ void h_fini ( Int exitcode )
 {
    if (VG_(clo_verbosity) >= 2) {
       VG_(message)(Vg_DebugMsg,
-                   "  h_:  %'10llu client allocs, %'10llu client frees", 
+                   "  h_:  %'10llu client allocs, %'10llu client frees\n", 
                    stats__client_mallocs, stats__client_frees);
       VG_(message)(Vg_DebugMsg,
-                   "  h_:  %'10llu Segs allocd,   %'10llu Segs recycled", 
+                   "  h_:  %'10llu Segs allocd,   %'10llu Segs recycled\n", 
                    stats__segs_allocd, stats__segs_recycled);
    }
 
 #if 0
    if (h_clo_lossage_check) {
-      VG_(message)(Vg_UserMsg, "");
-      VG_(message)(Vg_UserMsg, "%12lld total memory references",
+      VG_(message)(Vg_UserMsg, "\n");
+      VG_(message)(Vg_UserMsg, "%12lld total memory references\n",
                                stats__tot_mem_refs);
-      VG_(message)(Vg_UserMsg, "%12lld   of which are in a known segment",
+      VG_(message)(Vg_UserMsg, "%12lld   of which are in a known segment\n",
                                stats__refs_in_a_seg);
-      VG_(message)(Vg_UserMsg, "%12lld   of which are 'lost' w.r.t the seg",
+      VG_(message)(Vg_UserMsg, "%12lld   of which are 'lost' w.r.t the seg\n",
                                stats__refs_lost_seg);
-      VG_(message)(Vg_UserMsg, "");
+      VG_(message)(Vg_UserMsg, "\n");
       show_lossage();
-      VG_(message)(Vg_UserMsg, "");
+      VG_(message)(Vg_UserMsg, "\n");
    } else {
       tl_assert( 0 == VG_(OSetGen_Size)(lossage) );
    }

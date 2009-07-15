@@ -223,16 +223,16 @@ static Word StackBlocks__cmp ( XArray* fb1s, XArray* fb2s )
 static void pp_StackBlocks ( XArray* sbs )
 {
    Word i, n = VG_(sizeXA)( sbs );
-   VG_(message)(Vg_DebugMsg, "<<< STACKBLOCKS" );
+   VG_(message)(Vg_DebugMsg, "<<< STACKBLOCKS\n" );
    for (i = 0; i < n; i++) {
       StackBlock* sb = (StackBlock*)VG_(indexXA)( sbs, i );
       VG_(message)(Vg_DebugMsg,
-         "   StackBlock{ off %ld szB %lu spRel:%c isVec:%c \"%s\" }",
+         "   StackBlock{ off %ld szB %lu spRel:%c isVec:%c \"%s\" }\n",
          sb->base, sb->szB, sb->spRel ? 'Y' : 'N',
          sb->isVec ? 'Y' : 'N', &sb->name[0] 
       );
    }
-   VG_(message)(Vg_DebugMsg, ">>> STACKBLOCKS" );
+   VG_(message)(Vg_DebugMsg, ">>> STACKBLOCKS\n" );
 }
 
 
@@ -345,12 +345,12 @@ static XArray* /* of StackBlock */
           if (moans > 0 && !VG_(clo_xml)) {
              moans--;
              VG_(message)(Vg_UserMsg, "Warning: bogus DWARF3 info: "
-                                      "overlapping stack blocks");
+                                      "overlapping stack blocks\n");
              if (VG_(clo_verbosity) >= 2)
                 pp_StackBlocks(orig);
              if (moans == 0)
                 VG_(message)(Vg_UserMsg, "Further instances of this "
-                                         "message will not be shown" );
+                                         "message will not be shown\n" );
           }
           VG_(dropTailXA)( orig, VG_(sizeXA)( orig ));
           break;
@@ -740,7 +740,7 @@ static void add_block_to_GlobalTree (
    if (already_present && moans > 0 && !VG_(clo_xml)) {
       moans--;
       VG_(message)(Vg_UserMsg, "Warning: bogus DWARF3 info: "
-                               "overlapping global blocks");
+                               "overlapping global blocks\n");
       if (VG_(clo_verbosity) >= 2) {
          GlobalTree__pp( gitree,
                          "add_block_to_GlobalTree: non-exact duplicate" );
@@ -750,7 +750,7 @@ static void add_block_to_GlobalTree (
       }
       if (moans == 0)
          VG_(message)(Vg_UserMsg, "Further instances of this "
-                                  "message will not be shown" );
+                                  "message will not be shown\n" );
    }
    /* tl_assert(!already_present); */
 }
@@ -1830,7 +1830,7 @@ void shadowStack_new_frame ( ThreadId tid,
          if (0 && (sb || gb))
             VG_(message)(Vg_DebugMsg, 
                          "exp-sgcheck: new max tree sizes: "
-                         "StackTree %ld, GlobalTree %ld",
+                         "StackTree %ld, GlobalTree %ld\n",
                          stats__max_sitree_size, stats__max_gitree_size );
       }
    } else {
@@ -2454,32 +2454,32 @@ void sg_fini(Int exitcode)
 {
    if (VG_(clo_verbosity) >= 2) {
       VG_(message)(Vg_DebugMsg,
-         " sg_:  %'llu total accesses, of which:", stats__total_accesses);
+         " sg_:  %'llu total accesses, of which:\n", stats__total_accesses);
       VG_(message)(Vg_DebugMsg,
-         " sg_:     stack0: %'12llu classify",
+         " sg_:     stack0: %'12llu classify\n",
          stats__classify_Stack0);
       VG_(message)(Vg_DebugMsg,
-         " sg_:     stackN: %'12llu classify",
+         " sg_:     stackN: %'12llu classify\n",
          stats__classify_StackN);
       VG_(message)(Vg_DebugMsg,
-         " sg_:     global: %'12llu classify",
+         " sg_:     global: %'12llu classify\n",
          stats__classify_Global);
       VG_(message)(Vg_DebugMsg,
-         " sg_:    unknown: %'12llu classify",
+         " sg_:    unknown: %'12llu classify\n",
          stats__classify_Unknown);
       VG_(message)(Vg_DebugMsg,
-         " sg_:  %'llu Invars preened, of which %'llu changed",
+         " sg_:  %'llu Invars preened, of which %'llu changed\n",
          stats__Invars_preened, stats__Invars_changed);
       VG_(message)(Vg_DebugMsg,
-         " sg_:   t_i_b_MT: %'12llu", stats__t_i_b_empty);
+         " sg_:   t_i_b_MT: %'12llu\n", stats__t_i_b_empty);
       VG_(message)(Vg_DebugMsg, 
-         " sg_:     qcache: %'llu searches, %'llu probes, %'llu misses",
+         " sg_:     qcache: %'llu searches, %'llu probes, %'llu misses\n",
          stats__qcache_queries, stats__qcache_probes, stats__qcache_misses);
       VG_(message)(Vg_DebugMsg, 
-         " sg_:  htab-fast: %'llu hits",
+         " sg_:  htab-fast: %'llu hits\n",
          stats__htab_fast);
       VG_(message)(Vg_DebugMsg, 
-         " sg_:  htab-slow: %'llu searches, %'llu probes, %'llu resizes",
+         " sg_:  htab-slow: %'llu searches, %'llu probes, %'llu resizes\n",
          stats__htab_searches, stats__htab_probes, stats__htab_resizes);
    }
 }

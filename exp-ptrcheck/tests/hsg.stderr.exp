@@ -1,0 +1,231 @@
+<?xml version="1.0"?>
+
+<valgrindoutput>
+
+<protocolversion>4</protocolversion>
+<protocoltool>exp-ptrcheck</protocoltool>
+
+<preamble>
+  <line>...</line>
+  <line>...</line>
+  <line>...</line>
+  <line>...</line>
+  <line>...</line>
+  <line>...</line>
+  <line>...</line>
+</preamble>
+
+<pid>...</pid>
+<ppid>...</ppid>
+<tool>exp-ptrcheck</tool>
+
+<args>
+  <vargv>...</vargv>
+  <argv>
+    <exe>./hsg</exe>
+  </argv>
+</args>
+
+<status>
+  <state>RUNNING</state>
+  <time>...</time>
+</status>
+
+<error>
+  <unique>0x........</unique>
+  <tid>...</tid>
+  <kind>SorG</kind>
+  <what>Invalid read of size 2</what>
+  <stack>
+    <frame>
+      <ip>0x........</ip>
+      <obj>...</obj>
+      <fn>addup_wrongly</fn>
+      <dir>...</dir>
+      <file>hsg.c</file>
+      <line>...</line>
+    </frame>
+    <frame>
+      <ip>0x........</ip>
+      <obj>...</obj>
+      <fn>main</fn>
+      <dir>...</dir>
+      <file>hsg.c</file>
+      <line>...</line>
+    </frame>
+  </stack>
+  <auxwhat>Address 0x........ expected vs actual:</auxwhat>
+  <auxwhat>Expected: global array "ga" in object with soname "NONE"</auxwhat>
+  <auxwhat>Actual:   unknown</auxwhat>
+</error>
+
+<error>
+  <unique>0x........</unique>
+  <tid>...</tid>
+  <kind>SorG</kind>
+  <what>Invalid read of size 2</what>
+  <stack>
+    <frame>
+      <ip>0x........</ip>
+      <obj>...</obj>
+      <fn>addup_wrongly</fn>
+      <dir>...</dir>
+      <file>hsg.c</file>
+      <line>...</line>
+    </frame>
+    <frame>
+      <ip>0x........</ip>
+      <obj>...</obj>
+      <fn>do_other_stuff</fn>
+      <dir>...</dir>
+      <file>hsg.c</file>
+      <line>...</line>
+    </frame>
+    <frame>
+      <ip>0x........</ip>
+      <obj>...</obj>
+      <fn>main</fn>
+      <dir>...</dir>
+      <file>hsg.c</file>
+      <line>...</line>
+    </frame>
+  </stack>
+  <auxwhat>Address 0x........ expected vs actual:</auxwhat>
+  <auxwhat>Expected: stack array "la" in frame 1 back from here</auxwhat>
+  <auxwhat>Actual:   unknown</auxwhat>
+</error>
+
+<error>
+  <unique>0x........</unique>
+  <tid>...</tid>
+  <kind>Heap</kind>
+  <what>Invalid read of size 1</what>
+  <stack>
+    <frame>
+      <ip>0x........</ip>
+      <obj>...</obj>
+      <fn>do_stupid_malloc_stuff</fn>
+      <dir>...</dir>
+      <file>hsg.c</file>
+      <line>...</line>
+    </frame>
+    <frame>
+      <ip>0x........</ip>
+      <obj>...</obj>
+      <fn>main</fn>
+      <dir>...</dir>
+      <file>hsg.c</file>
+      <line>...</line>
+    </frame>
+  </stack>
+  <auxwhat>Address 0x........ is 1 bytes before the accessing pointer's</auxwhat>
+  <auxwhat>legitimate range, a block of size 100 alloc'd</auxwhat>
+  <stack>
+    <frame>
+      <ip>0x........</ip>
+      <obj>...</obj>
+      <fn>malloc</fn>
+      <dir>...</dir>
+      <file>vg_replace_malloc.c</file>
+      <line>...</line>
+    </frame>
+    <frame>
+      <ip>0x........</ip>
+      <obj>...</obj>
+      <fn>do_stupid_malloc_stuff</fn>
+      <dir>...</dir>
+      <file>hsg.c</file>
+      <line>...</line>
+    </frame>
+    <frame>
+      <ip>0x........</ip>
+      <obj>...</obj>
+      <fn>main</fn>
+      <dir>...</dir>
+      <file>hsg.c</file>
+      <line>...</line>
+    </frame>
+  </stack>
+</error>
+
+<error>
+  <unique>0x........</unique>
+  <tid>...</tid>
+  <kind>Heap</kind>
+  <what>Invalid read of size 1</what>
+  <stack>
+    <frame>
+      <ip>0x........</ip>
+      <obj>...</obj>
+      <fn>do_stupid_malloc_stuff</fn>
+      <dir>...</dir>
+      <file>hsg.c</file>
+      <line>...</line>
+    </frame>
+    <frame>
+      <ip>0x........</ip>
+      <obj>...</obj>
+      <fn>main</fn>
+      <dir>...</dir>
+      <file>hsg.c</file>
+      <line>...</line>
+    </frame>
+  </stack>
+  <auxwhat>Address 0x........ is 50 bytes inside the accessing pointer's</auxwhat>
+  <auxwhat>once-legitimate range, a block of size 100 free'd</auxwhat>
+  <stack>
+    <frame>
+      <ip>0x........</ip>
+      <obj>...</obj>
+      <fn>free</fn>
+      <dir>...</dir>
+      <file>vg_replace_malloc.c</file>
+      <line>...</line>
+    </frame>
+    <frame>
+      <ip>0x........</ip>
+      <obj>...</obj>
+      <fn>do_stupid_malloc_stuff</fn>
+      <dir>...</dir>
+      <file>hsg.c</file>
+      <line>...</line>
+    </frame>
+    <frame>
+      <ip>0x........</ip>
+      <obj>...</obj>
+      <fn>main</fn>
+      <dir>...</dir>
+      <file>hsg.c</file>
+      <line>...</line>
+    </frame>
+  </stack>
+</error>
+
+<status>
+  <state>FINISHED</state>
+  <time>...</time>
+</status>
+
+<errorcounts>
+  <pair>
+    <count>...</count>
+    <unique>0x........</unique>
+  </pair>
+  <pair>
+    <count>...</count>
+    <unique>0x........</unique>
+  </pair>
+  <pair>
+    <count>...</count>
+    <unique>0x........</unique>
+  </pair>
+  <pair>
+    <count>...</count>
+    <unique>0x........</unique>
+  </pair>
+</errorcounts>
+
+<suppcounts>...</suppcounts>
+
+</valgrindoutput>
+

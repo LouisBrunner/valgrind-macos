@@ -8,12 +8,12 @@
 
 int main(void)
 {
-   int   i = 11;
+   int   i = 11; int fd = open("/dev/null", O_WRONLY);
    char* buf = malloc(sizeof(char) * 6);
    char  c = buf[-1];                  // LoadStoreErr
    char* x = buf + (long)buf;          // ArithErr
    char* y = (char*)((long)buf * i);   // AsmErr
-   write(-1, buf+3, 5);                // SysParamErr
-
+   write(fd, buf+3, 5);                // SysParamErr
+   close(fd);
    return x-y+c;
 }

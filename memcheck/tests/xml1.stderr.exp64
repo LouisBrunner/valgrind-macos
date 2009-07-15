@@ -2,7 +2,8 @@
 
 <valgrindoutput>
 
-<protocolversion>3</protocolversion>
+<protocolversion>4</protocolversion>
+<protocoltool>memcheck</protocoltool>
 
 <preamble>
   <line>...</line>
@@ -341,47 +342,20 @@
   <what>Syscall param exit(status) contains uninitialised byte(s)</what>
 </error>
 
-<errorcounts>
-  <pair>
-    <count>...</count>
-    <unique>0x........</unique>
-  </pair>
-  <pair>
-    <count>...</count>
-    <unique>0x........</unique>
-  </pair>
-  <pair>
-    <count>...</count>
-    <unique>0x........</unique>
-  </pair>
-  <pair>
-    <count>...</count>
-    <unique>0x........</unique>
-  </pair>
-  <pair>
-    <count>...</count>
-    <unique>0x........</unique>
-  </pair>
-  <pair>
-    <count>...</count>
-    <unique>0x........</unique>
-  </pair>
-</errorcounts>
-
 <status>
   <state>FINISHED</state>
   <time>...</time>
 </status>
 
-<suppcounts>...</suppcounts>
-
 <error>
   <unique>0x........</unique>
   <tid>...</tid>
   <kind>Leak_DefinitelyLost</kind>
-  <what>396 bytes in 1 blocks are definitely lost in loss record ... of ...</what>
-  <leakedbytes>396</leakedbytes>
-  <leakedblocks>1</leakedblocks>
+  <xwhat>
+    <text>396 bytes in 1 blocks are definitely lost in loss record ... of ...</text>
+    <leakedbytes>396</leakedbytes>
+    <leakedblocks>1</leakedblocks>
+  </xwhat>
   <stack>
     <frame>
       <ip>0x........</ip>
@@ -425,6 +399,35 @@
     </frame>
   </stack>
 </error>
+
+<errorcounts>
+  <pair>
+    <count>...</count>
+    <unique>0x........</unique>
+  </pair>
+  <pair>
+    <count>...</count>
+    <unique>0x........</unique>
+  </pair>
+  <pair>
+    <count>...</count>
+    <unique>0x........</unique>
+  </pair>
+  <pair>
+    <count>...</count>
+    <unique>0x........</unique>
+  </pair>
+  <pair>
+    <count>...</count>
+    <unique>0x........</unique>
+  </pair>
+  <pair>
+    <count>...</count>
+    <unique>0x........</unique>
+  </pair>
+</errorcounts>
+
+<suppcounts>...</suppcounts>
 
 </valgrindoutput>
 

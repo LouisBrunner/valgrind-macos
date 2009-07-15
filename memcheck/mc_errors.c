@@ -41,6 +41,7 @@
 #include "pub_tool_tooliface.h"
 #include "pub_tool_threadstate.h"
 #include "pub_tool_debuginfo.h"     // VG_(get_dataname_and_offset)
+#include "pub_tool_xarray.h"
 
 #include "mc_include.h"
 
@@ -109,11 +110,10 @@ struct _AddrInfo {
          PtrdiffT offset;
       } DataSym;
 
-      // Is described by Dwarf debug info.  Arbitrary strings.  Must
-      // be the same length.
+      // Is described by Dwarf debug info.  XArray*s of HChar.
       struct {
-         Char descr1[96];
-         Char descr2[96];
+         XArray* /* of HChar */ descr1;
+         XArray* /* of HChar */ descr2;
       } Variable;
 
       // Could only narrow it down to be the PLT/GOT/etc of a given
@@ -258,6 +258,41 @@ struct _MC_Error {
 /*--- Printing errors                                      ---*/
 /*------------------------------------------------------------*/
 
+/* This is the "this error is due to be printed shortly; so have a
+   look at it any print any preamble you want" function.  Which, in
+   Memcheck, we don't use.  Hence a no-op.
+*/
+void MC_(before_pp_Error) ( Error* err ) {
+}
+
+/* Do a printf-style operation on either the XML or normal output
+   channel, depending on the setting of VG_(clo_xml).
+*/
+static void emit_WRK ( HChar* format, va_list vargs )
+{
+   if (VG_(clo_xml)) {
+      VG_(vprintf_xml)(format, vargs);
+   } else {
+      VG_(vmessage)(Vg_UserMsg, format, vargs);
+   }
+}
+static void emit ( HChar* format, ... ) PRINTF_CHECK(1, 2);
+static void emit ( HChar* format, ... )
+{
+   va_list vargs;
+   va_start(vargs, format);
+   emit_WRK(format, vargs);
+   va_end(vargs);
+}
+static void emiN ( HChar* format, ... ) /* NO FORMAT CHECK */
+{
+   va_list vargs;
+   va_start(vargs, format);
+   emit_WRK(format, vargs);
+   va_end(vargs);
+}
+
+
 static void mc_pp_AddrInfo ( Addr a, AddrInfo* ai, Bool maybe_gcc )
 {
    HChar* xpre  = VG_(clo_xml) ? "  <auxwhat>" : " ";
@@ -266,23 +301,19 @@ static void mc_pp_AddrInfo ( Addr a, AddrInfo* ai, Bool maybe_gcc )
    switch (ai->tag) {
       case Addr_Unknown:
          if (maybe_gcc) {
-            VG_(message)(Vg_UserMsg, 
-               "%sAddress 0x%llx is just below the stack ptr.  "
-               "To suppress, use: --workaround-gcc296-bugs=yes%s", 
-               xpre, (ULong)a, xpost
-            );
+            emit( "%sAddress 0x%llx is just below the stack ptr.  "
+                  "To suppress, use: --workaround-gcc296-bugs=yes%s\n",
+                  xpre, (ULong)a, xpost );
 	 } else {
-            VG_(message)(Vg_UserMsg, 
-               "%sAddress 0x%llx "
-               "is not stack'd, malloc'd or (recently) free'd%s",
-               xpre, (ULong)a, xpost);
+            emit( "%sAddress 0x%llx "
+                  "is not stack'd, malloc'd or (recently) free'd%s\n",
+                  xpre, (ULong)a, xpost );
          }
          break;
 
       case Addr_Stack: 
-         VG_(message)(Vg_UserMsg, 
-                      "%sAddress 0x%llx is on thread %d's stack%s", 
-                      xpre, (ULong)a, ai->Addr.Stack.tid, xpost);
+         emit( "%sAddress 0x%llx is on thread %d's stack%s\n", 
+               xpre, (ULong)a, ai->Addr.Stack.tid, xpost );
          break;
 
       case Addr_Block: {
@@ -301,47 +332,51 @@ static void mc_pp_AddrInfo ( Addr a, AddrInfo* ai, Bool maybe_gcc )
             delta    = rwoffset;
             relative = "inside";
          }
-         VG_(message)(Vg_UserMsg, 
-            "%sAddress 0x%lx is %'lu bytes %s a %s of size %'lu %s%s",
+         emit(
+            "%sAddress 0x%lx is %'lu bytes %s a %s of size %'lu %s%s\n",
             xpre,
             a, delta, relative, ai->Addr.Block.block_desc,
             block_szB,
             ai->Addr.Block.block_kind==Block_Mallocd ? "alloc'd" 
             : ai->Addr.Block.block_kind==Block_Freed ? "free'd" 
                                                      : "client-defined",
-            xpost);
+            xpost
+         );
          VG_(pp_ExeContext)(ai->Addr.Block.lastchange);
          break;
       }
 
       case Addr_DataSym:
-         VG_(message_no_f_c)(Vg_UserMsg,
-                             "%sAddress 0x%llx is %llu bytes "
-                             "inside data symbol \"%t\"%s",
-                             xpre,
-                             (ULong)a,
-                             (ULong)ai->Addr.DataSym.offset,
-                             ai->Addr.DataSym.name,
-                             xpost);
+         emiN( "%sAddress 0x%llx is %llu bytes "
+               "inside data symbol \"%t\"%s\n",
+               xpre,
+               (ULong)a,
+               (ULong)ai->Addr.DataSym.offset,
+               ai->Addr.DataSym.name,
+               xpost );
          break;
 
       case Addr_Variable:
-         if (ai->Addr.Variable.descr1[0] != '\0')
-            VG_(message)(Vg_UserMsg, "%s%s%s",
-                         xpre, ai->Addr.Variable.descr1, xpost);
-         if (ai->Addr.Variable.descr2[0] != '\0')
-            VG_(message)(Vg_UserMsg, "%s%s%s",
-                         xpre, ai->Addr.Variable.descr2, xpost);
+         /* Note, no need for XML tags here, because descr1/2 will
+            already have <auxwhat> or <xauxwhat>s on them, in XML
+            mode. */
+         if (ai->Addr.Variable.descr1)
+            emit( "%s%s\n",
+                  VG_(clo_xml) ? "  " : " ",
+                  (HChar*)VG_(indexXA)(ai->Addr.Variable.descr1, 0) );
+         if (ai->Addr.Variable.descr2)
+            emit( "%s%s\n",
+                  VG_(clo_xml) ? "  " : " ",
+                  (HChar*)VG_(indexXA)(ai->Addr.Variable.descr2, 0) );
          break;
 
       case Addr_SectKind:
-         VG_(message_no_f_c)(Vg_UserMsg,
-                             "%sAddress 0x%llx is in the %t segment of %t%s",
-                             xpre,
-                             (ULong)a,
-                             VG_(pp_SectKind)(ai->Addr.SectKind.kind),
-                             ai->Addr.SectKind.objname,
-                             xpost);
+         emiN( "%sAddress 0x%llx is in the %t segment of %t%s\n",
+               xpre,
+               (ULong)a,
+               VG_(pp_SectKind)(ai->Addr.SectKind.kind),
+               ai->Addr.SectKind.objname,
+               xpost );
          break;
 
       default:
@@ -373,28 +408,9 @@ static const HChar* xml_leak_kind ( Reachedness lossmode )
    return loss;
 }
 
-static void mc_pp_msg( Char* xml_name, Error* err, const HChar* format, ... )
-{
-   HChar* xpre  = VG_(clo_xml) ? "  <what>" : "";
-   HChar* xpost = VG_(clo_xml) ? "</what>"  : "";
-   Char buf[256];
-   va_list vargs;
-
-   if (VG_(clo_xml))
-      VG_(message)(Vg_UserMsg, "  <kind>%s</kind>", xml_name);
-   // Stick xpre and xpost on the front and back of the format string.
-   VG_(snprintf)(buf, 256, "%s%s%s", xpre, format, xpost);
-   va_start(vargs, format);
-   VG_(vmessage) ( Vg_UserMsg, buf, vargs );
-   va_end(vargs);
-   VG_(pp_ExeContext)( VG_(get_error_where)(err) );
-}
-
 static void mc_pp_origin ( ExeContext* ec, UInt okind )
 {
-   HChar* src   = NULL;
-   HChar* xpre  = VG_(clo_xml) ? "  <what>" : " ";
-   HChar* xpost = VG_(clo_xml) ? "</what>"  : "";
+   HChar* src = NULL;
    tl_assert(ec);
 
    switch (okind) {
@@ -406,208 +422,331 @@ static void mc_pp_origin ( ExeContext* ec, UInt okind )
    tl_assert(src); /* guards against invalid 'okind' */
 
    if (VG_(clo_xml)) {
-      VG_(message)(Vg_UserMsg, "  <origin>");
-   }
-
-   VG_(message)(Vg_UserMsg, "%sUninitialised value was created%s%s",
-                            xpre, src, xpost);
-   VG_(pp_ExeContext)( ec );
-   if (VG_(clo_xml)) {
-      VG_(message)(Vg_UserMsg, "  </origin>");
+      emit( "  <auxwhat>Uninitialised value was created%s</auxwhat>\n",
+            src);
+      VG_(pp_ExeContext)( ec );
+   } else {
+      emit( " Uninitialised value was created%s\n", src);
+      VG_(pp_ExeContext)( ec );
    }
 }
 
 void MC_(pp_Error) ( Error* err )
 {
+   const Bool xml  = VG_(clo_xml); /* a shorthand */
    MC_Error* extra = VG_(get_error_extra)(err);
 
    switch (VG_(get_error_kind)(err)) {
-      case Err_CoreMem: {
+      case Err_CoreMem:
          /* What the hell *is* a CoreMemError? jrs 2005-May-18 */
          /* As of 2006-Dec-14, it's caused by unaddressable bytes in a
             signal handler frame.  --njn */
-         mc_pp_msg("CoreMemError", err,
-                   "%s contains unaddressable byte(s)", 
-                   VG_(get_error_string)(err));
+         // JRS 17 May 09: None of our regtests exercise this; hence AFAIK
+         // the following code is untested.  Bad.
+         if (xml) {
+            emit( "  <kind>CoreMemError</kind>\n" );
+            emiN( "  <what>%t contains unaddressable byte(s)</what>\n",
+                  VG_(get_error_string)(err));
+            VG_(pp_ExeContext)( VG_(get_error_where)(err) );
+         } else {
+            emit( "%s contains unaddressable byte(s)\n",
+                  VG_(get_error_string)(err));
+            VG_(pp_ExeContext)( VG_(get_error_where)(err) );
+         }
          break;
-      } 
       
       case Err_Value:
          MC_(any_value_errors) = True;
-         if (1 || extra->Err.Value.otag == 0) {
-            mc_pp_msg("UninitValue", err,
-                      "Use of uninitialised value of size %d",
-                      extra->Err.Value.szB);
+         if (xml) {
+            emit( "  <kind>UninitValue</kind>\n" );
+            emit( "  <what>Use of uninitialised value of size %ld</what>\n",
+                  extra->Err.Value.szB );
+            VG_(pp_ExeContext)( VG_(get_error_where)(err) );
+            if (extra->Err.Value.origin_ec)
+               mc_pp_origin( extra->Err.Value.origin_ec,
+                            extra->Err.Value.otag & 3 );
          } else {
-            mc_pp_msg("UninitValue", err,
-                      "Use of uninitialised value of size %d (otag %u)",
-                      extra->Err.Value.szB, extra->Err.Value.otag);
+            /* Could also show extra->Err.Cond.otag if debugging origin
+               tracking */
+            emit( "Use of uninitialised value of size %ld\n",
+                  extra->Err.Value.szB );
+            VG_(pp_ExeContext)( VG_(get_error_where)(err) );
+            if (extra->Err.Value.origin_ec)
+               mc_pp_origin( extra->Err.Value.origin_ec,
+                            extra->Err.Value.otag & 3 );
          }
-         if (extra->Err.Value.origin_ec)
-            mc_pp_origin( extra->Err.Value.origin_ec,
-                          extra->Err.Value.otag & 3 );
          break;
 
       case Err_Cond:
          MC_(any_value_errors) = True;
-         if (1 || extra->Err.Cond.otag == 0) {
-            mc_pp_msg("UninitCondition", err,
-                      "Conditional jump or move depends"
-                      " on uninitialised value(s)");
+         if (xml) {
+            emit( "  <kind>UninitCondition</kind>\n" );
+            emit( "  <what>Conditional jump or move depends"
+                  " on uninitialised value(s)</what>\n" );
+            VG_(pp_ExeContext)( VG_(get_error_where)(err) );
+            if (extra->Err.Cond.origin_ec)
+               mc_pp_origin( extra->Err.Cond.origin_ec,
+                             extra->Err.Cond.otag & 3 );
          } else {
-            mc_pp_msg("UninitCondition", err,
-                      "Conditional jump or move depends"
-                      " on uninitialised value(s) (otag %u)",
-                      extra->Err.Cond.otag);
+            /* Could also show extra->Err.Cond.otag if debugging origin
+               tracking */
+            emit( "Conditional jump or move depends"
+                  " on uninitialised value(s)\n" );
+            VG_(pp_ExeContext)( VG_(get_error_where)(err) );
+            if (extra->Err.Cond.origin_ec)
+               mc_pp_origin( extra->Err.Cond.origin_ec,
+                             extra->Err.Cond.otag & 3 );
          }
-         if (extra->Err.Cond.origin_ec)
-            mc_pp_origin( extra->Err.Cond.origin_ec,
-                          extra->Err.Cond.otag & 3 );
          break;
 
       case Err_RegParam:
          MC_(any_value_errors) = True;
-         mc_pp_msg("SyscallParam", err,
-                   "Syscall param %s contains uninitialised byte(s)",
-                   VG_(get_error_string)(err));
-         if (extra->Err.RegParam.origin_ec)
-            mc_pp_origin( extra->Err.RegParam.origin_ec,
-                          extra->Err.RegParam.otag & 3 );
+         if (xml) {
+            emit( "  <kind>SyscallParam</kind>\n" );
+            emiN( "  <what>Syscall param %t contains "
+                  "uninitialised byte(s)</what>\n",
+                  VG_(get_error_string)(err) );
+            VG_(pp_ExeContext)( VG_(get_error_where)(err) );
+            if (extra->Err.RegParam.origin_ec)
+               mc_pp_origin( extra->Err.RegParam.origin_ec,
+                             extra->Err.RegParam.otag & 3 );
+         } else {
+            emit( "Syscall param %s contains uninitialised byte(s)\n",
+                  VG_(get_error_string)(err) );
+            VG_(pp_ExeContext)( VG_(get_error_where)(err) );
+            if (extra->Err.RegParam.origin_ec)
+               mc_pp_origin( extra->Err.RegParam.origin_ec,
+                             extra->Err.RegParam.otag & 3 );
+         }
          break;
 
       case Err_MemParam:
          if (!extra->Err.MemParam.isAddrErr)
             MC_(any_value_errors) = True;
-         mc_pp_msg("SyscallParam", err,
-                   "Syscall param %s points to %s byte(s)",
-                   VG_(get_error_string)(err),
-                   ( extra->Err.MemParam.isAddrErr 
-                     ? "unaddressable" : "uninitialised" ));
-         mc_pp_AddrInfo(VG_(get_error_address)(err),
-                        &extra->Err.MemParam.ai, False);
-         if (extra->Err.MemParam.origin_ec && !extra->Err.MemParam.isAddrErr)
-            mc_pp_origin( extra->Err.MemParam.origin_ec,
-                          extra->Err.MemParam.otag & 3 );
+         if (xml) {
+            emit( "  <kind>SyscallParam</kind>\n" );
+            emiN( "  <what>Syscall param %t points to %s byte(s)</what>\n",
+                  VG_(get_error_string)(err),
+                  extra->Err.MemParam.isAddrErr 
+                     ? "unaddressable" : "uninitialised" );
+            VG_(pp_ExeContext)( VG_(get_error_where)(err) );
+            mc_pp_AddrInfo(VG_(get_error_address)(err),
+                           &extra->Err.MemParam.ai, False);
+            if (extra->Err.MemParam.origin_ec 
+                && !extra->Err.MemParam.isAddrErr)
+               mc_pp_origin( extra->Err.MemParam.origin_ec,
+                             extra->Err.MemParam.otag & 3 );
+         } else {
+            emit( "Syscall param %s points to %s byte(s)\n",
+                  VG_(get_error_string)(err),
+                  extra->Err.MemParam.isAddrErr 
+                     ? "unaddressable" : "uninitialised" );
+            VG_(pp_ExeContext)( VG_(get_error_where)(err) );
+            mc_pp_AddrInfo(VG_(get_error_address)(err),
+                           &extra->Err.MemParam.ai, False);
+            if (extra->Err.MemParam.origin_ec 
+                && !extra->Err.MemParam.isAddrErr)
+               mc_pp_origin( extra->Err.MemParam.origin_ec,
+                             extra->Err.MemParam.otag & 3 );
+         }
          break;
 
       case Err_User:
          if (!extra->Err.User.isAddrErr)
             MC_(any_value_errors) = True;
-         mc_pp_msg("ClientCheck", err,
-                   "%s byte(s) found during client check request", 
-                   ( extra->Err.User.isAddrErr
-                     ? "Unaddressable" : "Uninitialised" ));
-         mc_pp_AddrInfo(VG_(get_error_address)(err), &extra->Err.User.ai,
-                        False);
-         if (extra->Err.User.origin_ec && !extra->Err.User.isAddrErr)
-            mc_pp_origin( extra->Err.User.origin_ec,
-                          extra->Err.User.otag & 3 );
+         if (xml) { 
+            emit( "  <kind>ClientCheck</kind>\n" );
+            emit( "  <what>%s byte(s) found "
+                  "during client check request</what>\n", 
+                   extra->Err.User.isAddrErr
+                      ? "Unaddressable" : "Uninitialised" );
+            VG_(pp_ExeContext)( VG_(get_error_where)(err) );
+            mc_pp_AddrInfo(VG_(get_error_address)(err), &extra->Err.User.ai,
+                           False);
+            if (extra->Err.User.origin_ec && !extra->Err.User.isAddrErr)
+               mc_pp_origin( extra->Err.User.origin_ec,
+                             extra->Err.User.otag & 3 );
+         } else {
+            emit( "%s byte(s) found during client check request\n", 
+                   extra->Err.User.isAddrErr
+                      ? "Unaddressable" : "Uninitialised" );
+            VG_(pp_ExeContext)( VG_(get_error_where)(err) );
+            mc_pp_AddrInfo(VG_(get_error_address)(err), &extra->Err.User.ai,
+                           False);
+            if (extra->Err.User.origin_ec && !extra->Err.User.isAddrErr)
+               mc_pp_origin( extra->Err.User.origin_ec,
+                             extra->Err.User.otag & 3 );
+         }
          break;
 
       case Err_Free:
-         mc_pp_msg("InvalidFree", err,
-                   "Invalid free() / delete / delete[]");
-         mc_pp_AddrInfo(VG_(get_error_address)(err),
-                        &extra->Err.Free.ai, False);
+         if (xml) {
+            emit( "  <kind>InvalidFree</kind>\n" );
+            emit( "  <what>Invalid free() / delete / delete[]</what>\n" );
+            VG_(pp_ExeContext)( VG_(get_error_where)(err) );
+            mc_pp_AddrInfo( VG_(get_error_address)(err),
+                            &extra->Err.Free.ai, False );
+         } else {
+            emit( "Invalid free() / delete / delete[]\n" );
+            VG_(pp_ExeContext)( VG_(get_error_where)(err) );
+            mc_pp_AddrInfo( VG_(get_error_address)(err),
+                            &extra->Err.Free.ai, False );
+         }
          break;
 
       case Err_FreeMismatch:
-         mc_pp_msg("MismatchedFree", err,
-                   "Mismatched free() / delete / delete []");
-         mc_pp_AddrInfo(VG_(get_error_address)(err),
-                        &extra->Err.FreeMismatch.ai, False);
+         if (xml) {
+            emit( "  <kind>MismatchedFree</kind>\n" );
+            emit( "  <what>Mismatched free() / delete / delete []</what>\n" );
+            VG_(pp_ExeContext)( VG_(get_error_where)(err) );
+            mc_pp_AddrInfo(VG_(get_error_address)(err),
+                           &extra->Err.FreeMismatch.ai, False);
+         } else {
+            emit( "Mismatched free() / delete / delete []\n" );
+            VG_(pp_ExeContext)( VG_(get_error_where)(err) );
+            mc_pp_AddrInfo(VG_(get_error_address)(err),
+                           &extra->Err.FreeMismatch.ai, False);
+         }
          break;
 
       case Err_Addr:
-         if (extra->Err.Addr.isWrite) {
-            mc_pp_msg("InvalidWrite", err,
-                      "Invalid write of size %d", 
-                      extra->Err.Addr.szB); 
+         if (xml) {
+            emit( "  <kind>Invalid%s</kind>\n",
+                  extra->Err.Addr.isWrite ? "Write" : "Read"  );
+            emit( "  <what>Invalid %s of size %ld</what>\n",
+                  extra->Err.Addr.isWrite ? "write" : "read",
+                  extra->Err.Addr.szB );
+            VG_(pp_ExeContext)( VG_(get_error_where)(err) );
+            mc_pp_AddrInfo( VG_(get_error_address)(err),
+                            &extra->Err.Addr.ai,
+                            extra->Err.Addr.maybe_gcc );
          } else {
-            mc_pp_msg("InvalidRead", err,
-                      "Invalid read of size %d", 
-                      extra->Err.Addr.szB); 
+            emit( "Invalid %s of size %ld\n",
+                  extra->Err.Addr.isWrite ? "write" : "read",
+                  extra->Err.Addr.szB );
+            VG_(pp_ExeContext)( VG_(get_error_where)(err) );
+
+            mc_pp_AddrInfo( VG_(get_error_address)(err),
+                            &extra->Err.Addr.ai,
+                            extra->Err.Addr.maybe_gcc );
          }
-         mc_pp_AddrInfo(VG_(get_error_address)(err), &extra->Err.Addr.ai,
-                        extra->Err.Addr.maybe_gcc);
          break;
 
       case Err_Jump:
-         mc_pp_msg("InvalidJump", err,
-                   "Jump to the invalid address stated on the next line");
-         mc_pp_AddrInfo(VG_(get_error_address)(err), &extra->Err.Jump.ai,
-                        False);
+         if (xml) {
+            emit( "  <kind>InvalidJump</kind>\n" );
+            emit( "  <what>Jump to the invalid address stated "
+                  "on the next line</what>\n" );
+            VG_(pp_ExeContext)( VG_(get_error_where)(err) );
+            mc_pp_AddrInfo( VG_(get_error_address)(err), &extra->Err.Jump.ai,
+                            False );
+         } else {
+            emit( "Jump to the invalid address stated on the next line\n" );
+            VG_(pp_ExeContext)( VG_(get_error_where)(err) );
+            mc_pp_AddrInfo( VG_(get_error_address)(err), &extra->Err.Jump.ai,
+                            False );
+         }
          break;
 
       case Err_Overlap:
-         if (extra->Err.Overlap.szB == 0)
-            mc_pp_msg("Overlap", err,
-                      "Source and destination overlap in %s(%p, %p)",
-                      VG_(get_error_string)(err),
-                      extra->Err.Overlap.dst, extra->Err.Overlap.src);
-         else
-            mc_pp_msg("Overlap", err,
-                      "Source and destination overlap in %s(%p, %p, %d)",
-                      VG_(get_error_string)(err),
-                      extra->Err.Overlap.dst, extra->Err.Overlap.src,
-                      extra->Err.Overlap.szB);
+         if (xml) {
+            emit( "  <kind>Overlap</kind>\n" );
+            if (extra->Err.Overlap.szB == 0) {
+               emiN( "  <what>Source and destination overlap "
+                     "in %t(%#lx, %#lx)\n</what>\n",
+                     VG_(get_error_string)(err),
+                     extra->Err.Overlap.dst, extra->Err.Overlap.src );
+            } else {
+               emit( "  <what>Source and destination overlap "
+                     "in %s(%#lx, %#lx, %d)</what>\n",
+                     VG_(get_error_string)(err),
+                     extra->Err.Overlap.dst, extra->Err.Overlap.src,
+                     extra->Err.Overlap.szB );
+            }
+            VG_(pp_ExeContext)( VG_(get_error_where)(err) );
+         } else {
+            if (extra->Err.Overlap.szB == 0) {
+               emiN( "Source and destination overlap in %t(%#lx, %#lx)\n",
+                     VG_(get_error_string)(err),
+                     extra->Err.Overlap.dst, extra->Err.Overlap.src );
+            } else {
+               emit( "Source and destination overlap in %s(%#lx, %#lx, %d)\n",
+                     VG_(get_error_string)(err),
+                     extra->Err.Overlap.dst, extra->Err.Overlap.src,
+                     extra->Err.Overlap.szB );
+            }
+            VG_(pp_ExeContext)( VG_(get_error_where)(err) );
+         }
          break;
 
       case Err_IllegalMempool:
-         mc_pp_msg("InvalidMemPool", err,
-                   "Illegal memory pool address");
-         mc_pp_AddrInfo(VG_(get_error_address)(err),
-                        &extra->Err.IllegalMempool.ai, False);
+         // JRS 17 May 09: None of our regtests exercise this; hence AFAIK
+         // the following code is untested.  Bad.
+         if (xml) {
+            emit( "  <kind>InvalidMemPool</kind>\n" );
+            emit( "  <what>Illegal memory pool address</what>\n" );
+            VG_(pp_ExeContext)( VG_(get_error_where)(err) );
+            mc_pp_AddrInfo( VG_(get_error_address)(err),
+                            &extra->Err.IllegalMempool.ai, False );
+         } else {
+            emit( "Illegal memory pool address\n" );
+            VG_(pp_ExeContext)( VG_(get_error_where)(err) );
+            mc_pp_AddrInfo( VG_(get_error_address)(err),
+                            &extra->Err.IllegalMempool.ai, False );
+         }
          break;
 
       case Err_Leak: {
-         HChar*      xpre  = VG_(clo_xml) ? "  <what>" : "";
-         HChar*      xpost = VG_(clo_xml) ? "</what>"  : "";
          UInt        n_this_record   = extra->Err.Leak.n_this_record;
          UInt        n_total_records = extra->Err.Leak.n_total_records;
          LossRecord* lr              = extra->Err.Leak.lr;
-
-         if (VG_(clo_xml)) {
-            VG_(message_no_f_c)(Vg_UserMsg, "  <kind>%t</kind>",
-                                xml_leak_kind(lr->key.state));
-         } else {
-            VG_(message)(Vg_UserMsg, "");
-         }
-
-         if (lr->indirect_szB > 0) {
-            VG_(message)(Vg_UserMsg, 
-               "%s%'lu (%'lu direct, %'lu indirect) bytes in %'u blocks"
-               " are %s in loss record %'u of %'u%s",
-               xpre,
-               lr->szB + lr->indirect_szB, lr->szB, lr->indirect_szB,
-               lr->num_blocks,
-               str_leak_lossmode(lr->key.state), n_this_record, n_total_records,
-               xpost
-            );
-            if (VG_(clo_xml)) {
+         if (xml) {
+            emit("  <kind>%s</kind>\n", xml_leak_kind(lr->key.state));
+            if (lr->indirect_szB > 0) {
+               emit( "  <xwhat>\n" );
+               emit( "    <text>%'lu (%'lu direct, %'lu indirect) bytes "
+                     "in %'u blocks"
+                     " are %s in loss record %'u of %'u</text>\n",
+                     lr->szB + lr->indirect_szB, lr->szB, lr->indirect_szB,
+                     lr->num_blocks,
+                     str_leak_lossmode(lr->key.state),
+                     n_this_record, n_total_records );
                // Nb: don't put commas in these XML numbers 
-               VG_(message)(Vg_UserMsg, "  <leakedbytes>%lu</leakedbytes>", 
-                                        lr->szB + lr->indirect_szB);
-               VG_(message)(Vg_UserMsg, "  <leakedblocks>%u</leakedblocks>", 
-                                        lr->num_blocks);
+               emit( "    <leakedbytes>%lu</leakedbytes>\n",
+                     lr->szB + lr->indirect_szB );
+               emit( "    <leakedblocks>%u</leakedblocks>\n", lr->num_blocks );
+               emit( "  </xwhat>\n" );
+            } else {
+               emit( "  <xwhat>\n" );
+               emit( "    <text>%'lu bytes in %'u blocks"
+                     " are %s in loss record %'u of %'u</text>\n",
+                     lr->szB, lr->num_blocks,
+                     str_leak_lossmode(lr->key.state), 
+                     n_this_record, n_total_records );
+               emit( "    <leakedbytes>%ld</leakedbytes>\n", lr->szB);
+               emit( "    <leakedblocks>%d</leakedblocks>\n", lr->num_blocks);
+               emit( "  </xwhat>\n" );
             }
-         } else {
-            VG_(message)(
-               Vg_UserMsg, 
-               "%s%'lu bytes in %'u blocks are %s in loss record %'u of %'u%s",
-               xpre,
-               lr->szB, lr->num_blocks,
-               str_leak_lossmode(lr->key.state), n_this_record, n_total_records,
-               xpost
-            );
-            if (VG_(clo_xml)) {
-               VG_(message)(Vg_UserMsg, "  <leakedbytes>%ld</leakedbytes>",
-                                        lr->szB);
-               VG_(message)(Vg_UserMsg, "  <leakedblocks>%d</leakedblocks>", 
-                                        lr->num_blocks);
+            VG_(pp_ExeContext)(lr->key.allocated_at);
+         } else { /* ! if (xml) */
+            emit("\n");
+            if (lr->indirect_szB > 0) {
+               emit(
+                  "%'lu (%'lu direct, %'lu indirect) bytes in %'u blocks"
+                  " are %s in loss record %'u of %'u\n",
+                  lr->szB + lr->indirect_szB, lr->szB, lr->indirect_szB,
+                  lr->num_blocks, str_leak_lossmode(lr->key.state),
+                  n_this_record, n_total_records
+               );
+            } else {
+               emit(
+                  "%'lu bytes in %'u blocks are %s in loss record %'u of %'u\n",
+                  lr->szB, lr->num_blocks, str_leak_lossmode(lr->key.state),
+                  n_this_record, n_total_records
+               );
             }
-         }
-         VG_(pp_ExeContext)(lr->key.allocated_at);
+            VG_(pp_ExeContext)(lr->key.allocated_at);
+         } /* if (xml) */
          break;
       }
 
@@ -931,11 +1070,11 @@ static void describe_addr ( Addr a, /*OUT*/AddrInfo* ai )
 
    tl_assert(Addr_Undescribed == ai->tag);
 
-   /* Perhaps it's a user-def'd block? */
+   /* -- Perhaps it's a user-def'd block? -- */
    if (client_block_maybe_describe( a, ai )) {
       return;
    }
-   /* Search for a recently freed block which might bracket it. */
+   /* -- Search for a recently freed block which might bracket it. -- */
    mc = MC_(get_freed_list_head)();
    while (mc) {
       if (addr_is_in_MC_Chunk(mc, a)) {
@@ -949,7 +1088,7 @@ static void describe_addr ( Addr a, /*OUT*/AddrInfo* ai )
       }
       mc = mc->next; 
    }
-   /* Search for a currently malloc'd block which might bracket it. */
+   /* -- Search for a currently malloc'd block which might bracket it. -- */
    VG_(HT_ResetIter)(MC_(malloc_list));
    while ( (mc = VG_(HT_Next)(MC_(malloc_list))) ) {
       if (addr_is_in_MC_Chunk(mc, a)) {
@@ -962,27 +1101,41 @@ static void describe_addr ( Addr a, /*OUT*/AddrInfo* ai )
          return;
       }
    }
-   /* Perhaps the variable type/location data describes it? */
-   tl_assert(sizeof(ai->Addr.Variable.descr1) 
-             == sizeof(ai->Addr.Variable.descr2));
-   VG_(memset)( &ai->Addr.Variable.descr1, 
-                0, sizeof(ai->Addr.Variable.descr1));
-   VG_(memset)( &ai->Addr.Variable.descr2, 
-                0, sizeof(ai->Addr.Variable.descr2));
-   if (VG_(get_data_description)(
-             &ai->Addr.Variable.descr1[0],
-             &ai->Addr.Variable.descr2[0],
-             sizeof(ai->Addr.Variable.descr1)-1, 
-             a )) {
+   /* -- Perhaps the variable type/location data describes it? -- */
+   ai->Addr.Variable.descr1
+      = VG_(newXA)( VG_(malloc), "mc.da.descr1",
+                    VG_(free), sizeof(HChar) );
+   ai->Addr.Variable.descr2
+      = VG_(newXA)( VG_(malloc), "mc.da.descr2",
+                    VG_(free), sizeof(HChar) );
+
+   (void) VG_(get_data_description)( ai->Addr.Variable.descr1,
+                                     ai->Addr.Variable.descr2, a );
+   /* If there's nothing in descr1/2, free them.  Why is it safe to to
+      VG_(indexXA) at zero here?  Because VG_(get_data_description)
+      guarantees to zero terminate descr1/2 regardless of the outcome
+      of the call.  So there's always at least one element in each XA
+      after the call.
+   */
+   if (0 == VG_(strlen)( VG_(indexXA)( ai->Addr.Variable.descr1, 0 ))) {
+      VG_(deleteXA)( ai->Addr.Variable.descr1 );
+      ai->Addr.Variable.descr1 = NULL;
+   }
+   if (0 == VG_(strlen)( VG_(indexXA)( ai->Addr.Variable.descr2, 0 ))) {
+      VG_(deleteXA)( ai->Addr.Variable.descr2 );
+      ai->Addr.Variable.descr2 = NULL;
+   }
+   /* Assume (assert) that VG_(get_data_description) fills in descr1
+      before it fills in descr2 */
+   if (ai->Addr.Variable.descr1 == NULL)
+      tl_assert(ai->Addr.Variable.descr2 == NULL);
+   /* So did we get lucky? */
+   if (ai->Addr.Variable.descr1 != NULL) {
       ai->tag = Addr_Variable;
-      tl_assert( ai->Addr.Variable.descr1
-                    [ sizeof(ai->Addr.Variable.descr1)-1 ] == 0);
-      tl_assert( ai->Addr.Variable.descr2
-                    [ sizeof(ai->Addr.Variable.descr2)-1 ] == 0);
       return;
    }
-   /* Have a look at the low level data symbols - perhaps it's in
-      there. */
+   /* -- Have a look at the low level data symbols - perhaps it's in
+      there. -- */
    VG_(memset)( &ai->Addr.DataSym.name,
                 0, sizeof(ai->Addr.DataSym.name));
    if (VG_(get_datasym_and_offset)(
@@ -994,7 +1147,7 @@ static void describe_addr ( Addr a, /*OUT*/AddrInfo* ai )
                     [ sizeof(ai->Addr.DataSym.name)-1 ] == 0);
       return;
    }
-   /* Perhaps it's on a thread's stack? */
+   /* -- Perhaps it's on a thread's stack? -- */
    VG_(thread_stack_reset_iter)(&tid);
    while ( VG_(thread_stack_next)(&tid, &stack_min, &stack_max) ) {
       if (stack_min - VG_STACK_REDZONE_SZB <= a && a <= stack_max) {
@@ -1003,7 +1156,7 @@ static void describe_addr ( Addr a, /*OUT*/AddrInfo* ai )
          return;
       }
    }
-   /* last ditch attempt at classification */
+   /* -- last ditch attempt at classification -- */
    tl_assert( sizeof(ai->Addr.SectKind.objname) > 4 );
    VG_(memset)( &ai->Addr.SectKind.objname, 
                 0, sizeof(ai->Addr.SectKind.objname));
@@ -1017,7 +1170,7 @@ static void describe_addr ( Addr a, /*OUT*/AddrInfo* ai )
                     [ sizeof(ai->Addr.SectKind.objname)-1 ] == 0);
       return;
    }
-   /* Clueless ... */
+   /* -- Clueless ... -- */
    ai->tag = Addr_Unknown;
    return;
 }

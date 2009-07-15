@@ -237,7 +237,6 @@
 #define VG_DEBUG_LEAKCHECK 0
 #define VG_DEBUG_CLIQUE    0
  
-#define UMSG(args...)    VG_(message)(Vg_UserMsg, ##args)
 
 /*------------------------------------------------------------*/
 /*--- Getting the initial chunks, and searching them.      ---*/
@@ -875,28 +874,31 @@ static void print_results(ThreadId tid, Bool is_full_check)
    }
 
    if (VG_(clo_verbosity) > 0 && !VG_(clo_xml)) {
-      UMSG("");
-      UMSG("LEAK SUMMARY:");
-      UMSG("   definitely lost: %'lu bytes in %'lu blocks.",
-                               MC_(bytes_leaked), MC_(blocks_leaked) );
-      UMSG("   indirectly lost: %'lu bytes in %'lu blocks.",
-                              MC_(bytes_indirect), MC_(blocks_indirect) );
-      UMSG("     possibly lost: %'lu bytes in %'lu blocks.",
-                              MC_(bytes_dubious), MC_(blocks_dubious) );
-      UMSG("   still reachable: %'lu bytes in %'lu blocks.",
-                              MC_(bytes_reachable), MC_(blocks_reachable) );
-      UMSG("        suppressed: %'lu bytes in %'lu blocks.",
-                              MC_(bytes_suppressed), MC_(blocks_suppressed) );
+      VG_(umsg)("\n");
+      VG_(umsg)("LEAK SUMMARY:\n");
+      VG_(umsg)("   definitely lost: %'lu bytes in %'lu blocks.\n",
+                MC_(bytes_leaked), MC_(blocks_leaked) );
+      VG_(umsg)("   indirectly lost: %'lu bytes in %'lu blocks.\n",
+                MC_(bytes_indirect), MC_(blocks_indirect) );
+      VG_(umsg)("     possibly lost: %'lu bytes in %'lu blocks.\n",
+                MC_(bytes_dubious), MC_(blocks_dubious) );
+      VG_(umsg)("   still reachable: %'lu bytes in %'lu blocks.\n",
+                MC_(bytes_reachable), MC_(blocks_reachable) );
+      VG_(umsg)("        suppressed: %'lu bytes in %'lu blocks.\n",
+                MC_(bytes_suppressed), MC_(blocks_suppressed) );
       if (!is_full_check &&
           (MC_(blocks_leaked) + MC_(blocks_indirect) +
            MC_(blocks_dubious) + MC_(blocks_reachable)) > 0) {
-         UMSG("Rerun with --leak-check=full to see details of leaked memory.");
+         VG_(umsg)("Rerun with --leak-check=full to see details "
+                   "of leaked memory.\n");
       }
       if (is_full_check &&
           MC_(blocks_reachable) > 0 && !MC_(clo_show_reachable))
       {
-         UMSG("Reachable blocks (those to which a pointer was found) are not shown.");
-         UMSG("To see them, rerun with: --leak-check=full --show-reachable=yes");
+         VG_(umsg)("Reachable blocks (those to which a pointer "
+                   "was found) are not shown.\n");
+         VG_(umsg)("To see them, rerun with: --leak-check=full "
+                   "--show-reachable=yes\n");
       }
    }
 }
@@ -916,7 +918,7 @@ void MC_(detect_memory_leaks) ( ThreadId tid, LeakCheckMode mode )
    if (lc_n_chunks == 0) {
       tl_assert(lc_chunks == NULL);
       if (VG_(clo_verbosity) >= 1 && !VG_(clo_xml)) {
-         UMSG("All heap blocks were freed -- no leaks are possible.");
+         VG_(umsg)("All heap blocks were freed -- no leaks are possible.\n");
       }
       return;
    }
@@ -945,9 +947,9 @@ void MC_(detect_memory_leaks) ( ThreadId tid, LeakCheckMode mode )
             (ch1->data == ch2->data && ch1->szB  == ch2->szB)
          );
       if (nonsense_overlap) {
-         UMSG("Block [0x%lx, 0x%lx) overlaps with block [0x%lx, 0x%lx)",
-            ch1->data, (ch1->data + ch1->szB),
-            ch2->data, (ch2->data + ch2->szB));
+         VG_(umsg)("Block [0x%lx, 0x%lx) overlaps with block [0x%lx, 0x%lx)\n",
+                   ch1->data, (ch1->data + ch1->szB),
+                   ch2->data, (ch2->data + ch2->szB));
       }
       tl_assert (!nonsense_overlap);
    }
@@ -968,7 +970,8 @@ void MC_(detect_memory_leaks) ( ThreadId tid, LeakCheckMode mode )
 
    // Verbosity.
    if (VG_(clo_verbosity) > 0 && !VG_(clo_xml))
-      UMSG( "searching for pointers to %'d not-freed blocks.", lc_n_chunks );
+      VG_(umsg)( "searching for pointers to %'d not-freed blocks.\n",
+                 lc_n_chunks );
 
    // Scan the memory root-set, pushing onto the mark stack any blocks
    // pointed to.
@@ -1012,7 +1015,7 @@ void MC_(detect_memory_leaks) ( ThreadId tid, LeakCheckMode mode )
          seg_size = seg->end - seg->start + 1;
          if (VG_(clo_verbosity) > 2) {
             VG_(message)(Vg_DebugMsg,
-                         "  Scanning root segment: %#lx..%#lx (%lu)",
+                         "  Scanning root segment: %#lx..%#lx (%lu)\n",
                          seg->start, seg->end, seg_size);
          }
          lc_scan_memory(seg->start, seg_size, /*is_prior_definite*/True, -1);
@@ -1027,7 +1030,7 @@ void MC_(detect_memory_leaks) ( ThreadId tid, LeakCheckMode mode )
    lc_process_markstack(/*clique*/-1);
 
    if (VG_(clo_verbosity) > 0 && !VG_(clo_xml))
-      UMSG("checked %'lu bytes.", lc_scanned_szB);
+      VG_(umsg)("checked %'lu bytes.\n", lc_scanned_szB);
 
    // Trace all the leaked blocks to determine which are directly leaked and
    // which are indirectly leaked.  For each Unreached block, push it onto

@@ -305,9 +305,10 @@ extern Bool MC_(any_value_errors);
 
 /* Standard functions for error and suppressions as required by the
    core/tool iface */
-Bool MC_(eq_Error) ( VgRes res, Error* e1, Error* e2 );
-void MC_(pp_Error) ( Error* err );
-UInt MC_(update_Error_extra)( Error* err );
+Bool MC_(eq_Error)           ( VgRes res, Error* e1, Error* e2 );
+void MC_(before_pp_Error)    ( Error* err );
+void MC_(pp_Error)           ( Error* err );
+UInt MC_(update_Error_extra) ( Error* err );
 
 Bool MC_(is_recognised_suppression) ( Char* name, Supp* su );
 

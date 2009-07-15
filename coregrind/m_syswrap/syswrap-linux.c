@@ -1146,6 +1146,16 @@ POST(sys_eventfd2)
    }
 }
 
+// 64-bit version.
+PRE(sys_fallocate)
+{
+   *flags |= SfMayBlock;
+   PRINT("sys_fallocate ( %ld, %ld, %lld, %lld )",
+         ARG1, ARG2, (Long)ARG3, (Long)ARG4);
+   PRE_REG_READ4(long, "fallocate",
+                 int, fd, int, mode, vki_loff_t, offset, vki_loff_t, len);
+}
+
 /* ---------------------------------------------------------------------
    tid-related wrappers
    ------------------------------------------------------------------ */

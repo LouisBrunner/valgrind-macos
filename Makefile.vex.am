@@ -61,20 +61,6 @@ pub/libvex_guest_offsets.h:
 	rm -f auxprogs/genoffsets.s
 
 #----------------------------------------------------------------------------
-# main_vex_svnversion.h
-#----------------------------------------------------------------------------
-
-BUILT_SOURCES += priv/main_vex_svnversion.h
-
-# The contents of this file don't matter, as we don't call LibVEX_version()
-# from Valgrind.
-# Nb: generating a file and putting it in $(srcdir) rather than $(builddir)
-# seems like bad form... this should be fixed if VPATH builds are made to
-# work.
-priv/main_vex_svnversion.h:
-	echo "\"version\"" > $(srcdir)/priv/main_vex_svnversion.h
-
-#----------------------------------------------------------------------------
 # libvex-<platform>.a
 #----------------------------------------------------------------------------
 

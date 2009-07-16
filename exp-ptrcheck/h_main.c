@@ -2365,7 +2365,10 @@ static void setup_post_syscall_table ( void )
       ADD(0, __NR_setitimer);
       ADD(0, __NR_setpgid);
       ADD(0, __NR_setpriority);
+      ADD(0, __NR_setregid);
       ADD(0, __NR_setresgid);
+      ADD(0, __NR_setresuid);
+      ADD(0, __NR_setreuid);
       ADD(0, __NR_setrlimit);
       ADD(0, __NR_setsid);
 #     if defined(__NR_setsockopt)

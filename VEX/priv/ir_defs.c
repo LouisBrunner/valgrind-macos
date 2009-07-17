@@ -1460,9 +1460,9 @@ IRCAS* deepCopyIRCAS ( IRCAS* cas )
 {
    return mkIRCAS( cas->oldHi, cas->oldLo, cas->end,
                    deepCopyIRExpr(cas->addr),
-                   deepCopyIRExpr(cas->expdHi),
+                   cas->expdHi==NULL ? NULL : deepCopyIRExpr(cas->expdHi),
                    deepCopyIRExpr(cas->expdLo),
-                   deepCopyIRExpr(cas->dataHi),
+                   cas->dataHi==NULL ? NULL : deepCopyIRExpr(cas->dataHi),
                    deepCopyIRExpr(cas->dataLo) );
 }
 

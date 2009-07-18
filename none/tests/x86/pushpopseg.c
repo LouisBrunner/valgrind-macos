@@ -18,8 +18,8 @@ int main(int argc, char **argv)
       "popw %%fs\n"
       "movl %%esp, %2\n"
       "movw %%fs, %3\n"
-      : "=m" (sp1), "=m" (sp2), "=m" (sp3), "=m" (fs2)
-      : "m" (fs1)
+      : "=r" (sp1), "=r" (sp2), "=r" (sp3), "=r" (fs2)
+      : "r" (fs1)
       : "ax"
       );
 
@@ -34,8 +34,8 @@ int main(int argc, char **argv)
       "popl %%fs\n"
       "movl %%esp, %2\n"
       "movw %%fs, %3\n"
-      : "=m" (sp1), "=m" (sp2), "=m" (sp3), "=m" (fs2)
-      : "m" (fs1)
+      : "=r" (sp1), "=r" (sp2), "=r" (sp3), "=r" (fs2)
+      : "r" (fs1)
       : "ax"
       );
 

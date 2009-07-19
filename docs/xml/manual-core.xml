@@ -1193,7 +1193,7 @@ that can report errors, e.g. Memcheck, but not Cachegrind.</para>
       since <computeroutput>dsymutil</computeroutput> will always fail
       in such situations.  It fails both because the debuginfo for
       such pre-installed system components is not available anywhere,
-      and also because it would require write priviledges in those
+      and also because it would require write privileges in those
       directories.</para>
 
       <para>Be careful when

@@ -643,7 +643,7 @@ three possibilities we know of:</para>
 <itemizedlist>
   <listitem>
     <para>The pointer might have originally been a start-pointer and have been
-    moved along deliberately (or not deliberately) by the program.
+    moved along deliberately (or not deliberately) by the program.</para>
   </listitem>
     
   <listitem>
@@ -660,6 +660,7 @@ three possibilities we know of:</para>
     See <ulink url="http://theory.uwinnipeg.ca/gnu/gcc/gxxint_14.html">this
     page</ulink> for more information.</para>
   </listitem>
+</itemizedlist>
 
 <para>With that in mind, consider the nine possible cases described by the
 following figure.</para>

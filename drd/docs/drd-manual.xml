@@ -17,82 +17,78 @@ on the Valgrind command line.</para>
 
 <para>
 DRD is a Valgrind tool for detecting errors in multithreaded C and C++
-shared-memory programs. The tool works for any program that uses the
-POSIX threading primitives or that uses threading concepts built on
-top of the POSIX threading primitives.
+programs. The tool works for any program that uses the POSIX threading
+primitives or that uses threading concepts built on top of the POSIX threading
+primitives.
 </para>
 
 <sect2 id="drd-manual.mt-progr-models" xreflabel="MT-progr-models">
 <title>Multithreaded Programming Paradigms</title>
 
 <para>
-For many applications multithreading is a necessity. There are two
-reasons why the use of threads may be required:
+There are two possible reasons for using multithreading in a program:
 <itemizedlist>
   <listitem>
     <para>
-      To model concurrent activities. Managing the state of one
-      activity per thread can be a great simplification compared to
-      multiplexing the states of multiple activities in a single
-      thread. This is why most server and embedded software is
-      multithreaded.
+      To model concurrent activities. Assigning one thread to each activity
+      can be a great simplification compared to multiplexing the states of
+      multiple activities in a single thread. This is why most server software
+      and embedded software is multithreaded.
     </para>
   </listitem>
   <listitem>
     <para>
-      To let computations run on multiple CPU cores
-      simultaneously. This is why many High Performance Computing
-      (HPC) applications are multithreaded.
+      To use multiple CPU cores simultaneously for speeding up
+      computations. This is why many High Performance Computing (HPC)
+      applications are multithreaded.
     </para>
   </listitem>
 </itemizedlist>
 </para>
 
 <para>
-Multithreaded programs can use one or more of the following
-paradigms. Which paradigm is appropriate a.o. depends on the
-application type -- modeling concurrent activities versus HPC.
+Multithreaded programs can use one or more of the following programming
+paradigms. Which paradigm is appropriate depends a.o. on the application type.
 Some examples of multithreaded programming paradigms are:
 <itemizedlist>
   <listitem>
     <para>
-      Locking. Data that is shared between threads may only be
-      accessed after a lock has been obtained on the mutex associated
-      with the shared data item.  A.o. the POSIX threads library, the
-      Qt library and the Boost.Thread library support this paradigm
-      directly.
+      Locking. Data that is shared over threads is protected from concurrent
+      accesses via locking. A.o. the POSIX threads library, the Qt library
+      and the Boost.Thread library support this paradigm directly.
     </para>
   </listitem>
   <listitem>
     <para>
-      Message passing. No data is shared between threads, but threads
-      exchange data by passing messages to each other. Well known
-      implementations of the message passing paradigm are MPI and
-      CORBA.
+      Message passing. No data is shared between threads, but threads exchange
+      data by passing messages to each other. Examples of implementations of
+      the message passing paradigm are MPI and CORBA.
     </para>
   </listitem>
   <listitem>
     <para>
-      Automatic parallelization. A compiler converts a sequential
-      program into a multithreaded program. The original program may
-      or may not contain parallelization hints. As an example,
-      <computeroutput>gcc</computeroutput> supports the OpenMP
-      standard from gcc version 4.3.0 on. OpenMP is a set of compiler
-      directives which tell a compiler how to parallelize a C, C++ or
-      Fortran program.
+      Automatic parallelization. A compiler converts a sequential program into
+      a multithreaded program. The original program may or may not contain
+      parallelization hints. One example of such parallelization hints is the
+      OpenMP standard. In this standard a set of directives are defined which
+      tell a compiler how to parallelize a C, C++ or Fortran program. OpenMP
+      is well suited for computational intensive applications. As an example,
+      an open source image processing software package is using OpenMP to
+      maximize performance on systems with multiple CPU
+      cores. The <computeroutput>gcc</computeroutput> compiler supports the
+      OpenMP standard from version 4.2.0 on.
     </para>
   </listitem>
   <listitem>
     <para>
-      Software Transactional Memory (STM). Data is shared between
-      threads, and shared data is updated via transactions. After each
-      transaction it is verified whether there were conflicting
-      transactions. If there were conflicts, the transaction is
-      aborted, otherwise it is committed. This is a so-called
-      optimistic approach. There is a prototype of the Intel C
-      Compiler (<computeroutput>icc</computeroutput>) available that
-      supports STM. Research is ongoing about the addition of STM
-      support to <computeroutput>gcc</computeroutput>.
+      Software Transactional Memory (STM). Any data that is shared between
+      threads is updated via transactions. After each transaction it is
+      verified whether there were any conflicting transactions. If there were
+      conflicts, the transaction is aborted, otherwise it is committed. This
+      is a so-called optimistic approach. There is a prototype of the Intel C
+      Compiler (<computeroutput>icc</computeroutput>) available that supports
+      STM. Research about the addition of STM support
+      to <computeroutput>gcc</computeroutput> is ongoing.
     </para>
   </listitem>
 </itemizedlist>
@@ -138,12 +134,7 @@ The POSIX threads programming model is based on the following abstractions:
     <para>
       Atomic store and load-modify-store operations. While these are
       not mentioned in the POSIX threads standard, most
-      microprocessors support atomic memory operations. And some
-      compilers provide direct support for atomic memory operations
-      through built-in functions like
-      e.g. <computeroutput>__sync_fetch_and_add()</computeroutput>
-      which is supported by both <computeroutput>gcc</computeroutput>
-      and <computeroutput>icc</computeroutput>.
+      microprocessors support atomic memory operations.
     </para>
   </listitem>
   <listitem>
@@ -154,10 +145,9 @@ The POSIX threads programming model is based on the following abstractions:
   <listitem>
     <para>
       Synchronization objects and operations on these synchronization
-      objects. The following types of synchronization objects are
-      defined in the POSIX threads standard: mutexes, condition
-      variables, semaphores, reader-writer locks, barriers and
-      spinlocks.
+      objects. The following types of synchronization objects have been
+      defined in the POSIX threads standard: mutexes, condition variables,
+      semaphores, reader-writer locks, barriers and spinlocks.
     </para>
   </listitem>
 </itemizedlist>
@@ -165,17 +155,17 @@ The POSIX threads programming model is based on the following abstractions:
 
 <para>
 Which source code statements generate which memory accesses depends on
-the <emphasis>memory model</emphasis> of the programming language
-being used. There is not yet a definitive memory model for the C and
-C++ languagues. For a draft memory model, see also document <ulink
-url="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2007/n2338.html">
-WG21/N2338</ulink>.
+the <emphasis>memory model</emphasis> of the programming language being
+used. There is not yet a definitive memory model for the C and C++
+languages. For a draft memory model, see also the document
+<ulink url="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2007/n2338.html">
+WG21/N2338: Concurrency memory model compiler consequences</ulink>.
 </para>
 
 <para>
 For more information about POSIX threads, see also the Single UNIX
 Specification version 3, also known as
-<ulink url="http://www.unix.org/version3/ieee_std.html">
+<ulink url="http://www.opengroup.org/onlinepubs/000095399/idx/threads.html">
 IEEE Std 1003.1</ulink>.
 </para>
 
@@ -191,8 +181,9 @@ one or more of the following problems can occur:
 <itemizedlist>
   <listitem>
     <para>
-      Data races. One or more threads access the same memory
-      location without sufficient locking.
+      Data races. One or more threads access the same memory location without
+      sufficient locking. Most but not all data races are programming errors
+      and are the cause of subtle and hard-to-find bugs.
     </para>
   </listitem>
   <listitem>
@@ -203,10 +194,10 @@ one or more of the following problems can occur:
   </listitem>
   <listitem>
     <para>
-      Improper use of the POSIX threads API. The most popular POSIX
-      threads implementation, NPTL, is optimized for speed. The NPTL
-      will not complain on certain errors, e.g. when a mutex is locked
-      in one thread and unlocked in another thread.
+      Improper use of the POSIX threads API. Most implementations of the POSIX
+      threads API have been optimized for runtime speed. Such implementations
+      will not complain on certain errors, e.g. when a mutex is being unlocked
+      by another thread than the thread that obtained a lock on the mutex.
     </para>
   </listitem>
   <listitem>
@@ -241,13 +232,42 @@ improper use of the POSIX threads API.
 <title>Data Race Detection</title>
 
 <para>
-Synchronization operations impose an order on interthread memory
-accesses. This order is also known as the happens-before relationship.
+The result of load and store operations performed by a multithreaded program
+depends on the order in which memory operations are performed. This order is
+determined by:
+<orderedlist>
+  <listitem>
+    <para>
+      All memory operations performed by the same thread are performed in
+      <emphasis>program order</emphasis>, that is, the order determined by the
+      program source code and the results of previous load operations.
+    </para>
+  </listitem>
+  <listitem>
+    <para>
+      Synchronization operations determine certain ordering constraints on
+      memory operations performed by different threads. These ordering
+      constraints are called the <emphasis>synchronization order</emphasis>.
+    </para>
+  </listitem>
+</orderedlist>
+The combination of program order and synchronization order is called the
+<emphasis>happens-before relationship</emphasis>. This concept was first
+defined by S. Adve e.a.  in the paper <emphasis>Detecting data races on weak
+memory systems</emphasis>, ACM SIGARCH Computer Architecture News, v.19 n.3,
+p.234-243, May 1991.
 </para>
 
 <para>
-A multithreaded program is data-race free if all interthread memory
-accesses are ordered by synchronization operations.
+Two memory operations <emphasis>conflict</emphasis> if both operations are
+performed by different threads, refer to the same memory location and at least
+one of them is a store operation.
+</para>
+
+<para>
+A multithreaded program is <emphasis>data-race free</emphasis> if all
+conflicting memory accesses are ordered by synchronization
+operations.
 </para>
 
 <para>
@@ -258,26 +278,28 @@ a lock on the associated mutex while the shared data is accessed.
 </para>
 
 <para>
-All programs that follow a locking discipline are data-race free, but
-not all data-race free programs follow a locking discipline. There
-exist multithreaded programs where access to shared data is arbitrated
-via condition variables, semaphores or barriers. As an example, a
-certain class of HPC applications consists of a sequence of
-computation steps separated in time by barriers, and where these
-barriers are the only means of synchronization.
+All programs that follow a locking discipline are data-race free, but not all
+data-race free programs follow a locking discipline. There exist multithreaded
+programs where access to shared data is arbitrated via condition variables,
+semaphores or barriers. As an example, a certain class of HPC applications
+consists of a sequence of computation steps separated in time by barriers, and
+where these barriers are the only means of synchronization. Although there are
+many conflicting memory accesses in such applications and although such
+applications do not make use mutexes, most of these applications do not
+contain data races.
 </para>
 
 <para>
-There exist two different algorithms for verifying the correctness of
-multithreaded programs at runtime. The so-called Eraser algorithm
-verifies whether all shared memory accesses follow a consistent
-locking strategy. And the happens-before data race detectors verify
-directly whether all interthread memory accesses are ordered by
-synchronization operations. While the happens-before data race
-detection algorithm is more complex to implement, and while it is more
-sensitive to OS scheduling, it is a general approach that works for
-all classes of multithreaded programs. Furthermore, the happens-before
-data race detection algorithm does not report any false positives.
+There exist two different approaches for verifying the correctness of
+multithreaded programs at runtime. The approach of the so-called Eraser
+algorithm is to verify whether all shared memory accesses follow a consistent
+locking strategy. And the happens-before data race detectors verify directly
+whether all interthread memory accesses are ordered by synchronization
+operations. While the last approach is more complex to implement, and while it
+is more sensitive to OS scheduling, it is a general approach that works for
+all classes of multithreaded programs. An important advantage of
+happens-before data race detectors is that these do not report any false
+positives.
 </para>
 
 <para>
@@ -307,10 +329,9 @@ behavior of the DRD tool itself:</para>
     </term>
     <listitem>
       <para>
-        Controls whether <constant>DRD</constant> reports data races
-        for stack variables. This is disabled by default in order to
-        accelerate data race detection. Most programs do not share
-        stack variables over threads.
+        Controls whether <constant>DRD</constant> detects data races on stack
+        variables. Verifying stack variables is disabled by default because
+        most programs do not share stack variables over threads.
       </para>
     </listitem>
   </varlistentry>
@@ -321,8 +342,22 @@ behavior of the DRD tool itself:</para>
     <listitem>
       <para>
         Print an error message if any mutex or writer lock has been
-        held longer than the specified time (in milliseconds). This
-        option enables detecting lock contention.
+        held longer than the time specified in milliseconds. This
+        option enables the detection of lock contention.
+      </para>
+    </listitem>
+  </varlistentry>
+  <varlistentry>
+    <term>
+      <option>
+        <![CDATA[--first-race-only=<yes|no> [default: no]]]>
+      </option>
+    </term>
+    <listitem>
+      <para>
+        Whether to report only the first data race that has been detected on a
+        memory location or all data races that have been detected on a memory
+        location.
       </para>
     </listitem>
   </varlistentry>
@@ -365,13 +400,28 @@ behavior of the DRD tool itself:</para>
   </varlistentry>
   <varlistentry>
     <term>
+      <option><![CDATA[--segment-merging-interval=<n> [default: 10]]]></option>
+    </term>
+    <listitem>
+      <para>
+        Perform segment merging only after the specified number of new
+        segments have been created. This is an advanced configuration option
+        that allows to choose whether to minimize DRD's memory usage by
+        choosing a low value or to let DRD run faster by choosing a slightly
+        higher value. The optimal value for this parameter depends on the
+        program being analyzed. The default value works well for most programs.
+      </para>
+    </listitem>
+  </varlistentry>
+  <varlistentry>
+    <term>
       <option><![CDATA[--shared-threshold=<n> [default: off]]]></option>
     </term>
     <listitem>
       <para>
         Print an error message if a reader lock has been held longer
         than the specified time (in milliseconds). This option enables
-        detection of lock contention.
+        the detection of lock contention.
       </para>
     </listitem>
   </varlistentry>
@@ -394,15 +444,15 @@ behavior of the DRD tool itself:</para>
     </term>
     <listitem>
       <para>
-        Print stack usage at thread exit time. When a program creates
-        a large number of threads it becomes important to limit the
-        amount of virtual memory allocated for thread stacks. This
-        option makes it possible to observe how much stack memory has
-        been used by each thread of the the client program. Note: the
-        DRD tool allocates some temporary data on the client thread
-        stack itself. The space necessary for this temporary data must
-        be allocated by the client program, but is not included in the
-        reported stack usage.
+        Print stack usage at thread exit time. When a program creates a large
+        number of threads it becomes important to limit the amount of virtual
+        memory allocated for thread stacks. This option makes it possible to
+        observe how much stack memory has been used by each thread of the the
+        client program. Note: the DRD tool itself allocates some temporary
+        data on the client thread stack. The space necessary for this
+        temporary data must be allocated by the client program when it
+        allocates stack memory, but is not included in stack usage reported by
+        DRD.
       </para>
     </listitem>
   </varlistentry>
@@ -516,14 +566,9 @@ the following in mind when interpreting DRD's output:
 <itemizedlist>
   <listitem>
     <para>
-      Every thread is assigned two <emphasis>thread ID's</emphasis>:
-      one thread ID is assigned by the Valgrind core and one thread ID
-      is assigned by DRD. Both thread ID's start at one. Valgrind
-      thread ID's are reused when one thread finishes and another
-      thread is created. DRD does not reuse thread ID's. Thread ID's
-      are displayed e.g. as follows: 2/3, where the first number is
-      Valgrind's thread ID and the second number is the thread ID
-      assigned by DRD.
+      Every thread is assigned a <emphasis>thread ID</emphasis> by the DRD
+      tool. A thread ID is a number. Thread ID's start at one and are never
+      recycled.
     </para>
   </listitem>
   <listitem>
@@ -556,20 +601,20 @@ detects a data race:
 $ valgrind --tool=drd --var-info=yes drd/tests/rwlock_race
 ...
 ==9466== Thread 3:
-==9466== Conflicting load by thread 3/3 at 0x006020b8 size 4
+==9466== Conflicting load by thread 3 at 0x006020b8 size 4
 ==9466==    at 0x400B6C: thread_func (rwlock_race.c:29)
 ==9466==    by 0x4C291DF: vg_thread_wrapper (drd_pthread_intercepts.c:186)
 ==9466==    by 0x4E3403F: start_thread (in /lib64/libpthread-2.8.so)
 ==9466==    by 0x53250CC: clone (in /lib64/libc-2.8.so)
 ==9466== Location 0x6020b8 is 0 bytes inside local var "s_racy"
 ==9466== declared at rwlock_race.c:18, in frame #0 of thread 3
-==9466== Other segment start (thread 2/2)
+==9466== Other segment start (thread 2)
 ==9466==    at 0x4C2847D: pthread_rwlock_rdlock* (drd_pthread_intercepts.c:813)
 ==9466==    by 0x400B6B: thread_func (rwlock_race.c:28)
 ==9466==    by 0x4C291DF: vg_thread_wrapper (drd_pthread_intercepts.c:186)
 ==9466==    by 0x4E3403F: start_thread (in /lib64/libpthread-2.8.so)
 ==9466==    by 0x53250CC: clone (in /lib64/libc-2.8.so)
-==9466== Other segment end (thread 2/2)
+==9466== Other segment end (thread 2)
 ==9466==    at 0x4C28B54: pthread_rwlock_unlock* (drd_pthread_intercepts.c:912)
 ==9466==    by 0x400B84: thread_func (rwlock_race.c:30)
 ==9466==    by 0x4C291DF: vg_thread_wrapper (drd_pthread_intercepts.c:186)
@@ -589,17 +634,15 @@ The above report has the following meaning:
   </listitem>
   <listitem>
     <para>
-      The first line ("Thread 3") tells you Valgrind's thread ID for
-      the thread in which context the data race was detected.
+      The first line ("Thread 3") tells you the thread ID for
+      the thread in which context the data race has been detected.
     </para>
   </listitem>
   <listitem>
     <para>
-      The next line tells which kind of operation was performed (load
-      or store) and by which thread. Both Valgrind's and DRD's thread
-      ID's are displayed. On the same line the start address and the
-      number of bytes involved in the conflicting access are also
-      displayed.
+      The next line tells which kind of operation was performed (load or
+      store) and by which thread. On the same line the start address and the
+      number of bytes involved in the conflicting access are also displayed.
     </para>
   </listitem>
   <listitem>
@@ -747,7 +790,7 @@ output reports that the lock acquired at line 51 in source file
     <listitem>
       <para>
         Sending a signal to a condition variable while no lock is held
-        on the mutex associated with the signal.
+        on the mutex associated with the condition variable.
       </para>
     </listitem>
     <listitem>
@@ -819,67 +862,213 @@ output reports that the lock acquired at line 51 in source file
 <title>Client Requests</title>
 
 <para>
-Just as for other Valgrind tools it is possible to let a client
-program interact with the DRD tool.
+Just as for other Valgrind tools it is possible to let a client program
+interact with the DRD tool through client requests. In addition to the
+client requests several macro's have been defined that allow to use the
+client requests in a convenient way.
 </para>
 
 <para>
 The interface between client programs and the DRD tool is defined in
 the header file <literal>&lt;valgrind/drd.h&gt;</literal>. The
-available client requests are:
+available macro's and client requests are:
 <itemizedlist>
   <listitem>
     <para>
-      <varname>VG_USERREQ__DRD_GET_VALGRIND_THREAD_ID</varname>.
-      Query the thread ID that was assigned by the Valgrind core to
-      the thread executing this client request. Valgrind's thread ID's
-      start at one and are recycled in case a thread stops.
+      The macro <literal>DRD_GET_VALGRIND_THREADID</literal> and the
+      corresponding client
+      request <varname>VG_USERREQ__DRD_GET_VALGRIND_THREAD_ID</varname>.
+      Query the thread ID that has been assigned by the Valgrind core to the
+      thread executing this client request. Valgrind's thread ID's start at
+      one and are recycled in case a thread stops.
     </para>
   </listitem>
   <listitem>
     <para>
-      <varname>VG_USERREQ__DRD_GET_DRD_THREAD_ID</varname>.
-      Query the thread ID that was assigned by DRD to
-      the thread executing this client request. DRD's thread ID's
-      start at one and are never recycled.
+      The macro <literal>DRD_GET_DRD_THREADID</literal> and the corresponding
+      client request <varname>VG_USERREQ__DRD_GET_DRD_THREAD_ID</varname>.
+      Query the thread ID that has been assigned by DRD to the thread
+      executing this client request. These are the thread ID's reported by DRD
+      in data race reports and in trace messages. DRD's thread ID's start at
+      one and are never recycled.
     </para>
   </listitem>
   <listitem>
     <para>
-      <varname>VG_USERREQ__DRD_START_SUPPRESSION</varname>. Some
-      applications contain intentional races. There exist
-      e.g. applications where the same value is assigned to a shared
-      variable from two different threads. It may be more convenient
-      to suppress such races than to solve these. This client request
-      allows to suppress such races. See also the macro
-      <literal>DRD_IGNORE_VAR(x)</literal> defined in
-      <literal>&lt;valgrind/drd.h&gt;</literal>.
+      The macro's <literal>DRD_IGNORE_VAR(x)</literal>,
+      <literal>ANNOTATE_TRACE_MEMORY(&amp;x)</literal> and the corresponding
+      client request <varname>VG_USERREQ__DRD_START_SUPPRESSION</varname>. Some
+      applications contain intentional races. There exist e.g. applications
+      where the same value is assigned to a shared variable from two different
+      threads. It may be more convenient to suppress such races than to solve
+      these. This client request allows to suppress such races.
     </para>
   </listitem>
   <listitem>
     <para>
-      <varname>VG_USERREQ__DRD_FINISH_SUPPRESSION</varname>. Tell DRD
-      to no longer ignore data races in the address range that was
-      suppressed via
+      The client
+      request <varname>VG_USERREQ__DRD_FINISH_SUPPRESSION</varname>. Tell DRD
+      to no longer ignore data races for the address range that was suppressed
+      via the client request
       <varname>VG_USERREQ__DRD_START_SUPPRESSION</varname>.
     </para>
   </listitem>
   <listitem>
     <para>
+      The macro's <literal>DRD_TRACE_VAR(x)</literal>,
+      <literal>ANNOTATE_TRACE_MEMORY(&amp;x)</literal>
+      and the corresponding client request
       <varname>VG_USERREQ__DRD_START_TRACE_ADDR</varname>. Trace all
-      load and store activity on the specified address range. When DRD
-      reports a data race on a specified variable, and it's not
-      immediately clear which source code statements triggered the
-      conflicting accesses, it can be helpful to trace all activity on
-      the offending memory location. See also the macro
-      <literal>DRD_TRACE_VAR(x)</literal> defined in
-      <literal>&lt;valgrind/drd.h&gt;</literal>.
+      load and store activity on the specified address range. When DRD reports
+      a data race on a specified variable, and it's not immediately clear
+      which source code statements triggered the conflicting accesses, it can
+      be very helpful to trace all activity on the offending memory location.
     </para>
   </listitem>
   <listitem>
     <para>
-      <varname>VG_USERREQ__DRD_STOP_TRACE_ADDR</varname>. Do no longer
+      The client
+      request <varname>VG_USERREQ__DRD_STOP_TRACE_ADDR</varname>. Do no longer
       trace load and store activity for the specified address range.
+    </para>
+  </listitem>
+  <listitem>
+    <para>
+      The macro <literal>ANNOTATE_HAPPENS_BEFORE(addr)</literal> tells DRD to
+      insert a mark. Insert this macro just after an access to the variable at
+      the specified address has been performed.
+    </para>
+  </listitem>
+  <listitem>
+    <para>
+      The macro <literal>ANNOTATE_HAPPENS_AFTER(addr)</literal> tells DRD that
+      the next access to the variable at the specified address should be
+      considered to have happened after the access just before the latest
+      <literal>ANNOTATE_HAPPENS_BEFORE(addr)</literal> annotation that
+      references the same variable. The purpose of these two macro's is to
+      tell DRD about the order of inter-thread memory accesses implemented via
+      atomic memory operations.
+    </para>
+  </listitem>
+  <listitem>
+    <para>
+      The macro <literal>ANNOTATE_RWLOCK_CREATE(rwlock)</literal> tells DRD
+      that the object at address <literal>rwlock</literal> is a
+      reader-writer synchronization object that is not a
+      <literal>pthread_rwlock_t</literal> synchronization object.
+    </para>
+  </listitem>
+  <listitem>
+    <para>
+      The macro <literal>ANNOTATE_RWLOCK_DESTROY(rwlock)</literal> tells DRD
+      that the reader-writer synchronization object at
+      address <literal>rwlock</literal> has been destroyed.
+    </para>
+  </listitem>
+  <listitem>
+    <para>
+      The macro <literal>ANNOTATE_WRITERLOCK_ACQUIRED(rwlock)</literal> tells
+      DRD that a writer lock has been acquired on the reader-writer
+      synchronization object at address <literal>rwlock</literal>.
+    </para>
+  </listitem>
+  <listitem>
+    <para>
+      The macro <literal>ANNOTATE_READERLOCK_ACQUIRED(rwlock)</literal> tells
+      DRD that a reader lock has been acquired on the reader-writer
+      synchronization object at address <literal>rwlock</literal>.
+    </para>
+  </listitem>
+  <listitem>
+    <para>
+      The macro <literal>ANNOTATE_RWLOCK_ACQUIRED(rwlock, is_w)</literal>
+      tells DRD that a writer lock (when <literal>is_w != 0</literal>) or that
+      a reader lock (when <literal>is_w == 0</literal>) has been acquired on
+      the reader-writer synchronization object at
+      address <literal>rwlock</literal>.
+    </para>
+  </listitem>
+  <listitem>
+    <para>
+      The macro <literal>ANNOTATE_WRITERLOCK_RELEASED(rwlock)</literal> tells
+      DRD that a writer lock has been released on the reader-writer
+      synchronization object at address <literal>rwlock</literal>.
+    </para>
+  </listitem>
+  <listitem>
+    <para>
+      The macro <literal>ANNOTATE_READERLOCK_RELEASED(rwlock)</literal> tells
+      DRD that a reader lock has been released on the reader-writer
+      synchronization object at address <literal>rwlock</literal>.
+    </para>
+  </listitem>
+  <listitem>
+    <para>
+      The macro <literal>ANNOTATE_RWLOCK_RELEASED(rwlock, is_w)</literal>
+      tells DRD that a writer lock (when <literal>is_w != 0</literal>) or that
+      a reader lock (when <literal>is_w == 0</literal>) has been released on
+      the reader-writer synchronization object at
+      address <literal>rwlock</literal>.
+    </para>
+  </listitem>
+  <listitem>
+    <para>
+      The macro <literal>ANNOTATE_BENIGN_RACE(addr, descr)</literal> tells
+      DRD that any races detected on the specified address are benign and
+      hence should not be reported. The <literal>descr</literal> argument is
+      ignored but can be used to document why data races
+      on <literal>addr</literal> are benign.
+    </para>
+  </listitem>
+  <listitem>
+    <para>
+      The macro <literal>ANNOTATE_IGNORE_READS_BEGIN</literal> tells
+      DRD to ignore all memory loads performed by the current thread.
+    </para>
+  </listitem>
+  <listitem>
+    <para>
+      The macro <literal>ANNOTATE_IGNORE_READS_END</literal> tells
+      DRD to stop ignoring the memory loads performed by the current thread.
+    </para>
+  </listitem>
+  <listitem>
+    <para>
+      The macro <literal>ANNOTATE_IGNORE_WRITES_BEGIN</literal> tells
+      DRD to ignore all memory stores performed by the current thread.
+    </para>
+  </listitem>
+  <listitem>
+    <para>
+      The macro <literal>ANNOTATE_IGNORE_WRITES_END</literal> tells
+      DRD to stop ignoring the memory stores performed by the current thread.
+    </para>
+  </listitem>
+  <listitem>
+    <para>
+      The macro <literal>ANNOTATE_IGNORE_READS_AND_WRITES_BEGIN</literal> tells
+      DRD to ignore all memory accesses performed by the current thread.
+    </para>
+  </listitem>
+  <listitem>
+    <para>
+      The macro <literal>ANNOTATE_IGNORE_READS_AND_WRITES_END</literal> tells
+      DRD to stop ignoring the memory accesses performed by the current thread.
+    </para>
+  </listitem>
+  <listitem>
+    <para>
+      The macro <literal>ANNOTATE_NEW_MEMORY(addr, size)</literal> tells
+      DRD that the specified memory range has been allocated by a custom
+      memory allocator in the client program and that the client program
+      will start using this memory range.
+    </para>
+  </listitem>
+  <listitem>
+    <para>
+      The macro <literal>ANNOTATE_THREAD_NAME(name)</literal> tells DRD to
+      associate the specified name with the current thread and to include this
+      name in the error messages printed by DRD.
     </para>
   </listitem>
 </itemizedlist>
@@ -892,7 +1081,7 @@ the directory <literal>/usr/include</literal> by the command
 <literal>make install</literal>. If you obtained Valgrind by
 installing it as a package however, you will probably have to install
 another package with a name like <literal>valgrind-devel</literal>
-before Valgrind's header files are present.
+before Valgrind's header files are available.
 </para>
 
 </sect2>
@@ -997,21 +1186,21 @@ More information about Boost.Thread can be found here:
 <title>Debugging OpenMP Programs</title>
 
 <para>
-OpenMP stands for <emphasis>Open Multi-Processing</emphasis>. The
-OpenMP standard consists of a set of compiler directives for C, C++
-and Fortran programs that allows a compiler to transform a sequential
-program into a parallel program. OpenMP is well suited for HPC
-applications and allows to work at a higher level compared to direct
-use of the POSIX threads API. While OpenMP ensures that the POSIX API
-is used correctly, OpenMP programs can still contain data races. So it
-makes sense to verify OpenMP programs with a thread checking tool.
+OpenMP stands for <emphasis>Open Multi-Processing</emphasis>. The OpenMP
+standard consists of a set of compiler directives for C, C++ and Fortran
+programs that allows a compiler to transform a sequential program into a
+parallel program. OpenMP is well suited for HPC applications and allows to
+work at a higher level compared to direct use of the POSIX threads API. While
+OpenMP ensures that the POSIX API is used correctly, OpenMP programs can still
+contain data races. So it definitely makes sense to verify OpenMP programs
+with a thread checking tool.
 </para>
 
 <para>
 DRD supports OpenMP shared-memory programs generated by gcc. The gcc
 compiler supports OpenMP since version 4.2.0.  Gcc's runtime support
 for OpenMP programs is provided by a library called
-<literal>libgomp</literal>. The synchronization primites implemented
+<literal>libgomp</literal>. The synchronization primitives implemented
 in this library use Linux' futex system call directly, unless the
 library has been configured with the
 <literal>--disable-linux-futex</literal> flag. DRD only supports
@@ -1026,7 +1215,7 @@ are started. This is possible by adding a line similar to the
 following to your shell startup script:
 </para>
 <programlisting><![CDATA[
-export LD_LIBRARY_PATH=~/gcc-4.3.2/lib64:~/gcc-4.3.2/lib:
+export LD_LIBRARY_PATH=~/gcc-4.4.0/lib64:~/gcc-4.4.0/lib:
 ]]></programlisting>
 
 <para>
@@ -1056,31 +1245,29 @@ not been declared private. DRD will print the following error message
 for the above code:
 </para>
 <programlisting><![CDATA[
-$ valgrind --check-stack-var=yes --var-info=yes --tool=drd drd/tests/omp_matinv 3 -t 2 -r
+$ valgrind --tool=drd --check-stack-var=yes --var-info=yes drd/tests/omp_matinv 3 -t 2 -r
 ...
 Conflicting store by thread 1/1 at 0x7fefffbc4 size 4
    at 0x4014A0: gj.omp_fn.0 (omp_matinv.c:203)
    by 0x401211: gj (omp_matinv.c:159)
    by 0x40166A: invert_matrix (omp_matinv.c:238)
    by 0x4019B4: main (omp_matinv.c:316)
-Allocation context: unknown.
+Location 0x7fefffbc4 is 0 bytes inside local var "k"
+declared at omp_matinv.c:160, in frame #0 of thread 1
 ...
 ]]></programlisting>
 <para>
 In the above output the function name <function>gj.omp_fn.0</function>
 has been generated by gcc from the function name
-<function>gj</function>. Unfortunately the variable name
-<literal>k</literal> is not shown as the allocation context -- it is
-not clear to me whether this is caused by Valgrind or whether this is
-caused by gcc. The most usable information in the above output is the
-source file name and the line number where the data race has been detected
-(<literal>omp_matinv.c:203</literal>).
+<function>gj</function>. The allocation context information shows that the
+data race has been caused by modifying the variable <literal>k</literal>.
 </para>
 
 <para>
-Note: DRD reports errors on the <literal>libgomp</literal> library
-included with gcc 4.2.0 up to and including 4.3.2. This might indicate
-a race condition in the POSIX version of <literal>libgomp</literal>.
+Note: for gcc versions before 4.4.0, no allocation context information is
+shown. With these gcc versions the most usable information in the above output
+is the source file name and the line number where the data race has been
+detected (<literal>omp_matinv.c:203</literal>).
 </para>
 
 <para>
@@ -1095,11 +1282,12 @@ For more information about OpenMP, see also
 <title>DRD and Custom Memory Allocators</title>
 
 <para>
-DRD tracks all memory allocation events that happen via either the
+DRD tracks all memory allocation events that happen via the
 standard memory allocation and deallocation functions
 (<function>malloc</function>, <function>free</function>,
-<function>new</function> and <function>delete</function>) or via entry
-and exit of stack frames. DRD uses memory allocation and deallocation
+<function>new</function> and <function>delete</function>), via entry
+and exit of stack frames or that have been annotated with Valgrind's
+memory pool client requests. DRD uses memory allocation and deallocation
 information for two purposes:
 <itemizedlist>
   <listitem>
@@ -1124,10 +1312,15 @@ information for two purposes:
 
 <para>
 It is essential for correct operation of DRD that the tool knows about
-memory allocation and deallocation events. DRD does not yet support
-custom memory allocators, so you will have to make sure that any
-program which runs under DRD uses the standard memory allocation
-functions. As an example, the GNU libstdc++ library can be configured
+memory allocation and deallocation events. When analyzing a client program
+with DRD that uses a custom memory allocator, either instrument the custom
+memory allocator with the <literal>VALGRIND_MALLOCLIKE_BLOCK()</literal>
+and <literal>VALGRIND_FREELIKE_BLOCK()</literal> macro's or disable the
+custom memory allocator.
+</para>
+
+<para>
+As an example, the GNU libstdc++ library can be configured
 to use standard memory allocation functions instead of memory pools by
 setting the environment variable
 <literal>GLIBCXX_FORCE_NEW</literal>. For more information, see also
@@ -1187,10 +1380,9 @@ effect on the execution time of client programs are as follows:
   <listitem>
     <para>
       Most applications will run between 20 and 50 times slower under
-      DRD than a native single-threaded run. Applications such as
-      Firefox which perform very much mutex lock / unlock operations
-      however will run too slow to be usable under DRD. This issue
-      will be addressed in a future DRD version.
+      DRD than a native single-threaded run. The slowdown will be most
+      noticeable for applications which perform very much mutex lock /
+      unlock operations.
     </para>
   </listitem>
 </itemizedlist>
@@ -1208,7 +1400,7 @@ The following information may be helpful when using DRD:
   <listitem>
     <para>
       Make sure that debug information is present in the executable
-      being analysed, such that DRD can print function name and line
+      being analyzed, such that DRD can print function name and line
       number information in stack traces. Most compilers can be told
       to include debug information via compiler option
       <option>-g</option>.
@@ -1461,16 +1653,6 @@ approach for managing thread names is as follows:
       <ulink url="http://bugzilla.novell.com/show_bug.cgi?id=396197">
       396197</ulink> and Gentoo bug <ulink
       url="http://bugs.gentoo.org/214065">214065</ulink>.
-    </para>
-  </listitem>
-  <listitem>
-    <para>
-      When DRD prints a report about a data race detected on a stack
-      variable in a parallel section of an OpenMP program, the report
-      will contain no information about the context of the data race
-      location (<computeroutput>Allocation context:
-      unknown</computeroutput>). It's not yet clear whether this
-      behavior is caused by Valgrind or by gcc.
     </para>
   </listitem>
   <listitem>

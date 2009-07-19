@@ -185,7 +185,7 @@ static Bool handle_client_request(ThreadId vg_tid, UWord* arg, UWord* ret)
 
          nframes = VG_(get_StackTrace)(vg_tid, ips, n_ips, sps, fps, 0);
 
-         VG_(message)(Vg_DebugMsg, "thread %d/%d", vg_tid, drd_tid);
+         VG_(message)(Vg_DebugMsg, "thread %d", drd_tid);
          for (i = 0; i < nframes; i++)
          {
             VG_(describe_IP)(ips[i], desc, sizeof(desc));

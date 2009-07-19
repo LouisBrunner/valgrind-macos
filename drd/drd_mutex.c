@@ -92,8 +92,7 @@ static void mutex_cleanup(struct mutex_info* p)
    if (s_trace_mutex)
    {
       VG_(message)(Vg_UserMsg,
-                   "[%d/%d] mutex_destroy   %s 0x%lx rc %d owner %d\n",
-                   VG_(get_running_tid)(),
+                   "[%d] mutex_destroy   %s 0x%lx rc %d owner %d\n",
                    DRD_(thread_get_running_tid)(),
                    DRD_(mutex_get_typename)(p),
                    p->a1,
@@ -171,8 +170,7 @@ DRD_(mutex_init)(const Addr mutex, const MutexT mutex_type)
    if (s_trace_mutex)
    {
       VG_(message)(Vg_UserMsg,
-                   "[%d/%d] mutex_init      %s 0x%lx\n",
-                   VG_(get_running_tid)(),
+                   "[%d] mutex_init      %s 0x%lx\n",
                    DRD_(thread_get_running_tid)(),
                    DRD_(mutex_type_name)(mutex_type),
                    mutex);
@@ -235,8 +233,7 @@ void DRD_(mutex_pre_lock)(const Addr mutex, MutexT mutex_type,
    if (s_trace_mutex)
    {
       VG_(message)(Vg_UserMsg,
-                   "[%d/%d] %s %s 0x%lx rc %d owner %d\n",
-                   VG_(get_running_tid)(),
+                   "[%d] %s %s 0x%lx rc %d owner %d\n",
                    DRD_(thread_get_running_tid)(),
                    trylock ? "pre_mutex_lock " : "mutex_trylock  ",
                    p ? DRD_(mutex_get_typename)(p) : "(?)",
@@ -290,8 +287,7 @@ void DRD_(mutex_post_lock)(const Addr mutex, const Bool took_lock,
    if (s_trace_mutex)
    {
       VG_(message)(Vg_UserMsg,
-                   "[%d/%d] %s %s 0x%lx rc %d owner %d%s\n",
-                   VG_(get_running_tid)(),
+                   "[%d] %s %s 0x%lx rc %d owner %d%s\n",
                    drd_tid,
                    post_cond_wait ? "cond_post_wait " : "post_mutex_lock",
                    p ? DRD_(mutex_get_typename)(p) : "(?)",
@@ -359,8 +355,7 @@ void DRD_(mutex_unlock)(const Addr mutex, MutexT mutex_type)
    if (s_trace_mutex)
    {
       VG_(message)(Vg_UserMsg,
-                   "[%d/%d] mutex_unlock    %s 0x%lx rc %d\n",
-                   vg_tid,
+                   "[%d] mutex_unlock    %s 0x%lx rc %d\n",
                    drd_tid,
                    p ? DRD_(mutex_get_typename)(p) : "(?)",
                    mutex,

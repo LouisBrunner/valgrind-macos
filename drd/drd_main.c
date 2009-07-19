@@ -468,8 +468,8 @@ void drd_pre_thread_create(const ThreadId creator, const ThreadId created)
    if (DRD_(thread_get_trace_fork_join)())
    {
       VG_(message)(Vg_DebugMsg,
-                   "drd_pre_thread_create creator = %d/%d, created = %d\n",
-                   creator, drd_creator, created);
+                   "drd_pre_thread_create creator = %d, created = %d\n",
+                   drd_creator, created);
    }
 }
 
@@ -487,8 +487,8 @@ void drd_post_thread_create(const ThreadId vg_created)
    if (DRD_(thread_get_trace_fork_join)())
    {
       VG_(message)(Vg_DebugMsg,
-                   "drd_post_thread_create created = %d/%d\n",
-                   vg_created, drd_created);
+                   "drd_post_thread_create created = %d\n",
+                   drd_created);
    }
    if (! DRD_(get_check_stack_accesses)())
    {
@@ -510,8 +510,7 @@ static void drd_thread_finished(ThreadId vg_tid)
    if (DRD_(thread_get_trace_fork_join)())
    {
       VG_(message)(Vg_DebugMsg,
-                   "drd_thread_finished tid = %d/%d%s\n",
-                   vg_tid,
+                   "drd_thread_finished tid = %d%s\n",
                    drd_tid,
                    DRD_(thread_get_joinable)(drd_tid)
                    ? ""
@@ -524,9 +523,8 @@ static void drd_thread_finished(ThreadId vg_tid)
          = (DRD_(thread_get_stack_max)(drd_tid)
             - DRD_(thread_get_stack_min_min)(drd_tid));
       VG_(message)(Vg_UserMsg,
-                   "thread %d/%d%s finished and used %ld bytes out of %ld"
+                   "thread %d%s finished and used %ld bytes out of %ld"
                    " on its stack. Margin: %ld bytes.\n",
-                   vg_tid,
                    drd_tid,
                    DRD_(thread_get_joinable)(drd_tid)
                    ? ""

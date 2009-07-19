@@ -1,6 +1,6 @@
 
 Thread 3:
-Conflicting store by thread 3/3 at 0x........ size 4
+Conflicting store by thread 3 at 0x........ size 4
    at 0x........: t2 (hg03_inherit.c:28)
    by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
    by 0x........: (within libpthread-?.?.so)
@@ -8,7 +8,7 @@ Conflicting store by thread 3/3 at 0x........ size 4
 Location 0x........ is 0 bytes inside shared[1],
 declared at hg03_inherit.c:11, in frame #? of thread 3
 
-Conflicting store by thread 3/3 at 0x........ size 4
+Conflicting store by thread 3 at 0x........ size 4
    at 0x........: t2 (hg03_inherit.c:29)
    by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
    by 0x........: (within libpthread-?.?.so)

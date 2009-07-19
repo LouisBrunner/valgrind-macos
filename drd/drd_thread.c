@@ -333,15 +333,14 @@ void DRD_(thread_post_join)(DrdThreadId drd_joiner, DrdThreadId drd_joinee)
    if (s_trace_fork_join)
    {
       const ThreadId joiner = DRD_(DrdThreadIdToVgThreadId)(drd_joiner);
-      const ThreadId joinee = DRD_(DrdThreadIdToVgThreadId)(drd_joinee);
       const unsigned msg_size = 256;
       char* msg;
 
       msg = VG_(malloc)("drd.main.dptj.1", msg_size);
       tl_assert(msg);
       VG_(snprintf)(msg, msg_size,
-                    "drd_post_thread_join joiner = %d/%d, joinee = %d/%d",
-                    joiner, drd_joiner, joinee, drd_joinee);
+                    "drd_post_thread_join joiner = %d, joinee = %d",
+                    drd_joiner, drd_joinee);
       if (joiner)
       {
          char* vc;
@@ -583,10 +582,9 @@ void DRD_(thread_set_running_tid)(const ThreadId vg_tid,
           && DRD_(g_drd_running_tid) != DRD_INVALID_THREADID)
       {
          VG_(message)(Vg_DebugMsg,
-                      "Context switch from thread %d/%d to thread %d/%d;"
+                      "Context switch from thread %d to thread %d;"
                       " segments: %llu\n",
-                      s_vg_running_tid, DRD_(g_drd_running_tid),
-                      DRD_(DrdThreadIdToVgThreadId)(drd_tid), drd_tid,
+                      DRD_(g_drd_running_tid), drd_tid,
                       DRD_(sg_get_segments_alive_count)());
       }
       s_vg_running_tid = vg_tid;
@@ -1174,7 +1172,7 @@ static void show_call_stack(const DrdThreadId tid,
 {
    const ThreadId vg_tid = DRD_(DrdThreadIdToVgThreadId)(tid);
 
-   VG_(message)(Vg_UserMsg, "%s (thread %d/%d)\n", msg, vg_tid, tid);
+   VG_(message)(Vg_UserMsg, "%s (thread %d)\n", msg, tid);
 
    if (vg_tid != VG_INVALID_THREADID)
    {
@@ -1328,8 +1326,8 @@ static void thread_compute_conflict_set(struct bitmap** conflict_set,
 
       str = DRD_(vc_aprint)(&DRD_(g_threadinfo)[tid].last->vc);
       VG_(message)(Vg_DebugMsg,
-                   "computing conflict set for thread %d/%d with vc %s\n",
-                   DRD_(DrdThreadIdToVgThreadId)(tid), tid, str);
+                   "computing conflict set for thread %d with vc %s\n",
+                   tid, str);
       VG_(free)(str);
    }
 
@@ -1424,8 +1422,8 @@ void DRD_(thread_update_conflict_set)(const DrdThreadId tid,
 
       str = DRD_(vc_aprint)(&DRD_(g_threadinfo)[tid].last->vc);
       VG_(message)(Vg_DebugMsg,
-                   "updating conflict set for thread %d/%d with vc %s\n",
-                   DRD_(DrdThreadIdToVgThreadId)(tid), tid, str);
+                   "updating conflict set for thread %d with vc %s\n",
+                   tid, str);
       VG_(free)(str);
    }
 

@@ -5,26 +5,26 @@
 
 ---------------- pthread_create/join ----------------
 
-Conflicting store by thread 1/1 at 0x........ size 2
+Conflicting store by thread 1 at 0x........ size 2
    at 0x........: main (tc20_verifywrap.c:78)
 Location 0x........ is 0 bytes inside global var "unprotected"
 declared at tc20_verifywrap.c:27
-Other segment start (thread 0/2)
+Other segment start (thread 2)
    (thread finished, call stack no longer available)
-Other segment end (thread 0/2)
+Other segment end (thread 2)
    (thread finished, call stack no longer available)
 
 ---------------- pthread_mutex_lock et al ----------------
 
-[1/1] mutex_init      invalid mutex 0x........
+[1] mutex_init      invalid mutex 0x........
 
 The object at address 0x........ is not a mutex.
    at 0x........: pthread_mutex_init (drd_pthread_intercepts.c:?)
    by 0x........: main (tc20_verifywrap.c:92)
-[1/1] mutex_init      mutex 0x........
-[1/1] mutex_trylock   mutex 0x........ rc 0 owner 0
-[1/1] post_mutex_lock mutex 0x........ rc 0 owner 0
-[1/1] mutex_destroy   mutex 0x........ rc 1 owner 1
+[1] mutex_init      mutex 0x........
+[1] mutex_trylock   mutex 0x........ rc 0 owner 0
+[1] post_mutex_lock mutex 0x........ rc 0 owner 0
+[1] mutex_destroy   mutex 0x........ rc 1 owner 1
 
 Destroying locked mutex: mutex 0x........, recursion count 1, owner 1.
    at 0x........: pthread_mutex_destroy (drd_pthread_intercepts.c:?)
@@ -32,13 +32,13 @@ Destroying locked mutex: mutex 0x........, recursion count 1, owner 1.
 mutex 0x........ was first observed at:
    at 0x........: pthread_mutex_init (drd_pthread_intercepts.c:?)
    by 0x........: main (tc20_verifywrap.c:100)
-[1/1] mutex_trylock   mutex 0x........ rc 0 owner 0
-[1/1] post_mutex_lock mutex 0x........ rc 0 owner 0 (locking failed)
-[1/1] pre_mutex_lock  mutex 0x........ rc 0 owner 0
-[1/1] post_mutex_lock mutex 0x........ rc 0 owner 0 (locking failed)
-[1/1] mutex_trylock   mutex 0x........ rc 0 owner 0
-[1/1] post_mutex_lock mutex 0x........ rc 0 owner 0 (locking failed)
-[1/1] mutex_unlock    mutex 0x........ rc 0
+[1] mutex_trylock   mutex 0x........ rc 0 owner 0
+[1] post_mutex_lock mutex 0x........ rc 0 owner 0 (locking failed)
+[1] pre_mutex_lock  mutex 0x........ rc 0 owner 0
+[1] post_mutex_lock mutex 0x........ rc 0 owner 0 (locking failed)
+[1] mutex_trylock   mutex 0x........ rc 0 owner 0
+[1] post_mutex_lock mutex 0x........ rc 0 owner 0 (locking failed)
+[1] mutex_unlock    mutex 0x........ rc 0
 
 Mutex not locked: mutex 0x........, recursion count 0, owner 0.
    at 0x........: pthread_mutex_unlock (drd_pthread_intercepts.c:?)
@@ -49,9 +49,9 @@ mutex 0x........ was first observed at:
 
 ---------------- pthread_cond_wait et al ----------------
 
-[1/1] mutex_init      error checking mutex 0x........
-[1/1] cond_init       cond 0x........
-[1/1] mutex_unlock    error checking mutex 0x........ rc 0
+[1] mutex_init      error checking mutex 0x........
+[1] cond_init       cond 0x........
+[1] mutex_unlock    error checking mutex 0x........ rc 0
 
 Mutex not locked: mutex 0x........, recursion count 0, owner 0.
    at 0x........: pthread_cond_wait* (drd_pthread_intercepts.c:?)
@@ -59,21 +59,21 @@ Mutex not locked: mutex 0x........, recursion count 0, owner 0.
 mutex 0x........ was first observed at:
    at 0x........: pthread_mutex_init (drd_pthread_intercepts.c:?)
    by 0x........: main (tc20_verifywrap.c:145)
-[1/1] cond_pre_wait   cond 0x........
-[1/1] cond_post_wait  cond 0x........
-[1/1] cond_post_wait  error checking mutex 0x........ rc 0 owner 0
-[1/1] cond_signal     cond 0x........
+[1] cond_pre_wait   cond 0x........
+[1] cond_post_wait  cond 0x........
+[1] cond_post_wait  error checking mutex 0x........ rc 0 owner 0
+[1] cond_signal     cond 0x........
 
 FIXME: can't figure out how to verify wrap of pthread_cond_signal
 
-[1/1] cond_broadcast  cond 0x........
+[1] cond_broadcast  cond 0x........
 
 FIXME: can't figure out how to verify wrap of pthread_broadcast_signal
 
-[1/1] mutex_unlock    error checking mutex 0x........ rc 1
-[1/1] cond_pre_wait   cond 0x........
-[1/1] cond_post_wait  cond 0x........
-[1/1] cond_post_wait  error checking mutex 0x........ rc 0 owner 1
+[1] mutex_unlock    error checking mutex 0x........ rc 1
+[1] cond_pre_wait   cond 0x........
+[1] cond_post_wait  cond 0x........
+[1] cond_post_wait  error checking mutex 0x........ rc 0 owner 1
 
 ---------------- pthread_rwlock_* ----------------
 
@@ -116,8 +116,8 @@ rwlock 0x........ was first observed at:
 
 ---------------- sem_* ----------------
 
-[1/1] semaphore_init      0x........ value 4294967295
-[1/1] semaphore_init      0x........ value 0
+[1] semaphore_init      0x........ value 4294967295
+[1] semaphore_init      0x........ value 0
 
 Semaphore reinitialization: semaphore 0x........
    at 0x........: sem_init* (drd_pthread_intercepts.c:?)
@@ -128,7 +128,7 @@ semaphore 0x........ was first observed at:
 
 FIXME: can't figure out how to verify wrap of sem_destroy
 
-[1/1] semaphore_wait      0x........ value 0 -> 4294967295
+[1] semaphore_wait      0x........ value 0 -> 4294967295
 
 Invalid semaphore: semaphore 0x........
    at 0x........: sem_wait* (drd_pthread_intercepts.c:?)
@@ -136,11 +136,11 @@ Invalid semaphore: semaphore 0x........
 semaphore 0x........ was first observed at:
    at 0x........: sem_init* (drd_pthread_intercepts.c:?)
    by 0x........: main (tc20_verifywrap.c:228)
-[1/1] semaphore_post      0x........ value 4294967295 -> 0
+[1] semaphore_post      0x........ value 4294967295 -> 0
 
 FIXME: can't figure out how to verify wrap of sem_post
 
-[1/1] semaphore_destroy   0x........ value 0
+[1] semaphore_destroy   0x........ value 0
 
 ------------ dealloc of mem holding locks ------------
 
@@ -150,61 +150,61 @@ Destroying locked rwlock: rwlock 0x.........
 rwlock 0x........ was first observed at:
    at 0x........: pthread_rwlock_init* (drd_pthread_intercepts.c:?)
    by 0x........: main (tc20_verifywrap.c:216)
-[1/1] mutex_destroy   error checking mutex 0x........ rc 1 owner 1
+[1] mutex_destroy   error checking mutex 0x........ rc 1 owner 1
 
 Destroying locked mutex: mutex 0x........, recursion count 1, owner 1.
    at 0x........: main (tc20_verifywrap.c:262)
 mutex 0x........ was first observed at:
    at 0x........: pthread_mutex_init (drd_pthread_intercepts.c:?)
    by 0x........: main (tc20_verifywrap.c:145)
-[1/1] mutex_destroy   mutex 0x........ rc 0 owner 0
-[1/1] mutex_trylock   recursive mutex 0x........ rc 0 owner 0
-[1/1] post_mutex_lock recursive mutex 0x........ rc 0 owner 0
-[1/1] mutex_unlock    recursive mutex 0x........ rc 1
-[1/1] mutex_trylock   recursive mutex 0x........ rc 0 owner 1
-[1/1] post_mutex_lock recursive mutex 0x........ rc 0 owner 1
-[1/1] mutex_unlock    recursive mutex 0x........ rc 1
-[1/1] mutex_trylock   recursive mutex 0x........ rc 0 owner 1
-[1/1] post_mutex_lock recursive mutex 0x........ rc 0 owner 1
-[1/1] mutex_unlock    recursive mutex 0x........ rc 1
-[1/1] mutex_trylock   recursive mutex 0x........ rc 0 owner 1
-[1/1] post_mutex_lock recursive mutex 0x........ rc 0 owner 1
-[1/1] mutex_unlock    recursive mutex 0x........ rc 1
-[1/1] mutex_trylock   recursive mutex 0x........ rc 0 owner 1
-[1/1] post_mutex_lock recursive mutex 0x........ rc 0 owner 1
-[1/1] mutex_unlock    recursive mutex 0x........ rc 1
-[1/1] mutex_trylock   recursive mutex 0x........ rc 0 owner 1
-[1/1] post_mutex_lock recursive mutex 0x........ rc 0 owner 1
-[1/1] mutex_unlock    recursive mutex 0x........ rc 1
-[1/1] mutex_trylock   recursive mutex 0x........ rc 0 owner 1
-[1/1] post_mutex_lock recursive mutex 0x........ rc 0 owner 1
-[1/1] mutex_unlock    recursive mutex 0x........ rc 1
-[1/1] mutex_trylock   recursive mutex 0x........ rc 0 owner 1
-[1/1] post_mutex_lock recursive mutex 0x........ rc 0 owner 1
-[1/1] mutex_unlock    recursive mutex 0x........ rc 1
-[1/1] mutex_trylock   recursive mutex 0x........ rc 0 owner 1
-[1/1] post_mutex_lock recursive mutex 0x........ rc 0 owner 1
-[1/1] mutex_unlock    recursive mutex 0x........ rc 1
-[1/1] mutex_trylock   recursive mutex 0x........ rc 0 owner 1
-[1/1] post_mutex_lock recursive mutex 0x........ rc 0 owner 1
-[1/1] mutex_unlock    recursive mutex 0x........ rc 1
-[1/1] mutex_trylock   recursive mutex 0x........ rc 0 owner 1
-[1/1] post_mutex_lock recursive mutex 0x........ rc 0 owner 1
-[1/1] mutex_unlock    recursive mutex 0x........ rc 1
-[1/1] mutex_trylock   recursive mutex 0x........ rc 0 owner 1
-[1/1] post_mutex_lock recursive mutex 0x........ rc 0 owner 1
-[1/1] mutex_unlock    recursive mutex 0x........ rc 1
-[1/1] mutex_trylock   recursive mutex 0x........ rc 0 owner 1
-[1/1] post_mutex_lock recursive mutex 0x........ rc 0 owner 1
-[1/1] mutex_unlock    recursive mutex 0x........ rc 1
-[1/1] mutex_trylock   recursive mutex 0x........ rc 0 owner 1
-[1/1] post_mutex_lock recursive mutex 0x........ rc 0 owner 1
-[1/1] mutex_unlock    recursive mutex 0x........ rc 1
-[1/1] mutex_trylock   recursive mutex 0x........ rc 0 owner 1
-[1/1] post_mutex_lock recursive mutex 0x........ rc 0 owner 1
-[1/1] mutex_unlock    recursive mutex 0x........ rc 1
-[1/1] mutex_trylock   recursive mutex 0x........ rc 0 owner 1
-[1/1] post_mutex_lock recursive mutex 0x........ rc 0 owner 1
-[1/1] mutex_unlock    recursive mutex 0x........ rc 1
+[1] mutex_destroy   mutex 0x........ rc 0 owner 0
+[1] mutex_trylock   recursive mutex 0x........ rc 0 owner 0
+[1] post_mutex_lock recursive mutex 0x........ rc 0 owner 0
+[1] mutex_unlock    recursive mutex 0x........ rc 1
+[1] mutex_trylock   recursive mutex 0x........ rc 0 owner 1
+[1] post_mutex_lock recursive mutex 0x........ rc 0 owner 1
+[1] mutex_unlock    recursive mutex 0x........ rc 1
+[1] mutex_trylock   recursive mutex 0x........ rc 0 owner 1
+[1] post_mutex_lock recursive mutex 0x........ rc 0 owner 1
+[1] mutex_unlock    recursive mutex 0x........ rc 1
+[1] mutex_trylock   recursive mutex 0x........ rc 0 owner 1
+[1] post_mutex_lock recursive mutex 0x........ rc 0 owner 1
+[1] mutex_unlock    recursive mutex 0x........ rc 1
+[1] mutex_trylock   recursive mutex 0x........ rc 0 owner 1
+[1] post_mutex_lock recursive mutex 0x........ rc 0 owner 1
+[1] mutex_unlock    recursive mutex 0x........ rc 1
+[1] mutex_trylock   recursive mutex 0x........ rc 0 owner 1
+[1] post_mutex_lock recursive mutex 0x........ rc 0 owner 1
+[1] mutex_unlock    recursive mutex 0x........ rc 1
+[1] mutex_trylock   recursive mutex 0x........ rc 0 owner 1
+[1] post_mutex_lock recursive mutex 0x........ rc 0 owner 1
+[1] mutex_unlock    recursive mutex 0x........ rc 1
+[1] mutex_trylock   recursive mutex 0x........ rc 0 owner 1
+[1] post_mutex_lock recursive mutex 0x........ rc 0 owner 1
+[1] mutex_unlock    recursive mutex 0x........ rc 1
+[1] mutex_trylock   recursive mutex 0x........ rc 0 owner 1
+[1] post_mutex_lock recursive mutex 0x........ rc 0 owner 1
+[1] mutex_unlock    recursive mutex 0x........ rc 1
+[1] mutex_trylock   recursive mutex 0x........ rc 0 owner 1
+[1] post_mutex_lock recursive mutex 0x........ rc 0 owner 1
+[1] mutex_unlock    recursive mutex 0x........ rc 1
+[1] mutex_trylock   recursive mutex 0x........ rc 0 owner 1
+[1] post_mutex_lock recursive mutex 0x........ rc 0 owner 1
+[1] mutex_unlock    recursive mutex 0x........ rc 1
+[1] mutex_trylock   recursive mutex 0x........ rc 0 owner 1
+[1] post_mutex_lock recursive mutex 0x........ rc 0 owner 1
+[1] mutex_unlock    recursive mutex 0x........ rc 1
+[1] mutex_trylock   recursive mutex 0x........ rc 0 owner 1
+[1] post_mutex_lock recursive mutex 0x........ rc 0 owner 1
+[1] mutex_unlock    recursive mutex 0x........ rc 1
+[1] mutex_trylock   recursive mutex 0x........ rc 0 owner 1
+[1] post_mutex_lock recursive mutex 0x........ rc 0 owner 1
+[1] mutex_unlock    recursive mutex 0x........ rc 1
+[1] mutex_trylock   recursive mutex 0x........ rc 0 owner 1
+[1] post_mutex_lock recursive mutex 0x........ rc 0 owner 1
+[1] mutex_unlock    recursive mutex 0x........ rc 1
+[1] mutex_trylock   recursive mutex 0x........ rc 0 owner 1
+[1] post_mutex_lock recursive mutex 0x........ rc 0 owner 1
+[1] mutex_unlock    recursive mutex 0x........ rc 1
 
 ERROR SUMMARY: 13 errors from 13 contexts (suppressed: 0 from 0)

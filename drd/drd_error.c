@@ -136,9 +136,8 @@ void drd_report_data_race(Error* const err, const DataRaceErrInfo* const dri)
       describe_malloced_addr(dri->addr, dri->size, &ai);
    }
    VG_(message)(Vg_UserMsg,
-                "Conflicting %s by thread %d/%d at 0x%08lx size %ld\n",
+                "Conflicting %s by thread %d at 0x%08lx size %ld\n",
                 dri->access_type == eStore ? "store" : "load",
-                DRD_(DrdThreadIdToVgThreadId)(dri->tid),
                 dri->tid,
                 dri->addr,
                 dri->size);
@@ -254,10 +253,10 @@ static void drd_tool_error_pp(Error* const e)
    case CondDestrErr: {
       CondDestrErrInfo* cdi = (CondDestrErrInfo*)(VG_(get_error_extra)(e));
       VG_(message)(Vg_UserMsg,
-                   "%s: cond 0x%lx, mutex 0x%lx locked by thread %d/%d\n",
+                   "%s: cond 0x%lx, mutex 0x%lx locked by thread %d\n",
                    VG_(get_error_string)(e),
                    cdi->cond, cdi->mutex,
-                   DRD_(DrdThreadIdToVgThreadId)(cdi->owner), cdi->owner);
+                   cdi->owner);
       VG_(pp_ExeContext)(VG_(get_error_where)(e));
       first_observed(cdi->mutex);
       break;
@@ -310,8 +309,7 @@ static void drd_tool_error_pp(Error* const e)
       if (bei->other_context)
       {
          VG_(message)(Vg_UserMsg,
-                      "Conflicting wait call by thread %d/%d:\n",
-                      DRD_(DrdThreadIdToVgThreadId)(bei->other_tid),
+                      "Conflicting wait call by thread %d:\n",
                       bei->other_tid);
          VG_(pp_ExeContext)(bei->other_context);
       }

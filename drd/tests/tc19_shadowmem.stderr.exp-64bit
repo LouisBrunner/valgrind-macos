@@ -5,7 +5,7 @@
 ===========================================================
 
 ---------- char gran, 0 .. 99, skip 0 ----------
-Conflicting store by thread x/x at 0x........ size 1
+Conflicting store by thread x at 0x........ size 1
    at 0x........: child8 (tc19_shadowmem.c:33)
    by 0x........: steer (tc19_shadowmem.c:288)
    by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
@@ -16,7 +16,7 @@ Address 0x........ is at offset 0 from 0x......... Allocation context:
    by 0x........: main (tc19_shadowmem.c:144)
 ---------- char gran, 0 .. 99, skip 1 ----------
 
-Conflicting store by thread x/x at 0x........ size 1
+Conflicting store by thread x at 0x........ size 1
    at 0x........: child8 (tc19_shadowmem.c:33)
    by 0x........: steer (tc19_shadowmem.c:290)
    by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
@@ -27,7 +27,7 @@ Address 0x........ is at offset 1 from 0x......... Allocation context:
    by 0x........: main (tc19_shadowmem.c:144)
 ---------- char gran, 0 .. 99, skip 2 ----------
 
-Conflicting store by thread x/x at 0x........ size 1
+Conflicting store by thread x at 0x........ size 1
    at 0x........: child8 (tc19_shadowmem.c:33)
    by 0x........: steer (tc19_shadowmem.c:292)
    by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
@@ -38,7 +38,7 @@ Address 0x........ is at offset 2 from 0x......... Allocation context:
    by 0x........: main (tc19_shadowmem.c:144)
 ---------- char gran, 0 .. 99, skip 3 ----------
 
-Conflicting store by thread x/x at 0x........ size 1
+Conflicting store by thread x at 0x........ size 1
    at 0x........: child8 (tc19_shadowmem.c:33)
    by 0x........: steer (tc19_shadowmem.c:294)
    by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
@@ -49,7 +49,7 @@ Address 0x........ is at offset 3 from 0x......... Allocation context:
    by 0x........: main (tc19_shadowmem.c:144)
 ---------- char gran, 0 .. 99, skip 4 ----------
 
-Conflicting store by thread x/x at 0x........ size 1
+Conflicting store by thread x at 0x........ size 1
    at 0x........: child8 (tc19_shadowmem.c:33)
    by 0x........: steer (tc19_shadowmem.c:296)
    by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
@@ -60,7 +60,7 @@ Address 0x........ is at offset 4 from 0x......... Allocation context:
    by 0x........: main (tc19_shadowmem.c:144)
 ---------- char gran, 0 .. 99, skip 5 ----------
 
-Conflicting store by thread x/x at 0x........ size 1
+Conflicting store by thread x at 0x........ size 1
    at 0x........: child8 (tc19_shadowmem.c:33)
    by 0x........: steer (tc19_shadowmem.c:298)
    by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
@@ -71,7 +71,7 @@ Address 0x........ is at offset 5 from 0x......... Allocation context:
    by 0x........: main (tc19_shadowmem.c:144)
 ---------- char gran, 0 .. 99, skip 6 ----------
 
-Conflicting store by thread x/x at 0x........ size 1
+Conflicting store by thread x at 0x........ size 1
    at 0x........: child8 (tc19_shadowmem.c:33)
    by 0x........: steer (tc19_shadowmem.c:300)
    by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
@@ -82,7 +82,7 @@ Address 0x........ is at offset 6 from 0x......... Allocation context:
    by 0x........: main (tc19_shadowmem.c:144)
 ---------- char gran, 0 .. 99, skip 7 ----------
 
-Conflicting store by thread x/x at 0x........ size 1
+Conflicting store by thread x at 0x........ size 1
    at 0x........: child8 (tc19_shadowmem.c:33)
    by 0x........: steer (tc19_shadowmem.c:302)
    by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
@@ -93,7 +93,7 @@ Address 0x........ is at offset 7 from 0x......... Allocation context:
    by 0x........: main (tc19_shadowmem.c:144)
 ---------- char gran, 0 .. 99, skip 8 ----------
 
-Conflicting store by thread x/x at 0x........ size 1
+Conflicting store by thread x at 0x........ size 1
    at 0x........: child8 (tc19_shadowmem.c:33)
    by 0x........: steer (tc19_shadowmem.c:304)
    by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
@@ -104,7 +104,7 @@ Address 0x........ is at offset 8 from 0x......... Allocation context:
    by 0x........: main (tc19_shadowmem.c:144)
 ---------- char gran, 0 .. 99, skip 9 ----------
 
-Conflicting store by thread x/x at 0x........ size 1
+Conflicting store by thread x at 0x........ size 1
    at 0x........: child8 (tc19_shadowmem.c:33)
    by 0x........: steer (tc19_shadowmem.c:306)
    by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
@@ -115,7 +115,7 @@ Address 0x........ is at offset 9 from 0x......... Allocation context:
    by 0x........: main (tc19_shadowmem.c:144)
 ---------- char gran, 0 .. 99, skip 10 ----------
 
-Conflicting store by thread x/x at 0x........ size 1
+Conflicting store by thread x at 0x........ size 1
    at 0x........: child8 (tc19_shadowmem.c:33)
    by 0x........: steer (tc19_shadowmem.c:308)
    by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
@@ -126,7 +126,7 @@ Address 0x........ is at offset 10 from 0x......... Allocation context:
    by 0x........: main (tc19_shadowmem.c:144)
 ---------- char gran, 0 .. 99, skip 11 ----------
 
-Conflicting store by thread x/x at 0x........ size 1
+Conflicting store by thread x at 0x........ size 1
    at 0x........: child8 (tc19_shadowmem.c:33)
    by 0x........: steer (tc19_shadowmem.c:310)
    by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
@@ -137,7 +137,7 @@ Address 0x........ is at offset 11 from 0x......... Allocation context:
    by 0x........: main (tc19_shadowmem.c:144)
 ---------- char gran, 0 .. 99, skip 12 ----------
 
-Conflicting store by thread x/x at 0x........ size 1
+Conflicting store by thread x at 0x........ size 1
    at 0x........: child8 (tc19_shadowmem.c:33)
    by 0x........: steer (tc19_shadowmem.c:312)
    by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
@@ -148,7 +148,7 @@ Address 0x........ is at offset 12 from 0x......... Allocation context:
    by 0x........: main (tc19_shadowmem.c:144)
 ---------- char gran, 0 .. 99, skip 13 ----------
 
-Conflicting store by thread x/x at 0x........ size 1
+Conflicting store by thread x at 0x........ size 1
    at 0x........: child8 (tc19_shadowmem.c:33)
    by 0x........: steer (tc19_shadowmem.c:314)
    by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
@@ -159,7 +159,7 @@ Address 0x........ is at offset 13 from 0x......... Allocation context:
    by 0x........: main (tc19_shadowmem.c:144)
 ---------- char gran, 0 .. 99, skip 14 ----------
 
-Conflicting store by thread x/x at 0x........ size 1
+Conflicting store by thread x at 0x........ size 1
    at 0x........: child8 (tc19_shadowmem.c:33)
    by 0x........: steer (tc19_shadowmem.c:316)
    by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
@@ -170,7 +170,7 @@ Address 0x........ is at offset 14 from 0x......... Allocation context:
    by 0x........: main (tc19_shadowmem.c:144)
 ---------- char gran, 0 .. 99, skip 15 ----------
 
-Conflicting store by thread x/x at 0x........ size 1
+Conflicting store by thread x at 0x........ size 1
    at 0x........: child8 (tc19_shadowmem.c:33)
    by 0x........: steer (tc19_shadowmem.c:318)
    by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
@@ -181,7 +181,7 @@ Address 0x........ is at offset 15 from 0x......... Allocation context:
    by 0x........: main (tc19_shadowmem.c:144)
 ---------- char gran, 0 .. 99, skip 16 ----------
 
-Conflicting store by thread x/x at 0x........ size 1
+Conflicting store by thread x at 0x........ size 1
    at 0x........: child8 (tc19_shadowmem.c:33)
    by 0x........: steer (tc19_shadowmem.c:320)
    by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
@@ -192,7 +192,7 @@ Address 0x........ is at offset 16 from 0x......... Allocation context:
    by 0x........: main (tc19_shadowmem.c:144)
 ---------- char gran, 0 .. 99, skip 17 ----------
 
-Conflicting store by thread x/x at 0x........ size 1
+Conflicting store by thread x at 0x........ size 1
    at 0x........: child8 (tc19_shadowmem.c:33)
    by 0x........: steer (tc19_shadowmem.c:322)
    by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
@@ -203,7 +203,7 @@ Address 0x........ is at offset 17 from 0x......... Allocation context:
    by 0x........: main (tc19_shadowmem.c:144)
 ---------- char gran, 0 .. 99, skip 18 ----------
 
-Conflicting store by thread x/x at 0x........ size 1
+Conflicting store by thread x at 0x........ size 1
    at 0x........: child8 (tc19_shadowmem.c:33)
    by 0x........: steer (tc19_shadowmem.c:324)
    by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
@@ -214,7 +214,7 @@ Address 0x........ is at offset 18 from 0x......... Allocation context:
    by 0x........: main (tc19_shadowmem.c:144)
 ---------- char gran, 0 .. 99, skip 19 ----------
 
-Conflicting store by thread x/x at 0x........ size 1
+Conflicting store by thread x at 0x........ size 1
    at 0x........: child8 (tc19_shadowmem.c:33)
    by 0x........: steer (tc19_shadowmem.c:326)
    by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
@@ -225,7 +225,7 @@ Address 0x........ is at offset 19 from 0x......... Allocation context:
    by 0x........: main (tc19_shadowmem.c:144)
 ---------- char gran, 0 .. 99, skip 20 ----------
 
-Conflicting store by thread x/x at 0x........ size 1
+Conflicting store by thread x at 0x........ size 1
    at 0x........: child8 (tc19_shadowmem.c:33)
    by 0x........: steer (tc19_shadowmem.c:328)
    by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
@@ -236,7 +236,7 @@ Address 0x........ is at offset 20 from 0x......... Allocation context:
    by 0x........: main (tc19_shadowmem.c:144)
 ---------- char gran, 0 .. 99, skip 21 ----------
 
-Conflicting store by thread x/x at 0x........ size 1
+Conflicting store by thread x at 0x........ size 1
    at 0x........: child8 (tc19_shadowmem.c:33)
    by 0x........: steer (tc19_shadowmem.c:330)
    by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
@@ -247,7 +247,7 @@ Address 0x........ is at offset 21 from 0x......... Allocation context:
    by 0x........: main (tc19_shadowmem.c:144)
 ---------- char gran, 0 .. 99, skip 22 ----------
 
-Conflicting store by thread x/x at 0x........ size 1
+Conflicting store by thread x at 0x........ size 1
    at 0x........: child8 (tc19_shadowmem.c:33)
    by 0x........: steer (tc19_shadowmem.c:332)
    by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
@@ -258,7 +258,7 @@ Address 0x........ is at offset 22 from 0x......... Allocation context:
    by 0x........: main (tc19_shadowmem.c:144)
 ---------- char gran, 0 .. 99, skip 23 ----------
 
-Conflicting store by thread x/x at 0x........ size 1
+Conflicting store by thread x at 0x........ size 1
    at 0x........: child8 (tc19_shadowmem.c:33)
    by 0x........: steer (tc19_shadowmem.c:334)
    by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
@@ -269,7 +269,7 @@ Address 0x........ is at offset 23 from 0x......... Allocation context:
    by 0x........: main (tc19_shadowmem.c:144)
 ---------- char gran, 0 .. 99, skip 24 ----------
 
-Conflicting store by thread x/x at 0x........ size 1
+Conflicting store by thread x at 0x........ size 1
    at 0x........: child8 (tc19_shadowmem.c:33)
    by 0x........: steer (tc19_shadowmem.c:336)
    by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
@@ -280,7 +280,7 @@ Address 0x........ is at offset 24 from 0x......... Allocation context:
    by 0x........: main (tc19_shadowmem.c:144)
 ---------- char gran, 0 .. 99, skip 25 ----------
 
-Conflicting store by thread x/x at 0x........ size 1
+Conflicting store by thread x at 0x........ size 1
    at 0x........: child8 (tc19_shadowmem.c:33)
    by 0x........: steer (tc19_shadowmem.c:338)
    by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
@@ -291,7 +291,7 @@ Address 0x........ is at offset 25 from 0x......... Allocation context:
    by 0x........: main (tc19_shadowmem.c:144)
 ---------- char gran, 0 .. 99, skip 26 ----------
 
-Conflicting store by thread x/x at 0x........ size 1
+Conflicting store by thread x at 0x........ size 1
    at 0x........: child8 (tc19_shadowmem.c:33)
    by 0x........: steer (tc19_shadowmem.c:340)
    by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
@@ -302,7 +302,7 @@ Address 0x........ is at offset 26 from 0x......... Allocation context:
    by 0x........: main (tc19_shadowmem.c:144)
 ---------- char gran, 0 .. 99, skip 27 ----------
 
-Conflicting store by thread x/x at 0x........ size 1
+Conflicting store by thread x at 0x........ size 1
    at 0x........: child8 (tc19_shadowmem.c:33)
    by 0x........: steer (tc19_shadowmem.c:342)
    by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
@@ -313,7 +313,7 @@ Address 0x........ is at offset 27 from 0x......... Allocation context:
    by 0x........: main (tc19_shadowmem.c:144)
 ---------- char gran, 0 .. 99, skip 28 ----------
 
-Conflicting store by thread x/x at 0x........ size 1
+Conflicting store by thread x at 0x........ size 1
    at 0x........: child8 (tc19_shadowmem.c:33)
    by 0x........: steer (tc19_shadowmem.c:344)
    by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
@@ -324,7 +324,7 @@ Address 0x........ is at offset 28 from 0x......... Allocation context:
    by 0x........: main (tc19_shadowmem.c:144)
 ---------- char gran, 0 .. 99, skip 29 ----------
 
-Conflicting store by thread x/x at 0x........ size 1
+Conflicting store by thread x at 0x........ size 1
    at 0x........: child8 (tc19_shadowmem.c:33)
    by 0x........: steer (tc19_shadowmem.c:346)
    by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
@@ -335,7 +335,7 @@ Address 0x........ is at offset 29 from 0x......... Allocation context:
    by 0x........: main (tc19_shadowmem.c:144)
 ---------- char gran, 0 .. 99, skip 30 ----------
 
-Conflicting store by thread x/x at 0x........ size 1
+Conflicting store by thread x at 0x........ size 1
    at 0x........: child8 (tc19_shadowmem.c:33)
    by 0x........: steer (tc19_shadowmem.c:348)
    by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
@@ -346,7 +346,7 @@ Address 0x........ is at offset 30 from 0x......... Allocation context:
    by 0x........: main (tc19_shadowmem.c:144)
 ---------- char gran, 0 .. 99, skip 31 ----------
 
-Conflicting store by thread x/x at 0x........ size 1
+Conflicting store by thread x at 0x........ size 1
    at 0x........: child8 (tc19_shadowmem.c:33)
    by 0x........: steer (tc19_shadowmem.c:350)
    by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
@@ -357,7 +357,7 @@ Address 0x........ is at offset 31 from 0x......... Allocation context:
    by 0x........: main (tc19_shadowmem.c:144)
 ---------- char gran, 0 .. 99, skip 32 ----------
 
-Conflicting store by thread x/x at 0x........ size 1
+Conflicting store by thread x at 0x........ size 1
    at 0x........: child8 (tc19_shadowmem.c:33)
    by 0x........: steer (tc19_shadowmem.c:352)
    by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
@@ -368,7 +368,7 @@ Address 0x........ is at offset 32 from 0x......... Allocation context:
    by 0x........: main (tc19_shadowmem.c:144)
 ---------- char gran, 0 .. 99, skip 33 ----------
 
-Conflicting store by thread x/x at 0x........ size 1
+Conflicting store by thread x at 0x........ size 1
    at 0x........: child8 (tc19_shadowmem.c:33)
    by 0x........: steer (tc19_shadowmem.c:354)
    by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
@@ -379,7 +379,7 @@ Address 0x........ is at offset 33 from 0x......... Allocation context:
    by 0x........: main (tc19_shadowmem.c:144)
 ---------- char gran, 0 .. 99, skip 34 ----------
 
-Conflicting store by thread x/x at 0x........ size 1
+Conflicting store by thread x at 0x........ size 1
    at 0x........: child8 (tc19_shadowmem.c:33)
    by 0x........: steer (tc19_shadowmem.c:356)
    by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
@@ -390,7 +390,7 @@ Address 0x........ is at offset 34 from 0x......... Allocation context:
    by 0x........: main (tc19_shadowmem.c:144)
 ---------- char gran, 0 .. 99, skip 35 ----------
 
-Conflicting store by thread x/x at 0x........ size 1
+Conflicting store by thread x at 0x........ size 1
    at 0x........: child8 (tc19_shadowmem.c:33)
    by 0x........: steer (tc19_shadowmem.c:358)
    by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
@@ -401,7 +401,7 @@ Address 0x........ is at offset 35 from 0x......... Allocation context:
    by 0x........: main (tc19_shadowmem.c:144)
 ---------- char gran, 0 .. 99, skip 36 ----------
 
-Conflicting store by thread x/x at 0x........ size 1
+Conflicting store by thread x at 0x........ size 1
    at 0x........: child8 (tc19_shadowmem.c:33)
    by 0x........: steer (tc19_shadowmem.c:360)
    by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
@@ -412,7 +412,7 @@ Address 0x........ is at offset 36 from 0x......... Allocation context:
    by 0x........: main (tc19_shadowmem.c:144)
 ---------- char gran, 0 .. 99, skip 37 ----------
 
-Conflicting store by thread x/x at 0x........ size 1
+Conflicting store by thread x at 0x........ size 1
    at 0x........: child8 (tc19_shadowmem.c:33)
    by 0x........: steer (tc19_shadowmem.c:362)
    by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
@@ -423,7 +423,7 @@ Address 0x........ is at offset 37 from 0x......... Allocation context:
    by 0x........: main (tc19_shadowmem.c:144)
 ---------- char gran, 0 .. 99, skip 38 ----------
 
-Conflicting store by thread x/x at 0x........ size 1
+Conflicting store by thread x at 0x........ size 1
    at 0x........: child8 (tc19_shadowmem.c:33)
    by 0x........: steer (tc19_shadowmem.c:364)
    by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
@@ -434,7 +434,7 @@ Address 0x........ is at offset 38 from 0x......... Allocation context:
    by 0x........: main (tc19_shadowmem.c:144)
 ---------- char gran, 0 .. 99, skip 39 ----------
 
-Conflicting store by thread x/x at 0x........ size 1
+Conflicting store by thread x at 0x........ size 1
    at 0x........: child8 (tc19_shadowmem.c:33)
    by 0x........: steer (tc19_shadowmem.c:366)
    by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
@@ -445,7 +445,7 @@ Address 0x........ is at offset 39 from 0x......... Allocation context:
    by 0x........: main (tc19_shadowmem.c:144)
 ---------- char gran, 0 .. 99, skip 40 ----------
 
-Conflicting store by thread x/x at 0x........ size 1
+Conflicting store by thread x at 0x........ size 1
    at 0x........: child8 (tc19_shadowmem.c:33)
    by 0x........: steer (tc19_shadowmem.c:368)
    by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
@@ -456,7 +456,7 @@ Address 0x........ is at offset 40 from 0x......... Allocation context:
    by 0x........: main (tc19_shadowmem.c:144)
 ---------- char gran, 0 .. 99, skip 41 ----------
 
-Conflicting store by thread x/x at 0x........ size 1
+Conflicting store by thread x at 0x........ size 1
    at 0x........: child8 (tc19_shadowmem.c:33)
    by 0x........: steer (tc19_shadowmem.c:370)
    by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
@@ -467,7 +467,7 @@ Address 0x........ is at offset 41 from 0x......... Allocation context:
    by 0x........: main (tc19_shadowmem.c:144)
 ---------- char gran, 0 .. 99, skip 42 ----------
 
-Conflicting store by thread x/x at 0x........ size 1
+Conflicting store by thread x at 0x........ size 1
    at 0x........: child8 (tc19_shadowmem.c:33)
    by 0x........: steer (tc19_shadowmem.c:372)
    by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
@@ -478,7 +478,7 @@ Address 0x........ is at offset 42 from 0x......... Allocation context:
    by 0x........: main (tc19_shadowmem.c:144)
 ---------- char gran, 0 .. 99, skip 43 ----------
 
-Conflicting store by thread x/x at 0x........ size 1
+Conflicting store by thread x at 0x........ size 1
    at 0x........: child8 (tc19_shadowmem.c:33)
    by 0x........: steer (tc19_shadowmem.c:374)
    by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
@@ -489,7 +489,7 @@ Address 0x........ is at offset 43 from 0x......... Allocation context:
    by 0x........: main (tc19_shadowmem.c:144)
 ---------- char gran, 0 .. 99, skip 44 ----------
 
-Conflicting store by thread x/x at 0x........ size 1
+Conflicting store by thread x at 0x........ size 1
    at 0x........: child8 (tc19_shadowmem.c:33)
    by 0x........: steer (tc19_shadowmem.c:376)
    by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
@@ -500,7 +500,7 @@ Address 0x........ is at offset 44 from 0x......... Allocation context:
    by 0x........: main (tc19_shadowmem.c:144)
 ---------- char gran, 0 .. 99, skip 45 ----------
 
-Conflicting store by thread x/x at 0x........ size 1
+Conflicting store by thread x at 0x........ size 1
    at 0x........: child8 (tc19_shadowmem.c:33)
    by 0x........: steer (tc19_shadowmem.c:378)
    by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
@@ -511,7 +511,7 @@ Address 0x........ is at offset 45 from 0x......... Allocation context:
    by 0x........: main (tc19_shadowmem.c:144)
 ---------- char gran, 0 .. 99, skip 46 ----------
 
-Conflicting store by thread x/x at 0x........ size 1
+Conflicting store by thread x at 0x........ size 1
    at 0x........: child8 (tc19_shadowmem.c:33)
    by 0x........: steer (tc19_shadowmem.c:380)
    by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
@@ -522,7 +522,7 @@ Address 0x........ is at offset 46 from 0x......... Allocation context:
    by 0x........: main (tc19_shadowmem.c:144)
 ---------- char gran, 0 .. 99, skip 47 ----------
 
-Conflicting store by thread x/x at 0x........ size 1
+Conflicting store by thread x at 0x........ size 1
    at 0x........: child8 (tc19_shadowmem.c:33)
    by 0x........: steer (tc19_shadowmem.c:382)
    by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
@@ -533,7 +533,7 @@ Address 0x........ is at offset 47 from 0x......... Allocation context:
    by 0x........: main (tc19_shadowmem.c:144)
 ---------- char gran, 0 .. 99, skip 48 ----------
 
-Conflicting store by thread x/x at 0x........ size 1
+Conflicting store by thread x at 0x........ size 1
    at 0x........: child8 (tc19_shadowmem.c:33)
    by 0x........: steer (tc19_shadowmem.c:384)
    by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
@@ -544,7 +544,7 @@ Address 0x........ is at offset 48 from 0x......... Allocation context:
    by 0x........: main (tc19_shadowmem.c:144)
 ---------- char gran, 0 .. 99, skip 49 ----------
 
-Conflicting store by thread x/x at 0x........ size 1
+Conflicting store by thread x at 0x........ size 1
    at 0x........: child8 (tc19_shadowmem.c:33)
    by 0x........: steer (tc19_shadowmem.c:386)
    by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
@@ -555,7 +555,7 @@ Address 0x........ is at offset 49 from 0x......... Allocation context:
    by 0x........: main (tc19_shadowmem.c:144)
 ---------- char gran, 0 .. 99, skip 50 ----------
 
-Conflicting store by thread x/x at 0x........ size 1
+Conflicting store by thread x at 0x........ size 1
    at 0x........: child8 (tc19_shadowmem.c:33)
    by 0x........: steer (tc19_shadowmem.c:388)
    by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
@@ -566,7 +566,7 @@ Address 0x........ is at offset 50 from 0x......... Allocation context:
    by 0x........: main (tc19_shadowmem.c:144)
 ---------- char gran, 0 .. 99, skip 51 ----------
 
-Conflicting store by thread x/x at 0x........ size 1
+Conflicting store by thread x at 0x........ size 1
    at 0x........: child8 (tc19_shadowmem.c:33)
    by 0x........: steer (tc19_shadowmem.c:390)
    by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
@@ -577,7 +577,7 @@ Address 0x........ is at offset 51 from 0x......... Allocation context:
    by 0x........: main (tc19_shadowmem.c:144)
 ---------- char gran, 0 .. 99, skip 52 ----------
 
-Conflicting store by thread x/x at 0x........ size 1
+Conflicting store by thread x at 0x........ size 1
    at 0x........: child8 (tc19_shadowmem.c:33)
    by 0x........: steer (tc19_shadowmem.c:392)
    by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
@@ -588,7 +588,7 @@ Address 0x........ is at offset 52 from 0x......... Allocation context:
    by 0x........: main (tc19_shadowmem.c:144)
 ---------- char gran, 0 .. 99, skip 53 ----------
 
-Conflicting store by thread x/x at 0x........ size 1
+Conflicting store by thread x at 0x........ size 1
    at 0x........: child8 (tc19_shadowmem.c:33)
    by 0x........: steer (tc19_shadowmem.c:394)
    by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
@@ -599,7 +599,7 @@ Address 0x........ is at offset 53 from 0x......... Allocation context:
    by 0x........: main (tc19_shadowmem.c:144)
 ---------- char gran, 0 .. 99, skip 54 ----------
 
-Conflicting store by thread x/x at 0x........ size 1
+Conflicting store by thread x at 0x........ size 1
    at 0x........: child8 (tc19_shadowmem.c:33)
    by 0x........: steer (tc19_shadowmem.c:396)
    by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
@@ -610,7 +610,7 @@ Address 0x........ is at offset 54 from 0x......... Allocation context:
    by 0x........: main (tc19_shadowmem.c:144)
 ---------- char gran, 0 .. 99, skip 55 ----------
 
-Conflicting store by thread x/x at 0x........ size 1
+Conflicting store by thread x at 0x........ size 1
    at 0x........: child8 (tc19_shadowmem.c:33)
    by 0x........: steer (tc19_shadowmem.c:398)
    by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
@@ -621,7 +621,7 @@ Address 0x........ is at offset 55 from 0x......... Allocation context:
    by 0x........: main (tc19_shadowmem.c:144)
 ---------- char gran, 0 .. 99, skip 56 ----------
 
-Conflicting store by thread x/x at 0x........ size 1
+Conflicting store by thread x at 0x........ size 1
    at 0x........: child8 (tc19_shadowmem.c:33)
    by 0x........: steer (tc19_shadowmem.c:400)
    by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
@@ -632,7 +632,7 @@ Address 0x........ is at offset 56 from 0x......... Allocation context:
    by 0x........: main (tc19_shadowmem.c:144)
 ---------- char gran, 0 .. 99, skip 57 ----------
 
-Conflicting store by thread x/x at 0x........ size 1
+Conflicting store by thread x at 0x........ size 1
    at 0x........: child8 (tc19_shadowmem.c:33)
    by 0x........: steer (tc19_shadowmem.c:402)
    by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
@@ -643,7 +643,7 @@ Address 0x........ is at offset 57 from 0x......... Allocation context:
    by 0x........: main (tc19_shadowmem.c:144)
 ---------- char gran, 0 .. 99, skip 58 ----------
 
-Conflicting store by thread x/x at 0x........ size 1
+Conflicting store by thread x at 0x........ size 1
    at 0x........: child8 (tc19_shadowmem.c:33)
    by 0x........: steer (tc19_shadowmem.c:404)
    by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
@@ -654,7 +654,7 @@ Address 0x........ is at offset 58 from 0x......... Allocation context:
    by 0x........: main (tc19_shadowmem.c:144)
 ---------- char gran, 0 .. 99, skip 59 ----------
 
-Conflicting store by thread x/x at 0x........ size 1
+Conflicting store by thread x at 0x........ size 1
    at 0x........: child8 (tc19_shadowmem.c:33)
    by 0x........: steer (tc19_shadowmem.c:406)
    by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
@@ -665,7 +665,7 @@ Address 0x........ is at offset 59 from 0x......... Allocation context:
    by 0x........: main (tc19_shadowmem.c:144)
 ---------- char gran, 0 .. 99, skip 60 ----------
 
-Conflicting store by thread x/x at 0x........ size 1
+Conflicting store by thread x at 0x........ size 1
    at 0x........: child8 (tc19_shadowmem.c:33)
    by 0x........: steer (tc19_shadowmem.c:408)
    by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
@@ -676,7 +676,7 @@ Address 0x........ is at offset 60 from 0x......... Allocation context:
    by 0x........: main (tc19_shadowmem.c:144)
 ---------- char gran, 0 .. 99, skip 61 ----------
 
-Conflicting store by thread x/x at 0x........ size 1
+Conflicting store by thread x at 0x........ size 1
    at 0x........: child8 (tc19_shadowmem.c:33)
    by 0x........: steer (tc19_shadowmem.c:410)
    by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
@@ -687,7 +687,7 @@ Address 0x........ is at offset 61 from 0x......... Allocation context:
    by 0x........: main (tc19_shadowmem.c:144)
 ---------- char gran, 0 .. 99, skip 62 ----------
 
-Conflicting store by thread x/x at 0x........ size 1
+Conflicting store by thread x at 0x........ size 1
    at 0x........: child8 (tc19_shadowmem.c:33)
    by 0x........: steer (tc19_shadowmem.c:412)
    by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
@@ -698,7 +698,7 @@ Address 0x........ is at offset 62 from 0x......... Allocation context:
    by 0x........: main (tc19_shadowmem.c:144)
 ---------- char gran, 0 .. 99, skip 63 ----------
 
-Conflicting store by thread x/x at 0x........ size 1
+Conflicting store by thread x at 0x........ size 1
    at 0x........: child8 (tc19_shadowmem.c:33)
    by 0x........: steer (tc19_shadowmem.c:414)
    by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
@@ -709,7 +709,7 @@ Address 0x........ is at offset 63 from 0x......... Allocation context:
    by 0x........: main (tc19_shadowmem.c:144)
 ---------- char gran, 0 .. 99, skip 64 ----------
 
-Conflicting store by thread x/x at 0x........ size 1
+Conflicting store by thread x at 0x........ size 1
    at 0x........: child8 (tc19_shadowmem.c:33)
    by 0x........: steer (tc19_shadowmem.c:416)
    by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
@@ -720,7 +720,7 @@ Address 0x........ is at offset 64 from 0x......... Allocation context:
    by 0x........: main (tc19_shadowmem.c:144)
 ---------- char gran, 0 .. 99, skip 65 ----------
 
-Conflicting store by thread x/x at 0x........ size 1
+Conflicting store by thread x at 0x........ size 1
    at 0x........: child8 (tc19_shadowmem.c:33)
    by 0x........: steer (tc19_shadowmem.c:418)
    by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
@@ -731,7 +731,7 @@ Address 0x........ is at offset 65 from 0x......... Allocation context:
    by 0x........: main (tc19_shadowmem.c:144)
 ---------- char gran, 0 .. 99, skip 66 ----------
 
-Conflicting store by thread x/x at 0x........ size 1
+Conflicting store by thread x at 0x........ size 1
    at 0x........: child8 (tc19_shadowmem.c:33)
    by 0x........: steer (tc19_shadowmem.c:420)
    by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
@@ -742,7 +742,7 @@ Address 0x........ is at offset 66 from 0x......... Allocation context:
    by 0x........: main (tc19_shadowmem.c:144)
 ---------- char gran, 0 .. 99, skip 67 ----------
 
-Conflicting store by thread x/x at 0x........ size 1
+Conflicting store by thread x at 0x........ size 1
    at 0x........: child8 (tc19_shadowmem.c:33)
    by 0x........: steer (tc19_shadowmem.c:422)
    by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
@@ -753,7 +753,7 @@ Address 0x........ is at offset 67 from 0x......... Allocation context:
    by 0x........: main (tc19_shadowmem.c:144)
 ---------- char gran, 0 .. 99, skip 68 ----------
 
-Conflicting store by thread x/x at 0x........ size 1
+Conflicting store by thread x at 0x........ size 1
    at 0x........: child8 (tc19_shadowmem.c:33)
    by 0x........: steer (tc19_shadowmem.c:424)
    by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
@@ -764,7 +764,7 @@ Address 0x........ is at offset 68 from 0x......... Allocation context:
    by 0x........: main (tc19_shadowmem.c:144)
 ---------- char gran, 0 .. 99, skip 69 ----------
 
-Conflicting store by thread x/x at 0x........ size 1
+Conflicting store by thread x at 0x........ size 1
    at 0x........: child8 (tc19_shadowmem.c:33)
    by 0x........: steer (tc19_shadowmem.c:426)
    by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
@@ -775,7 +775,7 @@ Address 0x........ is at offset 69 from 0x......... Allocation context:
    by 0x........: main (tc19_shadowmem.c:144)
 ---------- char gran, 0 .. 99, skip 70 ----------
 
-Conflicting store by thread x/x at 0x........ size 1
+Conflicting store by thread x at 0x........ size 1
    at 0x........: child8 (tc19_shadowmem.c:33)
    by 0x........: steer (tc19_shadowmem.c:428)
    by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
@@ -786,7 +786,7 @@ Address 0x........ is at offset 70 from 0x......... Allocation context:
    by 0x........: main (tc19_shadowmem.c:144)
 ---------- char gran, 0 .. 99, skip 71 ----------
 
-Conflicting store by thread x/x at 0x........ size 1
+Conflicting store by thread x at 0x........ size 1
    at 0x........: child8 (tc19_shadowmem.c:33)
    by 0x........: steer (tc19_shadowmem.c:430)
    by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
@@ -797,7 +797,7 @@ Address 0x........ is at offset 71 from 0x......... Allocation context:
    by 0x........: main (tc19_shadowmem.c:144)
 ---------- char gran, 0 .. 99, skip 72 ----------
 
-Conflicting store by thread x/x at 0x........ size 1
+Conflicting store by thread x at 0x........ size 1
    at 0x........: child8 (tc19_shadowmem.c:33)
    by 0x........: steer (tc19_shadowmem.c:432)
    by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
@@ -808,7 +808,7 @@ Address 0x........ is at offset 72 from 0x......... Allocation context:
    by 0x........: main (tc19_shadowmem.c:144)
 ---------- char gran, 0 .. 99, skip 73 ----------
 
-Conflicting store by thread x/x at 0x........ size 1
+Conflicting store by thread x at 0x........ size 1
    at 0x........: child8 (tc19_shadowmem.c:33)
    by 0x........: steer (tc19_shadowmem.c:434)
    by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
@@ -819,7 +819,7 @@ Address 0x........ is at offset 73 from 0x......... Allocation context:
    by 0x........: main (tc19_shadowmem.c:144)
 ---------- char gran, 0 .. 99, skip 74 ----------
 
-Conflicting store by thread x/x at 0x........ size 1
+Conflicting store by thread x at 0x........ size 1
    at 0x........: child8 (tc19_shadowmem.c:33)
    by 0x........: steer (tc19_shadowmem.c:436)
    by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
@@ -830,7 +830,7 @@ Address 0x........ is at offset 74 from 0x......... Allocation context:
    by 0x........: main (tc19_shadowmem.c:144)
 ---------- char gran, 0 .. 99, skip 75 ----------
 
-Conflicting store by thread x/x at 0x........ size 1
+Conflicting store by thread x at 0x........ size 1
    at 0x........: child8 (tc19_shadowmem.c:33)
    by 0x........: steer (tc19_shadowmem.c:438)
    by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
@@ -841,7 +841,7 @@ Address 0x........ is at offset 75 from 0x......... Allocation context:
    by 0x........: main (tc19_shadowmem.c:144)
 ---------- char gran, 0 .. 99, skip 76 ----------
 
-Conflicting store by thread x/x at 0x........ size 1
+Conflicting store by thread x at 0x........ size 1
    at 0x........: child8 (tc19_shadowmem.c:33)
    by 0x........: steer (tc19_shadowmem.c:440)
    by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
@@ -852,7 +852,7 @@ Address 0x........ is at offset 76 from 0x......... Allocation context:
    by 0x........: main (tc19_shadowmem.c:144)
 ---------- char gran, 0 .. 99, skip 77 ----------
 
-Conflicting store by thread x/x at 0x........ size 1
+Conflicting store by thread x at 0x........ size 1
    at 0x........: child8 (tc19_shadowmem.c:33)
    by 0x........: steer (tc19_shadowmem.c:442)
    by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
@@ -863,7 +863,7 @@ Address 0x........ is at offset 77 from 0x......... Allocation context:
    by 0x........: main (tc19_shadowmem.c:144)
 ---------- char gran, 0 .. 99, skip 78 ----------
 
-Conflicting store by thread x/x at 0x........ size 1
+Conflicting store by thread x at 0x........ size 1
    at 0x........: child8 (tc19_shadowmem.c:33)
    by 0x........: steer (tc19_shadowmem.c:444)
    by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
@@ -874,7 +874,7 @@ Address 0x........ is at offset 78 from 0x......... Allocation context:
    by 0x........: main (tc19_shadowmem.c:144)
 ---------- char gran, 0 .. 99, skip 79 ----------
 
-Conflicting store by thread x/x at 0x........ size 1
+Conflicting store by thread x at 0x........ size 1
    at 0x........: child8 (tc19_shadowmem.c:33)
    by 0x........: steer (tc19_shadowmem.c:446)
    by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
@@ -885,7 +885,7 @@ Address 0x........ is at offset 79 from 0x......... Allocation context:
    by 0x........: main (tc19_shadowmem.c:144)
 ---------- char gran, 0 .. 99, skip 80 ----------
 
-Conflicting store by thread x/x at 0x........ size 1
+Conflicting store by thread x at 0x........ size 1
    at 0x........: child8 (tc19_shadowmem.c:33)
    by 0x........: steer (tc19_shadowmem.c:448)
    by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
@@ -896,7 +896,7 @@ Address 0x........ is at offset 80 from 0x......... Allocation context:
    by 0x........: main (tc19_shadowmem.c:144)
 ---------- char gran, 0 .. 99, skip 81 ----------
 
-Conflicting store by thread x/x at 0x........ size 1
+Conflicting store by thread x at 0x........ size 1
    at 0x........: child8 (tc19_shadowmem.c:33)
    by 0x........: steer (tc19_shadowmem.c:450)
    by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
@@ -907,7 +907,7 @@ Address 0x........ is at offset 81 from 0x......... Allocation context:
    by 0x........: main (tc19_shadowmem.c:144)
 ---------- char gran, 0 .. 99, skip 82 ----------
 
-Conflicting store by thread x/x at 0x........ size 1
+Conflicting store by thread x at 0x........ size 1
    at 0x........: child8 (tc19_shadowmem.c:33)
    by 0x........: steer (tc19_shadowmem.c:452)
    by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
@@ -918,7 +918,7 @@ Address 0x........ is at offset 82 from 0x......... Allocation context:
    by 0x........: main (tc19_shadowmem.c:144)
 ---------- char gran, 0 .. 99, skip 83 ----------
 
-Conflicting store by thread x/x at 0x........ size 1
+Conflicting store by thread x at 0x........ size 1
    at 0x........: child8 (tc19_shadowmem.c:33)
    by 0x........: steer (tc19_shadowmem.c:454)
    by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
@@ -929,7 +929,7 @@ Address 0x........ is at offset 83 from 0x......... Allocation context:
    by 0x........: main (tc19_shadowmem.c:144)
 ---------- char gran, 0 .. 99, skip 84 ----------
 
-Conflicting store by thread x/x at 0x........ size 1
+Conflicting store by thread x at 0x........ size 1
    at 0x........: child8 (tc19_shadowmem.c:33)
    by 0x........: steer (tc19_shadowmem.c:456)
    by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
@@ -940,7 +940,7 @@ Address 0x........ is at offset 84 from 0x......... Allocation context:
    by 0x........: main (tc19_shadowmem.c:144)
 ---------- char gran, 0 .. 99, skip 85 ----------
 
-Conflicting store by thread x/x at 0x........ size 1
+Conflicting store by thread x at 0x........ size 1
    at 0x........: child8 (tc19_shadowmem.c:33)
    by 0x........: steer (tc19_shadowmem.c:458)
    by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
@@ -951,7 +951,7 @@ Address 0x........ is at offset 85 from 0x......... Allocation context:
    by 0x........: main (tc19_shadowmem.c:144)
 ---------- char gran, 0 .. 99, skip 86 ----------
 
-Conflicting store by thread x/x at 0x........ size 1
+Conflicting store by thread x at 0x........ size 1
    at 0x........: child8 (tc19_shadowmem.c:33)
    by 0x........: steer (tc19_shadowmem.c:460)
    by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
@@ -962,7 +962,7 @@ Address 0x........ is at offset 86 from 0x......... Allocation context:
    by 0x........: main (tc19_shadowmem.c:144)
 ---------- char gran, 0 .. 99, skip 87 ----------
 
-Conflicting store by thread x/x at 0x........ size 1
+Conflicting store by thread x at 0x........ size 1
    at 0x........: child8 (tc19_shadowmem.c:33)
    by 0x........: steer (tc19_shadowmem.c:462)
    by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
@@ -973,7 +973,7 @@ Address 0x........ is at offset 87 from 0x......... Allocation context:
    by 0x........: main (tc19_shadowmem.c:144)
 ---------- char gran, 0 .. 99, skip 88 ----------
 
-Conflicting store by thread x/x at 0x........ size 1
+Conflicting store by thread x at 0x........ size 1
    at 0x........: child8 (tc19_shadowmem.c:33)
    by 0x........: steer (tc19_shadowmem.c:464)
    by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
@@ -984,7 +984,7 @@ Address 0x........ is at offset 88 from 0x......... Allocation context:
    by 0x........: main (tc19_shadowmem.c:144)
 ---------- char gran, 0 .. 99, skip 89 ----------
 
-Conflicting store by thread x/x at 0x........ size 1
+Conflicting store by thread x at 0x........ size 1
    at 0x........: child8 (tc19_shadowmem.c:33)
    by 0x........: steer (tc19_shadowmem.c:466)
    by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
@@ -995,7 +995,7 @@ Address 0x........ is at offset 89 from 0x......... Allocation context:
    by 0x........: main (tc19_shadowmem.c:144)
 ---------- char gran, 0 .. 99, skip 90 ----------
 
-Conflicting store by thread x/x at 0x........ size 1
+Conflicting store by thread x at 0x........ size 1
    at 0x........: child8 (tc19_shadowmem.c:33)
    by 0x........: steer (tc19_shadowmem.c:468)
    by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
@@ -1006,7 +1006,7 @@ Address 0x........ is at offset 90 from 0x......... Allocation context:
    by 0x........: main (tc19_shadowmem.c:144)
 ---------- char gran, 0 .. 99, skip 91 ----------
 
-Conflicting store by thread x/x at 0x........ size 1
+Conflicting store by thread x at 0x........ size 1
    at 0x........: child8 (tc19_shadowmem.c:33)
    by 0x........: steer (tc19_shadowmem.c:470)
    by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
@@ -1017,7 +1017,7 @@ Address 0x........ is at offset 91 from 0x......... Allocation context:
    by 0x........: main (tc19_shadowmem.c:144)
 ---------- char gran, 0 .. 99, skip 92 ----------
 
-Conflicting store by thread x/x at 0x........ size 1
+Conflicting store by thread x at 0x........ size 1
    at 0x........: child8 (tc19_shadowmem.c:33)
    by 0x........: steer (tc19_shadowmem.c:472)
    by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
@@ -1028,7 +1028,7 @@ Address 0x........ is at offset 92 from 0x......... Allocation context:
    by 0x........: main (tc19_shadowmem.c:144)
 ---------- char gran, 0 .. 99, skip 93 ----------
 
-Conflicting store by thread x/x at 0x........ size 1
+Conflicting store by thread x at 0x........ size 1
    at 0x........: child8 (tc19_shadowmem.c:33)
    by 0x........: steer (tc19_shadowmem.c:474)
    by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
@@ -1039,7 +1039,7 @@ Address 0x........ is at offset 93 from 0x......... Allocation context:
    by 0x........: main (tc19_shadowmem.c:144)
 ---------- char gran, 0 .. 99, skip 94 ----------
 
-Conflicting store by thread x/x at 0x........ size 1
+Conflicting store by thread x at 0x........ size 1
    at 0x........: child8 (tc19_shadowmem.c:33)
    by 0x........: steer (tc19_shadowmem.c:476)
    by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
@@ -1050,7 +1050,7 @@ Address 0x........ is at offset 94 from 0x......... Allocation context:
    by 0x........: main (tc19_shadowmem.c:144)
 ---------- char gran, 0 .. 99, skip 95 ----------
 
-Conflicting store by thread x/x at 0x........ size 1
+Conflicting store by thread x at 0x........ size 1
    at 0x........: child8 (tc19_shadowmem.c:33)
    by 0x........: steer (tc19_shadowmem.c:478)
    by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
@@ -1061,7 +1061,7 @@ Address 0x........ is at offset 95 from 0x......... Allocation context:
    by 0x........: main (tc19_shadowmem.c:144)
 ---------- char gran, 0 .. 99, skip 96 ----------
 
-Conflicting store by thread x/x at 0x........ size 1
+Conflicting store by thread x at 0x........ size 1
    at 0x........: child8 (tc19_shadowmem.c:33)
    by 0x........: steer (tc19_shadowmem.c:480)
    by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
@@ -1072,7 +1072,7 @@ Address 0x........ is at offset 96 from 0x......... Allocation context:
    by 0x........: main (tc19_shadowmem.c:144)
 ---------- char gran, 0 .. 99, skip 97 ----------
 
-Conflicting store by thread x/x at 0x........ size 1
+Conflicting store by thread x at 0x........ size 1
    at 0x........: child8 (tc19_shadowmem.c:33)
    by 0x........: steer (tc19_shadowmem.c:482)
    by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
@@ -1083,7 +1083,7 @@ Address 0x........ is at offset 97 from 0x......... Allocation context:
    by 0x........: main (tc19_shadowmem.c:144)
 ---------- char gran, 0 .. 99, skip 98 ----------
 
-Conflicting store by thread x/x at 0x........ size 1
+Conflicting store by thread x at 0x........ size 1
    at 0x........: child8 (tc19_shadowmem.c:33)
    by 0x........: steer (tc19_shadowmem.c:484)
    by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
@@ -1099,7 +1099,7 @@ Address 0x........ is at offset 98 from 0x......... Allocation context:
 
 ---------- short gran, 0 .. 98, skip 0 ----------
 
-Conflicting store by thread x/x at 0x........ size 2
+Conflicting store by thread x at 0x........ size 2
    at 0x........: child16 (tc19_shadowmem.c:57)
    by 0x........: steer (tc19_shadowmem.c:288)
    by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
@@ -1113,7 +1113,7 @@ Address 0x........ is at offset 0 from 0x......... Allocation context:
 More than 100 errors detected.  Subsequent errors
 will still be recorded, but in less detail than before.
 
-Conflicting store by thread x/x at 0x........ size 2
+Conflicting store by thread x at 0x........ size 2
    at 0x........: child16 (tc19_shadowmem.c:57)
    by 0x........: steer (tc19_shadowmem.c:290)
    by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
@@ -1124,7 +1124,7 @@ Address 0x........ is at offset 1 from 0x......... Allocation context:
    by 0x........: main (tc19_shadowmem.c:144)
 ---------- short gran, 0 .. 98, skip 2 ----------
 
-Conflicting store by thread x/x at 0x........ size 2
+Conflicting store by thread x at 0x........ size 2
    at 0x........: child16 (tc19_shadowmem.c:57)
    by 0x........: steer (tc19_shadowmem.c:292)
    by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
@@ -1135,7 +1135,7 @@ Address 0x........ is at offset 2 from 0x......... Allocation context:
    by 0x........: main (tc19_shadowmem.c:144)
 ---------- short gran, 1 .. 98, skip 3 ----------
 
-Conflicting store by thread x/x at 0x........ size 2
+Conflicting store by thread x at 0x........ size 2
    at 0x........: child16 (tc19_shadowmem.c:57)
    by 0x........: steer (tc19_shadowmem.c:294)
    by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
@@ -1146,7 +1146,7 @@ Address 0x........ is at offset 3 from 0x......... Allocation context:
    by 0x........: main (tc19_shadowmem.c:144)
 ---------- short gran, 0 .. 98, skip 4 ----------
 
-Conflicting store by thread x/x at 0x........ size 2
+Conflicting store by thread x at 0x........ size 2
    at 0x........: child16 (tc19_shadowmem.c:57)
    by 0x........: steer (tc19_shadowmem.c:296)
    by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
@@ -1157,7 +1157,7 @@ Address 0x........ is at offset 4 from 0x......... Allocation context:
    by 0x........: main (tc19_shadowmem.c:144)
 ---------- short gran, 1 .. 98, skip 5 ----------
 
-Conflicting store by thread x/x at 0x........ size 2
+Conflicting store by thread x at 0x........ size 2
    at 0x........: child16 (tc19_shadowmem.c:57)
    by 0x........: steer (tc19_shadowmem.c:298)
    by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
@@ -1168,7 +1168,7 @@ Address 0x........ is at offset 5 from 0x......... Allocation context:
    by 0x........: main (tc19_shadowmem.c:144)
 ---------- short gran, 0 .. 98, skip 6 ----------
 
-Conflicting store by thread x/x at 0x........ size 2
+Conflicting store by thread x at 0x........ size 2
    at 0x........: child16 (tc19_shadowmem.c:57)
    by 0x........: steer (tc19_shadowmem.c:300)
    by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
@@ -1179,7 +1179,7 @@ Address 0x........ is at offset 6 from 0x......... Allocation context:
    by 0x........: main (tc19_shadowmem.c:144)
 ---------- short gran, 1 .. 98, skip 7 ----------
 
-Conflicting store by thread x/x at 0x........ size 2
+Conflicting store by thread x at 0x........ size 2
    at 0x........: child16 (tc19_shadowmem.c:57)
    by 0x........: steer (tc19_shadowmem.c:302)
    by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
@@ -1190,7 +1190,7 @@ Address 0x........ is at offset 7 from 0x......... Allocation context:
    by 0x........: main (tc19_shadowmem.c:144)
 ---------- short gran, 0 .. 98, skip 8 ----------
 
-Conflicting store by thread x/x at 0x........ size 2
+Conflicting store by thread x at 0x........ size 2
    at 0x........: child16 (tc19_shadowmem.c:57)
    by 0x........: steer (tc19_shadowmem.c:304)
    by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
@@ -1201,7 +1201,7 @@ Address 0x........ is at offset 8 from 0x......... Allocation context:
    by 0x........: main (tc19_shadowmem.c:144)
 ---------- short gran, 1 .. 98, skip 9 ----------
 
-Conflicting store by thread x/x at 0x........ size 2
+Conflicting store by thread x at 0x........ size 2
    at 0x........: child16 (tc19_shadowmem.c:57)
    by 0x........: steer (tc19_shadowmem.c:306)
    by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
@@ -1212,7 +1212,7 @@ Address 0x........ is at offset 9 from 0x......... Allocation context:
    by 0x........: main (tc19_shadowmem.c:144)
 ---------- short gran, 0 .. 98, skip 10 ----------
 
-Conflicting store by thread x/x at 0x........ size 2
+Conflicting store by thread x at 0x........ size 2
    at 0x........: child16 (tc19_shadowmem.c:57)
    by 0x........: steer (tc19_shadowmem.c:308)
    by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
@@ -1223,7 +1223,7 @@ Address 0x........ is at offset 10 from 0x......... Allocation context:
    by 0x........: main (tc19_shadowmem.c:144)
 ---------- short gran, 1 .. 98, skip 11 ----------
 
-Conflicting store by thread x/x at 0x........ size 2
+Conflicting store by thread x at 0x........ size 2
    at 0x........: child16 (tc19_shadowmem.c:57)
    by 0x........: steer (tc19_shadowmem.c:310)
    by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
@@ -1234,7 +1234,7 @@ Address 0x........ is at offset 11 from 0x......... Allocation context:
    by 0x........: main (tc19_shadowmem.c:144)
 ---------- short gran, 0 .. 98, skip 12 ----------
 
-Conflicting store by thread x/x at 0x........ size 2
+Conflicting store by thread x at 0x........ size 2
    at 0x........: child16 (tc19_shadowmem.c:57)
    by 0x........: steer (tc19_shadowmem.c:312)
    by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
@@ -1245,7 +1245,7 @@ Address 0x........ is at offset 12 from 0x......... Allocation context:
    by 0x........: main (tc19_shadowmem.c:144)
 ---------- short gran, 1 .. 98, skip 13 ----------
 
-Conflicting store by thread x/x at 0x........ size 2
+Conflicting store by thread x at 0x........ size 2
    at 0x........: child16 (tc19_shadowmem.c:57)
    by 0x........: steer (tc19_shadowmem.c:314)
    by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
@@ -1256,7 +1256,7 @@ Address 0x........ is at offset 13 from 0x......... Allocation context:
    by 0x........: main (tc19_shadowmem.c:144)
 ---------- short gran, 0 .. 98, skip 14 ----------
 
-Conflicting store by thread x/x at 0x........ size 2
+Conflicting store by thread x at 0x........ size 2
    at 0x........: child16 (tc19_shadowmem.c:57)
    by 0x........: steer (tc19_shadowmem.c:316)
    by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
@@ -1267,7 +1267,7 @@ Address 0x........ is at offset 14 from 0x......... Allocation context:
    by 0x........: main (tc19_shadowmem.c:144)
 ---------- short gran, 1 .. 98, skip 15 ----------
 
-Conflicting store by thread x/x at 0x........ size 2
+Conflicting store by thread x at 0x........ size 2
    at 0x........: child16 (tc19_shadowmem.c:57)
    by 0x........: steer (tc19_shadowmem.c:318)
    by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
@@ -1278,7 +1278,7 @@ Address 0x........ is at offset 15 from 0x......... Allocation context:
    by 0x........: main (tc19_shadowmem.c:144)
 ---------- short gran, 0 .. 98, skip 16 ----------
 
-Conflicting store by thread x/x at 0x........ size 2
+Conflicting store by thread x at 0x........ size 2
    at 0x........: child16 (tc19_shadowmem.c:57)
    by 0x........: steer (tc19_shadowmem.c:320)
    by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
@@ -1289,7 +1289,7 @@ Address 0x........ is at offset 16 from 0x......... Allocation context:
    by 0x........: main (tc19_shadowmem.c:144)
 ---------- short gran, 1 .. 98, skip 17 ----------
 
-Conflicting store by thread x/x at 0x........ size 2
+Conflicting store by thread x at 0x........ size 2
    at 0x........: child16 (tc19_shadowmem.c:57)
    by 0x........: steer (tc19_shadowmem.c:322)
    by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
@@ -1300,7 +1300,7 @@ Address 0x........ is at offset 17 from 0x......... Allocation context:
    by 0x........: main (tc19_shadowmem.c:144)
 ---------- short gran, 0 .. 98, skip 18 ----------
 
-Conflicting store by thread x/x at 0x........ size 2
+Conflicting store by thread x at 0x........ size 2
    at 0x........: child16 (tc19_shadowmem.c:57)
    by 0x........: steer (tc19_shadowmem.c:324)
    by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
@@ -1311,7 +1311,7 @@ Address 0x........ is at offset 18 from 0x......... Allocation context:
    by 0x........: main (tc19_shadowmem.c:144)
 ---------- short gran, 1 .. 98, skip 19 ----------
 
-Conflicting store by thread x/x at 0x........ size 2
+Conflicting store by thread x at 0x........ size 2
    at 0x........: child16 (tc19_shadowmem.c:57)
    by 0x........: steer (tc19_shadowmem.c:326)
    by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
@@ -1322,7 +1322,7 @@ Address 0x........ is at offset 19 from 0x......... Allocation context:
    by 0x........: main (tc19_shadowmem.c:144)
 ---------- short gran, 0 .. 98, skip 20 ----------
 
-Conflicting store by thread x/x at 0x........ size 2
+Conflicting store by thread x at 0x........ size 2
    at 0x........: child16 (tc19_shadowmem.c:57)
    by 0x........: steer (tc19_shadowmem.c:328)
    by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
@@ -1333,7 +1333,7 @@ Address 0x........ is at offset 20 from 0x......... Allocation context:
    by 0x........: main (tc19_shadowmem.c:144)
 ---------- short gran, 1 .. 98, skip 21 ----------
 
-Conflicting store by thread x/x at 0x........ size 2
+Conflicting store by thread x at 0x........ size 2
    at 0x........: child16 (tc19_shadowmem.c:57)
    by 0x........: steer (tc19_shadowmem.c:330)
    by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
@@ -1344,7 +1344,7 @@ Address 0x........ is at offset 21 from 0x......... Allocation context:
    by 0x........: main (tc19_shadowmem.c:144)
 ---------- short gran, 0 .. 98, skip 22 ----------
 
-Conflicting store by thread x/x at 0x........ size 2
+Conflicting store by thread x at 0x........ size 2
    at 0x........: child16 (tc19_shadowmem.c:57)
    by 0x........: steer (tc19_shadowmem.c:332)
    by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
@@ -1355,7 +1355,7 @@ Address 0x........ is at offset 22 from 0x......... Allocation context:
    by 0x........: main (tc19_shadowmem.c:144)
 ---------- short gran, 1 .. 98, skip 23 ----------
 
-Conflicting store by thread x/x at 0x........ size 2
+Conflicting store by thread x at 0x........ size 2
    at 0x........: child16 (tc19_shadowmem.c:57)
    by 0x........: steer (tc19_shadowmem.c:334)
    by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
@@ -1366,7 +1366,7 @@ Address 0x........ is at offset 23 from 0x......... Allocation context:
    by 0x........: main (tc19_shadowmem.c:144)
 ---------- short gran, 0 .. 98, skip 24 ----------
 
-Conflicting store by thread x/x at 0x........ size 2
+Conflicting store by thread x at 0x........ size 2
    at 0x........: child16 (tc19_shadowmem.c:57)
    by 0x........: steer (tc19_shadowmem.c:336)
    by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
@@ -1377,7 +1377,7 @@ Address 0x........ is at offset 24 from 0x......... Allocation context:
    by 0x........: main (tc19_shadowmem.c:144)
 ---------- short gran, 1 .. 98, skip 25 ----------
 
-Conflicting store by thread x/x at 0x........ size 2
+Conflicting store by thread x at 0x........ size 2
    at 0x........: child16 (tc19_shadowmem.c:57)
    by 0x........: steer (tc19_shadowmem.c:338)
    by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
@@ -1388,7 +1388,7 @@ Address 0x........ is at offset 25 from 0x......... Allocation context:
    by 0x........: main (tc19_shadowmem.c:144)
 ---------- short gran, 0 .. 98, skip 26 ----------
 
-Conflicting store by thread x/x at 0x........ size 2
+Conflicting store by thread x at 0x........ size 2
    at 0x........: child16 (tc19_shadowmem.c:57)
    by 0x........: steer (tc19_shadowmem.c:340)
    by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
@@ -1399,7 +1399,7 @@ Address 0x........ is at offset 26 from 0x......... Allocation context:
    by 0x........: main (tc19_shadowmem.c:144)
 ---------- short gran, 1 .. 98, skip 27 ----------
 
-Conflicting store by thread x/x at 0x........ size 2
+Conflicting store by thread x at 0x........ size 2
    at 0x........: child16 (tc19_shadowmem.c:57)
    by 0x........: steer (tc19_shadowmem.c:342)
    by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
@@ -1410,7 +1410,7 @@ Address 0x........ is at offset 27 from 0x......... Allocation context:
    by 0x........: main (tc19_shadowmem.c:144)
 ---------- short gran, 0 .. 98, skip 28 ----------
 
-Conflicting store by thread x/x at 0x........ size 2
+Conflicting store by thread x at 0x........ size 2
    at 0x........: child16 (tc19_shadowmem.c:57)
    by 0x........: steer (tc19_shadowmem.c:344)
    by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
@@ -1421,7 +1421,7 @@ Address 0x........ is at offset 28 from 0x......... Allocation context:
    by 0x........: main (tc19_shadowmem.c:144)
 ---------- short gran, 1 .. 98, skip 29 ----------
 
-Conflicting store by thread x/x at 0x........ size 2
+Conflicting store by thread x at 0x........ size 2
    at 0x........: child16 (tc19_shadowmem.c:57)
    by 0x........: steer (tc19_shadowmem.c:346)
    by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
@@ -1432,7 +1432,7 @@ Address 0x........ is at offset 29 from 0x......... Allocation context:
    by 0x........: main (tc19_shadowmem.c:144)
 ---------- short gran, 0 .. 98, skip 30 ----------
 
-Conflicting store by thread x/x at 0x........ size 2
+Conflicting store by thread x at 0x........ size 2
    at 0x........: child16 (tc19_shadowmem.c:57)
    by 0x........: steer (tc19_shadowmem.c:348)
    by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
@@ -1443,7 +1443,7 @@ Address 0x........ is at offset 30 from 0x......... Allocation context:
    by 0x........: main (tc19_shadowmem.c:144)
 ---------- short gran, 1 .. 98, skip 31 ----------
 
-Conflicting store by thread x/x at 0x........ size 2
+Conflicting store by thread x at 0x........ size 2
    at 0x........: child16 (tc19_shadowmem.c:57)
    by 0x........: steer (tc19_shadowmem.c:350)
    by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
@@ -1454,7 +1454,7 @@ Address 0x........ is at offset 31 from 0x......... Allocation context:
    by 0x........: main (tc19_shadowmem.c:144)
 ---------- short gran, 0 .. 98, skip 32 ----------
 
-Conflicting store by thread x/x at 0x........ size 2
+Conflicting store by thread x at 0x........ size 2
    at 0x........: child16 (tc19_shadowmem.c:57)
    by 0x........: steer (tc19_shadowmem.c:352)
    by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
@@ -1465,7 +1465,7 @@ Address 0x........ is at offset 32 from 0x......... Allocation context:
    by 0x........: main (tc19_shadowmem.c:144)
 ---------- short gran, 1 .. 98, skip 33 ----------
 
-Conflicting store by thread x/x at 0x........ size 2
+Conflicting store by thread x at 0x........ size 2
    at 0x........: child16 (tc19_shadowmem.c:57)
    by 0x........: steer (tc19_shadowmem.c:354)
    by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
@@ -1476,7 +1476,7 @@ Address 0x........ is at offset 33 from 0x......... Allocation context:
    by 0x........: main (tc19_shadowmem.c:144)
 ---------- short gran, 0 .. 98, skip 34 ----------
 
-Conflicting store by thread x/x at 0x........ size 2
+Conflicting store by thread x at 0x........ size 2
    at 0x........: child16 (tc19_shadowmem.c:57)
    by 0x........: steer (tc19_shadowmem.c:356)
    by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
@@ -1487,7 +1487,7 @@ Address 0x........ is at offset 34 from 0x......... Allocation context:
    by 0x........: main (tc19_shadowmem.c:144)
 ---------- short gran, 1 .. 98, skip 35 ----------
 
-Conflicting store by thread x/x at 0x........ size 2
+Conflicting store by thread x at 0x........ size 2
    at 0x........: child16 (tc19_shadowmem.c:57)
    by 0x........: steer (tc19_shadowmem.c:358)
    by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
@@ -1498,7 +1498,7 @@ Address 0x........ is at offset 35 from 0x......... Allocation context:
    by 0x........: main (tc19_shadowmem.c:144)
 ---------- short gran, 0 .. 98, skip 36 ----------
 
-Conflicting store by thread x/x at 0x........ size 2
+Conflicting store by thread x at 0x........ size 2
    at 0x........: child16 (tc19_shadowmem.c:57)
    by 0x........: steer (tc19_shadowmem.c:360)
    by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
@@ -1509,7 +1509,7 @@ Address 0x........ is at offset 36 from 0x......... Allocation context:
    by 0x........: main (tc19_shadowmem.c:144)
 ---------- short gran, 1 .. 98, skip 37 ----------
 
-Conflicting store by thread x/x at 0x........ size 2
+Conflicting store by thread x at 0x........ size 2
    at 0x........: child16 (tc19_shadowmem.c:57)
    by 0x........: steer (tc19_shadowmem.c:362)
    by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
@@ -1520,7 +1520,7 @@ Address 0x........ is at offset 37 from 0x......... Allocation context:
    by 0x........: main (tc19_shadowmem.c:144)
 ---------- short gran, 0 .. 98, skip 38 ----------
 
-Conflicting store by thread x/x at 0x........ size 2
+Conflicting store by thread x at 0x........ size 2
    at 0x........: child16 (tc19_shadowmem.c:57)
    by 0x........: steer (tc19_shadowmem.c:364)
    by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
@@ -1531,7 +1531,7 @@ Address 0x........ is at offset 38 from 0x......... Allocation context:
    by 0x........: main (tc19_shadowmem.c:144)
 ---------- short gran, 1 .. 98, skip 39 ----------
 
-Conflicting store by thread x/x at 0x........ size 2
+Conflicting store by thread x at 0x........ size 2
    at 0x........: child16 (tc19_shadowmem.c:57)
    by 0x........: steer (tc19_shadowmem.c:366)
    by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
@@ -1542,7 +1542,7 @@ Address 0x........ is at offset 39 from 0x......... Allocation context:
    by 0x........: main (tc19_shadowmem.c:144)
 ---------- short gran, 0 .. 98, skip 40 ----------
 
-Conflicting store by thread x/x at 0x........ size 2
+Conflicting store by thread x at 0x........ size 2
    at 0x........: child16 (tc19_shadowmem.c:57)
    by 0x........: steer (tc19_shadowmem.c:368)
    by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
@@ -1553,7 +1553,7 @@ Address 0x........ is at offset 40 from 0x......... Allocation context:
    by 0x........: main (tc19_shadowmem.c:144)
 ---------- short gran, 1 .. 98, skip 41 ----------
 
-Conflicting store by thread x/x at 0x........ size 2
+Conflicting store by thread x at 0x........ size 2
    at 0x........: child16 (tc19_shadowmem.c:57)
    by 0x........: steer (tc19_shadowmem.c:370)
    by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
@@ -1564,7 +1564,7 @@ Address 0x........ is at offset 41 from 0x......... Allocation context:
    by 0x........: main (tc19_shadowmem.c:144)
 ---------- short gran, 0 .. 98, skip 42 ----------
 
-Conflicting store by thread x/x at 0x........ size 2
+Conflicting store by thread x at 0x........ size 2
    at 0x........: child16 (tc19_shadowmem.c:57)
    by 0x........: steer (tc19_shadowmem.c:372)
    by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
@@ -1575,7 +1575,7 @@ Address 0x........ is at offset 42 from 0x......... Allocation context:
    by 0x........: main (tc19_shadowmem.c:144)
 ---------- short gran, 1 .. 98, skip 43 ----------
 
-Conflicting store by thread x/x at 0x........ size 2
+Conflicting store by thread x at 0x........ size 2
    at 0x........: child16 (tc19_shadowmem.c:57)
    by 0x........: steer (tc19_shadowmem.c:374)
    by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
@@ -1586,7 +1586,7 @@ Address 0x........ is at offset 43 from 0x......... Allocation context:
    by 0x........: main (tc19_shadowmem.c:144)
 ---------- short gran, 0 .. 98, skip 44 ----------
 
-Conflicting store by thread x/x at 0x........ size 2
+Conflicting store by thread x at 0x........ size 2
    at 0x........: child16 (tc19_shadowmem.c:57)
    by 0x........: steer (tc19_shadowmem.c:376)
    by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
@@ -1597,7 +1597,7 @@ Address 0x........ is at offset 44 from 0x......... Allocation context:
    by 0x........: main (tc19_shadowmem.c:144)
 ---------- short gran, 1 .. 98, skip 45 ----------
 
-Conflicting store by thread x/x at 0x........ size 2
+Conflicting store by thread x at 0x........ size 2
    at 0x........: child16 (tc19_shadowmem.c:57)
    by 0x........: steer (tc19_shadowmem.c:378)
    by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
@@ -1608,7 +1608,7 @@ Address 0x........ is at offset 45 from 0x......... Allocation context:
    by 0x........: main (tc19_shadowmem.c:144)
 ---------- short gran, 0 .. 98, skip 46 ----------
 
-Conflicting store by thread x/x at 0x........ size 2
+Conflicting store by thread x at 0x........ size 2
    at 0x........: child16 (tc19_shadowmem.c:57)
    by 0x........: steer (tc19_shadowmem.c:380)
    by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
@@ -1619,7 +1619,7 @@ Address 0x........ is at offset 46 from 0x......... Allocation context:
    by 0x........: main (tc19_shadowmem.c:144)
 ---------- short gran, 1 .. 98, skip 47 ----------
 
-Conflicting store by thread x/x at 0x........ size 2
+Conflicting store by thread x at 0x........ size 2
    at 0x........: child16 (tc19_shadowmem.c:57)
    by 0x........: steer (tc19_shadowmem.c:382)
    by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
@@ -1630,7 +1630,7 @@ Address 0x........ is at offset 47 from 0x......... Allocation context:
    by 0x........: main (tc19_shadowmem.c:144)
 ---------- short gran, 0 .. 98, skip 48 ----------
 
-Conflicting store by thread x/x at 0x........ size 2
+Conflicting store by thread x at 0x........ size 2
    at 0x........: child16 (tc19_shadowmem.c:57)
    by 0x........: steer (tc19_shadowmem.c:384)
    by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
@@ -1641,7 +1641,7 @@ Address 0x........ is at offset 48 from 0x......... Allocation context:
    by 0x........: main (tc19_shadowmem.c:144)
 ---------- short gran, 1 .. 98, skip 49 ----------
 
-Conflicting store by thread x/x at 0x........ size 2
+Conflicting store by thread x at 0x........ size 2
    at 0x........: child16 (tc19_shadowmem.c:57)
    by 0x........: steer (tc19_shadowmem.c:386)
    by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
@@ -1652,7 +1652,7 @@ Address 0x........ is at offset 49 from 0x......... Allocation context:
    by 0x........: main (tc19_shadowmem.c:144)
 ---------- short gran, 0 .. 98, skip 50 ----------
 
-Conflicting store by thread x/x at 0x........ size 2
+Conflicting store by thread x at 0x........ size 2
    at 0x........: child16 (tc19_shadowmem.c:57)
    by 0x........: steer (tc19_shadowmem.c:388)
    by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
@@ -1663,7 +1663,7 @@ Address 0x........ is at offset 50 from 0x......... Allocation context:
    by 0x........: main (tc19_shadowmem.c:144)
 ---------- short gran, 1 .. 98, skip 51 ----------
 
-Conflicting store by thread x/x at 0x........ size 2
+Conflicting store by thread x at 0x........ size 2
    at 0x........: child16 (tc19_shadowmem.c:57)
    by 0x........: steer (tc19_shadowmem.c:390)
    by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
@@ -1674,7 +1674,7 @@ Address 0x........ is at offset 51 from 0x......... Allocation context:
    by 0x........: main (tc19_shadowmem.c:144)
 ---------- short gran, 0 .. 98, skip 52 ----------
 
-Conflicting store by thread x/x at 0x........ size 2
+Conflicting store by thread x at 0x........ size 2
    at 0x........: child16 (tc19_shadowmem.c:57)
    by 0x........: steer (tc19_shadowmem.c:392)
    by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
@@ -1685,7 +1685,7 @@ Address 0x........ is at offset 52 from 0x......... Allocation context:
    by 0x........: main (tc19_shadowmem.c:144)
 ---------- short gran, 1 .. 98, skip 53 ----------
 
-Conflicting store by thread x/x at 0x........ size 2
+Conflicting store by thread x at 0x........ size 2
    at 0x........: child16 (tc19_shadowmem.c:57)
    by 0x........: steer (tc19_shadowmem.c:394)
    by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
@@ -1696,7 +1696,7 @@ Address 0x........ is at offset 53 from 0x......... Allocation context:
    by 0x........: main (tc19_shadowmem.c:144)
 ---------- short gran, 0 .. 98, skip 54 ----------
 
-Conflicting store by thread x/x at 0x........ size 2
+Conflicting store by thread x at 0x........ size 2
    at 0x........: child16 (tc19_shadowmem.c:57)
    by 0x........: steer (tc19_shadowmem.c:396)
    by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
@@ -1707,7 +1707,7 @@ Address 0x........ is at offset 54 from 0x......... Allocation context:
    by 0x........: main (tc19_shadowmem.c:144)
 ---------- short gran, 1 .. 98, skip 55 ----------
 
-Conflicting store by thread x/x at 0x........ size 2
+Conflicting store by thread x at 0x........ size 2
    at 0x........: child16 (tc19_shadowmem.c:57)
    by 0x........: steer (tc19_shadowmem.c:398)
    by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
@@ -1718,7 +1718,7 @@ Address 0x........ is at offset 55 from 0x......... Allocation context:
    by 0x........: main (tc19_shadowmem.c:144)
 ---------- short gran, 0 .. 98, skip 56 ----------
 
-Conflicting store by thread x/x at 0x........ size 2
+Conflicting store by thread x at 0x........ size 2
    at 0x........: child16 (tc19_shadowmem.c:57)
    by 0x........: steer (tc19_shadowmem.c:400)
    by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
@@ -1729,7 +1729,7 @@ Address 0x........ is at offset 56 from 0x......... Allocation context:
    by 0x........: main (tc19_shadowmem.c:144)
 ---------- short gran, 1 .. 98, skip 57 ----------
 
-Conflicting store by thread x/x at 0x........ size 2
+Conflicting store by thread x at 0x........ size 2
    at 0x........: child16 (tc19_shadowmem.c:57)
    by 0x........: steer (tc19_shadowmem.c:402)
    by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
@@ -1740,7 +1740,7 @@ Address 0x........ is at offset 57 from 0x......... Allocation context:
    by 0x........: main (tc19_shadowmem.c:144)
 ---------- short gran, 0 .. 98, skip 58 ----------
 
-Conflicting store by thread x/x at 0x........ size 2
+Conflicting store by thread x at 0x........ size 2
    at 0x........: child16 (tc19_shadowmem.c:57)
    by 0x........: steer (tc19_shadowmem.c:404)
    by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
@@ -1751,7 +1751,7 @@ Address 0x........ is at offset 58 from 0x......... Allocation context:
    by 0x........: main (tc19_shadowmem.c:144)
 ---------- short gran, 1 .. 98, skip 59 ----------
 
-Conflicting store by thread x/x at 0x........ size 2
+Conflicting store by thread x at 0x........ size 2
    at 0x........: child16 (tc19_shadowmem.c:57)
    by 0x........: steer (tc19_shadowmem.c:406)
    by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
@@ -1762,7 +1762,7 @@ Address 0x........ is at offset 59 from 0x......... Allocation context:
    by 0x........: main (tc19_shadowmem.c:144)
 ---------- short gran, 0 .. 98, skip 60 ----------
 
-Conflicting store by thread x/x at 0x........ size 2
+Conflicting store by thread x at 0x........ size 2
    at 0x........: child16 (tc19_shadowmem.c:57)
    by 0x........: steer (tc19_shadowmem.c:408)
    by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
@@ -1773,7 +1773,7 @@ Address 0x........ is at offset 60 from 0x......... Allocation context:
    by 0x........: main (tc19_shadowmem.c:144)
 ---------- short gran, 1 .. 98, skip 61 ----------
 
-Conflicting store by thread x/x at 0x........ size 2
+Conflicting store by thread x at 0x........ size 2
    at 0x........: child16 (tc19_shadowmem.c:57)
    by 0x........: steer (tc19_shadowmem.c:410)
    by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
@@ -1784,7 +1784,7 @@ Address 0x........ is at offset 61 from 0x......... Allocation context:
    by 0x........: main (tc19_shadowmem.c:144)
 ---------- short gran, 0 .. 98, skip 62 ----------
 
-Conflicting store by thread x/x at 0x........ size 2
+Conflicting store by thread x at 0x........ size 2
    at 0x........: child16 (tc19_shadowmem.c:57)
    by 0x........: steer (tc19_shadowmem.c:412)
    by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
@@ -1795,7 +1795,7 @@ Address 0x........ is at offset 62 from 0x......... Allocation context:
    by 0x........: main (tc19_shadowmem.c:144)
 ---------- short gran, 1 .. 98, skip 63 ----------
 
-Conflicting store by thread x/x at 0x........ size 2
+Conflicting store by thread x at 0x........ size 2
    at 0x........: child16 (tc19_shadowmem.c:57)
    by 0x........: steer (tc19_shadowmem.c:414)
    by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
@@ -1806,7 +1806,7 @@ Address 0x........ is at offset 63 from 0x......... Allocation context:
    by 0x........: main (tc19_shadowmem.c:144)
 ---------- short gran, 0 .. 98, skip 64 ----------
 
-Conflicting store by thread x/x at 0x........ size 2
+Conflicting store by thread x at 0x........ size 2
    at 0x........: child16 (tc19_shadowmem.c:57)
    by 0x........: steer (tc19_shadowmem.c:416)
    by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
@@ -1817,7 +1817,7 @@ Address 0x........ is at offset 64 from 0x......... Allocation context:
    by 0x........: main (tc19_shadowmem.c:144)
 ---------- short gran, 1 .. 98, skip 65 ----------
 
-Conflicting store by thread x/x at 0x........ size 2
+Conflicting store by thread x at 0x........ size 2
    at 0x........: child16 (tc19_shadowmem.c:57)
    by 0x........: steer (tc19_shadowmem.c:418)
    by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
@@ -1828,7 +1828,7 @@ Address 0x........ is at offset 65 from 0x......... Allocation context:
    by 0x........: main (tc19_shadowmem.c:144)
 ---------- short gran, 0 .. 98, skip 66 ----------
 
-Conflicting store by thread x/x at 0x........ size 2
+Conflicting store by thread x at 0x........ size 2
    at 0x........: child16 (tc19_shadowmem.c:57)
    by 0x........: steer (tc19_shadowmem.c:420)
    by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
@@ -1839,7 +1839,7 @@ Address 0x........ is at offset 66 from 0x......... Allocation context:
    by 0x........: main (tc19_shadowmem.c:144)
 ---------- short gran, 1 .. 98, skip 67 ----------
 
-Conflicting store by thread x/x at 0x........ size 2
+Conflicting store by thread x at 0x........ size 2
    at 0x........: child16 (tc19_shadowmem.c:57)
    by 0x........: steer (tc19_shadowmem.c:422)
    by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
@@ -1850,7 +1850,7 @@ Address 0x........ is at offset 67 from 0x......... Allocation context:
    by 0x........: main (tc19_shadowmem.c:144)
 ---------- short gran, 0 .. 98, skip 68 ----------
 
-Conflicting store by thread x/x at 0x........ size 2
+Conflicting store by thread x at 0x........ size 2
    at 0x........: child16 (tc19_shadowmem.c:57)
    by 0x........: steer (tc19_shadowmem.c:424)
    by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
@@ -1861,7 +1861,7 @@ Address 0x........ is at offset 68 from 0x......... Allocation context:
    by 0x........: main (tc19_shadowmem.c:144)
 ---------- short gran, 1 .. 98, skip 69 ----------
 
-Conflicting store by thread x/x at 0x........ size 2
+Conflicting store by thread x at 0x........ size 2
    at 0x........: child16 (tc19_shadowmem.c:57)
    by 0x........: steer (tc19_shadowmem.c:426)
    by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
@@ -1872,7 +1872,7 @@ Address 0x........ is at offset 69 from 0x......... Allocation context:
    by 0x........: main (tc19_shadowmem.c:144)
 ---------- short gran, 0 .. 98, skip 70 ----------
 
-Conflicting store by thread x/x at 0x........ size 2
+Conflicting store by thread x at 0x........ size 2
    at 0x........: child16 (tc19_shadowmem.c:57)
    by 0x........: steer (tc19_shadowmem.c:428)
    by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
@@ -1883,7 +1883,7 @@ Address 0x........ is at offset 70 from 0x......... Allocation context:
    by 0x........: main (tc19_shadowmem.c:144)
 ---------- short gran, 1 .. 98, skip 71 ----------
 
-Conflicting store by thread x/x at 0x........ size 2
+Conflicting store by thread x at 0x........ size 2
    at 0x........: child16 (tc19_shadowmem.c:57)
    by 0x........: steer (tc19_shadowmem.c:430)
    by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
@@ -1894,7 +1894,7 @@ Address 0x........ is at offset 71 from 0x......... Allocation context:
    by 0x........: main (tc19_shadowmem.c:144)
 ---------- short gran, 0 .. 98, skip 72 ----------
 
-Conflicting store by thread x/x at 0x........ size 2
+Conflicting store by thread x at 0x........ size 2
    at 0x........: child16 (tc19_shadowmem.c:57)
    by 0x........: steer (tc19_shadowmem.c:432)
    by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
@@ -1905,7 +1905,7 @@ Address 0x........ is at offset 72 from 0x......... Allocation context:
    by 0x........: main (tc19_shadowmem.c:144)
 ---------- short gran, 1 .. 98, skip 73 ----------
 
-Conflicting store by thread x/x at 0x........ size 2
+Conflicting store by thread x at 0x........ size 2
    at 0x........: child16 (tc19_shadowmem.c:57)
    by 0x........: steer (tc19_shadowmem.c:434)
    by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
@@ -1916,7 +1916,7 @@ Address 0x........ is at offset 73 from 0x......... Allocation context:
    by 0x........: main (tc19_shadowmem.c:144)
 ---------- short gran, 0 .. 98, skip 74 ----------
 
-Conflicting store by thread x/x at 0x........ size 2
+Conflicting store by thread x at 0x........ size 2
    at 0x........: child16 (tc19_shadowmem.c:57)
    by 0x........: steer (tc19_shadowmem.c:436)
    by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
@@ -1927,7 +1927,7 @@ Address 0x........ is at offset 74 from 0x......... Allocation context:
    by 0x........: main (tc19_shadowmem.c:144)
 ---------- short gran, 1 .. 98, skip 75 ----------
 
-Conflicting store by thread x/x at 0x........ size 2
+Conflicting store by thread x at 0x........ size 2
    at 0x........: child16 (tc19_shadowmem.c:57)
    by 0x........: steer (tc19_shadowmem.c:438)
    by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
@@ -1938,7 +1938,7 @@ Address 0x........ is at offset 75 from 0x......... Allocation context:
    by 0x........: main (tc19_shadowmem.c:144)
 ---------- short gran, 0 .. 98, skip 76 ----------
 
-Conflicting store by thread x/x at 0x........ size 2
+Conflicting store by thread x at 0x........ size 2
    at 0x........: child16 (tc19_shadowmem.c:57)
    by 0x........: steer (tc19_shadowmem.c:440)
    by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
@@ -1949,7 +1949,7 @@ Address 0x........ is at offset 76 from 0x......... Allocation context:
    by 0x........: main (tc19_shadowmem.c:144)
 ---------- short gran, 1 .. 98, skip 77 ----------
 
-Conflicting store by thread x/x at 0x........ size 2
+Conflicting store by thread x at 0x........ size 2
    at 0x........: child16 (tc19_shadowmem.c:57)
    by 0x........: steer (tc19_shadowmem.c:442)
    by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
@@ -1960,7 +1960,7 @@ Address 0x........ is at offset 77 from 0x......... Allocation context:
    by 0x........: main (tc19_shadowmem.c:144)
 ---------- short gran, 0 .. 98, skip 78 ----------
 
-Conflicting store by thread x/x at 0x........ size 2
+Conflicting store by thread x at 0x........ size 2
    at 0x........: child16 (tc19_shadowmem.c:57)
    by 0x........: steer (tc19_shadowmem.c:444)
    by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
@@ -1971,7 +1971,7 @@ Address 0x........ is at offset 78 from 0x......... Allocation context:
    by 0x........: main (tc19_shadowmem.c:144)
 ---------- short gran, 1 .. 98, skip 79 ----------
 
-Conflicting store by thread x/x at 0x........ size 2
+Conflicting store by thread x at 0x........ size 2
    at 0x........: child16 (tc19_shadowmem.c:57)
    by 0x........: steer (tc19_shadowmem.c:446)
    by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
@@ -1982,7 +1982,7 @@ Address 0x........ is at offset 79 from 0x......... Allocation context:
    by 0x........: main (tc19_shadowmem.c:144)
 ---------- short gran, 0 .. 98, skip 80 ----------
 
-Conflicting store by thread x/x at 0x........ size 2
+Conflicting store by thread x at 0x........ size 2
    at 0x........: child16 (tc19_shadowmem.c:57)
    by 0x........: steer (tc19_shadowmem.c:448)
    by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
@@ -1993,7 +1993,7 @@ Address 0x........ is at offset 80 from 0x......... Allocation context:
    by 0x........: main (tc19_shadowmem.c:144)
 ---------- short gran, 1 .. 98, skip 81 ----------
 
-Conflicting store by thread x/x at 0x........ size 2
+Conflicting store by thread x at 0x........ size 2
    at 0x........: child16 (tc19_shadowmem.c:57)
    by 0x........: steer (tc19_shadowmem.c:450)
    by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
@@ -2004,7 +2004,7 @@ Address 0x........ is at offset 81 from 0x......... Allocation context:
    by 0x........: main (tc19_shadowmem.c:144)
 ---------- short gran, 0 .. 98, skip 82 ----------
 
-Conflicting store by thread x/x at 0x........ size 2
+Conflicting store by thread x at 0x........ size 2
    at 0x........: child16 (tc19_shadowmem.c:57)
    by 0x........: steer (tc19_shadowmem.c:452)
    by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
@@ -2015,7 +2015,7 @@ Address 0x........ is at offset 82 from 0x......... Allocation context:
    by 0x........: main (tc19_shadowmem.c:144)
 ---------- short gran, 1 .. 98, skip 83 ----------
 
-Conflicting store by thread x/x at 0x........ size 2
+Conflicting store by thread x at 0x........ size 2
    at 0x........: child16 (tc19_shadowmem.c:57)
    by 0x........: steer (tc19_shadowmem.c:454)
    by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
@@ -2026,7 +2026,7 @@ Address 0x........ is at offset 83 from 0x......... Allocation context:
    by 0x........: main (tc19_shadowmem.c:144)
 ---------- short gran, 0 .. 98, skip 84 ----------
 
-Conflicting store by thread x/x at 0x........ size 2
+Conflicting store by thread x at 0x........ size 2
    at 0x........: child16 (tc19_shadowmem.c:57)
    by 0x........: steer (tc19_shadowmem.c:456)
    by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
@@ -2037,7 +2037,7 @@ Address 0x........ is at offset 84 from 0x......... Allocation context:
    by 0x........: main (tc19_shadowmem.c:144)
 ---------- short gran, 1 .. 98, skip 85 ----------
 
-Conflicting store by thread x/x at 0x........ size 2
+Conflicting store by thread x at 0x........ size 2
    at 0x........: child16 (tc19_shadowmem.c:57)
    by 0x........: steer (tc19_shadowmem.c:458)
    by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
@@ -2048,7 +2048,7 @@ Address 0x........ is at offset 85 from 0x......... Allocation context:
    by 0x........: main (tc19_shadowmem.c:144)
 ---------- short gran, 0 .. 98, skip 86 ----------
 
-Conflicting store by thread x/x at 0x........ size 2
+Conflicting store by thread x at 0x........ size 2
    at 0x........: child16 (tc19_shadowmem.c:57)
    by 0x........: steer (tc19_shadowmem.c:460)
    by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
@@ -2059,7 +2059,7 @@ Address 0x........ is at offset 86 from 0x......... Allocation context:
    by 0x........: main (tc19_shadowmem.c:144)
 ---------- short gran, 1 .. 98, skip 87 ----------
 
-Conflicting store by thread x/x at 0x........ size 2
+Conflicting store by thread x at 0x........ size 2
    at 0x........: child16 (tc19_shadowmem.c:57)
    by 0x........: steer (tc19_shadowmem.c:462)
    by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
@@ -2070,7 +2070,7 @@ Address 0x........ is at offset 87 from 0x......... Allocation context:
    by 0x........: main (tc19_shadowmem.c:144)
 ---------- short gran, 0 .. 98, skip 88 ----------
 
-Conflicting store by thread x/x at 0x........ size 2
+Conflicting store by thread x at 0x........ size 2
    at 0x........: child16 (tc19_shadowmem.c:57)
    by 0x........: steer (tc19_shadowmem.c:464)
    by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
@@ -2081,7 +2081,7 @@ Address 0x........ is at offset 88 from 0x......... Allocation context:
    by 0x........: main (tc19_shadowmem.c:144)
 ---------- short gran, 1 .. 98, skip 89 ----------
 
-Conflicting store by thread x/x at 0x........ size 2
+Conflicting store by thread x at 0x........ size 2
    at 0x........: child16 (tc19_shadowmem.c:57)
    by 0x........: steer (tc19_shadowmem.c:466)
    by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
@@ -2092,7 +2092,7 @@ Address 0x........ is at offset 89 from 0x......... Allocation context:
    by 0x........: main (tc19_shadowmem.c:144)
 ---------- short gran, 0 .. 98, skip 90 ----------
 
-Conflicting store by thread x/x at 0x........ size 2
+Conflicting store by thread x at 0x........ size 2
    at 0x........: child16 (tc19_shadowmem.c:57)
    by 0x........: steer (tc19_shadowmem.c:468)
    by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
@@ -2103,7 +2103,7 @@ Address 0x........ is at offset 90 from 0x......... Allocation context:
    by 0x........: main (tc19_shadowmem.c:144)
 ---------- short gran, 1 .. 98, skip 91 ----------
 
-Conflicting store by thread x/x at 0x........ size 2
+Conflicting store by thread x at 0x........ size 2
    at 0x........: child16 (tc19_shadowmem.c:57)
    by 0x........: steer (tc19_shadowmem.c:470)
    by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
@@ -2114,7 +2114,7 @@ Address 0x........ is at offset 91 from 0x......... Allocation context:
    by 0x........: main (tc19_shadowmem.c:144)
 ---------- short gran, 0 .. 98, skip 92 ----------
 
-Conflicting store by thread x/x at 0x........ size 2
+Conflicting store by thread x at 0x........ size 2
    at 0x........: child16 (tc19_shadowmem.c:57)
    by 0x........: steer (tc19_shadowmem.c:472)
    by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
@@ -2125,7 +2125,7 @@ Address 0x........ is at offset 92 from 0x......... Allocation context:
    by 0x........: main (tc19_shadowmem.c:144)
 ---------- short gran, 1 .. 98, skip 93 ----------
 
-Conflicting store by thread x/x at 0x........ size 2
+Conflicting store by thread x at 0x........ size 2
    at 0x........: child16 (tc19_shadowmem.c:57)
    by 0x........: steer (tc19_shadowmem.c:474)
    by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
@@ -2136,7 +2136,7 @@ Address 0x........ is at offset 93 from 0x......... Allocation context:
    by 0x........: main (tc19_shadowmem.c:144)
 ---------- short gran, 0 .. 98, skip 94 ----------
 
-Conflicting store by thread x/x at 0x........ size 2
+Conflicting store by thread x at 0x........ size 2
    at 0x........: child16 (tc19_shadowmem.c:57)
    by 0x........: steer (tc19_shadowmem.c:476)
    by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
@@ -2147,7 +2147,7 @@ Address 0x........ is at offset 94 from 0x......... Allocation context:
    by 0x........: main (tc19_shadowmem.c:144)
 ---------- short gran, 1 .. 98, skip 95 ----------
 
-Conflicting store by thread x/x at 0x........ size 2
+Conflicting store by thread x at 0x........ size 2
    at 0x........: child16 (tc19_shadowmem.c:57)
    by 0x........: steer (tc19_shadowmem.c:478)
    by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
@@ -2158,7 +2158,7 @@ Address 0x........ is at offset 95 from 0x......... Allocation context:
    by 0x........: main (tc19_shadowmem.c:144)
 ---------- short gran, 0 .. 98, skip 96 ----------
 
-Conflicting store by thread x/x at 0x........ size 2
+Conflicting store by thread x at 0x........ size 2
    at 0x........: child16 (tc19_shadowmem.c:57)
    by 0x........: steer (tc19_shadowmem.c:480)
    by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
@@ -2169,7 +2169,7 @@ Address 0x........ is at offset 96 from 0x......... Allocation context:
    by 0x........: main (tc19_shadowmem.c:144)
 ---------- short gran, 1 .. 98, skip 97 ----------
 
-Conflicting store by thread x/x at 0x........ size 2
+Conflicting store by thread x at 0x........ size 2
    at 0x........: child16 (tc19_shadowmem.c:57)
    by 0x........: steer (tc19_shadowmem.c:482)
    by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
@@ -2185,7 +2185,7 @@ Address 0x........ is at offset 97 from 0x......... Allocation context:
 
 ---------- int gran, 0 .. 96, skip 0 ----------
 
-Conflicting store by thread x/x at 0x........ size 4
+Conflicting store by thread x at 0x........ size 4
    at 0x........: child32 (tc19_shadowmem.c:81)
    by 0x........: steer (tc19_shadowmem.c:288)
    by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
@@ -2196,7 +2196,7 @@ Address 0x........ is at offset 0 from 0x......... Allocation context:
    by 0x........: main (tc19_shadowmem.c:144)
 ---------- int gran, 1 .. 96, skip 1 ----------
 
-Conflicting store by thread x/x at 0x........ size 4
+Conflicting store by thread x at 0x........ size 4
    at 0x........: child32 (tc19_shadowmem.c:81)
    by 0x........: steer (tc19_shadowmem.c:290)
    by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
@@ -2207,7 +2207,7 @@ Address 0x........ is at offset 1 from 0x......... Allocation context:
    by 0x........: main (tc19_shadowmem.c:144)
 ---------- int gran, 2 .. 96, skip 2 ----------
 
-Conflicting store by thread x/x at 0x........ size 4
+Conflicting store by thread x at 0x........ size 4
    at 0x........: child32 (tc19_shadowmem.c:81)
    by 0x........: steer (tc19_shadowmem.c:292)
    by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
@@ -2218,7 +2218,7 @@ Address 0x........ is at offset 2 from 0x......... Allocation context:
    by 0x........: main (tc19_shadowmem.c:144)
 ---------- int gran, 3 .. 96, skip 3 ----------
 
-Conflicting store by thread x/x at 0x........ size 4
+Conflicting store by thread x at 0x........ size 4
    at 0x........: child32 (tc19_shadowmem.c:81)
    by 0x........: steer (tc19_shadowmem.c:294)
    by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
@@ -2229,7 +2229,7 @@ Address 0x........ is at offset 3 from 0x......... Allocation context:
    by 0x........: main (tc19_shadowmem.c:144)
 ---------- int gran, 0 .. 96, skip 4 ----------
 
-Conflicting store by thread x/x at 0x........ size 4
+Conflicting store by thread x at 0x........ size 4
    at 0x........: child32 (tc19_shadowmem.c:81)
    by 0x........: steer (tc19_shadowmem.c:296)
    by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
@@ -2240,7 +2240,7 @@ Address 0x........ is at offset 4 from 0x......... Allocation context:
    by 0x........: main (tc19_shadowmem.c:144)
 ---------- int gran, 1 .. 96, skip 5 ----------
 
-Conflicting store by thread x/x at 0x........ size 4
+Conflicting store by thread x at 0x........ size 4
    at 0x........: child32 (tc19_shadowmem.c:81)
    by 0x........: steer (tc19_shadowmem.c:298)
    by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
@@ -2251,7 +2251,7 @@ Address 0x........ is at offset 5 from 0x......... Allocation context:
    by 0x........: main (tc19_shadowmem.c:144)
 ---------- int gran, 2 .. 96, skip 6 ----------
 
-Conflicting store by thread x/x at 0x........ size 4
+Conflicting store by thread x at 0x........ size 4
    at 0x........: child32 (tc19_shadowmem.c:81)
    by 0x........: steer (tc19_shadowmem.c:300)
    by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
@@ -2262,7 +2262,7 @@ Address 0x........ is at offset 6 from 0x......... Allocation context:
    by 0x........: main (tc19_shadowmem.c:144)
 ---------- int gran, 3 .. 96, skip 7 ----------
 
-Conflicting store by thread x/x at 0x........ size 4
+Conflicting store by thread x at 0x........ size 4
    at 0x........: child32 (tc19_shadowmem.c:81)
    by 0x........: steer (tc19_shadowmem.c:302)
    by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
@@ -2273,7 +2273,7 @@ Address 0x........ is at offset 7 from 0x......... Allocation context:
    by 0x........: main (tc19_shadowmem.c:144)
 ---------- int gran, 0 .. 96, skip 8 ----------
 
-Conflicting store by thread x/x at 0x........ size 4
+Conflicting store by thread x at 0x........ size 4
    at 0x........: child32 (tc19_shadowmem.c:81)
    by 0x........: steer (tc19_shadowmem.c:304)
    by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
@@ -2284,7 +2284,7 @@ Address 0x........ is at offset 8 from 0x......... Allocation context:
    by 0x........: main (tc19_shadowmem.c:144)
 ---------- int gran, 1 .. 96, skip 9 ----------
 
-Conflicting store by thread x/x at 0x........ size 4
+Conflicting store by thread x at 0x........ size 4
    at 0x........: child32 (tc19_shadowmem.c:81)
    by 0x........: steer (tc19_shadowmem.c:306)
    by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
@@ -2295,7 +2295,7 @@ Address 0x........ is at offset 9 from 0x......... Allocation context:
    by 0x........: main (tc19_shadowmem.c:144)
 ---------- int gran, 2 .. 96, skip 10 ----------
 
-Conflicting store by thread x/x at 0x........ size 4
+Conflicting store by thread x at 0x........ size 4
    at 0x........: child32 (tc19_shadowmem.c:81)
    by 0x........: steer (tc19_shadowmem.c:308)
    by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
@@ -2306,7 +2306,7 @@ Address 0x........ is at offset 10 from 0x......... Allocation context:
    by 0x........: main (tc19_shadowmem.c:144)
 ---------- int gran, 3 .. 96, skip 11 ----------
 
-Conflicting store by thread x/x at 0x........ size 4
+Conflicting store by thread x at 0x........ size 4
    at 0x........: child32 (tc19_shadowmem.c:81)
    by 0x........: steer (tc19_shadowmem.c:310)
    by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
@@ -2317,7 +2317,7 @@ Address 0x........ is at offset 11 from 0x......... Allocation context:
    by 0x........: main (tc19_shadowmem.c:144)
 ---------- int gran, 0 .. 96, skip 12 ----------
 
-Conflicting store by thread x/x at 0x........ size 4
+Conflicting store by thread x at 0x........ size 4
    at 0x........: child32 (tc19_shadowmem.c:81)
    by 0x........: steer (tc19_shadowmem.c:312)
    by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
@@ -2328,7 +2328,7 @@ Address 0x........ is at offset 12 from 0x......... Allocation context:
    by 0x........: main (tc19_shadowmem.c:144)
 ---------- int gran, 1 .. 96, skip 13 ----------
 
-Conflicting store by thread x/x at 0x........ size 4
+Conflicting store by thread x at 0x........ size 4
    at 0x........: child32 (tc19_shadowmem.c:81)
    by 0x........: steer (tc19_shadowmem.c:314)
    by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
@@ -2339,7 +2339,7 @@ Address 0x........ is at offset 13 from 0x......... Allocation context:
    by 0x........: main (tc19_shadowmem.c:144)
 ---------- int gran, 2 .. 96, skip 14 ----------
 
-Conflicting store by thread x/x at 0x........ size 4
+Conflicting store by thread x at 0x........ size 4
    at 0x........: child32 (tc19_shadowmem.c:81)
    by 0x........: steer (tc19_shadowmem.c:316)
    by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
@@ -2350,7 +2350,7 @@ Address 0x........ is at offset 14 from 0x......... Allocation context:
    by 0x........: main (tc19_shadowmem.c:144)
 ---------- int gran, 3 .. 96, skip 15 ----------
 
-Conflicting store by thread x/x at 0x........ size 4
+Conflicting store by thread x at 0x........ size 4
    at 0x........: child32 (tc19_shadowmem.c:81)
    by 0x........: steer (tc19_shadowmem.c:318)
    by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
@@ -2361,7 +2361,7 @@ Address 0x........ is at offset 15 from 0x......... Allocation context:
    by 0x........: main (tc19_shadowmem.c:144)
 ---------- int gran, 0 .. 96, skip 16 ----------
 
-Conflicting store by thread x/x at 0x........ size 4
+Conflicting store by thread x at 0x........ size 4
    at 0x........: child32 (tc19_shadowmem.c:81)
    by 0x........: steer (tc19_shadowmem.c:320)
    by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
@@ -2372,7 +2372,7 @@ Address 0x........ is at offset 16 from 0x......... Allocation context:
    by 0x........: main (tc19_shadowmem.c:144)
 ---------- int gran, 1 .. 96, skip 17 ----------
 
-Conflicting store by thread x/x at 0x........ size 4
+Conflicting store by thread x at 0x........ size 4
    at 0x........: child32 (tc19_shadowmem.c:81)
    by 0x........: steer (tc19_shadowmem.c:322)
    by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
@@ -2383,7 +2383,7 @@ Address 0x........ is at offset 17 from 0x......... Allocation context:
    by 0x........: main (tc19_shadowmem.c:144)
 ---------- int gran, 2 .. 96, skip 18 ----------
 
-Conflicting store by thread x/x at 0x........ size 4
+Conflicting store by thread x at 0x........ size 4
    at 0x........: child32 (tc19_shadowmem.c:81)
    by 0x........: steer (tc19_shadowmem.c:324)
    by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
@@ -2394,7 +2394,7 @@ Address 0x........ is at offset 18 from 0x......... Allocation context:
    by 0x........: main (tc19_shadowmem.c:144)
 ---------- int gran, 3 .. 96, skip 19 ----------
 
-Conflicting store by thread x/x at 0x........ size 4
+Conflicting store by thread x at 0x........ size 4
    at 0x........: child32 (tc19_shadowmem.c:81)
    by 0x........: steer (tc19_shadowmem.c:326)
    by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
@@ -2405,7 +2405,7 @@ Address 0x........ is at offset 19 from 0x......... Allocation context:
    by 0x........: main (tc19_shadowmem.c:144)
 ---------- int gran, 0 .. 96, skip 20 ----------
 
-Conflicting store by thread x/x at 0x........ size 4
+Conflicting store by thread x at 0x........ size 4
    at 0x........: child32 (tc19_shadowmem.c:81)
    by 0x........: steer (tc19_shadowmem.c:328)
    by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
@@ -2416,7 +2416,7 @@ Address 0x........ is at offset 20 from 0x......... Allocation context:
    by 0x........: main (tc19_shadowmem.c:144)
 ---------- int gran, 1 .. 96, skip 21 ----------
 
-Conflicting store by thread x/x at 0x........ size 4
+Conflicting store by thread x at 0x........ size 4
    at 0x........: child32 (tc19_shadowmem.c:81)
    by 0x........: steer (tc19_shadowmem.c:330)
    by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
@@ -2427,7 +2427,7 @@ Address 0x........ is at offset 21 from 0x......... Allocation context:
    by 0x........: main (tc19_shadowmem.c:144)
 ---------- int gran, 2 .. 96, skip 22 ----------
 
-Conflicting store by thread x/x at 0x........ size 4
+Conflicting store by thread x at 0x........ size 4
    at 0x........: child32 (tc19_shadowmem.c:81)
    by 0x........: steer (tc19_shadowmem.c:332)
    by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
@@ -2438,7 +2438,7 @@ Address 0x........ is at offset 22 from 0x......... Allocation context:
    by 0x........: main (tc19_shadowmem.c:144)
 ---------- int gran, 3 .. 96, skip 23 ----------
 
-Conflicting store by thread x/x at 0x........ size 4
+Conflicting store by thread x at 0x........ size 4
    at 0x........: child32 (tc19_shadowmem.c:81)
    by 0x........: steer (tc19_shadowmem.c:334)
    by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
@@ -2449,7 +2449,7 @@ Address 0x........ is at offset 23 from 0x......... Allocation context:
    by 0x........: main (tc19_shadowmem.c:144)
 ---------- int gran, 0 .. 96, skip 24 ----------
 
-Conflicting store by thread x/x at 0x........ size 4
+Conflicting store by thread x at 0x........ size 4
    at 0x........: child32 (tc19_shadowmem.c:81)
    by 0x........: steer (tc19_shadowmem.c:336)
    by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
@@ -2460,7 +2460,7 @@ Address 0x........ is at offset 24 from 0x......... Allocation context:
    by 0x........: main (tc19_shadowmem.c:144)
 ---------- int gran, 1 .. 96, skip 25 ----------
 
-Conflicting store by thread x/x at 0x........ size 4
+Conflicting store by thread x at 0x........ size 4
    at 0x........: child32 (tc19_shadowmem.c:81)
    by 0x........: steer (tc19_shadowmem.c:338)
    by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
@@ -2471,7 +2471,7 @@ Address 0x........ is at offset 25 from 0x......... Allocation context:
    by 0x........: main (tc19_shadowmem.c:144)
 ---------- int gran, 2 .. 96, skip 26 ----------
 
-Conflicting store by thread x/x at 0x........ size 4
+Conflicting store by thread x at 0x........ size 4
    at 0x........: child32 (tc19_shadowmem.c:81)
    by 0x........: steer (tc19_shadowmem.c:340)
    by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
@@ -2482,7 +2482,7 @@ Address 0x........ is at offset 26 from 0x......... Allocation context:
    by 0x........: main (tc19_shadowmem.c:144)
 ---------- int gran, 3 .. 96, skip 27 ----------
 
-Conflicting store by thread x/x at 0x........ size 4
+Conflicting store by thread x at 0x........ size 4
    at 0x........: child32 (tc19_shadowmem.c:81)
    by 0x........: steer (tc19_shadowmem.c:342)
    by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
@@ -2493,7 +2493,7 @@ Address 0x........ is at offset 27 from 0x......... Allocation context:
    by 0x........: main (tc19_shadowmem.c:144)
 ---------- int gran, 0 .. 96, skip 28 ----------
 
-Conflicting store by thread x/x at 0x........ size 4
+Conflicting store by thread x at 0x........ size 4
    at 0x........: child32 (tc19_shadowmem.c:81)
    by 0x........: steer (tc19_shadowmem.c:344)
    by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
@@ -2504,7 +2504,7 @@ Address 0x........ is at offset 28 from 0x......... Allocation context:
    by 0x........: main (tc19_shadowmem.c:144)
 ---------- int gran, 1 .. 96, skip 29 ----------
 
-Conflicting store by thread x/x at 0x........ size 4
+Conflicting store by thread x at 0x........ size 4
    at 0x........: child32 (tc19_shadowmem.c:81)
    by 0x........: steer (tc19_shadowmem.c:346)
    by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
@@ -2515,7 +2515,7 @@ Address 0x........ is at offset 29 from 0x......... Allocation context:
    by 0x........: main (tc19_shadowmem.c:144)
 ---------- int gran, 2 .. 96, skip 30 ----------
 
-Conflicting store by thread x/x at 0x........ size 4
+Conflicting store by thread x at 0x........ size 4
    at 0x........: child32 (tc19_shadowmem.c:81)
    by 0x........: steer (tc19_shadowmem.c:348)
    by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
@@ -2526,7 +2526,7 @@ Address 0x........ is at offset 30 from 0x......... Allocation context:
    by 0x........: main (tc19_shadowmem.c:144)
 ---------- int gran, 3 .. 96, skip 31 ----------
 
-Conflicting store by thread x/x at 0x........ size 4
+Conflicting store by thread x at 0x........ size 4
    at 0x........: child32 (tc19_shadowmem.c:81)
    by 0x........: steer (tc19_shadowmem.c:350)
    by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
@@ -2537,7 +2537,7 @@ Address 0x........ is at offset 31 from 0x......... Allocation context:
    by 0x........: main (tc19_shadowmem.c:144)
 ---------- int gran, 0 .. 96, skip 32 ----------
 
-Conflicting store by thread x/x at 0x........ size 4
+Conflicting store by thread x at 0x........ size 4
    at 0x........: child32 (tc19_shadowmem.c:81)
    by 0x........: steer (tc19_shadowmem.c:352)
    by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
@@ -2548,7 +2548,7 @@ Address 0x........ is at offset 32 from 0x......... Allocation context:
    by 0x........: main (tc19_shadowmem.c:144)
 ---------- int gran, 1 .. 96, skip 33 ----------
 
-Conflicting store by thread x/x at 0x........ size 4
+Conflicting store by thread x at 0x........ size 4
    at 0x........: child32 (tc19_shadowmem.c:81)
    by 0x........: steer (tc19_shadowmem.c:354)
    by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
@@ -2559,7 +2559,7 @@ Address 0x........ is at offset 33 from 0x......... Allocation context:
    by 0x........: main (tc19_shadowmem.c:144)
 ---------- int gran, 2 .. 96, skip 34 ----------
 
-Conflicting store by thread x/x at 0x........ size 4
+Conflicting store by thread x at 0x........ size 4
    at 0x........: child32 (tc19_shadowmem.c:81)
    by 0x........: steer (tc19_shadowmem.c:356)
    by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
@@ -2570,7 +2570,7 @@ Address 0x........ is at offset 34 from 0x......... Allocation context:
    by 0x........: main (tc19_shadowmem.c:144)
 ---------- int gran, 3 .. 96, skip 35 ----------
 
-Conflicting store by thread x/x at 0x........ size 4
+Conflicting store by thread x at 0x........ size 4
    at 0x........: child32 (tc19_shadowmem.c:81)
    by 0x........: steer (tc19_shadowmem.c:358)
    by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
@@ -2581,7 +2581,7 @@ Address 0x........ is at offset 35 from 0x......... Allocation context:
    by 0x........: main (tc19_shadowmem.c:144)
 ---------- int gran, 0 .. 96, skip 36 ----------
 
-Conflicting store by thread x/x at 0x........ size 4
+Conflicting store by thread x at 0x........ size 4
    at 0x........: child32 (tc19_shadowmem.c:81)
    by 0x........: steer (tc19_shadowmem.c:360)
    by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
@@ -2592,7 +2592,7 @@ Address 0x........ is at offset 36 from 0x......... Allocation context:
    by 0x........: main (tc19_shadowmem.c:144)
 ---------- int gran, 1 .. 96, skip 37 ----------
 
-Conflicting store by thread x/x at 0x........ size 4
+Conflicting store by thread x at 0x........ size 4
    at 0x........: child32 (tc19_shadowmem.c:81)
    by 0x........: steer (tc19_shadowmem.c:362)
    by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
@@ -2603,7 +2603,7 @@ Address 0x........ is at offset 37 from 0x......... Allocation context:
    by 0x........: main (tc19_shadowmem.c:144)
 ---------- int gran, 2 .. 96, skip 38 ----------
 
-Conflicting store by thread x/x at 0x........ size 4
+Conflicting store by thread x at 0x........ size 4
    at 0x........: child32 (tc19_shadowmem.c:81)
    by 0x........: steer (tc19_shadowmem.c:364)
    by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
@@ -2614,7 +2614,7 @@ Address 0x........ is at offset 38 from 0x......... Allocation context:
    by 0x........: main (tc19_shadowmem.c:144)
 ---------- int gran, 3 .. 96, skip 39 ----------
 
-Conflicting store by thread x/x at 0x........ size 4
+Conflicting store by thread x at 0x........ size 4
    at 0x........: child32 (tc19_shadowmem.c:81)
    by 0x........: steer (tc19_shadowmem.c:366)
    by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
@@ -2625,7 +2625,7 @@ Address 0x........ is at offset 39 from 0x......... Allocation context:
    by 0x........: main (tc19_shadowmem.c:144)
 ---------- int gran, 0 .. 96, skip 40 ----------
 
-Conflicting store by thread x/x at 0x........ size 4
+Conflicting store by thread x at 0x........ size 4
    at 0x........: child32 (tc19_shadowmem.c:81)
    by 0x........: steer (tc19_shadowmem.c:368)
    by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
@@ -2636,7 +2636,7 @@ Address 0x........ is at offset 40 from 0x......... Allocation context:
    by 0x........: main (tc19_shadowmem.c:144)
 ---------- int gran, 1 .. 96, skip 41 ----------
 
-Conflicting store by thread x/x at 0x........ size 4
+Conflicting store by thread x at 0x........ size 4
    at 0x........: child32 (tc19_shadowmem.c:81)
    by 0x........: steer (tc19_shadowmem.c:370)
    by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
@@ -2647,7 +2647,7 @@ Address 0x........ is at offset 41 from 0x......... Allocation context:
    by 0x........: main (tc19_shadowmem.c:144)
 ---------- int gran, 2 .. 96, skip 42 ----------
 
-Conflicting store by thread x/x at 0x........ size 4
+Conflicting store by thread x at 0x........ size 4
    at 0x........: child32 (tc19_shadowmem.c:81)
    by 0x........: steer (tc19_shadowmem.c:372)
    by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
@@ -2658,7 +2658,7 @@ Address 0x........ is at offset 42 from 0x......... Allocation context:
    by 0x........: main (tc19_shadowmem.c:144)
 ---------- int gran, 3 .. 96, skip 43 ----------
 
-Conflicting store by thread x/x at 0x........ size 4
+Conflicting store by thread x at 0x........ size 4
    at 0x........: child32 (tc19_shadowmem.c:81)
    by 0x........: steer (tc19_shadowmem.c:374)
    by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
@@ -2669,7 +2669,7 @@ Address 0x........ is at offset 43 from 0x......... Allocation context:
    by 0x........: main (tc19_shadowmem.c:144)
 ---------- int gran, 0 .. 96, skip 44 ----------
 
-Conflicting store by thread x/x at 0x........ size 4
+Conflicting store by thread x at 0x........ size 4
    at 0x........: child32 (tc19_shadowmem.c:81)
    by 0x........: steer (tc19_shadowmem.c:376)
    by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
@@ -2680,7 +2680,7 @@ Address 0x........ is at offset 44 from 0x......... Allocation context:
    by 0x........: main (tc19_shadowmem.c:144)
 ---------- int gran, 1 .. 96, skip 45 ----------
 
-Conflicting store by thread x/x at 0x........ size 4
+Conflicting store by thread x at 0x........ size 4
    at 0x........: child32 (tc19_shadowmem.c:81)
    by 0x........: steer (tc19_shadowmem.c:378)
    by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
@@ -2691,7 +2691,7 @@ Address 0x........ is at offset 45 from 0x......... Allocation context:
    by 0x........: main (tc19_shadowmem.c:144)
 ---------- int gran, 2 .. 96, skip 46 ----------
 
-Conflicting store by thread x/x at 0x........ size 4
+Conflicting store by thread x at 0x........ size 4
    at 0x........: child32 (tc19_shadowmem.c:81)
    by 0x........: steer (tc19_shadowmem.c:380)
    by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
@@ -2702,7 +2702,7 @@ Address 0x........ is at offset 46 from 0x......... Allocation context:
    by 0x........: main (tc19_shadowmem.c:144)
 ---------- int gran, 3 .. 96, skip 47 ----------
 
-Conflicting store by thread x/x at 0x........ size 4
+Conflicting store by thread x at 0x........ size 4
    at 0x........: child32 (tc19_shadowmem.c:81)
    by 0x........: steer (tc19_shadowmem.c:382)
    by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
@@ -2713,7 +2713,7 @@ Address 0x........ is at offset 47 from 0x......... Allocation context:
    by 0x........: main (tc19_shadowmem.c:144)
 ---------- int gran, 0 .. 96, skip 48 ----------
 
-Conflicting store by thread x/x at 0x........ size 4
+Conflicting store by thread x at 0x........ size 4
    at 0x........: child32 (tc19_shadowmem.c:81)
    by 0x........: steer (tc19_shadowmem.c:384)
    by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
@@ -2724,7 +2724,7 @@ Address 0x........ is at offset 48 from 0x......... Allocation context:
    by 0x........: main (tc19_shadowmem.c:144)
 ---------- int gran, 1 .. 96, skip 49 ----------
 
-Conflicting store by thread x/x at 0x........ size 4
+Conflicting store by thread x at 0x........ size 4
    at 0x........: child32 (tc19_shadowmem.c:81)
    by 0x........: steer (tc19_shadowmem.c:386)
    by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
@@ -2735,7 +2735,7 @@ Address 0x........ is at offset 49 from 0x......... Allocation context:
    by 0x........: main (tc19_shadowmem.c:144)
 ---------- int gran, 2 .. 96, skip 50 ----------
 
-Conflicting store by thread x/x at 0x........ size 4
+Conflicting store by thread x at 0x........ size 4
    at 0x........: child32 (tc19_shadowmem.c:81)
    by 0x........: steer (tc19_shadowmem.c:388)
    by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
@@ -2746,7 +2746,7 @@ Address 0x........ is at offset 50 from 0x......... Allocation context:
    by 0x........: main (tc19_shadowmem.c:144)
 ---------- int gran, 3 .. 96, skip 51 ----------
 
-Conflicting store by thread x/x at 0x........ size 4
+Conflicting store by thread x at 0x........ size 4
    at 0x........: child32 (tc19_shadowmem.c:81)
    by 0x........: steer (tc19_shadowmem.c:390)
    by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
@@ -2757,7 +2757,7 @@ Address 0x........ is at offset 51 from 0x......... Allocation context:
    by 0x........: main (tc19_shadowmem.c:144)
 ---------- int gran, 0 .. 96, skip 52 ----------
 
-Conflicting store by thread x/x at 0x........ size 4
+Conflicting store by thread x at 0x........ size 4
    at 0x........: child32 (tc19_shadowmem.c:81)
    by 0x........: steer (tc19_shadowmem.c:392)
    by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
@@ -2768,7 +2768,7 @@ Address 0x........ is at offset 52 from 0x......... Allocation context:
    by 0x........: main (tc19_shadowmem.c:144)
 ---------- int gran, 1 .. 96, skip 53 ----------
 
-Conflicting store by thread x/x at 0x........ size 4
+Conflicting store by thread x at 0x........ size 4
    at 0x........: child32 (tc19_shadowmem.c:81)
    by 0x........: steer (tc19_shadowmem.c:394)
    by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
@@ -2779,7 +2779,7 @@ Address 0x........ is at offset 53 from 0x......... Allocation context:
    by 0x........: main (tc19_shadowmem.c:144)
 ---------- int gran, 2 .. 96, skip 54 ----------
 
-Conflicting store by thread x/x at 0x........ size 4
+Conflicting store by thread x at 0x........ size 4
    at 0x........: child32 (tc19_shadowmem.c:81)
    by 0x........: steer (tc19_shadowmem.c:396)
    by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
@@ -2790,7 +2790,7 @@ Address 0x........ is at offset 54 from 0x......... Allocation context:
    by 0x........: main (tc19_shadowmem.c:144)
 ---------- int gran, 3 .. 96, skip 55 ----------
 
-Conflicting store by thread x/x at 0x........ size 4
+Conflicting store by thread x at 0x........ size 4
    at 0x........: child32 (tc19_shadowmem.c:81)
    by 0x........: steer (tc19_shadowmem.c:398)
    by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
@@ -2801,7 +2801,7 @@ Address 0x........ is at offset 55 from 0x......... Allocation context:
    by 0x........: main (tc19_shadowmem.c:144)
 ---------- int gran, 0 .. 96, skip 56 ----------
 
-Conflicting store by thread x/x at 0x........ size 4
+Conflicting store by thread x at 0x........ size 4
    at 0x........: child32 (tc19_shadowmem.c:81)
    by 0x........: steer (tc19_shadowmem.c:400)
    by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
@@ -2812,7 +2812,7 @@ Address 0x........ is at offset 56 from 0x......... Allocation context:
    by 0x........: main (tc19_shadowmem.c:144)
 ---------- int gran, 1 .. 96, skip 57 ----------
 
-Conflicting store by thread x/x at 0x........ size 4
+Conflicting store by thread x at 0x........ size 4
    at 0x........: child32 (tc19_shadowmem.c:81)
    by 0x........: steer (tc19_shadowmem.c:402)
    by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
@@ -2823,7 +2823,7 @@ Address 0x........ is at offset 57 from 0x......... Allocation context:
    by 0x........: main (tc19_shadowmem.c:144)
 ---------- int gran, 2 .. 96, skip 58 ----------
 
-Conflicting store by thread x/x at 0x........ size 4
+Conflicting store by thread x at 0x........ size 4
    at 0x........: child32 (tc19_shadowmem.c:81)
    by 0x........: steer (tc19_shadowmem.c:404)
    by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
@@ -2834,7 +2834,7 @@ Address 0x........ is at offset 58 from 0x......... Allocation context:
    by 0x........: main (tc19_shadowmem.c:144)
 ---------- int gran, 3 .. 96, skip 59 ----------
 
-Conflicting store by thread x/x at 0x........ size 4
+Conflicting store by thread x at 0x........ size 4
    at 0x........: child32 (tc19_shadowmem.c:81)
    by 0x........: steer (tc19_shadowmem.c:406)
    by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
@@ -2845,7 +2845,7 @@ Address 0x........ is at offset 59 from 0x......... Allocation context:
    by 0x........: main (tc19_shadowmem.c:144)
 ---------- int gran, 0 .. 96, skip 60 ----------
 
-Conflicting store by thread x/x at 0x........ size 4
+Conflicting store by thread x at 0x........ size 4
    at 0x........: child32 (tc19_shadowmem.c:81)
    by 0x........: steer (tc19_shadowmem.c:408)
    by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
@@ -2856,7 +2856,7 @@ Address 0x........ is at offset 60 from 0x......... Allocation context:
    by 0x........: main (tc19_shadowmem.c:144)
 ---------- int gran, 1 .. 96, skip 61 ----------
 
-Conflicting store by thread x/x at 0x........ size 4
+Conflicting store by thread x at 0x........ size 4
    at 0x........: child32 (tc19_shadowmem.c:81)
    by 0x........: steer (tc19_shadowmem.c:410)
    by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
@@ -2867,7 +2867,7 @@ Address 0x........ is at offset 61 from 0x......... Allocation context:
    by 0x........: main (tc19_shadowmem.c:144)
 ---------- int gran, 2 .. 96, skip 62 ----------
 
-Conflicting store by thread x/x at 0x........ size 4
+Conflicting store by thread x at 0x........ size 4
    at 0x........: child32 (tc19_shadowmem.c:81)
    by 0x........: steer (tc19_shadowmem.c:412)
    by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
@@ -2878,7 +2878,7 @@ Address 0x........ is at offset 62 from 0x......... Allocation context:
    by 0x........: main (tc19_shadowmem.c:144)
 ---------- int gran, 3 .. 96, skip 63 ----------
 
-Conflicting store by thread x/x at 0x........ size 4
+Conflicting store by thread x at 0x........ size 4
    at 0x........: child32 (tc19_shadowmem.c:81)
    by 0x........: steer (tc19_shadowmem.c:414)
    by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
@@ -2889,7 +2889,7 @@ Address 0x........ is at offset 63 from 0x......... Allocation context:
    by 0x........: main (tc19_shadowmem.c:144)
 ---------- int gran, 0 .. 96, skip 64 ----------
 
-Conflicting store by thread x/x at 0x........ size 4
+Conflicting store by thread x at 0x........ size 4
    at 0x........: child32 (tc19_shadowmem.c:81)
    by 0x........: steer (tc19_shadowmem.c:416)
    by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
@@ -2900,7 +2900,7 @@ Address 0x........ is at offset 64 from 0x......... Allocation context:
    by 0x........: main (tc19_shadowmem.c:144)
 ---------- int gran, 1 .. 96, skip 65 ----------
 
-Conflicting store by thread x/x at 0x........ size 4
+Conflicting store by thread x at 0x........ size 4
    at 0x........: child32 (tc19_shadowmem.c:81)
    by 0x........: steer (tc19_shadowmem.c:418)
    by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
@@ -2911,7 +2911,7 @@ Address 0x........ is at offset 65 from 0x......... Allocation context:
    by 0x........: main (tc19_shadowmem.c:144)
 ---------- int gran, 2 .. 96, skip 66 ----------
 
-Conflicting store by thread x/x at 0x........ size 4
+Conflicting store by thread x at 0x........ size 4
    at 0x........: child32 (tc19_shadowmem.c:81)
    by 0x........: steer (tc19_shadowmem.c:420)
    by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
@@ -2922,7 +2922,7 @@ Address 0x........ is at offset 66 from 0x......... Allocation context:
    by 0x........: main (tc19_shadowmem.c:144)
 ---------- int gran, 3 .. 96, skip 67 ----------
 
-Conflicting store by thread x/x at 0x........ size 4
+Conflicting store by thread x at 0x........ size 4
    at 0x........: child32 (tc19_shadowmem.c:81)
    by 0x........: steer (tc19_shadowmem.c:422)
    by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
@@ -2933,7 +2933,7 @@ Address 0x........ is at offset 67 from 0x......... Allocation context:
    by 0x........: main (tc19_shadowmem.c:144)
 ---------- int gran, 0 .. 96, skip 68 ----------
 
-Conflicting store by thread x/x at 0x........ size 4
+Conflicting store by thread x at 0x........ size 4
    at 0x........: child32 (tc19_shadowmem.c:81)
    by 0x........: steer (tc19_shadowmem.c:424)
    by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
@@ -2944,7 +2944,7 @@ Address 0x........ is at offset 68 from 0x......... Allocation context:
    by 0x........: main (tc19_shadowmem.c:144)
 ---------- int gran, 1 .. 96, skip 69 ----------
 
-Conflicting store by thread x/x at 0x........ size 4
+Conflicting store by thread x at 0x........ size 4
    at 0x........: child32 (tc19_shadowmem.c:81)
    by 0x........: steer (tc19_shadowmem.c:426)
    by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
@@ -2955,7 +2955,7 @@ Address 0x........ is at offset 69 from 0x......... Allocation context:
    by 0x........: main (tc19_shadowmem.c:144)
 ---------- int gran, 2 .. 96, skip 70 ----------
 
-Conflicting store by thread x/x at 0x........ size 4
+Conflicting store by thread x at 0x........ size 4
    at 0x........: child32 (tc19_shadowmem.c:81)
    by 0x........: steer (tc19_shadowmem.c:428)
    by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
@@ -2966,7 +2966,7 @@ Address 0x........ is at offset 70 from 0x......... Allocation context:
    by 0x........: main (tc19_shadowmem.c:144)
 ---------- int gran, 3 .. 96, skip 71 ----------
 
-Conflicting store by thread x/x at 0x........ size 4
+Conflicting store by thread x at 0x........ size 4
    at 0x........: child32 (tc19_shadowmem.c:81)
    by 0x........: steer (tc19_shadowmem.c:430)
    by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
@@ -2977,7 +2977,7 @@ Address 0x........ is at offset 71 from 0x......... Allocation context:
    by 0x........: main (tc19_shadowmem.c:144)
 ---------- int gran, 0 .. 96, skip 72 ----------
 
-Conflicting store by thread x/x at 0x........ size 4
+Conflicting store by thread x at 0x........ size 4
    at 0x........: child32 (tc19_shadowmem.c:81)
    by 0x........: steer (tc19_shadowmem.c:432)
    by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
@@ -2988,7 +2988,7 @@ Address 0x........ is at offset 72 from 0x......... Allocation context:
    by 0x........: main (tc19_shadowmem.c:144)
 ---------- int gran, 1 .. 96, skip 73 ----------
 
-Conflicting store by thread x/x at 0x........ size 4
+Conflicting store by thread x at 0x........ size 4
    at 0x........: child32 (tc19_shadowmem.c:81)
    by 0x........: steer (tc19_shadowmem.c:434)
    by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
@@ -2999,7 +2999,7 @@ Address 0x........ is at offset 73 from 0x......... Allocation context:
    by 0x........: main (tc19_shadowmem.c:144)
 ---------- int gran, 2 .. 96, skip 74 ----------
 
-Conflicting store by thread x/x at 0x........ size 4
+Conflicting store by thread x at 0x........ size 4
    at 0x........: child32 (tc19_shadowmem.c:81)
    by 0x........: steer (tc19_shadowmem.c:436)
    by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
@@ -3010,7 +3010,7 @@ Address 0x........ is at offset 74 from 0x......... Allocation context:
    by 0x........: main (tc19_shadowmem.c:144)
 ---------- int gran, 3 .. 96, skip 75 ----------
 
-Conflicting store by thread x/x at 0x........ size 4
+Conflicting store by thread x at 0x........ size 4
    at 0x........: child32 (tc19_shadowmem.c:81)
    by 0x........: steer (tc19_shadowmem.c:438)
    by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
@@ -3021,7 +3021,7 @@ Address 0x........ is at offset 75 from 0x......... Allocation context:
    by 0x........: main (tc19_shadowmem.c:144)
 ---------- int gran, 0 .. 96, skip 76 ----------
 
-Conflicting store by thread x/x at 0x........ size 4
+Conflicting store by thread x at 0x........ size 4
    at 0x........: child32 (tc19_shadowmem.c:81)
    by 0x........: steer (tc19_shadowmem.c:440)
    by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
@@ -3032,7 +3032,7 @@ Address 0x........ is at offset 76 from 0x......... Allocation context:
    by 0x........: main (tc19_shadowmem.c:144)
 ---------- int gran, 1 .. 96, skip 77 ----------
 
-Conflicting store by thread x/x at 0x........ size 4
+Conflicting store by thread x at 0x........ size 4
    at 0x........: child32 (tc19_shadowmem.c:81)
    by 0x........: steer (tc19_shadowmem.c:442)
    by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
@@ -3043,7 +3043,7 @@ Address 0x........ is at offset 77 from 0x......... Allocation context:
    by 0x........: main (tc19_shadowmem.c:144)
 ---------- int gran, 2 .. 96, skip 78 ----------
 
-Conflicting store by thread x/x at 0x........ size 4
+Conflicting store by thread x at 0x........ size 4
    at 0x........: child32 (tc19_shadowmem.c:81)
    by 0x........: steer (tc19_shadowmem.c:444)
    by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
@@ -3054,7 +3054,7 @@ Address 0x........ is at offset 78 from 0x......... Allocation context:
    by 0x........: main (tc19_shadowmem.c:144)
 ---------- int gran, 3 .. 96, skip 79 ----------
 
-Conflicting store by thread x/x at 0x........ size 4
+Conflicting store by thread x at 0x........ size 4
    at 0x........: child32 (tc19_shadowmem.c:81)
    by 0x........: steer (tc19_shadowmem.c:446)
    by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
@@ -3065,7 +3065,7 @@ Address 0x........ is at offset 79 from 0x......... Allocation context:
    by 0x........: main (tc19_shadowmem.c:144)
 ---------- int gran, 0 .. 96, skip 80 ----------
 
-Conflicting store by thread x/x at 0x........ size 4
+Conflicting store by thread x at 0x........ size 4
    at 0x........: child32 (tc19_shadowmem.c:81)
    by 0x........: steer (tc19_shadowmem.c:448)
    by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
@@ -3076,7 +3076,7 @@ Address 0x........ is at offset 80 from 0x......... Allocation context:
    by 0x........: main (tc19_shadowmem.c:144)
 ---------- int gran, 1 .. 96, skip 81 ----------
 
-Conflicting store by thread x/x at 0x........ size 4
+Conflicting store by thread x at 0x........ size 4
    at 0x........: child32 (tc19_shadowmem.c:81)
    by 0x........: steer (tc19_shadowmem.c:450)
    by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
@@ -3087,7 +3087,7 @@ Address 0x........ is at offset 81 from 0x......... Allocation context:
    by 0x........: main (tc19_shadowmem.c:144)
 ---------- int gran, 2 .. 96, skip 82 ----------
 
-Conflicting store by thread x/x at 0x........ size 4
+Conflicting store by thread x at 0x........ size 4
    at 0x........: child32 (tc19_shadowmem.c:81)
    by 0x........: steer (tc19_shadowmem.c:452)
    by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
@@ -3098,7 +3098,7 @@ Address 0x........ is at offset 82 from 0x......... Allocation context:
    by 0x........: main (tc19_shadowmem.c:144)
 ---------- int gran, 3 .. 96, skip 83 ----------
 
-Conflicting store by thread x/x at 0x........ size 4
+Conflicting store by thread x at 0x........ size 4
    at 0x........: child32 (tc19_shadowmem.c:81)
    by 0x........: steer (tc19_shadowmem.c:454)
    by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
@@ -3109,7 +3109,7 @@ Address 0x........ is at offset 83 from 0x......... Allocation context:
    by 0x........: main (tc19_shadowmem.c:144)
 ---------- int gran, 0 .. 96, skip 84 ----------
 
-Conflicting store by thread x/x at 0x........ size 4
+Conflicting store by thread x at 0x........ size 4
    at 0x........: child32 (tc19_shadowmem.c:81)
    by 0x........: steer (tc19_shadowmem.c:456)
    by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
@@ -3120,7 +3120,7 @@ Address 0x........ is at offset 84 from 0x......... Allocation context:
    by 0x........: main (tc19_shadowmem.c:144)
 ---------- int gran, 1 .. 96, skip 85 ----------
 
-Conflicting store by thread x/x at 0x........ size 4
+Conflicting store by thread x at 0x........ size 4
    at 0x........: child32 (tc19_shadowmem.c:81)
    by 0x........: steer (tc19_shadowmem.c:458)
    by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
@@ -3131,7 +3131,7 @@ Address 0x........ is at offset 85 from 0x......... Allocation context:
    by 0x........: main (tc19_shadowmem.c:144)
 ---------- int gran, 2 .. 96, skip 86 ----------
 
-Conflicting store by thread x/x at 0x........ size 4
+Conflicting store by thread x at 0x........ size 4
    at 0x........: child32 (tc19_shadowmem.c:81)
    by 0x........: steer (tc19_shadowmem.c:460)
    by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
@@ -3142,7 +3142,7 @@ Address 0x........ is at offset 86 from 0x......... Allocation context:
    by 0x........: main (tc19_shadowmem.c:144)
 ---------- int gran, 3 .. 96, skip 87 ----------
 
-Conflicting store by thread x/x at 0x........ size 4
+Conflicting store by thread x at 0x........ size 4
    at 0x........: child32 (tc19_shadowmem.c:81)
    by 0x........: steer (tc19_shadowmem.c:462)
    by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
@@ -3153,7 +3153,7 @@ Address 0x........ is at offset 87 from 0x......... Allocation context:
    by 0x........: main (tc19_shadowmem.c:144)
 ---------- int gran, 0 .. 96, skip 88 ----------
 
-Conflicting store by thread x/x at 0x........ size 4
+Conflicting store by thread x at 0x........ size 4
    at 0x........: child32 (tc19_shadowmem.c:81)
    by 0x........: steer (tc19_shadowmem.c:464)
    by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
@@ -3164,7 +3164,7 @@ Address 0x........ is at offset 88 from 0x......... Allocation context:
    by 0x........: main (tc19_shadowmem.c:144)
 ---------- int gran, 1 .. 96, skip 89 ----------
 
-Conflicting store by thread x/x at 0x........ size 4
+Conflicting store by thread x at 0x........ size 4
    at 0x........: child32 (tc19_shadowmem.c:81)
    by 0x........: steer (tc19_shadowmem.c:466)
    by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
@@ -3175,7 +3175,7 @@ Address 0x........ is at offset 89 from 0x......... Allocation context:
    by 0x........: main (tc19_shadowmem.c:144)
 ---------- int gran, 2 .. 96, skip 90 ----------
 
-Conflicting store by thread x/x at 0x........ size 4
+Conflicting store by thread x at 0x........ size 4
    at 0x........: child32 (tc19_shadowmem.c:81)
    by 0x........: steer (tc19_shadowmem.c:468)
    by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
@@ -3186,7 +3186,7 @@ Address 0x........ is at offset 90 from 0x......... Allocation context:
    by 0x........: main (tc19_shadowmem.c:144)
 ---------- int gran, 3 .. 96, skip 91 ----------
 
-Conflicting store by thread x/x at 0x........ size 4
+Conflicting store by thread x at 0x........ size 4
    at 0x........: child32 (tc19_shadowmem.c:81)
    by 0x........: steer (tc19_shadowmem.c:470)
    by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
@@ -3197,7 +3197,7 @@ Address 0x........ is at offset 91 from 0x......... Allocation context:
    by 0x........: main (tc19_shadowmem.c:144)
 ---------- int gran, 0 .. 96, skip 92 ----------
 
-Conflicting store by thread x/x at 0x........ size 4
+Conflicting store by thread x at 0x........ size 4
    at 0x........: child32 (tc19_shadowmem.c:81)
    by 0x........: steer (tc19_shadowmem.c:472)
    by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
@@ -3208,7 +3208,7 @@ Address 0x........ is at offset 92 from 0x......... Allocation context:
    by 0x........: main (tc19_shadowmem.c:144)
 ---------- int gran, 1 .. 96, skip 93 ----------
 
-Conflicting store by thread x/x at 0x........ size 4
+Conflicting store by thread x at 0x........ size 4
    at 0x........: child32 (tc19_shadowmem.c:81)
    by 0x........: steer (tc19_shadowmem.c:474)
    by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
@@ -3219,7 +3219,7 @@ Address 0x........ is at offset 93 from 0x......... Allocation context:
    by 0x........: main (tc19_shadowmem.c:144)
 ---------- int gran, 2 .. 96, skip 94 ----------
 
-Conflicting store by thread x/x at 0x........ size 4
+Conflicting store by thread x at 0x........ size 4
    at 0x........: child32 (tc19_shadowmem.c:81)
    by 0x........: steer (tc19_shadowmem.c:476)
    by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
@@ -3230,7 +3230,7 @@ Address 0x........ is at offset 94 from 0x......... Allocation context:
    by 0x........: main (tc19_shadowmem.c:144)
 ---------- int gran, 3 .. 96, skip 95 ----------
 
-Conflicting store by thread x/x at 0x........ size 4
+Conflicting store by thread x at 0x........ size 4
    at 0x........: child32 (tc19_shadowmem.c:81)
    by 0x........: steer (tc19_shadowmem.c:478)
    by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
@@ -3246,7 +3246,7 @@ Address 0x........ is at offset 95 from 0x......... Allocation context:
 
 ---------- double gran, 0 .. 92, skip 0 ----------
 
-Conflicting store by thread x/x at 0x........ size 8
+Conflicting store by thread x at 0x........ size 8
    at 0x........: child64 (tc19_shadowmem.c:105)
    by 0x........: steer (tc19_shadowmem.c:288)
    by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
@@ -3257,7 +3257,7 @@ Address 0x........ is at offset 0 from 0x......... Allocation context:
    by 0x........: main (tc19_shadowmem.c:144)
 ---------- double gran, 1 .. 92, skip 1 ----------
 
-Conflicting store by thread x/x at 0x........ size 8
+Conflicting store by thread x at 0x........ size 8
    at 0x........: child64 (tc19_shadowmem.c:105)
    by 0x........: steer (tc19_shadowmem.c:290)
    by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
@@ -3268,7 +3268,7 @@ Address 0x........ is at offset 1 from 0x......... Allocation context:
    by 0x........: main (tc19_shadowmem.c:144)
 ---------- double gran, 2 .. 92, skip 2 ----------
 
-Conflicting store by thread x/x at 0x........ size 8
+Conflicting store by thread x at 0x........ size 8
    at 0x........: child64 (tc19_shadowmem.c:105)
    by 0x........: steer (tc19_shadowmem.c:292)
    by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
@@ -3279,7 +3279,7 @@ Address 0x........ is at offset 2 from 0x......... Allocation context:
    by 0x........: main (tc19_shadowmem.c:144)
 ---------- double gran, 3 .. 92, skip 3 ----------
 
-Conflicting store by thread x/x at 0x........ size 8
+Conflicting store by thread x at 0x........ size 8
    at 0x........: child64 (tc19_shadowmem.c:105)
    by 0x........: steer (tc19_shadowmem.c:294)
    by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
@@ -3290,7 +3290,7 @@ Address 0x........ is at offset 3 from 0x......... Allocation context:
    by 0x........: main (tc19_shadowmem.c:144)
 ---------- double gran, 4 .. 92, skip 4 ----------
 
-Conflicting store by thread x/x at 0x........ size 8
+Conflicting store by thread x at 0x........ size 8
    at 0x........: child64 (tc19_shadowmem.c:105)
    by 0x........: steer (tc19_shadowmem.c:296)
    by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
@@ -3301,7 +3301,7 @@ Address 0x........ is at offset 4 from 0x......... Allocation context:
    by 0x........: main (tc19_shadowmem.c:144)
 ---------- double gran, 5 .. 92, skip 5 ----------
 
-Conflicting store by thread x/x at 0x........ size 8
+Conflicting store by thread x at 0x........ size 8
    at 0x........: child64 (tc19_shadowmem.c:105)
    by 0x........: steer (tc19_shadowmem.c:298)
    by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
@@ -3312,7 +3312,7 @@ Address 0x........ is at offset 5 from 0x......... Allocation context:
    by 0x........: main (tc19_shadowmem.c:144)
 ---------- double gran, 6 .. 92, skip 6 ----------
 
-Conflicting store by thread x/x at 0x........ size 8
+Conflicting store by thread x at 0x........ size 8
    at 0x........: child64 (tc19_shadowmem.c:105)
    by 0x........: steer (tc19_shadowmem.c:300)
    by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
@@ -3323,7 +3323,7 @@ Address 0x........ is at offset 6 from 0x......... Allocation context:
    by 0x........: main (tc19_shadowmem.c:144)
 ---------- double gran, 7 .. 92, skip 7 ----------
 
-Conflicting store by thread x/x at 0x........ size 8
+Conflicting store by thread x at 0x........ size 8
    at 0x........: child64 (tc19_shadowmem.c:105)
    by 0x........: steer (tc19_shadowmem.c:302)
    by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
@@ -3334,7 +3334,7 @@ Address 0x........ is at offset 7 from 0x......... Allocation context:
    by 0x........: main (tc19_shadowmem.c:144)
 ---------- double gran, 0 .. 92, skip 8 ----------
 
-Conflicting store by thread x/x at 0x........ size 8
+Conflicting store by thread x at 0x........ size 8
    at 0x........: child64 (tc19_shadowmem.c:105)
    by 0x........: steer (tc19_shadowmem.c:304)
    by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
@@ -3345,7 +3345,7 @@ Address 0x........ is at offset 8 from 0x......... Allocation context:
    by 0x........: main (tc19_shadowmem.c:144)
 ---------- double gran, 1 .. 92, skip 9 ----------
 
-Conflicting store by thread x/x at 0x........ size 8
+Conflicting store by thread x at 0x........ size 8
    at 0x........: child64 (tc19_shadowmem.c:105)
    by 0x........: steer (tc19_shadowmem.c:306)
    by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
@@ -3356,7 +3356,7 @@ Address 0x........ is at offset 9 from 0x......... Allocation context:
    by 0x........: main (tc19_shadowmem.c:144)
 ---------- double gran, 2 .. 92, skip 10 ----------
 
-Conflicting store by thread x/x at 0x........ size 8
+Conflicting store by thread x at 0x........ size 8
    at 0x........: child64 (tc19_shadowmem.c:105)
    by 0x........: steer (tc19_shadowmem.c:308)
    by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
@@ -3367,7 +3367,7 @@ Address 0x........ is at offset 10 from 0x......... Allocation context:
    by 0x........: main (tc19_shadowmem.c:144)
 ---------- double gran, 3 .. 92, skip 11 ----------
 
-Conflicting store by thread x/x at 0x........ size 8
+Conflicting store by thread x at 0x........ size 8
    at 0x........: child64 (tc19_shadowmem.c:105)
    by 0x........: steer (tc19_shadowmem.c:310)
    by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
@@ -3378,7 +3378,7 @@ Address 0x........ is at offset 11 from 0x......... Allocation context:
    by 0x........: main (tc19_shadowmem.c:144)
 ---------- double gran, 4 .. 92, skip 12 ----------
 
-Conflicting store by thread x/x at 0x........ size 8
+Conflicting store by thread x at 0x........ size 8
    at 0x........: child64 (tc19_shadowmem.c:105)
    by 0x........: steer (tc19_shadowmem.c:312)
    by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
@@ -3389,7 +3389,7 @@ Address 0x........ is at offset 12 from 0x......... Allocation context:
    by 0x........: main (tc19_shadowmem.c:144)
 ---------- double gran, 5 .. 92, skip 13 ----------
 
-Conflicting store by thread x/x at 0x........ size 8
+Conflicting store by thread x at 0x........ size 8
    at 0x........: child64 (tc19_shadowmem.c:105)
    by 0x........: steer (tc19_shadowmem.c:314)
    by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
@@ -3400,7 +3400,7 @@ Address 0x........ is at offset 13 from 0x......... Allocation context:
    by 0x........: main (tc19_shadowmem.c:144)
 ---------- double gran, 6 .. 92, skip 14 ----------
 
-Conflicting store by thread x/x at 0x........ size 8
+Conflicting store by thread x at 0x........ size 8
    at 0x........: child64 (tc19_shadowmem.c:105)
    by 0x........: steer (tc19_shadowmem.c:316)
    by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
@@ -3411,7 +3411,7 @@ Address 0x........ is at offset 14 from 0x......... Allocation context:
    by 0x........: main (tc19_shadowmem.c:144)
 ---------- double gran, 7 .. 92, skip 15 ----------
 
-Conflicting store by thread x/x at 0x........ size 8
+Conflicting store by thread x at 0x........ size 8
    at 0x........: child64 (tc19_shadowmem.c:105)
    by 0x........: steer (tc19_shadowmem.c:318)
    by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
@@ -3422,7 +3422,7 @@ Address 0x........ is at offset 15 from 0x......... Allocation context:
    by 0x........: main (tc19_shadowmem.c:144)
 ---------- double gran, 0 .. 92, skip 16 ----------
 
-Conflicting store by thread x/x at 0x........ size 8
+Conflicting store by thread x at 0x........ size 8
    at 0x........: child64 (tc19_shadowmem.c:105)
    by 0x........: steer (tc19_shadowmem.c:320)
    by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
@@ -3433,7 +3433,7 @@ Address 0x........ is at offset 16 from 0x......... Allocation context:
    by 0x........: main (tc19_shadowmem.c:144)
 ---------- double gran, 1 .. 92, skip 17 ----------
 
-Conflicting store by thread x/x at 0x........ size 8
+Conflicting store by thread x at 0x........ size 8
    at 0x........: child64 (tc19_shadowmem.c:105)
    by 0x........: steer (tc19_shadowmem.c:322)
    by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
@@ -3444,7 +3444,7 @@ Address 0x........ is at offset 17 from 0x......... Allocation context:
    by 0x........: main (tc19_shadowmem.c:144)
 ---------- double gran, 2 .. 92, skip 18 ----------
 
-Conflicting store by thread x/x at 0x........ size 8
+Conflicting store by thread x at 0x........ size 8
    at 0x........: child64 (tc19_shadowmem.c:105)
    by 0x........: steer (tc19_shadowmem.c:324)
    by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
@@ -3455,7 +3455,7 @@ Address 0x........ is at offset 18 from 0x......... Allocation context:
    by 0x........: main (tc19_shadowmem.c:144)
 ---------- double gran, 3 .. 92, skip 19 ----------
 
-Conflicting store by thread x/x at 0x........ size 8
+Conflicting store by thread x at 0x........ size 8
    at 0x........: child64 (tc19_shadowmem.c:105)
    by 0x........: steer (tc19_shadowmem.c:326)
    by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
@@ -3466,7 +3466,7 @@ Address 0x........ is at offset 19 from 0x......... Allocation context:
    by 0x........: main (tc19_shadowmem.c:144)
 ---------- double gran, 4 .. 92, skip 20 ----------
 
-Conflicting store by thread x/x at 0x........ size 8
+Conflicting store by thread x at 0x........ size 8
    at 0x........: child64 (tc19_shadowmem.c:105)
    by 0x........: steer (tc19_shadowmem.c:328)
    by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
@@ -3477,7 +3477,7 @@ Address 0x........ is at offset 20 from 0x......... Allocation context:
    by 0x........: main (tc19_shadowmem.c:144)
 ---------- double gran, 5 .. 92, skip 21 ----------
 
-Conflicting store by thread x/x at 0x........ size 8
+Conflicting store by thread x at 0x........ size 8
    at 0x........: child64 (tc19_shadowmem.c:105)
    by 0x........: steer (tc19_shadowmem.c:330)
    by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
@@ -3488,7 +3488,7 @@ Address 0x........ is at offset 21 from 0x......... Allocation context:
    by 0x........: main (tc19_shadowmem.c:144)
 ---------- double gran, 6 .. 92, skip 22 ----------
 
-Conflicting store by thread x/x at 0x........ size 8
+Conflicting store by thread x at 0x........ size 8
    at 0x........: child64 (tc19_shadowmem.c:105)
    by 0x........: steer (tc19_shadowmem.c:332)
    by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
@@ -3499,7 +3499,7 @@ Address 0x........ is at offset 22 from 0x......... Allocation context:
    by 0x........: main (tc19_shadowmem.c:144)
 ---------- double gran, 7 .. 92, skip 23 ----------
 
-Conflicting store by thread x/x at 0x........ size 8
+Conflicting store by thread x at 0x........ size 8
    at 0x........: child64 (tc19_shadowmem.c:105)
    by 0x........: steer (tc19_shadowmem.c:334)
    by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
@@ -3510,7 +3510,7 @@ Address 0x........ is at offset 23 from 0x......... Allocation context:
    by 0x........: main (tc19_shadowmem.c:144)
 ---------- double gran, 0 .. 92, skip 24 ----------
 
-Conflicting store by thread x/x at 0x........ size 8
+Conflicting store by thread x at 0x........ size 8
    at 0x........: child64 (tc19_shadowmem.c:105)
    by 0x........: steer (tc19_shadowmem.c:336)
    by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
@@ -3521,7 +3521,7 @@ Address 0x........ is at offset 24 from 0x......... Allocation context:
    by 0x........: main (tc19_shadowmem.c:144)
 ---------- double gran, 1 .. 92, skip 25 ----------
 
-Conflicting store by thread x/x at 0x........ size 8
+Conflicting store by thread x at 0x........ size 8
    at 0x........: child64 (tc19_shadowmem.c:105)
    by 0x........: steer (tc19_shadowmem.c:338)
    by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
@@ -3532,7 +3532,7 @@ Address 0x........ is at offset 25 from 0x......... Allocation context:
    by 0x........: main (tc19_shadowmem.c:144)
 ---------- double gran, 2 .. 92, skip 26 ----------
 
-Conflicting store by thread x/x at 0x........ size 8
+Conflicting store by thread x at 0x........ size 8
    at 0x........: child64 (tc19_shadowmem.c:105)
    by 0x........: steer (tc19_shadowmem.c:340)
    by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
@@ -3543,7 +3543,7 @@ Address 0x........ is at offset 26 from 0x......... Allocation context:
    by 0x........: main (tc19_shadowmem.c:144)
 ---------- double gran, 3 .. 92, skip 27 ----------
 
-Conflicting store by thread x/x at 0x........ size 8
+Conflicting store by thread x at 0x........ size 8
    at 0x........: child64 (tc19_shadowmem.c:105)
    by 0x........: steer (tc19_shadowmem.c:342)
    by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
@@ -3554,7 +3554,7 @@ Address 0x........ is at offset 27 from 0x......... Allocation context:
    by 0x........: main (tc19_shadowmem.c:144)
 ---------- double gran, 4 .. 92, skip 28 ----------
 
-Conflicting store by thread x/x at 0x........ size 8
+Conflicting store by thread x at 0x........ size 8
    at 0x........: child64 (tc19_shadowmem.c:105)
    by 0x........: steer (tc19_shadowmem.c:344)
    by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
@@ -3565,7 +3565,7 @@ Address 0x........ is at offset 28 from 0x......... Allocation context:
    by 0x........: main (tc19_shadowmem.c:144)
 ---------- double gran, 5 .. 92, skip 29 ----------
 
-Conflicting store by thread x/x at 0x........ size 8
+Conflicting store by thread x at 0x........ size 8
    at 0x........: child64 (tc19_shadowmem.c:105)
    by 0x........: steer (tc19_shadowmem.c:346)
    by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
@@ -3576,7 +3576,7 @@ Address 0x........ is at offset 29 from 0x......... Allocation context:
    by 0x........: main (tc19_shadowmem.c:144)
 ---------- double gran, 6 .. 92, skip 30 ----------
 
-Conflicting store by thread x/x at 0x........ size 8
+Conflicting store by thread x at 0x........ size 8
    at 0x........: child64 (tc19_shadowmem.c:105)
    by 0x........: steer (tc19_shadowmem.c:348)
    by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
@@ -3587,7 +3587,7 @@ Address 0x........ is at offset 30 from 0x......... Allocation context:
    by 0x........: main (tc19_shadowmem.c:144)
 ---------- double gran, 7 .. 92, skip 31 ----------
 
-Conflicting store by thread x/x at 0x........ size 8
+Conflicting store by thread x at 0x........ size 8
    at 0x........: child64 (tc19_shadowmem.c:105)
    by 0x........: steer (tc19_shadowmem.c:350)
    by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
@@ -3598,7 +3598,7 @@ Address 0x........ is at offset 31 from 0x......... Allocation context:
    by 0x........: main (tc19_shadowmem.c:144)
 ---------- double gran, 0 .. 92, skip 32 ----------
 
-Conflicting store by thread x/x at 0x........ size 8
+Conflicting store by thread x at 0x........ size 8
    at 0x........: child64 (tc19_shadowmem.c:105)
    by 0x........: steer (tc19_shadowmem.c:352)
    by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
@@ -3609,7 +3609,7 @@ Address 0x........ is at offset 32 from 0x......... Allocation context:
    by 0x........: main (tc19_shadowmem.c:144)
 ---------- double gran, 1 .. 92, skip 33 ----------
 
-Conflicting store by thread x/x at 0x........ size 8
+Conflicting store by thread x at 0x........ size 8
    at 0x........: child64 (tc19_shadowmem.c:105)
    by 0x........: steer (tc19_shadowmem.c:354)
    by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
@@ -3620,7 +3620,7 @@ Address 0x........ is at offset 33 from 0x......... Allocation context:
    by 0x........: main (tc19_shadowmem.c:144)
 ---------- double gran, 2 .. 92, skip 34 ----------
 
-Conflicting store by thread x/x at 0x........ size 8
+Conflicting store by thread x at 0x........ size 8
    at 0x........: child64 (tc19_shadowmem.c:105)
    by 0x........: steer (tc19_shadowmem.c:356)
    by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
@@ -3631,7 +3631,7 @@ Address 0x........ is at offset 34 from 0x......... Allocation context:
    by 0x........: main (tc19_shadowmem.c:144)
 ---------- double gran, 3 .. 92, skip 35 ----------
 
-Conflicting store by thread x/x at 0x........ size 8
+Conflicting store by thread x at 0x........ size 8
    at 0x........: child64 (tc19_shadowmem.c:105)
    by 0x........: steer (tc19_shadowmem.c:358)
    by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
@@ -3642,7 +3642,7 @@ Address 0x........ is at offset 35 from 0x......... Allocation context:
    by 0x........: main (tc19_shadowmem.c:144)
 ---------- double gran, 4 .. 92, skip 36 ----------
 
-Conflicting store by thread x/x at 0x........ size 8
+Conflicting store by thread x at 0x........ size 8
    at 0x........: child64 (tc19_shadowmem.c:105)
    by 0x........: steer (tc19_shadowmem.c:360)
    by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
@@ -3653,7 +3653,7 @@ Address 0x........ is at offset 36 from 0x......... Allocation context:
    by 0x........: main (tc19_shadowmem.c:144)
 ---------- double gran, 5 .. 92, skip 37 ----------
 
-Conflicting store by thread x/x at 0x........ size 8
+Conflicting store by thread x at 0x........ size 8
    at 0x........: child64 (tc19_shadowmem.c:105)
    by 0x........: steer (tc19_shadowmem.c:362)
    by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
@@ -3664,7 +3664,7 @@ Address 0x........ is at offset 37 from 0x......... Allocation context:
    by 0x........: main (tc19_shadowmem.c:144)
 ---------- double gran, 6 .. 92, skip 38 ----------
 
-Conflicting store by thread x/x at 0x........ size 8
+Conflicting store by thread x at 0x........ size 8
    at 0x........: child64 (tc19_shadowmem.c:105)
    by 0x........: steer (tc19_shadowmem.c:364)
    by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
@@ -3675,7 +3675,7 @@ Address 0x........ is at offset 38 from 0x......... Allocation context:
    by 0x........: main (tc19_shadowmem.c:144)
 ---------- double gran, 7 .. 92, skip 39 ----------
 
-Conflicting store by thread x/x at 0x........ size 8
+Conflicting store by thread x at 0x........ size 8
    at 0x........: child64 (tc19_shadowmem.c:105)
    by 0x........: steer (tc19_shadowmem.c:366)
    by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
@@ -3686,7 +3686,7 @@ Address 0x........ is at offset 39 from 0x......... Allocation context:
    by 0x........: main (tc19_shadowmem.c:144)
 ---------- double gran, 0 .. 92, skip 40 ----------
 
-Conflicting store by thread x/x at 0x........ size 8
+Conflicting store by thread x at 0x........ size 8
    at 0x........: child64 (tc19_shadowmem.c:105)
    by 0x........: steer (tc19_shadowmem.c:368)
    by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
@@ -3697,7 +3697,7 @@ Address 0x........ is at offset 40 from 0x......... Allocation context:
    by 0x........: main (tc19_shadowmem.c:144)
 ---------- double gran, 1 .. 92, skip 41 ----------
 
-Conflicting store by thread x/x at 0x........ size 8
+Conflicting store by thread x at 0x........ size 8
    at 0x........: child64 (tc19_shadowmem.c:105)
    by 0x........: steer (tc19_shadowmem.c:370)
    by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
@@ -3708,7 +3708,7 @@ Address 0x........ is at offset 41 from 0x......... Allocation context:
    by 0x........: main (tc19_shadowmem.c:144)
 ---------- double gran, 2 .. 92, skip 42 ----------
 
-Conflicting store by thread x/x at 0x........ size 8
+Conflicting store by thread x at 0x........ size 8
    at 0x........: child64 (tc19_shadowmem.c:105)
    by 0x........: steer (tc19_shadowmem.c:372)
    by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
@@ -3719,7 +3719,7 @@ Address 0x........ is at offset 42 from 0x......... Allocation context:
    by 0x........: main (tc19_shadowmem.c:144)
 ---------- double gran, 3 .. 92, skip 43 ----------
 
-Conflicting store by thread x/x at 0x........ size 8
+Conflicting store by thread x at 0x........ size 8
    at 0x........: child64 (tc19_shadowmem.c:105)
    by 0x........: steer (tc19_shadowmem.c:374)
    by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
@@ -3730,7 +3730,7 @@ Address 0x........ is at offset 43 from 0x......... Allocation context:
    by 0x........: main (tc19_shadowmem.c:144)
 ---------- double gran, 4 .. 92, skip 44 ----------
 
-Conflicting store by thread x/x at 0x........ size 8
+Conflicting store by thread x at 0x........ size 8
    at 0x........: child64 (tc19_shadowmem.c:105)
    by 0x........: steer (tc19_shadowmem.c:376)
    by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
@@ -3741,7 +3741,7 @@ Address 0x........ is at offset 44 from 0x......... Allocation context:
    by 0x........: main (tc19_shadowmem.c:144)
 ---------- double gran, 5 .. 92, skip 45 ----------
 
-Conflicting store by thread x/x at 0x........ size 8
+Conflicting store by thread x at 0x........ size 8
    at 0x........: child64 (tc19_shadowmem.c:105)
    by 0x........: steer (tc19_shadowmem.c:378)
    by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
@@ -3752,7 +3752,7 @@ Address 0x........ is at offset 45 from 0x......... Allocation context:
    by 0x........: main (tc19_shadowmem.c:144)
 ---------- double gran, 6 .. 92, skip 46 ----------
 
-Conflicting store by thread x/x at 0x........ size 8
+Conflicting store by thread x at 0x........ size 8
    at 0x........: child64 (tc19_shadowmem.c:105)
    by 0x........: steer (tc19_shadowmem.c:380)
    by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
@@ -3763,7 +3763,7 @@ Address 0x........ is at offset 46 from 0x......... Allocation context:
    by 0x........: main (tc19_shadowmem.c:144)
 ---------- double gran, 7 .. 92, skip 47 ----------
 
-Conflicting store by thread x/x at 0x........ size 8
+Conflicting store by thread x at 0x........ size 8
    at 0x........: child64 (tc19_shadowmem.c:105)
    by 0x........: steer (tc19_shadowmem.c:382)
    by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
@@ -3774,7 +3774,7 @@ Address 0x........ is at offset 47 from 0x......... Allocation context:
    by 0x........: main (tc19_shadowmem.c:144)
 ---------- double gran, 0 .. 92, skip 48 ----------
 
-Conflicting store by thread x/x at 0x........ size 8
+Conflicting store by thread x at 0x........ size 8
    at 0x........: child64 (tc19_shadowmem.c:105)
    by 0x........: steer (tc19_shadowmem.c:384)
    by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
@@ -3785,7 +3785,7 @@ Address 0x........ is at offset 48 from 0x......... Allocation context:
    by 0x........: main (tc19_shadowmem.c:144)
 ---------- double gran, 1 .. 92, skip 49 ----------
 
-Conflicting store by thread x/x at 0x........ size 8
+Conflicting store by thread x at 0x........ size 8
    at 0x........: child64 (tc19_shadowmem.c:105)
    by 0x........: steer (tc19_shadowmem.c:386)
    by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
@@ -3796,7 +3796,7 @@ Address 0x........ is at offset 49 from 0x......... Allocation context:
    by 0x........: main (tc19_shadowmem.c:144)
 ---------- double gran, 2 .. 92, skip 50 ----------
 
-Conflicting store by thread x/x at 0x........ size 8
+Conflicting store by thread x at 0x........ size 8
    at 0x........: child64 (tc19_shadowmem.c:105)
    by 0x........: steer (tc19_shadowmem.c:388)
    by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
@@ -3807,7 +3807,7 @@ Address 0x........ is at offset 50 from 0x......... Allocation context:
    by 0x........: main (tc19_shadowmem.c:144)
 ---------- double gran, 3 .. 92, skip 51 ----------
 
-Conflicting store by thread x/x at 0x........ size 8
+Conflicting store by thread x at 0x........ size 8
    at 0x........: child64 (tc19_shadowmem.c:105)
    by 0x........: steer (tc19_shadowmem.c:390)
    by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
@@ -3818,7 +3818,7 @@ Address 0x........ is at offset 51 from 0x......... Allocation context:
    by 0x........: main (tc19_shadowmem.c:144)
 ---------- double gran, 4 .. 92, skip 52 ----------
 
-Conflicting store by thread x/x at 0x........ size 8
+Conflicting store by thread x at 0x........ size 8
    at 0x........: child64 (tc19_shadowmem.c:105)
    by 0x........: steer (tc19_shadowmem.c:392)
    by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
@@ -3829,7 +3829,7 @@ Address 0x........ is at offset 52 from 0x......... Allocation context:
    by 0x........: main (tc19_shadowmem.c:144)
 ---------- double gran, 5 .. 92, skip 53 ----------
 
-Conflicting store by thread x/x at 0x........ size 8
+Conflicting store by thread x at 0x........ size 8
    at 0x........: child64 (tc19_shadowmem.c:105)
    by 0x........: steer (tc19_shadowmem.c:394)
    by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
@@ -3840,7 +3840,7 @@ Address 0x........ is at offset 53 from 0x......... Allocation context:
    by 0x........: main (tc19_shadowmem.c:144)
 ---------- double gran, 6 .. 92, skip 54 ----------
 
-Conflicting store by thread x/x at 0x........ size 8
+Conflicting store by thread x at 0x........ size 8
    at 0x........: child64 (tc19_shadowmem.c:105)
    by 0x........: steer (tc19_shadowmem.c:396)
    by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
@@ -3851,7 +3851,7 @@ Address 0x........ is at offset 54 from 0x......... Allocation context:
    by 0x........: main (tc19_shadowmem.c:144)
 ---------- double gran, 7 .. 92, skip 55 ----------
 
-Conflicting store by thread x/x at 0x........ size 8
+Conflicting store by thread x at 0x........ size 8
    at 0x........: child64 (tc19_shadowmem.c:105)
    by 0x........: steer (tc19_shadowmem.c:398)
    by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
@@ -3862,7 +3862,7 @@ Address 0x........ is at offset 55 from 0x......... Allocation context:
    by 0x........: main (tc19_shadowmem.c:144)
 ---------- double gran, 0 .. 92, skip 56 ----------
 
-Conflicting store by thread x/x at 0x........ size 8
+Conflicting store by thread x at 0x........ size 8
    at 0x........: child64 (tc19_shadowmem.c:105)
    by 0x........: steer (tc19_shadowmem.c:400)
    by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
@@ -3873,7 +3873,7 @@ Address 0x........ is at offset 56 from 0x......... Allocation context:
    by 0x........: main (tc19_shadowmem.c:144)
 ---------- double gran, 1 .. 92, skip 57 ----------
 
-Conflicting store by thread x/x at 0x........ size 8
+Conflicting store by thread x at 0x........ size 8
    at 0x........: child64 (tc19_shadowmem.c:105)
    by 0x........: steer (tc19_shadowmem.c:402)
    by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
@@ -3884,7 +3884,7 @@ Address 0x........ is at offset 57 from 0x......... Allocation context:
    by 0x........: main (tc19_shadowmem.c:144)
 ---------- double gran, 2 .. 92, skip 58 ----------
 
-Conflicting store by thread x/x at 0x........ size 8
+Conflicting store by thread x at 0x........ size 8
    at 0x........: child64 (tc19_shadowmem.c:105)
    by 0x........: steer (tc19_shadowmem.c:404)
    by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
@@ -3895,7 +3895,7 @@ Address 0x........ is at offset 58 from 0x......... Allocation context:
    by 0x........: main (tc19_shadowmem.c:144)
 ---------- double gran, 3 .. 92, skip 59 ----------
 
-Conflicting store by thread x/x at 0x........ size 8
+Conflicting store by thread x at 0x........ size 8
    at 0x........: child64 (tc19_shadowmem.c:105)
    by 0x........: steer (tc19_shadowmem.c:406)
    by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
@@ -3906,7 +3906,7 @@ Address 0x........ is at offset 59 from 0x......... Allocation context:
    by 0x........: main (tc19_shadowmem.c:144)
 ---------- double gran, 4 .. 92, skip 60 ----------
 
-Conflicting store by thread x/x at 0x........ size 8
+Conflicting store by thread x at 0x........ size 8
    at 0x........: child64 (tc19_shadowmem.c:105)
    by 0x........: steer (tc19_shadowmem.c:408)
    by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
@@ -3917,7 +3917,7 @@ Address 0x........ is at offset 60 from 0x......... Allocation context:
    by 0x........: main (tc19_shadowmem.c:144)
 ---------- double gran, 5 .. 92, skip 61 ----------
 
-Conflicting store by thread x/x at 0x........ size 8
+Conflicting store by thread x at 0x........ size 8
    at 0x........: child64 (tc19_shadowmem.c:105)
    by 0x........: steer (tc19_shadowmem.c:410)
    by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
@@ -3928,7 +3928,7 @@ Address 0x........ is at offset 61 from 0x......... Allocation context:
    by 0x........: main (tc19_shadowmem.c:144)
 ---------- double gran, 6 .. 92, skip 62 ----------
 
-Conflicting store by thread x/x at 0x........ size 8
+Conflicting store by thread x at 0x........ size 8
    at 0x........: child64 (tc19_shadowmem.c:105)
    by 0x........: steer (tc19_shadowmem.c:412)
    by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
@@ -3939,7 +3939,7 @@ Address 0x........ is at offset 62 from 0x......... Allocation context:
    by 0x........: main (tc19_shadowmem.c:144)
 ---------- double gran, 7 .. 92, skip 63 ----------
 
-Conflicting store by thread x/x at 0x........ size 8
+Conflicting store by thread x at 0x........ size 8
    at 0x........: child64 (tc19_shadowmem.c:105)
    by 0x........: steer (tc19_shadowmem.c:414)
    by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
@@ -3950,7 +3950,7 @@ Address 0x........ is at offset 63 from 0x......... Allocation context:
    by 0x........: main (tc19_shadowmem.c:144)
 ---------- double gran, 0 .. 92, skip 64 ----------
 
-Conflicting store by thread x/x at 0x........ size 8
+Conflicting store by thread x at 0x........ size 8
    at 0x........: child64 (tc19_shadowmem.c:105)
    by 0x........: steer (tc19_shadowmem.c:416)
    by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
@@ -3961,7 +3961,7 @@ Address 0x........ is at offset 64 from 0x......... Allocation context:
    by 0x........: main (tc19_shadowmem.c:144)
 ---------- double gran, 1 .. 92, skip 65 ----------
 
-Conflicting store by thread x/x at 0x........ size 8
+Conflicting store by thread x at 0x........ size 8
    at 0x........: child64 (tc19_shadowmem.c:105)
    by 0x........: steer (tc19_shadowmem.c:418)
    by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
@@ -3972,7 +3972,7 @@ Address 0x........ is at offset 65 from 0x......... Allocation context:
    by 0x........: main (tc19_shadowmem.c:144)
 ---------- double gran, 2 .. 92, skip 66 ----------
 
-Conflicting store by thread x/x at 0x........ size 8
+Conflicting store by thread x at 0x........ size 8
    at 0x........: child64 (tc19_shadowmem.c:105)
    by 0x........: steer (tc19_shadowmem.c:420)
    by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
@@ -3983,7 +3983,7 @@ Address 0x........ is at offset 66 from 0x......... Allocation context:
    by 0x........: main (tc19_shadowmem.c:144)
 ---------- double gran, 3 .. 92, skip 67 ----------
 
-Conflicting store by thread x/x at 0x........ size 8
+Conflicting store by thread x at 0x........ size 8
    at 0x........: child64 (tc19_shadowmem.c:105)
    by 0x........: steer (tc19_shadowmem.c:422)
    by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
@@ -3994,7 +3994,7 @@ Address 0x........ is at offset 67 from 0x......... Allocation context:
    by 0x........: main (tc19_shadowmem.c:144)
 ---------- double gran, 4 .. 92, skip 68 ----------
 
-Conflicting store by thread x/x at 0x........ size 8
+Conflicting store by thread x at 0x........ size 8
    at 0x........: child64 (tc19_shadowmem.c:105)
    by 0x........: steer (tc19_shadowmem.c:424)
    by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
@@ -4005,7 +4005,7 @@ Address 0x........ is at offset 68 from 0x......... Allocation context:
    by 0x........: main (tc19_shadowmem.c:144)
 ---------- double gran, 5 .. 92, skip 69 ----------
 
-Conflicting store by thread x/x at 0x........ size 8
+Conflicting store by thread x at 0x........ size 8
    at 0x........: child64 (tc19_shadowmem.c:105)
    by 0x........: steer (tc19_shadowmem.c:426)
    by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
@@ -4016,7 +4016,7 @@ Address 0x........ is at offset 69 from 0x......... Allocation context:
    by 0x........: main (tc19_shadowmem.c:144)
 ---------- double gran, 6 .. 92, skip 70 ----------
 
-Conflicting store by thread x/x at 0x........ size 8
+Conflicting store by thread x at 0x........ size 8
    at 0x........: child64 (tc19_shadowmem.c:105)
    by 0x........: steer (tc19_shadowmem.c:428)
    by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
@@ -4027,7 +4027,7 @@ Address 0x........ is at offset 70 from 0x......... Allocation context:
    by 0x........: main (tc19_shadowmem.c:144)
 ---------- double gran, 7 .. 92, skip 71 ----------
 
-Conflicting store by thread x/x at 0x........ size 8
+Conflicting store by thread x at 0x........ size 8
    at 0x........: child64 (tc19_shadowmem.c:105)
    by 0x........: steer (tc19_shadowmem.c:430)
    by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
@@ -4038,7 +4038,7 @@ Address 0x........ is at offset 71 from 0x......... Allocation context:
    by 0x........: main (tc19_shadowmem.c:144)
 ---------- double gran, 0 .. 92, skip 72 ----------
 
-Conflicting store by thread x/x at 0x........ size 8
+Conflicting store by thread x at 0x........ size 8
    at 0x........: child64 (tc19_shadowmem.c:105)
    by 0x........: steer (tc19_shadowmem.c:432)
    by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
@@ -4049,7 +4049,7 @@ Address 0x........ is at offset 72 from 0x......... Allocation context:
    by 0x........: main (tc19_shadowmem.c:144)
 ---------- double gran, 1 .. 92, skip 73 ----------
 
-Conflicting store by thread x/x at 0x........ size 8
+Conflicting store by thread x at 0x........ size 8
    at 0x........: child64 (tc19_shadowmem.c:105)
    by 0x........: steer (tc19_shadowmem.c:434)
    by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
@@ -4060,7 +4060,7 @@ Address 0x........ is at offset 73 from 0x......... Allocation context:
    by 0x........: main (tc19_shadowmem.c:144)
 ---------- double gran, 2 .. 92, skip 74 ----------
 
-Conflicting store by thread x/x at 0x........ size 8
+Conflicting store by thread x at 0x........ size 8
    at 0x........: child64 (tc19_shadowmem.c:105)
    by 0x........: steer (tc19_shadowmem.c:436)
    by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
@@ -4071,7 +4071,7 @@ Address 0x........ is at offset 74 from 0x......... Allocation context:
    by 0x........: main (tc19_shadowmem.c:144)
 ---------- double gran, 3 .. 92, skip 75 ----------
 
-Conflicting store by thread x/x at 0x........ size 8
+Conflicting store by thread x at 0x........ size 8
    at 0x........: child64 (tc19_shadowmem.c:105)
    by 0x........: steer (tc19_shadowmem.c:438)
    by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
@@ -4082,7 +4082,7 @@ Address 0x........ is at offset 75 from 0x......... Allocation context:
    by 0x........: main (tc19_shadowmem.c:144)
 ---------- double gran, 4 .. 92, skip 76 ----------
 
-Conflicting store by thread x/x at 0x........ size 8
+Conflicting store by thread x at 0x........ size 8
    at 0x........: child64 (tc19_shadowmem.c:105)
    by 0x........: steer (tc19_shadowmem.c:440)
    by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
@@ -4093,7 +4093,7 @@ Address 0x........ is at offset 76 from 0x......... Allocation context:
    by 0x........: main (tc19_shadowmem.c:144)
 ---------- double gran, 5 .. 92, skip 77 ----------
 
-Conflicting store by thread x/x at 0x........ size 8
+Conflicting store by thread x at 0x........ size 8
    at 0x........: child64 (tc19_shadowmem.c:105)
    by 0x........: steer (tc19_shadowmem.c:442)
    by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
@@ -4104,7 +4104,7 @@ Address 0x........ is at offset 77 from 0x......... Allocation context:
    by 0x........: main (tc19_shadowmem.c:144)
 ---------- double gran, 6 .. 92, skip 78 ----------
 
-Conflicting store by thread x/x at 0x........ size 8
+Conflicting store by thread x at 0x........ size 8
    at 0x........: child64 (tc19_shadowmem.c:105)
    by 0x........: steer (tc19_shadowmem.c:444)
    by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
@@ -4115,7 +4115,7 @@ Address 0x........ is at offset 78 from 0x......... Allocation context:
    by 0x........: main (tc19_shadowmem.c:144)
 ---------- double gran, 7 .. 92, skip 79 ----------
 
-Conflicting store by thread x/x at 0x........ size 8
+Conflicting store by thread x at 0x........ size 8
    at 0x........: child64 (tc19_shadowmem.c:105)
    by 0x........: steer (tc19_shadowmem.c:446)
    by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
@@ -4126,7 +4126,7 @@ Address 0x........ is at offset 79 from 0x......... Allocation context:
    by 0x........: main (tc19_shadowmem.c:144)
 ---------- double gran, 0 .. 92, skip 80 ----------
 
-Conflicting store by thread x/x at 0x........ size 8
+Conflicting store by thread x at 0x........ size 8
    at 0x........: child64 (tc19_shadowmem.c:105)
    by 0x........: steer (tc19_shadowmem.c:448)
    by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
@@ -4137,7 +4137,7 @@ Address 0x........ is at offset 80 from 0x......... Allocation context:
    by 0x........: main (tc19_shadowmem.c:144)
 ---------- double gran, 1 .. 92, skip 81 ----------
 
-Conflicting store by thread x/x at 0x........ size 8
+Conflicting store by thread x at 0x........ size 8
    at 0x........: child64 (tc19_shadowmem.c:105)
    by 0x........: steer (tc19_shadowmem.c:450)
    by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
@@ -4148,7 +4148,7 @@ Address 0x........ is at offset 81 from 0x......... Allocation context:
    by 0x........: main (tc19_shadowmem.c:144)
 ---------- double gran, 2 .. 92, skip 82 ----------
 
-Conflicting store by thread x/x at 0x........ size 8
+Conflicting store by thread x at 0x........ size 8
    at 0x........: child64 (tc19_shadowmem.c:105)
    by 0x........: steer (tc19_shadowmem.c:452)
    by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
@@ -4159,7 +4159,7 @@ Address 0x........ is at offset 82 from 0x......... Allocation context:
    by 0x........: main (tc19_shadowmem.c:144)
 ---------- double gran, 3 .. 92, skip 83 ----------
 
-Conflicting store by thread x/x at 0x........ size 8
+Conflicting store by thread x at 0x........ size 8
    at 0x........: child64 (tc19_shadowmem.c:105)
    by 0x........: steer (tc19_shadowmem.c:454)
    by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
@@ -4170,7 +4170,7 @@ Address 0x........ is at offset 83 from 0x......... Allocation context:
    by 0x........: main (tc19_shadowmem.c:144)
 ---------- double gran, 4 .. 92, skip 84 ----------
 
-Conflicting store by thread x/x at 0x........ size 8
+Conflicting store by thread x at 0x........ size 8
    at 0x........: child64 (tc19_shadowmem.c:105)
    by 0x........: steer (tc19_shadowmem.c:456)
    by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
@@ -4181,7 +4181,7 @@ Address 0x........ is at offset 84 from 0x......... Allocation context:
    by 0x........: main (tc19_shadowmem.c:144)
 ---------- double gran, 5 .. 92, skip 85 ----------
 
-Conflicting store by thread x/x at 0x........ size 8
+Conflicting store by thread x at 0x........ size 8
    at 0x........: child64 (tc19_shadowmem.c:105)
    by 0x........: steer (tc19_shadowmem.c:458)
    by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
@@ -4192,7 +4192,7 @@ Address 0x........ is at offset 85 from 0x......... Allocation context:
    by 0x........: main (tc19_shadowmem.c:144)
 ---------- double gran, 6 .. 92, skip 86 ----------
 
-Conflicting store by thread x/x at 0x........ size 8
+Conflicting store by thread x at 0x........ size 8
    at 0x........: child64 (tc19_shadowmem.c:105)
    by 0x........: steer (tc19_shadowmem.c:460)
    by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
@@ -4203,7 +4203,7 @@ Address 0x........ is at offset 86 from 0x......... Allocation context:
    by 0x........: main (tc19_shadowmem.c:144)
 ---------- double gran, 7 .. 92, skip 87 ----------
 
-Conflicting store by thread x/x at 0x........ size 8
+Conflicting store by thread x at 0x........ size 8
    at 0x........: child64 (tc19_shadowmem.c:105)
    by 0x........: steer (tc19_shadowmem.c:462)
    by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
@@ -4214,7 +4214,7 @@ Address 0x........ is at offset 87 from 0x......... Allocation context:
    by 0x........: main (tc19_shadowmem.c:144)
 ---------- double gran, 0 .. 92, skip 88 ----------
 
-Conflicting store by thread x/x at 0x........ size 8
+Conflicting store by thread x at 0x........ size 8
    at 0x........: child64 (tc19_shadowmem.c:105)
    by 0x........: steer (tc19_shadowmem.c:464)
    by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
@@ -4225,7 +4225,7 @@ Address 0x........ is at offset 88 from 0x......... Allocation context:
    by 0x........: main (tc19_shadowmem.c:144)
 ---------- double gran, 1 .. 92, skip 89 ----------
 
-Conflicting store by thread x/x at 0x........ size 8
+Conflicting store by thread x at 0x........ size 8
    at 0x........: child64 (tc19_shadowmem.c:105)
    by 0x........: steer (tc19_shadowmem.c:466)
    by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
@@ -4236,7 +4236,7 @@ Address 0x........ is at offset 89 from 0x......... Allocation context:
    by 0x........: main (tc19_shadowmem.c:144)
 ---------- double gran, 2 .. 92, skip 90 ----------
 
-Conflicting store by thread x/x at 0x........ size 8
+Conflicting store by thread x at 0x........ size 8
    at 0x........: child64 (tc19_shadowmem.c:105)
    by 0x........: steer (tc19_shadowmem.c:468)
    by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
@@ -4247,7 +4247,7 @@ Address 0x........ is at offset 90 from 0x......... Allocation context:
    by 0x........: main (tc19_shadowmem.c:144)
 ---------- double gran, 3 .. 92, skip 91 ----------
 
-Conflicting store by thread x/x at 0x........ size 8
+Conflicting store by thread x at 0x........ size 8
    at 0x........: child64 (tc19_shadowmem.c:105)
    by 0x........: steer (tc19_shadowmem.c:470)
    by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)

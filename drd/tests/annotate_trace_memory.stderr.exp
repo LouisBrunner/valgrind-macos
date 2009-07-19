@@ -1,17 +1,17 @@
 
 FLAGS [phb=1, fm=0]
 test01: positive
-store 0x........ size 4 (vg 2 / drd 2 / vc ...)
+store 0x........ size 4 (thread x / vc ...)
    at 0x........: test01::Worker() (tsan_unittest.cpp:?)
    by 0x........: MyThread::ThreadBody(MyThread*) (tsan_thread_wrappers_pthread.h:?)
-store 0x........ size 4 (vg 1 / drd 1 / vc ...)
+store 0x........ size 4 (thread x / vc ...)
    at 0x........: test01::Parent() (tsan_unittest.cpp:?)
    by 0x........: test01::Run() (tsan_unittest.cpp:?)
-Conflicting store by thread x/x at 0x........ size 4
+Conflicting store by thread x at 0x........ size 4
    at 0x........: test01::Parent() (tsan_unittest.cpp:?)
    by 0x........: test01::Run() (tsan_unittest.cpp:?)
 Allocation context: BSS section of tsan_unittest
-load  0x........ size 4 (vg 1 / drd 1 / vc ...)
+load  0x........ size 4 (thread x / vc ...)
    at 0x........: test01::Run() (tsan_unittest.cpp:?)
    by 0x........: main (tsan_unittest.cpp:?)
 	GLOB=2

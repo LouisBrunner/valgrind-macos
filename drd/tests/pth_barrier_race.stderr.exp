@@ -2,7 +2,7 @@
 Destruction of barrier not synchronized with barrier wait call: barrier 0x........
    at 0x........: pthread_barrier_destroy (drd_pthread_intercepts.c:?)
    by 0x........: main (pth_barrier_race.c:?)
-Conflicting wait call by thread 0/2:
+Conflicting wait call by thread 2:
    at 0x........: pthread_barrier_wait (drd_pthread_intercepts.c:?)
    by 0x........: thread (pth_barrier_race.c:?)
    by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)

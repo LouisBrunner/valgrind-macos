@@ -92,10 +92,7 @@ static void sg_init(Segment* const sg,
       char* vc;
 
       vc = DRD_(vc_aprint)(&sg->vc);
-      VG_(message)(Vg_DebugMsg, "New segment for thread %d/%d with vc %s",
-                   created != VG_INVALID_THREADID
-                   ? DRD_(DrdThreadIdToVgThreadId)(created)
-                   : DRD_INVALID_THREADID,
+      VG_(message)(Vg_DebugMsg, "New segment for thread %d with vc %s",
                    created, vc);
       VG_(free)(vc);
    }

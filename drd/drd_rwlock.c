@@ -211,8 +211,7 @@ static void rwlock_cleanup(struct rwlock_info* p)
    if (DRD_(s_trace_rwlock))
    {
       VG_(message)(Vg_UserMsg,
-                   "[%d/%d] rwlock_destroy     0x%lx\n",
-                   VG_(get_running_tid)(),
+                   "[%d] rwlock_destroy     0x%lx\n",
                    DRD_(thread_get_running_tid)(),
                    p->a1);
    }
@@ -279,8 +278,7 @@ struct rwlock_info* DRD_(rwlock_pre_init)(const Addr rwlock,
    if (DRD_(s_trace_rwlock))
    {
       VG_(message)(Vg_UserMsg,
-                   "[%d/%d] rwlock_init        0x%lx\n",
-                   VG_(get_running_tid)(),
+                   "[%d] rwlock_init        0x%lx\n",
                    DRD_(thread_get_running_tid)(),
                    rwlock);
    }
@@ -337,8 +335,7 @@ void DRD_(rwlock_pre_rdlock)(const Addr rwlock, const RwLockT rwlock_type)
    if (DRD_(s_trace_rwlock))
    {
       VG_(message)(Vg_UserMsg,
-                   "[%d/%d] pre_rwlock_rdlock  0x%lx\n",
-                   VG_(get_running_tid)(),
+                   "[%d] pre_rwlock_rdlock  0x%lx\n",
                    DRD_(thread_get_running_tid)(),
                    rwlock);
    }
@@ -370,8 +367,7 @@ void DRD_(rwlock_post_rdlock)(const Addr rwlock, const RwLockT rwlock_type,
    if (DRD_(s_trace_rwlock))
    {
       VG_(message)(Vg_UserMsg,
-                   "[%d/%d] post_rwlock_rdlock 0x%lx\n",
-                   VG_(get_running_tid)(),
+                   "[%d] post_rwlock_rdlock 0x%lx\n",
                    drd_tid,
                    rwlock);
    }
@@ -411,8 +407,7 @@ void DRD_(rwlock_pre_wrlock)(const Addr rwlock, const RwLockT rwlock_type)
    if (DRD_(s_trace_rwlock))
    {
       VG_(message)(Vg_UserMsg,
-                   "[%d/%d] pre_rwlock_wrlock  0x%lx\n",
-                   VG_(get_running_tid)(),
+                   "[%d] pre_rwlock_wrlock  0x%lx\n",
                    DRD_(thread_get_running_tid)(),
                    rwlock);
    }
@@ -452,8 +447,7 @@ void DRD_(rwlock_post_wrlock)(const Addr rwlock, const RwLockT rwlock_type,
    if (DRD_(s_trace_rwlock))
    {
       VG_(message)(Vg_UserMsg,
-                   "[%d/%d] post_rwlock_wrlock 0x%lx\n",
-                   VG_(get_running_tid)(),
+                   "[%d] post_rwlock_wrlock 0x%lx\n",
                    drd_tid,
                    rwlock);
    }
@@ -494,8 +488,7 @@ void DRD_(rwlock_pre_unlock)(const Addr rwlock, const RwLockT rwlock_type)
    if (DRD_(s_trace_rwlock))
    {
       VG_(message)(Vg_UserMsg,
-                   "[%d/%d] rwlock_unlock      0x%lx\n",
-                   vg_tid,
+                   "[%d] rwlock_unlock      0x%lx\n",
                    drd_tid,
                    rwlock);
    }

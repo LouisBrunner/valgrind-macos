@@ -374,7 +374,7 @@ case it would be advisable to read through this section.
 </formalpara>
 
 <para>Each error to be suppressed is described very specifically, to
-minimise the possibility that a suppression-directive inadvertantly
+minimise the possibility that a suppression-directive inadvertently
 suppresses a bunch of similar errors which you did want to see.  The
 suppression mechanism is designed to allow precise yet flexible
 specification of errors to suppress.</para>

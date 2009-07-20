@@ -1142,7 +1142,7 @@ Syscall param fsync(fd) contains uninitialised byte(s)
 119:      __NR_sigreturn n/a
 -----------------------------------------------------
 -----------------------------------------------------
-120:          __NR_clone 4s 0m
+120:          __NR_clone 5s 3m
 -----------------------------------------------------
 
 Syscall param clone(flags) contains uninitialised byte(s)
@@ -1154,13 +1154,21 @@ Syscall param clone(child_stack) contains uninitialised byte(s)
 Syscall param clone(parent_tidptr) contains uninitialised byte(s)
    ...
 
+Syscall param clone(parent_tidptr) points to unaddressable byte(s)
+   ...
+ Address 0x........ is not stack'd, malloc'd or (recently) free'd
+
 Syscall param clone(tlsinfo) contains uninitialised byte(s)
    ...
+
+Syscall param clone(tlsinfo) points to unaddressable byte(s)
+   ...
+ Address 0x........ is not stack'd, malloc'd or (recently) free'd
 
 Syscall param clone(child_tidptr) contains uninitialised byte(s)
    ...
 
-Syscall param clone(parent_tidptr) points to unaddressable byte(s)
+Syscall param clone(child_tidptr) points to unaddressable byte(s)
    ...
  Address 0x........ is not stack'd, malloc'd or (recently) free'd
 -----------------------------------------------------

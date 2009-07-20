@@ -550,9 +550,8 @@ int main(void)
 #ifndef CLONE_PARENT_SETTID
 #define CLONE_PARENT_SETTID	0x00100000
 #endif
-   // XXX: should really be "4s 2m"?  Not sure... (see PRE(sys_clone))
-   GO(__NR_clone, "4s 0m");
-   SY(__NR_clone, x0|CLONE_PARENT_SETTID|SIGCHLD, x0, x0, x0); FAIL;
+   GO(__NR_clone, "5s 3m");
+   SY(__NR_clone, x0|CLONE_PARENT_SETTID|CLONE_SETTLS|CLONE_CHILD_SETTID|SIGCHLD, x0, x0, x0, x0); FAIL;
    if (0 == res) {
       SY(__NR_exit, 0); FAIL;
    }

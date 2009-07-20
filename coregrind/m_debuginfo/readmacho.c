@@ -678,7 +678,7 @@ Bool ML_(read_macho_debug_info)( struct _DebugInfo* di )
 
    if (VG_(clo_verbosity) > 1)
       VG_(message)(Vg_DebugMsg,
-                   "%s (%#lx)", di->filename, di->rx_map_avma );
+                   "%s (%#lx)\n", di->filename, di->rx_map_avma );
 
    /* This should be ensured by our caller. */
    vg_assert(di->have_rx_map);
@@ -837,7 +837,7 @@ Bool ML_(read_macho_debug_info)( struct _DebugInfo* di )
       
       if (VG_(clo_verbosity) > 1)
          VG_(message)(Vg_DebugMsg,
-            "   reading syms   from primary file (%d %d)",
+            "   reading syms   from primary file (%d %d)\n",
             dysymcmd->nextdefsym, dysymcmd->nlocalsym );
 
       /* Read candidate symbols into 'candSyms', so we can truncate
@@ -897,7 +897,7 @@ Bool ML_(read_macho_debug_info)( struct _DebugInfo* di )
       Bool valid;
 
       if (VG_(clo_verbosity) > 1)
-         VG_(message)(Vg_DebugMsg, "   dSYM= %s", dsymfilename);
+         VG_(message)(Vg_DebugMsg, "   dSYM= %s\n", dsymfilename);
 
       ok = map_image_aboard( di, &iid, dsymfilename );
       if (!ok) goto fail;
@@ -912,7 +912,7 @@ Bool ML_(read_macho_debug_info)( struct _DebugInfo* di )
 
       if (VG_(clo_verbosity) > 1)
          VG_(message)(Vg_DebugMsg, "   dSYM does not have "
-                                   "correct UUID (out of date?)");
+                                   "correct UUID (out of date?)\n");
    }
 
    /* There was no dsym file, or it doesn't match.  We'll have to try
@@ -929,11 +929,11 @@ Bool ML_(read_macho_debug_info)( struct _DebugInfo* di )
 
    if (!VG_(clo_auto_run_dsymutil)) {
       if (VG_(clo_verbosity) == 1) {
-         VG_(message)(Vg_DebugMsg, "%s:", di->filename);
+         VG_(message)(Vg_DebugMsg, "%s:\n", di->filename);
       }
       if (VG_(clo_verbosity) > 0)
          VG_(message)(Vg_DebugMsg, "%sdSYM directory %s; consider using "
-                      "--auto-run-dsymutil=yes",
+                      "--auto-run-dsymutil=yes\n",
                       VG_(clo_verbosity) > 1 ? "   " : "",
                       dsymfilename ? "has wrong UUID" : "is missing"); 
       goto success;
@@ -950,10 +950,10 @@ Bool ML_(read_macho_debug_info)( struct _DebugInfo* di )
      VG_(strcpy)(cmd, dsymutil);
      if (0) VG_(strcat)(cmd, "--verbose ");
      VG_(strcat)(cmd, di->filename);
-     VG_(message)(Vg_DebugMsg, "run: %s", cmd);
+     VG_(message)(Vg_DebugMsg, "run: %s\n", cmd);
      r = VG_(system)( cmd );
      if (r)
-        VG_(message)(Vg_DebugMsg, "run: %s FAILED", dsymutil);
+        VG_(message)(Vg_DebugMsg, "run: %s FAILED\n", dsymutil);
      ML_(dinfo_free)(cmd);
      dsymfilename = find_separate_debug_file(di->filename);
    }
@@ -963,7 +963,7 @@ Bool ML_(read_macho_debug_info)( struct _DebugInfo* di )
       Bool valid;
 
       if (VG_(clo_verbosity) > 1)
-         VG_(message)(Vg_DebugMsg, "   dsyms= %s", dsymfilename);
+         VG_(message)(Vg_DebugMsg, "   dsyms= %s\n", dsymfilename);
 
       ok = map_image_aboard( di, &iid, dsymfilename );
       if (!ok) goto fail;
@@ -978,14 +978,14 @@ Bool ML_(read_macho_debug_info)( struct _DebugInfo* di )
             VG_(message)(Vg_DebugMsg,
                "WARNING: did not find expected UUID %02X%02X%02X%02X"
                "-%02X%02X-%02X%02X-%02X%02X-%02X%02X%02X%02X%02X%02X"
-               " in dSYM dir",
+               " in dSYM dir\n",
                (UInt)uuid[0], (UInt)uuid[1], (UInt)uuid[2], (UInt)uuid[3],
                (UInt)uuid[4], (UInt)uuid[5], (UInt)uuid[6], (UInt)uuid[7],
                (UInt)uuid[8], (UInt)uuid[9], (UInt)uuid[10],
                (UInt)uuid[11], (UInt)uuid[12], (UInt)uuid[13],
                (UInt)uuid[14], (UInt)uuid[15] );
             VG_(message)(Vg_DebugMsg,
-                         "WARNING: for %s", di->filename);
+                         "WARNING: for %s\n", di->filename);
          }
          unmap_image( &iid );
          /* unmap_image zeroes the fields, so the following test makes
@@ -1041,13 +1041,13 @@ Bool ML_(read_macho_debug_info)( struct _DebugInfo* di )
             if (0)
             VG_(message)(Vg_DebugMsg,
                          "Reading dwarf3 for %s (%#lx) from %s"
-                         " (%ld %ld %ld %ld %ld %ld)",
+                         " (%ld %ld %ld %ld %ld %ld)\n",
                          di->filename, di->text_avma, dsymfilename,
                          debug_info_sz, debug_abbv_sz, debug_line_sz, 
                          debug_str_sz, debug_ranges_sz, debug_loc_sz
                          );
             VG_(message)(Vg_DebugMsg,
-               "   reading dwarf3 from dsyms file");
+               "   reading dwarf3 from dsyms file\n");
          }
          /* The old reader: line numbers and unwind info only */
          ML_(read_debuginfo_dwarf3) ( di,

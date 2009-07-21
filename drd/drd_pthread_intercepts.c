@@ -390,7 +390,7 @@ PTH_FUNC(int, pthreadZucreateZa, // pthread_create*
 }
 
 // pthread_join
-PTH_FUNC(int, pthreadZujoin, // pthread_join
+PTH_FUNC(int, pthreadZujoinZa, // pthread_join*
          pthread_t pt_joinee, void **thread_return)
 {
    int      ret;
@@ -423,8 +423,8 @@ PTH_FUNC(int, pthreadZudetach, pthread_t pt_thread)
    return ret;
 }
 
-// pthread_cancel
-PTH_FUNC(int, pthreadZucancel, pthread_t pt_thread)
+// pthread_cancel*
+PTH_FUNC(int, pthreadZucancelZa, pthread_t pt_thread)
 {
    int res;
    int ret;

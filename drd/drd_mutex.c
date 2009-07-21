@@ -70,7 +70,6 @@ void DRD_(mutex_initialize)(struct mutex_info* const p,
                             const Addr mutex, const MutexT mutex_type)
 {
    tl_assert(mutex);
-   tl_assert(mutex_type != mutex_type_unknown);
    tl_assert(p->a1 == mutex);
 
    p->cleanup             = (void(*)(DrdClientobj*))mutex_cleanup;
@@ -146,8 +145,6 @@ DRD_(mutex_get_or_allocate)(const Addr mutex, const MutexT mutex_type)
       return 0;
    }
 
-   tl_assert(mutex_type != mutex_type_unknown);
-
    p = &(DRD_(clientobj_add)(mutex, ClientMutex)->mutex);
    DRD_(mutex_initialize)(p, mutex, mutex_type);
    return p;
@@ -164,8 +161,6 @@ struct mutex_info*
 DRD_(mutex_init)(const Addr mutex, const MutexT mutex_type)
 {
    struct mutex_info* p;
-
-   tl_assert(mutex_type != mutex_type_unknown);
 
    if (s_trace_mutex)
    {
@@ -349,7 +344,7 @@ void DRD_(mutex_unlock)(const Addr mutex, MutexT mutex_type)
    struct mutex_info* p;
 
    p = DRD_(mutex_get)(mutex);
-   if (mutex_type == mutex_type_unknown)
+   if (p && mutex_type == mutex_type_unknown)
       mutex_type = p->mutex_type;
 
    if (s_trace_mutex)
@@ -457,6 +452,8 @@ const char* DRD_(mutex_type_name)(const MutexT mt)
 {
    switch (mt)
    {
+   case mutex_type_unknown:
+      return "mutex";
    case mutex_type_invalid_mutex:
       return "invalid mutex";
    case mutex_type_recursive_mutex:

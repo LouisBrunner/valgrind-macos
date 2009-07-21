@@ -166,17 +166,18 @@ static __inline__ MutexT DRD_(mutex_type)(pthread_mutex_t* mutex)
 #if defined(HAVE_PTHREAD_MUTEX_T__M_KIND)
    /* glibc + LinuxThreads. */
    const int kind = mutex->__m_kind & 3;
+   return DRD_(pthread_to_drd_mutex_type)(kind);
 #elif defined(HAVE_PTHREAD_MUTEX_T__DATA__KIND)
    /* glibc + NPTL. */
    const int kind = mutex->__data.__kind & 3;
-#else
-   /* Another POSIX threads implementation. Regression tests will fail. */
-   const int kind = PTHREAD_MUTEX_DEFAULT;
-   fprintf(stderr,
-           "Did not recognize your POSIX threads implementation. Giving up.\n");
-   assert(0);
-#endif
    return DRD_(pthread_to_drd_mutex_type)(kind);
+#else
+   /*
+    * Another POSIX threads implementation. The mutex type won't be printed
+    * when enabling --trace-mutex=yes.
+    */
+   return mutex_type_unknown;
+#endif
 }
 
 /**

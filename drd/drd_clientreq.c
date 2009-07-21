@@ -185,11 +185,16 @@ static Bool handle_client_request(ThreadId vg_tid, UWord* arg, UWord* ret)
 
          nframes = VG_(get_StackTrace)(vg_tid, ips, n_ips, sps, fps, 0);
 
-         VG_(message)(Vg_DebugMsg, "thread %d", drd_tid);
+         VG_(message)(Vg_DebugMsg, "thread %d: stack 0x%lx - 0x%lx - 0x%lx\n",
+		      drd_tid,
+		      VG_(thread_get_stack_max)(vg_tid)
+		      - VG_(thread_get_stack_size)(vg_tid),
+		      topmost_sp,
+		      VG_(thread_get_stack_max)(vg_tid));
          for (i = 0; i < nframes; i++)
          {
             VG_(describe_IP)(ips[i], desc, sizeof(desc));
-            VG_(message)(Vg_DebugMsg, "[%2d] sp 0x%09lx fp 0x%09lx ip %s",
+            VG_(message)(Vg_DebugMsg, "[%2d] sp 0x%09lx fp 0x%09lx ip %s\n",
                          i, sps[i], fps[i], desc);
          }
 #endif

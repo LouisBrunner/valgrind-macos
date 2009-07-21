@@ -1,1 +1,2 @@
 prog: custom_alloc
+vgopts: --auto-run-dsymutil=yes

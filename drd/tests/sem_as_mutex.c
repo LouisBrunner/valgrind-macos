@@ -5,7 +5,7 @@
 #include <stdio.h>     /* printf() */
 #include <pthread.h>
 #include <semaphore.h>
-#include <unistd.h>    /* usleep() */
+#include <unistd.h>    /* sleep() */
 
 
 /* Local functions declarations. */

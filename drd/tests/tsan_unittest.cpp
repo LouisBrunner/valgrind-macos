@@ -93,7 +93,7 @@ static inline void IGNORE_RETURN_VALUE(T v)
 #include <stdlib.h>
 #include <dirent.h>
 
-#ifndef _APPLE_
+#ifndef __APPLE__
 #include <malloc.h>
 #endif
 

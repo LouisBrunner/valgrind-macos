@@ -21,7 +21,17 @@ int main()
     p = realloc(p, 50000);
     p = realloc(p, 40000);
     p = realloc(p, 0);
+    /*
+     * glibc returns a NULL pointer when the size argument passed to realloc()
+     * is zero, while Darwin's C library returns a non-NULL pointer. Both are
+     * allowed by POSIX.
+     */
+#if defined(__APPLE__)
+    if (p)
+      free(p);
+#else
     assert(! p);
+#endif
   }
 
   return 0;

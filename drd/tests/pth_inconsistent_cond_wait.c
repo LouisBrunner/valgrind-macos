@@ -5,8 +5,13 @@
  */
 
 
+#include <errno.h>     // ETIMEDOUT
 #include <pthread.h>
 #include <semaphore.h>
+#include <stdio.h>
+#include <string.h>    // memset()
+#include <sys/time.h>  // gettimeofday()
+#include <time.h>      // struct timespec
 #include <unistd.h>
 
 pthread_cond_t  s_cond;
@@ -14,21 +19,25 @@ pthread_mutex_t s_mutex1;
 pthread_mutex_t s_mutex2;
 sem_t           s_sem;
 
-void* thread1(void* arg)
+static void* thread_func(void* mutex)
 {
-  pthread_mutex_lock(&s_mutex1);
-  sem_post(&s_sem);
-  pthread_cond_wait(&s_cond, &s_mutex1);
-  pthread_mutex_unlock(&s_mutex1);
-  return 0;
-}
+  int err;
+  struct timeval now;
+  struct timespec deadline;
 
-void* thread2(void* arg)
-{
-  pthread_mutex_lock(&s_mutex2);
+  pthread_mutex_lock(mutex);
   sem_post(&s_sem);
-  pthread_cond_wait(&s_cond, &s_mutex2);
-  pthread_mutex_unlock(&s_mutex2);
+  gettimeofday(&now, 0);
+  memset(&deadline, 0, sizeof(deadline));
+  deadline.tv_sec  = now.tv_sec + 2;
+  deadline.tv_nsec = now.tv_usec * 1000;
+  err = pthread_cond_timedwait(&s_cond, mutex, &deadline);
+  if (err != 0)
+    fprintf(stderr,
+	    "pthread_cond_timedwait() call returned error code %d (%s)\n",
+	    err,
+	    strerror(err));
+  pthread_mutex_unlock(mutex);
   return 0;
 }
 
@@ -44,8 +53,8 @@ int main(int argc, char** argv)
   pthread_mutex_init(&s_mutex2, 0);
 
   /* Create two threads. */
-  pthread_create(&tid1, 0, &thread1, 0);
-  pthread_create(&tid2, 0, &thread2, 0);
+  pthread_create(&tid1, 0, &thread_func, &s_mutex1);
+  pthread_create(&tid2, 0, &thread_func, &s_mutex2);
 
   /* Wait until both threads have called sem_post(). */
   sem_wait(&s_sem);

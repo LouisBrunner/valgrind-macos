@@ -558,7 +558,7 @@ Omega and DRD.  There are many other smaller improvements.  In detail:
 - Memcheck has new flags --malloc-fill=<hexnum> and
   --free-fill=<hexnum> which free malloc'd / free'd areas with the
   specified byte.  This can help shake out obscure memory corruption
-  problems.  The definedness and addressibility of these areas is
+  problems.  The definedness and addressability of these areas is
   unchanged -- only the contents are affected.
 
 - The behaviour of Memcheck's client requests VALGRIND_GET_VBITS and

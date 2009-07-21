@@ -1,4 +1,4 @@
 prereq: ./supported_libpthread
-vgopts: --var-info=yes
+vgopts: --var-info=yes --auto-run-dsymutil=yes
 prog: pth_detached
 args: 10 10

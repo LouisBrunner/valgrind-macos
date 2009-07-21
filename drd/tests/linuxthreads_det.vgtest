@@ -1,2 +1,2 @@
 prog: linuxthreads_det
-vgopts: --var-info=yes
+vgopts: --var-info=yes --auto-run-dsymutil=yes

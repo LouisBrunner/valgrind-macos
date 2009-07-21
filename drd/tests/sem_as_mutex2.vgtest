@@ -1,4 +1,4 @@
 prereq: ./supported_libpthread
-vgopts: --check-stack-var=yes --var-info=yes
+vgopts: --check-stack-var=yes --var-info=yes --auto-run-dsymutil=yes
 prog: sem_as_mutex
 args: -m

@@ -80,12 +80,14 @@ void DRD_(finish_suppression)(const Addr a1, const Addr a2)
    }
 
    tl_assert(a1 < a2);
+#if 0
    if (! DRD_(is_suppressed)(a1, a2))
    {
       VG_(message)(Vg_DebugMsg, "?? [0x%lx,0x%lx[ not suppressed ??\n", a1, a2);
       VG_(get_and_pp_StackTrace)(VG_(get_running_tid)(), 12);
       tl_assert(False);
    }
+#endif
    DRD_(bm_clear_store)(DRD_(s_suppressed), a1, a2);
 }
 

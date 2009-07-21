@@ -12,6 +12,8 @@ sed \
 -e "/^drd, a thread error detector\.$/d" \
 -e "s/^Allocation context: stack of thread \([0-9]*\), offset -[0-9]*$/Allocation context: stack of thread \1, offset .../" \
 -e "/^warning: evaluate_Dwarf3_Expr: unhandled DW_OP_.*/d" \
+-e '/^warning: addVar:.*/d' \
+-e '/^run: \/usr\/bin\/dsymutil.*/d' \
 -e "s/, in frame #[0-9]* of thread /, in frame #? of thread /" \
 -e "s/(tc20_verifywrap.c:261)/(tc20_verifywrap.c:262)/" \
 -e "/^Copyright (C) 2006-200., and GNU GPL'd, by Bart Van Assche.$/d" \

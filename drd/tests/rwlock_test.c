@@ -13,6 +13,8 @@
 #include <string.h>  // strerror()
 
 
+#define NUM_ITERATIONS 1000
+
 #define PTH_CALL(expr)                                  \
   do                                                    \
   {                                                     \
@@ -69,6 +71,8 @@ int main(int argc, char** argv)
     PTH_CALL(pthread_join(tid[i], 0));
   }
 
+  fprintf(stderr, "s_counter - thread_count * iterations = %d\n",
+          s_counter - thread_count * NUM_ITERATIONS);
   fprintf(stderr, "Finished.\n");
 
   return 0;

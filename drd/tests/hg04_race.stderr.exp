@@ -3,8 +3,6 @@ Thread 3:
 Conflicting load by thread 3 at 0x........ size 4
    at 0x........: th (hg04_race.c:10)
    by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
-   by 0x........: (within libpthread-?.?.so)
-   by 0x........: clone (in /...libc...)
 Location 0x........ is 0 bytes inside local var "shared"
 declared at hg04_race.c:6, in frame #? of thread 2
 Other segment start (thread 2)
@@ -15,8 +13,6 @@ Other segment end (thread 2)
 Conflicting store by thread 3 at 0x........ size 4
    at 0x........: th (hg04_race.c:10)
    by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
-   by 0x........: (within libpthread-?.?.so)
-   by 0x........: clone (in /...libc...)
 Location 0x........ is 0 bytes inside local var "shared"
 declared at hg04_race.c:6, in frame #? of thread 2
 Other segment start (thread 2)

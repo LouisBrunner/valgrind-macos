@@ -7,8 +7,6 @@ The object at address 0x........ is not a mutex.
    at 0x........: pthread_mutex_unlock (drd_pthread_intercepts.c:?)
    by 0x........: thread_func (thread_name.c:?)
    by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
-   by 0x........: (within libpthread-?.?.so)
-   by 0x........: clone (in /...libc...)
 
 thread_func instance 2
 
@@ -18,8 +16,6 @@ The object at address 0x........ is not a mutex.
    at 0x........: pthread_mutex_unlock (drd_pthread_intercepts.c:?)
    by 0x........: thread_func (thread_name.c:?)
    by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
-   by 0x........: (within libpthread-?.?.so)
-   by 0x........: clone (in /...libc...)
 
 thread_func instance 3
 
@@ -29,8 +25,6 @@ The object at address 0x........ is not a mutex.
    at 0x........: pthread_mutex_unlock (drd_pthread_intercepts.c:?)
    by 0x........: thread_func (thread_name.c:?)
    by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
-   by 0x........: (within libpthread-?.?.so)
-   by 0x........: clone (in /...libc...)
 
 thread_func instance 4
 
@@ -40,8 +34,6 @@ The object at address 0x........ is not a mutex.
    at 0x........: pthread_mutex_unlock (drd_pthread_intercepts.c:?)
    by 0x........: thread_func (thread_name.c:?)
    by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
-   by 0x........: (within libpthread-?.?.so)
-   by 0x........: clone (in /...libc...)
 
 thread_func instance 5
 
@@ -51,8 +43,6 @@ The object at address 0x........ is not a mutex.
    at 0x........: pthread_mutex_unlock (drd_pthread_intercepts.c:?)
    by 0x........: thread_func (thread_name.c:?)
    by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
-   by 0x........: (within libpthread-?.?.so)
-   by 0x........: clone (in /...libc...)
 
 thread_func instance 6
 
@@ -62,8 +52,6 @@ The object at address 0x........ is not a mutex.
    at 0x........: pthread_mutex_unlock (drd_pthread_intercepts.c:?)
    by 0x........: thread_func (thread_name.c:?)
    by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
-   by 0x........: (within libpthread-?.?.so)
-   by 0x........: clone (in /...libc...)
 
 thread_func instance 7
 
@@ -73,8 +61,6 @@ The object at address 0x........ is not a mutex.
    at 0x........: pthread_mutex_unlock (drd_pthread_intercepts.c:?)
    by 0x........: thread_func (thread_name.c:?)
    by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
-   by 0x........: (within libpthread-?.?.so)
-   by 0x........: clone (in /...libc...)
 
 thread_func instance 8
 
@@ -84,8 +70,6 @@ The object at address 0x........ is not a mutex.
    at 0x........: pthread_mutex_unlock (drd_pthread_intercepts.c:?)
    by 0x........: thread_func (thread_name.c:?)
    by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
-   by 0x........: (within libpthread-?.?.so)
-   by 0x........: clone (in /...libc...)
 
 thread_func instance 9
 
@@ -95,8 +79,6 @@ The object at address 0x........ is not a mutex.
    at 0x........: pthread_mutex_unlock (drd_pthread_intercepts.c:?)
    by 0x........: thread_func (thread_name.c:?)
    by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
-   by 0x........: (within libpthread-?.?.so)
-   by 0x........: clone (in /...libc...)
 
 thread_func instance 10
 
@@ -106,7 +88,5 @@ The object at address 0x........ is not a mutex.
    at 0x........: pthread_mutex_unlock (drd_pthread_intercepts.c:?)
    by 0x........: thread_func (thread_name.c:?)
    by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
-   by 0x........: (within libpthread-?.?.so)
-   by 0x........: clone (in /...libc...)
 
 ERROR SUMMARY: 10 errors from 10 contexts (suppressed: 0 from 0)

@@ -6,7 +6,5 @@ mutex 0x........ was first observed at:
    at 0x........: pthread_mutex_lock (drd_pthread_intercepts.c:?)
    by 0x........: child_fn1 (tc22_exit_w_lock.c:18)
    by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
-   by 0x........: (within libpthread-?.?.so)
-   by 0x........: clone (in /...libc...)
 
 ERROR SUMMARY: 1 errors from 1 contexts (suppressed: 0 from 0)

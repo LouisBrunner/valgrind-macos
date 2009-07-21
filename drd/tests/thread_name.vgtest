@@ -1,3 +1,3 @@
 prereq: test -e thread_name && ./supported_libpthread
-vgopts: --var-info=yes --auto-run-dsymutil=yes --check-stack-var=yes
+vgopts: --var-info=yes --auto-run-dsymutil=yes --check-stack-var=yes --num-callers=3
 prog: thread_name

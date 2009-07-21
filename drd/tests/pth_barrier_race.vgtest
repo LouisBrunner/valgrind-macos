@@ -1,2 +1,3 @@
 prereq: test -e pth_barrier_race && ./supported_libpthread
+vgopts: --num-callers=3
 prog: pth_barrier_race

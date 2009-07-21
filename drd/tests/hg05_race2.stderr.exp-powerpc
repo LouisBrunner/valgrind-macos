@@ -3,8 +3,6 @@ Thread 3:
 Conflicting load by thread 3 at 0x........ size 4
    at 0x........: th (hg05_race2.c:17)
    by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
-   by 0x........: (within libpthread-?.?.so)
-   by 0x........: clone (in /...libc...)
 Allocation context: unknown.
 Other segment start (thread 2)
    (thread finished, call stack no longer available)
@@ -14,8 +12,6 @@ Other segment end (thread 2)
 Conflicting store by thread 3 at 0x........ size 4
    at 0x........: th (hg05_race2.c:17)
    by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
-   by 0x........: (within libpthread-?.?.so)
-   by 0x........: clone (in /...libc...)
 Allocation context: unknown.
 Other segment start (thread 2)
    (thread finished, call stack no longer available)

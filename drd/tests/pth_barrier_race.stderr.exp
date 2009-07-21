@@ -6,8 +6,6 @@ Conflicting wait call by thread 2:
    at 0x........: pthread_barrier_wait (drd_pthread_intercepts.c:?)
    by 0x........: thread (pth_barrier_race.c:?)
    by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
-   by 0x........: (within libpthread-?.?.so)
-   by 0x........: clone (in /...libc...)
 barrier 0x........ was first observed at:
    at 0x........: pthread_barrier_init (drd_pthread_intercepts.c:?)
    by 0x........: main (pth_barrier_race.c:?)

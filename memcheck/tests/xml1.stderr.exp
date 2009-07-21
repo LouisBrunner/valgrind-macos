@@ -31,7 +31,7 @@
   <unique>0x........</unique>
   <tid>...</tid>
   <kind>InvalidRead</kind>
-  <what>Invalid read of size 4</what>
+  <what>Invalid read of size N</what>
   <stack>
     <frame>
       <ip>0x........</ip>
@@ -156,7 +156,7 @@
   <unique>0x........</unique>
   <tid>...</tid>
   <kind>UninitValue</kind>
-  <what>Use of uninitialised value of size 8</what>
+  <what>Use of uninitialised value of size N</what>
   <stack>
     <frame>
       <ip>0x........</ip>

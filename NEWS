@@ -82,6 +82,27 @@ Release 3.5.0 (???)
     gap until the next snapshot.  This makes it clear that the memory
     usage has not dropped to zero between snapshots.
 
+* New features and improvements in DRD:
+  - The error messages printed by DRD are now easier to interpret. Instead of
+    using two different numbers to identify each thread (Valgrind thread ID and
+    DRD thread ID), DRD does now identify threads via a single number (the DRD
+    thread ID). Furthermore "first observed at" information is now printed for
+    all error messages related to synchronization objects.
+  - Race conditions between pthread_barrier_wait() and
+    pthread_barrier_destroy() calls are now reported.
+  - Added support for memory pools through the macro's
+    VALGRIND_MALLOCLIKE_BLOCK() VALGRIND_FREELIKE_BLOCK() (defined in 
+    in <valgrind/valgrind.h>). An alternative for these two macro's is the
+    new client request VG_USERREQ__DRD_CLEAN_MEMORY (defined in
+    <valgrind/drd.h>).
+  - Added support for annotating non-POSIX synchronization objects through
+    several new ANNOTATE_*() macro's.
+  - OpenMP: added support for the OpenMP runtime (libgomp) included with gcc
+    versions 4.3.0 and 4.4.0.
+  - Faster operation.
+  - Added to new command-line options (--first-race-only and
+    --segment-merging-interval).
+
 * exp-Omega, an experimental instantaneous leak-detecting tool, was disabled
   in 3.4.0 due to a lack of interest and maintenance, although the source
   code was still in the distribution.  The source code has now been removed
@@ -117,11 +138,6 @@ Release 3.5.0 (???)
     other installed suppression files were not read;  the fact that they
     were installed was a mistake.
 
-n-i-bz DRD - race conditions between pthread_barrier_wait() and
-       pthread_barrier_destroy() calls are now reported.
-n-i-bz DRD - added "first observed at" information in error
-       messages related to synchronization objects.
-n-i-bz DRD - added new client request, VG_USERREQ__DRD_CLEAN_MEMORY.
 187048 DRD - the mutex attribute PTHREAD_PROCESS_SHARED is now
        interpreted correctly.
 188046 Removed a bashism from the configure script.

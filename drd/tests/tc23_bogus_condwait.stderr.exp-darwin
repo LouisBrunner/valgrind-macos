@@ -1,0 +1,38 @@
+
+The object at address 0x........ is not a mutex.
+   at 0x........: pthread_cond_wait* (drd_pthread_intercepts.c:?)
+   by 0x........: main (tc23_bogus_condwait.c:75)
+
+The object at address 0x........ is not a mutex.
+   at 0x........: pthread_cond_wait* (drd_pthread_intercepts.c:?)
+   by 0x........: main (tc23_bogus_condwait.c:75)
+
+Mutex not locked: mutex 0x........, recursion count 0, owner 0.
+   at 0x........: pthread_cond_wait* (drd_pthread_intercepts.c:?)
+   by 0x........: main (tc23_bogus_condwait.c:78)
+mutex 0x........ was first observed at:
+   at 0x........: pthread_mutex_init (drd_pthread_intercepts.c:?)
+   by 0x........: main (tc23_bogus_condwait.c:57)
+
+The object at address 0x........ is not a mutex.
+   at 0x........: pthread_cond_wait* (drd_pthread_intercepts.c:?)
+   by 0x........: main (tc23_bogus_condwait.c:81)
+rwlock 0x........ was first observed at:
+   at 0x........: pthread_rwlock_init* (drd_pthread_intercepts.c:?)
+   by 0x........: main (tc23_bogus_condwait.c:63)
+
+The object at address 0x........ is not a mutex.
+   at 0x........: pthread_cond_wait* (drd_pthread_intercepts.c:?)
+   by 0x........: main (tc23_bogus_condwait.c:81)
+rwlock 0x........ was first observed at:
+   at 0x........: pthread_rwlock_init* (drd_pthread_intercepts.c:?)
+   by 0x........: main (tc23_bogus_condwait.c:63)
+
+Mutex not locked by calling thread: mutex 0x........, recursion count 0, owner 2.
+   at 0x........: pthread_cond_wait* (drd_pthread_intercepts.c:?)
+   by 0x........: main (tc23_bogus_condwait.c:84)
+mutex 0x........ was first observed at:
+   at 0x........: pthread_mutex_init (drd_pthread_intercepts.c:?)
+   by 0x........: main (tc23_bogus_condwait.c:59)
+
+ERROR SUMMARY: 6 errors from 6 contexts (suppressed: 0 from 0)

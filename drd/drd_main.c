@@ -110,7 +110,6 @@ static Bool DRD_(process_cmd_line_option)(Char* arg)
    else if VG_BOOL_CLO(arg, "--trace-segment",       trace_segment) {}
    else if VG_BOOL_CLO(arg, "--trace-semaphore",     trace_semaphore) {}
    else if VG_BOOL_CLO(arg, "--trace-suppr",         trace_suppression) {}
-   else if VG_BOOL_CLO(arg, "--read-var-info",       DRD_(s_var_info)) {}
    else if VG_BOOL_CLO(arg, "--var-info",            DRD_(s_var_info)) {}
    else if VG_INT_CLO (arg, "--exclusive-threshold", exclusive_threshold_ms) {}
    else if VG_INT_CLO (arg, "--shared-threshold",    shared_threshold_ms)    {}
@@ -200,11 +199,6 @@ static void DRD_(print_usage)(void)
 "        is held longer than the specified time (in milliseconds).\n"
 "    --show-confl-seg=yes|no   Show conflicting segments in race reports [yes].\n"
 "    --show-stack-usage=yes|no Print stack usage at thread exit time [no].\n"
-"    --read-var-info=yes|no    Display the names of global, static and\n"
-"        stack variables when a race is reported on such a variable. This\n"
-"        information is by default not displayed since for big programs\n"
-"        reading in all debug information at once may cause an out of\n"
-"        memory error [no].\n"
 "\n"
 "  drd options for monitoring process behavior:\n"
 "    --trace-addr=<address>    Trace all load and store activity for the.\n"

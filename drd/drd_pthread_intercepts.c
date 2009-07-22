@@ -611,8 +611,29 @@ PTH_FUNC(int, pthreadZucondZutimedwaitZa, // pthread_cond_timedwait*
    return ret;
 }
 
+// NOTE: be careful to intercept only pthread_cond_signal() and not Darwin's
+// pthread_cond_signal_thread_np(). The former accepts one argument; the latter
+// two. Intercepting all pthread_cond_signal* functions will cause only one
+// argument to be passed to pthread_cond_signal_np() and hence will cause this
+// last function to crash.
+
 // pthread_cond_signal
-PTH_FUNC(int, pthreadZucondZusignalZa, // pthread_cond_signal*
+PTH_FUNC(int, pthreadZucondZusignal, // pthread_cond_signal
+         pthread_cond_t* cond)
+{
+   int   ret;
+   int   res;
+   OrigFn fn;
+   VALGRIND_GET_ORIG_FN(fn);
+   VALGRIND_DO_CLIENT_REQUEST(res, -1, VG_USERREQ__PRE_COND_SIGNAL,
+                              cond, 0, 0, 0, 0);
+   CALL_FN_W_W(ret, fn, cond);
+   VALGRIND_DO_CLIENT_REQUEST(res, -1, VG_USERREQ__POST_COND_SIGNAL,
+                              cond, 0, 0, 0, 0);
+   return ret;
+}
+
+PTH_FUNC(int, pthreadZucondZusignalZu_2Za, // pthread_cond_signal_2*
          pthread_cond_t* cond)
 {
    int   ret;

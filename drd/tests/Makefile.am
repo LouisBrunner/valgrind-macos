@@ -134,7 +134,8 @@ EXTRA_DIST =                                        \
 	qt4_rwlock.vgtest                           \
 	qt4_semaphore.stderr.exp                    \
 	qt4_semaphore.vgtest                        \
-	recursive_mutex.stderr.exp	            \
+	recursive_mutex.stderr.exp-linux            \
+	recursive_mutex.stderr.exp-darwin           \
 	recursive_mutex.vgtest                      \
 	rwlock_race.stderr.exp	                    \
 	rwlock_race.stderr.exp2	                    \

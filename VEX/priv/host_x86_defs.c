@@ -1230,10 +1230,19 @@ void getRegUsage_X86Instr (HRegUsage* u, X86Instr* i, Bool mode64)
          /* This is a bit subtle. */
          /* First off, claim it trashes all the caller-saved regs
             which fall within the register allocator's jurisdiction.
-            These I believe to be %eax,%ecx,%edx. */
+            These I believe to be %eax %ecx %edx and all the xmm
+            registers. */
          addHRegUse(u, HRmWrite, hregX86_EAX());
          addHRegUse(u, HRmWrite, hregX86_ECX());
          addHRegUse(u, HRmWrite, hregX86_EDX());
+         addHRegUse(u, HRmWrite, hregX86_XMM0());
+         addHRegUse(u, HRmWrite, hregX86_XMM1());
+         addHRegUse(u, HRmWrite, hregX86_XMM2());
+         addHRegUse(u, HRmWrite, hregX86_XMM3());
+         addHRegUse(u, HRmWrite, hregX86_XMM4());
+         addHRegUse(u, HRmWrite, hregX86_XMM5());
+         addHRegUse(u, HRmWrite, hregX86_XMM6());
+         addHRegUse(u, HRmWrite, hregX86_XMM7());
          /* Now we have to state any parameter-carrying registers
             which might be read.  This depends on the regparmness. */
          switch (i->Xin.Call.regparms) {

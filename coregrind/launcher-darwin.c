@@ -277,6 +277,7 @@ int main(int argc, char** argv, char** envp)
    {  const char *cp;
       cp = getenv(VALGRIND_LIB);
       valgrind_lib = ( cp == NULL ? VG_LIBDIR : cp );
+      VG_(debugLog)(1, "launcher", "valgrind_lib = %s\n", valgrind_lib);
    }
 
    /* Find installed architectures. Use vgpreload_core-<platform>.so as the

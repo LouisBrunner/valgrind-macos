@@ -1571,6 +1571,7 @@ Int valgrind_main ( Int argc, HChar **argv, HChar **envp )
    { HChar *cp = VG_(getenv)(VALGRIND_LIB);
      if (cp != NULL)
         VG_(libdir) = cp;
+     VG_(debugLog)(1, "main", "VG_(libdir) = %s\n", VG_(libdir));
    }
 
    //--------------------------------------------------------------

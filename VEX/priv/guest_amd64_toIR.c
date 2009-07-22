@@ -4107,19 +4107,18 @@ void dis_MOVS ( Int sz, IRTemp t_inc )
    putIReg64( R_RSI, binop(Iop_Add64, mkexpr(ts), mkexpr(t_inc)) );
 }
 
-//.. //-- static 
-//.. //-- void dis_LODS ( UCodeBlock* cb, Int sz, Int t_inc )
-//.. //-- {
-//.. //--    Int ta = newTemp(cb);   /* EAX */
-//.. //--    Int ts = newTemp(cb);   /* ESI */
-//.. //-- 
-//.. //--    uInstr2(cb, GET,    4, ArchReg, R_ESI, TempReg, ts);
-//.. //--    uInstr2(cb, LOAD,  sz, TempReg, ts,    TempReg, ta);
-//.. //--    uInstr2(cb, PUT,   sz, TempReg, ta,    ArchReg, R_EAX);
-//.. //-- 
-//.. //--    uInstr2(cb, ADD,   4, TempReg, t_inc, TempReg, ts);
-//.. //--    uInstr2(cb, PUT,   4, TempReg, ts,    ArchReg, R_ESI);
-//.. //-- }
+static 
+void dis_LODS ( Int sz, IRTemp t_inc )
+{
+   IRType ty = szToITy(sz);
+   IRTemp ts = newTemp(Ity_I64);   /* RSI */
+
+   assign( ts, getIReg64(R_RSI) );
+
+   putIRegRAX ( sz, loadLE(ty, mkexpr(ts)) );
+
+   putIReg64( R_RSI, binop(Iop_Add64, mkexpr(ts), mkexpr(t_inc)) );
+}
 
 static 
 void dis_STOS ( Int sz, IRTemp t_inc )
@@ -14795,10 +14794,10 @@ DisResult disInstr_AMD64_WRK (
 //..      break;
 //.. //-- 
 //.. //--    
-//.. //--    case 0xAC: /* LODS, no REP prefix */
-//.. //--    case 0xAD:
-//.. //--       dis_string_op( cb, dis_LODS, ( opc == 0xAC ? 1 : sz ), "lods", sorb );
-//.. //--       break;
+    case 0xAC: /* LODS, no REP prefix */
+    case 0xAD:
+       dis_string_op( dis_LODS, ( opc == 0xAC ? 1 : sz ), "lods", pfx );
+       break;
 //.. 
 //..    case 0xAE: /* SCAS, no REP prefix */
 //..    case 0xAF:

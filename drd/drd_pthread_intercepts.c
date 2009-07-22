@@ -633,7 +633,7 @@ PTH_FUNC(int, pthreadZucondZusignal, // pthread_cond_signal
    return ret;
 }
 
-PTH_FUNC(int, pthreadZucondZusignalZu_2Za, // pthread_cond_signal_2*
+PTH_FUNC(int, pthreadZucondZusignalZAZa, // pthread_cond_signal@*
          pthread_cond_t* cond)
 {
    int   ret;

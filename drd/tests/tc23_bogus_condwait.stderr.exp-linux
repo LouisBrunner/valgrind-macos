@@ -9,7 +9,7 @@ The object at address 0x........ is not a mutex.
 
 Thread 3:
 Probably a race condition: condition variable 0x........ has been signaled but the associated mutex 0x........ is not locked by the signalling thread.
-   at 0x........: pthread_cond_signal* (drd_pthread_intercepts.c:?)
+   at 0x........: pthread_cond_signal@* (drd_pthread_intercepts.c:?)
    by 0x........: rescue_me (tc23_bogus_condwait.c:26)
    by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
 cond 0x........ was first observed at:
@@ -26,7 +26,7 @@ mutex 0x........ was first observed at:
 
 Thread 3:
 Probably a race condition: condition variable 0x........ has been signaled but the associated mutex 0x........ is not locked by the signalling thread.
-   at 0x........: pthread_cond_signal* (drd_pthread_intercepts.c:?)
+   at 0x........: pthread_cond_signal@* (drd_pthread_intercepts.c:?)
    by 0x........: rescue_me (tc23_bogus_condwait.c:30)
    by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
 cond 0x........ was first observed at:
@@ -53,7 +53,7 @@ rwlock 0x........ was first observed at:
 
 Thread 3:
 Probably a race condition: condition variable 0x........ has been signaled but the associated mutex 0x........ is not locked by the signalling thread.
-   at 0x........: pthread_cond_signal* (drd_pthread_intercepts.c:?)
+   at 0x........: pthread_cond_signal@* (drd_pthread_intercepts.c:?)
    by 0x........: rescue_me (tc23_bogus_condwait.c:34)
    by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
 cond 0x........ was first observed at:
@@ -73,7 +73,7 @@ mutex 0x........ was first observed at:
 
 Thread 3:
 Probably a race condition: condition variable 0x........ has been signaled but the associated mutex 0x........ is not locked by the signalling thread.
-   at 0x........: pthread_cond_signal* (drd_pthread_intercepts.c:?)
+   at 0x........: pthread_cond_signal@* (drd_pthread_intercepts.c:?)
    by 0x........: rescue_me (tc23_bogus_condwait.c:38)
    by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
 cond 0x........ was first observed at:

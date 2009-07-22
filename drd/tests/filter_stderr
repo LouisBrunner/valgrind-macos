@@ -28,6 +28,10 @@ sed \
 -e "s/ (\([a-zA-Z_]*\.h\):[0-9]*)/ (\1:?)/" \
 -e "s/ (\([a-zA-Z_]*\.cpp\):[0-9]*)/ (\1:?)/" |
 
+# Remove the message that more than hundred errors have been detected
+# (consists of two lines) and also the empty line below it.
+awk '{if ($0 == "More than 100 errors detected.  Subsequent errors") {getline;getline} else print}' |
+
 # Anonymise addresses
 $dir/../../tests/filter_addresses
 

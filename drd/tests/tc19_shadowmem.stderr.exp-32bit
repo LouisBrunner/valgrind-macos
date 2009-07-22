@@ -910,9 +910,6 @@ Address 0x........ is at offset 0 from 0x......... Allocation context:
    by 0x........: main (tc19_shadowmem.c:144)
 ---------- short gran, 1 .. 98, skip 1 ----------
 
-More than 100 errors detected.  Subsequent errors
-will still be recorded, but in less detail than before.
-
 Conflicting store by thread x at 0x........ size 2
    at 0x........: child16 (tc19_shadowmem.c:57)
    by 0x........: steer (tc19_shadowmem.c:290)

@@ -1,3 +1,3 @@
 prereq: ./supported_libpthread
-vgopts: --show-confl-seg=no --read-var-info=yes --auto-run-dsymutil=yes --num-callers=2
+vgopts: --show-confl-seg=no --read-var-info=yes --num-callers=2
 prog: ../../helgrind/tests/hg03_inherit

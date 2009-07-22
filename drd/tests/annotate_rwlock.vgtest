@@ -1,4 +1,4 @@
 prereq: test -e annotate_rwlock && ./supported_libpthread
-vgopts: --read-var-info=yes --auto-run-dsymutil=yes --check-stack-var=yes --show-confl-seg=no
+vgopts: --read-var-info=yes --check-stack-var=yes --show-confl-seg=no
 prog: annotate_rwlock
 stderr_filter: filter_stderr_and_thread_no

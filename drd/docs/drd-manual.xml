@@ -458,7 +458,7 @@ behavior of the DRD tool itself:</para>
   </varlistentry>
   <varlistentry>
     <term>
-      <option><![CDATA[--var-info=<yes|no> [default: no]]]></option>
+      <option><![CDATA[--read-var-info=<yes|no> [default: no]]]></option>
     </term>
     <listitem>
       <para>

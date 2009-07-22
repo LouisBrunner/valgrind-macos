@@ -584,7 +584,7 @@ Below you can find an example of a message printed by DRD when it
 detects a data race:
 </para>
 <programlisting><![CDATA[
-$ valgrind --tool=drd --var-info=yes drd/tests/rwlock_race
+$ valgrind --tool=drd --read-var-info=yes drd/tests/rwlock_race
 ...
 ==9466== Thread 3:
 ==9466== Conflicting load by thread 3 at 0x006020b8 size 4
@@ -652,7 +652,7 @@ The above report has the following meaning:
       displayed. For dynamically allocated data the allocation call
       stack is shown. For static variables and stack variables the
       allocation context is only shown when the option
-      <computeroutput>--var-info=yes</computeroutput> has been
+      <computeroutput>--read-var-info=yes</computeroutput> has been
       specified. Otherwise DRD will print <computeroutput>Allocation
       context: unknown</computeroutput>.
     </para>
@@ -1231,7 +1231,7 @@ not been declared private. DRD will print the following error message
 for the above code:
 </para>
 <programlisting><![CDATA[
-$ valgrind --tool=drd --check-stack-var=yes --var-info=yes drd/tests/omp_matinv 3 -t 2 -r
+$ valgrind --tool=drd --check-stack-var=yes --read-var-info=yes drd/tests/omp_matinv 3 -t 2 -r
 ...
 Conflicting store by thread 1/1 at 0x7fefffbc4 size 4
    at 0x4014A0: gj.omp_fn.0 (omp_matinv.c:203)
@@ -1353,7 +1353,7 @@ effect on the execution time of client programs are as follows:
       between 1.1 and 3.6 times more memory will be needed compared to
       a native run of the client program. More memory will be needed
       if loading debug information has been enabled
-      (<literal>--var-info=yes</literal>).
+      (<literal>--read-var-info=yes</literal>).
     </para>
   </listitem>
   <listitem>

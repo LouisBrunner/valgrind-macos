@@ -30,7 +30,7 @@ sed \
 
 # Remove the message that more than hundred errors have been detected
 # (consists of two lines) and also the empty line above it.
-awk 'BEGIN{begin=1} {if ($0 == "More than 100 errors detected.  Subsequent errors") { getline; getline; } else { if (begin) begin = 0; else print last_line; }; last_line = $0; } END { print last_line; }' |
+awk 'BEGIN{begin=1} {if ($0 == "More than 100 errors detected.  Subsequent errors") { getline; getline; } else { if (begin) begin = 0; else print last_line; }; last_line = $0; } END { if (! begin) print last_line; }' |
 
 # Anonymise addresses
 $dir/../../tests/filter_addresses

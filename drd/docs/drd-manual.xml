@@ -456,20 +456,6 @@ behavior of the DRD tool itself:</para>
       </para>
     </listitem>
   </varlistentry>
-  <varlistentry>
-    <term>
-      <option><![CDATA[--read-var-info=<yes|no> [default: no]]]></option>
-    </term>
-    <listitem>
-      <para>
-        Display the names of global, static and stack variables when a
-        data race is reported. While this information can be very
-        helpful, it is not loaded into memory by default. This is
-        because for big programs reading in all debug information at
-        once may cause an out of memory error.
-      </para>
-    </listitem>
-  </varlistentry>
 </variablelist>
 <!-- end of xi:include in the manpage -->
 

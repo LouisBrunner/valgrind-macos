@@ -1,3 +1,3 @@
 prereq: ./supported_libpthread
-vgopts: --var-info=yes --auto-run-dsymutil=yes
+vgopts: --read-var-info=yes --auto-run-dsymutil=yes
 prog: ../../helgrind/tests/tc01_simple_race

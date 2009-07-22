@@ -1,3 +1,3 @@
 prereq: ./supported_libpthread
-vgopts: --var-info=yes --auto-run-dsymutil=yes --check-stack-var=yes --num-callers=2
+vgopts: --read-var-info=yes --auto-run-dsymutil=yes --check-stack-var=yes --num-callers=2
 prog: ../../helgrind/tests/hg05_race2

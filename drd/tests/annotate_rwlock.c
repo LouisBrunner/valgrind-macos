@@ -13,6 +13,7 @@
 #include <assert.h>
 #include <pthread.h>
 #include <stdio.h>
+#include <unistd.h>        /* usleep() */
 #include "../../config.h"
 #include "../../drd/drd.h"
 
@@ -59,7 +60,12 @@ static void rwlock_rdlock(rwlock_t* p)
       ;
     if (p->writer_count == 0)
       break;
+#ifdef __APPLE__
+    /* Darwin doesn't have an implementation of pthread_yield(). */
+    usleep(100 * 1000);
+#else
     pthread_yield();
+#endif
     __sync_fetch_and_sub(&p->locked, 1);
   }
   p->reader_count++;
@@ -78,7 +84,12 @@ static void rwlock_wrlock(rwlock_t* p)
       ;
     if (p->reader_count == 0)
       break;
+#ifdef __APPLE__
+    /* Darwin doesn't have an implementation of pthread_yield(). */
+    usleep(100 * 1000);
+#else
     pthread_yield();
+#endif
     __sync_fetch_and_sub(&p->locked, 1);
   }
   p->writer_count++;

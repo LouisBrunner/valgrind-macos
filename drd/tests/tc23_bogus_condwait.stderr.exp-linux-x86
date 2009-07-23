@@ -1,15 +1,15 @@
 
 The object at address 0x........ is not a mutex.
-   at 0x........: pthread_cond_wait@* (drd_pthread_intercepts.c:?)
+   at 0x........: pthread_cond_wait (drd_pthread_intercepts.c:?)
    by 0x........: main (tc23_bogus_condwait.c:69)
 
 The object at address 0x........ is not a mutex.
-   at 0x........: pthread_cond_wait@* (drd_pthread_intercepts.c:?)
+   at 0x........: pthread_cond_wait (drd_pthread_intercepts.c:?)
    by 0x........: main (tc23_bogus_condwait.c:69)
 
 Thread 3:
 Probably a race condition: condition variable 0x........ has been signaled but the associated mutex 0x........ is not locked by the signalling thread.
-   at 0x........: pthread_cond_signal@* (drd_pthread_intercepts.c:?)
+   at 0x........: pthread_cond_signal (drd_pthread_intercepts.c:?)
    by 0x........: rescue_me (tc23_bogus_condwait.c:20)
    by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
 cond 0x........ was first observed at:
@@ -18,7 +18,7 @@ cond 0x........ was first observed at:
 
 Thread 1:
 Mutex not locked: mutex 0x........, recursion count 0, owner 0.
-   at 0x........: pthread_cond_wait@* (drd_pthread_intercepts.c:?)
+   at 0x........: pthread_cond_wait (drd_pthread_intercepts.c:?)
    by 0x........: main (tc23_bogus_condwait.c:72)
 mutex 0x........ was first observed at:
    at 0x........: pthread_mutex_init (drd_pthread_intercepts.c:?)
@@ -26,7 +26,7 @@ mutex 0x........ was first observed at:
 
 Thread 3:
 Probably a race condition: condition variable 0x........ has been signaled but the associated mutex 0x........ is not locked by the signalling thread.
-   at 0x........: pthread_cond_signal@* (drd_pthread_intercepts.c:?)
+   at 0x........: pthread_cond_signal (drd_pthread_intercepts.c:?)
    by 0x........: rescue_me (tc23_bogus_condwait.c:24)
    by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
 cond 0x........ was first observed at:
@@ -38,14 +38,14 @@ mutex 0x........ was first observed at:
 
 Thread 1:
 The object at address 0x........ is not a mutex.
-   at 0x........: pthread_cond_wait@* (drd_pthread_intercepts.c:?)
+   at 0x........: pthread_cond_wait (drd_pthread_intercepts.c:?)
    by 0x........: main (tc23_bogus_condwait.c:75)
 rwlock 0x........ was first observed at:
    at 0x........: pthread_rwlock_init* (drd_pthread_intercepts.c:?)
    by 0x........: main (tc23_bogus_condwait.c:57)
 
 The object at address 0x........ is not a mutex.
-   at 0x........: pthread_cond_wait@* (drd_pthread_intercepts.c:?)
+   at 0x........: pthread_cond_wait (drd_pthread_intercepts.c:?)
    by 0x........: main (tc23_bogus_condwait.c:75)
 rwlock 0x........ was first observed at:
    at 0x........: pthread_rwlock_init* (drd_pthread_intercepts.c:?)
@@ -53,7 +53,7 @@ rwlock 0x........ was first observed at:
 
 Thread 3:
 Probably a race condition: condition variable 0x........ has been signaled but the associated mutex 0x........ is not locked by the signalling thread.
-   at 0x........: pthread_cond_signal@* (drd_pthread_intercepts.c:?)
+   at 0x........: pthread_cond_signal (drd_pthread_intercepts.c:?)
    by 0x........: rescue_me (tc23_bogus_condwait.c:28)
    by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
 cond 0x........ was first observed at:
@@ -65,7 +65,7 @@ rwlock 0x........ was first observed at:
 
 Thread 1:
 Mutex not locked by calling thread: mutex 0x........, recursion count 1, owner 2.
-   at 0x........: pthread_cond_wait@* (drd_pthread_intercepts.c:?)
+   at 0x........: pthread_cond_wait (drd_pthread_intercepts.c:?)
    by 0x........: main (tc23_bogus_condwait.c:78)
 mutex 0x........ was first observed at:
    at 0x........: pthread_mutex_init (drd_pthread_intercepts.c:?)
@@ -73,7 +73,7 @@ mutex 0x........ was first observed at:
 
 Thread 3:
 Probably a race condition: condition variable 0x........ has been signaled but the associated mutex 0x........ is not locked by the signalling thread.
-   at 0x........: pthread_cond_signal@* (drd_pthread_intercepts.c:?)
+   at 0x........: pthread_cond_signal (drd_pthread_intercepts.c:?)
    by 0x........: rescue_me (tc23_bogus_condwait.c:32)
    by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
 cond 0x........ was first observed at:

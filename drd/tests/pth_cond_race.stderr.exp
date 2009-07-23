@@ -1,7 +1,7 @@
 
 Thread 2:
 Probably a race condition: condition variable 0x........ has been signaled but the associated mutex 0x........ is not locked by the signalling thread.
-   at 0x........: pthread_cond_signal@* (drd_pthread_intercepts.c:?)
+   at 0x........: pthread_cond_signal (drd_pthread_intercepts.c:?)
    by 0x........: thread_func (pth_cond_race.c:?)
    by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
 cond 0x........ was first observed at:

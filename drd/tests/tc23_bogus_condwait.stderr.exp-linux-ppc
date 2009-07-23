@@ -1,10 +1,10 @@
 
 The object at address 0x........ is not a mutex.
-   at 0x........: pthread_cond_wait* (drd_pthread_intercepts.c:?)
+   at 0x........: pthread_cond_wait (drd_pthread_intercepts.c:?)
    by 0x........: main (tc23_bogus_condwait.c:69)
 
 The object at address 0x........ is not a mutex.
-   at 0x........: pthread_cond_wait* (drd_pthread_intercepts.c:?)
+   at 0x........: pthread_cond_wait (drd_pthread_intercepts.c:?)
    by 0x........: main (tc23_bogus_condwait.c:69)
 
 Process terminating with default action of signal 7 (SIGBUS)

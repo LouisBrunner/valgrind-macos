@@ -9,6 +9,7 @@
 #include <pthread.h>
 #include <semaphore.h>
 #include <stdio.h>
+#include <stdlib.h>    // malloc()
 #include <string.h>    // memset()
 #include <sys/time.h>  // gettimeofday()
 #include <time.h>      // struct timespec
@@ -35,8 +36,22 @@
 pthread_cond_t  s_cond;
 pthread_mutex_t s_mutex1;
 pthread_mutex_t s_mutex2;
-sem_t           s_sem;
+sem_t*          s_sem;
 
+
+static sem_t* create_semaphore()
+{
+  sem_t* p = malloc(sizeof(*p));
+  if (p)
+    sem_init(p, 0, 0);
+  return p;
+}
+
+static void destroy_semaphore(sem_t* p)
+{
+  sem_destroy(p);
+  free(p);
+}
 
 static void* thread_func(void* mutex)
 {
@@ -44,7 +59,7 @@ static void* thread_func(void* mutex)
   struct timespec deadline;
 
   PTH_CALL(pthread_mutex_lock(mutex));
-  sem_post(&s_sem);
+  sem_post(s_sem);
   gettimeofday(&now, 0);
   memset(&deadline, 0, sizeof(deadline));
   deadline.tv_sec  = now.tv_sec + 2;
@@ -60,7 +75,7 @@ int main(int argc, char** argv)
   pthread_t tid2;
 
   /* Initialize synchronization objects. */
-  sem_init(&s_sem, 0, 0);
+  s_sem = create_semaphore();
   PTH_CALL(pthread_cond_init(&s_cond, 0));
   PTH_CALL(pthread_mutex_init(&s_mutex1, 0));
   PTH_CALL(pthread_mutex_init(&s_mutex2, 0));
@@ -70,8 +85,10 @@ int main(int argc, char** argv)
   PTH_CALL(pthread_create(&tid2, 0, &thread_func, &s_mutex2));
 
   /* Wait until both threads have called sem_post(). */
-  sem_wait(&s_sem);
-  sem_wait(&s_sem);
+  sem_wait(s_sem);
+  sem_wait(s_sem);
+  destroy_semaphore(s_sem);
+  s_sem = 0;
 
   /* Wait until both threads are waiting inside pthread_cond_wait(). */
   PTH_CALL(pthread_mutex_lock(&s_mutex1));

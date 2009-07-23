@@ -181,6 +181,10 @@ static Bool clientobj_remove_obj(DrdClientobj* const p)
    {
       VG_(message)(Vg_UserMsg, "Removing client object 0x%lx of type %d\n",
                    p->any.a1, p->any.type);
+#if 0
+      VG_(get_and_pp_StackTrace)(VG_(get_running_tid)(),
+                                 VG_(clo_backtrace_size));
+#endif
    }
 
    tl_assert(p->any.cleanup);

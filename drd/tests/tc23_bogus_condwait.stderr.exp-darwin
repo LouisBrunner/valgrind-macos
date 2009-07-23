@@ -1,4 +1,14 @@
 
+Thread 2:
+Invalid semaphore: semaphore 0x........
+   at 0x........: sem_wait* (drd_pthread_intercepts.c:?)
+   by 0x........: grab_the_lock (tc23_bogus_condwait.c:47)
+   by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
+semaphore 0x........ was first observed at:
+   at 0x........: sem_init* (drd_pthread_intercepts.c:?)
+   by 0x........: main (tc23_bogus_condwait.c:65)
+
+Thread 1:
 The object at address 0x........ is not a mutex.
    at 0x........: pthread_cond_wait* (drd_pthread_intercepts.c:?)
    by 0x........: main (tc23_bogus_condwait.c:75)
@@ -14,6 +24,19 @@ mutex 0x........ was first observed at:
    at 0x........: pthread_mutex_init (drd_pthread_intercepts.c:?)
    by 0x........: main (tc23_bogus_condwait.c:57)
 
+Thread 3:
+Probably a race condition: condition variable 0x........ has been signaled but the associated mutex 0x........ is not locked by the signalling thread.
+   at 0x........: pthread_cond_signal (drd_pthread_intercepts.c:?)
+   by 0x........: rescue_me (tc23_bogus_condwait.c:26)
+   by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
+cond 0x........ was first observed at:
+   at 0x........: pthread_cond_init* (drd_pthread_intercepts.c:?)
+   by 0x........: main (tc23_bogus_condwait.c:62)
+mutex 0x........ was first observed at:
+   at 0x........: pthread_mutex_init (drd_pthread_intercepts.c:?)
+   by 0x........: main (tc23_bogus_condwait.c:57)
+
+Thread 1:
 The object at address 0x........ is not a mutex.
    at 0x........: pthread_cond_wait* (drd_pthread_intercepts.c:?)
    by 0x........: main (tc23_bogus_condwait.c:81)
@@ -35,4 +58,16 @@ mutex 0x........ was first observed at:
    at 0x........: pthread_mutex_init (drd_pthread_intercepts.c:?)
    by 0x........: main (tc23_bogus_condwait.c:59)
 
-ERROR SUMMARY: 6 errors from 6 contexts (suppressed: 0 from 0)
+Thread 3:
+Probably a race condition: condition variable 0x........ has been signaled but the associated mutex 0x........ is not locked by the signalling thread.
+   at 0x........: pthread_cond_signal (drd_pthread_intercepts.c:?)
+   by 0x........: rescue_me (tc23_bogus_condwait.c:30)
+   by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
+cond 0x........ was first observed at:
+   at 0x........: pthread_cond_init* (drd_pthread_intercepts.c:?)
+   by 0x........: main (tc23_bogus_condwait.c:62)
+mutex 0x........ was first observed at:
+   at 0x........: pthread_mutex_init (drd_pthread_intercepts.c:?)
+   by 0x........: main (tc23_bogus_condwait.c:59)
+
+ERROR SUMMARY: 9 errors from 9 contexts (suppressed: 0 from 0)

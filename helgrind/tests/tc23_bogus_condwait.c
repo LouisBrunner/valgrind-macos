@@ -7,12 +7,6 @@
 #include <unistd.h>
 #include <semaphore.h>
 
-#ifdef __APPLE__
-#define OS_IS_DARWIN 1
-#else
-#define OS_IS_DARWIN 0
-#endif
-
 pthread_mutex_t mx[4];
 pthread_cond_t cv;
 pthread_rwlock_t rwl;
@@ -62,7 +56,7 @@ int main ( void )
   r= pthread_cond_init(&cv, NULL); assert(!r);
   r= pthread_rwlock_init(&rwl, NULL); assert(!r);
 
-  r= sem_init( &quit_now, 0,0 ); assert(OS_IS_DARWIN || !r);
+  r= sem_init( &quit_now, 0,0 ); assert(!r);
 
   r= pthread_create( &grabber, NULL, grab_the_lock, NULL ); assert(!r);
   sleep(1); /* let the grabber get there first */
@@ -83,8 +77,8 @@ int main ( void )
   /* mx is held by someone else. */
   r= pthread_cond_wait(&cv, &mx[2] );
 
-  r= sem_post( &quit_now ); assert(OS_IS_DARWIN || !r);
-  r= sem_post( &quit_now ); assert(OS_IS_DARWIN || !r);
+  r= sem_post( &quit_now ); assert(!r);
+  r= sem_post( &quit_now ); assert(!r);
 
   r= pthread_join( my_rescuer, NULL ); assert(!r);
   r= pthread_join( grabber, NULL ); assert(!r);

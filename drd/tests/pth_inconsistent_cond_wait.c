@@ -39,18 +39,28 @@ pthread_mutex_t s_mutex2;
 sem_t*          s_sem;
 
 
-static sem_t* create_semaphore()
+static sem_t* create_semaphore(const char* const name)
 {
+#ifdef __APPLE__
+  sem_t* p = sem_open(name, O_CREAT, 0600, 0);
+  return p;
+#else
   sem_t* p = malloc(sizeof(*p));
   if (p)
     sem_init(p, 0, 0);
   return p;
+#endif
 }
 
-static void destroy_semaphore(sem_t* p)
+static void destroy_semaphore(const char* const name, sem_t* p)
 {
+#ifdef __APPLE__
+  sem_close(p);
+  sem_unlink(name);
+#else
   sem_destroy(p);
   free(p);
+#endif
 }
 
 static void* thread_func(void* mutex)
@@ -75,7 +85,9 @@ int main(int argc, char** argv)
   pthread_t tid2;
 
   /* Initialize synchronization objects. */
-  s_sem = create_semaphore();
+  char semaphore_name[32];
+  snprintf(semaphore_name, sizeof(semaphore_name), "semaphore-%d", getpid());
+  s_sem = create_semaphore(semaphore_name);
   PTH_CALL(pthread_cond_init(&s_cond, 0));
   PTH_CALL(pthread_mutex_init(&s_mutex1, 0));
   PTH_CALL(pthread_mutex_init(&s_mutex2, 0));
@@ -87,7 +99,7 @@ int main(int argc, char** argv)
   /* Wait until both threads have called sem_post(). */
   sem_wait(s_sem);
   sem_wait(s_sem);
-  destroy_semaphore(s_sem);
+  destroy_semaphore(semaphore_name, s_sem);
   s_sem = 0;
 
   /* Wait until both threads are waiting inside pthread_cond_wait(). */

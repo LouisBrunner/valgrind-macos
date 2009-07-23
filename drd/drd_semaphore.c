@@ -247,7 +247,7 @@ void DRD_(semaphore_pre_wait)(const Addr semaphore)
    tl_assert(p);
    p->waiters++;
 
-   if ((int)p->waiters <= 0)
+   if ((Word)(p->waiters) <= 0)
    {
       SemaphoreErrInfo sei = { DRD_(thread_get_running_tid)(), semaphore };
       VG_(maybe_record_error)(VG_(get_running_tid)(),
@@ -293,7 +293,7 @@ void DRD_(semaphore_post_wait)(const DrdThreadId tid, const Addr semaphore,
     * DRD_(semaphore_pre_wait)() has finished before
     * DRD_(semaphore_post_wait)() has been called.
     */
-   if (p == NULL || (int)p->value < 0 || (int)p->waiters < 0)
+   if (p == NULL || (Int)(p->value) < 0 || (Word)(p->waiters) < 0)
    {
       SemaphoreErrInfo sei = { DRD_(thread_get_running_tid)(), semaphore };
       VG_(maybe_record_error)(VG_(get_running_tid)(),

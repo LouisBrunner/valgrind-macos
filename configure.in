@@ -264,6 +264,7 @@ case "${host_os}" in
 	     9.*)
 		  AC_MSG_RESULT([Darwin 9.x (${kernel}) / Mac OS X 10.5 Leopard])
 		  DEFAULT_SUPP="darwin9.supp ${DEFAULT_SUPP}"
+		  DEFAULT_SUPP="darwin9-drd.supp ${DEFAULT_SUPP}"
 		  ;;
      *) 
 		  AC_MSG_RESULT([unsupported (${kernel})])

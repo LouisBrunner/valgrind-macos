@@ -1,0 +1,184 @@
+#
+# Suppressions for the dynamic loader.
+#
+
+{
+   drd-darwin-dyld-1
+   drd:MutexErr
+   fun:pthread_mutex_unlock
+   fun:_dyld_register_func_for_add_image
+   fun:__keymgr_initializer
+   fun:libSystem_initializer
+   fun:_ZN16ImageLoaderMachO18doModInitFunctionsERKN11ImageLoader11LinkContextE
+   fun:_ZN11ImageLoader23recursiveInitializationERKNS_11LinkContextEj
+   fun:_ZN11ImageLoader23recursiveInitializationERKNS_11LinkContextEj
+   fun:_ZN11ImageLoader23recursiveInitializationERKNS_11LinkContextEj
+   fun:_ZN11ImageLoader15runInitializersERKNS_11LinkContextE
+   fun:_ZN4dyld24initializeMainExecutableEv
+   fun:_ZN4dyld5_mainEPK11mach_headermiPPKcS5_S5_
+   fun:_ZN13dyldbootstrap5startEPK11mach_headeriPPKcl
+}
+{
+   drd-darwin-dyld-2
+   drd:MutexErr
+   fun:pthread_mutex_unlock
+   fun:_dyld_register_func_for_remove_image
+   fun:__keymgr_initializer
+   fun:libSystem_initializer
+   fun:_ZN16ImageLoaderMachO18doModInitFunctionsERKN11ImageLoader11LinkContextE
+   fun:_ZN11ImageLoader23recursiveInitializationERKNS_11LinkContextEj
+   fun:_ZN11ImageLoader23recursiveInitializationERKNS_11LinkContextEj
+   fun:_ZN11ImageLoader23recursiveInitializationERKNS_11LinkContextEj
+   fun:_ZN11ImageLoader15runInitializersERKNS_11LinkContextE
+   fun:_ZN4dyld24initializeMainExecutableEv
+   fun:_ZN4dyld5_mainEPK11mach_headermiPPKcS5_S5_
+   fun:_ZN13dyldbootstrap5startEPK11mach_headeriPPKcl
+}
+{
+   drd-darwin-dyld-3
+   drd:MutexErr
+   fun:pthread_mutex_init
+   fun:_Z24dyldGlobalLockInitializev
+   fun:_dyld_initializer
+   fun:_ZN16ImageLoaderMachO18doModInitFunctionsERKN11ImageLoader11LinkContextE
+   fun:_ZN11ImageLoader23recursiveInitializationERKNS_11LinkContextEj
+   fun:_ZN11ImageLoader23recursiveInitializationERKNS_11LinkContextEj
+   fun:_ZN11ImageLoader23recursiveInitializationERKNS_11LinkContextEj
+   fun:_ZN11ImageLoader15runInitializersERKNS_11LinkContextE
+   fun:_ZN4dyld24initializeMainExecutableEv
+   fun:_ZN4dyld5_mainEPK11mach_headermiPPKcS5_S5_
+   fun:_ZN13dyldbootstrap5startEPK11mach_headeriPPKcl
+   fun:_dyld_start
+}
+{
+   drd-darwin-dyld-4
+   drd:ConflictingAccess
+   ...
+   fun:_ZN16ImageLoaderMachO16doBindLazySymbolEPmRKN11ImageLoader11LinkContextE
+   fun:_ZN4dyld14bindLazySymbolEPK11mach_headerPm
+   fun:stub_binding_helper_interface2
+}
+{
+   drd-darwin-dyld-5
+   drd:ConflictingAccess
+   fun:_ZNK16ImageLoaderMachO18findExportedSymbolEPKcPKvbPPK11ImageLoader
+   fun:_ZN16ImageLoaderMachO16resolveUndefinedERKN11ImageLoader11LinkContextEPK11macho_nlistbPPKS0_
+   fun:_ZN16ImageLoaderMachO16doBindLazySymbolEPmRKN11ImageLoader11LinkContextE
+}
+
+
+#
+# Suppressions for Darwin's C library.
+#
+
+{
+   drd-darwin-libc-cerror
+   drd:ConflictingAccess
+   ...
+   fun:cerror
+}
+{
+   drd-darwin-libc-nanosleep
+   drd:ConflictingAccess
+   ...
+   fun:nanosleep$UNIX2003
+}
+{
+   drd-darwin-libc-rand
+   drd:ConflictingAccess
+   fun:do_rand
+}
+{
+   drd-darwin-libc-flockfile
+   drd:ConflictingAccess
+   fun:flockfile
+}
+{
+   drd-darwin-libc-vfprintf-1
+   drd:ConflictingAccess
+   fun:vfprintf_l
+}
+{
+   drd-darwin-libc-vfprintf-2
+   drd:ConflictingAccess
+   fun:__vfprintf
+}
+{
+   drd-darwin-libc-localeconv
+   drd:ConflictingAccess
+   fun:localeconv_l
+}
+{
+   drd-darwin-libc-fflush
+   drd:ConflictingAccess
+   fun:fflush
+}
+
+
+#
+# Suppressions for Darwin's POSIX threads implementation.
+#
+
+{
+   drd-darwin-pthread-create-1
+   drd:ConflictingAccess
+   obj:*
+   fun:thread_start
+}
+{
+   drd-darwin-pthread-create-2
+   drd:ConflictingAccess
+   ...
+   fun:pthread_create*
+}
+{
+   drd-darwin-pthread-join-1
+   drd:ConflictingAccess
+   ...
+   fun:pthread_join$UNIX2003
+}
+{
+   drd-darwin-pthread-join-2
+   drd:ConflictingAccess
+   obj:*
+   fun:pthread_join*
+}
+{
+   drd-darwin-pthread-exit
+   drd:ConflictingAccess
+   ...
+   fun:_pthread_exit
+}
+{
+   drd-darwin-pthread-find-thread
+   drd:ConflictingAccess
+   fun:_pthread_find_thread
+}
+{
+   drd-darwin-pthread-spin-unlock
+   drd:ConflictingAccess
+   fun:spin_unlock
+}
+{
+   drd-darwin-pthread-testcancel
+   drd:ConflictingAccess
+   fun:_pthread_testcancel
+}
+{
+   drd-darwin-pthread-detach
+   drd:CondRaceErr
+   ...
+   fun:pthread_detach
+}
+{
+   drd-darwin-pthread-kill
+   drd:ConflictingAccess
+   ...
+   fun:pthread_kill
+}
+{
+   drd-darwin-pthread-free-pthread-onstack
+   drd:ConflictingAccess
+   fun:mig_dealloc_reply_port
+   fun:_pthread_free_pthread_onstack
+}

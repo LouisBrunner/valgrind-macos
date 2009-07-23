@@ -177,7 +177,7 @@ struct semaphore_info* DRD_(semaphore_init)(const Addr semaphore,
    if (s_trace_semaphore)
    {
       VG_(message)(Vg_UserMsg,
-                   "[%d] semaphore_init      0x%lx value %u\n",
+                   "[%d] sem_init      0x%lx value %u\n",
                    DRD_(thread_get_running_tid)(),
                    semaphore,
                    value);
@@ -229,7 +229,7 @@ void DRD_(semaphore_destroy)(const Addr semaphore)
    if (s_trace_semaphore)
    {
       VG_(message)(Vg_UserMsg,
-                   "[%d] semaphore_destroy   0x%lx value %u\n",
+                   "[%d] sem_destroy   0x%lx value %u\n",
                    DRD_(thread_get_running_tid)(),
                    semaphore,
                    p ? p->value : 0);
@@ -260,8 +260,8 @@ struct semaphore_info* DRD_(semaphore_open)(const Addr semaphore,
    if (s_trace_semaphore)
    {
       VG_(message)(Vg_UserMsg,
-                   "[%d] semaphore_open      0x%lx name %s"
-                   " oflag %ld mode 0%lo value %u\n",
+                   "[%d] sem_open      0x%lx name %s"
+                   " oflag %ld mode 0x%lx value %u\n",
                    DRD_(thread_get_running_tid)(),
                    semaphore, name, oflag, mode, value);
    }
@@ -306,7 +306,7 @@ void DRD_(semaphore_close)(const Addr semaphore)
    if (s_trace_semaphore)
    {
       VG_(message)(Vg_UserMsg,
-                   "[%d] semaphore_close     0x%lx value %u\n",
+                   "[%d] sem_close     0x%lx value %u\n",
                    DRD_(thread_get_running_tid)(),
                    semaphore,
                    p ? p->value : 0);
@@ -361,7 +361,7 @@ void DRD_(semaphore_post_wait)(const DrdThreadId tid, const Addr semaphore,
    if (s_trace_semaphore)
    {
       VG_(message)(Vg_UserMsg,
-                   "[%d] semaphore_wait      0x%lx value %u -> %u\n",
+                   "[%d] sem_wait      0x%lx value %u -> %u\n",
                    DRD_(thread_get_running_tid)(),
                    semaphore,
                    p ? p->value : 0,
@@ -425,7 +425,7 @@ void DRD_(semaphore_pre_post)(const DrdThreadId tid, const Addr semaphore)
    if (s_trace_semaphore)
    {
       VG_(message)(Vg_UserMsg,
-                   "[%d] semaphore_post      0x%lx value %u -> %u\n",
+                   "[%d] sem_post      0x%lx value %u -> %u\n",
                    DRD_(thread_get_running_tid)(),
                    semaphore,
                    p->value - 1, p->value);

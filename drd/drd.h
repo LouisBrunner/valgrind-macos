@@ -244,14 +244,14 @@
 
 /** Tell DRD to ignore all memory accesses performed by the current thread. */
 #define ANNOTATE_IGNORE_READS_AND_WRITES_BEGIN() \
-   do { DRDCL_(set_record_loads)(0); DRD_(set_record_stores)(0); } while(0)
+   do { DRDCL_(set_record_loads)(0); DRDCL_(set_record_stores)(0); } while(0)
 
 /**
  * Tell DRD to no longer ignore the memory accesses performed by the current
  * thread.
  */
 #define ANNOTATE_IGNORE_READS_AND_WRITES_END() \
-   do { DRDCL_(set_record_loads)(1); DRD_(set_record_stores)(1); } while(0)
+   do { DRDCL_(set_record_loads)(1); DRDCL_(set_record_stores)(1); } while(0)
 
 /**
  * Tell DRD that size bytes starting at addr has been allocated by a custom

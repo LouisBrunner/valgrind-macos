@@ -71,6 +71,7 @@
 #define vki_clock_t clock_t
 #define vki_u_int32_t u_int32_t
 #define vki_u_int16_t u_int16_t
+#define vki_pthread_t pthread_t
 
 
 // valgrind special

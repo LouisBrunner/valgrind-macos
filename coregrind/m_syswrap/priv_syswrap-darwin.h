@@ -383,7 +383,7 @@ DECL_TEMPLATE(darwin, aio_write);              // 319
 // NYI munlockall 325
 // 326
 DECL_TEMPLATE(darwin, issetugid);               // 327
-// NYI __pthread_kill 328
+DECL_TEMPLATE(darwin, __pthread_kill);          // 328
 DECL_TEMPLATE(darwin, __pthread_sigmask);       // 329
 // NYI __sigwait 330
 DECL_TEMPLATE(darwin, __disable_threadsignal);  // 331

@@ -576,7 +576,10 @@ int main(void)
    GO_UNIMP(326, "unused");
 
    // __NR_issetugid 327
-   // __NR___pthread_kill 328
+
+   GO(__NR___pthread_kill, 328, "2s 0m");
+   SY(__NR___pthread_kill, x0, x0); FAIL;
+
    // __NR___pthread_sigmask 329
    // __NR___sigwait 330
    // __NR_sigwait 330) // GrP fixme hack
@@ -730,7 +733,7 @@ int main(void)
  //SY(__NR_stime); // (Not yet handled by Valgrind) FAIL;
 
    // __NR_ptrace 26
-   // XXX: memory pointed to be arg3 goes unchecked... otherwise would be 2m
+   // XXX: memory pointed to by arg3 goes unchecked... otherwise would be 2m
    GO(__NR_ptrace, "4s 1m");
    SY(__NR_ptrace, x0+PTRACE_GETREGS, x0, x0, x0); FAIL;
 

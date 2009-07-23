@@ -1563,6 +1563,13 @@ POST(sigaction)
 }
 
 
+PRE(__pthread_kill)
+{
+   PRINT("__pthread_kill ( %ld, %ld )", ARG1, ARG2);
+   PRE_REG_READ2(long, "__pthread_kill", vki_pthread_t*, thread, int, sig);
+}
+
+
 PRE(__pthread_sigmask)
 {
    // GrP fixme
@@ -7437,7 +7444,7 @@ const SyscallTableEntry ML_(syscall_table)[] = {
 // _____(__NR_munlockall), 
    _____(VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(326)),   // ???
    MACX_(__NR_issetugid,               issetugid), 
-// _____(__NR___pthread_kill), 
+   MACX_(__NR___pthread_kill,          __pthread_kill),
    MACX_(__NR___pthread_sigmask,       __pthread_sigmask), 
 // _____(__NR___sigwait), 
    MACX_(__NR___disable_threadsignal,  __disable_threadsignal), 

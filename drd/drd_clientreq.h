@@ -143,6 +143,18 @@ enum {
    /* To notify the drd tool of a sem_destroy call. */
    VG_USERREQ__POST_SEM_DESTROY,
    /* args: Addr sem */
+   /* To notify the drd tool of a sem_open call. */
+   VG_USERREQ__PRE_SEM_OPEN,
+   /* args: Addr name, Word oflag, Word mode, Word value */
+   /* To notify the drd tool of a sem_open call. */
+   VG_USERREQ__POST_SEM_OPEN,
+   /* args: Addr sem, Word oflag, Word mode, Word value */
+   /* To notify the drd tool of a sem_close call. */
+   VG_USERREQ__PRE_SEM_CLOSE,
+   /* args: Addr sem */
+   /* To notify the drd tool of a sem_close call. */
+   VG_USERREQ__POST_SEM_CLOSE,
+   /* args: Addr sem */
    /* To notify the drd tool of a sem_wait call. */
    VG_USERREQ__PRE_SEM_WAIT,
    /* args: Addr sem */

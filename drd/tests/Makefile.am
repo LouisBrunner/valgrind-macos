@@ -148,6 +148,12 @@ EXTRA_DIST =                                        \
 	sem_as_mutex2.vgtest                        \
 	sem_as_mutex3.stderr.exp                    \
 	sem_as_mutex3.vgtest                        \
+	sem_open.stderr.exp                         \
+	sem_open.vgtest                             \
+	sem_open2.stderr.exp                        \
+	sem_open2.vgtest                            \
+	sem_open3.stderr.exp                        \
+	sem_open3.vgtest                            \
 	sigalrm.stderr.exp                          \
 	sigalrm.vgtest                              \
 	tc01_simple_race.stderr.exp                 \
@@ -245,6 +251,7 @@ check_PROGRAMS =      \
   rwlock_race         \
   rwlock_test         \
   sem_as_mutex        \
+  sem_open            \
   sigalrm             \
   thread_name         \
   trylock             \

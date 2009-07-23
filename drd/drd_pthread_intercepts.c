@@ -838,6 +838,39 @@ PTH_FUNC(int, semZudestroyZa, // sem_destroy*
    return ret;
 }
 
+// sem_open
+PTH_FUNC(sem_t *, semZuopen, // sem_open
+         const char *name, int oflag, mode_t mode, unsigned int value)
+{
+   sem_t *ret;
+   int    res;
+   OrigFn fn;
+   VALGRIND_GET_ORIG_FN(fn);
+   VALGRIND_DO_CLIENT_REQUEST(res, -1, VG_USERREQ__PRE_SEM_OPEN,
+                              name, oflag, mode, value, 0);
+   CALL_FN_W_WWWW(ret, fn, name, oflag, mode, value);
+   VALGRIND_DO_CLIENT_REQUEST(res, -1, VG_USERREQ__POST_SEM_OPEN,
+                              ret != SEM_FAILED ? ret : 0,
+                              name, oflag, mode, value);
+   return ret;
+}
+
+// sem_close
+PTH_FUNC(int, semZuclose, // sem_close
+         sem_t *sem)
+{
+   int   ret;
+   int   res;
+   OrigFn fn;
+   VALGRIND_GET_ORIG_FN(fn);
+   VALGRIND_DO_CLIENT_REQUEST(res, -1, VG_USERREQ__PRE_SEM_CLOSE,
+                              sem, 0, 0, 0, 0);
+   CALL_FN_W_W(ret, fn, sem);
+   VALGRIND_DO_CLIENT_REQUEST(res, -1, VG_USERREQ__POST_SEM_CLOSE,
+                              sem, 0, 0, 0, 0);
+   return ret;
+}
+
 // sem_wait
 PTH_FUNC(int, semZuwaitZa, // sem_wait*
          sem_t *sem)

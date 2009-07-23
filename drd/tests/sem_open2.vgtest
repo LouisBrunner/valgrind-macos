@@ -1,0 +1,4 @@
+prereq: ./supported_libpthread
+vgopts: --check-stack-var=yes --read-var-info=yes
+prog: sem_open
+args: -m

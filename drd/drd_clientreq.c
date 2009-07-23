@@ -371,6 +371,24 @@ static Bool handle_client_request(ThreadId vg_tid, UWord* arg, UWord* ret)
          DRD_(semaphore_destroy)(arg[1]);
       break;
 
+   case VG_USERREQ__PRE_SEM_OPEN:
+      DRD_(thread_enter_synchr)(drd_tid);
+      break;
+
+   case VG_USERREQ__POST_SEM_OPEN:
+      if (DRD_(thread_leave_synchr)(drd_tid) == 0)
+         DRD_(semaphore_open)(arg[1], (Char*)arg[2], arg[3], arg[4], arg[5]);
+      break;
+
+   case VG_USERREQ__PRE_SEM_CLOSE:
+      if (DRD_(thread_enter_synchr)(drd_tid) == 0)
+         DRD_(semaphore_close)(arg[1]);
+      break;
+
+   case VG_USERREQ__POST_SEM_CLOSE:
+      DRD_(thread_leave_synchr)(drd_tid);
+      break;
+
    case VG_USERREQ__PRE_SEM_WAIT:
       if (DRD_(thread_enter_synchr)(drd_tid) == 0)
          DRD_(semaphore_pre_wait)(arg[1]);

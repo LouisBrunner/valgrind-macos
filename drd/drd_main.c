@@ -544,11 +544,8 @@ static void drd_thread_finished(ThreadId vg_tid)
 
 static void DRD_(post_clo_init)(void)
 {
-#  if defined(VGP_x86_linux) || defined(VGP_amd64_linux)        \
-   || defined(VGP_ppc32_linux) || defined(VGP_ppc64_linux)
-   /* fine */
-#  else
-   VG_(printf)("\nWARNING: DRD has only been tested on Linux.\n\n");
+#if !defined(VGO_linux) && !defined(VGO_darwin)
+   VG_(printf)("\nWARNING: DRD has only been tested on Linux and on Darwin.\n\n");
 #  endif
 
    if (DRD_(s_var_info))
@@ -623,12 +620,6 @@ static void DRD_(fini)(Int exitcode)
 static
 void drd_pre_clo_init(void)
 {
-#if defined(VGO_darwin)
-   // This makes the (all-failing) regtests run much faster.
-   VG_(printf)("DRD doesn't work on Darwin yet, sorry.\n");
-   VG_(exit)(1);
-#endif
-
    // Basic tool stuff.
    VG_(details_name)            ("drd");
    VG_(details_version)         (NULL);

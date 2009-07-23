@@ -391,7 +391,7 @@ class ProducerConsumerQueue {
   // Blocks if the queue is empty. 
   void *Get() {    
     mu_.LockWhen(Condition(IsQueueNotEmpty, &q_));
-      void * item;
+      void * item = NULL;
       bool ok = TryGetInternal(&item);
       CHECK(ok);    
     mu_.Unlock();

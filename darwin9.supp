@@ -162,6 +162,14 @@
    fun:__setenv
    fun:setenv$UNIX2003
 }
+{
+   localeconv-leak
+   Memcheck:Leak
+   fun:malloc
+   fun:localeconv_l
+   fun:__vfprintf
+   fun:vsnprintf
+}
 
 ##----------------------------------------------------------------------##
 # Helgrind

@@ -200,7 +200,18 @@ struct semaphore_info* DRD_(semaphore_init)(const Addr semaphore,
    }
    else
    {
+#if defined(VGO_darwin)
+      const ThreadId vg_tid = VG_(get_running_tid)();
+      GenericErrInfo GEI = { DRD_(thread_get_running_tid)() };
+      VG_(maybe_record_error)(vg_tid,
+			      GenericErr,
+			      VG_(get_IP)(vg_tid),
+			      "sem_init() is not yet supported on Darwin",
+			      &GEI);
+      return NULL;
+#else
       p = drd_semaphore_get_or_allocate(semaphore);
+#endif
    }
    tl_assert(p);
    p->waits_to_skip = value;

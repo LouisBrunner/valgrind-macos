@@ -113,6 +113,32 @@
    drd:ConflictingAccess
    fun:fflush
 }
+{
+   drd-darwin-libc-fwrite
+   drd:ConflictingAccess
+   ...
+   fun:fwrite$UNIX2003
+}
+{
+   drd-darwin-cxa-guard-acquire
+   drd:ConflictingAccess
+   obj:*
+   fun:__cxa_current_exception_type
+   fun:__cxa_guard_acquire
+}
+{
+   drd-darwin-cxa-guard-release
+   drd:ConflictingAccess
+   fun:__cxa_guard_release
+}
+{
+   drd-darwin-cxa-finalize
+   drd:MutexErr
+   fun:pthread_mutex_destroy
+   fun:__tcf_115
+   fun:__cxa_finalize
+   fun:exit
+}
 
 
 #

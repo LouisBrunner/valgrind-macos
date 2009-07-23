@@ -33,11 +33,11 @@ How to test DRD
      perl tests/vg_regtest drd
 
 7. Run the regression tests that were developed for Thread Sanitizer:
-     ./vg-in-place --tool=drd --check-stack-var=yes drt/test/tsan_unittest 2>&1|less
+     ./vg-in-place --tool=drd --check-stack-var=yes drd/tests/tsan_unittest 2>&1|less
 
 8. Test the slowdown for matinv for various matrix sizes via the script
-   drd/scripts/run-matinv (must be about 24 for i == 1 and about
-   31 for i == 10 with n == 200).
+   drd/scripts/run-matinv (must be about 25 for i == 1 and about
+   50 for i == 10 with n == 200).
 
 9. Test whether DRD works with standard KDE applications and whether it does
    not print any false positives. Test this both with KDE3 and KDE4.

@@ -1,0 +1,19 @@
+
+Warning: invalid file descriptor -1 in syscall aio_read()
+Syscall param aio_read(aiocbp->aio_buf) points to unaddressable byte(s)
+   ...
+ Address 0x........ is not stack'd, malloc'd or (recently) free'd
+
+Conditional jump or move depends on uninitialised value(s)
+   at 0x........: main (aio.c:55)
+
+Syscall param aio_write(aiocbp->aio_buf) points to unaddressable byte(s)
+   ...
+ Address 0x........ is not stack'd, malloc'd or (recently) free'd
+
+ERROR SUMMARY: 3 errors from 3 contexts (suppressed: 0 from 0)
+malloc/free: in use at exit: ... bytes in ... blocks.
+malloc/free: ... allocs, ... frees, ... bytes allocated.
+For a detailed leak analysis,  rerun with: --leak-check=yes
+For counts of detected errors, rerun with: -v
+Use --track-origins=yes to see where uninitialised values come from

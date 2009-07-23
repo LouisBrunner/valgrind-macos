@@ -50,7 +50,7 @@ extern Bool ML_(client_signal_OK)(Int sigNo);
 
 // Return true if we're allowed to use or create this fd.
 extern
-Bool ML_(fd_allowed)(Int fd, const Char *syscallname, ThreadId tid, Bool soft);
+Bool ML_(fd_allowed)(Int fd, const Char *syscallname, ThreadId tid, Bool isNewFD);
 
 extern void ML_(record_fd_open_named)          (ThreadId tid, Int fd);
 extern void ML_(record_fd_open_nameless)       (ThreadId tid, Int fd);

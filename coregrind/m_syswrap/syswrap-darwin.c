@@ -49,6 +49,7 @@
 #include "pub_core_machine.h"      // VG_(get_SP)
 #include "pub_core_mallocfree.h"
 #include "pub_core_options.h"
+#include "pub_core_oset.h"
 #include "pub_core_scheduler.h"
 #include "pub_core_sigframe.h"      // For VG_(sigframe_destroy)()
 #include "pub_core_signals.h"
@@ -3439,13 +3440,48 @@ PRE(sigsuspend)
    PRE_REG_READ1(int, "sigsuspend", int, sigmask);
 }
 
+/* ---------------------------------------------------------------------
+   aio_*
+   ------------------------------------------------------------------ */
+
+// We must record the aiocbp for each aio_read() in a table so that when
+// aio_return() is called we can mark the memory written asynchronously by
+// aio_read() as having been written.  We don't have to do this for
+// aio_write().  See bug 197227 for more details.
+static OSet* aiocbp_table = NULL;
+static Bool aio_init_done = False;
+
+static void aio_init(void)
+{
+   aiocbp_table = VG_(OSetWord_Create)(VG_(malloc), "syswrap.aio", VG_(free));
+   aio_init_done = True;
+}
+
+static Bool was_a_successful_aio_read = False;
 
 PRE(aio_return)
 {
+   struct vki_aiocb* aiocbp = (struct vki_aiocb*)ARG1;
    // This assumes that the kernel looks at the struct pointer, but not the
    // contents of the struct.
    PRINT( "aio_return ( %#lx )", ARG1 );
    PRE_REG_READ1(long, "aio_return", struct vki_aiocb*, aiocbp);
+
+   if (!aio_init_done) aio_init();
+   was_a_successful_aio_read = VG_(OSetWord_Remove)(aiocbp_table, (UWord)aiocbp);
+}
+POST(aio_return)
+{
+   // If we found the aiocbp in our own table it must have been an aio_read(),
+   // so mark the buffer as written.  If we didn't find it, it must have been
+   // an aio_write() or a bogus aio_return() (eg. a second one on the same
+   // aiocbp).  Either way, the buffer won't have been written so we don't
+   // have to mark the buffer as written.
+   if (was_a_successful_aio_read) {
+      struct vki_aiocb* aiocbp = (struct vki_aiocb*)ARG1;
+      POST_MEM_WRITE((Addr)aiocbp->aio_buf, aiocbp->aio_nbytes);
+      was_a_successful_aio_read = False;
+   }
 }
 
 PRE(aio_suspend)
@@ -3472,18 +3508,55 @@ PRE(aio_error)
 
 PRE(aio_read)
 {
+   struct vki_aiocb* aiocbp = (struct vki_aiocb*)ARG1;
+
    PRINT( "aio_read ( %#lx )", ARG1 );
    PRE_REG_READ1(long, "aio_read", struct vki_aiocb*, aiocbp);
    PRE_MEM_READ( "aio_read(aiocbp)", ARG1, sizeof(struct vki_aiocb));
+
+   if (ML_(safe_to_deref)(aiocbp, sizeof(struct vki_aiocb))) {
+      if (ML_(fd_allowed)(aiocbp->aio_fildes, "aio_read", tid, /*isNewFd*/False)) {
+         PRE_MEM_WRITE("aio_read(aiocbp->aio_buf)",
+                       (Addr)aiocbp->aio_buf, aiocbp->aio_nbytes);
+      } else {
+         SET_STATUS_Failure( VKI_EBADF );
+      }
+   } else {
+      SET_STATUS_Failure( VKI_EINVAL );
+   }
+}
+POST(aio_read)
+{
+   // We have to record the fact that there is an asynchronous read request
+   // pending.  When a successful aio_return() occurs for this aiocb, then we
+   // will mark the memory as having been defined.
+   struct vki_aiocb* aiocbp = (struct vki_aiocb*)ARG1;
+   if (!aio_init_done) aio_init();
+   // aiocbp shouldn't already be in the table -- if it was a dup, the kernel
+   // should have caused the aio_read() to fail and we shouldn't have reached
+   // here.
+   VG_(OSetWord_Insert)(aiocbp_table, (UWord)aiocbp);
 }
 
 PRE(aio_write)
 {
+   struct vki_aiocb* aiocbp = (struct vki_aiocb*)ARG1;
+
    PRINT( "aio_write ( %#lx )", ARG1 );
    PRE_REG_READ1(long, "aio_write", struct vki_aiocb*, aiocbp);
    PRE_MEM_READ( "aio_write(aiocbp)", ARG1, sizeof(struct vki_aiocb));
-}
 
+   if (ML_(safe_to_deref)(aiocbp, sizeof(struct vki_aiocb))) {
+      if (ML_(fd_allowed)(aiocbp->aio_fildes, "aio_write", tid, /*isNewFd*/False)) {
+         PRE_MEM_READ("aio_write(aiocbp->aio_buf)",
+                      (Addr)aiocbp->aio_buf, aiocbp->aio_nbytes);
+      } else {
+         SET_STATUS_Failure( VKI_EBADF );
+      }
+   } else {
+      SET_STATUS_Failure( VKI_EINVAL );
+   }
+}
 
 /* ---------------------------------------------------------------------
    mach_msg: formatted messages
@@ -7430,11 +7503,11 @@ const SyscallTableEntry ML_(syscall_table)[] = {
 // _____(__NR_settid_with_pid), 
 // _____(__NR___pthread_cond_timedwait), 
 // _____(__NR_aio_fsync), 
-   MACX_(__NR_aio_return,     aio_return), 
+   MACXY(__NR_aio_return,     aio_return), 
    MACX_(__NR_aio_suspend,    aio_suspend), 
 // _____(__NR_aio_cancel), 
    MACX_(__NR_aio_error,      aio_error), 
-   MACX_(__NR_aio_read,       aio_read), 
+   MACXY(__NR_aio_read,       aio_read), 
    MACX_(__NR_aio_write,      aio_write), 
 // _____(__NR_lio_listio),   // 320
 // _____(__NR___pthread_cond_wait), 

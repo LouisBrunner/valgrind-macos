@@ -1,3 +1,3 @@
-prereq: ./supported_libpthread
+prereq: ./supported_libpthread && ./supported_sem_init
 prog: ../../helgrind/tests/tc24_nonzero_sem
 vgopts: --read-var-info=yes

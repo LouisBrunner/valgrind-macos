@@ -101,7 +101,6 @@ noinst_DSYMS = $(noinst_PROGRAMS)
 endif
 
 VGPRELOAD_DRD_SOURCES_COMMON = \
-  drd_gomp_intercepts.c        \
   drd_pthread_intercepts.c     \
   drd_qtcore_intercepts.c      \
   drd_strmem_intercepts.c

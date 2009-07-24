@@ -78,20 +78,9 @@
    fun:cerror
 }
 {
-   drd-darwin-libc-nanosleep
-   drd:ConflictingAccess
-   ...
-   fun:nanosleep$UNIX2003
-}
-{
    drd-darwin-libc-rand
    drd:ConflictingAccess
    fun:do_rand
-}
-{
-   drd-darwin-libc-flockfile
-   drd:ConflictingAccess
-   fun:flockfile
 }
 {
    drd-darwin-libc-vfprintf-1
@@ -107,11 +96,6 @@
    drd-darwin-libc-localeconv
    drd:ConflictingAccess
    fun:localeconv_l
-}
-{
-   drd-darwin-libc-fflush
-   drd:ConflictingAccess
-   fun:fflush
 }
 {
    drd-darwin-libc-fwrite
@@ -162,12 +146,6 @@
    drd:ConflictingAccess
    ...
    fun:pthread_join$UNIX2003
-}
-{
-   drd-darwin-pthread-join-2
-   drd:ConflictingAccess
-   obj:*
-   fun:pthread_join*
 }
 {
    drd-darwin-pthread-exit

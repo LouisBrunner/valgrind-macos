@@ -1,3 +1,4 @@
 prereq: ./supported_libpthread
 vgopts: --num-callers=3
 prog: pth_inconsistent_cond_wait
+args: -q

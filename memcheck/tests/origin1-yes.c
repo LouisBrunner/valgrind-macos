@@ -86,21 +86,28 @@ int main(void)
    }
 
    // Heap segment (brk), uninitialised
-   // Nb: on Darwin, sbrk() is implemented via vm_allocate() which always
-   // zeroes its allocated memory.  So we use a separate .exp file for Darwin,
-   // but we add an extra printf on Darwin only so that it cannot be
-   // successfully matched on non-Darwin platforms.
-#if defined(VGO_darwin)
+   // CURRENTLY DISABLED.  Why?
+   // - On Darwin, sbrk() is implemented via vm_allocate() which always zeroes
+   //   its allocated memory.  For a while we used use a separate .exp file
+   //   for Darwin, but we add an extra printf on Darwin only so that it
+   //   cannot be successfully matched on non-Darwin platforms.
+   // - On Ubuntu 9.04 configured with --enable-only32bit, the brk symbol
+   //   shows up as "???"
+   // - Our current treatment of brk is suspect;  whole new pages allocated
+   //   with brk should arguably be marked defined -- see the big comment
+   //   above track_new_mem_brk() in memcheck/mc_main.c.
+//#if defined(VGO_darwin)
       fprintf(stderr, "\nUndef 7 of 8 (brk)\n");
-      fprintf(stderr, "\n(no complaint; sbrk initialises memory on Darwin)\n");
-#else
-   {
-      int* ptr_to_new_brk_limit = sbrk(4096);
-      int  undef_brk_int = *ptr_to_new_brk_limit;
-      fprintf(stderr, "\nUndef 7 of 8 (brk)\n");
-      x += (undef_brk_int == 0x12345678 ? 15 : 26);
-   }
-#endif
+//      fprintf(stderr, "\n(no complaint; sbrk initialises memory on Darwin)\n");
+      fprintf(stderr, "\n(currently disabled)\n");
+//#else
+//   {
+//      int* ptr_to_new_brk_limit = sbrk(4096);
+//      int  undef_brk_int = *ptr_to_new_brk_limit;
+//      fprintf(stderr, "\nUndef 7 of 8 (brk)\n");
+//      x += (undef_brk_int == 0x12345678 ? 15 : 26);
+//   }
+//#endif
 
    // User block, marked as undefined
    {

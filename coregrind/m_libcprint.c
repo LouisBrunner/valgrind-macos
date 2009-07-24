@@ -349,7 +349,7 @@ void VG_(elapsed_wallclock_time) ( /*OUT*/HChar* buf )
 
    days = t;
 
-   VG_(sprintf)(buf, "%02u:%02u:%02u:%02u.%03u", days, hours, mins, s, ms);
+   VG_(sprintf)(buf, "%02u:%02u:%02u:%02u.%03u ", days, hours, mins, s, ms);
 }
 
 

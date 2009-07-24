@@ -312,8 +312,8 @@ UInt MC_(update_Error_extra) ( Error* err );
 
 Bool MC_(is_recognised_suppression) ( Char* name, Supp* su );
 
-Bool MC_(read_extra_suppression_info) ( Int fd, Char* buf,
-                                        Int nBuf, Supp *su );
+Bool MC_(read_extra_suppression_info) ( Int fd, Char** buf,
+                                        SizeT* nBuf, Supp *su );
 
 Bool MC_(error_matches_suppression) ( Error* err, Supp* su );
 

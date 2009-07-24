@@ -52,8 +52,8 @@ void pc_before_pp_Error    ( Error* err );
 void pc_pp_Error           ( Error* err );
 UInt pc_update_Error_extra ( Error* err );
 Bool pc_is_recognised_suppression ( Char* name, Supp *su );
-Bool pc_read_extra_suppression_info ( Int fd, Char* buf, 
-                                      Int nBuf, Supp* su );
+Bool pc_read_extra_suppression_info ( Int fd, Char** bufpp, 
+                                      SizeT* nBufp, Supp* su );
 Bool pc_error_matches_suppression (Error* err, Supp* su);
 Char* pc_get_error_name ( Error* err );
 void pc_print_extra_suppression_info ( Error* err );

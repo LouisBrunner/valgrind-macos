@@ -83,6 +83,7 @@ EXTRA_DIST = \
 	linux-syscalls-2007 linux-syscalls-2007.stderr.exp \
 	long_namespace_xml.vgtest long_namespace_xml.stdout.exp \
 	long_namespace_xml.stderr.exp \
+	long-supps.vgtest long-supps.stderr.exp long-supps.supp \
 	lsframe1.vgtest lsframe1.stdout.exp lsframe1.stderr.exp \
 	lsframe2.vgtest lsframe2.stdout.exp lsframe2.stderr.exp \
 	mallinfo.stderr.exp mallinfo.vgtest \
@@ -202,11 +203,15 @@ check_PROGRAMS = \
 	fprw fwrite inits inline \
 	leak-0 \
 	leak-cases \
-	leak-cycle leak-pool leak-tree \
+	leak-cycle \
+	leak-pool \
+	leak-tree \
 	linux-syslog-syscall \
 	linux-syscalls-2007 \
 	long_namespace_xml \
-	lsframe1 lsframe2 \
+	long-supps \
+	lsframe1 \
+	lsframe2 \
 	mallinfo \
 	malloc_free_fill \
 	malloc_usable malloc1 malloc2 malloc3 manuel1 manuel2 manuel3 \

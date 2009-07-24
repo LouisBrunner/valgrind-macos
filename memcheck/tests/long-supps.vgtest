@@ -1,0 +1,2 @@
+prog: long-supps
+vgopts: --suppressions=long-supps.supp -q

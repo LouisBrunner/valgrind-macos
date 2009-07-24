@@ -1006,7 +1006,7 @@ Bool HG_(recognised_suppression) ( Char* name, Supp *su )
 #  undef TRY
 }
 
-Bool HG_(read_extra_suppression_info) ( Int fd, Char* buf, Int nBuf,
+Bool HG_(read_extra_suppression_info) ( Int fd, Char** bufpp, SizeT* nBufp,
                                         Supp* su )
 {
    /* do nothing -- no extra suppression info present.  Return True to

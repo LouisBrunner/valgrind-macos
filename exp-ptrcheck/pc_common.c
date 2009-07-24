@@ -736,14 +736,14 @@ Bool pc_is_recognised_suppression ( Char* name, Supp *su )
    return True;
 }
 
-Bool pc_read_extra_suppression_info ( Int fd, Char* buf, 
-                                      Int nBuf, Supp* su )
+Bool pc_read_extra_suppression_info ( Int fd, Char** bufpp, 
+                                      SizeT* nBufp, Supp* su )
 {
    Bool eof;
    if (VG_(get_supp_kind)(su) == XS_SysParam) {
-      eof = VG_(get_line) ( fd, buf, nBuf );
+      eof = VG_(get_line) ( fd, bufpp, nBufp );
       if (eof) return False;
-      VG_(set_supp_string)(su, VG_(strdup)("pc.common.presi.1", buf));
+      VG_(set_supp_string)(su, VG_(strdup)("pc.common.presi.1", *bufpp));
    }
    return True;
 }

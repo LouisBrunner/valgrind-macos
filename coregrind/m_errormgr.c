@@ -964,14 +964,12 @@ static Int get_char ( Int fd, Char* out_buf )
    return 1;
 }
 
-
-/* Get a non-blank, non-comment line of at most nBuf chars from fd.
-   Skips leading spaces on the line. Return True if EOF was hit instead. 
-*/
-Bool VG_(get_line) ( Int fd, Char* buf, Int nBuf )
+Bool VG_(get_line) ( Int fd, Char** bufpp, SizeT* nBufp )
 {
-   Char ch;
-   Int  n, i;
+   Char* buf  = *bufpp;
+   SizeT nBuf = *nBufp;
+   Char  ch;
+   Int   n, i;
    while (True) {
       /* First, read until a non-blank char appears. */
       while (True) {
@@ -987,7 +985,14 @@ Bool VG_(get_line) ( Int fd, Char* buf, Int nBuf )
          n = get_char(fd, &ch);
          if (n <= 0) return False; /* the next call will return True */
          if (ch == '\n') break;
-         if (i > 0 && i == nBuf-1) i--;
+         if (i > 0 && i == nBuf-1) {
+            *nBufp = nBuf = nBuf * 2;
+            #define RIDICULOUS   100000
+            vg_assert2(nBuf < RIDICULOUS,  // Just a sanity check, really.
+               "VG_(get_line): line longer than %d chars, aborting\n",
+               RIDICULOUS);
+            *bufpp = buf = VG_(realloc)("errormgr.get_line.1", buf, nBuf);
+         }
          buf[i++] = ch; buf[i] = 0;
       }
       while (i > 1 && VG_(isspace)(buf[i-1])) { 
@@ -1053,11 +1058,11 @@ static Bool tool_name_present(Char *name, Char *names)
 */
 static void load_one_suppressions_file ( Char* filename )
 {
-#  define N_BUF 200
    SysRes sres;
    Int    fd, i, j, lineno = 0;
    Bool   eof;
-   Char   buf[N_BUF+1];
+   SizeT  nBuf = 200;
+   Char*  buf = VG_(malloc)("errormgr.losf.1", nBuf);
    Char*  tool_names;
    Char*  supp_name;
    Char*  err_str = NULL;
@@ -1098,20 +1103,20 @@ static void load_one_suppressions_file ( Char* filename )
 
       supp->string = supp->extra = NULL;
 
-      eof = VG_(get_line) ( fd, buf, N_BUF );
+      eof = VG_(get_line) ( fd, &buf, &nBuf );
       lineno++;
       if (eof) break;
 
       if (!VG_STREQ(buf, "{")) BOMB("expected '{' or end-of-file");
       
-      eof = VG_(get_line) ( fd, buf, N_BUF );
+      eof = VG_(get_line) ( fd, &buf, &nBuf );
       lineno++;
 
       if (eof || VG_STREQ(buf, "}")) BOMB("unexpected '}'");
 
       supp->sname = VG_(arena_strdup)(VG_AR_CORE, "errormgr.losf.2", buf);
 
-      eof = VG_(get_line) ( fd, buf, N_BUF );
+      eof = VG_(get_line) ( fd, &buf, &nBuf );
       lineno++;
 
       if (eof) BOMB("unexpected end-of-file");
@@ -1150,7 +1155,7 @@ static void load_one_suppressions_file ( Char* filename )
       else {
          // Ignore rest of suppression
          while (True) {
-            eof = VG_(get_line) ( fd, buf, N_BUF );
+            eof = VG_(get_line) ( fd, &buf, &nBuf );
             lineno++;
             if (eof) BOMB("unexpected end-of-file");
             if (VG_STREQ(buf, "}"))
@@ -1161,7 +1166,7 @@ static void load_one_suppressions_file ( Char* filename )
 
       if (VG_(needs).tool_errors && 
           !VG_TDICT_CALL(tool_read_extra_suppression_info,
-                         fd, buf, N_BUF, supp))
+                         fd, &buf, &nBuf, supp))
       {
          BOMB("bad or missing extra suppression info");
       }
@@ -1169,7 +1174,7 @@ static void load_one_suppressions_file ( Char* filename )
       /* the main frame-descriptor reading loop */
       i = 0;
       while (True) {
-         eof = VG_(get_line) ( fd, buf, N_BUF );
+         eof = VG_(get_line) ( fd, &buf, &nBuf );
          lineno++;
          if (eof)
             BOMB("unexpected end-of-file");
@@ -1196,7 +1201,7 @@ static void load_one_suppressions_file ( Char* filename )
       // lines and grab the '}'.
       if (!VG_STREQ(buf, "}")) {
          do {
-            eof = VG_(get_line) ( fd, buf, N_BUF );
+            eof = VG_(get_line) ( fd, &buf, &nBuf );
             lineno++;
          } while (!eof && !VG_STREQ(buf, "}"));
       }
@@ -1227,6 +1232,7 @@ static void load_one_suppressions_file ( Char* filename )
       supp->next = suppressions;
       suppressions = supp;
    }
+   VG_(free)(buf);
    VG_(close)(fd);
    return;
 
@@ -1242,7 +1248,6 @@ static void load_one_suppressions_file ( Char* filename )
    VG_(exit)(1);
 
 #  undef BOMB
-#  undef N_BUF   
 }
 
 

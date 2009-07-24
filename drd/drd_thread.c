@@ -195,6 +195,10 @@ static DrdThreadId DRD_(VgThreadIdToNewDrdThreadId)(const ThreadId tid)
       }
    }
 
+   VG_(printf)(
+"\nSorry, but the maximum number of threads supported by DRD has been exceeded."
+"Aborting.\n");
+
    tl_assert(False);
 
    return DRD_INVALID_THREADID;

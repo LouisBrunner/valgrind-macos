@@ -1013,8 +1013,8 @@ static void print_preamble ( Bool logging_to_fd,
 
       /* Core details */
       umsg_or_xml(
-         "%sBuilt with Valgrind and LibVEX; rerun with -h for copyright info%s\n",
-         xpre, xpost
+         "%sUsing Valgrind-%s and LibVEX; rerun with -h for copyright info%s\n",
+         xpre, VERSION, xpost
       );
 
       if (VG_(clo_xml))

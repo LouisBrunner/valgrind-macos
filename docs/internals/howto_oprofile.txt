@@ -10,13 +10,18 @@ opcontrol --stop ; opcontrol --reset ; opcontrol --callgraph=5 --start
 # stop the profiler and dump results to .. um .. some file somewhere
 opcontrol --stop ; opcontrol --dump
 
+# get total cost
+opreport --merge=tgid -x \
+    /home/sewardj/VgTRUNK/atomk/Inst/lib/valgrind/helgrind-amd64-linux \
+    | less
+
 # produce a flat profile
 opreport --merge=tgid --symbols -x \
     /home/sewardj/VgTRUNK/atomk/Inst/lib/valgrind/helgrind-amd64-linux \
     | less
 
 # produce a profile w/ callgraph
-opreport --merge=tgid --callgraph \
+opreport --merge=tgid --callgraph -x \
     /home/sewardj/VgTRUNK/atomk/Inst/lib/valgrind/helgrind-amd64-linux \
     | less
 

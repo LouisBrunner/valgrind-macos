@@ -1,5 +1,6 @@
 
-s_counter - thread_count * iterations = 0
+s_counter - expected_counter = 0
+s_grand_sum - expected_grand_sum = 0
 Finished.
 
 ERROR SUMMARY: 0 errors from 0 contexts (suppressed: 0 from 0)

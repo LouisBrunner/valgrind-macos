@@ -16,25 +16,35 @@
 #include <string.h>  /* strerror() */
 #include <unistd.h>  /* getopt() */
 
-static pthread_rwlock_t s_rwlock;
-static int s_counter;
 static int s_num_threads = 10;
 static int s_num_iterations = 1000;
+static pthread_mutex_t s_mutex;
+static long long s_grand_sum; /* protected by s_mutex. */
+static pthread_rwlock_t s_rwlock;
+static int s_counter; /* protected by s_rwlock. */
 
 static void* thread_func(void* arg)
 {
-  int i;
-  int sum = 0;
+  int i, r;
+  int sum1 = 0, sum2 = 0;
 
   for (i = s_num_iterations; i > 0; i--)
   {
-    pthread_rwlock_rdlock(&s_rwlock);
-    sum += s_counter;
-    pthread_rwlock_unlock(&s_rwlock);
-    pthread_rwlock_wrlock(&s_rwlock);
-    s_counter++;
-    pthread_rwlock_unlock(&s_rwlock);
+    r = pthread_rwlock_rdlock(&s_rwlock);
+    assert(! r);
+    sum1 += s_counter;
+    r = pthread_rwlock_unlock(&s_rwlock);
+    assert(! r);
+    r = pthread_rwlock_wrlock(&s_rwlock);
+    assert(! r);
+    sum2 += s_counter++;
+    r = pthread_rwlock_unlock(&s_rwlock);
+    assert(! r);
   }
+
+  pthread_mutex_lock(&s_mutex);
+  s_grand_sum += sum2;
+  pthread_mutex_unlock(&s_mutex);
 
   return 0;
 }
@@ -47,6 +57,8 @@ int main(int argc, char** argv)
   int optchar;
   int err;
   int i;
+  int expected_counter;
+  long long expected_grand_sum;
 
   while ((optchar = getopt(argc, argv, "i:t:")) != EOF)
   {
@@ -64,6 +76,7 @@ int main(int argc, char** argv)
     }
   }
 
+  pthread_mutex_init(&s_mutex, NULL);
   pthread_rwlock_init(&s_rwlock, NULL);
 
   pthread_attr_init(&attr);
@@ -90,8 +103,12 @@ int main(int argc, char** argv)
   }
   free(tid);
 
-  fprintf(stderr, "s_counter - thread_count * iterations = %d\n",
-          s_counter - threads_created * s_num_iterations);
+  expected_counter = threads_created * s_num_iterations;
+  fprintf(stderr, "s_counter - expected_counter = %d\n",
+          s_counter - expected_counter);
+  expected_grand_sum = 1ULL * expected_counter * (expected_counter - 1) / 2;
+  fprintf(stderr, "s_grand_sum - expected_grand_sum = %lld\n",
+          s_grand_sum - expected_grand_sum);
   fprintf(stderr, "Finished.\n");
 
   return 0;

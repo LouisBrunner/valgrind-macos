@@ -407,6 +407,8 @@ FREE(VG_Z_LIBC_SONAME,       _ZdaPvRKSt9nothrow_t, __builtin_vec_delete );
       if (!init_done) init(); \
       MALLOC_TRACE("calloc(%llu,%llu)", (ULong)nmemb, (ULong)size ); \
       \
+      /* Protect against overflow.  See bug 24078. */ \
+      if (size && nmemb > (SizeT)-1 / size) return NULL; \
       v = (void*)VALGRIND_NON_SIMD_CALL2( info.tl_calloc, nmemb, size ); \
       MALLOC_TRACE(" = %p", v ); \
       return v; \

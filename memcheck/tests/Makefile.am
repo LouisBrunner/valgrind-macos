@@ -49,6 +49,7 @@ EXTRA_DIST = \
 	badrw.stderr.exp badrw.vgtest \
 	brk2.stderr.exp brk2.vgtest \
 	buflen_check.stderr.exp buflen_check.vgtest \
+	calloc-overflow.stderr.exp calloc-overflow.vgtest\
 	clientperm.stderr.exp \
 	clientperm.stdout.exp clientperm.vgtest \
 	custom_alloc.stderr.exp custom_alloc.vgtest \
@@ -186,8 +187,14 @@ check_PROGRAMS = \
 	addressable \
 	atomic_incs \
 	badaddrvalue badfree badjump badjump2 \
-	badloop badpoll badrw brk2 buflen_check \
-	clientperm custom_alloc \
+	badloop \
+	badpoll \
+	badrw \
+	brk2 \
+	buflen_check \
+	calloc-overflow \
+	clientperm \
+	custom_alloc \
 	deep_templates \
 	describe-block \
 	doublefree error_counts errs1 exitprog execve execve2 erringfds \

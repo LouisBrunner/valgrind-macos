@@ -84,6 +84,18 @@ extern void VG_(sortXA) ( XArray* );
 extern Bool VG_(lookupXA) ( XArray*, void* key, 
                             /*OUT*/Word* first, /*OUT*/Word* last );
 
+/* A version of VG_(lookupXA) in which you can specify your own
+   comparison function.  This is unsafe in the sense that if the array
+   is not totally ordered as defined by your comparison function, then
+   this function may loop indefinitely, so it is up to you to ensure
+   that the array is suitably ordered.  This is in comparison to
+   VG_(lookupXA), which refuses to do anything (asserts) unless the
+   array has first been sorted using the same comparison function as
+   is being used for the lookup. */
+extern Bool VG_(lookupXA_UNSAFE) ( XArray* xao, void* key,
+                                   /*OUT*/Word* first, /*OUT*/Word* last,
+                                   Int(*cmpFn)(void*,void*) );
+
 /* How elements are there in this XArray now? */
 extern Word VG_(sizeXA) ( XArray* );
 
@@ -97,8 +109,13 @@ extern Word VG_(sizeXA) ( XArray* );
 extern void* VG_(indexXA) ( XArray*, Word );
 
 /* Drop the last n elements of an XArray.  Bombs if there are less
-   than n elements in the array. */
+   than n elements in the array.  This is an O(1) operation. */
 extern void VG_(dropTailXA) ( XArray*, Word );
+
+/* Drop the first n elements of an XArray.  Bombs if there are less
+   than n elements in the array.  This is an O(N) operation, where N
+   is the number of elements remaining in the XArray. */
+extern void VG_(dropHeadXA) ( XArray*, Word );
 
 /* Make a new, completely independent copy of the given XArray, using
    the existing allocation function to allocate the new space.

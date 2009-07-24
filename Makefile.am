@@ -26,7 +26,8 @@ else
 		callgrind \
 		massif \
 		lackey \
-		none
+		none \
+		drd
 
   TEST_EXP_TOOLS = exp-bbv
 endif

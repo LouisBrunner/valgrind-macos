@@ -20,7 +20,7 @@
   do                                                    \
   {                                                     \
     int err = (expr);                                   \
-    if ((err) != 0)                                     \
+    if (! s_quiet && err)				\
     {                                                   \
       fprintf(stderr,                                   \
               "%s:%d %s returned error code %d (%s)\n", \
@@ -33,10 +33,11 @@
   } while (0)
 
 
-pthread_cond_t  s_cond;
-pthread_mutex_t s_mutex1;
-pthread_mutex_t s_mutex2;
-sem_t*          s_sem;
+static pthread_cond_t  s_cond;
+static pthread_mutex_t s_mutex1;
+static pthread_mutex_t s_mutex2;
+static sem_t*          s_sem;
+static int             s_quiet;
 
 
 static sem_t* create_semaphore(const char* const name)
@@ -81,11 +82,23 @@ static void* thread_func(void* mutex)
 
 int main(int argc, char** argv)
 {
+  char semaphore_name[32];
+  int optchar;
   pthread_t tid1;
   pthread_t tid2;
 
+  while ((optchar = getopt(argc, argv, "q")) != EOF)
+  {
+    switch (optchar)
+    {
+    case 'q': s_quiet = 1; break;
+    default:
+      fprintf(stderr, "Error: unknown option '%c'.\n", optchar);
+      return 1;
+    }
+  }
+
   /* Initialize synchronization objects. */
-  char semaphore_name[32];
   snprintf(semaphore_name, sizeof(semaphore_name), "semaphore-%d", getpid());
   s_sem = create_semaphore(semaphore_name);
   PTH_CALL(pthread_cond_init(&s_cond, 0));

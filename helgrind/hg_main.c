@@ -48,7 +48,6 @@
 #include "pub_tool_options.h"
 #include "pub_tool_xarray.h"
 #include "pub_tool_stacktrace.h"
-#include "pub_tool_debuginfo.h"  /* VG_(get_data_description) */
 #include "pub_tool_wordfm.h"
 
 #include "hg_basics.h"
@@ -1047,34 +1046,39 @@ static void laog__handle_one_lock_deletion ( Lock* lk ); /* fwds */
 
 
 /* Block-copy states (needed for implementing realloc()). */
-static void shadow_mem_copy_range ( Addr src, Addr dst, SizeT len )
-{
-   libhb_copy_shadow_state( src, dst, len );
-}
-
-static void shadow_mem_read_range ( Thread* thr, Addr a, SizeT len )
+/* FIXME this copies shadow memory; it doesn't apply the MSM to it.
+   Is that a problem? (hence 'scopy' rather than 'ccopy') */
+static void shadow_mem_scopy_range ( Thread* thr,
+                                     Addr src, Addr dst, SizeT len )
 {
    Thr*     hbthr = thr->hbthr;
    tl_assert(hbthr);
-   LIBHB_READ_N(hbthr, a, len);
+   libhb_copy_shadow_state( hbthr, src, dst, len );
 }
 
-static void shadow_mem_write_range ( Thread* thr, Addr a, SizeT len ) {
+static void shadow_mem_cread_range ( Thread* thr, Addr a, SizeT len )
+{
    Thr*     hbthr = thr->hbthr;
    tl_assert(hbthr);
-   LIBHB_WRITE_N(hbthr, a, len);
+   LIBHB_CREAD_N(hbthr, a, len);
+}
+
+static void shadow_mem_cwrite_range ( Thread* thr, Addr a, SizeT len ) {
+   Thr*     hbthr = thr->hbthr;
+   tl_assert(hbthr);
+   LIBHB_CWRITE_N(hbthr, a, len);
 }
 
 static void shadow_mem_make_New ( Thread* thr, Addr a, SizeT len )
 {
-   libhb_range_new( thr->hbthr, a, len );
+   libhb_srange_new( thr->hbthr, a, len );
 }
 
 static void shadow_mem_make_NoAccess ( Thread* thr, Addr aIN, SizeT len )
 {
    if (0 && len > 500)
       VG_(printf)("make NoAccess ( %#lx, %ld )\n", aIN, len );
-   libhb_range_noaccess( thr->hbthr, aIN, len );
+   libhb_srange_noaccess( thr->hbthr, aIN, len );
 }
 
 
@@ -1437,13 +1441,18 @@ void evhH__pre_thread_releases_lock ( Thread* thr,
    - for all other uses, use get_current_Thread.
 */
 
-static Thread* current_Thread = NULL;
+static Thread *current_Thread      = NULL,
+              *current_Thread_prev = NULL;
 
 static void evh__start_client_code ( ThreadId tid, ULong nDisp ) {
    if (0) VG_(printf)("start %d %llu\n", (Int)tid, nDisp);
    tl_assert(current_Thread == NULL);
    current_Thread = map_threads_lookup( tid );
    tl_assert(current_Thread != NULL);
+   if (current_Thread != current_Thread_prev) {
+      libhb_Thr_resumes( current_Thread->hbthr );
+      current_Thread_prev = current_Thread;
+   }
 }
 static void evh__stop_client_code ( ThreadId tid, ULong nDisp ) {
    if (0) VG_(printf)(" stop %d %llu\n", (Int)tid, nDisp);
@@ -1524,6 +1533,15 @@ void evh__die_mem ( Addr a, SizeT len ) {
    shadow_mem_make_NoAccess( get_current_Thread(), a, len );
    if (len >= SCE_BIGRANGE_T && (HG_(clo_sanity_flags) & SCE_BIGRANGE))
       all__sanity_check("evh__die_mem-post");
+}
+
+static
+void evh__copy_mem ( Addr src, Addr dst, SizeT len ) {
+   if (SHOW_EVENTS >= 2)
+      VG_(printf)("evh__copy_mem(%p, %p, %lu)\n", (void*)src, (void*)dst, len );
+   shadow_mem_scopy_range( get_current_Thread(), src, dst, len );
+   if (len >= SCE_BIGRANGE_T && (HG_(clo_sanity_flags) & SCE_BIGRANGE))
+      all__sanity_check("evh__copy_mem-post");
 }
 
 static
@@ -1626,8 +1644,12 @@ void evh__pre_thread_ll_exit ( ThreadId quit_tid )
       HG_(record_error_Misc)( thr_q, buf );
    }
 
-   /* About the only thing we do need to do is clear the map_threads
-      entry, in order that the Valgrind core can re-use it. */
+   /* Not much to do here:
+      - tell libhb the thread is gone
+      - clear the map_threads entry, in order that the Valgrind core
+        can re-use it. */
+   tl_assert(thr_q->hbthr);
+   libhb_async_exit(thr_q->hbthr);
    tl_assert(thr_q->coretid == quit_tid);
    thr_q->coretid = VG_INVALID_THREADID;
    map_threads_delete( quit_tid );
@@ -1670,6 +1692,9 @@ void evh__HG_PTHREAD_JOIN_POST ( ThreadId stay_tid, Thread* quit_thr )
       stayer. */
    so = libhb_so_alloc();
    tl_assert(so);
+   /* Send last arg of _so_send as False, since the sending thread
+      doesn't actually exist any more, so we don't want _so_send to
+      try taking stack snapshots of it. */
    libhb_so_send(hbthr_q, so, True/*strong_send*/);
    libhb_so_recv(hbthr_s, so, True/*strong_recv*/);
    libhb_so_dealloc(so);
@@ -1697,7 +1722,7 @@ void evh__pre_mem_read ( CorePart part, ThreadId tid, Char* s,
        || (SHOW_EVENTS >= 1 && size != 1))
       VG_(printf)("evh__pre_mem_read(ctid=%d, \"%s\", %p, %lu)\n", 
                   (Int)tid, s, (void*)a, size );
-   shadow_mem_read_range( map_threads_lookup(tid), a, size);
+   shadow_mem_cread_range( map_threads_lookup(tid), a, size);
    if (size >= SCE_BIGRANGE_T && (HG_(clo_sanity_flags) & SCE_BIGRANGE))
       all__sanity_check("evh__pre_mem_read-post");
 }
@@ -1711,7 +1736,7 @@ void evh__pre_mem_read_asciiz ( CorePart part, ThreadId tid,
                   (Int)tid, s, (void*)a );
    // FIXME: think of a less ugly hack
    len = VG_(strlen)( (Char*) a );
-   shadow_mem_read_range( map_threads_lookup(tid), a, len+1 );
+   shadow_mem_cread_range( map_threads_lookup(tid), a, len+1 );
    if (len >= SCE_BIGRANGE_T && (HG_(clo_sanity_flags) & SCE_BIGRANGE))
       all__sanity_check("evh__pre_mem_read_asciiz-post");
 }
@@ -1722,7 +1747,7 @@ void evh__pre_mem_write ( CorePart part, ThreadId tid, Char* s,
    if (SHOW_EVENTS >= 1)
       VG_(printf)("evh__pre_mem_write(ctid=%d, \"%s\", %p, %lu)\n", 
                   (Int)tid, s, (void*)a, size );
-   shadow_mem_write_range( map_threads_lookup(tid), a, size);
+   shadow_mem_cwrite_range( map_threads_lookup(tid), a, size);
    if (size >= SCE_BIGRANGE_T && (HG_(clo_sanity_flags) & SCE_BIGRANGE))
       all__sanity_check("evh__pre_mem_write-post");
 }
@@ -1751,90 +1776,78 @@ void evh__die_mem_heap ( Addr a, SizeT len ) {
       all__sanity_check("evh__pre_mem_read-post");
 }
 
+/* --- Event handlers called from generated code --- */
+
 static VG_REGPARM(1)
-void evh__mem_help_read_1(Addr a) {
+void evh__mem_help_cread_1(Addr a) {
    Thread*  thr = get_current_Thread_in_C_C();
    Thr*     hbthr = thr->hbthr;
-   LIBHB_READ_1(hbthr, a);
+   LIBHB_CREAD_1(hbthr, a);
 }
 
 static VG_REGPARM(1)
-void evh__mem_help_read_2(Addr a) {
+void evh__mem_help_cread_2(Addr a) {
    Thread*  thr = get_current_Thread_in_C_C();
    Thr*     hbthr = thr->hbthr;
-   LIBHB_READ_2(hbthr, a);
+   LIBHB_CREAD_2(hbthr, a);
 }
 
 static VG_REGPARM(1)
-void evh__mem_help_read_4(Addr a) {
+void evh__mem_help_cread_4(Addr a) {
    Thread*  thr = get_current_Thread_in_C_C();
    Thr*     hbthr = thr->hbthr;
-   LIBHB_READ_4(hbthr, a);
+   LIBHB_CREAD_4(hbthr, a);
 }
 
 static VG_REGPARM(1)
-void evh__mem_help_read_8(Addr a) {
+void evh__mem_help_cread_8(Addr a) {
    Thread*  thr = get_current_Thread_in_C_C();
    Thr*     hbthr = thr->hbthr;
-   LIBHB_READ_8(hbthr, a);
+   LIBHB_CREAD_8(hbthr, a);
 }
 
 static VG_REGPARM(2)
-void evh__mem_help_read_N(Addr a, SizeT size) {
+void evh__mem_help_cread_N(Addr a, SizeT size) {
    Thread*  thr = get_current_Thread_in_C_C();
    Thr*     hbthr = thr->hbthr;
-   LIBHB_READ_N(hbthr, a, size);
+   LIBHB_CREAD_N(hbthr, a, size);
 }
 
 static VG_REGPARM(1)
-void evh__mem_help_write_1(Addr a) {
+void evh__mem_help_cwrite_1(Addr a) {
    Thread*  thr = get_current_Thread_in_C_C();
    Thr*     hbthr = thr->hbthr;
-   LIBHB_WRITE_1(hbthr, a);
+   LIBHB_CWRITE_1(hbthr, a);
 }
 
 static VG_REGPARM(1)
-void evh__mem_help_write_2(Addr a) {
+void evh__mem_help_cwrite_2(Addr a) {
    Thread*  thr = get_current_Thread_in_C_C();
    Thr*     hbthr = thr->hbthr;
-   LIBHB_WRITE_2(hbthr, a);
+   LIBHB_CWRITE_2(hbthr, a);
 }
 
 static VG_REGPARM(1)
-void evh__mem_help_write_4(Addr a) {
+void evh__mem_help_cwrite_4(Addr a) {
    Thread*  thr = get_current_Thread_in_C_C();
    Thr*     hbthr = thr->hbthr;
-   LIBHB_WRITE_4(hbthr, a);
+   LIBHB_CWRITE_4(hbthr, a);
 }
 
 static VG_REGPARM(1)
-void evh__mem_help_write_8(Addr a) {
+void evh__mem_help_cwrite_8(Addr a) {
    Thread*  thr = get_current_Thread_in_C_C();
    Thr*     hbthr = thr->hbthr;
-   LIBHB_WRITE_8(hbthr, a);
+   LIBHB_CWRITE_8(hbthr, a);
 }
 
 static VG_REGPARM(2)
-void evh__mem_help_write_N(Addr a, SizeT size) {
+void evh__mem_help_cwrite_N(Addr a, SizeT size) {
    Thread*  thr = get_current_Thread_in_C_C();
    Thr*     hbthr = thr->hbthr;
-   LIBHB_WRITE_N(hbthr, a, size);
+   LIBHB_CWRITE_N(hbthr, a, size);
 }
 
-//static void evh__bus_lock(void) {
-//   Thread* thr;
-//   if (0) VG_(printf)("evh__bus_lock()\n");
-//   thr = get_current_Thread();
-//   tl_assert(thr); /* cannot fail - Thread* must already exist */
-//   evhH__post_thread_w_acquires_lock( thr, LK_nonRec, (Addr)&__bus_lock );
-//}
-//static void evh__bus_unlock(void) {
-//   Thread* thr;
-//   if (0) VG_(printf)("evh__bus_unlock()\n");
-//   thr = get_current_Thread();
-//   tl_assert(thr); /* cannot fail - Thread* must already exist */
-//   evhH__pre_thread_releases_lock( thr, (Addr)&__bus_lock, False/*!isRDWR*/ );
-//}
 
 /* ------------------------------------------------------- */
 /* -------------- events to do with mutexes -------------- */
@@ -3455,7 +3468,7 @@ static void* hg_cli__realloc ( ThreadId tid, void* payloadV, SizeT new_size )
       /* First half kept and copied, second half new */
       // FIXME: shouldn't we use a copier which implements the
       // memory state machine?
-      shadow_mem_copy_range( payload, p_new, md->szB );
+      evh__copy_mem( payload, p_new, md->szB );
       evh__new_mem_heap ( p_new + md->szB, new_size - md->szB,
                           /*inited*/False );
       /* FIXME: can anything funny happen here?  specifically, if the
@@ -3533,60 +3546,60 @@ static void instrument_mem_access ( IRSB*   bbOut,
    if (isStore) {
       switch (szB) {
          case 1:
-            hName = "evh__mem_help_write_1";
-            hAddr = &evh__mem_help_write_1;
+            hName = "evh__mem_help_cwrite_1";
+            hAddr = &evh__mem_help_cwrite_1;
             argv = mkIRExprVec_1( addr );
             break;
          case 2:
-            hName = "evh__mem_help_write_2";
-            hAddr = &evh__mem_help_write_2;
+            hName = "evh__mem_help_cwrite_2";
+            hAddr = &evh__mem_help_cwrite_2;
             argv = mkIRExprVec_1( addr );
             break;
          case 4:
-            hName = "evh__mem_help_write_4";
-            hAddr = &evh__mem_help_write_4;
+            hName = "evh__mem_help_cwrite_4";
+            hAddr = &evh__mem_help_cwrite_4;
             argv = mkIRExprVec_1( addr );
             break;
          case 8:
-            hName = "evh__mem_help_write_8";
-            hAddr = &evh__mem_help_write_8;
+            hName = "evh__mem_help_cwrite_8";
+            hAddr = &evh__mem_help_cwrite_8;
             argv = mkIRExprVec_1( addr );
             break;
          default:
             tl_assert(szB > 8 && szB <= 512); /* stay sane */
             regparms = 2;
-            hName = "evh__mem_help_write_N";
-            hAddr = &evh__mem_help_write_N;
+            hName = "evh__mem_help_cwrite_N";
+            hAddr = &evh__mem_help_cwrite_N;
             argv = mkIRExprVec_2( addr, mkIRExpr_HWord( szB ));
             break;
       }
    } else {
       switch (szB) {
          case 1:
-            hName = "evh__mem_help_read_1";
-            hAddr = &evh__mem_help_read_1;
+            hName = "evh__mem_help_cread_1";
+            hAddr = &evh__mem_help_cread_1;
             argv = mkIRExprVec_1( addr );
             break;
          case 2:
-            hName = "evh__mem_help_read_2";
-            hAddr = &evh__mem_help_read_2;
+            hName = "evh__mem_help_cread_2";
+            hAddr = &evh__mem_help_cread_2;
             argv = mkIRExprVec_1( addr );
             break;
          case 4:
-            hName = "evh__mem_help_read_4";
-            hAddr = &evh__mem_help_read_4;
+            hName = "evh__mem_help_cread_4";
+            hAddr = &evh__mem_help_cread_4;
             argv = mkIRExprVec_1( addr );
             break;
          case 8:
-            hName = "evh__mem_help_read_8";
-            hAddr = &evh__mem_help_read_8;
+            hName = "evh__mem_help_cread_8";
+            hAddr = &evh__mem_help_cread_8;
             argv = mkIRExprVec_1( addr );
             break;
          default: 
             tl_assert(szB > 8 && szB <= 512); /* stay sane */
             regparms = 2;
-            hName = "evh__mem_help_read_N";
-            hAddr = &evh__mem_help_read_N;
+            hName = "evh__mem_help_cread_N";
+            hAddr = &evh__mem_help_cread_N;
             argv = mkIRExprVec_2( addr, mkIRExpr_HWord( szB ));
             break;
       }
@@ -3660,7 +3673,6 @@ IRSB* hg_instrument ( VgCallbackClosure* closure,
             break;
 
          case Ist_MBE:
-            //instrument_memory_bus_event( bbOut, st->Ist.MBE.event );
             switch (st->Ist.MBE.event) {
                case Imbe_Fence:
                   break; /* not interesting */
@@ -3673,7 +3685,15 @@ IRSB* hg_instrument ( VgCallbackClosure* closure,
             /* Atomic read-modify-write cycle.  Just pretend it's a
                read. */
             IRCAS* cas    = st->Ist.CAS.details;
-            Bool   isDCAS = cas->dataHi != NULL;
+            Bool   isDCAS = cas->oldHi != IRTemp_INVALID;
+            if (isDCAS) {
+               tl_assert(cas->expdHi);
+               tl_assert(cas->dataHi);
+            } else {
+               tl_assert(!cas->expdHi);
+               tl_assert(!cas->dataHi);
+            }
+            /* Just be boring about it. */
             instrument_mem_access(
                bbOut,
                cas->addr,
@@ -4009,8 +4029,13 @@ static Bool hg_process_cmd_line_option ( Char* arg )
                             HG_(clo_track_lockorders)) {}
    else if VG_BOOL_CLO(arg, "--cmp-race-err-addrs",
                             HG_(clo_cmp_race_err_addrs)) {}
-   else if VG_BOOL_CLO(arg, "--show-conflicts",
-                            HG_(clo_show_conflicts)) {}
+
+   else if VG_XACT_CLO(arg, "--history-level=none",
+                            HG_(clo_history_level), 0);
+   else if VG_XACT_CLO(arg, "--history-level=partial",
+                            HG_(clo_history_level), 1);
+   else if VG_XACT_CLO(arg, "--history-level=full",
+                            HG_(clo_history_level), 2);
 
    /* If you change the 10k/10mill limits, remember to also change
       them in assertions at the top of event_map_maybe_GC. */
@@ -4048,8 +4073,11 @@ static void hg_print_usage ( void )
 {
    VG_(printf)(
 "    --track-lockorders=no|yes show lock ordering errors? [yes]\n"
-"    --show-conflicts=no|yes   show both stack traces in a race? [yes]\n"
-"    --conflict-cache-size=N   size of conflict history cache [1000000]\n"
+"    --history-level=none|partial|full [full]\n"
+"       full:    show both stack traces for a data race (can be very slow)\n"
+"       partial: full trace for one thread, approx for the other (faster)\n"
+"       none:    only show trace for one thread in a race (fastest)\n"
+"    --conflict-cache-size=N   size of 'full' history cache [1000000]\n"
    );
    VG_(replacement_malloc_print_usage)();
 }
@@ -4160,7 +4188,7 @@ void for_libhb__get_stacktrace ( Thr* hbt, Addr* frames, UWord nRequest )
 }
 
 static
-ExeContext*  for_libhb__get_EC ( Thr* hbt )
+ExeContext* for_libhb__get_EC ( Thr* hbt )
 {
    Thread*     thr;
    ThreadId    tid;
@@ -4169,6 +4197,7 @@ ExeContext*  for_libhb__get_EC ( Thr* hbt )
    thr = libhb_get_Thr_opaque( hbt );
    tl_assert(thr);
    tid = map_threads_maybe_reverse_lookup_SLOW(thr);
+   /* this will assert if tid is invalid */
    ec = VG_(record_ExeContext)( tid, 0 );
    return ec;
 }
@@ -4238,7 +4267,7 @@ static void hg_pre_clo_init ( void )
    VG_(track_new_mem_stack)       ( evh__new_mem );
 
    // FIXME: surely this isn't thread-aware
-   VG_(track_copy_mem_remap)      ( shadow_mem_copy_range );
+   VG_(track_copy_mem_remap)      ( evh__copy_mem );
 
    VG_(track_change_mem_mprotect) ( evh__set_perms );
 

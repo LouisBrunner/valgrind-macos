@@ -74,7 +74,7 @@ Bool  HG_(clo_track_lockorders) = True;
 
 Bool  HG_(clo_cmp_race_err_addrs) = False;
 
-Bool  HG_(clo_show_conflicts) = True;
+UWord HG_(clo_history_level) = 2;
 
 UWord HG_(clo_conflict_cache_size) = 1000000;
 

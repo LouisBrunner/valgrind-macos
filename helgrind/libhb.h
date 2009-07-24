@@ -97,37 +97,36 @@ Bool libhb_so_everSent ( SO* so );
 
 /* Memory accesses (1/2/4/8 byte size).  They report a race if one is
    found. */
-#define LIBHB_WRITE_1(_thr,_a)    zsm_apply8___msm_write((_thr),(_a))
-#define LIBHB_WRITE_2(_thr,_a)    zsm_apply16___msm_write((_thr),(_a))
-#define LIBHB_WRITE_4(_thr,_a)    zsm_apply32___msm_write((_thr),(_a))
-#define LIBHB_WRITE_8(_thr,_a)    zsm_apply64___msm_write((_thr),(_a))
-#define LIBHB_WRITE_N(_thr,_a,_n) zsm_apply_range___msm_read((_thr),(_a),(_n))
+#define LIBHB_CWRITE_1(_thr,_a)    zsm_sapply08_f__msmcwrite((_thr),(_a))
+#define LIBHB_CWRITE_2(_thr,_a)    zsm_sapply16_f__msmcwrite((_thr),(_a))
+#define LIBHB_CWRITE_4(_thr,_a)    zsm_sapply32_f__msmcwrite((_thr),(_a))
+#define LIBHB_CWRITE_8(_thr,_a)    zsm_sapply64_f__msmcwrite((_thr),(_a))
+#define LIBHB_CWRITE_N(_thr,_a,_n) zsm_sapplyNN_f__msmcwrite((_thr),(_a),(_n))
 
-#define LIBHB_READ_1(_thr,_a)    zsm_apply8___msm_read((_thr),(_a))
-#define LIBHB_READ_2(_thr,_a)    zsm_apply16___msm_read((_thr),(_a))
-#define LIBHB_READ_4(_thr,_a)    zsm_apply32___msm_read((_thr),(_a))
-#define LIBHB_READ_8(_thr,_a)    zsm_apply64___msm_read((_thr),(_a))
-#define LIBHB_READ_N(_thr,_a,_n) zsm_apply_range___msm_read((_thr),(_a),(_n))
+#define LIBHB_CREAD_1(_thr,_a)    zsm_sapply08_f__msmcread((_thr),(_a))
+#define LIBHB_CREAD_2(_thr,_a)    zsm_sapply16_f__msmcread((_thr),(_a))
+#define LIBHB_CREAD_4(_thr,_a)    zsm_sapply32_f__msmcread((_thr),(_a))
+#define LIBHB_CREAD_8(_thr,_a)    zsm_sapply64_f__msmcread((_thr),(_a))
+#define LIBHB_CREAD_N(_thr,_a,_n) zsm_sapplyNN_f__msmcread((_thr),(_a),(_n))
 
-void zsm_apply8___msm_write ( Thr* thr, Addr a );
-void zsm_apply16___msm_write ( Thr* thr, Addr a );
-void zsm_apply32___msm_write ( Thr* thr, Addr a );
-void zsm_apply64___msm_write ( Thr* thr, Addr a );
-void zsm_apply_range___msm_write ( Thr* thr,
-                                   Addr a, SizeT len );
+void zsm_sapply08_f__msmcwrite ( Thr* thr, Addr a );
+void zsm_sapply16_f__msmcwrite ( Thr* thr, Addr a );
+void zsm_sapply32_f__msmcwrite ( Thr* thr, Addr a );
+void zsm_sapply64_f__msmcwrite ( Thr* thr, Addr a );
+void zsm_sapplyNN_f__msmcwrite ( Thr* thr, Addr a, SizeT len );
 
-void zsm_apply8___msm_read ( Thr* thr, Addr a );
-void zsm_apply16___msm_read ( Thr* thr, Addr a );
-void zsm_apply32___msm_read ( Thr* thr, Addr a );
-void zsm_apply64___msm_read ( Thr* thr, Addr a );
-void zsm_apply_range___msm_read ( Thr* thr,
-                                  Addr a, SizeT len );
+void zsm_sapply08_f__msmcread ( Thr* thr, Addr a );
+void zsm_sapply16_f__msmcread ( Thr* thr, Addr a );
+void zsm_sapply32_f__msmcread ( Thr* thr, Addr a );
+void zsm_sapply64_f__msmcread ( Thr* thr, Addr a );
+void zsm_sapplyNN_f__msmcread ( Thr* thr, Addr a, SizeT len );
 
+void libhb_Thr_resumes ( Thr* thr );
 
 /* Set memory address ranges to new (freshly allocated), or noaccess
    (no longer accessible). */
-void libhb_range_new      ( Thr*, Addr, SizeT );
-void libhb_range_noaccess ( Thr*, Addr, SizeT );
+void libhb_srange_new      ( Thr*, Addr, SizeT );
+void libhb_srange_noaccess ( Thr*, Addr, SizeT );
 
 /* For the convenience of callers, we offer to store one void* item in
    a Thr, which we ignore, but the caller can get or set any time. */
@@ -136,7 +135,7 @@ void  libhb_set_Thr_opaque ( Thr*, void* );
 
 /* Low level copy of shadow state from [src,src+len) to [dst,dst+len).
    Overlapping moves are checked for and asserted against. */
-void libhb_copy_shadow_state ( Addr src, Addr dst, SizeT len );
+void libhb_copy_shadow_state ( Thr* thr, Addr src, Addr dst, SizeT len );
 
 /* Call this periodically to give libhb the opportunity to
    garbage-collect its internal data structures. */

@@ -72,22 +72,36 @@ extern Bool HG_(clo_track_lockorders);
    (regtesting) this is sometimes important. */
 extern Bool HG_(clo_cmp_race_err_addrs);
 
-/* Show conflicting accesses?  This involves collecting and storing
-   large numbers of call stacks just in case we might need to show
-   them later, and so is expensive (although very useful).  Hence
-   allow it to be optionally disabled. */
-extern Bool HG_(clo_show_conflicts);
+/* Controls how much history to collect, in order to show conflicting
+   accesses.  There are three levels:
 
-/* Size of the conflicting-access cache, measured in terms of
-   maximum possible number of elements in the previous-access map.
-   Must be between 10k amd 10 million.  Default is 1 million. */
+   0: "none": don't collect any history.  Fastest, but means we can
+      only show one of the two stacks in a race.
+
+   1: "partial": collect one stack trace per (notional) segment, that
+      is, collect a stack trace for a thread every time its vector
+      clock changes.  This faciliates showing the bounds of the
+      conflicting segment(s), with relatively small overhead.
+
+   2: "full": collect a stack trace every time the constraints for a
+      location change.  This facilitates showing both stack traces in
+      a race, although can be very expensive in time and space
+      (depends on the rate that threads "drag" locations across
+      vector-clock-change boundaries ("dragovers").  This involves
+      collecting and storing large numbers of call stacks just in case
+      we might need to show them later, and so is expensive (although
+      very useful). */
+extern UWord HG_(clo_history_level);
+
+/* When doing "full" history collection, this determines the size of
+   the conflicting-access cache, measured in terms of maximum possible
+   number of elements in the previous-access map.  Must be between 10k
+   amd 10 million.  Default is 1 million. */
 extern UWord HG_(clo_conflict_cache_size);
 
 /* Sanity check level.  This is an or-ing of
    SCE_{THREADS,LOCKS,BIGRANGE,ACCESS,LAOG}. */
 extern Word HG_(clo_sanity_flags);
-
-
 
 
 #endif /* ! __HG_BASICS_H */

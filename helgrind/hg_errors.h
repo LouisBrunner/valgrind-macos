@@ -49,7 +49,9 @@ void  HG_(print_extra_suppression_info) ( Error* err );
 /* Functions for recording various kinds of errors. */
 void HG_(record_error_Race) ( Thread* thr, 
                               Addr data_addr, Int szB, Bool isWrite,
-                              ExeContext* mb_lastlock );
+                              Thread* h1_confthr,
+                              ExeContext* h1_ct_segstart,
+                              ExeContext* h1_ct_mbsegend );
 void HG_(record_error_UnlockUnlocked) ( Thread*, Lock* );
 void HG_(record_error_UnlockForeign)  ( Thread*, Thread*, Lock* );
 void HG_(record_error_UnlockBogus)    ( Thread*, Addr );

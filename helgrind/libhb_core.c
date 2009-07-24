@@ -147,9 +147,8 @@ typedef  ULong  SVal;
 */
 static void zsm_init ( void(*rcinc)(SVal), void(*rcdec)(SVal) );
 
-static void zsm_set_range   ( Addr, SizeT, SVal );
-static SVal zsm_read8       ( Addr );
-static void zsm_copy_range  ( Addr, Addr, SizeT );
+static void zsm_sset_range  ( Addr, SizeT, SVal );
+static void zsm_scopy_range ( Addr, Addr, SizeT );
 static void zsm_flush_cache ( void );
 
 #endif /* ! __HB_ZSM_H */
@@ -322,20 +321,20 @@ static UWord stats__cache_totmisses      = 0; // # misses
 static ULong stats__cache_make_New_arange = 0; // total arange made New
 static ULong stats__cache_make_New_inZrep = 0; // arange New'd on Z reps
 static UWord stats__cline_normalises     = 0; // # calls to cacheline_normalise
-static UWord stats__cline_read64s        = 0; // # calls to s_m_read64
-static UWord stats__cline_read32s        = 0; // # calls to s_m_read32
-static UWord stats__cline_read16s        = 0; // # calls to s_m_read16
-static UWord stats__cline_read8s         = 0; // # calls to s_m_read8
-static UWord stats__cline_write64s       = 0; // # calls to s_m_write64
-static UWord stats__cline_write32s       = 0; // # calls to s_m_write32
-static UWord stats__cline_write16s       = 0; // # calls to s_m_write16
-static UWord stats__cline_write8s        = 0; // # calls to s_m_write8
-static UWord stats__cline_set64s         = 0; // # calls to s_m_set64
-static UWord stats__cline_set32s         = 0; // # calls to s_m_set32
-static UWord stats__cline_set16s         = 0; // # calls to s_m_set16
-static UWord stats__cline_set8s          = 0; // # calls to s_m_set8
-static UWord stats__cline_get8s          = 0; // # calls to s_m_get8
-static UWord stats__cline_copy8s         = 0; // # calls to s_m_copy8
+static UWord stats__cline_cread64s       = 0; // # calls to s_m_read64
+static UWord stats__cline_cread32s       = 0; // # calls to s_m_read32
+static UWord stats__cline_cread16s       = 0; // # calls to s_m_read16
+static UWord stats__cline_cread08s       = 0; // # calls to s_m_read8
+static UWord stats__cline_cwrite64s      = 0; // # calls to s_m_write64
+static UWord stats__cline_cwrite32s      = 0; // # calls to s_m_write32
+static UWord stats__cline_cwrite16s      = 0; // # calls to s_m_write16
+static UWord stats__cline_cwrite08s      = 0; // # calls to s_m_write8
+static UWord stats__cline_sread08s       = 0; // # calls to s_m_set8
+static UWord stats__cline_swrite08s      = 0; // # calls to s_m_get8
+static UWord stats__cline_swrite16s      = 0; // # calls to s_m_get8
+static UWord stats__cline_swrite32s      = 0; // # calls to s_m_get8
+static UWord stats__cline_swrite64s      = 0; // # calls to s_m_get8
+static UWord stats__cline_scopy08s       = 0; // # calls to s_m_copy8
 static UWord stats__cline_64to32splits   = 0; // # 64-bit accesses split
 static UWord stats__cline_32to16splits   = 0; // # 32-bit accesses split
 static UWord stats__cline_16to8splits    = 0; // # 16-bit accesses split
@@ -1536,39 +1535,45 @@ typedef
 
 
 /* Create a new, empty VTS. */
-VTS* VTS__new ( void );
+static VTS* VTS__new ( void );
 
 /* Delete this VTS in its entirety. */
-void VTS__delete ( VTS* vts );
+static void VTS__delete ( VTS* vts );
 
 /* Create a new singleton VTS. */
-VTS* VTS__singleton ( Thr* thr, ULong tym );
+static VTS* VTS__singleton ( Thr* thr, ULong tym );
 
 /* Return a new VTS in which vts[me]++, so to speak.  'vts' itself is
    not modified. */
-VTS* VTS__tick ( Thr* me, VTS* vts );
+static VTS* VTS__tick ( Thr* me, VTS* vts );
 
 /* Return a new VTS constructed as the join (max) of the 2 args.
    Neither arg is modified. */
-VTS* VTS__join ( VTS* a, VTS* b );
+static VTS* VTS__join ( VTS* a, VTS* b );
 
-/* Compute the partial ordering relation of the two args. */
-typedef
-   enum { POrd_EQ=4, POrd_LT, POrd_GT, POrd_UN }
-   POrd;
+/* Compute the partial ordering relation of the two args.  Although we
+   could be completely general and return an enumeration value (EQ,
+   LT, GT, UN), in fact we only need LEQ, and so we may as well
+   hardwire that fact.
 
-POrd VTS__cmp ( VTS* a, VTS* b );
+   Returns NULL iff LEQ(A,B), or non-NULL if not.  In the latter case,
+   the returned Thr* indicates the discovered point for which they are
+   not.  There may be more than one such point, but we only care about
+   seeing one of them, not all of them.  This rather strange
+   convention is used because sometimes we want to know the actual
+   index at which they first differ. */
+static Thr* VTS__cmpLEQ ( VTS* a, VTS* b );
 
 /* Compute an arbitrary structural (total) ordering on the two args,
    based on their VCs, so they can be looked up in a table, tree, etc.
    Returns -1, 0 or 1. */
-Word VTS__cmp_structural ( VTS* a, VTS* b );
+static Word VTS__cmp_structural ( VTS* a, VTS* b );
 
 /* Debugging only.  Display the given VTS in the buffer. */
-void VTS__show ( HChar* buf, Int nBuf, VTS* vts );
+static void VTS__show ( HChar* buf, Int nBuf, VTS* vts );
 
 /* Debugging only.  Return vts[index], so to speak. */
-ULong VTS__indexAt_SLOW ( VTS* vts, Thr* idx );
+static ULong VTS__indexAt_SLOW ( VTS* vts, Thr* idx );
 
 #endif /* ! __HB_VTS_H */
 
@@ -1807,15 +1812,14 @@ VTS* VTS__join ( VTS* a, VTS* b )
 }
 
 
-/* Compute the partial ordering relation of the two args.
-*/
-POrd VTS__cmp ( VTS* a, VTS* b )
+/* Determine if 'a' <= 'b', in the partial ordering.  Returns NULL if
+   they are, or the first Thr* for which they are not.  This rather
+   strange convention is used because sometimes we want to know the
+   actual index at which they first differ. */
+static Thr* VTS__cmpLEQ ( VTS* a, VTS* b )
 {
-   Word     ia, ib, useda, usedb;
-   ULong    tyma, tymb;
-
-   Bool all_leq = True;
-   Bool all_geq = True;
+   Word  ia, ib, useda, usedb;
+   ULong tyma, tymb;
 
    tl_assert(a && a->ts);
    tl_assert(b && b->ts);
@@ -1829,6 +1833,8 @@ POrd VTS__cmp ( VTS* a, VTS* b )
       /* This logic is to enumerate doubles (tyma, tymb) drawn
          from a and b in order, and tyma/b are the relevant
          scalar timestamps, taking into account implicit zeroes. */
+      Thr* thr;
+
       tl_assert(ia >= 0 && ia <= useda);
       tl_assert(ib >= 0 && ib <= usedb);
 
@@ -1841,12 +1847,14 @@ POrd VTS__cmp ( VTS* a, VTS* b )
          ScalarTS* tmpb = VG_(indexXA)( b->ts, ib );
          tyma = 0;
          tymb = tmpb->tym;
+         thr  = tmpb->thr;
          ib++;
 
       } else if (ia != useda && ib == usedb) {
          /* b empty, use up a */
          ScalarTS* tmpa = VG_(indexXA)( a->ts, ia );
          tyma = tmpa->tym;
+         thr  = tmpa->thr;
          tymb = 0;
          ia++;
 
@@ -1857,6 +1865,7 @@ POrd VTS__cmp ( VTS* a, VTS* b )
          if (tmpa->thr < tmpb->thr) {
             /* a has the lowest unconsidered Thr* */
             tyma = tmpa->tym;
+            thr  = tmpa->thr;
             tymb = 0;
             ia++;
          }
@@ -1865,11 +1874,13 @@ POrd VTS__cmp ( VTS* a, VTS* b )
             /* b has the lowest unconsidered Thr* */
             tyma = 0;
             tymb = tmpb->tym;
+            thr  = tmpb->thr;
             ib++;
          } else {
             /* they both next mention the same Thr* */
             tl_assert(tmpa->thr == tmpb->thr);
             tyma = tmpa->tym;
+            thr  = tmpa->thr;
             tymb = tmpb->tym;
             ia++;
             ib++;
@@ -1878,22 +1889,15 @@ POrd VTS__cmp ( VTS* a, VTS* b )
 
       /* having laboriously determined (tyma, tymb), do something
          useful with it. */
-      if (tyma < tymb)
-         all_geq = False;
-      if (tyma > tymb)
-         all_leq = False;
+      if (tyma > tymb) {
+         /* not LEQ at this index.  Quit, since the answer is
+            determined already. */
+         tl_assert(thr);
+         return thr;
+      }
    }
 
-   if (all_leq && all_geq)
-      return POrd_EQ;
-   /* now we know they aren't equal, so either all_leq or all_geq or
-      both are false. */
-   if (all_leq)
-      return POrd_LT;
-   if (all_geq)
-      return POrd_GT;
-   /* hmm, neither all_geq or all_leq.  This means unordered. */
-   return POrd_UN;
+   return NULL; /* all points are LEQ */
 }
 
 
@@ -2302,10 +2306,10 @@ static void vts_tab__do_GC ( Bool show_stats )
 /////////////////////////////////////////////////////////
 
 //////////////////////////
-static ULong stats__getOrdering_queries = 0;
-static ULong stats__getOrdering_misses  = 0;
-static ULong stats__join2_queries       = 0;
-static ULong stats__join2_misses        = 0;
+static ULong stats__cmpLEQ_queries = 0;
+static ULong stats__cmpLEQ_misses  = 0;
+static ULong stats__join2_queries  = 0;
+static ULong stats__join2_misses   = 0;
 
 static inline UInt ROL32 ( UInt w, Int n ) {
    w = (w << n) | (w >> (32-n));
@@ -2316,10 +2320,10 @@ static inline UInt hash_VtsIDs ( VtsID vi1, VtsID vi2, UInt nTab ) {
    return hash % nTab;
 }
 
-#define N_GETORDERING_CACHE 1023
+#define N_CMPLEQ_CACHE 1023
 static
-   struct { VtsID vi1; VtsID vi2; POrd ord; }
-   getOrdering_cache[N_GETORDERING_CACHE];
+   struct { VtsID vi1; VtsID vi2; Bool leq; }
+   cmpLEQ_cache[N_CMPLEQ_CACHE];
 
 #define N_JOIN2_CACHE 1023
 static
@@ -2328,10 +2332,10 @@ static
 
 static void VtsID__invalidate_caches ( void ) {
    Int i;
-   for (i = 0; i < N_GETORDERING_CACHE; i++) {
-      getOrdering_cache[i].vi1 = VtsID_INVALID;
-      getOrdering_cache[i].vi2 = VtsID_INVALID;
-      getOrdering_cache[i].ord = 0; /* an invalid POrd value */
+   for (i = 0; i < N_CMPLEQ_CACHE; i++) {
+      cmpLEQ_cache[i].vi1 = VtsID_INVALID;
+      cmpLEQ_cache[i].vi2 = VtsID_INVALID;
+      cmpLEQ_cache[i].leq = False;
    }
    for (i = 0; i < N_JOIN2_CACHE; i++) {
      join2_cache[i].vi1 = VtsID_INVALID;
@@ -2368,32 +2372,32 @@ static void VtsID__pp ( VtsID vi ) {
 
 /* compute partial ordering relation of vi1 and vi2. */
 __attribute__((noinline))
-static POrd VtsID__getOrdering_WRK ( VtsID vi1, VtsID vi2 ) {
+static Bool VtsID__cmpLEQ_WRK ( VtsID vi1, VtsID vi2 ) {
    UInt hash;
-   POrd ord;
+   Bool leq;
    VTS  *v1, *v2;
-   //if (vi1 == vi2) return POrd_EQ;
+   //if (vi1 == vi2) return True;
    tl_assert(vi1 != vi2);
    ////++
-   stats__getOrdering_queries++;
-   hash = hash_VtsIDs(vi1, vi2, N_GETORDERING_CACHE);
-   if (getOrdering_cache[hash].vi1 == vi1
-       && getOrdering_cache[hash].vi2 == vi2)
-      return getOrdering_cache[hash].ord;
-   stats__getOrdering_misses++;
+   stats__cmpLEQ_queries++;
+   hash = hash_VtsIDs(vi1, vi2, N_CMPLEQ_CACHE);
+   if (cmpLEQ_cache[hash].vi1 == vi1
+       && cmpLEQ_cache[hash].vi2 == vi2)
+      return cmpLEQ_cache[hash].leq;
+   stats__cmpLEQ_misses++;
    ////--
    v1  = VtsID__to_VTS(vi1);
    v2  = VtsID__to_VTS(vi2);
-   ord = VTS__cmp( v1, v2 );
+   leq = VTS__cmpLEQ( v1, v2 ) == NULL;
    ////++
-   getOrdering_cache[hash].vi1 = vi1;
-   getOrdering_cache[hash].vi2 = vi2;
-   getOrdering_cache[hash].ord = ord;
+   cmpLEQ_cache[hash].vi1 = vi1;
+   cmpLEQ_cache[hash].vi2 = vi2;
+   cmpLEQ_cache[hash].leq = leq;
    ////--
-   return ord;
+   return leq;
 }
-static inline POrd VtsID__getOrdering ( VtsID vi1, VtsID vi2 ) {
-   return LIKELY(vi1 == vi2)  ? POrd_EQ  : VtsID__getOrdering_WRK(vi1, vi2);
+static inline Bool VtsID__cmpLEQ ( VtsID vi1, VtsID vi2 ) {
+   return LIKELY(vi1 == vi2)  ? True  : VtsID__cmpLEQ_WRK(vi1, vi2);
 }
 
 /* compute binary join */
@@ -2446,6 +2450,385 @@ static ULong VtsID__indexAt ( VtsID vi, Thr* idx ) {
    return VTS__indexAt_SLOW( vts, idx );
 }
 
+/* Assuming that !cmpLEQ(vi1, vi2), find the index of the first (or
+   any, really) element in vi1 which is pointwise greater-than the
+   corresponding element in vi2.  If no such element exists, return
+   NULL.  This needs to be fairly quick since it is called every time
+   a race is detected. */
+static Thr* VtsID__findFirst_notLEQ ( VtsID vi1, VtsID vi2 )
+{
+   VTS  *vts1, *vts2;
+   Thr* diffthr;
+   tl_assert(vi1 != vi2);
+   vts1 = VtsID__to_VTS(vi1);
+   vts2 = VtsID__to_VTS(vi2);
+   tl_assert(vts1 != vts2);
+   diffthr = VTS__cmpLEQ(vts1, vts2);
+   tl_assert(diffthr); /* else they are LEQ ! */
+   return diffthr;
+}
+
+
+/////////////////////////////////////////////////////////
+//                                                     //
+// Filters                                             //
+//                                                     //
+/////////////////////////////////////////////////////////
+
+// baseline: 5, 9
+#define FI_LINE_SZB_LOG2  5
+#define FI_NUM_LINES_LOG2 10
+
+#define FI_LINE_SZB       (1 << FI_LINE_SZB_LOG2)
+#define FI_NUM_LINES      (1 << FI_NUM_LINES_LOG2)
+
+#define FI_TAG_MASK        (~(Addr)(FI_LINE_SZB - 1))
+#define FI_GET_TAG(_a)     ((_a) & FI_TAG_MASK)
+
+#define FI_GET_LINENO(_a)  ( ((_a) >> FI_LINE_SZB_LOG2) \
+                             & (Addr)(FI_NUM_LINES-1) )
+
+
+/* In the lines, each 8 bytes are treated individually, and are mapped
+   to a UShort.  Regardless of endianness of the underlying machine,
+   bits 1 and 0 pertain to the lowest address and bits 15 and 14 to
+   the highest address.
+
+   Of each bit pair, the higher numbered bit is set if a R has been
+   seen, so the actual layout is:
+
+   15 14             ...  01 00
+
+   R  W  for addr+7  ...  R  W  for addr+0
+
+   So a mask for the R-bits is 0xAAAA and for the W bits is 0x5555.
+*/
+
+/* tags are separated from lines.  tags are Addrs and are
+   the base address of the line. */
+typedef
+   struct {
+      UShort u16s[FI_LINE_SZB / 8]; /* each UShort covers 8 bytes */
+   }
+   FiLine;
+
+typedef
+   struct {
+      Addr   tags[FI_NUM_LINES];
+      FiLine lines[FI_NUM_LINES];
+   }
+   Filter;
+
+/* Forget everything we know -- clear the filter and let everything
+   through.  This needs to be as fast as possible, since it is called
+   every time the running thread changes, and every time a thread's
+   vector clocks change, which can be quite frequent.  The obvious
+   fast way to do this is simply to stuff in tags which we know are
+   not going to match anything, since they're not aligned to the start
+   of a line. */
+static void Filter__clear ( Filter* fi, HChar* who )
+{
+   UWord i;
+   if (0) VG_(printf)("  Filter__clear(%p, %s)\n", fi, who);
+   for (i = 0; i < FI_NUM_LINES; i += 8) {
+      fi->tags[i+0] = 1; /* impossible value -- cannot match */
+      fi->tags[i+1] = 1;
+      fi->tags[i+2] = 1;
+      fi->tags[i+3] = 1;
+      fi->tags[i+4] = 1;
+      fi->tags[i+5] = 1;
+      fi->tags[i+6] = 1;
+      fi->tags[i+7] = 1;
+   }
+   tl_assert(i == FI_NUM_LINES);
+}
+
+/* Clearing an arbitrary range in the filter.  Unfortunately
+   we have to do this due to core-supplied new/die-mem events. */
+
+static void Filter__clear_1byte ( Filter* fi, Addr a )
+{
+   Addr    atag   = FI_GET_TAG(a);     /* tag of 'a' */
+   UWord   lineno = FI_GET_LINENO(a);  /* lineno for 'a' */
+   FiLine* line   = &fi->lines[lineno];
+   UWord   loff   = (a - atag) / 8;
+   UShort  mask   = 0x3 << (2 * (a & 7));
+   /* mask is C000, 3000, 0C00, 0300, 00C0, 0030, 000C or 0003 */
+   if (LIKELY( fi->tags[lineno] == atag )) {
+      /* hit.  clear the bits. */
+      UShort  u16  = line->u16s[loff];
+      line->u16s[loff] = u16 & ~mask; /* clear them */
+   } else {
+      /* miss.  The filter doesn't hold this address, so ignore. */
+   }
+}
+
+static void Filter__clear_8bytes_aligned ( Filter* fi, Addr a )
+{
+   Addr    atag   = FI_GET_TAG(a);     /* tag of 'a' */
+   UWord   lineno = FI_GET_LINENO(a);  /* lineno for 'a' */
+   FiLine* line   = &fi->lines[lineno];
+   UWord   loff   = (a - atag) / 8;
+   if (LIKELY( fi->tags[lineno] == atag )) {
+      line->u16s[loff] = 0;
+   } else {
+    /* miss.  The filter doesn't hold this address, so ignore. */
+   }
+}
+
+static void Filter__clear_range ( Filter* fi, Addr a, UWord len )
+{
+  //VG_(printf)("%lu ", len);
+   /* slowly do part preceding 8-alignment */
+   while (UNLIKELY(!VG_IS_8_ALIGNED(a)) && LIKELY(len > 0)) {
+      Filter__clear_1byte( fi, a );
+      a++;
+      len--;
+   }
+   /* vector loop */
+   while (len >= 8) {
+      Filter__clear_8bytes_aligned( fi, a );
+      a += 8;
+      len -= 8;
+   }
+   /* slowly do tail */
+   while (UNLIKELY(len > 0)) {
+      Filter__clear_1byte( fi, a );
+      a++;
+      len--;
+   }
+}
+
+
+/* ------ Read handlers for the filter. ------ */
+
+static inline Bool Filter__ok_to_skip_crd64 ( Filter* fi, Addr a )
+{
+   if (UNLIKELY( !VG_IS_8_ALIGNED(a) ))
+      return False;
+   { 
+     Addr    atag   = FI_GET_TAG(a);     /* tag of 'a' */
+     UWord   lineno = FI_GET_LINENO(a);  /* lineno for 'a' */
+     FiLine* line   = &fi->lines[lineno];
+     UWord   loff   = (a - atag) / 8;
+     UShort  mask   = 0xAAAA;
+     if (LIKELY( fi->tags[lineno] == atag )) {
+        /* hit.  check line and update. */
+        UShort u16  = line->u16s[loff];
+        Bool   ok   = (u16 & mask) == mask; /* all R bits set? */
+        line->u16s[loff] = u16 | mask; /* set them */
+        return ok;
+     } else {
+        /* miss.  nuke existing line and re-use it. */
+        UWord i;
+        fi->tags[lineno] = atag;
+        for (i = 0; i < FI_LINE_SZB / 8; i++)
+           line->u16s[i] = 0;
+        line->u16s[loff] = mask;
+        return False;
+     }
+   }
+}
+
+static inline Bool Filter__ok_to_skip_crd32 ( Filter* fi, Addr a )
+{
+   if (UNLIKELY( !VG_IS_4_ALIGNED(a) ))
+      return False;
+   {
+     Addr    atag   = FI_GET_TAG(a);     /* tag of 'a' */
+     UWord   lineno = FI_GET_LINENO(a);  /* lineno for 'a' */
+     FiLine* line   = &fi->lines[lineno];
+     UWord   loff   = (a - atag) / 8;
+     UShort  mask   = 0xAA << (2 * (a & 4)); /* 0xAA00 or 0x00AA */
+     if (LIKELY( fi->tags[lineno] == atag )) {
+        /* hit.  check line and update. */
+        UShort  u16  = line->u16s[loff];
+        Bool    ok   = (u16 & mask) == mask; /* 4 x R bits set? */
+        line->u16s[loff] = u16 | mask; /* set them */
+        return ok;
+     } else {
+        /* miss.  nuke existing line and re-use it. */
+        UWord   i;
+        fi->tags[lineno] = atag;
+        for (i = 0; i < FI_LINE_SZB / 8; i++)
+           line->u16s[i] = 0;
+        line->u16s[loff] = mask;
+        return False;
+     }
+   }
+}
+
+static inline Bool Filter__ok_to_skip_crd16 ( Filter* fi, Addr a )
+{
+   if (UNLIKELY( !VG_IS_2_ALIGNED(a) ))
+      return False;
+   {
+     Addr    atag   = FI_GET_TAG(a);     /* tag of 'a' */
+     UWord   lineno = FI_GET_LINENO(a);  /* lineno for 'a' */
+     FiLine* line   = &fi->lines[lineno];
+     UWord   loff   = (a - atag) / 8;
+     UShort  mask   = 0xA << (2 * (a & 6));
+     /* mask is A000, 0A00, 00A0 or 000A */
+     if (LIKELY( fi->tags[lineno] == atag )) {
+        /* hit.  check line and update. */
+        UShort  u16  = line->u16s[loff];
+        Bool    ok   = (u16 & mask) == mask; /* 2 x R bits set? */
+        line->u16s[loff] = u16 | mask; /* set them */
+        return ok;
+     } else {
+        /* miss.  nuke existing line and re-use it. */
+        UWord   i;
+        fi->tags[lineno] = atag;
+        for (i = 0; i < FI_LINE_SZB / 8; i++)
+           line->u16s[i] = 0;
+        line->u16s[loff] = mask;
+        return False;
+     }
+   }
+}
+
+static inline Bool Filter__ok_to_skip_crd08 ( Filter* fi, Addr a )
+{
+   {
+     Addr    atag   = FI_GET_TAG(a);     /* tag of 'a' */
+     UWord   lineno = FI_GET_LINENO(a);  /* lineno for 'a' */
+     FiLine* line   = &fi->lines[lineno];
+     UWord   loff   = (a - atag) / 8;
+     UShort  mask   = 0x2 << (2 * (a & 7));
+     /* mask is 8000, 2000, 0800, 0200, 0080, 0020, 0008 or 0002 */
+     if (LIKELY( fi->tags[lineno] == atag )) {
+        /* hit.  check line and update. */
+        UShort  u16  = line->u16s[loff];
+        Bool    ok   = (u16 & mask) == mask; /* 1 x R bits set? */
+        line->u16s[loff] = u16 | mask; /* set them */
+        return ok;
+     } else {
+        /* miss.  nuke existing line and re-use it. */
+        UWord   i;
+        fi->tags[lineno] = atag;
+        for (i = 0; i < FI_LINE_SZB / 8; i++)
+           line->u16s[i] = 0;
+        line->u16s[loff] = mask;
+        return False;
+     }
+   }
+}
+
+
+/* ------ Write handlers for the filter. ------ */
+
+static inline Bool Filter__ok_to_skip_cwr64 ( Filter* fi, Addr a )
+{
+   if (UNLIKELY( !VG_IS_8_ALIGNED(a) ))
+      return False;
+   { 
+     Addr    atag   = FI_GET_TAG(a);     /* tag of 'a' */
+     UWord   lineno = FI_GET_LINENO(a);  /* lineno for 'a' */
+     FiLine* line   = &fi->lines[lineno];
+     UWord   loff   = (a - atag) / 8;
+     UShort  mask   = 0xFFFF;
+     if (LIKELY( fi->tags[lineno] == atag )) {
+        /* hit.  check line and update. */
+        UShort u16  = line->u16s[loff];
+        Bool   ok   = (u16 & mask) == mask; /* all R & W bits set? */
+        line->u16s[loff] = u16 | mask; /* set them */
+        return ok;
+     } else {
+        /* miss.  nuke existing line and re-use it. */
+        UWord i;
+        fi->tags[lineno] = atag;
+        for (i = 0; i < FI_LINE_SZB / 8; i++)
+           line->u16s[i] = 0;
+        line->u16s[loff] = mask;
+        return False;
+     }
+   }
+}
+
+static inline Bool Filter__ok_to_skip_cwr32 ( Filter* fi, Addr a )
+{
+   if (UNLIKELY( !VG_IS_4_ALIGNED(a) ))
+      return False;
+   {
+     Addr    atag   = FI_GET_TAG(a);     /* tag of 'a' */
+     UWord   lineno = FI_GET_LINENO(a);  /* lineno for 'a' */
+     FiLine* line   = &fi->lines[lineno];
+     UWord   loff   = (a - atag) / 8;
+     UShort  mask   = 0xFF << (2 * (a & 4)); /* 0xFF00 or 0x00FF */
+     if (LIKELY( fi->tags[lineno] == atag )) {
+        /* hit.  check line and update. */
+        UShort  u16  = line->u16s[loff];
+        Bool    ok   = (u16 & mask) == mask; /* 4 x R & W bits set? */
+        line->u16s[loff] = u16 | mask; /* set them */
+        return ok;
+     } else {
+        /* miss.  nuke existing line and re-use it. */
+        UWord   i;
+        fi->tags[lineno] = atag;
+        for (i = 0; i < FI_LINE_SZB / 8; i++)
+           line->u16s[i] = 0;
+        line->u16s[loff] = mask;
+        return False;
+     }
+   }
+}
+
+static inline Bool Filter__ok_to_skip_cwr16 ( Filter* fi, Addr a )
+{
+   if (UNLIKELY( !VG_IS_2_ALIGNED(a) ))
+      return False;
+   {
+     Addr    atag   = FI_GET_TAG(a);     /* tag of 'a' */
+     UWord   lineno = FI_GET_LINENO(a);  /* lineno for 'a' */
+     FiLine* line   = &fi->lines[lineno];
+     UWord   loff   = (a - atag) / 8;
+     UShort  mask   = 0xF << (2 * (a & 6));
+     /* mask is F000, 0F00, 00F0 or 000F */
+     if (LIKELY( fi->tags[lineno] == atag )) {
+        /* hit.  check line and update. */
+        UShort  u16  = line->u16s[loff];
+        Bool    ok   = (u16 & mask) == mask; /* 2 x R & W bits set? */
+        line->u16s[loff] = u16 | mask; /* set them */
+        return ok;
+     } else {
+        /* miss.  nuke existing line and re-use it. */
+        UWord   i;
+        fi->tags[lineno] = atag;
+        for (i = 0; i < FI_LINE_SZB / 8; i++)
+           line->u16s[i] = 0;
+        line->u16s[loff] = mask;
+        return False;
+     }
+   }
+}
+
+static inline Bool Filter__ok_to_skip_cwr08 ( Filter* fi, Addr a )
+{
+   {
+     Addr    atag   = FI_GET_TAG(a);     /* tag of 'a' */
+     UWord   lineno = FI_GET_LINENO(a);  /* lineno for 'a' */
+     FiLine* line   = &fi->lines[lineno];
+     UWord   loff   = (a - atag) / 8;
+     UShort  mask   = 0x3 << (2 * (a & 7));
+     /* mask is C000, 3000, 0C00, 0300, 00C0, 0030, 000C or 0003 */
+     if (LIKELY( fi->tags[lineno] == atag )) {
+        /* hit.  check line and update. */
+        UShort  u16  = line->u16s[loff];
+        Bool    ok   = (u16 & mask) == mask; /* 1 x R bits set? */
+        line->u16s[loff] = u16 | mask; /* set them */
+        return ok;
+     } else {
+        /* miss.  nuke existing line and re-use it. */
+        UWord   i;
+        fi->tags[lineno] = atag;
+        for (i = 0; i < FI_LINE_SZB / 8; i++)
+           line->u16s[i] = 0;
+        line->u16s[loff] = mask;
+        return False;
+     }
+   }
+}
+
 
 /////////////////////////////////////////////////////////
 //                                                     //
@@ -2453,24 +2836,97 @@ static ULong VtsID__indexAt ( VtsID vi, Thr* idx ) {
 //                                                     //
 /////////////////////////////////////////////////////////
 
+// QQQ move this somewhere else
+typedef  struct { ULong ull; ExeContext* ec; }  ULong_n_EC;
+
 struct _Thr {
    /* Current VTSs for this thread.  They change as we go along.  viR
       is the VTS to be used for reads, viW for writes.  Usually they
       are the same, but can differ when we deal with reader-writer
-      locks.  It is always the case that VtsID__getOrdering(viW,viR)
-      == POrd_LT or POrdEQ -- that is, viW must be the same, or
-      lagging behind, viR. */
+      locks.  It is always the case that 
+         VtsID__cmpLEQ(viW,viR) == True
+      that is, viW must be the same, or lagging behind, viR. */
    VtsID viR;
    VtsID viW;
+
+   /* Is initially False, and is set to true after the thread really
+      has done a low-level exit. */
+   Bool still_alive;
+
+   /* A filter that removes references for which we believe that
+      msmcread/msmcwrite will not change the state, nor report a
+      race. */
+   Filter* filter;
+
    /* opaque (to us) data we hold on behalf of the library's user. */
    void* opaque;
+
+   /* The ULongs (scalar Krs) in this accumulate in strictly
+      increasing order, without duplicates.  This is important because
+      we need to be able to find a given scalar Kr in this array
+      later, by binary search. */
+   XArray* /* ULong_n_EC */ local_Krs_n_stacks;
 };
 
 static Thr* Thr__new ( void ) {
    Thr* thr = HG_(zalloc)( "libhb.Thr__new.1", sizeof(Thr) );
    thr->viR = VtsID_INVALID;
    thr->viW = VtsID_INVALID;
+   thr->still_alive = True;
+   thr->filter = HG_(zalloc)( "libhb.Thr__new.2", sizeof(Filter) );
+   thr->local_Krs_n_stacks
+      = VG_(newXA)( HG_(zalloc), "libhb.Thr__new.3 (local_Krs_and_stacks)",
+                    HG_(free), sizeof(ULong_n_EC) );
    return thr;
+}
+
+static void note_local_Kr_n_stack_for ( Thr* thr )
+{
+   Word       nPresent;
+   ULong_n_EC pair;
+   tl_assert(thr);
+   /* This is the scalar Kr for thr. */
+   pair.ull = VtsID__indexAt( thr->viR, thr );
+   pair.ec  = main_get_EC( thr );
+   tl_assert(pair.ec);
+   tl_assert(thr->local_Krs_n_stacks);
+
+   /* check that we're not adding duplicates */
+   nPresent = VG_(sizeXA)( thr->local_Krs_n_stacks );
+
+   /* Throw away old stacks, if necessary.  We can't accumulate stuff
+      indefinitely. */
+   if (nPresent > 10000) {
+      VG_(dropHeadXA)( thr->local_Krs_n_stacks, nPresent / 2 );
+      nPresent = VG_(sizeXA)( thr->local_Krs_n_stacks );
+      if (1)
+         VG_(printf)("LOCAL Kr: thr %p,  Kr %llu,  ec %p (!!! gc !!!)\n",
+                     thr, pair.ull, pair.ec );
+   }
+
+   if (nPresent > 0) {
+      ULong_n_EC* prevPair
+         = (ULong_n_EC*)VG_(indexXA)( thr->local_Krs_n_stacks, nPresent-1 );
+      tl_assert( prevPair->ull < pair.ull );
+   }
+
+   if (nPresent == 0)
+      pair.ec = NULL;
+
+   VG_(addToXA)( thr->local_Krs_n_stacks, &pair );
+
+   if (0)
+      VG_(printf)("LOCAL Kr: thr %p,  Kr %llu,  ec %p\n",
+                  thr, pair.ull, pair.ec );
+   if (0)
+      VG_(pp_ExeContext)(pair.ec);
+}
+
+static Int cmp__ULong_n_EC__by_ULong ( ULong_n_EC* pair1, ULong_n_EC* pair2 )
+{
+   if (pair1->ull < pair2->ull) return -1;
+   if (pair1->ull > pair2->ull) return 1;
+   return 0;
 }
 
 
@@ -2487,9 +2943,9 @@ static Thr* Thr__new ( void ) {
 
       <---------30--------->    <---------30--------->
    00 X-----Rmin-VtsID-----X 00 X-----Wmin-VtsID-----X   C(Rmin,Wmin)
-   01 X--------------------X XX X--------------------X   E(rror)
    10 X--------------------X XX X--------------------X   A: SVal_NOACCESS
-   11 X--------------------X XX X--------------------X   I: SVal_INVALID
+   11 0--------------------0 00 0--------------------0   A: SVal_INVALID
+
 */
 #define SVAL_TAGMASK (3ULL << 62)
 
@@ -2510,17 +2966,10 @@ static inline VtsID SVal__unC_Wmin ( SVal s ) {
    return (VtsID)(s & 0xFFFFFFFFULL);
 }
 
-static Bool SVal__isE ( SVal s ) {
-   return (1ULL << 62) == (s & SVAL_TAGMASK);
-}
-static SVal SVal__mkE ( void ) {
-   return 1ULL << 62;
-}
-
-static Bool SVal__isA ( SVal s ) {
+static inline Bool SVal__isA ( SVal s ) {
    return (2ULL << 62) == (s & SVAL_TAGMASK);
 }
-static SVal SVal__mkA ( void ) {
+static inline SVal SVal__mkA ( void ) {
    return 2ULL << 62;
 }
 
@@ -2653,7 +3102,7 @@ inline static void gal_Free ( GroupAlloc* ga, void* p )
 
 /* This is in two parts:
 
-   1. An OSet of RCECs.  This is a set of reference-counted stack
+   1. A hash table of RCECs.  This is a set of reference-counted stack
       traces.  When the reference count of a stack trace becomes zero,
       it is removed from the set and freed up.  The intent is to have
       a set of stack traces which can be referred to from (2), but to
@@ -3584,69 +4033,138 @@ static void event_map_maybe_GC ( void )
 //                                                     //
 /////////////////////////////////////////////////////////
 
-/* Logic in msm_read/msm_write updated/verified after re-analysis,
-   19 Nov 08. */
+/* Logic in msmcread/msmcwrite updated/verified after re-analysis, 19
+   Nov 08, and again after [...],
+   June 09. */
 
-/* 19 Nov 08: it seems that MSM_RACE2ERR == 1 is a bad idea.  When
-   nonzero, the effect is that when a race is detected for a location,
-   that location is put into a special 'error' state and no further
-   checking of it is done until it returns to a 'normal' state, which
-   requires it to be deallocated and reallocated.
-
-   This is a bad idea, because of the interaction with suppressions.
-   Suppose there is a race on the location, but the error is
-   suppressed.  The location now is marked as in-error.  Now any
-   subsequent race -- including ones we want to see -- will never be
-   detected until the location is deallocated and reallocated.
-
-   Hence set MSM_RACE2ERR to zero.  This causes raced-on locations to
-   remain in the normal 'C' (constrained) state, but places on them
-   the constraint that the next accesses happen-after both the
-   existing constraint and the relevant vector clock of the thread
-   doing the racing access.
-*/
-#define MSM_RACE2ERR 0
-
-static ULong stats__msm_read         = 0;
-static ULong stats__msm_read_change  = 0;
-static ULong stats__msm_write        = 0;
-static ULong stats__msm_write_change = 0;
+static ULong stats__msmcread         = 0;
+static ULong stats__msmcread_change  = 0;
+static ULong stats__msmcwrite        = 0;
+static ULong stats__msmcwrite_change = 0;
 
 __attribute__((noinline))
 static void record_race_info ( Thr* acc_thr, 
-                               Addr acc_addr, SizeT szB, Bool isWrite )
+                               Addr acc_addr, SizeT szB, Bool isWrite,
+                               VtsID vtsConstraint, VtsID vtsKlock )
 {
    /* Call here to report a race.  We just hand it onwards to
       HG_(record_error_Race).  If that in turn discovers that the
-      error is going to be collected, then that queries the
-      conflicting-event map.  The alternative would be to query it
-      right here.  But that causes a lot of pointless queries for
-      errors which will shortly be discarded as duplicates, and can
-      become a performance overhead; so we defer the query until we
-      know the error is not a duplicate. */
+      error is going to be collected, then, at history_level 2, that
+      queries the conflicting-event map.  The alternative would be to
+      query it right here.  But that causes a lot of pointless queries
+      for errors which will shortly be discarded as duplicates, and
+      can become a performance overhead; so we defer the query until
+      we know the error is not a duplicate. */
+
+   /* Stacks for the bounds of the (or one of the) conflicting
+      segment(s).  These are only set at history_level 1. */
+   ExeContext* hist1_seg_start = NULL;
+   ExeContext* hist1_seg_end   = NULL;
+   Thread*     hist1_conf_thr  = NULL;
+
+   tl_assert(acc_thr);
    tl_assert(acc_thr->opaque);
+   tl_assert(HG_(clo_history_level) >= 0 && HG_(clo_history_level) <= 2);
+
+   if (HG_(clo_history_level) == 1) {
+      Bool found;
+      Word firstIx, lastIx;
+      ULong_n_EC key;
+
+      /* At history_level 1, we must round up the relevant stack-pair
+         for the conflicting segment right now.  This is because
+         deferring it is complex; we can't (easily) put vtsKlock and
+         vtsConstraint into the XError and wait for later without
+         getting tied up in difficulties with VtsID reference
+         counting.  So just do it now. */
+      Thr*  confThr;
+      ULong confTym = 0;
+      /* Which thread are we in conflict with?  There may be more than
+         one, in which case VtsID__findFirst_notLEQ selects one arbitrarily
+         (in fact it's the one with the lowest Thr* value). */
+      confThr = VtsID__findFirst_notLEQ( vtsConstraint, vtsKlock );
+      /* This must exist!  since if it was NULL then there's no
+         conflict (semantics of return value of VtsID__findFirst_notLEQ) */
+      tl_assert(confThr);
+
+      /* Get the scalar clock value that the conflicting thread
+         introduced into the constraint.  A careful examination of the
+         base machine rules shows that this must be the same as the
+         conflicting thread's scalar clock when it created this
+         constraint.  Hence we know the scalar clock of the
+         conflicting thread when the conflicting access was made. */
+      confTym = VtsID__indexAt( vtsConstraint, confThr );
+
+      /* Using this scalar clock, index into the conflicting thread's
+         collection of stack traces made each time its vector clock
+         (hence its scalar clock) changed.  This gives the stack
+         traces at the start and end of the conflicting segment (well,
+         as per comment just above, of one of the conflicting
+         segments, if there are more than one). */
+      key.ull = confTym;
+      key.ec  = NULL;
+      /* tl_assert(confThr); -- asserted just above */
+      tl_assert(confThr->local_Krs_n_stacks);
+      firstIx = lastIx = 0;
+      found = VG_(lookupXA_UNSAFE)(
+                 confThr->local_Krs_n_stacks,
+                 &key, &firstIx, &lastIx,
+                 (Int(*)(void*,void*))cmp__ULong_n_EC__by_ULong
+              );
+      if (0) VG_(printf)("record_race_info %u %u  confThr %p "
+                         "confTym %llu found %d (%lu,%lu)\n", 
+                         vtsConstraint, vtsKlock,
+                         confThr, confTym, found, firstIx, lastIx);
+      /* We can't indefinitely collect stack traces at VTS
+         transitions, since we'd eventually run out of memory.  Hence
+         note_local_Kr_n_stack_for will eventually throw away old
+         ones, which in turn means we might fail to find index value
+         confTym in the array. */
+      if (found) {
+         ULong_n_EC *pair_start, *pair_end;
+         pair_start 
+            = (ULong_n_EC*)VG_(indexXA)( confThr->local_Krs_n_stacks, lastIx );
+         hist1_seg_start = pair_start->ec;
+         if (lastIx+1 < VG_(sizeXA)( confThr->local_Krs_n_stacks )) {
+            pair_end
+               = (ULong_n_EC*)VG_(indexXA)( confThr->local_Krs_n_stacks,
+                                            lastIx+1 );
+            /* from properties of VG_(lookupXA) and the comparison fn used: */
+            tl_assert(pair_start->ull < pair_end->ull);
+            hist1_seg_end = pair_end->ec;
+         } else {
+            if (confThr->still_alive)
+               hist1_seg_end = main_get_EC( confThr );
+         }
+         // seg_start could be NULL iff this is the first stack in the thread
+         //if (seg_start) VG_(pp_ExeContext)(seg_start);
+         //if (seg_end)   VG_(pp_ExeContext)(seg_end);
+         hist1_conf_thr = confThr->opaque;
+      }
+   }
+
    HG_(record_error_Race)( acc_thr->opaque, acc_addr,
-                           szB, isWrite, NULL/*mb_lastlock*/ );
+                           szB, isWrite,
+                           hist1_conf_thr, hist1_seg_start, hist1_seg_end );
 }
 
 static Bool is_sane_SVal_C ( SVal sv ) {
-   POrd ord;
+   Bool leq;
    if (!SVal__isC(sv)) return True;
-   ord = VtsID__getOrdering( SVal__unC_Rmin(sv), SVal__unC_Wmin(sv) );
-   if (ord == POrd_EQ || ord == POrd_LT) return True;
-   return False;
+   leq = VtsID__cmpLEQ( SVal__unC_Rmin(sv), SVal__unC_Wmin(sv) );
+   return leq;
 }
 
 
 /* Compute new state following a read */
-static inline SVal msm_read ( SVal svOld,
+static inline SVal msmcread ( SVal svOld,
                               /* The following are only needed for 
                                  creating error reports. */
                               Thr* acc_thr,
                               Addr acc_addr, SizeT szB )
 {
    SVal svNew = SVal_INVALID;
-   stats__msm_read++;
+   stats__msmcread++;
 
    /* Redundant sanity check on the constraints */
    if (CHECK_MSM) {
@@ -3654,38 +4172,24 @@ static inline SVal msm_read ( SVal svOld,
    }
 
    if (LIKELY(SVal__isC(svOld))) {
-      POrd  ord;
       VtsID tviR  = acc_thr->viR;
       VtsID tviW  = acc_thr->viW;
       VtsID rmini = SVal__unC_Rmin(svOld);
       VtsID wmini = SVal__unC_Wmin(svOld);
-
-      ord = VtsID__getOrdering(rmini,tviR);
-      if (LIKELY(ord == POrd_EQ || ord == POrd_LT)) {
+      Bool  leq   = VtsID__cmpLEQ(rmini,tviR);
+      if (LIKELY(leq)) {
          /* no race */
          /* Note: RWLOCK subtlety: use tviW, not tviR */
          svNew = SVal__mkC( rmini, VtsID__join2(wmini, tviW) );
          goto out;
       } else {
          /* assert on sanity of constraints. */
-         POrd  ordxx = VtsID__getOrdering(rmini,wmini);
-         tl_assert(ordxx == POrd_EQ || ordxx == POrd_LT);
-         /* Compute svNew following the race.  This isn't so
-            simple. */
-         /* see comments on corresponding fragment in
-            msm_write for explanation. */
-         if (MSM_RACE2ERR) {
-            /* XXX UNUSED; this should be deleted */
-            tl_assert(0);
-            svNew = SVal__mkE();
-         } else {
-            VtsID r_joined = VtsID__join2(rmini,tviR);
-            VtsID w_joined = VtsID__join2(wmini,tviW);
-            /* ensure that r_joined <= w_joined */
-            w_joined = VtsID__join2( w_joined, r_joined );
-            svNew = SVal__mkC( r_joined, w_joined );
-         }
-         record_race_info( acc_thr, acc_addr, szB, False/*!isWrite*/ );
+         Bool leqxx = VtsID__cmpLEQ(rmini,wmini);
+         tl_assert(leqxx);
+         // same as in non-race case
+         svNew = SVal__mkC( rmini, VtsID__join2(wmini, tviW) );
+         record_race_info( acc_thr, acc_addr, szB, False/*!isWrite*/,
+                           rmini, tviR );
          goto out;
       }
    }
@@ -3696,12 +4200,7 @@ static inline SVal msm_read ( SVal svOld,
       svNew = SVal_NOACCESS;
       goto out;
    }
-   if (SVal__isE(svOld)) {
-      /* no race, location is already "in error" */
-      svNew = SVal__mkE();
-      goto out;
-   }
-   VG_(printf)("msm_read: bad svOld: 0x%016llx\n", svOld);
+   if (0) VG_(printf)("msmcread: bad svOld: 0x%016llx\n", svOld);
    tl_assert(0);
 
   out:
@@ -3710,10 +4209,10 @@ static inline SVal msm_read ( SVal svOld,
    }
    if (UNLIKELY(svNew != svOld)) {
       tl_assert(svNew != SVal_INVALID);
-      if (HG_(clo_show_conflicts)
+      if (HG_(clo_history_level) >= 2
           && SVal__isC(svOld) && SVal__isC(svNew)) {
          event_map_bind( acc_addr, szB, False/*!isWrite*/, acc_thr );
-         stats__msm_read_change++;
+         stats__msmcread_change++;
       }
    }
    return svNew;
@@ -3721,14 +4220,14 @@ static inline SVal msm_read ( SVal svOld,
 
 
 /* Compute new state following a write */
-static inline SVal msm_write ( SVal svOld,
+static inline SVal msmcwrite ( SVal svOld,
                               /* The following are only needed for 
                                  creating error reports. */
                               Thr* acc_thr,
                               Addr acc_addr, SizeT szB )
 {
    SVal svNew = SVal_INVALID;
-   stats__msm_write++;
+   stats__msmcwrite++;
 
    /* Redundant sanity check on the constraints */
    if (CHECK_MSM) {
@@ -3736,56 +4235,32 @@ static inline SVal msm_write ( SVal svOld,
    }
 
    if (LIKELY(SVal__isC(svOld))) {
-      POrd  ord;
       VtsID tviW  = acc_thr->viW;
       VtsID wmini = SVal__unC_Wmin(svOld);
-
-      ord = VtsID__getOrdering(wmini,tviW);
-      if (LIKELY(ord == POrd_EQ || ord == POrd_LT)) {
+      Bool  leq   = VtsID__cmpLEQ(wmini,tviW);
+      if (LIKELY(leq)) {
          /* no race */
          svNew = SVal__mkC( tviW, tviW );
          goto out;
       } else {
-         VtsID tviR  = acc_thr->viR;
          VtsID rmini = SVal__unC_Rmin(svOld);
          /* assert on sanity of constraints. */
-         POrd  ordxx = VtsID__getOrdering(rmini,wmini);
-         tl_assert(ordxx == POrd_EQ || ordxx == POrd_LT);
-         /* Compute svNew following the race.  This isn't so
-            simple. */
-         if (MSM_RACE2ERR) {
-            /* XXX UNUSED; this should be deleted */
-            tl_assert(0);
-            svNew = SVal__mkE();
-            /* One possibility is, after a race is seen, to
-               set the location's constraints as aggressively
-               (as far ahead) as possible.  However, that just
-               causes lots more races to be reported, which is
-               very confusing.  Hence don't do this. */
-            /*
-                  = SVal__mkC( VtsID__join2(wmini,tviR),
-                               VtsID__join2(wmini,tviW) );
-            */
-         } else {
-            /* instead, re-set the constraints in a way which is
-               consistent with (ie, as they would have been computed
-               anyway) the case where no race was detected. */
-            VtsID r_joined = VtsID__join2(rmini,tviR);
-            VtsID w_joined = VtsID__join2(wmini,tviW);
-            /* Because of the race, the "normal" ordering constraint
-               wmini(constraint) <= tviW(actual access) no longer
-               holds.  Hence it can be that the required constraint
-               (on SVal_Cs) r_joined <= w_joined does not hold either.
-               To fix this and guarantee we're not generating invalid
-               SVal_Cs, do w_joined = w_joined `join` r_joined, so as
-               to force r_joined <= w_joined in the arguments to
-               SVal__mkC.  I think this is only important when we're
-               dealing with reader-writer locks.
-            */
-            w_joined = VtsID__join2( w_joined, r_joined );
-            svNew = SVal__mkC( r_joined, w_joined );
-         }
-         record_race_info( acc_thr, acc_addr, szB, True/*isWrite*/ );
+         Bool leqxx = VtsID__cmpLEQ(rmini,wmini);
+         tl_assert(leqxx);
+         // same as in non-race case
+         // proof: in the non-race case, we have
+         //    rmini <= wmini (invar on constraints)
+         //    tviW <= tviR (invar on thread clocks)
+         //    wmini <= tviW (from run-time check)
+         // hence from transitivity of <= we have
+         //    rmini <= wmini <= tviW
+         // and so join(rmini,tviW) == tviW
+         // and    join(wmini,tviW) == tviW
+         // qed.
+         svNew = SVal__mkC( VtsID__join2(rmini, tviW),
+                            VtsID__join2(wmini, tviW) );
+         record_race_info( acc_thr, acc_addr, szB, True/*isWrite*/,
+                           wmini, acc_thr->viW );
          goto out;
       }
    }
@@ -3796,12 +4271,7 @@ static inline SVal msm_write ( SVal svOld,
       svNew = SVal_NOACCESS;
       goto out;
    }
-   if (SVal__isE(svOld)) {
-      /* no race, location is already "in error" */
-      svNew = SVal__mkE();
-      goto out;
-   }
-   VG_(printf)("msm_write: bad svOld: 0x%016llx\n", svOld);
+   if (0) VG_(printf)("msmcwrite: bad svOld: 0x%016llx\n", svOld);
    tl_assert(0);
 
   out:
@@ -3810,10 +4280,10 @@ static inline SVal msm_write ( SVal svOld,
    }
    if (UNLIKELY(svNew != svOld)) {
       tl_assert(svNew != SVal_INVALID);
-      if (HG_(clo_show_conflicts)
+      if (HG_(clo_history_level) >= 2
           && SVal__isC(svOld) && SVal__isC(svNew)) {
          event_map_bind( acc_addr, szB, True/*isWrite*/, acc_thr );
-         stats__msm_write_change++;
+         stats__msmcwrite_change++;
       }
    }
    return svNew;
@@ -3826,14 +4296,14 @@ static inline SVal msm_write ( SVal svOld,
 //                                                     //
 /////////////////////////////////////////////////////////
 
-/*------------- ZSM accesses: 8 bit apply ------------- */
+/*------------- ZSM accesses: 8 bit sapply ------------- */
 
-void zsm_apply8___msm_read ( Thr* thr, Addr a ) {
+static void zsm_sapply08__msmcread ( Thr* thr, Addr a ) {
    CacheLine* cl; 
    UWord      cloff, tno, toff;
    SVal       svOld, svNew;
    UShort     descr;
-   stats__cline_read8s++;
+   stats__cline_cread08s++;
    cl    = get_cacheline(a);
    cloff = get_cacheline_offset(a);
    tno   = get_treeno(a);
@@ -3846,18 +4316,18 @@ void zsm_apply8___msm_read ( Thr* thr, Addr a ) {
          tl_assert(is_sane_CacheLine(cl)); /* EXPENSIVE */
    }
    svOld = cl->svals[cloff];
-   svNew = msm_read( svOld, thr,a,1 );
+   svNew = msmcread( svOld, thr,a,1 );
    if (CHECK_ZSM)
       tl_assert(svNew != SVal_INVALID);
    cl->svals[cloff] = svNew;
 }
 
-void zsm_apply8___msm_write ( Thr* thr, Addr a ) {
+static void zsm_sapply08__msmcwrite ( Thr* thr, Addr a ) {
    CacheLine* cl; 
    UWord      cloff, tno, toff;
    SVal       svOld, svNew;
    UShort     descr;
-   stats__cline_read8s++;
+   stats__cline_cwrite08s++;
    cl    = get_cacheline(a);
    cloff = get_cacheline_offset(a);
    tno   = get_treeno(a);
@@ -3870,20 +4340,20 @@ void zsm_apply8___msm_write ( Thr* thr, Addr a ) {
          tl_assert(is_sane_CacheLine(cl)); /* EXPENSIVE */
    }
    svOld = cl->svals[cloff];
-   svNew = msm_write( svOld, thr,a,1 );
+   svNew = msmcwrite( svOld, thr,a,1 );
    if (CHECK_ZSM)
       tl_assert(svNew != SVal_INVALID);
    cl->svals[cloff] = svNew;
 }
 
-/*------------- ZSM accesses: 16 bit apply ------------- */
+/*------------- ZSM accesses: 16 bit sapply ------------- */
 
-void zsm_apply16___msm_read ( Thr* thr, Addr a ) {
+static void zsm_sapply16__msmcread ( Thr* thr, Addr a ) {
    CacheLine* cl; 
    UWord      cloff, tno, toff;
    SVal       svOld, svNew;
    UShort     descr;
-   stats__cline_read16s++;
+   stats__cline_cread16s++;
    if (UNLIKELY(!aligned16(a))) goto slowcase;
    cl    = get_cacheline(a);
    cloff = get_cacheline_offset(a);
@@ -3901,23 +4371,23 @@ void zsm_apply16___msm_read ( Thr* thr, Addr a ) {
          tl_assert(is_sane_CacheLine(cl)); /* EXPENSIVE */
    }
    svOld = cl->svals[cloff];
-   svNew = msm_read( svOld, thr,a,2 );
+   svNew = msmcread( svOld, thr,a,2 );
    if (CHECK_ZSM)
       tl_assert(svNew != SVal_INVALID);
    cl->svals[cloff] = svNew;
    return;
   slowcase: /* misaligned, or must go further down the tree */
    stats__cline_16to8splits++;
-   zsm_apply8___msm_read( thr, a + 0 );
-   zsm_apply8___msm_read( thr, a + 1 );
+   zsm_sapply08__msmcread( thr, a + 0 );
+   zsm_sapply08__msmcread( thr, a + 1 );
 }
 
-void zsm_apply16___msm_write ( Thr* thr, Addr a ) {
+static void zsm_sapply16__msmcwrite ( Thr* thr, Addr a ) {
    CacheLine* cl; 
    UWord      cloff, tno, toff;
    SVal       svOld, svNew;
    UShort     descr;
-   stats__cline_read16s++;
+   stats__cline_cwrite16s++;
    if (UNLIKELY(!aligned16(a))) goto slowcase;
    cl    = get_cacheline(a);
    cloff = get_cacheline_offset(a);
@@ -3935,24 +4405,25 @@ void zsm_apply16___msm_write ( Thr* thr, Addr a ) {
          tl_assert(is_sane_CacheLine(cl)); /* EXPENSIVE */
    }
    svOld = cl->svals[cloff];
-   svNew = msm_write( svOld, thr,a,2 );
+   svNew = msmcwrite( svOld, thr,a,2 );
    if (CHECK_ZSM)
       tl_assert(svNew != SVal_INVALID);
    cl->svals[cloff] = svNew;
    return;
   slowcase: /* misaligned, or must go further down the tree */
    stats__cline_16to8splits++;
-   zsm_apply8___msm_write( thr, a + 0 );
-   zsm_apply8___msm_write( thr, a + 1 );
+   zsm_sapply08__msmcwrite( thr, a + 0 );
+   zsm_sapply08__msmcwrite( thr, a + 1 );
 }
 
-/*------------- ZSM accesses: 32 bit apply ------------- */
+/*------------- ZSM accesses: 32 bit sapply ------------- */
 
-void zsm_apply32___msm_read ( Thr* thr, Addr a ) {
+static void zsm_sapply32__msmcread ( Thr* thr, Addr a ) {
    CacheLine* cl; 
    UWord      cloff, tno, toff;
    SVal       svOld, svNew;
    UShort     descr;
+   stats__cline_cread32s++;
    if (UNLIKELY(!aligned32(a))) goto slowcase;
    cl    = get_cacheline(a);
    cloff = get_cacheline_offset(a);
@@ -3970,22 +4441,23 @@ void zsm_apply32___msm_read ( Thr* thr, Addr a ) {
          tl_assert(is_sane_CacheLine(cl)); /* EXPENSIVE */
    }
    svOld = cl->svals[cloff];
-   svNew = msm_read( svOld, thr,a,4 );
+   svNew = msmcread( svOld, thr,a,4 );
    if (CHECK_ZSM)
       tl_assert(svNew != SVal_INVALID);
    cl->svals[cloff] = svNew;
    return;
   slowcase: /* misaligned, or must go further down the tree */
    stats__cline_32to16splits++;
-   zsm_apply16___msm_read( thr, a + 0 );
-   zsm_apply16___msm_read( thr, a + 2 );
+   zsm_sapply16__msmcread( thr, a + 0 );
+   zsm_sapply16__msmcread( thr, a + 2 );
 }
 
-void zsm_apply32___msm_write ( Thr* thr, Addr a ) {
+static void zsm_sapply32__msmcwrite ( Thr* thr, Addr a ) {
    CacheLine* cl; 
    UWord      cloff, tno, toff;
    SVal       svOld, svNew;
    UShort     descr;
+   stats__cline_cwrite32s++;
    if (UNLIKELY(!aligned32(a))) goto slowcase;
    cl    = get_cacheline(a);
    cloff = get_cacheline_offset(a);
@@ -4003,26 +4475,26 @@ void zsm_apply32___msm_write ( Thr* thr, Addr a ) {
          tl_assert(is_sane_CacheLine(cl)); /* EXPENSIVE */
    }
    svOld = cl->svals[cloff];
-   svNew = msm_write( svOld, thr,a,4 );
+   svNew = msmcwrite( svOld, thr,a,4 );
    if (CHECK_ZSM)
       tl_assert(svNew != SVal_INVALID);
    cl->svals[cloff] = svNew;
    return;
   slowcase: /* misaligned, or must go further down the tree */
    stats__cline_32to16splits++;
-   zsm_apply16___msm_write( thr, a + 0 );
-   zsm_apply16___msm_write( thr, a + 2 );
+   zsm_sapply16__msmcwrite( thr, a + 0 );
+   zsm_sapply16__msmcwrite( thr, a + 2 );
 }
 
-/*------------- ZSM accesses: 64 bit apply ------------- */
+/*------------- ZSM accesses: 64 bit sapply ------------- */
 
-void zsm_apply64___msm_read ( Thr* thr, Addr a ) {
+static void zsm_sapply64__msmcread ( Thr* thr, Addr a ) {
    CacheLine* cl; 
    UWord      cloff, tno;
    //UWord      toff;
    SVal       svOld, svNew;
    UShort     descr;
-   stats__cline_read64s++;
+   stats__cline_cread64s++;
    if (UNLIKELY(!aligned64(a))) goto slowcase;
    cl    = get_cacheline(a);
    cloff = get_cacheline_offset(a);
@@ -4033,24 +4505,24 @@ void zsm_apply64___msm_read ( Thr* thr, Addr a ) {
       goto slowcase;
    }
    svOld = cl->svals[cloff];
-   svNew = msm_read( svOld, thr,a,8 );
+   svNew = msmcread( svOld, thr,a,8 );
    if (CHECK_ZSM)
       tl_assert(svNew != SVal_INVALID);
    cl->svals[cloff] = svNew;
    return;
   slowcase: /* misaligned, or must go further down the tree */
    stats__cline_64to32splits++;
-   zsm_apply32___msm_read( thr, a + 0 );
-   zsm_apply32___msm_read( thr, a + 4 );
+   zsm_sapply32__msmcread( thr, a + 0 );
+   zsm_sapply32__msmcread( thr, a + 4 );
 }
 
-void zsm_apply64___msm_write ( Thr* thr, Addr a ) {
+static void zsm_sapply64__msmcwrite ( Thr* thr, Addr a ) {
    CacheLine* cl; 
    UWord      cloff, tno;
    //UWord      toff;
    SVal       svOld, svNew;
    UShort     descr;
-   stats__cline_read64s++;
+   stats__cline_cwrite64s++;
    if (UNLIKELY(!aligned64(a))) goto slowcase;
    cl    = get_cacheline(a);
    cloff = get_cacheline_offset(a);
@@ -4061,25 +4533,25 @@ void zsm_apply64___msm_write ( Thr* thr, Addr a ) {
       goto slowcase;
    }
    svOld = cl->svals[cloff];
-   svNew = msm_write( svOld, thr,a,8 );
+   svNew = msmcwrite( svOld, thr,a,8 );
    if (CHECK_ZSM)
       tl_assert(svNew != SVal_INVALID);
    cl->svals[cloff] = svNew;
    return;
   slowcase: /* misaligned, or must go further down the tree */
    stats__cline_64to32splits++;
-   zsm_apply32___msm_write( thr, a + 0 );
-   zsm_apply32___msm_write( thr, a + 4 );
+   zsm_sapply32__msmcwrite( thr, a + 0 );
+   zsm_sapply32__msmcwrite( thr, a + 4 );
 }
 
-/*--------------- ZSM accesses: 8 bit write --------------- */
+/*--------------- ZSM accesses: 8 bit swrite --------------- */
 
 static
-void zsm_write8 ( Addr a, SVal svNew ) {
+void zsm_swrite08 ( Addr a, SVal svNew ) {
    CacheLine* cl; 
    UWord      cloff, tno, toff;
    UShort     descr;
-   stats__cline_set8s++;
+   stats__cline_swrite08s++;
    cl    = get_cacheline(a);
    cloff = get_cacheline_offset(a);
    tno   = get_treeno(a);
@@ -4095,14 +4567,14 @@ void zsm_write8 ( Addr a, SVal svNew ) {
    cl->svals[cloff] = svNew;
 }
 
-/*--------------- ZSM accesses: 16 bit write --------------- */
+/*--------------- ZSM accesses: 16 bit swrite --------------- */
 
 static
-void zsm_write16 ( Addr a, SVal svNew ) {
+void zsm_swrite16 ( Addr a, SVal svNew ) {
    CacheLine* cl; 
    UWord      cloff, tno, toff;
    UShort     descr;
-   stats__cline_set16s++;
+   stats__cline_swrite16s++;
    if (UNLIKELY(!aligned16(a))) goto slowcase;
    cl    = get_cacheline(a);
    cloff = get_cacheline_offset(a);
@@ -4131,18 +4603,18 @@ void zsm_write16 ( Addr a, SVal svNew ) {
    return;
   slowcase: /* misaligned */
    stats__cline_16to8splits++;
-   zsm_write8( a + 0, svNew );
-   zsm_write8( a + 1, svNew );
+   zsm_swrite08( a + 0, svNew );
+   zsm_swrite08( a + 1, svNew );
 }
 
-/*--------------- ZSM accesses: 32 bit write --------------- */
+/*--------------- ZSM accesses: 32 bit swrite --------------- */
 
 static
-void zsm_write32 ( Addr a, SVal svNew ) {
+void zsm_swrite32 ( Addr a, SVal svNew ) {
    CacheLine* cl; 
    UWord      cloff, tno, toff;
    UShort     descr;
-   stats__cline_set32s++;
+   stats__cline_swrite32s++;
    if (UNLIKELY(!aligned32(a))) goto slowcase;
    cl    = get_cacheline(a);
    cloff = get_cacheline_offset(a);
@@ -4173,18 +4645,18 @@ void zsm_write32 ( Addr a, SVal svNew ) {
    return;
   slowcase: /* misaligned */
    stats__cline_32to16splits++;
-   zsm_write16( a + 0, svNew );
-   zsm_write16( a + 2, svNew );
+   zsm_swrite16( a + 0, svNew );
+   zsm_swrite16( a + 2, svNew );
 }
 
-/*--------------- ZSM accesses: 64 bit write --------------- */
+/*--------------- ZSM accesses: 64 bit swrite --------------- */
 
 static
-void zsm_write64 ( Addr a, SVal svNew ) {
+void zsm_swrite64 ( Addr a, SVal svNew ) {
    CacheLine* cl; 
    UWord      cloff, tno;
    //UWord    toff;
-   stats__cline_set64s++;
+   stats__cline_swrite64s++;
    if (UNLIKELY(!aligned64(a))) goto slowcase;
    cl    = get_cacheline(a);
    cloff = get_cacheline_offset(a);
@@ -4203,18 +4675,18 @@ void zsm_write64 ( Addr a, SVal svNew ) {
    return;
   slowcase: /* misaligned */
    stats__cline_64to32splits++;
-   zsm_write32( a + 0, svNew );
-   zsm_write32( a + 4, svNew );
+   zsm_swrite32( a + 0, svNew );
+   zsm_swrite32( a + 4, svNew );
 }
 
-/*------------- ZSM accesses: 8 bit read/copy ------------- */
+/*------------- ZSM accesses: 8 bit sread/scopy ------------- */
 
 static
-SVal zsm_read8 ( Addr a ) {
+SVal zsm_sread08 ( Addr a ) {
    CacheLine* cl; 
    UWord      cloff, tno, toff;
    UShort     descr;
-   stats__cline_get8s++;
+   stats__cline_sread08s++;
    cl    = get_cacheline(a);
    cloff = get_cacheline_offset(a);
    tno   = get_treeno(a);
@@ -4227,177 +4699,19 @@ SVal zsm_read8 ( Addr a ) {
    return cl->svals[cloff];
 }
 
-static void zsm_copy8 ( Addr src, Addr dst, Bool uu_normalise ) {
+static void zsm_scopy08 ( Addr src, Addr dst, Bool uu_normalise ) {
    SVal       sv;
-   stats__cline_copy8s++;
-   sv = zsm_read8( src );
-   zsm_write8( dst, sv );
-}
-
-/* ------------ Shadow memory range setting ops ------------ */
-
-void zsm_apply_range___msm_read ( Thr* thr, 
-                                  Addr a, SizeT len )
-{
-   /* fast track a couple of common cases */
-   if (len == 4 && aligned32(a)) {
-      zsm_apply32___msm_read( thr, a );
-      return;
-   }
-   if (len == 8 && aligned64(a)) {
-      zsm_apply64___msm_read( thr, a );
-      return;
-   }
-
-   /* be completely general (but as efficient as possible) */
-   if (len == 0) return;
-
-   if (!aligned16(a) && len >= 1) {
-      zsm_apply8___msm_read( thr, a );
-      a += 1;
-      len -= 1;
-      tl_assert(aligned16(a));
-   }
-   if (len == 0) return;
-
-   if (!aligned32(a) && len >= 2) {
-      zsm_apply16___msm_read( thr, a );
-      a += 2;
-      len -= 2;
-      tl_assert(aligned32(a));
-   }
-   if (len == 0) return;
-
-   if (!aligned64(a) && len >= 4) {
-      zsm_apply32___msm_read( thr, a );
-      a += 4;
-      len -= 4;
-      tl_assert(aligned64(a));
-   }
-   if (len == 0) return;
-
-   if (len >= 8) {
-      tl_assert(aligned64(a));
-      while (len >= 8) {
-         zsm_apply64___msm_read( thr, a );
-         a += 8;
-         len -= 8;
-      }
-      tl_assert(aligned64(a));
-   }
-   if (len == 0) return;
-
-   if (len >= 4)
-      tl_assert(aligned32(a));
-   if (len >= 4) {
-      zsm_apply32___msm_read( thr, a );
-      a += 4;
-      len -= 4;
-   }
-   if (len == 0) return;
-
-   if (len >= 2)
-      tl_assert(aligned16(a));
-   if (len >= 2) {
-      zsm_apply16___msm_read( thr, a );
-      a += 2;
-      len -= 2;
-   }
-   if (len == 0) return;
-
-   if (len >= 1) {
-      zsm_apply8___msm_read( thr, a );
-      //a += 1;
-      len -= 1;
-   }
-   tl_assert(len == 0);
+   stats__cline_scopy08s++;
+   sv = zsm_sread08( src );
+   zsm_swrite08( dst, sv );
 }
 
 
+/* Block-copy states (needed for implementing realloc()).  Note this
+   doesn't change the filtering arrangements.  The caller of
+   zsm_scopy_range needs to attend to that. */
 
-void zsm_apply_range___msm_write ( Thr* thr,
-                                   Addr a, SizeT len )
-{
-   /* fast track a couple of common cases */
-   if (len == 4 && aligned32(a)) {
-      zsm_apply32___msm_write( thr, a );
-      return;
-   }
-   if (len == 8 && aligned64(a)) {
-      zsm_apply64___msm_write( thr, a );
-      return;
-   }
-
-   /* be completely general (but as efficient as possible) */
-   if (len == 0) return;
-
-   if (!aligned16(a) && len >= 1) {
-      zsm_apply8___msm_write( thr, a );
-      a += 1;
-      len -= 1;
-      tl_assert(aligned16(a));
-   }
-   if (len == 0) return;
-
-   if (!aligned32(a) && len >= 2) {
-      zsm_apply16___msm_write( thr, a );
-      a += 2;
-      len -= 2;
-      tl_assert(aligned32(a));
-   }
-   if (len == 0) return;
-
-   if (!aligned64(a) && len >= 4) {
-      zsm_apply32___msm_write( thr, a );
-      a += 4;
-      len -= 4;
-      tl_assert(aligned64(a));
-   }
-   if (len == 0) return;
-
-   if (len >= 8) {
-      tl_assert(aligned64(a));
-      while (len >= 8) {
-         zsm_apply64___msm_write( thr, a );
-         a += 8;
-         len -= 8;
-      }
-      tl_assert(aligned64(a));
-   }
-   if (len == 0) return;
-
-   if (len >= 4)
-      tl_assert(aligned32(a));
-   if (len >= 4) {
-      zsm_apply32___msm_write( thr, a );
-      a += 4;
-      len -= 4;
-   }
-   if (len == 0) return;
-
-   if (len >= 2)
-      tl_assert(aligned16(a));
-   if (len >= 2) {
-      zsm_apply16___msm_write( thr, a );
-      a += 2;
-      len -= 2;
-   }
-   if (len == 0) return;
-
-   if (len >= 1) {
-      zsm_apply8___msm_write( thr, a );
-      //a += 1;
-      len -= 1;
-   }
-   tl_assert(len == 0);
-}
-
-
-
-
-/* Block-copy states (needed for implementing realloc()). */
-
-static void zsm_copy_range ( Addr src, Addr dst, SizeT len )
+static void zsm_scopy_range ( Addr src, Addr dst, SizeT len )
 {
    SizeT i;
    if (len == 0)
@@ -4415,7 +4729,7 @@ static void zsm_copy_range ( Addr src, Addr dst, SizeT len )
          = get_cacheline_offset( dst+i+1 ) == 0 /* last in line */
            || i == 0       /* first in range */
            || i == len-1;  /* last in range */
-      zsm_copy8( src+i, dst+i, normalise );
+      zsm_scopy08( src+i, dst+i, normalise );
    }
 }
 
@@ -4426,15 +4740,15 @@ static void zsm_copy_range ( Addr src, Addr dst, SizeT len )
 
 /* Do small ranges in-cache, in the obvious way. */
 static
-void zsm_set_range_SMALL ( Addr a, SizeT len, SVal svNew )
+void zsm_sset_range_SMALL ( Addr a, SizeT len, SVal svNew )
 {
    /* fast track a couple of common cases */
    if (len == 4 && aligned32(a)) {
-      zsm_write32( a, svNew );
+      zsm_swrite32( a, svNew );
       return;
    }
    if (len == 8 && aligned64(a)) {
-      zsm_write64( a, svNew );
+      zsm_swrite64( a, svNew );
       return;
    }
 
@@ -4442,7 +4756,7 @@ void zsm_set_range_SMALL ( Addr a, SizeT len, SVal svNew )
    if (len == 0) return;
 
    if (!aligned16(a) && len >= 1) {
-      zsm_write8( a, svNew );
+      zsm_swrite08( a, svNew );
       a += 1;
       len -= 1;
       tl_assert(aligned16(a));
@@ -4450,7 +4764,7 @@ void zsm_set_range_SMALL ( Addr a, SizeT len, SVal svNew )
    if (len == 0) return;
 
    if (!aligned32(a) && len >= 2) {
-      zsm_write16( a, svNew );
+      zsm_swrite16( a, svNew );
       a += 2;
       len -= 2;
       tl_assert(aligned32(a));
@@ -4458,7 +4772,7 @@ void zsm_set_range_SMALL ( Addr a, SizeT len, SVal svNew )
    if (len == 0) return;
 
    if (!aligned64(a) && len >= 4) {
-      zsm_write32( a, svNew );
+      zsm_swrite32( a, svNew );
       a += 4;
       len -= 4;
       tl_assert(aligned64(a));
@@ -4468,7 +4782,7 @@ void zsm_set_range_SMALL ( Addr a, SizeT len, SVal svNew )
    if (len >= 8) {
       tl_assert(aligned64(a));
       while (len >= 8) {
-         zsm_write64( a, svNew );
+         zsm_swrite64( a, svNew );
          a += 8;
          len -= 8;
       }
@@ -4479,7 +4793,7 @@ void zsm_set_range_SMALL ( Addr a, SizeT len, SVal svNew )
    if (len >= 4)
       tl_assert(aligned32(a));
    if (len >= 4) {
-      zsm_write32( a, svNew );
+      zsm_swrite32( a, svNew );
       a += 4;
       len -= 4;
    }
@@ -4488,14 +4802,14 @@ void zsm_set_range_SMALL ( Addr a, SizeT len, SVal svNew )
    if (len >= 2)
       tl_assert(aligned16(a));
    if (len >= 2) {
-      zsm_write16( a, svNew );
+      zsm_swrite16( a, svNew );
       a += 2;
       len -= 2;
    }
    if (len == 0) return;
 
    if (len >= 1) {
-      zsm_write8( a, svNew );
+      zsm_swrite08( a, svNew );
       //a += 1;
       len -= 1;
    }
@@ -4503,13 +4817,16 @@ void zsm_set_range_SMALL ( Addr a, SizeT len, SVal svNew )
 }
 
 
-/* If we're doing a small range, hand off to zsm_set_range_SMALL.  But
+/* If we're doing a small range, hand off to zsm_sset_range_SMALL.  But
    for larger ranges, try to operate directly on the out-of-cache
    representation, rather than dragging lines into the cache,
    overwriting them, and forcing them out.  This turns out to be an
-   important performance optimisation. */
+   important performance optimisation.
 
-static void zsm_set_range ( Addr a, SizeT len, SVal svNew )
+   Note that this doesn't change the filtering arrangements.  The
+   caller of zsm_sset_range needs to attend to that. */
+
+static void zsm_sset_range ( Addr a, SizeT len, SVal svNew )
 {
    tl_assert(svNew != SVal_INVALID);
    stats__cache_make_New_arange += (ULong)len;
@@ -4535,7 +4852,7 @@ static void zsm_set_range ( Addr a, SizeT len, SVal svNew )
    }
 
    if (LIKELY(len < 2 * N_LINE_ARANGE)) {
-      zsm_set_range_SMALL( a, len, svNew );
+      zsm_sset_range_SMALL( a, len, svNew );
    } else {
       Addr  before_start  = a;
       Addr  aligned_start = cacheline_ROUNDUP(a);
@@ -4557,10 +4874,10 @@ static void zsm_set_range ( Addr a, SizeT len, SVal svNew )
          tl_assert(after_start == a+len);
       }
       if (before_len > 0) {
-         zsm_set_range_SMALL( before_start, before_len, svNew );
+         zsm_sset_range_SMALL( before_start, before_len, svNew );
       }
       if (after_len > 0) {
-         zsm_set_range_SMALL( after_start, after_len, svNew );
+         zsm_sset_range_SMALL( after_start, after_len, svNew );
       }
       stats__cache_make_New_inZrep += (ULong)aligned_len;
 
@@ -4575,7 +4892,7 @@ static void zsm_set_range ( Addr a, SizeT len, SVal svNew )
          if (tag == cache_shmem.tags0[wix]) {
             UWord i;
             for (i = 0; i < N_LINE_ARANGE / 8; i++)
-               zsm_write64( aligned_start + i * 8, svNew );
+               zsm_swrite64( aligned_start + i * 8, svNew );
          } else {
             UWord i;
             Word zix;
@@ -4601,6 +4918,272 @@ static void zsm_set_range ( Addr a, SizeT len, SVal svNew )
       tl_assert(aligned_start == after_start);
       tl_assert(aligned_len == 0);
    }
+}
+
+
+/////////////////////////////////////////////////////////
+//                                                     //
+// Front-filtering accesses                            //
+//                                                     //
+/////////////////////////////////////////////////////////
+
+static UWord stats__f_ac = 0;
+static UWord stats__f_sk = 0;
+
+#if 0
+#  define STATS__F_SHOW \
+     do { \
+        if (UNLIKELY(0 == (stats__f_ac & 0xFFFFFF))) \
+           VG_(printf)("filters: ac %lu sk %lu\n",   \
+           stats__f_ac, stats__f_sk); \
+     } while (0)
+#else
+#  define STATS__F_SHOW /* */
+#endif
+
+void zsm_sapply08_f__msmcwrite ( Thr* thr, Addr a ) {
+   stats__f_ac++;
+   STATS__F_SHOW;
+   if (LIKELY(Filter__ok_to_skip_cwr08(thr->filter, a))) {
+      stats__f_sk++;
+      return;
+   }
+   zsm_sapply08__msmcwrite(thr, a);
+}
+
+void zsm_sapply16_f__msmcwrite ( Thr* thr, Addr a ) {
+   stats__f_ac++;
+   STATS__F_SHOW;
+   if (LIKELY(Filter__ok_to_skip_cwr16(thr->filter, a))) {
+      stats__f_sk++;
+      return;
+   }
+   zsm_sapply16__msmcwrite(thr, a);
+}
+
+void zsm_sapply32_f__msmcwrite ( Thr* thr, Addr a ) {
+   stats__f_ac++;
+   STATS__F_SHOW;
+   if (LIKELY(Filter__ok_to_skip_cwr32(thr->filter, a))) {
+      stats__f_sk++;
+      return;
+   }
+   zsm_sapply32__msmcwrite(thr, a);
+}
+
+void zsm_sapply64_f__msmcwrite ( Thr* thr, Addr a ) {
+   stats__f_ac++;
+   STATS__F_SHOW;
+   if (LIKELY(Filter__ok_to_skip_cwr64(thr->filter, a))) {
+      stats__f_sk++;
+      return;
+   }
+   zsm_sapply64__msmcwrite(thr, a);
+}
+
+void zsm_sapplyNN_f__msmcwrite ( Thr* thr, Addr a, SizeT len )
+{
+   /* fast track a couple of common cases */
+   if (len == 4 && aligned32(a)) {
+      zsm_sapply32_f__msmcwrite( thr, a );
+      return;
+   }
+   if (len == 8 && aligned64(a)) {
+      zsm_sapply64_f__msmcwrite( thr, a );
+      return;
+   }
+
+   /* be completely general (but as efficient as possible) */
+   if (len == 0) return;
+
+   if (!aligned16(a) && len >= 1) {
+      zsm_sapply08_f__msmcwrite( thr, a );
+      a += 1;
+      len -= 1;
+      tl_assert(aligned16(a));
+   }
+   if (len == 0) return;
+
+   if (!aligned32(a) && len >= 2) {
+      zsm_sapply16_f__msmcwrite( thr, a );
+      a += 2;
+      len -= 2;
+      tl_assert(aligned32(a));
+   }
+   if (len == 0) return;
+
+   if (!aligned64(a) && len >= 4) {
+      zsm_sapply32_f__msmcwrite( thr, a );
+      a += 4;
+      len -= 4;
+      tl_assert(aligned64(a));
+   }
+   if (len == 0) return;
+
+   if (len >= 8) {
+      tl_assert(aligned64(a));
+      while (len >= 8) {
+         zsm_sapply64_f__msmcwrite( thr, a );
+         a += 8;
+         len -= 8;
+      }
+      tl_assert(aligned64(a));
+   }
+   if (len == 0) return;
+
+   if (len >= 4)
+      tl_assert(aligned32(a));
+   if (len >= 4) {
+      zsm_sapply32_f__msmcwrite( thr, a );
+      a += 4;
+      len -= 4;
+   }
+   if (len == 0) return;
+
+   if (len >= 2)
+      tl_assert(aligned16(a));
+   if (len >= 2) {
+      zsm_sapply16_f__msmcwrite( thr, a );
+      a += 2;
+      len -= 2;
+   }
+   if (len == 0) return;
+
+   if (len >= 1) {
+      zsm_sapply08_f__msmcwrite( thr, a );
+      //a += 1;
+      len -= 1;
+   }
+   tl_assert(len == 0);
+}
+
+void zsm_sapply08_f__msmcread ( Thr* thr, Addr a ) {
+   stats__f_ac++;
+   STATS__F_SHOW;
+   if (LIKELY(Filter__ok_to_skip_crd08(thr->filter, a))) {
+      stats__f_sk++;
+      return;
+   }
+   zsm_sapply08__msmcread(thr, a);
+}
+
+void zsm_sapply16_f__msmcread ( Thr* thr, Addr a ) {
+   stats__f_ac++;
+   STATS__F_SHOW;
+   if (LIKELY(Filter__ok_to_skip_crd16(thr->filter, a))) {
+      stats__f_sk++;
+      return;
+   }
+   zsm_sapply16__msmcread(thr, a);
+}
+
+void zsm_sapply32_f__msmcread ( Thr* thr, Addr a ) {
+   stats__f_ac++;
+   STATS__F_SHOW;
+   if (LIKELY(Filter__ok_to_skip_crd32(thr->filter, a))) {
+      stats__f_sk++;
+      return;
+   }
+   zsm_sapply32__msmcread(thr, a);
+}
+
+void zsm_sapply64_f__msmcread ( Thr* thr, Addr a ) {
+   stats__f_ac++;
+   STATS__F_SHOW;
+   if (LIKELY(Filter__ok_to_skip_crd64(thr->filter, a))) {
+      stats__f_sk++;
+      return;
+   }
+   zsm_sapply64__msmcread(thr, a);
+}
+
+void zsm_sapplyNN_f__msmcread ( Thr* thr, Addr a, SizeT len )
+{
+   /* fast track a couple of common cases */
+   if (len == 4 && aligned32(a)) {
+      zsm_sapply32_f__msmcread( thr, a );
+      return;
+   }
+   if (len == 8 && aligned64(a)) {
+      zsm_sapply64_f__msmcread( thr, a );
+      return;
+   }
+
+   /* be completely general (but as efficient as possible) */
+   if (len == 0) return;
+
+   if (!aligned16(a) && len >= 1) {
+      zsm_sapply08_f__msmcread( thr, a );
+      a += 1;
+      len -= 1;
+      tl_assert(aligned16(a));
+   }
+   if (len == 0) return;
+
+   if (!aligned32(a) && len >= 2) {
+      zsm_sapply16_f__msmcread( thr, a );
+      a += 2;
+      len -= 2;
+      tl_assert(aligned32(a));
+   }
+   if (len == 0) return;
+
+   if (!aligned64(a) && len >= 4) {
+      zsm_sapply32_f__msmcread( thr, a );
+      a += 4;
+      len -= 4;
+      tl_assert(aligned64(a));
+   }
+   if (len == 0) return;
+
+   if (len >= 8) {
+      tl_assert(aligned64(a));
+      while (len >= 8) {
+         zsm_sapply64_f__msmcread( thr, a );
+         a += 8;
+         len -= 8;
+      }
+      tl_assert(aligned64(a));
+   }
+   if (len == 0) return;
+
+   if (len >= 4)
+      tl_assert(aligned32(a));
+   if (len >= 4) {
+      zsm_sapply32_f__msmcread( thr, a );
+      a += 4;
+      len -= 4;
+   }
+   if (len == 0) return;
+
+   if (len >= 2)
+      tl_assert(aligned16(a));
+   if (len >= 2) {
+      zsm_sapply16_f__msmcread( thr, a );
+      a += 2;
+      len -= 2;
+   }
+   if (len == 0) return;
+
+   if (len >= 1) {
+      zsm_sapply08_f__msmcread( thr, a );
+      //a += 1;
+      len -= 1;
+   }
+   tl_assert(len == 0);
+}
+
+void libhb_Thr_resumes ( Thr* thr )
+{
+   if (0) VG_(printf)("resume %p\n", thr);
+   Filter__clear(thr->filter, "libhb_Thr_resumes");
+   /* A kludge, but .. if this thread doesn't have any marker stacks
+      at all, get one right now.  This is easier than figuring out
+      exactly when at thread startup we can and can't take a stack
+      snapshot. */
+   tl_assert(thr->local_Krs_n_stacks);
+   if (VG_(sizeXA)( thr->local_Krs_n_stacks ) == 0)
+      note_local_Kr_n_stack_for(thr);
 }
 
 
@@ -4698,6 +5281,7 @@ Thr* libhb_init (
    return thr;
 }
 
+
 Thr* libhb_create ( Thr* parent )
 {
    /* The child's VTSs are copies of the parent's VTSs, but ticked at
@@ -4708,8 +5292,12 @@ Thr* libhb_create ( Thr* parent )
 
    child->viR = VtsID__tick( parent->viR, child );
    child->viW = VtsID__tick( parent->viW, child );
+   Filter__clear(child->filter, "libhb_create(child)");
    VtsID__rcinc(child->viR);
    VtsID__rcinc(child->viW);
+   /* We need to do note_local_Kr_n_stack_for( child ), but it's too
+      early for that - it may not have a valid TId yet.  So, let
+      libhb_Thr_resumes pick it up the first time the thread runs. */
 
    tl_assert(VtsID__indexAt( child->viR, child ) == 1);
    tl_assert(VtsID__indexAt( child->viW, child ) == 1);
@@ -4719,8 +5307,10 @@ Thr* libhb_create ( Thr* parent )
    VtsID__rcdec(parent->viW);
    parent->viR = VtsID__tick( parent->viR, parent );
    parent->viW = VtsID__tick( parent->viW, parent );
+   Filter__clear(parent->filter, "libhb_create(parent)");
    VtsID__rcinc(parent->viR);
    VtsID__rcinc(parent->viW);
+   note_local_Kr_n_stack_for( parent );
 
    show_thread_state(" child", child);
    show_thread_state("parent", parent);
@@ -4764,23 +5354,23 @@ void libhb_shutdown ( Bool show_stats )
       VG_(printf)("%s","\n");
       VG_(printf)("   cline: %'10lu normalises\n",
                   stats__cline_normalises );
-      VG_(printf)("   cline:  rds 8/4/2/1: %'13lu %'13lu %'13lu %'13lu\n",
-                  stats__cline_read64s,
-                  stats__cline_read32s,
-                  stats__cline_read16s,
-                  stats__cline_read8s );
-      VG_(printf)("   cline:  wrs 8/4/2/1: %'13lu %'13lu %'13lu %'13lu\n",
-                  stats__cline_write64s,
-                  stats__cline_write32s,
-                  stats__cline_write16s,
-                  stats__cline_write8s );
-      VG_(printf)("   cline: sets 8/4/2/1: %'13lu %'13lu %'13lu %'13lu\n",
-                  stats__cline_set64s,
-                  stats__cline_set32s,
-                  stats__cline_set16s,
-                  stats__cline_set8s );
-      VG_(printf)("   cline: get1s %'lu, copy1s %'lu\n",
-                  stats__cline_get8s, stats__cline_copy8s );
+      VG_(printf)("   cline: c rds 8/4/2/1: %'13lu %'13lu %'13lu %'13lu\n",
+                  stats__cline_cread64s,
+                  stats__cline_cread32s,
+                  stats__cline_cread16s,
+                  stats__cline_cread08s );
+      VG_(printf)("   cline: c wrs 8/4/2/1: %'13lu %'13lu %'13lu %'13lu\n",
+                  stats__cline_cwrite64s,
+                  stats__cline_cwrite32s,
+                  stats__cline_cwrite16s,
+                  stats__cline_cwrite08s );
+      VG_(printf)("   cline: s wrs 8/4/2/1: %'13lu %'13lu %'13lu %'13lu\n",
+                  stats__cline_swrite64s,
+                  stats__cline_swrite32s,
+                  stats__cline_swrite16s,
+                  stats__cline_swrite08s );
+      VG_(printf)("   cline: s rd1s %'lu, s copy1s %'lu\n",
+                  stats__cline_sread08s, stats__cline_scopy08s );
       VG_(printf)("   cline:    splits: 8to4 %'12lu    4to2 %'12lu    2to1 %'12lu\n",
                  stats__cline_64to32splits,
                  stats__cline_32to16splits,
@@ -4795,12 +5385,12 @@ void libhb_shutdown ( Bool show_stats )
 
       VG_(printf)("%s","\n");
 
-      VG_(printf)("   libhb: %'13llu msm_read  (%'llu changed)\n",
-                  stats__msm_read, stats__msm_read_change);
-      VG_(printf)("   libhb: %'13llu msm_write (%'llu changed)\n",
-                  stats__msm_write, stats__msm_write_change);
-      VG_(printf)("   libhb: %'13llu getOrd queries (%'llu misses)\n",
-                  stats__getOrdering_queries, stats__getOrdering_misses);
+      VG_(printf)("   libhb: %'13llu msmcread  (%'llu changed)\n",
+                  stats__msmcread, stats__msmcread_change);
+      VG_(printf)("   libhb: %'13llu msmcwrite (%'llu changed)\n",
+                  stats__msmcwrite, stats__msmcwrite_change);
+      VG_(printf)("   libhb: %'13llu cmpLEQ queries (%'llu misses)\n",
+                  stats__cmpLEQ_queries, stats__cmpLEQ_misses);
       VG_(printf)("   libhb: %'13llu join2  queries (%'llu misses)\n",
                   stats__join2_queries, stats__join2_misses);
 
@@ -4855,7 +5445,9 @@ void libhb_shutdown ( Bool show_stats )
 
 void libhb_async_exit ( Thr* thr )
 {
-   /* is there anything we need to do? */
+   tl_assert(thr);
+   thr->still_alive = False;
+   /* XXX free up Filter and local_Krs_n_stacks */
 }
 
 /* Both Segs and SOs point to VTSs.  However, there is no sharing, so
@@ -4886,8 +5478,8 @@ void libhb_so_send ( Thr* thr, SO* so, Bool strong_send )
 
    /* stay sane .. a thread's read-clock must always lead or be the
       same as its write-clock */
-   { POrd ord = VtsID__getOrdering(thr->viW, thr->viR);
-     tl_assert(ord == POrd_EQ || ord == POrd_LT);
+   { Bool leq = VtsID__cmpLEQ(thr->viW, thr->viR);
+     tl_assert(leq);
    }
 
    /* since we're overwriting the VtsIDs in the SO, we need to drop
@@ -4916,8 +5508,12 @@ void libhb_so_send ( Thr* thr, SO* so, Bool strong_send )
    VtsID__rcdec(thr->viW);
    thr->viR = VtsID__tick( thr->viR, thr );
    thr->viW = VtsID__tick( thr->viW, thr );
+   Filter__clear(thr->filter, "libhb_so_send");
+   if (thr->still_alive)
+      note_local_Kr_n_stack_for(thr);
    VtsID__rcinc(thr->viR);
    VtsID__rcinc(thr->viW);
+
    if (strong_send)
       show_thread_state("s-send", thr);
    else
@@ -4939,6 +5535,11 @@ void libhb_so_recv ( Thr* thr, SO* so, Bool strong_recv )
       thr->viR = VtsID__join2( thr->viR, so->viR );
       VtsID__rcinc(thr->viR);
 
+// QQQ
+VtsID__rcdec(thr->viR);
+thr->viR = VtsID__tick( thr->viR, thr );
+VtsID__rcinc(thr->viR);
+
       /* For a strong receive, we also advance the receiver's write
          clock, which means the receive as a whole is essentially
          equivalent to a W-acquisition of a R-W lock. */
@@ -4946,7 +5547,18 @@ void libhb_so_recv ( Thr* thr, SO* so, Bool strong_recv )
          VtsID__rcdec(thr->viW);
          thr->viW = VtsID__join2( thr->viW, so->viW );
          VtsID__rcinc(thr->viW);
+
+
+// QQQ
+VtsID__rcdec(thr->viW);
+thr->viW = VtsID__tick( thr->viW, thr );
+VtsID__rcinc(thr->viW);
+
+
       }
+
+      Filter__clear(thr->filter, "libhb_so_recv");
+      note_local_Kr_n_stack_for(thr);
 
       if (strong_recv) 
          show_thread_state("s-recv", thr);
@@ -4975,32 +5587,31 @@ Bool libhb_so_everSent ( SO* so )
 #define XXX1 0 // 0x67a106c
 #define XXX2 0
 
-static Bool TRACEME(Addr a, SizeT szB) {
+static inline Bool TRACEME(Addr a, SizeT szB) {
    if (XXX1 && a <= XXX1 && XXX1 <= a+szB) return True;
    if (XXX2 && a <= XXX2 && XXX2 <= a+szB) return True;
    return False;
 }
 static void trace ( Thr* thr, Addr a, SizeT szB, HChar* s ) {
-  SVal sv = zsm_read8(a);
+  SVal sv = zsm_sread08(a);
   VG_(printf)("thr %p (%#lx,%lu) %s: 0x%016llx ", thr,a,szB,s,sv);
   show_thread_state("", thr);
   VG_(printf)("%s","\n");
 }
 
-void libhb_range_new ( Thr* thr, Addr a, SizeT szB )
+void libhb_srange_new ( Thr* thr, Addr a, SizeT szB )
 {
    SVal sv = SVal__mkC(thr->viW, thr->viW);
    tl_assert(is_sane_SVal_C(sv));
-   if(TRACEME(a,szB))trace(thr,a,szB,"nw-before");
-   zsm_set_range( a, szB, sv );
-   if(TRACEME(a,szB))trace(thr,a,szB,"nw-after ");
+   if (0 && TRACEME(a,szB)) trace(thr,a,szB,"nw-before");
+   zsm_sset_range( a, szB, sv );
+   Filter__clear_range( thr->filter, a, szB );
+   if (0 && TRACEME(a,szB)) trace(thr,a,szB,"nw-after ");
 }
 
-void libhb_range_noaccess ( Thr* thr, Addr a, SizeT szB )
+void libhb_srange_noaccess ( Thr* thr, Addr a, SizeT szB )
 {
-   if(TRACEME(a,szB))trace(thr,a,szB,"NA-before");
-   zsm_set_range( a, szB, SVal__mkA() );
-   if(TRACEME(a,szB))trace(thr,a,szB,"NA-after ");
+   /* do nothing */
 }
 
 void* libhb_get_Thr_opaque ( Thr* thr ) {
@@ -5013,9 +5624,10 @@ void libhb_set_Thr_opaque ( Thr* thr, void* v ) {
    thr->opaque = v;
 }
 
-void libhb_copy_shadow_state ( Addr dst, Addr src, SizeT len )
+void libhb_copy_shadow_state ( Thr* thr, Addr src, Addr dst, SizeT len )
 {
-   zsm_copy_range(dst, src, len);
+   zsm_scopy_range(src, dst, len);
+   Filter__clear_range( thr->filter, dst, len ); 
 }
 
 void libhb_maybe_GC ( void )

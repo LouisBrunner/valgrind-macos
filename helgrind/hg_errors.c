@@ -174,17 +174,19 @@ typedef
       XErrorTag tag;
       union {
          struct {
-            Addr  data_addr;
-            Int   szB;
-            Bool  isWrite;
-            ExeContext* mb_lastlock;
-            ExeContext* mb_confacc;
-            Thread* thr;
-            Thread* mb_confaccthr;
-            Int   mb_confaccSzB;
-            Bool  mb_confaccIsW;
-            XArray* descr1; /* XArray* of HChar */
-            XArray* descr2; /* XArray* of HChar */
+            Addr        data_addr;
+            Int         szB;
+            Bool        isWrite;
+            Thread*     thr;
+            XArray*     descr1; /* XArray* of HChar */
+            XArray*     descr2; /* XArray* of HChar */
+            Thread*     h1_ct; /* non-NULL means h1 info present */
+            ExeContext* h1_ct_mbsegstartEC;
+            ExeContext* h1_ct_mbsegendEC;
+            Thread*     h2_ct; /* non-NULL means h2 info present */
+            ExeContext* h2_ct_accEC;
+            Int         h2_ct_accSzB;
+            Bool        h2_ct_accIsW;
          } Race;
          struct {
             Thread* thr;  /* doing the unlocking */
@@ -293,30 +295,34 @@ UInt HG_(update_extra) ( Error* err )
       /* And poke around in the conflicting-event map, to see if we
          can rustle up a plausible-looking conflicting memory access
          to show. */
-      { Thr* thrp = NULL;
-        ExeContext* wherep = NULL;
-        Addr  acc_addr = xe->XE.Race.data_addr;
-        Int   acc_szB  = xe->XE.Race.szB;
-        Thr*  acc_thr  = xe->XE.Race.thr->hbthr;
-        Bool  acc_isW  = xe->XE.Race.isWrite;
-        SizeT conf_szB = 0;
-        Bool  conf_isW = False;
-        tl_assert(!xe->XE.Race.mb_confacc);
-        tl_assert(!xe->XE.Race.mb_confaccthr);
-        if (libhb_event_map_lookup(
-               &wherep, &thrp, &conf_szB, &conf_isW,
-               acc_thr, acc_addr, acc_szB, acc_isW )) {
-           Thread* threadp;
-           tl_assert(wherep);
-           tl_assert(thrp);
-           threadp = libhb_get_Thr_opaque( thrp );
-           tl_assert(threadp);
-           xe->XE.Race.mb_confacc = wherep;
-           xe->XE.Race.mb_confaccthr = threadp;
-           xe->XE.Race.mb_confaccSzB = (Int)conf_szB;
-           xe->XE.Race.mb_confaccIsW = conf_isW;
+      if (HG_(clo_history_level) >= 2) { 
+         Thr* thrp = NULL;
+         ExeContext* wherep = NULL;
+         Addr  acc_addr = xe->XE.Race.data_addr;
+         Int   acc_szB  = xe->XE.Race.szB;
+         Thr*  acc_thr  = xe->XE.Race.thr->hbthr;
+         Bool  acc_isW  = xe->XE.Race.isWrite;
+         SizeT conf_szB = 0;
+         Bool  conf_isW = False;
+         tl_assert(!xe->XE.Race.h2_ct_accEC);
+         tl_assert(!xe->XE.Race.h2_ct);
+         if (libhb_event_map_lookup(
+                &wherep, &thrp, &conf_szB, &conf_isW,
+                acc_thr, acc_addr, acc_szB, acc_isW )) {
+            Thread* threadp;
+            tl_assert(wherep);
+            tl_assert(thrp);
+            threadp = libhb_get_Thr_opaque( thrp );
+            tl_assert(threadp);
+            xe->XE.Race.h2_ct_accEC  = wherep;
+            xe->XE.Race.h2_ct        = threadp;
+            xe->XE.Race.h2_ct_accSzB = (Int)conf_szB;
+            xe->XE.Race.h2_ct_accIsW = conf_isW;
         }
       }
+
+      // both NULL or both non-NULL
+      tl_assert( (!!xe->XE.Race.h2_ct) == (!!xe->XE.Race.h2_ct_accEC) );
    }
 
    return sizeof(XError);
@@ -324,7 +330,9 @@ UInt HG_(update_extra) ( Error* err )
 
 void HG_(record_error_Race) ( Thread* thr, 
                               Addr data_addr, Int szB, Bool isWrite,
-                              ExeContext* mb_lastlock )
+                              Thread* h1_ct,
+                              ExeContext* h1_ct_segstart,
+                              ExeContext* h1_ct_mbsegendEC )
 {
    XError xe;
    tl_assert( HG_(is_sane_Thread)(thr) );
@@ -351,7 +359,6 @@ void HG_(record_error_Race) ( Thread* thr,
    xe.XE.Race.data_addr   = data_addr;
    xe.XE.Race.szB         = szB;
    xe.XE.Race.isWrite     = isWrite;
-   xe.XE.Race.mb_lastlock = mb_lastlock;
    xe.XE.Race.thr         = thr;
    tl_assert(isWrite == False || isWrite == True);
    tl_assert(szB == 8 || szB == 4 || szB == 2 || szB == 1);
@@ -366,12 +373,17 @@ void HG_(record_error_Race) ( Thread* thr,
    // not to be discarded.  We'll fill these fields in in 
    // HG_(update_extra) just above, assuming the error ever makes
    // it that far (unlikely).
-   xe.XE.Race.mb_confaccSzB = 0;
-   xe.XE.Race.mb_confaccIsW = False;
-   xe.XE.Race.mb_confacc    = NULL;
-   xe.XE.Race.mb_confaccthr = NULL;
+   xe.XE.Race.h2_ct_accSzB = 0;
+   xe.XE.Race.h2_ct_accIsW = False;
+   xe.XE.Race.h2_ct_accEC  = NULL;
+   xe.XE.Race.h2_ct        = NULL;
    tl_assert( HG_(is_sane_ThreadId)(thr->coretid) );
    tl_assert( thr->coretid != VG_INVALID_THREADID );
+
+   xe.XE.Race.h1_ct              = h1_ct;
+   xe.XE.Race.h1_ct_mbsegstartEC = h1_ct_segstart;
+   xe.XE.Race.h1_ct_mbsegendEC   = h1_ct_mbsegendEC;
+
    VG_(maybe_record_error)( thr->coretid,
                             XE_Race, data_addr, NULL, &xe );
 }
@@ -645,14 +657,15 @@ void HG_(before_pp_Error) ( Error* err )
          break;
       case XE_Race:
          announce_one_thread( xe->XE.Race.thr );
-         if (xe->XE.Race.mb_confaccthr)
-            announce_one_thread( xe->XE.Race.mb_confaccthr );
+         if (xe->XE.Race.h2_ct)
+            announce_one_thread( xe->XE.Race.h2_ct );
+         if (xe->XE.Race.h1_ct)
+            announce_one_thread( xe->XE.Race.h1_ct );
          break;
       default:
          tl_assert(0);
    }
 }
-
 
 void HG_(pp_Error) ( Error* err )
 {
@@ -892,8 +905,8 @@ void HG_(pp_Error) ( Error* err )
       err_ga = VG_(get_error_address)(err);
 
       tl_assert( HG_(is_sane_Thread)( xe->XE.Race.thr ));
-      if (xe->XE.Race.mb_confaccthr)
-         tl_assert( HG_(is_sane_Thread)( xe->XE.Race.mb_confaccthr ));
+      if (xe->XE.Race.h2_ct)
+         tl_assert( HG_(is_sane_Thread)( xe->XE.Race.h2_ct ));
 
       if (xml) {
 
@@ -908,25 +921,39 @@ void HG_(pp_Error) ( Error* err )
          emit( "  </xwhat>\n" );
          VG_(pp_ExeContext)( VG_(get_error_where)(err) );
 
-         if (xe->XE.Race.mb_confacc) {
-            if (xe->XE.Race.mb_confaccthr) {
-               emit( "  <xauxwhat>\n");
-               emit( "    <text>This conflicts with a previous %s of size %d "
-                               "by thread #%d</text>\n",
-                     xe->XE.Race.mb_confaccIsW ? "write" : "read",
-                     xe->XE.Race.mb_confaccSzB,
-                     xe->XE.Race.mb_confaccthr->errmsg_index );
-               emit( "    <hthreadid>%d</hthreadid>\n", 
-                     xe->XE.Race.mb_confaccthr->errmsg_index);
-               emit("  </xauxwhat>\n");
+         if (xe->XE.Race.h2_ct) {
+            tl_assert(xe->XE.Race.h2_ct_accEC); // assured by update_extra
+            emit( "  <xauxwhat>\n");
+            emit( "    <text>This conflicts with a previous %s of size %d "
+                            "by thread #%d</text>\n",
+                  xe->XE.Race.h2_ct_accIsW ? "write" : "read",
+                  xe->XE.Race.h2_ct_accSzB,
+                  xe->XE.Race.h2_ct->errmsg_index );
+            emit( "    <hthreadid>%d</hthreadid>\n", 
+                  xe->XE.Race.h2_ct->errmsg_index);
+            emit("  </xauxwhat>\n");
+            VG_(pp_ExeContext)( xe->XE.Race.h2_ct_accEC );
+         }
+
+         if (xe->XE.Race.h1_ct) {
+            emit( "  <xauxwhat>\n");
+            emit( "    <text>This conflicts with a previous access "
+                  "by thread #%d, after</text>\n",
+                  xe->XE.Race.h1_ct->errmsg_index );
+            emit( "    <hthreadid>%d</hthreadid>\n", 
+                  xe->XE.Race.h1_ct->errmsg_index );
+            emit("  </xauxwhat>\n");
+            if (xe->XE.Race.h1_ct_mbsegstartEC) {
+               VG_(pp_ExeContext)( xe->XE.Race.h1_ct_mbsegstartEC );
             } else {
-               // FIXME: can this ever happen?
-               emit( "  <auxwhat>This conflicts with a previous %s "
-                     "of size %d</auxwhat>\n",
-                     xe->XE.Race.mb_confaccIsW ? "write" : "read",
-                     xe->XE.Race.mb_confaccSzB );
+               emit( "  <auxwhat>(the start of the thread)</auxwhat>\n" );
             }
-            VG_(pp_ExeContext)( xe->XE.Race.mb_confacc );
+            emit( "  <auxwhat>but before</auxwhat>\n" );
+            if (xe->XE.Race.h1_ct_mbsegendEC) {
+               VG_(pp_ExeContext)( xe->XE.Race.h1_ct_mbsegendEC );
+            } else {
+               emit( "  <auxwhat>(the end of the the thread)</auxwhat>\n" );
+            }
          }
 
       } else {
@@ -936,20 +963,32 @@ void HG_(pp_Error) ( Error* err )
                "at %#lx by thread #%d\n",
                what, szB, err_ga, (Int)xe->XE.Race.thr->errmsg_index );
          VG_(pp_ExeContext)( VG_(get_error_where)(err) );
-         if (xe->XE.Race.mb_confacc) {
-            if (xe->XE.Race.mb_confaccthr) {
-               emit( " This conflicts with a previous %s of size %d "
-                     "by thread #%d\n",
-                     xe->XE.Race.mb_confaccIsW ? "write" : "read",
-                     xe->XE.Race.mb_confaccSzB,
-                     xe->XE.Race.mb_confaccthr->errmsg_index );
+
+         if (xe->XE.Race.h2_ct) {
+            tl_assert(xe->XE.Race.h2_ct_accEC); // assured by update_extra
+            emit( " This conflicts with a previous %s of size %d "
+                  "by thread #%d\n",
+                  xe->XE.Race.h2_ct_accIsW ? "write" : "read",
+                  xe->XE.Race.h2_ct_accSzB,
+                  xe->XE.Race.h2_ct->errmsg_index );
+            VG_(pp_ExeContext)( xe->XE.Race.h2_ct_accEC );
+         }
+
+         if (xe->XE.Race.h1_ct) {
+            emit( " This conflicts with a previous access by thread #%d, "
+                  "after\n",
+                  xe->XE.Race.h1_ct->errmsg_index );
+            if (xe->XE.Race.h1_ct_mbsegstartEC) {
+               VG_(pp_ExeContext)( xe->XE.Race.h1_ct_mbsegstartEC );
             } else {
-               // FIXME: can this ever happen?
-               emit( " This conflicts with a previous %s of size %d\n",
-                     xe->XE.Race.mb_confaccIsW ? "write" : "read",
-                     xe->XE.Race.mb_confaccSzB );
+               emit( "   (the start of the thread)\n" );
             }
-            VG_(pp_ExeContext)( xe->XE.Race.mb_confacc );
+            emit( " but before\n" );
+            if (xe->XE.Race.h1_ct_mbsegendEC) {
+               VG_(pp_ExeContext)( xe->XE.Race.h1_ct_mbsegendEC );
+            } else {
+               emit( "   (the end of the the thread)\n" );
+            }
          }
 
       }

@@ -1,0 +1,26 @@
+#! /bin/sh
+
+dir=`dirname $0`
+
+sed "s/^==//" |
+
+perl -p -e "s/ [0-9]{1,7}==//" |
+
+# Have to strip the header ourselves, because the timestamp means the
+# default stripping doesn't work.
+sed "/ Nulgrind.*$/ d" |
+sed "/ Copyright.*$/ d" |
+sed "/ Using Valgrind.*$/ d" |
+
+$dir/filter_stderr |
+
+# At this point there are two lines left which look something like this:
+#   00:00:00:00.000
+#   00:00:00:01.107  
+# We replace the last 5 numbers to allow for a wide range of possible times.
+# It's not a great test, but it will catch some breakage (eg. if the times
+# don't start near 0, as happened in bug 200990, or if the space following
+# the time is omitted, as happend in r10465).
+#
+perl -p -e "s/^00:00:00:\d\d\.\d\d\d $/00:00:00:XX:YYY/"
+

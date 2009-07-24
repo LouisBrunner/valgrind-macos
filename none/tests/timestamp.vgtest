@@ -1,0 +1,3 @@
+prog: timestamp
+vgopts: --time-stamp=yes
+stderr_filter: filter_timestamp

@@ -33,8 +33,12 @@ endif
 DIST_SUBDIRS = x86 amd64 ppc32 ppc64 linux darwin x86-linux .
 
 dist_noinst_SCRIPTS = \
-	filter_cmdline0 filter_linenos \
-	filter_fdleak filter_none_discards filter_stderr
+	filter_cmdline0 \
+	filter_linenos \
+	filter_fdleak \
+	filter_none_discards \
+	filter_stderr \
+	filter_timestamp
 
 noinst_HEADERS = fdleak.h
 
@@ -131,6 +135,7 @@ EXTRA_DIST = \
 	threaded-fork.stderr.exp threaded-fork.stdout.exp threaded-fork.vgtest \
 	threadederrno.stderr.exp threadederrno.stdout.exp \
 	threadederrno.vgtest \
+	timestamp.stderr.exp timestamp.vgtest \
 	tls.vgtest tls.stderr.exp tls.stdout.exp  \
 	vgprintf.stderr.exp vgprintf.stdout.exp vgprintf.vgtest
 
@@ -157,9 +162,15 @@ check_PROGRAMS = \
 	syscall-restart1 syscall-restart2 \
 	syslog \
 	system \
-	threaded-fork threadederrno \
-	tls tls.so tls2.so vgprintf \
-	coolo_sigaction gxx304
+	threaded-fork \
+	threadederrno \
+	timestamp \
+	tls \
+	tls.so \
+	tls2.so \
+	vgprintf \
+	coolo_sigaction \
+	gxx304
 
 # DDD:
 # - manythreads and thread-exits have lots of this:

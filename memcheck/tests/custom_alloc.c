@@ -94,8 +94,8 @@ int main(void)
 
    // Bug 137073: passing 0 to MALLOCLIKE_BLOCK was causing an assertion
    // failure.  Test for this (and likewise for FREELIKE_BLOCK).
-   //VALGRIND_MALLOCLIKE_BLOCK(0,0,0,0);
-   //VALGRIND_FREELIKE_BLOCK(0,0);
+   VALGRIND_MALLOCLIKE_BLOCK(0,0,0,0);
+   VALGRIND_FREELIKE_BLOCK(0,0);
    
    return x;
 

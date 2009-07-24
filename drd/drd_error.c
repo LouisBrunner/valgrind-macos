@@ -424,7 +424,7 @@ static Bool drd_tool_error_recog(Char* const name, Supp* const supp)
 }
 
 static
-Bool drd_tool_error_read_extra(Int fd, Char* buf, Int nBuf, Supp* supp)
+Bool drd_tool_error_read_extra(Int fd, Char** bufpp, SizeT* nBufp, Supp* supp)
 {
    return True;
 }

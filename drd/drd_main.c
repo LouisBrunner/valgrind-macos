@@ -291,6 +291,11 @@ void drd_start_using_mem(const Addr a1, const SizeT len)
    {
       DRD_(trace_mem_access)(a1, len, eStart);
    }
+   
+   if (UNLIKELY(DRD_(running_thread_inside_pthread_create)()))
+   {
+      DRD_(start_suppression)(a1, a1 + len, "pthread_create()");
+   }
 }
 
 static void drd_start_using_mem_w_ecu(const Addr a1,

@@ -191,8 +191,25 @@ static void DRD_(set_joinable)(const pthread_t tid, const int joinable)
                               tid, joinable, 0, 0, 0);
 }
 
+/** Tell DRD that the calling thread is about to enter pthread_create(). */
+static __inline__ void DRD_(entering_pthread_create)(void)
+{
+   int res;
+   VALGRIND_DO_CLIENT_REQUEST(res, 0, VG_USERREQ__ENTERING_PTHREAD_CREATE,
+                              0, 0, 0, 0, 0);
+}
+
+/** Tell DRD that the calling thread has left pthread_create(). */
+static __inline__ void DRD_(left_pthread_create)(void)
+{
+   int res;
+   VALGRIND_DO_CLIENT_REQUEST(res, 0, VG_USERREQ__LEFT_PTHREAD_CREATE,
+                              0, 0, 0, 0, 0);
+}
+
 /**
- * The function called from the thread created by pthread_create().
+ * Entry point for newly created threads. This function is called from the
+ * thread created by pthread_create().
  */
 static void* DRD_(thread_wrapper)(void* arg)
 {
@@ -300,7 +317,8 @@ static void DRD_(set_main_thread_state)(void)
 
 
 /*
- * Note: as of today there exist three different versions of pthread_create:
+ * Note: as of today there exist three different versions of pthread_create
+ * in Linux:
  * - pthread_create@GLIBC_2.0
  * - pthread_create@@GLIBC_2.1
  * - pthread_create@@GLIBC_2.2.5
@@ -360,7 +378,10 @@ PTH_FUNC(int, pthreadZucreateZa, // pthread_create*
    assert(thread_args_p->detachstate == PTHREAD_CREATE_JOINABLE
           || thread_args_p->detachstate == PTHREAD_CREATE_DETACHED);
 
+
+   DRD_(entering_pthread_create)();
    CALL_FN_W_WWWW(ret, fn, thread, attr, DRD_(thread_wrapper), thread_args_p);
+   DRD_(left_pthread_create)();
 
 #if defined(WAIT_UNTIL_CREATED_THREAD_STARTED)
    if (ret == 0)

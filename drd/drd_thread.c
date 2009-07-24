@@ -184,6 +184,7 @@ static DrdThreadId DRD_(VgThreadIdToNewDrdThreadId)(const ThreadId tid)
          DRD_(thread_set_name)(i, "");
          DRD_(g_threadinfo)[i].is_recording_loads  = True;
          DRD_(g_threadinfo)[i].is_recording_stores = True;
+         DRD_(g_threadinfo)[i].pthread_create_nesting_level = 0;
          DRD_(g_threadinfo)[i].synchr_nesting = 0;
          tl_assert(DRD_(g_threadinfo)[i].first == 0);
          tl_assert(DRD_(g_threadinfo)[i].last == 0);
@@ -518,6 +519,28 @@ void DRD_(thread_set_joinable)(const DrdThreadId tid, const Bool joinable)
    tl_assert(DRD_(g_threadinfo)[tid].pt_threadid != INVALID_POSIX_THREADID);
 
    DRD_(g_threadinfo)[tid].detached_posix_thread = ! joinable;
+}
+
+/** Tells DRD that the calling thread is about to enter pthread_create(). */
+void DRD_(thread_entering_pthread_create)(const DrdThreadId tid)
+{
+   tl_assert(0 <= (int)tid && tid < DRD_N_THREADS
+             && tid != DRD_INVALID_THREADID);
+   tl_assert(DRD_(g_threadinfo)[tid].pt_threadid != INVALID_POSIX_THREADID);
+   tl_assert(DRD_(g_threadinfo)[tid].pthread_create_nesting_level >= 0);
+
+   DRD_(g_threadinfo)[tid].pthread_create_nesting_level++;
+}
+
+/** Tells DRD that the calling thread has left pthread_create(). */
+void DRD_(thread_left_pthread_create)(const DrdThreadId tid)
+{
+   tl_assert(0 <= (int)tid && tid < DRD_N_THREADS
+             && tid != DRD_INVALID_THREADID);
+   tl_assert(DRD_(g_threadinfo)[tid].pt_threadid != INVALID_POSIX_THREADID);
+   tl_assert(DRD_(g_threadinfo)[tid].pthread_create_nesting_level > 0);
+
+   DRD_(g_threadinfo)[tid].pthread_create_nesting_level--;
 }
 
 /** Obtain the thread number and the user-assigned thread name. */

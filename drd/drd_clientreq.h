@@ -62,6 +62,13 @@ enum {
    VG_USERREQ__SET_JOINABLE,
    /* args: pthread_t, Bool */
 
+   /* Tell DRD that the calling thread is about to enter pthread_create(). */
+   VG_USERREQ__ENTERING_PTHREAD_CREATE,
+   /* args: (none) */
+   /* Tell DRD that the calling thread has left pthread_create(). */
+   VG_USERREQ__LEFT_PTHREAD_CREATE,
+   /* args: (none) */
+
    /* To notify drd that a thread finished because */
    /* pthread_thread_join() was called on it. */
    VG_USERREQ__POST_THREAD_JOIN,

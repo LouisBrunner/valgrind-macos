@@ -47,7 +47,9 @@
 /* Local function declarations. */
 
 static Bool handle_client_request(ThreadId vg_tid, UWord* arg, UWord* ret);
+#if 0
 static Addr highest_used_stack_address(const ThreadId vg_tid);
+#endif
 
 
 /* Function definitions. */
@@ -175,6 +177,7 @@ static Bool handle_client_request(ThreadId vg_tid, UWord* arg, UWord* ret)
 
    case VG_USERREQ__DRD_SUPPRESS_CURRENT_STACK:
       {
+#if 0
          const Addr topmost_sp = highest_used_stack_address(vg_tid);
 #if 0
          UInt nframes;
@@ -201,6 +204,7 @@ static Bool handle_client_request(ThreadId vg_tid, UWord* arg, UWord* ret)
          DRD_(thread_set_stack_startup)(drd_tid, VG_(get_SP)(vg_tid));
          DRD_(start_suppression)(topmost_sp, VG_(thread_get_stack_max)(vg_tid),
                                  "stack top");
+#endif
          break;
       }
 
@@ -233,6 +237,14 @@ static Bool handle_client_request(ThreadId vg_tid, UWord* arg, UWord* ret)
    case VG_USERREQ__SET_JOINABLE:
       DRD_(thread_set_joinable)(DRD_(PtThreadIdToDrdThreadId)(arg[1]),
                                 (Bool)arg[2]);
+      break;
+
+   case VG_USERREQ__ENTERING_PTHREAD_CREATE:
+      DRD_(thread_entering_pthread_create)(drd_tid);
+      break;
+
+   case VG_USERREQ__LEFT_PTHREAD_CREATE:
+      DRD_(thread_left_pthread_create)(drd_tid);
       break;
 
    case VG_USERREQ__POST_THREAD_JOIN:
@@ -492,6 +504,7 @@ static Bool handle_client_request(ThreadId vg_tid, UWord* arg, UWord* ret)
    return True;
 }
 
+#if 0
 /**
  * Walk the stack up to the highest stack frame, and return the stack pointer
  * of the highest stack frame. It is assumed that there are no more than
@@ -535,3 +548,4 @@ static Addr highest_used_stack_address(const ThreadId vg_tid)
 
    return husa;
 }
+#endif

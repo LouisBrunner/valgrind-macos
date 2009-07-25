@@ -88,6 +88,7 @@ Release 3.5.0 (???)
     DRD thread ID), DRD does now identify threads via a single number (the DRD
     thread ID). Furthermore "first observed at" information is now printed for
     all error messages related to synchronization objects.
+  - Added support for named semaphores (sem_open() and sem_close()).
   - Race conditions between pthread_barrier_wait() and
     pthread_barrier_destroy() calls are now reported.
   - Added support for memory pools through the macro's

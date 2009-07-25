@@ -1,5 +1,5 @@
 #
-# Suppressions for the dynamic loader.
+# Suppression patterns for dyld, the dynamic loader.
 #
 
 {
@@ -9,14 +9,6 @@
    fun:_dyld_register_func_for_add_image
    fun:__keymgr_initializer
    fun:libSystem_initializer
-   fun:_ZN16ImageLoaderMachO18doModInitFunctionsERKN11ImageLoader11LinkContextE
-   fun:_ZN11ImageLoader23recursiveInitializationERKNS_11LinkContextEj
-   fun:_ZN11ImageLoader23recursiveInitializationERKNS_11LinkContextEj
-   fun:_ZN11ImageLoader23recursiveInitializationERKNS_11LinkContextEj
-   fun:_ZN11ImageLoader15runInitializersERKNS_11LinkContextE
-   fun:_ZN4dyld24initializeMainExecutableEv
-   fun:_ZN4dyld5_mainEPK11mach_headermiPPKcS5_S5_
-   fun:_ZN13dyldbootstrap5startEPK11mach_headeriPPKcl
 }
 {
    drd-darwin-dyld-2
@@ -25,14 +17,6 @@
    fun:_dyld_register_func_for_remove_image
    fun:__keymgr_initializer
    fun:libSystem_initializer
-   fun:_ZN16ImageLoaderMachO18doModInitFunctionsERKN11ImageLoader11LinkContextE
-   fun:_ZN11ImageLoader23recursiveInitializationERKNS_11LinkContextEj
-   fun:_ZN11ImageLoader23recursiveInitializationERKNS_11LinkContextEj
-   fun:_ZN11ImageLoader23recursiveInitializationERKNS_11LinkContextEj
-   fun:_ZN11ImageLoader15runInitializersERKNS_11LinkContextE
-   fun:_ZN4dyld24initializeMainExecutableEv
-   fun:_ZN4dyld5_mainEPK11mach_headermiPPKcS5_S5_
-   fun:_ZN13dyldbootstrap5startEPK11mach_headeriPPKcl
 }
 {
    drd-darwin-dyld-3
@@ -40,35 +24,37 @@
    fun:pthread_mutex_init
    fun:_Z24dyldGlobalLockInitializev
    fun:_dyld_initializer
-   fun:_ZN16ImageLoaderMachO18doModInitFunctionsERKN11ImageLoader11LinkContextE
-   fun:_ZN11ImageLoader23recursiveInitializationERKNS_11LinkContextEj
-   fun:_ZN11ImageLoader23recursiveInitializationERKNS_11LinkContextEj
-   fun:_ZN11ImageLoader23recursiveInitializationERKNS_11LinkContextEj
-   fun:_ZN11ImageLoader15runInitializersERKNS_11LinkContextE
-   fun:_ZN4dyld24initializeMainExecutableEv
-   fun:_ZN4dyld5_mainEPK11mach_headermiPPKcS5_S5_
-   fun:_ZN13dyldbootstrap5startEPK11mach_headeriPPKcl
-   fun:_dyld_start
 }
 {
    drd-darwin-dyld-4
    drd:ConflictingAccess
    ...
-   fun:_ZN16ImageLoaderMachO16doBindLazySymbolEPmRKN11ImageLoader11LinkContextE
    fun:_ZN4dyld14bindLazySymbolEPK11mach_headerPm
    fun:stub_binding_helper_interface2
 }
 {
    drd-darwin-dyld-5
    drd:ConflictingAccess
-   fun:_ZNK16ImageLoaderMachO18findExportedSymbolEPKcPKvbPPK11ImageLoader
+   ...
    fun:_ZN16ImageLoaderMachO16resolveUndefinedERKN11ImageLoader11LinkContextEPK11macho_nlistbPPKS0_
-   fun:_ZN16ImageLoaderMachO16doBindLazySymbolEPmRKN11ImageLoader11LinkContextE
+}
+{
+   drd-darwin-dyld-6
+   drd:ConflictingAccess
+   fun:_ZN4dyld8addImageEP11ImageLoader
+}
+{
+   drd-darwin-dyld-7
+   drd:ConflictingAccess
+   fun:_ZNK16ImageLoaderMachO18findExportedSymbolEPKcPKvbPPK11ImageLoader
+   fun:_ZNK11ImageLoader41findExportedSymbolInDependentImagesExceptEPKcPPKS_RS4_S4_S4_
+   fun:_ZNK11ImageLoader42findExportedSymbolInImageOrDependentImagesEPKcRKNS_11LinkContextEPPKS_
+   fun:dlsym
 }
 
 
 #
-# Suppressions for Darwin's C library.
+# Suppression patterns for libc, Darwin's C library.
 #
 
 {
@@ -123,10 +109,37 @@
    fun:__cxa_finalize
    fun:exit
 }
+{
+   drd-darwin-atexit-register
+   drd:ConflictingAccess
+   fun:atexit_register
+}
+{
+   drd-darwin-opendir
+   drd:ConflictingAccess
+   fun:telldir$UNIX2003
+   fun:__opendir2$UNIX2003
+   fun:opendir$UNIX2003
+}
+{
+   drd-darwin-readdir
+   drd:ConflictingAccess
+   fun:readdir
+}
+{
+   drd-darwin-closedir
+   drd:ConflictingAccess
+   fun:closedir$UNIX2003
+}
+{
+   drd:darwin-ptrace
+   drd:ConflictingAccess
+   fun:ptrace
+}
 
 
 #
-# Suppressions for Darwin's POSIX threads implementation.
+# Suppression patterns for libpthread, Darwin's POSIX threads implementation.
 #
 
 {
@@ -185,4 +198,103 @@
    drd:ConflictingAccess
    fun:mig_dealloc_reply_port
    fun:_pthread_free_pthread_onstack
+}
+{
+   drd-darwin-pthread-mach-thread-np
+   drd:ConflictingAccess
+   ...
+   fun:pthread_mach_thread_np
+}
+{
+   drd-darwin-pthread-key-create
+   drd:ConflictingAccess
+   fun:pthread_key_create
+}
+
+
+#
+# Suppression patterns for libobjc.
+#
+
+{
+   drd-darwin-objc-1
+   drd:ConflictingAccess
+   fun:objc_msgSend
+}
+{
+   drd-darwin-objc-2
+   drd:ConflictingAccess
+   fun:_cache_fill
+   fun:log_and_fill_cache
+   fun:_class_lookupMethodAndLoadCache
+}
+{
+   drd-darwin-objc-3
+   drd:ConflictingAccess
+   fun:_cache_getMethod
+   fun:objc_msgSend
+}
+
+
+#
+# Suppression patterns for CoreFoundation.framework.
+#
+
+{
+   drd-darwin-corefoundation-framework-1
+   drd:ConflictingAccess
+   fun:-[NSLock lock]
+}
+{
+   drd-darwin-corefoundation-framework-2
+   drd:ConflictingAccess
+   ...
+   fun:-[NSObject release]
+}
+{
+   drd-darwin-corefoundation-framework-3
+   drd:ConflictingAccess
+   ...
+   fun:-[NSObject(NSObject) autorelease]
+}
+{
+   drd-darwin-corefoundation-framework-4
+   drd:ConflictingAccess
+   ...
+   fun:-[NSObject retain]
+}
+{
+   drd-darwin-corefoundation-framework-5
+   drd:ConflictingAccess
+   ...
+   fun:NSExtraRefCount
+}
+{
+   drd-darwin-corefoundation-framework-6
+   drd:ConflictingAccess
+   ...
+   fun:NSKVONotify
+}
+{
+   drd-darwin-corefoundation-framework-7
+   drd:ConflictingAccess
+   ...
+   fun:CFRunLoop*
+}
+{
+   drd-darwin-corefoundation-framework-8
+   drd:ConflictingAccess
+   fun:CFBag*
+}
+
+
+#
+# Suppression patterns for AudioToolbox.framework.
+#
+
+{
+   drd-darwin-audiotoolbox-framework-1
+   drd:ConflictingAccess
+   obj:*
+   fun:_Z26InitializeSystemSoundPortsv
 }

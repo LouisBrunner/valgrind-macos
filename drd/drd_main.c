@@ -549,10 +549,8 @@ static void drd_thread_finished(ThreadId vg_tid)
 
 static void DRD_(post_clo_init)(void)
 {
-#if defined(VGO_linux)
+#if defined(VGO_linux) || defined(VGO_darwin)
    /* fine */
-#elif defined(VGO_darwin)
-   VG_(printf)("\nWARNING: DRD support for Darwin is still considered as experimental.\n\n");
 #else
    VG_(printf)("\nWARNING: DRD has not yet been tested on this operating system.\n\n");
 #  endif

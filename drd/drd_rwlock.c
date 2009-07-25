@@ -43,8 +43,10 @@ struct rwlock_thread_info
    UWord    tid;                 // DrdThreadId.
    UInt     reader_nesting_count;
    UInt     writer_nesting_count;
-   Segment* last_unlock_segment; // Segment of last unlock call by this thread.
-   Bool     last_lock_was_writer_lock;
+   // Segment of last unlock call by this thread that unlocked a writer lock.
+   Segment* latest_wrlocked_segment;
+   // Segment of last unlock call by this thread that unlocked a reader lock.
+   Segment* latest_rdlocked_segment;
 };
 
 
@@ -151,8 +153,8 @@ DRD_(lookup_or_insert_node)(OSet* oset, const UWord tid)
       q->tid                       = tid;
       q->reader_nesting_count      = 0;
       q->writer_nesting_count      = 0;
-      q->last_unlock_segment       = 0;
-      q->last_lock_was_writer_lock = False;
+      q->latest_wrlocked_segment   = 0;
+      q->latest_rdlocked_segment   = 0;
       VG_(OSetGen_Insert)(oset, q);
    }
    tl_assert(q);
@@ -174,10 +176,18 @@ static void DRD_(rwlock_combine_other_vc)(struct rwlock_info* const p,
    VG_(OSetGen_ResetIter)(p->thread_info);
    for ( ; (q = VG_(OSetGen_Next)(p->thread_info)) != 0; )
    {
-      if (q->tid != tid && (readers_too || q->last_lock_was_writer_lock))
+      if (q->tid != tid)
       {
-         DRD_(vc_combine)(&DRD_(g_threadinfo)[tid].last->vc,
-                          &q->last_unlock_segment->vc);
+         if (q->latest_wrlocked_segment)
+         {
+            DRD_(vc_combine)(&DRD_(g_threadinfo)[tid].last->vc,
+                             &q->latest_wrlocked_segment->vc);
+         }
+         if (readers_too && q->latest_rdlocked_segment)
+         {
+            DRD_(vc_combine)(&DRD_(g_threadinfo)[tid].last->vc,
+                             &q->latest_rdlocked_segment->vc);
+         }
       }
    }
    DRD_(thread_update_conflict_set)(tid, &old_vc);
@@ -229,8 +239,10 @@ static void rwlock_cleanup(struct rwlock_info* p)
    VG_(OSetGen_ResetIter)(p->thread_info);
    for ( ; (q = VG_(OSetGen_Next)(p->thread_info)) != 0; )
    {
-      DRD_(sg_put)(q->last_unlock_segment);
+      DRD_(sg_put)(q->latest_wrlocked_segment);
+      DRD_(sg_put)(q->latest_rdlocked_segment);
    }
+
    VG_(OSetGen_Destroy)(p->thread_info);
 }
 
@@ -243,9 +255,7 @@ DRD_(rwlock_get_or_allocate)(const Addr rwlock)
    tl_assert(offsetof(DrdClientobj, rwlock) == 0);
    p = &(DRD_(clientobj_get)(rwlock, ClientRwlock)->rwlock);
    if (p)
-   {
       return p;
-   }
 
    if (DRD_(clientobj_present)(rwlock, rwlock + 1))
    {
@@ -382,7 +392,6 @@ void DRD_(rwlock_post_rdlock)(const Addr rwlock, const RwLockT rwlock_type,
    q = DRD_(lookup_or_insert_node)(p->thread_info, drd_tid);
    if (++q->reader_nesting_count == 1)
    {
-      q->last_lock_was_writer_lock = False;
       DRD_(thread_new_segment)(drd_tid);
       DRD_(s_rwlock_segment_creation_count)++;
       DRD_(rwlock_combine_other_vc)(p, drd_tid, False);
@@ -413,9 +422,7 @@ void DRD_(rwlock_pre_wrlock)(const Addr rwlock, const RwLockT rwlock_type)
    }
 
    if (p == 0)
-   {
       p = DRD_(rwlock_get_or_allocate)(rwlock);
-   }
 
    tl_assert(p);
 
@@ -459,7 +466,6 @@ void DRD_(rwlock_post_wrlock)(const Addr rwlock, const RwLockT rwlock_type,
                                    DRD_(thread_get_running_tid)());
    tl_assert(q->writer_nesting_count == 0);
    q->writer_nesting_count++;
-   q->last_lock_was_writer_lock = True;
    tl_assert(q->writer_nesting_count == 1);
    DRD_(thread_new_segment)(drd_tid);
    DRD_(s_rwlock_segment_creation_count)++;
@@ -534,6 +540,17 @@ void DRD_(rwlock_pre_unlock)(const Addr rwlock, const RwLockT rwlock_type)
                                     &HEI);
          }
       }
+      if (q->reader_nesting_count == 0 && q->writer_nesting_count == 0)
+      {
+         /*
+          * This pthread_rwlock_unlock() call really unlocks the rwlock. Save
+          * the current vector clock of the thread such that it is available
+          * when this rwlock is locked again.
+          */
+         DRD_(thread_get_latest_segment)(&q->latest_rdlocked_segment, drd_tid);
+         DRD_(thread_new_segment)(drd_tid);
+         DRD_(s_rwlock_segment_creation_count)++;
+      }
    }
    else if (q->writer_nesting_count > 0)
    {
@@ -554,32 +571,30 @@ void DRD_(rwlock_pre_unlock)(const Addr rwlock, const RwLockT rwlock_type)
                                     &HEI);
          }
       }
+      if (q->reader_nesting_count == 0 && q->writer_nesting_count == 0)
+      {
+         /*
+          * This pthread_rwlock_unlock() call really unlocks the rwlock. Save
+          * the current vector clock of the thread such that it is available
+          * when this rwlock is locked again.
+          */
+         DRD_(thread_get_latest_segment)(&q->latest_wrlocked_segment, drd_tid);
+         DRD_(thread_new_segment)(drd_tid);
+         DRD_(s_rwlock_segment_creation_count)++;
+      }
    }
    else
    {
       tl_assert(False);
    }
-
-   if (q->reader_nesting_count == 0 && q->writer_nesting_count == 0)
-   {
-      /* This pthread_rwlock_unlock() call really unlocks the rwlock. Save */
-      /* the current vector clock of the thread such that it is available  */
-      /* when this rwlock is locked again.                                 */
-
-      DRD_(thread_get_latest_segment)(&q->last_unlock_segment, drd_tid);
-      DRD_(thread_new_segment)(drd_tid);
-      DRD_(s_rwlock_segment_creation_count)++;
-   }
 }
 
-/**
- * Call this function when thread tid stops to exist, such that the
- * "last owner" field can be cleared if it still refers to that thread.
- */
+/** Called when thread tid stops to exist. */
 static void rwlock_delete_thread(struct rwlock_info* const p,
                                  const DrdThreadId tid)
 {
    struct rwlock_thread_info* q;
+
    if (DRD_(rwlock_is_locked_by)(p, tid))
    {
       RwlockErrInfo REI = { DRD_(thread_get_running_tid)(), p->a1 };

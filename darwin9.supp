@@ -238,3 +238,27 @@
    fun:pthread_create
 }
 
+
+# I think this suppresses the same race as helgrind-glibc2X-102,
+# that is, the unavoidable startup race on xargs[2] in hg_intercepts.c.
+{
+   helgrind-darwin9-102
+   Helgrind:Race
+   fun:pthread_create
+}
+
+# Thread #9: Bug in libpthread: recursive write lock granted on 
+#            mutex/wrlock which does not support recursion
+#  at 0x18696: pthread_cond_wait* (hg_intercepts.c:655)
+#  by 0x2300B8: pthread_rwlock_wrlock$UNIX2003 (in /usr/lib/libSystem.B.dylib)
+#  by 0x18F41: pthread_rwlock_wrlock* (hg_intercepts.c:1177)
+#
+# no idea what this is about
+#
+{
+   helgrind-darwin9-kludge1
+   Helgrind:Misc
+   fun:pthread_cond_wait*
+   fun:pthread_rwlock_*lock*
+   fun:pthread_rwlock_*lock*
+}

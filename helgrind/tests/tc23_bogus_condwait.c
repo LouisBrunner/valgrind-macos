@@ -1,4 +1,3 @@
-
 /* Expect 5 errors total (4 re cvs, 1 re exiting w/lock.).
    Tests passing bogus mutexes to pthread_cond_wait. */
 #define _GNU_SOURCE 1 /* needed by glibc <= 2.3 for pthread_rwlock_* */
@@ -6,13 +5,14 @@
 #include <assert.h>
 #include <unistd.h>
 #include <semaphore.h>
-
+#include <stdio.h>
 pthread_mutex_t mx[4];
 pthread_cond_t cv;
 pthread_rwlock_t rwl;
-
 sem_t quit_now;
-
+static int my_sem_init(sem_t*, char*, int, unsigned);
+static int my_sem_destroy(sem_t*);
+static int my_sem_wait(sem_t*); static int my_sem_post(sem_t*);
 void* rescue_me ( void* uu )
 {
   /* wait for, and unblock, the first wait */
@@ -31,14 +31,14 @@ void* rescue_me ( void* uu )
   sleep(1);
   pthread_cond_signal( &cv );
 
-  sem_wait( &quit_now );
+  my_sem_wait( &quit_now );
   return NULL;
 }
 
 void* grab_the_lock ( void* uu )
 {
    int r= pthread_mutex_lock( &mx[2] ); assert(!r);
-   sem_wait( &quit_now );
+   my_sem_wait( &quit_now );
    r= pthread_mutex_unlock( &mx[2] ); assert(!r);
    return NULL;
 }
@@ -56,7 +56,7 @@ int main ( void )
   r= pthread_cond_init(&cv, NULL); assert(!r);
   r= pthread_rwlock_init(&rwl, NULL); assert(!r);
 
-  r= sem_init( &quit_now, 0,0 ); assert(!r);
+  r= my_sem_init( &quit_now, "quit_now", 0,0 ); assert(!r);
 
   r= pthread_create( &grabber, NULL, grab_the_lock, NULL ); assert(!r);
   sleep(1); /* let the grabber get there first */
@@ -77,10 +77,75 @@ int main ( void )
   /* mx is held by someone else. */
   r= pthread_cond_wait(&cv, &mx[2] );
 
-  r= sem_post( &quit_now ); assert(!r);
-  r= sem_post( &quit_now ); assert(!r);
+  r= my_sem_post( &quit_now ); assert(!r);
+  r= my_sem_post( &quit_now ); assert(!r);
 
   r= pthread_join( my_rescuer, NULL ); assert(!r);
   r= pthread_join( grabber, NULL ); assert(!r);
+
+  r= my_sem_destroy( &quit_now ); assert(!r);
   return 0;
+}
+
+
+
+
+
+
+
+
+static int my_sem_init (sem_t* s, char* identity, int pshared, unsigned count)
+{
+#if defined(VGO_linux)
+   return sem_init(s, pshared, count);
+#elif defined(VGO_darwin)
+   char name[100];
+   sem_t** fakeptr = (sem_t**)s;
+   assert(sizeof(sem_t) >= sizeof(sem_t*));
+   { int i; for (i = 0; i < sizeof(name); i++) name[i] = 0; }
+   sprintf(name, "anonsem_%s_pid%d", identity, (int)getpid());
+   name[ sizeof(name)-1 ] = 0;
+   if (0) printf("name = %s\n", name);
+   *fakeptr = sem_open(name, O_CREAT, 0600, count);
+   if (*fakeptr == (sem_t*)SEM_FAILED)
+      return -1;
+   else
+      return 0;
+#else
+#  error "Unsupported OS"
+#endif
+}
+
+static int my_sem_destroy ( sem_t* s )
+{
+#if defined(VGO_linux)
+   return sem_destroy(s);
+#elif defined(VGO_darwin)
+   sem_t** fakeptr = (sem_t**)s;
+   return sem_close(*fakeptr);
+#else
+#  error "Unsupported OS"
+#endif
+}
+
+static int my_sem_wait(sem_t* s)
+{
+#if defined(VGO_linux)
+  return sem_wait(s);
+#elif defined(VGO_darwin)
+  return sem_wait( *(sem_t**)s );
+#else
+#  error "Unsupported OS"
+#endif
+}
+
+static int my_sem_post(sem_t* s)
+{
+#if defined(VGO_linux)
+  return sem_post(s);
+#elif defined(VGO_darwin)
+  return sem_post( *(sem_t**)s );
+#else
+#  error "Unsupported OS"
+#endif
 }

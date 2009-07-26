@@ -209,43 +209,43 @@
 # I don't know if they're real problems or false positives (njn).
 
 {
-   crude1
+   helgrind-darwinlibc-nuke-everything-in-dyld
    Helgrind:Race
    obj:/usr/lib/dyld
 }
+
 {
-   crude2
+   helgrind-darwinlibc-nuke-everything-in-libSystem.B.dylib
    Helgrind:Race
    obj:/usr/lib/libSystem.B.dylib
 }
+
 # This would be better as "fun:\?\?\?" but string matching doesn't seem to
 # allow escaping meta-chars.
+#
+# This is very bad .. not only will it hide races in any
+# un-identified piece of code, the ??? also matches any 3-char
+# function name.
 {
-   crude3
+   helgrind-darwinlibc-nuke-everything-in-???-(unknown-code)
    Helgrind:Race
    fun:???
 }
+
 {
-   crude4
+   helgrind-darwinlibc--mythread_wrapper-*thread*start*
    Helgrind:Race
    fun:mythread_wrapper
+   fun:*thread*start*
 }
+
 {
-   crude5
+   helgrind-darwinlibc--pthread_create_WRK-pthread_create
    Helgrind:Race
-   ...
    fun:pthread_create_WRK
    fun:pthread_create
 }
 
-
-# I think this suppresses the same race as helgrind-glibc2X-102,
-# that is, the unavoidable startup race on xargs[2] in hg_intercepts.c.
-{
-   helgrind-darwin9-102
-   Helgrind:Race
-   fun:pthread_create
-}
 
 # Thread #9: Bug in libpthread: recursive write lock granted on 
 #            mutex/wrlock which does not support recursion
@@ -256,7 +256,7 @@
 # no idea what this is about
 #
 {
-   helgrind-darwin9-kludge1
+   helgrind-darwin9--pthread-rwlock-kludgery
    Helgrind:Misc
    fun:pthread_cond_wait*
    fun:pthread_rwlock_*lock*

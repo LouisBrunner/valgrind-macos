@@ -465,9 +465,9 @@ PTH_FUNC(int, pthreadZuonceZa, // pthread_once*
     * Necessary for Darwin. This is not necessary for Linux but doesn't have
     * any known adverse effects.
     */
-   DRD_IGNORE_VAR(once_control);
+   DRD_IGNORE_VAR(*once_control);
    CALL_FN_W_WW(ret, fn, once_control, init_routine);
-   DRD_STOP_IGNORING_VAR(once_control);
+   DRD_STOP_IGNORING_VAR(*once_control);
    return ret;
 }
 

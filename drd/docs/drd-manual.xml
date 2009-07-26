@@ -892,11 +892,12 @@ available macro's and client requests are:
   </listitem>
   <listitem>
     <para>
-      The client
-      request <varname>VG_USERREQ__DRD_FINISH_SUPPRESSION</varname>. Tell DRD
+      The macro <literal>DRD_STOP_IGNORING_VAR(x)</literal> and the
+      corresponding client request
+      <varname>VG_USERREQ__DRD_FINISH_SUPPRESSION</varname>. Tell DRD
       to no longer ignore data races for the address range that was suppressed
-      via the client request
-      <varname>VG_USERREQ__DRD_START_SUPPRESSION</varname>.
+      either via the macro <literal>DRD_IGNORE_VAR(x)</literal> or via the
+      client request <varname>VG_USERREQ__DRD_START_SUPPRESSION</varname>.
     </para>
   </listitem>
   <listitem>

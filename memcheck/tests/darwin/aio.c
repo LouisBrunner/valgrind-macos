@@ -3,7 +3,7 @@
 #include <fcntl.h>
 #include <stdio.h>
 #include <string.h>
-
+#include <unistd.h>
 int x;
 
 int main(void)
@@ -81,6 +81,8 @@ int main(void)
 
    assert( aio_return(&a) < 0 );    // (repeated aio_return();  fails because 
                                     // Valgrind can't find &a in the table)
+
+   unlink("mytmpfile");
 
    return x;
 };

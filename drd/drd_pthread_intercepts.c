@@ -453,6 +453,24 @@ PTH_FUNC(int, pthreadZucancelZa, pthread_t pt_thread)
    return ret;
 }
 
+// pthread_once
+PTH_FUNC(int, pthreadZuonceZa, // pthread_once*
+         pthread_once_t *once_control, void (*init_routine)(void))
+{
+   int ret;
+   OrigFn fn;
+   VALGRIND_GET_ORIG_FN(fn);
+   /*
+    * Ignore any data races triggered by the implementation of pthread_once().
+    * Necessary for Darwin. This is not necessary for Linux but doesn't have
+    * any known adverse effects.
+    */
+   DRD_IGNORE_VAR(once_control);
+   CALL_FN_W_WW(ret, fn, once_control, init_routine);
+   DRD_STOP_IGNORING_VAR(once_control);
+   return ret;
+}
+
 // pthread_mutex_init
 PTH_FUNC(int, pthreadZumutexZuinit,
          pthread_mutex_t *mutex,

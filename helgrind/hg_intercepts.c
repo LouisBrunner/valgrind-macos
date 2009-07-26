@@ -208,6 +208,9 @@ static void* mythread_wrapper ( void* xargsV )
 // darwin: pthread_create
 // darwin: pthread_create_suspended_np (trapped)
 //
+/* ensure this has its own frame, so as to make it more distinguishable
+   in suppressions */
+__attribute__((noinline))
 static int pthread_create_WRK(pthread_t *thread, const pthread_attr_t *attr,
                               void *(*start) (void *), void *arg)
 {
@@ -1400,6 +1403,7 @@ static int pthread_rwlock_unlock_WRK(pthread_rwlock_t* rwlock)
 /*----------------------------------------------------------------*/
 
 #include <semaphore.h>
+#include <fcntl.h>       /* O_CREAT */
 
 #define TRACE_SEM_FNS 0
 

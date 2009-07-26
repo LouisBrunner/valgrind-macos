@@ -15,13 +15,4 @@ Possible data race during write of size 4 at 0x........ by thread #x
  Location 0x........ is 0 bytes inside shared[1],
  declared at hg03_inherit.c:11, in frame #x of thread x
 
-Possible data race during write of size 4 at 0x........ by thread #x
-   at 0x........: t2 (hg03_inherit.c:29)
-   by 0x........: mythread_wrapper (hg_intercepts.c:...)
-   ...
- This conflicts with a previous read of size 4 by thread #x
-   at 0x........: main (hg03_inherit.c:60)
- Location 0x........ is 0 bytes inside shared[1],
- declared at hg03_inherit.c:11, in frame #x of thread x
-
-ERROR SUMMARY: 2 errors from 2 contexts (suppressed: 0 from 0)
+ERROR SUMMARY: 1 errors from 1 contexts (suppressed: 0 from 0)

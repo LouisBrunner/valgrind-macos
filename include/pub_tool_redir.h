@@ -130,16 +130,17 @@
    characters are transformed.
 
      *         -->  Za    (asterisk)
-     +         -->  Zp    (plus)
      :         -->  Zc    (colon)
      .         -->  Zd    (dot)
-     _         -->  Zu    (underscore)
      -         -->  Zh    (hyphen)
+     +         -->  Zp    (plus)
      (space)   -->  Zs    (space)
+     _         -->  Zu    (underscore)
      @         -->  ZA    (at)
-     Z         -->  ZZ    (Z)
+     $         -->  ZD    (dollar)
      (         -->  ZL    (left)
      )         -->  ZR    (right)
+     Z         -->  ZZ    (Z)
 
    Everything else is left unchanged.
 */

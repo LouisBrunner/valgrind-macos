@@ -228,16 +228,17 @@ Bool VG_(maybe_Z_demangle) ( const HChar* sym,
       i++;
       switch (sym[i]) {
          case 'a': EMITSO('*'); break;
-         case 'p': EMITSO('+'); break;
          case 'c': EMITSO(':'); break;
          case 'd': EMITSO('.'); break;
-         case 'u': EMITSO('_'); break;
          case 'h': EMITSO('-'); break;
+         case 'p': EMITSO('+'); break;
          case 's': EMITSO(' '); break;
-         case 'Z': EMITSO('Z'); break;
+         case 'u': EMITSO('_'); break;
          case 'A': EMITSO('@'); break;
+         case 'D': EMITSO('$'); break;
          case 'L': EMITSO('('); break;
          case 'R': EMITSO(')'); break;
+         case 'Z': EMITSO('Z'); break;
          default: error = True; goto out;
       }
       i++;
@@ -276,16 +277,17 @@ Bool VG_(maybe_Z_demangle) ( const HChar* sym,
       i++;
       switch (sym[i]) {
          case 'a': EMITFN('*'); break;
-         case 'p': EMITFN('+'); break;
          case 'c': EMITFN(':'); break;
          case 'd': EMITFN('.'); break;
-         case 'u': EMITFN('_'); break;
          case 'h': EMITFN('-'); break;
+         case 'p': EMITFN('+'); break;
          case 's': EMITFN(' '); break;
-         case 'Z': EMITFN('Z'); break;
+         case 'u': EMITFN('_'); break;
          case 'A': EMITFN('@'); break;
-         case 'L': EMITSO('('); break;
-         case 'R': EMITSO(')'); break;
+         case 'D': EMITFN('$'); break;
+         case 'L': EMITFN('('); break;
+         case 'R': EMITFN(')'); break;
+         case 'Z': EMITFN('Z'); break;
          default: error = True; goto out;
       }
       i++;

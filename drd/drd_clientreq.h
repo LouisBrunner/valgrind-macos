@@ -45,12 +45,8 @@
  * source files.
  */
 enum {
-   /* Ask drd to suppress data race reports on all currently allocated stack */
-   /* data of the current thread.                                            */
-   VG_USERREQ__DRD_SUPPRESS_CURRENT_STACK = VG_USERREQ_TOOL_BASE('D', 'r'),
-   /* args: none */
    /* To ask the drd tool to start a new segment in the specified thread. */
-   VG_USERREQ__DRD_START_NEW_SEGMENT,
+   VG_USERREQ__DRD_START_NEW_SEGMENT = VG_USERREQ_TOOL_BASE('D', 'r'),
    /* args: POSIX thread ID. */
 
    /* Tell drd the pthread_t of the running thread. */

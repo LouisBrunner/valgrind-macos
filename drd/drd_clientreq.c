@@ -47,9 +47,6 @@
 /* Local function declarations. */
 
 static Bool handle_client_request(ThreadId vg_tid, UWord* arg, UWord* ret);
-#if 0
-static Addr highest_used_stack_address(const ThreadId vg_tid);
-#endif
 
 
 /* Function definitions. */
@@ -174,39 +171,6 @@ static Bool handle_client_request(ThreadId vg_tid, UWord* arg, UWord* ret)
          tl_assert(False);
       }
       break;
-
-   case VG_USERREQ__DRD_SUPPRESS_CURRENT_STACK:
-      {
-#if 0
-         const Addr topmost_sp = highest_used_stack_address(vg_tid);
-#if 0
-         UInt nframes;
-         const UInt n_ips = 20;
-         Addr ips[n_ips], sps[n_ips], fps[n_ips];
-         Char desc[128];
-         unsigned i;
-
-         nframes = VG_(get_StackTrace)(vg_tid, ips, n_ips, sps, fps, 0);
-
-         VG_(message)(Vg_DebugMsg, "thread %d: stack 0x%lx - 0x%lx - 0x%lx\n",
-		      drd_tid,
-		      VG_(thread_get_stack_max)(vg_tid)
-		      - VG_(thread_get_stack_size)(vg_tid),
-		      topmost_sp,
-		      VG_(thread_get_stack_max)(vg_tid));
-         for (i = 0; i < nframes; i++)
-         {
-            VG_(describe_IP)(ips[i], desc, sizeof(desc));
-            VG_(message)(Vg_DebugMsg, "[%2d] sp 0x%09lx fp 0x%09lx ip %s\n",
-                         i, sps[i], fps[i], desc);
-         }
-#endif
-         DRD_(thread_set_stack_startup)(drd_tid, VG_(get_SP)(vg_tid));
-         DRD_(start_suppression)(topmost_sp, VG_(thread_get_stack_max)(vg_tid),
-                                 "stack top");
-#endif
-         break;
-      }
 
    case VG_USERREQ__DRD_START_NEW_SEGMENT:
       DRD_(thread_new_segment)(DRD_(PtThreadIdToDrdThreadId)(arg[1]));
@@ -503,49 +467,3 @@ static Bool handle_client_request(ThreadId vg_tid, UWord* arg, UWord* ret)
    *ret = result;
    return True;
 }
-
-#if 0
-/**
- * Walk the stack up to the highest stack frame, and return the stack pointer
- * of the highest stack frame. It is assumed that there are no more than
- * ten stack frames above the current frame. This should be no problem
- * since this function is either called indirectly from the _init() function
- * in vgpreload_drd-*.so or from the thread wrapper for a newly created
- * thread. See also drd_pthread_intercepts.c.
- */
-static Addr highest_used_stack_address(const ThreadId vg_tid)
-{
-   UInt nframes;
-   const UInt n_ips = 10;
-   UInt i;
-   Addr ips[n_ips], sps[n_ips];
-   Addr husa;
-
-   nframes = VG_(get_StackTrace)(vg_tid, ips, n_ips, sps, 0, 0);
-   tl_assert(1 <= nframes && nframes <= n_ips);
-
-   /* A hack to work around VG_(get_StackTrace)()'s behavior that sometimes */
-   /* the topmost stackframes it returns are bogus (this occurs sometimes   */
-   /* at least on amd64, ppc32 and ppc64).                                  */
-
-   husa = sps[0];
-
-   tl_assert(VG_(thread_get_stack_max)(vg_tid)
-             - VG_(thread_get_stack_size)(vg_tid) <= husa
-             && husa < VG_(thread_get_stack_max)(vg_tid));
-
-   for (i = 1; i < nframes; i++)
-   {
-      if (sps[i] == 0)
-         break;
-      if (husa < sps[i] && sps[i] < VG_(thread_get_stack_max)(vg_tid))
-         husa = sps[i];
-   }
-
-   tl_assert(VG_(thread_get_stack_max)(vg_tid)
-             - VG_(thread_get_stack_size)(vg_tid) <= husa
-             && husa < VG_(thread_get_stack_max)(vg_tid));
-
-   return husa;
-}
-#endif

@@ -217,9 +217,6 @@ static void* DRD_(thread_wrapper)(void* arg)
    DrdPosixThreadArgs* arg_ptr;
    DrdPosixThreadArgs arg_copy;
 
-   VALGRIND_DO_CLIENT_REQUEST(res, 0, VG_USERREQ__DRD_SUPPRESS_CURRENT_STACK,
-                              0, 0, 0, 0, 0);
-
    arg_ptr = (DrdPosixThreadArgs*)arg;
    arg_copy = *arg_ptr;
 #if defined(WAIT_UNTIL_CREATED_THREAD_STARTED)
@@ -305,9 +302,6 @@ static void DRD_(check_threading_library)(void)
 static void DRD_(set_main_thread_state)(void)
 {
    int res;
-
-   VALGRIND_DO_CLIENT_REQUEST(res, -1, VG_USERREQ__DRD_SUPPRESS_CURRENT_STACK,
-                              0, 0, 0, 0, 0);
 
    // Make sure that DRD knows about the main thread's POSIX thread ID.
    VALGRIND_DO_CLIENT_REQUEST(res, -1, VG_USERREQ__SET_PTHREADID,

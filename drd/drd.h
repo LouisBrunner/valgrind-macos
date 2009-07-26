@@ -78,6 +78,9 @@
 /** Tell DRD not to complain about data races for the specified variable. */
 #define DRD_IGNORE_VAR(x) DRDCL_(ignore_range)(&(x), sizeof(x))
 
+/** Tell DRD to no longer ignore data races for the specified variable. */
+#define DRD_STOP_IGNORING_VAR(x) DRDCL_(ignore_range)(&(x), sizeof(x))
+
 /**
  * Tell DRD to trace all memory accesses on the specified variable. 
  * until the memory that was allocated for the variable is freed.
@@ -368,6 +371,14 @@ void DRDCL_(ignore_range)(const void* const addr, const int size)
 {
    int res;
    VALGRIND_DO_CLIENT_REQUEST(res, 0, VG_USERREQ__DRD_START_SUPPRESSION,
+                              addr, size, 0, 0, 0);
+}
+
+static __inline__
+void DRDCL_(stop_ignoring_range)(const void* const addr, const int size)
+{
+   int res;
+   VALGRIND_DO_CLIENT_REQUEST(res, 0, VG_USERREQ__DRD_FINISH_SUPPRESSION,
                               addr, size, 0, 0, 0);
 }
 

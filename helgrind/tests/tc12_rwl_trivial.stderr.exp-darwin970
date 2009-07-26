@@ -1,0 +1,16 @@
+
+Thread #x is the program's root thread
+
+Thread #x unlocked a not-locked lock at 0x........
+   at 0x........: pthread_rwlock_unlock* (hg_intercepts.c:...)
+   by 0x........: main (tc12_rwl_trivial.c:35)
+  Lock at 0x........ was first observed
+   at 0x........: pthread_rwlock_init* (hg_intercepts.c:...)
+   by 0x........: main (tc12_rwl_trivial.c:24)
+
+Thread #x's call to pthread_rwlock_unlock failed
+   with error code 22 (EINVAL: Invalid argument)
+   at 0x........: pthread_rwlock_unlock* (hg_intercepts.c:...)
+   by 0x........: main (tc12_rwl_trivial.c:35)
+
+ERROR SUMMARY: 2 errors from 2 contexts (suppressed: 0 from 0)

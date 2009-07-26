@@ -42,6 +42,7 @@ EXTRA_DIST = \
 	tc11_XCHG.vgtest tc11_XCHG.stdout.exp tc11_XCHG.stderr.exp \
 	tc12_rwl_trivial.vgtest tc12_rwl_trivial.stdout.exp \
 		tc12_rwl_trivial.stderr.exp \
+		tc12_rwl_trivial.stderr.exp-darwin970 \
 	tc13_laog1.vgtest tc13_laog1.stdout.exp tc13_laog1.stderr.exp \
 	tc14_laog_dinphils.vgtest tc14_laog_dinphils.stdout.exp \
 		tc14_laog_dinphils.stderr.exp \

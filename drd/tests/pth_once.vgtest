@@ -1,0 +1,5 @@
+prereq: test -e tsan_unittest && ./supported_libpthread
+vgopts: --read-var-info=yes --check-stack-var=yes
+prog: tsan_unittest
+args: 106
+stderr_filter: filter_error_summary

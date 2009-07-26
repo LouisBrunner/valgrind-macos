@@ -780,6 +780,18 @@ VG_(debugLog_vprintf) (
       else                { is_long = True; }
 
       switch (format[i]) {
+         case 'o': /* %o */
+            if (flags & VG_MSG_ALTFORMAT) {
+               ret += 2;
+               send('0',send_arg2);
+            }
+            if (is_long)
+               ret += myvprintf_int64(send, send_arg2, flags, 8, width, False,
+                                      (ULong)(va_arg (vargs, ULong)));
+            else
+               ret += myvprintf_int64(send, send_arg2, flags, 8, width, False,
+                                      (ULong)(va_arg (vargs, UInt)));
+            break;
          case 'd': /* %d */
             flags |= VG_MSG_SIGNED;
             if (is_long)

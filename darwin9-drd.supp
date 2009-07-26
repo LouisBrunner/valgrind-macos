@@ -3,7 +3,7 @@
 #
 
 {
-   drd-darwin-dyld-1
+   drd-darwin-dyld-register-func-for-add-image
    drd:MutexErr
    fun:pthread_mutex_unlock
    fun:_dyld_register_func_for_add_image
@@ -11,7 +11,7 @@
    fun:libSystem_initializer
 }
 {
-   drd-darwin-dyld-2
+   drd-darwin-dyld-register-func-for-remove-image
    drd:MutexErr
    fun:pthread_mutex_unlock
    fun:_dyld_register_func_for_remove_image
@@ -19,32 +19,40 @@
    fun:libSystem_initializer
 }
 {
-   drd-darwin-dyld-3
+   drd-darwin-dyld-GlobalLockInitialize
    drd:MutexErr
    fun:pthread_mutex_init
    fun:_Z24dyldGlobalLockInitializev
    fun:_dyld_initializer
 }
 {
-   drd-darwin-dyld-4
+   drd-darwin-dyld-bindLazySymbol
    drd:ConflictingAccess
    ...
    fun:_ZN4dyld14bindLazySymbolEPK11mach_headerPm
    fun:stub_binding_helper_interface2
 }
 {
-   drd-darwin-dyld-5
+   drd-darwin-dyld-addImage
+   drd:ConflictingAccess
+   fun:_ZN4dyld8addImageEP11ImageLoader
+}
+{
+   dyld-ImageLoader::link
+   drd:ConflictingAccess
+   ...
+   fun:_ZN4dyld18notifyBatchPartialE17dyld_image_statesbPFPKcS0_jPK15dyld_image_infoE
+   fun:_ZN11ImageLoader4linkERKNS_11LinkContextEbbRKNS_10RPathChainE
+   fun:_ZN4dyld4linkEP11ImageLoaderbRKNS0_10RPathChainE
+}
+{
+   drd-darwin-dyld-ImageLoaderMachO::resolveUndefined
    drd:ConflictingAccess
    ...
    fun:_ZN16ImageLoaderMachO16resolveUndefinedERKN11ImageLoader11LinkContextEPK11macho_nlistbPPKS0_
 }
 {
-   drd-darwin-dyld-6
-   drd:ConflictingAccess
-   fun:_ZN4dyld8addImageEP11ImageLoader
-}
-{
-   drd-darwin-dyld-7
+   drd-darwin-dyld-ImageLoaderMachO::findExportedSymbol
    drd:ConflictingAccess
    fun:_ZNK16ImageLoaderMachO18findExportedSymbolEPKcPKvbPPK11ImageLoader
    fun:_ZNK11ImageLoader41findExportedSymbolInDependentImagesExceptEPKcPPKS_RS4_S4_S4_
@@ -216,23 +224,23 @@
 # Suppression patterns for libobjc.
 #
 
+# It looks like the implementation of objc_msgSend uses another means than the
+# POSIX threads library for locking. More information about messaging and
+# objc_msgSend can be found here: 
+# http://devworld.apple.com/documentation/Cocoa/Conceptual/ObjCRuntimeGuide/Articles/ocrtHowMessagingWorks.html
+#
+
 {
-   drd-darwin-objc-1
+   drd-darwin-objc-msgSend
    drd:ConflictingAccess
+   ...
    fun:objc_msgSend
 }
 {
-   drd-darwin-objc-2
+   drd-darwin-objc-msgSend
    drd:ConflictingAccess
-   fun:_cache_fill
-   fun:log_and_fill_cache
-   fun:_class_lookupMethodAndLoadCache
-}
-{
-   drd-darwin-objc-3
-   drd:ConflictingAccess
-   fun:_cache_getMethod
-   fun:objc_msgSend
+   ...
+   fun:objc_sync_enter
 }
 
 
@@ -240,61 +248,213 @@
 # Suppression patterns for CoreFoundation.framework.
 #
 
+# Suppressions for NSObject methods. For more information about the NSObject
+# class, see also
+# http://developer.apple.com/documentation/Cocoa/Reference/Foundation/Classes/NSObject_Class/Reference/Reference.html
 {
-   drd-darwin-corefoundation-framework-1
-   drd:ConflictingAccess
-   fun:-[NSLock lock]
-}
-{
-   drd-darwin-corefoundation-framework-2
+   drd-darwin-NSObject-release
    drd:ConflictingAccess
    ...
    fun:-[NSObject release]
 }
 {
-   drd-darwin-corefoundation-framework-3
+   drd-darwin-NSObject-autorelease-1
    drd:ConflictingAccess
    ...
    fun:-[NSObject(NSObject) autorelease]
 }
 {
-   drd-darwin-corefoundation-framework-4
+   drd-darwin-NSObject-autorelease-2
+   drd:ConflictingAccess
+   fun:__NSAutoreleaseObject
+}
+{
+   drd-darwin-NSObject-NSDeallocateObject
+   drd:ConflictingAccess
+   fun:_internal_object_dispose
+   fun:NSDeallocateObject
+}
+{
+   drd-darwin-NSObject-retain
    drd:ConflictingAccess
    ...
    fun:-[NSObject retain]
 }
 {
-   drd-darwin-corefoundation-framework-5
+   drd-darwin-NSObject-retainCount
+   drd:ConflictingAccess
+   ...
+   fun:-[NSObject retainCount]
+}
+{
+   drd-darwin-NSObject-NSDelayedPerforming-1
+   drd:ConflictingAccess
+   ...
+   fun:+[NSObject(NSDelayedPerforming) cancelPreviousPerformRequestsWithTarget:selector:object:]
+}
+{
+   drd-darwin-NSObject-NSDelayedPerforming-2
+   drd:ConflictingAccess
+   ...
+   fun:-[NSObject(NSDelayedPerforming) performSelector:withObject:afterDelay:]
+}
+{
+   drd-darwin-NSObject-NSDelayedPerforming-3
+   drd:ConflictingAccess
+   ...
+   fun:-[NSObject(NSDelayedPerforming) performSelector:withObject:afterDelay:inModes:]
+}
+{
+   drd-darwin-NSObject-NSDelayedPerforming-4
+   drd:ConflictingAccess
+   ...
+   fun:-[NSObject(NSThreadPerformAdditions) performSelector:onThread:withObject:waitUntilDone:modes:]
+}
+{
+   drd-darwin-NSObject-NSDelayedPerforming-5
+   drd:ConflictingAccess
+   ...
+   fun:-[NSObject(NSThreadPerformAdditions) performSelectorOnMainThread:withObject:waitUntilDone:]
+}
+
+# Suppressions for methods of the NSThread class.
+{
+   drd-NSThread-nq
+   drd:ConflictingAccess
+   ...
+   fun:-[NSThread _nq:]
+}
+
+# Suppressions for methods of the NSLock class. See also
+# http://developer.apple.com/documentation/Cocoa/Reference/Foundation/Classes/NSLock_Class/Reference/Reference.html
+{
+   drd-darwin-NSLock-lock
+   drd:ConflictingAccess
+   fun:-[NSLock lock]
+}
+{
+   drd-darwin-NSLock-unlock
+   drd:ConflictingAccess
+   fun:-[NSLock unlock]
+}
+# Suppressions for NSCondition methods.
+{
+   drd-darwin-NSConditionLock-lock
+   drd:ConflictingAccess
+   fun:-[NSCondition lock]
+}
+# Suppressions for NSConditionLock methods.
+{
+   drd-darwin-NSConditionLock-lockWhenCondition:beforeDate:
+   drd:ConflictingAccess
+   fun:-[NSConditionLock lockWhenCondition:beforeDate:]
+}
+
+
+# NSExtraRefCount returns the specified object's reference count, and
+# NSDecrementExtraRefCountWasZero decrements the specified object's reference
+# count.
+# See also http://developer.apple.com/documentation/Cocoa/Reference/Foundation/Miscellaneous/Foundation_Functions/Reference/reference.html
+{
+   drd-darwin-NSExtraRefCount
    drd:ConflictingAccess
    ...
    fun:NSExtraRefCount
 }
 {
-   drd-darwin-corefoundation-framework-6
+   drd-darwin-NSDecrementExtraRefCountWasZero
+   drd:ConflictingAccess
+   ...
+   fun:NSDecrementExtraRefCountWasZero
+}
+# For more information about key-value observing, see also the NSKeyValueObserving Protocol Reference:
+# http://developer.apple.com/documentation/Cocoa/Reference/Foundation/Protocols/NSKeyValueObserving_Protocol/Reference/Reference.html
+{
+   drd-darwin-NSKVONotify
    drd:ConflictingAccess
    ...
    fun:NSKVONotify
 }
 {
-   drd-darwin-corefoundation-framework-7
+   drd-darwin-NSKVONotifyingEnableForInfoAndKey
    drd:ConflictingAccess
    ...
-   fun:CFRunLoop*
+   fun:_NSKVONotifyingEnableForInfoAndKey
+}
+# From the NSRunLoop class reference:
+# Warning: The NSRunLoop class is generally not considered to be thread-safe
+# and its methods should only be called within the context of the current
+# thread. You should never try to call the methods of an NSRunLoop object
+# running in a different thread, as doing so might cause unexpected results.
+# See also the NSRunLoop Class Reference:
+# http://developer.apple.com/documentation/Cocoa/Reference/Foundation/Classes/NSRunLoop_Class/Reference/Reference.html
+# {
+#    drd-darwin-CFRunLoop*
+#    drd:ConflictingAccess
+#    ...
+#    fun:CFRunLoop*
+# }
+# See also the CFBag reference:
+# http://developer.apple.com/documentation/CoreFoundation/Reference/CFBagRef/Reference/reference.html
+# {
+#    drd-darwin-CFBag*
+#    drd:ConflictingAccess
+#    fun:CFBag*
+# }
+
+# Suppression patterns for the memory allocation functions in WTF.
+{
+   drd-WTF::fastCalloc
+   drd:ConflictingAccess
+   ...
+   fun:_ZN3WTF10fastCallocEmm
 }
 {
-   drd-darwin-corefoundation-framework-8
+   drd-WTF::fastMalloc
    drd:ConflictingAccess
-   fun:CFBag*
+   ...
+   fun:_ZN3WTF10fastMallocEm
+}
+{
+   drd-WTF::fastFree
+   drd:ConflictingAccess
+   ...
+   fun:_ZN3WTF8fastFreeEPv
 }
 
-
-#
-# Suppression patterns for AudioToolbox.framework.
-#
-
+# Suppression patterns for the string manipulation functions in WebCore.
 {
-   drd-darwin-audiotoolbox-framework-1
+   drd-WebCore::StringImpl::init
    drd:ConflictingAccess
-   obj:*
-   fun:_Z26InitializeSystemSoundPortsv
+   ...
+   fun:_ZN7WebCore10StringImpl4initEPKcj
+}
+{
+   drd-WebCore::StringImpl::append
+   drd:ConflictingAccess
+   ...
+   fun:_ZN7WebCore10StringImpl6appendEPKtj
+}
+{
+   drd-WebCore::CString::init
+   drd:ConflictingAccess
+   ...
+   fun:_ZN7WebCore7CString4initEPKcj
+}
+
+# Suppression patterns for the text encoding functions in WebCore.
+{
+   drd-WebCore::WebCore::TextCodec::~TextCodec()
+   drd:ConflictingAccess
+   fun:_ZN7WebCore9TextCodecD2Ev
+}
+{
+   drd-WebCore::TextCodecICU::TextCodecICU
+   drd:ConflictingAccess
+   fun:_ZN7WebCore12TextCodecICUC2ERKNS_12TextEncodingE
+}
+{
+   drd-WebCore::TextCodecICU::~TextCodecICU
+   drd:ConflictingAccess
+   fun:_ZN7WebCore12TextCodecICUD0Ev
 }

@@ -250,7 +250,6 @@ check_PROGRAMS =      \
   pth_detached_sem    \
   pth_inconsistent_cond_wait \
   pth_mutex_reinit    \
-  pth_once            \
   pth_process_shared_mutex   \
   recursive_mutex     \
   rwlock_race         \

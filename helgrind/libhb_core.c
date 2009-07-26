@@ -2885,6 +2885,11 @@ static void note_local_Kr_n_stack_for ( Thr* thr )
    Word       nPresent;
    ULong_n_EC pair;
    tl_assert(thr);
+
+   // We only collect this info at history level 1 (approx)
+   if (HG_(clo_history_level) != 1) 
+      return;
+
    /* This is the scalar Kr for thr. */
    pair.ull = VtsID__indexAt( thr->viR, thr );
    pair.ec  = main_get_EC( thr );

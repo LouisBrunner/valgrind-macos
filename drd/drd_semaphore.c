@@ -261,7 +261,7 @@ struct semaphore_info* DRD_(semaphore_open)(const Addr semaphore,
    {
       VG_(message)(Vg_UserMsg,
                    "[%d] sem_open      0x%lx name %s"
-                   " oflag %ld mode %#lo value %u\n",
+                   " oflag %#lx mode %#lo value %u\n",
                    DRD_(thread_get_running_tid)(),
                    semaphore, name, oflag, mode, value);
    }

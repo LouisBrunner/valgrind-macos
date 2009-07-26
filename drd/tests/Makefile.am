@@ -154,6 +154,8 @@ EXTRA_DIST =                                        \
 	sem_open2.vgtest                            \
 	sem_open3.stderr.exp                        \
 	sem_open3.vgtest                            \
+	sem_open_traced.stderr.exp                  \
+	sem_open_traced.vgtest                      \
 	sigalrm.stderr.exp                          \
 	sigalrm.vgtest                              \
 	tc01_simple_race.stderr.exp                 \

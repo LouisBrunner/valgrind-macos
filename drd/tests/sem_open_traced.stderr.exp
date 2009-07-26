@@ -1,0 +1,9 @@
+
+[1] sem_open      0x........ name drd-sem-open-test oflag 0x........ mode 0600 value 1
+[2] sem_wait      0x........ value 1 -> 0
+[2] sem_post      0x........ value 0 -> 1
+[1] sem_wait      0x........ value 1 -> 0
+[1] sem_post      0x........ value 0 -> 1
+[1] sem_close     0x........ value 1
+
+ERROR SUMMARY: 0 errors from 0 contexts (suppressed: 0 from 0)

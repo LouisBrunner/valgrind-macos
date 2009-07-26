@@ -8,7 +8,7 @@
 #include <pthread.h>
 #include <assert.h>
 
-#ifdef __APPLE__
+#if defined(VGO_darwin)
 #define OS_IS_DARWIN 1
 #else
 #define OS_IS_DARWIN 0

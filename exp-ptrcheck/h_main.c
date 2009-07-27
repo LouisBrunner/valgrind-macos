@@ -2206,6 +2206,8 @@ static void setup_post_syscall_table ( void )
       ADD(0, __NR_creat);
       ADD(0, __NR_dup);
       ADD(0, __NR_dup2);
+      ADD(0, __NR_epoll_create);
+      ADD(0, __NR_epoll_create1);
       ADD(0, __NR_execve); /* presumably we see this because the call failed? */
       ADD(0, __NR_exit); /* hmm, why are we still alive? */
       ADD(0, __NR_exit_group);

@@ -92,8 +92,9 @@ extern Bool VG_(unique_error) ( ThreadId tid, ErrorKind ekind,
    pointer to size_t holding its size;  if the buffer is too small for the
    line, it will be realloc'd until big enough (updating *bufpp and *nBufp in
    the process).  (It will bomb out if the size gets ridiculous).  Skips
-   leading spaces on the line.  Returns True if EOF was hit instead.  */
-extern Bool VG_(get_line) ( Int fd, Char** bufpp, SizeT* nBufp );
+   leading spaces on the line.  Increments lineno with the number of lines
+   read if lineno is non-NULL. Returns True if EOF was hit.  */
+extern Bool VG_(get_line) ( Int fd, Char** bufpp, SizeT* nBufp, Int* lineno );
 
 
 /* ------------------------------------------------------------------ */

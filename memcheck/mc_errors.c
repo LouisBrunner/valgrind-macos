@@ -1390,7 +1390,7 @@ Bool MC_(read_extra_suppression_info) ( Int fd, Char** bufpp,
    Bool eof;
 
    if (VG_(get_supp_kind)(su) == ParamSupp) {
-      eof = VG_(get_line) ( fd, bufpp, nBufp );
+      eof = VG_(get_line) ( fd, bufpp, nBufp, NULL );
       if (eof) return False;
       VG_(set_supp_string)(su, VG_(strdup)("mc.resi.1", *bufpp));
    }

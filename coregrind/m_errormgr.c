@@ -964,7 +964,7 @@ static Int get_char ( Int fd, Char* out_buf )
    return 1;
 }
 
-Bool VG_(get_line) ( Int fd, Char** bufpp, SizeT* nBufp )
+Bool VG_(get_line) ( Int fd, Char** bufpp, SizeT* nBufp, Int* lineno )
 {
    Char* buf  = *bufpp;
    SizeT nBuf = *nBufp;
@@ -975,6 +975,8 @@ Bool VG_(get_line) ( Int fd, Char** bufpp, SizeT* nBufp )
       while (True) {
          n = get_char(fd, &ch);
          if (n == 1 && !VG_(isspace)(ch)) break;
+         if (n == 1 && ch == '\n' && lineno)
+            (*lineno)++;
          if (n <= 0) return True;
       }
 
@@ -984,6 +986,8 @@ Bool VG_(get_line) ( Int fd, Char** bufpp, SizeT* nBufp )
       while (True) {
          n = get_char(fd, &ch);
          if (n <= 0) return False; /* the next call will return True */
+         if (ch == '\n' && lineno)
+            (*lineno)++;
          if (ch == '\n') break;
          if (i > 0 && i == nBuf-1) {
             *nBufp = nBuf = nBuf * 2;
@@ -1103,21 +1107,18 @@ static void load_one_suppressions_file ( Char* filename )
 
       supp->string = supp->extra = NULL;
 
-      eof = VG_(get_line) ( fd, &buf, &nBuf );
-      lineno++;
+      eof = VG_(get_line) ( fd, &buf, &nBuf, &lineno );
       if (eof) break;
 
       if (!VG_STREQ(buf, "{")) BOMB("expected '{' or end-of-file");
       
-      eof = VG_(get_line) ( fd, &buf, &nBuf );
-      lineno++;
+      eof = VG_(get_line) ( fd, &buf, &nBuf, &lineno );
 
       if (eof || VG_STREQ(buf, "}")) BOMB("unexpected '}'");
 
       supp->sname = VG_(arena_strdup)(VG_AR_CORE, "errormgr.losf.2", buf);
 
-      eof = VG_(get_line) ( fd, &buf, &nBuf );
-      lineno++;
+      eof = VG_(get_line) ( fd, &buf, &nBuf, &lineno );
 
       if (eof) BOMB("unexpected end-of-file");
 
@@ -1155,8 +1156,7 @@ static void load_one_suppressions_file ( Char* filename )
       else {
          // Ignore rest of suppression
          while (True) {
-            eof = VG_(get_line) ( fd, &buf, &nBuf );
-            lineno++;
+            eof = VG_(get_line) ( fd, &buf, &nBuf, &lineno );
             if (eof) BOMB("unexpected end-of-file");
             if (VG_STREQ(buf, "}"))
                break;
@@ -1174,8 +1174,7 @@ static void load_one_suppressions_file ( Char* filename )
       /* the main frame-descriptor reading loop */
       i = 0;
       while (True) {
-         eof = VG_(get_line) ( fd, &buf, &nBuf );
-         lineno++;
+         eof = VG_(get_line) ( fd, &buf, &nBuf, &lineno );
          if (eof)
             BOMB("unexpected end-of-file");
          if (VG_STREQ(buf, "}")) {
@@ -1201,8 +1200,7 @@ static void load_one_suppressions_file ( Char* filename )
       // lines and grab the '}'.
       if (!VG_STREQ(buf, "}")) {
          do {
-            eof = VG_(get_line) ( fd, &buf, &nBuf );
-            lineno++;
+            eof = VG_(get_line) ( fd, &buf, &nBuf, &lineno );
          } while (!eof && !VG_STREQ(buf, "}"));
       }
 

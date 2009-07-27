@@ -52,18 +52,17 @@ void DRD_(set_show_conflicting_segments)(const Bool scs)
 }
 
 /**
- * Describe a data address range [a,a+len[ as good as possible, for error
- * messages, putting the result in ai.
+ * Describe the client address a as good as possible, putting the result in ai.
  */
 static
-void describe_malloced_addr(Addr const a, SizeT const len, AddrInfo* const ai)
+void describe_malloced_addr(Addr const a, AddrInfo* const ai)
 {
-   Addr data;
+   Addr heap_block_start;
 
-   if (DRD_(heap_addrinfo)(a, &data, &ai->size, &ai->lastchange))
+   if (DRD_(heap_addrinfo)(a, &heap_block_start, &ai->size, &ai->lastchange))
    {
       ai->akind = eMallocd;
-      ai->rwoffset = a - data;
+      ai->rwoffset = a - heap_block_start;
    }
    else
    {
@@ -72,9 +71,9 @@ void describe_malloced_addr(Addr const a, SizeT const len, AddrInfo* const ai)
 }
 
 /**
- * Report where an object has been observed for the first time. The printed
- * call stack will either refer to a pthread_*_init() or a pthread_*lock()
- * call.
+ * Report where a client synchronization object has been observed for the first
+ * time. The printed call stack will either refer to a pthread_*_init() or a
+ * pthread_*lock() call.
  */
 static void first_observed(const Addr obj)
 {
@@ -133,7 +132,7 @@ void drd_report_data_race(Error* const err, const DataRaceErrInfo* const dri)
    if (descr1 == NULL)
    {
       /* No.  Do Plan B. */
-      describe_malloced_addr(dri->addr, dri->size, &ai);
+      describe_malloced_addr(dri->addr, &ai);
    }
    VG_(message)(Vg_UserMsg,
                 "Conflicting %s by thread %d at 0x%08lx size %ld\n",
@@ -188,18 +187,27 @@ void drd_report_data_race(Error* const err, const DataRaceErrInfo* const dri)
       VG_(deleteXA)(descr1);
 }
 
-static Bool drd_tool_error_eq(VgRes res, Error* e1, Error* e2)
+/**
+ * Compare two error contexts. The core function VG_(maybe_record_error)()
+ * calls this function to compare error contexts such that errors that occur
+ * repeatedly are only printed once. This function is only called by the core 
+ * if the error kind of e1 and e2 matches and if the ExeContext's of e1 and
+ * e2 also match.
+ */
+static Bool drd_compare_error_contexts(VgRes res, Error* e1, Error* e2)
 {
+   /*
+    * Since e1 and e2 have the same error kind and the same error contexts,
+    * no further comparisons have to be performed. Just return true.
+    */
    return True;
 }
 
+/**
+ * Called by the core just before an error message will be printed. Used by
+ * DRD to print the thread number as a preamble.
+ */
 static void drd_tool_error_before_pp(Error* const e)
-{
-   /* No need to do anything; drd_tool_error_pp does all
-      the work. */
-}
-
-static void drd_tool_error_pp(Error* const e)
 {
    static DrdThreadId s_last_tid_printed = 1;
    DrdThreadId* err_extra;
@@ -211,7 +219,11 @@ static void drd_tool_error_pp(Error* const e)
       VG_(umsg)("%s:\n", DRD_(thread_get_name)(*err_extra));
       s_last_tid_printed = *err_extra;
    }
+}
 
+/** Report an error to the user. */
+static void drd_tool_error_pp(Error* const e)
+{
    switch (VG_(get_error_kind)(e))
    {
    case DataRaceErr: {
@@ -390,32 +402,39 @@ static UInt drd_tool_error_update_extra(Error* e)
    }
 }
 
-static Bool drd_tool_error_recog(Char* const name, Supp* const supp)
+/**
+ * Parse suppression name.
+ *
+ * The suppression types recognized by DRD are the same types as the error
+ * types supported by DRD. So try to match the suppression name against the
+ * names of DRD error types.
+ */
+static Bool drd_is_recognized_suppression(Char* const name, Supp* const supp)
 {
-   SuppKind skind = 0;
+   DrdErrorKind skind = 0;
 
    if (VG_(strcmp)(name, STR_DataRaceErr) == 0)
-      ;
+      skind = DataRaceErr;
    else if (VG_(strcmp)(name, STR_MutexErr) == 0)
-      ;
+      skind = MutexErr;
    else if (VG_(strcmp)(name, STR_CondErr) == 0)
-      ;
+      skind = CondErr;
    else if (VG_(strcmp)(name, STR_CondDestrErr) == 0)
-      ;
+      skind = CondDestrErr;
    else if (VG_(strcmp)(name, STR_CondRaceErr) == 0)
-      ;
+      skind = CondRaceErr;
    else if (VG_(strcmp)(name, STR_CondWaitErr) == 0)
-      ;
+      skind = CondWaitErr;
    else if (VG_(strcmp)(name, STR_SemaphoreErr) == 0)
-      ;
+      skind = SemaphoreErr;
    else if (VG_(strcmp)(name, STR_BarrierErr) == 0)
-      ;
+      skind = BarrierErr;
    else if (VG_(strcmp)(name, STR_RwlockErr) == 0)
-      ;
+      skind = RwlockErr;
    else if (VG_(strcmp)(name, STR_HoldtimeErr) == 0)
-      ;
+      skind = HoldtimeErr;
    else if (VG_(strcmp)(name, STR_GenericErr) == 0)
-      ;
+      skind = GenericErr;
    else
       return False;
 
@@ -423,21 +442,30 @@ static Bool drd_tool_error_recog(Char* const name, Supp* const supp)
    return True;
 }
 
+/**
+ * Read additional suppression information from the suppression file.
+ *
+ * None of the suppression patterns recognized by DRD has 'extra' lines
+ * of information in the suppression file, so just return True to indicate
+ * that reading the 'extra' lines succeeded.
+ */
 static
-Bool drd_tool_error_read_extra(Int fd, Char** bufpp, SizeT* nBufp, Supp* supp)
+Bool drd_read_extra_suppression_info(Int fd, Char** bufpp,
+                                     SizeT* nBufp, Supp* supp)
 {
    return True;
 }
 
-static Bool drd_tool_error_matches(Error* const e, Supp* const supp)
+/**
+ * Determine whether or not the types of the given error message and the
+ * given suppression match.
+ */
+static Bool drd_error_matches_suppression(Error* const e, Supp* const supp)
 {
-   switch (VG_(get_supp_kind)(supp))
-   {
-   }
-   return True;
+   return VG_(get_supp_kind)(supp) == VG_(get_error_kind)(e);
 }
 
-static Char* drd_tool_error_name(Error* e)
+static Char* drd_get_error_name(Error* e)
 {
    switch (VG_(get_error_kind)(e))
    {
@@ -458,20 +486,27 @@ static Char* drd_tool_error_name(Error* e)
    return 0;
 }
 
-static void drd_tool_error_print_extra(Error* e)
+/**
+ * Print extra suppression information.
+ *
+ * Invoked while printing a suppression pattern because the user
+ * specified --gen-suppressions=yes or all on the command line. DRD does not
+ * define any 'extra' suppression information.
+ */
+static void drd_print_extra_suppression_info(Error* e)
 { }
 
+/** Tell the Valgrind core about DRD's error handlers. */
 void DRD_(register_error_handlers)(void)
 {
-   // Tool error reporting.
-   VG_(needs_tool_errors)(drd_tool_error_eq,
+   VG_(needs_tool_errors)(drd_compare_error_contexts,
                           drd_tool_error_before_pp,
                           drd_tool_error_pp,
                           False,
                           drd_tool_error_update_extra,
-                          drd_tool_error_recog,
-                          drd_tool_error_read_extra,
-                          drd_tool_error_matches,
-                          drd_tool_error_name,
-                          drd_tool_error_print_extra);
+                          drd_is_recognized_suppression,
+                          drd_read_extra_suppression_info,
+                          drd_error_matches_suppression,
+                          drd_get_error_name,
+                          drd_print_extra_suppression_info);
 }

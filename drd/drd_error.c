@@ -190,7 +190,7 @@ void drd_report_data_race(Error* const err, const DataRaceErrInfo* const dri)
 
 static Bool drd_tool_error_eq(VgRes res, Error* e1, Error* e2)
 {
-   return False;
+   return True;
 }
 
 static void drd_tool_error_before_pp(Error* const e)

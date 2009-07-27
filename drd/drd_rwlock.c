@@ -331,6 +331,9 @@ struct rwlock_info* DRD_(rwlock_pre_init)(const Addr rwlock,
    p = DRD_(rwlock_get)(rwlock);
 
    if (p)
+	drd_rwlock_check_type(p, rwlock_type);
+
+   if (p)
    {
       const ThreadId vg_tid = VG_(get_running_tid)();
       RwlockErrInfo REI = { DRD_(thread_get_running_tid)(), p->a1 };
@@ -363,6 +366,8 @@ void DRD_(rwlock_post_destroy)(const Addr rwlock, const RwLockT rwlock_type)
                               &GEI);
       return;
    }
+
+   drd_rwlock_check_type(p, rwlock_type);
 
    DRD_(clientobj_remove)(rwlock, ClientRwlock);
 }
@@ -545,6 +550,9 @@ void DRD_(rwlock_pre_unlock)(const Addr rwlock, const RwLockT rwlock_type)
                               &GEI);
       return;
    }
+
+   drd_rwlock_check_type(p, rwlock_type);
+
    if (! DRD_(rwlock_is_locked_by)(p, drd_tid))
    {
       RwlockErrInfo REI = { DRD_(thread_get_running_tid)(), p->a1 };

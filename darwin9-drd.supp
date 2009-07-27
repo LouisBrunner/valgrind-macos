@@ -191,6 +191,12 @@
 }
 {
    drd-darwin-pthread-detach
+   drd:ConflictingAccess
+   ...
+   fun:pthread_detach
+}
+{
+   drd-darwin-pthread-detach
    drd:CondRaceErr
    ...
    fun:pthread_detach

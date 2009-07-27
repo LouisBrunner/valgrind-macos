@@ -1,2 +1,2 @@
-prereq: ./supported_libpthread && ./supported_sem_init
+prereq: ./supported_libpthread
 prog: ../../helgrind/tests/tc17_sembar

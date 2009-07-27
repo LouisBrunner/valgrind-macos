@@ -1212,7 +1212,9 @@ static DiSym* prefersym ( struct _DebugInfo* di, DiSym* a, DiSym* b )
 static void canonicaliseSymtab ( struct _DebugInfo* di )
 {
    Word  i, j, n_merged, n_truncated;
-   Addr  s1, s2, e1, e2;
+   Addr  s1, s2, e1, e2, p1, p2;
+   UChar *n1, *n2;
+   Bool t1, t2;
 
 #  define SWAP(ty,aa,bb) \
       do { ty tt = (aa); (aa) = (bb); (bb) = tt; } while (0)
@@ -1272,15 +1274,22 @@ static void canonicaliseSymtab ( struct _DebugInfo* di )
 
       /* Truncate one or the other. */
       s1 = di->symtab[i].addr;
-      s2 = di->symtab[i+1].addr;
       e1 = s1 + di->symtab[i].size - 1;
+      p1 = di->symtab[i].tocptr;
+      n1 = di->symtab[i].name;
+      t1 = di->symtab[i].isText;
+      s2 = di->symtab[i+1].addr;
       e2 = s2 + di->symtab[i+1].size - 1;
+      p2 = di->symtab[i+1].tocptr;
+      n2 = di->symtab[i+1].name;
+      t2 = di->symtab[i+1].isText;
       if (s1 < s2) {
          e1 = s2-1;
       } else {
          vg_assert(s1 == s2);
          if (e1 > e2) { 
-            s1 = e2+1; SWAP(Addr,s1,s2); SWAP(Addr,e1,e2); 
+            s1 = e2+1; SWAP(Addr,s1,s2); SWAP(Addr,e1,e2); SWAP(Addr,p1,p2);
+                       SWAP(UChar *,n1,n2); SWAP(Bool,t1,t2);
          } else 
          if (e1 < e2) {
             s2 = e1+1;
@@ -1290,9 +1299,15 @@ static void canonicaliseSymtab ( struct _DebugInfo* di )
 	 }
       }
       di->symtab[i].addr   = s1;
-      di->symtab[i+1].addr = s2;
       di->symtab[i].size   = e1 - s1 + 1;
-      di->symtab[i+1].size = e2 - s2 + 1;
+      di->symtab[i].tocptr = p1;
+      di->symtab[i].name   = n1;
+      di->symtab[i].isText = t1;
+      di->symtab[i+1].addr   = s2;
+      di->symtab[i+1].size   = e2 - s2 + 1;
+      di->symtab[i+1].tocptr = p2;
+      di->symtab[i+1].name   = n2;
+      di->symtab[i+1].isText = t2;
       vg_assert(s1 <= s2);
       vg_assert(di->symtab[i].size > 0);
       vg_assert(di->symtab[i+1].size > 0);

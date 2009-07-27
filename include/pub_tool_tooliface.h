@@ -276,9 +276,10 @@ extern void VG_(needs_core_errors) ( void );
 
 /* Want to report errors from tool?  This implies use of suppressions, too. */
 extern void VG_(needs_tool_errors) (
-   // Identify if two errors are equal, or equal enough.  `res' indicates how
-   // close is "close enough".  `res' should be passed on as necessary, eg. if
-   // the Error's `extra' part contains an ExeContext, `res' should be
+   // Identify if two errors are equal, or close enough.  This function is
+   // only called if e1 and e2 will have the same error kind.  `res' indicates
+   // how close is "close enough".  `res' should be passed on as necessary,
+   // eg. if the Error's `extra' part contains an ExeContext, `res' should be
    // passed to VG_(eq_ExeContext)() if the ExeContexts are considered.  Other
    // than that, probably don't worry about it unless you have lots of very
    // similar errors occurring.

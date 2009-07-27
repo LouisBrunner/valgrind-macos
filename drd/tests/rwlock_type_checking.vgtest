@@ -1,0 +1,4 @@
+prereq: test -e rwlock_type_checking && ./supported_libpthread
+vgopts: --read-var-info=yes --check-stack-var=yes --show-confl-seg=no
+prog: rwlock_type_checking
+stderr_filter: filter_stderr

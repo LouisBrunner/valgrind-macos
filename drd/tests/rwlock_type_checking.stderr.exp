@@ -1,0 +1,31 @@
+
+Attempt to use a user-defined rwlock as a POSIX rwlock: rwlock 0x.........
+   at 0x........: pthread_rwlock_rdlock* (drd_pthread_intercepts.c:?)
+   by 0x........: main (rwlock_type_checking.c:?)
+rwlock 0x........ was first observed at:
+   at 0x........: vgDrdCl_annotate_rwlock (drd.h:?)
+   by 0x........: main (rwlock_type_checking.c:?)
+
+Attempt to use a POSIX rwlock as a user-defined rwlock: rwlock 0x.........
+   at 0x........: vgDrdCl_annotate_rwlock (drd.h:?)
+   by 0x........: main (rwlock_type_checking.c:?)
+rwlock 0x........ was first observed at:
+   at 0x........: pthread_rwlock_init* (drd_pthread_intercepts.c:?)
+   by 0x........: main (rwlock_type_checking.c:?)
+
+Destroying locked rwlock: rwlock 0x.........
+   at 0x........: pthread_rwlock_destroy* (drd_pthread_intercepts.c:?)
+   by 0x........: main (rwlock_type_checking.c:?)
+rwlock 0x........ was first observed at:
+   at 0x........: pthread_rwlock_init* (drd_pthread_intercepts.c:?)
+   by 0x........: main (rwlock_type_checking.c:?)
+
+Destroying locked rwlock: rwlock 0x.........
+   at 0x........: vgDrdCl_annotate_rwlock (drd.h:?)
+   by 0x........: main (rwlock_type_checking.c:?)
+rwlock 0x........ was first observed at:
+   at 0x........: vgDrdCl_annotate_rwlock (drd.h:?)
+   by 0x........: main (rwlock_type_checking.c:?)
+Finished.
+
+ERROR SUMMARY: 4 errors from 4 contexts (suppressed: 0 from 0)

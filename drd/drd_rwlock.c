@@ -194,9 +194,40 @@ static void DRD_(rwlock_combine_other_vc)(struct rwlock_info* const p,
    DRD_(vc_cleanup)(&old_vc);
 }
 
+/**
+ * Compare the type of the rwlock specified at initialization time with
+ * the type passed as an argument, and complain if these two types do not
+ * match.
+ */
+static Bool drd_rwlock_check_type(struct rwlock_info* const p,
+                                  const RwLockT rwlock_type)
+{
+   tl_assert(p);
+   /* The code below has to be updated if additional rwlock types are added. */
+   tl_assert(rwlock_type == pthread_rwlock || rwlock_type == user_rwlock);
+   tl_assert(p->rwlock_type == pthread_rwlock || p->rwlock_type == user_rwlock);
+
+   if (p->rwlock_type == rwlock_type)
+      return True;
+
+   {
+      RwlockErrInfo REI = { DRD_(thread_get_running_tid)(), p->a1 };
+      VG_(maybe_record_error)
+         (VG_(get_running_tid)(),
+          RwlockErr,
+          VG_(get_IP)(VG_(get_running_tid)()),
+          rwlock_type == pthread_rwlock
+          ? "Attempt to use a user-defined rwlock as a POSIX rwlock"
+          : "Attempt to use a POSIX rwlock as a user-defined rwlock",
+          &REI);
+   }
+   return False;
+}
+
 /** Initialize the rwlock_info data structure *p. */
 static
-void DRD_(rwlock_initialize)(struct rwlock_info* const p, const Addr rwlock)
+void DRD_(rwlock_initialize)(struct rwlock_info* const p, const Addr rwlock,
+                             const RwLockT rwlock_type)
 {
    tl_assert(rwlock != 0);
    tl_assert(p->a1 == rwlock);
@@ -205,6 +236,7 @@ void DRD_(rwlock_initialize)(struct rwlock_info* const p, const Addr rwlock)
    p->cleanup         = (void(*)(DrdClientobj*))rwlock_cleanup;
    p->delete_thread
       = (void(*)(DrdClientobj*, DrdThreadId))rwlock_delete_thread;
+   p->rwlock_type     = rwlock_type;
    p->thread_info     = VG_(OSetGen_Create)(
       0, 0, VG_(malloc), "drd.rwlock.ri.1", VG_(free));
    p->acquiry_time_ms = 0;
@@ -248,14 +280,17 @@ static void rwlock_cleanup(struct rwlock_info* p)
 
 static
 struct rwlock_info*
-DRD_(rwlock_get_or_allocate)(const Addr rwlock)
+DRD_(rwlock_get_or_allocate)(const Addr rwlock, const RwLockT rwlock_type)
 {
    struct rwlock_info* p;
 
    tl_assert(offsetof(DrdClientobj, rwlock) == 0);
    p = &(DRD_(clientobj_get)(rwlock, ClientRwlock)->rwlock);
    if (p)
+   {
+      drd_rwlock_check_type(p, rwlock_type);
       return p;
+   }
 
    if (DRD_(clientobj_present)(rwlock, rwlock + 1))
    {
@@ -269,7 +304,7 @@ DRD_(rwlock_get_or_allocate)(const Addr rwlock)
    }
 
    p = &(DRD_(clientobj_add)(rwlock, ClientRwlock)->rwlock);
-   DRD_(rwlock_initialize)(p, rwlock);
+   DRD_(rwlock_initialize)(p, rwlock, rwlock_type);
    return p;
 }
 
@@ -307,7 +342,7 @@ struct rwlock_info* DRD_(rwlock_pre_init)(const Addr rwlock,
       return p;
    }
 
-   p = DRD_(rwlock_get_or_allocate)(rwlock);
+   p = DRD_(rwlock_get_or_allocate)(rwlock, rwlock_type);
 
    return p;
 }
@@ -350,7 +385,7 @@ void DRD_(rwlock_pre_rdlock)(const Addr rwlock, const RwLockT rwlock_type)
                    rwlock);
    }
 
-   p = DRD_(rwlock_get_or_allocate)(rwlock);
+   p = DRD_(rwlock_get_or_allocate)(rwlock, rwlock_type);
    tl_assert(p);
 
    if (DRD_(rwlock_is_wrlocked_by)(p, DRD_(thread_get_running_tid)()))
@@ -422,7 +457,7 @@ void DRD_(rwlock_pre_wrlock)(const Addr rwlock, const RwLockT rwlock_type)
    }
 
    if (p == 0)
-      p = DRD_(rwlock_get_or_allocate)(rwlock);
+      p = DRD_(rwlock_get_or_allocate)(rwlock, rwlock_type);
 
    tl_assert(p);
 

@@ -144,6 +144,8 @@ EXTRA_DIST =                                        \
 	rwlock_race.vgtest                          \
 	rwlock_test.stderr.exp	                    \
 	rwlock_test.vgtest                          \
+	rwlock_type_checking.stderr.exp	            \
+	rwlock_type_checking.vgtest                 \
 	sem_as_mutex.stderr.exp                     \
 	sem_as_mutex.vgtest                         \
 	sem_as_mutex2.stderr.exp                    \
@@ -254,6 +256,7 @@ check_PROGRAMS =      \
   recursive_mutex     \
   rwlock_race         \
   rwlock_test         \
+  rwlock_type_checking \
   sem_as_mutex        \
   sem_open            \
   sigalrm             \

@@ -124,6 +124,7 @@ struct rwlock_info
    void        (*cleanup)(union drd_clientobj*);
    void        (*delete_thread)(union drd_clientobj*, DrdThreadId);
    ExeContext* first_observed_at;
+   RwLockT     rwlock_type;
    OSet*       thread_info;
    ULong       acquiry_time_ms;
    ExeContext* acquired_at;

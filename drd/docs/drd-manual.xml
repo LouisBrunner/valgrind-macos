@@ -147,7 +147,8 @@ The POSIX threads programming model is based on the following abstractions:
       Synchronization objects and operations on these synchronization
       objects. The following types of synchronization objects have been
       defined in the POSIX threads standard: mutexes, condition variables,
-      semaphores, reader-writer locks, barriers and spinlocks.
+      semaphores, reader-writer synchronization objects, barriers and
+      spinlocks.
     </para>
   </listitem>
 </itemizedlist>
@@ -699,9 +700,9 @@ The above report has the following meaning:
 <title>Detected Errors: Lock Contention</title>
 
 <para>
-Threads must be able to make progress without being blocked for too
-long by other threads. Sometimes a thread has to wait until a mutex or
-reader-writer lock is unlocked by another thread. This is called
+Threads must be able to make progress without being blocked for too long by
+other threads. Sometimes a thread has to wait until a mutex or reader-writer
+synchronization object is unlocked by another thread. This is called
 <emphasis>lock contention</emphasis>.
 </para>
 
@@ -800,18 +801,33 @@ output reports that the lock acquired at line 51 in source file
     </listitem>
     <listitem>
       <para>
-        Destruction or deallocation of a locked reader-writer lock.
+        Destruction or deallocation of a locked reader-writer synchronization
+        object.
       </para>
     </listitem>
     <listitem>
       <para>
-        Attempts to unlock a reader-writer lock that was not locked by
-        the calling thread.
+        Attempts to unlock a reader-writer synchronization object that was not
+        locked by the calling thread.
       </para>
     </listitem>
     <listitem>
       <para>
-        Attempts to recursively lock a reader-writer lock exclusively.
+        Attempts to recursively lock a reader-writer synchronization object
+        exclusively.
+      </para>
+    </listitem>
+    <listitem>
+      <para>
+        Attempts to pass the address of a user-defined reader-writer
+        synchronization object to a POSIX threads function.
+      </para>
+    </listitem>
+    <listitem>
+      <para>
+        Attempts to pass the address of a POSIX reader-writer synchronization
+        object to one of the annotations for user-defined reader-writer
+        synchronization objects.
       </para>
     </listitem>
     <listitem>
@@ -833,9 +849,8 @@ output reports that the lock acquired at line 51 in source file
     </listitem>
     <listitem>
       <para>
-        Exiting a thread without first unlocking the spinlocks,
-        mutexes or reader-writer locks that were locked by that
-        thread.
+        Exiting a thread without first unlocking the spinlocks, mutexes or
+        reader-writer synchronization objects that were locked by that thread.
       </para>
     </listitem>
   </itemizedlist>
@@ -1059,6 +1074,12 @@ available macro's and client requests are:
     </para>
   </listitem>
 </itemizedlist>
+</para>
+
+<para>
+For an example of how to use the annotations for user-defined reader-writer
+synchronization objects, see
+also <literal>drd/tests/annotate_rwlock.c</literal>.
 </para>
 
 <para>

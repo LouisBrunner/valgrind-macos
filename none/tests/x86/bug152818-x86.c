@@ -60,6 +60,7 @@ static void pp_eflags (unsigned int _8bits_eflags)
     "lahf       \t\n"                       \
     "movl %%eax, %1 \t\n"                       \
     "movl %%esi, %2 \t\n"                       \
+    "cld \t\n" \
     : "=d"(out_eax),                        \
       "=b"(out_eflags),                       \
       "=r"(out_esi)                         \

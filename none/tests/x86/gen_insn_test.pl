@@ -809,7 +809,8 @@ while (<>)
     }
 
     print qq|         \"frstor %$stateargnum\\n\"\n|;
-
+    print qq|         \"cld\\n\"\n|;
+    
     print qq|         :|;
 
     $prefix = " ";

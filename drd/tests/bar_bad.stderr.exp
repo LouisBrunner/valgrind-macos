@@ -1,4 +1,5 @@
 
+
 initialise a barrier with zero count
 pthread_barrier_init: 'count' argument is zero: barrier 0x........
    at 0x........: pthread_barrier_init (drd_pthread_intercepts.c:?)
@@ -43,3 +44,5 @@ Destruction of barrier that is being waited upon: barrier 0x........
 barrier 0x........ was first observed at:
    at 0x........: pthread_barrier_init (drd_pthread_intercepts.c:?)
    by 0x........: main (bar_bad.c:?)
+
+ERROR SUMMARY: 7 errors from 6 contexts (suppressed: 0 from 0)

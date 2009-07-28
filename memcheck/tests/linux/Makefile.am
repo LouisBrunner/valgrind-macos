@@ -6,6 +6,10 @@ dist_noinst_SCRIPTS = filter_stderr
 EXTRA_DIST = \
 	brk.stderr.exp brk.vgtest \
 	capget capget.stderr.exp \
+	lsframe1.vgtest lsframe1.stdout.exp lsframe1.stderr.exp \
+	lsframe2.vgtest lsframe2.stdout.exp lsframe2.stderr.exp \
+	stack_changes.stderr.exp stack_changes.stdout.exp \
+	    stack_changes.stdout.exp2 stack_changes.vgtest \
 	stack_switch.stderr.exp stack_switch.vgtest \
 	timerfd-syscall timerfd-syscall.stderr.exp \
 	with-space.stderr.exp with-space.stdout.exp with-space.vgtest
@@ -13,6 +17,9 @@ EXTRA_DIST = \
 check_PROGRAMS = \
 	brk \
 	capget \
+	lsframe1 \
+	lsframe2 \
+	stack_changes \
 	stack_switch \
 	timerfd-syscall
 

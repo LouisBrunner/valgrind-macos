@@ -84,8 +84,6 @@ EXTRA_DIST = \
 	long_namespace_xml.vgtest long_namespace_xml.stdout.exp \
 	long_namespace_xml.stderr.exp \
 	long-supps.vgtest long-supps.stderr.exp long-supps.supp \
-	lsframe1.vgtest lsframe1.stdout.exp lsframe1.stderr.exp \
-	lsframe2.vgtest lsframe2.stdout.exp lsframe2.stderr.exp \
 	mallinfo.stderr.exp mallinfo.vgtest \
 	malloc_free_fill.vgtest \
 	malloc_free_fill.stderr.exp \
@@ -147,8 +145,6 @@ EXTRA_DIST = \
 	sigkill.stderr.exp sigkill.stderr.exp-darwin sigkill.vgtest \
 	signal2.stderr.exp signal2.stdout.exp signal2.vgtest \
 	sigprocmask.stderr.exp sigprocmask.stderr.exp2 sigprocmask.vgtest \
-	stack_changes.stderr.exp stack_changes.stdout.exp \
-	stack_changes.stdout.exp2 stack_changes.vgtest \
 	strchr.stderr.exp strchr.stderr.exp2 strchr.stderr.exp-darwin \
 	    strchr.vgtest \
 	str_tester.stderr.exp str_tester.vgtest \
@@ -209,8 +205,6 @@ check_PROGRAMS = \
 	linux-syscalls-2007 \
 	long_namespace_xml \
 	long-supps \
-	lsframe1 \
-	lsframe2 \
 	mallinfo \
 	malloc_free_fill \
 	malloc_usable malloc1 malloc2 malloc3 manuel1 manuel2 manuel3 \
@@ -230,7 +224,8 @@ check_PROGRAMS = \
 	realloc1 realloc2 realloc3 \
 	sh-mem sh-mem-random \
 	sigaltstack signal2 sigprocmask sigkill \
-	stack_changes strchr str_tester \
+	strchr \
+	str_tester \
 	supp_unknown supp1 supp2 suppfree \
 	trivialleak \
 	unit_libcbase unit_oset \

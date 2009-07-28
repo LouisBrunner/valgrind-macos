@@ -69,8 +69,16 @@ function run_test {
     --drd-stats=yes "$@" -p${psep}${p} "${test_args}"
 
   p=4
-  test_output="${1}-helgrind-4.out" \
-  print_runtime_ratio "${avg4}" "${stddev4}" "${vsz4}" "${vszdev4}" "$VG" --tool=helgrind "$@" -p${psep}${p} "${test_args}"
+  test_output="${1}-helgrind-4-none.out" \
+  print_runtime_ratio "${avg4}" "${stddev4}" "${vsz4}" "${vszdev4}" "$VG" --tool=helgrind --history-level=none "$@" -p${psep}${p} "${test_args}"
+
+  p=4
+  test_output="${1}-helgrind-4-partial.out" \
+  print_runtime_ratio "${avg4}" "${stddev4}" "${vsz4}" "${vszdev4}" "$VG" --tool=helgrind --history-level=partial "$@" -p${psep}${p} "${test_args}"
+
+  p=4
+  test_output="${1}-helgrind-4-full.out" \
+  print_runtime_ratio "${avg4}" "${stddev4}" "${vsz4}" "${vszdev4}" "$VG" --tool=helgrind --history-level=full "$@" -p${psep}${p} "${test_args}"
 
   echo ''
 }
@@ -117,10 +125,14 @@ fi
 # 13. Virtual memory size ratio for --tool=drd --check-stack-var=yes -p4 versus -p4.
 # 14. Execution time ratio for --tool=drd --check-stack-var=no -p4 versus -p4.
 # 15. Virtual memory size ratio for --tool=drd --check-stack-var=no -p4 versus -p4.
-# 16. Execution time ratio for --tool=helgrind -p4 versus -p4.
-# 17. Virtual memory size ratio for --tool=helgrind -p4 versus -p4.
-# 18. Execution time ratio for Intel Thread Checker -p4 versus -p4.
-# 19. Execution time ratio for Intel Thread Checker -p4 versus -p4.
+# 16. Execution time ratio for --tool=helgrind --history-level=none -p4 versus -p4.
+# 17. Virtual memory size ratio for --tool=helgrind --history-level=none -p4 versus -p4.
+# 18. Execution time ratio for --tool=helgrind --history-level=partial -p4 versus -p4.
+# 19. Virtual memory size ratio for --tool=helgrind --history-level=partial -p4 versus -p4.
+# 20. Execution time ratio for --tool=helgrind --history-level=full -p4 versus -p4.
+# 21. Virtual memory size ratio for --tool=helgrind --history-level=full -p4 versus -p4.
+# 22. Execution time ratio for Intel Thread Checker -p4 versus -p4.
+# 23. Execution time ratio for Intel Thread Checker -p4 versus -p4.
 #
 # Notes:
 # - Both Helgrind and DRD use a granularity of one byte for data race detection.
@@ -131,25 +143,25 @@ fi
 #   granularity does ITC use ? And which m4 macro's have been used by ITC as
 #   implementation of the synchronization primitives ?
 #
-#     1                    2     3      4      5      6     7     8    9   10   11   12  13     14  15   16    17   18    19
-############################################################################################################################
-# Results:                native       native       native       none      none       DRD        DRD      HG         ITC ITC
-#                         -p1          -p2          -p4           -p1       -p4       -p4       -p4+f     -p4      -p4 -p4+f
-# ..........................................................................................................................
-# Cholesky                0.09  12016  0.06  22016  0.55  42352 13.4  4.86  2.4 2.08   22 2.34   11 2.53   25  5.94  239  82
-# FFT                     0.02   6692  0.02  15912  0.02  31963 16.5  7.92 18.0 2.43  151 2.97   53 3.22  103  5.48   90  41
-# LU, contiguous          0.07   4100  0.04  12304  0.04  28712 12.9 12.29 22.5 2.62  180 2.87   87 3.16  178  5.53  428 128
-# Ocean, contiguous       0.22  16848  0.14  25384  0.15  42528  6.6  3.75 10.5 2.09  112 2.65   77 2.90  271  5.95   90  28
-# Radix                   0.20  15136  0.10  23336  0.13  40069 12.9  4.06 20.2 2.15   58 2.66   38 2.90   95  6.03  222  56
-# Raytrace                0.69 207104  0.48 215296  0.48 232362  8.1  1.22 11.6 1.20  422 1.35   76 1.38  212  3.78  172  53
-# Water-n2                0.16  10696  0.09  27072  0.11  59832 14.1  5.40 20.4 1.79 3220 2.98  256 3.04   94  3.54  189  39
-# Water-sp                0.20   4444  0.10  13536  0.10  29928 10.5 11.42 21.3 2.52  399 3.03   53 3.44   93  4.76  183  34
-# ..........................................................................................................................
-# geometric mean          0.14  13024  0.09  25883  0.12  47866 11.4  5.21 13.4 2.06  195 2.54   59 2.73  110  5.03  180  51
-# ..........................................................................................................................
-# Hardware: dual-core Intel Core2 Duo E6750, 2.66 GHz, 4 MB L2 cache, 2 GB RAM.                                    
-# Software: openSUSE 11.0 (64-bit edition), runlevel 3, gcc 4.3.1, 32 bit SPLASH-2 executables, valgrind trunk r10380.
-############################################################################################################################
+#     1                    2     3      4      5      6     7     8    9   10   11   12  13     14  15    16    17  18    19  20    21   22   23
+################################################################################################################################################
+# Results:                native       native       native       none      none       DRD        DRD      HG        HG        HG         ITC ITC
+#                         -p1          -p2          -p4           -p1       -p4       -p4       -p4+f     -p4       -p4       -p4      -p4 -p4+f
+# ..............................................................................................................................................
+# Cholesky                0.11  12016  0.06  22016  0.55  41328 10.3  4.92  1.7 2.14   15 2.61    8 2.61   10  3.96  10  3.96  15  6.14  239  82
+# FFT                     0.02   6692  0.02  14888  0.02  31621 17.0  8.01 20.0 2.48  114 3.15   64 3.28   81  4.52  81  4.52 116  5.56   90  41
+# LU, contiguous          0.08   4100  0.05  12304  0.06  28712 11.1 12.44 18.5 2.64  104 3.18   70 3.18   87  4.84  89  4.84 118  5.55  428 128
+# Ocean, contiguous       0.23  16848  0.19  25384  0.23  42528  6.3  3.78  8.3 2.11   87 2.82   62 4.02   71  3.75  71  3.75 195  5.96   90  28
+# Radix                   0.21  15136  0.14  23336  0.15  39728 12.6  4.10 22.3 2.19   61 2.87   41 2.94   52  4.03  52  4.03  85  6.13  222  56
+# Raytrace                0.63 207104  0.49 215296  0.49 231680  8.9  1.23 12.9 1.20  385 1.38   86 2.10  158  3.70 160  3.70 222  4.15  172  53
+# Water-n2                0.18  10696  0.09  27072  0.11  59832 12.5  5.46 26.7 1.80 3092 3.03  263 3.06   92  3.28  92  3.28  92  3.55  189  39
+# Water-sp                0.20   4444  0.15  13536  0.10  30269 10.6 11.56 27.0 2.52  405 3.29   69 3.42   95  4.59  95  4.59  97  4.73  183  34
+# ..............................................................................................................................................
+# geometric mean          0.14  13024  0.10  25669  0.14  47655 10.8  5.26 13.5 2.08  161 2.71   59 3.03   66  4.05  66  4.05  95  5.13  180  51
+# ..............................................................................................................................................
+# Hardware: dual-core Intel Core2 Duo E6750, 2.66 GHz, 4 MB L2 cache, 2 GB RAM.                                                        
+# Software: openSUSE 11.0 (64-bit edition), runlevel 3, kernel 2.6.30.1, gcc 4.3.1, 32 bit SPLASH-2 executables, valgrind trunk r10648.
+################################################################################################################################################
 
 ####
 # Notes:

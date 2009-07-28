@@ -2004,44 +2004,69 @@ static void evh__HG_PTHREAD_MUTEX_UNLOCK_POST ( ThreadId tid, void* mutex )
 /* --------------- events to do with CVs --------------- */
 /* ----------------------------------------------------- */
 
-/* A mapping from CV to the SO associated with it.  When the CV is
+/* A mapping from CV to (the SO associated with it, plus some
+   auxiliary data for error checking).  When the CV is
    signalled/broadcasted upon, we do a 'send' into the SO, and when a
    wait on it completes, we do a 'recv' from the SO.  This is believed
    to give the correct happens-before events arising from CV
    signallings/broadcasts.
 */
 
-/* pthread_mutex_cond* -> SO* */
-static WordFM* map_cond_to_SO = NULL;
+/* .so is the SO for this CV.
+   .mx_ga is the associated mutex, when .nWaiters > 0
 
-static void map_cond_to_SO_INIT ( void ) {
-   if (UNLIKELY(map_cond_to_SO == NULL)) {
-      map_cond_to_SO = VG_(newFM)( HG_(zalloc),
-                                   "hg.mctSI.1", HG_(free), NULL );
-      tl_assert(map_cond_to_SO != NULL);
+   POSIX says effectively that the first pthread_cond_{timed}wait call
+   causes a dynamic binding between the CV and the mutex, and that
+   lasts until such time as the waiter count falls to zero.  Hence
+   need to keep track of the number of waiters in order to do
+   consistency tracking. */
+typedef
+   struct { 
+      SO*   so;       /* libhb-allocated SO */
+      void* mx_ga;    /* addr of associated mutex, if any */
+      UWord nWaiters; /* # threads waiting on the CV */
+   }
+   CVInfo;
+
+
+/* pthread_cond_t* -> CVInfo* */
+static WordFM* map_cond_to_CVInfo = NULL;
+
+static void map_cond_to_CVInfo_INIT ( void ) {
+   if (UNLIKELY(map_cond_to_CVInfo == NULL)) {
+      map_cond_to_CVInfo = VG_(newFM)( HG_(zalloc),
+                                       "hg.mctCI.1", HG_(free), NULL );
+      tl_assert(map_cond_to_CVInfo != NULL);
    }
 }
 
-static SO* map_cond_to_SO_lookup_or_alloc ( void* cond ) {
+static CVInfo* map_cond_to_CVInfo_lookup_or_alloc ( void* cond ) {
    UWord key, val;
-   map_cond_to_SO_INIT();
-   if (VG_(lookupFM)( map_cond_to_SO, &key, &val, (UWord)cond )) {
+   map_cond_to_CVInfo_INIT();
+   if (VG_(lookupFM)( map_cond_to_CVInfo, &key, &val, (UWord)cond )) {
       tl_assert(key == (UWord)cond);
-      return (SO*)val;
+      return (CVInfo*)val;
    } else {
-      SO* so = libhb_so_alloc();
-      VG_(addToFM)( map_cond_to_SO, (UWord)cond, (UWord)so );
-      return so;
+      SO*     so  = libhb_so_alloc();
+      CVInfo* cvi = HG_(zalloc)("hg.mctCloa.1", sizeof(CVInfo));
+      cvi->so     = so;
+      cvi->mx_ga  = 0;
+      VG_(addToFM)( map_cond_to_CVInfo, (UWord)cond, (UWord)cvi );
+      return cvi;
    }
 }
 
-static void map_cond_to_SO_delete ( void* cond ) {
+static void map_cond_to_CVInfo_delete ( void* cond ) {
    UWord keyW, valW;
-   map_cond_to_SO_INIT();
-   if (VG_(delFromFM)( map_cond_to_SO, &keyW, &valW, (UWord)cond )) {
-      SO* so = (SO*)valW;
+   map_cond_to_CVInfo_INIT();
+   if (VG_(delFromFM)( map_cond_to_CVInfo, &keyW, &valW, (UWord)cond )) {
+      CVInfo* cvi = (CVInfo*)valW;
       tl_assert(keyW == (UWord)cond);
-      libhb_so_dealloc(so);
+      tl_assert(cvi);
+      tl_assert(cvi->so);
+      libhb_so_dealloc(cvi->so);
+      cvi->mx_ga = 0;
+      HG_(free)(cvi);
    }
 }
 
@@ -2054,7 +2079,8 @@ static void evh__HG_PTHREAD_COND_SIGNAL_PRE ( ThreadId tid, void* cond )
       from the SO, thereby acquiring a dependency on this signalling
       event. */
    Thread*   thr;
-   SO*       so;
+   CVInfo*   cvi;
+   //Lock*     lk;
 
    if (SHOW_EVENTS >= 1)
       VG_(printf)("evh__HG_PTHREAD_COND_SIGNAL_PRE(ctid=%d, cond=%p)\n", 
@@ -2063,13 +2089,43 @@ static void evh__HG_PTHREAD_COND_SIGNAL_PRE ( ThreadId tid, void* cond )
    thr = map_threads_maybe_lookup( tid );
    tl_assert(thr); /* cannot fail - Thread* must already exist */
 
+   cvi = map_cond_to_CVInfo_lookup_or_alloc( cond );
+   tl_assert(cvi);
+   tl_assert(cvi->so);
+
    // error-if: mutex is bogus
    // error-if: mutex is not locked
+   // Hmm.  POSIX doesn't actually say that it's an error to call 
+   // pthread_cond_signal with the associated mutex being unlocked.
+   // Although it does say that it should be "if consistent scheduling
+   // is desired."
+   //
+   // For the moment, disable these checks.
+   //lk = map_locks_maybe_lookup(cvi->mx_ga);
+   //if (lk == NULL || cvi->mx_ga == 0) {
+   //   HG_(record_error_Misc)( thr, 
+   //      "pthread_cond_{signal,broadcast}: "
+   //      "no or invalid mutex associated with cond");
+   //}
+   ///* note: lk could be NULL.  Be careful. */
+   //if (lk) {
+   //   if (lk->kind == LK_rdwr) {
+   //      HG_(record_error_Misc)(thr,
+   //         "pthread_cond_{signal,broadcast}: associated lock is a rwlock");
+   //   }
+   //   if (lk->heldBy == NULL) {
+   //      HG_(record_error_Misc)(thr,
+   //         "pthread_cond_{signal,broadcast}: "
+   //         "associated lock is not held by any thread");
+   //   }
+   //   if (lk->heldBy != NULL && 0 == VG_(elemBag)(lk->heldBy, (Word)thr)) {
+   //      HG_(record_error_Misc)(thr,
+   //         "pthread_cond_{signal,broadcast}: "
+   //         "associated lock is not held by calling thread");
+   //   }
+   //}
 
-   so = map_cond_to_SO_lookup_or_alloc( cond );
-   tl_assert(so);
-
-   libhb_so_send( thr->hbthr, so, True/*strong_send*/ );
+   libhb_so_send( thr->hbthr, cvi->so, True/*strong_send*/ );
 }
 
 /* returns True if it reckons 'mutex' is valid and held by this
@@ -2080,6 +2136,7 @@ static Bool evh__HG_PTHREAD_COND_WAIT_PRE ( ThreadId tid,
    Thread* thr;
    Lock*   lk;
    Bool    lk_valid = True;
+   CVInfo* cvi;
 
    if (SHOW_EVENTS >= 1)
       VG_(printf)("evh__hg_PTHREAD_COND_WAIT_PRE"
@@ -2122,6 +2179,20 @@ static Bool evh__HG_PTHREAD_COND_WAIT_PRE ( ThreadId tid,
    }
 
    // error-if: cond is also associated with a different mutex
+   cvi = map_cond_to_CVInfo_lookup_or_alloc(cond);
+   tl_assert(cvi);
+   tl_assert(cvi->so);
+   if (cvi->nWaiters == 0) {
+      /* form initial (CV,MX) binding */
+      cvi->mx_ga = mutex;
+   }
+   else /* check existing (CV,MX) binding */
+   if (cvi->mx_ga != mutex) {
+      HG_(record_error_Misc)(
+         thr, "pthread_cond_{timed}wait: cond is associated "
+              "with a different mutex");
+   }
+   cvi->nWaiters++;
 
    return lk_valid;
 }
@@ -2133,7 +2204,7 @@ static void evh__HG_PTHREAD_COND_WAIT_POST ( ThreadId tid,
       the SO for this cond, and 'recv' from it so as to acquire a
       dependency edge back to the signaller/broadcaster. */
    Thread* thr;
-   SO*     so;
+   CVInfo* cvi;
 
    if (SHOW_EVENTS >= 1)
       VG_(printf)("evh__HG_PTHREAD_COND_WAIT_POST"
@@ -2145,10 +2216,12 @@ static void evh__HG_PTHREAD_COND_WAIT_POST ( ThreadId tid,
 
    // error-if: cond is also associated with a different mutex
 
-   so = map_cond_to_SO_lookup_or_alloc( cond );
-   tl_assert(so);
+   cvi = map_cond_to_CVInfo_lookup_or_alloc( cond );
+   tl_assert(cvi);
+   tl_assert(cvi->so);
+   tl_assert(cvi->nWaiters > 0);
 
-   if (!libhb_so_everSent(so)) {
+   if (!libhb_so_everSent(cvi->so)) {
       /* Hmm.  How can a wait on 'cond' succeed if nobody signalled
          it?  If this happened it would surely be a bug in the threads
          library.  Or one of those fabled "spurious wakeups". */
@@ -2158,7 +2231,9 @@ static void evh__HG_PTHREAD_COND_WAIT_POST ( ThreadId tid,
    }
 
    /* anyway, acquire a dependency on it. */
-   libhb_so_recv( thr->hbthr, so, True/*strong_recv*/ );
+   libhb_so_recv( thr->hbthr, cvi->so, True/*strong_recv*/ );
+
+   cvi->nWaiters--;
 }
 
 static void evh__HG_PTHREAD_COND_DESTROY_PRE ( ThreadId tid,
@@ -2172,7 +2247,7 @@ static void evh__HG_PTHREAD_COND_DESTROY_PRE ( ThreadId tid,
                   "(ctid=%d, cond=%p)\n", 
                   (Int)tid, (void*)cond );
 
-   map_cond_to_SO_delete( cond );
+   map_cond_to_CVInfo_delete( cond );
 }
 
 

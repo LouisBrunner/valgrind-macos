@@ -6,7 +6,7 @@
 # are called gmp-devel and mpfr-devel.
 
 
-GCC_VERSION=4.4.0
+GCC_VERSION=4.4.1
 FSF_MIRROR=ftp://ftp.easynet.be/gnu
 SRCDIR=$HOME/software
 DOWNLOADS=$SRCDIR/downloads

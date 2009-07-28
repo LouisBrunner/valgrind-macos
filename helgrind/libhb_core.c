@@ -5540,10 +5540,14 @@ void libhb_so_recv ( Thr* thr, SO* so, Bool strong_recv )
       thr->viR = VtsID__join2( thr->viR, so->viR );
       VtsID__rcinc(thr->viR);
 
-// QQQ
-VtsID__rcdec(thr->viR);
-thr->viR = VtsID__tick( thr->viR, thr );
-VtsID__rcinc(thr->viR);
+      /* At one point (r10589) it seemed safest to tick the clocks for
+         the receiving thread after the join.  But on reflection, I
+         wonder if that might cause it to 'overtake' constraints,
+         which could lead to missing races.  So, back out that part of
+         r10589. */
+      //VtsID__rcdec(thr->viR);
+      //thr->viR = VtsID__tick( thr->viR, thr );
+      //VtsID__rcinc(thr->viR);
 
       /* For a strong receive, we also advance the receiver's write
          clock, which means the receive as a whole is essentially
@@ -5553,13 +5557,10 @@ VtsID__rcinc(thr->viR);
          thr->viW = VtsID__join2( thr->viW, so->viW );
          VtsID__rcinc(thr->viW);
 
-
-// QQQ
-VtsID__rcdec(thr->viW);
-thr->viW = VtsID__tick( thr->viW, thr );
-VtsID__rcinc(thr->viW);
-
-
+         /* See comment just above, re r10589. */
+         //VtsID__rcdec(thr->viW);
+         //thr->viW = VtsID__tick( thr->viW, thr );
+         //VtsID__rcinc(thr->viW);
       }
 
       Filter__clear(thr->filter, "libhb_so_recv");

@@ -11,6 +11,7 @@ perl -p -e "s/ [0-9]{1,7}==//" |
 sed "/ Nulgrind.*$/ d" |
 sed "/ Copyright.*$/ d" |
 sed "/ Using Valgrind.*$/ d" |
+sed "/ Command:.*$/ d" |
 
 $dir/filter_stderr |
 

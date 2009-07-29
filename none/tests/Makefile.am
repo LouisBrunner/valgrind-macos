@@ -34,8 +34,9 @@ DIST_SUBDIRS = x86 amd64 ppc32 ppc64 linux darwin x86-linux .
 
 dist_noinst_SCRIPTS = \
 	filter_cmdline0 \
-	filter_linenos \
 	filter_fdleak \
+	filter_linenos \
+	filter_long_command \
 	filter_none_discards \
 	filter_stderr \
 	filter_timestamp
@@ -79,6 +80,7 @@ EXTRA_DIST = \
 	fork.stderr.exp fork.stdout.exp fork.vgtest \
 	fucomip.stderr.exp fucomip.vgtest \
 	gxx304.stderr.exp gxx304.vgtest \
+	long-command.stderr.exp long-command.vgtest \
 	manythreads.stdout.exp manythreads.stderr.exp manythreads.vgtest \
 	map_unaligned.stderr.exp map_unaligned.vgtest \
 	map_unmap.stderr.exp map_unmap.stdout.exp map_unmap.vgtest \

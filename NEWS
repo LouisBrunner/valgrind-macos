@@ -31,6 +31,16 @@ Release 3.5.0 (???)
 
 * XXX: exp-bbv has been added...
 
+* Valgrind's start-up message has changed.  It is shorter but also includes
+  the command being run, which makes it easier to use --trace-children=yes.
+  An example:
+
+==3050== Memcheck, a memory error detector.
+==3050== Copyright (C) 2002-2009, and GNU GPL'd, by Julian Seward et al.
+==3050== Using Valgrind-3.5.0.SVN and LibVEX; rerun with -h for copyright info
+==3050== Command: ls -l
+==3050== 
+
 * A new Memcheck client request VALGRIND_COUNT_LEAK_BLOCKS has been added.
   It is similar to VALGRIND_COUNT_LEAKS but counts blocks instead of bytes.
   [XXX: consider adding VALGRIND_COUNT_LEAK_BYTES as a synonym and

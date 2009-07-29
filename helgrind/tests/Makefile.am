@@ -99,6 +99,23 @@ check_PROGRAMS = \
 	tc24_nonzero_sem
 
 # DDD: it seg faults, and then the Valgrind exit path hangs
+# JRS 29 July 09: it craps out in the stack unwinder, in
+#==13480==    at 0xF00B81FF: ??? f00b8180 VG_(get_StackTrace_wrk)
+#==13480==    by 0xF00B83F8: ??? f00b8340 VG_(get_StackTrace)
+#==13480==    by 0xF009FE19: ??? f009fd70 record_ExeContext_wrk
+#==13480==    by 0xF009D92E: ??? f009d8c0 construct_error
+#==13480==    by 0xF009F001: ??? f009eef0 VG_(maybe_record_error)
+#==13480==    by 0xF0081F80: ??? f0081f00 HG_(record_error_misc)
+#==13480==    by 0xF0089C00: ??? f0089b80 evh__pre_thread_ll_exit
+#==13480==    by 0xF01111D1: ??? f0111070 run_a_thread_NORETURN
+#==13480==    by 0xF0111512: ??? f0111500 start_thread_NORETURN
+# when the thread being unwound is at __bsdthread_terminate+0
+#
+# Like Tom says, the stack unwinder protection is bollocks.
+# We should junk all previous schemes and simply get the 
+# stack unwinder to consult aspacem at each frame (cache-accelerated,
+# of course) to check each page it visits is accessible.
+#
 if ! VGCONF_PLATFORMS_INCLUDE_X86_DARWIN
    check_PROGRAMS += \
 	tc22_exit_w_lock

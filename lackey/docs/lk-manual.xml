@@ -4,7 +4,7 @@
 
 <chapter id="lk-manual" xreflabel="Lackey">
 
-<title>Lackey: a simple profiler and memory tracer</title>
+<title>Lackey: an example tool</title>
 
 <para>To use this tool, you must specify
 <computeroutput>--tool=lackey</computeroutput> on the Valgrind

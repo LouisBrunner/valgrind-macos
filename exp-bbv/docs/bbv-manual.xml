@@ -3,14 +3,14 @@
   "http://www.oasis-open.org/docbook/xml/4.2/docbookx.dtd">
 
 <chapter id="bbv-manual" xreflabel="BBV">
-  <title>BBV: a Basic Block Vector generation tool</title>
+  <title>BBV: an experimental basic block vector generation tool</title>
 
 <para>To use this tool, you must specify
 <computeroutput>--tool=exp-bbv</computeroutput> on the Valgrind
 command line.</para>
 
-<sect1 id="bbv-manual.background" xreflabel="BBV Background">
-<title>Basic Block Profiling and SimPoint</title>
+<sect1 id="bbv-manual.overview" xreflabel="Overview">
+<title>Overview</title>
 
 <para>
    A Basic Blocks Vector (BBV) is a list of all basic blocks entered
@@ -20,7 +20,7 @@ command line.</para>
 </para>
 
 <para>
-   This tool was written to generate basic block vectors
+   BBV is tool that generates basic block vectors
    for use with the SimPoint analysis tool 
    (http://www.cse.ucsd.edu/~calder/simpoint/).
    The SimPoint methodology enables speeding up architectural 
@@ -39,14 +39,14 @@ command line.</para>
   In computer architecture research, running a 
   benchmark on a cycle-accurate simulator can cause slowdowns on the order
   of 1000 times, making it take days, weeks, or even longer to run full
-  benchmarks.  By utilizing SimPoint this can be reduced significantly
-  while still retaining reasonable accuracy, usually in the 5-10% range.
+  benchmarks.  By utilizing SimPoint this can be reduced significantly,
+  usually by 90-95%, while still retaining reasonable accuracy.
 </para>
 
 <para>
    A more complete introduction to how SimPoint works can be 
    found in the paper "Automatically Characterizing Large Scale 
-   Program Behavior" by T. Sherwood, E Perelman, G. Hamerly, and 
+   Program Behavior" by T. Sherwood, E. Perelman, G. Hamerly, and 
    B. Calder.  
 </para>
 

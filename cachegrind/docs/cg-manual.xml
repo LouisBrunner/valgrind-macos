@@ -4,27 +4,22 @@
 [ <!ENTITY % vg-entities SYSTEM "../../docs/xml/vg-entities.xml"> %vg-entities; ]>
 
 
-<chapter id="cg-manual" xreflabel="Cachegrind: a cache-miss profiler">
-<title>Cachegrind: a cache and branch profiler</title>
-
-<sect1 id="cg-manual.cache" xreflabel="Cache profiling">
-<title>Cache and branch profiling</title>
+<chapter id="cg-manual" xreflabel="Cachegrind: a cache and branch-prediction profiler">
+<title>Cachegrind: a cache and branch-prediction profiler</title>
 
 <para>To use this tool, you must specify
 <computeroutput>--tool=cachegrind</computeroutput> on the
 Valgrind command line.</para>
 
-<para>Cachegrind is a tool for finding places where programs
-interact badly with typical modern superscalar processors
-and run slowly as a result.
-In particular, it will do a cache simulation of your program,
-and optionally a branch-predictor simulation, and can
-then annotate your source line-by-line with the number of cache
-misses and branch mispredictions.  The following statistics are 
-collected:</para>
+<sect1 id="cg-manual.overview" xreflabel="Overview">
+<title>Overview</title>
+
+<para>Cachegrind simulates how your program interacts with a machine's cache
+hierarchy and (optionally) branch predictor.  It gathers the following
+statistics:</para>
 <itemizedlist>
   <listitem>
-    <para>L1 instruction cache reads and misses;</para>
+    <para>L1 instruction cache reads and read misses;</para>
   </listitem>
   <listitem>
     <para>L1 data cache reads and read misses, writes and write
@@ -44,24 +39,28 @@ collected:</para>
   </listitem>
 </itemizedlist>
 
+<para>These statistics are presented for the entire program and for each
+function in the program.  You can also annotate each line of source code in
+the program with the counts that were caused directly by it.</para>
+
 <para>On a modern machine, an L1 miss will typically cost
 around 10 cycles, an L2 miss can cost as much as 200
 cycles, and a mispredicted branch costs in the region of 10
 to 30 cycles.  Detailed cache and branch profiling can be very useful
-for improving the performance of your program.</para>
+for understanding how your program interacts with the machine and thus how
+to make it faster.</para>
 
 <para>Also, since one instruction cache read is performed per
 instruction executed, you can find out how many instructions are
-executed per line, which can be useful for traditional profiling
-and test coverage.</para>
+executed per line, which can be useful for traditional profiling.</para>
 
 <para>Branch profiling is not enabled by default.  To use it, you must
 additionally specify <computeroutput>--branch-sim=yes</computeroutput>
 on the command line.</para>
 
 
-<sect2 id="cg-manual.overview" xreflabel="Overview">
-<title>Overview</title>
+<sect2 id="cg-manual.basics" xreflabel="Basics">
+<title>Basics</title>
 
 <para>First off, as for normal Valgrind use, you probably want to
 compile with debugging info (the
@@ -169,7 +168,7 @@ follows:</para>
 
 <para>The cache configuration simulated (cache size,
 associativity and line size) is determined automagically using
-the CPUID instruction.  If you have an old machine that (a)
+the x86 CPUID instruction.  If you have an machine that (a)
 doesn't support the CPUID instruction, or (b) supports it in an
 early incarnation that doesn't give any cache information, then
 Cachegrind will fall back to using a default configuration (that

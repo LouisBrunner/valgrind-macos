@@ -1,6 +1,7 @@
 <?xml version="1.0"?> <!-- -*- sgml -*- -->
 <!DOCTYPE chapter PUBLIC "-//OASIS//DTD DocBook XML V4.2//EN"
-  "http://www.oasis-open.org/docbook/xml/4.2/docbookx.dtd">
+  "http://www.oasis-open.org/docbook/xml/4.2/docbookx.dtd"
+[ <!ENTITY % vg-entities SYSTEM "vg-entities.xml"> %vg-entities; ]>
 
 <chapter id="manual-intro" xreflabel="Introduction">
 <title>Introduction</title>
@@ -8,163 +9,81 @@
 <sect1 id="manual-intro.overview" xreflabel="An Overview of Valgrind">
 <title>An Overview of Valgrind</title>
 
-<para>Valgrind is a suite of simulation-based debugging and profiling
-tools for programs running on Linux (x86, amd64, ppc32 and ppc64).
-The system consists of a core, which provides a synthetic CPU in
-software, and a set of tools, each of which performs some kind of
-debugging, profiling, or similar task.  The architecture is modular,
-so that new tools can be created easily and without disturbing the
-existing structure.</para>
+<para>Valgrind is an instrumentation framework for building dynamic analysis
+tools.  It comes with a set of tools each of which performs some kind of
+debugging, profiling, or similar task that helps you improve your programs.
+Valgrind's architecture is modular, so new tools can be created easily
+and without disturbing the existing structure.</para>
 
-<para>A number of useful tools are supplied as standard.  In
-summary, these are:</para>
+<para>A number of useful tools are supplied as standard.</para>
 
 <orderedlist>
 
   <listitem>
-    <para><command>Memcheck</command> detects memory-management problems
-    in programs.  All reads and writes of memory are checked, and
-    calls to malloc/new/free/delete are intercepted. As a result,
-    Memcheck can detect the following problems:</para>
-
-    <itemizedlist>
-     <listitem>
-      <para>Use of uninitialised memory</para>
-     </listitem>
-     <listitem>
-      <para>Reading/writing memory after it has been
-      free'd</para>
-     </listitem>
-     <listitem>
-      <para>Reading/writing off the end of malloc'd
-      blocks</para>
-     </listitem>
-     <listitem>
-      <para>Reading/writing inappropriate areas on the
-      stack</para>
-     </listitem>
-     <listitem>
-      <para>Memory leaks -- where pointers to malloc'd
-      blocks are lost forever</para>
-     </listitem>
-     <listitem>
-      <para>Mismatched use of malloc/new/new [] vs
-      free/delete/delete []</para>
-      </listitem>
-     <listitem>
-      <para>Overlapping <computeroutput>src</computeroutput> and
-      <computeroutput>dst</computeroutput> pointers in
-      <computeroutput>memcpy()</computeroutput> and related
-      functions</para></listitem> 
-    </itemizedlist>
-
-    <para>Problems like these can be difficult to find by other means,
-    often remaining undetected for long periods, then causing occasional,
-    difficult-to-diagnose crashes.</para>
-   </listitem>
+    <para><command>Memcheck</command> is a memory error detector.  It helps
+    you make your programs, particularly those written in C and C++, more
+    correct.</para>
+  </listitem>
  
-   <listitem>
-    <para><command>Cachegrind</command> is a cache profiler.  It
-    performs detailed simulation of the I1, D1 and L2 caches in your CPU
-    and so can accurately pinpoint the sources of cache misses in your
-    code.  It will show the number of cache misses,
-    memory references and instructions accruing to each line of source
-    code, with per-function, per-module and whole-program summaries.  If
-    you ask really nicely it will even show counts for each individual
-    machine instruction.</para>
+  <listitem>
+    <para><command>Cachegrind</command> is a cache and branch-prediction
+    profiler.  It can help you make your programs run faster.</para>
+  </listitem>
 
-    <para>On x86 and and64, Cachegrind auto-detects your machine's cache
-    configuration using the <computeroutput>CPUID</computeroutput>
-    instruction, and so needs no further configuration info, in most
-    cases.</para>
-   </listitem>
+  <listitem>
+    <para><command>Callgrind</command> is a call-graph generating cache
+    profiler.  It has some overlap with Cachegrind, but also gathers some
+    information that Cachegrind does not.</para>
+  </listitem>
 
-   <listitem>
-     <para><command>Callgrind</command> is a profiler similar in
-     concept to Cachegrind, but which also tracks caller-callee
-     relationships.  By doing so it is able to show how instruction,
-     memory reference and cache miss costs flow between callers and
-     callees.  Callgrind collects a large amount of data which is best
-     navigated using Josef Weidendorfer's amazing KCachegrind
-     visualisation tool (<ulink
-     url="http://kcachegrind.sourceforge.net/cgi-bin/show.cgi/KcacheGrindIndex">http://kcachegrind.sourceforge.net</ulink>).
-     KCachegrind is a KDE application which presents 
-     these profiling results in a
-     graphical and easy-to-understand form.</para>
-   </listitem>
+  <listitem>
+    <para><command>Helgrind</command> is a thread error detector.
+    It can help you make your multi-threaded programs more correct.
+    </para>
+  </listitem>
 
-   <listitem>
-     <para><command>Helgrind</command> detects synchronisation errors
-     in programs that use the POSIX pthreads threading primitives.  It
-     detects the following three classes of errors:</para>
+  <listitem>
+    <para><command>DRD</command> is also a thread error detector.  It is
+    similar to Helgrind but uses different analysis techniques and so may
+    find different problems.</para>
+  </listitem>
 
-     <itemizedlist>
-      <listitem>
-        <para>Misuses of the POSIX pthreads API.</para>
-      </listitem>
-      <listitem>
-        <para>Potential deadlocks arising from lock ordering
-        problems.</para>
-      </listitem>
-      <listitem>
-       <para>Data races -- accessing memory without adequate locking.</para>
-      </listitem>
-    </itemizedlist>
+  <listitem>
+    <para><command>Massif</command> is a heap profiler.  It can help you
+    make your programs use less memory.</para>
+  </listitem>
 
-    <para>Problems like these often result in unreproducible,
-    timing-dependent crashes, deadlocks and other misbehaviour, and
-    can be difficult to find by other means.</para>
-   </listitem>
+  <listitem>
+    <para><command>Ptrcheck</command> is an experimental heap, stack and
+    global array overrun detector.  Its functionality overlaps somewhat
+    with Memcheck's, but it can find some problems that Memcheck would
+    miss.</para>
+  </listitem>
 
-   <listitem>
-     <para><command>DRD</command> is similar to Helgrind, but uses a
-     different analysis technique and so may find different problems.
-     </para>
-   </listitem>
-
-   <listitem>
-     <para><command>Massif</command> is a heap profiler.
-     It measures how much heap memory programs use.  In particular,
-     it can give you information about heap blocks, heap 
-     administration overheads, and stack sizes.</para>
-
-     <para>Heap profiling can help you reduce the amount of
-     memory your program uses.  On modern machines with virtual
-     memory, this reduces the chances that your program will run out
-     of memory, and may make it faster by reducing the amount of
-     paging needed.</para>
-   </listitem>
-
-   <listitem>
-     <para><command>Ptrcheck</command> is an experimental pointer checking
-     tool.  Its functionality overlaps somewhat with Memcheck's, but it can
-     find some problems that Memcheck would miss.</para>
-   </listitem>
-
+  <listitem>
+    <para><command>BBV</command> is an experimental SimPoint basic block
+    vector generator.  It is useful to people doing computer architecture
+    research and development.</para>
+  </listitem>
 
 </orderedlist>
   
-
-<para>A couple of minor tools (<command>Lackey</command> and
-<command>Nulgrind</command>) are also supplied.  These aren't
-particularly useful -- they exist to illustrate how to create simple
-tools and to help the valgrind developers in various ways.  Nulgrind is
-the null tool -- it adds no instrumentation.  Lackey is a simple example
-tool which counts instructions, memory accesses, and the number of
-integer and floating point operations your program does.</para>
+<para>There are also a couple of minor tools that aren't useful to
+most users:  <command>Lackey</command> is an example tool that illustrates
+some instrumentation basics; and <command>Nulgrind</command> is the minimal
+Valgrind tool that does no analysis or instrumentation, and is only useful
+for testing purposes.</para>
 
 <para>Valgrind is closely tied to details of the CPU and operating
 system, and to a lesser extent, the compiler and basic C libraries.
-Nonetheless, as of version 3.3.0 it supports several platforms:
-x86/Linux (mature), amd64/Linux (maturing), ppc32/Linux and
-ppc64/Linux (less mature but work well).  There is also experimental
-support for ppc32/AIX5 and ppc64/AIX5 (AIX 5.2 and 5.3 only).
-Valgrind uses the standard Unix
+Nonetheless, it supports a number of widely-used platforms, listed in full
+at <ulink url="&vg-url;">&vg-url;</ulink>.</para>
+
+<para>Valgrind is built via the standard Unix
 <computeroutput>./configure</computeroutput>,
 <computeroutput>make</computeroutput>, <computeroutput>make
-install</computeroutput> mechanism, and we have attempted to ensure that
-it works on machines with Linux kernel 2.4.X or 2.6.X and glibc
-2.2.X to 2.7.X.</para>
+install</computeroutput> process;  full details are given in the
+README file in the distribution.</para>
 
 <para>Valgrind is licensed under the <xref linkend="license.gpl"/>,
 version 2.  The <computeroutput>valgrind/*.h</computeroutput> headers
@@ -182,7 +101,8 @@ Inc.</para>
 contributions are licensed as "GPLv2, or (at your option) any later
 version."  This is so as to allow the possibility of easily upgrading
 the license to GPLv3 in future.  If you want to modify code in the VEX
-subdirectory, please also see VEX/HACKING.README.</para>
+subdirectory, please also see the file VEX/HACKING.README in the
+distribution.</para>
 
 
 </sect1>
@@ -191,11 +111,8 @@ subdirectory, please also see VEX/HACKING.README.</para>
 <sect1 id="manual-intro.navigation" xreflabel="How to navigate this manual">
 <title>How to navigate this manual</title>
 
-<para>The Valgrind distribution consists of the Valgrind core, upon
-which are built Valgrind tools.  The tools do different kinds of debugging
-and profiling.  This manual is structured similarly.</para>
-
-<para>First, we describe the Valgrind core, how to use it, and the flags
+<para>This manual's structure reflects the structure of Valgrind itself.
+First, we describe the Valgrind core, how to use it, and the flags
 it supports.  Then, each tool has its own chapter in this manual.  You
 only need to read the documentation for the core and for the tool(s) you
 actually use, although you may find it helpful to be at least a little
@@ -209,9 +126,8 @@ there is no central place describing all the flags that are
 accepted -- you have to read the flags documentation both for
 <xref linkend="manual-core"/> and for the tool you want to use.</para>
 
-<para>The manual is quite big and complex.  If you are looking for a
-quick getting-started guide, have a look at
-<xref linkend="quick-start"/>.</para>
+<para>The manual is quite big and complex.  If you want to start using
+Valgrind more quickly, read <xref linkend="quick-start"/>.</para>
 
 </sect1>
 

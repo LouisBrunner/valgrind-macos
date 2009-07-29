@@ -12,8 +12,6 @@
 command line.</para>
 
 
-
-
 <sect1 id="hg-manual.overview" xreflabel="Overview">
 <title>Overview</title>
 
@@ -25,14 +23,6 @@ threading primitives.</para>
 sharing a common address space, thread creation, thread joining,
 thread exit, mutexes (locks), condition variables (inter-thread event
 notifications), reader-writer locks, semaphores and barriers.</para>
-
-<para>Helgrind is aware of all these abstractions and tracks their
-effects as accurately as it can.  Currently it does not correctly
-handle pthread spinlocks, although it will not object if you use them.
-Adding support for spinlocks would be easy enough if the demand arises.
-On x86 and amd64 platforms, it understands and partially handles
-implicit locking arising from the use of the LOCK instruction prefix.
-</para>
 
 <para>Helgrind can detect three classes of errors, which are discussed
 in detail in the next three sections:</para>
@@ -57,6 +47,19 @@ in detail in the next three sections:</para>
   </para>
  </listitem>
 </orderedlist>
+
+<para>Problems like these often result in unreproducible,
+timing-dependent crashes, deadlocks and other misbehaviour, and
+can be difficult to find by other means.</para>
+
+<para>Helgrind is aware of all the pthread abstractions and tracks their
+effects as accurately as it can.  Currently it does not correctly
+handle pthread spinlocks, although it will not object if you use them.
+Adding support for spinlocks would be easy enough if the demand arises.
+On x86 and amd64 platforms, it understands and partially handles
+implicit locking arising from the use of the LOCK instruction prefix.
+</para>
+
 
 <para>Following those is a section containing 
 <link linkend="hg-manual.effective-use">

@@ -5,8 +5,8 @@
 
 
 <chapter id="pc-manual" 
-         xreflabel="Ptrcheck: an (experimental) pointer checking tool">
-  <title>Ptrcheck: an (experimental) pointer checking tool</title>
+         xreflabel="Ptrcheck: an experimental heap, stack &amp; global array overrun detector">
+  <title>Ptrcheck: an experimental heap, stack &amp; global array overrun detector</title>
 
 <para>To use this tool, you must specify
 <computeroutput>--tool=exp-ptrcheck</computeroutput> on the Valgrind
@@ -18,7 +18,7 @@ command line.</para>
 <sect1 id="pc-manual.overview" xreflabel="Overview">
 <title>Overview</title>
 
-<para>Ptrcheck is a Valgrind tool for finding overruns of heap, stack
+<para>Ptrcheck is a tool for finding overruns of heap, stack
 and global arrays.  Its functionality overlaps somewhat with
 Memcheck's, but it is able to catch invalid accesses in a number of
 cases that Memcheck would miss.  A detailed comparison against

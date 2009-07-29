@@ -11,7 +11,7 @@
 <title>Introduction</title>
 
 So you want to write a Valgrind tool?  Here are some instructions that may
-help.  They were last updated for Valgrind 3.2.2.
+help.
 
 <sect2 id="writing-tools.tools" xreflabel="Tools">
 <title>Tools</title>

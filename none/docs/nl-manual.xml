@@ -5,18 +5,26 @@
 
 <chapter id="nl-manual" xreflabel="Nulgrind">
 
-<title>Nulgrind: the "null" tool</title>
-<subtitle>A tool that does not very much at all</subtitle>
+<title>Nulgrind: the minimal Valgrind tool</title>
 
-<para>Nulgrind is the minimal tool for Valgrind.  It does no
-initialisation or finalisation, and adds no instrumentation to
-the program's code.  It is mainly of use for Valgrind's
-developers for debugging and regression testing.</para>
+<para>To use this tool, you must specify
+<computeroutput>--tool=none</computeroutput> on the Valgrind
+command line.</para>
+
+<sect1 id="ms-manual.overview" xreflabel="Overview">
+<title>Overview</title>
+
+<para>Nulgrind is the simplest possible Valgrind tool.  It performs no
+instrumentation or analysis of a program, just runs it normally.  It is
+mainly of use for Valgrind's developers for debugging and regression
+testing.</para>
 
 <para>Nonetheless you can run programs with Nulgrind.  They will run
 roughly 5 times more slowly than normal, for no useful effect.  Note
 that you need to use the option <option>--tool=none</option> to run
 Nulgrind (ie. not <option>--tool=nulgrind</option>).</para>
+
+</sect1>
 
 </chapter>
 

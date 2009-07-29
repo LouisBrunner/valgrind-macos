@@ -7,21 +7,16 @@
 <chapter id="ms-manual" xreflabel="Massif: a heap profiler">
   <title>Massif: a heap profiler</title>
 
-<emphasis>Please note that this documentation describes Massif version 3.3.0
-and later.  Massif was significantly overhauled for 3.3.0;  versions 3.2.3
-and earlier presented the profiling information an a quite different manner,
-and so this documentation only pertains to the later versions.</emphasis>
-
 <para>To use this tool, you must specify
 <computeroutput>--tool=massif</computeroutput> on the Valgrind
 command line.</para>
 
-<sect1 id="ms-manual.spaceprof" xreflabel="Heap profiling">
-<title>Heap profiling</title>
+<sect1 id="ms-manual.overview" xreflabel="Overview">
+<title>Overview</title>
 
 <para>Massif is a heap profiler.  It measures how much heap memory your
 program uses.  This includes both the useful space, and the extra bytes
-allocated for book-keeping purposes and alignment purposes.  It can also
+allocated for book-keeping and alignment purposes.  It can also
 measure the size of your program's stack(s), although it does not do so by
 default.</para>
 

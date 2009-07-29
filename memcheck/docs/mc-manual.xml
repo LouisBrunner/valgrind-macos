@@ -3,54 +3,55 @@
           "http://www.oasis-open.org/docbook/xml/4.2/docbookx.dtd">
 
 
-<chapter id="mc-manual" xreflabel="Memcheck: a heavyweight memory checker">
-<title>Memcheck: a heavyweight memory checker</title>
+<chapter id="mc-manual" xreflabel="Memcheck: a memory error detector">
+<title>Memcheck: a memory error detector</title>
 
 <para>To use this tool, you may specify <option>--tool=memcheck</option>
 on the Valgrind command line.  You don't have to, though, since Memcheck
 is the default tool.</para>
 
 
-<sect1 id="mc-manual.bugs" 
-       xreflabel="Kinds of bugs that Memcheck can find">
-<title>Kinds of bugs that Memcheck can find</title>
+<sect1 id="mc-manual.overview" xreflabel="Overview">
+<title>Overview</title>
 
-<para>Memcheck is Valgrind's heavyweight memory checking tool.  All
-reads and writes of memory are checked, and calls to
-<function>malloc</function>/<computeroutput>new</computeroutput>/<function>free</function>/<computeroutput>delete</computeroutput>
-are intercepted. As a result, Memcheck can detect the following
-problems:</para>
+<para>Memcheck is a memory error detector.  It can detect the following
+problems that are common in C and C++ programs.</para>
 
 <itemizedlist>
   <listitem>
-    <para>Use of uninitialised memory</para>
+    <para>Accessing memory you shouldn't, e.g. overrunning and underrunning
+    heap blocks, overrunning the top of the stack, and accessing memory after
+    it has been freed.</para>
   </listitem>
+
   <listitem>
-    <para>Reading/writing memory after it has been free'd</para>
+    <para>Using undefined values, i.e. values that have not been initialised,
+    or that have been derived from other undefined values.</para>
   </listitem>
+
   <listitem>
-    <para>Reading/writing off the end of malloc'd blocks</para>
-  </listitem>
-  <listitem>
-    <para>Reading/writing inappropriate areas on the stack</para>
-  </listitem>
-  <listitem>
-    <para>Memory leaks - where pointers to malloc'd blocks are
-   lost forever</para>
-  </listitem>
-  <listitem>
-    <para>Mismatched use of
+    <para>Incorrect freeing of heap memory, such as double-freeing heap
+    blocks, or mismatched use of
     <function>malloc</function>/<computeroutput>new</computeroutput>/<computeroutput>new[]</computeroutput>
     versus
     <function>free</function>/<computeroutput>delete</computeroutput>/<computeroutput>delete[]</computeroutput></para>
   </listitem>
+
   <listitem>
     <para>Overlapping <computeroutput>src</computeroutput> and
     <computeroutput>dst</computeroutput> pointers in
-    <function>memcpy()</function> and related
-    functions</para>
+    <computeroutput>memcpy()</computeroutput> and related
+    functions.</para>
+  </listitem>
+
+  <listitem>
+    <para>Memory leaks.</para>
   </listitem>
 </itemizedlist>
+
+<para>Problems like these can be difficult to find by other means,
+often remaining undetected for long periods, then causing occasional,
+difficult-to-diagnose crashes.</para>
 
 </sect1>
 

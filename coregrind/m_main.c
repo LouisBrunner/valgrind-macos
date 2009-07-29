@@ -212,8 +212,8 @@ static void usage_NORETURN ( Bool debug_help )
 "  Extra options read from ~/.valgrindrc, $VALGRIND_OPTS, ./.valgrindrc\n"
 "\n"
 "  %s is %s\n"
-"  Valgrind is Copyright (C) 2000-2009, and GNU GPL'd, by Julian Seward et al\n"
-"  LibVEX is Copyright (C) 2004-2009, and GNU GPL'd, by OpenWorks LLP\n"
+"  Valgrind is Copyright (C) 2000-2009, and GNU GPL'd, by Julian Seward et al.\n"
+"  LibVEX is Copyright (C) 2004-2009, and GNU GPL'd, by OpenWorks LLP.\n"
 "\n"
 "  Bug reports, feedback, admiration, abuse, etc, to: %s.\n"
 "\n";

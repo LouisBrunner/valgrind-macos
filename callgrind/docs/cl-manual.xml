@@ -4,8 +4,12 @@
 [ <!ENTITY % cl-entities SYSTEM "cl-entities.xml"> %cl-entities; ]>
 
 <chapter id="cl-manual" xreflabel="Callgrind Manual">
-<title>Callgrind: a call graph profiler</title>
+<title>Callgrind: a call-graph generating cache profiler</title>
 
+
+<para>To use this tool, you must specify
+<computeroutput>--tool=callgrind</computeroutput> on the
+Valgrind command line.</para>
 
 <sect1 id="cl-manual.use" xreflabel="Overview">
 <title>Overview</title>

@@ -865,31 +865,43 @@ PRE(sys_futex)
       ARG6 - int val3				CMP_REQUEUE
     */
    PRINT("sys_futex ( %#lx, %ld, %ld, %#lx, %#lx )", ARG1,ARG2,ARG3,ARG4,ARG5);
-   switch(ARG2) {
+   switch(ARG2 & ~(VKI_FUTEX_PRIVATE_FLAG|VKI_FUTEX_CLOCK_REALTIME)) {
    case VKI_FUTEX_CMP_REQUEUE:
-   case VKI_FUTEX_CMP_REQUEUE | VKI_FUTEX_PRIVATE_FLAG:
+   case VKI_FUTEX_WAKE_OP:
+   case VKI_FUTEX_CMP_REQUEUE_PI:
       PRE_REG_READ6(long, "futex", 
                     vki_u32 *, futex, int, op, int, val,
                     struct timespec *, utime, vki_u32 *, uaddr2, int, val3);
       break;
    case VKI_FUTEX_REQUEUE:
-   case VKI_FUTEX_REQUEUE | VKI_FUTEX_PRIVATE_FLAG:
+   case VKI_FUTEX_WAIT_REQUEUE_PI:
       PRE_REG_READ5(long, "futex", 
                     vki_u32 *, futex, int, op, int, val,
                     struct timespec *, utime, vki_u32 *, uaddr2);
       break;
+   case VKI_FUTEX_WAIT_BITSET:
+      PRE_REG_READ6(long, "futex", 
+                    vki_u32 *, futex, int, op, int, val,
+                    struct timespec *, utime, int, dummy, int, val3);
+      break;
+   case VKI_FUTEX_WAKE_BITSET:
+      PRE_REG_READ6(long, "futex", 
+                    vki_u32 *, futex, int, op, int, val,
+                    int, dummy, int, dummy2, int, val3);
+      break;
    case VKI_FUTEX_WAIT:
-   case VKI_FUTEX_WAIT | VKI_FUTEX_PRIVATE_FLAG:
+   case VKI_FUTEX_LOCK_PI:
       PRE_REG_READ4(long, "futex", 
                     vki_u32 *, futex, int, op, int, val,
                     struct timespec *, utime);
       break;
    case VKI_FUTEX_WAKE:
-   case VKI_FUTEX_WAKE | VKI_FUTEX_PRIVATE_FLAG:
    case VKI_FUTEX_FD:
+   case VKI_FUTEX_TRYLOCK_PI:
       PRE_REG_READ3(long, "futex", 
                     vki_u32 *, futex, int, op, int, val);
       break;
+   case VKI_FUTEX_UNLOCK_PI:
    default:
       PRE_REG_READ2(long, "futex", vki_u32 *, futex, int, op);
       break;
@@ -899,23 +911,27 @@ PRE(sys_futex)
 
    *flags |= SfMayBlock;
 
-   switch(ARG2) {
+   switch(ARG2 & ~(VKI_FUTEX_PRIVATE_FLAG|VKI_FUTEX_CLOCK_REALTIME)) {
    case VKI_FUTEX_WAIT:
-   case VKI_FUTEX_WAIT | VKI_FUTEX_PRIVATE_FLAG:
+   case VKI_FUTEX_LOCK_PI:
+   case VKI_FUTEX_WAIT_BITSET:
+   case VKI_FUTEX_WAIT_REQUEUE_PI:
       if (ARG4 != 0)
 	 PRE_MEM_READ( "futex(timeout)", ARG4, sizeof(struct vki_timespec) );
       break;
 
    case VKI_FUTEX_REQUEUE:
-   case VKI_FUTEX_REQUEUE | VKI_FUTEX_PRIVATE_FLAG:
    case VKI_FUTEX_CMP_REQUEUE:
-   case VKI_FUTEX_CMP_REQUEUE | VKI_FUTEX_PRIVATE_FLAG:
+   case VKI_FUTEX_CMP_REQUEUE_PI:
+   case VKI_FUTEX_WAKE_OP:
       PRE_MEM_READ( "futex(futex2)", ARG5, sizeof(Int) );
       break;
 
    case VKI_FUTEX_WAKE:
-   case VKI_FUTEX_WAKE | VKI_FUTEX_PRIVATE_FLAG:
    case VKI_FUTEX_FD:
+   case VKI_FUTEX_WAKE_BITSET:
+   case VKI_FUTEX_TRYLOCK_PI:
+   case VKI_FUTEX_UNLOCK_PI:
       /* no additional pointers */
       break;
 

@@ -4,17 +4,14 @@
 [ <!ENTITY % vg-entities SYSTEM "vg-entities.xml"> %vg-entities; ]>
 
 
-<chapter id="writing-tools" xreflabel="Writing a New Valgrind Tool">
+<chapter id="manual-writing-tools" xreflabel="Writing a New Valgrind Tool">
 <title>Writing a New Valgrind Tool</title>
-
-<sect1 id="writing-tools.intro" xreflabel="Introduction">
-<title>Introduction</title>
 
 So you want to write a Valgrind tool?  Here are some instructions that may
 help.
 
-<sect2 id="writing-tools.tools" xreflabel="Tools">
-<title>Tools</title>
+<sect1 id="manual-writing-tools.intro" xreflabel="Introduction">
+<title>Introduction</title>
 
 <para>The key idea behind Valgrind's architecture is the division
 between its "core" and "tool plug-ins".</para>
@@ -33,16 +30,14 @@ functions to indicate to the core that they would like to use
 certain services, or be notified when certain interesting events
 occur.  But the core takes care of all the hard work.</para>
 
-</sect2>
-
 </sect1>
 
 
 
-<sect1 id="writing-tools.writingatool" xreflabel="Writing a Tool">
+<sect1 id="manual-writing-tools.writingatool" xreflabel="Writing a Tool">
 <title>Writing a Tool</title>
 
-<sect2 id="writing-tools.howtoolswork" xreflabel="How tools work">
+<sect2 id="manual-writing-tools.howtoolswork" xreflabel="How tools work">
 <title>How tools work</title>
 
 <para>Tool plug-ins must define various functions for instrumenting programs
@@ -53,7 +48,7 @@ when the <option>--tool</option> option is used to select it.</para>
 </sect2>
 
 
-<sect2 id="writing-tools.gettingcode" xreflabel="Getting the code">
+<sect2 id="manual-writing-tools.gettingcode" xreflabel="Getting the code">
 <title>Getting the code</title>
 
 <para>To write your own tool, you'll need the Valgrind source code.  You'll
@@ -65,7 +60,7 @@ website</ulink>.</para>
 </sect2>
 
 
-<sect2 id="writing-tools.gettingstarted" xreflabel="Getting started">
+<sect2 id="manual-writing-tools.gettingstarted" xreflabel="Getting started">
 <title>Getting started</title>
 
 <para>Valgrind uses GNU <computeroutput>automake</computeroutput> and
@@ -186,7 +181,7 @@ onto the interesting stuff...</para>
 
 
 
-<sect2 id="writing-tools.writingcode" xreflabel="Writing the Code">
+<sect2 id="manual-writing-tools.writingcode" xreflabel="Writing the Code">
 <title>Writing the code</title>
 
 <para>A tool must define at least these four functions:</para>
@@ -211,7 +206,7 @@ core about them.</para>
 
 
 
-<sect2 id="writing-tools.init" xreflabel="Initialisation">
+<sect2 id="manual-writing-tools.init" xreflabel="Initialisation">
 <title>Initialisation</title>
 
 <para>Most of the initialisation should be done in
@@ -267,7 +262,7 @@ can be found in
 
 
 
-<sect2 id="writing-tools.instr" xreflabel="Instrumentation">
+<sect2 id="manual-writing-tools.instr" xreflabel="Instrumentation">
 <title>Instrumentation</title>
 
 <para><function>instrument()</function> is the interesting one.  It
@@ -286,7 +281,7 @@ complex example.</para>
 
 
 
-<sect2 id="writing-tools.fini" xreflabel="Finalisation">
+<sect2 id="manual-writing-tools.fini" xreflabel="Finalisation">
 <title>Finalisation</title>
 
 <para>This is where you can present the final results, such as a summary
@@ -297,7 +292,7 @@ this point.</para>
 
 
 
-<sect2 id="writing-tools.otherinfo" xreflabel="Other Important Information">
+<sect2 id="manual-writing-tools.otherinfo" xreflabel="Other Important Information">
 <title>Other Important Information</title>
 
 <para>Please note that the core/tool split infrastructure is quite
@@ -339,14 +334,14 @@ isn't that relevant to tool-writers, however.</para>
 </sect2>
 
 
-<sect2 id="writing-tools.advice" xreflabel="Words of Advice">
+<sect2 id="manual-writing-tools.advice" xreflabel="Words of Advice">
 <title>Words of Advice</title>
 
 <para>Writing and debugging tools is not trivial.  Here are some
 suggestions for solving common problems.</para>
 
 
-<sect3 id="writing-tools.segfaults">
+<sect3 id="manual-writing-tools.segfaults">
 <title>Segmentation Faults</title>
 
 <para>If you are getting segmentation faults in C functions used by your
@@ -359,7 +354,7 @@ tool, the usual GDB command:</para>
 </sect3>
 
 
-<sect3 id="writing-tools.debugfns">
+<sect3 id="manual-writing-tools.debugfns">
 <title>Debugging C functions</title>
 
 <para>If you want to debug C functions used by your tool, you can
@@ -411,7 +406,7 @@ this to extract useful tracebacks from GDB.</para>
 </sect3>
 
 
-<sect3 id="writing-tools.ucode-probs">
+<sect3 id="manual-writing-tools.ucode-probs">
 <title>IR Instrumentation Problems</title>
 
 <para>If you are having problems with your VEX IR instrumentation, it's
@@ -422,7 +417,7 @@ results of instrumentation.</para>
 </sect3>
 
 
-<sect3 id="writing-tools.misc">
+<sect3 id="manual-writing-tools.misc">
 <title>Miscellaneous</title>
 
 <para>If you just want to know whether a program point has been reached,
@@ -442,13 +437,13 @@ list).</para>
 
 
 
-<sect1 id="writing-tools.advtopics" xreflabel="Advanced Topics">
+<sect1 id="manual-writing-tools.advtopics" xreflabel="Advanced Topics">
 <title>Advanced Topics</title>
 
 <para>Once a tool becomes more complicated, there are some extra
 things you may want/need to do.</para>
 
-<sect2 id="writing-tools.suppressions" xreflabel="Suppressions">
+<sect2 id="manual-writing-tools.suppressions" xreflabel="Suppressions">
 <title>Suppressions</title>
 
 <para>If your tool reports errors and you want to suppress some common
@@ -467,7 +462,7 @@ for the tool during initialisation with
 </sect2>
 
 
-<sect2 id="writing-tools.docs" xreflabel="Documentation">
+<sect2 id="manual-writing-tools.docs" xreflabel="Documentation">
 <title>Documentation</title>
 
 <para>As of version 3.0.0, Valgrind documentation has been converted to
@@ -475,7 +470,7 @@ XML. Why?  See <ulink url="http://www.ucc.ie/xml/">The XML FAQ</ulink>.
 </para>
 
 
-<sect3 id="writing-tools.xml" xreflabel="The XML Toolchain">
+<sect3 id="manual-writing-tools.xml" xreflabel="The XML Toolchain">
 <title>The XML Toolchain</title>
 
 <para>If you are feeling conscientious and want to write some
@@ -514,7 +509,7 @@ local installation.</para>
 </sect3>
 
 
-<sect3 id="writing-tools.writing" xreflabel="Writing the Documentation">
+<sect3 id="manual-writing-tools.writing" xreflabel="Writing the Documentation">
 <title>Writing the Documentation</title>
 
 <para>Follow these steps (using <computeroutput>foobar</computeroutput>
@@ -610,7 +605,7 @@ attribute base of element chapter
 </sect2>
 
 
-<sect2 id="writing-tools.regtests" xreflabel="Regression Tests">
+<sect2 id="manual-writing-tools.regtests" xreflabel="Regression Tests">
 <title>Regression Tests</title>
 
 <para>Valgrind has some support for regression tests.  If you want to
@@ -655,7 +650,7 @@ write regression tests for your tool:</para>
 
 
 
-<sect2 id="writing-tools.profiling" xreflabel="Profiling">
+<sect2 id="manual-writing-tools.profiling" xreflabel="Profiling">
 <title>Profiling</title>
 
 <para>To profile a tool, use Cachegrind on it.  Read README_DEVELOPERS for
@@ -669,7 +664,7 @@ instruction and cache hit/miss counts.</para>
 
 
 
-<sect2 id="writing-tools.mkhackery" xreflabel="Other Makefile Hackery">
+<sect2 id="manual-writing-tools.mkhackery" xreflabel="Other Makefile Hackery">
 <title>Other Makefile Hackery</title>
 
 <para>If you add any directories under
@@ -687,7 +682,7 @@ example) you need to add them to the
 
 
 
-<sect2 id="writing-tools.ifacever" xreflabel="Core/tool Interface Versions">
+<sect2 id="manual-writing-tools.ifacever" xreflabel="Core/tool Interface Versions">
 <title>Core/tool Interface Versions</title>
 
 <para>In order to allow for the core/tool interface to evolve over time,
@@ -714,7 +709,7 @@ minimising the use of naked structs in the interface.</para>
 
 
 
-<sect1 id="writing-tools.finalwords" xreflabel="Final Words">
+<sect1 id="manual-writing-tools.finalwords" xreflabel="Final Words">
 <title>Final Words</title>
 
 <para>The core/tool interface is not fixed.  It's pretty stable these days,

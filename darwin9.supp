@@ -97,8 +97,17 @@
    fun:main
 }
 
+# afaict this is legit.  Might be caused by setenv("VAR=")
+# where the value string is empty (not sure)
 {
-   futimes-1
+   macos-Cond-7
+   Memcheck:Cond
+   fun:__setenv
+   fun:putenv
+}
+
+{
+   macos-futimes-1
    Memcheck:Param
    futimes(tvp[1])
    fun:futimes
@@ -156,14 +165,14 @@
 # See https://bugs.kde.org/show_bug.cgi?id=188572 about this;  it's
 # unavoidable due to BSD setenv() semantics.
 {
-   <insert a suppression name here>
+   macos-__setenv-leak-see-our-bug-188572
    Memcheck:Leak
    fun:malloc_zone_malloc
    fun:__setenv
    fun:setenv$UNIX2003
 }
 {
-   localeconv-leak
+   macos-localeconv-leak
    Memcheck:Leak
    fun:malloc
    fun:localeconv_l

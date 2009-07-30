@@ -1052,14 +1052,7 @@ static void print_preamble ( Bool logging_to_fd,
    }
 
    if (!VG_(clo_xml) && VG_(clo_verbosity) > 0 && !logging_to_fd) {
-      VG_(umsg)("\n");
-      VG_(umsg)("My PID = %d, parent PID = %d.  Prog and args are:\n",
-                VG_(getpid)(), VG_(getppid)() );
-      if (VG_(args_the_exename))
-         VG_(umsg)("   %s\n", VG_(args_the_exename));
-      for (i = 0; i < VG_(sizeXA)( VG_(args_for_client) ); i++) 
-         VG_(umsg)("   %s\n", 
-                   * (HChar**) VG_(indexXA)( VG_(args_for_client), i ));
+      VG_(umsg)("My PID: %d, parent PID: %d\n", VG_(getpid)(), VG_(getppid)());
    }
    else
    if (VG_(clo_xml)) {
@@ -1111,7 +1104,7 @@ static void print_preamble ( Bool logging_to_fd,
 
    // Empty line after the preamble
    if (VG_(clo_verbosity) > 0)
-      VG_(message)(Vg_UserMsg, "\n");
+      VG_(umsg)("\n");
    if (VG_(clo_xml))
       VG_(printf_xml)("\n");
 

@@ -718,31 +718,55 @@ file, which will almost certainly make it unreadable by ms_print.</para>
 
 <para>ms_print's options are:</para>
 
-<itemizedlist>
+<variablelist>
 
-  <listitem>
-    <para><option>-h --help</option></para>
-    <para><option>-v --version</option></para>
-    <para>Help and version, as usual.</para>
-  </listitem>
+  <varlistentry>
+    <term>
+      <option><![CDATA[-h --help ]]></option>
+    </term>
+    <listitem>
+      <para>Show the help message.</para>
+    </listitem>
+  </varlistentry>
 
-  <listitem>
-    <para><option><![CDATA[--threshold=<m.n>]]></option> [default: 1.0]</para>
-    <para>Same as Massif's <option>--threshold</option>, but
-    applied after profiling rather than during.</para>
-  </listitem>
+  <varlistentry>
+    <term>
+      <option><![CDATA[-v --version ]]></option>
+    </term>
+    <listitem>
+      <para>Show the version number.</para>
+    </listitem>
+  </varlistentry>
 
-  <listitem>
-    <para><option><![CDATA[--x=<m.n>]]></option> [default: 72]</para>
-    <para>Width of the graph, in columns.</para>
-  </listitem>
+  <varlistentry>
+    <term>
+      <option><![CDATA[--threshold=<m.n> [default: 1.0] ]]></option>
+    </term>
+    <listitem>
+      <para>Same as Massif's <option>--threshold</option> option, but
+      applied after profiling rather than during.</para>
+    </listitem>
+  </varlistentry>
 
-  <listitem>
-    <para><option><![CDATA[--y=<n>]]></option> [default: 20]</para>
-    <para>Height of the graph, in rows.</para>
-  </listitem>
+  <varlistentry>
+    <term>
+      <option><![CDATA[--x=<n> [default: 72]]]></option>
+    </term>
+    <listitem>
+      <para>Width of the graph, in columns.</para>
+    </listitem>
+  </varlistentry>
 
-</itemizedlist>
+  <varlistentry>
+    <term>
+      <option><![CDATA[--y=<n> [default: 20] ]]></option>
+    </term>
+    <listitem>
+      <para>Height of the graph, in rows.</para>
+    </listitem>
+  </varlistentry>
+
+</variablelist>
 
 </sect1>
 

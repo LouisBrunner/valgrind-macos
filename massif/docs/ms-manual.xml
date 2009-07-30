@@ -587,26 +587,6 @@ file, which will almost certainly make it unreadable by ms_print.</para>
 --alloc-fn='operator new(unsigned, std::nothrow_t const&amp;)'
 ]]></screen>
       </para>
-
-      <para>
-      The full list of functions and operators that are by default
-      considered allocation functions is as follows.</para>
-<screen><![CDATA[
-malloc
-calloc
-realloc
-memalign
-__builtin_new
-__builtin_vec_new
-operator new(unsigned)
-operator new(unsigned long)
-operator new[](unsigned)
-operator new[](unsigned long)
-operator new(unsigned, std::nothrow_t const&)
-operator new[](unsigned, std::nothrow_t const&)
-operator new(unsigned long, std::nothrow_t const&)
-operator new[](unsigned long, std::nothrow_t const&)
-]]></screen>
       </listitem>
   </varlistentry>
 

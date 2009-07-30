@@ -44,13 +44,13 @@ documentation of Memcheck and the other tools, please read the User Manual.
 
 <para>Compile your program with <option>-g</option> to include debugging
 information so that Memcheck's error messages include exact line
-numbers.  Using <computeroutput>-O0</computeroutput> is also a good
+numbers.  Using <option>-O0</option> is also a good
 idea, if you can tolerate the slowdown.  With
-<computeroutput>-O1</computeroutput> line numbers in error messages can
+<option>-O1</option> line numbers in error messages can
 be inaccurate, although generally speaking running Memcheck on code compiled
-at <computeroutput>-O1</computeroutput> works fairly well.
+at <option>-O1</option> works fairly well.
 Use of
-<computeroutput>-O2</computeroutput> and above is not recommended as
+<option>-O2</option> and above is not recommended as
 Memcheck occasionally reports uninitialised-value errors which don't
 really exist.</para>
 

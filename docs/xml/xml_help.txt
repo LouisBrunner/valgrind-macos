@@ -17,8 +17,12 @@ xml to html markup transformations:
 
 <programlisting> --> <pre class="programlisting">
 <screen>         --> <pre class="screen">
-<computeroutput> --> <tt class="computeroutput">
-<literal>        --> <tt>
+<option>         --> <code class="option">
+<filename>       --> <code class="filename">
+<function>       --> <code class="function">
+<literal>        --> <code class="literal">
+<varname>        --> <code class="varname">
+<computeroutput> --> <code class="computeroutput">
 <emphasis>       --> <i>
 <command>        --> <b class="command">
 <blockquote>     --> <div class="blockquote">

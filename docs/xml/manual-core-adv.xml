@@ -56,8 +56,8 @@ program with any extra supporting libraries.</para>
 on x86, amd64, ppc32 and ppc64, the overhead is 6 simple integer instructions
 and is probably undetectable except in tight loops.
 However, if you really wish to compile out the client requests, you can
-compile with <computeroutput>-DNVALGRIND</computeroutput> (analogous to
-<computeroutput>-DNDEBUG</computeroutput>'s effect on
+compile with <option>-DNVALGRIND</option> (analogous to
+<option>-DNDEBUG</option>'s effect on
 <computeroutput>assert()</computeroutput>).
 </para>
 
@@ -103,7 +103,7 @@ tool-specific macros).</para>
     once.</para>
     <para>
     Alternatively, for transparent self-modifying-code support,
-    use<computeroutput>--smc-check=all</computeroutput>, or run
+    use<option>--smc-check=all</option>, or run
     on ppc32/Linux or ppc64/Linux.
     </para>
    </listitem>
@@ -504,7 +504,7 @@ will honour only the first one.</para>
 
 <para>Figuring out what's going on given the dynamic nature of wrapping
 can be difficult.  The 
-<computeroutput>--trace-redir=yes</computeroutput> flag makes 
+<option>--trace-redir=yes</option> flag makes 
 this possible
 by showing the complete state of the redirection subsystem after
 every
@@ -536,10 +536,10 @@ sections.  The active binding set is (conceptually) recomputed from
 the specifications, and all known symbol names, following any change
 to the specification set.</para>
 
-<para><computeroutput>--trace-redir=yes</computeroutput> shows the contents 
+<para><option>--trace-redir=yes</option> shows the contents 
 of both sets following any such event.</para>
 
-<para><computeroutput>-v</computeroutput> prints a line of text each 
+<para><option>-v</option> prints a line of text each 
 time an active specification is used for the first time.</para>
 
 <para>Hence for maximum debugging effectiveness you will need to use both
@@ -555,7 +555,7 @@ However, to make the implementation more robust, the two kinds
 of interception (wrapping vs replacement) are treated differently.
 </para>
 
-<para><computeroutput>--trace-redir=yes</computeroutput> shows 
+<para><option>--trace-redir=yes</option> shows 
 specifications and bindings for both
 replacement and wrapper functions.  To differentiate the 
 two, replacement bindings are printed using 

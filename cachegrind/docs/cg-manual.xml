@@ -8,7 +8,7 @@
 <title>Cachegrind: a cache and branch-prediction profiler</title>
 
 <para>To use this tool, you must specify
-<computeroutput>--tool=cachegrind</computeroutput> on the
+<option>--tool=cachegrind</option> on the
 Valgrind command line.</para>
 
 <sect1 id="cg-manual.overview" xreflabel="Overview">
@@ -55,7 +55,7 @@ instruction executed, you can find out how many instructions are
 executed per line, which can be useful for traditional profiling.</para>
 
 <para>Branch profiling is not enabled by default.  To use it, you must
-additionally specify <computeroutput>--branch-sim=yes</computeroutput>
+additionally specify <option>--branch-sim=yes</option>
 on the command line.</para>
 
 
@@ -64,7 +64,7 @@ on the command line.</para>
 
 <para>First off, as for normal Valgrind use, you probably want to
 compile with debugging info (the
-<computeroutput>-g</computeroutput> flag).  But by contrast with
+<option>-g</option> flag).  But by contrast with
 normal Valgrind use, you probably <command>do</command> want to turn
 optimisation on, since you should profile your program as it will
 be normally run.</para>
@@ -83,7 +83,7 @@ be normally run.</para>
 
     <para>Branch prediction statistics are not collected by default.
     To do so, add the flag
-    <computeroutput>--branch-sim=yes</computeroutput>.
+    <option>--branch-sim=yes</option>.
     </para>
 
     <para>This step should be done every time you want to collect
@@ -98,7 +98,7 @@ be normally run.</para>
     files to annotate can be specified manually, or manually on
     the command line, or "interesting" source files can be
     annotated automatically with the
-    <computeroutput>--auto=yes</computeroutput> option.  You can
+    <option>--auto=yes</option> option.  You can
     annotate C/C++ files or assembly language files equally
     easily.</para>
 
@@ -175,9 +175,9 @@ Cachegrind will fall back to using a default configuration (that
 of a model 3/4 Athlon).  Cachegrind will tell you if this
 happens.  You can manually specify one, two or all three levels
 (I1/D1/L2) of the cache from the command line using the
-<computeroutput>--I1</computeroutput>,
-<computeroutput>--D1</computeroutput> and
-<computeroutput>--L2</computeroutput> options.
+<option>--I1</option>,
+<option>--D1</option> and
+<option>--L2</option> options.
 For cache parameters to be valid for simulation, the number
 of sets (with associativity being the number of cache lines in
 each set) has to be a power of two.</para>
@@ -186,9 +186,9 @@ each set) has to be a power of two.</para>
 Cachegrind cannot automatically 
 determine the cache configuration, so you will 
 need to specify it with the
-<computeroutput>--I1</computeroutput>,
-<computeroutput>--D1</computeroutput> and
-<computeroutput>--L2</computeroutput> options.</para>
+<option>--I1</option>,
+<option>--D1</option> and
+<option>--L2</option> options.</para>
 
 
 <para>Other noteworthy behaviour:</para>
@@ -356,7 +356,7 @@ file:</para>
   <listitem>
     <para>To use an output file name other than the default
     <computeroutput>cachegrind.out</computeroutput>,
-    use the <computeroutput>--cachegrind-out-file</computeroutput>
+    use the <option>--cachegrind-out-file</option>
     switch.</para>
   </listitem>
   <listitem>
@@ -371,7 +371,7 @@ file:</para>
 on the output file name serves two purposes.  Firstly, it means you 
 don't have to rename old log files that you don't want to overwrite.  
 Secondly, and more importantly, it allows correct profiling with the
-<computeroutput>--trace-children=yes</computeroutput> option of
+<option>--trace-children=yes</option> option of
 programs that spawn child processes.</para>
 
 </sect2>
@@ -465,8 +465,8 @@ configuration, or failing that, via defaults).</para>
       <para>Enables or disables collection of branch instruction and
             misprediction counts.  By default this is disabled as it
             slows Cachegrind down by approximately 25%.  Note that you
-            cannot specify <computeroutput>--cache-sim=no</computeroutput>
-            and <computeroutput>--branch-sim=no</computeroutput>
+            cannot specify <option>--cache-sim=no</option>
+            and <option>--branch-sim=no</option>
             together, as that would leave Cachegrind with no
             information to collect.</para>
     </listitem>
@@ -615,7 +615,7 @@ Ir        I1mr I2mr Dr        D1mr  D2mr  Dw        D1mw   D2mw    file:function
  <listitem>
    <para>Events shown: the events shown, which is a subset of the events
    gathered.  This can be adjusted with the
-   <computeroutput>--show</computeroutput> option.</para>
+   <option>--show</option> option.</para>
   </listitem>
 
   <listitem>
@@ -626,12 +626,12 @@ Ir        I1mr I2mr Dr        D1mr  D2mr  Dw        D1mw   D2mw    file:function
     <computeroutput>Ir</computeroutput> counts, they will then be
     sorted by <computeroutput>I1mr</computeroutput> counts, and
     so on.  This order can be adjusted with the
-    <computeroutput>--sort</computeroutput> option.</para>
+    <option>--sort</option> option.</para>
 
     <para>Note that this dictates the order the functions appear.
     It is <command>not</command> the order in which the columns
     appear; that is dictated by the "events shown" line (and can
-    be changed with the <computeroutput>--show</computeroutput>
+    be changed with the <option>--show</option>
     option).</para>
   </listitem>
 
@@ -644,7 +644,7 @@ Ir        I1mr I2mr Dr        D1mr  D2mr  Dw        D1mw   D2mw    file:function
     <computeroutput>Ir</computeroutput> is chosen as the
     threshold event since it is the primary sort event.  The
     threshold can be adjusted with the
-    <computeroutput>--threshold</computeroutput>
+    <option>--threshold</option>
     option.</para>
   </listitem>
 
@@ -655,7 +655,7 @@ Ir        I1mr I2mr Dr        D1mr  D2mr  Dw        D1mw   D2mw    file:function
 
   <listitem>
     <para>Auto-annotation: whether auto-annotation was requested
-    via the <computeroutput>--auto=yes</computeroutput>
+    via the <option>--auto=yes</option>
     option. In this case no.</para>
   </listitem>
 
@@ -676,7 +676,7 @@ instructions that write to memory). The name
 and/or function name could not be determined from debugging
 information. If most of the entries have the form
 <computeroutput>???:???</computeroutput> the program probably
-wasn't compiled with <computeroutput>-g</computeroutput>.  If any
+wasn't compiled with <option>-g</option>.  If any
 code was invalidated (either due to self-modifying code or
 unloading of shared objects) its counts are aggregated into a
 single cost centre written as
@@ -688,7 +688,7 @@ and from libraries (eg. <filename>getc.c</filename>)</para>
 
 <para>There are two ways to annotate source files -- by choosing
 them manually, or with the
-<computeroutput>--auto=yes</computeroutput> option. To do it
+<option>--auto=yes</option> option. To do it
 manually, just specify the filenames as additional arguments to
 cg_annotate. For example, the
 output from running <filename>cg_annotate &lt;filename&gt;
@@ -736,7 +736,7 @@ terminal is clearly useful.)</para>
 (<computeroutput>User-annotated source</computeroutput>) as
 having been chosen manually for annotation.  If the file was
 found in one of the directories specified with the
-<computeroutput>-I / --include</computeroutput> option, the directory
+<option>-I</option>/<option>--include</option> option, the directory
 and file are both given.</para>
 
 <para>Each line is annotated with its event counts.  Events not
@@ -757,7 +757,7 @@ part of a file the shown code comes from, eg:</para>
 (figures and code for line 878)]]></programlisting>
 
 <para>The amount of context to show around annotated lines is
-controlled by the <computeroutput>--context</computeroutput>
+controlled by the <option>--context</option>
 option.</para>
 
 <para>To get automatic annotation, run
@@ -765,8 +765,8 @@ option.</para>
 cg_annotate will automatically annotate every source file it can
 find that is mentioned in the function-by-function summary.
 Therefore, the files chosen for auto-annotation are affected by
-the <computeroutput>--sort</computeroutput> and
-<computeroutput>--threshold</computeroutput> options.  Each
+the <option>--sort</option> and
+<option>--threshold</option> options.  Each
 source file is clearly marked (<computeroutput>Auto-annotated
 source</computeroutput>) as being chosen automatically.  Any
 files that could not be found are mentioned at the end of the
@@ -785,9 +785,9 @@ usually compiled with debugging information, but the source files
 are often not present on a system.  If a file is chosen for
 annotation <command>both</command> manually and automatically, it
 is marked as <computeroutput>User-annotated
-source</computeroutput>. Use the <computeroutput>-I /
---include</computeroutput> option to tell Valgrind where to look
-for source files if the filenames found from the debugging
+source</computeroutput>. Use the
+<option>-I</option>/<option>--include</option> option to tell Valgrind where
+to look for source files if the filenames found from the debugging
 information aren't specific enough.</para>
 
 <para>Beware that cg_annotate can take some time to digest large
@@ -839,27 +839,25 @@ cg_annotate.</para>
 <itemizedlist>
 
   <listitem>
-    <para><computeroutput>-h, --help</computeroutput></para>
-    <para><computeroutput>-v, --version</computeroutput></para>
+    <para><option>-h --help</option></para>
+    <para><option>-v --version</option></para>
     <para>Help and version, as usual.</para>
   </listitem>
 
   <listitem id="sort">
-    <para><computeroutput>--sort=A,B,C</computeroutput> [default:
+    <para><option>--sort=A,B,C</option> [default:
     order in
     <computeroutput>cachegrind.out.&lt;pid&gt;</computeroutput>]</para>
     <para>Specifies the events upon which the sorting of the
     function-by-function entries will be based.  Useful if you
     want to concentrate on eg. I cache misses
-    (<computeroutput>--sort=I1mr,I2mr</computeroutput>), or D
-    cache misses
-    (<computeroutput>--sort=D1mr,D2mr</computeroutput>), or L2
-    misses
-    (<computeroutput>--sort=D2mr,I2mr</computeroutput>).</para>
+    (<option>--sort=I1mr,I2mr</option>), or D cache misses
+    (<option>--sort=D1mr,D2mr</option>), or L2 misses
+    (<option>--sort=D2mr,I2mr</option>).</para>
   </listitem>
 
   <listitem id="show">
-    <para><computeroutput>--show=A,B,C</computeroutput> [default:
+    <para><option>--show=A,B,C</option> [default:
     all, using order in
     <computeroutput>cachegrind.out.&lt;pid&gt;</computeroutput>]</para>
     <para>Specifies which events to show (and the column
@@ -869,7 +867,7 @@ cg_annotate.</para>
   </listitem>
 
   <listitem id="threshold">
-    <para><computeroutput>--threshold=X</computeroutput>
+    <para><option>--threshold=X</option>
     [default: 99%]</para>
     <para>Sets the threshold for the function-by-function
     summary.  Functions are shown that account for more than X%
@@ -878,24 +876,23 @@ cg_annotate.</para>
       
     <para>Note: thresholds can be set for more than one of the
     events by appending any events for the
-    <computeroutput>--sort</computeroutput> option with a colon
+    <option>--sort</option> option with a colon
     and a number (no spaces, though).  E.g. if you want to see
     the functions that cover 99% of L2 read misses and 99% of L2
     write misses, use this option:</para>
-    <para><computeroutput>--sort=D2mr:99,D2mw:99</computeroutput></para>
+    <para><option>--sort=D2mr:99,D2mw:99</option></para>
   </listitem>
 
   <listitem id="auto">
-    <para><computeroutput>--auto=no</computeroutput> [default]</para>
-    <para><computeroutput>--auto=yes</computeroutput></para>
+    <para><option>--auto=no</option> [default]</para>
+    <para><option>--auto=yes</option></para>
     <para>When enabled, automatically annotates every file that
     is mentioned in the function-by-function summary that can be
     found.  Also gives a list of those that couldn't be found.</para>
   </listitem>
 
   <listitem id="context">
-    <para><computeroutput>--context=N</computeroutput> [default:
-    8]</para>
+    <para><option>--context=N</option> [default: 8]</para>
     <para>Print N lines of context before and after each
     annotated line.  Avoids printing large sections of source
     files that were not executed.  Use a large number
@@ -903,9 +900,8 @@ cg_annotate.</para>
   </listitem>
 
   <listitem id="include">
-    <para><computeroutput>-I&lt;dir&gt;,
-      --include=&lt;dir&gt;</computeroutput> [default: empty
-      string]</para>
+    <para><option>-I&lt;dir&gt;, --include=&lt;dir&gt;</option>
+        [default: empty string]</para>
     <para>Adds a directory to the list in which to search for
     files.  Multiple -I/--include options can be given to add
     multiple directories.</para>
@@ -1046,7 +1042,7 @@ cg_annotate issues warnings.</para>
 
   <listitem>
     <para>If you compile some files with
-    <computeroutput>-g</computeroutput> and some without, some
+    <option>-g</option> and some without, some
     events that take place in a file without debug info could be
     attributed to the last line of a file with debug info
     (whichever one gets placed before the non-debug-info file in

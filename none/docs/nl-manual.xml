@@ -8,7 +8,7 @@
 <title>Nulgrind: the minimal Valgrind tool</title>
 
 <para>To use this tool, you must specify
-<computeroutput>--tool=none</computeroutput> on the Valgrind
+<option>--tool=none</option> on the Valgrind
 command line.</para>
 
 <sect1 id="ms-manual.overview" xreflabel="Overview">

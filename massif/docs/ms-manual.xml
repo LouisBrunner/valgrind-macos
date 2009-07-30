@@ -8,7 +8,7 @@
   <title>Massif: a heap profiler</title>
 
 <para>To use this tool, you must specify
-<computeroutput>--tool=massif</computeroutput> on the Valgrind
+<option>--tool=massif</option> on the Valgrind
 command line.</para>
 
 <sect1 id="ms-manual.overview" xreflabel="Overview">
@@ -54,7 +54,7 @@ which parts of your program are responsible for allocating the heap memory.
 
 
 <para>First off, as for the other Valgrind tools, you should compile with
-debugging info (the <computeroutput>-g</computeroutput> flag).  It shouldn't
+debugging info (the <option>-g</option> flag).  It shouldn't
 matter much what optimisation level you compile your program with, as this
 is unlikely to affect the heap memory usage.</para>
 
@@ -188,7 +188,7 @@ For very short-run programs such as the example, most of the executed
 instructions involve the loading and dynamic linking of the program.  The
 execution of <computeroutput>main</computeroutput> (and thus the heap
 allocations) only occur at the very end.  For a short-running program like
-this, we can use the <computeroutput>--time-unit=B</computeroutput> option
+this, we can use the <option>--time-unit=B</option> option
 to specify that we want the time unit to instead be the number of bytes
 allocated/deallocated on the heap and stack(s).</para>
 
@@ -232,7 +232,7 @@ taking snapshots for every heap allocation/deallocation, but as a program
 runs for longer, it takes snapshots less frequently.  It also discards older
 snapshots as the program goes on;  when it reaches the maximum number of
 snapshots (100 by default, although changeable with the
-<computeroutput>--max-snapshots</computeroutput> option) half of them are
+<option>--max-snapshots</option> option) half of them are
 deleted.  This means that a reasonable number of snapshots are always
 maintained.</para>
 
@@ -246,7 +246,7 @@ shortly.  Detailed snapshots are represented in the graph by bars consisting
 of '@' characters.  The text at the bottom show that 3 detailed
 snapshots were taken for this program (snapshots 9, 14 and 24).  By default,
 every 10th snapshot is detailed, although this can be changed via the
-<computeroutput>--detailed-freq</computeroutput> option.</para>
+<option>--detailed-freq</option> option.</para>
 
 <para>Finally, there is at most one <emphasis>peak</emphasis> snapshot.  The
 peak snapshot is a detailed snapshot, and records the point where memory
@@ -260,7 +260,7 @@ at every allocation, i.e. it is <emphasis>not</emphasis> just the peak among
 the regular snapshots.  However, recording the true peak is expensive, and
 so by default Massif records a peak whose size is within 1% of the size of
 the true peak.  See the description of the
-<computeroutput>--peak-inaccuracy</computeroutput> option below for more
+<option>--peak-inaccuracy</option> option below for more
 details.</para>
 
 <para>The following graph is from an execution of Konqueror, the KDE web
@@ -331,7 +331,7 @@ a small amount of information is recorded for each one:</para>
 
   <listitem><para>The time it was taken. In this case, the time unit is
   bytes, due to the use of
-  <computeroutput>--time-unit=B</computeroutput>.</para></listitem>
+  <option>--time-unit=B</option>.</para></listitem>
 
   <listitem><para>The total memory consumption at that point.</para></listitem>
 
@@ -347,14 +347,14 @@ a small amount of information is recorded for each one:</para>
   The exact number of administrative bytes depends on the details of the
   allocator.  By default Massif assumes 8 bytes per block, as can be seen
   from the example, but this number can be changed via the
-  <computeroutput>--heap-admin</computeroutput> option.</para>
+  <option>--heap-admin</option> option.</para>
 
   <para>Second, allocators often round up the number of bytes asked for to a
   larger number.  By default, if N bytes are asked for, Massif rounds N up
   to the nearest multiple of 8 that is equal to or greater than N.  This is
   typical behaviour for allocators, and is required to ensure that elements
   within the block are suitably aligned.  The rounding size can be changed
-  with the <computeroutput>--alignment</computeroutput> option, although it
+  with the <option>--alignment</option> option, although it
   cannot be less than 8, and must be a power of two.</para></listitem>
 
   <listitem><para>The size of the stack(s).  By default, stack profiling is
@@ -379,7 +379,7 @@ functions, and so all 9,000 useful bytes (which is 99.21% of all allocated
 bytes) go through them.  But how were <function>malloc</function> and new
 called?  At this point, every allocation so far has been due to line 21
 inside <function>main</function>, hence the second line in the tree.  The
-<computeroutput>-></computeroutput> indicates that main (line 20) called
+<option>-></option> indicates that main (line 20) called
 <function>malloc</function>.</para>
 
 <para>Let's see what the subsequent output shows happened next:</para>
@@ -491,7 +491,7 @@ only prints the details for code locations responsible for more than 1%.
 The entries that do not meet this threshold are aggregated.  This avoids
 filling up the output with large numbers of unimportant entries.  The
 thresholds can be changed with the
-<computeroutput>--threshold</computeroutput> option that both Massif and
+<option>--threshold</option> option that both Massif and
 ms_print support.</para>
 
 </sect2>
@@ -617,7 +617,7 @@ operator new[](unsigned long, std::nothrow_t const&)
     <listitem>
       <para>Any direct heap allocation (i.e. a call to
       <function>malloc</function>, <function>new</function>, etc, or a call
-      to a function name in a <computeroutput>--alloc-fn</computeroutput>
+      to a function name in a <option>--alloc-fn</option>
       option) that occurs in a function specified by this option will be
       ignored.  This is mostly useful for testing purposes.  This option can
       be specified multiple times on the command line, to name multiple
@@ -632,7 +632,7 @@ operator new[](unsigned long, std::nothrow_t const&)
       </para>
       
       <para>Note that overloaded C++ names must be written in full, as for
-      <computeroutput>--alloc-fn</computeroutput> above.
+      <option>--alloc-fn</option> above.
       </para>
       </listitem>
   </varlistentry>
@@ -685,7 +685,7 @@ operator new[](unsigned long, std::nothrow_t const&)
     </term>
     <listitem>
       <para>Frequency of detailed snapshots.  With
-      <computeroutput>--detailed-freq=1</computeroutput>, every snapshot is
+      <option>--detailed-freq=1</option>, every snapshot is
       detailed.</para>
     </listitem>
   </varlistentry>
@@ -741,14 +741,14 @@ operator new[](unsigned long, std::nothrow_t const&)
 <itemizedlist>
 
   <listitem>
-    <para><computeroutput>-h, --help</computeroutput></para>
-    <para><computeroutput>-v, --version</computeroutput></para>
+    <para><option>-h --help</option></para>
+    <para><option>-v --version</option></para>
     <para>Help and version, as usual.</para>
   </listitem>
 
   <listitem>
     <para><option><![CDATA[--threshold=<m.n>]]></option> [default: 1.0]</para>
-    <para>Same as Massif's <computeroutput>--threshold</computeroutput>, but
+    <para>Same as Massif's <option>--threshold</option>, but
     applied after profiling rather than during.</para>
   </listitem>
 

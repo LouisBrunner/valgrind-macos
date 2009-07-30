@@ -48,7 +48,7 @@ included below.</para>
 <variablelist remap="TP">
 
   <varlistentry>
-    <term><option>-h, --help</option></term>
+    <term><option>-h --help</option></term>
     <listitem>
       <para>Show summary of options.</para>
     </listitem>

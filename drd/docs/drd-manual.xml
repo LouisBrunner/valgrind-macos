@@ -8,7 +8,7 @@
   <title>DRD: a thread error detector</title>
 
 <para>To use this tool, you must specify
-<computeroutput>--tool=drd</computeroutput>
+<option>--tool=drd</option>
 on the Valgrind command line.</para>
 
 
@@ -653,7 +653,7 @@ The above report has the following meaning:
       displayed. For dynamically allocated data the allocation call
       stack is shown. For static variables and stack variables the
       allocation context is only shown when the option
-      <computeroutput>--read-var-info=yes</computeroutput> has been
+      <option>--read-var-info=yes</option> has been
       specified. Otherwise DRD will print <computeroutput>Allocation
       context: unknown</computeroutput>.
     </para>

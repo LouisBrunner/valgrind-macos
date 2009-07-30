@@ -8,7 +8,7 @@
 
 
 <para>To use this tool, you must specify
-<computeroutput>--tool=callgrind</computeroutput> on the
+<option>--tool=callgrind</option> on the
 Valgrind command line.</para>
 
 <sect1 id="cl-manual.use" xreflabel="Overview">
@@ -61,7 +61,7 @@ of the profiling, two command line tools are provided:</para>
 </variablelist>
 
 <para>To use Callgrind, you must specify 
-<computeroutput>--tool=callgrind</computeroutput> on the Valgrind 
+<option>--tool=callgrind</option> on the Valgrind 
 command line.</para>
 
   <sect2 id="cl-manual.functionality" xreflabel="Functionality">
@@ -498,8 +498,7 @@ callgrind.out.<emphasis>pid</emphasis>.<emphasis>part</emphasis>-<emphasis>threa
 <title>Command line option reference</title>
 
 <para>
-In the following, options are grouped into classes, in the same order as
-the output of <computeroutput>callgrind --help</computeroutput>.
+In the following, options are grouped into classes.
 </para>
 <para>
 Some options allow the specification of a function/symbol name, such as
@@ -512,30 +511,6 @@ the use of wildcards '*' (zero or more arbitrary characters) and '?'
 shell. This feature is important especially for C++, as without wildcard
 usage, the function would have to be specified in full extent, including
 parameter signature. </para>
-
-<sect2 id="cl-manual.options.misc" 
-       xreflabel="Miscellaneous options">
-<title>Miscellaneous options</title>
-
-<variablelist id="cl.opts.list.misc">
-
-  <varlistentry>
-    <term><option>--help</option></term>
-    <listitem>
-      <para>Show summary of options. This is a short version of this
-      manual section.</para>
-    </listitem>
-  </varlistentry>
-
-  <varlistentry>
-    <term><option>--version</option></term>
-    <listitem>
-      <para>Show version of callgrind.</para>
-    </listitem>
-  </varlistentry>
-
-</variablelist>
-</sect2>
 
 <sect2 id="cl-manual.options.creation" 
        xreflabel="Dump creation options">
@@ -750,9 +725,9 @@ Also see <xref linkend="cl-manual.limits"/>.</para>
       option <xref linkend="opt.toggle-collect"/>.  If you use this flag, 
       collection
       state should be switched off at the beginning.  Note that the
-      specification of <computeroutput>--toggle-collect</computeroutput>
+      specification of <option>--toggle-collect</option>
       implicitly sets
-      <computeroutput>--collect-state=no</computeroutput>.</para>
+      <option>--collect-state=no</option>.</para>
       <para>Collection state can be toggled also by inserting the client request
       <computeroutput><xref linkend="cr.toggle-collect"/>;</computeroutput>
       at the needed code positions.</para>

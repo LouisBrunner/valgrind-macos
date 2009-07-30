@@ -9,7 +9,7 @@
   <title>Ptrcheck: an experimental heap, stack &amp; global array overrun detector</title>
 
 <para>To use this tool, you must specify
-<computeroutput>--tool=exp-ptrcheck</computeroutput> on the Valgrind
+<option>--tool=exp-ptrcheck</option> on the Valgrind
 command line.</para>
 
 
@@ -161,7 +161,7 @@ possibly be a valid pointer.</para>
 <title>How Ptrcheck Works: Stack and Global Checks</title>
 
 <para>When a source file is compiled
-with <computeroutput>-g</computeroutput>, the compiler attaches DWARF3
+with <option>-g</option>, the compiler attaches DWARF3
 debugging information which describes the location of all stack and
 global arrays in the file.</para>
 

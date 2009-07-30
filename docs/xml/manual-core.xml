@@ -113,20 +113,20 @@ already, if you intended to debug your program with GNU gdb, or some
 other debugger.</para>
 
 <para>If you are planning to use Memcheck: On rare
-occasions, compiler optimisations (at <computeroutput>-O2</computeroutput>
-and above, and sometimes <computeroutput>-O1</computeroutput>) have been
+occasions, compiler optimisations (at <option>-O2</option>
+and above, and sometimes <option>-O1</option>) have been
 observed to generate code which fools Memcheck into wrongly reporting
 uninitialised value errors, or missing uninitialised value errors.  We have
 looked in detail into fixing this, and unfortunately the result is that
 doing so would give a further significant slowdown in what is already a slow
 tool.  So the best solution is to turn off optimisation altogether.  Since
 this often makes things unmanageably slow, a reasonable compromise is to use
-<computeroutput>-O</computeroutput>.  This gets you the majority of the
+<option>-O</option>.  This gets you the majority of the
 benefits of higher optimisation levels whilst keeping relatively small the
 chances of false positives or false negatives from Memcheck.  Also, you
-should compile your code with <computeroutput>-Wall</computeroutput> because
+should compile your code with <option>-Wall</option> because
 it can identify some or all of the problems that Valgrind can miss at the
-higher optimisation levels.  (Using <computeroutput>-Wall</computeroutput>
+higher optimisation levels.  (Using <option>-Wall</option>
 is also a good idea in general.)  All other tools (as far as we know) are
 unaffected by optimisation level.</para>
 
@@ -631,7 +631,7 @@ categories.</para>
   </varlistentry>
 
   <varlistentry id="opt.quiet" xreflabel="--quiet">
-    <term><option>-q --quiet</option></term>
+    <term><option>-q</option>, <option>--quiet</option></term>
     <listitem>
       <para>Run silently, and only print error messages. Useful if you
       are running regression tests or have some other automated test
@@ -640,7 +640,7 @@ categories.</para>
   </varlistentry>
 
   <varlistentry id="opt.verbose" xreflabel="--verbose">
-    <term><option>-v --verbose</option></term>
+    <term><option>-v</option>, <option>--verbose</option></term>
     <listitem>
       <para>Be more verbose. Gives extra information on various aspects
       of your program, such as: the shared objects loaded, the
@@ -1525,7 +1525,7 @@ following entry in <literal>~/.valgrindrc</literal>:</para>
 run.  Without the <computeroutput>memcheck:</computeroutput>
 part, this will cause problems if you select other tools that
 don't understand
-<computeroutput>--leak-check=yes</computeroutput>.</para>
+<option>--leak-check=yes</option>.</para>
 
 </sect2>
 
@@ -1589,7 +1589,7 @@ able to cope with any POSIX-compliant use of signals.</para>
 <para>If you're using signals in clever ways (for example, catching
 SIGSEGV, modifying page state and restarting the instruction), you're
 probably relying on precise exceptions.  In this case, you will need
-to use <computeroutput>--vex-iropt-precise-memory-exns=yes</computeroutput>.
+to use <option>--vex-iropt-precise-memory-exns=yes</option>.
 </para>
 
 <para>If your program dies as a result of a fatal core-dumping signal,
@@ -1961,7 +1961,7 @@ shipped.</para>
 <title>Warning Messages You Might See</title>
 
 <para>Most of these only appear if you run in verbose mode
-(enabled by <computeroutput>-v</computeroutput>):</para>
+(enabled by <option>-v</option>):</para>
 
  <itemizedlist>
 

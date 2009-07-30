@@ -87,7 +87,7 @@ trick, one which I assume the
 support.</para>
 
 <para><filename>valgrind.so</filename> is linked with the
-<computeroutput>-z initfirst</computeroutput> flag, which
+<option>-z initfirst</option> flag, which
 requests that its initialisation code is run before that of any
 other object in the executable image.  When this happens,
 valgrind gains control.  The real CPU becomes "trapped" in
@@ -489,8 +489,8 @@ result:</para>
     entirely.</para>
 
     <para>To find out which glibc symbols are used by Valgrind,
-    reinstate the link flags <computeroutput>-nostdlib
-    -Wl,-no-undefined</computeroutput>.  This causes linking to
+    reinstate the link flags <option>-nostdlib
+    -Wl,-no-undefined</option>.  This causes linking to
     fail, but will tell you what you depend on.  I have mostly,
     but not entirely, got rid of the glibc dependencies; what
     remains is, IMO, fairly harmless.  AFAIK the current

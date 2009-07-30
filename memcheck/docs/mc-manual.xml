@@ -157,7 +157,7 @@ difficult-to-diagnose crashes.</para>
       lost" and "possibly lost" blocks.  When enabled, the leak detector also
       shows "reachable" and "indirectly lost" blocks.  (In other words, it
       shows all blocks, except suppressed ones, so
-      <computeroutput>--show-all</computeroutput> would be a better name for
+      <option>--show-all</option> would be a better name for
       it.)</para>
     </listitem>
   </varlistentry>
@@ -764,12 +764,12 @@ LEAK SUMMARY:
         suppressed: 0 bytes in 0 blocks.
 ]]></programlisting>
 
-<para>If <computeroutput>--leak-check=full</computeroutput> is specified,
+<para>If <option>--leak-check=full</option> is specified,
 Memcheck will give details for each definitely lost or possibly lost block,
 including where it was allocated.  (Actually, it merges results for all
 blocks that have the same category and sufficiently similar stack traces
 into a single "loss record".  The
-<computeroutput>--leak-resolution</computeroutput> lets you control the
+<option>--leak-resolution</option> lets you control the
 meaning of "sufficiently similar".)  It cannot tell you when or how or why
 the pointer to a leaked block was lost; you have to work that out for
 yourself.  In general, you should attempt to ensure your programs do not
@@ -795,7 +795,7 @@ bytes in other blocks are indirectly lost because of this lost block.
 The loss records are not presented in any notable order, so the loss record
 numbers aren't particularly meaningful.</para>
 
-<para>If you specify <computeroutput>--show-reachable=yes</computeroutput>,
+<para>If you specify <option>--show-reachable=yes</option>,
 reachable and indirectly lost blocks will also be shown, as the following
 two examples show.</para>
 
@@ -1289,7 +1289,7 @@ arguments.</para>
 
   <listitem>
     <para><varname>VALGRIND_DO_LEAK_CHECK</varname>: does a full memory leak
-    check (like <computeroutput>--leak-check=full</computeroutput> right now.
+    check (like <option>--leak-check=full</option> right now.
     This is useful for incrementally checking for leaks between arbitrary
     places in the program's execution.  It has no return value.</para>
   </listitem>
@@ -1297,7 +1297,7 @@ arguments.</para>
   <listitem>
     <para><varname>VALGRIND_DO_QUICK_LEAK_CHECK</varname>: like
     <varname>VALGRIND_DO_LEAK_CHECK</varname>, except it produces only a leak
-    summary (like <computeroutput>--leak-check=summary</computeroutput>).
+    summary (like <option>--leak-check=summary</option>).
     It has no return value.</para>
   </listitem>
 
@@ -1580,7 +1580,7 @@ the same <computeroutput>mpicc</computeroutput> you use to build the
 MPI application you want to debug.  By default, Valgrind tries
 <computeroutput>mpicc</computeroutput>, but you can specify a
 different one by using the configure-time flag
-<computeroutput>--with-mpicc=</computeroutput>.  Currently the
+<option>--with-mpicc=</option>.  Currently the
 wrappers are only buildable with
 <computeroutput>mpicc</computeroutput>s which are based on GNU
 <computeroutput>gcc</computeroutput> or Intel's
@@ -1704,7 +1704,7 @@ valgrind MPI wrappers 16386: Try MPIWRAP_DEBUG=help for possible options
 </itemizedlist>
 
 <para> If you want to use Valgrind's XML output facility
-(<computeroutput>--xml=yes</computeroutput>), you should pass
+(<option>--xml=yes</option>), you should pass
 <computeroutput>quiet</computeroutput> in
 <computeroutput>MPIWRAP_DEBUG</computeroutput> so as to get rid of any
 extraneous printing from the wrappers.</para>

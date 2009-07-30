@@ -20,14 +20,9 @@
 <refsynopsisdiv>
 <cmdsynopsis>
   <command>valgrind</command>
-  <arg>
-    <arg><replaceable>valgrind</replaceable></arg>
-    <arg><replaceable>options</replaceable></arg>
-  </arg>
-  <arg><replaceable>your-program</replaceable></arg>
-  <arg>
-    <arg><replaceable>your-program-options</replaceable></arg>
-  </arg>
+  <arg><replaceable>valgrind-options</replaceable></arg>
+  <arg><command>your-program</command></arg>
+  <arg><replaceable>your-program-options</replaceable></arg>
 </cmdsynopsis>
 </refsynopsisdiv>
 
@@ -37,81 +32,18 @@
 
 <para><command>Valgrind</command> is a flexible program for debugging
 and profiling Linux executables.  It consists of a core, which provides
-a synthetic CPU in software, and a series of "tools", each of which is a
-debugging or profiling tool. The architecture is modular, so that new
-tools can be created easily and without disturbing the existing
-structure.</para>
+a synthetic CPU in software, and a series of debugging and profiling tools.
+The architecture is modular, so that new tools can be created easily and
+without disturbing the existing structure.</para>
+
+<para>Some of the options described below work with all Valgrind tools, and
+some only work with a few or one.  The section MEMCHECK OPTIONS and those
+below it describe tool-specific options.</para>
 
 <para>This manual page covers only basic usage and options.  For more
 comprehensive information, please see the HTML documentation on your
 system: <filename>&vg-doc-path;</filename>, or online:
 <filename>&vg-bookset;</filename>.</para>
-
-</refsect1>
-
-
-<refsect1 id="invocation">
-<title>Invocation</title>
-
-<para><command>Valgrind</command> is typically invoked as follows:
-<literallayout>    valgrind program args</literallayout>
-
-This runs <command>program</command> (with arguments
-<command>args</command>) under Valgrind using the Memcheck tool.
-Memcheck performs a range of memory-checking functions, including
-detecting accesses to uninitialised memory, misuse of allocated memory
-(double frees, access after free, etc.) and detecting memory
-leaks.</para>
-
-<para>To use a different tool, use the <option>--tool</option> option:
-<literallayout>    valgrind --tool=toolname program args</literallayout></para>
-
-<para>The following tools are available:</para>
-
-<itemizedlist>
-
-  <listitem>
-    <para><option>cachegrind</option> is a cache simulator.  It can be
-    used to annotate every line of your program with the number of
-    instructions executed and cache misses incurred.</para>
-  </listitem>
-
-  <listitem>
-    <para><option>callgrind</option> adds call graph tracing to cachegrind.  It can be
-    used to get call counts and inclusive cost for each call happening in your
-    program. In addition to cachegrind, callgrind can annotate threads separately,
-    and every instruction of disassembler output of your program with the number of
-    instructions executed and cache misses incurred.</para>
-  </listitem>
-
-  <listitem>
-    <para><option>helgrind</option> spots potential race conditions in
-    your program.</para>
-  </listitem>
-
-  <listitem>
-    <para><option>lackey</option> is a sample tool that can be used as a
-    template for generating your own tools. After the program
-    terminates, it prints out some basic statistics about the program
-    execution.</para>
-  </listitem>
-
-  <listitem>
-    <para><option>massif</option> is a heap profiler.  It measures how
-    much heap memory your program uses.</para>
-  </listitem>
-
-  <listitem>
-    <para><option>memcheck</option> is a fine-grained memory checker.</para>
-  </listitem>
-
-  <listitem>
-    <para><option>none</option> performs no function - it simply runs
-    the program under Valgrind.  This is typically used for debugging
-    and benchmarking Valgrind.</para>
-  </listitem>
-
-</itemizedlist>
 
 </refsect1>
 
@@ -228,22 +160,33 @@ leaks.</para>
 
 
 
-<refsect1 id="massif-options">
-<title>Massif Options</title>
+<refsect1 id="helgrind-options">
+<title>Helgrind Options</title>
 
-<xi:include href="../../massif/docs/ms-manual.xml" 
-            xpointer="ms.opts.list"
+<xi:include href="../../helgrind/docs/hg-manual.xml" 
+            xpointer="hg.opts.list"
             xmlns:xi="http://www.w3.org/2001/XInclude" />
 
 </refsect1>
 
 
 
-<refsect1 id="helgrind-options">
-<title>Helgrind Options</title>
+<refsect1 id="drd-options">
+<title>DRD Options</title>
 
-<xi:include href="../../helgrind/docs/hg-manual.xml" 
-            xpointer="hg.opts.list"
+<xi:include href="../../drd/docs/drd-manual.xml" 
+            xpointer="drd.opts.list"
+            xmlns:xi="http://www.w3.org/2001/XInclude" />
+
+</refsect1>
+
+
+
+<refsect1 id="massif-options">
+<title>Massif Options</title>
+
+<xi:include href="../../massif/docs/ms-manual.xml" 
+            xpointer="ms.opts.list"
             xmlns:xi="http://www.w3.org/2001/XInclude" />
 
 </refsect1>

@@ -1198,9 +1198,8 @@ fail these checks.</para>
        xreflabel="Acting on Cachegrind's information">
 <title>Acting on Cachegrind's information</title>
 <para>
-So, you've managed to profile your program with Cachegrind.  Now what?
-What's the best way to actually act on the information it provides to speed
-up your program?  Here are some rules of thumb that we have found to be
+Cachegrind gives you lots of information, but acting on that information
+isn't always easy.  Here are some rules of thumb that we have found to be
 useful.</para>
 
 <para>
@@ -1208,6 +1207,17 @@ First of all, the global hit/miss rate numbers are not that useful.  If you
 have multiple programs or multiple runs of a program, comparing the numbers
 might identify if any are outliers and worthy of closer investigation.
 Otherwise, they're not enough to act on.</para>
+
+<para>
+The function-by-function counts are more useful to look at, as they pinpoint
+which functions are causing large numbers of counts.  However, beware that
+inlining can make these counts misleading.  If a function
+<function>f</function> is always inlined, counts will be attributed to the
+functions it is inlined into, rather than itself.  However, if you look at
+the line-by-line annotations for <function>f</function> you'll see the
+counts that belong to <function>f</function>.  (This is hard to avoid, it's
+how the debug info is structured.)  So it's worth looking for large numbers
+in the line-by-line annotations.</para>
 
 <para>
 The line-by-line source code annotations are much more useful.  In our
@@ -1220,11 +1230,51 @@ bottlenecks.</para>
 <para>
 After that, we have found that L2 misses are typically a much bigger source
 of slow-downs than L1 misses.  So it's worth looking for any snippets of
-code that cause a high proportion of the L2 misses.  If you find any, it's
-still not always easy to work out how to improve things.  You need to have a
+code with high <computeroutput>D2mr</computeroutput> or
+<computeroutput>D2mw</computeroutput> counts.  (You can use
+<option>--show=D2mr
+--sort=D2mr</option> with cg_annotate to focus just on
+<literal>D2mr</literal> counts, for example.) If you find any, it's still
+not always easy to work out how to improve things.  You need to have a
 reasonable understanding of how caches work, the principles of locality, and
 your program's data access patterns.  Improving things may require
 redesigning a data structure, for example.</para>
+
+<para>
+Looking at the <computeroutput>Bcm</computeroutput> and
+<computeroutput>Bim</computeroutput> misses can also be helpful.
+In particular, <computeroutput>Bim</computeroutput> misses are often caused
+by <literal>switch</literal> statements, and in some cases these
+<literal>switch</literal> statements can be replaced with table-driven code.
+For example, you might replace code like this:</para>
+
+<programlisting><![CDATA[
+enum E { A, B, C };
+enum E e;
+int i;
+...
+switch (e)
+{
+    case A: i += 1;
+    case B: i += 2;
+    case C: i += 3;
+}
+]]></programlisting>
+
+<para>with code like this:</para>
+
+<programlisting><![CDATA[
+enum E { A, B, C };
+enum E e;
+enum E table[] = { 1, 2, 3 };
+int i;
+...
+i += table[e];
+]]></programlisting>
+
+<para>
+This is obviously a contrived example, but the basic principle applies in a
+wide variety of situations.</para>
 
 <para>
 In short, Cachegrind can tell you where some of the bottlenecks in your code

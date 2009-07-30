@@ -1028,9 +1028,9 @@ static void print_preamble ( Bool logging_to_fd,
 ==9717==          fffffffffffffffffffffffffffff 1 2 3 \
 ==9717==          bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb
       */
-      VG_(umsg)("Command: ");
+      umsg_or_xml("Command: ");
       if (VG_(args_the_exename))
-         VG_(umsg)("%s", VG_(args_the_exename));
+         umsg_or_xml("%s", VG_(args_the_exename));
       n = 0;
       for (i = 0; i < VG_(sizeXA)( VG_(args_for_client) ); i++) {
          HChar* s = *(HChar**)VG_(indexXA)( VG_(args_for_client), i );
@@ -1043,9 +1043,9 @@ static void print_preamble ( Bool logging_to_fd,
             VG_(umsg)("\n        ");
             n = slen;
          }
-         VG_(umsg)(" %s", s);
+         umsg_or_xml(" %s", s);
       }
-      VG_(umsg)("\n");
+      umsg_or_xml("\n");
 
       if (VG_(clo_xml))
          VG_(printf_xml)("</preamble>\n");

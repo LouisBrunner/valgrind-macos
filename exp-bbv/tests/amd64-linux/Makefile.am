@@ -27,7 +27,7 @@ AM_CCASFLAGS += -ffreestanding
 
 LDFLAGS += -nostartfiles -nodefaultlibs
 
-clone_test = clone_test.S
+clone_test_SOURCES = clone_test.S
 complex_rep_SOURCES = complex_rep.S
 fldcw_check_SOURCES = fldcw_check.S
 ll_SOURCES = ll.S

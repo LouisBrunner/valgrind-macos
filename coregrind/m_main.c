@@ -1052,7 +1052,7 @@ static void print_preamble ( Bool logging_to_fd,
    }
 
    if (!VG_(clo_xml) && VG_(clo_verbosity) > 0 && !logging_to_fd) {
-      VG_(umsg)("My PID: %d, parent PID: %d\n", VG_(getpid)(), VG_(getppid)());
+      VG_(umsg)("Parent PID: %d\n", VG_(getppid)());
    }
    else
    if (VG_(clo_xml)) {

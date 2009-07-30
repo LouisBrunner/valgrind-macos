@@ -5,8 +5,8 @@
 
 
 <chapter id="pc-manual" 
-         xreflabel="Ptrcheck: an experimental heap, stack &amp; global array overrun detector">
-  <title>Ptrcheck: an experimental heap, stack &amp; global array overrun detector</title>
+         xreflabel="Ptrcheck: an experimental heap, stack and global array overrun detector">
+  <title>Ptrcheck: an experimental heap, stack and global array overrun detector</title>
 
 <para>To use this tool, you must specify
 <option>--tool=exp-ptrcheck</option> on the Valgrind

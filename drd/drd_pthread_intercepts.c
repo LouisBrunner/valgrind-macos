@@ -110,7 +110,7 @@
  * happen, even when compiling with optimization disabled.
  */
 #undef __always_inline /* since already defined in <cdefs.h> */
-#if __GNUC_PREREQ (3,2)
+#if __GNUC__ > 3 || __GNUC__ == 3 && __GNUC_MINOR__ >= 2
 #define __always_inline __inline__ __attribute__((always_inline))
 #else
 #define __always_inline __inline__

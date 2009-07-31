@@ -97,6 +97,7 @@ EXTRA_DIST =                                        \
 	pth_broadcast.stderr.exp                    \
 	pth_broadcast.vgtest                        \
 	pth_cancel_locked.stderr.exp		    \
+	pth_cancel_locked.stderr.exp-darwin	    \
 	pth_cancel_locked.vgtest		    \
 	pth_cleanup_handler.stderr.exp		    \
 	pth_cleanup_handler.vgtest		    \

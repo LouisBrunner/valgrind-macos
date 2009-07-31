@@ -196,11 +196,20 @@ void drd_report_data_race(Error* const err, const DataRaceErrInfo* const dri)
  */
 static Bool drd_compare_error_contexts(VgRes res, Error* e1, Error* e2)
 {
-   /*
-    * Since e1 and e2 have the same error kind and the same error contexts,
-    * no further comparisons have to be performed. Just return true.
-    */
-   return True;
+   tl_assert(VG_(get_error_kind)(e1) == VG_(get_error_kind)(e2));
+
+   switch (VG_(get_error_kind)(e1))
+   {
+   case DataRaceErr:
+   {
+      const DataRaceErrInfo* const dri1 = VG_(get_error_extra)(e1);
+      const DataRaceErrInfo* const dri2 = VG_(get_error_extra)(e2);
+      return dri1->access_type == dri2->access_type
+	     && dri1->size == dri2->size;
+   }
+   default:
+      return True;
+   }
 }
 
 /**

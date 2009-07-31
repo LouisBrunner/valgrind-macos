@@ -82,7 +82,7 @@ Release 3.5.0 (???)
   Stack traces produced when --xml=yes is specified are different and
   unchanged.
 
-* XXX: XML output has changed...
+* XXX: XML output has changed... along with how --xml=yes works.
 
 * The graphs drawn by Massif's ms_print program have changed slightly:
   - The half-height chars '.' and ',' are no longer drawn, because they are

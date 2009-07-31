@@ -426,57 +426,61 @@ static HChar* show_ShrinkMode ( ShrinkMode sm )
    }
 }
 
-static void show_Addr_concisely ( /*OUT*/HChar* buf, Addr aA )
+static void show_len_concisely ( /*OUT*/HChar* buf, Addr start, Addr end )
 {
    HChar* fmt;
-   ULong a = (ULong)aA;
+   ULong len = ((ULong)end) - ((ULong)start) + 1;
 
-   if (a < 10*1000*1000ULL) {
+   if (len < 10*1000*1000ULL) {
       fmt = "%7llu";
    } 
-   else if (a < 999999ULL * (1ULL<<20)) {
+   else if (len < 999999ULL * (1ULL<<20)) {
       fmt = "%6llum";
-      a >>= 20;
+      len >>= 20;
    }
-   else if (a < 999999ULL * (1ULL<<30)) {
+   else if (len < 999999ULL * (1ULL<<30)) {
       fmt = "%6llug";
-      a >>= 30;
+      len >>= 30;
    }
-   else if (a < 999999ULL * (1ULL<<40)) {
+   else if (len < 999999ULL * (1ULL<<40)) {
       fmt = "%6llut";
-      a >>= 40;
+      len >>= 40;
    }
    else {
       fmt = "%6llue";
-      a >>= 50;
+      len >>= 50;
    }
-   ML_(am_sprintf)(buf, fmt, a);
+   ML_(am_sprintf)(buf, fmt, len);
 }
 
 
 /* Show full details of an NSegment */
 
 static void __attribute__ ((unused))
-            show_nsegment_full ( Int logLevel, NSegment* seg )
+            show_nsegment_full ( Int logLevel, Int segNo, NSegment* seg )
 {
+   HChar len_buf[20];
    HChar* name = "(none)";
+
    if (seg->fnIdx >= 0 && seg->fnIdx < segnames_used
                        && segnames[seg->fnIdx].inUse
                        && segnames[seg->fnIdx].fname[0] != 0)
       name = segnames[seg->fnIdx].fname;
 
-   VG_(debugLog)(logLevel, "aspacem",
-      "NSegment{%s, start=0x%llx, end=0x%llx, smode=%s, dev=%llu, "
-      "ino=%llu, offset=%lld, fnIdx=%d, hasR=%d, hasW=%d, hasX=%d, "
-      "hasT=%d, mark=%d, name=\"%s\"}\n",
-      show_SegKind(seg->kind),
-      (ULong)seg->start,
-      (ULong)seg->end,
+   show_len_concisely(len_buf, seg->start, seg->end);
+
+   VG_(debugLog)(
+      logLevel, "aspacem",
+      "%3d: %s %010llx-%010llx %s %c%c%c%c%c %s "
+      "d=0x%03llx i=%-7lld o=%-7lld (%d) m=%d %s\n",
+      segNo, show_SegKind(seg->kind),
+      (ULong)seg->start, (ULong)seg->end, len_buf,
+      seg->hasR ? 'r' : '-', seg->hasW ? 'w' : '-', 
+      seg->hasX ? 'x' : '-', seg->hasT ? 'T' : '-',
+      seg->isCH ? 'H' : '-',
       show_ShrinkMode(seg->smode),
       seg->dev, seg->ino, seg->offset, seg->fnIdx,
-      (Int)seg->hasR, (Int)seg->hasW, (Int)seg->hasX, (Int)seg->hasT,
-      (Int)seg->mark, 
-      name
+      (Int)seg->mark, name
    );
 }
 
@@ -486,8 +490,7 @@ static void __attribute__ ((unused))
 static void show_nsegment ( Int logLevel, Int segNo, NSegment* seg )
 {
    HChar len_buf[20];
-   ULong len = ((ULong)seg->end) - ((ULong)seg->start) + 1;
-   show_Addr_concisely(len_buf, len);
+   show_len_concisely(len_buf, seg->start, seg->end);
 
    switch (seg->kind) {
 
@@ -952,28 +955,31 @@ static void sync_check_mapping_callback ( Addr addr, SizeT len, UInt prot,
                    ? nsegments[i].start-nsegments[i].offset == addr-offset
                    : True);
       if (!same) {
+         Addr start = addr;
+         Addr end = start + len - 1;
+         HChar len_buf[20];
+         show_len_concisely(len_buf, start, end);
+
          sync_check_ok = False;
+
          VG_(debugLog)(
             0,"aspacem",
-              "sync_check_mapping_callback: segment mismatch: V's seg:\n");
-         show_nsegment_full( 0, &nsegments[i] );
-         goto show_kern_seg;
+              "segment mismatch: V's seg 1st, kernel's 2nd:\n");
+         show_nsegment_full( 0, i, &nsegments[i] );
+         VG_(debugLog)(0,"aspacem", 
+            "...: .... %010llx-%010llx %s %c%c%c.. ....... "
+            "d=0x%03llx i=%-7lld o=%-7lld (.) m=. %s\n",
+            (ULong)start, (ULong)end, len_buf,
+            prot & VKI_PROT_READ  ? 'r' : '-',
+            prot & VKI_PROT_WRITE ? 'w' : '-',
+            prot & VKI_PROT_EXEC  ? 'x' : '-',
+            dev, ino, offset, filename ? (HChar*)filename : "(none)" );
+
+         return;
       }
    }
 
    /* Looks harmless.  Keep going. */
-   return;
-
-  show_kern_seg:
-   VG_(debugLog)(0,"aspacem",
-                   "sync_check_mapping_callback: "
-                   "segment mismatch: kernel's seg:\n");
-   VG_(debugLog)(0,"aspacem", 
-                   "start=0x%llx end=0x%llx prot=%u "
-                   "dev=%llu ino=%llu offset=%lld name=\"%s\"\n",
-                   (ULong)addr, ((ULong)addr) + ((ULong)len) - 1,
-                   prot, dev, ino, offset, 
-                   filename ? (HChar*)filename : "(none)" );
    return;
 }
 
@@ -1016,24 +1022,26 @@ static void sync_check_gap_callback ( Addr addr, SizeT len )
              || nsegments[i].kind == SkResvn;
 
       if (!same) {
+         Addr start = addr;
+         Addr end = start + len - 1;
+         HChar len_buf[20];
+         show_len_concisely(len_buf, start, end);
+
          sync_check_ok = False;
+
          VG_(debugLog)(
             0,"aspacem",
-              "sync_check_mapping_callback: segment mismatch: V's gap:\n");
-         show_nsegment_full( 0, &nsegments[i] );
-         goto show_kern_gap;
+              "segment mismatch: V's gap 1st, kernel's 2nd:\n");
+         show_nsegment_full( 0, i, &nsegments[i] );
+         VG_(debugLog)(0,"aspacem", 
+            "   : .... %010llx-%010llx %s",
+            (ULong)start, (ULong)end, len_buf);
+         }
+         return;
       }
    }
 
    /* Looks harmless.  Keep going. */
-   return;
-
-  show_kern_gap:
-   VG_(debugLog)(0,"aspacem",
-                   "sync_check_gap_callback: segment mismatch: kernel's gap:\n");
-   VG_(debugLog)(0,"aspacem", 
-                   "start=0x%llx end=0x%llx\n",
-                   (ULong)addr, ((ULong)addr) + ((ULong)len) - 1 );
    return;
 }
 
@@ -1449,7 +1457,7 @@ static void add_segment ( NSegment* seg )
    aspacem_assert(VG_IS_PAGE_ALIGNED(sEnd+1));
 
    segment_is_sane = sane_NSegment(seg);
-   if (!segment_is_sane) show_nsegment_full(0,seg);
+   if (!segment_is_sane) show_nsegment_full(0,-1,seg);
    aspacem_assert(segment_is_sane);
 
    split_nsegments_lo_and_hi( sStart, sEnd, &iLo, &iHi );

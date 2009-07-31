@@ -160,8 +160,8 @@ void drd_report_data_race(Error* const err, const DataRaceErrInfo* const dri)
       char sect_name[64];
       VgSectKind sect_kind;
 
-      sect_kind = VG_(seginfo_sect_kind)(sect_name, sizeof(sect_name),
-                                         dri->addr);
+      sect_kind = VG_(DebugInfo_sect_kind)(sect_name, sizeof(sect_name),
+                                           dri->addr);
       if (sect_kind != Vg_SectUnknown)
       {
          VG_(message)(Vg_UserMsg,

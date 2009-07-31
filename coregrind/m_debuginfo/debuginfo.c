@@ -1498,14 +1498,18 @@ Bool VG_(get_objname) ( Addr a, Char* buf, Int nbuf )
 
 /* Map a code address to its DebugInfo.  Returns NULL if not found.  Doesn't
    require debug info. */
-DebugInfo* VG_(find_seginfo) ( Addr a )
+DebugInfo* VG_(find_DebugInfo) ( Addr a )
 {
+   static UWord n_search = 0;
    DebugInfo* di;
+   n_search++;
    for (di = debugInfo_list; di != NULL; di = di->next) {
       if (di->text_present
           && di->text_size > 0
           && di->text_avma <= a 
           && a < di->text_avma + di->text_size) {
+         if (0 == (n_search & 0xF))
+            move_DebugInfo_one_step_forward( di );
          return di;
       }
    }
@@ -3375,70 +3379,70 @@ void* /* really, XArray* of GlobalBlock */
 /*--- DebugInfo accessor functions                         ---*/
 /*------------------------------------------------------------*/
 
-const DebugInfo* VG_(next_seginfo)(const DebugInfo* di)
+const DebugInfo* VG_(next_DebugInfo)(const DebugInfo* di)
 {
    if (di == NULL)
       return debugInfo_list;
    return di->next;
 }
 
-Addr VG_(seginfo_get_text_avma)(const DebugInfo* di)
+Addr VG_(DebugInfo_get_text_avma)(const DebugInfo* di)
 {
    return di->text_present ? di->text_avma : 0; 
 }
 
-SizeT VG_(seginfo_get_text_size)(const DebugInfo* di)
+SizeT VG_(DebugInfo_get_text_size)(const DebugInfo* di)
 {
    return di->text_present ? di->text_size : 0; 
 }
 
-Addr VG_(seginfo_get_plt_avma)(const DebugInfo* di)
+Addr VG_(DebugInfo_get_plt_avma)(const DebugInfo* di)
 {
    return di->plt_present ? di->plt_avma : 0; 
 }
 
-SizeT VG_(seginfo_get_plt_size)(const DebugInfo* di)
+SizeT VG_(DebugInfo_get_plt_size)(const DebugInfo* di)
 {
    return di->plt_present ? di->plt_size : 0; 
 }
 
-Addr VG_(seginfo_get_gotplt_avma)(const DebugInfo* di)
+Addr VG_(DebugInfo_get_gotplt_avma)(const DebugInfo* di)
 {
    return di->gotplt_present ? di->gotplt_avma : 0; 
 }
 
-SizeT VG_(seginfo_get_gotplt_size)(const DebugInfo* di)
+SizeT VG_(DebugInfo_get_gotplt_size)(const DebugInfo* di)
 {
    return di->gotplt_present ? di->gotplt_size : 0; 
 }
 
-const UChar* VG_(seginfo_soname)(const DebugInfo* di)
+const UChar* VG_(DebugInfo_get_soname)(const DebugInfo* di)
 {
    return di->soname;
 }
 
-const UChar* VG_(seginfo_filename)(const DebugInfo* di)
+const UChar* VG_(DebugInfo_get_filename)(const DebugInfo* di)
 {
    return di->filename;
 }
 
-PtrdiffT VG_(seginfo_get_text_bias)(const DebugInfo* di)
+PtrdiffT VG_(DebugInfo_get_text_bias)(const DebugInfo* di)
 {
    return di->text_present ? di->text_bias : 0;
 }
 
-Int VG_(seginfo_syms_howmany) ( const DebugInfo *si )
+Int VG_(DebugInfo_syms_howmany) ( const DebugInfo *si )
 {
    return si->symtab_used;
 }
 
-void VG_(seginfo_syms_getidx) ( const DebugInfo *si, 
-                                      Int idx,
-                               /*OUT*/Addr*   avma,
-                               /*OUT*/Addr*   tocptr,
-                               /*OUT*/UInt*   size,
-                               /*OUT*/HChar** name,
-                               /*OUT*/Bool*   isText )
+void VG_(DebugInfo_syms_getidx) ( const DebugInfo *si, 
+                                        Int idx,
+                                  /*OUT*/Addr*   avma,
+                                  /*OUT*/Addr*   tocptr,
+                                  /*OUT*/UInt*   size,
+                                  /*OUT*/HChar** name,
+                                  /*OUT*/Bool*   isText )
 {
    vg_assert(idx >= 0 && idx < si->symtab_used);
    if (avma)   *avma   = si->symtab[idx].addr;
@@ -3475,8 +3479,8 @@ const HChar* VG_(pp_SectKind)( VgSectKind kind )
    characters of the object's name is put in name[0 .. n_name-2], and
    name[n_name-1] is set to zero (guaranteed zero terminated). */
 
-VgSectKind VG_(seginfo_sect_kind)( /*OUT*/UChar* name, SizeT n_name, 
-                                   Addr a)
+VgSectKind VG_(DebugInfo_sect_kind)( /*OUT*/UChar* name, SizeT n_name, 
+                                     Addr a)
 {
    DebugInfo* di;
    VgSectKind res = Vg_SectUnknown;
@@ -3485,7 +3489,8 @@ VgSectKind VG_(seginfo_sect_kind)( /*OUT*/UChar* name, SizeT n_name,
 
       if (0)
          VG_(printf)(
-            "addr=%#lx di=%p %s got=%#lx,%ld plt=%#lx,%ld data=%#lx,%ld bss=%#lx,%ld\n",
+            "addr=%#lx di=%p %s got=%#lx,%ld plt=%#lx,%ld "
+            "data=%#lx,%ld bss=%#lx,%ld\n",
             a, di, di->filename,
             di->got_avma,  di->got_size,
             di->plt_avma,  di->plt_size,

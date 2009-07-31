@@ -336,7 +336,7 @@ void VG_(redir_notify_new_DebugInfo)( DebugInfo* newsi )
 #  endif
 
    vg_assert(newsi);
-   newsi_soname = VG_(seginfo_soname)(newsi);
+   newsi_soname = VG_(DebugInfo_get_soname)(newsi);
    vg_assert(newsi_soname != NULL);
 
    /* stay sane: we don't already have this. */
@@ -348,10 +348,10 @@ void VG_(redir_notify_new_DebugInfo)( DebugInfo* newsi )
 
    specList = NULL; /* the spec list we're building up */
 
-   nsyms = VG_(seginfo_syms_howmany)( newsi );
+   nsyms = VG_(DebugInfo_syms_howmany)( newsi );
    for (i = 0; i < nsyms; i++) {
-      VG_(seginfo_syms_getidx)( newsi, i, &sym_addr, &sym_toc, 
-                                          NULL, &sym_name, &isText );
+      VG_(DebugInfo_syms_getidx)( newsi, i, &sym_addr, &sym_toc, 
+                                            NULL, &sym_name, &isText );
       ok = VG_(maybe_Z_demangle)( sym_name, demangled_sopatt, N_DEMANGLED,
                                   demangled_fnpatt, N_DEMANGLED, &isWrap );
       /* ignore data symbols */
@@ -388,8 +388,8 @@ void VG_(redir_notify_new_DebugInfo)( DebugInfo* newsi )
 
    if (check_ppcTOCs) {
       for (i = 0; i < nsyms; i++) {
-         VG_(seginfo_syms_getidx)( newsi, i, &sym_addr, &sym_toc, 
-                                             NULL, &sym_name, &isText );
+         VG_(DebugInfo_syms_getidx)( newsi, i, &sym_addr, &sym_toc, 
+                                               NULL, &sym_name, &isText );
          ok = isText
               && VG_(maybe_Z_demangle)( 
                     sym_name, demangled_sopatt, N_DEMANGLED,
@@ -500,7 +500,7 @@ void generate_and_add_actives (
    for (sp = specs; sp; sp = sp->next) {
       sp->done = False;
       sp->mark = VG_(string_match)( sp->from_sopatt, 
-                                    VG_(seginfo_soname)(di) );
+                                    VG_(DebugInfo_get_soname)(di) );
       anyMark = anyMark || sp->mark;
    }
 
@@ -510,10 +510,10 @@ void generate_and_add_actives (
 
    /* Iterate outermost over the symbols in the seginfo, in the hope
       of trashing the caches less. */
-   nsyms = VG_(seginfo_syms_howmany)( di );
+   nsyms = VG_(DebugInfo_syms_howmany)( di );
    for (i = 0; i < nsyms; i++) {
-      VG_(seginfo_syms_getidx)( di, i,
-                                &sym_addr, NULL, NULL, &sym_name, &isText );
+      VG_(DebugInfo_syms_getidx)( di, i, &sym_addr, NULL, NULL,
+                                         &sym_name, &isText );
 
       /* ignore data symbols */
       if (!isText)
@@ -577,7 +577,8 @@ void generate_and_add_actives (
       VG_(printf)(
       "%swas not found whilst processing\n", v);
       VG_(printf)(
-      "%ssymbols from the object with soname: %s\n", v, VG_(seginfo_soname)(di));
+      "%ssymbols from the object with soname: %s\n",
+      v, VG_(DebugInfo_get_soname)(di));
       VG_(printf)(
       "%s\n", v);
       VG_(printf)(
@@ -846,7 +847,7 @@ static void add_hardwired_spec ( HChar* sopatt, HChar* fnpatt,
 void VG_(redir_initialise) ( void )
 {
    // Assert that there are no DebugInfos so far
-   vg_assert( VG_(next_seginfo)(NULL) == NULL );
+   vg_assert( VG_(next_DebugInfo)(NULL) == NULL );
 
    // Initialise active mapping.
    activeSet = VG_(OSetGen_Create)(offsetof(Active, from_addr),
@@ -1117,8 +1118,9 @@ static void show_redir_state ( HChar* who )
    for (ts = topSpecs; ts; ts = ts->next) {
       VG_(message)(Vg_DebugMsg, 
                    "   TOPSPECS of soname %s\n",
-                   ts->seginfo ? (HChar*)VG_(seginfo_soname)(ts->seginfo)
-                               : "(hardwired)" );
+                   ts->seginfo
+                      ? (HChar*)VG_(DebugInfo_get_soname)(ts->seginfo)
+                      : "(hardwired)" );
       for (sp = ts->specs; sp; sp = sp->next)
          show_spec("     ", sp);
    }

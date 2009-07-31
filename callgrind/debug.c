@@ -379,7 +379,7 @@ void CLG_(print_addr)(Addr addr)
 	VG_(printf)("%#lx %s", addr, fn_buf);
 
     if (di) {
-      obj_name = VG_(seginfo_filename)(di);
+      obj_name = VG_(DebugInfo_get_filename)(di);
       if (obj_name) {
 	while(obj_name[i]) {
 	  if (obj_name[i]=='/') opos = i+1;

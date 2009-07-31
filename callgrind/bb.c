@@ -143,7 +143,7 @@ static BB* new_bb(obj_node* obj, PtrdiffT offset,
    bb->jmp         = (CJmpInfo*) &(bb->instr[instr_count]);
    bb->instr_len   = 0;
    bb->cost_count  = 0;
-   bb->sect_kind   = VG_(seginfo_sect_kind)(NULL, 0, offset + obj->offset);
+   bb->sect_kind   = VG_(DebugInfo_sect_kind)(NULL, 0, offset + obj->offset);
    bb->fn          = 0;
    bb->line        = 0;
    bb->is_entry    = 0;
@@ -201,21 +201,21 @@ obj_node* obj_of_address(Addr addr)
   DebugInfo* di;
   PtrdiffT offset;
 
-  di = VG_(find_seginfo)(addr);
+  di = VG_(find_DebugInfo)(addr);
   obj = CLG_(get_obj_node)( di );
 
   /* Update symbol offset in object if remapped */
   /* FIXME (or at least check this) 2008 Feb 19: 'offset' is
      only correct for text symbols, not for data symbols */
-  offset = di ? VG_(seginfo_get_text_bias)(di):0;
+  offset = di ? VG_(DebugInfo_get_text_bias)(di):0;
   if (obj->offset != offset) {
-      Addr start = di ? VG_(seginfo_get_text_avma)(di) : 0;
+      Addr start = di ? VG_(DebugInfo_get_text_avma)(di) : 0;
 
       CLG_DEBUG(0, "Mapping changed for '%s': %#lx -> %#lx\n",
 		obj->name, obj->start, start);
 
       /* Size should be the same, and offset diff == start diff */
-      CLG_ASSERT( obj->size == (di ? VG_(seginfo_get_text_size)(di) : 0) );
+      CLG_ASSERT( obj->size == (di ? VG_(DebugInfo_get_text_size)(di) : 0) );
       CLG_ASSERT( obj->start - start == obj->offset - offset );
       obj->offset = offset;
       obj->start = start;

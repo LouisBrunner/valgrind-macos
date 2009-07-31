@@ -170,44 +170,49 @@ VG_(di_get_global_blocks_from_dihandle) ( ULong di_handle,
 
 
 /*====================================================================*/
-/*=== Obtaining segment information                                ===*/
+/*=== Obtaining debug information                                  ===*/
 /*====================================================================*/
 
-/* A way to get information about what segments are mapped */
-typedef struct _DebugInfo DebugInfo;
+/* A way to make limited debuginfo queries on a per-mapped-object
+   basis. */
+typedef  struct _DebugInfo  DebugInfo;
 
 /* Returns NULL if the DebugInfo isn't found.  It doesn't matter if
    debug info is present or not. */
-extern       DebugInfo* VG_(find_seginfo)      ( Addr a );
+DebugInfo* VG_(find_DebugInfo) ( Addr a );
 
 /* Fish bits out of DebugInfos. */
-extern       Addr     VG_(seginfo_get_text_avma)( const DebugInfo *di );
-extern       SizeT    VG_(seginfo_get_text_size)( const DebugInfo *di );
-extern       Addr     VG_(seginfo_get_plt_avma) ( const DebugInfo *di );
-extern       SizeT    VG_(seginfo_get_plt_size) ( const DebugInfo *di );
-extern       Addr     VG_(seginfo_get_gotplt_avma)( const DebugInfo *di );
-extern       SizeT    VG_(seginfo_get_gotplt_size)( const DebugInfo *di );
-extern const UChar*   VG_(seginfo_soname)       ( const DebugInfo *di );
-extern const UChar*   VG_(seginfo_filename)     ( const DebugInfo *di );
-extern       PtrdiffT VG_(seginfo_get_text_bias)( const DebugInfo *di );
+Addr          VG_(DebugInfo_get_text_avma)   ( const DebugInfo *di );
+SizeT         VG_(DebugInfo_get_text_size)   ( const DebugInfo *di );
+Addr          VG_(DebugInfo_get_plt_avma)    ( const DebugInfo *di );
+SizeT         VG_(DebugInfo_get_plt_size)    ( const DebugInfo *di );
+Addr          VG_(DebugInfo_get_gotplt_avma) ( const DebugInfo *di );
+SizeT         VG_(DebugInfo_get_gotplt_size) ( const DebugInfo *di );
+const UChar*  VG_(DebugInfo_get_soname)      ( const DebugInfo *di );
+const UChar*  VG_(DebugInfo_get_filename)    ( const DebugInfo *di );
+PtrdiffT      VG_(DebugInfo_get_text_bias)   ( const DebugInfo *di );
 
-/* Function for traversing the seginfo list.  When called with NULL it
-   returns the first element; otherwise it returns the given element's
-   successor. */
-extern const DebugInfo* VG_(next_seginfo)    ( const DebugInfo *di );
+/* Function for traversing the DebugInfo list.  When called with NULL
+   it returns the first element; otherwise it returns the given
+   element's successor.  Note that the order of elements in the list
+   changes in response to most of the queries listed in this header,
+   that explicitly or implicitly have to search the list for a
+   particular code address.  So it isn't safe to assume that the order
+   of the list stays constant. */
+const DebugInfo* VG_(next_DebugInfo)    ( const DebugInfo *di );
 
 /* Functions for traversing all the symbols in a DebugInfo.  _howmany
    tells how many there are.  _getidx retrieves the n'th, for n in 0
    .. _howmany-1.  You may not modify the function name thereby
    acquired; if you want to do so, first strdup it. */
-extern Int  VG_(seginfo_syms_howmany) ( const DebugInfo *di );
-extern void VG_(seginfo_syms_getidx)  ( const DebugInfo *di, 
-                                        Int idx,
-                                        /*OUT*/Addr*   avma,
-                                        /*OUT*/Addr*   tocptr,
-                                        /*OUT*/UInt*   size,
-                                        /*OUT*/HChar** name,
-                                        /*OUT*/Bool*   isText );
+Int  VG_(DebugInfo_syms_howmany) ( const DebugInfo *di );
+void VG_(DebugInfo_syms_getidx)  ( const DebugInfo *di, 
+                                   Int idx,
+                                   /*OUT*/Addr*   avma,
+                                   /*OUT*/Addr*   tocptr,
+                                   /*OUT*/UInt*   size,
+                                   /*OUT*/HChar** name,
+                                   /*OUT*/Bool*   isText );
 
 /* A simple enumeration to describe the 'kind' of various kinds of
    segments that arise from the mapping of object files. */
@@ -226,16 +231,14 @@ typedef
 
 /* Convert a VgSectKind to a string, which must be copied if you want
    to change it. */
-extern
 const HChar* VG_(pp_SectKind)( VgSectKind kind );
 
 /* Given an address 'a', make a guess of which section of which object
    it comes from.  If name is non-NULL, then the last n_name-1
    characters of the object's name is put in name[0 .. n_name-2], and
    name[n_name-1] is set to zero (guaranteed zero terminated). */
-extern 
-VgSectKind VG_(seginfo_sect_kind)( /*OUT*/UChar* name, SizeT n_name, 
-                                   Addr a);
+VgSectKind VG_(DebugInfo_sect_kind)( /*OUT*/UChar* name, SizeT n_name, 
+                                     Addr a);
 
 
 #endif   // __PUB_TOOL_DEBUGINFO_H

@@ -367,32 +367,32 @@ static void DRD_(suppress_relocation_conflicts)(const Addr a, const SizeT len)
    VG_(printf)("Evaluating range @ 0x%lx size %ld\n", a, len);
 #endif
 
-   for (di = VG_(next_seginfo)(0); di; di = VG_(next_seginfo)(di))
+   for (di = VG_(next_DebugInfo)(0); di; di = VG_(next_DebugInfo)(di))
    {
       Addr  avma;
       SizeT size;
 
-      avma = VG_(seginfo_get_plt_avma)(di);
-      size = VG_(seginfo_get_plt_size)(di);
+      avma = VG_(DebugInfo_get_plt_avma)(di);
+      size = VG_(DebugInfo_get_plt_size)(di);
       tl_assert((avma && size) || (avma == 0 && size == 0));
       if (size > 0)
       {
 #if 0
          VG_(printf)("Suppressing .plt @ 0x%lx size %ld\n", avma, size);
 #endif
-         tl_assert(VG_(seginfo_sect_kind)(NULL, 0, avma) == Vg_SectPLT);
+         tl_assert(VG_(DebugInfo_sect_kind)(NULL, 0, avma) == Vg_SectPLT);
          DRD_(start_suppression)(avma, avma + size, ".plt");
       }
 
-      avma = VG_(seginfo_get_gotplt_avma)(di);
-      size = VG_(seginfo_get_gotplt_size)(di);
+      avma = VG_(DebugInfo_get_gotplt_avma)(di);
+      size = VG_(DebugInfo_get_gotplt_size)(di);
       tl_assert((avma && size) || (avma == 0 && size == 0));
       if (size > 0)
       {
 #if 0
          VG_(printf)("Suppressing .got.plt @ 0x%lx size %ld\n", avma, size);
 #endif
-         tl_assert(VG_(seginfo_sect_kind)(NULL, 0, avma) == Vg_SectGOTPLT);
+         tl_assert(VG_(DebugInfo_sect_kind)(NULL, 0, avma) == Vg_SectGOTPLT);
          DRD_(start_suppression)(avma, avma + size, ".gotplt");
       }
    }

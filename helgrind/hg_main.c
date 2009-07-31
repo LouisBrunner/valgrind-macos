@@ -3703,10 +3703,10 @@ static Bool is_in_dynamic_linker_shared_object( Addr64 ga )
    const UChar* soname;
    if (0) return False;
 
-   dinfo  = VG_(find_seginfo)( (Addr)ga );
+   dinfo = VG_(find_DebugInfo)( (Addr)ga );
    if (!dinfo) return False;
 
-   soname = VG_(seginfo_soname)(dinfo);
+   soname = VG_(DebugInfo_get_soname)(dinfo);
    tl_assert(soname);
    if (0) VG_(printf)("%s\n", soname);
 

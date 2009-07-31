@@ -217,11 +217,11 @@
 # These ones were necessary to give no errors on a tiny threaded program.
 # I don't know if they're real problems or false positives (njn).
 
-{
-   helgrind-darwinlibc-nuke-everything-in-dyld
-   Helgrind:Race
-   obj:/usr/lib/dyld
-}
+#{
+#   helgrind-darwinlibc-nuke-everything-in-dyld
+#   Helgrind:Race
+#   obj:/usr/lib/dyld
+#}
 
 {
    helgrind-darwinlibc-nuke-everything-in-libSystem.B.dylib

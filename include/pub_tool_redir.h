@@ -211,19 +211,31 @@
 #  error "Unknown platform"
 #endif
 
-/* --- Sonames for Linux ELF linkers. --- */
+/* --- Sonames for Linux ELF linkers, plus unencoded versions. --- */
 
 #if defined(VGO_linux)
+
 #define  VG_Z_LD_LINUX_SO_2         ldZhlinuxZdsoZd2           // ld-linux.so.2
+#define  VG_U_LD_LINUX_SO_2         "ld-linux.so.2"
+
 #define  VG_Z_LD_LINUX_X86_64_SO_2  ldZhlinuxZhx86Zh64ZdsoZd2  // ld-linux-x86-64.so.2
+#define  VG_U_LD_LINUX_X86_64_SO_2  "ld-linux-x86-64.so.2"
+
 #define  VG_Z_LD64_SO_1             ld64ZdsoZd1                // ld64.so.1
+#define  VG_U_LD64_SO_1             "ld64.so.1"
+
 #define  VG_Z_LD_SO_1               ldZdsoZd1                  // ld.so.1
+#define  VG_U_LD_SO_1               "ld.so.1"
+
 #endif
 
 /* --- Executable name for Darwin Mach-O linker. --- */
 
 #if defined(VGO_darwin)
+
 #define  VG_Z_DYLD               dyld                       // dyld
+#define  VG_U_DYLD               "dyld"
+
 #endif
 
 

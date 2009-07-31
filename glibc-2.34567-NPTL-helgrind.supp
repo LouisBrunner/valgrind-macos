@@ -24,11 +24,11 @@
 #   H fails to see glibc's internal locking/unlocking of FILE*s
 #   as required by POSIX.  A better solution is needed.
 
-{
-   helgrind-glibc2X-001
-   Helgrind:Race
-   obj:/lib*/ld-2.*so*
-}
+#{
+#   helgrind-glibc2X-001
+#   Helgrind:Race
+#   obj:/lib*/ld-2.*so*
+#}
 
 # helgrind-glibc2X-002 was merged into helgrind-glibc2X-001
 

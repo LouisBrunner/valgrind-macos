@@ -49,6 +49,9 @@
 #include "pub_tool_xarray.h"
 #include "pub_tool_stacktrace.h"
 #include "pub_tool_wordfm.h"
+#include "pub_tool_debuginfo.h" // VG_(find_seginfo), VG_(seginfo_soname)
+#include "pub_tool_redir.h"     // sonames for the dynamic linkers
+#include "pub_tool_vki.h"       // VKI_PAGE_SIZE
 
 #include "hg_basics.h"
 #include "hg_wordset.h"
@@ -3691,6 +3694,35 @@ static void instrument_mem_access ( IRSB*   bbOut,
 }
 
 
+/* Figure out if GA is a guest code address in the dynamic linker, and
+   if so return True.  Otherwise (and in case of any doubt) return
+   False.  (sidedly safe w/ False as the safe value) */
+static Bool is_in_dynamic_linker_shared_object( Addr64 ga )
+{
+   DebugInfo* dinfo;
+   const UChar* soname;
+   if (0) return False;
+
+   dinfo  = VG_(find_seginfo)( (Addr)ga );
+   if (!dinfo) return False;
+
+   soname = VG_(seginfo_soname)(dinfo);
+   tl_assert(soname);
+   if (0) VG_(printf)("%s\n", soname);
+
+#  if defined(VGO_linux)
+   if (VG_STREQ(soname, VG_U_LD_LINUX_SO_2))        return True;
+   if (VG_STREQ(soname, VG_U_LD_LINUX_X86_64_SO_2)) return True;
+   if (VG_STREQ(soname, VG_U_LD64_SO_1))            return True;
+   if (VG_STREQ(soname, VG_U_LD_SO_1))              return True;
+#  elif defined(VGO_darwin)
+   if (VG_STREQ(soname, VG_U_DYLD)) return True;
+#  else
+#    error "Unsupported OS"
+#  endif
+   return False;
+}
+
 static
 IRSB* hg_instrument ( VgCallbackClosure* closure,
                       IRSB* bbIn,
@@ -3702,10 +3734,16 @@ IRSB* hg_instrument ( VgCallbackClosure* closure,
    IRSB*   bbOut;
    Addr64  cia; /* address of current insn */
    IRStmt* st;
+   Bool    inLDSO = False;
+   Addr64  inLDSOmask4K = 1; /* mismatches on first check */
 
    if (gWordTy != hWordTy) {
       /* We don't currently support this case. */
       VG_(tool_panic)("host/guest word size mismatch");
+   }
+
+   if (VKI_PAGE_SIZE < 4096 || VG_(log2)(VKI_PAGE_SIZE) == -1) {
+      VG_(tool_panic)("implausible or too-small VKI_PAGE_SIZE");
    }
 
    /* Set up BB */
@@ -3745,6 +3783,20 @@ IRSB* hg_instrument ( VgCallbackClosure* closure,
          case Ist_IMark:
             /* no mem refs, but note the insn address. */
             cia = st->Ist.IMark.addr;
+            /* Don't instrument the dynamic linker.  It generates a
+               lot of races which we just expensively suppress, so
+               it's pointless.
+
+               Avoid flooding is_in_dynamic_linker_shared_object with
+               requests by only checking at transitions between 4K
+               pages. */
+            if ((cia & ~(Addr64)0xFFF) != inLDSOmask4K) {
+               if (0) VG_(printf)("NEW %#lx\n", (Addr)cia);
+               inLDSOmask4K = cia & ~(Addr64)0xFFF;
+               inLDSO = is_in_dynamic_linker_shared_object(cia);
+            } else {
+               if (0) VG_(printf)("old %#lx\n", (Addr)cia);
+            }
             break;
 
          case Ist_MBE:
@@ -3769,14 +3821,16 @@ IRSB* hg_instrument ( VgCallbackClosure* closure,
                tl_assert(!cas->dataHi);
             }
             /* Just be boring about it. */
-            instrument_mem_access(
-               bbOut,
-               cas->addr,
-               (isDCAS ? 2 : 1)
-                  * sizeofIRType(typeOfIRExpr(bbIn->tyenv, cas->dataLo)),
-               False/*!isStore*/,
-               sizeofIRType(hWordTy)
-            );
+            if (!inLDSO) {
+               instrument_mem_access(
+                  bbOut,
+                  cas->addr,
+                  (isDCAS ? 2 : 1)
+                     * sizeofIRType(typeOfIRExpr(bbIn->tyenv, cas->dataLo)),
+                  False/*!isStore*/,
+                  sizeofIRType(hWordTy)
+               );
+            }
             break;
          }
 
@@ -3784,13 +3838,15 @@ IRSB* hg_instrument ( VgCallbackClosure* closure,
             /* It seems we pretend that store-conditionals don't
                exist, viz, just ignore them ... */
             if (st->Ist.Store.resSC == IRTemp_INVALID) {
-               instrument_mem_access( 
-                  bbOut, 
-                  st->Ist.Store.addr, 
-                  sizeofIRType(typeOfIRExpr(bbIn->tyenv, st->Ist.Store.data)),
-                  True/*isStore*/,
-                  sizeofIRType(hWordTy)
-               );
+               if (!inLDSO) {
+                  instrument_mem_access( 
+                     bbOut, 
+                     st->Ist.Store.addr, 
+                     sizeofIRType(typeOfIRExpr(bbIn->tyenv, st->Ist.Store.data)),
+                     True/*isStore*/,
+                     sizeofIRType(hWordTy)
+                  );
+               }
             }
             break;
 
@@ -3799,13 +3855,15 @@ IRSB* hg_instrument ( VgCallbackClosure* closure,
                vanilla one or a load-linked. */
             IRExpr* data = st->Ist.WrTmp.data;
             if (data->tag == Iex_Load) {
-               instrument_mem_access(
-                  bbOut,
-                  data->Iex.Load.addr,
-                  sizeofIRType(data->Iex.Load.ty),
-                  False/*!isStore*/,
-                  sizeofIRType(hWordTy)
-               );
+               if (!inLDSO) {
+                  instrument_mem_access(
+                     bbOut,
+                     data->Iex.Load.addr,
+                     sizeofIRType(data->Iex.Load.ty),
+                     False/*!isStore*/,
+                     sizeofIRType(hWordTy)
+                  );
+               }
             }
             break;
          }
@@ -3820,16 +3878,20 @@ IRSB* hg_instrument ( VgCallbackClosure* closure,
                tl_assert(d->mSize != 0);
                dataSize = d->mSize;
                if (d->mFx == Ifx_Read || d->mFx == Ifx_Modify) {
-                  instrument_mem_access( 
-                     bbOut, d->mAddr, dataSize, False/*!isStore*/,
-                     sizeofIRType(hWordTy)
-                  );
+                  if (!inLDSO) {
+                     instrument_mem_access( 
+                        bbOut, d->mAddr, dataSize, False/*!isStore*/,
+                        sizeofIRType(hWordTy)
+                     );
+                  }
                }
                if (d->mFx == Ifx_Write || d->mFx == Ifx_Modify) {
-                  instrument_mem_access( 
-                     bbOut, d->mAddr, dataSize, True/*isStore*/,
-                     sizeofIRType(hWordTy)
-                  );
+                  if (!inLDSO) {
+                     instrument_mem_access( 
+                        bbOut, d->mAddr, dataSize, True/*isStore*/,
+                        sizeofIRType(hWordTy)
+                     );
+                  }
                }
             } else {
                tl_assert(d->mAddr == NULL);

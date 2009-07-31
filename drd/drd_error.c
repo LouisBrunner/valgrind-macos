@@ -207,6 +207,12 @@ static Bool drd_compare_error_contexts(VgRes res, Error* e1, Error* e2)
       return dri1->access_type == dri2->access_type
 	     && dri1->size == dri2->size;
    }
+   case MutexErr:
+   {
+      const MutexErrInfo* const mei1 = VG_(get_error_extra)(e1);
+      const MutexErrInfo* const mei2 = VG_(get_error_extra)(e2);
+      return mei1->mutex == mei2->mutex;
+   }
    default:
       return True;
    }

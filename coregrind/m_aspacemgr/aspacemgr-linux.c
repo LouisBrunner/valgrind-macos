@@ -1036,7 +1036,6 @@ static void sync_check_gap_callback ( Addr addr, SizeT len )
          VG_(debugLog)(0,"aspacem", 
             "   : .... %010llx-%010llx %s",
             (ULong)start, (ULong)end, len_buf);
-         }
          return;
       }
    }

@@ -209,14 +209,15 @@ DrdThreadId DRD_(PtThreadIdToDrdThreadId)(const PThreadId tid)
 {
    int i;
 
-   tl_assert(tid != INVALID_POSIX_THREADID);
-
-   for (i = 1; i < DRD_N_THREADS; i++)
+   if (tid != INVALID_POSIX_THREADID)
    {
-      if (DRD_(g_threadinfo)[i].posix_thread_exists
-          && DRD_(g_threadinfo)[i].pt_threadid == tid)
+      for (i = 1; i < DRD_N_THREADS; i++)
       {
-         return i;
+         if (DRD_(g_threadinfo)[i].posix_thread_exists
+             && DRD_(g_threadinfo)[i].pt_threadid == tid)
+         {
+            return i;
+         }
       }
    }
    return DRD_INVALID_THREADID;

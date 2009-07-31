@@ -83,11 +83,11 @@ static Bool handle_client_request(ThreadId vg_tid, UWord* arg, UWord* ret)
       if (arg[1] && ! DRD_(freelike_block)(vg_tid, arg[1]/*addr*/))
       {
          GenericErrInfo GEI = { DRD_(thread_get_running_tid)() };
-	 VG_(maybe_record_error)(vg_tid,
-				 GenericErr,
-				 VG_(get_IP)(vg_tid),
-				 "Invalid VG_USERREQ__FREELIKE_BLOCK request",
-				 &GEI);
+         VG_(maybe_record_error)(vg_tid,
+                                 GenericErr,
+                                 VG_(get_IP)(vg_tid),
+                                 "Invalid VG_USERREQ__FREELIKE_BLOCK request",
+                                 &GEI);
       }
       break;
 
@@ -212,17 +212,44 @@ static Bool handle_client_request(ThreadId vg_tid, UWord* arg, UWord* ret)
       break;
 
    case VG_USERREQ__POST_THREAD_JOIN:
-      tl_assert(arg[1]);
-      DRD_(thread_post_join)(drd_tid, DRD_(PtThreadIdToDrdThreadId)(arg[1]));
+   {
+      const DrdThreadId thread_to_join = DRD_(PtThreadIdToDrdThreadId)(arg[1]);
+      if (thread_to_join == DRD_INVALID_THREADID)
+      {
+         InvalidThreadIdInfo ITI = { DRD_(thread_get_running_tid)(), arg[1] };
+         VG_(maybe_record_error)(vg_tid,
+                                 InvalidThreadId,
+                                 VG_(get_IP)(vg_tid),
+                                 "pthread_join(): invalid thread ID",
+                                 &ITI);
+      }
+      else
+      {
+         DRD_(thread_post_join)(drd_tid, thread_to_join);
+      }
       break;
+   }
 
    case VG_USERREQ__PRE_THREAD_CANCEL:
-      tl_assert(arg[1]);
-      DRD_(thread_pre_cancel)(drd_tid);
+   {
+      const DrdThreadId thread_to_cancel =DRD_(PtThreadIdToDrdThreadId)(arg[1]);
+      if (thread_to_cancel == DRD_INVALID_THREADID)
+      {
+         InvalidThreadIdInfo ITI = { DRD_(thread_get_running_tid)(), arg[1] };
+         VG_(maybe_record_error)(vg_tid,
+                                 InvalidThreadId,
+                                 VG_(get_IP)(vg_tid),
+                                 "pthread_cancel(): invalid thread ID",
+                                 &ITI);
+      }
+      else
+      {
+         DRD_(thread_pre_cancel)(thread_to_cancel);
+      }
       break;
+   }
 
    case VG_USERREQ__POST_THREAD_CANCEL:
-      tl_assert(arg[1]);
       break;
 
    case VG_USERREQ__PRE_MUTEX_INIT:

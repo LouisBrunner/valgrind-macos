@@ -59,6 +59,8 @@ typedef enum {
    HoldtimeErr    = 10,
 #define STR_GenericErr   "GenericErr"
    GenericErr     = 11,
+#define STR_InvalidThreadId "InvalidThreadId"
+   InvalidThreadId = 12,
 } DrdErrorKind;
 
 /* The classification of a faulting address. */
@@ -161,6 +163,10 @@ typedef struct {
    DrdThreadId tid;
 } GenericErrInfo;
 
+typedef struct {
+   DrdThreadId tid;
+   ULong       ptid;
+} InvalidThreadIdInfo;
 
 void DRD_(set_show_conflicting_segments)(const Bool scs);
 void DRD_(register_error_handlers)(void);

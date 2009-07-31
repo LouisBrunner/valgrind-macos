@@ -438,8 +438,9 @@ PTH_FUNC(int, pthreadZudetach, pthread_t pt_thread)
    return ret;
 }
 
-// pthread_cancel*
-PTH_FUNC(int, pthreadZucancelZa, pthread_t pt_thread)
+// pthread_cancel
+// Note: make sure not to intercept pthread_cancel_init() on Linux !
+PTH_FUNC(int, pthreadZucancel, pthread_t pt_thread)
 {
    int res;
    int ret;

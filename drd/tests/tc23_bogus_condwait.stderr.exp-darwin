@@ -16,7 +16,7 @@ Probably a race condition: condition variable 0x........ has been signaled but t
    by 0x........: rescue_me (tc23_bogus_condwait.c:20)
    by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
 cond 0x........ was first observed at:
-   at 0x........: pthread_cond_init* (drd_pthread_intercepts.c:?)
+   at 0x........: pthread_cond_init (drd_pthread_intercepts.c:?)
    by 0x........: main (tc23_bogus_condwait.c:56)
 mutex 0x........ was first observed at:
    at 0x........: pthread_mutex_init (drd_pthread_intercepts.c:?)
@@ -27,7 +27,7 @@ The object at address 0x........ is not a mutex.
    at 0x........: pthread_cond_wait (drd_pthread_intercepts.c:?)
    by 0x........: main (tc23_bogus_condwait.c:75)
 rwlock 0x........ was first observed at:
-   at 0x........: pthread_rwlock_init* (drd_pthread_intercepts.c:?)
+   at 0x........: pthread_rwlock_init (drd_pthread_intercepts.c:?)
    by 0x........: main (tc23_bogus_condwait.c:57)
 
 Mutex not locked by calling thread: mutex 0x........, recursion count 1, owner 2.
@@ -43,7 +43,7 @@ Probably a race condition: condition variable 0x........ has been signaled but t
    by 0x........: rescue_me (tc23_bogus_condwait.c:24)
    by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
 cond 0x........ was first observed at:
-   at 0x........: pthread_cond_init* (drd_pthread_intercepts.c:?)
+   at 0x........: pthread_cond_init (drd_pthread_intercepts.c:?)
    by 0x........: main (tc23_bogus_condwait.c:56)
 mutex 0x........ was first observed at:
    at 0x........: pthread_mutex_init (drd_pthread_intercepts.c:?)

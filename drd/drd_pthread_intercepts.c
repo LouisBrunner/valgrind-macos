@@ -78,10 +78,43 @@
 #define WAIT_UNTIL_CREATED_THREAD_STARTED
 #define ALLOCATE_THREAD_ARGS_ON_THE_STACK
 
-#define PTH_FUNC(ret_ty, f, args...)                            \
-   ret_ty VG_WRAP_FUNCTION_ZZ(VG_Z_LIBPTHREAD_SONAME,f)(args);  \
-   ret_ty VG_WRAP_FUNCTION_ZZ(VG_Z_LIBPTHREAD_SONAME,f)(args)
+/**
+ * Macro for generating a Valgrind interception function.
+ * @param[in] ret_ty Return type of the function to be generated.
+ * @param[in] zf Z-encoded name of the interception function.
+ * @param[in] implf Name of the function that implements the intercept.
+ * @param[in] arg_decl Argument declaration list enclosed in parentheses.
+ * @param[in] argl Argument list enclosed in parentheses.
+ */
+#define PTH_FUNC(ret_ty, zf, implf, argl_decl, argl)                    \
+   ret_ty VG_WRAP_FUNCTION_ZZ(VG_Z_LIBPTHREAD_SONAME,zf) argl_decl;     \
+   ret_ty VG_WRAP_FUNCTION_ZZ(VG_Z_LIBPTHREAD_SONAME,zf) argl_decl      \
+   { return implf argl; }
 
+/**
+ * Macro for generating three Valgrind interception functions: one with the
+ * Z-encoded name zf, one with ZAZa ("@*") appended to the name zf and one
+ * with ZDZa ("$*") appended to the name zf. The second generated interception
+ * function will intercept versioned symbols on Linux, and the third will
+ * intercept versioned symbols on Darwin.
+ */
+#define PTH_FUNCS(ret_ty, zf, implf, argl_decl, argl)           \
+   PTH_FUNC(ret_ty, zf, implf, argl_decl, argl);                \
+   PTH_FUNC(ret_ty, zf ## ZAZa, implf, argl_decl, argl);        \
+   PTH_FUNC(ret_ty, zf ## ZDZa, implf, argl_decl, argl);
+
+/*
+ * Not inlining one of the intercept functions will cause the regression
+ * tests to fail because this would cause an additional stackfram to appear
+ * in the output. The __always_inline macro guarantees that inlining will
+ * happen, even when compiling with optimization disabled.
+ */
+#undef __always_inline /* since already defined in <cdefs.h> */
+#if __GNUC_PREREQ (3,2)
+#define __always_inline __inline__ __attribute__((always_inline))
+#else
+#define __always_inline __inline__
+#endif
 
 /* Local data structures. */
 
@@ -161,7 +194,7 @@ static MutexT DRD_(pthread_to_drd_mutex_type)(const int kind)
  *   higher bits for flags like PTHREAD_MUTEXATTR_FLAG_ROBUST and
  *   PTHREAD_MUTEXATTR_FLAG_PSHARED.
  */
-static __inline__ MutexT DRD_(mutex_type)(pthread_mutex_t* mutex)
+static __always_inline MutexT DRD_(mutex_type)(pthread_mutex_t* mutex)
 {
 #if defined(HAVE_PTHREAD_MUTEX_T__M_KIND)
    /* glibc + LinuxThreads. */
@@ -192,7 +225,7 @@ static void DRD_(set_joinable)(const pthread_t tid, const int joinable)
 }
 
 /** Tell DRD that the calling thread is about to enter pthread_create(). */
-static __inline__ void DRD_(entering_pthread_create)(void)
+static __always_inline void DRD_(entering_pthread_create)(void)
 {
    int res;
    VALGRIND_DO_CLIENT_REQUEST(res, 0, VG_USERREQ__ENTERING_PTHREAD_CREATE,
@@ -200,7 +233,7 @@ static __inline__ void DRD_(entering_pthread_create)(void)
 }
 
 /** Tell DRD that the calling thread has left pthread_create(). */
-static __inline__ void DRD_(left_pthread_create)(void)
+static __always_inline void DRD_(left_pthread_create)(void)
 {
    int res;
    VALGRIND_DO_CLIENT_REQUEST(res, 0, VG_USERREQ__LEFT_PTHREAD_CREATE,
@@ -328,10 +361,9 @@ static void DRD_(set_main_thread_state)(void)
  * glibc-2.9/nptl/pthread_create.c.
  */
 
-// pthread_create
-PTH_FUNC(int, pthreadZucreateZa, // pthread_create*
-         pthread_t *thread, const pthread_attr_t *attr,
-         void *(*start) (void *), void *arg)
+static __always_inline
+int pthread_create_intercept(pthread_t* thread, const pthread_attr_t* attr,
+                             void* (*start)(void*), void* arg)
 {
    int    res;
    int    ret;
@@ -404,9 +436,13 @@ PTH_FUNC(int, pthreadZucreateZa, // pthread_create*
    return ret;
 }
 
-// pthread_join
-PTH_FUNC(int, pthreadZujoinZa, // pthread_join*
-         pthread_t pt_joinee, void **thread_return)
+PTH_FUNCS(int, pthreadZucreate, pthread_create_intercept,
+          (pthread_t *thread, const pthread_attr_t *attr,
+           void *(*start) (void *), void *arg),
+          (thread, attr, start, arg));
+
+static __always_inline
+int pthread_join_intercept(pthread_t pt_joinee, void **thread_return)
 {
    int      ret;
    int      res;
@@ -422,8 +458,12 @@ PTH_FUNC(int, pthreadZujoinZa, // pthread_join*
    return ret;
 }
 
-// pthread_detach
-PTH_FUNC(int, pthreadZudetach, pthread_t pt_thread)
+PTH_FUNCS(int, pthreadZujoin, pthread_join_intercept,
+          (pthread_t pt_joinee, void **thread_return),
+          (pt_joinee, thread_return));
+
+static __always_inline
+int pthread_detach_intercept(pthread_t pt_thread)
 {
    int ret;
    OrigFn fn;
@@ -438,9 +478,14 @@ PTH_FUNC(int, pthreadZudetach, pthread_t pt_thread)
    return ret;
 }
 
-// pthread_cancel
-// Note: make sure not to intercept pthread_cancel_init() on Linux !
-PTH_FUNC(int, pthreadZucancel, pthread_t pt_thread)
+PTH_FUNCS(int, pthreadZudetach, pthread_detach_intercept,
+          (pthread_t thread), (thread));
+
+// NOTE: be careful to intercept only pthread_cancel() and not
+// pthread_cancel_init() on Linux.
+
+static __always_inline
+int pthread_cancel_intercept(pthread_t pt_thread)
 {
    int res;
    int ret;
@@ -454,9 +499,12 @@ PTH_FUNC(int, pthreadZucancel, pthread_t pt_thread)
    return ret;
 }
 
-// pthread_once
-PTH_FUNC(int, pthreadZuonceZa, // pthread_once*
-         pthread_once_t *once_control, void (*init_routine)(void))
+PTH_FUNCS(int, pthreadZucancel, pthread_cancel_intercept,
+          (pthread_t thread), (thread))
+
+static __always_inline
+int pthread_once_intercept(pthread_once_t *once_control,
+                           void (*init_routine)(void))
 {
    int ret;
    OrigFn fn;
@@ -472,10 +520,13 @@ PTH_FUNC(int, pthreadZuonceZa, // pthread_once*
    return ret;
 }
 
-// pthread_mutex_init
-PTH_FUNC(int, pthreadZumutexZuinit,
-         pthread_mutex_t *mutex,
-         const pthread_mutexattr_t* attr)
+PTH_FUNCS(int, pthreadZuonce, pthread_once_intercept,
+          (pthread_once_t *once_control, void (*init_routine)(void)),
+          (once_control, init_routine));
+
+static __always_inline
+int pthread_mutex_init_intercept(pthread_mutex_t *mutex,
+                                 const pthread_mutexattr_t* attr)
 {
    int ret;
    int res;
@@ -494,9 +545,12 @@ PTH_FUNC(int, pthreadZumutexZuinit,
    return ret;
 }
 
-// pthread_mutex_destroy
-PTH_FUNC(int, pthreadZumutexZudestroy,
-         pthread_mutex_t *mutex)
+PTH_FUNCS(int, pthreadZumutexZuinit, pthread_mutex_init_intercept,
+          (pthread_mutex_t *mutex, const pthread_mutexattr_t* attr),
+          (mutex, attr));
+
+static __always_inline
+int pthread_mutex_destroy_intercept(pthread_mutex_t* mutex)
 {
    int ret;
    int res;
@@ -510,9 +564,11 @@ PTH_FUNC(int, pthreadZumutexZudestroy,
    return ret;
 }
 
-// pthread_mutex_lock
-PTH_FUNC(int, pthreadZumutexZulock, // pthread_mutex_lock
-         pthread_mutex_t *mutex)
+PTH_FUNCS(int, pthreadZumutexZudestroy, pthread_mutex_destroy_intercept,
+          (pthread_mutex_t *mutex), (mutex));
+
+static __always_inline
+int pthread_mutex_lock_intercept(pthread_mutex_t* mutex)
 {
    int   ret;
    int   res;
@@ -526,9 +582,11 @@ PTH_FUNC(int, pthreadZumutexZulock, // pthread_mutex_lock
    return ret;
 }
 
-// pthread_mutex_trylock
-PTH_FUNC(int, pthreadZumutexZutrylock, // pthread_mutex_trylock
-         pthread_mutex_t *mutex)
+PTH_FUNCS(int, pthreadZumutexZulock, pthread_mutex_lock_intercept,
+          (pthread_mutex_t *mutex), (mutex));
+
+static __always_inline
+int pthread_mutex_trylock_intercept(pthread_mutex_t* mutex)
 {
    int   ret;
    int   res;
@@ -542,10 +600,12 @@ PTH_FUNC(int, pthreadZumutexZutrylock, // pthread_mutex_trylock
    return ret;
 }
 
-// pthread_mutex_timedlock
-PTH_FUNC(int, pthreadZumutexZutimedlock, // pthread_mutex_timedlock
-         pthread_mutex_t *mutex,
-         const struct timespec *abs_timeout)
+PTH_FUNCS(int, pthreadZumutexZutrylock, pthread_mutex_trylock_intercept,
+          (pthread_mutex_t *mutex), (mutex));
+
+static __always_inline
+int pthread_mutex_timedlock_intercept(pthread_mutex_t *mutex,
+                                      const struct timespec *abs_timeout)
 {
    int   ret;
    int   res;
@@ -559,9 +619,12 @@ PTH_FUNC(int, pthreadZumutexZutimedlock, // pthread_mutex_timedlock
    return ret;
 }
 
-// pthread_mutex_unlock
-PTH_FUNC(int, pthreadZumutexZuunlock, // pthread_mutex_unlock
-         pthread_mutex_t *mutex)
+PTH_FUNCS(int, pthreadZumutexZutimedlock, pthread_mutex_timedlock_intercept,
+          (pthread_mutex_t *mutex, const struct timespec *abs_timeout),
+          (mutex, abs_timeout));
+
+static __always_inline
+int pthread_mutex_unlock_intercept(pthread_mutex_t *mutex)
 {
    int ret;
    int   res;
@@ -577,10 +640,12 @@ PTH_FUNC(int, pthreadZumutexZuunlock, // pthread_mutex_unlock
    return ret;
 }
 
-// pthread_cond_init
-PTH_FUNC(int, pthreadZucondZuinitZa, // pthread_cond_init*
-         pthread_cond_t* cond,
-         const pthread_condattr_t* attr)
+PTH_FUNCS(int, pthreadZumutexZuunlock, pthread_mutex_unlock_intercept,
+          (pthread_mutex_t *mutex), (mutex));
+
+static __always_inline
+int pthread_cond_init_intercept(pthread_cond_t* cond,
+                                const pthread_condattr_t* attr)
 {
    int ret;
    int res;
@@ -594,9 +659,12 @@ PTH_FUNC(int, pthreadZucondZuinitZa, // pthread_cond_init*
    return ret;
 }
 
-// pthread_cond_destroy
-PTH_FUNC(int, pthreadZucondZudestroyZa, // pthread_cond_destroy*
-         pthread_cond_t* cond)
+PTH_FUNCS(int, pthreadZucondZuinit, pthread_cond_init_intercept,
+          (pthread_cond_t* cond, const pthread_condattr_t* attr),
+          (cond, attr));
+
+static __always_inline
+int pthread_cond_destroy_intercept(pthread_cond_t* cond)
 {
    int ret;
    int res;
@@ -610,10 +678,11 @@ PTH_FUNC(int, pthreadZucondZudestroyZa, // pthread_cond_destroy*
    return ret;
 }
 
-// pthread_cond_wait
-PTH_FUNC(int, pthreadZucondZuwaitZa, // pthread_cond_wait*
-         pthread_cond_t *cond,
-         pthread_mutex_t *mutex)
+PTH_FUNCS(int, pthreadZucondZudestroy, pthread_cond_destroy_intercept,
+          (pthread_cond_t* cond), (cond));
+
+static __always_inline
+int pthread_cond_wait_intercept(pthread_cond_t *cond, pthread_mutex_t *mutex)
 {
    int   ret;
    int   res;
@@ -627,11 +696,14 @@ PTH_FUNC(int, pthreadZucondZuwaitZa, // pthread_cond_wait*
    return ret;
 }
 
-// pthread_cond_timedwait
-PTH_FUNC(int, pthreadZucondZutimedwaitZa, // pthread_cond_timedwait*
-         pthread_cond_t *cond,
-         pthread_mutex_t *mutex,
-         const struct timespec* abstime)
+PTH_FUNCS(int, pthreadZucondZuwait, pthread_cond_wait_intercept,
+          (pthread_cond_t *cond, pthread_mutex_t *mutex),
+          (cond, mutex));
+
+static __always_inline
+int pthread_cond_timedwait_intercept(pthread_cond_t *cond,
+                                     pthread_mutex_t *mutex,
+                                     const struct timespec* abstime)
 {
    int   ret;
    int   res;
@@ -645,15 +717,19 @@ PTH_FUNC(int, pthreadZucondZutimedwaitZa, // pthread_cond_timedwait*
    return ret;
 }
 
+PTH_FUNCS(int, pthreadZucondZutimedwait, pthread_cond_timedwait_intercept,
+          (pthread_cond_t *cond, pthread_mutex_t *mutex,
+           const struct timespec* abstime),
+          (cond, mutex, abstime));
+
 // NOTE: be careful to intercept only pthread_cond_signal() and not Darwin's
 // pthread_cond_signal_thread_np(). The former accepts one argument; the latter
 // two. Intercepting all pthread_cond_signal* functions will cause only one
 // argument to be passed to pthread_cond_signal_np() and hence will cause this
 // last function to crash.
 
-// pthread_cond_signal
-PTH_FUNC(int, pthreadZucondZusignal, // pthread_cond_signal
-         pthread_cond_t* cond)
+static __always_inline
+int pthread_cond_signal_intercept(pthread_cond_t* cond)
 {
    int   ret;
    int   res;
@@ -667,24 +743,11 @@ PTH_FUNC(int, pthreadZucondZusignal, // pthread_cond_signal
    return ret;
 }
 
-PTH_FUNC(int, pthreadZucondZusignalZAZa, // pthread_cond_signal@*
-         pthread_cond_t* cond)
-{
-   int   ret;
-   int   res;
-   OrigFn fn;
-   VALGRIND_GET_ORIG_FN(fn);
-   VALGRIND_DO_CLIENT_REQUEST(res, -1, VG_USERREQ__PRE_COND_SIGNAL,
-                              cond, 0, 0, 0, 0);
-   CALL_FN_W_W(ret, fn, cond);
-   VALGRIND_DO_CLIENT_REQUEST(res, -1, VG_USERREQ__POST_COND_SIGNAL,
-                              cond, 0, 0, 0, 0);
-   return ret;
-}
+PTH_FUNCS(int, pthreadZucondZusignal, pthread_cond_signal_intercept,
+          (pthread_cond_t* cond), (cond));
 
-// pthread_cond_broadcast
-PTH_FUNC(int, pthreadZucondZubroadcastZa, // pthread_cond_broadcast*
-         pthread_cond_t* cond)
+static __always_inline
+int pthread_cond_broadcast_intercept(pthread_cond_t* cond)
 {
    int   ret;
    int   res;
@@ -698,12 +761,12 @@ PTH_FUNC(int, pthreadZucondZubroadcastZa, // pthread_cond_broadcast*
    return ret;
 }
 
+PTH_FUNCS(int, pthreadZucondZubroadcast, pthread_cond_broadcast_intercept,
+          (pthread_cond_t* cond), (cond));
 
 #if defined(HAVE_PTHREAD_SPIN_LOCK)
-// pthread_spin_init
-PTH_FUNC(int, pthreadZuspinZuinit, // pthread_spin_init
-         pthread_spinlock_t *spinlock,
-         int pshared)
+static __always_inline
+int pthread_spin_init_intercept(pthread_spinlock_t *spinlock, int pshared)
 {
    int ret;
    int res;
@@ -717,9 +780,11 @@ PTH_FUNC(int, pthreadZuspinZuinit, // pthread_spin_init
    return ret;
 }
 
-// pthread_spin_destroy
-PTH_FUNC(int, pthreadZuspinZudestroy, // pthread_spin_destroy
-         pthread_spinlock_t *spinlock)
+PTH_FUNCS(int, pthreadZuspinZuinit, pthread_spin_init_intercept,
+          (pthread_spinlock_t *spinlock, int pshared), (spinlock, pshared));
+
+static __always_inline
+int pthread_spin_destroy_intercept(pthread_spinlock_t *spinlock)
 {
    int ret;
    int res;
@@ -733,9 +798,11 @@ PTH_FUNC(int, pthreadZuspinZudestroy, // pthread_spin_destroy
    return ret;
 }
 
-// pthread_spin_lock
-PTH_FUNC(int, pthreadZuspinZulock, // pthread_spin_lock
-         pthread_spinlock_t *spinlock)
+PTH_FUNCS(int, pthreadZuspinZudestroy, pthread_spin_destroy_intercept,
+          (pthread_spinlock_t *spinlock), (spinlock));
+
+static __always_inline
+int pthread_spin_lock_intercept(pthread_spinlock_t *spinlock)
 {
    int   ret;
    int   res;
@@ -749,9 +816,11 @@ PTH_FUNC(int, pthreadZuspinZulock, // pthread_spin_lock
    return ret;
 }
 
-// pthread_spin_trylock
-PTH_FUNC(int, pthreadZuspinZutrylock, // pthread_spin_trylock
-         pthread_spinlock_t *spinlock)
+PTH_FUNCS(int, pthreadZuspinZulock, pthread_spin_lock_intercept,
+          (pthread_spinlock_t *spinlock), (spinlock));
+
+static __always_inline
+int pthread_spin_trylock_intercept(pthread_spinlock_t *spinlock)
 {
    int   ret;
    int   res;
@@ -765,9 +834,11 @@ PTH_FUNC(int, pthreadZuspinZutrylock, // pthread_spin_trylock
    return ret;
 }
 
-// pthread_spin_unlock
-PTH_FUNC(int, pthreadZuspinZuunlock, // pthread_spin_unlock
-         pthread_spinlock_t *spinlock)
+PTH_FUNCS(int, pthreadZuspinZutrylock, pthread_spin_trylock_intercept,
+          (pthread_spinlock_t *spinlock), (spinlock));
+
+static __always_inline
+int pthread_spin_unlock_intercept(pthread_spinlock_t *spinlock)
 {
    int   ret;
    int   res;
@@ -780,15 +851,17 @@ PTH_FUNC(int, pthreadZuspinZuunlock, // pthread_spin_unlock
                               spinlock, 0, 0, 0, 0);
    return ret;
 }
+
+PTH_FUNCS(int, pthreadZuspinZuunlock, pthread_spin_unlock_intercept,
+          (pthread_spinlock_t *spinlock), (spinlock));
 #endif   // HAVE_PTHREAD_SPIN_LOCK
 
 
 #if defined(HAVE_PTHREAD_BARRIER_INIT)
-// pthread_barrier_init
-PTH_FUNC(int, pthreadZubarrierZuinit, // pthread_barrier_init
-         pthread_barrier_t* barrier,
-         const pthread_barrierattr_t* attr,
-         unsigned count)
+static __always_inline
+int pthread_barrier_init_intercept(pthread_barrier_t* barrier,
+                                   const pthread_barrierattr_t* attr,
+                                   unsigned count)
 {
    int   ret;
    int   res;
@@ -802,9 +875,12 @@ PTH_FUNC(int, pthreadZubarrierZuinit, // pthread_barrier_init
    return ret;
 }
 
-// pthread_barrier_destroy
-PTH_FUNC(int, pthreadZubarrierZudestroy, // pthread_barrier_destroy
-         pthread_barrier_t* barrier)
+PTH_FUNCS(int, pthreadZubarrierZuinit, pthread_barrier_init_intercept,
+          (pthread_barrier_t* barrier, const pthread_barrierattr_t* attr,
+           unsigned count), (barrier, attr, count));
+
+static __always_inline
+int pthread_barrier_destroy_intercept(pthread_barrier_t* barrier)
 {
    int   ret;
    int   res;
@@ -818,9 +894,11 @@ PTH_FUNC(int, pthreadZubarrierZudestroy, // pthread_barrier_destroy
    return ret;
 }
 
-// pthread_barrier_wait
-PTH_FUNC(int, pthreadZubarrierZuwait, // pthread_barrier_wait
-         pthread_barrier_t* barrier)
+PTH_FUNCS(int, pthreadZubarrierZudestroy, pthread_barrier_destroy_intercept,
+          (pthread_barrier_t* barrier), (barrier));
+
+static __always_inline
+int pthread_barrier_wait_intercept(pthread_barrier_t* barrier)
 {
    int   ret;
    int   res;
@@ -835,14 +913,14 @@ PTH_FUNC(int, pthreadZubarrierZuwait, // pthread_barrier_wait
                               ret == PTHREAD_BARRIER_SERIAL_THREAD, 0);
    return ret;
 }
+
+PTH_FUNCS(int, pthreadZubarrierZuwait, pthread_barrier_wait_intercept,
+          (pthread_barrier_t* barrier), (barrier));
 #endif   // HAVE_PTHREAD_BARRIER_INIT
 
 
-// sem_init
-PTH_FUNC(int, semZuinitZa, // sem_init*
-         sem_t *sem,
-         int pshared,
-         unsigned int value)
+static __always_inline
+int sem_init_intercept(sem_t *sem, int pshared, unsigned int value)
 {
    int   ret;
    int   res;
@@ -856,9 +934,11 @@ PTH_FUNC(int, semZuinitZa, // sem_init*
    return ret;
 }
 
-// sem_destroy
-PTH_FUNC(int, semZudestroyZa, // sem_destroy*
-         sem_t *sem)
+PTH_FUNCS(int, semZuinit, sem_init_intercept,
+          (sem_t *sem, int pshared, unsigned int value), (sem, pshared, value));
+
+static __always_inline
+int sem_destroy_intercept(sem_t *sem)
 {
    int   ret;
    int   res;
@@ -872,9 +952,11 @@ PTH_FUNC(int, semZudestroyZa, // sem_destroy*
    return ret;
 }
 
-// sem_open
-PTH_FUNC(sem_t *, semZuopen, // sem_open
-         const char *name, int oflag, mode_t mode, unsigned int value)
+PTH_FUNCS(int, semZudestroy, sem_destroy_intercept, (sem_t *sem), (sem));
+
+static __always_inline
+sem_t* sem_open_intercept(const char *name, int oflag, mode_t mode,
+                          unsigned int value)
 {
    sem_t *ret;
    int    res;
@@ -889,9 +971,11 @@ PTH_FUNC(sem_t *, semZuopen, // sem_open
    return ret;
 }
 
-// sem_close
-PTH_FUNC(int, semZuclose, // sem_close
-         sem_t *sem)
+PTH_FUNCS(sem_t *, semZuopen, sem_open_intercept,
+          (const char *name, int oflag, mode_t mode, unsigned int value),
+          (name, oflag, mode, value));
+
+static __always_inline int sem_close_intercept(sem_t *sem)
 {
    int   ret;
    int   res;
@@ -905,9 +989,9 @@ PTH_FUNC(int, semZuclose, // sem_close
    return ret;
 }
 
-// sem_wait
-PTH_FUNC(int, semZuwaitZa, // sem_wait*
-         sem_t *sem)
+PTH_FUNCS(int, semZuclose, sem_close_intercept, (sem_t *sem), (sem));
+
+static __always_inline int sem_wait_intercept(sem_t *sem)
 {
    int   ret;
    int   res;
@@ -921,9 +1005,9 @@ PTH_FUNC(int, semZuwaitZa, // sem_wait*
    return ret;
 }
 
-// sem_trywait
-PTH_FUNC(int, semZutrywaitZa, // sem_trywait*
-         sem_t *sem)
+PTH_FUNCS(int, semZuwait, sem_wait_intercept, (sem_t *sem), (sem));
+
+static __always_inline int sem_trywait_intercept(sem_t *sem)
 {
    int   ret;
    int   res;
@@ -937,9 +1021,10 @@ PTH_FUNC(int, semZutrywaitZa, // sem_trywait*
    return ret;
 }
 
-// sem_timedwait
-PTH_FUNC(int, semZutimedwait, // sem_timedwait
-         sem_t *sem, const struct timespec *abs_timeout)
+PTH_FUNCS(int, semZutrywait, sem_trywait_intercept, (sem_t *sem), (sem));
+
+static __always_inline
+int sem_timedwait_intercept(sem_t *sem, const struct timespec *abs_timeout)
 {
    int   ret;
    int   res;
@@ -953,9 +1038,11 @@ PTH_FUNC(int, semZutimedwait, // sem_timedwait
    return ret;
 }
 
-// sem_post
-PTH_FUNC(int, semZupostZa, // sem_post*
-         sem_t *sem)
+PTH_FUNCS(int, semZutimedwait, sem_timedwait_intercept,
+          (sem_t *sem, const struct timespec *abs_timeout),
+          (sem, abs_timeout));
+
+static __always_inline int sem_post_intercept(sem_t *sem)
 {
    int   ret;
    int   res;
@@ -969,11 +1056,11 @@ PTH_FUNC(int, semZupostZa, // sem_post*
    return ret;
 }
 
-// pthread_rwlock_init
-PTH_FUNC(int,
-         pthreadZurwlockZuinitZa, // pthread_rwlock_init*
-         pthread_rwlock_t* rwlock,
-         const pthread_rwlockattr_t* attr)
+PTH_FUNCS(int, semZupost, sem_post_intercept, (sem_t *sem), (sem));
+
+static __always_inline
+int pthread_rwlock_init_intercept(pthread_rwlock_t* rwlock,
+                                  const pthread_rwlockattr_t* attr)
 {
    int   ret;
    int   res;
@@ -985,10 +1072,13 @@ PTH_FUNC(int,
    return ret;
 }
 
-// pthread_rwlock_destroy
-PTH_FUNC(int,
-         pthreadZurwlockZudestroyZa, // pthread_rwlock_destroy*
-         pthread_rwlock_t* rwlock)
+PTH_FUNCS(int,
+          pthreadZurwlockZuinit, pthread_rwlock_init_intercept,
+          (pthread_rwlock_t* rwlock, const pthread_rwlockattr_t* attr),
+          (rwlock, attr));
+
+static __always_inline
+int pthread_rwlock_destroy_intercept(pthread_rwlock_t* rwlock)
 {
    int   ret;
    int   res;
@@ -1000,10 +1090,12 @@ PTH_FUNC(int,
    return ret;
 }
 
-// pthread_rwlock_rdlock
-PTH_FUNC(int,
-         pthreadZurwlockZurdlockZa, // pthread_rwlock_rdlock*
-         pthread_rwlock_t* rwlock)
+PTH_FUNCS(int,
+          pthreadZurwlockZudestroy, pthread_rwlock_destroy_intercept,
+          (pthread_rwlock_t* rwlock), (rwlock));
+
+static __always_inline
+int pthread_rwlock_rdlock_intercept(pthread_rwlock_t* rwlock)
 {
    int   ret;
    int   res;
@@ -1017,10 +1109,12 @@ PTH_FUNC(int,
    return ret;
 }
 
-// pthread_rwlock_wrlock
-PTH_FUNC(int,
-         pthreadZurwlockZuwrlockZa, // pthread_rwlock_wrlock*
-         pthread_rwlock_t* rwlock)
+PTH_FUNCS(int,
+          pthreadZurwlockZurdlock, pthread_rwlock_rdlock_intercept,
+          (pthread_rwlock_t* rwlock), (rwlock));
+
+static __always_inline
+int pthread_rwlock_wrlock_intercept(pthread_rwlock_t* rwlock)
 {
    int   ret;
    int   res;
@@ -1034,10 +1128,12 @@ PTH_FUNC(int,
    return ret;
 }
 
-// pthread_rwlock_timedrdlock
-PTH_FUNC(int,
-         pthreadZurwlockZutimedrdlockZa, // pthread_rwlock_timedrdlock*
-         pthread_rwlock_t* rwlock)
+PTH_FUNCS(int,
+          pthreadZurwlockZuwrlock, pthread_rwlock_wrlock_intercept,
+          (pthread_rwlock_t* rwlock), (rwlock));
+
+static __always_inline
+int pthread_rwlock_timedrdlock_intercept(pthread_rwlock_t* rwlock)
 {
    int   ret;
    int   res;
@@ -1051,10 +1147,12 @@ PTH_FUNC(int,
    return ret;
 }
 
-// pthread_rwlock_timedwrlock
-PTH_FUNC(int,
-         pthreadZurwlockZutimedwrlockZa, // pthread_rwlock_timedwrlock*
-         pthread_rwlock_t* rwlock)
+PTH_FUNCS(int,
+          pthreadZurwlockZutimedrdlock, pthread_rwlock_timedrdlock_intercept,
+          (pthread_rwlock_t* rwlock), (rwlock));
+
+static __always_inline
+int pthread_rwlock_timedwrlock_intercept(pthread_rwlock_t* rwlock)
 {
    int   ret;
    int   res;
@@ -1068,10 +1166,12 @@ PTH_FUNC(int,
    return ret;
 }
 
-// pthread_rwlock_tryrdlock
-PTH_FUNC(int,
-         pthreadZurwlockZutryrdlockZa, // pthread_rwlock_tryrdlock*
-         pthread_rwlock_t* rwlock)
+PTH_FUNCS(int,
+          pthreadZurwlockZutimedwrlock, pthread_rwlock_timedwrlock_intercept,
+          (pthread_rwlock_t* rwlock), (rwlock));
+
+static __always_inline
+int pthread_rwlock_tryrdlock_intercept(pthread_rwlock_t* rwlock)
 {
    int   ret;
    int   res;
@@ -1085,10 +1185,12 @@ PTH_FUNC(int,
    return ret;
 }
 
-// pthread_rwlock_trywrlock
-PTH_FUNC(int,
-         pthreadZurwlockZutrywrlockZa, // pthread_rwlock_trywrlock*
-         pthread_rwlock_t* rwlock)
+PTH_FUNCS(int,
+          pthreadZurwlockZutryrdlock, pthread_rwlock_tryrdlock_intercept,
+          (pthread_rwlock_t* rwlock), (rwlock));
+
+static __always_inline
+int pthread_rwlock_trywrlock_intercept(pthread_rwlock_t* rwlock)
 {
    int   ret;
    int   res;
@@ -1102,10 +1204,12 @@ PTH_FUNC(int,
    return ret;
 }
 
-// pthread_rwlock_unlock
-PTH_FUNC(int,
-         pthreadZurwlockZuunlockZa, // pthread_rwlock_unlock*
-         pthread_rwlock_t* rwlock)
+PTH_FUNCS(int,
+          pthreadZurwlockZutrywrlock, pthread_rwlock_trywrlock_intercept,
+          (pthread_rwlock_t* rwlock), (rwlock));
+
+static __always_inline
+int pthread_rwlock_unlock_intercept(pthread_rwlock_t* rwlock)
 {
    int   ret;
    int   res;
@@ -1118,3 +1222,7 @@ PTH_FUNC(int,
                               rwlock, ret == 0, 0, 0, 0);
    return ret;
 }
+
+PTH_FUNCS(int,
+          pthreadZurwlockZuunlock, pthread_rwlock_unlock_intercept,
+          (pthread_rwlock_t* rwlock), (rwlock));

@@ -57,6 +57,7 @@ EXTRA_DIST = \
 	cmdline4.stderr.exp cmdline4.vgtest \
 	cmdline5.stderr.exp cmdline5.vgtest \
 	cmdline6.stderr.exp cmdline6.vgtest \
+	cmd-with-special.stderr.exp cmd-with-special.vgtest \
 	coolo_sigaction.stderr.exp \
 	coolo_sigaction.stdout.exp coolo_sigaction.vgtest \
 	coolo_strlen.stderr.exp coolo_strlen.vgtest \

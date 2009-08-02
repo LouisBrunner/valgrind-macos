@@ -958,6 +958,21 @@ static void print_file_vars(Char* format)
 /*=== Printing the preamble                                        ===*/
 /*====================================================================*/
 
+// Print the command, escaping any chars that require it.
+static void umsg_or_xml_arg(Char* arg,
+                            UInt (*umsg_or_xml)( const HChar*, ... ) )
+{
+   SizeT len = VG_(strlen)(arg);
+   Char* special = " \\<>";
+   Int i;
+   for (i = 0; i < len; i++) {
+      if (VG_(strchr)(special, arg[i])) {
+         umsg_or_xml("\\");   // escape with a backslash if necessary
+      }
+      umsg_or_xml("%c", arg[i]);
+   }
+}
+
 /* Ok, the logging sink is running now.  Print a suitable preamble.
    If logging to file or a socket, write details of parent PID and
    command line args, to help people trying to interpret the
@@ -1030,7 +1045,7 @@ static void print_preamble ( Bool logging_to_fd,
       */
       umsg_or_xml("Command: ");
       if (VG_(args_the_exename))
-         umsg_or_xml("%s", VG_(args_the_exename));
+         umsg_or_xml_arg(VG_(args_the_exename), umsg_or_xml);
       n = 0;
       for (i = 0; i < VG_(sizeXA)( VG_(args_for_client) ); i++) {
          HChar* s = *(HChar**)VG_(indexXA)( VG_(args_for_client), i );
@@ -1043,7 +1058,8 @@ static void print_preamble ( Bool logging_to_fd,
             VG_(umsg)("\n        ");
             n = slen;
          }
-         umsg_or_xml(" %s", s);
+         umsg_or_xml(" ");
+         umsg_or_xml_arg(s, umsg_or_xml);
       }
       umsg_or_xml("\n");
 

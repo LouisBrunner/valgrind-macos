@@ -52,10 +52,22 @@
    fun:pthread_create*
 }
 {
-   drd-libpthread
+   drd-libpthread-pthread_join
+   drd:ConflictingAccess
+   fun:pthread_join
+   fun:pthread_join
+}
+{
+   drd-libpthread-__deallocate_stack
    drd:ConflictingAccess
    ...
    fun:__deallocate_stack
+}
+{
+   drd-libpthread-__free_tcb
+   drd:ConflictingAccess
+   ...
+   fun:__free_tcb
 }
 {
    drd-libpthread-pthread_detach

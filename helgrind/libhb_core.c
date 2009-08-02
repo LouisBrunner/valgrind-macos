@@ -2886,8 +2886,13 @@ static Thr* Thr__new ( void ) {
    thr->viW = VtsID_INVALID;
    thr->still_alive = True;
    thr->filter = HG_(zalloc)( "libhb.Thr__new.2", sizeof(Filter) );
+   /* We only really need this at history level 1, but unfortunately
+      this routine is called before the command line processing is
+      done (sigh), so we can't rely on HG_(clo_history_level) at this
+      point.  Hence always allocate it.  Bah. */
    thr->local_Kws_n_stacks
-      = VG_(newXA)( HG_(zalloc), "libhb.Thr__new.3 (local_Kws_and_stacks)",
+      = VG_(newXA)( HG_(zalloc),
+                    "libhb.Thr__new.3 (local_Kws_and_stacks)",
                     HG_(free), sizeof(ULong_n_EC) );
    return thr;
 }
@@ -5251,14 +5256,18 @@ void zsm_sapplyNN_f__msmcread ( Thr* thr, Addr a, SizeT len )
 void libhb_Thr_resumes ( Thr* thr )
 {
    if (0) VG_(printf)("resume %p\n", thr);
+   tl_assert(thr);
+   tl_assert(thr->still_alive);
    Filter__clear(thr->filter, "libhb_Thr_resumes");
    /* A kludge, but .. if this thread doesn't have any marker stacks
       at all, get one right now.  This is easier than figuring out
       exactly when at thread startup we can and can't take a stack
       snapshot. */
-   tl_assert(thr->local_Kws_n_stacks);
-   if (VG_(sizeXA)( thr->local_Kws_n_stacks ) == 0)
-      note_local_Kw_n_stack_for(thr);
+   if (HG_(clo_history_level) == 1) {
+      tl_assert(thr->local_Kws_n_stacks);
+      if (VG_(sizeXA)( thr->local_Kws_n_stacks ) == 0)
+         note_local_Kw_n_stack_for(thr);
+   }
 }
 
 
@@ -5521,8 +5530,24 @@ void libhb_shutdown ( Bool show_stats )
 void libhb_async_exit ( Thr* thr )
 {
    tl_assert(thr);
+   tl_assert(thr->still_alive);
    thr->still_alive = False;
-   /* XXX free up Filter and local_Kws_n_stacks */
+
+   /* free up Filter and local_Kws_n_stacks (well, actually not the
+      latter ..) */
+   tl_assert(thr->filter);
+   HG_(free)(thr->filter);
+   thr->filter = NULL;
+
+   /* Another space-accuracy tradeoff.  Do we want to be able to show
+      H1 history for conflicts in threads which have since exited?  If
+      yes, then we better not free up thr->local_Kws_n_stacks.  The
+      downside is a potential per-thread leak of up to
+      N_KWs_N_STACKs_PER_THREAD * sizeof(ULong_n_EC) * whatever the
+      XArray average overcommit factor is (1.5 I'd guess). */
+   // hence:
+   // VG_(deleteXA)(thr->local_Kws_n_stacks);
+   // thr->local_Kws_n_stacks = NULL;
 }
 
 /* Both Segs and SOs point to VTSs.  However, there is no sharing, so
@@ -5583,9 +5608,10 @@ void libhb_so_send ( Thr* thr, SO* so, Bool strong_send )
    VtsID__rcdec(thr->viW);
    thr->viR = VtsID__tick( thr->viR, thr );
    thr->viW = VtsID__tick( thr->viW, thr );
-   Filter__clear(thr->filter, "libhb_so_send");
-   if (thr->still_alive)
+   if (thr->still_alive) {
+      Filter__clear(thr->filter, "libhb_so_send");
       note_local_Kw_n_stack_for(thr);
+   }
    VtsID__rcinc(thr->viR);
    VtsID__rcinc(thr->viW);
 

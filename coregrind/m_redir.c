@@ -223,8 +223,8 @@ typedef
       HChar* from_fnpatt;  /* from fnname pattern  */
       Addr   to_addr;      /* where redirecting to */
       Bool   isWrap;       /* wrap or replacement? */
-      const HChar* mandatory; /* non-NULL ==> abort V and print the
-                              string if from_sopatt is loaded but
+      HChar** mandatory;   /* non-NULL ==> abort V and print the
+                              strings if from_sopatt is loaded but
                               from_fnpatt cannot be found */
       /* VARIABLE PARTS -- used transiently whilst processing redirections */
       Bool   mark; /* set if spec requires further processing */
@@ -555,6 +555,7 @@ void generate_and_add_actives (
          break;
    }
    if (sp) {
+      HChar** strp;
       HChar* v = "valgrind:  ";
       vg_assert(sp->mark);
       vg_assert(!sp->done);
@@ -581,8 +582,11 @@ void generate_and_add_actives (
       v, VG_(DebugInfo_get_soname)(di));
       VG_(printf)(
       "%s\n", v);
-      VG_(printf)(
-      "%s%s\n", v, sp->mandatory);
+
+      for (strp = sp->mandatory; *strp; strp++)
+         VG_(printf)(
+         "%s%s\n", v, *strp);
+
       VG_(printf)(
       "%s\n", v);
       VG_(printf)(
@@ -809,7 +813,7 @@ static void add_hardwired_active ( Addr from, Addr to )
 __attribute__((unused)) /* not used on all platforms */
 static void add_hardwired_spec ( HChar* sopatt, HChar* fnpatt, 
                                  Addr   to_addr,
-                                 const HChar* const mandatory )
+                                 HChar** mandatory )
 {
    Spec* spec = dinfo_zalloc("redir.ahs.1", sizeof(Spec));
    vg_assert(spec);
@@ -836,6 +840,18 @@ static void add_hardwired_spec ( HChar* sopatt, HChar* fnpatt,
    spec->next = topSpecs->specs;
    topSpecs->specs = spec;
 }
+
+
+__attribute__((unused)) /* not used on all platforms */
+static const HChar* complain_about_stripped_glibc_ldso[]
+= { "Possible fixes: (1, short term): install glibc's debuginfo",
+    "package on this machine.  (2, longer term): ask the packagers",
+    "for your Linux distribution to please in future ship a non-",
+    "stripped ld.so (or whatever the dynamic linker .so is called)",
+    "that exports the above-named function using the standard",
+    "calling conventions for this platform.",
+    NULL
+  };
 
 
 /* Initialise the redir system, and create the initial Spec list and
@@ -880,11 +896,26 @@ void VG_(redir_initialise) ( void )
       (Addr)&VG_(amd64_linux_REDIR_FOR_vtime) 
    );
 
-#  elif defined(VGP_ppc32_linux)
-   {
-   static const HChar croakage[]
-     = "Possible fix: install glibc's debuginfo package on this machine.";
+   /* If we're using memcheck, use these intercepts right from
+      the start, otherwise ld.so makes a lot of noise. */
+   if (0==VG_(strcmp)("Memcheck", VG_(details).name)) {
 
+      add_hardwired_spec(
+         "ld-linux-x86-64.so.2", "strlen",
+         (Addr)&VG_(amd64_linux_REDIR_FOR_strlen),
+#        if defined(GLIBC_2_2) || defined(GLIBC_2_3) || defined(GLIBC_2_4) \
+            || defined(GLIBC_2_5) || defined(GLIBC_2_6) || defined(GLIBC_2_7) \
+            || defined(GLIBC_2_8) || defined(GLIBC_2_9)
+         NULL
+#        else
+         /* for glibc-2.10 and later, this is mandatory - can't sanely
+            continue without it */
+         complain_about_stripped_glibc_ldso
+#        endif
+      );   
+   }
+
+#  elif defined(VGP_ppc32_linux)
    /* If we're using memcheck, use these intercepts right from
       the start, otherwise ld.so makes a lot of noise. */
    if (0==VG_(strcmp)("Memcheck", VG_(details).name)) {
@@ -893,7 +924,7 @@ void VG_(redir_initialise) ( void )
       add_hardwired_spec(
          "ld.so.1", "strlen",
          (Addr)&VG_(ppc32_linux_REDIR_FOR_strlen),
-         croakage
+         complain_about_stripped_glibc_ldso
       );   
       add_hardwired_spec(
          "ld.so.1", "strcmp",
@@ -908,13 +939,8 @@ void VG_(redir_initialise) ( void )
          /* glibc-2.6.1 (openSUSE 10.3, ppc32) seems fine without it */
       );
    }
-   }
 
 #  elif defined(VGP_ppc64_linux)
-   {
-   static const HChar croakage[]
-     = "Possible fix: install glibc's debuginfo package on this machine.";
-
    /* If we're using memcheck, use these intercepts right from
       the start, otherwise ld.so makes a lot of noise. */
    if (0==VG_(strcmp)("Memcheck", VG_(details).name)) {
@@ -923,7 +949,7 @@ void VG_(redir_initialise) ( void )
       add_hardwired_spec(
          "ld64.so.1", "strlen",
          (Addr)VG_(fnptr_to_fnentry)( &VG_(ppc64_linux_REDIR_FOR_strlen) ),
-         croakage
+         complain_about_stripped_glibc_ldso
       );
 
       add_hardwired_spec(
@@ -932,7 +958,6 @@ void VG_(redir_initialise) ( void )
          NULL /* not mandatory - so why bother at all? */
          /* glibc-2.5 (FC6, ppc64) seems fine without it */
       );
-   }
    }
 
 #  elif defined(VGP_ppc32_aix5)
@@ -955,11 +980,11 @@ void VG_(redir_initialise) ( void )
                          (Addr)&VG_(darwin_REDIR_FOR_strcpy), NULL);
       add_hardwired_spec("dyld", "strlcat",
                          (Addr)&VG_(darwin_REDIR_FOR_strlcat), NULL);
-#if defined(VGP_amd64_darwin)
+#     if defined(VGP_amd64_darwin)
       // DDD: #warning fixme rdar://6166275
       add_hardwired_spec("dyld", "arc4random",
                          (Addr)&VG_(darwin_REDIR_FOR_arc4random), NULL);
-#endif
+#     endif
    }
 
 #  else

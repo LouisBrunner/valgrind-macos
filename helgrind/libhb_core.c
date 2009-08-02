@@ -2839,6 +2839,18 @@ static inline Bool Filter__ok_to_skip_cwr08 ( Filter* fi, Addr a )
 // QQQ move this somewhere else
 typedef  struct { ULong ull; ExeContext* ec; }  ULong_n_EC;
 
+/* How many of the above records to collect for each thread?  Older
+   ones are dumped when we run out of space.  62.5k requires 1MB per
+   thread, since each ULong_n_EC record is 16 bytes long.  When more
+   than N_KWs_N_STACKs_PER_THREAD are present, the older half are
+   deleted to make space.  Hence in the worst case we will be able to
+   produce a stack at least for the last N_KWs_N_STACKs_PER_THREAD / 2
+   Kw transitions (segments in this thread).  For the current setting
+   that gives a guaranteed stack for at least the last 31.25k
+   segments. */
+#define N_KWs_N_STACKs_PER_THREAD 62500
+
+
 struct _Thr {
    /* Current VTSs for this thread.  They change as we go along.  viR
       is the VTS to be used for reads, viW for writes.  Usually they
@@ -2861,11 +2873,11 @@ struct _Thr {
    /* opaque (to us) data we hold on behalf of the library's user. */
    void* opaque;
 
-   /* The ULongs (scalar Krs) in this accumulate in strictly
+   /* The ULongs (scalar Kws) in this accumulate in strictly
       increasing order, without duplicates.  This is important because
-      we need to be able to find a given scalar Kr in this array
+      we need to be able to find a given scalar Kw in this array
       later, by binary search. */
-   XArray* /* ULong_n_EC */ local_Krs_n_stacks;
+   XArray* /* ULong_n_EC */ local_Kws_n_stacks;
 };
 
 static Thr* Thr__new ( void ) {
@@ -2874,13 +2886,13 @@ static Thr* Thr__new ( void ) {
    thr->viW = VtsID_INVALID;
    thr->still_alive = True;
    thr->filter = HG_(zalloc)( "libhb.Thr__new.2", sizeof(Filter) );
-   thr->local_Krs_n_stacks
-      = VG_(newXA)( HG_(zalloc), "libhb.Thr__new.3 (local_Krs_and_stacks)",
+   thr->local_Kws_n_stacks
+      = VG_(newXA)( HG_(zalloc), "libhb.Thr__new.3 (local_Kws_and_stacks)",
                     HG_(free), sizeof(ULong_n_EC) );
    return thr;
 }
 
-static void note_local_Kr_n_stack_for ( Thr* thr )
+static void note_local_Kw_n_stack_for ( Thr* thr )
 {
    Word       nPresent;
    ULong_n_EC pair;
@@ -2890,38 +2902,38 @@ static void note_local_Kr_n_stack_for ( Thr* thr )
    if (HG_(clo_history_level) != 1) 
       return;
 
-   /* This is the scalar Kr for thr. */
-   pair.ull = VtsID__indexAt( thr->viR, thr );
+   /* This is the scalar Kw for thr. */
+   pair.ull = VtsID__indexAt( thr->viW, thr );
    pair.ec  = main_get_EC( thr );
    tl_assert(pair.ec);
-   tl_assert(thr->local_Krs_n_stacks);
+   tl_assert(thr->local_Kws_n_stacks);
 
    /* check that we're not adding duplicates */
-   nPresent = VG_(sizeXA)( thr->local_Krs_n_stacks );
+   nPresent = VG_(sizeXA)( thr->local_Kws_n_stacks );
 
    /* Throw away old stacks, if necessary.  We can't accumulate stuff
       indefinitely. */
-   if (nPresent > 10000) {
-      VG_(dropHeadXA)( thr->local_Krs_n_stacks, nPresent / 2 );
-      nPresent = VG_(sizeXA)( thr->local_Krs_n_stacks );
-      if (1)
-         VG_(printf)("LOCAL Kr: thr %p,  Kr %llu,  ec %p (!!! gc !!!)\n",
+   if (nPresent >= N_KWs_N_STACKs_PER_THREAD) {
+      VG_(dropHeadXA)( thr->local_Kws_n_stacks, nPresent / 2 );
+      nPresent = VG_(sizeXA)( thr->local_Kws_n_stacks );
+      if (0)
+         VG_(printf)("LOCAL Kw: thr %p,  Kw %llu,  ec %p (!!! gc !!!)\n",
                      thr, pair.ull, pair.ec );
    }
 
    if (nPresent > 0) {
       ULong_n_EC* prevPair
-         = (ULong_n_EC*)VG_(indexXA)( thr->local_Krs_n_stacks, nPresent-1 );
-      tl_assert( prevPair->ull < pair.ull );
+         = (ULong_n_EC*)VG_(indexXA)( thr->local_Kws_n_stacks, nPresent-1 );
+      tl_assert( prevPair->ull <= pair.ull );
    }
 
    if (nPresent == 0)
       pair.ec = NULL;
 
-   VG_(addToXA)( thr->local_Krs_n_stacks, &pair );
+   VG_(addToXA)( thr->local_Kws_n_stacks, &pair );
 
    if (0)
-      VG_(printf)("LOCAL Kr: thr %p,  Kr %llu,  ec %p\n",
+      VG_(printf)("LOCAL Kw: thr %p,  Kw %llu,  ec %p\n",
                   thr, pair.ull, pair.ec );
    if (0)
       VG_(pp_ExeContext)(pair.ec);
@@ -4047,10 +4059,56 @@ static ULong stats__msmcread_change  = 0;
 static ULong stats__msmcwrite        = 0;
 static ULong stats__msmcwrite_change = 0;
 
+/* Some notes on the H1 history mechanism:
+
+   Transition rules are:
+
+   read_{Kr,Kw}(Cr,Cw)  = (Cr,           Cr `join` Kw)
+   write_{Kr,Kw}(Cr,Cw) = (Cr `join` Kw, Cr `join` Kw)
+
+   After any access by a thread T to a location L, L's constraint pair
+   (Cr,Cw) has Cw[T] == T's Kw[T], that is, == T's scalar W-clock.
+
+   After a race by thread T conflicting with some previous access by
+   some other thread U, for a location with constraint (before
+   processing the later access) (Cr,Cw), then Cw[U] is the segment in
+   which the previously access lies.
+
+   Hence in record_race_info, we pass in Cfailed and Kfailed, which
+   are compared so as to find out which thread(s) this access
+   conflicts with.  Once that is established, we also require the
+   pre-update Cw for the location, so we can index into it for those
+   threads, to get the scalar clock values for the point at which the
+   former accesses were made.  (In fact we only bother to do any of
+   this for an arbitrarily chosen one of the conflicting threads, as
+   that's simpler, it avoids flooding the user with vast amounts of
+   mostly useless information, and because the program is wrong if it
+   contains any races at all -- so we don't really need to show all
+   conflicting access pairs initially, so long as we only show none if
+   none exist).
+
+   ---
+
+   That requires the auxiliary proof that 
+
+      (Cr `join` Kw)[T] == Kw[T]
+
+   Why should that be true?  Because for any thread T, Kw[T] >= the
+   scalar clock value for T known by any other thread.  In other
+   words, because T's value for its own scalar clock is at least as up
+   to date as the value for it known by any other thread (that is true
+   for both the R- and W- scalar clocks).  Hence no other thread will
+   be able to feed in a value for that element (indirectly via a
+   constraint) which will exceed Kw[T], and hence the join cannot
+   cause that particular element to advance.
+*/
+
 __attribute__((noinline))
 static void record_race_info ( Thr* acc_thr, 
                                Addr acc_addr, SizeT szB, Bool isWrite,
-                               VtsID vtsConstraint, VtsID vtsKlock )
+                               VtsID Cfailed,
+                               VtsID Kfailed,
+                               VtsID Cw )
 {
    /* Call here to report a race.  We just hand it onwards to
       HG_(record_error_Race).  If that in turn discovers that the
@@ -4078,8 +4136,8 @@ static void record_race_info ( Thr* acc_thr,
 
       /* At history_level 1, we must round up the relevant stack-pair
          for the conflicting segment right now.  This is because
-         deferring it is complex; we can't (easily) put vtsKlock and
-         vtsConstraint into the XError and wait for later without
+         deferring it is complex; we can't (easily) put Kfailed and
+         Cfailed into the XError and wait for later without
          getting tied up in difficulties with VtsID reference
          counting.  So just do it now. */
       Thr*  confThr;
@@ -4087,9 +4145,12 @@ static void record_race_info ( Thr* acc_thr,
       /* Which thread are we in conflict with?  There may be more than
          one, in which case VtsID__findFirst_notLEQ selects one arbitrarily
          (in fact it's the one with the lowest Thr* value). */
-      confThr = VtsID__findFirst_notLEQ( vtsConstraint, vtsKlock );
+      confThr = VtsID__findFirst_notLEQ( Cfailed, Kfailed );
       /* This must exist!  since if it was NULL then there's no
-         conflict (semantics of return value of VtsID__findFirst_notLEQ) */
+         conflict (semantics of return value of
+         VtsID__findFirst_notLEQ), and msmc{read,write}, which has
+         called us, just checked exactly this -- that there was in
+         fact a race. */
       tl_assert(confThr);
 
       /* Get the scalar clock value that the conflicting thread
@@ -4098,7 +4159,7 @@ static void record_race_info ( Thr* acc_thr,
          conflicting thread's scalar clock when it created this
          constraint.  Hence we know the scalar clock of the
          conflicting thread when the conflicting access was made. */
-      confTym = VtsID__indexAt( vtsConstraint, confThr );
+      confTym = VtsID__indexAt( Cfailed, confThr );
 
       /* Using this scalar clock, index into the conflicting thread's
          collection of stack traces made each time its vector clock
@@ -4109,34 +4170,39 @@ static void record_race_info ( Thr* acc_thr,
       key.ull = confTym;
       key.ec  = NULL;
       /* tl_assert(confThr); -- asserted just above */
-      tl_assert(confThr->local_Krs_n_stacks);
+      tl_assert(confThr->local_Kws_n_stacks);
       firstIx = lastIx = 0;
       found = VG_(lookupXA_UNSAFE)(
-                 confThr->local_Krs_n_stacks,
+                 confThr->local_Kws_n_stacks,
                  &key, &firstIx, &lastIx,
                  (Int(*)(void*,void*))cmp__ULong_n_EC__by_ULong
               );
-      if (0) VG_(printf)("record_race_info %u %u  confThr %p "
+      if (0) VG_(printf)("record_race_info %u %u %u  confThr %p "
                          "confTym %llu found %d (%lu,%lu)\n", 
-                         vtsConstraint, vtsKlock,
+                         Cfailed, Kfailed, Cw,
                          confThr, confTym, found, firstIx, lastIx);
       /* We can't indefinitely collect stack traces at VTS
          transitions, since we'd eventually run out of memory.  Hence
-         note_local_Kr_n_stack_for will eventually throw away old
+         note_local_Kw_n_stack_for will eventually throw away old
          ones, which in turn means we might fail to find index value
          confTym in the array. */
       if (found) {
          ULong_n_EC *pair_start, *pair_end;
          pair_start 
-            = (ULong_n_EC*)VG_(indexXA)( confThr->local_Krs_n_stacks, lastIx );
+            = (ULong_n_EC*)VG_(indexXA)( confThr->local_Kws_n_stacks, lastIx );
          hist1_seg_start = pair_start->ec;
-         if (lastIx+1 < VG_(sizeXA)( confThr->local_Krs_n_stacks )) {
+         if (lastIx+1 < VG_(sizeXA)( confThr->local_Kws_n_stacks )) {
             pair_end
-               = (ULong_n_EC*)VG_(indexXA)( confThr->local_Krs_n_stacks,
+               = (ULong_n_EC*)VG_(indexXA)( confThr->local_Kws_n_stacks,
                                             lastIx+1 );
             /* from properties of VG_(lookupXA) and the comparison fn used: */
             tl_assert(pair_start->ull < pair_end->ull);
             hist1_seg_end = pair_end->ec;
+            /* Could do a bit better here.  It may be that pair_end
+               doesn't have a stack, but the following entries in the
+               array have the same scalar Kw and to have a stack.  So
+               we should search a bit further along the array than
+               lastIx+1 if hist1_seg_end is NULL. */
          } else {
             if (confThr->still_alive)
                hist1_seg_end = main_get_EC( confThr );
@@ -4194,7 +4260,9 @@ static inline SVal msmcread ( SVal svOld,
          // same as in non-race case
          svNew = SVal__mkC( rmini, VtsID__join2(wmini, tviW) );
          record_race_info( acc_thr, acc_addr, szB, False/*!isWrite*/,
-                           rmini, tviR );
+                           rmini, /* Cfailed */
+                           tviR,  /* Kfailed */
+                           wmini  /* Cw */ );
          goto out;
       }
    }
@@ -4265,7 +4333,9 @@ static inline SVal msmcwrite ( SVal svOld,
          svNew = SVal__mkC( VtsID__join2(rmini, tviW),
                             VtsID__join2(wmini, tviW) );
          record_race_info( acc_thr, acc_addr, szB, True/*isWrite*/,
-                           wmini, acc_thr->viW );
+                           wmini, /* Cfailed */
+                           tviW,  /* Kfailed */
+                           wmini  /* Cw */ );
          goto out;
       }
    }
@@ -5186,9 +5256,9 @@ void libhb_Thr_resumes ( Thr* thr )
       at all, get one right now.  This is easier than figuring out
       exactly when at thread startup we can and can't take a stack
       snapshot. */
-   tl_assert(thr->local_Krs_n_stacks);
-   if (VG_(sizeXA)( thr->local_Krs_n_stacks ) == 0)
-      note_local_Kr_n_stack_for(thr);
+   tl_assert(thr->local_Kws_n_stacks);
+   if (VG_(sizeXA)( thr->local_Kws_n_stacks ) == 0)
+      note_local_Kw_n_stack_for(thr);
 }
 
 
@@ -5300,7 +5370,7 @@ Thr* libhb_create ( Thr* parent )
    Filter__clear(child->filter, "libhb_create(child)");
    VtsID__rcinc(child->viR);
    VtsID__rcinc(child->viW);
-   /* We need to do note_local_Kr_n_stack_for( child ), but it's too
+   /* We need to do note_local_Kw_n_stack_for( child ), but it's too
       early for that - it may not have a valid TId yet.  So, let
       libhb_Thr_resumes pick it up the first time the thread runs. */
 
@@ -5315,7 +5385,7 @@ Thr* libhb_create ( Thr* parent )
    Filter__clear(parent->filter, "libhb_create(parent)");
    VtsID__rcinc(parent->viR);
    VtsID__rcinc(parent->viW);
-   note_local_Kr_n_stack_for( parent );
+   note_local_Kw_n_stack_for( parent );
 
    show_thread_state(" child", child);
    show_thread_state("parent", parent);
@@ -5452,7 +5522,7 @@ void libhb_async_exit ( Thr* thr )
 {
    tl_assert(thr);
    thr->still_alive = False;
-   /* XXX free up Filter and local_Krs_n_stacks */
+   /* XXX free up Filter and local_Kws_n_stacks */
 }
 
 /* Both Segs and SOs point to VTSs.  However, there is no sharing, so
@@ -5515,7 +5585,7 @@ void libhb_so_send ( Thr* thr, SO* so, Bool strong_send )
    thr->viW = VtsID__tick( thr->viW, thr );
    Filter__clear(thr->filter, "libhb_so_send");
    if (thr->still_alive)
-      note_local_Kr_n_stack_for(thr);
+      note_local_Kw_n_stack_for(thr);
    VtsID__rcinc(thr->viR);
    VtsID__rcinc(thr->viW);
 
@@ -5564,7 +5634,7 @@ void libhb_so_recv ( Thr* thr, SO* so, Bool strong_recv )
       }
 
       Filter__clear(thr->filter, "libhb_so_recv");
-      note_local_Kr_n_stack_for(thr);
+      note_local_Kw_n_stack_for(thr);
 
       if (strong_recv) 
          show_thread_state("s-recv", thr);

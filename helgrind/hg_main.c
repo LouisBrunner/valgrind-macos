@@ -4169,7 +4169,7 @@ static Bool hg_process_cmd_line_option ( Char* arg )
 
    else if VG_XACT_CLO(arg, "--history-level=none",
                             HG_(clo_history_level), 0);
-   else if VG_XACT_CLO(arg, "--history-level=partial",
+   else if VG_XACT_CLO(arg, "--history-level=approx",
                             HG_(clo_history_level), 1);
    else if VG_XACT_CLO(arg, "--history-level=full",
                             HG_(clo_history_level), 2);
@@ -4211,9 +4211,9 @@ static void hg_print_usage ( void )
    VG_(printf)(
 "    --track-lockorders=no|yes show lock ordering errors? [yes]\n"
 "    --history-level=none|partial|full [full]\n"
-"       full:    show both stack traces for a data race (can be very slow)\n"
-"       partial: full trace for one thread, approx for the other (faster)\n"
-"       none:    only show trace for one thread in a race (fastest)\n"
+"       full:   show both stack traces for a data race (can be very slow)\n"
+"       approx: full trace for one thread, approx for the other (faster)\n"
+"       none:   only show trace for one thread in a race (fastest)\n"
 "    --conflict-cache-size=N   size of 'full' history cache [1000000]\n"
    );
    VG_(replacement_malloc_print_usage)();

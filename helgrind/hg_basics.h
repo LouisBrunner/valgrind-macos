@@ -78,7 +78,7 @@ extern Bool HG_(clo_cmp_race_err_addrs);
    0: "none": don't collect any history.  Fastest, but means we can
       only show one of the two stacks in a race.
 
-   1: "partial": collect one stack trace per (notional) segment, that
+   1: "approx": collect one stack trace per (notional) segment, that
       is, collect a stack trace for a thread every time its vector
       clock changes.  This faciliates showing the bounds of the
       conflicting segment(s), with relatively small overhead.

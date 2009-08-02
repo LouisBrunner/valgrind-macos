@@ -118,6 +118,20 @@ UInt ppc32g_dirtyhelper_MFSPR_268_269 ( UInt r269 )
 
 
 /* CALLED FROM GENERATED CODE */
+/* DIRTY HELPER (I'm not really sure what the side effects are) */
+UInt ppc32g_dirtyhelper_MFSPR_287 ( void )
+{
+#  if defined(__powerpc__) || defined(_AIX)
+   UInt spr;
+   __asm__ __volatile__("mfspr %0,287" : "=b"(spr));
+   return spr;
+#  else
+   return 0;
+#  endif
+}
+
+
+/* CALLED FROM GENERATED CODE */
 /* DIRTY HELPER (reads guest state, writes guest mem) */
 void ppc32g_dirtyhelper_LVS ( VexGuestPPC32State* gst,
                               UInt vD_off, UInt sh, UInt shift_right )

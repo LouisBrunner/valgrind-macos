@@ -5471,7 +5471,29 @@ static Bool dis_proc_ctl ( VexAbiInfo* vbi, UInt theInstr )
                          );
          /* execute the dirty call, dumping the result in val. */
          stmt( IRStmt_Dirty(d) );
-         putIReg( rD_addr, mkexpr(val) );
+         putIReg( rD_addr,
+                  mkWidenFrom32(ty, mkexpr(val), False/*unsigned*/) );
+         DIP("mfspr r%u,%u", rD_addr, (UInt)SPR);
+         break;
+      }
+
+      /* Again, runs natively on PPC7400 (7447, really).  Not
+         bothering with a feature test. */
+      case 287: /* 0x11F */ {
+         IRTemp   val  = newTemp(Ity_I32);
+         IRExpr** args = mkIRExprVec_0();
+         IRDirty* d    = unsafeIRDirty_1_N(
+                            val,
+                            0/*regparms*/,
+                            "ppc32g_dirtyhelper_MFSPR_287",
+                            fnptr_to_fnentry
+                               (vbi, &ppc32g_dirtyhelper_MFSPR_287),
+                            args
+                         );
+         /* execute the dirty call, dumping the result in val. */
+         stmt( IRStmt_Dirty(d) );
+         putIReg( rD_addr,
+                  mkWidenFrom32(ty, mkexpr(val), False/*unsigned*/) );
          DIP("mfspr r%u,%u", rD_addr, (UInt)SPR);
          break;
       }

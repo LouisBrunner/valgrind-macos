@@ -150,6 +150,8 @@ extern ULong ppcg_dirtyhelper_MFTB ( void );
 
 extern UInt ppc32g_dirtyhelper_MFSPR_268_269 ( UInt );
 
+extern UInt ppc32g_dirtyhelper_MFSPR_287 ( void );
+
 extern void ppc32g_dirtyhelper_LVS ( VexGuestPPC32State* gst,
                                      UInt vD_idx, UInt sh,
                                      UInt shift_right );

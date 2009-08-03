@@ -654,7 +654,8 @@ static Bool is_systemish_library_name ( UChar* name )
        || 0 == VG_(strncasecmp)(name, "/opt/", 5)
        || 0 == VG_(strncasecmp)(name, "/sw/", 4)
        || 0 == VG_(strncasecmp)(name, "/System/", 8)
-       || 0 == VG_(strncasecmp)(name, "/Library/", 9)) {
+       || 0 == VG_(strncasecmp)(name, "/Library/", 9)
+       || 0 == VG_(strncasecmp)(name, "/Applications/", 14)) {
       return True;
    } else {
       return False;

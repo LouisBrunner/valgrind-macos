@@ -2377,23 +2377,28 @@ static void parse_type_DIE ( /*MOD*/XArray* /* of TyEnt */ tyents,
       vg_assert(fieldE.Te.Field.name);
       if (fieldE.Te.Field.typeR == D3_INVALID_CUOFF)
          goto bad_DIE;
-      if (parent_is_struct && (!fieldE.Te.Field.loc))
-         goto bad_DIE;
-      if ((!parent_is_struct) && fieldE.Te.Field.loc) {
-         /* If this is a union type, pretend we haven't seen the data
-            member location expression, as it is by definition
-            redundant (it must be zero). */
-         ML_(dinfo_free)(fieldE.Te.Field.loc);
-         fieldE.Te.Field.loc  = NULL;
-         fieldE.Te.Field.nLoc = 0;
+      if (fieldE.Te.Field.loc) {
+         if (!parent_is_struct) {
+            /* If this is a union type, pretend we haven't seen the data
+               member location expression, as it is by definition
+               redundant (it must be zero). */
+            ML_(dinfo_free)(fieldE.Te.Field.loc);
+            fieldE.Te.Field.loc  = NULL;
+            fieldE.Te.Field.nLoc = 0;
+         }
+         /* Record this child in the parent */
+         fieldE.Te.Field.isStruct = parent_is_struct;
+         vg_assert(parser->qparentE[parser->sp].Te.TyStOrUn.fieldRs);
+         VG_(addToXA)( parser->qparentE[parser->sp].Te.TyStOrUn.fieldRs,
+                       &posn );
+         /* And record the child itself */
+         goto acquire_Field;
+      } else {
+         /* Member with no location - this can happen with static
+            const members in C++ code which are compile time constants
+            that do no exist in the class. They're not of any interest
+            to us so we ignore them. */
       }
-      /* Record this child in the parent */
-      fieldE.Te.Field.isStruct = parent_is_struct;
-      vg_assert(parser->qparentE[parser->sp].Te.TyStOrUn.fieldRs);
-      VG_(addToXA)( parser->qparentE[parser->sp].Te.TyStOrUn.fieldRs,
-                    &posn );
-      /* And record the child itself */
-      goto acquire_Field;
    }
 
    if (dtag == DW_TAG_array_type) {

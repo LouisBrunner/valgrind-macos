@@ -1,2 +1,1 @@
 prog: vgprintf
-stdout_filter: ../../tests/filter_numbers

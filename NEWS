@@ -46,6 +46,16 @@ Release 3.5.0 (???)
   [XXX: consider adding VALGRIND_COUNT_LEAK_BYTES as a synonym and
   deprecating VALGRIND_COUNT_LEAKS, which wasn't a good name to begin with]
 
+* The Valgrind client requests VALGRIND_PRINTF and VALGRIND_PRINTF_BACKTRACE
+  have been changed slightly.  Previously, the string was always printed
+  immediately on its own line.  Now, the string will be added to a buffer
+  but not printed until a newline is encountered, or other Valgrind output
+  is printed (note that for VALGRIND_PRINTF_BACKTRACE, the back-trace itself
+  is considered "other Valgrind output").  This allows you to use multiple
+  VALGRIND_PRINTF calls to build up a single output line, and also to print
+  multiple output lines with a single request (by embedding multiple
+  newlines in the string).
+
 * Memcheck's leak checker has been improved.  
   - The results for --leak-check=summary now match the summary results for
     --leak-check=full.  Previously they could differ because

@@ -1,3 +1,9 @@
 
-Yo
+Yo Yo Ma
+9
+Backtrace line one
+Line two:
+   at 0x........: VALGRIND_PRINTF_BACKTRACE (valgrind.h:...)
+   by 0x........: main (vgprintf.c:12)
+29
 

@@ -141,7 +141,7 @@ static void init(void);
       MALLOC_TRACE(#fnname "(%llu)", (ULong)n ); \
       \
       v = (void*)VALGRIND_NON_SIMD_CALL1( info.tl_##vg_replacement, n ); \
-      MALLOC_TRACE(" = %p", v ); \
+      MALLOC_TRACE(" = %p\n", v ); \
       return v; \
    }
 
@@ -156,7 +156,7 @@ static void init(void);
       MALLOC_TRACE(#fnname "(%p, %llu)", zone, (ULong)n ); \
       \
       v = (void*)VALGRIND_NON_SIMD_CALL1( info.tl_##vg_replacement, n ); \
-      MALLOC_TRACE(" = %p", v ); \
+      MALLOC_TRACE(" = %p\n", v ); \
       return v; \
    }
 
@@ -176,11 +176,12 @@ static void init(void);
       MALLOC_TRACE(#fnname "(%llu)", (ULong)n );        \
       \
       v = (void*)VALGRIND_NON_SIMD_CALL1( info.tl_##vg_replacement, n ); \
-      MALLOC_TRACE(" = %p", v ); \
+      MALLOC_TRACE(" = %p\n", v ); \
       if (NULL == v) { \
          VALGRIND_PRINTF_BACKTRACE( \
-            "new/new[] failed and should throw an exception, but Valgrind\n" \
-            "   cannot throw exceptions and so is aborting instead.  Sorry."); \
+            "new/new[] failed and should throw an exception, but Valgrind\n"); \
+         VALGRIND_PRINTF_BACKTRACE( \
+            "   cannot throw exceptions and so is aborting instead.  Sorry.\n"); \
             _exit(1); \
       } \
       return v; \
@@ -301,7 +302,7 @@ ALLOC_or_BOMB(VG_Z_LIBC_SONAME,       __builtin_vec_new, __builtin_vec_new );
    void VG_REPLACE_FUNCTION_ZU(soname,fnname) (void *zone, void *p)  \
    { \
       if (!init_done) init(); \
-      MALLOC_TRACE(#vg_replacement "(%p, %p)", zone, p ); \
+      MALLOC_TRACE(#vg_replacement "(%p, %p)\n", zone, p ); \
       if (p == NULL)  \
          return; \
       (void)VALGRIND_NON_SIMD_CALL1( info.tl_##vg_replacement, p ); \
@@ -313,7 +314,7 @@ ALLOC_or_BOMB(VG_Z_LIBC_SONAME,       __builtin_vec_new, __builtin_vec_new );
    void VG_REPLACE_FUNCTION_ZU(soname,fnname) (void *p)  \
    { \
       if (!init_done) init(); \
-      MALLOC_TRACE(#vg_replacement "(%p)", p ); \
+      MALLOC_TRACE(#vg_replacement "(%p)\n", p ); \
       if (p == NULL)  \
          return; \
       (void)VALGRIND_NON_SIMD_CALL1( info.tl_##vg_replacement, p ); \
@@ -393,7 +394,7 @@ FREE(VG_Z_LIBC_SONAME,       _ZdaPvRKSt9nothrow_t, __builtin_vec_delete );
       MALLOC_TRACE("calloc(%p, %llu,%llu)", zone, (ULong)nmemb, (ULong)size ); \
       \
       v = (void*)VALGRIND_NON_SIMD_CALL2( info.tl_calloc, nmemb, size ); \
-      MALLOC_TRACE(" = %p", v ); \
+      MALLOC_TRACE(" = %p\n", v ); \
       return v; \
    }
 
@@ -410,7 +411,7 @@ FREE(VG_Z_LIBC_SONAME,       _ZdaPvRKSt9nothrow_t, __builtin_vec_delete );
       /* Protect against overflow.  See bug 24078. */ \
       if (size && nmemb > (SizeT)-1 / size) return NULL; \
       v = (void*)VALGRIND_NON_SIMD_CALL2( info.tl_calloc, nmemb, size ); \
-      MALLOC_TRACE(" = %p", v ); \
+      MALLOC_TRACE(" = %p\n", v ); \
       return v; \
    }
 
@@ -440,11 +441,11 @@ ZONECALLOC(VG_Z_LIBC_SONAME, malloc_zone_calloc);
          return VG_REPLACE_FUNCTION_ZU(VG_Z_LIBC_SONAME,malloc) (new_size); \
       if (new_size <= 0) { \
          VG_REPLACE_FUNCTION_ZU(VG_Z_LIBC_SONAME,free)(ptrV); \
-         MALLOC_TRACE(" = 0"); \
+         MALLOC_TRACE(" = 0\n"); \
          return NULL; \
       } \
       v = (void*)VALGRIND_NON_SIMD_CALL2( info.tl_realloc, ptrV, new_size ); \
-      MALLOC_TRACE(" = %p", v ); \
+      MALLOC_TRACE(" = %p\n", v ); \
       return v; \
    }
 
@@ -464,11 +465,11 @@ ZONECALLOC(VG_Z_LIBC_SONAME, malloc_zone_calloc);
          return VG_REPLACE_FUNCTION_ZU(VG_Z_LIBC_SONAME,malloc) (new_size); \
       if (new_size <= 0) { \
          VG_REPLACE_FUNCTION_ZU(VG_Z_LIBC_SONAME,free)(ptrV); \
-         MALLOC_TRACE(" = 0"); \
+         MALLOC_TRACE(" = 0\n"); \
          return NULL; \
       } \
       v = (void*)VALGRIND_NON_SIMD_CALL2( info.tl_realloc, ptrV, new_size ); \
-      MALLOC_TRACE(" = %p", v ); \
+      MALLOC_TRACE(" = %p\n", v ); \
       return v; \
    }
 
@@ -501,7 +502,7 @@ ZONEREALLOC(VG_Z_LIBC_SONAME, malloc_zone_realloc);
       while (0 != (alignment & (alignment - 1))) alignment++; \
       \
       v = (void*)VALGRIND_NON_SIMD_CALL2( info.tl_memalign, alignment, n ); \
-      MALLOC_TRACE(" = %p", v ); \
+      MALLOC_TRACE(" = %p\n", v ); \
       return v; \
    }
 
@@ -524,7 +525,7 @@ ZONEREALLOC(VG_Z_LIBC_SONAME, malloc_zone_realloc);
       while (0 != (alignment & (alignment - 1))) alignment++; \
       \
       v = (void*)VALGRIND_NON_SIMD_CALL2( info.tl_memalign, alignment, n ); \
-      MALLOC_TRACE(" = %p", v ); \
+      MALLOC_TRACE(" = %p\n", v ); \
       return v; \
    }
 
@@ -680,7 +681,7 @@ POSIX_MEMALIGN(VG_Z_LIBC_SONAME, memalign_common);
          return 0; \
       \
       pszB = (SizeT)VALGRIND_NON_SIMD_CALL1( info.tl_malloc_usable_size, p ); \
-      MALLOC_TRACE(" = %llu", (ULong)pszB ); \
+      MALLOC_TRACE(" = %llu\n", (ULong)pszB ); \
       \
       return pszB; \
    }
@@ -695,7 +696,7 @@ MALLOC_USABLE_SIZE(VG_Z_LIBC_SONAME, malloc_size);
 
 static void panic(const char *str)
 {
-   VALGRIND_PRINTF_BACKTRACE("Program aborting because of call to %s", str);
+   VALGRIND_PRINTF_BACKTRACE("Program aborting because of call to %s\n", str);
    _exit(99);
    *(int *)0 = 'x';
 }
@@ -735,7 +736,7 @@ MALLOC_STATS(VG_Z_LIBC_SONAME, malloc_stats);
    { \
       static struct vg_mallinfo mi; \
       if (!init_done) init(); \
-      MALLOC_TRACE("mallinfo()"); \
+      MALLOC_TRACE("mallinfo()\n"); \
       (void)VALGRIND_NON_SIMD_CALL1( info.mallinfo, &mi ); \
       return mi; \
    }

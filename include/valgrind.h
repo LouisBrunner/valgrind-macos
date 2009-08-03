@@ -3681,7 +3681,9 @@ typedef
 
 
 /* These requests are for getting Valgrind itself to print something.
-   Possibly with a backtrace.  This is a really ugly hack. */
+   Possibly with a backtrace.  This is a really ugly hack.  The return value
+   is the number of characters printed, excluding the "**<pid>** " part at the
+   start and the backtrace (if present). */
 
 #if defined(NVALGRIND)
 

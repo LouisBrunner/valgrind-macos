@@ -669,7 +669,7 @@ BCOPY(VG_Z_DYLD,        bcopy)
      badness: \
       VALGRIND_PRINTF_BACKTRACE( \
          "*** memmove_chk: buffer overflow detected ***: " \
-         "program terminated"); \
+         "program terminated\n"); \
      _exit(127); \
      /*NOTREACHED*/ \
      return NULL; \
@@ -730,7 +730,7 @@ GLIBC232_RAWMEMCHR(VG_Z_LIBC_SONAME, rawmemchr)
      badness: \
       VALGRIND_PRINTF_BACKTRACE( \
          "*** strcpy_chk: buffer overflow detected ***: " \
-         "program terminated"); \
+         "program terminated\n"); \
      _exit(127); \
      /*NOTREACHED*/ \
      return NULL; \
@@ -757,7 +757,7 @@ GLIBC25___STRCPY_CHK(VG_Z_LIBC_SONAME, __strcpy_chk)
      badness: \
       VALGRIND_PRINTF_BACKTRACE( \
          "*** stpcpy_chk: buffer overflow detected ***: " \
-         "program terminated"); \
+         "program terminated\n"); \
      _exit(127); \
      /*NOTREACHED*/ \
      return NULL; \
@@ -840,7 +840,7 @@ GLIBC25_MEMPCPY(VG_Z_LD_SO_1,     mempcpy) /* ld.so.1 */
      badness: \
       VALGRIND_PRINTF_BACKTRACE( \
          "*** memcpy_chk: buffer overflow detected ***: " \
-         "program terminated"); \
+         "program terminated\n"); \
      _exit(127); \
      /*NOTREACHED*/ \
      return NULL; \

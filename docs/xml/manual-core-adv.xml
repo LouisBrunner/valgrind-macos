@@ -215,18 +215,21 @@ tool-specific macros).</para>
    <term><command><computeroutput>VALGRIND_PRINTF(format, ...)</computeroutput>:</command></term>
    <listitem>
     <para>printf a message to the log file when running under
-    Valgrind.  Nothing is output if not running under Valgrind.
-    Returns the number of characters output.</para>
+    Valgrind, prefixed with the PID between a pair of
+    <computeroutput>**</computeroutput> markers.  Nothing is output if not
+    running under Valgrind.  Output is not produced until a newline is
+    encountered, or subequent Valgrind output is printed;  this allows you
+    to build up a single line of output over multiple calls.
+    Returns the number of characters output, excluding the PID at the
+    start.</para>
    </listitem>
   </varlistentry>
 
   <varlistentry>
    <term><command><computeroutput>VALGRIND_PRINTF_BACKTRACE(format, ...)</computeroutput>:</command></term>
    <listitem>
-    <para>printf a message to the log file along with a stack
-    backtrace when running under Valgrind.  Nothing is output if
-    not running under Valgrind.  Returns the number of characters
-    output.</para>
+    <para>Like <computeroutput>VALGRIND_PRINTF<computeroutput>, but prints
+    a stack backtrace immediately afterwards.</para>
    </listitem>
   </varlistentry>
 

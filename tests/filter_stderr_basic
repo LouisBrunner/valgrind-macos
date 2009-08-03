@@ -27,7 +27,10 @@ sed "/^WARNING: assuming toc 0x*/d" |
 sed "/^Using Valgrind-.* and LibVEX; rerun with -h for copyright info/ d" |
 
 # Anonymise line numbers in vg_replace_malloc.c, remove dirname if present
-perl -p -e "s/(m_replacemalloc\/)?vg_replace_malloc.c:[0-9]*/vg_replace_malloc.c:.../" |
+perl -p -e "s/(m_replacemalloc\/)?vg_replace_malloc.c:\d+\)/vg_replace_malloc.c:...\)/" |
+
+# Likewise for valgrind.h
+perl -p -e "s/valgrind\.h:\d+\)/valgrind\.h:...\)/" |
 
 # Hide suppressed error counts
 sed "s/^\(ERROR SUMMARY[^(]*(suppressed: \)[0-9]*\( from \)[0-9]*)$/\10\20)/" |

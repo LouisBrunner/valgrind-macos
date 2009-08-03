@@ -140,7 +140,7 @@ EXTRA_DIST = \
 	threadederrno.vgtest \
 	timestamp.stderr.exp timestamp.vgtest \
 	tls.vgtest tls.stderr.exp tls.stdout.exp  \
-	vgprintf.stderr.exp vgprintf.stdout.exp vgprintf.vgtest
+	vgprintf.stderr.exp vgprintf.vgtest
 
 check_PROGRAMS = \
 	ansi args \

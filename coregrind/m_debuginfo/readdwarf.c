@@ -512,9 +512,9 @@ void read_dwarf2_lineblock ( struct _DebugInfo* di,
       VG_(printf)("  DWARF Version:               %d\n", 
                   (Int)info.li_version);
 
-   if (info.li_version != 2) {
+   if (info.li_version != 2 && info.li_version != 3) {
       ML_(symerr)(di, True,
-                  "Only DWARF version 2 line info "
+                  "Only DWARF version 2 and 3 line info "
                   "is currently supported.");
       goto out;
    }
@@ -1162,9 +1162,9 @@ void ML_(read_debuginfo_dwarf3)
 
       /* version should be 2 */
       ver = *((UShort*)( block_img + blklen_len ));
-      if ( ver != 2 ) {
+      if ( ver != 2 && ver != 3 ) {
          ML_(symerr)( di, True,
-                      "Ignoring non-dwarf2 block in .debug_info" );
+                      "Ignoring non-Dwarf2/3 block in .debug_info" );
          continue;
       }
       
@@ -3575,8 +3575,8 @@ void ML_(read_callframe_info_dwarf3)
             VG_(printf)("cie.version     = %d\n", (Int)cie_version);
          if (di->ddump_frames)
             VG_(printf)("  Version:               %d\n", (Int)cie_version);
-         if (cie_version != 1) {
-            how = "unexpected CIE version (not 1)";
+         if (cie_version != 1 && cie_version != 3) {
+            how = "unexpected CIE version (not 1 nor 3)";
             goto bad;
          }
 

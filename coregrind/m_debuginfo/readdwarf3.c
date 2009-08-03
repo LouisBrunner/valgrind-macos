@@ -1322,8 +1322,8 @@ void read_filename_table( /*MOD*/D3VarParser* parser,
       get_Initial_Length( &is_dw64, &c,
            "read_filename_table: invalid initial-length field" );
    version = get_UShort( &c );
-   if (version != 2)
-     cc->barf("read_filename_table: Only DWARF version 2 line info "
+   if (version != 2 && version != 3)
+     cc->barf("read_filename_table: Only DWARF version 2 and 3 line info "
               "is currently supported.");
    /*header_length              = (ULong)*/ get_Dwarfish_UWord( &c, is_dw64 );
    /*minimum_instruction_length = */ get_UChar( &c );

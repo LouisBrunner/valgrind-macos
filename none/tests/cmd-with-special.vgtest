@@ -1,0 +1,7 @@
+# Use the "prereq" command to copy ../../tests/true to a filename containing
+# special chars that need escaping in the "Command:" line.  We do the
+# renaming because the autotools would barf on such a filename.
+prereq: cp ../../tests/true 'a \<>b'
+prog: 'a \<>b'
+vgopts: -q
+cleanup: rm 'a \<>b'

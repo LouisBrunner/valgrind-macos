@@ -2476,11 +2476,23 @@ static void parse_type_DIE ( /*MOD*/XArray* /* of TyEnt */ tyents,
          boundE.Te.Bound.knownU = True;
          boundE.Te.Bound.boundL = lower;
          boundE.Te.Bound.boundU = upper;
-      } 
+      }
       else if (have_lower && (!have_upper) && (!have_count)) {
          boundE.Te.Bound.knownL = True;
          boundE.Te.Bound.knownU = False;
          boundE.Te.Bound.boundL = lower;
+         boundE.Te.Bound.boundU = 0;
+      }
+      else if ((!have_lower) && have_upper && (!have_count)) {
+         boundE.Te.Bound.knownL = False;
+         boundE.Te.Bound.knownU = True;
+         boundE.Te.Bound.boundL = 0;
+         boundE.Te.Bound.boundU = upper;
+      }
+      else if ((!have_lower) && (!have_upper) && (!have_count)) {
+         boundE.Te.Bound.knownL = False;
+         boundE.Te.Bound.knownU = False;
+         boundE.Te.Bound.boundL = 0;
          boundE.Te.Bound.boundU = 0;
       } else {
          /* FIXME: handle more cases */

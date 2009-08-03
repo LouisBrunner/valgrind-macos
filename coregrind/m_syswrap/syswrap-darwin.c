@@ -606,6 +606,12 @@ static void sync_mappings(const HChar *when, const HChar *where, Int num)
    Int         i;
    Bool        ok;
 
+   if (VG_(clo_trace_syscalls)) {
+       VG_(debugLog)(0, "syswrap-darwin",
+                     "sync_mappings(\"%s\", \"%s\", %d)\n", 
+                     when, where, num);
+   }
+
    // 16 is enough for most cases, but small enough that overflow happens
    // occasionally and thus the overflow path gets some test coverage.
    css_size = 16;
@@ -634,8 +640,8 @@ static void sync_mappings(const HChar *when, const HChar *where, Int num)
          action = "removed";
       }
       if (VG_(clo_trace_syscalls)) {
-          VG_(debugLog)(0, "aspacem",
-                        "\n%s region 0x%010lx..0x%010lx at %s (%s)\n", 
+          VG_(debugLog)(0, "syswrap-darwin",
+                        "  %s region 0x%010lx..0x%010lx at %s (%s)\n", 
                         action, cs->start, cs->end + 1, where, when);
       }
    }
@@ -3609,7 +3615,7 @@ static void import_complex_message(ThreadId tid, mach_msg_header_t *mh)
          // single port
          record_unnamed_port(tid, desc->port.name, -1);
          record_port_insert_rights(desc->port.name, desc->port.disposition);
-         PRINT("got port %s; ", name_for_port(desc->port.name));
+         PRINT("got port %s;\n", name_for_port(desc->port.name));
          break;
 
       case MACH_MSG_OOL_DESCRIPTOR:
@@ -3623,7 +3629,7 @@ static void import_complex_message(ThreadId tid, mach_msg_header_t *mh)
             Addr start = VG_PGROUNDDN((Addr)desc->out_of_line.address);
             Addr end = VG_PGROUNDUP((Addr)desc->out_of_line.address + 
                                     (Addr)desc->out_of_line.size);
-            PRINT("got ool mem %p..%#lx; ", desc->out_of_line.address, 
+            PRINT("got ool mem %p..%#lx;\n", desc->out_of_line.address, 
                   (Addr)desc->out_of_line.address+desc->out_of_line.size);
 
             ML_(notify_core_and_tool_of_mmap)(
@@ -3654,7 +3660,7 @@ static void import_complex_message(ThreadId tid, mach_msg_header_t *mh)
                PRINT(" %s", name_for_port(ports[i]));
             }
          }
-         PRINT(";");
+         PRINT(";\n");
          break;
 
       default:

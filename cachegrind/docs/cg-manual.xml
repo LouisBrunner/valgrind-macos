@@ -441,8 +441,7 @@ configuration, or failing that, via defaults).</para>
             <option>%p</option> and <option>%q</option> format specifiers
             can be used to embed the process ID and/or the contents of an
             environment variable in the name, as is the case for the core
-            option <option>--log-file</option>.  See <link
-            linkend="manual-core.basicopts">here</link> for details.
+            option <option><xref linkend="opt.log-file"/></option>.
       </para>
     </listitem>
   </varlistentry>

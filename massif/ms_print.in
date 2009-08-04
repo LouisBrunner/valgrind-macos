@@ -66,10 +66,10 @@ usage: ms_print [options] <file>
 
   options for the user, with defaults in [ ], are:
     -h --help             show this message
-    -v --version          show version
+    --version             show version
     --threshold=<n.n>     significance threshold, in percent [$threshold]
-    --x=<n>               graph width, in columns; min=4, max=1000 [72]
-    --y=<n>               graph height, in rows;   min=4, max=1000 [20]
+    --x=<4..1000>         graph width, in columns [72]
+    --y=<4..1000>         graph height, in rows [20]
 
   ms_print is Copyright (C) 2007-2007 Nicholas Nethercote.
   and licensed under the GNU General Public License, version 2.
@@ -107,7 +107,7 @@ sub process_cmd_line()
         if ($arg =~ /^-/) {
 
             # --version
-            if ($arg =~ /^-v$|^--version$/) {
+            if ($arg =~ /^--version$/) {
                 die("ms_print-$version\n");
 
             # --threshold=X (tolerates a trailing '%')

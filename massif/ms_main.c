@@ -49,7 +49,7 @@
 //   identified?  [hmm, could make getting the name of alloc-fns more
 //   difficult] [could dump full names to file, truncate in ms_print]
 // - make --show-below-main=no work
-// - Options like --alloc-fn='operator new(unsigned, std::nothrow_t const&amp;)'
+// - Options like --alloc-fn='operator new(unsigned, std::nothrow_t const&)'
 //   don't work in a .valgrindrc file or in $VALGRIND_OPTS. 
 //   m_commandline.c:add_args_from_string() needs to respect single quotes.
 // - With --stack=yes, want to add a stack trace for detailed snapshots so
@@ -446,7 +446,7 @@ static void ms_print_usage(void)
 {
    VG_(printf)(
 "    --heap=no|yes             profile heap blocks [yes]\n"
-"    --heap-admin=<number>     average admin bytes per heap block;\n"
+"    --heap-admin=<size>       average admin bytes per heap block;\n"
 "                               ignored if --heap=no [8]\n"
 "    --stacks=no|yes           profile stack(s) [no]\n"
 "    --depth=<number>          depth of contexts [30]\n"

@@ -4216,12 +4216,10 @@ static void hg_print_usage ( void )
 "       none:   only show trace for one thread in a race (fastest)\n"
 "    --conflict-cache-size=N   size of 'full' history cache [1000000]\n"
    );
-   VG_(replacement_malloc_print_usage)();
 }
 
 static void hg_print_debug_usage ( void )
 {
-   VG_(replacement_malloc_print_debug_usage)();
    VG_(printf)("    --cmp-race-err-addrs=no|yes  are data addresses in "
                "race errors significant? [no]\n");
    VG_(printf)("    --hg-sanity-flags=<XXXXXX>   sanity check "

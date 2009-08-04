@@ -64,8 +64,6 @@ extern Bool VG_(clo_trace_malloc);
 extern UInt VG_(clo_alignment);
 
 extern Bool VG_(replacement_malloc_process_cmd_line_option) ( Char* arg );
-extern void VG_(replacement_malloc_print_usage)             ( void );
-extern void VG_(replacement_malloc_print_debug_usage)       ( void );
 
 #endif   // __PUB_TOOL_REPLACEMALLOC_H
 

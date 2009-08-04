@@ -34,6 +34,7 @@ DIST_SUBDIRS = x86 amd64 ppc32 ppc64 linux darwin x86-linux .
 
 dist_noinst_SCRIPTS = \
 	filter_cmdline0 \
+	filter_cmdline1 \
 	filter_fdleak \
 	filter_linenos \
 	filter_none_discards \

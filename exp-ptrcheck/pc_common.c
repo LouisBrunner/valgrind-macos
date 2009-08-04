@@ -80,17 +80,14 @@ void pc_print_usage(void)
    "    --partial-loads-ok=no|yes  same as for Memcheck [yes]\n"
    "    --enable-sg-checks=no|yes  enable stack & global array checking? [yes]\n"
    );
-   VG_(replacement_malloc_print_usage)();
 }
 
 void pc_print_debug_usage(void)
 {
-  /*
    VG_(printf)(
-   "    --lossage-check=no|yes    gather stats for quality control [no]\n"
+"    (none)\n"
+//"    --lossage-check=no|yes    gather stats for quality control [no]\n"
    );
-  */
-   VG_(replacement_malloc_print_debug_usage)();
 }
 
 

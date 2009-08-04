@@ -211,7 +211,6 @@ static void DRD_(print_usage)(void)
 "    --trace-semaphore=yes|no  Trace all semaphore activity [no].\n",
 DRD_(thread_get_segment_merge_interval)()
 );
-   VG_(replacement_malloc_print_usage)();
 }
 
 static void DRD_(print_debug_usage)(void)
@@ -227,7 +226,6 @@ static void DRD_(print_debug_usage)(void)
 "    --trace-segment=yes|no    Trace segment actions [no].\n"
 "    --trace-suppr=yes|no      Trace all address suppression actions [no].\n"
 );
-   VG_(replacement_malloc_print_debug_usage)();
 }
 
 

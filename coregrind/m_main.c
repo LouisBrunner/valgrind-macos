@@ -111,34 +111,22 @@ static void usage_NORETURN ( Bool debug_help )
    Char* usage1 = 
 "usage: valgrind [options] prog-and-args\n"
 "\n"
-"  common user options for all Valgrind tools, with defaults in [ ]:\n"
+"  tool-selection option, with default in [ ]:\n"
 "    --tool=<name>             use the Valgrind tool named <name> [memcheck]\n"
+"\n"
+"  basic user options for all Valgrind tools, with defaults in [ ]:\n"
 "    -h --help                 show this message\n"
 "    --help-debug              show this message, plus debugging options\n"
 "    --version                 show version\n"
 "    -q --quiet                run silently; only print error msgs\n"
 "    -v --verbose              be more verbose, incl counts of errors\n"
 "    --trace-children=no|yes   Valgrind-ise child processes (follow execve)? [no]\n"
-"    --child-silent-after-fork=no|yes  omit child output between fork & exec? [no]\n"
+"    --child-silent-after-fork=no|yes omit child output between fork & exec? [no]\n"
 "    --track-fds=no|yes        track open file descriptors? [no]\n"
 "    --time-stamp=no|yes       add timestamps to log messages? [no]\n"
 "    --log-fd=<number>         log messages to file descriptor [2=stderr]\n"
 "    --log-file=<file>         log messages to <file>\n"
 "    --log-socket=ipaddr:port  log messages to socket ipaddr:port\n"
-"\n"
-"  uncommon user options for all Valgrind tools:\n"
-"    --run-libc-freeres=no|yes free up glibc memory at exit? [yes]\n"
-"    --sim-hints=hint1,hint2,...  known hints:\n"
-"                                 lax-ioctls, enable-outer [none]\n"
-"    --show-emwarns=no|yes     show warnings about emulation limits? [no]\n"
-"    --smc-check=none|stack|all  checks for self-modifying code: none,\n"
-"                              only for code found in stacks, or all [stack]\n"
-"    --kernel-variant=variant1,variant2,...  known variants: bproc [none]\n"
-"                              handle non-standard kernel variants\n"
-"    --read-var-info=yes|no    read debug info on stack and global variables\n"
-"                              and use it to print better error messages in\n"
-"                              tools that make use of it (Memcheck, Helgrind,\n"
-"                              DRD)\n"
 "\n"
 "  user options for Valgrind tools that report errors:\n"
 "    --xml=yes                 emit error output in XML (some tools only)\n"
@@ -156,15 +144,34 @@ static void usage_NORETURN ( Bool debug_help )
 "    --db-attach=no|yes        start debugger when errors detected? [no]\n"
 "    --db-command=<command>    command to start debugger [%s -nw %%f %%p]\n"
 "    --input-fd=<number>       file descriptor for input [0=stdin]\n"
+"    --dsymutil=no|yes         run dsymutil on Mac OS X when helpful? [no]\n"
 "    --max-stackframe=<number> assume stack switch for SP changes larger\n"
 "                              than <number> bytes [2000000]\n"
 "    --main-stacksize=<number> set size of main thread's stack (in bytes)\n"
 "                              [use current 'ulimit' value]\n"
+"\n"
+"  user options for Valgrind tools that replace malloc:\n"
+"    --alignment=<number>      set minimum alignment of heap allocations [%ld]\n"
+"\n"
+"  uncommon user options for all Valgrind tools:\n"
+"    --smc-check=none|stack|all  checks for self-modifying code: none,\n"
+"                              only for code found in stacks, or all [stack]\n"
+"    --read-var-info=yes|no    read debug info on stack and global variables\n"
+"                              and use it to print better error messages in\n"
+"                              tools that make use of it (Memcheck, Helgrind,\n"
+"                              DRD)\n"
+"    --run-libc-freeres=no|yes free up glibc memory at exit on Linux? [yes]\n"
+"    --sim-hints=hint1,hint2,...  known hints:\n"
+"                                 lax-ioctls, enable-outer [none]\n"
+"    --kernel-variant=variant1,variant2,...  known variants: bproc [none]\n"
+"                              handle non-standard kernel variants\n"
+"    --show-emwarns=no|yes     show warnings about emulation limits? [no]\n"
 "\n";
 
    Char* usage2 = 
 "\n"
 "  debugging options for all Valgrind tools:\n"
+"    -d                        show verbose debugging output\n"
 "    --sanity-level=<number>   level of sanity checking to do [1]\n"
 "    --trace-flags=<XXXXXXXX>   show generated code? (X = 0|1) [00000000]\n"
 "    --profile-flags=<XXXXXXXX> ditto, but for profiling (X = 0|1) [00000000]\n"
@@ -184,13 +191,13 @@ static void usage_NORETURN ( Bool debug_help )
 "    --sym-offsets=yes|no      show syms in form 'name+offset' ? [no]\n"
 "    --command-line-only=no|yes  only use command line options [no]\n"
 "\n"
-"    --vex-iropt-verbosity             0 .. 9 [0]\n"
-"    --vex-iropt-level                 0 .. 2 [2]\n"
-"    --vex-iropt-precise-memory-exns   [no]\n"
-"    --vex-iropt-unroll-thresh         0 .. 400 [120]\n"
-"    --vex-guest-max-insns             1 .. 100 [50]\n"
-"    --vex-guest-chase-thresh          0 .. 99  [10]\n"
-"\n"
+"  Vex options for all Valgrind tools:\n"
+"    --vex-iropt-verbosity=<0..9>           [0]\n"
+"    --vex-iropt-level=<0..2>               [2]\n"
+"    --vex-iropt-precise-memory-exns=no|yes [no]\n"
+"    --vex-iropt-unroll-thresh=<0..400>     [120]\n"
+"    --vex-guest-max-insns=<1..100>         [50]\n"
+"    --vex-guest-chase-thresh=<0..99>       [10]\n"
 "    --trace-flags and --profile-flags values (omit the middle space):\n"
 "       1000 0000   show conversion into IR\n"
 "       0100 0000   show after initial opt\n"
@@ -205,6 +212,9 @@ static void usage_NORETURN ( Bool debug_help )
 "  debugging options for Valgrind tools that report errors\n"
 "    --dump-error=<number>     show translation for basic block associated\n"
 "                              with <number>'th error context [0=show none]\n"
+"\n"
+"  debugging options for Valgrind tools that replace malloc:\n"
+"    --trace-malloc=no|yes     show client malloc details? [no]\n"
 "\n";
 
    Char* usage3 =
@@ -224,8 +234,8 @@ static void usage_NORETURN ( Bool debug_help )
    VG_(log_output_sink).fd = 1;
    VG_(log_output_sink).is_socket = False;
 
-   /* 'usage1' expects one char* argument */
-   VG_(printf)(usage1, gdb_path);
+   /* 'usage1' expects one char* argument and one SizeT argument. */
+   VG_(printf)(usage1, gdb_path, VG_MIN_MALLOC_SZB);
    if (VG_(details).name) {
       VG_(printf)("  user options for %s:\n", VG_(details).name);
       if (VG_(needs).command_line_options)
@@ -474,10 +484,9 @@ void main_process_cmd_line_options ( /*OUT*/Bool* logging_to_fd,
       else if VG_XACT_CLO(arg, "--smc-check=all",   VG_(clo_smc_check),
                                                     Vg_SmcAll);
 
-      else if VG_STR_CLO (arg, "--kernel-variant",   VG_(clo_kernel_variant)) {}
+      else if VG_STR_CLO (arg, "--kernel-variant",  VG_(clo_kernel_variant)) {}
 
-      else if VG_BOOL_CLO(arg, "--auto-run-dsymutil",
-                               VG_(clo_auto_run_dsymutil)) {}
+      else if VG_BOOL_CLO(arg, "--dsymutil",        VG_(clo_dsymutil)) {}
 
       else if VG_BINT_CLO(arg, "--vex-iropt-verbosity",
                        VG_(clo_vex_control).iropt_verbosity, 0, 10) {}

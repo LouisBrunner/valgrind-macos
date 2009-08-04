@@ -917,8 +917,8 @@ Bool ML_(read_macho_debug_info)( struct _DebugInfo* di )
    }
 
    /* There was no dsym file, or it doesn't match.  We'll have to try
-      regenerating it, unless auto-run-dsymutil is disabled, in which
-      case just complain instead. */
+      regenerating it, unless --dsymutil=no, in which case just complain
+      instead. */
 
    /* If this looks like a lib that we shouldn't run dsymutil on, just
       give up.  (possible reasons: is system lib, or in /usr etc, or
@@ -928,13 +928,13 @@ Bool ML_(read_macho_debug_info)( struct _DebugInfo* di )
    if (is_systemish_library_name(di->filename))
       goto success;
 
-   if (!VG_(clo_auto_run_dsymutil)) {
+   if (!VG_(clo_dsymutil)) {
       if (VG_(clo_verbosity) == 1) {
          VG_(message)(Vg_DebugMsg, "%s:\n", di->filename);
       }
       if (VG_(clo_verbosity) > 0)
          VG_(message)(Vg_DebugMsg, "%sdSYM directory %s; consider using "
-                      "--auto-run-dsymutil=yes\n",
+                      "--dsymutil=yes\n",
                       VG_(clo_verbosity) > 1 ? "   " : "",
                       dsymfilename ? "has wrong UUID" : "is missing"); 
       goto success;

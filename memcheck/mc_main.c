@@ -4785,12 +4785,13 @@ static void mc_print_usage(void)
 "    --malloc-fill=<hexnumber>        fill malloc'd areas with given value\n"
 "    --free-fill=<hexnumber>          fill free'd areas with given value\n"
    );
-   VG_(replacement_malloc_print_usage)();
 }
 
 static void mc_print_debug_usage(void)
 {  
-   VG_(replacement_malloc_print_debug_usage)();
+   VG_(printf)(
+"    (none)\n"
+   );
 }
 
 

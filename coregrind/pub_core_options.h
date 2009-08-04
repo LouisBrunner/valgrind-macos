@@ -168,7 +168,7 @@ extern HChar* VG_(clo_kernel_variant);
 
 /* Darwin-specific: automatically run /usr/bin/dsymutil to update
    .dSYM directories as necessary? */
-extern Bool VG_(clo_auto_run_dsymutil);
+extern Bool VG_(clo_dsymutil);
 
 /* --------- Functions --------- */
 

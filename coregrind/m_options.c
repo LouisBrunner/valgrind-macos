@@ -90,7 +90,7 @@ Word   VG_(clo_main_stacksize) = 0; /* use client's rlimit.stack */
 Bool   VG_(clo_wait_for_gdb)   = False;
 VgSmc  VG_(clo_smc_check)      = Vg_SmcStack;
 HChar* VG_(clo_kernel_variant) = NULL;
-Bool   VG_(clo_auto_run_dsymutil) = False;
+Bool   VG_(clo_dsymutil)       = False;
 
 
 /*====================================================================*/

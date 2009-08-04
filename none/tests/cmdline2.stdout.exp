@@ -1,33 +1,21 @@
 usage: valgrind [options] prog-and-args
 
-  common user options for all Valgrind tools, with defaults in [ ]:
+  tool-selection option, with default in [ ]:
     --tool=<name>             use the Valgrind tool named <name> [memcheck]
+
+  basic user options for all Valgrind tools, with defaults in [ ]:
     -h --help                 show this message
     --help-debug              show this message, plus debugging options
     --version                 show version
     -q --quiet                run silently; only print error msgs
     -v --verbose              be more verbose, incl counts of errors
     --trace-children=no|yes   Valgrind-ise child processes (follow execve)? [no]
-    --child-silent-after-fork=no|yes  omit child output between fork & exec? [no]
+    --child-silent-after-fork=no|yes omit child output between fork & exec? [no]
     --track-fds=no|yes        track open file descriptors? [no]
     --time-stamp=no|yes       add timestamps to log messages? [no]
     --log-fd=<number>         log messages to file descriptor [2=stderr]
     --log-file=<file>         log messages to <file>
     --log-socket=ipaddr:port  log messages to socket ipaddr:port
-
-  uncommon user options for all Valgrind tools:
-    --run-libc-freeres=no|yes free up glibc memory at exit? [yes]
-    --sim-hints=hint1,hint2,...  known hints:
-                                 lax-ioctls, enable-outer [none]
-    --show-emwarns=no|yes     show warnings about emulation limits? [no]
-    --smc-check=none|stack|all  checks for self-modifying code: none,
-                              only for code found in stacks, or all [stack]
-    --kernel-variant=variant1,variant2,...  known variants: bproc [none]
-                              handle non-standard kernel variants
-    --read-var-info=yes|no    read debug info on stack and global variables
-                              and use it to print better error messages in
-                              tools that make use of it (Memcheck, Helgrind,
-                              DRD)
 
   user options for Valgrind tools that report errors:
     --xml=yes                 emit error output in XML (some tools only)
@@ -45,15 +33,34 @@ usage: valgrind [options] prog-and-args
     --db-attach=no|yes        start debugger when errors detected? [no]
     --db-command=<command>    command to start debugger [/usr/bin/gdb -nw %f %p]
     --input-fd=<number>       file descriptor for input [0=stdin]
+    --dsymutil=no|yes         run dsymutil on Mac OS X when helpful? [no]
     --max-stackframe=<number> assume stack switch for SP changes larger
                               than <number> bytes [2000000]
     --main-stacksize=<number> set size of main thread's stack (in bytes)
                               [use current 'ulimit' value]
 
+  user options for Valgrind tools that replace malloc:
+    --alignment=<number>      set minimum alignment of heap allocations [...]
+
+  uncommon user options for all Valgrind tools:
+    --smc-check=none|stack|all  checks for self-modifying code: none,
+                              only for code found in stacks, or all [stack]
+    --read-var-info=yes|no    read debug info on stack and global variables
+                              and use it to print better error messages in
+                              tools that make use of it (Memcheck, Helgrind,
+                              DRD)
+    --run-libc-freeres=no|yes free up glibc memory at exit on Linux? [yes]
+    --sim-hints=hint1,hint2,...  known hints:
+                                 lax-ioctls, enable-outer [none]
+    --kernel-variant=variant1,variant2,...  known variants: bproc [none]
+                              handle non-standard kernel variants
+    --show-emwarns=no|yes     show warnings about emulation limits? [no]
+
   user options for Nulgrind:
     (none)
 
   debugging options for all Valgrind tools:
+    -d                        show verbose debugging output
     --sanity-level=<number>   level of sanity checking to do [1]
     --trace-flags=<XXXXXXXX>   show generated code? (X = 0|1) [00000000]
     --profile-flags=<XXXXXXXX> ditto, but for profiling (X = 0|1) [00000000]
@@ -73,13 +80,13 @@ usage: valgrind [options] prog-and-args
     --sym-offsets=yes|no      show syms in form 'name+offset' ? [no]
     --command-line-only=no|yes  only use command line options [no]
 
-    --vex-iropt-verbosity             0 .. 9 [0]
-    --vex-iropt-level                 0 .. 2 [2]
-    --vex-iropt-precise-memory-exns   [no]
-    --vex-iropt-unroll-thresh         0 .. 400 [120]
-    --vex-guest-max-insns             1 .. 100 [50]
-    --vex-guest-chase-thresh          0 .. 99  [10]
-
+  Vex options for all Valgrind tools:
+    --vex-iropt-verbosity=<0..9>           [0]
+    --vex-iropt-level=<0..2>               [2]
+    --vex-iropt-precise-memory-exns=no|yes [no]
+    --vex-iropt-unroll-thresh=<0..400>     [120]
+    --vex-guest-max-insns=<1..100>         [50]
+    --vex-guest-chase-thresh=<0..99>       [10]
     --trace-flags and --profile-flags values (omit the middle space):
        1000 0000   show conversion into IR
        0100 0000   show after initial opt
@@ -94,6 +101,9 @@ usage: valgrind [options] prog-and-args
   debugging options for Valgrind tools that report errors
     --dump-error=<number>     show translation for basic block associated
                               with <number>'th error context [0=show none]
+
+  debugging options for Valgrind tools that replace malloc:
+    --trace-malloc=no|yes     show client malloc details? [no]
 
   debugging options for Nulgrind:
     (none)

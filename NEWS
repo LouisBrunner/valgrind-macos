@@ -9,7 +9,8 @@ Release 3.5.0 (???)
   - AMD64 (a.k.a. x86-64) are supported, but not as well.
   - Older PowerPC machines are not supported.
   - It requires Mac OS X 10.5 Leopard or later.  Porting to 10.4 is not
-    planned because it would require work and 10.4 is only becoming less common.
+    planned because it would require work and 10.4 is only becoming less
+    common.
 
   Things that don't work:
   - Helgrind and Ptrcheck
@@ -24,6 +25,10 @@ Release 3.5.0 (???)
     will fail with a SIGTRAP at start-up.  This is apparently Instant
     Hijack's fault.  See https://bugs.kde.org/show_bug.cgi?id=193917 for
     details and a simple work-around.
+
+  Usage notes:
+  - You will likely find --dsymutil=yes a useful option, as error messages may
+    be imprecise without it.
 
   Many thanks to Greg Parker for developing this port over several years.
 

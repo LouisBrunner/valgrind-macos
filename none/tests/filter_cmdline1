@@ -1,0 +1,4 @@
+#! /bin/sh
+
+perl -p -e 's/(set minimum alignment of heap allocations) \[(8|16)\]/$1 [...]/'
+

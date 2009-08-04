@@ -228,7 +228,7 @@ tool-specific macros).</para>
   <varlistentry>
    <term><command><computeroutput>VALGRIND_PRINTF_BACKTRACE(format, ...)</computeroutput>:</command></term>
    <listitem>
-    <para>Like <computeroutput>VALGRIND_PRINTF<computeroutput>, but prints
+    <para>Like <computeroutput>VALGRIND_PRINTF</computeroutput>, but prints
     a stack backtrace immediately afterwards.</para>
    </listitem>
   </varlistentry>

@@ -460,12 +460,13 @@ static void ms_print_usage(void)
 "    --max-snapshots=<N>       maximum number of snapshots recorded [100]\n"
 "    --massif-out-file=<file>  output file name [massif.out.%%p]\n"
    );
-   VG_(replacement_malloc_print_usage)();
 }
 
 static void ms_print_debug_usage(void)
 {
-   VG_(replacement_malloc_print_debug_usage)();
+   VG_(printf)(
+"    (none)\n"
+   );
 }
 
 

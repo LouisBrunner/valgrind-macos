@@ -14,17 +14,18 @@ Jeremy Fitzhardinge wrote Helgrind (in the 2.X line) and totally
 overhauled low-level syscall/signal and address space layout stuff,
 among many other things.
 
-Josef Weidendorfer wrote Callgrind and the associated KCachegrind GUI.
+Josef Weidendorfer wrote and maintains Callgrind and the associated
+KCachegrind GUI.
 
 Paul Mackerras did a lot of the initial per-architecture factoring
-that forms the basis of the 3.0 line and is also to be seen in 2.4.0.
+that forms the basis of the 3.0 line and was also seen in 2.4.0.
 He also did UCode-based dynamic translation support for PowerPC, and
 created a set of ppc-linux derivatives of the 2.X release line.
 
 Greg Parker wrote the Mac OS X port.
 
-Dirk Mueller contributed the malloc-free mismatch checking stuff
-and other bits and pieces, and acted as our KDE liaison.
+Dirk Mueller contributed the malloc/free mismatch checking
+and other bits and pieces, and acts as our KDE liaison.
 
 Robert Walsh added file descriptor leakage checking, new library
 interception machinery, support for client allocation pools, and minor
@@ -37,6 +38,8 @@ the Vex dynamic-translation framework.
 
 Donna Robinson created and maintains the very excellent
 http://www.valgrind.org.
+
+Vince Weaver wrote and maintains BBV.
 
 Frederic Gobry helped with autoconf and automake.
 

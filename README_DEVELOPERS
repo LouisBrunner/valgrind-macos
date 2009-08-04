@@ -106,25 +106,24 @@ Self-hosting
 ~~~~~~~~~~~~
 To run Valgrind under Valgrind:
 
-(1) Check out 2 trees, "inner" and "outer".  "inner" runs the app
-    directly and is what you will be profiling.  "outer" does the
-    profiling.
+(1) Check out 2 trees, "Inner" and "Outer".  Inner runs the app
+    directly.  Outer runs Inner.
 
 (2) Configure inner with --enable-inner and build/install as
     usual.
 
-(3) Configure outer normally and build/install as usual.
+(3) Configure Outer normally and build/install as usual.
 
 (4) Choose a very simple program (date) and try
 
     outer/.../bin/valgrind --sim-hints=enable-outer --trace-children=yes  \
        --tool=cachegrind -v inner/.../bin/valgrind --tool=none -v prog
 
-If you omit the --trace-children=yes, you'll only monitor inner's launcher
+If you omit the --trace-children=yes, you'll only monitor Inner's launcher
 program, not its stage2.
 
 The whole thing is fragile, confusing and slow, but it does work well enough
-for you to get some useful performance data.  The inner Valgrind has most of
+for you to get some useful performance data.  Inner has most of
 its output (ie. those lines beginning with "==<pid>==") prefixed with a '>',
 which helps a lot.
 
@@ -132,8 +131,8 @@ At the time of writing the allocator is not annotated with client requests
 so Memcheck is not as useful as it could be.  It also has not been tested
 much, so don't be surprised if you hit problems.
 
-When using self-hosting with an outer callgrind tool, use '--pop-on-jump'
-(on the outer). Otherwise, callgrind has much higher memory requirements. 
+When using self-hosting with an outer Callgrind tool, use '--pop-on-jump'
+(on the outer). Otherwise, Callgrind has much higher memory requirements. 
 
 
 Printing out problematic blocks

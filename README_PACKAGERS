@@ -1,7 +1,4 @@
 
-These notes were significantly updated on 6 Dec 2007 for the Valgrind
-3.3.0 release.
-
 Greetings, packaging person!  This information is aimed at people
 building binary distributions of Valgrind.
 
@@ -77,20 +74,19 @@ Valgrind.  The following notes may save you some trouble.
    from valgrind.
 
 
--- Don't strip symbols from lib/valgrind/$platform/{cachegrind,
-   callgrind,drd,helgrind,lackey,massif,memcheck,none}
-   in the installation tree.  Doing so will likely cause problems.
-   Removing the line number info is probably OK, although that has not
-   been tested by the Valgrind developers.
+-- Don't strip symbols from lib/valgrind/* in the installation tree.
+   Doing so will likely cause problems.  Removing the line number info is
+   probably OK (at least for some of the files in that directory), although
+   that has not been tested by the Valgrind developers.
 
 
 -- Please test the final installation works by running it on something
    huge.  I suggest checking that it can start and exit successfully
-   both Firefox-2.0.0.X and OpenOffice.org 2.3.X.  I use these as test
-   programs, and I know they fairly thoroughly exercise Valgrind.  The
-   command lines to use are:
+   both Firefox and OpenOffice.org.  I use these as test programs, and I
+   know they fairly thoroughly exercise Valgrind.  The command lines to use
+   are:
 
-   valgrind -v --trace-children=yes mozilla
+   valgrind -v --trace-children=yes firefox
 
    valgrind -v --trace-children=yes soffice
 

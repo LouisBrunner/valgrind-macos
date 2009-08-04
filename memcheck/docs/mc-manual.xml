@@ -1562,7 +1562,7 @@ buffer which is too small.</para>
 
 <para>Unlike most of the rest of Valgrind, the wrapper library is subject to a
 BSD-style license, so you can link it into any code base you like.
-See the top of <computeroutput>auxprogs/libmpiwrap.c</computeroutput>
+See the top of <computeroutput>mpi/libmpiwrap.c</computeroutput>
 for license details.</para>
 
 
@@ -1866,7 +1866,7 @@ to make the library thread-safe.</para>
 checks.</para>
 
 <para>Writing new wrappers should be fairly easy.  The source file is
-<computeroutput>auxprogs/libmpiwrap.c</computeroutput>.  If possible,
+<computeroutput>mpi/libmpiwrap.c</computeroutput>.  If possible,
 find an existing wrapper for a function of similar behaviour to the
 one you want to wrap, and use it as a starting point.  The wrappers
 are organised in sections in the same order as the MPI 1.1 spec, to

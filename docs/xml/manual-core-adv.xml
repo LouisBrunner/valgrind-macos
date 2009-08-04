@@ -25,25 +25,27 @@ ways.  The subjects covered are:</para>
 
 <para>Valgrind has a trapdoor mechanism via which the client
 program can pass all manner of requests and queries to Valgrind
-and the current tool.  Internally, this is used extensively to
-make malloc, free, etc, work, although you don't see that.</para>
+and the current tool.  Internally, this is used extensively 
+to make various things work, although that's not visible from the
+outside.</para>
 
 <para>For your convenience, a subset of these so-called client
 requests is provided to allow you to tell Valgrind facts about
 the behaviour of your program, and also to make queries.
-In particular, your program can tell Valgrind about changes in
-memory range permissions that Valgrind would not otherwise know
-about, and so allows clients to get Valgrind to do arbitrary
-custom checks.</para>
+In particular, your program can tell Valgrind about things that it
+otherwise would not know, leading to better results.
+</para>
 
 <para>Clients need to include a header file to make this work.
 Which header file depends on which client requests you use.  Some
 client requests are handled by the core, and are defined in the
 header file <filename>valgrind/valgrind.h</filename>.  Tool-specific
 header files are named after the tool, e.g.
-<filename>valgrind/memcheck.h</filename>.  All header files can be found
-in the <literal>include/valgrind</literal> directory of wherever Valgrind
-was installed.</para>
+<filename>valgrind/memcheck.h</filename>.  Each tool-specific header file
+includes <filename>valgrind/valgrind.h</filename> so you don't need to
+include it in your client if you include a tool-specific header.  All header
+files can be found in the <literal>include/valgrind</literal> directory of
+wherever Valgrind was installed.</para>
 
 <para>The macros in these header files have the magical property
 that they generate code in-line which Valgrind can spot.
@@ -58,7 +60,7 @@ and is probably undetectable except in tight loops.
 However, if you really wish to compile out the client requests, you can
 compile with <option>-DNVALGRIND</option> (analogous to
 <option>-DNDEBUG</option>'s effect on
-<computeroutput>assert()</computeroutput>).
+<function>assert</function>).
 </para>
 
 <para>You are encouraged to copy the <filename>valgrind/*.h</filename> headers
@@ -94,7 +96,7 @@ tool-specific macros).</para>
     Valgrind to make new translations of that code, which is
     probably the semantics you want.  Note that code invalidations
     are expensive because finding all the relevant translations
-    quickly is very difficult.  So try not to call it often.
+    quickly is very difficult, so try not to call it often.
     Note that you can be clever about
     this: you only need to call it when an area which previously
     contained code is overwritten with new code.  You can choose
@@ -126,9 +128,9 @@ tool-specific macros).</para>
    <term><command><computeroutput>VALGRIND_MALLOCLIKE_BLOCK</computeroutput>:</command></term>
    <listitem>
     <para>If your program manages its own memory instead of using
-    the standard <computeroutput>malloc()</computeroutput> /
-    <computeroutput>new</computeroutput> /
-    <computeroutput>new[]</computeroutput>, tools that track
+    the standard <function>malloc</function> /
+    <function>new</function> /
+    <function>new[]</function>, tools that track
     information about heap blocks will not do nearly as good a
     job.  For example, Memcheck won't detect nearly as many
     errors, and the error messages won't be as informative.  To
@@ -144,7 +146,7 @@ tool-specific macros).</para>
    <listitem>
     <para>This should be used in conjunction with
     <computeroutput>VALGRIND_MALLOCLIKE_BLOCK</computeroutput>.
-    Again, see <filename>memcheck/memcheck.h</filename> for
+    Again, see <filename>valgrind.h</filename> for
     information on how to use it.</para>
    </listitem>
   </varlistentry>
@@ -193,20 +195,18 @@ tool-specific macros).</para>
   <varlistentry>
    <term><command><computeroutput>VALGRIND_NON_SIMD_CALL[0123]</computeroutput>:</command></term>
    <listitem>
-    <para>Executes a function of 0, 1, 2 or 3 args in the client
-    program on the <emphasis>real</emphasis> CPU, not the virtual
-    CPU that Valgrind normally runs code on.  These are used in
-    various ways internally to Valgrind.  They might be useful to
-    client programs.</para> 
+    <para>Executes a function in the client program on the
+    <emphasis>real</emphasis> CPU, not the virtual CPU that Valgrind
+    normally runs code on.  The function must take an integer (holding a
+    thread ID) as the first argument and then 0, 1, 2 or 3 more arguments
+    (depending on which client request is used).  These are used in various
+    ways internally to Valgrind.  They might be useful to client
+    programs.</para> 
 
     <para><command>Warning:</command> Only use these if you
     <emphasis>really</emphasis> know what you are doing.  They aren't 
-    entirely reliable, and can cause Valgrind to crash.
-    Generally, your prospects of these working are made higher if the called
-    function does not refer to any global variables, and does not refer to any
-    libc or other functions (printf et al).  Any kind of entanglement with libc
-    or dynamic linking is likely to have a bad outcome, for tricky reasons
-    which we've grappled with a lot in the past.
+    entirely reliable, and can cause Valgrind to crash.  See
+    <filename>valgrind.h</filename> for more details.
     </para>
    </listitem>
   </varlistentry>
@@ -214,22 +214,23 @@ tool-specific macros).</para>
   <varlistentry>
    <term><command><computeroutput>VALGRIND_PRINTF(format, ...)</computeroutput>:</command></term>
    <listitem>
-    <para>printf a message to the log file when running under
-    Valgrind, prefixed with the PID between a pair of
-    <computeroutput>**</computeroutput> markers.  Nothing is output if not
-    running under Valgrind.  Output is not produced until a newline is
-    encountered, or subequent Valgrind output is printed;  this allows you
-    to build up a single line of output over multiple calls.
-    Returns the number of characters output, excluding the PID at the
-    start.</para>
+    <para>Print a printf-style message to the Valgrind log file.  The
+    message is prefixed with the PID between a pair of
+    <computeroutput>**</computeroutput> markers.  (Like all client requests,
+    nothing is output if the client program is not running under Valgrind.)
+    Output is not produced until a newline is encountered, or subequent
+    Valgrind output is printed; this allows you to build up a single line of
+    output over multiple calls.  Returns the number of characters output,
+    excluding the PID prefix.</para>
    </listitem>
   </varlistentry>
 
   <varlistentry>
    <term><command><computeroutput>VALGRIND_PRINTF_BACKTRACE(format, ...)</computeroutput>:</command></term>
    <listitem>
-    <para>Like <computeroutput>VALGRIND_PRINTF</computeroutput>, but prints
-    a stack backtrace immediately afterwards.</para>
+    <para>Like <computeroutput>VALGRIND_PRINTF</computeroutput> (in
+    particular, the return value is identical), but prints a stack backtrace
+    immediately afterwards.</para>
    </listitem>
   </varlistentry>
 
@@ -245,6 +246,9 @@ tool-specific macros).</para>
     to a new stack.  Use this if you're using a user-level thread package
     and are noticing spurious errors from Valgrind about uninitialized
     memory reads.</para>
+
+    <para><command>Warning:</command> Unfortunately, this client request is
+    unreliable and best avoided.</para>
    </listitem>
   </varlistentry>
 
@@ -254,6 +258,9 @@ tool-specific macros).</para>
     <para>Deregisters a previously registered stack.  Informs
     Valgrind that previously registered memory range with stack id
     <computeroutput>id</computeroutput> is no longer a stack.</para>
+
+    <para><command>Warning:</command> Unfortunately, this client request is
+    unreliable and best avoided.</para>
    </listitem>
   </varlistentry>
 
@@ -265,15 +272,13 @@ tool-specific macros).</para>
     <computeroutput>id</computeroutput> has changed its start and end
     values.  Use this if your user-level thread package implements
     stack growth.</para>
+
+    <para><command>Warning:</command> Unfortunately, this client request is
+    unreliable and best avoided.</para>
    </listitem>
   </varlistentry>
 
  </variablelist>
-
-<para>Note that <filename>valgrind.h</filename> is included by
-all the tool-specific header files (such as
-<filename>memcheck.h</filename>), so you don't need to include it
-in your client if you include a tool-specific header.</para>
 
 </sect1>
 
@@ -285,22 +290,21 @@ in your client if you include a tool-specific header.</para>
 <title>Function wrapping</title>
 
 <para>
-Valgrind versions 3.2.0 and above can do function wrapping on all
-supported targets.  In function wrapping, calls to some specified
-function are intercepted and rerouted to a different, user-supplied
-function.  This can do whatever it likes, typically examining the
-arguments, calling onwards to the original, and possibly examining the
-result.  Any number of functions may be wrapped.</para>
+Valgrind allows calls to some specified functions to be intercepted and
+rerouted to a different, user-supplied function.  This can do whatever it
+likes, typically examining the arguments, calling onwards to the original,
+and possibly examining the result.  Any number of functions may be
+wrapped.</para>
 
 <para>
 Function wrapping is useful for instrumenting an API in some way.  For
-example, wrapping functions in the POSIX pthreads API makes it
-possible to notify Valgrind of thread status changes, and wrapping
-functions in the MPI (message-passing) API allows notifying Valgrind
+example, Helgrind wraps functions in the POSIX pthreads API so it can know
+about thread status changes, and the core is able to wrap
+functions in the MPI (message-passing) API so it can know
 of memory status changes associated with message arrival/departure.
 Such information is usually passed to Valgrind by using client
-requests in the wrapper functions, although that is not of relevance
-here.</para>
+requests in the wrapper functions, although the exact mechanism may vary.
+</para>
 
 <sect2 id="manual-core-adv.wrapping.example" xreflabel="A Simple Example">
 <title>A Simple Example</title>
@@ -313,7 +317,7 @@ int foo ( int x, int y ) { return x + y; }]]></programlisting>
 <para>A wrapper is a function of identical type, but with a special name
 which identifies it as the wrapper for <computeroutput>foo</computeroutput>.
 Wrappers need to include
-supporting macros from <computeroutput>valgrind.h</computeroutput>.
+supporting macros from <filename>valgrind.h</filename>.
 Here is a simple wrapper which prints the arguments and return value:</para>
 
 <programlisting><![CDATA[
@@ -367,8 +371,8 @@ in the same thread.</para>
 <para><computeroutput>CALL_FN_W_WW</computeroutput>: eventually we will
 want to call the function being
 wrapped.  Calling it directly does not work, since that just gets us
-back to the wrapper and tends to kill the program in short order by
-stack overflow.  Instead, the result lvalue, 
+back to the wrapper and leads to an infinite loop.  Instead, the result
+lvalue, 
 <computeroutput>OrigFn</computeroutput> and arguments are
 handed to one of a family of macros of the form 
 <computeroutput>CALL_FN_*</computeroutput>.  These
@@ -469,27 +473,27 @@ appear and disappear (are dlopen'd and dlclose'd) on the fly.
 Valgrind tries to maintain sensible behaviour in such situations.</para>
 
 <para>For example, suppose a process has dlopened (an ELF object with
-soname) <computeroutput>object1.so</computeroutput>, which contains 
+soname) <filename>object1.so</filename>, which contains 
 <computeroutput>function1</computeroutput>.  It starts to use
 <computeroutput>function1</computeroutput> immediately.</para>
 
-<para>After a while it dlopens <computeroutput>wrappers.so</computeroutput>,
+<para>After a while it dlopens <filename>wrappers.so</filename>,
 which contains a wrapper
 for <computeroutput>function1</computeroutput> in (soname) 
-<computeroutput>object1.so</computeroutput>.  All subsequent calls to 
+<filename>object1.so</filename>.  All subsequent calls to 
 <computeroutput>function1</computeroutput> are rerouted to the wrapper.</para>
 
-<para>If <computeroutput>wrappers.so</computeroutput> is 
+<para>If <filename>wrappers.so</filename> is 
 later dlclose'd, calls to <computeroutput>function1</computeroutput> are 
 naturally routed back to the original.</para>
 
-<para>Alternatively, if <computeroutput>object1.so</computeroutput>
-is dlclose'd but wrappers.so remains,
-then the wrapper exported by <computeroutput>wrapper.so</computeroutput>
+<para>Alternatively, if <filename>object1.so</filename>
+is dlclose'd but <filename>wrappers.so</filename> remains,
+then the wrapper exported by <filename>wrappers.so</filename>
 becomes inactive, since there
 is no way to get to it - there is no original to call any more.  However,
 Valgrind remembers that the wrapper is still present.  If 
-<computeroutput>object1.so</computeroutput> is
+<filename>object1.so</filename> is
 eventually dlopen'd again, the wrapper will become active again.</para>
 
 <para>In short, valgrind inspects all code loading/unloading events to
@@ -511,7 +515,7 @@ can be difficult.  The
 this possible
 by showing the complete state of the redirection subsystem after
 every
-<computeroutput>mmap</computeroutput>/<computeroutput>munmap</computeroutput>
+<function>mmap</function>/<function>munmap</function>
 event affecting code (text).</para>
 
 <para>There are two central concepts:</para>
@@ -525,7 +529,7 @@ event affecting code (text).</para>
   <computeroutput>I_WRAP_SONAME_FNNAME_{ZZ,_ZU}</computeroutput>
   macros.</para></listitem>
 
-  <listitem><para>An "active redirection" is code-address to 
+  <listitem><para>An "active redirection" is a code-address to 
   code-address binding currently in effect.</para></listitem>
 
 </itemizedlist>
@@ -533,7 +537,7 @@ event affecting code (text).</para>
 <para>The state of the wrapping-and-redirection subsystem comprises a set of
 specifications and a set of active bindings.  The specifications are
 acquired/discarded by watching all 
-<computeroutput>mmap</computeroutput>/<computeroutput>munmap</computeroutput>
+<function>mmap</function>/<function>munmap</function>
 events on code (text)
 sections.  The active binding set is (conceptually) recomputed from
 the specifications, and all known symbol names, following any change
@@ -551,7 +555,7 @@ flags.</para>
 <para>One final comment.  The function-wrapping facility is closely
 tied to Valgrind's ability to replace (redirect) specified
 functions, for example to redirect calls to 
-<computeroutput>malloc</computeroutput> to its
+<function>malloc</function> to its
 own implementation.  Indeed, a replacement function can be
 regarded as a wrapper function which does not call the original.
 However, to make the implementation more robust, the two kinds
@@ -581,8 +585,8 @@ other wrapped function.  Once you have the
 calls between, recursion between, and longjumps out of wrappers
 should work correctly.  There is never any interaction between wrapped
 functions and merely replaced functions 
-(eg <computeroutput>malloc</computeroutput>), so you can call
-<computeroutput>malloc</computeroutput> etc safely from within wrappers.
+(eg <function>malloc</function>), so you can call
+<function>malloc</function> etc safely from within wrappers.
 </para>
 
 <para>The above comments are true for {x86,amd64,ppc32}-linux.  On
@@ -619,21 +623,21 @@ and 'v' denotes C's <computeroutput>void</computeroutput> type.
 The currently available macros are:</para>
 
 <programlisting><![CDATA[
-CALL_FN_v_v       -- call an original of type  void fn ( void )
-CALL_FN_W_v       -- call an original of type  long fn ( void )
+CALL_FN_v_v    -- call an original of type  void fn ( void )
+CALL_FN_W_v    -- call an original of type  long fn ( void )
 
-CALL_FN_v_W       -- void fn ( long )
-CALL_FN_W_W       -- long fn ( long )
+CALL_FN_v_W    -- call an original of type  void fn ( long )
+CALL_FN_W_W    -- call an original of type  long fn ( long )
 
-CALL_FN_v_WW      -- void fn ( long, long )
-CALL_FN_W_WW      -- long fn ( long, long )
+CALL_FN_v_WW   -- call an original of type  void fn ( long, long )
+CALL_FN_W_WW   -- call an original of type  long fn ( long, long )
 
-CALL_FN_v_WWW     -- void fn ( long, long, long )
-CALL_FN_W_WWW     -- long fn ( long, long, long )
+CALL_FN_v_WWW  -- call an original of type  void fn ( long, long, long )
+CALL_FN_W_WWW  -- call an original of type  long fn ( long, long, long )
 
-CALL_FN_W_WWWW    -- long fn ( long, long, long, long )
-CALL_FN_W_5W      -- long fn ( long, long, long, long, long )
-CALL_FN_W_6W      -- long fn ( long, long, long, long, long, long )
+CALL_FN_W_WWWW -- call an original of type  long fn ( long, long, long, long )
+CALL_FN_W_5W   -- call an original of type  long fn ( long, long, long, long, long )
+CALL_FN_W_6W   -- call an original of type  long fn ( long, long, long, long, long, long )
 and so on, up to 
 CALL_FN_W_12W
 ]]></programlisting>
@@ -641,14 +645,14 @@ CALL_FN_W_12W
 <para>The set of supported types can be expanded as needed.  It is
 regrettable that this limitation exists.  Function wrapping has proven
 difficult to implement, with a certain apparently unavoidable level of
-ickyness.  After several implementation attempts, the present
+ickiness.  After several implementation attempts, the present
 arrangement appears to be the least-worst tradeoff.  At least it works
 reliably in the presence of dynamic linking and dynamic code
 loading/unloading.</para>
 
 <para>You should not attempt to wrap a function of one type signature with a
 wrapper of a different type signature.  Such trickery will surely lead
-to crashes or strange behaviour.  This is not of course a limitation
+to crashes or strange behaviour.  This is not a limitation
 of the function wrapping implementation, merely a reflection of the
 fact that it gives you sweeping powers to shoot yourself in the foot
 if you are not careful.  Imagine the instant havoc you could wreak by
@@ -661,10 +665,10 @@ process.</para>
 <title>Examples</title>
 
 <para>In the source tree, 
-<computeroutput>memcheck/tests/wrap[1-8].c</computeroutput> provide a series of
+<filename>memcheck/tests/wrap[1-8].c</filename> provide a series of
 examples, ranging from very simple to quite advanced.</para>
 
-<para><computeroutput>auxprogs/libmpiwrap.c</computeroutput> is an example 
+<para><filename>mpi/libmpiwrap.c</filename> is an example 
 of wrapping a big, complex API (the MPI-2 interface).  This file defines 
 almost 300 different wrappers.</para>
 </sect2>

@@ -179,6 +179,28 @@ collect2: ld returned 1 exit status
     of them undocumented but accepted by CPUs.  So Valgrind will still have
     decoding failures from time to time.  If this happens, please file a bug
     report.</para>
+  </answer>
+</qandaentry>
+
+<qandaentry id="faq.bss">
+  <question id="q-bss">
+    <para>My program fails to start, and this message is printed:</para>
+<screen></screen>
+  </question>
+  <answer id="a-bss">
+    <para>One possibility is that your program has a bug and erroneously
+    jumps to a non-code address, in which case you'll get a SIGILL signal.
+    Memcheck may issue a warning just before this happens, but it might not
+    if the jump happens to land in addressable memory.</para>
+
+    <para>Another possibility is that Valgrind does not handle the
+    instruction.  If you are using an older Valgrind, a newer version might
+    handle the instruction.  However, all instruction sets have some
+    obscure, rarely used instructions.  Also, on amd64 there are an almost
+    limitless number of combinations of redundant instruction prefixes, many
+    of them undocumented but accepted by CPUs.  So Valgrind will still have
+    decoding failures from time to time.  If this happens, please file a bug
+    report.</para>
 
   </answer>
 </qandaentry>
@@ -242,30 +264,30 @@ collect2: ld returned 1 exit status
     memory as still reachable.  The behaviour not to free pools at the
     exit() could be called a bug of the library though.</para>
 
-    <para>Using gcc, you can force the STL to use malloc and to free
+    <para>Using GCC, you can force the STL to use malloc and to free
     memory as soon as possible by globally disabling memory caching.
     Beware!  Doing so will probably slow down your program, sometimes
     drastically.</para>
     <itemizedlist>
       <listitem>
-        <para>With gcc 2.91, 2.95, 3.0 and 3.1, compile all source using
+        <para>With GCC 2.91, 2.95, 3.0 and 3.1, compile all source using
         the STL with <literal>-D__USE_MALLOC</literal>. Beware!  This was
-        removed from gcc starting with version 3.3.</para>
+        removed from GCC starting with version 3.3.</para>
       </listitem>
       <listitem>
-        <para>With gcc 3.2.2 and later, you should export the
+        <para>With GCC 3.2.2 and later, you should export the
         environment variable <literal>GLIBCPP_FORCE_NEW</literal> before
         running your program.</para>
       </listitem>
       <listitem>
-        <para>With gcc 3.4 and later, that variable has changed name to
+        <para>With GCC 3.4 and later, that variable has changed name to
         <literal>GLIBCXX_FORCE_NEW</literal>.</para>
       </listitem>
     </itemizedlist>
 
     <para>There are other ways to disable memory pooling: using the
     <literal>malloc_alloc</literal> template with your objects (not
-    portable, but should work for gcc) or even writing your own memory
+    portable, but should work for GCC) or even writing your own memory
     allocators. But all this goes beyond the scope of this FAQ.  Start
     by reading 
     <ulink 

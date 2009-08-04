@@ -809,11 +809,10 @@ instructions.</para>
 
 <para>To do this, you just need to assemble your
 <computeroutput>.s</computeroutput> files with assembly-level debug
-information.  You can use <computeroutput>gcc
--S</computeroutput> to compile C/C++ programs to assembly code, and then
-<computeroutput>gcc -g</computeroutput> on the assembly code files to
-achieve this.  You can then profile and annotate the assembly code source
-files in the same way as C/C++ source files.</para>
+information.  You can use compile with the <option>-S</option> to compile C/C++
+programs to assembly code, and then assemble the assembly code files with
+<option>-g</option> to achieve this.  You can then profile and annotate the
+assembly code source files in the same way as C/C++ source files.</para>
 
 </sect2>
 
@@ -1037,7 +1036,7 @@ cg_annotate issues warnings.</para>
     the counts from each entry.</para>
 
     <para>The reason for this is that although the debug info
-    output by gcc indicates the switch from
+    output by GCC indicates the switch from
     <filename>bar.c</filename> to <filename>foo.h</filename>, it
     doesn't indicate the name of the function in
     <filename>foo.h</filename>, so Valgrind keeps using the old
@@ -1065,8 +1064,8 @@ cg_annotate issues warnings.</para>
     which case you'll get a warning message explaining that
     annotations for the file might be incorrect.</para>
     
-    <para>If you are using gcc 3.1 or later, this is most likely
-    irrelevant, since gcc switched to using the more modern DWARF2 
+    <para>If you are using GCC 3.1 or later, this is most likely
+    irrelevant, since GCC switched to using the more modern DWARF2 
     format by default at version 3.1.  DWARF2 does not have any such
     limitations on line numbers.</para>
   </listitem>

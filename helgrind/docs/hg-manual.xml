@@ -748,11 +748,11 @@ of false data-race errors.</para>
       the futex syscall, which causes total chaos since in Helgrind
       since it cannot "see" those.</para>
      <para>Fortunately, this can be solved using a configuration-time
-      flag (for gcc).  Rebuild gcc from source, and configure using
+      flag (for GCC).  Rebuild GCC from source, and configure using
       <varname>--disable-linux-futex</varname>.
       This makes libgomp.so use the standard
       POSIX threading primitives instead.  Note that this was tested
-      using gcc-4.2.3 and has not been re-tested using more recent gcc
+      using GCC 4.2.3 and has not been re-tested using more recent GCC
       versions.  We would appreciate hearing about any successes or
       failures with more recent versions.</para>
      </listitem>
@@ -1096,7 +1096,7 @@ some time.</para>
     when provided with unbounded storage for conflicting access info.
     This should be investigated.</para>
   </listitem>
-  <listitem><para>Document races caused by gcc's thread-unsafe code
+  <listitem><para>Document races caused by GCC's thread-unsafe code
     generation for speculative stores.  In the interim see
     <computeroutput>http://gcc.gnu.org/ml/gcc/2007-10/msg00266.html
     </computeroutput>

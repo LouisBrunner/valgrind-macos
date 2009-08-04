@@ -535,7 +535,7 @@ file, which will almost certainly make it unreadable by ms_print.</para>
       <para>If heap profiling is enabled, gives the number of administrative
       bytes per block to use.  This should be an estimate of the average,
       since it may vary.  For example, the allocator used by
-      <computeroutput>glibc</computeroutput> requires somewhere between 4 to
+      glibc on Linux requires somewhere between 4 to
       15 bytes per block, depending on various factors.  It also requires
       admin space for freed blocks, although Massif does not account
       for this.</para>

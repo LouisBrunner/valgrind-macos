@@ -129,9 +129,6 @@ difficult-to-diagnose crashes.</para>
         nonsensical.  Memcheck checks for and
         rejects this combination at startup.
         </para>
-        <para>Origin tracking is a new feature, introduced in Valgrind
-        version 3.4.0.
-        </para>
       </listitem>
   </varlistentry>
 
@@ -180,7 +177,7 @@ difficult-to-diagnose crashes.</para>
       <option>--num-callers=40</option> or some such large number.
       </para>
 
-      <para>Note that the <option>--leak-resolution=</option> setting
+      <para>Note that the <option>--leak-resolution</option> setting
       does not affect Memcheck's ability to find
       leaks.  It only changes how the results are presented.</para>
     </listitem>
@@ -217,17 +214,17 @@ difficult-to-diagnose crashes.</para>
     </term>
     <listitem>
       <para>When enabled, assume that reads and writes some small
-      distance below the stack pointer are due to bugs in gcc 2.96, and
+      distance below the stack pointer are due to bugs in GCC 2.96, and
       does not report them.  The "small distance" is 256 bytes by
-      default.  Note that gcc 2.96 is the default compiler on some ancient
+      default.  Note that GCC 2.96 is the default compiler on some ancient
       Linux distributions (RedHat 7.X) and so you may need to use this
       flag.  Do not use it if you do not have to, as it can cause real
       errors to be overlooked.  A better alternative is to use a more
-      recent gcc/g++ in which this bug is fixed.</para>
+      recent GCC in which this bug is fixed.</para>
 
       <para>You may also need to use this flag when working with
-      gcc/g++ 3.X or 4.X on 32-bit PowerPC Linux.  This is because
-      gcc/g++ generates code which occasionally accesses below the
+      GCC 3.X or 4.X on 32-bit PowerPC Linux.  This is because
+      GCC generates code which occasionally accesses below the
       stack pointer, particularly for floating-point to/from integer
       conversions.  This is in violation of the 32-bit PowerPC ELF
       specification, which makes no provision for locations below the
@@ -336,16 +333,16 @@ and so on.</para>
 <para>Memcheck tries to establish what the illegal address might relate
 to, since that's often useful.  So, if it points into a block of memory
 which has already been freed, you'll be informed of this, and also where
-the block was free'd at.  Likewise, if it should turn out to be just off
-the end of a malloc'd block, a common result of off-by-one-errors in
+the block was freed.  Likewise, if it should turn out to be just off
+the end of a heap block, a common result of off-by-one-errors in
 array subscripting, you'll be informed of this fact, and also where the
-block was malloc'd.</para>
+block was allocated.</para>
 
 <para>In this example, Memcheck can't identify the address.  Actually
 the address is on the stack, but, for some reason, this is not a valid
 stack address -- it is below the stack pointer and that isn't allowed.
-In this particular case it's probably caused by gcc generating invalid
-code, a known bug in some ancient versions of gcc.</para>
+In this particular case it's probably caused by GCC generating invalid
+code, a known bug in some ancient versions of GCC.</para>
 
 <para>Note that Memcheck only tells you that your program is about to
 access memory at an illegal address.  It can't stop the access from
@@ -402,11 +399,10 @@ complains.</para>
     as in the example above.</para>
   </listitem>
   <listitem>
-    <para>The contents of malloc'd blocks, before you write something
-    there.  In C++, the new operator is a wrapper round
-    <function>malloc</function>, so if you create an object with new,
-    its fields will be uninitialised until you (or the constructor)
-    fill them in.</para>
+    <para>The contents of heap blocks (allocated with
+    <function>malloc</function>, <function>new</function>, or a similar
+    function) before you (or a constructor) write something there.
+    </para>
   </listitem>
 </itemizedlist>
 
@@ -438,7 +434,7 @@ so it can know exactly whether or not the argument to
 <function>free</function>/<computeroutput>delete</computeroutput> is
 legitimate or not.  Here, this test program has freed the same block
 twice.  As with the illegal read/write errors, Memcheck attempts to
-make sense of the address free'd.  If, as here, the address is one
+make sense of the address freed.  If, as here, the address is one
 which has previously been freed, you wil be told that -- making
 duplicate frees of the same block easy to spot.</para>
 
@@ -563,7 +559,7 @@ call.</para>
 ]]></programlisting>
 
 <para>... because the program has (a) tried to write uninitialised junk
-from the malloc'd block to the standard output, and (b) passed an
+from the heap block to the standard output, and (b) passed an
 uninitialised value to <function>exit</function>.  Note that the first
 error refers to the memory pointed to by
 <computeroutput>buf</computeroutput> (not
@@ -1015,12 +1011,12 @@ to generate truly appalling code for accessing arrays of
 <varname>struct S</varname>'s on some architectures.</para>
 
 <para>So <varname>s1</varname> occupies 8 bytes, yet only 5 of them will
-be initialised.  For the assignment <varname>s2 = s1</varname>, gcc
+be initialised.  For the assignment <varname>s2 = s1</varname>, GCC
 generates code to copy all 8 bytes wholesale into <varname>s2</varname>
 without regard for their meaning.  If Memcheck simply checked values as
 they came out of memory, it would yelp every time a structure assignment
 like this happened.  So the more complicated behaviour described above
-is necessary.  This allows <literal>gcc</literal> to copy
+is necessary.  This allows GCC to copy
 <varname>s1</varname> into <varname>s2</varname> any way it likes, and a
 warning will only be emitted if the uninitialised values are later
 used.</para>
@@ -1580,11 +1576,10 @@ the same <computeroutput>mpicc</computeroutput> you use to build the
 MPI application you want to debug.  By default, Valgrind tries
 <computeroutput>mpicc</computeroutput>, but you can specify a
 different one by using the configure-time flag
-<option>--with-mpicc=</option>.  Currently the
+<option>--with-mpicc</option>.  Currently the
 wrappers are only buildable with
 <computeroutput>mpicc</computeroutput>s which are based on GNU
-<computeroutput>gcc</computeroutput> or Intel's
-<computeroutput>icc</computeroutput>.</para>
+GCC or Intel's C++ Compiler.</para>
 
 <para>Check that the configure script prints a line like this:</para>
 

@@ -225,7 +225,7 @@ a tool assertion fails.  Others have other uses.</para>
 be left untouched (they default to <varname>False</varname>).  They
 determine whether a tool can do various things such as: record, report
 and suppress errors; process command line options; wrap system calls;
-record extra information about malloc'd blocks, etc.</para>
+record extra information about heap blocks, etc.</para>
 
 <para>For example, if a tool wants the core's help in recording and
 reporting errors, it must call
@@ -240,13 +240,13 @@ all the needs.</para>
 
 <para>Third, the tool can indicate which events in core it wants to be
 notified about, using the functions <function>VG_(track_*)()</function>.
-These include things such as blocks of memory being malloc'd, the stack
+These include things such as heap blocks being allocated, the stack
 pointer changing, a mutex being locked, etc.  If a tool wants to know
 about this, it should provide a pointer to a function, which will be
 called when that event happens.</para>
 
-<para>For example, if the tool want to be notified when a new block of
-memory is malloc'd, it should call
+<para>For example, if the tool want to be notified when a new heap block
+is allocated, it should call
 <function>VG_(track_new_mem_heap)()</function> with an appropriate
 function pointer, and the assigned function will be called each time
 this happens.</para>

@@ -42,7 +42,7 @@ Release 3.5.0 (???)
 
 ==3050== Memcheck, a memory error detector.
 ==3050== Copyright (C) 2002-2009, and GNU GPL'd, by Julian Seward et al.
-==3050== Using Valgrind-3.5.0.SVN and LibVEX; rerun with -h for copyright info
+==3050== Using Valgrind-3.5.0 and LibVEX; rerun with -h for copyright info
 ==3050== Command: ls -l
 ==3050== 
 
@@ -60,6 +60,9 @@ Release 3.5.0 (???)
   VALGRIND_PRINTF calls to build up a single output line, and also to print
   multiple output lines with a single request (by embedding multiple
   newlines in the string).
+
+* XXX: mention --read-var-info.  It was mentioned as a developer-visible
+  change in 3.4.0, but it's useful for normal users of some tools as well.
 
 * Memcheck's leak checker has been improved.  
   - The results for --leak-check=summary now match the summary results for

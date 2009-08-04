@@ -1,9 +1,0 @@
-#! /bin/sh
-
-dir=`dirname $0`
-
-# We change the "Command:" so it doesn't get stripped out by the standard
-# filters.
-sed "s/Command:/COMMAND:/" |
-
-./filter_stderr

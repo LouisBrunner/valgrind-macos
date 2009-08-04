@@ -36,7 +36,6 @@ dist_noinst_SCRIPTS = \
 	filter_cmdline0 \
 	filter_fdleak \
 	filter_linenos \
-	filter_long_command \
 	filter_none_discards \
 	filter_stderr \
 	filter_timestamp

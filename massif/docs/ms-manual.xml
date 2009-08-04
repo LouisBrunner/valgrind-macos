@@ -501,6 +501,7 @@ ms_print support.</para>
 
 </sect2>
 
+
 <sect2 id="ms-manual.forkingprograms" xreflabel="Forking Programs">
 <title>Forking Programs</title>
 <para>If your program forks, the child will inherit all the profiling data that
@@ -510,6 +511,66 @@ has been gathered for the parent.</para>
 <option>--massif-out-file</option>) does not contain <option>%p</option>, then
 the outputs from the parent and child will be intermingled in a single output
 file, which will almost certainly make it unreadable by ms_print.</para>
+</sect2>
+
+
+<sect2 id="ms-manual.not-measured"
+       xreflabel="Memory Allocations Not Measured by Massif">
+<title>Memory Allocations Not Measured by Massif</title>
+<para>
+It is worth emphasising that Massif measures only heap memory, i.e. memory
+allocated with
+<function>malloc</function>,
+<function>calloc</function>,
+<function>realloc</function>,
+<function>memalign</function>,
+<function>new</function>,
+<function>new[]</function>,
+and a few other, similar functions.  (And it can optionally measure stack
+memory, of course.)  This means it does <emphasis>not</emphasis> directly
+measure memory allocated with lower-level system calls such as
+<function>mmap</function>,
+<function>mremap</function>, and
+<function>brk</function>.  
+</para>
+
+<para>
+Heap allocation functions such as <function>malloc</function> are built on
+top of these system calls.  For example, when needed, an allocator will
+typically call <function>mmap</function> to allocate a large chunk of
+memory, and then hand over pieces of that memory chunk to the client program
+in response to calls to <function>malloc</function> et al.  Massif directly
+measures only these higher-level <function>malloc</function> et al calls,
+not the lower-level system calls.
+</para>
+
+<para>
+Furthermore, a client program may use these lower-level system calls
+directly to allocate memory.  Massif does not measure these.  Nor does it
+measure the size of code, data and BSS segments.  Therefore, the numbers
+reported by Massif may be significantly smaller than those reported by tools
+such as <filename>top</filename> that measure a program's total size in
+memory.
+</para>
+
+</sect2>
+
+
+<sect2 id="ms-manual.acting" xreflabel="Action on Massif's Information">
+<title>Acting on Massif's Information</title>
+<para>Massif's information is generally fairly easy to act upon.  The
+obvious place to start looking is the peak snapshot.</para>
+
+<para>It can also be useful to look at the overall shape of the graph, to
+see if memory usage climbs and falls as you expect;  spikes in the graph
+might be worth investigating.</para>
+
+<para>The detailed snapshots can get quite large.  It is worth viewing them
+in a very wide window.   It's also a good idea to view them with a text
+editor.  That makes it easy to scroll up and down while keeping the cursor
+in a particular column, which makes following the allocation chains easier.
+</para>
+
 </sect2>
 
 </sect1>
@@ -704,6 +765,18 @@ file, which will almost certainly make it unreadable by ms_print.</para>
 
 </variablelist>
 <!-- end of xi:include in the manpage -->
+
+</sect1>
+
+
+<sect1 id="ms-manual.clientreqs" xreflabel="Client requests">
+<title>Massif Client Requests</title>
+
+<para>Massif does not have a <filename>massif.h</filename> file, but it does
+implement two of the core client requests:
+<function>VALGRIND_MALLOCLIKE_BLOCK</function> and
+<function>VALGRIND_FREELIKE_BLOCK</function>.  These work in the obvious
+way.</para>
 
 </sect1>
 

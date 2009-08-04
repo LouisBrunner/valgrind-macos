@@ -982,7 +982,6 @@ static void print_preamble ( Bool logging_to_fd,
                              const HChar* toolname )
 {
    Int    i;
-   SizeT  n;
    HChar* xpre  = VG_(clo_xml) ? "  <line>" : "";
    HChar* xpost = VG_(clo_xml) ? "</line>" : "";
    UInt (*umsg_or_xml)( const HChar*, ... )
@@ -1024,8 +1023,7 @@ static void print_preamble ( Bool logging_to_fd,
          );
       }
 
-      umsg_or_xml("%s%s%s\n", 
-                               xpre, VG_(details).copyright_author, xpost);
+      umsg_or_xml("%s%s%s\n", xpre, VG_(details).copyright_author, xpost);
 
       /* Core details */
       umsg_or_xml(
@@ -1033,35 +1031,19 @@ static void print_preamble ( Bool logging_to_fd,
          xpre, VERSION, xpost
       );
 
-      /* Print the command line, wrapping near 80-chars wide.  An example of a
-         command line with many args, some of them very long:
-        
-==9717== Command: date 11 23 4a \
-==9717==          aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa \
-==9717==          aaa 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 \
-==9717==          22 23 24 25 26 27 28 29 30 31 32 33 34 35 36 37 38 39 40 \
-==9717==          fffffffffffffffffffffffffffff 1 2 3 \
-==9717==          bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb
-      */
-      umsg_or_xml("Command: ");
+      // Print the command line.  At one point we wrapped at 80 chars and
+      // printed a '\' as a line joiner, but that makes it hard to cut and
+      // paste the command line (because of the "==pid==" prefixes), so we now
+      // favour utility and simplicity over aesthetics.
+      umsg_or_xml("%sCommand: ", xpre);
       if (VG_(args_the_exename))
          umsg_or_xml_arg(VG_(args_the_exename), umsg_or_xml);
-      n = 0;
       for (i = 0; i < VG_(sizeXA)( VG_(args_for_client) ); i++) {
          HChar* s = *(HChar**)VG_(indexXA)( VG_(args_for_client), i );
-         SizeT slen = VG_(strlen)(s);
-         n += slen + 1;   // +1 for the space char between each argument
-         // With a PID of up to 5 digits, 58 puts the line-ending '\' in
-         // column 79 at the most, always leaving column 80 empty.
-         if (n > 58) {
-            VG_(umsg)(" \\");
-            VG_(umsg)("\n        ");
-            n = slen;
-         }
          umsg_or_xml(" ");
          umsg_or_xml_arg(s, umsg_or_xml);
       }
-      umsg_or_xml("\n");
+      umsg_or_xml("%s\n", xpost);
 
       if (VG_(clo_xml))
          VG_(printf_xml)("</preamble>\n");
@@ -1144,10 +1126,10 @@ static void print_preamble ( Bool logging_to_fd,
       } else {
 #        define BUF_LEN    256
          Char version_buf[BUF_LEN];
-         Int nn = VG_(read) ( sr_Res(fd), version_buf, BUF_LEN );
-         vg_assert(nn <= BUF_LEN);
-         if (nn > 0) {
-            version_buf[nn-1] = '\0';
+         Int n = VG_(read) ( sr_Res(fd), version_buf, BUF_LEN );
+         vg_assert(n <= BUF_LEN);
+         if (n > 0) {
+            version_buf[n-1] = '\0';
             VG_(message)(Vg_DebugMsg, "  %s\n", version_buf);
          } else {
             VG_(message)(Vg_DebugMsg, "  (empty?)\n");

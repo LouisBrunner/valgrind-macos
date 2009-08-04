@@ -68,7 +68,8 @@ valgrind --tool=massif prog
 statistics are printed to Valgrind's commentary;  all of Massif's profiling
 data is written to a file.  By default, this file is called
 <filename>massif.out.&lt;pid&gt;</filename>, where
-<filename>&lt;pid&gt;</filename> is the process ID.</para>
+<filename>&lt;pid&gt;</filename> is the process ID, although this filename
+can be changed with the <option>--massif-out-file</option> option.</para>
 
 <para>To see the information gathered by Massif in an easy-to-read form, use
 the ms_print script.  If the output file's name is
@@ -222,14 +223,16 @@ Number of snapshots: 25
  Detailed snapshots: [9, 14 (peak), 24]
 ]]></screen>
 
-<para>Each vertical bar represents a snapshot, i.e. a measurement of the
-memory usage at a certain point in time.  If the next snapshot is more than
-one column away, a horizontal line of characters is drawn from the top of
-the snapshot to just before the next snapshot column.  The text at the
-bottom show that 25 snapshots were taken for this program, which is one per
-heap allocation/deallocation, plus a couple of extras.  Massif starts by
-taking snapshots for every heap allocation/deallocation, but as a program
-runs for longer, it takes snapshots less frequently.  It also discards older
+<para>The size of the graph can be changed with ms_print's
+<option>--x</option> and <option>--y</option> options.  Each vertical bar
+represents a snapshot, i.e. a measurement of the memory usage at a certain
+point in time.  If the next snapshot is more than one column away, a
+horizontal line of characters is drawn from the top of the snapshot to just
+before the next snapshot column.  The text at the bottom show that 25
+snapshots were taken for this program, which is one per heap
+allocation/deallocation, plus a couple of extras.  Massif starts by taking
+snapshots for every heap allocation/deallocation, but as a program runs for
+longer, it takes snapshots less frequently.  It also discards older
 snapshots as the program goes on;  when it reaches the maximum number of
 snapshots (100 by default, although changeable with the
 <option>--max-snapshots</option> option) half of them are
@@ -358,7 +361,10 @@ a small amount of information is recorded for each one:</para>
 
   <listitem><para>The size of the stack(s).  By default, stack profiling is
   off as it slows Massif down greatly.  Therefore, the stack column is zero
-  in the example.</para></listitem>
+  in the example.  Stack profiling can be turned on with the
+  <option>--stacks=yes</option> option.  
+  
+  </para></listitem>
 </itemizedlist>
 
 <para>The next snapshot is detailed.  As well as the basic counts, it gives

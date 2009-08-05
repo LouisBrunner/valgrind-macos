@@ -645,7 +645,20 @@ in a particular column, which makes following the allocation chains easier.
       which can fill up the allocation trees with uninteresting information.
       This option can be specified multiple times on the command line, to
       name multiple functions.</para>
-      
+
+      <para>Note that the named function will only be treated this way if it is
+      the top entry in a stack trace, or just below another function treated
+      this way.  For example, if you have a function
+      <function>malloc1</function> that wraps <function>malloc</function>,
+      and <function>malloc2</function> that wraps
+      <function>malloc1</function>, just specifying
+      <option>--alloc-fn=malloc2</option> will have no effect.  You need to
+      specify <option>--alloc-fn=malloc1</option> as well.  This is a little
+      inconvenient, but the reason is that checking for allocation functions
+      is slow, and it saves a lot of time if Massif can stop looking through
+      the stack trace entries as soon as it finds one that doesn't match
+      rather than having to continue through all the entries.</para>
+
       <para>Note that C++ names are demangled.  Note also that overloaded
       C++ names must be written in full.  Single quotes may be necessary to
       prevent the shell from breaking them up.  For example:

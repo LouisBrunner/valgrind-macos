@@ -871,14 +871,11 @@ Int get_IPs( ThreadId tid, Bool is_custom_alloc, Addr ips[])
       // If the original stack trace is smaller than asked-for, redo=False.
       if (n_ips < clo_depth + overestimate) { redo = False; }
 
-      // If it's a non-custom block, we will always remove the first stack
-      // trace entry (which will be one of malloc, __builtin_new, etc).
-      n_alloc_fns_removed = ( is_custom_alloc ? 0 : 1 );
-
       // Filter out alloc fns.  If it's a non-custom block, we remove the
       // first entry (which will be one of malloc, __builtin_new, etc)
       // without looking at it, because VG_(get_fnname) is expensive (it
       // involves calls to VG_(malloc)/VG_(free)).
+      n_alloc_fns_removed = ( is_custom_alloc ? 0 : 1 );
       for (i = n_alloc_fns_removed; i < n_ips; i++) {
          if (VG_(get_fnname)(ips[i], buf, BUF_LEN)) {
             if (is_member_fn(alloc_fns, buf)) {

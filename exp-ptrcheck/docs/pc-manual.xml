@@ -49,7 +49,7 @@ known, is entirely novel.</para>
 <sect1 id="pc-manual.options" xreflabel="Ptrcheck Options">
 <title>Ptrcheck Options</title>
 
-<para>The following end-user options are available:</para>
+<para>Ptrcheck-specific options are:</para>
 
 <!-- start of xi:include in the manpage -->
 <variablelist id="pc.opts.list">
@@ -97,26 +97,6 @@ known, is entirely novel.</para>
 </variablelist>
 <!-- end of xi:include in the manpage -->
 
-<!-- start of xi:include in the manpage -->
-<para>In addition, the following debugging options are available for
-Ptrcheck:</para>
-
-<variablelist id="hg.debugopts.list">
-
-  <varlistentry id="opt.trace-malloc" xreflabel="--trace-malloc">
-    <term>
-      <option><![CDATA[--trace-malloc=no|yes [no]
-      ]]></option>
-    </term>
-    <listitem>
-      <para>Show all client malloc (etc) and free (etc) requests.</para>
-    </listitem>
-  </varlistentry>
-
-</variablelist>
-<!-- end of xi:include in the manpage -->
-
-
 </sect1>
 
 
@@ -138,19 +118,19 @@ bounds of the associated block, and reports an error if the address is
 out of bounds, or if the block has been freed.</para>
 
 <para>Of course it is rarely the case that one wants to access a block
-only at the exact address returned by malloc (et al).  Ptrcheck
-understands that adding or subtracting offsets from a pointer to a
+only at the exact address returned by <function>malloc</function> et al.
+Ptrcheck understands that adding or subtracting offsets from a pointer to a
 block results in a pointer to the same block.</para>
 
 <para>At a fundamental level, this scheme works because a correct
 program cannot make assumptions about the addresses returned by
-malloc.  In particular it cannot make any assumptions about the
-differences in addresses returned by subsequent calls to malloc.
-Hence there are very few ways to take an address returned by malloc,
-modify it, and still have a valid address.  In short, the only
-allowable operations are adding and subtracting other non-pointer
-values.  Almost all other operations produce a value which cannot
-possibly be a valid pointer.</para>
+<function>malloc</function> et al.  In particular it cannot make any
+assumptions about the differences in addresses returned by subsequent calls
+to <function>malloc</function> et al.  Hence there are very few ways to take
+an address returned by <function>malloc</function>, modify it, and still
+have a valid address.  In short, the only allowable operations are adding
+and subtracting other non-pointer values.  Almost all other operations
+produce a value which cannot possibly be a valid pointer.</para>
 
 </sect1>
 
@@ -171,12 +151,10 @@ memory referencing instruction was supposed to access.  Unfortunately
 the DWARF3 debugging format does not provide a way to represent such
 information, so we have to resort to a heuristic technique to
 approximate the same information.  The key observation is that
-</para>
-
-   <para>
+   <emphasis>
    if a memory referencing instruction accesses inside a stack or
    global array once, then it is highly likely to always access that
-   same array</para>
+   same array</emphasis>.</para>
 
 <para>To see how this might be useful, consider the following buggy
 fragment:</para>
@@ -199,19 +177,20 @@ Ptrcheck reports an error.</para>
 
 <para>There is an important caveat.</para>
 
-<para>Imagine a function such as memcpy, which is used to read and
-write many different areas of memory over the lifetime of the program.
-If we insist that the read and write instructions in its memory
-copying loop only ever access one particular stack or global variable,
-we will be flooded with errors resulting from calls to memcpy.</para>
+<para>Imagine a function such as <function>memcpy</function>, which is used
+to read and write many different areas of memory over the lifetime of the
+program.  If we insist that the read and write instructions in its memory
+copying loop only ever access one particular stack or global variable, we
+will be flooded with errors resulting from calls to
+<function>memcpy</function>.</para>
 
 <para>To avoid this problem, Ptrcheck instantiates fresh likely-target
 records for each entry to a function, and discards them on exit.  This
-allows detection of cases where (eg) memcpy overflows its source or
-destination buffers for any specific call, but does not carry any
-restriction from one call to the next.  Indeed, multiple threads may
-be multiple simultaneous calls to (eg) memcpy without mutual
-interference.</para>
+allows detection of cases where (e.g.) <function>memcpy</function> overflows
+its source or destination buffers for any specific call, but does not carry
+any restriction from one call to the next.  Indeed, multiple threads may be
+multiple simultaneous calls to (e.g.) <function>memcpy</function> without
+mutual interference.</para>
 
 </sect1>
 
@@ -244,8 +223,8 @@ of the process' address space.</para>
 
 <para>Ptrcheck's approach is to keep track of pointers derived from
 heap blocks.  It tracks pointers which are derived directly from calls
-to malloc et al, but also ones derived indirectly, by adding or
-subtracting offsets from the directly-derived pointers.  When a
+to <function>malloc</function> et al, but also ones derived indirectly, by
+adding or subtracting offsets from the directly-derived pointers.  When a
 pointer is finally used to access memory, Ptrcheck compares the access
 address with that of the block it was originally derived from, and
 reports an error if the access address is not within the block
@@ -275,17 +254,16 @@ will require only 320MB of extra storage.  Achieving the same level of
 detection with Memcheck is close to impossible and would likely
 involve several gigabytes of extra storage.</para>
 
-<para>In defense of Memcheck ...</para>
+<para>Having said all that, remember that Memcheck performs uninitialised
+value checking, invalid and mismatched free checking, overlap checking, and
+leak checking, none of which Ptrcheck do.  Memcheck has also benefitted from
+years of refinement, tuning, and experience with production-level usage, and
+so is much faster than Ptrcheck as it currently stands.
+</para>
 
-<para>Remember that Memcheck performs uninitialised value checking,
-which Ptrcheck does not.  Memcheck has also benefitted from years of
-refinement, tuning, and experience with production-level usage, and so
-is much faster than Ptrcheck as it currently stands, as of October
-2008.</para>
-
-<para>Consequently it is recommended to first make your programs run
-Memcheck clean.  Once that's done, try Ptrcheck to see if you can
-shake out any further heap, global or stack errors.</para>
+<para>Consequently we recommend you first make your programs run Memcheck
+clean.  Once that's done, try Ptrcheck to see if you can shake out any
+further heap, global or stack errors.</para>
 
 </sect1>
 
@@ -323,20 +301,21 @@ of.</para>
   <listitem>
    <para>Heap checks: Ptrcheck needs to "understand" which system
    calls return pointers and which don't.  Many, but not all system
-   calls are handled.  If an unhandled one is encountered, Ptrcheck
-   will abort.</para>
+   calls are handled.  If an unhandled one is encountered, Ptrcheck will
+   abort.  Fortunately, adding support for a new syscall is very
+   easy.</para>
   </listitem>
 
   <listitem>
-   <para>Stack checks: It follows from the description above (How Ptrcheck
-   Works: Stack and Global Checks) that the first access by a memory
-   referencing instruction to a stack or global array creates an
-   association between that instruction and the array, which is
-   checked on subsequent accesses by that instruction, until the
-   containing function exits.  Hence, the first access by an
-   instruction to an array (in any given function instantiation) is
-   not checked for overrun, since Ptrcheck uses that as the "example"
-   of how subsequent accesses should behave.</para>
+   <para>Stack checks: It follows from the description above (<xref
+   linkend="pc-manual.how-works.sg-checks"/>) that the first access by a
+   memory referencing instruction to a stack or global array creates an
+   association between that instruction and the array, which is checked on
+   subsequent accesses by that instruction, until the containing function
+   exits.  Hence, the first access by an instruction to an array (in any
+   given function instantiation) is not checked for overrun, since Ptrcheck
+   uses that as the "example" of how subsequent accesses should
+   behave.</para>
   </listitem>
 
   <listitem>
@@ -393,9 +372,9 @@ of.</para>
 
   <listitem>
    <para>Coverage: the heap checking is relatively robust, requiring
-   only that Ptrcheck can see calls to malloc/free et al.  In that
-   sense it has debug-info requirements comparable with Memcheck, and
-   is able to heap-check programs even with no debugging information
+   only that Ptrcheck can see calls to <function>malloc</function> et al.
+   In that sense it has debug-info requirements comparable with Memcheck,
+   and is able to heap-check programs even with no debugging information
    attached.</para>
 
    <para>Stack/global checking is much more fragile.  If a shared
@@ -424,7 +403,7 @@ of.</para>
    PowerPC platforms, only on x86 and amd64 targets.  That's because
    the stack and global checking requires tracking function calls and
    exits reliably, and there's no obvious way to do it with the PPC
-   ABIs.  (cf with the x86 and amd64 ABIs this is relatively
+   ABIs.  (In comparison, with the x86 and amd64 ABIs this is relatively
    straightforward.)</para>
   </listitem>
 
@@ -444,8 +423,8 @@ of.</para>
 
 
 <sect1 id="pc-manual.todo-user-visible"
-       xreflabel="Still To Do: User Visible Functionality">
-<title>Still To Do: User Visible Functionality</title>
+       xreflabel="Still To Do: User-visible Functionality">
+<title>Still To Do: User-visible Functionality</title>
 
 <itemizedlist>
 
@@ -494,7 +473,7 @@ in real use.</para>
   </listitem>
   
   <listitem>
-   <para>h_main.c: move vast amounts of arch-dependent uglyness
+   <para>h_main.c: move vast amounts of arch-dependent ugliness
    (get_IntRegInfo et al) to its own source file, a la
    mc_machine.c.</para>
   </listitem>
@@ -519,7 +498,7 @@ in real use.</para>
   <listitem>
    <para>sg_main.c: fix compute_II_hash to make it a bit more sensible
    for ppc32/64 targets (except that sg_ doesn't work on ppc32/64
-   targets, so this is a bit academic at the mo).</para>
+   targets, so this is a bit academic at the moment).</para>
   </listitem>
   
 </itemizedlist>

@@ -20,9 +20,9 @@ command line.</para>
 </para>
 
 <para>
-   BBV is tool that generates basic block vectors
-   for use with the SimPoint analysis tool 
-   (http://www.cse.ucsd.edu/~calder/simpoint/).
+   BBV is tool that generates basic block vectors for use with the 
+   <ulink url="http://www.cse.ucsd.edu/~calder/simpoint/">SimPoint</ulink>
+   analysis tool. 
    The SimPoint methodology enables speeding up architectural 
    simulations by only running a small portion of a program
    and then extrapolating total behavior from this
@@ -69,9 +69,9 @@ command line.</para>
 </para>   
 
 <para>
-   To create actual SimPoint results, you will need the
-   SimPoint utility, available from the SimPoint webpage
-   (http://www.cse.ucsd.edu/~calder/simpoint/).
+   To create actual SimPoint results, you will need the SimPoint utility,
+   available from the 
+   <ulink url="http://www.cse.ucsd.edu/~calder/simpoint/">SimPoint webpage</ulink>.
    Assuming you have downloaded SimPoint 3.2 and compiled it,
    create SimPoint results with a command like the following:
       

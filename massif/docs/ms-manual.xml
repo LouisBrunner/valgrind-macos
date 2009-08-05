@@ -255,16 +255,29 @@ every 10th snapshot is detailed, although this can be changed via the
 peak snapshot is a detailed snapshot, and records the point where memory
 consumption was greatest.  The peak snapshot is represented in the graph by
 a bar consisting of '#' characters.  The text at the bottom shows
-that snapshot 14 was the peak.  Note that for tiny programs that never
-deallocate heap memory, Massif will not record a peak snapshot.</para>
+that snapshot 14 was the peak.</para>
 
-<para>Some more details about the peak:  the peak is determined by looking
-at every allocation, i.e. it is <emphasis>not</emphasis> just the peak among
-the regular snapshots.  However, recording the true peak can be expensive, and
-so by default Massif records a peak whose size is within 1% of the size of
-the true peak.  See the description of the
-<option>--peak-inaccuracy</option> option below for more
-details.</para>
+<para>Massif's determination of when the peak occurred can be wrong, for
+two reasons.</para>
+
+<itemizedlist>
+  <listitem><para>Peak snapshots are only ever taken after a deallocation
+  happens.  This avoids lots of unnecessary peak snapshot recordings
+  (imagine what happens if your program allocates a lot of heap blocks in
+  succession, hitting a new peak every time).  But it means that if your
+  program never deallocates any blocks, no peak will be recorded.  It also
+  means that if your program does deallocate blocks but later allocates to a
+  higher peak without subsequently deallocating, the reported peak will be
+  too low.
+  </para>
+  </listitem>
+
+  <listitem><para>Even with this behaviour, recording the peak accurately
+  is slow.  So by default Massif records a peak whose size is within 1% of
+  the size of the true peak.  This inaccuracy in the peak measurement can be
+  changed with the <option>--peak-inaccuracy</option> option.</para>
+  </listitem>
+</itemizedlist>
 
 <para>The following graph is from an execution of Konqueror, the KDE web
 browser.  It shows what graphs for larger programs look like.</para>

@@ -1842,10 +1842,6 @@ AC_CONFIG_FILES([
    valgrind.pc
    glibc-2.X.supp
    docs/Makefile 
-   docs/lib/Makefile
-   docs/images/Makefile
-   docs/internals/Makefile
-   docs/xml/Makefile
    tests/Makefile 
    tests/vg_regtest 
    perf/Makefile 

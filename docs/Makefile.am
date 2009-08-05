@@ -13,10 +13,61 @@ BUILD_ALL_DOCS=yes
 ## END OF HACK
 ##-------------------------------------------------------------
 
-
-SUBDIRS = xml lib images internals
-
-EXTRA_DIST = README
+EXTRA_DIST = \
+	README \
+	images/home.png \
+	images/next.png \
+	images/prev.png \
+	images/up.png \
+	internals/3_0_BUGSTATUS.txt \
+	internals/3_1_BUGSTATUS.txt \
+	internals/3_2_BUGSTATUS.txt \
+	internals/3_3_BUGSTATUS.txt \
+	internals/3_4_BUGSTATUS.txt \
+	internals/BIG_APP_NOTES.txt \
+	internals/Darwin-notes.txt \
+	internals/directory-structure.txt \
+	internals/howto_BUILD_KDE42.txt \
+	internals/howto_oprofile.txt \
+	internals/m_replacemalloc.txt \
+	internals/m_syswrap.txt \
+	internals/module-structure.txt \
+	internals/notes.txt \
+	internals/porting-HOWTO.txt \
+	internals/mpi2entries.txt \
+	internals/porting-to-ARM.txt \
+	internals/register-uses.txt \
+	internals/release-HOWTO.txt \
+	internals/segments-seginfos.txt \
+	internals/threads-syscalls-signals.txt \
+	internals/tm-mutexstates.dot \
+	internals/tm-threadstates.dot \
+	internals/tracking-fn-entry-exit.txt \
+	internals/why-no-libc.txt \
+	internals/xml-output.txt \
+	internals/xml-output-protocol4.txt \
+	lib/line-wrap.xsl \
+	lib/vg_basic.css \
+	lib/vg-fo.xsl \
+	lib/vg-faq2txt.xsl \
+	lib/vg-html-chunk.xsl \
+	lib/vg-html-website.xsl \
+	lib/vg-html-common.xsl \
+	xml/FAQ.xml \
+	xml/dist-docs.xml \
+	xml/index.xml \
+	xml/licenses.xml \
+	xml/manual.xml \
+	xml/manual-intro.xml \
+	xml/manual-core.xml \
+	xml/manual-core-adv.xml \
+	xml/manual-writing-tools.xml \
+	xml/design-impl.xml \
+	xml/quick-start-guide.xml \
+	xml/tech-docs.xml \
+	xml/valgrind-manpage.xml \
+	xml/vg-entities.xml \
+	xml/xml_help.txt
 
 
 ##-------------------------------------------------------------------
@@ -97,7 +148,6 @@ print-docs:
 	export XML_CATALOG_FILES=$(XML_CATALOG_FILES) && \
 	mkdir -p $(myprintdir) && \
 	mkdir -p $(myprintdir)/images && \
-	cp $(myimgdir)/massif-graph-sm.png $(myprintdir)/images && \
 	$(XSLTPROC) $(XSLTPROC_FLAGS) -o $(myprintdir)/index.fo $(XSL_FO_STYLE) $(myxmldir)/index.xml && \
 	(cd $(myprintdir) && \
          ( pdfxmltex index.fo && \
@@ -204,7 +254,6 @@ download-docs:
 	@echo "Generating valgrind_manual.pdf ..."
 	mkdir -p $(vgdir)/print
 	mkdir -p $(vgdir)/print/images
-	cp $(myimgdir)/massif-graph-sm.png $(vgdir)/print/images/
 	$(XSLTPROC) $(XSLTPROC_FLAGS) -o $(vgdir)/print/manual.fo $(XSL_FO_STYLE) $(myxmldir)/index.xml
 	(cd $(vgdir)/print/ && \
 		( pdfxmltex manual.fo && \

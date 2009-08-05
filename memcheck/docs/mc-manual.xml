@@ -64,6 +64,57 @@ difficult-to-diagnose crashes.</para>
 <!-- start of xi:include in the manpage -->
 <variablelist id="mc.opts.list">
 
+  <varlistentry id="opt.leak-check" xreflabel="--leak-check">
+    <term>
+      <option><![CDATA[--leak-check=<no|summary|yes|full> [default: summary] ]]></option>
+    </term>
+    <listitem>
+      <para>When enabled, search for memory leaks when the client
+      program finishes.  If set to <varname>summary</varname>, it says how
+      many leaks occurred.  If set to <varname>full</varname> or
+      <varname>yes</varname>, it also gives details of each individual
+      leak.</para>
+    </listitem>
+  </varlistentry>
+
+  <varlistentry id="opt.leak-resolution" xreflabel="--leak-resolution">
+    <term>
+      <option><![CDATA[--leak-resolution=<low|med|high> [default: high] ]]></option>
+    </term>
+    <listitem>
+      <para>When doing leak checking, determines how willing
+      Memcheck is to consider different backtraces to
+      be the same.  When set to <varname>low</varname>, only the first
+      two entries need match.  When <varname>med</varname>, four entries
+      have to match.  When <varname>high</varname>, all entries need to
+      match;  this is consistent with how merging occurs for other kinds of
+      errors.</para>
+
+      <para>For hardcore leak debugging, you probably want to use
+      <option>--leak-resolution=high</option> together with
+      <option>--num-callers=40</option> or some such large number.
+      </para>
+
+      <para>Note that the <option>--leak-resolution</option> setting
+      does not affect Memcheck's ability to find
+      leaks.  It only changes how the results are presented.</para>
+    </listitem>
+  </varlistentry>
+
+  <varlistentry id="opt.show-reachable" xreflabel="--show-reachable">
+    <term>
+      <option><![CDATA[--show-reachable=<yes|no> [default: no] ]]></option>
+    </term>
+    <listitem>
+      <para>When disabled, the memory leak detector only shows "definitely
+      lost" and "possibly lost" blocks.  When enabled, the leak detector also
+      shows "reachable" and "indirectly lost" blocks.  (In other words, it
+      shows all blocks, except suppressed ones, so
+      <option>--show-all</option> would be a better name for
+      it.)</para>
+    </listitem>
+  </varlistentry>
+
   <varlistentry id="opt.undef-value-errors" xreflabel="--undef-value-errors">
     <term>
       <option><![CDATA[--undef-value-errors=<yes|no> [default: yes] ]]></option>
@@ -132,54 +183,28 @@ difficult-to-diagnose crashes.</para>
       </listitem>
   </varlistentry>
 
-  <varlistentry id="opt.leak-check" xreflabel="--leak-check">
+  <varlistentry id="opt.partial-loads-ok" xreflabel="--partial-loads-ok">
     <term>
-      <option><![CDATA[--leak-check=<no|summary|yes|full> [default: summary] ]]></option>
+      <option><![CDATA[--partial-loads-ok=<yes|no> [default: no] ]]></option>
     </term>
     <listitem>
-      <para>When enabled, search for memory leaks when the client
-      program finishes.  If set to <varname>summary</varname>, it says how
-      many leaks occurred.  If set to <varname>full</varname> or
-      <varname>yes</varname>, it also gives details of each individual
-      leak.</para>
-    </listitem>
-  </varlistentry>
+      <para>Controls how Memcheck handles word-sized,
+      word-aligned loads from addresses for which some bytes are
+      addressable and others are not.  When <varname>yes</varname>, such
+      loads do not produce an address error.  Instead, loaded bytes
+      originating from illegal addresses are marked as uninitialised, and
+      those corresponding to legal addresses are handled in the normal
+      way.</para>
 
-  <varlistentry id="opt.show-reachable" xreflabel="--show-reachable">
-    <term>
-      <option><![CDATA[--show-reachable=<yes|no> [default: no] ]]></option>
-    </term>
-    <listitem>
-      <para>When disabled, the memory leak detector only shows "definitely
-      lost" and "possibly lost" blocks.  When enabled, the leak detector also
-      shows "reachable" and "indirectly lost" blocks.  (In other words, it
-      shows all blocks, except suppressed ones, so
-      <option>--show-all</option> would be a better name for
-      it.)</para>
-    </listitem>
-  </varlistentry>
+      <para>When <varname>no</varname>, loads from partially invalid
+      addresses are treated the same as loads from completely invalid
+      addresses: an illegal-address error is issued, and the resulting
+      bytes are marked as initialised.</para>
 
-  <varlistentry id="opt.leak-resolution" xreflabel="--leak-resolution">
-    <term>
-      <option><![CDATA[--leak-resolution=<low|med|high> [default: high] ]]></option>
-    </term>
-    <listitem>
-      <para>When doing leak checking, determines how willing
-      Memcheck is to consider different backtraces to
-      be the same.  When set to <varname>low</varname>, only the first
-      two entries need match.  When <varname>med</varname>, four entries
-      have to match.  When <varname>high</varname>, all entries need to
-      match;  this is consistent with how merging occurs for other kinds of
-      errors.</para>
-
-      <para>For hardcore leak debugging, you probably want to use
-      <option>--leak-resolution=high</option> together with
-      <option>--num-callers=40</option> or some such large number.
-      </para>
-
-      <para>Note that the <option>--leak-resolution</option> setting
-      does not affect Memcheck's ability to find
-      leaks.  It only changes how the results are presented.</para>
+      <para>Note that code that behaves in this way is in violation of
+      the the ISO C/C++ standards, and should be considered broken.  If
+      at all possible, such code should be fixed.  This flag should be
+      used only as a last resort.</para>
     </listitem>
   </varlistentry>
 
@@ -229,31 +254,6 @@ difficult-to-diagnose crashes.</para>
       conversions.  This is in violation of the 32-bit PowerPC ELF
       specification, which makes no provision for locations below the
       stack pointer to be accessible.</para>
-    </listitem>
-  </varlistentry>
-
-  <varlistentry id="opt.partial-loads-ok" xreflabel="--partial-loads-ok">
-    <term>
-      <option><![CDATA[--partial-loads-ok=<yes|no> [default: no] ]]></option>
-    </term>
-    <listitem>
-      <para>Controls how Memcheck handles word-sized,
-      word-aligned loads from addresses for which some bytes are
-      addressable and others are not.  When <varname>yes</varname>, such
-      loads do not produce an address error.  Instead, loaded bytes
-      originating from illegal addresses are marked as uninitialised, and
-      those corresponding to legal addresses are handled in the normal
-      way.</para>
-
-      <para>When <varname>no</varname>, loads from partially invalid
-      addresses are treated the same as loads from completely invalid
-      addresses: an illegal-address error is issued, and the resulting
-      bytes are marked as initialised.</para>
-
-      <para>Note that code that behaves in this way is in violation of
-      the the ISO C/C++ standards, and should be considered broken.  If
-      at all possible, such code should be fixed.  This flag should be
-      used only as a last resort.</para>
     </listitem>
   </varlistentry>
 

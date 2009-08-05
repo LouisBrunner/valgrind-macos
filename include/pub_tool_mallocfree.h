@@ -35,6 +35,8 @@
 // These can be for allocating memory used by tools.
 // Nb: the allocators *always succeed* -- they never return NULL (Valgrind
 // will abort if they can't allocate the memory).
+// The 'cc' is a string that identifies the allocation point.  It's used when
+// --profile-heap=yes is specified.
 extern void* VG_(malloc)         ( HChar* cc, SizeT nbytes );
 extern void  VG_(free)           ( void* p );
 extern void* VG_(calloc)         ( HChar* cc, SizeT n, SizeT bytes_per_elem );

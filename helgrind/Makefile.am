@@ -1,5 +1,10 @@
 include $(top_srcdir)/Makefile.tool.am
 
+EXTRA_DIST = \
+	docs/hg-manual.xml \
+	README_MSMProp2.txt \
+	README_YARD.txt
+
 #----------------------------------------------------------------------------
 # Headers, etc
 #----------------------------------------------------------------------------
@@ -12,8 +17,6 @@ noinst_HEADERS = \
 	hg_lock_n_thread.h \
 	hg_wordset.h \
 	libhb.h
-
-EXTRA_DIST = README_MSMProp2.txt README_YARD.txt
 
 #----------------------------------------------------------------------------
 # helgrind-<platform>

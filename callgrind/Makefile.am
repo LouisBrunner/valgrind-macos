@@ -1,5 +1,13 @@
 include $(top_srcdir)/Makefile.tool.am
 
+EXTRA_DIST =  \
+	docs/cl-entities.xml \
+	docs/cl-manual.xml \
+	docs/cl-format.xml \
+	docs/man-annotate.xml \
+	docs/man-control.xml \
+	docs/man-callgrind.xml
+
 #----------------------------------------------------------------------------
 # Headers, etc
 #----------------------------------------------------------------------------

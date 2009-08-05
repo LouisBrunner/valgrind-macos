@@ -1,5 +1,5 @@
 
-SUBDIRS = . tests docs
+SUBDIRS = . tests
 
 include $(top_srcdir)/Makefile.all.am
 

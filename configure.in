@@ -1858,28 +1858,22 @@ AC_CONFIG_FILES([
    memcheck/tests/darwin/Makefile
    memcheck/tests/x86-linux/Makefile
    memcheck/perf/Makefile
-   memcheck/docs/Makefile
    cachegrind/Makefile
    cachegrind/tests/Makefile
    cachegrind/tests/x86/Makefile
-   cachegrind/docs/Makefile
    cachegrind/cg_annotate
    callgrind/Makefile
    callgrind/callgrind_annotate
    callgrind/callgrind_control
    callgrind/tests/Makefile
-   callgrind/docs/Makefile
    helgrind/Makefile
    helgrind/tests/Makefile
-   helgrind/docs/Makefile
    massif/Makefile
    massif/tests/Makefile
    massif/perf/Makefile
-   massif/docs/Makefile
    massif/ms_print
    lackey/Makefile
    lackey/tests/Makefile
-   lackey/docs/Makefile
    none/Makefile
    none/tests/Makefile
    none/tests/amd64/Makefile
@@ -1889,16 +1883,12 @@ AC_CONFIG_FILES([
    none/tests/linux/Makefile
    none/tests/darwin/Makefile
    none/tests/x86-linux/Makefile
-   none/docs/Makefile
    exp-ptrcheck/Makefile
    exp-ptrcheck/tests/Makefile
-   exp-ptrcheck/docs/Makefile
    drd/Makefile
-   drd/docs/Makefile
    drd/scripts/download-and-build-splash2
    drd/tests/Makefile
    exp-bbv/Makefile
-   exp-bbv/docs/Makefile
    exp-bbv/tests/Makefile
    exp-bbv/tests/x86/Makefile
    exp-bbv/tests/x86-linux/Makefile

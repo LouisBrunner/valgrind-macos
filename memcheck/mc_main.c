@@ -5780,6 +5780,12 @@ static void mc_pre_clo_init(void)
    // - Telying on the zeroed-ness of whole brk'd pages is pretty grotty... I
    //   doubt most programmers know the above information.
    // So I'm not terribly unhappy with marking it as undefined. --njn.
+   //
+   // [More:  I think most of what John said only applies to sbrk().  It seems
+   // that brk() always deals in whole pages.  And since this event deals
+   // directly with brk(), not with sbrk(), perhaps it would be reasonable to
+   // just mark all memory it allocates as defined.]
+   //
    VG_(track_new_mem_brk)         ( make_mem_undefined_w_tid );
    VG_(track_new_mem_mmap)        ( mc_new_mem_mmap );
    

@@ -1,6 +1,6 @@
 
 
-Counted ... calls to _dl_runtime_resolve()
+Counted ... calls to main()
 
 Jccs:
   total:         ...

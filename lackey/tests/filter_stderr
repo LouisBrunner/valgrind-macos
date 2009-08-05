@@ -8,4 +8,7 @@ $dir/../../tests/filter_stderr_basic    |
 sed "/^Lackey, an example Valgrind tool./ , /./ d" |
 
 # Filter all the numbers.
-../../tests/filter_numbers
+../../tests/filter_numbers |
+
+# Replace "call" with "calls"
+sed "s/ call / calls /"

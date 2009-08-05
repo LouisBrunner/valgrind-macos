@@ -57,267 +57,14 @@ difficult-to-diagnose crashes.</para>
 
 
 
-<sect1 id="mc-manual.flags" 
-       xreflabel="Command-line flags specific to Memcheck">
-<title>Command-line flags specific to Memcheck</title>
-
-<!-- start of xi:include in the manpage -->
-<variablelist id="mc.opts.list">
-
-  <varlistentry id="opt.leak-check" xreflabel="--leak-check">
-    <term>
-      <option><![CDATA[--leak-check=<no|summary|yes|full> [default: summary] ]]></option>
-    </term>
-    <listitem>
-      <para>When enabled, search for memory leaks when the client
-      program finishes.  If set to <varname>summary</varname>, it says how
-      many leaks occurred.  If set to <varname>full</varname> or
-      <varname>yes</varname>, it also gives details of each individual
-      leak.</para>
-    </listitem>
-  </varlistentry>
-
-  <varlistentry id="opt.leak-resolution" xreflabel="--leak-resolution">
-    <term>
-      <option><![CDATA[--leak-resolution=<low|med|high> [default: high] ]]></option>
-    </term>
-    <listitem>
-      <para>When doing leak checking, determines how willing
-      Memcheck is to consider different backtraces to
-      be the same.  When set to <varname>low</varname>, only the first
-      two entries need match.  When <varname>med</varname>, four entries
-      have to match.  When <varname>high</varname>, all entries need to
-      match;  this is consistent with how merging occurs for other kinds of
-      errors.</para>
-
-      <para>For hardcore leak debugging, you probably want to use
-      <option>--leak-resolution=high</option> together with
-      <option>--num-callers=40</option> or some such large number.
-      </para>
-
-      <para>Note that the <option>--leak-resolution</option> setting
-      does not affect Memcheck's ability to find
-      leaks.  It only changes how the results are presented.</para>
-    </listitem>
-  </varlistentry>
-
-  <varlistentry id="opt.show-reachable" xreflabel="--show-reachable">
-    <term>
-      <option><![CDATA[--show-reachable=<yes|no> [default: no] ]]></option>
-    </term>
-    <listitem>
-      <para>When disabled, the memory leak detector only shows "definitely
-      lost" and "possibly lost" blocks.  When enabled, the leak detector also
-      shows "reachable" and "indirectly lost" blocks.  (In other words, it
-      shows all blocks, except suppressed ones, so
-      <option>--show-all</option> would be a better name for
-      it.)</para>
-    </listitem>
-  </varlistentry>
-
-  <varlistentry id="opt.undef-value-errors" xreflabel="--undef-value-errors">
-    <term>
-      <option><![CDATA[--undef-value-errors=<yes|no> [default: yes] ]]></option>
-    </term>
-    <listitem>
-      <para>Controls whether Memcheck reports
-      uses of undefined value errors.  Set this to
-      <varname>no</varname> if you don't want to see undefined value
-      errors.  It also has the side effect of speeding up
-      memcheck somewhat.
-      </para>
-    </listitem>
-  </varlistentry>
-
-  <varlistentry id="opt.track-origins" xreflabel="--track-origins">
-    <term>
-      <option><![CDATA[--track-origins=<yes|no> [default: no] ]]></option>
-    </term>
-      <listitem>
-        <para>Controls whether Memcheck tracks
-        the origin of uninitialised values.  By default, it does not,
-        which means that although it can tell you that an
-        uninitialised value is being used in a dangerous way, it
-        cannot tell you where the uninitialised value came from.  This
-        often makes it difficult to track down the root problem.
-        </para>
-        <para>When set
-        to <varname>yes</varname>, Memcheck keeps
-        track of the origins of all uninitialised values.  Then, when
-        an uninitialised value error is
-        reported, Memcheck will try to show the
-        origin of the value.  An origin can be one of the following
-        four places: a heap block, a stack allocation, a client
-        request, or miscellaneous other sources (eg, a call
-        to <varname>brk</varname>).
-        </para>
-        <para>For uninitialised values originating from a heap
-        block, Memcheck shows where the block was
-        allocated.  For uninitialised values originating from a stack
-        allocation, Memcheck can tell you which
-        function allocated the value, but no more than that -- typically
-        it shows you the source location of the opening brace of the
-        function.  So you should carefully check that all of the
-        function's local variables are initialised properly.
-        </para>
-        <para>Performance overhead: origin tracking is expensive.  It
-        halves Memcheck's speed and increases
-        memory use by a minimum of 100MB, and possibly more.
-        Nevertheless it can drastically reduce the effort required to
-        identify the root cause of uninitialised value errors, and so
-        is often a programmer productivity win, despite running
-        more slowly.
-        </para>
-        <para>Accuracy: Memcheck tracks origins
-        quite accurately.  To avoid very large space and time
-        overheads, some approximations are made.  It is possible,
-        although unlikely, that Memcheck will report an incorrect origin, or
-        not be able to identify any origin.
-        </para>
-        <para>Note that the combination
-        <option>--track-origins=yes</option>
-        and <option>--undef-value-errors=no</option> is
-        nonsensical.  Memcheck checks for and
-        rejects this combination at startup.
-        </para>
-      </listitem>
-  </varlistentry>
-
-  <varlistentry id="opt.partial-loads-ok" xreflabel="--partial-loads-ok">
-    <term>
-      <option><![CDATA[--partial-loads-ok=<yes|no> [default: no] ]]></option>
-    </term>
-    <listitem>
-      <para>Controls how Memcheck handles word-sized,
-      word-aligned loads from addresses for which some bytes are
-      addressable and others are not.  When <varname>yes</varname>, such
-      loads do not produce an address error.  Instead, loaded bytes
-      originating from illegal addresses are marked as uninitialised, and
-      those corresponding to legal addresses are handled in the normal
-      way.</para>
-
-      <para>When <varname>no</varname>, loads from partially invalid
-      addresses are treated the same as loads from completely invalid
-      addresses: an illegal-address error is issued, and the resulting
-      bytes are marked as initialised.</para>
-
-      <para>Note that code that behaves in this way is in violation of
-      the the ISO C/C++ standards, and should be considered broken.  If
-      at all possible, such code should be fixed.  This flag should be
-      used only as a last resort.</para>
-    </listitem>
-  </varlistentry>
-
-  <varlistentry id="opt.freelist-vol" xreflabel="--freelist-vol">
-    <term>
-      <option><![CDATA[--freelist-vol=<number> [default: 10000000] ]]></option>
-    </term>
-    <listitem>
-      <para>When the client program releases memory using
-      <function>free</function> (in <literal>C</literal>) or
-      <computeroutput>delete</computeroutput>
-      (<literal>C++</literal>), that memory is not immediately made
-      available for re-allocation.  Instead, it is marked inaccessible
-      and placed in a queue of freed blocks.  The purpose is to defer as
-      long as possible the point at which freed-up memory comes back
-      into circulation.  This increases the chance that
-      Memcheck will be able to detect invalid
-      accesses to blocks for some significant period of time after they
-      have been freed.</para>
-
-      <para>This flag specifies the maximum total size, in bytes, of the
-      blocks in the queue.  The default value is ten million bytes.
-      Increasing this increases the total amount of memory used by
-      Memcheck but may detect invalid uses of freed
-      blocks which would otherwise go undetected.</para>
-    </listitem>
-  </varlistentry>
-
-  <varlistentry id="opt.workaround-gcc296-bugs" xreflabel="--workaround-gcc296-bugs">
-    <term>
-      <option><![CDATA[--workaround-gcc296-bugs=<yes|no> [default: no] ]]></option>
-    </term>
-    <listitem>
-      <para>When enabled, assume that reads and writes some small
-      distance below the stack pointer are due to bugs in GCC 2.96, and
-      does not report them.  The "small distance" is 256 bytes by
-      default.  Note that GCC 2.96 is the default compiler on some ancient
-      Linux distributions (RedHat 7.X) and so you may need to use this
-      flag.  Do not use it if you do not have to, as it can cause real
-      errors to be overlooked.  A better alternative is to use a more
-      recent GCC in which this bug is fixed.</para>
-
-      <para>You may also need to use this flag when working with
-      GCC 3.X or 4.X on 32-bit PowerPC Linux.  This is because
-      GCC generates code which occasionally accesses below the
-      stack pointer, particularly for floating-point to/from integer
-      conversions.  This is in violation of the 32-bit PowerPC ELF
-      specification, which makes no provision for locations below the
-      stack pointer to be accessible.</para>
-    </listitem>
-  </varlistentry>
-
-  <varlistentry id="opt.ignore-ranges" xreflabel="--ignore-ranges">
-    <term>
-      <option><![CDATA[--ignore-ranges=0xPP-0xQQ[,0xRR-0xSS] ]]></option>
-    </term>
-    <listitem>
-    <para>Any ranges listed in this option (and multiple ranges can be
-    specified, separated by commas) will be ignored by Memcheck's
-    addressability checking.
-    </listitem>
-  </varlistentry>
-
-  <varlistentry id="opt.malloc-fill" xreflabel="--malloc-fill">
-    <term>
-      <option><![CDATA[--malloc-fill=<hexnumber> ]]></option>
-    </term>
-    <listitem>
-      <para>Fills blocks allocated
-      by <computeroutput>malloc</computeroutput>,
-         <computeroutput>new</computeroutput>, etc, but not
-      by <computeroutput>calloc</computeroutput>, with the specified
-      byte.  This can be useful when trying to shake out obscure
-      memory corruption problems.  The allocated area is still
-      regarded by Memcheck as undefined -- this flag only affects its
-      contents.
-      </para>
-    </listitem>
-  </varlistentry>
-
-  <varlistentry id="opt.free-fill" xreflabel="--free-fill">
-    <term>
-      <option><![CDATA[--free-fill=<hexnumber> ]]></option>
-    </term>
-    <listitem>
-      <para>Fills blocks freed
-      by <computeroutput>free</computeroutput>,
-         <computeroutput>delete</computeroutput>, etc, with the
-      specified byte.  This can be useful when trying to shake out
-      obscure memory corruption problems.  The freed area is still
-      regarded by Memcheck as not valid for access -- this flag only
-      affects its contents.
-      </para>
-    </listitem>
-  </varlistentry>
-
-</variablelist>
-<!-- end of xi:include in the manpage -->
-
-</sect1>
-
-
 <sect1 id="mc-manual.errormsgs"
        xreflabel="Explanation of error messages from Memcheck">
 <title>Explanation of error messages from Memcheck</title>
 
-<para>Despite considerable sophistication under the hood, Memcheck can
-only really detect two kinds of errors: use of illegal addresses, and
-use of undefined values.  Nevertheless, this is enough to help you
-discover all sorts of memory-management problems in your code.  This
-section presents a quick summary of what error messages mean.  The
-precise behaviour of the error-checking machinery is described in 
-<xref linkend="mc-manual.machine"/>.</para>
+<para>Memcheck issues a range of error messages.  This section presents a
+quick summary of what error messages mean.  The precise behaviour of the
+error-checking machinery is described in <xref
+linkend="mc-manual.machine"/>.</para>
 
 
 <sect2 id="mc-manual.badrw" 
@@ -822,6 +569,256 @@ two examples show.</para>
 
 </sect1>
 
+
+
+<sect1 id="mc-manual.flags" 
+       xreflabel="Command-line flags specific to Memcheck">
+<title>Command-line flags specific to Memcheck</title>
+
+<!-- start of xi:include in the manpage -->
+<variablelist id="mc.opts.list">
+
+  <varlistentry id="opt.leak-check" xreflabel="--leak-check">
+    <term>
+      <option><![CDATA[--leak-check=<no|summary|yes|full> [default: summary] ]]></option>
+    </term>
+    <listitem>
+      <para>When enabled, search for memory leaks when the client
+      program finishes.  If set to <varname>summary</varname>, it says how
+      many leaks occurred.  If set to <varname>full</varname> or
+      <varname>yes</varname>, it also gives details of each individual
+      leak.</para>
+    </listitem>
+  </varlistentry>
+
+  <varlistentry id="opt.leak-resolution" xreflabel="--leak-resolution">
+    <term>
+      <option><![CDATA[--leak-resolution=<low|med|high> [default: high] ]]></option>
+    </term>
+    <listitem>
+      <para>When doing leak checking, determines how willing
+      Memcheck is to consider different backtraces to
+      be the same for the purposes of merging multiple leaks into a single
+      leak report.  When set to <varname>low</varname>, only the first
+      two entries need match.  When <varname>med</varname>, four entries
+      have to match.  When <varname>high</varname>, all entries need to
+      match.</para>
+
+      <para>For hardcore leak debugging, you probably want to use
+      <option>--leak-resolution=high</option> together with
+      <option>--num-callers=40</option> or some such large number.
+      </para>
+
+      <para>Note that the <option>--leak-resolution</option> setting
+      does not affect Memcheck's ability to find
+      leaks.  It only changes how the results are presented.</para>
+    </listitem>
+  </varlistentry>
+
+  <varlistentry id="opt.show-reachable" xreflabel="--show-reachable">
+    <term>
+      <option><![CDATA[--show-reachable=<yes|no> [default: no] ]]></option>
+    </term>
+    <listitem>
+      <para>When disabled, the memory leak detector only shows "definitely
+      lost" and "possibly lost" blocks.  When enabled, the leak detector also
+      shows "reachable" and "indirectly lost" blocks.  (In other words, it
+      shows all blocks, except suppressed ones, so
+      <option>--show-all</option> would be a better name for
+      it.)</para>
+    </listitem>
+  </varlistentry>
+
+  <varlistentry id="opt.undef-value-errors" xreflabel="--undef-value-errors">
+    <term>
+      <option><![CDATA[--undef-value-errors=<yes|no> [default: yes] ]]></option>
+    </term>
+    <listitem>
+      <para>Controls whether Memcheck reports
+      uses of undefined value errors.  Set this to
+      <varname>no</varname> if you don't want to see undefined value
+      errors.  It also has the side effect of speeding up
+      Memcheck somewhat.
+      </para>
+    </listitem>
+  </varlistentry>
+
+  <varlistentry id="opt.track-origins" xreflabel="--track-origins">
+    <term>
+      <option><![CDATA[--track-origins=<yes|no> [default: no] ]]></option>
+    </term>
+      <listitem>
+        <para>Controls whether Memcheck tracks
+        the origin of uninitialised values.  By default, it does not,
+        which means that although it can tell you that an
+        uninitialised value is being used in a dangerous way, it
+        cannot tell you where the uninitialised value came from.  This
+        often makes it difficult to track down the root problem.
+        </para>
+        <para>When set
+        to <varname>yes</varname>, Memcheck keeps
+        track of the origins of all uninitialised values.  Then, when
+        an uninitialised value error is
+        reported, Memcheck will try to show the
+        origin of the value.  An origin can be one of the following
+        four places: a heap block, a stack allocation, a client
+        request, or miscellaneous other sources (eg, a call
+        to <varname>brk</varname>).
+        </para>
+        <para>For uninitialised values originating from a heap
+        block, Memcheck shows where the block was
+        allocated.  For uninitialised values originating from a stack
+        allocation, Memcheck can tell you which
+        function allocated the value, but no more than that -- typically
+        it shows you the source location of the opening brace of the
+        function.  So you should carefully check that all of the
+        function's local variables are initialised properly.
+        </para>
+        <para>Performance overhead: origin tracking is expensive.  It
+        halves Memcheck's speed and increases
+        memory use by a minimum of 100MB, and possibly more.
+        Nevertheless it can drastically reduce the effort required to
+        identify the root cause of uninitialised value errors, and so
+        is often a programmer productivity win, despite running
+        more slowly.
+        </para>
+        <para>Accuracy: Memcheck tracks origins
+        quite accurately.  To avoid very large space and time
+        overheads, some approximations are made.  It is possible,
+        although unlikely, that Memcheck will report an incorrect origin, or
+        not be able to identify any origin.
+        </para>
+        <para>Note that the combination
+        <option>--track-origins=yes</option>
+        and <option>--undef-value-errors=no</option> is
+        nonsensical.  Memcheck checks for and
+        rejects this combination at startup.
+        </para>
+      </listitem>
+  </varlistentry>
+
+  <varlistentry id="opt.partial-loads-ok" xreflabel="--partial-loads-ok">
+    <term>
+      <option><![CDATA[--partial-loads-ok=<yes|no> [default: no] ]]></option>
+    </term>
+    <listitem>
+      <para>Controls how Memcheck handles word-sized,
+      word-aligned loads from addresses for which some bytes are
+      addressable and others are not.  When <varname>yes</varname>, such
+      loads do not produce an address error.  Instead, loaded bytes
+      originating from illegal addresses are marked as uninitialised, and
+      those corresponding to legal addresses are handled in the normal
+      way.</para>
+
+      <para>When <varname>no</varname>, loads from partially invalid
+      addresses are treated the same as loads from completely invalid
+      addresses: an illegal-address error is issued, and the resulting
+      bytes are marked as initialised.</para>
+
+      <para>Note that code that behaves in this way is in violation of
+      the the ISO C/C++ standards, and should be considered broken.  If
+      at all possible, such code should be fixed.  This flag should be
+      used only as a last resort.</para>
+    </listitem>
+  </varlistentry>
+
+  <varlistentry id="opt.freelist-vol" xreflabel="--freelist-vol">
+    <term>
+      <option><![CDATA[--freelist-vol=<number> [default: 10000000] ]]></option>
+    </term>
+    <listitem>
+      <para>When the client program releases memory using
+      <function>free</function> (in <literal>C</literal>) or
+      <computeroutput>delete</computeroutput>
+      (<literal>C++</literal>), that memory is not immediately made
+      available for re-allocation.  Instead, it is marked inaccessible
+      and placed in a queue of freed blocks.  The purpose is to defer as
+      long as possible the point at which freed-up memory comes back
+      into circulation.  This increases the chance that
+      Memcheck will be able to detect invalid
+      accesses to blocks for some significant period of time after they
+      have been freed.</para>
+
+      <para>This flag specifies the maximum total size, in bytes, of the
+      blocks in the queue.  The default value is ten million bytes.
+      Increasing this increases the total amount of memory used by
+      Memcheck but may detect invalid uses of freed
+      blocks which would otherwise go undetected.</para>
+    </listitem>
+  </varlistentry>
+
+  <varlistentry id="opt.workaround-gcc296-bugs" xreflabel="--workaround-gcc296-bugs">
+    <term>
+      <option><![CDATA[--workaround-gcc296-bugs=<yes|no> [default: no] ]]></option>
+    </term>
+    <listitem>
+      <para>When enabled, assume that reads and writes some small
+      distance below the stack pointer are due to bugs in GCC 2.96, and
+      does not report them.  The "small distance" is 256 bytes by
+      default.  Note that GCC 2.96 is the default compiler on some ancient
+      Linux distributions (RedHat 7.X) and so you may need to use this
+      flag.  Do not use it if you do not have to, as it can cause real
+      errors to be overlooked.  A better alternative is to use a more
+      recent GCC in which this bug is fixed.</para>
+
+      <para>You may also need to use this flag when working with
+      GCC 3.X or 4.X on 32-bit PowerPC Linux.  This is because
+      GCC generates code which occasionally accesses below the
+      stack pointer, particularly for floating-point to/from integer
+      conversions.  This is in violation of the 32-bit PowerPC ELF
+      specification, which makes no provision for locations below the
+      stack pointer to be accessible.</para>
+    </listitem>
+  </varlistentry>
+
+  <varlistentry id="opt.ignore-ranges" xreflabel="--ignore-ranges">
+    <term>
+      <option><![CDATA[--ignore-ranges=0xPP-0xQQ[,0xRR-0xSS] ]]></option>
+    </term>
+    <listitem>
+    <para>Any ranges listed in this option (and multiple ranges can be
+    specified, separated by commas) will be ignored by Memcheck's
+    addressability checking.</para>
+    </listitem>
+  </varlistentry>
+
+  <varlistentry id="opt.malloc-fill" xreflabel="--malloc-fill">
+    <term>
+      <option><![CDATA[--malloc-fill=<hexnumber> ]]></option>
+    </term>
+    <listitem>
+      <para>Fills blocks allocated
+      by <computeroutput>malloc</computeroutput>,
+         <computeroutput>new</computeroutput>, etc, but not
+      by <computeroutput>calloc</computeroutput>, with the specified
+      byte.  This can be useful when trying to shake out obscure
+      memory corruption problems.  The allocated area is still
+      regarded by Memcheck as undefined -- this flag only affects its
+      contents.
+      </para>
+    </listitem>
+  </varlistentry>
+
+  <varlistentry id="opt.free-fill" xreflabel="--free-fill">
+    <term>
+      <option><![CDATA[--free-fill=<hexnumber> ]]></option>
+    </term>
+    <listitem>
+      <para>Fills blocks freed
+      by <computeroutput>free</computeroutput>,
+         <computeroutput>delete</computeroutput>, etc, with the
+      specified byte value.  This can be useful when trying to shake out
+      obscure memory corruption problems.  The freed area is still
+      regarded by Memcheck as not valid for access -- this flag only
+      affects its contents.
+      </para>
+    </listitem>
+  </varlistentry>
+
+</variablelist>
+<!-- end of xi:include in the manpage -->
+
+</sect1>
 
 
 <sect1 id="mc-manual.suppfiles" xreflabel="Writing suppression files">

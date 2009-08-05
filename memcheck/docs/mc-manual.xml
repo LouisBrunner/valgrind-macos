@@ -257,6 +257,17 @@ difficult-to-diagnose crashes.</para>
     </listitem>
   </varlistentry>
 
+  <varlistentry id="opt.ignore-ranges" xreflabel="--ignore-ranges">
+    <term>
+      <option><![CDATA[--ignore-ranges=0xPP-0xQQ[,0xRR-0xSS] ]]></option>
+    </term>
+    <listitem>
+    <para>Any ranges listed in this option (and multiple ranges can be
+    specified, separated by commas) will be ignored by Memcheck's
+    addressability checking.
+    </listitem>
+  </varlistentry>
+
   <varlistentry id="opt.malloc-fill" xreflabel="--malloc-fill">
     <term>
       <option><![CDATA[--malloc-fill=<hexnumber> ]]></option>

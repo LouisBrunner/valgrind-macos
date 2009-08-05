@@ -61,11 +61,11 @@ really exist.</para>
 <title>Running your program under Memcheck</title>
 
 <para>If you normally run your program like this:</para>
-<programlisting>    myprog arg1 arg2
+<programlisting>  myprog arg1 arg2
 </programlisting>
 
 <para>Use this command line:</para>
-<programlisting>    valgrind --leak-check=yes myprog arg1 arg2
+<programlisting>  valgrind --leak-check=yes myprog arg1 arg2
 </programlisting>
 
 <para>Memcheck is the default tool.  The <option>--leak-check</option>

@@ -537,7 +537,7 @@ static Bool bbv_process_cmd_line_option(Char* arg)
    else if VG_STR_CLO  (arg, "--pc-out-file",      clo_pc_out_file) {
       generate_pc_file = True;
    }
-   else if VG_XACT_CLO (arg, "--instr-count-only", instr_count_only, True) {}
+   else if VG_BOOL_CLO (arg, "--instr-count-only", instr_count_only) {}
    else {
       return False;
    }
@@ -547,10 +547,12 @@ static Bool bbv_process_cmd_line_option(Char* arg)
 
 static void bbv_print_usage(void)
 {
-   VG_(printf) ("   --bb-out-file=<file>  filename for basic block vector info\n");
-   VG_(printf) ("   --pc-out-file=<file>  filename for basic block addresses and function names\n");
-   VG_(printf) ("   --interval-size=<num> interval size\n");
-   VG_(printf) ("   --instr-count-only    only print total instruction count\n");
+   VG_(printf)(
+"   --bb-out-file=<file>       filename for BBV info\n"
+"   --pc-out-file=<file>       filename for BB addresses and function names\n"
+"   --interval-size=<num>      interval size\n"
+"   --instr-count-only=yes|no  only print total instruction count\n"
+   );
 }
 
 static void bbv_print_debug_usage(void)

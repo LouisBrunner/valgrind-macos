@@ -14,108 +14,11 @@ command line.</para>
 <sect1 id="lk-manual.overview" xreflabel="Overview">
 <title>Overview</title>
 
-<para>Lackey is a simple valgrind tool that does some basic program
-measurement.  It adds quite a lot of simple instrumentation to the
-program's code.  It is primarily intended to be of use as an example
-tool, and consequently emphasises clarity of implementation
-over performance.</para>
-
-<para>It measures and reports various things.</para>
-
-<orderedlist>
-
- <listitem>
-  <para>When command line option
-  <option>--basic-counts=yes</option> is specified,
-  it prints the following statistics and information about the execution of
-  the client program:</para>
-
-  <orderedlist>
-
-   <listitem>
-    <para>The number of calls to
-    <computeroutput>_dl_runtime_resolve()</computeroutput>, the
-    function in glibc's dynamic linker that resolves function
-    references to shared objects.</para>
-    <para>You can change the name of the function tracked with command line
-    option <option>--fnname=&lt;name&gt;</option>.</para>
-   </listitem>
-
-   <listitem>
-    <para>The number of conditional branches encountered and the
-    number and proportion of those taken.</para>
-   </listitem>
-
-   <listitem>
-    <para>The number of superblocks entered and completed by the
-    program.  Note that due to optimisations done by the JIT, this
-    is not at all an accurate value.</para>
-   </listitem>
-
-   <listitem>
-    <para>The number of guest (x86, amd64, ppc, etc.) instructions and IR
-    statements executed.  IR is Valgrind's RISC-like intermediate
-    representation via which all instrumentation is done.
-    </para>
-   </listitem>
-
-   <listitem>
-    <para>Ratios between some of these counts.</para>
-   </listitem>
-
-   <listitem>
-    <para>The exit code of the client program.</para>
-   </listitem>
-
-  </orderedlist>
- </listitem>
-
- <listitem>
-  <para>When command line option
-  <option>--detailed-counts=yes</option> is
-  specified, a table is printed with counts of loads, stores and ALU
-  operations for various types of operands.</para>
-
-  <para>The types are identified by their IR name ("I1" ... "I128",
-  "F32", "F64", and "V128").</para>
- </listitem>
-
- <listitem>
-  <para>When command line option
-  <option>--trace-mem=yes</option> is
-  specified, it prints out the size and address of almost every load and
-  store made by the program.  See the comments at the top of the file
-  <computeroutput>lackey/lk_main.c</computeroutput> for details about
-  the output format, how it works, and inaccuracies in the address trace.
-  </para>
- </listitem>
-
- <listitem>
-  <para>When command line option
-  <option>--trace-superblocks=yes</option> is
-  specified, it prints out the address of every superblock 
-  (extended basic block) executed by the program.  This is
-  primarily of interest to Valgrind developers.  See the comments at 
-  the top of the file <computeroutput>lackey/lk_main.c</computeroutput>
-  for details about the output format.
-  </para>
- </listitem>
-
-</orderedlist>
-
-<para>Note that Lackey runs quite slowly, especially when
-<option>--detailed-counts=yes</option> is specified.
-It could be made to run a lot faster by doing a slightly more
-sophisticated job of the instrumentation, but that would undermine
-its role as a simple example tool.  Hence we have chosen not to do
-so.</para>
-
-<para>Note also that <option>--trace-mem=yes</option>
-and <option>--trace-superblocks=yes</option> create
-immense amounts of output.  If you are saving the output in a file,
-you can eat up tens of gigabytes of disk space very quickly.
-As a result of printing out so much stuff, they also cause the program
-to run absolutely utterly unbelievably slowly.</para>
+<para>Lackey is a simple Valgrind tool that does various kinds of basic
+program measurement.  It adds quite a lot of simple instrumentation to the
+program's code.  It is primarily intended to be of use as an example tool,
+and consequently emphasises clarity of implementation over
+performance.</para>
 
 </sect1>
 
@@ -133,7 +36,47 @@ to run absolutely utterly unbelievably slowly.</para>
       <option><![CDATA[--basic-counts=<no|yes> [default: yes] ]]></option>
     </term>
     <listitem>
-      <para>Count basic events, as described above.</para>
+      <para>When enabled, Lackey prints the following statistics and
+      information about the execution of the client program:</para>
+
+      <orderedlist>
+
+       <listitem>
+        <para>The number of calls to the function specified by the
+        <option>--fnname</option> option (the default is
+        <computeroutput>main</computeroutput>).
+        If the program has had its symbols stripped, the count will always
+        be zero.</para>
+       </listitem>
+
+       <listitem>
+        <para>The number of conditional branches encountered and the
+        number and proportion of those taken.</para>
+       </listitem>
+
+       <listitem>
+        <para>The number of superblocks entered and completed by the
+        program.  Note that due to optimisations done by the JIT, this
+        is not at all an accurate value.</para>
+       </listitem>
+
+       <listitem>
+        <para>The number of guest (x86, amd64, ppc, etc.) instructions and IR
+        statements executed.  IR is Valgrind's RISC-like intermediate
+        representation via which all instrumentation is done.
+        </para>
+       </listitem>
+
+       <listitem>
+        <para>Ratios between some of these counts.</para>
+       </listitem>
+
+       <listitem>
+        <para>The exit code of the client program.</para>
+       </listitem>
+
+      </orderedlist>
+
     </listitem>
   </varlistentry>
 
@@ -142,17 +85,10 @@ to run absolutely utterly unbelievably slowly.</para>
       <option><![CDATA[--detailed-counts=<no|yes> [default: no] ]]></option>
     </term>
     <listitem>
-      <para>Count loads, stores and alu ops, differentiated by their
-            IR types.</para>
-    </listitem>
-  </varlistentry>
-
-  <varlistentry id="opt.fnname" xreflabel="--fnname">
-    <term>
-      <option><![CDATA[--fnname=<name> [default: _dl_runtime_resolve()] ]]></option>
-    </term>
-    <listitem>
-      <para>Count calls to the function &lt;name&gt;.</para>
+      <para>When enabled, Lackey prints a table containing counts of loads,
+      stores and ALU operations, differentiated by their IR types.
+      The IR types are identified by their IR name ("I1", "I8", ... "I128",
+      "F32", "F64", and "V128").</para>
     </listitem>
   </varlistentry>
 
@@ -161,8 +97,11 @@ to run absolutely utterly unbelievably slowly.</para>
       <option><![CDATA[--trace-mem=<no|yes> [default: no] ]]></option>
     </term>
     <listitem>
-      <para>Produce a log of all memory references, as described
-      above.</para>
+      <para>When enabled, Lackey prints the size and address of almost every
+      memory access made by the program.  See the comments at the top of
+      the file <computeroutput>lackey/lk_main.c</computeroutput> for details
+      about the output format, how it works, and inaccuracies in the address
+      trace.  Note that this option produces immense amounts of output.</para>
     </listitem>
   </varlistentry>
 
@@ -171,9 +110,24 @@ to run absolutely utterly unbelievably slowly.</para>
       <option><![CDATA[--trace-superblocks=<no|yes> [default: no] ]]></option>
     </term>
     <listitem>
-      <para>Print a line of text giving the address of each superblock
-            (single entry, multiple exit chunk of code) executed
-            by the program.</para>
+      <para>When enabled, 
+      Lackey prints out the address of every superblock 
+      (a single entry, multiple exit, linear chunk of code) executed by the
+      program.  This is primarily of interest to Valgrind developers.  See
+      the comments at the top of the file
+      <computeroutput>lackey/lk_main.c</computeroutput> for details about
+      the output format.  Note that this option produces large amounts of
+      output.</para>
+    </listitem>
+  </varlistentry>
+
+  <varlistentry id="opt.fnname" xreflabel="--fnname">
+    <term>
+      <option><![CDATA[--fnname=<name> [default: main] ]]></option>
+    </term>
+    <listitem>
+      <para>Changes the function for which calls are counted when
+      <option>--basic-counts=yes</option> is specified.</para>
     </listitem>
   </varlistentry>
 

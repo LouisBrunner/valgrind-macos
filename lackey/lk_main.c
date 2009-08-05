@@ -132,7 +132,7 @@
 //   want to analyse locality of memory accesses -- but is not good if
 //   absolute addresses are important.
 //
-// Despite all these warnings, Dullard's results should be good enough for a
+// Despite all these warnings, Lackey's results should be good enough for a
 // wide range of purposes.  For example, Cachegrind shares all the above
 // shortcomings and it is still useful.
 //
@@ -192,7 +192,7 @@ static Bool clo_trace_sbs       = False;
 /* The name of the function of which the number of calls (under
  * --basic-counts=yes) is to be counted, with default. Override with command
  * line option --fnname. */
-static Char* clo_fnname = "_dl_runtime_resolve";
+static Char* clo_fnname = "main";
 
 static Bool lk_process_cmd_line_option(Char* arg)
 {
@@ -212,12 +212,12 @@ static Bool lk_process_cmd_line_option(Char* arg)
 static void lk_print_usage(void)
 {  
    VG_(printf)(
-"    --basic-counts=no|yes     count instructions, jumps, etc. [no]\n"
+"    --basic-counts=no|yes     count instructions, jumps, etc. [yes]\n"
 "    --detailed-counts=no|yes  count loads, stores and alu ops [no]\n"
 "    --trace-mem=no|yes        trace all loads and stores [no]\n"
 "    --trace-superblocks=no|yes  trace all superblock entries [no]\n"
 "    --fnname=<name>           count calls to <name> (only used if\n"
-"                              --basic-count=yes)  [_dl_runtime_resolve]\n"
+"                              --basic-count=yes)  [main]\n"
    );
 }
 
@@ -883,7 +883,8 @@ static void lk_fini(Int exitcode)
       ULong total_Jccs = n_Jccs + n_IJccs;
       ULong taken_Jccs = (n_Jccs - n_Jccs_untaken) + n_IJccs_untaken;
 
-      VG_(umsg)("Counted %'llu calls to %s()\n", n_func_calls, clo_fnname);
+      VG_(umsg)("Counted %'llu call%s to %s()\n",
+                n_func_calls, ( n_func_calls==1 ? "" : "s" ), clo_fnname);
 
       VG_(umsg)("\n");
       VG_(umsg)("Jccs:\n");

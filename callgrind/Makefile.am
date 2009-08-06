@@ -5,8 +5,7 @@ EXTRA_DIST =  \
 	docs/cl-manual.xml \
 	docs/cl-format.xml \
 	docs/man-annotate.xml \
-	docs/man-control.xml \
-	docs/man-callgrind.xml
+	docs/man-control.xml
 
 #----------------------------------------------------------------------------
 # Headers, etc

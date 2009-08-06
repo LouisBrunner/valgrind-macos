@@ -906,7 +906,18 @@ Also see <xref linkend="cl-manual.cycles"/>.</para>
       <option><![CDATA[--simulate-wb=<yes|no> [default: no] ]]></option>
     </term>
     <listitem>
-      <para>Specify whether write-back events should be counted.</para>
+      <para>Specify whether write-back behavior should be simulated, allowing
+      to distinguish L2 caches misses with and without write backs.
+      The cache model of Cachegrind/Callgrind does not specify write-through
+      vs. write-back behavior, and this also is not relevant for the number
+      of generated miss counts. However, with explicit write-back simulation
+      it can be decided whether a miss triggers not only the loading of a new
+      cache line, but also if a write back of a dirty cache line had to take
+      place before. The new dirty miss events are I2dmr, D2dmr, and D2dmw,
+      for misses because of instruction read, data read, and data write,
+      respectively. As they produce two memory transactions, they should
+      account for a doubled time estimation in relation to a normal miss.
+      </para>
     </listitem>
   </varlistentry>
 
@@ -930,7 +941,35 @@ Also see <xref linkend="cl-manual.cycles"/>.</para>
       <option><![CDATA[--cacheuse=<yes|no> [default: no] ]]></option>
     </term>
     <listitem>
-      <para>Specify whether cache block use should be collected.
+      <para>Specify whether cache line use should be collected. For every
+      cache line, from loading to it being evicted, the number of accesses
+      as well as the number of actually used bytes is determined. This
+      behavior is related to the code which triggered loading of the cache
+      line. In contrast to miss counters, which shows the position where
+      the symptoms of bad cache behavior (i.e. latencies) happens, the
+      use counters try to pinpoint at the reason (i.e. the code with the
+      bad access behavior). The new counters are defined in a way such
+      that worse behavior results in higher cost.
+      AcCost1 and AcCost2 are counters showing bad temporal locality
+      for L1 and L2 caches, respectively. This is done by summing up
+      reciprocal values of the numbers of accesses of each cache line,
+      multiplied by 1000 (as only integer costs are allowed). E.g. for
+      a given source line with 5 read accesses, a value of 5000 AcCost
+      means that for every access, a new cache line was loaded and directly
+      evicted afterwards without further accesses. Similarly, SpLoss1/2
+      shows bad spatial locality for L1 and L2 caches, respectively. It
+      gives the <emphasis>spatial loss</emphasis> count of bytes which
+      were loaded into cache but never accessed. It pinpoints at code
+      accessing data in a way such that cache space is wasted. This hints
+      at bad layout of data structures in memory. Assuming a cache line
+      size of 64 bytes and 100 L1 misses for a given source line, the
+      loading of 6400 bytes into L1 was triggered. If SpLoss1 shows a
+      value of 3200 for this line, this means that half of the loaded data was
+      never used, or using a better data layout, only half of the cache
+      space would have been needed.
+      Please note that for cache line use counters, it currently is
+      not possible to provide meaningful inclusive costs. Therefore,
+      inclusive cost of these counters should be ignored.
       </para>
     </listitem>
   </varlistentry>

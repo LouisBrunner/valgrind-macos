@@ -97,11 +97,10 @@ for profiling functions called from multiple call sites, and where
 optimization opportunities depend on changing code in the callers, in
 particular by reducing the call count.</para>
 
-<para>Callgrind's cache simulation is based on the 
-<ulink url="&cg-tool-url;">Cachegrind tool</ulink>. Read 
-<ulink url="&cg-doc-url;">Cachegrind's documentation</ulink> first.
-The material below describes the features supported in addition to 
-Cachegrind's features.</para>
+<para>Callgrind's cache simulation is based on that of Cachegrind.
+Read the documentation for <xref linkend="cg-manual"/> first.  The material
+below describes the features supported in addition to Cachegrind's
+features.</para>
 
 <para>Callgrind's ability to detect function calls and returns depends
 on the instruction set of the platform it is run on.  It works best

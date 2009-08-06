@@ -580,10 +580,10 @@ void CLG_(print_usage)(void)
 "\n   cost entity separation options:\n"
 "    --separate-threads=no|yes Separate data per thread [no]\n"
 "    --separate-callers=<n>    Separate functions by call chain length [0]\n"
-"    --separate-recs=<n>       Separate function recursions upto level [2]\n"
-"    --skip-plt=no|yes         Ignore calls to/from PLT sections? [yes]\n"
-"    --separate-recs<n>=<f>    Separate <n> recursions for function <f>\n"
 "    --separate-callers<n>=<f> Separate <n> callers for function <f>\n"
+"    --separate-recs=<n>       Separate function recursions up to level [2]\n"
+"    --separate-recs<n>=<f>    Separate <n> recursions for function <f>\n"
+"    --skip-plt=no|yes         Ignore calls to/from PLT sections? [yes]\n"
 "    --skip-direct-rec=no|yes  Ignore direct recursions? [yes]\n"
 "    --fn-skip=<function>      Ignore calls to/from function?\n"
 #if CLG_EXPERIMENTAL

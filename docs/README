@@ -121,21 +121,22 @@ in recent distros.
 
 Notes [May 2009]
 -----------------
-For Ubuntu 9.04, to do non-print-docs builds (ie. with BUILD_ALL_DOCS
-commented out) I had to:
+For Ubuntu 9.04, to build HTML docs I had to:
 
   sudo apt-get install docbook docbook-xsl
 
 Actually, I'm not sure if the 'docbook' is necessary, but 'docbook-xsl'
 definitely is.
 
-Then I had to change the value of XSL_MAN_STYLE from this:
+To build the man pages I also had to change the value of XSL_MAN_STYLE from this:
 
     /usr/share/xml/docbook/stylesheet/nwalsh/current/manpages/docbook.xsl
 
 to this:
 
     /usr/share/xml/docbook/stylesheet/nwalsh/manpages/docbook.xsl
+
+I haven't succeeded in building the print docs.
 
 Notes [Mar. 2007]
 -----------------

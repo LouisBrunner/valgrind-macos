@@ -1220,21 +1220,21 @@ their arguments.</para>
 <variablelist id="callgrind_control.opts.list">
 
   <varlistentry>
-    <term><option>-h, --help</option></term>
+    <term><option>-h --help</option></term>
     <listitem>
       <para>Show a short description, usage, and summary of options.</para>
     </listitem>
   </varlistentry>
 
   <varlistentry>
-    <term><option>-v, --version</option></term>
+    <term><option>-v --version</option></term>
     <listitem>
       <para>Show version of callgrind_control.</para>
     </listitem>
   </varlistentry>
 
   <varlistentry>
-    <term><option>-l, --long</option></term>
+    <term><option>-l --long</option></term>
     <listitem>
       <para>Show also the working directory, in addition to the brief
       information given by default.
@@ -1243,14 +1243,14 @@ their arguments.</para>
   </varlistentry>
 
   <varlistentry>
-    <term><option>-s, --stat</option></term>
+    <term><option>-s --stat</option></term>
     <listitem>
       <para>Show statistics information about active Callgrind runs.</para>
     </listitem>
   </varlistentry>
 
   <varlistentry>
-    <term><option>-b, --back</option></term>
+    <term><option>-b --back</option></term>
     <listitem>
       <para>Show stack/back traces of each thread in active Callgrind runs. For
       each active function in the stack trace, also the number of invocations
@@ -1273,7 +1273,7 @@ their arguments.</para>
   </varlistentry>
 
   <varlistentry>
-    <term><option>-d, --dump [desc]</option> (default: empty description)</term>
+    <term><option>-d --dump [desc]</option> (default: empty description)</term>
     <listitem>
       <para>Request the dumping of profile information. Optionally, a 
       description can be specified which is written into the dump as part of 
@@ -1283,21 +1283,21 @@ their arguments.</para>
   </varlistentry>
 
   <varlistentry>
-    <term><option>-z, --zero </option></term>
+    <term><option>-z --zero </option></term>
     <listitem>
       <para>Zero all event counters.</para>
     </listitem>
   </varlistentry>
 
   <varlistentry>
-    <term><option>-k, --kill</option></term>
+    <term><option>-k --kill</option></term>
     <listitem>
       <para>Force a Callgrind run to be terminated.</para>
     </listitem>
   </varlistentry>
 
   <varlistentry>
-    <term><option>-i, --instr [on|off]</option> (default: on)</term>
+    <term><option>-i --instr [on|off]</option> (default: on)</term>
     <listitem>
       <para>Switch instrumentation mode on or off. If a Callgrind run has
       instrumentation disabled, no simulation is done and no events are

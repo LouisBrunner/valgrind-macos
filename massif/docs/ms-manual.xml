@@ -49,41 +49,19 @@ which parts of your program are responsible for allocating the heap memory.
 </sect1>
 
 
-<sect1 id="ms-manual.using" xreflabel="Using Massif">
-<title>Using Massif</title>
-
+<sect1 id="ms-manual.using" xreflabel="Using Massif and ms_print">
+<title>Using Massif and ms_print</title>
 
 <para>First off, as for the other Valgrind tools, you should compile with
 debugging info (the <option>-g</option> flag).  It shouldn't
 matter much what optimisation level you compile your program with, as this
 is unlikely to affect the heap memory usage.</para>
 
-<para>Then, to gather heap profiling information about the program
-<computeroutput>prog</computeroutput>, type:</para>
-<screen><![CDATA[
-valgrind --tool=massif prog
-]]></screen>
+<para>Then, you need to run Massif itself to gather the profiling
+information, and then run ms_print to present it in a readable way.</para>
 
-<para>The program will execute (slowly).  Upon completion, no summary
-statistics are printed to Valgrind's commentary;  all of Massif's profiling
-data is written to a file.  By default, this file is called
-<filename>massif.out.&lt;pid&gt;</filename>, where
-<filename>&lt;pid&gt;</filename> is the process ID, although this filename
-can be changed with the <option>--massif-out-file</option> option.</para>
 
-<para>To see the information gathered by Massif in an easy-to-read form, use
-the ms_print script.  If the output file's name is
-<filename>massif.out.12345</filename>, type:</para>
-<screen><![CDATA[
-ms_print massif.out.12345]]></screen>
 
-<para>ms_print will produce (a) a graph showing the memory consumption over
-the program's execution, and (b) detailed information about the responsible
-allocation sites at various points in the program, including the point of
-peak memory allocation.  The use of a separate script for presenting the
-results is deliberate:  it separates the data gathering from its
-presentation, and means that new methods of presenting the data can be added in
-the future.</para>
 
 <sect2 id="ms-manual.anexample" xreflabel="An Example">
 <title>An Example Program</title>
@@ -126,6 +104,45 @@ on the heap.</para>
 31         return 0;
 32      }
 ]]></screen>
+
+</sect2>
+
+
+<sect2 id="ms-manual.running-massif" xreflabel="Running Massif">
+<title>Running Massif</title>
+
+<para>To gather heap profiling information about the program
+<computeroutput>prog</computeroutput>, type:</para>
+<screen><![CDATA[
+valgrind --tool=massif prog
+]]></screen>
+
+<para>The program will execute (slowly).  Upon completion, no summary
+statistics are printed to Valgrind's commentary;  all of Massif's profiling
+data is written to a file.  By default, this file is called
+<filename>massif.out.&lt;pid&gt;</filename>, where
+<filename>&lt;pid&gt;</filename> is the process ID, although this filename
+can be changed with the <option>--massif-out-file</option> option.</para>
+
+</sect2>
+
+
+<sect2 id="ms-manual.running-ms_print" xreflabel="Running ms_print">
+<title>Running ms_print</title>
+
+<para>To see the information gathered by Massif in an easy-to-read form, use
+ms_print.  If the output file's name is
+<filename>massif.out.12345</filename>, type:</para>
+<screen><![CDATA[
+ms_print massif.out.12345]]></screen>
+
+<para>ms_print will produce (a) a graph showing the memory consumption over
+the program's execution, and (b) detailed information about the responsible
+allocation sites at various points in the program, including the point of
+peak memory allocation.  The use of a separate script for presenting the
+results is deliberate:  it separates the data gathering from its
+presentation, and means that new methods of presenting the data can be added in
+the future.</para>
 
 </sect2>
 
@@ -865,7 +882,7 @@ way.</para>
 </sect1>
 
 <sect1 id="ms-manual.fileformat" xreflabel="fileformat">
-<title>Massif's output file format</title>
+<title>Massif's Output File Format</title>
 <para>Massif's file format is plain text (i.e. not binary) and deliberately
 easy to read for both humans and machines.  Nonetheless, the exact format
 is not described here.  This is because the format is currently very

@@ -146,7 +146,7 @@ usage: cg_annotate [options] output-file [source-files]
 
   options for the user, with defaults in [ ], are:
     -h --help             show this message
-    -v --version          show version
+    --version             show version
     --show=A,B,C          only show figures for events A,B,C [all]
     --sort=A,B,C          sort columns by events A,B,C [event column order]
     --threshold=<0--100>  percentage of counts (of primary sort event) we
@@ -179,7 +179,7 @@ sub process_cmd_line()
         if ($arg =~ /^-/) {
 
             # --version
-            if ($arg =~ /^-v$|^--version$/) {
+            if ($arg =~ /^--version$/) {
                 die("cg_annotate-$version\n");
 
             # --show=A,B,C

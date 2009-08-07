@@ -84,21 +84,21 @@ sub shortHelp {
 sub printHelp {
   printHeader;
 
-  print "Usage: callgrind_control [options] [ <PID>|<Name> ...]\n\n";
-  print "If no PIDs/Names are given, an action is applied to all currently\n";
+  print "Usage: callgrind_control [options] [<pid>|<name> ...]\n\n";
+  print "If no pids/names are given, an action is applied to all currently\n";
   print "active Callgrind runs. Default action is printing short information.\n\n";
   print "Options:\n";
-  print "  -h --help     Show this help text\n";
-  print "  -v --version  Show version\n";
-  print "  -l --long     Show more information\n";
-  print "  -s --stat     Show statistics\n";
-  print "  -b --back     Show stack/back trace\n";
-  print "  -e [A, ...]   Show event counters for A, ... (default: all)\n";
-  print "  -d --dump [s] Request a profile dump using <s> as description\n";
-  print "  -z --zero     Zero all event counters\n";
-  print "  -k --kill     Kill\n";
-  print "  -i [on|off]   Switch instrumentation state on/off (default: on)\n";
-  print "  -w <dir>      Specify the startup directory of an active callgrind run\n";
+  print "  -h --help        Show this help text\n";
+  print "  --version        Show version\n";
+  print "  -l --long        Show more information\n";
+  print "  -s --stat        Show statistics\n";
+  print "  -b --back        Show stack/back trace\n";
+  print "  -e [<A>,...]     Show event counters for <A>,... (default: all)\n";
+  print "  --dump[=<s>]     Request a dump optionally using <s> as description\n";
+  print "  -z --zero        Zero all event counters\n";
+  print "  -k --kill        Kill\n";
+  print "  --instr=<on|off> Switch instrumentation state on/off\n";
+  print "  -w=<dir>         Specify the startup directory of an active Callgrind run\n";
   print "\n";
   exit;
 }
@@ -223,20 +223,76 @@ foreach $arg (@ARGV) {
     if ($requestEvents == 1) { $requestEvents = 2; }
     if ($gotW == 1) { $gotW = 2; }
 
-    if ($arg =~ /^-?-h/) { printHelp; }
-    if ($arg =~ /^-?-v/) { printVersion; }
-    if ($arg =~ /^-?-l/) { $printLong = 1; next; }
-    if ($arg =~ /^-?-s/) { $printStatus = 1; next; }
-    if ($arg =~ /^-?-b/) { $printBacktrace = 1; next; }
-    if ($arg =~ /^-e/) { $requestEvents = 1; next; }
-    if ($arg =~ /^-?-d/) { $requestDump = 1; next; }
-    if ($arg =~ /^-?-z/) { $requestZero = 1; next; }
-    if ($arg =~ /^-?-k/) { $requestKill = 1; next; }
-    if ($arg =~ /^-?-i/) { $switchInstr = 1; $switchInstrMode = "+"; next; }
-    if ($arg =~ /^-w/) { $gotW = 1; next; }
-
-    print "Error: unknown command line option '$arg'.\n";
-    shortHelp;
+    if ($arg =~ /^(-h|--help)$/) {
+	printHelp;
+    }
+    elsif ($arg =~ /^--version$/) {
+	printVersion;
+    }
+    elsif ($arg =~ /^(-l|--long)$/) {
+	$printLong = 1;
+	next;
+    }
+    elsif ($arg =~ /^(-s|--stat)$/) {
+	$printStatus = 1;
+	next;
+    }
+    elsif ($arg =~ /^(-b|--back)$/) {
+	$printBacktrace = 1;
+	next;
+    }
+    elsif ($arg =~ /^-e$/) {
+	$requestEvents = 1;
+	next;
+    }
+    elsif ($arg =~ /^(-d|--dump)(|=.*)$/) {
+	if ($2 ne "") {
+	    $requestDump = 2;
+	    $dumpHint = substr($2,1);
+	}
+	else {
+	    # take next argument as dump hint
+	    $requestDump = 1;
+	}
+	next;
+    }
+    elsif ($arg =~ /^(-z|--zero)$/) {
+	$requestZero = 1;
+	next;
+    }
+    elsif ($arg =~ /^(-k|--kill)$/) {
+	$requestKill = 1;
+	next;
+    }
+    elsif ($arg =~ /^(-i|--instr)(|=on|=off)$/) {
+	$switchInstr = 2;
+	if ($2 eq "=on") {
+	    $switchInstrMode = "+";
+	}
+	elsif ($2 eq "=off") {
+	    $switchInstrMode = "-";
+	}
+	else {
+	    # check next argument for "on" or "off"
+	    $switchInstr = 1;
+	}
+	next;
+    }
+    elsif ($arg =~ /^-w(|=.*)$/) {
+	if ($1 ne "") {
+	    $gotW = 2;
+	    $workingDir = substr($1,1);
+	}
+	else {
+	    # take next argument as working directory
+	    $gotW = 1;
+	}
+	next;
+    }
+    else {
+	print "Error: unknown command line option '$arg'.\n";
+	shortHelp;
+    }
   }
 
   if ($arg =~ /^[A-Za-z_]/) {
@@ -255,8 +311,15 @@ foreach $arg (@ARGV) {
 
     if ($switchInstr == 1) {
       $switchInstr = 2;
-      if (($arg eq "off") || ($arg eq "no")) {
-	$switchInstrMode = "-";
+      if ($arg eq "on") {
+	  $switchInstrMode = "+";
+      }
+      elsif ($arg eq "off") {
+	  $switchInstrMode = "-";
+      }
+      else {
+	  print "Error: need to specify 'on' or 'off' after '-i'.\n";
+	  shortHelp;
       }
       next;
     }
@@ -265,10 +328,6 @@ foreach $arg (@ARGV) {
   if ($gotW == 1) {
       $gotW = 2;
       $workingDir = $arg;
-      if (!-d $workingDir) {
-	  print "Error: directory '$workingDir' does not exist.\n";
-	  shortHelp;
-      }
       next;
   }
 
@@ -287,11 +346,21 @@ foreach $arg (@ARGV) {
 }
 
 if ($gotW == 1) {
-  print "Error: no directory specified after -w.\n";
+  print "Error: no directory specified after '-w'.\n";
+  shortHelp;
+}
+
+if ($switchInstr == 1) {
+  print "Error: need to specify 'on' or 'off' after '-i'.\n";
   shortHelp;
 }
 
 if ($workingDir ne "") {
+    if (!-d $workingDir) {
+	print "Error: directory '$workingDir' does not exist.\n";
+	shortHelp;
+    }
+
     # Generate dummy information for dummy pid 0
     $pid = "0";
     $mversion{$pid} = "1.0";

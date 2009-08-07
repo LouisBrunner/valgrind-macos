@@ -4210,7 +4210,7 @@ static void hg_print_usage ( void )
 {
    VG_(printf)(
 "    --track-lockorders=no|yes show lock ordering errors? [yes]\n"
-"    --history-level=none|partial|full [full]\n"
+"    --history-level=none|approx|full [full]\n"
 "       full:   show both stack traces for a data race (can be very slow)\n"
 "       approx: full trace for one thread, approx for the other (faster)\n"
 "       none:   only show trace for one thread in a race (fastest)\n"

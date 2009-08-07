@@ -48,13 +48,13 @@ There are two possible reasons for using multithreading in a program:
 
 <para>
 Multithreaded programs can use one or more of the following programming
-paradigms. Which paradigm is appropriate depends a.o. on the application type.
+paradigms. Which paradigm is appropriate depends e.g. on the application type.
 Some examples of multithreaded programming paradigms are:
 <itemizedlist>
   <listitem>
     <para>
       Locking. Data that is shared over threads is protected from concurrent
-      accesses via locking. A.o. the POSIX threads library, the Qt library
+      accesses via locking. E.g. the POSIX threads library, the Qt library
       and the Boost.Thread library support this paradigm directly.
     </para>
   </listitem>
@@ -85,10 +85,9 @@ Some examples of multithreaded programming paradigms are:
       threads is updated via transactions. After each transaction it is
       verified whether there were any conflicting transactions. If there were
       conflicts, the transaction is aborted, otherwise it is committed. This
-      is a so-called optimistic approach. There is a prototype of the Intel C
-      Compiler (<computeroutput>icc</computeroutput>) available that supports
-      STM. Research about the addition of STM support
-      to GCC is ongoing.
+      is a so-called optimistic approach. There is a prototype of the Intel C++
+      Compiler available that supports STM. Research about the addition of
+      STM support to GCC is ongoing.
     </para>
   </listitem>
 </itemizedlist>
@@ -254,7 +253,7 @@ determined by:
 </orderedlist>
 The combination of program order and synchronization order is called the
 <emphasis>happens-before relationship</emphasis>. This concept was first
-defined by S. Adve e.a.  in the paper <emphasis>Detecting data races on weak
+defined by S. Adve et al in the paper <emphasis>Detecting data races on weak
 memory systems</emphasis>, ACM SIGARCH Computer Architecture News, v.19 n.3,
 p.234-243, May 1991.
 </para>
@@ -330,7 +329,7 @@ behavior of the DRD tool itself:</para>
     </term>
     <listitem>
       <para>
-        Controls whether <constant>DRD</constant> detects data races on stack
+        Controls whether DRD detects data races on stack
         variables. Verifying stack variables is disabled by default because
         most programs do not share stack variables over threads.
       </para>
@@ -371,11 +370,11 @@ behavior of the DRD tool itself:</para>
     <listitem>
       <para>
         Whether to report calls to
-        <function>pthread_cond_signal()</function> and
-        <function>pthread_cond_broadcast()</function> where the mutex
+        <function>pthread_cond_signal</function> and
+        <function>pthread_cond_broadcast</function> where the mutex
         associated with the signal through
-        <function>pthread_cond_wait()</function> or
-        <function>pthread_cond_timed_wait()</function>is not locked at
+        <function>pthread_cond_wait</function> or
+        <function>pthread_cond_timed_wait</function>is not locked at
         the time the signal is sent.  Sending a signal without holding
         a lock on the associated mutex is a common programming error
         which can cause subtle race conditions and unpredictable
@@ -635,8 +634,9 @@ The above report has the following meaning:
   <listitem>
     <para>
       Next, the call stack of the conflicting access is displayed. If
-      your program has been compiled with debug information (-g), this
-      call stack will include file names and line numbers. The two
+      your program has been compiled with debug information
+      (<option>-g</option>), this call stack will include file names and
+      line numbers. The two
       bottommost frames in this call stack (<function>clone</function>
       and <function>start_thread</function>) show how the NPTL starts
       a thread. The third frame
@@ -644,7 +644,7 @@ The above report has the following meaning:
       fourth frame (<function>thread_func</function>) is the first
       interesting line because it shows the thread entry point, that
       is the function that has been passed as the third argument to
-      <function>pthread_create()</function>.
+      <function>pthread_create</function>.
     </para>
   </listitem>
   <listitem>
@@ -782,7 +782,7 @@ output reports that the lock acquired at line 51 in source file
     </listitem>
     <listitem>
       <para>
-        Calling <function>pthread_cond_wait()</function> on a mutex
+        Calling <function>pthread_cond_wait</function> on a mutex
         that is not locked, that is locked by another thread or that
         has been locked recursively.
       </para>
@@ -790,7 +790,7 @@ output reports that the lock acquired at line 51 in source file
     <listitem>
       <para>
         Associating two different mutexes with a condition variable
-        through <function>pthread_cond_wait()</function>.
+        through <function>pthread_cond_wait</function>.
       </para>
     </listitem>
     <listitem>
@@ -865,14 +865,14 @@ output reports that the lock acquired at line 51 in source file
 <para>
 Just as for other Valgrind tools it is possible to let a client program
 interact with the DRD tool through client requests. In addition to the
-client requests several macro's have been defined that allow to use the
+client requests several macros have been defined that allow to use the
 client requests in a convenient way.
 </para>
 
 <para>
 The interface between client programs and the DRD tool is defined in
 the header file <literal>&lt;valgrind/drd.h&gt;</literal>. The
-available macro's and client requests are:
+available macros and client requests are:
 <itemizedlist>
   <listitem>
     <para>
@@ -896,7 +896,7 @@ available macro's and client requests are:
   </listitem>
   <listitem>
     <para>
-      The macro's <literal>DRD_IGNORE_VAR(x)</literal>,
+      The macros <literal>DRD_IGNORE_VAR(x)</literal>,
       <literal>ANNOTATE_TRACE_MEMORY(&amp;x)</literal> and the corresponding
       client request <varname>VG_USERREQ__DRD_START_SUPPRESSION</varname>. Some
       applications contain intentional races. There exist e.g. applications
@@ -917,7 +917,7 @@ available macro's and client requests are:
   </listitem>
   <listitem>
     <para>
-      The macro's <literal>DRD_TRACE_VAR(x)</literal>,
+      The macros <literal>DRD_TRACE_VAR(x)</literal>,
       <literal>ANNOTATE_TRACE_MEMORY(&amp;x)</literal>
       and the corresponding client request
       <varname>VG_USERREQ__DRD_START_TRACE_ADDR</varname>. Trace all
@@ -947,7 +947,7 @@ available macro's and client requests are:
       the next access to the variable at the specified address should be
       considered to have happened after the access just before the latest
       <literal>ANNOTATE_HAPPENS_BEFORE(addr)</literal> annotation that
-      references the same variable. The purpose of these two macro's is to
+      references the same variable. The purpose of these two macros is to
       tell DRD about the order of inter-thread memory accesses implemented via
       atomic memory operations.
     </para>
@@ -1104,12 +1104,12 @@ GNOME applications use the threading primitives provided by the
 <computeroutput>gthread</computeroutput> libraries. These libraries
 are built on top of POSIX threads, and hence are directly supported by
 DRD. Please keep in mind that you have to call
-<function>g_thread_init()</function> before creating any threads, or
+<function>g_thread_init</function> before creating any threads, or
 DRD will report several data races on glib functions. See also the
 <ulink
 url="http://library.gnome.org/devel/glib/stable/glib-Threads.html">GLib
 Reference Manual</ulink> for more information about
-<function>g_thread_init()</function>.
+<function>g_thread_init</function>.
 </para>
 
 <para>
@@ -1303,7 +1303,7 @@ information for two purposes:
       To know where the scope ends of POSIX objects that have not been
       destroyed explicitly. It is e.g. not required by the POSIX
       threads standard to call
-      <function>pthread_mutex_destroy()</function> before freeing the
+      <function>pthread_mutex_destroy</function> before freeing the
       memory in which a mutex object resides.
     </para>
   </listitem>
@@ -1322,8 +1322,8 @@ information for two purposes:
 It is essential for correct operation of DRD that the tool knows about
 memory allocation and deallocation events. When analyzing a client program
 with DRD that uses a custom memory allocator, either instrument the custom
-memory allocator with the <literal>VALGRIND_MALLOCLIKE_BLOCK()</literal>
-and <literal>VALGRIND_FREELIKE_BLOCK()</literal> macro's or disable the
+memory allocator with the <literal>VALGRIND_MALLOCLIKE_BLOCK</literal>
+and <literal>VALGRIND_FREELIKE_BLOCK</literal> macros or disable the
 custom memory allocator.
 </para>
 
@@ -1346,14 +1346,14 @@ manual</ulink>.
 <para>
 It is essential for correct operation of DRD that there are no memory
 errors such as dangling pointers in the client program. Which means that
-it is a good idea to make sure that your program is memcheck-clean
+it is a good idea to make sure that your program is Memcheck-clean
 before you analyze it with DRD. It is possible however that some of
-the memcheck reports are caused by data races. In this case it makes
-sense to run DRD before memcheck.
+the Memcheck reports are caused by data races. In this case it makes
+sense to run DRD before Memcheck.
 </para>
 
 <para>
-So which tool should be run first ? In case both DRD and memcheck
+So which tool should be run first? In case both DRD and Memcheck
 complain about a program, a possible approach is to run both tools
 alternatingly and to fix as many errors as possible after each run of
 each tool until none of the two tools prints any more error messages.
@@ -1389,7 +1389,7 @@ effect on the execution time of client programs are as follows:
     <para>
       Most applications will run between 20 and 50 times slower under
       DRD than a native single-threaded run. The slowdown will be most
-      noticeable for applications which perform very much mutex lock /
+      noticeable for applications which perform frequent mutex lock /
       unlock operations.
     </para>
   </listitem>
@@ -1438,7 +1438,7 @@ The following information may be helpful when using DRD:
       <literal>std::cout</literal>. Doing so would not only
       generate multiple data race reports, it could also result in
       output from several threads getting mixed up.  Either use
-      <function>printf()</function> or do the following:
+      <function>printf</function> or do the following:
       <orderedlist>
         <listitem>
           <para>Derive a class from <literal>std::ostreambuf</literal>
@@ -1480,7 +1480,7 @@ The following information may be helpful when using DRD:
 <para>
 The Single UNIX Specification version two defines the following four
 mutex types (see also the documentation of <ulink
-url="http://www.opengroup.org/onlinepubs/007908799/xsh/pthread_mutexattr_settype.html"><function>pthread_mutexattr_settype()</function></ulink>):
+url="http://www.opengroup.org/onlinepubs/007908799/xsh/pthread_mutexattr_settype.html"><function>pthread_mutexattr_settype</function></ulink>):
 <itemizedlist>
   <listitem>
     <para>
@@ -1547,11 +1547,11 @@ concept.
 </sect2>
 
 <sect2 id="drd-manual.pctw" xreflabel="pthread_cond_timedwait">
-<title>pthread_cond_timedwait() and timeouts</title>
+<title><function>pthread_cond_timedwait</function> and timeouts</title>
 
 <para>
 Historically the function
-<function>pthread_cond_timedwait()</function> only allowed the
+<function>pthread_cond_timedwait</function> only allowed the
 specification of an absolute timeout, that is a timeout independent of
 the time when this function was called. However, almost every call to
 this function expresses a relative timeout. This typically happens by
@@ -1564,8 +1564,8 @@ the timeout. A more reliable approach is as follows:
   <listitem>
     <para>
       When initializing a condition variable through
-      pthread_cond_init(), specify that the timeout of
-      pthread_cond_timedwait() will use the clock
+      <function>pthread_cond_init</function>, specify that the timeout of
+      <function>pthread_cond_timedwait</function> will use the clock
       <literal>CLOCK_MONOTONIC</literal> instead of
       <literal>CLOCK_REALTIME</literal>. You can do this via
       <computeroutput>pthread_condattr_setclock(...,
@@ -1574,7 +1574,7 @@ the timeout. A more reliable approach is as follows:
   </listitem>
   <listitem>
     <para>
-      When calling <function>pthread_cond_timedwait()</function>, pass
+      When calling <function>pthread_cond_timedwait</function>, pass
       the sum of
       <computeroutput>clock_gettime(CLOCK_MONOTONIC)</computeroutput>
       and a relative timeout as the third argument.
@@ -1597,7 +1597,7 @@ external state to a file. When analyzing log files of a multithreaded
 application it can be very convenient to know which thread logged
 which information. One possible approach is to identify threads in
 logging output by including the result of
-<function>pthread_self()</function> in every log line. However, this approach
+<function>pthread_self</function> in every log line. However, this approach
 has two disadvantages: there is no direct relationship between these
 values and the source code and these values can be different in each
 run. A better approach is to assign a brief name to each thread and to
@@ -1607,19 +1607,19 @@ approach for managing thread names is as follows:
   <listitem>
     <para>
       Allocate a key for the pointer to the thread name through
-      <function>pthread_key_create()</function>.
+      <function>pthread_key_create</function>.
     </para>
   </listitem>
   <listitem>
     <para>
       Just after thread creation, set the thread name through
-      <function>pthread_setspecific()</function>.
+      <function>pthread_setspecific</function>.
     </para>
   </listitem>
   <listitem>
     <para>
       In the code that generates the logging information, query the thread
-      name by calling <function>pthread_getspecific()</function>.
+      name by calling <function>pthread_getspecific</function>.
     </para>
   </listitem>
 </itemizedlist>
@@ -1639,9 +1639,7 @@ approach for managing thread names is as follows:
 <itemizedlist>
   <listitem>
     <para>
-      DRD has only been tested on the Linux operating system, and not
-      on any of the other operating systems supported by
-      Valgrind.
+      DRD has only been tested on Linux and Mac OS X.
     </para>
   </listitem>
   <listitem>
@@ -1653,12 +1651,12 @@ approach for managing thread names is as follows:
   </listitem>
   <listitem>
     <para>
-      DRD, just like memcheck, will refuse to start on Linux
+      DRD, just like Memcheck, will refuse to start on Linux
       distributions where all symbol information has been removed from
-      ld.so. This is a.o. the case for the PPC editions of openSUSE
-      and Gentoo. You will have to install the glibc debuginfo package
-      on these platforms before you can use DRD. See also openSUSE bug
-      <ulink url="http://bugzilla.novell.com/show_bug.cgi?id=396197">
+      <filename>ld.so</filename>. This is e.g. the case for the PPC editions
+      of openSUSE and Gentoo. You will have to install the glibc debuginfo
+      package on these platforms before you can use DRD. See also openSUSE
+      bug <ulink url="http://bugzilla.novell.com/show_bug.cgi?id=396197">
       396197</ulink> and Gentoo bug <ulink
       url="http://bugs.gentoo.org/214065">214065</ulink>.
     </para>

@@ -127,10 +127,6 @@ system: <filename>&vg-docs-path;</filename>, or online:
 <title>Cachegrind Options</title>
 
 <xi:include href="../../cachegrind/docs/cg-manual.xml" 
-            xpointer="cg.opts.para"
-            xmlns:xi="http://www.w3.org/2001/XInclude" />
-
-<xi:include href="../../cachegrind/docs/cg-manual.xml" 
             xpointer="cg.opts.list"
             xmlns:xi="http://www.w3.org/2001/XInclude" />
 
@@ -173,6 +169,9 @@ system: <filename>&vg-docs-path;</filename>, or online:
 
 <xi:include href="../../drd/docs/drd-manual.xml" 
             xpointer="drd.opts.list"
+            xmlns:xi="http://www.w3.org/2001/XInclude" />
+<xi:include href="../../drd/docs/drd-manual.xml" 
+            xpointer="drd.debugopts.list"
             xmlns:xi="http://www.w3.org/2001/XInclude" />
 
 </refsect1>

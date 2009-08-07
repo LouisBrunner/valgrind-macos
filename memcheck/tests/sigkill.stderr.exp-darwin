@@ -185,8 +185,10 @@ setting signal 65: Invalid argument
 getting signal 65: Invalid argument
 
 
+HEAP SUMMARY:
+    in use at exit: ... bytes in ... blocks.
+  total heap usage: ... allocs, ... frees, ... bytes allocated.
+For a detailed leak analysis, rerun with: --leak-check=yes
+
+For counts of detected and suppressed errors, rerun with: -v
 ERROR SUMMARY: 0 errors from 0 contexts (suppressed: 0 from 0)
-malloc/free: in use at exit: ... bytes in ... blocks.
-malloc/free: ... allocs, ... frees, ... bytes allocated.
-For a detailed leak analysis,  rerun with: --leak-check=yes
-For counts of detected errors, rerun with: -v

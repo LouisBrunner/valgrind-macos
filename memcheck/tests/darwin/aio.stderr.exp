@@ -11,9 +11,11 @@ Syscall param aio_write(aiocbp->aio_buf) points to unaddressable byte(s)
    ...
  Address 0x........ is not stack'd, malloc'd or (recently) free'd
 
-ERROR SUMMARY: 3 errors from 3 contexts (suppressed: 0 from 0)
-malloc/free: in use at exit: ... bytes in ... blocks.
-malloc/free: ... allocs, ... frees, ... bytes allocated.
-For a detailed leak analysis,  rerun with: --leak-check=yes
-For counts of detected errors, rerun with: -v
+HEAP SUMMARY:
+    in use at exit: ... bytes in ... blocks.
+  total heap usage: ... allocs, ... frees, ... bytes allocated.
+For a detailed leak analysis, rerun with: --leak-check=yes
+
+For counts of detected and suppressed errors, rerun with: -v
 Use --track-origins=yes to see where uninitialised values come from
+ERROR SUMMARY: 3 errors from 3 contexts (suppressed: 0 from 0)

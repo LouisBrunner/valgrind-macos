@@ -1,6 +1,8 @@
 include $(top_srcdir)/Makefile.tool.am
 
-EXTRA_DIST = docs/cg-manual.xml
+EXTRA_DIST = \
+	docs/cg-manual.xml \
+	docs/cg_annotate-manpage.xml
 
 #----------------------------------------------------------------------------
 # Headers, etc

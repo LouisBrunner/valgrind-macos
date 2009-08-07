@@ -14,7 +14,7 @@
 
 <refnamediv id="a-name">
   <refname>callgrind_annotate</refname>
-  <refpurpose>post-processing tool for the Valgrind tool Callgrind</refpurpose>
+  <refpurpose>post-processing tool for the Callgrind</refpurpose>
 </refnamediv>
 
 <refsynopsisdiv id="a-synopsis">

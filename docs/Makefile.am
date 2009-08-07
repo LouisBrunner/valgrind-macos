@@ -111,7 +111,7 @@ XSL_MAN_STYLES = \
     /usr/share/xml/docbook/stylesheet/nwalsh/current/manpages/docbook.xsl \
     /usr/share/xml/docbook/stylesheet/nwalsh/manpages/docbook.xsl
 
-all-docs: FAQ.txt man-page html-docs print-docs
+all-docs: FAQ.txt man-pages html-docs print-docs
 
 valid:
 	$(XMLLINT) $(XMLLINT_FLAGS) $(myxmldir)/index.xml
@@ -123,7 +123,7 @@ FAQ.txt:
 	$(XSLTPROC) $(XSLTPROC_FLAGS) -o ./FAQ.txt $(XSL_TEXT_STYLE) $(myxmldir)/FAQ.xml
 
 # the valgrind manpages
-man-page:
+man-pages:
 	for x in $(XSL_MAN_STYLES) ; do \
 	    if test -f $$x; then \
 		echo "Using manpage stylesheet: $$x"; \
@@ -198,14 +198,14 @@ install-data-hook:
 # docs and man page and copies them into the docs/ directory in the
 # tarball.
  ifeq ($(BUILD_ALL_DOCS),yes)
-dist-hook: FAQ.txt html-docs print-docs man-page
+dist-hook: FAQ.txt html-docs print-docs man-pages
 	cp -r html $(distdir)
 	cp FAQ.txt $(distdir)/..
 	cp valgrind.1 $(distdir)
 	cp print/index.pdf $(distdir)
 	cp print/index.ps $(distdir)
  else
-dist-hook: FAQ.txt html-docs man-page
+dist-hook: FAQ.txt html-docs man-pages
 	cp FAQ.txt $(distdir)/..
 	cp -r html $(distdir)
  endif

@@ -11,6 +11,10 @@
 <xi:include href="valgrind-manpage.xml" parse="xml"  
     xmlns:xi="http://www.w3.org/2001/XInclude" />
 
+<!-- cg_annotate -->
+<xi:include href="../../cachegrind/docs/cg_annotate-manpage.xml" parse="xml"  
+    xmlns:xi="http://www.w3.org/2001/XInclude" />
+
 <!-- callgrind_annotate -->
 <xi:include href="../../callgrind/docs/callgrind_annotate-manpage.xml" parse="xml"  
     xmlns:xi="http://www.w3.org/2001/XInclude" />

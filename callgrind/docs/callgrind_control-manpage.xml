@@ -13,8 +13,7 @@
 
 <refnamediv id="c-name">
   <refname>callgrind_control</refname>
-  <refpurpose>observe and control programs being run by the Valgrind tool
-  Callgrind</refpurpose>
+  <refpurpose>observe and control programs being run by Callgrind</refpurpose>
 </refnamediv>
 
 <refsynopsisdiv id="c-synopsis">
@@ -43,6 +42,8 @@ being run by Callgrind.</para>
 <refsect1 id="c-options">
 <title>Options</title>
 
+<xi:include href="cl-manual.xml" xpointer="callgrind_control.opts.list"
+            xmlns:xi="http://www.w3.org/2001/XInclude" />
 
 </refsect1>
 

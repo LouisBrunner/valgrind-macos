@@ -793,7 +793,8 @@ fail these checks.</para>
 <sect1 id="cg-manual.annopts" xreflabel="cg_annotate Options">
 <title>cg_annotate Options</title>
 
-<variablelist>
+<!-- start of xi:include in the manpage -->
+<variablelist id="cg_annotate.opts.list">
 
   <varlistentry>
     <term>
@@ -896,6 +897,7 @@ fail these checks.</para>
   </varlistentry>
 
 </variablelist>
+<!-- end of xi:include in the manpage -->
   
 </sect1>
 

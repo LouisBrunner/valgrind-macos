@@ -222,6 +222,7 @@ system: <filename>&vg-docs-path;</filename>, or online:
 <title>See Also</title>
 
 <para>
+cg_annotate(1),
 callgrind_annotate(1),
 callgrind_control(1),
 ms_print(1),

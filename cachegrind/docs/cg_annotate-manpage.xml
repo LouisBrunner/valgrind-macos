@@ -4,22 +4,22 @@
 [ <!ENTITY % vg-entities SYSTEM "../../docs/xml/vg-entities.xml"> %vg-entities; ]>
 
 
-<refentry id="ms_print">
+<refentry id="cg_annotate">
 
 <refmeta>
-  <refentrytitle>ms_print</refentrytitle>
+  <refentrytitle>cg_annotate</refentrytitle>
   <manvolnum>1</manvolnum>
   <refmiscinfo>Release &rel-version;</refmiscinfo>
 </refmeta>
 
 <refnamediv>
-  <refname>ms_print</refname>
-  <refpurpose>post-processing tool for Massif</refpurpose>
+  <refname>cg_annotate</refname>
+  <refpurpose>post-processing tool for Cachegrind</refpurpose>
 </refnamediv>
 
 <refsynopsisdiv>
 <cmdsynopsis>
-  <command>ms_print</command>
+  <command>cg_annotate</command>
   <arg><replaceable>options</replaceable></arg>
   <arg>filename</arg>
 </cmdsynopsis>
@@ -29,8 +29,8 @@
 <refsect1 id="description">
 <title>Description</title>
 
-<para><command>ms_print</command> takes an output file produced by the
-Valgrind tool Massif and prints the information in an easy-to-read form.
+<para><command>cg_annotate</command> takes an output file produced by the
+Valgrind tool Cachegrind and prints the information in an easy-to-read form.
 </para>
 
 </refsect1>
@@ -40,7 +40,7 @@ Valgrind tool Massif and prints the information in an easy-to-read form.
 <refsect1 id="options">
 <title>Options</title>
 
-<xi:include href="ms-manual.xml" xpointer="ms_print.opts.list"
+<xi:include href="cg-manual.xml" xpointer="cg_annotate.opts.list"
             xmlns:xi="http://www.w3.org/2001/XInclude" />
 
 </refsect1>

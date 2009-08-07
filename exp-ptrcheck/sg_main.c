@@ -2452,7 +2452,7 @@ void sg_pre_thread_first_insn ( ThreadId tid ) {
 
 void sg_fini(Int exitcode)
 {
-   if (VG_(clo_verbosity) >= 2) {
+   if (VG_(clo_stats)) {
       VG_(message)(Vg_DebugMsg,
          " sg_:  %'llu total accesses, of which:\n", stats__total_accesses);
       VG_(message)(Vg_DebugMsg,

@@ -4240,12 +4240,26 @@ static void hg_post_clo_init ( void )
 
 static void hg_fini ( Int exitcode )
 {
+   if (VG_(clo_verbosity) == 1 && !VG_(clo_xml)) {
+      VG_(message)(Vg_UserMsg, 
+                   "For counts of detected and suppressed errors, "
+                   "rerun with: -v\n");
+   }
+
+   if (VG_(clo_verbosity) == 1 && !VG_(clo_xml)
+       && HG_(clo_history_level) >= 2) {
+      VG_(umsg)( 
+         "Use --history-level=approx or =none to gain increased speed, at\n" );
+      VG_(umsg)(
+         "the cost of reduced accuracy of conflicting-access information\n");
+   }
+
    if (SHOW_DATA_STRUCTURES)
       pp_everything( PP_ALL, "SK_(fini)" );
    if (HG_(clo_sanity_flags))
       all__sanity_check("SK_(fini)");
 
-   if (VG_(clo_verbosity) >= 2) {
+   if (VG_(clo_stats)) {
 
       if (1) {
          VG_(printf)("\n");

@@ -902,17 +902,19 @@ void MC_(print_malloc_stats) ( void )
       nbytes += (ULong)mc->szB;
    }
 
-   VG_(message)(Vg_UserMsg, 
-      "malloc/free: in use at exit: %'llu bytes in %'lu blocks.\n",
+   VG_(umsg)(
+      "HEAP SUMMARY:\n"
+   );
+   VG_(umsg)(
+      "    in use at exit: %'llu bytes in %'lu blocks.\n",
       nbytes, nblocks
    );
-   VG_(message)(Vg_UserMsg, 
-      "malloc/free: %'lu allocs, %'lu frees, %'llu bytes allocated.\n",
+   VG_(umsg)(
+      "  total heap usage: %'lu allocs, %'lu frees, "
+      "%'llu bytes allocated.\n",
       cmalloc_n_mallocs,
       cmalloc_n_frees, cmalloc_bs_mallocd
    );
-   if (VG_(clo_verbosity) > 1)
-      VG_(message)(Vg_UserMsg, "\n");
 }
 
 /*--------------------------------------------------------------------*/

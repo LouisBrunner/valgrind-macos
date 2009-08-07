@@ -918,6 +918,7 @@ void MC_(detect_memory_leaks) ( ThreadId tid, LeakCheckMode mode )
    if (lc_n_chunks == 0) {
       tl_assert(lc_chunks == NULL);
       if (VG_(clo_verbosity) >= 1 && !VG_(clo_xml)) {
+         VG_(umsg)("\n");
          VG_(umsg)("All heap blocks were freed -- no leaks are possible.\n");
       }
       return;
@@ -969,9 +970,11 @@ void MC_(detect_memory_leaks) ( ThreadId tid, LeakCheckMode mode )
    lc_markstack_top = -1;
 
    // Verbosity.
-   if (VG_(clo_verbosity) > 0 && !VG_(clo_xml))
-      VG_(umsg)( "searching for pointers to %'d not-freed blocks.\n",
+   if (VG_(clo_verbosity) > 1 && !VG_(clo_xml)) {
+      VG_(umsg)( "\n" );
+      VG_(umsg)( "Searching for pointers to %'d not-freed blocks.\n",
                  lc_n_chunks );
+   }
 
    // Scan the memory root-set, pushing onto the mark stack any blocks
    // pointed to.
@@ -1029,8 +1032,8 @@ void MC_(detect_memory_leaks) ( ThreadId tid, LeakCheckMode mode )
    // from the root-set has been traced.
    lc_process_markstack(/*clique*/-1);
 
-   if (VG_(clo_verbosity) > 0 && !VG_(clo_xml))
-      VG_(umsg)("checked %'lu bytes.\n", lc_scanned_szB);
+   if (VG_(clo_verbosity) > 1 && !VG_(clo_xml))
+      VG_(umsg)("Checked %'lu bytes.\n", lc_scanned_szB);
 
    // Trace all the leaked blocks to determine which are directly leaked and
    // which are indirectly leaked.  For each Unreached block, push it onto

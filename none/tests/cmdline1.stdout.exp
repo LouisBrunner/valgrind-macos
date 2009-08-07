@@ -8,7 +8,7 @@ usage: valgrind [options] prog-and-args
     --help-debug              show this message, plus debugging options
     --version                 show version
     -q --quiet                run silently; only print error msgs
-    -v --verbose              be more verbose, incl counts of errors
+    -v --verbose              be more verbose -- show misc extra info
     --trace-children=no|yes   Valgrind-ise child processes (follow execve)? [no]
     --child-silent-after-fork=no|yes omit child output between fork & exec? [no]
     --track-fds=no|yes        track open file descriptors? [no]

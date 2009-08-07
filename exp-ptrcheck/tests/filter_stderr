@@ -14,11 +14,12 @@ sed "s/(in \/.*libpthread.*)$/(in \/...libpthread...)/"             |
 # Anonymise paths like "__libc_start_main (../foo/bar/libc-quux.c:129)"
 sed "s/__libc_\(.*\) (.*)$/__libc_\1 (...libc...)/" |
 
-# Remove preambly stuff
+# Remove preambly stuff; also postambly stuff
 sed \
 -e "/^exp-ptrcheck, a heap, stack & global array overrun detector\.$/d" \
 -e "/^NOTE: This is an Experimental-Class Valgrind Tool.$/d"  \
--e "/^Copyright (C) 2003-200., and GNU GPL'd, by OpenWorks Ltd et al.$/d" |
+-e "/^Copyright (C) 2003-200., and GNU GPL'd, by OpenWorks Ltd et al.$/d" \
+-e "/^For counts of detected and suppressed errors, rerun with: -v$/d" |
 
 # Tidy up in cases where glibc (+ libdl + libpthread + ld) have
 # been built with debugging information, hence source locs are present.

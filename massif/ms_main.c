@@ -220,6 +220,12 @@ Number of snapshots: 50
       VG_(dmsg)("Massif: " format, ##args); \
    }
 
+// Used for printing stats when clo_stats == True.
+#define STATS(format, args...) \
+   if (VG_(clo_stats)) { \
+      VG_(dmsg)("Massif: " format, ##args); \
+   }
+
 //------------------------------------------------------------//
 //--- Statistics                                           ---//
 //------------------------------------------------------------//
@@ -2225,28 +2231,28 @@ static void ms_fini(Int exit_status)
 
    // Stats
    tl_assert(n_xpts > 0);  // always have alloc_xpt
-   VERB(1, "heap allocs:           %u\n", n_heap_allocs);
-   VERB(1, "heap reallocs:         %u\n", n_heap_reallocs);
-   VERB(1, "heap frees:            %u\n", n_heap_frees);
-   VERB(1, "ignored heap allocs:   %u\n", n_ignored_heap_allocs);
-   VERB(1, "ignored heap frees:    %u\n", n_ignored_heap_frees);
-   VERB(1, "ignored heap reallocs: %u\n", n_ignored_heap_reallocs);
-   VERB(1, "stack allocs:          %u\n", n_stack_allocs);
-   VERB(1, "stack frees:           %u\n", n_stack_frees);
-   VERB(1, "XPts:                  %u\n", n_xpts);
-   VERB(1, "top-XPts:              %u (%d%%)\n",
+   STATS("heap allocs:           %u\n", n_heap_allocs);
+   STATS("heap reallocs:         %u\n", n_heap_reallocs);
+   STATS("heap frees:            %u\n", n_heap_frees);
+   STATS("ignored heap allocs:   %u\n", n_ignored_heap_allocs);
+   STATS("ignored heap frees:    %u\n", n_ignored_heap_frees);
+   STATS("ignored heap reallocs: %u\n", n_ignored_heap_reallocs);
+   STATS("stack allocs:          %u\n", n_stack_allocs);
+   STATS("stack frees:           %u\n", n_stack_frees);
+   STATS("XPts:                  %u\n", n_xpts);
+   STATS("top-XPts:              %u (%d%%)\n",
       alloc_xpt->n_children,
       ( n_xpts ? alloc_xpt->n_children * 100 / n_xpts : 0));
-   VERB(1, "XPt init expansions:   %u\n", n_xpt_init_expansions);
-   VERB(1, "XPt later expansions:  %u\n", n_xpt_later_expansions);
-   VERB(1, "SXPt allocs:           %u\n", n_sxpt_allocs);
-   VERB(1, "SXPt frees:            %u\n", n_sxpt_frees);
-   VERB(1, "skipped snapshots:     %u\n", n_skipped_snapshots);
-   VERB(1, "real snapshots:        %u\n", n_real_snapshots);
-   VERB(1, "detailed snapshots:    %u\n", n_detailed_snapshots);
-   VERB(1, "peak snapshots:        %u\n", n_peak_snapshots);
-   VERB(1, "cullings:              %u\n", n_cullings);
-   VERB(1, "XCon redos:            %u\n", n_XCon_redos);
+   STATS("XPt init expansions:   %u\n", n_xpt_init_expansions);
+   STATS("XPt later expansions:  %u\n", n_xpt_later_expansions);
+   STATS("SXPt allocs:           %u\n", n_sxpt_allocs);
+   STATS("SXPt frees:            %u\n", n_sxpt_frees);
+   STATS("skipped snapshots:     %u\n", n_skipped_snapshots);
+   STATS("real snapshots:        %u\n", n_real_snapshots);
+   STATS("detailed snapshots:    %u\n", n_detailed_snapshots);
+   STATS("peak snapshots:        %u\n", n_peak_snapshots);
+   STATS("cullings:              %u\n", n_cullings);
+   STATS("XCon redos:            %u\n", n_XCon_redos);
 }
 
 

@@ -7,8 +7,13 @@ $dir/../../tests/filter_stderr_basic                    |
 # Anonymise addresses
 $dir/../../tests/filter_addresses                       |
 
-# Remove "Helgrind, ..." line and the following copyright line.
-sed "/^Helgrind, a thread error detector/ , /./ d" |
+# Remove "Helgrind, ..." line and the following copyright line;
+# also the standard postamble (does such a word exist?)
+sed \
+ -e "/^Helgrind, a thread error detector/ , /./ d" \
+ -e "/^For counts of detected and suppressed errors, rerun with: -v$/d" \
+ -e "/^Use --history-level=approx or =none to gain increased speed, at$/d" \
+ -e "/^the cost of reduced accuracy of conflicting-access information$/d" |
 
 # Anonymise line numbers in hg_intercepts.c
 sed "s/hg_intercepts.c:[0-9]*/hg_intercepts.c:.../g"  |

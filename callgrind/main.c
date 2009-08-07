@@ -1190,7 +1190,7 @@ void finish(void)
   if (VG_(clo_verbosity) == 0) return;
   
   /* Hash table stats */
-  if (VG_(clo_verbosity) > 1) {
+  if (VG_(clo_stats)) {
     int BB_lookups =
       CLG_(stat).full_debug_BBs +
       CLG_(stat).fn_name_debug_BBs +

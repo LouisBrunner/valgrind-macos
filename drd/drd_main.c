@@ -568,7 +568,13 @@ static void drd_start_client_code(const ThreadId tid, const ULong bbs_done)
 static void DRD_(fini)(Int exitcode)
 {
    // thread_print_all();
-   if (VG_(clo_verbosity) > 1 || DRD_(s_print_stats))
+   if (VG_(clo_verbosity) == 1 && !VG_(clo_xml)) {
+      VG_(message)(Vg_UserMsg, 
+                   "For counts of detected and suppressed errors, "
+                   "rerun with: -v\n");
+   }
+
+   if (VG_(clo_stats) || DRD_(s_print_stats))
    {
       ULong pu = DRD_(thread_get_update_conflict_set_count)();
       ULong pu_seg_cr = DRD_(thread_get_update_conflict_set_new_sg_count)();

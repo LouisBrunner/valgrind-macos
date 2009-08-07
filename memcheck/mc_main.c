@@ -5569,15 +5569,24 @@ static void mc_fini ( Int exitcode )
 {
    MC_(print_malloc_stats)();
 
-   if (VG_(clo_verbosity) == 1 && !VG_(clo_xml)) {
-      if (MC_(clo_leak_check) == LC_Off)
-         VG_(message)(Vg_UserMsg, 
-            "For a detailed leak analysis,  rerun with: --leak-check=yes\n");
-
-      VG_(message)(Vg_UserMsg, 
-                   "For counts of detected errors, rerun with: -v\n");
+   if (MC_(clo_leak_check) != LC_Off) {
+      MC_(detect_memory_leaks)(1/*bogus ThreadId*/, MC_(clo_leak_check));
    }
 
+   if (VG_(clo_verbosity) == 1 && !VG_(clo_xml)
+       && MC_(clo_leak_check) == LC_Off) {
+      VG_(message)(Vg_UserMsg, 
+         "For a detailed leak analysis, rerun with: --leak-check=yes\n");
+   }
+
+   if (VG_(clo_verbosity) >= 1 && !VG_(clo_xml)) {
+      VG_(message)(Vg_UserMsg, "\n");
+   }
+
+   if (VG_(clo_verbosity) == 1 && !VG_(clo_xml)) {
+      VG_(message)(Vg_UserMsg, 
+                   "For counts of detected and suppressed errors, rerun with: -v\n");
+   }
 
    if (MC_(any_value_errors) && !VG_(clo_xml) && VG_(clo_verbosity) >= 1
        && MC_(clo_mc_level) == 2) {
@@ -5586,12 +5595,9 @@ static void mc_fini ( Int exitcode )
                    "uninitialised values come from\n");
    }
 
-   if (MC_(clo_leak_check) != LC_Off)
-      MC_(detect_memory_leaks)(1/*bogus ThreadId*/, MC_(clo_leak_check));
-
    done_prof_mem();
 
-   if (VG_(clo_verbosity) > 1) {
+   if (VG_(clo_stats)) {
       SizeT max_secVBit_szB, max_SMs_szB, max_shmem_szB;
       
       VG_(message)(Vg_DebugMsg,

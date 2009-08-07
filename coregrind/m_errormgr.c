@@ -806,7 +806,6 @@ static Bool show_used_suppressions ( void )
    for (su = suppressions; su != NULL; su = su->next) {
       if (su->count <= 0)
          continue;
-      any_supp = True;
       if (VG_(clo_xml)) {
          VG_(printf_xml_no_f_c)( "  <pair>\n"
                                  "    <count>%d</count>\n"
@@ -814,8 +813,12 @@ static Bool show_used_suppressions ( void )
                                  "  </pair>\n",
                                  su->count, su->sname );
       } else {
-         VG_(dmsg)("supp: %6d %s\n", su->count, su->sname);
+         // blank line before the first shown suppression, if any
+         if (!any_supp)
+            VG_(dmsg)("\n");
+         VG_(dmsg)("used_suppression: %6d %s\n", su->count, su->sname);
       }
+      any_supp = True;
    }
 
    if (VG_(clo_xml))
@@ -866,6 +869,9 @@ void VG_(show_all_errors) ( void )
    if (VG_(clo_verbosity) <= 1)
       return;
 
+   // We do the following only at -v or above, and only in non-XML
+   // mode
+
    /* Print the contexts in order of increasing error count. */
    for (i = 0; i < n_err_contexts; i++) {
       n_min = (1 << 30) - 1;
@@ -898,19 +904,16 @@ void VG_(show_all_errors) ( void )
       p_min->count = 1 << 30;
    } 
 
-   if (n_supp_contexts > 0) 
-      VG_(umsg)("\n");
    any_supp = show_used_suppressions();
 
-   if (n_err_contexts > 0) {
-      if (any_supp) 
-         VG_(umsg)("\n");
-      VG_(umsg)("IN SUMMARY: "
-                "%d errors from %d contexts (suppressed: %d from %d)\n",
-                n_errs_found, n_err_contexts, n_errs_suppressed,
-                n_supp_contexts );
+   if (any_supp) 
       VG_(umsg)("\n");
-   }
+   // reprint this, so users don't have to scroll way up to find
+   // the first printing
+   VG_(umsg)("ERROR SUMMARY: "
+             "%d errors from %d contexts (suppressed: %d from %d)\n",
+             n_errs_found, n_err_contexts, n_errs_suppressed,
+             n_supp_contexts );
 }
 
 

@@ -119,7 +119,7 @@ static void usage_NORETURN ( Bool debug_help )
 "    --help-debug              show this message, plus debugging options\n"
 "    --version                 show version\n"
 "    -q --quiet                run silently; only print error msgs\n"
-"    -v --verbose              be more verbose, incl counts of errors\n"
+"    -v --verbose              be more verbose -- show misc extra info\n"
 "    --trace-children=no|yes   Valgrind-ise child processes (follow execve)? [no]\n"
 "    --child-silent-after-fork=no|yes omit child output between fork & exec? [no]\n"
 "    --track-fds=no|yes        track open file descriptors? [no]\n"
@@ -171,6 +171,7 @@ static void usage_NORETURN ( Bool debug_help )
    Char* usage2 = 
 "\n"
 "  debugging options for all Valgrind tools:\n"
+"    --stats=no|yes            show tool and core statistics [no]\n"
 "    -d                        show verbose debugging output\n"
 "    --sanity-level=<number>   level of sanity checking to do [1]\n"
 "    --trace-flags=<XXXXXXXX>   show generated code? (X = 0|1) [00000000]\n"
@@ -437,6 +438,7 @@ void main_process_cmd_line_options ( /*OUT*/Bool* logging_to_fd,
                VG_STREQ(arg, "--quiet"))
          VG_(clo_verbosity)--;
 
+      else if VG_BOOL_CLO(arg, "--stats",          VG_(clo_stats)) {}
       else if VG_BOOL_CLO(arg, "--xml",            VG_(clo_xml)) {}
       else if VG_BOOL_CLO(arg, "--db-attach",      VG_(clo_db_attach)) {}
       else if VG_BOOL_CLO(arg, "--demangle",       VG_(clo_demangle)) {}
@@ -2411,35 +2413,21 @@ void shutdown_actions_NORETURN( ThreadId tid,
    if (VG_(clo_track_fds))
       VG_(show_open_fds)();
 
-   /* ** HACK ALERT ** HACK ALERT ** HACK ALERT ** HACK ALERT ** */
-   if (VG_(clo_xml)) {
-      /* THIS IS WHAT WE SHOULD CHANGE IT TO */
-      /* For the moment, do it like this (the "right way") in XML
-         mode, so that output is as described in XML Protocol 4. */
-      /* A good test is memcheck/tests/amd64/defcfaexpr; ensure
-         the output does not change */
-      VG_TDICT_CALL(tool_fini, 0/*exitcode*/);
+   /* Call the tool's finalisation function.  This makes Memcheck's
+      leak checker run, and possibly chuck a bunch of leak errors into
+      the error management machinery. */
+   VG_TDICT_CALL(tool_fini, 0/*exitcode*/);
 
-      /* Show the error counts. */
-      if (VG_(needs).core_errors || VG_(needs).tool_errors) {
-         VG_(printf_xml)( "\n" );
-         VG_(show_error_counts_as_XML)();
-         VG_(printf_xml)( "\n" );
-      }
-
-      /* In XML mode, this merely prints the used suppressions. */
-      if (VG_(needs).core_errors || VG_(needs).tool_errors)
-         VG_(show_all_errors)();
-
-   } else {
-      /* THIS IS WHAT IT HAS ALWAYS BEEN,
-         resulting in  https://bugs.kde.org/show_bug.cgi?id=186790 */
-      if (VG_(needs).core_errors || VG_(needs).tool_errors)
-         VG_(show_all_errors)();
-
-      VG_TDICT_CALL(tool_fini, 0/*exitcode*/);
+   /* Show the error counts. */
+   if (VG_(needs).core_errors || VG_(needs).tool_errors) {
+      VG_(printf_xml)( "\n" );
+      VG_(show_error_counts_as_XML)();
+      VG_(printf_xml)( "\n" );
    }
-   /* END ** HACK ALERT ** HACK ALERT ** HACK ALERT ** HACK ALERT ** */
+
+   /* In XML mode, this merely prints the used suppressions. */
+   if (VG_(needs).core_errors || VG_(needs).tool_errors)
+      VG_(show_all_errors)();
 
    if (VG_(clo_xml)) {
       VG_(printf_xml)("\n");
@@ -2449,7 +2437,7 @@ void shutdown_actions_NORETURN( ThreadId tid,
 
    VG_(sanity_check_general)( True /*include expensive checks*/ );
 
-   if (VG_(clo_verbosity) > 1)
+   if (VG_(clo_stats))
       print_all_stats();
 
    /* Show a profile of the heap(s) at shutdown.  Optionally, first

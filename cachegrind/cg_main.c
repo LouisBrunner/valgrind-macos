@@ -1591,7 +1591,7 @@ static void cg_fini(Int exitcode)
    }
 
    // Various stats
-   if (VG_(clo_verbosity) > 1) {
+   if (VG_(clo_stats)) {
       Int debug_lookups = full_debugs      + fn_debugs +
                           file_line_debugs + no_debugs;
 

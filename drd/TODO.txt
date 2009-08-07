@@ -1,15 +1,14 @@
-Last updated May 30, 2009.
+Last updated August 7, 2009.
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 
 The DRD tool
 ~~~~~~~~~~~~
-- Eliminate Valgrind's thread ID's from DRD's output, and only keep the
-  DrdThreadId.
-- Add support for Ist_CAS once the DCAS branch has been merged to the trunk.
-- Update the description of DRD in docs/xml/manual-intro.xml before 3.4.2 or
-  3.5.0 is released, whichever is released first.
-- Update the DRD manual before 3.5.0 is released.
+- Improve the code for suppressing races reported on glibc FILE objects, e.g. by
+  intercepting all operations on FILE objects and by associating mutex semantics
+  with FILE objects. Verify that races on unsynchronized *_unlocked() operations
+  are reported. Remove FILE-I/O suppression patterns from glibc-2.X-drd.supp.
+  See also http://www.unix.org/whitepapers/reentrant.html.
 - Add locking order checking. Start from the following information:
   * http://sourceforge.net/mailarchive/message.php?msg_id=alpine.LNX.1.10.0803270822080.17890%40mudge.stoecker.eu
   * http://lwn.net/Articles/185605/
@@ -18,15 +17,6 @@ The DRD tool
   (only possible after locking order checking is implemented).
 - Evaluate whether integration of drd with one of the available Valgrind GUI's
   makes sense (http://valgrind.org/downloads/guis.html).
-- Find out why no variable name information is printed for races
-  detected in parallel sections of OpenMP programs. An example:
-  ./vg-in-place --tool=drd drd/tests/omp_prime 4 -t 2
-- Improve the code for suppressing races reported on glibc FILE objects, e.g. by
-  intercepting all operations on FILE objects and by associating mutex semantics
-  with FILE objects. Verify that races on unsynchronized *_unlocked() operations
-  are reported. Remove FILE-I/O suppression patterns from glibc-2.X-drd.supp.
-  See also http://www.unix.org/whitepapers/reentrant.html.
-- Find out why DRD reports an error on the POSIX implementation of libgomp.so.
 
 
 Testing
@@ -39,7 +29,6 @@ Testing
 
 Documentation
 ~~~~~~~~~~~~~
-- Document the features added after the 3.4.0 release.
 - Document the algorithms used in drd.
 - Add comment on double checked locking.
 - Add comment on lockless algorithms in general and circular buffers in

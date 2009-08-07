@@ -71,18 +71,21 @@ to "line", which means that the first number of a cost line is always a line
 number.</para>
 
 <para>Thus, the first cost line specifies that in line 15 of source file
-"file.f" there is code belonging to function "main". While running, 90 CPU
-cycles passed by, and 2 of the 14 instructions executed were floating point
-operations. Similarly, the next line specifies that there were 12 instructions
-executed in the context of function "main" which can be related to line 16 in
-file "file.f", taking 20 CPU cycles. If a cost line specifies less event counts
-than given in the "events" line, the rest is assumed to be zero. I.e., there
-was no floating point instruction executed relating to line 16.</para>
+<filename>file.f</filename> there is code belonging to function
+<function>main</function>. While running, 90 CPU cycles passed by, and 2 of
+the 14 instructions executed were floating point operations. Similarly, the
+next line specifies that there were 12 instructions executed in the context
+of function <function>main</function> which can be related to line 16 in
+file <filename>file.f</filename>, taking 20 CPU cycles. If a cost line
+specifies less event counts than given in the "events" line, the rest is
+assumed to be zero.  I.e. there was no floating point instruction executed
+relating to line 16.</para>
 
 <para>Note that regular cost lines always give self (also called exclusive)
 cost of code at a given position. If you specify multiple cost lines for the
 same position, these will be summed up. On the other hand, in the example above
-there is no specification of how many times function "main" actually was
+there is no specification of how many times function
+<function>main</function> actually was
 called: profile data only contains sums.</para>
 
 </sect2>
@@ -118,9 +121,11 @@ reference below for details.</para>
 <sect2 id="cl-format.overview.example2" xreflabel="Extended Example">
 <title>Extended Example</title>
 
-<para>The following example shows 3 functions, "main", "func1", and
-"func2". Function "main" calls "func1" once and "func2" 3 times. "func1" calls
-"func2" 2 times.
+<para>The following example shows 3 functions, <function>main</function>,
+<function>func1</function>, and <function>func2</function>. Function
+<function>main</function> calls <function>func1</function> once and
+<function>func2</function> 3 times. <function>func1</function> calls
+<function>func2</function> 2 times.
 <screen>events: Instructions
 
 fl=file1.c
@@ -145,14 +150,18 @@ fl=file2.c
 fn=func2
 20 700</screen></para>
 
-<para>One can see that in "main" only code from line 16 is executed where also
-the other functions are called. Inclusive cost of "main" is 820, which is the
-sum of self cost 20 and costs spent in the calls: 400 for the single call to
-"func1" and 400 as sum for the three calls to "func2".</para>
+<para>One can see that in <function>main</function> only code from line 16
+is executed where also the other functions are called. Inclusive cost of
+<function>main</function> is 820, which is the sum of self cost 20 and costs
+spent in the calls: 400 for the single call to <function>func1</function>
+and 400 as sum for the three calls to <function>func2</function>.</para>
 
-<para>Function "func1" is located in "file1.c", the same as "main". Therefore,
-a "cfl=" specification for the call to "func1" is not needed. The function
-"func1" only consists of code at line 51 of "file1.c", where "func2" is called.</para>
+<para>Function <function>func1</function> is located in
+<filename>file1.c</filename>, the same as <function>main</function>.
+Therefore, a "cfl=" specification for the call to <function>func1</function>
+is not needed. The function <function>func1</function> only consists of code
+at line 51 of <filename>file1.c</filename>, where <function>func2</function>
+is called.</para>
 
 </sect2>
 
@@ -227,7 +236,7 @@ fn=(1)
 <para>If a Callgrind data file should hold costs for each assembler instruction
 of a program, you specify subposition "instr" in the "positions:" header line,
 and each cost line has to include the address of some instruction. Addresses
-are allowed to have a size of 64bit to support 64bit architectures. Thus,
+are allowed to have a size of 64 bits to support 64-bit architectures. Thus,
 repeating similar, long addresses for almost every line in the data file can
 enlarge the file size quite significantly, and
 motivates for subposition compression: instead of every cost line starting with
@@ -378,7 +387,7 @@ for "Ir and "Dr".</para>
     <para><computeroutput>version: number</computeroutput> [Callgrind]</para>
     <para>This is used to distinguish future profile data formats.  A 
     major version of 0 or 1 is supposed to be upwards compatible with 
-    Cachegrinds format.  It is optional; if not appearing, version 1 
+    Cachegrind's format.  It is optional; if not appearing, version 1 
     is supposed.  Otherwise, this has to be the first header line.</para>
   </listitem>
 

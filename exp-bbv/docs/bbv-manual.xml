@@ -14,13 +14,13 @@ command line.</para>
 
 <para>
    A basic block is a linear section of code with one entry point and one exit
-   point.  A <emphasis>basic blocks vector</emphasis> (BBV) is a list of all
+   point.  A <emphasis>basic block vector</emphasis> (BBV) is a list of all
    basic blocks entered during program execution, and a count of how many
    times each basic block was run.
 </para>
 
 <para>
-   BBV is tool that generates basic block vectors for use with the 
+   BBV is a tool that generates basic block vectors for use with the 
    <ulink url="http://www.cse.ucsd.edu/~calder/simpoint/">SimPoint</ulink>
    analysis tool. 
    The SimPoint methodology enables speeding up architectural 
@@ -214,17 +214,30 @@ T:11:78573 :15:1353  :56:1
 T:18:45 :12:135353 :56:78 314:4324263]]></programlisting>
 
 <para>
-  Each new interval starts with a T.   This is followed by a colon,
-  then by a unique number identifying the basic block.  This is followed
-  by another colon, then followed by the frequency (which is scaled
-  by the number of instructions in the basic block).
+  Each new interval starts with a T.   This is followed on the same line
+  by a series of basic block and frequency pairs, one for each
+  basic block that was entered during the interval.  The format for
+  each block/frequency pair is a colon, followed by a number that
+  uniquely identifies the basic block, another colon, and then
+  the frequency (which is the number of times the block was entered,
+  multiplied by the number of instructions in the block).  The
+  pairs are separated from each other by a space.
 </para>
 
 <para>
-  The entry count is multiplied by the number of instructions that are 
+  The frequency count is multiplied by the number of instructions that are 
   in the basic block, in order to weigh the count so that instructions in 
   small basic blocks aren't counted as more important than instructions 
   in large basic blocks.
+</para>
+
+<para>
+  The SimPoint program only processes lines that start with a "T".  All
+  other lines are ignored.  Traditionally comments are indicated by
+  starting a line with a "#" character.  Some other BBV generation tools,
+  such as PinPoints, generate lines beginning with letters other than "T"
+  to indicate more information about the program being run.  We do
+  not generate these, as the SimPoint utility ignores them.
 </para>
 
 </sect1>
@@ -257,38 +270,50 @@ T:18:45 :12:135353 :56:78 314:4324263]]></programlisting>
 
 <para>
    When a superblock is run for the first time, it is instrumented
-   with our BBV routine.  This adds a call to our instruction
-   counting function for each original instruction.
-   The current superblock is looked up in an ordered set to find 
-   a structure that holds block-specific statistics (the entry point 
-   address is the index into the ordered set).  We increment the 
-   instruction count for this superblock and
-   also update the master instruction count.
-   If the master count overflows the interval size 
-   then we print out the basic block statistics for the current interval
-   to disk, and then reset all the superblock counters to zero.
+   with our BBV routine.  A block info (bbInfo) structure is allocated
+   which holds the various information and statistics for the block.
+   A unique block ID is assigned to the block, and then the
+   structure is placed into an ordered set.
+   Then each native instruction in the block is instrumented to
+   call an instruction counting routine with a pointer to the block
+   info structure as an argument.
 </para>
 
 <para>
-   On the x86 and amd64 architectures the code takes special
-   care with rep-prefixed string instructions.  This is because 
+   At run-time, our instruction counting routines are called once
+   per native instruction.  The relevant block info structure is accessed
+   and the block count and total instruction count is updated.   
+   If the total instruction count overflows the interval size 
+   then we walk the ordered set, writing out the statistics for
+   any block that was accessed in the interval, then resetting the
+   block counters to zero.
+</para>
+
+<para>
+   On the x86 and amd64 architectures the counting code has extra
+   code to handle rep-prefixed string instructions.  This is because 
    actual hardware counts a rep-prefixed instruction 
    as one instruction, while a naive Valgrind implementation
    would count it as many (possibly hundreds, thousands or even millions)
-   of instructions.  We have special code to handle
-   this properly, which makes the results match hardware performance
-   counter results.
+   of instructions.  We handle rep-prefixed instructions specially,
+   in order to make the results match those obtained with hardware performance
+   counters.
 </para>   
    
 <para>
-   BBV also counts the fldcw instruction.  This
-   instruction is used on x86 machines when converting numbers
-   from floating point to integer (among other uses).
+   BBV also counts the fldcw instruction.  This instruction is used on 
+   x86 machines in various ways; it is most commonly found when converting 
+   floating point values into integers.
    On Pentium 4 systems the retired instruction performance
-   counter counts this instruction as two
-   instructions (all other known processors only count it as one).
-   This can affect results when using SimPoint on Pentium 4 systems,
-   so we provide the count for use in mitigating this at analysis time.
+   counter counts this instruction as two instructions (all other 
+   known processors only count it as one).
+   This can affect results when using SimPoint on Pentium 4 systems.
+   We provide the fldcw count so that users can evaluate whether it
+   will impact their results enough to avoid using Pentium 4 machines
+   for their experiments.  It would be possible to add an option to 
+   this tool that mimics the double-counting so that the generated BBV
+   files would be usable for experiments using hardware performance
+   counters on Pentium 4 systems.
 </para>
 
 </sect1>

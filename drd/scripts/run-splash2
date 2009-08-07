@@ -73,8 +73,8 @@ function run_test {
   print_runtime_ratio "${avg4}" "${stddev4}" "${vsz4}" "${vszdev4}" "$VG" --tool=helgrind --history-level=none "$@" -p${psep}${p} "${test_args}"
 
   p=4
-  test_output="${1}-helgrind-4-partial.out" \
-  print_runtime_ratio "${avg4}" "${stddev4}" "${vsz4}" "${vszdev4}" "$VG" --tool=helgrind --history-level=partial "$@" -p${psep}${p} "${test_args}"
+  test_output="${1}-helgrind-4-approx.out" \
+  print_runtime_ratio "${avg4}" "${stddev4}" "${vsz4}" "${vszdev4}" "$VG" --tool=helgrind --history-level=approx "$@" -p${psep}${p} "${test_args}"
 
   p=4
   test_output="${1}-helgrind-4-full.out" \
@@ -127,8 +127,8 @@ fi
 # 15. Virtual memory size ratio for --tool=drd --check-stack-var=no -p4 versus -p4.
 # 16. Execution time ratio for --tool=helgrind --history-level=none -p4 versus -p4.
 # 17. Virtual memory size ratio for --tool=helgrind --history-level=none -p4 versus -p4.
-# 18. Execution time ratio for --tool=helgrind --history-level=partial -p4 versus -p4.
-# 19. Virtual memory size ratio for --tool=helgrind --history-level=partial -p4 versus -p4.
+# 18. Execution time ratio for --tool=helgrind --history-level=approx -p4 versus -p4.
+# 19. Virtual memory size ratio for --tool=helgrind --history-level=approx -p4 versus -p4.
 # 20. Execution time ratio for --tool=helgrind --history-level=full -p4 versus -p4.
 # 21. Virtual memory size ratio for --tool=helgrind --history-level=full -p4 versus -p4.
 # 22. Execution time ratio for Intel Thread Checker -p4 versus -p4.

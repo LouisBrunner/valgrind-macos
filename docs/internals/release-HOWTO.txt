@@ -13,7 +13,7 @@ First of all:
 
 - Tell valgrind-developers you want to do a release.  Give a timeframe for
   everyone to check in any final features/bug-fixes they want in the
-  release.  (Especially Josef Weidendorfer for Callgrind.)
+  release.
 
 - Go over the docs, make sure they're up to date.
 
@@ -40,19 +40,15 @@ First of all:
 - Other files that might need updating:  README, README_DEVELOPERS,
   README_PACKAGERS.
 
-- Add X.Y.Z and X.Y.Z.SVN versions to Bugzilla (ask Dirk to do it)
+- Add X.Y.Z and X.Y+1.Z.SVN versions to Bugzilla.
 
-- If there are any binary incompatible tool API changes against the last
-  stable release, ensure that VG_CORE_INTERFACE_VERSION in
-  include/pub_tool_tooliface.h has been increased since the last release.
+- Add "wantedX.Y.Z+1" and "wantedX.Y+1.Z" milestones to Bugzilla.
 
 
 For each release candidate (should do release candidates for feature
 releases, bug-fix-only releases might not need one):
 
-- Build.  Don't forget to rebuild the Vex header file that specifies which
-  version of Vex is being used (so that it matches that mentioned in the final
-  release notes).  [This was forgotten for 3.2.2.]
+- Build.
 
 - Do pre-release testing:
 
@@ -83,9 +79,6 @@ releases, bug-fix-only releases might not need one):
 
   * Run regression tests from gsl-1.6 on all platforms.  This is a good,
     thorough test of FP.  Easy, using the scripts auxprogs/gsl16test.
-
-  * Check that a tarball build of callgrind is buildable/installable
-    against a from-tarball build of valgrind.
 
 - Change release number in AC_INIT() in configure.in to "X.Y.Z-rcN", where
   'N' is the release candidate number.
@@ -163,12 +156,8 @@ For the official release:
 - Change release number in AC_INIT() in configure.in to "X.Y.Z.SVN", where
   X.Y.Z is one more than the release just done.
 
-- Add a new section to docs/internals/X_Y_BUGSTATUS.txt (or a new file if
-  it's a feature release).
-
-- Add new entries to docs/internals/roadmap.txt for the next release(s).
-
-- Copy the release notes into the trunk's NEWS file.
+- Make sure the release notes are present in the NEWS file on the trunk and
+  the branch.
 
 - Announce the release:
   - Email valgrind-users, valgrind-developers, and valgrind-announce.

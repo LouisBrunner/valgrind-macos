@@ -54,7 +54,7 @@ when the <option>--tool</option> option is used to select it.</para>
 <para>To write your own tool, you'll need the Valgrind source code.  You'll
 need a check-out of the Subversion repository for the automake/autoconf
 build instructions to work.  See the information about how to do check-out
-from the repository at <ulink url="&vg-svn-repo;">the Valgrind
+from the repository at <ulink url="&vg-repo-url;">the Valgrind
 website</ulink>.</para>
 
 </sect2>

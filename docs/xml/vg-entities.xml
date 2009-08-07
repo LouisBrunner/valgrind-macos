@@ -1,9 +1,7 @@
 <!-- misc. strings -->
-<!ENTITY vg-url        "http://www.valgrind.org/">
 <!ENTITY vg-jemail     "julian@valgrind.org">
 <!ENTITY vg-vemail     "valgrind@valgrind.org">
 <!ENTITY vg-lifespan   "2000-2009">
-<!ENTITY vg-users-list "http://lists.sourceforge.net/lists/listinfo/valgrind-users">
 
 <!-- valgrind release + version stuff -->
 <!ENTITY rel-type    "Release">
@@ -11,14 +9,14 @@
 <!ENTITY rel-date    "2 January 2009">
 
 <!-- where the docs are installed -->
-<!ENTITY vg-doc-path  "/usr/share/doc/valgrind/html/index.html">
+<!ENTITY vg-docs-path  "/usr/share/doc/valgrind/html/index.html">
 
 <!-- valgrind website links used in lots of places in the docs  -->
 <!-- kept in here 'cos everytime the website gets changed, it`s -->
 <!-- a real pain tracking the links down in the docs            -->
-<!ENTITY vg-developers "http://www.valgrind.org/info/developers.html">
-<!ENTITY vg-svn-repo   "http://www.valgrind.org/downloads/repository.html">
-<!ENTITY vg-pubs       "http://www.valgrind.org/docs/pubs.html">
-<!ENTITY vg-bookset    "http://www.valgrind.org/docs/manual/index.html">
-<!ENTITY vg-dist-docs  "http://www.valgrind.org/docs/manual/dist.html">
-<!ENTITY vg-commentary "http://www.valgrind.org/docs/manual/manual-core.html#manual-core.comment">
+<!ENTITY vg-url        "http://www.valgrind.org/">
+<!ENTITY vg-lists-url  "http://www.valgrind.org/support/mailing_lists.html">
+<!ENTITY vg-devs-url   "http://www.valgrind.org/info/developers.html">
+<!ENTITY vg-repo-url   "http://www.valgrind.org/downloads/repository.html">
+<!ENTITY vg-pubs-url   "http://www.valgrind.org/docs/pubs.html">
+<!ENTITY vg-docs-url   "http://www.valgrind.org/docs/manual/index.html">

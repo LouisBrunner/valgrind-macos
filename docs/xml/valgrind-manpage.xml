@@ -42,8 +42,8 @@ below it describe tool-specific options.</para>
 
 <para>This manual page covers only basic usage and options.  For more
 comprehensive information, please see the HTML documentation on your
-system: <filename>&vg-doc-path;</filename>, or online:
-<filename>&vg-bookset;</filename>.</para>
+system: <filename>&vg-docs-path;</filename>, or online:
+<filename>&vg-docs-url;</filename>.</para>
 
 </refsect1>
 
@@ -223,9 +223,9 @@ system: <filename>&vg-doc-path;</filename>, or online:
 <title>See Also</title>
 
 <para>
-<filename>&vg-doc-path;</filename>, 
+<filename>&vg-docs-path;</filename>, 
 and/or 
-<filename>&vg-bookset;</filename>.
+<filename>&vg-docs-url;</filename>.
 </para>
 
 </refsect1>

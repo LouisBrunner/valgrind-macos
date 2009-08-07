@@ -11,7 +11,7 @@
   <releaseinfo>&rel-type; &rel-version; &rel-date;</releaseinfo>
   <copyright>
     <year>&vg-lifespan;</year>
-    <holder><ulink url="&vg-developers;">Valgrind Developers</ulink></holder>
+    <holder><ulink url="&vg-devs-url;">Valgrind Developers</ulink></holder>
   </copyright>
   <legalnotice>
     <para>Email: <ulink url="mailto:&vg-vemail;">&vg-vemail;</ulink></para>
@@ -52,7 +52,7 @@
   <para>From Nordic mythology.  Originally (before release) the project
   was named Heimdall, after the watchman of the Nordic gods.  He could
   "see a hundred miles by day or night, hear the grass growing, see the
-  wool growing on a sheep's back" (etc).  This would have been a great
+  wool growing on a sheep's back", etc.  This would have been a great
   name, but it was already taken by a security package "Heimdal".</para>
 
   <para>Keeping with the Nordic theme, Valgrind was chosen.  Valgrind is
@@ -78,7 +78,7 @@
 
 <qandaentry id="faq.make_dies">
  <question id="q-make_dies">
-  <para>When I trying building Valgrind, 'make' dies partway with
+  <para>When building Valgrind, 'make' dies partway with
   an assertion failure, something like this:</para>
 <screen>
 % make: expand.c:489: allocated_variable_append: 
@@ -88,20 +88,20 @@
  <answer id="a-make_dies">
   <para>It's probably a bug in 'make'.  Some, but not all, instances of
   version 3.79.1 have this bug, see
-  www.mail-archive.com/bug-make@gnu.org/msg01658.html.  Try upgrading to
-  a more recent version of 'make'.  Alternatively, we have heard that
-  unsetting the CFLAGS environment variable avoids the problem.</para>
+  <ulink url="http://www.mail-archive.com/bug-make@gnu.org/msg01658.html">this</ulink>.
+  Try upgrading to a more recent version of 'make'.  Alternatively, we have
+  heard that unsetting the CFLAGS environment variable avoids the
+  problem.</para>
  </answer>
 </qandaentry>
 
 <qandaentry id="faq.glibc_devel">
  <question>
-  <para>When I try to build Valgrind, 'make' fails with
-<programlisting>
+  <para>When building Valgrind, 'make' fails with this:</para>
+<screen>
 /usr/bin/ld: cannot find -lc
 collect2: ld returned 1 exit status
-</programlisting>
-  </para>
+</screen>
  </question>
  <answer>
   <para>You need to install the glibc-static-devel package.</para>
@@ -118,17 +118,17 @@ collect2: ld returned 1 exit status
 <qandaentry id="faq.exit_errors">
   <question id="q-exit_errors">
     <para>Programs run OK on Valgrind, but at exit produce a bunch of
-    errors involving <literal>__libc_freeres()</literal> and then die
+    errors involving <literal>__libc_freeres</literal> and then die
     with a segmentation fault.</para>
   </question>
   <answer id="a-exit_errors">
     <para>When the program exits, Valgrind runs the procedure
-    <function>__libc_freeres()</function> in glibc.  This is a hook for
+    <function>__libc_freeres</function> in glibc.  This is a hook for
     memory debuggers, so they can ask glibc to free up any memory it has
     used.  Doing that is needed to ensure that Valgrind doesn't
     incorrectly report space leaks in glibc.</para>
 
-    <para>Problem is that running <literal>__libc_freeres()</literal> in
+    <para>The problem is that running <literal>__libc_freeres</literal> in
     older glibc versions causes this crash.</para>
 
     <para>Workaround for 1.1.X and later versions of Valgrind: use the
@@ -237,9 +237,9 @@ collect2: ld returned 1 exit status
     memory pool allocators.  Memory for quite a number of destructed
     objects is not immediately freed and given back to the OS, but kept
     in the pool(s) for later re-use.  The fact that the pools are not
-    freed at the exit() of the program cause Valgrind to report this
+    freed at the exit of the program cause Valgrind to report this
     memory as still reachable.  The behaviour not to free pools at the
-    exit() could be called a bug of the library though.</para>
+    exit could be called a bug of the library though.</para>
 
     <para>Using GCC, you can force the STL to use malloc and to free
     memory as soon as possible by globally disabling memory caching.
@@ -269,8 +269,8 @@ collect2: ld returned 1 exit status
     by reading 
     <ulink 
     url="http://gcc.gnu.org/onlinedocs/libstdc++/faq/index.html#4_4_leak">
-    http://gcc.gnu.org/onlinedocs/libstdc++/faq/index.html#4_4_leak</ulink> if
-    you absolutely want to do that. But beware: 
+         http://gcc.gnu.org/onlinedocs/libstdc++/faq/index.html#4_4_leak</ulink>
+    if you absolutely want to do that. But beware: 
     allocators belong to the more messy parts of the STL and
     people went to great lengths to make the STL portable across
     platforms. Chances are good that your solution will work on your
@@ -297,7 +297,7 @@ collect2: ld returned 1 exit status
     object is unloaded before the program terminates, Valgrind will
     discard the debug information and the error message will be full of
     <literal>???</literal> entries.  The workaround here is to avoid
-    calling dlclose() on these shared objects.</para>
+    calling <function>dlclose</function> on these shared objects.</para>
 
     <para>Also, <option>-fomit-frame-pointer</option> and
     <option>-fstack-check</option> can make stack traces worse.</para>
@@ -369,9 +369,11 @@ Invalid write of size 1
     <para>Occasionally Valgrind stack traces get the wrong function
     names.  This is caused by glibc using aliases to effectively give
     one function two names.  Most of the time Valgrind chooses a
-    suitable name, but very occasionally it gets it wrong.  Examples we
-    know of are printing 'bcmp' instead of 'memcmp', 'index' instead of
-    'strchr', and 'rindex' instead of 'strrchr'.</para>
+    suitable name, but very occasionally it gets it wrong.  Examples we know
+    of are printing <function>bcmp</function> instead of
+    <function>memcmp</function>, <function>index</function> instead of
+    <function>strchr</function>, and <function>rindex</function> instead of
+    <function>strrchr</function>.</para>
   </answer>
 </qandaentry>
 
@@ -401,19 +403,12 @@ Invalid write of size 1
   </answer>
 </qandaentry>
 
-</qandadiv>
 
-
-
-<!-- Memcheck doesn't find my bug -->
-<qandadiv id="faq.notfound" xreflabel="Memcheck doesn't find my bug">
-<title>Memcheck doesn't find my bug</title>
 
 <qandaentry id="faq.hiddenbug">
   <question id="q-hiddenbug">
-    <para>I try running "valgrind --tool=memcheck my_program" and get
-    Valgrind's startup message, but I don't get any errors and I know my
-    program has errors.</para>
+    <para> Memcheck doesn't report any errors and I know my program has
+    errors.</para>
   </question>
   <answer id="a-hiddenbug">
     <para>There are two possible causes of this.</para>
@@ -442,13 +437,13 @@ valgrind-listener 12345
 
     <para>Second, if your program is statically linked, most Valgrind
     tools won't work as well, because they won't be able to replace
-    certain functions, such as malloc(), with their own versions.  A key
-    indicator of this is if Memcheck says:
+    certain functions, such as <function>malloc</function>, with their own
+    versions.  A key indicator of this is if Memcheck says:
 <programlisting>
 All heap blocks were freed -- no leaks are possible
 </programlisting>
-    when you know your program calls malloc().  The workaround is to
-    avoid statically linking your program.</para>
+    when you know your program calls <function>malloc</function>.  The
+    workaround is to avoid statically linking your program.</para>
   </answer>
 </qandaentry>
 
@@ -475,6 +470,10 @@ int main(void)
     <para>Unfortunately, Memcheck doesn't do bounds checking on static
     or stack arrays.  We'd like to, but it's just not possible to do in
     a reasonable way that fits with how Memcheck works.  Sorry.</para>
+    
+    <para>However, the experimental tool Ptrcheck can detect errors like
+    this.  Run Valgrind with the <option>--tool=exp-ptrcheck</option> option
+    to try it, but beware that it is not as robust as Memcheck.</para>
   </answer>
 </qandaentry>
 
@@ -612,48 +611,31 @@ int main(void)
 <qandadiv id="faq.help" xreflabel="How To Get Further Assistance">
 <title>How To Get Further Assistance</title>
 
+<!-- WARNING: this file should not xref other parts of the docs, because it
+is built standalone as FAQ.txt.  That's why we link to, for example, the
+online copy of the manual. -->
+
 <qandaentry id="e-help">
   <!-- <question><para/></question> -->
   <answer id="a-help">
-  <para>Please read all of this section before posting.</para>
-
-  <para>If you think an answer is incomplete or inaccurate, please
-  e-mail <ulink url="mailto:&vg-vemail;">&vg-vemail;</ulink>.</para>
-
   <para>Read the appropriate section(s) of the 
-  <ulink url="&vg-bookset;">Valgrind Documentation</ulink>.</para>
-
-  <para>Read the 
-  <ulink url="&vg-dist-docs;">Distribution Documents</ulink>.</para>
+  <ulink url="&vg-docs-url;">Valgrind Documentation</ulink>.</para>
 
   <para><ulink url="http://search.gmane.org">Search</ulink> the 
   <ulink url="http://news.gmane.org/gmane.comp.debugging.valgrind">valgrind-users</ulink> mailing list archives, using the group name 
   <computeroutput>gmane.comp.debugging.valgrind</computeroutput>.</para>
 
-  <para>Only when you have tried all of these things and are still
-  stuck, should you post to the 
-  <ulink url="&vg-users-list;">valgrind-users mailing list</ulink>. In
-  which case, please read the following carefully.  Making a complete
-  posting will greatly increase the chances that an expert or fellow
-  user reading it will have enough information and motivation to
-  reply.</para>
+  <para>If you think an answer in this FAQ is incomplete or inaccurate, please
+  e-mail <ulink url="mailto:&vg-vemail;">&vg-vemail;</ulink>.</para>
 
-  <para>Make sure you give full details of the problem, including the
-  full output of <computeroutput>valgrind -v &lt;your-prog&gt;</computeroutput>, if
-  applicable.  Also which Linux distribution you're using (Red Hat,
-  Debian, etc) and its version number.</para>
-
-  <para>You are in little danger of making your posting too long unless
-  you include large chunks of Valgrind's (unsuppressed) output, so err
-  on the side of giving too much information.</para>
-
-  <para>Clearly written subject lines and message bodies are
-  appreciated, too.</para>
-
-  <para>Finally, remember that, despite the fact that most of the
-  community are very helpful and responsive to emailed questions, you
-  are probably requesting help from unpaid volunteers, so you have no
-  guarantee of receiving an answer.</para>
+  <para>If you have tried all of these things and are still
+  stuck, you can try mailing the
+  <ulink url="&vg-lists-url;">valgrind-users mailing list</ulink>. 
+  Note that an email has a better change of being answered usefully if it is
+  clearly written.  Also remember that, despite the fact that most of the
+  community are very helpful and responsive to emailed questions, you are
+  probably requesting help from unpaid volunteers, so you have no guarantee
+  of receiving an answer.</para>
 </answer>
 
 </qandaentry>

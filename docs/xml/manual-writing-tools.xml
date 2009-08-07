@@ -14,14 +14,15 @@ help.
 <title>Introduction</title>
 
 <para>The key idea behind Valgrind's architecture is the division
-between its "core" and "tool plug-ins".</para>
+between its <emphasis>core</emphasis> and <emphasis>tools</emphasis>.</para>
 
 <para>The core provides the common low-level infrastructure to
 support program instrumentation, including the JIT
 compiler, low-level memory manager, signal handling and a
-scheduler (for pthreads).  It also provides certain services that
+thread scheduler.  It also provides certain services that
 are useful to some but not all tools, such as support for error
-recording and suppression.</para>
+recording, and support for replacing heap allocation functions such as
+<function>malloc</function>.</para>
 
 <para>But the core leaves certain operations undefined, which
 must be filled by tools.  Most notably, tools define how program
@@ -34,13 +35,13 @@ occur.  But the core takes care of all the hard work.</para>
 
 
 
-<sect1 id="manual-writing-tools.writingatool" xreflabel="Writing a Tool">
-<title>Writing a Tool</title>
+<sect1 id="manual-writing-tools.writingatool" xreflabel="Basics">
+<title>Basics</title>
 
 <sect2 id="manual-writing-tools.howtoolswork" xreflabel="How tools work">
 <title>How tools work</title>
 
-<para>Tool plug-ins must define various functions for instrumenting programs
+<para>Tools must define various functions for instrumenting programs
 that are called by Valgrind's core. They are then linked against
 Valgrind's core to define a complete Valgrind tool which will be used
 when the <option>--tool</option> option is used to select it.</para>
@@ -87,19 +88,20 @@ top-level directory <computeroutput>valgrind/</computeroutput>.</para>
  </listitem>
 
  <listitem>
-  <para>Create empty files
-  <filename>foobar/docs/Makefile.am</filename> and
-  <filename>foobar/tests/Makefile.am</filename>.
+  <para>Create an empty file <filename>foobar/tests/Makefile.am</filename>.
   </para>
  </listitem>
 
  <listitem>
   <para>Copy <filename>none/Makefile.am</filename> into
   <filename>foobar/</filename>.  Edit it by replacing all
-  occurrences of the string <computeroutput>"none"</computeroutput> with
-  <computeroutput>"foobar"</computeroutput>, and all occurrences of
-  the string <computeroutput>"nl_"</computeroutput> with
-  <computeroutput>"fb_"</computeroutput>.</para>
+  occurrences of the strings
+  <computeroutput>"none"</computeroutput>,
+  <computeroutput>"nl_"</computeroutput> and
+  <computeroutput>"nl-"</computeroutput> with
+  <computeroutput>"foobar"</computeroutput>,
+  <computeroutput>"fb_"</computeroutput> and
+  <computeroutput>"fb-"</computeroutput> respectively.</para>
  </listitem>
 
  <listitem>
@@ -107,11 +109,11 @@ top-level directory <computeroutput>valgrind/</computeroutput>.</para>
   <computeroutput>foobar/</computeroutput>, renaming it as
   <filename>fb_main.c</filename>.  Edit it by changing the
   <computeroutput>details</computeroutput> lines in
-  <function>nl_pre_clo_init()</function> to something appropriate for the
+  <function>nl_pre_clo_init</function> to something appropriate for the
   tool.  These fields are used in the startup message, except for
   <computeroutput>bug_reports_to</computeroutput> which is used if a
-  tool assertion fails.  Also replace the string
-  <computeroutput>"nl_"</computeroutput> with  
+  tool assertion fails.  Also, replace the string
+  <computeroutput>"nl_"</computeroutput> throughout with  
   <computeroutput>"fb_"</computeroutput> again.</para>
  </listitem>
 
@@ -119,13 +121,12 @@ top-level directory <computeroutput>valgrind/</computeroutput>.</para>
    <para>Edit <filename>Makefile.am</filename>, adding the new directory
    <filename>foobar</filename> to the
    <computeroutput>TOOLS</computeroutput> or
-   <computeroutput>EXP_TOOLS</computeroutput>variables.</para>
+   <computeroutput>EXP_TOOLS</computeroutput> variables.</para>
   </listitem>
 
   <listitem>
    <para>Edit <filename>configure.in</filename>, adding
-   <filename>foobar/Makefile</filename>,
-   <filename>foobar/docs/Makefile</filename> and
+   <filename>foobar/Makefile</filename> and
    <filename>foobar/tests/Makefile</filename> to the
    <computeroutput>AC_OUTPUT</computeroutput> list.</para>
   </listitem>
@@ -166,7 +167,7 @@ top-level directory <computeroutput>valgrind/</computeroutput>.</para>
 
 </orderedlist>
 
-<para>These steps don't have to be followed exactly - you can choose
+<para>These steps don't have to be followed exactly -- you can choose
 different names for your source files, and use a different
 <option>--prefix</option> for
 <computeroutput>./configure</computeroutput>.</para>
@@ -190,8 +191,7 @@ onto the interesting stuff...</para>
 
 <para>The names can be different to the above, but these are the usual
 names.  The first one is registered using the macro
-<computeroutput>VG_DETERMINE_INTERFACE_VERSION</computeroutput> (which also
-checks that the core/tool interface of the tool matches that of the core).
+<computeroutput>VG_DETERMINE_INTERFACE_VERSION</computeroutput>.
 The last three are registered using the
 <computeroutput>VG_(basic_tool_funcs)</computeroutput> function.</para>
 
@@ -207,25 +207,25 @@ core about them.</para>
 <title>Initialisation</title>
 
 <para>Most of the initialisation should be done in
-<function>pre_clo_init()</function>.  Only use
-<function>post_clo_init()</function> if a tool provides command line
+<function>pre_clo_init</function>.  Only use
+<function>post_clo_init</function> if a tool provides command line
 options and must do some initialisation after option processing takes
 place (<computeroutput>"clo"</computeroutput> stands for "command line
 options").</para>
 
 <para>First of all, various "details" need to be set for a tool, using
-the functions <function>VG_(details_*)()</function>.  Some are all
+the functions <function>VG_(details_*)</function>.  Some are all
 compulsory, some aren't.  Some are used when constructing the startup
 message, <computeroutput>detail_bug_reports_to</computeroutput> is used
-if <computeroutput>VG_(tool_panic)()</computeroutput> is ever called, or
+if <computeroutput>VG_(tool_panic)</computeroutput> is ever called, or
 a tool assertion fails.  Others have other uses.</para>
 
 <para>Second, various "needs" can be set for a tool, using the functions
-<function>VG_(needs_*)()</function>.  They are mostly booleans, and can
+<function>VG_(needs_*)</function>.  They are mostly booleans, and can
 be left untouched (they default to <varname>False</varname>).  They
 determine whether a tool can do various things such as: record, report
 and suppress errors; process command line options; wrap system calls;
-record extra information about heap blocks, etc.</para>
+record extra information about heap blocks; etc.</para>
 
 <para>For example, if a tool wants the core's help in recording and
 reporting errors, it must call
@@ -233,13 +233,11 @@ reporting errors, it must call
 eight functions for comparing errors, printing out errors, reading
 suppressions from a suppressions file, etc.  While writing these
 functions requires some work, it's much less than doing error handling
-from scratch because the core is doing most of the work.  See the
-function <function>VG_(needs_tool_errors)</function> in
-<filename>include/pub_tool_tooliface.h</filename> for full details of
-all the needs.</para>
+from scratch because the core is doing most of the work.
+</para>
 
 <para>Third, the tool can indicate which events in core it wants to be
-notified about, using the functions <function>VG_(track_*)()</function>.
+notified about, using the functions <function>VG_(track_*)</function>.
 These include things such as heap blocks being allocated, the stack
 pointer changing, a mutex being locked, etc.  If a tool wants to know
 about this, it should provide a pointer to a function, which will be
@@ -247,7 +245,7 @@ called when that event happens.</para>
 
 <para>For example, if the tool want to be notified when a new heap block
 is allocated, it should call
-<function>VG_(track_new_mem_heap)()</function> with an appropriate
+<function>VG_(track_new_mem_heap)</function> with an appropriate
 function pointer, and the assigned function will be called each time
 this happens.</para>
 
@@ -262,9 +260,9 @@ can be found in
 <sect2 id="manual-writing-tools.instr" xreflabel="Instrumentation">
 <title>Instrumentation</title>
 
-<para><function>instrument()</function> is the interesting one.  It
+<para><function>instrument</function> is the interesting one.  It
 allows you to instrument <emphasis>VEX IR</emphasis>, which is
-Valgrind's RISC-like intermediate language.  VEX IR is described fairly well
+Valgrind's RISC-like intermediate language.  VEX IR is described
 in the comments of the header file
 <filename>VEX/pub/libvex_ir.h</filename>.</para>
 
@@ -308,21 +306,21 @@ are deep reasons for this, trust us).  Valgrind provides an
 implementation of a reasonable subset of the C library, details of which
 are in <filename>pub_tool_libc*.h</filename>.</para>
 
-<para>When writing a tool, you shouldn't need to look at any of the code in
-Valgrind's core.  Although it might be useful sometimes to help understand
-something.</para>
+<para>When writing a tool, in theory you shouldn't need to look at any of
+the code in Valgrind's core, but in practice it might be useful sometimes to
+help understand something.</para>
 
 <para>The <filename>include/pub_tool_basics.h</filename> and
-<filename>VEX/pub/libvex_basictypes.h</filename> files file have some basic
+<filename>VEX/pub/libvex_basictypes.h</filename> files have some basic
 types that are widely used.</para>
 
 <para>Ultimately, the tools distributed (Memcheck, Cachegrind, Lackey, etc.)
 are probably the best documentation of all, for the moment.</para>
 
-<para>Note that the <computeroutput>VG_</computeroutput> macro is used
+<para>The <computeroutput>VG_</computeroutput> macro is used
 heavily.  This just prepends a longer string in front of names to avoid
 potential namespace clashes.  It is defined in
-<filename>include/pub_tool_basics_asm.h</filename>.</para>
+<filename>include/pub_tool_basics.h</filename>.</para>
 
 <para>There are some assorted notes about various aspects of the
 implementation in <filename>docs/internals/</filename>.  Much of it
@@ -330,105 +328,6 @@ isn't that relevant to tool-writers, however.</para>
 
 </sect2>
 
-
-<sect2 id="manual-writing-tools.advice" xreflabel="Words of Advice">
-<title>Words of Advice</title>
-
-<para>Writing and debugging tools is not trivial.  Here are some
-suggestions for solving common problems.</para>
-
-
-<sect3 id="manual-writing-tools.segfaults">
-<title>Segmentation Faults</title>
-
-<para>If you are getting segmentation faults in C functions used by your
-tool, the usual GDB command:</para>
-
-<screen><![CDATA[
-  gdb <prog> core]]></screen>
-<para>usually gives the location of the segmentation fault.</para>
-
-</sect3>
-
-
-<sect3 id="manual-writing-tools.debugfns">
-<title>Debugging C functions</title>
-
-<para>If you want to debug C functions used by your tool, you can
-achieve this by following these steps:</para>
-<orderedlist>
-  <listitem>
-    <para>Set <computeroutput>VALGRIND_LAUNCHER</computeroutput> to
-    <computeroutput><![CDATA[<prefix>/bin/valgrind]]></computeroutput>:</para>
-<programlisting>
-  export VALGRIND_LAUNCHER=/usr/local/bin/valgrind</programlisting>
-  </listitem>
-
-  <listitem>
-    <para>Then run <computeroutput><![CDATA[ gdb <prefix>/lib/valgrind/<platform>/<tool>:]]></computeroutput></para>
-<programlisting>
-  gdb /usr/local/lib/valgrind/ppc32-linux/lackey</programlisting>
-  </listitem>
-
-  <listitem>
-    <para>Do <computeroutput>handle SIGSEGV SIGILL nostop
-    noprint</computeroutput> in GDB to prevent GDB from stopping on a
-    SIGSEGV or SIGILL:</para>
-<programlisting>
-  (gdb) handle SIGILL SIGSEGV nostop noprint</programlisting>
-  </listitem>
-
-  <listitem>
-    <para>Set any breakpoints you want and proceed as normal for GDB:</para>
-<programlisting>
-  (gdb) b vgPlain_do_exec</programlisting>
-    <para>The macro VG_(FUNC) is expanded to vgPlain_FUNC, so If you
-    want to set a breakpoint VG_(do_exec), you could do like this in
-    GDB.</para>
-  </listitem>
-
-  <listitem>
-    <para>Run the tool with required options:</para>
-<programlisting>
-  (gdb) run `pwd`</programlisting>
-  </listitem>
-
-</orderedlist>
-
-<para>GDB may be able to give you useful information.  Note that by
-default most of the system is built with
-<option>-fomit-frame-pointer</option>, and you'll need to get rid of
-this to extract useful tracebacks from GDB.</para>
-
-</sect3>
-
-
-<sect3 id="manual-writing-tools.ucode-probs">
-<title>IR Instrumentation Problems</title>
-
-<para>If you are having problems with your VEX IR instrumentation, it's
-likely that GDB won't be able to help at all.  In this case, Valgrind's
-<option>--trace-flags</option> option is invaluable for observing the
-results of instrumentation.</para>
-
-</sect3>
-
-
-<sect3 id="manual-writing-tools.misc">
-<title>Miscellaneous</title>
-
-<para>If you just want to know whether a program point has been reached,
-using the <computeroutput>OINK</computeroutput> macro (in
-<filename>include/pub_tool_libcprint.h</filename>) can be easier than
-using GDB.</para>
-
-<para>The other debugging command line options can be useful too (run
-<computeroutput>valgrind --help-debug</computeroutput> for the
-list).</para>
-
-</sect3>
-
-</sect2>
 
 </sect1>
 
@@ -440,12 +339,45 @@ list).</para>
 <para>Once a tool becomes more complicated, there are some extra
 things you may want/need to do.</para>
 
+<sect2 id="manual-writing-tools.advice" xreflabel="Debugging Tips">
+<title>Debugging Tips</title>
+
+<para>Writing and debugging tools is not trivial.  Here are some
+suggestions for solving common problems.</para>
+
+<para>If you are getting segmentation faults in C functions used by your
+tool, the usual GDB command:</para>
+
+<screen><![CDATA[
+  gdb <prog> core]]></screen>
+<para>usually gives the location of the segmentation fault.</para>
+
+<para>If you want to debug C functions used by your tool, there are
+instructions on how to do so in the file
+<filename>README_DEVELOPERS</filename>.</para>
+
+<para>If you are having problems with your VEX IR instrumentation, it's
+likely that GDB won't be able to help at all.  In this case, Valgrind's
+<option>--trace-flags</option> option is invaluable for observing the
+results of instrumentation.</para>
+
+<para>If you just want to know whether a program point has been reached,
+using the <computeroutput>OINK</computeroutput> macro (in
+<filename>include/pub_tool_libcprint.h</filename>) can be easier than
+using GDB.</para>
+
+<para>The other debugging command line options can be useful too (run
+<computeroutput>valgrind --help-debug</computeroutput> for the
+list).</para>
+
+</sect2>
+
 <sect2 id="manual-writing-tools.suppressions" xreflabel="Suppressions">
 <title>Suppressions</title>
 
 <para>If your tool reports errors and you want to suppress some common
 ones, you can add suppressions to the suppression files.  The relevant
-files are <filename>valgrind/*.supp</filename>; the final suppression
+files are <filename>*.supp</filename>; the final suppression
 file is aggregated from these files by combining the relevant
 <filename>.supp</filename> files depending on the versions of linux, X
 and glibc on a system.</para>
@@ -454,7 +386,7 @@ and glibc on a system.</para>
 <computeroutput>tool_name:suppression_name</computeroutput>.  The
 <computeroutput>tool_name</computeroutput> here is the name you specify
 for the tool during initialisation with
-<function>VG_(details_name)()</function>.</para>
+<function>VG_(details_name)</function>.</para>
 
 </sect2>
 
@@ -462,101 +394,60 @@ for the tool during initialisation with
 <sect2 id="manual-writing-tools.docs" xreflabel="Documentation">
 <title>Documentation</title>
 
-<para>As of version 3.0.0, Valgrind documentation has been converted to
-XML. Why?  See <ulink url="http://www.ucc.ie/xml/">The XML FAQ</ulink>.
-</para>
-
-
-<sect3 id="manual-writing-tools.xml" xreflabel="The XML Toolchain">
-<title>The XML Toolchain</title>
-
 <para>If you are feeling conscientious and want to write some
-documentation for your tool, please use XML.  The Valgrind
-Docs use the following toolchain and versions:</para>
+documentation for your tool, please use XML as the rest of Valgrind does.
+The file <filename>docs/README</filename> has more details on getting
+the XML toolchain to work;  this can be difficult, unfortunately.</para>
 
-<programlisting>
- xmllint:   using libxml version 20607
- xsltproc:  using libxml 20607, libxslt 10102 and libexslt 802
- pdfxmltex: pdfTeX (Web2C 7.4.5) 3.14159-1.10b
- pdftops:   version 3.00
- DocBook:   version 4.2
-</programlisting>
-
-<para><command>Latency:</command> you should note that latency is
-a big problem: DocBook is constantly being updated, but the tools
-tend to lag behind somewhat.  It is important that the versions
-get on with each other, so if you decide to upgrade something,
-then you need to ascertain whether things still work nicely -
-this *cannot* be assumed.</para>
-
-<para><command>Stylesheets:</command> The Valgrind docs use
-various custom stylesheet layers, all of which are in
-<computeroutput>valgrind/docs/lib/</computeroutput>. You
-shouldn't need to modify these in any way.</para>
-
-<para><command>Catalogs:</command> Catalogs provide a mapping from
-generic addresses to specific local directories on a given machine.
-Most recent Linux distributions have adopted a common place for storing
-catalogs (<filename>/etc/xml/</filename>).  Assuming that you have the
-various tools listed above installed, you probably won't need to modify
-your catalogs.  But if you do, then just add another
-<computeroutput>group</computeroutput> to this file, reflecting your
-local installation.</para>
-
-</sect3>
-
-
-<sect3 id="manual-writing-tools.writing" xreflabel="Writing the Documentation">
-<title>Writing the Documentation</title>
-
-<para>Follow these steps (using <computeroutput>foobar</computeroutput>
-as the example tool name again):</para>
+<para>To write the documentation, follow these steps (using
+<computeroutput>foobar</computeroutput> as the example tool name
+again):</para>
 
 <orderedlist>
 
   <listitem>
    <para>The docs go in
-   <computeroutput>valgrind/foobar/docs/</computeroutput>, which you will
+   <computeroutput>foobar/docs/</computeroutput>, which you will
    have created when you started writing the tool.</para>
   </listitem>
 
   <listitem>
-    <para>Write <filename>foobar/docs/Makefile.am</filename>.  Use
-    <filename>memcheck/docs/Makefile.am</filename> as an
-    example.</para>
-  </listitem>
-
-  <listitem>
     <para>Copy the XML documentation file for the tool Nulgrind from
-    <filename>valgrind/none/docs/nl-manual.xml</filename> to
+    <filename>none/docs/nl-manual.xml</filename> to
     <computeroutput>foobar/docs/</computeroutput>, and rename it to
     <filename>foobar/docs/fb-manual.xml</filename>.</para>
 
-    <para><command>Note</command>: there is a *really stupid* tetex bug
-    with underscores in filenames, so don't use '_'.</para>
+    <para><command>Note</command>: there is a tetex bug
+    involving underscores in filenames, so don't use '_'.</para>
   </listitem>
 
   <listitem>
     <para>Write the documentation. There are some helpful bits and
-    pieces on using xml markup in
-    <filename>valgrind/docs/xml/xml_help.txt</filename>.</para>
+    pieces on using XML markup in
+    <filename>docs/xml/xml_help.txt</filename>.</para>
   </listitem>
 
   <listitem>
     <para>Include it in the User Manual by adding the relevant entry to
-    <filename>valgrind/docs/xml/manual.xml</filename>.  Copy and edit an
+    <filename>docs/xml/manual.xml</filename>.  Copy and edit an
     existing entry.</para>
   </listitem>
 
   <listitem>
+    <para>Include it in the man page by adding the relevant entry to
+    <filename>docs/xml/valgrind-manpage.xml</filename>.  Copy and
+    edit an existing entry.</para>
+  </listitem>
+
+  <listitem>
     <para>Validate <filename>foobar/docs/fb-manual.xml</filename> using
-    the following command from within <filename>valgrind/docs/</filename>:
+    the following command from within <filename>docs/</filename>:
   </para>
 <screen><![CDATA[
-% make valid
+make valid
 ]]></screen>
 
-   <para>You will probably get errors that look like this:</para>
+   <para>You may get errors that look like this:</para>
 
 <screen><![CDATA[
 ./xml/index.xml:5: element chapter: validity error : No declaration for
@@ -565,9 +456,9 @@ attribute base of element chapter
 
    <para>Ignore (only) these -- they're not important.</para>
 
-   <para>Because the xml toolchain is fragile, it is important to ensure
+   <para>Because the XML toolchain is fragile, it is important to ensure
    that <filename>fb-manual.xml</filename> won't break the documentation
-   set build.  Note that just because an xml file happily transforms to
+   set build.  Note that just because an XML file happily transforms to
    html does not necessarily mean the same holds true for pdf/ps.</para>
   </listitem>
 
@@ -575,29 +466,30 @@ attribute base of element chapter
     <para>You can (re-)generate the HTML docs while you are writing
     <filename>fb-manual.xml</filename> to help you see how it's looking.
     The generated files end up in
-    <filename>valgrind/docs/html/</filename>.  Use the following
-    command, within <filename>valgrind/docs/</filename>:</para>
+    <filename>docs/html/</filename>.  Use the following
+    command, within <filename>docs/</filename>:</para>
 <screen><![CDATA[
-% make html-docs
+make html-docs
 ]]></screen>
   </listitem>
 
   <listitem>
-    <para>When you have finished, also generate pdf and ps output to
-    check all is well, from within <filename>valgrind/docs/</filename>:
+    <para>When you have finished, try to generate PDF and PostScript output to
+    check all is well, from within <filename>docs/</filename>:
   </para>
 <screen><![CDATA[
-% make print-docs
+make print-docs
 ]]></screen>
 
     <para>Check the output <filename>.pdf</filename> and
     <filename>.ps</filename> files in
-    <computeroutput>valgrind/docs/print/</computeroutput>.</para>
+    <computeroutput>docs/print/</computeroutput>.</para>
+
+    <para>Note that the toolchain is even more fragile for the print docs,
+    so don't feel too bad if you can't get it working.</para>
   </listitem>
 
 </orderedlist>
-
-</sect3>
 
 </sect2>
 
@@ -650,12 +542,14 @@ write regression tests for your tool:</para>
 <sect2 id="manual-writing-tools.profiling" xreflabel="Profiling">
 <title>Profiling</title>
 
-<para>To profile a tool, use Cachegrind on it.  Read README_DEVELOPERS for
-details on running Valgrind under Valgrind.</para>
+<para>Lots of profiling tools have trouble running Valgrind.  For example,
+trying to use gprof is hopeless.</para>
 
-<para>Alternatively, you can use OProfile.  In most cases, it is better than
-Cachegrind because it's much faster, and gives real times, as opposed to
-instruction and cache hit/miss counts.</para>
+<para>Probably the best way to profile a tool is with OProfile on Linux.</para>
+
+<para>You can also use Cachegrind on it.  Read
+<filename>README_DEVELOPERS</filename> for details on running Valgrind under
+Valgrind;  it's a bit fragile but can usually be made to work.</para>
 
 </sect2>
 
@@ -665,40 +559,35 @@ instruction and cache hit/miss counts.</para>
 <title>Other Makefile Hackery</title>
 
 <para>If you add any directories under
-<computeroutput>valgrind/foobar/</computeroutput>, you will need to add
+<computeroutput>foobar/</computeroutput>, you will need to add
 an appropriate <filename>Makefile.am</filename> to it, and add a
 corresponding entry to the <computeroutput>AC_OUTPUT</computeroutput>
-list in <filename>valgrind/configure.in</filename>.</para>
+list in <filename>configure.in</filename>.</para>
 
 <para>If you add any scripts to your tool (see Cachegrind for an
 example) you need to add them to the
 <computeroutput>bin_SCRIPTS</computeroutput> variable in
-<filename>valgrind/foobar/Makefile.am</filename>.</para>
+<filename>foobar/Makefile.am</filename> and possible also to the
+<computeroutput>AC_OUTPUT</computeroutput> list in
+<filename>configure.in</filename>.</para>
 
 </sect2>
 
 
 
 <sect2 id="manual-writing-tools.ifacever" xreflabel="Core/tool Interface Versions">
-<title>Core/tool Interface Versions</title>
+<title>The Core/tool Interface</title>
 
-<para>In order to allow for the core/tool interface to evolve over time,
-Valgrind uses a basic interface versioning system.  All a tool has to do
-is use the
-<computeroutput>VG_DETERMINE_INTERFACE_VERSION</computeroutput> macro
-exactly once in its code.  If not, a link error will occur when the tool
-is built.</para>
+<para>The core/tool interface evolves over time, but it's pretty stable.
+We deliberately do not provide backward compatibility with old interfaces,
+because it is too difficult and too restrictive.  We view this as a good
+thing -- if we had to be backward compatible with earlier versions, many
+improvements now in the system could not have been added.</para>
 
-<para>The interface version number is changed when binary incompatible
-changes are made to the interface.  If the core and tool has the same major
-version number X they should work together.  If X doesn't match, Valgrind
-will abort execution with an explanation of the problem.</para>
-
-<para>This approach was chosen so that if the interface changes in the
-future, old tools won't work and the reason will be clearly explained,
-instead of possibly crashing mysteriously.  We have attempted to
-minimise the potential for binary incompatible changes by means such as
-minimising the use of naked structs in the interface.</para>
+<para>Because tools are statically linked with the core, if a tool compiles
+successfully then it should be compatible with the core.  We would not
+deliberately violate this property by, for example, changing the behaviour
+of a core function without changing its prototype.</para>
 
 </sect2>
 
@@ -709,16 +598,9 @@ minimising the use of naked structs in the interface.</para>
 <sect1 id="manual-writing-tools.finalwords" xreflabel="Final Words">
 <title>Final Words</title>
 
-<para>The core/tool interface is not fixed.  It's pretty stable these days,
-but it does change.  We deliberately do not provide backward compatibility
-with old interfaces, because it is too difficult and too restrictive.
-The interface checking should catch any incompatibilities.  We view this as
-a good thing -- if we had to be backward compatible with earlier versions,
-many improvements now in the system could not have been added.
-</para>
-
-
-<para>Happy programming.</para>
+<para>Writing a new Valgrind tool is not easy, but the tools you can write
+with Valgrind are among the most powerful programming tools there are.
+Happy programming!</para>
 
 </sect1>
 

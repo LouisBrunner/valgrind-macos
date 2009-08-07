@@ -222,8 +222,8 @@ system: <filename>&vg-docs-path;</filename>, or online:
 <title>See Also</title>
 
 <para>
-<filename>&vg-docs-path;</filename>, 
-and/or 
+ms_print(1),
+<filename>&vg-docs-path;</filename> or
 <filename>&vg-docs-url;</filename>.
 </para>
 
@@ -233,12 +233,9 @@ and/or
 <refsect1 id="author">
 <title>Author</title>
 
-<para>This manpage has been written by Andres Roldan &lt;aroldan@debian.org&gt;
-for the Debian Project, but can be used for any other distribution.</para>
-
-<para>Updated, rearranged and expanded by Robert Walsh
-&lt;rjwalsh@durables.org&gt; for the 2.4.0 release, and by other
-Valgrind developers subsequently.</para>
+<para>This manpage written by Andres Roldan &lt;aroldan@debian.org&gt;,
+Robert Walsh &lt;rjwalsh@durables.org&gt;, and the Valgrind
+developers.</para>
 
 </refsect1>
 

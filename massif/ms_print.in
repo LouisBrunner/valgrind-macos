@@ -67,7 +67,7 @@ usage: ms_print [options] <file>
   options for the user, with defaults in [ ], are:
     -h --help             show this message
     --version             show version
-    --threshold=<n.n>     significance threshold, in percent [$threshold]
+    --threshold=<m.n>     significance threshold, in percent [$threshold]
     --x=<4..1000>         graph width, in columns [72]
     --y=<4..1000>         graph height, in rows [20]
 

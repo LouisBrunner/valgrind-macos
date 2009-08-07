@@ -9,7 +9,7 @@
 <!ENTITY rel-date    "2 January 2009">
 
 <!-- where the docs are installed -->
-<!ENTITY vg-docs-path  "/usr/share/doc/valgrind/html/index.html">
+<!ENTITY vg-docs-path  "$INSTALL/share/doc/valgrind/html/index.html">
 
 <!-- valgrind website links used in lots of places in the docs  -->
 <!-- kept in here 'cos everytime the website gets changed, it`s -->

@@ -1,0 +1,73 @@
+<?xml version="1.0"?> <!-- -*- sgml -*- -->
+<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook XML V4.2//EN"
+          "http://www.oasis-open.org/docbook/xml/4.2/docbookx.dtd"
+[ <!ENTITY % vg-entities SYSTEM "../../docs/xml/vg-entities.xml"> %vg-entities; ]>
+
+
+<refentry id="ms_print">
+
+<refmeta>
+  <refentrytitle>ms_print</refentrytitle>
+  <manvolnum>1</manvolnum>
+  <refmiscinfo>Release &rel-version;</refmiscinfo>
+</refmeta>
+
+<refnamediv>
+  <refname>ms_print</refname>
+  <refpurpose>post-processing tool for the Valgrind tool Massif</refpurpose>
+</refnamediv>
+
+<refsynopsisdiv>
+<cmdsynopsis>
+  <command>ms_print</command>
+  <arg><replaceable>options</replaceable></arg>
+  <arg>filename</arg>
+</cmdsynopsis>
+</refsynopsisdiv>
+
+
+<refsect1 id="description">
+<title>Description</title>
+
+<para><command>ms_print</command> takes an output file produced by the
+Valgrind tool Massif and prints the information in an easy-to-read form.
+</para>
+
+</refsect1>
+
+
+
+<refsect1 id="options">
+<title>Options</title>
+
+<xi:include href="ms-manual.xml" xpointer="ms_print.opts.list"
+            xmlns:xi="http://www.w3.org/2001/XInclude" />
+
+</refsect1>
+
+
+
+
+<refsect1 id="see_also">
+<title>See Also</title>
+
+<para>
+valgrind(1),
+<filename>&vg-docs-path;</filename> or
+<filename>&vg-docs-url;</filename>.
+</para>
+
+</refsect1>
+
+
+<refsect1 id="author">
+<title>Author</title>
+
+<para>Nicholas Nethercote.</para>
+
+</refsect1>
+
+
+</refentry>
+
+

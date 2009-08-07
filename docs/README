@@ -128,11 +128,12 @@ For Ubuntu 9.04, to build HTML docs I had to:
 Actually, I'm not sure if the 'docbook' is necessary, but 'docbook-xsl'
 definitely is.
 
-To build the man pages I also had to change the value of XSL_MAN_STYLE from this:
+To build the man pages I also changed the Makefile.am to try this
+stylesheet:
 
     /usr/share/xml/docbook/stylesheet/nwalsh/current/manpages/docbook.xsl
 
-to this:
+if it can't find this one:
 
     /usr/share/xml/docbook/stylesheet/nwalsh/manpages/docbook.xsl
 

@@ -57,6 +57,7 @@ EXTRA_DIST = \
 	xml/dist-docs.xml \
 	xml/index.xml \
 	xml/licenses.xml \
+	xml/manpages-index.xml \
 	xml/manual.xml \
 	xml/manual-intro.xml \
 	xml/manual-core.xml \
@@ -106,7 +107,9 @@ XSL_HTML_CHUNK_STYLE  = $(mylibdir)/vg-html-chunk.xsl
 XSL_FO_STYLE          = $(mylibdir)/vg-fo.xsl
 XSL_TEXT_STYLE        = $(mylibdir)/vg-faq2txt.xsl
 XSL_WEBSITE_STYLE     = $(mylibdir)/vg-html-website.xsl
-XSL_MAN_STYLE = /usr/share/xml/docbook/stylesheet/nwalsh/current/manpages/docbook.xsl
+XSL_MAN_STYLES = \
+    /usr/share/xml/docbook/stylesheet/nwalsh/current/manpages/docbook.xsl \
+    /usr/share/xml/docbook/stylesheet/nwalsh/manpages/docbook.xsl
 
 all-docs: FAQ.txt man-page html-docs print-docs
 
@@ -119,16 +122,21 @@ FAQ.txt:
 	export XML_CATALOG_FILES=$(XML_CATALOG_FILES) && \
 	$(XSLTPROC) $(XSLTPROC_FLAGS) -o ./FAQ.txt $(XSL_TEXT_STYLE) $(myxmldir)/FAQ.xml
 
-# the valgrind manpage
+# the valgrind manpages
 man-page:
-	if test ! -f $(XSL_MAN_STYLE); then \
-	    echo "Error: I can't find the file '$(XSL_MAN_STYLE)'";     \
-	    echo "Please check where it lives on your system, and"      \
-	         "amend the line 'XSL_MAN_STYLE = ' in this Makefile."; \
-		  exit 1; \
-	fi;
-	export XML_CATALOG_FILES=$(XML_CATALOG_FILES) && \
-	$(XSLTPROC) $(XSLTPROC_FLAGS) -o ./ $(XSL_MAN_STYLE) $(myxmldir)/valgrind-manpage.xml
+	for x in $(XSL_MAN_STYLES) ; do \
+	    if test -f $$x; then \
+		echo "Using manpage stylesheet: $$x"; \
+		export XML_CATALOG_FILES=$(XML_CATALOG_FILES) && \
+		$(XSLTPROC) $(XSLTPROC_FLAGS) -o ./ $$x $(myxmldir)/manpages-index.xml; \
+		exit 0; \
+	    fi; \
+	done; \
+	echo ""; \
+	echo "Error: I can't find the XSL_MAN_STYLE file";     \
+	echo "Please check where it lives on your system, and"      \
+	     "amend the line 'XSL_MAN_STYLES = ' in this Makefile."; \
+	exit 1;
 
 # chunked html, on a chapter-by-chapter basis
 html-docs:

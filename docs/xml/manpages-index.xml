@@ -1,0 +1,19 @@
+<?xml version="1.0"?> <!-- -*- sgml -*- -->
+<!DOCTYPE set PUBLIC "-//OASIS//DTD DocBook XML V4.2//EN"
+  "http://www.oasis-open.org/docbook/xml/4.2/docbookx.dtd">
+
+<!-- This file is not part of the distributed docs, it's just here so we can
+     point $(XSTLPROC) at a single file and get all the man pages. -->
+
+<set>
+
+<!-- valgrind -->
+<xi:include href="valgrind-manpage.xml" parse="xml"  
+    xmlns:xi="http://www.w3.org/2001/XInclude" />
+
+<!-- ms_print -->
+<xi:include href="../../massif/docs/ms_print-manpage.xml" parse="xml"  
+    xmlns:xi="http://www.w3.org/2001/XInclude" />
+
+</set>
+

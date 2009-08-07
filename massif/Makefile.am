@@ -2,7 +2,9 @@ include $(top_srcdir)/Makefile.tool.am
 
 SUBDIRS += perf
 
-EXTRA_DIST = docs/ms-manual.xml
+EXTRA_DIST = \
+	docs/ms-manual.xml \
+	docs/ms_print-manpage.xml
 
 #----------------------------------------------------------------------------
 # Headers, etc

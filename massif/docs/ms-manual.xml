@@ -829,7 +829,8 @@ way.</para>
 
 <para>ms_print's options are:</para>
 
-<variablelist>
+<!-- start of xi:include in the manpage -->
+<variablelist id="ms_print.opts.list">
 
   <varlistentry>
     <term>

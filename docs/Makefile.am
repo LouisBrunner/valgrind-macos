@@ -179,6 +179,12 @@ install-data-hook:
 		mkdir -p $(DESTDIR)$(datadir)/doc/valgrind; \
 		cp -r html $(DESTDIR)$(datadir)/doc/valgrind; \
 	fi
+	for f in *.1 ; do \
+		if test -r $$f ; then \
+			mkdir -p $(DESTDIR)$(mandir)/man1; \
+			cp $$f $(DESTDIR)$(mandir)/man1; \
+		fi \
+	done
  ifeq ($(BUILD_ALL_DOCS),yes)
 	if test -r index.pdf ; then \
 		mkdir -p $(DESTDIR)$(datadir)/doc/valgrind; \
@@ -188,31 +194,28 @@ install-data-hook:
 		mkdir -p $(DESTDIR)$(datadir)/doc/valgrind; \
 		cp index.ps $(DESTDIR)$(datadir)/doc/valgrind/valgrind_manual.ps; \
 	fi
-	if test -r valgrind.1 ; then \
-		mkdir -p $(DESTDIR)$(mandir)/man1; \
-		cp valgrind.1 $(DESTDIR)$(mandir)/man1/valgrind.1; \
-	fi
  endif
 
 # This is done at 'make dist' time.  It builds the html docs, print
-# docs and man page and copies them into the docs/ directory in the
+# docs and man pages and copies them into the docs/ directory in the
 # tarball.
  ifeq ($(BUILD_ALL_DOCS),yes)
-dist-hook: FAQ.txt html-docs print-docs man-pages
+dist-hook: FAQ.txt html-docs man-pages print-docs
 	cp -r html $(distdir)
 	cp FAQ.txt $(distdir)/..
-	cp valgrind.1 $(distdir)
+	cp *.1 $(distdir)
 	cp print/index.pdf $(distdir)
 	cp print/index.ps $(distdir)
  else
 dist-hook: FAQ.txt html-docs man-pages
-	cp FAQ.txt $(distdir)/..
 	cp -r html $(distdir)
+	cp FAQ.txt $(distdir)/..
+	cp *.1 $(distdir)
  endif
 
 distclean-local:
 	rm -rf html print
-	rm -f $(top_builddir)/FAQ.txt
+	rm -f $(top_builddir)/FAQ.txt $(top_builddir)/docs/*.1
 
 
 

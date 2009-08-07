@@ -961,13 +961,6 @@ unlock(mx)                             unlock(mx)
     </listitem>
   </varlistentry>
 
-   --history-level=none|partial|full [full]
-       full:   show both stack traces for a data race (can be very slow)
-       approx: full trace for one thread, approx for the other (faster)
-       none:   only show trace for one thread in a race (fastest)
-
-
-
   <varlistentry id="opt.history-level"
                 xreflabel="--history-level">
     <term>

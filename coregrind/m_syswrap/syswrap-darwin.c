@@ -593,7 +593,7 @@ void VG_(show_open_ports)(void)
    sync_mappings
    ------------------------------------------------------------------ */
 
-static void sync_mappings(const HChar *when, const HChar *where, Int num)
+void ML_(sync_mappings)(const HChar *when, const HChar *where, Int num)
 {
    // Usually the number of segments added/removed in a single calls is very
    // small e.g. 1.  But it sometimes gets up to at least 100 or so (eg. for
@@ -6263,7 +6263,7 @@ POST(mach_msg_receive)
    // PRINT("UNHANDLED reply %d", mh->msgh_id);
 
    // Assume the call may have mapped or unmapped memory
-   sync_mappings("after", "mach_msg_receive", 0);
+   ML_(sync_mappings)("after", "mach_msg_receive", 0);
 }
 
 PRE(mach_msg_receive)
@@ -6674,7 +6674,7 @@ POST(mach_msg)
 
 POST(mach_msg_unhandled)
 {
-   sync_mappings("after", "mach_msg_unhandled", 0);
+   ML_(sync_mappings)("after", "mach_msg_unhandled", 0);
 }
 
 
@@ -6973,7 +6973,7 @@ PRE(iokit_user_client_trap)
 
 POST(iokit_user_client_trap)
 {
-   sync_mappings("after", "iokit_user_client_trap", ARG2);
+   ML_(sync_mappings)("after", "iokit_user_client_trap", ARG2);
 }
 
 

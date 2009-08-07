@@ -50,6 +50,8 @@ extern const UInt ML_(mdep_trap_table_size);
 
 void VG_(show_open_ports)(void);
 
+void ML_(sync_mappings)(const HChar *when, const HChar *where, Int num);
+
 // Unix syscalls.  
 // GEN = it uses the generic wrapper
 // NYI = wrapper not yet implemented in Valgrind

@@ -11,6 +11,14 @@
 <xi:include href="valgrind-manpage.xml" parse="xml"  
     xmlns:xi="http://www.w3.org/2001/XInclude" />
 
+<!-- callgrind_annotate -->
+<xi:include href="../../callgrind/docs/callgrind_annotate-manpage.xml" parse="xml"  
+    xmlns:xi="http://www.w3.org/2001/XInclude" />
+
+<!-- callgrind_control -->
+<xi:include href="../../callgrind/docs/callgrind_control-manpage.xml" parse="xml"  
+    xmlns:xi="http://www.w3.org/2001/XInclude" />
+
 <!-- ms_print -->
 <xi:include href="../../massif/docs/ms_print-manpage.xml" parse="xml"  
     xmlns:xi="http://www.w3.org/2001/XInclude" />

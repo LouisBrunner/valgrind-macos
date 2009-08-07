@@ -222,6 +222,8 @@ system: <filename>&vg-docs-path;</filename>, or online:
 <title>See Also</title>
 
 <para>
+callgrind_annotate(1),
+callgrind_control(1),
 ms_print(1),
 <filename>&vg-docs-path;</filename> or
 <filename>&vg-docs-url;</filename>.
@@ -233,9 +235,10 @@ ms_print(1),
 <refsect1 id="author">
 <title>Author</title>
 
-<para>This manpage written by Andres Roldan &lt;aroldan@debian.org&gt;,
-Robert Walsh &lt;rjwalsh@durables.org&gt;, and the Valgrind
-developers.</para>
+<para>The Valgrind developers.</para>
+
+<para>This manpage was written by Andres Roldan &lt;aroldan@debian.org&gt;
+and the Valgrind developers.</para>
 
 </refsect1>
 

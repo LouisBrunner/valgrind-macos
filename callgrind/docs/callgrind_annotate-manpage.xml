@@ -1,0 +1,71 @@
+<?xml version="1.0"?> <!-- -*- sgml -*- -->
+<!DOCTYPE chapter PUBLIC "-//OASIS//DTD DocBook XML V4.2//EN"
+          "http://www.oasis-open.org/docbook/xml/4.2/docbookx.dtd"
+[ <!ENTITY % vg-entities SYSTEM "../../docs/xml/vg-entities.xml"> %vg-entities; ]>
+
+
+<refentry id="callgrind-annotate">
+
+<refmeta>
+  <refentrytitle>Callgrind Annotate</refentrytitle>
+  <manvolnum>1</manvolnum>
+  <refmiscinfo>Release &rel-version;</refmiscinfo>
+</refmeta>
+
+<refnamediv id="a-name">
+  <refname>callgrind_annotate</refname>
+  <refpurpose>post-processing tool for the Valgrind tool Callgrind</refpurpose>
+</refnamediv>
+
+<refsynopsisdiv id="a-synopsis">
+  <cmdsynopsis>
+    <command>callgrind_annotate</command>    
+    <arg choice="opt"><replaceable>options</replaceable></arg>
+    <arg choice="opt"><replaceable>source-files</replaceable></arg>
+  </cmdsynopsis>
+</refsynopsisdiv>
+
+
+<refsect1 id="a-description">
+<title>Description</title>
+
+<para><command>callgrind_annotate</command> takes an output file produced by
+the Valgrind tool Callgrind and prints the information in an easy-to-read form.
+</para>
+
+</refsect1>
+
+
+<refsect1 id="a-options">
+<title>Options</title>
+
+<xi:include href="cl-manual.xml" xpointer="callgrind_annotate.opts.list"
+            xmlns:xi="http://www.w3.org/2001/XInclude" />
+
+</refsect1>
+
+
+<refsect1 id="a-see_also">
+<title>See Also</title>
+
+<para>
+valgrind(1),
+<filename>&vg-docs-path;</filename> or
+<filename>&vg-docs-url;</filename>.
+</para>
+
+
+</refsect1>
+
+
+<refsect1 id="a-author">
+<title>Author</title>
+
+<para>Josef Weidendorfer &lt;&cl-email;&gt;.</para>
+
+<para>This manual page was written by 
+Philipp Frauenfelder &lt;pfrauenf@debian.org&gt;.</para>
+</refsect1>
+
+
+</refentry>

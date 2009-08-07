@@ -1,7 +1,7 @@
 <?xml version="1.0"?> <!-- -*- sgml -*- -->
 <!DOCTYPE chapter PUBLIC "-//OASIS//DTD DocBook XML V4.2//EN"
   "http://www.oasis-open.org/docbook/xml/4.2/docbookx.dtd"
-[ <!ENTITY % cl-entities SYSTEM "cl-entities.xml"> %cl-entities; ]>
+[ <!ENTITY % vg-entities SYSTEM "../../docs/xml/vg-entities.xml"> %vg-entities; ]>
 
 <chapter id="cl-manual" xreflabel="Callgrind Manual">
 <title>Callgrind: a call-graph generating cache profiler</title>
@@ -33,12 +33,9 @@ of the profiling, two command line tools are provided:</para>
   <listitem>
     <para>This command reads in the profile data, and prints a
     sorted lists of functions, optionally with source annotation.</para>
-<!--
-    <para>You can read the manpage here: <xref
-	      linkend="callgrind-annotate"/>.</para>
--->
+
     <para>For graphical visualization of the data, try
-    <ulink url="&cl-gui;">KCachegrind</ulink>, which is a KDE/Qt based
+    <ulink url="&cl-gui-url;">KCachegrind</ulink>, which is a KDE/Qt based
     GUI that makes it easy to navigate the large amount of data that
     Callgrind produces.</para>
 
@@ -53,9 +50,6 @@ of the profiling, two command line tools are provided:</para>
     the application.  You can 
     get statistics information as well as the current stack trace, and
     you can request zeroing of counters or dumping of profile data.</para>
-<!--
-    <para>You can read the manpage here: <xref linkend="callgrind-control"/>.</para>
--->
   </listitem>
   </varlistentry>
 </variablelist>
@@ -172,7 +166,7 @@ on heuristics to detect calls and returns.</para>
   </para>
 
   <para>For better call graph browsing experience, it is highly recommended
-  to use <ulink url="&cl-gui;">KCachegrind</ulink>.
+  to use <ulink url="&cl-gui-url;">KCachegrind</ulink>.
   If your code
   has a significant fraction of its cost in <emphasis>cycles</emphasis> (sets
   of functions calling each other in a recursive manner), you have to
@@ -262,7 +256,7 @@ callgrind.out.<emphasis>pid</emphasis>.<emphasis>part</emphasis>-<emphasis>threa
       must be actively running for detection of the dump command. So,
       for a GUI application, resize the window, or for a server, send a
       request.</para>
-      <para>If you are using <ulink url="&cl-gui;">KCachegrind</ulink>
+      <para>If you are using <ulink url="&cl-gui-url;">KCachegrind</ulink>
       for browsing of profile information, you can use the toolbar
       button <command>Force dump</command>. This will request a dump
       and trigger a reload after the dump is written.</para>
@@ -489,8 +483,8 @@ callgrind.out.<emphasis>pid</emphasis>.<emphasis>part</emphasis>-<emphasis>threa
 </sect1>
 
 
-<sect1 id="cl-manual.options" xreflabel="Command line option reference">
-<title>Command line option reference</title>
+<sect1 id="cl-manual.options" xreflabel="Callgrind Options">
+<title>Callgrind Options</title>
 
 <para>
 In the following, options are grouped into classes.
@@ -515,6 +509,7 @@ parameter signature. </para>
 These options influence the name and format of the profile data files.
 </para>
 
+<!-- start of xi:include in the manpage -->
 <variablelist id="cl.opts.list.creation">
 
   <varlistentry id="opt.callgrind-out-file" xreflabel="--callgrind-out-file">
@@ -609,6 +604,7 @@ be executed. For interactive control use
 <computeroutput>callgrind_control</computeroutput>.
 </para>
 
+<!-- start of xi:include in the manpage -->
 <variablelist id="cl.opts.list.activity">
 
   <varlistentry id="opt.dump-every-bb" xreflabel="--dump-every-bb">
@@ -652,6 +648,7 @@ be executed. For interactive control use
   </varlistentry>
 
 </variablelist>
+<!-- end of xi:include in the manpage -->
 </sect2>
 
 <sect2 id="cl-manual.options.collection"
@@ -662,6 +659,7 @@ be executed. For interactive control use
 These options specify when events are to be aggregated into event counts.
 Also see <xref linkend="cl-manual.limits"/>.</para>
 
+<!-- start of xi:include in the manpage -->
 <variablelist id="cl.opts.list.collection">
 
   <varlistentry id="opt.instr-atstart" xreflabel="--instr-atstart">
@@ -761,6 +759,7 @@ Also see <xref linkend="cl-manual.limits"/>.</para>
   </varlistentry>
 
 </variablelist>
+<!-- end of xi:include in the manpage -->
 </sect2>
 
 <sect2 id="cl-manual.options.separation"
@@ -775,6 +774,7 @@ call chain leading to a function should be taken into account,
 and whether the thread ID should be considered.
 Also see <xref linkend="cl-manual.cycles"/>.</para>
 
+<!-- start of xi:include in the manpage -->
 <variablelist id="cmd-options.separation">
 
   <varlistentry id="opt.separate-threads" xreflabel="--separate-threads">
@@ -883,12 +883,14 @@ Also see <xref linkend="cl-manual.cycles"/>.</para>
 --> 
 
 </variablelist>
+<!-- end of xi:include in the manpage -->
 </sect2>
 
 <sect2 id="cl-manual.options.simulation"
        xreflabel="Cache simulation options">
 <title>Cache simulation options</title>
 
+<!-- start of xi:include in the manpage -->
 <variablelist id="cl.opts.list.simulation">
   
   <varlistentry id="opt.simulate-cache" xreflabel="--simulate-cache">
@@ -1004,6 +1006,7 @@ Also see <xref linkend="cl-manual.cycles"/>.</para>
     </listitem>
   </varlistentry>
 </variablelist>
+<!-- end of xi:include in the manpage -->
 
 </sect2>
 
@@ -1091,6 +1094,183 @@ their arguments.</para>
   </varlistentry>
 
 </variablelist>
+
+</sect1>
+
+
+
+<sect1 id="cl-manual.callgrind_annotate-options" xreflabel="callgrind_annotate Options">
+<title>callgrind_annotate Options</title>
+
+<!-- start of xi:include in the manpage -->
+<variablelist id="callgrind_annotate.opts.list">
+
+  <varlistentry>
+    <term><option>-h --help</option></term>
+    <listitem>
+      <para>Show summary of options.</para>
+    </listitem>
+  </varlistentry>
+
+  <varlistentry>
+    <term><option>--version</option></term>
+    <listitem>
+      <para>Show version of callgrind_annotate.</para>
+    </listitem>
+  </varlistentry>
+
+  <varlistentry>
+    <term>
+      <option>--show=A,B,C [default: all]</option>
+    </term>
+    <listitem>
+      <para>Only show figures for events A,B,C.</para>
+    </listitem>
+  </varlistentry>
+
+  <varlistentry>
+    <term>
+      <option>--sort=A,B,C</option>
+    </term>
+    <listitem>
+      <para>Sort columns by events A,B,C [event column order].</para>
+    </listitem>
+  </varlistentry>
+
+  <varlistentry>
+    <term>
+      <option><![CDATA[--threshold=<0--100> [default: 99%] ]]></option>
+    </term>
+    <listitem>
+      <para>Percentage of counts (of primary sort event) we are 
+      interested in.</para>
+    </listitem>
+  </varlistentry>
+
+  <varlistentry>
+    <term>
+      <option><![CDATA[--auto=<yes|no> [default: no] ]]></option>
+    </term>
+    <listitem>
+      <para>Annotate all source files containing functions that helped 
+      reach the event count threshold.</para>
+    </listitem>
+  </varlistentry>
+
+  <varlistentry>
+    <term>
+      <option>--context=N [default: 8] </option>
+    </term>
+    <listitem>
+      <para>Print N lines of context before and after annotated 
+      lines.</para>
+    </listitem>
+  </varlistentry>
+
+  <varlistentry>
+    <term>
+      <option><![CDATA[--inclusive=<yes|no> [default: no] ]]></option>
+    </term>
+    <listitem>
+      <para>Add subroutine costs to functions calls.</para>
+    </listitem>
+  </varlistentry>
+
+  <varlistentry>
+    <term>
+      <option><![CDATA[--tree=<none|caller|calling|both> [default: none] ]]></option>
+    </term>
+    <listitem>
+      <para>Print for each function their callers, the called functions 
+      or both.</para>
+    </listitem>
+  </varlistentry>
+
+  <varlistentry>
+    <term>
+      <option><![CDATA[-I, --include=<dir> ]]></option>
+    </term>
+    <listitem>
+      <para>Add <option>dir</option> to the list of directories to search
+      for source files.</para>
+  </listitem>
+  </varlistentry>
+
+</variablelist>
+<!-- end of xi:include in the manpage -->
+
+
+</sect1>
+
+
+
+
+<sect1 id="cl-manual.callgrind_control-options" xreflabel="callgrind_control Options">
+<title>callgrind_control Options</title>
+
+<!-- start of xi:include in the manpage -->
+<variablelist id="callgrind_control.opts.list">
+
+  <varlistentry>
+    <term><option>-h --help</option></term>
+    <listitem>
+      <para>Show summary of options.</para>
+    </listitem>
+  </varlistentry>
+
+  <varlistentry>
+    <term><option>--version</option></term>
+    <listitem>
+      <para>Show version of callgrind_control.</para>
+    </listitem>
+  </varlistentry>
+
+  <varlistentry>
+    <term><option>-s</option></term>
+    <listitem>
+      <para>Show statistics.</para>
+    </listitem>
+  </varlistentry>
+
+  <varlistentry>
+    <term><option>-b</option></term>
+    <listitem>
+      <para>Show stack trace.</para>
+    </listitem>
+  </varlistentry>
+
+  <varlistentry>
+    <term><option>-e [A,B,C] [default: all] </option></term>
+    <listitem>
+      <para>Only show figures for events A,B,C.</para>
+    </listitem>
+  </varlistentry>
+
+  <varlistentry>
+    <term><option>-z</option></term>
+    <listitem>
+      <para>Zero cost counters.</para>
+    </listitem>
+  </varlistentry>
+
+  <varlistentry>
+    <term><option>-d, --dump [hint]</option></term>
+    <listitem>
+      <para>Request the dumping of profile information. Optionally, a 
+      string can be specified which is written into the dump as part of 
+      the Trigger reason. This can be used to distinguish multiple dumps.</para>
+    </listitem>
+  </varlistentry>
+
+  <varlistentry>
+    <term><option>-k</option></term>
+    <listitem>
+      <para>Kill.</para>
+    </listitem>
+  </varlistentry>
+
+</variablelist>
+<!-- end of xi:include in the manpage -->
 
 </sect1>
 

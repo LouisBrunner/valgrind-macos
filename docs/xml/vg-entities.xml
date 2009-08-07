@@ -1,6 +1,7 @@
 <!-- misc. strings -->
 <!ENTITY vg-jemail     "julian@valgrind.org">
 <!ENTITY vg-vemail     "valgrind@valgrind.org">
+<!ENTITY cl-email      "Josef.Weidendorfer@gmx.de">
 <!ENTITY vg-lifespan   "2000-2009">
 
 <!-- valgrind release + version stuff -->
@@ -20,3 +21,6 @@
 <!ENTITY vg-repo-url   "http://www.valgrind.org/downloads/repository.html">
 <!ENTITY vg-pubs-url   "http://www.valgrind.org/docs/pubs.html">
 <!ENTITY vg-docs-url   "http://www.valgrind.org/docs/manual/index.html">
+<!ENTITY cl-gui-url    "http://kcachegrind.sourceforge.net/cgi-bin/show.cgi/KcacheGrindIndex">
+
+

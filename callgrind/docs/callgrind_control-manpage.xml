@@ -1,0 +1,72 @@
+<?xml version="1.0"?> <!-- -*- sgml -*- -->
+<!DOCTYPE chapter PUBLIC "-//OASIS//DTD DocBook XML V4.2//EN"
+          "http://www.oasis-open.org/docbook/xml/4.2/docbookx.dtd"
+[ <!ENTITY % vg-entities SYSTEM "../../docs/xml/vg-entities.xml"> %vg-entities; ]>
+
+
+<refentry id="callgrind-control">
+<refmeta>
+  <refentrytitle>Callgrind Control</refentrytitle>
+  <manvolnum>1</manvolnum>
+  <refmiscinfo>Release &rel-version;</refmiscinfo>
+</refmeta>
+
+<refnamediv id="c-name">
+  <refname>callgrind_control</refname>
+  <refpurpose>observe and control programs being run by the Valgrind tool
+  Callgrind</refpurpose>
+</refnamediv>
+
+<refsynopsisdiv id="c-synopsis">
+  <cmdsynopsis>
+    <command>callgrind_control</command>    
+    <arg choice="opt"><replaceable>options</replaceable></arg>
+    <arg choice="opt" rep="repeat"><replaceable>pid/program-name</replaceable></arg>
+  </cmdsynopsis>
+</refsynopsisdiv>
+
+
+<refsect1 id="c-description">
+<title>Description</title>
+
+<para>
+<command>callgrind_control</command> controls programs being run by the
+Valgrind tool Callgrind.  When a <command>pid/program name</command>
+argument is not specified, all applications currently being run by Callgrind
+on this system will be used for actions given by the specified option(s).
+The default action is to give some brief information about the applications
+being run by Callgrind.</para>
+
+</refsect1>
+
+
+<refsect1 id="c-options">
+<title>Options</title>
+
+
+</refsect1>
+
+
+<refsect1 id="c-see_also">
+<title>See Also</title>
+
+<para>
+valgrind(1),
+<filename>&vg-docs-path;</filename> or
+<filename>&vg-docs-url;</filename>.
+</para>
+
+</refsect1>
+
+
+<refsect1 id="c-author">
+<title>Author</title>
+
+<para>Josef Weidendorfer &lt;&cl-email;&gt;.</para>
+
+
+</refsect1>
+
+
+</refentry>
+

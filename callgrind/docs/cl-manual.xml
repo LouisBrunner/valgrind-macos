@@ -1206,69 +1206,116 @@ their arguments.</para>
 
 
 <sect1 id="cl-manual.callgrind_control-options" xreflabel="callgrind_control Options">
-<title>callgrind_control Options</title>
+<title>Description and options of callgrind_control</title>
+
+<para>The command <command>callgrind_control</command> allows to control
+  programs being run by the Valgrind tool Callgrind. By default, it acts
+  on all programs detected to be run by the current user via Callgrind.
+  It is possible to limit the actions to specified Callgrind runs by
+  providing a list of pids or program names as argument.
+  The default action is to give some brief information about the applications
+  being run by Callgrind.</para>
 
 <!-- start of xi:include in the manpage -->
 <variablelist id="callgrind_control.opts.list">
 
   <varlistentry>
-    <term><option>-h --help</option></term>
+    <term><option>-h, --help</option></term>
     <listitem>
-      <para>Show summary of options.</para>
+      <para>Show a short description, usage, and summary of options.</para>
     </listitem>
   </varlistentry>
 
   <varlistentry>
-    <term><option>--version</option></term>
+    <term><option>-v, --version</option></term>
     <listitem>
       <para>Show version of callgrind_control.</para>
     </listitem>
   </varlistentry>
 
   <varlistentry>
-    <term><option>-s</option></term>
+    <term><option>-l, --long</option></term>
     <listitem>
-      <para>Show statistics.</para>
+      <para>Show also the working directory, in addition to the brief
+      information given by default.
+      </para>
     </listitem>
   </varlistentry>
 
   <varlistentry>
-    <term><option>-b</option></term>
+    <term><option>-s, --stat</option></term>
     <listitem>
-      <para>Show stack trace.</para>
+      <para>Show statistics information about active Callgrind runs.</para>
     </listitem>
   </varlistentry>
 
   <varlistentry>
-    <term><option>-e [A,B,C] [default: all] </option></term>
+    <term><option>-b, --back</option></term>
     <listitem>
-      <para>Only show figures for events A,B,C.</para>
+      <para>Show stack/back traces of each thread in active Callgrind runs. For
+      each active function in the stack trace, also the number of invocations
+      since program start (or last dump) is shown. This option can be
+      combined with -e to show inclusive cost of active functions.</para>
     </listitem>
   </varlistentry>
 
   <varlistentry>
-    <term><option>-z</option></term>
+    <term><option>-e [A, B, ...]</option> (default: all)</term>
     <listitem>
-      <para>Zero cost counters.</para>
+      <para>Show the current per-thread, exclusive cost values of event
+      counters. If no explicit event names are given, figures for all event
+      types which are collected in the given Callgrind run are
+      shown. Otherwise, only figures for event types A, B, ... are shown. If
+      this option is combined with -b, inclusive cost for the functions of
+      each active stack frame is provided, too.
+      </para>
     </listitem>
   </varlistentry>
 
   <varlistentry>
-    <term><option>-d, --dump [hint]</option></term>
+    <term><option>-d, --dump [desc]</option> (default: empty description)</term>
     <listitem>
       <para>Request the dumping of profile information. Optionally, a 
-      string can be specified which is written into the dump as part of 
-      the Trigger reason. This can be used to distinguish multiple dumps.</para>
+      description can be specified which is written into the dump as part of 
+      the information giving the reason which triggered the dump action. This
+      can be used to distinguish multiple dumps.</para>
     </listitem>
   </varlistentry>
 
   <varlistentry>
-    <term><option>-k</option></term>
+    <term><option>-z, --zero </option></term>
     <listitem>
-      <para>Kill.</para>
+      <para>Zero all event counters.</para>
     </listitem>
   </varlistentry>
 
+  <varlistentry>
+    <term><option>-k, --kill</option></term>
+    <listitem>
+      <para>Force a Callgrind run to be terminated.</para>
+    </listitem>
+  </varlistentry>
+
+  <varlistentry>
+    <term><option>-i, --instr [on|off]</option> (default: on)</term>
+    <listitem>
+      <para>Switch instrumentation mode on or off. If a Callgrind run has
+      instrumentation disabled, no simulation is done and no events are
+      counted. This is useful to skip uninteresting program parts, as there
+      is much less slowdown (same as with the Valgrind tool "none"). See also
+      the Callgrind option <option>--instr-atstart</option>.</para>
+    </listitem>
+  </varlistentry>
+
+  <varlistentry>
+    <term><option>-w directory</option></term>
+    <listitem>
+      <para>Specify the startup directory of an active Callgrind run. On some
+      systems, active Callgrind runs can not be detected. To be able to
+      control these, the failed auto-detection can be worked around by
+      specifying the directory where a Callgrind run was started.</para>
+    </listitem>
+  </varlistentry>
 </variablelist>
 <!-- end of xi:include in the manpage -->
 

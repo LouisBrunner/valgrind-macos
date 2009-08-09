@@ -20,7 +20,7 @@
   <cmdsynopsis>
     <command>callgrind_control</command>    
     <arg choice="opt"><replaceable>options</replaceable></arg>
-    <arg choice="opt" rep="repeat"><replaceable>pid/program-name</replaceable></arg>
+    <arg choice="opt" rep="repeat"><replaceable>pid|program-name</replaceable></arg>
   </cmdsynopsis>
 </refsynopsisdiv>
 

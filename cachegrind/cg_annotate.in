@@ -142,7 +142,7 @@ my $version = "@VERSION@";
 
 # Usage message.
 my $usage = <<END
-usage: cg_annotate [options] output-file [source-files]
+usage: cg_annotate [options] cachegrind-out-file [source-files...]
 
   options for the user, with defaults in [ ], are:
     -h --help             show this message

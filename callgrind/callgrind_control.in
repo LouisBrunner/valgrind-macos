@@ -84,7 +84,7 @@ sub shortHelp {
 sub printHelp {
   printHeader;
 
-  print "Usage: callgrind_control [options] [<pid>|<name> ...]\n\n";
+  print "Usage: callgrind_control [options] [pid|program-name...]\n\n";
   print "If no pids/names are given, an action is applied to all currently\n";
   print "active Callgrind runs. Default action is printing short information.\n\n";
   print "Options:\n";

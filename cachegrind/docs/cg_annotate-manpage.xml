@@ -21,7 +21,8 @@
 <cmdsynopsis>
   <command>cg_annotate</command>
   <arg><replaceable>options</replaceable></arg>
-  <arg>filename</arg>
+  <arg choice="plain"><replaceable>cachegrind-out-file</replaceable></arg>
+  <arg choice="opt" rep="repeat"><replaceable>source-files</replaceable></arg>
 </cmdsynopsis>
 </refsynopsisdiv>
 

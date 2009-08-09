@@ -62,7 +62,7 @@ my $ms_print_args;
 
 # Usage message.
 my $usage = <<END
-usage: ms_print [options] <file>
+usage: ms_print [options] massif-out-file
 
   options for the user, with defaults in [ ], are:
     -h --help             show this message

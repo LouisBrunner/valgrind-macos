@@ -10,6 +10,7 @@
   <refentrytitle>ms_print</refentrytitle>
   <manvolnum>1</manvolnum>
   <refmiscinfo>Release &rel-version;</refmiscinfo>
+  <date>rel-date</date>
 </refmeta>
 
 <refnamediv>
@@ -21,7 +22,7 @@
 <cmdsynopsis>
   <command>ms_print</command>
   <arg><replaceable>options</replaceable></arg>
-  <arg>filename</arg>
+  <arg choice="plain"><replaceable>massif-out-file</replaceable></arg>
 </cmdsynopsis>
 </refsynopsisdiv>
 

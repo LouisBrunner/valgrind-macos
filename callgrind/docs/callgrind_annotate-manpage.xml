@@ -21,7 +21,9 @@
   <cmdsynopsis>
     <command>callgrind_annotate</command>    
     <arg choice="opt"><replaceable>options</replaceable></arg>
-    <arg choice="opt"><replaceable>source-files</replaceable></arg>
+    <!-- note the deliberate <arg> nesting here -->
+    <arg choice="opt"><replaceable>callgrind-out-file</replaceable>
+    <arg choice="opt" rep="repeat"><replaceable>source-files</replaceable></arg></arg>
   </cmdsynopsis>
 </refsynopsisdiv>
 

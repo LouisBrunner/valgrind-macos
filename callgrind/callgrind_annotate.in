@@ -196,7 +196,7 @@ my $version = "@VERSION@";
 
 # Usage message.
 my $usage = <<END
-usage: callgrind_annotate [options] [data-file [source-files]]
+usage: callgrind_annotate [options] [callgrind-out-file [source-files...]]
 
   options for the user, with defaults in [ ], are:
     -h --help             show this message

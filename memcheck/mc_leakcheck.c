@@ -113,6 +113,7 @@
 // ----
 //
 // Also, why are two blank lines printed between each loss record?
+// [bug 197930]
 //
 // ----
 //

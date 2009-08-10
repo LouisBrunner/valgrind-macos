@@ -1339,7 +1339,7 @@ arguments.</para>
 
 
 
-<sect1 id="mc-manual.mempools" xreflabel="Memory pools">
+<sect1 id="mc-manual.mempools" xreflabel="Memory Pools">
 <title>Memory Pools: describing and working with custom allocators</title>
 
 <para>Some programs use custom memory allocators, often for performance

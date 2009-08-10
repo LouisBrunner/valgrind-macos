@@ -138,7 +138,7 @@ static void resize ( VgHashTable table )
 }
 
 /* Puts a new, heap allocated VgHashNode, into the VgHashTable.  Prepends
-   the node to the appropriate chain. */
+   the node to the appropriate chain.  No duplicate key detection is done. */
 void VG_(HT_add_node) ( VgHashTable table, void* vnode )
 {
    VgHashNode* node     = (VgHashNode*)vnode;

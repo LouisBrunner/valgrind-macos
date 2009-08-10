@@ -3851,6 +3851,11 @@ VALGRIND_PRINTF_BACKTRACE(const char *format, ...)
    stack traces relating to the heap block will contain entries for both
    my_alloc() and internal_alloc(), which is probably not what you want.
 
+   For Memcheck users: if you use VALGRIND_MALLOCLIKE_BLOCK to carve out
+   custom blocks from within a heap block, B, that has been allocated with
+   malloc/calloc/new/etc, then block B will be *ignored* during leak-checking
+   -- the custom blocks will take precedence.
+
    VALGRIND_FREELIKE_BLOCK is the partner to VALGRIND_MALLOCLIKE_BLOCK.  For
    Memcheck, it does two things:
 
@@ -3884,11 +3889,6 @@ VALGRIND_PRINTF_BACKTRACE(const char *format, ...)
    Note: there is currently no VALGRIND_REALLOCLIKE_BLOCK client request;  it
    has to be emulated with MALLOCLIKE/FREELIKE and memory copying.
    
-   WARNING: if your allocator uses malloc() or 'new' to allocate
-   superblocks, rather than mmap() or brk(), this will not work properly --
-   you'll likely get assertion failures during leak detection.  This is
-   because Valgrind doesn't like seeing overlapping heap blocks.  Sorry.
-
    Ignored if addr == 0.
 */
 #define VALGRIND_MALLOCLIKE_BLOCK(addr, sizeB, rzB, is_zeroed)    \

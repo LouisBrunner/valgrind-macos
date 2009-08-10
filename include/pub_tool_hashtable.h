@@ -58,10 +58,12 @@ extern VgHashTable VG_(HT_construct) ( HChar* name );
 /* Count the number of nodes in a table. */
 extern Int VG_(HT_count_nodes) ( VgHashTable table );
 
-/* Add a node to the table. */
+/* Add a node to the table.  Duplicate keys are permitted. */
 extern void VG_(HT_add_node) ( VgHashTable t, void* node );
 
-/* Looks up a VgHashNode in the table.  Returns NULL if not found. */
+/* Looks up a VgHashNode in the table.  Returns NULL if not found.  If entries
+ * with duplicate keys are present, the most recently-added of the dups will
+ * be returned, but it's probably better to avoid dups altogether. */
 extern void* VG_(HT_lookup) ( VgHashTable table, UWord key );
 
 /* Removes a VgHashNode from the table.  Returns NULL if not found. */

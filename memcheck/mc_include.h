@@ -98,7 +98,10 @@ Bool MC_(mempool_exists)  ( Addr pool );
 
 MC_Chunk* MC_(get_freed_list_head)( void );
 
-/* For tracking malloc'd blocks */
+/* For tracking malloc'd blocks.  Nb: it's quite important that it's a
+   VgHashTable, because VgHashTable allows duplicate keys without complaint.
+   This can occur if a user marks a malloc() block as also a custom block with
+   MALLOCLIKE_BLOCK. */
 extern VgHashTable MC_(malloc_list);
 
 /* For tracking memory pools. */

@@ -53,6 +53,7 @@ EXTRA_DIST = \
 	clientperm.stderr.exp \
 	clientperm.stdout.exp clientperm.vgtest \
 	custom_alloc.stderr.exp custom_alloc.vgtest \
+	custom-overlap.stderr.exp custom-overlap.vgtest \
 	deep_templates.vgtest \
 	deep_templates.stdout.exp deep_templates.stderr.exp \
 	describe-block.stderr.exp describe-block.vgtest \
@@ -191,6 +192,7 @@ check_PROGRAMS = \
 	calloc-overflow \
 	clientperm \
 	custom_alloc \
+	custom-overlap \
 	deep_templates \
 	describe-block \
 	doublefree error_counts errs1 exitprog execve execve2 erringfds \

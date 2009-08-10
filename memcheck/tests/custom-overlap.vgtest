@@ -1,0 +1,2 @@
+prog: custom-overlap
+vgopts: --leak-check=summary -q

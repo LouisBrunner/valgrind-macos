@@ -910,7 +910,7 @@ static void print_results(ThreadId tid, Bool is_full_check)
 
 void MC_(detect_memory_leaks) ( ThreadId tid, LeakCheckMode mode )
 {
-   Int i;
+   Int i, j;
    
    tl_assert(mode != LC_Off);
 
@@ -933,27 +933,63 @@ void MC_(detect_memory_leaks) ( ThreadId tid, LeakCheckMode mode )
       tl_assert( lc_chunks[i]->data <= lc_chunks[i+1]->data);
    }
 
-   // Sanity check -- make sure they don't overlap.  But do allow exact
-   // duplicates.  If this assertion fails, it may mean that the application
+   // Sanity check -- make sure they don't overlap.  The one exception is that
+   // we allow a MALLOCLIKE block to sit entirely within a malloc() block.
+   // This is for bug 100628.  If this occurs, we ignore the malloc() block
+   // for leak-checking purposes.  This is a hack and probably should be done
+   // better, but at least it's consistent with mempools (which are treated
+   // like this in find_active_chunks).  Mempools have a separate VgHashTable
+   // for mempool chunks, but if custom-allocated blocks are put in a separate
+   // table from normal heap blocks it makes free-mismatch checking more
+   // difficult.
+   //
+   // If this check fails, it probably means that the application
    // has done something stupid with VALGRIND_MALLOCLIKE_BLOCK client
-   // requests, specifically, has made overlapping requests (which are
-   // nonsensical).  Another way to screw up is to use
-   // VALGRIND_MALLOCLIKE_BLOCK for stack locations; again nonsensical.
+   // requests, eg. has made overlapping requests (which are
+   // nonsensical), or used VALGRIND_MALLOCLIKE_BLOCK for stack locations;
+   // again nonsensical.
+   //
    for (i = 0; i < lc_n_chunks-1; i++) {
       MC_Chunk* ch1 = lc_chunks[i];
       MC_Chunk* ch2 = lc_chunks[i+1];
-      Bool nonsense_overlap = ! (
-            // Normal case - no overlap.
-            (ch1->data + ch1->szB <= ch2->data) ||
-            // Degenerate case: exact duplicates.
-            (ch1->data == ch2->data && ch1->szB  == ch2->szB)
-         );
-      if (nonsense_overlap) {
-         VG_(umsg)("Block [0x%lx, 0x%lx) overlaps with block [0x%lx, 0x%lx)\n",
-                   ch1->data, (ch1->data + ch1->szB),
-                   ch2->data, (ch2->data + ch2->szB));
+
+      Addr start1    = ch1->data;
+      Addr start2    = ch2->data;
+      Addr end1      = ch1->data + ch1->szB - 1;
+      Addr end2      = ch2->data + ch2->szB - 1;
+      Bool isCustom1 = ch1->allockind == MC_AllocCustom;
+      Bool isCustom2 = ch2->allockind == MC_AllocCustom;
+
+      if (end1 < start2) {
+         // Normal case - no overlap.
+
+      // We used to allow exact duplicates, I'm not sure why.  --njn
+      //} else if (start1 == start2 && end1 == end2) {
+         // Degenerate case: exact duplicates.
+
+      } else if (start1 >= start2 && end1 <= end2 && isCustom1 && !isCustom2) {
+         // Block i is MALLOCLIKE and entirely within block i+1.
+         // Remove block i+1.
+         for (j = i+1; j < lc_n_chunks-1; j++) {
+            lc_chunks[j] = lc_chunks[j+1];
+         }
+         lc_n_chunks--;
+
+      } else if (start2 >= start1 && end2 <= end1 && isCustom2 && !isCustom1) {
+         // Block i+1 is MALLOCLIKE and entirely within block i.
+         // Remove block i.
+         for (j = i; j < lc_n_chunks-1; j++) {
+            lc_chunks[j] = lc_chunks[j+1];
+         }
+         lc_n_chunks--;
+
+      } else {
+         VG_(umsg)("Block 0x%lx..0x%lx overlaps with block 0x%lx..0x%lx",
+                   start1, end1, start1, end2);
+         VG_(umsg)("This is usually caused by using VALGRIND_MALLOCLIKE_BLOCK");
+         VG_(umsg)("in an inappropriate way.");
+         tl_assert (0);
       }
-      tl_assert (!nonsense_overlap);
    }
 
    // Initialise lc_extras.

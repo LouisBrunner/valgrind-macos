@@ -722,7 +722,12 @@ Also see <xref linkend="cl-manual.limits"/>.</para>
       implicitly sets
       <option>--collect-state=no</option>.</para>
       <para>Collection state can be toggled also by inserting the client request
-      <computeroutput><xref linkend="cr.toggle-collect"/>;</computeroutput>
+      <computeroutput>
+      <!-- commented out because it causes broken links in the man page
+      <xref linkend="cr.toggle-collect"/>;
+      -->
+      CALLGRIND_TOGGLE_COLLECT
+      ;</computeroutput>
       at the needed code positions.</para>
     </listitem>
   </varlistentry>

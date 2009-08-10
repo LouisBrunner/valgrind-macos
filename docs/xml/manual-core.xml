@@ -1010,9 +1010,12 @@ that can report errors, e.g. Memcheck, but not Cachegrind.</para>
       wildcards to function names, and by using frame-level wildcards.
       The wildcarding facilities are powerful yet flexible, and with a
       bit of careful editing, you may be able to suppress a whole
-      family of related errors with only a few suppressions.  For
-      details on how to do this, see
-      <xref linkend="manual-core.suppress"/>.</para>
+      family of related errors with only a few suppressions.  
+      <!-- commented out because it causes broken links in the man page
+      For details on how to do this, see
+      <xref linkend="manual-core.suppress"/>.
+      -->
+      </para>
 
       <para>Sometimes two different errors
       are suppressed by the same suppression, in which case Valgrind
@@ -1320,8 +1323,12 @@ need to use these.</para>
       code gets put on the stack for most programs.  The
       <function>VALGRIND_DISCARD_TRANSLATIONS</function> client request is
       an alternative to <option>--smc-check=all</option> that requires more
-      effort but is much faster;  see <xref
-      linkend="manual-core-adv.clientreq"/> for more details.</para>
+      effort but is much faster.
+      <!-- commented out because it causes broken links in the man page
+      ;  see <xref
+      linkend="manual-core-adv.clientreq"/> for more details.
+      -->
+      </para>
 
       <para>Some architectures (including ppc32 and ppc64) require
       programs which create code at runtime to flush the instruction

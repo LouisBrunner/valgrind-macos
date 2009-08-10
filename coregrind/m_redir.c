@@ -223,9 +223,9 @@ typedef
       HChar* from_fnpatt;  /* from fnname pattern  */
       Addr   to_addr;      /* where redirecting to */
       Bool   isWrap;       /* wrap or replacement? */
-      HChar** mandatory;   /* non-NULL ==> abort V and print the
-                              strings if from_sopatt is loaded but
-                              from_fnpatt cannot be found */
+      const HChar** mandatory; /* non-NULL ==> abort V and print the
+                                  strings if from_sopatt is loaded but
+                                  from_fnpatt cannot be found */
       /* VARIABLE PARTS -- used transiently whilst processing redirections */
       Bool   mark; /* set if spec requires further processing */
       Bool   done; /* set if spec was successfully matched */
@@ -555,7 +555,7 @@ void generate_and_add_actives (
          break;
    }
    if (sp) {
-      HChar** strp;
+      const HChar** strp;
       HChar* v = "valgrind:  ";
       vg_assert(sp->mark);
       vg_assert(!sp->done);
@@ -813,7 +813,7 @@ static void add_hardwired_active ( Addr from, Addr to )
 __attribute__((unused)) /* not used on all platforms */
 static void add_hardwired_spec ( HChar* sopatt, HChar* fnpatt, 
                                  Addr   to_addr,
-                                 HChar** mandatory )
+                                 const HChar** mandatory )
 {
    Spec* spec = dinfo_zalloc("redir.ahs.1", sizeof(Spec));
    vg_assert(spec);

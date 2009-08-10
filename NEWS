@@ -46,6 +46,8 @@ Release 3.5.0 (???)
 ==3050== Command: ls -l
 ==3050== 
 
+* XXX: shut-down messages have changed a bit...
+
 * A new Memcheck client request VALGRIND_COUNT_LEAK_BLOCKS has been added.
   It is similar to VALGRIND_COUNT_LEAKS but counts blocks instead of bytes.
   [XXX: consider adding VALGRIND_COUNT_LEAK_BYTES as a synonym and

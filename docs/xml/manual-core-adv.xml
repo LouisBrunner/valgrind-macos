@@ -511,7 +511,7 @@ will honour only the first one.</para>
 
 <para>Figuring out what's going on given the dynamic nature of wrapping
 can be difficult.  The 
-<option>--trace-redir=yes</option> flag makes 
+<option>--trace-redir=yes</option> option makes 
 this possible
 by showing the complete state of the redirection subsystem after
 every
@@ -550,7 +550,7 @@ of both sets following any such event.</para>
 time an active specification is used for the first time.</para>
 
 <para>Hence for maximum debugging effectiveness you will need to use both
-flags.</para>
+options.</para>
 
 <para>One final comment.  The function-wrapping facility is closely
 tied to Valgrind's ability to replace (redirect) specified

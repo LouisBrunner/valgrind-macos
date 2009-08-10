@@ -110,10 +110,10 @@ command line.</para>
    
 </sect1>
 
-<sect1 id="bbv-manual.usage" xreflabel="BBV Usage">
-<title>BBV Command Line Options</title>
+<sect1 id="bbv-manual.usage" xreflabel="BBV Command-line Options">
+<title>BBV Command-line Options</title>
 
-<para> BBV-specific options are:</para>
+<para> BBV-specific command-line options are:</para>
 
 <!-- start of xi:include in the manpage -->
 <variablelist id="bbv.opts.list">

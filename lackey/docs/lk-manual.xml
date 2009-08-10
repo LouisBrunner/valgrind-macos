@@ -23,10 +23,10 @@ performance.</para>
 </sect1>
 
 
-<sect1 id="lk-manual.options" xreflabel="Lackey Options">
-<title>Lackey Options</title>
+<sect1 id="lk-manual.options" xreflabel="Lackey Command-line Options">
+<title>Lackey Command-line Options</title>
 
-<para>Lackey-specific options are:</para>
+<para>Lackey-specific command-line options are:</para>
 
 <!-- start of xi:include in the manpage -->
 <variablelist id="lk.opts.list">

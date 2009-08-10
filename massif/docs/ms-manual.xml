@@ -53,7 +53,7 @@ which parts of your program are responsible for allocating the heap memory.
 <title>Using Massif and ms_print</title>
 
 <para>First off, as for the other Valgrind tools, you should compile with
-debugging info (the <option>-g</option> flag).  It shouldn't
+debugging info (the <option>-g</option> option).  It shouldn't
 matter much what optimisation level you compile your program with, as this
 is unlikely to affect the heap memory usage.</para>
 
@@ -606,10 +606,10 @@ in a particular column, which makes following the allocation chains easier.
 </sect1>
 
 
-<sect1 id="ms-manual.options" xreflabel="Massif Options">
-<title>Massif Options</title>
+<sect1 id="ms-manual.options" xreflabel="Massif Command-line Options">
+<title>Massif Command-line Options</title>
 
-<para>Massif-specific options are:</para>
+<para>Massif-specific command-line options are:</para>
 
 <!-- start of xi:include in the manpage -->
 <variablelist id="ms.opts.list">
@@ -824,8 +824,8 @@ way.</para>
 </sect1>
 
 
-<sect1 id="ms-manual.ms_print-options" xreflabel="ms_print Options">
-<title>ms_print Options</title>
+<sect1 id="ms-manual.ms_print-options" xreflabel="ms_print Command-line Options">
+<title>ms_print Command-line Options</title>
 
 <para>ms_print's options are:</para>
 

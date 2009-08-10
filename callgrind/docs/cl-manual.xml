@@ -46,10 +46,10 @@ of the profiling, two command line tools are provided:</para>
   <term><command>callgrind_control</command></term>
   <listitem>
     <para>This command enables you to interactively observe and control 
-    the status of currently running applications, without stopping
-    the application.  You can 
-    get statistics information as well as the current stack trace, and
-    you can request zeroing of counters or dumping of profile data.</para>
+    the status of a program currently running under Callgrind's control,
+    without stopping the program.  You can get statistics information as
+    well as the current stack trace, and you can request zeroing of counters
+    or dumping of profile data.</para>
   </listitem>
   </varlistentry>
 </variablelist>
@@ -105,7 +105,7 @@ on heuristics to detect calls and returns.</para>
   <title>Basic Usage</title>
 
   <para>As with Cachegrind, you probably want to compile with debugging info
-  (the <option>-g</option> flag) and with optimization turned on.</para>
+  (the <option>-g</option> option) and with optimization turned on.</para>
 
   <para>To start a profile run for a program, execute:
   <screen>valgrind --tool=callgrind [callgrind options] your-program [program options]</screen>
@@ -476,15 +476,15 @@ callgrind.out.<emphasis>pid</emphasis>.<emphasis>part</emphasis>-<emphasis>threa
   intermingled, which almost certainly is not what you want.</para>
 
   <para>You will be able to control the new child independently from
-  the parent via <computeroutput>callgrind_control</computeroutput>.</para>
+  the parent via callgrind_control.</para>
 
   </sect2>
 
 </sect1>
 
 
-<sect1 id="cl-manual.options" xreflabel="Callgrind Options">
-<title>Callgrind Options</title>
+<sect1 id="cl-manual.options" xreflabel="Callgrind Command-line Options">
+<title>Callgrind Command-line Options</title>
 
 <para>
 In the following, options are grouped into classes.
@@ -600,8 +600,7 @@ These options influence the name and format of the profile data files.
 
 <para>
 These options specify when actions relating to event counts are to
-be executed. For interactive control use
-<computeroutput>callgrind_control</computeroutput>.
+be executed. For interactive control use callgrind_control.
 </para>
 
 <!-- start of xi:include in the manpage -->
@@ -716,7 +715,7 @@ Also see <xref linkend="cl-manual.limits"/>.</para>
       <para>Collection state can be
       toggled at entry and exit of a given function with the
       option <option><xref linkend="opt.toggle-collect"/></option>.  If you
-      use this flag, collection
+      use this option, collection
       state should be disabled at the beginning.  Note that the
       specification of <option>--toggle-collect</option>
       implicitly sets
@@ -1104,8 +1103,8 @@ their arguments.</para>
 
 
 
-<sect1 id="cl-manual.callgrind_annotate-options" xreflabel="callgrind_annotate Options">
-<title>callgrind_annotate Options</title>
+<sect1 id="cl-manual.callgrind_annotate-options" xreflabel="callgrind_annotate Command-line Options">
+<title>callgrind_annotate Command-line Options</title>
 
 <!-- start of xi:include in the manpage -->
 <variablelist id="callgrind_annotate.opts.list">
@@ -1210,16 +1209,14 @@ their arguments.</para>
 
 
 
-<sect1 id="cl-manual.callgrind_control-options" xreflabel="callgrind_control Options">
-<title>Description and options of callgrind_control</title>
+<sect1 id="cl-manual.callgrind_control-options" xreflabel="callgrind_control Command-line Options">
+<title>callgrind_control Command-line Options</title>
 
-<para>The command <command>callgrind_control</command> allows to control
-  programs being run by the Valgrind tool Callgrind. By default, it acts
-  on all programs detected to be run by the current user via Callgrind.
-  It is possible to limit the actions to specified Callgrind runs by
-  providing a list of pids or program names as argument.
-  The default action is to give some brief information about the applications
-  being run by Callgrind.</para>
+<para>By default, callgrind_control acts on all programs run by the
+  current user under Callgrind.  It is possible to limit the actions to
+  specified Callgrind runs by providing a list of pids or program names as
+  argument.  The default action is to give some brief information about the
+  applications being run under Callgrind.</para>
 
 <!-- start of xi:include in the manpage -->
 <variablelist id="callgrind_control.opts.list">

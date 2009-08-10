@@ -1123,7 +1123,7 @@ static void print_preamble ( Bool logging_to_fd,
       VexArchInfo vex_archinfo;
       if (!logging_to_fd)
          VG_(message)(Vg_DebugMsg, "\n");
-      VG_(message)(Vg_DebugMsg, "Valgrind flags:\n");
+      VG_(message)(Vg_DebugMsg, "Valgrind options:\n");
       for (i = 0; i < VG_(sizeXA)( VG_(args_for_valgrind) ); i++) {
          VG_(message)(Vg_DebugMsg, 
                      "   %s\n", 

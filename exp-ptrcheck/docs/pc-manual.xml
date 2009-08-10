@@ -46,10 +46,10 @@ known, is entirely novel.</para>
 
 
 
-<sect1 id="pc-manual.options" xreflabel="Ptrcheck Options">
-<title>Ptrcheck Options</title>
+<sect1 id="pc-manual.options" xreflabel="Ptrcheck Command-line Options">
+<title>Ptrcheck Command-line Options</title>
 
-<para>Ptrcheck-specific options are:</para>
+<para>Ptrcheck-specific command-line options are:</para>
 
 <!-- start of xi:include in the manpage -->
 <variablelist id="pc.opts.list">
@@ -89,7 +89,7 @@ known, is entirely novel.</para>
       </para>
       <para>Note that code that behaves in this way is in violation of
       the the ISO C/C++ standards, and should be considered broken.  If
-      at all possible, such code should be fixed.  This flag should be
+      at all possible, such code should be fixed.  This option should be
       used only as a last resort.</para>
     </listitem>
   </varlistentry>

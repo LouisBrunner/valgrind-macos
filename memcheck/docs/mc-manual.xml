@@ -167,7 +167,7 @@ and it is at this point that Memcheck complains.</para>
 </itemizedlist>
 
 <para>To see information on the sources of uninitialised data in your
-program, use the <option>--track-origins=yes</option> flag.  This
+program, use the <option>--track-origins=yes</option> option.  This
 makes Memcheck run more slowly, but can make it much easier to track down
 the root causes of uninitialised value errors.</para>
 
@@ -574,9 +574,9 @@ two examples show.</para>
 
 
 
-<sect1 id="mc-manual.flags" 
-       xreflabel="Command-line flags specific to Memcheck">
-<title>Command-line flags specific to Memcheck</title>
+<sect1 id="mc-manual.options" 
+       xreflabel="Memcheck Command-Line Options">
+<title>Memcheck Command-Line Options</title>
 
 <!-- start of xi:include in the manpage -->
 <variablelist id="mc.opts.list">
@@ -720,7 +720,7 @@ two examples show.</para>
 
       <para>Note that code that behaves in this way is in violation of
       the the ISO C/C++ standards, and should be considered broken.  If
-      at all possible, such code should be fixed.  This flag should be
+      at all possible, such code should be fixed.  This option should be
       used only as a last resort.</para>
     </listitem>
   </varlistentry>
@@ -742,7 +742,7 @@ two examples show.</para>
       accesses to blocks for some significant period of time after they
       have been freed.</para>
 
-      <para>This flag specifies the maximum total size, in bytes, of the
+      <para>This option specifies the maximum total size, in bytes, of the
       blocks in the queue.  The default value is ten million bytes.
       Increasing this increases the total amount of memory used by
       Memcheck but may detect invalid uses of freed
@@ -760,11 +760,11 @@ two examples show.</para>
       does not report them.  The "small distance" is 256 bytes by
       default.  Note that GCC 2.96 is the default compiler on some ancient
       Linux distributions (RedHat 7.X) and so you may need to use this
-      flag.  Do not use it if you do not have to, as it can cause real
+      option.  Do not use it if you do not have to, as it can cause real
       errors to be overlooked.  A better alternative is to use a more
       recent GCC in which this bug is fixed.</para>
 
-      <para>You may also need to use this flag when working with
+      <para>You may also need to use this option when working with
       GCC 3.X or 4.X on 32-bit PowerPC Linux.  This is because
       GCC generates code which occasionally accesses below the
       stack pointer, particularly for floating-point to/from integer
@@ -796,7 +796,7 @@ two examples show.</para>
       by <computeroutput>calloc</computeroutput>, with the specified
       byte.  This can be useful when trying to shake out obscure
       memory corruption problems.  The allocated area is still
-      regarded by Memcheck as undefined -- this flag only affects its
+      regarded by Memcheck as undefined -- this option only affects its
       contents.
       </para>
     </listitem>
@@ -812,7 +812,7 @@ two examples show.</para>
          <computeroutput>delete</computeroutput>, etc, with the
       specified byte value.  This can be useful when trying to shake out
       obscure memory corruption problems.  The freed area is still
-      regarded by Memcheck as not valid for access -- this flag only
+      regarded by Memcheck as not valid for access -- this option only
       affects its contents.
       </para>
     </listitem>
@@ -1173,7 +1173,7 @@ follows:</para>
 
     <para>There is a hazy boundary case to do with multi-byte loads from
     addresses which are partially valid and partially invalid.  See
-    details of the flag <option>--partial-loads-ok</option> for details.
+    details of the option <option>--partial-loads-ok</option> for details.
     </para>
   </listitem>
 
@@ -1343,11 +1343,12 @@ arguments.</para>
 <title>Memory Pools: describing and working with custom allocators</title>
 
 <para>Some programs use custom memory allocators, often for performance
-reasons.  Left to itself, Memcheck is unable to "understand" the
-behaviour of custom allocation schemes and so may miss errors and
-leaks in your program.  What this section describes is a way to give
-Memcheck enough of a description of your custom allocator that it can
-make at least some sense of what is happening.</para>
+reasons.  Left to itself, Memcheck is unable to understand the
+behaviour of custom allocation schemes as well as it understands the
+standard allocators, and so may miss errors and leaks in your program.  What
+this section describes is a way to give Memcheck enough of a description of
+your custom allocator that it can make at least some sense of what is
+happening.</para>
 
 <para>There are many different sorts of custom allocator, so Memcheck
 attempts to reason about them using a loose, abstract model.  We
@@ -1433,12 +1434,12 @@ inform Memcheck about changes to the state of a mempool:</para>
   <listitem>
     <para>
     <varname>VALGRIND_CREATE_MEMPOOL(pool, rzB, is_zeroed)</varname>:
-    This request registers the address "pool" as the anchor address 
-    for a memory pool. It also provides a size "rzB", specifying how 
-    large the redzones placed around chunks allocated from the pool 
-    should be. Finally, it provides an "is_zeroed" flag that specifies 
-    whether the pool's chunks are zeroed (more precisely: defined) 
-    when allocated.
+    This request registers the address <varname>pool</varname> as the anchor
+    address for a memory pool. It also provides a size
+    <varname>rzB</varname>, specifying how large the redzones placed around
+    chunks allocated from the pool should be. Finally, it provides an
+    <varname>is_zeroed</varname> argument that specifies whether the pool's
+    chunks are zeroed (more precisely: defined) when allocated.
     </para>
     <para>
     Upon completion of this request, no chunks are associated with the
@@ -1459,44 +1460,47 @@ inform Memcheck about changes to the state of a mempool:</para>
 
   <listitem>
     <para><varname>VALGRIND_MEMPOOL_ALLOC(pool, addr, size)</varname>:
-    This request informs Memcheck that a "size"-byte chunk has been
-    allocated at "addr", and associates the chunk with the specified
-    "pool". If the pool was created with nonzero "rzB" redzones, Memcheck
-    will mark the "rzB" bytes before and after the chunk as NOACCESS. If
-    the pool was created with the "is_zeroed" flag set, Memcheck will mark
-    the chunk as DEFINED, otherwise Memcheck will mark the chunk as
-    UNDEFINED.
+    This request informs Memcheck that a <varname>size</varname>-byte chunk
+    has been allocated at <varname>addr</varname>, and associates the chunk with the
+    specified
+    <varname>pool</varname>. If the pool was created with nonzero
+    <varname>rzB</varname> redzones, Memcheck will mark the
+    <varname>rzB</varname> bytes before and after the chunk as NOACCESS. If
+    the pool was created with the <varname>is_zeroed</varname> argument set,
+    Memcheck will mark the chunk as DEFINED, otherwise Memcheck will mark
+    the chunk as UNDEFINED.
     </para>
   </listitem>
 
   <listitem>
     <para><varname>VALGRIND_MEMPOOL_FREE(pool, addr)</varname>:
-    This request informs Memcheck that the chunk at "addr" should no
-    longer be considered allocated. Memcheck will mark the chunk
-    associated with "addr" as NOACCESS, and delete its record of the
-    chunk's existence.
+    This request informs Memcheck that the chunk at <varname>addr</varname>
+    should no longer be considered allocated. Memcheck will mark the chunk
+    associated with <varname>addr</varname> as NOACCESS, and delete its
+    record of the chunk's existence.
     </para>
   </listitem>
 
   <listitem>
     <para><varname>VALGRIND_MEMPOOL_TRIM(pool, addr, size)</varname>:
-    This request "trims" the chunks associated with "pool". The request
-    only operates on chunks associated with "pool". Trimming is formally
-    defined as:</para>
+    This request trims the chunks associated with <varname>pool</varname>.
+    The request only operates on chunks associated with
+    <varname>pool</varname>. Trimming is formally defined as:</para>
     <itemizedlist>
       <listitem>
-        <para> All chunks entirely inside the range [addr,addr+size) are
-        preserved.</para>
+        <para> All chunks entirely inside the range
+        <varname>addr..(addr+size-1)</varname> are preserved.</para>
       </listitem>
       <listitem>
-        <para>All chunks entirely outside the range [addr,addr+size) are
-        discarded, as though <varname>VALGRIND_MEMPOOL_FREE</varname>
-        was called on them. </para>
+        <para>All chunks entirely outside the range
+        <varname>addr..(addr+size-1)</varname> are discarded, as though
+        <varname>VALGRIND_MEMPOOL_FREE</varname> was called on them. </para>
       </listitem>
       <listitem>
         <para>All other chunks must intersect with the range 
-        [addr,addr+size); areas outside the intersection are marked as 
-        NOACCESS, as though they had been independently freed with 
+        <varname>addr..(addr+size-1)</varname>; areas outside the
+        intersection are marked as NOACCESS, as though they had been
+        independently freed with
         <varname>VALGRIND_MEMPOOL_FREE</varname>.</para>
       </listitem>
     </itemizedlist>
@@ -1508,9 +1512,9 @@ inform Memcheck about changes to the state of a mempool:</para>
   <listitem>
     <para><varname>VALGRIND_MOVE_MEMPOOL(poolA, poolB)</varname>: This
     request informs Memcheck that the pool previously anchored at
-    address "poolA" has moved to anchor address "poolB". This is a
-    rare request, typically only needed if you
-    <function>realloc</function> the header of a mempool.</para>
+    address <varname>poolA</varname> has moved to anchor address
+    <varname>poolB</varname>.  This is a rare request, typically only needed
+    if you <function>realloc</function> the header of a mempool.</para>
     <para>No memory-status bits are altered by this request.</para>
   </listitem>
 
@@ -1518,11 +1522,12 @@ inform Memcheck about changes to the state of a mempool:</para>
     <para>
     <varname>VALGRIND_MEMPOOL_CHANGE(pool, addrA, addrB,
     size)</varname>: This request informs Memcheck that the chunk
-    previously allocated at address "addrA" within "pool" has been
-    moved and/or resized, and should be changed to cover the region
-    [addrB,addrB+size). This is a rare request, typically only needed
-    if you <function>realloc</function> a superblock or wish to
-    extend a chunk without changing its memory-status bits.
+    previously allocated at address <varname>addrA</varname> within
+    <varname>pool</varname> has been moved and/or resized, and should be
+    changed to cover the region <varname>addrB..(addrB+size-1)</varname>. This
+    is a rare request, typically only needed if you
+    <function>realloc</function> a superblock or wish to extend a chunk
+    without changing its memory-status bits.
     </para>
     <para>No memory-status bits are altered by this request.
     </para>
@@ -1531,10 +1536,10 @@ inform Memcheck about changes to the state of a mempool:</para>
   <listitem>
     <para><varname>VALGRIND_MEMPOOL_EXISTS(pool)</varname>:
     This request informs the caller whether or not Memcheck is currently 
-    tracking a mempool at anchor address "pool". It evaluates to 1 when 
-    there is a mempool associated with that address, 0 otherwise. This is a 
-    rare request, only useful in circumstances when client code might have 
-    lost track of the set of active mempools.
+    tracking a mempool at anchor address <varname>pool</varname>. It
+    evaluates to 1 when there is a mempool associated with that address, 0
+    otherwise. This is a rare request, only useful in circumstances when
+    client code might have lost track of the set of active mempools.
     </para>
   </listitem>
 
@@ -1585,7 +1590,7 @@ Valgrind's configure script will look for a suitable
 the same <computeroutput>mpicc</computeroutput> you use to build the
 MPI application you want to debug.  By default, Valgrind tries
 <computeroutput>mpicc</computeroutput>, but you can specify a
-different one by using the configure-time flag
+different one by using the configure-time option
 <option>--with-mpicc</option>.  Currently the
 wrappers are only buildable with
 <computeroutput>mpicc</computeroutput>s which are based on GNU

@@ -351,7 +351,7 @@ program.</para>
    However, it does require Helgrind to spend considerable extra time
    and memory at program startup to read the relevant debug info.
    Hence this facility is disabled by default.  To enable it, you need
-   to give the <varname>--read-var-info=yes</varname> flag to
+   to give the <varname>--read-var-info=yes</varname> option to
    Helgrind.</para>
  </listitem>
 </itemizedlist>
@@ -745,7 +745,7 @@ of false data-race errors.</para>
       instructions and the futex syscall, which causes total chaos since in
       Helgrind since it cannot "see" those.</para>
      <para>Fortunately, this can be solved using a configuration-time
-      flag (for GCC).  Rebuild GCC from source, and configure using
+      option (for GCC).  Rebuild GCC from source, and configure using
       <varname>--disable-linux-futex</varname>.
       This makes libgomp.so use the standard
       POSIX threading primitives instead.  Note that this was tested
@@ -938,8 +938,8 @@ unlock(mx)                             unlock(mx)
 
 
 
-<sect1 id="hg-manual.options" xreflabel="Helgrind Options">
-<title>Helgrind Options</title>
+<sect1 id="hg-manual.options" xreflabel="Helgrind Command-line Options">
+<title>Helgrind Command-line Options</title>
 
 <para>The following end-user options are available:</para>
 
@@ -1000,7 +1000,7 @@ unlock(mx)                             unlock(mx)
         for every single memory access made by the program.
         Historical information on not recently accessed locations is
         periodically discarded, to free up space in the cache.</para>
-      <para>This flag controls the size of the cache, in terms of the
+      <para>This option controls the size of the cache, in terms of the
         number of different memory addresses for which
         conflicting access information is stored.  If you find that
         Helgrind is showing race errors with only one stack instead of

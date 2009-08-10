@@ -90,7 +90,7 @@ executed per line, which can be useful for traditional profiling.</para>
 
 <para>First off, as for normal Valgrind use, you probably want to
 compile with debugging info (the
-<option>-g</option> flag).  But by contrast with
+<option>-g</option> option).  But by contrast with
 normal Valgrind use, you probably do want to turn
 optimisation on, since you should profile your program as it will
 be normally run.</para>
@@ -151,7 +151,7 @@ not
 </para>
 
 <para>Branch prediction statistics are not collected by default.
-To do so, add the flag <option>--branch-sim=yes</option>.</para>
+To do so, add the option <option>--branch-sim=yes</option>.</para>
 
 </sect2>
 
@@ -703,8 +703,8 @@ fail these checks.</para>
 
 
 
-<sect1 id="cg-manual.cgopts" xreflabel="Cachegrind Options">
-<title>Cachegrind Options</title>
+<sect1 id="cg-manual.cgopts" xreflabel="Cachegrind Command-line Options">
+<title>Cachegrind Command-line Options</title>
 
 <!-- start of xi:include in the manpage -->
 <para>Cachegrind-specific options are:</para>
@@ -790,8 +790,8 @@ fail these checks.</para>
 
 
 
-<sect1 id="cg-manual.annopts" xreflabel="cg_annotate Options">
-<title>cg_annotate Options</title>
+<sect1 id="cg-manual.annopts" xreflabel="cg_annotate Command-line Options">
+<title>cg_annotate Command-line Options</title>
 
 <!-- start of xi:include in the manpage -->
 <variablelist id="cg_annotate.opts.list">

@@ -315,8 +315,8 @@ DRD is based on the happens-before algorithm.
 <sect1 id="drd-manual.using-drd" xreflabel="Using DRD">
 <title>Using DRD</title>
 
-<sect2 id="drd-manual.options" xreflabel="DRD Options">
-<title>Command Line Options</title>
+<sect2 id="drd-manual.options" xreflabel="DRD Command-line Options">
+<title>DRD Command-line Options</title>
 
 <para>The following command-line options are available for controlling the
 behavior of the DRD tool itself:</para>
@@ -1211,8 +1211,8 @@ for OpenMP programs is provided by a library called
 <literal>libgomp</literal>. The synchronization primitives implemented
 in this library use Linux' futex system call directly, unless the
 library has been configured with the
-<literal>--disable-linux-futex</literal> flag. DRD only supports
-libgomp libraries that have been configured with this flag and in
+<literal>--disable-linux-futex</literal> option. DRD only supports
+libgomp libraries that have been configured with this option and in
 which symbol information is present. For most Linux distributions this
 means that you will have to recompile GCC. See also the script
 <literal>drd/scripts/download-and-build-gcc</literal> in the
@@ -1416,7 +1416,7 @@ The following information may be helpful when using DRD:
   </listitem>
   <listitem>
     <para>
-      Compile with flag <option>-O1</option> instead of
+      Compile with option <option>-O1</option> instead of
       <option>-O0</option>. This will reduce the amount of generated
       code, may reduce the amount of debug info and will speed up
       DRD's processing of the client program. For more information,

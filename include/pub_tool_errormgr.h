@@ -85,7 +85,7 @@ extern void VG_(maybe_record_error) ( ThreadId tid, ErrorKind ekind,
 extern Bool VG_(unique_error) ( ThreadId tid, ErrorKind ekind,
                                 Addr a, Char* s, void* extra,
                                 ExeContext* where, Bool print_error,
-                                Bool allow_GDB_attach, Bool count_error );
+                                Bool allow_GDB_attach );
 
 /* Gets a non-blank, non-comment line from fd.  bufpp is a pointer to a
    pointer to a buffer that must be allocated with VG_(malloc);  nBufp is a

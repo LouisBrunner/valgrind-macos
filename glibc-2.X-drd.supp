@@ -166,6 +166,13 @@
    drd:ConflictingAccess
    fun:g_slice_free_chain_with_offset
 }
+{
+   drd-libglib-g_main_context_new
+   drd:ConflictingAccess
+   fun:fcntl
+   obj:/usr/lib*/libglib-*.so*
+   fun:g_main_context_new
+}
 
 #
 # Suppression patterns for libQtCore.
@@ -202,6 +209,11 @@
    fun:_ZN7QObjectD2Ev
    fun:_ZN24QAbstractEventDispatcherD2Ev
    fun:_ZN20QEventDispatcherGlibD0Ev
+}
+{
+   drd-libQtCore-QMutexPool::get(void const*)
+   drd:ConflictingAccess
+   fun:_ZN10QMutexPool3getEPKv
 }
 
 #

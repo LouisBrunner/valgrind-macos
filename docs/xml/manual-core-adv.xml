@@ -152,46 +152,24 @@ tool-specific macros).</para>
   </varlistentry>
 
   <varlistentry>
-   <term><command><computeroutput>VALGRIND_CREATE_MEMPOOL</computeroutput>:</command></term>
+   <term>
+   <command><computeroutput>VALGRIND_CREATE_MEMPOOL</computeroutput></command>,
+   <command><computeroutput>VALGRIND_DESTROY_MEMPOOL</computeroutput></command>,
+   <command><computeroutput>VALGRIND_MEMPOOL_ALLOC</computeroutput></command>,
+   <command><computeroutput>VALGRIND_MEMPOOL_FREE</computeroutput></command>,
+   <command><computeroutput>VALGRIND_MOVE_MEMPOOL</computeroutput></command>,
+   <command><computeroutput>VALGRIND_MEMPOOL_CHANGE</computeroutput></command>,
+   <command><computeroutput>VALGRIND_MEMPOOL_EXISTS</computeroutput></command>:
+   </term>
    <listitem>
-    <para>This is similar to
-    <computeroutput>VALGRIND_MALLOCLIKE_BLOCK</computeroutput>,
-    but is tailored towards code that uses memory pools.  See the
-    comments in <filename>valgrind.h</filename> for information
-    on how to use it.</para>
+    <para>These are similar to 
+    <computeroutput>VALGRIND_MALLOCLIKE_BLOCK</computeroutput> and
+    <computeroutput>VALGRIND_FREELIKE_BLOCK</computeroutput>
+    but are tailored towards code that uses memory pools.  See 
+    <xref linkend="mc-manual.mempools"/> for a detailed description.</para>
    </listitem>
   </varlistentry>
   
-  <varlistentry>
-  <term><command><computeroutput>VALGRIND_DESTROY_MEMPOOL</computeroutput>:</command></term>
-   <listitem>
-    <para>This should be used in conjunction with
-    <computeroutput>VALGRIND_CREATE_MEMPOOL</computeroutput>.
-    Again, see the comments in <filename>valgrind.h</filename> for
-    information on how to use it.</para>
-   </listitem>
-  </varlistentry>
-
-  <varlistentry>
-   <term><command><computeroutput>VALGRIND_MEMPOOL_ALLOC</computeroutput>:</command></term>
-   <listitem>
-    <para>This should be used in conjunction with
-    <computeroutput>VALGRIND_CREATE_MEMPOOL</computeroutput>.
-    Again, see the comments in <filename>valgrind.h</filename> for
-    information on how to use it.</para>
-   </listitem>
-  </varlistentry>
-   
-  <varlistentry>
-   <term><command><computeroutput>VALGRIND_MEMPOOL_FREE</computeroutput>:</command></term>
-   <listitem>
-    <para>This should be used in conjunction with
-    <computeroutput>VALGRIND_CREATE_MEMPOOL</computeroutput>.
-    Again, see the comments in <filename>valgrind.h</filename> for
-    information on how to use it.</para>
-   </listitem>
-  </varlistentry>
-
   <varlistentry>
    <term><command><computeroutput>VALGRIND_NON_SIMD_CALL[0123]</computeroutput>:</command></term>
    <listitem>

@@ -17,7 +17,7 @@ int main(void)
    assert(sizeof(long) == sizeof(void*));
 
    /* Error counting */
-   printf("errors: %d\n\n", VALGRIND_COUNT_ERRORS);
+   fprintf(stderr, "errors: %d\n\n", VALGRIND_COUNT_ERRORS);
 
    if (x == 0) {
       y++;
@@ -25,16 +25,20 @@ int main(void)
       y--;
    }
 
-   printf("errors: %d\n\n", VALGRIND_COUNT_ERRORS);
+   fprintf(stderr, "errors: %d\n\n", VALGRIND_COUNT_ERRORS);
 
    // Get a baseline, after start-up and also after printf (because Darwin
    // printf allocates memory the first time it's called!)
    GET_INITIAL_LEAK_COUNTS;
 
+   fprintf(stderr, "errors: %d\n\n", VALGRIND_COUNT_ERRORS);
+
    /* Leak checking */
    GET_FINAL_LEAK_COUNTS;
-   PRINT_LEAK_COUNTS(stdout);
-   printf("\n");
+   PRINT_LEAK_COUNTS(stderr);
+   fprintf(stderr, "\n");
+
+   fprintf(stderr, "errors: %d\n\n", VALGRIND_COUNT_ERRORS);
 
    leaked = malloc(77);
    leaked = 0;
@@ -45,10 +49,10 @@ int main(void)
    reachable = malloc(99);
 
    GET_FINAL_LEAK_COUNTS;
-   PRINT_LEAK_COUNTS(stdout);
-   printf("\n");
+   PRINT_LEAK_COUNTS(stderr);
+   fprintf(stderr, "\n");
 
-   printf("errors: %d\n", VALGRIND_COUNT_ERRORS);
+   fprintf(stderr, "errors: %d\n", VALGRIND_COUNT_ERRORS);
 
    return 0;
 }

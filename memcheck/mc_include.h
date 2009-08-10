@@ -348,7 +348,8 @@ Bool MC_(record_leak_error)     ( ThreadId tid,
                                   UInt n_this_record,
                                   UInt n_total_records,
                                   LossRecord* lossRecord,
-                                  Bool print_record );
+                                  Bool print_record,
+                                  Bool count_error );
 
 /* Is this address in a user-specified "ignored range" ? */
 Bool MC_(in_ignored_range) ( Addr a );

@@ -737,10 +737,11 @@ void VG_(maybe_record_error) ( ThreadId tid,
    guaranteed to only happen once.  This avoids all the recording and
    comparing stuff.  But they can be suppressed;  returns True if it is
    suppressed.  Bool 'print_error' dictates whether to print the error. 
+   Bool 'count_error' dictates whether to count the error in n_errs_found.
 */
 Bool VG_(unique_error) ( ThreadId tid, ErrorKind ekind, Addr a, Char* s,
                          void* extra, ExeContext* where, Bool print_error,
-                         Bool allow_db_attach )
+                         Bool allow_db_attach, Bool count_error )
 {
    Error err;
    Supp *su;
@@ -759,7 +760,8 @@ Bool VG_(unique_error) ( ThreadId tid, ErrorKind ekind, Addr a, Char* s,
 
    su = is_suppressible_error(&err);
    if (NULL == su) {
-      n_errs_found++;
+      if (count_error)
+         n_errs_found++;
 
       if (print_error) {
          /* A bit of prettyprinting, to ensure there's a blank line

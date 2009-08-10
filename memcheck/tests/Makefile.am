@@ -59,7 +59,7 @@ EXTRA_DIST = \
 	describe-block.stderr.exp describe-block.vgtest \
 	doublefree.stderr.exp doublefree.vgtest \
 	erringfds.stderr.exp erringfds.stdout.exp erringfds.vgtest \
-	error_counts.stderr.exp error_counts.stdout.exp error_counts.vgtest \
+	error_counts.stderr.exp error_counts.vgtest \
 	errs1.stderr.exp errs1.vgtest \
 	exitprog.stderr.exp exitprog.vgtest \
 	execve.stderr.exp execve.vgtest \

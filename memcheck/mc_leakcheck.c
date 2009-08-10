@@ -828,7 +828,7 @@ static void print_results(ThreadId tid, Bool is_full_check)
 
    // Print the loss records (in size order) and collect summary stats.
    for (i = 0; i < n_lossrecords; i++) {
-      Bool print_record;
+      Bool count_as_error, print_record;
       // Rules for printing:
       // - We don't show suppressed loss records ever (and that's controlled
       //   within the error manager).
@@ -842,12 +842,13 @@ static void print_results(ThreadId tid, Bool is_full_check)
       // includes indirectly lost blocks!
       //
       lr = lr_array[i];
+      count_as_error = Unreached == lr->key.state || 
+                       Possible  == lr->key.state;
       print_record = is_full_check &&
-                     ( MC_(clo_show_reachable) || 
-                       Unreached == lr->key.state || 
-                       Possible  == lr->key.state );
+                     ( MC_(clo_show_reachable) || count_as_error );
       is_suppressed = 
-         MC_(record_leak_error) ( tid, i+1, n_lossrecords, lr, print_record );
+         MC_(record_leak_error) ( tid, i+1, n_lossrecords, lr, print_record,
+                                  count_as_error );
 
       if (is_suppressed) {
          MC_(blocks_suppressed) += lr->num_blocks;

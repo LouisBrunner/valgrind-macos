@@ -942,7 +942,7 @@ void MC_(record_overlap_error) ( ThreadId tid, Char* function,
 
 Bool MC_(record_leak_error) ( ThreadId tid, UInt n_this_record,
                               UInt n_total_records, LossRecord* lr,
-                              Bool print_record )
+                              Bool print_record, Bool count_error )
 {
    MC_Error extra;
    extra.Err.Leak.n_this_record   = n_this_record;
@@ -951,7 +951,7 @@ Bool MC_(record_leak_error) ( ThreadId tid, UInt n_this_record,
    return
    VG_(unique_error) ( tid, Err_Leak, /*Addr*/0, /*s*/NULL, &extra,
                        lr->key.allocated_at, print_record,
-                       /*allow_GDB_attach*/False );
+                       /*allow_GDB_attach*/False, count_error );
 }
 
 void MC_(record_user_error) ( ThreadId tid, Addr a,

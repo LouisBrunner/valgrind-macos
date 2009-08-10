@@ -818,8 +818,9 @@ in a particular column, which makes following the allocation chains easier.
 <para>Massif does not have a <filename>massif.h</filename> file, but it does
 implement two of the core client requests:
 <function>VALGRIND_MALLOCLIKE_BLOCK</function> and
-<function>VALGRIND_FREELIKE_BLOCK</function>.  These work in the obvious
-way.</para>
+<function>VALGRIND_FREELIKE_BLOCK</function>;  they are described in 
+<xref linkend="manual-core-adv.clientreq"/>.
+</para>
 
 </sect1>
 

@@ -1073,6 +1073,14 @@ available macros and client requests are:
       name in the error messages printed by DRD.
     </para>
   </listitem>
+  <listitem>
+    <para>
+      The macros <literal>VALGRIND_MALLOCLIKE_BLOCK</literal> and
+      <literal>VALGRIND_FREELIKE_BLOCK</literal> from the Valgrind core are
+      implemented;  they are described in 
+      <xref linkend="manual-core-adv.clientreq"/>.
+    </para>
+  </listitem>
 </itemizedlist>
 </para>
 

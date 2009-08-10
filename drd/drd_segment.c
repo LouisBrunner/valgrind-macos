@@ -27,7 +27,6 @@
 #include "drd_segment.h"
 #include "drd_thread.h"
 #include "pub_tool_basics.h"      // Addr, SizeT
-#include "pub_tool_errormgr.h"    // VG_(unique_error)()
 #include "pub_tool_libcassert.h"  // tl_assert()
 #include "pub_tool_libcbase.h"    // VG_(strlen)()
 #include "pub_tool_libcprint.h"   // VG_(printf)()

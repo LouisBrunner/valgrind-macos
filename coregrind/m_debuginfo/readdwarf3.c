@@ -2307,6 +2307,14 @@ static void parse_type_DIE ( /*MOD*/XArray* /* of TyEnt */ tyents,
          if (typeE.Te.TyStOrUn.name == NULL)
             goto bad_DIE;
          typeE.Te.TyStOrUn.complete = False;
+         /* JRS 2009 Aug 10: <possible kludge>? */
+         /* Push this tyent on the stack, even though it's incomplete.
+            It appears that gcc-4.4 on Fedora 11 will sometimes create
+            DW_TAG_member entries for it, and so we need to have a
+            plausible parent present in order for that to work.  See
+            #200029 comments 8 and 9. */
+         typestack_push( cc, parser, td3, &typeE, level );
+         /* </possible kludge> */
          goto acquire_Type;
       }
       if ((!is_decl) /* && (!is_spec) */) {

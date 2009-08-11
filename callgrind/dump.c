@@ -832,7 +832,8 @@ static Bool fprint_bbcc(Int fd, BBCC* bbcc, AddrPos* last)
     if (bb->jmp[jmp].instr == instr) {
 	jcc_count=0;
 	for(jcc=bbcc->jmp[jmp].jcc_list; jcc; jcc=jcc->next_from)
-	    if ((jcc->jmpkind != Ijk_Call) && (jcc->call_counter >0))
+	    if (((jcc->jmpkind != Ijk_Call) && (jcc->call_counter >0)) ||
+		(!CLG_(is_zero_cost)( CLG_(sets).full, jcc->cost )))
 	      jcc_count++;
 
 	if (jcc_count>0) {    
@@ -845,7 +846,8 @@ static Bool fprint_bbcc(Int fd, BBCC* bbcc, AddrPos* last)
 	    fprint_apos(fd, &(currCost->p), last, bbcc->cxt->fn[0]->file);
 	    something_written = True;
 	    for(jcc=bbcc->jmp[jmp].jcc_list; jcc; jcc=jcc->next_from) {
-		if ((jcc->jmpkind != Ijk_Call) && (jcc->call_counter >0))
+		if (((jcc->jmpkind != Ijk_Call) && (jcc->call_counter >0)) ||
+		    (!CLG_(is_zero_cost)( CLG_(sets).full, jcc->cost )))
 		    fprint_jcc(fd, jcc, &(currCost->p), last, ecounter);
 	    }
 	}

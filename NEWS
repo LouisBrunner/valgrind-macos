@@ -77,6 +77,10 @@ Release 3.5.0 (???)
   - The default value for the --leak-resolution option has been changed from
     "low" to "high".  In general, this means that more leak reports will be
     produced, but each leak report will describe fewer leaked blocks.
+  - "Definitely lost" and "possibly lost" leaks are now considered as normal
+    errors, ie. they are counted for the "ERROR SUMMARY" and
+    --error-exitcode.  This is true even if their loss records aren't
+    printed, ie. if you run with --leak-check=summary.
   - The documentation for the leak checker has also been improved.
 
 * XXX: Atomic instructions are now handled properly...

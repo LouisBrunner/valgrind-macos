@@ -79,6 +79,13 @@ static UInt n_errs_found = 0;
 /* Running count of suppressed errors detected. */
 static UInt n_errs_suppressed = 0;
 
+/* Running count of unsuppressed error contexts. */
+static UInt n_err_contexts = 0;
+
+/* Running count of suppressed error contexts. */
+static UInt n_supp_contexts = 0;
+
+
 /* forwards ... */
 static Supp* is_suppressible_error ( Error* err );
 
@@ -712,6 +719,7 @@ void VG_(maybe_record_error) ( ThreadId tid,
    p->supp = is_suppressible_error(&err);
    errors  = p;
    if (p->supp == NULL) {
+      n_err_contexts++;
       n_errs_found++;
       /* A bit of prettyprinting, to ensure there's a blank line
          in between each error. */
@@ -727,6 +735,7 @@ void VG_(maybe_record_error) ( ThreadId tid,
       is_first_shown_context = False;
       n_errs_shown++;
    } else {
+      n_supp_contexts++;
       n_errs_suppressed++;
       p->supp->count++;
    }
@@ -760,8 +769,10 @@ Bool VG_(unique_error) ( ThreadId tid, ErrorKind ekind, Addr a, Char* s,
 
    su = is_suppressible_error(&err);
    if (NULL == su) {
-      if (count_error)
+      if (count_error) {
          n_errs_found++;
+         n_err_contexts++;
+      }
 
       if (print_error) {
          /* A bit of prettyprinting, to ensure there's a blank line
@@ -782,6 +793,7 @@ Bool VG_(unique_error) ( ThreadId tid, ErrorKind ekind, Addr a, Char* s,
 
    } else {
       n_errs_suppressed++;
+      n_supp_contexts++;
       su->count++;
       return True;
    }
@@ -833,28 +845,13 @@ static Bool show_used_suppressions ( void )
 void VG_(show_all_errors) ( void )
 {
    Int    i, n_min;
-   Int    n_err_contexts, n_supp_contexts;
    Error *p, *p_min;
-   Supp  *su;
    Bool   any_supp;
 
    if (VG_(clo_verbosity) == 0)
       return;
 
-   n_err_contexts = 0;
-   for (p = errors; p != NULL; p = p->next) {
-      if (p->supp == NULL)
-         n_err_contexts++;
-   }
-
-   n_supp_contexts = 0;
-   for (su = suppressions; su != NULL; su = su->next) {
-      if (su->count > 0)
-         n_supp_contexts++;
-   }
-
-   /* If we're printing XML, just show the suppressions and stop.
-    */
+   /* If we're printing XML, just show the suppressions and stop. */
    if (VG_(clo_xml)) {
       (void)show_used_suppressions();
       return;

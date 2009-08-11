@@ -43,7 +43,7 @@
 #include "pub_tool_aspacemgr.h"
 #include "pub_tool_execontext.h"
 #include "pub_tool_errormgr.h"
-#include "pub_tool_options.h"        // VG_(clo_verbosity)
+#include "pub_tool_options.h"        // VG_(clo_stats)
 #include "hg_basics.h"
 #include "hg_wordset.h"
 #include "hg_lock_n_thread.h"
@@ -2289,7 +2289,7 @@ static void vts_tab__do_GC ( Bool show_stats )
       VG_(printf)("<<GC ends, next gc at %ld>>\n", vts_next_GC_at);
    }
 
-   if (VG_(clo_verbosity) > 1) {
+   if (VG_(clo_stats)) {
       static UInt ctr = 0;
       tl_assert(nTab > 0);
       VG_(message)(Vg_DebugMsg,
@@ -3952,7 +3952,7 @@ static void event_map_maybe_GC ( void )
             VG_(addToXA)( refs2del, &keyW );
          }
       }
-      if (VG_(clo_verbosity) > 1) {
+      if (VG_(clo_stats)) {
          VG_(message)(Vg_DebugMsg,
             "libhb: EvM GC: delete generations %lu and below, "
             "retaining %lu entries\n",
@@ -3978,7 +3978,7 @@ static void event_map_maybe_GC ( void )
             retained--;
          }
       }
-      if (VG_(clo_verbosity) > 1) {
+      if (VG_(clo_stats)) {
          VG_(message)(Vg_DebugMsg,
             "libhb: EvM GC: randomly delete half the entries, "
             "retaining %lu entries\n",

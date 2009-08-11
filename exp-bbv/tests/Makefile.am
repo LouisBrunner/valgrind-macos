@@ -19,6 +19,10 @@ endif
 
 DIST_SUBDIRS = x86 x86-linux amd64-linux ppc32-linux .
 
+dist_noinst_SCRIPTS = \
+	filter_bb \
+	filter_stderr
+
 EXTRA_DIST = \
 	   logo.include logo.lzss_new
 	

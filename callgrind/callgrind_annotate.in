@@ -243,16 +243,20 @@ sub process_cmd_line()
             # --sort=A,B,C
             } elsif ($arg =~ /^--sort=(.*)$/) {
                 @sort_events = split(/,/, $1);
+                my $th_specified = 0;
                 foreach my $i (0 .. scalar @sort_events - 1) {
-                    if ($sort_events[$i] =~#/.*:(\d+)$/) {
-                                            /.*:([\d\.]+)%?$/) {
+                    if ($sort_events[$i] =~ /.*:([\d\.]+)%?$/) {
                         my $th = $1;
                         ($th >= 0 && $th <= 100) or die($usage);
                         $sort_events[$i] =~ s/:.*//;
                         $thresholds[$i] = $th;
+                        $th_specified = 1;
                     } else {
                         $thresholds[$i] = 0;
                     }
+                }
+                if (not $th_specified) {
+                    @thresholds = ();
                 }
 
             # --threshold=X (tolerates a trailing '%')

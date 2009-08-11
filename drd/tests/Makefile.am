@@ -6,7 +6,8 @@ dist_noinst_SCRIPTS =		    \
 	filter_stderr               \
 	filter_stderr_and_thread_no \
 	run_openmp_test             \
-	supported_libpthread
+	supported_libpthread	    \
+	supported_sem_init
 
 noinst_HEADERS =                                    \
 	tsan_thread_wrappers_pthread.h

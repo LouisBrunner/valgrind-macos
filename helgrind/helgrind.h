@@ -95,7 +95,13 @@ typedef
       _VG_USERREQ__HG_POSIX_SEM_WAIT_POST,        /* sem_t* */
       _VG_USERREQ__HG_PTHREAD_BARRIER_INIT_PRE,   /* pth_bar_t*, ulong */
       _VG_USERREQ__HG_PTHREAD_BARRIER_WAIT_PRE,   /* pth_bar_t* */
-      _VG_USERREQ__HG_PTHREAD_BARRIER_DESTROY_PRE /* pth_bar_t* */
+      _VG_USERREQ__HG_PTHREAD_BARRIER_DESTROY_PRE, /* pth_bar_t* */
+      _VG_USERREQ__HG_PTHREAD_SPIN_INIT_OR_UNLOCK_PRE,  /* pth_slk_t* */
+      _VG_USERREQ__HG_PTHREAD_SPIN_INIT_OR_UNLOCK_POST, /* pth_slk_t* */
+      _VG_USERREQ__HG_PTHREAD_SPIN_LOCK_PRE,      /* pth_slk_t* */
+      _VG_USERREQ__HG_PTHREAD_SPIN_LOCK_POST,     /* pth_slk_t* */
+      _VG_USERREQ__HG_PTHREAD_SPIN_DESTROY_PRE    /* pth_slk_t* */
+
    } Vg_TCheckClientRequest;
 
 /* Clean memory state.  This makes Helgrind forget everything it knew

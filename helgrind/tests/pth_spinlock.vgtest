@@ -1,0 +1,3 @@
+prereq: test -e ../../drd/tests/pth_spinlock
+vgopts: -q
+prog: ../../drd/tests/pth_spinlock

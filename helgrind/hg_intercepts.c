@@ -367,11 +367,6 @@ done.  No way the joiner can return before the thread is gone.
               pthread_mutex_lock
               pthread_mutex_trylock pthread_mutex_timedlock
               pthread_mutex_unlock
-
-   Unhandled: pthread_spin_init pthread_spin_destroy 
-              pthread_spin_lock
-              pthread_spin_trylock
-              pthread_spin_unlock
 */
 
 //-----------------------------------------------------------
@@ -1048,6 +1043,201 @@ PTH_FUNC(int, pthreadZubarrierZudestroy, // pthread_barrier_destroy
 }
 
 #endif   // defined(HAVE_PTHREAD_BARRIER_INIT)
+
+
+/*----------------------------------------------------------------*/
+/*--- pthread_spinlock_t functions                             ---*/
+/*----------------------------------------------------------------*/
+
+#if defined(HAVE_PTHREAD_SPIN_LOCK)
+
+/* Handled:   pthread_spin_init pthread_spin_destroy
+              pthread_spin_lock pthread_spin_trylock
+              pthread_spin_unlock
+
+   Unhandled:
+*/
+
+/* This is a nasty kludge, in that glibc "knows" that initialising a
+   spin lock unlocks it, and pthread_spin_{init,unlock} are names for
+   the same function.  Hence we have to have a wrapper which does both
+   things, without knowing which the user intended to happen. */
+
+//-----------------------------------------------------------
+// glibc:  pthread_spin_init
+// glibc:  pthread_spin_unlock
+// darwin: (doesn't appear to exist)
+static int pthread_spin_init_or_unlock_WRK(pthread_spinlock_t* lock,
+                                           int pshared) {
+   int    ret;
+   OrigFn fn;
+   VALGRIND_GET_ORIG_FN(fn);
+   if (TRACE_PTH_FNS) {
+      fprintf(stderr, "<< pthread_spin_iORu %p", lock); fflush(stderr);
+   }
+
+   DO_CREQ_v_W(_VG_USERREQ__HG_PTHREAD_SPIN_INIT_OR_UNLOCK_PRE,
+               pthread_spinlock_t*, lock);
+
+   CALL_FN_W_WW(ret, fn, lock,pshared);
+
+   if (ret == 0 /*success*/) {
+      DO_CREQ_v_W(_VG_USERREQ__HG_PTHREAD_SPIN_INIT_OR_UNLOCK_POST,
+                  pthread_spinlock_t*,lock);
+   } else { 
+      DO_PthAPIerror( "pthread_spinlock_{init,unlock}", ret );
+   }
+
+   if (TRACE_PTH_FNS) {
+      fprintf(stderr, " :: spiniORu -> %d >>\n", ret);
+   }
+   return ret;
+}
+#if defined(VGO_linux)
+   PTH_FUNC(int, pthreadZuspinZuinit, // pthread_spin_init
+            pthread_spinlock_t* lock, int pshared) {
+      return pthread_spin_init_or_unlock_WRK(lock, pshared);
+   }
+   PTH_FUNC(int, pthreadZuspinZuunlock, // pthread_spin_unlock
+            pthread_spinlock_t* lock) {
+      /* this is never actually called */
+      return pthread_spin_init_or_unlock_WRK(lock, 0/*pshared*/);
+   }
+#elif defined(VGO_darwin)
+#else
+#  error "Unsupported OS"
+#endif
+
+
+//-----------------------------------------------------------
+// glibc:  pthread_spin_destroy
+// darwin: (doesn't appear to exist)
+#if defined(VGO_linux)
+
+PTH_FUNC(int, pthreadZuspinZudestroy, // pthread_spin_destroy
+              pthread_spinlock_t* lock)
+{
+   int    ret;
+   OrigFn fn;
+   VALGRIND_GET_ORIG_FN(fn);
+   if (TRACE_PTH_FNS) {
+      fprintf(stderr, "<< pthread_spin_destroy %p", lock);
+      fflush(stderr);
+   }
+
+   DO_CREQ_v_W(_VG_USERREQ__HG_PTHREAD_SPIN_DESTROY_PRE,
+               pthread_spinlock_t*,lock);
+
+   CALL_FN_W_W(ret, fn, lock);
+
+   if (ret != 0) {
+      DO_PthAPIerror( "pthread_spin_destroy", ret );
+   }
+
+   if (TRACE_PTH_FNS) {
+      fprintf(stderr, " :: spindestroy -> %d >>\n", ret);
+   }
+   return ret;
+}
+
+#elif defined(VGO_darwin)
+#else
+#  error "Unsupported OS"
+#endif
+
+
+//-----------------------------------------------------------
+// glibc:  pthread_spin_lock
+// darwin: (doesn't appear to exist)
+#if defined(VGO_linux)
+
+PTH_FUNC(int, pthreadZuspinZulock, // pthread_spin_lock
+              pthread_spinlock_t* lock)
+{
+   int    ret;
+   OrigFn fn;
+   VALGRIND_GET_ORIG_FN(fn);
+   if (TRACE_PTH_FNS) {
+      fprintf(stderr, "<< pthread_spinlock %p", lock);
+      fflush(stderr);
+   }
+
+   DO_CREQ_v_WW(_VG_USERREQ__HG_PTHREAD_SPIN_LOCK_PRE,
+                pthread_spinlock_t*,lock, long,0/*!isTryLock*/);
+
+   CALL_FN_W_W(ret, fn, lock);
+
+   /* There's a hole here: libpthread now knows the lock is locked,
+      but the tool doesn't, so some other thread could run and detect
+      that the lock has been acquired by someone (this thread).  Does
+      this matter?  Not sure, but I don't think so. */
+
+   if (ret == 0 /*success*/) {
+      DO_CREQ_v_W(_VG_USERREQ__HG_PTHREAD_SPIN_LOCK_POST,
+                  pthread_spinlock_t*,lock);
+   } else { 
+      DO_PthAPIerror( "pthread_spin_lock", ret );
+   }
+
+   if (TRACE_PTH_FNS) {
+      fprintf(stderr, " :: spinlock -> %d >>\n", ret);
+   }
+   return ret;
+}
+
+#elif defined(VGO_darwin)
+#else
+#  error "Unsupported OS"
+#endif
+
+
+//-----------------------------------------------------------
+// glibc:  pthread_spin_trylock
+// darwin: (doesn't appear to exist)
+#if defined(VGO_linux)
+
+PTH_FUNC(int, pthreadZuspinZutrylock, // pthread_spin_trylock
+              pthread_spinlock_t* lock)
+{
+   int    ret;
+   OrigFn fn;
+   VALGRIND_GET_ORIG_FN(fn);
+   if (TRACE_PTH_FNS) {
+      fprintf(stderr, "<< pthread_spin_trylock %p", lock);
+      fflush(stderr);
+   }
+
+   DO_CREQ_v_WW(_VG_USERREQ__HG_PTHREAD_SPIN_LOCK_PRE,
+                pthread_spinlock_t*,lock, long,1/*isTryLock*/);
+
+   CALL_FN_W_W(ret, fn, lock);
+
+   /* There's a hole here: libpthread now knows the lock is locked,
+      but the tool doesn't, so some other thread could run and detect
+      that the lock has been acquired by someone (this thread).  Does
+      this matter?  Not sure, but I don't think so. */
+
+   if (ret == 0 /*success*/) {
+      DO_CREQ_v_W(_VG_USERREQ__HG_PTHREAD_SPIN_LOCK_POST,
+                  pthread_spinlock_t*,lock);
+   } else {
+      if (ret != EBUSY)
+         DO_PthAPIerror( "pthread_spin_trylock", ret );
+   }
+
+   if (TRACE_PTH_FNS) {
+      fprintf(stderr, " :: spin_trylock -> %d >>\n", ret);
+   }
+   return ret;
+}
+
+#elif defined(VGO_darwin)
+#else
+#  error "Unsupported OS"
+#endif
+
+#endif // defined(HAVE_PTHREAD_SPIN_LOCK)
+
 
 /*----------------------------------------------------------------*/
 /*--- pthread_rwlock_t functions                               ---*/

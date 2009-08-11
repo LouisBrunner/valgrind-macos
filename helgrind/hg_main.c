@@ -2003,6 +2003,79 @@ static void evh__HG_PTHREAD_MUTEX_UNLOCK_POST ( ThreadId tid, void* mutex )
 }
 
 
+/* ------------------------------------------------------- */
+/* -------------- events to do with mutexes -------------- */
+/* ------------------------------------------------------- */
+
+/* All a bit of a kludge.  Pretend we're really dealing with ordinary
+   pthread_mutex_t's instead, for the most part. */
+
+static void evh__HG_PTHREAD_SPIN_INIT_OR_UNLOCK_PRE( ThreadId tid, 
+                                                     void* slock )
+{
+   Thread* thr;
+   Lock*   lk;
+   /* In glibc's kludgey world, we're either initialising or unlocking
+      it.  Since this is the pre-routine, if it is locked, unlock it
+      and take a dependence edge.  Otherwise, do nothing. */
+
+   if (SHOW_EVENTS >= 1)
+      VG_(printf)("evh__hg_PTHREAD_SPIN_INIT_OR_UNLOCK_PRE"
+                  "(ctid=%d, slock=%p)\n", 
+                  (Int)tid, (void*)slock );
+
+   thr = map_threads_maybe_lookup( tid );
+   /* cannot fail - Thread* must already exist */;
+   tl_assert( HG_(is_sane_Thread)(thr) );
+
+   lk = map_locks_maybe_lookup( (Addr)slock );
+   if (lk && lk->heldBy) {
+      /* it's held.  So do the normal pre-unlock actions, as copied
+         from evh__HG_PTHREAD_MUTEX_UNLOCK_PRE.  This stupidly
+         duplicates the map_locks_maybe_lookup. */
+      evhH__pre_thread_releases_lock( thr, (Addr)slock,
+                                           False/*!isRDWR*/ );
+   }
+}
+
+static void evh__HG_PTHREAD_SPIN_INIT_OR_UNLOCK_POST( ThreadId tid, 
+                                                      void* slock )
+{
+   Lock* lk;
+   /* More kludgery.  If the lock has never been seen before, do
+      actions as per evh__HG_PTHREAD_MUTEX_INIT_POST.  Else do
+      nothing. */
+
+   if (SHOW_EVENTS >= 1)
+      VG_(printf)("evh__hg_PTHREAD_SPIN_INIT_OR_UNLOCK_POST"
+                  "(ctid=%d, slock=%p)\n", 
+                  (Int)tid, (void*)slock );
+
+   lk = map_locks_maybe_lookup( (Addr)slock );
+   if (!lk) {
+      map_locks_lookup_or_create( LK_nonRec, (Addr)slock, tid );
+   }
+}
+
+static void evh__HG_PTHREAD_SPIN_LOCK_PRE( ThreadId tid, 
+                                           void* slock, Word isTryLock )
+{
+   evh__HG_PTHREAD_MUTEX_LOCK_PRE( tid, slock, isTryLock );
+}
+
+static void evh__HG_PTHREAD_SPIN_LOCK_POST( ThreadId tid, 
+                                            void* slock )
+{
+   evh__HG_PTHREAD_MUTEX_LOCK_POST( tid, slock );
+}
+
+static void evh__HG_PTHREAD_SPIN_DESTROY_PRE( ThreadId tid, 
+                                              void* slock )
+{
+   evh__HG_PTHREAD_MUTEX_DESTROY_PRE( tid, slock );
+}
+
+
 /* ----------------------------------------------------- */
 /* --------------- events to do with CVs --------------- */
 /* ----------------------------------------------------- */
@@ -4142,6 +4215,31 @@ Bool hg_handle_client_request ( ThreadId tid, UWord* args, UWord* ret)
       case _VG_USERREQ__HG_PTHREAD_BARRIER_DESTROY_PRE:
          /* pth_bar_t* */
          evh__HG_PTHREAD_BARRIER_DESTROY_PRE( tid, (void*)args[1] );
+         break;
+
+      case _VG_USERREQ__HG_PTHREAD_SPIN_INIT_OR_UNLOCK_PRE:
+         /* pth_spinlock_t* */
+         evh__HG_PTHREAD_SPIN_INIT_OR_UNLOCK_PRE( tid, (void*)args[1] );
+         break;
+
+      case _VG_USERREQ__HG_PTHREAD_SPIN_INIT_OR_UNLOCK_POST:
+         /* pth_spinlock_t* */
+         evh__HG_PTHREAD_SPIN_INIT_OR_UNLOCK_POST( tid, (void*)args[1] );
+         break;
+
+      case _VG_USERREQ__HG_PTHREAD_SPIN_LOCK_PRE:
+         /* pth_spinlock_t*, Word */
+         evh__HG_PTHREAD_SPIN_LOCK_PRE( tid, (void*)args[1], args[2] );
+         break;
+
+      case _VG_USERREQ__HG_PTHREAD_SPIN_LOCK_POST:
+         /* pth_spinlock_t* */
+         evh__HG_PTHREAD_SPIN_LOCK_POST( tid, (void*)args[1] );
+         break;
+
+      case _VG_USERREQ__HG_PTHREAD_SPIN_DESTROY_PRE:
+         /* pth_spinlock_t* */
+         evh__HG_PTHREAD_SPIN_DESTROY_PRE( tid, (void*)args[1] );
          break;
 
       default:

@@ -80,6 +80,7 @@ use strict;
 
 # Total counts for summary (an array reference).
 my $summary_CC;
+my $totals_CC;
 
 # Totals for each function, for overall summary.
 # hash(filename:fn_name => CC array)
@@ -349,6 +350,17 @@ sub add_array_a_to_b ($$)
     $^W = 1;
 }
 
+# Is this a line with all events zero?
+sub is_zero ($)
+{
+    my ($CC) = @_;
+    my $isZero = 1;
+    foreach my $i (0 .. (scalar @$CC)-1) {
+	$isZero = 0 if ($CC->[$i] >0);
+    }
+    return $isZero;
+}
+
 # Add each event count to the CC array.  '.' counts become undef, as do
 # missing entries (implicitly).
 sub line_to_CC ($)
@@ -478,6 +490,11 @@ sub read_input_file()
         $thresholds[0] = $single_threshold;
     }
 
+    # Current directory, used to strip from file names if absolute
+    my $pwd = `pwd`;
+    chomp $pwd;
+    $pwd .= '/';
+
     my $curr_obj = "";
     my $curr_file;
     my $curr_fn;
@@ -536,8 +553,14 @@ sub read_input_file()
 	      $tmp = {} unless defined $tmp;
 	      $$tmp{$curr_cname} = 1;
 	      $called_from_line->{$curr_file,$curr_line_num} = $tmp;
-	      $call_CCs{$curr_name,$curr_cname,$curr_line_num} = $CC;
-	      $call_counter{$curr_name,$curr_cname,$curr_line_num} = $curr_call_counter;
+	      if(defined $call_CCs{$curr_name,$curr_cname,$curr_line_num}) {
+	        add_array_a_to_b($CC, $call_CCs{$curr_name,$curr_cname,$curr_line_num});
+	        $call_counter{$curr_name,$curr_cname,$curr_line_num} += $curr_call_counter;
+              }
+              else {
+	        $call_CCs{$curr_name,$curr_cname,$curr_line_num} = $CC;
+	        $call_counter{$curr_name,$curr_cname,$curr_line_num} = $curr_call_counter;
+              }
 
 	      $curr_call_counter = 0;
 
@@ -584,6 +607,7 @@ sub read_input_file()
                 if (defined $curr_file);
 
             $curr_file = uncompressed_name("fl",$1);
+	    $curr_file =~ s/^$pwd//;
             $curr_file_ind_CCs = $all_ind_CCs{$curr_file};
             $curr_file_ind_CCs = {} unless (defined $curr_file_ind_CCs);
 
@@ -593,6 +617,7 @@ sub read_input_file()
             $all_ind_CCs{$curr_file} = $curr_file_ind_CCs;
 
             $curr_file = uncompressed_name("fl",$2);
+	    $curr_file =~ s/^$pwd//;
             $curr_name = "$curr_file:$curr_fn";
             $curr_file_ind_CCs = $all_ind_CCs{$curr_file};
             $curr_file_ind_CCs = {} unless (defined $curr_file_ind_CCs);
@@ -645,7 +670,7 @@ sub read_input_file()
           # ignore jump information
 
         } elsif (s/^totals:\s+//) {
-	  #ignore
+	    $totals_CC = line_to_CC($_);
 
         } elsif (s/^summary:\s+//) {
             $summary_CC = line_to_CC($_);
@@ -656,20 +681,20 @@ sub read_input_file()
         }
     }
 
+    if ((not defined $summary_CC) || is_zero($summary_CC)) {
+	$summary_CC = $totals_CC;
+    }
+
     # Check if summary line was present
     if (not defined $summary_CC) {
         warn("WARNING: missing final summary line, no summary will be printed\n");
     }
-    else {
-      # Finish up handling final filename/fn_name counts
-      $fn_totals{"$curr_file:$curr_fn"} = $curr_fn_CC 
-	if (defined $curr_file && defined $curr_fn);
-      $all_ind_CCs{$curr_file} = 
-	$curr_file_ind_CCs if (defined $curr_file);
 
-      (scalar(@$summary_CC) == @events) 
-	or die("Line $.: summary event and total event mismatch\n");
-    }
+    # Finish up handling final filename/fn_name counts
+    $fn_totals{"$curr_file:$curr_fn"} = $curr_fn_CC
+	if (defined $curr_file && defined $curr_fn);
+    $all_ind_CCs{$curr_file} =
+	$curr_file_ind_CCs if (defined $curr_file);
 
     # Correct inclusive totals
     if ($inclusive) {

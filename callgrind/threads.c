@@ -210,7 +210,7 @@ void CLG_(pre_signal)(ThreadId tid, Int sigNum, Bool alt_stack)
 
     /* setup new cxtinfo struct for this signal handler */
     es = push_exec_state(sigNum);
-    // because of this, below call to init_exec_state will zero es->cost
+    CLG_(zero_cost)( CLG_(sets).full, es->cost );
     CLG_(current_state).cost = es->cost;
     es->call_stack_bottom = CLG_(current_call_stack).sp;
 
@@ -317,7 +317,6 @@ void CLG_(init_exec_state)(exec_state* es)
   es->jmps_passed = 0;
   es->bbcc = 0;
   es->nonskipped = 0;
-  CLG_(init_cost)( CLG_(sets).full, es->cost );
 }
 
 
@@ -330,7 +329,7 @@ static exec_state* new_exec_state(Int sigNum)
     /* allocate real cost space: needed as incremented by
      * simulation functions */
     es->cost       = CLG_(get_eventset_cost)(CLG_(sets).full);
-
+    CLG_(zero_cost)( CLG_(sets).full, es->cost );
     CLG_(init_exec_state)(es);
     es->sig        = sigNum;
     es->call_stack_bottom  = 0;

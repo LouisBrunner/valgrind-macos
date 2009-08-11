@@ -1033,6 +1033,12 @@ void unwind_thread(thread_info* t)
   CLG_(current_fn_stack).top = CLG_(current_fn_stack).bottom;
 }
 
+static
+void zero_state_cost(thread_info* t)
+{
+    CLG_(zero_cost)( CLG_(sets).full, CLG_(current_state).cost );
+}
+
 /* Ups, this can go wrong... */
 extern void VG_(discard_translations) ( Addr64 start, ULong range );
 
@@ -1051,9 +1057,8 @@ void CLG_(set_instrument_state)(Char* reason, Bool state)
 
   /* reset internal state: call stacks, simulator */
   CLG_(forall_threads)(unwind_thread);
+  CLG_(forall_threads)(zero_state_cost);
   (*CLG_(cachesim).clear)();
-  if (0)
-    CLG_(forall_threads)(zero_thread_cost);
 
   if (VG_(clo_verbosity) > 1)
     VG_(message)(Vg_DebugMsg, "%s: instrumentation switched %s\n",

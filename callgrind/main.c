@@ -993,6 +993,7 @@ static void zero_thread_cost(thread_info* t)
     CLG_(copy_cost)( CLG_(sets).full, 
 		    CLG_(current_call_stack).entry[i].enter_cost,
 		    CLG_(current_state).cost );
+    CLG_(current_call_stack).entry[i].jcc->call_counter = 0;
   }
 
   CLG_(forall_bbccs)(CLG_(zero_bbcc));

@@ -5,4 +5,5 @@ Invalid read of size 1
  Expected: unknown
  Actual:   global array "im_a_global_arr" in object with soname "preen_invars_so"
 
+
 ERROR SUMMARY: 1 errors from 1 contexts (suppressed: 0 from 0)

@@ -11,4 +11,5 @@ Thread #x: lock order "0x........ before 0x........" violated
    at 0x........: pthread_mutex_lock (hg_intercepts.c:...)
    by 0x........: main (tc13_laog1.c:18)
 
+
 ERROR SUMMARY: 1 errors from 1 contexts (suppressed: 0 from 0)

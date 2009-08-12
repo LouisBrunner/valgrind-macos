@@ -3,3 +3,4 @@ Conditional jump or move depends on uninitialised value(s)
    by 0x........: aaa (bogus.S:0)
    by 0x........: aaa (bogus.S:0)
    by 0x........: main (bogus.S:0)
+

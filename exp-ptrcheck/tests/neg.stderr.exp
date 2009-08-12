@@ -49,4 +49,5 @@ Invalid read of size 4
    at 0x........: main (neg.c:22)
  Address 0x........ is not derived from any known block
 
+
 ERROR SUMMARY: 10 errors from 10 contexts (suppressed: 0 from 0)

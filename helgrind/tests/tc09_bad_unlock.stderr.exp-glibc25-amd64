@@ -36,8 +36,8 @@ Thread #x's call to pthread_mutex_unlock failed
    at 0x........: pthread_mutex_unlock (hg_intercepts.c:...)
    by 0x........: nearly_main (tc09_bad_unlock.c:41)
    by 0x........: main (tc09_bad_unlock.c:49)
----------------------
 
+---------------------
 Thread #x unlocked a not-locked lock at 0x........
    at 0x........: pthread_mutex_unlock (hg_intercepts.c:...)
    by 0x........: nearly_main (tc09_bad_unlock.c:27)
@@ -86,5 +86,6 @@ Thread #x's call to pthread_mutex_unlock failed
 
 Thread #x: Exiting thread still holds 1 lock
    ...
+
 
 ERROR SUMMARY: 11 errors from 11 contexts (suppressed: 0 from 0)

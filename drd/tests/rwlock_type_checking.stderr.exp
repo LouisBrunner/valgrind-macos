@@ -12,6 +12,7 @@ Attempt to use a POSIX rwlock as a user-defined rwlock: rwlock 0x.........
 rwlock 0x........ was first observed at:
    at 0x........: pthread_rwlock_init (drd_pthread_intercepts.c:?)
    by 0x........: main (rwlock_type_checking.c:?)
+
 Finished.
 
 ERROR SUMMARY: 4 errors from 2 contexts (suppressed: 0 from 0)

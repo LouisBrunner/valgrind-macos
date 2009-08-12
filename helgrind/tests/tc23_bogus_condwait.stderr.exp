@@ -29,4 +29,5 @@ Thread #x: pthread_cond_{timed}wait: cond is associated with a different mutex
    at 0x........: pthread_cond_wait@* (hg_intercepts.c:...)
    by 0x........: main (tc23_bogus_condwait.c:78)
 
+
 ERROR SUMMARY: 7 errors from 7 contexts (suppressed: 0 from 0)

@@ -35,4 +35,5 @@ mutex 0x........ was first observed at:
    at 0x........: pthread_mutex_init (drd_pthread_intercepts.c:?)
    by 0x........: main (pth_inconsistent_cond_wait.c:?)
 
+
 ERROR SUMMARY: 3 errors from 3 contexts (suppressed: 0 from 0)

@@ -12,6 +12,7 @@ Thread #x: lock order "0x........ before 0x........" violated
   followed by a later acquisition of lock at 0x........
    at 0x........: pthread_mutex_lock (hg_intercepts.c:...)
    by 0x........: main (tc15_laog_lockdel.c:28)
+
 Free 2 and re-allocate it.  This gives it a new identity,
 so a second locking sequence 2 -> 1 should now be OK.
 done

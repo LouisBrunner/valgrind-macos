@@ -5,6 +5,7 @@ Conflicting load by thread x at 0x........ size 4
    by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
 Location 0x........ is 0 bytes inside local var "s_y"
 declared at atomic_var.c:35, in frame #? of thread x
+
 y = 1
 Test finished.
 

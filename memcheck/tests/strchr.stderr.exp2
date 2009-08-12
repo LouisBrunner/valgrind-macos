@@ -9,3 +9,4 @@ Conditional jump or move depends on uninitialised value(s)
 Conditional jump or move depends on uninitialised value(s)
    at 0x........: rindex (mc_replace_strmem.c:...)
    by 0x........: main (strchr.c:16)
+

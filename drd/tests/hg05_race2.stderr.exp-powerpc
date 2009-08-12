@@ -18,4 +18,5 @@ Other segment start (thread 2)
 Other segment end (thread 2)
    (thread finished, call stack no longer available)
 
+
 ERROR SUMMARY: 2 errors from 2 contexts (suppressed: 0 from 0)

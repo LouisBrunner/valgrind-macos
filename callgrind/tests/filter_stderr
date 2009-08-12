@@ -5,7 +5,7 @@ dir=`dirname $0`
 $dir/../../tests/filter_stderr_basic                |
 
 # Remove "Callgrind, ..." line and the following copyright line.
-sed "/^Callgrind, a call-graph generating cache profiler./ , /./ d" |
+sed "/^Callgrind, a call-graph generating cache profiler/ , /./ d" |
 
 # Remove pointer to callgrind_control
 sed "/^For interactive control,.*$/d" |

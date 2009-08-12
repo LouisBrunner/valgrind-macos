@@ -15,3 +15,4 @@ Invalid read of size 4
  Address 0x........ is 15 bytes after a block of size 5 alloc'd
    at 0x........: realloc (vg_replace_malloc.c:...)
    by 0x........: main (realloc3.c:21)
+

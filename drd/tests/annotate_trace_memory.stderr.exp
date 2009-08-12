@@ -11,6 +11,7 @@ Conflicting store by thread x at 0x........ size 4
    at 0x........: test01::Parent() (tsan_unittest.cpp:?)
    by 0x........: test01::Run() (tsan_unittest.cpp:?)
 Allocation context: BSS section of tsan_unittest
+
 load  0x........ size 4 (thread x / vc ...)
    at 0x........: test01::Run() (tsan_unittest.cpp:?)
    by 0x........: main (tsan_unittest.cpp:?)

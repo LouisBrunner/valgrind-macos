@@ -12,8 +12,8 @@ Conflicting store by thread x at 0x........ size 1
 Address 0x........ is at offset 0 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
----------- char gran, 0 .. 99, skip 1 ----------
 
+---------- char gran, 0 .. 99, skip 1 ----------
 Conflicting store by thread x at 0x........ size 1
    at 0x........: child8 (tc19_shadowmem.c:33)
    by 0x........: steer (tc19_shadowmem.c:290)
@@ -21,8 +21,8 @@ Conflicting store by thread x at 0x........ size 1
 Address 0x........ is at offset 1 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
----------- char gran, 0 .. 99, skip 2 ----------
 
+---------- char gran, 0 .. 99, skip 2 ----------
 Conflicting store by thread x at 0x........ size 1
    at 0x........: child8 (tc19_shadowmem.c:33)
    by 0x........: steer (tc19_shadowmem.c:292)
@@ -30,8 +30,8 @@ Conflicting store by thread x at 0x........ size 1
 Address 0x........ is at offset 2 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
----------- char gran, 0 .. 99, skip 3 ----------
 
+---------- char gran, 0 .. 99, skip 3 ----------
 Conflicting store by thread x at 0x........ size 1
    at 0x........: child8 (tc19_shadowmem.c:33)
    by 0x........: steer (tc19_shadowmem.c:294)
@@ -39,8 +39,8 @@ Conflicting store by thread x at 0x........ size 1
 Address 0x........ is at offset 3 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
----------- char gran, 0 .. 99, skip 4 ----------
 
+---------- char gran, 0 .. 99, skip 4 ----------
 Conflicting store by thread x at 0x........ size 1
    at 0x........: child8 (tc19_shadowmem.c:33)
    by 0x........: steer (tc19_shadowmem.c:296)
@@ -48,8 +48,8 @@ Conflicting store by thread x at 0x........ size 1
 Address 0x........ is at offset 4 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
----------- char gran, 0 .. 99, skip 5 ----------
 
+---------- char gran, 0 .. 99, skip 5 ----------
 Conflicting store by thread x at 0x........ size 1
    at 0x........: child8 (tc19_shadowmem.c:33)
    by 0x........: steer (tc19_shadowmem.c:298)
@@ -57,8 +57,8 @@ Conflicting store by thread x at 0x........ size 1
 Address 0x........ is at offset 5 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
----------- char gran, 0 .. 99, skip 6 ----------
 
+---------- char gran, 0 .. 99, skip 6 ----------
 Conflicting store by thread x at 0x........ size 1
    at 0x........: child8 (tc19_shadowmem.c:33)
    by 0x........: steer (tc19_shadowmem.c:300)
@@ -66,8 +66,8 @@ Conflicting store by thread x at 0x........ size 1
 Address 0x........ is at offset 6 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
----------- char gran, 0 .. 99, skip 7 ----------
 
+---------- char gran, 0 .. 99, skip 7 ----------
 Conflicting store by thread x at 0x........ size 1
    at 0x........: child8 (tc19_shadowmem.c:33)
    by 0x........: steer (tc19_shadowmem.c:302)
@@ -75,8 +75,8 @@ Conflicting store by thread x at 0x........ size 1
 Address 0x........ is at offset 7 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
----------- char gran, 0 .. 99, skip 8 ----------
 
+---------- char gran, 0 .. 99, skip 8 ----------
 Conflicting store by thread x at 0x........ size 1
    at 0x........: child8 (tc19_shadowmem.c:33)
    by 0x........: steer (tc19_shadowmem.c:304)
@@ -84,8 +84,8 @@ Conflicting store by thread x at 0x........ size 1
 Address 0x........ is at offset 8 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
----------- char gran, 0 .. 99, skip 9 ----------
 
+---------- char gran, 0 .. 99, skip 9 ----------
 Conflicting store by thread x at 0x........ size 1
    at 0x........: child8 (tc19_shadowmem.c:33)
    by 0x........: steer (tc19_shadowmem.c:306)
@@ -93,8 +93,8 @@ Conflicting store by thread x at 0x........ size 1
 Address 0x........ is at offset 9 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
----------- char gran, 0 .. 99, skip 10 ----------
 
+---------- char gran, 0 .. 99, skip 10 ----------
 Conflicting store by thread x at 0x........ size 1
    at 0x........: child8 (tc19_shadowmem.c:33)
    by 0x........: steer (tc19_shadowmem.c:308)
@@ -102,8 +102,8 @@ Conflicting store by thread x at 0x........ size 1
 Address 0x........ is at offset 10 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
----------- char gran, 0 .. 99, skip 11 ----------
 
+---------- char gran, 0 .. 99, skip 11 ----------
 Conflicting store by thread x at 0x........ size 1
    at 0x........: child8 (tc19_shadowmem.c:33)
    by 0x........: steer (tc19_shadowmem.c:310)
@@ -111,8 +111,8 @@ Conflicting store by thread x at 0x........ size 1
 Address 0x........ is at offset 11 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
----------- char gran, 0 .. 99, skip 12 ----------
 
+---------- char gran, 0 .. 99, skip 12 ----------
 Conflicting store by thread x at 0x........ size 1
    at 0x........: child8 (tc19_shadowmem.c:33)
    by 0x........: steer (tc19_shadowmem.c:312)
@@ -120,8 +120,8 @@ Conflicting store by thread x at 0x........ size 1
 Address 0x........ is at offset 12 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
----------- char gran, 0 .. 99, skip 13 ----------
 
+---------- char gran, 0 .. 99, skip 13 ----------
 Conflicting store by thread x at 0x........ size 1
    at 0x........: child8 (tc19_shadowmem.c:33)
    by 0x........: steer (tc19_shadowmem.c:314)
@@ -129,8 +129,8 @@ Conflicting store by thread x at 0x........ size 1
 Address 0x........ is at offset 13 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
----------- char gran, 0 .. 99, skip 14 ----------
 
+---------- char gran, 0 .. 99, skip 14 ----------
 Conflicting store by thread x at 0x........ size 1
    at 0x........: child8 (tc19_shadowmem.c:33)
    by 0x........: steer (tc19_shadowmem.c:316)
@@ -138,8 +138,8 @@ Conflicting store by thread x at 0x........ size 1
 Address 0x........ is at offset 14 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
----------- char gran, 0 .. 99, skip 15 ----------
 
+---------- char gran, 0 .. 99, skip 15 ----------
 Conflicting store by thread x at 0x........ size 1
    at 0x........: child8 (tc19_shadowmem.c:33)
    by 0x........: steer (tc19_shadowmem.c:318)
@@ -147,8 +147,8 @@ Conflicting store by thread x at 0x........ size 1
 Address 0x........ is at offset 15 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
----------- char gran, 0 .. 99, skip 16 ----------
 
+---------- char gran, 0 .. 99, skip 16 ----------
 Conflicting store by thread x at 0x........ size 1
    at 0x........: child8 (tc19_shadowmem.c:33)
    by 0x........: steer (tc19_shadowmem.c:320)
@@ -156,8 +156,8 @@ Conflicting store by thread x at 0x........ size 1
 Address 0x........ is at offset 16 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
----------- char gran, 0 .. 99, skip 17 ----------
 
+---------- char gran, 0 .. 99, skip 17 ----------
 Conflicting store by thread x at 0x........ size 1
    at 0x........: child8 (tc19_shadowmem.c:33)
    by 0x........: steer (tc19_shadowmem.c:322)
@@ -165,8 +165,8 @@ Conflicting store by thread x at 0x........ size 1
 Address 0x........ is at offset 17 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
----------- char gran, 0 .. 99, skip 18 ----------
 
+---------- char gran, 0 .. 99, skip 18 ----------
 Conflicting store by thread x at 0x........ size 1
    at 0x........: child8 (tc19_shadowmem.c:33)
    by 0x........: steer (tc19_shadowmem.c:324)
@@ -174,8 +174,8 @@ Conflicting store by thread x at 0x........ size 1
 Address 0x........ is at offset 18 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
----------- char gran, 0 .. 99, skip 19 ----------
 
+---------- char gran, 0 .. 99, skip 19 ----------
 Conflicting store by thread x at 0x........ size 1
    at 0x........: child8 (tc19_shadowmem.c:33)
    by 0x........: steer (tc19_shadowmem.c:326)
@@ -183,8 +183,8 @@ Conflicting store by thread x at 0x........ size 1
 Address 0x........ is at offset 19 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
----------- char gran, 0 .. 99, skip 20 ----------
 
+---------- char gran, 0 .. 99, skip 20 ----------
 Conflicting store by thread x at 0x........ size 1
    at 0x........: child8 (tc19_shadowmem.c:33)
    by 0x........: steer (tc19_shadowmem.c:328)
@@ -192,8 +192,8 @@ Conflicting store by thread x at 0x........ size 1
 Address 0x........ is at offset 20 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
----------- char gran, 0 .. 99, skip 21 ----------
 
+---------- char gran, 0 .. 99, skip 21 ----------
 Conflicting store by thread x at 0x........ size 1
    at 0x........: child8 (tc19_shadowmem.c:33)
    by 0x........: steer (tc19_shadowmem.c:330)
@@ -201,8 +201,8 @@ Conflicting store by thread x at 0x........ size 1
 Address 0x........ is at offset 21 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
----------- char gran, 0 .. 99, skip 22 ----------
 
+---------- char gran, 0 .. 99, skip 22 ----------
 Conflicting store by thread x at 0x........ size 1
    at 0x........: child8 (tc19_shadowmem.c:33)
    by 0x........: steer (tc19_shadowmem.c:332)
@@ -210,8 +210,8 @@ Conflicting store by thread x at 0x........ size 1
 Address 0x........ is at offset 22 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
----------- char gran, 0 .. 99, skip 23 ----------
 
+---------- char gran, 0 .. 99, skip 23 ----------
 Conflicting store by thread x at 0x........ size 1
    at 0x........: child8 (tc19_shadowmem.c:33)
    by 0x........: steer (tc19_shadowmem.c:334)
@@ -219,8 +219,8 @@ Conflicting store by thread x at 0x........ size 1
 Address 0x........ is at offset 23 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
----------- char gran, 0 .. 99, skip 24 ----------
 
+---------- char gran, 0 .. 99, skip 24 ----------
 Conflicting store by thread x at 0x........ size 1
    at 0x........: child8 (tc19_shadowmem.c:33)
    by 0x........: steer (tc19_shadowmem.c:336)
@@ -228,8 +228,8 @@ Conflicting store by thread x at 0x........ size 1
 Address 0x........ is at offset 24 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
----------- char gran, 0 .. 99, skip 25 ----------
 
+---------- char gran, 0 .. 99, skip 25 ----------
 Conflicting store by thread x at 0x........ size 1
    at 0x........: child8 (tc19_shadowmem.c:33)
    by 0x........: steer (tc19_shadowmem.c:338)
@@ -237,8 +237,8 @@ Conflicting store by thread x at 0x........ size 1
 Address 0x........ is at offset 25 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
----------- char gran, 0 .. 99, skip 26 ----------
 
+---------- char gran, 0 .. 99, skip 26 ----------
 Conflicting store by thread x at 0x........ size 1
    at 0x........: child8 (tc19_shadowmem.c:33)
    by 0x........: steer (tc19_shadowmem.c:340)
@@ -246,8 +246,8 @@ Conflicting store by thread x at 0x........ size 1
 Address 0x........ is at offset 26 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
----------- char gran, 0 .. 99, skip 27 ----------
 
+---------- char gran, 0 .. 99, skip 27 ----------
 Conflicting store by thread x at 0x........ size 1
    at 0x........: child8 (tc19_shadowmem.c:33)
    by 0x........: steer (tc19_shadowmem.c:342)
@@ -255,8 +255,8 @@ Conflicting store by thread x at 0x........ size 1
 Address 0x........ is at offset 27 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
----------- char gran, 0 .. 99, skip 28 ----------
 
+---------- char gran, 0 .. 99, skip 28 ----------
 Conflicting store by thread x at 0x........ size 1
    at 0x........: child8 (tc19_shadowmem.c:33)
    by 0x........: steer (tc19_shadowmem.c:344)
@@ -264,8 +264,8 @@ Conflicting store by thread x at 0x........ size 1
 Address 0x........ is at offset 28 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
----------- char gran, 0 .. 99, skip 29 ----------
 
+---------- char gran, 0 .. 99, skip 29 ----------
 Conflicting store by thread x at 0x........ size 1
    at 0x........: child8 (tc19_shadowmem.c:33)
    by 0x........: steer (tc19_shadowmem.c:346)
@@ -273,8 +273,8 @@ Conflicting store by thread x at 0x........ size 1
 Address 0x........ is at offset 29 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
----------- char gran, 0 .. 99, skip 30 ----------
 
+---------- char gran, 0 .. 99, skip 30 ----------
 Conflicting store by thread x at 0x........ size 1
    at 0x........: child8 (tc19_shadowmem.c:33)
    by 0x........: steer (tc19_shadowmem.c:348)
@@ -282,8 +282,8 @@ Conflicting store by thread x at 0x........ size 1
 Address 0x........ is at offset 30 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
----------- char gran, 0 .. 99, skip 31 ----------
 
+---------- char gran, 0 .. 99, skip 31 ----------
 Conflicting store by thread x at 0x........ size 1
    at 0x........: child8 (tc19_shadowmem.c:33)
    by 0x........: steer (tc19_shadowmem.c:350)
@@ -291,8 +291,8 @@ Conflicting store by thread x at 0x........ size 1
 Address 0x........ is at offset 31 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
----------- char gran, 0 .. 99, skip 32 ----------
 
+---------- char gran, 0 .. 99, skip 32 ----------
 Conflicting store by thread x at 0x........ size 1
    at 0x........: child8 (tc19_shadowmem.c:33)
    by 0x........: steer (tc19_shadowmem.c:352)
@@ -300,8 +300,8 @@ Conflicting store by thread x at 0x........ size 1
 Address 0x........ is at offset 32 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
----------- char gran, 0 .. 99, skip 33 ----------
 
+---------- char gran, 0 .. 99, skip 33 ----------
 Conflicting store by thread x at 0x........ size 1
    at 0x........: child8 (tc19_shadowmem.c:33)
    by 0x........: steer (tc19_shadowmem.c:354)
@@ -309,8 +309,8 @@ Conflicting store by thread x at 0x........ size 1
 Address 0x........ is at offset 33 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
----------- char gran, 0 .. 99, skip 34 ----------
 
+---------- char gran, 0 .. 99, skip 34 ----------
 Conflicting store by thread x at 0x........ size 1
    at 0x........: child8 (tc19_shadowmem.c:33)
    by 0x........: steer (tc19_shadowmem.c:356)
@@ -318,8 +318,8 @@ Conflicting store by thread x at 0x........ size 1
 Address 0x........ is at offset 34 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
----------- char gran, 0 .. 99, skip 35 ----------
 
+---------- char gran, 0 .. 99, skip 35 ----------
 Conflicting store by thread x at 0x........ size 1
    at 0x........: child8 (tc19_shadowmem.c:33)
    by 0x........: steer (tc19_shadowmem.c:358)
@@ -327,8 +327,8 @@ Conflicting store by thread x at 0x........ size 1
 Address 0x........ is at offset 35 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
----------- char gran, 0 .. 99, skip 36 ----------
 
+---------- char gran, 0 .. 99, skip 36 ----------
 Conflicting store by thread x at 0x........ size 1
    at 0x........: child8 (tc19_shadowmem.c:33)
    by 0x........: steer (tc19_shadowmem.c:360)
@@ -336,8 +336,8 @@ Conflicting store by thread x at 0x........ size 1
 Address 0x........ is at offset 36 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
----------- char gran, 0 .. 99, skip 37 ----------
 
+---------- char gran, 0 .. 99, skip 37 ----------
 Conflicting store by thread x at 0x........ size 1
    at 0x........: child8 (tc19_shadowmem.c:33)
    by 0x........: steer (tc19_shadowmem.c:362)
@@ -345,8 +345,8 @@ Conflicting store by thread x at 0x........ size 1
 Address 0x........ is at offset 37 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
----------- char gran, 0 .. 99, skip 38 ----------
 
+---------- char gran, 0 .. 99, skip 38 ----------
 Conflicting store by thread x at 0x........ size 1
    at 0x........: child8 (tc19_shadowmem.c:33)
    by 0x........: steer (tc19_shadowmem.c:364)
@@ -354,8 +354,8 @@ Conflicting store by thread x at 0x........ size 1
 Address 0x........ is at offset 38 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
----------- char gran, 0 .. 99, skip 39 ----------
 
+---------- char gran, 0 .. 99, skip 39 ----------
 Conflicting store by thread x at 0x........ size 1
    at 0x........: child8 (tc19_shadowmem.c:33)
    by 0x........: steer (tc19_shadowmem.c:366)
@@ -363,8 +363,8 @@ Conflicting store by thread x at 0x........ size 1
 Address 0x........ is at offset 39 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
----------- char gran, 0 .. 99, skip 40 ----------
 
+---------- char gran, 0 .. 99, skip 40 ----------
 Conflicting store by thread x at 0x........ size 1
    at 0x........: child8 (tc19_shadowmem.c:33)
    by 0x........: steer (tc19_shadowmem.c:368)
@@ -372,8 +372,8 @@ Conflicting store by thread x at 0x........ size 1
 Address 0x........ is at offset 40 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
----------- char gran, 0 .. 99, skip 41 ----------
 
+---------- char gran, 0 .. 99, skip 41 ----------
 Conflicting store by thread x at 0x........ size 1
    at 0x........: child8 (tc19_shadowmem.c:33)
    by 0x........: steer (tc19_shadowmem.c:370)
@@ -381,8 +381,8 @@ Conflicting store by thread x at 0x........ size 1
 Address 0x........ is at offset 41 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
----------- char gran, 0 .. 99, skip 42 ----------
 
+---------- char gran, 0 .. 99, skip 42 ----------
 Conflicting store by thread x at 0x........ size 1
    at 0x........: child8 (tc19_shadowmem.c:33)
    by 0x........: steer (tc19_shadowmem.c:372)
@@ -390,8 +390,8 @@ Conflicting store by thread x at 0x........ size 1
 Address 0x........ is at offset 42 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
----------- char gran, 0 .. 99, skip 43 ----------
 
+---------- char gran, 0 .. 99, skip 43 ----------
 Conflicting store by thread x at 0x........ size 1
    at 0x........: child8 (tc19_shadowmem.c:33)
    by 0x........: steer (tc19_shadowmem.c:374)
@@ -399,8 +399,8 @@ Conflicting store by thread x at 0x........ size 1
 Address 0x........ is at offset 43 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
----------- char gran, 0 .. 99, skip 44 ----------
 
+---------- char gran, 0 .. 99, skip 44 ----------
 Conflicting store by thread x at 0x........ size 1
    at 0x........: child8 (tc19_shadowmem.c:33)
    by 0x........: steer (tc19_shadowmem.c:376)
@@ -408,8 +408,8 @@ Conflicting store by thread x at 0x........ size 1
 Address 0x........ is at offset 44 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
----------- char gran, 0 .. 99, skip 45 ----------
 
+---------- char gran, 0 .. 99, skip 45 ----------
 Conflicting store by thread x at 0x........ size 1
    at 0x........: child8 (tc19_shadowmem.c:33)
    by 0x........: steer (tc19_shadowmem.c:378)
@@ -417,8 +417,8 @@ Conflicting store by thread x at 0x........ size 1
 Address 0x........ is at offset 45 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
----------- char gran, 0 .. 99, skip 46 ----------
 
+---------- char gran, 0 .. 99, skip 46 ----------
 Conflicting store by thread x at 0x........ size 1
    at 0x........: child8 (tc19_shadowmem.c:33)
    by 0x........: steer (tc19_shadowmem.c:380)
@@ -426,8 +426,8 @@ Conflicting store by thread x at 0x........ size 1
 Address 0x........ is at offset 46 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
----------- char gran, 0 .. 99, skip 47 ----------
 
+---------- char gran, 0 .. 99, skip 47 ----------
 Conflicting store by thread x at 0x........ size 1
    at 0x........: child8 (tc19_shadowmem.c:33)
    by 0x........: steer (tc19_shadowmem.c:382)
@@ -435,8 +435,8 @@ Conflicting store by thread x at 0x........ size 1
 Address 0x........ is at offset 47 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
----------- char gran, 0 .. 99, skip 48 ----------
 
+---------- char gran, 0 .. 99, skip 48 ----------
 Conflicting store by thread x at 0x........ size 1
    at 0x........: child8 (tc19_shadowmem.c:33)
    by 0x........: steer (tc19_shadowmem.c:384)
@@ -444,8 +444,8 @@ Conflicting store by thread x at 0x........ size 1
 Address 0x........ is at offset 48 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
----------- char gran, 0 .. 99, skip 49 ----------
 
+---------- char gran, 0 .. 99, skip 49 ----------
 Conflicting store by thread x at 0x........ size 1
    at 0x........: child8 (tc19_shadowmem.c:33)
    by 0x........: steer (tc19_shadowmem.c:386)
@@ -453,8 +453,8 @@ Conflicting store by thread x at 0x........ size 1
 Address 0x........ is at offset 49 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
----------- char gran, 0 .. 99, skip 50 ----------
 
+---------- char gran, 0 .. 99, skip 50 ----------
 Conflicting store by thread x at 0x........ size 1
    at 0x........: child8 (tc19_shadowmem.c:33)
    by 0x........: steer (tc19_shadowmem.c:388)
@@ -462,8 +462,8 @@ Conflicting store by thread x at 0x........ size 1
 Address 0x........ is at offset 50 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
----------- char gran, 0 .. 99, skip 51 ----------
 
+---------- char gran, 0 .. 99, skip 51 ----------
 Conflicting store by thread x at 0x........ size 1
    at 0x........: child8 (tc19_shadowmem.c:33)
    by 0x........: steer (tc19_shadowmem.c:390)
@@ -471,8 +471,8 @@ Conflicting store by thread x at 0x........ size 1
 Address 0x........ is at offset 51 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
----------- char gran, 0 .. 99, skip 52 ----------
 
+---------- char gran, 0 .. 99, skip 52 ----------
 Conflicting store by thread x at 0x........ size 1
    at 0x........: child8 (tc19_shadowmem.c:33)
    by 0x........: steer (tc19_shadowmem.c:392)
@@ -480,8 +480,8 @@ Conflicting store by thread x at 0x........ size 1
 Address 0x........ is at offset 52 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
----------- char gran, 0 .. 99, skip 53 ----------
 
+---------- char gran, 0 .. 99, skip 53 ----------
 Conflicting store by thread x at 0x........ size 1
    at 0x........: child8 (tc19_shadowmem.c:33)
    by 0x........: steer (tc19_shadowmem.c:394)
@@ -489,8 +489,8 @@ Conflicting store by thread x at 0x........ size 1
 Address 0x........ is at offset 53 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
----------- char gran, 0 .. 99, skip 54 ----------
 
+---------- char gran, 0 .. 99, skip 54 ----------
 Conflicting store by thread x at 0x........ size 1
    at 0x........: child8 (tc19_shadowmem.c:33)
    by 0x........: steer (tc19_shadowmem.c:396)
@@ -498,8 +498,8 @@ Conflicting store by thread x at 0x........ size 1
 Address 0x........ is at offset 54 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
----------- char gran, 0 .. 99, skip 55 ----------
 
+---------- char gran, 0 .. 99, skip 55 ----------
 Conflicting store by thread x at 0x........ size 1
    at 0x........: child8 (tc19_shadowmem.c:33)
    by 0x........: steer (tc19_shadowmem.c:398)
@@ -507,8 +507,8 @@ Conflicting store by thread x at 0x........ size 1
 Address 0x........ is at offset 55 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
----------- char gran, 0 .. 99, skip 56 ----------
 
+---------- char gran, 0 .. 99, skip 56 ----------
 Conflicting store by thread x at 0x........ size 1
    at 0x........: child8 (tc19_shadowmem.c:33)
    by 0x........: steer (tc19_shadowmem.c:400)
@@ -516,8 +516,8 @@ Conflicting store by thread x at 0x........ size 1
 Address 0x........ is at offset 56 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
----------- char gran, 0 .. 99, skip 57 ----------
 
+---------- char gran, 0 .. 99, skip 57 ----------
 Conflicting store by thread x at 0x........ size 1
    at 0x........: child8 (tc19_shadowmem.c:33)
    by 0x........: steer (tc19_shadowmem.c:402)
@@ -525,8 +525,8 @@ Conflicting store by thread x at 0x........ size 1
 Address 0x........ is at offset 57 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
----------- char gran, 0 .. 99, skip 58 ----------
 
+---------- char gran, 0 .. 99, skip 58 ----------
 Conflicting store by thread x at 0x........ size 1
    at 0x........: child8 (tc19_shadowmem.c:33)
    by 0x........: steer (tc19_shadowmem.c:404)
@@ -534,8 +534,8 @@ Conflicting store by thread x at 0x........ size 1
 Address 0x........ is at offset 58 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
----------- char gran, 0 .. 99, skip 59 ----------
 
+---------- char gran, 0 .. 99, skip 59 ----------
 Conflicting store by thread x at 0x........ size 1
    at 0x........: child8 (tc19_shadowmem.c:33)
    by 0x........: steer (tc19_shadowmem.c:406)
@@ -543,8 +543,8 @@ Conflicting store by thread x at 0x........ size 1
 Address 0x........ is at offset 59 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
----------- char gran, 0 .. 99, skip 60 ----------
 
+---------- char gran, 0 .. 99, skip 60 ----------
 Conflicting store by thread x at 0x........ size 1
    at 0x........: child8 (tc19_shadowmem.c:33)
    by 0x........: steer (tc19_shadowmem.c:408)
@@ -552,8 +552,8 @@ Conflicting store by thread x at 0x........ size 1
 Address 0x........ is at offset 60 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
----------- char gran, 0 .. 99, skip 61 ----------
 
+---------- char gran, 0 .. 99, skip 61 ----------
 Conflicting store by thread x at 0x........ size 1
    at 0x........: child8 (tc19_shadowmem.c:33)
    by 0x........: steer (tc19_shadowmem.c:410)
@@ -561,8 +561,8 @@ Conflicting store by thread x at 0x........ size 1
 Address 0x........ is at offset 61 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
----------- char gran, 0 .. 99, skip 62 ----------
 
+---------- char gran, 0 .. 99, skip 62 ----------
 Conflicting store by thread x at 0x........ size 1
    at 0x........: child8 (tc19_shadowmem.c:33)
    by 0x........: steer (tc19_shadowmem.c:412)
@@ -570,8 +570,8 @@ Conflicting store by thread x at 0x........ size 1
 Address 0x........ is at offset 62 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
----------- char gran, 0 .. 99, skip 63 ----------
 
+---------- char gran, 0 .. 99, skip 63 ----------
 Conflicting store by thread x at 0x........ size 1
    at 0x........: child8 (tc19_shadowmem.c:33)
    by 0x........: steer (tc19_shadowmem.c:414)
@@ -579,8 +579,8 @@ Conflicting store by thread x at 0x........ size 1
 Address 0x........ is at offset 63 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
----------- char gran, 0 .. 99, skip 64 ----------
 
+---------- char gran, 0 .. 99, skip 64 ----------
 Conflicting store by thread x at 0x........ size 1
    at 0x........: child8 (tc19_shadowmem.c:33)
    by 0x........: steer (tc19_shadowmem.c:416)
@@ -588,8 +588,8 @@ Conflicting store by thread x at 0x........ size 1
 Address 0x........ is at offset 64 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
----------- char gran, 0 .. 99, skip 65 ----------
 
+---------- char gran, 0 .. 99, skip 65 ----------
 Conflicting store by thread x at 0x........ size 1
    at 0x........: child8 (tc19_shadowmem.c:33)
    by 0x........: steer (tc19_shadowmem.c:418)
@@ -597,8 +597,8 @@ Conflicting store by thread x at 0x........ size 1
 Address 0x........ is at offset 65 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
----------- char gran, 0 .. 99, skip 66 ----------
 
+---------- char gran, 0 .. 99, skip 66 ----------
 Conflicting store by thread x at 0x........ size 1
    at 0x........: child8 (tc19_shadowmem.c:33)
    by 0x........: steer (tc19_shadowmem.c:420)
@@ -606,8 +606,8 @@ Conflicting store by thread x at 0x........ size 1
 Address 0x........ is at offset 66 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
----------- char gran, 0 .. 99, skip 67 ----------
 
+---------- char gran, 0 .. 99, skip 67 ----------
 Conflicting store by thread x at 0x........ size 1
    at 0x........: child8 (tc19_shadowmem.c:33)
    by 0x........: steer (tc19_shadowmem.c:422)
@@ -615,8 +615,8 @@ Conflicting store by thread x at 0x........ size 1
 Address 0x........ is at offset 67 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
----------- char gran, 0 .. 99, skip 68 ----------
 
+---------- char gran, 0 .. 99, skip 68 ----------
 Conflicting store by thread x at 0x........ size 1
    at 0x........: child8 (tc19_shadowmem.c:33)
    by 0x........: steer (tc19_shadowmem.c:424)
@@ -624,8 +624,8 @@ Conflicting store by thread x at 0x........ size 1
 Address 0x........ is at offset 68 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
----------- char gran, 0 .. 99, skip 69 ----------
 
+---------- char gran, 0 .. 99, skip 69 ----------
 Conflicting store by thread x at 0x........ size 1
    at 0x........: child8 (tc19_shadowmem.c:33)
    by 0x........: steer (tc19_shadowmem.c:426)
@@ -633,8 +633,8 @@ Conflicting store by thread x at 0x........ size 1
 Address 0x........ is at offset 69 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
----------- char gran, 0 .. 99, skip 70 ----------
 
+---------- char gran, 0 .. 99, skip 70 ----------
 Conflicting store by thread x at 0x........ size 1
    at 0x........: child8 (tc19_shadowmem.c:33)
    by 0x........: steer (tc19_shadowmem.c:428)
@@ -642,8 +642,8 @@ Conflicting store by thread x at 0x........ size 1
 Address 0x........ is at offset 70 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
----------- char gran, 0 .. 99, skip 71 ----------
 
+---------- char gran, 0 .. 99, skip 71 ----------
 Conflicting store by thread x at 0x........ size 1
    at 0x........: child8 (tc19_shadowmem.c:33)
    by 0x........: steer (tc19_shadowmem.c:430)
@@ -651,8 +651,8 @@ Conflicting store by thread x at 0x........ size 1
 Address 0x........ is at offset 71 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
----------- char gran, 0 .. 99, skip 72 ----------
 
+---------- char gran, 0 .. 99, skip 72 ----------
 Conflicting store by thread x at 0x........ size 1
    at 0x........: child8 (tc19_shadowmem.c:33)
    by 0x........: steer (tc19_shadowmem.c:432)
@@ -660,8 +660,8 @@ Conflicting store by thread x at 0x........ size 1
 Address 0x........ is at offset 72 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
----------- char gran, 0 .. 99, skip 73 ----------
 
+---------- char gran, 0 .. 99, skip 73 ----------
 Conflicting store by thread x at 0x........ size 1
    at 0x........: child8 (tc19_shadowmem.c:33)
    by 0x........: steer (tc19_shadowmem.c:434)
@@ -669,8 +669,8 @@ Conflicting store by thread x at 0x........ size 1
 Address 0x........ is at offset 73 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
----------- char gran, 0 .. 99, skip 74 ----------
 
+---------- char gran, 0 .. 99, skip 74 ----------
 Conflicting store by thread x at 0x........ size 1
    at 0x........: child8 (tc19_shadowmem.c:33)
    by 0x........: steer (tc19_shadowmem.c:436)
@@ -678,8 +678,8 @@ Conflicting store by thread x at 0x........ size 1
 Address 0x........ is at offset 74 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
----------- char gran, 0 .. 99, skip 75 ----------
 
+---------- char gran, 0 .. 99, skip 75 ----------
 Conflicting store by thread x at 0x........ size 1
    at 0x........: child8 (tc19_shadowmem.c:33)
    by 0x........: steer (tc19_shadowmem.c:438)
@@ -687,8 +687,8 @@ Conflicting store by thread x at 0x........ size 1
 Address 0x........ is at offset 75 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
----------- char gran, 0 .. 99, skip 76 ----------
 
+---------- char gran, 0 .. 99, skip 76 ----------
 Conflicting store by thread x at 0x........ size 1
    at 0x........: child8 (tc19_shadowmem.c:33)
    by 0x........: steer (tc19_shadowmem.c:440)
@@ -696,8 +696,8 @@ Conflicting store by thread x at 0x........ size 1
 Address 0x........ is at offset 76 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
----------- char gran, 0 .. 99, skip 77 ----------
 
+---------- char gran, 0 .. 99, skip 77 ----------
 Conflicting store by thread x at 0x........ size 1
    at 0x........: child8 (tc19_shadowmem.c:33)
    by 0x........: steer (tc19_shadowmem.c:442)
@@ -705,8 +705,8 @@ Conflicting store by thread x at 0x........ size 1
 Address 0x........ is at offset 77 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
----------- char gran, 0 .. 99, skip 78 ----------
 
+---------- char gran, 0 .. 99, skip 78 ----------
 Conflicting store by thread x at 0x........ size 1
    at 0x........: child8 (tc19_shadowmem.c:33)
    by 0x........: steer (tc19_shadowmem.c:444)
@@ -714,8 +714,8 @@ Conflicting store by thread x at 0x........ size 1
 Address 0x........ is at offset 78 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
----------- char gran, 0 .. 99, skip 79 ----------
 
+---------- char gran, 0 .. 99, skip 79 ----------
 Conflicting store by thread x at 0x........ size 1
    at 0x........: child8 (tc19_shadowmem.c:33)
    by 0x........: steer (tc19_shadowmem.c:446)
@@ -723,8 +723,8 @@ Conflicting store by thread x at 0x........ size 1
 Address 0x........ is at offset 79 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
----------- char gran, 0 .. 99, skip 80 ----------
 
+---------- char gran, 0 .. 99, skip 80 ----------
 Conflicting store by thread x at 0x........ size 1
    at 0x........: child8 (tc19_shadowmem.c:33)
    by 0x........: steer (tc19_shadowmem.c:448)
@@ -732,8 +732,8 @@ Conflicting store by thread x at 0x........ size 1
 Address 0x........ is at offset 80 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
----------- char gran, 0 .. 99, skip 81 ----------
 
+---------- char gran, 0 .. 99, skip 81 ----------
 Conflicting store by thread x at 0x........ size 1
    at 0x........: child8 (tc19_shadowmem.c:33)
    by 0x........: steer (tc19_shadowmem.c:450)
@@ -741,8 +741,8 @@ Conflicting store by thread x at 0x........ size 1
 Address 0x........ is at offset 81 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
----------- char gran, 0 .. 99, skip 82 ----------
 
+---------- char gran, 0 .. 99, skip 82 ----------
 Conflicting store by thread x at 0x........ size 1
    at 0x........: child8 (tc19_shadowmem.c:33)
    by 0x........: steer (tc19_shadowmem.c:452)
@@ -750,8 +750,8 @@ Conflicting store by thread x at 0x........ size 1
 Address 0x........ is at offset 82 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
----------- char gran, 0 .. 99, skip 83 ----------
 
+---------- char gran, 0 .. 99, skip 83 ----------
 Conflicting store by thread x at 0x........ size 1
    at 0x........: child8 (tc19_shadowmem.c:33)
    by 0x........: steer (tc19_shadowmem.c:454)
@@ -759,8 +759,8 @@ Conflicting store by thread x at 0x........ size 1
 Address 0x........ is at offset 83 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
----------- char gran, 0 .. 99, skip 84 ----------
 
+---------- char gran, 0 .. 99, skip 84 ----------
 Conflicting store by thread x at 0x........ size 1
    at 0x........: child8 (tc19_shadowmem.c:33)
    by 0x........: steer (tc19_shadowmem.c:456)
@@ -768,8 +768,8 @@ Conflicting store by thread x at 0x........ size 1
 Address 0x........ is at offset 84 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
----------- char gran, 0 .. 99, skip 85 ----------
 
+---------- char gran, 0 .. 99, skip 85 ----------
 Conflicting store by thread x at 0x........ size 1
    at 0x........: child8 (tc19_shadowmem.c:33)
    by 0x........: steer (tc19_shadowmem.c:458)
@@ -777,8 +777,8 @@ Conflicting store by thread x at 0x........ size 1
 Address 0x........ is at offset 85 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
----------- char gran, 0 .. 99, skip 86 ----------
 
+---------- char gran, 0 .. 99, skip 86 ----------
 Conflicting store by thread x at 0x........ size 1
    at 0x........: child8 (tc19_shadowmem.c:33)
    by 0x........: steer (tc19_shadowmem.c:460)
@@ -786,8 +786,8 @@ Conflicting store by thread x at 0x........ size 1
 Address 0x........ is at offset 86 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
----------- char gran, 0 .. 99, skip 87 ----------
 
+---------- char gran, 0 .. 99, skip 87 ----------
 Conflicting store by thread x at 0x........ size 1
    at 0x........: child8 (tc19_shadowmem.c:33)
    by 0x........: steer (tc19_shadowmem.c:462)
@@ -795,8 +795,8 @@ Conflicting store by thread x at 0x........ size 1
 Address 0x........ is at offset 87 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
----------- char gran, 0 .. 99, skip 88 ----------
 
+---------- char gran, 0 .. 99, skip 88 ----------
 Conflicting store by thread x at 0x........ size 1
    at 0x........: child8 (tc19_shadowmem.c:33)
    by 0x........: steer (tc19_shadowmem.c:464)
@@ -804,8 +804,8 @@ Conflicting store by thread x at 0x........ size 1
 Address 0x........ is at offset 88 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
----------- char gran, 0 .. 99, skip 89 ----------
 
+---------- char gran, 0 .. 99, skip 89 ----------
 Conflicting store by thread x at 0x........ size 1
    at 0x........: child8 (tc19_shadowmem.c:33)
    by 0x........: steer (tc19_shadowmem.c:466)
@@ -813,8 +813,8 @@ Conflicting store by thread x at 0x........ size 1
 Address 0x........ is at offset 89 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
----------- char gran, 0 .. 99, skip 90 ----------
 
+---------- char gran, 0 .. 99, skip 90 ----------
 Conflicting store by thread x at 0x........ size 1
    at 0x........: child8 (tc19_shadowmem.c:33)
    by 0x........: steer (tc19_shadowmem.c:468)
@@ -822,8 +822,8 @@ Conflicting store by thread x at 0x........ size 1
 Address 0x........ is at offset 90 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
----------- char gran, 0 .. 99, skip 91 ----------
 
+---------- char gran, 0 .. 99, skip 91 ----------
 Conflicting store by thread x at 0x........ size 1
    at 0x........: child8 (tc19_shadowmem.c:33)
    by 0x........: steer (tc19_shadowmem.c:470)
@@ -831,8 +831,8 @@ Conflicting store by thread x at 0x........ size 1
 Address 0x........ is at offset 91 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
----------- char gran, 0 .. 99, skip 92 ----------
 
+---------- char gran, 0 .. 99, skip 92 ----------
 Conflicting store by thread x at 0x........ size 1
    at 0x........: child8 (tc19_shadowmem.c:33)
    by 0x........: steer (tc19_shadowmem.c:472)
@@ -840,8 +840,8 @@ Conflicting store by thread x at 0x........ size 1
 Address 0x........ is at offset 92 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
----------- char gran, 0 .. 99, skip 93 ----------
 
+---------- char gran, 0 .. 99, skip 93 ----------
 Conflicting store by thread x at 0x........ size 1
    at 0x........: child8 (tc19_shadowmem.c:33)
    by 0x........: steer (tc19_shadowmem.c:474)
@@ -849,8 +849,8 @@ Conflicting store by thread x at 0x........ size 1
 Address 0x........ is at offset 93 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
----------- char gran, 0 .. 99, skip 94 ----------
 
+---------- char gran, 0 .. 99, skip 94 ----------
 Conflicting store by thread x at 0x........ size 1
    at 0x........: child8 (tc19_shadowmem.c:33)
    by 0x........: steer (tc19_shadowmem.c:476)
@@ -858,8 +858,8 @@ Conflicting store by thread x at 0x........ size 1
 Address 0x........ is at offset 94 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
----------- char gran, 0 .. 99, skip 95 ----------
 
+---------- char gran, 0 .. 99, skip 95 ----------
 Conflicting store by thread x at 0x........ size 1
    at 0x........: child8 (tc19_shadowmem.c:33)
    by 0x........: steer (tc19_shadowmem.c:478)
@@ -867,8 +867,8 @@ Conflicting store by thread x at 0x........ size 1
 Address 0x........ is at offset 95 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
----------- char gran, 0 .. 99, skip 96 ----------
 
+---------- char gran, 0 .. 99, skip 96 ----------
 Conflicting store by thread x at 0x........ size 1
    at 0x........: child8 (tc19_shadowmem.c:33)
    by 0x........: steer (tc19_shadowmem.c:480)
@@ -876,8 +876,8 @@ Conflicting store by thread x at 0x........ size 1
 Address 0x........ is at offset 96 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
----------- char gran, 0 .. 99, skip 97 ----------
 
+---------- char gran, 0 .. 99, skip 97 ----------
 Conflicting store by thread x at 0x........ size 1
    at 0x........: child8 (tc19_shadowmem.c:33)
    by 0x........: steer (tc19_shadowmem.c:482)
@@ -885,8 +885,8 @@ Conflicting store by thread x at 0x........ size 1
 Address 0x........ is at offset 97 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
----------- char gran, 0 .. 99, skip 98 ----------
 
+---------- char gran, 0 .. 99, skip 98 ----------
 Conflicting store by thread x at 0x........ size 1
    at 0x........: child8 (tc19_shadowmem.c:33)
    by 0x........: steer (tc19_shadowmem.c:484)
@@ -895,12 +895,12 @@ Address 0x........ is at offset 98 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
 
+
 ==========================================================
 === 16 16 16 16 16 16 16 16 16 16 16 16 16 16 16 16 16 ===
 ==========================================================
 
 ---------- short gran, 0 .. 98, skip 0 ----------
-
 Conflicting store by thread x at 0x........ size 2
    at 0x........: child16 (tc19_shadowmem.c:57)
    by 0x........: steer (tc19_shadowmem.c:288)
@@ -908,8 +908,8 @@ Conflicting store by thread x at 0x........ size 2
 Address 0x........ is at offset 0 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
----------- short gran, 1 .. 98, skip 1 ----------
 
+---------- short gran, 1 .. 98, skip 1 ----------
 Conflicting store by thread x at 0x........ size 2
    at 0x........: child16 (tc19_shadowmem.c:57)
    by 0x........: steer (tc19_shadowmem.c:290)
@@ -917,8 +917,8 @@ Conflicting store by thread x at 0x........ size 2
 Address 0x........ is at offset 1 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
----------- short gran, 0 .. 98, skip 2 ----------
 
+---------- short gran, 0 .. 98, skip 2 ----------
 Conflicting store by thread x at 0x........ size 2
    at 0x........: child16 (tc19_shadowmem.c:57)
    by 0x........: steer (tc19_shadowmem.c:292)
@@ -926,8 +926,8 @@ Conflicting store by thread x at 0x........ size 2
 Address 0x........ is at offset 2 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
----------- short gran, 1 .. 98, skip 3 ----------
 
+---------- short gran, 1 .. 98, skip 3 ----------
 Conflicting store by thread x at 0x........ size 2
    at 0x........: child16 (tc19_shadowmem.c:57)
    by 0x........: steer (tc19_shadowmem.c:294)
@@ -935,8 +935,8 @@ Conflicting store by thread x at 0x........ size 2
 Address 0x........ is at offset 3 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
----------- short gran, 0 .. 98, skip 4 ----------
 
+---------- short gran, 0 .. 98, skip 4 ----------
 Conflicting store by thread x at 0x........ size 2
    at 0x........: child16 (tc19_shadowmem.c:57)
    by 0x........: steer (tc19_shadowmem.c:296)
@@ -944,8 +944,8 @@ Conflicting store by thread x at 0x........ size 2
 Address 0x........ is at offset 4 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
----------- short gran, 1 .. 98, skip 5 ----------
 
+---------- short gran, 1 .. 98, skip 5 ----------
 Conflicting store by thread x at 0x........ size 2
    at 0x........: child16 (tc19_shadowmem.c:57)
    by 0x........: steer (tc19_shadowmem.c:298)
@@ -953,8 +953,8 @@ Conflicting store by thread x at 0x........ size 2
 Address 0x........ is at offset 5 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
----------- short gran, 0 .. 98, skip 6 ----------
 
+---------- short gran, 0 .. 98, skip 6 ----------
 Conflicting store by thread x at 0x........ size 2
    at 0x........: child16 (tc19_shadowmem.c:57)
    by 0x........: steer (tc19_shadowmem.c:300)
@@ -962,8 +962,8 @@ Conflicting store by thread x at 0x........ size 2
 Address 0x........ is at offset 6 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
----------- short gran, 1 .. 98, skip 7 ----------
 
+---------- short gran, 1 .. 98, skip 7 ----------
 Conflicting store by thread x at 0x........ size 2
    at 0x........: child16 (tc19_shadowmem.c:57)
    by 0x........: steer (tc19_shadowmem.c:302)
@@ -971,8 +971,8 @@ Conflicting store by thread x at 0x........ size 2
 Address 0x........ is at offset 7 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
----------- short gran, 0 .. 98, skip 8 ----------
 
+---------- short gran, 0 .. 98, skip 8 ----------
 Conflicting store by thread x at 0x........ size 2
    at 0x........: child16 (tc19_shadowmem.c:57)
    by 0x........: steer (tc19_shadowmem.c:304)
@@ -980,8 +980,8 @@ Conflicting store by thread x at 0x........ size 2
 Address 0x........ is at offset 8 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
----------- short gran, 1 .. 98, skip 9 ----------
 
+---------- short gran, 1 .. 98, skip 9 ----------
 Conflicting store by thread x at 0x........ size 2
    at 0x........: child16 (tc19_shadowmem.c:57)
    by 0x........: steer (tc19_shadowmem.c:306)
@@ -989,8 +989,8 @@ Conflicting store by thread x at 0x........ size 2
 Address 0x........ is at offset 9 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
----------- short gran, 0 .. 98, skip 10 ----------
 
+---------- short gran, 0 .. 98, skip 10 ----------
 Conflicting store by thread x at 0x........ size 2
    at 0x........: child16 (tc19_shadowmem.c:57)
    by 0x........: steer (tc19_shadowmem.c:308)
@@ -998,8 +998,8 @@ Conflicting store by thread x at 0x........ size 2
 Address 0x........ is at offset 10 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
----------- short gran, 1 .. 98, skip 11 ----------
 
+---------- short gran, 1 .. 98, skip 11 ----------
 Conflicting store by thread x at 0x........ size 2
    at 0x........: child16 (tc19_shadowmem.c:57)
    by 0x........: steer (tc19_shadowmem.c:310)
@@ -1007,8 +1007,8 @@ Conflicting store by thread x at 0x........ size 2
 Address 0x........ is at offset 11 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
----------- short gran, 0 .. 98, skip 12 ----------
 
+---------- short gran, 0 .. 98, skip 12 ----------
 Conflicting store by thread x at 0x........ size 2
    at 0x........: child16 (tc19_shadowmem.c:57)
    by 0x........: steer (tc19_shadowmem.c:312)
@@ -1016,8 +1016,8 @@ Conflicting store by thread x at 0x........ size 2
 Address 0x........ is at offset 12 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
----------- short gran, 1 .. 98, skip 13 ----------
 
+---------- short gran, 1 .. 98, skip 13 ----------
 Conflicting store by thread x at 0x........ size 2
    at 0x........: child16 (tc19_shadowmem.c:57)
    by 0x........: steer (tc19_shadowmem.c:314)
@@ -1025,8 +1025,8 @@ Conflicting store by thread x at 0x........ size 2
 Address 0x........ is at offset 13 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
----------- short gran, 0 .. 98, skip 14 ----------
 
+---------- short gran, 0 .. 98, skip 14 ----------
 Conflicting store by thread x at 0x........ size 2
    at 0x........: child16 (tc19_shadowmem.c:57)
    by 0x........: steer (tc19_shadowmem.c:316)
@@ -1034,8 +1034,8 @@ Conflicting store by thread x at 0x........ size 2
 Address 0x........ is at offset 14 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
----------- short gran, 1 .. 98, skip 15 ----------
 
+---------- short gran, 1 .. 98, skip 15 ----------
 Conflicting store by thread x at 0x........ size 2
    at 0x........: child16 (tc19_shadowmem.c:57)
    by 0x........: steer (tc19_shadowmem.c:318)
@@ -1043,8 +1043,8 @@ Conflicting store by thread x at 0x........ size 2
 Address 0x........ is at offset 15 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
----------- short gran, 0 .. 98, skip 16 ----------
 
+---------- short gran, 0 .. 98, skip 16 ----------
 Conflicting store by thread x at 0x........ size 2
    at 0x........: child16 (tc19_shadowmem.c:57)
    by 0x........: steer (tc19_shadowmem.c:320)
@@ -1052,8 +1052,8 @@ Conflicting store by thread x at 0x........ size 2
 Address 0x........ is at offset 16 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
----------- short gran, 1 .. 98, skip 17 ----------
 
+---------- short gran, 1 .. 98, skip 17 ----------
 Conflicting store by thread x at 0x........ size 2
    at 0x........: child16 (tc19_shadowmem.c:57)
    by 0x........: steer (tc19_shadowmem.c:322)
@@ -1061,8 +1061,8 @@ Conflicting store by thread x at 0x........ size 2
 Address 0x........ is at offset 17 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
----------- short gran, 0 .. 98, skip 18 ----------
 
+---------- short gran, 0 .. 98, skip 18 ----------
 Conflicting store by thread x at 0x........ size 2
    at 0x........: child16 (tc19_shadowmem.c:57)
    by 0x........: steer (tc19_shadowmem.c:324)
@@ -1070,8 +1070,8 @@ Conflicting store by thread x at 0x........ size 2
 Address 0x........ is at offset 18 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
----------- short gran, 1 .. 98, skip 19 ----------
 
+---------- short gran, 1 .. 98, skip 19 ----------
 Conflicting store by thread x at 0x........ size 2
    at 0x........: child16 (tc19_shadowmem.c:57)
    by 0x........: steer (tc19_shadowmem.c:326)
@@ -1079,8 +1079,8 @@ Conflicting store by thread x at 0x........ size 2
 Address 0x........ is at offset 19 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
----------- short gran, 0 .. 98, skip 20 ----------
 
+---------- short gran, 0 .. 98, skip 20 ----------
 Conflicting store by thread x at 0x........ size 2
    at 0x........: child16 (tc19_shadowmem.c:57)
    by 0x........: steer (tc19_shadowmem.c:328)
@@ -1088,8 +1088,8 @@ Conflicting store by thread x at 0x........ size 2
 Address 0x........ is at offset 20 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
----------- short gran, 1 .. 98, skip 21 ----------
 
+---------- short gran, 1 .. 98, skip 21 ----------
 Conflicting store by thread x at 0x........ size 2
    at 0x........: child16 (tc19_shadowmem.c:57)
    by 0x........: steer (tc19_shadowmem.c:330)
@@ -1097,8 +1097,8 @@ Conflicting store by thread x at 0x........ size 2
 Address 0x........ is at offset 21 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
----------- short gran, 0 .. 98, skip 22 ----------
 
+---------- short gran, 0 .. 98, skip 22 ----------
 Conflicting store by thread x at 0x........ size 2
    at 0x........: child16 (tc19_shadowmem.c:57)
    by 0x........: steer (tc19_shadowmem.c:332)
@@ -1106,8 +1106,8 @@ Conflicting store by thread x at 0x........ size 2
 Address 0x........ is at offset 22 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
----------- short gran, 1 .. 98, skip 23 ----------
 
+---------- short gran, 1 .. 98, skip 23 ----------
 Conflicting store by thread x at 0x........ size 2
    at 0x........: child16 (tc19_shadowmem.c:57)
    by 0x........: steer (tc19_shadowmem.c:334)
@@ -1115,8 +1115,8 @@ Conflicting store by thread x at 0x........ size 2
 Address 0x........ is at offset 23 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
----------- short gran, 0 .. 98, skip 24 ----------
 
+---------- short gran, 0 .. 98, skip 24 ----------
 Conflicting store by thread x at 0x........ size 2
    at 0x........: child16 (tc19_shadowmem.c:57)
    by 0x........: steer (tc19_shadowmem.c:336)
@@ -1124,8 +1124,8 @@ Conflicting store by thread x at 0x........ size 2
 Address 0x........ is at offset 24 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
----------- short gran, 1 .. 98, skip 25 ----------
 
+---------- short gran, 1 .. 98, skip 25 ----------
 Conflicting store by thread x at 0x........ size 2
    at 0x........: child16 (tc19_shadowmem.c:57)
    by 0x........: steer (tc19_shadowmem.c:338)
@@ -1133,8 +1133,8 @@ Conflicting store by thread x at 0x........ size 2
 Address 0x........ is at offset 25 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
----------- short gran, 0 .. 98, skip 26 ----------
 
+---------- short gran, 0 .. 98, skip 26 ----------
 Conflicting store by thread x at 0x........ size 2
    at 0x........: child16 (tc19_shadowmem.c:57)
    by 0x........: steer (tc19_shadowmem.c:340)
@@ -1142,8 +1142,8 @@ Conflicting store by thread x at 0x........ size 2
 Address 0x........ is at offset 26 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
----------- short gran, 1 .. 98, skip 27 ----------
 
+---------- short gran, 1 .. 98, skip 27 ----------
 Conflicting store by thread x at 0x........ size 2
    at 0x........: child16 (tc19_shadowmem.c:57)
    by 0x........: steer (tc19_shadowmem.c:342)
@@ -1151,8 +1151,8 @@ Conflicting store by thread x at 0x........ size 2
 Address 0x........ is at offset 27 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
----------- short gran, 0 .. 98, skip 28 ----------
 
+---------- short gran, 0 .. 98, skip 28 ----------
 Conflicting store by thread x at 0x........ size 2
    at 0x........: child16 (tc19_shadowmem.c:57)
    by 0x........: steer (tc19_shadowmem.c:344)
@@ -1160,8 +1160,8 @@ Conflicting store by thread x at 0x........ size 2
 Address 0x........ is at offset 28 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
----------- short gran, 1 .. 98, skip 29 ----------
 
+---------- short gran, 1 .. 98, skip 29 ----------
 Conflicting store by thread x at 0x........ size 2
    at 0x........: child16 (tc19_shadowmem.c:57)
    by 0x........: steer (tc19_shadowmem.c:346)
@@ -1169,8 +1169,8 @@ Conflicting store by thread x at 0x........ size 2
 Address 0x........ is at offset 29 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
----------- short gran, 0 .. 98, skip 30 ----------
 
+---------- short gran, 0 .. 98, skip 30 ----------
 Conflicting store by thread x at 0x........ size 2
    at 0x........: child16 (tc19_shadowmem.c:57)
    by 0x........: steer (tc19_shadowmem.c:348)
@@ -1178,8 +1178,8 @@ Conflicting store by thread x at 0x........ size 2
 Address 0x........ is at offset 30 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
----------- short gran, 1 .. 98, skip 31 ----------
 
+---------- short gran, 1 .. 98, skip 31 ----------
 Conflicting store by thread x at 0x........ size 2
    at 0x........: child16 (tc19_shadowmem.c:57)
    by 0x........: steer (tc19_shadowmem.c:350)
@@ -1187,8 +1187,8 @@ Conflicting store by thread x at 0x........ size 2
 Address 0x........ is at offset 31 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
----------- short gran, 0 .. 98, skip 32 ----------
 
+---------- short gran, 0 .. 98, skip 32 ----------
 Conflicting store by thread x at 0x........ size 2
    at 0x........: child16 (tc19_shadowmem.c:57)
    by 0x........: steer (tc19_shadowmem.c:352)
@@ -1196,8 +1196,8 @@ Conflicting store by thread x at 0x........ size 2
 Address 0x........ is at offset 32 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
----------- short gran, 1 .. 98, skip 33 ----------
 
+---------- short gran, 1 .. 98, skip 33 ----------
 Conflicting store by thread x at 0x........ size 2
    at 0x........: child16 (tc19_shadowmem.c:57)
    by 0x........: steer (tc19_shadowmem.c:354)
@@ -1205,8 +1205,8 @@ Conflicting store by thread x at 0x........ size 2
 Address 0x........ is at offset 33 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
----------- short gran, 0 .. 98, skip 34 ----------
 
+---------- short gran, 0 .. 98, skip 34 ----------
 Conflicting store by thread x at 0x........ size 2
    at 0x........: child16 (tc19_shadowmem.c:57)
    by 0x........: steer (tc19_shadowmem.c:356)
@@ -1214,8 +1214,8 @@ Conflicting store by thread x at 0x........ size 2
 Address 0x........ is at offset 34 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
----------- short gran, 1 .. 98, skip 35 ----------
 
+---------- short gran, 1 .. 98, skip 35 ----------
 Conflicting store by thread x at 0x........ size 2
    at 0x........: child16 (tc19_shadowmem.c:57)
    by 0x........: steer (tc19_shadowmem.c:358)
@@ -1223,8 +1223,8 @@ Conflicting store by thread x at 0x........ size 2
 Address 0x........ is at offset 35 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
----------- short gran, 0 .. 98, skip 36 ----------
 
+---------- short gran, 0 .. 98, skip 36 ----------
 Conflicting store by thread x at 0x........ size 2
    at 0x........: child16 (tc19_shadowmem.c:57)
    by 0x........: steer (tc19_shadowmem.c:360)
@@ -1232,8 +1232,8 @@ Conflicting store by thread x at 0x........ size 2
 Address 0x........ is at offset 36 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
----------- short gran, 1 .. 98, skip 37 ----------
 
+---------- short gran, 1 .. 98, skip 37 ----------
 Conflicting store by thread x at 0x........ size 2
    at 0x........: child16 (tc19_shadowmem.c:57)
    by 0x........: steer (tc19_shadowmem.c:362)
@@ -1241,8 +1241,8 @@ Conflicting store by thread x at 0x........ size 2
 Address 0x........ is at offset 37 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
----------- short gran, 0 .. 98, skip 38 ----------
 
+---------- short gran, 0 .. 98, skip 38 ----------
 Conflicting store by thread x at 0x........ size 2
    at 0x........: child16 (tc19_shadowmem.c:57)
    by 0x........: steer (tc19_shadowmem.c:364)
@@ -1250,8 +1250,8 @@ Conflicting store by thread x at 0x........ size 2
 Address 0x........ is at offset 38 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
----------- short gran, 1 .. 98, skip 39 ----------
 
+---------- short gran, 1 .. 98, skip 39 ----------
 Conflicting store by thread x at 0x........ size 2
    at 0x........: child16 (tc19_shadowmem.c:57)
    by 0x........: steer (tc19_shadowmem.c:366)
@@ -1259,8 +1259,8 @@ Conflicting store by thread x at 0x........ size 2
 Address 0x........ is at offset 39 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
----------- short gran, 0 .. 98, skip 40 ----------
 
+---------- short gran, 0 .. 98, skip 40 ----------
 Conflicting store by thread x at 0x........ size 2
    at 0x........: child16 (tc19_shadowmem.c:57)
    by 0x........: steer (tc19_shadowmem.c:368)
@@ -1268,8 +1268,8 @@ Conflicting store by thread x at 0x........ size 2
 Address 0x........ is at offset 40 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
----------- short gran, 1 .. 98, skip 41 ----------
 
+---------- short gran, 1 .. 98, skip 41 ----------
 Conflicting store by thread x at 0x........ size 2
    at 0x........: child16 (tc19_shadowmem.c:57)
    by 0x........: steer (tc19_shadowmem.c:370)
@@ -1277,8 +1277,8 @@ Conflicting store by thread x at 0x........ size 2
 Address 0x........ is at offset 41 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
----------- short gran, 0 .. 98, skip 42 ----------
 
+---------- short gran, 0 .. 98, skip 42 ----------
 Conflicting store by thread x at 0x........ size 2
    at 0x........: child16 (tc19_shadowmem.c:57)
    by 0x........: steer (tc19_shadowmem.c:372)
@@ -1286,8 +1286,8 @@ Conflicting store by thread x at 0x........ size 2
 Address 0x........ is at offset 42 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
----------- short gran, 1 .. 98, skip 43 ----------
 
+---------- short gran, 1 .. 98, skip 43 ----------
 Conflicting store by thread x at 0x........ size 2
    at 0x........: child16 (tc19_shadowmem.c:57)
    by 0x........: steer (tc19_shadowmem.c:374)
@@ -1295,8 +1295,8 @@ Conflicting store by thread x at 0x........ size 2
 Address 0x........ is at offset 43 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
----------- short gran, 0 .. 98, skip 44 ----------
 
+---------- short gran, 0 .. 98, skip 44 ----------
 Conflicting store by thread x at 0x........ size 2
    at 0x........: child16 (tc19_shadowmem.c:57)
    by 0x........: steer (tc19_shadowmem.c:376)
@@ -1304,8 +1304,8 @@ Conflicting store by thread x at 0x........ size 2
 Address 0x........ is at offset 44 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
----------- short gran, 1 .. 98, skip 45 ----------
 
+---------- short gran, 1 .. 98, skip 45 ----------
 Conflicting store by thread x at 0x........ size 2
    at 0x........: child16 (tc19_shadowmem.c:57)
    by 0x........: steer (tc19_shadowmem.c:378)
@@ -1313,8 +1313,8 @@ Conflicting store by thread x at 0x........ size 2
 Address 0x........ is at offset 45 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
----------- short gran, 0 .. 98, skip 46 ----------
 
+---------- short gran, 0 .. 98, skip 46 ----------
 Conflicting store by thread x at 0x........ size 2
    at 0x........: child16 (tc19_shadowmem.c:57)
    by 0x........: steer (tc19_shadowmem.c:380)
@@ -1322,8 +1322,8 @@ Conflicting store by thread x at 0x........ size 2
 Address 0x........ is at offset 46 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
----------- short gran, 1 .. 98, skip 47 ----------
 
+---------- short gran, 1 .. 98, skip 47 ----------
 Conflicting store by thread x at 0x........ size 2
    at 0x........: child16 (tc19_shadowmem.c:57)
    by 0x........: steer (tc19_shadowmem.c:382)
@@ -1331,8 +1331,8 @@ Conflicting store by thread x at 0x........ size 2
 Address 0x........ is at offset 47 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
----------- short gran, 0 .. 98, skip 48 ----------
 
+---------- short gran, 0 .. 98, skip 48 ----------
 Conflicting store by thread x at 0x........ size 2
    at 0x........: child16 (tc19_shadowmem.c:57)
    by 0x........: steer (tc19_shadowmem.c:384)
@@ -1340,8 +1340,8 @@ Conflicting store by thread x at 0x........ size 2
 Address 0x........ is at offset 48 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
----------- short gran, 1 .. 98, skip 49 ----------
 
+---------- short gran, 1 .. 98, skip 49 ----------
 Conflicting store by thread x at 0x........ size 2
    at 0x........: child16 (tc19_shadowmem.c:57)
    by 0x........: steer (tc19_shadowmem.c:386)
@@ -1349,8 +1349,8 @@ Conflicting store by thread x at 0x........ size 2
 Address 0x........ is at offset 49 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
----------- short gran, 0 .. 98, skip 50 ----------
 
+---------- short gran, 0 .. 98, skip 50 ----------
 Conflicting store by thread x at 0x........ size 2
    at 0x........: child16 (tc19_shadowmem.c:57)
    by 0x........: steer (tc19_shadowmem.c:388)
@@ -1358,8 +1358,8 @@ Conflicting store by thread x at 0x........ size 2
 Address 0x........ is at offset 50 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
----------- short gran, 1 .. 98, skip 51 ----------
 
+---------- short gran, 1 .. 98, skip 51 ----------
 Conflicting store by thread x at 0x........ size 2
    at 0x........: child16 (tc19_shadowmem.c:57)
    by 0x........: steer (tc19_shadowmem.c:390)
@@ -1367,8 +1367,8 @@ Conflicting store by thread x at 0x........ size 2
 Address 0x........ is at offset 51 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
----------- short gran, 0 .. 98, skip 52 ----------
 
+---------- short gran, 0 .. 98, skip 52 ----------
 Conflicting store by thread x at 0x........ size 2
    at 0x........: child16 (tc19_shadowmem.c:57)
    by 0x........: steer (tc19_shadowmem.c:392)
@@ -1376,8 +1376,8 @@ Conflicting store by thread x at 0x........ size 2
 Address 0x........ is at offset 52 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
----------- short gran, 1 .. 98, skip 53 ----------
 
+---------- short gran, 1 .. 98, skip 53 ----------
 Conflicting store by thread x at 0x........ size 2
    at 0x........: child16 (tc19_shadowmem.c:57)
    by 0x........: steer (tc19_shadowmem.c:394)
@@ -1385,8 +1385,8 @@ Conflicting store by thread x at 0x........ size 2
 Address 0x........ is at offset 53 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
----------- short gran, 0 .. 98, skip 54 ----------
 
+---------- short gran, 0 .. 98, skip 54 ----------
 Conflicting store by thread x at 0x........ size 2
    at 0x........: child16 (tc19_shadowmem.c:57)
    by 0x........: steer (tc19_shadowmem.c:396)
@@ -1394,8 +1394,8 @@ Conflicting store by thread x at 0x........ size 2
 Address 0x........ is at offset 54 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
----------- short gran, 1 .. 98, skip 55 ----------
 
+---------- short gran, 1 .. 98, skip 55 ----------
 Conflicting store by thread x at 0x........ size 2
    at 0x........: child16 (tc19_shadowmem.c:57)
    by 0x........: steer (tc19_shadowmem.c:398)
@@ -1403,8 +1403,8 @@ Conflicting store by thread x at 0x........ size 2
 Address 0x........ is at offset 55 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
----------- short gran, 0 .. 98, skip 56 ----------
 
+---------- short gran, 0 .. 98, skip 56 ----------
 Conflicting store by thread x at 0x........ size 2
    at 0x........: child16 (tc19_shadowmem.c:57)
    by 0x........: steer (tc19_shadowmem.c:400)
@@ -1412,8 +1412,8 @@ Conflicting store by thread x at 0x........ size 2
 Address 0x........ is at offset 56 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
----------- short gran, 1 .. 98, skip 57 ----------
 
+---------- short gran, 1 .. 98, skip 57 ----------
 Conflicting store by thread x at 0x........ size 2
    at 0x........: child16 (tc19_shadowmem.c:57)
    by 0x........: steer (tc19_shadowmem.c:402)
@@ -1421,8 +1421,8 @@ Conflicting store by thread x at 0x........ size 2
 Address 0x........ is at offset 57 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
----------- short gran, 0 .. 98, skip 58 ----------
 
+---------- short gran, 0 .. 98, skip 58 ----------
 Conflicting store by thread x at 0x........ size 2
    at 0x........: child16 (tc19_shadowmem.c:57)
    by 0x........: steer (tc19_shadowmem.c:404)
@@ -1430,8 +1430,8 @@ Conflicting store by thread x at 0x........ size 2
 Address 0x........ is at offset 58 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
----------- short gran, 1 .. 98, skip 59 ----------
 
+---------- short gran, 1 .. 98, skip 59 ----------
 Conflicting store by thread x at 0x........ size 2
    at 0x........: child16 (tc19_shadowmem.c:57)
    by 0x........: steer (tc19_shadowmem.c:406)
@@ -1439,8 +1439,8 @@ Conflicting store by thread x at 0x........ size 2
 Address 0x........ is at offset 59 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
----------- short gran, 0 .. 98, skip 60 ----------
 
+---------- short gran, 0 .. 98, skip 60 ----------
 Conflicting store by thread x at 0x........ size 2
    at 0x........: child16 (tc19_shadowmem.c:57)
    by 0x........: steer (tc19_shadowmem.c:408)
@@ -1448,8 +1448,8 @@ Conflicting store by thread x at 0x........ size 2
 Address 0x........ is at offset 60 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
----------- short gran, 1 .. 98, skip 61 ----------
 
+---------- short gran, 1 .. 98, skip 61 ----------
 Conflicting store by thread x at 0x........ size 2
    at 0x........: child16 (tc19_shadowmem.c:57)
    by 0x........: steer (tc19_shadowmem.c:410)
@@ -1457,8 +1457,8 @@ Conflicting store by thread x at 0x........ size 2
 Address 0x........ is at offset 61 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
----------- short gran, 0 .. 98, skip 62 ----------
 
+---------- short gran, 0 .. 98, skip 62 ----------
 Conflicting store by thread x at 0x........ size 2
    at 0x........: child16 (tc19_shadowmem.c:57)
    by 0x........: steer (tc19_shadowmem.c:412)
@@ -1466,8 +1466,8 @@ Conflicting store by thread x at 0x........ size 2
 Address 0x........ is at offset 62 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
----------- short gran, 1 .. 98, skip 63 ----------
 
+---------- short gran, 1 .. 98, skip 63 ----------
 Conflicting store by thread x at 0x........ size 2
    at 0x........: child16 (tc19_shadowmem.c:57)
    by 0x........: steer (tc19_shadowmem.c:414)
@@ -1475,8 +1475,8 @@ Conflicting store by thread x at 0x........ size 2
 Address 0x........ is at offset 63 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
----------- short gran, 0 .. 98, skip 64 ----------
 
+---------- short gran, 0 .. 98, skip 64 ----------
 Conflicting store by thread x at 0x........ size 2
    at 0x........: child16 (tc19_shadowmem.c:57)
    by 0x........: steer (tc19_shadowmem.c:416)
@@ -1484,8 +1484,8 @@ Conflicting store by thread x at 0x........ size 2
 Address 0x........ is at offset 64 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
----------- short gran, 1 .. 98, skip 65 ----------
 
+---------- short gran, 1 .. 98, skip 65 ----------
 Conflicting store by thread x at 0x........ size 2
    at 0x........: child16 (tc19_shadowmem.c:57)
    by 0x........: steer (tc19_shadowmem.c:418)
@@ -1493,8 +1493,8 @@ Conflicting store by thread x at 0x........ size 2
 Address 0x........ is at offset 65 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
----------- short gran, 0 .. 98, skip 66 ----------
 
+---------- short gran, 0 .. 98, skip 66 ----------
 Conflicting store by thread x at 0x........ size 2
    at 0x........: child16 (tc19_shadowmem.c:57)
    by 0x........: steer (tc19_shadowmem.c:420)
@@ -1502,8 +1502,8 @@ Conflicting store by thread x at 0x........ size 2
 Address 0x........ is at offset 66 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
----------- short gran, 1 .. 98, skip 67 ----------
 
+---------- short gran, 1 .. 98, skip 67 ----------
 Conflicting store by thread x at 0x........ size 2
    at 0x........: child16 (tc19_shadowmem.c:57)
    by 0x........: steer (tc19_shadowmem.c:422)
@@ -1511,8 +1511,8 @@ Conflicting store by thread x at 0x........ size 2
 Address 0x........ is at offset 67 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
----------- short gran, 0 .. 98, skip 68 ----------
 
+---------- short gran, 0 .. 98, skip 68 ----------
 Conflicting store by thread x at 0x........ size 2
    at 0x........: child16 (tc19_shadowmem.c:57)
    by 0x........: steer (tc19_shadowmem.c:424)
@@ -1520,8 +1520,8 @@ Conflicting store by thread x at 0x........ size 2
 Address 0x........ is at offset 68 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
----------- short gran, 1 .. 98, skip 69 ----------
 
+---------- short gran, 1 .. 98, skip 69 ----------
 Conflicting store by thread x at 0x........ size 2
    at 0x........: child16 (tc19_shadowmem.c:57)
    by 0x........: steer (tc19_shadowmem.c:426)
@@ -1529,8 +1529,8 @@ Conflicting store by thread x at 0x........ size 2
 Address 0x........ is at offset 69 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
----------- short gran, 0 .. 98, skip 70 ----------
 
+---------- short gran, 0 .. 98, skip 70 ----------
 Conflicting store by thread x at 0x........ size 2
    at 0x........: child16 (tc19_shadowmem.c:57)
    by 0x........: steer (tc19_shadowmem.c:428)
@@ -1538,8 +1538,8 @@ Conflicting store by thread x at 0x........ size 2
 Address 0x........ is at offset 70 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
----------- short gran, 1 .. 98, skip 71 ----------
 
+---------- short gran, 1 .. 98, skip 71 ----------
 Conflicting store by thread x at 0x........ size 2
    at 0x........: child16 (tc19_shadowmem.c:57)
    by 0x........: steer (tc19_shadowmem.c:430)
@@ -1547,8 +1547,8 @@ Conflicting store by thread x at 0x........ size 2
 Address 0x........ is at offset 71 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
----------- short gran, 0 .. 98, skip 72 ----------
 
+---------- short gran, 0 .. 98, skip 72 ----------
 Conflicting store by thread x at 0x........ size 2
    at 0x........: child16 (tc19_shadowmem.c:57)
    by 0x........: steer (tc19_shadowmem.c:432)
@@ -1556,8 +1556,8 @@ Conflicting store by thread x at 0x........ size 2
 Address 0x........ is at offset 72 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
----------- short gran, 1 .. 98, skip 73 ----------
 
+---------- short gran, 1 .. 98, skip 73 ----------
 Conflicting store by thread x at 0x........ size 2
    at 0x........: child16 (tc19_shadowmem.c:57)
    by 0x........: steer (tc19_shadowmem.c:434)
@@ -1565,8 +1565,8 @@ Conflicting store by thread x at 0x........ size 2
 Address 0x........ is at offset 73 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
----------- short gran, 0 .. 98, skip 74 ----------
 
+---------- short gran, 0 .. 98, skip 74 ----------
 Conflicting store by thread x at 0x........ size 2
    at 0x........: child16 (tc19_shadowmem.c:57)
    by 0x........: steer (tc19_shadowmem.c:436)
@@ -1574,8 +1574,8 @@ Conflicting store by thread x at 0x........ size 2
 Address 0x........ is at offset 74 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
----------- short gran, 1 .. 98, skip 75 ----------
 
+---------- short gran, 1 .. 98, skip 75 ----------
 Conflicting store by thread x at 0x........ size 2
    at 0x........: child16 (tc19_shadowmem.c:57)
    by 0x........: steer (tc19_shadowmem.c:438)
@@ -1583,8 +1583,8 @@ Conflicting store by thread x at 0x........ size 2
 Address 0x........ is at offset 75 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
----------- short gran, 0 .. 98, skip 76 ----------
 
+---------- short gran, 0 .. 98, skip 76 ----------
 Conflicting store by thread x at 0x........ size 2
    at 0x........: child16 (tc19_shadowmem.c:57)
    by 0x........: steer (tc19_shadowmem.c:440)
@@ -1592,8 +1592,8 @@ Conflicting store by thread x at 0x........ size 2
 Address 0x........ is at offset 76 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
----------- short gran, 1 .. 98, skip 77 ----------
 
+---------- short gran, 1 .. 98, skip 77 ----------
 Conflicting store by thread x at 0x........ size 2
    at 0x........: child16 (tc19_shadowmem.c:57)
    by 0x........: steer (tc19_shadowmem.c:442)
@@ -1601,8 +1601,8 @@ Conflicting store by thread x at 0x........ size 2
 Address 0x........ is at offset 77 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
----------- short gran, 0 .. 98, skip 78 ----------
 
+---------- short gran, 0 .. 98, skip 78 ----------
 Conflicting store by thread x at 0x........ size 2
    at 0x........: child16 (tc19_shadowmem.c:57)
    by 0x........: steer (tc19_shadowmem.c:444)
@@ -1610,8 +1610,8 @@ Conflicting store by thread x at 0x........ size 2
 Address 0x........ is at offset 78 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
----------- short gran, 1 .. 98, skip 79 ----------
 
+---------- short gran, 1 .. 98, skip 79 ----------
 Conflicting store by thread x at 0x........ size 2
    at 0x........: child16 (tc19_shadowmem.c:57)
    by 0x........: steer (tc19_shadowmem.c:446)
@@ -1619,8 +1619,8 @@ Conflicting store by thread x at 0x........ size 2
 Address 0x........ is at offset 79 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
----------- short gran, 0 .. 98, skip 80 ----------
 
+---------- short gran, 0 .. 98, skip 80 ----------
 Conflicting store by thread x at 0x........ size 2
    at 0x........: child16 (tc19_shadowmem.c:57)
    by 0x........: steer (tc19_shadowmem.c:448)
@@ -1628,8 +1628,8 @@ Conflicting store by thread x at 0x........ size 2
 Address 0x........ is at offset 80 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
----------- short gran, 1 .. 98, skip 81 ----------
 
+---------- short gran, 1 .. 98, skip 81 ----------
 Conflicting store by thread x at 0x........ size 2
    at 0x........: child16 (tc19_shadowmem.c:57)
    by 0x........: steer (tc19_shadowmem.c:450)
@@ -1637,8 +1637,8 @@ Conflicting store by thread x at 0x........ size 2
 Address 0x........ is at offset 81 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
----------- short gran, 0 .. 98, skip 82 ----------
 
+---------- short gran, 0 .. 98, skip 82 ----------
 Conflicting store by thread x at 0x........ size 2
    at 0x........: child16 (tc19_shadowmem.c:57)
    by 0x........: steer (tc19_shadowmem.c:452)
@@ -1646,8 +1646,8 @@ Conflicting store by thread x at 0x........ size 2
 Address 0x........ is at offset 82 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
----------- short gran, 1 .. 98, skip 83 ----------
 
+---------- short gran, 1 .. 98, skip 83 ----------
 Conflicting store by thread x at 0x........ size 2
    at 0x........: child16 (tc19_shadowmem.c:57)
    by 0x........: steer (tc19_shadowmem.c:454)
@@ -1655,8 +1655,8 @@ Conflicting store by thread x at 0x........ size 2
 Address 0x........ is at offset 83 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
----------- short gran, 0 .. 98, skip 84 ----------
 
+---------- short gran, 0 .. 98, skip 84 ----------
 Conflicting store by thread x at 0x........ size 2
    at 0x........: child16 (tc19_shadowmem.c:57)
    by 0x........: steer (tc19_shadowmem.c:456)
@@ -1664,8 +1664,8 @@ Conflicting store by thread x at 0x........ size 2
 Address 0x........ is at offset 84 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
----------- short gran, 1 .. 98, skip 85 ----------
 
+---------- short gran, 1 .. 98, skip 85 ----------
 Conflicting store by thread x at 0x........ size 2
    at 0x........: child16 (tc19_shadowmem.c:57)
    by 0x........: steer (tc19_shadowmem.c:458)
@@ -1673,8 +1673,8 @@ Conflicting store by thread x at 0x........ size 2
 Address 0x........ is at offset 85 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
----------- short gran, 0 .. 98, skip 86 ----------
 
+---------- short gran, 0 .. 98, skip 86 ----------
 Conflicting store by thread x at 0x........ size 2
    at 0x........: child16 (tc19_shadowmem.c:57)
    by 0x........: steer (tc19_shadowmem.c:460)
@@ -1682,8 +1682,8 @@ Conflicting store by thread x at 0x........ size 2
 Address 0x........ is at offset 86 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
----------- short gran, 1 .. 98, skip 87 ----------
 
+---------- short gran, 1 .. 98, skip 87 ----------
 Conflicting store by thread x at 0x........ size 2
    at 0x........: child16 (tc19_shadowmem.c:57)
    by 0x........: steer (tc19_shadowmem.c:462)
@@ -1691,8 +1691,8 @@ Conflicting store by thread x at 0x........ size 2
 Address 0x........ is at offset 87 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
----------- short gran, 0 .. 98, skip 88 ----------
 
+---------- short gran, 0 .. 98, skip 88 ----------
 Conflicting store by thread x at 0x........ size 2
    at 0x........: child16 (tc19_shadowmem.c:57)
    by 0x........: steer (tc19_shadowmem.c:464)
@@ -1700,8 +1700,8 @@ Conflicting store by thread x at 0x........ size 2
 Address 0x........ is at offset 88 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
----------- short gran, 1 .. 98, skip 89 ----------
 
+---------- short gran, 1 .. 98, skip 89 ----------
 Conflicting store by thread x at 0x........ size 2
    at 0x........: child16 (tc19_shadowmem.c:57)
    by 0x........: steer (tc19_shadowmem.c:466)
@@ -1709,8 +1709,8 @@ Conflicting store by thread x at 0x........ size 2
 Address 0x........ is at offset 89 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
----------- short gran, 0 .. 98, skip 90 ----------
 
+---------- short gran, 0 .. 98, skip 90 ----------
 Conflicting store by thread x at 0x........ size 2
    at 0x........: child16 (tc19_shadowmem.c:57)
    by 0x........: steer (tc19_shadowmem.c:468)
@@ -1718,8 +1718,8 @@ Conflicting store by thread x at 0x........ size 2
 Address 0x........ is at offset 90 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
----------- short gran, 1 .. 98, skip 91 ----------
 
+---------- short gran, 1 .. 98, skip 91 ----------
 Conflicting store by thread x at 0x........ size 2
    at 0x........: child16 (tc19_shadowmem.c:57)
    by 0x........: steer (tc19_shadowmem.c:470)
@@ -1727,8 +1727,8 @@ Conflicting store by thread x at 0x........ size 2
 Address 0x........ is at offset 91 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
----------- short gran, 0 .. 98, skip 92 ----------
 
+---------- short gran, 0 .. 98, skip 92 ----------
 Conflicting store by thread x at 0x........ size 2
    at 0x........: child16 (tc19_shadowmem.c:57)
    by 0x........: steer (tc19_shadowmem.c:472)
@@ -1736,8 +1736,8 @@ Conflicting store by thread x at 0x........ size 2
 Address 0x........ is at offset 92 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
----------- short gran, 1 .. 98, skip 93 ----------
 
+---------- short gran, 1 .. 98, skip 93 ----------
 Conflicting store by thread x at 0x........ size 2
    at 0x........: child16 (tc19_shadowmem.c:57)
    by 0x........: steer (tc19_shadowmem.c:474)
@@ -1745,8 +1745,8 @@ Conflicting store by thread x at 0x........ size 2
 Address 0x........ is at offset 93 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
----------- short gran, 0 .. 98, skip 94 ----------
 
+---------- short gran, 0 .. 98, skip 94 ----------
 Conflicting store by thread x at 0x........ size 2
    at 0x........: child16 (tc19_shadowmem.c:57)
    by 0x........: steer (tc19_shadowmem.c:476)
@@ -1754,8 +1754,8 @@ Conflicting store by thread x at 0x........ size 2
 Address 0x........ is at offset 94 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
----------- short gran, 1 .. 98, skip 95 ----------
 
+---------- short gran, 1 .. 98, skip 95 ----------
 Conflicting store by thread x at 0x........ size 2
    at 0x........: child16 (tc19_shadowmem.c:57)
    by 0x........: steer (tc19_shadowmem.c:478)
@@ -1763,8 +1763,8 @@ Conflicting store by thread x at 0x........ size 2
 Address 0x........ is at offset 95 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
----------- short gran, 0 .. 98, skip 96 ----------
 
+---------- short gran, 0 .. 98, skip 96 ----------
 Conflicting store by thread x at 0x........ size 2
    at 0x........: child16 (tc19_shadowmem.c:57)
    by 0x........: steer (tc19_shadowmem.c:480)
@@ -1772,8 +1772,8 @@ Conflicting store by thread x at 0x........ size 2
 Address 0x........ is at offset 96 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
----------- short gran, 1 .. 98, skip 97 ----------
 
+---------- short gran, 1 .. 98, skip 97 ----------
 Conflicting store by thread x at 0x........ size 2
    at 0x........: child16 (tc19_shadowmem.c:57)
    by 0x........: steer (tc19_shadowmem.c:482)
@@ -1782,12 +1782,12 @@ Address 0x........ is at offset 97 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
 
+
 ==========================================================
 === 32 32 32 32 32 32 32 32 32 32 32 32 32 32 32 32 32 ===
 ==========================================================
 
 ---------- int gran, 0 .. 96, skip 0 ----------
-
 Conflicting store by thread x at 0x........ size 4
    at 0x........: child32 (tc19_shadowmem.c:81)
    by 0x........: steer (tc19_shadowmem.c:288)
@@ -1795,8 +1795,8 @@ Conflicting store by thread x at 0x........ size 4
 Address 0x........ is at offset 0 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
----------- int gran, 1 .. 96, skip 1 ----------
 
+---------- int gran, 1 .. 96, skip 1 ----------
 Conflicting store by thread x at 0x........ size 4
    at 0x........: child32 (tc19_shadowmem.c:81)
    by 0x........: steer (tc19_shadowmem.c:290)
@@ -1804,8 +1804,8 @@ Conflicting store by thread x at 0x........ size 4
 Address 0x........ is at offset 1 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
----------- int gran, 2 .. 96, skip 2 ----------
 
+---------- int gran, 2 .. 96, skip 2 ----------
 Conflicting store by thread x at 0x........ size 4
    at 0x........: child32 (tc19_shadowmem.c:81)
    by 0x........: steer (tc19_shadowmem.c:292)
@@ -1813,8 +1813,8 @@ Conflicting store by thread x at 0x........ size 4
 Address 0x........ is at offset 2 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
----------- int gran, 3 .. 96, skip 3 ----------
 
+---------- int gran, 3 .. 96, skip 3 ----------
 Conflicting store by thread x at 0x........ size 4
    at 0x........: child32 (tc19_shadowmem.c:81)
    by 0x........: steer (tc19_shadowmem.c:294)
@@ -1822,8 +1822,8 @@ Conflicting store by thread x at 0x........ size 4
 Address 0x........ is at offset 3 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
----------- int gran, 0 .. 96, skip 4 ----------
 
+---------- int gran, 0 .. 96, skip 4 ----------
 Conflicting store by thread x at 0x........ size 4
    at 0x........: child32 (tc19_shadowmem.c:81)
    by 0x........: steer (tc19_shadowmem.c:296)
@@ -1831,8 +1831,8 @@ Conflicting store by thread x at 0x........ size 4
 Address 0x........ is at offset 4 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
----------- int gran, 1 .. 96, skip 5 ----------
 
+---------- int gran, 1 .. 96, skip 5 ----------
 Conflicting store by thread x at 0x........ size 4
    at 0x........: child32 (tc19_shadowmem.c:81)
    by 0x........: steer (tc19_shadowmem.c:298)
@@ -1840,8 +1840,8 @@ Conflicting store by thread x at 0x........ size 4
 Address 0x........ is at offset 5 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
----------- int gran, 2 .. 96, skip 6 ----------
 
+---------- int gran, 2 .. 96, skip 6 ----------
 Conflicting store by thread x at 0x........ size 4
    at 0x........: child32 (tc19_shadowmem.c:81)
    by 0x........: steer (tc19_shadowmem.c:300)
@@ -1849,8 +1849,8 @@ Conflicting store by thread x at 0x........ size 4
 Address 0x........ is at offset 6 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
----------- int gran, 3 .. 96, skip 7 ----------
 
+---------- int gran, 3 .. 96, skip 7 ----------
 Conflicting store by thread x at 0x........ size 4
    at 0x........: child32 (tc19_shadowmem.c:81)
    by 0x........: steer (tc19_shadowmem.c:302)
@@ -1858,8 +1858,8 @@ Conflicting store by thread x at 0x........ size 4
 Address 0x........ is at offset 7 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
----------- int gran, 0 .. 96, skip 8 ----------
 
+---------- int gran, 0 .. 96, skip 8 ----------
 Conflicting store by thread x at 0x........ size 4
    at 0x........: child32 (tc19_shadowmem.c:81)
    by 0x........: steer (tc19_shadowmem.c:304)
@@ -1867,8 +1867,8 @@ Conflicting store by thread x at 0x........ size 4
 Address 0x........ is at offset 8 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
----------- int gran, 1 .. 96, skip 9 ----------
 
+---------- int gran, 1 .. 96, skip 9 ----------
 Conflicting store by thread x at 0x........ size 4
    at 0x........: child32 (tc19_shadowmem.c:81)
    by 0x........: steer (tc19_shadowmem.c:306)
@@ -1876,8 +1876,8 @@ Conflicting store by thread x at 0x........ size 4
 Address 0x........ is at offset 9 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
----------- int gran, 2 .. 96, skip 10 ----------
 
+---------- int gran, 2 .. 96, skip 10 ----------
 Conflicting store by thread x at 0x........ size 4
    at 0x........: child32 (tc19_shadowmem.c:81)
    by 0x........: steer (tc19_shadowmem.c:308)
@@ -1885,8 +1885,8 @@ Conflicting store by thread x at 0x........ size 4
 Address 0x........ is at offset 10 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
----------- int gran, 3 .. 96, skip 11 ----------
 
+---------- int gran, 3 .. 96, skip 11 ----------
 Conflicting store by thread x at 0x........ size 4
    at 0x........: child32 (tc19_shadowmem.c:81)
    by 0x........: steer (tc19_shadowmem.c:310)
@@ -1894,8 +1894,8 @@ Conflicting store by thread x at 0x........ size 4
 Address 0x........ is at offset 11 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
----------- int gran, 0 .. 96, skip 12 ----------
 
+---------- int gran, 0 .. 96, skip 12 ----------
 Conflicting store by thread x at 0x........ size 4
    at 0x........: child32 (tc19_shadowmem.c:81)
    by 0x........: steer (tc19_shadowmem.c:312)
@@ -1903,8 +1903,8 @@ Conflicting store by thread x at 0x........ size 4
 Address 0x........ is at offset 12 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
----------- int gran, 1 .. 96, skip 13 ----------
 
+---------- int gran, 1 .. 96, skip 13 ----------
 Conflicting store by thread x at 0x........ size 4
    at 0x........: child32 (tc19_shadowmem.c:81)
    by 0x........: steer (tc19_shadowmem.c:314)
@@ -1912,8 +1912,8 @@ Conflicting store by thread x at 0x........ size 4
 Address 0x........ is at offset 13 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
----------- int gran, 2 .. 96, skip 14 ----------
 
+---------- int gran, 2 .. 96, skip 14 ----------
 Conflicting store by thread x at 0x........ size 4
    at 0x........: child32 (tc19_shadowmem.c:81)
    by 0x........: steer (tc19_shadowmem.c:316)
@@ -1921,8 +1921,8 @@ Conflicting store by thread x at 0x........ size 4
 Address 0x........ is at offset 14 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
----------- int gran, 3 .. 96, skip 15 ----------
 
+---------- int gran, 3 .. 96, skip 15 ----------
 Conflicting store by thread x at 0x........ size 4
    at 0x........: child32 (tc19_shadowmem.c:81)
    by 0x........: steer (tc19_shadowmem.c:318)
@@ -1930,8 +1930,8 @@ Conflicting store by thread x at 0x........ size 4
 Address 0x........ is at offset 15 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
----------- int gran, 0 .. 96, skip 16 ----------
 
+---------- int gran, 0 .. 96, skip 16 ----------
 Conflicting store by thread x at 0x........ size 4
    at 0x........: child32 (tc19_shadowmem.c:81)
    by 0x........: steer (tc19_shadowmem.c:320)
@@ -1939,8 +1939,8 @@ Conflicting store by thread x at 0x........ size 4
 Address 0x........ is at offset 16 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
----------- int gran, 1 .. 96, skip 17 ----------
 
+---------- int gran, 1 .. 96, skip 17 ----------
 Conflicting store by thread x at 0x........ size 4
    at 0x........: child32 (tc19_shadowmem.c:81)
    by 0x........: steer (tc19_shadowmem.c:322)
@@ -1948,8 +1948,8 @@ Conflicting store by thread x at 0x........ size 4
 Address 0x........ is at offset 17 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
----------- int gran, 2 .. 96, skip 18 ----------
 
+---------- int gran, 2 .. 96, skip 18 ----------
 Conflicting store by thread x at 0x........ size 4
    at 0x........: child32 (tc19_shadowmem.c:81)
    by 0x........: steer (tc19_shadowmem.c:324)
@@ -1957,8 +1957,8 @@ Conflicting store by thread x at 0x........ size 4
 Address 0x........ is at offset 18 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
----------- int gran, 3 .. 96, skip 19 ----------
 
+---------- int gran, 3 .. 96, skip 19 ----------
 Conflicting store by thread x at 0x........ size 4
    at 0x........: child32 (tc19_shadowmem.c:81)
    by 0x........: steer (tc19_shadowmem.c:326)
@@ -1966,8 +1966,8 @@ Conflicting store by thread x at 0x........ size 4
 Address 0x........ is at offset 19 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
----------- int gran, 0 .. 96, skip 20 ----------
 
+---------- int gran, 0 .. 96, skip 20 ----------
 Conflicting store by thread x at 0x........ size 4
    at 0x........: child32 (tc19_shadowmem.c:81)
    by 0x........: steer (tc19_shadowmem.c:328)
@@ -1975,8 +1975,8 @@ Conflicting store by thread x at 0x........ size 4
 Address 0x........ is at offset 20 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
----------- int gran, 1 .. 96, skip 21 ----------
 
+---------- int gran, 1 .. 96, skip 21 ----------
 Conflicting store by thread x at 0x........ size 4
    at 0x........: child32 (tc19_shadowmem.c:81)
    by 0x........: steer (tc19_shadowmem.c:330)
@@ -1984,8 +1984,8 @@ Conflicting store by thread x at 0x........ size 4
 Address 0x........ is at offset 21 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
----------- int gran, 2 .. 96, skip 22 ----------
 
+---------- int gran, 2 .. 96, skip 22 ----------
 Conflicting store by thread x at 0x........ size 4
    at 0x........: child32 (tc19_shadowmem.c:81)
    by 0x........: steer (tc19_shadowmem.c:332)
@@ -1993,8 +1993,8 @@ Conflicting store by thread x at 0x........ size 4
 Address 0x........ is at offset 22 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
----------- int gran, 3 .. 96, skip 23 ----------
 
+---------- int gran, 3 .. 96, skip 23 ----------
 Conflicting store by thread x at 0x........ size 4
    at 0x........: child32 (tc19_shadowmem.c:81)
    by 0x........: steer (tc19_shadowmem.c:334)
@@ -2002,8 +2002,8 @@ Conflicting store by thread x at 0x........ size 4
 Address 0x........ is at offset 23 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
----------- int gran, 0 .. 96, skip 24 ----------
 
+---------- int gran, 0 .. 96, skip 24 ----------
 Conflicting store by thread x at 0x........ size 4
    at 0x........: child32 (tc19_shadowmem.c:81)
    by 0x........: steer (tc19_shadowmem.c:336)
@@ -2011,8 +2011,8 @@ Conflicting store by thread x at 0x........ size 4
 Address 0x........ is at offset 24 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
----------- int gran, 1 .. 96, skip 25 ----------
 
+---------- int gran, 1 .. 96, skip 25 ----------
 Conflicting store by thread x at 0x........ size 4
    at 0x........: child32 (tc19_shadowmem.c:81)
    by 0x........: steer (tc19_shadowmem.c:338)
@@ -2020,8 +2020,8 @@ Conflicting store by thread x at 0x........ size 4
 Address 0x........ is at offset 25 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
----------- int gran, 2 .. 96, skip 26 ----------
 
+---------- int gran, 2 .. 96, skip 26 ----------
 Conflicting store by thread x at 0x........ size 4
    at 0x........: child32 (tc19_shadowmem.c:81)
    by 0x........: steer (tc19_shadowmem.c:340)
@@ -2029,8 +2029,8 @@ Conflicting store by thread x at 0x........ size 4
 Address 0x........ is at offset 26 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
----------- int gran, 3 .. 96, skip 27 ----------
 
+---------- int gran, 3 .. 96, skip 27 ----------
 Conflicting store by thread x at 0x........ size 4
    at 0x........: child32 (tc19_shadowmem.c:81)
    by 0x........: steer (tc19_shadowmem.c:342)
@@ -2038,8 +2038,8 @@ Conflicting store by thread x at 0x........ size 4
 Address 0x........ is at offset 27 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
----------- int gran, 0 .. 96, skip 28 ----------
 
+---------- int gran, 0 .. 96, skip 28 ----------
 Conflicting store by thread x at 0x........ size 4
    at 0x........: child32 (tc19_shadowmem.c:81)
    by 0x........: steer (tc19_shadowmem.c:344)
@@ -2047,8 +2047,8 @@ Conflicting store by thread x at 0x........ size 4
 Address 0x........ is at offset 28 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
----------- int gran, 1 .. 96, skip 29 ----------
 
+---------- int gran, 1 .. 96, skip 29 ----------
 Conflicting store by thread x at 0x........ size 4
    at 0x........: child32 (tc19_shadowmem.c:81)
    by 0x........: steer (tc19_shadowmem.c:346)
@@ -2056,8 +2056,8 @@ Conflicting store by thread x at 0x........ size 4
 Address 0x........ is at offset 29 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
----------- int gran, 2 .. 96, skip 30 ----------
 
+---------- int gran, 2 .. 96, skip 30 ----------
 Conflicting store by thread x at 0x........ size 4
    at 0x........: child32 (tc19_shadowmem.c:81)
    by 0x........: steer (tc19_shadowmem.c:348)
@@ -2065,8 +2065,8 @@ Conflicting store by thread x at 0x........ size 4
 Address 0x........ is at offset 30 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
----------- int gran, 3 .. 96, skip 31 ----------
 
+---------- int gran, 3 .. 96, skip 31 ----------
 Conflicting store by thread x at 0x........ size 4
    at 0x........: child32 (tc19_shadowmem.c:81)
    by 0x........: steer (tc19_shadowmem.c:350)
@@ -2074,8 +2074,8 @@ Conflicting store by thread x at 0x........ size 4
 Address 0x........ is at offset 31 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
----------- int gran, 0 .. 96, skip 32 ----------
 
+---------- int gran, 0 .. 96, skip 32 ----------
 Conflicting store by thread x at 0x........ size 4
    at 0x........: child32 (tc19_shadowmem.c:81)
    by 0x........: steer (tc19_shadowmem.c:352)
@@ -2083,8 +2083,8 @@ Conflicting store by thread x at 0x........ size 4
 Address 0x........ is at offset 32 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
----------- int gran, 1 .. 96, skip 33 ----------
 
+---------- int gran, 1 .. 96, skip 33 ----------
 Conflicting store by thread x at 0x........ size 4
    at 0x........: child32 (tc19_shadowmem.c:81)
    by 0x........: steer (tc19_shadowmem.c:354)
@@ -2092,8 +2092,8 @@ Conflicting store by thread x at 0x........ size 4
 Address 0x........ is at offset 33 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
----------- int gran, 2 .. 96, skip 34 ----------
 
+---------- int gran, 2 .. 96, skip 34 ----------
 Conflicting store by thread x at 0x........ size 4
    at 0x........: child32 (tc19_shadowmem.c:81)
    by 0x........: steer (tc19_shadowmem.c:356)
@@ -2101,8 +2101,8 @@ Conflicting store by thread x at 0x........ size 4
 Address 0x........ is at offset 34 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
----------- int gran, 3 .. 96, skip 35 ----------
 
+---------- int gran, 3 .. 96, skip 35 ----------
 Conflicting store by thread x at 0x........ size 4
    at 0x........: child32 (tc19_shadowmem.c:81)
    by 0x........: steer (tc19_shadowmem.c:358)
@@ -2110,8 +2110,8 @@ Conflicting store by thread x at 0x........ size 4
 Address 0x........ is at offset 35 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
----------- int gran, 0 .. 96, skip 36 ----------
 
+---------- int gran, 0 .. 96, skip 36 ----------
 Conflicting store by thread x at 0x........ size 4
    at 0x........: child32 (tc19_shadowmem.c:81)
    by 0x........: steer (tc19_shadowmem.c:360)
@@ -2119,8 +2119,8 @@ Conflicting store by thread x at 0x........ size 4
 Address 0x........ is at offset 36 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
----------- int gran, 1 .. 96, skip 37 ----------
 
+---------- int gran, 1 .. 96, skip 37 ----------
 Conflicting store by thread x at 0x........ size 4
    at 0x........: child32 (tc19_shadowmem.c:81)
    by 0x........: steer (tc19_shadowmem.c:362)
@@ -2128,8 +2128,8 @@ Conflicting store by thread x at 0x........ size 4
 Address 0x........ is at offset 37 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
----------- int gran, 2 .. 96, skip 38 ----------
 
+---------- int gran, 2 .. 96, skip 38 ----------
 Conflicting store by thread x at 0x........ size 4
    at 0x........: child32 (tc19_shadowmem.c:81)
    by 0x........: steer (tc19_shadowmem.c:364)
@@ -2137,8 +2137,8 @@ Conflicting store by thread x at 0x........ size 4
 Address 0x........ is at offset 38 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
----------- int gran, 3 .. 96, skip 39 ----------
 
+---------- int gran, 3 .. 96, skip 39 ----------
 Conflicting store by thread x at 0x........ size 4
    at 0x........: child32 (tc19_shadowmem.c:81)
    by 0x........: steer (tc19_shadowmem.c:366)
@@ -2146,8 +2146,8 @@ Conflicting store by thread x at 0x........ size 4
 Address 0x........ is at offset 39 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
----------- int gran, 0 .. 96, skip 40 ----------
 
+---------- int gran, 0 .. 96, skip 40 ----------
 Conflicting store by thread x at 0x........ size 4
    at 0x........: child32 (tc19_shadowmem.c:81)
    by 0x........: steer (tc19_shadowmem.c:368)
@@ -2155,8 +2155,8 @@ Conflicting store by thread x at 0x........ size 4
 Address 0x........ is at offset 40 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
----------- int gran, 1 .. 96, skip 41 ----------
 
+---------- int gran, 1 .. 96, skip 41 ----------
 Conflicting store by thread x at 0x........ size 4
    at 0x........: child32 (tc19_shadowmem.c:81)
    by 0x........: steer (tc19_shadowmem.c:370)
@@ -2164,8 +2164,8 @@ Conflicting store by thread x at 0x........ size 4
 Address 0x........ is at offset 41 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
----------- int gran, 2 .. 96, skip 42 ----------
 
+---------- int gran, 2 .. 96, skip 42 ----------
 Conflicting store by thread x at 0x........ size 4
    at 0x........: child32 (tc19_shadowmem.c:81)
    by 0x........: steer (tc19_shadowmem.c:372)
@@ -2173,8 +2173,8 @@ Conflicting store by thread x at 0x........ size 4
 Address 0x........ is at offset 42 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
----------- int gran, 3 .. 96, skip 43 ----------
 
+---------- int gran, 3 .. 96, skip 43 ----------
 Conflicting store by thread x at 0x........ size 4
    at 0x........: child32 (tc19_shadowmem.c:81)
    by 0x........: steer (tc19_shadowmem.c:374)
@@ -2182,8 +2182,8 @@ Conflicting store by thread x at 0x........ size 4
 Address 0x........ is at offset 43 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
----------- int gran, 0 .. 96, skip 44 ----------
 
+---------- int gran, 0 .. 96, skip 44 ----------
 Conflicting store by thread x at 0x........ size 4
    at 0x........: child32 (tc19_shadowmem.c:81)
    by 0x........: steer (tc19_shadowmem.c:376)
@@ -2191,8 +2191,8 @@ Conflicting store by thread x at 0x........ size 4
 Address 0x........ is at offset 44 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
----------- int gran, 1 .. 96, skip 45 ----------
 
+---------- int gran, 1 .. 96, skip 45 ----------
 Conflicting store by thread x at 0x........ size 4
    at 0x........: child32 (tc19_shadowmem.c:81)
    by 0x........: steer (tc19_shadowmem.c:378)
@@ -2200,8 +2200,8 @@ Conflicting store by thread x at 0x........ size 4
 Address 0x........ is at offset 45 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
----------- int gran, 2 .. 96, skip 46 ----------
 
+---------- int gran, 2 .. 96, skip 46 ----------
 Conflicting store by thread x at 0x........ size 4
    at 0x........: child32 (tc19_shadowmem.c:81)
    by 0x........: steer (tc19_shadowmem.c:380)
@@ -2209,8 +2209,8 @@ Conflicting store by thread x at 0x........ size 4
 Address 0x........ is at offset 46 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
----------- int gran, 3 .. 96, skip 47 ----------
 
+---------- int gran, 3 .. 96, skip 47 ----------
 Conflicting store by thread x at 0x........ size 4
    at 0x........: child32 (tc19_shadowmem.c:81)
    by 0x........: steer (tc19_shadowmem.c:382)
@@ -2218,8 +2218,8 @@ Conflicting store by thread x at 0x........ size 4
 Address 0x........ is at offset 47 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
----------- int gran, 0 .. 96, skip 48 ----------
 
+---------- int gran, 0 .. 96, skip 48 ----------
 Conflicting store by thread x at 0x........ size 4
    at 0x........: child32 (tc19_shadowmem.c:81)
    by 0x........: steer (tc19_shadowmem.c:384)
@@ -2227,8 +2227,8 @@ Conflicting store by thread x at 0x........ size 4
 Address 0x........ is at offset 48 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
----------- int gran, 1 .. 96, skip 49 ----------
 
+---------- int gran, 1 .. 96, skip 49 ----------
 Conflicting store by thread x at 0x........ size 4
    at 0x........: child32 (tc19_shadowmem.c:81)
    by 0x........: steer (tc19_shadowmem.c:386)
@@ -2236,8 +2236,8 @@ Conflicting store by thread x at 0x........ size 4
 Address 0x........ is at offset 49 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
----------- int gran, 2 .. 96, skip 50 ----------
 
+---------- int gran, 2 .. 96, skip 50 ----------
 Conflicting store by thread x at 0x........ size 4
    at 0x........: child32 (tc19_shadowmem.c:81)
    by 0x........: steer (tc19_shadowmem.c:388)
@@ -2245,8 +2245,8 @@ Conflicting store by thread x at 0x........ size 4
 Address 0x........ is at offset 50 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
----------- int gran, 3 .. 96, skip 51 ----------
 
+---------- int gran, 3 .. 96, skip 51 ----------
 Conflicting store by thread x at 0x........ size 4
    at 0x........: child32 (tc19_shadowmem.c:81)
    by 0x........: steer (tc19_shadowmem.c:390)
@@ -2254,8 +2254,8 @@ Conflicting store by thread x at 0x........ size 4
 Address 0x........ is at offset 51 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
----------- int gran, 0 .. 96, skip 52 ----------
 
+---------- int gran, 0 .. 96, skip 52 ----------
 Conflicting store by thread x at 0x........ size 4
    at 0x........: child32 (tc19_shadowmem.c:81)
    by 0x........: steer (tc19_shadowmem.c:392)
@@ -2263,8 +2263,8 @@ Conflicting store by thread x at 0x........ size 4
 Address 0x........ is at offset 52 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
----------- int gran, 1 .. 96, skip 53 ----------
 
+---------- int gran, 1 .. 96, skip 53 ----------
 Conflicting store by thread x at 0x........ size 4
    at 0x........: child32 (tc19_shadowmem.c:81)
    by 0x........: steer (tc19_shadowmem.c:394)
@@ -2272,8 +2272,8 @@ Conflicting store by thread x at 0x........ size 4
 Address 0x........ is at offset 53 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
----------- int gran, 2 .. 96, skip 54 ----------
 
+---------- int gran, 2 .. 96, skip 54 ----------
 Conflicting store by thread x at 0x........ size 4
    at 0x........: child32 (tc19_shadowmem.c:81)
    by 0x........: steer (tc19_shadowmem.c:396)
@@ -2281,8 +2281,8 @@ Conflicting store by thread x at 0x........ size 4
 Address 0x........ is at offset 54 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
----------- int gran, 3 .. 96, skip 55 ----------
 
+---------- int gran, 3 .. 96, skip 55 ----------
 Conflicting store by thread x at 0x........ size 4
    at 0x........: child32 (tc19_shadowmem.c:81)
    by 0x........: steer (tc19_shadowmem.c:398)
@@ -2290,8 +2290,8 @@ Conflicting store by thread x at 0x........ size 4
 Address 0x........ is at offset 55 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
----------- int gran, 0 .. 96, skip 56 ----------
 
+---------- int gran, 0 .. 96, skip 56 ----------
 Conflicting store by thread x at 0x........ size 4
    at 0x........: child32 (tc19_shadowmem.c:81)
    by 0x........: steer (tc19_shadowmem.c:400)
@@ -2299,8 +2299,8 @@ Conflicting store by thread x at 0x........ size 4
 Address 0x........ is at offset 56 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
----------- int gran, 1 .. 96, skip 57 ----------
 
+---------- int gran, 1 .. 96, skip 57 ----------
 Conflicting store by thread x at 0x........ size 4
    at 0x........: child32 (tc19_shadowmem.c:81)
    by 0x........: steer (tc19_shadowmem.c:402)
@@ -2308,8 +2308,8 @@ Conflicting store by thread x at 0x........ size 4
 Address 0x........ is at offset 57 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
----------- int gran, 2 .. 96, skip 58 ----------
 
+---------- int gran, 2 .. 96, skip 58 ----------
 Conflicting store by thread x at 0x........ size 4
    at 0x........: child32 (tc19_shadowmem.c:81)
    by 0x........: steer (tc19_shadowmem.c:404)
@@ -2317,8 +2317,8 @@ Conflicting store by thread x at 0x........ size 4
 Address 0x........ is at offset 58 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
----------- int gran, 3 .. 96, skip 59 ----------
 
+---------- int gran, 3 .. 96, skip 59 ----------
 Conflicting store by thread x at 0x........ size 4
    at 0x........: child32 (tc19_shadowmem.c:81)
    by 0x........: steer (tc19_shadowmem.c:406)
@@ -2326,8 +2326,8 @@ Conflicting store by thread x at 0x........ size 4
 Address 0x........ is at offset 59 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
----------- int gran, 0 .. 96, skip 60 ----------
 
+---------- int gran, 0 .. 96, skip 60 ----------
 Conflicting store by thread x at 0x........ size 4
    at 0x........: child32 (tc19_shadowmem.c:81)
    by 0x........: steer (tc19_shadowmem.c:408)
@@ -2335,8 +2335,8 @@ Conflicting store by thread x at 0x........ size 4
 Address 0x........ is at offset 60 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
----------- int gran, 1 .. 96, skip 61 ----------
 
+---------- int gran, 1 .. 96, skip 61 ----------
 Conflicting store by thread x at 0x........ size 4
    at 0x........: child32 (tc19_shadowmem.c:81)
    by 0x........: steer (tc19_shadowmem.c:410)
@@ -2344,8 +2344,8 @@ Conflicting store by thread x at 0x........ size 4
 Address 0x........ is at offset 61 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
----------- int gran, 2 .. 96, skip 62 ----------
 
+---------- int gran, 2 .. 96, skip 62 ----------
 Conflicting store by thread x at 0x........ size 4
    at 0x........: child32 (tc19_shadowmem.c:81)
    by 0x........: steer (tc19_shadowmem.c:412)
@@ -2353,8 +2353,8 @@ Conflicting store by thread x at 0x........ size 4
 Address 0x........ is at offset 62 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
----------- int gran, 3 .. 96, skip 63 ----------
 
+---------- int gran, 3 .. 96, skip 63 ----------
 Conflicting store by thread x at 0x........ size 4
    at 0x........: child32 (tc19_shadowmem.c:81)
    by 0x........: steer (tc19_shadowmem.c:414)
@@ -2362,8 +2362,8 @@ Conflicting store by thread x at 0x........ size 4
 Address 0x........ is at offset 63 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
----------- int gran, 0 .. 96, skip 64 ----------
 
+---------- int gran, 0 .. 96, skip 64 ----------
 Conflicting store by thread x at 0x........ size 4
    at 0x........: child32 (tc19_shadowmem.c:81)
    by 0x........: steer (tc19_shadowmem.c:416)
@@ -2371,8 +2371,8 @@ Conflicting store by thread x at 0x........ size 4
 Address 0x........ is at offset 64 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
----------- int gran, 1 .. 96, skip 65 ----------
 
+---------- int gran, 1 .. 96, skip 65 ----------
 Conflicting store by thread x at 0x........ size 4
    at 0x........: child32 (tc19_shadowmem.c:81)
    by 0x........: steer (tc19_shadowmem.c:418)
@@ -2380,8 +2380,8 @@ Conflicting store by thread x at 0x........ size 4
 Address 0x........ is at offset 65 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
----------- int gran, 2 .. 96, skip 66 ----------
 
+---------- int gran, 2 .. 96, skip 66 ----------
 Conflicting store by thread x at 0x........ size 4
    at 0x........: child32 (tc19_shadowmem.c:81)
    by 0x........: steer (tc19_shadowmem.c:420)
@@ -2389,8 +2389,8 @@ Conflicting store by thread x at 0x........ size 4
 Address 0x........ is at offset 66 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
----------- int gran, 3 .. 96, skip 67 ----------
 
+---------- int gran, 3 .. 96, skip 67 ----------
 Conflicting store by thread x at 0x........ size 4
    at 0x........: child32 (tc19_shadowmem.c:81)
    by 0x........: steer (tc19_shadowmem.c:422)
@@ -2398,8 +2398,8 @@ Conflicting store by thread x at 0x........ size 4
 Address 0x........ is at offset 67 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
----------- int gran, 0 .. 96, skip 68 ----------
 
+---------- int gran, 0 .. 96, skip 68 ----------
 Conflicting store by thread x at 0x........ size 4
    at 0x........: child32 (tc19_shadowmem.c:81)
    by 0x........: steer (tc19_shadowmem.c:424)
@@ -2407,8 +2407,8 @@ Conflicting store by thread x at 0x........ size 4
 Address 0x........ is at offset 68 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
----------- int gran, 1 .. 96, skip 69 ----------
 
+---------- int gran, 1 .. 96, skip 69 ----------
 Conflicting store by thread x at 0x........ size 4
    at 0x........: child32 (tc19_shadowmem.c:81)
    by 0x........: steer (tc19_shadowmem.c:426)
@@ -2416,8 +2416,8 @@ Conflicting store by thread x at 0x........ size 4
 Address 0x........ is at offset 69 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
----------- int gran, 2 .. 96, skip 70 ----------
 
+---------- int gran, 2 .. 96, skip 70 ----------
 Conflicting store by thread x at 0x........ size 4
    at 0x........: child32 (tc19_shadowmem.c:81)
    by 0x........: steer (tc19_shadowmem.c:428)
@@ -2425,8 +2425,8 @@ Conflicting store by thread x at 0x........ size 4
 Address 0x........ is at offset 70 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
----------- int gran, 3 .. 96, skip 71 ----------
 
+---------- int gran, 3 .. 96, skip 71 ----------
 Conflicting store by thread x at 0x........ size 4
    at 0x........: child32 (tc19_shadowmem.c:81)
    by 0x........: steer (tc19_shadowmem.c:430)
@@ -2434,8 +2434,8 @@ Conflicting store by thread x at 0x........ size 4
 Address 0x........ is at offset 71 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
----------- int gran, 0 .. 96, skip 72 ----------
 
+---------- int gran, 0 .. 96, skip 72 ----------
 Conflicting store by thread x at 0x........ size 4
    at 0x........: child32 (tc19_shadowmem.c:81)
    by 0x........: steer (tc19_shadowmem.c:432)
@@ -2443,8 +2443,8 @@ Conflicting store by thread x at 0x........ size 4
 Address 0x........ is at offset 72 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
----------- int gran, 1 .. 96, skip 73 ----------
 
+---------- int gran, 1 .. 96, skip 73 ----------
 Conflicting store by thread x at 0x........ size 4
    at 0x........: child32 (tc19_shadowmem.c:81)
    by 0x........: steer (tc19_shadowmem.c:434)
@@ -2452,8 +2452,8 @@ Conflicting store by thread x at 0x........ size 4
 Address 0x........ is at offset 73 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
----------- int gran, 2 .. 96, skip 74 ----------
 
+---------- int gran, 2 .. 96, skip 74 ----------
 Conflicting store by thread x at 0x........ size 4
    at 0x........: child32 (tc19_shadowmem.c:81)
    by 0x........: steer (tc19_shadowmem.c:436)
@@ -2461,8 +2461,8 @@ Conflicting store by thread x at 0x........ size 4
 Address 0x........ is at offset 74 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
----------- int gran, 3 .. 96, skip 75 ----------
 
+---------- int gran, 3 .. 96, skip 75 ----------
 Conflicting store by thread x at 0x........ size 4
    at 0x........: child32 (tc19_shadowmem.c:81)
    by 0x........: steer (tc19_shadowmem.c:438)
@@ -2470,8 +2470,8 @@ Conflicting store by thread x at 0x........ size 4
 Address 0x........ is at offset 75 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
----------- int gran, 0 .. 96, skip 76 ----------
 
+---------- int gran, 0 .. 96, skip 76 ----------
 Conflicting store by thread x at 0x........ size 4
    at 0x........: child32 (tc19_shadowmem.c:81)
    by 0x........: steer (tc19_shadowmem.c:440)
@@ -2479,8 +2479,8 @@ Conflicting store by thread x at 0x........ size 4
 Address 0x........ is at offset 76 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
----------- int gran, 1 .. 96, skip 77 ----------
 
+---------- int gran, 1 .. 96, skip 77 ----------
 Conflicting store by thread x at 0x........ size 4
    at 0x........: child32 (tc19_shadowmem.c:81)
    by 0x........: steer (tc19_shadowmem.c:442)
@@ -2488,8 +2488,8 @@ Conflicting store by thread x at 0x........ size 4
 Address 0x........ is at offset 77 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
----------- int gran, 2 .. 96, skip 78 ----------
 
+---------- int gran, 2 .. 96, skip 78 ----------
 Conflicting store by thread x at 0x........ size 4
    at 0x........: child32 (tc19_shadowmem.c:81)
    by 0x........: steer (tc19_shadowmem.c:444)
@@ -2497,8 +2497,8 @@ Conflicting store by thread x at 0x........ size 4
 Address 0x........ is at offset 78 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
----------- int gran, 3 .. 96, skip 79 ----------
 
+---------- int gran, 3 .. 96, skip 79 ----------
 Conflicting store by thread x at 0x........ size 4
    at 0x........: child32 (tc19_shadowmem.c:81)
    by 0x........: steer (tc19_shadowmem.c:446)
@@ -2506,8 +2506,8 @@ Conflicting store by thread x at 0x........ size 4
 Address 0x........ is at offset 79 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
----------- int gran, 0 .. 96, skip 80 ----------
 
+---------- int gran, 0 .. 96, skip 80 ----------
 Conflicting store by thread x at 0x........ size 4
    at 0x........: child32 (tc19_shadowmem.c:81)
    by 0x........: steer (tc19_shadowmem.c:448)
@@ -2515,8 +2515,8 @@ Conflicting store by thread x at 0x........ size 4
 Address 0x........ is at offset 80 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
----------- int gran, 1 .. 96, skip 81 ----------
 
+---------- int gran, 1 .. 96, skip 81 ----------
 Conflicting store by thread x at 0x........ size 4
    at 0x........: child32 (tc19_shadowmem.c:81)
    by 0x........: steer (tc19_shadowmem.c:450)
@@ -2524,8 +2524,8 @@ Conflicting store by thread x at 0x........ size 4
 Address 0x........ is at offset 81 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
----------- int gran, 2 .. 96, skip 82 ----------
 
+---------- int gran, 2 .. 96, skip 82 ----------
 Conflicting store by thread x at 0x........ size 4
    at 0x........: child32 (tc19_shadowmem.c:81)
    by 0x........: steer (tc19_shadowmem.c:452)
@@ -2533,8 +2533,8 @@ Conflicting store by thread x at 0x........ size 4
 Address 0x........ is at offset 82 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
----------- int gran, 3 .. 96, skip 83 ----------
 
+---------- int gran, 3 .. 96, skip 83 ----------
 Conflicting store by thread x at 0x........ size 4
    at 0x........: child32 (tc19_shadowmem.c:81)
    by 0x........: steer (tc19_shadowmem.c:454)
@@ -2542,8 +2542,8 @@ Conflicting store by thread x at 0x........ size 4
 Address 0x........ is at offset 83 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
----------- int gran, 0 .. 96, skip 84 ----------
 
+---------- int gran, 0 .. 96, skip 84 ----------
 Conflicting store by thread x at 0x........ size 4
    at 0x........: child32 (tc19_shadowmem.c:81)
    by 0x........: steer (tc19_shadowmem.c:456)
@@ -2551,8 +2551,8 @@ Conflicting store by thread x at 0x........ size 4
 Address 0x........ is at offset 84 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
----------- int gran, 1 .. 96, skip 85 ----------
 
+---------- int gran, 1 .. 96, skip 85 ----------
 Conflicting store by thread x at 0x........ size 4
    at 0x........: child32 (tc19_shadowmem.c:81)
    by 0x........: steer (tc19_shadowmem.c:458)
@@ -2560,8 +2560,8 @@ Conflicting store by thread x at 0x........ size 4
 Address 0x........ is at offset 85 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
----------- int gran, 2 .. 96, skip 86 ----------
 
+---------- int gran, 2 .. 96, skip 86 ----------
 Conflicting store by thread x at 0x........ size 4
    at 0x........: child32 (tc19_shadowmem.c:81)
    by 0x........: steer (tc19_shadowmem.c:460)
@@ -2569,8 +2569,8 @@ Conflicting store by thread x at 0x........ size 4
 Address 0x........ is at offset 86 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
----------- int gran, 3 .. 96, skip 87 ----------
 
+---------- int gran, 3 .. 96, skip 87 ----------
 Conflicting store by thread x at 0x........ size 4
    at 0x........: child32 (tc19_shadowmem.c:81)
    by 0x........: steer (tc19_shadowmem.c:462)
@@ -2578,8 +2578,8 @@ Conflicting store by thread x at 0x........ size 4
 Address 0x........ is at offset 87 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
----------- int gran, 0 .. 96, skip 88 ----------
 
+---------- int gran, 0 .. 96, skip 88 ----------
 Conflicting store by thread x at 0x........ size 4
    at 0x........: child32 (tc19_shadowmem.c:81)
    by 0x........: steer (tc19_shadowmem.c:464)
@@ -2587,8 +2587,8 @@ Conflicting store by thread x at 0x........ size 4
 Address 0x........ is at offset 88 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
----------- int gran, 1 .. 96, skip 89 ----------
 
+---------- int gran, 1 .. 96, skip 89 ----------
 Conflicting store by thread x at 0x........ size 4
    at 0x........: child32 (tc19_shadowmem.c:81)
    by 0x........: steer (tc19_shadowmem.c:466)
@@ -2596,8 +2596,8 @@ Conflicting store by thread x at 0x........ size 4
 Address 0x........ is at offset 89 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
----------- int gran, 2 .. 96, skip 90 ----------
 
+---------- int gran, 2 .. 96, skip 90 ----------
 Conflicting store by thread x at 0x........ size 4
    at 0x........: child32 (tc19_shadowmem.c:81)
    by 0x........: steer (tc19_shadowmem.c:468)
@@ -2605,8 +2605,8 @@ Conflicting store by thread x at 0x........ size 4
 Address 0x........ is at offset 90 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
----------- int gran, 3 .. 96, skip 91 ----------
 
+---------- int gran, 3 .. 96, skip 91 ----------
 Conflicting store by thread x at 0x........ size 4
    at 0x........: child32 (tc19_shadowmem.c:81)
    by 0x........: steer (tc19_shadowmem.c:470)
@@ -2614,8 +2614,8 @@ Conflicting store by thread x at 0x........ size 4
 Address 0x........ is at offset 91 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
----------- int gran, 0 .. 96, skip 92 ----------
 
+---------- int gran, 0 .. 96, skip 92 ----------
 Conflicting store by thread x at 0x........ size 4
    at 0x........: child32 (tc19_shadowmem.c:81)
    by 0x........: steer (tc19_shadowmem.c:472)
@@ -2623,8 +2623,8 @@ Conflicting store by thread x at 0x........ size 4
 Address 0x........ is at offset 92 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
----------- int gran, 1 .. 96, skip 93 ----------
 
+---------- int gran, 1 .. 96, skip 93 ----------
 Conflicting store by thread x at 0x........ size 4
    at 0x........: child32 (tc19_shadowmem.c:81)
    by 0x........: steer (tc19_shadowmem.c:474)
@@ -2632,8 +2632,8 @@ Conflicting store by thread x at 0x........ size 4
 Address 0x........ is at offset 93 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
----------- int gran, 2 .. 96, skip 94 ----------
 
+---------- int gran, 2 .. 96, skip 94 ----------
 Conflicting store by thread x at 0x........ size 4
    at 0x........: child32 (tc19_shadowmem.c:81)
    by 0x........: steer (tc19_shadowmem.c:476)
@@ -2641,8 +2641,8 @@ Conflicting store by thread x at 0x........ size 4
 Address 0x........ is at offset 94 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
----------- int gran, 3 .. 96, skip 95 ----------
 
+---------- int gran, 3 .. 96, skip 95 ----------
 Conflicting store by thread x at 0x........ size 4
    at 0x........: child32 (tc19_shadowmem.c:81)
    by 0x........: steer (tc19_shadowmem.c:478)
@@ -2651,12 +2651,12 @@ Address 0x........ is at offset 95 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
 
+
 ==========================================================
 === 64 64 64 64 64 64 64 64 64 64 64 64 64 64 64 64 64 ===
 ==========================================================
 
 ---------- double gran, 0 .. 92, skip 0 ----------
-
 Conflicting store by thread x at 0x........ size 8
    at 0x........: child64 (tc19_shadowmem.c:105)
    by 0x........: steer (tc19_shadowmem.c:288)
@@ -2664,8 +2664,8 @@ Conflicting store by thread x at 0x........ size 8
 Address 0x........ is at offset 0 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
----------- double gran, 1 .. 92, skip 1 ----------
 
+---------- double gran, 1 .. 92, skip 1 ----------
 Conflicting store by thread x at 0x........ size 8
    at 0x........: child64 (tc19_shadowmem.c:105)
    by 0x........: steer (tc19_shadowmem.c:290)
@@ -2673,8 +2673,8 @@ Conflicting store by thread x at 0x........ size 8
 Address 0x........ is at offset 1 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
----------- double gran, 2 .. 92, skip 2 ----------
 
+---------- double gran, 2 .. 92, skip 2 ----------
 Conflicting store by thread x at 0x........ size 8
    at 0x........: child64 (tc19_shadowmem.c:105)
    by 0x........: steer (tc19_shadowmem.c:292)
@@ -2682,8 +2682,8 @@ Conflicting store by thread x at 0x........ size 8
 Address 0x........ is at offset 2 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
----------- double gran, 3 .. 92, skip 3 ----------
 
+---------- double gran, 3 .. 92, skip 3 ----------
 Conflicting store by thread x at 0x........ size 8
    at 0x........: child64 (tc19_shadowmem.c:105)
    by 0x........: steer (tc19_shadowmem.c:294)
@@ -2691,8 +2691,8 @@ Conflicting store by thread x at 0x........ size 8
 Address 0x........ is at offset 3 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
----------- double gran, 4 .. 92, skip 4 ----------
 
+---------- double gran, 4 .. 92, skip 4 ----------
 Conflicting store by thread x at 0x........ size 8
    at 0x........: child64 (tc19_shadowmem.c:105)
    by 0x........: steer (tc19_shadowmem.c:296)
@@ -2700,8 +2700,8 @@ Conflicting store by thread x at 0x........ size 8
 Address 0x........ is at offset 4 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
----------- double gran, 5 .. 92, skip 5 ----------
 
+---------- double gran, 5 .. 92, skip 5 ----------
 Conflicting store by thread x at 0x........ size 8
    at 0x........: child64 (tc19_shadowmem.c:105)
    by 0x........: steer (tc19_shadowmem.c:298)
@@ -2709,8 +2709,8 @@ Conflicting store by thread x at 0x........ size 8
 Address 0x........ is at offset 5 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
----------- double gran, 6 .. 92, skip 6 ----------
 
+---------- double gran, 6 .. 92, skip 6 ----------
 Conflicting store by thread x at 0x........ size 8
    at 0x........: child64 (tc19_shadowmem.c:105)
    by 0x........: steer (tc19_shadowmem.c:300)
@@ -2718,8 +2718,8 @@ Conflicting store by thread x at 0x........ size 8
 Address 0x........ is at offset 6 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
----------- double gran, 7 .. 92, skip 7 ----------
 
+---------- double gran, 7 .. 92, skip 7 ----------
 Conflicting store by thread x at 0x........ size 8
    at 0x........: child64 (tc19_shadowmem.c:105)
    by 0x........: steer (tc19_shadowmem.c:302)
@@ -2727,8 +2727,8 @@ Conflicting store by thread x at 0x........ size 8
 Address 0x........ is at offset 7 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
----------- double gran, 0 .. 92, skip 8 ----------
 
+---------- double gran, 0 .. 92, skip 8 ----------
 Conflicting store by thread x at 0x........ size 8
    at 0x........: child64 (tc19_shadowmem.c:105)
    by 0x........: steer (tc19_shadowmem.c:304)
@@ -2736,8 +2736,8 @@ Conflicting store by thread x at 0x........ size 8
 Address 0x........ is at offset 8 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
----------- double gran, 1 .. 92, skip 9 ----------
 
+---------- double gran, 1 .. 92, skip 9 ----------
 Conflicting store by thread x at 0x........ size 8
    at 0x........: child64 (tc19_shadowmem.c:105)
    by 0x........: steer (tc19_shadowmem.c:306)
@@ -2745,8 +2745,8 @@ Conflicting store by thread x at 0x........ size 8
 Address 0x........ is at offset 9 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
----------- double gran, 2 .. 92, skip 10 ----------
 
+---------- double gran, 2 .. 92, skip 10 ----------
 Conflicting store by thread x at 0x........ size 8
    at 0x........: child64 (tc19_shadowmem.c:105)
    by 0x........: steer (tc19_shadowmem.c:308)
@@ -2754,8 +2754,8 @@ Conflicting store by thread x at 0x........ size 8
 Address 0x........ is at offset 10 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
----------- double gran, 3 .. 92, skip 11 ----------
 
+---------- double gran, 3 .. 92, skip 11 ----------
 Conflicting store by thread x at 0x........ size 8
    at 0x........: child64 (tc19_shadowmem.c:105)
    by 0x........: steer (tc19_shadowmem.c:310)
@@ -2763,8 +2763,8 @@ Conflicting store by thread x at 0x........ size 8
 Address 0x........ is at offset 11 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
----------- double gran, 4 .. 92, skip 12 ----------
 
+---------- double gran, 4 .. 92, skip 12 ----------
 Conflicting store by thread x at 0x........ size 8
    at 0x........: child64 (tc19_shadowmem.c:105)
    by 0x........: steer (tc19_shadowmem.c:312)
@@ -2772,8 +2772,8 @@ Conflicting store by thread x at 0x........ size 8
 Address 0x........ is at offset 12 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
----------- double gran, 5 .. 92, skip 13 ----------
 
+---------- double gran, 5 .. 92, skip 13 ----------
 Conflicting store by thread x at 0x........ size 8
    at 0x........: child64 (tc19_shadowmem.c:105)
    by 0x........: steer (tc19_shadowmem.c:314)
@@ -2781,8 +2781,8 @@ Conflicting store by thread x at 0x........ size 8
 Address 0x........ is at offset 13 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
----------- double gran, 6 .. 92, skip 14 ----------
 
+---------- double gran, 6 .. 92, skip 14 ----------
 Conflicting store by thread x at 0x........ size 8
    at 0x........: child64 (tc19_shadowmem.c:105)
    by 0x........: steer (tc19_shadowmem.c:316)
@@ -2790,8 +2790,8 @@ Conflicting store by thread x at 0x........ size 8
 Address 0x........ is at offset 14 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
----------- double gran, 7 .. 92, skip 15 ----------
 
+---------- double gran, 7 .. 92, skip 15 ----------
 Conflicting store by thread x at 0x........ size 8
    at 0x........: child64 (tc19_shadowmem.c:105)
    by 0x........: steer (tc19_shadowmem.c:318)
@@ -2799,8 +2799,8 @@ Conflicting store by thread x at 0x........ size 8
 Address 0x........ is at offset 15 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
----------- double gran, 0 .. 92, skip 16 ----------
 
+---------- double gran, 0 .. 92, skip 16 ----------
 Conflicting store by thread x at 0x........ size 8
    at 0x........: child64 (tc19_shadowmem.c:105)
    by 0x........: steer (tc19_shadowmem.c:320)
@@ -2808,8 +2808,8 @@ Conflicting store by thread x at 0x........ size 8
 Address 0x........ is at offset 16 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
----------- double gran, 1 .. 92, skip 17 ----------
 
+---------- double gran, 1 .. 92, skip 17 ----------
 Conflicting store by thread x at 0x........ size 8
    at 0x........: child64 (tc19_shadowmem.c:105)
    by 0x........: steer (tc19_shadowmem.c:322)
@@ -2817,8 +2817,8 @@ Conflicting store by thread x at 0x........ size 8
 Address 0x........ is at offset 17 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
----------- double gran, 2 .. 92, skip 18 ----------
 
+---------- double gran, 2 .. 92, skip 18 ----------
 Conflicting store by thread x at 0x........ size 8
    at 0x........: child64 (tc19_shadowmem.c:105)
    by 0x........: steer (tc19_shadowmem.c:324)
@@ -2826,8 +2826,8 @@ Conflicting store by thread x at 0x........ size 8
 Address 0x........ is at offset 18 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
----------- double gran, 3 .. 92, skip 19 ----------
 
+---------- double gran, 3 .. 92, skip 19 ----------
 Conflicting store by thread x at 0x........ size 8
    at 0x........: child64 (tc19_shadowmem.c:105)
    by 0x........: steer (tc19_shadowmem.c:326)
@@ -2835,8 +2835,8 @@ Conflicting store by thread x at 0x........ size 8
 Address 0x........ is at offset 19 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
----------- double gran, 4 .. 92, skip 20 ----------
 
+---------- double gran, 4 .. 92, skip 20 ----------
 Conflicting store by thread x at 0x........ size 8
    at 0x........: child64 (tc19_shadowmem.c:105)
    by 0x........: steer (tc19_shadowmem.c:328)
@@ -2844,8 +2844,8 @@ Conflicting store by thread x at 0x........ size 8
 Address 0x........ is at offset 20 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
----------- double gran, 5 .. 92, skip 21 ----------
 
+---------- double gran, 5 .. 92, skip 21 ----------
 Conflicting store by thread x at 0x........ size 8
    at 0x........: child64 (tc19_shadowmem.c:105)
    by 0x........: steer (tc19_shadowmem.c:330)
@@ -2853,8 +2853,8 @@ Conflicting store by thread x at 0x........ size 8
 Address 0x........ is at offset 21 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
----------- double gran, 6 .. 92, skip 22 ----------
 
+---------- double gran, 6 .. 92, skip 22 ----------
 Conflicting store by thread x at 0x........ size 8
    at 0x........: child64 (tc19_shadowmem.c:105)
    by 0x........: steer (tc19_shadowmem.c:332)
@@ -2862,8 +2862,8 @@ Conflicting store by thread x at 0x........ size 8
 Address 0x........ is at offset 22 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
----------- double gran, 7 .. 92, skip 23 ----------
 
+---------- double gran, 7 .. 92, skip 23 ----------
 Conflicting store by thread x at 0x........ size 8
    at 0x........: child64 (tc19_shadowmem.c:105)
    by 0x........: steer (tc19_shadowmem.c:334)
@@ -2871,8 +2871,8 @@ Conflicting store by thread x at 0x........ size 8
 Address 0x........ is at offset 23 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
----------- double gran, 0 .. 92, skip 24 ----------
 
+---------- double gran, 0 .. 92, skip 24 ----------
 Conflicting store by thread x at 0x........ size 8
    at 0x........: child64 (tc19_shadowmem.c:105)
    by 0x........: steer (tc19_shadowmem.c:336)
@@ -2880,8 +2880,8 @@ Conflicting store by thread x at 0x........ size 8
 Address 0x........ is at offset 24 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
----------- double gran, 1 .. 92, skip 25 ----------
 
+---------- double gran, 1 .. 92, skip 25 ----------
 Conflicting store by thread x at 0x........ size 8
    at 0x........: child64 (tc19_shadowmem.c:105)
    by 0x........: steer (tc19_shadowmem.c:338)
@@ -2889,8 +2889,8 @@ Conflicting store by thread x at 0x........ size 8
 Address 0x........ is at offset 25 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
----------- double gran, 2 .. 92, skip 26 ----------
 
+---------- double gran, 2 .. 92, skip 26 ----------
 Conflicting store by thread x at 0x........ size 8
    at 0x........: child64 (tc19_shadowmem.c:105)
    by 0x........: steer (tc19_shadowmem.c:340)
@@ -2898,8 +2898,8 @@ Conflicting store by thread x at 0x........ size 8
 Address 0x........ is at offset 26 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
----------- double gran, 3 .. 92, skip 27 ----------
 
+---------- double gran, 3 .. 92, skip 27 ----------
 Conflicting store by thread x at 0x........ size 8
    at 0x........: child64 (tc19_shadowmem.c:105)
    by 0x........: steer (tc19_shadowmem.c:342)
@@ -2907,8 +2907,8 @@ Conflicting store by thread x at 0x........ size 8
 Address 0x........ is at offset 27 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
----------- double gran, 4 .. 92, skip 28 ----------
 
+---------- double gran, 4 .. 92, skip 28 ----------
 Conflicting store by thread x at 0x........ size 8
    at 0x........: child64 (tc19_shadowmem.c:105)
    by 0x........: steer (tc19_shadowmem.c:344)
@@ -2916,8 +2916,8 @@ Conflicting store by thread x at 0x........ size 8
 Address 0x........ is at offset 28 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
----------- double gran, 5 .. 92, skip 29 ----------
 
+---------- double gran, 5 .. 92, skip 29 ----------
 Conflicting store by thread x at 0x........ size 8
    at 0x........: child64 (tc19_shadowmem.c:105)
    by 0x........: steer (tc19_shadowmem.c:346)
@@ -2925,8 +2925,8 @@ Conflicting store by thread x at 0x........ size 8
 Address 0x........ is at offset 29 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
----------- double gran, 6 .. 92, skip 30 ----------
 
+---------- double gran, 6 .. 92, skip 30 ----------
 Conflicting store by thread x at 0x........ size 8
    at 0x........: child64 (tc19_shadowmem.c:105)
    by 0x........: steer (tc19_shadowmem.c:348)
@@ -2934,8 +2934,8 @@ Conflicting store by thread x at 0x........ size 8
 Address 0x........ is at offset 30 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
----------- double gran, 7 .. 92, skip 31 ----------
 
+---------- double gran, 7 .. 92, skip 31 ----------
 Conflicting store by thread x at 0x........ size 8
    at 0x........: child64 (tc19_shadowmem.c:105)
    by 0x........: steer (tc19_shadowmem.c:350)
@@ -2943,8 +2943,8 @@ Conflicting store by thread x at 0x........ size 8
 Address 0x........ is at offset 31 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
----------- double gran, 0 .. 92, skip 32 ----------
 
+---------- double gran, 0 .. 92, skip 32 ----------
 Conflicting store by thread x at 0x........ size 8
    at 0x........: child64 (tc19_shadowmem.c:105)
    by 0x........: steer (tc19_shadowmem.c:352)
@@ -2952,8 +2952,8 @@ Conflicting store by thread x at 0x........ size 8
 Address 0x........ is at offset 32 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
----------- double gran, 1 .. 92, skip 33 ----------
 
+---------- double gran, 1 .. 92, skip 33 ----------
 Conflicting store by thread x at 0x........ size 8
    at 0x........: child64 (tc19_shadowmem.c:105)
    by 0x........: steer (tc19_shadowmem.c:354)
@@ -2961,8 +2961,8 @@ Conflicting store by thread x at 0x........ size 8
 Address 0x........ is at offset 33 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
----------- double gran, 2 .. 92, skip 34 ----------
 
+---------- double gran, 2 .. 92, skip 34 ----------
 Conflicting store by thread x at 0x........ size 8
    at 0x........: child64 (tc19_shadowmem.c:105)
    by 0x........: steer (tc19_shadowmem.c:356)
@@ -2970,8 +2970,8 @@ Conflicting store by thread x at 0x........ size 8
 Address 0x........ is at offset 34 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
----------- double gran, 3 .. 92, skip 35 ----------
 
+---------- double gran, 3 .. 92, skip 35 ----------
 Conflicting store by thread x at 0x........ size 8
    at 0x........: child64 (tc19_shadowmem.c:105)
    by 0x........: steer (tc19_shadowmem.c:358)
@@ -2979,8 +2979,8 @@ Conflicting store by thread x at 0x........ size 8
 Address 0x........ is at offset 35 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
----------- double gran, 4 .. 92, skip 36 ----------
 
+---------- double gran, 4 .. 92, skip 36 ----------
 Conflicting store by thread x at 0x........ size 8
    at 0x........: child64 (tc19_shadowmem.c:105)
    by 0x........: steer (tc19_shadowmem.c:360)
@@ -2988,8 +2988,8 @@ Conflicting store by thread x at 0x........ size 8
 Address 0x........ is at offset 36 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
----------- double gran, 5 .. 92, skip 37 ----------
 
+---------- double gran, 5 .. 92, skip 37 ----------
 Conflicting store by thread x at 0x........ size 8
    at 0x........: child64 (tc19_shadowmem.c:105)
    by 0x........: steer (tc19_shadowmem.c:362)
@@ -2997,8 +2997,8 @@ Conflicting store by thread x at 0x........ size 8
 Address 0x........ is at offset 37 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
----------- double gran, 6 .. 92, skip 38 ----------
 
+---------- double gran, 6 .. 92, skip 38 ----------
 Conflicting store by thread x at 0x........ size 8
    at 0x........: child64 (tc19_shadowmem.c:105)
    by 0x........: steer (tc19_shadowmem.c:364)
@@ -3006,8 +3006,8 @@ Conflicting store by thread x at 0x........ size 8
 Address 0x........ is at offset 38 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
----------- double gran, 7 .. 92, skip 39 ----------
 
+---------- double gran, 7 .. 92, skip 39 ----------
 Conflicting store by thread x at 0x........ size 8
    at 0x........: child64 (tc19_shadowmem.c:105)
    by 0x........: steer (tc19_shadowmem.c:366)
@@ -3015,8 +3015,8 @@ Conflicting store by thread x at 0x........ size 8
 Address 0x........ is at offset 39 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
----------- double gran, 0 .. 92, skip 40 ----------
 
+---------- double gran, 0 .. 92, skip 40 ----------
 Conflicting store by thread x at 0x........ size 8
    at 0x........: child64 (tc19_shadowmem.c:105)
    by 0x........: steer (tc19_shadowmem.c:368)
@@ -3024,8 +3024,8 @@ Conflicting store by thread x at 0x........ size 8
 Address 0x........ is at offset 40 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
----------- double gran, 1 .. 92, skip 41 ----------
 
+---------- double gran, 1 .. 92, skip 41 ----------
 Conflicting store by thread x at 0x........ size 8
    at 0x........: child64 (tc19_shadowmem.c:105)
    by 0x........: steer (tc19_shadowmem.c:370)
@@ -3033,8 +3033,8 @@ Conflicting store by thread x at 0x........ size 8
 Address 0x........ is at offset 41 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
----------- double gran, 2 .. 92, skip 42 ----------
 
+---------- double gran, 2 .. 92, skip 42 ----------
 Conflicting store by thread x at 0x........ size 8
    at 0x........: child64 (tc19_shadowmem.c:105)
    by 0x........: steer (tc19_shadowmem.c:372)
@@ -3042,8 +3042,8 @@ Conflicting store by thread x at 0x........ size 8
 Address 0x........ is at offset 42 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
----------- double gran, 3 .. 92, skip 43 ----------
 
+---------- double gran, 3 .. 92, skip 43 ----------
 Conflicting store by thread x at 0x........ size 8
    at 0x........: child64 (tc19_shadowmem.c:105)
    by 0x........: steer (tc19_shadowmem.c:374)
@@ -3051,8 +3051,8 @@ Conflicting store by thread x at 0x........ size 8
 Address 0x........ is at offset 43 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
----------- double gran, 4 .. 92, skip 44 ----------
 
+---------- double gran, 4 .. 92, skip 44 ----------
 Conflicting store by thread x at 0x........ size 8
    at 0x........: child64 (tc19_shadowmem.c:105)
    by 0x........: steer (tc19_shadowmem.c:376)
@@ -3060,8 +3060,8 @@ Conflicting store by thread x at 0x........ size 8
 Address 0x........ is at offset 44 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
----------- double gran, 5 .. 92, skip 45 ----------
 
+---------- double gran, 5 .. 92, skip 45 ----------
 Conflicting store by thread x at 0x........ size 8
    at 0x........: child64 (tc19_shadowmem.c:105)
    by 0x........: steer (tc19_shadowmem.c:378)
@@ -3069,8 +3069,8 @@ Conflicting store by thread x at 0x........ size 8
 Address 0x........ is at offset 45 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
----------- double gran, 6 .. 92, skip 46 ----------
 
+---------- double gran, 6 .. 92, skip 46 ----------
 Conflicting store by thread x at 0x........ size 8
    at 0x........: child64 (tc19_shadowmem.c:105)
    by 0x........: steer (tc19_shadowmem.c:380)
@@ -3078,8 +3078,8 @@ Conflicting store by thread x at 0x........ size 8
 Address 0x........ is at offset 46 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
----------- double gran, 7 .. 92, skip 47 ----------
 
+---------- double gran, 7 .. 92, skip 47 ----------
 Conflicting store by thread x at 0x........ size 8
    at 0x........: child64 (tc19_shadowmem.c:105)
    by 0x........: steer (tc19_shadowmem.c:382)
@@ -3087,8 +3087,8 @@ Conflicting store by thread x at 0x........ size 8
 Address 0x........ is at offset 47 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
----------- double gran, 0 .. 92, skip 48 ----------
 
+---------- double gran, 0 .. 92, skip 48 ----------
 Conflicting store by thread x at 0x........ size 8
    at 0x........: child64 (tc19_shadowmem.c:105)
    by 0x........: steer (tc19_shadowmem.c:384)
@@ -3096,8 +3096,8 @@ Conflicting store by thread x at 0x........ size 8
 Address 0x........ is at offset 48 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
----------- double gran, 1 .. 92, skip 49 ----------
 
+---------- double gran, 1 .. 92, skip 49 ----------
 Conflicting store by thread x at 0x........ size 8
    at 0x........: child64 (tc19_shadowmem.c:105)
    by 0x........: steer (tc19_shadowmem.c:386)
@@ -3105,8 +3105,8 @@ Conflicting store by thread x at 0x........ size 8
 Address 0x........ is at offset 49 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
----------- double gran, 2 .. 92, skip 50 ----------
 
+---------- double gran, 2 .. 92, skip 50 ----------
 Conflicting store by thread x at 0x........ size 8
    at 0x........: child64 (tc19_shadowmem.c:105)
    by 0x........: steer (tc19_shadowmem.c:388)
@@ -3114,8 +3114,8 @@ Conflicting store by thread x at 0x........ size 8
 Address 0x........ is at offset 50 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
----------- double gran, 3 .. 92, skip 51 ----------
 
+---------- double gran, 3 .. 92, skip 51 ----------
 Conflicting store by thread x at 0x........ size 8
    at 0x........: child64 (tc19_shadowmem.c:105)
    by 0x........: steer (tc19_shadowmem.c:390)
@@ -3123,8 +3123,8 @@ Conflicting store by thread x at 0x........ size 8
 Address 0x........ is at offset 51 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
----------- double gran, 4 .. 92, skip 52 ----------
 
+---------- double gran, 4 .. 92, skip 52 ----------
 Conflicting store by thread x at 0x........ size 8
    at 0x........: child64 (tc19_shadowmem.c:105)
    by 0x........: steer (tc19_shadowmem.c:392)
@@ -3132,8 +3132,8 @@ Conflicting store by thread x at 0x........ size 8
 Address 0x........ is at offset 52 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
----------- double gran, 5 .. 92, skip 53 ----------
 
+---------- double gran, 5 .. 92, skip 53 ----------
 Conflicting store by thread x at 0x........ size 8
    at 0x........: child64 (tc19_shadowmem.c:105)
    by 0x........: steer (tc19_shadowmem.c:394)
@@ -3141,8 +3141,8 @@ Conflicting store by thread x at 0x........ size 8
 Address 0x........ is at offset 53 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
----------- double gran, 6 .. 92, skip 54 ----------
 
+---------- double gran, 6 .. 92, skip 54 ----------
 Conflicting store by thread x at 0x........ size 8
    at 0x........: child64 (tc19_shadowmem.c:105)
    by 0x........: steer (tc19_shadowmem.c:396)
@@ -3150,8 +3150,8 @@ Conflicting store by thread x at 0x........ size 8
 Address 0x........ is at offset 54 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
----------- double gran, 7 .. 92, skip 55 ----------
 
+---------- double gran, 7 .. 92, skip 55 ----------
 Conflicting store by thread x at 0x........ size 8
    at 0x........: child64 (tc19_shadowmem.c:105)
    by 0x........: steer (tc19_shadowmem.c:398)
@@ -3159,8 +3159,8 @@ Conflicting store by thread x at 0x........ size 8
 Address 0x........ is at offset 55 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
----------- double gran, 0 .. 92, skip 56 ----------
 
+---------- double gran, 0 .. 92, skip 56 ----------
 Conflicting store by thread x at 0x........ size 8
    at 0x........: child64 (tc19_shadowmem.c:105)
    by 0x........: steer (tc19_shadowmem.c:400)
@@ -3168,8 +3168,8 @@ Conflicting store by thread x at 0x........ size 8
 Address 0x........ is at offset 56 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
----------- double gran, 1 .. 92, skip 57 ----------
 
+---------- double gran, 1 .. 92, skip 57 ----------
 Conflicting store by thread x at 0x........ size 8
    at 0x........: child64 (tc19_shadowmem.c:105)
    by 0x........: steer (tc19_shadowmem.c:402)
@@ -3177,8 +3177,8 @@ Conflicting store by thread x at 0x........ size 8
 Address 0x........ is at offset 57 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
----------- double gran, 2 .. 92, skip 58 ----------
 
+---------- double gran, 2 .. 92, skip 58 ----------
 Conflicting store by thread x at 0x........ size 8
    at 0x........: child64 (tc19_shadowmem.c:105)
    by 0x........: steer (tc19_shadowmem.c:404)
@@ -3186,8 +3186,8 @@ Conflicting store by thread x at 0x........ size 8
 Address 0x........ is at offset 58 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
----------- double gran, 3 .. 92, skip 59 ----------
 
+---------- double gran, 3 .. 92, skip 59 ----------
 Conflicting store by thread x at 0x........ size 8
    at 0x........: child64 (tc19_shadowmem.c:105)
    by 0x........: steer (tc19_shadowmem.c:406)
@@ -3195,8 +3195,8 @@ Conflicting store by thread x at 0x........ size 8
 Address 0x........ is at offset 59 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
----------- double gran, 4 .. 92, skip 60 ----------
 
+---------- double gran, 4 .. 92, skip 60 ----------
 Conflicting store by thread x at 0x........ size 8
    at 0x........: child64 (tc19_shadowmem.c:105)
    by 0x........: steer (tc19_shadowmem.c:408)
@@ -3204,8 +3204,8 @@ Conflicting store by thread x at 0x........ size 8
 Address 0x........ is at offset 60 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
----------- double gran, 5 .. 92, skip 61 ----------
 
+---------- double gran, 5 .. 92, skip 61 ----------
 Conflicting store by thread x at 0x........ size 8
    at 0x........: child64 (tc19_shadowmem.c:105)
    by 0x........: steer (tc19_shadowmem.c:410)
@@ -3213,8 +3213,8 @@ Conflicting store by thread x at 0x........ size 8
 Address 0x........ is at offset 61 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
----------- double gran, 6 .. 92, skip 62 ----------
 
+---------- double gran, 6 .. 92, skip 62 ----------
 Conflicting store by thread x at 0x........ size 8
    at 0x........: child64 (tc19_shadowmem.c:105)
    by 0x........: steer (tc19_shadowmem.c:412)
@@ -3222,8 +3222,8 @@ Conflicting store by thread x at 0x........ size 8
 Address 0x........ is at offset 62 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
----------- double gran, 7 .. 92, skip 63 ----------
 
+---------- double gran, 7 .. 92, skip 63 ----------
 Conflicting store by thread x at 0x........ size 8
    at 0x........: child64 (tc19_shadowmem.c:105)
    by 0x........: steer (tc19_shadowmem.c:414)
@@ -3231,8 +3231,8 @@ Conflicting store by thread x at 0x........ size 8
 Address 0x........ is at offset 63 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
----------- double gran, 0 .. 92, skip 64 ----------
 
+---------- double gran, 0 .. 92, skip 64 ----------
 Conflicting store by thread x at 0x........ size 8
    at 0x........: child64 (tc19_shadowmem.c:105)
    by 0x........: steer (tc19_shadowmem.c:416)
@@ -3240,8 +3240,8 @@ Conflicting store by thread x at 0x........ size 8
 Address 0x........ is at offset 64 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
----------- double gran, 1 .. 92, skip 65 ----------
 
+---------- double gran, 1 .. 92, skip 65 ----------
 Conflicting store by thread x at 0x........ size 8
    at 0x........: child64 (tc19_shadowmem.c:105)
    by 0x........: steer (tc19_shadowmem.c:418)
@@ -3249,8 +3249,8 @@ Conflicting store by thread x at 0x........ size 8
 Address 0x........ is at offset 65 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
----------- double gran, 2 .. 92, skip 66 ----------
 
+---------- double gran, 2 .. 92, skip 66 ----------
 Conflicting store by thread x at 0x........ size 8
    at 0x........: child64 (tc19_shadowmem.c:105)
    by 0x........: steer (tc19_shadowmem.c:420)
@@ -3258,8 +3258,8 @@ Conflicting store by thread x at 0x........ size 8
 Address 0x........ is at offset 66 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
----------- double gran, 3 .. 92, skip 67 ----------
 
+---------- double gran, 3 .. 92, skip 67 ----------
 Conflicting store by thread x at 0x........ size 8
    at 0x........: child64 (tc19_shadowmem.c:105)
    by 0x........: steer (tc19_shadowmem.c:422)
@@ -3267,8 +3267,8 @@ Conflicting store by thread x at 0x........ size 8
 Address 0x........ is at offset 67 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
----------- double gran, 4 .. 92, skip 68 ----------
 
+---------- double gran, 4 .. 92, skip 68 ----------
 Conflicting store by thread x at 0x........ size 8
    at 0x........: child64 (tc19_shadowmem.c:105)
    by 0x........: steer (tc19_shadowmem.c:424)
@@ -3276,8 +3276,8 @@ Conflicting store by thread x at 0x........ size 8
 Address 0x........ is at offset 68 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
----------- double gran, 5 .. 92, skip 69 ----------
 
+---------- double gran, 5 .. 92, skip 69 ----------
 Conflicting store by thread x at 0x........ size 8
    at 0x........: child64 (tc19_shadowmem.c:105)
    by 0x........: steer (tc19_shadowmem.c:426)
@@ -3285,8 +3285,8 @@ Conflicting store by thread x at 0x........ size 8
 Address 0x........ is at offset 69 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
----------- double gran, 6 .. 92, skip 70 ----------
 
+---------- double gran, 6 .. 92, skip 70 ----------
 Conflicting store by thread x at 0x........ size 8
    at 0x........: child64 (tc19_shadowmem.c:105)
    by 0x........: steer (tc19_shadowmem.c:428)
@@ -3294,8 +3294,8 @@ Conflicting store by thread x at 0x........ size 8
 Address 0x........ is at offset 70 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
----------- double gran, 7 .. 92, skip 71 ----------
 
+---------- double gran, 7 .. 92, skip 71 ----------
 Conflicting store by thread x at 0x........ size 8
    at 0x........: child64 (tc19_shadowmem.c:105)
    by 0x........: steer (tc19_shadowmem.c:430)
@@ -3303,8 +3303,8 @@ Conflicting store by thread x at 0x........ size 8
 Address 0x........ is at offset 71 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
----------- double gran, 0 .. 92, skip 72 ----------
 
+---------- double gran, 0 .. 92, skip 72 ----------
 Conflicting store by thread x at 0x........ size 8
    at 0x........: child64 (tc19_shadowmem.c:105)
    by 0x........: steer (tc19_shadowmem.c:432)
@@ -3312,8 +3312,8 @@ Conflicting store by thread x at 0x........ size 8
 Address 0x........ is at offset 72 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
----------- double gran, 1 .. 92, skip 73 ----------
 
+---------- double gran, 1 .. 92, skip 73 ----------
 Conflicting store by thread x at 0x........ size 8
    at 0x........: child64 (tc19_shadowmem.c:105)
    by 0x........: steer (tc19_shadowmem.c:434)
@@ -3321,8 +3321,8 @@ Conflicting store by thread x at 0x........ size 8
 Address 0x........ is at offset 73 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
----------- double gran, 2 .. 92, skip 74 ----------
 
+---------- double gran, 2 .. 92, skip 74 ----------
 Conflicting store by thread x at 0x........ size 8
    at 0x........: child64 (tc19_shadowmem.c:105)
    by 0x........: steer (tc19_shadowmem.c:436)
@@ -3330,8 +3330,8 @@ Conflicting store by thread x at 0x........ size 8
 Address 0x........ is at offset 74 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
----------- double gran, 3 .. 92, skip 75 ----------
 
+---------- double gran, 3 .. 92, skip 75 ----------
 Conflicting store by thread x at 0x........ size 8
    at 0x........: child64 (tc19_shadowmem.c:105)
    by 0x........: steer (tc19_shadowmem.c:438)
@@ -3339,8 +3339,8 @@ Conflicting store by thread x at 0x........ size 8
 Address 0x........ is at offset 75 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
----------- double gran, 4 .. 92, skip 76 ----------
 
+---------- double gran, 4 .. 92, skip 76 ----------
 Conflicting store by thread x at 0x........ size 8
    at 0x........: child64 (tc19_shadowmem.c:105)
    by 0x........: steer (tc19_shadowmem.c:440)
@@ -3348,8 +3348,8 @@ Conflicting store by thread x at 0x........ size 8
 Address 0x........ is at offset 76 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
----------- double gran, 5 .. 92, skip 77 ----------
 
+---------- double gran, 5 .. 92, skip 77 ----------
 Conflicting store by thread x at 0x........ size 8
    at 0x........: child64 (tc19_shadowmem.c:105)
    by 0x........: steer (tc19_shadowmem.c:442)
@@ -3357,8 +3357,8 @@ Conflicting store by thread x at 0x........ size 8
 Address 0x........ is at offset 77 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
----------- double gran, 6 .. 92, skip 78 ----------
 
+---------- double gran, 6 .. 92, skip 78 ----------
 Conflicting store by thread x at 0x........ size 8
    at 0x........: child64 (tc19_shadowmem.c:105)
    by 0x........: steer (tc19_shadowmem.c:444)
@@ -3366,8 +3366,8 @@ Conflicting store by thread x at 0x........ size 8
 Address 0x........ is at offset 78 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
----------- double gran, 7 .. 92, skip 79 ----------
 
+---------- double gran, 7 .. 92, skip 79 ----------
 Conflicting store by thread x at 0x........ size 8
    at 0x........: child64 (tc19_shadowmem.c:105)
    by 0x........: steer (tc19_shadowmem.c:446)
@@ -3375,8 +3375,8 @@ Conflicting store by thread x at 0x........ size 8
 Address 0x........ is at offset 79 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
----------- double gran, 0 .. 92, skip 80 ----------
 
+---------- double gran, 0 .. 92, skip 80 ----------
 Conflicting store by thread x at 0x........ size 8
    at 0x........: child64 (tc19_shadowmem.c:105)
    by 0x........: steer (tc19_shadowmem.c:448)
@@ -3384,8 +3384,8 @@ Conflicting store by thread x at 0x........ size 8
 Address 0x........ is at offset 80 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
----------- double gran, 1 .. 92, skip 81 ----------
 
+---------- double gran, 1 .. 92, skip 81 ----------
 Conflicting store by thread x at 0x........ size 8
    at 0x........: child64 (tc19_shadowmem.c:105)
    by 0x........: steer (tc19_shadowmem.c:450)
@@ -3393,8 +3393,8 @@ Conflicting store by thread x at 0x........ size 8
 Address 0x........ is at offset 81 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
----------- double gran, 2 .. 92, skip 82 ----------
 
+---------- double gran, 2 .. 92, skip 82 ----------
 Conflicting store by thread x at 0x........ size 8
    at 0x........: child64 (tc19_shadowmem.c:105)
    by 0x........: steer (tc19_shadowmem.c:452)
@@ -3402,8 +3402,8 @@ Conflicting store by thread x at 0x........ size 8
 Address 0x........ is at offset 82 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
----------- double gran, 3 .. 92, skip 83 ----------
 
+---------- double gran, 3 .. 92, skip 83 ----------
 Conflicting store by thread x at 0x........ size 8
    at 0x........: child64 (tc19_shadowmem.c:105)
    by 0x........: steer (tc19_shadowmem.c:454)
@@ -3411,8 +3411,8 @@ Conflicting store by thread x at 0x........ size 8
 Address 0x........ is at offset 83 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
----------- double gran, 4 .. 92, skip 84 ----------
 
+---------- double gran, 4 .. 92, skip 84 ----------
 Conflicting store by thread x at 0x........ size 8
    at 0x........: child64 (tc19_shadowmem.c:105)
    by 0x........: steer (tc19_shadowmem.c:456)
@@ -3420,8 +3420,8 @@ Conflicting store by thread x at 0x........ size 8
 Address 0x........ is at offset 84 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
----------- double gran, 5 .. 92, skip 85 ----------
 
+---------- double gran, 5 .. 92, skip 85 ----------
 Conflicting store by thread x at 0x........ size 8
    at 0x........: child64 (tc19_shadowmem.c:105)
    by 0x........: steer (tc19_shadowmem.c:458)
@@ -3429,8 +3429,8 @@ Conflicting store by thread x at 0x........ size 8
 Address 0x........ is at offset 85 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
----------- double gran, 6 .. 92, skip 86 ----------
 
+---------- double gran, 6 .. 92, skip 86 ----------
 Conflicting store by thread x at 0x........ size 8
    at 0x........: child64 (tc19_shadowmem.c:105)
    by 0x........: steer (tc19_shadowmem.c:460)
@@ -3438,8 +3438,8 @@ Conflicting store by thread x at 0x........ size 8
 Address 0x........ is at offset 86 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
----------- double gran, 7 .. 92, skip 87 ----------
 
+---------- double gran, 7 .. 92, skip 87 ----------
 Conflicting store by thread x at 0x........ size 8
    at 0x........: child64 (tc19_shadowmem.c:105)
    by 0x........: steer (tc19_shadowmem.c:462)
@@ -3447,8 +3447,8 @@ Conflicting store by thread x at 0x........ size 8
 Address 0x........ is at offset 87 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
----------- double gran, 0 .. 92, skip 88 ----------
 
+---------- double gran, 0 .. 92, skip 88 ----------
 Conflicting store by thread x at 0x........ size 8
    at 0x........: child64 (tc19_shadowmem.c:105)
    by 0x........: steer (tc19_shadowmem.c:464)
@@ -3456,8 +3456,8 @@ Conflicting store by thread x at 0x........ size 8
 Address 0x........ is at offset 88 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
----------- double gran, 1 .. 92, skip 89 ----------
 
+---------- double gran, 1 .. 92, skip 89 ----------
 Conflicting store by thread x at 0x........ size 8
    at 0x........: child64 (tc19_shadowmem.c:105)
    by 0x........: steer (tc19_shadowmem.c:466)
@@ -3465,8 +3465,8 @@ Conflicting store by thread x at 0x........ size 8
 Address 0x........ is at offset 89 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
----------- double gran, 2 .. 92, skip 90 ----------
 
+---------- double gran, 2 .. 92, skip 90 ----------
 Conflicting store by thread x at 0x........ size 8
    at 0x........: child64 (tc19_shadowmem.c:105)
    by 0x........: steer (tc19_shadowmem.c:468)
@@ -3474,8 +3474,8 @@ Conflicting store by thread x at 0x........ size 8
 Address 0x........ is at offset 90 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
----------- double gran, 3 .. 92, skip 91 ----------
 
+---------- double gran, 3 .. 92, skip 91 ----------
 Conflicting store by thread x at 0x........ size 8
    at 0x........: child64 (tc19_shadowmem.c:105)
    by 0x........: steer (tc19_shadowmem.c:470)
@@ -3483,5 +3483,6 @@ Conflicting store by thread x at 0x........ size 8
 Address 0x........ is at offset 91 from 0x......... Allocation context:
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
+
 
 ERROR SUMMARY: 385 errors from 385 contexts (suppressed: 0 from 0)

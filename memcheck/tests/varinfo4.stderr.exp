@@ -18,3 +18,4 @@ Uninitialised byte(s) found during client check request
    by 0x........: main (varinfo4.c:56)
  Location 0x........ is 1 byte inside a[3].xyzzy[21].c2[2],
  declared at varinfo4.c:45, in frame #1 of thread 1
+

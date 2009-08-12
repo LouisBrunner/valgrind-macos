@@ -24,4 +24,5 @@ Possible data race during write of size 4 at 0x........ by thread #x
  Location 0x........ is 0 bytes inside global var "x"
  declared at tc01_simple_race.c:9
 
+
 ERROR SUMMARY: 2 errors from 2 contexts (suppressed: 0 from 0)

@@ -77,4 +77,5 @@ Thread #x deallocated location 0x........ containing a locked lock
    by 0x........: nearly_main (tc09_bad_unlock.c:31)
    by 0x........: main (tc09_bad_unlock.c:50)
 
+
 ERROR SUMMARY: 8 errors from 8 contexts (suppressed: 0 from 0)

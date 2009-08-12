@@ -8,4 +8,5 @@ Thread #x unlocked a not-locked lock at 0x........
    at 0x........: pthread_rwlock_init (hg_intercepts.c:...)
    by 0x........: main (tc12_rwl_trivial.c:24)
 
+
 ERROR SUMMARY: 1 errors from 1 contexts (suppressed: 0 from 0)

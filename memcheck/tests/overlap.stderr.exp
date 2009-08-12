@@ -25,3 +25,4 @@ Source and destination overlap in strncat(0x........, 0x........, 21)
 Source and destination overlap in strncat(0x........, 0x........, 21)
    at 0x........: strncat (mc_replace_strmem.c:...)
    by 0x........: main (overlap.c:113)
+

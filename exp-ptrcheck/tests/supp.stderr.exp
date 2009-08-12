@@ -7,4 +7,5 @@ Syscall param write(buf) is non-contiguous
    by 0x........: main (supp.c:12)
  Last byte is not inside a known block
 
+
 ERROR SUMMARY: 1 errors from 1 contexts (suppressed: 0 from 0)

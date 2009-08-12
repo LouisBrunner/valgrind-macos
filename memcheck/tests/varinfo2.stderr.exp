@@ -18,3 +18,4 @@ Uninitialised byte(s) found during client check request
    by 0x........: main (varinfo2.c:51)
  Location 0x........ is 1 byte inside local var "var"
  declared at varinfo2.c:37, in frame #1 of thread 1
+

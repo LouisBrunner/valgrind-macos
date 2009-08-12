@@ -23,4 +23,5 @@ Invalid write of size 1
  Expected: stack array "buf" in frame 4 back from here
  Actual:   stack array "beforebuf" in frame 4 back from here
 
+
 ERROR SUMMARY: 3 errors from 3 contexts (suppressed: 0 from 0)

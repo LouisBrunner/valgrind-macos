@@ -11,6 +11,7 @@ Conflicting store by thread 3 at 0x........ size 4
    by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
 Location 0x........ is 0 bytes inside local var "s_racy"
 declared at rwlock_race.c:18, in frame #? of thread 3
+
 Result: 2
 
 ERROR SUMMARY: 2 errors from 2 contexts (suppressed: 0 from 0)

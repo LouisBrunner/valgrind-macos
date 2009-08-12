@@ -20,4 +20,5 @@ Thread #x is the program's root thread
 Thread #x: Exiting thread still holds 1 lock
    ...
 
+
 ERROR SUMMARY: 3 errors from 3 contexts (suppressed: 0 from 0)

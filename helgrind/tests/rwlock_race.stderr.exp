@@ -19,6 +19,7 @@ Possible data race during write of size 4 at 0x........ by thread #x
    ...
  Location 0x........ is 0 bytes inside local var "s_racy"
  declared at rwlock_race.c:18, in frame #x of thread x
+
 Result: 2
 
 ERROR SUMMARY: 1 errors from 1 contexts (suppressed: 0 from 0)

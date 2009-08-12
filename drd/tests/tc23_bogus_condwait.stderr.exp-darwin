@@ -59,4 +59,5 @@ mutex 0x........ was first observed at:
    at 0x........: pthread_mutex_init (drd_pthread_intercepts.c:?)
    by 0x........: main (tc23_bogus_condwait.c:53)
 
+
 ERROR SUMMARY: 9 errors from 7 contexts (suppressed: 0 from 0)

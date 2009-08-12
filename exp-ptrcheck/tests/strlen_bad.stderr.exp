@@ -39,4 +39,5 @@ Invalid read of size 4
    by 0x........: __strdup (in /...libc...)
    by 0x........: main (strlen.c:14)
 
+
 ERROR SUMMARY: 4 errors from 4 contexts (suppressed: 0 from 0)

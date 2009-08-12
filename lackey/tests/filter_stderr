@@ -5,7 +5,7 @@ dir=`dirname $0`
 $dir/../../tests/filter_stderr_basic    |
 
 # Remove "Lackey, ..." line and the following copyright line.
-sed "/^Lackey, an example Valgrind tool./ , /./ d" |
+sed "/^Lackey, an example Valgrind tool/ , /./ d" |
 
 # Filter all the numbers.
 ../../tests/filter_numbers |

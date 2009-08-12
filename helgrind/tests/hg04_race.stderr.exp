@@ -31,4 +31,5 @@ Possible data race during write of size 4 at 0x........ by thread #x
  Location 0x........ is 0 bytes inside local var "shared"
  declared at hg04_race.c:6, in frame #x of thread x
 
+
 ERROR SUMMARY: 2 errors from 2 contexts (suppressed: 0 from 0)

@@ -42,4 +42,5 @@ Possible data race during write of size 4 at 0x........ by thread #x
  Location 0x........ is 0 bytes inside global var "unprot2"
  declared at tc06_two_races.c:9
 
+
 ERROR SUMMARY: 4 errors from 4 contexts (suppressed: 0 from 0)

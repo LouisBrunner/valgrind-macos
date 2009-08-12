@@ -106,4 +106,5 @@ Last byte (0x........) is 0 bytes within a 6-byte block alloc'd
    by 0x........: __libc_start_main (...libc...)
    by 0x........: ...
 
+
 ERROR SUMMARY: 8 errors from 8 contexts (suppressed: 0 from 0)

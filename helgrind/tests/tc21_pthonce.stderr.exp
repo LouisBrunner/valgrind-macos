@@ -31,4 +31,5 @@ Possible data race during write of size 4 at 0x........ by thread #x
  Location 0x........ is 0 bytes inside local var "unprotected2"
  declared at tc21_pthonce.c:51, in frame #x of thread x
 
+
 ERROR SUMMARY: 2 errors from 2 contexts (suppressed: 0 from 0)

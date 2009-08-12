@@ -30,4 +30,5 @@ mutex 0x........ was first observed at:
    by 0x........: bar (tc04_free_lock.c:38)
    by 0x........: main (tc04_free_lock.c:28)
 
+
 ERROR SUMMARY: 4 errors from 4 contexts (suppressed: 0 from 0)

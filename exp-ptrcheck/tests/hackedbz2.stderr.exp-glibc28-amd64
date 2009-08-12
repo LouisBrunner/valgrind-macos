@@ -12,4 +12,5 @@ Invalid read of size 1
  Expected: global array "myprintf_buf" in object with soname "NONE"
  Actual:   unknown
 
+
 ERROR SUMMARY: 1 errors from 1 contexts (suppressed: 0 from 0)

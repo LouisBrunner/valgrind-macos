@@ -104,4 +104,5 @@ Invalid read of size 2
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (partial.c:10)
 
+
 ERROR SUMMARY: 15 errors from 15 contexts (suppressed: 0 from 0)

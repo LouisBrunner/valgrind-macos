@@ -10,4 +10,5 @@ Thread #x: lock order "0x........ before 0x........" violated
    by 0x........: mythread_wrapper (hg_intercepts.c:...)
    ...
 
+
 ERROR SUMMARY: 1000 errors from 1 contexts (suppressed: 0 from 0)

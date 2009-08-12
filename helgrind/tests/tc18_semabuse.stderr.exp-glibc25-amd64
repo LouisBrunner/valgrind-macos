@@ -11,4 +11,5 @@ Thread #x: Bug in libpthread: sem_wait succeeded on semaphore without prior sem_
    by 0x........: sem_wait (hg_intercepts.c:...)
    by 0x........: main (tc18_semabuse.c:34)
 
+
 ERROR SUMMARY: 2 errors from 2 contexts (suppressed: 0 from 0)

@@ -176,4 +176,5 @@ Uninitialised byte(s) found during client check request
    by 0x........: main (varinfo5.c:5)
  Location 0x........ is 1 byte inside a[3].xyzzy[21].c2[2],
  declared at varinfo5so.c:135, in frame #1 of thread 1
+
 answer is 0

@@ -10,4 +10,5 @@ barrier 0x........ was first observed at:
    at 0x........: pthread_barrier_init (drd_pthread_intercepts.c:?)
    by 0x........: main (pth_barrier_race.c:?)
 
+
 ERROR SUMMARY: 1 errors from 1 contexts (suppressed: 0 from 0)

@@ -4,6 +4,7 @@ Jump to the invalid address stated on the next line
    by 0x........: (below main)
  Address 0x........ is not stack'd, malloc'd or (recently) free'd
 
+
 Process terminating with default action of signal 11 (SIGSEGV)
  Access not within mapped region at address 0x........
    at 0x........: ???
@@ -15,9 +16,10 @@ Process terminating with default action of signal 11 (SIGSEGV)
  The main thread stack size used in this run was ....
 
 HEAP SUMMARY:
-    in use at exit: ... bytes in ... blocks.
-  total heap usage: ... allocs, ... frees, ... bytes allocated.
-For a detailed leak analysis, rerun with: --leak-check=yes
+    in use at exit: ... bytes in ... blocks
+  total heap usage: ... allocs, ... frees, ... bytes allocated
+
+For a detailed leak analysis, rerun with: --leak-check=full
 
 For counts of detected and suppressed errors, rerun with: -v
 ERROR SUMMARY: 1 errors from 1 contexts (suppressed: 0 from 0)

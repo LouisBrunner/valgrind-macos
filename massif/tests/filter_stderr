@@ -5,7 +5,7 @@ dir=`dirname $0`
 $dir/../../tests/filter_stderr_basic                |
 
 # Remove "Massif, ..." line and the following copyright line.
-sed "/^Massif, a heap profiler./ , /./ d" |
+sed "/^Massif, a heap profiler/ , /./ d" |
 
 # Remove AIX-only alloc-fns
 perl -n -e 'print if !/^Massif:   (malloc|calloc|realloc|memalign)_common$/' |

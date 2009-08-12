@@ -11,6 +11,7 @@ mutex 0x........ was first observed at:
    by 0x........: lock_twice (recursive_mutex.c:?)
    by 0x........: main (recursive_mutex.c:?)
 
+
 Done.
 
 ERROR SUMMARY: 1 errors from 1 contexts (suppressed: 0 from 0)

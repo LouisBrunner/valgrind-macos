@@ -23,4 +23,5 @@ Thread #x's call to pthread_mutex_unlock failed
    by 0x........: nearly_main (tc10_rec_lock.c:42)
    by 0x........: main (tc10_rec_lock.c:47)
 
+
 ERROR SUMMARY: 2 errors from 2 contexts (suppressed: 0 from 0)

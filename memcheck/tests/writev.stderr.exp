@@ -2,14 +2,15 @@ Test file created.
 Syscall param writev(vector[...]) points to unaddressable byte(s)
    ...
  Address 0x........ is not stack'd, malloc'd or (recently) free'd
-Received EFAULT as expected
 
+Received EFAULT as expected
 Syscall param writev(vector) points to unaddressable byte(s)
    ...
  Address 0x........ is not stack'd, malloc'd or (recently) free'd
-Received EINVAL as expected
 
+Received EINVAL as expected
 Syscall param readv(vector) points to unaddressable byte(s)
    ...
  Address 0x........ is not stack'd, malloc'd or (recently) free'd
+
 Received EINVAL as expected

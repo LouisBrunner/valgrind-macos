@@ -31,8 +31,8 @@ mutex 0x........ was first observed at:
    at 0x........: pthread_mutex_init (drd_pthread_intercepts.c:?)
    by 0x........: nearly_main (tc09_bad_unlock.c:31)
    by 0x........: main (tc09_bad_unlock.c:49)
----------------------
 
+---------------------
 Mutex not locked by calling thread: mutex 0x........, recursion count 0, owner 1.
    at 0x........: pthread_mutex_unlock (drd_pthread_intercepts.c:?)
    by 0x........: nearly_main (tc09_bad_unlock.c:27)
@@ -54,5 +54,6 @@ mutex 0x........ was first observed at:
    at 0x........: pthread_mutex_init (drd_pthread_intercepts.c:?)
    by 0x........: nearly_main (tc09_bad_unlock.c:31)
    by 0x........: main (tc09_bad_unlock.c:50)
+
 
 ERROR SUMMARY: 8 errors from 7 contexts (suppressed: 0 from 0)

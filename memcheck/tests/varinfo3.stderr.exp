@@ -55,3 +55,4 @@ Uninitialised byte(s) found during client check request
    by 0x........: main (varinfo3.c:66)
  Location 0x........ is 0 bytes inside nonstatic_local_undef[8],
  declared at varinfo3.c:53, in frame #2 of thread 1
+

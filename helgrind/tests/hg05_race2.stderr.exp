@@ -31,4 +31,5 @@ Possible data race during write of size 4 at 0x........ by thread #x
  Location 0x........ is 0 bytes inside foo.poot[5].plop[11],
  declared at hg05_race2.c:24, in frame #x of thread x
 
+
 ERROR SUMMARY: 2 errors from 2 contexts (suppressed: 0 from 0)

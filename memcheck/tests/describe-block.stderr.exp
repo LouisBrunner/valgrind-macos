@@ -4,10 +4,12 @@ Invalid write of size 1
  Address 0x........ is 0 bytes inside a magic foople zone of size 4,096 client-defined
    at 0x........: main (describe-block.c:6)
 
+
 HEAP SUMMARY:
-    in use at exit: ... bytes in ... blocks.
-  total heap usage: ... allocs, ... frees, ... bytes allocated.
-For a detailed leak analysis, rerun with: --leak-check=yes
+    in use at exit: ... bytes in ... blocks
+  total heap usage: ... allocs, ... frees, ... bytes allocated
+
+For a detailed leak analysis, rerun with: --leak-check=full
 
 For counts of detected and suppressed errors, rerun with: -v
 ERROR SUMMARY: 1 errors from 1 contexts (suppressed: 0 from 0)

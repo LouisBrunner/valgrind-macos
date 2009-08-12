@@ -1,9 +1,10 @@
 
 
 HEAP SUMMARY:
-    in use at exit: ... bytes in ... blocks.
-  total heap usage: ... allocs, ... frees, ... bytes allocated.
-For a detailed leak analysis, rerun with: --leak-check=yes
+    in use at exit: ... bytes in ... blocks
+  total heap usage: ... allocs, ... frees, ... bytes allocated
+
+For a detailed leak analysis, rerun with: --leak-check=full
 
 For counts of detected and suppressed errors, rerun with: -v
 ERROR SUMMARY: 0 errors from 0 contexts (suppressed: 0 from 0)
@@ -17,6 +18,7 @@ Invalid write of size 1
    by 0x........: main (addressable.c:125)
  Address 0x........ is not stack'd, malloc'd or (recently) free'd
 
+
 Process terminating with default action of signal N (SIGSEGV or SIGBUS)
  Bad memory (SIGSEGV or SIGBUS) at address 0x........
    at 0x........: test2 (addressable.c:51)
@@ -28,17 +30,19 @@ Process terminating with default action of signal N (SIGSEGV or SIGBUS)
  The main thread stack size used in this run was ....
 
 HEAP SUMMARY:
-    in use at exit: ... bytes in ... blocks.
-  total heap usage: ... allocs, ... frees, ... bytes allocated.
-For a detailed leak analysis, rerun with: --leak-check=yes
+    in use at exit: ... bytes in ... blocks
+  total heap usage: ... allocs, ... frees, ... bytes allocated
+
+For a detailed leak analysis, rerun with: --leak-check=full
 
 For counts of detected and suppressed errors, rerun with: -v
 ERROR SUMMARY: 2 errors from 2 contexts (suppressed: 0 from 0)
 
 HEAP SUMMARY:
-    in use at exit: ... bytes in ... blocks.
-  total heap usage: ... allocs, ... frees, ... bytes allocated.
-For a detailed leak analysis, rerun with: --leak-check=yes
+    in use at exit: ... bytes in ... blocks
+  total heap usage: ... allocs, ... frees, ... bytes allocated
+
+For a detailed leak analysis, rerun with: --leak-check=full
 
 For counts of detected and suppressed errors, rerun with: -v
 ERROR SUMMARY: 0 errors from 0 contexts (suppressed: 0 from 0)
@@ -49,9 +53,10 @@ Process terminating with default action of signal N (SIGSEGV or SIGBUS)
    by 0x........: main (addressable.c:125)
 
 HEAP SUMMARY:
-    in use at exit: ... bytes in ... blocks.
-  total heap usage: ... allocs, ... frees, ... bytes allocated.
-For a detailed leak analysis, rerun with: --leak-check=yes
+    in use at exit: ... bytes in ... blocks
+  total heap usage: ... allocs, ... frees, ... bytes allocated
+
+For a detailed leak analysis, rerun with: --leak-check=full
 
 For counts of detected and suppressed errors, rerun with: -v
 ERROR SUMMARY: 0 errors from 0 contexts (suppressed: 0 from 0)
@@ -65,19 +70,22 @@ Uninitialised byte(s) found during client check request
    by 0x........: main (addressable.c:125)
  Address 0x........ is not stack'd, malloc'd or (recently) free'd
 
+
 HEAP SUMMARY:
-    in use at exit: ... bytes in ... blocks.
-  total heap usage: ... allocs, ... frees, ... bytes allocated.
-For a detailed leak analysis, rerun with: --leak-check=yes
+    in use at exit: ... bytes in ... blocks
+  total heap usage: ... allocs, ... frees, ... bytes allocated
+
+For a detailed leak analysis, rerun with: --leak-check=full
 
 For counts of detected and suppressed errors, rerun with: -v
 Use --track-origins=yes to see where uninitialised values come from
 ERROR SUMMARY: 2 errors from 2 contexts (suppressed: 0 from 0)
 
 HEAP SUMMARY:
-    in use at exit: ... bytes in ... blocks.
-  total heap usage: ... allocs, ... frees, ... bytes allocated.
-For a detailed leak analysis, rerun with: --leak-check=yes
+    in use at exit: ... bytes in ... blocks
+  total heap usage: ... allocs, ... frees, ... bytes allocated
+
+For a detailed leak analysis, rerun with: --leak-check=full
 
 For counts of detected and suppressed errors, rerun with: -v
 ERROR SUMMARY: 0 errors from 0 contexts (suppressed: 0 from 0)

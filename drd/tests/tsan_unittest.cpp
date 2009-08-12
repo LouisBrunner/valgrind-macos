@@ -5780,67 +5780,55 @@ REGISTER_TEST(Run, 122)
 // test123 TP: accesses of different sizes. {{{1
 namespace test123 {
 
-uint64_t MEM[8];
+union uint_union {
+  uint64_t u64[8];
+  uint32_t u32[16];
+  uint16_t u16[32];
+  uint8_t  u8[64];
+};
 
-#define GenericWrite(p,size,off) { \
-  if (size == 64) {\
-    CHECK(off == 0);\
-    (p)[off] = 1;\
-  } else if (size == 32) {\
-    CHECK(off <= 2);\
-    uint32_t *x = (uint32_t*)(p);\
-    x[off] = 1;\
-  } else if (size == 16) {\
-    CHECK(off <= 4);\
-    uint16_t *x = (uint16_t*)(p);\
-    x[off] = 1;\
-  } else if (size == 8) {\
-    CHECK(off <= 8);\
-    uint8_t *x = (uint8_t*)(p);\
-    x[off] = 1;\
-  } else {\
-    CHECK(0);\
-  }\
-}\
+uint_union MEM;
+
+#define GenericWrite(p) { *(p) = 1; }
 
 // Q. Hey dude, why so many functions? 
 // A. I need different stack traces for different accesses.
 
-void Wr64_0() { GenericWrite(&MEM[0], 64, 0); } 
-void Wr64_1() { GenericWrite(&MEM[1], 64, 0); } 
-void Wr64_2() { GenericWrite(&MEM[2], 64, 0); } 
-void Wr64_3() { GenericWrite(&MEM[3], 64, 0); } 
-void Wr64_4() { GenericWrite(&MEM[4], 64, 0); } 
-void Wr64_5() { GenericWrite(&MEM[5], 64, 0); } 
-void Wr64_6() { GenericWrite(&MEM[6], 64, 0); } 
-void Wr64_7() { GenericWrite(&MEM[7], 64, 0); } 
+void Wr64_0() { GenericWrite(&MEM.u64[0]); } 
+void Wr64_1() { GenericWrite(&MEM.u64[1]); } 
+void Wr64_2() { GenericWrite(&MEM.u64[2]); } 
+void Wr64_3() { GenericWrite(&MEM.u64[3]); } 
+void Wr64_4() { GenericWrite(&MEM.u64[4]); } 
+void Wr64_5() { GenericWrite(&MEM.u64[5]); } 
+void Wr64_6() { GenericWrite(&MEM.u64[6]); } 
+void Wr64_7() { GenericWrite(&MEM.u64[7]); } 
 
-void Wr32_0() { GenericWrite(&MEM[0], 32, 0); } 
-void Wr32_1() { GenericWrite(&MEM[1], 32, 1); } 
-void Wr32_2() { GenericWrite(&MEM[2], 32, 0); } 
-void Wr32_3() { GenericWrite(&MEM[3], 32, 1); } 
-void Wr32_4() { GenericWrite(&MEM[4], 32, 0); } 
-void Wr32_5() { GenericWrite(&MEM[5], 32, 1); } 
-void Wr32_6() { GenericWrite(&MEM[6], 32, 0); } 
-void Wr32_7() { GenericWrite(&MEM[7], 32, 1); } 
+void Wr32_0() { GenericWrite(&MEM.u32[0]); } 
+void Wr32_1() { GenericWrite(&MEM.u32[3]); } 
+void Wr32_2() { GenericWrite(&MEM.u32[4]); } 
+void Wr32_3() { GenericWrite(&MEM.u32[7]); } 
+void Wr32_4() { GenericWrite(&MEM.u32[8]); } 
+void Wr32_5() { GenericWrite(&MEM.u32[11]); } 
+void Wr32_6() { GenericWrite(&MEM.u32[12]); } 
+void Wr32_7() { GenericWrite(&MEM.u32[15]); } 
 
-void Wr16_0() { GenericWrite(&MEM[0], 16, 0); } 
-void Wr16_1() { GenericWrite(&MEM[1], 16, 1); } 
-void Wr16_2() { GenericWrite(&MEM[2], 16, 2); } 
-void Wr16_3() { GenericWrite(&MEM[3], 16, 3); } 
-void Wr16_4() { GenericWrite(&MEM[4], 16, 0); } 
-void Wr16_5() { GenericWrite(&MEM[5], 16, 1); } 
-void Wr16_6() { GenericWrite(&MEM[6], 16, 2); } 
-void Wr16_7() { GenericWrite(&MEM[7], 16, 3); } 
+void Wr16_0() { GenericWrite(&MEM.u16[0]); } 
+void Wr16_1() { GenericWrite(&MEM.u16[5]); } 
+void Wr16_2() { GenericWrite(&MEM.u16[10]); } 
+void Wr16_3() { GenericWrite(&MEM.u16[15]); } 
+void Wr16_4() { GenericWrite(&MEM.u16[16]); } 
+void Wr16_5() { GenericWrite(&MEM.u16[21]); } 
+void Wr16_6() { GenericWrite(&MEM.u16[26]); } 
+void Wr16_7() { GenericWrite(&MEM.u16[31]); } 
 
-void Wr8_0() { GenericWrite(&MEM[0], 8, 0); } 
-void Wr8_1() { GenericWrite(&MEM[1], 8, 1); } 
-void Wr8_2() { GenericWrite(&MEM[2], 8, 2); } 
-void Wr8_3() { GenericWrite(&MEM[3], 8, 3); } 
-void Wr8_4() { GenericWrite(&MEM[4], 8, 4); } 
-void Wr8_5() { GenericWrite(&MEM[5], 8, 5); } 
-void Wr8_6() { GenericWrite(&MEM[6], 8, 6); } 
-void Wr8_7() { GenericWrite(&MEM[7], 8, 7); } 
+void Wr8_0() { GenericWrite(&MEM.u8[0]); } 
+void Wr8_1() { GenericWrite(&MEM.u8[9]); } 
+void Wr8_2() { GenericWrite(&MEM.u8[18]); } 
+void Wr8_3() { GenericWrite(&MEM.u8[27]); } 
+void Wr8_4() { GenericWrite(&MEM.u8[36]); } 
+void Wr8_5() { GenericWrite(&MEM.u8[45]); } 
+void Wr8_6() { GenericWrite(&MEM.u8[54]); } 
+void Wr8_7() { GenericWrite(&MEM.u8[63]); } 
 
 void WriteAll64() {
   Wr64_0();
@@ -5906,14 +5894,14 @@ typedef void (*F)(void);
 
 void TestTwoSizes(F f1, F f2) {
   // first f1, then f2
-  ANNOTATE_NEW_MEMORY(MEM, sizeof(MEM));
-  memset(MEM, 0, sizeof(MEM));
+  ANNOTATE_NEW_MEMORY(&MEM, sizeof(MEM));
+  memset(&MEM, 0, sizeof(MEM));
   MyThreadArray t1(f1, f2);
   t1.Start();
   t1.Join();
   // reverse order
-  ANNOTATE_NEW_MEMORY(MEM, sizeof(MEM));
-  memset(MEM, 0, sizeof(MEM));
+  ANNOTATE_NEW_MEMORY(&MEM, sizeof(MEM));
+  memset(&MEM, 0, sizeof(MEM));
   MyThreadArray t2(f2, f1);
   t2.Start();
   t2.Join();

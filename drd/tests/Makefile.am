@@ -27,6 +27,8 @@ EXTRA_DIST =                                        \
 	annotate_ignore_read.vgtest		    \
 	annotate_ignore_rw.stderr.exp		    \
 	annotate_ignore_rw.vgtest		    \
+	annotate_ignore_rw2.stderr.exp		    \
+	annotate_ignore_rw2.vgtest		    \
 	annotate_trace_memory.stderr.exp	    \
 	annotate_trace_memory.vgtest		    \
 	atomic_var.stderr.exp			    \
@@ -216,6 +218,7 @@ EXTRA_DIST =                                        \
 	tc20_verifywrap2.stderr.exp-glibc2.5        \
 	tc20_verifywrap2.stderr.exp-glibc2.5-ppc    \
 	tc20_verifywrap2.stderr.exp-glibc2.8        \
+	tc20_verifywrap2.stderr.exp-glibc2.10       \
 	tc20_verifywrap2.vgtest                     \
 	tc21_pthonce.stderr.exp                     \
 	tc21_pthonce.stdout.exp                     \

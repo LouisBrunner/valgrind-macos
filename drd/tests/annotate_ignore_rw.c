@@ -8,11 +8,14 @@
 
 static int s_a;
 static int s_b;
+static int s_c;
 
 static void* thread_func(void* arg)
 {
   /* Read s_a and modify s_b. */
   s_b = s_a;
+  /* Modify s_c. */
+  s_c = 1;
 
   return NULL;
 }
@@ -21,6 +24,7 @@ int main(int argc, char** argv)
 {
   int optchar;
   int ign_rw = 1;
+  int tmp;
   pthread_t tid;
   
   while ((optchar = getopt(argc, argv, "r")) != EOF)
@@ -42,6 +46,16 @@ int main(int argc, char** argv)
   s_a = s_b;
   if (ign_rw)
     ANNOTATE_IGNORE_READS_AND_WRITES_END();
+
+  /*
+   * Insert a delay here in order to make sure the load of s_c happens
+   * after s_c has been modified.
+   */
+  sleep(1);
+
+  /* Read s_c. */
+  tmp = s_c;
+
   pthread_join(tid, 0);
 
   fprintf(stderr, "Finished.\n");

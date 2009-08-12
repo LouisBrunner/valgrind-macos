@@ -879,23 +879,22 @@ static void print_results(ThreadId tid, Bool is_full_check)
    }
 
    if (VG_(clo_verbosity) > 0 && !VG_(clo_xml)) {
-      VG_(umsg)("\n");
       VG_(umsg)("LEAK SUMMARY:\n");
-      VG_(umsg)("   definitely lost: %'lu bytes in %'lu blocks.\n",
+      VG_(umsg)("   definitely lost: %'lu bytes in %'lu blocks\n",
                 MC_(bytes_leaked), MC_(blocks_leaked) );
-      VG_(umsg)("   indirectly lost: %'lu bytes in %'lu blocks.\n",
+      VG_(umsg)("   indirectly lost: %'lu bytes in %'lu blocks\n",
                 MC_(bytes_indirect), MC_(blocks_indirect) );
-      VG_(umsg)("     possibly lost: %'lu bytes in %'lu blocks.\n",
+      VG_(umsg)("     possibly lost: %'lu bytes in %'lu blocks\n",
                 MC_(bytes_dubious), MC_(blocks_dubious) );
-      VG_(umsg)("   still reachable: %'lu bytes in %'lu blocks.\n",
+      VG_(umsg)("   still reachable: %'lu bytes in %'lu blocks\n",
                 MC_(bytes_reachable), MC_(blocks_reachable) );
-      VG_(umsg)("        suppressed: %'lu bytes in %'lu blocks.\n",
+      VG_(umsg)("        suppressed: %'lu bytes in %'lu blocks\n",
                 MC_(bytes_suppressed), MC_(blocks_suppressed) );
       if (!is_full_check &&
           (MC_(blocks_leaked) + MC_(blocks_indirect) +
            MC_(blocks_dubious) + MC_(blocks_reachable)) > 0) {
          VG_(umsg)("Rerun with --leak-check=full to see details "
-                   "of leaked memory.\n");
+                   "of leaked memory\n");
       }
       if (is_full_check &&
           MC_(blocks_reachable) > 0 && !MC_(clo_show_reachable))
@@ -905,6 +904,7 @@ static void print_results(ThreadId tid, Bool is_full_check)
          VG_(umsg)("To see them, rerun with: --leak-check=full "
                    "--show-reachable=yes\n");
       }
+      VG_(umsg)("\n");
    }
 }
 
@@ -923,8 +923,8 @@ void MC_(detect_memory_leaks) ( ThreadId tid, LeakCheckMode mode )
    if (lc_n_chunks == 0) {
       tl_assert(lc_chunks == NULL);
       if (VG_(clo_verbosity) >= 1 && !VG_(clo_xml)) {
+         VG_(umsg)("All heap blocks were freed -- no leaks are possible\n");
          VG_(umsg)("\n");
-         VG_(umsg)("All heap blocks were freed -- no leaks are possible.\n");
       }
       return;
    }
@@ -1012,8 +1012,7 @@ void MC_(detect_memory_leaks) ( ThreadId tid, LeakCheckMode mode )
 
    // Verbosity.
    if (VG_(clo_verbosity) > 1 && !VG_(clo_xml)) {
-      VG_(umsg)( "\n" );
-      VG_(umsg)( "Searching for pointers to %'d not-freed blocks.\n",
+      VG_(umsg)( "Searching for pointers to %'d not-freed blocks\n",
                  lc_n_chunks );
    }
 
@@ -1073,8 +1072,10 @@ void MC_(detect_memory_leaks) ( ThreadId tid, LeakCheckMode mode )
    // from the root-set has been traced.
    lc_process_markstack(/*clique*/-1);
 
-   if (VG_(clo_verbosity) > 1 && !VG_(clo_xml))
-      VG_(umsg)("Checked %'lu bytes.\n", lc_scanned_szB);
+   if (VG_(clo_verbosity) > 1 && !VG_(clo_xml)) {
+      VG_(umsg)("Checked %'lu bytes\n", lc_scanned_szB);
+      VG_(umsg)( "\n" );
+   }
 
    // Trace all the leaked blocks to determine which are directly leaked and
    // which are indirectly leaked.  For each Unreached block, push it onto

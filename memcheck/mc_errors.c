@@ -729,7 +729,6 @@ void MC_(pp_Error) ( Error* err )
             }
             VG_(pp_ExeContext)(lr->key.allocated_at);
          } else { /* ! if (xml) */
-            emit("\n");
             if (lr->indirect_szB > 0) {
                emit(
                   "%'lu (%'lu direct, %'lu indirect) bytes in %'u blocks"

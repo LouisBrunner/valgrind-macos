@@ -904,14 +904,10 @@ void MC_(print_malloc_stats) ( void )
 
    VG_(umsg)(
       "HEAP SUMMARY:\n"
-   );
-   VG_(umsg)(
-      "    in use at exit: %'llu bytes in %'lu blocks.\n",
-      nbytes, nblocks
-   );
-   VG_(umsg)(
-      "  total heap usage: %'lu allocs, %'lu frees, "
-      "%'llu bytes allocated.\n",
+      "    in use at exit: %'llu bytes in %'lu blocks\n"
+      "  total heap usage: %'lu allocs, %'lu frees, %'llu bytes allocated\n"
+      "\n",
+      nbytes, nblocks,
       cmalloc_n_mallocs,
       cmalloc_n_frees, cmalloc_bs_mallocd
    );

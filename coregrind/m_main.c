@@ -1018,7 +1018,7 @@ static void print_preamble ( Bool logging_to_fd,
          VG_(printf_xml)("<preamble>\n");
 
       /* Tool details */
-      umsg_or_xml( "%s%s%s%s, %s.%s\n",
+      umsg_or_xml( "%s%s%s%s, %s%s\n",
                    xpre,
                    VG_(details).name, 
                    NULL == VG_(details).version ? "" : "-",
@@ -1029,7 +1029,7 @@ static void print_preamble ( Bool logging_to_fd,
 
       if (VG_(strlen)(toolname) >= 4 && VG_STREQN(4, toolname, "exp-")) {
          umsg_or_xml(
-            "%sNOTE: This is an Experimental-Class Valgrind Tool.%s\n",
+            "%sNOTE: This is an Experimental-Class Valgrind Tool%s\n",
             xpre, xpost
          );
       }
@@ -1060,6 +1060,7 @@ static void print_preamble ( Bool logging_to_fd,
          VG_(printf_xml)("</preamble>\n");
    }
 
+   // Print the parent PID, and other stuff, if necessary.
    if (!VG_(clo_xml) && VG_(clo_verbosity) > 0 && !logging_to_fd) {
       VG_(umsg)("Parent PID: %d\n", VG_(getppid)());
    }
@@ -1111,11 +1112,11 @@ static void print_preamble ( Bool logging_to_fd,
       VG_(printf_xml)("</args>\n");
    }
 
-   // Empty line after the preamble
-   if (VG_(clo_verbosity) > 0)
-      VG_(umsg)("\n");
+   // Last thing in the preamble is a blank line.
    if (VG_(clo_xml))
       VG_(printf_xml)("\n");
+   else if (VG_(clo_verbosity) > 0)
+      VG_(umsg)("\n");
 
    if (VG_(clo_verbosity) > 1) {
       SysRes fd;
@@ -2394,10 +2395,11 @@ void shutdown_actions_NORETURN( ThreadId tid,
    // Finalisation: cleanup, messages, etc.  Order not so important, only
    // affects what order the messages come.
    //--------------------------------------------------------------
-   if (VG_(clo_verbosity) > 0)
-      VG_(message)(Vg_UserMsg, "\n");
+   // First thing in the post-amble is a blank line.
    if (VG_(clo_xml))
       VG_(printf_xml)("\n");
+   else if (VG_(clo_verbosity) > 0)
+      VG_(message)(Vg_UserMsg, "\n");
 
    if (VG_(clo_xml)) {
       HChar buf[50];
@@ -2405,7 +2407,8 @@ void shutdown_actions_NORETURN( ThreadId tid,
       VG_(printf_xml_no_f_c)( "<status>\n"
                               "  <state>FINISHED</state>\n"
                               "  <time>%t</time>\n"
-                              "</status>\n",
+                              "</status>\n"
+                              "\n",
                               buf);
    }
 
@@ -2420,9 +2423,7 @@ void shutdown_actions_NORETURN( ThreadId tid,
 
    /* Show the error counts. */
    if (VG_(needs).core_errors || VG_(needs).tool_errors) {
-      VG_(printf_xml)( "\n" );
       VG_(show_error_counts_as_XML)();
-      VG_(printf_xml)( "\n" );
    }
 
    /* In XML mode, this merely prints the used suppressions. */

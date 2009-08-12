@@ -1492,8 +1492,8 @@ static void default_action(const vki_siginfo_t *info, ThreadId tid)
          (could_core && is_signal_from_kernel(tid, sigNo, info->si_code))
         ) &&
         !VG_(clo_xml) ) {
-      VG_(umsg)("\n");
       VG_(umsg)(
+         "\n"
          "Process terminating with default action of signal %d (%s)%s\n",
          sigNo, signame(sigNo), core ? ": dumping core" : "");
 

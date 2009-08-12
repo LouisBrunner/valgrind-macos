@@ -5571,16 +5571,13 @@ static void mc_fini ( Int exitcode )
 
    if (MC_(clo_leak_check) != LC_Off) {
       MC_(detect_memory_leaks)(1/*bogus ThreadId*/, MC_(clo_leak_check));
-   }
-
-   if (VG_(clo_verbosity) == 1 && !VG_(clo_xml)
-       && MC_(clo_leak_check) == LC_Off) {
-      VG_(message)(Vg_UserMsg, 
-         "For a detailed leak analysis, rerun with: --leak-check=yes\n");
-   }
-
-   if (VG_(clo_verbosity) >= 1 && !VG_(clo_xml)) {
-      VG_(message)(Vg_UserMsg, "\n");
+   } else {
+      if (VG_(clo_verbosity) == 1 && !VG_(clo_xml)) {
+         VG_(umsg)(
+            "For a detailed leak analysis, rerun with: --leak-check=full\n"
+            "\n"
+         );
+      }
    }
 
    if (VG_(clo_verbosity) == 1 && !VG_(clo_xml)) {

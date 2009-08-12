@@ -512,6 +512,7 @@ static void pp_Error ( Error* err, Bool allow_db_attach )
 
       /* postamble */
       VG_(printf_xml)("</error>\n");
+      VG_(printf_xml)("\n");
 
    } else {
 
@@ -524,9 +525,9 @@ static void pp_Error ( Error* err, Bool allow_db_attach )
       }
    
       VG_TDICT_CALL( tool_pp_Error, err );
+      VG_(umsg)("\n");
 
       do_actions_on_error(err, allow_db_attach);
-
    }
 }
 
@@ -563,10 +564,6 @@ void construct_error ( Error* err, ThreadId tid, ErrorKind ekind, Addr a,
 }
 
 
-
-/* Shared between VG_(maybe_record_error)() and VG_(unique_error)(),
-   just for pretty printing purposes. */
-static Bool is_first_shown_context = True;
 
 static Int  n_errs_shown = 0;
 
@@ -721,18 +718,9 @@ void VG_(maybe_record_error) ( ThreadId tid,
    if (p->supp == NULL) {
       n_err_contexts++;
       n_errs_found++;
-      /* A bit of prettyprinting, to ensure there's a blank line
-         in between each error. */
-      if (!is_first_shown_context) {
-         if (VG_(clo_xml))
-            VG_(printf_xml)("\n");
-         else
-            VG_(umsg)("\n");
-      }
       /* Actually show the error; more complex than you might think. */
       pp_Error( p, /*allow_db_attach*/True );
       /* update stats */
-      is_first_shown_context = False;
       n_errs_shown++;
    } else {
       n_supp_contexts++;
@@ -775,18 +763,9 @@ Bool VG_(unique_error) ( ThreadId tid, ErrorKind ekind, Addr a, Char* s,
       }
 
       if (print_error) {
-         /* A bit of prettyprinting, to ensure there's a blank line
-            in between each error. */
-         if (!is_first_shown_context) {
-            if (VG_(clo_xml))
-               VG_(printf_xml)("\n");
-            else
-               VG_(umsg)("\n");
-         }
          /* Actually show the error; more complex than you might think. */
          pp_Error(&err, allow_db_attach);
          /* update stats */
-         is_first_shown_context = False;
          n_errs_shown++;
       }
       return False;
@@ -930,6 +909,7 @@ void VG_(show_error_counts_as_XML) ( void )
       VG_(printf_xml)("  </pair>\n");
    }
    VG_(printf_xml)("</errorcounts>\n");
+   VG_(printf_xml)("\n");
 }
 
 

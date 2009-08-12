@@ -3536,8 +3536,19 @@ int     GLOB = 0;
 const int N_iter = 2;
 const int Nlog  = 16;
 const int N     = 1 << Nlog;
-static int64_t ARR1[N];
-static int ARR2[N];
+union uint64_union {
+  uint64_t u64[1];
+  uint32_t u32[2];
+  uint16_t u16[4];
+  uint8_t  u8 [8];
+};
+static uint64_union ARR1[N];
+union uint32_union {
+  uint32_t u32[1];
+  uint16_t u16[2];
+  uint8_t  u8 [4];
+};
+static uint32_union ARR2[N];
 Barrier *barriers[N_iter];
 Mutex   MU; 
 
@@ -3558,15 +3569,15 @@ void Worker() {
         if (i & (1 << n)) {
           for (int off = 0; off < (1 << x); off++) {
             switch(x) {
-              case 0: CHECK(          ARR1  [i * (1<<x) + off] == 0); break;
-              case 1: CHECK(((int*)  (ARR1))[i * (1<<x) + off] == 0); break;
-              case 2: CHECK(((short*)(ARR1))[i * (1<<x) + off] == 0); break;
-              case 3: CHECK(((char*) (ARR1))[i * (1<<x) + off] == 0); break;
+              case 0: CHECK(ARR1[i].u64[off] == 0); break;
+              case 1: CHECK(ARR1[i].u32[off] == 0); break;
+              case 2: CHECK(ARR1[i].u16[off] == 0); break;
+              case 3: CHECK(ARR1[i].u8 [off] == 0); break;
             }
             switch(x) {
-              case 1: CHECK(((int*)  (ARR2))[i * (1<<x) + off] == 0); break;
-              case 2: CHECK(((short*)(ARR2))[i * (1<<x) + off] == 0); break;
-              case 3: CHECK(((char*) (ARR2))[i * (1<<x) + off] == 0); break;
+              case 1: CHECK(ARR2[i].u32[off] == 0); break;
+              case 2: CHECK(ARR2[i].u16[off] == 0); break;
+              case 3: CHECK(ARR2[i].u8 [off] == 0); break;
             }
           }
         }
@@ -5781,54 +5792,52 @@ REGISTER_TEST(Run, 122)
 namespace test123 {
 
 union uint_union {
-  uint64_t u64[8];
-  uint32_t u32[16];
-  uint16_t u16[32];
-  uint8_t  u8[64];
+  uint64_t u64[1];
+  uint32_t u32[2];
+  uint16_t u16[4];
+  uint8_t  u8[8];
 };
 
-uint_union MEM;
-
-#define GenericWrite(p) { *(p) = 1; }
+uint_union MEM[8];
 
 // Q. Hey dude, why so many functions? 
 // A. I need different stack traces for different accesses.
 
-void Wr64_0() { GenericWrite(&MEM.u64[0]); } 
-void Wr64_1() { GenericWrite(&MEM.u64[1]); } 
-void Wr64_2() { GenericWrite(&MEM.u64[2]); } 
-void Wr64_3() { GenericWrite(&MEM.u64[3]); } 
-void Wr64_4() { GenericWrite(&MEM.u64[4]); } 
-void Wr64_5() { GenericWrite(&MEM.u64[5]); } 
-void Wr64_6() { GenericWrite(&MEM.u64[6]); } 
-void Wr64_7() { GenericWrite(&MEM.u64[7]); } 
+void Wr64_0() { MEM[0].u64[0] = 1; } 
+void Wr64_1() { MEM[1].u64[0] = 1; } 
+void Wr64_2() { MEM[2].u64[0] = 1; } 
+void Wr64_3() { MEM[3].u64[0] = 1; } 
+void Wr64_4() { MEM[4].u64[0] = 1; } 
+void Wr64_5() { MEM[5].u64[0] = 1; } 
+void Wr64_6() { MEM[6].u64[0] = 1; } 
+void Wr64_7() { MEM[7].u64[0] = 1; } 
 
-void Wr32_0() { GenericWrite(&MEM.u32[0]); } 
-void Wr32_1() { GenericWrite(&MEM.u32[3]); } 
-void Wr32_2() { GenericWrite(&MEM.u32[4]); } 
-void Wr32_3() { GenericWrite(&MEM.u32[7]); } 
-void Wr32_4() { GenericWrite(&MEM.u32[8]); } 
-void Wr32_5() { GenericWrite(&MEM.u32[11]); } 
-void Wr32_6() { GenericWrite(&MEM.u32[12]); } 
-void Wr32_7() { GenericWrite(&MEM.u32[15]); } 
+void Wr32_0() { MEM[0].u32[0] = 1; } 
+void Wr32_1() { MEM[1].u32[3] = 1; } 
+void Wr32_2() { MEM[2].u32[4] = 1; } 
+void Wr32_3() { MEM[3].u32[7] = 1; } 
+void Wr32_4() { MEM[4].u32[8] = 1; } 
+void Wr32_5() { MEM[5].u32[11] = 1; } 
+void Wr32_6() { MEM[6].u32[12] = 1; } 
+void Wr32_7() { MEM[7].u32[15] = 1; } 
 
-void Wr16_0() { GenericWrite(&MEM.u16[0]); } 
-void Wr16_1() { GenericWrite(&MEM.u16[5]); } 
-void Wr16_2() { GenericWrite(&MEM.u16[10]); } 
-void Wr16_3() { GenericWrite(&MEM.u16[15]); } 
-void Wr16_4() { GenericWrite(&MEM.u16[16]); } 
-void Wr16_5() { GenericWrite(&MEM.u16[21]); } 
-void Wr16_6() { GenericWrite(&MEM.u16[26]); } 
-void Wr16_7() { GenericWrite(&MEM.u16[31]); } 
+void Wr16_0() { MEM[0].u16[0] = 1; } 
+void Wr16_1() { MEM[1].u16[1] = 1; } 
+void Wr16_2() { MEM[2].u16[0] = 1; } 
+void Wr16_3() { MEM[3].u16[1] = 1; } 
+void Wr16_4() { MEM[4].u16[0] = 1; } 
+void Wr16_5() { MEM[5].u16[1] = 1; } 
+void Wr16_6() { MEM[6].u16[0] = 1; } 
+void Wr16_7() { MEM[7].u16[1] = 1; } 
 
-void Wr8_0() { GenericWrite(&MEM.u8[0]); } 
-void Wr8_1() { GenericWrite(&MEM.u8[9]); } 
-void Wr8_2() { GenericWrite(&MEM.u8[18]); } 
-void Wr8_3() { GenericWrite(&MEM.u8[27]); } 
-void Wr8_4() { GenericWrite(&MEM.u8[36]); } 
-void Wr8_5() { GenericWrite(&MEM.u8[45]); } 
-void Wr8_6() { GenericWrite(&MEM.u8[54]); } 
-void Wr8_7() { GenericWrite(&MEM.u8[63]); } 
+void Wr8_0() { MEM[0].u8[0] = 1; } 
+void Wr8_1() { MEM[1].u8[1] = 1; } 
+void Wr8_2() { MEM[2].u8[2] = 1; } 
+void Wr8_3() { MEM[3].u8[3] = 1; } 
+void Wr8_4() { MEM[4].u8[0] = 1; } 
+void Wr8_5() { MEM[5].u8[1] = 1; } 
+void Wr8_6() { MEM[6].u8[2] = 1; } 
+void Wr8_7() { MEM[7].u8[3] = 1; } 
 
 void WriteAll64() {
   Wr64_0();

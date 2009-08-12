@@ -66,13 +66,13 @@ static void rwlock_rdlock(rwlock_t* p)
 #else
     pthread_yield();
 #endif
-    __sync_fetch_and_sub(&p->locked, 1);
+    (void) __sync_fetch_and_sub(&p->locked, 1);
   }
   p->reader_count++;
   assert(p->reader_count >= 0);
   assert(p->writer_count >= 0);
   assert(p->reader_count == 0 || p->writer_count == 0);
-  __sync_fetch_and_sub(&p->locked, 1);
+  (void) __sync_fetch_and_sub(&p->locked, 1);
   ANNOTATE_READERLOCK_ACQUIRED(p);
 }
 
@@ -90,13 +90,13 @@ static void rwlock_wrlock(rwlock_t* p)
 #else
     pthread_yield();
 #endif
-    __sync_fetch_and_sub(&p->locked, 1);
+    (void) __sync_fetch_and_sub(&p->locked, 1);
   }
   p->writer_count++;
   assert(p->reader_count >= 0);
   assert(p->writer_count >= 0);
   assert(p->reader_count == 0 || p->writer_count == 0);
-  __sync_fetch_and_sub(&p->locked, 1);
+  (void) __sync_fetch_and_sub(&p->locked, 1);
   ANNOTATE_WRITERLOCK_ACQUIRED(p);
 }
 
@@ -117,7 +117,7 @@ static void rwlock_unlock(rwlock_t* p)
   assert(p->reader_count >= 0);
   assert(p->writer_count >= 0);
   assert(p->reader_count == 0 || p->writer_count == 0);
-  __sync_fetch_and_sub(&p->locked, 1);
+  (void) __sync_fetch_and_sub(&p->locked, 1);
 }
 
 static void* thread_func(void* arg)

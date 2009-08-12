@@ -230,3 +230,15 @@
    fun:_ZN5boost9call_onceIPFvvEEEvRNS_9once_flagET_
 }
 
+{
+   drd-libboost-boost::detail::get_once_per_thread_epoch()
+   drd:ConflictingAccess
+   fun:_ZN5boost6detail25get_once_per_thread_epochEv
+}
+
+{
+   drd-libboost-boost::detail::get_current_thread_data()
+   drd:ConflictingAccess
+   ...
+   fun:_ZN5boost6detail23get_current_thread_dataEv
+}

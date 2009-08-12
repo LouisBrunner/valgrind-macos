@@ -749,6 +749,25 @@ Syscall param fstat_extended(fsacl) points to unaddressable byte(s)
  Address 0x........ is not stack'd, malloc'd or (recently) free'd
 
 -----------------------------------------------------
+x200011c(284):__NR_access_extended 4s 1m
+-----------------------------------------------------
+Syscall param access_extended(entries) contains uninitialised byte(s)
+   ...
+
+Syscall param access_extended(size) contains uninitialised byte(s)
+   ...
+
+Syscall param access_extended(results) contains uninitialised byte(s)
+   ...
+
+Syscall param access_extended(uid) contains uninitialised byte(s)
+   ...
+
+Syscall param access_extended(entries) points to unaddressable byte(s)
+   ...
+ Address 0x........ is not stack'd, malloc'd or (recently) free'd
+
+-----------------------------------------------------
 (296):           old load_shared_file
 -----------------------------------------------------
 -----------------------------------------------------

@@ -341,7 +341,7 @@ DECL_TEMPLATE(darwin, lstat_extended);          // 280
 DECL_TEMPLATE(darwin, fstat_extended);          // 281
 DECL_TEMPLATE(darwin, chmod_extended);          // 282
 DECL_TEMPLATE(darwin, fchmod_extended);         // 283
-// NYI access_extended 284
+DECL_TEMPLATE(darwin, access_extended);         // 284
 DECL_TEMPLATE(darwin, settid);                  // 285
 // NYI gettid 286
 // NYI setsgroups 287

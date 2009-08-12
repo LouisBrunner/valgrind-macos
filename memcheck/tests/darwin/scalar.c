@@ -510,7 +510,12 @@ int main(void)
 
    // __NR_chmod_extended 282
    // __NR_fchmod_extended 283
-   // __NR_access_extended 284
+
+   // XXX: we don't check the 'results' (too hard, see the wrapper code).  If
+   // we did, it would be 2m.
+   GO(__NR_access_extended, 284, "4s 1m");
+   SY(__NR_access_extended, x0, x0+1, x0, x0); FAIL;
+
    // __NR_settid 285
    // __NR_gettid 286
    // __NR_setsgroups 287

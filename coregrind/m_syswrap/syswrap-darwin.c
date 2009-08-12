@@ -2015,7 +2015,8 @@ PRE(fchmod_extended)
                  vki_mode_t, mode,
                  void* /*really,user_addr_t*/, xsecurity);
    /* DDD: relative to the xnu sources (kauth_copyinfilesec), this
-      is just way wrong. */
+      is just way wrong.  [The trouble is with the size, which depends on a
+      non-trival kernel computation] */
    PRE_MEM_READ( "fchmod_extended(xsecurity)", ARG5, 
                  sizeof(struct kauth_filesec) );
 }
@@ -2034,9 +2035,92 @@ PRE(chmod_extended)
                  void* /*really,user_addr_t*/, xsecurity);
    PRE_MEM_RASCIIZ("chmod_extended(path)", ARG1);
    /* DDD: relative to the xnu sources (kauth_copyinfilesec), this
-      is just way wrong. */
+      is just way wrong.  [The trouble is with the size, which depends on a
+      non-trival kernel computation] */
    PRE_MEM_READ( "chmod_extended(xsecurity)", ARG5, 
                  sizeof(struct kauth_filesec) );
+}
+
+
+// This is a ridiculous syscall.  Specifically, the 'entries' argument points
+// to a buffer that contains one or more 'accessx_descriptor' structs followed
+// by one or more strings.  Each accessx_descriptor contains a field,
+// 'ad_name_offset', which points to one of the strings (or it can contain
+// zero which means "reuse the string from the previous accessx_descriptor").
+//
+// What's really ridiculous is that we are only given the size of the overall
+// buffer, not the number of accessx_descriptors, nor the number of strings.
+// The kernel determines the number of accessx_descriptors by walking through
+// them one by one, checking that the ad_name_offset points within the buffer,
+// past the current point (or that it's a zero, unless its the first
+// descriptor);  if so, we assume that this really is an accessx_descriptor,
+// if not, we assume we've hit the strings section.  Gah.
+//
+// This affects us here because number of entries in the 'results' buffer is
+// determined by the number of accessx_descriptors.  So we have to know that
+// number in order to do PRE_MEM_WRITE/POST_MEM_WRITE of 'results'.  In
+// practice, we skip the PRE_MEM_WRITE step because it's easier to do the
+// computation after the syscall has succeeded, because the kernel will have
+// checked for all the zillion different ways this syscall can fail, and we'll
+// know we have a well-formed 'entries' buffer.  This means we might miss some
+// uses of unaddressable memory but oh well.
+//
+PRE(access_extended)
+{
+   PRINT("access_extended( %#lx(%s), %lu, %#lx, %lu )",
+      ARG1, (char *)ARG1, ARG2, ARG3, ARG4);
+   PRE_REG_READ4(int, "access_extended", void *, entries, vki_size_t, size, 
+                 vki_errno_t *, results, vki_uid_t *, uid);
+   PRE_MEM_READ("access_extended(entries)", ARG1, ARG2 );
+
+   // XXX: as mentioned above, this check is too hard to do before the
+   // syscall.
+   //PRE_MEM_WRITE("access_extended(results)", ARG3, ??? );
+}
+POST(access_extended)
+{
+   // 'n_descs' is the number of descriptors we think are in the buffer.  We
+   // start with the maximum possible value, which occurs if we have the
+   // shortest possible string section.  The shortest string section allowed
+   // consists of a single one-char string (plus the NUL char).  Hence the
+   // '2'.
+   struct vki_accessx_descriptor* entries = (struct vki_accessx_descriptor*)ARG2;
+   SizeT size = ARG2;
+   Int n_descs = (size - 2) / sizeof(struct accessx_descriptor);
+   Int i = 0;     // Current position in the descriptors section array.
+   Int u;         // Upper bound on the length of the descriptors array
+                  // (recomputed each time around the loop)
+   vg_assert(n_descs > 0);
+
+   // Step through the descriptors, lowering 'n_descs' until we know we've
+   // reached the string section.
+   while (True)
+   {
+      // If we're past our estimate, we must be one past the end of the
+      // descriptors section (ie. at the start of the string section).  Stop.
+      if (i >= n_descs)
+         break;
+
+      // Get the array index for the string, but pretend momentarily that it
+      // is actually another accessx_descriptor.  That gives us an upper bound
+      // on the length of the descriptors section.  (Unless the index is zero,
+      // in which case we have no new info.)
+      u = entries[i].ad_name_offset / sizeof(struct vki_accessx_descriptor);
+      if (u == 0) {
+         vg_assert(i != 0);
+         continue;
+      }
+
+      // If the upper bound is below our current estimate, revise that
+      // estimate downwards.
+      if (u < n_descs)
+         n_descs = u;
+   }
+
+   // Sanity check.
+   vg_assert(n_descs <= VKI_ACCESSX_MAX_DESCRIPTORS);
+
+   POST_MEM_WRITE( ARG3, n_descs * sizeof(vki_errno_t) );
 }
 
 
@@ -7477,9 +7561,9 @@ const SyscallTableEntry ML_(syscall_table)[] = {
    MACXY(__NR_stat_extended,  stat_extended), 
    MACXY(__NR_lstat_extended, lstat_extended),   // 280
    MACXY(__NR_fstat_extended, fstat_extended), 
-   MACX_(__NR_chmod_extended,    chmod_extended), 
-   MACX_(__NR_fchmod_extended,   fchmod_extended), 
-// _____(__NR_access_extended), 
+   MACX_(__NR_chmod_extended, chmod_extended), 
+   MACX_(__NR_fchmod_extended,fchmod_extended), 
+   MACXY(__NR_access_extended,access_extended), 
    MACX_(__NR_settid,         settid), 
 // _____(__NR_gettid), 
 // _____(__NR_setsgroups), 

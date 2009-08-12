@@ -1255,6 +1255,29 @@ AC_MSG_RESULT([no])
 CFLAGS=$safe_CFLAGS
 
 
+# does this compiler support -Wno-uninitialized ?
+
+AC_MSG_CHECKING([if gcc accepts -Wno-uninitialized])
+
+safe_CFLAGS=$CFLAGS
+CFLAGS="-Wno-uninitialized"
+
+AC_TRY_COMPILE(
+[ ],
+[
+  return 0;
+],
+[
+AC_SUBST([FLAG_W_NO_UNINITIALIZED], [-Wno-uninitialized])
+AC_MSG_RESULT([yes])
+],
+[
+AC_SUBST([FLAG_W_NO_UNINITIALIZED], [])
+AC_MSG_RESULT([no])
+])
+CFLAGS=$safe_CFLAGS
+
+
 # does this compiler support -Wextra or the older -W ?
 
 AC_MSG_CHECKING([if gcc accepts -Wextra or -W])

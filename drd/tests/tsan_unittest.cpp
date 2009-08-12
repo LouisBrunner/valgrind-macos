@@ -5219,7 +5219,7 @@ int       *REALLOC;
 int       *VALLOC;
 int       *PVALLOC;
 int       *MEMALIGN;
-int       *POSIX_MEMALIGN;
+union pi_pv_union { int* pi; void* pv; } POSIX_MEMALIGN;
 int       *MMAP;
 
 int       *NEW;
@@ -5237,7 +5237,7 @@ void Worker() {
   (*VALLOC)++;
   (*PVALLOC)++;
   (*MEMALIGN)++;
-  (*POSIX_MEMALIGN)++;
+  (*(POSIX_MEMALIGN.pi))++;
   (*MMAP)++;
 
   (*NEW)++;
@@ -5253,7 +5253,7 @@ void Run() {
   VALLOC = (int*)valloc(sizeof(int));
   PVALLOC = (int*)valloc(sizeof(int));  // TODO: pvalloc breaks helgrind.
   MEMALIGN = (int*)memalign(64, sizeof(int));
-  CHECK(0 == posix_memalign((void**)&POSIX_MEMALIGN, 64, sizeof(int)));
+  CHECK(0 == posix_memalign(&POSIX_MEMALIGN.pv, 64, sizeof(int)));
   MMAP = (int*)mmap(NULL, sizeof(int), PROT_READ | PROT_WRITE,
                     MAP_PRIVATE | MAP_ANON, -1, 0);
 
@@ -5279,8 +5279,8 @@ void Run() {
   ANNOTATE_EXPECT_RACE(PVALLOC, "real race on a pvalloc-ed object");
   FAST_MODE_INIT(MEMALIGN);
   ANNOTATE_EXPECT_RACE(MEMALIGN, "real race on a memalign-ed object");
-  FAST_MODE_INIT(POSIX_MEMALIGN);
-  ANNOTATE_EXPECT_RACE(POSIX_MEMALIGN, "real race on a posix_memalign-ed object");
+  FAST_MODE_INIT(POSIX_MEMALIGN.pi);
+  ANNOTATE_EXPECT_RACE(POSIX_MEMALIGN.pi, "real race on a posix_memalign-ed object");
   FAST_MODE_INIT(MMAP);
   ANNOTATE_EXPECT_RACE(MMAP, "real race on a mmap-ed object");
 
@@ -5303,7 +5303,7 @@ void Run() {
   free(VALLOC);
   free(PVALLOC);
   free(MEMALIGN);
-  free(POSIX_MEMALIGN);
+  free(POSIX_MEMALIGN.pv);
   munmap(MMAP, sizeof(int));
   delete NEW;
   delete [] NEW_ARR;

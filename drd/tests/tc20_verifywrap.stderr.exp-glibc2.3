@@ -28,8 +28,8 @@ mutex 0x........ was first observed at:
    at 0x........: pthread_mutex_init (drd_pthread_intercepts.c:?)
    by 0x........: main (tc20_verifywrap.c:100)
 
-make pthread_mutex_lock fail: skipped on glibc < 2.4
 
+make pthread_mutex_lock fail: skipped on glibc < 2.4
 
 Mutex not locked: mutex 0x........, recursion count 0, owner 0.
    at 0x........: pthread_mutex_unlock (drd_pthread_intercepts.c:?)
@@ -118,7 +118,6 @@ FIXME: can't figure out how to verify wrap of sem_post
 
 
 ------------ dealloc of mem holding locks ------------
-
 
 Destroying locked rwlock: rwlock 0x.........
    at 0x........: main (tc20_verifywrap.c:262)

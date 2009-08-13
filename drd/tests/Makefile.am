@@ -15,10 +15,6 @@ noinst_HEADERS =                                    \
 EXTRA_DIST =                                        \
 	annotate_order_1.stderr.exp		    \
 	annotate_order_1.vgtest			    \
-	annotate_order_2.stderr.exp		    \
-	annotate_order_2.vgtest			    \
-	annotate_order_3.stderr.exp		    \
-	annotate_order_3.vgtest			    \
 	annotate_spinlock.stderr.exp		    \
 	annotate_spinlock.vgtest		    \
 	annotate_rwlock.stderr.exp		    \

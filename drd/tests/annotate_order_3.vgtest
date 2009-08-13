@@ -1,5 +1,0 @@
-prereq: test -e tsan_unittest && ./supported_libpthread
-vgopts: --read-var-info=yes --check-stack-var=yes --show-confl-seg=no
-prog: tsan_unittest
-args: 31
-stderr_filter: filter_stderr_and_thread_no

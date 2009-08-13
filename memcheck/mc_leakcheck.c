@@ -842,13 +842,19 @@ static void print_results(ThreadId tid, Bool is_full_check)
       // includes indirectly lost blocks!
       //
       lr = lr_array[i];
-      // You could argue that indirect leaks should be counted as errors, but
-      // it seems better to make the counting criteria similar to the printing
-      // criteria.  So we don't count them.
-      count_as_error = Unreached == lr->key.state || 
-                       Possible  == lr->key.state;
       print_record = is_full_check &&
-                     ( MC_(clo_show_reachable) || count_as_error );
+                     ( MC_(clo_show_reachable) ||
+                       Unreached == lr->key.state || 
+                       Possible  == lr->key.state );
+      // We don't count a leaks as errors with --leak-check=summary.
+      // Otherwise you can get high error counts with few or no error
+      // messages, which can be confusing.  Also, you could argue that
+      // indirect leaks should be counted as errors, but it seems better to
+      // make the counting criteria similar to the printing criteria.  So we
+      // don't count them.
+      count_as_error = is_full_check && 
+                       ( Unreached == lr->key.state || 
+                         Possible  == lr->key.state );
       is_suppressed = 
          MC_(record_leak_error) ( tid, i+1, n_lossrecords, lr, print_record,
                                   count_as_error );

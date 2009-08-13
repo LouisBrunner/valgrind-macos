@@ -568,6 +568,32 @@ two examples show.</para>
    by 0x........: main (leak-cases.c:80)
 ]]></programlisting>
 
+<para>Because there are different kinds of leaks with different severities, an
+interesting question is this: which leaks should be counted as true "errors"
+and which should not?  The answer to this question affects the numbers printed
+in the <computeroutput>ERROR SUMMARY</computeroutput> line, and also the effect
+of the <option>--error-exitcode</option> option.  Memcheck uses the following
+criteria:</para>
+
+<itemizedlist>
+  <listitem>
+    <para>First, a leak is only counted as a true "error" if
+    <option>--leak-check=full</option> is specified.  In other words, an
+    unprinted leak is not considered a true "error".  If this were not the
+    case, it would be possible to get a high error count but not have any
+    errors printed, which would be confusing.</para>
+  </listitem>
+
+  <listitem>
+    <para>After that, definitely lost and possibly lost blocks are counted as
+    true "errors".  Indirectly lost and still reachable blocks are not counted
+    as true "errors", even if <option>--show-reachable=yes</option> is
+    specified and they are printed;  this is because such blocks don't need
+    direct fixing by the programmer.
+    </para>
+  </listitem>
+</itemizedlist>
+
 </sect2>
 
 </sect1>

@@ -771,8 +771,10 @@ Bool VG_(unique_error) ( ThreadId tid, ErrorKind ekind, Addr a, Char* s,
       return False;
 
    } else {
-      n_errs_suppressed++;
-      n_supp_contexts++;
+      if (count_error) {
+         n_errs_suppressed++;
+         n_supp_contexts++;
+      }
       su->count++;
       return True;
    }
@@ -859,7 +861,8 @@ void VG_(show_all_errors) ( void )
             p_min = p;
          }
       }
-      if (p_min == NULL) VG_(tool_panic)("show_all_errors()");
+      // XXX: this isn't right.  See bug 203651.
+      if (p_min == NULL) continue; //VG_(tool_panic)("show_all_errors()");
 
       VG_(umsg)("\n");
       VG_(umsg)("%d errors in context %d of %d:\n",

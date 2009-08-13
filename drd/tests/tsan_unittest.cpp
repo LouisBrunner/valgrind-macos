@@ -5813,31 +5813,31 @@ void Wr64_6() { MEM[6].u64[0] = 1; }
 void Wr64_7() { MEM[7].u64[0] = 1; } 
 
 void Wr32_0() { MEM[0].u32[0] = 1; } 
-void Wr32_1() { MEM[1].u32[3] = 1; } 
-void Wr32_2() { MEM[2].u32[4] = 1; } 
-void Wr32_3() { MEM[3].u32[7] = 1; } 
-void Wr32_4() { MEM[4].u32[8] = 1; } 
-void Wr32_5() { MEM[5].u32[11] = 1; } 
-void Wr32_6() { MEM[6].u32[12] = 1; } 
-void Wr32_7() { MEM[7].u32[15] = 1; } 
+void Wr32_1() { MEM[1].u32[1] = 1; } 
+void Wr32_2() { MEM[2].u32[0] = 1; } 
+void Wr32_3() { MEM[3].u32[1] = 1; } 
+void Wr32_4() { MEM[4].u32[0] = 1; } 
+void Wr32_5() { MEM[5].u32[1] = 1; } 
+void Wr32_6() { MEM[6].u32[0] = 1; } 
+void Wr32_7() { MEM[7].u32[1] = 1; } 
 
 void Wr16_0() { MEM[0].u16[0] = 1; } 
 void Wr16_1() { MEM[1].u16[1] = 1; } 
-void Wr16_2() { MEM[2].u16[0] = 1; } 
-void Wr16_3() { MEM[3].u16[1] = 1; } 
+void Wr16_2() { MEM[2].u16[2] = 1; } 
+void Wr16_3() { MEM[3].u16[3] = 1; } 
 void Wr16_4() { MEM[4].u16[0] = 1; } 
 void Wr16_5() { MEM[5].u16[1] = 1; } 
-void Wr16_6() { MEM[6].u16[0] = 1; } 
-void Wr16_7() { MEM[7].u16[1] = 1; } 
+void Wr16_6() { MEM[6].u16[2] = 1; } 
+void Wr16_7() { MEM[7].u16[3] = 1; } 
 
 void Wr8_0() { MEM[0].u8[0] = 1; } 
 void Wr8_1() { MEM[1].u8[1] = 1; } 
 void Wr8_2() { MEM[2].u8[2] = 1; } 
 void Wr8_3() { MEM[3].u8[3] = 1; } 
-void Wr8_4() { MEM[4].u8[0] = 1; } 
-void Wr8_5() { MEM[5].u8[1] = 1; } 
-void Wr8_6() { MEM[6].u8[2] = 1; } 
-void Wr8_7() { MEM[7].u8[3] = 1; } 
+void Wr8_4() { MEM[4].u8[4] = 1; } 
+void Wr8_5() { MEM[5].u8[5] = 1; } 
+void Wr8_6() { MEM[6].u8[6] = 1; } 
+void Wr8_7() { MEM[7].u8[7] = 1; } 
 
 void WriteAll64() {
   Wr64_0();

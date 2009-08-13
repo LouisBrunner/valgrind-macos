@@ -29,6 +29,10 @@ EXTRA_DIST =                                        \
 	annotate_ignore_rw.vgtest		    \
 	annotate_ignore_rw2.stderr.exp		    \
 	annotate_ignore_rw2.vgtest		    \
+	annotate_ignore_write.stderr.exp	    \
+	annotate_ignore_write.vgtest		    \
+	annotate_ignore_write2.stderr.exp	    \
+	annotate_ignore_write2.vgtest		    \
 	annotate_trace_memory.stderr.exp	    \
 	annotate_trace_memory.vgtest		    \
 	atomic_var.stderr.exp			    \
@@ -244,6 +248,7 @@ EXTRA_DIST =                                        \
 
 check_PROGRAMS =      \
   annotate_ignore_rw  \
+  annotate_ignore_write \
   custom_alloc        \
   fp_race             \
   hold_lock           \

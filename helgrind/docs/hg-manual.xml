@@ -1005,11 +1005,11 @@ unlock(mx)                             unlock(mx)
         conflicting access information is stored.  If you find that
         Helgrind is showing race errors with only one stack instead of
         the expected two stacks, try increasing this value.</para>
-      <para>The minimum value is 10,000 and the maximum is 10,000,000
-        (ten times the default value).  Increasing the value by 1
+      <para>The minimum value is 10,000 and the maximum is 20,000,000
+        (twenty times the default value).  Increasing the value by 1
         increases Helgrind's memory requirement by very roughly 100
-        bytes, so the maximum value will easily eat up an extra
-        gigabyte or so of memory.</para>
+        bytes, so the maximum value will easily eat up two extra
+        gigabytes or so of memory.</para>
     </listitem>
   </varlistentry>
 

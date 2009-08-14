@@ -4397,10 +4397,10 @@ static Bool hg_process_cmd_line_option ( Char* arg )
    else if VG_XACT_CLO(arg, "--history-level=full",
                             HG_(clo_history_level), 2);
 
-   /* If you change the 10k/10mill limits, remember to also change
+   /* If you change the 10k/20mill limits, remember to also change
       them in assertions at the top of event_map_maybe_GC. */
    else if VG_BINT_CLO(arg, "--conflict-cache-size",
-                       HG_(clo_conflict_cache_size), 10*1000, 10*1000*1000) {}
+                       HG_(clo_conflict_cache_size), 10*1000, 20*1000*1000) {}
 
    /* "stuvwx" --> stuvwx (binary) */
    else if VG_STR_CLO(arg, "--hg-sanity-flags", tmp_str) {

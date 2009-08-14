@@ -4,6 +4,10 @@ include $(top_srcdir)/Makefile.tool-tests.am
 dist_noinst_SCRIPTS = filter_stderr
 
 EXTRA_DIST = \
+	annotate_hbefore.vgtest annotate_hbefore.stdout.exp \
+		annotate_hbefore.stderr.exp \
+	annotate_rwlock.vgtest annotate_rwlock.stdout.exp \
+		annotate_rwlock.stderr.exp \
 	bar_bad.vgtest bar_bad.stdout.exp bar_bad.stderr.exp \
 	bar_trivial.vgtest bar_trivial.stdout.exp bar_trivial.stderr.exp \
 	hg01_all_ok.vgtest hg01_all_ok.stdout.exp hg01_all_ok.stderr.exp \
@@ -12,7 +16,7 @@ EXTRA_DIST = \
 	hg04_race.vgtest hg04_race.stdout.exp hg04_race.stderr.exp \
 	hg05_race2.vgtest hg05_race2.stdout.exp hg05_race2.stderr.exp \
 	hg06_readshared.vgtest hg06_readshared.stdout.exp \
-	    hg06_readshared.stderr.exp \
+		hg06_readshared.stderr.exp \
 	pth_barrier1.vgtest pth_barrier1.stdout.exp pth_barrier1.stderr.exp \
 	pth_barrier2.vgtest pth_barrier2.stdout.exp pth_barrier2.stderr.exp \
 	pth_barrier3.vgtest pth_barrier3.stdout.exp pth_barrier3.stderr.exp \
@@ -72,6 +76,8 @@ EXTRA_DIST = \
 # XXX: tc18_semabuse uses operations that are unsupported on Darwin.  It
 # should be conditionally compiled like tc20_verifywrap is.
 check_PROGRAMS = \
+	annotate_hbefore \
+	annotate_rwlock \
 	hg01_all_ok \
 	hg02_deadlock \
 	hg03_inherit \
@@ -130,6 +136,10 @@ endif
 
 if HAVE_PTHREAD_MUTEX_TIMEDLOCK
 check_PROGRAMS += tc20_verifywrap
+endif
+
+if HAVE_BUILTIN_ATOMIC
+check_PROGRAMS += annotate_rwlock
 endif
 
 AM_CFLAGS   += $(AM_FLAG_M3264_PRI)

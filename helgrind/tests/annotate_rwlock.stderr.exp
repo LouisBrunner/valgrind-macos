@@ -1,0 +1,77 @@
+Thread #x was created
+   ...
+   by 0x........: pthread_create@* (hg_intercepts.c:...)
+   by 0x........: main (annotate_rwlock.c:164)
+
+Thread #x was created
+   ...
+   by 0x........: pthread_create@* (hg_intercepts.c:...)
+   by 0x........: main (annotate_rwlock.c:164)
+
+Possible data race during read of size 4 at 0x........ by thread #x
+   at 0x........: rwlock_rdlock (annotate_rwlock.c:71)
+   by 0x........: thread_func (annotate_rwlock.c:144)
+   by 0x........: mythread_wrapper (hg_intercepts.c:...)
+   ...
+ This conflicts with a previous write of size 4 by thread #x
+   at 0x........: rwlock_wrlock (annotate_rwlock.c:106)
+   by 0x........: thread_func (annotate_rwlock.c:147)
+   by 0x........: mythread_wrapper (hg_intercepts.c:...)
+   ...
+
+Possible data race during read of size 4 at 0x........ by thread #x
+   at 0x........: rwlock_rdlock (annotate_rwlock.c:81)
+   by 0x........: thread_func (annotate_rwlock.c:144)
+   by 0x........: mythread_wrapper (hg_intercepts.c:...)
+   ...
+ This conflicts with a previous write of size 4 by thread #x
+   at 0x........: rwlock_rdlock (annotate_rwlock.c:81)
+   by 0x........: thread_func (annotate_rwlock.c:144)
+   by 0x........: mythread_wrapper (hg_intercepts.c:...)
+   ...
+
+Possible data race during write of size 4 at 0x........ by thread #x
+   at 0x........: rwlock_rdlock (annotate_rwlock.c:81)
+   by 0x........: thread_func (annotate_rwlock.c:144)
+   by 0x........: mythread_wrapper (hg_intercepts.c:...)
+   ...
+ This conflicts with a previous read of size 4 by thread #x
+   at 0x........: rwlock_unlock (annotate_rwlock.c:131)
+   by 0x........: thread_func (annotate_rwlock.c:149)
+   by 0x........: mythread_wrapper (hg_intercepts.c:...)
+   ...
+
+Possible data race during write of size 4 at 0x........ by thread #x
+   at 0x........: rwlock_unlock (annotate_rwlock.c:121)
+   by 0x........: thread_func (annotate_rwlock.c:146)
+   by 0x........: mythread_wrapper (hg_intercepts.c:...)
+   ...
+ This conflicts with a previous read of size 4 by thread #x
+   at 0x........: rwlock_unlock (annotate_rwlock.c:131)
+   by 0x........: thread_func (annotate_rwlock.c:149)
+   by 0x........: mythread_wrapper (hg_intercepts.c:...)
+   ...
+
+Possible data race during write of size 4 at 0x........ by thread #x
+   at 0x........: rwlock_wrlock (annotate_rwlock.c:106)
+   by 0x........: thread_func (annotate_rwlock.c:147)
+   by 0x........: mythread_wrapper (hg_intercepts.c:...)
+   ...
+ This conflicts with a previous read of size 4 by thread #x
+   at 0x........: rwlock_unlock (annotate_rwlock.c:132)
+   by 0x........: thread_func (annotate_rwlock.c:149)
+   by 0x........: mythread_wrapper (hg_intercepts.c:...)
+   ...
+
+Possible data race during write of size 4 at 0x........ by thread #x
+   at 0x........: rwlock_unlock (annotate_rwlock.c:127)
+   by 0x........: thread_func (annotate_rwlock.c:149)
+   by 0x........: mythread_wrapper (hg_intercepts.c:...)
+   ...
+ This conflicts with a previous read of size 4 by thread #x
+   at 0x........: rwlock_unlock (annotate_rwlock.c:132)
+   by 0x........: thread_func (annotate_rwlock.c:149)
+   by 0x........: mythread_wrapper (hg_intercepts.c:...)
+   ...
+
+Finished.

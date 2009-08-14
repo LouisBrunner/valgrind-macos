@@ -1,54 +1,143 @@
 
-Release 3.5.0 (XXX)
+Release 3.5.0 ([Julian] XXX)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+3.5.0 is a feature release with many significant improvements and the
+usual collection of bug fixes.  The main improvement is that Valgrind now
+works on Mac OS X.  Also, there is a new experimental tool, exp-BBV, which
+will be of use to computer architecture researchers.  Furthermore,
+Valgrind's text output has change in various ways, and Memcheck's leak
+checker has been improved and Valgrind's output has changed somewhat.  In
+detail:
+
 * Valgrind now runs on Mac OS X.  (Note that Mac OS X is sometimes called
   "Darwin" because that is the name of the OS core.)  
 
   Supported machines:
+
   - x86 machines are supported fairly well.
-  - AMD64 (a.k.a. x86-64) are supported, but not as well.
+
+  - AMD64 (a.k.a. x86-64) are supported, but not as well.  In particular,
+    start-up is slow.
+
   - Older PowerPC machines are not supported.
+
   - It requires Mac OS X 10.5 Leopard or later.  Porting to 10.4 is not
     planned because it would require work and 10.4 is only becoming less
     common.
 
   Things that don't work:
-  - Ptrcheck
-  - Objective-C garbage collection
-  - --db-attach=yes
+
+  - The Ptrcheck tool.
+
+  - Objective-C garbage collection.
+
+  - --db-attach=yes.
+
   - If you have Rogue Amoeba's "Instant Hijack" program installed, Valgrind
     will fail with a SIGTRAP at start-up.  This is apparently Instant
     Hijack's fault.  See https://bugs.kde.org/show_bug.cgi?id=193917 for
     details and a simple work-around.
 
   Usage notes:
+
   - You will likely find --dsymutil=yes a useful option, as error messages may
     be imprecise without it.
+
   - The Mac OS X support is new and therefore will be less robust than the
     Linux support.  Please report any bugs you find.
 
   Many thanks to Greg Parker for developing this port over several years.
 
-* XXX: something about improved Wine support?
+* A new experimental tool, BBV, has been added.  BBV generates basic block
+  vectors for use with the SimPoint analysis tool, which allows a program's
+  overall behaviour to be approximated by running only a fraction of it.
+  This is useful for computer architecture researchers.  You can run BBV by
+  specifying --tool=exp-bbv (the "exp-" prefix is short for "experimental").
+  BBV was written by Vince Weaver.
 
-* XXX: exp-bbv has been added...
+* Various aspects of Valgrind's text output have changed.
 
-* Valgrind's start-up message has changed.  It is shorter but also includes
-  the command being run, which makes it easier to use --trace-children=yes.
-  An example:
+  - Valgrind's start-up message has changed.  It is shorter but also
+    includes the command being run, which makes it easier to use
+    --trace-children=yes.  An example:
 
 ==3050== Memcheck, a memory error detector.
 ==3050== Copyright (C) 2002-2009, and GNU GPL'd, by Julian Seward et al.
 ==3050== Using Valgrind-3.5.0 and LibVEX; rerun with -h for copyright info
 ==3050== Command: ls -l
-==3050== 
 
-* XXX: shut-down messages have changed a bit...
+  - Valgrind's shut-down messages have also changed.  This is most
+    noticeable with Memcheck, where the leak summary now occurs before the
+    error summary.  This change was necessary to allow leaks to be counted
+    as proper errors (see the description of the leak checker changes below
+    for more details).  An example:
+
+==16663== HEAP SUMMARY:
+==16663==     in use at exit: 15,090 bytes in 17 blocks
+==16663==   total heap usage: 17 allocs, 0 frees, 15,090 bytes allocated
+==16663== 
+==16663== LEAK SUMMARY:
+==16663==    definitely lost: 0 bytes in 0 blocks
+==16663==    indirectly lost: 0 bytes in 0 blocks
+==16663==      possibly lost: 0 bytes in 0 blocks
+==16663==    still reachable: 10,694 bytes in 9 blocks
+==16663==         suppressed: 4,396 bytes in 8 blocks
+==16663== Rerun with --leak-check=full to see details of leaked memory
+==16663== 
+==16663== For counts of detected and suppressed errors, rerun with: -v
+==16663== ERROR SUMMARY: 0 errors from 0 contexts (suppressed: 0 from 0)
+
+  - [Julian] XXX: XML output has changed... along with how --xml=yes works.
+
+  - The format of some (non-XML) stack trace entries has changed a little.
+    Previously there were six possible forms:
+
+      0x80483BF: really (a.c:20)
+      0x80483BF: really (in /foo/a.out)
+      0x80483BF: really
+      0x80483BF: (within /foo/a.out)
+      0x80483BF: ??? (a.c:20)
+      0x80483BF: ???
+
+    The third and fourth of these forms have been made more consistent with
+    the others.  The six possible forms are now:
+  
+      0x80483BF: really (a.c:20)
+      0x80483BF: really (in /foo/a.out)
+      0x80483BF: really (in ???)
+      0x80483BF: ??? (in /foo/a.out)
+      0x80483BF: ??? (a.c:20)
+      0x80483BF: ???
+
+    Stack traces produced when --xml=yes is specified are different and
+    unchanged.
+
+* Memcheck's leak checker has been improved.  
+
+  - The results for --leak-check=summary now match the summary results for
+    --leak-check=full.  Previously they could differ because
+    --leak-check=summary counted "indirectly lost" blocks and "suppressed"
+    blocks as "definitely lost".
+
+  - Blocks that are only reachable via at least one interior-pointer, but
+    are directly pointed to by a start-pointer, were previously marked as
+    "still reachable".  They are now correctly marked as "possibly lost".
+
+  - The default value for the --leak-resolution option has been changed from
+    "low" to "high".  In general, this means that more leak reports will be
+    produced, but each leak report will describe fewer leaked blocks.
+
+  - With --leak-check=full, "definitely lost" and "possibly lost" leaks are
+    now considered as proper errors, ie. they are counted for the "ERROR
+    SUMMARY" and affect the behaviour of --error-exitcode.  These leaks are
+    not counted as errors if --leak-check=summary is specified, however.
+
+  - The documentation for the leak checker has been improved.
+
+* [Julian] XXX: something about improved Wine support?
 
 * A new Memcheck client request VALGRIND_COUNT_LEAK_BLOCKS has been added.
   It is similar to VALGRIND_COUNT_LEAKS but counts blocks instead of bytes.
-  [XXX: consider adding VALGRIND_COUNT_LEAK_BYTES as a synonym and
-  deprecating VALGRIND_COUNT_LEAKS, which wasn't a good name to begin with]
 
 * The Valgrind client requests VALGRIND_PRINTF and VALGRIND_PRINTF_BACKTRACE
   have been changed slightly.  Previously, the string was always printed
@@ -60,82 +149,52 @@ Release 3.5.0 (XXX)
   multiple output lines with a single request (by embedding multiple
   newlines in the string).
 
-* XXX: mention --read-var-info.  It was mentioned as a developer-visible
-  change in 3.4.0, but it's useful for normal users of some tools as well.
-
-* Memcheck's leak checker has been improved.  
-  - The results for --leak-check=summary now match the summary results for
-    --leak-check=full.  Previously they could differ because
-    --leak-check=summary counted "indirectly lost" blocks and "suppressed"
-    blocks as "definitely lost".
-  - Blocks that are only reachable via at least one interior-pointer, but
-    are directly pointed to by a start-pointer, were previously marked as
-    "still reachable".  They are now correctly marked as "possibly lost".
-  - The default value for the --leak-resolution option has been changed from
-    "low" to "high".  In general, this means that more leak reports will be
-    produced, but each leak report will describe fewer leaked blocks.
-  - "Definitely lost" and "possibly lost" leaks are now considered as normal
-    errors, ie. they are counted for the "ERROR SUMMARY" and
-    --error-exitcode.  This is true even if their loss records aren't
-    printed, ie. if you run with --leak-check=summary.
-  - The documentation for the leak checker has also been improved.
-
-* XXX: Atomic instructions are now handled properly...
-
-* The format of some (non-XML) stack trace entries has changed a little.
-  Previously there were six possible forms:
-
-    0x80483BF: really (a.c:20)
-    0x80483BF: really (in /foo/a.out)
-    0x80483BF: really
-    0x80483BF: (within /foo/a.out)
-    0x80483BF: ??? (a.c:20)
-    0x80483BF: ???
-
-  The third and fourth of these forms have been made more consistent with
-  the others.  The six possible forms are now:
-  
-    0x80483BF: really (a.c:20)
-    0x80483BF: really (in /foo/a.out)
-    0x80483BF: really (in ???)
-    0x80483BF: ??? (in /foo/a.out)
-    0x80483BF: ??? (a.c:20)
-    0x80483BF: ???
-
-  Stack traces produced when --xml=yes is specified are different and
-  unchanged.
-
-* XXX: XML output has changed... along with how --xml=yes works.
+* [Julian] XXX: Atomic instructions are now handled properly...
 
 * The graphs drawn by Massif's ms_print program have changed slightly:
+
   - The half-height chars '.' and ',' are no longer drawn, because they are
     confusing.  The --y option can be used if the default y-resolution is
     not high enough.
+
   - Horizontal lines are now drawn after the top of a snapshot if there is a
     gap until the next snapshot.  This makes it clear that the memory
     usage has not dropped to zero between snapshots.
 
 * New features and improvements in DRD:
+
   - The error messages printed by DRD are now easier to interpret. Instead of
     using two different numbers to identify each thread (Valgrind thread ID and
     DRD thread ID), DRD does now identify threads via a single number (the DRD
     thread ID). Furthermore "first observed at" information is now printed for
     all error messages related to synchronization objects.
+
   - Added support for named semaphores (sem_open() and sem_close()).
+
   - Race conditions between pthread_barrier_wait() and
     pthread_barrier_destroy() calls are now reported.
-  - Added support for memory pools through the macro's
+
+  - Added support for custom allocators through the macros
     VALGRIND_MALLOCLIKE_BLOCK() VALGRIND_FREELIKE_BLOCK() (defined in 
-    in <valgrind/valgrind.h>). An alternative for these two macro's is the
+    in <valgrind/valgrind.h>). An alternative for these two macros is the
     new client request VG_USERREQ__DRD_CLEAN_MEMORY (defined in
     <valgrind/drd.h>).
+
   - Added support for annotating non-POSIX synchronization objects through
-    several new ANNOTATE_*() macro's.
+    several new ANNOTATE_*() macros.
+
   - OpenMP: added support for the OpenMP runtime (libgomp) included with gcc
     versions 4.3.0 and 4.4.0.
+
   - Faster operation.
-  - Added to new command-line options (--first-race-only and
+
+  - Added two new command-line options (--first-race-only and
     --segment-merging-interval).
+
+* Something that happened in 3.4.0, but wasn't clearly announced:  the
+  option --read-var-info can be used by some tools (Memcheck, Helgrind and
+  DRD).  When enabled, it makes those tools run more slowly, but
+  descriptions of data addresses in error messages become more detailed.
 
 * exp-Omega, an experimental instantaneous leak-detecting tool, was disabled
   in 3.4.0 due to a lack of interest and maintenance, although the source
@@ -187,6 +246,10 @@ n-i-bz DRD - fixed a memory leak triggered by vector clock deallocation
        (fixed in r10228).
 195169 DRD - added support for newer versions of gcc's OpenMP runtime (libgomp)
        (fixed in r10261).
+
+XXX: more bugs listed...
+
+XXX: dates and versions of RCs and final release
 
 
 Release 3.4.1 (28 February 2009)

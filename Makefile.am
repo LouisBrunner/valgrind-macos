@@ -17,18 +17,10 @@ EXP_TOOLS = 	exp-ptrcheck \
 
 # DDD: once all tools work on Darwin, TEST_TOOLS and TEST_EXP_TOOLS can be
 # replaced with TOOLS and EXP_TOOLS.
+TEST_TOOLS = $(TOOLS)
 if !VGCONF_OS_IS_DARWIN
-  TEST_TOOLS = $(TOOLS)
   TEST_EXP_TOOLS = $(EXP_TOOLS)
 else
-  TEST_TOOLS =	memcheck \
-		cachegrind \
-		callgrind \
-		massif \
-		lackey \
-		none \
-		drd
-
   TEST_EXP_TOOLS = exp-bbv
 endif
 

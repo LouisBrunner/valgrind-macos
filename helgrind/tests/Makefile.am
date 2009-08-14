@@ -69,6 +69,8 @@ EXTRA_DIST = \
 	tc24_nonzero_sem.vgtest tc24_nonzero_sem.stdout.exp \
 		tc24_nonzero_sem.stderr.exp
 
+# XXX: tc18_semabuse uses operations that are unsupported on Darwin.  It
+# should be conditionally compiled like tc20_verifywrap is.
 check_PROGRAMS = \
 	hg01_all_ok \
 	hg02_deadlock \

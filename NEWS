@@ -1,8 +1,8 @@
 
-Release 3.5.0 (???)
+Release 3.5.0 (XXX)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-* Mac OS X is now supported.  (Note that Mac OS X is often called "Darwin"
-  because that is the name of the OS core.)  
+* Valgrind now runs on Mac OS X.  (Note that Mac OS X is sometimes called
+  "Darwin" because that is the name of the OS core.)  
 
   Supported machines:
   - x86 machines are supported fairly well.
@@ -13,14 +13,9 @@ Release 3.5.0 (???)
     common.
 
   Things that don't work:
-  - Helgrind and Ptrcheck
+  - Ptrcheck
   - Objective-C garbage collection
   - --db-attach=yes
-  - Messages like the following indicate a mismatch between Valgrind's
-    memory map and the kernel. Occasional failures are expected in
-    multithreaded programs. If the failure repeats for the same address
-    range, then there may be a problem causing false errors or crashes.
-        sync check at ...: FAILED
   - If you have Rogue Amoeba's "Instant Hijack" program installed, Valgrind
     will fail with a SIGTRAP at start-up.  This is apparently Instant
     Hijack's fault.  See https://bugs.kde.org/show_bug.cgi?id=193917 for
@@ -29,6 +24,8 @@ Release 3.5.0 (???)
   Usage notes:
   - You will likely find --dsymutil=yes a useful option, as error messages may
     be imprecise without it.
+  - The Mac OS X support is new and therefore will be less robust than the
+    Linux support.  Please report any bugs you find.
 
   Many thanks to Greg Parker for developing this port over several years.
 

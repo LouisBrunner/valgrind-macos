@@ -1,3 +1,0 @@
-prereq: test -e ../../helgrind/tests/tc20_verifywrap && ./supported_libpthread
-vgopts: --trace-mutex=yes --trace-cond=yes --trace-semaphore=yes --read-var-info=yes --check-stack-var=yes
-prog: ../../helgrind/tests/tc20_verifywrap

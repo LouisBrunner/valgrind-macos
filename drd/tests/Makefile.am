@@ -212,18 +212,6 @@ EXTRA_DIST =                                        \
 	tc19_shadowmem.stderr.exp-32bit             \
 	tc19_shadowmem.stderr.exp-64bit             \
 	tc19_shadowmem.vgtest                       \
-	tc20_verifywrap.stderr.exp-glibc2.3         \
-	tc20_verifywrap.stderr.exp-glibc2.5         \
-	tc20_verifywrap.stderr.exp-glibc2.5-ppc     \
-	tc20_verifywrap.stderr.exp-glibc2.8         \
-	tc20_verifywrap.vgtest                      \
-	tc20_verifywrap2.stderr.exp-glibc2.3        \
-	tc20_verifywrap2.stderr.exp-glibc2.3-b      \
-	tc20_verifywrap2.stderr.exp-glibc2.5        \
-	tc20_verifywrap2.stderr.exp-glibc2.5-ppc    \
-	tc20_verifywrap2.stderr.exp-glibc2.8        \
-	tc20_verifywrap2.stderr.exp-glibc2.10       \
-	tc20_verifywrap2.vgtest                     \
 	tc21_pthonce.stderr.exp                     \
 	tc21_pthonce.stdout.exp                     \
 	tc21_pthonce.vgtest                         \

@@ -77,7 +77,6 @@ EXTRA_DIST = \
 # should be conditionally compiled like tc20_verifywrap is.
 check_PROGRAMS = \
 	annotate_hbefore \
-	annotate_rwlock \
 	hg01_all_ok \
 	hg02_deadlock \
 	hg03_inherit \

@@ -13,6 +13,8 @@ noinst_HEADERS =                                    \
 	tsan_thread_wrappers_pthread.h
 
 EXTRA_DIST =                                        \
+	annotate_hbefore.stderr.exp		    \
+	annotate_hbefore.vgtest			    \
 	annotate_order_1.stderr.exp		    \
 	annotate_order_1.vgtest			    \
 	annotate_order_2.stderr.exp		    \

@@ -1,0 +1,4 @@
+prereq: test -e ../../helgrind/tests/annotate_hbefore && ./supported_libpthread
+vgopts: --read-var-info=yes --check-stack-var=yes --show-confl-seg=no
+prog: ../../helgrind/tests/annotate_hbefore
+stderr_filter: filter_stderr

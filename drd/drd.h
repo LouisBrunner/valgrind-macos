@@ -321,10 +321,12 @@ enum {
    /* args: null-terminated character string. */
 
    /* Tell DRD to insert a happens before annotation. */
-   VG_USERREQ__DRD_ANNOTATE_HAPPENS_BEFORE,
+   VG_USERREQ__DRD_ANNOTATE_HAPPENS_BEFORE
+      = VG_USERREQ_TOOL_BASE('H','G') + 256 + 33,
    /* args: Addr. */
    /* Tell DRD to insert a happens after annotation. */
-   VG_USERREQ__DRD_ANNOTATE_HAPPENS_AFTER,
+   VG_USERREQ__DRD_ANNOTATE_HAPPENS_AFTER
+      = VG_USERREQ_TOOL_BASE('H','G') + 256 + 34,
    /* args: Addr. */
 
    /* Tell DRD about an operation performed on a user-defined reader-writer

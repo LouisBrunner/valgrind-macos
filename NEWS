@@ -15,24 +15,24 @@ and X86/Darwin.  Support for recent distros and toolchain components
 Here is a short summary of the changes.  Details are shown further
 down:
 
-* support for Mac OS X 10.5.x
+* Support for Mac OS X 10.5.x.
 
-* improvements and simplifications to Memcheck's leak checker
+* Improvements and simplifications to Memcheck's leak checker.
 
-* clarification and simplifications in various aspects of Valgrind's
-  text output
+* Clarification and simplifications in various aspects of Valgrind's
+  text output.
 
-* XML output for Helgrind and Ptrcheck
+* XML output for Helgrind and Ptrcheck.
 
-* performance and stability improvements for Helgrind and DRD
+* Performance and stability improvements for Helgrind and DRD.
 
-* genuinely atomic support for x86/amd64/ppc atomic instructions
+* Genuinely atomic support for x86/amd64/ppc atomic instructions.
 
-* a new experimental tool, BBV, useful for computer architecture
-  research
+* A new experimental tool, BBV, useful for computer architecture
+  research.
 
-* improved Wine support, including ability to read Windows PDB
-  debuginfo
+* Improved Wine support, including ability to read Windows PDB
+  debuginfo.
 
                     -------------------------
 
@@ -157,7 +157,7 @@ minor changes.
   from GUI tools.  Also, the XML output mechanism has been
   overhauled.
 
-  - the XML format has been overhauled and generalised, so it is more
+  - The XML format has been overhauled and generalised, so it is more
     suitable for error reporting tools in general.  The Memcheck
     specific aspects of it have been removed.  The new format, which
     is an evolution of the old format, is described in

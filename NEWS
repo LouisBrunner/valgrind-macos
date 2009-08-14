@@ -193,8 +193,9 @@ detail:
 
 * Something that happened in 3.4.0, but wasn't clearly announced:  the
   option --read-var-info can be used by some tools (Memcheck, Helgrind and
-  DRD).  When enabled, it makes those tools run more slowly, but
-  descriptions of data addresses in error messages become more detailed.
+  DRD).  When enabled, it makes those tools run more slowly and increases
+  memory consumption, but descriptions of data addresses in error messages
+  become more detailed.
 
 * exp-Omega, an experimental instantaneous leak-detecting tool, was disabled
   in 3.4.0 due to a lack of interest and maintenance, although the source

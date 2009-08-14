@@ -87,6 +87,11 @@
    ...
    fun:_Unwind_Resume
 }
+{
+   drd-libpthread-nanosleep
+   drd:ConflictingAccess
+   fun:nanosleep
+}
 
 #
 # Suppression patterns for libgomp.

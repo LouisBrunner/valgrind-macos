@@ -2966,6 +2966,107 @@ static void evh__HG_PTHREAD_BARRIER_WAIT_PRE ( ThreadId tid,
 }
 
 
+/* ----------------------------------------------------- */
+/* ----- events to do with user-specified HB edges ----- */
+/* ----------------------------------------------------- */
+
+/* A mapping from arbitrary UWord tag to the SO associated with it.
+   The UWord tags are meaningless to us, interpreted only by the
+   user. */
+
+
+
+/* UWord -> SO* */
+static WordFM* map_usertag_to_SO = NULL;
+
+static void map_usertag_to_SO_INIT ( void ) {
+   if (UNLIKELY(map_usertag_to_SO == NULL)) {
+      map_usertag_to_SO = VG_(newFM)( HG_(zalloc),
+                                      "hg.mutS.1", HG_(free), NULL );
+      tl_assert(map_usertag_to_SO != NULL);
+   }
+}
+
+static SO* map_usertag_to_SO_lookup_or_alloc ( UWord usertag ) {
+   UWord key, val;
+   map_usertag_to_SO_INIT();
+   if (VG_(lookupFM)( map_usertag_to_SO, &key, &val, usertag )) {
+      tl_assert(key == (UWord)usertag);
+      return (SO*)val;
+   } else {
+      SO* so = libhb_so_alloc();
+      VG_(addToFM)( map_usertag_to_SO, usertag, (UWord)so );
+      return so;
+   }
+}
+
+// If it's ever needed (XXX check before use)
+//static void map_usertag_to_SO_delete ( UWord usertag ) {
+//   UWord keyW, valW;
+//   map_usertag_to_SO_INIT();
+//   if (VG_(delFromFM)( map_usertag_to_SO, &keyW, &valW, usertag )) {
+//      SO* so = (SO*)valW;
+//      tl_assert(keyW == usertag);
+//      tl_assert(so);
+//      libhb_so_dealloc(so);
+//   }
+//}
+
+
+static
+void evh__HG_USERSO_SEND_PRE ( ThreadId tid, UWord usertag )
+{
+   /* TID is just about to notionally sent a message on a notional
+      abstract synchronisation object whose identity is given by
+      USERTAG.  Bind USERTAG to a real SO if it is not already so
+      bound, and do a 'strong send' on the SO.  This is later used by
+      other thread(s) which successfully 'receive' from the SO,
+      thereby acquiring a dependency on this signalling event. */
+   Thread* thr;
+   SO*     so;
+
+   if (SHOW_EVENTS >= 1)
+      VG_(printf)("evh__HG_USERSO_SEND_PRE(ctid=%d, usertag=%#lx)\n", 
+                  (Int)tid, usertag );
+
+   thr = map_threads_maybe_lookup( tid );
+   tl_assert(thr); /* cannot fail - Thread* must already exist */
+
+   so = map_usertag_to_SO_lookup_or_alloc( usertag );
+   tl_assert(so);
+
+   libhb_so_send( thr->hbthr, so, True/*strong_send*/ );
+}
+
+static
+void evh__HG_USERSO_RECV_POST ( ThreadId tid, UWord usertag )
+{
+   /* TID has just notionally received a message from a notional
+      abstract synchronisation object whose identity is given by
+      USERTAG.  Bind USERTAG to a real SO if it is not already so
+      bound.  If the SO has at some point in the past been 'sent' on,
+      to a 'strong receive' on it, thereby acquiring a dependency on
+      the sender. */
+   Thread* thr;
+   SO*     so;
+
+   if (SHOW_EVENTS >= 1)
+      VG_(printf)("evh__HG_USERSO_RECV_POST(ctid=%d, usertag=%#lx)\n", 
+                  (Int)tid, usertag );
+
+   thr = map_threads_maybe_lookup( tid );
+   tl_assert(thr); /* cannot fail - Thread* must already exist */
+
+   so = map_usertag_to_SO_lookup_or_alloc( usertag );
+   tl_assert(so);
+
+   /* Acquire a dependency on it.  If the SO has never so far been
+      sent on, then libhb_so_recv will do nothing.  So we're safe
+      regardless of SO's history. */
+   libhb_so_recv( thr->hbthr, so, True/*strong_recv*/ );
+}
+
+
 /*--------------------------------------------------------------*/
 /*--- Lock acquisition order monitoring                      ---*/
 /*--------------------------------------------------------------*/
@@ -4240,6 +4341,30 @@ Bool hg_handle_client_request ( ThreadId tid, UWord* args, UWord* ret)
       case _VG_USERREQ__HG_PTHREAD_SPIN_DESTROY_PRE:
          /* pth_spinlock_t* */
          evh__HG_PTHREAD_SPIN_DESTROY_PRE( tid, (void*)args[1] );
+         break;
+
+      case _VG_USERREQ__HG_CLIENTREQ_UNIMP: {
+         /* char* who */
+         HChar*  who = (HChar*)args[1];
+         HChar   buf[50 + 50];
+         Thread* thr = map_threads_maybe_lookup( tid );
+         tl_assert( thr ); /* I must be mapped */
+         tl_assert( who );
+         tl_assert( VG_(strlen)(who) <= 50 );
+         VG_(sprintf)(buf, "Unimplemented client request macro \"%s\"", who );
+         /* record_error_Misc strdup's buf, so this is safe: */
+         HG_(record_error_Misc)( thr, buf );
+         break;
+      }
+
+      case _VG_USERREQ__HG_USERSO_SEND_PRE:
+         /* UWord arbitrary-SO-tag */
+         evh__HG_USERSO_SEND_PRE( tid, args[1] );
+         break;
+
+      case _VG_USERREQ__HG_USERSO_RECV_POST:
+         /* UWord arbitrary-SO-tag */
+         evh__HG_USERSO_RECV_POST( tid, args[1] );
          break;
 
       default:

@@ -415,7 +415,7 @@ static void gen_suppression(Error* err)
       // itself contains "]]>", as specified in Protocol 4.
       VG_(printf_xml)("    <rawtext>\n");
       VG_(printf_xml)("<![CDATA[\n");
-      VG_(printf)("%s", (HChar*) VG_(indexXA)(text, 0) );
+      VG_(printf_xml)("%s", (HChar*) VG_(indexXA)(text, 0) );
       VG_(printf_xml)("]]>\n");
       VG_(printf_xml)("    </rawtext>\n");
       VG_(printf_xml)("  </suppression>\n");

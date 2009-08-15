@@ -158,11 +158,11 @@
 
 /** Tell DRD that a reader-writer lock object has been initialized. */
 #define ANNOTATE_RWLOCK_CREATE(rwlock) \
-   DRDCL_(annotate_rwlock)(rwlock, 0, 0)
+   DRDCL_(annotate_rwlock_create)(rwlock)
 
 /** Tell DRD that a reader-writer lock object has been destroyed. */
 #define ANNOTATE_RWLOCK_DESTROY(rwlock) \
-   DRDCL_(annotate_rwlock)(rwlock, 1, 0)
+   DRDCL_(annotate_rwlock_destroy)(rwlock)
 
 /**
  * Tell DRD that a reader-writer lock has been acquired. is_w == 1 means that
@@ -170,7 +170,7 @@
  * obtained.
  */
 #define ANNOTATE_RWLOCK_ACQUIRED(rwlock, is_w) \
-   DRDCL_(annotate_rwlock)(rwlock, 2, is_w)
+   DRDCL_(annotate_rwlock_acquired)(rwlock, is_w)
 
 /**
  * Tell DRD that a reader lock has been acquired on a reader-writer
@@ -190,7 +190,7 @@
  * is about to be released.
  */
 #define ANNOTATE_RWLOCK_RELEASED(rwlock, is_w) \
-   DRDCL_(annotate_rwlock)(rwlock, 3, is_w)
+   DRDCL_(annotate_rwlock_released)(rwlock, is_w)
 
 /**
  * Tell DRD that a reader lock is about to be released.
@@ -320,6 +320,32 @@ enum {
    VG_USERREQ__DRD_SET_THREAD_NAME,
    /* args: null-terminated character string. */
 
+   /* Tell DRD that a user-defined reader-writer synchronization object
+    * has been created. */
+   VG_USERREQ__DRD_ANNOTATE_RWLOCK_CREATE
+      = VG_USERREQ_TOOL_BASE('H','G') + 256 + 14,
+   /* args: Addr. */
+   /* Tell DRD that a user-defined reader-writer synchronization object
+    * is about to be destroyed. */
+   VG_USERREQ__DRD_ANNOTATE_RWLOCK_DESTROY
+      = VG_USERREQ_TOOL_BASE('H','G') + 256 + 15,
+   /* args: Addr. */
+   /* Tell DRD that a lock on a user-defined reader-writer synchronization
+    * object has been acquired. */
+   VG_USERREQ__DRD_ANNOTATE_RWLOCK_ACQUIRED
+      = VG_USERREQ_TOOL_BASE('H','G') + 256 + 17,
+   /* args: Addr, Int is_rw. */
+   /* Tell DRD that a lock on a user-defined reader-writer synchronization
+    * object is about to be released. */
+   VG_USERREQ__DRD_ANNOTATE_RWLOCK_RELEASED
+      = VG_USERREQ_TOOL_BASE('H','G') + 256 + 18,
+   /* args: Addr, Int is_rw. */
+
+   /* Tell DRD that an annotation has not yet been implemented. */
+   VG_USERREQ__DRD_ANNOTATION_UNIMP
+      = VG_USERREQ_TOOL_BASE('H','G') + 256 + 32,
+   /* args: Char*. */
+
    /* Tell DRD to insert a happens before annotation. */
    VG_USERREQ__DRD_ANNOTATE_HAPPENS_BEFORE
       = VG_USERREQ_TOOL_BASE('H','G') + 256 + 33,
@@ -329,10 +355,6 @@ enum {
       = VG_USERREQ_TOOL_BASE('H','G') + 256 + 34,
    /* args: Addr. */
 
-   /* Tell DRD about an operation performed on a user-defined reader-writer
-    * synchronization object. */
-   VG_USERREQ__DRD_ANNOTATE_RWLOCK,
-   /* args: Addr, Int operation_type, Int is_rw. */
 };
 
 
@@ -433,13 +455,39 @@ void DRDCL_(annotate_happens_after)(const void* const addr)
 }
 
 static __inline__
-void DRDCL_(annotate_rwlock)(const void* const rwlock, const int op,
-                             const int is_w)
+void DRDCL_(annotate_rwlock_create)(const void* const rwlock)
 {
    int res;
    VALGRIND_DO_CLIENT_REQUEST(res, 0,
-                              VG_USERREQ__DRD_ANNOTATE_RWLOCK,
-                              rwlock, op, is_w, 0, 0);
+                              VG_USERREQ__DRD_ANNOTATE_RWLOCK_CREATE,
+                              rwlock, 0, 0, 0, 0);
+}
+
+static __inline__
+void DRDCL_(annotate_rwlock_destroy)(const void* const rwlock)
+{
+   int res;
+   VALGRIND_DO_CLIENT_REQUEST(res, 0,
+                              VG_USERREQ__DRD_ANNOTATE_RWLOCK_DESTROY,
+                              rwlock, 0, 0, 0, 0);
+}
+
+static __inline__
+void DRDCL_(annotate_rwlock_acquired)(const void* const rwlock, const int is_w)
+{
+   int res;
+   VALGRIND_DO_CLIENT_REQUEST(res, 0,
+                              VG_USERREQ__DRD_ANNOTATE_RWLOCK_ACQUIRED,
+                              rwlock, is_w, 0, 0, 0);
+}
+
+static __inline__
+void DRDCL_(annotate_rwlock_released)(const void* const rwlock, const int is_w)
+{
+   int res;
+   VALGRIND_DO_CLIENT_REQUEST(res, 0,
+                              VG_USERREQ__DRD_ANNOTATE_RWLOCK_RELEASED,
+                              rwlock, is_w, 0, 0, 0);
 }
 
 #endif /* __VALGRIND_DRD_H */

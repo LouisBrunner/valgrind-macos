@@ -383,6 +383,15 @@ static void drd_tool_error_pp(Error* const e)
       VG_(pp_ExeContext)(VG_(get_error_where)(e));
       break;
    }
+   case UnimpClReq: {
+      UnimpClReqInfo* uicr =(UnimpClReqInfo*)(VG_(get_error_extra)(e));
+      VG_(message)(Vg_UserMsg,
+                   "The annotation macro %s has not yet been implemented in"
+                   " <helgrind/helgrind.h>\n",
+                   /*VG_(get_error_string)(e),*/ uicr->descr);
+      VG_(pp_ExeContext)(VG_(get_error_where)(e));
+      break;
+   }
    default:
       VG_(message)(Vg_UserMsg,
                    "%s\n",
@@ -420,6 +429,8 @@ static UInt drd_tool_error_update_extra(Error* e)
       return sizeof(GenericErrInfo);
    case InvalidThreadId:
       return sizeof(InvalidThreadIdInfo);
+   case UnimpClReq:
+      return sizeof(UnimpClReqInfo);
    default:
       tl_assert(False);
       break;
@@ -461,6 +472,8 @@ static Bool drd_is_recognized_suppression(Char* const name, Supp* const supp)
       skind = GenericErr;
    else if (VG_(strcmp)(name, STR_InvalidThreadId) == 0)
       skind = InvalidThreadId;
+   else if (VG_(strcmp)(name, STR_UnimpClReq) == 0)
+      skind = UnimpClReq;
    else
       return False;
 
@@ -507,6 +520,7 @@ static Char* drd_get_error_name(Error* e)
    case HoldtimeErr:  return VGAPPEND(STR_, HoldtimeErr);
    case GenericErr:   return VGAPPEND(STR_, GenericErr);
    case InvalidThreadId: return VGAPPEND(STR_, InvalidThreadId);
+   case UnimpClReq:   return VGAPPEND(STR_, UnimpClReq);
    default:
       tl_assert(0);
    }

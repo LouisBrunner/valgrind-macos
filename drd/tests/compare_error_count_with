@@ -1,0 +1,3 @@
+#!/bin/sh
+
+awk -v count=50000 '/ERROR SUMMARY/{if ($4 <= count) print "Total error count is below threshold."; else print "Total error count is above threshold" }'

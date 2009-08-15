@@ -136,40 +136,55 @@ static Bool handle_client_request(ThreadId vg_tid, UWord* arg, UWord* ret)
       }
       break;
 
-   case VG_USERREQ__DRD_ANNOTATE_RWLOCK:
+   case VG_USERREQ__DRD_ANNOTATE_RWLOCK_CREATE:
+      if (arg[1])
       {
          struct mutex_info* const mutex_p = DRD_(mutex_get)(arg[1]);
          if (mutex_p && mutex_p->mutex_type == mutex_type_spinlock)
             break;
       }
-      switch (arg[2])
+      DRD_(rwlock_pre_init)(arg[1], user_rwlock);
+      break;
+
+   case VG_USERREQ__DRD_ANNOTATE_RWLOCK_DESTROY:
+      if (arg[1])
       {
-      case 0:
-         DRD_(rwlock_pre_init)(arg[1], user_rwlock);
-         break;
-      case 1:
-         DRD_(rwlock_post_destroy)(arg[1], user_rwlock);
-         break;
-      case 2:
-         tl_assert(arg[3] == !! arg[3]);
-         if (arg[3])
-         {
-            DRD_(rwlock_pre_wrlock)(arg[1], user_rwlock);
-            DRD_(rwlock_post_wrlock)(arg[1], user_rwlock, True);
-         }
-         else
-         {
-            DRD_(rwlock_pre_rdlock)(arg[1], user_rwlock);
-            DRD_(rwlock_post_rdlock)(arg[1], user_rwlock, True);
-         }
-         break;
-      case 3:
-         tl_assert(arg[3] == !! arg[3]);
-         DRD_(rwlock_pre_unlock)(arg[1], user_rwlock);
-         break;
-      default:
-         tl_assert(False);
+         struct mutex_info* const mutex_p = DRD_(mutex_get)(arg[1]);
+         if (mutex_p && mutex_p->mutex_type == mutex_type_spinlock)
+            break;
       }
+      DRD_(rwlock_post_destroy)(arg[1], user_rwlock);
+      break;
+
+   case VG_USERREQ__DRD_ANNOTATE_RWLOCK_ACQUIRED:
+      if (arg[1])
+      {
+         struct mutex_info* const mutex_p = DRD_(mutex_get)(arg[1]);
+         if (mutex_p && mutex_p->mutex_type == mutex_type_spinlock)
+            break;
+      }
+      tl_assert(arg[2] == !! arg[2]);
+      if (arg[2])
+      {
+         DRD_(rwlock_pre_wrlock)(arg[1], user_rwlock);
+         DRD_(rwlock_post_wrlock)(arg[1], user_rwlock, True);
+      }
+      else
+      {
+         DRD_(rwlock_pre_rdlock)(arg[1], user_rwlock);
+         DRD_(rwlock_post_rdlock)(arg[1], user_rwlock, True);
+      }
+      break;
+
+   case VG_USERREQ__DRD_ANNOTATE_RWLOCK_RELEASED:
+      if (arg[1])
+      {
+         struct mutex_info* const mutex_p = DRD_(mutex_get)(arg[1]);
+         if (mutex_p && mutex_p->mutex_type == mutex_type_spinlock)
+            break;
+      }
+      tl_assert(arg[2] == !! arg[2]);
+      DRD_(rwlock_pre_unlock)(arg[1], user_rwlock);
       break;
 
    case VG_USERREQ__DRD_START_NEW_SEGMENT:
@@ -480,6 +495,21 @@ static Bool handle_client_request(ThreadId vg_tid, UWord* arg, UWord* ret)
    case VG_USERREQ__DRD_CLEAN_MEMORY:
       if (arg[2] > 0)
          DRD_(clean_memory)(arg[1], arg[2]);
+      break;
+
+   case VG_USERREQ__DRD_ANNOTATION_UNIMP:
+      {
+         /* Note: it is assumed below that the text arg[1] points to is never
+          * freed, e.g. because it points to static data.
+          */
+         UnimpClReqInfo UICR =
+            { DRD_(thread_get_running_tid)(), (Char*)arg[1] };
+         VG_(maybe_record_error)(vg_tid,
+                                 UnimpClReq,
+                                 VG_(get_IP)(vg_tid),
+                                 "",
+                                 &UICR);
+      }
       break;
 
    default:

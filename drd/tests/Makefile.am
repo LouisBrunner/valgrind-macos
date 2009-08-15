@@ -2,6 +2,7 @@
 include $(top_srcdir)/Makefile.tool-tests.am
 
 dist_noinst_SCRIPTS =		    \
+	compare_error_count_with    \
 	filter_error_summary	    \
 	filter_stderr               \
 	filter_stderr_and_thread_no \
@@ -21,10 +22,14 @@ EXTRA_DIST =                                        \
 	annotate_order_2.vgtest			    \
 	annotate_order_3.stderr.exp		    \
 	annotate_order_3.vgtest			    \
+	annotate_publish_hg.stderr.exp		    \
+	annotate_publish_hg.vgtest		    \
 	annotate_spinlock.stderr.exp		    \
 	annotate_spinlock.vgtest		    \
 	annotate_rwlock.stderr.exp		    \
 	annotate_rwlock.vgtest			    \
+	annotate_rwlock_hg.stderr.exp		    \
+	annotate_rwlock_hg.vgtest		    \
 	annotate_ignore_read.stderr.exp		    \
 	annotate_ignore_read.vgtest		    \
 	annotate_ignore_rw.stderr.exp		    \
@@ -239,6 +244,7 @@ EXTRA_DIST =                                        \
 check_PROGRAMS =      \
   annotate_ignore_rw  \
   annotate_ignore_write \
+  annotate_publish_hg \
   custom_alloc        \
   fp_race             \
   hold_lock           \

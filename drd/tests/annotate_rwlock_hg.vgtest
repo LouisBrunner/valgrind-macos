@@ -1,0 +1,4 @@
+prereq: test -e ../../helgrind/tests/annotate_rwlock && ./supported_libpthread
+vgopts: --read-var-info=yes --check-stack-var=yes --show-confl-seg=no
+prog: ../../helgrind/tests/annotate_rwlock
+stderr_filter: compare_error_count_with

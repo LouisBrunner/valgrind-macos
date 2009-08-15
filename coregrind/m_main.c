@@ -950,10 +950,11 @@ static void print_file_vars(Char* format)
                   i++;
                }
 
-               VG_(message_no_f_c)(Vg_UserMsg,
-                                   "<logfilequalifier> <var>%t</var> "
-                                   "<value>%t</value> </logfilequalifier>\n",
-                                   qualname,qual);
+               VG_(printf_xml_no_f_c)(
+                  "<logfilequalifier> <var>%t</var> "
+                  "<value>%t</value> </logfilequalifier>\n",
+                  qualname,qual
+               );
 	       format[i] = '}';
 	       i++;
 	    }
@@ -2422,7 +2423,8 @@ void shutdown_actions_NORETURN( ThreadId tid,
    VG_TDICT_CALL(tool_fini, 0/*exitcode*/);
 
    /* Show the error counts. */
-   if (VG_(needs).core_errors || VG_(needs).tool_errors) {
+   if (VG_(clo_xml)
+       && (VG_(needs).core_errors || VG_(needs).tool_errors)) {
       VG_(show_error_counts_as_XML)();
    }
 

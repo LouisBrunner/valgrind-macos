@@ -146,3 +146,10 @@ AM_CXXFLAGS += $(AM_FLAG_M3264_PRI)
 
 LDADD = -lpthread
 
+if VGCONF_OS_IS_DARWIN
+annotate_hbefore_CFLAGS = $(AM_CFLAGS) -mdynamic-no-pic
+else
+annotate_hbefore_CFLAGS = $(AM_CFLAGS)
+endif
+
+

@@ -853,6 +853,12 @@ output reports that the lock acquired at line 51 in source file
         reader-writer synchronization objects that were locked by that thread.
       </para>
     </listitem>
+    <listitem>
+      <para>
+        Passing an invalid thread ID to <function>pthread_join</function>
+        or <function>pthread_cancel</function>.
+      </para>
+    </listitem>
   </itemizedlist>
 </para>
 
@@ -1087,7 +1093,12 @@ available macros and client requests are:
 <para>
 For an example of how to use the annotations for user-defined reader-writer
 synchronization objects, see
-also <literal>drd/tests/annotate_rwlock.c</literal>.
+also the source file <literal>drd/tests/annotate_rwlock.c</literal> in the
+Valgrind source archive. And an example of how to
+use the <literal>ANNOTATE_HAPPENS_BEFORE</literal> and
+the <literal>ANNOTATE_HAPPENS_AFTER</literal> annotations can be found
+in the source code of the <ulink url="http://code.google.com/chromium/">Chromium</ulink>
+web browser.
 </para>
 
 <para>

@@ -2269,28 +2269,18 @@ Bool VG_(use_FPO_info) ( /*MOD*/Addr* ipP,
 /*---                                                        ---*/
 /*--------------------------------------------------------------*/
 
-/* Implement a "p2XA" function ("printf-to-XA"), which printfs into an
-   XArray of HChar, adding stuff at the end.  This is very convenient
-   for concocting result strings in format_message().  Note that the
-   resulting string is NOT zero-terminated.
+/* Try to make p2XA(dst, fmt, args..) turn into
+   VG_(xaprintf_no_f_c)(dst, fmt, args) without having to resort to
+   vararg macros.  As usual with everything to do with varargs, it's
+   an ugly hack.
 
-   Unfortunately no format check on p2XA, since we need to use %t
-   for XML escaped-string output, and gcc complains about that.
+   //#define p2XA(dstxa, format, args...)
+   //   VG_(xaprintf_no_f_c)(dstxa, format, ##args)
 */
-static void add_char_to_XA ( HChar c, void* opaque )
-{
-   XArray* dst = (XArray*)opaque;
-   (void) VG_(addBytesToXA)( dst, &c, 1 );
-}
-static void p2XA ( XArray* dst, const HChar* format, ... )
-{
-   va_list vargs;
-   va_start(vargs, format);
-   VG_(vcbprintf)( add_char_to_XA, (void*)dst, format, vargs );
-   va_end(vargs);
-}
+#define  p2XA  VG_(xaprintf_no_f_c)
 
-/* Add a zero-terminating byte to DST. */
+/* Add a zero-terminating byte to DST, which must be an XArray* of
+   HChar. */
 static void zterm_XA ( XArray* dst )
 {
    HChar zero = 0;

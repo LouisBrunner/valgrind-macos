@@ -528,14 +528,18 @@ static Char* drd_get_error_name(Error* e)
 }
 
 /**
- * Print extra suppression information.
+ * Return extra suppression information.
  *
  * Invoked while printing a suppression pattern because the user
  * specified --gen-suppressions=yes or all on the command line. DRD does not
  * define any 'extra' suppression information.
  */
-static void drd_print_extra_suppression_info(Error* e)
-{ }
+static
+Bool drd_get_extra_suppression_info(Error* e,
+                                    /*OUT*/Char* buf, Int nBuf)
+{
+   return False;
+}
 
 /** Tell the Valgrind core about DRD's error handlers. */
 void DRD_(register_error_handlers)(void)
@@ -549,5 +553,5 @@ void DRD_(register_error_handlers)(void)
                           drd_read_extra_suppression_info,
                           drd_error_matches_suppression,
                           drd_get_error_name,
-                          drd_print_extra_suppression_info);
+                          drd_get_extra_suppression_info);
 }

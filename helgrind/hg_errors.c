@@ -1068,9 +1068,11 @@ Bool HG_(error_matches_suppression) ( Error* err, Supp* su )
    }
 }
 
-void HG_(print_extra_suppression_info) ( Error* err )
+Bool HG_(get_extra_suppression_info) ( Error* err,
+                                       /*OUT*/Char* buf, Int nBuf )
 {
    /* Do nothing */
+   return False;
 }
 
 

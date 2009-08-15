@@ -1499,11 +1499,19 @@ Char* MC_(get_error_name) ( Error* err )
    }
 }
 
-void MC_(print_extra_suppression_info) ( Error* err )
+Bool MC_(get_extra_suppression_info) ( Error* err,
+                                       /*OUT*/Char* buf, Int nBuf )
 {
    ErrorKind ekind = VG_(get_error_kind )(err);
+   tl_assert(buf);
+   tl_assert(nBuf >= 16); // stay sane
    if (Err_RegParam == ekind || Err_MemParam == ekind) {
-      VG_(printf)("   %s\n", VG_(get_error_string)(err));
+      Char* errstr = VG_(get_error_string)(err);
+      tl_assert(errstr);
+      VG_(snprintf)(buf, nBuf-1, "%s", errstr);
+      return True;
+   } else {
+      return False;
    }
 }
 

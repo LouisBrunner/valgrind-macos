@@ -306,6 +306,31 @@ void VG_(dropHeadXA) ( XArray* xao, Word n )
    xa->usedsizeE -= n;
 }
 
+/* --------- Printeffery --------- */
+
+static void add_char_to_XA ( HChar c, void* opaque )
+{
+   XArray* dst = (XArray*)opaque;
+   (void) VG_(addBytesToXA)( dst, &c, 1 );
+}
+
+void VG_(xaprintf)( XArray* dst, const HChar* format, ... )
+{
+   va_list vargs;
+   va_start(vargs, format);
+   VG_(vcbprintf)( add_char_to_XA, (void*)dst, format, vargs );
+   va_end(vargs);
+}
+
+/* and again .. */
+void VG_(xaprintf_no_f_c)( XArray* dst, const HChar* format, ... )
+{
+   va_list vargs;
+   va_start(vargs, format);
+   VG_(vcbprintf)( add_char_to_XA, (void*)dst, format, vargs );
+   va_end(vargs);
+}
+
 
 /*--------------------------------------------------------------------*/
 /*--- end                                               m_xarray.c ---*/

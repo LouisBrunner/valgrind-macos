@@ -320,7 +320,8 @@ Bool MC_(read_extra_suppression_info) ( Int fd, Char** buf,
 
 Bool MC_(error_matches_suppression) ( Error* err, Supp* su );
 
-void MC_(print_extra_suppression_info) ( Error* err );
+Bool MC_(get_extra_suppression_info) ( Error* err,
+                                       /*OUT*/Char* buf, Int nBuf );
 
 Char* MC_(get_error_name) ( Error* err );
 

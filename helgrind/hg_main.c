@@ -4601,7 +4601,7 @@ static void hg_pre_clo_init ( void )
                                    HG_(read_extra_suppression_info),
                                    HG_(error_matches_suppression),
                                    HG_(get_error_name),
-                                   HG_(print_extra_suppression_info));
+                                   HG_(get_extra_suppression_info));
 
    VG_(needs_xml_output)          ();
 

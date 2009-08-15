@@ -298,13 +298,25 @@ SUPPRESSION
 -----------
 These are optionally emitted as part of ERRORs, and specify the
 suppression that would be needed to suppress the containing error.
+For convenience, the suppression is presented twice, once in
+a structured nicely wrapped up in tags, and once as raw text
+suitable for direct copying and pasting into a suppressions file.
 
   <suppression>
     <sname>TEXT</sname>    name of the suppression
     <skind>TEXT</skind>    kind, eg                 "Memcheck:Param"
     <skaux>TEXT</skaux>    (optional) aux kind, eg  "write(buf)"
     SFRAME                 (one or more) frames
+    <rawtext> CDATAS </rawtext>
   </suppression>
+
+where CDATAS is a sequence of one or more <![CDATA[ .. ]]> blocks
+holding the raw text.  Unfortunately, CDATA provides no way to escape
+the ending marker "]]>", which means that if the raw data contains
+such a sequence, it has to be split between two CDATA blocks, one
+ending with data "]]" and the other beginning with data "<".  This is
+why the spec calls for one or more CDATA blocks rather than exactly
+one.
 
 
 SFRAME

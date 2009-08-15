@@ -62,11 +62,16 @@ extern UInt VG_(get_StackTrace) ( ThreadId tid,
                                   /*OUT*/StackTrace fps,
                                   Word first_ip_delta );
 
-// Apply a function to every element in the StackTrace.  The parameter 'n'
-// gives the index of the passed ip.  Doesn't go below main() unless
-// --show-below-main=yes is set.
-extern void VG_(apply_StackTrace)( void(*action)(UInt n, Addr ip),
-                                   StackTrace ips, UInt n_ips );
+// Apply a function to every element in the StackTrace.  The parameter
+// 'n' gives the index of the passed ip.  'opaque' is an arbitrary
+// pointer provided to each invokation of 'action' (a poor man's
+// closure).  Doesn't go below main() unless --show-below-main=yes is
+// set.
+extern void VG_(apply_StackTrace)(
+               void(*action)(UInt n, Addr ip, void* opaque),
+               void* opaque,
+               StackTrace ips, UInt n_ips
+            );
 
 // Print a StackTrace.
 extern void VG_(pp_StackTrace) ( StackTrace ips, UInt n_ips );

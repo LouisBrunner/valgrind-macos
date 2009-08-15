@@ -46,6 +46,7 @@
 #include "pub_core_stacktrace.h"
 #include "pub_core_tooliface.h"
 #include "pub_core_translate.h"        // for VG_(translate)()
+#include "pub_core_xarray.h"           // VG_(xaprintf) et al
 
 /*------------------------------------------------------------*/
 /*--- Globals                                              ---*/
@@ -295,78 +296,133 @@ static Bool eq_Error ( VgRes res, Error* e1, Error* e2 )
 }
 
 
-/* Helper function for suppression generation: print a single line of
-   a suppression pseudo-stack-trace, either in XML or text mode.
+/* Helper functions for suppression generation: print a single line of
+   a suppression pseudo-stack-trace, either in XML or text mode.  It's
+   important that the behaviour of these two functions exactly
+   corresponds.
 */
 #define ERRTXT_LEN   4096
 
-static void printSuppForIp(UInt n, Addr ip)
+static void printSuppForIp_XML(UInt n, Addr ip, void* uu_opaque)
 {
    static UChar buf[ERRTXT_LEN];
-
    if ( VG_(get_fnname_no_cxx_demangle) (ip, buf,  ERRTXT_LEN) ) {
-      if (VG_(clo_xml))
-         VG_(printf_xml_no_f_c)("    <sframe> <fun>%t</fun> </sframe>\n", buf);
-      else
-         VG_(printf)("   fun:%s\n", buf);
- 
-  } else if ( VG_(get_objname)(ip, buf, ERRTXT_LEN) ) {
-      if (VG_(clo_xml))
-         VG_(printf_xml_no_f_c)("    <sframe> <obj>%t</obj> </sframe>\n", buf);
-      else
-         VG_(printf)("   obj:%s\n", buf);
-
+      VG_(printf_xml_no_f_c)("    <sframe> <fun>%t</fun> </sframe>\n", buf);
+   } else
+   if ( VG_(get_objname)(ip, buf, ERRTXT_LEN) ) {
+      VG_(printf_xml_no_f_c)("    <sframe> <obj>%t</obj> </sframe>\n", buf);
    } else {
-      if (VG_(clo_xml))
-         VG_(printf_xml_no_f_c)("    <sframe> <obj>*</obj> </sframe>\n");
-      else
-         VG_(printf)("   obj:*\n");
+      VG_(printf_xml_no_f_c)("    <sframe> <obj>*</obj> </sframe>\n");
    }
 }
 
+static void printSuppForIp_nonXML(UInt n, Addr ip, void* textV)
+{
+   static UChar buf[ERRTXT_LEN];
+   XArray* /* of HChar */ text = (XArray*)textV;
+   if ( VG_(get_fnname_no_cxx_demangle) (ip, buf,  ERRTXT_LEN) ) {
+      VG_(xaprintf)(text, "   fun:%s\n", buf);
+   } else
+   if ( VG_(get_objname)(ip, buf, ERRTXT_LEN) ) {
+      VG_(xaprintf)(text, "   obj:%s\n", buf);
+   } else {
+      VG_(xaprintf)(text, "   obj:*\n");
+   }
+}
 
 /* Generate a suppression for an error, either in text or XML mode.
 */
 static void gen_suppression(Error* err)
 {
-   ExeContext* ec      = VG_(get_error_where)(err);
+   Char        xtra[256]; /* assumed big enough (is overrun-safe) */
+   Bool        anyXtra;
+   Char*       name;
+   ExeContext* ec;
+   XArray* /* HChar */ text;
 
-   //(example code, see comment on CoreSuppKind above)
-   if (0) {    
-   //if (0) ThreadErr == err->ekind) {
-   //   VG_(printf)("{\n");
-   //   VG_(printf)("   <insert a suppression name here>\n");
-   //   VG_(printf)("   core:Thread\n");
+   const HChar* dummy_name = "insert_a_suppression_name_here";
 
-   } else {
-      Char* name = VG_TDICT_CALL(tool_get_error_name, err);
-      if (NULL == name) {
-         VG_(umsg)("(%s does not allow error to be suppressed)\n",
-                   VG_(details).name);
-         return;
-      }
-      if (VG_(clo_xml)) {
-         VG_(printf_xml)("  <suppression>\n");
-         VG_(printf_xml)("    <sname>insert_a_suppression_name_here</sname>\n");
-         VG_(printf_xml)("    <skind>%s:%s</skind>\n", VG_(details).name, name);
-      } else {
-         VG_(printf)("{\n");
-         VG_(printf)("   <insert a suppression name here>\n");
-         VG_(printf)("   %s:%s\n", VG_(details).name, name);
-      }
-      VG_TDICT_CALL(tool_print_extra_suppression_info, err);
+   vg_assert(err);
+
+   /* In XML mode, we also need to print the plain text version of the
+      suppresion in a CDATA section.  What that really means is, we
+      need to generate the plaintext version both in XML and text
+      mode.  So generate it into TEXT. */
+   text = VG_(newXA)( VG_(malloc), "errormgr.gen_suppression.1",
+                      VG_(free), sizeof(HChar) );
+   vg_assert(text);
+
+   ec = VG_(get_error_where)(err);
+   vg_assert(ec);
+
+   name = VG_TDICT_CALL(tool_get_error_name, err);
+   if (NULL == name) {
+      VG_(umsg)("(%s does not allow error to be suppressed)\n",
+                VG_(details).name);
+      return;
    }
 
+   /* Ok.  Generate the plain text version into TEXT. */
+   VG_(xaprintf)(text, "{\n");
+   VG_(xaprintf)(text, "   <%s>\n", dummy_name);
+   VG_(xaprintf)(text, "   %s:%s\n", VG_(details).name, name);
+
+   VG_(memset)(xtra, 0, sizeof(xtra));
+   anyXtra = VG_TDICT_CALL(tool_get_extra_suppression_info,
+                           err, xtra, sizeof(xtra));
+   vg_assert(xtra[sizeof(xtra)-1] == 0);
+
+   if (anyXtra)
+      VG_(xaprintf)(text, "   %s\n", xtra);
+
    // Print stack trace elements
-   VG_(apply_StackTrace)(printSuppForIp,
+   VG_(apply_StackTrace)(printSuppForIp_nonXML,
+                         text,
                          VG_(get_ExeContext_StackTrace)(ec),
                          VG_(get_ExeContext_n_ips)(ec));
 
-   if (VG_(clo_xml)) {
-      VG_(printf_xml)("  </suppression>\n");
+   VG_(xaprintf)(text, "}\n");
+   // zero terminate
+   VG_(xaprintf)(text, "%c", (HChar)0 );
+   // VG_(printf) of text
+
+   /* And now display it. */
+   if (! VG_(clo_xml) ) {
+
+      // the simple case
+      VG_(printf)("%s", (HChar*) VG_(indexXA)(text, 0) );
+
    } else {
-      VG_(printf)("}\n");
+
+      /* Now we have to print the XML directly.  No need to go to the
+         effort of stuffing it in an XArray, since we won't need it
+         again. */
+      VG_(printf_xml)("  <suppression>\n");
+      VG_(printf_xml)("    <sname>%s</sname>\n", dummy_name);
+      VG_(printf_xml_no_f_c)(
+                      "    <skind>%t:%t</skind>\n", VG_(details).name, name);
+      if (anyXtra)
+         VG_(printf_xml_no_f_c)("    <skaux>%t</skaux>\n", xtra);
+
+      // Print stack trace elements
+      VG_(apply_StackTrace)(printSuppForIp_XML,
+                            NULL,
+                            VG_(get_ExeContext_StackTrace)(ec),
+                            VG_(get_ExeContext_n_ips)(ec));
+
+      // And now the cdata bit
+      // XXX FIXME!  properly handle the case where the raw text
+      // itself contains "]]>", as specified in Protocol 4.
+      VG_(printf_xml)("    <rawtext>\n");
+      VG_(printf_xml)("<![CDATA[\n");
+      VG_(printf)("%s", (HChar*) VG_(indexXA)(text, 0) );
+      VG_(printf_xml)("]]>\n");
+      VG_(printf_xml)("    </rawtext>\n");
+      VG_(printf_xml)("  </suppression>\n");
+
    }
+
+   VG_(deleteXA)(text);
 }
 
 

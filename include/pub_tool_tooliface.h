@@ -332,10 +332,17 @@ extern void VG_(needs_tool_errors) (
    // VG_(tdict).tool_recognised_suppression().
    Char* (*get_error_name)(Error* err),
 
-   // This should print any extra info for the error, for --gen-suppressions,
-   // including the newline.  This is the inverse of
+   // This should print into buf[0..nBuf-1] any extra info for the
+   // error, for --gen-suppressions, but not including any leading
+   // spaces nor a trailing newline.  When called, buf[0 .. nBuf-1]
+   // will be zero filled, and it is expected and checked that the
+   // last element is still zero after the call.  In other words the
+   // tool may not overrun the buffer, and this is checked for.  If
+   // there is any info printed in the buffer, return True, otherwise
+   // do nothing, and return False.  This function is the inverse of
    // VG_(tdict).tool_read_extra_suppression_info().
-   void (*print_extra_suppression_info)(Error* err)
+   Bool (*print_extra_suppression_info)(Error* err,
+                                        /*OUT*/Char* buf, Int nBuf)
 );
 
 /* Is information kept by the tool about specific instructions or

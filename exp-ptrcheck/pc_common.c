@@ -775,14 +775,21 @@ Char* pc_get_error_name ( Error* err )
    }
 }
 
-void pc_print_extra_suppression_info ( Error* err )
+Bool pc_get_extra_suppression_info ( Error* err,
+                                     /*OUT*/Char* buf, Int nBuf )
 {
-   if (XE_SysParam == VG_(get_error_kind)(err)) {
-      VG_(printf)("   %s\n", VG_(get_error_string)(err));
+   ErrorKind ekind = VG_(get_error_kind )(err);
+   tl_assert(buf);
+   tl_assert(nBuf >= 16); // stay sane
+   if (XE_SysParam == ekind) {
+      Char* errstr = VG_(get_error_string)(err);
+      tl_assert(errstr);
+      VG_(snprintf)(buf, nBuf-1, "%s", errstr);
+      return True;
+   } else {
+      return False;
    }
 }
-
-
 
 
 /*--------------------------------------------------------------------*/

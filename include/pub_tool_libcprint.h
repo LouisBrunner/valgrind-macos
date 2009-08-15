@@ -31,20 +31,6 @@
 #ifndef __PUB_TOOL_LIBCPRINT_H
 #define __PUB_TOOL_LIBCPRINT_H
 
-
-/* Enable compile-time format string checking by gcc.
-   This feature is supported since at least gcc version 2.95.
-   For more information about the format attribute, see also
-   http://gcc.gnu.org/onlinedocs/gcc-4.3.0/gcc/Function-Attributes.html.
- */
-
-#if defined(__GNUC__)
-#define PRINTF_CHECK(x, y) __attribute__((format(__printf__, x, y)))
-#else
-#define PRINTF_CHECK(x, y)
-#endif
-
-
 /* ---------------------------------------------------------------------
    Basic printing
    ------------------------------------------------------------------ */

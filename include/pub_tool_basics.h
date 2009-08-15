@@ -323,6 +323,16 @@ static inline Bool sr_EQ ( SysRes sr1, SysRes sr2 ) {
 #  define UNLIKELY(x) (x)
 #endif
 
+// printf format string checking for gcc.
+// This feature has been supported since at least gcc version 2.95.
+// For more information about the format attribute, see
+// http://gcc.gnu.org/onlinedocs/gcc-4.3.0/gcc/Function-Attributes.html.
+#if defined(__GNUC__)
+#define PRINTF_CHECK(x, y) __attribute__((format(__printf__, x, y)))
+#else
+#define PRINTF_CHECK(x, y)
+#endif
+
 
 #endif /* __PUB_TOOL_BASICS_H */
 

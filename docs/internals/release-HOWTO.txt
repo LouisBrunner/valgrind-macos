@@ -91,6 +91,9 @@ releases, bug-fix-only releases might not need one):
   build works whereas a from-the-tarball one doesn't, usually due to some
   trivial installation problem.
 
+- Also check the HTML and print docs look sane (eg. links work).  And the
+  man pages, esp. that there are no broken references (look for "???").
+
 - Announce the release:
   - Email valgrind-users and valgrind-developers (but not valgrind-announce).  
   - Make clear it's a release candidate.  

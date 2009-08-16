@@ -22,7 +22,8 @@ threading primitives.</para>
 <para>The main abstractions in POSIX pthreads are: a set of threads
 sharing a common address space, thread creation, thread joining,
 thread exit, mutexes (locks), condition variables (inter-thread event
-notifications), reader-writer locks, semaphores and barriers.</para>
+notifications), reader-writer locks, spinlocks, semaphores and
+barriers.</para>
 
 <para>Helgrind can detect three classes of errors, which are discussed
 in detail in the next three sections:</para>
@@ -49,13 +50,19 @@ in detail in the next three sections:</para>
 timing-dependent crashes, deadlocks and other misbehaviour, and
 can be difficult to find by other means.</para>
 
-<para>Helgrind is aware of all the pthread abstractions and tracks their
-effects as accurately as it can.  Currently it does not correctly
-handle pthread spinlocks, although it will not object if you use them.
-Adding support for spinlocks would be easy enough if the demand arises.
-On x86 and amd64 platforms, it understands and partially handles
-implicit locking arising from the use of the LOCK instruction prefix.
+<para>Helgrind is aware of all the pthread abstractions and tracks
+their effects as accurately as it can.  On x86 and amd64 platforms, it
+understands and partially handles implicit locking arising from the
+use of the LOCK instruction prefix.
 </para>
+
+<para>Helgrind works best when your application uses only the POSIX
+pthreads API.  However, if you want to use custom threading 
+primitives, you can describe their behaviour to Helgrind using the
+<varname>ANNOTATE_*</varname> macros defined
+in <varname>helgrind.h</varname>.  This functionality was added in
+release 3.5.0 of Valgrind, and is considered experimental.</para>
+
 
 
 <para>Following those is a section containing 
@@ -107,6 +114,8 @@ are:</para>
                  with a not-locked mutex, an invalid mutex,
                  or one locked by a different
                  thread</para></listitem>
+ <listitem><para>inconsistent bindings between condition
+                 variables and their associated mutexes</para></listitem>
  <listitem><para>invalid or duplicate initialisation of a pthread
                  barrier</para></listitem>
  <listitem><para>initialisation of a pthread barrier on which threads
@@ -968,22 +977,34 @@ unlock(mx)                             unlock(mx)
       [default: full] ]]></option>
     </term>
     <listitem>
-      <para>When set to <option>full</option> (the default), Helgrind
-        collects enough information about "old" accesses that it can produce
-        two stack traces in a race report -- both the stack trace for the
-        current access, and the trace for the older, conflicting
-        access.</para>
+      <para><option>--history-level=full</option> (the default) causes
+        Helgrind collects enough information about "old" accesses that
+        it can produce two stack traces in a race report -- both the
+        stack trace for the current access, and the trace for the
+        older, conflicting access.</para>
       <para>Collecting such information is expensive in both speed and
-        memory.  However, without it, it is very much more difficult to
-        track down the root causes of races.  Nonetheless, you may not need
-        it in situations where you just want to check for the presence or
-        absence of races, for example, when doing regression testing of a
-        previously race-free program.</para>
-      <para>Setting this option to <option>approx</option> means that
-        Helgrind will show a full trace for one thread, and an approximation
-        for the other, and run faster.  Setting it to <option>none</option>
-        means that Helgrind will show a full trace for one thread, and
-        nothing for the other, and run faster again.</para>
+        memory, particularly for programs that do many inter-thread
+        synchronisation events (locks, unlocks, etc).  Without such
+        information, it is more difficult to track down the root
+        causes of races.  Nonetheless, you may not need it in
+        situations where you just want to check for the presence or
+        absence of races, for example, when doing regression testing
+        of a previously race-free program.</para>
+      <para><option>--history-level=none</option> is the opposite
+        extreme.  It causes Helgrind not to collect any information
+        about previous accesses.  This can be dramatically faster
+        than <option>--history-level=full</option>.</para>
+      <para><option>--history-level=approx</option> provides a
+        compromise between these two extremes.  It causes Helgrind to
+        show a full trace for the later access, and approximate
+        information regarding the earlier access.  This approximate
+        information consists of two stacks, and the earlier access is
+        guaranteed to have occurred somewhere between program points
+        denoted by the two stacks. This is not as useful as showing
+        the exact stack for the previous access
+        (as <option>--history-level=full</option> does), but it is
+        better than nothing, and it is almost as fast as
+        <option>--history-level=none</option>.</para>
     </listitem>
   </varlistentry>
 
@@ -994,6 +1015,8 @@ unlock(mx)                             unlock(mx)
       [default: 1000000] ]]></option>
     </term>
     <listitem>
+      <para>This flag only has any effect
+        at <option>--history-level=full</option>.</para>
       <para>Information about "old" conflicting accesses is stored in
         a cache of limited size, with LRU-style management.  This is
         necessary because it isn't practical to store a stack trace
@@ -1005,10 +1028,10 @@ unlock(mx)                             unlock(mx)
         conflicting access information is stored.  If you find that
         Helgrind is showing race errors with only one stack instead of
         the expected two stacks, try increasing this value.</para>
-      <para>The minimum value is 10,000 and the maximum is 20,000,000
-        (twenty times the default value).  Increasing the value by 1
+      <para>The minimum value is 10,000 and the maximum is 30,000,000
+        (thirty times the default value).  Increasing the value by 1
         increases Helgrind's memory requirement by very roughly 100
-        bytes, so the maximum value will easily eat up two extra
+        bytes, so the maximum value will easily eat up three extra
         gigabytes or so of memory.</para>
     </listitem>
   </varlistentry>
@@ -1097,10 +1120,36 @@ arguments.</para>
 <itemizedlist>
 
   <listitem>
-    <para><function>VALGRIND_HG_CLEAN_MEMORY</function>,
-    This makes Helgrind forget everything it knows about a specified memory
-    range.  This is particularly useful for memory allocators that wish to
-    recycle memory.</para>
+    <para><function>VALGRIND_HG_CLEAN_MEMORY</function></para>
+    <para>This makes Helgrind forget everything it knows about a
+    specified memory range.  This is particularly useful for memory
+    allocators that wish to recycle memory.</para>
+  </listitem>
+  <listitem>
+    <para><function>ANNOTATE_HAPPENS_BEFORE</function></para>
+  </listitem>
+  <listitem>
+    <para><function>ANNOTATE_HAPPENS_AFTER</function></para>
+  </listitem>
+  <listitem>
+    <para><function>ANNOTATE_NEW_MEMORY</function></para>
+  </listitem>
+  <listitem>
+    <para><function>ANNOTATE_RWLOCK_CREATE</function></para>
+  </listitem>
+  <listitem>
+    <para><function>ANNOTATE_RWLOCK_DESTROY</function></para>
+  </listitem>
+  <listitem>
+    <para><function>ANNOTATE_RWLOCK_ACQUIRED</function></para>
+  </listitem>
+  <listitem>
+    <para><function>ANNOTATE_RWLOCK_RELEASED</function></para>
+    <para>These are used to describe to Helgrind, the behaviour of
+    custom (non-POSIX) synchronisation primitives, which it otherwise
+    has no way to understand.  See comments
+    in <filename>helgrind.h</filename> for further
+    documentation.</para>
   </listitem>
 
 </itemizedlist>
@@ -1116,10 +1165,6 @@ arguments.</para>
 some time.</para>
 
 <itemizedlist>
-  <listitem><para>Track which mutexes are associated with which
-    condition variables, and emit a warning if this becomes
-    inconsistent.</para>
-  </listitem>
   <listitem><para>For lock order errors, print the complete lock
     cycle, rather than only doing for size-2 cycles as at
     present.</para>

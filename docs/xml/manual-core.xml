@@ -1346,11 +1346,12 @@ need to use these.</para>
       <option><![CDATA[--read-var-info=<yes|no> [default: no] ]]></option>
     </term>
     <listitem>
-      <para>When enabled, Valgrind will read information about variables from
-      debug info.  This slows Valgrind down and makes it use more memory, but
-      for the tools that can take advantage of it (Memcheck, Helgrind, DRD) it
-      can result in more precise error messages.  For example, here are some
-      standard errors issued by Memcheck:</para>
+      <para>When enabled, Valgrind will read information about
+      variable types and locations from DWARF3 debug info.
+      This slows Valgrind down and makes it use more memory, but for
+      the tools that can take advantage of it (Memcheck, Helgrind,
+      DRD) it can result in more precise error messages.  For example,
+      here are some standard errors issued by Memcheck:</para>
 <programlisting><![CDATA[
 ==15516== Uninitialised byte(s) found during client check request
 ==15516==    at 0x400633: croak (varinfo1.c:28)
@@ -1555,22 +1556,28 @@ don't understand
 <sect1 id="manual-core.pthreads" xreflabel="Support for Threads">
 <title>Support for Threads</title>
 
-<para>The main thing to point out with respect to multithreaded programs is
-that your program will use the native threading library, but Valgrind
-serialises execution so that only one (kernel) thread is running at a time.
-This approach avoids the horrible implementation problems of implementing a
-truly multiprocessor version of Valgrind, but it does mean that threaded
-apps run only on one CPU, even if you have a multiprocessor machine.</para>
+<para>Threaded programs are fully supported.</para>
 
-<para>Valgrind schedules your program's threads in a round-robin fashion,
-with all threads having equal priority.  It switches threads
-every 100000 basic blocks (on x86, typically around 600000
-instructions), which means you'll get a much finer interleaving
-of thread executions than when run natively.  This in itself may
-cause your program to behave differently if you have some kind of
-concurrency, critical race, locking, or similar, bugs.  In that case
-you might consider using the tools Helgrind and/or DRD to track them
-down.</para>
+<para>The main thing to point out with respect to threaded programs is
+that your program will use the native threading library, but Valgrind
+serialises execution so that only one (kernel) thread is running at a
+time.  This approach avoids the horrible implementation problems of
+implementing a truly multithreaded version of Valgrind, but it does
+mean that threaded apps run only on one CPU, even if you have a
+multiprocessor or multicore machine.</para>
+
+<para>Valgrind doesn't schedule the threads itself.  It merely ensures
+that only one thread runs at once, using a simple locking scheme.  The
+actual thread scheduling remains under control of the OS kernel.  What
+this does mean, though, is that your program will see very different
+scheduling when run on Valgrind than it does when running normally.
+This is both because Valgrind is serialising the threads, and because
+the code runs so much slower than normal.</para>
+
+<para>This difference in scheduling may cause your program to behave
+differently, if you have some kind of concurrency, critical race,
+locking, or similar, bugs.  In that case you might consider using the
+tools Helgrind and/or DRD to track them down.</para>
 
 <para>On Linux, Valgrind also supports direct use of the
 <computeroutput>clone</computeroutput> system call,
@@ -1624,7 +1631,7 @@ will create a core dump in the usual way.</para>
 <computeroutput>make</computeroutput>, <computeroutput>make
 install</computeroutput> mechanism, and we have attempted to
 ensure that it works on machines with kernel 2.4 or 2.6 and glibc
-2.2.X to 2.9.X.  Once you have completed 
+2.2.X to 2.10.X.  Once you have completed 
 <computeroutput>make install</computeroutput> you may then want 
 to run the regression tests
 with <computeroutput>make regtest</computeroutput>.

@@ -2069,6 +2069,9 @@ PRE(access_extended)
 {
    PRINT("access_extended( %#lx(%s), %lu, %#lx, %lu )",
       ARG1, (char *)ARG1, ARG2, ARG3, ARG4);
+   // XXX: the accessx_descriptor struct contains padding, so this can cause
+   // unnecessary undefined value errors.  But you arguably shouldn't be
+   // passing undefined values to the kernel anyway...
    PRE_REG_READ4(int, "access_extended", void *, entries, vki_size_t, size, 
                  vki_errno_t *, results, vki_uid_t *, uid);
    PRE_MEM_READ("access_extended(entries)", ARG1, ARG2 );
@@ -2084,18 +2087,17 @@ POST(access_extended)
    // shortest possible string section.  The shortest string section allowed
    // consists of a single one-char string (plus the NUL char).  Hence the
    // '2'.
-   struct vki_accessx_descriptor* entries = (struct vki_accessx_descriptor*)ARG2;
+   struct vki_accessx_descriptor* entries = (struct vki_accessx_descriptor*)ARG1;
    SizeT size = ARG2;
    Int n_descs = (size - 2) / sizeof(struct accessx_descriptor);
-   Int i = 0;     // Current position in the descriptors section array.
+   Int i;         // Current position in the descriptors section array.
    Int u;         // Upper bound on the length of the descriptors array
-                  // (recomputed each time around the loop)
+                  //   (recomputed each time around the loop)
    vg_assert(n_descs > 0);
 
    // Step through the descriptors, lowering 'n_descs' until we know we've
    // reached the string section.
-   while (True)
-   {
+   for (i = 0; True; i++) {
       // If we're past our estimate, we must be one past the end of the
       // descriptors section (ie. at the start of the string section).  Stop.
       if (i >= n_descs)

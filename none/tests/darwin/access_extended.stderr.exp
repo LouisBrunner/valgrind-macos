@@ -1,0 +1,4 @@
+retval = 0
+access_extended.c(F_OK) = 0 (Unknown error: 0)
+access_extended.c(X_OK) = 13 (Permission denied)
+no_such_file(F_OK) = 2 (No such file or directory)

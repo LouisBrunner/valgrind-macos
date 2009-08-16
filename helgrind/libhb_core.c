@@ -3797,7 +3797,7 @@ static void event_map_maybe_GC ( void )
    /* Check for sane command line params.  Limit values must match
       those in hg_process_cmd_line_option. */
    tl_assert( HG_(clo_conflict_cache_size) >= 10*1000 );
-   tl_assert( HG_(clo_conflict_cache_size) <= 20*1000*1000 );
+   tl_assert( HG_(clo_conflict_cache_size) <= 30*1000*1000 );
 
    /* Check our counting is sane (expensive) */
    if (CHECK_CEM)

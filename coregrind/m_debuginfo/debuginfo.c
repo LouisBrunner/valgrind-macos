@@ -699,13 +699,16 @@ ULong VG_(di_notify_mmap)( Addr a, Bool allow_SkFileV )
 
       x86-linux:   consider if r and x
       all others:  consider if r and x and not w
+
+      2009 Aug 16: apply similar kludge to ppc32-linux.
+      See http://bugs.kde.org/show_bug.cgi?id=190820
    */
    is_rx_map = False;
    is_rw_map = False;
-#  if defined(VGA_x86)
+#  if defined(VGA_x86) || defined(VGA_ppc32)
    is_rx_map = seg->hasR && seg->hasX;
    is_rw_map = seg->hasR && seg->hasW;
-#  elif defined(VGA_amd64) || defined(VGA_ppc32) || defined(VGA_ppc64)
+#  elif defined(VGA_amd64) || defined(VGA_ppc64)
    is_rx_map = seg->hasR && seg->hasX && !seg->hasW;
    is_rw_map = seg->hasR && seg->hasW && !seg->hasX;
 #  else

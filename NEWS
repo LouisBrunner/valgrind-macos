@@ -15,7 +15,7 @@ and X86/Darwin.  Support for recent distros and toolchain components
 Here is a short summary of the changes.  Details are shown further
 down:
 
-* Support for Mac OS X 10.5.x.
+* Support for Mac OS X (10.5.x).
 
 * Improvements and simplifications to Memcheck's leak checker.
 
@@ -41,20 +41,23 @@ minor changes.
 
 
 * Valgrind now runs on Mac OS X.  (Note that Mac OS X is sometimes
-  called "Darwin" because that is the name of the OS core.)
+  called "Darwin" because that is the name of the OS core, which is the
+  level that Valgrind works at.)
 
-  Supported machines:
+  Supported systems:
 
-  - x86 machines are supported fairly well.
+  - It requires OS 10.5.x (Leopard).  Porting to 10.4.x is not planned
+    because it would require work and 10.4 is only becoming less common.
 
-  - amd64 (a.k.a. x86-64) are supported, but not as well.  In
-    particular, start-up is slow.
+  - 32-bit programs on x86 and AMD64 (a.k.a x86-64) machines are supported
+    fairly well.  For 10.5.x, 32-bit programs are the default even on
+    64-bit machines, so it handles most current programs.
+    
+  - 64-bit programs on x86 and AMD64 (a.k.a x86-64) machines are not
+    officially supported, but simple programs at least will probably work.
+    However, start-up is slow.
 
   - PowerPC machines are not supported.
-
-  - It requires Mac OS X 10.5 Leopard or later.  Porting to 10.4 is not
-    planned because it would require work and 10.4 is only becoming less
-    common.
 
   Things that don't work:
 

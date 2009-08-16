@@ -318,6 +318,14 @@ ending with data "]]" and the other beginning with data "<".  This is
 why the spec calls for one or more CDATA blocks rather than exactly
 one.
 
+Note that, so far, we cannot envisage a circumstance in which a
+generated suppression would contain the string "]]>", since neither
+"]" nor ">" appear to turn up in mangled symbol names.  Hence it is
+not envisaged that there will ever be more than one CDATA block, and
+indeed the implementation as of Valgrind 3.5.0 will only ever generate
+one block (it ignores any possible escaping problems).  Nevertheless
+the specification allows multiple blocks, as a matter of safety.
+
 
 SFRAME
 ------

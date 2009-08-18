@@ -215,7 +215,13 @@ bogo_loop:
 	cmp	$0,%al			# check for end of file
 	je	done_bogo
 	
-	cmp	$('o'<<24+'g'<<16+'o'<<8+'b'),%eax	
+	# Grrr, due to a bug in binutils 2.18.50.0.9
+        #   (which unfortunately shipped with Fedora 10)
+	#   http://sourceware.org/bugzilla/show_bug.cgi?id=6878
+	#   We can't use the apostrophe character
+
+#       cmp     $('o'<<24+'g'<<16+'o'<<8+'b'),%eax
+        cmp     $(0x6f<<24+0x67<<16+0x6f<<8+0x62),%eax
 				        # "bogo" in little-endian
 					
 	jne	bogo_loop		# ! if not equal, keep going
@@ -238,7 +244,9 @@ done_bogo:
 	pop	%rdx			# restore call pointer
 	call	*%rdx			# copy it (call strcat)
 
-	mov	$' ',%al		# print a space
+#	mov	$' ',%al		# print a space
+	mov	$0x20,%al		# print a space
+	
 	stosb
 
 	push %rbx
@@ -248,10 +256,12 @@ done_bogo:
 	# MHz
 	#=========
 print_mhz:
-	mov	$('z'<<24+'H'<<16+'M'<<8+' '),%ebx	
+#       mov     $('z'<<24+'H'<<16+'M'<<8+' '),%ebx
+        mov     $(0x7a<<24+0x48<<16+0x4d<<8+0x20),%ebx
 			   		# find ' MHz' and grab up to .
 	                                # we are little endian
-	mov	$'.',%ah
+#	mov	$'.',%ah
+	mov	$0x2e,%ah
 
 	# below is same as "sub $(strcat-find_string),%edx
 	# gas won't let us force the one-byte constant
@@ -266,11 +276,13 @@ print_mhz:
 	#=========
 	# Chip Name
 	#=========
-chip_name:	
-	mov	$('e'<<24+'m'<<16+'a'<<8+'n'),%ebx     	
+chip_name:
+#       mov     $('e'<<24+'m'<<16+'a'<<8+'n'),%ebx
+        mov     $(0x65<<24+0x6d<<16+0x61<<8+0x6e),%ebx
 					# find 'name\t: ' and grab up to \n
 					# we are little endian
-	mov	$' ',%ah
+#	mov	$' ',%ah
+	mov	$0x20,%ah
 	call	*%rdx	   		# call find_string
 	stosb
 	call 	skip_spaces
@@ -319,7 +331,8 @@ print_s:
 	# Bogomips
 	#========
 	
-	mov	$('s'<<24+'p'<<16+'i'<<8+'m'),%ebx      	
+#       mov     $('s'<<24+'p'<<16+'i'<<8+'m'),%ebx
+        mov     $(0x73<<24+0x70<<16+0x69<<8+0x6d),%ebx
 					# find 'mips\t: ' and grab up to \n
 	mov	$0xa,%ah
 	call	find_string
@@ -386,7 +399,8 @@ find_colon:
 	lodsb				# repeat till we find colon
 	cmp	$0,%al
 	je	done
-	cmp	$':',%al
+#	cmp	$':',%al
+	cmp	$0x3a,%al	
 	jne	find_colon
 
 skip_spaces:		
@@ -399,7 +413,8 @@ store_loop:
 	je	done
 	cmp	%ah,%al			# is it end string?
 	je 	almost_done		# ! if so, finish
-	cmp	$'\n',%al
+#	cmp	$'\n',%al
+	cmp	$0xa,%al
 	je	almost_done
 	stosb				# ! if not store and continue
 	lodsb
@@ -435,7 +450,8 @@ center_and_print:
 	inc	%edi			# move to a clear buffer
 	push	%rdi			# save for later
 
-	mov	$('['<<8+27),%ax	# we want to output ^[[
+#	mov	$('['<<8+27),%ax	# we want to output ^[[
+	mov	$(0x5b<<8+27),%ax	# we want to output ^[[	
 	stosw
 
 	cdq	      			# clear dx
@@ -460,7 +476,8 @@ not_too_big:
 	shr	%eax			# then divide by 2
 	
 	call	num_to_ascii		# print number of spaces
-	mov	$'C',%al		# tack a 'C' on the end
+#	mov	$'C',%al		# tack a 'C' on the end
+	mov	$0x43,%al		# tack a 'C' on the end	
 					# ah is zero from num_to_ascii
 	stosw				# store C and a NULL
 	pop  %rcx			# pop the pointer to ^[[xC

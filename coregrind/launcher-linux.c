@@ -159,13 +159,15 @@ static const char *select_platform(const char *clientname)
 
          if (header[EI_DATA] == ELFDATA2LSB) {
             if (ehdr->e_machine == EM_386 &&
-                ehdr->e_ident[EI_OSABI] == ELFOSABI_SYSV) {
+                (ehdr->e_ident[EI_OSABI] == ELFOSABI_SYSV ||
+                 ehdr->e_ident[EI_OSABI] == ELFOSABI_LINUX)) {
                platform = "x86-linux";
             }
          }
          else if (header[EI_DATA] == ELFDATA2MSB) {
             if (ehdr->e_machine == EM_PPC &&
-                ehdr->e_ident[EI_OSABI] == ELFOSABI_SYSV) {
+                (ehdr->e_ident[EI_OSABI] == ELFOSABI_SYSV ||
+                 ehdr->e_ident[EI_OSABI] == ELFOSABI_LINUX)) {
                platform = "ppc32-linux";
             }
          }
@@ -174,12 +176,14 @@ static const char *select_platform(const char *clientname)
 
          if (header[EI_DATA] == ELFDATA2LSB) {
             if (ehdr->e_machine == EM_X86_64 &&
-                ehdr->e_ident[EI_OSABI] == ELFOSABI_SYSV) {
+                (ehdr->e_ident[EI_OSABI] == ELFOSABI_SYSV ||
+                 ehdr->e_ident[EI_OSABI] == ELFOSABI_LINUX)) {
                platform = "amd64-linux";
             }
          } else if (header[EI_DATA] == ELFDATA2MSB) {
             if (ehdr->e_machine == EM_PPC64 &&
-                ehdr->e_ident[EI_OSABI] == ELFOSABI_SYSV) {
+                (ehdr->e_ident[EI_OSABI] == ELFOSABI_SYSV ||
+                 ehdr->e_ident[EI_OSABI] == ELFOSABI_LINUX)) {
                platform = "ppc64-linux";
             }
          }

@@ -21,8 +21,19 @@ static int s_counter;
 
 class IncThread: public QThread
 {
+public:
+  IncThread();
+  virtual ~IncThread();
+
+private:
   virtual void run();
 };
+
+IncThread::IncThread()
+{ }
+
+IncThread::~IncThread()
+{ }
 
 void IncThread::run()
 {

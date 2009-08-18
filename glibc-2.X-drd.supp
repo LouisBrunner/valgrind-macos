@@ -225,7 +225,6 @@
    drd:ConflictingAccess
    ...
    fun:_ZN7QThreadC2EP7QObject
-   fun:main
 }
 
 #

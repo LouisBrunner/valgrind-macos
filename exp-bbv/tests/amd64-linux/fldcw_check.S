@@ -48,43 +48,80 @@ sixtyfour_reg:
 	fldcw	0(%rdx)			# rdx
 
 	# 32-bit register
+	
+	# Note!  The assembler that comes with SuSE 9.1
+	#        cannot assemble 32-bit fldcw on 64-bit systems
+	#        Hence the need to hand-code them
+	
+	
 thirtytwo_reg:	
 	fnstcw	cw
 	mov	$cw,%eax
-	fldcw	0(%eax)			# eax
-	mov	$cw,%ebx
-	fldcw	0(%ebx)			# ebx
-	mov	$cw,%ecx	
-	fldcw	0(%ecx)			# ecx
-	mov	$cw,%edx		 
-	fldcw	0(%edx)			# edx
 	
+#	fldcw	0(%eax)			# eax
+	.byte	0x67,0xd9,0x28
+
+	mov	$cw,%ebx
+	
+#	fldcw	0(%ebx)			# ebx
+	.byte	0x67,0xd9,0x2b
+
+	mov	$cw,%ecx	
+	
+#	fldcw	0(%ecx)			# ecx
+	.byte	0x67,0xd9,0x29
+
+	mov	$cw,%edx
+	
+#	fldcw	0(%edx)			# edx
+	.byte	0x67,0xd9,0x2a
+
 	# register + 8-bit offset
 eight_bit:	
 	mov	$cw,%eax
 	sub	$32,%eax
 	
-	fldcw	32(%eax)		# eax + 8 bit offset
+#	fldcw	32(%eax)		# eax + 8 bit offset
+	.byte 0x67,0xd9,0x68,0x20
+
 	mov	%eax,%ebx
-	fldcw	32(%ebx)		# ebx + 8 bit offset	
+#	fldcw	32(%ebx)		# ebx + 8 bit offset	
+	.byte	0x67,0xd9,0x6b,0x20
+
 	mov	%eax,%ecx
-	fldcw	32(%ecx)		# ecx + 8 bit offset		
+	
+#	fldcw	32(%ecx)		# ecx + 8 bit offset		
+	.byte	0x67,0xd9,0x69,0x20
+
 	mov	%eax,%edx
-	fldcw	32(%edx)		# edx + 8 bit offset
+	
+#	fldcw	32(%edx)		# edx + 8 bit offset
+	.byte	0x67,0xd9,0x6a,0x20
+	
 	
 	# register + 32-bit offset
 thirtytwo_bit:	
 	mov	$cw,%eax
 	sub	$30000,%eax
 	
-	fldcw	30000(%eax)		# eax + 16 bit offset
+#	fldcw	30000(%eax)		# eax + 16 bit offset
+	.byte	0x67,0xd9,0xa8,0x30,0x75,0x00,0x00
+	
 	mov	%eax,%ebx
-	fldcw	30000(%ebx)		# ebx + 16 bit offset	
+	
+#	fldcw	30000(%ebx)		# ebx + 16 bit offset
+	.byte	0x67,0xd9,0xab,0x30,0x75,0x00,0x00
+	
 	mov	%eax,%ecx
-	fldcw	30000(%ecx)		# ecx + 16 bit offset		
+	
+#	fldcw	30000(%ecx)		# ecx + 16 bit offset
+	.byte	0x67,0xd9,0xa9,0x30,0x75,0x00,0x00
+	
 	mov	%eax,%edx
-	fldcw	30000(%edx)		# edx + 16 bit offset			
-
+	
+#	fldcw	30000(%edx)		# edx + 16 bit offset
+	.byte	0x67,0xd9,0xaa,0x30,0x75,0x00,0x00
+	
 	# check an fp/integer conversion
 	# in a loop to give a bigger count
 

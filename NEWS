@@ -36,8 +36,8 @@ down:
 
                     -------------------------
 
-Here are details of the above changes, plus descriptions of many other
-minor changes.
+Here are details of the above changes, followed by descriptions of
+many other minor changes, and a list of fixed bugs.
 
 
 * Valgrind now runs on Mac OS X.  (Note that Mac OS X is sometimes
@@ -406,29 +406,160 @@ minor changes.
     properly tested.
 
 
+The following bugs have been fixed or resolved.  Note that "n-i-bz"
+stands for "not in bugzilla" -- that is, a bug that was reported to us
+but never got a bugzilla entry.  We encourage you to file bugs in
+bugzilla (http://bugs.kde.org/enter_valgrind_bug.cgi) rather than
+mailing the developers (or mailing lists) directly -- bugs that are
+not entered into bugzilla tend to get forgotten about or ignored.
 
-XXX a number of bugs in Callgrind / KCachegrind have been fixed. (?)
+To see details of a given bug, visit
+https://bugs.kde.org/show_bug.cgi?id=XXXXXX
+where XXXXXX is the bug number as listed below.
 
+84303   How about a LockCheck tool? 
+91633   dereference of null ptr in vgPlain_st_basetype 
+97452   Valgrind doesn't report any pthreads problems 
+100628  leak-check gets assertion failure when using 
+        VALGRIND_MALLOCLIKE_BLOCK on malloc()ed memory 
+108528  NPTL pthread cleanup handlers not called 
+110126  Valgrind 2.4.1 configure.in tramples CFLAGS 
+110128  mallinfo is not implemented... 
+110770  VEX: Generated files not always updated when making valgrind
+111102  Memcheck: problems with large (memory footprint) applications 
+115673  Vex's decoder should never assert 
+117564  False positive: Syscall param clone(child_tidptr) contains
+        uninitialised byte(s) 
+119404  executing ssh from inside valgrind fails 
+133679  Callgrind does not write path names to sources with dwarf debug
+        info
+135847  configure.in problem with non gnu compilers (and possible fix) 
+136154  threads.c:273 (vgCallgrind_post_signal): Assertion
+        '*(vgCallgrind_current_fn_stack.top) == 0' failed. 
+136230  memcheck reports "possibly lost", should be "still reachable" 
+137073  NULL arg to MALLOCLIKE_BLOCK causes crash 
+137904  Valgrind reports a memory leak when using POSIX threads,
+        while it shouldn't 
+139076  valgrind VT_GETSTATE error 
+142228  complaint of elf_dynamic_do_rela in trivial usage 
+145347  spurious warning with USBDEVFS_REAPURB 
+148441  (wine) can't find memory leak in Wine, win32 binary 
+        executable file.
+148742  Leak-check fails assert on exit 
+149878  add (proper) check for calloc integer overflow 
+150606  Call graph is broken when using callgrind control 
+152393  leak errors produce an exit code of 0. I need some way to 
+        cause leak errors to result in a nonzero exit code. 
+157154  documentation (leak-resolution doc speaks about num-callers
+        def=4) + what is a loss record
+159501  incorrect handling of ALSA ioctls 
+162020  Valgrinding an empty/zero-byte file crashes valgrind 
+162482  ppc: Valgrind crashes while reading stabs information 
+162718  x86: avoid segment selector 0 in sys_set_thread_area() 
+163253  (wine) canonicaliseSymtab forgot some fields in DiSym 
+163560  VEX/test_main.c is missing from valgrind-3.3.1 
+164353  malloc_usable_size() doesn't return a usable size 
+165468  Inconsistent formatting in memcheck manual -- please fix 
+169505  main.c:286 (endOfInstr):
+        Assertion 'ii->cost_offset == *cost_offset' failed 
+177206  Generate default.supp during compile instead of configure
+177209  Configure valt_load_address based on arch+os 
+177305  eventfd / syscall 323 patch lost
+179731  Tests fail to build because of inlining of non-local asm labels
+181394  helgrind: libhb_core.c:3762 (msm_write): Assertion 
+        'ordxx == POrd_EQ || ordxx == POrd_LT' failed. 
+181594  Bogus warning for empty text segment 
+181707  dwarf doesn't require enumerations to have name 
+185038  exp-ptrcheck: "unhandled syscall: 285" (fallocate) on x86_64 
+185050  exp-ptrcheck: sg_main.c:727 (add_block_to_GlobalTree):
+        Assertion '!already_present' failed.
+185359  exp-ptrcheck: unhandled syscall getresuid()
+185794  "WARNING: unhandled syscall: 285" (fallocate) on x86_64
+185816  Valgrind is unable to handle debug info for files with split
+        debug info that are prelinked afterwards 
+185980  [darwin] unhandled syscall: sem_open 
+186238  bbToIR_AMD64: disInstr miscalculated next %rip
+186507  exp-ptrcheck unhandled syscalls prctl, etc. 
+186790  Suppression pattern used for leaks are not reported 
+186796  Symbols with length>200 in suppression files are ignored 
+187048  drd: mutex PTHREAD_PROCESS_SHARED attribute missinterpretation
+187416  exp-ptrcheck: support for __NR_{setregid,setreuid,setresuid}
+188038  helgrind: hg_main.c:926: mk_SHVAL_fail: the 'impossible' happened
+188046  bashisms in the configure script
+188127  amd64->IR: unhandled instruction bytes: 0xF0 0xF 0xB0 0xA
+188161  memcheck: --track-origins=yes asserts "mc_machine.c:672
+        (get_otrack_shadow_offset_wrk): the 'impossible' happened."
+188248  helgrind: pthread_cleanup_push, pthread_rwlock_unlock, 
+        assertion fail "!lock->heldBy" 
+188427  Add support for epoll_create1 (with patch) 
+188530  Support for SIOCGSTAMPNS
+188560  Include valgrind.spec in the tarball
+188572  Valgrind on Mac should suppress setenv() mem leak 
+189054  Valgrind fails to build because of duplicate non-local asm labels 
+189737  vex amd64->IR: unhandled instruction bytes: 0xAC
+189762  epoll_create syscall not handled (--tool=exp-ptrcheck)
+189763  drd assertion failure: s_threadinfo[tid].is_recording 
+190219  unhandled syscall: 328 (x86-linux)
+190391  dup of 181394; see above
+190429  Valgrind reports lots of errors in ld.so with x86_64 2.9.90 glibc 
+190820  No debug information on powerpc-linux
+190820  No debug information on powerpc-linux 
+191095  PATCH: Improve usbdevfs ioctl handling 
+191182  memcheck: VALGRIND_LEAK_CHECK quadratic when big nr of chunks
+        or big nr of errors
+191189  --xml=yes should obey --gen-suppressions=all 
+191192  syslog() needs a suppression on macosx 
+191271  DARWIN: WARNING: unhandled syscall: 33554697 a.k.a.: 265 
+191761  getrlimit on MacOSX 
+191992  multiple --fn-skip only works sometimes; dependent on order 
+192634  V. reports "aspacem sync_check_mapping_callback: 
+        segment mismatch" on Darwin
+192954  __extension__ missing on 2 client requests 
+194429  Crash at start-up with glibc-2.10.1 and linux-2.6.29 
+194474  "INSTALL" file has different build instructions than "README"
+194671  Unhandled syscall (sem_wait?) from mac valgrind 
+195069  memcheck: reports leak (memory still reachable) for 
+        printf("%d', x) 
+195169  drd: (vgDrd_barrier_post_wait):
+        Assertion 'r->sg[p->post_iteration]' failed. 
+195268  valgrind --log-file doesn't accept ~/...
+195838  VEX abort: LibVEX_N_SPILL_BYTES too small for CPUID boilerplate 
+195860  WARNING: unhandled syscall: unix:223 
+196528  need a error suppression for pthread_rwlock_init under os x? 
+197227  Support aio_* syscalls on Darwin
+197456  valgrind should reject --suppressions=(directory) 
+197512  DWARF2 CFI reader: unhandled CFI instruction 0:10 
+197591  unhandled syscall 27 (mincore) 
+197793  Merge DCAS branch to the trunk == 85756, 142103
+197794  Avoid duplicate filenames in Vex 
+197898  make check fails on current SVN 
+197901  make check fails also under exp-ptrcheck in current SVN 
+197929  Make --leak-resolution=high the default 
+197930  Reduce spacing between leak reports 
+197933  Print command line of client at start-up, and shorten preamble 
+197966  unhandled syscall 205 (x86-linux, --tool=exp-ptrcheck)
+198395  add BBV to the distribution as an experimental tool 
+198624  Missing syscalls on Darwin: 82, 167, 281, 347 
+198649  callgrind_annotate doesn't cumulate counters 
+199338  callgrind_annotate sorting/thresholds are broken for all but Ir 
+199977  Valgrind complains about an unrecognized instruction in the
+        atomic_incs test program
+200029  valgrind isn't able to read Fedora 12 debuginfo 
+200760  darwin unhandled syscall: unix:284 
+200827  DRD doesn't work on Mac OS X 
+200990  VG_(read_millisecond_timer)() does not work correctly 
+201016  Valgrind does not support pthread_kill() on Mac OS 
+201169  Document --read-var-info
+201323  Pre-3.5.0 performance sanity checking 
+201384  Review user manual for the 3.5.0 release 
+201585  mfpvr not implemented on ppc 
+201708  tests failing because x86 direction flag is left set 
+201757  Valgrind doesn't handle any recent sys_futex additions 
+n-i-bz  drd: fixed assertion failure triggered by mutex reinitialization.
+n-i-bz  drd: fixed a bug that caused incorrect messages to be printed
+        about memory allocation events with memory access tracing enabled
+n-i-bz  drd: fixed a memory leak triggered by vector clock deallocation
 
-187048 DRD - the mutex attribute PTHREAD_PROCESS_SHARED is now
-       interpreted correctly.
-188046 Removed a bashism from the configure script.
-189763 DRD - pthread_create@GLIBC_2.0() no longer triggers an assertion
-       failure.
-n-i-bz DRD - fixed assertion failure triggered by mutex reinitialization.
-       Note: DRD did report the mutex reinitialization before reporting the
-       assertion failure.
-n-i-bz DRD - fixed a bug that caused incorrect messages to be printed about
-       memory allocation events with memory access tracing enabled (fixed
-       in r10191).
-n-i-bz DRD - fixed a memory leak triggered by vector clock deallocation
-       (fixed in r10228).
-195169 DRD - added support for newer versions of gcc's OpenMP runtime (libgomp)
-       (fixed in r10261).
-
-XXX: more bugs listed...
-
-XXX: dates and versions of RCs and final release
 (3.5.0.RC1:  XX Aug 2009, vex rXXXX, valgrind rXXXX).
 (3.5.0:      XX Aug 2009, vex rXXXX, valgrind rXXXX).
 

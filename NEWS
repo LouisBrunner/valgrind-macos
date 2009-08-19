@@ -123,7 +123,7 @@ many other minor changes, and a list of fixed bugs.
     changes above for more details).  This was also necessary to fix a
     longstanding bug in which uses of suppressions against leaks were
     not "counted", leading to difficulties in maintaining suppression
-    files (XXXX bug number).
+    files (see https://bugs.kde.org/show_bug.cgi?id=186790).
 
   - Behavior of -v has changed.  In previous versions, -v printed out
     a mixture of marginally-user-useful information, and tool/core
@@ -502,7 +502,6 @@ where XXXXXX is the bug number as listed below.
 190391  dup of 181394; see above
 190429  Valgrind reports lots of errors in ld.so with x86_64 2.9.90 glibc 
 190820  No debug information on powerpc-linux
-190820  No debug information on powerpc-linux 
 191095  PATCH: Improve usbdevfs ioctl handling 
 191182  memcheck: VALGRIND_LEAK_CHECK quadratic when big nr of chunks
         or big nr of errors

@@ -136,7 +136,7 @@ static const char *select_platform(const char *clientname)
       // Skip whitespace.
       while (1) {
          if (i == n_bytes) return NULL;
-         if (' ' != header[i] && '\t' == header[i]) break;
+         if (' ' != header[i] && '\t' != header[i]) break;
          i++;
       }
 

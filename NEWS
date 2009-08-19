@@ -1,7 +1,6 @@
 
-Release 3.5.0 (XXX August 2009)
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
+Release 3.5.0 (19 August 2009)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 3.5.0 is a feature release with many significant improvements and the
 usual collection of bug fixes.  The main improvement is that Valgrind
 now works on Mac OS X.
@@ -555,13 +554,14 @@ where XXXXXX is the bug number as listed below.
 201585  mfpvr not implemented on ppc 
 201708  tests failing because x86 direction flag is left set 
 201757  Valgrind doesn't handle any recent sys_futex additions 
+204377  64-bit valgrind can not start a shell script
+        (with #!/path/to/shell) if the shell is a 32-bit executable
 n-i-bz  drd: fixed assertion failure triggered by mutex reinitialization.
 n-i-bz  drd: fixed a bug that caused incorrect messages to be printed
         about memory allocation events with memory access tracing enabled
 n-i-bz  drd: fixed a memory leak triggered by vector clock deallocation
 
-(3.5.0.RC1:  XX Aug 2009, vex rXXXX, valgrind rXXXX).
-(3.5.0:      XX Aug 2009, vex rXXXX, valgrind rXXXX).
+(3.5.0: 20 Aug 2009, vex r1913, valgrind r10846).
 
 
 

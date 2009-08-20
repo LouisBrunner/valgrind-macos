@@ -116,18 +116,26 @@ static const char *select_platform(const char *clientname)
    ssize_t n_bytes;
    const char *platform = NULL;
 
+   VG_(debugLog)(2, "launcher", "selecting platform for '%s'\n", clientname);
+
    if (strchr(clientname, '/') == NULL)
       clientname = find_client(clientname);
+
+   VG_(debugLog)(2, "launcher", "selecting platform for '%s'\n", clientname);
 
    if ((fd = open(clientname, O_RDONLY)) < 0)
       return NULL;
    //   barf("open(%s): %s", clientname, strerror(errno));
+
+   VG_(debugLog)(2, "launcher", "opened '%s'\n", clientname);
 
    n_bytes = read(fd, header, sizeof(header));
    close(fd);
    if (n_bytes < 2) {
       return NULL;
    }
+
+   VG_(debugLog)(2, "launcher", "read %d bytes from '%s'\n", n_bytes, clientname);
 
    if (header[0] == '#' && header[1] == '!') {
       int i = 2;
@@ -189,6 +197,9 @@ static const char *select_platform(const char *clientname)
          }
       }
    }
+
+   VG_(debugLog)(2, "launcher", "selected platform '%s'\n",
+                 platform ? platform : "unknown");
 
    return platform;
 }

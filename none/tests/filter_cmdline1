@@ -1,4 +1,5 @@
 #! /bin/sh
 
-perl -p -e 's/(set minimum alignment of heap allocations) \[(8|16)\]/$1 [...]/'
+sed -e 's/\(set minimum alignment of heap allocations\) \[[0-9]*\]/\1 [...]/' \
+    -e 's/\(command to start debugger\) \[.* -nw %f %p\]/\1 [... -nw %f %p]/'
 

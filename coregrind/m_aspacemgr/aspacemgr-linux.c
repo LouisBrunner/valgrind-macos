@@ -2986,6 +2986,8 @@ Bool VG_(am_relocate_nooverlap_client)( /*OUT*/Bool* need_discard,
 #endif // HAVE_MREMAP
 
 
+#if defined(VGO_linux)
+
 /*-----------------------------------------------------------------*/
 /*---                                                           ---*/
 /*--- A simple parser for /proc/self/maps on Linux 2.4.X/2.6.X. ---*/
@@ -3490,6 +3492,8 @@ Bool VG_(get_changed_segments)(
 
    return !css_overflowed;
 }
+
+#endif // defined(VGO_linux)
 
 
 #endif // defined(VGO_linux) || defined(VGO_darwin)

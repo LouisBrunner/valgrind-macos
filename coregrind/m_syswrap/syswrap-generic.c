@@ -3526,12 +3526,12 @@ PRE(sys_open)
    }
    PRE_MEM_RASCIIZ( "open(filename)", ARG1 );
 
-#if HAVE_PROC
-   /* Handle the case where the open is of /proc/self/cmdline or
-      /proc/<pid>/cmdline, and just give it a copy of the fd for the
-      fake file we cooked up at startup (in m_main).  Also, seek the
-      cloned fd back to the start. */
+   if (VG_(have_proc_filesystem)())
    {
+      /* Handle the case where the open is of /proc/self/cmdline or
+         /proc/<pid>/cmdline, and just give it a copy of the fd for the
+         fake file we cooked up at startup (in m_main).  Also, seek the
+         cloned fd back to the start. */
       HChar  name[30];
       Char*  arg1s = (Char*) ARG1;
       SysRes sres;
@@ -3551,7 +3551,6 @@ PRE(sys_open)
          return;
       }
    }
-#endif // HAVE_PROC
 
    /* Otherwise handle normally */
    *flags |= SfMayBlock;
@@ -3674,7 +3673,6 @@ PRE(sys_readlink)
    PRE_MEM_WRITE( "readlink(buf)", ARG2,ARG3 );
 
    {
-#if HAVE_PROC
       /*
        * Handle the case where readlink is looking at /proc/self/exe or
        * /proc/<pid>/exe.
@@ -3682,7 +3680,7 @@ PRE(sys_readlink)
       HChar name[25];
       Char* arg1s = (Char*) ARG1;
       VG_(sprintf)(name, "/proc/%d/exe", VG_(getpid)());
-      if (ML_(safe_to_deref)(arg1s, 1) &&
+      if (VG_(have_proc_filesystem()) && ML_(safe_to_deref)(arg1s, 1) &&
           (VG_STREQ(arg1s, name) || VG_STREQ(arg1s, "/proc/self/exe"))
          )
       {
@@ -3690,7 +3688,6 @@ PRE(sys_readlink)
          SET_STATUS_from_SysRes( VG_(do_syscall3)(saved, (UWord)name, 
                                                          ARG2, ARG3));
       } else
-#endif // HAVE_PROC
       {
          /* Normal case */
          SET_STATUS_from_SysRes( VG_(do_syscall3)(saved, ARG1, ARG2, ARG3));

@@ -1083,6 +1083,23 @@ Char *VG_(dirname)(const Char *path)
    return buf;
 }
 
+/* ---------------------------------------------------------------------
+   proc filesystem
+   ------------------------------------------------------------------ */
+Bool VG_(have_proc_filesystem)(void)
+{
+   static int have_proc_fs = -1;
+
+   if (have_proc_fs < 0)
+   {
+      have_proc_fs
+         = VG_(access)("/proc/self/fd", 1, 0, 0) == 0
+         && VG_(access)("/proc/self/exe", 1, 0, 0) == 0
+         && VG_(access)("/proc/self/maps", 1, 0, 0) == 0;
+   }
+   return have_proc_fs;
+}
+
 
 /*--------------------------------------------------------------------*/
 /*--- end                                                          ---*/

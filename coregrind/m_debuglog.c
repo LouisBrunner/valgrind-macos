@@ -932,7 +932,6 @@ static void add_to_buf ( HChar c, void* p )
 /* Send a logging message.  Nothing is output unless 'level'
    is <= the current loglevel. */
 /* EXPORTED */
-__attribute__((format(__printf__, 3, 4)))
 void VG_(debugLog) ( Int level, const HChar* modulename,
                                 const HChar* format, ... )
 {

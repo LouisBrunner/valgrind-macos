@@ -1086,7 +1086,7 @@ Char *VG_(dirname)(const Char *path)
 /* ---------------------------------------------------------------------
    proc filesystem
    ------------------------------------------------------------------ */
-Bool VG_(have_proc_filesystem)(void)
+Bool VG_(is_procfs_mounted)(void)
 {
    static int have_proc_fs = -1;
 

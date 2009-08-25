@@ -100,7 +100,7 @@ extern Bool VG_(record_startup_wd) ( void );
 
 /* Whether or not the proc filesystem has been mounted at the /proc
    mountpoint. */
-extern Bool VG_(have_proc_filesystem)(void);
+extern Bool VG_(is_procfs_mounted)(void);
 
 #endif   // __PUB_CORE_LIBCFILE_H
 

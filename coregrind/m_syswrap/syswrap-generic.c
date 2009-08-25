@@ -3526,7 +3526,7 @@ PRE(sys_open)
    }
    PRE_MEM_RASCIIZ( "open(filename)", ARG1 );
 
-   if (VG_(have_proc_filesystem)())
+   if (VG_(is_procfs_mounted)())
    {
       /* Handle the case where the open is of /proc/self/cmdline or
          /proc/<pid>/cmdline, and just give it a copy of the fd for the
@@ -3680,7 +3680,7 @@ PRE(sys_readlink)
       HChar name[25];
       Char* arg1s = (Char*) ARG1;
       VG_(sprintf)(name, "/proc/%d/exe", VG_(getpid)());
-      if (VG_(have_proc_filesystem()) && ML_(safe_to_deref)(arg1s, 1) &&
+      if (VG_(is_procfs_mounted()) && ML_(safe_to_deref)(arg1s, 1) &&
           (VG_STREQ(arg1s, name) || VG_STREQ(arg1s, "/proc/self/exe"))
          )
       {

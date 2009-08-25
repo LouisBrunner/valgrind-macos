@@ -1802,48 +1802,48 @@ Int valgrind_main ( Int argc, HChar **argv, HChar **envp )
    // when it tries to open /proc/<pid>/cmdline for itself.
    //   p: setup file descriptors
    //--------------------------------------------------------------
-   if (! VG_(is_procfs_mounted)()) {
-           // client shouldn't be using /proc!
-           VG_(cl_cmdline_fd) = -1;
-   } else {
-      if (!need_help) {
-         HChar  buf[50], buf2[50+64];
-         HChar  nul[1];
-         Int    fd, r;
-         HChar* exename;
+#if !defined(VGO_linux)
+   // client shouldn't be using /proc!
+   VG_(cl_cmdline_fd) = -1;
+#else
+   if (!need_help) {
+      HChar  buf[50], buf2[50+64];
+      HChar  nul[1];
+      Int    fd, r;
+      HChar* exename;
 
-         VG_(debugLog)(1, "main", "Create fake /proc/<pid>/cmdline\n");
+      VG_(debugLog)(1, "main", "Create fake /proc/<pid>/cmdline\n");
 
-         VG_(sprintf)(buf, "proc_%d_cmdline", VG_(getpid)());
-         fd = VG_(mkstemp)( buf, buf2 );
-         if (fd == -1)
-            VG_(err_config_error)("Can't create client cmdline file in /tmp.");
+      VG_(sprintf)(buf, "proc_%d_cmdline", VG_(getpid)());
+      fd = VG_(mkstemp)( buf, buf2 );
+      if (fd == -1)
+         VG_(err_config_error)("Can't create client cmdline file in /tmp.");
 
-         nul[0] = 0;
-         exename = VG_(args_the_exename) ? VG_(args_the_exename)
-            : "unknown_exename";
-         VG_(write)(fd, VG_(args_the_exename), 
-                    VG_(strlen)( VG_(args_the_exename) ));
+      nul[0] = 0;
+      exename = VG_(args_the_exename) ? VG_(args_the_exename)
+                                      : "unknown_exename";
+      VG_(write)(fd, VG_(args_the_exename), 
+                     VG_(strlen)( VG_(args_the_exename) ));
+      VG_(write)(fd, nul, 1);
+
+      for (i = 0; i < VG_(sizeXA)( VG_(args_for_client) ); i++) {
+         HChar* arg = * (HChar**) VG_(indexXA)( VG_(args_for_client), i );
+         VG_(write)(fd, arg, VG_(strlen)( arg ));
          VG_(write)(fd, nul, 1);
-
-         for (i = 0; i < VG_(sizeXA)( VG_(args_for_client) ); i++) {
-            HChar* arg = * (HChar**) VG_(indexXA)( VG_(args_for_client), i );
-            VG_(write)(fd, arg, VG_(strlen)( arg ));
-            VG_(write)(fd, nul, 1);
-         }
-
-         /* Don't bother to seek the file back to the start; instead do
-            it every time a copy of it is given out (by PRE(sys_open)). 
-            That is probably more robust across fork() etc. */
-
-         /* Now delete it, but hang on to the fd. */
-         r = VG_(unlink)( buf2 );
-         if (r)
-            VG_(err_config_error)("Can't delete client cmdline file in /tmp.");
-
-         VG_(cl_cmdline_fd) = fd;
       }
+
+      /* Don't bother to seek the file back to the start; instead do
+	 it every time a copy of it is given out (by PRE(sys_open)). 
+	 That is probably more robust across fork() etc. */
+
+      /* Now delete it, but hang on to the fd. */
+      r = VG_(unlink)( buf2 );
+      if (r)
+         VG_(err_config_error)("Can't delete client cmdline file in /tmp.");
+
+      VG_(cl_cmdline_fd) = fd;
    }
+#endif
 
    //--------------------------------------------------------------
    // Init tool part 1: pre_clo_init

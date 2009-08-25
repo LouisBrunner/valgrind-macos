@@ -98,10 +98,6 @@ extern Int VG_(mkstemp) ( HChar* part_of_name, /*OUT*/HChar* fullname );
    calling VG_(get_startup_wd) (in pub_tool_libcfile.h). */
 extern Bool VG_(record_startup_wd) ( void );
 
-/* Whether or not the proc filesystem has been mounted at the /proc
-   mountpoint. */
-extern Bool VG_(is_procfs_mounted)(void);
-
 #endif   // __PUB_CORE_LIBCFILE_H
 
 /*--------------------------------------------------------------------*/

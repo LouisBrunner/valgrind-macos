@@ -1,0 +1,10 @@
+
+/proc/self/cmdline:
+./procfs-cmdline-exe\0arg1\0arg 2\0arg3\0
+/proc/<pid>/cmdline:
+./procfs-cmdline-exe\0arg1\0arg 2\0arg3\0
+Result of readlink("/proc/self/exe"): procfs-cmdline-exe
+Result of readlink("/proc/<pid>/exe"): procfs-cmdline-exe
+readlinkat: Function not implemented
+readlinkat: Function not implemented
+

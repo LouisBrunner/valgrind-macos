@@ -88,6 +88,8 @@ EXTRA_DIST = \
 	munmap_exe.stderr.exp munmap_exe.vgtest \
 	nestedfns.stderr.exp nestedfns.stdout.exp nestedfns.vgtest \
 	pending.stdout.exp pending.stderr.exp pending.vgtest \
+	procfs-linux.stderr.exp procfs-linux.vgtest \
+	procfs-non-linux.stderr.exp procfs-non-linux.vgtest \
 	pth_atfork1.stderr.exp pth_atfork1.stdout.exp pth_atfork1.vgtest \
 	pth_blockedsig.stderr.exp \
 	pth_blockedsig.stdout.exp pth_blockedsig.vgtest \
@@ -155,6 +157,7 @@ check_PROGRAMS = \
 	munmap_exe map_unaligned map_unmap mq \
 	nestedfns \
 	pending \
+	procfs-cmdline-exe \
 	pth_atfork1 pth_blockedsig pth_cancel1 pth_cancel2 pth_cvsimple \
 	pth_empty pth_exit pth_exit2 pth_mutexspeed pth_once pth_rwlock \
 	pth_stackalign \

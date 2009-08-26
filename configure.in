@@ -1526,6 +1526,7 @@ AC_CHECK_FUNCS([     \
         pthread_rwlock_timedrdlock \
         pthread_rwlock_timedwrlock \
         pthread_spin_lock          \
+        readlinkat   \
         semtimedop   \
         signalfd     \
         sigwaitinfo  \

@@ -588,7 +588,7 @@ SysRes write_ldt ( ThreadId tid, void* ptr, UInt bytecount, Int oldmode )
 
    /* If this thread doesn't have an LDT, we'd better allocate it
       now. */
-   if (ldt == (HWord)NULL) {
+   if (ldt == NULL) {
       ldt = alloc_zeroed_x86_LDT();
       VG_(threads)[tid].arch.vex.guest_LDT = (HWord)ldt;
    }

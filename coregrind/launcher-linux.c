@@ -135,7 +135,8 @@ static const char *select_platform(const char *clientname)
       return NULL;
    }
 
-   VG_(debugLog)(2, "launcher", "read %ld bytes from '%s'\n", n_bytes, clientname);
+   VG_(debugLog)(2, "launcher", "read %ld bytes from '%s'\n",
+                    (long int)n_bytes, clientname);
 
    if (header[0] == '#' && header[1] == '!') {
       int i = 2;

@@ -387,7 +387,7 @@ static void drd_tool_error_pp(Error* const e)
       UnimpClReqInfo* uicr =(UnimpClReqInfo*)(VG_(get_error_extra)(e));
       VG_(message)(Vg_UserMsg,
                    "The annotation macro %s has not yet been implemented in"
-                   " <helgrind/helgrind.h>\n",
+                   " <valgrind/helgrind.h>\n",
                    /*VG_(get_error_string)(e),*/ uicr->descr);
       VG_(pp_ExeContext)(VG_(get_error_where)(e));
       break;

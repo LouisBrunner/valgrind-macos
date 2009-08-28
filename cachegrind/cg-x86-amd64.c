@@ -38,7 +38,7 @@
 
 #include "cg_arch.h"
 
-// All CPUID info taken from sandpile.org/a32/cpuid.htm */
+// All CPUID info taken from sandpile.org/ia32/cpuid.htm */
 // Probably only works for Intel and AMD chips, and probably only for some of
 // them. 
 
@@ -173,6 +173,9 @@ Int Intel_cache_info(Int level, cache_t* I1c, cache_t* D1c, cache_t* L2c)
          *I1c = (cache_t) { 32, 8, 32 };  
          micro_ops_warn(32, 32, 32); 
          break;  
+
+      /* not sectored, whatever that might mean */
+      case 0x78: *L2c = (cache_t) { 1024, 4,  64 }; L2_found = True;  break;
 
       /* These are sectored, whatever that means */
       case 0x79: *L2c = (cache_t) {  128, 8,  64 }; L2_found = True;  break;

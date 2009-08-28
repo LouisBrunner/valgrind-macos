@@ -2986,7 +2986,7 @@ Bool VG_(am_relocate_nooverlap_client)( /*OUT*/Bool* need_discard,
 #endif // HAVE_MREMAP
 
 
-#if HAVE_PROC
+#if defined(VGO_linux)
 
 /*-----------------------------------------------------------------*/
 /*---                                                           ---*/
@@ -3493,7 +3493,7 @@ Bool VG_(get_changed_segments)(
    return !css_overflowed;
 }
 
-#endif // HAVE_PROC
+#endif // defined(VGO_linux)
 
 
 #endif // defined(VGO_linux) || defined(VGO_darwin)

@@ -1802,7 +1802,7 @@ Int valgrind_main ( Int argc, HChar **argv, HChar **envp )
    // when it tries to open /proc/<pid>/cmdline for itself.
    //   p: setup file descriptors
    //--------------------------------------------------------------
-#if !HAVE_PROC
+#if !defined(VGO_linux)
    // client shouldn't be using /proc!
    VG_(cl_cmdline_fd) = -1;
 #else

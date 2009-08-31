@@ -1060,7 +1060,7 @@ IRSB* cg_instrument ( VgCallbackClosure* closure,
             Bool     inverted;
             Addr64   nia, sea;
             IRConst* dst;
-            IROp     tyW    = hWordTy;
+            IRType   tyW    = hWordTy;
             IROp     widen  = tyW==Ity_I32  ? Iop_1Uto32  : Iop_1Uto64;
             IROp     opXOR  = tyW==Ity_I32  ? Iop_Xor32   : Iop_Xor64;
             IRTemp   guard1 = newIRTemp(cgs.sbOut->tyenv, Ity_I1);

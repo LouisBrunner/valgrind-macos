@@ -455,11 +455,16 @@ VexTranslateResult LibVEX_Translate ( VexTranslateArgs* vta )
       } else {
          /* HACK */
          UChar* p = (UChar*)vta->guest_bytes;
+         UInt   sum = 0;
          UInt   guest_bytes_read = (UInt)vta->guest_extents->len[0];
-         vex_printf(". 0 %llx %u\n.", vta->guest_bytes_addr, guest_bytes_read );
-         for (i = 0; i < guest_bytes_read; i++)
-            vex_printf(" %02x", (Int)p[i] );
-         vex_printf("\n\n");
+         vex_printf("GuestBytes %llx %u ", vta->guest_bytes_addr, 
+                                           guest_bytes_read );
+         for (i = 0; i < guest_bytes_read; i++) {
+            UInt b = (UInt)p[i];
+            vex_printf(" %02x", b );
+            sum = (sum << 1) ^ b;
+         }
+         vex_printf("  %08x\n\n", sum);
       }
    }
 

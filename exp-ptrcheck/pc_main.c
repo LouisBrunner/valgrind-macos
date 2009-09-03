@@ -155,7 +155,7 @@ static void pc_pre_clo_init(void)
 
    VG_(details_name)            ("exp-ptrcheck");
    VG_(details_version)         (NULL);
-   VG_(details_description)     ("a heap, stack & global array "
+   VG_(details_description)     ("a heap, stack and global array "
                                  "overrun detector");
    VG_(details_copyright_author)(
       "Copyright (C) 2003-2009, and GNU GPL'd, by OpenWorks Ltd et al.");

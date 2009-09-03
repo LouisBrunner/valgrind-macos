@@ -24,6 +24,7 @@ EXTRA_DIST = \
 	internals/3_2_BUGSTATUS.txt \
 	internals/3_3_BUGSTATUS.txt \
 	internals/3_4_BUGSTATUS.txt \
+	internals/3_5_BUGSTATUS.txt \
 	internals/BIG_APP_NOTES.txt \
 	internals/Darwin-notes.txt \
 	internals/directory-structure.txt \

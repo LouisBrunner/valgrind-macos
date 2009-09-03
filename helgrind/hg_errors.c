@@ -591,7 +591,7 @@ static Bool announce_one_thread ( Thread* thr )
    if (VG_(clo_xml)) {
 
       VG_(printf_xml)("<announcethread>\n");
-      VG_(printf_xml)("  <hthreadid>%d</threadid>\n", thr->errmsg_index);
+      VG_(printf_xml)("  <hthreadid>%d</hthreadid>\n", thr->errmsg_index);
       if (thr->errmsg_index == 1) {
          tl_assert(thr->created_at == NULL);
          VG_(printf_xml)("  <isrootthread></isrootthread>\n");

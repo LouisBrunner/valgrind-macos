@@ -250,6 +250,10 @@ static HChar** setup_client_env ( HChar** origenv, const HChar* toolname)
 #define AT_UCACHEBSIZE		21
 #endif /* AT_UCACHEBSIZE */
 
+#ifndef AT_BASE_PLATFORM
+#define AT_BASE_PLATFORM	24
+#endif /* AT_BASE_PLATFORM */
+
 #ifndef AT_RANDOM
 #define AT_RANDOM		25
 #endif /* AT_RANDOM */
@@ -430,7 +434,8 @@ Addr setup_client_stack( void*  init_sp,
    /* now, how big is the auxv? */
    auxsize = sizeof(*auxv);	/* there's always at least one entry: AT_NULL */
    for (cauxv = orig_auxv; cauxv->a_type != AT_NULL; cauxv++) {
-      if (cauxv->a_type == AT_PLATFORM)
+      if (cauxv->a_type == AT_PLATFORM ||
+          cauxv->a_type == AT_BASE_PLATFORM)
 	 stringsize += VG_(strlen)(cauxv->u.a_ptr) + 1;
       else if (cauxv->a_type == AT_RANDOM)
 	 stringsize += 16;
@@ -638,6 +643,7 @@ Addr setup_client_stack( void*  init_sp,
             break;
 
          case AT_PLATFORM:
+         case AT_BASE_PLATFORM:
             /* points to a platform description string */
             auxv->u.a_ptr = copy_str(&strtab, orig_auxv->u.a_ptr);
             break;

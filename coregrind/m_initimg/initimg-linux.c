@@ -258,6 +258,10 @@ static HChar** setup_client_env ( HChar** origenv, const HChar* toolname)
 #define AT_RANDOM		25
 #endif /* AT_RANDOM */
 
+#ifndef AT_EXECFN
+#define AT_EXECFN		31
+#endif /* AT_EXECFN */
+
 #ifndef AT_SYSINFO
 #define AT_SYSINFO		32
 #endif /* AT_SYSINFO */
@@ -439,6 +443,8 @@ Addr setup_client_stack( void*  init_sp,
 	 stringsize += VG_(strlen)(cauxv->u.a_ptr) + 1;
       else if (cauxv->a_type == AT_RANDOM)
 	 stringsize += 16;
+      else if (cauxv->a_type == AT_EXECFN)
+	 stringsize += VG_(strlen)(VG_(args_the_exename)) + 1;
       auxsize += sizeof(*cauxv);
    }
 
@@ -707,6 +713,11 @@ Addr setup_client_stack( void*  init_sp,
             auxv->u.a_ptr = strtab;
             VG_(memcpy)(strtab, orig_auxv->u.a_ptr, 16);
             strtab += 16;
+            break;
+
+         case AT_EXECFN:
+            /* points to the executable filename */
+            auxv->u.a_ptr = copy_str(&strtab, VG_(args_the_exename));
             break;
 
          default:

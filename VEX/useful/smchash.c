@@ -40,12 +40,12 @@ GuestBytes* read_one ( FILE* f )
   assert(!ferror(f));
 
   r= fscanf(f, "GuestBytes %llx %d  ", &gb->ga, &gb->nbytes);
-  printf("r = %d\n", r);
+  if (0) printf("r = %d\n", r);
   assert(r == 2);
 
   assert(gb->ga != 0);
   assert(gb->nbytes > 0);
-  assert(gb->nbytes < 500); // let's say
+  assert(gb->nbytes < 5000); // let's say
 
   Int nToAlloc = gb->nbytes + (gb->ga & 3);
 
@@ -78,7 +78,7 @@ void apply_to_all ( FILE* f,
 {
   while (!feof(f)) {
     GuestBytes* gb = read_one(f);
-    printf("got %llu %d\n", gb->ga, gb->nbytes);
+    if (0) printf("got %llu %d\n", gb->ga, gb->nbytes);
     fn( gb, opaque );
     free(gb->bytes);
     free(gb);
@@ -145,7 +145,80 @@ static UInt cand0 ( GuestBytes* gb )
    }
    return sum;
 }
+
+static UInt cand1 ( GuestBytes* gb )
+{
+   UWord addr = (UWord)gb->actual;
+   UWord len = gb->nbytes;
+   UInt sum1 = 0, sum2 = 0;
+   /* pull up to 4-alignment */
+   while ((addr & 3) != 0 && len >= 1) {
+      UChar* p = (UChar*)addr;
+      sum1 = (sum1 << 8) | (UInt)p[0];
+      addr++;
+      len--;
+   }
+   /* vectorised + unrolled */
+   while (len >= 16) {
+      UInt* p = (UInt*)addr;
+      UInt  w;
+      w = p[0];  sum1 = ROL32(sum1 ^ w, 31);  sum2 += w;
+      w = p[1];  sum1 = ROL32(sum1 ^ w, 31);  sum2 += w;
+      w = p[2];  sum1 = ROL32(sum1 ^ w, 31);  sum2 += w;
+      w = p[3];  sum1 = ROL32(sum1 ^ w, 31);  sum2 += w;
+      addr += 16;
+      len  -= 16;
+      sum1 ^= sum2;
+   }
+   /* vectorised fixup */
+   while (len >= 4) {
+      UInt* p = (UInt*)addr;
+      UInt  w = p[0];
+      sum1 = ROL32(sum1 ^ w, 31);  sum2 += w;
+      addr += 4;
+      len  -= 4;
+      sum1 ^= sum2;
+   }
+   /* scalar fixup */
+   while (len >= 1) {
+      UChar* p = (UChar*)addr;
+      UInt   w = (UInt)p[0];
+      sum1 = ROL32(sum1 ^ w, 31);  sum2 += w;
+      addr++;
+      len--;
+   }
+   return sum1 + sum2;
+}
  
+static UInt adler32 ( GuestBytes* gb )
+{
+   UWord addr = (UWord)gb->actual;
+   UWord len = gb->nbytes;
+   UInt   s1 = 1;
+   UInt   s2 = 0;
+   UChar* buf = (UChar*)addr;
+   while (len >= 4) {
+      s1 += buf[0];
+      s2 += s1;
+      s1 += buf[1];
+      s2 += s1;
+      s1 += buf[2];
+      s2 += s1;
+      s1 += buf[3];
+      s2 += s1;
+      buf += 4;
+      len -= 4;
+   }
+   while (len > 0) {
+      s1 += buf[0];
+      s2 += s1;
+      len--;
+      buf++;
+   }
+   return (s2 << 16) + s1;
+}
+
+
 
 
 //////////////////////////////////////////////////////////
@@ -153,8 +226,10 @@ static UInt cand0 ( GuestBytes* gb )
 UInt (*theFn)(GuestBytes*) =
   //hash_const_zero;
   //hash_sum;
-  //hash_rol;
-  cand0;
+//hash_rol;
+//cand0;
+  cand1;
+  //adler32;
 
 Int cmp_UInt_ps ( UInt* p1, UInt* p2 ) {
   if (*p1 < *p2) return -1;
@@ -162,36 +237,75 @@ Int cmp_UInt_ps ( UInt* p1, UInt* p2 ) {
   return 0;
 }
 
+Int nSetBits ( UInt w )
+{
+  Int i, j;
+  j = 0;
+  for (i = 0; i < 32; i++)
+    if (w & (1<<i))
+      j++;
+  return j;
+}
+
+Int    toc_nblocks           = 0;
+Int    toc_nblocks_with_zero = 0;
+double toc_sum_of_avgs       = 0.0;
+
+void invertBit ( UChar* b, UInt ix, UInt bix ) {
+   b[ix] ^= (1 << bix);
+}
+
 void try_onebit_changes( GuestBytes* gb, void* opaque )
 {
+   toc_nblocks++;
    /* collect up the hash values for all one bit changes of the key,
-      and also that for the unmodified key.  Then sort and see if we
-      have any dups. */
+      and also that for the unmodified key.  Then compute the number
+      of changed bits for all of them. */
    UInt  hashIx  = 0;
-   UInt  nHashes = 1 + 8 * gb->nbytes;
+   UInt  nHashes = 8 * gb->nbytes;
    UInt* hashes  = malloc( nHashes * sizeof(UInt) );
 
    UInt byteIx, bitIx;
    UInt hInit, hFinal, hRunning;
+   Int dist, totDist = 0, nNoDist = 0;
    assert(hashes);
    hInit = theFn( gb );
-   hashes[hashIx++] = hInit;
     for (byteIx = 0; byteIx < gb->nbytes; byteIx++) {
       for (bitIx = 0; bitIx < 8; bitIx++) {
-         gb->actual[byteIx] ^= (1 << bitIx);
+
+         invertBit(gb->actual, byteIx, bitIx);
+         //invertBit(gb->actual, byteIx, bitIx ^ 4);
+
          hRunning = theFn( gb );
+
+         dist = nSetBits(hRunning ^ hInit);
+         totDist += dist;
+         if (dist == 0) nNoDist++;
+
          hashes[hashIx++] = hRunning;
-         gb->actual[byteIx] ^= (1 << bitIx);
-         printf("  %02d.%d  %08x\n", byteIx, bitIx, hRunning);
+
+         invertBit(gb->actual, byteIx, bitIx);
+         //invertBit(gb->actual, byteIx, bitIx ^ 4);
+
+         if (0) printf("  %02d.%d  %08x  %d\n", 
+                       byteIx, bitIx, hRunning ^ hInit, dist);
       }
    }
    hFinal = theFn( gb );
    assert(hFinal == hInit);
    assert(hashIx == nHashes);
 
-   qsort( hashes, nHashes, sizeof(UInt), cmp_UInt_ps );
+   if (nNoDist > 0) 
+      printf("%4d  measurements,  %5.2f avg dist,  %2d zeroes\n",
+             (Int)nHashes, (double)totDist / (double)nHashes,  nNoDist);
+   else
+      printf("%4d  measurements,  %5.2f avg dist\n",
+             (Int)nHashes, (double)totDist / (double)nHashes);
 
+   if (nNoDist > 0)
+      toc_nblocks_with_zero++;
 
+   toc_sum_of_avgs += (double)totDist / (double)nHashes;
 
    free(hashes);
 }
@@ -202,6 +316,8 @@ int main ( void )
 {
   FILE* f = stdin;
   apply_to_all(f, try_onebit_changes, NULL);
+  printf("\n%d blocks,  %d with a zero,  %5.2f avg avg\n\n",
+         toc_nblocks, toc_nblocks_with_zero, toc_sum_of_avgs / (double)toc_nblocks );
   return 0;
 }
 

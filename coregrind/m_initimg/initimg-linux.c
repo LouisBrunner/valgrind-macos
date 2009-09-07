@@ -608,6 +608,7 @@ Addr setup_client_stack( void*  init_sp,
 #  endif
 
    for (; orig_auxv->a_type != AT_NULL; auxv++, orig_auxv++) {
+      const NSegment *ehdrseg;
 
       /* copy the entry... */
       *auxv = *orig_auxv;
@@ -699,12 +700,19 @@ Addr setup_client_stack( void*  init_sp,
             break;
 
          case AT_SYSINFO:
-#        if !defined(VGP_ppc32_linux) && !defined(VGP_ppc64_linux)
-         case AT_SYSINFO_EHDR:
-#        endif
             /* Trash this, because we don't reproduce it */
             auxv->a_type = AT_IGNORE;
             break;
+
+#        if !defined(VGP_ppc32_linux) && !defined(VGP_ppc64_linux)
+         case AT_SYSINFO_EHDR:
+            /* Trash this, because we don't reproduce it */
+            ehdrseg = VG_(am_find_nsegment)((Addr)auxv->u.a_ptr);
+            vg_assert(ehdrseg);
+            VG_(am_munmap_valgrind)(ehdrseg->start, ehdrseg->end - ehdrseg->start);
+            auxv->a_type = AT_IGNORE;
+            break;
+#        endif
 
          case AT_RANDOM:
             /* points to 16 random bytes - we need to ensure this is

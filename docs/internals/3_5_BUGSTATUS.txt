@@ -11,3 +11,5 @@ Stuff to merge to 3.5 branch
 r10878  Add support for the L2 cache on Intel T4200.
 r10881  Ashley Mis-matched thread tags in helgrind xml
 r10882  Ashley Remove & from exp-ptrcheck description
+r10887  rmdir on ppc64-linux (#206903).
+

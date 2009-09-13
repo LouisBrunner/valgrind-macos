@@ -1191,10 +1191,10 @@ const SyscallTableEntry ML_(syscall_table)[] = {
    GENX_(__NR_rename,            sys_rename),             //  38
    GENX_(__NR_mkdir,             sys_mkdir),              //  39
 
-// _____(__NR_rmdir,             sys_rmdir),              //  40
+   GENX_(__NR_rmdir,             sys_rmdir),              //  40
    GENXY(__NR_dup,               sys_dup),                //  41
    LINXY(__NR_pipe,              sys_pipe),               //  42
-   GENXY(__NR_times,             sys_times),              // 43
+   GENXY(__NR_times,             sys_times),              //  43
 // _____(__NR_prof,              sys_prof),               //  44
 
    GENX_(__NR_brk,               sys_brk),                //  45

@@ -698,7 +698,7 @@ static Bool translations_allowable_from_seg ( NSegment const* seg )
    Bool allowR = False;
 #  endif
    return seg != NULL
-          && (seg->kind == SkAnonC || seg->kind == SkFileC)
+          && (seg->kind == SkAnonC || seg->kind == SkFileC || seg->kind == SkShmC)
           && (seg->hasX || (seg->hasR && allowR));
 }
 

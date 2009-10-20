@@ -464,6 +464,8 @@ const char* DRD_(mutex_type_name)(const MutexT mt)
       return "mutex";
    case mutex_type_spinlock:
       return "spinlock";
+   case mutex_type_order_annotation:
+      return "order annotation mutex";
    default:
       tl_assert(0);
    }

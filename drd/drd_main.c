@@ -260,8 +260,6 @@ static void drd_pre_mem_read_asciiz(const CorePart part,
       p++;
       size++;
    }
-   // To do: find out what a reasonable upper limit on 'size' is.
-   tl_assert(size < 4096);
    if (size > 0)
    {
       DRD_(trace_load)(a, size);

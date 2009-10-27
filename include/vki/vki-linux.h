@@ -2570,6 +2570,57 @@ struct	vki_iwreq
 	union	vki_iwreq_data	u;
 };
 
+/*--------------------------------------------------------------------*/
+// From linux-2.6.31.5/include/linux/perf_counter.h
+/*--------------------------------------------------------------------*/
+
+struct vki_perf_counter_attr {
+
+	/*
+	 * Major type: hardware/software/tracepoint/etc.
+	 */
+	__vki_u32			type;
+
+	/*
+	 * Size of the attr structure, for fwd/bwd compat.
+	 */
+	__vki_u32			size;
+
+	/*
+	 * Type specific configuration information.
+	 */
+	__vki_u64			config;
+
+	union {
+		__vki_u64		sample_period;
+		__vki_u64		sample_freq;
+	};
+
+	__vki_u64			sample_type;
+	__vki_u64			read_format;
+
+	__vki_u64			disabled       :  1, /* off by default        */
+					inherit	       :  1, /* children inherit it   */
+					pinned	       :  1, /* must always be on PMU */
+					exclusive      :  1, /* only group on PMU     */
+					exclude_user   :  1, /* don't count user      */
+					exclude_kernel :  1, /* ditto kernel          */
+					exclude_hv     :  1, /* ditto hypervisor      */
+					exclude_idle   :  1, /* don't count when idle */
+					mmap           :  1, /* include mmap data     */
+					comm	       :  1, /* include comm data     */
+					freq           :  1, /* use freq, not period  */
+					inherit_stat   :  1, /* per task counts       */
+					enable_on_exec :  1, /* next exec enables     */
+					task           :  1, /* trace fork/exit       */
+
+					__reserved_1   : 50;
+
+	__vki_u32			wakeup_events;	/* wakeup every n events */
+	__vki_u32			__reserved_2;
+
+	__vki_u64			__reserved_3;
+};
 
 #endif // __VKI_LINUX_H
 

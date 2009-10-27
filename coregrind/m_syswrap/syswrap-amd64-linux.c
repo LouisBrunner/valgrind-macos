@@ -1374,13 +1374,13 @@ const SyscallTableEntry ML_(syscall_table)[] = {
    LINX_(__NR_eventfd2,          sys_eventfd2),         // 290
    LINXY(__NR_epoll_create1,     sys_epoll_create1),    // 291
    //   (__NR_dup3,              sys_ni_syscall)        // 292
-   LINXY(__NR_pipe2,             sys_pipe2)             // 293
+   LINXY(__NR_pipe2,             sys_pipe2),            // 293
    //   (__NR_inotify_init1,     sys_ni_syscall)        // 294
 
    //   (__NR_preadv,            sys_ni_syscall)        // 295
    //   (__NR_pwritev,           sys_ni_syscall)        // 296
    //   (__NR_rt_tgsigqueueinfo, sys_ni_syscall)        // 297
-   //   (__NR_perf_counter_open, sys_ni_syscall)        // 298
+   LINXY(__NR_perf_counter_open, sys_perf_counter_open) // 298
 };
 
 const UInt ML_(syscall_table_size) = 

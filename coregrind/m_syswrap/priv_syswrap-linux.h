@@ -47,6 +47,7 @@ extern SysRes ML_(do_fork_clone) ( ThreadId tid, UInt flags,
 DECL_TEMPLATE(linux, sys_mount);
 DECL_TEMPLATE(linux, sys_oldumount);
 DECL_TEMPLATE(linux, sys_umount);
+DECL_TEMPLATE(linux, sys_perf_counter_open);
 
 // POSIX, but various sub-cases differ between Linux and Darwin.
 DECL_TEMPLATE(linux, sys_fcntl);

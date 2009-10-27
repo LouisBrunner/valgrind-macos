@@ -1508,6 +1508,10 @@ const SyscallTableEntry ML_(syscall_table)[] = {
    //   (__NR_dup3,              sys_ni_syscall)        // 316
    LINXY(__NR_pipe2,             sys_pipe2)             // 317
    //   (__NR_inotify_init1,     sys_ni_syscall)        // 318
+   //   (__NR_perf_counter_open, sys_ni_syscall)        // 319
+   //   (__NR_preadv,            sys_ni_syscall)        // 320
+   //   (__NR_pwritev,           sys_ni_syscall)        // 321
+   //   (__NR_rt_tgsigqueueinfo, sys_ni_syscall)        // 322
 };
 
 const UInt ML_(syscall_table_size) = 

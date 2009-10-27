@@ -376,6 +376,10 @@
 #define __NR_dup3               292
 #define __NR_pipe2              293
 #define __NR_inotify_init1      294
+#define __NR_preadv             295
+#define __NR_pwritev            296
+#define __NR_rt_tgsigqueueinfo  297
+#define __NR_perf_counter_open  298
 
 #endif /* __VKI_SCNUMS_AMD64_LINUX_H */
 

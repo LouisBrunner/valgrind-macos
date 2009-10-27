@@ -8,6 +8,7 @@ EXTRA_DIST = \
 	capget capget.stderr.exp \
 	lsframe1.vgtest lsframe1.stdout.exp lsframe1.stderr.exp \
 	lsframe2.vgtest lsframe2.stdout.exp lsframe2.stderr.exp \
+	sigqueue.vgtest sigqueue.stderr.exp \
 	stack_changes.stderr.exp stack_changes.stdout.exp \
 	    stack_changes.stdout.exp2 stack_changes.vgtest \
 	stack_switch.stderr.exp stack_switch.vgtest \
@@ -19,6 +20,7 @@ check_PROGRAMS = \
 	capget \
 	lsframe1 \
 	lsframe2 \
+	sigqueue \
 	stack_changes \
 	stack_switch \
 	timerfd-syscall

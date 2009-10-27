@@ -117,6 +117,7 @@ DECL_TEMPLATE(linux, sys_set_mempolicy);
 DECL_TEMPLATE(linux, sys_get_mempolicy);
 
 DECL_TEMPLATE(linux, sys_inotify_init);
+DECL_TEMPLATE(linux, sys_inotify_init1);
 DECL_TEMPLATE(linux, sys_inotify_add_watch);
 DECL_TEMPLATE(linux, sys_inotify_rm_watch);
 

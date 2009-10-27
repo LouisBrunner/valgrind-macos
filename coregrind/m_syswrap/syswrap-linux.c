@@ -1526,6 +1526,24 @@ POST(sys_inotify_init)
    }
 }
 
+PRE(sys_inotify_init1)
+{
+   PRINT("sys_inotify_init ( %ld )", ARG1);
+   PRE_REG_READ1(long, "inotify_init", int, flag);
+}
+
+POST(sys_inotify_init1)
+{
+   vg_assert(SUCCESS);
+   if (!ML_(fd_allowed)(RES, "inotify_init", tid, True)) {
+      VG_(close)(RES);
+      SET_STATUS_Failure( VKI_EMFILE );
+   } else {
+      if (VG_(clo_track_fds))
+         ML_(record_fd_open_nameless) (tid, RES);
+   }
+}
+
 PRE(sys_inotify_add_watch)
 {
    PRINT( "sys_inotify_add_watch ( %ld, %#lx, %lx )", ARG1,ARG2,ARG3);

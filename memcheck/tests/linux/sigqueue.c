@@ -1,3 +1,5 @@
+/* Test program that invokes the Linux system call rt_sigqueueinfo(). */
+
 #include <signal.h>
 #include <string.h>
 #include <stddef.h>

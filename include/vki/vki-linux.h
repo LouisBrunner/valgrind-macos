@@ -1288,6 +1288,10 @@ typedef unsigned long	vki_aio_context_t;
 enum {
 	VKI_IOCB_CMD_PREAD = 0,
 	VKI_IOCB_CMD_PWRITE = 1,
+	VKI_IOCB_CMD_FSYNC = 2,
+	VKI_IOCB_CMD_FDSYNC = 3,
+	VKI_IOCB_CMD_PREADV = 7,
+	VKI_IOCB_CMD_PWRITEV = 8,
 };
 
 /* read() from /dev/aio returns these structures. */

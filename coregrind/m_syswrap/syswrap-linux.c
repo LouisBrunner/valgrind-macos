@@ -1399,10 +1399,35 @@ POST(sys_io_getevents)
             if (vev->result > 0)
                POST_MEM_WRITE( cb->aio_buf, vev->result );
             break;
-            
+
          case VKI_IOCB_CMD_PWRITE:
             break;
-           
+
+         case VKI_IOCB_CMD_FSYNC:
+            break;
+
+         case VKI_IOCB_CMD_FDSYNC:
+            break;
+
+         case VKI_IOCB_CMD_PREADV:
+	     if (vev->result > 0) {
+                  struct vki_iovec * vec = (struct vki_iovec *)(Addr)cb->aio_buf;
+                  Int remains = vev->result;
+                  Int j;
+
+                  for (j = 0; j < cb->aio_nbytes; j++) {
+                       Int nReadThisBuf = vec[j].iov_len;
+                       if (nReadThisBuf > remains) nReadThisBuf = remains;
+                       POST_MEM_WRITE( (Addr)vec[j].iov_base, nReadThisBuf );
+                       remains -= nReadThisBuf;
+                       if (remains < 0) VG_(core_panic)("io_getevents(PREADV): remains < 0");
+                  }
+	     }
+             break;
+
+         case VKI_IOCB_CMD_PWRITEV:
+             break;
+
          default:
             VG_(message)(Vg_DebugMsg,
                         "Warning: unhandled io_getevents opcode: %u\n",
@@ -1415,7 +1440,7 @@ POST(sys_io_getevents)
 
 PRE(sys_io_submit)
 {
-   Int i;
+   Int i, j;
 
    PRINT("sys_io_submit ( %llu, %ld, %#lx )", (ULong)ARG1,ARG2,ARG3);
    PRE_REG_READ3(long, "io_submit",
@@ -1425,6 +1450,8 @@ PRE(sys_io_submit)
    if (ARG3 != 0) {
       for (i = 0; i < ARG2; i++) {
          struct vki_iocb *cb = ((struct vki_iocb **)ARG3)[i];
+         struct vki_iovec *iov;
+
          PRE_MEM_READ( "io_submit(iocb)", (Addr)cb, sizeof(struct vki_iocb) );
          switch (cb->aio_lio_opcode) {
          case VKI_IOCB_CMD_PREAD:
@@ -1434,7 +1461,27 @@ PRE(sys_io_submit)
          case VKI_IOCB_CMD_PWRITE:
             PRE_MEM_READ( "io_submit(PWRITE)", cb->aio_buf, cb->aio_nbytes );
             break;
-           
+
+         case VKI_IOCB_CMD_FSYNC:
+            break;
+
+         case VKI_IOCB_CMD_FDSYNC:
+            break;
+
+         case VKI_IOCB_CMD_PREADV:
+            iov = (struct vki_iovec *)(Addr)cb->aio_buf;
+            PRE_MEM_READ( "io_submit(PREADV)", cb->aio_buf, cb->aio_nbytes * sizeof(struct vki_iovec) );
+            for (j = 0; j < cb->aio_nbytes; j++)
+                PRE_MEM_WRITE( "io_submit(PREADV(iov[i]))", (Addr)iov[j].iov_base, iov[j].iov_len );
+            break;
+
+         case VKI_IOCB_CMD_PWRITEV:
+            iov = (struct vki_iovec *)(Addr)cb->aio_buf;
+            PRE_MEM_READ( "io_submit(PWRITEV)", cb->aio_buf, cb->aio_nbytes * sizeof(struct vki_iovec) );
+            for (j = 0; j < cb->aio_nbytes; j++)
+                PRE_MEM_READ( "io_submit(PWRITEV(iov[i]))", (Addr)iov[j].iov_base, iov[j].iov_len );
+            break;
+
          default:
             VG_(message)(Vg_DebugMsg,"Warning: unhandled io_submit opcode: %u\n",
                          cb->aio_lio_opcode);

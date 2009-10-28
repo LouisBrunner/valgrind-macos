@@ -3005,6 +3005,97 @@ PRE(sys_faccessat)
 }
 
 /* ---------------------------------------------------------------------
+   p{read,write}v wrappers
+   ------------------------------------------------------------------ */
+
+PRE(sys_preadv)
+{
+   Int i;
+   struct vki_iovec * vec;
+   *flags |= SfMayBlock;
+#if VG_WORDSIZE == 4
+   PRINT("sys_preadv ( %ld, %#lx, %llu, %lld )",ARG1,ARG2,(ULong)ARG3,LOHI64(ARG4,ARG5));
+   PRE_REG_READ5(ssize_t, "preadv",
+                 unsigned long, fd, const struct iovec *, vector,
+                 unsigned long, count, vki_u32, offset_low32,
+                 vki_u32, offset_high32);
+#elif VG_WORDSIZE == 8
+   PRINT("sys_preadv ( %ld, %#lx, %llu, %lld )",ARG1,ARG2,(ULong)ARG3,(Long)ARG4);
+   PRE_REG_READ4(ssize_t, "preadv",
+                 unsigned long, fd, const struct iovec *, vector,
+                 unsigned long, count, Word, offset);
+#else
+#  error Unexpected word size
+#endif
+   if (!ML_(fd_allowed)(ARG1, "preadv", tid, False)) {
+      SET_STATUS_Failure( VKI_EBADF );
+   } else {
+      PRE_MEM_READ( "preadv(vector)", ARG2, ARG3 * sizeof(struct vki_iovec) );
+
+      if (ARG2 != 0) {
+         /* ToDo: don't do any of the following if the vector is invalid */
+         vec = (struct vki_iovec *)ARG2;
+         for (i = 0; i < (Int)ARG3; i++)
+            PRE_MEM_WRITE( "preadv(vector[...])",
+                           (Addr)vec[i].iov_base, vec[i].iov_len );
+      }
+   }
+}
+
+POST(sys_preadv)
+{
+   vg_assert(SUCCESS);
+   if (RES > 0) {
+      Int i;
+      struct vki_iovec * vec = (struct vki_iovec *)ARG2;
+      Int remains = RES;
+
+      /* RES holds the number of bytes read. */
+      for (i = 0; i < (Int)ARG3; i++) {
+	 Int nReadThisBuf = vec[i].iov_len;
+	 if (nReadThisBuf > remains) nReadThisBuf = remains;
+	 POST_MEM_WRITE( (Addr)vec[i].iov_base, nReadThisBuf );
+	 remains -= nReadThisBuf;
+	 if (remains < 0) VG_(core_panic)("preadv: remains < 0");
+      }
+   }
+}
+
+PRE(sys_pwritev)
+{
+   Int i;
+   struct vki_iovec * vec;
+   *flags |= SfMayBlock;
+#if VG_WORDSIZE == 4
+   PRINT("sys_pwritev ( %ld, %#lx, %llu, %lld )",ARG1,ARG2,(ULong)ARG3,LOHI64(ARG4,ARG5));
+   PRE_REG_READ5(ssize_t, "pwritev",
+                 unsigned long, fd, const struct iovec *, vector,
+                 unsigned long, count, vki_u32, offset_low32,
+                 vki_u32, offset_high32);
+#elif VG_WORDSIZE == 8
+   PRINT("sys_pwritev ( %ld, %#lx, %llu, %lld )",ARG1,ARG2,(ULong)ARG3,(Long)ARG4);
+   PRE_REG_READ4(ssize_t, "pwritev",
+                 unsigned long, fd, const struct iovec *, vector,
+                 unsigned long, count, Word, offset);
+#else
+#  error Unexpected word size
+#endif
+   if (!ML_(fd_allowed)(ARG1, "pwritev", tid, False)) {
+      SET_STATUS_Failure( VKI_EBADF );
+   } else {
+      PRE_MEM_READ( "pwritev(vector)", 
+		     ARG2, ARG3 * sizeof(struct vki_iovec) );
+      if (ARG2 != 0) {
+         /* ToDo: don't do any of the following if the vector is invalid */
+         vec = (struct vki_iovec *)ARG2;
+         for (i = 0; i < (Int)ARG3; i++)
+            PRE_MEM_READ( "pwritev(vector[...])",
+                           (Addr)vec[i].iov_base, vec[i].iov_len );
+      }
+   }
+}
+
+/* ---------------------------------------------------------------------
    key retention service wrappers
    ------------------------------------------------------------------ */
 

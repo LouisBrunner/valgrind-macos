@@ -2676,7 +2676,7 @@ PRE(sys_rt_sigqueueinfo)
    PRE_REG_READ3(long, "rt_sigqueueinfo", 
                  int, pid, int, sig, vki_siginfo_t *, uinfo);
    if (ARG2 != 0)
-      PRE_MEM_READ( "rt_sigqueueinfo(uinfo)", ARG3, sizeof(vki_siginfo_t) );
+      PRE_MEM_READ( "rt_sigqueueinfo(uinfo)", ARG3, VKI_SI_MAX_SIZE );
 }
 POST(sys_rt_sigqueueinfo)
 {

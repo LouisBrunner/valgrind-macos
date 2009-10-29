@@ -212,7 +212,8 @@ void VG_(DebugInfo_syms_getidx)  ( const DebugInfo *di,
                                    /*OUT*/Addr*   tocptr,
                                    /*OUT*/UInt*   size,
                                    /*OUT*/HChar** name,
-                                   /*OUT*/Bool*   isText );
+                                   /*OUT*/Bool*   isText,
+                                   /*OUT*/Bool*   isIFunc );
 
 /* A simple enumeration to describe the 'kind' of various kinds of
    segments that arise from the mapping of object files. */

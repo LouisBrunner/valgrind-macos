@@ -268,12 +268,15 @@ typedef
       TopSpec* parent_spec; /* the TopSpec which supplied the Spec */
       TopSpec* parent_sym;  /* the TopSpec which supplied the symbol */
       Bool     isWrap;      /* wrap or replacement? */
+      Bool     isIFunc;     /* indirect function? */
    }
    Active;
 
 /* The active set is a fast lookup table */
 static OSet* activeSet = NULL;
 
+/* Wrapper routine for indirect functions */
+static Addr iFuncWrapper;
 
 /*------------------------------------------------------------*/
 /*--- FWDses                                               ---*/
@@ -350,8 +353,8 @@ void VG_(redir_notify_new_DebugInfo)( DebugInfo* newsi )
 
    nsyms = VG_(DebugInfo_syms_howmany)( newsi );
    for (i = 0; i < nsyms; i++) {
-      VG_(DebugInfo_syms_getidx)( newsi, i, &sym_addr, &sym_toc, 
-                                            NULL, &sym_name, &isText );
+      VG_(DebugInfo_syms_getidx)( newsi, i, &sym_addr, &sym_toc,
+                                  NULL, &sym_name, &isText, NULL );
       ok = VG_(maybe_Z_demangle)( sym_name, demangled_sopatt, N_DEMANGLED,
                                   demangled_fnpatt, N_DEMANGLED, &isWrap );
       /* ignore data symbols */
@@ -388,8 +391,8 @@ void VG_(redir_notify_new_DebugInfo)( DebugInfo* newsi )
 
    if (check_ppcTOCs) {
       for (i = 0; i < nsyms; i++) {
-         VG_(DebugInfo_syms_getidx)( newsi, i, &sym_addr, &sym_toc, 
-                                               NULL, &sym_name, &isText );
+         VG_(DebugInfo_syms_getidx)( newsi, i, &sym_addr, &sym_toc,
+                                     NULL, &sym_name, &isText, NULL );
          ok = isText
               && VG_(maybe_Z_demangle)( 
                     sym_name, demangled_sopatt, N_DEMANGLED,
@@ -470,6 +473,30 @@ void VG_(redir_notify_new_DebugInfo)( DebugInfo* newsi )
 
 #undef N_DEMANGLED
 
+/* Add a new target for an indirect function. Adds a new redirection
+   for the indirection function with address old_from that redirects
+   the ordinary function with address new_from to the target address
+   of the original redirection. */
+
+void VG_(redir_add_ifunc_target)( Addr old_from, Addr new_from )
+{
+    Active *old, new;
+
+    old = VG_(OSetGen_Lookup)(activeSet, &old_from);
+    vg_assert(old);
+    vg_assert(old->isIFunc);
+
+    new = *old;
+    new.from_addr = new_from;
+    new.isIFunc = False;
+    maybe_add_active (new);
+
+    if (VG_(clo_trace_redir)) {
+       VG_(message)( Vg_DebugMsg,
+                     "Adding redirect for indirect function 0x%llx from 0x%llx -> 0x%llx\n",
+                     (ULong)old_from, (ULong)new_from, (ULong)new.to_addr );
+    }
+}
 
 /* Do one element of the basic cross product: add to the active set,
    all matches resulting from comparing all the given specs against
@@ -487,7 +514,7 @@ void generate_and_add_actives (
      )
 {
    Spec*  sp;
-   Bool   anyMark, isText;
+   Bool   anyMark, isText, isIFunc;
    Active act;
    Int    nsyms, i;
    Addr   sym_addr;
@@ -513,7 +540,7 @@ void generate_and_add_actives (
    nsyms = VG_(DebugInfo_syms_howmany)( di );
    for (i = 0; i < nsyms; i++) {
       VG_(DebugInfo_syms_getidx)( di, i, &sym_addr, NULL, NULL,
-                                         &sym_name, &isText );
+                                  &sym_name, &isText, &isIFunc );
 
       /* ignore data symbols */
       if (!isText)
@@ -539,6 +566,7 @@ void generate_and_add_actives (
             act.parent_spec = parent_spec;
             act.parent_sym  = parent_sym;
             act.isWrap      = sp->isWrap;
+            act.isIFunc     = isIFunc;
             sp->done = True;
             maybe_add_active( act );
          }
@@ -780,7 +808,9 @@ Addr VG_(redir_do_lookup) ( Addr orig, Bool* isWrap )
 
    vg_assert(r->to_addr != 0);
    if (isWrap)
-      *isWrap = r->isWrap;
+      *isWrap = r->isWrap || r->isIFunc;
+   if (r->isIFunc)
+      return iFuncWrapper;
    return r->to_addr;
 }
 
@@ -1096,6 +1126,8 @@ void handle_maybe_load_notifier( const UChar* soname,
 
    if (VG_(strcmp)(symbol, VG_STRINGIFY(VG_NOTIFY_ON_LOAD(freeres))) == 0)
       VG_(client___libc_freeres_wrapper) = addr;
+   else if (VG_(strcmp)(symbol, VG_STRINGIFY(VG_NOTIFY_ON_LOAD(ifunc_wrapper))) == 0)
+      iFuncWrapper = addr;
    else
       vg_assert2(0, "unrecognised load notification function: %s", symbol);
 }

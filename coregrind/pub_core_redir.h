@@ -58,6 +58,8 @@ extern void VG_(redir_notify_delete_DebugInfo)( DebugInfo* );
 /* Initialise the module, and load initial "hardwired" redirects. */
 extern void VG_(redir_initialise)( void );
 
+/* Notify the module of a new target for an indirect function. */
+extern void VG_(redir_add_ifunc_target)( Addr old_from, Addr new_from );
 
 //--------------------------------------------------------------------
 // Queries

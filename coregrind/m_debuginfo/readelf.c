@@ -214,7 +214,8 @@ Bool get_elf_symbol_info (
                                   used on entry */
         Bool*  from_opd_out,   /* ppc64-linux only: did we deref an
                                   .opd entry? */
-        Bool*  is_text_out     /* is this a text symbol? */
+        Bool*  is_text_out,    /* is this a text symbol? */
+        Bool*  is_ifunc        /* is this a  STT_GNU_IFUNC function ?*/
      )
 {
    Bool plausible;
@@ -232,6 +233,7 @@ Bool get_elf_symbol_info (
    *sym_size_out   = (Int)sym->st_size;
    *sym_tocptr_out = 0; /* unknown/inapplicable */
    *from_opd_out   = False;
+   *is_ifunc       = False;
 
    /* Figure out if we're interested in the symbol.  Firstly, is it of
       the right flavour?  */
@@ -243,6 +245,9 @@ Bool get_elf_symbol_info (
         &&
         (ELFXX_ST_TYPE(sym->st_info) == STT_FUNC 
          || ELFXX_ST_TYPE(sym->st_info) == STT_OBJECT
+#ifdef STT_GNU_IFUNC
+         || ELFXX_ST_TYPE(sym->st_info) == STT_GNU_IFUNC
+#endif
         );
 
    /* Work out the svma and bias for each section as it will appear in
@@ -324,6 +329,14 @@ Bool get_elf_symbol_info (
       *is_text_out = True;
       *sym_avma_out += text_bias;
    }
+
+#  ifdef STT_GNU_IFUNC
+   /* Check for indirect functions. */
+   if (*is_text_out
+       && ELFXX_ST_TYPE(sym->st_info) == STT_GNU_IFUNC) {
+       *is_ifunc = True;
+   }
+#  endif
 
 #  if defined(VGP_ppc64_linux)
    /* Allow STT_NOTYPE in the very special case where we're running on
@@ -570,7 +583,7 @@ void read_elf_symtab__normal(
    Char      *sym_name, *sym_name_really;
    Int        sym_size;
    Addr       sym_tocptr;
-   Bool       from_opd, is_text;
+   Bool       from_opd, is_text, is_ifunc;
    DiSym      risym;
    ElfXX_Sym *sym;
 
@@ -602,13 +615,14 @@ void read_elf_symtab__normal(
                               &sym_avma_really,
                               &sym_size,
                               &sym_tocptr,
-                              &from_opd, &is_text)) {
+                              &from_opd, &is_text, &is_ifunc)) {
 
-         risym.addr   = sym_avma_really;
-         risym.size   = sym_size;
-         risym.name   = ML_(addStr) ( di, sym_name_really, -1 );
-         risym.tocptr = sym_tocptr;
-         risym.isText = is_text;
+         risym.addr    = sym_avma_really;
+         risym.size    = sym_size;
+         risym.name    = ML_(addStr) ( di, sym_name_really, -1 );
+         risym.tocptr  = sym_tocptr;
+         risym.isText  = is_text;
+         risym.isIFunc = is_ifunc;
          vg_assert(risym.name != NULL);
          vg_assert(risym.tocptr == 0); /* has no role except on ppc64-linux */
          ML_(addSym) ( di, &risym );
@@ -646,6 +660,7 @@ typedef
       Int        size;
       Bool       from_opd;
       Bool       is_text;
+      Bool       is_ifunc;
    }
    TempSym;
 
@@ -671,7 +686,7 @@ void read_elf_symtab__ppc64_linux(
    Char       *sym_name, *sym_name_really;
    Int         sym_size;
    Addr        sym_tocptr;
-   Bool        from_opd, modify_size, modify_tocptr, is_text;
+   Bool        from_opd, modify_size, modify_tocptr, is_text, is_ifunc;
    DiSym       risym;
    ElfXX_Sym  *sym;
    OSet       *oset;
@@ -713,7 +728,7 @@ void read_elf_symtab__ppc64_linux(
                               &sym_avma_really,
                               &sym_size,
                               &sym_tocptr,
-                              &from_opd, &is_text)) {
+                              &from_opd, &is_text, &is_ifunc)) {
 
          /* Check if we've seen this (name,addr) key before. */
          key.addr = sym_avma_really;
@@ -785,6 +800,7 @@ void read_elf_symtab__ppc64_linux(
             elem->size     = sym_size;
             elem->from_opd = from_opd;
             elem->is_text  = is_text;
+            elem->is_ifunc = is_ifunc;
             VG_(OSetGen_Insert)(oset, elem);
             if (di->trace_symtab) {
                VG_(printf)("   to-oset [%4ld]:          "
@@ -808,11 +824,12 @@ void read_elf_symtab__ppc64_linux(
    VG_(OSetGen_ResetIter)( oset );
 
    while ( (elem = VG_(OSetGen_Next)(oset)) ) {
-      risym.addr   = elem->key.addr;
-      risym.size   = elem->size;
-      risym.name   = ML_(addStr) ( di, elem->key.name, -1 );
-      risym.tocptr = elem->tocptr;
-      risym.isText = elem->is_text;
+      risym.addr    = elem->key.addr;
+      risym.size    = elem->size;
+      risym.name    = ML_(addStr) ( di, elem->key.name, -1 );
+      risym.tocptr  = elem->tocptr;
+      risym.isText  = elem->is_text;
+      risym.isIFunc = elem->is_ifunc;
       vg_assert(risym.name != NULL);
 
       ML_(addSym) ( di, &risym );

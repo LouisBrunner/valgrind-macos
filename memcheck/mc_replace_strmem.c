@@ -116,6 +116,7 @@ Bool is_overlap ( void* dst, const void* src, SizeT dstlen, SizeT srclen )
 STRRCHR(VG_Z_LIBC_SONAME,   strrchr)
 STRRCHR(VG_Z_LIBC_SONAME,   rindex)
 #if defined(VGO_linux)
+STRRCHR(VG_Z_LIBC_SONAME,   __GI_strrchr)
 STRRCHR(VG_Z_LD_LINUX_SO_2, rindex)
 #elif defined(VGO_darwin)
 STRRCHR(VG_Z_DYLD,          strrchr)
@@ -140,6 +141,7 @@ STRRCHR(VG_Z_DYLD,          rindex)
 STRCHR(VG_Z_LIBC_SONAME,          strchr)
 STRCHR(VG_Z_LIBC_SONAME,          index)
 #if defined(VGO_linux)
+STRCHR(VG_Z_LIBC_SONAME,          __GI_strchr)
 STRCHR(VG_Z_LD_LINUX_SO_2,        strchr)
 STRCHR(VG_Z_LD_LINUX_SO_2,        index)
 STRCHR(VG_Z_LD_LINUX_X86_64_SO_2, strchr)
@@ -172,7 +174,9 @@ STRCHR(VG_Z_DYLD,                 index)
    }
 
 STRCAT(VG_Z_LIBC_SONAME, strcat)
-
+#if defined(VGO_linux)
+STRCAT(VG_Z_LIBC_SONAME, __GI_strcat)
+#endif
 
 #define STRNCAT(soname, fnname) \
    char* VG_REPLACE_FUNCTION_ZU(soname,fnname) \
@@ -257,6 +261,9 @@ STRLCAT(VG_Z_DYLD,        strlcat)
    }
 
 STRNLEN(VG_Z_LIBC_SONAME, strnlen)
+#if defined(VGO_linux)
+STRNLEN(VG_Z_LIBC_SONAME, __GI_strnlen)
+#endif
    
 
 // Note that this replacement often doesn't get used because gcc inlines
@@ -274,6 +281,7 @@ STRNLEN(VG_Z_LIBC_SONAME, strnlen)
 
 STRLEN(VG_Z_LIBC_SONAME,          strlen)
 #if defined(VGO_linux)
+STRLEN(VG_Z_LIBC_SONAME,          __GI_strlen)
 STRLEN(VG_Z_LD_LINUX_SO_2,        strlen)
 STRLEN(VG_Z_LD_LINUX_X86_64_SO_2, strlen)
 #endif
@@ -301,7 +309,9 @@ STRLEN(VG_Z_LD_LINUX_X86_64_SO_2, strlen)
    }
 
 STRCPY(VG_Z_LIBC_SONAME, strcpy)
-#if defined(VGO_darwin)
+#if defined(VGO_linux)
+STRCPY(VG_Z_LIBC_SONAME, __GI_strcpy)
+#elif defined(VGO_darwin)
 STRCPY(VG_Z_DYLD,        strcpy)
 #endif
 
@@ -327,7 +337,9 @@ STRCPY(VG_Z_DYLD,        strcpy)
    }
 
 STRNCPY(VG_Z_LIBC_SONAME, strncpy)
-#if defined(VGO_darwin)
+#if defined(VGO_linux)
+STRNCPY(VG_Z_LIBC_SONAME, __GI_strncpy)
+#elif defined(VGO_darwin)
 STRNCPY(VG_Z_DYLD,        strncpy)
 #endif
 
@@ -384,7 +396,9 @@ STRLCPY(VG_Z_DYLD,        strlcpy)
    }
 
 STRNCMP(VG_Z_LIBC_SONAME, strncmp)
-#if defined(VGO_darwin)
+#if defined(VGO_linux)
+STRNCMP(VG_Z_LIBC_SONAME, __GI_strncmp)
+#elif defined(VGO_darwin)
 STRNCMP(VG_Z_DYLD,        strncmp)
 #endif
 
@@ -411,6 +425,7 @@ STRNCMP(VG_Z_DYLD,        strncmp)
 
 STRCMP(VG_Z_LIBC_SONAME,          strcmp)
 #if defined(VGO_linux)
+STRCMP(VG_Z_LIBC_SONAME,          __GI_strcmp)
 STRCMP(VG_Z_LD_LINUX_X86_64_SO_2, strcmp)
 STRCMP(VG_Z_LD64_SO_1,            strcmp)
 #endif
@@ -557,6 +572,7 @@ MEMCMP(VG_Z_DYLD,        bcmp)
 
 STPCPY(VG_Z_LIBC_SONAME,          stpcpy)
 #if defined(VGO_linux)
+STPCPY(VG_Z_LIBC_SONAME,          __GI_stpcpy)
 STPCPY(VG_Z_LD_LINUX_SO_2,        stpcpy)
 STPCPY(VG_Z_LD_LINUX_X86_64_SO_2, stpcpy)
 #elif defined(VGO_darwin)
@@ -709,7 +725,9 @@ GLIBC232_STRCHRNUL(VG_Z_LIBC_SONAME, strchrnul)
    }
 
 GLIBC232_RAWMEMCHR(VG_Z_LIBC_SONAME, rawmemchr)
-
+#if defined (VGO_linux)
+GLIBC232_RAWMEMCHR(VG_Z_LIBC_SONAME, __GI___rawmemchr)
+#endif
 
 /* glibc variant of strcpy that checks the dest is big enough.
    Copied from glibc-2.5/debug/test-strcpy_chk.c. */

@@ -3435,14 +3435,16 @@ void VG_(DebugInfo_syms_getidx) ( const DebugInfo *si,
                                   /*OUT*/Addr*   tocptr,
                                   /*OUT*/UInt*   size,
                                   /*OUT*/HChar** name,
-                                  /*OUT*/Bool*   isText )
+                                  /*OUT*/Bool*   isText,
+                                  /*OUT*/Bool*   isIFunc )
 {
    vg_assert(idx >= 0 && idx < si->symtab_used);
-   if (avma)   *avma   = si->symtab[idx].addr;
-   if (tocptr) *tocptr = si->symtab[idx].tocptr;
-   if (size)   *size   = si->symtab[idx].size;
-   if (name)   *name   = (HChar*)si->symtab[idx].name;
-   if (isText) *isText = si->symtab[idx].isText;
+   if (avma)    *avma    = si->symtab[idx].addr;
+   if (tocptr)  *tocptr  = si->symtab[idx].tocptr;
+   if (size)    *size    = si->symtab[idx].size;
+   if (name)    *name    = (HChar*)si->symtab[idx].name;
+   if (isText)  *isText  = si->symtab[idx].isText;
+   if (isIFunc) *isIFunc = si->symtab[idx].isIFunc;
 }
 
 

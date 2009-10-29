@@ -89,6 +89,7 @@
 #include "pub_core_debuginfo.h"     // VG_(di_notify_pdb_debuginfo)
 #include "priv_sema.h"
 #include "pub_core_scheduler.h"     // self
+#include "pub_core_redir.h"
 
 
 /* ---------------------------------------------------------------------
@@ -1397,6 +1398,11 @@ void do_client_request ( ThreadId tid )
             VG_(vmessage)( Vg_DebugMsg, (char *)arg[1], (void*)arg[2] );
             VG_(message_flush)();
             SET_CLREQ_RETVAL( tid, count );
+         break; }
+
+      case VG_USERREQ__ADD_IFUNC_TARGET: {
+         VG_(redir_add_ifunc_target)( arg[1], arg[2] );
+         SET_CLREQ_RETVAL( tid, 0);
          break; }
 
       case VG_USERREQ__PRINTF_BACKTRACE: {

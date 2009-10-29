@@ -50,6 +50,9 @@ typedef
       /* Internal equivalent of VALGRIND_PRINTF . */
       VG_USERREQ__INTERNAL_PRINTF   = 0x3103,
 
+      /* Add a target for an indirect function redirection. */
+      VG_USERREQ__ADD_IFUNC_TARGET  = 0x3104,
+
    } Vg_InternalClientRequest;
 
 // Function for printing from code within Valgrind, but which runs on the

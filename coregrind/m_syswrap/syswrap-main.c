@@ -2058,6 +2058,8 @@ VG_(fixup_guest_state_after_syscall_interrupted)( ThreadId tid,
       if (VG_(clo_trace_signals))
          VG_(message)( Vg_DebugMsg,
                        "  completed and committed: nothing to do");
+      getSyscallStatusFromGuestState( &sci->status, &th_regs->vex );
+      vg_assert(sci->status.what == SsComplete);
       VG_(post_syscall)(tid);
    } 
 

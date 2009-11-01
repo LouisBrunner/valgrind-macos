@@ -830,6 +830,7 @@ static void add_hardwired_active ( Addr from, Addr to )
    act.parent_spec = NULL;
    act.parent_sym  = NULL;
    act.isWrap      = False;
+   act.isIFunc     = False;
    maybe_add_active( act );
 }
 

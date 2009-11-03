@@ -2315,6 +2315,9 @@ static void setup_post_syscall_table ( void )
       ADD(0, __NR_open);
       ADD(0, __NR_personality);
       ADD(0, __NR_pipe);
+#     if defined(__NR_pipe2)
+      ADD(0, __NR_pipe2);
+#     endif
       ADD(0, __NR_poll);
       ADD(0, __NR_prctl);
       ADD(0, __NR_pread64);

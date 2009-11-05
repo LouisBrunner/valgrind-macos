@@ -2556,7 +2556,8 @@ static void pre_argv_envp(Addr a, ThreadId tid, Char* s1, Char* s2)
       a += sizeof(char*);
    }
 }
-static SysRes simple_pre_exec_check(const HChar* exe_name)
+static SysRes simple_pre_exec_check ( const HChar* exe_name,
+                                      Bool trace_this_child )
 {
    Int fd, ret;
    SysRes res;
@@ -2573,7 +2574,7 @@ static SysRes simple_pre_exec_check(const HChar* exe_name)
    // Check we have execute permissions.  We allow setuid executables
    // to be run only in the case when we are not simulating them, that
    // is, they to be run natively.
-   setuid_allowed = VG_(clo_trace_children)  ? False  : True;
+   setuid_allowed = trace_this_child  ? False  : True;
    ret = VG_(check_executable)(NULL/*&is_setuid*/,
                                (HChar*)exe_name, setuid_allowed);
    if (0 != ret) {
@@ -2590,6 +2591,7 @@ PRE(posix_spawn)
    Char*        launcher_basename = NULL;
    Int          i, j, tot_args;
    SysRes       res;
+   Bool         trace_this_child;
 
    /* args: pid_t* pid
             char*  path
@@ -2622,15 +2624,19 @@ PRE(posix_spawn)
       syswrap-generic.c. */
 
    /* Check that the name at least begins in client-accessible storage. */
-   if (!VG_(am_is_valid_for_client)( ARG2, 1, VKI_PROT_READ )) {
+   if (ARG2 == 0 /* obviously bogus */
+       || !VG_(am_is_valid_for_client)( ARG2, 1, VKI_PROT_READ )) {
       SET_STATUS_Failure( VKI_EFAULT );
       return;
    }
 
+   // Decide whether or not we want to follow along
+   trace_this_child = VG_(should_we_trace_this_child)( (HChar*)ARG2 );
+
    // Do the important checks:  it is a file, is executable, permissions are
    // ok, etc.  We allow setuid executables to run only in the case when
    // we are not simulating them, that is, they to be run natively.
-   res = simple_pre_exec_check((const HChar*)ARG2);
+   res = simple_pre_exec_check( (const HChar*)ARG2, trace_this_child );
    if (sr_isError(res)) {
       SET_STATUS_Failure( sr_Err(res) );
       return;
@@ -2639,7 +2645,7 @@ PRE(posix_spawn)
    /* If we're tracing the child, and the launcher name looks bogus
       (possibly because launcher.c couldn't figure it out, see
       comments therein) then we have no option but to fail. */
-   if (VG_(clo_trace_children)
+   if (trace_this_child
        && (VG_(name_of_launcher) == NULL
            || VG_(name_of_launcher)[0] != '/')) {
       SET_STATUS_Failure( VKI_ECHILD ); /* "No child processes" */
@@ -2651,7 +2657,7 @@ PRE(posix_spawn)
 
    // Set up the child's exe path.
    //
-   if (VG_(clo_trace_children)) {
+   if (trace_this_child) {
 
       // We want to exec the launcher.  Get its pre-remembered path.
       path = VG_(name_of_launcher);
@@ -2685,7 +2691,7 @@ PRE(posix_spawn)
       VG_(env_remove_valgrind_env_stuff)( envp );
    }
 
-   if (VG_(clo_trace_children)) {
+   if (trace_this_child) {
       // Set VALGRIND_LIB in ARG5 (the environment)
       VG_(env_setenv)( &envp, VALGRIND_LIB, VG_(libdir));
    }
@@ -2698,7 +2704,7 @@ PRE(posix_spawn)
    // except that the first VG_(args_for_valgrind_noexecpass) args
    // are omitted.
    //
-   if (!VG_(clo_trace_children)) {
+   if (!trace_this_child) {
       argv = (Char**)ARG4;
    } else {
       vg_assert( VG_(args_for_valgrind) );

@@ -660,6 +660,32 @@ in most cases.  We group the available options by rough categories.</para>
     </listitem>
   </varlistentry>
 
+  <varlistentry id="opt.trace-children-skip" xreflabel="--trace-children-skip">
+    <term>
+      <option><![CDATA[--trace-children-skip=patt1,patt2 ]]></option>
+    </term>
+    <listitem>
+      <para>This option only has an effect when 
+        <option>--trace-children=yes</option> is specified.  It allows
+        for some children to be skipped.  The option takes a comma
+        separated list of patterns for the names of child executables
+        that Valgrind should not trace into.  Patterns may include the
+        metacharacters <computeroutput>?</computeroutput>
+        and <computeroutput>*</computeroutput>, which have the usual
+        meaning.</para>
+      <para>
+        This can be useful for pruning uninteresting branches from a
+        tree of processes being run on Valgrind.  But you should be
+        careful when using it.  When Valgrind skips tracing into an
+        executable, it doesn't just skip tracing that executable, it
+        also skips tracing any of that executable's child processes.
+        In other words, the flag doesn't merely cause tracing to stop
+        at the specified executables -- it skips tracing of entire
+        process subtrees rooted at any of the specified
+        executables.</para>
+    </listitem>
+  </varlistentry>
+
   <varlistentry id="opt.child-silent-after-fork"
                 xreflabel="--child-silent-after-fork">
     <term>

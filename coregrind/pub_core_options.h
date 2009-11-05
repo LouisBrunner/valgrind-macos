@@ -61,6 +61,9 @@ extern Int   VG_(clo_sanity_level);
 extern Bool  VG_(clo_demangle);
 /* Simulate child processes? default: NO */
 extern Bool  VG_(clo_trace_children);
+/* String containing comma-separated patterns for executable names
+   that should not be traced into even when --trace-children=yes */
+extern HChar* VG_(clo_trace_children_skip);
 /* After a fork, the child's output can become confusingly
    intermingled with the parent's output.  This is especially
    problematic when VG_(clo_xml) is True.  Setting
@@ -182,6 +185,10 @@ extern void VG_(err_missing_prog) ( void );
 __attribute__((noreturn))
 extern void VG_(err_config_error) ( Char* msg );
 
+/* Should we trace into this child executable (across execve etc) ?
+   This involves considering --trace-children=, --trace-children-skip=
+   and the name of the executable. */
+extern Bool VG_(should_we_trace_this_child) ( HChar* child_exe_name );
 
 #endif   // __PUB_CORE_OPTIONS_H
 

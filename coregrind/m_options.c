@@ -38,6 +38,7 @@
 #include "pub_core_libcprint.h"
 #include "pub_core_libcproc.h"
 #include "pub_core_mallocfree.h"
+#include "pub_core_seqmatch.h"     // VG_(string_match)
 
 // See pub_{core,tool}_options.h for explanations of all these.
 
@@ -56,6 +57,7 @@ Bool   VG_(clo_xml)            = False;
 HChar* VG_(clo_xml_user_comment) = NULL;
 Bool   VG_(clo_demangle)       = True;
 Bool   VG_(clo_trace_children) = False;
+HChar* VG_(clo_trace_children_skip) = NULL;
 Bool   VG_(clo_child_silent_after_fork) = False;
 Char*  VG_(clo_log_fname_expanded) = NULL;
 Char*  VG_(clo_xml_fname_expanded) = NULL;
@@ -264,6 +266,69 @@ Char* VG_(expand_file_name)(Char* option_name, Char* format)
   }
 }
 
+/*====================================================================*/
+/*=== --trace-children= support                                    ===*/
+/*====================================================================*/
+
+static HChar const* consume_commas ( HChar const* c ) {
+   while (*c && *c == ',') {
+      ++c;
+   }
+   return c;
+}
+
+static HChar const* consume_field ( HChar const* c ) {
+   while (*c && *c != ',') {
+      ++c;
+   }
+   return c;
+}
+
+/* Should we trace into this child executable (across execve etc) ?
+   This involves considering --trace-children=, --trace-children-skip=
+   and the name of the executable. */
+Bool VG_(should_we_trace_this_child) ( HChar* child_exe_name )
+{
+   // child_exe_name is pulled out of the guest's space.  We
+   // should be at least marginally cautious with it, lest it
+   // explode or burst into flames unexpectedly.
+   if (child_exe_name == NULL || VG_(strlen)(child_exe_name) == 0)
+      return VG_(clo_trace_children);  // we know narfink
+
+   // the main logic
+   // If --trace-children=no, the answer is simply NO.
+   if (! VG_(clo_trace_children))
+      return False;
+
+   // otherwise, return True, unless the exe name matches any of the
+   // patterns specified by --trace-children-skip=.
+   if (VG_(clo_trace_children_skip)) {
+      HChar const* last = VG_(clo_trace_children_skip);
+      HChar const* name = (HChar const*)child_exe_name;
+      while (*last) {
+         Bool   matches;
+         HChar* patt;
+         HChar const* first = consume_commas(last);
+         last = consume_field(first);
+         if (first == last)
+            break;
+         vg_assert(last > first);
+         /* copy the candidate string into a temporary malloc'd block
+            so we can use VG_(string_match) on it. */
+         patt = VG_(calloc)("m_options.swttc.1", last - first + 1, 1);
+         VG_(memcpy)(patt, first, last - first);
+         vg_assert(patt[last-first] == 0);
+         matches = VG_(string_match)(patt, name);
+         VG_(free)(patt);
+         if (matches)
+            return False;
+      }
+   }
+ 
+   // --trace-children=yes, and this particular executable isn't
+   // excluded
+   return True;
+}
 
 
 /*--------------------------------------------------------------------*/

@@ -1754,6 +1754,38 @@ if test x$ac_have_qtcore = xyes; then
 fi
 
 
+# Test for QAtomicInt, which has been introduced in Qt 4.4.
+# See also http://doc.trolltech.com/4.4/qatomicint.html.
+if test x$ac_have_qtcore = xyes; then
+  AC_MSG_CHECKING([for Qt4 QAtomicInt)])
+  AC_LANG(C++)
+  safe_CXXFLAGS="${CXXFLAGS}"
+  CXXFLAGS="${QTCORE_CFLAGS} $mflag_primary"
+  AC_TRY_COMPILE([
+    #include <QtCore/QAtomicInt>
+  ],
+  [
+    QAtomicInt I;
+    I.testAndSetOrdered(0, 1);
+    return 0;
+  ],
+  [
+    ac_have_qtcore_qatomicint=yes
+    AC_MSG_RESULT([yes])
+    AC_DEFINE([HAVE_QTCORE_QATOMICINT], [1], [Define to 1 if the installed version of Qt4 provides QAtomicInt.])
+  ],
+  [
+    ac_have_qtcore_qatomicint=no
+    AC_MSG_RESULT([no])
+  ])
+  CXXFLAGS="${safe_CXXFLAGS}"
+  AC_LANG(C)
+fi
+
+AM_CONDITIONAL([HAVE_QTCORE_QATOMICINT], [test x$ac_have_qtcore_qatomicint = xyes])
+
+
+
 # Check whether the boost library 1.35 or later has been installed.
 # The Boost.Threads library has undergone a major rewrite in version 1.35.0.
 

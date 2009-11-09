@@ -147,6 +147,8 @@ EXTRA_DIST =                                        \
 	pth_process_shared_mutex.vgtest             \
 	pth_spinlock.stderr.exp                     \
 	pth_spinlock.vgtest                         \
+	qt4_atomic.stderr.exp                       \
+	qt4_atomic.vgtest                           \
 	qt4_mutex.stderr.exp                        \
 	qt4_mutex.vgtest                            \
 	qt4_rwlock.stderr.exp                       \
@@ -300,7 +302,7 @@ check_PROGRAMS += pth_spinlock
 endif
 
 if HAVE_QTCORE
-check_PROGRAMS += qt4_mutex qt4_rwlock qt4_semaphore
+check_PROGRAMS += qt4_atomic qt4_mutex qt4_rwlock qt4_semaphore
 endif
 
 
@@ -352,6 +354,10 @@ matinv_LDADD                = $(LDADD) -lm
 endif
 
 if HAVE_QTCORE
+qt4_atomic_SOURCES          = qt4_atomic.cpp
+qt4_atomic_CXXFLAGS         = $(AM_CXXFLAGS) $(QTCORE_CFLAGS)
+qt4_atomic_LDADD            = $(LDADD) $(QTCORE_LIBS)
+
 qt4_mutex_SOURCES           = qt4_mutex.cpp
 qt4_mutex_CXXFLAGS          = $(AM_CXXFLAGS) $(QTCORE_CFLAGS)
 qt4_mutex_LDADD             = $(LDADD) $(QTCORE_LIBS)

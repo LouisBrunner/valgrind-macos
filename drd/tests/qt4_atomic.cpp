@@ -5,7 +5,6 @@
 #endif
 
 #include "config.h"
-#include <QMutex>         // class QMutex
 #include <QAtomicInt>     // class QAtomicInt
 #include <cassert>
 #include <cstdio>         // fprintf()

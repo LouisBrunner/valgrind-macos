@@ -90,7 +90,7 @@ void * VG_NOTIFY_ON_LOAD(ifunc_wrapper) (void)
     VALGRIND_DO_CLIENT_REQUEST(res, 0,
                                VG_USERREQ__ADD_IFUNC_TARGET,
                                fn.nraddr, result, 0, 0, 0);
-    return result;
+    return (void*)result;
 }
 
 #elif defined(VGO_darwin)

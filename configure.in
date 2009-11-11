@@ -1757,7 +1757,7 @@ fi
 # Test for QAtomicInt, which has been introduced in Qt 4.4.
 # See also http://doc.trolltech.com/4.4/qatomicint.html.
 if test x$ac_have_qtcore = xyes; then
-  AC_MSG_CHECKING([for Qt4 QAtomicInt)])
+  AC_MSG_CHECKING([for Qt4 QAtomicInt])
   AC_LANG(C++)
   safe_CXXFLAGS="${CXXFLAGS}"
   CXXFLAGS="${QTCORE_CFLAGS} $mflag_primary"

@@ -1691,6 +1691,7 @@ Bool ML_(read_elf_debug_info) ( struct _DebugInfo* di )
       UChar*     debug_str_img    = NULL; /* .debug_str    (dwarf2) */
       UChar*     debug_ranges_img = NULL; /* .debug_ranges (dwarf2) */
       UChar*     debug_loc_img    = NULL; /* .debug_loc    (dwarf2) */
+      UChar*     debug_frame_img  = NULL; /* .debug_frame  (dwarf2) */
       UChar*     dwarf1d_img      = NULL; /* .debug        (dwarf1) */
       UChar*     dwarf1l_img      = NULL; /* .line         (dwarf1) */
       UChar*     ehframe_img      = NULL; /* .eh_frame     (dwarf2) */
@@ -1710,6 +1711,7 @@ Bool ML_(read_elf_debug_info) ( struct _DebugInfo* di )
       SizeT      debug_str_sz    = 0;
       SizeT      debug_ranges_sz = 0;
       SizeT      debug_loc_sz    = 0;
+      SizeT      debug_frame_sz  = 0;
       SizeT      dwarf1d_sz      = 0;
       SizeT      dwarf1l_sz      = 0;
       SizeT      ehframe_sz      = 0;
@@ -1767,6 +1769,7 @@ Bool ML_(read_elf_debug_info) ( struct _DebugInfo* di )
          FIND(".debug_str",     debug_str_sz,    debug_str_img)
          FIND(".debug_ranges",  debug_ranges_sz, debug_ranges_img)
          FIND(".debug_loc",     debug_loc_sz,    debug_loc_img)
+         FIND(".debug_frame",   debug_frame_sz,  debug_frame_img)
 
          FIND(".debug",         dwarf1d_sz,      dwarf1d_img)
          FIND(".line",          dwarf1l_sz,      dwarf1l_img)
@@ -1959,6 +1962,8 @@ Bool ML_(read_elf_debug_info) ( struct _DebugInfo* di )
                FIND(need_dwarf2, ".debug_ranges", debug_ranges_sz, 
                                                                debug_ranges_img)
                FIND(need_dwarf2, ".debug_loc",    debug_loc_sz,  debug_loc_img)
+               FIND(need_dwarf2, ".debug_frame",  debug_frame_sz,
+                                                               debug_frame_img)
                FIND(need_dwarf1, ".debug",        dwarf1d_sz,    dwarf1d_img)
                FIND(need_dwarf1, ".line",         dwarf1l_sz,    dwarf1l_img)
 
@@ -1996,10 +2001,14 @@ Bool ML_(read_elf_debug_info) ( struct _DebugInfo* di )
                          False, opd_img);
       }
 
-      /* Read .eh_frame (call-frame-info) if any */
+      /* Read .eh_frame and .debug_frame (call-frame-info) if any */
       if (ehframe_img) {
          vg_assert(ehframe_sz == di->ehframe_size);
-         ML_(read_callframe_info_dwarf3)( di, ehframe_img );
+         ML_(read_callframe_info_dwarf3)( di, ehframe_img, ehframe_sz, True );
+      }
+      if (debug_frame_sz) {
+         ML_(read_callframe_info_dwarf3)( di, debug_frame_img,
+                                          debug_frame_sz, False );
       }
 
       /* Read the stabs and/or dwarf2 debug information, if any.  It

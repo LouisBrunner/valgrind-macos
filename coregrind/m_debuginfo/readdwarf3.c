@@ -2356,9 +2356,16 @@ static void parse_type_DIE ( /*MOD*/XArray* /* of TyEnt */ tyents,
          if (attr == DW_AT_type && ctsSzB > 0) {
             fieldE.Te.Field.typeR = (UWord)cts;
          }
-         if (attr == DW_AT_data_member_location && ctsMemSzB > 0) {
+         /* There are 2 different cases for DW_AT_data_member_location.
+            If it is a constant class attribute, it contains byte offset
+            from the beginning of the containing entity.
+            Otherwise it is a location expression.  */
+         if (attr == DW_AT_data_member_location && ctsSzB > 0) {
+            fieldE.Te.Field.nLoc = -1;
+            fieldE.Te.Field.pos.offset = cts;
+         } else if (attr == DW_AT_data_member_location && ctsMemSzB > 0) {
             fieldE.Te.Field.nLoc = (UWord)ctsMemSzB;
-            fieldE.Te.Field.loc
+            fieldE.Te.Field.pos.loc
                = ML_(dinfo_memdup)( "di.readdwarf3.ptD.member.2",
                                     (UChar*)(UWord)cts, 
                                     (SizeT)fieldE.Te.Field.nLoc );
@@ -2385,13 +2392,14 @@ static void parse_type_DIE ( /*MOD*/XArray* /* of TyEnt */ tyents,
       vg_assert(fieldE.Te.Field.name);
       if (fieldE.Te.Field.typeR == D3_INVALID_CUOFF)
          goto bad_DIE;
-      if (fieldE.Te.Field.loc) {
+      if (fieldE.Te.Field.nLoc) {
          if (!parent_is_struct) {
             /* If this is a union type, pretend we haven't seen the data
                member location expression, as it is by definition
                redundant (it must be zero). */
-            ML_(dinfo_free)(fieldE.Te.Field.loc);
-            fieldE.Te.Field.loc  = NULL;
+            if (fieldE.Te.Field.nLoc > 0)
+               ML_(dinfo_free)(fieldE.Te.Field.pos.loc);
+            fieldE.Te.Field.pos.loc = NULL;
             fieldE.Te.Field.nLoc = 0;
          }
          /* Record this child in the parent */
@@ -2616,10 +2624,10 @@ static void parse_type_DIE ( /*MOD*/XArray* /* of TyEnt */ tyents,
    /* For union members, Expr should be absent */
    if (0) VG_(printf)("YYYY Acquire Field\n");
    vg_assert(fieldE.tag == Te_Field);
-   vg_assert( (fieldE.Te.Field.nLoc > 0 && fieldE.Te.Field.loc != NULL)
-              || (fieldE.Te.Field.nLoc == 0 && fieldE.Te.Field.loc == NULL) );
+   vg_assert(fieldE.Te.Field.nLoc <= 0 || fieldE.Te.Field.pos.loc != NULL);
+   vg_assert(fieldE.Te.Field.nLoc != 0 || fieldE.Te.Field.pos.loc == NULL);
    if (fieldE.Te.Field.isStruct) {
-      vg_assert(fieldE.Te.Field.nLoc > 0);
+      vg_assert(fieldE.Te.Field.nLoc != 0);
    } else {
       vg_assert(fieldE.Te.Field.nLoc == 0);
    }

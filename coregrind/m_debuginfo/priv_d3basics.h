@@ -522,6 +522,9 @@ typedef enum
     DW_OP_form_tls_address = 0x9b,
     DW_OP_call_frame_cfa = 0x9c,
     DW_OP_bit_piece = 0x9d,
+    /* DWARF 4 extensions.  */
+    DW_OP_implicit_value = 0x9e,
+    DW_OP_stack_value = 0x9f,
     /* GNU extensions.  */
     DW_OP_GNU_push_tls_address = 0xe0,
     /* HP extensions.  */
@@ -596,12 +599,13 @@ typedef
 
 /* This describes the result of evaluating a DWARF3 expression.
    GXR_Failure: failed; .word is an asciiz string summarising why
+   GXR_Addr:    evaluated to an address of the object, in .word
    GXR_Value:   evaluated to a value, in .word
    GXR_RegNo:   evaluated to a DWARF3 register number, in .word
 */
 typedef
    struct { 
-      enum { GXR_Failure, GXR_Value, GXR_RegNo } kind;
+      enum { GXR_Failure, GXR_Addr, GXR_Value, GXR_RegNo } kind;
       UWord word;
    }
    GXResult;
@@ -643,6 +647,10 @@ GXResult ML_(evaluate_Dwarf3_Expr) ( UChar* expr, UWord exprszB,
    expression is not manifestly a constant.  The range of addresses
    covered by the guard is also ignored. */
 GXResult ML_(evaluate_trivial_GX)( GExpr* gx, const DebugInfo* di );
+
+/* Compute call frame address (CFA) for IP/SP/FP.  */
+Addr ML_(get_CFA) ( Addr ip, Addr sp, Addr fp,
+                    Addr min_accessible, Addr max_accessible );
 
 #endif /* ndef __PRIV_D3BASICS_H */
 

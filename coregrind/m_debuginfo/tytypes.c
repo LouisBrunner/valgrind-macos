@@ -98,10 +98,15 @@ void ML_(pp_TyEnt)( TyEnt* te )
                      te->Te.Atom.value, te->Te.Atom.name);
          break;
       case Te_Field:
-         VG_(printf)("Te_Field(ty=0x%05lx,nLoc=%lu,loc=%p,\"%s\")",
-                     te->Te.Field.typeR, te->Te.Field.nLoc,
-                     te->Te.Field.loc,
-                     te->Te.Field.name ? te->Te.Field.name : (UChar*)"");
+         if (te->Te.Field.nLoc == -1)
+            VG_(printf)("Te_Field(ty=0x%05lx,pos.offset=%ld,\"%s\")",
+                        te->Te.Field.typeR, te->Te.Field.pos.offset,
+                        te->Te.Field.name ? te->Te.Field.name : (UChar*)"");
+         else
+            VG_(printf)("Te_Field(ty=0x%05lx,nLoc=%lu,pos.loc=%p,\"%s\")",
+                        te->Te.Field.typeR, te->Te.Field.nLoc,
+                        te->Te.Field.pos.loc,
+                        te->Te.Field.name ? te->Te.Field.name : (UChar*)"");
          break;
       case Te_Bound:
          VG_(printf)("Te_Bound[");
@@ -476,8 +481,11 @@ Word ML_(TyEnt__cmp_by_all_except_cuOff) ( TyEnt* te1, TyEnt* te2 )
       if (r != 0) return r;
       r = UWord__cmp(te1->Te.Field.nLoc, te2->Te.Field.nLoc);
       if (r != 0) return r;
-      r = Bytevector__cmp(te1->Te.Field.loc, te2->Te.Field.loc,
-                          te1->Te.Field.nLoc);
+      if (te1->Te.Field.nLoc == -1)
+         r = Long__cmp(te1->Te.Field.pos.offset, te2->Te.Field.pos.offset);
+      else
+         r = Bytevector__cmp(te1->Te.Field.pos.loc, te2->Te.Field.pos.loc,
+                             te1->Te.Field.nLoc);
       return r;
    case Te_Bound:
       r = Bool__cmp(te1->Te.Bound.knownL, te2->Te.Bound.knownL);
@@ -568,7 +576,8 @@ void ML_(TyEnt__make_EMPTY) ( TyEnt* te )
          break;
       case Te_Field:
          if (te->Te.Field.name) ML_(dinfo_free)(te->Te.Field.name);
-         if (te->Te.Field.loc) ML_(dinfo_free)(te->Te.Field.loc);
+         if (te->Te.Field.nLoc > 0 && te->Te.Field.pos.loc)
+            ML_(dinfo_free)(te->Te.Field.pos.loc);
          break;
       case Te_Bound:
          break;
@@ -747,26 +756,32 @@ XArray* /*UChar*/ ML_(describe_type)( /*OUT*/PtrdiffT* residual_offset,
                field = ML_(TyEnts__index_by_cuOff)(tyents, NULL, fieldR);
                vg_assert(field);
                vg_assert(field->tag == Te_Field);
-               vg_assert(field->Te.Field.loc);
-               vg_assert(field->Te.Field.nLoc > 0);
-               /* Re data_bias in this call, we should really send in
-                  a legitimate value.  But the expression is expected
-                  to be a constant expression, evaluation of which
-                  will not need to use DW_OP_addr and hence we can
-                  avoid the trouble of plumbing the data bias through
-                  to this point (if, indeed, it has any meaning; from
-                  which DebugInfo would we take the data bias? */
-               res = ML_(evaluate_Dwarf3_Expr)(
-                       field->Te.Field.loc, field->Te.Field.nLoc,
-                       NULL/*fbGX*/, NULL/*RegSummary*/,
-                       0/*data_bias*/,
-                       True/*push_initial_zero*/);
-               if (0) {
-                  VG_(printf)("QQQ ");
-                  ML_(pp_GXResult)(res);
-                  VG_(printf)("\n");
+               vg_assert(field->Te.Field.nLoc < 0
+                         || (field->Te.Field.nLoc > 0
+                             && field->Te.Field.pos.loc));
+               if (field->Te.Field.nLoc == -1) {
+                  res.kind = GXR_Addr;
+                  res.word = field->Te.Field.pos.offset;
+               } else {
+                  /* Re data_bias in this call, we should really send in
+                     a legitimate value.  But the expression is expected
+                     to be a constant expression, evaluation of which
+                     will not need to use DW_OP_addr and hence we can
+                     avoid the trouble of plumbing the data bias through
+                     to this point (if, indeed, it has any meaning; from
+                     which DebugInfo would we take the data bias? */
+                   res =  ML_(evaluate_Dwarf3_Expr)(
+                          field->Te.Field.pos.loc, field->Te.Field.nLoc,
+                          NULL/*fbGX*/, NULL/*RegSummary*/,
+                          0/*data_bias*/,
+                          True/*push_initial_zero*/);
+                  if (0) {
+                     VG_(printf)("QQQ ");
+                     ML_(pp_GXResult)(res);
+                     VG_(printf)("\n");
+                  }
                }
-               if (res.kind != GXR_Value)
+               if (res.kind != GXR_Addr)
                   continue;
                mul = ML_(sizeOfType)( tyents, field->Te.Field.typeR );
                if (mul.b != True)

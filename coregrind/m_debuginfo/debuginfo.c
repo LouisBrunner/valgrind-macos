@@ -2003,6 +2003,94 @@ static void cfsi_cache__invalidate ( void ) {
 }
 
 
+static CFSICacheEnt* cfsi_cache__find ( Addr ip )
+{
+   UWord         hash = ip % N_CFSI_CACHE;
+   CFSICacheEnt* ce = &cfsi_cache[hash];
+   static UWord  n_q = 0, n_m = 0;
+
+   n_q++;
+   if (0 && 0 == (n_q & 0x1FFFFF))
+      VG_(printf)("QQQ %lu %lu\n", n_q, n_m);
+
+   if (LIKELY(ce->ip == ip) && LIKELY(ce->di != NULL)) {
+      /* found an entry in the cache .. */
+   } else {
+      /* not found in cache.  Search and update. */
+      n_m++;
+      ce->ip = ip;
+      find_DiCfSI( &ce->di, &ce->ix, ip );
+   }
+
+   if (UNLIKELY(ce->di == (DebugInfo*)1)) {
+      /* no DiCfSI for this address */
+      return NULL;
+   } else {
+      /* found a DiCfSI for this address */
+      return ce;
+   }
+}
+
+
+static Addr compute_cfa ( Addr ip, Addr sp, Addr fp,
+                          Addr min_accessible, Addr max_accessible,
+                          DebugInfo* di, DiCfSI* cfsi )
+{
+   CfiExprEvalContext eec;
+   Addr               cfa;
+   Bool               ok;
+
+   /* Compute the CFA. */
+   cfa = 0;
+   switch (cfsi->cfa_how) {
+      case CFIC_SPREL: 
+         cfa = sp + cfsi->cfa_off;
+         break;
+      case CFIC_FPREL: 
+         cfa = fp + cfsi->cfa_off;
+         break;
+      case CFIC_EXPR: 
+         if (0) {
+            VG_(printf)("CFIC_EXPR: ");
+            ML_(ppCfiExpr)(di->cfsi_exprs, cfsi->cfa_off);
+            VG_(printf)("\n");
+         }
+         eec.ipHere = ip;
+         eec.spHere = sp;
+         eec.fpHere = fp;
+         eec.min_accessible = min_accessible;
+         eec.max_accessible = max_accessible;
+         ok = True;
+         cfa = evalCfiExpr(di->cfsi_exprs, cfsi->cfa_off, &eec, &ok );
+         if (!ok) return 0;
+         break;
+      default: 
+         vg_assert(0);
+   }
+   return cfa;
+}
+
+
+/* Get the call frame address (CFA) given an IP/SP/FP triple. */
+Addr ML_(get_CFA) ( Addr ip, Addr sp, Addr fp,
+                    Addr min_accessible, Addr max_accessible )
+{
+   CFSICacheEnt* ce;
+   DebugInfo*    di;
+   DiCfSI*       cfsi;
+
+   ce = cfsi_cache__find(ip);
+
+   if (UNLIKELY(ce == NULL))
+      return 0; /* no info.  Nothing we can do. */
+
+   di = ce->di;
+   cfsi = &di->cfsi[ ce->ix ];
+
+   return compute_cfa(ip, sp, fp, min_accessible,  max_accessible, di, cfsi);
+}
+
+
 /* The main function for DWARF2/3 CFI-based stack unwinding.
    Given an IP/SP/FP triple, produce the IP/SP/FP values for the
    previous frame, if possible. */
@@ -2015,43 +2103,20 @@ Bool VG_(use_CF_info) ( /*MOD*/Addr* ipP,
                         Addr min_accessible,
                         Addr max_accessible )
 {
-   Bool       ok;
-   DebugInfo* di;
-   DiCfSI*    cfsi = NULL;
-   Addr       cfa, ipHere, spHere, fpHere, ipPrev, spPrev, fpPrev;
-
+   Bool               ok;
+   DebugInfo*         di;
+   DiCfSI*            cfsi = NULL;
+   Addr               cfa, ipHere, spHere, fpHere, ipPrev, spPrev, fpPrev;
+   CFSICacheEnt*      ce;
    CfiExprEvalContext eec;
 
-   static UWord n_q = 0, n_m = 0;
-   n_q++;
-   if (0 && 0 == (n_q & 0x1FFFFF))
-      VG_(printf)("QQQ %lu %lu\n", n_q, n_m);
+   ce = cfsi_cache__find(*ipP);
 
-   { UWord hash = (*ipP) % N_CFSI_CACHE;
-     CFSICacheEnt* ce = &cfsi_cache[hash];
-
-     if (LIKELY(ce->ip == *ipP) && LIKELY(ce->di != NULL)) {
-        /* found an entry in the cache .. */
-     } else {
-        /* not found in cache.  Search and update. */
-        n_m++;
-        ce->ip = *ipP;
-        find_DiCfSI( &ce->di, &ce->ix, *ipP );
-     }
-
-     if (UNLIKELY(ce->di == (DebugInfo*)1)) {
-        /* no DiCfSI for this address */
-        cfsi = NULL;
-        di = NULL;
-     } else {
-        /* found a DiCfSI for this address */
-        di = ce->di;
-        cfsi = &di->cfsi[ ce->ix ];
-     }
-   }
-
-   if (UNLIKELY(cfsi == NULL))
+   if (UNLIKELY(ce == NULL))
       return False; /* no info.  Nothing we can do. */
+
+   di = ce->di;
+   cfsi = &di->cfsi[ ce->ix ];
 
    if (0) {
       VG_(printf)("found cfisi: "); 
@@ -2065,32 +2130,10 @@ Bool VG_(use_CF_info) ( /*MOD*/Addr* ipP,
    fpHere = *fpP;
 
    /* First compute the CFA. */
-   cfa = 0;
-   switch (cfsi->cfa_how) {
-      case CFIC_SPREL: 
-         cfa = cfsi->cfa_off + spHere;
-         break;
-      case CFIC_FPREL: 
-         cfa = cfsi->cfa_off + fpHere;
-         break;
-      case CFIC_EXPR: 
-         if (0) {
-            VG_(printf)("CFIC_EXPR: ");
-            ML_(ppCfiExpr)(di->cfsi_exprs, cfsi->cfa_off);
-            VG_(printf)("\n");
-         }
-         eec.ipHere = ipHere;
-         eec.spHere = spHere;
-         eec.fpHere = fpHere;
-         eec.min_accessible = min_accessible;
-         eec.max_accessible = max_accessible;
-         ok = True;
-         cfa = evalCfiExpr(di->cfsi_exprs, cfsi->cfa_off, &eec, &ok );
-         if (!ok) return False;
-         break;
-      default: 
-         vg_assert(0);
-   }
+   cfa = compute_cfa(ipHere, spHere, fpHere,
+                     min_accessible,  max_accessible, di, cfsi);
+   if (UNLIKELY(cfa == 0))
+      return False;
 
    /* Now we know the CFA, use it to roll back the registers we're
       interested in. */
@@ -2346,7 +2389,7 @@ static Bool data_address_is_in_var ( /*OUT*/PtrdiffT* offset,
       VG_(printf)("\n");
    }
 
-   if (res.kind == GXR_Value 
+   if (res.kind == GXR_Addr 
        && res.word <= data_addr
        && data_addr < res.word + var_szB) {
       *offset = data_addr - res.word;
@@ -3057,7 +3100,7 @@ void analyse_deps ( /*MOD*/XArray* /* of FrameBlock */ blocks,
    vg_assert(res_sp_6k.kind == res_fp_6k.kind);
    vg_assert(res_sp_6k.kind == res_fp_7k.kind);
 
-   if (res_sp_6k.kind == GXR_Value) {
+   if (res_sp_6k.kind == GXR_Addr) {
       StackBlock block;
       GXResult res;
       UWord sp_delta = res_sp_7k.word - res_sp_6k.word;
@@ -3074,7 +3117,7 @@ void analyse_deps ( /*MOD*/XArray* /* of FrameBlock */ blocks,
          regs.sp = regs.fp = 0;
          regs.ip = ip;
          res = ML_(evaluate_GX)( var->gexpr, var->fbGX, &regs, di );
-         tl_assert(res.kind == GXR_Value);
+         tl_assert(res.kind == GXR_Addr);
          if (debug)
          VG_(printf)("   %5ld .. %5ld (sp) %s\n",
                      res.word, res.word + ((UWord)mul.ul) - 1, var->name);
@@ -3093,7 +3136,7 @@ void analyse_deps ( /*MOD*/XArray* /* of FrameBlock */ blocks,
          regs.sp = regs.fp = 0;
          regs.ip = ip;
          res = ML_(evaluate_GX)( var->gexpr, var->fbGX, &regs, di );
-         tl_assert(res.kind == GXR_Value);
+         tl_assert(res.kind == GXR_Addr);
          if (debug)
          VG_(printf)("   %5ld .. %5ld (FP) %s\n",
                      res.word, res.word + ((UWord)mul.ul) - 1, var->name);
@@ -3308,7 +3351,7 @@ void* /* really, XArray* of GlobalBlock */
             res = ML_(evaluate_trivial_GX)( var->gexpr, di );
 
             /* Not a constant address => not interesting */
-            if (res.kind != GXR_Value) {
+            if (res.kind != GXR_Addr) {
                if (0) VG_(printf)("FAIL\n");
                continue;
             }

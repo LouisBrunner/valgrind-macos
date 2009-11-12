@@ -649,6 +649,11 @@ extern void ML_(addVar)( struct _DebugInfo* di,
    this after finishing adding entries to these tables. */
 extern void ML_(canonicaliseTables) ( struct _DebugInfo* di );
 
+/* Canonicalise the call-frame-info table held by 'di', in preparation
+   for use. This is called by ML_(canonicaliseTables) but can also be
+   called on it's own to sort just this table. */
+extern void ML_(canonicaliseCFI) ( struct _DebugInfo* di );
+
 /* ------ Searching ------ */
 
 /* Find a symbol-table index containing the specified pointer, or -1

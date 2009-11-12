@@ -1435,7 +1435,7 @@ static Int compare_DiCfSI ( void* va, void* vb )
    return 0;
 }
 
-static void canonicaliseCFI ( struct _DebugInfo* di )
+void ML_(canonicaliseCFI) ( struct _DebugInfo* di )
 {
    Word  i, j;
    const Addr minAvma = 0;
@@ -1528,7 +1528,7 @@ void ML_(canonicaliseTables) ( struct _DebugInfo* di )
 {
    canonicaliseSymtab ( di );
    canonicaliseLoctab ( di );
-   canonicaliseCFI ( di );
+   ML_(canonicaliseCFI) ( di );
    canonicaliseVarInfo ( di );
 }
 

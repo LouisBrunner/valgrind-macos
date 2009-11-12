@@ -430,9 +430,9 @@ UInt VG_(get_StackTrace_wrk) ( ThreadId tid_if_known,
 #           endif
 
             if (0 == ip || 1 == ip) break;
-            fp = (((UWord*)fp)[0]);
             if (sps) sps[i] = fp; /* NB. not sp */
             if (fps) fps[i] = fp;
+            fp = (((UWord*)fp)[0]);
             ips[i++] = ip - 1; /* -1: refer to calling insn, not the RA */
             if (debug)
                VG_(printf)("     ipsF[%d]=%#08lx\n", i-1, ips[i-1]);

@@ -809,8 +809,10 @@ Addr VG_(redir_do_lookup) ( Addr orig, Bool* isWrap )
    vg_assert(r->to_addr != 0);
    if (isWrap)
       *isWrap = r->isWrap || r->isIFunc;
-   if (r->isIFunc)
+   if (r->isIFunc) {
+      vg_assert(iFuncWrapper);
       return iFuncWrapper;
+   }
    return r->to_addr;
 }
 

@@ -1214,7 +1214,7 @@ static void canonicaliseSymtab ( struct _DebugInfo* di )
    Word  i, j, n_merged, n_truncated;
    Addr  s1, s2, e1, e2, p1, p2;
    UChar *n1, *n2;
-   Bool t1, t2;
+   Bool t1, t2, f1, f2;
 
 #  define SWAP(ty,aa,bb) \
       do { ty tt = (aa); (aa) = (bb); (bb) = tt; } while (0)
@@ -1278,11 +1278,13 @@ static void canonicaliseSymtab ( struct _DebugInfo* di )
       p1 = di->symtab[i].tocptr;
       n1 = di->symtab[i].name;
       t1 = di->symtab[i].isText;
+      f1 = di->symtab[i].isIFunc;
       s2 = di->symtab[i+1].addr;
       e2 = s2 + di->symtab[i+1].size - 1;
       p2 = di->symtab[i+1].tocptr;
       n2 = di->symtab[i+1].name;
       t2 = di->symtab[i+1].isText;
+      f2 = di->symtab[i+1].isIFunc;
       if (s1 < s2) {
          e1 = s2-1;
       } else {
@@ -1298,16 +1300,18 @@ static void canonicaliseSymtab ( struct _DebugInfo* di )
               up back at cleanup_more, which will take care of it. */
 	 }
       }
-      di->symtab[i].addr   = s1;
-      di->symtab[i].size   = e1 - s1 + 1;
-      di->symtab[i].tocptr = p1;
-      di->symtab[i].name   = n1;
-      di->symtab[i].isText = t1;
-      di->symtab[i+1].addr   = s2;
-      di->symtab[i+1].size   = e2 - s2 + 1;
-      di->symtab[i+1].tocptr = p2;
-      di->symtab[i+1].name   = n2;
-      di->symtab[i+1].isText = t2;
+      di->symtab[i].addr    = s1;
+      di->symtab[i].size    = e1 - s1 + 1;
+      di->symtab[i].tocptr  = p1;
+      di->symtab[i].name    = n1;
+      di->symtab[i].isText  = t1;
+      di->symtab[i].isIFunc = f1;
+      di->symtab[i+1].addr    = s2;
+      di->symtab[i+1].size    = e2 - s2 + 1;
+      di->symtab[i+1].tocptr  = p2;
+      di->symtab[i+1].name    = n2;
+      di->symtab[i+1].isText  = t2;
+      di->symtab[i+1].isIFunc = f2;
       vg_assert(s1 <= s2);
       vg_assert(di->symtab[i].size > 0);
       vg_assert(di->symtab[i+1].size > 0);

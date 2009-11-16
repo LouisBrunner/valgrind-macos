@@ -1273,6 +1273,7 @@ static ULong DEBUG_SnarfCodeView(
             vsym.size = sym->data_v1.p_name.namelen;
                       // FIXME: .namelen is sizeof(.data) including .name[]
             vsym.isText = (sym->generic.id == S_PUB_V1);
+            vsym.isIFunc = False;
             ML_(addSym)( di, &vsym );
             n_syms_read++;
          }
@@ -1299,6 +1300,7 @@ static ULong DEBUG_SnarfCodeView(
                         // not size of function!
             vsym.isText = !!(IMAGE_SCN_CNT_CODE 
                              & sectp[sym->data_v2.segment-1].Characteristics);
+            vsym.isIFunc = False;
             ML_(addSym)( di, &vsym );
             n_syms_read++;
          }
@@ -1331,6 +1333,7 @@ static ULong DEBUG_SnarfCodeView(
                         // .text of the function
             vsym.isText = !!(IMAGE_SCN_CNT_CODE
                              & sectp[sym->data_v2.segment-1].Characteristics);
+            vsym.isIFunc = False;
             ML_(addSym)( di, &vsym );
             n_syms_read++;
          }
@@ -1362,6 +1365,7 @@ static ULong DEBUG_SnarfCodeView(
          vsym.name = nmstr;
          vsym.size = sym->proc_v1.proc_len;
          vsym.isText = True;
+         vsym.isIFunc = False;
          if (debug)
              VG_(message)(Vg_UserMsg,
                          "Adding function %s addr=%#lx length=%d\n",
@@ -1382,6 +1386,7 @@ static ULong DEBUG_SnarfCodeView(
          vsym.name = nmstr;
          vsym.size = sym->proc_v2.proc_len;
          vsym.isText = True;
+         vsym.isIFunc = False;
          if (debug)
             VG_(message)(Vg_UserMsg,
                          "Adding function %s addr=%#lx length=%d\n",
@@ -1404,6 +1409,7 @@ static ULong DEBUG_SnarfCodeView(
             vsym.name = nmstr;
             vsym.size  = sym->proc_v3.proc_len;
             vsym.isText = 1;
+            vsym.isIFunc = False;
             ML_(addSym)( di, &vsym );
             n_syms_read++;
          }

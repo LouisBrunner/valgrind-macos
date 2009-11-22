@@ -2335,10 +2335,26 @@ Int emit_AMD64Instr ( UChar* buf, Int nbuf, AMD64Instr* i,
       if (i->Ain.Alu64R.op == Aalu_MOV) {
          switch (i->Ain.Alu64R.src->tag) {
             case Armi_Imm:
-               *p++ = toUChar(0x48 + (1 & iregBit3(i->Ain.Alu64R.dst)));
-               *p++ = 0xC7;
-               *p++ = toUChar(0xC0 + iregBits210(i->Ain.Alu64R.dst));
-               p = emit32(p, i->Ain.Alu64R.src->Armi.Imm.imm32);
+               if (0 == (i->Ain.Alu64R.src->Armi.Imm.imm32 & ~0xFFF)) {
+                  /* Actually we could use this form for constants in
+                     the range 0 through 0x7FFFFFFF inclusive, but
+                     limit it to a small range for verifiability
+                     purposes. */
+                  /* Generate "movl $imm32, 32-bit-register" and let
+                     the default zero-extend rule cause the upper half
+                     of the dst to be zeroed out too.  This saves 1
+                     and sometimes 2 bytes compared to the more
+                     obvious encoding in the 'else' branch. */
+                  if (1 & iregBit3(i->Ain.Alu64R.dst))
+                     *p++ = 0x41;
+                  *p++ = 0xB8 + iregBits210(i->Ain.Alu64R.dst);
+                  p = emit32(p, i->Ain.Alu64R.src->Armi.Imm.imm32);
+               } else {
+                  *p++ = toUChar(0x48 + (1 & iregBit3(i->Ain.Alu64R.dst)));
+                  *p++ = 0xC7;
+                  *p++ = toUChar(0xC0 + iregBits210(i->Ain.Alu64R.dst));
+                  p = emit32(p, i->Ain.Alu64R.src->Armi.Imm.imm32);
+               }
                goto done;
             case Armi_Reg:
                *p++ = rexAMode_R( i->Ain.Alu64R.src->Armi.Reg.reg,

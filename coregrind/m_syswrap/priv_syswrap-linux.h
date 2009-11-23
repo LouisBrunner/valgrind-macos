@@ -50,6 +50,7 @@ DECL_TEMPLATE(linux, sys_umount);
 DECL_TEMPLATE(linux, sys_perf_counter_open);
 DECL_TEMPLATE(linux, sys_preadv);
 DECL_TEMPLATE(linux, sys_pwritev);
+DECL_TEMPLATE(linux, sys_dup3);
 
 // POSIX, but various sub-cases differ between Linux and Darwin.
 DECL_TEMPLATE(linux, sys_fcntl);

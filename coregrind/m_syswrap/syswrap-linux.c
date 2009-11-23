@@ -2411,6 +2411,21 @@ POST(sys_pipe2)
    }
 }
 
+PRE(sys_dup3)
+{
+   PRINT("sys_dup3 ( %ld, %ld, %ld )", ARG1,ARG2,ARG3);
+   PRE_REG_READ3(long, "dup3", unsigned int, oldfd, unsigned int, newfd, int, flags);
+   if (!ML_(fd_allowed)(ARG2, "dup3", tid, True))
+      SET_STATUS_Failure( VKI_EBADF );
+}
+
+POST(sys_dup3)
+{
+   vg_assert(SUCCESS);
+   if (VG_(clo_track_fds))
+      ML_(record_fd_open_named)(tid, RES);
+}
+
 PRE(sys_quotactl)
 {
    PRINT("sys_quotactl (0x%lx, %#lx, 0x%lx, 0x%lx )", ARG1,ARG2,ARG3, ARG4);

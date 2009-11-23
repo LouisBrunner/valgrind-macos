@@ -1373,7 +1373,7 @@ const SyscallTableEntry ML_(syscall_table)[] = {
 
    LINX_(__NR_eventfd2,          sys_eventfd2),         // 290
    LINXY(__NR_epoll_create1,     sys_epoll_create1),    // 291
-   //   (__NR_dup3,              sys_ni_syscall)        // 292
+   LINXY(__NR_dup3,              sys_dup3),             // 292
    LINXY(__NR_pipe2,             sys_pipe2),            // 293
    LINXY(__NR_inotify_init1,     sys_inotify_init1),    // 294
 

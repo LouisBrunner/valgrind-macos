@@ -214,7 +214,7 @@ DECL_TEMPLATE(linux, sys_sched_getscheduler);
 DECL_TEMPLATE(linux, sys_sched_yield);
 DECL_TEMPLATE(linux, sys_sched_get_priority_max);
 DECL_TEMPLATE(linux, sys_sched_get_priority_min);
-//DECL_TEMPLATE(linux, sys_sched_rr_get_interval);    // not yet encountered
+DECL_TEMPLATE(linux, sys_sched_rr_get_interval);
 DECL_TEMPLATE(linux, sys_sched_setaffinity);
 DECL_TEMPLATE(linux, sys_sched_getaffinity);
 

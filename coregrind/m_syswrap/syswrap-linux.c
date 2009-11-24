@@ -2318,6 +2318,21 @@ PRE(sys_sched_get_priority_min)
    PRE_REG_READ1(long, "sched_get_priority_min", int, policy);
 }
 
+PRE(sys_sched_rr_get_interval)
+{
+   PRINT("sys_sched_rr_get_interval ( %ld, %#lx )", ARG1, ARG2);
+   PRE_REG_READ2(int, "sched_rr_get_interval",
+                 vki_pid_t, pid,
+                 struct vki_timespec *, tp);
+   PRE_MEM_WRITE("sched_rr_get_interval(timespec)",
+                 ARG2, sizeof(struct vki_timespec));
+}
+
+POST(sys_sched_rr_get_interval)
+{
+   POST_MEM_WRITE(ARG2, sizeof(struct vki_timespec));
+}
+
 PRE(sys_sched_setaffinity)
 {
    PRINT("sched_setaffinity ( %ld, %ld, %#lx )", ARG1, ARG2, ARG3);

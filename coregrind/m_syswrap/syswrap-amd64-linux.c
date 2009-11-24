@@ -1200,7 +1200,7 @@ const SyscallTableEntry ML_(syscall_table)[] = {
    LINX_(__NR_sched_getscheduler,      sys_sched_getscheduler),      // 145 
    LINX_(__NR_sched_get_priority_max,  sys_sched_get_priority_max),  // 146 
    LINX_(__NR_sched_get_priority_min,  sys_sched_get_priority_min),  // 147 
-   //LINX?(__NR_sched_rr_get_interval,   sys_sched_rr_get_interval),   // 148 
+   LINXY(__NR_sched_rr_get_interval,   sys_sched_rr_get_interval),   // 148 
    GENX_(__NR_mlock,                   sys_mlock),                   // 149 
 
    GENX_(__NR_munlock,           sys_munlock),        // 150 

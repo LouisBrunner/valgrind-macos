@@ -242,6 +242,7 @@ DECL_TEMPLATE(linux, sys_rt_sigprocmask);
 DECL_TEMPLATE(linux, sys_rt_sigpending);
 DECL_TEMPLATE(linux, sys_rt_sigtimedwait);
 DECL_TEMPLATE(linux, sys_rt_sigqueueinfo);
+DECL_TEMPLATE(linux, sys_rt_tgsigqueueinfo);
 DECL_TEMPLATE(linux, sys_rt_sigsuspend);
 
 // Linux-specific?

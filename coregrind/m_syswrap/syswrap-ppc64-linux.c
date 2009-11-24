@@ -1511,7 +1511,7 @@ const SyscallTableEntry ML_(syscall_table)[] = {
    LINXY(__NR_perf_counter_open, sys_perf_counter_open),// 319
    LINXY(__NR_preadv,            sys_preadv),           // 320
    LINX_(__NR_pwritev,           sys_pwritev),          // 321
-   //   (__NR_rt_tgsigqueueinfo, sys_ni_syscall)        // 322
+   LINXY(__NR_rt_tgsigqueueinfo, sys_rt_tgsigqueueinfo) // 322
 };
 
 const UInt ML_(syscall_table_size) = 

@@ -2761,6 +2761,21 @@ POST(sys_rt_sigqueueinfo)
       SET_STATUS_Failure( VKI_EINVAL );
 }
 
+PRE(sys_rt_tgsigqueueinfo)
+{
+   PRINT("sys_rt_tgsigqueueinfo(%ld, %ld, %ld, %#lx)", ARG1, ARG2, ARG3, ARG4);
+   PRE_REG_READ4(long, "rt_tgsigqueueinfo",
+                 int, tgid, int, pid, int, sig, vki_siginfo_t *, uinfo);
+   if (ARG3 != 0)
+      PRE_MEM_READ( "rt_tgsigqueueinfo(uinfo)", ARG4, VKI_SI_MAX_SIZE );
+}
+
+POST(sys_rt_tgsigqueueinfo)
+{
+   if (!ML_(client_signal_OK)(ARG3))
+      SET_STATUS_Failure( VKI_EINVAL );
+}
+
 // XXX: x86-specific?  The kernel prototypes for the different archs are
 //      hard to decipher.
 PRE(sys_rt_sigsuspend)

@@ -605,34 +605,34 @@ POST(sys_llseek)
       POST_MEM_WRITE( ARG4, sizeof(vki_loff_t) );
 }
 
-//zz PRE(sys_adjtimex, 0)
-//zz {
-//zz    struct vki_timex *tx = (struct vki_timex *)ARG1;
-//zz    PRINT("sys_adjtimex ( %p )", ARG1);
-//zz    PRE_REG_READ1(long, "adjtimex", struct timex *, buf);
-//zz    PRE_MEM_READ( "adjtimex(timex->modes)", ARG1, sizeof(tx->modes));
-//zz 
-#if 0 //zz  (avoiding warnings about multi-line comments)
-zz #define ADJX(bit,field) 				\
-zz    if (tx->modes & bit)					\
-zz       PRE_MEM_READ( "adjtimex(timex->"#field")",	\
-zz 		    (Addr)&tx->field, sizeof(tx->field))
-#endif
-//zz    ADJX(ADJ_FREQUENCY, freq);
-//zz    ADJX(ADJ_MAXERROR, maxerror);
-//zz    ADJX(ADJ_ESTERROR, esterror);
-//zz    ADJX(ADJ_STATUS, status);
-//zz    ADJX(ADJ_TIMECONST, constant);
-//zz    ADJX(ADJ_TICK, tick);
-//zz #undef ADJX
-//zz    
-//zz    PRE_MEM_WRITE( "adjtimex(timex)", ARG1, sizeof(struct vki_timex));
-//zz }
-//zz 
-//zz POST(sys_adjtimex)
-//zz {
-//zz    POST_MEM_WRITE( ARG1, sizeof(struct vki_timex) );
-//zz }
+PRE(sys_adjtimex)
+{
+   struct vki_timex *tx = (struct vki_timex *)ARG1;
+   PRINT("sys_adjtimex ( %#lx )", ARG1);
+   PRE_REG_READ1(long, "adjtimex", struct timex *, buf);
+   PRE_MEM_READ( "adjtimex(timex->modes)", ARG1, sizeof(tx->modes));
+
+#define ADJX(bit,field) 				\
+   if (tx->modes & bit)					\
+      PRE_MEM_READ( "adjtimex(timex->"#field")",	\
+		    (Addr)&tx->field, sizeof(tx->field))
+
+   ADJX(VKI_ADJ_OFFSET, offset);
+   ADJX(VKI_ADJ_FREQUENCY, freq);
+   ADJX(VKI_ADJ_MAXERROR, maxerror);
+   ADJX(VKI_ADJ_ESTERROR, esterror);
+   ADJX(VKI_ADJ_STATUS, status);
+   ADJX(VKI_ADJ_TIMECONST, constant);
+   ADJX(VKI_ADJ_TICK, tick);
+#undef ADJX
+
+   PRE_MEM_WRITE( "adjtimex(timex)", ARG1, sizeof(struct vki_timex));
+}
+
+POST(sys_adjtimex)
+{
+   POST_MEM_WRITE( ARG1, sizeof(struct vki_timex) );
+}
 
 PRE(sys_ioperm)
 {

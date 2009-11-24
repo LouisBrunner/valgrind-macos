@@ -277,14 +277,14 @@ struct vki_timex {
 	int  :32; int  :32; int  :32; int  :32;
 };
 
-//#define ADJ_OFFSET		0x0001	/* time offset */
-#define ADJ_FREQUENCY		0x0002	/* frequency offset */
-#define ADJ_MAXERROR		0x0004	/* maximum time error */
-#define ADJ_ESTERROR		0x0008	/* estimated time error */
-#define ADJ_STATUS		0x0010	/* clock status */
-#define ADJ_TIMECONST		0x0020	/* pll time constant */
-#define ADJ_TICK		0x4000	/* tick value */
-//#define ADJ_OFFSET_SINGLESHOT	0x8001	/* old-fashioned adjtime */
+#define VKI_ADJ_OFFSET			0x0001	/* time offset */
+#define VKI_ADJ_FREQUENCY		0x0002	/* frequency offset */
+#define VKI_ADJ_MAXERROR		0x0004	/* maximum time error */
+#define VKI_ADJ_ESTERROR		0x0008	/* estimated time error */
+#define VKI_ADJ_STATUS			0x0010	/* clock status */
+#define VKI_ADJ_TIMECONST		0x0020	/* pll time constant */
+#define VKI_ADJ_TICK			0x4000	/* tick value */
+//#define VKI_ADJ_OFFSET_SINGLESHOT	0x8001	/* old-fashioned adjtime */
 
 //----------------------------------------------------------------------
 // From linux-2.6.8.1/include/linux/times.h

@@ -1213,7 +1213,7 @@ const SyscallTableEntry ML_(syscall_table)[] = {
    LINXY(__NR__sysctl,           sys_sysctl),         // 156 
    LINXY(__NR_prctl,             sys_prctl),          // 157 
    PLAX_(__NR_arch_prctl,	 sys_arch_prctl),     // 158 
-   //   (__NR_adjtimex,          sys_adjtimex),       // 159 
+   LINXY(__NR_adjtimex,          sys_adjtimex),       // 159 
 
    GENX_(__NR_setrlimit,         sys_setrlimit),      // 160 
    GENX_(__NR_chroot,            sys_chroot),         // 161 

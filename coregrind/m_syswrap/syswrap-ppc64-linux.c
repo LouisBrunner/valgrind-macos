@@ -1291,7 +1291,7 @@ const SyscallTableEntry ML_(syscall_table)[] = {
 // _____(__NR_setdomainname,     sys_setdomainname),      // 121
    GENXY(__NR_uname,             sys_newuname),           // 122
 // _____(__NR_modify_ldt,        sys_modify_ldt),         // 123
-// _____(__NR_adjtimex,          sys_adjtimex),           // 124
+   LINXY(__NR_adjtimex,          sys_adjtimex),           // 124
 
    GENXY(__NR_mprotect,          sys_mprotect),           // 125
 // _____(__NR_sigprocmask,       sys_sigprocmask),        // 126

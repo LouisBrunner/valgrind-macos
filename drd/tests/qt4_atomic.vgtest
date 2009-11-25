@@ -1,0 +1,3 @@
+prereq: test -e qt4_atomic
+vgopts: --check-stack-var=yes
+prog: qt4_atomic

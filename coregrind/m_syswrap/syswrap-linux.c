@@ -1177,14 +1177,24 @@ POST(sys_eventfd2)
    }
 }
 
-// 64-bit version.
 PRE(sys_fallocate)
 {
    *flags |= SfMayBlock;
+#if VG_WORDSIZE == 4
+   PRINT("sys_fallocate ( %ld, %ld, %lld, %lld )",
+         ARG1, ARG2, MERGE64(ARG3,ARG4), MERGE64(ARG5,ARG6));
+   PRE_REG_READ6(long, "fallocate",
+                 int, fd, int, mode,
+                 unsigned, MERGE64_FIRST(offset), unsigned, MERGE64_SECOND(offset),
+                 unsigned, MERGE64_FIRST(len), unsigned, MERGE64_SECOND(len));
+#elif VG_WORDSIZE == 8
    PRINT("sys_fallocate ( %ld, %ld, %lld, %lld )",
          ARG1, ARG2, (Long)ARG3, (Long)ARG4);
    PRE_REG_READ4(long, "fallocate",
                  int, fd, int, mode, vki_loff_t, offset, vki_loff_t, len);
+#else
+#  error Unexpected word size
+#endif
    if (!ML_(fd_allowed)(ARG1, "fallocate", tid, False))
       SET_STATUS_Failure( VKI_EBADF );
 }

@@ -23,7 +23,10 @@ How to test DRD
    exist:
      (
        cd drd/tests;
-       for e in $(awk '/\\$/{n=$0; sub("\\\\$", "", n); if (line != "") { line = line " " n } else { line=n }} /[^\\]$/{if (line != ""){print line;line=""};print}' < Makefile.am | sed -n 's/^EXTRA_DIST *=//p' | sed 's/..noinst_SCRIPTS.//')
+       for e in $(awk '/\\$/{n=$0; sub("\\\\$", "", n); if (line != "")\
+           { line = line " " n } else { line=n }} \
+           /[^\\]$/{if (line != ""){print line;line=""};print}' < Makefile.am \
+         | sed -n 's/^EXTRA_DIST *=//p' | sed 's/..noinst_SCRIPTS.//')
        do
          [ -e "$e" ] || echo "$e"
        done

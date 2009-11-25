@@ -1276,7 +1276,7 @@ const SyscallTableEntry ML_(syscall_table)[] = {
 // _____(__NR_olduname,          sys_olduname),           // 109
 
 // _____(__NR_iopl,              sys_iopl),               // 110
-// _____(__NR_vhangup,           sys_vhangup),            // 111
+   LINX_(__NR_vhangup,           sys_vhangup),            // 111
 // _____(__NR_idle,              sys_idle),               // 112
 // _____(__NR_vm86,              sys_vm86),               // 113
    GENXY(__NR_wait4,             sys_wait4),              // 114

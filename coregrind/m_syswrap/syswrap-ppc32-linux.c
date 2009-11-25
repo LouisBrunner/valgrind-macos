@@ -1629,7 +1629,7 @@ const SyscallTableEntry ML_(syscall_table)[] = {
 //..    //   (__NR_olduname,          sys_uname),             // 109 -- obsolete
 //.. 
 //..    GENX_(__NR_iopl,              sys_iopl),              // 110
-//..    LINX_(__NR_vhangup,           sys_vhangup),           // 111
+   LINX_(__NR_vhangup,           sys_vhangup),           // 111
 //..    GENX_(__NR_idle,              sys_ni_syscall),        // 112
 //..    //   (__NR_vm86old,           sys_vm86old),           // 113 x86/Linux-only
    GENXY(__NR_wait4,             sys_wait4),             // 114

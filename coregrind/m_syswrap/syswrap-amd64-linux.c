@@ -1206,7 +1206,7 @@ const SyscallTableEntry ML_(syscall_table)[] = {
    GENX_(__NR_munlock,           sys_munlock),        // 150 
    GENX_(__NR_mlockall,          sys_mlockall),       // 151 
    LINX_(__NR_munlockall,        sys_munlockall),     // 152 
-   //   (__NR_vhangup,           sys_vhangup),        // 153 
+   LINX_(__NR_vhangup,           sys_vhangup),        // 153 
    //   (__NR_modify_ldt,        sys_modify_ldt),     // 154 
 
    //   (__NR_pivot_root,        sys_pivot_root),     // 155 

@@ -2355,7 +2355,7 @@ PRE(sys_pwrite64)
          ARG1, ARG2, (ULong)ARG3, MERGE64(ARG4,ARG5));
    PRE_REG_READ5(ssize_t, "pwrite64",
                  unsigned int, fd, const char *, buf, vki_size_t, count,
-                 vki_u32, MERG64_FIRST(offset), vki_u32, MERGE64_SECOND(offset));
+                 vki_u32, MERGE64_FIRST(offset), vki_u32, MERGE64_SECOND(offset));
 #elif VG_WORDSIZE == 8
    PRINT("sys_pwrite64 ( %ld, %#lx, %llu, %lld )",
          ARG1, ARG2, (ULong)ARG3, (Long)ARG4);

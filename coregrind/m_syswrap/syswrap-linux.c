@@ -378,8 +378,18 @@ SysRes ML_(do_fork_clone) ( ThreadId tid, UInt flags,
 #define PRE(name)       DEFN_PRE_TEMPLATE(linux, name)
 #define POST(name)      DEFN_POST_TEMPLATE(linux, name)
 
-// Combine two 32-bit values into a 64-bit value
-#define LOHI64(lo,hi)   ( ((ULong)(lo)) | (((ULong)(hi)) << 32) )
+// Macros to support 64-bit syscall args split into two 32 bit values
+#if defined(VG_LITTLEENDIAN)
+#define MERGE64(lo,hi)   ( ((ULong)(lo)) | (((ULong)(hi)) << 32) )
+#define MERGE64_FIRST(name) name##_low
+#define MERGE64_SECOND(name) name##_high
+#elif defined(VG_BIGENDIAN)
+#define MERGE64(hi,lo)   ( ((ULong)(lo)) | (((ULong)(hi)) << 32) )
+#define MERGE64_FIRST(name) name##_high
+#define MERGE64_SECOND(name) name##_low
+#else
+#error Unknown endianness
+#endif
 
 /* ---------------------------------------------------------------------
    *mount wrappers
@@ -1286,19 +1296,19 @@ POST(sys_tgkill)
 PRE(sys_fadvise64)
 {
    PRINT("sys_fadvise64 ( %ld, %lld, %lu, %ld )",
-         ARG1, LOHI64(ARG2,ARG3), ARG4, ARG5);
+         ARG1, MERGE64(ARG2,ARG3), ARG4, ARG5);
    PRE_REG_READ5(long, "fadvise64",
-                 int, fd, vki_u32, offset_low, vki_u32, offset_high,
+                 int, fd, vki_u32, MERGE64_FIRST(offset), vki_u32, MERGE64_SECOND(offset),
                  vki_size_t, len, int, advice);
 }
 
 PRE(sys_fadvise64_64)
 {
    PRINT("sys_fadvise64_64 ( %ld, %lld, %lld, %ld )",
-         ARG1, LOHI64(ARG2,ARG3), LOHI64(ARG4,ARG5), ARG6);
+         ARG1, MERGE64(ARG2,ARG3), MERGE64(ARG4,ARG5), ARG6);
    PRE_REG_READ6(long, "fadvise64_64",
-                 int, fd, vki_u32, offset_low, vki_u32, offset_high,
-                 vki_u32, len_low, vki_u32, len_high, int, advice);
+                 int, fd, vki_u32, MERGE64_FIRST(offset), vki_u32, MERGE64_SECOND(offset),
+                 vki_u32, MERGE64_FIRST(len), vki_u32, MERGE64_SECOND(len), int, advice);
 }
 
 /* ---------------------------------------------------------------------
@@ -3106,11 +3116,11 @@ PRE(sys_preadv)
    struct vki_iovec * vec;
    *flags |= SfMayBlock;
 #if VG_WORDSIZE == 4
-   PRINT("sys_preadv ( %ld, %#lx, %llu, %lld )",ARG1,ARG2,(ULong)ARG3,LOHI64(ARG4,ARG5));
+   PRINT("sys_preadv ( %ld, %#lx, %llu, %lld )",ARG1,ARG2,(ULong)ARG3,MERGE64(ARG4,ARG5));
    PRE_REG_READ5(ssize_t, "preadv",
                  unsigned long, fd, const struct iovec *, vector,
-                 unsigned long, count, vki_u32, offset_low32,
-                 vki_u32, offset_high32);
+                 unsigned long, count, vki_u32, MERGE64_FIRST(offset),
+                 vki_u32, MERGE64_SECOND(offset));
 #elif VG_WORDSIZE == 8
    PRINT("sys_preadv ( %ld, %#lx, %llu, %lld )",ARG1,ARG2,(ULong)ARG3,(Long)ARG4);
    PRE_REG_READ4(ssize_t, "preadv",
@@ -3159,11 +3169,11 @@ PRE(sys_pwritev)
    struct vki_iovec * vec;
    *flags |= SfMayBlock;
 #if VG_WORDSIZE == 4
-   PRINT("sys_pwritev ( %ld, %#lx, %llu, %lld )",ARG1,ARG2,(ULong)ARG3,LOHI64(ARG4,ARG5));
+   PRINT("sys_pwritev ( %ld, %#lx, %llu, %lld )",ARG1,ARG2,(ULong)ARG3,MERGE64(ARG4,ARG5));
    PRE_REG_READ5(ssize_t, "pwritev",
                  unsigned long, fd, const struct iovec *, vector,
-                 unsigned long, count, vki_u32, offset_low32,
-                 vki_u32, offset_high32);
+                 unsigned long, count, vki_u32, MERGE64_FIRST(offset),
+                 vki_u32, MERGE64_SECOND(offset));
 #elif VG_WORDSIZE == 8
    PRINT("sys_pwritev ( %ld, %#lx, %llu, %lld )",ARG1,ARG2,(ULong)ARG3,(Long)ARG4);
    PRE_REG_READ4(ssize_t, "pwritev",
@@ -3400,9 +3410,9 @@ PRE(sys_delete_module)
 PRE(sys_lookup_dcookie)
 {
    PRINT("sys_lookup_dcookie (0x%llx, %#lx, %ld)",
-         LOHI64(ARG1,ARG2), ARG3, ARG4);
+         MERGE64(ARG1,ARG2), ARG3, ARG4);
    PRE_REG_READ4(long, "lookup_dcookie",
-                 vki_u32, cookie_low32, vki_u32, cookie_high32,
+                 vki_u32, MERGE64_FIRST(cookie), vki_u32, MERGE64_SECOND(cookie),
                  char *, buf, vki_size_t, len);
    PRE_MEM_WRITE( "lookup_dcookie(buf)", ARG3, ARG4);
 }

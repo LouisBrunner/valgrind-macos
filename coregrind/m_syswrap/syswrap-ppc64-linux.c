@@ -484,6 +484,13 @@ PRE(sys_socketcall)
       break;
    }
 
+   case VKI_SYS_ACCEPT4: {
+     /* int accept4(int s, struct sockaddr *addr, int *addrlen, int flags); */
+      PRE_MEM_READ( "socketcall.accept4(args)", ARG2, 4*sizeof(Addr) );
+      ML_(generic_PRE_sys_accept)( tid, ARG2_0, ARG2_1, ARG2_2 );
+      break;
+   }
+
    case VKI_SYS_SENDTO:
      /* int sendto(int s, const void *msg, int len,
                     unsigned int flags,
@@ -629,7 +636,9 @@ POST(sys_socketcall)
     break;
 
   case VKI_SYS_ACCEPT:
+  case VKI_SYS_ACCEPT4:
     /* int accept(int s, struct sockaddr *addr, int *addrlen); */
+    /* int accept4(int s, struct sockaddr *addr, int *addrlen, int flags); */
     r = ML_(generic_POST_sys_accept)( tid, VG_(mk_SysRes_Success)(RES),
 				      ARG2_0, ARG2_1, ARG2_2 );
     SET_STATUS_from_SysRes(r);

@@ -349,6 +349,7 @@ DECL_TEMPLATE(amd64_linux, sys_setsockopt);
 DECL_TEMPLATE(amd64_linux, sys_getsockopt);
 DECL_TEMPLATE(amd64_linux, sys_connect);
 DECL_TEMPLATE(amd64_linux, sys_accept);
+DECL_TEMPLATE(amd64_linux, sys_accept4);
 DECL_TEMPLATE(amd64_linux, sys_sendto);
 DECL_TEMPLATE(amd64_linux, sys_recvfrom);
 DECL_TEMPLATE(amd64_linux, sys_sendmsg);
@@ -676,6 +677,23 @@ PRE(sys_accept)
    ML_(generic_PRE_sys_accept)(tid, ARG1,ARG2,ARG3);
 }
 POST(sys_accept)
+{
+   SysRes r;
+   vg_assert(SUCCESS);
+   r = ML_(generic_POST_sys_accept)(tid, VG_(mk_SysRes_Success)(RES),
+                                         ARG1,ARG2,ARG3);
+   SET_STATUS_from_SysRes(r);
+}
+
+PRE(sys_accept4)
+{
+   *flags |= SfMayBlock;
+   PRINT("sys_accept4 ( %ld, %#lx, %ld, %ld )",ARG1,ARG2,ARG3,ARG4);
+   PRE_REG_READ4(long, "accept4",
+                 int, s, struct sockaddr *, addr, int, *addrlen, int, flags);
+   ML_(generic_PRE_sys_accept)(tid, ARG1,ARG2,ARG3);
+}
+POST(sys_accept4)
 {
    SysRes r;
    vg_assert(SUCCESS);
@@ -1368,7 +1386,7 @@ const SyscallTableEntry ML_(syscall_table)[] = {
    LINX_(__NR_fallocate,         sys_fallocate),        // 285
    LINXY(__NR_timerfd_settime,   sys_timerfd_settime),  // 286
    LINXY(__NR_timerfd_gettime,   sys_timerfd_gettime),  // 287
-   //   (__NR_paccept,           sys_ni_syscall)        // 288
+   PLAXY(__NR_accept4,           sys_accept4),          // 288
    LINXY(__NR_signalfd4,         sys_signalfd4),        // 289
 
    LINX_(__NR_eventfd2,          sys_eventfd2),         // 290

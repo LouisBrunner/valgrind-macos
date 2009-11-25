@@ -2481,12 +2481,47 @@ POST(sys_waitid)
 PRE(sys_sync_file_range)
 {
    *flags |= SfMayBlock;
-   PRINT("sys_sync_file_range ( %ld, %ld, %ld, %ld )",
-         ARG1,ARG2,ARG3,ARG4);
+#if VG_WORDSIZE == 4
+   PRINT("sys_sync_file_range ( %ld, %lld, %lld, %ld )",
+         ARG1,MERGE64(ARG2,ARG3),MERGE64(ARG4,ARG5),ARG6);
+   PRE_REG_READ6(long, "sync_file_range",
+                 int, fd,
+                 unsigned, MERGE64_FIRST(offset), unsigned, MERGE64_SECOND(offset),
+                 unsigned, MERGE64_FIRST(nbytes), unsigned, MERGE64_SECOND(nbytes),
+                 unsigned int, flags);
+#elif VG_WORDSIZE == 8
+   PRINT("sys_sync_file_range ( %ld, %lld, %lld, %ld )",
+         ARG1,(Long)ARG2,(Long)ARG3,ARG4);
    PRE_REG_READ4(long, "sync_file_range",
                  int, fd, vki_loff_t, offset, vki_loff_t, nbytes,
                  unsigned int, flags);
+#else
+#  error Unexpected word size
+#endif
    if (!ML_(fd_allowed)(ARG1, "sync_file_range", tid, False))
+      SET_STATUS_Failure( VKI_EBADF );
+}
+
+PRE(sys_sync_file_range2)
+{
+   *flags |= SfMayBlock;
+#if VG_WORDSIZE == 4
+   PRINT("sys_sync_file_range2 ( %ld, %ld, %lld, %lld )",
+         ARG1,ARG2,MERGE64(ARG3,ARG4),MERGE64(ARG5,ARG6));
+   PRE_REG_READ6(long, "sync_file_range2",
+                 int, fd, unsigned int, flags,
+                 unsigned, MERGE64_FIRST(offset), unsigned, MERGE64_SECOND(offset),
+                 unsigned, MERGE64_FIRST(nbytes), unsigned, MERGE64_SECOND(nbytes));
+#elif VG_WORDSIZE == 8
+   PRINT("sys_sync_file_range2 ( %ld, %ld, %lld, %lld )",
+         ARG1,ARG2,(Long)ARG3,(Long)ARG4);
+   PRE_REG_READ4(long, "sync_file_range2",
+                 int, fd, unsigned int, flags,
+                 vki_loff_t, offset, vki_loff_t, nbytes);
+#else
+#  error Unexpected word size
+#endif
+   if (!ML_(fd_allowed)(ARG1, "sync_file_range2", tid, False))
       SET_STATUS_Failure( VKI_EBADF );
 }
 

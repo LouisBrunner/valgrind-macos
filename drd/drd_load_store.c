@@ -460,8 +460,7 @@ IRSB* DRD_(instrument)(VgCallbackClosure* const closure,
    {
       IRStmt* const st = bb_in->stmts[i];
       tl_assert(st);
-      if (st->tag == Ist_NoOp)
-         continue;
+      tl_assert(isFlatIRStmt(st));
 
       switch (st->tag)
       {
@@ -489,8 +488,7 @@ IRSB* DRD_(instrument)(VgCallbackClosure* const closure,
          break;
 
       case Ist_Store:
-         if (instrument && /* ignore stores resulting from st{d,w}cx. */
-                           st->Ist.Store.resSC == IRTemp_INVALID)
+         if (instrument)
          {
             instrument_store(bb,
                              st->Ist.Store.addr,
@@ -576,9 +574,41 @@ IRSB* DRD_(instrument)(VgCallbackClosure* const closure,
          addStmtToIRSB(bb, st);
          break;
 
-      default:
+      case Ist_LLSC: {
+         /* Ignore store-conditionals, and handle load-linked's
+            exactly like normal loads. */
+         IRType dataTy;
+         if (st->Ist.LLSC.storedata == NULL)
+         {
+            /* LL */
+            dataTy = typeOfIRTemp(bb_in->tyenv, st->Ist.LLSC.result);
+            if (instrument) {
+               instrument_load(bb,
+                               st->Ist.LLSC.addr,
+                               sizeofIRType(dataTy));
+            }
+         }
+         else
+         {
+            /* SC */
+            /*ignore */
+         }
          addStmtToIRSB(bb, st);
          break;
+      }
+
+      case Ist_NoOp:
+      case Ist_AbiHint:
+      case Ist_Put:
+      case Ist_PutI:
+      case Ist_Exit:
+         /* None of these can contain any memory references. */
+         addStmtToIRSB(bb, st);
+         break;
+
+      default:
+         ppIRStmt(st);
+         tl_assert(0);
       }
    }
 

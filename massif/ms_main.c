@@ -1903,14 +1903,12 @@ static void add_counter_update(IRSB* sbOut, Int n)
    IRTemp t2 = newIRTemp(sbOut->tyenv, Ity_I64);
    IRExpr* counter_addr = mkIRExpr_HWord( (HWord)&guest_instrs_executed );
 
-   IRStmt* st1 = IRStmt_WrTmp(t1, IRExpr_Load(False/*!isLL*/,
-                                              END, Ity_I64, counter_addr));
+   IRStmt* st1 = IRStmt_WrTmp(t1, IRExpr_Load(END, Ity_I64, counter_addr));
    IRStmt* st2 =
       IRStmt_WrTmp(t2,
                    IRExpr_Binop(Iop_Add64, IRExpr_RdTmp(t1),
                                            IRExpr_Const(IRConst_U64(n))));
-   IRStmt* st3 = IRStmt_Store(END, IRTemp_INVALID/*"not store-conditional"*/,
-                              counter_addr, IRExpr_RdTmp(t2));
+   IRStmt* st3 = IRStmt_Store(END, counter_addr, IRExpr_RdTmp(t2));
 
    addStmtToIRSB( sbOut, st1 );
    addStmtToIRSB( sbOut, st2 );

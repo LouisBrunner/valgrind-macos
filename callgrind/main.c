@@ -657,14 +657,8 @@ void CLG_(collectBlockInfo)(IRSB* sbIn,
 static
 void addConstMemStoreStmt( IRSB* bbOut, UWord addr, UInt val, IRType hWordTy)
 {
-    /* JRS 2009june01: re IRTemp_INVALID, am assuming that this
-       function is used only to create instrumentation, and not to
-       copy/reconstruct IRStmt_Stores that were in the incoming IR
-       superblock.  If that is not a correct assumption, then things
-       will break badly on PowerPC, esp w/ threaded apps. */
     addStmtToIRSB( bbOut,
 		   IRStmt_Store(CLGEndness,
-                                IRTemp_INVALID,
 				IRExpr_Const(hWordTy == Ity_I32 ?
 					     IRConst_U32( addr ) :
 					     IRConst_U64( addr )),
@@ -864,8 +858,24 @@ IRSB* CLG_(instrument)( VgCallbackClosure* closure,
             addEvent_Dw( &clgs, curr_inode, dataSize, cas->addr );
             break;
          }
- 
-	 case Ist_Exit: {
+
+         case Ist_LLSC: {
+            IRType dataTy;
+            if (st->Ist.LLSC.storedata == NULL) {
+               /* LL */
+               dataTy = typeOfIRTemp(sbIn->tyenv, st->Ist.LLSC.result);
+               addEvent_Dr( &clgs, curr_inode,
+                            sizeofIRType(dataTy), st->Ist.LLSC.addr );
+            } else {
+               /* SC */
+               dataTy = typeOfIRExpr(sbIn->tyenv, st->Ist.LLSC.storedata);
+               addEvent_Dw( &clgs, curr_inode,
+                            sizeofIRType(dataTy), st->Ist.LLSC.addr );
+            }
+            break;
+         }
+
+ 	 case Ist_Exit: {
 	    UInt jmps_passed;
 
 	    /* We may never reach the next statement, so need to flush

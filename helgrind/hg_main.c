@@ -4008,19 +4008,41 @@ IRSB* hg_instrument ( VgCallbackClosure* closure,
             break;
          }
 
-         case Ist_Store:
-            /* It seems we pretend that store-conditionals don't
-               exist, viz, just ignore them ... */
-            if (st->Ist.Store.resSC == IRTemp_INVALID) {
+         case Ist_LLSC: {
+            /* We pretend store-conditionals don't exist, viz, ignore
+               them.  Whereas load-linked's are treated the same as
+               normal loads. */
+            IRType dataTy;
+            if (st->Ist.LLSC.storedata == NULL) {
+               /* LL */
+               dataTy = typeOfIRTemp(bbIn->tyenv, st->Ist.LLSC.result);
                if (!inLDSO) {
-                  instrument_mem_access( 
-                     bbOut, 
-                     st->Ist.Store.addr, 
-                     sizeofIRType(typeOfIRExpr(bbIn->tyenv, st->Ist.Store.data)),
-                     True/*isStore*/,
+                  instrument_mem_access(
+                     bbOut,
+                     st->Ist.LLSC.addr,
+                     sizeofIRType(dataTy),
+                     False/*!isStore*/,
                      sizeofIRType(hWordTy)
                   );
                }
+            } else {
+               /* SC */
+               /*ignore */
+            }
+            break;
+         }
+
+         case Ist_Store:
+            /* It seems we pretend that store-conditionals don't
+               exist, viz, just ignore them ... */
+            if (!inLDSO) {
+               instrument_mem_access( 
+                  bbOut, 
+                  st->Ist.Store.addr, 
+                  sizeofIRType(typeOfIRExpr(bbIn->tyenv, st->Ist.Store.data)),
+                  True/*isStore*/,
+                  sizeofIRType(hWordTy)
+               );
             }
             break;
 

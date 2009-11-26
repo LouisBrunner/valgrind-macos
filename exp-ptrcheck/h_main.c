@@ -4332,6 +4332,323 @@ static void gen_nonptr_or_unknown_for_III( PCEnv* pce, IntRegInfo* iii )
    }
 }
 
+
+/* schemeS helper for doing stores, pulled out into a function because
+   it needs to handle both normal stores and store-conditionals.
+   Returns False if we see a case we don't know how to handle.
+*/
+static Bool schemeS_store ( PCEnv* pce,
+                            IRExpr* data, IRExpr* addr, IRTemp resSC )
+{
+   /* We have: STle(addr) = data
+      if data is int-word sized, do
+      check_store4(addr, addr#, data, data#)
+      for all other stores
+      check_store{1,2}(addr, addr#, data)
+
+      The helper actually *does* the store, so that it can do the
+      post-hoc ugly hack of inspecting and "improving" the shadow data
+      after the store, in the case where it isn't an aligned word
+      store.
+
+      Only word-sized values are shadowed.  If this is a
+      store-conditional, .resSC will denote a non-word-typed temp, and
+      so we don't need to shadow it.  Assert about the type, tho.
+      However, since we're not re-emitting the original IRStmt_Store,
+      but rather doing it as part of the helper function, we need to
+      actually do a SC in the helper, and assign the result bit to
+      .resSC.  Ugly.
+   */
+   IRType  d_ty  = typeOfIRExpr(pce->sb->tyenv, data);
+   IRExpr* addrv = schemeEw_Atom( pce, addr );
+   if (resSC != IRTemp_INVALID) {
+      tl_assert(typeOfIRTemp(pce->sb->tyenv, resSC) == Ity_I1);
+      /* viz, not something we want to shadow */
+      /* also, throw out all store-conditional cases that
+         we can't handle */
+      if (pce->gWordTy == Ity_I32 && d_ty != Ity_I32)
+         return False;
+      if (pce->gWordTy == Ity_I64 && d_ty != Ity_I32 && d_ty != Ity_I64)
+         return False;
+   }
+   if (pce->gWordTy == Ity_I32) {
+      /* ------ 32 bit host/guest (cough, cough) ------ */
+      switch (d_ty) {
+         /* Integer word case */
+         case Ity_I32: {
+            IRExpr* datav = schemeEw_Atom( pce, data );
+            if (resSC == IRTemp_INVALID) {
+               /* "normal" store */
+               gen_dirty_v_WWWW( pce,
+                                 &check_store4_P, "check_store4_P",
+                                 addr, addrv, data, datav );
+            } else {
+               /* store-conditional; need to snarf the success bit */
+               IRTemp resSC32
+                   = gen_dirty_W_WWWW( pce,
+                                       &check_store4C_P,
+                                       "check_store4C_P",
+                                       addr, addrv, data, datav );
+               /* presumably resSC32 will really be Ity_I32.  In
+                  any case we'll get jumped by the IR sanity
+                  checker if it's not, when it sees the
+                  following statement. */
+               assign( 'I', pce, resSC, unop(Iop_32to1, mkexpr(resSC32)) );
+            }
+            break;
+         }
+         /* Integer subword cases */
+         case Ity_I16:
+            gen_dirty_v_WWW( pce,
+                             &check_store2, "check_store2",
+                             addr, addrv,
+                             uwiden_to_host_word( pce, data ));
+            break;
+         case Ity_I8:
+            gen_dirty_v_WWW( pce,
+                             &check_store1, "check_store1",
+                             addr, addrv,
+                             uwiden_to_host_word( pce, data ));
+            break;
+         /* 64-bit float.  Pass store data in 2 32-bit pieces. */
+         case Ity_F64: {
+            IRAtom* d64 = assignNew( 'I', pce, Ity_I64,
+                                     unop(Iop_ReinterpF64asI64, data) );
+            IRAtom* dLo32 = assignNew( 'I', pce, Ity_I32,
+                                       unop(Iop_64to32, d64) );
+            IRAtom* dHi32 = assignNew( 'I', pce, Ity_I32,
+                                       unop(Iop_64HIto32, d64) );
+            gen_dirty_v_WWWW( pce,
+                              &check_store8_ms4B_ls4B, 
+                              "check_store8_ms4B_ls4B",
+                              addr, addrv, dHi32, dLo32 );
+            break;
+         }
+         /* 32-bit float.  We can just use _store4, but need
+            to futz with the argument type. */
+         case Ity_F32: {
+            IRAtom* i32 = assignNew( 'I', pce, Ity_I32, 
+                                     unop(Iop_ReinterpF32asI32,
+                                          data ) );
+            gen_dirty_v_WWW( pce,
+                             &check_store4,
+                             "check_store4",
+                             addr, addrv, i32 );
+            break;
+         }
+         /* 64-bit int.  Pass store data in 2 32-bit pieces. */
+         case Ity_I64: {
+            IRAtom* dLo32 = assignNew( 'I', pce, Ity_I32,
+                                       unop(Iop_64to32, data) );
+            IRAtom* dHi32 = assignNew( 'I', pce, Ity_I32,
+                                       unop(Iop_64HIto32, data) );
+            gen_dirty_v_WWWW( pce,
+                              &check_store8_ms4B_ls4B, 
+                              "check_store8_ms4B_ls4B",
+                              addr, addrv, dHi32, dLo32 );
+            break;
+         }
+         /* 128-bit vector.  Pass store data in 4 32-bit pieces.
+            This is all very ugly and inefficient, but it is
+            hard to better without considerably complicating the
+            store-handling schemes. */
+         case Ity_V128: {
+            IRAtom* dHi64 = assignNew( 'I', pce, Ity_I64,
+                                       unop(Iop_V128HIto64, data) );
+            IRAtom* dLo64 = assignNew( 'I', pce, Ity_I64,
+                                       unop(Iop_V128to64, data) );
+            IRAtom* w3    = assignNew( 'I', pce, Ity_I32,
+                                       unop(Iop_64HIto32, dHi64) );
+            IRAtom* w2    = assignNew( 'I', pce, Ity_I32,
+                                       unop(Iop_64to32, dHi64) );
+            IRAtom* w1    = assignNew( 'I', pce, Ity_I32,
+                                       unop(Iop_64HIto32, dLo64) );
+            IRAtom* w0    = assignNew( 'I', pce, Ity_I32,
+                                       unop(Iop_64to32, dLo64) );
+            gen_dirty_v_6W( pce,
+                            &check_store16_ms4B_4B_4B_ls4B, 
+                            "check_store16_ms4B_4B_4B_ls4B",
+                            addr, addrv, w3, w2, w1, w0 );
+            break;
+         }
+         default:
+            ppIRType(d_ty); tl_assert(0);
+      }
+   } else {
+      /* ------ 64 bit host/guest (cough, cough) ------ */
+      switch (d_ty) {
+         /* Integer word case */
+         case Ity_I64: {
+            IRExpr* datav = schemeEw_Atom( pce, data );
+            if (resSC == IRTemp_INVALID) {
+               /* "normal" store */
+               gen_dirty_v_WWWW( pce,
+                                 &check_store8_P, "check_store8_P",
+                                 addr, addrv, data, datav );
+            } else {
+               IRTemp resSC64
+                   = gen_dirty_W_WWWW( pce,
+                                       &check_store8C_P,
+                                       "check_store8C_P",
+                                       addr, addrv, data, datav );
+               assign( 'I', pce, resSC, unop(Iop_64to1, mkexpr(resSC64)) );
+            }
+            break;
+         }
+         /* Integer subword cases */
+         case Ity_I32:
+            if (resSC == IRTemp_INVALID) {
+               /* "normal" store */
+               gen_dirty_v_WWW( pce,
+                                &check_store4, "check_store4",
+                                addr, addrv,
+                                uwiden_to_host_word( pce, data ));
+            } else {
+               /* store-conditional; need to snarf the success bit */
+               IRTemp resSC64
+                   = gen_dirty_W_WWW( pce,
+                                      &check_store4C,
+                                      "check_store4C",
+                                      addr, addrv,
+                                      uwiden_to_host_word( pce, data ));
+               assign( 'I', pce, resSC, unop(Iop_64to1, mkexpr(resSC64)) );
+            }
+            break;
+         case Ity_I16:
+            gen_dirty_v_WWW( pce,
+                             &check_store2, "check_store2",
+                             addr, addrv,
+                             uwiden_to_host_word( pce, data ));
+            break;
+         case Ity_I8:
+            gen_dirty_v_WWW( pce,
+                             &check_store1, "check_store1",
+                             addr, addrv,
+                             uwiden_to_host_word( pce, data ));
+            break;
+         /* 128-bit vector.  Pass store data in 2 64-bit pieces. */
+         case Ity_V128: {
+            IRAtom* dHi64 = assignNew( 'I', pce, Ity_I64,
+                                       unop(Iop_V128HIto64, data) );
+            IRAtom* dLo64 = assignNew( 'I', pce, Ity_I64,
+                                       unop(Iop_V128to64, data) );
+            gen_dirty_v_WWWW( pce,
+                              &check_store16_ms8B_ls8B, 
+                              "check_store16_ms8B_ls8B",
+                              addr, addrv, dHi64, dLo64 );
+            break;
+         }
+         /* 64-bit float. */
+         case Ity_F64: {
+            IRAtom* dI = assignNew( 'I', pce, Ity_I64, 
+                                     unop(Iop_ReinterpF64asI64,
+                                          data ) );
+            gen_dirty_v_WWW( pce,
+                             &check_store8_all8B,
+                             "check_store8_all8B",
+                             addr, addrv, dI );
+            break;
+         }
+         /* 32-bit float.  We can just use _store4, but need
+            to futz with the argument type. */
+         case Ity_F32: {
+            IRAtom* i32 = assignNew( 'I', pce, Ity_I32, 
+                                     unop(Iop_ReinterpF32asI32,
+                                          data ) );
+            IRAtom* i64 = assignNew( 'I', pce, Ity_I64, 
+                                     unop(Iop_32Uto64,
+                                          i32 ) );
+            gen_dirty_v_WWW( pce,
+                             &check_store4,
+                             "check_store4",
+                             addr, addrv, i64 );
+            break;
+         }
+         default:
+            ppIRType(d_ty); tl_assert(0);
+      }
+   }
+   /* And don't copy the original, since the helper does the store.
+      Ick. */
+   return True; /* store was successfully instrumented */
+}
+
+
+/* schemeS helper for doing loads, pulled out into a function because
+   it needs to handle both normal loads and load-linked's.
+*/
+static void schemeS_load ( PCEnv* pce, IRExpr* addr, IRType e_ty, IRTemp dstv )
+{
+   HChar*  h_nm  = NULL;
+   void*   h_fn  = NULL;
+   IRExpr* addrv = NULL;
+   if (e_ty == pce->gWordTy) {
+      tl_assert(dstv != IRTemp_INVALID);
+   } else {
+      tl_assert(dstv == IRTemp_INVALID);
+   }
+   if (pce->gWordTy == Ity_I32) {
+      /* 32 bit host/guest (cough, cough) */
+      switch (e_ty) {
+         /* Ity_I32: helper returns shadow value. */
+         case Ity_I32:  h_fn = &check_load4_P;
+                        h_nm = "check_load4_P"; break;
+         /* all others: helper does not return a shadow
+            value. */
+         case Ity_V128: h_fn = &check_load16;
+                        h_nm = "check_load16"; break;
+         case Ity_I64:
+         case Ity_F64:  h_fn = &check_load8;
+                        h_nm = "check_load8"; break;
+         case Ity_F32:  h_fn = &check_load4;
+                        h_nm = "check_load4"; break;
+         case Ity_I16:  h_fn = &check_load2;
+                        h_nm = "check_load2"; break;
+         case Ity_I8:   h_fn = &check_load1;
+                        h_nm = "check_load1"; break;
+         default: ppIRType(e_ty); tl_assert(0);
+      }
+      addrv = schemeEw_Atom( pce, addr );
+      if (e_ty == Ity_I32) {
+         assign( 'I', pce, dstv, 
+                  mkexpr( gen_dirty_W_WW( pce, h_fn, h_nm,
+                                               addr, addrv )) );
+      } else {
+         gen_dirty_v_WW( pce, NULL, h_fn, h_nm, addr, addrv );
+      }
+   } else {
+      /* 64 bit host/guest (cough, cough) */
+      switch (e_ty) {
+         /* Ity_I64: helper returns shadow value. */
+         case Ity_I64:  h_fn = &check_load8_P;
+                        h_nm = "check_load8_P"; break;
+         /* all others: helper does not return a shadow
+            value. */
+         case Ity_V128: h_fn = &check_load16;
+                        h_nm = "check_load16"; break;
+         case Ity_F64:  h_fn = &check_load8;
+                        h_nm = "check_load8"; break;
+         case Ity_F32:
+         case Ity_I32:  h_fn = &check_load4;
+                        h_nm = "check_load4"; break;
+         case Ity_I16:  h_fn = &check_load2;
+                        h_nm = "check_load2"; break;
+         case Ity_I8:   h_fn = &check_load1;
+                        h_nm = "check_load1"; break;
+         default: ppIRType(e_ty); tl_assert(0);
+      }
+      addrv = schemeEw_Atom( pce, addr );
+      if (e_ty == Ity_I64) {
+         assign( 'I', pce, dstv, 
+                  mkexpr( gen_dirty_W_WW( pce, h_fn, h_nm,
+                                               addr, addrv )) );
+      } else {
+         gen_dirty_v_WW( pce, NULL, h_fn, h_nm, addr, addrv );
+      }
+   }
+}
+
+
 /* Generate into 'pce', instrumentation for 'st'.  Also copy 'st'
    itself into 'pce' (the caller does not do so).  This is somewhat
    complex and relies heavily on the assumption that the incoming IR
@@ -4571,6 +4888,29 @@ static void schemeS ( PCEnv* pce, IRStmt* st )
          break;
       }
 
+      case Ist_LLSC: {
+         if (st->Ist.LLSC.storedata == NULL) {
+            /* LL */
+            IRTemp dst    = st->Ist.LLSC.result;
+            IRType dataTy = typeOfIRTemp(pce->sb->tyenv, dst);
+            Bool   isWord = dataTy == pce->gWordTy;
+            IRTemp dstv   = isWord ? newShadowTmp( pce, dst )
+                                   : IRTemp_INVALID;
+            schemeS_load( pce, st->Ist.LLSC.addr, dataTy, dstv );
+            /* copy the original -- must happen after the helper call */
+            stmt( 'C', pce, st );
+         } else {
+            /* SC */
+            schemeS_store( pce,
+                           st->Ist.LLSC.storedata,
+                           st->Ist.LLSC.addr,
+                           st->Ist.LLSC.result );
+            /* Don't copy the original, since the helper does the
+               store itself. */
+         }
+         break;
+      }
+
       case Ist_Dirty: {
          Int i;
          IRDirty* di;
@@ -4702,244 +5042,15 @@ static void schemeS ( PCEnv* pce, IRStmt* st )
       } /* case Ist_Put */
 
       case Ist_Store: {
-         /* We have: STle(addr) = data
-            if data is int-word sized, do
-            check_store4(addr, addr#, data, data#)
-            for all other stores
-            check_store{1,2}(addr, addr#, data)
-
-            The helper actually *does* the store, so that it can do
-            the post-hoc ugly hack of inspecting and "improving" the
-            shadow data after the store, in the case where it isn't an
-            aligned word store.
-
-            Only word-sized values are shadowed.  If this is a
-            store-conditional, .resSC will denote a non-word-typed
-            temp, and so we don't need to shadow it.  Assert about the
-            type, tho.  However, since we're not re-emitting the
-            original IRStmt_Store, but rather doing it as part of the
-            helper function, we need to actually do a SC in the
-            helper, and assign the result bit to .resSC.  Ugly.
-         */
-         IRExpr* data  = st->Ist.Store.data;
-         IRExpr* addr  = st->Ist.Store.addr;
-         IRType  d_ty  = typeOfIRExpr(pce->sb->tyenv, data);
-         IRExpr* addrv = schemeEw_Atom( pce, addr );
-         IRTemp  resSC = st->Ist.Store.resSC;
-         if (resSC != IRTemp_INVALID) {
-            tl_assert(typeOfIRTemp(pce->sb->tyenv, resSC) == Ity_I1);
-            /* viz, not something we want to shadow */
-            /* also, throw out all store-conditional cases that
-               we can't handle */
-            if (pce->gWordTy == Ity_I32 && d_ty != Ity_I32)
-               goto unhandled;
-            if (pce->gWordTy == Ity_I64 && d_ty != Ity_I32 && d_ty != Ity_I64)
-               goto unhandled;
-         }
-         if (pce->gWordTy == Ity_I32) {
-            /* ------ 32 bit host/guest (cough, cough) ------ */
-            switch (d_ty) {
-               /* Integer word case */
-               case Ity_I32: {
-                  IRExpr* datav = schemeEw_Atom( pce, data );
-                  if (resSC == IRTemp_INVALID) {
-                     /* "normal" store */
-                     gen_dirty_v_WWWW( pce,
-                                       &check_store4_P, "check_store4_P",
-                                       addr, addrv, data, datav );
-                  } else {
-                     /* store-conditional; need to snarf the success bit */
-                     IRTemp resSC32
-                         = gen_dirty_W_WWWW( pce,
-                                             &check_store4C_P,
-                                             "check_store4C_P",
-                                             addr, addrv, data, datav );
-                     /* presumably resSC32 will really be Ity_I32.  In
-                        any case we'll get jumped by the IR sanity
-                        checker if it's not, when it sees the
-                        following statement. */
-                     assign( 'I', pce, resSC, unop(Iop_32to1, mkexpr(resSC32)) );
-                  }
-                  break;
-               }
-               /* Integer subword cases */
-               case Ity_I16:
-                  gen_dirty_v_WWW( pce,
-                                   &check_store2, "check_store2",
-                                   addr, addrv,
-                                   uwiden_to_host_word( pce, data ));
-                  break;
-               case Ity_I8:
-                  gen_dirty_v_WWW( pce,
-                                   &check_store1, "check_store1",
-                                   addr, addrv,
-                                   uwiden_to_host_word( pce, data ));
-                  break;
-               /* 64-bit float.  Pass store data in 2 32-bit pieces. */
-               case Ity_F64: {
-                  IRAtom* d64 = assignNew( 'I', pce, Ity_I64,
-                                           unop(Iop_ReinterpF64asI64, data) );
-                  IRAtom* dLo32 = assignNew( 'I', pce, Ity_I32,
-                                             unop(Iop_64to32, d64) );
-                  IRAtom* dHi32 = assignNew( 'I', pce, Ity_I32,
-                                             unop(Iop_64HIto32, d64) );
-                  gen_dirty_v_WWWW( pce,
-                                    &check_store8_ms4B_ls4B, 
-                                    "check_store8_ms4B_ls4B",
-                                    addr, addrv, dHi32, dLo32 );
-                  break;
-               }
-               /* 32-bit float.  We can just use _store4, but need
-                  to futz with the argument type. */
-               case Ity_F32: {
-                  IRAtom* i32 = assignNew( 'I', pce, Ity_I32, 
-                                           unop(Iop_ReinterpF32asI32,
-                                                data ) );
-                  gen_dirty_v_WWW( pce,
-                                   &check_store4,
-                                   "check_store4",
-                                   addr, addrv, i32 );
-                  break;
-               }
-               /* 64-bit int.  Pass store data in 2 32-bit pieces. */
-               case Ity_I64: {
-                  IRAtom* dLo32 = assignNew( 'I', pce, Ity_I32,
-                                             unop(Iop_64to32, data) );
-                  IRAtom* dHi32 = assignNew( 'I', pce, Ity_I32,
-                                             unop(Iop_64HIto32, data) );
-                  gen_dirty_v_WWWW( pce,
-                                    &check_store8_ms4B_ls4B, 
-                                    "check_store8_ms4B_ls4B",
-                                    addr, addrv, dHi32, dLo32 );
-                  break;
-               }
-
-               /* 128-bit vector.  Pass store data in 4 32-bit pieces.
-                  This is all very ugly and inefficient, but it is
-                  hard to better without considerably complicating the
-                  store-handling schemes. */
-               case Ity_V128: {
-                  IRAtom* dHi64 = assignNew( 'I', pce, Ity_I64,
-                                             unop(Iop_V128HIto64, data) );
-                  IRAtom* dLo64 = assignNew( 'I', pce, Ity_I64,
-                                             unop(Iop_V128to64, data) );
-                  IRAtom* w3    = assignNew( 'I', pce, Ity_I32,
-                                             unop(Iop_64HIto32, dHi64) );
-                  IRAtom* w2    = assignNew( 'I', pce, Ity_I32,
-                                             unop(Iop_64to32, dHi64) );
-                  IRAtom* w1    = assignNew( 'I', pce, Ity_I32,
-                                             unop(Iop_64HIto32, dLo64) );
-                  IRAtom* w0    = assignNew( 'I', pce, Ity_I32,
-                                             unop(Iop_64to32, dLo64) );
-                  gen_dirty_v_6W( pce,
-                                  &check_store16_ms4B_4B_4B_ls4B, 
-                                  "check_store16_ms4B_4B_4B_ls4B",
-                                  addr, addrv, w3, w2, w1, w0 );
-                  break;
-               }
-
-
-               default:
-                  ppIRType(d_ty); tl_assert(0);
-            }
-         } else {
-            /* ------ 64 bit host/guest (cough, cough) ------ */
-            switch (d_ty) {
-               /* Integer word case */
-               case Ity_I64: {
-                  IRExpr* datav = schemeEw_Atom( pce, data );
-                  if (resSC == IRTemp_INVALID) {
-                     /* "normal" store */
-                     gen_dirty_v_WWWW( pce,
-                                       &check_store8_P, "check_store8_P",
-                                       addr, addrv, data, datav );
-                  } else {
-                     IRTemp resSC64
-                         = gen_dirty_W_WWWW( pce,
-                                             &check_store8C_P,
-                                             "check_store8C_P",
-                                             addr, addrv, data, datav );
-                     assign( 'I', pce, resSC, unop(Iop_64to1, mkexpr(resSC64)) );
-                  }
-                  break;
-               }
-               /* Integer subword cases */
-               case Ity_I32:
-                  if (resSC == IRTemp_INVALID) {
-                     /* "normal" store */
-                     gen_dirty_v_WWW( pce,
-                                      &check_store4, "check_store4",
-                                      addr, addrv,
-                                      uwiden_to_host_word( pce, data ));
-                  } else {
-                     /* store-conditional; need to snarf the success bit */
-                     IRTemp resSC64
-                         = gen_dirty_W_WWW( pce,
-                                            &check_store4C,
-                                            "check_store4C",
-                                            addr, addrv,
-                                            uwiden_to_host_word( pce, data ));
-                     assign( 'I', pce, resSC, unop(Iop_64to1, mkexpr(resSC64)) );
-                  }
-                  break;
-               case Ity_I16:
-                  gen_dirty_v_WWW( pce,
-                                   &check_store2, "check_store2",
-                                   addr, addrv,
-                                   uwiden_to_host_word( pce, data ));
-                  break;
-               case Ity_I8:
-                  gen_dirty_v_WWW( pce,
-                                   &check_store1, "check_store1",
-                                   addr, addrv,
-                                   uwiden_to_host_word( pce, data ));
-                  break;
-               /* 128-bit vector.  Pass store data in 2 64-bit pieces. */
-               case Ity_V128: {
-                  IRAtom* dHi64 = assignNew( 'I', pce, Ity_I64,
-                                             unop(Iop_V128HIto64, data) );
-                  IRAtom* dLo64 = assignNew( 'I', pce, Ity_I64,
-                                             unop(Iop_V128to64, data) );
-                  gen_dirty_v_WWWW( pce,
-                                    &check_store16_ms8B_ls8B, 
-                                    "check_store16_ms8B_ls8B",
-                                    addr, addrv, dHi64, dLo64 );
-                  break;
-               }
-               /* 64-bit float. */
-               case Ity_F64: {
-                  IRAtom* dI = assignNew( 'I', pce, Ity_I64, 
-                                           unop(Iop_ReinterpF64asI64,
-                                                data ) );
-                  gen_dirty_v_WWW( pce,
-                                   &check_store8_all8B,
-                                   "check_store8_all8B",
-                                   addr, addrv, dI );
-                  break;
-               }
-               /* 32-bit float.  We can just use _store4, but need
-                  to futz with the argument type. */
-               case Ity_F32: {
-                  IRAtom* i32 = assignNew( 'I', pce, Ity_I32, 
-                                           unop(Iop_ReinterpF32asI32,
-                                                data ) );
-                  IRAtom* i64 = assignNew( 'I', pce, Ity_I64, 
-                                           unop(Iop_32Uto64,
-                                                i32 ) );
-                  gen_dirty_v_WWW( pce,
-                                   &check_store4,
-                                   "check_store4",
-                                   addr, addrv, i64 );
-                  break;
-               }
-               default:
-                  ppIRType(d_ty); tl_assert(0);
-            }
-         }
-         /* And don't copy the original, since the helper does the
-            store.  Ick. */
+         Bool ok = schemeS_store( pce,
+                                  st->Ist.Store.data,
+                                  st->Ist.Store.addr,
+                                  IRTemp_INVALID/*not a SC*/ );
+         if (!ok) goto unhandled;
+         /* Don't copy the original, since the helper does the store
+            itself. */
          break;
-      } /* case Ist_Store */
+      }
 
       case Ist_WrTmp: {
          /* This is the only place we have to deal with the full
@@ -4992,69 +5103,7 @@ static void schemeS ( PCEnv* pce, IRStmt* st )
             }
 
             case Iex_Load: {
-               IRExpr* addr  = e->Iex.Load.addr;
-               HChar*  h_nm  = NULL;
-               void*   h_fn  = NULL;
-               IRExpr* addrv = NULL;
-               if (pce->gWordTy == Ity_I32) {
-                  /* 32 bit host/guest (cough, cough) */
-                  switch (e_ty) {
-                     /* Ity_I32: helper returns shadow value. */
-                     case Ity_I32:  h_fn = &check_load4_P;
-                                    h_nm = "check_load4_P"; break;
-                     /* all others: helper does not return a shadow
-                        value. */
-                     case Ity_V128: h_fn = &check_load16;
-                                    h_nm = "check_load16"; break;
-                     case Ity_I64:
-                     case Ity_F64:  h_fn = &check_load8;
-                                    h_nm = "check_load8"; break;
-                     case Ity_F32:  h_fn = &check_load4;
-                                    h_nm = "check_load4"; break;
-                     case Ity_I16:  h_fn = &check_load2;
-                                    h_nm = "check_load2"; break;
-                     case Ity_I8:   h_fn = &check_load1;
-                                    h_nm = "check_load1"; break;
-                     default: ppIRType(e_ty); tl_assert(0);
-                  }
-                  addrv = schemeEw_Atom( pce, addr );
-                  if (e_ty == Ity_I32) {
-                     assign( 'I', pce, dstv, 
-                              mkexpr( gen_dirty_W_WW( pce, h_fn, h_nm,
-                                                           addr, addrv )) );
-                  } else {
-                     gen_dirty_v_WW( pce, NULL, h_fn, h_nm, addr, addrv );
-                  }
-               } else {
-                  /* 64 bit host/guest (cough, cough) */
-                  switch (e_ty) {
-                     /* Ity_I64: helper returns shadow value. */
-                     case Ity_I64:  h_fn = &check_load8_P;
-                                    h_nm = "check_load8_P"; break;
-                     /* all others: helper does not return a shadow
-                        value. */
-                     case Ity_V128: h_fn = &check_load16;
-                                    h_nm = "check_load16"; break;
-                     case Ity_F64:  h_fn = &check_load8;
-                                    h_nm = "check_load8"; break;
-                     case Ity_F32:
-                     case Ity_I32:  h_fn = &check_load4;
-                                    h_nm = "check_load4"; break;
-                     case Ity_I16:  h_fn = &check_load2;
-                                    h_nm = "check_load2"; break;
-                     case Ity_I8:   h_fn = &check_load1;
-                                    h_nm = "check_load1"; break;
-                     default: ppIRType(e_ty); tl_assert(0);
-                  }
-                  addrv = schemeEw_Atom( pce, addr );
-                  if (e_ty == Ity_I64) {
-                     assign( 'I', pce, dstv, 
-                              mkexpr( gen_dirty_W_WW( pce, h_fn, h_nm,
-                                                           addr, addrv )) );
-                  } else {
-                     gen_dirty_v_WW( pce, NULL, h_fn, h_nm, addr, addrv );
-                  }
-               }
+               schemeS_load( pce, e->Iex.Load.addr, e_ty, dstv );
                /* copy the original -- must happen after the helper call */
                stmt( 'C', pce, st );
                break;

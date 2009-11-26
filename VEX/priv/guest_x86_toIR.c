@@ -648,7 +648,7 @@ static void assign ( IRTemp dst, IRExpr* e )
 
 static void storeLE ( IRExpr* addr, IRExpr* data )
 {
-   stmt( IRStmt_Store(Iend_LE, IRTemp_INVALID, addr, data) );
+   stmt( IRStmt_Store(Iend_LE, addr, data) );
 }
 
 static IRExpr* unop ( IROp op, IRExpr* a )
@@ -708,9 +708,9 @@ static IRExpr* mkV128 ( UShort mask )
    return IRExpr_Const(IRConst_V128(mask));
 }
 
-static IRExpr* loadLE ( IRType ty, IRExpr* data )
+static IRExpr* loadLE ( IRType ty, IRExpr* addr )
 {
-   return IRExpr_Load(False, Iend_LE, ty, data);
+   return IRExpr_Load(Iend_LE, ty, addr);
 }
 
 static IROp mkSizedOp ( IRType ty, IROp op8 )

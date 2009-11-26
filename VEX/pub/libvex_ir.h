@@ -1044,20 +1044,13 @@ struct _IRExpr {
          IRExpr* arg;      /* operand */
       } Unop;
 
-      /* A load from memory.  If .isLL is True then this load also
-         lodges a reservation (ppc-style lwarx/ldarx operation).  If
-         .isLL is True, then also, the address must be naturally
-         aligned - any misaligned addresses should be caught by a
-         dominating IR check and side exit.  This alignment
-         restriction exists because on at least some LL/SC platforms
-         (ppc), lwarx etc will trap w/ SIGBUS on misaligned addresses,
-         and we have to actually generate lwarx on the host, and we
-         don't want it trapping on the host.
-
+      /* A load from memory -- a normal load, not a load-linked.
+         Load-Linkeds (and Store-Conditionals) are instead represented
+         by IRStmt.LLSC since Load-Linkeds have side effects and so
+         are not semantically valid IRExpr's.
          ppIRExpr output: LD<end>:<ty>(<addr>), eg. LDle:I32(t1)
       */
       struct {
-         Bool      isLL;   /* True iff load makes a reservation */
          IREndness end;    /* Endian-ness of the load */
          IRType    ty;     /* Type of the loaded value */
          IRExpr*   addr;   /* Address being loaded from */
@@ -1141,8 +1134,7 @@ extern IRExpr* IRExpr_Triop  ( IROp op, IRExpr* arg1,
                                         IRExpr* arg2, IRExpr* arg3 );
 extern IRExpr* IRExpr_Binop  ( IROp op, IRExpr* arg1, IRExpr* arg2 );
 extern IRExpr* IRExpr_Unop   ( IROp op, IRExpr* arg );
-extern IRExpr* IRExpr_Load   ( Bool isLL, IREndness end,
-                               IRType ty, IRExpr* addr );
+extern IRExpr* IRExpr_Load   ( IREndness end, IRType ty, IRExpr* addr );
 extern IRExpr* IRExpr_Const  ( IRConst* con );
 extern IRExpr* IRExpr_CCall  ( IRCallee* cee, IRType retty, IRExpr** args );
 extern IRExpr* IRExpr_Mux0X  ( IRExpr* cond, IRExpr* expr0, IRExpr* exprX );
@@ -1483,6 +1475,7 @@ typedef
       Ist_WrTmp,
       Ist_Store,
       Ist_CAS,
+      Ist_LLSC,
       Ist_Dirty,
       Ist_MBE,       /* META (maybe) */
       Ist_Exit
@@ -1578,28 +1571,13 @@ typedef
             IRExpr* data;  /* Expression (RHS of assignment) */
          } WrTmp;
 
-         /* Write a value to memory.  Normally scRes is
-            IRTemp_INVALID, denoting a normal store.  If scRes is not
-            IRTemp_INVALID, then this is a store-conditional, which
-            may fail or succeed depending on the outcome of a
-            previously lodged reservation on this address.  scRes is
-            written 1 if the store succeeds and 0 if it fails, and
-            must have type Ity_I1.
-
-            If scRes is not IRTemp_INVALID, then also, the address
-            must be naturally aligned - any misaligned addresses
-            should be caught by a dominating IR check and side exit.
-            This alignment restriction exists because on at least some
-            LL/SC platforms (ppc), stwcx. etc will trap w/ SIGBUS on
-            misaligned addresses, and we have to actually generate
-            stwcx. on the host, and we don't want it trapping on the
-            host.
-
+         /* Write a value to memory.  This is a normal store, not a
+            Store-Conditional.  To represent a Store-Conditional,
+            instead use IRStmt.LLSC.
             ppIRStmt output: ST<end>(<addr>) = <data>, eg. STle(t1) = t2
          */
          struct {
             IREndness end;    /* Endianness of the store */
-            IRTemp    resSC;  /* result of SC goes here (1 == success) */
             IRExpr*   addr;   /* store address */
             IRExpr*   data;   /* value to write */
          } Store;
@@ -1621,6 +1599,57 @@ typedef
          struct {
             IRCAS* details;
          } CAS;
+
+         /* Either Load-Linked or Store-Conditional, depending on
+            STOREDATA.
+
+            If STOREDATA is NULL then this is a Load-Linked, meaning
+            that data is loaded from memory as normal, but a
+            'reservation' for the address is also lodged in the
+            hardware.
+
+               result = Load-Linked(addr, end)
+
+            The data transfer type is the type of RESULT (I32, I64,
+            etc).  ppIRStmt output:
+
+               result = LD<end>-Linked(<addr>), eg. LDbe-Linked(t1)
+
+            If STOREDATA is not NULL then this is a Store-Conditional,
+            hence:
+
+               result = Store-Conditional(addr, storedata, end)
+
+            The data transfer type is the type of STOREDATA and RESULT
+            has type Ity_I1. The store may fail or succeed depending
+            on the state of a previously lodged reservation on this
+            address.  RESULT is written 1 if the store succeeds and 0
+            if it fails.  eg ppIRStmt output:
+
+               result = ( ST<end>-Cond(<addr>) = <storedata> )
+               eg t3 = ( STbe-Cond(t1, t2) )
+
+            In all cases, the address must be naturally aligned for
+            the transfer type -- any misaligned addresses should be
+            caught by a dominating IR check and side exit.  This
+            alignment restriction exists because on at least some
+            LL/SC platforms (ppc), stwcx. etc will trap w/ SIGBUS on
+            misaligned addresses, and we have to actually generate
+            stwcx. on the host, and we don't want it trapping on the
+            host.
+
+            Summary of rules for transfer type:
+              STOREDATA == NULL (LL):
+                transfer type = type of RESULT
+              STOREDATA != NULL (SC):
+                transfer type = type of STOREDATA, and RESULT :: Ity_I1
+         */
+         struct {
+            IREndness end;
+            IRTemp    result;
+            IRExpr*   addr;
+            IRExpr*   storedata; /* NULL => LL, non-NULL => SC */
+         } LLSC;
 
          /* Call (possibly conditionally) a C function that has side
             effects (ie. is "dirty").  See the comments above the
@@ -1668,9 +1697,10 @@ extern IRStmt* IRStmt_Put     ( Int off, IRExpr* data );
 extern IRStmt* IRStmt_PutI    ( IRRegArray* descr, IRExpr* ix, Int bias, 
                                 IRExpr* data );
 extern IRStmt* IRStmt_WrTmp   ( IRTemp tmp, IRExpr* data );
-extern IRStmt* IRStmt_Store   ( IREndness end,
-                                IRTemp resSC, IRExpr* addr, IRExpr* data );
+extern IRStmt* IRStmt_Store   ( IREndness end, IRExpr* addr, IRExpr* data );
 extern IRStmt* IRStmt_CAS     ( IRCAS* details );
+extern IRStmt* IRStmt_LLSC    ( IREndness end, IRTemp result,
+                                IRExpr* addr, IRExpr* storedata );
 extern IRStmt* IRStmt_Dirty   ( IRDirty* details );
 extern IRStmt* IRStmt_MBE     ( IRMBusEvent event );
 extern IRStmt* IRStmt_Exit    ( IRExpr* guard, IRJumpKind jk, IRConst* dst );

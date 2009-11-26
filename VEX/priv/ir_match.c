@@ -90,7 +90,6 @@ Bool matchWrk ( MatchInfo* mi, IRExpr* p/*attern*/, IRExpr* e/*xpr*/ )
          return True;
       case Iex_Load:
          if (e->tag != Iex_Load) return False;
-         if (p->Iex.Load.isLL != e->Iex.Load.isLL) return False;
          if (p->Iex.Load.end != e->Iex.Load.end) return False;
          if (p->Iex.Load.ty != e->Iex.Load.ty) return False;
          if (!matchWrk(mi, p->Iex.Load.addr, e->Iex.Load.addr))

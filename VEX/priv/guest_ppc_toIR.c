@@ -467,7 +467,7 @@ static void storeBE ( IRExpr* addr, IRExpr* data )
 {
    IRType tyA = typeOfIRExpr(irsb->tyenv, addr);
    vassert(tyA == Ity_I32 || tyA == Ity_I64);
-   stmt( IRStmt_Store(Iend_BE, IRTemp_INVALID, addr, data) );
+   stmt( IRStmt_Store(Iend_BE, addr, data) );
 }
 
 static IRExpr* unop ( IROp op, IRExpr* a )
@@ -517,20 +517,9 @@ static IRExpr* mkU64 ( ULong i )
 }
 
 /* This generates a normal (non load-linked) load. */
-static IRExpr* loadBE ( IRType ty, IRExpr* data )
+static IRExpr* loadBE ( IRType ty, IRExpr* addr )
 {
-   return IRExpr_Load(False, Iend_BE, ty, data);
-}
-
-/* And this, a linked load. */
-static IRExpr* loadlinkedBE ( IRType ty, IRExpr* data )
-{
-   if (mode64) {
-      vassert(ty == Ity_I32 || ty == Ity_I64);
-   } else {
-      vassert(ty == Ity_I32);
-   }
-   return IRExpr_Load(True, Iend_BE, ty, data);
+   return IRExpr_Load(Iend_BE, ty, addr);
 }
 
 static IRExpr* mkOR1 ( IRExpr* arg1, IRExpr* arg2 )
@@ -4861,7 +4850,8 @@ static Bool dis_memsync ( UInt theInstr )
          stmt( IRStmt_MBE(Imbe_Fence) );
          break;
 
-      case 0x014: // lwarx (Load Word and Reserve Indexed, PPC32 p458)
+      case 0x014: { // lwarx (Load Word and Reserve Indexed, PPC32 p458)
+         IRTemp res;
          /* According to the PowerPC ISA version 2.05, b0 (called EH
             in the documentation) is merely a hint bit to the
             hardware, I think as to whether or not contention is
@@ -4872,10 +4862,13 @@ static Bool dis_memsync ( UInt theInstr )
          gen_SIGBUS_if_misaligned( EA, 4 );
 
          // and actually do the load
-         putIReg( rD_addr, mkWidenFrom32(ty, loadlinkedBE(Ity_I32, mkexpr(EA)),
-                                             False) );
+         res = newTemp(Ity_I32);
+         stmt( IRStmt_LLSC(Iend_BE, res, mkexpr(EA), NULL/*this is a load*/) );
+
+         putIReg( rD_addr, mkWidenFrom32(ty, mkexpr(res), False) );
          break;
-         
+      }
+
       case 0x096: { 
          // stwcx. (Store Word Conditional Indexed, PPC32 p532)
          // Note this has to handle stwcx. in both 32- and 64-bit modes,
@@ -4896,7 +4889,7 @@ static Bool dis_memsync ( UInt theInstr )
 
          // Do the store, and get success/failure bit into resSC
          resSC = newTemp(Ity_I1);
-         stmt( IRStmt_Store(Iend_BE, resSC, mkexpr(EA), mkexpr(rS)) );
+         stmt( IRStmt_LLSC(Iend_BE, resSC, mkexpr(EA), mkexpr(rS)) );
 
          // Set CR0[LT GT EQ S0] = 0b000 || XER[SO]  on failure
          // Set CR0[LT GT EQ S0] = 0b001 || XER[SO]  on success
@@ -4948,7 +4941,8 @@ static Bool dis_memsync ( UInt theInstr )
          break;
 
       /* 64bit Memsync */
-      case 0x054: // ldarx (Load DWord and Reserve Indexed, PPC64 p473)
+      case 0x054: { // ldarx (Load DWord and Reserve Indexed, PPC64 p473)
+         IRTemp res;
          /* According to the PowerPC ISA version 2.05, b0 (called EH
             in the documentation) is merely a hint bit to the
             hardware, I think as to whether or not contention is
@@ -4961,9 +4955,13 @@ static Bool dis_memsync ( UInt theInstr )
          gen_SIGBUS_if_misaligned( EA, 8 );
 
          // and actually do the load
-         putIReg( rD_addr, loadlinkedBE(Ity_I64, mkexpr(EA)) );
+         res = newTemp(Ity_I64);
+         stmt( IRStmt_LLSC(Iend_BE, res, mkexpr(EA), NULL/*this is a load*/) );
+
+         putIReg( rD_addr, mkexpr(res) );
          break;
-       
+      }
+      
       case 0x0D6: { // stdcx. (Store DWord Condition Indexd, PPC64 p581)
          // A marginally simplified version of the stwcx. case
          IRTemp rS = newTemp(Ity_I64);
@@ -4984,7 +4982,7 @@ static Bool dis_memsync ( UInt theInstr )
 
          // Do the store, and get success/failure bit into resSC
          resSC = newTemp(Ity_I1);
-         stmt( IRStmt_Store(Iend_BE, resSC, mkexpr(EA), mkexpr(rS)) );
+         stmt( IRStmt_LLSC(Iend_BE, resSC, mkexpr(EA), mkexpr(rS)) );
 
          // Set CR0[LT GT EQ S0] = 0b000 || XER[SO]  on failure
          // Set CR0[LT GT EQ S0] = 0b001 || XER[SO]  on success

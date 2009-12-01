@@ -1971,7 +1971,7 @@ VG_(fixup_guest_state_after_syscall_interrupted)( ThreadId tid,
    if (VG_(clo_trace_signals))
       VG_(message)( Vg_DebugMsg,
                     "interrupted_syscall: tid=%d, ip=0x%llx, "
-                    "restart=%s, sres.isErr=%s, sres.val=%lld", 
+                    "restart=%s, sres.isErr=%s, sres.val=%lld\n", 
                     (Int)tid,
                     (ULong)ip, 
                     restart ? "True" : "False", 
@@ -1991,7 +1991,7 @@ VG_(fixup_guest_state_after_syscall_interrupted)( ThreadId tid,
    if (outside_range) {
       if (VG_(clo_trace_signals))
          VG_(message)( Vg_DebugMsg,
-                       "  not in syscall at all: hmm, very suspicious" );
+                       "  not in syscall at all: hmm, very suspicious\n" );
       /* Looks like we weren't in a syscall at all.  Hmm. */
       vg_assert(sci->status.what != SsIdle);
       return;
@@ -2008,7 +2008,7 @@ VG_(fixup_guest_state_after_syscall_interrupted)( ThreadId tid,
    if (in_setup_to_restart) {
       /* syscall hasn't even started; go around again */
       if (VG_(clo_trace_signals))
-         VG_(message)( Vg_DebugMsg, "  not started: restarting");
+         VG_(message)( Vg_DebugMsg, "  not started: restarting\n");
       vg_assert(sci->status.what == SsHandToKernel);
       ML_(fixup_guest_state_to_restart_syscall)(th_regs);
    } 
@@ -2020,11 +2020,11 @@ VG_(fixup_guest_state_after_syscall_interrupted)( ThreadId tid,
          EINTR it. */
       if (restart) {
          if (VG_(clo_trace_signals))
-            VG_(message)( Vg_DebugMsg, "  at syscall instr: restarting");
+            VG_(message)( Vg_DebugMsg, "  at syscall instr: restarting\n");
          ML_(fixup_guest_state_to_restart_syscall)(th_regs);
       } else {
          if (VG_(clo_trace_signals))
-            VG_(message)( Vg_DebugMsg, "  at syscall instr: returning EINTR");
+            VG_(message)( Vg_DebugMsg, "  at syscall instr: returning EINTR\n");
          canonical = convert_SysRes_to_SyscallStatus( 
                         VG_(mk_SysRes_Error)( VKI_EINTR ) 
                      );
@@ -2042,7 +2042,7 @@ VG_(fixup_guest_state_after_syscall_interrupted)( ThreadId tid,
          state. */
       if (VG_(clo_trace_signals))
          VG_(message)( Vg_DebugMsg,
-                       "  completed, but uncommitted: committing");
+                       "  completed, but uncommitted: committing\n");
       canonical = convert_SysRes_to_SyscallStatus( sres );
       if (!(sci->flags & SfNoWriteResult))
          putSyscallStatusIntoGuestState( tid, &canonical, &th_regs->vex );
@@ -2057,7 +2057,7 @@ VG_(fixup_guest_state_after_syscall_interrupted)( ThreadId tid,
          this up. */
       if (VG_(clo_trace_signals))
          VG_(message)( Vg_DebugMsg,
-                       "  completed and committed: nothing to do");
+                       "  completed and committed: nothing to do\n");
       getSyscallStatusFromGuestState( &sci->status, &th_regs->vex );
       vg_assert(sci->status.what == SsComplete);
       VG_(post_syscall)(tid);

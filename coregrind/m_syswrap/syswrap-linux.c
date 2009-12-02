@@ -379,6 +379,7 @@ SysRes ML_(do_fork_clone) ( ThreadId tid, UInt flags,
 #define POST(name)      DEFN_POST_TEMPLATE(linux, name)
 
 // Macros to support 64-bit syscall args split into two 32 bit values
+#define LOHI64(lo,hi)   ( ((ULong)(lo)) | (((ULong)(hi)) << 32) )
 #if defined(VG_LITTLEENDIAN)
 #define MERGE64(lo,hi)   ( ((ULong)(lo)) | (((ULong)(hi)) << 32) )
 #define MERGE64_FIRST(name) name##_low
@@ -3161,11 +3162,13 @@ PRE(sys_preadv)
    struct vki_iovec * vec;
    *flags |= SfMayBlock;
 #if VG_WORDSIZE == 4
-   PRINT("sys_preadv ( %ld, %#lx, %llu, %lld )",ARG1,ARG2,(ULong)ARG3,MERGE64(ARG4,ARG5));
+   /* Note that the offset argument here is in lo+hi order on both
+      big and little endian platforms... */
+   PRINT("sys_preadv ( %ld, %#lx, %llu, %lld )",ARG1,ARG2,(ULong)ARG3,LOHI64(ARG4,ARG5));
    PRE_REG_READ5(ssize_t, "preadv",
                  unsigned long, fd, const struct iovec *, vector,
-                 unsigned long, count, vki_u32, MERGE64_FIRST(offset),
-                 vki_u32, MERGE64_SECOND(offset));
+                 unsigned long, count, vki_u32, offset_low,
+                 vki_u32, offset_high);
 #elif VG_WORDSIZE == 8
    PRINT("sys_preadv ( %ld, %#lx, %llu, %lld )",ARG1,ARG2,(ULong)ARG3,(Long)ARG4);
    PRE_REG_READ4(ssize_t, "preadv",
@@ -3214,11 +3217,13 @@ PRE(sys_pwritev)
    struct vki_iovec * vec;
    *flags |= SfMayBlock;
 #if VG_WORDSIZE == 4
-   PRINT("sys_pwritev ( %ld, %#lx, %llu, %lld )",ARG1,ARG2,(ULong)ARG3,MERGE64(ARG4,ARG5));
+   /* Note that the offset argument here is in lo+hi order on both
+      big and little endian platforms... */
+   PRINT("sys_pwritev ( %ld, %#lx, %llu, %lld )",ARG1,ARG2,(ULong)ARG3,LOHI64(ARG4,ARG5));
    PRE_REG_READ5(ssize_t, "pwritev",
                  unsigned long, fd, const struct iovec *, vector,
-                 unsigned long, count, vki_u32, MERGE64_FIRST(offset),
-                 vki_u32, MERGE64_SECOND(offset));
+                 unsigned long, count, vki_u32, offset_low,
+                 vki_u32, offset_high);
 #elif VG_WORDSIZE == 8
    PRINT("sys_pwritev ( %ld, %#lx, %llu, %lld )",ARG1,ARG2,(ULong)ARG3,(Long)ARG4);
    PRE_REG_READ4(ssize_t, "pwritev",

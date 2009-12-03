@@ -192,6 +192,16 @@ void vexSetAllocModeTEMP_and_clear ( void )
    mode = VexAllocModeTEMP;
    temporary_curr            = &temporary[0];
    private_LibVEX_alloc_curr = &temporary[0];
+
+   /* Set to (1) and change the fill byte to 0x00 or 0xFF to test for
+      any potential bugs due to using uninitialised memory in the main
+      VEX storage area. */
+   if (0) {
+      Int i;
+      for (i = 0; i < N_TEMPORARY_BYTES; i++)
+         temporary[i] = 0x00;
+   }
+
    vexAllocSanityCheck();
 }
 

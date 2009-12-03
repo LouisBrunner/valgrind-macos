@@ -1062,6 +1062,8 @@ Bool ML_(read_elf_debug_info) ( struct _DebugInfo* di )
    Bool          res, ok;
    SysRes        fd, sres;
    Word          i;
+   Bool          dynbss_present = False;
+   Bool          sdynbss_present = False;
 
    /* Image addresses for the ELF file we're working with. */
    Addr          oimage   = 0;
@@ -1476,8 +1478,40 @@ Bool ML_(read_elf_debug_info) ( struct _DebugInfo* di )
          }
       }
 
+      if (0 == VG_(strcmp)(name, ".dynbss")) {
+         if (inrw && size > 0 && !di->bss_present) {
+            dynbss_present = True;
+            di->bss_present = True;
+            di->bss_svma = svma;
+            di->bss_avma = svma + rw_bias;
+            di->bss_size = size;
+            di->bss_bias = rw_bias;
+            di->bss_debug_svma = svma;
+            di->bss_debug_bias = rw_bias;
+            TRACE_SYMTAB("acquiring .dynbss svma = %#lx .. %#lx\n",
+                         di->bss_svma,
+                         di->bss_svma + di->bss_size - 1);
+            TRACE_SYMTAB("acquiring .dynbss avma = %#lx .. %#lx\n",
+                         di->bss_avma,
+                         di->bss_avma + di->bss_size - 1);
+            TRACE_SYMTAB("acquiring .dynbss bias = %#lx\n", di->bss_bias);
+         }
+      }
+
       /* Accept .bss where mapped as rw (data), even if zero-sized */
       if (0 == VG_(strcmp)(name, ".bss")) {
+         if (inrw && size > 0 && dynbss_present) {
+            vg_assert(di->bss_present);
+            dynbss_present = False;
+            vg_assert(di->bss_svma + di->bss_size == svma);
+            di->bss_size += size;
+            TRACE_SYMTAB("acquiring .bss svma = %#lx .. %#lx\n",
+                         svma, svma + size - 1);
+            TRACE_SYMTAB("acquiring .bss avma = %#lx .. %#lx\n",
+                         svma + rw_bias, svma + rw_bias + size - 1);
+            TRACE_SYMTAB("acquiring .bss bias = %#lx\n", di->bss_bias);
+         } else
+
          if (inrw && size >= 0 && !di->bss_present) {
             di->bss_present = True;
             di->bss_svma = svma;
@@ -1529,8 +1563,40 @@ Bool ML_(read_elf_debug_info) ( struct _DebugInfo* di )
          }
       }
 
+      if (0 == VG_(strcmp)(name, ".sdynbss")) {
+         if (inrw && size >= 0 && !di->sbss_present) {
+            sdynbss_present = True;
+            di->sbss_present = True;
+            di->sbss_svma = svma;
+            di->sbss_avma = svma + rw_bias;
+            di->sbss_size = size;
+            di->sbss_bias = rw_bias;
+            di->sbss_debug_svma = svma;
+            di->sbss_debug_bias = rw_bias;
+            TRACE_SYMTAB("acquiring .sdynbss svma = %#lx .. %#lx\n",
+                         di->sbss_svma,
+                         di->sbss_svma + di->sbss_size - 1);
+            TRACE_SYMTAB("acquiring .sdynbss avma = %#lx .. %#lx\n",
+                         di->sbss_avma,
+                         di->sbss_avma + di->sbss_size - 1);
+            TRACE_SYMTAB("acquiring .sdynbss bias = %#lx\n", di->sbss_bias);
+         }
+      }
+
       /* Accept .sbss where mapped as rw (data) */
       if (0 == VG_(strcmp)(name, ".sbss")) {
+         if (inrw && size > 0 && sdynbss_present) {
+            vg_assert(di->sbss_present);
+            sdynbss_present = False;
+            vg_assert(di->sbss_svma + di->sbss_size == svma);
+            di->sbss_size += size;
+            TRACE_SYMTAB("acquiring .sbss svma = %#lx .. %#lx\n",
+                         svma, svma + size - 1);
+            TRACE_SYMTAB("acquiring .sbss avma = %#lx .. %#lx\n",
+                         svma + rw_bias, svma + rw_bias + size - 1);
+            TRACE_SYMTAB("acquiring .sbss bias = %#lx\n", di->sbss_bias);
+         } else
+
          if (inrw && size > 0 && !di->sbss_present) {
             di->sbss_present = True;
             di->sbss_svma = svma;

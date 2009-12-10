@@ -923,14 +923,26 @@ available macros and client requests are:
   </listitem>
   <listitem>
     <para>
-      The macros <literal>DRD_TRACE_VAR(x)</literal>,
-      <literal>ANNOTATE_TRACE_MEMORY(&amp;x)</literal>
-      and the corresponding client request
-      <varname>VG_USERREQ__DRD_START_TRACE_ADDR</varname>. Trace all
-      load and store activity on the specified address range. When DRD reports
-      a data race on a specified variable, and it's not immediately clear
-      which source code statements triggered the conflicting accesses, it can
-      be very helpful to trace all activity on the offending memory location.
+      The macro <literal>DRD_TRACE_VAR(x)</literal>. Trace all load and store
+      activity for the address range starting at <literal>&amp;x</literal> and
+      occupying <literal>sizeof(x)</literal> bytes. When DRD reports a data
+      race on a specified variable, and it's not immediately clear which
+      source code statements triggered the conflicting accesses, it can be
+      very helpful to trace all activity on the offending memory location.
+    </para>
+  </listitem>
+  <listitem>
+    <para>
+      The macro <literal>ANNOTATE_TRACE_MEMORY(&amp;x)</literal>. Trace all
+      load and store activity that touches at least the single byte at the
+      address <literal>&amp;x</literal>.
+    </para>
+  </listitem>
+  <listitem>
+    <para>
+      The client request <varname>VG_USERREQ__DRD_START_TRACE_ADDR</varname>,
+      which allows to trace all load and store activity for the specified
+      address range.
     </para>
   </listitem>
   <listitem>

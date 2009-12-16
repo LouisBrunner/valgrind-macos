@@ -77,7 +77,7 @@ typedef struct _OSet     OSet;
 // - Free:  frees a chunk of memory allocated with Alloc.
 
 typedef Word  (*OSetCmp_t)         ( const void* key, const void* elem );
-typedef void* (*OSetAlloc_t)       ( HChar* ec, SizeT szB );
+typedef void* (*OSetAlloc_t)       ( HChar* cc, SizeT szB );
 typedef void  (*OSetFree_t)        ( void* p );
 
 /*--------------------------------------------------------------------*/
@@ -87,6 +87,7 @@ typedef void  (*OSetFree_t)        ( void* p );
 // * Create: allocates and initialises the OSet.  Arguments:
 //   - alloc     The allocation function used internally for allocating the
 //               OSet and all its nodes.
+//   - cc        Cost centre string used by 'alloc'.
 //   - free      The deallocation function used internally for freeing nodes
 //               called by VG_(OSetWord_Destroy)().
 //
@@ -98,7 +99,7 @@ typedef void  (*OSetFree_t)        ( void* p );
 //   to allow the destruction of any attached resources;  if NULL it is not
 //   called.
 
-extern OSet* VG_(OSetWord_Create)       ( OSetAlloc_t alloc, HChar* ec, 
+extern OSet* VG_(OSetWord_Create)       ( OSetAlloc_t alloc, HChar* cc, 
                                           OSetFree_t _free );
 extern void  VG_(OSetWord_Destroy)      ( OSet* os );
 
@@ -161,6 +162,7 @@ extern Bool  VG_(OSetWord_Next)         ( OSet* os, /*OUT*/UWord* val );
 //   - alloc     The allocation function used for allocating the OSet itself;
 //               it's also called for each invocation of
 //               VG_(OSetGen_AllocNode)().
+//   - cc        Cost centre string used by 'alloc'.
 //   - free      The deallocation function used by VG_(OSetGen_FreeNode)() and
 //               VG_(OSetGen_Destroy)().
 //
@@ -184,7 +186,7 @@ extern Bool  VG_(OSetWord_Next)         ( OSet* os, /*OUT*/UWord* val );
 //   lead to assertions in Valgrind's allocator.
 
 extern OSet* VG_(OSetGen_Create)    ( PtrdiffT keyOff, OSetCmp_t cmp,
-                                      OSetAlloc_t alloc, HChar* ec,
+                                      OSetAlloc_t alloc, HChar* cc,
                                       OSetFree_t _free );
 extern void  VG_(OSetGen_Destroy)   ( OSet* os );
 extern void* VG_(OSetGen_AllocNode) ( OSet* os, SizeT elemSize );

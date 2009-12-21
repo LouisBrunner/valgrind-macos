@@ -283,8 +283,11 @@ struct vki_timex {
 #define VKI_ADJ_ESTERROR		0x0008	/* estimated time error */
 #define VKI_ADJ_STATUS			0x0010	/* clock status */
 #define VKI_ADJ_TIMECONST		0x0020	/* pll time constant */
+#define VKI_ADJ_TAI			0x0080	/* set TAI offset */
 #define VKI_ADJ_TICK			0x4000	/* tick value */
+#define VKI_ADJ_ADJTIME			0x8000	/* switch between adjtime/adjtimex modes */
 //#define VKI_ADJ_OFFSET_SINGLESHOT	0x8001	/* old-fashioned adjtime */
+#define VKI_ADJ_OFFSET_READONLY		0x2000	/* read-only adjtime */
 
 //----------------------------------------------------------------------
 // From linux-2.6.8.1/include/linux/times.h

@@ -95,6 +95,8 @@ void * VG_NOTIFY_ON_LOAD(ifunc_wrapper) (void)
 
 #elif defined(VGO_darwin)
 
+#include "config.h" /* VERSION */
+
 /* ---------------------------------------------------------------------
    Darwin crash log hints
    ------------------------------------------------------------------ */

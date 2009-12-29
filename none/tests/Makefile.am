@@ -175,6 +175,7 @@ check_PROGRAMS = \
 	tls \
 	tls.so \
 	tls2.so \
+	valgrind_cpp_test \
 	vgprintf \
 	coolo_sigaction \
 	gxx304
@@ -261,6 +262,9 @@ tls2_so_LDFLAGS		= -dynamic -dynamiclib -all_load
 else
 tls2_so_LDFLAGS		= -shared
 endif
+
+valgrind_cpp_test_SOURCES = valgrind_cpp_test.cpp
+valgrind_cpp_test_LDADD   = -lstdc++
 
 # C++ tests
 coolo_sigaction_SOURCES	= coolo_sigaction.cpp

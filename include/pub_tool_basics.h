@@ -193,15 +193,18 @@ typedef
    SysRes;
 #elif defined(VGO_darwin)
 typedef
+   enum { 
+      SysRes_MACH=40,  // MACH, result is _wLO
+      SysRes_MDEP,     // MDEP, result is _wLO
+      SysRes_UNIX_OK,  // UNIX, success, result is _wHI:_wLO
+      SysRes_UNIX_ERR  // UNIX, error,   error  is _wHI:_wLO
+   }
+   SysResMode;
+typedef
    struct {
       UWord _wLO;
       UWord _wHI;
-      enum { 
-         SysRes_MACH=40,  // MACH, result is _wLO
-         SysRes_MDEP,     // MDEP, result is _wLO
-         SysRes_UNIX_OK,  // UNIX, success, result is _wHI:_wLO
-         SysRes_UNIX_ERR  // UNIX, error,   error  is _wHI:_wLO
-      } _mode;
+      SysResMode _mode;
    }
    SysRes;
 #else

@@ -40,6 +40,7 @@
    ************************************************************* */
 
 #include "priv_aspacemgr.h"
+#include "config.h"
 
 
 /* Note: many of the exported functions implemented below are

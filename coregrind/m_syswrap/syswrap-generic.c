@@ -62,6 +62,8 @@
 #include "priv_types_n_macros.h"
 #include "priv_syswrap-generic.h"
 
+#include "config.h"
+
 
 /* Returns True iff address range is something the client can
    plausibly mess with: all of it is either already belongs to the

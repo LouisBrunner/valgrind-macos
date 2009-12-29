@@ -56,6 +56,7 @@
 #include "pub_tool_redir.h"
 #include "valgrind.h"
 #include "helgrind.h"
+#include "config.h"
 
 #define TRACE_PTH_FNS 0
 #define TRACE_QT4_FNS 0

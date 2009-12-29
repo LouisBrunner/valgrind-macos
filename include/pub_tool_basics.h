@@ -49,9 +49,6 @@
 // For varargs types
 #include <stdarg.h>
 
-/* For HAVE_BUILTIN_EXPECT */
-#include "config.h"
-
 
 /* ---------------------------------------------------------------------
    symbol prefixing
@@ -318,7 +315,7 @@ static inline Bool sr_EQ ( SysRes sr1, SysRes sr2 ) {
 #define VG_BUGS_TO "www.valgrind.org"
 
 /* Branch prediction hints. */
-#if HAVE_BUILTIN_EXPECT
+#if 1 /*HAVE_BUILTIN_EXPECT*/
 #  define LIKELY(x)   __builtin_expect(!!(x), 1)
 #  define UNLIKELY(x) __builtin_expect((x), 0)
 #else

@@ -56,6 +56,7 @@ void ppHRegClass ( HRegClass hrc )
    switch (hrc) {
       case HRcInt32:   vex_printf("HRcInt32"); break;
       case HRcInt64:   vex_printf("HRcInt64"); break;
+      case HRcFlt32:   vex_printf("HRcFlt32"); break;
       case HRcFlt64:   vex_printf("HRcFlt64"); break;
       case HRcVec64:   vex_printf("HRcVec64"); break;
       case HRcVec128:  vex_printf("HRcVec128"); break;
@@ -71,7 +72,8 @@ void ppHReg ( HReg r )
    switch (hregClass(r)) {
       case HRcInt32:   vex_printf("%%%sr%d", maybe_v, regNo); return;
       case HRcInt64:   vex_printf("%%%sR%d", maybe_v, regNo); return;
-      case HRcFlt64:   vex_printf("%%%sF%d", maybe_v, regNo); return;
+      case HRcFlt32:   vex_printf("%%%sF%d", maybe_v, regNo); return;
+      case HRcFlt64:   vex_printf("%%%sD%d", maybe_v, regNo); return;
       case HRcVec64:   vex_printf("%%%sv%d", maybe_v, regNo); return;
       case HRcVec128:  vex_printf("%%%sV%d", maybe_v, regNo); return;
       default: vpanic("ppHReg");

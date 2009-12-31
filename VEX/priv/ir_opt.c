@@ -904,6 +904,30 @@ static Bool sameIRTemps ( IRExpr* e1, IRExpr* e2 )
                   && e1->Iex.RdTmp.tmp == e2->Iex.RdTmp.tmp );
 }
 
+static Bool sameIcoU32s ( IRExpr* e1, IRExpr* e2 )
+{
+   return toBool( e1->tag == Iex_Const
+                  && e2->tag == Iex_Const
+                  && e1->Iex.Const.con->tag == Ico_U32
+                  && e2->Iex.Const.con->tag == Ico_U32
+                  && e1->Iex.Const.con->Ico.U32
+                     == e2->Iex.Const.con->Ico.U32 );
+}
+
+/* Are both expressions either the same IRTemp or IRConst-U32s ?  If
+   in doubt, say No. */
+static Bool sameIRTempsOrIcoU32s ( IRExpr* e1, IRExpr* e2 )
+{
+   switch (e1->tag) {
+      case Iex_RdTmp:
+         return sameIRTemps(e1, e2);
+      case Iex_Const:
+         return sameIcoU32s(e1, e2);
+      default:
+         return False;
+   }
+}
+
 static Bool notBool ( Bool b )
 {
    if (b == True) return False;
@@ -1578,14 +1602,22 @@ static IRExpr* fold_Expr ( IRExpr* e )
    }
 
    /* Mux0X */
-   if (e->tag == Iex_Mux0X
-       && e->Iex.Mux0X.cond->tag == Iex_Const) {
-      Bool zero;
-      /* assured us by the IR type rules */
-      vassert(e->Iex.Mux0X.cond->Iex.Const.con->tag == Ico_U8);
-      zero = toBool(0 == (0xFF & e->Iex.Mux0X.cond
-                                  ->Iex.Const.con->Ico.U8));
-      e2 = zero ? e->Iex.Mux0X.expr0 : e->Iex.Mux0X.exprX;
+   if (e->tag == Iex_Mux0X) {
+      /* is the discriminant is a constant? */
+      if (e->Iex.Mux0X.cond->tag == Iex_Const) {
+         Bool zero;
+         /* assured us by the IR type rules */
+         vassert(e->Iex.Mux0X.cond->Iex.Const.con->tag == Ico_U8);
+         zero = toBool(0 == (0xFF & e->Iex.Mux0X.cond
+                                     ->Iex.Const.con->Ico.U8));
+         e2 = zero ? e->Iex.Mux0X.expr0 : e->Iex.Mux0X.exprX;
+      }
+      else
+      /* are the arms identical? (pretty weedy test) */
+      if (sameIRTempsOrIcoU32s(e->Iex.Mux0X.expr0,
+                               e->Iex.Mux0X.exprX)) {
+         e2 = e->Iex.Mux0X.expr0;
+      }
    }
 
    if (DEBUG_IROPT && e2 != e) {
@@ -3938,6 +3970,20 @@ static IRExpr* fold_IRExpr_Unop ( IROp op, IRExpr* aa )
       if (is_Unop(aa, Iop_CmpwNEZ64))
          return IRExpr_Unop( Iop_CmpNEZ64, aa->Iex.Unop.arg );
       break;
+
+   case Iop_1Sto32:
+      /* 1Sto32( CmpNEZ8( 32to8( 1Uto32( CmpNEZ32( x ))))) -> CmpwNEZ32(x) */
+      if (is_Unop(aa, Iop_CmpNEZ8)
+          && is_Unop(aa->Iex.Unop.arg, Iop_32to8)
+          && is_Unop(aa->Iex.Unop.arg->Iex.Unop.arg, Iop_1Uto32)
+          && is_Unop(aa->Iex.Unop.arg->Iex.Unop.arg->Iex.Unop.arg,
+                     Iop_CmpNEZ32)) {
+         return IRExpr_Unop( Iop_CmpwNEZ32,
+                             aa->Iex.Unop.arg->Iex.Unop.arg
+                               ->Iex.Unop.arg->Iex.Unop.arg);
+      }
+      break;
+
    default:
       break;
    }

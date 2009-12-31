@@ -74,9 +74,9 @@
    Note further that since the class field is never 1111b, no valid
    register can have the value INVALID_HREG.
 
-   There are currently 5 register classes:
+   There are currently 6 register classes:
 
-     int32 int64 float64 simd64 simd128
+     int32 int64 float32 float64 simd64 simd128
 */
 
 typedef UInt HReg;
@@ -87,23 +87,27 @@ typedef UInt HReg;
    available on any specific host.  For example on x86, the available
    classes are: Int32, Flt64, Vec128 only.
 
-   IMPORTANT NOTE: reg_alloc2.c needs how much space is needed to spill
-   each class of register.  It has the following knowledge hardwired in:
+   IMPORTANT NOTE: host_generic_reg_alloc2.c needs how much space is
+   needed to spill each class of register.  It allocates the following
+   amount of space:
 
-      HRcInt32     32 bits
+      HRcInt32     64 bits
       HRcInt64     64 bits
-      HRcFlt64     80 bits (on x86 these are spilled by fstpt/fldt)
+      HRcFlt32     64 bits
+      HRcFlt64     128 bits (on x86 these are spilled by fstpt/fldt and
+                             so won't fit in a 64-bit slot)
       HRcVec64     64 bits
       HRcVec128    128 bits
 
    If you add another regclass, you must remember to update
-   reg_alloc2.c accordingly.
+   host_generic_reg_alloc2.c accordingly.
 */
 typedef
    enum { 
       HRcINVALID=1,   /* NOT A VALID REGISTER CLASS */
-      HRcInt32=4,     /* 32-bit int */
-      HRcInt64=5,     /* 64-bit int */
+      HRcInt32=3,     /* 32-bit int */
+      HRcInt64=4,     /* 64-bit int */
+      HRcFlt32=5,     /* 32-bit float */
       HRcFlt64=6,     /* 64-bit float */
       HRcVec64=7,     /* 64-bit SIMD */
       HRcVec128=8     /* 128-bit SIMD */
@@ -265,10 +269,10 @@ HInstrArray* doRegisterAllocation (
    /* Apply a reg-reg mapping to an insn. */
    void (*mapRegs) (HRegRemap*, HInstr*, Bool),
 
-   /* Return an insn to spill/restore a real reg to a spill slot
+   /* Return insn(s) to spill/restore a real reg to a spill slot
       offset.  And optionally a function to do direct reloads. */
-   HInstr* (*genSpill) ( HReg, Int, Bool ),
-   HInstr* (*genReload) ( HReg, Int, Bool ),
+   void    (*genSpill) (  HInstr**, HInstr**, HReg, Int, Bool ),
+   void    (*genReload) ( HInstr**, HInstr**, HReg, Int, Bool ),
    HInstr* (*directReload) ( HInstr*, HReg, Short ),
    Int     guest_sizeB,
 

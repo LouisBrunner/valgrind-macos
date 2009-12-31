@@ -257,6 +257,10 @@ void ppIROp ( IROp op )
       case Iop_SubF64r32: vex_printf("SubF64r32"); return;
       case Iop_MulF64r32: vex_printf("MulF64r32"); return;
       case Iop_DivF64r32: vex_printf("DivF64r32"); return;
+      case Iop_AddF32:    vex_printf("AddF32"); return;
+      case Iop_SubF32:    vex_printf("SubF32"); return;
+      case Iop_MulF32:    vex_printf("MulF32"); return;
+      case Iop_DivF32:    vex_printf("DivF32"); return;
 
       case Iop_ScaleF64:      vex_printf("ScaleF64"); return;
       case Iop_AtanF64:       vex_printf("AtanF64"); return;
@@ -267,9 +271,11 @@ void ppIROp ( IROp op )
       case Iop_PRem1F64:      vex_printf("PRem1F64"); return;
       case Iop_PRem1C3210F64: vex_printf("PRem1C3210F64"); return;
       case Iop_NegF64:        vex_printf("NegF64"); return;
+      case Iop_AbsF64:        vex_printf("AbsF64"); return;
+      case Iop_NegF32:        vex_printf("NegF32"); return;
+      case Iop_AbsF32:        vex_printf("AbsF32"); return;
       case Iop_SqrtF64:       vex_printf("SqrtF64"); return;
-
-      case Iop_AbsF64:    vex_printf("AbsF64"); return;
+      case Iop_SqrtF32:       vex_printf("SqrtF32"); return;
       case Iop_SinF64:    vex_printf("SinF64"); return;
       case Iop_CosF64:    vex_printf("CosF64"); return;
       case Iop_TanF64:    vex_printf("TanF64"); return;
@@ -291,13 +297,17 @@ void ppIROp ( IROp op )
 
       case Iop_CmpF64:    vex_printf("CmpF64"); return;
 
-      case Iop_F64toI16: vex_printf("F64toI16"); return;
-      case Iop_F64toI32: vex_printf("F64toI32"); return;
-      case Iop_F64toI64: vex_printf("F64toI64"); return;
+      case Iop_F64toI16S: vex_printf("F64toI16S"); return;
+      case Iop_F64toI32S: vex_printf("F64toI32S"); return;
+      case Iop_F64toI64S: vex_printf("F64toI64S"); return;
 
-      case Iop_I16toF64: vex_printf("I16toF64"); return;
-      case Iop_I32toF64: vex_printf("I32toF64"); return;
-      case Iop_I64toF64: vex_printf("I64toF64"); return;
+      case Iop_F64toI32U: vex_printf("F64toI32U"); return;
+
+      case Iop_I16StoF64: vex_printf("I16StoF64"); return;
+      case Iop_I32StoF64: vex_printf("I32StoF64"); return;
+      case Iop_I64StoF64: vex_printf("I64StoF64"); return;
+
+      case Iop_I32UtoF64: vex_printf("I32UtoF64"); return;
 
       case Iop_F32toF64: vex_printf("F32toF64"); return;
       case Iop_F64toF32: vex_printf("F64toF32"); return;
@@ -1780,23 +1790,37 @@ void typeOfPrimop ( IROp op,
       case Iop_MulF64r32: case Iop_DivF64r32:
          TERNARY(ity_RMode,Ity_F64,Ity_F64, Ity_F64);
 
+      case Iop_AddF32: case Iop_SubF32:
+      case Iop_MulF32: case Iop_DivF32:
+         TERNARY(ity_RMode,Ity_F32,Ity_F32, Ity_F32);
+
       case Iop_NegF64: case Iop_AbsF64: 
          UNARY(Ity_F64, Ity_F64);
+
+      case Iop_NegF32: case Iop_AbsF32:
+         UNARY(Ity_F32, Ity_F32);
 
       case Iop_SqrtF64:
       case Iop_SqrtF64r32:
          BINARY(ity_RMode,Ity_F64, Ity_F64);
 
+      case Iop_SqrtF32:
+         BINARY(ity_RMode,Ity_F32, Ity_F32);
+
       case Iop_CmpF64:
          BINARY(Ity_F64,Ity_F64, Ity_I32);
 
-      case Iop_F64toI16: BINARY(ity_RMode,Ity_F64, Ity_I16);
-      case Iop_F64toI32: BINARY(ity_RMode,Ity_F64, Ity_I32);
-      case Iop_F64toI64: BINARY(ity_RMode,Ity_F64, Ity_I64);
+      case Iop_F64toI16S: BINARY(ity_RMode,Ity_F64, Ity_I16);
+      case Iop_F64toI32S: BINARY(ity_RMode,Ity_F64, Ity_I32);
+      case Iop_F64toI64S: BINARY(ity_RMode,Ity_F64, Ity_I64);
 
-      case Iop_I16toF64: UNARY(Ity_I16, Ity_F64);
-      case Iop_I32toF64: UNARY(Ity_I32, Ity_F64);
-      case Iop_I64toF64: BINARY(ity_RMode,Ity_I64, Ity_F64);
+      case Iop_F64toI32U: BINARY(ity_RMode,Ity_F64, Ity_I32);
+
+      case Iop_I16StoF64: UNARY(Ity_I16, Ity_F64);
+      case Iop_I32StoF64: UNARY(Ity_I32, Ity_F64);
+      case Iop_I64StoF64: BINARY(ity_RMode,Ity_I64, Ity_F64);
+
+      case Iop_I32UtoF64: UNARY(Ity_I32, Ity_F64);
 
       case Iop_F32toF64: UNARY(Ity_F32, Ity_F64);
       case Iop_F64toF32: BINARY(ity_RMode,Ity_F64, Ity_F32);
@@ -2697,15 +2721,16 @@ void tcStmt ( IRSB* bb, IRStmt* stmt, IRType gWordTy )
          tyRes = typeOfIRTemp(tyenv, stmt->Ist.LLSC.result);
          if (stmt->Ist.LLSC.storedata == NULL) {
             /* it's a LL */
-            if (tyRes != Ity_I64 && tyRes != Ity_I32)
+            if (tyRes != Ity_I64 && tyRes != Ity_I32 && tyRes != Ity_I8)
                sanityCheckFail(bb,stmt,"Ist.LLSC(LL).result :: bogus");
          } else {
             /* it's a SC */
             if (tyRes != Ity_I1)
                sanityCheckFail(bb,stmt,"Ist.LLSC(SC).result: not :: Ity_I1");
             tyData = typeOfIRExpr(tyenv, stmt->Ist.LLSC.storedata);
-            if (tyData != Ity_I64 && tyData != Ity_I32)
-               sanityCheckFail(bb,stmt,"Ist.LLSC(SC).result :: storedata bogus");
+            if (tyData != Ity_I64 && tyData != Ity_I32 && tyData != Ity_I8)
+               sanityCheckFail(bb,stmt,
+                               "Ist.LLSC(SC).result :: storedata bogus");
          }
          break;
       }

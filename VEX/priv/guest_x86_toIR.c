@@ -119,6 +119,9 @@
    only taken if the CAS fails, that is, the location is contended,
    which is relatively unlikely.
 
+   XXXX: Nov 2009: handling of SWP on ARM suffers from the same
+   problem.
+
    Note also, the test for CAS success vs failure is done using
    Iop_CasCmp{EQ,NE}{8,16,32,64} rather than the ordinary
    Iop_Cmp{EQ,NE} equivalents.  This is so as to tell Memcheck that it
@@ -4380,7 +4383,7 @@ UInt dis_FPU ( Bool* decode_ok, UChar sorb, Int delta )
                           binop(Iop_Shl32, 
                                 binop(Iop_CmpF64, 
                                       get_ST(0),
-                                      unop(Iop_I32toF64, 
+                                      unop(Iop_I32StoF64, 
                                            loadLE(Ity_I32,mkexpr(addr)))),
                                 mkU8(8)),
                           mkU32(0x4500)
@@ -4395,7 +4398,7 @@ UInt dis_FPU ( Bool* decode_ok, UChar sorb, Int delta )
                           binop(Iop_Shl32, 
                                 binop(Iop_CmpF64, 
                                       get_ST(0),
-                                      unop(Iop_I32toF64, 
+                                      unop(Iop_I32StoF64, 
                                            loadLE(Ity_I32,mkexpr(addr)))),
                                 mkU8(8)),
                           mkU32(0x4500)
@@ -4428,7 +4431,7 @@ UInt dis_FPU ( Bool* decode_ok, UChar sorb, Int delta )
                   triop(fop, 
                         get_FAKE_roundingmode(), /* XXXROUNDINGFIXME */
                         get_ST(0),
-                        unop(Iop_I32toF64,
+                        unop(Iop_I32StoF64,
                              loadLE(Ity_I32, mkexpr(addr)))));
                break;
 
@@ -4436,7 +4439,7 @@ UInt dis_FPU ( Bool* decode_ok, UChar sorb, Int delta )
                put_ST_UNCHECKED(0, 
                   triop(fop, 
                         get_FAKE_roundingmode(), /* XXXROUNDINGFIXME */
-                        unop(Iop_I32toF64,
+                        unop(Iop_I32StoF64,
                              loadLE(Ity_I32, mkexpr(addr))),
                         get_ST(0)));
                break;
@@ -4528,27 +4531,27 @@ UInt dis_FPU ( Bool* decode_ok, UChar sorb, Int delta )
             case 0: /* FILD m32int */
                DIP("fildl %s\n", dis_buf);
                fp_push();
-               put_ST(0, unop(Iop_I32toF64,
+               put_ST(0, unop(Iop_I32StoF64,
                               loadLE(Ity_I32, mkexpr(addr))));
                break;
 
             case 1: /* FISTTPL m32 (SSE3) */
                DIP("fisttpl %s\n", dis_buf);
                storeLE( mkexpr(addr), 
-                        binop(Iop_F64toI32, mkU32(Irrm_ZERO), get_ST(0)) );
+                        binop(Iop_F64toI32S, mkU32(Irrm_ZERO), get_ST(0)) );
                fp_pop();
                break;
 
             case 2: /* FIST m32 */
                DIP("fistl %s\n", dis_buf);
                storeLE( mkexpr(addr), 
-                        binop(Iop_F64toI32, get_roundingmode(), get_ST(0)) );
+                        binop(Iop_F64toI32S, get_roundingmode(), get_ST(0)) );
                break;
 
             case 3: /* FISTP m32 */
                DIP("fistpl %s\n", dis_buf);
                storeLE( mkexpr(addr), 
-                        binop(Iop_F64toI32, get_roundingmode(), get_ST(0)) );
+                        binop(Iop_F64toI32S, get_roundingmode(), get_ST(0)) );
                fp_pop();
                break;
 
@@ -4844,7 +4847,7 @@ UInt dis_FPU ( Bool* decode_ok, UChar sorb, Int delta )
             case 1: /* FISTTPQ m64 (SSE3) */
                DIP("fistppll %s\n", dis_buf);
                storeLE( mkexpr(addr), 
-                        binop(Iop_F64toI64, mkU32(Irrm_ZERO), get_ST(0)) );
+                        binop(Iop_F64toI64S, mkU32(Irrm_ZERO), get_ST(0)) );
                fp_pop();
                break;
 
@@ -5069,7 +5072,7 @@ UInt dis_FPU ( Bool* decode_ok, UChar sorb, Int delta )
                           binop(Iop_Shl32, 
                                 binop(Iop_CmpF64, 
                                       get_ST(0),
-                                      unop(Iop_I32toF64, 
+                                      unop(Iop_I32StoF64, 
                                          unop(Iop_16Sto32,
                                            loadLE(Ity_I16,mkexpr(addr))))),
                                 mkU8(8)),
@@ -5085,7 +5088,7 @@ UInt dis_FPU ( Bool* decode_ok, UChar sorb, Int delta )
                           binop(Iop_Shl32, 
                                 binop(Iop_CmpF64, 
                                       get_ST(0),
-                                      unop(Iop_I32toF64, 
+                                      unop(Iop_I32StoF64, 
                                          unop(Iop_16Sto32,
                                               loadLE(Ity_I16,mkexpr(addr))))),
                                 mkU8(8)),
@@ -5119,7 +5122,7 @@ UInt dis_FPU ( Bool* decode_ok, UChar sorb, Int delta )
                   triop(fop, 
                         get_FAKE_roundingmode(), /* XXXROUNDINGFIXME */
                         get_ST(0),
-                        unop(Iop_I32toF64,
+                        unop(Iop_I32StoF64,
                              unop(Iop_16Sto32, 
                                   loadLE(Ity_I16, mkexpr(addr))))));
                break;
@@ -5128,7 +5131,7 @@ UInt dis_FPU ( Bool* decode_ok, UChar sorb, Int delta )
                put_ST_UNCHECKED(0, 
                   triop(fop, 
                         get_FAKE_roundingmode(), /* XXXROUNDINGFIXME */
-                        unop(Iop_I32toF64,
+                        unop(Iop_I32StoF64,
                              unop(Iop_16Sto32, 
                                   loadLE(Ity_I16, mkexpr(addr)))),
                         get_ST(0)));
@@ -5206,7 +5209,7 @@ UInt dis_FPU ( Bool* decode_ok, UChar sorb, Int delta )
             case 0: /* FILD m16int */
                DIP("fildw %s\n", dis_buf);
                fp_push();
-               put_ST(0, unop(Iop_I32toF64,
+               put_ST(0, unop(Iop_I32StoF64,
                               unop(Iop_16Sto32,
                                    loadLE(Ity_I16, mkexpr(addr)))));
                break;
@@ -5214,27 +5217,27 @@ UInt dis_FPU ( Bool* decode_ok, UChar sorb, Int delta )
             case 1: /* FISTTPS m16 (SSE3) */
                DIP("fisttps %s\n", dis_buf);
                storeLE( mkexpr(addr), 
-                        binop(Iop_F64toI16, mkU32(Irrm_ZERO), get_ST(0)) );
+                        binop(Iop_F64toI16S, mkU32(Irrm_ZERO), get_ST(0)) );
                fp_pop();
                break;
 
             case 2: /* FIST m16 */
                DIP("fistp %s\n", dis_buf);
                storeLE( mkexpr(addr), 
-                        binop(Iop_F64toI16, get_roundingmode(), get_ST(0)) );
+                        binop(Iop_F64toI16S, get_roundingmode(), get_ST(0)) );
                break;
 
             case 3: /* FISTP m16 */
                DIP("fistps %s\n", dis_buf);
                storeLE( mkexpr(addr), 
-                        binop(Iop_F64toI16, get_roundingmode(), get_ST(0)) );
+                        binop(Iop_F64toI16S, get_roundingmode(), get_ST(0)) );
                fp_pop();
                break;
 
             case 5: /* FILD m64 */
                DIP("fildll %s\n", dis_buf);
                fp_push();
-               put_ST(0, binop(Iop_I64toF64,
+               put_ST(0, binop(Iop_I64StoF64,
                                get_roundingmode(),
                                loadLE(Ity_I64, mkexpr(addr))));
                break;
@@ -5242,7 +5245,7 @@ UInt dis_FPU ( Bool* decode_ok, UChar sorb, Int delta )
             case 7: /* FISTP m64 */
                DIP("fistpll %s\n", dis_buf);
                storeLE( mkexpr(addr), 
-                        binop(Iop_F64toI64, get_roundingmode(), get_ST(0)) );
+                        binop(Iop_F64toI64S, get_roundingmode(), get_ST(0)) );
                fp_pop();
                break;
 
@@ -8266,14 +8269,14 @@ DisResult disInstr_X86_WRK (
          gregOfRM(modrm), 0,
          binop(Iop_F64toF32, 
                mkexpr(rmode),
-               unop(Iop_I32toF64, 
+               unop(Iop_I32StoF64, 
                     unop(Iop_64to32, mkexpr(arg64)) )) );
 
       putXMMRegLane32F(
          gregOfRM(modrm), 1, 
          binop(Iop_F64toF32, 
                mkexpr(rmode),
-               unop(Iop_I32toF64,
+               unop(Iop_I32StoF64,
                     unop(Iop_64HIto32, mkexpr(arg64)) )) );
 
       goto decode_success;
@@ -8306,7 +8309,7 @@ DisResult disInstr_X86_WRK (
          gregOfRM(modrm), 0,
          binop(Iop_F64toF32,
                mkexpr(rmode),
-               unop(Iop_I32toF64, mkexpr(arg32)) ) );
+               unop(Iop_I32StoF64, mkexpr(arg32)) ) );
 
       goto decode_success;
    }
@@ -8353,10 +8356,10 @@ DisResult disInstr_X86_WRK (
       assign( 
          dst64,
          binop( Iop_32HLto64,
-                binop( Iop_F64toI32, 
+                binop( Iop_F64toI32S, 
                        mkexpr(rmode), 
                        unop( Iop_F32toF64, mkexpr(f32hi) ) ),
-                binop( Iop_F64toI32, 
+                binop( Iop_F64toI32S, 
                        mkexpr(rmode), 
                        unop( Iop_F32toF64, mkexpr(f32lo) ) )
               )
@@ -8400,7 +8403,7 @@ DisResult disInstr_X86_WRK (
       }
 
       putIReg(4, gregOfRM(modrm),
-                 binop( Iop_F64toI32, 
+                 binop( Iop_F64toI32S, 
                         mkexpr(rmode), 
                         unop( Iop_F32toF64, mkexpr(f32lo) ) )
       );
@@ -9311,12 +9314,12 @@ DisResult disInstr_X86_WRK (
 
       putXMMRegLane64F( 
          gregOfRM(modrm), 0,
-         unop(Iop_I32toF64, unop(Iop_64to32, mkexpr(arg64)))
+         unop(Iop_I32StoF64, unop(Iop_64to32, mkexpr(arg64)))
       );
 
       putXMMRegLane64F(
          gregOfRM(modrm), 1, 
-         unop(Iop_I32toF64, unop(Iop_64HIto32, mkexpr(arg64)))
+         unop(Iop_I32StoF64, unop(Iop_64HIto32, mkexpr(arg64)))
       );
 
       goto decode_success;
@@ -9347,7 +9350,7 @@ DisResult disInstr_X86_WRK (
 
 #     define CVT(_t)  binop( Iop_F64toF32,                    \
                              mkexpr(rmode),                   \
-                             unop(Iop_I32toF64,mkexpr(_t)))
+                             unop(Iop_I32StoF64,mkexpr(_t)))
       
       putXMMRegLane32F( gregOfRM(modrm), 3, CVT(t3) );
       putXMMRegLane32F( gregOfRM(modrm), 2, CVT(t2) );
@@ -9388,7 +9391,7 @@ DisResult disInstr_X86_WRK (
       assign( t1, unop(Iop_ReinterpI64asF64, 
                        unop(Iop_V128HIto64, mkexpr(argV))) );
       
-#     define CVT(_t)  binop( Iop_F64toI32,                    \
+#     define CVT(_t)  binop( Iop_F64toI32S,                   \
                              mkexpr(rmode),                   \
                              mkexpr(_t) )
       
@@ -9444,8 +9447,8 @@ DisResult disInstr_X86_WRK (
       assign( 
          dst64,
          binop( Iop_32HLto64,
-                binop( Iop_F64toI32, mkexpr(rmode), mkexpr(f64hi) ),
-                binop( Iop_F64toI32, mkexpr(rmode), mkexpr(f64lo) )
+                binop( Iop_F64toI32S, mkexpr(rmode), mkexpr(f64hi) ),
+                binop( Iop_F64toI32S, mkexpr(rmode), mkexpr(f64lo) )
               )
       );
 
@@ -9520,12 +9523,12 @@ DisResult disInstr_X86_WRK (
 
       putXMMRegLane64F( 
          gregOfRM(modrm), 0,
-         unop(Iop_I32toF64, unop(Iop_64to32, mkexpr(arg64)) )
+         unop(Iop_I32StoF64, unop(Iop_64to32, mkexpr(arg64)) )
       );
 
       putXMMRegLane64F( 
          gregOfRM(modrm), 1,
-         unop(Iop_I32toF64, unop(Iop_64HIto32, mkexpr(arg64)) )
+         unop(Iop_I32StoF64, unop(Iop_64HIto32, mkexpr(arg64)) )
       );
 
       goto decode_success;
@@ -9557,7 +9560,7 @@ DisResult disInstr_X86_WRK (
       /* This is less than ideal.  If it turns out to be a performance
 	 bottleneck it can be improved. */
 #     define CVT(_t)                            \
-        binop( Iop_F64toI32,                    \
+        binop( Iop_F64toI32S,                   \
                mkexpr(rmode),                   \
                unop( Iop_F32toF64,              \
                      unop( Iop_ReinterpI32asF32, mkexpr(_t))) )
@@ -9637,7 +9640,7 @@ DisResult disInstr_X86_WRK (
       }
 
       putIReg(4, gregOfRM(modrm),
-                 binop( Iop_F64toI32, mkexpr(rmode), mkexpr(f64lo)) );
+                 binop( Iop_F64toI32S, mkexpr(rmode), mkexpr(f64lo)) );
 
       goto decode_success;
    }
@@ -9694,7 +9697,7 @@ DisResult disInstr_X86_WRK (
 
       putXMMRegLane64F( 
          gregOfRM(modrm), 0,
-         unop(Iop_I32toF64, mkexpr(arg32)) );
+         unop(Iop_I32StoF64, mkexpr(arg32)) );
 
       goto decode_success;
    }
@@ -9754,7 +9757,7 @@ DisResult disInstr_X86_WRK (
       assign( t1, unop(Iop_ReinterpI64asF64, 
                        unop(Iop_V128HIto64, mkexpr(argV))) );
       
-#     define CVT(_t)  binop( Iop_F64toI32,                    \
+#     define CVT(_t)  binop( Iop_F64toI32S,                   \
                              mkexpr(rmode),                   \
                              mkexpr(_t) )
       
@@ -9795,7 +9798,7 @@ DisResult disInstr_X86_WRK (
       /* This is less than ideal.  If it turns out to be a performance
 	 bottleneck it can be improved. */
 #     define CVT(_t)                            \
-        binop( Iop_F64toI32,                    \
+        binop( Iop_F64toI32S,                   \
                mkexpr(rmode),                   \
                unop( Iop_F32toF64,              \
                      unop( Iop_ReinterpI32asF32, mkexpr(_t))) )

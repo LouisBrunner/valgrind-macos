@@ -1457,7 +1457,7 @@ static HReg iselWordExpr_R_wrk ( ISelEnv* env, IRExpr* e )
          return r_ccIR;
       }
 
-      if (e->Iex.Binop.op == Iop_F64toI32) {
+      if (e->Iex.Binop.op == Iop_F64toI32S) {
          /* This works in both mode64 and mode32. */
          HReg      r1      = StackFramePtr(env->mode64);
          PPCAMode* zero_r1 = PPCAMode_IR( 0, r1 );
@@ -1485,7 +1485,7 @@ static HReg iselWordExpr_R_wrk ( ISelEnv* env, IRExpr* e )
          return idst;
       }
 
-      if (e->Iex.Binop.op == Iop_F64toI64) {
+      if (e->Iex.Binop.op == Iop_F64toI64S) {
          if (mode64) {
             HReg      r1      = StackFramePtr(env->mode64);
             PPCAMode* zero_r1 = PPCAMode_IR( 0, r1 );
@@ -2732,8 +2732,8 @@ static void iselInt64Expr_wrk ( HReg* rHi, HReg* rLo,
             *rLo = iselWordExpr_R(env, e->Iex.Binop.arg2);
             return;
 
-         /* F64toI64 */
-         case Iop_F64toI64: {
+         /* F64toI64S */
+         case Iop_F64toI64S: {
             HReg      tLo     = newVRegI(env);
             HReg      tHi     = newVRegI(env);
             HReg      r1      = StackFramePtr(env->mode64);
@@ -3186,7 +3186,7 @@ static HReg iselDblExpr_wrk ( ISelEnv* env, IRExpr* e )
          return r_dst;
       }
 
-      if (e->Iex.Binop.op == Iop_I64toF64) {
+      if (e->Iex.Binop.op == Iop_I64StoF64) {
          if (mode64) {
             HReg fdst = newVRegF(env);
             HReg isrc = iselWordExpr_R(env, e->Iex.Binop.arg2);

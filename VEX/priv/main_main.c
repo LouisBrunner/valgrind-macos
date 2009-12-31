@@ -60,6 +60,7 @@
 #include "host_x86_defs.h"
 #include "host_amd64_defs.h"
 #include "host_ppc_defs.h"
+#include "host_arm_defs.h"
 
 #include "guest_generic_bb_to_IR.h"
 #include "guest_x86_defs.h"
@@ -179,8 +180,8 @@ VexTranslateResult LibVEX_Translate ( VexTranslateArgs* vta )
    Bool         (*isMove)       ( HInstr*, HReg*, HReg* );
    void         (*getRegUsage)  ( HRegUsage*, HInstr*, Bool );
    void         (*mapRegs)      ( HRegRemap*, HInstr*, Bool );
-   HInstr*      (*genSpill)     ( HReg, Int, Bool );
-   HInstr*      (*genReload)    ( HReg, Int, Bool );
+   void         (*genSpill)     ( HInstr**, HInstr**, HReg, Int, Bool );
+   void         (*genReload)    ( HInstr**, HInstr**, HReg, Int, Bool );
    HInstr*      (*directReload) ( HInstr*, HReg, Short );
    void         (*ppInstr)      ( HInstr*, Bool );
    void         (*ppReg)        ( HReg );
@@ -314,8 +315,27 @@ VexTranslateResult LibVEX_Translate ( VexTranslateArgs* vta )
          vassert(vta->dispatch == NULL); /* return-to-dispatcher scheme */
          break;
 
+      case VexArchARM:
+         mode64       = False;
+         getAllocableRegs_ARM ( &n_available_real_regs,
+                                &available_real_regs );
+         isMove       = (Bool(*)(HInstr*,HReg*,HReg*)) isMove_ARMInstr;
+         getRegUsage  = (void(*)(HRegUsage*,HInstr*, Bool)) getRegUsage_ARMInstr;
+         mapRegs      = (void(*)(HRegRemap*,HInstr*, Bool)) mapRegs_ARMInstr;
+         genSpill     = (HInstr*(*)(HReg,Int, Bool)) genSpill_ARM;
+         genReload    = (HInstr*(*)(HReg,Int, Bool)) genReload_ARM;
+         ppInstr      = (void(*)(HInstr*, Bool)) ppARMInstr;
+         ppReg        = (void(*)(HReg)) ppHRegARM;
+         iselSB       = iselSB_ARM;
+         emit         = (Int(*)(UChar*,Int,HInstr*,Bool,void*)) emit_ARMInstr;
+         host_is_bigendian = False;
+         host_word_type    = Ity_I32;
+         vassert(are_valid_hwcaps(VexArchARM, vta->archinfo_host.hwcaps));
+         vassert(vta->dispatch == NULL); /* return-to-dispatcher scheme */
+         break;
+
       default:
-         vpanic("LibVEX_Translate: unsupported target insn set");
+         vpanic("LibVEX_Translate: unsupported host insn set");
    }
 
 
@@ -331,7 +351,7 @@ VexTranslateResult LibVEX_Translate ( VexTranslateArgs* vta )
          offB_TISTART     = offsetof(VexGuestX86State,guest_TISTART);
          offB_TILEN       = offsetof(VexGuestX86State,guest_TILEN);
          vassert(are_valid_hwcaps(VexArchX86, vta->archinfo_guest.hwcaps));
-         vassert(0 == sizeof(VexGuestX86State) % 8);
+         vassert(0 == sizeof(VexGuestX86State) % 16);
          vassert(sizeof( ((VexGuestX86State*)0)->guest_TISTART) == 4);
          vassert(sizeof( ((VexGuestX86State*)0)->guest_TILEN  ) == 4);
          vassert(sizeof( ((VexGuestX86State*)0)->guest_NRADDR ) == 4);
@@ -347,22 +367,10 @@ VexTranslateResult LibVEX_Translate ( VexTranslateArgs* vta )
          offB_TISTART     = offsetof(VexGuestAMD64State,guest_TISTART);
          offB_TILEN       = offsetof(VexGuestAMD64State,guest_TILEN);
          vassert(are_valid_hwcaps(VexArchAMD64, vta->archinfo_guest.hwcaps));
-         vassert(0 == sizeof(VexGuestAMD64State) % 8);
+         vassert(0 == sizeof(VexGuestAMD64State) % 16);
          vassert(sizeof( ((VexGuestAMD64State*)0)->guest_TISTART ) == 8);
          vassert(sizeof( ((VexGuestAMD64State*)0)->guest_TILEN   ) == 8);
          vassert(sizeof( ((VexGuestAMD64State*)0)->guest_NRADDR  ) == 8);
-         break;
-
-      case VexArchARM:
-         preciseMemExnsFn = guest_arm_state_requires_precise_mem_exns;
-         disInstrFn       = NULL; /* HACK */
-         specHelper       = guest_arm_spechelper;
-         guest_sizeB      = sizeof(VexGuestARMState);
-         guest_word_type  = Ity_I32;
-         guest_layout     = &armGuest_layout;
-         offB_TISTART     = 0; /* hack ... arm has bitrot */
-         offB_TILEN       = 0; /* hack ... arm has bitrot */
-         vassert(are_valid_hwcaps(VexArchARM, vta->archinfo_guest.hwcaps));
          break;
 
       case VexArchPPC32:
@@ -375,7 +383,7 @@ VexTranslateResult LibVEX_Translate ( VexTranslateArgs* vta )
          offB_TISTART     = offsetof(VexGuestPPC32State,guest_TISTART);
          offB_TILEN       = offsetof(VexGuestPPC32State,guest_TILEN);
          vassert(are_valid_hwcaps(VexArchPPC32, vta->archinfo_guest.hwcaps));
-         vassert(0 == sizeof(VexGuestPPC32State) % 8);
+         vassert(0 == sizeof(VexGuestPPC32State) % 16);
          vassert(sizeof( ((VexGuestPPC32State*)0)->guest_TISTART ) == 4);
          vassert(sizeof( ((VexGuestPPC32State*)0)->guest_TILEN   ) == 4);
          vassert(sizeof( ((VexGuestPPC32State*)0)->guest_NRADDR  ) == 4);
@@ -396,6 +404,22 @@ VexTranslateResult LibVEX_Translate ( VexTranslateArgs* vta )
          vassert(sizeof( ((VexGuestPPC64State*)0)->guest_TILEN      ) == 8);
          vassert(sizeof( ((VexGuestPPC64State*)0)->guest_NRADDR     ) == 8);
          vassert(sizeof( ((VexGuestPPC64State*)0)->guest_NRADDR_GPR2) == 8);
+         break;
+
+      case VexArchARM:
+         preciseMemExnsFn = guest_arm_state_requires_precise_mem_exns;
+         disInstrFn       = disInstr_ARM;
+         specHelper       = guest_arm_spechelper;
+         guest_sizeB      = sizeof(VexGuestARMState);
+         guest_word_type  = Ity_I32;
+         guest_layout     = &armGuest_layout;
+         offB_TISTART     = offsetof(VexGuestARMState,guest_TISTART);
+         offB_TILEN       = offsetof(VexGuestARMState,guest_TILEN);
+         vassert(are_valid_hwcaps(VexArchARM, vta->archinfo_guest.hwcaps));
+         vassert(0 == sizeof(VexGuestARMState) % 16);
+         vassert(sizeof( ((VexGuestARMState*)0)->guest_TISTART) == 4);
+         vassert(sizeof( ((VexGuestARMState*)0)->guest_TILEN  ) == 4);
+         vassert(sizeof( ((VexGuestARMState*)0)->guest_NRADDR ) == 4);
          break;
 
       default:

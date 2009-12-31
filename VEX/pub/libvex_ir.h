@@ -531,6 +531,9 @@ typedef
       /* :: IRRoundingMode(I32) x F64 x F64 -> F64 */ 
       Iop_AddF64, Iop_SubF64, Iop_MulF64, Iop_DivF64,
 
+      /* :: IRRoundingMode(I32) x F32 x F32 -> F32 */ 
+      Iop_AddF32, Iop_SubF32, Iop_MulF32, Iop_DivF32,
+
       /* Variants of the above which produce a 64-bit result but which
          round their result to a IEEE float range first. */
       /* :: IRRoundingMode(I32) x F64 x F64 -> F64 */ 
@@ -540,9 +543,15 @@ typedef
       /* :: F64 -> F64 */
       Iop_NegF64, Iop_AbsF64,
 
+      /* :: F32 -> F32 */
+      Iop_NegF32, Iop_AbsF32,
+
       /* Unary operations, with rounding. */
       /* :: IRRoundingMode(I32) x F64 -> F64 */
       Iop_SqrtF64, Iop_SqrtF64r32,
+
+      /* :: IRRoundingMode(I32) x F32 -> F32 */
+      Iop_SqrtF32,
 
       /* Comparison, yielding GT/LT/EQ/UN(ordered), as per the following:
             0x45 Unordered
@@ -552,13 +561,15 @@ typedef
          This just happens to be the Intel encoding.  The values
          are recorded in the type IRCmpF64Result.
       */
+      /* :: F64 x F64 -> IRCmpF64Result(I32) */
       Iop_CmpF64,
 
       /* --- Int to/from FP conversions. --- */
 
-      /* For the most part, these take a first argument :: Ity_I32
-         (as IRRoundingMode) which is an indication of the rounding
-         mode to use, as per the following encoding:
+      /* For the most part, these take a first argument :: Ity_I32 (as
+         IRRoundingMode) which is an indication of the rounding mode
+         to use, as per the following encoding ("the standard
+         encoding"):
             00b  to nearest (the default)
             01b  to -infinity
             10b  to +infinity
@@ -570,25 +581,43 @@ typedef
             10b  to +infinity
             11b  to -infinity
          Any PPC -> IR front end will have to translate these PPC
-         encodings to the standard encodings.
+         encodings, as encoded in the guest state, to the standard
+         encodings, to pass to the primops.
+         For reference only, the ARM VFP encoding is:
+            00b  to nearest
+            01b  to +infinity
+            10b  to -infinity
+            11b  to zero
+         Again, this will have to be converted to the standard encoding
+         to pass to primops.
 
          If one of these conversions gets an out-of-range condition,
          or a NaN, as an argument, the result is host-defined.  On x86
-         the "integer indefinite" value 0x80..00 is produced.
-         On PPC it is either 0x80..00 or 0x7F..FF depending on the sign
-         of the argument.
+         the "integer indefinite" value 0x80..00 is produced.  On PPC
+         it is either 0x80..00 or 0x7F..FF depending on the sign of
+         the argument.
+
+         On ARMvfp, when converting to a signed integer result, the
+         overflow result is 0x80..00 for negative args and 0x7F..FF
+         for positive args.  For unsigned integer results it is
+         0x00..00 and 0xFF..FF respectively.
 
          Rounding is required whenever the destination type cannot
          represent exactly all values of the source type.
       */
-      Iop_F64toI16,  /* IRRoundingMode(I32) x F64 -> I16 */
-      Iop_F64toI32,  /* IRRoundingMode(I32) x F64 -> I32 */
-      Iop_F64toI64,  /* IRRoundingMode(I32) x F64 -> I64 */
+      Iop_F64toI16S, /* IRRoundingMode(I32) x F64 -> signed I16 */
+      Iop_F64toI32S, /* IRRoundingMode(I32) x F64 -> signed I32 */
+      Iop_F64toI64S, /* IRRoundingMode(I32) x F64 -> signed I64 */
 
-      Iop_I16toF64,  /*                       I16 -> F64 */
-      Iop_I32toF64,  /*                       I32 -> F64 */
-      Iop_I64toF64,  /* IRRoundingMode(I32) x I64 -> F64 */
+      Iop_F64toI32U, /* IRRoundingMode(I32) x F64 -> unsigned I32 */
 
+      Iop_I16StoF64, /*                       signed I16 -> F64 */
+      Iop_I32StoF64, /*                       signed I32 -> F64 */
+      Iop_I64StoF64, /* IRRoundingMode(I32) x signed I64 -> F64 */
+
+      Iop_I32UtoF64, /*                       unsigned I32 -> F64 */
+
+      /* Conversion between floating point formats */
       Iop_F32toF64,  /*                       F32 -> F64 */
       Iop_F64toF32,  /* IRRoundingMode(I32) x F64 -> F32 */
 
@@ -1233,7 +1262,7 @@ typedef
       Ijk_SigBUS,         /* current instruction synths SIGBUS */
       /* Unfortunately, various guest-dependent syscall kinds.  They
 	 all mean: do a syscall before continuing. */
-      Ijk_Sys_syscall,    /* amd64 'syscall', ppc 'sc' */
+      Ijk_Sys_syscall,    /* amd64 'syscall', ppc 'sc', arm 'svc #0' */
       Ijk_Sys_int32,      /* amd64/x86 'int $0x20' */
       Ijk_Sys_int128,     /* amd64/x86 'int $0x80' */
       Ijk_Sys_int129,     /* amd64/x86 'int $0x81' */

@@ -334,13 +334,15 @@ HInstrArray* doRegisterAllocation (
    /* Apply a reg-reg mapping to an insn. */
    void (*mapRegs) ( HRegRemap*, HInstr*, Bool ),
 
-   /* Return an insn to spill/restore a real reg to a spill slot byte
-      offset.  Also (optionally) a 'directReload' function, which
+   /* Return one, or, if we're unlucky, two insn(s) to spill/restore a
+      real reg to a spill slot byte offset.  The two leading HInstr**
+      args are out parameters, through which the generated insns are
+      returned.  Also (optionally) a 'directReload' function, which
       attempts to replace a given instruction by one which reads
       directly from a specified spill slot.  May be NULL, in which
       case the optimisation is not attempted. */
-   HInstr* (*genSpill) ( HReg, Int, Bool ),
-   HInstr* (*genReload) ( HReg, Int, Bool ),
+   void    (*genSpill)  ( HInstr**, HInstr**, HReg, Int, Bool ),
+   void    (*genReload) ( HInstr**, HInstr**, HReg, Int, Bool ),
    HInstr* (*directReload) ( HInstr*, HReg, Short ),
    Int     guest_sizeB,
 
@@ -830,7 +832,7 @@ HInstrArray* doRegisterAllocation (
       }
 
       /* The spill slots are 64 bits in size.  As per the comment on
-         definition of HRegClass in h_generic_regs.h, that means, to
+         definition of HRegClass in host_generic_regs.h, that means, to
          spill a vreg of class Flt64 or Vec128, we'll need to find two
          adjacent spill slots to use.  Note, this logic needs to kept
          in sync with the size info on the definition of HRegClass. */
@@ -1157,9 +1159,15 @@ HInstrArray* doRegisterAllocation (
             if (vreg_lrs[m].dead_before > ii) {
                vassert(vreg_lrs[m].reg_class != HRcINVALID);
                if ((!eq_spill_opt) || !rreg_state[k].eq_spill_slot) {
-                  EMIT_INSTR( (*genSpill)( rreg_state[k].rreg,
-                                           vreg_lrs[m].spill_offset,
-                                           mode64 ) );
+                  HInstr* spill1 = NULL;
+                  HInstr* spill2 = NULL;
+                  (*genSpill)( &spill1, &spill2, rreg_state[k].rreg,
+                               vreg_lrs[m].spill_offset, mode64 );
+                  vassert(spill1 || spill2); /* can't both be NULL */
+                  if (spill1)
+                     EMIT_INSTR(spill1);
+                  if (spill2)
+                     EMIT_INSTR(spill2);
                }
                rreg_state[k].eq_spill_slot = True;
             }
@@ -1199,7 +1207,7 @@ HInstrArray* doRegisterAllocation (
          in a spill slot, and this is last use of that vreg, see if we
          can convert the instruction into one reads directly from the
          spill slot.  This is clearly only possible for x86 and amd64
-         targets, since ppc is a load-store architecture.  If
+         targets, since ppc and arm load-store architectures.  If
          successful, replace instrs_in->arr[ii] with this new
          instruction, and recompute its reg usage, so that the change
          is invisible to the standard-case handling that follows. */
@@ -1332,9 +1340,15 @@ HInstrArray* doRegisterAllocation (
                indeed needed. */
             if (reg_usage.mode[j] != HRmWrite) {
                vassert(vreg_lrs[m].reg_class != HRcINVALID);
-               EMIT_INSTR( (*genReload)( rreg_state[k].rreg,
-                                         vreg_lrs[m].spill_offset,
-                                         mode64 ) );
+               HInstr* reload1 = NULL;
+               HInstr* reload2 = NULL;
+               (*genReload)( &reload1, &reload2, rreg_state[k].rreg,
+                             vreg_lrs[m].spill_offset, mode64 );
+               vassert(reload1 || reload2); /* can't both be NULL */
+               if (reload1)
+                  EMIT_INSTR(reload1);
+               if (reload2)
+                  EMIT_INSTR(reload2);
                /* This rreg is read or modified by the instruction.
                   If it's merely read we can claim it now equals the
                   spill slot, but not so if it is modified. */
@@ -1409,9 +1423,15 @@ HInstrArray* doRegisterAllocation (
          vassert(vreg_lrs[m].dead_before > ii);
          vassert(vreg_lrs[m].reg_class != HRcINVALID);
          if ((!eq_spill_opt) || !rreg_state[spillee].eq_spill_slot) {
-            EMIT_INSTR( (*genSpill)( rreg_state[spillee].rreg,
-                                     vreg_lrs[m].spill_offset,
-                                     mode64 ) );
+            HInstr* spill1 = NULL;
+            HInstr* spill2 = NULL;
+            (*genSpill)( &spill1, &spill2, rreg_state[spillee].rreg,
+                         vreg_lrs[m].spill_offset, mode64 );
+            vassert(spill1 || spill2); /* can't both be NULL */
+            if (spill1)
+               EMIT_INSTR(spill1);
+            if (spill2)
+               EMIT_INSTR(spill2);
          }
 
          /* Update the rreg_state to reflect the new assignment for this
@@ -1429,9 +1449,15 @@ HInstrArray* doRegisterAllocation (
             written), we have to generate a reload for it. */
          if (reg_usage.mode[j] != HRmWrite) {
             vassert(vreg_lrs[m].reg_class != HRcINVALID);
-            EMIT_INSTR( (*genReload)( rreg_state[spillee].rreg,
-                                      vreg_lrs[m].spill_offset,
-                                      mode64 ) );
+            HInstr* reload1 = NULL;
+            HInstr* reload2 = NULL;
+            (*genReload)( &reload1, &reload2, rreg_state[spillee].rreg,
+                          vreg_lrs[m].spill_offset, mode64 );
+            vassert(reload1 || reload2); /* can't both be NULL */
+            if (reload1)
+               EMIT_INSTR(reload1);
+            if (reload2)
+               EMIT_INSTR(reload2);
             /* This rreg is read or modified by the instruction.
                If it's merely read we can claim it now equals the
                spill slot, but not so if it is modified. */

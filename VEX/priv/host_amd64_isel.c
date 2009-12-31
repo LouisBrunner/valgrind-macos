@@ -1280,9 +1280,9 @@ static HReg iselIntExpr_R_wrk ( ISelEnv* env, IRExpr* e )
          return dst;
       }
 
-      if (e->Iex.Binop.op == Iop_F64toI32
-          || e->Iex.Binop.op == Iop_F64toI64) {
-         Int  szD = e->Iex.Binop.op==Iop_F64toI32 ? 4 : 8;
+      if (e->Iex.Binop.op == Iop_F64toI32S
+          || e->Iex.Binop.op == Iop_F64toI64S) {
+         Int  szD = e->Iex.Binop.op==Iop_F64toI32S ? 4 : 8;
          HReg rf  = iselDblExpr(env, e->Iex.Binop.arg2);
          HReg dst = newVRegI(env);
          set_SSE_rounding_mode( env, e->Iex.Binop.arg1 );
@@ -3002,7 +3002,7 @@ static HReg iselDblExpr_wrk ( ISelEnv* env, IRExpr* e )
       return dst;
    }
 
-   if (e->tag == Iex_Binop && e->Iex.Binop.op == Iop_I64toF64) {
+   if (e->tag == Iex_Binop && e->Iex.Binop.op == Iop_I64StoF64) {
       HReg dst = newVRegV(env);
       HReg src = iselIntExpr_R(env, e->Iex.Binop.arg2);
       set_SSE_rounding_mode( env, e->Iex.Binop.arg1 );
@@ -3011,7 +3011,7 @@ static HReg iselDblExpr_wrk ( ISelEnv* env, IRExpr* e )
       return dst;
    }
 
-   if (e->tag == Iex_Unop && e->Iex.Unop.op == Iop_I32toF64) {
+   if (e->tag == Iex_Unop && e->Iex.Unop.op == Iop_I32StoF64) {
       HReg dst = newVRegV(env);
       HReg src = iselIntExpr_R(env, e->Iex.Unop.arg);
       set_SSE_rounding_default( env );

@@ -998,8 +998,9 @@ static HReg iselIntExpr_R_wrk ( ISelEnv* env, IRExpr* e )
          return dst;
       }
 
-      if (e->Iex.Binop.op == Iop_F64toI32 || e->Iex.Binop.op == Iop_F64toI16) {
-         Int  sz  = e->Iex.Binop.op == Iop_F64toI16 ? 2 : 4;
+      if (e->Iex.Binop.op == Iop_F64toI32S
+          || e->Iex.Binop.op == Iop_F64toI16S) {
+         Int  sz  = e->Iex.Binop.op == Iop_F64toI16S ? 2 : 4;
          HReg rf  = iselDblExpr(env, e->Iex.Binop.arg2);
          HReg dst = newVRegI(env);
 
@@ -2260,7 +2261,7 @@ static void iselInt64Expr_wrk ( HReg* rHi, HReg* rLo, ISelEnv* env, IRExpr* e )
          /* Sigh, this is an almost exact copy of the F64 -> I32/I16
             case.  Unfortunately I see no easy way to avoid the
             duplication. */
-         case Iop_F64toI64: {
+         case Iop_F64toI64S: {
             HReg rf  = iselDblExpr(env, e->Iex.Binop.arg2);
             HReg tLo = newVRegI(env);
             HReg tHi = newVRegI(env);
@@ -2940,7 +2941,7 @@ static HReg iselDblExpr_wrk ( ISelEnv* env, IRExpr* e )
       return dst;
    }
 
-   if (e->tag == Iex_Binop && e->Iex.Binop.op == Iop_I64toF64) {
+   if (e->tag == Iex_Binop && e->Iex.Binop.op == Iop_I64StoF64) {
       HReg dst = newVRegF(env);
       HReg rHi,rLo;
       iselInt64Expr( &rHi, &rLo, env, e->Iex.Binop.arg2);
@@ -3003,7 +3004,7 @@ static HReg iselDblExpr_wrk ( ISelEnv* env, IRExpr* e )
 
    if (e->tag == Iex_Unop) {
       switch (e->Iex.Unop.op) {
-         case Iop_I32toF64: {
+         case Iop_I32StoF64: {
             HReg dst = newVRegF(env);
             HReg ri  = iselIntExpr_R(env, e->Iex.Unop.arg);
             addInstr(env, X86Instr_Push(X86RMI_Reg(ri)));

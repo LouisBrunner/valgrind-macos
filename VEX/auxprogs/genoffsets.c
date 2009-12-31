@@ -61,6 +61,7 @@
 #include "../pub/libvex_guest_amd64.h"
 #include "../pub/libvex_guest_ppc32.h"
 #include "../pub/libvex_guest_ppc64.h"
+#include "../pub/libvex_guest_arm.h"
 
 #define VG_STRINGIFZ(__str)  #__str
 #define VG_STRINGIFY(__str)  VG_STRINGIFZ(__str)
@@ -151,4 +152,14 @@ void foo ( void )
    GENOFFSET(PPC64,ppc64,GPR10);
    GENOFFSET(PPC64,ppc64,CIA);
    GENOFFSET(PPC64,ppc64,CR0_0);
+
+   // arm
+   GENOFFSET(ARM,arm,R0);
+   GENOFFSET(ARM,arm,R1);
+   GENOFFSET(ARM,arm,R2);
+   GENOFFSET(ARM,arm,R3);
+   GENOFFSET(ARM,arm,R4);
+   GENOFFSET(ARM,arm,R5);
+   GENOFFSET(ARM,arm,R7);
+   GENOFFSET(ARM,arm,R15);
 }

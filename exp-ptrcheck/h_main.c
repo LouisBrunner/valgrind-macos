@@ -4141,19 +4141,19 @@ void instrument_arithop ( PCEnv* pce,
          /* FIXME: for Shl/Shr/Sar, really should do a test on the 2nd
             arg, so that shift by zero preserves the original
             value. */
-         case Iop_Shl32:    goto n32;
-         case Iop_Sar32:    goto n32;
-         case Iop_Shr32:    goto n32;
-         case Iop_16Uto32:  goto n32;
-         case Iop_16Sto32:  goto n32;
-         case Iop_F64toI32: goto n32;
-         case Iop_16HLto32: goto n32;
-         case Iop_MullS16:  goto n32;
-         case Iop_MullU16:  goto n32;
+         case Iop_Shl32:     goto n32;
+         case Iop_Sar32:     goto n32;
+         case Iop_Shr32:     goto n32;
+         case Iop_16Uto32:   goto n32;
+         case Iop_16Sto32:   goto n32;
+         case Iop_F64toI32S: goto n32;
+         case Iop_16HLto32:  goto n32;
+         case Iop_MullS16:   goto n32;
+         case Iop_MullU16:   goto n32;
          case Iop_PRemC3210F64: goto n32;
-         case Iop_DivU32:   goto n32;
-         case Iop_DivS32:   goto n32;
-         case Iop_V128to32: goto n32;
+         case Iop_DivU32:    goto n32;
+         case Iop_DivS32:    goto n32;
+         case Iop_V128to32:  goto n32;
 
          /* cases where result range is very limited and clearly cannot
             be a pointer */
@@ -4256,7 +4256,7 @@ void instrument_arithop ( PCEnv* pce,
          case Iop_32HLto64:   goto n64;
          case Iop_DivModU64to32: goto n64;
          case Iop_DivModS64to32: goto n64;
-         case Iop_F64toI64:      goto n64;
+         case Iop_F64toI64S:     goto n64;
          case Iop_MullS32:    goto n64;
          case Iop_MullU32:    goto n64;
          case Iop_DivU64:     goto n64;

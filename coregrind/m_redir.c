@@ -50,6 +50,8 @@
 #include "pub_core_clientstate.h"  // VG_(client___libc_freeres_wrapper)
 #include "pub_core_demangle.h"     // VG_(maybe_Z_demangle)
 
+#include "config.h" /* GLIBC_2_* */
+
 
 /* This module is a critical part of the redirection/intercept system.
    It keeps track of the current intercept state, cleans up the

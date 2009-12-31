@@ -744,8 +744,12 @@ extern void         mapRegs_AMD64Instr     ( HRegRemap*, AMD64Instr*, Bool );
 extern Bool         isMove_AMD64Instr      ( AMD64Instr*, HReg*, HReg* );
 extern Int          emit_AMD64Instr        ( UChar* buf, Int nbuf, AMD64Instr*, 
                                              Bool, void* dispatch );
-extern AMD64Instr*  genSpill_AMD64         ( HReg rreg, Int offset, Bool );
-extern AMD64Instr*  genReload_AMD64        ( HReg rreg, Int offset, Bool );
+
+extern void genSpill_AMD64  ( /*OUT*/HInstr** i1, /*OUT*/HInstr** i2,
+                              HReg rreg, Int offset, Bool );
+extern void genReload_AMD64 ( /*OUT*/HInstr** i1, /*OUT*/HInstr** i2,
+                              HReg rreg, Int offset, Bool );
+
 extern void         getAllocableRegs_AMD64 ( Int*, HReg** );
 extern HInstrArray* iselSB_AMD64           ( IRSB*, VexArch,
                                                     VexArchInfo*,

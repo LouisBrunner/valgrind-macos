@@ -1620,41 +1620,50 @@ Bool isMove_X86Instr ( X86Instr* i, HReg* src, HReg* dst )
    register allocator.  Note it's critical these don't write the
    condition codes. */
 
-X86Instr* genSpill_X86 ( HReg rreg, Int offsetB, Bool mode64 )
+void genSpill_X86 ( /*OUT*/HInstr** i1, /*OUT*/HInstr** i2,
+                    HReg rreg, Int offsetB, Bool mode64 )
 {
    X86AMode* am;
    vassert(offsetB >= 0);
    vassert(!hregIsVirtual(rreg));
    vassert(mode64 == False);
+   *i1 = *i2 = NULL;
    am = X86AMode_IR(offsetB, hregX86_EBP());
-
    switch (hregClass(rreg)) {
       case HRcInt32:
-         return X86Instr_Alu32M ( Xalu_MOV, X86RI_Reg(rreg), am );
+         *i1 = X86Instr_Alu32M ( Xalu_MOV, X86RI_Reg(rreg), am );
+         return;
       case HRcFlt64:
-         return X86Instr_FpLdSt ( False/*store*/, 10, rreg, am );
+         *i1 = X86Instr_FpLdSt ( False/*store*/, 10, rreg, am );
+         return;
       case HRcVec128:
-         return X86Instr_SseLdSt ( False/*store*/, rreg, am );
+         *i1 = X86Instr_SseLdSt ( False/*store*/, rreg, am );
+         return;
       default: 
          ppHRegClass(hregClass(rreg));
          vpanic("genSpill_X86: unimplemented regclass");
    }
 }
 
-X86Instr* genReload_X86 ( HReg rreg, Int offsetB, Bool mode64 )
+void genReload_X86 ( /*OUT*/HInstr** i1, /*OUT*/HInstr** i2,
+                     HReg rreg, Int offsetB, Bool mode64 )
 {
    X86AMode* am;
    vassert(offsetB >= 0);
    vassert(!hregIsVirtual(rreg));
    vassert(mode64 == False);
+   *i1 = *i2 = NULL;
    am = X86AMode_IR(offsetB, hregX86_EBP());
    switch (hregClass(rreg)) {
       case HRcInt32:
-         return X86Instr_Alu32R ( Xalu_MOV, X86RMI_Mem(am), rreg );
+         *i1 = X86Instr_Alu32R ( Xalu_MOV, X86RMI_Mem(am), rreg );
+         return;
       case HRcFlt64:
-         return X86Instr_FpLdSt ( True/*load*/, 10, rreg, am );
+         *i1 = X86Instr_FpLdSt ( True/*load*/, 10, rreg, am );
+         return;
       case HRcVec128:
-         return X86Instr_SseLdSt ( True/*load*/, rreg, am );
+         *i1 = X86Instr_SseLdSt ( True/*load*/, rreg, am );
+         return;
       default: 
          ppHRegClass(hregClass(rreg));
          vpanic("genReload_X86: unimplemented regclass");

@@ -1912,37 +1912,44 @@ Bool isMove_AMD64Instr ( AMD64Instr* i, HReg* src, HReg* dst )
    register allocator.  Note it's critical these don't write the
    condition codes. */
 
-AMD64Instr* genSpill_AMD64 ( HReg rreg, Int offsetB, Bool mode64 )
+void genSpill_AMD64 ( /*OUT*/HInstr** i1, /*OUT*/HInstr** i2,
+                      HReg rreg, Int offsetB, Bool mode64 )
 {
    AMD64AMode* am;
    vassert(offsetB >= 0);
    vassert(!hregIsVirtual(rreg));
    vassert(mode64 == True);
+   *i1 = *i2 = NULL;
    am = AMD64AMode_IR(offsetB, hregAMD64_RBP());
-
    switch (hregClass(rreg)) {
       case HRcInt64:
-         return AMD64Instr_Alu64M ( Aalu_MOV, AMD64RI_Reg(rreg), am );
+         *i1 = AMD64Instr_Alu64M ( Aalu_MOV, AMD64RI_Reg(rreg), am );
+         return;
       case HRcVec128:
-         return AMD64Instr_SseLdSt ( False/*store*/, 16, rreg, am );
+         *i1 = AMD64Instr_SseLdSt ( False/*store*/, 16, rreg, am );
+         return;
       default: 
          ppHRegClass(hregClass(rreg));
          vpanic("genSpill_AMD64: unimplemented regclass");
    }
 }
 
-AMD64Instr* genReload_AMD64 ( HReg rreg, Int offsetB, Bool mode64 )
+void genReload_AMD64 ( /*OUT*/HInstr** i1, /*OUT*/HInstr** i2,
+                       HReg rreg, Int offsetB, Bool mode64 )
 {
    AMD64AMode* am;
    vassert(offsetB >= 0);
    vassert(!hregIsVirtual(rreg));
    vassert(mode64 == True);
+   *i1 = *i2 = NULL;
    am = AMD64AMode_IR(offsetB, hregAMD64_RBP());
    switch (hregClass(rreg)) {
       case HRcInt64:
-         return AMD64Instr_Alu64R ( Aalu_MOV, AMD64RMI_Mem(am), rreg );
+         *i1 = AMD64Instr_Alu64R ( Aalu_MOV, AMD64RMI_Mem(am), rreg );
+         return;
       case HRcVec128:
-         return AMD64Instr_SseLdSt ( True/*load*/, 16, rreg, am );
+         *i1 = AMD64Instr_SseLdSt ( True/*load*/, 16, rreg, am );
+         return;
       default: 
          ppHRegClass(hregClass(rreg));
          vpanic("genReload_AMD64: unimplemented regclass");

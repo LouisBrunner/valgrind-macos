@@ -685,8 +685,12 @@ extern void         mapRegs_X86Instr     ( HRegRemap*, X86Instr*, Bool );
 extern Bool         isMove_X86Instr      ( X86Instr*, HReg*, HReg* );
 extern Int          emit_X86Instr        ( UChar* buf, Int nbuf, X86Instr*, 
                                            Bool, void* dispatch );
-extern X86Instr*    genSpill_X86         ( HReg rreg, Int offset, Bool );
-extern X86Instr*    genReload_X86        ( HReg rreg, Int offset, Bool );
+
+extern void genSpill_X86  ( /*OUT*/HInstr** i1, /*OUT*/HInstr** i2,
+                            HReg rreg, Int offset, Bool );
+extern void genReload_X86 ( /*OUT*/HInstr** i1, /*OUT*/HInstr** i2,
+                            HReg rreg, Int offset, Bool );
+
 extern X86Instr*    directReload_X86     ( X86Instr* i, 
                                            HReg vreg, Short spill_off );
 extern void         getAllocableRegs_X86 ( Int*, HReg** );

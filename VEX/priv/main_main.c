@@ -243,10 +243,13 @@ VexTranslateResult LibVEX_Translate ( VexTranslateArgs* vta )
          getAllocableRegs_X86 ( &n_available_real_regs,
                                 &available_real_regs );
          isMove       = (Bool(*)(HInstr*,HReg*,HReg*)) isMove_X86Instr;
-         getRegUsage  = (void(*)(HRegUsage*,HInstr*, Bool)) getRegUsage_X86Instr;
+         getRegUsage  = (void(*)(HRegUsage*,HInstr*, Bool))
+                        getRegUsage_X86Instr;
          mapRegs      = (void(*)(HRegRemap*,HInstr*, Bool)) mapRegs_X86Instr;
-         genSpill     = (HInstr*(*)(HReg,Int, Bool)) genSpill_X86;
-         genReload    = (HInstr*(*)(HReg,Int, Bool)) genReload_X86;
+         genSpill     = (void(*)(HInstr**,HInstr**,HReg,Int,Bool))
+                        genSpill_X86;
+         genReload    = (void(*)(HInstr**,HInstr**,HReg,Int,Bool))
+                        genReload_X86;
          directReload = (HInstr*(*)(HInstr*,HReg,Short)) directReload_X86;
          ppInstr      = (void(*)(HInstr*, Bool)) ppX86Instr;
          ppReg        = (void(*)(HReg)) ppHRegX86;
@@ -263,10 +266,13 @@ VexTranslateResult LibVEX_Translate ( VexTranslateArgs* vta )
          getAllocableRegs_AMD64 ( &n_available_real_regs,
                                   &available_real_regs );
          isMove      = (Bool(*)(HInstr*,HReg*,HReg*)) isMove_AMD64Instr;
-         getRegUsage = (void(*)(HRegUsage*,HInstr*, Bool)) getRegUsage_AMD64Instr;
+         getRegUsage = (void(*)(HRegUsage*,HInstr*, Bool))
+                       getRegUsage_AMD64Instr;
          mapRegs     = (void(*)(HRegRemap*,HInstr*, Bool)) mapRegs_AMD64Instr;
-         genSpill    = (HInstr*(*)(HReg,Int, Bool)) genSpill_AMD64;
-         genReload   = (HInstr*(*)(HReg,Int, Bool)) genReload_AMD64;
+         genSpill    = (void(*)(HInstr**,HInstr**,HReg,Int,Bool))
+                       genSpill_AMD64;
+         genReload   = (void(*)(HInstr**,HInstr**,HReg,Int,Bool))
+                       genReload_AMD64;
          ppInstr     = (void(*)(HInstr*, Bool)) ppAMD64Instr;
          ppReg       = (void(*)(HReg)) ppHRegAMD64;
          iselSB      = iselSB_AMD64;
@@ -284,8 +290,8 @@ VexTranslateResult LibVEX_Translate ( VexTranslateArgs* vta )
          isMove      = (Bool(*)(HInstr*,HReg*,HReg*)) isMove_PPCInstr;
          getRegUsage = (void(*)(HRegUsage*,HInstr*,Bool)) getRegUsage_PPCInstr;
          mapRegs     = (void(*)(HRegRemap*,HInstr*,Bool)) mapRegs_PPCInstr;
-         genSpill    = (HInstr*(*)(HReg,Int,Bool)) genSpill_PPC;
-         genReload   = (HInstr*(*)(HReg,Int,Bool)) genReload_PPC;
+         genSpill    = (void(*)(HInstr**,HInstr**,HReg,Int,Bool)) genSpill_PPC;
+         genReload   = (void(*)(HInstr**,HInstr**,HReg,Int,Bool)) genReload_PPC;
          ppInstr     = (void(*)(HInstr*,Bool)) ppPPCInstr;
          ppReg       = (void(*)(HReg)) ppHRegPPC;
          iselSB      = iselSB_PPC;
@@ -303,8 +309,8 @@ VexTranslateResult LibVEX_Translate ( VexTranslateArgs* vta )
          isMove      = (Bool(*)(HInstr*,HReg*,HReg*)) isMove_PPCInstr;
          getRegUsage = (void(*)(HRegUsage*,HInstr*, Bool)) getRegUsage_PPCInstr;
          mapRegs     = (void(*)(HRegRemap*,HInstr*, Bool)) mapRegs_PPCInstr;
-         genSpill    = (HInstr*(*)(HReg,Int, Bool)) genSpill_PPC;
-         genReload   = (HInstr*(*)(HReg,Int, Bool)) genReload_PPC;
+         genSpill    = (void(*)(HInstr**,HInstr**,HReg,Int,Bool)) genSpill_PPC;
+         genReload   = (void(*)(HInstr**,HInstr**,HReg,Int,Bool)) genReload_PPC;
          ppInstr     = (void(*)(HInstr*, Bool)) ppPPCInstr;
          ppReg       = (void(*)(HReg)) ppHRegPPC;
          iselSB      = iselSB_PPC;
@@ -316,18 +322,18 @@ VexTranslateResult LibVEX_Translate ( VexTranslateArgs* vta )
          break;
 
       case VexArchARM:
-         mode64       = False;
+         mode64      = False;
          getAllocableRegs_ARM ( &n_available_real_regs,
                                 &available_real_regs );
-         isMove       = (Bool(*)(HInstr*,HReg*,HReg*)) isMove_ARMInstr;
-         getRegUsage  = (void(*)(HRegUsage*,HInstr*, Bool)) getRegUsage_ARMInstr;
-         mapRegs      = (void(*)(HRegRemap*,HInstr*, Bool)) mapRegs_ARMInstr;
-         genSpill     = (HInstr*(*)(HReg,Int, Bool)) genSpill_ARM;
-         genReload    = (HInstr*(*)(HReg,Int, Bool)) genReload_ARM;
-         ppInstr      = (void(*)(HInstr*, Bool)) ppARMInstr;
-         ppReg        = (void(*)(HReg)) ppHRegARM;
-         iselSB       = iselSB_ARM;
-         emit         = (Int(*)(UChar*,Int,HInstr*,Bool,void*)) emit_ARMInstr;
+         isMove      = (Bool(*)(HInstr*,HReg*,HReg*)) isMove_ARMInstr;
+         getRegUsage = (void(*)(HRegUsage*,HInstr*, Bool)) getRegUsage_ARMInstr;
+         mapRegs     = (void(*)(HRegRemap*,HInstr*, Bool)) mapRegs_ARMInstr;
+         genSpill    = (void(*)(HInstr**,HInstr**,HReg,Int,Bool)) genSpill_ARM;
+         genReload   = (void(*)(HInstr**,HInstr**,HReg,Int,Bool)) genReload_ARM;
+         ppInstr     = (void(*)(HInstr*, Bool)) ppARMInstr;
+         ppReg       = (void(*)(HReg)) ppHRegARM;
+         iselSB      = iselSB_ARM;
+         emit        = (Int(*)(UChar*,Int,HInstr*,Bool,void*)) emit_ARMInstr;
          host_is_bigendian = False;
          host_word_type    = Ity_I32;
          vassert(are_valid_hwcaps(VexArchARM, vta->archinfo_host.hwcaps));

@@ -708,7 +708,7 @@ ULong VG_(di_notify_mmap)( Addr a, Bool allow_SkFileV )
 #  if defined(VGA_x86) || defined(VGA_ppc32)
    is_rx_map = seg->hasR && seg->hasX;
    is_rw_map = seg->hasR && seg->hasW;
-#  elif defined(VGA_amd64) || defined(VGA_ppc64)
+#  elif defined(VGA_amd64) || defined(VGA_ppc64) || defined(VGA_arm)
    is_rx_map = seg->hasR && seg->hasX && !seg->hasW;
    is_rw_map = seg->hasR && seg->hasW && !seg->hasX;
 #  else
@@ -1395,17 +1395,17 @@ Vg_FnNameKind VG_(get_fnname_kind) ( Char* name )
       return Vg_FnNameMain;
 
    } else if (
-#if defined(VGO_linux)
+#      if defined(VGO_linux)
        VG_STREQ("__libc_start_main",  name) ||  // glibc glibness
        VG_STREQ("generic_start_main", name) ||  // Yellow Dog doggedness
-#elif defined(VGO_aix5)
+#      elif defined(VGO_aix5)
        VG_STREQ("__start", name)            ||  // AIX aches
-#elif defined(VGO_darwin)
+#      elif defined(VGO_darwin)
        // See readmacho.c for an explanation of this.
        VG_STREQ("start_according_to_valgrind", name) ||  // Darwin, darling
-#else
-#      error Unknown OS
-#endif
+#      else
+#        error "Unknown OS"
+#      endif
        0) {
       return Vg_FnNameBelowMain;
 
@@ -1821,11 +1821,9 @@ Char* VG_(describe_IP)(Addr eip, Char* buf, Int n_buf)
    a CfiExpr into one convenient struct. */
 typedef
    struct {
-      Addr ipHere;
-      Addr spHere;
-      Addr fpHere;
-      Addr min_accessible;
-      Addr max_accessible;
+      D3UnwindRegs* uregs;
+      Addr          min_accessible;
+      Addr          max_accessible;
    }
    CfiExprEvalContext;
 
@@ -1838,7 +1836,9 @@ UWord evalCfiExpr ( XArray* exprs, Int ix,
 {
    UWord wL, wR;
    Addr  a;
-   CfiExpr* e = VG_(indexXA)( exprs, ix );
+   CfiExpr* e;
+   vg_assert(sizeof(Addr) == sizeof(UWord));
+   e = VG_(indexXA)( exprs, ix );
    switch (e->tag) {
       case Cex_Binop:
          wL = evalCfiExpr( exprs, e->Cex.Binop.ixL, eec, ok );
@@ -1855,9 +1855,19 @@ UWord evalCfiExpr ( XArray* exprs, Int ix,
          /*NOTREACHED*/
       case Cex_CfiReg:
          switch (e->Cex.CfiReg.reg) {
-            case Creg_IP: return (Addr)eec->ipHere;
-            case Creg_SP: return (Addr)eec->spHere;
-            case Creg_FP: return (Addr)eec->fpHere;
+#           if defined(VGA_x86) || defined(VGA_amd64)
+            case Creg_IA_IP: return eec->uregs->xip;
+            case Creg_IA_SP: return eec->uregs->xsp;
+            case Creg_IA_BP: return eec->uregs->xbp;
+#           elif defined(VGA_arm)
+            case Creg_ARM_R13: return eec->uregs->r13;
+            case Creg_ARM_R12: return eec->uregs->r12;
+            case Creg_ARM_R15: return eec->uregs->r15;
+            case Creg_ARM_R14: return eec->uregs->r14;
+#           elif defined(VGA_ppc32) || defined(VGA_ppc64)
+#           else
+#             error "Unsupported arch"
+#           endif
             default: goto unhandled;
          }
          /*NOTREACHED*/
@@ -2032,7 +2042,7 @@ static CFSICacheEnt* cfsi_cache__find ( Addr ip )
 }
 
 
-static Addr compute_cfa ( Addr ip, Addr sp, Addr fp,
+static Addr compute_cfa ( D3UnwindRegs* uregs,
                           Addr min_accessible, Addr max_accessible,
                           DebugInfo* di, DiCfSI* cfsi )
 {
@@ -2043,21 +2053,34 @@ static Addr compute_cfa ( Addr ip, Addr sp, Addr fp,
    /* Compute the CFA. */
    cfa = 0;
    switch (cfsi->cfa_how) {
-      case CFIC_SPREL: 
-         cfa = sp + cfsi->cfa_off;
+#     if defined(VGA_x86) || defined(VGA_amd64)
+      case CFIC_IA_SPREL: 
+         cfa = cfsi->cfa_off + uregs->xsp;
          break;
-      case CFIC_FPREL: 
-         cfa = fp + cfsi->cfa_off;
+      case CFIC_IA_BPREL: 
+         cfa = cfsi->cfa_off + uregs->xbp;
          break;
-      case CFIC_EXPR: 
+#     elif defined(VGA_arm)
+      case CFIC_ARM_R13REL: 
+         cfa = cfsi->cfa_off + uregs->r13;
+         break;
+      case CFIC_ARM_R12REL: 
+         cfa = cfsi->cfa_off + uregs->r12;
+         break;
+      case CFIC_ARM_R11REL: 
+         cfa = cfsi->cfa_off + uregs->r11;
+         break;
+#     elif defined(VGA_ppc32) || defined(VGA_ppc64)
+#     else
+#       error "Unsupported arch"
+#     endif
+      case CFIC_EXPR: /* available on all archs */
          if (0) {
             VG_(printf)("CFIC_EXPR: ");
             ML_(ppCfiExpr)(di->cfsi_exprs, cfsi->cfa_off);
             VG_(printf)("\n");
          }
-         eec.ipHere = ip;
-         eec.spHere = sp;
-         eec.fpHere = fp;
+         eec.uregs          = uregs;
          eec.min_accessible = min_accessible;
          eec.max_accessible = max_accessible;
          ok = True;
@@ -2072,6 +2095,8 @@ static Addr compute_cfa ( Addr ip, Addr sp, Addr fp,
 
 
 /* Get the call frame address (CFA) given an IP/SP/FP triple. */
+/* NOTE: This function may rearrange the order of entries in the
+   DebugInfo list. */
 Addr ML_(get_CFA) ( Addr ip, Addr sp, Addr fp,
                     Addr min_accessible, Addr max_accessible )
 {
@@ -2087,30 +2112,53 @@ Addr ML_(get_CFA) ( Addr ip, Addr sp, Addr fp,
    di = ce->di;
    cfsi = &di->cfsi[ ce->ix ];
 
-   return compute_cfa(ip, sp, fp, min_accessible,  max_accessible, di, cfsi);
+   /* Temporary impedance-matching kludge so that this keeps working
+      on x86-linux and amd64-linux. */
+#  if defined(VGA_x86) || defined(VGA_amd64)
+   { D3UnwindRegs uregs;
+     uregs.xip = ip;
+     uregs.xsp = sp;
+     uregs.xbp = fp;
+     return compute_cfa(&uregs,
+                        min_accessible,  max_accessible, di, cfsi);
+   }
+#  else
+   return 0; /* indicates failure */
+#  endif
 }
 
 
-/* The main function for DWARF2/3 CFI-based stack unwinding.
-   Given an IP/SP/FP triple, produce the IP/SP/FP values for the
-   previous frame, if possible. */
-/* Returns True if OK.  If not OK, *{ip,sp,fp}P are not changed. */
-/* NOTE: this function may rearrange the order of entries in the
-   DebugInfo list. */
-Bool VG_(use_CF_info) ( /*MOD*/Addr* ipP,
-                        /*MOD*/Addr* spP,
-                        /*MOD*/Addr* fpP,
+/* The main function for DWARF2/3 CFI-based stack unwinding.  Given a
+   set of registers in UREGS, modify it to hold the register values
+   for the previous frame, if possible.  Returns True if successful.
+   If not successful, *UREGS is not changed.
+
+   For x86 and amd64, the unwound registers are: {E,R}IP,
+   {E,R}SP, {E,R}BP.
+
+   For arm, the unwound registers are: R11 R12 R13 R14 R15.
+*/
+Bool VG_(use_CF_info) ( /*MOD*/D3UnwindRegs* uregsHere,
                         Addr min_accessible,
                         Addr max_accessible )
 {
    Bool               ok;
    DebugInfo*         di;
    DiCfSI*            cfsi = NULL;
-   Addr               cfa, ipHere, spHere, fpHere, ipPrev, spPrev, fpPrev;
+   Addr               cfa, ipHere = 0;
    CFSICacheEnt*      ce;
    CfiExprEvalContext eec;
+   D3UnwindRegs       uregsPrev;
 
-   ce = cfsi_cache__find(*ipP);
+#  if defined(VGA_x86) || defined(VGA_amd64)
+   ipHere = uregsHere->xip;
+#  elif defined(VGA_arm)
+   ipHere = uregsHere->r15;
+#  elif defined(VGA_ppc32) || defined(VGA_ppc64)
+#  else
+#    error "Unknown arch"
+#  endif
+   ce = cfsi_cache__find(ipHere);
 
    if (UNLIKELY(ce == NULL))
       return False; /* no info.  Nothing we can do. */
@@ -2123,15 +2171,11 @@ Bool VG_(use_CF_info) ( /*MOD*/Addr* ipP,
       ML_(ppDiCfSI)(di->cfsi_exprs, cfsi);
    }
 
-   ipPrev = spPrev = fpPrev = 0;
-
-   ipHere = *ipP;
-   spHere = *spP;
-   fpHere = *fpP;
+   VG_(memset)(&uregsPrev, 0, sizeof(uregsPrev));
 
    /* First compute the CFA. */
-   cfa = compute_cfa(ipHere, spHere, fpHere,
-                     min_accessible,  max_accessible, di, cfsi);
+   cfa = compute_cfa(uregsHere,
+                     min_accessible, max_accessible, di, cfsi);
    if (UNLIKELY(cfa == 0))
       return False;
 
@@ -2159,9 +2203,7 @@ Bool VG_(use_CF_info) ( /*MOD*/Addr* ipP,
             case CFIR_EXPR:                             \
                if (0)                                   \
                   ML_(ppCfiExpr)(di->cfsi_exprs,_off);  \
-               eec.ipHere = ipHere;                     \
-               eec.spHere = spHere;                     \
-               eec.fpHere = fpHere;                     \
+               eec.uregs = uregsHere;                   \
                eec.min_accessible = min_accessible;     \
                eec.max_accessible = max_accessible;     \
                ok = True;                               \
@@ -2173,15 +2215,24 @@ Bool VG_(use_CF_info) ( /*MOD*/Addr* ipP,
          }                                              \
       } while (0)
 
-   COMPUTE(ipPrev, ipHere, cfsi->ra_how, cfsi->ra_off);
-   COMPUTE(spPrev, spHere, cfsi->sp_how, cfsi->sp_off);
-   COMPUTE(fpPrev, fpHere, cfsi->fp_how, cfsi->fp_off);
+#  if defined(VGA_x86) || defined(VGA_amd64)
+   COMPUTE(uregsPrev.xip, uregsHere->xip, cfsi->ra_how, cfsi->ra_off);
+   COMPUTE(uregsPrev.xsp, uregsPrev->xsp, cfsi->sp_how, cfsi->sp_off);
+   COMPUTE(uregsPrev.xbp, uregsPrev->xbp, cfsi->bp_how, cfsi->bp_off);
+#  elif defined(VGA_arm)
+   COMPUTE(uregsPrev.r15, uregsHere->r15, cfsi->ra_how,  cfsi->ra_off);
+   COMPUTE(uregsPrev.r14, uregsHere->r14, cfsi->r14_how, cfsi->r14_off);
+   COMPUTE(uregsPrev.r13, uregsHere->r13, cfsi->r13_how, cfsi->r13_off);
+   COMPUTE(uregsPrev.r12, uregsHere->r12, cfsi->r12_how, cfsi->r12_off);
+   COMPUTE(uregsPrev.r11, uregsHere->r11, cfsi->r11_how, cfsi->r11_off);
+#  elif defined(VGA_ppc32) || defined(VGA_ppc64)
+#  else
+#    error "Unknown arch"
+#  endif
 
 #  undef COMPUTE
 
-   *ipP = ipPrev;
-   *spP = spPrev;
-   *fpP = fpPrev;
+   *uregsHere = uregsPrev;
    return True;
 }
 

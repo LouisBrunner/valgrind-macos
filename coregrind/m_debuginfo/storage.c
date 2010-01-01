@@ -126,11 +126,20 @@ void ML_(ppDiCfSI) ( XArray* /* of CfiExpr */ exprs, DiCfSI* si )
    VG_(printf)("[%#lx .. %#lx]: ", si->base,
                                si->base + (UWord)si->len - 1);
    switch (si->cfa_how) {
-      case CFIC_SPREL: 
+      case CFIC_IA_SPREL: 
          VG_(printf)("let cfa=oldSP+%d", si->cfa_off); 
          break;
-      case CFIC_FPREL: 
-         VG_(printf)("let cfa=oldFP+%d", si->cfa_off); 
+      case CFIC_IA_BPREL: 
+         VG_(printf)("let cfa=oldBP+%d", si->cfa_off); 
+         break;
+      case CFIC_ARM_R13REL: 
+         VG_(printf)("let cfa=oldR13+%d", si->cfa_off); 
+         break;
+      case CFIC_ARM_R12REL: 
+         VG_(printf)("let cfa=oldR12+%d", si->cfa_off); 
+         break;
+      case CFIC_ARM_R11REL: 
+         VG_(printf)("let cfa=oldR11+%d", si->cfa_off); 
          break;
       case CFIC_EXPR: 
          VG_(printf)("let cfa={"); 
@@ -143,10 +152,24 @@ void ML_(ppDiCfSI) ( XArray* /* of CfiExpr */ exprs, DiCfSI* si )
 
    VG_(printf)(" in RA=");
    SHOW_HOW(si->ra_how, si->ra_off);
+#  if defined(VGA_x86) || defined(VGA_amd64)
    VG_(printf)(" SP=");
    SHOW_HOW(si->sp_how, si->sp_off);
-   VG_(printf)(" FP=");
-   SHOW_HOW(si->fp_how, si->fp_off);
+   VG_(printf)(" BP=");
+   SHOW_HOW(si->bp_how, si->bp_off);
+#  elif defined(VGA_arm)
+   VG_(printf)(" R14=");
+   SHOW_HOW(si->r14_how, si->r14_off);
+   VG_(printf)(" R13=");
+   SHOW_HOW(si->r13_how, si->r13_off);
+   VG_(printf)(" R12=");
+   SHOW_HOW(si->r12_how, si->r12_off);
+   VG_(printf)(" R11=");
+   SHOW_HOW(si->r11_how, si->r11_off);
+#  elif defined(VGA_ppc32) || defined(VGA_ppc64)
+#  else
+#    error "Unknown arch"
+#  endif
    VG_(printf)("\n");
 #  undef SHOW_HOW
 }
@@ -574,9 +597,13 @@ static void ppCfiOp ( CfiOp op )
 static void ppCfiReg ( CfiReg reg )
 {
    switch (reg) {
-      case Creg_SP: VG_(printf)("SP"); break;
-      case Creg_FP: VG_(printf)("FP"); break;
-      case Creg_IP: VG_(printf)("IP"); break;
+      case Creg_IA_SP:   VG_(printf)("xSP"); break;
+      case Creg_IA_BP:   VG_(printf)("xBP"); break;
+      case Creg_IA_IP:   VG_(printf)("xIP"); break;
+      case Creg_ARM_R13: VG_(printf)("R13"); break;
+      case Creg_ARM_R12: VG_(printf)("R12"); break;
+      case Creg_ARM_R15: VG_(printf)("R15"); break;
+      case Creg_ARM_R14: VG_(printf)("R14"); break;
       default: vg_assert(0);
    }
 }

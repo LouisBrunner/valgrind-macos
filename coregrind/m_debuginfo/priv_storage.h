@@ -97,55 +97,103 @@ typedef
 
 /* --------------------- CF INFO --------------------- */
 
-/* A structure to summarise DWARF2/3 CFA info for the code address
-   range [base .. base+len-1].  In short, if you know (sp,fp,ip) at
-   some point and ip is in the range [base .. base+len-1], it tells
-   you how to calculate (sp,fp) for the caller of the current frame
-   and also ra, the return address of the current frame.
+/* DiCfSI: a structure to summarise DWARF2/3 CFA info for the code
+   address range [base .. base+len-1].
+
+   On x86 and amd64 ("IA"), if you know ({e,r}sp, {e,r}bp, {e,r}ip) at
+   some point and {e,r}ip is in the range [base .. base+len-1], it
+   tells you how to calculate ({e,r}sp, {e,r}bp) for the caller of the
+   current frame and also ra, the return address of the current frame.
 
    First off, calculate CFA, the Canonical Frame Address, thusly:
 
      cfa = case cfa_how of
-              CFIC_SPREL -> sp + cfa_off
-              CFIC_FPREL -> fp + cfa_off
-              CFIR_EXPR  -> expr whose index is in cfa_off
+              CFIC_IA_SPREL -> {e,r}sp + cfa_off
+              CFIC_IA_BPREL -> {e,r}bp + cfa_off
+              CFIR_IA_EXPR  -> expr whose index is in cfa_off
 
-   Once that is done, the previous frame's sp/fp values and this
-   frame's ra value can be calculated like this:
+   Once that is done, the previous frame's {e,r}sp/{e,r}bp values and
+   this frame's {e,r}ra value can be calculated like this:
 
-      old_sp/fp/ra
-         = case sp/fp/ra_how of
+     old_{e,r}sp/{e,r}bp/ra
+         = case {e,r}sp/{e,r}bp/ra_how of
               CFIR_UNKNOWN   -> we don't know, sorry
               CFIR_SAME      -> same as it was before (sp/fp only)
-              CFIR_CFAREL    -> cfa + sp/fp/ra_off
-              CFIR_MEMCFAREL -> *( cfa + sp/fp/ra_off )
-              CFIR_EXPR      -> expr whose index is in sp/fp/ra_off
+              CFIR_CFAREL    -> cfa + sp/bp/ra_off
+              CFIR_MEMCFAREL -> *( cfa + sp/bp/ra_off )
+              CFIR_EXPR      -> expr whose index is in sp/bp/ra_off
+
+   On ARM it's pretty much the same, except we have more registers to
+   keep track of:
+
+     cfa = case cfa_how of
+              CFIC_R13REL -> r13 + cfa_off
+              CFIC_R12REL -> r12 + cfa_off
+              CFIC_R11REL -> r11 + cfa_off
+              CFIR_EXPR   -> expr whose index is in cfa_off
+
+     old_r14/r13/r12/r11/ra
+         = case r14/r13/r12/r11/ra_how of
+              CFIR_UNKNOWN   -> we don't know, sorry
+              CFIR_SAME      -> same as it was before (r14/r13/r12/r11 only)
+              CFIR_CFAREL    -> cfa + r14/r13/r12/r11/ra_off
+              CFIR_MEMCFAREL -> *( cfa + r14/r13/r12/r11/ra_off )
+              CFIR_EXPR      -> expr whose index is in r14/r13/r12/r11/ra_off
 */
 
-#define CFIC_SPREL     ((UChar)1)
-#define CFIC_FPREL     ((UChar)2)
-#define CFIC_EXPR      ((UChar)3)
+#define CFIC_IA_SPREL     ((UChar)1)
+#define CFIC_IA_BPREL     ((UChar)2)
+#define CFIC_IA_EXPR      ((UChar)3)
+#define CFIC_ARM_R13REL   ((UChar)4)
+#define CFIC_ARM_R12REL   ((UChar)5)
+#define CFIC_ARM_R11REL   ((UChar)6)
+#define CFIC_EXPR         ((UChar)7)  /* all targets */
 
-#define CFIR_UNKNOWN   ((UChar)4)
-#define CFIR_SAME      ((UChar)5)
-#define CFIR_CFAREL    ((UChar)6)
-#define CFIR_MEMCFAREL ((UChar)7)
-#define CFIR_EXPR      ((UChar)8)
+#define CFIR_UNKNOWN      ((UChar)64)
+#define CFIR_SAME         ((UChar)65)
+#define CFIR_CFAREL       ((UChar)66)
+#define CFIR_MEMCFAREL    ((UChar)67)
+#define CFIR_EXPR         ((UChar)68)
 
+#if defined(VGA_x86) || defined(VGA_amd64)
+typedef
+   struct {
+      Addr  base;
+      UInt  len;
+      UChar cfa_how; /* a CFIC_IA value */
+      UChar ra_how;  /* a CFIR_ value */
+      UChar sp_how;  /* a CFIR_ value */
+      UChar bp_how;  /* a CFIR_ value */
+      Int   cfa_off;
+      Int   ra_off;
+      Int   sp_off;
+      Int   bp_off;
+   }
+   DiCfSI;
+#elif defined(VGA_arm)
 typedef
    struct {
       Addr  base;
       UInt  len;
       UChar cfa_how; /* a CFIC_ value */
       UChar ra_how;  /* a CFIR_ value */
-      UChar sp_how;  /* a CFIR_ value */
-      UChar fp_how;  /* a CFIR_ value */
+      UChar r14_how; /* a CFIR_ value */
+      UChar r13_how; /* a CFIR_ value */
+      UChar r12_how; /* a CFIR_ value */
+      UChar r11_how; /* a CFIR_ value */
       Int   cfa_off;
       Int   ra_off;
-      Int   sp_off;
-      Int   fp_off;
+      Int   r14_off;
+      Int   r13_off;
+      Int   r12_off;
+      Int   r11_off;
    }
    DiCfSI;
+#elif defined(VGA_ppc32) || defined(VGA_ppc64)
+typedef void DiCfSI;
+#else
+#  error "Unknown arch"
+#endif
 
 
 typedef
@@ -159,9 +207,13 @@ typedef
 
 typedef
    enum {
-      Creg_SP=0x213,
-      Creg_FP,
-      Creg_IP
+      Creg_IA_SP=0x213,
+      Creg_IA_BP,
+      Creg_IA_IP,
+      Creg_ARM_R13,
+      Creg_ARM_R12,
+      Creg_ARM_R15,
+      Creg_ARM_R14
    }
    CfiReg;
 

@@ -833,13 +833,16 @@ GXResult ML_(evaluate_Dwarf3_Expr) ( UChar* expr, UWord exprszB,
             break;
          case DW_OP_call_frame_cfa:
             if (!regs)
-               FAIL("evaluate_Dwarf3_Expr: DW_OP_call_frame_cfa but no reg info");
+               FAIL("evaluate_Dwarf3_Expr: "
+                    "DW_OP_call_frame_cfa but no reg info");
 #if defined(VGP_ppc32_linux) || defined(VGP_ppc64_linux)
-            /* Valgrind on ppc32/ppc64 currently doesn't use unwind info.  */
+            /* Valgrind on ppc32/ppc64 currently doesn't use unwind info. */
             uw1 = *(Addr *)(regs->sp);
 #else
             uw1 = ML_(get_CFA)(regs->ip, regs->sp, regs->fp, 0, ~(UWord) 0);
 #endif
+            /* we expect this to fail on arm-linux, since ML_(get_CFA)
+               always returns zero at present. */
             if (!uw1)
                FAIL("evaluate_Dwarf3_Expr: Could not resolve "
                     "DW_OP_call_frame_cfa");

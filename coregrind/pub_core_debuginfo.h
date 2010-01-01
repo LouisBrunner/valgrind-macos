@@ -106,12 +106,31 @@ Bool VG_(get_fnname_raw) ( Addr a, Char* buf, Int nbuf );
 extern
 Bool VG_(get_fnname_no_cxx_demangle) ( Addr a, Char* buf, Int nbuf );
 
-/* Use DWARF2/3 CFA information to do one step of stack unwinding. */
-extern Bool VG_(use_CF_info) ( /*MOD*/Addr* ipP,
-                               /*MOD*/Addr* spP,
-                               /*MOD*/Addr* fpP,
+
+/* Use DWARF2/3 CFA information to do one step of stack unwinding.
+   D3UnwindRegs holds the current register values, and is
+   arch-specific.  Note that the x86 and amd64 definitions are shared
+   and so the regs are named 'xip' etc rather than 'eip' and 'rip'. */
+#if defined(VGA_amd64) || defined(VGA_x86)
+typedef
+   struct { Addr xip; Addr xsp; Addr xbp; }
+   D3UnwindRegs;
+#elif defined(VGA_arm)
+typedef
+   struct { Addr r15; Addr r14; Addr r13; Addr r12; Addr r11; }
+   D3UnwindRegs;
+#elif defined(VGA_ppc32) || defined(VGA_ppc64)
+typedef
+   void
+   D3UnwindRegs;
+#else
+#  error "Unsupported arch"
+#endif
+
+extern Bool VG_(use_CF_info) ( /*MOD*/D3UnwindRegs* uregs,
                                Addr min_accessible,
                                Addr max_accessible );
+
 
 /* Use MSVC FPO data to do one step of stack unwinding. */
 extern Bool VG_(use_FPO_info) ( /*MOD*/Addr* ipP,

@@ -574,12 +574,13 @@ UInt VG_(get_StackTrace_wrk) ( ThreadId tid_if_known,
    vg_assert(sizeof(Addr) == sizeof(UWord));
    vg_assert(sizeof(Addr) == sizeof(void*));
 
-   Addr r15 = startRegs->r_pc;
-   Addr r13 = startRegs->r_sp;
-   Addr r14 = startRegs->misc.ARM.r14;
-   Addr r12 = startRegs->misc.ARM.r12;
-   Addr r11 = startRegs->misc.ARM.r11;
-   Addr fp_min = r13;
+   D3UnwindRegs uregs;
+   uregs.r15 = startRegs->r_pc;
+   uregs.r14 = startRegs->misc.ARM.r14;
+   uregs.r13 = startRegs->r_sp;
+   uregs.r12 = startRegs->misc.ARM.r12;
+   uregs.r11 = startRegs->misc.ARM.r11;
+   Addr fp_min = uregs.r13;
 
    /* Snaffle IPs from the client's stack into ips[0 .. max_n_ips-1],
       stopping when the trail goes cold, which we guess to be
@@ -595,7 +596,8 @@ UInt VG_(get_StackTrace_wrk) ( ThreadId tid_if_known,
    if (debug)
       VG_(printf)("max_n_ips=%d fp_min=0x%lx fp_max_orig=0x%lx, "
                   "fp_max=0x%lx r15=0x%lx r13=0x%lx\n",
-		  max_n_ips, fp_min, fp_max_orig, fp_max, r15, r13);
+                  max_n_ips, fp_min, fp_max_orig, fp_max,
+                  uregs.r15, uregs.r13);
 
    /* Assertion broken before main() is reached in pthreaded programs;  the
     * offending stack traces only have one item.  --njn, 2002-aug-16 */
@@ -605,36 +607,38 @@ UInt VG_(get_StackTrace_wrk) ( ThreadId tid_if_known,
    if (fp_min + 512 >= fp_max) {
       /* If the stack limits look bogus, don't poke around ... but
          don't bomb out either. */
-      if (sps) sps[0] = r13;
+      if (sps) sps[0] = uregs.r13;
       if (fps) fps[0] = 0;
-      ips[0] = r15;
+      ips[0] = uregs.r15;
       return 1;
    } 
 
    /* */
 
-   if (sps) sps[0] = r13;
+   if (sps) sps[0] = uregs.r13;
    if (fps) fps[0] = 0;
-   ips[0] = r15;
+   ips[0] = uregs.r15;
    i = 1;
 
    /* Loop unwinding the stack. */
 
    while (True) {
       if (debug) {
-         VG_(printf)("i: %d, r15: 0x%lx, r13: 0x%lx\n",i, r15, r13);
+         VG_(printf)("i: %d, r15: 0x%lx, r13: 0x%lx\n",
+                     i, uregs.r15, uregs.r13);
       }
 
       if (i >= max_n_ips)
          break;
 
-      if (VG_(use_CF_info)( &r15, &r14, &r13, &r12, &r11, fp_min, fp_max )) {
-         if (sps) sps[i] = r13;
+      if (VG_(use_CF_info)( &uregs, fp_min, fp_max )) {
+         if (sps) sps[i] = uregs.r13;
          if (fps) fps[i] = 0;
-         ips[i++] = r15 -1;
+         ips[i++] = uregs.r15 -1;
          if (debug)
-            VG_(printf)("USING CFI: r15: 0x%lx, r13: 0x%lx\n", r15, r13);
-         r15 = r15 - 1;
+            VG_(printf)("USING CFI: r15: 0x%lx, r13: 0x%lx\n",
+                        uregs.r15, uregs.r13);
+         uregs.r15 = uregs.r15 - 1;
          continue;
       }
       /* No luck.  We have to give up. */

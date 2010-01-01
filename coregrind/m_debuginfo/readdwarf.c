@@ -1783,6 +1783,10 @@ void ML_(read_debuginfo_dwarf1) (
 #  define FP_REG         1
 #  define SP_REG         1
 #  define RA_REG_DEFAULT 65
+#elif defined(VGP_arm_linux)
+#  define FP_REG         12
+#  define SP_REG         13
+#  define RA_REG_DEFAULT 14    //???
 #elif defined(VGP_x86_darwin)
 #  define FP_REG         5
 #  define SP_REG         4
@@ -2012,6 +2016,15 @@ static void initUnwindContext ( /*OUT*/UnwindContext* ctx )
          /* ctx->state[j].reg[i].arg = 0; */
       }
    }
+#  if defined(VGA_arm)
+   /* All callee-saved registers (or at least the ones we are
+      summarising for) should start out as RR_Same, on ARM. */
+   ctx->state[j].reg[11].tag = RR_Same;
+   /* ctx->state[j].reg[13].tag = RR_Same; */
+   ctx->state[j].reg[14].tag = RR_Same;
+   ctx->state[j].reg[12].tag = RR_Same;
+   /* this can't be right though: R12 (IP) isn't callee saved. */
+#  endif
 }
 
 
@@ -2031,16 +2044,7 @@ typedef
 
 static void initCfiSI ( DiCfSI* si )
 {
-   si->base    = 0;
-   si->len     = 0;
-   si->cfa_how = 0;
-   si->ra_how  = 0;
-   si->sp_how  = 0;
-   si->fp_how  = 0;
-   si->cfa_off = 0;
-   si->ra_off  = 0;
-   si->sp_off  = 0;
-   si->fp_off  = 0;
+   VG_(memset)(si, 0, sizeof(*si));
 }
 
 
@@ -2072,7 +2076,7 @@ static Bool summarise_context( /*OUT*/DiCfSI* si,
    if (ctx->state_sp >= N_RR_STACK) { why = 9; goto failed; }
    ctxs = &ctx->state[ctx->state_sp];
 
-   /* How to generate the CFA */
+   /* First, summarise the method for generating the CFA */
    if (!ctxs->cfa_is_regoff) {
       /* it was set by DW_CFA_def_cfa_expression; try to convert */
       XArray *src, *dst;
@@ -2093,15 +2097,37 @@ static Bool summarise_context( /*OUT*/DiCfSI* si,
       si->cfa_off = conv;
       if (0 && debuginfo->ddump_frames)
          ML_(ppCfiExpr)(dst, conv);
-   } else
+   }
+   else
    if (ctxs->cfa_is_regoff && ctxs->cfa_reg == SP_REG) {
-      si->cfa_how = CFIC_SPREL;
       si->cfa_off = ctxs->cfa_off;
-   } else
+#     if defined(VGA_x86) || defined(VGA_amd64)
+      si->cfa_how = CFIC_IA_SPREL;
+#     elif defined(VGA_arm)
+      si->cfa_how = CFIC_ARM_R13REL;
+#     else
+      si->cfa_how = 0; /* invalid */
+#     endif
+   }
+   else
    if (ctxs->cfa_is_regoff && ctxs->cfa_reg == FP_REG) {
-      si->cfa_how = CFIC_FPREL;
       si->cfa_off = ctxs->cfa_off;
-   } else {
+#     if defined(VGA_x86) || defined(VGA_amd64)
+      si->cfa_how = CFIC_IA_BPREL;
+#     elif defined(VGA_arm)
+      si->cfa_how = CFIC_ARM_R12REL;
+#     else
+      si->cfa_how = 0; /* invalid */
+#     endif
+   }
+#  if defined(VGA_arm)
+   else
+   if (ctxs->cfa_is_regoff && ctxs->cfa_reg == 11/*??_REG*/) {
+      si->cfa_how = CFIC_ARM_R11REL;
+      si->cfa_off = ctxs->cfa_off;
+   }
+#  endif
+   else {
       why = 1;
       goto failed;
    }
@@ -2143,12 +2169,15 @@ static Bool summarise_context( /*OUT*/DiCfSI* si,
          why = 2; goto failed; /* otherwise give up */        \
    }
 
+#  if defined(VGA_x86) || defined(VGA_amd64)
+
+   /* --- entire tail of this fn specialised for x86/amd64 --- */
+
    SUMMARISE_HOW(si->ra_how, si->ra_off,
                              ctxs->reg[ctx->ra_reg] );
    SUMMARISE_HOW(si->fp_how, si->fp_off,
                              ctxs->reg[FP_REG] );
 
-#  undef SUMMARISE_HOW
 
    /* on x86/amd64, it seems the old %{e,r}sp value before the call is
       always the same as the CFA.  Therefore ... */
@@ -2175,6 +2204,66 @@ static Bool summarise_context( /*OUT*/DiCfSI* si,
    si->len  = (UInt)(ctx->loc - loc_start);
 
    return True;
+
+#  elif defined(VGA_arm)
+
+   /* ---- entire tail of this fn specialised for arm ---- */
+
+   SUMMARISE_HOW(si->r14_how, si->r14_off,
+                              ctxs->reg[14] );
+
+   //SUMMARISE_HOW(si->r13_how, si->r13_off,
+   //                           ctxs->reg[13] );
+
+   SUMMARISE_HOW(si->r12_how, si->r12_off,
+                              ctxs->reg[FP_REG] );
+
+   SUMMARISE_HOW(si->r11_how, si->r11_off,
+                              ctxs->reg[11/*FP_REG*/] );
+
+   if (ctxs->reg[14/*LR*/].tag == RR_Same
+       && ctx->ra_reg == 14/*as we expect it always to be*/) {
+      /* Generate a trivial CfiExpr, which merely says "r14".  First
+         ensure this DebugInfo has a cfsi_expr array in which to park
+         it. */
+      if (!debuginfo->cfsi_exprs)
+         debuginfo->cfsi_exprs = VG_(newXA)( ML_(dinfo_zalloc),
+                                             "di.ccCt.2a",
+                                             ML_(dinfo_free),
+                                             sizeof(CfiExpr) );
+      si->ra_off = ML_(CfiExpr_CfiReg)( debuginfo->cfsi_exprs,
+                                        Creg_ARM_R14);
+      si->ra_how = CFIR_EXPR;
+   } else {
+      /* Just summarise it in the normal way */
+      SUMMARISE_HOW(si->ra_how, si->ra_off,
+                                ctxs->reg[ctx->ra_reg] );
+   }
+
+   /* on arm, it seems the old r13 (SP) value before the call is
+      always the same as the CFA.  Therefore ... */
+   si->r13_how = CFIR_CFAREL;
+   si->r13_off = 0;
+
+   /* bogus looking range?  Note, we require that the difference is
+      representable in 32 bits. */
+   if (loc_start >= ctx->loc) 
+      { why = 4; goto failed; }
+   if (ctx->loc - loc_start > 10000000 /* let's say */)
+      { why = 5; goto failed; }
+
+   si->base = loc_start + ctx->initloc;
+   si->len  = (UInt)(ctx->loc - loc_start);
+
+   return True;
+
+
+#  elif defined(VGA_ppc32) || defined(VGA_ppc64)
+#  else
+#    error "Unknown arch"
+#  endif
+
+#  undef SUMMARISE_HOW
 
   failed:
    if (VG_(clo_verbosity) > 2 || debuginfo->trace_cfi) {
@@ -2228,12 +2317,24 @@ static Int copy_convert_CfiExpr_tree ( XArray*        dstxa,
       case Cex_DwReg:
          /* This is the only place where the conversion can fail. */
          dwreg = src->Cex.DwReg.reg;
+#        if defined(VGA_x86) || defined(VGA_amd64)
          if (dwreg == SP_REG)
             return ML_(CfiExpr_CfiReg)( dstxa, Creg_SP );
          if (dwreg == FP_REG)
             return ML_(CfiExpr_CfiReg)( dstxa, Creg_FP );
          if (dwreg == srcuc->ra_reg)
             return ML_(CfiExpr_CfiReg)( dstxa, Creg_IP ); /* correct? */
+#        elif defined(VGA_arm)
+         if (dwreg == SP_REG)
+            return ML_(CfiExpr_CfiReg)( dstxa, Creg_ARM_R13 );
+         if (dwreg == FP_REG)
+            return ML_(CfiExpr_CfiReg)( dstxa, Creg_ARM_R12 );
+         if (dwreg == srcuc->ra_reg)
+           return ML_(CfiExpr_CfiReg)( dstxa, Creg_ARM_R15 ); /* correct? */
+#        elif defined(VGA_ppc32) || defined(VGA_ppc64)
+#        else
+#           error "Unknown arch"
+#        endif
          /* else we must fail - can't represent the reg */
          return -1;
       default:

@@ -559,7 +559,7 @@ static void pp_curr_ExeContext(void)
 }
 #endif
 
-#if defined(VGA_x86) || defined(VGA_ppc32)
+#if defined(VGA_x86) || defined(VGA_ppc32) || defined(VGA_arm)
 #  define SHMEM_SECMAP_MASK         0xFFFC
 #  define SHMEM_SECMAP_SHIFT        2
 #  define SHMEM_IS_WORD_ALIGNED(_a) VG_IS_4_ALIGNED(_a)
@@ -1271,24 +1271,29 @@ typedef
 
 #if defined(VGA_x86)
 # include "libvex_guest_x86.h"
-# define MC_SIZEOF_GUEST_STATE sizeof(VexGuestX86State)
+# define PC_SIZEOF_GUEST_STATE sizeof(VexGuestX86State)
 #endif
 
 #if defined(VGA_amd64)
 # include "libvex_guest_amd64.h"
-# define MC_SIZEOF_GUEST_STATE sizeof(VexGuestAMD64State)
+# define PC_SIZEOF_GUEST_STATE sizeof(VexGuestAMD64State)
 # define PC_OFF_FS_ZERO offsetof(VexGuestAMD64State,guest_FS_ZERO)
 # define PC_SZB_FS_ZERO sizeof( ((VexGuestAMD64State*)0)->guest_FS_ZERO)
 #endif
 
 #if defined(VGA_ppc32)
 # include "libvex_guest_ppc32.h"
-# define MC_SIZEOF_GUEST_STATE sizeof(VexGuestPPC32State)
+# define PC_SIZEOF_GUEST_STATE sizeof(VexGuestPPC32State)
 #endif
 
 #if defined(VGA_ppc64)
 # include "libvex_guest_ppc64.h"
-# define MC_SIZEOF_GUEST_STATE sizeof(VexGuestPPC64State)
+# define PC_SIZEOF_GUEST_STATE sizeof(VexGuestPPC64State)
+#endif
+
+#if defined(VGA_arm)
+# include "libvex_guest_arm.h"
+# define PC_SIZEOF_GUEST_STATE sizeof(VexGuestARMState)
 #endif
 
 
@@ -1806,6 +1811,27 @@ static void get_IntRegInfo ( /*OUT*/IntRegInfo* iii, Int offset, Int szB )
    tl_assert(0);
 #  undef GOF
 
+   /* -------------------- arm -------------------- */
+
+#  elif defined(VGA_arm)
+
+#  define GOF(_fieldname) \
+      (offsetof(VexGuestARMState,guest_##_fieldname))
+
+   Int  o    = offset;
+   Int  sz   = szB;
+   Bool is4  = sz == 4;
+   Bool is8  = sz == 8;
+
+   tl_assert(sz > 0);
+   tl_assert(host_is_big_endian());
+
+   /* Set default state to "does not intersect any int register". */
+   VG_(memset)( iii, 0, sizeof(*iii) );
+
+   VG_(printf)("get_IntRegInfo(arm):failing on (%d,%d)\n", o, sz);
+   tl_assert(0);
+
 
 #  else
 #    error "FIXME: not implemented for this architecture"
@@ -1888,6 +1914,14 @@ static Bool is_integer_guest_reg_array ( IRRegArray* arr )
    VG_(printf)("\n");
    tl_assert(0);
 
+   /* -------------------- arm -------------------- */
+#  elif defined(VGA_arm)
+   /* There are no rotating register sections on ARM. */
+   VG_(printf)("is_integer_guest_reg_array(arm): unhandled: ");
+   ppIRRegArray(arr);
+   VG_(printf)("\n");
+   tl_assert(0);
+
 #  else
 #    error "FIXME: not implemented for this architecture"
 #  endif
@@ -1939,7 +1973,7 @@ static void put_guest_intreg ( ThreadId tid, Int shadowNo,
 static void init_shadow_registers ( ThreadId tid )
 {
    Int i, wordSzB = sizeof(UWord);
-   for (i = 0; i < MC_SIZEOF_GUEST_STATE-wordSzB; i += wordSzB) {
+   for (i = 0; i < PC_SIZEOF_GUEST_STATE-wordSzB; i += wordSzB) {
       put_guest_intreg( tid, 1, i, wordSzB, (UWord)UNKNOWN );
    }
 }
@@ -2207,9 +2241,13 @@ static void setup_post_syscall_table ( void )
       ADD(0, __NR_dup);
       ADD(0, __NR_dup2);
       ADD(0, __NR_epoll_create);
+#     if defined(__NR_epoll_create1)
       ADD(0, __NR_epoll_create1);
+#     endif
       ADD(0, __NR_epoll_ctl);
+#     if defined(__NR_epoll_pwait)
       ADD(0, __NR_epoll_pwait);
+#     endif
       ADD(0, __NR_epoll_wait);
       ADD(0, __NR_execve); /* presumably we see this because the call failed? */
       ADD(0, __NR_exit); /* hmm, why are we still alive? */
@@ -2684,9 +2722,18 @@ static inline Bool looks_like_a_pointer(Addr a)
 #  if defined(VGA_x86) || defined(VGA_ppc32)
    tl_assert(sizeof(UWord) == 4);
    return (a > 0x01000000UL && a < 0xFF000000UL);
+
 #  elif defined(VGA_amd64) || defined(VGA_ppc64)
    tl_assert(sizeof(UWord) == 8);
    return (a >= 16 * 0x10000UL && a < 0xFF00000000000000UL);
+
+#  elif defined(VGA_arm)
+   /* Unfortunately arm-linux seems to load the exe at very low, at
+      0x8000, so we have to assume any value above that is a pointer,
+      which is pretty dismal. */
+   tl_assert(sizeof(UWord) == 4);
+   return (a >= 0x00008000UL && a < 0xFF000000UL);
+
 #  else
 #    error "Unsupported architecture"
 #  endif
@@ -5280,7 +5327,7 @@ IRSB* h_instrument ( VgCallbackClosure* closure,
                                (void*)&pce );
 
    /* Stay sane.  These two should agree! */
-   tl_assert(layout->total_sizeB == MC_SIZEOF_GUEST_STATE);
+   tl_assert(layout->total_sizeB == PC_SIZEOF_GUEST_STATE);
 
    /* Copy verbatim any IR preamble preceding the first IMark */
 

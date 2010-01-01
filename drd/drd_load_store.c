@@ -43,9 +43,11 @@
 #elif defined(VGA_amd64)
 #define STACK_POINTER_OFFSET OFFSET_amd64_RSP
 #elif defined(VGA_ppc32)
-#define STACK_POINTER_OFFSET ((OFFSET_ppc32_GPR0 + OFFSET_ppc32_GPR2) / 2)
+#define STACK_POINTER_OFFSET OFFSET_ppc32_GPR1
 #elif defined(VGA_ppc64)
-#define STACK_POINTER_OFFSET ((OFFSET_ppc64_GPR0 + OFFSET_ppc64_GPR2) / 2)
+#define STACK_POINTER_OFFSET OFFSET_ppc64_GPR1
+#elif defined(VGA_arm)
+#define STACK_POINTER_OFFSET OFFSET_arm_R13
 #else
 #error Unknown architecture.
 #endif

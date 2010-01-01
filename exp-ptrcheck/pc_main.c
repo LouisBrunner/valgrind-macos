@@ -127,10 +127,10 @@ static void pc_post_clo_init ( void )
    sg_post_clo_init();
 #  if defined(VGA_x86) || defined(VGA_amd64)
    /* nothing */
-#  elif defined(VGA_ppc32) || defined(VGA_ppc64)
+#  elif defined(VGA_ppc32) || defined(VGA_ppc64) || defined(VGA_arm)
    if (VG_(clo_verbosity) >= 1 && sg_clo_enable_sg_checks) {
       VG_(message)(Vg_UserMsg, 
-         "WARNING: exp-ptrcheck on ppc32/ppc64 platforms: "
+         "WARNING: exp-ptrcheck on ppc32/ppc64/arm platforms: "
          "stack and global array\n");
       VG_(message)(Vg_UserMsg, 
          "WARNING: checking is not currently supported.  "

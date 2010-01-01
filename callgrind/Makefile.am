@@ -48,8 +48,9 @@ CALLGRIND_SOURCES_COMMON = \
 	threads.c \
 	../cachegrind/cg-x86-amd64.c \
 	../cachegrind/cg-ppc32.c \
-	../cachegrind/cg-ppc64.c
-	
+	../cachegrind/cg-ppc64.c \
+	../cachegrind/cg-arm.c
+
 CALLGRIND_CFLAGS_COMMON = -I$(top_srcdir)/cachegrind
 
 callgrind_@VGCONF_ARCH_PRI@_@VGCONF_OS@_SOURCES      = \

@@ -1217,33 +1217,6 @@ if test x$no_pointer_sign = xyes; then
 fi
 
 
-# does this compiler support -Wdeclaration-after-statement ?
-AC_MSG_CHECKING([if gcc accepts -Wdeclaration-after-statement])
-
-safe_CFLAGS=$CFLAGS
-CFLAGS="-Wdeclaration-after-statement"
-
-AC_TRY_COMPILE(, [
-  return 0;
-],
-[
-declaration_after_statement=yes
-FLAG_WDECL_AFTER_STMT="-Wdeclaration-after-statement"
-AC_MSG_RESULT([yes])
-], [
-declaration_after_statement=no
-FLAG_WDECL_AFTER_STMT=""
-AC_MSG_RESULT([no])
-])
-CFLAGS=$safe_CFLAGS
-
-AC_SUBST(FLAG_WDECL_AFTER_STMT)
-
-if test x$declaration_after_statement = xyes; then
-  CFLAGS="$CFLAGS -Wdeclaration-after-statement"
-fi
-
-
 # does this compiler support -Wno-empty-body ?
 
 AC_MSG_CHECKING([if gcc accepts -Wno-empty-body])

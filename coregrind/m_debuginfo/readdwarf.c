@@ -2015,16 +2015,16 @@ static void initUnwindContext ( /*OUT*/UnwindContext* ctx )
            ctx->state[j].reg[i].tag = RR_Undef;
          /* ctx->state[j].reg[i].arg = 0; */
       }
+#     if defined(VGA_arm)
+      /* All callee-saved registers (or at least the ones we are
+         summarising for) should start out as RR_Same, on ARM. */
+      ctx->state[j].reg[11].tag = RR_Same;
+      /* ctx->state[j].reg[13].tag = RR_Same; */
+      ctx->state[j].reg[14].tag = RR_Same;
+      ctx->state[j].reg[12].tag = RR_Same;
+      /* this can't be right though: R12 (IP) isn't callee saved. */
+#     endif
    }
-#  if defined(VGA_arm)
-   /* All callee-saved registers (or at least the ones we are
-      summarising for) should start out as RR_Same, on ARM. */
-   ctx->state[j].reg[11].tag = RR_Same;
-   /* ctx->state[j].reg[13].tag = RR_Same; */
-   ctx->state[j].reg[14].tag = RR_Same;
-   ctx->state[j].reg[12].tag = RR_Same;
-   /* this can't be right though: R12 (IP) isn't callee saved. */
-#  endif
 }
 
 

@@ -45,6 +45,9 @@
 #elif defined(VGP_ppc64_linux)
 #  include "vki/vki-scnums-ppc64-linux.h"
 
+#elif defined(VGP_arm_linux)
+#  include "vki/vki-scnums-arm-linux.h"
+
 #elif defined(VGP_ppc32_aix5) || defined(VGP_ppc64_aix5)
    // Nothing:  vki-scnums-aix5.h only contains stuff suitable for inclusion
    // in C files, not asm files.  So unlike all the other

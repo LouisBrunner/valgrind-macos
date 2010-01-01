@@ -151,6 +151,11 @@ case "${host_cpu}" in
         esac
         ;;
 
+     armv7*)
+	AC_MSG_RESULT([ok (${host_cpu})])
+	ARCH_MAX="arm"
+	;;
+
      *) 
 	AC_MSG_RESULT([no (${host_cpu})])
 	AC_MSG_ERROR([Unsupported host architecture. Sorry])
@@ -459,6 +464,14 @@ case "$ARCH_MAX-$VGCONF_OS" in
         valt_load_address_inner="0x0"
         AC_MSG_RESULT([ok (${ARCH_MAX}-${VGCONF_OS})])
 	;;
+     arm-linux) 
+	VGCONF_ARCH_PRI="arm"
+	VGCONF_PLATFORM_PRI_CAPS="ARM_LINUX"
+	VGCONF_PLATFORM_SEC_CAPS=""
+	valt_load_address_normal="0x38000000"
+	valt_load_address_inner="0x28000000"
+	AC_MSG_RESULT([ok (${host_cpu}-${host_os})])
+	;;
     *)
         VGCONF_ARCH_PRI="unknown"
         VGCONF_ARCH_SEC="unknown"
@@ -489,6 +502,8 @@ AM_CONDITIONAL(VGCONF_ARCHS_INCLUDE_PPC32,
 AM_CONDITIONAL(VGCONF_ARCHS_INCLUDE_PPC64, 
                test x$VGCONF_PLATFORM_PRI_CAPS = xPPC64_LINUX \
                  -o x$VGCONF_PLATFORM_PRI_CAPS = xPPC64_AIX5 )
+AM_CONDITIONAL(VGCONF_ARCHS_INCLUDE_ARM,   
+               test x$VGCONF_PLATFORM_PRI_CAPS = xARM_LINUX )
 
 # Set up VGCONF_PLATFORMS_INCLUDE_<platform>.  Either one or two of these
 # become defined.
@@ -502,6 +517,8 @@ AM_CONDITIONAL(VGCONF_PLATFORMS_INCLUDE_PPC32_LINUX,
                  -o x$VGCONF_PLATFORM_SEC_CAPS = xPPC32_LINUX)
 AM_CONDITIONAL(VGCONF_PLATFORMS_INCLUDE_PPC64_LINUX, 
                test x$VGCONF_PLATFORM_PRI_CAPS = xPPC64_LINUX)
+AM_CONDITIONAL(VGCONF_PLATFORMS_INCLUDE_ARM_LINUX, 
+               test x$VGCONF_PLATFORM_PRI_CAPS = xARM_LINUX)
 
 AM_CONDITIONAL(VGCONF_PLATFORMS_INCLUDE_PPC32_AIX5, 
                test x$VGCONF_PLATFORM_PRI_CAPS = xPPC32_AIX5 \ 
@@ -523,7 +540,8 @@ AM_CONDITIONAL(VGCONF_OS_IS_LINUX,
                test x$VGCONF_PLATFORM_PRI_CAPS = xX86_LINUX \
                  -o x$VGCONF_PLATFORM_PRI_CAPS = xAMD64_LINUX \
                  -o x$VGCONF_PLATFORM_PRI_CAPS = xPPC32_LINUX \
-                 -o x$VGCONF_PLATFORM_PRI_CAPS = xPPC64_LINUX)
+                 -o x$VGCONF_PLATFORM_PRI_CAPS = xPPC64_LINUX \
+                 -o x$VGCONF_PLATFORM_PRI_CAPS = xARM_LINUX )
 AM_CONDITIONAL(VGCONF_OS_IS_AIX5,
                test x$VGCONF_PLATFORM_PRI_CAPS = xPPC32_AIX5 \
                  -o x$VGCONF_PLATFORM_PRI_CAPS = xPPC64_AIX5)
@@ -1927,6 +1945,7 @@ AC_CONFIG_FILES([
    none/tests/ppc32/Makefile
    none/tests/ppc64/Makefile
    none/tests/x86/Makefile
+   none/tests/arm/Makefile
    none/tests/linux/Makefile
    none/tests/darwin/Makefile
    none/tests/x86-linux/Makefile

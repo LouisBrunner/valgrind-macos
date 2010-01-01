@@ -172,6 +172,12 @@ static const char *select_platform(const char *clientname)
                  ehdr->e_ident[EI_OSABI] == ELFOSABI_LINUX)) {
                platform = "x86-linux";
             }
+            else 
+            if (ehdr->e_machine == EM_ARM &&
+                (ehdr->e_ident[EI_OSABI] == ELFOSABI_SYSV ||
+                 ehdr->e_ident[EI_OSABI] == ELFOSABI_LINUX)) {
+               platform = "arm-linux";
+            }
          }
          else if (header[EI_DATA] == ELFDATA2MSB) {
             if (ehdr->e_machine == EM_PPC &&
@@ -180,6 +186,7 @@ static const char *select_platform(const char *clientname)
                platform = "ppc32-linux";
             }
          }
+
       } else if (n_bytes >= sizeof(Elf64_Ehdr) && header[EI_CLASS] == ELFCLASS64) {
          const Elf64_Ehdr *ehdr = (Elf64_Ehdr *)header;
 
@@ -266,7 +273,8 @@ int main(int argc, char** argv, char** envp)
    if ((0==strcmp(VG_PLATFORM,"x86-linux"))   ||
        (0==strcmp(VG_PLATFORM,"amd64-linux")) ||
        (0==strcmp(VG_PLATFORM,"ppc32-linux")) ||
-       (0==strcmp(VG_PLATFORM,"ppc64-linux")))
+       (0==strcmp(VG_PLATFORM,"ppc64-linux")) ||
+       (0==strcmp(VG_PLATFORM,"arm-linux")))
       default_platform = VG_PLATFORM;
    else
       barf("Unknown VG_PLATFORM '%s'", VG_PLATFORM);

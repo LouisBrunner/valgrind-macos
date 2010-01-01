@@ -63,8 +63,7 @@
 __attribute__ ((__noreturn__))
 extern void  VG_(core_panic)      ( Char* str );
 __attribute__ ((__noreturn__))
-extern void  VG_(core_panic_at)   ( Char* str, 
-                                    Addr ip, Addr sp, Addr fp, Addr lr );
+extern void  VG_(core_panic_at)   ( Char* str, UnwindStartRegs* );
 
 /* Called when some unhandleable client behaviour is detected.
    Prints a msg and aborts. */

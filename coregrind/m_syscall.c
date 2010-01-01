@@ -100,6 +100,17 @@ SysRes VG_(mk_SysRes_ppc64_linux) ( ULong val, ULong cr0so ) {
    return res;
 }
 
+SysRes VG_(mk_SysRes_arm_linux) ( Int val ) {
+   SysRes res;
+   res._isError = val >= -4095 && val <= -1;
+   if (res._isError) {
+      res._val = (UInt)(-val);
+   } else {
+      res._val = (UInt)val;
+   }
+   return res;
+}
+
 /* Generic constructors. */
 SysRes VG_(mk_SysRes_Error) ( UWord err ) {
    SysRes r;
@@ -397,6 +408,32 @@ asm(
 "        andi. 3,3,1\n"
 "        std  3,8(5)\n"    /* argblock[1] = cr0.s0 & 1 */
 "        blr\n"
+);
+
+#elif defined(VGP_arm_linux)
+/* I think the conventions are:
+   args  in r0 r1 r2 r3 r4 r5
+   sysno in r7
+   return value in r0, w/ same conventions as x86-linux, viz r0 in
+   -4096 .. -1 is an error value.  All other values are success
+   values.
+*/
+extern UWord do_syscall_WRK (
+          UWord a1, UWord a2, UWord a3,
+          UWord a4, UWord a5, UWord a6,
+          UWord syscall_no
+       );
+asm(
+".text\n"
+"do_syscall_WRK:\n"
+"         push    {r4, r5, r7}\n"
+"         ldr     r4, [sp, #12]\n"
+"         ldr     r5, [sp, #16]\n"
+"         ldr     r7, [sp, #20]\n"
+"         svc     0x0\n"
+"         pop     {r4, r5, r7}\n"
+"         bx      lr\n"
+".previous\n"
 );
 
 #elif defined(VGP_ppc32_aix5)
@@ -719,6 +756,10 @@ SysRes VG_(do_syscall) ( UWord sysno, UWord a1, UWord a2, UWord a3,
    argblock[6] = a6;
    do_syscall_WRK( &argblock[0] );
    return VG_(mk_SysRes_ppc64_linux)( argblock[0], argblock[1] );
+
+#  elif defined(VGP_arm_linux)
+   UWord val = do_syscall_WRK(a1,a2,a3,a4,a5,a6,sysno);
+   return VG_(mk_SysRes_arm_linux)( val );
 
 #  elif defined(VGP_ppc32_aix5)
    UWord res;

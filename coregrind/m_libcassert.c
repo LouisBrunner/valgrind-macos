@@ -45,51 +45,94 @@
    Assertery.
    ------------------------------------------------------------------ */
 
-#if defined(VGP_x86_linux)  ||  defined(VGP_x86_darwin)
-#  define GET_REAL_PC_SP_AND_FP(pc, sp, fp)      \
-      asm("call 0f;" \
-          "0: popl %0;" \
-          "movl %%esp, %1;" \
-          "movl %%ebp, %2;" \
-          : "=r" (pc),\
-            "=r" (sp),\
-            "=r" (fp));
-#elif defined(VGP_amd64_linux)  ||  defined(VGP_amd64_darwin)
-#  define GET_REAL_PC_SP_AND_FP(pc, sp, fp)      \
-      asm("leaq 0(%%rip), %0;" \
-          "movq %%rsp, %1;" \
-          "movq %%rbp, %2;" \
-          : "=r" (pc),\
-            "=r" (sp),\
-            "=r" (fp));
+#if defined(VGP_x86_linux) || defined(VGP_x86_darwin)
+#  define GET_STARTREGS(srP)                              \
+      { UInt eip, esp, ebp;                               \
+        __asm__ __volatile__(                             \
+           "call 0f;"                                     \
+           "0: popl %0;"                                  \
+           "movl %%esp, %1;"                              \
+           "movl %%ebp, %2;"                              \
+           : "=r" (eip), "=r" (esp), "=r" (ebp)           \
+           : /* reads none */                             \
+           : "memory"                                     \
+        );                                                \
+        (srP)->r_pc = (ULong)eip;                         \
+        (srP)->r_sp = (ULong)esp;                         \
+        (srP)->misc.X86.r_ebp = ebp;                      \
+      }
+#elif defined(VGP_amd64_linux) || defined(VGP_amd64_darwin)
+#  define GET_STARTREGS(srP)                              \
+      { ULong rip, rsp, rbp;                              \
+        __asm__ __volatile__(                             \
+           "leaq 0(%%rip), %0;"                           \
+           "movq %%rsp, %1;"                              \
+           "movq %%rbp, %2;"                              \
+           : "=r" (rip), "=r" (rsp), "=r" (rbp)           \
+           : /* reads none */                             \
+           : "memory"                                     \
+        );                                                \
+        (srP)->r_pc = rip;                                \
+        (srP)->r_sp = rsp;                                \
+        (srP)->misc.AMD64.r_rbp = rbp;                    \
+      }
 #elif defined(VGP_ppc32_linux) || defined(VGP_ppc32_aix5)
-#  define GET_REAL_PC_SP_AND_FP(pc, sp, fp)                   \
-      asm("mflr 0;"                   /* r0 = lr */           \
-          "bl m_libcassert_get_ip;"   /* lr = pc */           \
-          "m_libcassert_get_ip:\n"                            \
-          "mflr %0;"                \
-          "mtlr 0;"                   /* restore lr */        \
-          "mr %1,1;"                \
-          "mr %2,1;"                \
-          : "=r" (pc),              \
-            "=r" (sp),              \
-            "=r" (fp)               \
-          : /* reads none */        \
-          : "r0" /* trashed */ );
+#  define GET_STARTREGS(srP)                              \
+      { UInt cia, r1, lr;                                 \
+        __asm__ __volatile__(                             \
+           "mflr 0;"                   /* r0 = lr */      \
+           "bl m_libcassert_get_ip;"   /* lr = pc */      \
+           "m_libcassert_get_ip:\n"                       \
+           "mflr %0;"                  /* %0 = pc */      \
+           "mtlr 0;"                   /* restore lr */   \
+           "mr %1,1;"                  /* %1 = r1 */      \
+           "mr %2,0;"                  /* %2 = lr */      \
+           : "=r" (cia), "=r" (r1), "=r" (lr)             \
+           : /* reads none */                             \
+           : "r0" /* trashed */                           \
+        );                                                \
+        srP->r_pc = (ULong)cia;                           \
+        srP->r_sp = (ULong)r1;                            \
+        srP->misc.PPC32.lr = lr;                          \
+      }
 #elif defined(VGP_ppc64_linux) || defined(VGP_ppc64_aix5)
-#  define GET_REAL_PC_SP_AND_FP(pc, sp, fp)                   \
-      asm("mflr 0;"                   /* r0 = lr */           \
-          "bl .m_libcassert_get_ip;"  /* lr = pc */           \
-          ".m_libcassert_get_ip:\n"                           \
-          "mflr %0;"                \
-          "mtlr 0;"                   /* restore lr */        \
-          "mr %1,1;"                \
-          "mr %2,1;"                \
-          : "=r" (pc),              \
-            "=r" (sp),              \
-            "=r" (fp)               \
-          : /* reads none */        \
-          : "r0" /* trashed */ );
+#  define GET_STARTREGS(srP)                              \
+      { ULong cia, r1, lr;                                \
+        __asm__ __volatile__(                             \
+           "mflr 0;"                   /* r0 = lr */      \
+           "bl .m_libcassert_get_ip;"  /* lr = pc */      \
+           ".m_libcassert_get_ip:\n"                      \
+           "mflr %0;"                  /* %0 = pc */      \
+           "mtlr 0;"                   /* restore lr */   \
+           "mr %1,1;"                  /* %1 = r1 */      \
+           "mr %2,0;"                  /* %2 = lr */      \
+           : "=r" (cia), "=r" (r1), "=r" (lr)             \
+           : /* reads none */                             \
+           : "r0" /* trashed */                           \
+        );                                                \
+        srP->r_pc = cia;                                  \
+        srP->r_sp = r1;                                   \
+        srP->misc.PPC64.lr = lr;                          \
+      }
+#elif defined(VGP_arm_linux)
+#  define GET_STARTREGS(srP)                              \
+      { UInt block[5];                                    \
+        __asm__ __volatile__(                             \
+           "str r15, [%0, #+0];"                          \
+           "str r14, [%0, #+4];"                          \
+           "str r13, [%0, #+8];"                          \
+           "str r12, [%0, #+12];"                         \
+           "str r11, [%0, #+16];"                         \
+           : /* out */                                    \
+           : /* in */ "r"(&block[0])                      \
+           : /* trash */ "memory"                         \
+        );                                                \
+        (srP)->r_pc = block[0] - 8;                       \
+        (srP)->r_sp = block[1];                           \
+        (srP)->misc.ARM.r14 = block[2];                   \
+        (srP)->misc.ARM.r12 = block[3];                   \
+        (srP)->misc.ARM.r11 = block[4];                   \
+      }
 #else
 #  error Unknown platform
 #endif
@@ -129,8 +172,8 @@ void VG_(show_sched_status) ( void )
 }
 
 __attribute__ ((noreturn))
-static void report_and_quit ( const Char* report, 
-                              Addr ip, Addr sp, Addr fp, Addr lr )
+static void report_and_quit ( const Char* report,
+                              UnwindStartRegs* startRegsIN )
 {
    Addr stacktop;
    Addr ips[BACKTRACE_DEPTH];
@@ -141,8 +184,13 @@ static void report_and_quit ( const Char* report,
    // If necessary, fake up an ExeContext which is of our actual real CPU
    // state.  Could cause problems if we got the panic/exception within the
    // execontext/stack dump/symtab code.  But it's better than nothing.
-   if (0 == ip && 0 == sp && 0 == fp) {
-       GET_REAL_PC_SP_AND_FP(ip, sp, fp);
+   UnwindStartRegs startRegs;
+   VG_(memset)(&startRegs, 0, sizeof(startRegs));
+
+   if (startRegsIN == NULL) {
+      GET_STARTREGS(&startRegs);
+   } else {
+      startRegs = *startRegsIN;
    }
  
    stacktop = tst->os_state.valgrind_stack_init_SP;
@@ -153,7 +201,7 @@ static void report_and_quit ( const Char* report,
          ips, BACKTRACE_DEPTH, 
          NULL/*array to dump SP values in*/,
          NULL/*array to dump FP values in*/,
-         ip, sp, fp, lr, sp, stacktop
+         &startRegs, stacktop
       );
    VG_(clo_xml) = False;
    VG_(pp_StackTrace) (ips, n_ips);
@@ -214,32 +262,32 @@ void VG_(assert_fail) ( Bool isCore, const Char* expr, const Char* file,
    if (!VG_STREQ(buf, ""))
       VG_(printf)("%s: %s\n", component, buf );
 
-   report_and_quit(bugs_to, 0,0,0,0);
+   report_and_quit(bugs_to, NULL);
 }
 
 __attribute__ ((noreturn))
 static void panic ( Char* name, Char* report, Char* str,
-                    Addr ip, Addr sp, Addr fp, Addr lr )
+                    UnwindStartRegs* startRegs )
 {
    if (VG_(clo_xml))
       VG_(printf_xml)("</valgrindoutput>\n");
    VG_(printf)("\n%s: the 'impossible' happened:\n   %s\n", name, str);
-   report_and_quit(report, ip, sp, fp, lr);
+   report_and_quit(report, startRegs);
 }
 
-void VG_(core_panic_at) ( Char* str, Addr ip, Addr sp, Addr fp, Addr lr )
+void VG_(core_panic_at) ( Char* str, UnwindStartRegs* startRegs )
 {
-   panic("valgrind", VG_BUGS_TO, str, ip, sp, fp, lr);
+   panic("valgrind", VG_BUGS_TO, str, startRegs);
 }
 
 void VG_(core_panic) ( Char* str )
 {
-   VG_(core_panic_at)(str, 0,0,0,0);
+   VG_(core_panic_at)(str, NULL);
 }
 
 void VG_(tool_panic) ( Char* str )
 {
-   panic(VG_(details).name, VG_(details).bug_reports_to, str, 0,0,0,0);
+   panic(VG_(details).name, VG_(details).bug_reports_to, str, NULL);
 }
 
 /* Print some helpful-ish text about unimplemented things, and give up. */

@@ -83,6 +83,8 @@ typedef
    typedef VexGuestPPC32State VexGuestArchState;
 #elif defined(VGA_ppc64)
    typedef VexGuestPPC64State VexGuestArchState;
+#elif defined(VGA_arm)
+   typedef VexGuestARMState   VexGuestArchState;
 #else
 #  error Unknown architecture
 #endif

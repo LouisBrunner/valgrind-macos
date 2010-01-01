@@ -479,6 +479,151 @@ VG_(trampoline_stuff_end):
 #	undef UD2_1024
 #	undef UD2_PAGE
 
+/*---------------- ppc32-linux ----------------*/
+
+#elif defined(VGP_arm_linux)
+
+#       define UD2_4      .word 0xFFFFFFFF
+#	define UD2_16     UD2_4    ; UD2_4    ; UD2_4    ; UD2_4
+#	define UD2_64     UD2_16   ; UD2_16   ; UD2_16   ; UD2_16
+#	define UD2_256    UD2_64   ; UD2_64   ; UD2_64   ; UD2_64
+#	define UD2_1024   UD2_256  ; UD2_256  ; UD2_256  ; UD2_256
+#	define UD2_PAGE   UD2_1024 ; UD2_1024 ; UD2_1024 ; UD2_1024  
+
+	/* a leading page of unexecutable code */
+	UD2_PAGE
+
+.global VG_(trampoline_stuff_start)
+VG_(trampoline_stuff_start):
+
+.global VG_(arm_linux_REDIR_FOR_strlen)
+VG_(arm_linux_REDIR_FOR_strlen):
+	mov	r2, r0
+	ldrb	r0, [r0, #0]	@ zero_extendqisi2
+	@ lr needed for prologue
+	cmp	r0, #0
+	bxeq	lr
+	mov	r0, #0
+.L5:
+	add	r0, r0, #1
+	ldrb	r3, [r0, r2]	@ zero_extendqisi2
+	cmp	r3, #0
+	bne	.L5
+	bx	lr
+	UD2_4
+
+//.global VG_(arm_linux_REDIR_FOR_index)
+//VG_(arm_linux_REDIR_FOR_index):
+//	ldrb	r3, [r0, #0]	@ zero_extendqisi2
+//	and	r1, r1, #255
+//	cmp	r3, r1
+//	@ lr needed for prologue
+//	bne	.L9
+//	bx	lr
+//.L12:
+//	ldrb	r3, [r0, #1]!	@ zero_extendqisi2
+//	cmp	r3, r1
+//	beq	.L11
+//.L9:
+//	cmp	r3, #0
+//	bne	.L12
+//	mov	r0, #0
+//	bx	lr
+//.L11:
+//	bx	lr
+//	UD2_4
+
+.global VG_(arm_linux_REDIR_FOR_memcpy)
+VG_(arm_linux_REDIR_FOR_memcpy):
+	stmfd	sp!, {r4, r5, lr}
+	subs	lr, r2, #0
+	mov	r5, r0
+	beq	.L2
+	cmp	r0, r1
+	bls	.L4
+	add	r3, r0, lr
+	add	r1, lr, r1
+	cmp	lr, #3
+	sub	r4, r3, #1
+	sub	r0, r1, #1
+	ble	.L28
+	sub	ip, r3, #5
+	sub	r1, r1, #5
+.L8:
+	ldrb	r3, [r1, #4]	@ zero_extendqisi2
+	sub	lr, lr, #4
+	strb	r3, [ip, #4]
+	ldrb	r2, [r1, #3]	@ zero_extendqisi2
+	cmp	lr, #3
+	strb	r2, [ip, #3]
+	ldrb	r3, [r1, #2]	@ zero_extendqisi2
+	mov	r4, ip
+	strb	r3, [ip, #2]
+	ldrb	r2, [r1, #1]	@ zero_extendqisi2
+	mov	r0, r1
+	strb	r2, [ip, #1]
+	sub	r1, r1, #4
+	sub	ip, ip, #4
+	bgt	.L8
+	cmp	lr, #0
+	beq	.L2
+.L28:
+	sub	r2, lr, #1
+.L21:
+	sub	r2, r2, #1
+	ldrb	r3, [r0], #-1	@ zero_extendqisi2
+	cmn	r2, #1
+	strb	r3, [r4], #-1
+	bne	.L21
+.L2:
+	mov	r0, r5
+	ldmfd	sp!, {r4, r5, pc}
+.L4:
+	bcs	.L2
+	cmp	lr, #3
+	mov	ip, r0
+	ble	.L29
+.L19:
+	ldrb	r3, [r1, #0]	@ zero_extendqisi2
+	sub	lr, lr, #4
+	strb	r3, [ip, #0]
+	ldrb	r2, [r1, #1]	@ zero_extendqisi2
+	cmp	lr, #3
+	strb	r2, [ip, #1]
+	ldrb	r3, [r1, #2]	@ zero_extendqisi2
+	strb	r3, [ip, #2]
+	ldrb	r2, [r1, #3]	@ zero_extendqisi2
+	add	r1, r1, #4
+	strb	r2, [ip, #3]
+	add	ip, ip, #4
+	bgt	.L19
+	cmp	lr, #0
+	beq	.L2
+.L29:
+	sub	r2, lr, #1
+.L20:
+	sub	r2, r2, #1
+	ldrb	r3, [r1], #1	@ zero_extendqisi2
+	cmn	r2, #1
+	strb	r3, [ip], #1
+	bne	.L20
+	mov	r0, r5
+	ldmfd	sp!, {r4, r5, pc}
+	UD2_4
+
+.global VG_(trampoline_stuff_end)
+VG_(trampoline_stuff_end):
+
+	/* and a trailing page of unexecutable code */
+	UD2_PAGE
+
+#	undef UD2_4
+#	undef UD2_16
+#	undef UD2_64
+#	undef UD2_256
+#	undef UD2_1024
+#	undef UD2_PAGE
+        
 /*---------------- ppc32-aix5 ----------------*/
 #else
 #if defined(VGP_ppc32_aix5)
@@ -1076,7 +1221,11 @@ VG_(trampoline_stuff_end):
 
 #if defined(VGO_linux)
 /* Let the linker know we don't need an executable stack */
-.section .note.GNU-stack,"",@progbits
+#  if defined(VGP_arm_linux)
+   .section .note.GNU-stack,"",%progbits
+#  else        
+   .section .note.GNU-stack,"",@progbits
+#  endif
 #endif
 
 /*--------------------------------------------------------------------*/

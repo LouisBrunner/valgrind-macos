@@ -65,6 +65,11 @@
 # define MC_SIZEOF_GUEST_STATE sizeof(VexGuestPPC64State)
 #endif
 
+#if defined(VGA_arm)
+# include "libvex_guest_arm.h"
+# define MC_SIZEOF_GUEST_STATE sizeof(VexGuestARMState)
+#endif
+
 static inline Bool host_is_big_endian ( void ) {
    UInt x = 0x11223344;
    return 0x1122 == *(UShort*)(&x);
@@ -674,6 +679,77 @@ static Int get_otrack_shadow_offset_wrk ( Int offset, Int szB )
 #  undef GOF
 #  undef SZB
 
+   /* --------------------- arm --------------------- */
+
+#  elif defined(VGA_arm)
+
+#  define GOF(_fieldname) \
+      (offsetof(VexGuestARMState,guest_##_fieldname))
+#  define SZB(_fieldname) \
+      (sizeof(((VexGuestARMState*)0)->guest_##_fieldname))
+
+   Int  o     = offset;
+   Int  sz    = szB;
+   tl_assert(sz > 0);
+   tl_assert(host_is_little_endian());
+
+   if (o == GOF(R0)  && sz == 4) return o;
+   if (o == GOF(R1)  && sz == 4) return o;
+   if (o == GOF(R2)  && sz == 4) return o;
+   if (o == GOF(R3)  && sz == 4) return o;
+   if (o == GOF(R4)  && sz == 4) return o;
+   if (o == GOF(R5)  && sz == 4) return o;
+   if (o == GOF(R6)  && sz == 4) return o;
+   if (o == GOF(R7)  && sz == 4) return o;
+   if (o == GOF(R8)  && sz == 4) return o;
+   if (o == GOF(R9)  && sz == 4) return o;
+   if (o == GOF(R10) && sz == 4) return o;
+   if (o == GOF(R11) && sz == 4) return o;
+   if (o == GOF(R12) && sz == 4) return o;
+   if (o == GOF(R13) && sz == 4) return o;
+   if (o == GOF(R14) && sz == 4) return o;
+
+   /* EAZG: These may be completely wrong. */
+   if (o == GOF(R15)   && sz == 4) return -1; /* slot unused */
+   if (o == GOF(CC_OP) && sz == 4) return -1; /* slot unused */
+
+   if (o == GOF(CC_DEP1) && sz == 4) return o;
+   if (o == GOF(CC_DEP2) && sz == 4) return o;
+
+   if (o == GOF(CC_NDEP) && sz == 4) return -1; /* slot unused */
+
+   //if (o == GOF(SYSCALLNO)     && sz == 4) return -1; /* slot unused */
+   //if (o == GOF(CC)     && sz == 4) return -1; /* slot unused */
+   //if (o == GOF(EMWARN)     && sz == 4) return -1; /* slot unused */
+   //if (o == GOF(TISTART)     && sz == 4) return -1; /* slot unused */
+   //if (o == GOF(NRADDR)     && sz == 4) return -1; /* slot unused */
+
+   if (o == GOF(FPSCR)    && sz == 4) return -1;
+   if (o == GOF(TPIDRURO) && sz == 4) return -1;
+
+   if (o >= GOF(D0)  && o+sz <= GOF(D0) +SZB(D0))  return -1;
+   if (o >= GOF(D1)  && o+sz <= GOF(D1) +SZB(D1))  return -1;
+   if (o >= GOF(D2)  && o+sz <= GOF(D2) +SZB(D2))  return -1;
+   if (o >= GOF(D3)  && o+sz <= GOF(D3) +SZB(D3))  return -1;
+   if (o >= GOF(D4)  && o+sz <= GOF(D4) +SZB(D4))  return -1;
+   if (o >= GOF(D5)  && o+sz <= GOF(D5) +SZB(D5))  return -1;
+   if (o >= GOF(D6)  && o+sz <= GOF(D6) +SZB(D6))  return -1;
+   if (o >= GOF(D7)  && o+sz <= GOF(D7) +SZB(D7))  return -1;
+   if (o >= GOF(D8)  && o+sz <= GOF(D8) +SZB(D8))  return -1;
+   if (o >= GOF(D9)  && o+sz <= GOF(D9) +SZB(D9))  return -1;
+   if (o >= GOF(D10) && o+sz <= GOF(D10)+SZB(D10)) return -1;
+   if (o >= GOF(D11) && o+sz <= GOF(D11)+SZB(D11)) return -1;
+   if (o >= GOF(D12) && o+sz <= GOF(D12)+SZB(D12)) return -1;
+   if (o >= GOF(D13) && o+sz <= GOF(D13)+SZB(D13)) return -1;
+   if (o >= GOF(D14) && o+sz <= GOF(D14)+SZB(D14)) return -1;
+   if (o >= GOF(D15) && o+sz <= GOF(D15)+SZB(D15)) return -1;
+
+   VG_(printf)("MC_(get_otrack_shadow_offset)(arm)(off=%d,sz=%d)\n",
+               offset,szB);
+   tl_assert(0);
+#  undef GOF
+#  undef SZB
+
 #  else
 #    error "FIXME: not implemented for this architecture"
 #  endif
@@ -751,6 +827,14 @@ IRType MC_(get_otrack_reg_array_equiv_int_type) ( IRRegArray* arr )
       return Ity_I64;
 
    VG_(printf)("get_reg_array_equiv_int_type(x86): unhandled: ");
+   ppIRRegArray(arr);
+   VG_(printf)("\n");
+   tl_assert(0);
+
+   /* --------------------- arm --------------------- */
+#  elif defined(VGA_arm)
+
+   VG_(printf)("get_reg_array_equiv_int_type(arm): unhandled: ");
    ppIRRegArray(arr);
    VG_(printf)("\n");
    tl_assert(0);

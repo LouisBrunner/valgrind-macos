@@ -1683,6 +1683,25 @@ Addr VG_(am_startup) ( Addr sp_at_startup )
    VG_(debugLog)(2, "aspacem", "Reading /proc/self/maps\n");
    parse_procselfmaps( read_maps_callback, NULL );
 
+#if defined(VGP_arm_linux)
+   /* ARM puts code at the end of memory that contains processor
+      specific stuff (cmpxchg, getting the thread local storage, etc.)
+      This isn't specified in /proc/self/maps, so do it here
+    
+      EAZG: Is this the proper place for this? Seems like this is one
+      of the few contexts when we can punch holes in the map
+   */
+   init_nsegment( &seg );
+   seg.kind  = SkFileC;
+   seg.start = 0xFFFF0000;
+   seg.end   = 0xFFFFEFFF;
+   seg.hasR  = toBool(1);
+   seg.hasW  = toBool(0);
+   seg.hasX  = toBool(1);
+   seg.fnIdx = allocate_segname( "arm_commpage" );
+   add_segment( &seg );
+#endif
+ 
    VG_(am_show_nsegments)(2, "With contents of /proc/self/maps");
 
    AM_SANITY_CHECK;

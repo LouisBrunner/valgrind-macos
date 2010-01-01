@@ -10,12 +10,12 @@ include $(top_srcdir)/Makefile.all.am
 #----------------------------------------------------------------------------
 
 AM_CPPFLAGS_@VGCONF_PLATFORM_PRI_CAPS@ += \
- 	-I$(top_srcdir)/coregrind \
+	-I$(top_srcdir)/coregrind \
 	-DVG_LIBDIR="\"$(pkglibdir)"\" \
 	-DVG_PLATFORM="\"@VGCONF_ARCH_PRI@-@VGCONF_OS@\""
 if VGCONF_HAVE_PLATFORM_SEC
 AM_CPPFLAGS_@VGCONF_PLATFORM_SEC_CAPS@ += \
- 	-I$(top_srcdir)/coregrind \
+	-I$(top_srcdir)/coregrind \
 	-DVG_LIBDIR="\"$(pkglibdir)"\" \
 	-DVG_PLATFORM="\"@VGCONF_ARCH_SEC@-@VGCONF_OS@\""
 endif
@@ -281,6 +281,7 @@ COREGRIND_SOURCES_COMMON = \
 	m_dispatch/dispatch-amd64-linux.S \
 	m_dispatch/dispatch-ppc32-linux.S \
 	m_dispatch/dispatch-ppc64-linux.S \
+	m_dispatch/dispatch-arm-linux.S \
 	m_dispatch/dispatch-ppc32-aix5.S \
 	m_dispatch/dispatch-ppc64-aix5.S \
 	m_dispatch/dispatch-x86-darwin.S \
@@ -300,6 +301,7 @@ COREGRIND_SOURCES_COMMON = \
 	m_sigframe/sigframe-amd64-linux.c \
 	m_sigframe/sigframe-ppc32-linux.c \
 	m_sigframe/sigframe-ppc64-linux.c \
+	m_sigframe/sigframe-arm-linux.c \
 	m_sigframe/sigframe-ppc32-aix5.c \
 	m_sigframe/sigframe-ppc64-aix5.c \
 	m_sigframe/sigframe-x86-darwin.c \
@@ -310,6 +312,7 @@ COREGRIND_SOURCES_COMMON = \
 	m_syswrap/syscall-amd64-linux.S \
 	m_syswrap/syscall-ppc32-linux.S \
 	m_syswrap/syscall-ppc64-linux.S \
+	m_syswrap/syscall-arm-linux.S \
 	m_syswrap/syscall-ppc32-aix5.S \
 	m_syswrap/syscall-ppc64-aix5.S \
 	m_syswrap/syscall-x86-darwin.S \
@@ -324,6 +327,7 @@ COREGRIND_SOURCES_COMMON = \
 	m_syswrap/syswrap-amd64-linux.c \
 	m_syswrap/syswrap-ppc32-linux.c \
 	m_syswrap/syswrap-ppc64-linux.c \
+	m_syswrap/syswrap-arm-linux.c \
 	m_syswrap/syswrap-ppc32-aix5.c \
 	m_syswrap/syswrap-ppc64-aix5.c \
 	m_syswrap/syswrap-x86-darwin.c \

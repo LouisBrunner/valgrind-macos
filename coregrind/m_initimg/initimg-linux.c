@@ -1004,6 +1004,22 @@ void VG_(ii_finalise_image)( IIFinaliseImageInfo iifii )
    arch->vex.guest_GPR2 = iifii.initial_client_TOC;
    arch->vex.guest_CIA  = iifii.initial_client_IP;
 
+#   elif defined(VGP_arm_linux)
+   /* Zero out the initial state, and set up the simulated FPU in a
+      sane way. */
+   LibVEX_GuestARM_initialise(&arch->vex);
+
+   /* Zero out the shadow areas. */
+   VG_(memset)(&arch->vex_shadow1, 0, sizeof(VexGuestARMState));
+   VG_(memset)(&arch->vex_shadow2, 0, sizeof(VexGuestARMState));
+
+   arch->vex.guest_R13 = iifii.initial_client_SP;
+   arch->vex.guest_R15 = iifii.initial_client_IP;
+
+   /* This is just EABI stuff. */
+   // FIXME jrs: what's this for?
+   arch->vex.guest_R1 =  iifii.initial_client_SP;
+
 #  else
 #    error Unknown platform
 #  endif

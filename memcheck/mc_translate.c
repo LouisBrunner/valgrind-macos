@@ -1392,10 +1392,22 @@ IRAtom* mkLazy3 ( MCEnv* mce, IRType finalVty,
    /* I32 x I64 x I64 -> I32 */
    if (t1 == Ity_I32 && t2 == Ity_I64 && t3 == Ity_I64 
        && finalVty == Ity_I32) {
-      if (0) VG_(printf)("mkLazy3: I32 x I64 x I64 -> I64\n");
+      if (0) VG_(printf)("mkLazy3: I32 x I64 x I64 -> I32\n");
       at = mkPCastTo(mce, Ity_I64, va1);
       at = mkUifU(mce, Ity_I64, at, va2);
       at = mkUifU(mce, Ity_I64, at, va3);
+      at = mkPCastTo(mce, Ity_I32, at);
+      return at;
+   }
+
+   /* I32 x I32 x I32 -> I32 */
+   /* 32-bit FP idiom, as (eg) happens on ARM */
+   if (t1 == Ity_I32 && t2 == Ity_I32 && t3 == Ity_I32 
+       && finalVty == Ity_I32) {
+      if (0) VG_(printf)("mkLazy3: I32 x I32 x I32 -> I32\n");
+      at = va1;
+      at = mkUifU(mce, Ity_I32, at, va2);
+      at = mkUifU(mce, Ity_I32, at, va3);
       at = mkPCastTo(mce, Ity_I32, at);
       return at;
    }
@@ -2059,6 +2071,12 @@ IRAtom* expr2vbits_Triop ( MCEnv* mce,
       case Iop_PRem1C3210F64:
          /* I32(rm) x F64 x F64 -> I32 */
          return mkLazy3(mce, Ity_I32, vatom1, vatom2, vatom3);
+      case Iop_AddF32:
+      case Iop_SubF32:
+      case Iop_MulF32:
+      case Iop_DivF32:
+         /* I32(rm) x F32 x F32 -> I32 */
+         return mkLazy3(mce, Ity_I32, vatom1, vatom2, vatom3);
       default:
          ppIROp(op);
          VG_(tool_panic)("memcheck:expr2vbits_Triop");
@@ -2408,6 +2426,7 @@ IRAtom* expr2vbits_Binop ( MCEnv* mce,
          /* I32(rm) x I64/F64 -> I64/F64 */
          return mkLazy2(mce, Ity_I64, vatom1, vatom2);
 
+      case Iop_F64toI32U:
       case Iop_F64toI32S:
       case Iop_F64toF32:
          /* First arg is I32 (rounding mode), second is F64 (data). */
@@ -2667,6 +2686,7 @@ IRExpr* expr2vbits_Unop ( MCEnv* mce, IROp op, IRAtom* atom )
 
       case Iop_F32toF64: 
       case Iop_I32StoF64:
+      case Iop_I32UtoF64:
       case Iop_NegF64:
       case Iop_AbsF64:
       case Iop_Est5FRSqrt:
@@ -2681,6 +2701,8 @@ IRExpr* expr2vbits_Unop ( MCEnv* mce, IROp op, IRAtom* atom )
       case Iop_Clz32:
       case Iop_Ctz32:
       case Iop_TruncF64asF32:
+      case Iop_NegF32:
+      case Iop_AbsF32:
          return mkPCastTo(mce, Ity_I32, vatom);
 
       case Iop_1Uto64:
@@ -2730,6 +2752,7 @@ IRExpr* expr2vbits_Unop ( MCEnv* mce, IROp op, IRAtom* atom )
       case Iop_ReinterpF64asI64:
       case Iop_ReinterpI64asF64:
       case Iop_ReinterpI32asF32:
+      case Iop_ReinterpF32asI32:
       case Iop_NotV128:
       case Iop_Not64:
       case Iop_Not32:

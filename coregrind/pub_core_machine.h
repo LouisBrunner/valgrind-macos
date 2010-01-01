@@ -60,6 +60,11 @@
 #  define VG_ELF_MACHINE      EM_PPC64
 #  define VG_ELF_CLASS        ELFCLASS64
 #  define VG_PLAT_USES_PPCTOC 1
+#elif defined(VGP_arm_linux)
+#  define VG_ELF_DATA2XXX     ELFDATA2LSB
+#  define VG_ELF_MACHINE      EM_ARM
+#  define VG_ELF_CLASS        ELFCLASS32
+#  undef  VG_PLAT_USES_PPCTOC
 #elif defined(VGO_aix5)
 #  undef  VG_ELF_DATA2XXX
 #  undef  VG_ELF_MACHINE
@@ -90,6 +95,10 @@
 #  define VG_INSTR_PTR        guest_CIA
 #  define VG_STACK_PTR        guest_GPR1
 #  define VG_FRAME_PTR        guest_GPR1   // No frame ptr for PPC
+#elif defined(VGA_arm)
+#  define VG_INSTR_PTR        guest_R15
+#  define VG_STACK_PTR        guest_R13
+#  define VG_FRAME_PTR        guest_R11
 #else
 #  error Unknown arch
 #endif
@@ -98,6 +107,13 @@
 // Offsets for the Vex state
 #define VG_O_STACK_PTR        (offsetof(VexGuestArchState, VG_STACK_PTR))
 #define VG_O_INSTR_PTR        (offsetof(VexGuestArchState, VG_INSTR_PTR))
+
+
+//-------------------------------------------------------------
+// Get hold of the values needed for a stack unwind, for the specified
+// (client) thread.
+void VG_(get_UnwindStartRegs) ( /*OUT*/UnwindStartRegs* regs,
+                                ThreadId tid );
 
 
 //-------------------------------------------------------------

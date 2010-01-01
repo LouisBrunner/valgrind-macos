@@ -655,6 +655,18 @@ static void do_pre_run_checks ( ThreadState* tst )
    vg_assert(VG_IS_16_ALIGNED(& tst->arch.vex_shadow1.guest_VR1));
    vg_assert(VG_IS_16_ALIGNED(& tst->arch.vex_shadow2.guest_VR1));
 #  endif   
+
+#  if defined(VGA_arm)
+   /* arm guest_state VFP regs must be 8 byte aligned for
+      loads/stores. */
+   vg_assert(VG_IS_8_ALIGNED(& tst->arch.vex.guest_D0));
+   vg_assert(VG_IS_8_ALIGNED(& tst->arch.vex_shadow1.guest_D0));
+   vg_assert(VG_IS_8_ALIGNED(& tst->arch.vex_shadow2.guest_D0));
+   /* be extra paranoid .. */
+   vg_assert(VG_IS_8_ALIGNED(& tst->arch.vex.guest_D1));
+   vg_assert(VG_IS_8_ALIGNED(& tst->arch.vex_shadow1.guest_D1));
+   vg_assert(VG_IS_8_ALIGNED(& tst->arch.vex_shadow2.guest_D1));
+#  endif
 }
 
 
@@ -1195,6 +1207,12 @@ VgSchedReturnCode VG_(scheduler) ( ThreadId tid )
             be in on entry to Vex-generated code, and they should be
             unchanged on exit from it.  Failure of this assertion
             usually means a bug in Vex's code generation. */
+         //{ UInt xx;
+         //  __asm__ __volatile__ (
+         //     "\t.word 0xEEF12A10\n"  // fmrx r2,fpscr
+         //     "\tmov %0, r2" : "=r"(xx) : : "r2" );
+         //  VG_(printf)("QQQQ new fpscr = %08x\n", xx);
+         //}
          vg_assert2(0, "VG_(scheduler), phase 3: "
                        "run_innerloop detected host "
                        "state invariant failure", trc);
@@ -1279,6 +1297,9 @@ void VG_(nuke_all_threads_except) ( ThreadId me, VgSchedReturnCode src )
 #elif defined(VGA_ppc32) || defined(VGA_ppc64)
 #  define VG_CLREQ_ARGS       guest_GPR4
 #  define VG_CLREQ_RET        guest_GPR3
+#elif defined(VGA_arm)
+#  define VG_CLREQ_ARGS       guest_R4
+#  define VG_CLREQ_RET        guest_R3
 #else
 #  error Unknown arch
 #endif

@@ -91,6 +91,12 @@ extern void* VG_(ppc64_linux_REDIR_FOR_strchr)( void*, Int );
 extern void VG_(ppctoc_magic_redirect_return_stub);
 #endif
 
+#if defined(VGP_arm_linux)
+extern UInt  VG_(arm_linux_REDIR_FOR_strlen)( void* );
+//extern void* VG_(arm_linux_REDIR_FOR_index) ( void*, Int );
+extern void* VG_(arm_linux_REDIR_FOR_memcpy)( void*, void*, Int );
+#endif
+
 #if defined(VGP_ppc32_aix5)
 /* A label (sans dot) marking the client start point for ppc32_aix5.
    This function is entered with r3 holding a pointer to the

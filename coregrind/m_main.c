@@ -1951,6 +1951,8 @@ Int valgrind_main ( Int argc, HChar **argv, HChar **envp )
       iters = 10;
 #     elif defined(VGP_ppc32_linux)
       iters = 5;
+#     elif defined(VGP_arm_linux)
+      iters = 1;
 #     elif defined(VGP_ppc32_aix5) || defined(VGP_ppc64_aix5)
       iters = 4;
 #     elif defined(VGO_darwin)
@@ -2625,6 +2627,29 @@ void* memset(void *s, int c, SizeT n) {
   return VG_(memset)(s,c,n);
 }
 
+/* EAZG: ARM's EABI will call floating point exception handlers in
+   libgcc which boil down to an abort or raise, that's usually defined
+   in libc. Instead, define them here. */
+#if defined(VGP_arm_linux)
+void raise(void);
+void raise(void){
+   VG_(printf)("Something called raise().\n");
+   vg_assert(0);
+}
+
+void abort(void);
+void abort(void){
+   VG_(printf)("Something called raise().\n");
+   vg_assert(0);
+}
+
+void __aeabi_unwind_cpp_pr0(void);
+void __aeabi_unwind_cpp_pr0(void){
+   VG_(printf)("Something called __aeabi_unwind_cpp_pr0()\n");
+   vg_assert(0);
+}
+#endif
+
 /* ---------------- Requirement 2 ---------------- */
 
 /* Glibc's sysdeps/i386/elf/start.S has the following gem of a
@@ -2757,6 +2782,26 @@ asm("\n"
     "\tbl ._start_in_C_linux\n"
     "\tnop\n"
     "\ttrap\n"
+);
+#elif defined(VGP_arm_linux)
+asm("\n"
+    "\t.align 2\n"
+    "\t.global _start\n"
+    "_start:\n"
+    "\tldr  r0, [pc, #36]\n"
+    "\tldr  r1, [pc, #36]\n"
+    "\tadd  r0, r1, r0\n"
+    "\tldr  r1, [pc, #32]\n"
+    "\tadd  r0, r1, r0\n"
+    "\tmvn  r1, #15\n"
+    "\tand  r0, r0, r1\n"
+    "\tmov  r1, sp\n"
+    "\tmov  sp, r0\n"
+    "\tmov  r0, r1\n"
+    "\tb _start_in_C_linux\n"
+    "\t.word vgPlain_interim_stack\n"
+    "\t.word "VG_STRINGIFY(VG_STACK_GUARD_SZB)"\n"
+    "\t.word "VG_STRINGIFY(VG_STACK_ACTIVE_SZB)"\n"
 );
 #else
 #  error "Unknown linux platform"

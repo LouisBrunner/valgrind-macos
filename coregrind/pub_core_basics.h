@@ -56,12 +56,58 @@
 #  include "libvex_guest_ppc32.h"
 #elif defined(VGA_ppc64)
 #  include "libvex_guest_ppc64.h"
+#elif defined(VGA_arm)
+#  include "libvex_guest_arm.h"
 #else
 #  error Unknown arch
 #endif
 
 // For jmp_buf
 #include <setjmp.h>
+
+
+/* ---------------------------------------------------------------------
+   A struct to hold starting values for stack unwinding.
+   ------------------------------------------------------------------ */
+
+/* This really shouldn't be here.  But putting it elsewhere leads to a
+   veritable swamp of new module cycles. */
+
+/* To support CFA-based stack unwinding, and stack unwinding in
+   general, we need to be able to get hold of the values of specific
+   registers, in order to start the unwinding process.  This is
+   unavoidably arch and platform dependent.  Here is a struct which
+   holds the relevant values.  All platforms must have a program
+   counter and a stack pointer register, but the other fields (frame
+   pointer? link register? misc other regs?) are ad-hoc.  Note, the
+   common fields are 64-bit, so as to make this host-independent. */
+
+typedef
+   struct {
+      ULong r_pc; /* x86:EIP, amd64:RIP, ppc:CIA, arm:R15 */
+      ULong r_sp; /* x86:ESP, amd64:RSP, ppc:R1,  arm:R13 */
+      union {
+         struct {
+            UInt r_ebp;
+         } X86;
+         struct {
+            ULong r_rbp;
+         } AMD64;
+         struct {
+            UInt r_lr;
+         } PPC32;
+         struct {
+            ULong r_lr;
+         } PPC64;
+         struct {
+            UInt r14;
+            UInt r12;
+            UInt r11;
+         } ARM;
+      } misc;
+   }
+   UnwindStartRegs;
+
 
 #endif   // __PUB_CORE_BASICS_H
 

@@ -1507,7 +1507,8 @@ Bool VG_(translate) ( ThreadId tid,
           VG_(clo_profile_flags) > 0
           ? (void*) &VG_(run_innerloop__dispatch_profiled)
           : (void*) &VG_(run_innerloop__dispatch_unprofiled);
-#  elif defined(VGA_ppc32) || defined(VGA_ppc64)
+#  elif defined(VGA_ppc32) || defined(VGA_ppc64) \
+        || defined(VGA_arm)
    vta.dispatch = NULL;
 #  else
 #    error "Unknown arch"

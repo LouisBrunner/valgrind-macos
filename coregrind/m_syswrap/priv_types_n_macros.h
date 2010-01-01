@@ -83,12 +83,13 @@ typedef
       // Note that, depending on the platform, arguments may be found in
       // registers or on the stack.  (See the comment at the top of
       // syswrap-main.c for per-platform details.)  For register arguments
-      // (which have o_arg field names) the o_arg value is the offset from
+      // (which have o_arg field names) the o_arg value is the offset into
       // the vex register state.  For stack arguments (which have s_arg
       // field names), the s_arg value is the offset from the stack pointer.
       Int o_sysno;
 #     if defined(VGP_x86_linux) || defined(VGP_amd64_linux) \
-         || defined(VGP_ppc32_linux) || defined(VGP_ppc64_linux)
+         || defined(VGP_ppc32_linux) || defined(VGP_ppc64_linux) \
+         || defined(VGP_arm_linux)
       Int o_arg1;
       Int o_arg2;
       Int o_arg3;
@@ -170,26 +171,33 @@ typedef
 */
 
 
-#if defined(VGO_linux)  ||  defined(VGO_darwin)
-/* On Linux, finding the wrapper is easy: just look up in fixed,
-   platform-specific tables.  These are defined in the relevant
-   platform-specific files -- syswrap-arch-os.c */
-
-extern const SyscallTableEntry ML_(syscall_table)[];
-
-extern const UInt ML_(syscall_table_size);
+/* A function to find the syscall table entry for a given sysno.  If
+   none is found, return NULL.  This used to be done with a single
+   fixed sized table exposed to the caller, but that's too inflexible;
+   hence now use a function which can do arbitrary messing around to
+   find the required entry. */
+#if defined(VGO_linux)
+extern
+SyscallTableEntry* ML_(get_linux_syscall_entry)( UInt sysno );
 
 #elif defined(VGP_ppc32_aix5)
-/* On AIX5 this is more complex than the simple fixed table lookup on
-   Linux, since the syscalls don't have fixed numbers.  So it's
-   simplest to use a function, which does all the required messing
-   around. */
+/* Same scheme on AIX5.  This is more complex than the simple fixed
+   table lookup typical for Linux, since the syscalls don't have fixed
+   numbers. */
 extern
 SyscallTableEntry* ML_(get_ppc32_aix5_syscall_entry) ( UInt sysno );
 
 #elif defined(VGP_ppc64_aix5)
 extern
 SyscallTableEntry* ML_(get_ppc64_aix5_syscall_entry) ( UInt sysno );
+
+#elif defined(VGO_darwin)
+/* XXX: Darwin still uses the old scheme of exposing the table
+   array(s) and size(s) directly to syswrap-main.c.  This should be
+   fixed. */
+
+extern const SyscallTableEntry ML_(syscall_table)[];
+extern const UInt ML_(syscall_table_size);
 
 #else
 #  error Unknown OS

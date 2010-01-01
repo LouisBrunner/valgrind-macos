@@ -41,6 +41,13 @@
 #include "pub_core_aspacemgr.h"
 #include "pub_core_mallocfree.h" // VG_(out_of_memory_NORETURN)
 
+// JRS FIXME get rid of this somehow
+#if defined(VGP_arm_linux)
+# include "pub_core_vkiscnums.h" // __ARM_NR_cacheflush
+# include "pub_core_syscall.h"   // VG_(do_syscallN)
+#endif
+
+
 /* #define DEBUG_TRANSTAB */
 
 
@@ -808,18 +815,26 @@ static void invalidate_icache ( void *ptr, Int nbytes )
    vg_assert(cls == 32 || cls == 64 || cls == 128);
 
    startaddr &= ~(cls - 1);
-   for (addr = startaddr; addr < endaddr; addr += cls)
-      asm volatile("dcbst 0,%0" : : "r" (addr));
-   asm volatile("sync");
-   for (addr = startaddr; addr < endaddr; addr += cls)
-      asm volatile("icbi 0,%0" : : "r" (addr));
-   asm volatile("sync; isync");
+   for (addr = startaddr; addr < endaddr; addr += cls) {
+      __asm__ __volatile__("dcbst 0,%0" : : "r" (addr));
+   }
+   __asm__ __volatile__("sync");
+   for (addr = startaddr; addr < endaddr; addr += cls) {
+      __asm__ __volatile__("icbi 0,%0" : : "r" (addr));
+   }
+   __asm__ __volatile__("sync; isync");
 
 #  elif defined(VGA_x86)
    /* no need to do anything, hardware provides coherence */
 
 #  elif defined(VGA_amd64)
    /* no need to do anything, hardware provides coherence */
+
+#  elif defined(VGP_arm_linux)
+   /* ARM cache flushes are privileged, so we must defer to the kernel. */
+   Addr startaddr = (Addr) ptr;
+   Addr endaddr   = startaddr + nbytes;
+   VG_(do_syscall2)(__NR_ARM_cacheflush, startaddr, endaddr);
 
 #  else
 #    error "Unknown ARCH"

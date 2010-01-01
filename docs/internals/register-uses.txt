@@ -95,6 +95,37 @@ ppc64-linux
 TBD
 
 
+arm-linux
+~~~~~~~~~
+
+Reg        Callee      Arg
+Name       Saves?      Reg?     Comment              Vex-uses?
+--------------------------------------------------------------
+r0                     int#1    int[31:0] retreg?    avail
+r1                     int#2    int[63:32] retreg?   avail
+r2                     int#3                         avail
+r3                     int#4                         avail
+r4         y                                         avail
+r5         y                                         avail
+r6         y                                         avail
+r7         y                                         avail
+r8         y                                         GSP
+r9         y (but only on Linux; not in general)     avail
+r10        y                                         avail
+r11        y                                         avail
+r12                         possibly used by linker? unavail
+r13(sp)                                              unavail
+r14(lr)                                              unavail
+r15(pc)                                              unavail
+
+VFP: d8-d15 are callee-saved
+r12 (IP) is probably available for use as a caller-saved
+register; but instead we use it as an intermediate for
+holding the address for F32/F64 spills, since the VFP load/store
+insns have reg+offset forms for offsets only up to 1020, which
+often isn't enough.
+
+
 ppc32-aix5
 ~~~~~~~~~~
 

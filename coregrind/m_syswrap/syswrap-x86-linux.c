@@ -1861,7 +1861,7 @@ POST(sys_syscall223)
 // arch/OS combination, eg. */* (generic), */Linux (Linux only), ?/?
 // (unknown).
 
-const SyscallTableEntry ML_(syscall_table)[] = {
+static SyscallTableEntry syscall_table[] = {
 //zz    //   (restart_syscall)                             // 0
    GENX_(__NR_exit,              sys_exit),           // 1
    GENX_(__NR_fork,              sys_fork),           // 2
@@ -2271,8 +2271,23 @@ const SyscallTableEntry ML_(syscall_table)[] = {
    LINXY(__NR_perf_counter_open, sys_perf_counter_open) // 336
 };
 
-const UInt ML_(syscall_table_size) = 
-            sizeof(ML_(syscall_table)) / sizeof(ML_(syscall_table)[0]);
+SyscallTableEntry* ML_(get_linux_syscall_entry) ( UInt sysno )
+{
+   const UInt syscall_table_size
+      = sizeof(syscall_table) / sizeof(syscall_table[0]);
+
+   /* Is it in the contiguous initial section of the table? */
+   if (sysno < syscall_table_size) {
+      SyscallTableEntry* sys = &syscall_table[sysno];
+      if (sys->before == NULL)
+         return NULL; /* no entry */
+      else
+         return sys;
+   }
+
+   /* Can't find a wrapper */
+   return NULL;
+}
 
 #endif // defined(VGP_x86_linux)
 

@@ -152,7 +152,8 @@ SysRes VG_(am_do_mmap_NO_NOTIFY)( Addr start, SizeT length, UInt prot,
 {
    SysRes res;
    aspacem_assert(VG_IS_PAGE_ALIGNED(offset));
-#  if defined(VGP_x86_linux) || defined(VGP_ppc32_linux)
+#  if defined(VGP_x86_linux) || defined(VGP_ppc32_linux) \
+      || defined(VGP_arm_linux)
    /* mmap2 uses 4096 chunks even if actual page size is bigger. */
    aspacem_assert((offset % 4096) == 0);
    res = VG_(do_syscall6)(__NR_mmap2, (UWord)start, length,

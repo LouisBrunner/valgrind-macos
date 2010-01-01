@@ -455,6 +455,18 @@ void getSyscallArgsFromGuestState ( /*OUT*/SyscallArgs*       canonical,
    canonical->arg7  = 0;
    canonical->arg8  = 0;
 
+#elif defined(VGP_arm_linux)
+   VexGuestARMState* gst = (VexGuestARMState*)gst_vanilla;
+   canonical->sysno = gst->guest_R7;
+   canonical->arg1  = gst->guest_R0;
+   canonical->arg2  = gst->guest_R1;
+   canonical->arg3  = gst->guest_R2;
+   canonical->arg4  = gst->guest_R3;
+   canonical->arg5  = gst->guest_R4;
+   canonical->arg6  = gst->guest_R5;
+   canonical->arg7  = 0;
+   canonical->arg8  = 0;
+
 #elif defined(VGP_ppc32_aix5)
    VexGuestPPC32State* gst = (VexGuestPPC32State*)gst_vanilla;
    canonical->sysno = gst->guest_GPR2;
@@ -647,6 +659,16 @@ void putSyscallArgsIntoGuestState ( /*IN*/ SyscallArgs*       canonical,
    gst->guest_GPR7 = canonical->arg5;
    gst->guest_GPR8 = canonical->arg6;
 
+#elif defined(VGP_arm_linux)
+   VexGuestARMState* gst = (VexGuestARMState*)gst_vanilla;
+   gst->guest_R7 = canonical->sysno;
+   gst->guest_R0 = canonical->arg1;
+   gst->guest_R1 = canonical->arg2;
+   gst->guest_R2 = canonical->arg3;
+   gst->guest_R3 = canonical->arg4;
+   gst->guest_R4 = canonical->arg5;
+   gst->guest_R5 = canonical->arg6;
+
 #elif defined(VGP_ppc32_aix5)
    VexGuestPPC32State* gst = (VexGuestPPC32State*)gst_vanilla;
    gst->guest_GPR2  = canonical->sysno;
@@ -736,6 +758,11 @@ void getSyscallStatusFromGuestState ( /*OUT*/SyscallStatus*     canonical,
    UInt                cr    = LibVEX_GuestPPC64_get_CR( gst );
    UInt                cr0so = (cr >> 28) & 1;
    canonical->sres = VG_(mk_SysRes_ppc64_linux)( gst->guest_GPR3, cr0so );
+   canonical->what = SsComplete;
+
+#  elif defined(VGP_arm_linux)
+   VexGuestARMState* gst = (VexGuestARMState*)gst_vanilla;
+   canonical->sres = VG_(mk_SysRes_arm_linux)( gst->guest_R0 );
    canonical->what = SsComplete;
 
 #  elif defined(VGP_ppc32_aix5)
@@ -844,7 +871,7 @@ void putSyscallStatusIntoGuestState ( /*IN*/ ThreadId tid,
    if (sr_isError(canonical->sres)) {
       /* This isn't exactly right, in that really a Failure with res
          not in the range 1 .. 4095 is unrepresentable in the
-         Linux-x86 scheme.  Oh well. */
+         Linux-amd64 scheme.  Oh well. */
       gst->guest_RAX = - (Long)sr_Err(canonical->sres);
    } else {
       gst->guest_RAX = sr_Res(canonical->sres);
@@ -887,6 +914,20 @@ void putSyscallStatusIntoGuestState ( /*IN*/ ThreadId tid,
              OFFSET_ppc64_GPR3, sizeof(UWord) );
    VG_TRACK( post_reg_write, Vg_CoreSysCall, tid, 
              OFFSET_ppc64_CR0_0, sizeof(UChar) );
+
+#  elif defined(VGP_arm_linux)
+   VexGuestARMState* gst = (VexGuestARMState*)gst_vanilla;
+   vg_assert(canonical->what == SsComplete);
+   if (sr_isError(canonical->sres)) {
+      /* This isn't exactly right, in that really a Failure with res
+         not in the range 1 .. 4095 is unrepresentable in the
+         Linux-arm scheme.  Oh well. */
+      gst->guest_R0 = - (Int)sr_Err(canonical->sres);
+   } else {
+      gst->guest_R0 = sr_Res(canonical->sres);
+   }
+   VG_TRACK( post_reg_write, Vg_CoreSysCall, tid, 
+             OFFSET_arm_R0, sizeof(UWord) );
 
 #  elif defined(VGP_ppc32_aix5)
    VexGuestPPC32State* gst = (VexGuestPPC32State*)gst_vanilla;
@@ -1031,6 +1072,17 @@ void getSyscallArgLayout ( /*OUT*/SyscallArgLayout* layout )
    layout->uu_arg7  = -1; /* impossible value */
    layout->uu_arg8  = -1; /* impossible value */
 
+#elif defined(VGP_arm_linux)
+   layout->o_sysno  = OFFSET_arm_R7;
+   layout->o_arg1   = OFFSET_arm_R0;
+   layout->o_arg2   = OFFSET_arm_R1;
+   layout->o_arg3   = OFFSET_arm_R2;
+   layout->o_arg4   = OFFSET_arm_R3;
+   layout->o_arg5   = OFFSET_arm_R4;
+   layout->o_arg6   = OFFSET_arm_R5;
+   layout->uu_arg7  = -1; /* impossible value */
+   layout->uu_arg8  = -1; /* impossible value */
+
 #elif defined(VGP_ppc32_aix5)
    layout->o_sysno  = OFFSET_ppc32_GPR2;
    layout->o_arg1   = OFFSET_ppc32_GPR3;
@@ -1117,9 +1169,7 @@ static const SyscallTableEntry* get_syscall_entry ( Int syscallno )
    const SyscallTableEntry* sys = NULL;
 
 #  if defined(VGO_linux)
-   if (syscallno < ML_(syscall_table_size) &&
-       ML_(syscall_table)[syscallno].before != NULL)
-      sys = &ML_(syscall_table)[syscallno];
+   sys = ML_(get_linux_syscall_entry)( syscallno );
 
 #  elif defined(VGP_ppc32_aix5)
    sys = ML_(get_ppc32_aix5_syscall_entry) ( syscallno );
@@ -1811,6 +1861,19 @@ void ML_(fixup_guest_state_to_restart_syscall) ( ThreadArchState* arch )
                       arch->vex.guest_CIA + 0ULL, p[0], p[1], p[2], p[3]);
 
       vg_assert(p[0] == 0x44 && p[1] == 0x0 && p[2] == 0x0 && p[3] == 0x2);
+   }
+
+#elif defined(VGP_arm_linux)
+   arch->vex.guest_R15 -= 4;   // sizeof(arm instr)
+   {
+      UChar *p = (UChar*)arch->vex.guest_R15;
+
+      if ((p[3] & 0xF) != 0xF)
+         VG_(message)(Vg_DebugMsg,
+                      "?! restarting over syscall that is not syscall at %#llx %02x %02x %02x %02x\n",
+                      arch->vex.guest_R15 + 0ULL, p[0], p[1], p[2], p[3]);
+
+      vg_assert((p[3] & 0xF) == 0xF);
    }
 
 #elif defined(VGP_ppc32_aix5) || defined(VGP_ppc64_aix5)

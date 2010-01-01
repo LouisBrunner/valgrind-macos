@@ -42,6 +42,23 @@
 
    It is called vg_replace_malloc.c because this filename appears in stack
    traces, so we want the name to be (hopefully!) meaningful to users.
+
+   IMPORTANT: this file must not contain any floating point code, nor
+   any integer division.  This is because on ARM these can cause calls
+   to helper functions, which will be unresolved within this .so.
+   Although it is usually the case that the client's ld.so instance
+   can bind them at runtime to the relevant functions in the client
+   executable, there is no guarantee of this; and so the client may
+   die via a runtime link failure.  Hence the only safe approach is to
+   avoid such function calls in the first place.  See "#define CALLOC"
+   below for a specific example.
+
+   A useful command is
+      for f in `find . -name "*preload*.so*"` ; \
+          do nm -A $f | grep " U " ; \
+      done
+
+   to see all the undefined symbols in all the preload shared objects.
    ------------------------------------------------------------------ */
 
 #include "pub_core_basics.h"
@@ -92,6 +109,30 @@ void *memcpy(void *destV, const void *srcV, unsigned long n)
    return dest;
 }
 #endif
+
+
+/* Compute the high word of the double-length unsigned product of U
+   and V.  This is for calloc argument overflow checking; see comments
+   below.  Algorithm as described in Hacker's Delight, chapter 8. */
+static UWord umulHW ( UWord u, UWord v )
+{
+   UWord u0, v0, w0, rHi;
+   UWord u1, v1, w1,w2,t;
+   UWord halfMask  = sizeof(UWord)==4 ? (UWord)0xFFFF
+                                      : (UWord)0xFFFFFFFFULL;
+   UWord halfShift = sizeof(UWord)==4 ? 16 : 32;
+   u0  = u & halfMask;
+   u1  = u >> halfShift;
+   v0  = v & halfMask;
+   v1  = v >> halfShift;
+   w0  = u0 * v0;
+   t   = u1 * v0 + (w0 >> halfShift);
+   w1  = t & halfMask;
+   w2  = t >> halfShift;
+   w1  = u0 * v1 + w1;
+   rHi = u1 * v1 + w2 + (w1 >> halfShift);
+   return rHi;
+}
 
 
 /*------------------------------------------------------------*/
@@ -408,8 +449,16 @@ FREE(VG_Z_LIBC_SONAME,       _ZdaPvRKSt9nothrow_t, __builtin_vec_delete );
       if (!init_done) init(); \
       MALLOC_TRACE("calloc(%llu,%llu)", (ULong)nmemb, (ULong)size ); \
       \
-      /* Protect against overflow.  See bug 24078. */ \
-      if (size && nmemb > (SizeT)-1 / size) return NULL; \
+      /* Protect against overflow.  See bug 24078. (that bug number is
+         invalid.  Which one really?) */ \
+      /* But don't use division, since that produces an external symbol
+         reference on ARM, in the form of a call to __aeabi_uidiv.  It's
+         normally OK, because ld.so manages to resolve it to something in the
+         executable, or one of its shared objects.  But that isn't guaranteed
+         to be the case, and it has been observed to fail in rare cases, eg:
+            echo x | valgrind /bin/sed -n "s/.*-\>\ //p"
+         So instead compute the high word of the product and check it is zero. */ \
+      if (umulHW(size, nmemb) != 0) return NULL; \
       v = (void*)VALGRIND_NON_SIMD_CALL2( info.tl_calloc, nmemb, size ); \
       MALLOC_TRACE(" = %p\n", v ); \
       return v; \

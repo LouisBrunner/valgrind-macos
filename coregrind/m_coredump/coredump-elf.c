@@ -324,6 +324,25 @@ static void fill_prstatus(const ThreadState *tst,
    regs->dsisr = 0;
    regs->result = 0;
 
+#elif defined(VGP_arm_linux)
+   regs->ARM_r0   = arch->vex.guest_R0;
+   regs->ARM_r1   = arch->vex.guest_R1;
+   regs->ARM_r2   = arch->vex.guest_R2;
+   regs->ARM_r3   = arch->vex.guest_R3;
+   regs->ARM_r4   = arch->vex.guest_R4;
+   regs->ARM_r5   = arch->vex.guest_R5;
+   regs->ARM_r6   = arch->vex.guest_R6;
+   regs->ARM_r7   = arch->vex.guest_R7;
+   regs->ARM_r8   = arch->vex.guest_R8;
+   regs->ARM_r9   = arch->vex.guest_R9;
+   regs->ARM_r10  = arch->vex.guest_R10;
+   regs->ARM_fp   = arch->vex.guest_R11;
+   regs->ARM_ip   = arch->vex.guest_R12;
+   regs->ARM_sp   = arch->vex.guest_R13;
+   regs->ARM_lr   = arch->vex.guest_R14;
+   regs->ARM_pc   = arch->vex.guest_R15;
+   regs->ARM_cpsr = LibVEX_GuestARM_get_cpsr( &((ThreadArchState*)arch)->vex );
+
 #else
 #  error Unknown ELF platform
 #endif
@@ -392,6 +411,9 @@ static void fill_fpu(const ThreadState *tst, vki_elf_fpregset_t *fpu)
    DO(16); DO(17); DO(18); DO(19); DO(20); DO(21); DO(22); DO(23);
    DO(24); DO(25); DO(26); DO(27); DO(28); DO(29); DO(30); DO(31);
 #  undef DO
+
+#elif defined(VGP_arm_linux)
+   // umm ...
 
 #else
 #  error Unknown ELF platform

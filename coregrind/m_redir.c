@@ -995,6 +995,28 @@ void VG_(redir_initialise) ( void )
       );
    }
 
+#  elif defined(VGP_arm_linux)
+   /* If we're using memcheck, use these intercepts right from
+      the start, otherwise ld.so makes a lot of noise. */
+   if (0==VG_(strcmp)("Memcheck", VG_(details).name)) {
+      add_hardwired_spec(
+         "ld-linux.so.3", "strlen",
+         (Addr)&VG_(arm_linux_REDIR_FOR_strlen),
+         NULL 
+      );
+      //add_hardwired_spec(
+      //   "ld-linux.so.3", "index",
+      //   (Addr)&VG_(arm_linux_REDIR_FOR_index),
+      //   NULL 
+      //);
+      add_hardwired_spec(
+         "ld-linux.so.3", "memcpy",
+         (Addr)&VG_(arm_linux_REDIR_FOR_memcpy),
+         NULL 
+      );
+   }
+   /* nothing so far */
+
 #  elif defined(VGP_ppc32_aix5)
    /* nothing so far */
 

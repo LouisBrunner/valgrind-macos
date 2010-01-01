@@ -37,22 +37,33 @@
 #  define VG_CLREQ_SZB             14  // length of a client request, may
                                        //   be larger than VG_MAX_INSTR_SZB
 #  define VG_STACK_REDZONE_SZB      0  // number of addressable bytes below %RSP
+
 #elif defined(VGP_amd64_linux)
 #  define VG_MIN_INSTR_SZB          1
 #  define VG_MAX_INSTR_SZB         16
 #  define VG_CLREQ_SZB             19
 #  define VG_STACK_REDZONE_SZB    128
+
 #elif defined(VGP_ppc32_linux)
 #  define VG_MIN_INSTR_SZB          4
 #  define VG_MAX_INSTR_SZB          4 
 #  define VG_CLREQ_SZB             20
 #  define VG_STACK_REDZONE_SZB      0
+
 #elif defined(VGP_ppc64_linux)
 #  define VG_MIN_INSTR_SZB          4
 #  define VG_MAX_INSTR_SZB          4 
 #  define VG_CLREQ_SZB             20
 #  define VG_STACK_REDZONE_SZB    288  // number of addressable bytes below R1
-                                       // from 64-bit PowerPC ELF ABI Supplement 1.7
+                                       // from 64-bit PowerPC ELF ABI 
+                                       // Supplement 1.7
+
+#elif defined(VGP_arm_linux)
+#  define VG_MIN_INSTR_SZB          4
+#  define VG_MAX_INSTR_SZB          4 
+#  define VG_CLREQ_SZB             28
+#  define VG_STACK_REDZONE_SZB      0
+
 #elif defined(VGP_ppc32_aix5)
 #  define VG_MIN_INSTR_SZB          4
 #  define VG_MAX_INSTR_SZB          4 
@@ -63,22 +74,26 @@
       8-alignment of the area to be messed with.  So let's just say
       224 instead.  Gdb has a similar kludge. */
 #  define VG_STACK_REDZONE_SZB    224
+
 #elif defined(VGP_ppc64_aix5)
 #  define VG_MIN_INSTR_SZB          4
 #  define VG_MAX_INSTR_SZB          4 
 #  define VG_CLREQ_SZB             20
 #  define VG_STACK_REDZONE_SZB    288 // is this right?
+
 #elif defined(VGP_x86_darwin)
 #  define VG_MIN_INSTR_SZB          1  // min length of native instruction
 #  define VG_MAX_INSTR_SZB         16  // max length of native instruction
 #  define VG_CLREQ_SZB             14  // length of a client request, may
                                        //   be larger than VG_MAX_INSTR_SZB
 #  define VG_STACK_REDZONE_SZB      0  // number of addressable bytes below %RSP
+
 #elif defined(VGP_amd64_darwin)
 #  define VG_MIN_INSTR_SZB          1
 #  define VG_MAX_INSTR_SZB         16
 #  define VG_CLREQ_SZB             19
 #  define VG_STACK_REDZONE_SZB    128
+
 #else
 #  error Unknown platform
 #endif

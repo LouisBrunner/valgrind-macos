@@ -49,6 +49,10 @@ TOOL_LDFLAGS_PPC64_LINUX = \
 	$(TOOL_LDFLAGS_COMMON_LINUX) @FLAG_M64@ \
 	-Wl,-T,$(top_builddir)/valt_load_address_ppc64_linux.lds
 
+TOOL_LDFLAGS_ARM_LINUX = \
+	$(TOOL_LDFLAGS_COMMON_LINUX) @FLAG_M32@ \
+	-Wl,-T,$(top_builddir)/valt_load_address_arm_linux.lds
+
 TOOL_LDFLAGS_PPC32_AIX5 = \
 	$(TOOL_LDFLAGS_COMMON_AIX5) @FLAG_MAIX32@
 
@@ -87,6 +91,10 @@ endif
 if VGCONF_PLATFORMS_INCLUDE_PPC64_LINUX
 BUILT_SOURCES += $(top_builddir)/valt_load_address_ppc64_linux.lds
 CLEANFILES    += $(top_builddir)/valt_load_address_ppc64_linux.lds
+endif
+if VGCONF_PLATFORMS_INCLUDE_ARM_LINUX
+BUILT_SOURCES += $(top_builddir)/valt_load_address_arm_linux.lds
+CLEANFILES    += $(top_builddir)/valt_load_address_arm_linux.lds
 endif
 if VGCONF_PLATFORMS_INCLUDE_PPC32_AIX5
 # No need to generate $(top_builddir)/valt_load_address*.lds; the final
@@ -149,6 +157,13 @@ $(top_builddir)/valt_load_address_ppc64_linux.lds: Makefile
 		-e '/\. = \(0x[0-9A-Fa-f]\+\|SEGMENT_START("[^"]\+", 0x[0-9A-Fa-f]\+)\) + SIZEOF_HEADERS/s/0x[0-9A-Fa-f]\+/valt_load_address/g' > $@ \
 	|| rm -f $@
 
+$(top_builddir)/valt_load_address_arm_linux.lds: Makefile
+	$(CC) @FLAG_M32@ -Wl,--verbose -nostdlib 2>&1 | sed \
+		-e '1,/^=====\+$$/d' \
+		-e '/^=====\+$$/,/.\*/d' \
+		-e '/\. = \(0x[0-9A-Fa-f]\+\|SEGMENT_START("[^"]\+", 0x[0-9A-Fa-f]\+)\) + SIZEOF_HEADERS/s/0x[0-9A-Fa-f]\+/valt_load_address/g' > $@ \
+	|| rm -f $@
+
 #----------------------------------------------------------------------------
 # vgpreload_<tool>-<platform>.a stuff
 #----------------------------------------------------------------------------
@@ -164,6 +179,9 @@ LIBREPLACEMALLOC_PPC32_LINUX = \
 
 LIBREPLACEMALLOC_PPC64_LINUX = \
 	$(top_builddir)/coregrind/libreplacemalloc_toolpreload-ppc64-linux.a
+
+LIBREPLACEMALLOC_ARM_LINUX = \
+	$(top_builddir)/coregrind/libreplacemalloc_toolpreload-arm-linux.a
 
 LIBREPLACEMALLOC_PPC32_AIX5 = \
 	$(top_builddir)/coregrind/libreplacemalloc_toolpreload-ppc32-aix5.a
@@ -196,6 +214,11 @@ LIBREPLACEMALLOC_LDFLAGS_PPC32_LINUX = \
 LIBREPLACEMALLOC_LDFLAGS_PPC64_LINUX = \
 	-Wl,--whole-archive \
 	$(LIBREPLACEMALLOC_PPC64_LINUX) \
+	-Wl,--no-whole-archive
+
+LIBREPLACEMALLOC_LDFLAGS_ARM_LINUX = \
+	-Wl,--whole-archive \
+	$(LIBREPLACEMALLOC_ARM_LINUX) \
 	-Wl,--no-whole-archive
 
 LIBREPLACEMALLOC_LDFLAGS_PPC32_AIX5 = \

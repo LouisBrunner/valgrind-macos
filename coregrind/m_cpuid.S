@@ -33,8 +33,9 @@
 /*
     Bool VG_(has_cpuid)(void)
  */
-.globl VG_(has_cpuid)
 #if defined(VGA_x86)
+.text
+.globl VG_(has_cpuid)
     VG_(has_cpuid):
         pushl   %ebp
         movl    %esp, %ebp
@@ -57,6 +58,8 @@
         popl    %ebp
         ret
 #elif defined(VGA_amd64)
+.text
+.globl VG_(has_cpuid)
     VG_(has_cpuid):
         movq    $1, %rax
         ret
@@ -66,8 +69,9 @@
     void VG_(cpuid)(UInt eax,
                     UInt* eax_ret, UInt* ebx_ret, UInt* ecx_ret, UInt* edx_ret)
  */
-.globl VG_(cpuid)
 #if defined(VGA_x86)
+.text
+.globl VG_(cpuid)
     VG_(cpuid):
         pushl   %ebp
         movl    %esp, %ebp
@@ -107,6 +111,8 @@
         popl    %ebp
         ret
 #elif defined(VGA_amd64)
+.text
+.globl VG_(cpuid)
     VG_(cpuid):
         pushq   %rbp
         movq    %rsp, %rbp
@@ -143,7 +149,7 @@
         ret
 #endif
 
-#if defined(VGO_linux)
+#if defined(VGA_x86) || defined(VGA_amd64)
 /* Let the linker know we don't need an executable stack */
 .section .note.GNU-stack,"",@progbits
 #endif

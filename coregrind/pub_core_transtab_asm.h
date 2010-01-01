@@ -40,7 +40,10 @@
    On ppc32/ppc64, the bottom two bits of instruction addresses are
    zero, which means that function causes only 1/4 of the entries to
    ever be used.  So instead the function is '(address >>u
-   2)[VG_TT_FAST_BITS-1 : 0]' on those targets. */
+   2)[VG_TT_FAST_BITS-1 : 0]' on those targets.
+
+   On ARM we do like ppc32/ppc64, although that will have to be
+   revisited when we come to implement Thumb. */
 
 #define VG_TT_FAST_BITS 15
 #define VG_TT_FAST_SIZE (1 << VG_TT_FAST_BITS)
@@ -50,7 +53,7 @@
    like a good place to put it. */
 #if defined(VGA_x86) || defined(VGA_amd64)
 #  define VG_TT_FAST_HASH(_addr)  ((((UWord)(_addr))     ) & VG_TT_FAST_MASK)
-#elif defined(VGA_ppc32) || defined(VGA_ppc64)
+#elif defined(VGA_ppc32) || defined(VGA_ppc64) || defined(VGA_arm)
 #  define VG_TT_FAST_HASH(_addr)  ((((UWord)(_addr)) >> 2) & VG_TT_FAST_MASK)
 #else
 #  error "VG_TT_FAST_HASH: unknown platform"

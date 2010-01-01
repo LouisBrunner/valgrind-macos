@@ -53,8 +53,8 @@
 UInt VG_(get_StackTrace_wrk) ( ThreadId tid_if_known,
                                /*OUT*/Addr* ips, UInt n_ips,
                                /*OUT*/Addr* sps, /*OUT*/Addr* fps,
-                               Addr ip, Addr sp, Addr fp, Addr lr,
-                               Addr fp_min, Addr fp_max_orig );
+                               UnwindStartRegs* startRegs,
+                               Addr fp_max_orig );
 
 #endif   // __PUB_CORE_STACKTRACE_H
 

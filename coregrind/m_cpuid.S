@@ -149,7 +149,7 @@
         ret
 #endif
 
-#if defined(VGA_x86) || defined(VGA_amd64)
+#if defined(VGP_x86_linux) || defined(VGP_amd64_linux)
 /* Let the linker know we don't need an executable stack */
 .section .note.GNU-stack,"",@progbits
 #endif

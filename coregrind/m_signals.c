@@ -54,7 +54,7 @@
    a signal with kill, its expected to be synchronous: ie, the signal
    will have been delivered by the time the syscall finishes.
    
-   4. Asyncronous, general signals.  All other signals, sent by
+   4. Asynchronous, general signals.  All other signals, sent by
    another process with kill.  These are generally blocked, except for
    two special cases: we poll for them each time we're about to run a
    thread for a time quanta, and while running blocking syscalls.
@@ -490,14 +490,15 @@ typedef struct SigQueue {
       return VG_(mk_SysRes_x86_darwin)( scclass, err ? True : False, 
                                         wHI, wLO );
    }
-   static inline Addr VG_UCONTEXT_LINK_REG( void* ucV ) {
-      return 0; /* No, really.  We have no LRs today. */
-   }
-   static inline Addr VG_UCONTEXT_FRAME_PTR( void* ucV ) {
-      ucontext_t* uc = (ucontext_t*)ucV;
+   static inline
+   void VG_UCONTEXT_TO_UnwindStartRegs( UnwindStartRegs* srP,
+                                        void* ucV ) {
+      ucontext_t* uc = (ucontext_t*)(ucV);
       struct __darwin_mcontext32* mc = uc->uc_mcontext;
       struct __darwin_i386_thread_state* ss = &mc->__ss;
-      return ss->__ebp;
+      srP->r_pc = (ULong)(ss->__eip);
+      srP->r_sp = (ULong)(ss->__esp);
+      srP->misc.X86.r_ebp = (UInt)(ss->__ebp);
    }
 
 #elif defined(VGP_amd64_darwin)

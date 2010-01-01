@@ -127,6 +127,7 @@ void foo ( void )
 
    // ppc32
    GENOFFSET(PPC32,ppc32,GPR0);
+   GENOFFSET(PPC32,ppc32,GPR1);
    GENOFFSET(PPC32,ppc32,GPR2);
    GENOFFSET(PPC32,ppc32,GPR3);
    GENOFFSET(PPC32,ppc32,GPR4);
@@ -141,6 +142,7 @@ void foo ( void )
 
    // ppc64
    GENOFFSET(PPC64,ppc64,GPR0);
+   GENOFFSET(PPC64,ppc64,GPR1);
    GENOFFSET(PPC64,ppc64,GPR2);
    GENOFFSET(PPC64,ppc64,GPR3);
    GENOFFSET(PPC64,ppc64,GPR4);
@@ -161,5 +163,7 @@ void foo ( void )
    GENOFFSET(ARM,arm,R4);
    GENOFFSET(ARM,arm,R5);
    GENOFFSET(ARM,arm,R7);
+   GENOFFSET(ARM,arm,R13);
+   GENOFFSET(ARM,arm,R14);
    GENOFFSET(ARM,arm,R15);
 }

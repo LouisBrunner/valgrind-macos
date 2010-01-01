@@ -2175,9 +2175,8 @@ static Bool summarise_context( /*OUT*/DiCfSI* si,
 
    SUMMARISE_HOW(si->ra_how, si->ra_off,
                              ctxs->reg[ctx->ra_reg] );
-   SUMMARISE_HOW(si->fp_how, si->fp_off,
+   SUMMARISE_HOW(si->bp_how, si->bp_off,
                              ctxs->reg[FP_REG] );
-
 
    /* on x86/amd64, it seems the old %{e,r}sp value before the call is
       always the same as the CFA.  Therefore ... */
@@ -2187,7 +2186,7 @@ static Bool summarise_context( /*OUT*/DiCfSI* si,
    /* also, gcc says "Undef" for %{e,r}bp when it is unchanged.  So
       .. */
    if (ctxs->reg[FP_REG].tag == RR_Undef)
-      si->fp_how = CFIR_SAME;
+      si->bp_how = CFIR_SAME;
 
    /* knock out some obviously stupid cases */
    if (si->ra_how == CFIR_SAME) 
@@ -2319,11 +2318,11 @@ static Int copy_convert_CfiExpr_tree ( XArray*        dstxa,
          dwreg = src->Cex.DwReg.reg;
 #        if defined(VGA_x86) || defined(VGA_amd64)
          if (dwreg == SP_REG)
-            return ML_(CfiExpr_CfiReg)( dstxa, Creg_SP );
+            return ML_(CfiExpr_CfiReg)( dstxa, Creg_IA_SP );
          if (dwreg == FP_REG)
-            return ML_(CfiExpr_CfiReg)( dstxa, Creg_FP );
+            return ML_(CfiExpr_CfiReg)( dstxa, Creg_IA_BP );
          if (dwreg == srcuc->ra_reg)
-            return ML_(CfiExpr_CfiReg)( dstxa, Creg_IP ); /* correct? */
+            return ML_(CfiExpr_CfiReg)( dstxa, Creg_IA_IP ); /* correct? */
 #        elif defined(VGA_arm)
          if (dwreg == SP_REG)
             return ML_(CfiExpr_CfiReg)( dstxa, Creg_ARM_R13 );

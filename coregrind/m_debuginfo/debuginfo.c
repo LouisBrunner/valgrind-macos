@@ -2217,8 +2217,8 @@ Bool VG_(use_CF_info) ( /*MOD*/D3UnwindRegs* uregsHere,
 
 #  if defined(VGA_x86) || defined(VGA_amd64)
    COMPUTE(uregsPrev.xip, uregsHere->xip, cfsi->ra_how, cfsi->ra_off);
-   COMPUTE(uregsPrev.xsp, uregsPrev->xsp, cfsi->sp_how, cfsi->sp_off);
-   COMPUTE(uregsPrev.xbp, uregsPrev->xbp, cfsi->bp_how, cfsi->bp_off);
+   COMPUTE(uregsPrev.xsp, uregsHere->xsp, cfsi->sp_how, cfsi->sp_off);
+   COMPUTE(uregsPrev.xbp, uregsHere->xbp, cfsi->bp_how, cfsi->bp_off);
 #  elif defined(VGA_arm)
    COMPUTE(uregsPrev.r15, uregsHere->r15, cfsi->ra_how,  cfsi->ra_off);
    COMPUTE(uregsPrev.r14, uregsHere->r14, cfsi->r14_how, cfsi->r14_off);

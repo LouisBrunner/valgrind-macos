@@ -79,10 +79,11 @@ UInt VG_(get_StackTrace_wrk) ( ThreadId tid_if_known,
    vg_assert(sizeof(Addr) == sizeof(UWord));
    vg_assert(sizeof(Addr) == sizeof(void*));
 
-   Addr ip = (Addr)startRegs->r_pc;
-   Addr sp = (Addr)startRegs->r_sp;
-   Addr fp = startRegs->misc.X86.r_ebp;
-   Addr fp_min = sp;
+   D3UnwindRegs uregs;
+   uregs.xip = (Addr)startRegs->r_pc;
+   uregs.xsp = (Addr)startRegs->r_sp;
+   uregs.xbp = startRegs->misc.X86.r_ebp;
+   Addr fp_min = uregs.xsp;
 
    /* Snaffle IPs from the client's stack into ips[0 .. max_n_ips-1],
       stopping when the trail goes cold, which we guess to be
@@ -98,7 +99,8 @@ UInt VG_(get_StackTrace_wrk) ( ThreadId tid_if_known,
    if (debug)
       VG_(printf)("max_n_ips=%d fp_min=0x%lx fp_max_orig=0x%lx, "
                   "fp_max=0x%lx ip=0x%lx fp=0x%lx\n",
-		  max_n_ips, fp_min, fp_max_orig, fp_max, ip, fp);
+                  max_n_ips, fp_min, fp_max_orig, fp_max,
+                  uregs.xip, uregs.xbp);
 
    /* Assertion broken before main() is reached in pthreaded programs;  the
     * offending stack traces only have one item.  --njn, 2002-aug-16 */
@@ -109,18 +111,18 @@ UInt VG_(get_StackTrace_wrk) ( ThreadId tid_if_known,
    if (fp_min + 512 >= fp_max) {
       /* If the stack limits look bogus, don't poke around ... but
          don't bomb out either. */
-      if (sps) sps[0] = sp;
-      if (fps) fps[0] = fp;
-      ips[0] = ip;
+      if (sps) sps[0] = uregs.xsp;
+      if (fps) fps[0] = uregs.xbp;
+      ips[0] = uregs.xip;
       return 1;
    } 
 #  endif
 
    /* fp is %ebp.  sp is %esp.  ip is %eip. */
 
-   if (sps) sps[0] = sp;
-   if (fps) fps[0] = fp;
-   ips[0] = ip;
+   if (sps) sps[0] = uregs.xsp;
+   if (fps) fps[0] = uregs.xbp;
+   ips[0] = uregs.xip;
    i = 1;
 
    /* Loop unwinding the stack. Note that the IP value we get on
@@ -153,52 +155,55 @@ UInt VG_(get_StackTrace_wrk) ( ThreadId tid_if_known,
          fails, and is expensive. */
       /* Deal with frames resulting from functions which begin "pushl%
          ebp ; movl %esp, %ebp" which is the ABI-mandated preamble. */
-      if (fp_min <= fp &&
-          fp <= fp_max - 1 * sizeof(UWord)/*see comment below*/)
+      if (fp_min <= uregs.xbp &&
+          uregs.xbp <= fp_max - 1 * sizeof(UWord)/*see comment below*/)
       {
          /* fp looks sane, so use it. */
-         ip = (((UWord*)fp)[1]);
+         uregs.xip = (((UWord*)uregs.xbp)[1]);
          // We stop if we hit a zero (the traditional end-of-stack
          // marker) or a one -- these correspond to recorded IPs of 0 or -1.
          // The latter because r8818 (in this file) changes the meaning of
          // entries [1] and above in a stack trace, by subtracting 1 from
          // them.  Hence stacks that used to end with a zero value now end in
          // -1 and so we must detect that too.
-         if (0 == ip || 1 == ip) break;
-         sp = fp + sizeof(Addr) /*saved %ebp*/ 
-                 + sizeof(Addr) /*ra*/;
-         fp = (((UWord*)fp)[0]);
-         if (sps) sps[i] = sp;
-         if (fps) fps[i] = fp;
-         ips[i++] = ip - 1; /* -1: refer to calling insn, not the RA */
+         if (0 == uregs.xip || 1 == uregs.xip) break;
+         uregs.xsp = uregs.xbp + sizeof(Addr) /*saved %ebp*/ 
+                               + sizeof(Addr) /*ra*/;
+         uregs.xbp = (((UWord*)uregs.xbp)[0]);
+         if (sps) sps[i] = uregs.xsp;
+         if (fps) fps[i] = uregs.xbp;
+         ips[i++] = uregs.xip - 1; /* -1: refer to calling insn, not the RA */
          if (debug)
             VG_(printf)("     ipsF[%d]=0x%08lx\n", i-1, ips[i-1]);
-         ip = ip - 1; /* as per comment at the head of this loop */
+         uregs.xip = uregs.xip - 1;
+            /* as per comment at the head of this loop */
          continue;
       }
 
       /* That didn't work out, so see if there is any CF info to hand
          which can be used. */
-      if ( VG_(use_CF_info)( &ip, &sp, &fp, fp_min, fp_max ) ) {
-         if (0 == ip || 1 == ip) break;
-         if (sps) sps[i] = sp;
-         if (fps) fps[i] = fp;
-         ips[i++] = ip - 1; /* -1: refer to calling insn, not the RA */
+      if ( VG_(use_CF_info)( &uregs, fp_min, fp_max ) ) {
+         if (0 == uregs.xip || 1 == uregs.xip) break;
+         if (sps) sps[i] = uregs.xsp;
+         if (fps) fps[i] = uregs.xbp;
+         ips[i++] = uregs.xip - 1; /* -1: refer to calling insn, not the RA */
          if (debug)
             VG_(printf)("     ipsC[%d]=0x%08lx\n", i-1, ips[i-1]);
-         ip = ip - 1; /* as per comment at the head of this loop */
+         uregs.xip = uregs.xip - 1;
+            /* as per comment at the head of this loop */
          continue;
       }
 
       /* And, similarly, try for MSVC FPO unwind info. */
-      if ( VG_(use_FPO_info)( &ip, &sp, &fp, fp_min, fp_max ) ) {
-         if (0 == ip || 1 == ip) break;
-         if (sps) sps[i] = sp;
-         if (fps) fps[i] = fp;
-         ips[i++] = ip;
+      if ( VG_(use_FPO_info)( &uregs.xip, &uregs.xsp, &uregs.xbp,
+                              fp_min, fp_max ) ) {
+         if (0 == uregs.xip || 1 == uregs.xip) break;
+         if (sps) sps[i] = uregs.xsp;
+         if (fps) fps[i] = uregs.xbp;
+         ips[i++] = uregs.xip;
          if (debug)
             VG_(printf)("     ipsC[%d]=0x%08lx\n", i-1, ips[i-1]);
-         ip = ip - 1;
+         uregs.xip = uregs.xip - 1;
          continue;
       }
 
@@ -230,10 +235,11 @@ UInt VG_(get_StackTrace_wrk) ( ThreadId tid_if_known,
    vg_assert(sizeof(Addr) == sizeof(UWord));
    vg_assert(sizeof(Addr) == sizeof(void*));
 
-   Addr ip = startRegs->r_pc;
-   Addr sp = startRegs->r_sp;
-   Addr fp = startRegs->misc.AMD64.r_rbp;
-   Addr fp_min = sp;
+   D3UnwindRegs uregs;
+   uregs.xip = startRegs->r_pc;
+   uregs.xsp = startRegs->r_sp;
+   uregs.xbp = startRegs->misc.AMD64.r_rbp;
+   Addr fp_min = uregs.xsp;
 
    /* Snaffle IPs from the client's stack into ips[0 .. max_n_ips-1],
       stopping when the trail goes cold, which we guess to be
@@ -249,7 +255,8 @@ UInt VG_(get_StackTrace_wrk) ( ThreadId tid_if_known,
    if (debug)
       VG_(printf)("max_n_ips=%d fp_min=0x%lx fp_max_orig=0x%lx, "
                   "fp_max=0x%lx ip=0x%lx fp=0x%lx\n",
-		  max_n_ips, fp_min, fp_max_orig, fp_max, ip, fp);
+                  max_n_ips, fp_min, fp_max_orig, fp_max,
+                  uregs.xip, uregs.xbp);
 
    /* Assertion broken before main() is reached in pthreaded programs;  the
     * offending stack traces only have one item.  --njn, 2002-aug-16 */
@@ -260,18 +267,18 @@ UInt VG_(get_StackTrace_wrk) ( ThreadId tid_if_known,
    if (fp_min + 512 >= fp_max) {
       /* If the stack limits look bogus, don't poke around ... but
          don't bomb out either. */
-      if (sps) sps[0] = sp;
-      if (fps) fps[0] = fp;
-      ips[0] = ip;
+      if (sps) sps[0] = uregs.xsp;
+      if (fps) fps[0] = uregs.xbp;
+      ips[0] = uregs.xip;
       return 1;
    } 
 #  endif
 
    /* fp is %rbp.  sp is %rsp.  ip is %rip. */
 
-   ips[0] = ip;
-   if (sps) sps[0] = sp;
-   if (fps) fps[0] = fp;
+   ips[0] = uregs.xip;
+   if (sps) sps[0] = uregs.xsp;
+   if (fps) fps[0] = uregs.xbp;
    i = 1;
 
    /* Loop unwinding the stack. Note that the IP value we get on
@@ -298,14 +305,14 @@ UInt VG_(get_StackTrace_wrk) ( ThreadId tid_if_known,
 
       /* First off, see if there is any CFI info to hand which can
          be used. */
-      if ( VG_(use_CF_info)( &ip, &sp, &fp, fp_min, fp_max ) ) {
-         if (0 == ip || 1 == ip) break;
-         if (sps) sps[i] = sp;
-         if (fps) fps[i] = fp;
-         ips[i++] = ip - 1; /* -1: refer to calling insn, not the RA */
+      if ( VG_(use_CF_info)( &uregs, fp_min, fp_max ) ) {
+         if (0 == uregs.xip || 1 == uregs.xip) break;
+         if (sps) sps[i] = uregs.xsp;
+         if (fps) fps[i] = uregs.xbp;
+         ips[i++] = uregs.xip - 1; /* -1: refer to calling insn, not the RA */
          if (debug)
             VG_(printf)("     ipsC[%d]=%#08lx\n", i-1, ips[i-1]);
-         ip = ip - 1; /* as per comment at the head of this loop */
+         uregs.xip = uregs.xip - 1; /* as per comment at the head of this loop */
          continue;
       }
 
@@ -321,19 +328,19 @@ UInt VG_(get_StackTrace_wrk) ( ThreadId tid_if_known,
          fact that we are prodding at & ((UWord*)fp)[1] and so need to
          adjust the limit check accordingly.  Omitting this has been
          observed to cause segfaults on rare occasions. */
-      if (fp_min <= fp && fp <= fp_max - 1 * sizeof(UWord)) {
+      if (fp_min <= uregs.xbp && uregs.xbp <= fp_max - 1 * sizeof(UWord)) {
          /* fp looks sane, so use it. */
-         ip = (((UWord*)fp)[1]);
-         if (0 == ip || 1 == ip) break;
-         sp = fp + sizeof(Addr) /*saved %rbp*/ 
-                 + sizeof(Addr) /*ra*/;
-         fp = (((UWord*)fp)[0]);
-         if (sps) sps[i] = sp;
-         if (fps) fps[i] = fp;
-         ips[i++] = ip - 1; /* -1: refer to calling insn, not the RA */
+         uregs.xip = (((UWord*)uregs.xbp)[1]);
+         if (0 == uregs.xip || 1 == uregs.xip) break;
+         uregs.xsp = uregs.xbp + sizeof(Addr) /*saved %rbp*/ 
+                               + sizeof(Addr) /*ra*/;
+         uregs.xbp = (((UWord*)uregs.xbp)[0]);
+         if (sps) sps[i] = uregs.xsp;
+         if (fps) fps[i] = uregs.xbp;
+         ips[i++] = uregs.xip - 1; /* -1: refer to calling insn, not the RA */
          if (debug)
             VG_(printf)("     ipsF[%d]=%#08lx\n", i-1, ips[i-1]);
-         ip = ip - 1; /* as per comment at the head of this loop */
+         uregs.xip = uregs.xip - 1; /* as per comment at the head of this loop */
          continue;
       }
 
@@ -349,19 +356,20 @@ UInt VG_(get_StackTrace_wrk) ( ThreadId tid_if_known,
            address; instead scan a likely section of stack (eg sp .. sp+256)
            and use suitable values found there.
       */
-      if (fp_min <= sp && sp < fp_max) {
-         ip = ((UWord*)sp)[0];
-         if (0 == ip || 1 == ip) break;
-         if (sps) sps[i] = sp;
-         if (fps) fps[i] = fp;
-         ips[i++] = ip == 0 
+      if (fp_min <= uregs.xsp && uregs.xsp < fp_max) {
+         uregs.xip = ((UWord*)uregs.xsp)[0];
+         if (0 == uregs.xip || 1 == uregs.xip) break;
+         if (sps) sps[i] = uregs.xsp;
+         if (fps) fps[i] = uregs.xbp;
+         ips[i++] = uregs.xip == 0 
                     ? 0 /* sp[0] == 0 ==> stuck at the bottom of a
                            thread stack */
-                    : ip - 1; /* -1: refer to calling insn, not the RA */
+                    : uregs.xip - 1;
+                        /* -1: refer to calling insn, not the RA */
          if (debug)
             VG_(printf)("     ipsH[%d]=%#08lx\n", i-1, ips[i-1]);
-         ip = ip - 1; /* as per comment at the head of this loop */
-         sp += 8;
+         uregs.xip = uregs.xip - 1; /* as per comment at the head of this loop */
+         uregs.xsp += 8;
          continue;
       }
 

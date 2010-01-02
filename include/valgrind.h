@@ -89,13 +89,15 @@
    Misc note: how to find out what's predefined in gcc by default:
    gcc -Wp,-dM somefile.c
 */
+#undef PLAT_ppc64_aix5
+#undef PLAT_ppc32_aix5
+#undef PLAT_x86_darwin
+#undef PLAT_amd64_darwin
 #undef PLAT_x86_linux
 #undef PLAT_amd64_linux
 #undef PLAT_ppc32_linux
 #undef PLAT_ppc64_linux
 #undef PLAT_arm_linux
-#undef PLAT_ppc32_aix5
-#undef PLAT_ppc64_aix5
 
 #if defined(_AIX) && defined(__64BIT__)
 #  define PLAT_ppc64_aix5 1

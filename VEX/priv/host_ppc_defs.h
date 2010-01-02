@@ -854,8 +854,12 @@ extern void         mapRegs_PPCInstr     ( HRegRemap*, PPCInstr* , Bool mode64);
 extern Bool         isMove_PPCInstr      ( PPCInstr*, HReg*, HReg* );
 extern Int          emit_PPCInstr        ( UChar* buf, Int nbuf, PPCInstr*, 
                                            Bool mode64, void* dispatch );
-extern PPCInstr*    genSpill_PPC         ( HReg rreg, UShort offsetB, Bool mode64 );
-extern PPCInstr*    genReload_PPC        ( HReg rreg, UShort offsetB, Bool mode64 );
+
+extern void genSpill_PPC  ( /*OUT*/HInstr** i1, /*OUT*/HInstr** i2,
+                            HReg rreg, Int offsetB, Bool mode64 );
+extern void genReload_PPC ( /*OUT*/HInstr** i1, /*OUT*/HInstr** i2,
+                            HReg rreg, Int offsetB, Bool mode64 );
+
 extern void         getAllocableRegs_PPC ( Int*, HReg**, Bool mode64 );
 extern HInstrArray* iselSB_PPC           ( IRSB*, VexArch,
                                                   VexArchInfo*,

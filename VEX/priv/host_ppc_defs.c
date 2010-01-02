@@ -2148,51 +2148,63 @@ Bool isMove_PPCInstr ( PPCInstr* i, HReg* src, HReg* dst )
 /* Generate ppc spill/reload instructions under the direction of the
    register allocator.  Note it's critical these don't write the
    condition codes. */
-PPCInstr* genSpill_PPC ( HReg rreg, UShort offsetB, Bool mode64 )
+
+void genSpill_PPC ( /*OUT*/HInstr** i1, /*OUT*/HInstr** i2,
+                    HReg rreg, Int offsetB, Bool mode64 )
 {
    PPCAMode* am;
    vassert(!hregIsVirtual(rreg));
+   *i1 = *i2 = NULL;
    am = PPCAMode_IR( offsetB, GuestStatePtr(mode64) );
-   
    switch (hregClass(rreg)) {
-   case HRcInt64:
-      vassert(mode64);
-      return PPCInstr_Store( 8, am, rreg, mode64 );
-   case HRcInt32:
-      vassert(!mode64);
-      return PPCInstr_Store( 4, am, rreg, mode64 );
-   case HRcFlt64:
-      return PPCInstr_FpLdSt ( False/*store*/, 8, rreg, am );
-   case HRcVec128:
-      // XXX: GPR30 used as spill register to kludge AltiVec AMode_IR
-      return PPCInstr_AvLdSt ( False/*store*/, 16, rreg, am );
-   default: 
-      ppHRegClass(hregClass(rreg));
-      vpanic("genSpill_PPC: unimplemented regclass");
+      case HRcInt64:
+         vassert(mode64);
+         *i1 = PPCInstr_Store( 8, am, rreg, mode64 );
+         return;
+      case HRcInt32:
+         vassert(!mode64);
+         *i1 = PPCInstr_Store( 4, am, rreg, mode64 );
+         return;
+      case HRcFlt64:
+         *i1 = PPCInstr_FpLdSt ( False/*store*/, 8, rreg, am );
+         return;
+      case HRcVec128:
+         // XXX: GPR30 used as spill register to kludge AltiVec
+         // AMode_IR
+         *i1 = PPCInstr_AvLdSt ( False/*store*/, 16, rreg, am );
+         return;
+      default: 
+         ppHRegClass(hregClass(rreg));
+         vpanic("genSpill_PPC: unimplemented regclass");
    }
 }
 
-PPCInstr* genReload_PPC ( HReg rreg, UShort offsetB, Bool mode64 )
+void genReload_PPC ( /*OUT*/HInstr** i1, /*OUT*/HInstr** i2,
+                     HReg rreg, Int offsetB, Bool mode64 )
 {
    PPCAMode* am;
    vassert(!hregIsVirtual(rreg));
+   *i1 = *i2 = NULL;
    am = PPCAMode_IR( offsetB, GuestStatePtr(mode64) );
-
    switch (hregClass(rreg)) {
-   case HRcInt64:
-      vassert(mode64);
-      return PPCInstr_Load( 8, rreg, am, mode64 );
-   case HRcInt32:
-      vassert(!mode64);
-      return PPCInstr_Load( 4, rreg, am, mode64 );
-   case HRcFlt64:
-      return PPCInstr_FpLdSt ( True/*load*/, 8, rreg, am );
-   case HRcVec128:
-      // XXX: GPR30 used as spill register to kludge AltiVec AMode_IR
-      return PPCInstr_AvLdSt ( True/*load*/, 16, rreg, am );
-   default: 
-      ppHRegClass(hregClass(rreg));
-      vpanic("genReload_PPC: unimplemented regclass");
+      case HRcInt64:
+         vassert(mode64);
+         *i1 = PPCInstr_Load( 8, rreg, am, mode64 );
+         return;
+      case HRcInt32:
+         vassert(!mode64);
+         *i1 = PPCInstr_Load( 4, rreg, am, mode64 );
+         return;
+      case HRcFlt64:
+         *i1 = PPCInstr_FpLdSt ( True/*load*/, 8, rreg, am );
+         return;
+      case HRcVec128:
+         // XXX: GPR30 used as spill register to kludge AltiVec AMode_IR
+         *i1 = PPCInstr_AvLdSt ( True/*load*/, 16, rreg, am );
+         return;
+      default: 
+         ppHRegClass(hregClass(rreg));
+         vpanic("genReload_PPC: unimplemented regclass");
    }
 }
 

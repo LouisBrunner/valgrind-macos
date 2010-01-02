@@ -91,9 +91,9 @@
            : /* reads none */                             \
            : "r0" /* trashed */                           \
         );                                                \
-        srP->r_pc = (ULong)cia;                           \
-        srP->r_sp = (ULong)r1;                            \
-        srP->misc.PPC32.lr = lr;                          \
+        (srP)->r_pc = (ULong)cia;                         \
+        (srP)->r_sp = (ULong)r1;                          \
+        (srP)->misc.PPC32.r_lr = lr;                      \
       }
 #elif defined(VGP_ppc64_linux) || defined(VGP_ppc64_aix5)
 #  define GET_STARTREGS(srP)                              \
@@ -110,9 +110,9 @@
            : /* reads none */                             \
            : "r0" /* trashed */                           \
         );                                                \
-        srP->r_pc = cia;                                  \
-        srP->r_sp = r1;                                   \
-        srP->misc.PPC64.lr = lr;                          \
+        (srP)->r_pc = cia;                                \
+        (srP)->r_sp = r1;                                 \
+        (srP)->misc.PPC64.r_lr = lr;                      \
       }
 #elif defined(VGP_arm_linux)
 #  define GET_STARTREGS(srP)                              \

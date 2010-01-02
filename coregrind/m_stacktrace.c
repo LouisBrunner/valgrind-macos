@@ -391,8 +391,8 @@ UInt VG_(get_StackTrace_wrk) ( ThreadId tid_if_known,
 UInt VG_(get_StackTrace_wrk) ( ThreadId tid_if_known,
                                /*OUT*/Addr* ips, UInt max_n_ips,
                                /*OUT*/Addr* sps, /*OUT*/Addr* fps,
-                               Addr ip, Addr sp, Addr fp, Addr lr,
-                               Addr fp_min, Addr fp_max_orig )
+                               UnwindStartRegs* startRegs,
+                               Addr fp_max_orig )
 {
    Bool  lr_is_first_RA = False;
 #  if defined(VG_PLAT_USES_PPCTOC)
@@ -407,6 +407,16 @@ UInt VG_(get_StackTrace_wrk) ( ThreadId tid_if_known,
 
    vg_assert(sizeof(Addr) == sizeof(UWord));
    vg_assert(sizeof(Addr) == sizeof(void*));
+
+   Addr ip = (Addr)startRegs->r_pc;
+   Addr sp = (Addr)startRegs->r_sp;
+   Addr fp = sp;
+#  if defined(VGP_ppc32_linux) || defined(VGP_ppc32_aix5)
+   Addr lr = startRegs->misc.PPC32.r_lr;
+#  elif defined(VGP_ppc64_linux) || defined(VGP_ppc64_aix5)
+   Addr lr = startRegs->misc.PPC64.r_lr;
+#  endif
+   Addr fp_min = sp;
 
    /* Snaffle IPs from the client's stack into ips[0 .. max_n_ips-1],
       stopping when the trail goes cold, which we guess to be

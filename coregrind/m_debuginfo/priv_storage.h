@@ -190,7 +190,20 @@ typedef
    }
    DiCfSI;
 #elif defined(VGA_ppc32) || defined(VGA_ppc64)
-typedef void DiCfSI;
+/* Just have a struct with the common fields in, so that code that
+   processes the common fields doesn't have to be ifdef'd against
+   VGP_/VGA_ symbols.  These are not used in any way on ppc32/64-linux
+   at the moment. */
+typedef
+   struct {
+      Addr  base;
+      UInt  len;
+      UChar cfa_how; /* a CFIC_ value */
+      UChar ra_how;  /* a CFIR_ value */
+      Int   cfa_off;
+      Int   ra_off;
+   }
+   DiCfSI;
 #else
 #  error "Unknown arch"
 #endif

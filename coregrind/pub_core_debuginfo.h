@@ -121,7 +121,7 @@ typedef
    D3UnwindRegs;
 #elif defined(VGA_ppc32) || defined(VGA_ppc64)
 typedef
-   void
+   UChar  /* should be void, but gcc complains at use points */
    D3UnwindRegs;
 #else
 #  error "Unsupported arch"

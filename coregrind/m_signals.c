@@ -263,6 +263,7 @@ typedef struct SigQueue {
    meaningless, so the caller of VG_UCONTEXT_SYSCALL_SYSRES has to be
    very careful to pay attention to the results only when it is sure
    that the said constraint on the program counter is indeed valid. */
+
 #if defined(VGP_x86_linux)
 #  define VG_UCONTEXT_INSTR_PTR(uc)       ((uc)->uc_mcontext.eip)
 #  define VG_UCONTEXT_STACK_PTR(uc)       ((uc)->uc_mcontext.esp)
@@ -332,21 +333,23 @@ typedef struct SigQueue {
    uc->uc_regs->mc_gregs[PT_MSR], otherwise it clears it.  That bit
    will always be clear under 2.4.20.  So you can use that bit to tell
    whether uc->uc_regs->mc_vregs is valid. */
-#  define VG_UCONTEXT_INSTR_PTR(uc)       ((uc)->uc_regs->mc_gregs[VKI_PT_NIP])
-#  define VG_UCONTEXT_STACK_PTR(uc)       ((uc)->uc_regs->mc_gregs[VKI_PT_R1])
-#  define VG_UCONTEXT_FRAME_PTR(uc)       ((uc)->uc_regs->mc_gregs[VKI_PT_R1])
+#  define VG_UCONTEXT_INSTR_PTR(uc)  ((uc)->uc_regs->mc_gregs[VKI_PT_NIP])
+#  define VG_UCONTEXT_STACK_PTR(uc)  ((uc)->uc_regs->mc_gregs[VKI_PT_R1])
 #  define VG_UCONTEXT_SYSCALL_SYSRES(uc)                            \
       /* Convert the values in uc_mcontext r3,cr into a SysRes. */  \
       VG_(mk_SysRes_ppc32_linux)(                                   \
          (uc)->uc_regs->mc_gregs[VKI_PT_R3],                        \
          (((uc)->uc_regs->mc_gregs[VKI_PT_CCR] >> 28) & 1)          \
       )
-#  define VG_UCONTEXT_LINK_REG(uc)        ((uc)->uc_regs->mc_gregs[VKI_PT_LNK]) 
+#  define VG_UCONTEXT_TO_UnwindStartRegs(srP, uc)                     \
+      { (srP)->r_pc = (ULong)((uc)->uc_regs->mc_gregs[VKI_PT_NIP]);   \
+        (srP)->r_sp = (ULong)((uc)->uc_regs->mc_gregs[VKI_PT_R1]);    \
+        (srP)->misc.PPC32.r_lr = (uc)->uc_regs->mc_gregs[VKI_PT_LNK]; \
+      }
 
 #elif defined(VGP_ppc64_linux)
-#  define VG_UCONTEXT_INSTR_PTR(uc)       ((uc)->uc_mcontext.gp_regs[VKI_PT_NIP])
-#  define VG_UCONTEXT_STACK_PTR(uc)       ((uc)->uc_mcontext.gp_regs[VKI_PT_R1])
-#  define VG_UCONTEXT_FRAME_PTR(uc)       ((uc)->uc_mcontext.gp_regs[VKI_PT_R1])
+#  define VG_UCONTEXT_INSTR_PTR(uc)  ((uc)->uc_mcontext.gp_regs[VKI_PT_NIP])
+#  define VG_UCONTEXT_STACK_PTR(uc)  ((uc)->uc_mcontext.gp_regs[VKI_PT_R1])
    /* Dubious hack: if there is an error, only consider the lowest 8
       bits of r3.  memcheck/tests/post-syscall shows a case where an
       interrupted syscall should have produced a ucontext with 0x4
@@ -361,7 +364,11 @@ typedef struct SigQueue {
       if (err) r3 &= 0xFF;
       return VG_(mk_SysRes_ppc64_linux)( r3, err );
    }
-#  define VG_UCONTEXT_LINK_REG(uc)        ((uc)->uc_mcontext.gp_regs[VKI_PT_LNK]) 
+#  define VG_UCONTEXT_TO_UnwindStartRegs(srP, uc)                       \
+      { (srP)->r_pc = (uc)->uc_mcontext.gp_regs[VKI_PT_NIP];            \
+        (srP)->r_sp = (uc)->uc_mcontext.gp_regs[VKI_PT_R1];             \
+        (srP)->misc.PPC64.r_lr = (uc)->uc_mcontext.gp_regs[VKI_PT_LNK]; \
+      }
 
 #elif defined(VGP_arm_linux)
 #  define VG_UCONTEXT_INSTR_PTR(uc)       ((uc)->uc_mcontext.arm_pc)

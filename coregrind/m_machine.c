@@ -97,12 +97,12 @@ void VG_(get_UnwindStartRegs) ( /*OUT*/UnwindStartRegs* regs,
       = VG_(threads)[tid].arch.vex.guest_RBP;
 #  elif defined(VGA_ppc32)
    regs->r_pc = (ULong)VG_(threads)[tid].arch.vex.guest_CIA;
-   regs->r_sp = (ULong)VG_(threads)[tid].arch.vex.guest_R1;
+   regs->r_sp = (ULong)VG_(threads)[tid].arch.vex.guest_GPR1;
    regs->misc.PPC32.r_lr
       = VG_(threads)[tid].arch.vex.guest_LR;
 #  elif defined(VGA_ppc64)
    regs->r_pc = VG_(threads)[tid].arch.vex.guest_CIA;
-   regs->r_sp = VG_(threads)[tid].arch.vex.guest_R1;
+   regs->r_sp = VG_(threads)[tid].arch.vex.guest_GPR1;
    regs->misc.PPC64.r_lr
       = VG_(threads)[tid].arch.vex.guest_LR;
 #  elif defined(VGA_arm)

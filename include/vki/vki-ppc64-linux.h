@@ -560,8 +560,10 @@ struct vki_termios {
 
 /* provoke compile error for invalid uses of size argument */
 #define _VKI_IOC_TYPECHECK(t) \
-       (sizeof(t) / (sizeof(t) == sizeof(t[1]) && \
-         sizeof(t) < (1 << _VKI_IOC_SIZEBITS)))
+	((sizeof(t) == sizeof(t[1]) && \
+	  sizeof(t) < (1 << _VKI_IOC_SIZEBITS)) \
+	 ? sizeof(t) \
+	 : /*cause gcc to complain about division by zero*/(1/0) )
 
 /* used to create numbers */
 #define _VKI_IO(type,nr)            _VKI_IOC(_VKI_IOC_NONE,(type),(nr),0)

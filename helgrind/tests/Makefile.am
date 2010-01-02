@@ -129,6 +129,16 @@ if ! VGCONF_PLATFORMS_INCLUDE_X86_DARWIN
 	tc22_exit_w_lock
 endif
 
+if VGCONF_PLATFORMS_INCLUDE_ARM_LINUX
+annotate_hbefore_CFLAGS = $(AM_CFLAGS) -mcpu=cortex-a8
+tc07_hbl1_CFLAGS        = $(AM_CFLAGS) -mcpu=cortex-a8
+tc08_hbl2_CFLAGS        = $(AM_CFLAGS) -mcpu=cortex-a8
+else
+annotate_hbefore_CFLAGS = $(AM_CFLAGS)
+tc07_hbl1_CFLAGS        = $(AM_CFLAGS)
+tc08_hbl2_CFLAGS        = $(AM_CFLAGS)
+endif
+
 if HAVE_PTHREAD_BARRIER
 check_PROGRAMS += bar_bad bar_trivial
 endif

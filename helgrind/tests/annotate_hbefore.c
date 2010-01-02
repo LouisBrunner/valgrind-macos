@@ -132,6 +132,39 @@ UWord do_acasW ( UWord* addr, UWord expected, UWord nyu )
    return block[3] & 1;
 }
 
+#elif defined(VGA_arm)
+
+// arm
+/* return 1 if success, 0 if failure */
+UWord do_acasW ( UWord* addr, UWord expected, UWord nyu )
+{
+  UWord old, success;
+  UWord block[2] = { (UWord)addr, nyu };
+
+  /* Fetch the old value, and set the reservation */
+  __asm__ __volatile__ (
+     "ldrex  %0, [%1]"    "\n"
+      : /*out*/   "=r"(old)
+      : /*in*/    "r"(addr)
+   );
+
+   /* If the old value isn't as expected, we've had it */
+   if (old != expected) return 0;
+
+   /* otherwise try to stuff the new value in */
+   __asm__ __volatile__(
+      "ldr    r4, [%1, #0]"      "\n\t"
+      "ldr    r5, [%1, #4]"      "\n\t"
+      "strex  r6, r5, [r4, #0]"  "\n\t"
+      "eor    %0, r6, #1"        "\n\t"
+      : /*out*/ "=r"(success)
+      : /*in*/ "r"(&block[0])
+      : /*trash*/ "r4","r5","r6","memory"
+   );
+   assert(success == 0 || success == 1);
+   return success;
+}
+
 #endif
 
 void atomic_incW ( UWord* w )

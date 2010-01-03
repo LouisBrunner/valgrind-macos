@@ -11,7 +11,12 @@
 
 int main(void)
 {
-#if defined(__NR_sigprocmask) && !defined(__powerpc64__) && !defined(_AIX)
+#if defined(__NR_sigprocmask)        \
+    && !defined(__powerpc64__)       \
+    && !defined(_AIX)                \
+    && !defined(__arm__)
+
+   // arm-linux uses rt_sigprocmask, so no sigset mangling takes place
 
    int x[6], *s, *os, i;
 

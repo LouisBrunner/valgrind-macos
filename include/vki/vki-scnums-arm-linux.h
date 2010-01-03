@@ -391,6 +391,13 @@
 #define __NR_fallocate			352
 #define __NR_timerfd_settime		353
 #define __NR_timerfd_gettime		354
+#define __NR_signalfd4                  355
+#define __NR_eventfd2                   356
+#define __NR_epoll_create1              357
+#define __NR_dup3                       358
+#define __NR_pipe2                      359
+#define __NR_inotify_init1              360
+
 
 
 #define __NR_ARM_BASE                   (0x0f0000)

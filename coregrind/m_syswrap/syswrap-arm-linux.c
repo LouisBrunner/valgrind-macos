@@ -1663,7 +1663,17 @@ static SyscallTableEntry syscall_main_table[] = {
    LINX_(__NR_eventfd,           sys_eventfd),          // 323
 //   LINX_(__NR_fallocate,        sys_ni_syscall),        // 324
    LINXY(__NR_timerfd_settime,   sys_timerfd_settime),  // 325
-   LINXY(__NR_timerfd_gettime,   sys_timerfd_gettime)   // 326
+   LINXY(__NR_timerfd_gettime,   sys_timerfd_gettime),   // 326
+
+   ///////////////
+
+   // JRS 2010-Jan-03: I believe that all the numbers listed 
+   // in comments in the table prior to this point (eg "// 326",
+   // etc) are bogus since it looks to me like they are copied
+   // verbatim from syswrap-x86-linux.c and they certainly do not
+   // correspond to what's in include/vki/vki-scnums-arm-linux.h.
+   // From here onwards, please ensure the numbers are correct.
+   LINXY(__NR_pipe2,             sys_pipe2)             // 359
 };
 
 

@@ -1,0 +1,717 @@
+MOV
+mov  r0, r1 :: rd 0x00000001 rm 0x00000001, carryin 0, cpsr 0x00000000     
+cpy  r0, r1 :: rd 0x00000001 rm 0x00000001, carryin 0, cpsr 0x00000000     
+mov  r0, #0 :: rd 0x00000000 rm 0x00000000, carryin 0, cpsr 0x00000000     
+mov  r0, #1 :: rd 0x00000001 rm 0x00000000, carryin 0, cpsr 0x00000000     
+movs r0, r1 :: rd 0x00000001 rm 0x00000001, carryin 0, cpsr 0x00000000     
+movs r0, r1 :: rd 0x00000000 rm 0x00000000, carryin 0, cpsr 0x40000000  Z  
+movs r0, r1 :: rd 0x80000000 rm 0x80000000, carryin 0, cpsr 0x80000000 N   
+movs r0, #0 :: rd 0x00000000 rm 0x00000000, carryin 0, cpsr 0x40000000  Z  
+movs r0, #1 :: rd 0x00000001 rm 0x00000000, carryin 0, cpsr 0x00000000     
+movs r0, r1 :: rd 0x00000001 rm 0x00000001, carryin 1, cpsr 0x20000000   C 
+movs r0, r1 :: rd 0x00000000 rm 0x00000000, carryin 1, cpsr 0x60000000  ZC 
+movs r0, r1 :: rd 0x80000000 rm 0x80000000, carryin 1, cpsr 0xa0000000 N C 
+movs r0, #0 :: rd 0x00000000 rm 0x00000000, carryin 1, cpsr 0x60000000  ZC 
+movs r0, #1 :: rd 0x00000001 rm 0x00000000, carryin 1, cpsr 0x20000000   C 
+MVN
+mvn  r0, r1 :: rd 0xfffffffe rm 0x00000001, carryin 0, cpsr 0x00000000     
+mvns r0, r1 :: rd 0xfffffffe rm 0x00000001, carryin 0, cpsr 0x80000000 N   
+mvns r0, r1 :: rd 0xffffffff rm 0x00000000, carryin 0, cpsr 0x80000000 N   
+mvns r0, r1 :: rd 0x7fffffff rm 0x80000000, carryin 0, cpsr 0x00000000     
+mvns r0, r1 :: rd 0xfffffffe rm 0x00000001, carryin 1, cpsr 0xa0000000 N C 
+mvns r0, r1 :: rd 0xffffffff rm 0x00000000, carryin 1, cpsr 0xa0000000 N C 
+mvns r0, r1 :: rd 0x7fffffff rm 0x80000000, carryin 1, cpsr 0x20000000   C 
+ADD
+adds r0, r1, r2 :: rd 0x00000000 rm 0x00000000, rn 0x00000000, carryin 0, cpsr 0x40000000  Z  
+adds r0, r1, r2 :: rd 0x00000001 rm 0x00000000, rn 0x00000001, carryin 0, cpsr 0x00000000     
+adds r0, r1, r2 :: rd 0x00000001 rm 0x00000001, rn 0x00000000, carryin 0, cpsr 0x00000000     
+adds r0, r1, r2 :: rd 0x00000002 rm 0x00000001, rn 0x00000001, carryin 0, cpsr 0x00000000     
+adds r0, r1, r2 :: rd 0xffffffff rm 0x00000000, rn 0xffffffff, carryin 0, cpsr 0x80000000 N   
+adds r0, r1, r2 :: rd 0x00000000 rm 0x00000001, rn 0xffffffff, carryin 0, cpsr 0x60000000  ZC 
+adds r0, r1, r2 :: rd 0x80000000 rm 0x7fffffff, rn 0x00000001, carryin 0, cpsr 0x90000000 N  V
+adds r0, r1, r2 :: rd 0x7fffffff rm 0x80000000, rn 0xffffffff, carryin 0, cpsr 0x30000000   CV
+adds r0, r1, r2 :: rd 0x80000000 rm 0x80000000, rn 0x00000000, carryin 0, cpsr 0x80000000 N   
+ADC
+adcs r0, r1, r2 :: rd 0x00000000 rm 0x00000000, rn 0x00000000, carryin 0, cpsr 0x40000000  Z  
+adcs r0, r1, r2 :: rd 0x00000001 rm 0x00000000, rn 0x00000000, carryin 1, cpsr 0x00000000     
+LSL
+lsl  r0, r1, r2 :: rd 0xffffffff rm 0xffffffff, rn 0x00000000, carryin 0, cpsr 0x00000000     
+lsl  r0, r1, r2 :: rd 0xfffffffe rm 0xffffffff, rn 0x00000001, carryin 0, cpsr 0x00000000     
+lsl  r0, r1, r2 :: rd 0xfffffffc rm 0xffffffff, rn 0x00000002, carryin 0, cpsr 0x00000000     
+lsl  r0, r1, r2 :: rd 0x80000000 rm 0xffffffff, rn 0x0000001f, carryin 0, cpsr 0x00000000     
+lsl  r0, r1, r2 :: rd 0x00000000 rm 0xffffffff, rn 0x00000020, carryin 0, cpsr 0x00000000     
+lsl  r0, r1, r2 :: rd 0x00000000 rm 0xffffffff, rn 0x00000021, carryin 0, cpsr 0x00000000     
+lsl  r0, r1, r2 :: rd 0x00000000 rm 0xffffffff, rn 0x0000003f, carryin 0, cpsr 0x00000000     
+lsl  r0, r1, r2 :: rd 0x00000000 rm 0xffffffff, rn 0x00000040, carryin 0, cpsr 0x00000000     
+lsl  r0, r1, r2 :: rd 0x00000000 rm 0xffffffff, rn 0x000000ff, carryin 0, cpsr 0x00000000     
+lsl  r0, r1, r2 :: rd 0xffffffff rm 0xffffffff, rn 0x00000100, carryin 0, cpsr 0x00000000     
+lsl  r0, r1, r2 :: rd 0x00000001 rm 0x00000001, rn 0x00000000, carryin 0, cpsr 0x00000000     
+lsl  r0, r1, r2 :: rd 0x00000002 rm 0x00000001, rn 0x00000001, carryin 0, cpsr 0x00000000     
+lsl  r0, r1, r2 :: rd 0x80000000 rm 0x00000001, rn 0x0000001f, carryin 0, cpsr 0x00000000     
+lsl  r0, r1, r2 :: rd 0x00000000 rm 0x00000002, rn 0x0000001f, carryin 0, cpsr 0x00000000     
+LSLS
+lsls r0, r1, r2 :: rd 0xffffffff rm 0xffffffff, rn 0x00000000, carryin 0, cpsr 0x80000000 N   
+lsls r0, r1, r2 :: rd 0xfffffffe rm 0xffffffff, rn 0x00000001, carryin 0, cpsr 0xa0000000 N C 
+lsls r0, r1, r2 :: rd 0xfffffffc rm 0xffffffff, rn 0x00000002, carryin 0, cpsr 0xa0000000 N C 
+lsls r0, r1, r2 :: rd 0x80000000 rm 0xffffffff, rn 0x0000001f, carryin 0, cpsr 0xa0000000 N C 
+lsls r0, r1, r2 :: rd 0x00000000 rm 0xffffffff, rn 0x00000020, carryin 0, cpsr 0x60000000  ZC 
+lsls r0, r1, r2 :: rd 0x00000000 rm 0xffffffff, rn 0x00000021, carryin 0, cpsr 0x40000000  Z  
+lsls r0, r1, r2 :: rd 0x00000000 rm 0xffffffff, rn 0x0000003f, carryin 0, cpsr 0x40000000  Z  
+lsls r0, r1, r2 :: rd 0x00000000 rm 0xffffffff, rn 0x00000040, carryin 0, cpsr 0x40000000  Z  
+lsls r0, r1, r2 :: rd 0x00000000 rm 0xffffffff, rn 0x000000ff, carryin 0, cpsr 0x40000000  Z  
+lsls r0, r1, r2 :: rd 0xffffffff rm 0xffffffff, rn 0x00000100, carryin 0, cpsr 0x80000000 N   
+lsls r0, r1, r2 :: rd 0x00000001 rm 0x00000001, rn 0x00000000, carryin 0, cpsr 0x00000000     
+lsls r0, r1, r2 :: rd 0x00000002 rm 0x00000001, rn 0x00000001, carryin 0, cpsr 0x00000000     
+lsls r0, r1, r2 :: rd 0x80000000 rm 0x00000001, rn 0x0000001f, carryin 0, cpsr 0x80000000 N   
+lsls r0, r1, r2 :: rd 0x00000000 rm 0x00000002, rn 0x0000001f, carryin 0, cpsr 0x60000000  ZC 
+lsls r0, r1, r2 :: rd 0xffffffff rm 0xffffffff, rn 0x00000000, carryin 1, cpsr 0xa0000000 N C 
+lsls r0, r1, r2 :: rd 0xfffffffe rm 0xffffffff, rn 0x00000001, carryin 1, cpsr 0xa0000000 N C 
+lsls r0, r1, r2 :: rd 0xfffffffc rm 0xffffffff, rn 0x00000002, carryin 1, cpsr 0xa0000000 N C 
+lsls r0, r1, r2 :: rd 0x80000000 rm 0xffffffff, rn 0x0000001f, carryin 1, cpsr 0xa0000000 N C 
+lsls r0, r1, r2 :: rd 0x00000000 rm 0xffffffff, rn 0x00000020, carryin 1, cpsr 0x60000000  ZC 
+lsls r0, r1, r2 :: rd 0x00000000 rm 0xffffffff, rn 0x00000021, carryin 1, cpsr 0x40000000  Z  
+lsls r0, r1, r2 :: rd 0x00000000 rm 0xffffffff, rn 0x0000003f, carryin 1, cpsr 0x40000000  Z  
+lsls r0, r1, r2 :: rd 0x00000000 rm 0xffffffff, rn 0x00000040, carryin 1, cpsr 0x40000000  Z  
+lsls r0, r1, r2 :: rd 0x00000000 rm 0xffffffff, rn 0x000000ff, carryin 1, cpsr 0x40000000  Z  
+lsls r0, r1, r2 :: rd 0xffffffff rm 0xffffffff, rn 0x00000100, carryin 1, cpsr 0xa0000000 N C 
+lsls r0, r1, r2 :: rd 0x00000001 rm 0x00000001, rn 0x00000000, carryin 1, cpsr 0x20000000   C 
+lsls r0, r1, r2 :: rd 0x00000002 rm 0x00000001, rn 0x00000001, carryin 1, cpsr 0x00000000     
+lsls r0, r1, r2 :: rd 0x80000000 rm 0x00000001, rn 0x0000001f, carryin 1, cpsr 0x80000000 N   
+lsls r0, r1, r2 :: rd 0x00000000 rm 0x00000002, rn 0x0000001f, carryin 1, cpsr 0x60000000  ZC 
+LSL immediate
+lsl  r0, r1, #0 :: rd 0xffffffff rm 0xffffffff, carryin 0, cpsr 0x00000000     
+lsl  r0, r1, #1 :: rd 0xfffffffe rm 0xffffffff, carryin 0, cpsr 0x00000000     
+lsl  r0, r1, #31 :: rd 0x80000000 rm 0xffffffff, carryin 0, cpsr 0x00000000     
+lsl  r0, r1, #0 :: rd 0x00000001 rm 0x00000001, carryin 0, cpsr 0x00000000     
+lsl  r0, r1, #1 :: rd 0x00000002 rm 0x00000001, carryin 0, cpsr 0x00000000     
+lsl  r0, r1, #31 :: rd 0x80000000 rm 0x00000001, carryin 0, cpsr 0x00000000     
+lsl  r0, r1, #31 :: rd 0x00000000 rm 0x00000002, carryin 0, cpsr 0x00000000     
+lsl  r0, r1, #0 :: rd 0xffffffff rm 0xffffffff, carryin 1, cpsr 0x20000000   C 
+lsl  r0, r1, #1 :: rd 0xfffffffe rm 0xffffffff, carryin 1, cpsr 0x20000000   C 
+lsl  r0, r1, #31 :: rd 0x80000000 rm 0xffffffff, carryin 1, cpsr 0x20000000   C 
+lsl  r0, r1, #0 :: rd 0x00000001 rm 0x00000001, carryin 1, cpsr 0x20000000   C 
+lsl  r0, r1, #1 :: rd 0x00000002 rm 0x00000001, carryin 1, cpsr 0x20000000   C 
+lsl  r0, r1, #31 :: rd 0x80000000 rm 0x00000001, carryin 1, cpsr 0x20000000   C 
+lsl  r0, r1, #31 :: rd 0x00000000 rm 0x00000002, carryin 1, cpsr 0x20000000   C 
+LSLS immediate
+lsls r0, r1, #0 :: rd 0xffffffff rm 0xffffffff, carryin 0, cpsr 0x80000000 N   
+lsls r0, r1, #1 :: rd 0xfffffffe rm 0xffffffff, carryin 0, cpsr 0xa0000000 N C 
+lsls r0, r1, #31 :: rd 0x80000000 rm 0xffffffff, carryin 0, cpsr 0xa0000000 N C 
+lsls r0, r1, #0 :: rd 0x00000001 rm 0x00000001, carryin 0, cpsr 0x00000000     
+lsls r0, r1, #1 :: rd 0x00000002 rm 0x00000001, carryin 0, cpsr 0x00000000     
+lsls r0, r1, #31 :: rd 0x80000000 rm 0x00000001, carryin 0, cpsr 0x80000000 N   
+lsls r0, r1, #31 :: rd 0x00000000 rm 0x00000002, carryin 0, cpsr 0x60000000  ZC 
+lsls r0, r1, #0 :: rd 0xffffffff rm 0xffffffff, carryin 1, cpsr 0xa0000000 N C 
+lsls r0, r1, #1 :: rd 0xfffffffe rm 0xffffffff, carryin 1, cpsr 0xa0000000 N C 
+lsls r0, r1, #31 :: rd 0x80000000 rm 0xffffffff, carryin 1, cpsr 0xa0000000 N C 
+lsls r0, r1, #0 :: rd 0x00000001 rm 0x00000001, carryin 1, cpsr 0x20000000   C 
+lsls r0, r1, #1 :: rd 0x00000002 rm 0x00000001, carryin 1, cpsr 0x00000000     
+lsls r0, r1, #31 :: rd 0x80000000 rm 0x00000001, carryin 1, cpsr 0x80000000 N   
+lsls r0, r1, #31 :: rd 0x00000000 rm 0x00000002, carryin 1, cpsr 0x60000000  ZC 
+LSR
+lsr  r0, r1, r2 :: rd 0xffffffff rm 0xffffffff, rn 0x00000000, carryin 0, cpsr 0x00000000     
+lsr  r0, r1, r2 :: rd 0x7fffffff rm 0xffffffff, rn 0x00000001, carryin 0, cpsr 0x00000000     
+lsr  r0, r1, r2 :: rd 0x3fffffff rm 0xffffffff, rn 0x00000002, carryin 0, cpsr 0x00000000     
+lsr  r0, r1, r2 :: rd 0x00000001 rm 0xffffffff, rn 0x0000001f, carryin 0, cpsr 0x00000000     
+lsr  r0, r1, r2 :: rd 0x00000000 rm 0xffffffff, rn 0x00000020, carryin 0, cpsr 0x00000000     
+lsr  r0, r1, r2 :: rd 0x00000000 rm 0xffffffff, rn 0x00000021, carryin 0, cpsr 0x00000000     
+lsr  r0, r1, r2 :: rd 0x00000000 rm 0xffffffff, rn 0x0000003f, carryin 0, cpsr 0x00000000     
+lsr  r0, r1, r2 :: rd 0x00000000 rm 0xffffffff, rn 0x00000040, carryin 0, cpsr 0x00000000     
+lsr  r0, r1, r2 :: rd 0x00000000 rm 0xffffffff, rn 0x000000ff, carryin 0, cpsr 0x00000000     
+lsr  r0, r1, r2 :: rd 0xffffffff rm 0xffffffff, rn 0x00000100, carryin 0, cpsr 0x00000000     
+LSRS
+lsrs r0, r1, r2 :: rd 0xffffffff rm 0xffffffff, rn 0x00000000, carryin 0, cpsr 0x80000000 N   
+lsrs r0, r1, r2 :: rd 0x7fffffff rm 0xffffffff, rn 0x00000001, carryin 0, cpsr 0x20000000   C 
+lsrs r0, r1, r2 :: rd 0x3fffffff rm 0xffffffff, rn 0x00000002, carryin 0, cpsr 0x20000000   C 
+lsrs r0, r1, r2 :: rd 0x00000001 rm 0xffffffff, rn 0x0000001f, carryin 0, cpsr 0x20000000   C 
+lsrs r0, r1, r2 :: rd 0x00000000 rm 0xffffffff, rn 0x00000020, carryin 0, cpsr 0x60000000  ZC 
+lsrs r0, r1, r2 :: rd 0x00000000 rm 0xffffffff, rn 0x00000021, carryin 0, cpsr 0x40000000  Z  
+lsrs r0, r1, r2 :: rd 0x00000000 rm 0xffffffff, rn 0x0000003f, carryin 0, cpsr 0x40000000  Z  
+lsrs r0, r1, r2 :: rd 0x00000000 rm 0xffffffff, rn 0x00000040, carryin 0, cpsr 0x40000000  Z  
+lsrs r0, r1, r2 :: rd 0x00000000 rm 0xffffffff, rn 0x000000ff, carryin 0, cpsr 0x40000000  Z  
+lsrs r0, r1, r2 :: rd 0xffffffff rm 0xffffffff, rn 0x00000000, carryin 1, cpsr 0xa0000000 N C 
+lsrs r0, r1, r2 :: rd 0x7fffffff rm 0xffffffff, rn 0x00000001, carryin 1, cpsr 0x20000000   C 
+lsrs r0, r1, r2 :: rd 0x3fffffff rm 0xffffffff, rn 0x00000002, carryin 1, cpsr 0x20000000   C 
+lsrs r0, r1, r2 :: rd 0x00000001 rm 0xffffffff, rn 0x0000001f, carryin 1, cpsr 0x20000000   C 
+lsrs r0, r1, r2 :: rd 0x00000000 rm 0xffffffff, rn 0x00000020, carryin 1, cpsr 0x60000000  ZC 
+lsrs r0, r1, r2 :: rd 0x00000000 rm 0xffffffff, rn 0x00000021, carryin 1, cpsr 0x40000000  Z  
+lsrs r0, r1, r2 :: rd 0x00000000 rm 0xffffffff, rn 0x0000003f, carryin 1, cpsr 0x40000000  Z  
+lsrs r0, r1, r2 :: rd 0x00000000 rm 0xffffffff, rn 0x00000040, carryin 1, cpsr 0x40000000  Z  
+lsrs r0, r1, r2 :: rd 0x00000000 rm 0xffffffff, rn 0x000000ff, carryin 1, cpsr 0x40000000  Z  
+LSR immediate
+lsr  r0, r1, #0 :: rd 0xffffffff rm 0xffffffff, carryin 0, cpsr 0x00000000     
+lsr  r0, r1, #1 :: rd 0x7fffffff rm 0xffffffff, carryin 0, cpsr 0x00000000     
+lsr  r0, r1, #31 :: rd 0x00000001 rm 0xffffffff, carryin 0, cpsr 0x00000000     
+lsr  r0, r1, #32 :: rd 0x00000000 rm 0xffffffff, carryin 0, cpsr 0x00000000     
+lsr  r0, r1, #16 :: rd 0x00000001 rm 0x00010000, carryin 0, cpsr 0x00000000     
+lsr  r0, r1, #17 :: rd 0x00000000 rm 0x00010000, carryin 0, cpsr 0x00000000     
+lsr  r0, r1, #18 :: rd 0x00000000 rm 0x00010000, carryin 0, cpsr 0x00000000     
+LSRS immediate
+lsrs r0, r1, #0 :: rd 0xffffffff rm 0xffffffff, carryin 0, cpsr 0x80000000 N   
+lsrs r0, r1, #1 :: rd 0x7fffffff rm 0xffffffff, carryin 0, cpsr 0x20000000   C 
+lsrs r0, r1, #31 :: rd 0x00000001 rm 0xffffffff, carryin 0, cpsr 0x20000000   C 
+lsrs r0, r1, #32 :: rd 0x00000000 rm 0xffffffff, carryin 0, cpsr 0x60000000  ZC 
+lsrs r0, r1, #16 :: rd 0x00000001 rm 0x00010000, carryin 0, cpsr 0x00000000     
+lsrs r0, r1, #17 :: rd 0x00000000 rm 0x00010000, carryin 0, cpsr 0x60000000  ZC 
+lsrs r0, r1, #18 :: rd 0x00000000 rm 0x00010000, carryin 0, cpsr 0x40000000  Z  
+lsrs r0, r1, #0 :: rd 0xffffffff rm 0xffffffff, carryin 1, cpsr 0xa0000000 N C 
+lsrs r0, r1, #1 :: rd 0x7fffffff rm 0xffffffff, carryin 1, cpsr 0x20000000   C 
+lsrs r0, r1, #31 :: rd 0x00000001 rm 0xffffffff, carryin 1, cpsr 0x20000000   C 
+lsrs r0, r1, #32 :: rd 0x00000000 rm 0xffffffff, carryin 1, cpsr 0x60000000  ZC 
+lsrs r0, r1, #16 :: rd 0x00000001 rm 0x00010000, carryin 1, cpsr 0x00000000     
+lsrs r0, r1, #17 :: rd 0x00000000 rm 0x00010000, carryin 1, cpsr 0x60000000  ZC 
+lsrs r0, r1, #18 :: rd 0x00000000 rm 0x00010000, carryin 1, cpsr 0x40000000  Z  
+ASR
+asr  r0, r1, r2 :: rd 0xffffffff rm 0xffffffff, rn 0x00000000, carryin 0, cpsr 0x00000000     
+asr  r0, r1, r2 :: rd 0xffffffff rm 0xffffffff, rn 0x00000001, carryin 0, cpsr 0x00000000     
+asr  r0, r1, r2 :: rd 0xffffffff rm 0xffffffff, rn 0x00000002, carryin 0, cpsr 0x00000000     
+asr  r0, r1, r2 :: rd 0xffffffff rm 0xffffffff, rn 0x0000001f, carryin 0, cpsr 0x00000000     
+asr  r0, r1, r2 :: rd 0xffffffff rm 0xffffffff, rn 0x00000020, carryin 0, cpsr 0x00000000     
+asr  r0, r1, r2 :: rd 0xffffffff rm 0xffffffff, rn 0x00000021, carryin 0, cpsr 0x00000000     
+asr  r0, r1, r2 :: rd 0xffffffff rm 0xffffffff, rn 0x0000003f, carryin 0, cpsr 0x00000000     
+asr  r0, r1, r2 :: rd 0xffffffff rm 0xffffffff, rn 0x00000040, carryin 0, cpsr 0x00000000     
+asr  r0, r1, r2 :: rd 0xffffffff rm 0xffffffff, rn 0x000000ff, carryin 0, cpsr 0x00000000     
+asr  r0, r1, r2 :: rd 0xffffffff rm 0xffffffff, rn 0x00000100, carryin 0, cpsr 0x00000000     
+asr  r0, r1, r2 :: rd 0x7fffffff rm 0x7fffffff, rn 0x00000000, carryin 0, cpsr 0x00000000     
+asr  r0, r1, r2 :: rd 0x3fffffff rm 0x7fffffff, rn 0x00000001, carryin 0, cpsr 0x00000000     
+asr  r0, r1, r2 :: rd 0x1fffffff rm 0x7fffffff, rn 0x00000002, carryin 0, cpsr 0x00000000     
+asr  r0, r1, r2 :: rd 0x00000000 rm 0x7fffffff, rn 0x0000001f, carryin 0, cpsr 0x00000000     
+asr  r0, r1, r2 :: rd 0x00000000 rm 0x7fffffff, rn 0x00000020, carryin 0, cpsr 0x00000000     
+asr  r0, r1, r2 :: rd 0x00000000 rm 0x7fffffff, rn 0x00000021, carryin 0, cpsr 0x00000000     
+asr  r0, r1, r2 :: rd 0x00000000 rm 0x7fffffff, rn 0x0000003f, carryin 0, cpsr 0x00000000     
+asr  r0, r1, r2 :: rd 0x00000000 rm 0x7fffffff, rn 0x00000040, carryin 0, cpsr 0x00000000     
+asr  r0, r1, r2 :: rd 0x00000000 rm 0x7fffffff, rn 0x000000ff, carryin 0, cpsr 0x00000000     
+asr  r0, r1, r2 :: rd 0x7fffffff rm 0x7fffffff, rn 0x00000100, carryin 0, cpsr 0x00000000     
+asr  r0, r1, r2 :: rd 0xffffffff rm 0xffffffff, rn 0x00000000, carryin 1, cpsr 0x20000000   C 
+asr  r0, r1, r2 :: rd 0xffffffff rm 0xffffffff, rn 0x00000001, carryin 1, cpsr 0x20000000   C 
+asr  r0, r1, r2 :: rd 0xffffffff rm 0xffffffff, rn 0x00000002, carryin 1, cpsr 0x20000000   C 
+asr  r0, r1, r2 :: rd 0xffffffff rm 0xffffffff, rn 0x0000001f, carryin 1, cpsr 0x20000000   C 
+asr  r0, r1, r2 :: rd 0xffffffff rm 0xffffffff, rn 0x00000020, carryin 1, cpsr 0x20000000   C 
+asr  r0, r1, r2 :: rd 0xffffffff rm 0xffffffff, rn 0x00000021, carryin 1, cpsr 0x20000000   C 
+asr  r0, r1, r2 :: rd 0xffffffff rm 0xffffffff, rn 0x0000003f, carryin 1, cpsr 0x20000000   C 
+asr  r0, r1, r2 :: rd 0xffffffff rm 0xffffffff, rn 0x00000040, carryin 1, cpsr 0x20000000   C 
+asr  r0, r1, r2 :: rd 0xffffffff rm 0xffffffff, rn 0x000000ff, carryin 1, cpsr 0x20000000   C 
+asr  r0, r1, r2 :: rd 0xffffffff rm 0xffffffff, rn 0x00000100, carryin 1, cpsr 0x20000000   C 
+asr  r0, r1, r2 :: rd 0x7fffffff rm 0x7fffffff, rn 0x00000000, carryin 1, cpsr 0x20000000   C 
+asr  r0, r1, r2 :: rd 0x3fffffff rm 0x7fffffff, rn 0x00000001, carryin 1, cpsr 0x20000000   C 
+asr  r0, r1, r2 :: rd 0x1fffffff rm 0x7fffffff, rn 0x00000002, carryin 1, cpsr 0x20000000   C 
+asr  r0, r1, r2 :: rd 0x00000000 rm 0x7fffffff, rn 0x0000001f, carryin 1, cpsr 0x20000000   C 
+asr  r0, r1, r2 :: rd 0x00000000 rm 0x7fffffff, rn 0x00000020, carryin 1, cpsr 0x20000000   C 
+asr  r0, r1, r2 :: rd 0x00000000 rm 0x7fffffff, rn 0x00000021, carryin 1, cpsr 0x20000000   C 
+asr  r0, r1, r2 :: rd 0x00000000 rm 0x7fffffff, rn 0x0000003f, carryin 1, cpsr 0x20000000   C 
+asr  r0, r1, r2 :: rd 0x00000000 rm 0x7fffffff, rn 0x00000040, carryin 1, cpsr 0x20000000   C 
+asr  r0, r1, r2 :: rd 0x00000000 rm 0x7fffffff, rn 0x000000ff, carryin 1, cpsr 0x20000000   C 
+asr  r0, r1, r2 :: rd 0x7fffffff rm 0x7fffffff, rn 0x00000100, carryin 1, cpsr 0x20000000   C 
+ASRS
+asrs r0, r1, r2 :: rd 0xffffffff rm 0xffffffff, rn 0x00000000, carryin 0, cpsr 0x80000000 N   
+asrs r0, r1, r2 :: rd 0xffffffff rm 0xffffffff, rn 0x00000001, carryin 0, cpsr 0xa0000000 N C 
+asrs r0, r1, r2 :: rd 0xffffffff rm 0xffffffff, rn 0x00000002, carryin 0, cpsr 0xa0000000 N C 
+asrs r0, r1, r2 :: rd 0xffffffff rm 0xffffffff, rn 0x0000001f, carryin 0, cpsr 0xa0000000 N C 
+asrs r0, r1, r2 :: rd 0xffffffff rm 0xffffffff, rn 0x00000020, carryin 0, cpsr 0xa0000000 N C 
+asrs r0, r1, r2 :: rd 0xffffffff rm 0xffffffff, rn 0x00000021, carryin 0, cpsr 0xa0000000 N C 
+asrs r0, r1, r2 :: rd 0xffffffff rm 0xffffffff, rn 0x0000003f, carryin 0, cpsr 0xa0000000 N C 
+asrs r0, r1, r2 :: rd 0xffffffff rm 0xffffffff, rn 0x00000040, carryin 0, cpsr 0xa0000000 N C 
+asrs r0, r1, r2 :: rd 0xffffffff rm 0xffffffff, rn 0x000000ff, carryin 0, cpsr 0xa0000000 N C 
+asrs r0, r1, r2 :: rd 0xffffffff rm 0xffffffff, rn 0x00000100, carryin 0, cpsr 0x80000000 N   
+asrs r0, r1, r2 :: rd 0x7fffffff rm 0x7fffffff, rn 0x00000000, carryin 0, cpsr 0x00000000     
+asrs r0, r1, r2 :: rd 0x3fffffff rm 0x7fffffff, rn 0x00000001, carryin 0, cpsr 0x20000000   C 
+asrs r0, r1, r2 :: rd 0x1fffffff rm 0x7fffffff, rn 0x00000002, carryin 0, cpsr 0x20000000   C 
+asrs r0, r1, r2 :: rd 0x00000000 rm 0x7fffffff, rn 0x0000001f, carryin 0, cpsr 0x60000000  ZC 
+asrs r0, r1, r2 :: rd 0x00000000 rm 0x7fffffff, rn 0x00000020, carryin 0, cpsr 0x40000000  Z  
+asrs r0, r1, r2 :: rd 0x00000000 rm 0x7fffffff, rn 0x00000021, carryin 0, cpsr 0x40000000  Z  
+asrs r0, r1, r2 :: rd 0x00000000 rm 0x7fffffff, rn 0x0000003f, carryin 0, cpsr 0x40000000  Z  
+asrs r0, r1, r2 :: rd 0x00000000 rm 0x7fffffff, rn 0x00000040, carryin 0, cpsr 0x40000000  Z  
+asrs r0, r1, r2 :: rd 0x00000000 rm 0x7fffffff, rn 0x000000ff, carryin 0, cpsr 0x40000000  Z  
+asrs r0, r1, r2 :: rd 0x7fffffff rm 0x7fffffff, rn 0x00000100, carryin 0, cpsr 0x00000000     
+asrs r0, r1, r2 :: rd 0xffffffff rm 0xffffffff, rn 0x00000000, carryin 1, cpsr 0xa0000000 N C 
+asrs r0, r1, r2 :: rd 0xffffffff rm 0xffffffff, rn 0x00000001, carryin 1, cpsr 0xa0000000 N C 
+asrs r0, r1, r2 :: rd 0xffffffff rm 0xffffffff, rn 0x00000002, carryin 1, cpsr 0xa0000000 N C 
+asrs r0, r1, r2 :: rd 0xffffffff rm 0xffffffff, rn 0x0000001f, carryin 1, cpsr 0xa0000000 N C 
+asrs r0, r1, r2 :: rd 0xffffffff rm 0xffffffff, rn 0x00000020, carryin 1, cpsr 0xa0000000 N C 
+asrs r0, r1, r2 :: rd 0xffffffff rm 0xffffffff, rn 0x00000021, carryin 1, cpsr 0xa0000000 N C 
+asrs r0, r1, r2 :: rd 0xffffffff rm 0xffffffff, rn 0x0000003f, carryin 1, cpsr 0xa0000000 N C 
+asrs r0, r1, r2 :: rd 0xffffffff rm 0xffffffff, rn 0x00000040, carryin 1, cpsr 0xa0000000 N C 
+asrs r0, r1, r2 :: rd 0xffffffff rm 0xffffffff, rn 0x000000ff, carryin 1, cpsr 0xa0000000 N C 
+asrs r0, r1, r2 :: rd 0xffffffff rm 0xffffffff, rn 0x00000100, carryin 1, cpsr 0xa0000000 N C 
+asrs r0, r1, r2 :: rd 0x7fffffff rm 0x7fffffff, rn 0x00000000, carryin 1, cpsr 0x20000000   C 
+asrs r0, r1, r2 :: rd 0x3fffffff rm 0x7fffffff, rn 0x00000001, carryin 1, cpsr 0x20000000   C 
+asrs r0, r1, r2 :: rd 0x1fffffff rm 0x7fffffff, rn 0x00000002, carryin 1, cpsr 0x20000000   C 
+asrs r0, r1, r2 :: rd 0x00000000 rm 0x7fffffff, rn 0x0000001f, carryin 1, cpsr 0x60000000  ZC 
+asrs r0, r1, r2 :: rd 0x00000000 rm 0x7fffffff, rn 0x00000020, carryin 1, cpsr 0x40000000  Z  
+asrs r0, r1, r2 :: rd 0x00000000 rm 0x7fffffff, rn 0x00000021, carryin 1, cpsr 0x40000000  Z  
+asrs r0, r1, r2 :: rd 0x00000000 rm 0x7fffffff, rn 0x0000003f, carryin 1, cpsr 0x40000000  Z  
+asrs r0, r1, r2 :: rd 0x00000000 rm 0x7fffffff, rn 0x00000040, carryin 1, cpsr 0x40000000  Z  
+asrs r0, r1, r2 :: rd 0x00000000 rm 0x7fffffff, rn 0x000000ff, carryin 1, cpsr 0x40000000  Z  
+asrs r0, r1, r2 :: rd 0x7fffffff rm 0x7fffffff, rn 0x00000100, carryin 1, cpsr 0x20000000   C 
+asrs r0, r1, r2 :: rd 0x00000008 rm 0x00000008, rn 0x00000000, carryin 0, cpsr 0x00000000     
+asrs r0, r1, r2 :: rd 0x00000004 rm 0x00000008, rn 0x00000001, carryin 0, cpsr 0x00000000     
+asrs r0, r1, r2 :: rd 0x00000002 rm 0x00000008, rn 0x00000002, carryin 0, cpsr 0x00000000     
+asrs r0, r1, r2 :: rd 0x00000001 rm 0x00000008, rn 0x00000003, carryin 0, cpsr 0x00000000     
+asrs r0, r1, r2 :: rd 0x00000000 rm 0x00000008, rn 0x00000004, carryin 0, cpsr 0x60000000  ZC 
+asrs r0, r1, r2 :: rd 0x00000000 rm 0x00000008, rn 0x00000005, carryin 0, cpsr 0x40000000  Z  
+asrs r0, r1, r2 :: rd 0x00000008 rm 0x00000008, rn 0x00000000, carryin 1, cpsr 0x20000000   C 
+asrs r0, r1, r2 :: rd 0x00000004 rm 0x00000008, rn 0x00000001, carryin 1, cpsr 0x00000000     
+asrs r0, r1, r2 :: rd 0x00000002 rm 0x00000008, rn 0x00000002, carryin 1, cpsr 0x00000000     
+asrs r0, r1, r2 :: rd 0x00000001 rm 0x00000008, rn 0x00000003, carryin 1, cpsr 0x00000000     
+asrs r0, r1, r2 :: rd 0x00000000 rm 0x00000008, rn 0x00000004, carryin 1, cpsr 0x60000000  ZC 
+asrs r0, r1, r2 :: rd 0x00000000 rm 0x00000008, rn 0x00000005, carryin 1, cpsr 0x40000000  Z  
+asrs r0, r1, r2 :: rd 0xc0000000 rm 0x80000001, rn 0x00000001, carryin 0, cpsr 0xa0000000 N C 
+asrs r0, r1, r2 :: rd 0xe0000000 rm 0x80000001, rn 0x00000002, carryin 0, cpsr 0x80000000 N   
+ASR immediate
+asr  r0, r1, #0 :: rd 0xffffffff rm 0xffffffff, carryin 0, cpsr 0x00000000     
+asr  r0, r1, #1 :: rd 0xffffffff rm 0xffffffff, carryin 0, cpsr 0x00000000     
+asr  r0, r1, #31 :: rd 0xffffffff rm 0xffffffff, carryin 0, cpsr 0x00000000     
+asr  r0, r1, #32 :: rd 0xffffffff rm 0xffffffff, carryin 0, cpsr 0x00000000     
+asr  r0, r1, #0 :: rd 0x7fffffff rm 0x7fffffff, carryin 0, cpsr 0x00000000     
+asr  r0, r1, #1 :: rd 0x3fffffff rm 0x7fffffff, carryin 0, cpsr 0x00000000     
+asr  r0, r1, #31 :: rd 0x00000000 rm 0x7fffffff, carryin 0, cpsr 0x00000000     
+asr  r0, r1, #32 :: rd 0x00000000 rm 0x7fffffff, carryin 0, cpsr 0x00000000     
+asr  r0, r1, #16 :: rd 0x00000001 rm 0x00010000, carryin 0, cpsr 0x00000000     
+asr  r0, r1, #17 :: rd 0x00000000 rm 0x00010000, carryin 0, cpsr 0x00000000     
+asr  r0, r1, #18 :: rd 0x00000000 rm 0x00010000, carryin 0, cpsr 0x00000000     
+ASRS immediate
+asrs r0, r1, #0 :: rd 0xffffffff rm 0xffffffff, carryin 0, cpsr 0x80000000 N   
+asrs r0, r1, #1 :: rd 0xffffffff rm 0xffffffff, carryin 0, cpsr 0xa0000000 N C 
+asrs r0, r1, #31 :: rd 0xffffffff rm 0xffffffff, carryin 0, cpsr 0xa0000000 N C 
+asrs r0, r1, #32 :: rd 0xffffffff rm 0xffffffff, carryin 0, cpsr 0xa0000000 N C 
+asrs r0, r1, #0 :: rd 0x7fffffff rm 0x7fffffff, carryin 0, cpsr 0x00000000     
+asrs r0, r1, #1 :: rd 0x3fffffff rm 0x7fffffff, carryin 0, cpsr 0x20000000   C 
+asrs r0, r1, #31 :: rd 0x00000000 rm 0x7fffffff, carryin 0, cpsr 0x60000000  ZC 
+asrs r0, r1, #32 :: rd 0x00000000 rm 0x7fffffff, carryin 0, cpsr 0x40000000  Z  
+asrs r0, r1, #16 :: rd 0x00000001 rm 0x00010000, carryin 0, cpsr 0x00000000     
+asrs r0, r1, #17 :: rd 0x00000000 rm 0x00010000, carryin 0, cpsr 0x60000000  ZC 
+asrs r0, r1, #18 :: rd 0x00000000 rm 0x00010000, carryin 0, cpsr 0x40000000  Z  
+asrs r0, r1, #0 :: rd 0xffffffff rm 0xffffffff, carryin 1, cpsr 0xa0000000 N C 
+asrs r0, r1, #1 :: rd 0xffffffff rm 0xffffffff, carryin 1, cpsr 0xa0000000 N C 
+asrs r0, r1, #31 :: rd 0xffffffff rm 0xffffffff, carryin 1, cpsr 0xa0000000 N C 
+asrs r0, r1, #32 :: rd 0xffffffff rm 0xffffffff, carryin 1, cpsr 0xa0000000 N C 
+asrs r0, r1, #0 :: rd 0x7fffffff rm 0x7fffffff, carryin 1, cpsr 0x20000000   C 
+asrs r0, r1, #1 :: rd 0x3fffffff rm 0x7fffffff, carryin 1, cpsr 0x20000000   C 
+asrs r0, r1, #31 :: rd 0x00000000 rm 0x7fffffff, carryin 1, cpsr 0x60000000  ZC 
+asrs r0, r1, #32 :: rd 0x00000000 rm 0x7fffffff, carryin 1, cpsr 0x40000000  Z  
+asrs r0, r1, #16 :: rd 0x00000001 rm 0x00010000, carryin 1, cpsr 0x00000000     
+asrs r0, r1, #17 :: rd 0x00000000 rm 0x00010000, carryin 1, cpsr 0x60000000  ZC 
+asrs r0, r1, #18 :: rd 0x00000000 rm 0x00010000, carryin 1, cpsr 0x40000000  Z  
+ROR
+ror  r0, r1, r2 :: rd 0x00088000 rm 0x00088000, rn 0x00000000, carryin 0, cpsr 0x00000000     
+ror  r0, r1, r2 :: rd 0x40044000 rm 0x80088000, rn 0x00000001, carryin 0, cpsr 0x00000000     
+ror  r0, r1, r2 :: rd 0x00044000 rm 0x00088000, rn 0x00000001, carryin 0, cpsr 0x00000000     
+ror  r0, r1, r2 :: rd 0x00022000 rm 0x00088000, rn 0x00000002, carryin 0, cpsr 0x00000000     
+ror  r0, r1, r2 :: rd 0x00110000 rm 0x00088000, rn 0x0000001f, carryin 0, cpsr 0x00000000     
+ror  r0, r1, r2 :: rd 0x00088000 rm 0x00088000, rn 0x00000020, carryin 0, cpsr 0x00000000     
+ror  r0, r1, r2 :: rd 0x00044000 rm 0x00088000, rn 0x00000021, carryin 0, cpsr 0x00000000     
+ror  r0, r1, r2 :: rd 0x00110000 rm 0x00088000, rn 0x0000003f, carryin 0, cpsr 0x00000000     
+ror  r0, r1, r2 :: rd 0x00088000 rm 0x00088000, rn 0x00000040, carryin 0, cpsr 0x00000000     
+ror  r0, r1, r2 :: rd 0x00110000 rm 0x00088000, rn 0x000000ff, carryin 0, cpsr 0x00000000     
+ror  r0, r1, r2 :: rd 0x00088000 rm 0x00088000, rn 0x00000100, carryin 0, cpsr 0x00000000     
+ror  r0, r1, r2 :: rd 0x80088000 rm 0x80088000, rn 0x00000100, carryin 0, cpsr 0x00000000     
+ror  r0, r1, r2 :: rd 0x00044000 rm 0x00088000, rn 0x00000101, carryin 0, cpsr 0x00000000     
+ror  r0, r1, r2 :: rd 0x00088000 rm 0x00088000, rn 0x00000000, carryin 1, cpsr 0x20000000   C 
+ror  r0, r1, r2 :: rd 0x40044000 rm 0x80088000, rn 0x00000001, carryin 1, cpsr 0x20000000   C 
+ror  r0, r1, r2 :: rd 0x00044000 rm 0x00088000, rn 0x00000001, carryin 1, cpsr 0x20000000   C 
+ror  r0, r1, r2 :: rd 0x00022000 rm 0x00088000, rn 0x00000002, carryin 1, cpsr 0x20000000   C 
+ror  r0, r1, r2 :: rd 0x00110000 rm 0x00088000, rn 0x0000001f, carryin 1, cpsr 0x20000000   C 
+ror  r0, r1, r2 :: rd 0x00088000 rm 0x00088000, rn 0x00000020, carryin 1, cpsr 0x20000000   C 
+ror  r0, r1, r2 :: rd 0x00044000 rm 0x00088000, rn 0x00000021, carryin 1, cpsr 0x20000000   C 
+ror  r0, r1, r2 :: rd 0x00110000 rm 0x00088000, rn 0x0000003f, carryin 1, cpsr 0x20000000   C 
+ror  r0, r1, r2 :: rd 0x00088000 rm 0x00088000, rn 0x00000040, carryin 1, cpsr 0x20000000   C 
+ror  r0, r1, r2 :: rd 0x00110000 rm 0x00088000, rn 0x000000ff, carryin 1, cpsr 0x20000000   C 
+ror  r0, r1, r2 :: rd 0x00088000 rm 0x00088000, rn 0x00000100, carryin 1, cpsr 0x20000000   C 
+ror  r0, r1, r2 :: rd 0x80088000 rm 0x80088000, rn 0x00000100, carryin 1, cpsr 0x20000000   C 
+ror  r0, r1, r2 :: rd 0x00044000 rm 0x00088000, rn 0x00000101, carryin 1, cpsr 0x20000000   C 
+RORS
+rors r0, r1, r2 :: rd 0x00088000 rm 0x00088000, rn 0x00000000, carryin 0, cpsr 0x00000000     
+rors r0, r1, r2 :: rd 0x80088000 rm 0x80088000, rn 0x00000000, carryin 0, cpsr 0x80000000 N   
+rors r0, r1, r2 :: rd 0x00044000 rm 0x00088000, rn 0x00000001, carryin 0, cpsr 0x00000000     
+rors r0, r1, r2 :: rd 0x00022000 rm 0x00088000, rn 0x00000002, carryin 0, cpsr 0x00000000     
+rors r0, r1, r2 :: rd 0x00110000 rm 0x00088000, rn 0x0000001f, carryin 0, cpsr 0x00000000     
+rors r0, r1, r2 :: rd 0x00088000 rm 0x00088000, rn 0x00000020, carryin 0, cpsr 0x00000000     
+rors r0, r1, r2 :: rd 0x00044000 rm 0x00088000, rn 0x00000021, carryin 0, cpsr 0x00000000     
+rors r0, r1, r2 :: rd 0x00110000 rm 0x00088000, rn 0x0000003f, carryin 0, cpsr 0x00000000     
+rors r0, r1, r2 :: rd 0x00088000 rm 0x00088000, rn 0x00000040, carryin 0, cpsr 0x00000000     
+rors r0, r1, r2 :: rd 0x00110000 rm 0x00088000, rn 0x000000ff, carryin 0, cpsr 0x00000000     
+rors r0, r1, r2 :: rd 0x00088000 rm 0x00088000, rn 0x00000100, carryin 0, cpsr 0x00000000     
+rors r0, r1, r2 :: rd 0x80088000 rm 0x80088000, rn 0x00000100, carryin 0, cpsr 0x80000000 N   
+rors r0, r1, r2 :: rd 0x00044000 rm 0x00088000, rn 0x00000101, carryin 0, cpsr 0x00000000     
+rors r0, r1, r2 :: rd 0x00088000 rm 0x00088000, rn 0x00000000, carryin 1, cpsr 0x20000000   C 
+rors r0, r1, r2 :: rd 0x80088000 rm 0x80088000, rn 0x00000000, carryin 1, cpsr 0xa0000000 N C 
+rors r0, r1, r2 :: rd 0x00044000 rm 0x00088000, rn 0x00000001, carryin 1, cpsr 0x00000000     
+rors r0, r1, r2 :: rd 0x00022000 rm 0x00088000, rn 0x00000002, carryin 1, cpsr 0x00000000     
+rors r0, r1, r2 :: rd 0x00110000 rm 0x00088000, rn 0x0000001f, carryin 1, cpsr 0x00000000     
+rors r0, r1, r2 :: rd 0x00088000 rm 0x00088000, rn 0x00000020, carryin 1, cpsr 0x00000000     
+rors r0, r1, r2 :: rd 0x00044000 rm 0x00088000, rn 0x00000021, carryin 1, cpsr 0x00000000     
+rors r0, r1, r2 :: rd 0x00110000 rm 0x00088000, rn 0x0000003f, carryin 1, cpsr 0x00000000     
+rors r0, r1, r2 :: rd 0x00088000 rm 0x00088000, rn 0x00000040, carryin 1, cpsr 0x00000000     
+rors r0, r1, r2 :: rd 0x00110000 rm 0x00088000, rn 0x000000ff, carryin 1, cpsr 0x00000000     
+rors r0, r1, r2 :: rd 0x00088000 rm 0x00088000, rn 0x00000100, carryin 1, cpsr 0x20000000   C 
+rors r0, r1, r2 :: rd 0x80088000 rm 0x80088000, rn 0x00000100, carryin 1, cpsr 0xa0000000 N C 
+rors r0, r1, r2 :: rd 0x00044000 rm 0x00088000, rn 0x00000101, carryin 1, cpsr 0x00000000     
+ROR immediate
+ror  r0, r1, #0 :: rd 0x00088000 rm 0x00088000, carryin 0, cpsr 0x00000000     
+ror  r0, r1, #1 :: rd 0x00044000 rm 0x00088000, carryin 0, cpsr 0x00000000     
+ror  r0, r1, #31 :: rd 0x00110000 rm 0x00088000, carryin 0, cpsr 0x00000000     
+ror  r0, r1, #16 :: rd 0x00000001 rm 0x00010000, carryin 0, cpsr 0x00000000     
+ror  r0, r1, #17 :: rd 0x80000000 rm 0x00010000, carryin 0, cpsr 0x00000000     
+ror  r0, r1, #18 :: rd 0x40000000 rm 0x00010000, carryin 0, cpsr 0x00000000     
+ror  r0, r1, #0 :: rd 0x00088000 rm 0x00088000, carryin 1, cpsr 0x20000000   C 
+ror  r0, r1, #1 :: rd 0x00044000 rm 0x00088000, carryin 1, cpsr 0x20000000   C 
+ror  r0, r1, #31 :: rd 0x00110000 rm 0x00088000, carryin 1, cpsr 0x20000000   C 
+ror  r0, r1, #16 :: rd 0x00000001 rm 0x00010000, carryin 1, cpsr 0x20000000   C 
+ror  r0, r1, #17 :: rd 0x80000000 rm 0x00010000, carryin 1, cpsr 0x20000000   C 
+ror  r0, r1, #18 :: rd 0x40000000 rm 0x00010000, carryin 1, cpsr 0x20000000   C 
+RORS immediate
+rors r0, r1, #0 :: rd 0x00088000 rm 0x00088000, carryin 0, cpsr 0x00000000     
+rors r0, r1, #1 :: rd 0x00044000 rm 0x00088000, carryin 0, cpsr 0x00000000     
+rors r0, r1, #31 :: rd 0x00110000 rm 0x00088000, carryin 0, cpsr 0x00000000     
+rors r0, r1, #16 :: rd 0x00000001 rm 0x00010000, carryin 0, cpsr 0x00000000     
+rors r0, r1, #17 :: rd 0x80000000 rm 0x00010000, carryin 0, cpsr 0xa0000000 N C 
+rors r0, r1, #18 :: rd 0x40000000 rm 0x00010000, carryin 0, cpsr 0x00000000     
+rors r0, r1, #0 :: rd 0x00088000 rm 0x00088000, carryin 1, cpsr 0x20000000   C 
+rors r0, r1, #1 :: rd 0x00044000 rm 0x00088000, carryin 1, cpsr 0x00000000     
+rors r0, r1, #31 :: rd 0x00110000 rm 0x00088000, carryin 1, cpsr 0x00000000     
+rors r0, r1, #16 :: rd 0x00000001 rm 0x00010000, carryin 1, cpsr 0x00000000     
+rors r0, r1, #17 :: rd 0x80000000 rm 0x00010000, carryin 1, cpsr 0xa0000000 N C 
+rors r0, r1, #18 :: rd 0x40000000 rm 0x00010000, carryin 1, cpsr 0x00000000     
+shift with barrel shifter
+add  r0, r1, r2, lsl r3 :: rd 0xffffffff rm 0x00000000, rn 0xffffffff rs 0x00000000, carryin 0, cpsr 0x00000000     
+add  r0, r1, r2, lsl r3 :: rd 0xfffffffe rm 0x00000000, rn 0xffffffff rs 0x00000001, carryin 0, cpsr 0x00000000     
+add  r0, r1, r2, lsl r3 :: rd 0x80000000 rm 0x00000000, rn 0xffffffff rs 0x0000001f, carryin 0, cpsr 0x00000000     
+add  r0, r1, r2, lsl r3 :: rd 0x00000000 rm 0x00000000, rn 0xffffffff rs 0x00000020, carryin 0, cpsr 0x00000000     
+add  r0, r1, r2, lsl r3 :: rd 0x00000000 rm 0x00000000, rn 0xffffffff rs 0x000000ff, carryin 0, cpsr 0x00000000     
+add  r0, r1, r2, lsl r3 :: rd 0xffffffff rm 0x00000000, rn 0xffffffff rs 0x00000100, carryin 0, cpsr 0x00000000     
+add  r0, r1, r2, lsr r3 :: rd 0xffffffff rm 0x00000000, rn 0xffffffff rs 0x00000000, carryin 0, cpsr 0x00000000     
+add  r0, r1, r2, lsr r3 :: rd 0x7fffffff rm 0x00000000, rn 0xffffffff rs 0x00000001, carryin 0, cpsr 0x00000000     
+add  r0, r1, r2, lsr r3 :: rd 0x00000001 rm 0x00000000, rn 0xffffffff rs 0x0000001f, carryin 0, cpsr 0x00000000     
+add  r0, r1, r2, lsr r3 :: rd 0x00000000 rm 0x00000000, rn 0xffffffff rs 0x00000020, carryin 0, cpsr 0x00000000     
+add  r0, r1, r2, lsr r3 :: rd 0x00000000 rm 0x00000000, rn 0xffffffff rs 0x000000ff, carryin 0, cpsr 0x00000000     
+add  r0, r1, r2, lsr r3 :: rd 0xffffffff rm 0x00000000, rn 0xffffffff rs 0x00000100, carryin 0, cpsr 0x00000000     
+add  r0, r1, r2, asr r3 :: rd 0x7fffffff rm 0x00000000, rn 0x7fffffff rs 0x00000000, carryin 0, cpsr 0x00000000     
+add  r0, r1, r2, asr r3 :: rd 0x3fffffff rm 0x00000000, rn 0x7fffffff rs 0x00000001, carryin 0, cpsr 0x00000000     
+add  r0, r1, r2, asr r3 :: rd 0x00000000 rm 0x00000000, rn 0x7fffffff rs 0x0000001f, carryin 0, cpsr 0x00000000     
+add  r0, r1, r2, asr r3 :: rd 0x00000000 rm 0x00000000, rn 0x7fffffff rs 0x00000020, carryin 0, cpsr 0x00000000     
+add  r0, r1, r2, asr r3 :: rd 0x00000000 rm 0x00000000, rn 0x7fffffff rs 0x000000ff, carryin 0, cpsr 0x00000000     
+add  r0, r1, r2, asr r3 :: rd 0x7fffffff rm 0x00000000, rn 0x7fffffff rs 0x00000100, carryin 0, cpsr 0x00000000     
+add  r0, r1, r2, lsr r3 :: rd 0xffffffff rm 0x00000000, rn 0xffffffff rs 0x00000100, carryin 0, cpsr 0x00000000     
+add  r0, r1, r2, lsl r3 :: rd 0xffffffff rm 0x00000000, rn 0xffffffff rs 0x00000000, carryin 1, cpsr 0x20000000   C 
+add  r0, r1, r2, lsl r3 :: rd 0xfffffffe rm 0x00000000, rn 0xffffffff rs 0x00000001, carryin 1, cpsr 0x20000000   C 
+add  r0, r1, r2, lsl r3 :: rd 0x80000000 rm 0x00000000, rn 0xffffffff rs 0x0000001f, carryin 1, cpsr 0x20000000   C 
+add  r0, r1, r2, lsl r3 :: rd 0x00000000 rm 0x00000000, rn 0xffffffff rs 0x00000020, carryin 1, cpsr 0x20000000   C 
+add  r0, r1, r2, lsl r3 :: rd 0x00000000 rm 0x00000000, rn 0xffffffff rs 0x000000ff, carryin 1, cpsr 0x20000000   C 
+add  r0, r1, r2, lsl r3 :: rd 0xffffffff rm 0x00000000, rn 0xffffffff rs 0x00000100, carryin 1, cpsr 0x20000000   C 
+add  r0, r1, r2, lsr r3 :: rd 0xffffffff rm 0x00000000, rn 0xffffffff rs 0x00000000, carryin 1, cpsr 0x20000000   C 
+add  r0, r1, r2, lsr r3 :: rd 0x7fffffff rm 0x00000000, rn 0xffffffff rs 0x00000001, carryin 1, cpsr 0x20000000   C 
+add  r0, r1, r2, lsr r3 :: rd 0x00000001 rm 0x00000000, rn 0xffffffff rs 0x0000001f, carryin 1, cpsr 0x20000000   C 
+add  r0, r1, r2, lsr r3 :: rd 0x00000000 rm 0x00000000, rn 0xffffffff rs 0x00000020, carryin 1, cpsr 0x20000000   C 
+add  r0, r1, r2, lsr r3 :: rd 0x00000000 rm 0x00000000, rn 0xffffffff rs 0x000000ff, carryin 1, cpsr 0x20000000   C 
+add  r0, r1, r2, lsr r3 :: rd 0xffffffff rm 0x00000000, rn 0xffffffff rs 0x00000100, carryin 1, cpsr 0x20000000   C 
+add  r0, r1, r2, asr r3 :: rd 0x7fffffff rm 0x00000000, rn 0x7fffffff rs 0x00000000, carryin 1, cpsr 0x20000000   C 
+add  r0, r1, r2, asr r3 :: rd 0x3fffffff rm 0x00000000, rn 0x7fffffff rs 0x00000001, carryin 1, cpsr 0x20000000   C 
+add  r0, r1, r2, asr r3 :: rd 0x00000000 rm 0x00000000, rn 0x7fffffff rs 0x0000001f, carryin 1, cpsr 0x20000000   C 
+add  r0, r1, r2, asr r3 :: rd 0x00000000 rm 0x00000000, rn 0x7fffffff rs 0x00000020, carryin 1, cpsr 0x20000000   C 
+add  r0, r1, r2, asr r3 :: rd 0x00000000 rm 0x00000000, rn 0x7fffffff rs 0x000000ff, carryin 1, cpsr 0x20000000   C 
+add  r0, r1, r2, asr r3 :: rd 0x7fffffff rm 0x00000000, rn 0x7fffffff rs 0x00000100, carryin 1, cpsr 0x20000000   C 
+add  r0, r1, r2, lsr r3 :: rd 0xffffffff rm 0x00000000, rn 0xffffffff rs 0x00000100, carryin 1, cpsr 0x20000000   C 
+add  r0, r1, r2, asr r3 :: rd 0x00000008 rm 0x00000000, rn 0x00000008 rs 0x00000000, carryin 0, cpsr 0x00000000     
+add  r0, r1, r2, asr r3 :: rd 0x00000004 rm 0x00000000, rn 0x00000008 rs 0x00000001, carryin 0, cpsr 0x00000000     
+add  r0, r1, r2, asr r3 :: rd 0x00000002 rm 0x00000000, rn 0x00000008 rs 0x00000002, carryin 0, cpsr 0x00000000     
+add  r0, r1, r2, asr r3 :: rd 0x00000001 rm 0x00000000, rn 0x00000008 rs 0x00000003, carryin 0, cpsr 0x00000000     
+add  r0, r1, r2, asr r3 :: rd 0x00000000 rm 0x00000000, rn 0x00000008 rs 0x00000004, carryin 0, cpsr 0x00000000     
+add  r0, r1, r2, asr r3 :: rd 0x00000000 rm 0x00000000, rn 0x00000008 rs 0x00000005, carryin 0, cpsr 0x00000000     
+add  r0, r1, r2, asr r3 :: rd 0x00000008 rm 0x00000000, rn 0x00000008 rs 0x00000000, carryin 1, cpsr 0x20000000   C 
+add  r0, r1, r2, asr r3 :: rd 0x00000004 rm 0x00000000, rn 0x00000008 rs 0x00000001, carryin 1, cpsr 0x20000000   C 
+add  r0, r1, r2, asr r3 :: rd 0x00000002 rm 0x00000000, rn 0x00000008 rs 0x00000002, carryin 1, cpsr 0x20000000   C 
+add  r0, r1, r2, asr r3 :: rd 0x00000001 rm 0x00000000, rn 0x00000008 rs 0x00000003, carryin 1, cpsr 0x20000000   C 
+add  r0, r1, r2, asr r3 :: rd 0x00000000 rm 0x00000000, rn 0x00000008 rs 0x00000004, carryin 1, cpsr 0x20000000   C 
+add  r0, r1, r2, asr r3 :: rd 0x00000000 rm 0x00000000, rn 0x00000008 rs 0x00000005, carryin 1, cpsr 0x20000000   C 
+add  r0, r1, r2, ror r3 :: rd 0x00088000 rm 0x00000000, rn 0x00088000 rs 0x00000000, carryin 0, cpsr 0x00000000     
+add  r0, r1, r2, ror r3 :: rd 0x80088000 rm 0x00000000, rn 0x80088000 rs 0x00000000, carryin 0, cpsr 0x00000000     
+add  r0, r1, r2, ror r3 :: rd 0x00044000 rm 0x00000000, rn 0x00088000 rs 0x00000001, carryin 0, cpsr 0x00000000     
+add  r0, r1, r2, ror r3 :: rd 0x00110000 rm 0x00000000, rn 0x00088000 rs 0x0000001f, carryin 0, cpsr 0x00000000     
+add  r0, r1, r2, ror r3 :: rd 0x00088000 rm 0x00000000, rn 0x00088000 rs 0x00000020, carryin 0, cpsr 0x00000000     
+add  r0, r1, r2, ror r3 :: rd 0x00110000 rm 0x00000000, rn 0x00088000 rs 0x000000ff, carryin 0, cpsr 0x00000000     
+add  r0, r1, r2, ror r3 :: rd 0x00088000 rm 0x00000000, rn 0x00088000 rs 0x00000100, carryin 0, cpsr 0x00000000     
+add  r0, r1, r2, ror r3 :: rd 0x80088000 rm 0x00000000, rn 0x80088000 rs 0x00000100, carryin 0, cpsr 0x00000000     
+add  r0, r1, r2, ror r3 :: rd 0x00044000 rm 0x00000000, rn 0x00088000 rs 0x00000101, carryin 0, cpsr 0x00000000     
+add  r0, r1, r2, ror r3 :: rd 0x00088000 rm 0x00000000, rn 0x00088000 rs 0x00000000, carryin 1, cpsr 0x20000000   C 
+add  r0, r1, r2, ror r3 :: rd 0x80088000 rm 0x00000000, rn 0x80088000 rs 0x00000000, carryin 1, cpsr 0x20000000   C 
+add  r0, r1, r2, ror r3 :: rd 0x00044000 rm 0x00000000, rn 0x00088000 rs 0x00000001, carryin 1, cpsr 0x20000000   C 
+add  r0, r1, r2, ror r3 :: rd 0x00110000 rm 0x00000000, rn 0x00088000 rs 0x0000001f, carryin 1, cpsr 0x20000000   C 
+add  r0, r1, r2, ror r3 :: rd 0x00088000 rm 0x00000000, rn 0x00088000 rs 0x00000020, carryin 1, cpsr 0x20000000   C 
+add  r0, r1, r2, ror r3 :: rd 0x00110000 rm 0x00000000, rn 0x00088000 rs 0x000000ff, carryin 1, cpsr 0x20000000   C 
+add  r0, r1, r2, ror r3 :: rd 0x00088000 rm 0x00000000, rn 0x00088000 rs 0x00000100, carryin 1, cpsr 0x20000000   C 
+add  r0, r1, r2, ror r3 :: rd 0x80088000 rm 0x00000000, rn 0x80088000 rs 0x00000100, carryin 1, cpsr 0x20000000   C 
+add  r0, r1, r2, ror r3 :: rd 0x00044000 rm 0x00000000, rn 0x00088000 rs 0x00000101, carryin 1, cpsr 0x20000000   C 
+adds r0, r1, r2, lsl r3 :: rd 0xffffffff rm 0x00000000, rn 0xffffffff rs 0x00000000, carryin 0, cpsr 0x80000000 N   
+adds r0, r1, r2, lsl r3 :: rd 0xfffffffe rm 0x00000000, rn 0xffffffff rs 0x00000001, carryin 0, cpsr 0x80000000 N   
+adds r0, r1, r2, lsl r3 :: rd 0x80000000 rm 0x00000000, rn 0xffffffff rs 0x0000001f, carryin 0, cpsr 0x80000000 N   
+adds r0, r1, r2, lsl r3 :: rd 0x00000000 rm 0x00000000, rn 0xffffffff rs 0x00000020, carryin 0, cpsr 0x40000000  Z  
+adds r0, r1, r2, lsl r3 :: rd 0x00000000 rm 0x00000000, rn 0xffffffff rs 0x000000ff, carryin 0, cpsr 0x40000000  Z  
+adds r0, r1, r2, lsl r3 :: rd 0xffffffff rm 0x00000000, rn 0xffffffff rs 0x00000100, carryin 0, cpsr 0x80000000 N   
+adds r0, r1, r2, lsr r3 :: rd 0xffffffff rm 0x00000000, rn 0xffffffff rs 0x00000000, carryin 0, cpsr 0x80000000 N   
+adds r0, r1, r2, lsr r3 :: rd 0x7fffffff rm 0x00000000, rn 0xffffffff rs 0x00000001, carryin 0, cpsr 0x00000000     
+adds r0, r1, r2, lsr r3 :: rd 0x00000001 rm 0x00000000, rn 0xffffffff rs 0x0000001f, carryin 0, cpsr 0x00000000     
+adds r0, r1, r2, lsr r3 :: rd 0x00000000 rm 0x00000000, rn 0xffffffff rs 0x00000020, carryin 0, cpsr 0x40000000  Z  
+adds r0, r1, r2, lsr r3 :: rd 0x00000000 rm 0x00000000, rn 0xffffffff rs 0x000000ff, carryin 0, cpsr 0x40000000  Z  
+adds r0, r1, r2, lsr r3 :: rd 0xffffffff rm 0x00000000, rn 0xffffffff rs 0x00000100, carryin 0, cpsr 0x80000000 N   
+adds r0, r1, r2, ror r3 :: rd 0x00088000 rm 0x00000000, rn 0x00088000 rs 0x00000000, carryin 0, cpsr 0x00000000     
+adds r0, r1, r2, ror r3 :: rd 0x80088000 rm 0x00000000, rn 0x80088000 rs 0x00000000, carryin 0, cpsr 0x80000000 N   
+adds r0, r1, r2, ror r3 :: rd 0x00044000 rm 0x00000000, rn 0x00088000 rs 0x00000001, carryin 0, cpsr 0x00000000     
+adds r0, r1, r2, ror r3 :: rd 0x00110000 rm 0x00000000, rn 0x00088000 rs 0x0000001f, carryin 0, cpsr 0x00000000     
+adds r0, r1, r2, ror r3 :: rd 0x00088000 rm 0x00000000, rn 0x00088000 rs 0x00000020, carryin 0, cpsr 0x00000000     
+adds r0, r1, r2, ror r3 :: rd 0x00110000 rm 0x00000000, rn 0x00088000 rs 0x000000ff, carryin 0, cpsr 0x00000000     
+adds r0, r1, r2, ror r3 :: rd 0x00088000 rm 0x00000000, rn 0x00088000 rs 0x00000100, carryin 0, cpsr 0x00000000     
+adds r0, r1, r2, ror r3 :: rd 0x80088000 rm 0x00000000, rn 0x80088000 rs 0x00000100, carryin 0, cpsr 0x80000000 N   
+adds r0, r1, r2, ror r3 :: rd 0x00044000 rm 0x00000000, rn 0x00088000 rs 0x00000101, carryin 0, cpsr 0x00000000     
+adds r0, r1, r2, lsl r3 :: rd 0xffffffff rm 0x00000000, rn 0xffffffff rs 0x00000000, carryin 1, cpsr 0x80000000 N   
+adds r0, r1, r2, lsl r3 :: rd 0xfffffffe rm 0x00000000, rn 0xffffffff rs 0x00000001, carryin 1, cpsr 0x80000000 N   
+adds r0, r1, r2, lsl r3 :: rd 0x80000000 rm 0x00000000, rn 0xffffffff rs 0x0000001f, carryin 1, cpsr 0x80000000 N   
+adds r0, r1, r2, lsl r3 :: rd 0x00000000 rm 0x00000000, rn 0xffffffff rs 0x00000020, carryin 1, cpsr 0x40000000  Z  
+adds r0, r1, r2, lsl r3 :: rd 0x00000000 rm 0x00000000, rn 0xffffffff rs 0x000000ff, carryin 1, cpsr 0x40000000  Z  
+adds r0, r1, r2, lsl r3 :: rd 0xffffffff rm 0x00000000, rn 0xffffffff rs 0x00000100, carryin 1, cpsr 0x80000000 N   
+adds r0, r1, r2, lsr r3 :: rd 0xffffffff rm 0x00000000, rn 0xffffffff rs 0x00000000, carryin 1, cpsr 0x80000000 N   
+adds r0, r1, r2, lsr r3 :: rd 0x7fffffff rm 0x00000000, rn 0xffffffff rs 0x00000001, carryin 1, cpsr 0x00000000     
+adds r0, r1, r2, lsr r3 :: rd 0x00000001 rm 0x00000000, rn 0xffffffff rs 0x0000001f, carryin 1, cpsr 0x00000000     
+adds r0, r1, r2, lsr r3 :: rd 0x00000000 rm 0x00000000, rn 0xffffffff rs 0x00000020, carryin 1, cpsr 0x40000000  Z  
+adds r0, r1, r2, lsr r3 :: rd 0x00000000 rm 0x00000000, rn 0xffffffff rs 0x000000ff, carryin 1, cpsr 0x40000000  Z  
+adds r0, r1, r2, lsr r3 :: rd 0xffffffff rm 0x00000000, rn 0xffffffff rs 0x00000100, carryin 1, cpsr 0x80000000 N   
+adds r0, r1, r2, ror r3 :: rd 0x00088000 rm 0x00000000, rn 0x00088000 rs 0x00000000, carryin 1, cpsr 0x00000000     
+adds r0, r1, r2, ror r3 :: rd 0x80088000 rm 0x00000000, rn 0x80088000 rs 0x00000000, carryin 1, cpsr 0x80000000 N   
+adds r0, r1, r2, ror r3 :: rd 0x00044000 rm 0x00000000, rn 0x00088000 rs 0x00000001, carryin 1, cpsr 0x00000000     
+adds r0, r1, r2, ror r3 :: rd 0x00110000 rm 0x00000000, rn 0x00088000 rs 0x0000001f, carryin 1, cpsr 0x00000000     
+adds r0, r1, r2, ror r3 :: rd 0x00088000 rm 0x00000000, rn 0x00088000 rs 0x00000020, carryin 1, cpsr 0x00000000     
+adds r0, r1, r2, ror r3 :: rd 0x00110000 rm 0x00000000, rn 0x00088000 rs 0x000000ff, carryin 1, cpsr 0x00000000     
+adds r0, r1, r2, ror r3 :: rd 0x00088000 rm 0x00000000, rn 0x00088000 rs 0x00000100, carryin 1, cpsr 0x00000000     
+adds r0, r1, r2, ror r3 :: rd 0x80088000 rm 0x00000000, rn 0x80088000 rs 0x00000100, carryin 1, cpsr 0x80000000 N   
+adds r0, r1, r2, ror r3 :: rd 0x00044000 rm 0x00000000, rn 0x00088000 rs 0x00000101, carryin 1, cpsr 0x00000000     
+adcs r0, r1, r2, lsl r3 :: rd 0xffffffff rm 0x00000000, rn 0xffffffff rs 0x00000000, carryin 0, cpsr 0x80000000 N   
+adcs r0, r1, r2, lsr r3 :: rd 0xffffffff rm 0x00000000, rn 0xffffffff rs 0x00000000, carryin 0, cpsr 0x80000000 N   
+adcs r0, r1, r2, lsl r3 :: rd 0xfffffffe rm 0x00000000, rn 0xffffffff rs 0x00000001, carryin 0, cpsr 0x80000000 N   
+adcs r0, r1, r2, lsr r3 :: rd 0x7fffffff rm 0x00000000, rn 0xffffffff rs 0x00000001, carryin 0, cpsr 0x00000000     
+adcs r0, r1, r2, lsl r3 :: rd 0x00000000 rm 0x00000000, rn 0xffffffff rs 0x00000000, carryin 1, cpsr 0x60000000  ZC 
+adcs r0, r1, r2, lsr r3 :: rd 0x00000000 rm 0x00000000, rn 0xffffffff rs 0x00000000, carryin 1, cpsr 0x60000000  ZC 
+adcs r0, r1, r2, lsl r3 :: rd 0xffffffff rm 0x00000000, rn 0xffffffff rs 0x00000001, carryin 1, cpsr 0x80000000 N   
+adcs r0, r1, r2, lsr r3 :: rd 0x80000000 rm 0x00000000, rn 0xffffffff rs 0x00000001, carryin 1, cpsr 0x90000000 N  V
+MUL
+mul  r0, r1, r2 :: rd 0x00000000 rm 0x00000000, rn 0x00000000, carryin 0, cpsr 0x00000000     
+mul  r0, r1, r2 :: rd 0x00000000 rm 0xffffffff, rn 0x00000000, carryin 0, cpsr 0x00000000     
+mul  r0, r1, r2 :: rd 0x00000000 rm 0x00000000, rn 0xffffffff, carryin 0, cpsr 0x00000000     
+mul  r0, r1, r2 :: rd 0x00000001 rm 0xffffffff, rn 0xffffffff, carryin 0, cpsr 0x00000000     
+mul  r0, r1, r2 :: rd 0x00000001 rm 0x7fffffff, rn 0x7fffffff, carryin 0, cpsr 0x00000000     
+mul  r0, r1, r2 :: rd 0xfffe0001 rm 0x0000ffff, rn 0x0000ffff, carryin 0, cpsr 0x00000000     
+MULS
+muls r0, r1, r2 :: rd 0x00000000 rm 0x00000000, rn 0x00000000, carryin 0, cpsr 0x40000000  Z  
+muls r0, r1, r2 :: rd 0x00000000 rm 0xffffffff, rn 0x00000000, carryin 0, cpsr 0x40000000  Z  
+muls r0, r1, r2 :: rd 0x00000000 rm 0x00000000, rn 0xffffffff, carryin 0, cpsr 0x40000000  Z  
+muls r0, r1, r2 :: rd 0x00000001 rm 0xffffffff, rn 0xffffffff, carryin 0, cpsr 0x00000000     
+muls r0, r1, r2 :: rd 0x00000001 rm 0x7fffffff, rn 0x7fffffff, carryin 0, cpsr 0x00000000     
+muls r0, r1, r2 :: rd 0xfffe0001 rm 0x0000ffff, rn 0x0000ffff, carryin 0, cpsr 0x80000000 N   
+MLA
+mla  r0, r1, r2, r3 :: rd 0x00000001 rm 0x00000000, rn 0x00000000 rs 0x00000001, carryin 0, cpsr 0x00000000     
+mla  r0, r1, r2, r3 :: rd 0x00000001 rm 0xffffffff, rn 0x00000000 rs 0x00000001, carryin 0, cpsr 0x00000000     
+mla  r0, r1, r2, r3 :: rd 0x00000001 rm 0x00000000, rn 0xffffffff rs 0x00000001, carryin 0, cpsr 0x00000000     
+mla  r0, r1, r2, r3 :: rd 0x00000002 rm 0xffffffff, rn 0xffffffff rs 0x00000001, carryin 0, cpsr 0x00000000     
+mla  r0, r1, r2, r3 :: rd 0x00000002 rm 0x7fffffff, rn 0x7fffffff rs 0x00000001, carryin 0, cpsr 0x00000000     
+mla  r0, r1, r2, r3 :: rd 0xfffe0002 rm 0x0000ffff, rn 0x0000ffff rs 0x00000001, carryin 0, cpsr 0x00000000     
+MLAS
+mlas r0, r1, r2, r3 :: rd 0x00000001 rm 0x00000000, rn 0x00000000 rs 0x00000001, carryin 0, cpsr 0x00000000     
+mlas r0, r1, r2, r3 :: rd 0x00000001 rm 0xffffffff, rn 0x00000000 rs 0x00000001, carryin 0, cpsr 0x00000000     
+mlas r0, r1, r2, r3 :: rd 0x00000001 rm 0x00000000, rn 0xffffffff rs 0x00000001, carryin 0, cpsr 0x00000000     
+mlas r0, r1, r2, r3 :: rd 0x00000002 rm 0xffffffff, rn 0xffffffff rs 0x00000001, carryin 0, cpsr 0x00000000     
+mlas r0, r1, r2, r3 :: rd 0x00000002 rm 0x7fffffff, rn 0x7fffffff rs 0x00000001, carryin 0, cpsr 0x00000000     
+mlas r0, r1, r2, r3 :: rd 0xfffe0002 rm 0x0000ffff, rn 0x0000ffff rs 0x00000001, carryin 0, cpsr 0x80000000 N   
+MLS
+mls  r0, r1, r2, r3 :: rd 0x00000001 rm 0x00000000, rn 0x00000000 rs 0x00000001, carryin 0, cpsr 0x00000000     
+mls  r0, r1, r2, r3 :: rd 0x00000001 rm 0xffffffff, rn 0x00000000 rs 0x00000001, carryin 0, cpsr 0x00000000     
+mls  r0, r1, r2, r3 :: rd 0x00000001 rm 0x00000000, rn 0xffffffff rs 0x00000001, carryin 0, cpsr 0x00000000     
+mls  r0, r1, r2, r3 :: rd 0x00000000 rm 0xffffffff, rn 0xffffffff rs 0x00000001, carryin 0, cpsr 0x00000000     
+mls  r0, r1, r2, r3 :: rd 0x00000000 rm 0x7fffffff, rn 0x7fffffff rs 0x00000001, carryin 0, cpsr 0x00000000     
+mls  r0, r1, r2, r3 :: rd 0x00020000 rm 0x0000ffff, rn 0x0000ffff rs 0x00000001, carryin 0, cpsr 0x00000000     
+UMULL
+umull  r0, r1, r2, r3 :: rd 0x00000000 rd2 0x00000000, rm 0x00000000 rs 0x00000000, carryin 0, cpsr 0x00000000     
+umull  r0, r1, r2, r3 :: rd 0x00000000 rd2 0x00000000, rm 0x00000000 rs 0x00000001, carryin 0, cpsr 0x00000000     
+umull  r0, r1, r2, r3 :: rd 0x00000000 rd2 0x00000000, rm 0x00000001 rs 0x00000000, carryin 0, cpsr 0x00000000     
+umull  r0, r1, r2, r3 :: rd 0x00000001 rd2 0x00000000, rm 0x00000001 rs 0x00000001, carryin 0, cpsr 0x00000000     
+umull  r0, r1, r2, r3 :: rd 0xfffe0001 rd2 0x00000000, rm 0x0000ffff rs 0x0000ffff, carryin 0, cpsr 0x00000000     
+umull  r0, r1, r2, r3 :: rd 0x00000001 rd2 0xfffffffe, rm 0xffffffff rs 0xffffffff, carryin 0, cpsr 0x00000000     
+umulls r0, r1, r2, r3 :: rd 0x00000000 rd2 0x00000000, rm 0x00000000 rs 0x00000000, carryin 0, cpsr 0x40000000  Z  
+umulls r0, r1, r2, r3 :: rd 0x00000000 rd2 0x00000000, rm 0x00000000 rs 0x00000001, carryin 0, cpsr 0x40000000  Z  
+umulls r0, r1, r2, r3 :: rd 0x00000000 rd2 0x00000000, rm 0x00000001 rs 0x00000000, carryin 0, cpsr 0x40000000  Z  
+umulls r0, r1, r2, r3 :: rd 0x00000001 rd2 0x00000000, rm 0x00000001 rs 0x00000001, carryin 0, cpsr 0x00000000     
+umulls r0, r1, r2, r3 :: rd 0xfffe0001 rd2 0x00000000, rm 0x0000ffff rs 0x0000ffff, carryin 0, cpsr 0x00000000     
+umulls r0, r1, r2, r3 :: rd 0x00000001 rd2 0xfffffffe, rm 0xffffffff rs 0xffffffff, carryin 0, cpsr 0x80000000 N   
+SMULL
+smull  r0, r1, r2, r3 :: rd 0x00000000 rd2 0x00000000, rm 0x00000000 rs 0x00000000, carryin 0, cpsr 0x00000000     
+smull  r0, r1, r2, r3 :: rd 0x00000000 rd2 0x00000000, rm 0x00000000 rs 0x00000001, carryin 0, cpsr 0x00000000     
+smull  r0, r1, r2, r3 :: rd 0x00000000 rd2 0x00000000, rm 0x00000001 rs 0x00000000, carryin 0, cpsr 0x00000000     
+smull  r0, r1, r2, r3 :: rd 0x00000001 rd2 0x00000000, rm 0x00000001 rs 0x00000001, carryin 0, cpsr 0x00000000     
+smull  r0, r1, r2, r3 :: rd 0xfffe0001 rd2 0x00000000, rm 0x0000ffff rs 0x0000ffff, carryin 0, cpsr 0x00000000     
+smull  r0, r1, r2, r3 :: rd 0x00000001 rd2 0x00000000, rm 0xffffffff rs 0xffffffff, carryin 0, cpsr 0x00000000     
+smulls r0, r1, r2, r3 :: rd 0x00000000 rd2 0x00000000, rm 0x00000000 rs 0x00000000, carryin 0, cpsr 0x40000000  Z  
+smulls r0, r1, r2, r3 :: rd 0x00000000 rd2 0x00000000, rm 0x00000000 rs 0x00000001, carryin 0, cpsr 0x40000000  Z  
+smulls r0, r1, r2, r3 :: rd 0x00000000 rd2 0x00000000, rm 0x00000001 rs 0x00000000, carryin 0, cpsr 0x40000000  Z  
+smulls r0, r1, r2, r3 :: rd 0x00000001 rd2 0x00000000, rm 0x00000001 rs 0x00000001, carryin 0, cpsr 0x00000000     
+smulls r0, r1, r2, r3 :: rd 0xfffe0001 rd2 0x00000000, rm 0x0000ffff rs 0x0000ffff, carryin 0, cpsr 0x00000000     
+smulls r0, r1, r2, r3 :: rd 0x00000001 rd2 0x00000000, rm 0xffffffff rs 0xffffffff, carryin 0, cpsr 0x00000000     
+UMLAL
+umlal  r0, r1, r2, r3 :: rd 0x00000000 rd2 0x00000000, rm 0x00000000 rs 0x00000000, carryin 0, cpsr 0x00000000     
+umlal  r0, r1, r2, r3 :: rd 0x00000000 rd2 0x00000001, rm 0x00000000 rs 0x00000000, carryin 0, cpsr 0x00000000     
+umlal  r0, r1, r2, r3 :: rd 0x00000001 rd2 0x00000001, rm 0x00000000 rs 0x00000000, carryin 0, cpsr 0x00000000     
+umlal  r0, r1, r2, r3 :: rd 0x00000001 rd2 0xffffffff, rm 0x00000001 rs 0x00000001, carryin 0, cpsr 0x00000000     
+umlal  r0, r1, r2, r3 :: rd 0x00000000 rd2 0x00000000, rm 0x00000000 rs 0x00000001, carryin 0, cpsr 0x00000000     
+umlal  r0, r1, r2, r3 :: rd 0x00000000 rd2 0x00000000, rm 0x00000001 rs 0x00000000, carryin 0, cpsr 0x00000000     
+umlal  r0, r1, r2, r3 :: rd 0x00000001 rd2 0x00000000, rm 0x00000001 rs 0x00000001, carryin 0, cpsr 0x00000000     
+umlal  r0, r1, r2, r3 :: rd 0xfffe0001 rd2 0x00000000, rm 0x0000ffff rs 0x0000ffff, carryin 0, cpsr 0x00000000     
+umlal  r0, r1, r2, r3 :: rd 0x00000001 rd2 0xfffffffe, rm 0xffffffff rs 0xffffffff, carryin 0, cpsr 0x00000000     
+umlals r0, r1, r2, r3 :: rd 0x00000000 rd2 0x00000000, rm 0x00000000 rs 0x00000000, carryin 0, cpsr 0x40000000  Z  
+umlals r0, r1, r2, r3 :: rd 0x00000000 rd2 0x00000001, rm 0x00000000 rs 0x00000000, carryin 0, cpsr 0x00000000     
+umlals r0, r1, r2, r3 :: rd 0x00000001 rd2 0x00000001, rm 0x00000000 rs 0x00000000, carryin 0, cpsr 0x00000000     
+umlals r0, r1, r2, r3 :: rd 0x00000001 rd2 0xffffffff, rm 0x00000001 rs 0x00000001, carryin 0, cpsr 0x80000000 N   
+umlals r0, r1, r2, r3 :: rd 0x00000000 rd2 0x00000000, rm 0x00000000 rs 0x00000001, carryin 0, cpsr 0x40000000  Z  
+umlals r0, r1, r2, r3 :: rd 0x00000000 rd2 0x00000000, rm 0x00000001 rs 0x00000000, carryin 0, cpsr 0x40000000  Z  
+umlals r0, r1, r2, r3 :: rd 0x00000001 rd2 0x00000000, rm 0x00000001 rs 0x00000001, carryin 0, cpsr 0x00000000     
+umlals r0, r1, r2, r3 :: rd 0xfffe0001 rd2 0x00000000, rm 0x0000ffff rs 0x0000ffff, carryin 0, cpsr 0x00000000     
+umlals r0, r1, r2, r3 :: rd 0x00000001 rd2 0xfffffffe, rm 0xffffffff rs 0xffffffff, carryin 0, cpsr 0x80000000 N   
+SMLAL
+smlal  r0, r1, r2, r3 :: rd 0x00000000 rd2 0x00000000, rm 0x00000000 rs 0x00000000, carryin 0, cpsr 0x00000000     
+smlal  r0, r1, r2, r3 :: rd 0x00000000 rd2 0x00000001, rm 0x00000000 rs 0x00000000, carryin 0, cpsr 0x00000000     
+smlal  r0, r1, r2, r3 :: rd 0x00000001 rd2 0x00000001, rm 0x00000000 rs 0x00000000, carryin 0, cpsr 0x00000000     
+smlal  r0, r1, r2, r3 :: rd 0x00000001 rd2 0xffffffff, rm 0x00000001 rs 0x00000001, carryin 0, cpsr 0x00000000     
+smlal  r0, r1, r2, r3 :: rd 0x00000000 rd2 0x00000000, rm 0x00000000 rs 0x00000001, carryin 0, cpsr 0x00000000     
+smlal  r0, r1, r2, r3 :: rd 0x00000000 rd2 0x00000000, rm 0x00000001 rs 0x00000000, carryin 0, cpsr 0x00000000     
+smlal  r0, r1, r2, r3 :: rd 0x00000001 rd2 0x00000000, rm 0x00000001 rs 0x00000001, carryin 0, cpsr 0x00000000     
+smlal  r0, r1, r2, r3 :: rd 0xfffe0001 rd2 0x00000000, rm 0x0000ffff rs 0x0000ffff, carryin 0, cpsr 0x00000000     
+smlal  r0, r1, r2, r3 :: rd 0x00000001 rd2 0x00000000, rm 0xffffffff rs 0xffffffff, carryin 0, cpsr 0x00000000     
+smlals r0, r1, r2, r3 :: rd 0x00000000 rd2 0x00000000, rm 0x00000000 rs 0x00000000, carryin 0, cpsr 0x40000000  Z  
+smlals r0, r1, r2, r3 :: rd 0x00000000 rd2 0x00000001, rm 0x00000000 rs 0x00000000, carryin 0, cpsr 0x00000000     
+smlals r0, r1, r2, r3 :: rd 0x00000001 rd2 0x00000001, rm 0x00000000 rs 0x00000000, carryin 0, cpsr 0x00000000     
+smlals r0, r1, r2, r3 :: rd 0x00000001 rd2 0xffffffff, rm 0x00000001 rs 0x00000001, carryin 0, cpsr 0x80000000 N   
+smlals r0, r1, r2, r3 :: rd 0x00000000 rd2 0x00000000, rm 0x00000000 rs 0x00000001, carryin 0, cpsr 0x40000000  Z  
+smlals r0, r1, r2, r3 :: rd 0x00000000 rd2 0x00000000, rm 0x00000001 rs 0x00000000, carryin 0, cpsr 0x40000000  Z  
+smlals r0, r1, r2, r3 :: rd 0x00000001 rd2 0x00000000, rm 0x00000001 rs 0x00000001, carryin 0, cpsr 0x00000000     
+smlals r0, r1, r2, r3 :: rd 0xfffe0001 rd2 0x00000000, rm 0x0000ffff rs 0x0000ffff, carryin 0, cpsr 0x00000000     
+smlals r0, r1, r2, r3 :: rd 0x00000001 rd2 0x00000000, rm 0xffffffff rs 0xffffffff, carryin 0, cpsr 0x00000000     
+CLZ
+clz  r0, r1 :: rd 0x00000020 rm 0x00000000, carryin 0, cpsr 0x00000000     
+clz  r0, r1 :: rd 0x0000001f rm 0x00000001, carryin 0, cpsr 0x00000000     
+clz  r0, r1 :: rd 0x0000001b rm 0x00000010, carryin 0, cpsr 0x00000000     
+clz  r0, r1 :: rd 0x00000000 rm 0xffffffff, carryin 0, cpsr 0x00000000     
+clz  r0, r1 :: rd 0x00000020 rm 0x00000000, carryin 1, cpsr 0x20000000   C 
+clz  r0, r1 :: rd 0x0000001f rm 0x00000001, carryin 1, cpsr 0x20000000   C 
+clz  r0, r1 :: rd 0x0000001b rm 0x00000010, carryin 1, cpsr 0x20000000   C 
+clz  r0, r1 :: rd 0x00000000 rm 0xffffffff, carryin 1, cpsr 0x20000000   C 
+extend instructions
+uxtb r0, r1 :: rd 0x00000000 rm 0x00000000, carryin 0, cpsr 0x00000000     
+uxtb r0, r1 :: rd 0x00000001 rm 0x00000001, carryin 0, cpsr 0x00000000     
+uxtb r0, r1 :: rd 0x000000ff rm 0x000000ff, carryin 0, cpsr 0x00000000     
+uxtb r0, r1 :: rd 0x000000ff rm 0xffffffff, carryin 0, cpsr 0x00000000     
+sxtb r0, r1 :: rd 0x00000000 rm 0x00000000, carryin 0, cpsr 0x00000000     
+sxtb r0, r1 :: rd 0x00000001 rm 0x00000001, carryin 0, cpsr 0x00000000     
+sxtb r0, r1 :: rd 0xffffffff rm 0x000000ff, carryin 0, cpsr 0x00000000     
+sxtb r0, r1 :: rd 0xffffffff rm 0xffffffff, carryin 0, cpsr 0x00000000     
+uxth r0, r1 :: rd 0x00000000 rm 0x00000000, carryin 0, cpsr 0x00000000     
+uxth r0, r1 :: rd 0x00000001 rm 0x00000001, carryin 0, cpsr 0x00000000     
+uxth r0, r1 :: rd 0x0000ffff rm 0x0000ffff, carryin 0, cpsr 0x00000000     
+uxth r0, r1 :: rd 0x0000ffff rm 0xffffffff, carryin 0, cpsr 0x00000000     
+sxth r0, r1 :: rd 0x00000000 rm 0x00000000, carryin 0, cpsr 0x00000000     
+sxth r0, r1 :: rd 0x00000001 rm 0x00000001, carryin 0, cpsr 0x00000000     
+sxth r0, r1 :: rd 0x00007fff rm 0x00007fff, carryin 0, cpsr 0x00000000     
+sxth r0, r1 :: rd 0xffffffff rm 0x0000ffff, carryin 0, cpsr 0x00000000     
+sxth r0, r1 :: rd 0xffffffff rm 0x0010ffff, carryin 0, cpsr 0x00000000     
+sxth r0, r1 :: rd 0x00007fff rm 0x00107fff, carryin 0, cpsr 0x00000000     
+sxth r0, r1 :: rd 0xffffffff rm 0xffffffff, carryin 0, cpsr 0x00000000     
+uxtb r0, r1, ror #0 :: rd 0x000000ff rm 0x000000ff, carryin 0, cpsr 0x00000000     
+uxtb r0, r1, ror #8 :: rd 0x00000000 rm 0x000000ff, carryin 0, cpsr 0x00000000     
+uxtb r0, r1, ror #8 :: rd 0x000000ff rm 0x0000ff00, carryin 0, cpsr 0x00000000     
+uxtb r0, r1, ror #16 :: rd 0x000000ff rm 0x00ff0000, carryin 0, cpsr 0x00000000     
+uxtb r0, r1, ror #24 :: rd 0x000000ff rm 0xff000000, carryin 0, cpsr 0x00000000     
+uxtb16 r0, r1 :: rd 0x00ff00ff rm 0xffffffff, carryin 0, cpsr 0x00000000     
+uxtb16 r0, r1, ror #16 :: rd 0x00ff0000 rm 0x0000ffff, carryin 0, cpsr 0x00000000     
+sxtb16 r0, r1 :: rd 0xffffffff rm 0xffffffff, carryin 0, cpsr 0x00000000     
+sxtb16 r0, r1 :: rd 0xffffffff rm 0x00ff00ff, carryin 0, cpsr 0x00000000     
+sxtb16 r0, r1 :: rd 0x007f007f rm 0x007f007f, carryin 0, cpsr 0x00000000     
+------------ BFI ------------
+bfi  r0, r1, #0, #11 :: rd 0x555552aa rm 0xaaaaaaaa, carryin 0, cpsr 0x00000000     
+bfi  r0, r1, #1, #11 :: rd 0x55555555 rm 0xaaaaaaaa, carryin 0, cpsr 0x00000000     
+bfi  r0, r1, #2, #11 :: rd 0x55554aa9 rm 0xaaaaaaaa, carryin 0, cpsr 0x00000000     
+bfi  r0, r1, #19, #11 :: rd 0x7ffd5555 rm 0xffffffff, carryin 0, cpsr 0x00000000     
+bfi  r0, r1, #20, #11 :: rd 0x7ff55555 rm 0xffffffff, carryin 0, cpsr 0x00000000     
+bfi  r0, r1, #21, #11 :: rd 0xfff55555 rm 0xffffffff, carryin 0, cpsr 0x00000000     
+bfi  r0, r1, #0, #32 :: rd 0xffffffff rm 0xffffffff, carryin 0, cpsr 0x00000000     
+bfi  r0, r1, #1, #31 :: rd 0xffffffff rm 0xffffffff, carryin 0, cpsr 0x00000000     
+bfi  r0, r1, #29, #3 :: rd 0xf5555555 rm 0xffffffff, carryin 0, cpsr 0x00000000     
+bfi  r0, r1, #30, #2 :: rd 0xd5555555 rm 0xffffffff, carryin 0, cpsr 0x00000000     
+bfi  r0, r1, #31, #1 :: rd 0xd5555555 rm 0xffffffff, carryin 0, cpsr 0x00000000     
+------------ BFC ------------
+bfc  r0, #0, #11 :: rd 0x55555000 rm 0xaaaaaaaa, carryin 0, cpsr 0x00000000     
+bfc  r0, #1, #11 :: rd 0x55555001 rm 0xaaaaaaaa, carryin 0, cpsr 0x00000000     
+bfc  r0, #2, #11 :: rd 0x55554001 rm 0xaaaaaaaa, carryin 0, cpsr 0x00000000     
+bfc  r0, #19, #11 :: rd 0x40055555 rm 0xffffffff, carryin 0, cpsr 0x00000000     
+bfc  r0, #20, #11 :: rd 0x00055555 rm 0xffffffff, carryin 0, cpsr 0x00000000     
+bfc  r0, #21, #11 :: rd 0x00155555 rm 0xffffffff, carryin 0, cpsr 0x00000000     
+bfc  r0, #0, #32 :: rd 0x00000000 rm 0xffffffff, carryin 0, cpsr 0x00000000     
+bfc  r0, #1, #31 :: rd 0x00000001 rm 0xffffffff, carryin 0, cpsr 0x00000000     
+bfc  r0, #29, #3 :: rd 0x15555555 rm 0xffffffff, carryin 0, cpsr 0x00000000     
+bfc  r0, #30, #2 :: rd 0x15555555 rm 0xffffffff, carryin 0, cpsr 0x00000000     
+bfc  r0, #31, #1 :: rd 0x55555555 rm 0xffffffff, carryin 0, cpsr 0x00000000     
+------------ SBFX ------------
+sbfx  r0, r1, #0, #1 :: rd 0x00000000 rm 0x00000000, carryin 0, cpsr 0x00000000     
+sbfx  r0, r1, #0, #1 :: rd 0xffffffff rm 0x00000001, carryin 0, cpsr 0x00000000     
+sbfx  r0, r1, #1, #1 :: rd 0x00000000 rm 0x00000000, carryin 0, cpsr 0x00000000     
+sbfx  r0, r1, #1, #1 :: rd 0x00000000 rm 0x00000001, carryin 0, cpsr 0x00000000     
+sbfx  r0, r1, #1, #1 :: rd 0xffffffff rm 0x00000002, carryin 0, cpsr 0x00000000     
+sbfx  r0, r1, #1, #1 :: rd 0xffffffff rm 0x00000003, carryin 0, cpsr 0x00000000     
+sbfx  r0, r1, #0, #2 :: rd 0x00000000 rm 0x00000000, carryin 0, cpsr 0x00000000     
+sbfx  r0, r1, #0, #2 :: rd 0x00000001 rm 0x00000001, carryin 0, cpsr 0x00000000     
+sbfx  r0, r1, #1, #2 :: rd 0x00000000 rm 0x00000000, carryin 0, cpsr 0x00000000     
+sbfx  r0, r1, #1, #2 :: rd 0x00000000 rm 0x00000001, carryin 0, cpsr 0x00000000     
+sbfx  r0, r1, #1, #2 :: rd 0x00000001 rm 0x00000002, carryin 0, cpsr 0x00000000     
+sbfx  r0, r1, #1, #2 :: rd 0x00000001 rm 0x00000003, carryin 0, cpsr 0x00000000     
+sbfx  r0, r1, #0, #11 :: rd 0x000002aa rm 0xaaaaaaaa, carryin 0, cpsr 0x00000000     
+sbfx  r0, r1, #1, #11 :: rd 0xfffffd55 rm 0xaaaaaaaa, carryin 0, cpsr 0x00000000     
+sbfx  r0, r1, #2, #11 :: rd 0x000002aa rm 0xaaaaaaaa, carryin 0, cpsr 0x00000000     
+sbfx  r0, r1, #2, #11 :: rd 0x000002aa rm 0xaaaaaaaa, carryin 0, cpsr 0x00000000     
+sbfx  r0, r1, #31, #1 :: rd 0xffffffff rm 0xaaaaaaaa, carryin 0, cpsr 0x00000000     
+sbfx  r0, r1, #30, #2 :: rd 0xfffffffe rm 0xaaaaaaaa, carryin 0, cpsr 0x00000000     
+------------ UBFX ------------
+ubfx  r0, r1, #0, #1 :: rd 0x00000000 rm 0x00000000, carryin 0, cpsr 0x00000000     
+ubfx  r0, r1, #0, #1 :: rd 0x00000001 rm 0x00000001, carryin 0, cpsr 0x00000000     
+ubfx  r0, r1, #1, #1 :: rd 0x00000000 rm 0x00000000, carryin 0, cpsr 0x00000000     
+ubfx  r0, r1, #1, #1 :: rd 0x00000000 rm 0x00000001, carryin 0, cpsr 0x00000000     
+ubfx  r0, r1, #1, #1 :: rd 0x00000001 rm 0x00000002, carryin 0, cpsr 0x00000000     
+ubfx  r0, r1, #1, #1 :: rd 0x00000001 rm 0x00000003, carryin 0, cpsr 0x00000000     
+ubfx  r0, r1, #0, #2 :: rd 0x00000000 rm 0x00000000, carryin 0, cpsr 0x00000000     
+ubfx  r0, r1, #0, #2 :: rd 0x00000001 rm 0x00000001, carryin 0, cpsr 0x00000000     
+ubfx  r0, r1, #1, #2 :: rd 0x00000000 rm 0x00000000, carryin 0, cpsr 0x00000000     
+ubfx  r0, r1, #1, #2 :: rd 0x00000000 rm 0x00000001, carryin 0, cpsr 0x00000000     
+ubfx  r0, r1, #1, #2 :: rd 0x00000001 rm 0x00000002, carryin 0, cpsr 0x00000000     
+ubfx  r0, r1, #1, #2 :: rd 0x00000001 rm 0x00000003, carryin 0, cpsr 0x00000000     
+ubfx  r0, r1, #0, #11 :: rd 0x000002aa rm 0xaaaaaaaa, carryin 0, cpsr 0x00000000     
+ubfx  r0, r1, #1, #11 :: rd 0x00000555 rm 0xaaaaaaaa, carryin 0, cpsr 0x00000000     
+ubfx  r0, r1, #2, #11 :: rd 0x000002aa rm 0xaaaaaaaa, carryin 0, cpsr 0x00000000     
+ubfx  r0, r1, #2, #11 :: rd 0x000002aa rm 0xaaaaaaaa, carryin 0, cpsr 0x00000000     
+ubfx  r0, r1, #31, #1 :: rd 0x00000001 rm 0xaaaaaaaa, carryin 0, cpsr 0x00000000     
+ubfx  r0, r1, #30, #2 :: rd 0x00000002 rm 0xaaaaaaaa, carryin 0, cpsr 0x00000000     
+------------ SMULL{B,T}{B,T} ------------
+smulbb r0, r1, r2 :: rd 0x00000000 rm 0x00030000, rn 0x00040000, carryin 0, cpsr 0x00000000     
+smulbb r0, r1, r2 :: rd 0x00000002 rm 0x00030001, rn 0x00040002, carryin 0, cpsr 0x00000000     
+smulbb r0, r1, r2 :: rd 0xc000ffff rm 0x00038001, rn 0x00047fff, carryin 0, cpsr 0x00000000     
+smulbb r0, r1, r2 :: rd 0x3fff0001 rm 0x00037fff, rn 0x00047fff, carryin 0, cpsr 0x00000000     
+smulbb r0, r1, r2 :: rd 0x00000001 rm 0x0003ffff, rn 0x0004ffff, carryin 0, cpsr 0x00000000     
+------------ SXTAB ------------
+sxtab r0, r1, r2, ROR #24 :: rd 0x3141594e rm 0x31415927, rn 0x27182819, carryin 0, cpsr 0x00000000     
+sxtab r0, r1, r2, ROR #16 :: rd 0x3141593f rm 0x31415927, rn 0x27182819, carryin 0, cpsr 0x00000000     
+sxtab r0, r1, r2, ROR #8 :: rd 0x3141594f rm 0x31415927, rn 0x27182819, carryin 0, cpsr 0x00000000     
+sxtab r0, r1, r2, ROR #0 :: rd 0x31415940 rm 0x31415927, rn 0x27182819, carryin 0, cpsr 0x00000000     
+sxtab r0, r1, r2, ROR #24 :: rd 0x3141594e rm 0x31415927, rn 0x27182899, carryin 0, cpsr 0x00000000     
+sxtab r0, r1, r2, ROR #16 :: rd 0x3141593f rm 0x31415927, rn 0x27182899, carryin 0, cpsr 0x00000000     
+sxtab r0, r1, r2, ROR #8 :: rd 0x3141594f rm 0x31415927, rn 0x27182899, carryin 0, cpsr 0x00000000     
+sxtab r0, r1, r2, ROR #0 :: rd 0x314158c0 rm 0x31415927, rn 0x27182899, carryin 0, cpsr 0x00000000     
+------------ UXTAH ------------
+uxtah r0, r1, r2, ROR #24 :: rd 0x3141724e rm 0x31415927, rn 0x27182819, carryin 0, cpsr 0x00000000     
+uxtah r0, r1, r2, ROR #16 :: rd 0x3141803f rm 0x31415927, rn 0x27182819, carryin 0, cpsr 0x00000000     
+uxtah r0, r1, r2, ROR #8 :: rd 0x3141714f rm 0x31415927, rn 0x27182819, carryin 0, cpsr 0x00000000     
+uxtah r0, r1, r2, ROR #0 :: rd 0x31418140 rm 0x31415927, rn 0x27182819, carryin 0, cpsr 0x00000000     
+uxtah r0, r1, r2, ROR #24 :: rd 0x3141f24e rm 0x31415927, rn 0x27182899, carryin 0, cpsr 0x00000000     
+uxtah r0, r1, r2, ROR #16 :: rd 0x3141803f rm 0x31415927, rn 0x27182899, carryin 0, cpsr 0x00000000     
+uxtah r0, r1, r2, ROR #8 :: rd 0x3141714f rm 0x31415927, rn 0x27182899, carryin 0, cpsr 0x00000000     
+uxtah r0, r1, r2, ROR #0 :: rd 0x314181c0 rm 0x31415927, rn 0x27182899, carryin 0, cpsr 0x00000000     

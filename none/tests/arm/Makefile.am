@@ -1,23 +1,19 @@
 
 include $(top_srcdir)/Makefile.tool-tests.am
 
-#dist_noinst_SCRIPTS = filter_cpuid filter_stderr gen_insn_test.pl
-dist_noinst_SCRIPTS =
+dist_noinst_SCRIPTS = filter_stderr
 
+EXTRA_DIST = \
+	v6int.stdout.exp v6int.stderr.exp v6int.vgtest
 
-### jrs: re-check this against known-good equivalents, eg x86 version
-
-EXTRA_DIST = $(noinst_SCRIPTS)
-#	\
-#	instructions.stderr.exp instructions.stdout.exp
-
-# if any tests appear here, remember to include @FLAG_M32@ in the
-# compilation flags
-#
-
-#check_PROGRAMS = instructions
-check_PROGRAMS =
+check_PROGRAMS = \
+	v6int
 
 AM_CFLAGS    += @FLAG_M32@
 AM_CXXFLAGS  += @FLAG_M32@
 AM_CCASFLAGS += @FLAG_M32@
+
+# need to specify cpu here because inline assembly in v6int.c
+# contains various v6 and v7 insns, which the assembler by
+# default rejects.
+v6int_CFLAGS 	= $(AM_CFLAGS) -g -O -mcpu=cortex-a8

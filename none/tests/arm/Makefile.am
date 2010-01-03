@@ -1,4 +1,10 @@
 
+include $(top_srcdir)/Makefile.tool-tests.am
+
+#dist_noinst_SCRIPTS = filter_cpuid filter_stderr gen_insn_test.pl
+dist_noinst_SCRIPTS =
+
+
 ### jrs: re-check this against known-good equivalents, eg x86 version
 
 EXTRA_DIST = $(noinst_SCRIPTS)

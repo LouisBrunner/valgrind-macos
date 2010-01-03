@@ -16,6 +16,9 @@ endif
 if VGCONF_ARCHS_INCLUDE_PPC64
 SUBDIRS += ppc64
 endif
+if VGCONF_ARCHS_INCLUDE_ARM
+SUBDIRS += arm
+endif
 
 # OS-specific tests
 if VGCONF_OS_IS_LINUX
@@ -30,7 +33,7 @@ if VGCONF_PLATFORMS_INCLUDE_X86_LINUX
 SUBDIRS += x86-linux
 endif
 
-DIST_SUBDIRS = x86 amd64 ppc32 ppc64 linux darwin x86-linux .
+DIST_SUBDIRS = x86 amd64 ppc32 ppc64 arm linux darwin x86-linux .
 
 dist_noinst_SCRIPTS = \
 	filter_cmdline0 \

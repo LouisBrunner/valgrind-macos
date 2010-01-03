@@ -2418,7 +2418,13 @@ DisResult disInstr_ARM_WRK (
       assign(oldRnT, getIReg(rN));
 
       IRTemp anchorT = newTemp(Ity_I32);
-      assign(anchorT, binop(Iop_And32, mkexpr(oldRnT), mkU32(~3U)));
+      /* The old (Addison-Wesley) ARM ARM seems to say that
+         LDMxx/STMxx ignore the bottom two bits of the address.
+         However, Cortex-A8 doesn't seem to care.  Hence: */
+      /* No .. don't force alignment .. */
+      /* assign(anchorT, binop(Iop_And32, mkexpr(oldRnT), mkU32(~3U))); */
+      /* Instead, use the potentially misaligned address directly. */
+      assign(anchorT, mkexpr(oldRnT));
 
       IROp opADDorSUB = bINC ? Iop_Add32 : Iop_Sub32;
       // bINC == 1:  xxMIA, xxMIB

@@ -1673,6 +1673,10 @@ static SyscallTableEntry syscall_main_table[] = {
    // verbatim from syswrap-x86-linux.c and they certainly do not
    // correspond to what's in include/vki/vki-scnums-arm-linux.h.
    // From here onwards, please ensure the numbers are correct.
+
+   LINXY(__NR_signalfd4,         sys_signalfd4),        // 355
+   LINX_(__NR_eventfd2,          sys_eventfd2),         // 356
+
    LINXY(__NR_pipe2,             sys_pipe2)             // 359
 };
 

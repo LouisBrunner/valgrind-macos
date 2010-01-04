@@ -8,6 +8,6 @@ Process terminating with default action of signal 7 (SIGBUS)
  Invalid address alignment at address 0x........
    at 0x........: (within libpthread-?.?.so)
    by 0x........: pthread_cond_wait@@GLIBC_2.3.2(within libpthread-?.?.so)
-   by 0x........: main (tc23_bogus_condwait.c:69)
+   by 0x........: pthread_cond_wait (drd_pthread_intercepts.c:?)
 
 ERROR SUMMARY: 2 errors from 1 contexts (suppressed: 0 from 0)

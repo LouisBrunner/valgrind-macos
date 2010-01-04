@@ -57,9 +57,16 @@ int main ( void )
 // Note: on ppc32/64 the second call to foo() does give an error,
 // since the expensive EQ/NE scheme does not apply to the CmpORD
 // primops used by ppc.
-static void bar ( void )
+//
+// On arm, the "normal" (x86-like) comparison primops are used, so
+// the expensive EQ/NE scheme could apply.  However, it doesn't,
+// because the constant 0x80808080 is placed in a constant pool
+// and so never appears as a literal, and so the instrumenter
+// never spots it and so doesn't use the expensive scheme (for foo).
+// Hence also on ARM we get 3 errors, not 2.
+static __attribute__((noinline)) void bar ( void )
 {
-#if defined(__powerpc__) || defined(__powerpc64__)
-  fprintf(stderr, "Currently running on ppc32/64: this test should give 3 errors, not 2.\n");
+#if defined(__powerpc__) || defined(__powerpc64__) || defined(__arm__)
+  fprintf(stderr, "Currently running on ppc32/64/arm: this test should give 3 errors, not 2.\n");
 #endif
 }

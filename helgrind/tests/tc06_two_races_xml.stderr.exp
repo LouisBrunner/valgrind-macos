@@ -29,12 +29,12 @@
 </status>
 
 <announcethread>
-  <hthreadid>1</threadid>
+  <hthreadid>1</hthreadid>
   <isrootthread></isrootthread>
 </announcethread>
 
 <announcethread>
-  <hthreadid>2</threadid>
+  <hthreadid>2</hthreadid>
   <stack>
     <frame>
       <ip>0x........</ip>
@@ -293,6 +293,7 @@
   <auxwhat>Location 0x........ is 0 bytes inside global var "unprot2"</auxwhat>
   <xauxwhat><text>declared at tc06_two_races.c:9</text> <file>tc06_two_races.c</file> <line>...</line> </xauxwhat>
 </error>
+
 
 <status>
   <state>FINISHED</state>

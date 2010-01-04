@@ -36,7 +36,8 @@
 #  define PLAT_arm_linux 1
 #endif
 
-#if defined(PLAT_amd64_linux) || defined(PLAT_x86_linux)
+#if defined(PLAT_amd64_linux) || defined(PLAT_x86_linux) \
+    || defined(PLAT_amd64_darwin) || defined(PLAT_x86_darwin)
 #  define INC(_lval,_lqual) \
       __asm__ __volatile__ ( \
       "lock ; incl (%0)" : /*out*/ : /*in*/"r"(&(_lval)) : "memory", "cc" )

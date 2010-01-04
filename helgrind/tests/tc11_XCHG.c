@@ -40,7 +40,8 @@
 #endif
 
 
-#if defined(PLAT_amd64_linux) || defined(PLAT_x86_linux)
+#if defined(PLAT_amd64_linux) || defined(PLAT_x86_linux) \
+    || defined(PLAT_amd64_darwin) || defined(PLAT_x86_darwin)
 #  define XCHG_M_R(_addr,_lval) \
      __asm__ __volatile__( \
         "xchgl %0, %1" \

@@ -470,6 +470,8 @@ UInt VG_(vmessage) ( VgMsgKind kind, const HChar* format, va_list vargs )
 
    /* Cache the results of getpid just once, so we don't have to call
       getpid once for each line of text output. */
+   b->my_pid = -1; /* LATER: cacheing is confusing in presence of fork(),
+                      disable for now. */
    if (UNLIKELY(b->my_pid == -1)) {
       b->my_pid = VG_(getpid)();
       vg_assert(b->my_pid >= 0);

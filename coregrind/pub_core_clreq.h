@@ -64,13 +64,16 @@ static int VALGRIND_INTERNAL_PRINTF(const char *format, ...)
 static int VALGRIND_INTERNAL_PRINTF(const char *format, ...)
 {
    unsigned long _qzz_res = 0;
-   va_list vargs;
-   va_start(vargs, format);
+   union {
+      va_list vargs;
+      unsigned long ul;
+   } args;
+   va_start(args.vargs, format);
    VALGRIND_DO_CLIENT_REQUEST(
       _qzz_res, 0, VG_USERREQ__INTERNAL_PRINTF,
-      (unsigned long)format, (unsigned long)vargs, 0, 0, 0
+      (unsigned long)format, (unsigned long)(args.ul), 0, 0, 0
    );
-   va_end(vargs);
+   va_end(args.vargs);
    return _qzz_res;
 }
 

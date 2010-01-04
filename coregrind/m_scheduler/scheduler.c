@@ -1408,15 +1408,27 @@ void do_client_request ( ThreadId tid )
          break;
 
       case VG_USERREQ__PRINTF: {
-         Int count = 
-            VG_(vmessage)( Vg_ClientMsg, (char *)arg[1], (void*)arg[2] );
+         union {
+            va_list vargs;
+            unsigned long ul;
+         } args;
+         Int count;
+         args.ul = (unsigned long)arg[2];
+         count =
+            VG_(vmessage)( Vg_ClientMsg, (char *)arg[1], args.vargs );
             VG_(message_flush)();
             SET_CLREQ_RETVAL( tid, count );
          break; }
 
       case VG_USERREQ__INTERNAL_PRINTF: {
-         Int count = 
-            VG_(vmessage)( Vg_DebugMsg, (char *)arg[1], (void*)arg[2] );
+         union {
+            va_list vargs;
+            unsigned long ul;
+         } args;
+         Int count;
+         args.ul = (unsigned long)arg[2];
+         count =
+            VG_(vmessage)( Vg_DebugMsg, (char *)arg[1], args.vargs );
             VG_(message_flush)();
             SET_CLREQ_RETVAL( tid, count );
          break; }
@@ -1427,8 +1439,14 @@ void do_client_request ( ThreadId tid )
          break; }
 
       case VG_USERREQ__PRINTF_BACKTRACE: {
-         Int count =
-            VG_(vmessage)( Vg_ClientMsg, (char *)arg[1], (void*)arg[2] );
+         union {
+            va_list vargs;
+            unsigned long ul;
+         } args;
+         Int count;
+         args.ul = (unsigned long)arg[2];
+         count =
+            VG_(vmessage)( Vg_ClientMsg, (char *)arg[1], args.vargs );
             VG_(message_flush)();
             VG_(get_and_pp_StackTrace)( tid, VG_(clo_backtrace_size) );
             SET_CLREQ_RETVAL( tid, count );

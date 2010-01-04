@@ -4183,12 +4183,16 @@ static int
 VALGRIND_PRINTF(const char *format, ...)
 {
    unsigned long _qzz_res;
-   va_list vargs;
-   va_start(vargs, format);
+   union {
+      va_list vargs;
+      unsigned long ul;
+   } args;
+   va_start(args.vargs, format);
    VALGRIND_DO_CLIENT_REQUEST(_qzz_res, 0, VG_USERREQ__PRINTF,
-                              (unsigned long)format, (unsigned long)vargs, 
+                              (unsigned long)format,
+                              (unsigned long)(args.ul),
                               0, 0, 0);
-   va_end(vargs);
+   va_end(args.vargs);
    return (int)_qzz_res;
 }
 
@@ -4198,12 +4202,16 @@ static int
 VALGRIND_PRINTF_BACKTRACE(const char *format, ...)
 {
    unsigned long _qzz_res;
-   va_list vargs;
-   va_start(vargs, format);
+   union {
+      va_list vargs;
+      unsigned long ul;
+   } args;
+   va_start(args.vargs, format);
    VALGRIND_DO_CLIENT_REQUEST(_qzz_res, 0, VG_USERREQ__PRINTF_BACKTRACE,
-                              (unsigned long)format, (unsigned long)vargs, 
+                              (unsigned long)format,
+                              (unsigned long)(args.ul),
                               0, 0, 0);
-   va_end(vargs);
+   va_end(args.vargs);
    return (int)_qzz_res;
 }
 

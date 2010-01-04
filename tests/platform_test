@@ -12,6 +12,7 @@
 
 all_platforms=
 all_platforms="$all_platforms x86-linux amd64-linux ppc32-linux ppc64-linux"
+all_platforms="$all_platforms arm-linux"
 all_platforms="$all_platforms ppc32-aix5 ppc64-aix5"
 all_platforms="$all_platforms x86-darwin amd64-darwin"
 

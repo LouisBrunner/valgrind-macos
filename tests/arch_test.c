@@ -27,6 +27,7 @@ char* all_archs[] = {
    "amd64",
    "ppc32",
    "ppc64",
+   "arm",
    NULL
 };
 

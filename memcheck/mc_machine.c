@@ -727,22 +727,22 @@ static Int get_otrack_shadow_offset_wrk ( Int offset, Int szB )
    if (o == GOF(FPSCR)    && sz == 4) return -1;
    if (o == GOF(TPIDRURO) && sz == 4) return -1;
 
-   if (o >= GOF(D0)  && o+sz <= GOF(D0) +SZB(D0))  return -1;
-   if (o >= GOF(D1)  && o+sz <= GOF(D1) +SZB(D1))  return -1;
-   if (o >= GOF(D2)  && o+sz <= GOF(D2) +SZB(D2))  return -1;
-   if (o >= GOF(D3)  && o+sz <= GOF(D3) +SZB(D3))  return -1;
-   if (o >= GOF(D4)  && o+sz <= GOF(D4) +SZB(D4))  return -1;
-   if (o >= GOF(D5)  && o+sz <= GOF(D5) +SZB(D5))  return -1;
-   if (o >= GOF(D6)  && o+sz <= GOF(D6) +SZB(D6))  return -1;
-   if (o >= GOF(D7)  && o+sz <= GOF(D7) +SZB(D7))  return -1;
-   if (o >= GOF(D8)  && o+sz <= GOF(D8) +SZB(D8))  return -1;
-   if (o >= GOF(D9)  && o+sz <= GOF(D9) +SZB(D9))  return -1;
-   if (o >= GOF(D10) && o+sz <= GOF(D10)+SZB(D10)) return -1;
-   if (o >= GOF(D11) && o+sz <= GOF(D11)+SZB(D11)) return -1;
-   if (o >= GOF(D12) && o+sz <= GOF(D12)+SZB(D12)) return -1;
-   if (o >= GOF(D13) && o+sz <= GOF(D13)+SZB(D13)) return -1;
-   if (o >= GOF(D14) && o+sz <= GOF(D14)+SZB(D14)) return -1;
-   if (o >= GOF(D15) && o+sz <= GOF(D15)+SZB(D15)) return -1;
+   if (o >= GOF(D0)  && o+sz <= GOF(D0) +SZB(D0))  return GOF(D0);
+   if (o >= GOF(D1)  && o+sz <= GOF(D1) +SZB(D1))  return GOF(D1);
+   if (o >= GOF(D2)  && o+sz <= GOF(D2) +SZB(D2))  return GOF(D2);
+   if (o >= GOF(D3)  && o+sz <= GOF(D3) +SZB(D3))  return GOF(D3);
+   if (o >= GOF(D4)  && o+sz <= GOF(D4) +SZB(D4))  return GOF(D4);
+   if (o >= GOF(D5)  && o+sz <= GOF(D5) +SZB(D5))  return GOF(D5);
+   if (o >= GOF(D6)  && o+sz <= GOF(D6) +SZB(D6))  return GOF(D6);
+   if (o >= GOF(D7)  && o+sz <= GOF(D7) +SZB(D7))  return GOF(D7);
+   if (o >= GOF(D8)  && o+sz <= GOF(D8) +SZB(D8))  return GOF(D8);
+   if (o >= GOF(D9)  && o+sz <= GOF(D9) +SZB(D9))  return GOF(D9);
+   if (o >= GOF(D10) && o+sz <= GOF(D10)+SZB(D10)) return GOF(D10);
+   if (o >= GOF(D11) && o+sz <= GOF(D11)+SZB(D11)) return GOF(D11);
+   if (o >= GOF(D12) && o+sz <= GOF(D12)+SZB(D12)) return GOF(D12);
+   if (o >= GOF(D13) && o+sz <= GOF(D13)+SZB(D13)) return GOF(D13);
+   if (o >= GOF(D14) && o+sz <= GOF(D14)+SZB(D14)) return GOF(D14);
+   if (o >= GOF(D15) && o+sz <= GOF(D15)+SZB(D15)) return GOF(D15);
 
    VG_(printf)("MC_(get_otrack_shadow_offset)(arm)(off=%d,sz=%d)\n",
                offset,szB);

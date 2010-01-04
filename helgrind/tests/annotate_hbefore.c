@@ -117,16 +117,18 @@ UWord do_acasW ( UWord* addr, UWord expected, UWord nyu )
 {
    UWord block[4] = { (UWord)addr, expected, nyu, 2 };
    __asm__ __volatile__(
+      "pushl %%ebx"                   "\n\t"
       "movl 0(%%esi),  %%edi"         "\n\t" // addr
       "movl 4(%%esi),  %%eax"         "\n\t" // expected
       "movl 8(%%esi),  %%ebx"         "\n\t" // nyu
       "xorl %%ecx,%%ecx"              "\n\t"
       "lock; cmpxchgl %%ebx,(%%edi)"  "\n\t"
       "setz %%cl"                     "\n\t"
-      "movl %%ecx, 12(%%esi)"         "\n"
+      "movl %%ecx, 12(%%esi)"         "\n\t"
+      "popl %%ebx"                    "\n"
       : /*out*/ 
       : /*in*/ "S"(&block[0])
-      : /*trash*/"memory","cc","edi","eax","ebx","ecx"
+      : /*trash*/"memory","cc","edi","eax","ecx"
    );
    assert(block[3] == 0 || block[3] == 1);
    return block[3] & 1;

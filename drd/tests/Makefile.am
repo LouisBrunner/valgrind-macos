@@ -227,8 +227,7 @@ EXTRA_DIST =                                        \
 	tc22_exit_w_lock.stderr.exp-32bit	    \
 	tc22_exit_w_lock.stderr.exp-64bit           \
 	tc22_exit_w_lock.vgtest                     \
-	tc23_bogus_condwait.stderr.exp-linux-x86    \
-	tc23_bogus_condwait.stderr.exp-linux-ppc    \
+	tc23_bogus_condwait.stderr.exp-linux        \
 	tc23_bogus_condwait.stderr.exp-darwin       \
 	tc23_bogus_condwait.vgtest                  \
 	tc24_nonzero_sem.stderr.exp                 \

@@ -1,0 +1,5 @@
+prog: ll
+vgopts: --interval-size=1000 --bb-out-file=ll.out.bb
+post:	cat ll.out.bb
+cleanup: rm ll.out.bb
+

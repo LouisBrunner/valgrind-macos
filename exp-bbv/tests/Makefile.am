@@ -16,8 +16,11 @@ endif
 if VGCONF_PLATFORMS_INCLUDE_PPC32_LINUX
 SUBDIRS += ppc32-linux
 endif
+if VGCONF_PLATFORMS_INCLUDE_ARM_LINUX
+SUBDIRS += arm-linux
+endif
 
-DIST_SUBDIRS = x86 x86-linux amd64-linux ppc32-linux .
+DIST_SUBDIRS = x86 x86-linux amd64-linux ppc32-linux arm-linux .
 
 dist_noinst_SCRIPTS = \
 	filter_bb \

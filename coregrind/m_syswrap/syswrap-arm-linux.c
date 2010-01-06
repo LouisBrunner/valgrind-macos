@@ -321,18 +321,14 @@ DECL_TEMPLATE(arm_linux, sys_getpeername);
 DECL_TEMPLATE(arm_linux, sys_socketpair);
 DECL_TEMPLATE(arm_linux, sys_send);
 DECL_TEMPLATE(arm_linux, sys_recv);
-DECL_TEMPLATE(arm_linux, sys_mmap);
 DECL_TEMPLATE(arm_linux, sys_mmap2);
 DECL_TEMPLATE(arm_linux, sys_stat64);
 DECL_TEMPLATE(arm_linux, sys_lstat64);
 DECL_TEMPLATE(arm_linux, sys_fstatat64);
 DECL_TEMPLATE(arm_linux, sys_fstat64);
-DECL_TEMPLATE(arm_linux, sys_ipc);
 DECL_TEMPLATE(arm_linux, sys_clone);
 DECL_TEMPLATE(arm_linux, sys_sigreturn);
 DECL_TEMPLATE(arm_linux, sys_rt_sigreturn);
-DECL_TEMPLATE(arm_linux, sys_sigaction);
-DECL_TEMPLATE(arm_linux, sys_sigsuspend);
 DECL_TEMPLATE(arm_linux, sys_set_tls);
 DECL_TEMPLATE(arm_linux, sys_cacheflush);
 
@@ -950,11 +946,6 @@ POST(sys_recv)
    ML_(generic_POST_sys_recv)( tid, RES, ARG1, ARG2, ARG3 );
 }
 
-PRE(sys_mmap)
-{
-    I_die_here;
-}
-
 PRE(sys_mmap2)
 {
    SysRes r;
@@ -1035,17 +1026,6 @@ PRE(sys_fstat64)
 POST(sys_fstat64)
 {
    POST_MEM_WRITE( ARG2, sizeof(struct vki_stat64) );
-}
-
-
-PRE(sys_ipc)
-{   
-    I_die_here;
-}
-
-POST(sys_ipc)
-{   
-    I_die_here;
 }
 
 PRE(sys_clone)
@@ -1189,19 +1169,6 @@ PRE(sys_rt_sigreturn)
    *flags |= SfPollAfter;
 }
 
-PRE(sys_sigaction)
-{   
-    I_die_here;
-}
-
-POST(sys_sigaction)
-{   I_die_here;
-}
-
-PRE(sys_sigsuspend)
-{   I_die_here;
-}
-
 /* Very much ARM specific */
 
 PRE(sys_set_tls)
@@ -1327,13 +1294,13 @@ static SyscallTableEntry syscall_main_table[] = {
 
    GENX_(__NR_getpgrp,           sys_getpgrp),        // 65
    GENX_(__NR_setsid,            sys_setsid),         // 66
-   PLAXY(__NR_sigaction,         sys_sigaction),      // 67
+//      _____(__NR_sigaction,         sys_sigaction),      // 67
 //zz    //   (__NR_sgetmask,          sys_sgetmask),       // 68 */* (ANSI C)
 //zz    //   (__NR_ssetmask,          sys_ssetmask),       // 69 */* (ANSI C)
 //zz 
    LINX_(__NR_setreuid,          sys_setreuid16),     // 70
    LINX_(__NR_setregid,          sys_setregid16),     // 71
-   PLAX_(__NR_sigsuspend,        sys_sigsuspend),     // 72
+//   _____(__NR_sigsuspend,        sys_sigsuspend),     // 72
    LINXY(__NR_sigpending,        sys_sigpending),     // 73
 //zz    //   (__NR_sethostname,       sys_sethostname),    // 74 */*
 //zz 
@@ -1355,7 +1322,7 @@ static SyscallTableEntry syscall_main_table[] = {
 //zz    //   (__NR_reboot,            sys_reboot),         // 88 */Linux
 //zz    //   (__NR_readdir,           old_readdir),        // 89 -- superseded
 //zz 
-//   PLAX_(__NR_mmap,              old_mmap),           // 90
+//   _____(__NR_mmap,              old_mmap),           // 90
    GENXY(__NR_munmap,            sys_munmap),         // 91
    GENX_(__NR_truncate,          sys_truncate),       // 92
    GENX_(__NR_ftruncate,         sys_ftruncate),      // 93
@@ -1387,7 +1354,7 @@ static SyscallTableEntry syscall_main_table[] = {
 //zz 
 //zz    //   (__NR_swapoff,           sys_swapoff),        // 115 */Linux 
    LINXY(__NR_sysinfo,           sys_sysinfo),        // 116
-   PLAXY(__NR_ipc,               sys_ipc),            // 117
+//   _____(__NR_ipc,               sys_ipc),            // 117
    GENX_(__NR_fsync,             sys_fsync),          // 118
    PLAX_(__NR_sigreturn,         sys_sigreturn),      // 119 ?/Linux
 

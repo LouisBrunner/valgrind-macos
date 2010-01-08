@@ -1863,10 +1863,10 @@ Syscall param pread64(buf) contains uninitialised byte(s)
 Syscall param pread64(count) contains uninitialised byte(s)
    ...
 
-Syscall param pread64(offset_low32) contains uninitialised byte(s)
+Syscall param pread64(offset_low) contains uninitialised byte(s)
    ...
 
-Syscall param pread64(offset_high32) contains uninitialised byte(s)
+Syscall param pread64(offset_high) contains uninitialised byte(s)
    ...
 
 Syscall param pread64(buf) points to unaddressable byte(s)
@@ -1885,10 +1885,10 @@ Syscall param pwrite64(buf) contains uninitialised byte(s)
 Syscall param pwrite64(count) contains uninitialised byte(s)
    ...
 
-Syscall param pwrite64(offset_low32) contains uninitialised byte(s)
+Syscall param pwrite64(offset_low) contains uninitialised byte(s)
    ...
 
-Syscall param pwrite64(offset_high32) contains uninitialised byte(s)
+Syscall param pwrite64(offset_high) contains uninitialised byte(s)
    ...
 
 Syscall param pwrite64(buf) points to unaddressable byte(s)
@@ -2073,10 +2073,10 @@ Syscall param mmap2(offset) contains uninitialised byte(s)
 Syscall param truncate64(path) contains uninitialised byte(s)
    ...
 
-Syscall param truncate64(length_low32) contains uninitialised byte(s)
+Syscall param truncate64(length_low) contains uninitialised byte(s)
    ...
 
-Syscall param truncate64(length_high32) contains uninitialised byte(s)
+Syscall param truncate64(length_high) contains uninitialised byte(s)
    ...
 
 Syscall param truncate64(path) points to unaddressable byte(s)
@@ -2089,10 +2089,10 @@ Syscall param truncate64(path) points to unaddressable byte(s)
 Syscall param ftruncate64(fd) contains uninitialised byte(s)
    ...
 
-Syscall param ftruncate64(length_low32) contains uninitialised byte(s)
+Syscall param ftruncate64(length_low) contains uninitialised byte(s)
    ...
 
-Syscall param ftruncate64(length_high32) contains uninitialised byte(s)
+Syscall param ftruncate64(length_high) contains uninitialised byte(s)
    ...
 
 -----------------------------------------------------
@@ -2874,10 +2874,10 @@ Syscall param io_cancel(result) points to unaddressable byte(s)
 -----------------------------------------------------
 253: __NR_lookup_dcookie 4s 1m
 -----------------------------------------------------
-Syscall param lookup_dcookie(cookie_low32) contains uninitialised byte(s)
+Syscall param lookup_dcookie(cookie_low) contains uninitialised byte(s)
    ...
 
-Syscall param lookup_dcookie(cookie_high32) contains uninitialised byte(s)
+Syscall param lookup_dcookie(cookie_high) contains uninitialised byte(s)
    ...
 
 Syscall param lookup_dcookie(buf) contains uninitialised byte(s)

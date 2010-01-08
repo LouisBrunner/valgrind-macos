@@ -33,97 +33,97 @@
    Memcheck:Param
    write(buf)
    fun:*libc_write
-   obj:/usr/X11R6/lib*/libX11.so.6.2
+   obj:/usr/*lib*/libX11.so*
    fun:*X11TransWrite
 }
 
 {
    libX11.so.6.2/libX11.so.6.2/libX11.so.6.2(Cond)
    Memcheck:Cond
-   obj:/usr/X11R6/lib*/libX11.so.6.2
-   obj:/usr/X11R6/lib*/libX11.so.6.2
-   obj:/usr/X11R6/lib*/libX11.so.6.2
+   obj:/usr/*lib*/libX11.so*
+   obj:/usr/*lib*/libX11.so*
+   obj:/usr/*lib*/libX11.so*
 }
 
 {
    libXt.so.6.2/libXt.so.6.2/libXt.so.6.2(Cond)
    Memcheck:Cond
-   obj:/usr/X11R6/lib*/libXt.so.6.0
-   obj:/usr/X11R6/lib*/libXt.so.6.0
-   obj:/usr/X11R6/lib*/libXt.so.6.0
+   obj:/usr/*lib*/libXt.so*
+   obj:/usr/*lib*/libXt.so*
+   obj:/usr/*lib*/libXt.so*
 }
 
 
 {
    libXaw.so.7.0/libXaw.so.7.0/libXaw.so.7.0(Cond)
    Memcheck:Cond
-   obj:/usr/X11R6/lib*/libXaw.so.7.0
-   obj:/usr/X11R6/lib*/libXaw.so.7.0
-   obj:/usr/X11R6/lib*/libXaw.so.7.0
+   obj:/usr/*lib*/libXaw.so*
+   obj:/usr/*lib*/libXaw.so*
+   obj:/usr/*lib*/libXaw.so*
 }
 
 {
    libXmu.so.6.2/libXmu.so.6.2/libXmu.so.6.2(Cond)
    Memcheck:Cond
-   obj:/usr/X11R6/lib*/libXmu.so.6.2
-   obj:/usr/X11R6/lib*/libXmu.so.6.2
-   obj:/usr/X11R6/lib*/libXmu.so.6.2
+   obj:/usr/*lib*/libXmu.so*
+   obj:/usr/*lib*/libXmu.so*
+   obj:/usr/*lib*/libXmu.so*
 }
 
 {
    libXt.so.6.0/libXt.so.6.0/libXaw.so.7.0(Cond)
    Memcheck:Cond
-   obj:/usr/X11R6/lib*/libXt.so.6.0
-   obj:/usr/X11R6/lib*/libXt.so.6.0
-   obj:/usr/X11R6/lib*/libXaw.so.7.0
+   obj:/usr/*lib*/libXt.so*
+   obj:/usr/*lib*/libXt.so*
+   obj:/usr/*lib*/libXaw.so*
 }
 
 {
    libXaw.so.7.0/libXaw.so.7.0/libXt.so.6.0(Value4)
    Memcheck:Value4
-   obj:/usr/X11R6/lib*/libXaw.so.7.0
-   obj:/usr/X11R6/lib*/libXaw.so.7.0
-   obj:/usr/X11R6/lib*/libXt.so.6.0
+   obj:/usr/*lib*/libXaw.so*
+   obj:/usr/*lib*/libXaw.so*
+   obj:/usr/*lib*/libXt.so*
 }
 
 {
    libXaw.so.7.0/libXaw.so.7.0/libXt.so.6.0(Cond)
    Memcheck:Cond
-   obj:/usr/X11R6/lib*/libXaw.so.7.0
-   obj:/usr/X11R6/lib*/libXaw.so.7.0
-   obj:/usr/X11R6/lib*/libXt.so.6.0
+   obj:/usr/*lib*/libXaw.so*
+   obj:/usr/*lib*/libXaw.so*
+   obj:/usr/*lib*/libXt.so*
 }
 
 {
    libX11.so.6.2/libX11.so.6.2/libXaw.so.7.0(Cond)
    Memcheck:Cond
-   obj:/usr/X11R6/lib*/libX11.so.6.2
-   obj:/usr/X11R6/lib*/libX11.so.6.2
-   obj:/usr/X11R6/lib*/libXaw.so.7.0
+   obj:/usr/*lib*/libX11.so*
+   obj:/usr/*lib*/libX11.so*
+   obj:/usr/*lib*/libXaw.so*
 }
 
 {
    libX11.so.6.2/libX11.so.6.2/libXaw.so.7.0(Addr4)
    Memcheck:Addr4
-   obj:/usr/X11R6/lib*/libX11.so.6.2
-   obj:/usr/X11R6/lib*/libX11.so.6.2
-   obj:/usr/X11R6/lib*/libXaw.so.7.0
+   obj:/usr/*lib*/libX11.so*
+   obj:/usr/*lib*/libX11.so*
+   obj:/usr/*lib*/libXaw.so*
 }
 
 {
    libX11.so.6.2/libXaw.so.7.0/libXaw.so.7.0(Cond)
    Memcheck:Cond
-   obj:/usr/X11R6/lib*/libX11.so.6.2
-   obj:/usr/X11R6/lib*/libXaw.so.7.0
-   obj:/usr/X11R6/lib*/libXaw.so.7.0
+   obj:/usr/*lib*/libX11.so*
+   obj:/usr/*lib*/libXaw.so*
+   obj:/usr/*lib*/libXaw.so*
 }
 
 {
    libXpm.so.4.11/libXpm.so.4.11/libXpm.so.4.11
    Memcheck:Cond
-   obj:/usr/X11R6/lib*/libXpm.so.4.11
-   obj:/usr/X11R6/lib*/libXpm.so.4.11
-   obj:/usr/X11R6/lib*/libXpm.so.4.11
+   obj:/usr/*lib*/libXpm.so.4.11
+   obj:/usr/*lib*/libXpm.so.4.11
+   obj:/usr/*lib*/libXpm.so.4.11
 }
 
 {
@@ -175,7 +175,7 @@
    write(buf)
    fun:*
    fun:_X11TransWrite
-   obj:/usr/X11R6/lib*/libX11.so.6.2
+   obj:/usr/*lib*/libX11.so*
 }
 
 {
@@ -184,7 +184,7 @@
    write(buf)
    fun:write
    fun:_X11TransWrite
-   obj:/usr/X11R6/lib*/libX11.so.6.2
+   obj:/usr/*lib*/libX11.so*
 }
 
 {
@@ -202,7 +202,7 @@
    Memcheck:Param
    writev(vector[...])
    fun:writev
-   obj:/usr/X11R6/lib*/libX11.so.6.2
+   obj:/usr/*lib*/libX11.so*
    fun:_X11TransWritev
    fun:_XSend
 }
@@ -213,7 +213,7 @@
    writev(vector[...])
    fun:do_writev
    fun:writev
-   obj:/usr/X11R6/lib*/libX11.so.6.2
+   obj:/usr/*lib*/libX11.so*
    fun:_X11TransWritev
    fun:_XSend
 }
@@ -287,6 +287,24 @@
    obj:/usr/X11*/lib*/libX11.so*
 }
 
+# Inlined strlen in libX11 on Ubuntu 9.10 amd64, unfortunately.
+# Invalid read of size 4
+#    at 0x9B5CCE6: ??? (in /usr/lib/libX11.so.6.2.0)
+#    by 0x9B5D011: XGetAtomName (in /usr/lib/libX11.so.6.2.0)
+#    by 0x86407C3: gdk_x11_xatom_to_atom_for_display
+#                  (in /usr/lib/libgdk-x11-2.0.so.0.1800.3)
+#    by 0x8636817: ??? (in /usr/lib/libgdk-x11-2.0.so.0.1800.3)
+#  Address 0x1a558e1c is 28 bytes inside a block of size 30 alloc'd
+#    at 0x4C2552D: malloc (vg_replace_malloc.c:236)
+#    by 0x9B642C0: _XUpdateAtomCache (in /usr/lib/libX11.so.6.2.0)
+#    by 0x9B647F1: ??? (in /usr/lib/libX11.so.6.2.0)
+#    by 0x9B81818: ??? (in /usr/lib/libX11.so.6.2.0)
+{
+   libX11.so.6.2.0/libX11.so.6.2.0(Addr4)
+   Memcheck:Addr4
+   obj:/usr/*lib*/libX11.so*
+   obj:/usr/*lib*/libX11.so*
+}
 
 ##----------------------------------------------------------------------##
 # Completely inappropriate place, but ...

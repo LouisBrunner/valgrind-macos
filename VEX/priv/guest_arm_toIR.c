@@ -151,7 +151,7 @@ static IRTemp r15kind;
 
 /* Do a little-endian load of a 32-bit word, regardless of the
    endianness of the underlying host. */
-static UInt getUIntLittleEndianly ( UChar* p )
+static inline UInt getUIntLittleEndianly ( UChar* p )
 {
    UInt w = 0;
    w = (w << 8) | p[3];
@@ -181,6 +181,11 @@ static UInt ROR32 ( UInt x, UInt sh ) {
 #define BITS8(_b7,_b6,_b5,_b4,_b3,_b2,_b1,_b0)  \
    ((BITS4((_b7),(_b6),(_b5),(_b4)) << 4) \
     | BITS4((_b3),(_b2),(_b1),(_b0)))
+
+/* produces _uint[_bMax:_bMin] */
+#define SLICE_UInt(_uint,_bMax,_bMin) \
+   (( ((UInt)(_uint)) >> (_bMin)) \
+      & ((1 << ((_bMax) - (_bMin) + 1)) - 1))
 
 
 /*------------------------------------------------------------*/
@@ -1012,7 +1017,7 @@ static Bool mk_shifter_operand ( UInt insn_25, UInt insn_11_0,
                // shco = Rm[0]
                if (shco) {
                   assign( *shco,
-                           binop(Iop_And32, mkexpr(rMt), mkU32(1)));
+                          binop(Iop_And32, mkexpr(rMt), mkU32(1)));
                }
                assign( oldcT, mk_armg_calculate_flag_c() );
                assign( *shop, 
@@ -1337,6 +1342,8 @@ IRExpr* mk_EA_reg_plusminus_imm12 ( UInt rN, UInt bU, UInt imm12,
 }
 
 
+/* NB: This is "DecodeImmShift" in newer versions of the the ARM ARM.
+*/
 static
 IRExpr* mk_EA_reg_plusminus_shifted_reg ( UInt rN, UInt bU, UInt rM,
                                           UInt sh2, UInt imm5,
@@ -1382,12 +1389,10 @@ IRExpr* mk_EA_reg_plusminus_shifted_reg ( UInt rN, UInt bU, UInt rM,
             IRTemp rmT    = newTemp(Ity_I32);
             IRTemp cflagT = newTemp(Ity_I32);
             assign(rmT, getIReg(rM));
-            assign(cflagT, mk_armg_calculate_flag_v());
-            vassert(imm5 >= 1 && imm5 <= 31);
+            assign(cflagT, mk_armg_calculate_flag_c());
             index = binop(Iop_Or32, 
                           binop(Iop_Shl32, mkexpr(cflagT), mkU8(31)),
                           binop(Iop_Shr32, mkexpr(rmT), mkU8(1)));
-            vassert(0); // ATC
             DIS(buf, "[r%u, %cr%u, RRX]", rN, opChar, rM);
          } else {
             IRTemp rmT = newTemp(Ity_I32);
@@ -1396,7 +1401,6 @@ IRExpr* mk_EA_reg_plusminus_shifted_reg ( UInt rN, UInt bU, UInt rM,
             index = binop(Iop_Or32, 
                           binop(Iop_Shl32, mkexpr(rmT), mkU8(32-imm5)),
                           binop(Iop_Shr32, mkexpr(rmT), mkU8(imm5)));
-            vassert(0); // ATC
             DIS(buf, "[r%u, %cr%u, ROR #%u]", rN, opChar, rM, imm5); 
          }
          break;
@@ -1516,6 +1520,60 @@ IRTemp mk_convert_IRCmpF64Result_to_NZCV ( IRTemp irRes )
 
 
 /*------------------------------------------------------------*/
+/*--- Instructions in NV (never) space                     ---*/
+/*------------------------------------------------------------*/
+
+static Bool decode_NV_instruction ( UInt insn )
+{
+#  define INSN(_bMax,_bMin)  SLICE_UInt(insn, (_bMax), (_bMin))
+#  define INSN_COND          SLICE_UInt(insn, 31, 28)
+
+   HChar dis_buf[128];
+
+   // Should only be called for NV instructions
+   vassert(BITS4(1,1,1,1) == INSN_COND);
+
+   /* ------------------------ pld ------------------------ */
+   if (BITS8(0,1,0,1, 0, 1,0,1) == (INSN(27,20) & BITS8(1,1,1,1,0,1,1,1))
+       && BITS4(1,1,1,1) == INSN(15,12)) {
+      UInt rN    = INSN(19,16);
+      UInt imm12 = INSN(11,0);
+      UInt bU    = INSN(23,23);
+      DIP("pld [r%u, #%c%u]\n", rN, bU ? '+' : '-', imm12);
+      return True;
+   }
+
+   if (BITS8(0,1,1,1, 0, 1,0,1) == (INSN(27,20) & BITS8(1,1,1,1,0,1,1,1))
+       && BITS4(1,1,1,1) == INSN(15,12)
+       && 0 == INSN(4,4)) {
+      UInt rN   = INSN(19,16);
+      UInt rM   = INSN(3,0);
+      UInt imm5 = INSN(11,7);
+      UInt sh2  = INSN(6,5);
+      UInt bU   = INSN(23,23);
+      if (rM != 15) {
+         IRExpr* eaE = mk_EA_reg_plusminus_shifted_reg(rN, bU, rM,
+                                                       sh2, imm5, dis_buf);
+         IRTemp eaT = newTemp(Ity_I32);
+         /* Bind eaE to a temp merely for debugging-vex purposes, so we
+            can check it's a plausible decoding.  It will get removed
+            by iropt a little later on. */
+         vassert(eaE);
+         assign(eaT, eaE);
+         DIP("pld %s\n", dis_buf);
+         return True;
+      }
+      /* fall through */
+   }
+
+   return False;
+
+#  undef INSN_COND
+#  undef INSN
+}
+
+
+/*------------------------------------------------------------*/
 /*--- Disassemble a single instruction                     ---*/
 /*------------------------------------------------------------*/
 
@@ -1535,10 +1593,8 @@ DisResult disInstr_ARM_WRK (
           )
 {
    // A macro to fish bits out of 'insn'.
-#  define INSN(_bMax,_bMin) \
-      ((insn >> (_bMin)) & ((1 << ((_bMax) - (_bMin) + 1)) - 1))
-#  define INSN_COND \
-      INSN(31,28)
+#  define INSN(_bMax,_bMin)  SLICE_UInt(insn, (_bMax), (_bMin))
+#  define INSN_COND          SLICE_UInt(insn, 31, 28)
 
    DisResult dres;
    UInt      insn;
@@ -1649,8 +1705,15 @@ DisResult disInstr_ARM_WRK (
       condT :: Ity_I32 and is always either zero or one. */
    condT = IRTemp_INVALID;
    switch ( (ARMCondcode)INSN_COND ) {
-      case ARMCondNV: // Illegal instruction prior to v5 (see ARM ARM A3-5)
-         goto decode_failure;
+      case ARMCondNV: {
+         // Illegal instruction prior to v5 (see ARM ARM A3-5), but
+         // some cases are acceptable
+         Bool ok = decode_NV_instruction(insn);
+         if (ok)
+            goto decode_success;
+         else
+            goto decode_failure;
+      }
       case ARMCondAL: // Always executed
          break;
       case ARMCondEQ: case ARMCondNE: case ARMCondHS: case ARMCondLO:
@@ -4675,8 +4738,8 @@ DisResult disInstr_ARM_WRK (
 
    return dres;
 
-#  undef INSN
 #  undef INSN_COND
+#  undef INSN
 }
 
 #undef DIP

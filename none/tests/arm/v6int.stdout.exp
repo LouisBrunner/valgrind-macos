@@ -715,3 +715,7 @@ uxtah r0, r1, r2, ROR #24 :: rd 0x3141f24e rm 0x31415927, rn 0x27182899, carryin
 uxtah r0, r1, r2, ROR #16 :: rd 0x3141803f rm 0x31415927, rn 0x27182899, carryin 0, cpsr 0x00000000     
 uxtah r0, r1, r2, ROR #8 :: rd 0x3141714f rm 0x31415927, rn 0x27182899, carryin 0, cpsr 0x00000000     
 uxtah r0, r1, r2, ROR #0 :: rd 0x314181c0 rm 0x31415927, rn 0x27182899, carryin 0, cpsr 0x00000000     
+------------ PLD/PLDW (begin) ------------
+pld  reg +/- imm12  cases
+pld  reg +/- shifted reg  cases
+------------ PLD/PLDW (done) ------------

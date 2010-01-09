@@ -781,5 +781,32 @@ int main(int argc, char **argv)
         TESTINST3("uxtah r0, r1, r2, ROR #0", 0x31415927, 0x27182899, 
                   r0, r1, r2, 0);
 
+	printf("------------ PLD/PLDW (begin) ------------\n");
+        /* These don't have any effect on the architected state, so,
+           uh, there's no result values to check.  Just _do_ some of
+           them and check Valgrind's instruction decoder eats them up
+           without complaining. */
+        { int alocal;
+          printf("pld  reg +/- imm12  cases\n");
+          __asm__ __volatile__( "pld [%0, #128]" : :/*in*/"r"(&alocal) );
+          __asm__ __volatile__( "pld [%0, #-128]" : :/*in*/"r"(&alocal) );
+          __asm__ __volatile__( "pld [r15, #-128]" : :/*in*/"r"(&alocal) );
+
+          // apparently pldw is v7 only
+          //__asm__ __volatile__( "pldw [%0, #128]" : :/*in*/"r"(&alocal) );
+          //__asm__ __volatile__( "pldw [%0, #-128]" : :/*in*/"r"(&alocal) );
+          //__asm__ __volatile__( "pldw [r15, #128]" : :/*in*/"r"(&alocal) );
+
+          printf("pld  reg +/- shifted reg  cases\n");
+          __asm__ __volatile__( "pld [%0, %1]" : : /*in*/"r"(&alocal), "r"(0) );
+          __asm__ __volatile__( "pld [%0, %1, LSL #1]" : : /*in*/"r"(&alocal), "r"(0) );
+          __asm__ __volatile__( "pld [%0, %1, LSR #1]" : : /*in*/"r"(&alocal), "r"(0) );
+          __asm__ __volatile__( "pld [%0, %1, ASR #1]" : : /*in*/"r"(&alocal), "r"(0) );
+          __asm__ __volatile__( "pld [%0, %1, ROR #1]" : : /*in*/"r"(&alocal), "r"(0) );
+          __asm__ __volatile__( "pld [%0, %1, RRX]" : : /*in*/"r"(&alocal), "r"(0) );
+        }
+	printf("------------ PLD/PLDW (done) ------------\n");
+
+
 	return 0;
 }

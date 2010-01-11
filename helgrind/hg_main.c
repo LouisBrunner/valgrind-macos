@@ -3885,6 +3885,7 @@ static Bool is_in_dynamic_linker_shared_object( Addr64 ga )
    if (0) VG_(printf)("%s\n", soname);
 
 #  if defined(VGO_linux)
+   if (VG_STREQ(soname, VG_U_LD_LINUX_SO_3))        return True;
    if (VG_STREQ(soname, VG_U_LD_LINUX_SO_2))        return True;
    if (VG_STREQ(soname, VG_U_LD_LINUX_X86_64_SO_2)) return True;
    if (VG_STREQ(soname, VG_U_LD64_SO_1))            return True;

@@ -972,7 +972,7 @@ static IRExpr* getIRegRAX ( Int sz )
    switch (sz) {
       case 1: return IRExpr_Get( OFFB_RAX, Ity_I8 );
       case 2: return IRExpr_Get( OFFB_RAX, Ity_I16 );
-      case 4: return IRExpr_Get( OFFB_RAX, Ity_I32 );
+      case 4: return unop(Iop_64to32, IRExpr_Get( OFFB_RAX, Ity_I64 ));
       case 8: return IRExpr_Get( OFFB_RAX, Ity_I64 );
       default: vpanic("getIRegRAX(amd64)");
    }
@@ -1020,7 +1020,7 @@ static IRExpr* getIRegRDX ( Int sz )
    switch (sz) {
       case 1: return IRExpr_Get( OFFB_RDX, Ity_I8 );
       case 2: return IRExpr_Get( OFFB_RDX, Ity_I16 );
-      case 4: return IRExpr_Get( OFFB_RDX, Ity_I32 );
+      case 4: return unop(Iop_64to32, IRExpr_Get( OFFB_RDX, Ity_I64 ));
       case 8: return IRExpr_Get( OFFB_RDX, Ity_I64 );
       default: vpanic("getIRegRDX(amd64)");
    }
@@ -1071,8 +1071,9 @@ static HChar* nameIReg64 ( UInt regno )
 static IRExpr* getIReg32 ( UInt regno )
 {
    vassert(!host_is_bigendian);
-   return IRExpr_Get( integerGuestReg64Offset(regno),
-                      Ity_I32 );
+   return unop(Iop_64to32,
+               IRExpr_Get( integerGuestReg64Offset(regno),
+                           Ity_I64 ));
 }
 
 static void putIReg32 ( UInt regno, IRExpr* e )
@@ -1136,11 +1137,22 @@ static IRExpr* getIRegRexB ( Int sz, Prefix pfx, UInt lo3bits )
    vassert(lo3bits < 8);
    vassert(IS_VALID_PFX(pfx));
    vassert(sz == 8 || sz == 4 || sz == 2 || sz == 1);
-   return IRExpr_Get(
-             offsetIReg( sz, lo3bits | (getRexB(pfx) << 3), 
-                             toBool(sz==1 && !haveREX(pfx)) ),
-             szToITy(sz)
-          );
+   if (sz == 4) {
+      sz = 8;
+      return unop(Iop_64to32,
+                  IRExpr_Get(
+                     offsetIReg( sz, lo3bits | (getRexB(pfx) << 3), 
+                                     toBool(sz==1 && !haveREX(pfx)) ),
+                     szToITy(sz)
+                 )
+             );
+   } else {
+      return IRExpr_Get(
+                offsetIReg( sz, lo3bits | (getRexB(pfx) << 3), 
+                                toBool(sz==1 && !haveREX(pfx)) ),
+                szToITy(sz)
+             );
+   }
 }
 
 static void putIRegRexB ( Int sz, Prefix pfx, UInt lo3bits, IRExpr* e )
@@ -1206,8 +1218,15 @@ static UInt offsetIRegG ( Int sz, Prefix pfx, UChar mod_reg_rm )
 static 
 IRExpr* getIRegG ( Int sz, Prefix pfx, UChar mod_reg_rm )
 {
-   return IRExpr_Get( offsetIRegG( sz, pfx, mod_reg_rm ),
-                      szToITy(sz) );
+   if (sz == 4) {
+      sz = 8;
+      return unop(Iop_64to32,
+                  IRExpr_Get( offsetIRegG( sz, pfx, mod_reg_rm ),
+                              szToITy(sz) ));
+   } else {
+      return IRExpr_Get( offsetIRegG( sz, pfx, mod_reg_rm ),
+                         szToITy(sz) );
+   }
 }
 
 static 
@@ -1246,8 +1265,15 @@ static UInt offsetIRegE ( Int sz, Prefix pfx, UChar mod_reg_rm )
 static 
 IRExpr* getIRegE ( Int sz, Prefix pfx, UChar mod_reg_rm )
 {
-   return IRExpr_Get( offsetIRegE( sz, pfx, mod_reg_rm ),
-                      szToITy(sz) );
+   if (sz == 4) {
+      sz = 8;
+      return unop(Iop_64to32,
+                  IRExpr_Get( offsetIRegE( sz, pfx, mod_reg_rm ),
+                              szToITy(sz) ));
+   } else {
+      return IRExpr_Get( offsetIRegE( sz, pfx, mod_reg_rm ),
+                         szToITy(sz) );
+   }
 }
 
 static 

@@ -3970,6 +3970,11 @@ static IRExpr* fold_IRExpr_Unop ( IROp op, IRExpr* aa )
       if (is_Unop(aa, Iop_CmpwNEZ64))
          return IRExpr_Unop( Iop_CmpNEZ64, aa->Iex.Unop.arg );
       break;
+   case Iop_64to32:
+      /* 64to32( 32Uto64 ( x )) --> x */
+      if (is_Unop(aa, Iop_32Uto64))
+         return aa->Iex.Unop.arg;
+      break;
 
    case Iop_1Sto32:
       /* 1Sto32( CmpNEZ8( 32to8( 1Uto32( CmpNEZ32( x ))))) -> CmpwNEZ32(x) */
@@ -3983,6 +3988,7 @@ static IRExpr* fold_IRExpr_Unop ( IROp op, IRExpr* aa )
                                ->Iex.Unop.arg->Iex.Unop.arg);
       }
       break;
+
 
    default:
       break;

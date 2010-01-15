@@ -1272,6 +1272,22 @@ IRExpr* guest_x86_spechelper ( HChar* function_name,
                            binop(Iop_Add32, cc_dep1, cc_dep2), 
                            cc_dep1));
       }
+      // ATC, requires verification, no test case known
+      //if (isU32(cc_op, X86G_CC_OP_SMULL)) {
+      //   /* C after signed widening multiply denotes the case where
+      //      the top half of the result isn't simply the sign extension
+      //      of the bottom half (iow the result doesn't fit completely
+      //      in the bottom half).  Hence: 
+      //        C = hi-half(dep1 x dep2) != lo-half(dep1 x dep2) >>s 31 
+      //      where 'x' denotes signed widening multiply.*/
+      //   return 
+      //      unop(Iop_1Uto32,
+      //           binop(Iop_CmpNE32, 
+      //                 unop(Iop_64HIto32,
+      //                      binop(Iop_MullS32, cc_dep1, cc_dep2)),
+      //                 binop(Iop_Sar32,
+      //                       binop(Iop_Mul32, cc_dep1, cc_dep2), mkU8(31)) ));
+      //}
 #     if 0
       if (cc_op->tag == Iex_Const) {
          vex_printf("CFLAG "); ppIRExpr(cc_op); vex_printf("\n");

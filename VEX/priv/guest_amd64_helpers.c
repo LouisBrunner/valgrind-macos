@@ -995,6 +995,17 @@ IRExpr* guest_amd64_spechelper ( HChar* function_name,
                            binop(Iop_Shl64,cc_dep2,mkU8(32))));
 
       }
+      if (isU64(cc_op, AMD64G_CC_OP_SUBL) && isU64(cond, AMD64CondNLE)) {
+         /* long sub/cmp, then NLE (signed greater than) 
+            --> test !(dst <=s src)
+            --> test (dst >s src)
+            --> test (src <s dst) */
+         return unop(Iop_1Uto64,
+                     binop(Iop_CmpLT64S,
+                           binop(Iop_Shl64,cc_dep2,mkU8(32)),
+                           binop(Iop_Shl64,cc_dep1,mkU8(32))));
+
+      }
 
       if (isU64(cc_op, AMD64G_CC_OP_SUBL) && isU64(cond, AMD64CondBE)) {
          /* long sub/cmp, then BE (unsigned less than or equal)
@@ -1153,6 +1164,12 @@ IRExpr* guest_amd64_spechelper ( HChar* function_name,
          /* byte and/or/xor, then Z --> test dst==0 */
          return unop(Iop_1Uto64,
                      binop(Iop_CmpEQ64, binop(Iop_And64,cc_dep1,mkU64(255)), 
+                                        mkU64(0)));
+      }
+      if (isU64(cc_op, AMD64G_CC_OP_LOGICB) && isU64(cond, AMD64CondNZ)) {
+         /* byte and/or/xor, then NZ --> test dst!=0 */
+         return unop(Iop_1Uto64,
+                     binop(Iop_CmpNE64, binop(Iop_And64,cc_dep1,mkU64(255)), 
                                         mkU64(0)));
       }
 

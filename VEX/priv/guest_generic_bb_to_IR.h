@@ -79,9 +79,13 @@ typedef
       /* What happens next?
          Dis_StopHere:  this insn terminates the BB; we must stop.
          Dis_Continue:  we can optionally continue into the next insn
-         Dis_Resteer:   followed a branch; continue at the spec'd addr
+         Dis_ResteerU:  followed an unconditional branch; continue at 
+                        'continueAt'
+         Dis_ResteerC:  (speculatively, of course) followed a
+                        conditional branch; continue at 'continueAt'
       */
-      enum { Dis_StopHere, Dis_Continue, Dis_Resteer } whatNext;
+      enum { Dis_StopHere, Dis_Continue, 
+             Dis_ResteerU, Dis_ResteerC } whatNext;
 
       /* For Dis_Resteer, this is the guest address we should continue
          at.  Otherwise ignored (should be zero). */
@@ -123,8 +127,15 @@ typedef
          or not? */
       /*IN*/  Bool         put_IP,
 
-      /* Return True iff resteering to the given addr is allowed */
+      /* Return True iff resteering to the given addr is allowed (for
+         branches/calls to destinations that are known at JIT-time) */
       /*IN*/  Bool         (*resteerOkFn) ( /*opaque*/void*, Addr64 ),
+
+      /* Should we speculatively resteer across conditional branches?
+         (Experimental and not enabled by default).  The strategy is
+         to assume that backward branches are taken and forward
+         branches are not taken. */
+      /*IN*/  Bool         resteerCisOk,
 
       /* Vex-opaque data passed to all caller (valgrind) supplied
          callbacks. */

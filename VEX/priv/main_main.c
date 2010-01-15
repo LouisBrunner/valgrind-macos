@@ -89,6 +89,7 @@ void LibVEX_default_VexControl ( /*OUT*/ VexControl* vcon )
    vcon->iropt_unroll_thresh        = 120;
    vcon->guest_max_insns            = 60;
    vcon->guest_chase_thresh         = 10;
+   vcon->guest_chase_cond           = False;
 }
 
 
@@ -128,6 +129,8 @@ void LibVEX_Init (
    vassert(vcon->guest_max_insns <= 100);
    vassert(vcon->guest_chase_thresh >= 0);
    vassert(vcon->guest_chase_thresh < vcon->guest_max_insns);
+   vassert(vcon->guest_chase_cond == True 
+           || vcon->guest_chase_cond == False);
 
    /* Check that Vex has been built with sizes of basic types as
       stated in priv/libvex_basictypes.h.  Failure of any of these is

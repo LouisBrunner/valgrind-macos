@@ -265,6 +265,9 @@ typedef
          far, the front end(s) will attempt to chase into its
          successor. A setting of zero disables chasing.  */
       Int guest_chase_thresh;
+      /* EXPERIMENTAL: chase across conditional branches?  Not all
+         front ends honour this.  Default: NO. */
+      Bool guest_chase_cond;
    }
    VexControl;
 

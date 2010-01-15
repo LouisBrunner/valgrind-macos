@@ -7805,6 +7805,7 @@ DisResult disInstr_X86_WRK (
              /*OUT*/Bool* expect_CAS,
              Bool         put_IP,
              Bool         (*resteerOkFn) ( /*opaque*/void*, Addr64 ),
+             Bool         resteerCisOk,
              void*        callback_opaque,
              Long         delta64,
              VexArchInfo* archinfo 
@@ -12599,7 +12600,7 @@ DisResult disInstr_X86_WRK (
          storeLE( mkexpr(t1), mkU32(guest_EIP_bbstart+delta));
          if (resteerOkFn( callback_opaque, (Addr64)(Addr32)d32 )) {
             /* follow into the call target. */
-            dres.whatNext   = Dis_Resteer;
+            dres.whatNext   = Dis_ResteerU;
             dres.continueAt = (Addr64)(Addr32)d32;
          } else {
             jmp_lit(Ijk_Call,d32);
@@ -12885,7 +12886,7 @@ DisResult disInstr_X86_WRK (
       d32 = (((Addr32)guest_EIP_bbstart)+delta+1) + getSDisp8(delta); 
       delta++;
       if (resteerOkFn( callback_opaque, (Addr64)(Addr32)d32) ) {
-         dres.whatNext   = Dis_Resteer;
+         dres.whatNext   = Dis_ResteerU;
          dres.continueAt = (Addr64)(Addr32)d32;
       } else {
          jmp_lit(Ijk_Boring,d32);
@@ -12899,7 +12900,7 @@ DisResult disInstr_X86_WRK (
       d32 = (((Addr32)guest_EIP_bbstart)+delta+sz) + getSDisp(sz,delta); 
       delta += sz;
       if (resteerOkFn( callback_opaque, (Addr64)(Addr32)d32) ) {
-         dres.whatNext   = Dis_Resteer;
+         dres.whatNext   = Dis_ResteerU;
          dres.continueAt = (Addr64)(Addr32)d32;
       } else {
          jmp_lit(Ijk_Boring,d32);
@@ -12924,28 +12925,56 @@ DisResult disInstr_X86_WRK (
    case 0x7D: /* JGEb/JNLb (jump greater or equal) */
    case 0x7E: /* JLEb/JNGb (jump less or equal) */
    case 0x7F: /* JGb/JNLEb (jump greater) */
-      d32 = (((Addr32)guest_EIP_bbstart)+delta+1) + getSDisp8(delta); 
+    { Int    jmpDelta;
+      HChar* comment  = "";
+      jmpDelta = (Int)getSDisp8(delta);
+      vassert(-128 <= jmpDelta && jmpDelta < 128);
+      d32 = (((Addr32)guest_EIP_bbstart)+delta+1) + jmpDelta; 
       delta++;
-      if (0 && resteerOkFn( callback_opaque, (Addr64)(Addr32)d32) ) {
-         /* Unused experimental hack: speculatively follow one arm
-            of a conditional branch. */
-         /* Assume the branch is taken.  So we need to emit a
-            side-exit to the insn following this one, on the negation
-            of the condition, and continue at the branch target
-            address (d32). */
-         if (0) vex_printf("resteer\n");
+      if (resteerCisOk
+          && vex_control.guest_chase_cond
+          && jmpDelta < 0
+          && resteerOkFn( callback_opaque, (Addr64)(Addr32)d32) ) {
+         /* Speculation: assume this backward branch is taken.  So we
+            need to emit a side-exit to the insn following this one,
+            on the negation of the condition, and continue at the
+            branch target address (d32). */
          stmt( IRStmt_Exit( 
                   mk_x86g_calculate_condition((X86Condcode)(1 ^ (opc - 0x70))),
                   Ijk_Boring,
                   IRConst_U32(guest_EIP_bbstart+delta) ) );
-         dres.whatNext   = Dis_Resteer;
+         dres.whatNext   = Dis_ResteerC;
          dres.continueAt = (Addr64)(Addr32)d32;
-      } else {
-         jcc_01((X86Condcode)(opc - 0x70), (Addr32)(guest_EIP_bbstart+delta), d32);
+         comment = "(assumed taken)";
+      }
+      else
+      if (resteerCisOk
+          && vex_control.guest_chase_cond
+          && jmpDelta >= 0
+          && resteerOkFn( callback_opaque, 
+                          (Addr64)(Addr32)(guest_EIP_bbstart+delta)) ) {
+         /* Speculation: assume this forward branch is not taken.  So
+            we need to emit a side-exit to d32 (the dest) and continue
+            disassembling at the insn immediately following this
+            one. */
+         stmt( IRStmt_Exit( 
+                  mk_x86g_calculate_condition((X86Condcode)(opc - 0x70)),
+                  Ijk_Boring,
+                  IRConst_U32(d32) ) );
+         dres.whatNext   = Dis_ResteerC;
+         dres.continueAt = (Addr64)(Addr32)(guest_EIP_bbstart+delta);
+         comment = "(assumed not taken)";
+      }
+      else {
+         /* Conservative default translation - end the block at this
+            point. */
+         jcc_01( (X86Condcode)(opc - 0x70), 
+                 (Addr32)(guest_EIP_bbstart+delta), d32);
          dres.whatNext = Dis_StopHere;
       }
-      DIP("j%s-8 0x%x\n", name_X86Condcode(opc - 0x70), d32);
+      DIP("j%s-8 0x%x %s\n", name_X86Condcode(opc - 0x70), d32, comment);
       break;
+    }
 
    case 0xE3: /* JECXZ (for JCXZ see above) */
       if (sz != 4) goto decode_failure;
@@ -14448,14 +14477,55 @@ DisResult disInstr_X86_WRK (
       case 0x8D: /* JGEb/JNLb (jump greater or equal) */
       case 0x8E: /* JLEb/JNGb (jump less or equal) */
       case 0x8F: /* JGb/JNLEb (jump greater) */
-         d32 = (((Addr32)guest_EIP_bbstart)+delta+4) + getUDisp32(delta); 
+       { Int    jmpDelta;
+         HChar* comment  = "";
+         jmpDelta = (Int)getUDisp32(delta);
+         d32 = (((Addr32)guest_EIP_bbstart)+delta+4) + jmpDelta;
          delta += 4;
-         jcc_01( (X86Condcode)(opc - 0x80), 
-                 (Addr32)(guest_EIP_bbstart+delta), 
-                 d32 );
-         dres.whatNext = Dis_StopHere;
-         DIP("j%s-32 0x%x\n", name_X86Condcode(opc - 0x80), d32);
+         if (resteerCisOk
+             && vex_control.guest_chase_cond
+             && jmpDelta < 0
+             && resteerOkFn( callback_opaque, (Addr64)(Addr32)d32) ) {
+            /* Speculation: assume this backward branch is taken.  So
+               we need to emit a side-exit to the insn following this
+               one, on the negation of the condition, and continue at
+               the branch target address (d32). */
+            stmt( IRStmt_Exit( 
+                     mk_x86g_calculate_condition((X86Condcode)(1 ^ (opc - 0x80))),
+                     Ijk_Boring,
+                     IRConst_U32(guest_EIP_bbstart+delta) ) );
+            dres.whatNext   = Dis_ResteerC;
+            dres.continueAt = (Addr64)(Addr32)d32;
+            comment = "(assumed taken)";
+         }
+         else
+         if (resteerCisOk
+             && vex_control.guest_chase_cond
+             && jmpDelta >= 0
+             && resteerOkFn( callback_opaque, 
+                             (Addr64)(Addr32)(guest_EIP_bbstart+delta)) ) {
+            /* Speculation: assume this forward branch is not taken.
+               So we need to emit a side-exit to d32 (the dest) and
+               continue disassembling at the insn immediately
+               following this one. */
+            stmt( IRStmt_Exit( 
+                     mk_x86g_calculate_condition((X86Condcode)(opc - 0x80)),
+                     Ijk_Boring,
+                     IRConst_U32(d32) ) );
+            dres.whatNext   = Dis_ResteerC;
+            dres.continueAt = (Addr64)(Addr32)(guest_EIP_bbstart+delta);
+            comment = "(assumed not taken)";
+         }
+         else {
+            /* Conservative default translation - end the block at
+               this point. */
+            jcc_01( (X86Condcode)(opc - 0x80), 
+                    (Addr32)(guest_EIP_bbstart+delta), d32);
+            dres.whatNext = Dis_StopHere;
+         }
+         DIP("j%s-32 0x%x %s\n", name_X86Condcode(opc - 0x80), d32, comment);
          break;
+       }
 
       /* =-=-=-=-=-=-=-=-=- RDTSC -=-=-=-=-=-=-=-=-=-=-= */
       case 0x31: { /* RDTSC */
@@ -14752,6 +14822,7 @@ DisResult disInstr_X86_WRK (
 DisResult disInstr_X86 ( IRSB*        irsb_IN,
                          Bool         put_IP,
                          Bool         (*resteerOkFn) ( void*, Addr64 ),
+                         Bool         resteerCisOk,
                          void*        callback_opaque,
                          UChar*       guest_code_IN,
                          Long         delta,
@@ -14776,6 +14847,7 @@ DisResult disInstr_X86 ( IRSB*        irsb_IN,
    x1 = irsb_IN->stmts_used;
    expect_CAS = False;
    dres = disInstr_X86_WRK ( &expect_CAS, put_IP, resteerOkFn,
+                             resteerCisOk,
                              callback_opaque, delta, archinfo );
    x2 = irsb_IN->stmts_used;
    vassert(x2 >= x1);
@@ -14794,6 +14866,7 @@ DisResult disInstr_X86 ( IRSB*        irsb_IN,
          to generate a useful error message; then assert. */
       vex_traceflags |= VEX_TRACE_FE;
       dres = disInstr_X86_WRK ( &expect_CAS, put_IP, resteerOkFn,
+                                resteerCisOk,
                                 callback_opaque, delta, archinfo );
       for (i = x1; i < x2; i++) {
          vex_printf("\t\t");

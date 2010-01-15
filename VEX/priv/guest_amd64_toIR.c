@@ -8828,6 +8828,7 @@ DisResult disInstr_AMD64_WRK (
              /*OUT*/Bool* expect_CAS,
              Bool         put_IP,
              Bool         (*resteerOkFn) ( /*opaque*/void*, Addr64 ),
+             Bool         resteerCisOk,
              void*        callback_opaque,
              Long         delta64,
              VexArchInfo* archinfo,
@@ -13726,7 +13727,7 @@ DisResult disInstr_AMD64_WRK (
       make_redzone_AbiHint(vbi, t1, t2/*nia*/, "call-d32");
       if (resteerOkFn( callback_opaque, (Addr64)d64) ) {
          /* follow into the call target. */
-         dres.whatNext   = Dis_Resteer;
+         dres.whatNext   = Dis_ResteerU;
          dres.continueAt = d64;
       } else {
          jmp_lit(Ijk_Call,d64);
@@ -13956,7 +13957,7 @@ DisResult disInstr_AMD64_WRK (
       d64 = (guest_RIP_bbstart+delta+1) + getSDisp8(delta); 
       delta++;
       if (resteerOkFn(callback_opaque,d64)) {
-         dres.whatNext   = Dis_Resteer;
+         dres.whatNext   = Dis_ResteerU;
          dres.continueAt = d64;
       } else {
          jmp_lit(Ijk_Boring,d64);
@@ -13972,7 +13973,7 @@ DisResult disInstr_AMD64_WRK (
       d64 = (guest_RIP_bbstart+delta+sz) + getSDisp(sz,delta); 
       delta += sz;
       if (resteerOkFn(callback_opaque,d64)) {
-         dres.whatNext   = Dis_Resteer;
+         dres.whatNext   = Dis_ResteerU;
          dres.continueAt = d64;
       } else {
          jmp_lit(Ijk_Boring,d64);
@@ -13997,15 +13998,58 @@ DisResult disInstr_AMD64_WRK (
    case 0x7D: /* JGEb/JNLb (jump greater or equal) */
    case 0x7E: /* JLEb/JNGb (jump less or equal) */
    case 0x7F: /* JGb/JNLEb (jump greater) */
+    { Long   jmpDelta;
+      HChar* comment  = "";
       if (haveF2orF3(pfx)) goto decode_failure;
-      d64 = (guest_RIP_bbstart+delta+1) + getSDisp8(delta); 
+      jmpDelta = getSDisp8(delta);
+      vassert(-128 <= jmpDelta && jmpDelta < 128);
+      d64 = (guest_RIP_bbstart+delta+1) + jmpDelta;
       delta++;
-      jcc_01( (AMD64Condcode)(opc - 0x70), 
-              guest_RIP_bbstart+delta,
-              d64 );
-      dres.whatNext = Dis_StopHere;
-      DIP("j%s-8 0x%llx\n", name_AMD64Condcode(opc - 0x70), d64);
+      if (resteerCisOk
+          && vex_control.guest_chase_cond
+          && jmpDelta < 0
+          && resteerOkFn( callback_opaque, d64) ) {
+         /* Speculation: assume this backward branch is taken.  So we
+            need to emit a side-exit to the insn following this one,
+            on the negation of the condition, and continue at the
+            branch target address (d64). */
+         stmt( IRStmt_Exit( 
+                  mk_amd64g_calculate_condition(
+                     (AMD64Condcode)(1 ^ (opc - 0x70))),
+                  Ijk_Boring,
+                  IRConst_U64(guest_RIP_bbstart+delta) ) );
+         dres.whatNext   = Dis_ResteerC;
+         dres.continueAt = d64;
+         comment = "(assumed taken)";
+      }
+      else
+      if (resteerCisOk
+          && vex_control.guest_chase_cond
+          && jmpDelta >= 0
+          && resteerOkFn( callback_opaque, guest_RIP_bbstart+delta ) ) {
+         /* Speculation: assume this forward branch is not taken.  So
+            we need to emit a side-exit to d64 (the dest) and continue
+            disassembling at the insn immediately following this
+            one. */
+         stmt( IRStmt_Exit( 
+                  mk_amd64g_calculate_condition((AMD64Condcode)(opc - 0x70)),
+                  Ijk_Boring,
+                  IRConst_U64(d64) ) );
+         dres.whatNext   = Dis_ResteerC;
+         dres.continueAt = guest_RIP_bbstart+delta;
+         comment = "(assumed not taken)";
+      }
+      else {
+         /* Conservative default translation - end the block at this
+            point. */
+         jcc_01( (AMD64Condcode)(opc - 0x70), 
+                 guest_RIP_bbstart+delta,
+                 d64 );
+         dres.whatNext = Dis_StopHere;
+      }
+      DIP("j%s-8 0x%llx %s\n", name_AMD64Condcode(opc - 0x70), d64, comment);
       break;
+    }
 
    case 0xE3: 
       /* JRCXZ or JECXZ, depending address size override. */
@@ -15791,15 +15835,57 @@ DisResult disInstr_AMD64_WRK (
       case 0x8D: /* JGEb/JNLb (jump greater or equal) */
       case 0x8E: /* JLEb/JNGb (jump less or equal) */
       case 0x8F: /* JGb/JNLEb (jump greater) */
+       { Long   jmpDelta;
+         HChar* comment  = "";
          if (haveF2orF3(pfx)) goto decode_failure;
-         d64 = (guest_RIP_bbstart+delta+4) + getSDisp32(delta); 
+         jmpDelta = getSDisp32(delta);
+         d64 = (guest_RIP_bbstart+delta+4) + jmpDelta;
          delta += 4;
-         jcc_01( (AMD64Condcode)(opc - 0x80), 
-                 guest_RIP_bbstart+delta, 
-                 d64 );
-         dres.whatNext = Dis_StopHere;
-         DIP("j%s-32 0x%llx\n", name_AMD64Condcode(opc - 0x80), d64);
+         if (resteerCisOk
+             && vex_control.guest_chase_cond
+             && jmpDelta < 0
+             && resteerOkFn( callback_opaque, d64) ) {
+            /* Speculation: assume this backward branch is taken.  So
+               we need to emit a side-exit to the insn following this
+               one, on the negation of the condition, and continue at
+               the branch target address (d64). */
+            stmt( IRStmt_Exit( 
+                     mk_amd64g_calculate_condition(
+                        (AMD64Condcode)(1 ^ (opc - 0x80))),
+                     Ijk_Boring,
+                     IRConst_U64(guest_RIP_bbstart+delta) ) );
+            dres.whatNext   = Dis_ResteerC;
+            dres.continueAt = d64;
+            comment = "(assumed taken)";
+         }
+         else
+         if (resteerCisOk
+             && vex_control.guest_chase_cond
+             && jmpDelta >= 0
+             && resteerOkFn( callback_opaque, guest_RIP_bbstart+delta ) ) {
+            /* Speculation: assume this forward branch is not taken.
+               So we need to emit a side-exit to d64 (the dest) and
+               continue disassembling at the insn immediately
+               following this one. */
+            stmt( IRStmt_Exit( 
+                     mk_amd64g_calculate_condition((AMD64Condcode)(opc - 0x80)),
+                     Ijk_Boring,
+                     IRConst_U64(d64) ) );
+            dres.whatNext   = Dis_ResteerC;
+            dres.continueAt = guest_RIP_bbstart+delta;
+            comment = "(assumed not taken)";
+         }
+         else {
+            /* Conservative default translation - end the block at
+               this point. */
+            jcc_01( (AMD64Condcode)(opc - 0x80), 
+                    guest_RIP_bbstart+delta,
+                    d64 );
+            dres.whatNext = Dis_StopHere;
+         }
+         DIP("j%s-32 0x%llx %s\n", name_AMD64Condcode(opc - 0x80), d64, comment);
          break;
+       }
 
       /* =-=-=-=-=-=-=-=-=- PREFETCH =-=-=-=-=-=-=-=-=-= */
       case 0x0D: /* 0F 0D /0 -- prefetch mem8 */
@@ -16112,6 +16198,7 @@ DisResult disInstr_AMD64_WRK (
 DisResult disInstr_AMD64 ( IRSB*        irsb_IN,
                            Bool         put_IP,
                            Bool         (*resteerOkFn) ( void*, Addr64 ),
+                           Bool         resteerCisOk,
                            void*        callback_opaque,
                            UChar*       guest_code_IN,
                            Long         delta,
@@ -16140,6 +16227,7 @@ DisResult disInstr_AMD64 ( IRSB*        irsb_IN,
    x1 = irsb_IN->stmts_used;
    expect_CAS = False;
    dres = disInstr_AMD64_WRK ( &expect_CAS, put_IP, resteerOkFn,
+                               resteerCisOk,
                                callback_opaque,
                                delta, archinfo, abiinfo );
    x2 = irsb_IN->stmts_used;
@@ -16172,6 +16260,7 @@ DisResult disInstr_AMD64 ( IRSB*        irsb_IN,
          to generate a useful error message; then assert. */
       vex_traceflags |= VEX_TRACE_FE;
       dres = disInstr_AMD64_WRK ( &expect_CAS, put_IP, resteerOkFn,
+                                  resteerCisOk,
                                   callback_opaque,
                                   delta, archinfo, abiinfo );
       for (i = x1; i < x2; i++) {

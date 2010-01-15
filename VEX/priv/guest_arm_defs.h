@@ -55,6 +55,7 @@ extern
 DisResult disInstr_ARM ( IRSB*        irbb,
                          Bool         put_IP,
                          Bool         (*resteerOkFn) ( void*, Addr64 ),
+                         Bool         resteerCisOk,
                          void*        callback_opaque,
                          UChar*       guest_code,
                          Long         delta,

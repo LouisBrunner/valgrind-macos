@@ -121,6 +121,7 @@ IRSB* bb_to_IR ( /*OUT*/VexGuestExtents* vge,
    IRSB*      irsb;
    Addr64     guest_IP_curr_instr;
    IRConst*   guest_IP_bbstart_IRConst = NULL;
+   Int        n_cond_resteers_allowed = 2;
 
    Bool (*resteerOKfn)(void*,Addr64) = NULL;
 
@@ -209,6 +210,15 @@ IRSB* bb_to_IR ( /*OUT*/VexGuestExtents* vge,
       resteerOKfn
          = resteerOK ? chase_into_ok : const_False;
 
+      /* n_cond_resteers_allowed keeps track of whether we're still
+         allowing dis_instr_fn to chase conditional branches.  It
+         starts (at 2) and gets decremented each time dis_instr_fn
+         tells us it has chased a conditional branch.  We then
+         decrement it, and use it to tell later calls to dis_instr_fn
+         whether or not it is allowed to chase conditional
+         branches. */
+      vassert(n_cond_resteers_allowed >= 0 && n_cond_resteers_allowed <= 2);
+
       /* This is the IP of the instruction we're just about to deal
          with. */
       guest_IP_curr_instr = guest_IP_bbstart + delta;
@@ -231,6 +241,7 @@ IRSB* bb_to_IR ( /*OUT*/VexGuestExtents* vge,
       dres = dis_instr_fn ( irsb,
                             need_to_put_IP,
                             resteerOKfn,
+                            toBool(n_cond_resteers_allowed > 0),
                             callback_opaque,
                             guest_code,
                             delta,
@@ -243,10 +254,17 @@ IRSB* bb_to_IR ( /*OUT*/VexGuestExtents* vge,
       /* stay sane ... */
       vassert(dres.whatNext == Dis_StopHere
               || dres.whatNext == Dis_Continue
-              || dres.whatNext == Dis_Resteer);
+              || dres.whatNext == Dis_ResteerU
+              || dres.whatNext == Dis_ResteerC);
+      /* ... disassembled insn length is sane ... */
       vassert(dres.len >= 0 && dres.len <= 20);
-      if (dres.whatNext != Dis_Resteer)
+      /* ... continueAt is zero if no resteer requested ... */
+      if (dres.whatNext != Dis_ResteerU && dres.whatNext != Dis_ResteerC)
          vassert(dres.continueAt == 0);
+      /* ... if we disallowed conditional resteers, check that one
+             didn't actually happen anyway ... */
+      if (n_cond_resteers_allowed == 0)
+         vassert(dres.whatNext != Dis_ResteerC);
 
       /* Fill in the insn-mark length field. */
       vassert(first_stmt_idx >= 0 && first_stmt_idx < irsb->stmts_used);
@@ -313,10 +331,15 @@ IRSB* bb_to_IR ( /*OUT*/VexGuestExtents* vge,
          case Dis_StopHere:
             vassert(irsb->next != NULL);
             goto done;
-         case Dis_Resteer:
+         case Dis_ResteerU:
+         case Dis_ResteerC:
             /* Check that we actually allowed a resteer .. */
             vassert(resteerOK);
             vassert(irsb->next == NULL);
+            if (dres.whatNext == Dis_ResteerC) {
+               vassert(n_cond_resteers_allowed > 0);
+               n_cond_resteers_allowed--;
+            }
             /* figure out a new delta to continue at. */
             vassert(resteerOKfn(callback_opaque,dres.continueAt));
             delta = dres.continueAt - guest_IP_bbstart;

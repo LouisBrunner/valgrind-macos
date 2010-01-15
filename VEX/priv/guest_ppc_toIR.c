@@ -4324,7 +4324,7 @@ static Bool dis_branch ( UInt theInstr,
       }
 
       if (resteerOkFn( callback_opaque, tgt )) {
-         dres->whatNext   = Dis_Resteer;
+         dres->whatNext   = Dis_ResteerU;
          dres->continueAt = tgt;
       } else {
          irsb->jumpkind = flag_LK ? Ijk_Call : Ijk_Boring;
@@ -8951,6 +8951,7 @@ static
 DisResult disInstr_PPC_WRK ( 
              Bool         put_IP,
              Bool         (*resteerOkFn) ( /*opaque*/void*, Addr64 ),
+             Bool         resteerCisOk,
              void*        callback_opaque,
              Long         delta64,
              VexArchInfo* archinfo,
@@ -9749,6 +9750,7 @@ DisResult disInstr_PPC_WRK (
 DisResult disInstr_PPC ( IRSB*        irsb_IN,
                          Bool         put_IP,
                          Bool         (*resteerOkFn) ( void*, Addr64 ),
+                         Bool         resteerCisOk,
                          void*        callback_opaque,
                          UChar*       guest_code_IN,
                          Long         delta,
@@ -9790,7 +9792,8 @@ DisResult disInstr_PPC ( IRSB*        irsb_IN,
    guest_CIA_curr_instr = mkSzAddr(ty, guest_IP);
    guest_CIA_bbstart    = mkSzAddr(ty, guest_IP - delta);
 
-   dres = disInstr_PPC_WRK ( put_IP, resteerOkFn, callback_opaque,
+   dres = disInstr_PPC_WRK ( put_IP, 
+                             resteerOkFn, resteerCisOk, callback_opaque,
                              delta, archinfo, abiinfo );
 
    return dres;

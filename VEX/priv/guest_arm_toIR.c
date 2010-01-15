@@ -2642,7 +2642,7 @@ DisResult disInstr_ARM_WRK (
             continue tracing at the destination. */
          if (resteerOkFn( callback_opaque, (Addr64)dst )) {
             /* yes */
-            dres.whatNext   = Dis_Resteer;
+            dres.whatNext   = Dis_ResteerU;
             dres.continueAt = (Addr64)dst;
          } else {
             /* no; terminate the SB at this point. */
@@ -4756,6 +4756,7 @@ DisResult disInstr_ARM_WRK (
 DisResult disInstr_ARM ( IRSB*        irsb_IN,
                          Bool         put_IP,
                          Bool         (*resteerOkFn) ( void*, Addr64 ),
+                         Bool         resteerCisOk,
                          void*        callback_opaque,
                          UChar*       guest_code_IN,
                          Long         delta,

@@ -90,6 +90,7 @@ usage: valgrind [options] prog-and-args
     --vex-iropt-unroll-thresh=<0..400>     [120]
     --vex-guest-max-insns=<1..100>         [50]
     --vex-guest-chase-thresh=<0..99>       [10]
+    --vex-guest-chase-cond=no|yes          [no]
     --trace-flags and --profile-flags values (omit the middle space):
        1000 0000   show conversion into IR
        0100 0000   show after initial opt

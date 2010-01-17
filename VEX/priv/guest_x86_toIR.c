@@ -12933,12 +12933,15 @@ DisResult disInstr_X86_WRK (
       delta++;
       if (resteerCisOk
           && vex_control.guest_chase_cond
+          && (Addr32)d32 != (Addr32)guest_EIP_bbstart
           && jmpDelta < 0
           && resteerOkFn( callback_opaque, (Addr64)(Addr32)d32) ) {
          /* Speculation: assume this backward branch is taken.  So we
             need to emit a side-exit to the insn following this one,
             on the negation of the condition, and continue at the
-            branch target address (d32). */
+            branch target address (d32).  If we wind up back at the
+            first instruction of the trace, just stop; it's better to
+            let the IR loop unroller handle that case. */
          stmt( IRStmt_Exit( 
                   mk_x86g_calculate_condition((X86Condcode)(1 ^ (opc - 0x70))),
                   Ijk_Boring,
@@ -12950,6 +12953,7 @@ DisResult disInstr_X86_WRK (
       else
       if (resteerCisOk
           && vex_control.guest_chase_cond
+          && (Addr32)d32 != (Addr32)guest_EIP_bbstart
           && jmpDelta >= 0
           && resteerOkFn( callback_opaque, 
                           (Addr64)(Addr32)(guest_EIP_bbstart+delta)) ) {
@@ -14484,14 +14488,18 @@ DisResult disInstr_X86_WRK (
          delta += 4;
          if (resteerCisOk
              && vex_control.guest_chase_cond
+             && (Addr32)d32 != (Addr32)guest_EIP_bbstart
              && jmpDelta < 0
              && resteerOkFn( callback_opaque, (Addr64)(Addr32)d32) ) {
             /* Speculation: assume this backward branch is taken.  So
                we need to emit a side-exit to the insn following this
                one, on the negation of the condition, and continue at
-               the branch target address (d32). */
+               the branch target address (d32).  If we wind up back at
+               the first instruction of the trace, just stop; it's
+               better to let the IR loop unroller handle that case.*/
             stmt( IRStmt_Exit( 
-                     mk_x86g_calculate_condition((X86Condcode)(1 ^ (opc - 0x80))),
+                     mk_x86g_calculate_condition((X86Condcode)
+                                                 (1 ^ (opc - 0x80))),
                      Ijk_Boring,
                      IRConst_U32(guest_EIP_bbstart+delta) ) );
             dres.whatNext   = Dis_ResteerC;
@@ -14501,6 +14509,7 @@ DisResult disInstr_X86_WRK (
          else
          if (resteerCisOk
              && vex_control.guest_chase_cond
+             && (Addr32)d32 != (Addr32)guest_EIP_bbstart
              && jmpDelta >= 0
              && resteerOkFn( callback_opaque, 
                              (Addr64)(Addr32)(guest_EIP_bbstart+delta)) ) {

@@ -14007,12 +14007,15 @@ DisResult disInstr_AMD64_WRK (
       delta++;
       if (resteerCisOk
           && vex_control.guest_chase_cond
+          && (Addr64)d64 != (Addr64)guest_RIP_bbstart
           && jmpDelta < 0
           && resteerOkFn( callback_opaque, d64) ) {
          /* Speculation: assume this backward branch is taken.  So we
             need to emit a side-exit to the insn following this one,
             on the negation of the condition, and continue at the
-            branch target address (d64). */
+            branch target address (d64).  If we wind up back at the
+            first instruction of the trace, just stop; it's better to
+            let the IR loop unroller handle that case. */
          stmt( IRStmt_Exit( 
                   mk_amd64g_calculate_condition(
                      (AMD64Condcode)(1 ^ (opc - 0x70))),
@@ -14025,6 +14028,7 @@ DisResult disInstr_AMD64_WRK (
       else
       if (resteerCisOk
           && vex_control.guest_chase_cond
+          && (Addr64)d64 != (Addr64)guest_RIP_bbstart
           && jmpDelta >= 0
           && resteerOkFn( callback_opaque, guest_RIP_bbstart+delta ) ) {
          /* Speculation: assume this forward branch is not taken.  So
@@ -15843,12 +15847,15 @@ DisResult disInstr_AMD64_WRK (
          delta += 4;
          if (resteerCisOk
              && vex_control.guest_chase_cond
+             && (Addr64)d64 != (Addr64)guest_RIP_bbstart
              && jmpDelta < 0
              && resteerOkFn( callback_opaque, d64) ) {
             /* Speculation: assume this backward branch is taken.  So
                we need to emit a side-exit to the insn following this
                one, on the negation of the condition, and continue at
-               the branch target address (d64). */
+               the branch target address (d64).  If we wind up back at
+               the first instruction of the trace, just stop; it's
+               better to let the IR loop unroller handle that case. */
             stmt( IRStmt_Exit( 
                      mk_amd64g_calculate_condition(
                         (AMD64Condcode)(1 ^ (opc - 0x80))),
@@ -15861,6 +15868,7 @@ DisResult disInstr_AMD64_WRK (
          else
          if (resteerCisOk
              && vex_control.guest_chase_cond
+             && (Addr64)d64 != (Addr64)guest_RIP_bbstart
              && jmpDelta >= 0
              && resteerOkFn( callback_opaque, guest_RIP_bbstart+delta ) ) {
             /* Speculation: assume this forward branch is not taken.
@@ -15868,7 +15876,8 @@ DisResult disInstr_AMD64_WRK (
                continue disassembling at the insn immediately
                following this one. */
             stmt( IRStmt_Exit( 
-                     mk_amd64g_calculate_condition((AMD64Condcode)(opc - 0x80)),
+                     mk_amd64g_calculate_condition((AMD64Condcode)
+                                                   (opc - 0x80)),
                      Ijk_Boring,
                      IRConst_U64(d64) ) );
             dres.whatNext   = Dis_ResteerC;

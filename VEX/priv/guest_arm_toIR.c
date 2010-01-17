@@ -1586,6 +1586,7 @@ static
 DisResult disInstr_ARM_WRK (
              Bool         put_IP,
              Bool         (*resteerOkFn) ( /*opaque*/void*, Addr64 ),
+             Bool         resteerCisOk,
              void*        callback_opaque,
              UChar*       guest_instr,
              VexArchInfo* archinfo,
@@ -2653,12 +2654,58 @@ DisResult disInstr_ARM_WRK (
          DIP("b%s 0x%x\n", link ? "l" : "", dst);
       } else {
          /* conditional transfer to 'dst' */
-         stmt( IRStmt_Exit( unop(Iop_32to1, mkexpr(condT)),
-                            jk, IRConst_U32(dst) ));
-         irsb->next     = mkU32(guest_R15_curr_instr + 4);
-         irsb->jumpkind = jk;
-         dres.whatNext  = Dis_StopHere;
-         DIP("b%s%s 0x%x\n", link ? "l" : "", nCC(INSN_COND), dst);
+         HChar* comment = "";
+
+         /* First see if we can do some speculative chasing into one
+            arm or the other.  Be conservative and only chase if
+            !link, that is, this is a normal conditional branch to a
+            known destination. */
+         if (!link
+             && resteerCisOk
+             && vex_control.guest_chase_cond
+             && dst < guest_R15_curr_instr
+             && resteerOkFn( callback_opaque, (Addr64)(Addr32)dst) ) {
+            /* Speculation: assume this backward branch is taken.  So
+               we need to emit a side-exit to the insn following this
+               one, on the negation of the condition, and continue at
+               the branch target address (dst). */
+            stmt( IRStmt_Exit( unop(Iop_Not1,
+                                    unop(Iop_32to1, mkexpr(condT))),
+                               Ijk_Boring,
+                               IRConst_U32(guest_R15_curr_instr+4) ));
+            dres.whatNext   = Dis_ResteerC;
+            dres.continueAt = (Addr64)(Addr32)dst;
+            comment = "(assumed taken)";
+         }
+         else
+         if (!link
+             && resteerCisOk
+             && vex_control.guest_chase_cond
+             && dst >= guest_R15_curr_instr
+             && resteerOkFn( callback_opaque, 
+                             (Addr64)(Addr32)(guest_R15_curr_instr+4)) ) {
+            /* Speculation: assume this forward branch is not taken.
+               So we need to emit a side-exit to dst (the dest) and
+               continue disassembling at the insn immediately
+               following this one. */
+            stmt( IRStmt_Exit( unop(Iop_32to1, mkexpr(condT)),
+                               Ijk_Boring,
+                               IRConst_U32(dst) ));
+            dres.whatNext   = Dis_ResteerC;
+            dres.continueAt = (Addr64)(Addr32)(guest_R15_curr_instr+4);
+            comment = "(assumed not taken)";
+         }
+         else {
+            /* Conservative default translation - end the block at
+               this point. */
+            stmt( IRStmt_Exit( unop(Iop_32to1, mkexpr(condT)),
+                               jk, IRConst_U32(dst) ));
+            irsb->next     = mkU32(guest_R15_curr_instr + 4);
+            irsb->jumpkind = jk;
+            dres.whatNext  = Dis_StopHere;
+         }
+         DIP("b%s%s 0x%x %s\n", link ? "l" : "", nCC(INSN_COND),
+             dst, comment);
       }
       goto decode_success;
    }
@@ -4774,7 +4821,8 @@ DisResult disInstr_ARM ( IRSB*        irsb_IN,
    host_is_bigendian    = host_bigendian_IN;
    guest_R15_curr_instr = (Addr32)guest_IP;
 
-   dres = disInstr_ARM_WRK ( put_IP, resteerOkFn, callback_opaque,
+   dres = disInstr_ARM_WRK ( put_IP, resteerOkFn,
+                             resteerCisOk, callback_opaque,
                              &guest_code_IN[delta],
                              archinfo, abiinfo );
 

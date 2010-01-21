@@ -770,12 +770,12 @@ GXResult ML_(evaluate_Dwarf3_Expr) ( UChar* expr, UWord exprszB,
             PUSH(sw1);
             break;
          case DW_OP_mod:
-            POP(sw2);
-            if (sw2 == 0)
+            POP(uw2);
+            if (uw2 == 0)
                FAIL("evaluate_Dwarf3_Expr: division by zero");
-            POP(sw1);
-            sw1 %= sw2;
-            PUSH(sw1);
+            POP(uw1);
+            uw1 %= uw2;
+            PUSH(uw1);
             break;
 #define BINARY(name, op, s) \
          case DW_OP_##name:		\

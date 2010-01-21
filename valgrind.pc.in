@@ -11,6 +11,6 @@ Name: Valgrind
 Description: A dynamic binary instrumentation framework
 Version: @VERSION@
 Requires:
-Libs: -L${libdir}/valgrind/@VGCONF_ARCH_PRI@-@VGCONF_OS@ -lcoregrind -lvex -lgcc
+Libs: -L${libdir}/valgrind -lcoregrind-@VGCONF_ARCH_PRI@-@VGCONF_OS@ -lvex-@VGCONF_ARCH_PRI@-@VGCONF_OS@ -lgcc
 Cflags: -I${includedir}
 

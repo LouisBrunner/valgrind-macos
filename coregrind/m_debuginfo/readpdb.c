@@ -1201,8 +1201,6 @@ static void pdb_convert_symbols_header( PDB_SYMBOLS *symbols,
 /*---                                                      ---*/
 /*------------------------------------------------------------*/
 
-static Bool debug = False; // JRS: fixme
-
 static ULong DEBUG_SnarfCodeView(
                 DebugInfo* di,
                 IMAGE_SECTION_HEADER* sectp,
@@ -1216,12 +1214,13 @@ static ULong DEBUG_SnarfCodeView(
    UChar* nmstr;
    Char   symname[4096 /*WIN32_PATH_MAX*/];
 
+   Bool  debug = di->trace_symtab;
    Addr  bias = BIAS_FOR_SYMBOLS;
    ULong n_syms_read = 0;
 
    if (debug)
       VG_(message)(Vg_UserMsg,
-                   "SnarfCodeView addr=%p offset=%d length=%d\n", 
+                   "BEGIN SnarfCodeView addr=%p offset=%d length=%d\n", 
                    root, offset, size );
 
    VG_(memset)(&vsym, 0, sizeof(vsym));  /* avoid holes */
@@ -1262,7 +1261,7 @@ static ULong DEBUG_SnarfCodeView(
          symname[sym->data_v1.p_name.namelen] = '\0';
 
          if (debug)
-            VG_(message)(Vg_UserMsg, "Data %s\n", symname );
+            VG_(message)(Vg_UserMsg, "  Data %s\n", symname );
 
          if (0 /*VG_(needs).data_syms*/) {
             nmstr = ML_(addStr)(di, symname, sym->data_v1.p_name.namelen);
@@ -1287,7 +1286,7 @@ static ULong DEBUG_SnarfCodeView(
 
          if (debug)
             VG_(message)(Vg_UserMsg,
-                         "S_GDATA_V2/S_LDATA_V2/S_PUB_V2 %s\n", symname );
+                         "  S_GDATA_V2/S_LDATA_V2/S_PUB_V2 %s\n", symname );
 
          if (sym->generic.id==S_PUB_V2 /*VG_(needs).data_syms*/) {
             nmstr = ML_(addStr)(di, symname, k);
@@ -1318,7 +1317,7 @@ static ULong DEBUG_SnarfCodeView(
 
          if (debug)
             VG_(message)(Vg_UserMsg,
-                         "S_PUB_FUNC1_V3/S_PUB_FUNC2_V3/S_PUB_V3 %s\n",
+                         "  S_PUB_FUNC1_V3/S_PUB_FUNC2_V3/S_PUB_V3 %s\n",
                          symname );
 
          if (1  /*sym->generic.id==S_PUB_FUNC1_V3 
@@ -1368,7 +1367,7 @@ static ULong DEBUG_SnarfCodeView(
          vsym.isIFunc = False;
          if (debug)
              VG_(message)(Vg_UserMsg,
-                         "Adding function %s addr=%#lx length=%d\n",
+                         "  Adding function %s addr=%#lx length=%d\n",
                          symname, vsym.addr, vsym.size );
          ML_(addSym)( di, &vsym );
          n_syms_read++;
@@ -1389,7 +1388,7 @@ static ULong DEBUG_SnarfCodeView(
          vsym.isIFunc = False;
          if (debug)
             VG_(message)(Vg_UserMsg,
-                         "Adding function %s addr=%#lx length=%d\n",
+                         "  Adding function %s addr=%#lx length=%d\n",
                          symname, vsym.addr, vsym.size );
          ML_(addSym)( di, &vsym );
          n_syms_read++;
@@ -1398,7 +1397,7 @@ static ULong DEBUG_SnarfCodeView(
       case S_GPROC_V3: {
          if (debug)
             VG_(message)(Vg_UserMsg,
-                         "S_LPROC_V3/S_GPROC_V3 %s\n", sym->proc_v3.name );
+                         "  S_LPROC_V3/S_GPROC_V3 %s\n", sym->proc_v3.name );
 
          if (1) {
             nmstr = ML_(addStr)(di, sym->proc_v3.name,
@@ -1483,6 +1482,10 @@ static ULong DEBUG_SnarfCodeView(
 
    } /* for ( i = offset; i < size; i += length ) */
 
+   if (debug)
+      VG_(message)(Vg_UserMsg,
+                   "END SnarfCodeView addr=%p offset=%d length=%d\n", 
+                   root, offset, size );
    return n_syms_read;
 }
 
@@ -1529,8 +1532,14 @@ static ULong DEBUG_SnarfLinetab(
    struct startend    * start;
    Int                this_seg;
 
+   Bool  debug = di->trace_symtab;
    Addr  bias = BIAS_FOR_LINETAB;
    ULong n_lines_read = 0;
+
+   if (debug)
+      VG_(message)(Vg_UserMsg,
+                   "BEGIN SnarfLineTab linetab=%p size=%d\n", 
+                   linetab, size );
 
    /*
     * Now get the important bits.
@@ -1600,7 +1609,7 @@ static ULong DEBUG_SnarfLinetab(
 
             if (debug)
                VG_(message)(Vg_UserMsg,
-                  "Adding %d lines for file %s segment %d addr=%#x end=%#x\n",
+                  "  Adding %d lines for file %s segment %d addr=%#x end=%#x\n",
                   linecount, filename, segno, start[k].start, start[k].end );
 
             for ( j = 0; j < linecount; j++ ) {
@@ -1612,7 +1621,7 @@ static ULong DEBUG_SnarfLinetab(
                                            : start[k].end);
                if (debug)
                   VG_(message)(Vg_UserMsg,
-                     "Adding line %d addr=%#lx end=%#lx\n", 
+                     "  Adding line %d addr=%#lx end=%#lx\n", 
                         ((unsigned short *)(pnt2.ui + linecount))[j],
                         startaddr, endaddr );
                   ML_(addLineInfo)(
@@ -1623,6 +1632,11 @@ static ULong DEBUG_SnarfLinetab(
             }
         }
     }
+
+   if (debug)
+      VG_(message)(Vg_UserMsg,
+                   "END SnarfLineTab linetab=%p size=%d\n", 
+                   linetab, size );
 
     return n_lines_read;
 }
@@ -1679,8 +1693,8 @@ static ULong codeview_dump_linetab2(
    unsigned    i;
    struct codeview_linetab2_block* lbh;
    struct codeview_linetab2_file* fd;
-   //const Bool debug = False;
 
+   Bool  debug = di->trace_symtab;
    Addr  bias = BIAS_FOR_LINETAB2;
    ULong n_line2s_read = 0;
 
@@ -1792,6 +1806,7 @@ static void pdb_dump( struct pdb_reader* pdb,
    char *modimage;
    char *file; 
 
+   Bool debug = di->trace_symtab;
    Addr bias_for_fpo = BIAS_FOR_FPO;
 
    ULong n_fpos_read = 0, n_syms_read = 0,
@@ -1952,6 +1967,8 @@ static void pdb_dump( struct pdb_reader* pdb,
     */
    modimage = pdb->read_file( pdb, symbols.gsym_file, &len_modimage );
    if (modimage) {
+      if (debug)
+         VG_(umsg)("\n");
       if (VG_(clo_verbosity) > 1)
          VG_(message)(Vg_UserMsg, "Reading global symbols\n" );
       DEBUG_SnarfCodeView( di, sectp_avma, modimage, 0, len_modimage );
@@ -1991,6 +2008,8 @@ static void pdb_dump( struct pdb_reader* pdb,
          total_size = pdb_get_file_size(pdb, file_nr);
 
          if (symbol_size) {
+            if (debug)
+               VG_(umsg)("\n");
             if (VG_(clo_verbosity) > 1)
                VG_(message)(Vg_UserMsg, "Reading symbols for %s\n",
                                         file_name );
@@ -2001,6 +2020,8 @@ static void pdb_dump( struct pdb_reader* pdb,
          }
 
          if (lineno_size) {
+            if (debug)
+               VG_(umsg)("\n");
             if (VG_(clo_verbosity) > 1)
                VG_(message)(Vg_UserMsg, "Reading lines for %s\n", file_name );
             n_lines_read

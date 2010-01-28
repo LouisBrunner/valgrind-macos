@@ -4122,8 +4122,17 @@ typedef
           VG_USERREQ__MEMPOOL_EXISTS   = 0x130a,
 
           /* Allow printfs to valgrind log. */
+          /* The first two pass the va_list argument by value, which
+             assumes it is the same size as or smaller than a UWord,
+             which generally isn't the case.  Hence are deprecated.
+             The second two pass the vargs by reference and so are
+             immune to this problem. */
+          /* both :: char* fmt, va_list vargs (DEPRECATED) */
           VG_USERREQ__PRINTF           = 0x1401,
           VG_USERREQ__PRINTF_BACKTRACE = 0x1402,
+          /* both :: char* fmt, va_list* vargs */
+          VG_USERREQ__PRINTF_VALIST_BY_REF = 0x1403,
+          VG_USERREQ__PRINTF_BACKTRACE_VALIST_BY_REF = 0x1404,
 
           /* Stack support. */
           VG_USERREQ__STACK_REGISTER   = 0x1501,
@@ -4183,16 +4192,14 @@ static int
 VALGRIND_PRINTF(const char *format, ...)
 {
    unsigned long _qzz_res;
-   union {
-      va_list vargs;
-      unsigned long ul;
-   } args;
-   va_start(args.vargs, format);
-   VALGRIND_DO_CLIENT_REQUEST(_qzz_res, 0, VG_USERREQ__PRINTF,
+   va_list vargs;
+   va_start(vargs, format);
+   VALGRIND_DO_CLIENT_REQUEST(_qzz_res, 0,
+                              VG_USERREQ__PRINTF_VALIST_BY_REF,
                               (unsigned long)format,
-                              (unsigned long)(args.ul),
+                              (unsigned long)&vargs, 
                               0, 0, 0);
-   va_end(args.vargs);
+   va_end(vargs);
    return (int)_qzz_res;
 }
 
@@ -4202,16 +4209,14 @@ static int
 VALGRIND_PRINTF_BACKTRACE(const char *format, ...)
 {
    unsigned long _qzz_res;
-   union {
-      va_list vargs;
-      unsigned long ul;
-   } args;
-   va_start(args.vargs, format);
-   VALGRIND_DO_CLIENT_REQUEST(_qzz_res, 0, VG_USERREQ__PRINTF_BACKTRACE,
+   va_list vargs;
+   va_start(vargs, format);
+   VALGRIND_DO_CLIENT_REQUEST(_qzz_res, 0,
+                              VG_USERREQ__PRINTF_BACKTRACE_VALIST_BY_REF,
                               (unsigned long)format,
-                              (unsigned long)(args.ul),
+                              (unsigned long)&vargs, 
                               0, 0, 0);
-   va_end(args.vargs);
+   va_end(vargs);
    return (int)_qzz_res;
 }
 

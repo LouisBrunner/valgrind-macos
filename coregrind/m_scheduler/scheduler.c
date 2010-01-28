@@ -1408,48 +1408,71 @@ void do_client_request ( ThreadId tid )
          break;
 
       case VG_USERREQ__PRINTF: {
+         /* JRS 2010-Jan-28: this is DEPRECATED; use the
+            _VALIST_BY_REF version instead */
+         if (sizeof(va_list) != sizeof(UWord))
+            goto va_list_casting_error_NORETURN;
          union {
             va_list vargs;
-            unsigned long ul;
-         } args;
-         Int count;
-         args.ul = (unsigned long)arg[2];
-         count =
-            VG_(vmessage)( Vg_ClientMsg, (char *)arg[1], args.vargs );
-            VG_(message_flush)();
-            SET_CLREQ_RETVAL( tid, count );
-         break; }
+            unsigned long uw;
+         } u;
+         u.uw = (unsigned long)arg[2];
+         Int count = 
+            VG_(vmessage)( Vg_ClientMsg, (char *)arg[1], u.vargs );
+         VG_(message_flush)();
+         SET_CLREQ_RETVAL( tid, count );
+         break;
+      }
 
-      case VG_USERREQ__INTERNAL_PRINTF: {
+      case VG_USERREQ__PRINTF_BACKTRACE: {
+         /* JRS 2010-Jan-28: this is DEPRECATED; use the
+            _VALIST_BY_REF version instead */
+         if (sizeof(va_list) != sizeof(UWord))
+            goto va_list_casting_error_NORETURN;
          union {
             va_list vargs;
-            unsigned long ul;
-         } args;
-         Int count;
-         args.ul = (unsigned long)arg[2];
-         count =
-            VG_(vmessage)( Vg_DebugMsg, (char *)arg[1], args.vargs );
-            VG_(message_flush)();
-            SET_CLREQ_RETVAL( tid, count );
-         break; }
+            unsigned long uw;
+         } u;
+         u.uw = (unsigned long)arg[2];
+         Int count =
+            VG_(vmessage)( Vg_ClientMsg, (char *)arg[1], u.vargs );
+         VG_(message_flush)();
+         VG_(get_and_pp_StackTrace)( tid, VG_(clo_backtrace_size) );
+         SET_CLREQ_RETVAL( tid, count );
+         break;
+      }
+
+      case VG_USERREQ__PRINTF_VALIST_BY_REF: {
+         va_list* vargsp = (va_list*)arg[2];
+         Int count = 
+            VG_(vmessage)( Vg_ClientMsg, (char *)arg[1], *vargsp );
+         VG_(message_flush)();
+         SET_CLREQ_RETVAL( tid, count );
+         break;
+      }
+
+      case VG_USERREQ__PRINTF_BACKTRACE_VALIST_BY_REF: {
+         va_list* vargsp = (va_list*)arg[2];
+         Int count =
+            VG_(vmessage)( Vg_ClientMsg, (char *)arg[1], *vargsp );
+         VG_(message_flush)();
+         VG_(get_and_pp_StackTrace)( tid, VG_(clo_backtrace_size) );
+         SET_CLREQ_RETVAL( tid, count );
+         break;
+      }
+
+      case VG_USERREQ__INTERNAL_PRINTF_VALIST_BY_REF: {
+         va_list* vargsp = (va_list*)arg[2];
+         Int count = 
+            VG_(vmessage)( Vg_DebugMsg, (char *)arg[1], *vargsp );
+         VG_(message_flush)();
+         SET_CLREQ_RETVAL( tid, count );
+         break;
+      }
 
       case VG_USERREQ__ADD_IFUNC_TARGET: {
          VG_(redir_add_ifunc_target)( arg[1], arg[2] );
          SET_CLREQ_RETVAL( tid, 0);
-         break; }
-
-      case VG_USERREQ__PRINTF_BACKTRACE: {
-         union {
-            va_list vargs;
-            unsigned long ul;
-         } args;
-         Int count;
-         args.ul = (unsigned long)arg[2];
-         count =
-            VG_(vmessage)( Vg_ClientMsg, (char *)arg[1], args.vargs );
-            VG_(message_flush)();
-            VG_(get_and_pp_StackTrace)( tid, VG_(clo_backtrace_size) );
-            SET_CLREQ_RETVAL( tid, count );
          break; }
 
       case VG_USERREQ__STACK_REGISTER: {
@@ -1555,6 +1578,32 @@ void do_client_request ( ThreadId tid )
          }
          break;
    }
+   return;
+
+   /*NOTREACHED*/
+  va_list_casting_error_NORETURN:
+   VG_(umsg)(
+      "Valgrind: fatal error - cannot continue: use of the deprecated\n"
+      "client requests VG_USERREQ__PRINTF or VG_USERREQ__PRINTF_BACKTRACE\n"
+      "on a platform where they cannot be supported.  Please use the\n"
+      "equivalent _VALIST_BY_REF versions instead.\n"
+      "\n"
+      "This is a binary-incompatible change in Valgrind's client request\n"
+      "mechanism.  It is unfortunate, but difficult to avoid.  End-users\n"
+      "are expected to almost never see this message.  The only case in\n"
+      "which you might see this message is if your code uses the macros\n"
+      "VALGRIND_PRINTF or VALGRIND_PRINTF_BACKTRACE.  If so, you will need\n"
+      "to recompile such code, using the header files from this version of\n"
+      "Valgrind, and not any previous version.\n"
+      "\n"
+      "If you see this mesage in any other circumstances, it is probably\n"
+      "a bug in Valgrind.  In this case, please file a bug report at\n"
+      "\n"
+      "   http://www.valgrind.org/support/bug_reports.html\n"
+      "\n"
+      "Will now abort.\n"
+   );
+   vg_assert(0);
 }
 
 

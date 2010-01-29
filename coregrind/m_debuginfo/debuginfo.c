@@ -971,9 +971,15 @@ void VG_(di_notify_pdb_debuginfo)( Int fd_obj, Addr avma_obj,
       goto out;
    }
    pdb_mtime = stat_buf.mtime;
-   if (pdb_mtime < obj_mtime ) {
-      /* PDB file is older than PE file - ignore it or we will either
-         (a) print wrong stack traces or more likely (b) crash. */
+
+   if (obj_mtime - pdb_mtime > 60ULL) {
+      /* PDB file is older than PE file.  Really, the PDB should be
+         newer than the PE, but that doesn't always seem to be the
+         case.  Allow the PDB to be up to one minute older.
+         Otherwise, it's probably out of date, in which case ignore it
+         or we will either (a) print wrong stack traces or more likely
+         (b) crash.
+      */
       VG_(message)(Vg_UserMsg,
                    "Warning: Ignoring %s since it is older than %s\n",
                    pdbname, exename);

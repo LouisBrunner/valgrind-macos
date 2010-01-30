@@ -79,14 +79,27 @@
    warned, they can and do refer to local vars in the relevant
    functions. */
 
-/* This is the biasing arrangement in John's original patch.  I don't
-   see that is makes any sense for the FPO bias to be hardwired to
-   zero, but perhaps that's OK when the reloc value is also zero.
-   (iow, the FPO bias should actually be 'reloc' ?) */
+/* The BIAS_FOR_{SYMBOLS,LINETAB,LINETAB2} are as in JohnR's original
+   patch.  BIAS_FOR_FPO was originally hardwired to zero, but that
+   doesn't make much sense.  Here, we use text_bias as empirically
+   producing the most ranges that fall inside the text segments for a
+   multi-dll program.  Of course, it could still be nonsense :-) */
 #define BIAS_FOR_SYMBOLS   (di->rx_map_avma)
 #define BIAS_FOR_LINETAB   (di->rx_map_avma)
 #define BIAS_FOR_LINETAB2  (di->text_bias)
-#define BIAS_FOR_FPO       0 /* no, really */
+#define BIAS_FOR_FPO       (di->text_bias)
+/* Using di->text_bias for the FPOs causes 981 in range and 1 out of
+   range.  Using rx_map_avma gives 953 in range and 29 out of range,
+   so di->text_bias looks like a better bet.:
+   $ grep FPO spew-B-text_bias  | grep keep | wc
+       981    4905   57429
+   $ grep FPO spew-B-text_bias  | grep SKIP | wc
+         1       5      53
+   $ grep FPO spew-B-rx_map_avma  | grep keep | wc
+       953    4765   55945
+   $ grep FPO spew-B-rx_map_avma  | grep SKIP | wc
+        29     145    1537
+*/
 
 /* This module leaks space; enable m_main's calling of
    VG_(di_discard_ALL_debuginfo)() at shutdown and run with
@@ -2011,7 +2024,7 @@ static void pdb_dump( struct pdb_reader* pdb,
             /* out of range; ignore */
          }
       }
-      vg_assert(j >= 0 && j < di->fpo_size); // should be <=
+      vg_assert(j >= 0 && j <= di->fpo_size);
       di->fpo_size = j;
 
       /* And record min/max */

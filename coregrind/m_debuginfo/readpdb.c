@@ -70,9 +70,9 @@
 
    To complicate matters further, Wine supplies us, via the
    VG_USERREQ__LOAD_PDB_DEBUGINFO client request that initiates PDB
-   reading, a value 'reloc' which, if you read 'virtual.c' in the Wine
-   sources, looks a lot like a text bias value.  Yet the code below
-   ignores it.
+   reading, a value 'unknown_purpose__reloc' which, if you read
+   'virtual.c' in the Wine sources, looks a lot like a text bias
+   value.  Yet the code below ignores it.
 
    To make future experimentation with biasing easier, here are four
    macros which give the bias to use in each of the four cases.  Be
@@ -1823,7 +1823,7 @@ static Int cmp_FPO_DATA_for_canonicalisation ( void* f1V, void* f2V )
 static void pdb_dump( struct pdb_reader* pdb,
                       DebugInfo* di,
                       Addr pe_avma,
-                      Int  reloc,
+                      Int  unknown_purpose__reloc,
                       IMAGE_SECTION_HEADER* sectp_avma )
 {
    Int header_size;
@@ -1879,7 +1879,7 @@ static void pdb_dump( struct pdb_reader* pdb,
                    (PtrdiffT)BIAS_FOR_FPO, VG_STRINGIFY(BIAS_FOR_FPO));
       VG_(message)(Vg_DebugMsg,
                    "   RELOC             = %#08lx\n",
-                   (PtrdiffT)reloc);
+                   (PtrdiffT)unknown_purpose__reloc);
    }
 
    /* Since we just use the FPO data without reformatting, at least

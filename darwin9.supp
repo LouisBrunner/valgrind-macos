@@ -103,7 +103,7 @@
    macos-Cond-7
    Memcheck:Cond
    fun:__setenv
-   fun:putenv
+   fun:putenv*
 }
 
 {

@@ -972,7 +972,7 @@ void VG_(di_notify_pdb_debuginfo)( Int fd_obj, Addr avma_obj,
    }
    pdb_mtime = stat_buf.mtime;
 
-   if (obj_mtime - pdb_mtime > 60ULL) {
+   if (obj_mtime > pdb_mtime + 60ULL) {
       /* PDB file is older than PE file.  Really, the PDB should be
          newer than the PE, but that doesn't always seem to be the
          case.  Allow the PDB to be up to one minute older.
@@ -981,9 +981,9 @@ void VG_(di_notify_pdb_debuginfo)( Int fd_obj, Addr avma_obj,
          (b) crash.
       */
       VG_(message)(Vg_UserMsg,
-                   "Warning: Ignoring %s since it is older than %s\n",
-                   pdbname, exename);
-      goto out;
+                   "Warning:       %s (mtime = %llu)\n"
+                   " is older than %s (mtime = %llu)\n",
+                   pdbname, pdb_mtime, exename, obj_mtime);
    }
 
    sres = VG_(open)(pdbname, VKI_O_RDONLY, 0);

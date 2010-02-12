@@ -1864,7 +1864,7 @@ static void pdb_dump( struct pdb_reader* pdb,
       }
    }
 
-   if (VG_(clo_verbosity) > 0) {
+   if (VG_(clo_verbosity) > 1) {
       VG_(message)(Vg_DebugMsg,
                    "PDB_READER:\n");
       VG_(message)(Vg_DebugMsg,
@@ -2176,7 +2176,7 @@ static void pdb_dump( struct pdb_reader* pdb,
    if ( types_image ) ML_(dinfo_free)( types_image );
    if ( pdb->u.jg.toc ) ML_(dinfo_free)( pdb->u.jg.toc );
 
-   if (VG_(clo_verbosity) > 0) {
+   if (VG_(clo_verbosity) > 1) {
       VG_(message)(Vg_DebugMsg,
                    "   # symbols read = %llu\n", n_syms_read );
       VG_(message)(Vg_DebugMsg,

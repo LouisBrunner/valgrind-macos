@@ -42,7 +42,9 @@
 #include "pub_core_vki.h"          // VKI_PAGE_SIZE
 #include "pub_core_libcbase.h"
 #include "pub_core_libcassert.h"
+#include "pub_core_libcfile.h"     // VG_(open), read, lseek, close
 #include "pub_core_libcprint.h"
+#include "pub_core_libcproc.h"     // VG_(getpid), system
 #include "pub_core_options.h"      // VG_(clo_verbosity)
 #include "pub_core_xarray.h"       // keeps priv_storage.h happy
 #include "pub_core_redir.h"
@@ -2193,6 +2195,8 @@ static void pdb_dump( struct pdb_reader* pdb,
 /*---                                                      ---*/
 /*------------------------------------------------------------*/
 
+/* Read line, symbol and unwind information from a PDB file.
+*/
 Bool ML_(read_pdb_debug_info)(
         DebugInfo* di,
         Addr       obj_avma,
@@ -2420,6 +2424,123 @@ Bool ML_(read_pdb_debug_info)(
    TRACE_SYMTAB("\n");
 
    return True;
+}
+
+
+/* Examine a PE file to see if it states the path of an associated PDB
+   file; if so return that.  Caller must deallocate with
+   ML_(dinfo_free).
+*/
+
+HChar* ML_(find_name_of_pdb_file)( HChar* pename )
+{
+   /* This is a giant kludge, of the kind "you did WTF?!?", but it
+      works. */
+   Bool   do_cleanup = False;
+   HChar  tmpname[100], tmpnameroot[50];
+   Int    fd, r;
+   HChar* res = NULL;
+
+   if (!pename)
+      goto out;
+
+   fd = -1;
+   VG_(memset)(tmpnameroot, 0, sizeof(tmpnameroot));
+   VG_(sprintf)(tmpnameroot, "petmp%d", VG_(getpid)());
+   VG_(memset)(tmpname, 0, sizeof(tmpname));
+   fd = VG_(mkstemp)( tmpnameroot, tmpname );
+   if (fd == -1) {
+      VG_(message)(Vg_UserMsg,
+                   "Find PDB file: Can't create /tmp file %s\n", tmpname);
+      goto out;
+   }
+   do_cleanup = True;
+
+   /* Make up the command to run, essentially:
+      sh -c "strings (pename) | egrep '\.pdb|\.PDB' > (tmpname)"
+   */
+   HChar* sh      = "/bin/sh";
+   HChar* strings = "/usr/bin/strings";
+   HChar* egrep   = "/usr/bin/egrep";
+
+   /* (sh) -c "(strings) (pename) | (egrep) 'pdb' > (tmpname) */
+   Int cmdlen = VG_(strlen)(strings) + VG_(strlen)(pename)
+                + VG_(strlen)(egrep) + VG_(strlen)(tmpname)
+                + 100/*misc*/;
+   HChar* cmd = ML_(dinfo_zalloc)("di.readpe.fnopf.cmd", cmdlen);
+   vg_assert(cmd);
+   VG_(sprintf)(cmd, "%s -c \"%s %s | %s '\\.pdb|\\.PDB' >> %s\"",
+                     sh, strings, pename, egrep, tmpname);
+   vg_assert(cmd[cmdlen-1] == 0);
+   if (0) VG_(printf)("QQQQQQQQ: %s\n", cmd);
+
+   r = VG_(system)( cmd );
+   if (r) {
+      VG_(message)(Vg_DebugMsg,
+                   "Find PDB file: Command failed:\n   %s\n", cmd);
+      goto out;
+   }
+
+   /* Find out how big the file is, and get it aboard. */
+   struct vg_stat stat_buf;
+   VG_(memset)(&stat_buf, 0, sizeof(stat_buf));
+
+   SysRes sr = VG_(stat)(tmpname, &stat_buf);
+   if (sr_isError(sr)) {
+      VG_(umsg)("Find PDB file: can't stat %s\n", tmpname);
+      goto out;
+   }
+
+   Int szB = (Int)stat_buf.size;
+   if (szB == 0) {
+      VG_(umsg)("Find PDB file: %s is empty\n", tmpname);
+      goto out;
+   }
+   /* 6 == strlen("X.pdb\n") */
+   if (szB < 6 || szB > 1024/*let's say*/) {
+      VG_(umsg)("Find PDB file: %s has implausible size %d\n",
+                tmpname, szB);
+      goto out;
+   }
+
+   HChar* pdbname = ML_(dinfo_zalloc)("di.readpe.fnopf.pdbname", szB + 1);
+   vg_assert(pdbname);
+   pdbname[szB] = 0;
+
+   Int nread = VG_(read)(fd, pdbname, szB);
+   if (nread != szB) {
+      VG_(umsg)("Find PDB file: read of %s failed\n", tmpname);
+      goto out;
+   }
+   vg_assert(pdbname[szB] == 0);
+
+   /* Check we've got something remotely sane -- must have one dot and
+      one \n in it, and the \n must be at the end */
+   Bool saw_dot = False;
+   Int  saw_n_crs = 0;
+   Int  i;
+   for (i = 0; pdbname[i]; i++) {
+      if (pdbname[i] == '.')  saw_dot = True;
+      if (pdbname[i] == '\n') saw_n_crs++;
+   }
+   if (!saw_dot || saw_n_crs != 1 || pdbname[szB-1] != '\n') {
+      VG_(umsg)("Find PDB file: can't make sense of: %s\n", pdbname);
+      goto out;
+   }
+   /* Change the \n to a terminating zero, so we have a "normal" string */
+   pdbname[szB-1] = 0;
+
+   if (0) VG_(printf)("QQQQQQQQ: got %s\n", pdbname);
+
+   res = pdbname;
+   goto out;
+
+  out:
+   if (do_cleanup) {
+      VG_(close)(fd);
+      VG_(unlink)( tmpname );
+   }
+   return res;
 }
 
 #endif // defined(VGO_linux) || defined(VGO_darwin)

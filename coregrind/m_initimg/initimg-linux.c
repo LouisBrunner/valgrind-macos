@@ -132,6 +132,7 @@ static HChar** setup_client_env ( HChar** origenv, const HChar* toolname)
    Int    v_launcher_len  = VG_(strlen)( v_launcher );
    Bool   ld_preload_done = False;
    Int    vglib_len       = VG_(strlen)(VG_(libdir));
+   Bool   debug           = False;
 
    HChar** cpp;
    HChar** ret;
@@ -172,9 +173,12 @@ static HChar** setup_client_env ( HChar** origenv, const HChar* toolname)
    VG_(debugLog)(2, "initimg", "  \"%s\"\n", preload_string);
 
    /* Count the original size of the env */
+   if (debug) VG_(printf)("\n\n");
    envc = 0;
-   for (cpp = origenv; cpp && *cpp; cpp++)
+   for (cpp = origenv; cpp && *cpp; cpp++) {
       envc++;
+      if (debug) VG_(printf)("XXXXXXXXX: BEFORE %s\n", *cpp);
+   }
 
    /* Allocate a new space */
    ret = VG_(malloc) ("initimg-linux.sce.3",
@@ -182,8 +186,10 @@ static HChar** setup_client_env ( HChar** origenv, const HChar* toolname)
    vg_assert(ret);
 
    /* copy it over */
-   for (cpp = ret; *origenv; )
+   for (cpp = ret; *origenv; ) {
+      if (debug) VG_(printf)("XXXXXXXXX: COPY   %s\n", *origenv);
       *cpp++ = *origenv++;
+   }
    *cpp = NULL;
    
    vg_assert(envc == (cpp - ret));
@@ -202,6 +208,7 @@ static HChar** setup_client_env ( HChar** origenv, const HChar* toolname)
 
          ld_preload_done = True;
       }
+      if (debug) VG_(printf)("XXXXXXXXX: MASH   %s\n", *cpp);
    }
 
    /* Add the missing bits */
@@ -213,6 +220,7 @@ static HChar** setup_client_env ( HChar** origenv, const HChar* toolname)
       VG_(snprintf)(cp, len, "%s%s", ld_preload, preload_string);
 
       ret[envc++] = cp;
+      if (debug) VG_(printf)("XXXXXXXXX: ADD    %s\n", cp);
    }
 
    /* ret[0 .. envc-1] is live now. */
@@ -229,6 +237,10 @@ static HChar** setup_client_env ( HChar** origenv, const HChar* toolname)
 
    VG_(free)(preload_string);
    ret[envc] = NULL;
+
+   for (i = 0; i < envc; i++) {
+      if (debug) VG_(printf)("XXXXXXXXX: FINAL  %s\n", ret[i]);
+   }
 
    return ret;
 }

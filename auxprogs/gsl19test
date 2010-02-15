@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 
 # Do an automated test which involves building and regtesting version
 # 1.9 of the GNU Scientific Library (gsl).  This has proven to be a 

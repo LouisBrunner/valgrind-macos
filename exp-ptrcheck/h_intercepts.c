@@ -45,6 +45,60 @@
    them in the same order as in mc_replace_strmem.c. */
 
 
+#define STRRCHR(soname, fnname) \
+   char* VG_REPLACE_FUNCTION_ZU(soname,fnname)( const char* s, int c ); \
+   char* VG_REPLACE_FUNCTION_ZU(soname,fnname)( const char* s, int c ) \
+   { \
+      UChar  ch   = (UChar)((UInt)c); \
+      UChar* p    = (UChar*)s; \
+      UChar* last = NULL; \
+      while (True) { \
+         if (*p == ch) last = p; \
+         if (*p == 0) return last; \
+         p++; \
+      } \
+   }
+
+// Apparently rindex() is the same thing as strrchr()
+STRRCHR(VG_Z_LIBC_SONAME,   strrchr)
+STRRCHR(VG_Z_LIBC_SONAME,   rindex)
+#if defined(VGO_linux)
+STRRCHR(VG_Z_LIBC_SONAME,   __GI_strrchr)
+STRRCHR(VG_Z_LD_LINUX_SO_2, rindex)
+#elif defined(VGO_darwin)
+STRRCHR(VG_Z_DYLD,          strrchr)
+STRRCHR(VG_Z_DYLD,          rindex)
+#endif
+
+
+#define STRCHR(soname, fnname) \
+   char* VG_REPLACE_FUNCTION_ZU(soname,fnname) ( const char* s, int c ); \
+   char* VG_REPLACE_FUNCTION_ZU(soname,fnname) ( const char* s, int c ) \
+   { \
+      UChar  ch = (UChar)((UInt)c); \
+      UChar* p  = (UChar*)s; \
+      while (True) { \
+         if (*p == ch) return p; \
+         if (*p == 0) return NULL; \
+         p++; \
+      } \
+   }
+
+// Apparently index() is the same thing as strchr()
+STRCHR(VG_Z_LIBC_SONAME,          strchr)
+STRCHR(VG_Z_LIBC_SONAME,          index)
+#if defined(VGO_linux)
+STRCHR(VG_Z_LIBC_SONAME,          __GI_strchr)
+STRCHR(VG_Z_LD_LINUX_SO_2,        strchr)
+STRCHR(VG_Z_LD_LINUX_SO_2,        index)
+STRCHR(VG_Z_LD_LINUX_X86_64_SO_2, strchr)
+STRCHR(VG_Z_LD_LINUX_X86_64_SO_2, index)
+#elif defined(VGO_darwin)
+STRCHR(VG_Z_DYLD,                 strchr)
+STRCHR(VG_Z_DYLD,                 index)
+#endif
+
+
 #define STRNLEN(soname, fnname) \
    SizeT VG_REPLACE_FUNCTION_ZU(soname,fnname) ( const char* str, SizeT n ); \
    SizeT VG_REPLACE_FUNCTION_ZU(soname,fnname) ( const char* str, SizeT n ) \
@@ -102,6 +156,24 @@ STRCMP(VG_Z_LIBC_SONAME,          strcmp)
 #if defined(VGO_linux)
 STRCMP(VG_Z_LD_LINUX_X86_64_SO_2, strcmp)
 STRCMP(VG_Z_LD64_SO_1,            strcmp)
+#endif
+
+
+#define MEMCHR(soname, fnname) \
+   void* VG_REPLACE_FUNCTION_ZU(soname,fnname) (const void *s, int c, SizeT n); \
+   void* VG_REPLACE_FUNCTION_ZU(soname,fnname) (const void *s, int c, SizeT n) \
+   { \
+      SizeT i; \
+      UChar c0 = (UChar)c; \
+      UChar* p = (UChar*)s; \
+      for (i = 0; i < n; i++) \
+         if (p[i] == c0) return (void*)(&p[i]); \
+      return NULL; \
+   }
+
+MEMCHR(VG_Z_LIBC_SONAME, memchr)
+#if defined(VGO_darwin)
+MEMCHR(VG_Z_DYLD,        memchr)
 #endif
 
 
@@ -170,6 +242,25 @@ STPCPY(VG_Z_LIBC_SONAME,          stpcpy)
 #if defined(VGO_linux)
 STPCPY(VG_Z_LD_LINUX_SO_2,        stpcpy)
 STPCPY(VG_Z_LD_LINUX_X86_64_SO_2, stpcpy)
+#endif
+
+
+/* Find the first occurrence of C in S.  */
+#define GLIBC232_RAWMEMCHR(soname, fnname) \
+   char* VG_REPLACE_FUNCTION_ZU(soname,fnname) (const char* s, int c_in); \
+   char* VG_REPLACE_FUNCTION_ZU(soname,fnname) (const char* s, int c_in) \
+   { \
+      unsigned char  c        = (unsigned char) c_in; \
+      unsigned char* char_ptr = (unsigned char *)s; \
+      while (1) { \
+         if (*char_ptr == c) return char_ptr; \
+         char_ptr++; \
+      } \
+   }
+
+GLIBC232_RAWMEMCHR(VG_Z_LIBC_SONAME, rawmemchr)
+#if defined (VGO_linux)
+GLIBC232_RAWMEMCHR(VG_Z_LIBC_SONAME, __GI___rawmemchr)
 #endif
 
 

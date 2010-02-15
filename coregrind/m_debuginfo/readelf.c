@@ -964,8 +964,8 @@ Addr open_debug_file( Char* name, UInt crc, /*OUT*/UWord* size )
       return 0;
    }
 
-   VG_(message)(Vg_DebugMsg,
-                "  .. CRC is valid\n");
+   if (VG_(clo_verbosity) > 1)
+      VG_(message)(Vg_DebugMsg, "  .. CRC is valid\n");
    
    return sr_Res(sres);
 }

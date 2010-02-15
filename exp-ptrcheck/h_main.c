@@ -2331,6 +2331,9 @@ static void setup_post_syscall_table ( void )
       ADD(0, __NR_getxattr);
       ADD(0, __NR_inotify_add_watch);
       ADD(0, __NR_inotify_init);
+#     if defined(__NR_inotify_init1)
+      ADD(0, __NR_inotify_init1);
+#     endif
       ADD(0, __NR_inotify_rm_watch);
       ADD(0, __NR_ioctl); // ioctl -- assuming no pointers returned
       ADD(0, __NR_ioprio_get);

@@ -374,15 +374,13 @@ typedef
                        leftmost column? */
       /* Current message kind - changes from call to call */
       VgMsgKind kind;
-      /* PID; acquired just once and stays constant */
-      Int my_pid;
       /* destination */
       OutputSink* sink;
    } 
    vmessage_buf_t;
 
 static vmessage_buf_t vmessage_buf
-   = { "", 0, True, Vg_UserMsg, -1, &VG_(log_output_sink) };
+   = { "", 0, True, Vg_UserMsg, &VG_(log_output_sink) };
 
 
 // Adds a single char to the buffer.  We aim to have at least 128
@@ -430,7 +428,7 @@ static void add_to__vmessage_buf ( HChar c, void *p )
             b->buf[b->buf_used++] = tmp[i];
       }
 
-      VG_(sprintf)(tmp, "%d", b->my_pid);
+      VG_(sprintf)(tmp, "%d", VG_(getpid)());
       tmp[sizeof(tmp)-1] = 0;
       for (i = 0; tmp[i]; i++)
          b->buf[b->buf_used++] = tmp[i];
@@ -467,15 +465,6 @@ UInt VG_(vmessage) ( VgMsgKind kind, const HChar* format, va_list vargs )
    /* We have to set this each call, so that the correct flavour
       of preamble is emitted at each \n. */
    b->kind = kind;
-
-   /* Cache the results of getpid just once, so we don't have to call
-      getpid once for each line of text output. */
-   b->my_pid = -1; /* LATER: cacheing is confusing in presence of fork(),
-                      disable for now. */
-   if (UNLIKELY(b->my_pid == -1)) {
-      b->my_pid = VG_(getpid)();
-      vg_assert(b->my_pid >= 0);
-   }
 
    ret = VG_(debugLog_vprintf) ( add_to__vmessage_buf,
                                  b, format, vargs );

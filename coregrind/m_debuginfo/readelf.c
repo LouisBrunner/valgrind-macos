@@ -942,7 +942,7 @@ Addr open_debug_file( Char* name, UInt crc, /*OUT*/UWord* size )
    }
 
    if (VG_(clo_verbosity) > 1)
-      VG_(message)(Vg_DebugMsg, "Reading debug info from %s ..\n", name);
+      VG_(message)(Vg_DebugMsg, "  Considering %s ..\n", name);
 
    *size = stat_buf.size;
    
@@ -960,9 +960,12 @@ Addr open_debug_file( Char* name, UInt crc, /*OUT*/UWord* size )
       vg_assert(!sr_isError(res));
       if (VG_(clo_verbosity) > 1)
          VG_(message)(Vg_DebugMsg, 
-            ".. CRC mismatch (computed %08x wanted %08x)\n", calccrc, crc);
+            "  .. CRC mismatch (computed %08x wanted %08x)\n", calccrc, crc);
       return 0;
    }
+
+   VG_(message)(Vg_DebugMsg,
+                "  .. CRC is valid\n");
    
    return sr_Res(sres);
 }

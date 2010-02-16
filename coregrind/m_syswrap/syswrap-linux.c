@@ -933,8 +933,6 @@ PRE(sys_futex)
       break;
    }
 
-   PRE_MEM_READ( "futex(futex)", ARG1, sizeof(Int) );
-
    *flags |= SfMayBlock;
 
    switch(ARG2 & ~(VKI_FUTEX_PRIVATE_FLAG|VKI_FUTEX_CLOCK_REALTIME)) {
@@ -942,6 +940,7 @@ PRE(sys_futex)
    case VKI_FUTEX_LOCK_PI:
    case VKI_FUTEX_WAIT_BITSET:
    case VKI_FUTEX_WAIT_REQUEUE_PI:
+      PRE_MEM_READ( "futex(futex)", ARG1, sizeof(Int) );
       if (ARG4 != 0)
 	 PRE_MEM_READ( "futex(timeout)", ARG4, sizeof(struct vki_timespec) );
       break;
@@ -950,14 +949,18 @@ PRE(sys_futex)
    case VKI_FUTEX_CMP_REQUEUE:
    case VKI_FUTEX_CMP_REQUEUE_PI:
    case VKI_FUTEX_WAKE_OP:
+      PRE_MEM_READ( "futex(futex)", ARG1, sizeof(Int) );
       PRE_MEM_READ( "futex(futex2)", ARG5, sizeof(Int) );
       break;
 
-   case VKI_FUTEX_WAKE:
    case VKI_FUTEX_FD:
-   case VKI_FUTEX_WAKE_BITSET:
    case VKI_FUTEX_TRYLOCK_PI:
    case VKI_FUTEX_UNLOCK_PI:
+      PRE_MEM_READ( "futex(futex)", ARG1, sizeof(Int) );
+     break;
+
+   case VKI_FUTEX_WAKE:
+   case VKI_FUTEX_WAKE_BITSET:
       /* no additional pointers */
       break;
 

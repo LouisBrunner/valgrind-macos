@@ -1868,6 +1868,7 @@ struct vki_cdrom_generic_command
 #define VKI_SNDCTL_DSP_SETFRAGMENT	_VKI_SIOWR('P',10, int)
 
 #define VKI_SNDCTL_DSP_GETFMTS		_VKI_SIOR ('P',11, int) /* Returns a mask */
+#define VKI_SNDCTL_DSP_SETFMT		_VKI_SIOWR('P', 5, int) /* Selects ONE fmt */
 
 typedef struct vki_audio_buf_info {
 			int fragments;	/* # of available fragments (partially usend ones not counted) */

@@ -10562,8 +10562,14 @@ DisResult disInstr_AMD64_WRK (
       IRTemp arg64 = newTemp(Ity_I64);
 
       modrm = getUChar(delta+2);
-      do_MMX_preamble();
       if (epartIsReg(modrm)) {
+         /* Only switch to MMX mode if the source is a MMX register.
+            This is inconsistent with all other instructions which
+            convert between XMM and (M64 or MMX), which always switch
+            to MMX mode even if 64-bit operand is M64 and not MMX.  At
+            least, that's what the Intel docs seem to me to say.
+            Fixes #210264. */
+         do_MMX_preamble();
          assign( arg64, getMMXReg(eregLO3ofRM(modrm)) );
          delta += 2+1;
          DIP("cvtpi2pd %s,%s\n", nameMMXReg(eregLO3ofRM(modrm)),

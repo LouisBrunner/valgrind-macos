@@ -28,7 +28,7 @@
 */
 
 /* ---------------------------------------------------------------------
-   ALL THE CODE IN THIS FILE RUNS ON THE SIMULATED CPU. 
+   ALL THE CODE IN THIS FILE RUNS ON THE SIMULATED CPU.
 
    These functions are not called directly - they're the targets of code
    redirection or load notifications (see pub_core_redir.h for info).

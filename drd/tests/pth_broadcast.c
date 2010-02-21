@@ -1,4 +1,4 @@
-/** Broadcast a (POSIX threads) signal to all running threads, where the 
+/** Broadcast a (POSIX threads) signal to all running threads, where the
  *  number of threads can be specified on the command line. This test program
  *  is intended not only to test the correctness of drd but also to test
  *  whether performance does not degrade too much when the number of threads
@@ -96,7 +96,7 @@ static void thread_func(struct cthread* thread_info)
       printf("thread %d [%d] (1)\n", thread_info->m_threadnum, i);
     }
     csema_v(thread_info->m_sema);
-    
+
     // Wait until the main thread signals us via pthread_cond_broadcast().
     pthread_cond_wait(&s_cond, &s_mutex);
     if (s_trace)

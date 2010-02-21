@@ -55,7 +55,7 @@ int main(int argc, char** argv)
   pthread_mutex_init(&s_mutex, 0);
 
   /*
-   * Switch to line-buffered mode, such that timing information can be 
+   * Switch to line-buffered mode, such that timing information can be
    * obtained for each printf() call with strace.
    */
   setlinebuf(stdout);

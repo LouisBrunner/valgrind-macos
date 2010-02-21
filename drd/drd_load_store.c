@@ -442,7 +442,7 @@ static void instrument_store(IRSB* const bb,
 IRSB* DRD_(instrument)(VgCallbackClosure* const closure,
                        IRSB* const bb_in,
                        VexGuestLayout* const layout,
-                       VexGuestExtents* const vge, 
+                       VexGuestExtents* const vge,
                        IRType const gWordTy,
                        IRType const hWordTy)
 {

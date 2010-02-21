@@ -421,7 +421,7 @@ SizeT DRD_(thread_get_stack_size)(const DrdThreadId tid)
 }
 
 /**
- * Clean up thread-specific data structures. Call this just after 
+ * Clean up thread-specific data structures. Call this just after
  * pthread_join().
  */
 void DRD_(thread_delete)(const DrdThreadId tid)
@@ -561,7 +561,7 @@ void DRD_(thread_set_name)(const DrdThreadId tid, const char* const name)
 {
    tl_assert(0 <= (int)tid && tid < DRD_N_THREADS
              && tid != DRD_INVALID_THREADID);
-   
+
    if (name == NULL || name[0] == 0)
       VG_(snprintf)(DRD_(g_threadinfo)[tid].name,
                     sizeof(DRD_(g_threadinfo)[tid].name),
@@ -602,7 +602,7 @@ void DRD_(thread_set_running_tid)(const ThreadId vg_tid,
 {
    tl_assert(vg_tid != VG_INVALID_THREADID);
    tl_assert(drd_tid != DRD_INVALID_THREADID);
-   
+
    if (vg_tid != s_vg_running_tid)
    {
       if (s_trace_context_switches
@@ -1241,8 +1241,8 @@ thread_report_conflicting_segments_segment(const DrdThreadId tid,
          for (q = DRD_(g_threadinfo)[i].last; q; q = q->prev)
          {
             /*
-             * Since q iterates over the segments of thread i in order of 
-             * decreasing vector clocks, if q->vc <= p->vc, then 
+             * Since q iterates over the segments of thread i in order of
+             * decreasing vector clocks, if q->vc <= p->vc, then
              * q->next->vc <= p->vc will also hold. Hence, break out of the
              * loop once this condition is met.
              */

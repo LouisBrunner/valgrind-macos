@@ -28,7 +28,7 @@
 
 
 /*
- * Segments and segment lists. A segment represents information about 
+ * Segments and segment lists. A segment represents information about
  * a contiguous group of statements of a specific thread. There is a vector
  * clock associated with each segment.
  */

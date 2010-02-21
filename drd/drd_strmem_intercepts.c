@@ -11,7 +11,7 @@
   from memchec/mc_replace_strmem.c, which has the following copyright
   notice:
 
-  Copyright (C) 2000-2009 Julian Seward 
+  Copyright (C) 2000-2009 Julian Seward
   jseward@acm.org
 
   This program is free software; you can redistribute it and/or
@@ -49,7 +49,7 @@
    }
 
 STRNLEN(VG_Z_LIBC_SONAME, strnlen)
-   
+
 
 // Note that this replacement often doesn't get used because gcc inlines
 // calls to strlen() with its own built-in version.  This can be very

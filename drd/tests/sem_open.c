@@ -68,7 +68,7 @@ int main(int argc, char** argv)
   }
 
   /*
-   * Switch to line-buffered mode, such that timing information can be 
+   * Switch to line-buffered mode, such that timing information can be
    * obtained for each printf() call with strace.
    */
   setlinebuf(stdout);

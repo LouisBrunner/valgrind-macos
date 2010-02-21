@@ -66,13 +66,13 @@ typedef enum {
 } DrdErrorKind;
 
 /* The classification of a faulting address. */
-typedef 
-enum { 
+typedef
+enum {
    //Undescribed,   // as-yet unclassified
-   eStack, 
+   eStack,
    eUnknown,       // classification yielded nothing useful
    //Freed,
-   eMallocd, 
+   eMallocd,
    eSegment,       // in a segment (as defined in pub_tool_debuginfo.h)
    //UserG,         // in a user-defined block
    //Mempool,       // in a mempool

@@ -113,7 +113,7 @@ Bool DRD_(clientobj_present)(const Addr a1, const Addr a2)
    {
       if (a1 <= p->any.a1 && p->any.a1 < a2)
       {
-         return True;  
+         return True;
       }
    }
    return False;

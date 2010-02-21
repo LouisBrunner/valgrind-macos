@@ -214,7 +214,7 @@ DRD_(thread_get_segment_merge_interval)()
 }
 
 static void DRD_(print_debug_usage)(void)
-{  
+{
    VG_(printf)(
 "    --drd-stats=yes|no        Print statistics about DRD activity [no].\n"
 "    --trace-clientobj=yes|no  Trace all client object activity [no].\n"
@@ -287,7 +287,7 @@ void drd_start_using_mem(const Addr a1, const SizeT len)
    {
       DRD_(trace_mem_access)(a1, len, eStart);
    }
-   
+
    if (UNLIKELY(DRD_(running_thread_inside_pthread_create)()))
    {
       DRD_(start_suppression)(a1, a1 + len, "pthread_create()");
@@ -414,7 +414,7 @@ void drd_start_using_mem_stack(const Addr a, const SizeT len)
 {
    DRD_(thread_set_stack_min)(DRD_(thread_get_running_tid)(),
                               a - VG_STACK_REDZONE_SZB);
-   drd_start_using_mem(a - VG_STACK_REDZONE_SZB, 
+   drd_start_using_mem(a - VG_STACK_REDZONE_SZB,
                        len + VG_STACK_REDZONE_SZB);
 }
 
@@ -567,7 +567,7 @@ static void DRD_(fini)(Int exitcode)
 {
    // thread_print_all();
    if (VG_(clo_verbosity) == 1 && !VG_(clo_xml)) {
-      VG_(message)(Vg_UserMsg, 
+      VG_(message)(Vg_UserMsg,
                    "For counts of detected and suppressed errors, "
                    "rerun with: -v\n");
    }

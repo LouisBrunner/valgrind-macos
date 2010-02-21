@@ -41,7 +41,7 @@
 
 /* Client addresses are split into bitfields as follows:
  * ------------------------------------------------------
- * | Address MSB |      Address LSB      | Ignored bits | 
+ * | Address MSB |      Address LSB      | Ignored bits |
  * ------------------------------------------------------
  * | Address MSB | UWord MSB | UWord LSB | Ignored bits |
  * ------------------------------------------------------
@@ -281,7 +281,7 @@ static __inline__ void bm0_clear_range(UWord* bm0,
    tl_assert(size == 0 || uword_msb(a) == uword_msb(a + size - 1));
 #endif
    /*
-    * Note: although the expression below yields a correct result even if 
+    * Note: although the expression below yields a correct result even if
     * size == 0, do not touch bm0[] if size == 0 because this might otherwise
     * cause an access of memory just past the end of the bm0[] array.
     */

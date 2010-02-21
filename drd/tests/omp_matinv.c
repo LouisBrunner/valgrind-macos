@@ -149,7 +149,7 @@ static elem_t* multiply_matrices(const elem_t* const a1,
 
 /** Apply the Gauss-Jordan elimination algorithm on the matrix p->a starting
  *  at row r0 and up to but not including row r1. It is assumed that as many
- *  threads execute this function concurrently as the count barrier p->b was 
+ *  threads execute this function concurrently as the count barrier p->b was
  *  initialized with. If the matrix p->a is nonsingular, and if matrix p->a
  *  has at least as many columns as rows, the result of this algorithm is that
  *  submatrix p->a[0..p->rows-1,0..p->rows-1] is the identity matrix.

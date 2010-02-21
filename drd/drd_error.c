@@ -190,7 +190,7 @@ void drd_report_data_race(Error* const err, const DataRaceErrInfo* const dri)
 /**
  * Compare two error contexts. The core function VG_(maybe_record_error)()
  * calls this function to compare error contexts such that errors that occur
- * repeatedly are only printed once. This function is only called by the core 
+ * repeatedly are only printed once. This function is only called by the core
  * if the error kind of e1 and e2 matches and if the ExeContext's of e1 and
  * e2 also match.
  */

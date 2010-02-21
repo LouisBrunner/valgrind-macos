@@ -56,7 +56,7 @@ int main(int argc, char** argv)
   sem_init(&s_sem, 0, 1);
 
   /*
-   * Switch to line-buffered mode, such that timing information can be 
+   * Switch to line-buffered mode, such that timing information can be
    * obtained for each printf() call with strace.
    */
   setlinebuf(stdout);

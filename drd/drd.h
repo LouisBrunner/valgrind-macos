@@ -82,7 +82,7 @@
 #define DRD_STOP_IGNORING_VAR(x) DRDCL_(ignore_range)(&(x), sizeof(x))
 
 /**
- * Tell DRD to trace all memory accesses on the specified variable. 
+ * Tell DRD to trace all memory accesses on the specified variable.
  * until the memory that was allocated for the variable is freed.
  */
 #define DRD_TRACE_VAR(x) DRDCL_(trace_range)(&(x), sizeof(x))

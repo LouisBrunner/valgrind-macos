@@ -238,7 +238,7 @@ Bool DRD_(running_thread_inside_pthread_create)(void)
 }
 
 /**
- * Reports whether or not recording of memory loads is enabled for the 
+ * Reports whether or not recording of memory loads is enabled for the
  * currently running client thread.
  */
 static __inline__
@@ -254,7 +254,7 @@ Bool DRD_(running_thread_is_recording_loads)(void)
 }
 
 /**
- * Reports whether or not recording memory stores is enabled for the 
+ * Reports whether or not recording memory stores is enabled for the
  * currently running client thread.
  */
 static __inline__

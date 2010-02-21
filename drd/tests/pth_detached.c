@@ -56,13 +56,13 @@ int main(int argc, char** argv)
     thread_arg[i] = i;
 
   pthread_mutex_init(&s_mutex, 0);
-  
+
   pthread_attr_init(&attr);
   pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_DETACHED);
   assert(pthread_attr_getdetachstate(&attr, &detachstate) == 0);
   assert(detachstate == PTHREAD_CREATE_DETACHED);
   pthread_attr_setstacksize(&attr, 16384);
-  // Create count1 detached threads by setting the "detached" property via 
+  // Create count1 detached threads by setting the "detached" property via
   // thread attributes.
   for (i = 0; i < count1; i++)
   {

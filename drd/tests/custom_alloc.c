@@ -33,14 +33,14 @@ static void* custom_alloc(int size)
    if (hp + size2 > hp_lim) {
       hp = get_superblock();
       hp_lim = hp + SUPERBLOCK_SIZE - 1;
-   }  
+   }
 
    p = hp + RZ;
    hp += size2;
 
    VALGRIND_MALLOCLIKE_BLOCK( p, size, RZ, /*is_zeroed*/1 );
    return (void*)p;
-}     
+}
 
 static void custom_free(void* p)
 {
@@ -85,6 +85,6 @@ int main(void)
                         // unfortunately not identified as being in a free'd
                         // block because the freeing of the block and shadow
                         // chunk isn't postponed.
-   
+
    // leak from make_leak()
 }

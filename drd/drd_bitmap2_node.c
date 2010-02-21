@@ -118,7 +118,7 @@ void* DRD_(bm2_alloc_node)(HChar* const ec, const SizeT szB)
    /*
     * If szB < sizeof(struct bitmap2) then this function has been called to
     * allocate an AVL tree root node. Otherwise it has been called to allocate
-    * an AVL tree branch or leaf node. 
+    * an AVL tree branch or leaf node.
     */
    if (szB < sizeof(struct bitmap2))
       return VG_(malloc)(ec, szB);

@@ -26,7 +26,7 @@ int main(int argc, char** argv)
   int ign_rw = 1;
   int tmp;
   pthread_t tid;
-  
+
   while ((optchar = getopt(argc, argv, "r")) != EOF)
   {
     switch (optchar)

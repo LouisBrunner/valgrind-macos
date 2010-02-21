@@ -487,7 +487,7 @@ static Bool handle_client_request(ThreadId vg_tid, UWord* arg, UWord* ret)
       if (DRD_(thread_enter_synchr)(drd_tid) == 0)
          DRD_(rwlock_pre_unlock)(arg[1], pthread_rwlock);
       break;
-      
+
    case VG_USERREQ__POST_RWLOCK_UNLOCK:
       DRD_(thread_leave_synchr)(drd_tid);
       break;

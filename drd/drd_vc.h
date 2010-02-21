@@ -39,7 +39,7 @@
  * - Vector clocks are compared by comparing all counters of all threads.
  * - When a thread synchronization action is performed that guarantees that
  *   new actions of the current thread are executed after the actions of the
- *   other thread, the vector clock of the synchronization object and the 
+ *   other thread, the vector clock of the synchronization object and the
  *   current thread are combined (by taking the component-wise maximum).
  * - A vector clock is incremented during actions such as
  *   pthread_create(), pthread_mutex_unlock(), sem_post(). (Actions where

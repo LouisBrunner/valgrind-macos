@@ -76,7 +76,7 @@ void DRD_(finish_suppression)(const Addr a1, const Addr a2)
    {
       VG_(message)(Vg_DebugMsg, "finish suppression of 0x%lx sz %ld\n",
                    a1, a2 - a1);
-      VG_(get_and_pp_StackTrace)(VG_(get_running_tid)(), 12);   
+      VG_(get_and_pp_StackTrace)(VG_(get_running_tid)(), 12);
    }
 
    tl_assert(a1 < a2);

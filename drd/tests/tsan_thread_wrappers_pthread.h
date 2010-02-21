@@ -3,7 +3,7 @@
   framework.
 
   Copyright (C) 2008-2008 Google Inc
-     opensource@google.com 
+     opensource@google.com
 
   This program is free software; you can redistribute it and/or
   modify it under the terms of the GNU General Public License as
@@ -23,22 +23,22 @@
   The GNU General Public License is contained in the file COPYING.
 */
 
-// Author: Konstantin Serebryany <opensource@google.com> 
+// Author: Konstantin Serebryany <opensource@google.com>
 //
-// Here we define few simple classes that wrap pthread primitives. 
+// Here we define few simple classes that wrap pthread primitives.
 //
-// We need this to create unit tests for helgrind (or similar tool) 
-// that will work with different threading frameworks. 
+// We need this to create unit tests for helgrind (or similar tool)
+// that will work with different threading frameworks.
 //
-// If one needs to test helgrind's support for another threading library, 
-// he/she can create a copy of this file and replace pthread_ calls 
-// with appropriate calls to his/her library. 
+// If one needs to test helgrind's support for another threading library,
+// he/she can create a copy of this file and replace pthread_ calls
+// with appropriate calls to his/her library.
 //
-// Note, that some of the methods defined here are annotated with 
-// ANNOTATE_* macros defined in dynamic_annotations.h. 
+// Note, that some of the methods defined here are annotated with
+// ANNOTATE_* macros defined in dynamic_annotations.h.
 //
-// DISCLAIMER: the classes defined in this header file 
-// are NOT intended for general use -- only for unit tests. 
+// DISCLAIMER: the classes defined in this header file
+// are NOT intended for general use -- only for unit tests.
 //
 
 #ifndef THREAD_WRAPPERS_PTHREAD_H
@@ -71,23 +71,23 @@ static inline bool RunningOnValgrind() { return RUNNING_ON_VALGRIND; }
 #include <assert.h>
 #ifdef NDEBUG
 # error "Pleeease, do not define NDEBUG"
-#endif 
+#endif
 #define CHECK assert
 
 /// Set this to true if malloc() uses mutex on your platform as this may
 /// introduce a happens-before arc for a pure happens-before race detector.
 const bool kMallocUsesMutex = false;
 
-/// Current time in milliseconds. 
+/// Current time in milliseconds.
 static inline int64_t GetCurrentTimeMillis() {
   struct timeval now;
   gettimeofday(&now, NULL);
   return now.tv_sec * 1000 + now.tv_usec / 1000;
 }
 
-/// Copy tv to ts adding offset in milliseconds. 
-static inline void timeval2timespec(timeval *const tv, 
-                                     timespec *ts, 
+/// Copy tv to ts adding offset in milliseconds.
+static inline void timeval2timespec(timeval *const tv,
+                                     timespec *ts,
                                      int64_t offset_milli) {
   const int64_t ten_9 = 1000000000LL;
   const int64_t ten_6 = 1000000LL;
@@ -154,16 +154,16 @@ class SpinLock {
 
 #endif // NO_SPINLOCK
 
-/// Just a boolean condition. Used by Mutex::LockWhen and similar. 
+/// Just a boolean condition. Used by Mutex::LockWhen and similar.
 class Condition {
  public:
   typedef bool (*func_t)(void*);
 
   template <typename T>
-  Condition(bool (*func)(T*), T* arg) 
+  Condition(bool (*func)(T*), T* arg)
   : func_(reinterpret_cast<func_t>(func)), arg_(arg) {}
 
-  Condition(bool (*func)()) 
+  Condition(bool (*func)())
   : func_(reinterpret_cast<func_t>(func)), arg_(NULL) {}
 
   bool Eval() { return func_(arg_); }
@@ -176,22 +176,22 @@ class Condition {
 
 /// Wrapper for pthread_mutex_t.
 ///
-/// pthread_mutex_t is *not* a reader-writer lock, 
-/// so the methods like ReaderLock() aren't really reader locks. 
-/// We can not use pthread_rwlock_t because it 
+/// pthread_mutex_t is *not* a reader-writer lock,
+/// so the methods like ReaderLock() aren't really reader locks.
+/// We can not use pthread_rwlock_t because it
 /// does not work with pthread_cond_t.
-/// 
-/// TODO: We still need to test reader locks with this class. 
-/// Implement a mode where pthread_rwlock_t will be used 
-/// instead of pthread_mutex_t (only when not used with CondVar or LockWhen). 
-/// 
+///
+/// TODO: We still need to test reader locks with this class.
+/// Implement a mode where pthread_rwlock_t will be used
+/// instead of pthread_mutex_t (only when not used with CondVar or LockWhen).
+///
 class Mutex {
   friend class CondVar;
- public: 
+ public:
   Mutex() {
     CHECK(0 == pthread_mutex_init(&mu_, NULL));
     CHECK(0 == pthread_cond_init(&cv_, NULL));
-    signal_at_unlock_ = true;  // Always signal at Unlock to make 
+    signal_at_unlock_ = true;  // Always signal at Unlock to make
                                // Mutex more friendly to hybrid detectors.
   }
   ~Mutex() {
@@ -202,7 +202,7 @@ class Mutex {
   bool TryLock()       { return (0 == pthread_mutex_trylock(&mu_));}
   void Unlock() {
     if (signal_at_unlock_) {
-      CHECK(0 == pthread_cond_signal(&cv_)); 
+      CHECK(0 == pthread_cond_signal(&cv_));
     }
     CHECK(0 == pthread_mutex_unlock(&mu_));
   }
@@ -214,11 +214,11 @@ class Mutex {
   void ReaderLockWhen(Condition cond)      { Lock(); WaitLoop(cond); }
   void Await(Condition cond)               { WaitLoop(cond); }
 
-  bool ReaderLockWhenWithTimeout(Condition cond, int millis)      
+  bool ReaderLockWhenWithTimeout(Condition cond, int millis)
     { Lock(); return WaitLoopWithTimeout(cond, millis); }
-  bool LockWhenWithTimeout(Condition cond, int millis)      
+  bool LockWhenWithTimeout(Condition cond, int millis)
     { Lock(); return WaitLoopWithTimeout(cond, millis); }
-  bool AwaitWithTimeout(Condition cond, int millis)      
+  bool AwaitWithTimeout(Condition cond, int millis)
     { return WaitLoopWithTimeout(cond, millis); }
 
  private:
@@ -248,10 +248,10 @@ class Mutex {
     return cond.Eval();
   }
 
-  // A hack. cv_ should be the first data member so that 
-  // ANNOTATE_CONDVAR_WAIT(&MU, &MU) and ANNOTATE_CONDVAR_SIGNAL(&MU) works. 
+  // A hack. cv_ should be the first data member so that
+  // ANNOTATE_CONDVAR_WAIT(&MU, &MU) and ANNOTATE_CONDVAR_SIGNAL(&MU) works.
   // (See also racecheck_unittest.cc)
-  pthread_cond_t  cv_; 
+  pthread_cond_t  cv_;
   pthread_mutex_t mu_;
   bool            signal_at_unlock_;  // Set to true if Wait was called.
 };
@@ -259,7 +259,7 @@ class Mutex {
 
 class MutexLock {  // Scoped Mutex Locker/Unlocker
  public:
-  MutexLock(Mutex *mu) 
+  MutexLock(Mutex *mu)
     : mu_(mu) {
     mu_->Lock();
   }
@@ -271,13 +271,13 @@ class MutexLock {  // Scoped Mutex Locker/Unlocker
 };
 
 
-/// Wrapper for pthread_cond_t. 
+/// Wrapper for pthread_cond_t.
 class CondVar {
  public:
   CondVar()   { CHECK(0 == pthread_cond_init(&cv_, NULL)); }
   ~CondVar()  { CHECK(0 == pthread_cond_destroy(&cv_)); }
   void Wait(Mutex *mu) { CHECK(0 == pthread_cond_wait(&cv_, &mu->mu_)); }
-  bool WaitWithTimeout(Mutex *mu, int millis) { 
+  bool WaitWithTimeout(Mutex *mu, int millis) {
     struct timeval now;
     struct timespec timeout;
     gettimeofday(&now, NULL);
@@ -293,7 +293,7 @@ class CondVar {
 
 // pthreads do not allow to use condvar with rwlock so we can't make
 // ReaderLock method of Mutex to be the real rw-lock.
-// So, we need a special lock class to test reader locks. 
+// So, we need a special lock class to test reader locks.
 #define NEEDS_SEPERATE_RW_LOCK
 class RWLock {
  public:
@@ -310,7 +310,7 @@ class RWLock {
 
 class ReaderLockScoped {  // Scoped RWLock Locker/Unlocker
  public:
-  ReaderLockScoped(RWLock *mu) 
+  ReaderLockScoped(RWLock *mu)
     : mu_(mu) {
     mu_->ReaderLock();
   }
@@ -323,7 +323,7 @@ class ReaderLockScoped {  // Scoped RWLock Locker/Unlocker
 
 class WriterLockScoped {  // Scoped RWLock Locker/Unlocker
  public:
-  WriterLockScoped(RWLock *mu) 
+  WriterLockScoped(RWLock *mu)
     : mu_(mu) {
     mu_->Lock();
   }
@@ -339,14 +339,14 @@ class WriterLockScoped {  // Scoped RWLock Locker/Unlocker
 
 /// Wrapper for pthread_create()/pthread_join().
 class MyThread {
- public: 
+ public:
   typedef void *(*worker_t)(void*);
 
-  MyThread(worker_t worker, void *arg = NULL, const char *name = NULL) 
+  MyThread(worker_t worker, void *arg = NULL, const char *name = NULL)
       :w_(worker), arg_(arg), name_(name) {}
-  MyThread(void (*worker)(void), void *arg = NULL, const char *name = NULL)   
+  MyThread(void (*worker)(void), void *arg = NULL, const char *name = NULL)
       :w_(reinterpret_cast<worker_t>(worker)), arg_(arg), name_(name) {}
-  MyThread(void (*worker)(void *), void *arg = NULL, const char *name = NULL) 
+  MyThread(void (*worker)(void *), void *arg = NULL, const char *name = NULL)
       :w_(reinterpret_cast<worker_t>(worker)), arg_(arg), name_(name) {}
 
   ~MyThread(){ w_ = NULL; arg_ = NULL;}
@@ -378,7 +378,7 @@ class ProducerConsumerQueue {
     //ANNOTATE_PCQ_DESTROY(this);
   }
 
-  // Put. 
+  // Put.
   void Put(void *item) {
     mu_.Lock();
       q_.push(item);
@@ -387,18 +387,18 @@ class ProducerConsumerQueue {
     mu_.Unlock();
   }
 
-  // Get. 
-  // Blocks if the queue is empty. 
-  void *Get() {    
+  // Get.
+  // Blocks if the queue is empty.
+  void *Get() {
     mu_.LockWhen(Condition(IsQueueNotEmpty, &q_));
       void * item = NULL;
       bool ok = TryGetInternal(&item);
-      CHECK(ok);    
+      CHECK(ok);
     mu_.Unlock();
     return item;
   }
 
-  // If queue is not empty, 
+  // If queue is not empty,
   // remove an element from queue, put it into *res and return true.
   // Otherwise return false.
   bool TryGet(void **res) {
@@ -411,9 +411,9 @@ class ProducerConsumerQueue {
  private:
   Mutex mu_;
   std::queue<void*> q_; // protected by mu_
-  
+
   // Requires mu_
-  bool TryGetInternal(void ** item_ptr) {     
+  bool TryGetInternal(void ** item_ptr) {
     if (q_.empty())
       return false;
     *item_ptr = q_.front();
@@ -421,7 +421,7 @@ class ProducerConsumerQueue {
     //ANNOTATE_PCQ_GET(this);
     return true;
   }
-  
+
   static bool IsQueueNotEmpty(std::queue<void*> * queue) {
      return !queue->empty();
   }
@@ -429,15 +429,15 @@ class ProducerConsumerQueue {
 
 
 
-/// Function pointer with zero, one or two parameters. 
+/// Function pointer with zero, one or two parameters.
 struct Closure {
   typedef void (*F0)();
   typedef void (*F1)(void *arg1);
   typedef void (*F2)(void *arg1, void *arg2);
-  int  n_params; 
-  void *f; 
-  void *param1; 
-  void *param2; 
+  int  n_params;
+  void *f;
+  void *param1;
+  void *param2;
 
   void Execute() {
     if (n_params == 0) {
@@ -450,7 +450,7 @@ struct Closure {
     }
     delete this;
   }
-}; 
+};
 
 Closure *NewCallback(void (*f)()) {
   Closure *res = new Closure;
@@ -483,24 +483,24 @@ Closure *NewCallback(void (*f)(P1, P2), P1 p1, P2 p2) {
   return res;
 }
 
-/*! A thread pool that uses ProducerConsumerQueue. 
-  Usage: 
+/*! A thread pool that uses ProducerConsumerQueue.
+  Usage:
   {
     ThreadPool pool(n_workers);
     pool.StartWorkers();
     pool.Add(NewCallback(func_with_no_args));
     pool.Add(NewCallback(func_with_one_arg, arg));
     pool.Add(NewCallback(func_with_two_args, arg1, arg2));
-    ... // more calls to pool.Add() 
-    
-    // the ~ThreadPool() is called: we wait workers to finish 
-    // and then join all threads in the pool. 
+    ... // more calls to pool.Add()
+
+    // the ~ThreadPool() is called: we wait workers to finish
+    // and then join all threads in the pool.
   }
 */
 class ThreadPool {
- public: 
-  //! Create n_threads threads, but do not start. 
-  explicit ThreadPool(int n_threads) 
+ public:
+  //! Create n_threads threads, but do not start.
+  explicit ThreadPool(int n_threads)
     : queue_(INT_MAX) {
     for (int i = 0; i < n_threads; i++) {
       MyThread *thread = new MyThread(&ThreadPool::Worker, this);
@@ -508,14 +508,14 @@ class ThreadPool {
     }
   }
 
-  //! Start all threads. 
+  //! Start all threads.
   void StartWorkers() {
     for (size_t i = 0; i < workers_.size(); i++) {
       workers_[i]->Start();
     }
   }
 
-  //! Add a closure. 
+  //! Add a closure.
   void Add(Closure *closure) {
     queue_.Put(closure);
   }
@@ -541,22 +541,22 @@ class ThreadPool {
     while (true) {
       Closure *closure = reinterpret_cast<Closure*>(pool->queue_.Get());
       if(closure == NULL) {
-        return NULL; 
+        return NULL;
       }
-      closure->Execute();     
+      closure->Execute();
     }
   }
 };
 
 #ifndef NO_BARRIER
-/// Wrapper for pthread_barrier_t. 
+/// Wrapper for pthread_barrier_t.
 class Barrier{
  public:
   explicit Barrier(int n_threads) {CHECK(0 == pthread_barrier_init(&b_, 0, n_threads));}
   ~Barrier()                      {CHECK(0 == pthread_barrier_destroy(&b_));}
   void Block() {
     // helgrind 3.3.0 does not have an interceptor for barrier.
-    // but our current local version does. 
+    // but our current local version does.
     // ANNOTATE_CONDVAR_SIGNAL(this);
     pthread_barrier_wait(&b_);
     // ANNOTATE_CONDVAR_WAIT(this, this);

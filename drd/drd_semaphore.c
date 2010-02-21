@@ -445,12 +445,12 @@ void DRD_(semaphore_post_post)(const DrdThreadId tid, const Addr semaphore,
                                const Bool succeeded)
 {
    /*
-    * Note: it is hard to implement the sem_post() wrapper correctly in    
-    * case sem_post() returns an error code. This is because handling this 
-    * case correctly requires restoring the vector clock associated with   
+    * Note: it is hard to implement the sem_post() wrapper correctly in
+    * case sem_post() returns an error code. This is because handling this
+    * case correctly requires restoring the vector clock associated with
     * the semaphore to its original value here. In order to do that without
-    * introducing a race condition, extra locking has to be added around   
-    * each semaphore call. Such extra locking would have to be added in    
+    * introducing a race condition, extra locking has to be added around
+    * each semaphore call. Such extra locking would have to be added in
     * drd_pthread_intercepts.c. However, it is hard to implement
     * synchronization in drd_pthread_intercepts.c in a portable way without
     * calling already redirected functions.

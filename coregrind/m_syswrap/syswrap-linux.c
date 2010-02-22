@@ -83,6 +83,9 @@ static VgSchedReturnCode thread_wrapper(Word /*ThreadId*/ tidW)
    VG_TRACK(pre_thread_first_insn, tid);
 
    tst->os_state.lwpid = VG_(gettid)();
+   /* Set the threadgroup for real.  This overwrites the provisional
+      value set in do_clone() syswrap-*-linux.c.  See comments in
+      do_clone for background, also #226116. */
    tst->os_state.threadgroup = VG_(getpid)();
 
    /* Thread created with all signals blocked; scheduler will set the

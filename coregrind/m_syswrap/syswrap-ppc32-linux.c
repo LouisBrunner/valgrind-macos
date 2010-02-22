@@ -297,6 +297,17 @@ static SysRes do_clone ( ThreadId ptid,
    ctst->sig_mask = ptst->sig_mask;
    ctst->tmp_sig_mask = ptst->sig_mask;
 
+   /* Start the child with its threadgroup being the same as the
+      parent's.  This is so that any exit_group calls that happen
+      after the child is created but before it sets its
+      os_state.threadgroup field for real (in thread_wrapper in
+      syswrap-linux.c), really kill the new thread.  a.k.a this avoids
+      a race condition in which the thread is unkillable (via
+      exit_group) because its threadgroup is not set.  The race window
+      is probably only a few hundred or a few thousand cycles long.
+      See #226116. */
+   ctst->os_state.threadgroup = ptst->os_state.threadgroup;
+
    /* We don't really know where the client stack is, because its
       allocated by the client.  The best we can do is look at the
       memory mappings and try to derive some useful information.  We

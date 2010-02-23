@@ -2588,6 +2588,29 @@ POST(sys_perf_counter_open)
    }
 }
 
+PRE(sys_getcpu)
+{
+   PRINT("sys_getcpu ( %#lx, %#lx, %#lx )" , ARG1,ARG2,ARG3);
+   PRE_REG_READ3(int, "getcpu", 
+                 unsigned *, cpu, unsigned *, node, struct vki_getcpu_cache *, tcache);
+   if (ARG1 != 0)
+      PRE_MEM_WRITE( "getcpu(cpu)", ARG1, sizeof(unsigned) );
+   if (ARG2 != 0)
+      PRE_MEM_WRITE( "getcpu(node)", ARG2, sizeof(unsigned) );
+   if (ARG3 != 0)
+      PRE_MEM_WRITE( "getcpu(tcache)", ARG3, sizeof(struct vki_getcpu_cache) );
+}
+
+POST(sys_getcpu)
+{
+   if (ARG1 != 0)
+      POST_MEM_WRITE( ARG1, sizeof(unsigned) );
+   if (ARG2 != 0)
+      POST_MEM_WRITE( ARG2, sizeof(unsigned) );
+   if (ARG3 != 0)
+      POST_MEM_WRITE( ARG3, sizeof(struct vki_getcpu_cache) );
+}
+
 /* ---------------------------------------------------------------------
    utime wrapper
    ------------------------------------------------------------------ */

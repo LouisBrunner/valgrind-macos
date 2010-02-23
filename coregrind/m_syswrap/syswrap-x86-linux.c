@@ -2251,7 +2251,7 @@ static SyscallTableEntry syscall_table[] = {
 //   LINX_(__NR_unshare,		 sys_unshare),          // 310
    LINX_(__NR_set_robust_list,	 sys_set_robust_list),  // 311
    LINXY(__NR_get_robust_list,	 sys_get_robust_list),  // 312
-//   LINX_(__NR_splice,            sys_ni_syscall),       // 313
+   LINX_(__NR_splice,            sys_splice),           // 313
    LINX_(__NR_sync_file_range,   sys_sync_file_range),  // 314
 
 //   LINX_(__NR_tee,               sys_ni_syscall),       // 315

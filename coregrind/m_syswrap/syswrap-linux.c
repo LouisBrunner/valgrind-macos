@@ -3497,6 +3497,30 @@ PRE(sys_delete_module)
 }
 
 /* ---------------------------------------------------------------------
+   splice wrappers
+   ------------------------------------------------------------------ */
+
+PRE(sys_splice)
+{
+   *flags |= SfMayBlock;
+   PRINT("sys_splice ( %ld, %#lx, %ld, %#lx, %ld, %ld )",
+         ARG1,ARG2,ARG3,ARG4,ARG5,ARG6);
+   PRE_REG_READ6(int32_t, "splice",
+                 int, fd_in, vki_loff_t *, off_in,
+                 int, fd_out, vki_loff_t *, off_out,
+                 vki_size_t, len, unsigned int, flags);
+   if (!ML_(fd_allowed)(ARG1, "splice(fd_in)", tid, False) ||
+       !ML_(fd_allowed)(ARG3, "splice(fd_out)", tid, False)) {
+      SET_STATUS_Failure( VKI_EBADF );
+   } else {
+      if (ARG2 != 0)
+         PRE_MEM_READ( "splice(off_in)", ARG2, sizeof(vki_loff_t));
+      if (ARG4 != 0)
+         PRE_MEM_READ( "splice(off_out)", ARG4, sizeof(vki_loff_t));
+   }
+}
+
+/* ---------------------------------------------------------------------
    oprofile-related wrappers
    ------------------------------------------------------------------ */
 

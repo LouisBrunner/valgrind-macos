@@ -14442,9 +14442,10 @@ DisResult disInstr_AMD64_WRK (
       delta = dis_op2_E_G ( vbi, pfx, True, Iop_Add8, True, sz, delta, "adc" );
       break;
 
-//.. //--    case 0x1A: /* SBB Eb,Gb */
-//.. //--       delta = dis_op2_E_G ( sorb, True, SBB, True, 1, delta, "sbb" );
-//.. //--       break;
+   case 0x1A: /* SBB Eb,Gb */
+      if (haveF2orF3(pfx)) goto decode_failure;
+      delta = dis_op2_E_G ( vbi, pfx, True, Iop_Sub8, True, 1, delta, "sbb" );
+      break;
    case 0x1B: /* SBB Ev,Gv */
       if (haveF2orF3(pfx)) goto decode_failure;
       delta = dis_op2_E_G ( vbi, pfx, True, Iop_Sub8, True, sz, delta, "sbb" );

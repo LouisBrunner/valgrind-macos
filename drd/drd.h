@@ -228,10 +228,11 @@
 #define ANNOTATE_PCQ_GET(pcq) do { } while(0)
 
 /**
- * Tell DRD that data races in the specified address range are expected and
- * must not be reported.
+ * Tell DRD that data races at the specified address are expected and must not
+ * be reported.
  */
-#define ANNOTATE_BENIGN_RACE(addr, descr) DRDCL_(ignore_range)(addr, 4)
+#define ANNOTATE_BENIGN_RACE(addr, descr) \
+   DRDCL_(ignore_range)(addr, sizeof(*addr))
 
 /** Tell DRD to ignore all reads performed by the current thread. */
 #define ANNOTATE_IGNORE_READS_BEGIN() DRDCL_(set_record_loads)(0)

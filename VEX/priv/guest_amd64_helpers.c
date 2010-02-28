@@ -1189,11 +1189,12 @@ IRExpr* guest_amd64_spechelper ( HChar* function_name,
       /*---------------- INCB ----------------*/
 
       if (isU64(cc_op, AMD64G_CC_OP_INCB) && isU64(cond, AMD64CondLE)) {
-         /* 8-bit inc, then LE --> test result <=s 0 */
-         return unop(Iop_1Uto64,
-                     binop(Iop_CmpLE64S, 
-                           binop(Iop_Shl64,cc_dep1,mkU8(56)),
-                           mkU64(0)));
+         /* 8-bit inc, then LE --> sign bit of the arg */
+         return binop(Iop_And64,
+                      binop(Iop_Shr64,
+                            binop(Iop_Sub64, cc_dep1, mkU64(1)),
+                            mkU8(7)),
+                      mkU64(1));
       }
 
       /*---------------- INCW ----------------*/

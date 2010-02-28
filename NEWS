@@ -1,4 +1,13 @@
 
+Release 3.6.0 (???)
+~~~~~~~~~~~~~~~~~~~
+Improvements:
+- XXX: ARM support
+
+- --smc-check=all is much faster
+
+
+
 Release 3.5.0 (19 August 2009)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 3.5.0 is a feature release with many significant improvements and the

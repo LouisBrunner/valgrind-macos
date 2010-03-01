@@ -60,11 +60,7 @@
    thread for a time quanta, and while running blocking syscalls.
 
 
-   In addition, we define two signals for internal use: SIGVGCHLD and
-   SIGVGKILL.  SIGVGCHLD is used to indicate thread death to any
-   reaping thread (the master thread).  It is always blocked and never
-   delivered as a signal; it is always polled with sigtimedwait.
-
+   In addition, we reserve one signal for internal use: SIGVGKILL.
    SIGVGKILL is used to terminate threads.  When one thread wants
    another to exit, it will set its exitreason and send it SIGVGKILL
    if it appears to be blocked in a syscall.

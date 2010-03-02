@@ -281,8 +281,12 @@ check_PROGRAMS += boost_thread
 endif
 
 if HAVE_BUILTIN_ATOMIC
-check_PROGRAMS += annotate_rwlock atomic_var circular_buffer
-check_PROGRAMS += tsan_unittest
+check_PROGRAMS +=        \
+  annotate_rwlock        \
+  annotate_smart_pointer \
+  atomic_var             \
+  circular_buffer        \
+  tsan_unittest
 endif
 
 if HAVE_OPENMP
@@ -337,6 +341,10 @@ if HAVE_BOOST_1_35
 boost_thread_SOURCES        = boost_thread.cpp
 boost_thread_CXXFLAGS       = $(AM_CXXFLAGS) $(BOOST_CFLAGS)
 boost_thread_LDADD          = $(BOOST_LIBS)
+endif
+
+if HAVE_BUILTIN_ATOMIC
+annotate_smart_pointer_SOURCES = annotate_smart_pointer.cpp
 endif
 
 if HAVE_OPENMP

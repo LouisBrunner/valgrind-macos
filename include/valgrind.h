@@ -73,6 +73,17 @@
 #ifndef __VALGRIND_H
 #define __VALGRIND_H
 
+
+/* ------------------------------------------------------------------ */
+/* VERSION NUMBER OF VALGRIND                                         */
+/* ------------------------------------------------------------------ */
+
+/* Specify Valgrind's version number, so that user code can
+   conditionally compile based on our version number. */
+#define __VALGRIND__          3
+#define __VALGRIND_MINOR__    6
+
+
 #include <stdarg.h>
 
 /* Nb: this file might be included in a file compiled with -ansi.  So

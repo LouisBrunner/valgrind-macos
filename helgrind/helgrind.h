@@ -97,7 +97,7 @@ typedef
       _VG_USERREQ__HG_POSIX_SEM_DESTROY_PRE,      /* sem_t* */
       _VG_USERREQ__HG_POSIX_SEM_POST_PRE,         /* sem_t* */
       _VG_USERREQ__HG_POSIX_SEM_WAIT_POST,        /* sem_t* */
-      _VG_USERREQ__HG_PTHREAD_BARRIER_INIT_PRE,   /* pth_bar_t*, ulong */
+      _VG_USERREQ__HG_PTHREAD_BARRIER_INIT_PRE,   /* pth_bar_t*, ulong, ulong */
       _VG_USERREQ__HG_PTHREAD_BARRIER_WAIT_PRE,   /* pth_bar_t* */
       _VG_USERREQ__HG_PTHREAD_BARRIER_DESTROY_PRE, /* pth_bar_t* */
       _VG_USERREQ__HG_PTHREAD_SPIN_INIT_OR_UNLOCK_PRE,  /* pth_slk_t* */
@@ -109,28 +109,191 @@ typedef
       _VG_USERREQ__HG_USERSO_SEND_PRE,        /* arbitrary UWord SO-tag */
       _VG_USERREQ__HG_USERSO_RECV_POST,       /* arbitrary UWord SO-tag */
       _VG_USERREQ__HG_RESERVED1,              /* Do not use */
-      _VG_USERREQ__HG_RESERVED2               /* Do not use */
+      _VG_USERREQ__HG_RESERVED2,              /* Do not use */
+      _VG_USERREQ__HG_RESERVED3,              /* Do not use */
+      _VG_USERREQ__HG_RESERVED4,              /* Do not use */
+      _VG_USERREQ__HG_ARANGE_MAKE_UNTRACKED, /* Addr a, ulong len */
+      _VG_USERREQ__HG_ARANGE_MAKE_TRACKED,   /* Addr a, ulong len */
+      _VG_USERREQ__HG_PTHREAD_BARRIER_RESIZE_PRE /* pth_bar_t*, ulong */
 
    } Vg_TCheckClientRequest;
 
 
 /*----------------------------------------------------------------*/
-/*--- An implementation-only request -- not for end user use   ---*/
+/*---                                                          ---*/
+/*--- Implementation-only facilities.  Not for end-user use.   ---*/
+/*--- For end-user facilities see below (the next section in   ---*/
+/*--- this file.)                                              ---*/
+/*---                                                          ---*/
 /*----------------------------------------------------------------*/
 
-#define _HG_CLIENTREQ_UNIMP(_qzz_str)                            \
-   do {                                                          \
-     unsigned long _qzz_res;                                     \
-     VALGRIND_DO_CLIENT_REQUEST(_qzz_res, 0,                     \
-                                _VG_USERREQ__HG_CLIENTREQ_UNIMP, \
-                                _qzz_str, 0, 0, 0, 0);           \
-     (void)0;                                                    \
-   } while(0)
+/* Do a client request.  These are macros rather than a functions so
+   as to avoid having an extra frame in stack traces.
+
+   NB: these duplicate definitions in hg_intercepts.c.  But here, we
+   have to make do with weaker typing (no definition of Word etc) and
+   no assertions, whereas in helgrind.h we can use those facilities.
+   Obviously it's important the two sets of definitions are kept in
+   sync.
+
+   The commented-out asserts should actually hold, but unfortunately
+   they can't be allowed to be visible here, because that would
+   require the end-user code to #include <assert.h>.
+*/
+
+#define DO_CREQ_v_W(_creqF, _ty1F,_arg1F)                \
+   do {                                                  \
+      long int _unused_res, _arg1;                       \
+      /* assert(sizeof(_ty1F) == sizeof(long int)); */   \
+      _arg1 = (long int)(_arg1F);                        \
+      VALGRIND_DO_CLIENT_REQUEST(_unused_res, 0,         \
+                                 (_creqF),               \
+                                 _arg1, 0,0,0,0);        \
+   } while (0)
+
+#define DO_CREQ_v_WW(_creqF, _ty1F,_arg1F, _ty2F,_arg2F) \
+   do {                                                  \
+      long int _unused_res, _arg1, _arg2;                \
+      /* assert(sizeof(_ty1F) == sizeof(long int)); */   \
+      /* assert(sizeof(_ty2F) == sizeof(long int)); */   \
+      _arg1 = (long int)(_arg1F);                        \
+      _arg2 = (long int)(_arg2F);                        \
+      VALGRIND_DO_CLIENT_REQUEST(_unused_res, 0,         \
+                                 (_creqF),               \
+                                 _arg1,_arg2,0,0,0);     \
+   } while (0)
+
+#define DO_CREQ_v_WWW(_creqF, _ty1F,_arg1F,              \
+                      _ty2F,_arg2F, _ty3F, _arg3F)       \
+   do {                                                  \
+      long int _unused_res, _arg1, _arg2, _arg3;         \
+      /* assert(sizeof(_ty1F) == sizeof(long int)); */   \
+      /* assert(sizeof(_ty2F) == sizeof(long int)); */   \
+      /* assert(sizeof(_ty3F) == sizeof(long int)); */   \
+      _arg1 = (long int)(_arg1F);                        \
+      _arg2 = (long int)(_arg2F);                        \
+      _arg3 = (long int)(_arg3F);                        \
+      VALGRIND_DO_CLIENT_REQUEST(_unused_res, 0,         \
+                                 (_creqF),               \
+                                 _arg1,_arg2,_arg3,0,0); \
+   } while (0)
+
+
+#define _HG_CLIENTREQ_UNIMP(_qzz_str)                    \
+   DO_CREQ_v_W(_VG_USERREQ__HG_CLIENTREQ_UNIMP,          \
+               (char*),(_qzz_str))
 
 
 /*----------------------------------------------------------------*/
-/*--- Misc requests                                            ---*/
+/*---                                                          ---*/
+/*--- Helgrind-native requests.  These allow access to         ---*/
+/*--- the same set of annotation primitives that are used      ---*/
+/*--- to build the POSIX pthread wrappers.                     ---*/
+/*---                                                          ---*/
 /*----------------------------------------------------------------*/
+
+/* ----------------------------------------------------------
+   For describing ordinary mutexes (non-rwlocks).  For rwlock
+   descriptions see ANNOTATE_RWLOCK_* below.
+   ---------------------------------------------------------- */
+
+/* Notify here immediately after mutex creation.  _mbRec == 0 for a
+   non-recursive mutex, 1 for a recursive mutex. */
+#define VALGRIND_HG_MUTEX_INIT_POST(_mutex, _mbRec)          \
+   DO_CREQ_v_WW(_VG_USERREQ__HG_PTHREAD_MUTEX_INIT_POST,     \
+                void*,(_mutex), long,(_mbRec))
+
+/* Notify here immediately before mutex acquisition.  _isTryLock == 0
+   for a normal acquisition, 1 for a "try" style acquisition. */
+#define VALGRIND_HG_MUTEX_LOCK_PRE(_mutex, _isTryLock)       \
+   DO_CREQ_v_WW(_VG_USERREQ__HG_PTHREAD_MUTEX_LOCK_PRE,      \
+                void*,(_mutex), long,(_isTryLock))
+
+/* Notify here immediately after a successful mutex acquisition. */
+#define VALGRIND_HG_MUTEX_LOCK_POST(_mutex)                  \
+   DO_CREQ_v_W(_VG_USERREQ__HG_PTHREAD_MUTEX_LOCK_POST,      \
+               void*,(_mutex))
+
+/* Notify here immediately before a mutex release. */
+#define VALGRIND_HG_MUTEX_UNLOCK_PRE(_mutex)                 \
+   DO_CREQ_v_W(_VG_USERREQ__HG_PTHREAD_MUTEX_UNLOCK_PRE,     \
+               void*,(_mutex))
+
+/* Notify here immediately after a mutex release. */
+#define VALGRIND_HG_MUTEX_UNLOCK_POST(_mutex)                \
+   DO_CREQ_v_W(_VG_USERREQ__HG_PTHREAD_MUTEX_UNLOCK_POST,    \
+               void*,(_mutex))
+
+/* Notify here immediately before mutex destruction. */
+#define VALGRIND_HG_MUTEX_DESTROY_PRE(_mutex)                \
+   DO_CREQ_v_W(_VG_USERREQ__HG_PTHREAD_MUTEX_DESTROY_PRE,    \
+               void*,(_mutex))
+
+/* ----------------------------------------------------------
+   For describing semaphores.
+   ---------------------------------------------------------- */
+
+/* Notify here immediately after semaphore creation. */
+#define VALGRIND_HG_SEM_INIT_POST(_sem, _value)              \
+   DO_CREQ_v_WW(_VG_USERREQ__HG_POSIX_SEM_INIT_POST,         \
+                void*, (_sem), unsigned long, (_value))
+
+/* Notify here immediately after a semaphore wait (an acquire-style
+   operation) */
+#define VALGRIND_HG_SEM_WAIT_POST(_sem)                      \
+   DO_CREQ_v_W(_VG_USERREQ__HG_POSIX_SEM_WAIT_POST,          \
+               void*,(_sem))
+
+/* Notify here immediately before semaphore post (a release-style
+   operation) */
+#define VALGRIND_HG_SEM_POST_PRE(_sem)                       \
+   DO_CREQ_v_W(_VG_USERREQ__HG_POSIX_SEM_POST_PRE,           \
+               void*,(_sem))
+
+/* Notify here immediately before semaphore destruction. */
+#define VALGRIND_HG_SEM_DESTROY_PRE(_sem)                    \
+   DO_CREQ_v_W(_VG_USERREQ__HG_POSIX_SEM_DESTROY_PRE,        \
+               void*, (_sem))
+
+/* ----------------------------------------------------------
+   For describing barriers.
+   ---------------------------------------------------------- */
+
+/* Notify here immediately before barrier creation.  _count is the
+   capacity.  _resizable == 0 means the barrier may not be resized, 1
+   means it may be. */
+#define VALGRIND_HG_BARRIER_INIT_PRE(_bar, _count, _resizable) \
+   DO_CREQ_v_WWW(_VG_USERREQ__HG_PTHREAD_BARRIER_INIT_PRE,   \
+                 void*,(_bar),                               \
+                 unsigned long,(_count),                     \
+                 unsigned long,(_resizable))
+
+/* Notify here immediately before arrival at a barrier. */
+#define VALGRIND_HG_BARRIER_WAIT_PRE(_bar)                   \
+   DO_CREQ_v_W(_VG_USERREQ__HG_PTHREAD_BARRIER_WAIT_PRE,     \
+               void*,(_bar))
+
+/* Notify here immediately before a resize (change of barrier
+   capacity).  If _newcount >= the existing capacity, then there is no
+   change in the state of any threads waiting at the barrier.  If
+   _newcount < the existing capacity, and >= _newcount threads are
+   currently waiting at the barrier, then this notification is
+   considered to also have the effect of telling the checker that all
+   waiting threads have now moved past the barrier.  (I can't think of
+   any other sane semantics.) */
+#define VALGRIND_HG_BARRIER_RESIZE_PRE(_bar, _newcount)      \
+   DO_CREQ_v_WW(_VG_USERREQ__HG_PTHREAD_BARRIER_RESIZE_PRE,  \
+                void*,(_bar),                                \
+                unsigned long,(_newcount))
+
+/* Notify here immediately before barrier destruction. */
+#define VALGRIND_HG_BARRIER_DESTROY_PRE(_bar)                \
+   DO_CREQ_v_W(_VG_USERREQ__HG_PTHREAD_BARRIER_DESTROY_PRE,  \
+               void*,(_bar))
+
+/* ----------------------------------------------------------
+   For describing memory ownership changes.
+   ---------------------------------------------------------- */
 
 /* Clean memory state.  This makes Helgrind forget everything it knew
    about the specified memory range.  Effectively this announces that
@@ -139,27 +302,51 @@ typedef
    synchronisation, and (2) all other threads must sync with this one
    to access it safely.  This is particularly useful for memory
    allocators that wish to recycle memory. */
-#define VALGRIND_HG_CLEAN_MEMORY(_qzz_start, _qzz_len) \
-   do {                                                \
-     unsigned long _qzz_res;                           \
-     VALGRIND_DO_CLIENT_REQUEST(                       \
-        (_qzz_res), 0, VG_USERREQ__HG_CLEAN_MEMORY,    \
-        (_qzz_start), (_qzz_len), 0, 0, 0              \
-     );                                                \
-     (void)0;                                          \
-   } while(0)
+#define VALGRIND_HG_CLEAN_MEMORY(_qzz_start, _qzz_len)       \
+   DO_CREQ_v_WW(VG_USERREQ__HG_CLEAN_MEMORY,                 \
+                void*,(_qzz_start),                          \
+                unsigned long,(_qzz_len))
+
+/* ----------------------------------------------------------
+   For error control.
+   ---------------------------------------------------------- */
+
+/* Tell H that an address range is not to be "tracked" until further
+   notice.  This puts it in the NOACCESS state, in which case we
+   ignore all reads and writes to it.  Useful for ignoring ranges of
+   memory where there might be races we don't want to see.  If the
+   memory is subsequently reallocated via malloc/new/stack allocation,
+   then it is put back in the trackable state.  Hence it is safe in
+   the situation where checking is disabled, the containing area is
+   deallocated and later reallocated for some other purpose. */
+#define VALGRIND_HG_DISABLE_CHECKING(_qzz_start, _qzz_len)   \
+   DO_CREQ_v_WW(_VG_USERREQ__HG_ARANGE_MAKE_UNTRACKED,       \
+                 void*,(_qzz_start),                         \
+                 unsigned long,(_qzz_len))
+
+/* And put it back into the normal "tracked" state, that is, make it
+   once again subject to the normal race-checking machinery.  This
+   puts it in the same state as new memory allocated by this thread --
+   that is, basically owned exclusively by this thread. */
+#define VALGRIND_HG_ENABLE_CHECKING(_qzz_start, _qzz_len)    \
+   DO_CREQ_v_WW(_VG_USERREQ__HG_ARANGE_MAKE_TRACKED,         \
+                 void*,(_qzz_start),                         \
+                 unsigned long,(_qzz_len))
 
 
 /*----------------------------------------------------------------*/
+/*---                                                          ---*/
 /*--- ThreadSanitizer-compatible requests                      ---*/
+/*--- (mostly unimplemented)                                   ---*/
+/*---                                                          ---*/
 /*----------------------------------------------------------------*/
 
 /* A quite-broad set of annotations, as used in the ThreadSanitizer
    project.  This implementation aims to be a (source-level)
    compatible implementation of the macros defined in:
 
-   http://code.google.com/p/google-perftools/source  \
-                         /browse/trunk/src/base/dynamic_annotations.h
+   http://code.google.com/p/data-race-test/source
+          /browse/trunk/dynamic_annotations/dynamic_annotations.h
 
    (some of the comments below are taken from the above file)
 
@@ -240,22 +427,10 @@ typedef
    ----------------------------------------------------------------
 */
 #define ANNOTATE_HAPPENS_BEFORE(obj) \
-   do {                                                          \
-     unsigned long _qzz_res;                                     \
-     VALGRIND_DO_CLIENT_REQUEST(_qzz_res, 0,                     \
-                                _VG_USERREQ__HG_USERSO_SEND_PRE, \
-                                obj, 0, 0, 0, 0);                \
-     (void)0;                                                    \
-   } while (0)
+   DO_CREQ_v_W(_VG_USERREQ__HG_USERSO_SEND_PRE, void*,(obj))
 
 #define ANNOTATE_HAPPENS_AFTER(obj) \
-   do {                                                           \
-     unsigned long _qzz_res;                                      \
-     VALGRIND_DO_CLIENT_REQUEST(_qzz_res, 0,                      \
-                                _VG_USERREQ__HG_USERSO_RECV_POST, \
-                                obj, 0, 0, 0, 0);                 \
-     (void)0;                                                     \
-   } while (0)
+   DO_CREQ_v_W(_VG_USERREQ__HG_USERSO_RECV_POST, void*,(obj))
 
 
 /* ----------------------------------------------------------------
@@ -274,6 +449,12 @@ typedef
 #define ANNOTATE_PUBLISH_MEMORY_RANGE(pointer, size) \
    _HG_CLIENTREQ_UNIMP("ANNOTATE_PUBLISH_MEMORY_RANGE")
 
+/* DEPRECATED. Don't use it. */
+/* #define ANNOTATE_UNPUBLISH_MEMORY_RANGE(pointer, size) */
+
+/* DEPRECATED. Don't use it. */
+/* #define ANNOTATE_SWAP_MEMORY_RANGE(pointer, size) */
+
 
 /* ----------------------------------------------------------------
    TSan sources say:
@@ -289,8 +470,11 @@ typedef
    behaviour.
    ---------------------------------------------------------------- 
 */
-#define ANNOTATE_MUTEX_IS_USED_AS_CONDVAR(mu) \
-   _HG_CLIENTREQ_UNIMP("ANNOTATE_MUTEX_IS_USED_AS_CONDVAR")
+#define ANNOTATE_PURE_HAPPENS_BEFORE_MUTEX(mu) \
+   _HG_CLIENTREQ_UNIMP("ANNOTATE_PURE_HAPPENS_BEFORE_MUTEX")
+
+/* Deprecated. Use ANNOTATE_PURE_HAPPENS_BEFORE_MUTEX. */
+/* #define ANNOTATE_MUTEX_IS_USED_AS_CONDVAR(mu) */
 
 
 /* ----------------------------------------------------------------
@@ -354,16 +538,21 @@ typedef
    ----------------------------------------------------------------
 */
 
-/* Report that we may have a benign race on ADDRESS.  Insert at the
-   point where ADDRESS has been allocated, preferably close to the
-   point where the race happens.  See also ANNOTATE_BENIGN_RACE_STATIC.
+/* Report that we may have a benign race at "pointer", with size
+   "sizeof(*(pointer))". "pointer" must be a non-void* pointer.  Insert at the
+   point where "pointer" has been allocated, preferably close to the point
+   where the race happens.  See also ANNOTATE_BENIGN_RACE_STATIC.
 
    XXX: what's this actually supposed to do?  And what's the type of
    DESCRIPTION?  When does the annotation stop having an effect?
 */
-#define ANNOTATE_BENIGN_RACE(address, description) \
+#define ANNOTATE_BENIGN_RACE(pointer, description) \
    _HG_CLIENTREQ_UNIMP("ANNOTATE_BENIGN_RACE")
-   
+
+/* Same as ANNOTATE_BENIGN_RACE(address, description), but applies to
+   the memory range [address, address+size). */
+#define ANNOTATE_BENIGN_RACE_SIZED(address, size, description) \
+   _HG_CLIENTREQ_UNIMP("ANNOTATE_BENIGN_RACE_SIZED")
 
 /* Request the analysis tool to ignore all reads in the current thread
    until ANNOTATE_IGNORE_READS_END is called.  Useful to ignore
@@ -429,49 +618,51 @@ typedef
    ----------------------------------------------------------------
 */
 /* Report that a lock has just been created at address LOCK. */
-#define ANNOTATE_RWLOCK_CREATE(lock) \
-   do {                                                          \
-     unsigned long _qzz_res;                                     \
-     VALGRIND_DO_CLIENT_REQUEST(                                 \
-        _qzz_res, 0, _VG_USERREQ__HG_PTHREAD_RWLOCK_INIT_POST,   \
-        lock, 0, 0, 0, 0                                         \
-     );                                                          \
-     (void)0;                                                    \
-   } while(0)
+#define ANNOTATE_RWLOCK_CREATE(lock)                         \
+   DO_CREQ_v_W(_VG_USERREQ__HG_PTHREAD_RWLOCK_INIT_POST,     \
+               void*,(lock))
     
 /* Report that the lock at address LOCK is about to be destroyed. */
-#define ANNOTATE_RWLOCK_DESTROY(lock) \
-   do {                                                          \
-     unsigned long _qzz_res;                                     \
-     VALGRIND_DO_CLIENT_REQUEST(                                 \
-        _qzz_res, 0, _VG_USERREQ__HG_PTHREAD_RWLOCK_DESTROY_PRE, \
-        lock, 0, 0, 0, 0                                         \
-     );                                                          \
-     (void)0;                                                    \
-   } while(0)
+#define ANNOTATE_RWLOCK_DESTROY(lock)                        \
+   DO_CREQ_v_W(_VG_USERREQ__HG_PTHREAD_RWLOCK_DESTROY_PRE,   \
+               void*,(lock))
 
 /* Report that the lock at address LOCK has just been acquired.
    is_w=1 for writer lock, is_w=0 for reader lock. */
-#define ANNOTATE_RWLOCK_ACQUIRED(lock, is_w) \
-   do {                                                          \
-     unsigned long _qzz_res;                                     \
-     VALGRIND_DO_CLIENT_REQUEST(                                 \
-        _qzz_res, 0, _VG_USERREQ__HG_PTHREAD_RWLOCK_LOCK_POST,   \
-        lock, is_w ? 1 : 0, 0, 0, 0                              \
-     );                                                          \
-     (void)0;                                                    \
-   } while(0)
+#define ANNOTATE_RWLOCK_ACQUIRED(lock, is_w)                 \
+  DO_CREQ_v_WW(_VG_USERREQ__HG_PTHREAD_RWLOCK_LOCK_POST,     \
+               void*,(lock), unsigned long,(is_w))
 
 /* Report that the lock at address LOCK is about to be released. */
-  #define ANNOTATE_RWLOCK_RELEASED(lock, is_w) \
-   do {                                                          \
-     unsigned long _qzz_res;                                     \
-     VALGRIND_DO_CLIENT_REQUEST(                                 \
-        _qzz_res, 0, _VG_USERREQ__HG_PTHREAD_RWLOCK_UNLOCK_PRE,  \
-        lock, 0, 0, 0, 0                                         \
-     );                                                          \
-     (void)0;                                                    \
-   } while(0)
+#define ANNOTATE_RWLOCK_RELEASED(lock, is_w)                 \
+  DO_CREQ_v_W(_VG_USERREQ__HG_PTHREAD_RWLOCK_UNLOCK_PRE,     \
+              void*,(lock)) /* is_w is ignored */
+
+
+/* -------------------------------------------------------------
+   Annotations useful when implementing barriers.  They are not
+   normally needed by modules that merely use barriers.
+   The "barrier" argument is a pointer to the barrier object.
+   ----------------------------------------------------------------
+*/
+
+/* Report that the "barrier" has been initialized with initial
+   "count".  If 'reinitialization_allowed' is true, initialization is
+   allowed to happen multiple times w/o calling barrier_destroy() */
+#define ANNOTATE_BARRIER_INIT(barrier, count, reinitialization_allowed) \
+   _HG_CLIENTREQ_UNIMP("ANNOTATE_BARRIER_INIT")
+
+/* Report that we are about to enter barrier_wait("barrier"). */
+#define ANNOTATE_BARRIER_WAIT_BEFORE(barrier) \
+   _HG_CLIENTREQ_UNIMP("ANNOTATE_BARRIER_DESTROY")
+
+/* Report that we just exited barrier_wait("barrier"). */
+#define ANNOTATE_BARRIER_WAIT_AFTER(barrier) \
+   _HG_CLIENTREQ_UNIMP("ANNOTATE_BARRIER_DESTROY")
+
+/* Report that the "barrier" has been destroyed. */
+#define ANNOTATE_BARRIER_DESTROY(barrier) \
+   _HG_CLIENTREQ_UNIMP("ANNOTATE_BARRIER_DESTROY")
 
 
 /* ----------------------------------------------------------------
@@ -488,5 +679,9 @@ typedef
 #define ANNOTATE_NO_OP(arg) \
    _HG_CLIENTREQ_UNIMP("ANNOTATE_NO_OP")
 
+/* Force the race detector to flush its state. The actual effect depends on
+ * the implementation of the detector. */
+#define ANNOTATE_FLUSH_STATE() \
+   _HG_CLIENTREQ_UNIMP("ANNOTATE_FLUSH_STATE")
 
 #endif /* __HELGRIND_H */

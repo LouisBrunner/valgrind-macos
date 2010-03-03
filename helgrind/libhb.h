@@ -126,7 +126,8 @@ void libhb_Thr_resumes ( Thr* thr );
 /* Set memory address ranges to new (freshly allocated), or noaccess
    (no longer accessible). */
 void libhb_srange_new      ( Thr*, Addr, SizeT );
-void libhb_srange_noaccess ( Thr*, Addr, SizeT );
+void libhb_srange_noaccess ( Thr*, Addr, SizeT ); /* IS IGNORED */
+void libhb_srange_untrack  ( Thr*, Addr, SizeT );
 
 /* For the convenience of callers, we offer to store one void* item in
    a Thr, which we ignore, but the caller can get or set any time. */

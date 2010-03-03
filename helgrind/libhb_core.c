@@ -5716,6 +5716,16 @@ void libhb_srange_noaccess ( Thr* thr, Addr a, SizeT szB )
    /* do nothing */
 }
 
+void libhb_srange_untrack ( Thr* thr, Addr a, SizeT szB )
+{
+   SVal sv = SVal_NOACCESS;
+   tl_assert(is_sane_SVal_C(sv));
+   if (0 && TRACEME(a,szB)) trace(thr,a,szB,"untrack-before");
+   zsm_sset_range( a, szB, sv );
+   Filter__clear_range( thr->filter, a, szB );
+   if (0 && TRACEME(a,szB)) trace(thr,a,szB,"untrack-after ");
+}
+
 void* libhb_get_Thr_opaque ( Thr* thr ) {
    tl_assert(thr);
    return thr->opaque;

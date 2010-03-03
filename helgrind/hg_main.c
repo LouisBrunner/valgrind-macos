@@ -1084,6 +1084,13 @@ static void shadow_mem_make_NoAccess ( Thread* thr, Addr aIN, SizeT len )
    libhb_srange_noaccess( thr->hbthr, aIN, len );
 }
 
+static void shadow_mem_make_Untracked ( Thread* thr, Addr aIN, SizeT len )
+{
+   if (0 && len > 500)
+      VG_(printf)("make Untracked ( %#lx, %ld )\n", aIN, len );
+   libhb_srange_untrack( thr->hbthr, aIN, len );
+}
+
 
 /*----------------------------------------------------------------*/
 /*--- Event handlers (evh__* functions)                        ---*/
@@ -1531,11 +1538,22 @@ void evh__set_perms ( Addr a, SizeT len,
 
 static
 void evh__die_mem ( Addr a, SizeT len ) {
+   // urr, libhb ignores this.
    if (SHOW_EVENTS >= 2)
       VG_(printf)("evh__die_mem(%p, %lu)\n", (void*)a, len );
    shadow_mem_make_NoAccess( get_current_Thread(), a, len );
    if (len >= SCE_BIGRANGE_T && (HG_(clo_sanity_flags) & SCE_BIGRANGE))
       all__sanity_check("evh__die_mem-post");
+}
+
+static
+void evh__untrack_mem ( Addr a, SizeT len ) {
+   // whereas it doesn't ignore this
+   if (SHOW_EVENTS >= 2)
+      VG_(printf)("evh__untrack_mem(%p, %lu)\n", (void*)a, len );
+   shadow_mem_make_Untracked( get_current_Thread(), a, len );
+   if (len >= SCE_BIGRANGE_T && (HG_(clo_sanity_flags) & SCE_BIGRANGE))
+      all__sanity_check("evh__untrack_mem-post");
 }
 
 static
@@ -2701,6 +2719,7 @@ static void evh__HG_POSIX_SEM_WAIT_POST ( ThreadId tid, void* sem )
 typedef
    struct {
       Bool    initted; /* has it yet been initted by guest? */
+      Bool    resizable; /* is resizing allowed? */
       UWord   size;    /* declared size */
       XArray* waiting; /* XA of Thread*.  # present is 0 .. .size */
    }
@@ -2760,15 +2779,16 @@ static void map_barrier_to_Bar_delete ( void* barrier ) {
 
 static void evh__HG_PTHREAD_BARRIER_INIT_PRE ( ThreadId tid,
                                                void* barrier,
-                                               UWord count )
+                                               UWord count,
+                                               UWord resizable )
 {
    Thread* thr;
    Bar*    bar;
 
    if (SHOW_EVENTS >= 1)
       VG_(printf)("evh__HG_PTHREAD_BARRIER_INIT_PRE"
-                  "(tid=%d, barrier=%p, count=%lu)\n", 
-                  (Int)tid, (void*)barrier, count );
+                  "(tid=%d, barrier=%p, count=%lu, resizable=%lu)\n", 
+                  (Int)tid, (void*)barrier, count, resizable );
 
    thr = map_threads_maybe_lookup( tid );
    tl_assert(thr); /* cannot fail - Thread* must already exist */
@@ -2776,6 +2796,12 @@ static void evh__HG_PTHREAD_BARRIER_INIT_PRE ( ThreadId tid,
    if (count == 0) {
       HG_(record_error_Misc)(
          thr, "pthread_barrier_init: 'count' argument is zero"
+      );
+   }
+
+   if (resizable != 0 && resizable != 1) {
+      HG_(record_error_Misc)(
+         thr, "pthread_barrier_init: invalid 'resizable' argument"
       );
    }
 
@@ -2802,8 +2828,9 @@ static void evh__HG_PTHREAD_BARRIER_INIT_PRE ( ThreadId tid,
 
    tl_assert(bar->waiting);
    tl_assert(VG_(sizeXA)(bar->waiting) == 0);
-   bar->initted = True;
-   bar->size    = count;
+   bar->initted   = True;
+   bar->resizable = resizable == 1 ? True : False;
+   bar->size      = count;
 }
 
 
@@ -2848,6 +2875,43 @@ static void evh__HG_PTHREAD_BARRIER_DESTROY_PRE ( ThreadId tid,
       uninitialised again since otherwise a later _init call will
       elicit a duplicate-init error.  */
    map_barrier_to_Bar_delete( barrier );
+}
+
+
+/* All the threads have arrived.  Now do the Interesting Bit.  Get a
+   new synchronisation object and do a weak send to it from all the
+   participating threads.  This makes its vector clocks be the join of
+   all the individual threads' vector clocks.  Then do a strong
+   receive from it back to all threads, so that their VCs are a copy
+   of it (hence are all equal to the join of their original VCs.) */
+static void do_barrier_cross_sync_and_empty ( Bar* bar )
+{
+   /* XXX check bar->waiting has no duplicates */
+   UWord i;
+   SO*   so = libhb_so_alloc();
+
+   tl_assert(bar->waiting);
+   tl_assert(VG_(sizeXA)(bar->waiting) == bar->size);
+
+   /* compute the join ... */
+   for (i = 0; i < bar->size; i++) {
+      Thread* t = *(Thread**)VG_(indexXA)(bar->waiting, i);
+      Thr* hbthr = t->hbthr;
+      libhb_so_send( hbthr, so, False/*weak send*/ );
+   }
+   /* ... and distribute to all threads */
+   for (i = 0; i < bar->size; i++) {
+      Thread* t = *(Thread**)VG_(indexXA)(bar->waiting, i);
+      Thr* hbthr = t->hbthr;
+      libhb_so_recv( hbthr, so, True/*strong recv*/ );
+   }
+
+   /* finally, we must empty out the waiting vector */
+   VG_(dropTailXA)(bar->waiting, VG_(sizeXA)(bar->waiting));
+
+   /* and we don't need this any more.  Perhaps a stack-allocated
+      SO would be better? */
+   libhb_so_dealloc(so);
 }
 
 
@@ -2896,8 +2960,7 @@ static void evh__HG_PTHREAD_BARRIER_WAIT_PRE ( ThreadId tid,
    */
    Thread* thr;
    Bar*    bar;
-   SO*     so;
-   UWord   present, i;
+   UWord   present;
 
    if (SHOW_EVENTS >= 1)
       VG_(printf)("evh__HG_PTHREAD_BARRIER_WAIT_PRE"
@@ -2930,39 +2993,74 @@ static void evh__HG_PTHREAD_BARRIER_WAIT_PRE ( ThreadId tid,
    if (present < bar->size)
       return;
 
-   /* All the threads have arrived.  Now do the Interesting Bit.  Get
-      a new synchronisation object and do a weak send to it from all
-      the participating threads.  This makes its vector clocks be the
-      join of all the individual threads' vector clocks.  Then do a
-      strong receive from it back to all threads, so that their VCs
-      are a copy of it (hence are all equal to the join of their
-      original VCs.) */
-   so = libhb_so_alloc();
+   do_barrier_cross_sync_and_empty(bar);
+}
 
-   /* XXX check ->waiting has no duplicates */
 
+static void evh__HG_PTHREAD_BARRIER_RESIZE_PRE ( ThreadId tid,
+                                                 void* barrier,
+                                                 UWord newcount )
+{
+   Thread* thr;
+   Bar*    bar;
+   UWord   present;
+
+   if (SHOW_EVENTS >= 1)
+      VG_(printf)("evh__HG_PTHREAD_BARRIER_RESIZE_PRE"
+                  "(tid=%d, barrier=%p, newcount=%lu)\n", 
+                  (Int)tid, (void*)barrier, newcount );
+
+   thr = map_threads_maybe_lookup( tid );
+   tl_assert(thr); /* cannot fail - Thread* must already exist */
+
+   bar = map_barrier_to_Bar_lookup_or_alloc(barrier);
+   tl_assert(bar);
+
+   if (!bar->initted) {
+      HG_(record_error_Misc)(
+         thr, "pthread_barrier_resize: barrier is uninitialised"
+      );
+      return; /* client is broken .. avoid assertions below */
+   }
+
+   if (!bar->resizable) {
+      HG_(record_error_Misc)(
+         thr, "pthread_barrier_resize: barrier is may not be resized"
+      );
+      return; /* client is broken .. avoid assertions below */
+   }
+
+   if (newcount == 0) {
+      HG_(record_error_Misc)(
+         thr, "pthread_barrier_resize: 'newcount' argument is zero"
+      );
+      return; /* client is broken .. avoid assertions below */
+   }
+
+   /* guaranteed by _INIT_PRE above */
+   tl_assert(bar->size > 0);
    tl_assert(bar->waiting);
-   tl_assert(VG_(sizeXA)(bar->waiting) == bar->size);
+   /* Guaranteed by this fn */
+   tl_assert(newcount > 0);
 
-   /* compute the join ... */
-   for (i = 0; i < bar->size; i++) {
-      Thread* t = *(Thread**)VG_(indexXA)(bar->waiting, i);
-      Thr* hbthr = t->hbthr;
-      libhb_so_send( hbthr, so, False/*weak send*/ );
+   if (newcount >= bar->size) {
+      /* Increasing the capacity.  There's no possibility of threads
+         moving on from the barrier in this situation, so just note
+         the fact and do nothing more. */
+      bar->size = newcount;
+   } else {
+      /* Decreasing the capacity.  If we decrease it to be equal or
+         below the number of waiting threads, they will now move past
+         the barrier, so need to mess with dep edges in the same way
+         as if the barrier had filled up normally. */
+      present = VG_(sizeXA)(bar->waiting);
+      tl_assert(present >= 0 && present <= bar->size);
+      if (newcount <= present) {
+         bar->size = present; /* keep the cross_sync call happy */
+         do_barrier_cross_sync_and_empty(bar);
+      }
+      bar->size = newcount;
    }
-   /* ... and distribute to all threads */
-   for (i = 0; i < bar->size; i++) {
-      Thread* t = *(Thread**)VG_(indexXA)(bar->waiting, i);
-      Thr* hbthr = t->hbthr;
-      libhb_so_recv( hbthr, so, True/*strong recv*/ );
-   }
-
-   /* finally, we must empty out the waiting vector */
-   VG_(dropTailXA)(bar->waiting, VG_(sizeXA)(bar->waiting));
-
-   /* and we don't need this any more.  Perhaps a stack-allocated
-      SO would be better? */
-   libhb_so_dealloc(so);
 }
 
 
@@ -4157,6 +4255,22 @@ Bool hg_handle_client_request ( ThreadId tid, UWord* args, UWord* ret)
          }
          break;
 
+      case _VG_USERREQ__HG_ARANGE_MAKE_UNTRACKED:
+         if (0) VG_(printf)("HG_ARANGE_MAKE_UNTRACKED(%#lx,%ld)\n",
+                            args[1], args[2]);
+         if (args[2] > 0) { /* length */
+            evh__untrack_mem(args[1], args[2]);
+         }
+         break;
+
+      case _VG_USERREQ__HG_ARANGE_MAKE_TRACKED:
+         if (0) VG_(printf)("HG_ARANGE_MAKE_TRACKED(%#lx,%ld)\n",
+                            args[1], args[2]);
+         if (args[2] > 0) { /* length */
+            evh__new_mem(args[1], args[2]);
+         }
+         break;
+
       /* --- --- Client requests for Helgrind's use only --- --- */
 
       /* Some thread is telling us its pthread_t value.  Record the
@@ -4327,8 +4441,15 @@ Bool hg_handle_client_request ( ThreadId tid, UWord* args, UWord* ret)
          break;
 
       case _VG_USERREQ__HG_PTHREAD_BARRIER_INIT_PRE:
-         /* pth_bar_t*, ulong */
-         evh__HG_PTHREAD_BARRIER_INIT_PRE( tid, (void*)args[1], args[2] );
+         /* pth_bar_t*, ulong count, ulong resizable */
+         evh__HG_PTHREAD_BARRIER_INIT_PRE( tid, (void*)args[1],
+                                                args[2], args[3] );
+         break;
+
+      case _VG_USERREQ__HG_PTHREAD_BARRIER_RESIZE_PRE:
+         /* pth_bar_t*, ulong newcount */
+         evh__HG_PTHREAD_BARRIER_RESIZE_PRE ( tid, (void*)args[1],
+                                              args[2] );
          break;
 
       case _VG_USERREQ__HG_PTHREAD_BARRIER_WAIT_PRE:

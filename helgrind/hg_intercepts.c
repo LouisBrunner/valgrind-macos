@@ -70,8 +70,19 @@
    ret_ty I_WRAP_SONAME_FNNAME_ZZ(VG_Z_LIBPTHREAD_SONAME,f)(args); \
    ret_ty I_WRAP_SONAME_FNNAME_ZZ(VG_Z_LIBPTHREAD_SONAME,f)(args)
 
-// Do a client request.  This is a macro rather than a function 
-// so as to avoid having an extra function in the stack trace.
+// Do a client request.  These are macros rather than a functions so
+// as to avoid having an extra frame in stack traces.
+
+// NB: these duplicate definitions in helgrind.h.  But here, we
+// can have better typing (Word etc) and assertions, whereas
+// in helgrind.h we can't.  Obviously it's important the two
+// sets of definitions are kept in sync.
+
+// nuke the previous definitions
+#undef DO_CREQ_v_W
+#undef DO_CREQ_v_WW
+#undef DO_CREQ_W_WW
+#undef DO_CREQ_v_WWW
 
 #define DO_CREQ_v_W(_creqF, _ty1F,_arg1F)                \
    do {                                                  \
@@ -957,9 +968,10 @@ PTH_FUNC(int, pthreadZubarrierZuinit, // pthread_barrier_init
       fflush(stderr);
    }
 
-   DO_CREQ_v_WW(_VG_USERREQ__HG_PTHREAD_BARRIER_INIT_PRE,
-                pthread_barrier_t*,bar,
-                unsigned long,count);
+   DO_CREQ_v_WWW(_VG_USERREQ__HG_PTHREAD_BARRIER_INIT_PRE,
+                 pthread_barrier_t*, bar,
+                 unsigned long, count,
+                 unsigned long, 0/*!resizable*/);
 
    CALL_FN_W_WWW(ret, fn, bar,attr,count);
 

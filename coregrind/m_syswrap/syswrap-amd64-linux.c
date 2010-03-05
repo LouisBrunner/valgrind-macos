@@ -877,11 +877,11 @@ PRE(sys_semctl)
                     int, semid, int, semnum, int, cmd);
       break;
    }
-   ML_(generic_PRE_sys_semctl)(tid, ARG1,ARG2,ARG3,ARG4);
+   ML_(generic_PRE_sys_semctl)(tid, ARG1,ARG2,ARG3|VKI_IPC_64,ARG4);
 }
 POST(sys_semctl)
 {
-   ML_(generic_POST_sys_semctl)(tid, RES,ARG1,ARG2,ARG3,ARG4);
+   ML_(generic_POST_sys_semctl)(tid, RES,ARG1,ARG2,ARG3|VKI_IPC_64,ARG4);
 }
 
 PRE(sys_msgget)
@@ -967,11 +967,11 @@ PRE(sys_shmctl)
    PRINT("sys_shmctl ( %ld, %ld, %#lx )",ARG1,ARG2,ARG3);
    PRE_REG_READ3(long, "shmctl",
                  int, shmid, int, cmd, struct shmid_ds *, buf);
-   ML_(generic_PRE_sys_shmctl)(tid, ARG1,ARG2,ARG3);
+   ML_(generic_PRE_sys_shmctl)(tid, ARG1,ARG2|VKI_IPC_64,ARG3);
 }
 POST(sys_shmctl)
 {
-   ML_(generic_POST_sys_shmctl)(tid, RES,ARG1,ARG2,ARG3);
+   ML_(generic_POST_sys_shmctl)(tid, RES,ARG1,ARG2|VKI_IPC_64,ARG3);
 }
 
 PRE(sys_fadvise64)

@@ -1,14 +1,45 @@
-#include <cassert>
-#include <iostream>
+/*
+ * Test program that illustrates how to annotate a smart pointer
+ * implementation.  In a multithreaded program the following is relevant when
+ * working with smart pointers:
+ * - whether or not the objects pointed at are shared over threads.
+ * - whether or not the methods of the objects pointed at are thread-safe.
+ * - whether or not the smart pointer objects are shared over threads.
+ * - whether or not the smart pointer object itself is thread-safe.
+ *
+ * Most smart pointer implemenations are not thread-safe
+ * (e.g. boost::shared_ptr<>, tr1::shared_ptr<> and the smart_ptr<>
+ * implementation below). This means that it is not safe to modify a shared
+ * pointer object that is shared over threads without proper synchronization.
+ *
+ * Even for non-thread-safe smart pointers it is possible to have different
+ * threads access the same object via smart pointers without triggering data
+ * races on the smart pointer objects.
+ *
+ * A smart pointer implementation guarantees that the destructor of the object
+ * pointed at is invoked after the last smart pointer that points to that
+ * object has been destroyed or reset. Data race detection tools cannot detect
+ * this ordering without explicit annotation for smart pointers that track
+ * references without invoking synchronization operations recognized by data
+ * race detection tools.
+ */
+
+
+#include <cassert>     // assert()
+#include <climits>     // PTHREAD_STACK_MIN
+#include <iostream>    // std::cout
+#include <stdlib.h>    // atoi()
 #ifdef _WIN32
-#include <process.h>
-#include <windows.h>
+#include <process.h>   // _beginthreadex()
+#include <windows.h>   // CRITICAL_SECTION
 #else
-#include <pthread.h>
-#include <semaphore.h>
+#include <pthread.h>   // pthread_mutex_t
 #endif
+#include "../../drd/drd.h"
+
 
 #ifdef _WIN32
+
 class AtomicInt32
 {
 public:
@@ -37,22 +68,6 @@ private:
   CRITICAL_SECTION m_mutex;
 };
 
-class Semaphore
-{
-public:
-  Semaphore()
-    : m_sem(CreateSemaphore(NULL, 0, 1, NULL))
-  { assert(m_sem != INVALID_HANDLE_VALUE); }
-  ~Semaphore()
-  { CloseHandle(m_sem); }
-  void Post() const
-  { ReleaseSemaphore(m_sem, 1, NULL); }
-  void Wait() const
-  { WaitForSingleObject(m_sem, INFINITE); }
-private:
-  const HANDLE m_sem;
-};
-
 class Thread
 {
 public:
@@ -60,30 +75,33 @@ public:
   ~Thread() { }
   void Create(void* (*pf)(void*), void* arg)
   {
-    wrapper_args* wrapper_arg_p = new wrapper_args(pf, arg);
-    m_thread = reinterpret_cast<HANDLE>(_beginthreadex(NULL, 0, wrapper, wrapper_arg_p, 0, NULL));
+    WrapperArgs* wrapper_arg_p = new WrapperArgs(pf, arg);
+    m_thread = reinterpret_cast<HANDLE>(_beginthreadex(NULL, 0, wrapper,
+						       wrapper_arg_p, 0, NULL));
   }
   void Join()
   { WaitForSingleObject(m_thread, INFINITE); }
 
 private:
-  struct wrapper_args
+  struct WrapperArgs
   {
-    wrapper_args(void* (*pf)(void*), void* arg) : m_pf(pf), m_arg(arg) { }
+    WrapperArgs(void* (*pf)(void*), void* arg) : m_pf(pf), m_arg(arg) { }
 
     void* (*m_pf)(void*);
     void* m_arg;
   };
   static unsigned int __stdcall wrapper(void* arg)
   {
-    wrapper_args* wrapper_arg_p = reinterpret_cast<wrapper_args*>(arg);
-    wrapper_args wa = *wrapper_arg_p;
+    WrapperArgs* wrapper_arg_p = reinterpret_cast<WrapperArgs*>(arg);
+    WrapperArgs wa = *wrapper_arg_p;
     delete wrapper_arg_p;
     return reinterpret_cast<unsigned>((wa.m_pf)(wa.m_arg));
   }
   HANDLE m_thread;
 };
+
 #else // _WIN32
+
 class AtomicInt32
 {
 public:
@@ -111,34 +129,26 @@ private:
   pthread_mutex_t m_mutex;
 };
 
-class Semaphore
-{
-public:
-  Semaphore() : m_sem()
-  { sem_init(&m_sem, 0, 0); }
-  ~Semaphore()
-  { sem_destroy(&m_sem); }
-  void Post()
-  { sem_post(&m_sem); }
-  void Wait()
-  { sem_wait(&m_sem); }
-private:
-  sem_t m_sem;
-};
-
 class Thread
 {
 public:
   Thread() : m_tid() { }
   ~Thread() { }
   void Create(void* (*pf)(void*), void* arg)
-  { pthread_create(&m_tid, NULL, pf, arg); }
+  {
+    pthread_attr_t attr;
+    pthread_attr_init(&attr);
+    pthread_attr_setstacksize(&attr, PTHREAD_STACK_MIN + 4096);
+    pthread_create(&m_tid, &attr, pf, arg);
+    pthread_attr_destroy(&attr);
+  }
   void Join()
   { pthread_join(m_tid, NULL); }
 private:
   pthread_t m_tid;
 };
-#endif // _WIN32
+
+#endif // !defined(_WIN32)
 
 
 template<class T>
@@ -220,10 +230,17 @@ private:
   {
     if (m_ptr != pT)
     {
-      if (m_count_ptr && --(*m_count_ptr) == 0)
+      if (m_count_ptr)
       {
-	delete m_ptr;
-	delete m_count_ptr;
+	ANNOTATE_HAPPENS_BEFORE(m_count_ptr);
+	if (--(*m_count_ptr) == 0)
+	{
+	  ANNOTATE_HAPPENS_AFTER(m_count_ptr);
+	  delete m_ptr;
+	  m_ptr = NULL;
+	  delete m_count_ptr;
+	  m_count_ptr = NULL;
+	}
       }
       m_ptr = pT;
       m_count_ptr = count_ptr;
@@ -241,10 +258,15 @@ class counter
 public:
   counter()
     : m_mutex(), m_count()
-  {
-  }
+  { }
   ~counter()
-  { m_count = -1; }
+  {
+    // Data race detection tools that do not recognize the
+    // ANNOTATE_HAPPENS_BEFORE() / ANNOTATE_HAPPENS_AFTER() annotations in the
+    // smart_ptr<> implementation will report that the assignment below
+    // triggers a data race.
+    m_count = -1;
+  }
   int get() const
   {
     int result;
@@ -267,30 +289,31 @@ private:
   int           m_count;
 };
 
-static Semaphore* s_sem;
-
 static void* thread_func(void* arg)
 {
-  smart_ptr<counter> p(*reinterpret_cast<smart_ptr<counter>*>(arg));
-  s_sem->Post();
-  p->post_increment();
-  p = NULL;
+  smart_ptr<counter>* pp = reinterpret_cast<smart_ptr<counter>*>(arg);
+  (*pp)->post_increment();
+  *pp = NULL;
+  delete pp;
   return NULL;
 }
 
 int main(int argc, char** argv)
 {
   smart_ptr<counter> p(new counter);
-  Thread T;
+  const int nthreads = std::max(argc > 1 ? atoi(argv[1]) : 1, 1);
+  Thread T[nthreads];
 
-  s_sem = new Semaphore();
   p->post_increment();
-  T.Create(thread_func, &p);
-  // Wait until the created thread has copied the shared pointer.
-  s_sem->Wait();
+  for (int i = 0; i < nthreads; ++i)
+    T[i].Create(thread_func, new smart_ptr<counter>(p));
   p = NULL;
-  T.Join();
-  delete s_sem;
+  for (int i = 0; i < nthreads; ++i)
+    T[i].Join();
   std::cout << "Done.\n";
   return 0;
 }
+
+// Local variables:
+// c-basic-offset: 2
+// End:

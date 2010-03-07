@@ -237,7 +237,10 @@ void DRD_(semaphore_destroy)(const Addr semaphore)
 
    if (p == 0)
    {
-      GenericErrInfo GEI = { DRD_(thread_get_running_tid)() };
+      GenericErrInfo GEI = {
+	 .tid  = DRD_(thread_get_running_tid)(),
+	 .addr = semaphore,
+      };
       VG_(maybe_record_error)(VG_(get_running_tid)(),
                               GenericErr,
                               VG_(get_IP)(VG_(get_running_tid)()),
@@ -314,7 +317,10 @@ void DRD_(semaphore_close)(const Addr semaphore)
 
    if (p == 0)
    {
-      GenericErrInfo GEI = { DRD_(thread_get_running_tid)() };
+      GenericErrInfo GEI = {
+	 .tid  = DRD_(thread_get_running_tid)(),
+	 .addr = semaphore,
+      };
       VG_(maybe_record_error)(VG_(get_running_tid)(),
                               GenericErr,
                               VG_(get_IP)(VG_(get_running_tid)()),

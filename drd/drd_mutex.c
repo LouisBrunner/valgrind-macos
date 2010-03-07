@@ -114,7 +114,7 @@ static void mutex_cleanup(struct mutex_info* p)
    p->last_locked_segment = 0;
 }
 
-/** Let Valgrind report that there is no mutex object at address 'mutex'. */
+/** Report that address 'mutex' is not the address of a mutex object. */
 void DRD_(not_a_mutex)(const Addr mutex)
 {
    MutexErrInfo MEI = { DRD_(thread_get_running_tid)(),
@@ -123,6 +123,21 @@ void DRD_(not_a_mutex)(const Addr mutex)
                            MutexErr,
                            VG_(get_IP)(VG_(get_running_tid)()),
                            "Not a mutex",
+                           &MEI);
+}
+
+/**
+ * Report that address 'mutex' is not the address of a mutex object of the
+ * expected type.
+ */
+static void wrong_mutex_type(const Addr mutex)
+{
+   MutexErrInfo MEI = { DRD_(thread_get_running_tid)(),
+                        mutex, -1, DRD_INVALID_THREADID };
+   VG_(maybe_record_error)(VG_(get_running_tid)(),
+                           MutexErr,
+                           VG_(get_IP)(VG_(get_running_tid)()),
+                           "Mutex type mismatch",
                            &MEI);
 }
 
@@ -136,7 +151,13 @@ DRD_(mutex_get_or_allocate)(const Addr mutex, const MutexT mutex_type)
    p = &(DRD_(clientobj_get)(mutex, ClientMutex)->mutex);
    if (p)
    {
-      return p;
+      if (mutex_type == mutex_type_unknown || p->mutex_type == mutex_type)
+	 return p;
+      else
+      {
+	 wrong_mutex_type(mutex);
+	 return 0;
+      }
    }
 
    if (DRD_(clientobj_present)(mutex, mutex + 1))
@@ -211,10 +232,11 @@ void DRD_(mutex_post_destroy)(const Addr mutex)
    DRD_(clientobj_remove)(mutex, ClientMutex);
 }
 
-/** Called before pthread_mutex_lock() is invoked. If a data structure for
- *  the client-side object was not yet created, do this now. Also check whether
- *  an attempt is made to lock recursively a synchronization object that must
- *  not be locked recursively.
+/**
+ * Called before pthread_mutex_lock() is invoked. If a data structure for the
+ * client-side object was not yet created, do this now. Also check whether an
+ * attempt is made to lock recursively a synchronization object that must not
+ * be locked recursively.
  */
 void DRD_(mutex_pre_lock)(const Addr mutex, MutexT mutex_type,
                           const Bool trylock)
@@ -222,7 +244,7 @@ void DRD_(mutex_pre_lock)(const Addr mutex, MutexT mutex_type,
    struct mutex_info* p;
 
    p = DRD_(mutex_get_or_allocate)(mutex, mutex_type);
-   if (mutex_type == mutex_type_unknown)
+   if (p && mutex_type == mutex_type_unknown)
       mutex_type = p->mutex_type;
 
    if (s_trace_mutex)
@@ -464,11 +486,8 @@ const char* DRD_(mutex_type_name)(const MutexT mt)
       return "mutex";
    case mutex_type_spinlock:
       return "spinlock";
-   case mutex_type_order_annotation:
-      return "order annotation mutex";
-   default:
-      tl_assert(0);
    }
+   tl_assert(0);
    return "?";
 }
 

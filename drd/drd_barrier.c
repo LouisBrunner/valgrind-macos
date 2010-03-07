@@ -42,11 +42,11 @@
 struct barrier_thread_info
 {
    UWord       tid;           // A DrdThreadId declared as UWord because
-   // this member variable is the key of an OSet.
+                              // this member variable is the key of an OSet.
    Word        iteration;     // iteration of last pthread_barrier_wait()
-   // call thread tid participated in.
+                              // call thread tid participated in.
    Segment*    sg[2];         // Segments of the last two
-   // pthread_barrier() calls by thread tid.
+                              // pthread_barrier() calls by thread tid.
    ExeContext* wait_call_ctxt;// call stack for *_barrier_wait() call.
    Segment*    post_wait_sg;  // Segment created after *_barrier_wait() finished
 };
@@ -308,7 +308,10 @@ void DRD_(barrier_destroy)(const Addr barrier, const BarrierT barrier_type)
 
    if (p == 0)
    {
-      GenericErrInfo GEI = { DRD_(thread_get_running_tid)() };
+      GenericErrInfo GEI = {
+	 .tid = DRD_(thread_get_running_tid)(),
+	 .addr = barrier,
+      };
       VG_(maybe_record_error)(VG_(get_running_tid)(),
                               GenericErr,
                               VG_(get_IP)(VG_(get_running_tid)()),

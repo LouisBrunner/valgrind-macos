@@ -17,6 +17,7 @@ noinst_HEADERS =        \
   drd_clientreq.h       \
   drd_cond.h            \
   drd_error.h           \
+  drd_hb.h              \
   drd_load_store.h      \
   drd_malloc_wrappers.h \
   drd_mutex.h           \
@@ -56,6 +57,7 @@ DRD_SOURCES_COMMON =    \
   drd_clientreq.c       \
   drd_cond.c            \
   drd_error.c           \
+  drd_hb.c              \
   drd_load_store.c      \
   drd_main.c            \
   drd_malloc_wrappers.c \

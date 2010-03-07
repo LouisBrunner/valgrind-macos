@@ -249,6 +249,7 @@ const char* DRD_(clientobj_type_name)(const ObjType t)
    {
    case ClientMutex:     return "mutex";
    case ClientCondvar:   return "cond";
+   case ClientHbvar:     return "order annotation";
    case ClientSemaphore: return "semaphore";
    case ClientBarrier:   return "barrier";
    case ClientRwlock:    return "rwlock";

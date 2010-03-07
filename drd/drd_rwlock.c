@@ -294,7 +294,10 @@ DRD_(rwlock_get_or_allocate)(const Addr rwlock, const RwLockT rwlock_type)
 
    if (DRD_(clientobj_present)(rwlock, rwlock + 1))
    {
-      GenericErrInfo GEI = { DRD_(thread_get_running_tid)() };
+      GenericErrInfo GEI = {
+	 .tid  = DRD_(thread_get_running_tid)(),
+	 .addr = rwlock,
+      };
       VG_(maybe_record_error)(VG_(get_running_tid)(),
                               GenericErr,
                               VG_(get_IP)(VG_(get_running_tid)()),
@@ -358,7 +361,10 @@ void DRD_(rwlock_post_destroy)(const Addr rwlock, const RwLockT rwlock_type)
    p = DRD_(rwlock_get)(rwlock);
    if (p == 0)
    {
-      GenericErrInfo GEI = { DRD_(thread_get_running_tid)() };
+      GenericErrInfo GEI = {
+	 .tid = DRD_(thread_get_running_tid)(),
+	 .addr = rwlock,
+      };
       VG_(maybe_record_error)(VG_(get_running_tid)(),
                               GenericErr,
                               VG_(get_IP)(VG_(get_running_tid)()),
@@ -542,7 +548,10 @@ void DRD_(rwlock_pre_unlock)(const Addr rwlock, const RwLockT rwlock_type)
    p = DRD_(rwlock_get)(rwlock);
    if (p == 0)
    {
-      GenericErrInfo GEI = { DRD_(thread_get_running_tid)() };
+      GenericErrInfo GEI = {
+	 .tid = DRD_(thread_get_running_tid)(),
+	 .addr = rwlock,
+      };
       VG_(maybe_record_error)(VG_(get_running_tid)(),
                               GenericErr,
                               VG_(get_IP)(VG_(get_running_tid)()),

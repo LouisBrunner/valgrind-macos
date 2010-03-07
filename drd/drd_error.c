@@ -371,9 +371,11 @@ static void drd_tool_error_pp(Error* const e)
       break;
    }
    case GenericErr: {
-      //GenericErrInfo* gei =(GenericErrInfo*)(VG_(get_error_extra)(e));
+      GenericErrInfo* gei = (GenericErrInfo*)(VG_(get_error_extra)(e));
       VG_(message)(Vg_UserMsg, "%s\n", VG_(get_error_string)(e));
       VG_(pp_ExeContext)(VG_(get_error_where)(e));
+      if (gei->addr)
+	 first_observed(gei->addr);
       break;
    }
    case InvalidThreadId: {

@@ -163,6 +163,7 @@ typedef struct {
 
 typedef struct {
    DrdThreadId tid;
+   Addr        addr;
 } GenericErrInfo;
 
 typedef struct {

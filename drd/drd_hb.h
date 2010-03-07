@@ -23,8 +23,8 @@
 */
 
 
-#ifndef __DRD_COND_H
-#define __DRD_COND_H
+#ifndef __DRD_HB_H
+#define __DRD_HB_H
 
 
 #include "drd_thread.h"      /* DrdThreadid */
@@ -33,20 +33,19 @@
 
 /* Forward declarations. */
 
-struct cond_info;
+struct hb_info;
 
 
 /* Function declarations. */
 
-void DRD_(cond_set_report_signal_unlocked)(const Bool r);
-void DRD_(cond_set_trace)(const Bool trace_cond);
-struct cond_info* DRD_(cond_get)(const Addr cond);
-void DRD_(cond_pre_init)(const Addr cond);
-void DRD_(cond_post_destroy)(const Addr cond);
-void DRD_(cond_pre_wait)(const Addr cond, const Addr mutex);
-void DRD_(cond_post_wait)(const Addr cond);
-void DRD_(cond_pre_signal)(const Addr cond);
-void DRD_(cond_pre_broadcast)(const Addr cond);
+void DRD_(hb_set_trace)(const Bool trace_hb);
+struct hb_info* DRD_(hb_get)(const Addr hb);
+struct hb_info* DRD_(hb_get_or_allocate)(const Addr hb);
+void DRD_(hb_init)(const Addr hb);
+void DRD_(hb_destroy)(const Addr hb);
+void DRD_(hb_happens_after)(const DrdThreadId tid, const Addr hb);
+void DRD_(hb_happens_before)(const DrdThreadId tid, const Addr hb);
+void DRD_(hb_happens_done)(const DrdThreadId tid, const Addr hb);
 
 
-#endif /* __DRD_COND_H */
+#endif /* __DRD_HB_H */

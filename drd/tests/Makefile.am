@@ -16,6 +16,8 @@ noinst_HEADERS =                                    \
 EXTRA_DIST =                                        \
 	annotate_hb_err.stderr.exp		    \
 	annotate_hb_err.vgtest			    \
+	annotate_hb_race.stderr.exp		    \
+	annotate_hb_race.vgtest			    \
 	annotate_hbefore.stderr.exp		    \
 	annotate_hbefore.vgtest			    \
 	annotate_order_1.stderr.exp		    \
@@ -249,6 +251,7 @@ EXTRA_DIST =                                        \
 
 check_PROGRAMS =      \
   annotate_hb_err     \
+  annotate_hb_race    \
   annotate_ignore_rw  \
   annotate_ignore_write \
   annotate_publish_hg \

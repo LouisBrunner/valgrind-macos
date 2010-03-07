@@ -1,0 +1,9 @@
+
+Conflicting store by thread x at 0x........ size 4
+   at 0x........: main (annotate_hb_race.c:?)
+Location 0x........ is 0 bytes inside local var "s_i"
+declared at annotate_hb_race.c:14, in frame #? of thread x
+
+Done.
+
+ERROR SUMMARY: 1 errors from 1 contexts (suppressed: 0 from 0)

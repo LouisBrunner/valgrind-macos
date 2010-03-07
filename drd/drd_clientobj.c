@@ -144,7 +144,10 @@ DrdClientobj* DRD_(clientobj_add)(const Addr a1, const ObjType t)
    p->any.first_observed_at = VG_(record_ExeContext)(VG_(get_running_tid)(), 0);
    VG_(OSetGen_Insert)(s_clientobj_set, p);
    tl_assert(VG_(OSetGen_Lookup)(s_clientobj_set, &a1) == p);
-   DRD_(start_suppression)(a1, a1 + 1, "clientobj");
+   if (t == ClientHbvar)
+      DRD_(mark_hbvar)(a1);
+   else
+      DRD_(start_suppression)(a1, a1 + 1, "clientobj");
    return p;
 }
 
@@ -208,7 +211,7 @@ void DRD_(clientobj_stop_using_mem)(const Addr a1, const Addr a2)
 
    tl_assert(s_clientobj_set);
 
-   if (! DRD_(is_any_suppressed)(a1, a2))
+   if (! DRD_(range_contains_suppression_or_hbvar)(a1, a2))
       return;
 
    VG_(OSetGen_ResetIterAt)(s_clientobj_set, &a1);

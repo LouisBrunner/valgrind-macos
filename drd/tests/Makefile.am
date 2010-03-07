@@ -14,6 +14,8 @@ noinst_HEADERS =                                    \
 	tsan_thread_wrappers_pthread.h
 
 EXTRA_DIST =                                        \
+	annotate_hb_err.stderr.exp		    \
+	annotate_hb_err.vgtest			    \
 	annotate_hbefore.stderr.exp		    \
 	annotate_hbefore.vgtest			    \
 	annotate_order_1.stderr.exp		    \
@@ -24,6 +26,8 @@ EXTRA_DIST =                                        \
 	annotate_order_3.vgtest			    \
 	annotate_publish_hg.stderr.exp		    \
 	annotate_publish_hg.vgtest		    \
+	annotate_smart_pointer.stderr.exp	    \
+	annotate_smart_pointer.vgtest		    \
 	annotate_spinlock.stderr.exp		    \
 	annotate_spinlock.vgtest		    \
 	annotate_rwlock.stderr.exp		    \
@@ -244,6 +248,7 @@ EXTRA_DIST =                                        \
 
 
 check_PROGRAMS =      \
+  annotate_hb_err     \
   annotate_ignore_rw  \
   annotate_ignore_write \
   annotate_publish_hg \

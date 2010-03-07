@@ -1,0 +1,4 @@
+prereq: test -e annotate_hb_err && ./supported_libpthread
+vgopts: --read-var-info=yes --check-stack-var=yes --show-confl-seg=no
+prog: annotate_hb_err
+stderr_filter: filter_stderr_and_thread_no

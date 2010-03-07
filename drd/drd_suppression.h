@@ -17,6 +17,8 @@ void DRD_(start_suppression)(const Addr a1, const Addr a2,
 void DRD_(finish_suppression)(const Addr a1, const Addr a2);
 Bool DRD_(is_suppressed)(const Addr a1, const Addr a2);
 Bool DRD_(is_any_suppressed)(const Addr a1, const Addr a2);
+void DRD_(mark_hbvar)(const Addr a1);
+Bool DRD_(range_contains_suppression_or_hbvar)(const Addr a1, const Addr a2);
 void DRD_(start_tracing_address_range)(const Addr a1, const Addr a2);
 void DRD_(stop_tracing_address_range)(const Addr a1, const Addr a2);
 Bool DRD_(is_any_traced)(const Addr a1, const Addr a2);

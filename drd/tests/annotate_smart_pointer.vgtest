@@ -1,0 +1,5 @@
+prereq: test -e annotate_smart_pointer && ./supported_libpthread
+vgopts: --read-var-info=yes --check-stack-var=yes --show-confl-seg=no
+prog: annotate_smart_pointer
+args: 50 5
+stderr_filter: filter_stderr_and_thread_no

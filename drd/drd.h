@@ -90,27 +90,32 @@
 /**
  * @defgroup RaceDetectionAnnotations Data race detection annotations.
  *
- * @see See also the source file <a href="http://code.google.com/p/google-perftools/source/browse/trunk/src/base/dynamic_annotations.h">dynamic_annotations.h</a>
+ * @see See also the source file <a href="http://code.google.com/p/data-race-test/source/browse/trunk/dynamic_annotations/dynamic_annotations.h</a>
+
  * in the ThreadSanitizer project.
  */
 /*@{*/
 
 /**
- * Tell DRD to insert a mark. addr is the address of an object that is not a
- * pthread synchronization object. Inserting two 'happens before' annotations
- * while no thread has passed by a 'happens after' annotation is an error.
+ * Tell DRD to insert a happens-before mark. addr is the address of an object
+ * that is not a pthread synchronization object.
  */
 #define ANNOTATE_HAPPENS_BEFORE(addr) DRDCL_(annotate_happens_before)(addr)
 
 /**
- * Tell DRD that the memory accesses executed after this annotation will happen
- * after the memory accesses performed before the most recent
+ * Tell DRD that the memory accesses executed after this annotation will
+ * happen after all memory accesses performed before all preceding
  * ANNOTATE_HAPPENS_BEFORE(addr). addr is the address of an object that is not
- * a pthread synchronization object. Inserting a 'happens after' annotation
- * before any other thread has passed by a 'happens before' annotation for the
+ * a pthread synchronization object. Inserting a happens-after annotation
+ * before any other thread has passed by a happens-before annotation for the
  * same address is an error.
  */
 #define ANNOTATE_HAPPENS_AFTER(addr) DRDCL_(annotate_happens_after)(addr)
+
+/**
+ * Tell DRD that no more happens-after annotations will follow.
+ */
+#define ANNOTATE_HAPPENS_DONE(addr) DRDCL_(annotate_happens_done)(addr)
 
 /**
  * Tell DRD that waiting on the condition variable at address cv has succeeded
@@ -347,13 +352,16 @@ enum {
       = VG_USERREQ_TOOL_BASE('H','G') + 256 + 32,
    /* args: Char*. */
 
-   /* Tell DRD to insert a happens before annotation. */
+   /* Tell DRD to insert a happens-before annotation. */
    VG_USERREQ__DRD_ANNOTATE_HAPPENS_BEFORE
       = VG_USERREQ_TOOL_BASE('H','G') + 256 + 33,
    /* args: Addr. */
-   /* Tell DRD to insert a happens after annotation. */
+   /* Tell DRD to insert a happens-after annotation. */
    VG_USERREQ__DRD_ANNOTATE_HAPPENS_AFTER
       = VG_USERREQ_TOOL_BASE('H','G') + 256 + 34,
+   /* args: Addr. */
+   /* Tell DRD to insert a happens-done annotation. */
+   VG_USERREQ__DRD_ANNOTATE_HAPPENS_DONE,
    /* args: Addr. */
 
 };
@@ -452,6 +460,14 @@ void DRDCL_(annotate_happens_after)(const void* const addr)
 {
    int res;
    VALGRIND_DO_CLIENT_REQUEST(res, 0, VG_USERREQ__DRD_ANNOTATE_HAPPENS_AFTER,
+                              addr, 0, 0, 0, 0);
+}
+
+static __inline__
+void DRDCL_(annotate_happens_done)(const void* const addr)
+{
+   int res;
+   VALGRIND_DO_CLIENT_REQUEST(res, 0, VG_USERREQ__DRD_ANNOTATE_HAPPENS_DONE,
                               addr, 0, 0, 0, 0);
 }
 

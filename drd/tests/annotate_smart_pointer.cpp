@@ -27,7 +27,7 @@
 
 #include <cassert>     // assert()
 #include <climits>     // PTHREAD_STACK_MIN
-#include <iostream>    // std::cout
+#include <iostream>    // std::cerr
 #include <stdlib.h>    // atoi()
 #ifdef _WIN32
 #include <process.h>   // _beginthreadex()
@@ -35,7 +35,10 @@
 #else
 #include <pthread.h>   // pthread_mutex_t
 #endif
-#include "../../drd/drd.h"
+#include "unified_annotations.h"
+
+
+static bool s_enable_annotations = true;
 
 
 #ifdef _WIN32
@@ -232,10 +235,15 @@ private:
     {
       if (m_count_ptr)
       {
-	ANNOTATE_HAPPENS_BEFORE(m_count_ptr);
+	if (s_enable_annotations)
+	  ANNOTATE_HAPPENS_BEFORE(m_count_ptr);
 	if (--(*m_count_ptr) == 0)
 	{
-	  ANNOTATE_HAPPENS_AFTER(m_count_ptr);
+	  if (s_enable_annotations)
+	  {
+	    ANNOTATE_HAPPENS_AFTER(m_count_ptr);
+	    ANNOTATE_HAPPENS_DONE(m_count_ptr);
+	  }
 	  delete m_ptr;
 	  m_ptr = NULL;
 	  delete m_count_ptr;
@@ -300,17 +308,23 @@ static void* thread_func(void* arg)
 
 int main(int argc, char** argv)
 {
-  smart_ptr<counter> p(new counter);
   const int nthreads = std::max(argc > 1 ? atoi(argv[1]) : 1, 1);
-  Thread T[nthreads];
+  const int iterations = std::max(argc > 2 ? atoi(argv[2]) : 1, 1);
+  s_enable_annotations = argc > 3 ? !!atoi(argv[3]) : true;
 
-  p->post_increment();
-  for (int i = 0; i < nthreads; ++i)
-    T[i].Create(thread_func, new smart_ptr<counter>(p));
-  p = NULL;
-  for (int i = 0; i < nthreads; ++i)
-    T[i].Join();
-  std::cout << "Done.\n";
+  for (int j = 0; j < iterations; ++j)
+  {
+    Thread T[nthreads];
+
+    smart_ptr<counter> p(new counter);
+    p->post_increment();
+    for (int i = 0; i < nthreads; ++i)
+      T[i].Create(thread_func, new smart_ptr<counter>(p));
+    p = NULL;
+    for (int i = 0; i < nthreads; ++i)
+      T[i].Join();
+  }
+  std::cerr << "Done.\n";
   return 0;
 }
 

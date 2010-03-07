@@ -640,7 +640,7 @@ in a particular column, which makes following the allocation chains easier.
 
   <varlistentry id="opt.stacks" xreflabel="--stacks">
     <term>
-      <option><![CDATA[--stacks=<yes|no> [default: yes] ]]></option>
+      <option><![CDATA[--stacks=<yes|no> [default: no] ]]></option>
     </term>
     <listitem>
       <para>Specifies whether stack profiling should be done.  This option

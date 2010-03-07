@@ -239,6 +239,8 @@ void DRD_(hb_happens_after)(const DrdThreadId tid, const Addr hb)
 
    p->done = True;
 
+   DRD_(thread_new_segment)(tid);
+
    /*
     * Combine all vector clocks that were stored because of happens-before
     * annotations with the vector clock of the current thread.

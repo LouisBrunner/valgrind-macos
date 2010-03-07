@@ -108,14 +108,14 @@ Bool DRD_(vc_lte)(const VectorClock* const vc1, const VectorClock* const vc2)
    for (i = 0; i < vc1->size; i++)
    {
       while (j < vc2->size && vc2->vc[j].threadid < vc1->vc[i].threadid)
-      {
          j++;
-      }
       if (j >= vc2->size || vc2->vc[j].threadid > vc1->vc[i].threadid)
          return False;
 #ifdef ENABLE_DRD_CONSISTENCY_CHECKS
-      /* This assert statement has been commented out because of performance */
-      /* reasons.*/
+      /*
+       * This assert statement has been commented out because of performance
+       * reasons.
+       */
       tl_assert(j < vc2->size && vc2->vc[j].threadid == vc1->vc[i].threadid);
 #endif
       if (vc1->vc[i].count > vc2->vc[j].count)

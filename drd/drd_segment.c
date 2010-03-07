@@ -91,7 +91,7 @@ static void sg_init(Segment* const sg,
       char* vc;
 
       vc = DRD_(vc_aprint)(&sg->vc);
-      VG_(message)(Vg_DebugMsg, "New segment for thread %d with vc %s",
+      VG_(message)(Vg_DebugMsg, "New segment for thread %d with vc %s\n",
                    created, vc);
       VG_(free)(vc);
    }
@@ -130,7 +130,7 @@ static void DRD_(sg_delete)(Segment* const sg)
       char* vc;
 
       vc = DRD_(vc_aprint)(&sg->vc);
-      VG_(message)(Vg_DebugMsg, "Discarding the segment with vector clock %s",
+      VG_(message)(Vg_DebugMsg, "Discarding the segment with vector clock %s\n",
                    vc);
       VG_(free)(vc);
    }
@@ -166,7 +166,7 @@ void DRD_(sg_put)(Segment* const sg)
 
       vc = DRD_(vc_aprint)(&sg->vc);
       VG_(message)(Vg_DebugMsg,
-                   "Decrementing segment reference count %d -> %d with vc %s",
+                   "Decrementing segment reference count %d -> %d with vc %s\n",
                    sg->refcnt, sg->refcnt - 1, vc);
       VG_(free)(vc);
    }
@@ -194,8 +194,8 @@ void DRD_(sg_merge)(Segment* const sg1, Segment* const sg2)
       vc1 = DRD_(vc_aprint)(&sg1->vc);
       vc2 = DRD_(vc_aprint)(&sg2->vc);
 
-      VG_(message)(Vg_DebugMsg, "Merging segments with vector clocks %s and %s",
-                   vc1, vc2);
+      VG_(message)(Vg_DebugMsg,
+		   "Merging segments with vector clocks %s and %s\n", vc1, vc2);
       VG_(free)(vc1);
       VG_(free)(vc2);
    }

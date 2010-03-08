@@ -4127,13 +4127,13 @@ DisResult disInstr_ARM_WRK (
          goto decode_success;
       } else {
          // FTOUIS
-         //putFReg(fD, unop(Iop_ReinterpI32asF32,
-         //                 binop(Iop_F64toI32U, mkexpr(rmode),
-         //                       unop(Iop_F32toF64, getFReg(fM)))),
-         //        condT);
-         //DIP("ftoui%ss%s s%u, d%u\n", bZ ? "z" : "",
-         //    nCC(INSN_COND), fD, fM);
-         //goto decode_success;
+         putFReg(fD, unop(Iop_ReinterpI32asF32,
+                          binop(Iop_F64toI32U, mkexpr(rmode),
+                                unop(Iop_F32toF64, getFReg(fM)))),
+                 condT);
+         DIP("ftoui%ss%s s%u, d%u\n", bZ ? "z" : "",
+             nCC(INSN_COND), fD, fM);
+         goto decode_success;
       }
    }
 
@@ -4624,15 +4624,16 @@ DisResult disInstr_ARM_WRK (
 
   after_load_store_doubleword:
 
-   /* ------------------- sxtab ------------- */
-   if (BITS8(0,1,1,0,1,0,1,0) == INSN(27,20)
+   /* ------------------- {s,u}xtab ------------- */
+   if (BITS8(0,1,1,0,1,0,1,0) == (INSN(27,20) & BITS8(1,1,1,1,1,0,1,1))
        && BITS4(0,0,0,0) == (INSN(11,8) & BITS4(0,0,1,1))
        && BITS4(0,1,1,1) == INSN(7,4)) {
       UInt rN  = INSN(19,16);
       UInt rD  = INSN(15,12);
       UInt rM  = INSN(3,0);
       UInt rot = (insn >> 10) & 3;
-      if (rN == 15/*it's SXTB*/ || rD == 15 || rM == 15) {
+      UInt isU = INSN(22,22);
+      if (rN == 15/*it's {S,U}XTB*/ || rD == 15 || rM == 15) {
          /* undecodable; fall through */
       } else {
          IRTemp srcL = newTemp(Ity_I32);
@@ -4642,26 +4643,27 @@ DisResult disInstr_ARM_WRK (
          assign(srcL, getIReg(rN));
          assign(res,  binop(Iop_Add32,
                             mkexpr(srcL),
-                            unop(Iop_8Sto32,
+                            unop(isU ? Iop_8Uto32 : Iop_8Sto32,
                                  unop(Iop_32to8, 
                                       genROR32(srcR, 8 * rot)))));
          putIReg(rD, mkexpr(res), condT, Ijk_Boring);
-         DIP("sxtab%s r%u, r%u, r%u, ror #%u\n",
-             nCC(INSN_COND), rD, rN, rM, rot);
+         DIP("%cxtab%s r%u, r%u, r%u, ror #%u\n",
+             isU ? 'u' : 's', nCC(INSN_COND), rD, rN, rM, rot);
          goto decode_success;
       }
       /* fall through */
    }
 
-   /* ------------------- uxtah ------------- */
-   if (BITS8(0,1,1,0,1,1,1,1) == INSN(27,20)
+   /* ------------------- {s,u}xtah ------------- */
+   if (BITS8(0,1,1,0,1,0,1,1) == (INSN(27,20) & BITS8(1,1,1,1,1,0,1,1))
        && BITS4(0,0,0,0) == (INSN(11,8) & BITS4(0,0,1,1))
        && BITS4(0,1,1,1) == INSN(7,4)) {
       UInt rN  = INSN(19,16);
       UInt rD  = INSN(15,12);
       UInt rM  = INSN(3,0);
       UInt rot = (insn >> 10) & 3;
-      if (rN == 15/*it's UXTH*/ || rD == 15 || rM == 15) {
+      UInt isU = INSN(22,22);
+      if (rN == 15/*it's {S,U}XTH*/ || rD == 15 || rM == 15) {
          /* undecodable; fall through */
       } else {
          IRTemp srcL = newTemp(Ity_I32);
@@ -4671,13 +4673,13 @@ DisResult disInstr_ARM_WRK (
          assign(srcL, getIReg(rN));
          assign(res,  binop(Iop_Add32,
                             mkexpr(srcL),
-                            unop(Iop_16Uto32,
+                            unop(isU ? Iop_16Uto32 : Iop_16Sto32,
                                  unop(Iop_32to16, 
                                       genROR32(srcR, 8 * rot)))));
          putIReg(rD, mkexpr(res), condT, Ijk_Boring);
 
-         DIP("uxtah%s r%u, r%u, r%u, ror #%u\n",
-             nCC(INSN_COND), rD, rN, rM, rot);
+         DIP("%cxtah%s r%u, r%u, r%u, ror #%u\n",
+             isU ? 'u' : 's', nCC(INSN_COND), rD, rN, rM, rot);
          goto decode_success;
       }
       /* fall through */

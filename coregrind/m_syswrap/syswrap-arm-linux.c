@@ -922,7 +922,7 @@ PRE(sys_socketpair)
 {
    PRINT("sys_socketpair ( %ld, %ld, %ld, %#lx )",ARG1,ARG2,ARG3,ARG4);
    PRE_REG_READ4(long, "socketpair",
-                 int, d, int, type, int, protocol, int [2], sv);
+                 int, d, int, type, int, protocol, int*, sv);
    ML_(generic_PRE_sys_socketpair)(tid, ARG1,ARG2,ARG3,ARG4);
 }
 POST(sys_socketpair)

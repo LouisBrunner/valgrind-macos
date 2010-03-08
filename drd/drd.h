@@ -141,12 +141,7 @@
  */
 #define ANNOTATE_CONDVAR_WAIT(cv) do { } while(0)
 
-/**
- * Tell DRD to consider the memory operations that happened before a mutex
- * unlock event and after the subsequent mutex lock event on the same mutex as
- * ordered. This is how DRD always behaves, so this macro has been defined
- * such that it has no effect.
- */
+/** Deprecated -- don't use this annotation. */
 #define ANNOTATE_MUTEX_IS_USED_AS_CONDVAR(mtx) do { } while(0)
 
 /**
@@ -156,10 +151,11 @@
  */
 #define ANNOTATE_PUBLISH_MEMORY_RANGE(addr, size) do { } while(0)
 
-/**
- * Tell DRD to undo the effect of ANNOTATE_PUBLISH_MEMORY_RANGE().
- */
+/** Deprecated -- don't use this annotation. */
 #define ANNOTATE_UNPUBLISH_MEMORY_RANGE(addr, size) do { } while(0)
+
+/** Deprecated -- don't use this annotation. */
+#define ANNOTATE_SWAP_MEMORY_RANGE(addr, size) do { } while(0)
 
 /** Tell DRD that a reader-writer lock object has been initialized. */
 #define ANNOTATE_RWLOCK_CREATE(rwlock) \

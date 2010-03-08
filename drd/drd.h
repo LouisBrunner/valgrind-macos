@@ -113,11 +113,6 @@
 #define ANNOTATE_HAPPENS_AFTER(addr) DRDCL_(annotate_happens_after)(addr)
 
 /**
- * Tell DRD that no more happens-after annotations will follow.
- */
-#define ANNOTATE_HAPPENS_DONE(addr) DRDCL_(annotate_happens_done)(addr)
-
-/**
  * Tell DRD that waiting on the condition variable at address cv has succeeded
  * and a lock on the mutex at address mtx is now held. Since DRD always inserts
  * a happens before relation between the pthread_cond_signal() or
@@ -356,9 +351,6 @@ enum {
    VG_USERREQ__DRD_ANNOTATE_HAPPENS_AFTER
       = VG_USERREQ_TOOL_BASE('H','G') + 256 + 34,
    /* args: Addr. */
-   /* Tell DRD to insert a happens-done annotation. */
-   VG_USERREQ__DRD_ANNOTATE_HAPPENS_DONE,
-   /* args: Addr. */
 
 };
 
@@ -456,14 +448,6 @@ void DRDCL_(annotate_happens_after)(const void* const addr)
 {
    int res;
    VALGRIND_DO_CLIENT_REQUEST(res, 0, VG_USERREQ__DRD_ANNOTATE_HAPPENS_AFTER,
-                              addr, 0, 0, 0, 0);
-}
-
-static __inline__
-void DRDCL_(annotate_happens_done)(const void* const addr)
-{
-   int res;
-   VALGRIND_DO_CLIENT_REQUEST(res, 0, VG_USERREQ__DRD_ANNOTATE_HAPPENS_DONE,
                               addr, 0, 0, 0, 0);
 }
 

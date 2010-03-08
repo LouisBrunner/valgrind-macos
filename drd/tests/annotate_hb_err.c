@@ -30,14 +30,14 @@ int main(int argc, char** argv)
   pthread_cond_init((pthread_cond_t*)&i, NULL);
 
   /* The sequence below is fine. */
-  ANNOTATE_HAPPENS_DONE(&i);
+  ANNOTATE_NEW_MEMORY(&i, sizeof(i));
   ANNOTATE_HAPPENS_BEFORE(&i);
   ANNOTATE_HAPPENS_AFTER(&i);
-  ANNOTATE_HAPPENS_DONE(&i);
+  ANNOTATE_NEW_MEMORY(&i, sizeof(i));
   ANNOTATE_HAPPENS_BEFORE(&i);
-  ANNOTATE_HAPPENS_DONE(&i);
+  ANNOTATE_NEW_MEMORY(&i, sizeof(i));
 
-  /* happens-before after happens-after without intervening happens-done. */
+  /* happens-before after happens-after. */
   ANNOTATE_HAPPENS_BEFORE(&i);
   ANNOTATE_HAPPENS_AFTER(&i);
   ANNOTATE_HAPPENS_BEFORE(&i);

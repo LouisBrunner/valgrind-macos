@@ -123,10 +123,6 @@ static Bool handle_client_request(ThreadId vg_tid, UWord* arg, UWord* ret)
       DRD_(hb_happens_after)(drd_tid, arg[1]);
       break;
 
-   case VG_USERREQ__DRD_ANNOTATE_HAPPENS_DONE:
-      DRD_(hb_happens_done)(drd_tid, arg[1]);
-      break;
-
    case VG_USERREQ__DRD_ANNOTATE_RWLOCK_CREATE:
       if (arg[1])
       {

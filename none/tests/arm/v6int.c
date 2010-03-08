@@ -762,23 +762,61 @@ int main(int argc, char **argv)
         TESTINST3("sxtab r0, r1, r2, ROR #0", 0x31415927, 0x27182899, 
                   r0, r1, r2, 0);
 
+	printf("------------ UXTAB ------------\n");
+        TESTINST3("uxtab r0, r1, r2, ROR #24", 0x31415927, 0x27182819, 
+                  r0, r1, r2, 0);
+        TESTINST3("uxtab r0, r1, r2, ROR #16", 0x31415927, 0x27182819, 
+                  r0, r1, r2, 0);
+        TESTINST3("uxtab r0, r1, r2, ROR #8", 0x31415927, 0x27182819, 
+                  r0, r1, r2, 0);
+        TESTINST3("uxtab r0, r1, r2, ROR #0", 0x31415927, 0x27182819, 
+                  r0, r1, r2, 0);
+
+        TESTINST3("uxtab r0, r1, r2, ROR #24", 0x31415927, 0x27182899, 
+                  r0, r1, r2, 0);
+        TESTINST3("uxtab r0, r1, r2, ROR #16", 0x31415927, 0x27182899, 
+                  r0, r1, r2, 0);
+        TESTINST3("uxtab r0, r1, r2, ROR #8", 0x31415927, 0x27182899, 
+                  r0, r1, r2, 0);
+        TESTINST3("uxtab r0, r1, r2, ROR #0", 0x31415927, 0x27182899, 
+                  r0, r1, r2, 0);
+
+	printf("------------ SXTAH ------------\n");
+        TESTINST3("sxtah r0, r1, r2, ROR #24", 0x31415927, 0x27182819, 
+                  r0, r1, r2, 0);
+        TESTINST3("sxtah r0, r1, r2, ROR #16", 0x31415927, 0x27182819, 
+                  r0, r1, r2, 0);
+        TESTINST3("sxtah r0, r1, r2, ROR #8 ", 0x31415927, 0x27182819, 
+                  r0, r1, r2, 0);
+        TESTINST3("sxtah r0, r1, r2, ROR #0 ", 0x31415927, 0x27182819, 
+                  r0, r1, r2, 0);
+
+        TESTINST3("sxtah r0, r1, r2, ROR #24", 0x31415927, 0x27189819, 
+                  r0, r1, r2, 0);
+        TESTINST3("sxtah r0, r1, r2, ROR #16", 0x31415927, 0x27189819, 
+                  r0, r1, r2, 0);
+        TESTINST3("sxtah r0, r1, r2, ROR #8 ", 0x31415927, 0x27189819, 
+                  r0, r1, r2, 0);
+        TESTINST3("sxtah r0, r1, r2, ROR #0 ", 0x31415927, 0x27189819, 
+                  r0, r1, r2, 0);
+
 	printf("------------ UXTAH ------------\n");
         TESTINST3("uxtah r0, r1, r2, ROR #24", 0x31415927, 0x27182819, 
                   r0, r1, r2, 0);
         TESTINST3("uxtah r0, r1, r2, ROR #16", 0x31415927, 0x27182819, 
                   r0, r1, r2, 0);
-        TESTINST3("uxtah r0, r1, r2, ROR #8", 0x31415927, 0x27182819, 
+        TESTINST3("uxtah r0, r1, r2, ROR #8 ", 0x31415927, 0x27182819, 
                   r0, r1, r2, 0);
-        TESTINST3("uxtah r0, r1, r2, ROR #0", 0x31415927, 0x27182819, 
+        TESTINST3("uxtah r0, r1, r2, ROR #0 ", 0x31415927, 0x27182819, 
                   r0, r1, r2, 0);
 
-        TESTINST3("uxtah r0, r1, r2, ROR #24", 0x31415927, 0x27182899, 
+        TESTINST3("uxtah r0, r1, r2, ROR #24", 0x31415927, 0x27189819, 
                   r0, r1, r2, 0);
-        TESTINST3("uxtah r0, r1, r2, ROR #16", 0x31415927, 0x27182899, 
+        TESTINST3("uxtah r0, r1, r2, ROR #16", 0x31415927, 0x27189819, 
                   r0, r1, r2, 0);
-        TESTINST3("uxtah r0, r1, r2, ROR #8", 0x31415927, 0x27182899, 
+        TESTINST3("uxtah r0, r1, r2, ROR #8 ", 0x31415927, 0x27189819, 
                   r0, r1, r2, 0);
-        TESTINST3("uxtah r0, r1, r2, ROR #0", 0x31415927, 0x27182899, 
+        TESTINST3("uxtah r0, r1, r2, ROR #0 ", 0x31415927, 0x27189819, 
                   r0, r1, r2, 0);
 
 	printf("------------ PLD/PLDW (begin) ------------\n");

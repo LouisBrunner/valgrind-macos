@@ -706,15 +706,33 @@ sxtab r0, r1, r2, ROR #24 :: rd 0x3141594e rm 0x31415927, rn 0x27182899, carryin
 sxtab r0, r1, r2, ROR #16 :: rd 0x3141593f rm 0x31415927, rn 0x27182899, carryin 0, cpsr 0x00000000     
 sxtab r0, r1, r2, ROR #8 :: rd 0x3141594f rm 0x31415927, rn 0x27182899, carryin 0, cpsr 0x00000000     
 sxtab r0, r1, r2, ROR #0 :: rd 0x314158c0 rm 0x31415927, rn 0x27182899, carryin 0, cpsr 0x00000000     
+------------ UXTAB ------------
+uxtab r0, r1, r2, ROR #24 :: rd 0x3141594e rm 0x31415927, rn 0x27182819, carryin 0, cpsr 0x00000000     
+uxtab r0, r1, r2, ROR #16 :: rd 0x3141593f rm 0x31415927, rn 0x27182819, carryin 0, cpsr 0x00000000     
+uxtab r0, r1, r2, ROR #8 :: rd 0x3141594f rm 0x31415927, rn 0x27182819, carryin 0, cpsr 0x00000000     
+uxtab r0, r1, r2, ROR #0 :: rd 0x31415940 rm 0x31415927, rn 0x27182819, carryin 0, cpsr 0x00000000     
+uxtab r0, r1, r2, ROR #24 :: rd 0x3141594e rm 0x31415927, rn 0x27182899, carryin 0, cpsr 0x00000000     
+uxtab r0, r1, r2, ROR #16 :: rd 0x3141593f rm 0x31415927, rn 0x27182899, carryin 0, cpsr 0x00000000     
+uxtab r0, r1, r2, ROR #8 :: rd 0x3141594f rm 0x31415927, rn 0x27182899, carryin 0, cpsr 0x00000000     
+uxtab r0, r1, r2, ROR #0 :: rd 0x314159c0 rm 0x31415927, rn 0x27182899, carryin 0, cpsr 0x00000000     
+------------ SXTAH ------------
+sxtah r0, r1, r2, ROR #24 :: rd 0x3141724e rm 0x31415927, rn 0x27182819, carryin 0, cpsr 0x00000000     
+sxtah r0, r1, r2, ROR #16 :: rd 0x3141803f rm 0x31415927, rn 0x27182819, carryin 0, cpsr 0x00000000     
+sxtah r0, r1, r2, ROR #8  :: rd 0x3141714f rm 0x31415927, rn 0x27182819, carryin 0, cpsr 0x00000000     
+sxtah r0, r1, r2, ROR #0  :: rd 0x31418140 rm 0x31415927, rn 0x27182819, carryin 0, cpsr 0x00000000     
+sxtah r0, r1, r2, ROR #24 :: rd 0x3141724e rm 0x31415927, rn 0x27189819, carryin 0, cpsr 0x00000000     
+sxtah r0, r1, r2, ROR #16 :: rd 0x3141803f rm 0x31415927, rn 0x27189819, carryin 0, cpsr 0x00000000     
+sxtah r0, r1, r2, ROR #8  :: rd 0x314171bf rm 0x31415927, rn 0x27189819, carryin 0, cpsr 0x00000000     
+sxtah r0, r1, r2, ROR #0  :: rd 0x3140f140 rm 0x31415927, rn 0x27189819, carryin 0, cpsr 0x00000000     
 ------------ UXTAH ------------
 uxtah r0, r1, r2, ROR #24 :: rd 0x3141724e rm 0x31415927, rn 0x27182819, carryin 0, cpsr 0x00000000     
 uxtah r0, r1, r2, ROR #16 :: rd 0x3141803f rm 0x31415927, rn 0x27182819, carryin 0, cpsr 0x00000000     
-uxtah r0, r1, r2, ROR #8 :: rd 0x3141714f rm 0x31415927, rn 0x27182819, carryin 0, cpsr 0x00000000     
-uxtah r0, r1, r2, ROR #0 :: rd 0x31418140 rm 0x31415927, rn 0x27182819, carryin 0, cpsr 0x00000000     
-uxtah r0, r1, r2, ROR #24 :: rd 0x3141f24e rm 0x31415927, rn 0x27182899, carryin 0, cpsr 0x00000000     
-uxtah r0, r1, r2, ROR #16 :: rd 0x3141803f rm 0x31415927, rn 0x27182899, carryin 0, cpsr 0x00000000     
-uxtah r0, r1, r2, ROR #8 :: rd 0x3141714f rm 0x31415927, rn 0x27182899, carryin 0, cpsr 0x00000000     
-uxtah r0, r1, r2, ROR #0 :: rd 0x314181c0 rm 0x31415927, rn 0x27182899, carryin 0, cpsr 0x00000000     
+uxtah r0, r1, r2, ROR #8  :: rd 0x3141714f rm 0x31415927, rn 0x27182819, carryin 0, cpsr 0x00000000     
+uxtah r0, r1, r2, ROR #0  :: rd 0x31418140 rm 0x31415927, rn 0x27182819, carryin 0, cpsr 0x00000000     
+uxtah r0, r1, r2, ROR #24 :: rd 0x3141724e rm 0x31415927, rn 0x27189819, carryin 0, cpsr 0x00000000     
+uxtah r0, r1, r2, ROR #16 :: rd 0x3141803f rm 0x31415927, rn 0x27189819, carryin 0, cpsr 0x00000000     
+uxtah r0, r1, r2, ROR #8  :: rd 0x314171bf rm 0x31415927, rn 0x27189819, carryin 0, cpsr 0x00000000     
+uxtah r0, r1, r2, ROR #0  :: rd 0x3141f140 rm 0x31415927, rn 0x27189819, carryin 0, cpsr 0x00000000     
 ------------ PLD/PLDW (begin) ------------
 pld  reg +/- imm12  cases
 pld  reg +/- shifted reg  cases

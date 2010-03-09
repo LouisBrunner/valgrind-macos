@@ -2350,6 +2350,7 @@ static void setup_post_syscall_table ( void )
       ADD(0, __NR_madvise);
       ADD(0, __NR_mkdir);
       ADD(0, __NR_mlock);
+      ADD(0, __NR_mlockall);
       ADD(0, __NR_mprotect);
       ADD(0, __NR_munmap); // die_mem_munmap already called, segment remove);
       ADD(0, __NR_nanosleep);

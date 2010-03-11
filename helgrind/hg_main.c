@@ -3868,6 +3868,36 @@ static SizeT hg_cli_malloc_usable_size ( ThreadId tid, void* p )
 }
 
 
+/* For error creation: map 'data_addr' to a malloc'd chunk, if any.
+   Slow linear search. */
+
+static inline Bool addr_is_in_MM_Chunk( MallocMeta* mm, Addr a )
+{
+   if (a < mm->payload) return False;
+   if (a >= mm->payload + mm->szB) return False;
+   return True;
+}
+
+void HG_(mm_find_containing_block)( /*OUT*/ExeContext** where,
+                                    /*OUT*/Addr*        payload,
+                                    /*OUT*/SizeT*       szB,
+                                    Addr                data_addr )
+{
+   MallocMeta* mm;
+   /* Well, this totally sucks.  But without using an interval tree or
+      some such, it's hard to see how to do better. */
+   VG_(HT_ResetIter)(hg_mallocmeta_table);
+   while ( (mm = VG_(HT_Next)(hg_mallocmeta_table)) ) {
+      if (UNLIKELY(addr_is_in_MM_Chunk(mm, data_addr))) {
+         *where   = mm->where;
+         *payload = mm->payload;
+         *szB     = mm->szB;
+         return;
+      }
+   }
+}
+
+
 /*--------------------------------------------------------------*/
 /*--- Instrumentation                                        ---*/
 /*--------------------------------------------------------------*/

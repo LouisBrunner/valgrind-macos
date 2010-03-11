@@ -18,6 +18,10 @@ Possible data race during write of size 4 at 0x........ by thread #x
    at 0x........: threadfunc (pth_barrier.c:57)
    by 0x........: mythread_wrapper (hg_intercepts.c:...)
    ...
+ Address 0x........ is 0 bytes inside a block of size 128 alloc'd
+   at 0x........: malloc (vg_replace_malloc.c:...)
+   by 0x........: barriers_and_races (pth_barrier.c:72)
+   by 0x........: main (pth_barrier.c:107)
 
 Possible data race during write of size 4 at 0x........ by thread #x
    at 0x........: threadfunc (pth_barrier.c:57)
@@ -27,6 +31,10 @@ Possible data race during write of size 4 at 0x........ by thread #x
    at 0x........: threadfunc (pth_barrier.c:57)
    by 0x........: mythread_wrapper (hg_intercepts.c:...)
    ...
+ Address 0x........ is 4 bytes inside a block of size 128 alloc'd
+   at 0x........: malloc (vg_replace_malloc.c:...)
+   by 0x........: barriers_and_races (pth_barrier.c:72)
+   by 0x........: main (pth_barrier.c:107)
 
 Possible data race during write of size 4 at 0x........ by thread #x
    at 0x........: threadfunc (pth_barrier.c:57)
@@ -36,6 +44,10 @@ Possible data race during write of size 4 at 0x........ by thread #x
    at 0x........: threadfunc (pth_barrier.c:57)
    by 0x........: mythread_wrapper (hg_intercepts.c:...)
    ...
+ Address 0x........ is 8 bytes inside a block of size 128 alloc'd
+   at 0x........: malloc (vg_replace_malloc.c:...)
+   by 0x........: barriers_and_races (pth_barrier.c:72)
+   by 0x........: main (pth_barrier.c:107)
 
 Possible data race during write of size 4 at 0x........ by thread #x
    at 0x........: threadfunc (pth_barrier.c:57)
@@ -45,6 +57,10 @@ Possible data race during write of size 4 at 0x........ by thread #x
    at 0x........: threadfunc (pth_barrier.c:57)
    by 0x........: mythread_wrapper (hg_intercepts.c:...)
    ...
+ Address 0x........ is 12 bytes inside a block of size 128 alloc'd
+   at 0x........: malloc (vg_replace_malloc.c:...)
+   by 0x........: barriers_and_races (pth_barrier.c:72)
+   by 0x........: main (pth_barrier.c:107)
 
 Possible data race during write of size 4 at 0x........ by thread #x
    at 0x........: threadfunc (pth_barrier.c:57)
@@ -54,6 +70,10 @@ Possible data race during write of size 4 at 0x........ by thread #x
    at 0x........: threadfunc (pth_barrier.c:57)
    by 0x........: mythread_wrapper (hg_intercepts.c:...)
    ...
+ Address 0x........ is 16 bytes inside a block of size 128 alloc'd
+   at 0x........: malloc (vg_replace_malloc.c:...)
+   by 0x........: barriers_and_races (pth_barrier.c:72)
+   by 0x........: main (pth_barrier.c:107)
 
 Possible data race during write of size 4 at 0x........ by thread #x
    at 0x........: threadfunc (pth_barrier.c:57)
@@ -63,6 +83,10 @@ Possible data race during write of size 4 at 0x........ by thread #x
    at 0x........: threadfunc (pth_barrier.c:57)
    by 0x........: mythread_wrapper (hg_intercepts.c:...)
    ...
+ Address 0x........ is 20 bytes inside a block of size 128 alloc'd
+   at 0x........: malloc (vg_replace_malloc.c:...)
+   by 0x........: barriers_and_races (pth_barrier.c:72)
+   by 0x........: main (pth_barrier.c:107)
 
 Possible data race during write of size 4 at 0x........ by thread #x
    at 0x........: threadfunc (pth_barrier.c:57)
@@ -72,6 +96,10 @@ Possible data race during write of size 4 at 0x........ by thread #x
    at 0x........: threadfunc (pth_barrier.c:57)
    by 0x........: mythread_wrapper (hg_intercepts.c:...)
    ...
+ Address 0x........ is 24 bytes inside a block of size 128 alloc'd
+   at 0x........: malloc (vg_replace_malloc.c:...)
+   by 0x........: barriers_and_races (pth_barrier.c:72)
+   by 0x........: main (pth_barrier.c:107)
 
 Possible data race during write of size 4 at 0x........ by thread #x
    at 0x........: threadfunc (pth_barrier.c:57)
@@ -81,6 +109,10 @@ Possible data race during write of size 4 at 0x........ by thread #x
    at 0x........: threadfunc (pth_barrier.c:57)
    by 0x........: mythread_wrapper (hg_intercepts.c:...)
    ...
+ Address 0x........ is 28 bytes inside a block of size 128 alloc'd
+   at 0x........: malloc (vg_replace_malloc.c:...)
+   by 0x........: barriers_and_races (pth_barrier.c:72)
+   by 0x........: main (pth_barrier.c:107)
 
 Possible data race during write of size 4 at 0x........ by thread #x
    at 0x........: threadfunc (pth_barrier.c:57)
@@ -90,6 +122,10 @@ Possible data race during write of size 4 at 0x........ by thread #x
    at 0x........: threadfunc (pth_barrier.c:57)
    by 0x........: mythread_wrapper (hg_intercepts.c:...)
    ...
+ Address 0x........ is 32 bytes inside a block of size 128 alloc'd
+   at 0x........: malloc (vg_replace_malloc.c:...)
+   by 0x........: barriers_and_races (pth_barrier.c:72)
+   by 0x........: main (pth_barrier.c:107)
 
 Possible data race during write of size 4 at 0x........ by thread #x
    at 0x........: threadfunc (pth_barrier.c:57)
@@ -99,6 +135,10 @@ Possible data race during write of size 4 at 0x........ by thread #x
    at 0x........: threadfunc (pth_barrier.c:57)
    by 0x........: mythread_wrapper (hg_intercepts.c:...)
    ...
+ Address 0x........ is 36 bytes inside a block of size 128 alloc'd
+   at 0x........: malloc (vg_replace_malloc.c:...)
+   by 0x........: barriers_and_races (pth_barrier.c:72)
+   by 0x........: main (pth_barrier.c:107)
 
 Possible data race during write of size 4 at 0x........ by thread #x
    at 0x........: threadfunc (pth_barrier.c:57)
@@ -108,6 +148,10 @@ Possible data race during write of size 4 at 0x........ by thread #x
    at 0x........: threadfunc (pth_barrier.c:57)
    by 0x........: mythread_wrapper (hg_intercepts.c:...)
    ...
+ Address 0x........ is 40 bytes inside a block of size 128 alloc'd
+   at 0x........: malloc (vg_replace_malloc.c:...)
+   by 0x........: barriers_and_races (pth_barrier.c:72)
+   by 0x........: main (pth_barrier.c:107)
 
 Possible data race during write of size 4 at 0x........ by thread #x
    at 0x........: threadfunc (pth_barrier.c:57)
@@ -117,6 +161,10 @@ Possible data race during write of size 4 at 0x........ by thread #x
    at 0x........: threadfunc (pth_barrier.c:57)
    by 0x........: mythread_wrapper (hg_intercepts.c:...)
    ...
+ Address 0x........ is 44 bytes inside a block of size 128 alloc'd
+   at 0x........: malloc (vg_replace_malloc.c:...)
+   by 0x........: barriers_and_races (pth_barrier.c:72)
+   by 0x........: main (pth_barrier.c:107)
 
 Possible data race during write of size 4 at 0x........ by thread #x
    at 0x........: threadfunc (pth_barrier.c:57)
@@ -126,6 +174,10 @@ Possible data race during write of size 4 at 0x........ by thread #x
    at 0x........: threadfunc (pth_barrier.c:57)
    by 0x........: mythread_wrapper (hg_intercepts.c:...)
    ...
+ Address 0x........ is 48 bytes inside a block of size 128 alloc'd
+   at 0x........: malloc (vg_replace_malloc.c:...)
+   by 0x........: barriers_and_races (pth_barrier.c:72)
+   by 0x........: main (pth_barrier.c:107)
 
 Possible data race during write of size 4 at 0x........ by thread #x
    at 0x........: threadfunc (pth_barrier.c:57)
@@ -135,6 +187,10 @@ Possible data race during write of size 4 at 0x........ by thread #x
    at 0x........: threadfunc (pth_barrier.c:57)
    by 0x........: mythread_wrapper (hg_intercepts.c:...)
    ...
+ Address 0x........ is 52 bytes inside a block of size 128 alloc'd
+   at 0x........: malloc (vg_replace_malloc.c:...)
+   by 0x........: barriers_and_races (pth_barrier.c:72)
+   by 0x........: main (pth_barrier.c:107)
 
 Possible data race during write of size 4 at 0x........ by thread #x
    at 0x........: threadfunc (pth_barrier.c:57)
@@ -144,6 +200,10 @@ Possible data race during write of size 4 at 0x........ by thread #x
    at 0x........: threadfunc (pth_barrier.c:57)
    by 0x........: mythread_wrapper (hg_intercepts.c:...)
    ...
+ Address 0x........ is 56 bytes inside a block of size 128 alloc'd
+   at 0x........: malloc (vg_replace_malloc.c:...)
+   by 0x........: barriers_and_races (pth_barrier.c:72)
+   by 0x........: main (pth_barrier.c:107)
 
 Possible data race during write of size 4 at 0x........ by thread #x
    at 0x........: threadfunc (pth_barrier.c:57)
@@ -153,6 +213,10 @@ Possible data race during write of size 4 at 0x........ by thread #x
    at 0x........: threadfunc (pth_barrier.c:57)
    by 0x........: mythread_wrapper (hg_intercepts.c:...)
    ...
+ Address 0x........ is 60 bytes inside a block of size 128 alloc'd
+   at 0x........: malloc (vg_replace_malloc.c:...)
+   by 0x........: barriers_and_races (pth_barrier.c:72)
+   by 0x........: main (pth_barrier.c:107)
 
 Possible data race during write of size 4 at 0x........ by thread #x
    at 0x........: threadfunc (pth_barrier.c:57)
@@ -162,6 +226,10 @@ Possible data race during write of size 4 at 0x........ by thread #x
    at 0x........: threadfunc (pth_barrier.c:57)
    by 0x........: mythread_wrapper (hg_intercepts.c:...)
    ...
+ Address 0x........ is 64 bytes inside a block of size 128 alloc'd
+   at 0x........: malloc (vg_replace_malloc.c:...)
+   by 0x........: barriers_and_races (pth_barrier.c:72)
+   by 0x........: main (pth_barrier.c:107)
 
 Possible data race during write of size 4 at 0x........ by thread #x
    at 0x........: threadfunc (pth_barrier.c:57)
@@ -171,6 +239,10 @@ Possible data race during write of size 4 at 0x........ by thread #x
    at 0x........: threadfunc (pth_barrier.c:57)
    by 0x........: mythread_wrapper (hg_intercepts.c:...)
    ...
+ Address 0x........ is 68 bytes inside a block of size 128 alloc'd
+   at 0x........: malloc (vg_replace_malloc.c:...)
+   by 0x........: barriers_and_races (pth_barrier.c:72)
+   by 0x........: main (pth_barrier.c:107)
 
 Possible data race during write of size 4 at 0x........ by thread #x
    at 0x........: threadfunc (pth_barrier.c:57)
@@ -180,6 +252,10 @@ Possible data race during write of size 4 at 0x........ by thread #x
    at 0x........: threadfunc (pth_barrier.c:57)
    by 0x........: mythread_wrapper (hg_intercepts.c:...)
    ...
+ Address 0x........ is 72 bytes inside a block of size 128 alloc'd
+   at 0x........: malloc (vg_replace_malloc.c:...)
+   by 0x........: barriers_and_races (pth_barrier.c:72)
+   by 0x........: main (pth_barrier.c:107)
 
 Possible data race during write of size 4 at 0x........ by thread #x
    at 0x........: threadfunc (pth_barrier.c:57)
@@ -189,6 +265,10 @@ Possible data race during write of size 4 at 0x........ by thread #x
    at 0x........: threadfunc (pth_barrier.c:57)
    by 0x........: mythread_wrapper (hg_intercepts.c:...)
    ...
+ Address 0x........ is 76 bytes inside a block of size 128 alloc'd
+   at 0x........: malloc (vg_replace_malloc.c:...)
+   by 0x........: barriers_and_races (pth_barrier.c:72)
+   by 0x........: main (pth_barrier.c:107)
 
 Possible data race during write of size 4 at 0x........ by thread #x
    at 0x........: threadfunc (pth_barrier.c:57)
@@ -198,6 +278,10 @@ Possible data race during write of size 4 at 0x........ by thread #x
    at 0x........: threadfunc (pth_barrier.c:57)
    by 0x........: mythread_wrapper (hg_intercepts.c:...)
    ...
+ Address 0x........ is 80 bytes inside a block of size 128 alloc'd
+   at 0x........: malloc (vg_replace_malloc.c:...)
+   by 0x........: barriers_and_races (pth_barrier.c:72)
+   by 0x........: main (pth_barrier.c:107)
 
 Possible data race during write of size 4 at 0x........ by thread #x
    at 0x........: threadfunc (pth_barrier.c:57)
@@ -207,6 +291,10 @@ Possible data race during write of size 4 at 0x........ by thread #x
    at 0x........: threadfunc (pth_barrier.c:57)
    by 0x........: mythread_wrapper (hg_intercepts.c:...)
    ...
+ Address 0x........ is 84 bytes inside a block of size 128 alloc'd
+   at 0x........: malloc (vg_replace_malloc.c:...)
+   by 0x........: barriers_and_races (pth_barrier.c:72)
+   by 0x........: main (pth_barrier.c:107)
 
 Possible data race during write of size 4 at 0x........ by thread #x
    at 0x........: threadfunc (pth_barrier.c:57)
@@ -216,6 +304,10 @@ Possible data race during write of size 4 at 0x........ by thread #x
    at 0x........: threadfunc (pth_barrier.c:57)
    by 0x........: mythread_wrapper (hg_intercepts.c:...)
    ...
+ Address 0x........ is 88 bytes inside a block of size 128 alloc'd
+   at 0x........: malloc (vg_replace_malloc.c:...)
+   by 0x........: barriers_and_races (pth_barrier.c:72)
+   by 0x........: main (pth_barrier.c:107)
 
 Possible data race during write of size 4 at 0x........ by thread #x
    at 0x........: threadfunc (pth_barrier.c:57)
@@ -225,6 +317,10 @@ Possible data race during write of size 4 at 0x........ by thread #x
    at 0x........: threadfunc (pth_barrier.c:57)
    by 0x........: mythread_wrapper (hg_intercepts.c:...)
    ...
+ Address 0x........ is 92 bytes inside a block of size 128 alloc'd
+   at 0x........: malloc (vg_replace_malloc.c:...)
+   by 0x........: barriers_and_races (pth_barrier.c:72)
+   by 0x........: main (pth_barrier.c:107)
 
 Possible data race during write of size 4 at 0x........ by thread #x
    at 0x........: threadfunc (pth_barrier.c:57)
@@ -234,6 +330,10 @@ Possible data race during write of size 4 at 0x........ by thread #x
    at 0x........: threadfunc (pth_barrier.c:57)
    by 0x........: mythread_wrapper (hg_intercepts.c:...)
    ...
+ Address 0x........ is 96 bytes inside a block of size 128 alloc'd
+   at 0x........: malloc (vg_replace_malloc.c:...)
+   by 0x........: barriers_and_races (pth_barrier.c:72)
+   by 0x........: main (pth_barrier.c:107)
 
 Possible data race during write of size 4 at 0x........ by thread #x
    at 0x........: threadfunc (pth_barrier.c:57)
@@ -243,6 +343,10 @@ Possible data race during write of size 4 at 0x........ by thread #x
    at 0x........: threadfunc (pth_barrier.c:57)
    by 0x........: mythread_wrapper (hg_intercepts.c:...)
    ...
+ Address 0x........ is 100 bytes inside a block of size 128 alloc'd
+   at 0x........: malloc (vg_replace_malloc.c:...)
+   by 0x........: barriers_and_races (pth_barrier.c:72)
+   by 0x........: main (pth_barrier.c:107)
 
 Possible data race during write of size 4 at 0x........ by thread #x
    at 0x........: threadfunc (pth_barrier.c:57)
@@ -252,6 +356,10 @@ Possible data race during write of size 4 at 0x........ by thread #x
    at 0x........: threadfunc (pth_barrier.c:57)
    by 0x........: mythread_wrapper (hg_intercepts.c:...)
    ...
+ Address 0x........ is 104 bytes inside a block of size 128 alloc'd
+   at 0x........: malloc (vg_replace_malloc.c:...)
+   by 0x........: barriers_and_races (pth_barrier.c:72)
+   by 0x........: main (pth_barrier.c:107)
 
 Possible data race during write of size 4 at 0x........ by thread #x
    at 0x........: threadfunc (pth_barrier.c:57)
@@ -261,6 +369,10 @@ Possible data race during write of size 4 at 0x........ by thread #x
    at 0x........: threadfunc (pth_barrier.c:57)
    by 0x........: mythread_wrapper (hg_intercepts.c:...)
    ...
+ Address 0x........ is 108 bytes inside a block of size 128 alloc'd
+   at 0x........: malloc (vg_replace_malloc.c:...)
+   by 0x........: barriers_and_races (pth_barrier.c:72)
+   by 0x........: main (pth_barrier.c:107)
 
 Possible data race during write of size 4 at 0x........ by thread #x
    at 0x........: threadfunc (pth_barrier.c:57)
@@ -270,6 +382,10 @@ Possible data race during write of size 4 at 0x........ by thread #x
    at 0x........: threadfunc (pth_barrier.c:57)
    by 0x........: mythread_wrapper (hg_intercepts.c:...)
    ...
+ Address 0x........ is 112 bytes inside a block of size 128 alloc'd
+   at 0x........: malloc (vg_replace_malloc.c:...)
+   by 0x........: barriers_and_races (pth_barrier.c:72)
+   by 0x........: main (pth_barrier.c:107)
 
 Possible data race during write of size 4 at 0x........ by thread #x
    at 0x........: threadfunc (pth_barrier.c:57)
@@ -279,6 +395,10 @@ Possible data race during write of size 4 at 0x........ by thread #x
    at 0x........: threadfunc (pth_barrier.c:57)
    by 0x........: mythread_wrapper (hg_intercepts.c:...)
    ...
+ Address 0x........ is 116 bytes inside a block of size 128 alloc'd
+   at 0x........: malloc (vg_replace_malloc.c:...)
+   by 0x........: barriers_and_races (pth_barrier.c:72)
+   by 0x........: main (pth_barrier.c:107)
 
 Possible data race during write of size 4 at 0x........ by thread #x
    at 0x........: threadfunc (pth_barrier.c:57)
@@ -288,6 +408,10 @@ Possible data race during write of size 4 at 0x........ by thread #x
    at 0x........: threadfunc (pth_barrier.c:57)
    by 0x........: mythread_wrapper (hg_intercepts.c:...)
    ...
+ Address 0x........ is 120 bytes inside a block of size 128 alloc'd
+   at 0x........: malloc (vg_replace_malloc.c:...)
+   by 0x........: barriers_and_races (pth_barrier.c:72)
+   by 0x........: main (pth_barrier.c:107)
 
 Possible data race during write of size 4 at 0x........ by thread #x
    at 0x........: threadfunc (pth_barrier.c:57)
@@ -297,4 +421,8 @@ Possible data race during write of size 4 at 0x........ by thread #x
    at 0x........: threadfunc (pth_barrier.c:57)
    by 0x........: mythread_wrapper (hg_intercepts.c:...)
    ...
+ Address 0x........ is 124 bytes inside a block of size 128 alloc'd
+   at 0x........: malloc (vg_replace_malloc.c:...)
+   by 0x........: barriers_and_races (pth_barrier.c:72)
+   by 0x........: main (pth_barrier.c:107)
 

@@ -18,4 +18,8 @@ Possible data race during write of size 4 at 0x........ by thread #x
    at 0x........: threadfunc (pth_barrier.c:57)
    by 0x........: mythread_wrapper (hg_intercepts.c:...)
    ...
+ Address 0x........ is 0 bytes inside a block of size 4 alloc'd
+   at 0x........: malloc (vg_replace_malloc.c:...)
+   by 0x........: barriers_and_races (pth_barrier.c:72)
+   by 0x........: main (pth_barrier.c:107)
 

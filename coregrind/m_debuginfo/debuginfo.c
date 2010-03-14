@@ -1896,7 +1896,8 @@ typedef
 /* Evaluate the CfiExpr rooted at ix in exprs given the context eec.
    *ok is set to False on failure, but not to True on success.  The
    caller must set it to True before calling. */
-static 
+__attribute__((noinline))
+static
 UWord evalCfiExpr ( XArray* exprs, Int ix, 
                     CfiExprEvalContext* eec, Bool* ok )
 {
@@ -2079,7 +2080,7 @@ static void cfsi_cache__invalidate ( void ) {
 }
 
 
-static CFSICacheEnt* cfsi_cache__find ( Addr ip )
+static inline CFSICacheEnt* cfsi_cache__find ( Addr ip )
 {
    UWord         hash = ip % N_CFSI_CACHE;
    CFSICacheEnt* ce = &cfsi_cache[hash];
@@ -2108,6 +2109,7 @@ static CFSICacheEnt* cfsi_cache__find ( Addr ip )
 }
 
 
+inline
 static Addr compute_cfa ( D3UnwindRegs* uregs,
                           Addr min_accessible, Addr max_accessible,
                           DebugInfo* di, DiCfSI* cfsi )
@@ -2237,7 +2239,7 @@ Bool VG_(use_CF_info) ( /*MOD*/D3UnwindRegs* uregsHere,
       ML_(ppDiCfSI)(di->cfsi_exprs, cfsi);
    }
 
-   VG_(memset)(&uregsPrev, 0, sizeof(uregsPrev));
+   VG_(bzero_inline)(&uregsPrev, sizeof(uregsPrev));
 
    /* First compute the CFA. */
    cfa = compute_cfa(uregsHere,

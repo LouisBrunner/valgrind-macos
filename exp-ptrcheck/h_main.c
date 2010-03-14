@@ -2316,6 +2316,7 @@ static void setup_post_syscall_table ( void )
 #     endif
       ADD(0, __NR_getrlimit);
       ADD(0, __NR_getrusage);
+      ADD(0, __NR_getsid);
 #     if defined(__NR_getsockname)
       ADD(0, __NR_getsockname);
 #     endif

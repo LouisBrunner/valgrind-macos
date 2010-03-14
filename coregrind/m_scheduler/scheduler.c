@@ -852,7 +852,7 @@ static void handle_tt_miss ( ThreadId tid )
    /* Trivial event.  Miss in the fast-cache.  Do a full
       lookup for it. */
    found = VG_(search_transtab)( NULL, ip, True/*upd_fast_cache*/ );
-   if (!found) {
+   if (UNLIKELY(!found)) {
       /* Not found; we need to request a translation. */
       if (VG_(translate)( tid, ip, /*debug*/False, 0/*not verbose*/, 
                           bbs_done, True/*allow redirection*/ )) {

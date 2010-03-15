@@ -131,7 +131,7 @@ static void VG_(bzero_inline) ( void* s, SizeT sz )
           case 4: p[0] = p[1] = p[2] = p[3] = 0UL; return;
           case 3: p[0] = p[1] = p[2] = 0UL; return;
           case 2: p[0] = p[1] = 0UL; return;
-          case 1: p[0] = 1; return;
+          case 1: p[0] = 0UL; return;
           case 0: return;
           default: break;
       }

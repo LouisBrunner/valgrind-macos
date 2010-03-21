@@ -61,8 +61,10 @@ typedef enum {
    GenericErr     = 11,
 #define STR_InvalidThreadId "InvalidThreadId"
    InvalidThreadId = 12,
-#define STR_UnimpClReq "UnimpClReq"
-   UnimpClReq      = 13,
+#define STR_UnimpHgClReq  "UnimpHgClReq"
+   UnimpHgClReq   = 13,
+#define STR_UnimpDrdClReq "UnimpDrdClReq"
+   UnimpDrdClReq  = 14,
 } DrdErrorKind;
 
 /* The classification of a faulting address. */

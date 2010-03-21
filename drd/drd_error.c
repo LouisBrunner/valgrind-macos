@@ -385,12 +385,21 @@ static void drd_tool_error_pp(Error* const e)
       VG_(pp_ExeContext)(VG_(get_error_where)(e));
       break;
    }
-   case UnimpClReq: {
+   case UnimpHgClReq: {
       UnimpClReqInfo* uicr =(UnimpClReqInfo*)(VG_(get_error_extra)(e));
       VG_(message)(Vg_UserMsg,
                    "The annotation macro %s has not yet been implemented in"
                    " <valgrind/helgrind.h>\n",
                    /*VG_(get_error_string)(e),*/ uicr->descr);
+      VG_(pp_ExeContext)(VG_(get_error_where)(e));
+      break;
+   }
+   case UnimpDrdClReq: {
+      UnimpClReqInfo* uicr =(UnimpClReqInfo*)(VG_(get_error_extra)(e));
+      VG_(message)(Vg_UserMsg,
+                   "The annotation macro %s has not yet been implemented in"
+                   " <valgrind/drd.h>\n",
+                   uicr->descr);
       VG_(pp_ExeContext)(VG_(get_error_where)(e));
       break;
    }
@@ -431,7 +440,9 @@ static UInt drd_tool_error_update_extra(Error* e)
       return sizeof(GenericErrInfo);
    case InvalidThreadId:
       return sizeof(InvalidThreadIdInfo);
-   case UnimpClReq:
+   case UnimpHgClReq:
+      return sizeof(UnimpClReqInfo);
+   case UnimpDrdClReq:
       return sizeof(UnimpClReqInfo);
    default:
       tl_assert(False);
@@ -474,8 +485,10 @@ static Bool drd_is_recognized_suppression(Char* const name, Supp* const supp)
       skind = GenericErr;
    else if (VG_(strcmp)(name, STR_InvalidThreadId) == 0)
       skind = InvalidThreadId;
-   else if (VG_(strcmp)(name, STR_UnimpClReq) == 0)
-      skind = UnimpClReq;
+   else if (VG_(strcmp)(name, STR_UnimpHgClReq) == 0)
+      skind = UnimpHgClReq;
+   else if (VG_(strcmp)(name, STR_UnimpDrdClReq) == 0)
+      skind = UnimpDrdClReq;
    else
       return False;
 
@@ -522,7 +535,8 @@ static Char* drd_get_error_name(Error* e)
    case HoldtimeErr:  return VGAPPEND(STR_, HoldtimeErr);
    case GenericErr:   return VGAPPEND(STR_, GenericErr);
    case InvalidThreadId: return VGAPPEND(STR_, InvalidThreadId);
-   case UnimpClReq:   return VGAPPEND(STR_, UnimpClReq);
+   case UnimpHgClReq:  return VGAPPEND(STR_, UnimpHgClReq);
+   case UnimpDrdClReq: return VGAPPEND(STR_, UnimpDrdClReq);
    default:
       tl_assert(0);
    }

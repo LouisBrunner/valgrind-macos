@@ -484,6 +484,21 @@ static Bool handle_client_request(ThreadId vg_tid, UWord* arg, UWord* ret)
          DRD_(clean_memory)(arg[1], arg[2]);
       break;
 
+   case VG_USERREQ__HELGRIND_ANNOTATION_UNIMP:
+      {
+         /* Note: it is assumed below that the text arg[1] points to is never
+          * freed, e.g. because it points to static data.
+          */
+         UnimpClReqInfo UICR =
+            { DRD_(thread_get_running_tid)(), (Char*)arg[1] };
+         VG_(maybe_record_error)(vg_tid,
+                                 UnimpHgClReq,
+                                 VG_(get_IP)(vg_tid),
+                                 "",
+                                 &UICR);
+      }
+      break;
+
    case VG_USERREQ__DRD_ANNOTATION_UNIMP:
       {
          /* Note: it is assumed below that the text arg[1] points to is never
@@ -492,7 +507,7 @@ static Bool handle_client_request(ThreadId vg_tid, UWord* arg, UWord* ret)
          UnimpClReqInfo UICR =
             { DRD_(thread_get_running_tid)(), (Char*)arg[1] };
          VG_(maybe_record_error)(vg_tid,
-                                 UnimpClReq,
+                                 UnimpDrdClReq,
                                  VG_(get_IP)(vg_tid),
                                  "",
                                  &UICR);

@@ -14,6 +14,8 @@ noinst_HEADERS =                                    \
 	tsan_thread_wrappers_pthread.h
 
 EXTRA_DIST =                                        \
+	annotate_barrier.stderr.exp		    \
+	annotate_barrier.vgtest			    \
 	annotate_hb_err.stderr.exp		    \
 	annotate_hb_err.vgtest			    \
 	annotate_hb_race.stderr.exp		    \
@@ -48,6 +50,8 @@ EXTRA_DIST =                                        \
 	annotate_ignore_write2.vgtest		    \
 	annotate_trace_memory.stderr.exp	    \
 	annotate_trace_memory.vgtest		    \
+	annotate_static.stderr.exp	            \
+	annotate_static.vgtest		            \
 	atomic_var.stderr.exp			    \
 	atomic_var.vgtest			    \
 	bar_bad.stderr.exp			    \
@@ -255,6 +259,7 @@ check_PROGRAMS =      \
   annotate_ignore_rw  \
   annotate_ignore_write \
   annotate_publish_hg \
+  annotate_static     \
   custom_alloc        \
   fp_race             \
   hold_lock           \
@@ -290,6 +295,7 @@ endif
 
 if HAVE_BUILTIN_ATOMIC
 check_PROGRAMS +=        \
+  annotate_barrier       \
   annotate_rwlock        \
   annotate_smart_pointer \
   atomic_var             \
@@ -354,6 +360,8 @@ endif
 if HAVE_BUILTIN_ATOMIC
 annotate_smart_pointer_SOURCES = annotate_smart_pointer.cpp
 endif
+
+annotate_static_SOURCES     = annotate_static.cpp
 
 if HAVE_OPENMP
 omp_matinv_CFLAGS           = $(AM_CFLAGS) -fopenmp

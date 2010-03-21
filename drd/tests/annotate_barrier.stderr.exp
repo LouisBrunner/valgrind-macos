@@ -1,0 +1,47 @@
+
+The annotation macro ANNOTATE_BARRIER_INIT has not yet been implemented in <valgrind/drd.h>
+   at 0x........: vgDrdCl_annotate_barrier_init (drd.h:?)
+   by 0x........: barrier_init (annotate_barrier.c:?)
+   by 0x........: barriers_and_races (annotate_barrier.c:?)
+
+Thread 2:
+The annotation macro ANNOTATE_BARRIER_WAIT_BEFORE has not yet been implemented in <valgrind/drd.h>
+   at 0x........: vgDrdCl_annotate_barrier_wait_before (drd.h:?)
+   by 0x........: barrier_wait (annotate_barrier.c:?)
+   by 0x........: threadfunc (annotate_barrier.c:?)
+
+Thread 3:
+The annotation macro ANNOTATE_BARRIER_WAIT_AFTER has not yet been implemented in <valgrind/drd.h>
+   at 0x........: vgDrdCl_annotate_barrier_wait_after (drd.h:?)
+   by 0x........: barrier_wait (annotate_barrier.c:?)
+   by 0x........: threadfunc (annotate_barrier.c:?)
+
+The annotation macro ANNOTATE_BARRIER_WAIT_BEFORE has not yet been implemented in <valgrind/drd.h>
+   at 0x........: vgDrdCl_annotate_barrier_wait_before (drd.h:?)
+   by 0x........: barrier_wait (annotate_barrier.c:?)
+   by 0x........: threadfunc (annotate_barrier.c:?)
+
+Thread 2:
+Conflicting store by thread 2 at 0x........ size 4
+   at 0x........: threadfunc (annotate_barrier.c:?)
+   by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
+   by 0x........: (within libpthread-?.?.so)
+Address 0x........ is at offset 0 from 0x......... Allocation context:
+   at 0x........: malloc (vg_replace_malloc.c:...)
+   by 0x........: barriers_and_races (annotate_barrier.c:?)
+   by 0x........: main (annotate_barrier.c:?)
+
+The annotation macro ANNOTATE_BARRIER_WAIT_AFTER has not yet been implemented in <valgrind/drd.h>
+   at 0x........: vgDrdCl_annotate_barrier_wait_after (drd.h:?)
+   by 0x........: barrier_wait (annotate_barrier.c:?)
+   by 0x........: threadfunc (annotate_barrier.c:?)
+
+Thread 1:
+The annotation macro ANNOTATE_BARRIER_DESTROY has not yet been implemented in <valgrind/drd.h>
+   at 0x........: vgDrdCl_annotate_barrier_destroy (drd.h:?)
+   by 0x........: barrier_destroy (annotate_barrier.c:?)
+   by 0x........: barriers_and_races (annotate_barrier.c:?)
+
+Done.
+
+ERROR SUMMARY: 11 errors from 7 contexts (suppressed: 0 from 0)

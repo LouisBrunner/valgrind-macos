@@ -107,7 +107,7 @@ following:
 
 1.  Find out the name of the system call:
 
-       grep NNN /usr/include/asm/unistd.h
+       grep NNN /usr/include/asm/unistd*.h
 
     This should tell you something like  __NR_mysyscallname.
     Copy this entry to include/vki/vki-scnums-$(VG_PLATFORM).h.

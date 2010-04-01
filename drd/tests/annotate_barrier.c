@@ -14,6 +14,9 @@
 #include "../../drd/drd.h"
 
 
+#define BARRIER_SERIAL_THREAD -1
+
+
 /* Local datatypes. */
 
 typedef struct
@@ -74,7 +77,7 @@ static int barrier_wait(barrier_t* b)
   {
     __sync_sub_and_fetch(&b->wait_count, b->thread_count);
     __sync_add_and_fetch(&b->barrier_count, 1);
-    res = PTHREAD_BARRIER_SERIAL_THREAD;
+    res = BARRIER_SERIAL_THREAD;
   }
   else
   {

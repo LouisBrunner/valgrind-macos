@@ -1473,7 +1473,7 @@ static HReg iselIntExpr_R_wrk ( ISelEnv* env, IRExpr* e )
 //..             iselInt64Expr(&rHi,&rLo, env, e->Iex.Unop.arg);
 //..             return rLo; /* similar stupid comment to the above ... */
 //..          }
-//..          case Iop_16HIto8:
+         case Iop_16HIto8:
          case Iop_32HIto16:
          case Iop_64HIto32: {
             HReg dst  = newVRegI(env);

@@ -82,7 +82,14 @@ static int barrier_wait(barrier_t* b)
   else
   {
     while (b->barrier_count == barrier_count)
+    {
+#ifdef __APPLE__
+      /* Darwin doesn't have an implementation of pthread_yield(). */
+      usleep(100 * 1000);
+#else
       pthread_yield();
+#endif
+    }
   }
   ANNOTATE_BARRIER_WAIT_AFTER(b);
   return res;

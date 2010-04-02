@@ -329,6 +329,20 @@ static void sub_from_rsp ( ISelEnv* env, Int n )
                                         hregAMD64_RSP()));
 }
 
+/* Push 64-bit constants on the stack. */
+static void push_uimm64( ISelEnv* env, ULong uimm64 )
+{
+   /* If uimm64 can be expressed as the sign extension of its
+      lower 32 bits, we can do it the easy way. */
+   Long simm64 = (Long)uimm64;
+   if ( simm64 == ((simm64 << 32) >> 32) ) {
+      addInstr( env, AMD64Instr_Push(AMD64RMI_Imm( (UInt)uimm64 )) );
+   } else {
+      HReg tmp = newVRegI(env);
+      addInstr( env, AMD64Instr_Imm64(uimm64, tmp) );
+      addInstr( env, AMD64Instr_Push(AMD64RMI_Reg(tmp)) );
+   }
+}
 
 //.. /* Given an amode, return one which references 4 bytes further
 //..    along. */
@@ -3198,25 +3212,69 @@ static HReg iselVecExpr_wrk ( ISelEnv* env, IRExpr* e )
             break;
       }
       AMD64AMode* rsp0 = AMD64AMode_IR(0, hregAMD64_RSP());
+      const ULong const_z64    = 0x0000000000000000ULL;
+      const ULong const_o64    = 0xFFFFFFFFFFFFFFFFULL;
+      const ULong const_z32o32 = 0x00000000FFFFFFFFULL;
+      const ULong const_o32z32 = 0xFFFFFFFF00000000ULL;
       switch (e->Iex.Const.con->Ico.V128) {
          case 0x0000: case 0xFFFF:
             vassert(0); /* handled just above */
+         /* do push_uimm64 twice, first time for the high-order half. */
+         case 0x00F0:
+            push_uimm64(env, const_z64);
+            push_uimm64(env, const_o32z32);
+            break;
          case 0x00FF:
-            /* Both of these literals are sign-extended to 64 bits. */
-            addInstr(env, AMD64Instr_Push(AMD64RMI_Imm(0)));
-            addInstr(env, AMD64Instr_Push(AMD64RMI_Imm(0xFFFFFFFF)));
+            push_uimm64(env, const_z64);
+            push_uimm64(env, const_o64);
             break;
-         case 0x000F: {
-            HReg tmp = newVRegI(env);
-            addInstr(env, AMD64Instr_Imm64(0xFFFFFFFFULL, tmp));
-            addInstr(env, AMD64Instr_Push(AMD64RMI_Imm(0)));
-            addInstr(env, AMD64Instr_Push(AMD64RMI_Reg(tmp)));
+         case 0x000F:
+            push_uimm64(env, const_z64);
+            push_uimm64(env, const_z32o32);
             break;
-         }
+         case 0x0F00:
+            push_uimm64(env, const_z32o32);
+            push_uimm64(env, const_z64);
+            break;
+         case 0x0F0F:
+            push_uimm64(env, const_z32o32);
+            push_uimm64(env, const_z32o32);
+            break;
+         case 0x0FF0:
+            push_uimm64(env, const_z32o32);
+            push_uimm64(env, const_o32z32);
+            break;
+         case 0x0FFF:
+            push_uimm64(env, const_z32o32);
+            push_uimm64(env, const_o64);
+            break;
+         case 0xF000:
+            push_uimm64(env, const_o32z32);
+            push_uimm64(env, const_z64);
+            break;
+         case 0xF00F:
+            push_uimm64(env, const_o32z32);
+            push_uimm64(env, const_z32o32);
+            break;
+         case 0xF0F0:
+            push_uimm64(env, const_o32z32);
+            push_uimm64(env, const_o32z32);
+            break;
+         case 0xF0FF:
+            push_uimm64(env, const_o32z32);
+            push_uimm64(env, const_o64);
+            break;
          case 0xFF00:
-            /* Both of these literals are sign-extended to 64 bits. */
-            addInstr(env, AMD64Instr_Push(AMD64RMI_Imm(0xFFFFFFFF)));
-            addInstr(env, AMD64Instr_Push(AMD64RMI_Imm(0)));
+            push_uimm64(env, const_o64);
+            push_uimm64(env, const_z64);
+            break;
+         case 0xFF0F:
+            push_uimm64(env, const_o64);
+            push_uimm64(env, const_z32o32);
+            break;
+         case 0xFFF0:
+            push_uimm64(env, const_o64);
+            push_uimm64(env, const_o32z32);
             break;
          default:
             goto vec_fail;

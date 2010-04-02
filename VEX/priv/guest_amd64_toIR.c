@@ -13838,8 +13838,6 @@ DisResult disInstr_AMD64_WRK (
       goto decode_success;
    }
 
-
-#if 0
    /* 66 0f 38 20 /r = PMOVSXBW xmm1, xmm2/m64 
       Packed Move with Sign Extend from Byte to Word (XMM)
 
@@ -13869,8 +13867,8 @@ DisResult disInstr_AMD64_WRK (
       }
      
       putXMMReg( gregOfRexRM(pfx, modrm), 
-                 binop( Iop_SarN8x16, 
-                        binop( Iop_ShlN8x16, 
+                 binop( Iop_SarN16x8, 
+                        binop( Iop_ShlN16x8, 
                                binop( Iop_InterleaveLO8x16,
                                       IRExpr_Const( IRConst_V128(0) ),
                                       mkexpr(srcVec) ),
@@ -13879,7 +13877,6 @@ DisResult disInstr_AMD64_WRK (
      
       goto decode_success;
    }
-#endif
 
 
    /* 66 0f 38 21 /r = PMOVSXBD xmm1, xmm2/m32 

@@ -13744,15 +13744,64 @@ DisResult disInstr_AMD64_WRK (
 
       putXMMReg( gregOfRexRM(pfx, modrm), 
                  binop( Iop_OrV128, 
-                        binop( Iop_AndV128, mkexpr(src_vec), 
-                               mkexpr(imm8_mask) ), 
-                        binop( Iop_AndV128, mkexpr(src_vec), 
+                        binop( Iop_AndV128, mkexpr(src_vec), mkexpr(imm8_mask) ), 
+                        binop( Iop_AndV128, mkexpr(dst_vec), 
                                unop( Iop_NotV128, mkexpr(imm8_mask) ) ) ) );
 
       goto decode_success;
    }
 
 
+   // UNTESTED
+   /* 66 0F 3A 0C /r ib = BLENDPS xmm1, xmm2/m128, imm8
+      Blend Packed Single Precision Floating-Point Values (XMM) */
+   if ( have66noF2noF3( pfx ) 
+        && sz == 2
+        && insn[0] == 0x0F && insn[1] == 0x3A && insn[2] == 0x0C ) {
+
+      Int imm8;
+      IRTemp dst_vec = newTemp(Ity_V128);
+      IRTemp src_vec = newTemp(Ity_V128);
+
+      modrm = insn[3];
+
+      assign( dst_vec, getXMMReg( gregOfRexRM(pfx, modrm) ) );
+
+      if ( epartIsReg( modrm ) ) {
+         imm8 = (Int)insn[4];
+         assign( src_vec, getXMMReg( eregOfRexRM(pfx, modrm) ) );
+         delta += 3+1+1;
+         DIP( "blendps %s,%s,$%d\n", 
+              nameXMMReg( eregOfRexRM(pfx, modrm) ),
+              nameXMMReg( gregOfRexRM(pfx, modrm) ),
+              imm8 );    
+      } else {
+         addr = disAMode( &alen, vbi, pfx, delta+3, dis_buf, 
+                          1/* imm8 is 1 byte after the amode */ );
+         assign( src_vec, loadLE( Ity_V128, mkexpr(addr) ) );
+         imm8 = (Int)insn[2+alen+1];
+         delta += 3+alen+1;
+         DIP( "blendpd %s,%s$%d\n", 
+              dis_buf, nameXMMReg( gregOfRexRM(pfx, modrm) ), imm8 );
+      }
+
+      UShort imm8_perms[16] = { 0x0000, 0x000F, 0x00F0, 0x00FF, 0x0F00, 0x0F0F, 
+                                0x0FF0, 0x0FFF, 0xF000, 0xF00F, 0xF0F0, 0xF0FF, 
+                                0xFF00, 0xFF0F, 0xFFF0, 0xFFFF };
+      IRTemp imm8_mask = newTemp(Ity_V128);
+      assign( imm8_mask, mkV128( imm8_perms[ (imm8 & 15) ] ) );
+
+      putXMMReg( gregOfRexRM(pfx, modrm), 
+                 binop( Iop_OrV128, 
+                        binop( Iop_AndV128, mkexpr(src_vec), mkexpr(imm8_mask) ),
+                        binop( Iop_AndV128, mkexpr(dst_vec),
+                               unop( Iop_NotV128, mkexpr(imm8_mask) ) ) ) );
+
+      goto decode_success;
+   }
+
+
+   // UNTESTED
    /* 66 0F 3A 21 /r ib = INSERTPS xmm1, xmm2/m32, imm8
       Insert Packed Single Precision Floating-Point Value (XMM) */
    if ( have66noF2noF3( pfx ) 
@@ -13838,11 +13887,9 @@ DisResult disInstr_AMD64_WRK (
       goto decode_success;
    }
 
-   /* 66 0f 38 20 /r = PMOVSXBW xmm1, xmm2/m64 
-      Packed Move with Sign Extend from Byte to Word (XMM)
 
-      not tested: implementation uses SarN8x16, 
-      but backend doesn't know what to do with it */
+   /* 66 0f 38 20 /r = PMOVSXBW xmm1, xmm2/m64 
+      Packed Move with Sign Extend from Byte to Word (XMM) */
    if ( have66noF2noF3( pfx ) 
         && sz == 2 
         && insn[0] == 0x0F && insn[1] == 0x38 && insn[2] == 0x20 ) {

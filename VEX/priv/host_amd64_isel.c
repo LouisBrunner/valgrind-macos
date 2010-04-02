@@ -1480,6 +1480,7 @@ static HReg iselIntExpr_R_wrk ( ISelEnv* env, IRExpr* e )
             HReg src  = iselIntExpr_R(env, e->Iex.Unop.arg);
             Int shift = 0;
             switch (e->Iex.Unop.op) {
+               case Iop_16HIto8:  shift = 8;  break;
                case Iop_32HIto16: shift = 16; break;
                case Iop_64HIto32: shift = 32; break;
                default: vassert(0);
@@ -3186,35 +3187,43 @@ static HReg iselVecExpr_wrk ( ISelEnv* env, IRExpr* e )
    if (e->tag == Iex_Const) {
       HReg dst = newVRegV(env);
       vassert(e->Iex.Const.con->tag == Ico_V128);
-      if (e->Iex.Const.con->Ico.V128 == 0x0000) {
-         dst = generate_zeroes_V128(env);
-         return dst;
-      } else
-      if (e->Iex.Const.con->Ico.V128 == 0x00FF) {
-         AMD64AMode* rsp0 = AMD64AMode_IR(0, hregAMD64_RSP());
-         /* Both of these literals are sign-extended to 64 bits. */
-         addInstr(env, AMD64Instr_Push(AMD64RMI_Imm(0)));
-         addInstr(env, AMD64Instr_Push(AMD64RMI_Imm(0xFFFFFFFF)));
-         addInstr(env, AMD64Instr_SseLdSt( True/*load*/, 16, dst, rsp0 ));
-         add_to_rsp(env, 16);
-         return dst;
-      } else 
-      if (e->Iex.Const.con->Ico.V128 == 0x000F) {
-         HReg tmp = newVRegI(env);
-         AMD64AMode* rsp0 = AMD64AMode_IR(0, hregAMD64_RSP());
-         addInstr(env, AMD64Instr_Imm64(0xFFFFFFFFULL, tmp));
-         addInstr(env, AMD64Instr_Push(AMD64RMI_Imm(0)));
-         addInstr(env, AMD64Instr_Push(AMD64RMI_Reg(tmp)));
-         addInstr(env, AMD64Instr_SseLdSt( True/*load*/, 16, dst, rsp0 ));
-         add_to_rsp(env, 16);
-         return dst;
-      } else {
-         goto vec_fail;
-#        if 0
-         addInstr(env, X86Instr_SseConst(e->Iex.Const.con->Ico.V128, dst));
-         return dst;
-#        endif
+      switch (e->Iex.Const.con->Ico.V128) {
+         case 0x0000:
+            dst = generate_zeroes_V128(env);
+            return dst;
+         case 0xFFFF:
+            dst = generate_ones_V128(env);
+            return dst;
+         default:
+            break;
       }
+      AMD64AMode* rsp0 = AMD64AMode_IR(0, hregAMD64_RSP());
+      switch (e->Iex.Const.con->Ico.V128) {
+         case 0x0000: case 0xFFFF:
+            vassert(0); /* handled just above */
+         case 0x00FF:
+            /* Both of these literals are sign-extended to 64 bits. */
+            addInstr(env, AMD64Instr_Push(AMD64RMI_Imm(0)));
+            addInstr(env, AMD64Instr_Push(AMD64RMI_Imm(0xFFFFFFFF)));
+            break;
+         case 0x000F: {
+            HReg tmp = newVRegI(env);
+            addInstr(env, AMD64Instr_Imm64(0xFFFFFFFFULL, tmp));
+            addInstr(env, AMD64Instr_Push(AMD64RMI_Imm(0)));
+            addInstr(env, AMD64Instr_Push(AMD64RMI_Reg(tmp)));
+            break;
+         }
+         case 0xFF00:
+            /* Both of these literals are sign-extended to 64 bits. */
+            addInstr(env, AMD64Instr_Push(AMD64RMI_Imm(0xFFFFFFFF)));
+            addInstr(env, AMD64Instr_Push(AMD64RMI_Imm(0)));
+            break;
+         default:
+            goto vec_fail;
+      }
+      addInstr(env, AMD64Instr_SseLdSt( True/*load*/, 16, dst, rsp0 ));
+      add_to_rsp(env, 16);
+      return dst;
    }
 
    if (e->tag == Iex_Unop) {

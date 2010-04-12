@@ -1501,6 +1501,16 @@ void evh__new_mem ( Addr a, SizeT len ) {
 }
 
 static
+void evh__new_mem_stack ( Addr a, SizeT len ) {
+   if (SHOW_EVENTS >= 2)
+      VG_(printf)("evh__new_mem_stack(%p, %lu)\n", (void*)a, len );
+   shadow_mem_make_New( get_current_Thread(),
+                        -VG_STACK_REDZONE_SZB + a, len );
+   if (len >= SCE_BIGRANGE_T && (HG_(clo_sanity_flags) & SCE_BIGRANGE))
+      all__sanity_check("evh__new_mem_stack-post");
+}
+
+static
 void evh__new_mem_w_tid ( Addr a, SizeT len, ThreadId tid ) {
    if (SHOW_EVENTS >= 2)
       VG_(printf)("evh__new_mem_w_tid(%p, %lu)\n", (void*)a, len );
@@ -2022,7 +2032,7 @@ static void evh__HG_PTHREAD_MUTEX_UNLOCK_POST ( ThreadId tid, void* mutex )
 
 
 /* ------------------------------------------------------- */
-/* -------------- events to do with mutexes -------------- */
+/* -------------- events to do with spinlocks ------------ */
 /* ------------------------------------------------------- */
 
 /* All a bit of a kludge.  Pretend we're really dealing with ordinary
@@ -4810,7 +4820,7 @@ static void hg_pre_clo_init ( void )
    VG_(track_new_mem_stack_signal)( evh__new_mem_w_tid );
    VG_(track_new_mem_brk)         ( evh__new_mem_w_tid );
    VG_(track_new_mem_mmap)        ( evh__new_mem_w_perms );
-   VG_(track_new_mem_stack)       ( evh__new_mem );
+   VG_(track_new_mem_stack)       ( evh__new_mem_stack );
 
    // FIXME: surely this isn't thread-aware
    VG_(track_copy_mem_remap)      ( evh__copy_mem );

@@ -3183,7 +3183,7 @@ static UWord stats__ctxt_tab_cmps = 0;
 
 
 ///////////////////////////////////////////////////////
-//// Part (1): An OSet of RCECs
+//// Part (1): A hash table of RCECs
 ///
 
 #define N_FRAMES 8
@@ -3250,7 +3250,7 @@ static void free_RCEC ( RCEC* rcec ) {
    tl_assert(rcec->magic == RCEC_MAGIC);
    gal_Free( &rcec_group_allocator, rcec );
 }
-//////////// END OldRef group allocator
+//////////// END RCEC group allocator
 
 
 /* Find 'ec' in the RCEC list whose head pointer lives at 'headp' and

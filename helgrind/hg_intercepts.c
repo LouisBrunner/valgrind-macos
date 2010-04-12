@@ -193,8 +193,6 @@ static char* lame_strerror ( long err )
 /*--- pthread_create, pthread_join, pthread_exit               ---*/
 /*----------------------------------------------------------------*/
 
-/* Do not rename this function.  It contains an unavoidable race and
-   so is mentioned by name in glibc-*helgrind*.supp. */
 static void* mythread_wrapper ( void* xargsV )
 {
    volatile Word* xargs = (volatile Word*) xargsV;
@@ -207,7 +205,17 @@ static void* mythread_wrapper ( void* xargsV )
       we're ready because (1) we need to make sure it doesn't exit and
       hence deallocate xargs[] while we still need it, and (2) we
       don't want either parent nor child to proceed until the tool has
-      been notified of the child's pthread_t. */
+      been notified of the child's pthread_t.
+
+      Note that parent and child access args[] without a lock,
+      effectively using args[2] as a spinlock in order to get the
+      parent to wait until the child passes this point.  The parent
+      disables checking on xargs[] before creating the child and
+      re-enables it once the child goes past this point, so the user
+      never sees the race.  The previous approach (suppressing the
+      resulting error) was flawed, because it could leave shadow
+      memory for args[] in a state in which subsequent use of it by
+      the parent would report further races. */
    xargs[2] = 0;
    /* Now we can no longer safely use xargs[]. */
    return (void*) fn( (void*)arg );
@@ -237,6 +245,14 @@ static int pthread_create_WRK(pthread_t *thread, const pthread_attr_t *attr,
    xargs[0] = (Word)start;
    xargs[1] = (Word)arg;
    xargs[2] = 1; /* serves as a spinlock -- sigh */
+   /* Disable checking on the spinlock and the two words used to
+      convey args to the child.  Basically we need to make it appear
+      as if the child never accessed this area, since merely
+      suppressing the resulting races does not address the issue that
+      that piece of the parent's stack winds up in the "wrong" state
+      and therefore may give rise to mysterious races when the parent
+      comes to re-use this piece of stack in some other frame. */
+   VALGRIND_HG_DISABLE_CHECKING(&xargs, sizeof(xargs));
 
    CALL_FN_W_WWWW(ret, fn, thread,attr,mythread_wrapper,&xargs[0]);
 
@@ -255,6 +271,10 @@ static int pthread_create_WRK(pthread_t *thread, const pthread_attr_t *attr,
    } else { 
       DO_PthAPIerror( "pthread_create", ret );
    }
+
+   /* Reenable checking on the area previously used to communicate
+      with the child. */
+   VALGRIND_HG_ENABLE_CHECKING(&xargs, sizeof(xargs));
 
    if (TRACE_PTH_FNS) {
       fprintf(stderr, " :: pth_create -> %d >>\n", ret);

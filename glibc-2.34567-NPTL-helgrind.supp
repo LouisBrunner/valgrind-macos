@@ -135,12 +135,6 @@
    fun:__lll_*lock_*
 }
 {
-   helgrind-glibc2X-112
-   Helgrind:Race
-   fun:pthread_create_WRK
-   fun:pthread_create@*
-}
-{
    helgrind-glibc2X-113
    Helgrind:Race
    fun:pthread_barrier_wait*

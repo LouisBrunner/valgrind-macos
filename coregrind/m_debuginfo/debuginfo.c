@@ -1239,10 +1239,13 @@ static void search_all_symtabs ( Addr ptr, /*OUT*/DebugInfo** pdi,
    for (di = debugInfo_list; di != NULL; di = di->next) {
 
       if (findText) {
-         inRange = di->text_present
-                   && di->text_size > 0
-                   && di->text_avma <= ptr 
-                   && ptr < di->text_avma + di->text_size;
+         /* Consider any symbol in the r-x mapped area to be text.
+            See Comment_Regarding_Text_Range_Checks in storage.c for
+            details. */
+         inRange = di->have_rx_map
+                   && di->rx_map_size > 0
+                   && di->rx_map_avma <= ptr
+                   && ptr < di->rx_map_avma + di->rx_map_size;
       } else {
          inRange = (di->data_present
                     && di->data_size > 0

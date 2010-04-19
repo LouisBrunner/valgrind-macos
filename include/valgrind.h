@@ -79,8 +79,16 @@
 /* ------------------------------------------------------------------ */
 
 /* Specify Valgrind's version number, so that user code can
-   conditionally compile based on our version number. */
-#define __VALGRIND__          3
+   conditionally compile based on our version number.  Note that these
+   were introduced at version 3.6 and so do not exist in version 3.5
+   or earlier.  The recommended way to use them to check for "version
+   X.Y or later" is (eg)
+
+#if defined(__VALGRIND_MAJOR__) && defined(__VALGRIND_MINOR__)   \
+    && (__VALGRIND_MAJOR__ > 3                                   \
+        || (__VALGRIND_MAJOR__ == 3 && __VALGRIND_MINOR__ >= 6))
+*/
+#define __VALGRIND_MAJOR__    3
 #define __VALGRIND_MINOR__    6
 
 

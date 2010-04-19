@@ -21,6 +21,9 @@ First of all:
   release date probably won't be known yet, updating it is in the list below
   of tasks for the official release.)
 
+- Make sure __VALGRIND_MAJOR__ and __VALGRIND_MINOR__ are correct
+  for the release.  (include/valgrind.h)
+
 - Write release notes, add to NEWS.  Include a list of fixed bugs from
   Bugzilla.  It's unclear how to do this consistently.  The approach
   taken for 3.0.0 was to go to this page in KDE's bugzilla:

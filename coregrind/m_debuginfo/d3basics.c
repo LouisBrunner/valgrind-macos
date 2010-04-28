@@ -124,6 +124,10 @@ HChar* ML_(pp_DW_TAG) ( DW_TAG tag )
       case DW_TAG_imported_unit:      return "DW_TAG_imported_unit";
       case DW_TAG_condition:          return "DW_TAG_condition";
       case DW_TAG_shared_type:        return "DW_TAG_shared_type";
+      /* DWARF 4.  */
+      case DW_TAG_type_unit:          return "DW_TAG_type_unit";
+      case DW_TAG_rvalue_reference_type: return "DW_TAG_rvalue_reference_type";
+      case DW_TAG_template_alias:     return "DW_TAG_template_alias";
       /* SGI/MIPS Extensions.  */
       case DW_TAG_MIPS_loop:          return "DW_TAG_MIPS_loop";
       /* HP extensions.  See:
@@ -172,6 +176,10 @@ HChar* ML_(pp_DW_FORM) ( DW_FORM form )
       case DW_FORM_ref8:      return "DW_FORM_ref8";
       case DW_FORM_ref_udata: return "DW_FORM_ref_udata";
       case DW_FORM_indirect:  return "DW_FORM_indirect";
+      case DW_FORM_sec_offset:return "DW_FORM_sec_offset";
+      case DW_FORM_exprloc:   return "DW_FORM_exprloc";
+      case DW_FORM_flag_present:return "DW_FORM_flag_present";
+      case DW_FORM_ref_sig8:  return "DW_FORM_ref_sig8";
       default:                return "DW_FORM_???";
    }
 }
@@ -269,6 +277,13 @@ HChar* ML_(pp_DW_AT) ( DW_AT attr )
       case DW_AT_elemental: return "DW_AT_elemental";
       case DW_AT_pure: return "DW_AT_pure";
       case DW_AT_recursive: return "DW_AT_recursive";
+      /* DWARF 4 values.  */
+      case DW_AT_signature: return "DW_AT_signature";
+      case DW_AT_main_subprogram: return "DW_AT_main_subprogram";
+      case DW_AT_data_bit_offset: return "DW_AT_data_bit_offset";
+      case DW_AT_const_expr: return "DW_AT_const_expr";
+      case DW_AT_enum_class: return "DW_AT_enum_class";
+      case DW_AT_linkage_name: return "DW_AT_linkage_name";
       /* SGI/MIPS extensions.  */
       /* case DW_AT_MIPS_fde: return "DW_AT_MIPS_fde"; */
       /* DW_AT_MIPS_fde == DW_AT_HP_unmodifiable */

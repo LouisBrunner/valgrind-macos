@@ -1,6 +1,6 @@
 
 /*--------------------------------------------------------------------*/
-/*--- Read DWARF3 ".debug_info" sections (DIE trees).              ---*/
+/*--- Read DWARF3/4 ".debug_info" sections (DIE trees).            ---*/
 /*---                                                 readdwarf3.c ---*/
 /*--------------------------------------------------------------------*/
 
@@ -387,7 +387,7 @@ typedef
       void (*barf)( HChar* ) __attribute__((noreturn));
       /* Is this 64-bit DWARF ? */
       Bool   is_dw64;
-      /* Which DWARF version ?  (2 or 3) */
+      /* Which DWARF version ?  (2, 3 or 4) */
       UShort version;
       /* Length of this Compilation Unit, as stated in the
          .unit_length :: InitialLength field of the CU Header.
@@ -805,8 +805,8 @@ void parse_CU_Header ( /*OUT*/CUConst* cc,
 
    /* version */
    cc->version = get_UShort( c );
-   if (cc->version != 2 && cc->version != 3)
-      cc->barf( "parse_CU_Header: is neither DWARF2 nor DWARF3" );
+   if (cc->version != 2 && cc->version != 3 && cc->version != 4)
+      cc->barf( "parse_CU_Header: is neither DWARF2 nor DWARF3 nor DWARF4" );
    TRACE_D3("   Version:       %d\n", (Int)cc->version );
 
    /* debug_abbrev_offset */
@@ -984,10 +984,20 @@ void get_Form_contents ( /*OUT*/ULong* cts,
          *ctsSzB = 8;
          TRACE_D3("%llu", *cts);
          break;
+      case DW_FORM_sec_offset:
+         *cts = (ULong)get_Dwarfish_UWord( c, cc->is_dw64 );
+         *ctsSzB = cc->is_dw64 ? 8 : 4;
+         TRACE_D3("%llu", *cts);
+         break;
       case DW_FORM_sdata:
          *cts = (ULong)(Long)get_SLEB128(c);
          *ctsSzB = 8;
          TRACE_D3("%lld", (Long)*cts);
+         break;
+      case DW_FORM_udata:
+         *cts = (ULong)(Long)get_ULEB128(c);
+         *ctsSzB = 8;
+         TRACE_D3("%llu", (Long)*cts);
          break;
       case DW_FORM_addr:
          /* note, this is a hack.  DW_FORM_addr is defined as getting
@@ -1055,9 +1065,41 @@ void get_Form_contents ( /*OUT*/ULong* cts,
          *ctsMemSzB = 1 + (ULong)VG_(strlen)(str);
          break;
       }
+      case DW_FORM_ref1: {
+         UChar  u8 = get_UChar(c);
+         UWord res = cc->cu_start_offset + (UWord)u8;
+         *cts = (ULong)res;
+         *ctsSzB = sizeof(UWord);
+         TRACE_D3("<%lx>", res);
+         break;
+      }
+      case DW_FORM_ref2: {
+         UShort  u16 = get_UShort(c);
+         UWord res = cc->cu_start_offset + (UWord)u16;
+         *cts = (ULong)res;
+         *ctsSzB = sizeof(UWord);
+         TRACE_D3("<%lx>", res);
+         break;
+      }
       case DW_FORM_ref4: {
          UInt  u32 = get_UInt(c);
          UWord res = cc->cu_start_offset + (UWord)u32;
+         *cts = (ULong)res;
+         *ctsSzB = sizeof(UWord);
+         TRACE_D3("<%lx>", res);
+         break;
+      }
+      case DW_FORM_ref8: {
+         ULong  u64 = get_ULong(c);
+         UWord res = cc->cu_start_offset + (UWord)u64;
+         *cts = (ULong)res;
+         *ctsSzB = sizeof(UWord);
+         TRACE_D3("<%lx>", res);
+         break;
+      }
+      case DW_FORM_ref_udata: {
+         ULong  u64 = get_ULEB128(c);
+         UWord res = cc->cu_start_offset + (UWord)u64;
          *cts = (ULong)res;
          *ctsSzB = sizeof(UWord);
          TRACE_D3("<%lx>", res);
@@ -1070,6 +1112,11 @@ void get_Form_contents ( /*OUT*/ULong* cts,
          *ctsSzB = 1;
          break;
       }
+      case DW_FORM_flag_present:
+         TRACE_D3("1");
+         *cts = 1;
+         *ctsSzB = 1;
+         break;
       case DW_FORM_block1: {
          ULong  u64b;
          ULong  u64 = (ULong)get_UChar(c);
@@ -1096,6 +1143,50 @@ void get_Form_contents ( /*OUT*/ULong* cts,
          *ctsMemSzB = (UWord)u64;
          break;
       }
+      case DW_FORM_block4: {
+         ULong  u64b;
+         ULong  u64 = (ULong)get_UInt(c);
+         UChar* block = get_address_of_Cursor(c);
+         TRACE_D3("%llu byte block: ", u64);
+         for (u64b = u64; u64b > 0; u64b--) {
+            UChar u8 = get_UChar(c);
+            TRACE_D3("%x ", (UInt)u8);
+         }
+         *cts = (ULong)(UWord)block;
+         *ctsMemSzB = (UWord)u64;
+         break;
+      }
+      case DW_FORM_exprloc:
+      case DW_FORM_block: {
+         ULong  u64b;
+         ULong  u64 = (ULong)get_ULEB128(c);
+         UChar* block = get_address_of_Cursor(c);
+         TRACE_D3("%llu byte block: ", u64);
+         for (u64b = u64; u64b > 0; u64b--) {
+            UChar u8 = get_UChar(c);
+            TRACE_D3("%x ", (UInt)u8);
+         }
+         *cts = (ULong)(UWord)block;
+         *ctsMemSzB = (UWord)u64;
+         break;
+      }
+      case DW_FORM_ref_sig8: {
+         ULong  u64b;
+         UChar* block = get_address_of_Cursor(c);
+         TRACE_D3("8 byte signature: ");
+         for (u64b = 8; u64b > 0; u64b--) {
+            UChar u8 = get_UChar(c);
+            TRACE_D3("%x ", (UInt)u8);
+         }
+         *cts = (ULong)(UWord)block;
+         *ctsMemSzB = 8;
+         break;
+      }
+      case DW_FORM_indirect:
+         get_Form_contents (cts, ctsSzB, ctsMemSzB, cc, c, td3,
+                            (DW_FORM)get_ULEB128(c));
+         return;
+
       default:
          VG_(printf)(
             "get_Form_contents: unhandled %d (%s) at <%lx>\n",
@@ -1322,11 +1413,13 @@ void read_filename_table( /*MOD*/D3VarParser* parser,
       get_Initial_Length( &is_dw64, &c,
            "read_filename_table: invalid initial-length field" );
    version = get_UShort( &c );
-   if (version != 2 && version != 3)
-     cc->barf("read_filename_table: Only DWARF version 2 and 3 line info "
+   if (version != 2 && version != 3 && version != 4)
+     cc->barf("read_filename_table: Only DWARF version 2, 3 and 4 line info "
               "is currently supported.");
    /*header_length              = (ULong)*/ get_Dwarfish_UWord( &c, is_dw64 );
    /*minimum_instruction_length = */ get_UChar( &c );
+   if (version >= 4)
+      /*maximum_operations_per_insn = */ get_UChar( &c );
    /*default_is_stmt            = */ get_UChar( &c );
    /*line_base                  = (Char)*/ get_UChar( &c );
    /*line_range                 = */ get_UChar( &c );
@@ -2025,7 +2118,7 @@ static void parse_type_DIE ( /*MOD*/XArray* /* of TyEnt */ tyents,
             case DW_LANG_C89: case DW_LANG_C:
             case DW_LANG_C_plus_plus: case DW_LANG_ObjC:
             case DW_LANG_ObjC_plus_plus: case DW_LANG_UPC:
-            case DW_LANG_Upc:
+            case DW_LANG_Upc: case DW_LANG_C99:
                parser->language = 'C'; break;
             case DW_LANG_Fortran77: case DW_LANG_Fortran90:
             case DW_LANG_Fortran95:
@@ -2033,8 +2126,8 @@ static void parse_type_DIE ( /*MOD*/XArray* /* of TyEnt */ tyents,
             case DW_LANG_Ada83: case DW_LANG_Cobol74:
             case DW_LANG_Cobol85: case DW_LANG_Pascal83:
             case DW_LANG_Modula2: case DW_LANG_Java:
-            case DW_LANG_C99: case DW_LANG_Ada95:
-            case DW_LANG_PLI: case DW_LANG_D:
+            case DW_LANG_Ada95: case DW_LANG_PLI:
+            case DW_LANG_D: case DW_LANG_Python:
             case DW_LANG_Mips_Assembler:
                parser->language = '?'; break;
             default:

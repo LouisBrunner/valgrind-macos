@@ -1,6 +1,6 @@
 
 /*--------------------------------------------------------------------*/
-/*--- Read DWARF1/2/3 debug info.                      readdwarf.c ---*/
+/*--- Read DWARF1/2/3/4 debug info.                    readdwarf.c ---*/
 /*--------------------------------------------------------------------*/
 
 /*
@@ -139,6 +139,7 @@ typedef struct
   UShort li_version;
   ULong  li_header_length;
   UChar  li_min_insn_length;
+  UChar  li_max_ops_per_insn;
   UChar  li_default_is_stmt;
   Int    li_line_base;
   UChar  li_line_range;
@@ -182,7 +183,8 @@ enum dwarf_line_number_x_ops
   {
     DW_LNE_end_sequence = 1,
     DW_LNE_set_address = 2,
-    DW_LNE_define_file = 3
+    DW_LNE_define_file = 3,
+    DW_LNE_set_discriminator = 4
   };
 
 typedef struct
@@ -199,7 +201,7 @@ typedef struct
   UInt  column;
   Int   is_stmt;
   Int   basic_block;
-  Int   end_sequence;
+  UChar end_sequence;
 } LineSMR;
 
 
@@ -411,6 +413,11 @@ Word process_extended_line_op( struct _DebugInfo* di,
             VG_(printf)("  DWARF2-line: set_address\n");
          break;
 
+      case DW_LNE_set_discriminator:
+         read_leb128 (data, & bytes_read, 0);
+         data += bytes_read;
+         break;
+
       default:
          if (di->ddump_line)
             VG_(printf)("process_extended_line_op:default\n");
@@ -513,9 +520,9 @@ void read_dwarf2_lineblock ( struct _DebugInfo* di,
       VG_(printf)("  DWARF Version:               %d\n", 
                   (Int)info.li_version);
 
-   if (info.li_version != 2 && info.li_version != 3) {
+   if (info.li_version != 2 && info.li_version != 3 && info.li_version != 4) {
       ML_(symerr)(di, True,
-                  "Only DWARF version 2 and 3 line info "
+                  "Only DWARF version 2, 3 and 4 line info "
                   "is currently supported.");
       goto out;
    }
@@ -532,6 +539,26 @@ void read_dwarf2_lineblock ( struct _DebugInfo* di,
    if (di->ddump_line)
       VG_(printf)("  Minimum Instruction Length:  %d\n", 
                   (Int)info.li_min_insn_length);
+
+   /* We only support machines with one opcode per instruction
+      for now. If we ever want to support VLIW machines there is
+      code to handle multiple opcodes per instruction in the
+      patch attached to BZ#233595.
+   */
+   if (info.li_version >= 4) {
+      info.li_max_ops_per_insn = * ((UChar *)external);
+      if (info.li_max_ops_per_insn != 1) {
+         ML_(symerr)(di, True,
+                     "Invalid Maximum Ops Per Insn in line info.");
+         goto out;
+      }
+      external += 1;
+      if (di->ddump_line)
+         VG_(printf)("  Maximum Ops Per Insn:        %d\n", 
+                  (Int)info.li_max_ops_per_insn);
+   } else {
+      info.li_max_ops_per_insn = 1;
+   }
 
    info.li_default_is_stmt = * ((UChar *)external);
    external += 1;
@@ -714,7 +741,7 @@ void read_dwarf2_lineblock ( struct _DebugInfo* di,
 
          Int advAddr;
          op_code -= info.li_opcode_base;
-         adv      = (op_code / info.li_line_range) 
+         adv      = (op_code / info.li_line_range)
                        * info.li_min_insn_length;
          advAddr = adv;
          state_machine_regs.address += adv;
@@ -800,7 +827,7 @@ void read_dwarf2_lineblock ( struct _DebugInfo* di,
             break;
 
          case DW_LNS_advance_pc:
-            adv = info.li_min_insn_length 
+            adv = info.li_min_insn_length
                      * read_leb128 (data, & bytes_read, 0);
             data += bytes_read;
             state_machine_regs.address += adv;
@@ -979,7 +1006,7 @@ void read_unitinfo_dwarf2( /*OUT*/UnitInfo* ui,
    blklen = read_initial_length_field( p, &ui->dw64 );
    p += ui->dw64 ? 12 : 4;
 
-   /* version should be 2 */
+   /* version should be 2, 3 or 4 */
    ver = *((UShort*)p);
    p += 2;
 
@@ -1049,6 +1076,9 @@ void read_unitinfo_dwarf2( /*OUT*/UnitInfo* ui,
             classes) use FORM_data8, not FORM_data4.  Also,
             FORM_ref_addr and FORM_strp are 64-bit values, not 32-bit
             values. */
+         /* TJH 27 Apr 10: in DWARF 4 lineptr (and loclistptr,macptr,
+            rangelistptr classes) use FORM_sec_offset which is 64 bits
+            in 64 bit DWARF and 32 bits in 32 bit DWARF. */
          switch( form ) {
             /* Those cases extract the data properly */
             case 0x05: /* FORM_data2 */     cval = *((UShort*)p); p +=2; break;
@@ -1066,7 +1096,11 @@ void read_unitinfo_dwarf2( /*OUT*/UnitInfo* ui,
             case 0x08: /* FORM_string */    sval = (Char*)p; 
                                             p += VG_(strlen)((Char*)p) + 1; break;
             case 0x0b: /* FORM_data1 */     cval = *p; p++; break;
-            
+            case 0x17: /* FORM_sec_offset */if (ui->dw64) {
+                                               cval = *((ULong*)p); p += 8;
+                                            } else {
+                                               cval = *((UInt*)p); p += 4;
+                                            }; break;
             /* TODO : Following ones just skip data - implement if you need */
             case 0x01: /* FORM_addr */      p += addr_size; break;
             case 0x03: /* FORM_block2 */    p += *((UShort*)p) + 2; break;
@@ -1085,7 +1119,10 @@ void read_unitinfo_dwarf2( /*OUT*/UnitInfo* ui,
             case 0x13: /* FORM_ref4 */      p += 4; break;
             case 0x14: /* FORM_ref8 */      p += 8; break;
             case 0x15: /* FORM_ref_udata */ read_leb128U( &p ); break;
-            
+            case 0x18: /* FORM_exprloc */   p += read_leb128U( &p ); break;
+            case 0x19: /* FORM_flag_present */break;
+            case 0x20: /* FORM_ref_sig8 */  p += 8; break;
+
             default:
                VG_(printf)( "### unhandled dwarf2 abbrev form code 0x%x\n", form );
                break;
@@ -1163,9 +1200,9 @@ void ML_(read_debuginfo_dwarf3)
 
       /* version should be 2 */
       ver = *((UShort*)( block_img + blklen_len ));
-      if ( ver != 2 && ver != 3 ) {
+      if ( ver != 2 && ver != 3 && ver != 4 ) {
          ML_(symerr)( di, True,
-                      "Ignoring non-Dwarf2/3 block in .debug_info" );
+                      "Ignoring non-Dwarf2/3/4 block in .debug_info" );
          continue;
       }
       
@@ -3705,8 +3742,8 @@ void ML_(read_callframe_info_dwarf3)
             VG_(printf)("cie.version     = %d\n", (Int)cie_version);
          if (di->ddump_frames)
             VG_(printf)("  Version:               %d\n", (Int)cie_version);
-         if (cie_version != 1 && cie_version != 3) {
-            how = "unexpected CIE version (not 1 nor 3)";
+         if (cie_version != 1 && cie_version != 3 && cie_version != 4) {
+            how = "unexpected CIE version (not 1 nor 3 nor 4)";
             goto bad;
          }
 
@@ -3720,6 +3757,19 @@ void ML_(read_callframe_info_dwarf3)
          if (cie_augmentation[0] == 'e' && cie_augmentation[1] == 'h') {
             data += sizeof(Addr);
             cie_augmentation += 2;
+         }
+
+         if (cie_version >= 4) {
+            if (read_UChar(data) != sizeof(Addr)) {
+               how = "unexpected address size";
+               goto bad;
+            }
+            data += sizeof(UChar);
+            if (read_UChar(data) != 0) {
+               how = "unexpected non-zero segment size";
+               goto bad;
+            }
+            data += sizeof(UChar);
          }
 
          the_CIEs[this_CIE].code_a_f = read_leb128( data, &nbytes, 0);

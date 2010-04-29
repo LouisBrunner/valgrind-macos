@@ -14200,6 +14200,53 @@ DisResult disInstr_AMD64_WRK (
    }
 
 
+   /* 66 REX.W 0F 3A 22 /r ib = PINSRQ xmm1, r/m64, imm8
+      Extract Quadword int from gen.reg/mem64 and insert into xmm1 */
+   if ( have66noF2noF3( pfx ) 
+        && sz == 8  /* REX.W is present */
+        && insn[0] == 0x0F && insn[1] == 0x3A && insn[2] == 0x22 ) {
+
+      Int imm8_0;
+      IRTemp src_elems = newTemp(Ity_I64);
+      IRTemp src_vec   = newTemp(Ity_V128);
+
+      modrm = insn[3];
+
+      if ( epartIsReg( modrm ) ) {
+         imm8_0 = (Int)(insn[3+1] & 1);
+         assign( src_elems, getIReg64( eregOfRexRM(pfx,modrm) ) );
+         delta += 3+1+1;
+         DIP( "pinsrq $%d, %s,%s\n", imm8_0,
+              nameIReg64( eregOfRexRM(pfx, modrm) ),
+              nameXMMReg( gregOfRexRM(pfx, modrm) ) );
+      } else {
+         addr = disAMode( &alen, vbi, pfx, delta+3, dis_buf, 1 );
+         imm8_0 = (Int)(insn[3+alen] & 1);
+         assign( src_elems, loadLE( Ity_I64, mkexpr(addr) ) );
+         delta += 3+alen+1;
+         DIP( "pinsrq $%d, %s,%s\n", 
+              imm8_0, dis_buf, nameXMMReg( gregOfRexRM(pfx, modrm) ) );
+      }
+
+      UShort mask = 0;
+      if ( imm8_0 == 0 ) { 
+         mask = 0xFF00; 
+         assign( src_vec,  binop( Iop_64HLtoV128, mkU64(0), mkexpr(src_elems) ) );
+      } else {
+         mask = 0x00FF;
+         assign( src_vec, binop( Iop_64HLtoV128, mkexpr(src_elems), mkU64(0) ) );
+      }
+
+      putXMMReg( gregOfRexRM(pfx, modrm), 
+                 binop( Iop_OrV128, mkexpr(src_vec),
+                        binop( Iop_AndV128, 
+                               getXMMReg( gregOfRexRM(pfx, modrm) ),
+                               mkV128(mask) ) ) );
+
+      goto decode_success;
+   }
+
+
    /* 66 0F 38 3D /r = PMAXSD xmm1, xmm2/m128
       Maximum of Packed Signed Double Word Integers (XMM) 
       --

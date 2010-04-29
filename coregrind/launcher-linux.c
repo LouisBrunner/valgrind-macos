@@ -32,6 +32,16 @@
    and so it doesn't have to conform to Valgrind's arcane rules on
    no-glibc-usage etc. */
 
+/* Include valgrind headers before system headers to avoid problems
+   with the system headers #defining things which are used as names
+   of structure members in vki headers. */
+
+#include "pub_core_debuglog.h"
+#include "pub_core_vki.h"       // Avoids warnings from
+                                // pub_core_libcfile.h
+#include "pub_core_libcproc.h"  // For VALGRIND_LIB, VALGRIND_LAUNCHER
+#include "pub_core_ume.h"
+
 #include <assert.h>
 #include <ctype.h>
 #include <elf.h>
@@ -44,12 +54,6 @@
 #include <sys/mman.h>
 #include <sys/user.h>
 #include <unistd.h>
-
-#include "pub_core_debuglog.h"
-#include "pub_core_vki.h"       // Avoids warnings from
-                                // pub_core_libcfile.h
-#include "pub_core_libcproc.h"  // For VALGRIND_LIB, VALGRIND_LAUNCHER
-#include "pub_core_ume.h"
 
 
 

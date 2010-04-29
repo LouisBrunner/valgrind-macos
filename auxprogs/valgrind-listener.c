@@ -32,6 +32,16 @@
 
 /*---------------------------------------------------------------*/
 
+/* Include valgrind headers before system headers to avoid problems
+   with the system headers #defining things which are used as names
+   of structure members in vki headers. */
+
+#include "pub_core_basics.h"
+#include "pub_core_libcassert.h"    // For VG_BUGS_TO
+#include "pub_core_vki.h"           // Avoids warnings from 
+                                    // pub_core_libcfile.h
+#include "pub_core_libcfile.h"      // For VG_CLO_DEFAULT_LOGPORT
+
 #include <stdio.h>
 #include <unistd.h>
 #include <string.h>
@@ -43,12 +53,6 @@
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
-
-#include "pub_core_basics.h"
-#include "pub_core_libcassert.h"    // For VG_BUGS_TO
-#include "pub_core_vki.h"           // Avoids warnings from 
-                                    // pub_core_libcfile.h
-#include "pub_core_libcfile.h"      // For VG_CLO_DEFAULT_LOGPORT
 
 
 /*---------------------------------------------------------------*/

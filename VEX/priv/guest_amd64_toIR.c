@@ -14012,6 +14012,64 @@ DisResult disInstr_AMD64_WRK (
    }
 
 
+   /* 66 0F 38 3D /r = PMAXSD xmm1, xmm2/m128
+      Maximum of Packed Signed Double Word Integers (XMM) 
+      --
+      66 0F 38 39 /r = PMINSD xmm1, xmm2/m128
+      Minimum of Packed Signed Double Word Integers (XMM) */
+   if ( have66noF2noF3( pfx ) 
+        && sz == 2 
+        && insn[0] == 0x0F && insn[1] == 0x38
+        && ( (insn[2] == 0x3D) || (insn[2] == 0x39) ) ) {
+
+      IRTemp reg_vec  = newTemp(Ity_V128);
+      IRTemp rom_vec  = newTemp(Ity_V128);
+      IRTemp mask_vec = newTemp(Ity_V128);
+
+      Bool isPMAX     = (insn[2] == 0x3D) ? True : False;
+
+      HChar* str      = isPMAX ? "pmaxsd" : "pminsd";
+
+      modrm = insn[3];
+      assign( reg_vec, getXMMReg( gregOfRexRM(pfx, modrm) ) );
+
+      if ( epartIsReg( modrm ) ) {
+         assign( rom_vec, getXMMReg( eregOfRexRM(pfx, modrm) ) );
+         delta += 3+1;
+         DIP( "%s %s,%s\n", str,
+              nameXMMReg( eregOfRexRM(pfx, modrm) ),
+              nameXMMReg( gregOfRexRM(pfx, modrm) ) );    
+      } else {
+         addr = disAMode( &alen, vbi, pfx, delta+3, dis_buf, 0 );
+         assign( rom_vec, loadLE( Ity_V128, mkexpr(addr) ) );
+         delta += 3+alen;
+         DIP( "%s %s,%s\n", str, dis_buf, nameXMMReg( gregOfRexRM(pfx, modrm) ) );
+      }
+
+      assign( mask_vec, binop( Iop_CmpGT32Sx4, mkexpr(reg_vec), mkexpr(rom_vec) ) );
+
+      IRTemp max_min_vec = newTemp(Ity_V128);
+      if ( isPMAX ) {
+         assign( max_min_vec,
+                 binop( Iop_OrV128, 
+                        binop( Iop_AndV128, mkexpr(rom_vec),
+                               unopAndV128, mkexpr(rom_vec),
+                               unop( Iop_NotV128, mkexpr(mask_vec) ) ),
+                        binop( Iop_AndV128, mkexpr(reg_vec), mkexpr(mask_vec) ) ) );
+      } else {
+         assign( max_min_vec, 
+                 binop( Iop_OrV128, 
+                        binop( Iop_AndV128, mkexpr(reg_vec),
+                               unop( Iop_NotV128, mkexpr(mask_vec) ) ), 
+                        binop( Iop_AndV128, mkexpr(rom_vec), mkexpr(mask_vec) ) ) );
+      }
+
+      putXMMReg( gregOfRexRM(pfx, modrm), mkexpr(max_min_vec) );
+
+      goto decode_success;
+   }
+
+
    /* 66 0f 38 20 /r = PMOVSXBW xmm1, xmm2/m64 
       Packed Move with Sign Extend from Byte to Word (XMM) */
    if ( have66noF2noF3( pfx ) 
@@ -14880,12 +14938,12 @@ DisResult disInstr_AMD64_WRK (
          case 0xE1: 
             xtra = "e"; 
             zbit = mk_amd64g_calculate_condition( AMD64CondZ );
-	    cond = mkAnd1(cond, zbit);
+      cond = mkAnd1(cond, zbit);
             break;
          case 0xE0: 
             xtra = "ne";
             zbit = mk_amd64g_calculate_condition( AMD64CondNZ );
-	    cond = mkAnd1(cond, zbit);
+      cond = mkAnd1(cond, zbit);
             break;
          default:
 	    vassert(0);

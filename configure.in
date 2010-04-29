@@ -918,40 +918,24 @@ AC_MSG_RESULT([no])
 
 # Check whether pthread_mutex_t has a member called __m_kind.
 
-AC_MSG_CHECKING([for pthread_mutex_t::__m_kind])
-
-AC_TRY_COMPILE(
-[
-  #include <pthread.h>
-], [
-  pthread_mutex_t m;
-  return m.__m_kind;
-], [
-AC_MSG_RESULT([yes])
-AC_DEFINE([HAVE_PTHREAD_MUTEX_T__M_KIND], 1,
-          [Define to 1 if pthread_mutex_t has a member called __m_kind.])
-], [
-AC_MSG_RESULT([no])
-])
+AC_CHECK_MEMBER([pthread_mutex_t.__m_kind],
+	        [AC_DEFINE([HAVE_PTHREAD_MUTEX_T__M_KIND],
+		           1,                                   
+			   [Define to 1 if pthread_mutex_t has a member called __m_kind.])
+                ],
+		[],
+		[#include <pthread.h>])
 
 
 # Check whether pthread_mutex_t has a member called __data.__kind.
 
-AC_MSG_CHECKING([for pthread_mutex_t::__data.__kind])
-
-AC_TRY_COMPILE(
-[
-#include <pthread.h>
-], [
-  pthread_mutex_t m;
-  return m.__data.__kind;
-], [
-AC_MSG_RESULT([yes])
-AC_DEFINE([HAVE_PTHREAD_MUTEX_T__DATA__KIND], 1,
-          [Define to 1 if pthread_mutex_t has a member __data.__kind.])
-], [
-AC_MSG_RESULT([no])
-])
+AC_CHECK_MEMBER([pthread_mutex_t.__data.__kind],
+                [AC_DEFINE([HAVE_PTHREAD_MUTEX_T__DATA__KIND],
+		          1,
+			  [Define to 1 if pthread_mutex_t has a member __data.__kind.])
+                ],
+		[],
+		[#include <pthread.h>])
 
 
 # does this compiler support -maltivec and does it have the include file

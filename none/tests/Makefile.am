@@ -237,13 +237,13 @@ thread_exits_LDADD	= -lpthread
 threaded_fork_LDADD	= -lpthread
 threadederrno_LDADD	= -lpthread
 tls_SOURCES		= tls.c tls2.c
-tls_DEPENDENCIES	= tls.so
+tls_DEPENDENCIES	= tls.so tls2.so
 if VGCONF_OS_IS_AIX5
  tls_LDFLAGS		= 
 else
  tls_LDFLAGS		= -Wl,-rpath,$(top_builddir)/none/tests
 endif
-tls_LDADD		= tls.so -lpthread
+tls_LDADD		= tls.so tls2.so -lpthread
 tls_so_SOURCES		= tls_so.c
 tls_so_DEPENDENCIES	= tls2.so
 if VGCONF_OS_IS_AIX5

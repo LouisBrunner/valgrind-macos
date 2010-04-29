@@ -44,7 +44,7 @@ static int             s_quiet;
 
 static sem_t* create_semaphore(const char* const name)
 {
-#ifndef HAVE_SEM_INIT
+#ifdef __APPLE__
   sem_t* p = sem_open(name, O_CREAT, 0600, 0);
   return p;
 #else
@@ -57,7 +57,7 @@ static sem_t* create_semaphore(const char* const name)
 
 static void destroy_semaphore(const char* const name, sem_t* p)
 {
-#ifndef HAVE_SEM_INIT
+#ifdef __APPLE__
   sem_close(p);
   sem_unlink(name);
 #else

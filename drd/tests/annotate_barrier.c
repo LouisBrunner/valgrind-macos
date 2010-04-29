@@ -11,6 +11,7 @@
 #include <stdio.h>   /* fprintf() */
 #include <stdlib.h>  /* atoi() */
 #include <string.h>  /* memset() */
+#include <unistd.h>  /* usleep() */
 #include "../../drd/drd.h"
 #include "../../config.h"
 
@@ -38,6 +39,7 @@ typedef struct
 
 struct threadinfo
 {
+  int        thread_num;
   barrier_t* b;
   pthread_t  tid;
   int*       array;
@@ -106,13 +108,13 @@ static void* threadfunc(struct threadinfo* p)
   int* const array = p->array;
   barrier_t* const b = p->b;
   if (! s_silent)
-    printf("thread %lx iteration 0\n", pthread_self());
+    printf("thread %d iteration 0\n", p->thread_num);
   barrier_wait(b);
   for (i = 0; i < p->iterations; i++)
   {
     if (! s_silent)
-      printf("thread %lx iteration %d; writing to %p\n",
-             pthread_self(), i + 1, &array[i]);
+      printf("thread %d iteration %d; writing to %p\n",
+             p->thread_num, i + 1, &array[i]);
     array[i] = i;
     barrier_wait(b);
   }
@@ -137,6 +139,7 @@ static void barriers_and_races(const int nthread, const int iterations)
 
   for (i = 0; i < nthread; i++)
   {
+    t[i].thread_num = i + 1;
     t[i].b = &b;
     t[i].array = array;
     t[i].iterations = iterations;

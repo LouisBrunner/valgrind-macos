@@ -14304,6 +14304,54 @@ DisResult disInstr_AMD64_WRK (
    }
 
 
+   /* 66 0F 38 3F /r = PMAXUD xmm1, xmm2/m128
+      Maximum of Packed Unsigned Doubleword Integers (XMM) */
+   if ( have66noF2noF3( pfx ) 
+        && sz == 2 
+        && insn[0] == 0x0F && insn[1] == 0x38 && insn[2] == 0x3F ) {
+
+      IRTemp reg_vec  = newTemp(Ity_V128);
+      IRTemp rom_vec  = newTemp(Ity_V128);
+      IRTemp mask_vec = newTemp(Ity_V128);
+      IRTemp and_vec  = newTemp(Ity_V128);
+      IRTemp not_vec  = newTemp(Ity_V128);
+  
+      modrm = insn[3];
+      assign( reg_vec, getXMMReg( gregOfRexRM(pfx, modrm) ) );
+
+      if ( epartIsReg( modrm ) ) {
+         assign( rom_vec, getXMMReg( eregOfRexRM(pfx, modrm) ) );
+         delta += 3+1;
+         DIP( "pmaxud %s,%s\n", 
+              nameXMMReg( eregOfRexRM(pfx, modrm) ),
+              nameXMMReg( gregOfRexRM(pfx, modrm) ) );    
+      } else {
+         addr = disAMode( &alen, vbi, pfx, delta+3, dis_buf, 0 );
+         assign( rom_vec, loadLE( Ity_V128, mkexpr(addr) ) );
+         delta += 3+alen;
+         DIP( "pmaxud %s,%s\n", dis_buf, nameXMMReg( gregOfRexRM(pfx, modrm) ) );
+      }
+
+      /* the foll. simulates Iop_CmpGT32Ux4 (not implemented) 
+         c.f. Hacker's Delight, S2-11, p.23 */
+      assign( mask_vec, 
+              binop( Iop_XorV128, 
+                     binop( Iop_XorV128, 
+                            binop( Iop_CmpGT32Sx4, mkexpr(reg_vec), mkexpr(rom_vec) ),
+                            binop( Iop_SarN32x4, mkexpr(reg_vec), mkU8(31) ) ), 
+                     binop( Iop_SarN32x4, mkexpr(rom_vec), mkU8(31) ) ) );
+
+      assign( and_vec, binop( Iop_AndV128, mkexpr(reg_vec), mkexpr(mask_vec) ) );
+      assign( not_vec, binop( Iop_AndV128, mkexpr(rom_vec), 
+                              unop( Iop_NotV128, mkexpr(mask_vec) ) ) );
+
+      putXMMReg( gregOfRexRM(pfx, modrm), 
+                 binop( Iop_OrV128, mkexpr(not_vec), mkexpr(and_vec) ) );
+ 
+      goto decode_success;
+   }
+
+
    /* 66 0f 38 20 /r = PMOVSXBW xmm1, xmm2/m64 
       Packed Move with Sign Extend from Byte to Word (XMM) */
    if ( have66noF2noF3( pfx ) 

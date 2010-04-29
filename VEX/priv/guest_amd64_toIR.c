@@ -13752,7 +13752,6 @@ DisResult disInstr_AMD64_WRK (
    }
 
 
-   // UNTESTED
    /* 66 0F 3A 0C /r ib = BLENDPS xmm1, xmm2/m128, imm8
       Blend Packed Single Precision Floating-Point Values (XMM) */
    if ( have66noF2noF3( pfx ) 
@@ -13801,7 +13800,132 @@ DisResult disInstr_AMD64_WRK (
    }
 
 
-   // UNTESTED
+   /* 66 0F 3A 41 /r ib = DPPD xmm1, xmm2/m128, imm8
+      Dot Product of Packed Double Precision Floating-Point Values (XMM) */
+   if ( have66noF2noF3( pfx ) 
+        && sz == 2
+        && insn[0] == 0x0F && insn[1] == 0x3A && insn[2] == 0x41 ) {
+  
+      Int imm8;
+      IRTemp src_vec = newTemp(Ity_V128);
+      IRTemp dst_vec = newTemp(Ity_V128);
+      IRTemp and_vec = newTemp(Ity_V128);
+      IRTemp sum_vec = newTemp(Ity_V128);
+
+      modrm = insn[3];
+
+      assign( dst_vec, getXMMReg( gregOfRexRM(pfx, modrm) ) );
+  
+      if ( epartIsReg( modrm ) ) {
+         imm8 = (Int)insn[4];
+         assign( src_vec, getXMMReg( eregOfRexRM(pfx, modrm) ) );
+         delta += 3+1+1;
+         DIP( "dppd %s,%s,$%d\n", 
+              nameXMMReg( eregOfRexRM(pfx, modrm) ),
+              nameXMMReg( gregOfRexRM(pfx, modrm) ),
+              imm8 );    
+      } else {
+         addr = disAMode( &alen, vbi, pfx, delta+3, dis_buf, 
+                          1/* imm8 is 1 byte after the amode */ );
+         assign( src_vec, loadLE( Ity_V128, mkexpr(addr) ) );
+         imm8 = (Int)insn[2+alen+1];
+         delta += 3+alen+1;
+         DIP( "dppd %s,%s$%d\n", 
+              dis_buf, nameXMMReg( gregOfRexRM(pfx, modrm) ), imm8 );
+      }
+
+      UShort imm8_perms[4] = { 0x0000, 0x00FF, 0xFF00, 0xFFFF };
+
+      assign( and_vec, binop( Iop_AndV128,
+                              binop( Iop_Mul64Fx2,
+                                     mkexpr(dst_vec), mkexpr(src_vec) ),
+                              mkV128( imm8_perms[ ((imm8 >> 4) & 3) ] ) ) );
+
+      assign( sum_vec, binop( Iop_Add64F0x2,
+                              binop( Iop_InterleaveHI64x2,
+                                     mkexpr(and_vec), mkexpr(and_vec) ),
+                              binop( Iop_InterleaveLO64x2,
+                                     mkexpr(and_vec), mkexpr(and_vec) ) ) );
+
+      putXMMReg( gregOfRexRM( pfx, modrm ),
+                 binop( Iop_AndV128,
+                        binop( Iop_InterleaveLO64x2,
+                               mkexpr(sum_vec), mkexpr(sum_vec) ),
+                        mkV128( imm8_perms[ (imm8 & 3) ] ) ) );
+
+      goto decode_success;
+   }
+
+
+   /* 66 0F 3A 40 /r ib = DPPS xmm1, xmm2/m128, imm8
+      Dot Product of Packed Single Precision Floating-Point Values (XMM) */
+   if ( have66noF2noF3( pfx ) 
+        && sz == 2
+        && insn[0] == 0x0F
+        && insn[1] == 0x3A
+        && insn[2] == 0x40 ) {
+
+      Int imm8;
+      IRTemp xmm1_vec     = newTemp(Ity_V128);
+      IRTemp xmm2_vec     = newTemp(Ity_V128);
+      IRTemp tmp_prod_vec = newTemp(Ity_V128);
+      IRTemp prod_vec     = newTemp(Ity_V128);
+      IRTemp sum_vec      = newTemp(Ity_V128);
+      IRTemp v3, v2, v1, v0;
+      v3 = v2 = v1 = v0   = IRTemp_INVALID;
+
+      modrm = insn[3];
+
+      assign( xmm1_vec, getXMMReg( gregOfRexRM(pfx, modrm) ) );
+
+      if ( epartIsReg( modrm ) ) {
+         imm8 = (Int)insn[4];
+         assign( xmm2_vec, getXMMReg( eregOfRexRM(pfx, modrm) ) );
+         delta += 3+1+1;
+         DIP( "dpps %s,%s,$%d\n", 
+              nameXMMReg( eregOfRexRM(pfx, modrm) ),
+              nameXMMReg( gregOfRexRM(pfx, modrm) ),
+              imm8 );    
+      } else {
+         addr = disAMode( &alen, vbi, pfx, delta+3, dis_buf, 
+                          1/* imm8 is 1 byte after the amode */ );
+         assign( xmm2_vec, loadLE( Ity_V128, mkexpr(addr) ) );
+         imm8 = (Int)insn[2+alen+1];
+         delta += 3+alen+1;
+         DIP( "dpps %s,%s$%d\n", 
+              dis_buf, nameXMMReg( gregOfRexRM(pfx, modrm) ), imm8 );
+      }
+
+      UShort imm8_perms[16] = { 0x0000, 0x000F, 0x00F0, 0x00FF, 0x0F00, 
+                                0x0F0F, 0x0FF0, 0x0FFF, 0xF000, 0xF00F,
+                                0xF0F0, 0xF0FF, 0xFF00, 0xFF0F, 0xFFF0, 0xFFFF };
+
+      assign( tmp_prod_vec, 
+              binop( Iop_AndV128, 
+                     binop( Iop_Mul32Fx4, mkexpr(xmm1_vec), mkexpr(xmm2_vec) ), 
+                     mkV128( imm8_perms[((imm8 >> 4)& 15)] ) ) );
+      breakup128to32s( tmp_prod_vec, &v3, &v2, &v1, &v0 );
+      assign( prod_vec, mk128from32s( v3, v1, v2, v0 ) );
+
+      assign( sum_vec, binop( Iop_Add32Fx4,
+                              binop( Iop_InterleaveHI32x4, 
+                                     mkexpr(prod_vec), mkexpr(prod_vec) ), 
+                              binop( Iop_InterleaveLO32x4, 
+                                     mkexpr(prod_vec), mkexpr(prod_vec) ) ) );
+
+      putXMMReg( gregOfRexRM(pfx, modrm), 
+                 binop( Iop_AndV128, 
+                        binop( Iop_Add32Fx4,
+                               binop( Iop_InterleaveHI32x4,
+                                      mkexpr(sum_vec), mkexpr(sum_vec) ), 
+                               binop( Iop_InterleaveLO32x4,
+                                      mkexpr(sum_vec), mkexpr(sum_vec) ) ), 
+                        mkV128( imm8_perms[ (imm8 & 15) ] ) ) );
+
+      goto decode_success;
+   }
+
+
    /* 66 0F 3A 21 /r ib = INSERTPS xmm1, xmm2/m32, imm8
       Insert Packed Single Precision Floating-Point Value (XMM) */
    if ( have66noF2noF3( pfx ) 

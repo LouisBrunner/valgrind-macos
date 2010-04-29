@@ -14053,7 +14053,6 @@ DisResult disInstr_AMD64_WRK (
          assign( max_min_vec,
                  binop( Iop_OrV128, 
                         binop( Iop_AndV128, mkexpr(rom_vec),
-                               unopAndV128, mkexpr(rom_vec),
                                unop( Iop_NotV128, mkexpr(mask_vec) ) ),
                         binop( Iop_AndV128, mkexpr(reg_vec), mkexpr(mask_vec) ) ) );
       } else {

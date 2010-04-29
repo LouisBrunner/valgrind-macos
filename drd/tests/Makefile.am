@@ -61,6 +61,8 @@ EXTRA_DIST =                                        \
 	bar_trivial.vgtest			    \
 	boost_thread.stderr.exp			    \
 	boost_thread.vgtest			    \
+	bug-235681.stderr.exp			    \
+	bug-235681.vgtest			    \
 	circular_buffer.stderr.exp		    \
 	circular_buffer.vgtest			    \
 	custom_alloc.stderr.exp			    \
@@ -260,6 +262,7 @@ check_PROGRAMS =      \
   annotate_ignore_write \
   annotate_publish_hg \
   annotate_static     \
+  bug-235681          \
   custom_alloc        \
   fp_race             \
   hold_lock           \

@@ -1,4 +1,5 @@
 prereq: test -e bug-235681 && ./supported_libpthread
 vgopts: --read-var-info=yes --check-stack-var=yes --show-confl-seg=no --num-callers=3
 prog: bug-235681
+args: -q
 stderr_filter: filter_stderr

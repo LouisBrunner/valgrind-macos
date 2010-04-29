@@ -13,28 +13,34 @@
 pthread_mutex_t mutex;
 pthread_cond_t cond_var;
 int status;
+int silent;
 
 static void *run_fn(void *v)
 {
     int rc;
 
-    fprintf(stderr, "run_fn starting\n");
+    if (!silent)
+        fprintf(stderr, "run_fn starting\n");
 
     rc = pthread_mutex_lock(&mutex);
     assert(!rc);
 
     while (!status) {
-        fprintf(stderr, "run_fn(): status==0\n");
+        if (!silent)
+            fprintf(stderr, "run_fn(): status==0\n");
         rc = pthread_cond_wait(&cond_var, &mutex);
         assert(!rc);
-        fprintf(stderr, "run_fn(): woke up\n");
+        if (!silent)
+            fprintf(stderr, "run_fn(): woke up\n");
     }
-    fprintf(stderr, "run_fn(): status==1\n");
+    if (!silent)
+        fprintf(stderr, "run_fn(): status==1\n");
 
     rc = pthread_mutex_unlock(&mutex);
     assert(!rc);
 
-    fprintf(stderr, "run_fn done\n");
+    if (!silent)
+        fprintf(stderr, "run_fn done\n");
 
     return NULL;
 }
@@ -43,6 +49,9 @@ int main(int argc, char **argv)
 {
     int rc;
     pthread_t other_thread;
+
+    if (argc > 1)
+        silent = 1;
 
     rc = pthread_mutex_init(&mutex, NULL);
     assert(!rc);
@@ -55,14 +64,16 @@ int main(int argc, char **argv)
     assert(!rc);
 
     /* yield the processor, and give the other thread a chance to get into the while loop */
-    fprintf(stderr, "main(): sleeping...\n");
+    if (!silent)
+        fprintf(stderr, "main(): sleeping...\n");
     sleep(1);
 
     rc = pthread_mutex_lock(&mutex);
     assert(!rc);
     /**** BEGIN CS *****/
 
-    fprintf(stderr, "main(): status=1\n");
+    if (!silent)
+        fprintf(stderr, "main(): status=1\n");
     status = 1;
     rc = pthread_cond_broadcast(&cond_var);
     assert(!rc);
@@ -71,10 +82,13 @@ int main(int argc, char **argv)
     rc = pthread_mutex_unlock(&mutex);
     assert(!rc);
 
-    fprintf(stderr, "joining...\n");
+    if (!silent)
+        fprintf(stderr, "joining...\n");
 
     rc = pthread_join(other_thread, NULL);
     assert(!rc);
+
+    fprintf(stderr, "Done.\n");
 
     return 0;
 }

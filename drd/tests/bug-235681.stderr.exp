@@ -1,11 +1,4 @@
 
-run_fn starting
-run_fn(): status==0
-main(): sleeping...
-main(): status=1
-joining...
-run_fn(): woke up
-run_fn(): status==1
-run_fn done
+Done.
 
 ERROR SUMMARY: 0 errors from 0 contexts (suppressed: 0 from 0)

@@ -1516,16 +1516,18 @@ AC_CHECK_FUNCS([     \
         pthread_rwlock_timedrdlock \
         pthread_rwlock_timedwrlock \
         pthread_spin_lock          \
+        pthread_yield              \
         readlinkat   \
+        sem_init     \
         semtimedop   \
         signalfd     \
         sigwaitinfo  \
-        syscall      \
         strchr       \
         strdup       \
         strpbrk      \
         strrchr      \
         strstr       \
+        syscall      \
         timerfd      \
         utimensat    \
         ])

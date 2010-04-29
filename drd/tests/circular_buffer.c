@@ -58,7 +58,7 @@ int fetch_and_add(int* p, int i)
 
 static sem_t* create_semaphore(const char* const name, const int value)
 {
-#ifdef __APPLE__
+#ifndef HAVE_SEM_INIT
   sem_t* p = sem_open(name, O_CREAT, 0600, value);
   return p;
 #else
@@ -71,7 +71,7 @@ static sem_t* create_semaphore(const char* const name, const int value)
 
 static void destroy_semaphore(const char* const name, sem_t* p)
 {
-#ifdef __APPLE__
+#ifndef HAVE_SEM_INIT
   sem_close(p);
   sem_unlink(name);
 #else

@@ -12,6 +12,7 @@
 #include <stdlib.h>  /* atoi() */
 #include <string.h>  /* memset() */
 #include "../../drd/drd.h"
+#include "../../config.h"
 
 
 #define BARRIER_SERIAL_THREAD -1
@@ -83,7 +84,7 @@ static int barrier_wait(barrier_t* b)
   {
     while (b->barrier_count == barrier_count)
     {
-#ifdef __APPLE__
+#ifndef HAVE_PTHREAD_YIELD
       /* Darwin doesn't have an implementation of pthread_yield(). */
       usleep(100 * 1000);
 #else

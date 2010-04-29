@@ -14,6 +14,7 @@
 #include <sys/time.h>  // gettimeofday()
 #include <time.h>      // struct timespec
 #include <unistd.h>
+#include "../../config.h"
 
 
 #define PTH_CALL(expr)                                  \
@@ -42,7 +43,7 @@ static int             s_quiet;
 
 static sem_t* create_semaphore(const char* const name)
 {
-#ifdef __APPLE__
+#ifndef HAVE_SEM_INIT
   sem_t* p = sem_open(name, O_CREAT, 0600, 0);
   return p;
 #else
@@ -55,7 +56,7 @@ static sem_t* create_semaphore(const char* const name)
 
 static void destroy_semaphore(const char* const name, sem_t* p)
 {
-#ifdef __APPLE__
+#ifndef HAVE_SEM_INIT
   sem_close(p);
   sem_unlink(name);
 #else

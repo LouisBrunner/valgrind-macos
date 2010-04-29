@@ -60,7 +60,7 @@ static void rwlock_rdlock(rwlock_t* p)
       ;
     if (p->writer_count == 0)
       break;
-#ifdef __APPLE__
+#ifndef HAVE_PTHREAD_YIELD
     /* Darwin doesn't have an implementation of pthread_yield(). */
     usleep(100 * 1000);
 #else
@@ -84,7 +84,7 @@ static void rwlock_wrlock(rwlock_t* p)
       ;
     if (p->reader_count == 0)
       break;
-#ifdef __APPLE__
+#ifndef HAVE_PTHREAD_YIELD
     /* Darwin doesn't have an implementation of pthread_yield(). */
     usleep(100 * 1000);
 #else

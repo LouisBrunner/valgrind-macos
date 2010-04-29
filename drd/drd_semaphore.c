@@ -202,7 +202,7 @@ struct semaphore_info* DRD_(semaphore_init)(const Addr semaphore,
    {
 #if defined(VGO_darwin)
       const ThreadId vg_tid = VG_(get_running_tid)();
-      GenericErrInfo GEI = { DRD_(thread_get_running_tid)() };
+      GenericErrInfo GEI = { DRD_(thread_get_running_tid)(), NULL };
       VG_(maybe_record_error)(vg_tid,
 			      GenericErr,
 			      VG_(get_IP)(vg_tid),

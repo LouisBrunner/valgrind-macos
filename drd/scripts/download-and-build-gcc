@@ -6,7 +6,7 @@
 # are called gmp-devel and mpfr-devel.
 
 
-GCC_VERSION=4.4.3
+GCC_VERSION=4.5.0
 FSF_MIRROR=ftp://ftp.easynet.be/gnu
 SRCDIR=$HOME/software
 DOWNLOADS=$SRCDIR/downloads
@@ -24,6 +24,11 @@ fi
 
 if [ ! -e /usr/include/mpfr.h ]; then
   echo "Please install the mpfr library development package first."
+  exit 1
+fi
+
+if [ ! -e /usr/include/mpc.h ]; then
+  echo "Please install the mpc library development package first."
   exit 1
 fi
 

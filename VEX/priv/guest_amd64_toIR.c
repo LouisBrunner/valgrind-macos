@@ -13719,18 +13719,17 @@ DisResult disInstr_AMD64_WRK (
          imm8 = (Int)insn[4];
          assign( src_vec, getXMMReg( eregOfRexRM(pfx, modrm) ) );
          delta += 3+1+1;
-         DIP( "blendpd %s,%s,$%d\n", 
+         DIP( "blendpd $%d, %s,%s\n", imm8,
               nameXMMReg( eregOfRexRM(pfx, modrm) ),
-              nameXMMReg( gregOfRexRM(pfx, modrm) ),
-              imm8 );    
+              nameXMMReg( gregOfRexRM(pfx, modrm) ) );
       } else {
          addr = disAMode( &alen, vbi, pfx, delta+3, dis_buf, 
                           1/* imm8 is 1 byte after the amode */ );
          assign( src_vec, loadLE( Ity_V128, mkexpr(addr) ) );
          imm8 = (Int)insn[2+alen+1];
          delta += 3+alen+1;
-         DIP( "blendpd %s,%s,$%d\n", 
-              dis_buf, nameXMMReg( gregOfRexRM(pfx, modrm) ), imm8 );
+         DIP( "blendpd $%d, %s,%s\n", 
+              imm8, dis_buf, nameXMMReg( gregOfRexRM(pfx, modrm) ) );
       }
 
       switch( imm8 & 3 ) {
@@ -13770,18 +13769,17 @@ DisResult disInstr_AMD64_WRK (
          imm8 = (Int)insn[3+1];
          assign( src_vec, getXMMReg( eregOfRexRM(pfx, modrm) ) );
          delta += 3+1+1;
-         DIP( "blendps %s,%s,$%d\n", 
+         DIP( "blendps $%d, %s,%s\n", imm8,
               nameXMMReg( eregOfRexRM(pfx, modrm) ),
-              nameXMMReg( gregOfRexRM(pfx, modrm) ),
-              imm8 );    
+              nameXMMReg( gregOfRexRM(pfx, modrm) ) );    
       } else {
          addr = disAMode( &alen, vbi, pfx, delta+3, dis_buf, 
                           1/* imm8 is 1 byte after the amode */ );
          assign( src_vec, loadLE( Ity_V128, mkexpr(addr) ) );
          imm8 = (Int)insn[3+alen];
          delta += 3+alen+1;
-         DIP( "blendpd %s,%s$%d\n", 
-              dis_buf, nameXMMReg( gregOfRexRM(pfx, modrm) ), imm8 );
+         DIP( "blendpd $%d, %s,%s\n", 
+              imm8, dis_buf, nameXMMReg( gregOfRexRM(pfx, modrm) ) );
       }
 
       UShort imm8_perms[16] = { 0x0000, 0x000F, 0x00F0, 0x00FF, 0x0F00, 0x0F0F, 
@@ -13820,18 +13818,17 @@ DisResult disInstr_AMD64_WRK (
          imm8 = (Int)insn[4];
          assign( src_vec, getXMMReg( eregOfRexRM(pfx, modrm) ) );
          delta += 3+1+1;
-         DIP( "dppd %s,%s,$%d\n", 
+         DIP( "dppd $%d, %s,%s\n", imm8,
               nameXMMReg( eregOfRexRM(pfx, modrm) ),
-              nameXMMReg( gregOfRexRM(pfx, modrm) ),
-              imm8 );    
+              nameXMMReg( gregOfRexRM(pfx, modrm) ) );    
       } else {
          addr = disAMode( &alen, vbi, pfx, delta+3, dis_buf, 
                           1/* imm8 is 1 byte after the amode */ );
          assign( src_vec, loadLE( Ity_V128, mkexpr(addr) ) );
          imm8 = (Int)insn[2+alen+1];
          delta += 3+alen+1;
-         DIP( "dppd %s,%s$%d\n", 
-              dis_buf, nameXMMReg( gregOfRexRM(pfx, modrm) ), imm8 );
+         DIP( "dppd $%d, %s,%s\n", 
+              imm8, dis_buf, nameXMMReg( gregOfRexRM(pfx, modrm) ) );
       }
 
       UShort imm8_perms[4] = { 0x0000, 0x00FF, 0xFF00, 0xFFFF };
@@ -13882,18 +13879,17 @@ DisResult disInstr_AMD64_WRK (
          imm8 = (Int)insn[4];
          assign( xmm2_vec, getXMMReg( eregOfRexRM(pfx, modrm) ) );
          delta += 3+1+1;
-         DIP( "dpps %s,%s,$%d\n", 
+         DIP( "dpps $%d, %s,%s\n", imm8,
               nameXMMReg( eregOfRexRM(pfx, modrm) ),
-              nameXMMReg( gregOfRexRM(pfx, modrm) ),
-              imm8 );    
+              nameXMMReg( gregOfRexRM(pfx, modrm) ) );    
       } else {
          addr = disAMode( &alen, vbi, pfx, delta+3, dis_buf, 
                           1/* imm8 is 1 byte after the amode */ );
          assign( xmm2_vec, loadLE( Ity_V128, mkexpr(addr) ) );
          imm8 = (Int)insn[2+alen+1];
          delta += 3+alen+1;
-         DIP( "dpps %s,%s$%d\n", 
-              dis_buf, nameXMMReg( gregOfRexRM(pfx, modrm) ), imm8 );
+         DIP( "dpps $%d, %s,%s\n", 
+              imm8, dis_buf, nameXMMReg( gregOfRexRM(pfx, modrm) ) );
       }
 
       UShort imm8_perms[16] = { 0x0000, 0x000F, 0x00F0, 0x00FF, 0x0F00, 
@@ -13965,10 +13961,9 @@ DisResult disInstr_AMD64_WRK (
          }
 
          delta += 3+1+1;
-         DIP( "insertps %s,%s,$%d\n", 
+         DIP( "insertps $%d, %s,%s\n", imm8,
               nameXMMReg( eregOfRexRM(pfx, modrm) ),
-              nameXMMReg( gregOfRexRM(pfx, modrm) ),
-              imm8 );
+              nameXMMReg( gregOfRexRM(pfx, modrm) ) );
       } else {
          addr = disAMode( &alen, vbi, pfx, delta+3, dis_buf, 
                           1/* const imm8 is 1 byte after the amode */ );
@@ -13976,8 +13971,8 @@ DisResult disInstr_AMD64_WRK (
          imm8 = (Int)insn[2+alen+1];
          imm8_count_s = 0;
          delta += 3+alen+1;
-         DIP( "insertps %s,%s,$%d\n", 
-              dis_buf, nameXMMReg( gregOfRexRM(pfx, modrm) ), imm8 );
+         DIP( "insertps $%d, %s,%s\n", 
+              imm8, dis_buf, nameXMMReg( gregOfRexRM(pfx, modrm) ) );
       }
 
       IRTemp dst_lane_0 = IRTemp_INVALID;
@@ -14049,14 +14044,14 @@ DisResult disInstr_AMD64_WRK (
                          binop(Iop_And32, mkexpr(shr_lane), mkU32(255)) ) );
 
         delta += 3+1+1;
-        DIP( "pextrb %s,%s,$%d\n", 
-             nameXMMReg( gregOfRexRM(pfx, modrm) ),
-             nameXMMReg( eregOfRexRM(pfx, modrm) ), imm8 );
+        DIP( "pextrb $%d, %s,%s\n", imm8, 
+             nameXMMReg( gregOfRexRM(pfx, modrm) ), 
+             nameIReg64( eregOfRexRM(pfx, modrm) ) );
      } else {
         storeLE( mkexpr(addr), unop(Iop_32to8, mkexpr(shr_lane) ) );
         delta += 3+alen+1;
-        DIP( "pextrb %s,%s,$%d\n", 
-             nameXMMReg( gregOfRexRM(pfx, modrm) ), dis_buf, imm8 );
+        DIP( "$%d, pextrb %s,%s\n", 
+             imm8, nameXMMReg( gregOfRexRM(pfx, modrm) ), dis_buf );
      }
 
      goto decode_success;
@@ -14097,14 +14092,14 @@ DisResult disInstr_AMD64_WRK (
       if ( epartIsReg( modrm ) ) {
          putIReg32( eregOfRexRM(pfx,modrm), mkexpr(src_dword) );
          delta += 3+1+1;
-         DIP( "pextrd %s,%s,$%d\n", 
+         DIP( "pextrd $%d, %s,%s\n", imm8_10,
               nameXMMReg( gregOfRexRM(pfx, modrm) ),
-              nameXMMReg( eregOfRexRM(pfx, modrm) ), imm8_10 );
+              nameIReg32( eregOfRexRM(pfx, modrm) ) );
       } else {
          storeLE( mkexpr(addr), mkexpr(src_dword) );
          delta += 3+alen+1;
-         DIP( "pextrd %s,%s,$%d\n", 
-              nameXMMReg( gregOfRexRM(pfx, modrm) ), dis_buf, imm8_10 );
+         DIP( "pextrd $%d, %s,%s\n", 
+              imm8_10, nameXMMReg( gregOfRexRM(pfx, modrm) ), dis_buf );
       }
 
       goto decode_success;
@@ -14141,14 +14136,14 @@ DisResult disInstr_AMD64_WRK (
       if ( epartIsReg( modrm ) ) {
          putIReg64( eregOfRexRM(pfx,modrm), mkexpr(src_qword) );
          delta += 3+1+1;
-         DIP( "pextrq %s,%s,$%d\n", 
+         DIP( "pextrq $%d, %s,%s\n", imm8_0,
               nameXMMReg( gregOfRexRM(pfx, modrm) ),
-              nameXMMReg( eregOfRexRM(pfx, modrm) ), imm8_0 );
+              nameIReg64( eregOfRexRM(pfx, modrm) ) );
       } else {
          storeLE( mkexpr(addr), mkexpr(src_qword) );
          delta += 3+alen+1;
-         DIP( "pextrq %s,%s,$%d\n", 
-              nameXMMReg( gregOfRexRM(pfx, modrm) ), dis_buf, imm8_0 );
+         DIP( "pextrq $%d, %s,%s\n", 
+              imm8_0, nameXMMReg( gregOfRexRM(pfx, modrm) ), dis_buf );
       }
 
       goto decode_success;
@@ -14191,14 +14186,14 @@ DisResult disInstr_AMD64_WRK (
       if ( epartIsReg( modrm ) ) {
          putIReg64( eregOfRexRM(pfx,modrm), unop(Iop_16Uto64, mkexpr(src_word)) );
          delta += 3+1+1;
-         DIP( "pextrw %s,%s,$%d\n", 
+         DIP( "pextrw $%d, %s,%s\n", imm8_20, 
               nameXMMReg( gregOfRexRM(pfx, modrm) ),
-              nameXMMReg( eregOfRexRM(pfx, modrm) ), imm8_20 );
+              nameIReg64( eregOfRexRM(pfx, modrm) ) );
       } else {
          storeLE( mkexpr(addr), mkexpr(src_word) );
          delta += 3+alen+1;
-         DIP( "pextrw %s,%s,$%d\n", 
-              nameXMMReg( gregOfRexRM(pfx, modrm) ), dis_buf, imm8_20 );
+         DIP( "pextrw $%d, %s,%s\n", 
+              imm8_20, nameXMMReg( gregOfRexRM(pfx, modrm) ), dis_buf );
       }
 
       goto decode_success;

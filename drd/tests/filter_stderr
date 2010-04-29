@@ -2,6 +2,8 @@
 
 dir=`dirname $0`
 
+sed -e "s:_pthread_start (in /usr/lib/libSystem.B.dylib):(within libpthread-?.?.so):" |
+
 $dir/../../tests/filter_stderr_basic |
 
 # Remove "drd, ..." line and the following copyright line.

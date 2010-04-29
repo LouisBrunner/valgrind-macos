@@ -13767,7 +13767,7 @@ DisResult disInstr_AMD64_WRK (
       assign( dst_vec, getXMMReg( gregOfRexRM(pfx, modrm) ) );
 
       if ( epartIsReg( modrm ) ) {
-         imm8 = (Int)insn[4];
+         imm8 = (Int)insn[3+1];
          assign( src_vec, getXMMReg( eregOfRexRM(pfx, modrm) ) );
          delta += 3+1+1;
          DIP( "blendps %s,%s,$%d\n", 
@@ -13778,7 +13778,7 @@ DisResult disInstr_AMD64_WRK (
          addr = disAMode( &alen, vbi, pfx, delta+3, dis_buf, 
                           1/* imm8 is 1 byte after the amode */ );
          assign( src_vec, loadLE( Ity_V128, mkexpr(addr) ) );
-         imm8 = (Int)insn[2+alen+1];
+         imm8 = (Int)insn[3+alen];
          delta += 3+alen+1;
          DIP( "blendpd %s,%s$%d\n", 
               dis_buf, nameXMMReg( gregOfRexRM(pfx, modrm) ), imm8 );
@@ -14008,6 +14008,199 @@ DisResult disInstr_AMD64_WRK (
 
       putXMMReg( gregOfRexRM(pfx, modrm), ire_vec_128 );
  
+      goto decode_success;
+   }
+
+
+  /* 66 0F 3A 14 /r ib = PEXTRB r/m16, xmm, imm8
+     Extract Byte from xmm, store in mem or zero-extend + store in gen.reg. (XMM) */
+  if ( have66noF2noF3( pfx ) 
+       && sz == 2 
+       && insn[0] == 0x0F && insn[1] == 0x3A && insn[2] == 0x14 ) {
+
+     Int imm8;
+     IRTemp xmm_vec  = newTemp(Ity_V128);
+     IRTemp sel_lane = newTemp(Ity_I32);
+     IRTemp shr_lane = newTemp(Ity_I32);
+
+     modrm = insn[3];
+     assign( xmm_vec, getXMMReg( gregOfRexRM(pfx,modrm) ) );
+     breakup128to32s( xmm_vec, &t3, &t2, &t1, &t0 );
+
+     if ( epartIsReg( modrm ) ) {
+        imm8 = (Int)insn[3+1];
+     } else {
+        addr = disAMode( &alen, vbi, pfx, delta+3, dis_buf, 1 );
+        imm8 = (Int)insn[3+alen];
+     }
+     switch( (imm8 >> 2) & 3 ) {
+        case 0:  assign( sel_lane, mkexpr(t0) ); break;
+        case 1:  assign( sel_lane, mkexpr(t1) ); break;
+        case 2:  assign( sel_lane, mkexpr(t2) ); break;
+        case 3:  assign( sel_lane, mkexpr(t3) ); break;
+        default: vassert(0);
+     }
+     assign( shr_lane, 
+             binop( Iop_Shr32, mkexpr(sel_lane), mkU8(((imm8 & 3)*8)) ) );
+
+     if ( epartIsReg( modrm ) ) {
+        putIReg64( eregOfRexRM(pfx,modrm), 
+                   unop( Iop_32Uto64, 
+                         binop(Iop_And32, mkexpr(shr_lane), mkU32(255)) ) );
+
+        delta += 3+1+1;
+        DIP( "pextrb %s,%s,$%d\n", 
+             nameXMMReg( gregOfRexRM(pfx, modrm) ),
+             nameXMMReg( eregOfRexRM(pfx, modrm) ), imm8 );
+     } else {
+        storeLE( mkexpr(addr), unop(Iop_32to8, mkexpr(shr_lane) ) );
+        delta += 3+alen+1;
+        DIP( "pextrb %s,%s,$%d\n", 
+             nameXMMReg( gregOfRexRM(pfx, modrm) ), dis_buf, imm8 );
+     }
+
+     goto decode_success;
+  }
+
+
+   /* 66 0F 3A 16 /r ib = PEXTRD reg/mem32, xmm2, imm8
+      Extract Doubleword int from xmm reg and store in gen.reg or mem. (XMM) 
+      Note that this insn has the same opcodes as PEXTRQ, but 
+      here the REX.W bit is _not_ present */
+   if ( have66noF2noF3( pfx ) 
+        && sz == 2  /* REX.W is _not_ present */
+        && insn[0] == 0x0F && insn[1] == 0x3A && insn[2] == 0x16 ) {
+
+      Int imm8_10;
+      IRTemp xmm_vec   = newTemp(Ity_V128);
+      IRTemp src_dword = newTemp(Ity_I32);
+
+      modrm = insn[3];
+      assign( xmm_vec, getXMMReg( gregOfRexRM(pfx,modrm) ) );
+      breakup128to32s( xmm_vec, &t3, &t2, &t1, &t0 );
+
+      if ( epartIsReg( modrm ) ) {
+         imm8_10 = (Int)(insn[3+1] & 3);
+      } else { 
+         addr = disAMode( &alen, vbi, pfx, delta+3, dis_buf, 1 );
+         imm8_10 = (Int)(insn[3+alen] & 3);
+      }
+
+      switch ( imm8_10 ) {
+         case 0:  assign( src_dword, mkexpr(t0) ); break;
+         case 1:  assign( src_dword, mkexpr(t1) ); break;
+         case 2:  assign( src_dword, mkexpr(t2) ); break;
+         case 3:  assign( src_dword, mkexpr(t3) ); break;
+         default: vassert(0);
+      }
+
+      if ( epartIsReg( modrm ) ) {
+         putIReg32( eregOfRexRM(pfx,modrm), mkexpr(src_dword) );
+         delta += 3+1+1;
+         DIP( "pextrd %s,%s,$%d\n", 
+              nameXMMReg( gregOfRexRM(pfx, modrm) ),
+              nameXMMReg( eregOfRexRM(pfx, modrm) ), imm8_10 );
+      } else {
+         storeLE( mkexpr(addr), mkexpr(src_dword) );
+         delta += 3+alen+1;
+         DIP( "pextrd %s,%s,$%d\n", 
+              nameXMMReg( gregOfRexRM(pfx, modrm) ), dis_buf, imm8_10 );
+      }
+
+      goto decode_success;
+   }
+
+
+   /* 66 REX.W 0F 3A 16 /r ib = PEXTRQ reg/mem64, xmm2, imm8
+      Extract Quadword int from xmm reg and store in gen.reg or mem. (XMM) 
+      Note that this insn has the same opcodes as PEXTRD, but 
+      here the REX.W bit is present */
+   if ( have66noF2noF3( pfx ) 
+        && sz == 8  /* REX.W is present */
+        && insn[0] == 0x0F && insn[1] == 0x3A && insn[2] == 0x16 ) {
+
+      Int imm8_0;
+      IRTemp xmm_vec   = newTemp(Ity_V128);
+      IRTemp src_qword = newTemp(Ity_I64);
+
+      modrm = insn[3];
+      assign( xmm_vec, getXMMReg( gregOfRexRM(pfx,modrm) ) );
+
+      if ( epartIsReg( modrm ) ) {
+         imm8_0 = (Int)(insn[3+1] & 1);
+      } else {
+         addr   = disAMode( &alen, vbi, pfx, delta+3, dis_buf, 1 );
+         imm8_0 = (Int)(insn[3+alen] & 1);
+      }
+      switch ( imm8_0 ) {
+         case 0:  assign( src_qword, unop(Iop_V128to64,   mkexpr(xmm_vec)) ); break;
+         case 1:  assign( src_qword, unop(Iop_V128HIto64, mkexpr(xmm_vec)) ); break;
+         default: vassert(0);
+      }
+
+      if ( epartIsReg( modrm ) ) {
+         putIReg64( eregOfRexRM(pfx,modrm), mkexpr(src_qword) );
+         delta += 3+1+1;
+         DIP( "pextrq %s,%s,$%d\n", 
+              nameXMMReg( gregOfRexRM(pfx, modrm) ),
+              nameXMMReg( eregOfRexRM(pfx, modrm) ), imm8_0 );
+      } else {
+         storeLE( mkexpr(addr), mkexpr(src_qword) );
+         delta += 3+alen+1;
+         DIP( "pextrq %s,%s,$%d\n", 
+              nameXMMReg( gregOfRexRM(pfx, modrm) ), dis_buf, imm8_0 );
+      }
+
+      goto decode_success;
+   }
+
+
+   /* 66 0F 3A 15 /r ib = PEXTRW r/m16, xmm, imm8
+      Extract Word from xmm, store in mem or zero-extend + store in gen.reg. (XMM) */
+   if ( have66noF2noF3( pfx ) 
+        && sz == 2 
+        && insn[0] == 0x0F && insn[1] == 0x3A && insn[2] == 0x15 ) {
+
+      Int imm8_20;
+      IRTemp xmm_vec = newTemp(Ity_V128);
+      IRTemp src_word = newTemp(Ity_I16);
+
+      modrm = insn[3];
+      assign( xmm_vec, getXMMReg( gregOfRexRM(pfx,modrm) ) );
+      breakup128to32s( xmm_vec, &t3, &t2, &t1, &t0 );
+
+      if ( epartIsReg( modrm ) ) {
+         imm8_20 = (Int)(insn[3+1] & 7);
+      } else {
+         addr = disAMode( &alen, vbi, pfx, delta+3, dis_buf, 1 );
+         imm8_20 = (Int)(insn[3+alen] & 7);
+      }
+
+      switch ( imm8_20 ) {
+         case 0:  assign( src_word, unop(Iop_32to16,   mkexpr(t0)) ); break;
+         case 1:  assign( src_word, unop(Iop_32HIto16, mkexpr(t0)) ); break;
+         case 2:  assign( src_word, unop(Iop_32to16,   mkexpr(t1)) ); break;
+         case 3:  assign( src_word, unop(Iop_32HIto16, mkexpr(t1)) ); break;
+         case 4:  assign( src_word, unop(Iop_32to16,   mkexpr(t2)) ); break;
+         case 5:  assign( src_word, unop(Iop_32HIto16, mkexpr(t2)) ); break;
+         case 6:  assign( src_word, unop(Iop_32to16,   mkexpr(t3)) ); break;
+         case 7:  assign( src_word, unop(Iop_32HIto16, mkexpr(t3)) ); break;
+         default: vassert(0);
+      }
+
+      if ( epartIsReg( modrm ) ) {
+         putIReg64( eregOfRexRM(pfx,modrm), unop(Iop_16Uto64, mkexpr(src_word)) );
+         delta += 3+1+1;
+         DIP( "pextrw %s,%s,$%d\n", 
+              nameXMMReg( gregOfRexRM(pfx, modrm) ),
+              nameXMMReg( eregOfRexRM(pfx, modrm) ), imm8_20 );
+      } else {
+         storeLE( mkexpr(addr), mkexpr(src_word) );
+         delta += 3+alen+1;
+         DIP( "pextrw %s,%s,$%d\n", 
+              nameXMMReg( gregOfRexRM(pfx, modrm) ), dis_buf, imm8_20 );
+      }
+
       goto decode_success;
    }
 

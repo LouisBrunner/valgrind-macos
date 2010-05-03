@@ -7908,15 +7908,29 @@ DisResult disInstr_X86_WRK (
          delta += 5;
          goto decode_success;
       }
-      /* don't barf on recent binutils padding 
-         66 2e 0f 1f 84 00 00 00 00 00   nopw %cs:0x0(%eax,%eax,1) */
-      if (code[0] == 0x66
-          && code[1] == 0x2E && code[2] == 0x0F && code[3] == 0x1F 
-          && code[4] == 0x84 && code[5] == 0x00 && code[6] == 0x00
-          && code[7] == 0x00 && code[8] == 0x00 && code[9] == 0x00 ) {
-         DIP("nopw %%cs:0x0(%%eax,%%eax,1)\n");
-         delta += 10;
-         goto decode_success;
+      /* Don't barf on recent binutils padding,
+         all variants of which are: nopw %cs:0x0(%eax,%eax,1)
+         66 2e 0f 1f 84 00 00 00 00 00
+         66 66 2e 0f 1f 84 00 00 00 00 00
+         66 66 66 2e 0f 1f 84 00 00 00 00 00
+         66 66 66 66 2e 0f 1f 84 00 00 00 00 00
+         66 66 66 66 66 2e 0f 1f 84 00 00 00 00 00
+         66 66 66 66 66 66 2e 0f 1f 84 00 00 00 00 00
+      */
+      if (code[0] == 0x66) {
+         Int data16_cnt;
+         for (data16_cnt = 1; data16_cnt < 6; data16_cnt++)
+            if (code[data16_cnt] != 0x66)
+               break;
+         if (code[data16_cnt] == 0x2E && code[data16_cnt + 1] == 0x0F
+             && code[data16_cnt + 2] == 0x1F && code[data16_cnt + 3] == 0x84
+             && code[data16_cnt + 4] == 0x00 && code[data16_cnt + 5] == 0x00
+             && code[data16_cnt + 6] == 0x00 && code[data16_cnt + 7] == 0x00
+             && code[data16_cnt + 8] == 0x00 ) {
+            DIP("nopw %%cs:0x0(%%eax,%%eax,1)\n");
+            delta += 9 + data16_cnt;
+            goto decode_success;
+         }
       }
    }       
 

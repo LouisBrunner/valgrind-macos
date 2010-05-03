@@ -7,7 +7,7 @@
    This file is part of Nulgrind, the minimal Valgrind tool,
    which does no instrumentation or analysis.
 
-   Copyright (C) 2002-2009 Nicholas Nethercote
+   Copyright (C) 2002-2010 Nicholas Nethercote
       njn@valgrind.org
 
    This program is free software; you can redistribute it and/or
@@ -55,7 +55,7 @@ static void nl_pre_clo_init(void)
    VG_(details_version)         (NULL);
    VG_(details_description)     ("the minimal Valgrind tool");
    VG_(details_copyright_author)(
-      "Copyright (C) 2002-2009, and GNU GPL'd, by Nicholas Nethercote.");
+      "Copyright (C) 2002-2010, and GNU GPL'd, by Nicholas Nethercote.");
    VG_(details_bug_reports_to)  (VG_BUGS_TO);
 
    VG_(basic_tool_funcs)        (nl_post_clo_init,

@@ -19,7 +19,7 @@
 # change them.
 for i in `find . -name '*.[chS]' -type f -not -path '*.svn\/*'` ; do
     echo $i
-    perl -p -e 's/Copyright \(C\) 200([0-9])-2008/Copyright (C) 200$1-2009/' < $i > tmp.$$
+    perl -p -e 's/Copyright \(C\) 200([0-9])-2009/Copyright (C) 200$1-2010/' < $i > tmp.$$
     mv tmp.$$ $i
 done
 

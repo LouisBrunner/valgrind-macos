@@ -7,9 +7,9 @@
    This file is part of Valgrind, a dynamic binary instrumentation
    framework.
 
-   Copyright (C) 2000-2009 Nicholas Nethercote
+   Copyright (C) 2000-2010 Nicholas Nethercote
       njn@valgrind.org
-   Copyright (C) 2008-2009 Evan Geller
+   Copyright (C) 2008-2010 Evan Geller
       gaze@bea.ms
 
    This program is free software; you can redistribute it and/or

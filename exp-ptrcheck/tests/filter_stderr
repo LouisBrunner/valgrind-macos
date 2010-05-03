@@ -18,7 +18,7 @@ sed "s/__libc_\(.*\) (.*)$/__libc_\1 (...libc...)/" |
 sed \
 -e "/^exp-ptrcheck, a heap, stack and global array overrun detector$/d" \
 -e "/^NOTE: This is an Experimental-Class Valgrind Tool$/d"  \
--e "/^Copyright (C) 2003-200., and GNU GPL'd, by OpenWorks Ltd et al.$/d" \
+-e "/^Copyright (C) 2003-201., and GNU GPL'd, by OpenWorks Ltd et al.$/d" \
 -e "/^For counts of detected and suppressed errors, rerun with: -v$/d" |
 
 # Tidy up in cases where glibc (+ libdl + libpthread + ld) have

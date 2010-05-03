@@ -13,7 +13,7 @@
    This file is part of callgrind, a valgrind tool for cache simulation
    and call tree tracing.
 
-   Copyright (C) 2003-2009 Josef Weidendorfer.  All rights reserved.
+   Copyright (C) 2003-2010 Josef Weidendorfer.  All rights reserved.
 
    Redistribution and use in source and binary forms, with or without
    modification, are permitted provided that the following conditions

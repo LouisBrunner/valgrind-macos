@@ -6,10 +6,10 @@
    This file is part of BBV, a Valgrind tool for generating SimPoint
    basic block vectors.
 
-   Copyright (C) 2006-2009 Vince Weaver
+   Copyright (C) 2006-2010 Vince Weaver
       vince _at_ csl.cornell.edu
 
-   pcfile code is Copyright (C) 2006-2009 Oriol Prat
+   pcfile code is Copyright (C) 2006-2010 Oriol Prat
       oriol.prat _at _ bsc.es
 
    This program is free software; you can redistribute it and/or
@@ -607,7 +607,7 @@ static void bbv_pre_clo_init(void)
    VG_(details_version)         (NULL);
    VG_(details_description)     ("a SimPoint basic block vector generator");
    VG_(details_copyright_author)(
-      "Copyright (C) 2006-2009 Vince Weaver");
+      "Copyright (C) 2006-2010 Vince Weaver");
    VG_(details_bug_reports_to)  (VG_BUGS_TO);
 
    VG_(basic_tool_funcs)          (bbv_post_clo_init,

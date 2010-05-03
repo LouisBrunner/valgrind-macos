@@ -2,7 +2,7 @@
 /*
   This file is part of drd, a thread error detector.
 
-  Copyright (C) 2006-2009 Bart Van Assche <bart.vanassche@gmail.com>.
+  Copyright (C) 2006-2010 Bart Van Assche <bart.vanassche@gmail.com>.
 
   This program is free software; you can redistribute it and/or
   modify it under the terms of the GNU General Public License as
@@ -633,7 +633,7 @@ void drd_pre_clo_init(void)
    VG_(details_name)            ("drd");
    VG_(details_version)         (NULL);
    VG_(details_description)     ("a thread error detector");
-   VG_(details_copyright_author)("Copyright (C) 2006-2009, and GNU GPL'd,"
+   VG_(details_copyright_author)("Copyright (C) 2006-2010, and GNU GPL'd,"
                                  " by Bart Van Assche.");
    VG_(details_bug_reports_to)  (VG_BUGS_TO);
 

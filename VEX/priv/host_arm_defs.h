@@ -354,7 +354,8 @@ typedef
       ARMin_VXferD,
       ARMin_VXferS,
       ARMin_VCvtID,
-      ARMin_FPSCR
+      ARMin_FPSCR,
+      ARMin_MFence
    }
    ARMInstrTag;
 
@@ -561,6 +562,18 @@ typedef
             Bool toFPSCR;
             HReg iReg;
          } FPSCR;
+         /* Mem fence.  An insn which fences all loads and stores as
+            much as possible before continuing.  On ARM we emit the
+            sequence
+               mcr 15,0,r0,c7,c10,4 (DSB)
+               mcr 15,0,r0,c7,c10,5 (DMB)
+               mcr 15,0,r0,c7,c5,4 (ISB)
+            which is probably total overkill, but better safe than
+            sorry.
+         */
+         struct {
+         } MFence;
+
       } ARMin;
    }
    ARMInstr;
@@ -598,6 +611,7 @@ extern ARMInstr* ARMInstr_VXferS   ( Bool toS, HReg fD, HReg rLo );
 extern ARMInstr* ARMInstr_VCvtID   ( Bool iToD, Bool syned,
                                      HReg dst, HReg src );
 extern ARMInstr* ARMInstr_FPSCR    ( Bool toFPSCR, HReg iReg );
+extern ARMInstr* ARMInstr_MFence   ( void );
 
 extern void ppARMInstr ( ARMInstr* );
 

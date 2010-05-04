@@ -766,6 +766,11 @@ ARMInstr* ARMInstr_FPSCR ( Bool toFPSCR, HReg iReg ) {
    i->ARMin.FPSCR.iReg    = iReg;
    return i;
 }
+ARMInstr* ARMInstr_MFence ( void ) {
+   ARMInstr* i = LibVEX_Alloc(sizeof(ARMInstr));
+   i->tag      = ARMin_MFence;
+   return i;
+}
 
 void ppARMInstr ( ARMInstr* i ) {
    switch (i->tag) {
@@ -1034,6 +1039,11 @@ void ppARMInstr ( ARMInstr* i ) {
             vex_printf(", fpscr");
          }
          return;
+      case ARMin_MFence:
+         vex_printf("mfence (mcr 15,0,r0,c7,c10,4; 15,0,r0,c7,c10,5; "
+                    "15,0,r0,c7,c5,4)");
+         return;
+
       unhandled:
          vex_printf("ppARMInstr: unhandled case (tag %d)", (Int)i->tag);
          vpanic("ppARMInstr(1)");
@@ -1256,6 +1266,8 @@ void getRegUsage_ARMInstr ( HRegUsage* u, ARMInstr* i, Bool mode64 )
          else
             addHRegUse(u, HRmWrite, i->ARMin.FPSCR.iReg);
          return;
+      case ARMin_MFence:
+         return;
       unhandled:
       default:
          ppARMInstr(i);
@@ -1379,6 +1391,8 @@ void mapRegs_ARMInstr ( HRegRemap* m, ARMInstr* i, Bool mode64 )
          return;
       case ARMin_FPSCR:
          i->ARMin.FPSCR.iReg = lookupHRegRemap(m, i->ARMin.FPSCR.iReg);
+         return;
+      case ARMin_MFence:
          return;
       unhandled:
       default:
@@ -2261,6 +2275,12 @@ Int emit_ARMInstr ( UChar* buf, Int nbuf, ARMInstr* i,
             goto done;
          }
          goto bad; // FPSCR -> iReg case currently ATC
+      }
+      case ARMin_MFence: {
+         *p++ = 0xEE070F9A; /* mcr 15,0,r0,c7,c10,4 (DSB) */
+         *p++ = 0xEE070FBA; /* mcr 15,0,r0,c7,c10,5 (DMB) */
+         *p++ = 0xEE070F95; /* mcr 15,0,r0,c7,c5,4  (ISB) */
+         goto done;
       }
       default: 
          goto bad;

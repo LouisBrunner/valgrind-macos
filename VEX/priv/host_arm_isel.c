@@ -2383,6 +2383,17 @@ static void iselStmt ( ISelEnv* env, IRStmt* stmt )
       break;
    }
 
+   /* --------- MEM FENCE --------- */
+   case Ist_MBE:
+      switch (stmt->Ist.MBE.event) {
+         case Imbe_Fence:
+            addInstr(env,ARMInstr_MFence());
+            return;
+         default:
+            break;
+      }
+      break;
+
    /* --------- INSTR MARK --------- */
    /* Doesn't generate any executable code ... */
    case Ist_IMark:

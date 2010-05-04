@@ -1555,6 +1555,24 @@ static Bool decode_NV_instruction ( UInt insn )
       /* fall through */
    }
 
+   /* ------------------- v7 barrier insns ------------------- */
+   switch (insn) {
+      case 0xF57FF06F: /* ISB */
+         stmt( IRStmt_MBE(Imbe_Fence) );
+         DIP("ISB\n");
+         return True;
+      case 0xF57FF04F: /* DSB */
+         stmt( IRStmt_MBE(Imbe_Fence) );
+         DIP("DSB\n");
+         return True;
+      case 0xF57FF05F: /* DMB */
+         stmt( IRStmt_MBE(Imbe_Fence) );
+         DIP("DMB\n");
+         return True;
+      default:
+         break;
+   }
+
    return False;
 
 #  undef INSN_COND
@@ -4695,6 +4713,37 @@ DisResult disInstr_ARM_WRK (
          goto decode_success;
       }
       /* fall through */
+   }
+
+   /* Handle various kinds of barriers.  This is rather indiscriminate
+      in the sense that they are all turned into an IR Fence, which
+      means we don't know which they are, so the back end has to
+      re-emit them all when it comes acrosss an IR Fence.
+   */
+   switch (insn) {
+      case 0xEE070F9A: /* v6 */
+         /* mcr 15, 0, r0, c7, c10, 4 (v6) equiv to DSB (v7).  Data
+            Synch Barrier -- ensures completion of memory accesses. */
+         stmt( IRStmt_MBE(Imbe_Fence) );
+         DIP("mcr 15, 0, r0, c7, c10, 4 (data synch barrier)\n");
+         goto decode_success;
+      case 0xEE070FBA: /* v6 */
+         /* mcr 15, 0, r0, c7, c10, 5 (v6) equiv to DMB (v7).  Data
+            Memory Barrier -- ensures ordering of memory accesses. */
+         stmt( IRStmt_MBE(Imbe_Fence) );
+         DIP("mcr 15, 0, r0, c7, c10, 5 (data memory barrier)\n");
+         goto decode_success;
+      case 0xEE070F95: /* v6 */
+         /* mcr 15, 0, r0, c7, c5, 4 (v6) equiv to ISB (v7).
+            Instruction Synchronisation Barrier (or Flush Prefetch
+            Buffer) -- a pipe flush, I think.  I suspect we could
+            ignore those, but to be on the safe side emit a fence
+            anyway. */
+         stmt( IRStmt_MBE(Imbe_Fence) );
+         DIP("mcr 15, 0, r0, c7, c5, 4 (insn synch barrier)\n");
+         goto decode_success;
+      default:
+         break;
    }
 
    /* ----------------------------------------------------------- */

@@ -114,7 +114,8 @@ typedef
       _VG_USERREQ__HG_RESERVED4,              /* Do not use */
       _VG_USERREQ__HG_ARANGE_MAKE_UNTRACKED, /* Addr a, ulong len */
       _VG_USERREQ__HG_ARANGE_MAKE_TRACKED,   /* Addr a, ulong len */
-      _VG_USERREQ__HG_PTHREAD_BARRIER_RESIZE_PRE /* pth_bar_t*, ulong */
+      _VG_USERREQ__HG_PTHREAD_BARRIER_RESIZE_PRE, /* pth_bar_t*, ulong */
+      _VG_USERREQ__HG_CLEAN_MEMORY_HEAPBLOCK  /* Addr start_of_block */
 
    } Vg_TCheckClientRequest;
 
@@ -149,6 +150,17 @@ typedef
       VALGRIND_DO_CLIENT_REQUEST(_unused_res, 0,         \
                                  (_creqF),               \
                                  _arg1, 0,0,0,0);        \
+   } while (0)
+
+#define DO_CREQ_W_W(_resF, _dfltF, _creqF, _ty1F,_arg1F) \
+   do {                                                  \
+      long int _qzz_res, _arg1;                          \
+      /* assert(sizeof(_ty1F) == sizeof(long int)); */   \
+      _arg1 = (long int)(_arg1F);                        \
+      VALGRIND_DO_CLIENT_REQUEST(_qzz_res, (_dfltF),     \
+                                 (_creqF),               \
+                                 _arg1, 0,0,0,0);        \
+      _resF = _qzz_res;                                  \
    } while (0)
 
 #define DO_CREQ_v_WW(_creqF, _ty1F,_arg1F, _ty2F,_arg2F) \
@@ -306,6 +318,23 @@ typedef
    DO_CREQ_v_WW(VG_USERREQ__HG_CLEAN_MEMORY,                 \
                 void*,(_qzz_start),                          \
                 unsigned long,(_qzz_len))
+
+/* The same, but for the heap block starting at _qzz_blockstart.  This
+   allows painting when we only know the address of an object, but not
+   its size, which is sometimes the case in C++ code involving
+   inheritance, and in which RTTI is not, for whatever reason,
+   available.  Returns the number of bytes painted, which can be zero
+   for a zero-sized block.  Hence, return values >= 0 indicate success
+   (the block was found), and the value -1 indicates block not
+   found, and -2 is returned when not running on Helgrind. */
+#define VALGRIND_HG_CLEAN_MEMORY_HEAPBLOCK(_qzz_blockstart)  \
+   (__extension__                                            \
+   ({long int _npainted;                                     \
+     DO_CREQ_W_W(_npainted, (-2)/*default*/,                 \
+                 _VG_USERREQ__HG_CLEAN_MEMORY_HEAPBLOCK,     \
+                            void*,(_qzz_blockstart));        \
+     _npainted;                                              \
+   }))
 
 /* ----------------------------------------------------------
    For error control.

@@ -3879,32 +3879,62 @@ static SizeT hg_cli_malloc_usable_size ( ThreadId tid, void* p )
 
 
 /* For error creation: map 'data_addr' to a malloc'd chunk, if any.
-   Slow linear search. */
+   Slow linear search.  With a bit of hash table help if 'data_addr'
+   is either the start of a block or up to 15 word-sized steps along
+   from the start of a block. */
 
 static inline Bool addr_is_in_MM_Chunk( MallocMeta* mm, Addr a )
 {
-   if (a < mm->payload) return False;
-   if (a >= mm->payload + mm->szB) return False;
-   return True;
+   /* Accept 'a' as within 'mm' if 'mm's size is zero and 'a' points
+      right at it. */
+  if (UNLIKELY(mm->szB == 0 && a == mm->payload))
+     return True;
+  /* else normal interval rules apply */
+  if (LIKELY(a < mm->payload)) return False;
+  if (LIKELY(a >= mm->payload + mm->szB)) return False;
+  return True;
 }
 
-void HG_(mm_find_containing_block)( /*OUT*/ExeContext** where,
+Bool HG_(mm_find_containing_block)( /*OUT*/ExeContext** where,
                                     /*OUT*/Addr*        payload,
                                     /*OUT*/SizeT*       szB,
                                     Addr                data_addr )
 {
    MallocMeta* mm;
+   Int i;
+   const Int n_fast_check_words = 16;
+
+   /* First, do a few fast searches on the basis that data_addr might
+      be exactly the start of a block or up to 15 words inside.  This
+      can happen commonly via the creq
+      _VG_USERREQ__HG_CLEAN_MEMORY_HEAPBLOCK. */
+   for (i = 0; i < n_fast_check_words; i++) {
+      mm = VG_(HT_lookup)( hg_mallocmeta_table,
+                           data_addr - (UWord)(UInt)i * sizeof(UWord) );
+      if (UNLIKELY(mm && addr_is_in_MM_Chunk(mm, data_addr)))
+         goto found;
+   }
+
    /* Well, this totally sucks.  But without using an interval tree or
-      some such, it's hard to see how to do better. */
+      some such, it's hard to see how to do better.  We have to check
+      every block in the entire table. */
    VG_(HT_ResetIter)(hg_mallocmeta_table);
    while ( (mm = VG_(HT_Next)(hg_mallocmeta_table)) ) {
-      if (UNLIKELY(addr_is_in_MM_Chunk(mm, data_addr))) {
-         *where   = mm->where;
-         *payload = mm->payload;
-         *szB     = mm->szB;
-         return;
-      }
+      if (UNLIKELY(addr_is_in_MM_Chunk(mm, data_addr)))
+         goto found;
    }
+
+   /* Not found.  Bah. */
+   return False;
+   /*NOTREACHED*/
+
+  found:
+   tl_assert(mm);
+   tl_assert(addr_is_in_MM_Chunk(mm, data_addr));
+   if (where)   *where   = mm->where;
+   if (payload) *payload = mm->payload;
+   if (szB)     *szB     = mm->szB;
+   return True;
 }
 
 
@@ -4294,6 +4324,23 @@ Bool hg_handle_client_request ( ThreadId tid, UWord* args, UWord* ret)
             evh__new_mem(args[1], args[2]);
          }
          break;
+
+      case _VG_USERREQ__HG_CLEAN_MEMORY_HEAPBLOCK: {
+         Addr  payload = 0;
+         SizeT pszB = 0;
+         if (0) VG_(printf)("VG_USERREQ__HG_CLEAN_MEMORY_HEAPBLOCK(%#lx)\n",
+                            args[1]);
+         if (HG_(mm_find_containing_block)(NULL, &payload, &pszB, args[1])) {
+            if (pszB > 0) {
+               evh__die_mem(payload, pszB);
+               evh__new_mem(payload, pszB);
+            }
+            *ret = pszB;
+         } else {
+            *ret = (UWord)-1;
+         }
+         break;
+      }
 
       case _VG_USERREQ__HG_ARANGE_MAKE_UNTRACKED:
          if (0) VG_(printf)("HG_ARANGE_MAKE_UNTRACKED(%#lx,%ld)\n",

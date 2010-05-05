@@ -276,11 +276,16 @@ UInt HG_(update_extra) ( Error* err )
       tl_assert(!xe->XE.Race.descr2);
 
       /* First, see if it's in any heap block.  Unfortunately this
-         means a linear search through all allocated heap blocks. */
-      HG_(mm_find_containing_block)( 
-         &xe->XE.Race.hctxt, &xe->XE.Race.haddr, &xe->XE.Race.hszB,
-         xe->XE.Race.data_addr
-      );
+         means a linear search through all allocated heap blocks.  The
+         assertion says that if it's detected as a heap block, then we
+         must have an allocation context for it, since all heap blocks
+         should have an allocation context. */
+      Bool is_heapblock
+         = HG_(mm_find_containing_block)( 
+              &xe->XE.Race.hctxt, &xe->XE.Race.haddr, &xe->XE.Race.hszB,
+              xe->XE.Race.data_addr
+           );
+      tl_assert(is_heapblock == (xe->XE.Race.hctxt != NULL));
 
       if (!xe->XE.Race.hctxt) {
          /* It's not in any heap block.  See if we can map it to a

@@ -306,6 +306,16 @@ void VG_(dropHeadXA) ( XArray* xao, Word n )
    xa->usedsizeE -= n;
 }
 
+void VG_(getContentsXA_UNSAFE)( XArray* xao,
+                                /*OUT*/void** ctsP,
+                                /*OUT*/Word* usedP )
+{
+   struct _XArray* xa = (struct _XArray*)xao;
+   vg_assert(xa);
+   *ctsP  = (void*)xa->arr;
+   *usedP = xa->usedsizeE;
+}
+
 /* --------- Printeffery --------- */
 
 static void add_char_to_XA ( HChar c, void* opaque )

@@ -4821,7 +4821,34 @@ PRE(sys_ioctl)
       break;
 
    default:
-      ML_(PRE_unknown_ioctl)(tid, ARG2, ARG3);
+      /* EVIOC* are variable length and return size written on success */
+      switch (ARG2 & ~(_VKI_IOC_SIZEMASK << _VKI_IOC_SIZESHIFT)) {
+      case VKI_EVIOCGNAME(0):
+      case VKI_EVIOCGPHYS(0):
+      case VKI_EVIOCGUNIQ(0):
+      case VKI_EVIOCGKEY(0):
+      case VKI_EVIOCGLED(0):
+      case VKI_EVIOCGSND(0):
+      case VKI_EVIOCGSW(0):
+      case VKI_EVIOCGBIT(VKI_EV_SYN,0):
+      case VKI_EVIOCGBIT(VKI_EV_KEY,0):
+      case VKI_EVIOCGBIT(VKI_EV_REL,0):
+      case VKI_EVIOCGBIT(VKI_EV_ABS,0):
+      case VKI_EVIOCGBIT(VKI_EV_MSC,0):
+      case VKI_EVIOCGBIT(VKI_EV_SW,0):
+      case VKI_EVIOCGBIT(VKI_EV_LED,0):
+      case VKI_EVIOCGBIT(VKI_EV_SND,0):
+      case VKI_EVIOCGBIT(VKI_EV_REP,0):
+      case VKI_EVIOCGBIT(VKI_EV_FF,0):
+      case VKI_EVIOCGBIT(VKI_EV_PWR,0):
+      case VKI_EVIOCGBIT(VKI_EV_FF_STATUS,0):
+         if (RES > 0)
+            PRE_MEM_WRITE("ioctl(EVIO*)", ARG3, _VKI_IOC_SIZE(ARG2));
+         break;
+      default:
+         ML_(PRE_unknown_ioctl)(tid, ARG2, ARG3);
+         break;
+      }
       break;
    }   
 }
@@ -5607,7 +5634,34 @@ POST(sys_ioctl)
       break;
 
    default:
-      ML_(POST_unknown_ioctl)(tid, RES, ARG2, ARG3);
+      /* EVIOC* are variable length and return size written on success */
+      switch (ARG2 & ~(_VKI_IOC_SIZEMASK << _VKI_IOC_SIZESHIFT)) {
+      case VKI_EVIOCGNAME(0):
+      case VKI_EVIOCGPHYS(0):
+      case VKI_EVIOCGUNIQ(0):
+      case VKI_EVIOCGKEY(0):
+      case VKI_EVIOCGLED(0):
+      case VKI_EVIOCGSND(0):
+      case VKI_EVIOCGSW(0):
+      case VKI_EVIOCGBIT(VKI_EV_SYN,0):
+      case VKI_EVIOCGBIT(VKI_EV_KEY,0):
+      case VKI_EVIOCGBIT(VKI_EV_REL,0):
+      case VKI_EVIOCGBIT(VKI_EV_ABS,0):
+      case VKI_EVIOCGBIT(VKI_EV_MSC,0):
+      case VKI_EVIOCGBIT(VKI_EV_SW,0):
+      case VKI_EVIOCGBIT(VKI_EV_LED,0):
+      case VKI_EVIOCGBIT(VKI_EV_SND,0):
+      case VKI_EVIOCGBIT(VKI_EV_REP,0):
+      case VKI_EVIOCGBIT(VKI_EV_FF,0):
+      case VKI_EVIOCGBIT(VKI_EV_PWR,0):
+      case VKI_EVIOCGBIT(VKI_EV_FF_STATUS,0):
+         if (RES > 0)
+            POST_MEM_WRITE(ARG3, RES);
+         break;
+      default:
+         ML_(POST_unknown_ioctl)(tid, RES, ARG2, ARG3);
+         break;
+      }
       break;
    }
 }

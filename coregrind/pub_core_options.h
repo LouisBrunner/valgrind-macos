@@ -42,6 +42,9 @@
 /* The max number of suppression files. */
 #define VG_CLO_MAX_SFILES 100
 
+/* The max number of --require-text-symbol= specification strings. */
+#define VG_CLO_MAX_REQ_TSYMS 100
+
 /* Should we stop collecting errors if too many appear?  default: YES */
 extern Bool  VG_(clo_error_limit);
 /* Alternative exit code to hand to parent if errors were found.
@@ -82,6 +85,7 @@ extern Bool  VG_(clo_time_stamp);
 
 /* The file descriptor to read for input.  default: 0 == stdin */
 extern Int   VG_(clo_input_fd);
+
 /* The number of suppression files specified. */
 extern Int   VG_(clo_n_suppressions);
 /* The names of the suppression files. */
@@ -124,6 +128,39 @@ extern Char* VG_(clo_sim_hints);
 extern Bool VG_(clo_sym_offsets);
 /* Read DWARF3 variable info even if tool doesn't ask for it? */
 extern Bool VG_(clo_read_var_info);
+
+/* An array of strings harvested from --require-text-symbol= 
+   flags.
+
+   Each string specifies a pair: a soname pattern and a text symbol
+   name pattern, separated by a colon.  The patterns can be written
+   using the normal "?" and "*" wildcards.  For example:
+   ":*libc.so*:foo?bar".
+
+   These flags take effect when reading debuginfo from objects.  If an
+   object is loaded and the object's soname matches the soname
+   component of one of the specified pairs, then Valgrind will examine
+   all the text symbol names in the object.  If none of them match the
+   symbol name component of that same specification, then the run is
+   aborted, with an error message.
+
+   The purpose of this is to support reliable usage of marked-up
+   libraries.  For example, suppose we have a version of GCC's
+   libgomp.so which has been marked up with annotations to support
+   Helgrind.  It is only too easy and confusing to load the 'wrong'
+   libgomp.so into the application.  So the idea is: add a text symbol
+   in the marked-up library (eg), "annotated_for_helgrind_3_6", and
+   then give the flag
+
+     --require-text-symbol=:*libgomp*so*:annotated_for_helgrind_3_6
+
+   so that when libgomp.so is loaded, we scan the symbol table, and if
+   the symbol isn't present the run is aborted, rather than continuing
+   silently with the un-marked-up library.  Note that you should put
+   the entire flag in quotes to stop shells messing up the * and ?
+   wildcards. */
+extern Int    VG_(clo_n_req_tsyms);
+extern HChar* VG_(clo_req_tsyms)[VG_CLO_MAX_REQ_TSYMS];
 
 /* Track open file descriptors? */
 extern Bool  VG_(clo_track_fds);

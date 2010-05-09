@@ -1,0 +1,2 @@
+prog: require-text-symbol
+vgopts: -q "--require-text-symbol=:*libc.so*:strl?n"

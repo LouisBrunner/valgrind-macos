@@ -1501,6 +1501,55 @@ need to use these.</para>
    </listitem>
   </varlistentry>
 
+  <varlistentry id="opt.require-text-symbol"
+        xreflabel="--require-text-symbol">
+    <term>
+      <option><![CDATA[--require-text-symbol=:sonamepatt:fnnamepatt]]></option>
+    </term>
+    <listitem>
+      <para>When a shared object whose soname
+      matches <varname>sonamepatt</varname> is loaded into the
+      process, examine all the text symbols it exports.  If none of
+      those match <varname>fnnamepatt</varname>, print an error
+      message and abandon the run.  This makes it possible to ensure
+      that the run does not continue unless a given shared object
+      contains a particular function name.
+      </para>
+      <para>
+      Both <varname>sonamepatt</varname> and
+      <varname>fnnamepatt</varname> can be written using the usual
+      <varname>?</varname> and <varname>*</varname> wildcards.  For
+      example: <varname>":*libc.so*:foo?bar"</varname>.  You may use
+      characters other than a colon to separate the two patterns.  It
+      is only important that the first character and the separator
+      character are the same.  For example, the above example could
+      also be written <varname>"Q*libc.so*Qfoo?bar"</varname>.
+      Multiple <varname> --require-text-symbol</varname> flags are
+      allowed, in which case shared objects that are loaded into
+      the process will be checked against all of them.
+      </para>
+      <para>
+      The purpose of this is to support reliable usage of marked-up
+      libraries.  For example, suppose we have a version of GCC's
+      <varname>libgomp.so</varname> which has been marked up with
+      annotations to support Helgrind.  It is only too easy and
+      confusing to load the wrong, un-annotated
+      <varname>libgomp.so</varname> into the application.  So the idea
+      is: add a text symbol in the marked-up library, for
+      example <varname>annotated_for_helgrind_3_6</varname>, and then
+      give the flag
+      <varname>--require-text-symbol=:*libgomp*so*:annotated_for_helgrind_3_6</varname>
+      so that when <varname>libgomp.so</varname> is loaded, Valgrind
+      scans its symbol table, and if the symbol isn't present the run
+      is aborted, rather than continuing silently with the
+      un-marked-up library.  Note that you should put the entire flag
+      in quotes to stop shells expanding up the <varname>*</varname>
+      and <varname>?</varname> wildcards.
+      </para>
+   </listitem>
+  </varlistentry>
+
+
 </variablelist>
 <!-- end of xi:include in the manpage -->
 

@@ -55,6 +55,7 @@
 #include "pub_core_debuginfo.h"
 #include "pub_core_redir.h"
 #include "pub_core_scheduler.h"
+#include "pub_core_seqmatch.h"      // For VG_(string_match)
 #include "pub_core_signals.h"
 #include "pub_core_stacks.h"        // For VG_(register_stack)
 #include "pub_core_syswrap.h"
@@ -168,6 +169,9 @@ static void usage_NORETURN ( Bool debug_help )
 "    --kernel-variant=variant1,variant2,...  known variants: bproc [none]\n"
 "                              handle non-standard kernel variants\n"
 "    --show-emwarns=no|yes     show warnings about emulation limits? [no]\n"
+"    --require-text-symbol=:sonamepattern:symbolpattern    abort run if the\n"
+"                              stated shared object doesn't have the stated\n"
+"                              text symbol.  Patterns can contain ? and *.\n"
 "\n";
 
    Char* usage2 = 
@@ -538,13 +542,47 @@ void main_process_cmd_line_options ( /*OUT*/Bool* logging_to_fd,
 
       else if VG_STR_CLO(arg, "--suppressions", tmp_str) {
          if (VG_(clo_n_suppressions) >= VG_CLO_MAX_SFILES) {
-            VG_(message)(Vg_UserMsg, "Too many suppression files specified.\n");
+            VG_(message)(Vg_UserMsg,
+                         "Too many suppression files specified.\n");
             VG_(message)(Vg_UserMsg, 
                          "Increase VG_CLO_MAX_SFILES and recompile.\n");
             VG_(err_bad_option)(arg);
          }
          VG_(clo_suppressions)[VG_(clo_n_suppressions)] = tmp_str;
          VG_(clo_n_suppressions)++;
+      }
+
+      else if VG_STR_CLO(arg, "--require-text-symbol", tmp_str) {
+         if (VG_(clo_n_req_tsyms) >= VG_CLO_MAX_REQ_TSYMS) {
+            VG_(message)(Vg_UserMsg,
+                         "Too many --require-text-symbol= specifications.\n");
+            VG_(message)(Vg_UserMsg, 
+                         "Increase VG_CLO_MAX_REQ_TSYMS and recompile.\n");
+            VG_(err_bad_option)(arg);
+         }
+         /* String needs to be of the form C?*C?*, where C is any
+            character, but is the same both times.  Having it in this
+            form facilitates finding the boundary between the sopatt
+            and the fnpatt just by looking for the second occurrence
+            of C, without hardwiring any assumption about what C
+            is. */
+         Char patt[7];
+         Bool ok = True;
+         ok = tmp_str && VG_(strlen)(tmp_str) > 0;
+         if (ok) {
+           patt[0] = patt[3] = tmp_str[0];
+           patt[1] = patt[4] = '?';
+           patt[2] = patt[5] = '*';
+           patt[6] = 0;
+           ok = VG_(string_match)(patt, tmp_str);
+         }
+         if (!ok) {
+            VG_(message)(Vg_UserMsg,
+                         "Invalid --require-text-symbol= specification.\n");
+            VG_(err_bad_option)(arg);
+         }
+         VG_(clo_req_tsyms)[VG_(clo_n_req_tsyms)] = tmp_str;
+         VG_(clo_n_req_tsyms)++;
       }
 
       /* "stuvwxyz" --> stuvwxyz (binary) */

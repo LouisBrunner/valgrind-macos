@@ -67,13 +67,14 @@
    platform-specific.
 
    The module is notified of redirection state changes by m_debuginfo.
-   That calls VG_(redir_notify_new_SegInfo) when a new SegInfo (shared
-   object symbol table, basically) appears.  Appearance of new symbols
-   can cause new (active) redirections to appear for two reasons: the
-   symbols in the new table may match existing redirection
-   specifications (see comments below), and because the symbols in the
-   new table may themselves supply new redirect specifications which
-   match existing symbols (or ones in the new table).
+   That calls VG_(redir_notify_new_DebugInfo) when a new DebugInfo
+   (shared object symbol table, basically) appears.  Appearance of new
+   symbols can cause new (active) redirections to appear for two
+   reasons: the symbols in the new table may match existing
+   redirection specifications (see comments below), and because the
+   symbols in the new table may themselves supply new redirect
+   specifications which match existing symbols (or ones in the new
+   table).
 
    Redirect specifications are really symbols with "funny" prefixes
    (_vgrZU_ and _vgrZZ_).  These names tell m_redir that the
@@ -86,8 +87,8 @@
    by VG_(maybe_Z_demangle).
 
    When a shared object is unloaded, this module learns of it via a
-   call to VG_(redir_notify_delete_SegInfo).  It then removes from its
-   tables all active redirections in any way associated with that
+   call to VG_(redir_notify_delete_DebugInfo).  It then removes from
+   its tables all active redirections in any way associated with that
    object, and tidies up the translation caches accordingly.
 
    That takes care of tracking the redirection state.  When a
@@ -168,23 +169,23 @@
    ===========================================================
    Incremental implementation:
 
-   When a new SegInfo appears:
+   When a new DebugInfo appears:
    - it may be the source of new specs
    - it may be the source of new matches for existing specs
    Therefore:
 
-   - (new Specs x existing SegInfos): scan all symbols in the new 
-     SegInfo to find new specs.  Each of these needs to be compared 
-     against all symbols in all the existing SegInfos to generate 
+   - (new Specs x existing DebugInfos): scan all symbols in the new
+     DebugInfo to find new specs.  Each of these needs to be compared
+     against all symbols in all the existing DebugInfos to generate
      new actives.
      
-   - (existing Specs x new SegInfo): scan all symbols in the SegInfo,
-     trying to match them to any existing specs, also generating
-     new actives.
+   - (existing Specs x new DebugInfo): scan all symbols in the
+     DebugInfo, trying to match them to any existing specs, also
+     generating new actives.
 
-   - (new Specs x new SegInfo): scan all symbols in the new SegInfo,
-     trying to match them against the new specs, to generate new
-     actives.
+   - (new Specs x new DebugInfo): scan all symbols in the new
+     DebugInfo, trying to match them against the new specs, to
+     generate new actives.
 
    - Finally, add new new specs to the current set of specs.
 
@@ -195,7 +196,7 @@
         else add (s,d) to Actives
              and discard (s,1) and (d,1)  (maybe overly conservative)
 
-   When a SegInfo disappears:
+   When a DebugInfo disappears:
    - delete all specs acquired from the seginfo
    - delete all actives derived from the just-deleted specs
    - if each active (s,d) deleted, discard (s,1) and (d,1)
@@ -234,8 +235,8 @@ typedef
    }
    Spec;
 
-/* Top-level data structure.  It contains a pointer to a SegInfo and
-   also a list of the specs harvested from that SegInfo.  Note that
+/* Top-level data structure.  It contains a pointer to a DebugInfo and
+   also a list of the specs harvested from that DebugInfo.  Note that
    seginfo is allowed to be NULL, meaning that the specs are
    pre-loaded ones at startup and are not associated with any
    particular seginfo. */
@@ -249,7 +250,7 @@ typedef
    TopSpec;
 
 /* This is the top level list of redirections.  m_debuginfo maintains
-   a list of SegInfos, and the idea here is to maintain a list with
+   a list of DebugInfos, and the idea here is to maintain a list with
    the same number of elements (in fact, with one more element, so as
    to record abovementioned preloaded specifications.) */
 static TopSpec* topSpecs = NULL;
@@ -298,6 +299,7 @@ static void   show_active ( HChar* left, Active* act );
 static void   handle_maybe_load_notifier( const UChar* soname, 
                                                 HChar* symbol, Addr addr );
 
+static void   handle_require_text_symbols ( DebugInfo* );
 
 /*------------------------------------------------------------*/
 /*--- NOTIFICATIONS                                        ---*/
@@ -422,7 +424,7 @@ void VG_(redir_notify_new_DebugInfo)( DebugInfo* newsi )
       }
    }
 
-   /* Ok.  Now specList holds the list of specs from the DebugInfo. 
+   /* Ok.  Now specList holds the list of specs from the DebugInfo.
       Build a new TopSpec, but don't add it to topSpecs yet. */
    newts = dinfo_zalloc("redir.rnnD.4", sizeof(TopSpec));
    vg_assert(newts);
@@ -471,6 +473,11 @@ void VG_(redir_notify_new_DebugInfo)( DebugInfo* newsi )
 
    if (VG_(clo_trace_redir))
       show_redir_state("after VG_(redir_notify_new_DebugInfo)");
+
+   /* Really finally (quite unrelated to all the above) check the
+      names in the module against any --require-text-symbol=
+      specifications we might have. */
+   handle_require_text_symbols(newsi);
 }
 
 #undef N_DEMANGLED
@@ -1123,6 +1130,7 @@ static Bool is_aix5_glink_idiom ( Addr sym_addr )
    return False;
 }
 
+
 /*------------------------------------------------------------*/
 /*--- NOTIFY-ON-LOAD FUNCTIONS                             ---*/
 /*------------------------------------------------------------*/
@@ -1157,6 +1165,114 @@ void handle_maybe_load_notifier( const UChar* soname,
       iFuncWrapper = addr;
    else
       vg_assert2(0, "unrecognised load notification function: %s", symbol);
+}
+
+
+/*------------------------------------------------------------*/
+/*--- REQUIRE-TEXT-SYMBOL HANDLING                         ---*/
+/*------------------------------------------------------------*/
+
+/* In short: check that the currently-being-loaded object has text
+   symbols that satisfy any --require-text-symbol= specifications that
+   apply to it, and abort the run with an error message if not.
+*/
+static void handle_require_text_symbols ( DebugInfo* di )
+{
+   /* First thing to do is figure out which, if any,
+      --require-text-symbol specification strings apply to this
+      object.  Most likely none do, since it is not expected to
+      frequently be used.  Work through the list of specs and
+      accumulate in fnpatts[] the fn patterns that pertain to this
+      object. */
+   HChar* fnpatts[VG_CLO_MAX_REQ_TSYMS];
+   Int    fnpatts_used = 0;
+   Int    i, j;
+   const HChar* di_soname = VG_(DebugInfo_get_soname)(di);
+   vg_assert(di_soname); // must be present
+
+   VG_(memset)(&fnpatts, 0, sizeof(fnpatts));
+
+   vg_assert(VG_(clo_n_req_tsyms) >= 0);
+   vg_assert(VG_(clo_n_req_tsyms) <= VG_CLO_MAX_REQ_TSYMS);
+   for (i = 0; i < VG_(clo_n_req_tsyms); i++) {
+      HChar* spec = VG_(clo_req_tsyms)[i];
+      vg_assert(spec && VG_(strlen)(spec) >= 4);
+      // clone the spec, so we can stick a zero at the end of the sopatt
+      spec = VG_(strdup)("m_redir.hrts.1", spec);
+      HChar sep = spec[0];
+      HChar* sopatt = &spec[1];
+      HChar* fnpatt = VG_(strchr)(sopatt, sep);
+      // the initial check at clo processing in time in m_main
+      // should ensure this.
+      vg_assert(fnpatt && *fnpatt == sep);
+      *fnpatt = 0;
+      fnpatt++;
+      if (VG_(string_match)(sopatt, di_soname))
+         fnpatts[fnpatts_used++]
+            = VG_(strdup)("m_redir.hrts.2", fnpatt);
+      VG_(free)(spec);
+   }
+
+   if (fnpatts_used == 0)
+      return;  /* no applicable spec strings */
+
+   /* So finally, fnpatts[0 .. fnpatts_used - 1] contains the set of
+      (patterns for) text symbol names that must be found in this
+      object, in order to continue.  That is, we must find at least
+      one text symbol name that matches each pattern, else we must
+      abort the run. */
+
+   if (0) VG_(printf)("for %s\n", di_soname);
+   for (i = 0; i < fnpatts_used; i++)
+      if (0) VG_(printf)("   fnpatt: %s\n", fnpatts[i]);
+
+   /* For each spec, look through the syms to find one that matches.
+      This isn't terribly efficient but it happens rarely, so no big
+      deal. */
+   for (i = 0; i < fnpatts_used; i++) {
+      Bool   found = False;
+      HChar* fnpatt = fnpatts[i];
+      Int    nsyms = VG_(DebugInfo_syms_howmany)(di);
+      for (j = 0; j < nsyms; j++) {
+         Bool   isText   = False;
+         HChar* sym_name = NULL;
+         VG_(DebugInfo_syms_getidx)( di, j, NULL, NULL,
+                                     NULL, &sym_name, &isText, NULL );
+         /* ignore data symbols */
+         if (0) VG_(printf)("QQQ %s\n", sym_name);
+         vg_assert(sym_name);
+         if (!isText)
+            continue;
+         if (VG_(string_match)(fnpatt, sym_name)) {
+            found = True;
+            break;
+         }
+      }
+
+      if (!found) {
+         HChar* v = "valgrind:  ";
+         VG_(printf)("\n");
+         VG_(printf)(
+         "%sFatal error at when loading library with soname\n", v);
+         VG_(printf)(
+         "%s   %s\n", v, di_soname);
+         VG_(printf)(
+         "%sCannot find any text symbol with a name "
+         "that matches the pattern\n", v);
+         VG_(printf)("%s   %s\n", v, fnpatt);
+         VG_(printf)("%sas required by a --require-text-symbol= "
+         "specification.\n", v);
+         VG_(printf)("\n");
+         VG_(printf)(
+         "%sCannot continue -- exiting now.\n", v);
+         VG_(printf)("\n");
+         VG_(exit)(1);
+      }
+   }
+
+   /* All required specs were found.  Just free memory and return. */
+   for (i = 0; i < fnpatts_used; i++)
+      VG_(free)(fnpatts[i]);
 }
 
 

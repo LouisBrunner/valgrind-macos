@@ -6146,11 +6146,12 @@ ULong dis_FPU ( /*OUT*/Bool* decode_ok,
                fp_pop();
                break;
 
-//..             case 2: /* FIST m16 */
-//..                DIP("fistp %s\n", dis_buf);
-//..                storeLE( mkexpr(addr), 
-//..                         binop(Iop_F64toI16, get_roundingmode(), get_ST(0)) );
-//..                break;
+            case 2: /* FIST m16 */
+               DIP("fists %s\n", dis_buf);
+               storeLE( mkexpr(addr), 
+                        x87ishly_qnarrow_32_to_16(
+                        binop(Iop_F64toI32S, get_roundingmode(), get_ST(0)) ));
+               break;
 
             case 3: /* FISTP m16 */
                DIP("fistps %s\n", dis_buf);

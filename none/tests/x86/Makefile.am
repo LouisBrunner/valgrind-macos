@@ -53,7 +53,8 @@ EXTRA_DIST = \
 	ssse3_misaligned.stderr.exp ssse3_misaligned.stdout.exp \
 	ssse3_misaligned.vgtest ssse3_misaligned.c \
 	x86locked.vgtest x86locked.stdout.exp x86locked.stderr.exp \
-	yield.stderr.exp yield.stdout.exp yield.disabled
+	yield.stderr.exp yield.stdout.exp yield.disabled \
+	xadd.stdout.exp xadd.stderr.exp xadd.vgtest
 
 check_PROGRAMS = \
 	badseg \
@@ -84,7 +85,8 @@ check_PROGRAMS = \
 	sbbmisc \
 	smc1 \
 	x86locked \
-	yield
+	yield \
+	xadd
 if BUILD_SSSE3_TESTS
    check_PROGRAMS += ssse3_misaligned
 endif

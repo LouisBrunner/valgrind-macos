@@ -1,0 +1,2 @@
+prog: xadd
+vgopts: -q

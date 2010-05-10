@@ -48,7 +48,8 @@ EXTRA_DIST = \
 	ssse3_misaligned.vgtest \
 	ssse3_misaligned.c \
 	slahf-amd64.stderr.exp slahf-amd64.stdout.exp \
-	slahf-amd64.vgtest
+	slahf-amd64.vgtest \
+	xadd.stderr.exp xadd.stdout.exp xadd.vgtest
 
 check_PROGRAMS = \
 	amd64locked \
@@ -58,7 +59,8 @@ check_PROGRAMS = \
 	rcl-amd64 \
 	redundantRexW \
 	smc1 \
-	nibz_bennee_mmap
+	nibz_bennee_mmap \
+	xadd
 if BUILD_SSSE3_TESTS
  check_PROGRAMS += ssse3_misaligned
 endif

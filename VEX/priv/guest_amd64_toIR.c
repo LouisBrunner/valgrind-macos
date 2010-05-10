@@ -7720,7 +7720,8 @@ ULong dis_xadd_G_E ( /*OUT*/Bool* decode_ok,
 
    /* There are 3 cases to consider:
 
-      reg-reg: currently unhandled
+      reg-reg: ignore any lock prefix,
+               generate 'naive' (non-atomic) sequence
 
       reg-mem, not locked: ignore any lock prefix, generate 'naive'
                            (non-atomic) sequence
@@ -7730,9 +7731,18 @@ ULong dis_xadd_G_E ( /*OUT*/Bool* decode_ok,
 
    if (epartIsReg(rm)) {
       /* case 1 */
-      *decode_ok = False;
-      return delta0;
-      /* Currently we don't handle xadd_G_E with register operand. */
+      assign( tmpd, getIRegE(sz, pfx, rm) );
+      assign( tmpt0, getIRegG(sz, pfx, rm) );
+      assign( tmpt1, binop(mkSizedOp(ty,Iop_Add8),
+                           mkexpr(tmpd), mkexpr(tmpt0)) );
+      setFlags_DEP1_DEP2( Iop_Add8, tmpd, tmpt0, ty );
+      putIRegG(sz, pfx, rm, mkexpr(tmpd));
+      putIRegE(sz, pfx, rm, mkexpr(tmpt1));
+      DIP("xadd%c %s, %s\n",
+          nameISize(sz), nameIRegG(sz,pfx,rm),
+          				 nameIRegE(sz,pfx,rm));
+      *decode_ok = True;
+      return 1+delta0;
    }
    else if (!epartIsReg(rm) && !(pfx & PFX_LOCK)) {
       /* case 2 */

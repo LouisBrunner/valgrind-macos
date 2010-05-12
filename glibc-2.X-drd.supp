@@ -41,6 +41,14 @@
 #    fun:_ZNSsC1ERKSs
 # }
 
+{
+   drd-libstdc++-cxa_guard_release
+   drd:CondErr
+   fun:pthread_cond_broadcast@*
+   fun:__cxa_guard_release
+}
+
+
 #
 # Suppression patterns for libpthread.
 #

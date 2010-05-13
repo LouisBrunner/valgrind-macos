@@ -337,6 +337,7 @@ void DRD_(semaphore_pre_wait)(const Addr semaphore)
 {
    struct semaphore_info* p;
 
+   tl_assert(semaphore < semaphore + 1);
    p = drd_semaphore_get_or_allocate(semaphore);
    tl_assert(p);
    p->waiters++;

@@ -114,7 +114,7 @@ EXTRA_DIST = \
 	readline1.stderr.exp readline1.stdout.exp \
 	readline1.vgtest \
 	require-text-symbol-1.vgtest \
-		require-text-symbol-1.stderr.exp
+		require-text-symbol-1.stderr.exp \
 	require-text-symbol-2.vgtest \
 		require-text-symbol-2.stderr.exp-libcso6 \
 	res_search.stderr.exp res_search.stdout.exp res_search.vgtest \

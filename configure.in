@@ -39,6 +39,7 @@ AC_PROG_CXX
 #         AC_SUBST([OBJCFLAGS])
 #        ])
 AC_PROG_RANLIB
+AC_PROG_SED
 
 # If no AR variable was specified, look up the name of the archiver. Otherwise
 # do not touch the AR variable.
@@ -582,117 +583,18 @@ fi
 # This variable will collect the suppression files to be used.
 AC_SUBST(DEFAULT_SUPP)
 
-GLIBC_VERSION=""
+AC_CHECK_HEADER([features.h])
 
-AC_EGREP_CPP([GLIBC_22], [
+if test x$ac_cv_header_features_h = xyes; then
+  rm -f conftest.$ac_ext
+  cat <<_ACEOF >conftest.$ac_ext
 #include <features.h>
-#ifdef __GNU_LIBRARY__
- #if (__GLIBC__ == 2 && __GLIBC_MINOR__ == 2)
-  GLIBC_22
- #endif
+#if defined(__GNU_LIBRARY__) && defined(__GLIBC__) && defined(__GLIBC_MINOR__)
+glibc version is: __GLIBC__ __GLIBC_MINOR__
 #endif
-],
-GLIBC_VERSION="2.2")
-
-AC_EGREP_CPP([GLIBC_23], [
-#include <features.h>
-#ifdef __GNU_LIBRARY__
- #if (__GLIBC__ == 2 && __GLIBC_MINOR__ == 3)
-  GLIBC_23
- #endif
-#endif
-],
-GLIBC_VERSION="2.3")
-
-AC_EGREP_CPP([GLIBC_24], [
-#include <features.h>
-#ifdef __GNU_LIBRARY__
- #if (__GLIBC__ == 2 && __GLIBC_MINOR__ == 4)
-  GLIBC_24
- #endif
-#endif
-],
-GLIBC_VERSION="2.4")
-
-AC_EGREP_CPP([GLIBC_25], [
-#include <features.h>
-#ifdef __GNU_LIBRARY__
- #if (__GLIBC__ == 2 && __GLIBC_MINOR__ == 5)
-  GLIBC_25
- #endif
-#endif
-],
-GLIBC_VERSION="2.5")
-
-AC_EGREP_CPP([GLIBC_26], [
-#include <features.h>
-#ifdef __GNU_LIBRARY__
- #if (__GLIBC__ == 2 && __GLIBC_MINOR__ == 6)
-  GLIBC_26
- #endif
-#endif
-],
-GLIBC_VERSION="2.6")
-
-AC_EGREP_CPP([GLIBC_27], [
-#include <features.h>
-#ifdef __GNU_LIBRARY__
- #if (__GLIBC__ == 2 && __GLIBC_MINOR__ == 7)
-  GLIBC_27
- #endif
-#endif
-],
-GLIBC_VERSION="2.7")
-
-AC_EGREP_CPP([GLIBC_28], [
-#include <features.h>
-#ifdef __GNU_LIBRARY__
- #if (__GLIBC__ == 2 && __GLIBC_MINOR__ == 8)
-  GLIBC_28
- #endif
-#endif
-],
-GLIBC_VERSION="2.8")
-
-AC_EGREP_CPP([GLIBC_29], [
-#include <features.h>
-#ifdef __GNU_LIBRARY__
- #if (__GLIBC__ == 2 && __GLIBC_MINOR__ == 9)
-  GLIBC_29
- #endif
-#endif
-],
-GLIBC_VERSION="2.9")
-
-AC_EGREP_CPP([GLIBC_210], [
-#include <features.h>
-#ifdef __GNU_LIBRARY__
- #if (__GLIBC__ == 2 && __GLIBC_MINOR__ == 10)
-  GLIBC_210
- #endif
-#endif
-],
-GLIBC_VERSION="2.10")
-
-AC_EGREP_CPP([GLIBC_211], [
-#include <features.h>
-#ifdef __GNU_LIBRARY__
- #if (__GLIBC__ == 2 && __GLIBC_MINOR__ == 11)
-  GLIBC_211
- #endif
-#endif
-],
-GLIBC_VERSION="2.11")
-
-AC_EGREP_CPP([GLIBC_212], [
-#include <features.h>
-#ifdef __GNU_LIBRARY__
- #if (__GLIBC__ == 2 && __GLIBC_MINOR__ == 12)
-  GLIBC_212
- #endif
-#endif
-],
-GLIBC_VERSION="2.12")
+_ACEOF
+  GLIBC_VERSION="`$CPP conftest.$ac_ext | $SED -n 's/^glibc version is: //p' | $SED 's/ /./g'`"
+fi
 
 AC_EGREP_CPP([AIX5_LIBC], [
 #include <standards.h>
@@ -806,7 +708,7 @@ case "${GLIBC_VERSION}" in
 	;;
 
      *)
-	AC_MSG_RESULT(unsupported version)
+	AC_MSG_RESULT([unsupported version ${GLIBC_VERSION}])
 	AC_MSG_ERROR([Valgrind requires glibc version 2.2 - 2.12])
 	AC_MSG_ERROR([or AIX 5.1 or 5.2 or 5.3 GLIBC_VERSION])
 	AC_MSG_ERROR([or Darwin libc])

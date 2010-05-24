@@ -1726,7 +1726,7 @@ PRE(sys_mq_timedreceive)
 }
 POST(sys_mq_timedreceive)
 {
-   POST_MEM_WRITE( ARG2, ARG3 );
+   POST_MEM_WRITE( ARG2, RES );
    if (ARG4 != 0)
       POST_MEM_WRITE( ARG4, sizeof(unsigned int) );
 }

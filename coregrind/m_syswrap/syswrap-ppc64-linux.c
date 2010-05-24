@@ -1479,7 +1479,7 @@ static SyscallTableEntry syscall_table[] = {
    LINX_(__NR_mq_unlink,         sys_mq_unlink),          // 263
    LINX_(__NR_mq_timedsend,      sys_mq_timedsend),       // 264
 
-   LINX_(__NR_mq_timedreceive,   sys_mq_timedreceive),    // 265
+   LINXY(__NR_mq_timedreceive,   sys_mq_timedreceive),    // 265
    LINX_(__NR_mq_notify,         sys_mq_notify),          // 266
    LINXY(__NR_mq_getsetattr,     sys_mq_getsetattr),      // 267
 // _____(__NR_kexec_load,        sys_kexec_load),         // 268

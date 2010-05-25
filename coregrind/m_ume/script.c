@@ -35,6 +35,8 @@
 #include "pub_core_libcassert.h"    // VG_(exit), vg_assert
 #include "pub_core_libcfile.h"      // VG_(close) et al
 #include "pub_core_libcprint.h"
+#include "pub_core_xarray.h"
+#include "pub_core_clientstate.h"
 #include "pub_core_mallocfree.h"    // VG_(strdup)
 #include "pub_core_ume.h"           // self
 
@@ -132,6 +134,8 @@ Int VG_(load_script)(Int fd, const HChar* name, ExeInfo* info)
 
    if (info->argv && info->argv[0] != NULL)
       info->argv[0] = (char *)name;
+
+   VG_(args_the_exename) = name;
 
    if (0)
       VG_(printf)("#! script: interp_name=\"%s\" interp_args=\"%s\"\n",

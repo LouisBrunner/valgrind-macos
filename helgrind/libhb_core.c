@@ -5711,7 +5711,8 @@ void libhb_so_recv ( Thr* thr, SO* so, Bool strong_recv )
          //VtsID__rcinc(thr->viW);
       }
 
-      Filter__clear(thr->filter, "libhb_so_recv");
+      if (thr->filter)
+         Filter__clear(thr->filter, "libhb_so_recv");
       note_local_Kw_n_stack_for(thr);
 
       if (strong_recv) 

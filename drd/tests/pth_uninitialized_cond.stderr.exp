@@ -1,0 +1,10 @@
+
+Statically initialized condition variable.
+Uninitialized condition variable.
+condition variable has not been initialized: cond 0x........
+   at 0x........: pthread_cond_signal (drd_pthread_intercepts.c:?)
+   by 0x........: main (pth_uninitialized_cond.c:?)
+
+Done.
+
+ERROR SUMMARY: 1 errors from 1 contexts (suppressed: 0 from 0)

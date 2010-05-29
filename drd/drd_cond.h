@@ -36,6 +36,12 @@
 struct cond_info;
 
 
+/* Variable declarations. */
+
+extern Addr DRD_(pthread_cond_initializer);
+extern int DRD_(pthread_cond_initializer_size);
+
+
 /* Function declarations. */
 
 void DRD_(cond_set_report_signal_unlocked)(const Bool r);

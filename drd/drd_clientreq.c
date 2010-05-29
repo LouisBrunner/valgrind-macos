@@ -174,6 +174,11 @@ static Bool handle_client_request(ThreadId vg_tid, UWord* arg, UWord* ret)
       DRD_(rwlock_pre_unlock)(arg[1], user_rwlock);
       break;
 
+   case VG_USERREQ__SET_PTHREAD_COND_INITIALIZER:
+      DRD_(pthread_cond_initializer) = (Addr)arg[1];
+      DRD_(pthread_cond_initializer_size) = arg[2];
+      break;
+
    case VG_USERREQ__DRD_START_NEW_SEGMENT:
       DRD_(thread_new_segment)(DRD_(PtThreadIdToDrdThreadId)(arg[1]));
       break;

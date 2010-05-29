@@ -29,6 +29,7 @@
 #include "drd_mutex.h"
 #include "pub_tool_errormgr.h"    /* VG_(maybe_record_error)() */
 #include "pub_tool_libcassert.h"  /* tl_assert()               */
+#include "pub_tool_libcbase.h"    /* VG_(memcmp)()             */
 #include "pub_tool_libcprint.h"   /* VG_(printf)()             */
 #include "pub_tool_machine.h"     /* VG_(get_IP)()             */
 #include "pub_tool_threadstate.h" /* VG_(get_running_tid)()    */
@@ -43,6 +44,12 @@ static void DRD_(cond_cleanup)(struct cond_info* p);
 
 static Bool DRD_(s_report_signal_unlocked) = True;
 static Bool DRD_(s_trace_cond);
+
+
+/* Global variables. */
+
+Addr DRD_(pthread_cond_initializer);
+int DRD_(pthread_cond_initializer_size);
 
 
 /* Function definitions. */
@@ -382,11 +389,16 @@ void DRD_(cond_pre_signal)(Addr const cond)
                    cond);
    }
 
-   if (!p)
+   tl_assert(DRD_(pthread_cond_initializer));
+   if (!p && VG_(memcmp)((void*)cond, (void*)DRD_(pthread_cond_initializer),
+                         DRD_(pthread_cond_initializer_size)) != 0)
    {
       not_initialized(cond);
       return;
    }
+
+   if (!p)
+      p = cond_get_or_allocate(cond);
 
    cond_signal(DRD_(thread_get_running_tid)(), p);
 }
@@ -405,11 +417,16 @@ void DRD_(cond_pre_broadcast)(Addr const cond)
    }
 
    p = DRD_(cond_get)(cond);
-   if (!p)
+   tl_assert(DRD_(pthread_cond_initializer));
+   if (!p && VG_(memcmp)((void*)cond, (void*)DRD_(pthread_cond_initializer),
+                         DRD_(pthread_cond_initializer_size)) != 0)
    {
       not_initialized(cond);
       return;
    }
+
+   if (!p)
+      p = cond_get_or_allocate(cond);
 
    cond_signal(DRD_(thread_get_running_tid)(), p);
 }

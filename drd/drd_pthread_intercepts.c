@@ -134,6 +134,7 @@ typedef struct
 static void DRD_(init)(void) __attribute__((constructor));
 static void DRD_(check_threading_library)(void);
 static void DRD_(set_main_thread_state)(void);
+static void DRD_(set_pthread_cond_initializer)(void);
 
 
 /* Function definitions. */
@@ -152,6 +153,7 @@ static void DRD_(init)(void)
 {
    DRD_(check_threading_library)();
    DRD_(set_main_thread_state)();
+   DRD_(set_pthread_cond_initializer)();
 }
 
 /**
@@ -339,7 +341,20 @@ static void DRD_(set_main_thread_state)(void)
    // Make sure that DRD knows about the main thread's POSIX thread ID.
    VALGRIND_DO_CLIENT_REQUEST(res, -1, VG_USERREQ__SET_PTHREADID,
                               pthread_self(), 0, 0, 0, 0);
+}
 
+/** Tell DRD which value PTHREAD_COND_INITIALIZER has. */
+static void DRD_(set_pthread_cond_initializer)(void)
+{
+   int res;
+
+   static pthread_cond_t pthread_cond_initializer = PTHREAD_COND_INITIALIZER;
+
+   // Make sure that DRD knows about the main thread's POSIX thread ID.
+   VALGRIND_DO_CLIENT_REQUEST(res, -1, VG_USERREQ__SET_PTHREAD_COND_INITIALIZER,
+                              &pthread_cond_initializer,
+                              sizeof(pthread_cond_initializer),
+                              0, 0, 0);
 }
 
 

@@ -45,8 +45,14 @@
  * source files.
  */
 enum {
+   /* Declare the address and size of a variable with value
+    * PTHREAD_COND_INITIALIZER.
+    */
+   VG_USERREQ__SET_PTHREAD_COND_INITIALIZER = VG_USERREQ_TOOL_BASE('D', 'r'),
+   /* args: address, size. */
+
    /* To ask the drd tool to start a new segment in the specified thread. */
-   VG_USERREQ__DRD_START_NEW_SEGMENT = VG_USERREQ_TOOL_BASE('D', 'r'),
+   VG_USERREQ__DRD_START_NEW_SEGMENT,
    /* args: POSIX thread ID. */
 
    /* Tell drd the pthread_t of the running thread. */

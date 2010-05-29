@@ -39,12 +39,18 @@ AC_PROG_CXX
 #         AC_SUBST([OBJCFLAGS])
 #        ])
 AC_PROG_RANLIB
+# provide a very basic definition for AC_PROG_SED if it's not provided by
+# autoconf (as e.g. in autoconf 2.59).
+m4_ifndef([AC_PROG_SED],
+          [AC_DEFUN([AC_PROG_SED],
+                    [AC_ARG_VAR([SED])
+                     AC_CHECK_PROGS([SED],[gsed sed])])])
 AC_PROG_SED
 
 # If no AR variable was specified, look up the name of the archiver. Otherwise
 # do not touch the AR variable.
 if test "x$AR" = "x"; then
-  AC_PATH_PROGS([AR], [`echo $LD | sed 's/ld$/ar/'` "ar"], [ar])
+  AC_PATH_PROGS([AR], [`echo $LD | $SED 's/ld$/ar/'` "ar"], [ar])
 fi
 AC_ARG_VAR([AR],[Archiver command])
 
@@ -93,7 +99,7 @@ rm $tmpfile
 # We don't want gcc < 3.0
 AC_MSG_CHECKING([for a supported version of gcc])
 
-[gcc_version=`${CC} --version | head -n 1 | sed 's/^[^0-9]*\([0-9.]*\).*$/\1/'`]
+[gcc_version=`${CC} --version | head -n 1 | $SED 's/^[^0-9]*\([0-9.]*\).*$/\1/'`]
 
 case "${gcc_version}" in
      2.*)

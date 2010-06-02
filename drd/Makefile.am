@@ -56,6 +56,7 @@ DRD_SOURCES_COMMON =    \
   drd_clientobj.c       \
   drd_clientreq.c       \
   drd_cond.c            \
+  drd_cond_initializer.c \
   drd_error.c           \
   drd_hb.c              \
   drd_load_store.c      \

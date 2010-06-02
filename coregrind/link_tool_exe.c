@@ -27,7 +27,13 @@
    inputs.
 */
 
+/* ------------------------- LINUX ------------------------- */
+
 #if defined(VGO_linux)
+
+/* Scheme is simple: pass the specified command to the linker as-is,
+   except, add "-static" and "-Ttext=<argv[1]>" to it.
+*/
 
 // Don't NDEBUG this; the asserts are necesary for
 // safety checks.
@@ -95,9 +101,67 @@ int main ( int argc, char** argv )
    return r;
 }
 
+/* ------------------------- LINUX ------------------------- */
+
 #elif defined(VGO_darwin)
 
-#error Daaaawin
+/* Run the specified command as-is; ignore the specified load address
+   (argv[1]). */
+
+// Don't NDEBUG this; the asserts are necesary for
+// safety checks.
+#include <assert.h>
+#include <string.h>
+#include <stdio.h>
+#include <stdlib.h>
+
+int main ( int argc, char** argv )
+{
+   int    i;
+   size_t reqd = 0;
+
+   // expect at least: alt-load-address gcc -o foo bar.o
+   assert(argc > 5);
+
+   // check for plausible-ish alt load address
+   char* ala = argv[1];
+   assert(ala[0] == '0');
+   assert(ala[1] == 'x');
+
+   // command to run is argv[2 ..]
+
+   // so, build up the complete command here:
+   // argv[2 ..]
+
+   // first, do length safety checks
+   for (i = 2; i < argc; i++)
+      reqd += 1+ strlen(argv[i]);
+
+   reqd += 1;
+   char* cmd = calloc(reqd,1);
+   assert(cmd);
+
+   for (i = 2; i < argc; i++) {
+     strcat(cmd, " ");
+     strcat(cmd, argv[i]);
+   }
+
+   assert(cmd[reqd-1] == 0);
+
+   if (0) printf("\n");
+   printf("link_tool_exe: %s\n", cmd);
+   if (0) printf("\n");
+
+   int r = system(cmd);
+
+   free(cmd);
+
+   // return the result of system.  Note, we should handle it
+   // properly; that would involve using WEXITSTATUS on the
+   // value system gives back to us.
+   return r;
+}
+
 
 #else
 #  error "Unsupported OS"

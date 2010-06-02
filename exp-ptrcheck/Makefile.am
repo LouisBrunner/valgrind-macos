@@ -38,6 +38,13 @@ exp_ptrcheck_@VGCONF_ARCH_PRI@_@VGCONF_OS@_LDADD        = \
 	$(TOOL_LDADD_@VGCONF_PLATFORM_PRI_CAPS@)
 exp_ptrcheck_@VGCONF_ARCH_PRI@_@VGCONF_OS@_LDFLAGS      = \
 	$(TOOL_LDFLAGS_@VGCONF_PLATFORM_PRI_CAPS@)
+exp_ptrcheck_@VGCONF_ARCH_PRI@_@VGCONF_OS@_LINK = \
+	$(top_builddir)/coregrind/link_tool_exe \
+	@VALT_LOAD_ADDRESS@ \
+	$(LINK) \
+	$(exp_ptrcheck_@VGCONF_ARCH_PRI@_@VGCONF_OS@_CFLAGS) \
+	$(exp_ptrcheck_@VGCONF_ARCH_PRI@_@VGCONF_OS@_LDFLAGS)
+
 if VGCONF_HAVE_PLATFORM_SEC
 exp_ptrcheck_@VGCONF_ARCH_SEC@_@VGCONF_OS@_SOURCES      = \
 	$(EXP_PTRCHECK_SOURCES_COMMON)
@@ -51,6 +58,12 @@ exp_ptrcheck_@VGCONF_ARCH_SEC@_@VGCONF_OS@_LDADD        = \
 	$(TOOL_LDADD_@VGCONF_PLATFORM_SEC_CAPS@)
 exp_ptrcheck_@VGCONF_ARCH_SEC@_@VGCONF_OS@_LDFLAGS      = \
 	$(TOOL_LDFLAGS_@VGCONF_PLATFORM_SEC_CAPS@)
+exp_ptrcheck_@VGCONF_ARCH_SEC@_@VGCONF_OS@_LINK = \
+	$(top_builddir)/coregrind/link_tool_exe \
+	@VALT_LOAD_ADDRESS@ \
+	$(LINK) \
+	$(exp_ptrcheck_@VGCONF_ARCH_SEC@_@VGCONF_OS@_CFLAGS) \
+	$(exp_ptrcheck_@VGCONF_ARCH_SEC@_@VGCONF_OS@_LDFLAGS)
 endif
 
 #----------------------------------------------------------------------------
@@ -79,6 +92,7 @@ vgpreload_exp_ptrcheck_@VGCONF_ARCH_PRI@_@VGCONF_OS@_so_DEPENDENCIES = \
 vgpreload_exp_ptrcheck_@VGCONF_ARCH_PRI@_@VGCONF_OS@_so_LDFLAGS      = \
 	$(PRELOAD_LDFLAGS_@VGCONF_PLATFORM_PRI_CAPS@) \
 	$(LIBREPLACEMALLOC_LDFLAGS_@VGCONF_PLATFORM_PRI_CAPS@)
+
 if VGCONF_HAVE_PLATFORM_SEC
 vgpreload_exp_ptrcheck_@VGCONF_ARCH_SEC@_@VGCONF_OS@_so_SOURCES      = \
 	$(VGPRELOAD_EXP_PTRCHECK_SOURCES_COMMON)

@@ -113,7 +113,7 @@ int main ( int argc, char** argv )
    return failed ? 1 : 0;
 }
 
-/* ------------------------- LINUX ------------------------- */
+/* ------------------------- DARWIN ------------------------ */
 
 #elif defined(VGO_darwin)
 
@@ -129,8 +129,9 @@ int main ( int argc, char** argv )
 
 int main ( int argc, char** argv )
 {
-   int    i;
-   size_t reqd = 0;
+   int         i;
+   int/*bool*/ failed = 0;
+   size_t      reqd = 0;
 
    // expect at least: alt-load-address gcc -o foo bar.o
    assert(argc > 5);
@@ -165,13 +166,13 @@ int main ( int argc, char** argv )
    if (0) printf("\n");
 
    int r = system(cmd);
+   if (r == -1 || WEXITSTATUS(r) != 0)
+      failed = 1;
 
    free(cmd);
 
-   // return the result of system.  Note, we should handle it
-   // properly; that would involve using WEXITSTATUS on the
-   // value system gives back to us.
-   return r;
+   // return the result of system.
+   return failed ? 1 : 0;
 }
 
 

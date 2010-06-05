@@ -234,8 +234,9 @@
 #
 
 # Suppress the races on boost::once_flag::epoch and on
-# boost::detail::once_global_epoch. See also the source file
-# boost/thread/pthread/once.hpp in the Boost source tree.
+# boost::detail::this_thread_epoch. See also the source file
+# boost/thread/pthread/once.hpp in the Boost source tree
+# (https://svn.boost.org/trac/boost/browser/trunk/boost/thread/pthread/once.hpp).
 {
    drd-libboost-boost::call_once<void (*)()>(boost::once_flag&, void (*)())
    drd:ConflictingAccess
@@ -247,9 +248,18 @@
    drd:ConflictingAccess
    fun:_ZN5boost6detail25get_once_per_thread_epochEv
 }
+# Suppress the race reports on boost::detail::current_thread_tls_key. See also
+# https://svn.boost.org/trac/boost/ticket/3526 for more information about why
+# the access pattern of current_thread_tls_key is safe.
 {
    drd-libboost-boost::detail::get_current_thread_data()
    drd:ConflictingAccess
    ...
    fun:_ZN5boost6detail23get_current_thread_dataEv
+}
+{
+   drd-libboost-boost::detail::set_current_thread_data(boost::detail::thread_data_base*)
+   drd:ConflictingAccess
+   ...
+   fun:_ZN5boost6detail23set_current_thread_dataEPNS0_16thread_data_baseE
 }

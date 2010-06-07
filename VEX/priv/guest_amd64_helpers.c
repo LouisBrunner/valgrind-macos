@@ -2218,6 +2218,31 @@ void amd64g_dirtyhelper_OUT ( ULong portno, ULong data, ULong sz/*1,2 or 4*/ )
 #  endif
 }
 
+/* CALLED FROM GENERATED CODE */
+/* DIRTY HELPER (non-referentially-transparent) */
+/* Horrible hack.  On non-amd64 platforms, do nothing. */
+/* op = 0: call the native SGDT instruction.
+   op = 1: call the native SIDT instruction.
+*/
+void amd64g_dirtyhelper_SxDT ( void *address, ULong op ) {
+#  if defined(__x86_64__)
+   switch (op) {
+      case 0:
+         __asm__ __volatile__("sgdt (%0)" : : "r" (address) : "memory");
+         break;
+      case 1:
+         __asm__ __volatile__("sidt (%0)" : : "r" (address) : "memory");
+         break;
+      default:
+         vpanic("amd64g_dirtyhelper_SxDT");
+   }
+#  else
+   /* do nothing */
+   UChar* p = (UChar*)address;
+   p[0] = p[1] = p[2] = p[3] = p[4] = p[5] = 0;
+   p[6] = p[7] = p[8] = p[9] = 0;
+#  endif
+}
 
 /*---------------------------------------------------------------*/
 /*--- Helpers for MMX/SSE/SSE2.                               ---*/

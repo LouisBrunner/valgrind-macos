@@ -14790,6 +14790,41 @@ DisResult disInstr_X86_WRK (
          DIP("emms\n");
          break;
 
+      /* =-=-=-=-=-=-=-=-=- SGDT and SIDT =-=-=-=-=-=-=-=-=-=-= */
+      case 0x01: /* 0F 01 /0 -- SGDT */
+                 /* 0F 01 /1 -- SIDT */
+      {
+          /* This is really revolting, but ... since each processor
+             (core) only has one IDT and one GDT, just let the guest
+             see it (pass-through semantics).  I can't see any way to
+             construct a faked-up value, so don't bother to try. */
+         modrm = getUChar(delta);
+         addr = disAMode ( &alen, sorb, delta, dis_buf );
+         delta += alen;
+         if (epartIsReg(modrm)) goto decode_failure;
+         if (gregOfRM(modrm) != 0 && gregOfRM(modrm) != 1)
+            goto decode_failure;
+         switch (gregOfRM(modrm)) {
+            case 0: DIP("sgdt %s\n", dis_buf); break;
+            case 1: DIP("sidt %s\n", dis_buf); break;
+            default: vassert(0); /*NOTREACHED*/
+         }
+
+         IRDirty* d = unsafeIRDirty_0_N (
+                          0/*regparms*/,
+                          "x86g_dirtyhelper_SxDT",
+                          &x86g_dirtyhelper_SxDT,
+                          mkIRExprVec_2( mkexpr(addr),
+                                         mkU32(gregOfRM(modrm)) )
+                      );
+         /* declare we're writing memory */
+         d->mFx   = Ifx_Write;
+         d->mAddr = mkexpr(addr);
+         d->mSize = 6;
+         stmt( IRStmt_Dirty(d) );
+         break;
+      }
+
       /* =-=-=-=-=-=-=-=-=- unimp2 =-=-=-=-=-=-=-=-=-=-= */
 
       default:

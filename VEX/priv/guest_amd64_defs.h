@@ -153,6 +153,9 @@ extern ULong amd64g_dirtyhelper_IN  ( ULong portno, ULong sz/*1,2 or 4*/ );
 extern void  amd64g_dirtyhelper_OUT ( ULong portno, ULong data, 
                                       ULong sz/*1,2 or 4*/ );
 
+extern void amd64g_dirtyhelper_SxDT ( void* address,
+                                      ULong op /* 0 or 1 */ );
+
 //extern void  amd64g_dirtyhelper_CPUID_sse0 ( VexGuestAMD64State* );
 //extern void  amd64g_dirtyhelper_CPUID_sse1 ( VexGuestAMD64State* );
 //extern void  amd64g_dirtyhelper_CPUID_sse2 ( VexGuestAMD64State* );

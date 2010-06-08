@@ -1278,6 +1278,26 @@ AC_MSG_RESULT([no])
 CFLAGS=$safe_CFLAGS
 
 
+# does this compiler support -Wl,--build-id=none ?
+
+AC_MSG_CHECKING([if gcc accepts -Wl,--build-id=none])
+
+safe_CFLAGS=$CFLAGS
+CFLAGS="-Wl,--build-id=none"
+
+AC_TRY_COMPILE(
+[ ],
+[return 0; ],
+[
+  AC_SUBST([FLAG_NO_BUILD_ID], ["-Wl,--build-id=none"])
+  AC_MSG_RESULT([yes])
+], [
+  AC_SUBST([FLAG_NO_BUILD_ID], [""])
+  AC_MSG_RESULT([no])
+])
+CFLAGS=$safe_CFLAGS
+
+
 # does the ppc assembler support "mtocrf" et al?
 AC_MSG_CHECKING([if ppc32/64 as supports mtocrf/mfocrf])
 

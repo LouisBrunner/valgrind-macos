@@ -78,6 +78,11 @@
    fun:__free_tcb
 }
 {
+   drd-libpthread-__nptl_deallocate_tsd
+   drd:ConflictingAccess
+   fun:__nptl_deallocate_tsd
+}
+{
    drd-libpthread-pthread_detach
    drd:ConflictingAccess
    fun:pthread_detach

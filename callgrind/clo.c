@@ -415,6 +415,8 @@ Bool CLG_(process_cmd_line_option)(Char* arg)
    /* compatibility alias, deprecated option */
    else if VG_BOOL_CLO(arg, "--trace-jump",    CLG_(clo).collect_jumps) {}
 
+   else if VG_BOOL_CLO(arg, "--collect-bus", CLG_(clo).collect_bus) {}
+
    else if VG_BOOL_CLO(arg, "--combine-dumps", CLG_(clo).combine_dumps) {}
 
    else if VG_BOOL_CLO(arg, "--collect-atstart", CLG_(clo).collect_atstart) {}
@@ -572,6 +574,7 @@ void CLG_(print_usage)(void)
 "    --collect-atstart=no|yes  Collect at process/thread start [yes]\n"
 "    --toggle-collect=<func>   Toggle collection on enter/leave function\n"
 "    --collect-jumps=no|yes    Collect jumps? [no]\n"
+"    --collect-bus=no|yes      Collect global bus events? [no]\n"
 #if CLG_EXPERIMENTAL
 "    --collect-alloc=no|yes    Collect memory allocation info? [no]\n"
 #endif

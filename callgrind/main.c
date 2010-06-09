@@ -95,6 +95,30 @@ static void CLG_(init_statistics)(Statistics* s)
 
 
 /*------------------------------------------------------------*/
+/*--- Simple callbacks (not cache similator)               ---*/
+/*------------------------------------------------------------*/
+
+VG_REGPARM(1)
+static void log_global_event(InstrInfo* ii)
+{
+    ULong* cost_Bus;
+
+    CLG_DEBUG(0, "log_global_event:  Ir  %#lx/%u\n",
+              CLG_(bb_base) + ii->instr_offset, ii->instr_size);
+
+    if (!CLG_(current_state).collect) return;
+
+    CLG_(current_state).cost[ fullOffset(EG_BUS) ]++;
+
+    if (CLG_(current_state).nonskipped)
+        cost_Bus = CLG_(current_state).nonskipped->skipped + fullOffset(EG_BUS);
+    else
+        cost_Bus = CLG_(cost_base) + ii->cost_offset + ii->eventset->offset[EG_BUS];
+    cost_Bus[0]++;
+}
+
+
+/*------------------------------------------------------------*/
 /*--- Instrumentation structures and event queue handling  ---*/
 /*------------------------------------------------------------*/
 
@@ -137,6 +161,7 @@ typedef
       Ev_Dr,  // Data read
       Ev_Dw,  // Data write
       Ev_Dm,  // Data modify (read then write)
+      Ev_G    // Global bus event
    }
    EventTag;
 
@@ -159,6 +184,8 @@ typedef
 	    IRAtom* ea;
 	    Int     szB;
 	 } Dm;
+	 struct {
+	 } G;
       } Ev;
    }
    Event;
@@ -242,6 +269,9 @@ static void showEvent ( Event* ev )
 	 ppIRExpr(ev->Ev.Dm.ea);
 	 VG_(printf)("\n");
 	 break;
+      case Ev_G:
+         VG_(printf)("G  %p\n", ev->inode);
+         break;
       default:
 	 tl_assert(0);
 	 break;
@@ -285,6 +315,11 @@ static void flushEvents ( ClgState* clgs )
 	       // extend event set by Dw counter
 	       ev->inode->eventset = CLG_(add_event_group)(ev->inode->eventset,
 							   EG_DW);
+	       break;
+	   case Ev_G:
+	       // extend event set by Bus counter
+	       ev->inode->eventset = CLG_(add_event_group)(ev->inode->eventset,
+							   EG_BUS);
 	       break;
 	   default:
 	       tl_assert(0);
@@ -401,6 +436,14 @@ static void flushEvents ( ClgState* clgs )
 	    regparms = 3;
 	    inew = i+1;
 	    break;
+         case Ev_G:
+            /* Global bus event (CAS, LOCK-prefix, LL-SC, etc) */
+            helperName = "log_global_event";
+            helperAddr = &log_global_event;
+            argv = mkIRExprVec_1( i_node_expr );
+            regparms = 1;
+            inew = i+1;
+            break;
 	 default:
 	    tl_assert(0);
       }
@@ -502,6 +545,21 @@ void addEvent_Dw ( ClgState* clgs, InstrInfo* inode, Int datasize, IRAtom* ea )
    evt->inode     = inode;
    evt->Ev.Dw.szB = datasize;
    evt->Ev.Dw.ea  = ea;
+   clgs->events_used++;
+}
+
+static
+void addEvent_G ( ClgState* clgs, InstrInfo* inode )
+{
+   Event* evt;
+   if (!CLG_(clo).collect_bus) return;
+   if (clgs->events_used == N_EVENTS)
+      flushEvents(clgs);
+   tl_assert(clgs->events_used >= 0 && clgs->events_used < N_EVENTS);
+   evt = &clgs->events[clgs->events_used];
+   init_Event(evt);
+   evt->tag       = Ev_G;
+   evt->inode     = inode;
    clgs->events_used++;
 }
 
@@ -840,6 +898,7 @@ IRSB* CLG_(instrument)( VgCallbackClosure* closure,
                dataSize *= 2; /* since this is a doubleword-cas */
             addEvent_Dr( &clgs, curr_inode, dataSize, cas->addr );
             addEvent_Dw( &clgs, curr_inode, dataSize, cas->addr );
+            addEvent_G(  &clgs, curr_inode );
             break;
          }
 
@@ -855,6 +914,12 @@ IRSB* CLG_(instrument)( VgCallbackClosure* closure,
                dataTy = typeOfIRExpr(sbIn->tyenv, st->Ist.LLSC.storedata);
                addEvent_Dw( &clgs, curr_inode,
                             sizeofIRType(dataTy), st->Ist.LLSC.addr );
+               /* I don't know whether the global-bus-lock cost should
+                  be attributed to the LL or the SC, but it doesn't
+                  really matter since they always have to be used in
+                  pairs anyway.  Hence put it (quite arbitrarily) on
+                  the SC. */
+               addEvent_G(  &clgs, curr_inode );
             }
             break;
          }

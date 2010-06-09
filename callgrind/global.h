@@ -87,6 +87,8 @@ struct _CommandLineOptions {
   Bool collect_alloc;    /* Collect size of allocated memory */
   Bool collect_systime;  /* Collect time for system calls */
 
+  Bool collect_bus;      /* Collect global bus events */
+
   /* Instrument options */
   Bool instrument_atstart;  /* Instrument at start? */
   Bool simulate_cache;      /* Call into cache simulator ? */
@@ -679,8 +681,9 @@ extern ULong* CLG_(cost_base);
 #define EG_IR    1
 #define EG_DR    2
 #define EG_DW    3
-#define EG_ALLOC 4
-#define EG_SYS   5
+#define EG_BUS   4
+#define EG_ALLOC 5
+#define EG_SYS   6
 
 struct event_sets {
     EventSet *base, *full;

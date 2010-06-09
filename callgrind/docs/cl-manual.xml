@@ -353,10 +353,27 @@ callgrind.out.<emphasis>pid</emphasis>.<emphasis>part</emphasis>-<emphasis>threa
   start event collection a few million instructions after you have enabled
   instrumentation.</para>
 
-
   </sect2>
 
+  <sect2 id="cl-manual.busevents" xreflabel="Counting global bus events">
+  <title>Counting global bus events</title>
 
+  <para>For access to shared data among threads in a multithreaded
+  code, synchronization is required to avoid raced conditions.
+  Synchronization primitives are usually implemented via atomic instructions.
+  However, excessive use of such instructions can lead to performance
+  issues.</para>
+
+  <para>To enable analysis of this problem, Callgrind optionally can count
+  the number of atomic instructions executed. More precisely, for x86/x86_64,
+  these are instructions using a lock prefix. For architectures supporting
+  LL/SC, these are the number of SC instructions executed. For both, the term
+  "global bus events" is used.</para>
+
+  <para>The short name of the event type used for global bus events is "Ge".
+  To count global bus events, use <option><xref linkend="opt.collect-bus"/></option>.
+  </para>
+  </sect2>
 
   <sect2 id="cl-manual.cycles" xreflabel="Avoiding cycles">
   <title>Avoiding cycles</title>
@@ -759,6 +776,16 @@ Also see <xref linkend="cl-manual.limits"/>.</para>
     <listitem>
       <para>This specifies whether information for system call times
       should be collected.</para>
+    </listitem>
+  </varlistentry>
+
+  <varlistentry id="opt.collect-bus" xreflabel="--collect-bus">
+    <term>
+      <option><![CDATA[--collect-bus=<no|yes> [default: no] ]]></option>
+    </term>
+    <listitem>
+      <para>This specifies whether the number of global bus events executed
+      should be collected. The event type "Ge" is used for these events.</para>
     </listitem>
   </varlistentry>
 

@@ -1782,6 +1782,9 @@ void CLG_(init_eventsets)()
 	CLG_(register_event_group4)(EG_DW, "Dw", "D1mw", "D2mw", "I2dmw");
     }
 
+    if (CLG_(clo).collect_bus)
+	CLG_(register_event_group)(EG_BUS, "Ge");
+
     if (CLG_(clo).collect_alloc)
 	CLG_(register_event_group2)(EG_ALLOC, "allocCount", "allocSize");
 
@@ -1793,6 +1796,7 @@ void CLG_(init_eventsets)()
 
     // event set comprising all event groups, used for inclusive cost
     CLG_(sets).full = CLG_(add_event_group2)(CLG_(sets).base, EG_DR, EG_DW);
+    CLG_(sets).full = CLG_(add_event_group) (CLG_(sets).full, EG_BUS);
     CLG_(sets).full = CLG_(add_event_group2)(CLG_(sets).full, EG_ALLOC, EG_SYS);
 
     CLG_DEBUGIF(1) {
@@ -1819,6 +1823,7 @@ void CLG_(init_eventsets)()
     CLG_(append_event)(CLG_(dumpmap), "SpLoss1");
     CLG_(append_event)(CLG_(dumpmap), "AcCost2");
     CLG_(append_event)(CLG_(dumpmap), "SpLoss2");
+    CLG_(append_event)(CLG_(dumpmap), "Ge");
     CLG_(append_event)(CLG_(dumpmap), "allocCount");
     CLG_(append_event)(CLG_(dumpmap), "allocSize");
     CLG_(append_event)(CLG_(dumpmap), "sysCount");
@@ -1832,7 +1837,8 @@ static void cachesim_add_icost(SimCost cost, BBCC* bbcc,
 {
     if (!CLG_(clo).simulate_cache)
 	cost[ fullOffset(EG_IR) ] += exe_count;
-    else
+
+    if (ii->eventset)
 	CLG_(add_and_zero_cost2)( CLG_(sets).full, cost,
 				  ii->eventset, bbcc->cost + ii->cost_offset);
 }

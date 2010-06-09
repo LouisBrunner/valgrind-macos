@@ -671,6 +671,21 @@ struct cachesim_if
     Char *log_0I1Dr_name, *log_0I1Dw_name;
 };
 
+// Event groups
+#define EG_USE   0
+#define EG_IR    1
+#define EG_DR    2
+#define EG_DW    3
+#define EG_ALLOC 4
+#define EG_SYS   5
+
+struct event_sets {
+    EventSet *base, *full;
+};
+extern struct event_sets CLG_(sets);
+
+#define fullOffset(group) (CLG_(sets).full->offset[group])
+
 
 /*------------------------------------------------------------*/
 /*--- Functions                                            ---*/
@@ -685,20 +700,8 @@ void CLG_(print_usage)(void);
 void CLG_(print_debug_usage)(void);
 
 /* from sim.c */
-struct event_sets {
-  EventSet *Use, *Ir, *Dr, *Dw;
-  EventSet *UIr, *UIrDr, *UIrDrDw, *UIrDw, *UIrDwDr;
-  EventSet *full;
-
-  /* offsets into eventsets */  
-  Int off_full_Ir, off_full_Dr, off_full_Dw;
-  Int off_full_alloc, off_full_systime;
-};
-
-extern struct event_sets CLG_(sets);
 extern struct cachesim_if CLG_(cachesim);
-
-void CLG_(init_eventsets)(Int user);
+void CLG_(init_eventsets)(void);
 
 /* from main.c */
 Bool CLG_(get_debug_info)(Addr, Char filename[FILENAME_LEN],

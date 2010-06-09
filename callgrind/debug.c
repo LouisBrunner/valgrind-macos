@@ -137,40 +137,46 @@ void CLG_(print_bbcc)(int s, BBCC* bbcc)
 
 void CLG_(print_eventset)(int s, EventSet* es)
 {
-  int i;
+    int i, j;
+    UInt mask;
+    EventGroup* eg;
 
-  if (s<0) {
-    s = -s;
-    print_indent(s);
-  }
-
-  if (!es) {
-    VG_(printf)("(EventSet not set)\n");
-    return;
-  }
-
-  VG_(printf)("%5s (Size/Cap %d/%d): ",
-	      es->name, es->size, es->capacity);
-
-  if (es->size == 0)
-    VG_(printf)("-");
-  else {
-    for(i=0; i< es->size; i++) {
-      if (i>0) {
-	VG_(printf)(" ");
-	if (es->e[i-1].nextTop == i)
-	  VG_(printf)("| ");
-      }
-      VG_(printf)("%s", es->e[i].type->name);
+    if (s<0) {
+	s = -s;
+	print_indent(s);
     }
-  }
-  VG_(printf)("\n");
+
+    if (!es) {
+	VG_(printf)("(EventSet not set)\n");
+	return;
+    }
+
+    VG_(printf)("EventSet %d (%d groups, size %d):",
+		es->mask, es->count, es->size);
+
+    if (es->count == 0) {
+	VG_(printf)("-\n");
+	return;
+    }
+
+    for(i=0, mask=1; i<MAX_EVENTGROUP_COUNT; i++, mask=mask<<1) {
+	if ((es->mask & mask)==0) continue;
+	eg = CLG_(get_event_group)(i);
+	if (!eg) continue;
+	VG_(printf)(" (%d: %s", i, eg->name[0]);
+	for(j=1; j<eg->size; j++)
+	    VG_(printf)(" %s", eg->name[j]);
+	VG_(printf)(")");
+    }
+    VG_(printf)("\n");
 }
 
 
 void CLG_(print_cost)(int s, EventSet* es, ULong* c)
 {
-  Int i, pos;
+    Int i, j, pos, off;
+    UInt mask;
+    EventGroup* eg;
 
     if (s<0) {
 	s = -s;
@@ -182,29 +188,36 @@ void CLG_(print_cost)(int s, EventSet* es, ULong* c)
       return;
     }
     if (!c) {
-      VG_(printf)("Cost (Null, EventSet %s)\n", es->name);
+      VG_(printf)("Cost (Null, EventSet %d)\n", es->mask);
       return;
     }
 
     if (es->size == 0) {
-      VG_(printf)("Cost (Nothing, EventSet %s with len 0)\n", es->name);
+      VG_(printf)("Cost (Nothing, EventSet with len 0)\n");
       return;
     } 
 
     pos = s;
-    pos += VG_(printf)("Cost %s [%p]: %s %llu", es->name, c, es->e[0].type->name, c[0]);
+    pos += VG_(printf)("Cost [%p]: ", c);
+    off = 0;
+    for(i=0, mask=1; i<MAX_EVENTGROUP_COUNT; i++, mask=mask<<1) {
+	if ((es->mask & mask)==0) continue;
+	eg = CLG_(get_event_group)(i);
+	if (!eg) continue;
+	for(j=0; j<eg->size; j++) {
 
-    i = 1;
-    while(i<es->size) {
-      if (pos > 70) {
-	VG_(printf)(",\n");
-	print_indent(s+5);
-	pos = s+5;
-      }
-      else
-	pos += VG_(printf)(", ");
-      pos += VG_(printf)("%s %llu", es->e[i].type->name, c[i]);
-      i++;
+	    if (off>0) {
+		if (pos > 70) {
+		    VG_(printf)(",\n");
+		    print_indent(s+5);
+		    pos = s+5;
+		}
+		else
+		    pos += VG_(printf)(", ");
+	    }
+
+	    pos += VG_(printf)("%s %llu", eg->name[j], c[off++]);
+	}
     }
     VG_(printf)("\n");
 }
@@ -213,13 +226,13 @@ void CLG_(print_cost)(int s, EventSet* es, ULong* c)
 void CLG_(print_short_jcc)(jCC* jcc)
 {
     if (jcc)
-	VG_(printf)("%#lx => %#lx [%llu/%llu,%llu,%llu]",
+	VG_(printf)("%#lx => %#lx [calls %llu/Ir %llu, Dr %llu, Dw %llu]",
 		    bb_jmpaddr(jcc->from->bb),
 		    bb_addr(jcc->to->bb),
 		    jcc->call_counter,
-		    jcc->cost ? jcc->cost[CLG_(sets).off_full_Ir]:0,
-		    jcc->cost ? jcc->cost[CLG_(sets).off_full_Dr]:0,
-		    jcc->cost ? jcc->cost[CLG_(sets).off_full_Dw]:0);
+		    jcc->cost ? jcc->cost[fullOffset(EG_IR)]:0,
+		    jcc->cost ? jcc->cost[fullOffset(EG_DR)]:0,
+		    jcc->cost ? jcc->cost[fullOffset(EG_DW)]:0);
     else
 	VG_(printf)("[Skipped JCC]");
 }

@@ -1,86 +1,90 @@
 /*--------------------------------------------------------------------*/
 /*--- Callgrind                                                    ---*/
 /*---                                                     events.h ---*/
-/*--- (C) 2004-2005, Josef Weidendorfer                            ---*/
 /*--------------------------------------------------------------------*/
 
+/*
+   This file is part of Callgrind, a Valgrind tool for call tracing.
+
+   Copyright (C) 2002-2010, Josef Weidendorfer (Josef.Weidendorfer@gmx.de)
+
+   This program is free software; you can redistribute it and/or
+   modify it under the terms of the GNU General Public License as
+   published by the Free Software Foundation; either version 2 of the
+   License, or (at your option) any later version.
+
+   This program is distributed in the hope that it will be useful, but
+   WITHOUT ANY WARRANTY; without even the implied warranty of
+   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+   General Public License for more details.
+
+   You should have received a copy of the GNU General Public License
+   along with this program; if not, write to the Free Software
+   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
+   02111-1307, USA.
+
+   The GNU General Public License is contained in the file COPYING.
+*/
 
 /* Abstractions for 64-bit cost lists (events.h) */
 
-#ifndef CG_EVENTS
-#define CG_EVENTS
+#ifndef CLG_EVENTS
+#define CLG_EVENTS
 
 #include "pub_tool_basics.h"
 
 #define CLG_(str) VGAPPEND(vgCallgrind_,str)
 
-/* An event type */
-typedef struct _EventType EventType;
-struct _EventType {
-  Char* name;
-  Char* description;
-  Int id;
-};
-
-EventType* CLG_(register_eventtype)(Char*);
-EventType* CLG_(get_eventtype)(Char*);
-EventType* CLG_(get_eventtype_byindex)(Int id);
-
-/* An event set is a ordered list of event types, which comes down
- * to some description for ordered lists of costs.
- * Often, costs of 2 event types are related, e.g. one is always smaller
- * than the other. This is useful to speed up arithmetics on cost lists:
- * Each event type in the set has a <nextTop>. All indexes before are
- * promised to hold smaller values than the current.
+/* Event groups consist of one or more named event types.
+ * Event sets are constructed from such event groups.
+ *
+ * Event groups have to be registered globally with a unique ID
+ * before they can be used in an event set.
+ * A group can appear at most once in a event set.
  */
-typedef struct _EventSetEntry EventSetEntry;
-struct _EventSetEntry {
-  EventType* type;
-  Int nextTop;
+
+#define MAX_EVENTGROUP_COUNT 10
+
+typedef struct _EventGroup EventGroup;
+struct _EventGroup {
+    Int size;
+    Char* name[0];
 };
+
+/* return 0 if event group can not be registered */
+EventGroup* CLG_(register_event_group) (int id, Char*);
+EventGroup* CLG_(register_event_group2)(int id, Char*, Char*);
+EventGroup* CLG_(register_event_group3)(int id, Char*, Char*, Char*);
+EventGroup* CLG_(register_event_group4)(int id, Char*, Char*, Char*, Char*);
+EventGroup* CLG_(get_event_group)(int id);
+
+/* Event sets are defined by event groups they consist of. */
+
 typedef struct _EventSet EventSet;
 struct _EventSet {
-  Char* name;
-  Int size;
-  Int capacity;
-  EventSetEntry e[0];
-};
+    /* if subset with ID x is in the set, then bit x is set */
+    UInt mask;
+    Int count;
+    Int size;
+    Int offset[MAX_EVENTGROUP_COUNT];
+ };
 
-
-/* Some events out of an event set.
- * Used to print out part of an EventSet, or in another order.
- */
-typedef struct _EventMapping EventMapping;
-struct _EventMapping {
-  EventSet* set;
-  Int size;
-  Int capacity;
-  Int index[0];
-};
-
-  
-/* Allocate space for an event set */
-EventSet* CLG_(get_eventset)(Char* n, Int capacity);
-/* Incorporate a event type into a set, get start offset */
-Int CLG_(add_eventtype)(EventSet* dst, EventType*);
-/* Incorporate event types into a set, with ... < second < first */
-Int CLG_(add_dep_event2)(EventSet* dst, EventType* e1, EventType* e2);
-Int CLG_(add_dep_event3)(EventSet* dst,
-			EventType* e1, EventType* e2, EventType* e3);
-Int CLG_(add_dep_event4)(EventSet* dst,
-			EventType* e1, EventType* e2, EventType* e3,
-			EventType* e4);
-/* Incorporate one event set into another, get start offset */
-Int CLG_(add_eventset)(EventSet* dst, EventSet* src);
-/* Returns number of characters written */
+/* Same event set is returned when requesting same event groups */
+EventSet* CLG_(get_event_set)(Int id);
+EventSet* CLG_(get_event_set2)(Int id1, Int id2);
+EventSet* CLG_(get_event_set3)(Int id1, Int id2, Int id3);
+EventSet* CLG_(add_event_group)(EventSet*, Int id);
+EventSet* CLG_(add_event_group2)(EventSet*, Int id1, Int id2);
+EventSet* CLG_(add_event_set)(EventSet*, EventSet*);
+/* Writes event names into buf. Returns number of characters written */
 Int CLG_(sprint_eventset)(Char* buf, EventSet*);
-/* Allocate cost array for an event set */
-ULong* CLG_(get_eventset_cost)(EventSet*);
+
 
 /* Operations on costs. A cost pointer of 0 means zero cost.
- * Functions ending in _lz allocate costs lazy if needed
+ * Functions ending in _lz allocate cost arrays only when needed
  */
-/* Set costs according full capacity of event set to 0 */
+ULong* CLG_(get_eventset_cost)(EventSet*);
+/* Set costs of event set to 0 */
 void CLG_(init_cost)(EventSet*,ULong*);
 /* This always allocates counter and sets them to 0 */
 void CLG_(init_cost_lz)(EventSet*,ULong**);
@@ -94,13 +98,29 @@ void CLG_(add_cost)(EventSet*,ULong* dst, ULong* src);
 void CLG_(add_cost_lz)(EventSet*,ULong** pdst, ULong* src);
 /* Adds src to dst and zeros src. Returns false if nothing changed */
 Bool CLG_(add_and_zero_cost)(EventSet*,ULong* dst, ULong* src);
-Bool CLG_(add_and_zero_cost_lz)(EventSet*,ULong** pdst, ULong* src);
+Bool CLG_(add_and_zero_cost2)(EventSet*,ULong* dst,EventSet*,ULong* src);
 /* Adds difference of new and old to to dst, and set old to new.
  * Returns false if nothing changed */
 Bool CLG_(add_diff_cost)(EventSet*,ULong* dst, ULong* old, ULong* new_cost);
 Bool CLG_(add_diff_cost_lz)(EventSet*,ULong** pdst, ULong* old, ULong* new_cost);
 /* Returns number of characters written */
 Int CLG_(sprint_cost)(Char* buf, EventSet*, ULong*);
+
+/* EventMapping: An ordered subset of events from an event set.
+ * This is used to print out part of an EventSet, or in another order.
+ */
+struct EventMappingEntry {
+    Int group;
+    Int index;
+    Int offset;
+};
+typedef struct _EventMapping EventMapping;
+struct _EventMapping {
+  EventSet* es;
+  Int size;
+  Int capacity;
+  struct EventMappingEntry entry[0];
+};
 
 /* Allocate space for an event mapping */
 EventMapping* CLG_(get_eventmapping)(EventSet*);
@@ -110,4 +130,4 @@ Int CLG_(sprint_eventmapping)(Char* buf, EventMapping*);
 /* Returns number of characters written */
 Int CLG_(sprint_mappingcost)(Char* buf, EventMapping*, ULong*);
 
-#endif /* CG_EVENTS */
+#endif /* CLG_EVENTS */

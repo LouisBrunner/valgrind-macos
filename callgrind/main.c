@@ -273,34 +273,18 @@ static void flushEvents ( ClgState* clgs )
 	   case Ev_Ir:
 	       // Ir event always is first for a guest instruction
 	       CLG_ASSERT(ev->inode->eventset == 0);
-	       ev->inode->eventset = CLG_(sets).UIr;
+	       ev->inode->eventset = CLG_(sets).base;
 	       break;
 	   case Ev_Dr:
 	       // extend event set by Dr counter
-	       if ((ev->inode->eventset == CLG_(sets).UIrDr)   ||
-		   (ev->inode->eventset == CLG_(sets).UIrDrDw) ||
-		   (ev->inode->eventset == CLG_(sets).UIrDwDr))
-		   break;
-	       if (ev->inode->eventset == CLG_(sets).UIrDw) {
-		   ev->inode->eventset = CLG_(sets).UIrDwDr;
-		   break;
-	       }
-	       CLG_ASSERT(ev->inode->eventset == CLG_(sets).UIr);
-	       ev->inode->eventset = CLG_(sets).UIrDr;
+	       ev->inode->eventset = CLG_(add_event_group)(ev->inode->eventset,
+							   EG_DR);
 	       break;
 	   case Ev_Dw:
 	   case Ev_Dm:
 	       // extend event set by Dw counter
-	       if ((ev->inode->eventset == CLG_(sets).UIrDw)   ||
-		   (ev->inode->eventset == CLG_(sets).UIrDwDr) ||
-		   (ev->inode->eventset == CLG_(sets).UIrDrDw))
-		   break;
-	       if (ev->inode->eventset == CLG_(sets).UIrDr) {
-		   ev->inode->eventset = CLG_(sets).UIrDrDw;
-		   break;
-	       }
-	       CLG_ASSERT(ev->inode->eventset == CLG_(sets).UIr);
-	       ev->inode->eventset = CLG_(sets).UIrDw;
+	       ev->inode->eventset = CLG_(add_event_group)(ev->inode->eventset,
+							   EG_DW);
 	       break;
 	   default:
 	       tl_assert(0);
@@ -1161,7 +1145,7 @@ void CLG_(post_syscalltime)(ThreadId tid, UInt syscallno,
 {
   if (CLG_(clo).collect_systime &&
       CLG_(current_state).bbcc) {
-    Int o = CLG_(sets).off_full_systime;
+      Int o;
 #if CLG_MICROSYSTIME
     struct vki_timeval tv_now;
     ULong diff;
@@ -1171,11 +1155,12 @@ void CLG_(post_syscalltime)(ThreadId tid, UInt syscallno,
 #else
     UInt diff = VG_(read_millisecond_timer)() - syscalltime[tid];
 #endif  
-    
+
+    /* offset o is for "SysCount", o+1 for "SysTime" */
+    o = fullOffset(EG_SYS);
+    CLG_ASSERT(o>=0);
     CLG_DEBUG(0,"   Time (Off %d) for Syscall %d: %ull\n", o, syscallno, diff);
     
-    if (o<0) return;
-
     CLG_(current_state).cost[o] ++;
     CLG_(current_state).cost[o+1] += diff;
     if (!CLG_(current_state).bbcc->skipped)
@@ -1333,7 +1318,7 @@ void CLG_(post_clo_init)(void)
 
    (*CLG_(cachesim).post_clo_init)();
 
-   CLG_(init_eventsets)(0);
+   CLG_(init_eventsets)();
    CLG_(init_statistics)(& CLG_(stat));
    CLG_(init_cost_lz)( CLG_(sets).full, &CLG_(total_cost) );
 

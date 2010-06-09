@@ -864,6 +864,9 @@ void CLG_(setup_bbcc)(BB* bb)
   }
   
   CLG_(current_state).bbcc = bbcc;
+  // needed for log_* handlers called in this BB
+  CLG_(bb_base)   = bb->obj->offset + bb->offset;
+  CLG_(cost_base) = bbcc->cost;
   
   CLG_DEBUGIF(1) {
     VG_(printf)("     ");
@@ -878,7 +881,5 @@ void CLG_(setup_bbcc)(BB* bb)
     CLG_(print_cxt)(-8, CLG_(current_state).cxt, bbcc->rec_index);
   CLG_DEBUG(3,"\n");
   
-  (*CLG_(cachesim).after_bbsetup)();
-
   CLG_(stat).bb_executions++;
 }

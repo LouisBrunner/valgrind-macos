@@ -652,7 +652,6 @@ struct cachesim_if
     void (*getdesc)(Char* buf);
     void (*printstat)(void);  
     void (*add_icost)(SimCost, BBCC*, InstrInfo*, ULong);
-    void (*after_bbsetup)(void);
     void (*finish)(void);
     
     void (*log_1I0D)(InstrInfo*) VG_REGPARM(1);
@@ -670,6 +669,10 @@ struct cachesim_if
     Char *log_1I1Dr_name, *log_1I1Dw_name;
     Char *log_0I1Dr_name, *log_0I1Dw_name;
 };
+
+// set by setup_bbcc at start of every BB, and needed by log_* helpers
+extern Addr   CLG_(bb_base);
+extern ULong* CLG_(cost_base);
 
 // Event groups
 #define EG_USE   0

@@ -4842,8 +4842,7 @@ PRE(sys_ioctl)
       case VKI_EVIOCGBIT(VKI_EV_FF,0):
       case VKI_EVIOCGBIT(VKI_EV_PWR,0):
       case VKI_EVIOCGBIT(VKI_EV_FF_STATUS,0):
-         if (RES > 0)
-            PRE_MEM_WRITE("ioctl(EVIO*)", ARG3, _VKI_IOC_SIZE(ARG2));
+         PRE_MEM_WRITE("ioctl(EVIO*)", ARG3, _VKI_IOC_SIZE(ARG2));
          break;
       default:
          ML_(PRE_unknown_ioctl)(tid, ARG2, ARG3);

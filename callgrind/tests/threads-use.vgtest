@@ -1,0 +1,3 @@
+prog: threads
+vgopts: --separate-threads=yes --cacheuse=yes --collect-bus=yes --collect-systime=yes
+cleanup: rm callgrind.out.*

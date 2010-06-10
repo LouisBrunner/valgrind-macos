@@ -1778,8 +1778,8 @@ void CLG_(init_eventsets)()
     }
     else { // clo_simulate_writeback
 	CLG_(register_event_group4)(EG_IR, "Ir", "I1mr", "I2mr", "I2dmr");
-	CLG_(register_event_group4)(EG_DR, "Dr", "D1mr", "D2mr", "I2dmr");
-	CLG_(register_event_group4)(EG_DW, "Dw", "D1mw", "D2mw", "I2dmw");
+        CLG_(register_event_group4)(EG_DR, "Dr", "D1mr", "D2mr", "D2dmr");
+        CLG_(register_event_group4)(EG_DW, "Dw", "D1mw", "D2mw", "D2dmw");
     }
 
     if (CLG_(clo).collect_bus)

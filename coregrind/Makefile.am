@@ -422,27 +422,6 @@ vgpreload_core_@VGCONF_ARCH_SEC@_@VGCONF_OS@_so_LDFLAGS = \
 endif
 
 #----------------------------------------------------------------------------
-# link_tool_exe, the wrapper for the system linker
-#----------------------------------------------------------------------------
-
-noinst_PROGRAMS += link_tool_exe
-
-link_tool_exe_SOURCES   = link_tool_exe.c
-link_tool_exe_CPPFLAGS  = $(AM_CPPFLAGS_PRI)
-link_tool_exe_CFLAGS    = $(AM_CFLAGS_PRI)
-link_tool_exe_CCASFLAGS = $(AM_CCASFLAGS_PRI)
-link_tool_exe_LDFLAGS   = $(AM_CFLAGS_PRI)
-
-# force link_tool_exe to be built before libcoregrind.a is, and hence
-# before any of the tool executables are linked, since they in turn
-# are dependent on libcoregrind.a.  Unfortunately this doesn't give a
-# dependence on link_tool_exe.c: ideally if link_tool_exe.c is
-# changed, then 'make' rebuilds link_tool_exe, but the tool
-# executables themselves are not relinked.  I can't figure out how
-# to get that to happen.
-BUILT_SOURCES += link_tool_exe
-
-#----------------------------------------------------------------------------
 # General stuff
 #----------------------------------------------------------------------------
 

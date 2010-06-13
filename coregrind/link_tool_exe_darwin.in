@@ -1,0 +1,52 @@
+#! @PERL@
+
+# This script handles linking the tool executables on MacOSX.
+#
+# What we get passed here is:
+#   first arg
+#      the alternative load address
+#   all the rest of the args
+#      the gcc invokation to do the final link, that
+#      the build system would have done, left to itself
+#
+# Just ignore argv[1] and run the command specified by argv[2..] unchanged.
+
+use warnings;
+use strict;
+
+# expect at least: alt-load-address gcc -o foo bar.o
+die "Not enougn arguments"
+    if (($#ARGV + 1) < 5);
+
+my $ala = $ARGV[0];
+
+# check for plausible-ish alt load address
+die "Bogus alt-load address"
+    if (length($ala) < 3 || index($ala, "0x") != 0);
+
+# The cc invokation to do the final link
+my $cc = $ARGV[1];
+
+# and the 'restargs' are argv[2 ..]
+
+# so, build up the complete command here:
+# 'cc' 'restargs'
+
+my $cmd="$cc";
+
+# Add the rest of the parameters
+foreach my $n (2 .. $#ARGV) {
+   $cmd = "$cmd $ARGV[$n]";
+}
+
+print "link_tool_exe_darwin: $cmd\n";
+
+
+# Execute the command:
+my $r = system("$cmd");
+
+if ($r == 0) {
+    exit 0;
+} else {
+    exit 1;
+}

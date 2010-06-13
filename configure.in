@@ -251,11 +251,6 @@ case "${host_os}" in
         VGCONF_OS="aix5"
         ;;       
 
-     *freebsd*)
-        AC_MSG_RESULT([ok (${host_os})])
-        VGCONF_OS="freebsd"
-        ;;
-
      *darwin*)
         AC_MSG_RESULT([ok (${host_os})])
         VGCONF_OS="darwin"
@@ -1278,9 +1273,12 @@ AC_MSG_RESULT([no])
 CFLAGS=$safe_CFLAGS
 
 
-# does this compiler support -Wl,--build-id=none ?
+# does the linker support -Wl,--build-id=none ?  Note, it's
+# important that we test indirectly via whichever C compiler
+# is selected, rather than testing /usr/bin/ld or whatever
+# directly.
 
-AC_MSG_CHECKING([if gcc accepts -Wl,--build-id=none])
+AC_MSG_CHECKING([if the linker accepts -Wl,--build-id=none])
 
 safe_CFLAGS=$CFLAGS
 CFLAGS="-Wl,--build-id=none"
@@ -1864,6 +1862,12 @@ AC_CONFIG_FILES([
    exp-bbv/tests/ppc32-linux/Makefile
    exp-bbv/tests/arm-linux/Makefile
 ])
+AC_CONFIG_FILES([coregrind/link_tool_exe_linux],
+                [chmod +x coregrind/link_tool_exe_linux])
+AC_CONFIG_FILES([coregrind/link_tool_exe_darwin],
+                [chmod +x coregrind/link_tool_exe_darwin])
+AC_CONFIG_FILES([coregrind/link_tool_exe_aix5],
+                [chmod +x coregrind/link_tool_exe_aix5])
 AC_OUTPUT
 
 cat<<EOF

@@ -2668,18 +2668,19 @@ void* memset(void *s, int c, SizeT n) {
   return VG_(memset)(s,c,n);
 }
 
+/* BVA: abort() for those platforms that need it (PPC and ARM). */
+void abort(void);
+void abort(void){
+   VG_(printf)("Something called raise().\n");
+   vg_assert(0);
+}
+
 /* EAZG: ARM's EABI will call floating point exception handlers in
    libgcc which boil down to an abort or raise, that's usually defined
    in libc. Instead, define them here. */
 #if defined(VGP_arm_linux)
 void raise(void);
 void raise(void){
-   VG_(printf)("Something called raise().\n");
-   vg_assert(0);
-}
-
-void abort(void);
-void abort(void){
    VG_(printf)("Something called raise().\n");
    vg_assert(0);
 }

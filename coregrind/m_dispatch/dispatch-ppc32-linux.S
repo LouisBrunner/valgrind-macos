@@ -30,6 +30,7 @@
 
 #if defined(VGP_ppc32_linux)
 
+#include "config.h"
 #include "pub_core_basics_asm.h"
 #include "pub_core_dispatch_asm.h"
 #include "pub_core_transtab_asm.h"
@@ -131,6 +132,7 @@ LafterFP1:
         cmplwi  5,0
         beq     LafterVMX1
 
+#ifdef HAS_ALTIVEC
         /* VRSAVE save word : 32 bytes */
         mfspr   5,256         /* vrsave reg is spr number 256 */
         stw     5,244(1)
@@ -162,6 +164,8 @@ LafterFP1:
         stvx    21,5,1
         li      5,48
         stvx    20,5,1
+#endif
+        
 LafterVMX1:
 
         /* Save cr */
@@ -218,8 +222,11 @@ LafterFP2:
         cmplwi  5,0
         beq     LafterVMX2
 
+#ifdef HAS_ALTIVEC
         vspltisw 3,0x0  /* generate zero */
         mtvscr  3
+#endif
+        
 LafterVMX2:
 
         /* make a stack frame for the code we are calling */
@@ -415,6 +422,7 @@ LafterFP8:
         cmplwi  11,0
         beq     LafterVMX8
 
+#ifdef HAS_ALTIVEC
         /* Check VSCR[NJ] == 1 */
         /* first generate 4x 0x00010000 */
         vspltisw  4,0x1                   /* 4x 0x00000001 */
@@ -426,6 +434,7 @@ LafterFP8:
         vspltw    7,7,0x3                 /* flags-word to all lanes */
         vcmpequw. 8,6,7                   /* CR[24] = 1 if v6 == v7 */
         bt        24,invariant_violation  /* branch if all_equal */
+#endif
 LafterVMX8:
 
 	/* otherwise we're OK */
@@ -502,6 +511,7 @@ LafterFP9:
         cmplwi  11,0
         beq     LafterVMX9
 
+#ifdef HAS_ALTIVEC
         /* VRSAVE */
         lwz     4,244(1)
         mfspr   4,256         /* VRSAVE reg is spr number 256 */
@@ -531,6 +541,7 @@ LafterFP9:
         lvx     21,4,1
         li      4,48
         lvx     20,4,1
+#endif
 LafterVMX9:
 
         /* reset lr & sp */

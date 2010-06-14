@@ -741,6 +741,13 @@ static Bool haveF3no66noF2 ( Prefix pfx )
      toBool((pfx & (PFX_66|PFX_F2|PFX_F3)) == PFX_F3);
 }
 
+/* Return True iff pfx has F3 set and F2 clear */
+static Bool haveF3noF2 ( Prefix pfx )
+{
+  return 
+     toBool((pfx & (PFX_F2|PFX_F3)) == PFX_F3);
+}
+
 /* Return True iff pfx has 66, F2 and F3 clear */
 static Bool haveNo66noF2noF3 ( Prefix pfx )
 {
@@ -4331,6 +4338,101 @@ ULong dis_imul_I_E_G ( VexAbiInfo* vbi,
        ( epartIsReg(rm) ? nameIRegE(size,pfx,rm) : dis_buf ),
        nameIRegG(size,pfx,rm) );
    return delta;
+}
+
+
+/* Generate an IR sequence to do a popcount operation on the supplied
+   IRTemp, and return a new IRTemp holding the result.  'ty' may be
+   Ity_I16, Ity_I32 or Ity_I64 only. */
+static IRTemp gen_POPCOUNT ( IRType ty, IRTemp src )
+{
+   Int i;
+   if (ty == Ity_I16) {
+      IRTemp old = IRTemp_INVALID;
+      IRTemp nyu = IRTemp_INVALID;
+      IRTemp mask[4], shift[4];
+      for (i = 0; i < 4; i++) {
+         mask[i]  = newTemp(ty);
+         shift[i] = 1 << i;
+      }
+      assign(mask[0], mkU16(0x5555));
+      assign(mask[1], mkU16(0x3333));
+      assign(mask[2], mkU16(0x0F0F));
+      assign(mask[3], mkU16(0x00FF));
+      old = src;
+      for (i = 0; i < 4; i++) {
+         nyu = newTemp(ty);
+         assign(nyu,
+                binop(Iop_Add16, 
+                      binop(Iop_And16,
+                            mkexpr(old),
+                            mkexpr(mask[i])),
+                      binop(Iop_And16,
+                            binop(Iop_Shr16, mkexpr(old), mkU8(shift[i])),
+                            mkexpr(mask[i]))));
+         old = nyu;
+      }
+      return nyu;
+   }
+   if (ty == Ity_I32) {
+      IRTemp old = IRTemp_INVALID;
+      IRTemp nyu = IRTemp_INVALID;
+      IRTemp mask[5], shift[5];
+      for (i = 0; i < 5; i++) {
+         mask[i]  = newTemp(ty);
+         shift[i] = 1 << i;
+      }
+      assign(mask[0], mkU32(0x55555555));
+      assign(mask[1], mkU32(0x33333333));
+      assign(mask[2], mkU32(0x0F0F0F0F));
+      assign(mask[3], mkU32(0x00FF00FF));
+      assign(mask[4], mkU32(0x0000FFFF));
+      old = src;
+      for (i = 0; i < 5; i++) {
+         nyu = newTemp(ty);
+         assign(nyu,
+                binop(Iop_Add32, 
+                      binop(Iop_And32,
+                            mkexpr(old),
+                            mkexpr(mask[i])),
+                      binop(Iop_And32,
+                            binop(Iop_Shr32, mkexpr(old), mkU8(shift[i])),
+                            mkexpr(mask[i]))));
+         old = nyu;
+      }
+      return nyu;
+   }
+   if (ty == Ity_I64) {
+      IRTemp old = IRTemp_INVALID;
+      IRTemp nyu = IRTemp_INVALID;
+      IRTemp mask[6], shift[6];
+      for (i = 0; i < 6; i++) {
+         mask[i]  = newTemp(ty);
+         shift[i] = 1 << i;
+      }
+      assign(mask[0], mkU64(0x5555555555555555ULL));
+      assign(mask[1], mkU64(0x3333333333333333ULL));
+      assign(mask[2], mkU64(0x0F0F0F0F0F0F0F0FULL));
+      assign(mask[3], mkU64(0x00FF00FF00FF00FFULL));
+      assign(mask[4], mkU64(0x0000FFFF0000FFFFULL));
+      assign(mask[5], mkU64(0x00000000FFFFFFFFULL));
+      old = src;
+      for (i = 0; i < 6; i++) {
+         nyu = newTemp(ty);
+         assign(nyu,
+                binop(Iop_Add64, 
+                      binop(Iop_And64,
+                            mkexpr(old),
+                            mkexpr(mask[i])),
+                      binop(Iop_And64,
+                            binop(Iop_Shr64, mkexpr(old), mkU8(shift[i])),
+                            mkexpr(mask[i]))));
+         old = nyu;
+      }
+      return nyu;
+   }
+   /*NOTREACHED*/
+   vassert(0);
 }
 
 
@@ -14247,6 +14349,64 @@ DisResult disInstr_AMD64_WRK (
    }
 
 
+   /* 66 no-REX.W 0F 3A 22 /r ib = PINSRD xmm1, r/m32, imm8
+      Extract Doubleword int from gen.reg/mem32 and insert into xmm1 */
+   if ( have66noF2noF3( pfx ) 
+        && sz == 2 /* REX.W is NOT present */
+        && insn[0] == 0x0F && insn[1] == 0x3A && insn[2] == 0x22 ) {
+
+      Int imm8_10;
+      IRTemp src_elems = newTemp(Ity_I32);
+      IRTemp src_vec   = newTemp(Ity_V128);
+      IRTemp z32       = newTemp(Ity_I32);
+
+      modrm = insn[3];
+
+      if ( epartIsReg( modrm ) ) {
+         imm8_10 = (Int)(insn[3+1] & 3);
+         assign( src_elems, getIReg32( eregOfRexRM(pfx,modrm) ) );
+         delta += 3+1+1;
+         DIP( "pinsrd $%d, %s,%s\n", imm8_10,
+              nameIReg32( eregOfRexRM(pfx, modrm) ),
+              nameXMMReg( gregOfRexRM(pfx, modrm) ) );
+      } else {
+         addr = disAMode( &alen, vbi, pfx, delta+3, dis_buf, 1 );
+         imm8_10 = (Int)(insn[3+alen] & 3);
+         assign( src_elems, loadLE( Ity_I32, mkexpr(addr) ) );
+         delta += 3+alen+1;
+         DIP( "pinsrd $%d, %s,%s\n", 
+              imm8_10, dis_buf, nameXMMReg( gregOfRexRM(pfx, modrm) ) );
+      }
+
+      assign(z32, mkU32(0));
+
+      UShort mask = 0;
+      switch (imm8_10) {
+         case 3:  mask = 0x0FFF;
+                  assign(src_vec, mk128from32s(src_elems, z32, z32, z32));
+                  break;
+         case 2:  mask = 0xF0FF;
+                  assign(src_vec, mk128from32s(z32, src_elems, z32, z32));
+                  break;
+         case 1:  mask = 0xFF0F;
+                  assign(src_vec, mk128from32s(z32, z32, src_elems, z32));
+                  break;
+         case 0:  mask = 0xFFF0;
+                  assign(src_vec, mk128from32s(z32, z32, z32, src_elems));
+                  break;
+         default: vassert(0);
+      }
+
+      putXMMReg( gregOfRexRM(pfx, modrm), 
+                 binop( Iop_OrV128, mkexpr(src_vec),
+                        binop( Iop_AndV128, 
+                               getXMMReg( gregOfRexRM(pfx, modrm) ),
+                               mkV128(mask) ) ) );
+
+      goto decode_success;
+   }
+
+
    /* 66 0F 38 3D /r = PMAXSD xmm1, xmm2/m128
       Maximum of Packed Signed Double Word Integers (XMM) 
       --
@@ -14305,31 +14465,38 @@ DisResult disInstr_AMD64_WRK (
 
 
    /* 66 0F 38 3F /r = PMAXUD xmm1, xmm2/m128
-      Maximum of Packed Unsigned Doubleword Integers (XMM) */
+      Maximum of Packed Unsigned Doubleword Integers (XMM)
+      66 0F 38 3B /r = PMINUD xmm1, xmm2/m128
+      Minimum of Packed Unsigned Doubleword Integers (XMM) */
    if ( have66noF2noF3( pfx ) 
         && sz == 2 
-        && insn[0] == 0x0F && insn[1] == 0x38 && insn[2] == 0x3F ) {
+        && insn[0] == 0x0F && insn[1] == 0x38
+        && (insn[2] == 0x3F || insn[2] == 0x3B)) {
 
+      Bool   is_max   = insn[2] == 0x3F;
       IRTemp reg_vec  = newTemp(Ity_V128);
       IRTemp rom_vec  = newTemp(Ity_V128);
       IRTemp mask_vec = newTemp(Ity_V128);
       IRTemp and_vec  = newTemp(Ity_V128);
       IRTemp not_vec  = newTemp(Ity_V128);
-  
+
       modrm = insn[3];
       assign( reg_vec, getXMMReg( gregOfRexRM(pfx, modrm) ) );
 
       if ( epartIsReg( modrm ) ) {
          assign( rom_vec, getXMMReg( eregOfRexRM(pfx, modrm) ) );
          delta += 3+1;
-         DIP( "pmaxud %s,%s\n", 
+         DIP( "p%sud %s,%s\n",
+              is_max ? "max" : "min",
               nameXMMReg( eregOfRexRM(pfx, modrm) ),
               nameXMMReg( gregOfRexRM(pfx, modrm) ) );    
       } else {
          addr = disAMode( &alen, vbi, pfx, delta+3, dis_buf, 0 );
          assign( rom_vec, loadLE( Ity_V128, mkexpr(addr) ) );
          delta += 3+alen;
-         DIP( "pmaxud %s,%s\n", dis_buf, nameXMMReg( gregOfRexRM(pfx, modrm) ) );
+         DIP( "p%sd %s,%s\n",
+               is_max ? "max" : "min",
+              dis_buf, nameXMMReg( gregOfRexRM(pfx, modrm) ) );
       }
 
       /* the foll. simulates Iop_CmpGT32Ux4 (not implemented) 
@@ -14341,9 +14508,12 @@ DisResult disInstr_AMD64_WRK (
                             binop( Iop_SarN32x4, mkexpr(reg_vec), mkU8(31) ) ), 
                      binop( Iop_SarN32x4, mkexpr(rom_vec), mkU8(31) ) ) );
 
-      assign( and_vec, binop( Iop_AndV128, mkexpr(reg_vec), mkexpr(mask_vec) ) );
-      assign( not_vec, binop( Iop_AndV128, mkexpr(rom_vec), 
-                              unop( Iop_NotV128, mkexpr(mask_vec) ) ) );
+      assign( and_vec,
+              binop( Iop_AndV128, mkexpr(is_max ? reg_vec : rom_vec),
+                     mkexpr(mask_vec) ) );
+      assign( not_vec,
+              binop( Iop_AndV128, mkexpr(is_max ? rom_vec : reg_vec), 
+                     unop( Iop_NotV128, mkexpr(mask_vec) ) ) );
 
       putXMMReg( gregOfRexRM(pfx, modrm), 
                  binop( Iop_OrV128, mkexpr(not_vec), mkexpr(and_vec) ) );
@@ -14789,6 +14959,49 @@ DisResult disInstr_AMD64_WRK (
                  binop( Iop_InterleaveLO32x4, 
                         IRExpr_Const( IRConst_V128(0) ), 
                         mkexpr(srcVec) ) );
+
+      goto decode_success;
+   }
+
+
+   /* F3 0F B8  = POPCNT{W,L,Q}
+      Count the number of 1 bits in a register
+    */
+   if (haveF3noF2(pfx) /* so both 66 and 48 are possibilities */
+       && insn[0] == 0x0F && insn[1] == 0xB8) {
+      vassert(sz == 2 || sz == 4 || sz == 8);
+      /*IRType*/ ty  = szToITy(sz);
+      IRTemp     src = newTemp(ty);
+      modrm = insn[2];
+      if (epartIsReg(modrm)) {
+         assign(src, getIRegE(sz, pfx, modrm));
+         delta += 2+1;
+         DIP("popcnt%c %s, %s\n", nameISize(sz), nameIRegE(sz, pfx, modrm),
+             nameIRegG(sz, pfx, modrm));
+      } else {
+         addr = disAMode( &alen, vbi, pfx, delta+2, dis_buf, 0);
+         assign(src, loadLE(ty, mkexpr(addr)));
+         delta += 2+alen;
+         DIP("popcnt%c %s, %s\n", nameISize(sz), dis_buf,
+             nameIRegG(sz, pfx, modrm));
+      }
+
+      IRTemp result = gen_POPCOUNT(ty, src);
+      putIRegG(sz, pfx, modrm, mkexpr(result));
+
+      // Update flags.  This is pretty lame .. perhaps can do better
+      // if this turns out to be performance critical.
+      // O S A C P are cleared.  Z is set if SRC == 0.
+      stmt( IRStmt_Put( OFFB_CC_OP,   mkU64(AMD64G_CC_OP_COPY) ));
+      stmt( IRStmt_Put( OFFB_CC_DEP2, mkU64(0) ));
+      stmt( IRStmt_Put( OFFB_CC_NDEP, mkU64(0) ));
+      stmt( IRStmt_Put( OFFB_CC_DEP1,
+            binop(Iop_Shl64,
+                  unop(Iop_1Uto64,
+                       binop(Iop_CmpEQ64,
+                             widenUto64(mkexpr(src)),
+                             mkU64(0))),
+                  mkU8(AMD64G_CC_SHIFT_Z))));
 
       goto decode_success;
    }

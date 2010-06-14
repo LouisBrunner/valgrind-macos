@@ -130,7 +130,7 @@ static Bool match_executable(const char *entry)
 }
 
 // Returns NULL if it wasn't found.
-HChar* ML_(find_executable) ( HChar* exec )
+HChar* ML_(find_executable) ( const HChar* exec )
 {
    vg_assert(NULL != exec);
    if (VG_(strchr)(exec, '/')) {

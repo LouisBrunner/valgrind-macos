@@ -1016,7 +1016,7 @@ static void print_file_vars(Char* format)
 /*====================================================================*/
 
 // Print the command, escaping any chars that require it.
-static void umsg_or_xml_arg(Char* arg,
+static void umsg_or_xml_arg(const Char* arg,
                             UInt (*umsg_or_xml)( const HChar*, ... ) )
 {
    SizeT len = VG_(strlen)(arg);
@@ -1855,7 +1855,7 @@ Int valgrind_main ( Int argc, HChar **argv, HChar **envp )
       HChar  buf[50], buf2[50+64];
       HChar  nul[1];
       Int    fd, r;
-      HChar* exename;
+      const HChar* exename;
 
       VG_(debugLog)(1, "main", "Create fake /proc/<pid>/cmdline\n");
 

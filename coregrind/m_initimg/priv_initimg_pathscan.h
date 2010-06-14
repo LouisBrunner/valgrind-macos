@@ -32,6 +32,6 @@
 #ifndef __PRIV_INITIMG_PATHSCAN_H
 #define __PRIV_INITIMG_PATHSCAN_
 
-extern HChar* ML_(find_executable) ( HChar* exec );
+extern HChar* ML_(find_executable) ( const HChar* exec );
 
 #endif

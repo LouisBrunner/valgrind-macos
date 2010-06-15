@@ -94,6 +94,34 @@
 #endif
 
 //----------------------------------------------------------------------
+// VKI_STATIC_ASSERT(). Inspired by BUILD_BUG_ON() from
+// linux-2.6.34/include/linux/kernel.h
+//----------------------------------------------------------------------
+
+/*
+ * Evaluates to zero if 'expr' is true and forces a compilation error if
+ * 'expr' is false. Can be used in a context where no comma expressions
+ * are allowed.
+ */
+#ifdef __cplusplus
+template <bool b> struct vki_static_assert { int m_bitfield:(2*b-1); };
+#define VKI_STATIC_ASSERT(expr)                         \
+    (sizeof(vki_static_assert<(expr)>) - sizeof(int))
+#else
+#define VKI_STATIC_ASSERT(expr) (sizeof(struct { int:-!(expr); }))
+#endif
+
+//----------------------------------------------------------------------
+// Based on _IOC_TYPECHECK() from linux-2.6.34/asm-generic/ioctl.h
+//----------------------------------------------------------------------
+
+/* provoke compile error for invalid uses of size argument */
+#define _VKI_IOC_TYPECHECK(t)                                           \
+    (VKI_STATIC_ASSERT((sizeof(t) == sizeof(t[1])                       \
+                        && sizeof(t) < (1 << _VKI_IOC_SIZEBITS)))       \
+     + sizeof(t))
+
+//----------------------------------------------------------------------
 // From linux-2.6.8.1/include/linux/compiler.h
 //----------------------------------------------------------------------
 

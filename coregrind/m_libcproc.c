@@ -182,8 +182,12 @@ static void mash_colon_env(Char *varp, const Char *remove_pattern)
 	    entry_start = output+1;	/* entry starts after ':' */
       }
 
-      *output++ = *varp++;
+      if (*varp)
+         *output++ = *varp++;
    }
+
+   /* make sure last entry is nul terminated */
+   *output = '\0';
 
    /* match against the last entry */
    if (VG_(string_match)(remove_pattern, entry_start)) {

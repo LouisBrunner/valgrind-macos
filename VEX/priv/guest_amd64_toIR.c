@@ -14406,121 +14406,85 @@ DisResult disInstr_AMD64_WRK (
       goto decode_success;
    }
 
-
-   /* 66 0F 38 3D /r = PMAXSD xmm1, xmm2/m128
-      Maximum of Packed Signed Double Word Integers (XMM) 
-      --
-      66 0F 38 39 /r = PMINSD xmm1, xmm2/m128
-      Minimum of Packed Signed Double Word Integers (XMM) */
-   if ( have66noF2noF3( pfx ) 
-        && sz == 2 
-        && insn[0] == 0x0F && insn[1] == 0x38
-        && ( (insn[2] == 0x3D) || (insn[2] == 0x39) ) ) {
-
-      IRTemp reg_vec  = newTemp(Ity_V128);
-      IRTemp rom_vec  = newTemp(Ity_V128);
-      IRTemp mask_vec = newTemp(Ity_V128);
-
-      Bool isPMAX     = (insn[2] == 0x3D) ? True : False;
-
-      HChar* str      = isPMAX ? "pmaxsd" : "pminsd";
-
-      modrm = insn[3];
-      assign( reg_vec, getXMMReg( gregOfRexRM(pfx, modrm) ) );
-
-      if ( epartIsReg( modrm ) ) {
-         assign( rom_vec, getXMMReg( eregOfRexRM(pfx, modrm) ) );
-         delta += 3+1;
-         DIP( "%s %s,%s\n", str,
-              nameXMMReg( eregOfRexRM(pfx, modrm) ),
-              nameXMMReg( gregOfRexRM(pfx, modrm) ) );    
-      } else {
-         addr = disAMode( &alen, vbi, pfx, delta+3, dis_buf, 0 );
-         assign( rom_vec, loadLE( Ity_V128, mkexpr(addr) ) );
-         delta += 3+alen;
-         DIP( "%s %s,%s\n", str, dis_buf, nameXMMReg( gregOfRexRM(pfx, modrm) ) );
-      }
-
-      assign( mask_vec, binop( Iop_CmpGT32Sx4, mkexpr(reg_vec), mkexpr(rom_vec) ) );
-
-      IRTemp max_min_vec = newTemp(Ity_V128);
-      if ( isPMAX ) {
-         assign( max_min_vec,
-                 binop( Iop_OrV128, 
-                        binop( Iop_AndV128, mkexpr(rom_vec),
-                               unop( Iop_NotV128, mkexpr(mask_vec) ) ),
-                        binop( Iop_AndV128, mkexpr(reg_vec), mkexpr(mask_vec) ) ) );
-      } else {
-         assign( max_min_vec, 
-                 binop( Iop_OrV128, 
-                        binop( Iop_AndV128, mkexpr(reg_vec),
-                               unop( Iop_NotV128, mkexpr(mask_vec) ) ), 
-                        binop( Iop_AndV128, mkexpr(rom_vec), mkexpr(mask_vec) ) ) );
-      }
-
-      putXMMReg( gregOfRexRM(pfx, modrm), mkexpr(max_min_vec) );
-
+   /* 66 0F 38 37 = PCMPGTQ
+      64x2 comparison (signed, presumably; the Intel docs don't say :-)
+   */
+   if ( have66noF2noF3( pfx ) && sz == 2 
+        && insn[0] == 0x0F && insn[1] == 0x38 && insn[2] == 0x37) {
+      delta = dis_SSEint_E_to_G( vbi, pfx, delta+3, 
+                                 "pcmpgtq", Iop_CmpGT64Sx2, False );
       goto decode_success;
    }
 
+   /* 66 0F 38 3D /r = PMAXSD xmm1, xmm2/m128
+      Maximum of Packed Signed Double Word Integers (XMM) 
+      66 0F 38 39 /r = PMINSD xmm1, xmm2/m128
+      Minimum of Packed Signed Double Word Integers (XMM) */
+   if ( have66noF2noF3( pfx ) && sz == 2 
+        && insn[0] == 0x0F && insn[1] == 0x38
+        && (insn[2] == 0x3D || insn[2] == 0x39)) {
+      Bool isMAX = insn[2] == 0x3D;
+      delta = dis_SSEint_E_to_G(
+                 vbi, pfx, delta+3, 
+                 isMAX ? "pmaxsd" : "pminsd",
+                 isMAX ? Iop_Max32Sx4 : Iop_Min32Sx4,
+                 False
+              );
+      goto decode_success;
+   }
 
    /* 66 0F 38 3F /r = PMAXUD xmm1, xmm2/m128
       Maximum of Packed Unsigned Doubleword Integers (XMM)
       66 0F 38 3B /r = PMINUD xmm1, xmm2/m128
       Minimum of Packed Unsigned Doubleword Integers (XMM) */
-   if ( have66noF2noF3( pfx ) 
-        && sz == 2 
+   if ( have66noF2noF3( pfx ) && sz == 2 
         && insn[0] == 0x0F && insn[1] == 0x38
         && (insn[2] == 0x3F || insn[2] == 0x3B)) {
-
-      Bool   is_max   = insn[2] == 0x3F;
-      IRTemp reg_vec  = newTemp(Ity_V128);
-      IRTemp rom_vec  = newTemp(Ity_V128);
-      IRTemp mask_vec = newTemp(Ity_V128);
-      IRTemp and_vec  = newTemp(Ity_V128);
-      IRTemp not_vec  = newTemp(Ity_V128);
-
-      modrm = insn[3];
-      assign( reg_vec, getXMMReg( gregOfRexRM(pfx, modrm) ) );
-
-      if ( epartIsReg( modrm ) ) {
-         assign( rom_vec, getXMMReg( eregOfRexRM(pfx, modrm) ) );
-         delta += 3+1;
-         DIP( "p%sud %s,%s\n",
-              is_max ? "max" : "min",
-              nameXMMReg( eregOfRexRM(pfx, modrm) ),
-              nameXMMReg( gregOfRexRM(pfx, modrm) ) );    
-      } else {
-         addr = disAMode( &alen, vbi, pfx, delta+3, dis_buf, 0 );
-         assign( rom_vec, loadLE( Ity_V128, mkexpr(addr) ) );
-         delta += 3+alen;
-         DIP( "p%sd %s,%s\n",
-               is_max ? "max" : "min",
-              dis_buf, nameXMMReg( gregOfRexRM(pfx, modrm) ) );
-      }
-
-      /* the foll. simulates Iop_CmpGT32Ux4 (not implemented) 
-         c.f. Hacker's Delight, S2-11, p.23 */
-      assign( mask_vec, 
-              binop( Iop_XorV128, 
-                     binop( Iop_XorV128, 
-                            binop( Iop_CmpGT32Sx4, mkexpr(reg_vec), mkexpr(rom_vec) ),
-                            binop( Iop_SarN32x4, mkexpr(reg_vec), mkU8(31) ) ), 
-                     binop( Iop_SarN32x4, mkexpr(rom_vec), mkU8(31) ) ) );
-
-      assign( and_vec,
-              binop( Iop_AndV128, mkexpr(is_max ? reg_vec : rom_vec),
-                     mkexpr(mask_vec) ) );
-      assign( not_vec,
-              binop( Iop_AndV128, mkexpr(is_max ? rom_vec : reg_vec), 
-                     unop( Iop_NotV128, mkexpr(mask_vec) ) ) );
-
-      putXMMReg( gregOfRexRM(pfx, modrm), 
-                 binop( Iop_OrV128, mkexpr(not_vec), mkexpr(and_vec) ) );
- 
+      Bool isMAX = insn[2] == 0x3F;
+      delta = dis_SSEint_E_to_G(
+                 vbi, pfx, delta+3, 
+                 isMAX ? "pmaxud" : "pminud",
+                 isMAX ? Iop_Max32Ux4 : Iop_Min32Ux4,
+                 False
+              );
       goto decode_success;
    }
 
+   /* 66 0F 38 3E /r = PMAXUW xmm1, xmm2/m128
+      Maximum of Packed Unsigned Word Integers (XMM)
+      66 0F 38 3A /r = PMINUW xmm1, xmm2/m128
+      Minimum of Packed Unsigned Word Integers (XMM)
+   */
+   if ( have66noF2noF3( pfx ) && sz == 2 
+        && insn[0] == 0x0F && insn[1] == 0x38
+        && (insn[2] == 0x3E || insn[2] == 0x3A)) {
+      Bool isMAX = insn[2] == 0x3E;
+      delta = dis_SSEint_E_to_G(
+                 vbi, pfx, delta+3, 
+                 isMAX ? "pmaxuw" : "pminuw",
+                 isMAX ? Iop_Max16Ux8 : Iop_Min16Ux8,
+                 False
+              );
+      goto decode_success;
+   }
+
+   /* 66 0F 38 3C /r = PMAXSB xmm1, xmm2/m128
+      8Sx16 (signed) max
+      66 0F 38 38 /r = PMINSB xmm1, xmm2/m128
+      8Sx16 (signed) min
+   */
+   if ( have66noF2noF3( pfx ) && sz == 2 
+        && insn[0] == 0x0F && insn[1] == 0x38
+        && (insn[2] == 0x3C || insn[2] == 0x38)) {
+      Bool isMAX = insn[2] == 0x3C;
+      delta = dis_SSEint_E_to_G(
+                 vbi, pfx, delta+3, 
+                 isMAX ? "pmaxsb" : "pminsb",
+                 isMAX ? Iop_Max8Sx16 : Iop_Min8Sx16,
+                 False
+              );
+      goto decode_success;
+   }
 
    /* 66 0f 38 20 /r = PMOVSXBW xmm1, xmm2/m64 
       Packed Move with Sign Extend from Byte to Word (XMM) */
@@ -14959,6 +14923,40 @@ DisResult disInstr_AMD64_WRK (
                  binop( Iop_InterleaveLO32x4, 
                         IRExpr_Const( IRConst_V128(0) ), 
                         mkexpr(srcVec) ) );
+
+      goto decode_success;
+   }
+
+
+   /* 66 0f 38 40 /r = PMULLD xmm1, xmm2/m128
+      32x4 integer multiply from xmm2/m128 to xmm1 */
+   if ( have66noF2noF3( pfx ) 
+        && sz == 2 
+        && insn[0] == 0x0F && insn[1] == 0x38 && insn[2] == 0x40 ) {
+  
+      modrm = insn[3];
+
+      IRTemp argL = newTemp(Ity_V128);
+      IRTemp argR = newTemp(Ity_V128);
+
+      if ( epartIsReg(modrm) ) {
+         assign( argL, getXMMReg( eregOfRexRM(pfx, modrm) ) );
+         delta += 3+1;
+         DIP( "pmulld %s,%s\n",
+              nameXMMReg( eregOfRexRM(pfx, modrm) ),
+              nameXMMReg( gregOfRexRM(pfx, modrm) ) );
+      } else {
+         addr = disAMode( &alen, vbi, pfx, delta+3, dis_buf, 0 );
+         assign( argL, loadLE( Ity_V128, mkexpr(addr) ));
+         delta += 3+alen;
+         DIP( "pmulld %s,%s\n",
+              dis_buf, nameXMMReg( gregOfRexRM(pfx, modrm) ) );
+      }
+
+      assign(argR, getXMMReg( gregOfRexRM(pfx, modrm) ));
+
+      putXMMReg( gregOfRexRM(pfx, modrm), 
+                 binop( Iop_Mul32x4, mkexpr(argL), mkexpr(argR)) );
 
       goto decode_success;
    }

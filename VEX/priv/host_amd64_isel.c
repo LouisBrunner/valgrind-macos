@@ -42,6 +42,7 @@
 #include "main_globals.h"
 #include "host_generic_regs.h"
 #include "host_generic_simd64.h"
+#include "host_generic_simd128.h"
 #include "host_amd64_defs.h"
 
 
@@ -3158,7 +3159,8 @@ static HReg iselVecExpr ( ISelEnv* env, IRExpr* e )
 /* DO NOT CALL THIS DIRECTLY */
 static HReg iselVecExpr_wrk ( ISelEnv* env, IRExpr* e )
 {
-   Bool     arg1isEReg = False;
+   HWord      fn = 0; /* address of helper fn, if required */
+   Bool       arg1isEReg = False;
    AMD64SseOp op = Asse_INVALID;
    IRType     ty = typeOfIRExpr(env->type_env,e);
    vassert(e);
@@ -3611,6 +3613,73 @@ static HReg iselVecExpr_wrk ( ISelEnv* env, IRExpr* e )
          addInstr(env, mk_vMOVsd_RR(greg, dst));
          addInstr(env, AMD64Instr_SseReRg(op, ereg, dst));
          add_to_rsp(env, 16);
+         return dst;
+      }
+
+      case Iop_Mul32x4:    fn = (HWord)h_generic_calc_Mul32x4;
+                           goto do_SseAssistedBinary;
+      case Iop_Max32Sx4:   fn = (HWord)h_generic_calc_Max32Sx4;
+                           goto do_SseAssistedBinary;
+      case Iop_Min32Sx4:   fn = (HWord)h_generic_calc_Min32Sx4;
+                           goto do_SseAssistedBinary;
+      case Iop_Max32Ux4:   fn = (HWord)h_generic_calc_Max32Ux4;
+                           goto do_SseAssistedBinary;
+      case Iop_Min32Ux4:   fn = (HWord)h_generic_calc_Min32Ux4;
+                           goto do_SseAssistedBinary;
+      case Iop_Max16Ux8:   fn = (HWord)h_generic_calc_Max16Ux8;
+                           goto do_SseAssistedBinary;
+      case Iop_Min16Ux8:   fn = (HWord)h_generic_calc_Min16Ux8;
+                           goto do_SseAssistedBinary;
+      case Iop_Max8Sx16:   fn = (HWord)h_generic_calc_Max8Sx16;
+                           goto do_SseAssistedBinary;
+      case Iop_Min8Sx16:   fn = (HWord)h_generic_calc_Min8Sx16;
+                           goto do_SseAssistedBinary;
+      case Iop_CmpGT64Sx2: fn = (HWord)h_generic_calc_CmpGT64Sx2;
+                           goto do_SseAssistedBinary;
+      do_SseAssistedBinary: {
+         /* RRRufff!  RRRufff code is what we're generating here.  Oh
+            well. */
+         vassert(fn != 0);
+         HReg dst = newVRegV(env);
+         HReg argL = iselVecExpr(env, e->Iex.Binop.arg1);
+         HReg argR = iselVecExpr(env, e->Iex.Binop.arg2);
+         HReg argp = newVRegI(env);
+         /* subq $112, %rsp         -- make a space*/
+         sub_from_rsp(env, 112);
+         /* leaq 48(%rsp), %r_argp  -- point into it */
+         addInstr(env, AMD64Instr_Lea64(AMD64AMode_IR(48, hregAMD64_RSP()),
+                                        argp));
+         /* andq $-16, %r_argp      -- 16-align the pointer */
+         addInstr(env, AMD64Instr_Alu64R(Aalu_AND,
+                                         AMD64RMI_Imm( ~(UInt)15 ), 
+                                         argp));
+         /* Prepare 3 arg regs:
+            leaq 0(%r_argp), %rdi
+            leaq 16(%r_argp), %rsi
+            leaq 32(%r_argp), %rdx
+         */
+         addInstr(env, AMD64Instr_Lea64(AMD64AMode_IR(0, argp),
+                                        hregAMD64_RDI()));
+         addInstr(env, AMD64Instr_Lea64(AMD64AMode_IR(16, argp),
+                                        hregAMD64_RSI()));
+         addInstr(env, AMD64Instr_Lea64(AMD64AMode_IR(32, argp),
+                                        hregAMD64_RDX()));
+         /* Store the two args, at (%rsi) and (%rdx):
+            movupd  %argL, 0(%rsi)
+            movupd  %argR, 0(%rdx)
+         */
+         addInstr(env, AMD64Instr_SseLdSt(False/*!isLoad*/, 16, argL,
+                                          AMD64AMode_IR(0, hregAMD64_RSI())));
+         addInstr(env, AMD64Instr_SseLdSt(False/*!isLoad*/, 16, argR,
+                                          AMD64AMode_IR(0, hregAMD64_RDX())));
+         /* call the helper */
+         addInstr(env, AMD64Instr_Call( Acc_ALWAYS, (ULong)fn, 3 ));
+         /* fetch the result from memory, using %r_argp, which the
+            register allocator will keep alive across the call. */
+         addInstr(env, AMD64Instr_SseLdSt(True/*isLoad*/, 16, dst,
+                                          AMD64AMode_IR(0, argp)));
+         /* and finally, clear the space */
+         add_to_rsp(env, 112);
          return dst;
       }
 

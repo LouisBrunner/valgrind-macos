@@ -57,6 +57,8 @@
 #include "guest_arm_defs.h"
 #include "guest_ppc_defs.h"
 
+#include "host_generic_simd128.h"
+
 
 /* This file contains the top level interface to the library. */
 
@@ -141,6 +143,7 @@ void LibVEX_Init (
    vassert(4 == sizeof(Addr32));
    vassert(8 == sizeof(Addr64));
    vassert(16 == sizeof(U128));
+   vassert(16 == sizeof(V128));
 
    vassert(sizeof(void*) == 4 || sizeof(void*) == 8);
    vassert(sizeof(void*) == sizeof(int*));

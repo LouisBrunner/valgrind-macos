@@ -40,6 +40,7 @@ noinst_HEADERS = \
 	priv/guest_arm_defs.h \
 	priv/host_generic_regs.h \
 	priv/host_generic_simd64.h \
+	priv/host_generic_simd128.h \
 	priv/host_x86_defs.h \
 	priv/host_amd64_defs.h \
 	priv/host_ppc_defs.h \
@@ -90,6 +91,7 @@ LIBVEX_SOURCES_COMMON = \
 	priv/guest_arm_toIR.c \
 	priv/host_generic_regs.c \
 	priv/host_generic_simd64.c \
+	priv/host_generic_simd128.c \
 	priv/host_generic_reg_alloc2.c \
 	priv/host_x86_defs.c \
 	priv/host_x86_isel.c \

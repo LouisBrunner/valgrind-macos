@@ -58,6 +58,14 @@ typedef
    }
    RMArgs;
 
+static void do64HLtoV128 ( /*OUT*/V128* res, ULong wHi, ULong wLo )
+{
+   // try to sidestep strict-aliasing snafus by memcpying explicitly
+   UChar* p = (UChar*)res;
+   memcpy(&p[8], (UChar*)&wHi, 8);
+   memcpy(&p[0], (UChar*)&wLo, 8);
+}
+
 static UChar randUChar ( void )
 {
    static UInt seed = 80021;
@@ -2059,12 +2067,40 @@ void test_POPCNTW ( void )
 }
 
 
+void test_PCMPGTQ ( void )
+{
+   V128 spec[7];
+   do64HLtoV128( &spec[0], 0x0000000000000000ULL, 0xffffffffffffffffULL );
+   do64HLtoV128( &spec[1], 0x0000000000000001ULL, 0xfffffffffffffffeULL );
+   do64HLtoV128( &spec[2], 0x7fffffffffffffffULL, 0x8000000000000001ULL );
+   do64HLtoV128( &spec[3], 0x8000000000000000ULL, 0x8000000000000000ULL );
+   do64HLtoV128( &spec[4], 0x8000000000000001ULL, 0x7fffffffffffffffULL );
+   do64HLtoV128( &spec[5], 0xfffffffffffffffeULL, 0x0000000000000001ULL );
+   do64HLtoV128( &spec[6], 0xffffffffffffffffULL, 0x0000000000000000ULL );
+
+   V128 src, dst;
+   Int i, j;
+   for (i = 0; i < 10; i++) {
+      randV128(&src);
+      randV128(&dst);
+      DO_mandr_r("pcmpgtq", src, dst);
+   }
+   for (i = 0; i < 7; i++) {
+      for (j = 0; j < 7; j++) {
+         memcpy(&src, &spec[i], 16);
+         memcpy(&dst, &spec[j], 16);
+         DO_mandr_r("pcmpgtq", src, dst);
+      }
+   }
+}
+
 
 
 
 int main ( int argc, char** argv )
 {
 #if 1
+   // ------ SSE 4.1 ------
    test_BLENDPD();        // done Apr.01.2010
    test_BLENDPS();        // done Apr.02.2010
    //test_PBLENDW();
@@ -2088,14 +2124,14 @@ int main ( int argc, char** argv )
    //test_PINSRW();         // todo
    //test_PINSRB();         // todo
    //test_PHMINPOSUW();
-   //test_PMAXSB();
+   test_PMAXSB();
    test_PMAXSD();         // done Apr.09.2010
    test_PMAXUD();         // done Apr.16.2010
-   //test_PMAXUW();
-   //test_PMINSB();
+   test_PMAXUW();
+   test_PMINSB();
    test_PMINSD();         // done Apr.09.2010
    test_PMINUD();
-   //test_PMINUW();
+   test_PMINUW();
    test_PMOVSXBW();       // done Apr.02.2010
    test_PMOVSXBD();       // done Mar.30.2010
    test_PMOVSXBQ();       // done Mar.30.2010
@@ -2112,13 +2148,16 @@ int main ( int argc, char** argv )
    test_POPCNTL();
    test_POPCNTQ();
    //test_PMULDQ();
-   //test_PMULLD();
+   test_PMULLD();
    // PTEST
    // ROUNDPD
    // ROUNDPS
    // ROUNDSD
    // ROUNDSS
+   // ------ SSE 4.2 ------
+   test_PCMPGTQ();
 #else
+   test_PMAXSB();
 #endif
 
    return 0;

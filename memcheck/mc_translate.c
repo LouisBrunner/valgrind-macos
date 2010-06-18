@@ -2279,10 +2279,12 @@ IRAtom* expr2vbits_Binop ( MCEnv* mce,
       case Iop_Max32Sx4:
       case Iop_Min32Ux4:
       case Iop_Min32Sx4:
+      case Iop_Mul32x4:
          return binary32Ix4(mce, vatom1, vatom2);
 
       case Iop_Sub64x2:
       case Iop_Add64x2:
+      case Iop_CmpGT64Sx2:
          return binary64Ix2(mce, vatom1, vatom2);
 
       case Iop_QNarrow32Sx4:

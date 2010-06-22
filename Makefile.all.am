@@ -37,10 +37,8 @@ build-noinst_DSYMS: $(noinst_DSYMS)
 inplace-noinst_PROGRAMS: $(noinst_PROGRAMS)
 	mkdir -p $(inplacedir); \
 	for f in $(noinst_PROGRAMS) ; do \
-          if [ $$f != link_tool_exe ] ; then \
-	      rm -f $(inplacedir)/$$f; \
-	      ln -f -s ../$(subdir)/$$f $(inplacedir); \
-	  fi; \
+	  rm -f $(inplacedir)/$$f; \
+	  ln -f -s ../$(subdir)/$$f $(inplacedir); \
 	done
 
 # Similar to inplace-noinst_PROGRAMS
@@ -57,9 +55,7 @@ inplace-noinst_DSYMS: build-noinst_DSYMS
 install-noinst_PROGRAMS: $(noinst_PROGRAMS)
 	$(mkinstalldirs) $(DESTDIR)$(pkglibdir); \
 	for f in $(noinst_PROGRAMS); do \
-          if [ $$f != link_tool_exe ] ; then \
-	      $(INSTALL_PROGRAM) $$f $(DESTDIR)$(pkglibdir); \
-          fi; \
+	  $(INSTALL_PROGRAM) $$f $(DESTDIR)$(pkglibdir); \
 	done
 
 # Similar to install-noinst_PROGRAMS.

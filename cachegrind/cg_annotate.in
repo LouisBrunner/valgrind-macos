@@ -84,7 +84,7 @@ my %fn_totals;
 
 # Individual CCs, organised by filename and line_num for easy annotation.
 # hash(filename => hash(line_num => CC array))
-my %all_ind_CCs;
+my %allCCs;
 
 # Files chosen for annotation on the command line.  
 # key = basename (trimmed of any directory), value = full filename
@@ -376,59 +376,56 @@ sub read_input_file()
         $thresholds[0] = $single_threshold;
     }
 
-    my $curr_file;
-    my $curr_fn;
-    my $curr_name;
+    my $currFileName;
+    my $currFileFuncName;
 
-    my $curr_fn_CC = [];
-    my $curr_file_ind_CCs = {};     # hash(line_num => CC)
+    my $currFuncCC;
+    my $currFileCCs = {};     # hash(line_num => CC)
 
     # Read body of input file.
     while (<INPUTFILE>) {
         s/#.*$//;   # remove comments
         if (s/^(\d+)\s+//) {
-            my $line_num = $1;
+            my $lineNum = $1;
             my $CC = line_to_CC($_);
-            add_array_a_to_b($CC, $curr_fn_CC);
+            defined($currFuncCC) || die;
+            add_array_a_to_b($CC, $currFuncCC);
             
-            # If curr_file is selected, add CC to curr_file list.  We look for
+            # If currFileName is selected, add CC to currFileName list.  We look for
             # full filename matches;  or, if auto-annotating, we have to
             # remember everything -- we won't know until the end what's needed.
-            if ($auto_annotate || defined $user_ann_files{$curr_file}) {
-                my $tmp = $curr_file_ind_CCs->{$line_num};
-                $tmp = [] unless defined $tmp;
-                add_array_a_to_b($CC, $tmp);
-                $curr_file_ind_CCs->{$line_num} = $tmp;
+            defined($currFileCCs) || die;
+            if ($auto_annotate || defined $user_ann_files{$currFileName}) {
+                my $currLineCC = $currFileCCs->{$lineNum};
+                if (not defined $currLineCC) {
+                    $currLineCC = [];
+                    $currFileCCs->{$lineNum} = $currLineCC;
+                }
+                add_array_a_to_b($CC, $currLineCC);
             }
 
         } elsif (s/^fn=(.*)$//) {
-            # Commit result from previous function
-            $fn_totals{$curr_name} = $curr_fn_CC if (defined $curr_name);
-
-            # Setup new one
-            $curr_fn = $1;
-            $curr_name = "$curr_file:$curr_fn";
-            $curr_fn_CC = $fn_totals{$curr_name};
-            $curr_fn_CC = [] unless (defined $curr_fn_CC);
+            $currFileFuncName = "$currFileName:$1";
+            $currFuncCC = $fn_totals{$currFileFuncName};
+            if (not defined $currFuncCC) {
+                $currFuncCC = [];
+                $fn_totals{$currFileFuncName} = $currFuncCC;
+            }
 
         } elsif (s/^fl=(.*)$//) {
-            $all_ind_CCs{$curr_file} = $curr_file_ind_CCs 
-                if (defined $curr_file);
-
-            $curr_file = $1;
-            $curr_file_ind_CCs = $all_ind_CCs{$curr_file};
-            $curr_file_ind_CCs = {} unless (defined $curr_file_ind_CCs);
+            $currFileName = $1;
+            $currFileCCs = $allCCs{$currFileName};
+            if (not defined $currFileCCs) {
+                $currFileCCs = {};
+                $allCCs{$currFileName} = $currFileCCs;
+            }
+            # Assume that a "fn=" line is followed by a "fl=" line.
+            $currFileFuncName = undef;
 
         } elsif (s/^\s*$//) {
             # blank, do nothing
         
         } elsif (s/^summary:\s+//) {
-            # Finish up handling final filename/fn_name counts
-            $fn_totals{"$curr_file:$curr_fn"} = $curr_fn_CC 
-                if (defined $curr_file && defined $curr_fn);
-            $all_ind_CCs{$curr_file} = 
-                $curr_file_ind_CCs if (defined $curr_file);
-
             $summary_CC = line_to_CC($_);
             (scalar(@$summary_CC) == @events) 
                 or die("Line $.: summary event and total event mismatch\n");
@@ -761,7 +758,7 @@ sub annotate_ann_files($)
             print("$fancy");
 
             # Get file's CCs
-            my $src_file_CCs = $all_ind_CCs{$src_file};
+            my $src_file_CCs = $allCCs{$src_file};
             if (!defined $src_file_CCs) {
                 print("  No information has been collected for $src_file\n\n");
                 next LOOP;

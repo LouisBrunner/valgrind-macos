@@ -15,7 +15,7 @@ use warnings;
 use strict;
 
 # expect at least: alt-load-address gcc -o foo bar.o
-die "Not enougn arguments"
+die "Not enough arguments"
     if (($#ARGV + 1) < 5);
 
 my $ala = $ARGV[0];
@@ -39,7 +39,7 @@ foreach my $n (2 .. $#ARGV) {
    $cmd = "$cmd $ARGV[$n]";
 }
 
-print "link_tool_exe_darwin: $cmd\n";
+#print "link_tool_exe_darwin: $cmd\n";
 
 
 # Execute the command:

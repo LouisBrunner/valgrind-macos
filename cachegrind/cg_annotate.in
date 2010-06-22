@@ -881,8 +881,8 @@ sub annotate_ann_files($)
         foreach (my $i = 0; $i < @$summary_CC; $i++) {
             $percent_printed_CC->[$i] = 
                 sprintf("%.0f", 
-                        safe_div(abs($printed_totals_CC->[$i]),
-                                 abs($summary_CC->[$i] * 100)));
+                        100 * safe_div(abs($printed_totals_CC->[$i]),
+                                       abs($summary_CC->[$i])));
         }
         my $pp_CC_col_widths = compute_CC_col_widths($percent_printed_CC);
         print($fancy);

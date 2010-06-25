@@ -15005,6 +15005,48 @@ DisResult disInstr_AMD64_WRK (
    }
 
 
+   /* 66 0f 3A 0B /r ib = ROUNDSD imm8, xmm2/m64, xmm1 (Partial
+      implementation only -- only deal with cases where the rounding
+      mode is specified directly by the immediate byte. */
+   if (have66noF2noF3( pfx ) 
+       && sz == 2 
+       && insn[0] == 0x0F && insn[1] == 0x3A && insn[2] == 0x0B) {
+
+      modrm = insn[3];
+
+      IRTemp src = newTemp(Ity_F64);
+      IRTemp res = newTemp(Ity_F64);
+      Int    imm = 0;
+
+      if (epartIsReg(modrm)) {
+         assign( src, getXMMRegLane64F( eregOfRexRM(pfx, modrm), 0 ) );
+         imm = insn[3+1];
+         if (imm & ~3) goto decode_failure;
+         delta += 3+1+1;
+         DIP( "roundsd $%d,%s,%s\n",
+              imm, nameXMMReg( eregOfRexRM(pfx, modrm) ),
+                   nameXMMReg( gregOfRexRM(pfx, modrm) ) );
+      } else {
+         addr = disAMode( &alen, vbi, pfx, delta+3, dis_buf, 0 );
+         assign( src, loadLE( Ity_F64, mkexpr(addr) ));
+         imm = insn[3+alen];
+         if (imm & ~3) goto decode_failure;
+         delta += 3+alen+1;
+         DIP( "roundsd $%d,%s,%s\n",
+              imm, dis_buf, nameXMMReg( gregOfRexRM(pfx, modrm) ) );
+      }
+
+      /* (imm & 3) contains an Intel-encoded rounding mode.  Because
+         that encoding is the same as the encoding for IRRoundingMode,
+         we can use that value directly in the IR as a rounding
+         mode. */
+      assign(res, binop(Iop_RoundF64toInt, mkU32(imm & 3), mkexpr(src)) );
+
+      putXMMRegLane64F( gregOfRexRM(pfx, modrm), 0, mkexpr(res) );
+
+      goto decode_success;
+   }
+
    /* ---------------------------------------------------- */
    /* --- end of the SSE4 decoder                      --- */
    /* ---------------------------------------------------- */

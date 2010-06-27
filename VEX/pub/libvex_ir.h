@@ -639,6 +639,8 @@ typedef
       Iop_2xm1F64,   /* (2^arg - 1.0) */
       Iop_RoundF64toInt, /* F64 value to nearest integral value (still
                             as F64) */
+      Iop_RoundF32toInt, /* F32 value to nearest integral value (still
+                            as F32) */
 
       /* --- guest ppc32/64 specifics, not mandated by 754. --- */
 

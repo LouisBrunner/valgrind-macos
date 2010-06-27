@@ -809,12 +809,14 @@ AMD64Instr* AMD64Instr_A87Free ( Int nregs )
    vassert(nregs >= 1 && nregs <= 7);
    return i;
 }
-AMD64Instr* AMD64Instr_A87PushPop ( AMD64AMode* addr, Bool isPush )
+AMD64Instr* AMD64Instr_A87PushPop ( AMD64AMode* addr, Bool isPush, UChar szB )
 {
    AMD64Instr* i            = LibVEX_Alloc(sizeof(AMD64Instr));
    i->tag                   = Ain_A87PushPop;
    i->Ain.A87PushPop.addr   = addr;
    i->Ain.A87PushPop.isPush = isPush;
+   i->Ain.A87PushPop.szB    = szB;
+   vassert(szB == 8 || szB == 4);
    return i;
 }
 AMD64Instr* AMD64Instr_A87FpOp ( A87FpOp op )
@@ -1195,7 +1197,8 @@ void ppAMD64Instr ( AMD64Instr* i, Bool mode64 )
          vex_printf("ffree %%st(7..%d)", 8 - i->Ain.A87Free.nregs );
          break;
       case Ain_A87PushPop:
-         vex_printf(i->Ain.A87PushPop.isPush ? "fldl " : "fstpl ");
+         vex_printf(i->Ain.A87PushPop.isPush ? "fld%c " : "fstp%c ",
+                    i->Ain.A87PushPop.szB == 4 ? 's' : 'l');
          ppAMD64AMode(i->Ain.A87PushPop.addr);
          break;
       case Ain_A87FpOp:
@@ -2948,17 +2951,18 @@ Int emit_AMD64Instr ( UChar* buf, Int nbuf, AMD64Instr* i,
       goto done;
 
    case Ain_A87PushPop:
+      vassert(i->Ain.A87PushPop.szB == 8 || i->Ain.A87PushPop.szB == 4);
       if (i->Ain.A87PushPop.isPush) {
-         /* Load from memory into %st(0): fldl amode */
+         /* Load from memory into %st(0): flds/fldl amode */
          *p++ = clearWBit(
                    rexAMode_M(fake(0), i->Ain.A87PushPop.addr) );
-         *p++ = 0xDD;
+         *p++ = i->Ain.A87PushPop.szB == 4 ? 0xD9 : 0xDD;
 	 p = doAMode_M(p, fake(0)/*subopcode*/, i->Ain.A87PushPop.addr);
       } else {
-         /* Dump %st(0) to memory: fstpl amode */
+         /* Dump %st(0) to memory: fstps/fstpl amode */
          *p++ = clearWBit(
                    rexAMode_M(fake(3), i->Ain.A87PushPop.addr) );
-         *p++ = 0xDD;
+         *p++ = i->Ain.A87PushPop.szB == 4 ? 0xD9 : 0xDD;
          p = doAMode_M(p, fake(3)/*subopcode*/, i->Ain.A87PushPop.addr);
          goto done;
       }

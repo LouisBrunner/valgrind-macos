@@ -546,12 +546,13 @@ typedef
             Int nregs; /* 1 <= nregs <= 7 */
          } A87Free;
 
-         /* Push a 64-bit FP value from memory onto the stack, or move
-            a value from the stack to memory and remove it from the
-            stack. */
+         /* Push a 32- or 64-bit FP value from memory onto the stack,
+            or move a value from the stack to memory and remove it
+            from the stack. */
          struct {
             AMD64AMode* addr;
             Bool        isPush;
+            UChar       szB; /* 4 or 8 */
          } A87PushPop;
 
          /* Do an operation on the top-of-stack.  This can be unary, in
@@ -694,7 +695,7 @@ extern AMD64Instr* AMD64Instr_ACAS       ( AMD64AMode* addr, UChar sz );
 extern AMD64Instr* AMD64Instr_DACAS      ( AMD64AMode* addr, UChar sz );
 
 extern AMD64Instr* AMD64Instr_A87Free    ( Int nregs );
-extern AMD64Instr* AMD64Instr_A87PushPop ( AMD64AMode* addr, Bool isPush );
+extern AMD64Instr* AMD64Instr_A87PushPop ( AMD64AMode* addr, Bool isPush, UChar szB );
 extern AMD64Instr* AMD64Instr_A87FpOp    ( A87FpOp op );
 extern AMD64Instr* AMD64Instr_A87LdCW    ( AMD64AMode* addr );
 extern AMD64Instr* AMD64Instr_A87StSW    ( AMD64AMode* addr );

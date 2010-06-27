@@ -1776,11 +1776,11 @@ static HReg iselIntExpr_R_wrk ( ISelEnv* env, IRExpr* e )
 
          /* one arg -> top of x87 stack */
          addInstr(env, AMD64Instr_SseLdSt(False/*store*/, 8, arg2, m8_rsp));
-         addInstr(env, AMD64Instr_A87PushPop(m8_rsp, True/*push*/));
+         addInstr(env, AMD64Instr_A87PushPop(m8_rsp, True/*push*/, 8));
 
          /* other arg -> top of x87 stack */
          addInstr(env, AMD64Instr_SseLdSt(False/*store*/, 8, arg1, m8_rsp));
-         addInstr(env, AMD64Instr_A87PushPop(m8_rsp, True/*push*/));
+         addInstr(env, AMD64Instr_A87PushPop(m8_rsp, True/*push*/, 8));
 
          switch (e->Iex.Triop.op) {
             case Iop_PRemC3210F64:
@@ -2794,6 +2794,30 @@ static HReg iselFltExpr_wrk ( ISelEnv* env, IRExpr* e )
        return dst;
    }
 
+   if (e->tag == Iex_Binop && e->Iex.Binop.op == Iop_RoundF32toInt) {
+      AMD64AMode* m8_rsp = AMD64AMode_IR(-8, hregAMD64_RSP());
+      HReg        arg    = iselFltExpr(env, e->Iex.Binop.arg2);
+      HReg        dst    = newVRegV(env);
+
+      /* rf now holds the value to be rounded.  The first thing to do
+         is set the FPU's rounding mode accordingly. */
+
+      /* Set host x87 rounding mode */
+      set_FPU_rounding_mode( env, e->Iex.Binop.arg1 );
+
+      addInstr(env, AMD64Instr_SseLdSt(False/*store*/, 4, arg, m8_rsp));
+      addInstr(env, AMD64Instr_A87Free(1));
+      addInstr(env, AMD64Instr_A87PushPop(m8_rsp, True/*push*/, 4));
+      addInstr(env, AMD64Instr_A87FpOp(Afp_ROUND));
+      addInstr(env, AMD64Instr_A87PushPop(m8_rsp, False/*pop*/, 4));
+      addInstr(env, AMD64Instr_SseLdSt(True/*load*/, 4, dst, m8_rsp));
+
+      /* Restore default x87 rounding. */
+      set_FPU_rounding_default( env );
+
+      return dst;
+   }
+
    ppIRExpr(e);
    vpanic("iselFltExpr_wrk");
 }
@@ -2937,9 +2961,9 @@ static HReg iselDblExpr_wrk ( ISelEnv* env, IRExpr* e )
 
       addInstr(env, AMD64Instr_SseLdSt(False/*store*/, 8, arg, m8_rsp));
       addInstr(env, AMD64Instr_A87Free(1));
-      addInstr(env, AMD64Instr_A87PushPop(m8_rsp, True/*push*/));
+      addInstr(env, AMD64Instr_A87PushPop(m8_rsp, True/*push*/, 8));
       addInstr(env, AMD64Instr_A87FpOp(Afp_ROUND));
-      addInstr(env, AMD64Instr_A87PushPop(m8_rsp, False/*pop*/));
+      addInstr(env, AMD64Instr_A87PushPop(m8_rsp, False/*pop*/, 8));
       addInstr(env, AMD64Instr_SseLdSt(True/*load*/, 8, dst, m8_rsp));
 
       /* Restore default x87 rounding. */
@@ -2968,12 +2992,12 @@ static HReg iselDblExpr_wrk ( ISelEnv* env, IRExpr* e )
       /* one arg -> top of x87 stack */
       addInstr(env, AMD64Instr_SseLdSt(
                        False/*store*/, 8, arg2first ? arg2 : arg1, m8_rsp));
-      addInstr(env, AMD64Instr_A87PushPop(m8_rsp, True/*push*/));
+      addInstr(env, AMD64Instr_A87PushPop(m8_rsp, True/*push*/, 8));
 
       /* other arg -> top of x87 stack */
       addInstr(env, AMD64Instr_SseLdSt(
                        False/*store*/, 8, arg2first ? arg1 : arg2, m8_rsp));
-      addInstr(env, AMD64Instr_A87PushPop(m8_rsp, True/*push*/));
+      addInstr(env, AMD64Instr_A87PushPop(m8_rsp, True/*push*/, 8));
 
       /* do it */
       /* XXXROUNDINGFIXME */
@@ -3002,7 +3026,7 @@ static HReg iselDblExpr_wrk ( ISelEnv* env, IRExpr* e )
       }
 
       /* save result */
-      addInstr(env, AMD64Instr_A87PushPop(m8_rsp, False/*pop*/));
+      addInstr(env, AMD64Instr_A87PushPop(m8_rsp, False/*pop*/, 8));
       addInstr(env, AMD64Instr_SseLdSt(True/*load*/, 8, dst, m8_rsp));
       return dst;
    }
@@ -3067,15 +3091,15 @@ static HReg iselDblExpr_wrk ( ISelEnv* env, IRExpr* e )
          Int     nNeeded    = e->Iex.Binop.op==Iop_TanF64 ? 2 : 1;
          addInstr(env, AMD64Instr_SseLdSt(False/*store*/, 8, arg, m8_rsp));
          addInstr(env, AMD64Instr_A87Free(nNeeded));
-         addInstr(env, AMD64Instr_A87PushPop(m8_rsp, True/*push*/));
+         addInstr(env, AMD64Instr_A87PushPop(m8_rsp, True/*push*/, 8));
          /* XXXROUNDINGFIXME */
          /* set roundingmode here */
          addInstr(env, AMD64Instr_A87FpOp(fpop));
          if (e->Iex.Binop.op==Iop_TanF64) {
             /* get rid of the extra 1.0 that fptan pushes */
-            addInstr(env, AMD64Instr_A87PushPop(m8_rsp, False/*pop*/));
+            addInstr(env, AMD64Instr_A87PushPop(m8_rsp, False/*pop*/, 8));
          }
-         addInstr(env, AMD64Instr_A87PushPop(m8_rsp, False/*pop*/));
+         addInstr(env, AMD64Instr_A87PushPop(m8_rsp, False/*pop*/, 8));
          addInstr(env, AMD64Instr_SseLdSt(True/*load*/, 8, dst, m8_rsp));
          return dst;
       }

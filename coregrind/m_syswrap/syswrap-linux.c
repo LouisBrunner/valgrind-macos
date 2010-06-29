@@ -420,7 +420,8 @@ PRE(sys_mount)
    PRE_REG_READ5(long, "mount",
                  char *, source, char *, target, char *, type,
                  unsigned long, flags, void *, data);
-   PRE_MEM_RASCIIZ( "mount(source)", ARG1);
+   if (ARG1)
+      PRE_MEM_RASCIIZ( "mount(source)", ARG1);
    PRE_MEM_RASCIIZ( "mount(target)", ARG2);
    PRE_MEM_RASCIIZ( "mount(type)", ARG3);
 }

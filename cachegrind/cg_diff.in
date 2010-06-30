@@ -1,0 +1,328 @@
+#! @PERL@
+
+##--------------------------------------------------------------------##
+##--- Cachegrind's differencer.                         cg_diff.in ---##
+##--------------------------------------------------------------------##
+
+#  This file is part of Cachegrind, a Valgrind tool for cache
+#  profiling programs.
+#
+#  Copyright (C) 2002-2010 Nicholas Nethercote
+#     njn@valgrind.org
+#
+#  This program is free software; you can redistribute it and/or
+#  modify it under the terms of the GNU General Public License as
+#  published by the Free Software Foundation; either version 2 of the
+#  License, or (at your option) any later version.
+#
+#  This program is distributed in the hope that it will be useful, but
+#  WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+#  General Public License for more details.
+#
+#  You should have received a copy of the GNU General Public License
+#  along with this program; if not, write to the Free Software
+#  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
+#  02111-1307, USA.
+#
+#  The GNU General Public License is contained in the file COPYING.
+
+#----------------------------------------------------------------------------
+# This is a very cut-down and modified version of cg_annotate.
+#----------------------------------------------------------------------------
+
+use warnings;
+use strict;
+
+#----------------------------------------------------------------------------
+# Global variables
+#----------------------------------------------------------------------------
+
+# Version number
+my $version = "@VERSION@";
+
+# Usage message.
+my $usage = <<END
+usage: cg_diff [options] <cachegrind-out-file1> <cachegrind-out-file2>
+
+  options for the user, with defaults in [ ], are:
+    -h --help             show this message
+    -v --version          show version
+    --mod-filename=<expr> a Perl search-and-replace expression that is applied
+                          to filenames, eg. --mod-filename='s/prog[0-9]/projN/'
+
+  cg_diff is Copyright (C) 2010-2010 Nicholas Nethercote.
+  and licensed under the GNU General Public License, version 2.
+  Bug reports, feedback, admiration, abuse, etc, to: njn\@valgrind.org.
+                                                
+END
+;
+
+# --mod-filename expression
+my $mod_filename = undef;
+
+#-----------------------------------------------------------------------------
+# Argument and option handling
+#-----------------------------------------------------------------------------
+sub process_cmd_line() 
+{
+    my ($file1, $file2) = (undef, undef);
+
+    for my $arg (@ARGV) { 
+
+        if ($arg =~ /^-/) {
+            # --version
+            if ($arg =~ /^-v$|^--version$/) {
+                die("cg_diff-$version\n");
+
+            } elsif ($arg =~ /^--mod-filename=(.*)/) {
+                $mod_filename = $1;
+
+            } else {            # -h and --help fall under this case
+                die($usage);
+            }
+
+        } elsif (not defined($file1)) {
+            $file1 = $arg;
+
+        } elsif (not defined($file2)) {
+            $file2 = $arg;
+
+        } else {
+            die($usage);
+        }
+    }
+
+    # Must have specified two input files.
+    if (not defined $file1 or not defined $file2) {
+        die($usage);
+    }
+
+    return ($file1, $file2);
+}
+
+#-----------------------------------------------------------------------------
+# Reading of input file
+#-----------------------------------------------------------------------------
+sub max ($$) 
+{
+    my ($x, $y) = @_;
+    return ($x > $y ? $x : $y);
+}
+
+# Add the two arrays;  any '.' entries are ignored.  Two tricky things:
+# 1. If $a2->[$i] is undefined, it defaults to 0 which is what we want; we turn
+#    off warnings to allow this.  This makes things about 10% faster than
+#    checking for definedness ourselves.
+# 2. We don't add an undefined count or a ".", even though it's value is 0,
+#    because we don't want to make an $a2->[$i] that is undef become 0
+#    unnecessarily.
+sub add_array_a_to_b ($$) 
+{
+    my ($a, $b) = @_;
+
+    my $n = max(scalar @$a, scalar @$b);
+    $^W = 0;
+    foreach my $i (0 .. $n-1) {
+        $b->[$i] += $a->[$i] if (defined $a->[$i] && "." ne $a->[$i]);
+    }
+    $^W = 1;
+}
+
+sub sub_array_b_from_a ($$) 
+{
+    my ($a, $b) = @_;
+
+    my $n = max(scalar @$a, scalar @$b);
+    $^W = 0;
+    foreach my $i (0 .. $n-1) {
+        $a->[$i] -= $b->[$i];       # XXX: doesn't handle '.' entries
+    }
+    $^W = 1;
+}
+
+# Add each event count to the CC array.  '.' counts become undef, as do
+# missing entries (implicitly).
+sub line_to_CC ($$)
+{
+    my ($line, $numEvents) = @_;
+
+    my @CC = (split /\s+/, $line);
+    (@CC <= $numEvents) or die("Line $.: too many event counts\n");
+    return \@CC;
+}
+
+sub read_input_file($) 
+{
+    my ($input_file) = @_;
+
+    open(INPUTFILE, "< $input_file") 
+         || die "Cannot open $input_file for reading\n";
+
+    # Read "desc:" lines.
+    my $desc;
+    my $line;
+    while ($line = <INPUTFILE>) {
+        if ($line =~ s/desc:\s+//) {
+            $desc .= $line;
+        } else {
+            last;
+        }
+    }
+
+    # Read "cmd:" line (Nb: will already be in $line from "desc:" loop above).
+    ($line =~ s/^cmd:\s+//) or die("Line $.: missing command line\n");
+    my $cmd = $line;
+    chomp($cmd);    # Remove newline
+
+    # Read "events:" line.  We make a temporary hash in which the Nth event's
+    # value is N, which is useful for handling --show/--sort options below.
+    $line = <INPUTFILE>;
+    (defined $line && $line =~ s/^events:\s+//) 
+        or die("Line $.: missing events line\n");
+    my @events = split(/\s+/, $line);
+    my $numEvents = scalar @events;
+
+    my $currFileName;
+    my $currFileFuncName;
+
+    my %CCs;                    # hash("$filename#$funcname" => CC array)
+    my $currCC = undef;         # CC array
+
+    my $summaryCC;
+
+    # Read body of input file.
+    while (<INPUTFILE>) {
+        s/#.*$//;   # remove comments
+        if (s/^(\d+)\s+//) {
+            my $CC = line_to_CC($_, $numEvents);
+            defined($currCC) || die;
+            add_array_a_to_b($CC, $currCC);
+
+        } elsif (s/^fn=(.*)$//) {
+            defined($currFileName) || die;
+            $currFileFuncName = "$currFileName#$1";
+            $currCC = $CCs{$currFileFuncName};
+            if (not defined $currCC) {
+                $currCC = [];
+                $CCs{$currFileFuncName} = $currCC;
+            }
+
+        } elsif (s/^fl=(.*)$//) {
+            $currFileName = $1;
+            if (defined $mod_filename) {
+                eval "\$currFileName =~ $mod_filename";
+            }
+            # Assume that a "fn=" line is followed by a "fl=" line.
+            $currFileFuncName = undef;  
+
+        } elsif (s/^\s*$//) {
+            # blank, do nothing
+        
+        } elsif (s/^summary:\s+//) {
+            $summaryCC = line_to_CC($_, $numEvents);
+            (scalar(@$summaryCC) == @events) 
+                or die("Line $.: summary event and total event mismatch\n");
+
+        } else {
+            warn("WARNING: line $. malformed, ignoring\n");
+        }
+    }
+
+    # Check if summary line was present
+    if (not defined $summaryCC) {
+        die("missing final summary line, aborting\n");
+    }
+
+    close(INPUTFILE);
+
+    return ($cmd, \@events, \%CCs, $summaryCC);
+}
+
+#----------------------------------------------------------------------------
+# "main()"
+#----------------------------------------------------------------------------
+# Commands seen in the files.  Need not match.
+my $cmd1;
+my $cmd2;
+
+# Events seen in the files.  They must match.
+my $events1;
+my $events2;
+
+# Individual CCs, organised by filename/funcname/line_num.
+# hashref("$filename#$funcname", CC array)
+my $CCs1;
+my $CCs2;
+
+# Total counts for summary (an arrayref).
+my $summaryCC1;
+my $summaryCC2;
+
+#----------------------------------------------------------------------------
+# Read the input files
+#----------------------------------------------------------------------------
+my ($file1, $file2) = process_cmd_line();
+($cmd1, $events1, $CCs1, $summaryCC1) = read_input_file($file1);
+($cmd2, $events2, $CCs2, $summaryCC2) = read_input_file($file2);
+
+#----------------------------------------------------------------------------
+# Check the events match
+#----------------------------------------------------------------------------
+my $n = max(scalar @$events1, scalar @$events2);
+$^W = 0;    # turn off warnings, because we might hit undefs
+foreach my $i (0 .. $n-1) {
+    ($events1->[$i] eq $events2->[$i]) || die "events don't match, aborting\n";
+}
+$^W = 1;
+
+#----------------------------------------------------------------------------
+# Do the subtraction: CCs2 -= CCs1
+#----------------------------------------------------------------------------
+while (my ($filefuncname, $CC1) = each(%$CCs1)) {
+    my $CC2 = $CCs2->{$filefuncname};
+    if (not defined $CC2) {
+        $CC2 = [];
+        sub_array_b_from_a($CC2, $CC1);     # CC2 -= CC1
+        $CCs2->{$filefuncname} = $CC2;
+    } else {
+        sub_array_b_from_a($CC2, $CC1);     # CC2 -= CC1
+    }
+}
+sub_array_b_from_a($summaryCC2, $summaryCC1);
+
+#----------------------------------------------------------------------------
+# Print the result, in CCs2
+#----------------------------------------------------------------------------
+print("desc: Files compared:   $file1; $file2\n");
+print("cmd:  $cmd1; $cmd2\n");
+print("events: ");
+for my $e (@$events1) {
+    print(" $e");
+}
+print("\n");
+
+while (my ($filefuncname, $CC) = each(%$CCs2)) {
+
+    my @x = split(/#/, $filefuncname);
+    (scalar @x == 2) || die;
+
+    print("fl=$x[0]\n");
+    print("fn=$x[1]\n");
+
+    print("0");
+    foreach my $n (@$CC) {
+        print(" $n");
+    }
+    print("\n");
+}
+
+print("summary:");
+foreach my $n (@$summaryCC2) {
+    print(" $n");
+}
+print("\n");
+
+##--------------------------------------------------------------------##
+##--- end                                                          ---##
+##--------------------------------------------------------------------##

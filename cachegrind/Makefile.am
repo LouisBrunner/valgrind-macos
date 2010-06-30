@@ -8,7 +8,7 @@ EXTRA_DIST = \
 # Headers, etc
 #----------------------------------------------------------------------------
 
-bin_SCRIPTS = cg_annotate
+bin_SCRIPTS = cg_annotate cg_diff
 
 noinst_HEADERS = \
 	cg_arch.h \

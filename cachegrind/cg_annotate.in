@@ -120,7 +120,7 @@ my @sort_order;
 # handled this proportion of all the events thresholded.
 my @thresholds;
 
-my $default_threshold = 99;
+my $default_threshold = 0.1;
 
 my $single_threshold  = $default_threshold;
 
@@ -149,8 +149,8 @@ usage: cg_annotate [options] cachegrind-out-file [source-files...]
     --version             show version
     --show=A,B,C          only show figures for events A,B,C [all]
     --sort=A,B,C          sort columns by events A,B,C [event column order]
-    --threshold=<0--100>  percentage of counts (of primary sort event) we
-                          are interested in [$default_threshold%]
+    --threshold=<0--20>   a function is shown if it accounts for more than x% of
+                          the counts of the primary sort event [$default_threshold]
     --auto=yes|no         annotate all source files containing functions
                           that helped reach the event count threshold [no]
     --context=N           print N lines of context before and after
@@ -217,7 +217,7 @@ sub process_cmd_line()
             # --threshold=X (tolerates a trailing '%')
             } elsif ($arg =~ /^--threshold=([\d\.]+)%?$/) {
                 $single_threshold = $1;
-                ($1 >= 0 && $1 <= 100) or die($usage);
+                ($1 >= 0 && $1 <= 20) or die($usage);
 
             # --auto=yes|no
             } elsif ($arg =~ /^--auto=yes$/) {
@@ -377,7 +377,7 @@ sub read_input_file()
     # the primary sort event, and 0% for the rest.
     if (not @thresholds) {
         foreach my $e (@sort_order) {
-            push(@thresholds, 0);
+            push(@thresholds, 100);
         }
         $thresholds[0] = $single_threshold;
     }
@@ -617,17 +617,18 @@ sub print_summary_and_fn_totals ()
     # Print functions, stopping when the threshold has been reached.
     foreach my $fn_name (@fn_fullnames) {
 
+        my $fn_CC = $fn_totals{$fn_name};
+
         # Stop when we've reached all the thresholds
-        my $reached_all_thresholds = 1;
+        my $any_thresholds_exceeded = 0;
         foreach my $i (0 .. scalar @thresholds - 1) {
-            my $prop = safe_div(abs($curr_totals[$i] * 100),
+            my $prop = safe_div(abs($fn_CC->[$sort_order[$i]] * 100),
                                 abs($summary_CC->[$sort_order[$i]]));
-            $reached_all_thresholds &&= ($prop >= $thresholds[$i]);
+            $any_thresholds_exceeded ||= ($prop >= $thresholds[$i]);
         }
-        last if $reached_all_thresholds;
+        last if not $any_thresholds_exceeded;
 
         # Print function results
-        my $fn_CC = $fn_totals{$fn_name};
         print_CC($fn_CC, $fn_CC_col_widths);
         print(" $fn_name\n");
 

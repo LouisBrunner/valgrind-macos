@@ -3,9 +3,18 @@ Release 3.6.0 (???)
 ~~~~~~~~~~~~~~~~~~~
 Improvements:
 - XXX: ARM support
+- XXX: Mac OS 10.6 support (32 and 64 bit)
+- XXX: Much faster startup on Mac OS 10.5 for 64-bit programs.
 
 - --smc-check=all is much faster
 
+- Cachegrind has a new processing script, cg_diff, which finds the
+  difference between two profiles.  It's very useful for evaluating the
+  performance effects of a change in a program.
+  
+  Related to this change, the meaning of cg_annotate's (rarely-used)
+  --threshold option has changed; this is unlikely to affect many people, if
+  you do use it please see the user manual for details.
 
 
 Release 3.5.0 (19 August 2009)

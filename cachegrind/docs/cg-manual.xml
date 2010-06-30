@@ -98,8 +98,10 @@ be normally run.</para>
 <para>Then, you need to run Cachegrind itself to gather the profiling
 information, and then run cg_annotate to get a detailed presentation of that
 information.  As an optional intermediate step, you can use cg_merge to sum
-together the outputs of multiple Cachegrind runs, into a single file which
-you then use as the input for cg_annotate.</para>
+together the outputs of multiple Cachegrind runs into a single file which
+you then use as the input for cg_annotate.  Alternatively, you can use
+cg_diff to difference the outputs of two Cachegrind runs into a signel file
+which you then use as the input for cg_annotate.</para>
 
 
 <sect2 id="cg-manual.running-cachegrind" xreflabel="Running Cachegrind">
@@ -697,6 +699,85 @@ fail these checks.</para>
 </sect2>
 
 
+<sect2 id="cg-manual.cg_diff" xreflabel="cg_diff">
+<title>Differencing Profiles with cg_diff</title>
+
+<para>
+cg_diff is a simple program which
+reads two profile files, as created by Cachegrind, finds the difference
+between them, and writes the results into another file in the same format.
+You can then examine the merged results using
+<computeroutput>cg_annotate &lt;filename&gt;</computeroutput>, as
+described above.  This is very useful if you want to measure how a change to
+a program affected its performance.
+</para>
+
+<para>
+cg_diff is invoked as follows:
+</para>
+
+<programlisting><![CDATA[
+cg_diff file1 file2]]></programlisting>
+
+<para>
+It reads and checks <computeroutput>file1</computeroutput>, then read
+and checks <computeroutput>file2</computeroutput>, then computes the
+difference (effectively <computeroutput>file1</computeroutput> -
+<computeroutput>file2</computeroutput>).  The final results are written to
+standard output.</para>
+
+<para>
+Costs are summed on a per-function basis.  Per-line costs are not summed,
+because doing so is too difficult.  For example, consider differencing two
+profiles, one from a single-file program A, and one from the same program A
+where a single blank line was inserted at the top of the file.  Every single
+per-line count has changed.  In comparison, the per-function counts have not
+changed.  The per-function count differences are still very useful for
+determining differences between programs.  Note that because the result is
+the difference of two profiles, many of the counts will be negative;  this
+indicates that the counts for the relevant function are fewer in the second
+version than those in the first version.</para>
+
+<para>
+cg_diff does not attempt to check
+that the input files come from runs of the same executable.  It will
+happily merge together profile files from completely unrelated
+programs.  It does however check that the
+<computeroutput>Events:</computeroutput> lines of all the inputs are
+identical, so as to ensure that the addition of costs makes sense.
+For example, it would be nonsensical for it to add a number indicating
+D1 read references to a number from a different file indicating L2
+write misses.</para>
+
+<para>
+A number of other syntax and sanity checks are done whilst reading the
+inputs.  cg_diff will stop and
+attempt to print a helpful error message if any of the input files
+fail these checks.</para>
+
+<para>
+Sometimes you will want to compare Cachegrind profiles of two versions of a
+program that you have sitting side-by-side.  For example, you might have
+<computeroutput>version1/prog.c</computeroutput> and
+<computeroutput>version2/prog.c</computeroutput>, where the second is
+slightly different to the first.  A straight comparison of the two will not
+be useful -- because functions are qualified with filenames, a function
+<function>f</function> will be listed as
+<computeroutput>version1/prog.c:f</computeroutput> for the first version but
+<computeroutput>version2/prog.c:f</computeroutput> for the second
+version.</para>
+
+<para>
+When this happens, you can use the <option>--mod-filename</option> option.
+Its argument is a Perl search-and-replace expression that will be applied
+to all the filenames in both Cachegrind output files.  It can be used to
+remove minor differences in filenames.  For example, the option
+<option>--mod-filename='s/version[0-9]/versionN/'</option> will suffice for
+this case.</para>
+
+</sect2>
+
+
 </sect1>
 
 
@@ -842,21 +923,21 @@ fail these checks.</para>
 
   <varlistentry>
     <term>
-      <option><![CDATA[--threshold=X [default: 99%] ]]></option>
+      <option><![CDATA[--threshold=X [default: 0.1%] ]]></option>
     </term>
     <listitem>
       <para>Sets the threshold for the function-by-function
-      summary.  Functions are shown that account for more than X%
-      of the primary sort event.  If auto-annotating, also affects
-      which files are annotated.</para>
+      summary.  A function is shown if it accounts for more than X%
+      of the counts for the primary sort event.  If auto-annotating, also
+      affects which files are annotated.</para>
         
       <para>Note: thresholds can be set for more than one of the
       events by appending any events for the
       <option>--sort</option> option with a colon
       and a number (no spaces, though).  E.g. if you want to see
-      the functions that cover 99% of L2 read misses and 99% of L2
+      each function that covers more than 1% of L2 read misses or 1% of L2
       write misses, use this option:</para>
-      <para><option>--sort=D2mr:99,D2mw:99</option></para>
+      <para><option>--sort=D2mr:1,D2mw:1</option></para>
     </listitem>
   </varlistentry>
 
@@ -898,6 +979,49 @@ fail these checks.</para>
 <!-- end of xi:include in the manpage -->
   
 </sect1>
+
+
+<sect1 id="cg-manual.diffopts" xreflabel="cg_diff Command-line Options">
+<title>cg_diff Command-line Options</title>
+
+<!-- start of xi:include in the manpage -->
+<variablelist id="cg_diff.opts.list">
+
+  <varlistentry>
+    <term>
+      <option><![CDATA[-h --help ]]></option>
+    </term>
+    <listitem>
+      <para>Show the help message.</para>
+    </listitem>
+  </varlistentry>
+
+  <varlistentry>
+    <term>
+      <option><![CDATA[--version ]]></option>
+    </term>
+    <listitem>
+      <para>Show the version number.</para>
+    </listitem>
+  </varlistentry>
+
+  <varlistentry>
+    <term>
+      <option><![CDATA[--mod-filename=<expr> [default: none]]]></option>
+    </term>
+    <listitem>
+      <para>Specifies a Perl search-and-replace expression that is applied
+      to all filenames.  Useful for removing minor differences in paths
+      between two different versions of a program that are sitting in
+      different directories.</para>
+    </listitem>
+  </varlistentry>
+
+</variablelist>
+<!-- end of xi:include in the manpage -->
+  
+</sect1>
+
 
 
 

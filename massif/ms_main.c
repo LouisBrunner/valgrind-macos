@@ -176,6 +176,7 @@ Number of snapshots: 50
 #include "pub_tool_options.h"
 #include "pub_tool_replacemalloc.h"
 #include "pub_tool_stacktrace.h"
+#include "pub_tool_threadstate.h"
 #include "pub_tool_tooliface.h"
 #include "pub_tool_xarray.h"
 #include "pub_tool_clientstate.h"
@@ -190,6 +191,10 @@ Number of snapshots: 50
 // of detail, enough to tell how many bytes each line of code is responsible
 // for, more or less.  The main data structure is a tree representing the
 // call tree beneath all the allocation functions like malloc().
+// (Alternatively, if --pages-as-heap=yes is specified, memory is tracked at
+// the page level, and each page is treated much like a heap block.  We use
+// "heap" throughout below to cover this case because the concepts are all the
+// same.)
 //
 // "Snapshots" are recordings of the memory usage.  There are two basic
 // kinds:
@@ -280,13 +285,16 @@ static SizeT peak_snapshot_total_szB = 0;
 // memory.  An alternative to milliseconds as a unit of program "time".
 static ULong total_allocs_deallocs_szB = 0;
 
-// We don't start taking snapshots until the first basic block is executed,
-// rather than doing it in ms_post_clo_init (which is the obvious spot), for
-// two reasons.
+// When running with --heap=yes --pages-as-heap=no, we don't start taking
+// snapshots until the first basic block is executed, rather than doing it in
+// ms_post_clo_init (which is the obvious spot), for two reasons.
 // - It lets us ignore stack events prior to that, because they're not
 //   really proper ones and just would screw things up.
 // - Because there's still some core initialisation to do, and so there
 //   would be an artificial time gap between the first and second snapshots.
+//
+// When running with --heap=yes --pages-as-heap=yes, snapshots start much
+// earlier due to new_mem_startup so this isn't relevant.
 //
 static Bool have_started_executing_code = False;
 
@@ -393,12 +401,13 @@ static Char* TimeUnit_to_string(TimeUnit time_unit)
    }
 }
 
-static Bool clo_heap            = True;
+static Bool   clo_heap            = True;
    // clo_heap_admin is deliberately a word-sized type.  At one point it was
    // a UInt, but this caused problems on 64-bit machines when it was
    // multiplied by a small negative number and then promoted to a
    // word-sized type -- it ended up with a value of 4.2 billion.  Sigh.
 static SSizeT clo_heap_admin      = 8;
+static Bool   clo_pages_as_heap   = False;
 static Bool   clo_stacks          = False;
 static Int    clo_depth           = 30;
 static double clo_threshold       = 1.0;  // percentage
@@ -417,29 +426,34 @@ static Bool ms_process_cmd_line_option(Char* arg)
    // Remember the arg for later use.
    VG_(addToXA)(args_for_massif, &arg);
 
-        if VG_BOOL_CLO(arg, "--heap",   clo_heap)   {}
-   else if VG_BOOL_CLO(arg, "--stacks", clo_stacks) {}
+        if VG_BOOL_CLO(arg, "--heap",           clo_heap)   {}
+   else if VG_BINT_CLO(arg, "--heap-admin",     clo_heap_admin, 0, 1024) {}
 
-   else if VG_BINT_CLO(arg, "--heap-admin", clo_heap_admin, 0, 1024) {}
-   else if VG_BINT_CLO(arg, "--depth",      clo_depth, 1, MAX_DEPTH) {}
+   else if VG_BOOL_CLO(arg, "--stacks",         clo_stacks) {}
 
-   else if VG_DBL_CLO(arg, "--threshold",  clo_threshold) {}
+   else if VG_BOOL_CLO(arg, "--pages-as-heap",  clo_pages_as_heap) {}
+
+   else if VG_BINT_CLO(arg, "--depth",          clo_depth, 1, MAX_DEPTH) {}
+
+   else if VG_STR_CLO(arg, "--alloc-fn",        tmp_str) {
+      VG_(addToXA)(alloc_fns, &tmp_str);
+   }
+   else if VG_STR_CLO(arg, "--ignore-fn",       tmp_str) {
+      VG_(addToXA)(ignore_fns, &tmp_str);
+   }
+
+   else if VG_DBL_CLO(arg, "--threshold",       clo_threshold) {}
 
    else if VG_DBL_CLO(arg, "--peak-inaccuracy", clo_peak_inaccuracy) {}
 
-   else if VG_BINT_CLO(arg, "--detailed-freq", clo_detailed_freq, 1, 10000) {}
-   else if VG_BINT_CLO(arg, "--max-snapshots", clo_max_snapshots, 10, 1000) {}
+   else if VG_XACT_CLO(arg, "--time-unit=i",    clo_time_unit, TimeI)  {}
+   else if VG_XACT_CLO(arg, "--time-unit=ms",   clo_time_unit, TimeMS) {}
+   else if VG_XACT_CLO(arg, "--time-unit=B",    clo_time_unit, TimeB)  {}
 
-   else if VG_XACT_CLO(arg, "--time-unit=i",  clo_time_unit, TimeI)  {}
-   else if VG_XACT_CLO(arg, "--time-unit=ms", clo_time_unit, TimeMS) {}
-   else if VG_XACT_CLO(arg, "--time-unit=B",  clo_time_unit, TimeB)  {}
+   else if VG_BINT_CLO(arg, "--detailed-freq",  clo_detailed_freq, 1, 10000) {}
 
-   else if VG_STR_CLO(arg, "--alloc-fn", tmp_str) {
-      VG_(addToXA)(alloc_fns, &tmp_str);
-   }
-   else if VG_STR_CLO(arg, "--ignore-fn", tmp_str) {
-      VG_(addToXA)(ignore_fns, &tmp_str);
-   }
+   else if VG_BINT_CLO(arg, "--max-snapshots",  clo_max_snapshots, 10, 1000) {}
+
    else if VG_STR_CLO(arg, "--massif-out-file", clo_massif_out_file) {}
 
    else
@@ -455,6 +469,7 @@ static void ms_print_usage(void)
 "    --heap-admin=<size>       average admin bytes per heap block;\n"
 "                               ignored if --heap=no [8]\n"
 "    --stacks=no|yes           profile stack(s) [no]\n"
+"    --pages-as-heap=no|yes    profile memory at the page level [no]\n"
 "    --depth=<number>          depth of contexts [30]\n"
 "    --alloc-fn=<name>         specify <name> as an alloc function [empty]\n"
 "    --ignore-fn=<name>        ignore heap allocations within <name> [empty]\n"
@@ -842,7 +857,7 @@ static Bool fn_should_be_ignored(Addr ip)
 // Nb: it's possible to end up with an empty trace, eg. if 'main' is marked
 // as an alloc-fn.  This is ok.
 static
-Int get_IPs( ThreadId tid, Bool is_custom_alloc, Addr ips[])
+Int get_IPs( ThreadId tid, Bool exclude_first_entry, Addr ips[])
 {
    static Char buf[BUF_LEN];
    Int n_ips, i, n_alloc_fns_removed;
@@ -877,11 +892,11 @@ Int get_IPs( ThreadId tid, Bool is_custom_alloc, Addr ips[])
       // If the original stack trace is smaller than asked-for, redo=False.
       if (n_ips < clo_depth + overestimate) { redo = False; }
 
-      // Filter out alloc fns.  If it's a non-custom block, we remove the
-      // first entry (which will be one of malloc, __builtin_new, etc)
-      // without looking at it, because VG_(get_fnname) is expensive (it
-      // involves calls to VG_(malloc)/VG_(free)).
-      n_alloc_fns_removed = ( is_custom_alloc ? 0 : 1 );
+      // Filter out alloc fns.  If requested, we automatically remove the
+      // first entry (which presumably will be something like malloc or
+      // __builtin_new that we're sure to filter out) without looking at it,
+      // because VG_(get_fnname) is expensive.
+      n_alloc_fns_removed = ( exclude_first_entry ? 1 : 0 );
       for (i = n_alloc_fns_removed; i < n_ips; i++) {
          if (VG_(get_fnname)(ips[i], buf, BUF_LEN)) {
             if (is_member_fn(alloc_fns, buf)) {
@@ -912,14 +927,14 @@ Int get_IPs( ThreadId tid, Bool is_custom_alloc, Addr ips[])
 
 // Gets an XCon and puts it in the tree.  Returns the XCon's bottom-XPt.
 // Unless the allocation should be ignored, in which case we return NULL.
-static XPt* get_XCon( ThreadId tid, Bool is_custom_alloc )
+static XPt* get_XCon( ThreadId tid, Bool exclude_first_entry )
 {
    static Addr ips[MAX_IPS];
    Int i;
    XPt* xpt = alloc_xpt;
 
    // After this call, the IPs we want are in ips[0]..ips[n_ips-1].
-   Int n_ips = get_IPs(tid, is_custom_alloc, ips);
+   Int n_ips = get_IPs(tid, exclude_first_entry, ips);
 
    // Should we ignore this allocation?  (Nb: n_ips can be zero, eg. if
    // 'main' is marked as an alloc-fn.)
@@ -996,7 +1011,7 @@ static XPt* get_XCon( ThreadId tid, Bool is_custom_alloc )
 // Update 'szB' of every XPt in the XCon, by percolating upwards.
 static void update_XCon(XPt* xpt, SSizeT space_delta)
 {
-   tl_assert(True == clo_heap);
+   tl_assert(clo_heap);
    tl_assert(NULL != xpt);
 
    if (0 == space_delta)
@@ -1323,7 +1338,9 @@ take_snapshot(Snapshot* snapshot, SnapshotKind kind, Time my_time,
               Bool is_detailed)
 {
    tl_assert(!is_snapshot_in_use(snapshot));
-   tl_assert(have_started_executing_code);
+   if (!clo_pages_as_heap) {
+      tl_assert(have_started_executing_code);
+   }
 
    // Heap and heap admin.
    if (clo_heap) {
@@ -1518,31 +1535,11 @@ static void update_heap_stats(SSizeT heap_szB_delta, Int heap_extra_szB_delta)
 }
 
 static
-void* new_block ( ThreadId tid, void* p, SizeT req_szB, SizeT req_alignB,
-                  Bool is_zeroed )
+void* record_block( ThreadId tid, void* p, SizeT req_szB, SizeT slop_szB,
+                    Bool exclude_first_entry, Bool maybe_snapshot )
 {
-   HP_Chunk* hc;
-   Bool is_custom_alloc = (NULL != p);
-   SizeT actual_szB, slop_szB;
-
-   if ((SSizeT)req_szB < 0) return NULL;
-
-   // Allocate and zero if necessary
-   if (!p) {
-      p = VG_(cli_malloc)( req_alignB, req_szB );
-      if (!p) {
-         return NULL;
-      }
-      if (is_zeroed) VG_(memset)(p, 0, req_szB);
-      actual_szB = VG_(malloc_usable_size)(p);
-      tl_assert(actual_szB >= req_szB);
-      slop_szB = actual_szB - req_szB;
-   } else {
-      slop_szB = 0;
-   }
-
    // Make new HP_Chunk node, add to malloc_list
-   hc           = VG_(malloc)("ms.main.nb.1", sizeof(HP_Chunk));
+   HP_Chunk* hc = VG_(malloc)("ms.main.rb.1", sizeof(HP_Chunk));
    hc->req_szB  = req_szB;
    hc->slop_szB = slop_szB;
    hc->data     = (Addr)p;
@@ -1550,9 +1547,9 @@ void* new_block ( ThreadId tid, void* p, SizeT req_szB, SizeT req_alignB,
    VG_(HT_add_node)(malloc_list, hc);
 
    if (clo_heap) {
-      VERB(3, "<<< new_mem_heap (%lu, %lu)\n", req_szB, slop_szB);
+      VERB(3, "<<< record_block (%lu, %lu)\n", req_szB, slop_szB);
 
-      hc->where = get_XCon( tid, is_custom_alloc );
+      hc->where = get_XCon( tid, exclude_first_entry );
 
       if (hc->where) {
          // Update statistics.
@@ -1565,7 +1562,9 @@ void* new_block ( ThreadId tid, void* p, SizeT req_szB, SizeT req_alignB,
          update_XCon(hc->where, req_szB);
 
          // Maybe take a snapshot.
-         maybe_take_snapshot(Normal, "  alloc");
+         if (maybe_snapshot) {
+            maybe_take_snapshot(Normal, "  alloc");
+         }
 
       } else {
          // Ignored allocation.
@@ -1581,7 +1580,33 @@ void* new_block ( ThreadId tid, void* p, SizeT req_szB, SizeT req_alignB,
 }
 
 static __inline__
-void die_block ( void* p, Bool custom_free )
+void* alloc_and_record_block ( ThreadId tid, SizeT req_szB, SizeT req_alignB,
+                               Bool is_zeroed )
+{
+   SizeT actual_szB, slop_szB;
+   void* p;
+
+   if ((SSizeT)req_szB < 0) return NULL;
+
+   // Allocate and zero if necessary.
+   p = VG_(cli_malloc)( req_alignB, req_szB );
+   if (!p) {
+      return NULL;
+   }
+   if (is_zeroed) VG_(memset)(p, 0, req_szB);
+   actual_szB = VG_(malloc_usable_size)(p);
+   tl_assert(actual_szB >= req_szB);
+   slop_szB = actual_szB - req_szB;
+
+   // Record block.
+   record_block(tid, p, req_szB, slop_szB, /*exclude_first_entry*/True,
+                /*maybe_snapshot*/True);
+
+   return p;
+}
+
+static __inline__
+void unrecord_block ( void* p, Bool maybe_snapshot )
 {
    // Remove HP_Chunk from malloc_list
    HP_Chunk* hc = VG_(HT_remove)(malloc_list, (UWord)p);
@@ -1590,14 +1615,16 @@ void die_block ( void* p, Bool custom_free )
    }
 
    if (clo_heap) {
-      VERB(3, "<<< die_mem_heap\n");
+      VERB(3, "<<< unrecord_block\n");
 
       if (hc->where) {
          // Update statistics.
          n_heap_frees++;
 
          // Maybe take a peak snapshot, since it's a deallocation.
-         maybe_take_snapshot(Peak, "de-PEAK");
+         if (maybe_snapshot) {
+            maybe_take_snapshot(Peak, "de-PEAK");
+         }
 
          // Update heap stats.
          update_heap_stats(-hc->req_szB, -clo_heap_admin - hc->slop_szB);
@@ -1606,7 +1633,9 @@ void die_block ( void* p, Bool custom_free )
          update_XCon(hc->where, -hc->req_szB);
 
          // Maybe take a snapshot.
-         maybe_take_snapshot(Normal, "dealloc");
+         if (maybe_snapshot) {
+            maybe_take_snapshot(Normal, "dealloc");
+         }
 
       } else {
          n_ignored_heap_frees++;
@@ -1619,8 +1648,6 @@ void die_block ( void* p, Bool custom_free )
 
    // Actually free the chunk, and the heap block (if necessary)
    VG_(free)( hc );  hc = NULL;
-   if (!custom_free)
-      VG_(cli_free)( p );
 }
 
 // Nb: --ignore-fn is tricky for realloc.  If the block's original alloc was
@@ -1630,7 +1657,7 @@ void die_block ( void* p, Bool custom_free )
 // growing such a block, but for consistency (it also simplifies things) we
 // ignore such reallocs as well.
 static __inline__
-void* renew_block ( ThreadId tid, void* p_old, SizeT new_req_szB )
+void* realloc_block ( ThreadId tid, void* p_old, SizeT new_req_szB )
 {
    HP_Chunk* hc;
    void*     p_new;
@@ -1647,8 +1674,9 @@ void* renew_block ( ThreadId tid, void* p_old, SizeT new_req_szB )
    old_req_szB  = hc->req_szB;
    old_slop_szB = hc->slop_szB;
 
+   tl_assert(!clo_pages_as_heap);  // Shouldn't be here if --pages-as-heap=yes.
    if (clo_heap) {
-      VERB(3, "<<< renew_mem_heap (%lu)\n", new_req_szB);
+      VERB(3, "<<< realloc_block (%lu)\n", new_req_szB);
 
       if (hc->where) {
          // Update statistics.
@@ -1696,7 +1724,7 @@ void* renew_block ( ThreadId tid, void* p_old, SizeT new_req_szB )
 
       // Update XTree.
       if (clo_heap) {
-         new_where = get_XCon( tid, /*custom_malloc*/False);
+         new_where = get_XCon( tid, /*exclude_first_entry*/True);
          if (!is_ignored && new_where) {
             hc->where = new_where;
             update_XCon(old_where, -old_req_szB);
@@ -1745,47 +1773,50 @@ void* renew_block ( ThreadId tid, void* p_old, SizeT new_req_szB )
 
 static void* ms_malloc ( ThreadId tid, SizeT szB )
 {
-   return new_block( tid, NULL, szB, VG_(clo_alignment), /*is_zeroed*/False );
+   return alloc_and_record_block( tid, szB, VG_(clo_alignment), /*is_zeroed*/False );
 }
 
 static void* ms___builtin_new ( ThreadId tid, SizeT szB )
 {
-   return new_block( tid, NULL, szB, VG_(clo_alignment), /*is_zeroed*/False );
+   return alloc_and_record_block( tid, szB, VG_(clo_alignment), /*is_zeroed*/False );
 }
 
 static void* ms___builtin_vec_new ( ThreadId tid, SizeT szB )
 {
-   return new_block( tid, NULL, szB, VG_(clo_alignment), /*is_zeroed*/False );
+   return alloc_and_record_block( tid, szB, VG_(clo_alignment), /*is_zeroed*/False );
 }
 
 static void* ms_calloc ( ThreadId tid, SizeT m, SizeT szB )
 {
-   return new_block( tid, NULL, m*szB, VG_(clo_alignment), /*is_zeroed*/True );
+   return alloc_and_record_block( tid, m*szB, VG_(clo_alignment), /*is_zeroed*/True );
 }
 
 static void *ms_memalign ( ThreadId tid, SizeT alignB, SizeT szB )
 {
-   return new_block( tid, NULL, szB, alignB, False );
+   return alloc_and_record_block( tid, szB, alignB, False );
 }
 
 static void ms_free ( ThreadId tid __attribute__((unused)), void* p )
 {
-   die_block( p, /*custom_free*/False );
+   unrecord_block(p, /*maybe_snapshot*/True);
+   VG_(cli_free)(p);
 }
 
 static void ms___builtin_delete ( ThreadId tid, void* p )
 {
-   die_block( p, /*custom_free*/False);
+   unrecord_block(p, /*maybe_snapshot*/True);
+   VG_(cli_free)(p);
 }
 
 static void ms___builtin_vec_delete ( ThreadId tid, void* p )
 {
-   die_block( p, /*custom_free*/False );
+   unrecord_block(p, /*maybe_snapshot*/True);
+   VG_(cli_free)(p);
 }
 
 static void* ms_realloc ( ThreadId tid, void* p_old, SizeT new_szB )
 {
-   return renew_block(tid, p_old, new_szB);
+   return realloc_block(tid, p_old, new_szB);
 }
 
 static SizeT ms_malloc_usable_size ( ThreadId tid, void* p )
@@ -1794,6 +1825,89 @@ static SizeT ms_malloc_usable_size ( ThreadId tid, void* p )
 
    return ( hc ? hc->req_szB + hc->slop_szB : 0 );
 }                                                            
+
+//------------------------------------------------------------//
+//--- Page handling                                        ---//
+//------------------------------------------------------------//
+
+static
+void ms_record_page_mem ( Addr a, SizeT len )
+{
+   ThreadId tid = VG_(get_running_tid)();
+   Addr end;
+   tl_assert(VG_IS_PAGE_ALIGNED(len));
+   tl_assert(len >= VKI_PAGE_SIZE);
+   // Record the first N-1 pages as blocks, but don't do any snapshots.
+   for (end = a + len - VKI_PAGE_SIZE; a < end; a += VKI_PAGE_SIZE) {
+      record_block( tid, (void*)a, VKI_PAGE_SIZE, /*slop_szB*/0,
+                    /*exclude_first_entry*/False, /*maybe_snapshot*/False );
+   }
+   // Record the last page as a block, and maybe do a snapshot afterwards.
+   record_block( tid, (void*)a, VKI_PAGE_SIZE, /*slop_szB*/0,
+                 /*exclude_first_entry*/False, /*maybe_snapshot*/True );
+}
+
+static
+void ms_unrecord_page_mem( Addr a, SizeT len )
+{
+   Addr end;
+   tl_assert(VG_IS_PAGE_ALIGNED(len));
+   tl_assert(len >= VKI_PAGE_SIZE);
+   for (end = a + len - VKI_PAGE_SIZE; a < end; a += VKI_PAGE_SIZE) {
+      unrecord_block((void*)a, /*maybe_snapshot*/False);
+   }
+   unrecord_block((void*)a, /*maybe_snapshot*/True);
+}
+
+//------------------------------------------------------------//
+
+static
+void ms_new_mem_mmap ( Addr a, SizeT len,
+                       Bool rr, Bool ww, Bool xx, ULong di_handle )
+{
+   tl_assert(VG_IS_PAGE_ALIGNED(len));
+   ms_record_page_mem(a, len);
+}
+
+static
+void ms_new_mem_startup( Addr a, SizeT len,
+                         Bool rr, Bool ww, Bool xx, ULong di_handle )
+{
+   // startup maps are always be page-sized, except the trampoline page is
+   // marked by the core as only being the size of the trampoline itself,
+   // which is something like 57 bytes.  Round it up to page size.
+   len = VG_PGROUNDUP(len);
+   ms_record_page_mem(a, len);
+}
+
+static
+void ms_new_mem_brk ( Addr a, SizeT len, ThreadId tid )
+{
+   tl_assert(VG_IS_PAGE_ALIGNED(len));
+   ms_record_page_mem(a, len);
+}
+
+static
+void ms_copy_mem_remap( Addr from, Addr to, SizeT len)
+{
+   tl_assert(VG_IS_PAGE_ALIGNED(len));
+   ms_unrecord_page_mem(from, len);
+   ms_record_page_mem(to, len);
+}
+
+static
+void ms_die_mem_munmap( Addr a, SizeT len )
+{
+   tl_assert(VG_IS_PAGE_ALIGNED(len));
+   ms_unrecord_page_mem(a, len);
+}
+
+static
+void ms_die_mem_brk( Addr a, SizeT len )
+{
+   tl_assert(VG_IS_PAGE_ALIGNED(len));
+   ms_unrecord_page_mem(a, len);
+}
 
 //------------------------------------------------------------//
 //--- Stacks                                               ---//
@@ -1862,17 +1976,16 @@ static Bool ms_handle_client_request ( ThreadId tid, UWord* argv, UWord* ret )
 {
    switch (argv[0]) {
    case VG_USERREQ__MALLOCLIKE_BLOCK: {
-      void* res;
       void* p   = (void*)argv[1];
       SizeT szB =        argv[2];
-      res = new_block( tid, p, szB, /*alignB--ignored*/0, /*is_zeroed*/False );
-      tl_assert(res == p);
+      record_block( tid, p, szB, /*slop_szB*/0, /*exclude_first_entry*/False,
+                    /*maybe_snapshot*/True );
       *ret = 0;
       return True;
    }
    case VG_USERREQ__FREELIKE_BLOCK: {
       void* p = (void*)argv[1];
-      die_block( p, /*custom_free*/True );
+      unrecord_block(p, /*maybe_snapshot*/True);
       *ret = 0;
       return True;
    }
@@ -2019,8 +2132,15 @@ static void pp_snapshot_SXPt(Int fd, SXPt* sxpt, Int depth, Char* depth_str,
     case SigSXPt:
       // Print the SXPt itself.
       if (0 == depth) {
-         ip_desc =
-            "(heap allocation functions) malloc/new/new[], --alloc-fns, etc.";
+         if (clo_heap) {
+            ip_desc = 
+               ( clo_pages_as_heap
+               ? "(page allocation syscalls) mmap/mremap/brk, --alloc-fns, etc."
+               : "(heap allocation functions) malloc/new/new[], --alloc-fns, etc."
+               );
+         } else {
+            // XXX: --alloc-fns?
+         }
       } else {
          // If it's main-or-below-main, we (if appropriate) ignore everything
          // below it by pretending it has no children.
@@ -2261,17 +2381,56 @@ static void ms_fini(Int exit_status)
 static void ms_post_clo_init(void)
 {
    Int i;
+   Char* LD_PRELOAD_val;
+   Char* s;
+   Char* s2;
 
    // Check options.
    if (clo_threshold < 0 || clo_threshold > 100) {
       VG_(umsg)("--threshold must be between 0.0 and 100.0\n");
       VG_(err_bad_option)("--threshold");
    }
-
-   // If we have --heap=no, set --heap-admin to zero, just to make sure we
-   // don't accidentally use a non-zero heap-admin size somewhere.
+   if (clo_pages_as_heap) {
+      if (clo_stacks) {
+         VG_(umsg)("--pages-as-heap=yes cannot be used with --stacks=yes\n");
+         VG_(err_bad_option)("--pages-as-heap=yes with --stacks=yes");
+      }
+   }
    if (!clo_heap) {
-      clo_heap_admin = 0;
+      clo_pages_as_heap = False;
+   }
+
+   // If --pages-as-heap=yes we don't want malloc replacement to occur.  So we
+   // disable vgpreload_massif-$PLATFORM.so by removing it from LD_PRELOAD (or
+   // platform-equivalent).  We replace it entirely with spaces because then
+   // the linker doesn't complain (it does complain if we just change the name
+   // to a bogus file).  This is a bit of a hack, but LD_PRELOAD is setup well
+   // before tool initialisation, so this seems the best way to do it.
+   if (clo_pages_as_heap) {
+      clo_heap_admin = 0;     // No heap admin on pages.
+
+      LD_PRELOAD_val = VG_(getenv)( (Char*)VG_(LD_PRELOAD_var_name) );
+      tl_assert(LD_PRELOAD_val);
+
+      // Make sure the vgpreload_core-$PLATFORM entry is there, for sanity.
+      s2 = VG_(strstr)(LD_PRELOAD_val, "vgpreload_core");
+      tl_assert(s2);
+
+      // Now find the vgpreload_massif-$PLATFORM entry.
+      s2 = VG_(strstr)(LD_PRELOAD_val, "vgpreload_massif");
+      tl_assert(s2);
+
+      // Blank out everything to the previous ':', which must be there because
+      // of the preceding vgpreload_core-$PLATFORM entry.
+      for (s = s2; *s != ':'; s--) {
+         *s = ' ';
+      }
+
+      // Blank out everything to the end of the entry, which will be '\0' if
+      // LD_PRELOAD was empty before Valgrind started, or ':' otherwise.
+      for (s = s2; *s != ':' && *s != '\0'; s++) {
+         *s = ' ';
+      }
    }
 
    // Print alloc-fns and ignore-fns, if necessary.
@@ -2298,6 +2457,17 @@ static void ms_post_clo_init(void)
       VG_(track_die_mem_stack)        ( die_mem_stack        );
       VG_(track_new_mem_stack_signal) ( new_mem_stack_signal );
       VG_(track_die_mem_stack_signal) ( die_mem_stack_signal );
+   }
+
+   if (clo_pages_as_heap) {
+      VG_(track_new_mem_startup) ( ms_new_mem_startup );
+      VG_(track_new_mem_brk)     ( ms_new_mem_brk     );
+      VG_(track_new_mem_mmap)    ( ms_new_mem_mmap    );
+
+      VG_(track_copy_mem_remap)  ( ms_copy_mem_remap  );
+
+      VG_(track_die_mem_brk)     ( ms_die_mem_brk     );
+      VG_(track_die_mem_munmap)  ( ms_die_mem_munmap  ); 
    }
 
    // Initialise snapshot array, and sanity-check it.

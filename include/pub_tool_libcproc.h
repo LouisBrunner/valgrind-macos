@@ -44,6 +44,10 @@ extern Char* VG_(getenv) ( Char* name );
 /* Path to all our library/aux files */
 extern const Char *VG_(libdir);
 
+// The name of the LD_PRELOAD-equivalent variable.  It varies across
+// platforms.
+extern const Char* VG_(LD_PRELOAD_var_name);
+
 /* ---------------------------------------------------------------------
    Important syscalls
    ------------------------------------------------------------------ */

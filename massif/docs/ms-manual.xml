@@ -545,11 +545,11 @@ file, which will almost certainly make it unreadable by ms_print.</para>
 
 
 <sect2 id="ms-manual.not-measured"
-       xreflabel="Memory Allocations Not Measured by Massif">
-<title>Memory Allocations Not Measured by Massif</title>
+       xreflabel="Measuring All Memory in a Process">
+<title>Measuring All Memory in a Process</title>
 <para>
-It is worth emphasising that Massif measures only heap memory, i.e. memory
-allocated with
+It is worth emphasising that by default Massif measures only heap memory, i.e.
+memory allocated with
 <function>malloc</function>,
 <function>calloc</function>,
 <function>realloc</function>,
@@ -576,11 +576,47 @@ not the lower-level system calls.
 
 <para>
 Furthermore, a client program may use these lower-level system calls
-directly to allocate memory.  Massif does not measure these.  Nor does it
-measure the size of code, data and BSS segments.  Therefore, the numbers
-reported by Massif may be significantly smaller than those reported by tools
-such as <filename>top</filename> that measure a program's total size in
+directly to allocate memory.  By default, Massif does not measure these.  Nor
+does it measure the size of code, data and BSS segments.  Therefore, the
+numbers reported by Massif may be significantly smaller than those reported by
+tools such as <filename>top</filename> that measure a program's total size in
 memory.
+</para>
+
+<para>
+However, if you wish to measure <emphasis>all</emphasis> the memory used by
+your program, you can use the <option>--pages-as-heap=yes</option>.  When this
+option is enabled, Massif's normal heap block profiling is replaced by
+lower-level page profiling.  Every page allocated via
+<function>mmap</function> and similar system calls is treated as a distinct
+block.  This means that code, data and BSS segments are all measured, as they
+are just memory pages.  Even the stack is measured, since it is ultimately
+allocated (and extended when necessary) via <function>mmap</function>;  for
+this reason <option>--stacks=yes</option> is not allowed in conjunction with
+<option>--pages-as-heap=yes</option>.
+</para>
+
+<para>
+After <option>--pages-as-heap=yes</option> is used, ms_print's output is
+mostly unchanged.  One difference is that the start of each detailed snapshot
+says:
+</para>
+
+<screen><![CDATA[
+(page allocation syscalls) mmap/mremap/brk, --alloc-fns, etc.
+]]></screen>
+
+<para>instead of the usual</para>:
+
+<screen><![CDATA[
+(heap allocation functions) malloc/new/new[], --alloc-fns, etc.
+]]></screen>
+
+<para>
+The stack traces in the output may be more difficult to read, and interpreting
+them may require some detailed understanding of the lower levels of a program
+like the memory allocators.  But for some programs having the full information
+about memory usage can be very useful.
 </para>
 
 </sect2>

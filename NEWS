@@ -6,7 +6,7 @@ Improvements:
 - XXX: Mac OS 10.6 support (32 and 64 bit)
 - XXX: Much faster startup on Mac OS 10.5 for 64-bit programs.
 
-- --smc-check=all is much faster
+- Valgrind runs much faster when the --smc-check=all option is given.
 
 - Cachegrind has a new processing script, cg_diff, which finds the
   difference between two profiles.  It's very useful for evaluating the
@@ -15,6 +15,15 @@ Improvements:
   Related to this change, the meaning of cg_annotate's (rarely-used)
   --threshold option has changed; this is unlikely to affect many people, if
   you do use it please see the user manual for details.
+
+- Massif has a new option, --pages-as-heap, which is disabled by default.
+  When enabled, instead of tracking allocations at the level of heap blocks
+  (as allocated with malloc/new/new[]), it instead tracks memory allocations
+  at the level of memory pages (as mapped by mmap, brk, etc).  Each mapped
+  page is treated as its own block.  Interpreting the page-level output is
+  harder than the heap-level output, but this option is useful if you want
+  to account for every byte of memory used by a program.
+
 
 
 Release 3.5.0 (19 August 2009)

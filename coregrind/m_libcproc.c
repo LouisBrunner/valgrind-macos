@@ -64,6 +64,15 @@ Char** VG_(client_envp) = NULL;
 /* Path to library directory */
 const Char *VG_(libdir) = VG_LIBDIR;
 
+const Char *VG_(LD_PRELOAD_var_name) =
+#if defined(VGO_linux) || defined(VGO_aix5)
+   "LD_PRELOAD";
+#elif defined(VGO_darwin)
+   "DYLD_INSERT_LIBRARIES";
+#else
+#  error Unknown OS
+#endif
+
 /* We do getenv without libc's help by snooping around in
    VG_(client_envp) as determined at startup time. */
 Char *VG_(getenv)(Char *varname)

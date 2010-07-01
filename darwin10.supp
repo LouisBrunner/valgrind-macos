@@ -1,2 +1,22 @@
 
 # Suppressions for Darwin 10.x / Mac OS X 10.6 Snow Leopard
+
+##----------------------------------------------------------------------##
+# Memcheck
+##----------------------------------------------------------------------##
+
+# From Jesse Ruderman.
+{
+   Mac OS X 10.6.4. rdar://8145289. "new[]" paired with "delete" in the DesktopServicesPriv framework.
+   Memcheck:Free
+   fun:_ZdlPv
+   fun:_ZN5TChar18RemovePtrReferenceEv
+ }
+
+# From Jesse Ruderman.
+{
+   Mac OS X 10.6.4. rdar://8145318. Uninitialized memory from HIMenuBarView::MeasureAppMenus is used in HIMenuBarView::SetAdjustTextTitleBoundsAtIndex.
+   Memcheck:Cond
+   fun:_ZN13HIMenuBarView31SetAdjustTextTitleBoundsAtIndexEih
+   fun:_ZN13HIMenuBarView15MeasureAppMenusEv
+ }

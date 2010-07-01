@@ -1,6 +1,19 @@
 #! @PERL@
 
-# This script handles linking the tool executables on MacOSX.
+# This script handles linking the tool executables on Linux,
+# statically and at an alternative load address.
+#
+# Linking statically sidesteps all sorts of complications to do with
+# having two copies of the dynamic linker (valgrind's and the
+# client's) coexisting in the same process.  The alternative load
+# address is needed because Valgrind itself will load the client at
+# whatever address it specifies, which is almost invariably the
+# default load address.  Hence we can't allow Valgrind itself (viz,
+# the tool executable) to be loaded at that address.
+#
+# Unfortunately there's no standard way to do 'static link at
+# alternative address', so these link_tool_exe_*.in scripts handle
+# the per-platform hoop-jumping.
 #
 # What we get passed here is:
 #   first arg
@@ -9,10 +22,77 @@
 #      the gcc invokation to do the final link, that
 #      the build system would have done, left to itself
 #
-# Just ignore argv[1] and run the command specified by argv[2..] unchanged.
+# We just let the script 'die' if something is wrong, rather than do
+# proper error reporting.  We don't expect the users to run this 
+# directly.  It is only run as part of the build process, with 
+# carefully constrained inputs.
+#
+#
+# So: what we actually do is:
+#
+# Look at the specified gcc invokation.  Ignore all parts of it except
+# the *.a, *.o and -o outfile parts.  Wrap them up in a new command
+# which looks (eg) as follows:
+#
+#   (64-bit):
+#
+#   /usr/bin/ld -static -arch x86_64 -macosx_version_min 10.5 \
+#      -o memcheck-amd64-darwin -u __start -e __start \
+#      -image_base 0x138000000 -stack_addr 0x13c000000 \
+#      -stack_size 0x800000 \
+#      memcheck_amd*.o \
+#      ../coregrind/libcoregrind-amd64-darwin.a \
+#      ../VEX/libvex-amd64-darwin.a
+#
+#   (32-bit)
+#
+#   /usr/bin/ld -static -arch i386 -macosx_version_min 10.5 \
+#      -o memcheck-x86-darwin -u __start -e __start \
+#      -image_base 0x38000000 -stack_addr 0x3c000000 \
+#      -stack_size 0x800000 \
+#      memcheck_x86*.o \
+#      ../coregrind/libcoregrind-x86-darwin.a \
+#      ../VEX/libvex-x86-darwin.a
+#
+# The addresses shown above will actually work, although "for real" we
+# of course need to take it from argv[1].  In these examples the stack
+# is placed 64M after the executable start.  It is probably safer to
+# place it 64M before the executable's start point, so the executable
+# + data + bss can grow arbitrarily in future without colliding with
+# the stack.
+#
+# There's one more twist: we need to know the word size of the
+# executable for which we are linking.  We need to know this because
+# we must tell the linker that, by handing it either "-arch x86_64" or
+# "-arch i386".  Fortunately we can figure this out by scanning the
+# gcc invokation, which itself must contain either "-arch x86_64" or
+# "-arch i386".
 
 use warnings;
 use strict;
+# we need to be able to do 64-bit arithmetic:
+use Math::BigInt;
+
+
+# User configurable constants: how far before the exe should we
+# place the stack?
+my $TX_STACK_OFFSET_BEFORE_TEXT = 64 * 1024 * 1024;
+
+# and how big should the stack be?
+my $TX_STACK_SIZE = 8 * 1024 * 1024;
+
+
+# string -> bool
+sub is_dota_or_doto($)
+{
+   my ($str) = @_;
+   if ($str =~ /.\.a$/ || $str =~ /.\.o$/) {
+      return 1;
+   } else {
+      return 0;
+   }
+}
+
 
 # expect at least: alt-load-address gcc -o foo bar.o
 die "Not enough arguments"
@@ -21,22 +101,63 @@ die "Not enough arguments"
 my $ala = $ARGV[0];
 
 # check for plausible-ish alt load address
-die "Bogus alt-load address"
+die "Bogus alt-load address (1)"
     if (length($ala) < 3 || index($ala, "0x") != 0);
 
-# The cc invokation to do the final link
-my $cc = $ARGV[1];
+die "Bogus alt-load address (2)"
+    if ($ala !~ /^0x[0-9a-fA-F]+$/);
 
-# and the 'restargs' are argv[2 ..]
 
-# so, build up the complete command here:
-# 'cc' 'restargs'
+# get hold of the outfile name (following "-o")
+my $outname = "";
 
-my $cmd="$cc";
+foreach my $n (2 .. $#ARGV - 1) {
+    my $str = $ARGV[$n];
+    if ($str eq "-o" && $outname eq "") {
+        $outname = $ARGV[$n + 1];
+    }
+}
 
-# Add the rest of the parameters
+die "Can't find '-o outfilename' in command line"
+    if ($outname eq "");
+
+
+# get hold of the string following "-arch"
+my $archstr = "";
+
+foreach my $n (2 .. $#ARGV - 1) {
+    my $str = $ARGV[$n];
+    if ($str eq "-arch" && $archstr eq "") {
+        $archstr = $ARGV[$n + 1];
+    }
+}
+
+die "Can't find '-arch archstr' in command line"
+    if ($archstr eq "");
+
+
+# build the command line
+my $cmd = "/usr/bin/ld";
+
+$cmd = "$cmd -static";
+$cmd = "$cmd -arch $archstr";
+$cmd = "$cmd -macosx_version_min 10.5";
+$cmd = "$cmd -o $outname";
+$cmd = "$cmd -u __start -e __start";
+
+my $stack_addr = Math::BigInt->new( $ala ) - $TX_STACK_OFFSET_BEFORE_TEXT;
+my $stack_addr_str = $stack_addr->as_hex();
+my $stack_size_str = Math::BigInt::as_hex($TX_STACK_SIZE);
+
+$cmd = "$cmd -image_base $ala";
+$cmd = "$cmd -stack_addr $stack_addr_str";
+$cmd = "$cmd -stack_size $stack_size_str";
+
 foreach my $n (2 .. $#ARGV) {
-   $cmd = "$cmd $ARGV[$n]";
+    my $str = $ARGV[$n];
+    if (is_dota_or_doto($str)) {
+        $cmd = "$cmd $str";
+    }
 }
 
 #print "link_tool_exe_darwin: $cmd\n";

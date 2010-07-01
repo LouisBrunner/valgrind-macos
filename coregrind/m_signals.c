@@ -516,10 +516,9 @@ typedef struct SigQueue {
                                                     UWord scclass ) {
       I_die_here;
    }
-   static inline Addr VG_UCONTEXT_LINK_REG( void* ucV ) {
-      return 0; /* No, really.  We have no LRs today. */
-   }
-   static inline Addr VG_UCONTEXT_FRAME_PTR( void* ucV ) {
+   static inline
+   void VG_UCONTEXT_TO_UnwindStartRegs( UnwindStartRegs* srP,
+                                        void* ucV ) {
       I_die_here;
    }
 
@@ -2546,7 +2545,7 @@ void VG_(sigstartup_actions) ( void )
       /* Get the old host action */
       ret = VG_(sigaction)(i, NULL, &sa);
 
-#     if defined(VGP_x86_darwin)
+#     if defined(VGP_x86_darwin) || defined(VGP_amd64_darwin)
       /* apparently we may not even ask about the disposition of these
          signals, let alone change them */
       if (ret != 0 && (i == VKI_SIGKILL || i == VKI_SIGSTOP))

@@ -378,6 +378,22 @@ void wqthread_hijack(Addr self, Addr kport, Addr stackaddr, Addr workitem,
    VexGuestAMD64State *vex;
    Addr stack;
    SizeT stacksize;
+   vki_sigset_t blockall;
+
+   /* When we enter here we hold no lock (!), so we better acquire it
+      pronto.  Why do we hold no lock?  Because (presumably) the only
+      way to get here is as a result of a SfMayBlock syscall
+      "workq_ops(WQOPS_THREAD_RETURN)", which will have dropped the
+      lock.  At least that's clear for the 'reuse' case.  The
+      non-reuse case?  Dunno, perhaps it's a new thread the kernel
+      pulled out of a hat.  In any case we still need to take a
+      lock. */
+   VG_(acquire_BigLock_LL)("wqthread_hijack");
+
+   /* Start the thread with all signals blocked.  VG_(scheduler) will
+      set the mask correctly when we finally get there. */
+   VG_(sigfillset)(&blockall);
+   VG_(sigprocmask)(VKI_SIG_SETMASK, &blockall, NULL);
 
    if (reuse) {
        // This thread already exists; we're merely re-entering 
@@ -418,6 +434,15 @@ void wqthread_hijack(Addr self, Addr kport, Addr stackaddr, Addr workitem,
    if (reuse) {
       // Continue V's thread back in the scheduler. 
       // The client thread is of course in another location entirely.
+
+      /* Drop the lock before going into
+         ML_(wqthread_continue_NORETURN).  The latter will immediately
+         attempt to reacquire it in non-LL mode, which is a bit
+         wasteful but I don't think is harmful.  A better solution
+         would be to not drop the lock but instead "upgrade" it from a
+         LL lock to a full lock, but that's too much like hard work
+         right now. */
+      VG_(release_BigLock_LL)("wqthread_hijack(1)");
       ML_(wqthread_continue_NORETURN)(tst->tid);
    } 
    else {
@@ -450,6 +475,16 @@ void wqthread_hijack(Addr self, Addr kport, Addr stackaddr, Addr workitem,
       VG_(am_do_sync_check)("after", "wqthread_hijack", 0);
 
       // Go!
+      /* Same comments as the 'release' in the then-clause.
+         start_thread_NORETURN calls run_thread_NORETURN calls
+         thread_wrapper which acquires the lock before continuing.
+         Let's hope nothing non-thread-local happens until that point.
+
+         DDD: I think this is plain wrong .. if we get to
+         thread_wrapper not holding the lock, and someone has recycled
+         this thread slot in the meantime, we're hosed.  Is that
+         possible, though? */
+      VG_(release_BigLock_LL)("wqthread_hijack(2)");
       call_on_new_stack_0_1(tst->os_state.valgrind_stack_init_SP, 0, 
                             start_thread_NORETURN, (Word)tst);
    }

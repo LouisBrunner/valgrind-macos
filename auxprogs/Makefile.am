@@ -29,4 +29,6 @@ valgrind_listener_CPPFLAGS  = $(AM_CPPFLAGS_PRI) -I$(top_srcdir)/coregrind
 valgrind_listener_CFLAGS    = $(AM_CFLAGS_PRI)
 valgrind_listener_CCASFLAGS = $(AM_CCASFLAGS_PRI)
 valgrind_listener_LDFLAGS   = $(AM_CFLAGS_PRI)
-
+if VGCONF_PLATFORMS_INCLUDE_X86_DARWIN
+valgrind_listener_LDFLAGS   += -Wl,-read_only_relocs -Wl,suppress
+endif

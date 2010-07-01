@@ -1523,51 +1523,9 @@ Int valgrind_main ( Int argc, HChar **argv, HChar **envp )
 #  endif
 
    //--------------------------------------------------------------
-   // Darwin only: munmap address-space-filling segments
-   // (oversized pagezero or stack)
-   //   p: none
-   //--------------------------------------------------------------
-   // DDD:  comments from Greg Parker why these address-space-filling segments
-   // are necessary:
-   //
-   //   The memory maps are there to make sure that Valgrind's copies of libc
-   //   and dyld load in a non-default location, so that the inferior's own
-   //   libc and dyld do load in the default locations. (The kernel performs
-   //   the work of loading several things as described by the executable's
-   //   load commands, including the executable itself, dyld, the main
-   //   thread's stack, and the page-zero segment.) There might be a way to
-   //   fine-tune it so the maps are smaller but still do the job.
-   //
-   //   The post-launch mmap behavior can be cleaned up - looks like we don't
-   //   unmap as much as we should - which would improve post-launch
-   //   performance.
-   //
-   //   Hmm, there might be an extra-clever way to give Valgrind a custom
-   //   MH_DYLINKER that performs the "bootloader" work of loading dyld in an
-   //   acceptable place and then unloading itself. Then no mmaps would be
-   //   needed. I'll have to think about that one.
-   //
-   // [I can't work out where the address-space-filling segments are
-   // created in the first place. --njn]
-   //
-#if defined(VGO_darwin)
-# if VG_WORDSIZE == 4
-   VG_(do_syscall2)(__NR_munmap, 0x00000000, 0xf0000000);
-# else
-   // open up client space
-   VG_(do_syscall2)(__NR_munmap, 0x100000000, 0x700000000000-0x100000000);
-   // open up client stack and dyld
-   VG_(do_syscall2)(__NR_munmap, 0x7fff5c000000, 0x4000000);
-# endif
-#endif
-
-   //--------------------------------------------------------------
    // Ensure we're on a plausible stack.
    //   p: logging
    //--------------------------------------------------------------
-#if defined(VGO_darwin)
-   // Darwin doesn't use the interim stack.
-#else
    VG_(debugLog)(1, "main", "Checking current stack is plausible\n");
    { HChar* limLo  = (HChar*)(&VG_(interim_stack).bytes[0]);
      HChar* limHi  = limLo + sizeof(VG_(interim_stack));
@@ -1595,12 +1553,11 @@ Int valgrind_main ( Int argc, HChar **argv, HChar **envp )
       VG_(debugLog)(0, "main", "   Cannot continue.  Sorry.\n");
       VG_(exit)(1);
    }
-#endif
 
    //--------------------------------------------------------------
    // Start up the address space manager, and determine the
    // approximate location of the client's stack
-   //   p: logging, plausible-stack, darwin-munmap
+   //   p: logging, plausible-stack
    //--------------------------------------------------------------
    VG_(debugLog)(1, "main", "Starting the address space manager\n");
    vg_assert(VKI_PAGE_SIZE     == 4096 || VKI_PAGE_SIZE     == 65536);
@@ -3017,6 +2974,68 @@ void max_pw_passlen       ( void ) { vg_assert(0); }
 
 #elif defined(VGO_darwin)
 
+/*
+   Memory layout established by kernel:
+
+   0(%esp)   argc
+   4(%esp)   argv[0]
+             ...
+             argv[argc-1]
+             NULL
+             envp[0]
+             ...
+             envp[n]
+             NULL
+             executable name (presumably, a pointer to it)
+             NULL
+
+   Ditto in the 64-bit case, except all offsets from SP are obviously
+   twice as large.
+*/
+
+/* The kernel hands control to _start, which extracts the initial
+   stack pointer and calls onwards to _start_in_C_darwin.  This also
+   switches to the new stack.  */
+#if defined(VGP_x86_darwin)
+asm("\n"
+    ".text\n"
+    ".align 2,0x90\n"
+    "\t.globl __start\n"
+    "__start:\n"
+    /* set up the new stack in %eax */
+    "\tmovl  $_vgPlain_interim_stack, %eax\n"
+    "\taddl  $"VG_STRINGIFY(VG_STACK_GUARD_SZB)", %eax\n"
+    "\taddl  $"VG_STRINGIFY(VG_STACK_ACTIVE_SZB)", %eax\n"
+    "\tsubl  $16, %eax\n"
+    "\tandl  $~15, %eax\n"
+    /* install it, and collect the original one */
+    "\txchgl %eax, %esp\n"
+    /* call _start_in_C_darwin, passing it the startup %esp */
+    "\tpushl %eax\n"
+    "\tcall  __start_in_C_darwin\n"
+    "\tint $3\n"
+    "\tint $3\n"
+);
+#elif defined(VGP_amd64_darwin)
+asm("\n"
+    ".text\n"
+    "\t.globl __start\n"
+    ".align 3,0x90\n"
+    "__start:\n"
+    /* set up the new stack in %rdi */
+    "\tmovabsq $_vgPlain_interim_stack, %rdi\n"
+    "\taddq    $"VG_STRINGIFY(VG_STACK_GUARD_SZB)", %rdi\n"
+    "\taddq    $"VG_STRINGIFY(VG_STACK_ACTIVE_SZB)", %rdi\n"
+    "\tandq    $~15, %rdi\n"
+    /* install it, and collect the original one */
+    "\txchgq %rdi, %rsp\n"
+    /* call _start_in_C_darwin, passing it the startup %rsp */
+    "\tcall  __start_in_C_darwin\n"
+    "\tint $3\n"
+    "\tint $3\n"
+);
+#endif
+
 void* __memcpy_chk(void *dest, const void *src, SizeT n, SizeT n2);
 void* __memcpy_chk(void *dest, const void *src, SizeT n, SizeT n2) {
     // skip check
@@ -3041,15 +3060,13 @@ void* memset(void *s, int c, SizeT n) {
   return VG_(memset)(s,c,n);
 }
 
-/* _start in m_start-<arch>-darwin.S calls _start_in_C_darwin(). */
-
 /* Avoid compiler warnings: this fn _is_ used, but labelling it
    'static' causes gcc to complain it isn't. */
 void _start_in_C_darwin ( UWord* pArgc );
 void _start_in_C_darwin ( UWord* pArgc )
 {
    Int     r;
-   Int    argc = *(Int *)pArgc;  // not pArgc[0] on LP64
+   Int     argc = *(Int *)pArgc;  // not pArgc[0] on LP64
    HChar** argv = (HChar**)&pArgc[1];
    HChar** envp = (HChar**)&pArgc[1+argc+1];
 
@@ -3067,6 +3084,324 @@ void _start_in_C_darwin ( UWord* pArgc )
 #else
 
 #  error "Unknown OS"
+#endif
+
+
+////////////////////////////////////////////////////////////////
+
+/* For static linking on x86-darwin, we need to supply our own 64-bit
+   integer division code, else the link dies thusly:
+
+   ld_classic: Undefined symbols:
+     ___udivdi3
+     ___umoddi3
+*/
+#if defined(VGP_x86_darwin)
+
+/* Routines for doing signed/unsigned 64 x 64 ==> 64 div and mod
+   (udivdi3, umoddi3, divdi3, moddi3) using only 32 x 32 ==> 32
+   division.  Cobbled together from
+
+   http://www.hackersdelight.org/HDcode/divlu.c
+   http://www.hackersdelight.org/HDcode/divls.c
+   http://www.hackersdelight.org/HDcode/newCode/divDouble.c
+
+   The code from those three files is covered by the following license,
+   as it appears at:
+
+   http://www.hackersdelight.org/permissions.htm
+
+      You are free to use, copy, and distribute any of the code on
+      this web site, whether modified by you or not. You need not give
+      attribution. This includes the algorithms (some of which appear
+      in Hacker's Delight), the Hacker's Assistant, and any code
+      submitted by readers. Submitters implicitly agree to this.
+*/
+
+/* Long division, unsigned (64/32 ==> 32).
+   This procedure performs unsigned "long division" i.e., division of a
+64-bit unsigned dividend by a 32-bit unsigned divisor, producing a
+32-bit quotient.  In the overflow cases (divide by 0, or quotient
+exceeds 32 bits), it returns a remainder of 0xFFFFFFFF (an impossible
+value).
+   The dividend is u1 and u0, with u1 being the most significant word.
+The divisor is parameter v. The value returned is the quotient.
+   Max line length is 57, to fit in hacker.book. */
+
+static Int nlz32(UInt x) 
+{
+   Int n;
+   if (x == 0) return(32);
+   n = 0;
+   if (x <= 0x0000FFFF) {n = n +16; x = x <<16;}
+   if (x <= 0x00FFFFFF) {n = n + 8; x = x << 8;}
+   if (x <= 0x0FFFFFFF) {n = n + 4; x = x << 4;}
+   if (x <= 0x3FFFFFFF) {n = n + 2; x = x << 2;}
+   if (x <= 0x7FFFFFFF) {n = n + 1;}
+   return n;
+}
+
+/* 64 x 32 ==> 32 unsigned division, using only 32 x 32 ==> 32
+   division as a primitive. */
+static UInt divlu2(UInt u1, UInt u0, UInt v, UInt *r)
+{
+   const UInt b = 65536;     // Number base (16 bits).
+   UInt un1, un0,            // Norm. dividend LSD's.
+        vn1, vn0,            // Norm. divisor digits.
+        q1, q0,              // Quotient digits.
+        un32, un21, un10,    // Dividend digit pairs.
+        rhat;                // A remainder.
+   Int s;                    // Shift amount for norm.
+
+   if (u1 >= v) {            // If overflow, set rem.
+      if (r != NULL)         // to an impossible value,
+         *r = 0xFFFFFFFF;    // and return the largest
+      return 0xFFFFFFFF;}    // possible quotient.
+
+   s = nlz32(v);             // 0 <= s <= 31.
+   v = v << s;               // Normalize divisor.
+   vn1 = v >> 16;            // Break divisor up into
+   vn0 = v & 0xFFFF;         // two 16-bit digits.
+
+   un32 = (u1 << s) | ((u0 >> (32 - s)) & (-s >> 31));
+   un10 = u0 << s;           // Shift dividend left.
+
+   un1 = un10 >> 16;         // Break right half of
+   un0 = un10 & 0xFFFF;      // dividend into two digits.
+
+   q1 = un32/vn1;            // Compute the first
+   rhat = un32 - q1*vn1;     // quotient digit, q1.
+ again1:
+   if (q1 >= b || q1*vn0 > b*rhat + un1) {
+     q1 = q1 - 1;
+     rhat = rhat + vn1;
+     if (rhat < b) goto again1;}
+
+   un21 = un32*b + un1 - q1*v;  // Multiply and subtract.
+
+   q0 = un21/vn1;            // Compute the second
+   rhat = un21 - q0*vn1;     // quotient digit, q0.
+ again2:
+   if (q0 >= b || q0*vn0 > b*rhat + un0) {
+     q0 = q0 - 1;
+     rhat = rhat + vn1;
+     if (rhat < b) goto again2;}
+
+   if (r != NULL)            // If remainder is wanted,
+      *r = (un21*b + un0 - q0*v) >> s;     // return it.
+   return q1*b + q0;
+}
+
+
+/* 64 x 32 ==> 32 signed division, using only 32 x 32 ==> 32 division
+   as a primitive. */
+static Int divls(Int u1, UInt u0, Int v, Int *r)
+{
+   Int q, uneg, vneg, diff, borrow;
+
+   uneg = u1 >> 31;          // -1 if u < 0.
+   if (uneg) {               // Compute the absolute
+      u0 = -u0;              // value of the dividend u.
+      borrow = (u0 != 0);
+      u1 = -u1 - borrow;}
+
+   vneg = v >> 31;           // -1 if v < 0.
+   v = (v ^ vneg) - vneg;    // Absolute value of v.
+
+   if ((UInt)u1 >= (UInt)v) goto overflow;
+
+   q = divlu2(u1, u0, v, (UInt *)r);
+
+   diff = uneg ^ vneg;       // Negate q if signs of
+   q = (q ^ diff) - diff;    // u and v differed.
+   if (uneg && r != NULL)
+      *r = -*r;
+
+   if ((diff ^ q) < 0 && q != 0) {  // If overflow,
+ overflow:                    // set remainder
+      if (r != NULL)         // to an impossible value,
+         *r = 0x80000000;    // and return the largest
+      q = 0x80000000;}       // possible neg. quotient.
+   return q;
+}
+
+
+
+/* This file contains a program for doing 64/64 ==> 64 division, on a
+machine that does not have that instruction but that does have
+instructions for "long division" (64/32 ==> 32). Code for unsigned
+division is given first, followed by a simple program for doing the
+signed version by using the unsigned version.
+   These programs are useful in implementing "long long" (64-bit)
+arithmetic on a machine that has the long division instruction. It will
+work on 64- and 32-bit machines, provided the compiler implements long
+long's (64-bit integers). It is desirable that the machine have the
+Count Leading Zeros instruction.
+   In the GNU world, these programs are known as __divdi3 and __udivdi3,
+and similar names are used here.
+   This material is not in HD, but may be in a future edition.
+Max line length is 57, to fit in hacker.book. */
+
+
+static Int nlz64(ULong x) 
+{
+   Int n;
+   if (x == 0) return(64);
+   n = 0;
+   if (x <= 0x00000000FFFFFFFFULL) {n = n + 32; x = x << 32;}
+   if (x <= 0x0000FFFFFFFFFFFFULL) {n = n + 16; x = x << 16;}
+   if (x <= 0x00FFFFFFFFFFFFFFULL) {n = n +  8; x = x <<  8;}
+   if (x <= 0x0FFFFFFFFFFFFFFFULL) {n = n +  4; x = x <<  4;}
+   if (x <= 0x3FFFFFFFFFFFFFFFULL) {n = n +  2; x = x <<  2;}
+   if (x <= 0x7FFFFFFFFFFFFFFFULL) {n = n +  1;}
+   return n;
+}
+
+// ---------------------------- udivdi3 --------------------------------
+
+   /* The variables u0, u1, etc. take on only 32-bit values, but they
+   are declared long long to avoid some compiler warning messages and to
+   avoid some unnecessary EXTRs that the compiler would put in, to
+   convert long longs to ints.
+
+   First the procedure takes care of the case in which the divisor is a
+   32-bit quantity. There are two subcases: (1) If the left half of the
+   dividend is less than the divisor, one execution of DIVU is all that
+   is required (overflow is not possible). (2) Otherwise it does two
+   divisions, using the grade school method, with variables used as
+   suggested below.
+
+       q1 q0
+    ________
+   v)  u1 u0
+     q1*v
+     ____
+        k u0   */
+
+/* These macros must be used with arguments of the appropriate type
+(unsigned long long for DIVU and long long for DIVS. They are
+simulations of the presumed machines ops. I.e., they look at only the
+low-order 32 bits of the divisor, they return garbage if the division
+overflows, and they return garbage in the high-order half of the
+quotient doubleword.
+   In practice, these would be replaced with uses of the machine's DIVU
+and DIVS instructions (e.g., by using the GNU "asm" facility). */
+
+static UInt DIVU ( ULong u, UInt v )
+{
+  UInt uHi = (UInt)(u >> 32);
+  UInt uLo = (UInt)u;
+  return divlu2(uHi, uLo, v, NULL);
+}
+
+static Int DIVS ( Long u, Int v )
+{
+  Int  uHi = (Int)(u >> 32);
+  UInt uLo = (UInt)u;
+  return divls(uHi, uLo, v, NULL);
+}
+
+/* 64 x 64 ==> 64 unsigned division, using only 32 x 32 ==> 32
+   division as a primitive. */
+static ULong udivdi3(ULong u, ULong v)
+{
+   ULong u0, u1, v1, q0, q1, k, n;
+
+   if (v >> 32 == 0) {          // If v < 2**32:
+      if (u >> 32 < v)          // If u/v cannot overflow,
+         return DIVU(u, v)      // just do one division.
+            & 0xFFFFFFFF;
+      else {                    // If u/v would overflow:
+         u1 = u >> 32;          // Break u up into two
+         u0 = u & 0xFFFFFFFF;   // halves.
+         q1 = DIVU(u1, v)       // First quotient digit.
+            & 0xFFFFFFFF;
+         k = u1 - q1*v;         // First remainder, < v.
+         q0 = DIVU((k << 32) + u0, v) // 2nd quot. digit.
+            & 0xFFFFFFFF;
+         return (q1 << 32) + q0;
+      }
+   }
+                                // Here v >= 2**32.
+   n = nlz64(v);                // 0 <= n <= 31.
+   v1 = (v << n) >> 32;         // Normalize the divisor
+                                // so its MSB is 1.
+   u1 = u >> 1;                 // To ensure no overflow.
+   q1 = DIVU(u1, v1)            // Get quotient from
+       & 0xFFFFFFFF;            // divide unsigned insn.
+   q0 = (q1 << n) >> 31;        // Undo normalization and
+                                // division of u by 2.
+   if (q0 != 0)                 // Make q0 correct or
+      q0 = q0 - 1;              // too small by 1.
+   if ((u - q0*v) >= v)
+      q0 = q0 + 1;              // Now q0 is correct.
+   return q0;
+}
+
+
+// ----------------------------- divdi3 --------------------------------
+
+/* This routine presumes that smallish cases (those which can be done in
+one execution of DIVS) are common. If this is not the case, the test for
+this case should be deleted.
+   Note that the test for when DIVS can be used is not entirely
+accurate. For example, DIVS is not used if v = 0xFFFFFFFF8000000,
+whereas if could be (if u is sufficiently small in magnitude). */
+
+// ------------------------------ cut ----------------------------------
+
+static ULong my_llabs ( Long x )
+{
+   ULong t = x >> 63;
+   return (x ^ t) - t;
+}
+
+/* 64 x 64 ==> 64 signed division, using only 32 x 32 ==> 32 division
+   as a primitive. */
+static Long divdi3(Long u, Long v)
+{
+   ULong au, av;
+   Long q, t;
+   au = my_llabs(u);
+   av = my_llabs(v);
+   if (av >> 31 == 0) {         // If |v| < 2**31 and
+   // if (v << 32 >> 32 == v) { // If v is in range and
+      if (au < av << 31) {      // |u|/|v| cannot
+         q = DIVS(u, v);        // overflow, use DIVS.
+         return (q << 32) >> 32;
+      }
+   }
+   q = udivdi3(au,av);          // Invoke udivdi3.
+   t = (u ^ v) >> 63;           // If u, v have different
+   return (q ^ t) - t;          // signs, negate q.
+}
+
+// ---------------------------- end cut --------------------------------
+
+ULong __udivdi3 (ULong u, ULong v)
+{
+  return udivdi3(u,v);
+}
+
+Long __divdi3 (Long u, Long v)
+{
+  return divdi3(u,v);
+}
+
+ULong __umoddi3 (ULong u, ULong v)
+{
+  ULong q = __udivdi3(u, v);
+  ULong r = u - q * v;
+  return r;
+}
+
+Long __moddi3 (Long u, Long v)
+{
+  Long q = __divdi3(u, v);
+  Long r = u - q * v;
+  return r;
+}
+
 #endif
 
 

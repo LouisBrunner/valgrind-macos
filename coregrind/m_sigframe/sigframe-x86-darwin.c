@@ -79,6 +79,8 @@ struct hacky_sigframe {
    vki_sigset_t     mask; // saved sigmask; restore when hdlr returns
    UInt             __pad[1];
    UChar            upper_guardzone[512]; // put nothing here
+   // and don't zero it, since that might overwrite the client's
+   // stack redzone, at least on archs which have one
 };
 
 
@@ -96,7 +98,7 @@ static Bool extend ( ThreadState *tst, Addr addr, SizeT size )
       amd64-linux version, this doesn't appear to handle the redzone
       in the same way. */
    VG_TRACK( new_mem_stack_signal,
-             addr, size - VG_STACK_REDZONE_SZB, tid );
+             addr - VG_STACK_REDZONE_SZB, size, tid );
    return True;
 }
 
@@ -222,8 +224,8 @@ void VG_(sigframe_destroy)( ThreadId tid, Bool isRT )
                    tid, tst->arch.vex.guest_EIP);
 
    VG_TRACK( die_mem_stack_signal, 
-             (Addr)frame, 
-             sizeof(struct hacky_sigframe) - VG_STACK_REDZONE_SZB );
+             (Addr)frame - VG_STACK_REDZONE_SZB, 
+             sizeof(struct hacky_sigframe) );
 
    /* tell the tools */
    VG_TRACK( post_deliver_signal, tid, sigNo );

@@ -73,11 +73,11 @@ static void print(const char *str)
    VG_(printf)("%s", str);
 }
 
-static void check_mmap(SysRes res, Addr base, SizeT len)
+static void check_mmap(SysRes res, Addr base, SizeT len, HChar* who)
 {
    if (sr_isError(res)) {
-      VG_(printf)("valgrind: mmap(0x%llx, %lld) failed in UME.\n", 
-                  (ULong)base, (Long)len);
+      VG_(printf)("valgrind: mmap(0x%llx, %lld) failed in UME (%s).\n", 
+                  (ULong)base, (Long)len, who);
       VG_(exit)(1);
    }
 }
@@ -173,6 +173,19 @@ load_segment(int fd, vki_off_t offset, vki_off_t size,
 
    // GrP fixme mark __UNIXSTACK as SF_STACK
     
+   // Don't honour the client's request to map PAGEZERO.  Why not?
+   // Because when the kernel loaded the valgrind tool executable,
+   // it will have mapped pagezero itself.  So further attempts
+   // to map it when loading the client are guaranteed to fail.
+#if VG_WORDSIZE == 4
+   if (segcmd->vmaddr == 0 && 0 == VG_(strcmp)(segcmd->segname, SEG_PAGEZERO)) {
+      if (segcmd->vmsize != 0x1000) {
+         print("bad executable (__PAGEZERO is not 4 KB)\n");
+         return -1;
+      }
+      return 0;
+   }
+#endif
 #if VG_WORDSIZE == 8
    if (segcmd->vmaddr == 0 && 0 == VG_(strcmp)(segcmd->segname, SEG_PAGEZERO)) {
       if (segcmd->vmsize != 0x100000000) {
@@ -213,10 +226,11 @@ load_segment(int fd, vki_off_t offset, vki_off_t size,
    vmsize = VG_PGROUNDUP(segcmd->vmsize);
    if (filesize > 0) {
       addr = (Addr)segcmd->vmaddr;
+      VG_(debugLog)(2, "ume", "mmap fixed (file) (%#lx, %lu)\n", addr, filesize);
       res = VG_(am_mmap_named_file_fixed_client)(addr, filesize, prot, fd, 
                                                  offset + segcmd->fileoff, 
                                                  filename);
-      check_mmap(res, addr, filesize);
+      check_mmap(res, addr, filesize, "load_segment1");
    }
 
    // Zero-fill the remainder of the segment, if any
@@ -229,8 +243,9 @@ load_segment(int fd, vki_off_t offset, vki_off_t size,
       // page-aligned part
       SizeT length = vmsize - filesize;
       addr = (Addr)(filesize + segcmd->vmaddr);
+      VG_(debugLog)(2, "ume", "mmap fixed (anon) (%#lx, %lu)\n", addr, length);
       res = VG_(am_mmap_anon_fixed_client)(addr, length, prot);
-      check_mmap(res, addr, length);
+      check_mmap(res, addr, length, "load_segment2");
    }
 
    return 0;
@@ -343,7 +358,7 @@ load_unixthread(vki_uint8_t **out_stack_start, vki_uint8_t **out_stack_end,
       SysRes res;
         
       res = VG_(am_mmap_anon_fixed_client)(stackbase, stacksize, VKI_PROT_READ|VKI_PROT_WRITE|VKI_PROT_EXEC);
-      check_mmap(res, stackbase, stacksize);
+      check_mmap(res, stackbase, stacksize, "load_unixthread1");
       if (out_stack_start) *out_stack_start = (vki_uint8_t *)stackbase;
    } else {
       // custom stack - mapped via __UNIXTHREAD segment

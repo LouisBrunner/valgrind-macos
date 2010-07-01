@@ -12,9 +12,8 @@
 # the tool executable) to be loaded at that address.
 #
 # Unfortunately there's no standard way to do 'static link at
-# alternative address', so this program handles the per-platform
-# hoop-jumping.
-#
+# alternative address', so these link_tool_exe_*.in scripts handle
+# the per-platform hoop-jumping.
 #
 # What we get passed here is:
 #   first arg

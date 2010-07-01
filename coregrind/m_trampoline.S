@@ -924,8 +924,8 @@ VG_(x86_darwin_SUBST_FOR_sigreturn):
         int     $0x80
         ud2
 
-.globl VG_(darwin_REDIR_FOR_strlen)
-VG_(darwin_REDIR_FOR_strlen):
+.globl VG_(x86_darwin_REDIR_FOR_strlen)
+VG_(x86_darwin_REDIR_FOR_strlen):
         movl    4(%esp), %edx
         movl    %edx, %eax
         jmp     1f
@@ -937,8 +937,8 @@ VG_(darwin_REDIR_FOR_strlen):
         subl    %edx, %eax
         ret
 
-.globl VG_(darwin_REDIR_FOR_strcat)
-VG_(darwin_REDIR_FOR_strcat):
+.globl VG_(x86_darwin_REDIR_FOR_strcat)
+VG_(x86_darwin_REDIR_FOR_strcat):
         pushl   %esi
         movl    8(%esp), %esi
         movl    12(%esp), %ecx
@@ -961,8 +961,8 @@ VG_(darwin_REDIR_FOR_strcat):
         ret
 
 
-.globl VG_(darwin_REDIR_FOR_strcmp)
-VG_(darwin_REDIR_FOR_strcmp):
+.globl VG_(x86_darwin_REDIR_FOR_strcmp)
+VG_(x86_darwin_REDIR_FOR_strcmp):
         movl    4(%esp), %edx
         movl    8(%esp), %ecx
         jmp     1f
@@ -982,8 +982,8 @@ VG_(darwin_REDIR_FOR_strcmp):
         ret
 
 
-.globl VG_(darwin_REDIR_FOR_strcpy)
-VG_(darwin_REDIR_FOR_strcpy):
+.globl VG_(x86_darwin_REDIR_FOR_strcpy)
+VG_(x86_darwin_REDIR_FOR_strcpy):
 	pushl	%ebp
 	movl	%esp, %ebp
 	pushl	%esi
@@ -1004,8 +1004,8 @@ VG_(darwin_REDIR_FOR_strcpy):
 	leave
 	ret
 
-.globl VG_(darwin_REDIR_FOR_strlcat)
-VG_(darwin_REDIR_FOR_strlcat):
+.globl VG_(x86_darwin_REDIR_FOR_strlcat)
+VG_(x86_darwin_REDIR_FOR_strlcat):
 	pushl	%ebp
 	movl	%esp, %ebp
 	pushl	%edi
@@ -1034,7 +1034,7 @@ VG_(darwin_REDIR_FOR_strlcat):
 3:
 	movl	12(%ebp), %eax
 	movl	%eax, (%esp)
-	call	VG_(darwin_REDIR_FOR_strlen)
+	call	VG_(x86_darwin_REDIR_FOR_strlen)
 	jmp	7f
 4:
 	cmpl	$1, %esi
@@ -1076,8 +1076,16 @@ VG_(trampoline_stuff_end):
 .globl VG_(trampoline_stuff_start)
 VG_(trampoline_stuff_start):
 
-.globl VG_(darwin_REDIR_FOR_strlen)
-VG_(darwin_REDIR_FOR_strlen):
+.globl VG_(amd64_darwin_SUBST_FOR_sigreturn)
+VG_(amd64_darwin_SUBST_FOR_sigreturn):
+        /* XXX does this need to have any special form? (cf x86-linux
+	version) */
+        movq    $ __NR_DARWIN_FAKE_SIGRETURN, %rax
+        syscall
+        ud2
+
+.globl VG_(amd64_darwin_REDIR_FOR_strlen)
+VG_(amd64_darwin_REDIR_FOR_strlen):
         movq    %rdi, %rax
         jmp     1f
 0:
@@ -1088,8 +1096,8 @@ VG_(darwin_REDIR_FOR_strlen):
         subq    %rdi, %rax
         ret
 
-.globl VG_(darwin_REDIR_FOR_strcat)
-VG_(darwin_REDIR_FOR_strcat):
+.globl VG_(amd64_darwin_REDIR_FOR_strcat)
+VG_(amd64_darwin_REDIR_FOR_strcat):
 	movq	%rdi, %rdx
 	jmp	1f
 0:
@@ -1108,8 +1116,8 @@ VG_(darwin_REDIR_FOR_strcat):
 	ret
 
 
-.globl VG_(darwin_REDIR_FOR_strcmp)
-VG_(darwin_REDIR_FOR_strcmp):
+.globl VG_(amd64_darwin_REDIR_FOR_strcmp)
+VG_(amd64_darwin_REDIR_FOR_strcmp):
 	jmp	1f
 0:
 	incq	%rdi
@@ -1126,8 +1134,8 @@ VG_(darwin_REDIR_FOR_strcmp):
 	subl	%edx, %eax
 	ret
 
-.globl VG_(darwin_REDIR_FOR_strcpy)
-VG_(darwin_REDIR_FOR_strcpy):
+.globl VG_(amd64_darwin_REDIR_FOR_strcpy)
+VG_(amd64_darwin_REDIR_FOR_strcpy):
 	pushq	%rbp
 	movq	%rdi, %rdx
 	movq	%rsp, %rbp
@@ -1144,8 +1152,8 @@ VG_(darwin_REDIR_FOR_strcpy):
 	movq	%rdi, %rax
 	ret
 	
-.globl VG_(darwin_REDIR_FOR_strlcat)
-VG_(darwin_REDIR_FOR_strlcat):
+.globl VG_(amd64_darwin_REDIR_FOR_strlcat)
+VG_(amd64_darwin_REDIR_FOR_strlcat):
 	pushq	%rbp
 	leaq	(%rdx,%rdi), %rax
 	movq	%rdi, %rcx
@@ -1170,7 +1178,7 @@ VG_(darwin_REDIR_FOR_strlcat):
 	jmp	6f
 3:
 	movq	%rsi, %rdi
-	call	VG_(darwin_REDIR_FOR_strlen)
+	call	VG_(amd64_darwin_REDIR_FOR_strlen)
 	jmp	7f
 4:
 	cmpq	$1, %rdi
@@ -1193,8 +1201,8 @@ VG_(darwin_REDIR_FOR_strlcat):
 	leave
 	ret
 
-.globl VG_(darwin_REDIR_FOR_arc4random)
-VG_(darwin_REDIR_FOR_arc4random):
+.globl VG_(amd64_darwin_REDIR_FOR_arc4random)
+VG_(amd64_darwin_REDIR_FOR_arc4random):
 	/* not very random, hope dyld won't mind */
 	movq	$0x76616c6772696e64, %rax
 	ret

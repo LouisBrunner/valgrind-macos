@@ -792,6 +792,11 @@ typedef
 typedef struct eventreq vki_eventreq;
 
 
+#include <sys/acl.h>
+
+#define vki_kauth_filesec kauth_filesec
+
+
 #include <sys/ptrace.h>
 
 #define VKI_PTRACE_TRACEME   PT_TRACE_ME
@@ -1021,6 +1026,10 @@ struct ByteRangeLockPB2
 #define	VKI_A_GETPINFO_ADDR	A_GETPINFO_ADDR	
 #define	VKI_A_GETKAUDIT	A_GETKAUDIT	
 #define	VKI_A_SETKAUDIT	A_SETKAUDIT	
+#if DARWIN_VERS >= DARWIN_10_6
+#define VKI_A_SENDTRIGGER A_SENDTRIGGER
+#define VKI_A_GETSINFO_ADDR A_GETSINFO_ADDR
+#endif
 
 
 #include <sys/aio.h>

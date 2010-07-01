@@ -54,12 +54,18 @@ valgrind_CPPFLAGS  = $(AM_CPPFLAGS_PRI)
 valgrind_CFLAGS    = $(AM_CFLAGS_PRI)
 valgrind_CCASFLAGS = $(AM_CCASFLAGS_PRI)
 valgrind_LDFLAGS   = $(AM_CFLAGS_PRI)
+if VGCONF_PLATFORMS_INCLUDE_X86_DARWIN
+valgrind_LDFLAGS   += -Wl,-read_only_relocs -Wl,suppress
+endif
 
 no_op_client_for_valgrind_SOURCES = no_op_client_for_valgrind.c
 no_op_client_for_valgrind_CPPFLAGS  = $(AM_CPPFLAGS_PRI)
 no_op_client_for_valgrind_CFLAGS    = $(AM_CFLAGS_PRI)
 no_op_client_for_valgrind_CCASFLAGS = $(AM_CCASFLAGS_PRI)
 no_op_client_for_valgrind_LDFLAGS   = $(AM_CFLAGS_PRI)
+if VGCONF_PLATFORMS_INCLUDE_X86_DARWIN
+no_op_client_for_valgrind_LDFLAGS   += -Wl,-read_only_relocs -Wl,suppress
+endif
 
 #----------------------------------------------------------------------------
 # Darwin Mach stuff
@@ -109,11 +115,13 @@ mach_defs += \
         /usr/include/mach/vm_map.defs
 endif
 
-# Be careful w.r.t. parellel builds.  See section 27.9 of the automake info
+# Be careful w.r.t. parallel builds.  See section 27.9 of the automake info
 # page, "Handling Tools that Produce many Outputs".
-$(mach_user_srcs): $(mach_defs)
+$(abs_builddir)/m_mach: 
+	mkdir -p $@
+$(mach_user_srcs): $(mach_defs) $(abs_builddir)/m_mach
 	(cd m_mach && mig $(mach_defs))
-$(mach_hdrs): $(mach_defs) $(mach_user_srcs)
+$(mach_hdrs): $(mach_defs) $(mach_user_srcs) $(abs_builddir)/m_mach
 	(cd m_mach && mig $(mach_defs))
 
 #----------------------------------------------------------------------------
@@ -306,8 +314,6 @@ COREGRIND_SOURCES_COMMON = \
 	m_sigframe/sigframe-ppc64-aix5.c \
 	m_sigframe/sigframe-x86-darwin.c \
 	m_sigframe/sigframe-amd64-darwin.c \
-	m_start-x86-darwin.S \
-	m_start-amd64-darwin.S \
 	m_syswrap/syscall-x86-linux.S \
 	m_syswrap/syscall-amd64-linux.S \
 	m_syswrap/syscall-ppc32-linux.S \

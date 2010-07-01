@@ -429,7 +429,7 @@ DECL_TEMPLATE(darwin, workq_ops);               // 368
 // 369
 // 370
 // 371
-// 372
+DECL_TEMPLATE(darwin, __thread_selfid);         // 372
 // 373
 // 374
 // 375
@@ -484,6 +484,9 @@ DECL_TEMPLATE(darwin, __mac_syscall);           // 381
 // NYI __mac_mount 424
 // NYI __mac_get_mount 425
 // NYI __mac_getfsstat 426
+DECL_TEMPLATE(darwin, fsgetpath);           // 427
+// NYI audit_session_self 428
+// NYI audit_session_join 429
 
 // Mach message helpers
 DECL_TEMPLATE(darwin, host_info);
@@ -498,9 +501,11 @@ DECL_TEMPLATE(darwin, mach_port_deallocate);
 DECL_TEMPLATE(darwin, mach_port_get_refs);
 DECL_TEMPLATE(darwin, mach_port_mod_refs);
 DECL_TEMPLATE(darwin, mach_port_get_set_status);
+DECL_TEMPLATE(darwin, mach_port_move_member);
 DECL_TEMPLATE(darwin, mach_port_destroy);
 DECL_TEMPLATE(darwin, mach_port_request_notification);
 DECL_TEMPLATE(darwin, mach_port_insert_right);
+DECL_TEMPLATE(darwin, mach_port_extract_right);
 DECL_TEMPLATE(darwin, mach_port_get_attributes);
 DECL_TEMPLATE(darwin, mach_port_set_attributes);
 DECL_TEMPLATE(darwin, mach_port_insert_member);
@@ -537,6 +542,7 @@ DECL_TEMPLATE(darwin, thread_create_running);
 DECL_TEMPLATE(darwin, thread_suspend);
 DECL_TEMPLATE(darwin, thread_get_state);
 DECL_TEMPLATE(darwin, thread_policy);
+DECL_TEMPLATE(darwin, thread_policy_set);
 DECL_TEMPLATE(darwin, thread_info);
 DECL_TEMPLATE(darwin, bootstrap_register);
 DECL_TEMPLATE(darwin, bootstrap_look_up);

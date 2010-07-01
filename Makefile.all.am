@@ -96,7 +96,8 @@ AM_CFLAGS_BASE = \
 # stack traces, since users often see stack traces extending 
 # into (and through) the preloads.
 if VGCONF_OS_IS_DARWIN
-AM_CFLAGS_PIC = -dynamic -O -g -fno-omit-frame-pointer -fno-strict-aliasing -mno-dynamic-no-pic
+AM_CFLAGS_PIC = -dynamic -O -g -fno-omit-frame-pointer -fno-strict-aliasing \
+		-mno-dynamic-no-pic -fpic -fPIC
 else
 AM_CFLAGS_PIC = -fpic -O -g -fno-omit-frame-pointer -fno-strict-aliasing
 endif
@@ -167,8 +168,9 @@ AM_CCASFLAGS_PPC64_AIX5   = $(AM_CPPFLAGS_PPC64_AIX5) \
 
 AM_FLAG_M3264_X86_DARWIN = -arch i386
 AM_CFLAGS_X86_DARWIN     = $(WERROR) -arch i386 $(AM_CFLAGS_BASE) \
-			    -mmacosx-version-min=10.5 -fno-stack-protector \
-			    -mdynamic-no-pic
+				-mmacosx-version-min=10.5 \
+				-fno-stack-protector -fno-pic -fno-PIC
+
 AM_CCASFLAGS_X86_DARWIN  = $(AM_CPPFLAGS_X86_DARWIN) -arch i386 -g
 
 AM_FLAG_M3264_AMD64_DARWIN = -arch x86_64

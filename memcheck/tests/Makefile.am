@@ -23,8 +23,11 @@ endif
 if VGCONF_PLATFORMS_INCLUDE_X86_LINUX
 SUBDIRS += x86-linux
 endif
+if VGCONF_PLATFORMS_INCLUDE_AMD64_LINUX
+SUBDIRS += amd64-linux
+endif
 
-DIST_SUBDIRS = x86 amd64 linux darwin x86-linux .
+DIST_SUBDIRS = x86 amd64 linux darwin x86-linux amd64-linux .
 
 dist_noinst_SCRIPTS = \
 	filter_addressable \

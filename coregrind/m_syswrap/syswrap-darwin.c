@@ -2487,22 +2487,27 @@ POST(getdirentriesattr)
 
    POST_MEM_WRITE(ARG3, p - (char *)ARG3);
 
-   PRINT("got %d records, %ld/%lu bytes\n", count, p-(char *)ARG3, ARG4);
+   PRINT("got %d records, %ld/%lu bytes\n",
+         count, (Addr)p-(Addr)ARG3, ARG4);
 }
 
 
 PRE(fsgetpath)
 {
 #if VG_WORDSIZE == 4
-   PRINT("fsgetpath(%#lx, %ld, %#lx {%lu,%lu}, %llu)", 
-         ARG1, ARG2, ARG3, ((unsigned int *)ARG3)[0], ((unsigned int *)ARG3)[1], LOHI64(ARG4, ARG5));
+   PRINT("fsgetpath(%#lx, %ld, %#lx {%u,%u}, %llu)", 
+         ARG1, ARG2, ARG3,
+         ((unsigned int *)ARG3)[0], ((unsigned int *)ARG3)[1],
+         LOHI64(ARG4, ARG5));
    PRE_REG_READ5(ssize_t, "fsgetpath", 
                  void*,"buf", size_t,"bufsize", 
                  fsid_t *,"fsid",
                  vki_uint32_t, "objid_low32", vki_uint32_t, "objid_high32");
 #else
-   PRINT("fsgetpath(%#lx, %ld, %#lx {%u,%u}, %llu)", 
-         ARG1, ARG2, ARG3, ((unsigned int *)ARG3)[0], ((unsigned int *)ARG3)[1], ARG4);
+   PRINT("fsgetpath(%#lx, %ld, %#lx {%u,%u}, %lu)", 
+         ARG1, ARG2, ARG3,
+         ((unsigned int *)ARG3)[0],
+         ((unsigned int *)ARG3)[1], ARG4);
    PRE_REG_READ4(ssize_t, "fsgetpath", 
                  void*,"buf", size_t,"bufsize", 
                  fsid_t *,"fsid", uint64_t,"objid");
@@ -3616,7 +3621,7 @@ PRE(sigsuspend)
    basis that they don't do anything if the length is zero, so it's OK
    for the buffer pointer to be NULL in that case (meaning they don't
    complain). */
-#if defined(VGP_amd64_darwin)
+#if DARWIN_VERS >= DARWIN_10_6 && defined(VGP_amd64_darwin)
 PRE(proc_info)
 {
    /* int proc_info(int32_t callnum, int32_t pid,
@@ -4059,7 +4064,7 @@ POST(host_page_size)
    Reply *reply = (Reply *)ARG1;
 
    if (!reply->RetCode) {
-      PRINT("page size %u", reply->out_page_size);
+     PRINT("page size %llu", (ULong)reply->out_page_size);
    } else {
       PRINT("mig return %d", reply->RetCode);
    }
@@ -5048,9 +5053,9 @@ PRE(vm_allocate)
 
    Request *req = (Request *)ARG1;
 
-   PRINT("vm_allocate (%s, at %#x, size %d, flags %#x)", 
+   PRINT("vm_allocate (%s, at %#llx, size %lld, flags %#x)", 
          name_for_port(MACH_REMOTE), 
-         req->address, req->size, req->flags);
+         (ULong)req->address, (ULong)req->size, req->flags);
 
    MACH_ARG(vm_allocate.size) = req->size;
    MACH_ARG(vm_allocate.flags) = req->flags;
@@ -5074,7 +5079,7 @@ POST(vm_allocate)
    
    if (!reply->RetCode) {
       if (MACH_REMOTE == vg_task_port) {
-         PRINT("allocated at %#x", reply->address);
+        PRINT("allocated at %#llx", (ULong)reply->address);
          // requesting 0 bytes returns address 0 with no error
          if (MACH_ARG(vm_allocate.size)) {
             ML_(notify_core_and_tool_of_mmap)(
@@ -5082,7 +5087,8 @@ POST(vm_allocate)
                   VKI_PROT_READ|VKI_PROT_WRITE, VKI_MAP_ANON, -1, 0);
          }
       } else {
-         PRINT("allocated at %#x in remote task %s", reply->address, 
+         PRINT("allocated at %#llx in remote task %s",
+               (ULong)reply->address, 
                name_for_port(MACH_REMOTE));
       }
    } else {
@@ -5104,9 +5110,9 @@ PRE(vm_deallocate)
    
    Request *req = (Request *)ARG1;
    
-   PRINT("vm_deallocate(%s, at %#x, size %d)", 
+   PRINT("vm_deallocate(%s, at %#llx, size %lld)", 
          name_for_port(MACH_REMOTE), 
-         req->address, req->size);
+         (ULong)req->address, (ULong)req->size);
    
    MACH_ARG(vm_deallocate.address) = req->address;
    MACH_ARG(vm_deallocate.size) = req->size;
@@ -5162,8 +5168,9 @@ PRE(vm_protect)
    
    Request *req = (Request *)ARG1;
    
-   PRINT("vm_protect(%s, at %#x, size %d, set_max %d, prot %d)", 
-         name_for_port(MACH_REMOTE), req->address, req->size, 
+   PRINT("vm_protect(%s, at %#llx, size %lld, set_max %d, prot %d)", 
+         name_for_port(MACH_REMOTE),
+         (ULong)req->address, (ULong)req->size, 
          req->set_maximum, req->new_protection);
    
    MACH_ARG(vm_protect.address) = req->address;
@@ -5221,9 +5228,9 @@ PRE(vm_inherit)
    
    Request *req = (Request *)ARG1;
    
-   PRINT("vm_inherit(%s, at %#x, size %d, value %d)", 
+   PRINT("vm_inherit(%s, at %#llx, size %lld, value %d)", 
          name_for_port(MACH_REMOTE), 
-         req->address, req->size, 
+         (ULong)req->address, (ULong)req->size, 
          req->new_inheritance);
    
    AFTER = POST_FN(vm_inherit);
@@ -5265,8 +5272,9 @@ PRE(vm_read)
 
    Request *req = (Request *)ARG1;
 
-   PRINT("vm_read(from %s at %#x size %u)", 
-         name_for_port(MACH_REMOTE), req->address, req->size);
+   PRINT("vm_read(from %s at %#llx size %llu)", 
+         name_for_port(MACH_REMOTE),
+         (ULong)req->address, (ULong)req->size);
    
    MACH_ARG(vm_read.addr) = req->address;
    MACH_ARG(vm_read.size) = req->size;
@@ -5357,8 +5365,9 @@ PRE(vm_read_overwrite)
 
    Request *req = (Request *)ARG1;
 
-   PRINT("vm_read_overwrite(from %s at %#x size %u to %#x)", 
-         name_for_port(MACH_REMOTE), req->address, req->size, req->data);
+   PRINT("vm_read_overwrite(from %s at %#llx size %llu to %#llx)", 
+         name_for_port(MACH_REMOTE),
+         (ULong)req->address, (ULong)req->size, (ULong)req->data);
    
    MACH_ARG(vm_read_overwrite.addr) = req->address;
    MACH_ARG(vm_read_overwrite.size) = req->size;
@@ -5412,9 +5421,10 @@ PRE(vm_copy)
    
    Request *req = (Request *)ARG1;
    
-   PRINT("vm_copy(%s, %#x, %d, %#x)", 
+   PRINT("vm_copy(%s, %#llx, %lld, %#llx)", 
          name_for_port(MACH_REMOTE), 
-         req->source_address, req->size, req->dest_address);
+         (ULong)req->source_address,
+         (ULong)req->size, (ULong)req->dest_address);
 
    MACH_ARG(vm_copy.src) = req->source_address;
    MACH_ARG(vm_copy.dst) = req->dest_address;
@@ -5472,9 +5482,9 @@ PRE(vm_map)
    Request *req = (Request *)ARG1;
 
    // GrP fixme check these
-   PRINT("vm_map(in %s, at %#x, size %d, from %s ...)", 
+   PRINT("vm_map(in %s, at %#llx, size %lld, from %s ...)", 
          name_for_port(MACH_REMOTE), 
-         req->address, req->size, 
+         (ULong)req->address, (ULong)req->size, 
          name_for_port(req->object.name));
 
    MACH_ARG(vm_map.size) = req->size;
@@ -5500,7 +5510,7 @@ POST(vm_map)
 
    if (!reply->RetCode) {
       // GrP fixme check src and dest tasks
-      PRINT("mapped at %#x", reply->address);
+     PRINT("mapped at %#llx", (ULong)reply->address);
       // GrP fixme max prot
       ML_(notify_core_and_tool_of_mmap)(
             reply->address, VG_PGROUNDUP(MACH_ARG(vm_map.size)), 
@@ -5540,13 +5550,14 @@ PRE(vm_remap)
       mach_port_name_t source_task = req->src_task.name;
       if (source_task == mach_task_self()) {
          PRINT("vm_remap(mach_task_self(), "
-               "to %#x size %d, from mach_task_self() at %#x, ...)",
-               req->target_address, req->size, req->src_address);
+               "to %#llx size %lld, from mach_task_self() at %#llx, ...)",
+               (ULong)req->target_address,
+               (ULong)req->size, (ULong)req->src_address);
       } else {
-          PRINT("vm_remap(mach_task_self(), "
-                "to %#x size %d, from task %u at %#x, ...)",
-                req->target_address, req->size, 
-                source_task,  req->src_address);
+         PRINT("vm_remap(mach_task_self(), "
+               "to %#llx size %lld, from task %u at %#llx, ...)",
+               (ULong)req->target_address, (ULong)req->size, 
+               source_task, (ULong)req->src_address);
       }
    }
 
@@ -5578,7 +5589,7 @@ POST(vm_remap)
       // GrP fixme check src and dest tasks
       UInt prot = reply->cur_protection & reply->max_protection;
       // GrP fixme max prot
-      PRINT("mapped at %#x", reply->target_address);
+      PRINT("mapped at %#llx", (ULong)reply->target_address);
       ML_(notify_core_and_tool_of_mmap)(
             reply->target_address, VG_PGROUNDUP(MACH_ARG(vm_remap.size)), 
             prot, VKI_MAP_SHARED, -1, 0);
@@ -5650,9 +5661,9 @@ PRE(vm_purgable_control)
 
    Request *req = (Request *)ARG1;
 
-   PRINT("vm_purgable_control(%s, %#x, %d, %d)", 
+   PRINT("vm_purgable_control(%s, %#llx, %d, %d)", 
          name_for_port(MACH_REMOTE), 
-         req->address, req->control, req->state);
+         (ULong)req->address, req->control, req->state);
 
    // GrP fixme verify address?
 
@@ -7200,10 +7211,10 @@ POST(mach_timebase_info)
 PRE(mach_wait_until)
 {
 #if VG_WORDSIZE == 8
-   PRINT("mach_wait_until(%llu)", ARG1);
+   PRINT("mach_wait_until(%lu)", ARG1);
    PRE_REG_READ1(long, "mach_wait_until", 
                  unsigned long long,"deadline");
-#else   
+#else
    PRINT("mach_wait_until(%llu)", LOHI64(ARG1, ARG2));
    PRE_REG_READ2(long, "mach_wait_until", 
                  int,"deadline_hi", int,"deadline_lo");
@@ -7244,7 +7255,7 @@ POST(mk_timer_destroy)
 PRE(mk_timer_arm)
 {
 #if VG_WORDSIZE == 8
-   PRINT("mk_timer_arm(%s, %llu)", name_for_port(ARG1), ARG2);
+   PRINT("mk_timer_arm(%s, %lu)", name_for_port(ARG1), ARG2);
    PRE_REG_READ2(long, "mk_timer_arm", mach_port_t,"name", 
                  unsigned long,"expire_time");
 #else

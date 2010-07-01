@@ -1163,12 +1163,11 @@ Char* VG_(sysnum_string)(Word sysnum, SizeT n_buf, Char* buf)
 {
    Char* classname = NULL;
    switch (VG_DARWIN_SYSNO_CLASS(sysnum)) {
-    case VG_DARWIN_SYSCALL_CLASS_MACH: classname = "mach"; break;
-    case VG_DARWIN_SYSCALL_CLASS_UNIX: classname = "unix"; break;
-    case VG_DARWIN_SYSCALL_CLASS_MDEP: classname = "mdep"; break;
-    case VG_DARWIN_SYSCALL_CLASS_DIAG: classname = "diag"; break;
-    default:
-      VG_(core_panic)("unknown Darwin sysnum class");
+      case VG_DARWIN_SYSCALL_CLASS_MACH: classname = "mach"; break;
+      case VG_DARWIN_SYSCALL_CLASS_UNIX: classname = "unix"; break;
+      case VG_DARWIN_SYSCALL_CLASS_MDEP: classname = "mdep"; break;
+      case VG_DARWIN_SYSCALL_CLASS_DIAG: classname = "diag"; break;
+      default: classname = "UNKNOWN"; break;
    }
    VG_(snprintf)(buf, n_buf, "%s:%3ld",
                              classname, VG_DARWIN_SYSNO_INDEX(sysnum));

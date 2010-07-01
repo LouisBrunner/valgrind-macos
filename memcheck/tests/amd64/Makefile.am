@@ -12,7 +12,6 @@ EXTRA_DIST = \
 	bt_everything.stderr.exp bt_everything.stdout.exp \
 		bt_everything.vgtest \
 	bug132146.vgtest bug132146.stderr.exp bug132146.stdout.exp \
-	defcfaexpr.vgtest defcfaexpr.stderr.exp filter_defcfaexpr \
 	fxsave-amd64.vgtest fxsave-amd64.stdout.exp fxsave-amd64.stderr.exp \
 	int3-amd64.vgtest int3-amd64.stdout.exp int3-amd64.stderr.exp \
 	more_x87_fp.stderr.exp more_x87_fp.stdout.exp more_x87_fp.vgtest \
@@ -28,13 +27,6 @@ check_PROGRAMS = \
 	sse_memory \
 	xor-undef-amd64
 
-# DDD: these should be moved into amd64-linux/.
-if ! VGCONF_OS_IS_DARWIN
-   check_PROGRAMS += \
-	defcfaexpr \
-	int3-amd64
-endif
-
 AM_CFLAGS    += @FLAG_M64@
 AM_CXXFLAGS  += @FLAG_M64@
 AM_CCASFLAGS += @FLAG_M64@
@@ -43,4 +35,3 @@ more_x87_fp_CFLAGS	= $(AM_CFLAGS) -O -ffast-math -mfpmath=387 \
 				-mfancy-math-387
 more_x87_fp_LDADD	= -lm
 
-defcfaexpr_SOURCES	= defcfaexpr.S

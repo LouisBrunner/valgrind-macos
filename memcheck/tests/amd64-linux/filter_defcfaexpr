@@ -23,6 +23,6 @@
 # stack given the unusual CFAs describing it.
 
 
-sed "s/\/.*\/tests\/amd64\/defcfaexpr/bogus.S:0/" | \
+sed "s/\/.*\/tests\/amd64-linux\/defcfaexpr/bogus.S:0/" | \
       sed "s/(in /(/" | \
       ./filter_stderr

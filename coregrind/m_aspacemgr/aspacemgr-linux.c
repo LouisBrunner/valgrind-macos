@@ -3478,8 +3478,8 @@ static void add_mapping_callback(Addr addr, SizeT len, UInt prot,
 #        endif
          if (seg_prot != prot) {
              if (VG_(clo_trace_syscalls)) 
-                 VG_(debugLog)(0,"aspacem","\nregion %p..%p permission "
-                                 "mismatch (kernel %x, V %x)", 
+                 VG_(debugLog)(0,"aspacem","region %p..%p permission "
+                                 "mismatch (kernel %x, V %x)\n", 
                                  (void*)nsegments[i].start,
                                  (void*)(nsegments[i].end+1), prot, seg_prot);
          }

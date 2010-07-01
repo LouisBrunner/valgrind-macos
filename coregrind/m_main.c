@@ -3087,7 +3087,9 @@ void _start_in_C_darwin ( UWord* pArgc )
 #endif
 
 
-////////////////////////////////////////////////////////////////
+/*====================================================================*/
+/*=== {u,}{div,mod}di3 replacements                                ===*/
+/*====================================================================*/
 
 /* For static linking on x86-darwin, we need to supply our own 64-bit
    integer division code, else the link dies thusly:
@@ -3378,16 +3380,19 @@ static Long divdi3(Long u, Long v)
 
 // ---------------------------- end cut --------------------------------
 
+ULong __udivdi3 (ULong u, ULong v);
 ULong __udivdi3 (ULong u, ULong v)
 {
   return udivdi3(u,v);
 }
 
+Long __divdi3 (Long u, Long v);
 Long __divdi3 (Long u, Long v)
 {
   return divdi3(u,v);
 }
 
+ULong __umoddi3 (ULong u, ULong v);
 ULong __umoddi3 (ULong u, ULong v)
 {
   ULong q = __udivdi3(u, v);
@@ -3395,6 +3400,7 @@ ULong __umoddi3 (ULong u, ULong v)
   return r;
 }
 
+Long __moddi3 (Long u, Long v);
 Long __moddi3 (Long u, Long v)
 {
   Long q = __divdi3(u, v);

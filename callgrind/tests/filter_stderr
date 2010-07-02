@@ -19,6 +19,9 @@ perl -p -e 's/((I|D|L2) *refs:)[ 0-9,()+rdw]*$/\1/'  |
 # Remove numbers from I1/D1/L2/L2i/L2d "misses:" and "miss rates:" lines
 perl -p -e 's/((I1|D1|L2|L2i|L2d) *(misses|miss rate):)[ 0-9,()+rdw%\.]*$/\1/' |
 
+# Remove numbers from "Branches:", "Mispredicts:, and "Mispred rate:" lines
+perl -p -e 's/((Branches|Mispredicts|Mispred rate):)[ 0-9,()+condi%\.]*$/\1/' |
+
 # Remove CPUID warnings lines for P4s and other machines
 sed "/warning: Pentium 4 with 12 KB micro-op instruction trace cache/d" |
 sed "/Simulating a 16 KB I-cache with 32 B lines/d"   |

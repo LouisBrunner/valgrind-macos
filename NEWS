@@ -24,6 +24,10 @@ Improvements:
   harder than the heap-level output, but this option is useful if you want
   to account for every byte of memory used by a program.
 
+- Callgrind now can do branch prediction simulation, similar to Cachegrind.
+  In addition, it optionally can count the number of executed global bus events.
+  Both can be used for a better approximation of a "Cycle Estimation" as
+  derived event (you need to update the event formula in KCachegrind yourself).
 
 
 Release 3.5.0 (19 August 2009)

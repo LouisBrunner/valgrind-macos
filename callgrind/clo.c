@@ -415,8 +415,6 @@ Bool CLG_(process_cmd_line_option)(Char* arg)
    /* compatibility alias, deprecated option */
    else if VG_BOOL_CLO(arg, "--trace-jump",    CLG_(clo).collect_jumps) {}
 
-   else if VG_BOOL_CLO(arg, "--collect-bus", CLG_(clo).collect_bus) {}
-
    else if VG_BOOL_CLO(arg, "--combine-dumps", CLG_(clo).combine_dumps) {}
 
    else if VG_BOOL_CLO(arg, "--collect-atstart", CLG_(clo).collect_atstart) {}
@@ -527,8 +525,13 @@ Bool CLG_(process_cmd_line_option)(Char* arg)
 
    else if VG_BOOL_CLO(arg, "--collect-alloc",   CLG_(clo).collect_alloc) {}
    else if VG_BOOL_CLO(arg, "--collect-systime", CLG_(clo).collect_systime) {}
+   else if VG_BOOL_CLO(arg, "--collect-bus",     CLG_(clo).collect_bus) {}
+   /* for option compatibility with cachegrind */
+   else if VG_BOOL_CLO(arg, "--cache-sim",       CLG_(clo).simulate_cache) {}
+   /* compatibility alias, deprecated option */
    else if VG_BOOL_CLO(arg, "--simulate-cache",  CLG_(clo).simulate_cache) {}
-
+   /* for option compatibility with cachegrind */
+   else if VG_BOOL_CLO(arg, "--branch-sim",      CLG_(clo).simulate_branch) {}
    else {
        Bool isCachesimOption = (*CLG_(cachesim).parse_opt)(arg);
 
@@ -592,6 +595,9 @@ void CLG_(print_usage)(void)
 #if CLG_EXPERIMENTAL
 "    --fn-group<no>=<func>     Put function into separation group <no>\n"
 #endif
+"\n   simulation options:\n"
+"    --branch-sim=no|yes       Do branch prediction simulation [no]\n"
+"    --cache-sim=no|yes        Do cache simulation [no]\n"
     );
 
    (*CLG_(cachesim).print_opts)();
@@ -642,6 +648,7 @@ void CLG_(set_clo_defaults)(void)
   CLG_(clo).collect_jumps    = False;
   CLG_(clo).collect_alloc    = False;
   CLG_(clo).collect_systime  = False;
+  CLG_(clo).collect_bus      = False;
 
   CLG_(clo).skip_plt         = True;
   CLG_(clo).separate_callers = 0;
@@ -651,6 +658,7 @@ void CLG_(set_clo_defaults)(void)
   /* Instrumentation */
   CLG_(clo).instrument_atstart = True;
   CLG_(clo).simulate_cache = False;
+  CLG_(clo).simulate_branch = False;
 
   /* Call graph */
   CLG_(clo).pop_on_jump = False;

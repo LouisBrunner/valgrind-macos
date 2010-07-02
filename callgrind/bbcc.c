@@ -580,6 +580,7 @@ void CLG_(setup_bbcc)(BB* bb)
 
   if (last_bb) {
       passed = CLG_(current_state).jmps_passed;
+      CLG_ASSERT(passed <= last_bb->cjmp_count);
       if (passed == last_bb->cjmp_count) {
 	  jmpkind = last_bb->jmpkind;
 
@@ -599,9 +600,9 @@ void CLG_(setup_bbcc)(BB* bb)
 	  last_bbcc->ecounter_sum++;
 	  last_bbcc->jmp[passed].ecounter++;
 	  if (!CLG_(clo).simulate_cache) {
-	      /* update Ir cost */
-	      int instr_count = last_bb->jmp[passed].instr+1;
-	      CLG_(current_state).cost[ fullOffset(EG_IR) ] += instr_count;
+	      /* update Ir cost */              
+              UInt instr_count = last_bb->jmp[passed].instr+1;
+              CLG_(current_state).cost[ fullOffset(EG_IR) ] += instr_count;
 	  }
       }
 

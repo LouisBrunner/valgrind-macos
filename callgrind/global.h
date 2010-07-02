@@ -92,6 +92,7 @@ struct _CommandLineOptions {
   /* Instrument options */
   Bool instrument_atstart;  /* Instrument at start? */
   Bool simulate_cache;      /* Call into cache simulator ? */
+  Bool simulate_branch;     /* Call into branch prediction simulator ? */
 
   /* Call graph generation */
   Bool pop_on_jump;       /* Handle a jump between functions as ret+call */
@@ -652,7 +653,7 @@ struct cachesim_if
     void (*post_clo_init)(void);
     void (*clear)(void);
     void (*getdesc)(Char* buf);
-    void (*printstat)(void);  
+    void (*printstat)(Int,Int,Int);
     void (*add_icost)(SimCost, BBCC*, InstrInfo*, ULong);
     void (*finish)(void);
     
@@ -681,9 +682,11 @@ extern ULong* CLG_(cost_base);
 #define EG_IR    1
 #define EG_DR    2
 #define EG_DW    3
-#define EG_BUS   4
-#define EG_ALLOC 5
-#define EG_SYS   6
+#define EG_BC    4
+#define EG_BI    5
+#define EG_BUS   6
+#define EG_ALLOC 7
+#define EG_SYS   8
 
 struct event_sets {
     EventSet *base, *full;

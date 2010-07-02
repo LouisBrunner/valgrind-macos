@@ -4,7 +4,7 @@
 [ <!ENTITY % vg-entities SYSTEM "../../docs/xml/vg-entities.xml"> %vg-entities; ]>
 
 <chapter id="cl-manual" xreflabel="Callgrind Manual">
-<title>Callgrind: a call-graph generating cache profiler</title>
+<title>Callgrind: a call-graph generating cache and branch prediction profiler</title>
 
 
 <para>To use this tool, you must specify
@@ -14,14 +14,14 @@ Valgrind command line.</para>
 <sect1 id="cl-manual.use" xreflabel="Overview">
 <title>Overview</title>
 
-<para>Callgrind is a profiling tool that can
-construct a call graph for a program's run.
+<para>Callgrind is a profiling tool that records the call history among
+functions in a program's run as a call-graph.
 By default, the collected data consists of
 the number of instructions executed, their relationship
 to source lines, the caller/callee relationship between functions,
 and the numbers of such calls.
-Optionally, a cache simulator (similar to Cachegrind) can produce
-further information about the memory access behavior of the application.
+Optionally, cache simulation and/or branch prediction (similar to Cachegrind)
+can produce further information about the runtime behavior of an application.
 </para>
 
 <para>The profile data is written out to a file at program
@@ -175,10 +175,10 @@ on heuristics to detect calls and returns.</para>
   results in this case.</para>
 
   <para>If you are additionally interested in measuring the 
-  cache behavior of your 
-  program, use Callgrind with the option
-  <option><xref linkend="opt.simulate-cache"/>=yes.</option>
-  However, expect a  further slow down approximately by a factor of 2.</para>
+  cache behavior of your program, use Callgrind with the option
+  <option><xref linkend="clopt.cache-sim"/>=yes</option>. For
+  branch prediction simulation, use <option><xref linkend="clopt.branch-sim"/>=yes</option>.
+  Expect a further slow down approximately by a factor of 2.</para>
 
   <para>If the program section you want to profile is somewhere in the
   middle of the run, it is beneficial to 
@@ -371,7 +371,7 @@ callgrind.out.<emphasis>pid</emphasis>.<emphasis>part</emphasis>-<emphasis>threa
   "global bus events" is used.</para>
 
   <para>The short name of the event type used for global bus events is "Ge".
-  To count global bus events, use <option><xref linkend="opt.collect-bus"/></option>.
+  To count global bus events, use <option><xref linkend="clopt.collect-bus"/>=yes</option>.
   </para>
   </sect2>
 
@@ -779,7 +779,7 @@ Also see <xref linkend="cl-manual.limits"/>.</para>
     </listitem>
   </varlistentry>
 
-  <varlistentry id="opt.collect-bus" xreflabel="--collect-bus">
+  <varlistentry id="clopt.collect-bus" xreflabel="--collect-bus">
     <term>
       <option><![CDATA[--collect-bus=<no|yes> [default: no] ]]></option>
     </term>
@@ -917,22 +917,54 @@ Also see <xref linkend="cl-manual.cycles"/>.</para>
 <!-- end of xi:include in the manpage -->
 </sect2>
 
+
 <sect2 id="cl-manual.options.simulation"
+       xreflabel="Simulation options">
+<title>Simulation options</title>
+
+<!-- start of xi:include in the manpage -->
+<variablelist id="cl.opts.list.simulation">
+
+  <varlistentry id="clopt.cache-sim" xreflabel="--cache-sim">
+    <term>
+      <option><![CDATA[--cache-sim=<yes|no> [default: no] ]]></option>
+    </term>
+    <listitem>
+      <para>Specify if you want to do full cache simulation.  By default,
+      only instruction read accesses will be counted ("Ir").
+      With cache simulation, further event counters are enabled:
+      Cache misses on instruction reads ("I1mr"/"I2mr"),
+      data read accesses ("Dr") and related cache misses ("D1mr"/"D2mr"),
+      data write accesses ("Dw") and related cache misses ("D1mw"/"D2mw").
+      For more information, see <xref linkend="cg-manual"/>.
+      </para>
+    </listitem>
+  </varlistentry>
+
+  <varlistentry id="clopt.branch-sim" xreflabel="--branch-sim">
+    <term>
+      <option><![CDATA[--branch-sim=<yes|no> [default: no] ]]></option>
+    </term>
+    <listitem>
+      <para>Specify if you want to do branch prediction simulation.
+      Further event counters are enabled: Number of executed conditional
+      branches and related predictor misses ("Bc"/"Bcm"), executed indirect
+      jumps and related misses of the jump address predictor ("Bi"/"Bim").
+      </para>
+    </listitem>
+  </varlistentry>
+
+</variablelist>
+<!-- end of xi:include in the manpage -->
+</sect2>
+
+
+<sect2 id="cl-manual.options.cachesimulation"
        xreflabel="Cache simulation options">
 <title>Cache simulation options</title>
 
 <!-- start of xi:include in the manpage -->
-<variablelist id="cl.opts.list.simulation">
-  
-  <varlistentry id="opt.simulate-cache" xreflabel="--simulate-cache">
-    <term>
-      <option><![CDATA[--simulate-cache=<yes|no> [default: no] ]]></option>
-    </term>
-    <listitem>
-      <para>Specify if you want to do full cache simulation.  By default,
-      only instruction read accesses will be profiled.</para>
-    </listitem>
-  </varlistentry>
+<variablelist id="cl.opts.list.cachesimulation">
 
   <varlistentry id="opt.simulate-wb" xreflabel="--simulate-wb">
     <term>

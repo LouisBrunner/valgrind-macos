@@ -1490,8 +1490,7 @@ static
 void cachesim_print_opts(void)
 {
   VG_(printf)(
-"\n   cache simulator options:\n"
-"    --simulate-cache=no|yes   Do cache simulation [no]\n"
+"\n   cache simulator options (does cache simulation if used):\n"
 "    --simulate-wb=no|yes      Count write-back events [no]\n"
 "    --simulate-hwpref=no|yes  Simulate hardware prefetch [no]\n"
 #if CLG_EXPERIMENTAL
@@ -1614,7 +1613,7 @@ void percentify(Int n, Int ex, Int field_width, char buf[])
 }
 
 static
-void cachesim_printstat(void)
+void cachesim_printstat(Int l1, Int l2, Int l3)
 {
   FullCost total = CLG_(total_cost), D_total = 0;
   ULong L2_total_m, L2_total_mr, L2_total_mw,
@@ -1622,7 +1621,6 @@ void cachesim_printstat(void)
   char buf1[RESULTS_BUF_LEN], 
     buf2[RESULTS_BUF_LEN], 
     buf3[RESULTS_BUF_LEN];
-  Int l1, l2, l3;
   Int p;
 
   if ((VG_(clo_verbosity) >1) && clo_simulate_hwpref) {
@@ -1632,13 +1630,6 @@ void cachesim_printstat(void)
 		 prefetch_down);
     VG_(message)(Vg_DebugMsg, "\n");
   }
-
-  /* I cache results.  Use the I_refs value to determine the first column
-   * width. */
-  l1 = commify(total[fullOffset(EG_IR)], 0, buf1);
-  VG_(message)(Vg_UserMsg, "I   refs:      %s\n", buf1);
-
-  if (!CLG_(clo).simulate_cache) return;
 
   commify(total[fullOffset(EG_IR) +1], l1, buf1);
   VG_(message)(Vg_UserMsg, "I1  misses:    %s\n", buf1);
@@ -1671,8 +1662,8 @@ void cachesim_printstat(void)
   CLG_(add_cost) ( CLG_(get_event_set)(EG_DW), D_total, total + fullOffset(EG_DW) );
 
   commify( D_total[0], l1, buf1);
-  l2 = commify(total[fullOffset(EG_DR)], 0,  buf2);
-  l3 = commify(total[fullOffset(EG_DW)], 0,  buf3);
+  commify(total[fullOffset(EG_DR)], l2,  buf2);
+  commify(total[fullOffset(EG_DW)], l3,  buf3);
   VG_(message)(Vg_UserMsg, "D   refs:      %s  (%s rd + %s wr)\n",
 	       buf1,  buf2,  buf3);
 
@@ -1782,6 +1773,11 @@ void CLG_(init_eventsets)()
         CLG_(register_event_group4)(EG_DW, "Dw", "D1mw", "D2mw", "D2dmw");
     }
 
+    if (CLG_(clo).simulate_branch) {
+        CLG_(register_event_group2)(EG_BC, "Bc", "Bcm");
+        CLG_(register_event_group2)(EG_BI, "Bi", "Bim");
+    }
+
     if (CLG_(clo).collect_bus)
 	CLG_(register_event_group)(EG_BUS, "Ge");
 
@@ -1796,6 +1792,7 @@ void CLG_(init_eventsets)()
 
     // event set comprising all event groups, used for inclusive cost
     CLG_(sets).full = CLG_(add_event_group2)(CLG_(sets).base, EG_DR, EG_DW);
+    CLG_(sets).full = CLG_(add_event_group2)(CLG_(sets).full, EG_BC, EG_BI);
     CLG_(sets).full = CLG_(add_event_group) (CLG_(sets).full, EG_BUS);
     CLG_(sets).full = CLG_(add_event_group2)(CLG_(sets).full, EG_ALLOC, EG_SYS);
 
@@ -1819,6 +1816,10 @@ void CLG_(init_eventsets)()
     CLG_(append_event)(CLG_(dumpmap), "I2dmr");
     CLG_(append_event)(CLG_(dumpmap), "D2dmr");
     CLG_(append_event)(CLG_(dumpmap), "D2dmw");
+    CLG_(append_event)(CLG_(dumpmap), "Bc");
+    CLG_(append_event)(CLG_(dumpmap), "Bcm");
+    CLG_(append_event)(CLG_(dumpmap), "Bi");
+    CLG_(append_event)(CLG_(dumpmap), "Bim");
     CLG_(append_event)(CLG_(dumpmap), "AcCost1");
     CLG_(append_event)(CLG_(dumpmap), "SpLoss1");
     CLG_(append_event)(CLG_(dumpmap), "AcCost2");

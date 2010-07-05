@@ -291,7 +291,7 @@ case "${host_os}" in
 
      *) 
 	AC_MSG_RESULT([no (${host_os})])
-	AC_MSG_ERROR([Valgrind is operating system specific. Sorry. Please consider doing a port.])
+	AC_MSG_ERROR([Valgrind is operating system specific. Sorry.])
 	;;
 esac
 
@@ -473,18 +473,13 @@ case "$ARCH_MAX-$VGCONF_OS" in
 	fi
         AC_MSG_RESULT([ok (${ARCH_MAX}-${VGCONF_OS})])
 	;;
-     x86-darwin)
-        VGCONF_ARCH_PRI="x86"
-        VGCONF_ARCH_SEC=""
-	VGCONF_PLATFORM_PRI_CAPS="X86_DARWIN"
-	VGCONF_PLATFORM_SEC_CAPS=""
-        valt_load_address_pri_norml="0x38000000"
-        valt_load_address_pri_inner="0x28000000"
-        valt_load_address_sec_norml="0xUNSET"
-        valt_load_address_sec_inner="0xUNSET"
-        AC_MSG_RESULT([ok (${ARCH_MAX}-${VGCONF_OS})])
-	;;
-     amd64-darwin)
+     # Darwin gets identified as 32-bit even when it supports 64-bit.
+     # (Not sure why, possibly because 'uname' returns "i386"?)  Just about
+     # all Macs support both 32-bit and 64-bit, so we just build both.  If
+     # someone has a really old 32-bit only machine they can (hopefully?)
+     # build with --enable-only32bit.  See bug 243362.
+     x86-darwin|amd64-darwin)
+        ARCH_MAX="amd64"
         valt_load_address_sec_norml="0xUNSET"
         valt_load_address_sec_inner="0xUNSET"
 	if test x$vg_cv_only64bit = xyes; then

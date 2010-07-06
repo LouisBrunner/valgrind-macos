@@ -58,12 +58,9 @@ Bool VG_(replacement_malloc_process_cmd_line_option)(Char* arg)
           VG_(clo_alignment) > 4096 ||
           VG_(log2)( VG_(clo_alignment) ) == -1 /* not a power of 2 */)
       {
-         VG_(message)(Vg_UserMsg, 
-            "Invalid --alignment= setting.  "
-            "Should be a power of 2, >= %d, <= 4096.\n",
-            VG_MIN_MALLOC_SZB
-         );
-         VG_(err_bad_option)("--alignment");
+         VG_(fmsg_bad_option)(arg,
+            "Alignment must be a power of 2 in the range %d..4096.\n",
+            VG_MIN_MALLOC_SZB);
       }
    }
 

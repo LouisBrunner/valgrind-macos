@@ -442,7 +442,12 @@ static Bool ms_process_cmd_line_option(Char* arg)
       VG_(addToXA)(ignore_fns, &tmp_str);
    }
 
-   else if VG_DBL_CLO(arg, "--threshold",       clo_threshold) {}
+   else if VG_DBL_CLO(arg, "--threshold",  clo_threshold) {
+      if (clo_threshold < 0 || clo_threshold > 100) {
+         VG_(fmsg_bad_option)(arg,
+            "--threshold must be between 0.0 and 100.0\n");
+      }
+   }
 
    else if VG_DBL_CLO(arg, "--peak-inaccuracy", clo_peak_inaccuracy) {}
 
@@ -2386,14 +2391,10 @@ static void ms_post_clo_init(void)
    Char* s2;
 
    // Check options.
-   if (clo_threshold < 0 || clo_threshold > 100) {
-      VG_(umsg)("--threshold must be between 0.0 and 100.0\n");
-      VG_(err_bad_option)("--threshold");
-   }
    if (clo_pages_as_heap) {
       if (clo_stacks) {
-         VG_(umsg)("--pages-as-heap=yes cannot be used with --stacks=yes\n");
-         VG_(err_bad_option)("--pages-as-heap=yes with --stacks=yes");
+         VG_(fmsg_bad_option)(
+            "--pages-as-heap=yes together with --stacks=yes", "");
       }
    }
    if (!clo_heap) {

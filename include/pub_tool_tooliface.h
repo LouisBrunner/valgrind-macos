@@ -374,10 +374,17 @@ extern void VG_(needs_superblock_discards) (
 
 /* Tool defines its own command line options? */
 extern void VG_(needs_command_line_options) (
-   // Return True if option was recognised.  Presumably sets some state to
-   // record the option as well.  Nb: tools can assume that the argv will
-   // never disappear.  So they can, for example, store a pointer to a string
-   // within an option, rather than having to make a copy.
+   // Return True if option was recognised, False if it wasn't (but also see
+   // below).  Presumably sets some state to record the option as well.  
+   //
+   // Nb: tools can assume that the argv will never disappear.  So they can,
+   // for example, store a pointer to a string within an option, rather than
+   // having to make a copy.
+   //
+   // Options (and combinations of options) should be checked in this function
+   // if possible rather than in post_clo_init(), and if they are bad then
+   // VG_(fmsg_bad_option)() should be called.  This ensures that the
+   // messaging is consistent with command line option errors from the core.
    Bool (*process_cmd_line_option)(Char* argv),
 
    // Print out command line usage for options for normal tool operation.

@@ -189,7 +189,7 @@ static Bool is_binary_file(Char* f)
       // Something went wrong.  This will only happen if we earlier
       // succeeded in opening the file but fail here (eg. the file was
       // deleted between then and now).
-      VG_(printf)("valgrind: %s: unknown error\n", f);
+      VG_(fmsg)("%s: unknown error\n", f);
       VG_(exit)(126);      // 126 == NOEXEC
    }
 }
@@ -210,7 +210,7 @@ static Int do_exec_shell_followup(Int ret, HChar* exe_name, ExeInfo* info)
 
       // Is it a binary file?  
       if (is_binary_file(exe_name)) {
-         VG_(printf)("valgrind: %s: cannot execute binary file\n", exe_name);
+         VG_(fmsg)("%s: cannot execute binary file\n", exe_name);
          VG_(exit)(126);      // 126 == NOEXEC
       }
 
@@ -226,7 +226,7 @@ static Int do_exec_shell_followup(Int ret, HChar* exe_name, ExeInfo* info)
 
       if (0 != ret) {
          // Something went wrong with executing the default interpreter
-         VG_(printf)("valgrind: %s: bad interpreter (%s): %s\n",
+         VG_(fmsg)("%s: bad interpreter (%s): %s\n",
                      exe_name, info->interp_name, VG_(strerror)(ret));
          VG_(exit)(126);      // 126 == NOEXEC
       }
@@ -238,21 +238,20 @@ static Int do_exec_shell_followup(Int ret, HChar* exe_name, ExeInfo* info)
       // Was it a directory?
       res = VG_(stat)(exe_name, &st);
       if (!sr_isError(res) && VKI_S_ISDIR(st.mode)) {
-         VG_(printf)("valgrind: %s: is a directory\n", exe_name);
+         VG_(fmsg)("%s: is a directory\n", exe_name);
       
       // Was it not executable?
       } else if (0 != VG_(check_executable)(NULL, exe_name, 
                                             False/*allow_setuid*/)) {
-         VG_(printf)("valgrind: %s: %s\n", exe_name, VG_(strerror)(ret));
+         VG_(fmsg)("%s: %s\n", exe_name, VG_(strerror)(ret));
 
       // Did it start with "#!"?  If so, it must have been a bad interpreter.
       } else if (is_hash_bang_file(exe_name)) {
-         VG_(printf)("valgrind: %s: bad interpreter: %s\n",
-                     exe_name, VG_(strerror)(ret));
+         VG_(fmsg)("%s: bad interpreter: %s\n", exe_name, VG_(strerror)(ret));
 
       // Otherwise it was something else.
       } else {
-         VG_(printf)("valgrind: %s: %s\n", exe_name, VG_(strerror)(ret));
+         VG_(fmsg)("%s: %s\n", exe_name, VG_(strerror)(ret));
       }
       // 126 means NOEXEC;  I think this is Posix, and that in some cases we
       // should be returning 127, meaning NOTFOUND.  Oh well.

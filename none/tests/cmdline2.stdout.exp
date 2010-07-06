@@ -65,8 +65,8 @@ usage: valgrind [options] prog-and-args
     (none)
 
   debugging options for all Valgrind tools:
-    --stats=no|yes            show tool and core statistics [no]
     -d                        show verbose debugging output
+    --stats=no|yes            show tool and core statistics [no]
     --sanity-level=<number>   level of sanity checking to do [1]
     --trace-flags=<XXXXXXXX>   show generated code? (X = 0|1) [00000000]
     --profile-flags=<XXXXXXXX> ditto, but for profiling (X = 0|1) [00000000]

@@ -32,18 +32,8 @@
 #define __PUB_TOOL_LIBCPRINT_H
 
 /* ---------------------------------------------------------------------
-   Basic printing
+   Formatting functions
    ------------------------------------------------------------------ */
-
-/* Note that they all output to the file descriptor given by the
-   --log-fd/--log-file/--log-socket argument, which defaults to 2
-   (stderr).  Hence no need for VG_(fprintf)().
-*/
-extern UInt VG_(printf)   ( const HChar *format, ... )
-                          PRINTF_CHECK(1, 2);
-
-extern UInt VG_(vprintf)  ( const HChar *format, va_list vargs )
-                          PRINTF_CHECK(1, 0);
 
 extern UInt VG_(sprintf)  ( Char* buf, const HChar* format, ... )
                           PRINTF_CHECK(2, 3);
@@ -59,16 +49,51 @@ extern UInt VG_(vsnprintf)( Char* buf, Int size,
                                        const HChar *format, va_list vargs )
                           PRINTF_CHECK(3, 0);
 
-/* Yet another, totally general, version of vprintf, which hands all
-   output bytes to CHAR_SINK, passing it OPAQUE as the second arg. */
-extern void VG_(vcbprintf)( void(*char_sink)(HChar, void* opaque),
-                            void* opaque,
-                            const HChar* format, va_list vargs );
+// Percentify n/m with d decimal places.  Includes the '%' symbol at the end.
+// Right justifies in 'buf'.
+extern void VG_(percentify)(ULong n, ULong m, UInt d, Int n_buf, char buf[]);
 
-/* These are the same as the non "_xml" versions above, except the
-   output goes on the selected XML output channel instead of the
-   normal one.
-*/
+
+/* ---------------------------------------------------------------------
+   Output-printing functions
+   ------------------------------------------------------------------ */
+
+// Note that almost all output goes to the file descriptor given by the
+// --log-fd/--log-file/--log-socket argument, which defaults to 2 (stderr).
+// (Except that some text always goes to stdout/stderr at startup, and
+// debugging messages always go to stderr.)  Hence no need for
+// VG_(fprintf)().
+
+/* No, really.  I _am_ that strange. */
+#define OINK(nnn) VG_(message)(Vg_DebugMsg, "OINK %d\n",nnn)
+
+/* Print a message with a prefix that depends on the VgMsgKind.
+   Should be used for all user output. */
+
+typedef
+   enum {                 // Prefix
+      Vg_FailMsg,         // "valgrind:"
+      Vg_UserMsg,         // "==pid=="
+      Vg_DebugMsg,        // "--pid--"
+      Vg_DebugExtraMsg,   // "++pid++"
+      Vg_ClientMsg        // "**pid**"
+   }
+   VgMsgKind;
+
+// These print output that isn't prefixed with anything, and should be
+// used in very few cases, such as printing usage messages.
+extern UInt VG_(printf)   ( const HChar *format, ... )
+                          PRINTF_CHECK(1, 2);
+extern UInt VG_(vprintf)  ( const HChar *format, va_list vargs )
+                          PRINTF_CHECK(1, 0);
+
+// The "_no_f_c" functions here are just like their non-"_no_f_c" counterparts
+// but without the PRINTF_CHECK, so they can be used with our non-standard %t
+// format specifier.
+
+// These are the same as the non "_xml" versions above, except the
+// output goes on the selected XML output channel instead of the
+// normal one.
 extern UInt VG_(printf_xml)  ( const HChar *format, ... )
                              PRINTF_CHECK(1, 2);
 
@@ -77,46 +102,44 @@ extern UInt VG_(vprintf_xml) ( const HChar *format, va_list vargs )
 
 extern UInt VG_(printf_xml_no_f_c) ( const HChar *format, ... );
 
-// Percentify n/m with d decimal places.  Includes the '%' symbol at the end.
-// Right justifies in 'buf'.
-extern void VG_(percentify)(ULong n, ULong m, UInt d, Int n_buf, char buf[]);
+/* Yet another, totally general, version of vprintf, which hands all
+   output bytes to CHAR_SINK, passing it OPAQUE as the second arg. */
+extern void VG_(vcbprintf)( void(*char_sink)(HChar, void* opaque),
+                            void* opaque,
+                            const HChar* format, va_list vargs );
 
-
-/* ---------------------------------------------------------------------
-   Messages for the user
-   ------------------------------------------------------------------ */
-
-/* No, really.  I _am_ that strange. */
-#define OINK(nnn) VG_(message)(Vg_DebugMsg, "OINK %d\n",nnn)
-
-/* Print a message prefixed by "??<pid>?? "; '?' depends on the VgMsgKind.
-   Should be used for all user output. */
-
-typedef
-   enum { Vg_UserMsg,         /* '?' == '=' */
-          Vg_DebugMsg,        /* '?' == '-' */
-          Vg_DebugExtraMsg,   /* '?' == '+' */
-          Vg_ClientMsg        /* '?' == '*' */
-   }
-   VgMsgKind;
-
-/* Send a single-part message.  The format specification may contain
-   any ISO C format specifier or %t.  No attempt is made to let the
-   compiler verify consistency of the format string and the argument
-   list. */
 extern UInt VG_(message_no_f_c)( VgMsgKind kind, const HChar* format, ... );
-/* Send a single-part message.  The format specification may contain
-   any ISO C format specifier. The gcc compiler will verify
-   consistency of the format string and the argument list. */
 extern UInt VG_(message)( VgMsgKind kind, const HChar* format, ... )
-  PRINTF_CHECK(2, 3);
+   PRINTF_CHECK(2, 3);
 
 extern UInt VG_(vmessage)( VgMsgKind kind, const HChar* format, va_list vargs )
-  PRINTF_CHECK(2, 0);
+   PRINTF_CHECK(2, 0);
 
 // Short-cuts for VG_(message)().
+
+// This is used for messages printed due to start-up failures that occur
+// before the preamble is printed, eg. due a bad executable.
+extern UInt VG_(fmsg)( const HChar* format, ... ) PRINTF_CHECK(1, 2);
+
+// This is used if an option was bad for some reason.  Note: don't use it just
+// because an option was unrecognised -- return 'False' from
+// VG_(tdict).tool_process_cmd_line_option) to indicate that -- use it if eg.
+// an option was given an inappropriate argument.  This function prints an
+// error message, then shuts down the entire system.
+__attribute__((noreturn))
+extern void VG_(fmsg_bad_option) ( HChar* opt, const HChar* format, ... )
+   PRINTF_CHECK(2, 3);
+
+// This is used for messages that are interesting to the user:  info about
+// their program (eg. preamble, tool error messages, postamble) or stuff they
+// requested.
 extern UInt VG_(umsg)( const HChar* format, ... ) PRINTF_CHECK(1, 2);
+
+// This is used for debugging messages that are only of use to developers.
 extern UInt VG_(dmsg)( const HChar* format, ... ) PRINTF_CHECK(1, 2);
+
+// This is used for additional debugging messages that are only of use to
+// developers.
 extern UInt VG_(emsg)( const HChar* format, ... ) PRINTF_CHECK(1, 2);
 
 /* Flush any output cached by previous calls to VG_(message) et al. */

@@ -1271,49 +1271,40 @@ static cache_t clo_D1_cache = UNDEFINED_CACHE;
 static cache_t clo_L2_cache = UNDEFINED_CACHE;
 
 
-/* Checks cache config is ok;  makes it so if not. */
-static
-void check_cache(cache_t* cache, Char *name)
+// Checks cache config is ok.  Returns NULL if ok, or a pointer to an error
+// string otherwise.
+static Char* check_cache(cache_t* cache)
 {
-   /* Simulator requires line size and set count to be powers of two */
+   // Simulator requires line size and set count to be powers of two.
    if (( cache->size % (cache->line_size * cache->assoc) != 0) ||
-       (-1 == VG_(log2)(cache->size/cache->line_size/cache->assoc))) {
-      VG_(message)(Vg_UserMsg,
-         "error: %s set count not a power of two; aborting.\n",
-         name);
+       (-1 == VG_(log2)(cache->size/cache->line_size/cache->assoc)))
+   {
+      return "Cache set count is not a power of two.\n";
    }
 
+   // Simulator requires line size to be a power of two.
    if (-1 == VG_(log2)(cache->line_size)) {
-      VG_(message)(Vg_UserMsg,
-         "error: %s line size of %dB not a power of two; aborting.\n",
-         name, cache->line_size);
-      VG_(exit)(1);
+      return "Cache line size is not a power of two.\n";
    }
 
    // Then check line size >= 16 -- any smaller and a single instruction could
    // straddle three cache lines, which breaks a simulation assertion and is
    // stupid anyway.
    if (cache->line_size < MIN_LINE_SIZE) {
-      VG_(message)(Vg_UserMsg,
-         "error: %s line size of %dB too small; aborting.\n",
-         name, cache->line_size);
-      VG_(exit)(1);
+      return "Cache line size is too small.\n";
    }
 
    /* Then check cache size > line size (causes seg faults if not). */
    if (cache->size <= cache->line_size) {
-      VG_(message)(Vg_UserMsg,
-         "error: %s cache size of %dB <= line size of %dB; aborting.\n",
-         name, cache->size, cache->line_size);
-      VG_(exit)(1);
+      return "Cache size <= line size.\n";
    }
 
    /* Then check assoc <= (size / line size) (seg faults otherwise). */
    if (cache->assoc > (cache->size / cache->line_size)) {
-      VG_(message)(Vg_UserMsg,
-         "warning: %s associativity > (size / line size); aborting.\n", name);
-      VG_(exit)(1);
+      return "Cache associativity > (size / line size).\n";
    }
+
+   return NULL;
 }
 
 static
@@ -1321,26 +1312,26 @@ void configure_caches(cache_t* I1c, cache_t* D1c, cache_t* L2c)
 {
 #define DEFINED(L)   (-1 != L.size  || -1 != L.assoc || -1 != L.line_size)
 
-   Int n_clos = 0;
+   Char* checkRes;
 
-   // Count how many were defined on the command line.
-   if (DEFINED(clo_I1_cache)) { n_clos++; }
-   if (DEFINED(clo_D1_cache)) { n_clos++; }
-   if (DEFINED(clo_L2_cache)) { n_clos++; }
+   Bool all_caches_clo_defined =
+      (DEFINED(clo_I1_cache) &&
+       DEFINED(clo_D1_cache) &&
+       DEFINED(clo_L2_cache));
 
    // Set the cache config (using auto-detection, if supported by the
-   // architecture)
-   VG_(configure_caches)( I1c, D1c, L2c, (3 == n_clos) );
+   // architecture).
+   VG_(configure_caches)( I1c, D1c, L2c, all_caches_clo_defined );
+
+   // Check the default/auto-detected values.
+   checkRes = check_cache(I1c);  tl_assert(!checkRes);
+   checkRes = check_cache(D1c);  tl_assert(!checkRes);
+   checkRes = check_cache(L2c);  tl_assert(!checkRes);
 
    // Then replace with any defined on the command line.
    if (DEFINED(clo_I1_cache)) { *I1c = clo_I1_cache; }
    if (DEFINED(clo_D1_cache)) { *D1c = clo_D1_cache; }
    if (DEFINED(clo_L2_cache)) { *L2c = clo_L2_cache; }
-
-   // Then check values and fix if not acceptable.
-   check_cache(I1c, "I1");
-   check_cache(D1c, "D1");
-   check_cache(L2c, "L2");
 
    if (VG_(clo_verbosity) > 1) {
       VG_(message)(Vg_UserMsg, "Cache configuration used:\n");
@@ -1503,13 +1494,14 @@ void cachesim_print_opts(void)
 	      );
 }
 
-static void parse_opt ( cache_t* cache, char* opt )
+static void parse_opt ( cache_t* cache, char* opt, Char* optval )
 {
    Long i1, i2, i3;
    Char* endptr;
+   Char* checkRes;
 
    // Option argument looks like "65536,2,64".  Extract them.
-   i1 = VG_(strtoll10)(opt,      &endptr); if (*endptr != ',')  goto bad;
+   i1 = VG_(strtoll10)(optval,   &endptr); if (*endptr != ',')  goto bad;
    i2 = VG_(strtoll10)(endptr+1, &endptr); if (*endptr != ',')  goto bad;
    i3 = VG_(strtoll10)(endptr+1, &endptr); if (*endptr != '\0') goto bad;
 
@@ -1521,15 +1513,20 @@ static void parse_opt ( cache_t* cache, char* opt )
    if (cache->assoc     != i2) goto overflow;
    if (cache->line_size != i3) goto overflow;
 
+   checkRes = check_cache(cache);
+   if (checkRes) {
+      VG_(fmsg)("%s", checkRes);
+      goto bad;
+   }
+
    return;
 
-  overflow:
-   VG_(message)(Vg_UserMsg,
-                "one of the cache parameters was too large and overflowed\n");
   bad:
-   // XXX: this omits the "--I1/D1/L2=" part from the message, but that's
-   // not a big deal.
-   VG_(err_bad_option)(opt);
+   VG_(fmsg_bad_option)(opt, "");
+
+  overflow:
+   VG_(fmsg_bad_option)(opt,
+      "One of the cache parameters was too large and overflowed.\n");
 }
 
 /* Check for command line option for cache configuration.
@@ -1553,11 +1550,11 @@ static Bool cachesim_parse_opt(Char* arg)
    }
 
    else if VG_STR_CLO(arg, "--I1", tmp_str)
-      parse_opt(&clo_I1_cache, tmp_str);
+      parse_opt(&clo_I1_cache, arg, tmp_str);
    else if VG_STR_CLO(arg, "--D1", tmp_str)
-      parse_opt(&clo_D1_cache, tmp_str);
+      parse_opt(&clo_D1_cache, arg, tmp_str);
    else if VG_STR_CLO(arg, "--L2", tmp_str)
-      parse_opt(&clo_L2_cache, tmp_str);
+      parse_opt(&clo_L2_cache, arg, tmp_str);
   else
     return False;
 

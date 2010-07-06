@@ -1,7 +1,6 @@
 
 /*--------------------------------------------------------------------*/
-/*--- Command line options.                                        ---*/
-/*---                                                  m_options.c ---*/
+/*--- Command line options.                            m_options.c ---*/
 /*--------------------------------------------------------------------*/
 
 /*
@@ -100,41 +99,8 @@ Bool   VG_(clo_dsymutil)       = False;
 
 
 /*====================================================================*/
-/*=== Command line errors                                          ===*/
+/*=== File expansion                                               ===*/
 /*====================================================================*/
-
-static void revert_to_stderr ( void )
-{
-   VG_(log_output_sink).fd = 2; /* stderr */
-   VG_(log_output_sink).is_socket = False;
-}
-
-__attribute__((noreturn))
-void VG_(err_bad_option) ( Char* opt )
-{
-   revert_to_stderr();
-   VG_(printf)("valgrind: Bad option '%s'; aborting.\n", opt);
-   VG_(printf)("valgrind: Use --help for more information.\n");
-   VG_(exit)(1);
-}
-
-__attribute__((noreturn))
-void VG_(err_missing_prog) ( void  )
-{
-   revert_to_stderr();
-   VG_(printf)("valgrind: no program specified\n");
-   VG_(printf)("valgrind: Use --help for more information.\n");
-   VG_(exit)(1);
-}
-
-__attribute__((noreturn))
-void VG_(err_config_error) ( Char* msg )
-{
-   revert_to_stderr();
-   VG_(printf)("valgrind: Startup or configuration error:\n   %s\n", msg);
-   VG_(printf)("valgrind: Unable to start up properly.  Giving up.\n");
-   VG_(exit)(1);
-}
 
 // Copies the string, prepending it with the startup working directory, and
 // expanding %p and %q entries.  Returns a new, malloc'd string.
@@ -149,7 +115,7 @@ Char* VG_(expand_file_name)(Char* option_name, Char* format)
 
    if (VG_STREQ(format, "")) {
       // Empty name, bad.
-      VG_(umsg)("%s: filename is empty", option_name);
+      VG_(fmsg)("%s: filename is empty", option_name);
       goto bad;
    }
    
@@ -158,11 +124,13 @@ Char* VG_(expand_file_name)(Char* option_name, Char* format)
    // that we don't allow a legitimate filename beginning with '~' but that
    // seems very unlikely.
    if (format[0] == '~') {
-      VG_(umsg)("%s: filename begins with '~'\n", option_name);
-      VG_(umsg)("You probably expected the shell to expand the '~', but it\n");
-      VG_(umsg)("didn't.  The rules for '~'-expansion "
-                "vary from shell to shell.\n");
-      VG_(umsg)("You might have more luck using $HOME instead.\n");
+      VG_(fmsg)(
+         "%s: filename begins with '~'\n"
+         "You probably expected the shell to expand the '~', but it\n"
+         "didn't.  The rules for '~'-expansion vary from shell to shell.\n"
+         "You might have more luck using $HOME instead.\n",
+         option_name
+      );
       goto bad;
    }
 
@@ -216,8 +184,7 @@ Char* VG_(expand_file_name)(Char* option_name, Char* format)
                qualname = &format[i];
                while (True) {
                   if (0 == format[i]) {
-                     VG_(message)(Vg_UserMsg, "%s: malformed %%q specifier\n",
-                        option_name);
+                     VG_(fmsg)("%s: malformed %%q specifier\n", option_name);
                      goto bad;
                   } else if ('}' == format[i]) {
                      // Temporarily replace the '}' with NUL to extract var
@@ -225,9 +192,8 @@ Char* VG_(expand_file_name)(Char* option_name, Char* format)
                      format[i] = 0;
                      qual = VG_(getenv)(qualname);
                      if (NULL == qual) {
-                        VG_(message)(Vg_UserMsg,
-                           "%s: environment variable %s is not set\n",
-                           option_name, qualname);
+                        VG_(fmsg)("%s: environment variable %s is not set\n",
+                                  option_name, qualname);
                         format[i] = '}';  // Put the '}' back.
                         goto bad;
                      }
@@ -240,15 +206,14 @@ Char* VG_(expand_file_name)(Char* option_name, Char* format)
                ENSURE_THIS_MUCH_SPACE(VG_(strlen)(qual));
                j += VG_(sprintf)(&out[j], "%s", qual);
             } else {
-               VG_(message)(Vg_UserMsg,
-                  "%s: expected '{' after '%%q'\n", option_name);
+               VG_(fmsg)("%s: expected '{' after '%%q'\n", option_name);
                goto bad;
             }
          } 
          else {
             // Something else, abort.
-            VG_(message)(Vg_UserMsg,
-               "%s: expected 'p' or 'q' or '%%' after '%%'\n", option_name);
+            VG_(fmsg)("%s: expected 'p' or 'q' or '%%' after '%%'\n",
+                      option_name);
             goto bad;
          }
       }
@@ -265,7 +230,7 @@ Char* VG_(expand_file_name)(Char* option_name, Char* format)
    VG_(strcpy)(opt, option_name);
    VG_(strcat)(opt, "=");
    VG_(strcat)(opt, format);
-   VG_(err_bad_option)(opt);
+   VG_(fmsg_bad_option)(opt, "");
   }
 }
 
@@ -335,5 +300,5 @@ Bool VG_(should_we_trace_this_child) ( HChar* child_exe_name )
 
 
 /*--------------------------------------------------------------------*/
-/*--- end                                              m_options.c ---*/
+/*--- end                                                          ---*/
 /*--------------------------------------------------------------------*/

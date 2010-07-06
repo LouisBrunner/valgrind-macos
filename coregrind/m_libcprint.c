@@ -400,14 +400,6 @@ static void add_to__vmessage_buf ( HChar c, void *p )
       HChar ch;
       Int   i, depth;
 
-      switch (b->kind) {
-         case Vg_UserMsg:       ch = '='; break;
-         case Vg_DebugMsg:      ch = '-'; break;
-         case Vg_DebugExtraMsg: ch = '+'; break;
-         case Vg_ClientMsg:     ch = '*'; break;
-         default:               ch = '?'; break;
-      }
-
       // Print one '>' in front of the messages for each level of
       // self-hosting being performed.
       depth = RUNNING_ON_VALGRIND;
@@ -417,25 +409,47 @@ static void add_to__vmessage_buf ( HChar c, void *p )
          b->buf[b->buf_used++] = '>';
       }
 
-      b->buf[b->buf_used++] = ch;
-      b->buf[b->buf_used++] = ch;
+      if (Vg_FailMsg == b->kind) {
+         // "valgrind: " prefix.
+         b->buf[b->buf_used++] = 'v';
+         b->buf[b->buf_used++] = 'a';
+         b->buf[b->buf_used++] = 'l';
+         b->buf[b->buf_used++] = 'g';
+         b->buf[b->buf_used++] = 'r';
+         b->buf[b->buf_used++] = 'i';
+         b->buf[b->buf_used++] = 'n';
+         b->buf[b->buf_used++] = 'd';
+         b->buf[b->buf_used++] = ':';
+         b->buf[b->buf_used++] = ' ';
+      } else {
+         switch (b->kind) {
+            case Vg_UserMsg:       ch = '='; break;
+            case Vg_DebugMsg:      ch = '-'; break;
+            case Vg_DebugExtraMsg: ch = '+'; break;
+            case Vg_ClientMsg:     ch = '*'; break;
+            default:               ch = '?'; break;
+         }
 
-      if (VG_(clo_time_stamp)) {
-         VG_(memset)(tmp, 0, sizeof(tmp));
-         VG_(elapsed_wallclock_time)(tmp);
+         b->buf[b->buf_used++] = ch;
+         b->buf[b->buf_used++] = ch;
+
+         if (VG_(clo_time_stamp)) {
+            VG_(memset)(tmp, 0, sizeof(tmp));
+            VG_(elapsed_wallclock_time)(tmp);
+            tmp[sizeof(tmp)-1] = 0;
+            for (i = 0; tmp[i]; i++)
+               b->buf[b->buf_used++] = tmp[i];
+         }
+
+         VG_(sprintf)(tmp, "%d", VG_(getpid)());
          tmp[sizeof(tmp)-1] = 0;
          for (i = 0; tmp[i]; i++)
             b->buf[b->buf_used++] = tmp[i];
+
+         b->buf[b->buf_used++] = ch;
+         b->buf[b->buf_used++] = ch;
+         b->buf[b->buf_used++] = ' ';
       }
-
-      VG_(sprintf)(tmp, "%d", VG_(getpid)());
-      tmp[sizeof(tmp)-1] = 0;
-      for (i = 0; tmp[i]; i++)
-         b->buf[b->buf_used++] = tmp[i];
-
-      b->buf[b->buf_used++] = ch;
-      b->buf[b->buf_used++] = ch;
-      b->buf[b->buf_used++] = ' ';
 
       /* We can't possibly have stuffed 96 chars in merely as a result
          of making the preamble (can we?) */
@@ -503,7 +517,36 @@ UInt VG_(message) ( VgMsgKind kind, const HChar* format, ... )
    return count;
 }
 
+static void revert_to_stderr ( void )
+{
+   VG_(log_output_sink).fd = 2; /* stderr */
+   VG_(log_output_sink).is_socket = False;
+}
+
 /* VG_(message) variants with hardwired first argument. */
+
+UInt VG_(fmsg) ( const HChar* format, ... )
+{
+   UInt count;
+   va_list vargs;
+   va_start(vargs,format);
+   count = VG_(vmessage) ( Vg_FailMsg, format, vargs );
+   va_end(vargs);
+   return count;
+}
+
+void VG_(fmsg_bad_option) ( HChar* opt, const HChar* format, ... )
+{
+   va_list vargs;
+   va_start(vargs,format);
+   revert_to_stderr();
+   VG_(message) (Vg_FailMsg, "Bad option: %s\n", opt);
+   VG_(vmessage)(Vg_FailMsg, format, vargs );
+   VG_(message) (Vg_FailMsg, "Use --help for more information or consult the user manual.\n");
+   VG_(exit)(1);
+   va_end(vargs);
+}
+
 UInt VG_(umsg) ( const HChar* format, ... )
 {
    UInt count;
@@ -541,6 +584,24 @@ void VG_(message_flush) ( void )
    vmessage_buf_t* b = &vmessage_buf;
    send_bytes_to_logging_sink( b->sink, b->buf, b->buf_used );
    b->buf_used = 0;
+}
+
+__attribute__((noreturn))
+void VG_(err_missing_prog) ( void  )
+{
+   revert_to_stderr();
+   VG_(fmsg)("no program specified\n");
+   VG_(fmsg)("Use --help for more information.\n");
+   VG_(exit)(1);
+}
+
+__attribute__((noreturn))
+void VG_(err_config_error) ( Char* msg )
+{
+   revert_to_stderr();
+   VG_(fmsg)("Startup or configuration error:\n   %s\n", msg);
+   VG_(fmsg)("Unable to start up properly.  Giving up.\n");
+   VG_(exit)(1);
 }
 
 

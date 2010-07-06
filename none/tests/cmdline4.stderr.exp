@@ -1,2 +1,2 @@
-valgrind: Bad option '--bad-bad-option'; aborting.
-valgrind: Use --help for more information.
+valgrind: Bad option: --bad-bad-option
+valgrind: Use --help for more information or consult the user manual.

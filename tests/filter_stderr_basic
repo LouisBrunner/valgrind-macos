@@ -9,8 +9,8 @@
 
 dir=`dirname $0`
 
-# Remove ==pid== and --pid-- and ++pid++ and **pid** strings 
-perl -p -e 's/(==|--|\+\+|\*\*)[0-9]{1,7}\1 //' |
+# Remove ==pid== and --pid-- and **pid** strings 
+perl -p -e 's/(==|--|\*\*)[0-9]{1,7}\1 //' |
 
 # Remove any --pid:0: strings (debuglog level zero output)
 sed "/^--[0-9]\{1,7\}:0:*/d" |

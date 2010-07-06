@@ -425,7 +425,6 @@ static void add_to__vmessage_buf ( HChar c, void *p )
          switch (b->kind) {
             case Vg_UserMsg:       ch = '='; break;
             case Vg_DebugMsg:      ch = '-'; break;
-            case Vg_DebugExtraMsg: ch = '+'; break;
             case Vg_ClientMsg:     ch = '*'; break;
             default:               ch = '?'; break;
          }
@@ -563,16 +562,6 @@ UInt VG_(dmsg) ( const HChar* format, ... )
    va_list vargs;
    va_start(vargs,format);
    count = VG_(vmessage) ( Vg_DebugMsg, format, vargs );
-   va_end(vargs);
-   return count;
-}
-
-UInt VG_(emsg) ( const HChar* format, ... )
-{
-   UInt count;
-   va_list vargs;
-   va_start(vargs,format);
-   count = VG_(vmessage) ( Vg_DebugExtraMsg, format, vargs );
    va_end(vargs);
    return count;
 }

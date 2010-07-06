@@ -75,7 +75,6 @@ typedef
       Vg_FailMsg,         // "valgrind:"
       Vg_UserMsg,         // "==pid=="
       Vg_DebugMsg,        // "--pid--"
-      Vg_DebugExtraMsg,   // "++pid++"
       Vg_ClientMsg        // "**pid**"
    }
    VgMsgKind;
@@ -137,10 +136,6 @@ extern UInt VG_(umsg)( const HChar* format, ... ) PRINTF_CHECK(1, 2);
 
 // This is used for debugging messages that are only of use to developers.
 extern UInt VG_(dmsg)( const HChar* format, ... ) PRINTF_CHECK(1, 2);
-
-// This is used for additional debugging messages that are only of use to
-// developers.
-extern UInt VG_(emsg)( const HChar* format, ... ) PRINTF_CHECK(1, 2);
 
 /* Flush any output cached by previous calls to VG_(message) et al. */
 extern void VG_(message_flush) ( void );

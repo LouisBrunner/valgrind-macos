@@ -596,7 +596,8 @@ in most cases.  We group the available options by rough categories.</para>
     <term><option>-h --help</option></term>
     <listitem>
       <para>Show help for all options, both for the core and for the
-      selected tool.</para>
+      selected tool.  If the option is repeated it is equivalent to giving
+      <option>--help-debug</option>.</para>
     </listitem>
   </varlistentry>
 

@@ -303,10 +303,10 @@ static void early_process_cmd_line_options ( /*OUT*/Int* need_help,
          VG_(printf)("valgrind-" VERSION "\n");
          VG_(exit)(0);
       }
-      else if VG_XACT_CLO(str, "--help", *need_help, 1) {}
-      else if VG_XACT_CLO(str, "-h",     *need_help, 1) {}
+      else if VG_XACT_CLO(str, "--help", *need_help, *need_help+1) {}
+      else if VG_XACT_CLO(str, "-h",     *need_help, *need_help+1) {}
 
-      else if VG_XACT_CLO(str, "--help-debug", *need_help, 2) {}
+      else if VG_XACT_CLO(str, "--help-debug", *need_help, *need_help+2) {}
 
       // The tool has already been determined, but we need to know the name
       // here.
@@ -1826,7 +1826,7 @@ Int valgrind_main ( Int argc, HChar **argv, HChar **envp )
    //--------------------------------------------------------------
    VG_(debugLog)(1, "main", "Print help and quit, if requested\n");
    if (need_help) {
-      usage_NORETURN(/*--help-debug?*/2 == need_help);
+      usage_NORETURN(/*--help-debug?*/need_help >= 2);
    }
 
    //--------------------------------------------------------------

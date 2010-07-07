@@ -1180,7 +1180,7 @@ IRSB* CLG_(instrument)( VgCallbackClosure* closure,
    /* Deal with branches to unknown destinations.  Except ignore ones
       which are function returns as we assume the return stack
       predictor never mispredicts. */
-   if (sbIn->jumpkind == Ijk_Boring) {
+   if ((sbIn->jumpkind == Ijk_Boring) || (sbIn->jumpkind == Ijk_Call)) {
       if (0) { ppIRExpr( sbIn->next ); VG_(printf)("\n"); }
       switch (sbIn->next->tag) {
          case Iex_Const:

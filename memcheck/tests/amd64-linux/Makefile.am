@@ -6,7 +6,7 @@ dist_noinst_SCRIPTS = \
 
 EXTRA_DIST = \
 	defcfaexpr.vgtest defcfaexpr.stderr.exp \
-	int3-x86.vgtest int3-x86.stderr.exp int3-x86.stdout.exp
+	int3-amd64.vgtest int3-amd64.stderr.exp int3-amd64.stdout.exp
 
 check_PROGRAMS = \
 	defcfaexpr \

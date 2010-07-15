@@ -11,7 +11,8 @@ dist_noinst_SCRIPTS =		    \
 	supported_sem_init
 
 noinst_HEADERS =                                    \
-	tsan_thread_wrappers_pthread.h
+	tsan_thread_wrappers_pthread.h		    \
+	unified_annotations.h
 
 EXTRA_DIST =                                        \
 	annotate_barrier.stderr.exp		    \

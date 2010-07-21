@@ -3629,7 +3629,7 @@ PRE(proc_info)
                     user_addr_t buffer, int32_t buffersize)
    */
    PRINT("proc_info(%d, %d, %u, %llu, %#lx, %d)",
-         (Int)ARG1, (Int)ARG2, (UInt)ARG3, ARG4, ARG5, (Int)ARG6);
+         (Int)ARG1, (Int)ARG2, (UInt)ARG3, (ULong)ARG4, ARG5, (Int)ARG6);
    PRE_REG_READ6(int, "proc_info",
                  int, callnum, int, pid, unsigned int, flavor,
                  unsigned long long int, arg,

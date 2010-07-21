@@ -948,10 +948,12 @@ Bool ML_(read_macho_debug_info)( struct _DebugInfo* di )
      HChar* cmd = ML_(dinfo_zalloc)( "di.readmacho.tmp1", 
                                      VG_(strlen)(dsymutil)
                                      + VG_(strlen)(di->filename)
-                                     + 30 /* misc */ );
+                                     + 32 /* misc */ );
      VG_(strcpy)(cmd, dsymutil);
      if (0) VG_(strcat)(cmd, "--verbose ");
+     VG_(strcat)(cmd, "\"");
      VG_(strcat)(cmd, di->filename);
+     VG_(strcat)(cmd, "\"");
      VG_(message)(Vg_DebugMsg, "run: %s\n", cmd);
      r = VG_(system)( cmd );
      if (r)

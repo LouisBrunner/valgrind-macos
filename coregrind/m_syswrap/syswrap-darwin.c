@@ -7114,7 +7114,6 @@ PRE(semaphore_timedwait_signal)
 }
 
 
-#if DARWIN_VERS <= DARWIN_10_5
 PRE(__semwait_signal)
 {
    /* 10.5 args: int cond_sem, int mutex_sem,
@@ -7129,25 +7128,26 @@ PRE(__semwait_signal)
 
    *flags |= SfMayBlock;
 }
-#else
-PRE(__semwait_signal)
-{
-   /* 10.5 args: int cond_sem, int mutex_sem,
-                 int timeout, int relative,
-                 const timespec *ts */
-   PRINT("__semwait_signal(wait %s, signal %s, %ld, %ld, %#lx)", 
-         name_for_port(ARG1), name_for_port(ARG2), ARG3, ARG4, ARG5);
-   PRE_REG_READ5(int, "__semwait_signal", 
-                 int,cond_sem, int,mutex_sem,
-                 int,timeout, int,relative, 
-                 const struct vki_timespec *,ts);
-   
-   if (ARG5) PRE_MEM_READ ("__semwait_signal(ts)", 
-                           ARG5, sizeof(struct vki_timespec));
-   
-   *flags |= SfMayBlock;
-}
-#endif
+// GrP provided this alternative version for 10.6, but NjN
+// reckons the 10.5 is is still correct for 10.6.  So, retaining
+// Greg's version as a comment just in case we need it later.
+//PRE(__semwait_signal)
+//{
+//   /* 10.5 args: int cond_sem, int mutex_sem,
+//                 int timeout, int relative,
+//                 const timespec *ts */
+//   PRINT("__semwait_signal(wait %s, signal %s, %ld, %ld, %#lx)", 
+//         name_for_port(ARG1), name_for_port(ARG2), ARG3, ARG4, ARG5);
+//   PRE_REG_READ5(int, "__semwait_signal", 
+//                 int,cond_sem, int,mutex_sem,
+//                 int,timeout, int,relative, 
+//                 const struct vki_timespec *,ts);
+//   
+//   if (ARG5) PRE_MEM_READ ("__semwait_signal(ts)", 
+//                           ARG5, sizeof(struct vki_timespec));
+//   
+//   *flags |= SfMayBlock;
+//}
 
 
 PRE(__thread_selfid)

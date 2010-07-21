@@ -2399,6 +2399,7 @@ static void setup_post_syscall_table ( void )
 #     if defined(__NR_semop)
       ADD(0, __NR_semop);
 #     endif
+      ADD(0, __NR_sendfile);
 #     if defined(__NR_sendto)
       ADD(0, __NR_sendto);
 #     endif
@@ -2410,9 +2411,11 @@ static void setup_post_syscall_table ( void )
       ADD(0, __NR_set_thread_area);
 #     endif
       ADD(0, __NR_set_tid_address);
+      ADD(0, __NR_setgid);
       ADD(0, __NR_setfsgid);
       ADD(0, __NR_setfsuid);
       ADD(0, __NR_setgid);
+      ADD(0, __NR_setgroups);
       ADD(0, __NR_setitimer);
       ADD(0, __NR_setpgid);
       ADD(0, __NR_setpriority);

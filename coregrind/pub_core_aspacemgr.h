@@ -373,10 +373,10 @@ extern Bool VG_(am_relocate_nooverlap_client)( /*OUT*/Bool* need_discard,
 
 #if defined(VGP_ppc32_linux) || defined(VGP_ppc64_linux)
 # define VG_STACK_GUARD_SZB  65536  // 1 or 16 pages
-# define VG_STACK_ACTIVE_SZB 131072 // 2 or 32 pages
+# define VG_STACK_ACTIVE_SZB (4096 * 256) // 1Mb
 #else
 # define VG_STACK_GUARD_SZB  8192   // 2 pages
-# define VG_STACK_ACTIVE_SZB 65536  // 16 pages
+# define VG_STACK_ACTIVE_SZB (4096 * 256) // 1Mb
 #endif
 
 typedef

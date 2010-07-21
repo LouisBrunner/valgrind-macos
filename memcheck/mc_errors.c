@@ -768,6 +768,7 @@ void MC_(pp_Error) ( Error* err )
    for the --workaround-gcc296-bugs kludge. */
 static Bool is_just_below_ESP( Addr esp, Addr aa )
 {
+   esp -= VG_STACK_REDZONE_SZB;
    if (esp > aa && (esp - aa) <= VG_GCC296_BUG_STACK_SLOP)
       return True;
    else

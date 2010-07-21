@@ -7578,7 +7578,7 @@ const SyscallTableEntry ML_(syscall_table)[] = {
    MACXY(__NR_ioctl,       ioctl), 
 // _____(__NR_reboot), 
 // _____(__NR_revoke), 
-// _____(__NR_symlink), 
+   GENX_(__NR_symlink,     sys_symlink),   // 57
    GENX_(__NR_readlink,    sys_readlink), 
    GENX_(__NR_execve,      sys_execve), 
    GENX_(__NR_umask,       sys_umask),     // 60

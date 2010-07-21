@@ -2521,6 +2521,16 @@ POST(fsgetpath)
    POST_MEM_WRITE(ARG1, RES);
 }
 
+PRE(audit_session_self)
+{
+  PRINT("audit_session_self()");
+}
+
+POST(audit_session_self)
+{
+  record_named_port(tid, RES, MACH_PORT_RIGHT_SEND, "audit-session-%p");
+  PRINT("audit-session %#lx", RES);
+}
 
 PRE(exchangedata)
 {
@@ -7983,7 +7993,7 @@ const SyscallTableEntry ML_(syscall_table)[] = {
 // _____(__NR___mac_getfsstat),
 #if DARWIN_VERS >= DARWIN_10_6
    MACXY(__NR_fsgetpath, fsgetpath), 
-// _____(__NR_audit_session_self),
+   MACXY(__NR_audit_session_self, audit_session_self),
 // _____(__NR_audit_session_join),
 #endif
 

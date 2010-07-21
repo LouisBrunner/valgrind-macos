@@ -486,8 +486,8 @@ DECL_TEMPLATE(darwin, __mac_syscall);           // 381
 // NYI __mac_mount 424
 // NYI __mac_get_mount 425
 // NYI __mac_getfsstat 426
-DECL_TEMPLATE(darwin, fsgetpath);           // 427
-// NYI audit_session_self 428
+DECL_TEMPLATE(darwin, fsgetpath);                // 427
+DECL_TEMPLATE(darwin, audit_session_self);       // 428
 // NYI audit_session_join 429
 
 // Mach message helpers

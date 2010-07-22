@@ -288,6 +288,7 @@ asm(
 void pthread_hijack(Addr self, Addr kport, Addr func, Addr func_arg, 
                     Addr stacksize, Addr flags, Addr sp)
 {
+   vki_sigset_t blockall;
    ThreadState *tst = (ThreadState *)func_arg;
    VexGuestAMD64State *vex = &tst->arch.vex;
 
@@ -296,6 +297,11 @@ void pthread_hijack(Addr self, Addr kport, Addr func, Addr func_arg,
    // Wait for parent thread's permission.
    // The parent thread holds V's lock on our behalf.
    semaphore_wait(tst->os_state.child_go);
+
+   /* Start the thread with all signals blocked.  VG_(scheduler) will
+      set the mask correctly when we finally get there. */
+   VG_(sigfillset)(&blockall);
+   VG_(sigprocmask)(VKI_SIG_SETMASK, &blockall, NULL);
 
    // Set thread's registers
    // Do this FIRST because some code below tries to collect a backtrace, 
@@ -339,6 +345,10 @@ void pthread_hijack(Addr self, Addr kport, Addr func, Addr func_arg,
    }
    ML_(sync_mappings)("after", "pthread_hijack", 0);
 
+   // DDD: should this be here rather than in POST(sys_bsdthread_create)?
+   // But we don't have ptid here...
+   //VG_TRACK ( pre_thread_ll_create, ptid, tst->tid );
+
    // Tell parent thread's POST(sys_bsdthread_create) that we're done 
    // initializing registers and mapping memory.
    semaphore_signal(tst->os_state.child_done);
@@ -364,8 +374,7 @@ asm(
     );
 
 
-/*
-  wqthread note: The kernel may create or destroy pthreads in the 
+/*  wqthread note: The kernel may create or destroy pthreads in the 
     wqthread pool at any time with no userspace interaction, 
     and wqthread_start may be entered at any time with no userspace 
     interaction.

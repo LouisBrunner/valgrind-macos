@@ -331,12 +331,13 @@ void pthread_hijack(Addr self, Addr kport, Addr func, Addr func_arg,
             VKI_PROT_READ|VKI_PROT_WRITE, VKI_MAP_PRIVATE, -1, 0);
       // guard page
       ML_(notify_core_and_tool_of_mmap)(
-            stack-VKI_PAGE_SIZE, VKI_PAGE_SIZE, 0, VKI_MAP_PRIVATE, -1, 0);
+            stack-VKI_PAGE_SIZE, VKI_PAGE_SIZE,
+            0, VKI_MAP_PRIVATE, -1, 0);
    } else {
       // client allocated stack
       find_stack_segment(tst->tid, sp);
    }
-   VG_(am_do_sync_check)("after", "pthread_hijack", 0);
+   ML_(sync_mappings)("after", "pthread_hijack", 0);
 
    // Tell parent thread's POST(sys_bsdthread_create) that we're done 
    // initializing registers and mapping memory.
@@ -446,7 +447,6 @@ void wqthread_hijack(Addr self, Addr kport, Addr stackaddr, Addr workitem,
       ML_(wqthread_continue_NORETURN)(tst->tid);
    } 
    else {
-
       // Record thread's stack and Mach port and pthread struct
       tst->os_state.pthread = self;
       tst->os_state.lwpid = kport;
@@ -470,9 +470,10 @@ void wqthread_hijack(Addr self, Addr kport, Addr stackaddr, Addr workitem,
       // guard page
       // GrP fixme ban_mem_stack!
       ML_(notify_core_and_tool_of_mmap)(
-            stack-VKI_PAGE_SIZE, VKI_PAGE_SIZE, 0, VKI_MAP_PRIVATE, -1, 0);
+            stack-VKI_PAGE_SIZE, VKI_PAGE_SIZE,
+            0, VKI_MAP_PRIVATE, -1, 0);
 
-      VG_(am_do_sync_check)("after", "wqthread_hijack", 0);
+      ML_(sync_mappings)("after", "wqthread_hijack", 0);
 
       // Go!
       /* Same comments as the 'release' in the then-clause.

@@ -997,6 +997,11 @@ static void* pdb_ds_read( struct pdb_reader* pdb,
    UInt i;
 
    if (!size) return NULL;
+   if (size > 512 * 1024 * 1024) {
+      VG_(umsg)("Warning: pdb_ds_read: implausible size "
+                "(%u); skipping -- possible invalid .pdb file?\n", size);
+      return NULL;
+   }
 
    blocksize = pdb->u.ds.header->block_size;
    nBlocks   = (size + blocksize - 1) / blocksize;

@@ -1027,7 +1027,7 @@ static void print_preamble ( Bool logging_to_fd,
          VG_(printf_xml)("<preamble>\n");
 
       /* Tool details */
-      umsg_or_xml( "%s%s%s%s, %s%s\n",
+      umsg_or_xml( VG_(clo_xml) ? "%s%t%t%t, %t%s\n" : "%s%s%s%s, %s%s\n",
                    xpre,
                    VG_(details).name, 
                    NULL == VG_(details).version ? "" : "-",
@@ -1043,7 +1043,8 @@ static void print_preamble ( Bool logging_to_fd,
          );
       }
 
-      umsg_or_xml("%s%s%s\n", xpre, VG_(details).copyright_author, xpost);
+      umsg_or_xml( VG_(clo_xml) ? "%s%t%s\n" : "%s%s%s\n",
+                   xpre, VG_(details).copyright_author, xpost );
 
       /* Core details */
       umsg_or_xml(

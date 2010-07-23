@@ -2776,6 +2776,25 @@ static HReg iselFltExpr_wrk ( ISelEnv* env, IRExpr* e )
       return dst;
    }
 
+   if (e->tag == Iex_Binop && e->Iex.Binop.op == Iop_RoundF32toInt) {
+      HReg rf  = iselFltExpr(env, e->Iex.Binop.arg2);
+      HReg dst = newVRegF(env);
+
+      /* rf now holds the value to be rounded.  The first thing to do
+         is set the FPU's rounding mode accordingly. */
+
+      /* Set host rounding mode */
+      set_FPU_rounding_mode( env, e->Iex.Binop.arg1 );
+
+      /* grndint %rf, %dst */
+      addInstr(env, X86Instr_FpUnary(Xfp_ROUND, rf, dst));
+
+      /* Restore default FPU rounding. */
+      set_FPU_rounding_default( env );
+
+      return dst;
+   }
+
    ppIRExpr(e);
    vpanic("iselFltExpr_wrk");
 }

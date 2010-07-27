@@ -393,7 +393,7 @@ DECL_TEMPLATE(darwin, __pthread_markcancel);    // 332
 DECL_TEMPLATE(darwin, __pthread_canceled);      // 333
 DECL_TEMPLATE(darwin, __semwait_signal);        // 334
 // old utrace
-#if DARWIN_VERS >= DARWIN_10_6 && defined(VGP_amd64_darwin)
+#if DARWIN_VERS >= DARWIN_10_6
 DECL_TEMPLATE(darwin, proc_info);               // 336
 #endif
 DECL_TEMPLATE(darwin, sendfile);                // 337

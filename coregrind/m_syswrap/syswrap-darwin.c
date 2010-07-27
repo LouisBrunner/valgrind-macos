@@ -3621,23 +3621,34 @@ PRE(sigsuspend)
    PRE_REG_READ1(int, "sigsuspend", int, sigmask);
 }
 
-/* NB: 64-bit version only!  If this needs to be supported
-   on 32-bit Darwin too, be careful about the 4th arg, since
-   that is a uint64_t. 
+
+/* Be careful about the 4th arg, since that is a uint64_t.  Hence 64-
+   and 32-bit wrappers are different.
 
    ARG5 and ARG6 (buffer, buffersize) specify a buffer start and
    length in the usual way.  I have seen values NULL, 0 passed in some
    cases.  I left the calls to PRE_MEM_WRITE/READ unconditional on the
    basis that they don't do anything if the length is zero, so it's OK
    for the buffer pointer to be NULL in that case (meaning they don't
-   complain). */
-#if DARWIN_VERS >= DARWIN_10_6 && defined(VGP_amd64_darwin)
+   complain).
+
+   int proc_info(int32_t callnum, int32_t pid,
+                 uint32_t flavor, uint64_t arg,
+                 user_addr_t buffer, int32_t buffersize)
+*/
+#if DARWIN_VERS >= DARWIN_10_6
 PRE(proc_info)
 {
-   /* int proc_info(int32_t callnum, int32_t pid,
-                    uint32_t flavor, uint64_t arg,
-                    user_addr_t buffer, int32_t buffersize)
-   */
+#if VG_WORDSIZE == 4
+   PRINT("proc_info(%d, %d, %u, %llu, %#lx, %d)",
+         (Int)ARG1, (Int)ARG2, (UInt)ARG3, LOHI64(ARG4,ARG5), ARG6, (Int)ARG7);
+   PRE_REG_READ7(int, "proc_info",
+                 int, callnum, int, pid, unsigned int, flavor,
+                 vki_uint32_t, arg_low32,
+                 vki_uint32_t, arg_high32,
+                 void*, buffer, int, buffersize);
+   PRE_MEM_WRITE("proc_info(buffer)", ARG6, ARG7);
+#else
    PRINT("proc_info(%d, %d, %u, %llu, %#lx, %d)",
          (Int)ARG1, (Int)ARG2, (UInt)ARG3, (ULong)ARG4, ARG5, (Int)ARG6);
    PRE_REG_READ6(int, "proc_info",
@@ -3645,13 +3656,21 @@ PRE(proc_info)
                  unsigned long long int, arg,
                  void*, buffer, int, buffersize);
    PRE_MEM_WRITE("proc_info(buffer)", ARG5, ARG6);
+#endif
 }
+
 POST(proc_info)
 {
+#if VG_WORDSIZE == 4
+   vg_assert(SUCCESS);
+   POST_MEM_WRITE(ARG6, ARG7);
+#else
    vg_assert(SUCCESS);
    POST_MEM_WRITE(ARG5, ARG6);
-}
 #endif
+}
+
+#endif /* DARWIN_VERS >= DARWIN_10_6 */
 
 /* ---------------------------------------------------------------------
    aio_*
@@ -7889,7 +7908,7 @@ const SyscallTableEntry ML_(syscall_table)[] = {
    MACX_(__NR___pthread_canceled,      __pthread_canceled),
    MACX_(__NR___semwait_signal,        __semwait_signal), 
    _____(VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(335)),   // old utrace
-#if DARWIN_VERS >= DARWIN_10_6 && defined(VGP_amd64_darwin)
+#if DARWIN_VERS >= DARWIN_10_6
    MACXY(__NR_proc_info,               proc_info),  // 336
 #endif
    MACXY(__NR_sendfile,    sendfile), 

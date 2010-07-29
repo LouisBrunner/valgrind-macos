@@ -68,8 +68,8 @@ UWord VG_(run_innerloop) ( void* guest_state, UWord do_profiling );
    following somewhat bogus decls.  At least on x86 and amd64.  ppc32
    and ppc64 use straightforward bl-blr to get from dispatcher to
    translation and back and so do not need these labels. */
-extern void VG_(run_innerloop__dispatch_unprofiled);
-extern void VG_(run_innerloop__dispatch_profiled);
+extern Addr VG_(run_innerloop__dispatch_unprofiled);
+extern Addr VG_(run_innerloop__dispatch_profiled);
 #endif
 
 
@@ -86,7 +86,7 @@ extern void VG_(run_a_noredir_translation) ( volatile UWord* argblock );
 /* We need to a label inside VG_(run_a_noredir_translation), so that
    Vex can add branches to them from generated code.  Hence the
    following somewhat bogus decl. */
-extern void VG_(run_a_noredir_translation__return_point);
+extern Addr VG_(run_a_noredir_translation__return_point);
 #endif
 
 

@@ -2330,6 +2330,7 @@ static void setup_post_syscall_table ( void )
       ADD(0, __NR_getuid32);
 #     endif
       ADD(0, __NR_getxattr);
+      ADD(0, __NR_ioperm);
       ADD(0, __NR_inotify_add_watch);
       ADD(0, __NR_inotify_init);
 #     if defined(__NR_inotify_init1)

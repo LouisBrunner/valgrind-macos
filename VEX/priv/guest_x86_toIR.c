@@ -6161,7 +6161,8 @@ static HChar* nameBtOp ( BtOp op )
 
 
 static
-UInt dis_bt_G_E ( UChar sorb, Bool locked, Int sz, Int delta, BtOp op )
+UInt dis_bt_G_E ( VexAbiInfo* vbi,
+                  UChar sorb, Bool locked, Int sz, Int delta, BtOp op )
 {
    HChar  dis_buf[50];
    UChar  modrm;
@@ -6191,7 +6192,12 @@ UInt dis_bt_G_E ( UChar sorb, Bool locked, Int sz, Int delta, BtOp op )
       t_esp = newTemp(Ity_I32);
       t_addr0 = newTemp(Ity_I32);
 
-      assign( t_esp, binop(Iop_Sub32, getIReg(4, R_ESP), mkU32(sz)) );
+      /* For the choice of the value 128, see comment in dis_bt_G_E in
+         guest_amd64_toIR.c.  We point out here only that 128 is
+         fast-cased in Memcheck and is > 0, so seems like a good
+         choice. */
+      vassert(vbi->guest_stack_redzone_size == 0);
+      assign( t_esp, binop(Iop_Sub32, getIReg(4, R_ESP), mkU32(128)) );
       putIReg(4, R_ESP, mkexpr(t_esp));
 
       storeLE( mkexpr(t_esp), getIReg(sz, eregOfRM(modrm)) );
@@ -6286,7 +6292,7 @@ UInt dis_bt_G_E ( UChar sorb, Bool locked, Int sz, Int delta, BtOp op )
    if (epartIsReg(modrm)) {
       /* t_esp still points at it. */
       putIReg(sz, eregOfRM(modrm), loadLE(szToITy(sz), mkexpr(t_esp)) );
-      putIReg(4, R_ESP, binop(Iop_Add32, mkexpr(t_esp), mkU32(sz)) );
+      putIReg(4, R_ESP, binop(Iop_Add32, mkexpr(t_esp), mkU32(128)) );
    }
 
    DIP("bt%s%c %s, %s\n",
@@ -7841,7 +7847,8 @@ DisResult disInstr_X86_WRK (
              Bool         resteerCisOk,
              void*        callback_opaque,
              Long         delta64,
-             VexArchInfo* archinfo 
+             VexArchInfo* archinfo,
+             VexAbiInfo*  vbi
           )
 {
    IRType    ty;
@@ -14348,16 +14355,16 @@ DisResult disInstr_X86_WRK (
       /* =-=-=-=-=-=-=-=-=- BT/BTS/BTR/BTC =-=-=-=-=-=-= */
 
       case 0xA3: /* BT Gv,Ev */
-         delta = dis_bt_G_E ( sorb, pfx_lock, sz, delta, BtOpNone );
+         delta = dis_bt_G_E ( vbi, sorb, pfx_lock, sz, delta, BtOpNone );
          break;
       case 0xB3: /* BTR Gv,Ev */
-         delta = dis_bt_G_E ( sorb, pfx_lock, sz, delta, BtOpReset );
+         delta = dis_bt_G_E ( vbi, sorb, pfx_lock, sz, delta, BtOpReset );
          break;
       case 0xAB: /* BTS Gv,Ev */
-         delta = dis_bt_G_E ( sorb, pfx_lock, sz, delta, BtOpSet );
+         delta = dis_bt_G_E ( vbi, sorb, pfx_lock, sz, delta, BtOpSet );
          break;
       case 0xBB: /* BTC Gv,Ev */
-         delta = dis_bt_G_E ( sorb, pfx_lock, sz, delta, BtOpComp );
+         delta = dis_bt_G_E ( vbi, sorb, pfx_lock, sz, delta, BtOpComp );
          break;
 
       /* =-=-=-=-=-=-=-=-=- CMOV =-=-=-=-=-=-=-=-=-=-=-= */
@@ -15065,7 +15072,8 @@ DisResult disInstr_X86 ( IRSB*        irsb_IN,
    expect_CAS = False;
    dres = disInstr_X86_WRK ( &expect_CAS, put_IP, resteerOkFn,
                              resteerCisOk,
-                             callback_opaque, delta, archinfo );
+                             callback_opaque,
+                             delta, archinfo, abiinfo );
    x2 = irsb_IN->stmts_used;
    vassert(x2 >= x1);
 
@@ -15084,7 +15092,8 @@ DisResult disInstr_X86 ( IRSB*        irsb_IN,
       vex_traceflags |= VEX_TRACE_FE;
       dres = disInstr_X86_WRK ( &expect_CAS, put_IP, resteerOkFn,
                                 resteerCisOk,
-                                callback_opaque, delta, archinfo );
+                                callback_opaque,
+                                delta, archinfo, abiinfo );
       for (i = x1; i < x2; i++) {
          vex_printf("\t\t");
          ppIRStmt(irsb_IN->stmts[i]);

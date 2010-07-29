@@ -7367,11 +7367,25 @@ ULong dis_bt_G_E ( VexAbiInfo* vbi,
    
    if (epartIsReg(modrm)) {
       delta++;
-      /* Get it onto the client's stack. */
+      /* Get it onto the client's stack.  Oh, this is a horrible
+         kludge.  See https://bugs.kde.org/show_bug.cgi?id=245925.
+         Because of the ELF ABI stack redzone, there may be live data
+         up to 128 bytes below %RSP.  So we can't just push it on the
+         stack, else we may wind up trashing live data, and causing
+         impossible-to-find simulation errors.  (Yes, this did
+         happen.)  So we need to drop RSP before at least 128 before
+         pushing it.  That unfortunately means hitting Memcheck's
+         fast-case painting code.  Ideally we should drop more than
+         128, to reduce the chances of breaking buggy programs that
+         have live data below -128(%RSP).  Memcheck fast-cases moves
+         of 288 bytes due to the need to handle ppc64-linux quickly,
+         so let's use 288.  Of course the real fix is to get rid of
+         this kludge entirely.  */
       t_rsp = newTemp(Ity_I64);
       t_addr0 = newTemp(Ity_I64);
 
-      assign( t_rsp, binop(Iop_Sub64, getIReg64(R_RSP), mkU64(sz)) );
+      vassert(vbi->guest_stack_redzone_size == 128);
+      assign( t_rsp, binop(Iop_Sub64, getIReg64(R_RSP), mkU64(288)) );
       putIReg64(R_RSP, mkexpr(t_rsp));
 
       storeLE( mkexpr(t_rsp), getIRegE(sz, pfx, modrm) );
@@ -7470,7 +7484,7 @@ ULong dis_bt_G_E ( VexAbiInfo* vbi,
          standard zero-extend rule */
       if (op != BtOpNone)
          putIRegE(sz, pfx, modrm, loadLE(szToITy(sz), mkexpr(t_rsp)) );
-      putIReg64(R_RSP, binop(Iop_Add64, mkexpr(t_rsp), mkU64(sz)) );
+      putIReg64(R_RSP, binop(Iop_Add64, mkexpr(t_rsp), mkU64(288)) );
    }
 
    DIP("bt%s%c %s, %s\n",

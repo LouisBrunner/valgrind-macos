@@ -9951,7 +9951,8 @@ DisResult disInstr_AMD64_WRK (
    /* ***--- this is an MMX class insn introduced in SSE1 ---*** */
    /* 0F C4 = PINSRW -- get 16 bits from E(mem or low half ireg) and
       put it into the specified lane of mmx(G). */
-   if (haveNo66noF2noF3(pfx) && sz == 4 
+   if (haveNo66noF2noF3(pfx)
+       && (sz == 4 || /* ignore redundant REX.W */ sz == 8)
        && insn[0] == 0x0F && insn[1] == 0xC4) {
       /* Use t0 .. t3 to hold the 4 original 16-bit lanes of the
          mmx reg.  t4 is the new lane value.  t5 is the original

@@ -53,32 +53,32 @@
    readable, at least.  Otherwise Memcheck complains we're jumping to
    invalid addresses. */
 
-extern void VG_(trampoline_stuff_start)( void );
-extern void VG_(trampoline_stuff_end)( void );
+extern void VG_(trampoline_stuff_start);
+extern void VG_(trampoline_stuff_end);
 
 #if defined(VGP_x86_linux)
-extern void VG_(x86_linux_SUBST_FOR_sigreturn)( void );
-extern void VG_(x86_linux_SUBST_FOR_rt_sigreturn)( void );
+extern void VG_(x86_linux_SUBST_FOR_sigreturn);
+extern void VG_(x86_linux_SUBST_FOR_rt_sigreturn);
 extern Char* VG_(x86_linux_REDIR_FOR_index) ( const Char*, Int );
 #endif
 
 #if defined(VGP_amd64_linux)
-extern void VG_(amd64_linux_SUBST_FOR_rt_sigreturn)( void );
-extern void VG_(amd64_linux_REDIR_FOR_vgettimeofday)( void );
-extern void VG_(amd64_linux_REDIR_FOR_vtime)( void );
+extern void VG_(amd64_linux_SUBST_FOR_rt_sigreturn);
+extern void VG_(amd64_linux_REDIR_FOR_vgettimeofday);
+extern void VG_(amd64_linux_REDIR_FOR_vtime);
 extern UInt VG_(amd64_linux_REDIR_FOR_strlen)( void* );
 #endif
 
 #if defined(VGP_ppc32_linux)
-extern void  VG_(ppc32_linux_SUBST_FOR_sigreturn)( void );
-extern void  VG_(ppc32_linux_SUBST_FOR_rt_sigreturn)( void );
+extern void  VG_(ppc32_linux_SUBST_FOR_sigreturn);
+extern void  VG_(ppc32_linux_SUBST_FOR_rt_sigreturn);
 extern UInt  VG_(ppc32_linux_REDIR_FOR_strlen)( void* );
 extern UInt  VG_(ppc32_linux_REDIR_FOR_strcmp)( void*, void* );
 extern void* VG_(ppc32_linux_REDIR_FOR_strchr)( void*, Int );
 #endif
 
 #if defined(VGP_ppc64_linux)
-extern void  VG_(ppc64_linux_SUBST_FOR_rt_sigreturn)( void );
+extern void  VG_(ppc64_linux_SUBST_FOR_rt_sigreturn);
 extern UInt  VG_(ppc64_linux_REDIR_FOR_strlen)( void* );
 extern void* VG_(ppc64_linux_REDIR_FOR_strchr)( void*, Int );
 /* A label (sans dot) marking the ultra-magical return stub via which
@@ -88,7 +88,7 @@ extern void* VG_(ppc64_linux_REDIR_FOR_strchr)( void*, Int );
    restore the thread's LR and R2 registers from a small stack in the
    ppc64 guest state structure, and then branch to LR.  Convoluted?
    Confusing?  You betcha.  Could I think of anything simpler?  No. */
-extern void VG_(ppctoc_magic_redirect_return_stub)( void );
+extern void VG_(ppctoc_magic_redirect_return_stub);
 #endif
 
 #if defined(VGP_arm_linux)
@@ -105,22 +105,22 @@ extern void* VG_(arm_linux_REDIR_FOR_memcpy)( void*, void*, Int );
    then it cleans up the register state to be more what it really
    should be at client startup, and finally it jumps to the client's
    real entry point. */
-extern void VG_(ppc32_aix5_do_preloads_then_start_client)( void );
+extern void VG_(ppc32_aix5_do_preloads_then_start_client);
 
 /* See comment for VG_(ppctoc_magic_redirect_return_stub) above. */
-extern void VG_(ppctoc_magic_redirect_return_stub)( void );
+extern void VG_(ppctoc_magic_redirect_return_stub);
 #endif
 
 #if defined(VGP_ppc64_aix5)
 /* See comment for VG_(ppctoc_magic_redirect_return_stub) above. */
-extern void VG_(ppctoc_magic_redirect_return_stub)( void );
+extern void VG_(ppctoc_magic_redirect_return_stub);
 
 /* See comment for ppc32_aix5 equivalent above. */
-extern void VG_(ppc64_aix5_do_preloads_then_start_client)( void );
+extern void VG_(ppc64_aix5_do_preloads_then_start_client);
 #endif
 
 #if defined(VGP_x86_darwin)
-extern void  VG_(x86_darwin_SUBST_FOR_sigreturn)( void );
+extern void  VG_(x86_darwin_SUBST_FOR_sigreturn);
 extern SizeT VG_(x86_darwin_REDIR_FOR_strlen)( void* );
 extern SizeT VG_(x86_darwin_REDIR_FOR_strcmp)( void*, void* );
 extern void* VG_(x86_darwin_REDIR_FOR_strcat)( void*, void * );
@@ -130,7 +130,7 @@ extern SizeT VG_(x86_darwin_REDIR_FOR_strlcat)( char *s1, const char *s2,
 #endif
 
 #if defined(VGP_amd64_darwin)
-extern void  VG_(amd64_darwin_SUBST_FOR_sigreturn)( void );
+extern void  VG_(amd64_darwin_SUBST_FOR_sigreturn);
 extern SizeT VG_(amd64_darwin_REDIR_FOR_strlen)( void* );
 extern SizeT VG_(amd64_darwin_REDIR_FOR_strcmp)( void*, void* );
 extern void* VG_(amd64_darwin_REDIR_FOR_strcat)( void*, void * );

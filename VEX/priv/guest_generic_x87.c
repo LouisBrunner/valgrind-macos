@@ -453,13 +453,13 @@ ULong x86amd64g_calculate_FXTRACT ( ULong arg, HWord getExp )
    const ULong bit52   = 1ULL << 52;
    const ULong sigMask = bit52 - 1;
 
-   /* Mimic PIII behaviour for special cases. */
+   /* Mimic Core i5 behaviour for special cases. */
    if (arg == posInf)
       return getExp ? posInf : posInf;
    if (arg == negInf)
       return getExp ? posInf : negInf;
    if ((arg & nanMask) == nanMask)
-      return qNan;
+      return qNan | (arg & (1ULL << 63));
    if (arg == posZero)
       return getExp ? negInf : posZero;
    if (arg == negZero)

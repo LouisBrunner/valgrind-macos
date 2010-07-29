@@ -11036,19 +11036,24 @@ DisResult disInstr_AMD64_WRK (
 
    /* 66 0F 29 = MOVAPD -- move from G (xmm) to E (mem or xmm). */
    /* 66 0F 11 = MOVUPD -- move from G (xmm) to E (mem or xmm). */
-   if (have66noF2noF3(pfx) && insn[0] == 0x0F 
+   if (have66noF2noF3(pfx) && insn[0] == 0x0F
        && (insn[1] == 0x29 || insn[1] == 0x11)) {
+      HChar* wot = insn[1]==0x29 ? "apd" : "upd";
       modrm = getUChar(delta+2);
       if (epartIsReg(modrm)) {
-         /* fall through; awaiting test case */
+         putXMMReg( eregOfRexRM(pfx,modrm),
+		    getXMMReg( gregOfRexRM(pfx,modrm) ) );
+         DIP("mov%s %s,%s\n", wot, nameXMMReg(gregOfRexRM(pfx,modrm)),
+	                           nameXMMReg(eregOfRexRM(pfx,modrm)));
+         delta += 2+1;
       } else {
          addr = disAMode ( &alen, vbi, pfx, delta+2, dis_buf, 0 );
          storeLE( mkexpr(addr), getXMMReg(gregOfRexRM(pfx,modrm)) );
-         DIP("mov[ua]pd %s,%s\n", nameXMMReg(gregOfRexRM(pfx,modrm)),
-                                  dis_buf );
+         DIP("mov%s %s,%s\n", wot, nameXMMReg(gregOfRexRM(pfx,modrm)),
+                              dis_buf );
          delta += 2+alen;
-         goto decode_success;
       }
+      goto decode_success;
    }
 
    /* 66 0F 6E = MOVD from ireg32/m32 to xmm lo 1/4, zeroing high 3/4 of xmm. */

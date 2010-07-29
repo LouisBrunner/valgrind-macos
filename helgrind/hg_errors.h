@@ -59,7 +59,10 @@ void HG_(record_error_UnlockBogus)    ( Thread*, Addr );
 void HG_(record_error_PthAPIerror)    ( Thread*, HChar*, Word, HChar* );
 void HG_(record_error_LockOrder)      ( Thread*, Addr, Addr,
                                         ExeContext*, ExeContext* );
-void HG_(record_error_Misc)           ( Thread*, HChar* );
+void HG_(record_error_Misc_w_aux)     ( Thread*, HChar* errstr,
+                                        HChar* auxstr, ExeContext* auxctx );
+void HG_(record_error_Misc)           ( Thread* thr, HChar* errstr );
+
 
 /* Statistics pertaining to error management. */
 extern ULong HG_(stats__LockN_to_P_queries);

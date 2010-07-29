@@ -222,8 +222,10 @@ typedef
             ExeContext* after_ec;
          } LockOrder;
          struct {
-            Thread* thr;
-            HChar*  errstr; /* persistent, in tool-arena */
+            Thread*     thr;
+            HChar*      errstr; /* persistent, in tool-arena */
+            HChar*      auxstr; /* optional, persistent, in tool-arena */
+            ExeContext* auxctx; /* optional */
          } Misc;
       } XE;
    }
@@ -507,7 +509,8 @@ void HG_(record_error_PthAPIerror) ( Thread* thr, HChar* fnname,
                             XE_PthAPIerror, 0, NULL, &xe );
 }
 
-void HG_(record_error_Misc) ( Thread* thr, HChar* errstr )
+void HG_(record_error_Misc_w_aux) ( Thread* thr, HChar* errstr,
+                                    HChar* auxstr, ExeContext* auxctx )
 {
    XError xe;
    tl_assert( HG_(is_sane_Thread)(thr) );
@@ -516,11 +519,18 @@ void HG_(record_error_Misc) ( Thread* thr, HChar* errstr )
    xe.tag = XE_Misc;
    xe.XE.Misc.thr    = thr;
    xe.XE.Misc.errstr = string_table_strdup(errstr);
+   xe.XE.Misc.auxstr = auxstr ? string_table_strdup(auxstr) : NULL;
+   xe.XE.Misc.auxctx = auxctx;
    // FIXME: tid vs thr
    tl_assert( HG_(is_sane_ThreadId)(thr->coretid) );
    tl_assert( thr->coretid != VG_INVALID_THREADID );
    VG_(maybe_record_error)( thr->coretid,
                             XE_Misc, 0, NULL, &xe );
+}
+
+void HG_(record_error_Misc) ( Thread* thr, HChar* errstr )
+{
+   HG_(record_error_Misc_w_aux)(thr, errstr, NULL, NULL);
 }
 
 Bool HG_(eq_Error) ( VgRes not_used, Error* e1, Error* e2 )
@@ -716,6 +726,11 @@ void HG_(pp_Error) ( Error* err )
                (Int)xe->XE.Misc.thr->errmsg_index );
          emit( "  </xwhat>\n" );
          VG_(pp_ExeContext)( VG_(get_error_where)(err) );
+         if (xe->XE.Misc.auxstr) {
+            emit("  <auxwhat>%s</auxwhat>\n", xe->XE.Misc.auxstr);
+            if (xe->XE.Misc.auxctx)
+               VG_(pp_ExeContext)( xe->XE.Misc.auxctx );
+         }
 
       } else {
 
@@ -723,6 +738,11 @@ void HG_(pp_Error) ( Error* err )
                (Int)xe->XE.Misc.thr->errmsg_index,
                xe->XE.Misc.errstr );
          VG_(pp_ExeContext)( VG_(get_error_where)(err) );
+         if (xe->XE.Misc.auxstr) {
+            emit(" %s\n", xe->XE.Misc.auxstr);
+            if (xe->XE.Misc.auxctx)
+               VG_(pp_ExeContext)( xe->XE.Misc.auxctx );
+         }
 
       }
       break;

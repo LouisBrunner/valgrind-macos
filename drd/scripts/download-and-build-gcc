@@ -14,20 +14,26 @@ SRC=$HOME/software/gcc-${GCC_VERSION}
 BUILD=${SRC}-build
 TAR=gcc-${GCC_VERSION}.tar.bz2
 PREFIX=$HOME/gcc-${GCC_VERSION}
+GMP_PREFIX=/usr
+#GMP_PREFIX=$HOME/gmp-5.0.1
+MPFR_PREFIX=/usr
+#MPFR_PREFIX=$HOME/mpfr-2.4.2
+MPC_PREFIX=/usr
+#MPC_PREFIX=$HOME/mpc-0.8.1
 export LC_ALL=C
 export MAKEFLAGS="-j$(($(grep -c '^processor' /proc/cpuinfo) + 1))"
 
-if [ ! -e /usr/include/gmp.h ]; then
+if [ ! -e $GMP_PREFIX/include/gmp.h ]; then
   echo "Please install the gmp library development package first."
   exit 1
 fi
 
-if [ ! -e /usr/include/mpfr.h ]; then
+if [ ! -e $MPFR_PREFIX/include/mpfr.h ]; then
   echo "Please install the mpfr library development package first."
   exit 1
 fi
 
-if [ ! -e /usr/include/mpc.h ]; then
+if [ ! -e $MPC_PREFIX/include/mpc.h ]; then
   echo "Please install the mpc library development package first."
   exit 1
 fi
@@ -59,6 +65,9 @@ ${SRC}/configure            \
   --enable-languages=c,c++  \
   --enable-threads=posix    \
   --enable-tls              \
-  --prefix=$PREFIX
+  --prefix=$PREFIX          \
+  --with-gmp=$GMP_PREFIX    \
+  --with-mpfr=$MPFR_PREFIX  \
+  --with-mpc=$MPC_PREFIX
 
 time { make -s && make -s install; }

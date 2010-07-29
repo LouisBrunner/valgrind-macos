@@ -72,6 +72,11 @@
    fun:__deallocate_stack
 }
 {
+   drd-libpthread-__free_stacks
+   drd:ConflictingAccess
+   fun:__free_stacks
+}
+{
    drd-libpthread-__free_tcb
    drd:ConflictingAccess
    ...
@@ -232,6 +237,11 @@
    drd-libQtCore-QMutexPool::get(void const*)
    drd:ConflictingAccess
    fun:_ZN10QMutexPool3getEPKv
+}
+{
+   drd-libQtCore-qt_gettime_is_monotonic()
+   drd:ConflictingAccess
+   fun:_Z23qt_gettime_is_monotonicv
 }
 
 #

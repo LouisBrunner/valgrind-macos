@@ -584,7 +584,7 @@ AM_CONDITIONAL(VGCONF_PLATFORMS_INCLUDE_AMD64_DARWIN,
                test x$VGCONF_PLATFORM_PRI_CAPS = xAMD64_DARWIN)
 
 
-# Similarly, set up VGCONF_OF_IS_<os>.  Exactly one of these becomes defined.
+# Similarly, set up VGCONF_OS_IS_<os>.  Exactly one of these becomes defined.
 # Relies on the assumption that the primary and secondary targets are 
 # for the same OS, so therefore only necessary to test the primary.
 AM_CONDITIONAL(VGCONF_OS_IS_LINUX,

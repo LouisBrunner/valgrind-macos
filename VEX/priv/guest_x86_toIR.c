@@ -12613,13 +12613,12 @@ DisResult disInstr_X86_WRK (
       goto decode_success;
    }
 
-   /* F3 0F BD -- LZCNT (count leading zeroes.  An AMD extension, but
-      fortunately occupying opcode space which AFAICS is not occupied
-      by anything else, even in Intel land.  NB: 0F BD is BSR, but
-      that's decoded below here, and it won't match there's an F3
-      prefix.  Hence there is no possibility of confusion with this
-      one. */
-   if (insn[0] == 0xF3 && insn[1] == 0x0F && insn[2] == 0xBD) {
+   /* F3 0F BD -- LZCNT (count leading zeroes.  An AMD extension,
+      which we can only decode if we're sure this is an AMD cpu that
+      supports LZCNT, since otherwise it's BSR, which behaves
+      differently. */
+   if (insn[0] == 0xF3 && insn[1] == 0x0F && insn[2] == 0xBD
+       && 0 != (archinfo->hwcaps & VEX_HWCAPS_X86_LZCNT)) {
       vassert(sz == 2 || sz == 4);
       /*IRType*/ ty  = szToITy(sz);
       IRTemp     src = newTemp(ty);

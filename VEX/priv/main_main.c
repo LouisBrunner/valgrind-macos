@@ -754,32 +754,53 @@ void LibVEX_default_VexAbiInfo ( /*OUT*/VexAbiInfo* vbi )
 static HChar* show_hwcaps_x86 ( UInt hwcaps ) 
 {
    /* Monotonic, SSE3 > SSE2 > SSE1 > baseline. */
-   if (hwcaps == 0)
-      return "x86-sse0";
-   if (hwcaps == VEX_HWCAPS_X86_SSE1)
-      return "x86-sse1";
-   if (hwcaps == (VEX_HWCAPS_X86_SSE1 | VEX_HWCAPS_X86_SSE2))
-      return "x86-sse1-sse2";
-   if (hwcaps == (VEX_HWCAPS_X86_SSE1 
-                  | VEX_HWCAPS_X86_SSE2 | VEX_HWCAPS_X86_SSE3))
-      return "x86-sse1-sse2-sse3";
-
-   return NULL;
+   switch (hwcaps) {
+      case 0:
+         return "x86-sse0";
+      case VEX_HWCAPS_X86_SSE1:
+         return "x86-sse1";
+      case VEX_HWCAPS_X86_SSE1 | VEX_HWCAPS_X86_SSE2:
+         return "x86-sse1-sse2";
+      case VEX_HWCAPS_X86_SSE1 | VEX_HWCAPS_X86_SSE2
+           | VEX_HWCAPS_X86_LZCNT:
+         return "x86-sse1-sse2-lzcnt";
+      case VEX_HWCAPS_X86_SSE1 | VEX_HWCAPS_X86_SSE2
+           | VEX_HWCAPS_X86_SSE3:
+         return "x86-sse1-sse2-sse3";
+      case VEX_HWCAPS_X86_SSE1 | VEX_HWCAPS_X86_SSE2
+           | VEX_HWCAPS_X86_SSE3 | VEX_HWCAPS_X86_LZCNT:
+         return "x86-sse1-sse2-sse3-lzcnt";
+      default:
+         return NULL;
+   }
 }
 
 static HChar* show_hwcaps_amd64 ( UInt hwcaps )
 {
    /* SSE3 and CX16 are orthogonal and > baseline, although we really
       don't expect to come across anything which can do SSE3 but can't
-      do CX16.  Still, we can handle that case. */
-   const UInt SSE3 = VEX_HWCAPS_AMD64_SSE3;
-   const UInt CX16 = VEX_HWCAPS_AMD64_CX16;
-         UInt c    = hwcaps;
-   if (c == 0)           return "amd64-sse2";
-   if (c == SSE3)        return "amd64-sse3";
-   if (c == CX16)        return "amd64-sse2-cx16";
-   if (c == (SSE3|CX16)) return "amd64-sse3-cx16";
-   return NULL;
+      do CX16.  Still, we can handle that case.  LZCNT is similarly
+      orthogonal. */
+   switch (hwcaps) {
+      case 0:
+         return "amd64-sse2";
+      case VEX_HWCAPS_AMD64_SSE3:
+         return "amd64-sse3";
+      case VEX_HWCAPS_AMD64_CX16:
+         return "amd64-sse2-cx16";
+      case VEX_HWCAPS_AMD64_SSE3 | VEX_HWCAPS_AMD64_CX16:
+         return "amd64-sse3-cx16";
+      case VEX_HWCAPS_AMD64_SSE3 | VEX_HWCAPS_AMD64_LZCNT:
+         return "amd64-sse3-lzcnt";
+      case VEX_HWCAPS_AMD64_CX16 | VEX_HWCAPS_AMD64_LZCNT:
+         return "amd64-sse2-cx16-lzcnt";
+      case VEX_HWCAPS_AMD64_SSE3 | VEX_HWCAPS_AMD64_CX16
+           | VEX_HWCAPS_AMD64_LZCNT:
+         return "amd64-sse3-cx16-lzcnt";
+
+      default:
+         return NULL;
+   }
 }
 
 static HChar* show_hwcaps_ppc32 ( UInt hwcaps )

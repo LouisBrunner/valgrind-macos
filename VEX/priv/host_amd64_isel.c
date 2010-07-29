@@ -4122,8 +4122,10 @@ HInstrArray* iselSB_AMD64 ( IRSB* bb, VexArch      arch_host,
 
    /* sanity ... */
    vassert(arch_host == VexArchAMD64);
-   vassert(0 == (hwcaps_host & ~(VEX_HWCAPS_AMD64_SSE3
-                                 |VEX_HWCAPS_AMD64_CX16)));
+   vassert(0 == (hwcaps_host
+                 & ~(VEX_HWCAPS_AMD64_SSE3
+                     | VEX_HWCAPS_AMD64_CX16
+                     | VEX_HWCAPS_AMD64_LZCNT)));
 
    /* Make up an initial environment to use. */
    env = LibVEX_Alloc(sizeof(ISelEnv));

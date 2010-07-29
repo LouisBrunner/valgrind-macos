@@ -703,8 +703,10 @@ X86Instr* X86Instr_MFence ( UInt hwcaps ) {
    X86Instr* i          = LibVEX_Alloc(sizeof(X86Instr));
    i->tag               = Xin_MFence;
    i->Xin.MFence.hwcaps = hwcaps;
-   vassert(0 == (hwcaps & ~(VEX_HWCAPS_X86_SSE1|VEX_HWCAPS_X86_SSE2
-                                               |VEX_HWCAPS_X86_SSE3)));
+   vassert(0 == (hwcaps & ~(VEX_HWCAPS_X86_SSE1
+                            |VEX_HWCAPS_X86_SSE2
+                            |VEX_HWCAPS_X86_SSE3
+                            |VEX_HWCAPS_X86_LZCNT)));
    return i;
 }
 X86Instr* X86Instr_ACAS ( X86AMode* addr, UChar sz ) {

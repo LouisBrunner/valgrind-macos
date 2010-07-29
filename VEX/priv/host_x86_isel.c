@@ -4000,9 +4000,11 @@ HInstrArray* iselSB_X86 ( IRSB* bb, VexArch      arch_host,
 
    /* sanity ... */
    vassert(arch_host == VexArchX86);
-   vassert(0 == (hwcaps_host & ~(VEX_HWCAPS_X86_SSE1
-                                 |VEX_HWCAPS_X86_SSE2
-                                 |VEX_HWCAPS_X86_SSE3)));
+   vassert(0 == (hwcaps_host
+                 & ~(VEX_HWCAPS_X86_SSE1
+                     | VEX_HWCAPS_X86_SSE2
+                     | VEX_HWCAPS_X86_SSE3
+                     | VEX_HWCAPS_X86_LZCNT)));
 
    /* Make up an initial environment to use. */
    env = LibVEX_Alloc(sizeof(ISelEnv));

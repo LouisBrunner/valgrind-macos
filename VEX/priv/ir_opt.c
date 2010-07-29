@@ -1078,7 +1078,13 @@ static IRExpr* fold_Expr ( IRExpr* e )
                     0xFFFFFFFFULL 
                     & e->Iex.Unop.arg->Iex.Const.con->Ico.U32));
             break;
-
+         case Iop_32Sto64: {
+            /* signed */ Long s64 = e->Iex.Unop.arg->Iex.Const.con->Ico.U32;
+            s64 <<= 32;
+            s64 >>= 32;
+            e2 = IRExpr_Const(IRConst_U64((ULong)s64));
+            break;
+         }
          case Iop_CmpNEZ8:
             e2 = IRExpr_Const(IRConst_U1(toBool(
                     0 != 

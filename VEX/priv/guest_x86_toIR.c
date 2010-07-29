@@ -3362,6 +3362,40 @@ UInt dis_imul_I_E_G ( UChar       sorb,
 }
 
 
+/* Generate an IR sequence to do a count-leading-zeroes operation on
+   the supplied IRTemp, and return a new IRTemp holding the result.
+   'ty' may be Ity_I16 or Ity_I32 only.  In the case where the
+   argument is zero, return the number of bits in the word (the
+   natural semantics). */
+static IRTemp gen_LZCNT ( IRType ty, IRTemp src )
+{
+   vassert(ty == Ity_I32 || ty == Ity_I16);
+
+   IRTemp src32 = newTemp(Ity_I32);
+   assign(src32, widenUto32( mkexpr(src) ));
+
+   IRTemp src32x = newTemp(Ity_I32);
+   assign(src32x, 
+          binop(Iop_Shl32, mkexpr(src32),
+                           mkU8(32 - 8 * sizeofIRType(ty))));
+
+   // Clz32 has undefined semantics when its input is zero, so
+   // special-case around that.
+   IRTemp res32 = newTemp(Ity_I32);
+   assign(res32,
+          IRExpr_Mux0X(
+             unop(Iop_1Uto8,
+                  binop(Iop_CmpEQ32, mkexpr(src32x), mkU32(0))),
+             unop(Iop_Clz32, mkexpr(src32x)),
+             mkU32(8 * sizeofIRType(ty))
+   ));
+
+   IRTemp res = newTemp(ty);
+   assign(res, narrowTo(ty, mkexpr(res32)));
+   return res;
+}
+
+
 /*------------------------------------------------------------*/
 /*---                                                      ---*/
 /*--- x87 FLOATING POINT INSTRUCTIONS                      ---*/
@@ -12575,6 +12609,66 @@ DisResult disInstr_X86_WRK (
          putXMMRegLane64F( gregOfRM(modrm), 0, mkexpr(res) );
       else
          putXMMRegLane32F( gregOfRM(modrm), 0, mkexpr(res) );
+
+      goto decode_success;
+   }
+
+   /* F3 0F BD -- LZCNT (count leading zeroes.  An AMD extension, but
+      fortunately occupying opcode space which AFAICS is not occupied
+      by anything else, even in Intel land.  NB: 0F BD is BSR, but
+      that's decoded below here, and it won't match there's an F3
+      prefix.  Hence there is no possibility of confusion with this
+      one. */
+   if (insn[0] == 0xF3 && insn[1] == 0x0F && insn[2] == 0xBD) {
+      vassert(sz == 2 || sz == 4);
+      /*IRType*/ ty  = szToITy(sz);
+      IRTemp     src = newTemp(ty);
+      modrm = insn[3];
+      if (epartIsReg(modrm)) {
+         assign(src, getIReg(sz, eregOfRM(modrm)));
+         delta += 3+1;
+         DIP("lzcnt%c %s, %s\n", nameISize(sz),
+             nameIReg(sz, eregOfRM(modrm)),
+             nameIReg(sz, gregOfRM(modrm)));
+      } else {
+         addr = disAMode( &alen, sorb, delta+3, dis_buf );
+         assign(src, loadLE(ty, mkexpr(addr)));
+         delta += 3+alen;
+         DIP("lzcnt%c %s, %s\n", nameISize(sz), dis_buf,
+             nameIReg(sz, gregOfRM(modrm)));
+      }
+
+      IRTemp res = gen_LZCNT(ty, src);
+      putIReg(sz, gregOfRM(modrm), mkexpr(res));
+
+      // Update flags.  This is pretty lame .. perhaps can do better
+      // if this turns out to be performance critical.
+      // O S A P are cleared.  Z is set if RESULT == 0.
+      // C is set if SRC is zero.
+      IRTemp src32 = newTemp(Ity_I32);
+      IRTemp res32 = newTemp(Ity_I32);
+      assign(src32, widenUto32(mkexpr(src)));
+      assign(res32, widenUto32(mkexpr(res)));
+
+      IRTemp oszacp = newTemp(Ity_I32);
+      assign(
+         oszacp,
+         binop(Iop_Or32,
+               binop(Iop_Shl32,
+                     unop(Iop_1Uto32,
+                          binop(Iop_CmpEQ32, mkexpr(res32), mkU32(0))),
+                     mkU8(X86G_CC_SHIFT_Z)),
+               binop(Iop_Shl32,
+                     unop(Iop_1Uto32,
+                          binop(Iop_CmpEQ32, mkexpr(src32), mkU32(0))),
+                     mkU8(X86G_CC_SHIFT_C))
+         )
+      );
+
+      stmt( IRStmt_Put( OFFB_CC_OP,   mkU32(X86G_CC_OP_COPY) ));
+      stmt( IRStmt_Put( OFFB_CC_DEP2, mkU32(0) ));
+      stmt( IRStmt_Put( OFFB_CC_NDEP, mkU32(0) ));
+      stmt( IRStmt_Put( OFFB_CC_DEP1, mkexpr(oszacp) ));
 
       goto decode_success;
    }

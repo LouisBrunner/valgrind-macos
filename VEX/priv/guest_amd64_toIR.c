@@ -4436,6 +4436,40 @@ static IRTemp gen_POPCOUNT ( IRType ty, IRTemp src )
 }
 
 
+/* Generate an IR sequence to do a count-leading-zeroes operation on
+   the supplied IRTemp, and return a new IRTemp holding the result.
+   'ty' may be Ity_I16, Ity_I32 or Ity_I64 only.  In the case where
+   the argument is zero, return the number of bits in the word (the
+   natural semantics). */
+static IRTemp gen_LZCNT ( IRType ty, IRTemp src )
+{
+   vassert(ty == Ity_I64 || ty == Ity_I32 || ty == Ity_I16);
+
+   IRTemp src64 = newTemp(Ity_I64);
+   assign(src64, widenUto64( mkexpr(src) ));
+
+   IRTemp src64x = newTemp(Ity_I64);
+   assign(src64x, 
+          binop(Iop_Shl64, mkexpr(src64),
+                           mkU8(64 - 8 * sizeofIRType(ty))));
+
+   // Clz64 has undefined semantics when its input is zero, so
+   // special-case around that.
+   IRTemp res64 = newTemp(Ity_I64);
+   assign(res64,
+          IRExpr_Mux0X(
+             unop(Iop_1Uto8,
+                  binop(Iop_CmpEQ64, mkexpr(src64x), mkU64(0))),
+             unop(Iop_Clz64, mkexpr(src64x)),
+             mkU64(8 * sizeofIRType(ty))
+   ));
+
+   IRTemp res = newTemp(ty);
+   assign(res, narrowTo(ty, mkexpr(res64)));
+   return res;
+}
+
+
 /*------------------------------------------------------------*/
 /*---                                                      ---*/
 /*--- x87 FLOATING POINT INSTRUCTIONS                      ---*/
@@ -15065,6 +15099,67 @@ DisResult disInstr_AMD64_WRK (
       goto decode_success;
    }
 
+   /* F3 0F BD -- LZCNT (count leading zeroes.  An AMD extension, but
+      fortunately occupying opcode space which AFAICS is not occupied
+      by anything else, even in Intel land.  NB: 0F BD is BSR, but
+      that's decoded below here, and we reject it if there's an F3
+      prefix.  Hence there is no possibility of confusion with this
+      one. */
+   if (haveF3noF2(pfx) /* so both 66 and 48 are possibilities */
+       && insn[0] == 0x0F && insn[1] == 0xBD) {
+      vassert(sz == 2 || sz == 4 || sz == 8);
+      /*IRType*/ ty  = szToITy(sz);
+      IRTemp     src = newTemp(ty);
+      modrm = insn[2];
+      if (epartIsReg(modrm)) {
+         assign(src, getIRegE(sz, pfx, modrm));
+         delta += 2+1;
+         DIP("lzcnt%c %s, %s\n", nameISize(sz), nameIRegE(sz, pfx, modrm),
+             nameIRegG(sz, pfx, modrm));
+      } else {
+         addr = disAMode( &alen, vbi, pfx, delta+2, dis_buf, 0);
+         assign(src, loadLE(ty, mkexpr(addr)));
+         delta += 2+alen;
+         DIP("lzcnt%c %s, %s\n", nameISize(sz), dis_buf,
+             nameIRegG(sz, pfx, modrm));
+      }
+
+      IRTemp res = gen_LZCNT(ty, src);
+      putIRegG(sz, pfx, modrm, mkexpr(res));
+
+      // Update flags.  This is pretty lame .. perhaps can do better
+      // if this turns out to be performance critical.
+      // O S A P are cleared.  Z is set if RESULT == 0.
+      // C is set if SRC is zero.
+      IRTemp src64 = newTemp(Ity_I64);
+      IRTemp res64 = newTemp(Ity_I64);
+      assign(src64, widenUto64(mkexpr(src)));
+      assign(res64, widenUto64(mkexpr(res)));
+
+      IRTemp oszacp = newTemp(Ity_I64);
+      assign(
+         oszacp,
+         binop(Iop_Or64,
+               binop(Iop_Shl64,
+                     unop(Iop_1Uto64,
+                          binop(Iop_CmpEQ64, mkexpr(res64), mkU64(0))),
+                     mkU8(AMD64G_CC_SHIFT_Z)),
+               binop(Iop_Shl64,
+                     unop(Iop_1Uto64,
+                          binop(Iop_CmpEQ64, mkexpr(src64), mkU64(0))),
+                     mkU8(AMD64G_CC_SHIFT_C))
+         )
+      );
+
+      stmt( IRStmt_Put( OFFB_CC_OP,   mkU64(AMD64G_CC_OP_COPY) ));
+      stmt( IRStmt_Put( OFFB_CC_DEP2, mkU64(0) ));
+      stmt( IRStmt_Put( OFFB_CC_NDEP, mkU64(0) ));
+      stmt( IRStmt_Put( OFFB_CC_DEP1, mkexpr(oszacp) ));
+
+      goto decode_success;
+   }
+
+
    /* ---------------------------------------------------- */
    /* --- end of the SSE4 decoder                      --- */
    /* ---------------------------------------------------- */
@@ -17706,6 +17801,72 @@ DisResult disInstr_AMD64 ( IRSB*        irsb_IN,
    return dres;
 }
 
+
+/*------------------------------------------------------------*/
+/*--- Unused stuff                                         ---*/
+/*------------------------------------------------------------*/
+
+// A potentially more Memcheck-friendly version of gen_LZCNT, if
+// this should ever be needed.
+//
+//static IRTemp gen_LZCNT ( IRType ty, IRTemp src )
+//{
+//   /* Scheme is simple: propagate the most significant 1-bit into all
+//      lower positions in the word.  This gives a word of the form
+//      0---01---1.  Now invert it, giving a word of the form
+//      1---10---0, then do a population-count idiom (to count the 1s,
+//      which is the number of leading zeroes, or the word size if the
+//      original word was 0.
+//   */
+//   Int i;
+//   IRTemp t[7];
+//   for (i = 0; i < 7; i++) {
+//      t[i] = newTemp(ty);
+//   }
+//   if (ty == Ity_I64) {
+//      assign(t[0], binop(Iop_Or64, mkexpr(src),
+//                                   binop(Iop_Shr64, mkexpr(src),  mkU8(1))));
+//      assign(t[1], binop(Iop_Or64, mkexpr(t[0]),
+//                                   binop(Iop_Shr64, mkexpr(t[0]), mkU8(2))));
+//      assign(t[2], binop(Iop_Or64, mkexpr(t[1]),
+//                                   binop(Iop_Shr64, mkexpr(t[1]), mkU8(4))));
+//      assign(t[3], binop(Iop_Or64, mkexpr(t[2]),
+//                                   binop(Iop_Shr64, mkexpr(t[2]), mkU8(8))));
+//      assign(t[4], binop(Iop_Or64, mkexpr(t[3]),
+//                                   binop(Iop_Shr64, mkexpr(t[3]), mkU8(16))));
+//      assign(t[5], binop(Iop_Or64, mkexpr(t[4]),
+//                                   binop(Iop_Shr64, mkexpr(t[4]), mkU8(32))));
+//      assign(t[6], unop(Iop_Not64, mkexpr(t[5])));
+//      return gen_POPCOUNT(ty, t[6]);
+//   }
+//   if (ty == Ity_I32) {
+//      assign(t[0], binop(Iop_Or32, mkexpr(src),
+//                                   binop(Iop_Shr32, mkexpr(src),  mkU8(1))));
+//      assign(t[1], binop(Iop_Or32, mkexpr(t[0]),
+//                                   binop(Iop_Shr32, mkexpr(t[0]), mkU8(2))));
+//      assign(t[2], binop(Iop_Or32, mkexpr(t[1]),
+//                                   binop(Iop_Shr32, mkexpr(t[1]), mkU8(4))));
+//      assign(t[3], binop(Iop_Or32, mkexpr(t[2]),
+//                                   binop(Iop_Shr32, mkexpr(t[2]), mkU8(8))));
+//      assign(t[4], binop(Iop_Or32, mkexpr(t[3]),
+//                                   binop(Iop_Shr32, mkexpr(t[3]), mkU8(16))));
+//      assign(t[5], unop(Iop_Not32, mkexpr(t[4])));
+//      return gen_POPCOUNT(ty, t[5]);
+//   }
+//   if (ty == Ity_I16) {
+//      assign(t[0], binop(Iop_Or16, mkexpr(src),
+//                                   binop(Iop_Shr16, mkexpr(src),  mkU8(1))));
+//      assign(t[1], binop(Iop_Or16, mkexpr(t[0]),
+//                                   binop(Iop_Shr16, mkexpr(t[0]), mkU8(2))));
+//      assign(t[2], binop(Iop_Or16, mkexpr(t[1]),
+//                                   binop(Iop_Shr16, mkexpr(t[1]), mkU8(4))));
+//      assign(t[3], binop(Iop_Or16, mkexpr(t[2]),
+//                                   binop(Iop_Shr16, mkexpr(t[2]), mkU8(8))));
+//      assign(t[4], unop(Iop_Not16, mkexpr(t[3])));
+//      return gen_POPCOUNT(ty, t[4]);
+//   }
+//   vassert(0);
+//}
 
 
 /*--------------------------------------------------------------------*/

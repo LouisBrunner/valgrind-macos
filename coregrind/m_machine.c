@@ -407,8 +407,10 @@ Bool VG_(machine_get_hwcaps)( void )
    LibVEX_default_VexArchInfo(&vai);
 
 #if defined(VGA_x86)
-   { Bool have_sse1, have_sse2, have_cx8;
-     UInt eax, ebx, ecx, edx;
+   { Bool have_sse1, have_sse2, have_cx8, have_lzcnt;
+     UInt eax, ebx, ecx, edx, max_basic, max_extended;
+     UChar vstr[13];
+     vstr[0] = 0;
 
      if (!VG_(has_cpuid)())
         /* we can't do cpuid at all.  Give up. */
@@ -418,6 +420,17 @@ Bool VG_(machine_get_hwcaps)( void )
      if (eax < 1)
         /* we can't ask for cpuid(x) for x > 0.  Give up. */
         return False;
+
+     /* Get processor ID string, and max basic/extended index
+        values. */
+     max_basic = eax;
+     VG_(memcpy)(&vstr[0], &ebx, 4);
+     VG_(memcpy)(&vstr[4], &edx, 4);
+     VG_(memcpy)(&vstr[8], &ecx, 4);
+     vstr[12] = 0;
+
+     VG_(cpuid)(0x80000000, &eax, &ebx, &ecx, &edx);
+     max_extended = eax;
 
      /* get capabilities bits into edx */
      VG_(cpuid)(1, &eax, &ebx, &ecx, &edx);
@@ -432,10 +445,20 @@ Bool VG_(machine_get_hwcaps)( void )
      if (!have_cx8)
         return False;
 
+     /* Figure out if this is an AMD that can do LZCNT. */
+     have_lzcnt = False;
+     if (0 == VG_(strcmp)(vstr, "AuthenticAMD")
+         && max_extended >= 0x80000001) {
+        VG_(cpuid)(0x80000001, &eax, &ebx, &ecx, &edx);
+        have_lzcnt = (ecx & (1<<5)) != 0; /* True => have LZCNT */
+     }
+
      if (have_sse2 && have_sse1) {
         va          = VexArchX86;
         vai.hwcaps  = VEX_HWCAPS_X86_SSE1;
         vai.hwcaps |= VEX_HWCAPS_X86_SSE2;
+        if (have_lzcnt)
+           vai.hwcaps |= VEX_HWCAPS_X86_LZCNT;
         VG_(machine_x86_have_mxcsr) = 1;
         return True;
      }
@@ -455,7 +478,10 @@ Bool VG_(machine_get_hwcaps)( void )
 
 #elif defined(VGA_amd64)
    { Bool have_sse1, have_sse2, have_sse3, have_cx8, have_cx16;
-     UInt eax, ebx, ecx, edx;
+     Bool have_lzcnt;
+     UInt eax, ebx, ecx, edx, max_basic, max_extended;
+     UChar vstr[13];
+     vstr[0] = 0;
 
      if (!VG_(has_cpuid)())
         /* we can't do cpuid at all.  Give up. */
@@ -466,12 +492,26 @@ Bool VG_(machine_get_hwcaps)( void )
         /* we can't ask for cpuid(x) for x > 0.  Give up. */
         return False;
 
+     /* Get processor ID string, and max basic/extended index
+        values. */
+      max_basic = eax;
+     VG_(memcpy)(&vstr[0], &ebx, 4);
+     VG_(memcpy)(&vstr[4], &edx, 4);
+     VG_(memcpy)(&vstr[8], &ecx, 4);
+     vstr[12] = 0;
+
+     VG_(cpuid)(0x80000000, &eax, &ebx, &ecx, &edx);
+     max_extended = eax;
+
      /* get capabilities bits into edx */
      VG_(cpuid)(1, &eax, &ebx, &ecx, &edx);
 
      have_sse1 = (edx & (1<<25)) != 0; /* True => have sse insns */
      have_sse2 = (edx & (1<<26)) != 0; /* True => have sse2 insns */
      have_sse3 = (ecx & (1<<0)) != 0;  /* True => have sse3 insns */
+     // ssse3  is ecx:9
+     // sse41  is ecx:19
+     // sse42  is ecx:20
 
      /* cmpxchg8b is a minimum requirement now; if we don't have it we
         must simply give up.  But all CPUs since Pentium-I have it, so
@@ -483,9 +523,18 @@ Bool VG_(machine_get_hwcaps)( void )
      /* on amd64 we tolerate older cpus, which don't have cmpxchg16b */
      have_cx16 = (ecx & (1<<13)) != 0; /* True => have cmpxchg16b */
 
+     /* Figure out if this is an AMD that can do LZCNT. */
+     have_lzcnt = False;
+     if (0 == VG_(strcmp)(vstr, "AuthenticAMD")
+         && max_extended >= 0x80000001) {
+        VG_(cpuid)(0x80000001, &eax, &ebx, &ecx, &edx);
+        have_lzcnt = (ecx & (1<<5)) != 0; /* True => have LZCNT */
+     }
+
      va         = VexArchAMD64;
      vai.hwcaps = (have_sse3 ? VEX_HWCAPS_AMD64_SSE3 : 0)
-                  | (have_cx16 ? VEX_HWCAPS_AMD64_CX16 : 0);
+                  | (have_cx16 ? VEX_HWCAPS_AMD64_CX16 : 0)
+                  | (have_lzcnt ? VEX_HWCAPS_AMD64_LZCNT : 0);
      return True;
    }
 

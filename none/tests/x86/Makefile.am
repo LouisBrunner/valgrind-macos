@@ -17,6 +17,9 @@ endif
 # Explicitly include insn_sse3 even if ! BUILD_SSE3_TESTS, 
 # to avoid packaging screwups if 'make dist' is run on a machine
 # which failed the BUILD_SSE3_TESTS test in configure.in.
+
+## FIXME: move lzcnt32 to SSE4 conditionalisation, when that happens.
+
 EXTRA_DIST = \
 	badseg.stderr.exp badseg.stdout.exp badseg.vgtest \
 	bt_everything.stderr.exp bt_everything.stdout.exp bt_everything.vgtest \
@@ -46,6 +49,7 @@ EXTRA_DIST = \
 	jcxz.stdout.exp jcxz.stderr.exp jcxz.vgtest \
 	lahf.stdout.exp lahf.stderr.exp lahf.vgtest \
 	looper.stderr.exp looper.stdout.exp looper.vgtest \
+	lzcnt32.stderr.exp lzcnt32.stdout.exp lzcnt32.vgtest \
 	movx.stderr.exp movx.stdout.exp movx.vgtest \
 	pushpopseg.stderr.exp pushpopseg.stdout.exp pushpopseg.vgtest \
 	sbbmisc.stderr.exp sbbmisc.stdout.exp sbbmisc.vgtest \
@@ -80,6 +84,7 @@ check_PROGRAMS = \
 	jcxz \
 	lahf \
 	looper \
+	lzcnt32 \
 	movx \
 	pushpopseg \
 	sbbmisc \

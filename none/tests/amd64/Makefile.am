@@ -16,6 +16,9 @@ endif
 # Explicitly include insn_sse3 even if ! BUILD_SSE3_TESTS, 
 # to avoid packaging screwups if 'make dist' is run on a machine
 # which failed the BUILD_SSE3_TESTS test in configure.in.
+
+## FIXME: move lzcnt64 to SSE4 conditionalisation, when that happens.
+
 EXTRA_DIST = \
 	amd64locked.vgtest amd64locked.stdout.exp amd64locked.stderr.exp \
 	bug127521-64.vgtest bug127521-64.stdout.exp bug127521-64.stderr.exp \
@@ -37,6 +40,7 @@ EXTRA_DIST = \
 	insn_ssse3.stdout.exp insn_ssse3.stderr.exp insn_ssse3.vgtest \
 	jrcxz.stderr.exp jrcxz.stdout.exp jrcxz.vgtest \
 	looper.stderr.exp looper.stdout.exp looper.vgtest \
+	lzcnt64.stderr.exp lzcnt64.stdout.exp lzcnt64.vgtest \
 	nibz_bennee_mmap.stderr.exp nibz_bennee_mmap.stdout.exp \
 	nibz_bennee_mmap.vgtest \
 	rcl-amd64.vgtest rcl-amd64.stdout.exp rcl-amd64.stderr.exp \
@@ -56,6 +60,7 @@ check_PROGRAMS = \
 	bug127521-64 bug132813-amd64 bug132918 \
 	clc \
 	$(INSN_TESTS) \
+	lzcnt64 \
 	rcl-amd64 \
 	redundantRexW \
 	smc1 \

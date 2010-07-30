@@ -1,0 +1,3 @@
+prog: lzcnt64
+prereq: ../../../tests/x86_amd64_features amd64-lzcnt
+vgopts: -q

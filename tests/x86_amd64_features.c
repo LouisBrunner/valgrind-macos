@@ -29,9 +29,23 @@ static void cpuid ( unsigned int n,
       : "0" (n)         /* input */
    );
 }
+
+static Bool vendorStringEquals ( char* str )
+{
+   char vstr[13];
+   unsigned int a, b, c, d;
+   cpuid(0, &a, &b, &c, &d);
+   memcpy(&vstr[0], &b, 4);
+   memcpy(&vstr[4], &d, 4);
+   memcpy(&vstr[8], &c, 4);
+   vstr[12] = 0;
+   return 0 == strcmp(vstr, str);
+}
+
 static Bool go(char* cpu)
 { 
    unsigned int level = 0, cmask = 0, dmask = 0, a, b, c, d;
+   Bool require_amd = False;
 
    if        ( strcmp( cpu, "x86-fpu" ) == 0 ) {
      level = 1;
@@ -57,6 +71,10 @@ static Bool go(char* cpu)
    } else if ( strcmp( cpu, "x86-ssse3" ) == 0 ) {
      level = 1;
      cmask = 1 << 9;
+   } else if ( strcmp( cpu, "x86-lzcnt" ) == 0 ) {
+     level = 0x80000001;
+     cmask = 1 << 5;
+     require_amd = True;
 #if defined(VGA_amd64)
    } else if ( strcmp( cpu, "amd64-sse3" ) == 0 ) {
      level = 1;
@@ -67,6 +85,10 @@ static Bool go(char* cpu)
    } else if ( strcmp( cpu, "amd64-cx16" ) == 0 ) {
      level = 1;
      cmask = 1 << 13;
+   } else if ( strcmp( cpu, "amd64-lzcnt" ) == 0 ) {
+     level = 0x80000001;
+     cmask = 1 << 5;
+     require_amd = True;
 #endif
    } else {
      return 2;          // Unrecognised feature.
@@ -74,6 +96,10 @@ static Bool go(char* cpu)
 
    assert( !(cmask != 0 && dmask != 0) );
    assert( !(cmask == 0 && dmask == 0) );
+
+   if (require_amd && !vendorStringEquals("AuthenticAMD"))
+      return 1; // Feature not present
+      // regardless of what that feature actually is
 
    cpuid( level & 0x80000000, &a, &b, &c, &d );
 

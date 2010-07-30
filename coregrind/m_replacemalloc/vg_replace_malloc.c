@@ -219,7 +219,7 @@ static void init(void);
       v = (void*)VALGRIND_NON_SIMD_CALL1( info.tl_##vg_replacement, n ); \
       MALLOC_TRACE(" = %p\n", v ); \
       if (NULL == v) { \
-         VALGRIND_PRINTF_BACKTRACE( \
+         VALGRIND_PRINTF( \
             "new/new[] failed and should throw an exception, but Valgrind\n"); \
          VALGRIND_PRINTF_BACKTRACE( \
             "   cannot throw exceptions and so is aborting instead.  Sorry.\n"); \

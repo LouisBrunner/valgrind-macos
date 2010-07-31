@@ -230,10 +230,6 @@ Syscall param mount(flags) contains uninitialised byte(s)
 Syscall param mount(data) contains uninitialised byte(s)
    ...
 
-Syscall param mount(source) points to unaddressable byte(s)
-   ...
- Address 0x........ is not stack'd, malloc'd or (recently) free'd
-
 Syscall param mount(target) points to unaddressable byte(s)
    ...
  Address 0x........ is not stack'd, malloc'd or (recently) free'd
@@ -505,9 +501,6 @@ Syscall param fcntl(arg) contains uninitialised byte(s)
 -----------------------------------------------------
  55:          __NR_fcntl (GETLK) 1s 0m
 -----------------------------------------------------
-
-More than 100 errors detected.  Subsequent errors
-will still be recorded, but in less detail than before.
 Syscall param fcntl(lock) contains uninitialised byte(s)
    ...
 
@@ -517,6 +510,9 @@ Syscall param fcntl(lock) contains uninitialised byte(s)
 -----------------------------------------------------
  57:        __NR_setpgid 2s 0m
 -----------------------------------------------------
+
+More than 100 errors detected.  Subsequent errors
+will still be recorded, but in less detail than before.
 Syscall param setpgid(pid) contains uninitialised byte(s)
    ...
 

@@ -21,20 +21,45 @@ int main ( void )
   UInt eax, ebx, ecx, edx;
   UInt maxidx, maxextidx, i,ecx_in;
 
+  printf("\n");
   cpuid(&eax,&ebx,&ecx,&edx, 0,0);
   maxidx = eax;
-  for (i = 1; i <= maxidx; i++) {
+  for (i = 1; i <= maxidx +2; i++) {
+
     cpuid(&eax,&ebx,&ecx,&edx, i,0);
+
     if (i == 4) {
+      printf("\n");
       for (ecx_in = 1; ecx_in < 10; ecx_in++) {
          cpuid(&eax,&ebx,&ecx,&edx, i,ecx_in);
       }
+      printf("\n");
     }
+
+    if (i == 0xb) {
+      printf("\n");
+      for (ecx_in = 1; ecx_in < 10; ecx_in++) {
+         cpuid(&eax,&ebx,&ecx,&edx, i,ecx_in);
+      }
+      printf("\n");
+    }
+
+    if (i == 0xd) {
+      printf("\n");
+      for (ecx_in = 1; ecx_in < 5; ecx_in++) {
+         cpuid(&eax,&ebx,&ecx,&edx, i,ecx_in);
+      }
+      printf("\n");
+    }
+
+
   }
+
+  printf("\n");
 
   cpuid(&eax,&ebx,&ecx,&edx, 0x80000000,0);
   maxextidx = eax;
-  for (i = 0x80000001; i <= maxextidx; i++) {
+  for (i = 0x80000001; i <= maxextidx +2; i++) {
      cpuid(&eax,&ebx,&ecx,&edx, i,0);
   }
 

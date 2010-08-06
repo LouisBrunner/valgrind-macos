@@ -536,6 +536,7 @@ static Int get_otrack_shadow_offset_wrk ( Int offset, Int szB )
    if (o >= GOF(XMM13) && o+sz <= GOF(XMM13)+SZB(XMM13)) return GOF(XMM13);
    if (o >= GOF(XMM14) && o+sz <= GOF(XMM14)+SZB(XMM14)) return GOF(XMM14);
    if (o >= GOF(XMM15) && o+sz <= GOF(XMM15)+SZB(XMM15)) return GOF(XMM15);
+   if (o >= GOF(XMM16) && o+sz <= GOF(XMM16)+SZB(XMM16)) return GOF(XMM16);
 
    /* MMX accesses to FP regs.  Need to allow for 32-bit references
       due to dirty helpers for frstor etc, which reference the entire

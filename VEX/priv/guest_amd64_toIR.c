@@ -442,6 +442,7 @@ static void unimplemented ( HChar* str )
 #define OFFB_XMM13     offsetof(VexGuestAMD64State,guest_XMM13)
 #define OFFB_XMM14     offsetof(VexGuestAMD64State,guest_XMM14)
 #define OFFB_XMM15     offsetof(VexGuestAMD64State,guest_XMM15)
+#define OFFB_XMM16     offsetof(VexGuestAMD64State,guest_XMM16)
 
 #define OFFB_EMWARN    offsetof(VexGuestAMD64State,guest_EMWARN)
 #define OFFB_TISTART   offsetof(VexGuestAMD64State,guest_TISTART)
@@ -15172,6 +15173,104 @@ DisResult disInstr_AMD64_WRK (
       goto decode_success;
    }
 
+   /* 66 0F 3A 63 /r ib = PCMPISTRI imm8, xmm2/m128, xmm1
+      (selected special cases that actually occur in glibc,
+       not by any means a complete implementation.)
+   */
+   if (have66noF2noF3(pfx) 
+       && sz == 2 
+       && insn[0] == 0x0F && insn[1] == 0x3A
+       && insn[2] == 0x63) {
+
+      UInt  regNoL = 0;
+      UInt  regNoR = 0;
+      UChar imm    = 0;
+
+      /* This is a nasty kludge.  We need to pass 2 x V128 to the
+         helper (which is clean).  Since we can't do that, use a dirty
+         helper to compute the results directly from the XMM regs in
+         the guest state.  That means for the memory case, we need to
+         move the left operand into a pseudo-register (XMM16, let's
+         call it). */
+      modrm = insn[3];
+      if (epartIsReg(modrm)) {
+         regNoL = eregOfRexRM(pfx, modrm);
+         regNoR = gregOfRexRM(pfx, modrm);
+         imm = insn[3+1];
+         delta += 3+1+1;
+      } else {
+         regNoL = 16; /* use XMM16 as an intermediary */
+         regNoR = gregOfRexRM(pfx, modrm);
+         addr = disAMode( &alen, vbi, pfx, delta+3, dis_buf, 0 );
+         stmt( IRStmt_Put( OFFB_XMM16, loadLE(Ity_V128, mkexpr(addr)) ));
+         imm = insn[3+alen];
+         delta += 3+alen+1;
+      }
+
+      /* Now we know the XMM reg numbers for the operands, and the
+         immediate byte.  Is it one we can actually handle? */
+      void*  fn = NULL;
+      HChar* nm = NULL;
+      switch (imm) {
+         case 0x08: fn = &amd64g_dirtyhelper_ISTRI_08;
+                    nm = "amd64g_dirtyhelper_ISTRI_08"; break;
+         case 0x0C: fn = &amd64g_dirtyhelper_ISTRI_0C;
+                    nm = "amd64g_dirtyhelper_ISTRI_0C"; break;
+         case 0x3A: fn = &amd64g_dirtyhelper_ISTRI_3A;
+                    nm = "amd64g_dirtyhelper_ISTRI_3A"; break;
+         case 0x4A: fn = &amd64g_dirtyhelper_ISTRI_4A;
+                    nm = "amd64g_dirtyhelper_ISTRI_4A"; break;
+         default:   goto decode_failure;
+      }
+      vassert(fn); vassert(nm);
+
+      UInt gstOffL = regNoL == 16 ? OFFB_XMM16 : xmmGuestRegOffset(regNoL);
+      UInt gstOffR = xmmGuestRegOffset(regNoR);
+
+      IRTemp resT = newTemp(Ity_I64);
+      IRDirty* d
+         = unsafeIRDirty_1_N( resT, 0/*regparms*/,
+                              nm, fn,
+                              mkIRExprVec_2( mkIRExpr_HWord(gstOffL),
+                                             mkIRExpr_HWord(gstOffR)) );
+      /* It's not really a dirty call, but we can't use the clean
+         helper mechanism here for the very lame reason that we can't
+         pass 2 x V128s by value to a helper.  Hence this roundabout
+         scheme. */
+      d->needsBBP = True;
+      d->nFxState = 2;
+      d->fxState[0].fx     = Ifx_Read;
+      d->fxState[0].offset = gstOffL;
+      d->fxState[0].size   = sizeof(U128);
+      d->fxState[1].fx     = Ifx_Read;
+      d->fxState[1].offset = gstOffR;
+      d->fxState[1].size   = sizeof(U128);
+      stmt( IRStmt_Dirty(d) );
+
+      /* Now resT[15:0] holds what the Intel docs call IntRes2, and
+         resT[31:16] holds the new OSZACP values.  We must park the
+         resultin ECX and update the condition codes. */
+      putIReg64(R_RCX, binop(Iop_And64, mkexpr(resT), mkU64(0xFFFF)));
+
+      stmt( IRStmt_Put(
+               OFFB_CC_DEP1,
+               binop(Iop_And64, binop(Iop_Shr64, mkexpr(resT), mkU8(16)),
+                                mkU64(0xFFFF))
+      ));
+      stmt( IRStmt_Put( OFFB_CC_OP,   mkU64(AMD64G_CC_OP_COPY) ));
+      stmt( IRStmt_Put( OFFB_CC_DEP2, mkU64(0) ));
+      stmt( IRStmt_Put( OFFB_CC_NDEP, mkU64(0) ));
+
+      if (regNoL == 16) {
+         DIP("pcmpistri $%x,%s,%s\n",
+             (UInt)imm, dis_buf, nameXMMReg(regNoR));
+      } else {
+         DIP("pcmpistri $%x,%s,%s\n",
+             (UInt)imm, nameXMMReg(regNoL), nameXMMReg(regNoR));
+      }
+
+      goto decode_success;
+   }
 
    /* ---------------------------------------------------- */
    /* --- end of the SSE4 decoder                      --- */
@@ -17220,10 +17319,13 @@ DisResult disInstr_AMD64_WRK (
             fName = "amd64g_dirtyhelper_CPUID_sse3_and_cx16";
             fAddr = &amd64g_dirtyhelper_CPUID_sse3_and_cx16; 
             /* This is a Core-2-like machine */
+            /* fName = "amd64g_dirtyhelper_CPUID_sse42_and_cx16"; */
+            /* fAddr = &amd64g_dirtyhelper_CPUID_sse42_and_cx16; */
+            /* This is a Core-i5-like machine */
          }
          else {
-            /* Give a CPUID for at least a baseline machine, no SSE2
-               and no CX16 */
+            /* Give a CPUID for at least a baseline machine, SSE2
+               only, and no CX16 */
             fName = "amd64g_dirtyhelper_CPUID_baseline";
             fAddr = &amd64g_dirtyhelper_CPUID_baseline;
          }

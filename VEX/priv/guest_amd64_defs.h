@@ -142,6 +142,7 @@ extern void  amd64g_dirtyhelper_storeF80le ( ULong/*addr*/, ULong/*data*/ );
 
 extern void  amd64g_dirtyhelper_CPUID_baseline ( VexGuestAMD64State* st );
 extern void  amd64g_dirtyhelper_CPUID_sse3_and_cx16 ( VexGuestAMD64State* st );
+extern void  amd64g_dirtyhelper_CPUID_sse42_and_cx16 ( VexGuestAMD64State* st );
 
 extern void  amd64g_dirtyhelper_FINIT ( VexGuestAMD64State* );
 
@@ -155,6 +156,15 @@ extern void  amd64g_dirtyhelper_OUT ( ULong portno, ULong data,
 
 extern void amd64g_dirtyhelper_SxDT ( void* address,
                                       ULong op /* 0 or 1 */ );
+
+extern ULong amd64g_dirtyhelper_ISTRI_08 ( VexGuestAMD64State*,
+                                           HWord, HWord );
+extern ULong amd64g_dirtyhelper_ISTRI_0C ( VexGuestAMD64State*,
+                                           HWord, HWord );
+extern ULong amd64g_dirtyhelper_ISTRI_3A ( VexGuestAMD64State*,
+                                           HWord, HWord );
+extern ULong amd64g_dirtyhelper_ISTRI_4A ( VexGuestAMD64State*,
+                                           HWord, HWord );
 
 //extern void  amd64g_dirtyhelper_CPUID_sse0 ( VexGuestAMD64State* );
 //extern void  amd64g_dirtyhelper_CPUID_sse1 ( VexGuestAMD64State* );

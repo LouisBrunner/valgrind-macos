@@ -535,6 +535,263 @@ ULong x86amd64g_calculate_FXTRACT ( ULong arg, HWord getExp )
 }
 
 
+
+/*---------------------------------------------------------*/
+/*--- SSE4.2 PCMP{E,I}STR{I,M} helpers                  ---*/
+/*---------------------------------------------------------*/
+
+/* We need the definitions for OSZACP eflags/rflags offsets.
+   #including guest_{amd64,x86}_defs.h causes chaos, so just copy the
+   require values directly.  They are not going to change in the
+   future :-)
+*/
+#define SHIFT_O   11
+#define SHIFT_S   7
+#define SHIFT_Z   6
+#define SHIFT_A   4
+#define SHIFT_C   0
+#define SHIFT_P   2
+
+#define MASK_O    (1 << SHIFT_O)
+#define MASK_S    (1 << SHIFT_S)
+#define MASK_Z    (1 << SHIFT_Z)
+#define MASK_A    (1 << SHIFT_A)
+#define MASK_C    (1 << SHIFT_C)
+#define MASK_P    (1 << SHIFT_P)
+
+
+/* Count leading zeroes, w/ 0-produces-32 semantics, a la Hacker's
+   Delight. */
+static UInt clz32 ( UInt x )
+{
+   Int y, m, n;
+   y = -(x >> 16);
+   m = (y >> 16) & 16;
+   n = 16 - m;
+   x = x >> m;
+   y = x - 0x100;
+   m = (y >> 16) & 8;
+   n = n + m;
+   x = x << m;
+   y = x - 0x1000;
+   m = (y >> 16) & 4;
+   n = n + m;
+   x = x << m;
+   y = x - 0x4000;
+   m = (y >> 16) & 2;
+   n = n + m;
+   x = x << m;
+   y = x >> 14;
+   m = y & ~(y >> 1);
+   return n + 2 - m;
+}
+
+static UInt ctz32 ( UInt x )
+{
+   return 32 - clz32((~x) & (x-1));
+}
+
+
+/* Do the computations for SSE4.2 ISTRI_XX.  Not called directly from
+   generated code.  Pure function, reads *argLU and *argRU, returned
+   value (0 .. 16) is in the low 16 bits of the return value.
+   Returned bits 31:16 hold the result OSZACP value.
+*/
+UInt compute_ISTRI_08 ( U128* argLU, U128* argRU )
+{
+   /* unsigned bytes    (also works for unsigned)
+      equal each        (straightforward parallel compare)
+      polarity +        (IntRes2 = IntRes1)
+      index 0           (want index of ls 1 bit)
+   */
+   Int    i;
+   UChar* argL = (UChar*)argLU;
+   UChar* argR = (UChar*)argRU;
+   UInt boolResII = 0, zmaskL = 0, zmaskR = 0;
+   for (i = 15; i >= 0; i--) {
+      UChar cL  = argL[i];
+      UChar cR  = argR[i];
+      zmaskL    = (zmaskL << 1)    | (cL == 0  ? 1 : 0);
+      zmaskR    = (zmaskR << 1)    | (cR == 0  ? 1 : 0);
+      boolResII = (boolResII << 1) | (cL == cR ? 1 : 0);
+   }
+   UInt validL = ~(zmaskL | -zmaskL);  // not(left(zmaskL))
+   UInt validR = ~(zmaskR | -zmaskR);  // not(left(zmaskR))
+
+   // do invalidation, common to all equal-each cases
+   UInt intRes1
+      = (boolResII & validL & validR)  // if both valid, use cmpres
+        | (~ (validL | validR));       // if both invalid, force 1
+                                       // else force 0
+   intRes1 &= 0xFFFF;
+
+   // polarity: +
+   UInt intRes2 = intRes1;
+
+   // generate ecx value, common to all index-of-ls-1-bit cases
+   UInt newECX = intRes2 == 0 ? 16 : ctz32(intRes2);
+
+   // generate new flags, common to all ISTRI and ISTRM cases
+   UInt newFlags    // A, P are zero
+      = ((intRes2 == 0) ? 0 : MASK_C) // C == 0 iff intRes2 == 0
+      | ((zmaskL == 0)  ? 0 : MASK_Z) // Z == 1 iff any in argL is 0
+      | ((zmaskR == 0)  ? 0 : MASK_S) // S == 1 iff any in argR is 0
+      | ((intRes2 & 1) << SHIFT_O);   // O == IntRes2[0]
+
+   return (newFlags << 16) | newECX;
+}
+
+
+UInt compute_ISTRI_0C ( U128* argLU, U128* argRU )
+{
+   /* unsigned bytes
+      equal ordered     (substring search)
+      polarity +        (IntRes2 = IntRes1)
+      index 0           (want index of ls 1 bit)
+
+      argL: haystack,  argR: needle
+   */
+   UInt i, hi, ni;
+   UChar* argL = (UChar*)argLU;
+   UChar* argR = (UChar*)argRU;
+   UInt boolRes = 0, zmaskL = 0, zmaskR = 0;
+   UInt keepSearching = 1;
+   for (i = 0; i < 16; i++) {
+      UChar cL  = argL[i];
+      UChar cR  = argR[i];
+      zmaskL    = (zmaskL >> 1) | (cL == 0 ? (1 << 15) : 0);
+      zmaskR    = (zmaskR >> 1) | (cR == 0 ? (1 << 15) : 0);
+
+      if (argL[i] == 0) {
+        // run off the end of the haystack.
+        keepSearching = 0;
+      } 
+
+      UInt m = 1;
+      if (keepSearching) {
+         for (ni = 0; ni < 16; ni++) {
+            if (argR[ni] == 0) break;
+            hi = ni + i;
+            if (hi >= 16) break;
+            if (argL[hi] != argR[ni]) { m = 0; break; }
+         }
+      } else {
+         m = 0;
+      }
+      boolRes = (boolRes >> 1) | (m << 15);
+
+   }
+
+   // boolRes is "pre-invalidated"
+   UInt intRes1 = boolRes & 0xFFFF;
+
+   // polarity: +
+   UInt intRes2 = intRes1;
+
+   // generate ecx value, common to all index-of-ls-1-bit cases
+   UInt newECX = intRes2 == 0 ? 16 : ctz32(intRes2);
+
+   // generate new flags, common to all ISTRI and ISTRM cases
+   UInt newFlags    // A, P are zero
+      = ((intRes2 == 0) ? 0 : MASK_C) // C == 0 iff intRes2 == 0
+      | ((zmaskL == 0)  ? 0 : MASK_Z) // Z == 1 iff any in argL is 0
+      | ((zmaskR == 0)  ? 0 : MASK_S) // S == 1 iff any in argR is 0
+      | ((intRes2 & 1) << SHIFT_O);   // O == IntRes2[0]
+
+   return (newFlags << 16) | newECX;
+}
+
+
+UInt compute_ISTRI_3A ( U128* argLU, U128* argRU )
+{
+   /* signed bytes      (also works for unsigned)
+      equal each        (straightforward parallel compare)
+      polarity Masked-  (IntRes2 = IntRes1 ^ validL)
+      index 0           (want index of ls 1 bit)
+   */
+   Int    i;
+   UChar* argL = (UChar*)argLU;
+   UChar* argR = (UChar*)argRU;
+   UInt boolResII = 0, zmaskL = 0, zmaskR = 0;
+   for (i = 15; i >= 0; i--) {
+      UChar cL  = argL[i];
+      UChar cR  = argR[i];
+      zmaskL    = (zmaskL << 1)    | (cL == 0  ? 1 : 0);
+      zmaskR    = (zmaskR << 1)    | (cR == 0  ? 1 : 0);
+      boolResII = (boolResII << 1) | (cL == cR ? 1 : 0);
+   }
+   UInt validL = ~(zmaskL | -zmaskL);  // not(left(zmaskL))
+   UInt validR = ~(zmaskR | -zmaskR);  // not(left(zmaskR))
+
+   // do invalidation, common to all equal-each cases
+   UInt intRes1
+      = (boolResII & validL & validR)  // if both valid, use cmpres
+        | (~ (validL | validR));       // if both invalid, force 1
+                                       // else force 0
+   intRes1 &= 0xFFFF;
+
+   // polarity: Masked-
+   UInt intRes2 = (intRes1 ^ validL) & 0xFFFF;
+
+   // generate ecx value, common to all index-of-ls-1-bit cases
+   UInt newECX = intRes2 == 0 ? 16 : ctz32(intRes2);
+
+   // generate new flags, common to all ISTRI and ISTRM cases
+   UInt newFlags    // A, P are zero
+      = ((intRes2 == 0) ? 0 : MASK_C) // C == 0 iff intRes2 == 0
+      | ((zmaskL == 0)  ? 0 : MASK_Z) // Z == 1 iff any in argL is 0
+      | ((zmaskR == 0)  ? 0 : MASK_S) // S == 1 iff any in argR is 0
+      | ((intRes2 & 1) << SHIFT_O);   // O == IntRes2[0]
+
+   return (newFlags << 16) | newECX;
+}
+
+
+UInt compute_ISTRI_4A ( U128* argLU, U128* argRU )
+{
+   /* signed bytes  (also works for unsigned)
+      equal each    (straightforward parallel compare)
+      polarity +    (IntRes2 = IntRes1)
+      index 1       (want index of ms 1 bit)
+   */
+   Int    i;
+   UChar* argL = (UChar*)argLU;
+   UChar* argR = (UChar*)argRU;
+   UInt boolResII = 0, zmaskL = 0, zmaskR = 0;
+   for (i = 15; i >= 0; i--) {
+      UChar cL  = argL[i];
+      UChar cR  = argR[i];
+      zmaskL    = (zmaskL << 1)    | (cL == 0  ? 1 : 0);
+      zmaskR    = (zmaskR << 1)    | (cR == 0  ? 1 : 0);
+      boolResII = (boolResII << 1) | (cL == cR ? 1 : 0);
+   }
+   UInt validL = ~(zmaskL | -zmaskL);  // not(left(zmaskL))
+   UInt validR = ~(zmaskR | -zmaskR);  // not(left(zmaskR))
+
+   // do invalidation, common to all equal-each cases
+   UInt intRes1
+      = (boolResII & validL & validR)  // if both valid, use cmpres
+        | (~ (validL | validR));       // if both invalid, force 1
+                                       // else force 0
+   intRes1 &= 0xFFFF;
+
+   // polarity
+   UInt intRes2 = intRes1;
+
+   // generate ecx value, common to all index-of-ms-1-bit cases
+   UInt newECX = intRes2 == 0 ? 16 : (31 - clz32(intRes2));
+
+   // generate new flags, common to all ISTRI and ISTRM cases
+   UInt newFlags    // A, P are zero
+      = ((intRes2 == 0) ? 0 : MASK_C) // C == 0 iff intRes2 == 0
+      | ((zmaskL == 0)  ? 0 : MASK_Z) // Z == 1 iff any in argL is 0
+      | ((zmaskR == 0)  ? 0 : MASK_S) // S == 1 iff any in argR is 0
+      | ((intRes2 & 1) << SHIFT_O);   // O == IntRes2[0]
+
+   return (newFlags << 16) | newECX;
+}
+
+
 /*---------------------------------------------------------------*/
 /*--- end                                 guest_generic_x87.c ---*/
 /*---------------------------------------------------------------*/

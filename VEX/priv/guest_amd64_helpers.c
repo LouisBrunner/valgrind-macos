@@ -2009,6 +2009,158 @@ void amd64g_dirtyhelper_CPUID_sse3_and_cx16 ( VexGuestAMD64State* st )
 }
 
 
+/* Claim to be the following CPU (4 x ...), which is sse4.2 and cx16
+   capable.
+
+   vendor_id       : GenuineIntel
+   cpu family      : 6
+   model           : 37
+   model name      : Intel(R) Core(TM) i5 CPU         670  @ 3.47GHz
+   stepping        : 2
+   cpu MHz         : 3334.000
+   cache size      : 4096 KB
+   physical id     : 0
+   siblings        : 4
+   core id         : 0
+   cpu cores       : 2
+   apicid          : 0
+   initial apicid  : 0
+   fpu             : yes
+   fpu_exception   : yes
+   cpuid level     : 11
+   wp              : yes
+   flags           : fpu vme de pse tsc msr pae mce cx8 apic sep
+                     mtrr pge mca cmov pat pse36 clflush dts acpi
+                     mmx fxsr sse sse2 ss ht tm pbe syscall nx rdtscp
+                     lm constant_tsc arch_perfmon pebs bts rep_good
+                     xtopology nonstop_tsc aperfmperf pni pclmulqdq
+                     dtes64 monitor ds_cpl vmx smx est tm2 ssse3 cx16
+                     xtpr pdcm sse4_1 sse4_2 popcnt aes lahf_lm ida
+                     arat tpr_shadow vnmi flexpriority ept vpid
+   bogomips        : 6957.57
+   clflush size    : 64
+   cache_alignment : 64
+   address sizes   : 36 bits physical, 48 bits virtual
+   power management:
+*/
+void amd64g_dirtyhelper_CPUID_sse42_and_cx16 ( VexGuestAMD64State* st )
+{
+#  define SET_ABCD(_a,_b,_c,_d)                \
+      do { st->guest_RAX = (ULong)(_a);        \
+           st->guest_RBX = (ULong)(_b);        \
+           st->guest_RCX = (ULong)(_c);        \
+           st->guest_RDX = (ULong)(_d);        \
+      } while (0)
+
+   UInt old_eax = (UInt)st->guest_RAX;
+   UInt old_ecx = (UInt)st->guest_RCX;
+
+   switch (old_eax) {
+      case 0x00000000:
+         SET_ABCD(0x0000000b, 0x756e6547, 0x6c65746e, 0x49656e69);
+         break;
+      case 0x00000001:
+         SET_ABCD(0x00020652, 0x00100800, 0x0298e3ff, 0xbfebfbff);
+         break;
+      case 0x00000002:
+         SET_ABCD(0x55035a01, 0x00f0b2e3, 0x00000000, 0x09ca212c);
+         break;
+      case 0x00000003:
+         SET_ABCD(0x00000000, 0x00000000, 0x00000000, 0x00000000);
+         break;
+      case 0x00000004:
+         switch (old_ecx) {
+            case 0x00000000: SET_ABCD(0x1c004121, 0x01c0003f,
+                                      0x0000003f, 0x00000000); break;
+            case 0x00000001: SET_ABCD(0x1c004122, 0x00c0003f,
+                                      0x0000007f, 0x00000000); break;
+            case 0x00000002: SET_ABCD(0x1c004143, 0x01c0003f,
+                                      0x000001ff, 0x00000000); break;
+            case 0x00000003: SET_ABCD(0x1c03c163, 0x03c0003f,
+                                      0x00000fff, 0x00000002); break;
+            default:         SET_ABCD(0x00000000, 0x00000000,
+                                      0x00000000, 0x00000000); break;
+         }
+         break;
+      case 0x00000005:
+         SET_ABCD(0x00000040, 0x00000040, 0x00000003, 0x00001120);
+         break;
+      case 0x00000006:
+         SET_ABCD(0x00000007, 0x00000002, 0x00000001, 0x00000000);
+         break;
+      case 0x00000007:
+         SET_ABCD(0x00000000, 0x00000000, 0x00000000, 0x00000000);
+         break;
+      case 0x00000008:
+         SET_ABCD(0x00000000, 0x00000000, 0x00000000, 0x00000000);
+         break;
+      case 0x00000009:
+         SET_ABCD(0x00000000, 0x00000000, 0x00000000, 0x00000000);
+         break;
+      case 0x0000000a:
+         SET_ABCD(0x07300403, 0x00000004, 0x00000000, 0x00000603);
+         break;
+      case 0x0000000b:
+         switch (old_ecx) {
+            case 0x00000000:
+               SET_ABCD(0x00000001, 0x00000002,
+                        0x00000100, 0x00000000); break;
+            case 0x00000001:
+               SET_ABCD(0x00000004, 0x00000004,
+                        0x00000201, 0x00000000); break;
+            default:
+               SET_ABCD(0x00000000, 0x00000000,
+                        old_ecx,    0x00000000); break;
+         }
+         break;
+      case 0x0000000c:
+         SET_ABCD(0x00000001, 0x00000002, 0x00000100, 0x00000000);
+         break;
+      case 0x0000000d:
+         switch (old_ecx) {
+            case 0x00000000: SET_ABCD(0x00000001, 0x00000002,
+                                      0x00000100, 0x00000000); break;
+            case 0x00000001: SET_ABCD(0x00000004, 0x00000004,
+                                      0x00000201, 0x00000000); break;
+            default:         SET_ABCD(0x00000000, 0x00000000,
+                                      old_ecx,    0x00000000); break;
+         }
+         break;
+      case 0x80000000:
+         SET_ABCD(0x80000008, 0x00000000, 0x00000000, 0x00000000);
+         break;
+      case 0x80000001:
+         SET_ABCD(0x00000000, 0x00000000, 0x00000001, 0x28100800);
+         break;
+      case 0x80000002:
+         SET_ABCD(0x65746e49, 0x2952286c, 0x726f4320, 0x4d542865);
+         break;
+      case 0x80000003:
+         SET_ABCD(0x35692029, 0x55504320, 0x20202020, 0x20202020);
+         break;
+      case 0x80000004:
+         SET_ABCD(0x30373620, 0x20402020, 0x37342e33, 0x007a4847);
+         break;
+      case 0x80000005:
+         SET_ABCD(0x00000000, 0x00000000, 0x00000000, 0x00000000);
+         break;
+      case 0x80000006:
+         SET_ABCD(0x00000000, 0x00000000, 0x01006040, 0x00000000);
+         break;
+      case 0x80000007:
+         SET_ABCD(0x00000000, 0x00000000, 0x00000000, 0x00000100);
+         break;
+      case 0x80000008:
+         SET_ABCD(0x00003024, 0x00000000, 0x00000000, 0x00000000);
+         break;
+      default:
+         SET_ABCD(0x00000001, 0x00000002, 0x00000100, 0x00000000);
+         break;
+   }
+#  undef SET_ABCD
+}
+
+
 ULong amd64g_calculate_RCR ( ULong arg, 
                              ULong rot_amt, 
                              ULong rflags_in, 
@@ -2359,6 +2511,52 @@ ULong amd64g_calculate_sse_pmovmskb ( ULong w64hi, ULong w64lo )
 
 
 /*---------------------------------------------------------------*/
+/*--- Helpers for SSE4.2 PCMP{E,I}STR{I,M}                    ---*/
+/*---------------------------------------------------------------*/
+
+/* CALLED FROM GENERATED CODE: DIRTY HELPER(s).  (But not really,
+   actually it could be a clean helper, but for the fact that we can't
+   pass by value 2 x V128 to a clean helper.)  Reads guest state, no
+   writes to guest state, no accesses of memory, is a pure function.
+   This relies on the property that the XMM regs are laid out
+   consecutively in the guest state, so we can index into them here.
+   Returned value (0 .. 16) is in the low 16 bits of the return value.
+   Returned bits 31:16 hold the result OSZACP value.
+*/
+ULong amd64g_dirtyhelper_ISTRI_08 ( VexGuestAMD64State* gst,
+                                    HWord gstOffL, HWord gstOffR )
+{
+   U128* argL = (U128*)( ((UChar*)gst) + gstOffL );
+   U128* argR = (U128*)( ((UChar*)gst) + gstOffR );
+   return (HWord) compute_ISTRI_08( argL, argR );
+}
+
+ULong amd64g_dirtyhelper_ISTRI_0C ( VexGuestAMD64State* gst,
+                                    HWord gstOffL, HWord gstOffR )
+{
+   U128* argL = (U128*)( ((UChar*)gst) + gstOffL );
+   U128* argR = (U128*)( ((UChar*)gst) + gstOffR );
+   return (HWord) compute_ISTRI_0C( argL, argR );
+}
+
+ULong amd64g_dirtyhelper_ISTRI_3A ( VexGuestAMD64State* gst,
+                                    HWord gstOffL, HWord gstOffR )
+{
+   U128* argL = (U128*)( ((UChar*)gst) + gstOffL );
+   U128* argR = (U128*)( ((UChar*)gst) + gstOffR );
+   return (HWord) compute_ISTRI_3A( argL, argR );
+}
+
+ULong amd64g_dirtyhelper_ISTRI_4A ( VexGuestAMD64State* gst,
+                                    HWord gstOffL, HWord gstOffR )
+{
+   U128* argL = (U128*)( ((UChar*)gst) + gstOffL );
+   U128* argR = (U128*)( ((UChar*)gst) + gstOffR );
+   return (HWord) compute_ISTRI_4A( argL, argR );
+}
+
+
+/*---------------------------------------------------------------*/
 /*--- Helpers for dealing with, and describing,               ---*/
 /*--- guest state as a whole.                                 ---*/
 /*---------------------------------------------------------------*/
@@ -2421,6 +2619,7 @@ void LibVEX_GuestAMD64_initialise ( /*OUT*/VexGuestAMD64State* vex_state )
    SSEZERO(vex_state->guest_XMM13);
    SSEZERO(vex_state->guest_XMM14);
    SSEZERO(vex_state->guest_XMM15);
+   SSEZERO(vex_state->guest_XMM16);
 
 #  undef SSEZERO
 

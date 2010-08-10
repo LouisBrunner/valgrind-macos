@@ -205,7 +205,6 @@
    drd-libQtCore-deref-that-calls-QThreadData-destructor
    drd:ConflictingAccess
    fun:_ZN11QThreadDataD1Ev
-   fun:_ZN11QThreadData5derefEv
    obj:/usr/lib*/libQtCore.so.4.*
 }
 {

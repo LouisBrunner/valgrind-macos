@@ -180,6 +180,13 @@
    fun:vsnprintf
 }
 
+{
+   macos-TFontFeatures::TFontFeatures(unsigned long)-uninitialised-stack-val
+   Memcheck:Cond
+   fun:_ZN13TFontFeaturesC2Em
+   fun:_ZNK9TBaseFont12CopyFeaturesEv
+}
+
 ##----------------------------------------------------------------------##
 # Helgrind
 ##----------------------------------------------------------------------##

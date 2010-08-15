@@ -18,7 +18,7 @@ AM_MAINTAINER_MODE
 #----------------------------------------------------------------------------
 # Checks for various programs.
 #----------------------------------------------------------------------------
-CFLAGS="-Wno-long-long"
+CFLAGS="-Wno-long-long $CFLAGS"
 
 AC_PROG_LN_S
 AC_PROG_CC

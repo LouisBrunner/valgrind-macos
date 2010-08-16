@@ -126,9 +126,58 @@ STRNLEN(VG_Z_LIBC_SONAME, strnlen)
 
 STRLEN(VG_Z_LIBC_SONAME,          strlen)
 #if defined(VGO_linux)
+STRLEN(VG_Z_LIBC_SONAME,          __GI_strlen)
 STRLEN(VG_Z_LD_LINUX_SO_2,        strlen)
 STRLEN(VG_Z_LD_LINUX_X86_64_SO_2, strlen)
 STRLEN(VG_Z_LD_SO_1,              strlen)
+#endif
+
+
+#define STRCPY(soname, fnname) \
+   char* VG_REPLACE_FUNCTION_ZU(soname, fnname) ( char* dst, const char* src ); \
+   char* VG_REPLACE_FUNCTION_ZU(soname, fnname) ( char* dst, const char* src ) \
+   { \
+      Char* dst_orig = dst; \
+      \
+      while (*src) *dst++ = *src++; \
+      *dst = 0; \
+      \
+      return dst_orig; \
+   }
+
+STRCPY(VG_Z_LIBC_SONAME, strcpy)
+#if defined(VGO_linux)
+STRCPY(VG_Z_LIBC_SONAME, __GI_strcpy)
+#elif defined(VGO_darwin)
+STRCPY(VG_Z_DYLD,        strcpy)
+#endif
+
+
+#define STRNCMP(soname, fnname) \
+   int VG_REPLACE_FUNCTION_ZU(soname,fnname) \
+          ( const char* s1, const char* s2, SizeT nmax ); \
+   int VG_REPLACE_FUNCTION_ZU(soname,fnname) \
+          ( const char* s1, const char* s2, SizeT nmax ) \
+   { \
+      SizeT n = 0; \
+      while (True) { \
+         if (n >= nmax) return 0; \
+         if (*s1 == 0 && *s2 == 0) return 0; \
+         if (*s1 == 0) return -1; \
+         if (*s2 == 0) return 1; \
+         \
+         if (*(unsigned char*)s1 < *(unsigned char*)s2) return -1; \
+         if (*(unsigned char*)s1 > *(unsigned char*)s2) return 1; \
+         \
+         s1++; s2++; n++; \
+      } \
+   }
+
+STRNCMP(VG_Z_LIBC_SONAME, strncmp)
+#if defined(VGO_linux)
+STRNCMP(VG_Z_LIBC_SONAME, __GI_strncmp)
+#elif defined(VGO_darwin)
+STRNCMP(VG_Z_DYLD,        strncmp)
 #endif
 
 
@@ -154,6 +203,7 @@ STRLEN(VG_Z_LD_SO_1,              strlen)
 
 STRCMP(VG_Z_LIBC_SONAME,          strcmp)
 #if defined(VGO_linux)
+STRCMP(VG_Z_LIBC_SONAME,          __GI_strcmp)
 STRCMP(VG_Z_LD_LINUX_X86_64_SO_2, strcmp)
 STRCMP(VG_Z_LD64_SO_1,            strcmp)
 #endif

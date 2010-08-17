@@ -100,10 +100,21 @@
    fun:_Unwind_ForcedUnwind
 }
 {
+   drd-libpthread-_Unwind_GetCFA
+   drd:ConflictingAccess
+   fun:_Unwind_GetCFA
+}
+{
    drd-libpthread-_Unwind_Resume
    drd:ConflictingAccess
    ...
    fun:_Unwind_Resume
+}
+{
+   drd-libpthread-?
+   drd:ConflictingAccess
+   obj:/lib/libgcc_s.so.1
+   obj:/lib/libpthread-2.11.2.so
 }
 {
    drd-libpthread-nanosleep
@@ -164,6 +175,7 @@
 {
    drd-libglib-access-g_threads_got_initialized
    drd:ConflictingAccess
+   ...
    fun:_ZN27QEventDispatcherGlibPrivateC1EP13_GMainContext
    fun:_ZN20QEventDispatcherGlibC1EP7QObject
    obj:/usr/lib*/libQtCore.so.4.*

@@ -2514,45 +2514,123 @@ ULong amd64g_calculate_sse_pmovmskb ( ULong w64hi, ULong w64lo )
 /*--- Helpers for SSE4.2 PCMP{E,I}STR{I,M}                    ---*/
 /*---------------------------------------------------------------*/
 
-/* CALLED FROM GENERATED CODE: DIRTY HELPER(s).  (But not really,
+static UInt zmask_from_V128 ( V128* arg )
+{
+   UInt i, res = 0;
+   for (i = 0; i < 16; i++) {
+      res |=  ((arg->w8[i] == 0) ? 1 : 0) << i;
+   }
+   return res;
+}
+
+/* Helps with PCMP{I,E}STR{I,M}.
+
+   CALLED FROM GENERATED CODE: DIRTY HELPER(s).  (But not really,
    actually it could be a clean helper, but for the fact that we can't
-   pass by value 2 x V128 to a clean helper.)  Reads guest state, no
-   writes to guest state, no accesses of memory, is a pure function.
-   This relies on the property that the XMM regs are laid out
-   consecutively in the guest state, so we can index into them here.
-   Returned value (0 .. 16) is in the low 16 bits of the return value.
-   Returned bits 31:16 hold the result OSZACP value.
+   pass by value 2 x V128 to a clean helper, nor have one returned.)
+   Reads guest state, writes to guest state for the xSTRM cases, no
+   accesses of memory, is a pure function.
+
+   opc_and_imm contains (4th byte of opcode << 8) | the-imm8-byte so
+   the callee knows which I/E and I/M variant it is dealing with and
+   what the specific operation is.  4th byte of opcode is in the range
+   0x60 to 0x63:
+       istri  66 0F 3A 63
+       istrm  66 0F 3A 62
+       estri  66 0F 3A 61
+       estrm  66 0F 3A 60
+
+   gstOffL and gstOffR are the guest state offsets for the two XMM
+   register inputs.  We never have to deal with the memory case since
+   that is handled by pre-loading the relevant value into the fake
+   XMM16 register.
+
+   For ESTRx variants, edxIN and eaxIN hold the values of those two
+   registers.
+
+   In all cases, the bottom 16 bits of the result contain the new
+   OSZACP %rflags values.  For xSTRI variants, bits[31:16] of the
+   result hold the new %ecx value.  For xSTRM variants, the helper
+   writes the result directly to the guest XMM0.
+
+   Declarable side effects: in all cases, reads guest state at
+   [gstOffL, +16) and [gstOffR, +16).  For xSTRM variants, also writes
+   guest_XMM0.
+
+   Is expected to be called with opc_and_imm combinations which have
+   actually been validated, and will assert if otherwise.  The front
+   end should ensure we're only called with verified values.
 */
-ULong amd64g_dirtyhelper_ISTRI_08 ( VexGuestAMD64State* gst,
-                                    HWord gstOffL, HWord gstOffR )
+ULong amd64g_dirtyhelper_PCMPxSTRx ( 
+          VexGuestAMD64State* gst,
+          HWord opc4_and_imm,
+          HWord gstOffL, HWord gstOffR,
+          HWord edxIN, HWord eaxIN
+       )
 {
-   U128* argL = (U128*)( ((UChar*)gst) + gstOffL );
-   U128* argR = (U128*)( ((UChar*)gst) + gstOffR );
-   return (HWord) compute_ISTRI_08( argL, argR );
-}
+   HWord opc4 = (opc4_and_imm >> 8) & 0xFF;
+   HWord imm8 = opc4_and_imm & 0xFF;
+   HWord isISTRx = opc4 & 2;
+   HWord isxSTRM = (opc4 & 1) ^ 1;
+   vassert((opc4 & 0xFC) == 0x60); /* 0x60 .. 0x63 */
+   vassert((imm8 & 1) == 0); /* we support byte-size cases only */
 
-ULong amd64g_dirtyhelper_ISTRI_0C ( VexGuestAMD64State* gst,
-                                    HWord gstOffL, HWord gstOffR )
-{
-   U128* argL = (U128*)( ((UChar*)gst) + gstOffL );
-   U128* argR = (U128*)( ((UChar*)gst) + gstOffR );
-   return (HWord) compute_ISTRI_0C( argL, argR );
-}
+   // where the args are
+   V128* argL = (V128*)( ((UChar*)gst) + gstOffL );
+   V128* argR = (V128*)( ((UChar*)gst) + gstOffR );
 
-ULong amd64g_dirtyhelper_ISTRI_3A ( VexGuestAMD64State* gst,
-                                    HWord gstOffL, HWord gstOffR )
-{
-   U128* argL = (U128*)( ((UChar*)gst) + gstOffL );
-   U128* argR = (U128*)( ((UChar*)gst) + gstOffR );
-   return (HWord) compute_ISTRI_3A( argL, argR );
-}
+   /* Create the arg validity masks, either from the vectors
+      themselves or from the supplied edx/eax values. */
+   // FIXME: this is only right for the 8-bit data cases.
+   // At least that is asserted above.
+   UInt zmaskL, zmaskR;
+   if (isISTRx) {
+      zmaskL = zmask_from_V128(argL);
+      zmaskR = zmask_from_V128(argR);
+   } else {
+      Int tmp;
+      tmp = edxIN & 0xFFFFFFFF;
+      if (tmp < -16) tmp = -16;
+      if (tmp > 16)  tmp = 16;
+      if (tmp < 0)   tmp = -tmp;
+      vassert(tmp >= 0 && tmp <= 16);
+      zmaskL = (1 << tmp) & 0xFFFF;
+      tmp = eaxIN & 0xFFFFFFFF;
+      if (tmp < -16) tmp = -16;
+      if (tmp > 16)  tmp = 16;
+      if (tmp < 0)   tmp = -tmp;
+      vassert(tmp >= 0 && tmp <= 16);
+      zmaskR = (1 << tmp) & 0xFFFF;
+   }
 
-ULong amd64g_dirtyhelper_ISTRI_4A ( VexGuestAMD64State* gst,
-                                    HWord gstOffL, HWord gstOffR )
-{
-   U128* argL = (U128*)( ((UChar*)gst) + gstOffL );
-   U128* argR = (U128*)( ((UChar*)gst) + gstOffR );
-   return (HWord) compute_ISTRI_4A( argL, argR );
+   // temp spot for the resulting flags and vector.
+   V128 resV;
+   UInt resOSZACP;
+
+   // do the meyaath
+   Bool ok = compute_PCMPxSTRx ( 
+                &resV, &resOSZACP, argL, argR, 
+                zmaskL, zmaskR, imm8, (Bool)isxSTRM
+             );
+
+   // front end shouldn't pass us any imm8 variants we can't
+   // handle.  Hence:
+   vassert(ok);
+
+   // So, finally we need to get the results back to the caller.
+   // In all cases, the new OSZACP value is the lowest 16 of
+   // the return value.
+   if (isxSTRM) {
+      /* gst->guest_XMM0 = resV; */ // gcc don't like that
+      gst->guest_XMM0[0] = resV.w32[0];
+      gst->guest_XMM0[1] = resV.w32[1];
+      gst->guest_XMM0[2] = resV.w32[2];
+      gst->guest_XMM0[3] = resV.w32[3];
+      return resOSZACP & 0x8D5;
+   } else {
+      UInt newECX = resV.w32[0] & 0xFFFF;
+      return (newECX << 16) | (resOSZACP & 0x8D5);
+   }
 }
 
 

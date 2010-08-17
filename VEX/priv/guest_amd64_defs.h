@@ -157,14 +157,51 @@ extern void  amd64g_dirtyhelper_OUT ( ULong portno, ULong data,
 extern void amd64g_dirtyhelper_SxDT ( void* address,
                                       ULong op /* 0 or 1 */ );
 
-extern ULong amd64g_dirtyhelper_ISTRI_08 ( VexGuestAMD64State*,
-                                           HWord, HWord );
-extern ULong amd64g_dirtyhelper_ISTRI_0C ( VexGuestAMD64State*,
-                                           HWord, HWord );
-extern ULong amd64g_dirtyhelper_ISTRI_3A ( VexGuestAMD64State*,
-                                           HWord, HWord );
-extern ULong amd64g_dirtyhelper_ISTRI_4A ( VexGuestAMD64State*,
-                                           HWord, HWord );
+/* Helps with PCMP{I,E}STR{I,M}.
+
+   CALLED FROM GENERATED CODE: DIRTY HELPER(s).  (But not really,
+   actually it could be a clean helper, but for the fact that we can't
+   pass by value 2 x V128 to a clean helper, nor have one returned.)
+   Reads guest state, writes to guest state for the xSTRM cases, no
+   accesses of memory, is a pure function.
+
+   opc_and_imm contains (4th byte of opcode << 8) | the-imm8-byte so
+   the callee knows which I/E and I/M variant it is dealing with and
+   what the specific operation is.  4th byte of opcode is in the range
+   0x60 to 0x63:
+       istri  66 0F 3A 63
+       istrm  66 0F 3A 62
+       estri  66 0F 3A 61
+       estrm  66 0F 3A 60
+
+   gstOffL and gstOffR are the guest state offsets for the two XMM
+   register inputs.  We never have to deal with the memory case since
+   that is handled by pre-loading the relevant value into the fake
+   XMM16 register.
+
+   For ESTRx variants, edxIN and eaxIN hold the values of those two
+   registers.
+
+   In all cases, the bottom 16 bits of the result contain the new
+   OSZACP %rflags values.  For xSTRI variants, bits[31:16] of the
+   result hold the new %ecx value.  For xSTRM variants, the helper
+   writes the result directly to the guest XMM0.
+
+   Declarable side effects: in all cases, reads guest state at
+   [gstOffL, +16) and [gstOffR, +16).  For xSTRM variants, also writes
+   guest_XMM0.
+
+   Is expected to be called with opc_and_imm combinations which have
+   actually been validated, and will assert if otherwise.  The front
+   end should ensure we're only called with verified values.
+*/
+extern ULong amd64g_dirtyhelper_PCMPxSTRx ( 
+          VexGuestAMD64State*,
+          HWord opc4_and_imm,
+          HWord gstOffL, HWord gstOffR,
+          HWord edxIN, HWord eaxIN
+       );
+
 
 //extern void  amd64g_dirtyhelper_CPUID_sse0 ( VexGuestAMD64State* );
 //extern void  amd64g_dirtyhelper_CPUID_sse1 ( VexGuestAMD64State* );

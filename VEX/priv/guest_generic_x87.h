@@ -98,15 +98,14 @@ typedef
    generated code.  CLEAN HELPER. */
 extern ULong x86amd64g_calculate_FXTRACT ( ULong arg, HWord getExp );
 
-/* Do the computations for SSE4.2 ISTRI_XX.  Not called directly from
-   generated code.  Pure function, reads *argLU and *argRU, returned
-   value (0 .. 16) is in the low 16 bits of the return value.
-   Returned bits 31:16 hold the result OSZACP value. */
-extern UInt compute_ISTRI_08 ( U128* argLU, U128* argRU );
-extern UInt compute_ISTRI_0C ( U128* argLU, U128* argRU );
-extern UInt compute_ISTRI_3A ( U128* argLU, U128* argRU );
-extern UInt compute_ISTRI_4A ( U128* argLU, U128* argRU );
-
+/* Compute result and new OSZACP flags for all PCMP{E,I}STR{I,M}
+   variants.  See bigger comment on implementation of this function
+   for details on call/return conventions. */
+extern Bool compute_PCMPxSTRx ( /*OUT*/V128* resV,
+                                /*OUT*/UInt* resOSZACP,
+                                V128* argLV,  V128* argRV,
+                                UInt zmaskL, UInt zmaskR,
+                                UInt imm8,   Bool isxSTRM );
 
 #endif /* ndef __VEX_GUEST_GENERIC_X87_H */
 

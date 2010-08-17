@@ -43,18 +43,6 @@
 #ifndef __VEX_HOST_GENERIC_SIMD128_H
 #define __VEX_HOST_GENERIC_SIMD128_H
 
-/* A union for doing 128-bit primitives conveniently.  It is not
-   public and so not placed in pub/. */
-typedef
-   union {
-      UChar  w8[16];
-      UShort w16[8];
-      UInt   w32[4];
-      ULong  w64[2];
-   }
-   V128;
-
-
 #include "libvex_basictypes.h"
 
 /* DO NOT MAKE THESE INTO REGPARM FNS!  THIS WILL BREAK CALLING

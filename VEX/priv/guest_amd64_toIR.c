@@ -14461,6 +14461,61 @@ DisResult disInstr_AMD64_WRK (
       goto decode_success;
    }
 
+   /* 66 0F 3A 20 /r ib = PINSRB xmm1, r32/m8, imm8
+      Extract byte from r32/m8 and insert into xmm1 */
+   if ( have66noF2noF3( pfx )
+        && sz == 2
+        && insn[0] == 0x0F && insn[1] == 0x3A && insn[2] == 0x20 ) {
+
+      Int    imm8;
+      IRTemp new8 = newTemp(Ity_I64);
+
+      modrm = insn[3];
+
+      if ( epartIsReg( modrm ) ) {
+         imm8 = (Int)(insn[3+1] & 0xF);
+         assign( new8, binop(Iop_And64,
+                             unop(Iop_32Uto64,
+                                  getIReg32(eregOfRexRM(pfx,modrm))),
+                             mkU64(0xFF)));
+         delta += 3+1+1;
+         DIP( "pinsrb $%d,%s,%s\n", imm8,
+              nameIReg32( eregOfRexRM(pfx, modrm) ),
+              nameXMMReg( gregOfRexRM(pfx, modrm) ) );
+      } else {
+         addr = disAMode( &alen, vbi, pfx, delta+3, dis_buf, 1 );
+         imm8 = (Int)(insn[3+alen] & 0xF);
+         assign( new8, unop(Iop_8Uto64, loadLE( Ity_I8, mkexpr(addr) )));
+         delta += 3+alen+1;
+         DIP( "pinsrb $%d,%s,%s\n", 
+              imm8, dis_buf, nameXMMReg( gregOfRexRM(pfx, modrm) ) );
+      }
+
+      // Create a V128 value which has the selected byte in the
+      // specified lane, and zeroes everywhere else.
+      IRTemp tmp128 = newTemp(Ity_V128);
+      IRTemp halfshift = newTemp(Ity_I64);
+      assign(halfshift, binop(Iop_Shl64,
+                              mkexpr(new8), mkU8(8 * (imm8 & 7))));
+      vassert(imm8 >= 0 && imm8 <= 15);
+      if (imm8 < 8) {
+         assign(tmp128, binop(Iop_64HLtoV128, mkU64(0), mkexpr(halfshift)));
+      } else {
+         assign(tmp128, binop(Iop_64HLtoV128, mkexpr(halfshift), mkU64(0)));
+      }
+
+      UShort mask = ~(1 << imm8);
+
+      putXMMReg( gregOfRexRM(pfx, modrm), 
+                 binop( Iop_OrV128,
+                        mkexpr(tmp128),
+                        binop( Iop_AndV128, 
+                               getXMMReg( gregOfRexRM(pfx, modrm) ),
+                               mkV128(mask) ) ) );
+
+      goto decode_success;
+   }
+
    /* 66 0F 38 37 = PCMPGTQ
       64x2 comparison (signed, presumably; the Intel docs don't say :-)
    */
@@ -15174,14 +15229,19 @@ DisResult disInstr_AMD64_WRK (
    }
 
    /* 66 0F 3A 63 /r ib = PCMPISTRI imm8, xmm2/m128, xmm1
+      66 0F 3A 62 /r ib = PCMPISTRM imm8, xmm2/m128, xmm1
+      66 0F 3A 61 /r ib = PCMPESTRI imm8, xmm2/m128, xmm1
+      66 0F 3A 60 /r ib = PCMPESTRM imm8, xmm2/m128, xmm1
       (selected special cases that actually occur in glibc,
        not by any means a complete implementation.)
    */
    if (have66noF2noF3(pfx) 
        && sz == 2 
        && insn[0] == 0x0F && insn[1] == 0x3A
-       && insn[2] == 0x63) {
+       && (insn[2] >= 0x60 && insn[2] <= 0x63)) {
 
+      UInt  isISTRx = insn[2] & 2;
+      UInt  isxSTRM = (insn[2] & 1) ^ 1;
       UInt  regNoL = 0;
       UInt  regNoR = 0;
       UChar imm    = 0;
@@ -15208,35 +15268,41 @@ DisResult disInstr_AMD64_WRK (
       }
 
       /* Now we know the XMM reg numbers for the operands, and the
-         immediate byte.  Is it one we can actually handle? */
-      void*  fn = NULL;
-      HChar* nm = NULL;
+         immediate byte.  Is it one we can actually handle? Throw out
+         any cases for which the helper function has not been
+         verified. */
       switch (imm) {
-         case 0x08: fn = &amd64g_dirtyhelper_ISTRI_08;
-                    nm = "amd64g_dirtyhelper_ISTRI_08"; break;
-         case 0x0C: fn = &amd64g_dirtyhelper_ISTRI_0C;
-                    nm = "amd64g_dirtyhelper_ISTRI_0C"; break;
-         case 0x3A: fn = &amd64g_dirtyhelper_ISTRI_3A;
-                    nm = "amd64g_dirtyhelper_ISTRI_3A"; break;
-         case 0x4A: fn = &amd64g_dirtyhelper_ISTRI_4A;
-                    nm = "amd64g_dirtyhelper_ISTRI_4A"; break;
-         default:   goto decode_failure;
+         case 0x02: case 0x08: case 0x0A: case 0x0C: case 0x12:
+         case 0x1A: case 0x3A: case 0x44: case 0x4A:
+            break;
+         default:
+            goto decode_failure;
       }
-      vassert(fn); vassert(nm);
 
+      /* Who ya gonna call?  Presumably not Ghostbusters. */
+      void*  fn = &amd64g_dirtyhelper_PCMPxSTRx;
+      HChar* nm = "amd64g_dirtyhelper_PCMPxSTRx";
+
+      /* Round up the arguments.  Note that this is a kludge -- the
+         use of mkU64 rather than mkIRExpr_HWord implies the
+         assumption that the host's word size is 64-bit. */
       UInt gstOffL = regNoL == 16 ? OFFB_XMM16 : xmmGuestRegOffset(regNoL);
       UInt gstOffR = xmmGuestRegOffset(regNoR);
 
-      IRTemp resT = newTemp(Ity_I64);
-      IRDirty* d
-         = unsafeIRDirty_1_N( resT, 0/*regparms*/,
-                              nm, fn,
-                              mkIRExprVec_2( mkIRExpr_HWord(gstOffL),
-                                             mkIRExpr_HWord(gstOffR)) );
+      IRExpr*  opc4_and_imm = mkU64((insn[2] << 8) | (imm & 0xFF));
+      IRExpr*  gstOffLe     = mkU64(gstOffL);
+      IRExpr*  gstOffRe     = mkU64(gstOffR);
+      IRExpr*  edxIN        = isISTRx ? mkU64(0) : getIRegRDX(8);
+      IRExpr*  eaxIN        = isISTRx ? mkU64(0) : getIRegRAX(8);
+      IRExpr** args
+         = mkIRExprVec_5( opc4_and_imm, gstOffLe, gstOffRe, edxIN, eaxIN );
+
+      IRTemp   resT = newTemp(Ity_I64);
+      IRDirty* d    = unsafeIRDirty_1_N( resT, 0/*regparms*/, nm, fn, args );
       /* It's not really a dirty call, but we can't use the clean
          helper mechanism here for the very lame reason that we can't
-         pass 2 x V128s by value to a helper.  Hence this roundabout
-         scheme. */
+         pass 2 x V128s by value to a helper, nor get one back.  Hence
+         this roundabout scheme. */
       d->needsBBP = True;
       d->nFxState = 2;
       d->fxState[0].fx     = Ifx_Read;
@@ -15245,32 +15311,163 @@ DisResult disInstr_AMD64_WRK (
       d->fxState[1].fx     = Ifx_Read;
       d->fxState[1].offset = gstOffR;
       d->fxState[1].size   = sizeof(U128);
+      if (isxSTRM) {
+         /* Declare that the helper writes XMM0. */
+         d->nFxState = 3;
+         d->fxState[2].fx     = Ifx_Write;
+         d->fxState[2].offset = xmmGuestRegOffset(0);
+         d->fxState[2].size   = sizeof(U128);
+      }
+
       stmt( IRStmt_Dirty(d) );
 
-      /* Now resT[15:0] holds what the Intel docs call IntRes2, and
-         resT[31:16] holds the new OSZACP values.  We must park the
-         resultin ECX and update the condition codes. */
-      putIReg64(R_RCX, binop(Iop_And64, mkexpr(resT), mkU64(0xFFFF)));
+      /* Now resT[15:0] holds the new OSZACP values, so the condition
+         codes must be updated. And for a xSTRI case, resT[31:16]
+         holds the new ECX value, so stash that too. */
+      if (!isxSTRM) {
+         putIReg64(R_RCX, binop(Iop_And64,
+                                binop(Iop_Shr64, mkexpr(resT), mkU8(16)),
+                                mkU64(0xFFFF)));
+      }
 
       stmt( IRStmt_Put(
                OFFB_CC_DEP1,
-               binop(Iop_And64, binop(Iop_Shr64, mkexpr(resT), mkU8(16)),
-                                mkU64(0xFFFF))
+               binop(Iop_And64, mkexpr(resT), mkU64(0xFFFF))
       ));
       stmt( IRStmt_Put( OFFB_CC_OP,   mkU64(AMD64G_CC_OP_COPY) ));
       stmt( IRStmt_Put( OFFB_CC_DEP2, mkU64(0) ));
       stmt( IRStmt_Put( OFFB_CC_NDEP, mkU64(0) ));
 
       if (regNoL == 16) {
-         DIP("pcmpistri $%x,%s,%s\n",
+         DIP("pcmp%cstr%c $%x,%s,%s\n",
+             isISTRx ? 'i' : 'e', isxSTRM ? 'm' : 'i',
              (UInt)imm, dis_buf, nameXMMReg(regNoR));
       } else {
-         DIP("pcmpistri $%x,%s,%s\n",
+         DIP("pcmp%cstr%c $%x,%s,%s\n",
+             isISTRx ? 'i' : 'e', isxSTRM ? 'm' : 'i',
              (UInt)imm, nameXMMReg(regNoL), nameXMMReg(regNoR));
       }
 
       goto decode_success;
    }
+
+
+   /* 66 0f 38 17 /r = PTEST xmm1, xmm2/m128
+      Logical compare (set ZF and CF from AND/ANDN of the operands) */
+   if (have66noF2noF3( pfx ) && sz == 2 
+       && insn[0] == 0x0F && insn[1] == 0x38 && insn[2] == 0x17) {
+      modrm = insn[3];
+      IRTemp vecE = newTemp(Ity_V128);
+      IRTemp vecG = newTemp(Ity_V128);
+
+      if ( epartIsReg(modrm) ) {
+         assign(vecE, getXMMReg(eregOfRexRM(pfx, modrm)));
+         delta += 3+1;
+         DIP( "ptest %s,%s\n", 
+              nameXMMReg( eregOfRexRM(pfx, modrm) ),
+              nameXMMReg( gregOfRexRM(pfx, modrm) ) );
+      } else {
+         addr = disAMode( &alen, vbi, pfx, delta+3, dis_buf, 0 );
+         assign(vecE, loadLE( Ity_V128, mkexpr(addr) ));
+         delta += 3+alen;
+         DIP( "ptest %s,%s\n",
+              dis_buf, nameXMMReg( gregOfRexRM(pfx, modrm) ) );
+      }
+
+      assign(vecG, getXMMReg(gregOfRexRM(pfx, modrm)));
+
+      /* Set Z=1 iff (vecE & vecG) == 0
+         Set C=1 iff (vecE & not vecG) == 0
+      */
+
+      /* andV, andnV:  vecE & vecG,  vecE and not(vecG) */
+      IRTemp andV  = newTemp(Ity_V128);
+      IRTemp andnV = newTemp(Ity_V128);
+      assign(andV,  binop(Iop_AndV128, mkexpr(vecE), mkexpr(vecG)));
+      assign(andnV, binop(Iop_AndV128,
+                          mkexpr(vecE),
+                          binop(Iop_XorV128, mkexpr(vecG),
+                                             mkV128(0xFFFF))));
+
+      /* The same, but reduced to 64-bit values, by or-ing the top
+         and bottom 64-bits together.  It relies on this trick:
+
+          InterleaveLO64x2([a,b],[c,d]) == [b,d]    hence
+
+          InterleaveLO64x2([a,b],[a,b]) == [b,b]    and similarly
+          InterleaveHI64x2([a,b],[a,b]) == [a,a] 
+
+          and so the OR of the above 2 exprs produces
+          [a OR b, a OR b], from which we simply take the lower half.
+      */
+      IRTemp and64  = newTemp(Ity_I64);
+      IRTemp andn64 = newTemp(Ity_I64);
+   
+      assign(
+         and64,
+         unop(Iop_V128to64,
+              binop(Iop_OrV128,
+                    binop(Iop_InterleaveLO64x2, mkexpr(andV), mkexpr(andV)),
+                    binop(Iop_InterleaveHI64x2, mkexpr(andV), mkexpr(andV))
+              )
+         )
+      );
+
+      assign(
+         andn64,
+         unop(Iop_V128to64,
+              binop(Iop_OrV128,
+                    binop(Iop_InterleaveLO64x2, mkexpr(andnV), mkexpr(andnV)),
+                    binop(Iop_InterleaveHI64x2, mkexpr(andnV), mkexpr(andnV))
+              )
+          )
+       );
+
+      /* Now convert and64, andn64 to all-zeroes or all-1s, so we can
+         slice out the Z and C bits conveniently.  We use the standard
+         trick all-zeroes -> all-zeroes, anything-else -> all-ones
+         done by "(x | -x) >>s (word-size - 1)".
+      */
+      IRTemp z64 = newTemp(Ity_I64);
+      IRTemp c64 = newTemp(Ity_I64);
+      assign(z64,
+             unop(Iop_Not64,
+                  binop(Iop_Sar64,
+                        binop(Iop_Or64,
+                              binop(Iop_Sub64, mkU64(0), mkexpr(and64)),
+                              mkexpr(and64)
+                        ), 
+                        mkU8(63)))
+      );
+
+      assign(c64,
+             unop(Iop_Not64,
+                  binop(Iop_Sar64,
+                        binop(Iop_Or64,
+                              binop(Iop_Sub64, mkU64(0), mkexpr(andn64)),
+                              mkexpr(andn64)
+                        ),
+                        mkU8(63)))
+      );
+
+      /* And finally, slice out the Z and C flags and set the flags
+         thunk to COPY for them.  OSAP are set to zero. */
+      IRTemp newOSZACP = newTemp(Ity_I64);
+      assign(newOSZACP, 
+             binop(Iop_Or64,
+                   binop(Iop_And64, mkexpr(z64), mkU64(AMD64G_CC_MASK_Z)),
+                   binop(Iop_And64, mkexpr(c64), mkU64(AMD64G_CC_MASK_C))
+             )
+      );
+
+      stmt( IRStmt_Put( OFFB_CC_DEP1, mkexpr(newOSZACP)));
+      stmt( IRStmt_Put( OFFB_CC_OP,   mkU64(AMD64G_CC_OP_COPY) ));
+      stmt( IRStmt_Put( OFFB_CC_DEP2, mkU64(0) ));
+      stmt( IRStmt_Put( OFFB_CC_NDEP, mkU64(0) ));
+
+      goto decode_success;
+   }
+
 
    /* ---------------------------------------------------- */
    /* --- end of the SSE4 decoder                      --- */
@@ -17319,8 +17516,8 @@ DisResult disInstr_AMD64_WRK (
             fName = "amd64g_dirtyhelper_CPUID_sse3_and_cx16";
             fAddr = &amd64g_dirtyhelper_CPUID_sse3_and_cx16; 
             /* This is a Core-2-like machine */
-            /* fName = "amd64g_dirtyhelper_CPUID_sse42_and_cx16"; */
-            /* fAddr = &amd64g_dirtyhelper_CPUID_sse42_and_cx16; */
+            //fName = "amd64g_dirtyhelper_CPUID_sse42_and_cx16";
+            //fAddr = &amd64g_dirtyhelper_CPUID_sse42_and_cx16;
             /* This is a Core-i5-like machine */
          }
          else {

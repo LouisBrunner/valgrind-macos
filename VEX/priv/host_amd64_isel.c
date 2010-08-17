@@ -788,6 +788,21 @@ static HReg do_sse_NotV128 ( ISelEnv* env, HReg src )
 }
 
 
+/* Expand the given byte into a 64-bit word, by cloning each bit
+   8 times. */
+static ULong bitmask8_to_bytemask64 ( UShort w8 )
+{
+   vassert(w8 == (w8 & 0xFF));
+   ULong w64 = 0;
+   Int i;
+   for (i = 0; i < 8; i++) {
+      if (w8 & (1<<i))
+         w64 |= (0xFFULL << (8 * i));
+   }
+   return w64;
+}
+
+
 //.. /* Round an x87 FPU value to 53-bit-mantissa precision, to be used
 //..    after most non-simple FPU operations (simple = +, -, *, / and
 //..    sqrt).
@@ -3219,83 +3234,24 @@ static HReg iselVecExpr_wrk ( ISelEnv* env, IRExpr* e )
       switch (e->Iex.Const.con->Ico.V128) {
          case 0x0000:
             dst = generate_zeroes_V128(env);
-            return dst;
+            break;
          case 0xFFFF:
             dst = generate_ones_V128(env);
-            return dst;
-         default:
             break;
+         default: {
+            AMD64AMode* rsp0 = AMD64AMode_IR(0, hregAMD64_RSP());
+            /* do push_uimm64 twice, first time for the high-order half. */
+            push_uimm64(env, bitmask8_to_bytemask64(
+                                (e->Iex.Const.con->Ico.V128 >> 8) & 0xFF
+                       ));
+            push_uimm64(env, bitmask8_to_bytemask64(
+                                (e->Iex.Const.con->Ico.V128 >> 0) & 0xFF
+                       ));
+            addInstr(env, AMD64Instr_SseLdSt( True/*load*/, 16, dst, rsp0 ));
+            add_to_rsp(env, 16);
+            break;
+         }
       }
-      AMD64AMode* rsp0 = AMD64AMode_IR(0, hregAMD64_RSP());
-      const ULong const_z64    = 0x0000000000000000ULL;
-      const ULong const_o64    = 0xFFFFFFFFFFFFFFFFULL;
-      const ULong const_z32o32 = 0x00000000FFFFFFFFULL;
-      const ULong const_o32z32 = 0xFFFFFFFF00000000ULL;
-      switch (e->Iex.Const.con->Ico.V128) {
-         case 0x0000: case 0xFFFF:
-            vassert(0); /* handled just above */
-         /* do push_uimm64 twice, first time for the high-order half. */
-         case 0x00F0:
-            push_uimm64(env, const_z64);
-            push_uimm64(env, const_o32z32);
-            break;
-         case 0x00FF:
-            push_uimm64(env, const_z64);
-            push_uimm64(env, const_o64);
-            break;
-         case 0x000F:
-            push_uimm64(env, const_z64);
-            push_uimm64(env, const_z32o32);
-            break;
-         case 0x0F00:
-            push_uimm64(env, const_z32o32);
-            push_uimm64(env, const_z64);
-            break;
-         case 0x0F0F:
-            push_uimm64(env, const_z32o32);
-            push_uimm64(env, const_z32o32);
-            break;
-         case 0x0FF0:
-            push_uimm64(env, const_z32o32);
-            push_uimm64(env, const_o32z32);
-            break;
-         case 0x0FFF:
-            push_uimm64(env, const_z32o32);
-            push_uimm64(env, const_o64);
-            break;
-         case 0xF000:
-            push_uimm64(env, const_o32z32);
-            push_uimm64(env, const_z64);
-            break;
-         case 0xF00F:
-            push_uimm64(env, const_o32z32);
-            push_uimm64(env, const_z32o32);
-            break;
-         case 0xF0F0:
-            push_uimm64(env, const_o32z32);
-            push_uimm64(env, const_o32z32);
-            break;
-         case 0xF0FF:
-            push_uimm64(env, const_o32z32);
-            push_uimm64(env, const_o64);
-            break;
-         case 0xFF00:
-            push_uimm64(env, const_o64);
-            push_uimm64(env, const_z64);
-            break;
-         case 0xFF0F:
-            push_uimm64(env, const_o64);
-            push_uimm64(env, const_z32o32);
-            break;
-         case 0xFFF0:
-            push_uimm64(env, const_o64);
-            push_uimm64(env, const_o32z32);
-            break;
-         default:
-            goto vec_fail;
-      }
-      addInstr(env, AMD64Instr_SseLdSt( True/*load*/, 16, dst, rsp0 ));
-      add_to_rsp(env, 16);
       return dst;
    }
 
@@ -3723,7 +3679,7 @@ static HReg iselVecExpr_wrk ( ISelEnv* env, IRExpr* e )
       return dst;
    }
 
-   vec_fail:
+   //vec_fail:
    vex_printf("iselVecExpr (amd64, subarch = %s): can't reduce\n",
               LibVEX_ppVexHwCaps(VexArchAMD64, env->hwcaps));
    ppIRExpr(e);

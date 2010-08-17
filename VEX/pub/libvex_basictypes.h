@@ -62,7 +62,17 @@ typedef    signed long long int   Long;
 /* Always 128 bits. */
 typedef  UInt  U128[4];
 
+/* A union for doing 128-bit vector primitives conveniently. */
+typedef
+   union {
+      UChar  w8[16];
+      UShort w16[8];
+      UInt   w32[4];
+      ULong  w64[2];
+   }
+   V128;
 
+/* Floating point. */
 typedef  float   Float;    /* IEEE754 single-precision (32-bit) value */
 typedef  double  Double;   /* IEEE754 double-precision (64-bit) value */
 

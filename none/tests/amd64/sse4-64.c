@@ -2551,6 +2551,43 @@ void test_ROUNDSS_w_immediate_rounding ( void )
    }
 }
 
+void test_PTEST ( void )
+{
+   const Int ntests = 8;
+   V128 spec[ntests];
+   do64HLtoV128( &spec[0], 0x0000000000000000ULL, 0x0000000000000000ULL );
+   do64HLtoV128( &spec[1], 0x0000000000000000ULL, 0x0000000000000001ULL );
+   do64HLtoV128( &spec[2], 0x0000000000000001ULL, 0x0000000000000000ULL );
+   do64HLtoV128( &spec[3], 0x0000000000000001ULL, 0x0000000000000001ULL );
+   do64HLtoV128( &spec[4], 0xffffffffffffffffULL, 0xffffffffffffffffULL );
+   do64HLtoV128( &spec[5], 0xffffffffffffffffULL, 0xfffffffffffffffeULL );
+   do64HLtoV128( &spec[6], 0xfffffffffffffffeULL, 0xffffffffffffffffULL );
+   do64HLtoV128( &spec[7], 0xfffffffffffffffeULL, 0xfffffffffffffffeULL );
+   V128 block[2];
+   Int i, j;
+   ULong flags;
+   for (i = 0; i < ntests; i++) {
+      for (j = 0; j < ntests; j++) {
+         memcpy(&block[0], &spec[i], 16);
+         memcpy(&block[1], &spec[j], 16);
+         __asm__ __volatile__(
+            "subq $256, %%rsp"        "\n\t"
+            "movupd 0(%1), %%xmm2"    "\n\t"
+            "ptest 16(%1), %%xmm2"    "\n\t"
+            "pushfq"                  "\n\t"
+            "popq %0"                 "\n\t"
+            "addq $256, %%rsp"        "\n\t"
+            : /*out*/"=r"(flags) : /*in*/ "r"(&block[0]) :
+            "xmm2", "memory", "cc"
+         );
+         printf("r   ptest ");
+         showV128(&block[0]);
+         printf(" ");
+         showV128(&block[1]);
+         printf(" -> eflags %04x\n", (UInt)flags & 0x8D5);
+      }
+   }
+}
 
 int main ( int argc, char** argv )
 {
@@ -2577,7 +2614,7 @@ int main ( int argc, char** argv )
    test_PINSRQ();         // done Apr.16.2010
    test_PINSRD();         // todo
    //test_PINSRW();         // todo
-   //test_PINSRB();         // todo
+   test_PINSRB();         // todo
    //test_PHMINPOSUW();
    test_PMAXSB();
    test_PMAXSD();         // done Apr.09.2010
@@ -2604,7 +2641,7 @@ int main ( int argc, char** argv )
    test_POPCNTQ();
    //test_PMULDQ();
    test_PMULLD();
-   // PTEST
+   test_PTEST();
    // ROUNDPD
    // ROUNDPS
    // ROUNDSD
@@ -2614,7 +2651,7 @@ int main ( int argc, char** argv )
    // ------ SSE 4.2 ------
    test_PCMPGTQ();
 #else
-   test_ROUNDSS_w_immediate_rounding();
+   test_PTEST();
 #endif
 
    return 0;

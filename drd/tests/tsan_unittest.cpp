@@ -6620,7 +6620,7 @@ void Getter() {
     }
     usleep(1000);
   }
-  printf("T=%ld: non_zero_received=%d\n", 
+  printf("T=%zd: non_zero_received=%d\n", 
          (size_t)pthread_self(), non_zero_received);
 } 
 

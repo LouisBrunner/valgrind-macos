@@ -1,9 +1,12 @@
 
+/* Tests in detail the core arithmetic for pcmp{e,i}str{i,m} using
+   pcmpistri to drive it.  Does not check the e-vs-i or i-vs-m
+   aspect. */
+
 #include <string.h>
 #include <stdio.h>
 #include <assert.h>
 
-typedef  unsigned char  V128[16];
 typedef  unsigned int   UInt;
 typedef  signed int     Int;
 typedef  unsigned char  UChar;
@@ -11,6 +14,14 @@ typedef  unsigned long long int ULong;
 typedef  UChar          Bool;
 #define False ((Bool)0)
 #define True  ((Bool)1)
+
+//typedef  unsigned char  V128[16];
+typedef
+   union {
+      UChar uChar[16];
+      UInt  uInt[4];
+   }
+   V128;
 
 #define SHIFT_O   11
 #define SHIFT_S   7
@@ -71,7 +82,7 @@ void expand ( V128* dst, char* summary )
       assert(xx < 16);
       xx = (xx << 4) | xx;
       assert(xx < 256);
-      (*dst)[i] = xx;
+      dst->uChar[i] = xx;
    }
 }
 
@@ -94,7 +105,7 @@ UInt zmask_from_V128 ( V128* arg )
 {
    UInt i, res = 0;
    for (i = 0; i < 16; i++) {
-      res |=  (((*arg)[i] == 0) ? 1 : 0) << i;
+      res |=  ((arg->uChar[i] == 0) ? 1 : 0) << i;
    }
    return res;
 }
@@ -186,6 +197,17 @@ Bool pcmpXstrX_WRK ( /*OUT*/V128* resV,
    assert(imm8 < 0x80);
    assert((zmaskL >> 16) == 0);
    assert((zmaskR >> 16) == 0);
+
+   /* Explicitly reject any imm8 values that haven't been validated,
+      even if they would probably work.  Life is too short to have
+      unvalidated cases in the code base. */
+   switch (imm8) {
+      case 0x02: case 0x08: case 0x0C: case 0x12: case 0x1A:
+      case 0x3A: case 0x44: case 0x4A:
+         break;
+      default:
+         return False;
+   }
 
    UInt fmt = (imm8 >> 0) & 3; // imm8[1:0]  data format
    UInt agg = (imm8 >> 2) & 3; // imm8[3:2]  aggregation fn
@@ -391,7 +413,7 @@ UInt s_pcmpistri_4A ( V128* argLU, V128* argRU )
                        0x4A, False/*!isSTRM*/
         );
    assert(ok);
-   resECX = *(UInt*)(&resV[0]);
+   resECX = resV.uInt[0];
    return (resOSZACP << 16) | resECX;
 }
 
@@ -482,7 +504,7 @@ UInt s_pcmpistri_3A ( V128* argLU, V128* argRU )
                        0x3A, False/*!isSTRM*/
         );
    assert(ok);
-   resECX = *(UInt*)(&resV[0]);
+   resECX = resV.uInt[0];
    return (resOSZACP << 16) | resECX;
 }
 
@@ -559,7 +581,7 @@ UInt h_pcmpistri_0C ( V128* argL, V128* argR )
       "popq      %%rdx"                     "\n\t"
       "movq      %%rcx,  %0"                "\n\t"
       "movq      %%rdx,  %1"                "\n\t"
-      : /*out*/ "=r"(res), "=r"(flags) : "r"/*in*/(&block[0][0])
+      : /*out*/ "=r"(res), "=r"(flags) : "r"/*in*/(&block[0])
       : "rcx","rdx","xmm0","xmm2","xmm11","cc","memory"
    );
    return ((flags & 0x8D5) << 16) | (res & 0xFFFF);
@@ -576,7 +598,7 @@ UInt s_pcmpistri_0C ( V128* argLU, V128* argRU )
                        0x0C, False/*!isSTRM*/
         );
    assert(ok);
-   resECX = *(UInt*)(&resV[0]);
+   resECX = resV.uInt[0];
    return (resOSZACP << 16) | resECX;
 }
 
@@ -658,7 +680,7 @@ UInt s_pcmpistri_08 ( V128* argLU, V128* argRU )
                        0x08, False/*!isSTRM*/
         );
    assert(ok);
-   resECX = *(UInt*)(&resV[0]);
+   resECX = resV.uInt[0];
    return (resOSZACP << 16) | resECX;
 }
 
@@ -751,7 +773,7 @@ UInt s_pcmpistri_1A ( V128* argLU, V128* argRU )
                        0x1A, False/*!isSTRM*/
         );
    assert(ok);
-   resECX = *(UInt*)(&resV[0]);
+   resECX = resV.uInt[0];
    return (resOSZACP << 16) | resECX;
 }
 
@@ -846,7 +868,7 @@ UInt s_pcmpistri_02 ( V128* argLU, V128* argRU )
                        0x02, False/*!isSTRM*/
         );
    assert(ok);
-   resECX = *(UInt*)(&resV[0]);
+   resECX = resV.uInt[0];
    return (resOSZACP << 16) | resECX;
 }
 
@@ -928,7 +950,7 @@ UInt s_pcmpistri_12 ( V128* argLU, V128* argRU )
                        0x12, False/*!isSTRM*/
         );
    assert(ok);
-   resECX = *(UInt*)(&resV[0]);
+   resECX = resV.uInt[0];
    return (resOSZACP << 16) | resECX;
 }
 
@@ -1011,7 +1033,7 @@ UInt s_pcmpistri_44 ( V128* argLU, V128* argRU )
                        0x44, False/*!isSTRM*/
         );
    assert(ok);
-   resECX = *(UInt*)(&resV[0]);
+   resECX = resV.uInt[0];
    return (resOSZACP << 16) | resECX;
 }
 

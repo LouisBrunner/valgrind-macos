@@ -17513,11 +17513,11 @@ DisResult disInstr_AMD64_WRK (
          if (haveF2orF3(pfx)) goto decode_failure;
          if (archinfo->hwcaps == (VEX_HWCAPS_AMD64_SSE3
                                   |VEX_HWCAPS_AMD64_CX16)) {
-            fName = "amd64g_dirtyhelper_CPUID_sse3_and_cx16";
-            fAddr = &amd64g_dirtyhelper_CPUID_sse3_and_cx16; 
+            //fName = "amd64g_dirtyhelper_CPUID_sse3_and_cx16";
+            //fAddr = &amd64g_dirtyhelper_CPUID_sse3_and_cx16; 
             /* This is a Core-2-like machine */
-            //fName = "amd64g_dirtyhelper_CPUID_sse42_and_cx16";
-            //fAddr = &amd64g_dirtyhelper_CPUID_sse42_and_cx16;
+            fName = "amd64g_dirtyhelper_CPUID_sse42_and_cx16";
+            fAddr = &amd64g_dirtyhelper_CPUID_sse42_and_cx16;
             /* This is a Core-i5-like machine */
          }
          else {

@@ -984,6 +984,36 @@ STRCSPN(VG_Z_LIBC_SONAME,          strcspn)
 #endif
 
 
+// And here's a validated strspn replacement, should it
+// become necessary.
+//UWord mystrspn( UChar* s, UChar* accept )
+//{
+//   /* find the length of 'accept', not including terminating zero */
+//   UWord nacc = 0;
+//   while (accept[nacc]) nacc++;
+//   if (nacc == 0) return 0;
+//
+//   UWord len = 0;
+//   while (1) {
+//      UWord i;
+//      UChar sc = *s;
+//      if (sc == 0)
+//         break;
+//      for (i = 0; i < nacc; i++) {
+//         if (sc == accept[i])
+//            break;
+//      }
+//      assert(i >= 0 && i <= nacc);
+//      if (i == nacc)
+//         break;
+//      s++;
+//      len++;
+//   }
+//
+//   return len;
+//}
+
+
 /*------------------------------------------------------------*/
 /*--- Improve definedness checking of process environment  ---*/
 /*------------------------------------------------------------*/

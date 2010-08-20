@@ -4159,7 +4159,10 @@ typedef
           VG_USERREQ__STACK_CHANGE     = 0x1503,
 
           /* Wine support */
-          VG_USERREQ__LOAD_PDB_DEBUGINFO = 0x1601
+          VG_USERREQ__LOAD_PDB_DEBUGINFO = 0x1601,
+
+          /* Querying of debug info. */
+          VG_USERREQ__MAP_IP_TO_SRCLOC = 0x1701
    } Vg_ClientRequest;
 
 #if !defined(__GNUC__)
@@ -4522,6 +4525,17 @@ VALGRIND_PRINTF_BACKTRACE(const char *format, ...)
     VALGRIND_DO_CLIENT_REQUEST(_qzz_res, 0,                       \
                                VG_USERREQ__LOAD_PDB_DEBUGINFO,    \
                                fd, ptr, total_size, delta, 0);    \
+   }
+
+/* Map a code address to a source file name and line number.  buf64
+   must point to a 64-byte buffer in the caller's address space.  The
+   result will be dumped in there and is guaranteed to be zero
+   terminated.  If no info is found, the first byte is set to zero. */
+#define VALGRIND_MAP_IP_TO_SRCLOC(addr, buf64)                    \
+   {unsigned int _qzz_res;                                        \
+    VALGRIND_DO_CLIENT_REQUEST(_qzz_res, 0,                       \
+                               VG_USERREQ__MAP_IP_TO_SRCLOC,      \
+                               addr, buf64, 0, 0, 0);             \
    }
 
 

@@ -55,3 +55,33 @@
    fun:(below main)
 }
 
+
+# Invalid read of size 16
+#    at 0x5643A5C: ??? (strcpy.S:94)
+#    by 0x50C6A99: XtResolvePathname (in /usr/lib/libXt.so.6.0.0)
+#    by 0x50C3856: XtScreenDatabase (in /usr/lib/libXt.so.6.0.0)
+#    by 0x50C4386: _XtDisplayInitialize (in /usr/lib/libXt.so.6.0.0)
+{
+   Ubuntu 10.04 x86_64, SSEised strcpy, can't intercept
+   exp-ptrcheck:Heap
+   obj:/*lib*/libc-2.*so*
+   obj:/*lib*/libX*so*
+}
+{
+   Ubuntu 10.04 x86_64, SSEised strcpy, can't intercept - 2
+   exp-ptrcheck:Heap
+   obj:/*lib*/libc-2.*so*
+   obj:/*lib*/libICE*so*
+}
+{
+   Ubuntu 10.04 x86_64, SSEised strcpy, can't intercept - 3
+   exp-ptrcheck:Heap
+   obj:/*lib*/libc-2.*so*
+   obj:/*lib*/libglib*so*
+}
+{
+   Ubuntu 10.04 x86_64, SSEised strcpy, can't intercept - 4
+   exp-ptrcheck:Heap
+   obj:/*lib*/libc-2.*so*
+   obj:/*lib*/libfontconfig*so*
+}

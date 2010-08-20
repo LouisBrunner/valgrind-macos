@@ -314,6 +314,48 @@ GLIBC232_RAWMEMCHR(VG_Z_LIBC_SONAME, __GI___rawmemchr)
 #endif
 
 
+#define STRSTR(soname, fnname) \
+   void* VG_REPLACE_FUNCTION_ZU(soname,fnname) \
+         (void* haystack, void* needle); \
+   void* VG_REPLACE_FUNCTION_ZU(soname,fnname) \
+         (void* haystack, void* needle) \
+   { \
+      UChar* h = (UChar*)haystack; \
+      UChar* n = (UChar*)needle; \
+      \
+      /* find the length of n, not including terminating zero */ \
+      UWord nlen = 0; \
+      while (n[nlen]) nlen++; \
+      \
+      /* if n is the empty string, match immediately. */ \
+      if (nlen == 0) return h; \
+      \
+      /* assert(nlen >= 1); */ \
+      UChar n0 = n[0]; \
+      \
+      while (1) { \
+         UChar hh = *h; \
+         if (hh == 0) return NULL; \
+         if (hh != n0) { h++; continue; } \
+         \
+         UWord i; \
+         for (i = 0; i < nlen; i++) { \
+            if (n[i] != h[i]) \
+               break; \
+         } \
+         /* assert(i >= 0 && i <= nlen); */ \
+         if (i == nlen) \
+            return h; \
+         \
+         h++; \
+      } \
+   }
+
+#if defined(VGO_linux)
+STRSTR(VG_Z_LIBC_SONAME,          strstr)
+#endif
+
+
 /*--------------------------------------------------------------------*/
 /*--- end                                          pc_intercepts.c ---*/
 /*--------------------------------------------------------------------*/

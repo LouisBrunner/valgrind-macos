@@ -356,6 +356,43 @@ STRSTR(VG_Z_LIBC_SONAME,          strstr)
 #endif
 
 
+#define STRPBRK(soname, fnname) \
+   void* VG_REPLACE_FUNCTION_ZU(soname,fnname) \
+         (void* sV, void* acceptV); \
+   void* VG_REPLACE_FUNCTION_ZU(soname,fnname) \
+         (void* sV, void* acceptV) \
+   { \
+      UChar* s = (UChar*)sV; \
+      UChar* accept = (UChar*)acceptV; \
+      \
+      /*  find the length of 'accept', not including terminating zero */ \
+      UWord nacc = 0; \
+      while (accept[nacc]) nacc++; \
+      \
+      /* if n is the empty string, fail immediately. */ \
+      if (nacc == 0) return NULL; \
+      \
+      /* assert(nacc >= 1); */ \
+      while (1) { \
+         UWord i; \
+         UChar sc = *s; \
+         if (sc == 0) \
+            break; \
+         for (i = 0; i < nacc; i++) { \
+            if (sc == accept[i]) \
+               return s; \
+         } \
+         s++; \
+      } \
+      \
+      return NULL; \
+   }
+
+#if defined(VGO_linux)
+STRPBRK(VG_Z_LIBC_SONAME,          strpbrk)
+#endif
+
+
 /*--------------------------------------------------------------------*/
 /*--- end                                          pc_intercepts.c ---*/
 /*--------------------------------------------------------------------*/

@@ -1647,13 +1647,21 @@ IRAtom* expr2vbits_Binop ( MCEnv* mce,
          return binary16Ix8(mce, vatom1, vatom2);
 
       case Iop_Sub32x4:
+      case Iop_QSub32Sx4:
+      case Iop_QSub32Ux4:
       case Iop_CmpGT32Sx4:
       case Iop_CmpEQ32x4:
       case Iop_Add32x4:
+      case Iop_QAdd32Ux4:
+      case Iop_QAdd32Sx4:
          return binary32Ix4(mce, vatom1, vatom2);
 
       case Iop_Sub64x2:
+      case Iop_QSub64Ux2:
+      case Iop_QSub64Sx2:
       case Iop_Add64x2:
+      case Iop_QAdd64Ux2:
+      case Iop_QAdd64Sx2:
          return binary64Ix2(mce, vatom1, vatom2);
 
       case Iop_QNarrow32Sx4:

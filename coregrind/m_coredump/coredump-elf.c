@@ -340,7 +340,7 @@ static void fill_prstatus(const ThreadState *tst,
    regs->ARM_ip   = arch->vex.guest_R12;
    regs->ARM_sp   = arch->vex.guest_R13;
    regs->ARM_lr   = arch->vex.guest_R14;
-   regs->ARM_pc   = arch->vex.guest_R15;
+   regs->ARM_pc   = arch->vex.guest_R15T;
    regs->ARM_cpsr = LibVEX_GuestARM_get_cpsr( &((ThreadArchState*)arch)->vex );
 
 #else

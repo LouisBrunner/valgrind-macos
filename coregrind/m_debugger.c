@@ -223,7 +223,7 @@ static Int ptrace_setregs(Int pid, VexGuestArchState* vex)
    uregs.ARM_ip   = vex->guest_R12; 
    uregs.ARM_sp   = vex->guest_R13; 
    uregs.ARM_lr   = vex->guest_R14; 
-   uregs.ARM_pc   = vex->guest_R15; 
+   uregs.ARM_pc   = vex->guest_R15T;
    uregs.ARM_cpsr = LibVEX_GuestARM_get_cpsr(vex);
    return VG_(ptrace)(VKI_PTRACE_SETREGS, pid, NULL, &uregs);
 

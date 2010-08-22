@@ -1864,14 +1864,16 @@ void ML_(fixup_guest_state_to_restart_syscall) ( ThreadArchState* arch )
    }
 
 #elif defined(VGP_arm_linux)
-   arch->vex.guest_R15 -= 4;   // sizeof(arm instr)
+   // INTERWORKING FIXME.  This is certainly wrong.  Need to look at
+   // R15T to determine current mode, then back up accordingly.
+   arch->vex.guest_R15T -= 4;   // sizeof(arm instr)
    {
-      UChar *p = (UChar*)arch->vex.guest_R15;
+      UChar *p = (UChar*)arch->vex.guest_R15T;
 
       if ((p[3] & 0xF) != 0xF)
          VG_(message)(Vg_DebugMsg,
                       "?! restarting over syscall that is not syscall at %#llx %02x %02x %02x %02x\n",
-                      arch->vex.guest_R15 + 0ULL, p[0], p[1], p[2], p[3]);
+                      arch->vex.guest_R15T + 0ULL, p[0], p[1], p[2], p[3]);
 
       vg_assert((p[3] & 0xF) == 0xF);
    }

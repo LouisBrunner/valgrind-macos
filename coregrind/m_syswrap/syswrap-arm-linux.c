@@ -1657,10 +1657,13 @@ static SyscallTableEntry syscall_main_table[] = {
    // correspond to what's in include/vki/vki-scnums-arm-linux.h.
    // From here onwards, please ensure the numbers are correct.
 
+   LINX_(__NR_pselect6,		 sys_pselect6),         // 335
+
    LINXY(__NR_signalfd4,         sys_signalfd4),        // 355
    LINX_(__NR_eventfd2,          sys_eventfd2),         // 356
 
-   LINXY(__NR_pipe2,             sys_pipe2)             // 359
+   LINXY(__NR_pipe2,             sys_pipe2),            // 359
+   LINXY(__NR_inotify_init1,     sys_inotify_init1)     // 360
 };
 
 

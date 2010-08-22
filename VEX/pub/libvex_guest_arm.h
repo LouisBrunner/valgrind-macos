@@ -57,7 +57,15 @@ typedef
       UInt guest_R12;
       UInt guest_R13;     /* stack pointer */
       UInt guest_R14;     /* link register */
-      UInt guest_R15;     /* program counter */
+      UInt guest_R15T;
+      /* program counter[31:1] ++ [T], encoding both the current
+         instruction address and the ARM vs Thumb state of the
+         machine.  T==1 is Thumb, T==0 is ARM.  Hence values of the
+         form X--(31)--X1 denote a Thumb instruction at location
+         X--(31)--X0, values of the form X--(30)--X00 denote an ARM
+         instruction at precisely that address, and values of the form
+         X--(30)--10 are invalid since they would imply an ARM
+         instruction at a non-4-aligned address. */
 
       /* 4-word thunk used to calculate N(sign) Z(zero) C(carry,
          unsigned overflow) and V(signed overflow) flags. */
@@ -66,6 +74,12 @@ typedef
       UInt guest_CC_DEP1;
       UInt guest_CC_DEP2;
       UInt guest_CC_NDEP;
+
+      /* A 32-bit value which is used to compute the APSR.Q (sticky
+         saturation) flag, when necessary.  If the value stored here
+         is zero, APSR.Q is currently zero.  If it is any other value,
+         APSR.Q is currently one. */
+      UInt guest_QFLAG32;
 
       /* Various pseudo-regs mandated by Vex or Valgrind. */
       /* Emulation warnings */
@@ -108,6 +122,22 @@ typedef
       ULong guest_D13;
       ULong guest_D14;
       ULong guest_D15;
+      ULong guest_D16;
+      ULong guest_D17;
+      ULong guest_D18;
+      ULong guest_D19;
+      ULong guest_D20;
+      ULong guest_D21;
+      ULong guest_D22;
+      ULong guest_D23;
+      ULong guest_D24;
+      ULong guest_D25;
+      ULong guest_D26;
+      ULong guest_D27;
+      ULong guest_D28;
+      ULong guest_D29;
+      ULong guest_D30;
+      ULong guest_D31;
       UInt  guest_FPSCR;
 
       /* Not a town in Cornwall, but instead the TPIDRURO, on of the
@@ -119,9 +149,45 @@ typedef
          thread-related syscalls. */
       UInt guest_TPIDRURO;
 
+      /* Representation of the Thumb IT state.  ITSTATE is a 32-bit
+         value with 4 8-bit lanes.  [7:0] pertain to the next insn to
+         execute, [15:8] for the one after that, etc.  The per-insn
+         update to ITSTATE is to unsignedly shift it right 8 bits,
+         hence introducing a zero byte for the furthest ahead
+         instruction.  As per the next para, a zero byte denotes the
+         condition ALWAYS.
+
+         Each byte lane has one of the two following formats:
+
+         cccc 0001  for an insn which is part of an IT block.  cccc is
+                    the guarding condition (standard ARM condition
+                    code) XORd with 0xE, so as to cause 'cccc == 0'
+                    to encode the condition ALWAYS.
+
+         0000 0000  for an insn which is not part of an IT block.
+
+         If the bottom 4 bits are zero then the top 4 must be too.
+
+         Given the byte lane for an instruction, the guarding
+         condition for the instruction is (((lane >> 4) & 0xF) ^ 0xE).
+         This is not as stupid as it sounds, because the front end
+         elides the shift.  And the am-I-in-an-IT-block check is
+         (lane != 0).
+
+         In the case where (by whatever means) we know at JIT time
+         that an instruction is not in an IT block, we can prefix its
+         IR with assignments ITSTATE = 0 and hence have iropt fold out
+         the testing code.
+
+         The condition "is outside or last in IT block" corresponds
+         to the top 24 bits of ITSTATE being zero.
+      */
+      UInt guest_ITSTATE;
+
       /* Padding to make it have an 16-aligned size */
-      /* UInt padding1; */
-      /* UInt padding2; */
+      UInt padding1;
+      UInt padding2;
+      UInt padding3;
    }
    VexGuestARMState;
 

@@ -204,6 +204,31 @@ UInt armg_calculate_flag_v ( UInt cc_op, UInt cc_dep1,
    return (r >> ARMG_CC_SHIFT_V) & 1;
 }
 
+/* CALLED FROM GENERATED CODE: CLEAN HELPER */
+/* Calculate the QC flag from the thunk components, in the lowest bit
+   of the word (bit 0). */
+UInt armg_calculate_flag_qc ( UInt resL1, UInt resL2,
+                              UInt resR1, UInt resR2 )
+{
+   if (resL1 != resR1 || resL2 != resR2)
+      return 1;
+   else
+      return 0;
+}
+
+UInt armg_calculate_flag_idc ( UInt res1, UInt res2,
+                              UInt res3, UInt res4 )
+{
+   UInt exp1 = (res1 >> 23) & 0xff;
+   UInt exp2 = (res2 >> 23) & 0xff;
+   UInt exp3 = (res3 >> 23) & 0xff;
+   UInt exp4 = (res4 >> 23) & 0xff;
+   if ((exp1 == 0) || (exp2 == 0) || (exp3 == 0) || (exp3 == 0))
+      return 1;
+   else
+      return 0;
+}
+
 
 /* CALLED FROM GENERATED CODE: CLEAN HELPER */
 /* Calculate the specified condition from the thunk components, in the
@@ -215,10 +240,15 @@ UInt armg_calculate_condition ( UInt cond_n_op /* ARMCondcode << 4 | cc_op */,
 {
    UInt cond  = cond_n_op >> 4;
    UInt cc_op = cond_n_op & 0xF;
-   UInt nf, zf, vf, cf;
-   UInt inv  = cond & 1;
-   //   vex_printf("XXXXXXXX %x %x %x %x\n", cond_n_op, cc_dep1, cc_dep2, cc_dep3);
-   UInt nzcv = armg_calculate_flags_nzcv(cc_op, cc_dep1, cc_dep2, cc_dep3);
+   UInt nf, zf, vf, cf, nzcv, inv;
+   //   vex_printf("XXXXXXXX %x %x %x %x\n", 
+   //              cond_n_op, cc_dep1, cc_dep2, cc_dep3);
+
+   // skip flags computation in this case
+   if (cond == ARMCondAL) return 1;
+
+   inv  = cond & 1;
+   nzcv = armg_calculate_flags_nzcv(cc_op, cc_dep1, cc_dep2, cc_dep3);
 
    switch (cond) {
       case ARMCondEQ:    // Z=1         => z
@@ -260,7 +290,7 @@ UInt armg_calculate_condition ( UInt cond_n_op /* ARMCondcode << 4 | cc_op */,
          zf = nzcv >> ARMG_CC_SHIFT_Z;
          return 1 & (inv ^ ~(zf | (nf ^ vf)));
 
-      case ARMCondAL: // should never get here: Always => no flags to calc
+      case ARMCondAL: // handled above
       case ARMCondNV: // should never get here: Illegal instr
       default:
          /* shouldn't really make these calls from generated code */
@@ -289,8 +319,10 @@ static Bool isU32 ( IRExpr* e, UInt n )
               && e->Iex.Const.con->Ico.U32 == n );
 }
 
-IRExpr* guest_arm_spechelper ( HChar* function_name,
-                               IRExpr** args )
+IRExpr* guest_arm_spechelper ( HChar*   function_name,
+                               IRExpr** args,
+                               IRStmt** precedingStmts,
+                               Int      n_precedingStmts )
 {
 #  define unop(_op,_a1) IRExpr_Unop((_op),(_a1))
 #  define binop(_op,_a1,_a2) IRExpr_Binop((_op),(_a1),(_a2))
@@ -310,7 +342,7 @@ IRExpr* guest_arm_spechelper ( HChar* function_name,
    vex_printf("\n");
 #  endif
 
-   /* --------- specialising "x86g_calculate_condition" --------- */
+   /* --------- specialising "armg_calculate_condition" --------- */
 
    if (vex_streq(function_name, "armg_calculate_condition")) {
       /* specialise calls to above "armg_calculate condition" function */
@@ -341,7 +373,7 @@ IRExpr* guest_arm_spechelper ( HChar* function_name,
       }
 
       if (isU32(cond_n_op, (ARMCondLT << 4) | ARMG_CC_OP_SUB)) {
-         /* LE after SUB --> test argL <s argR */
+         /* LT after SUB --> test argL <s argR */
          return unop(Iop_1Uto32,
                      binop(Iop_CmpLT32S, cc_dep1, cc_dep2));
       }
@@ -378,6 +410,51 @@ IRExpr* guest_arm_spechelper ( HChar* function_name,
                      binop(Iop_CmpNE32, cc_dep1, mkU32(0)));
       }
 
+      /*----------------- AL -----------------*/
+      /* A critically important case for Thumb code.
+
+         What we're trying to spot is the case where cond_n_op is an
+         expression of the form Or32(..., 0xE0) since that means the
+         caller is asking for CondAL and we can simply return 1
+         without caring what the ... part is.  This is a potentially
+         dodgy kludge in that it assumes that the ... part has zeroes
+         in bits 7:4, so that the result of the Or32 is guaranteed to
+         be 0xE in bits 7:4.  Given that the places where this first
+         arg are constructed (in guest_arm_toIR.c) are very
+         constrained, we can get away with this.  To make this
+         guaranteed safe would require to have a new primop, Slice44
+         or some such, thusly
+
+         Slice44(arg1, arg2) = 0--(24)--0 arg1[7:4] arg2[3:0]
+
+         and we would then look for Slice44(0xE0, ...)
+         which would give the required safety property.
+
+         It would be infeasibly expensive to scan backwards through
+         the entire block looking for an assignment to the temp, so
+         just look at the previous 16 statements.  That should find it
+         if it is an interesting case, as a result of how the
+         boilerplate guff at the start of each Thumb insn translation
+         is made.
+      */
+      if (cond_n_op->tag == Iex_RdTmp) {
+         Int    j;
+         IRTemp look_for = cond_n_op->Iex.RdTmp.tmp;
+         Int    limit    = n_precedingStmts - 16;
+         if (limit < 0) limit = 0;
+         if (0) vex_printf("scanning %d .. %d\n", n_precedingStmts-1, limit);
+         for (j = n_precedingStmts - 1; j >= limit; j--) {
+            IRStmt* st = precedingStmts[j];
+            if (st->tag == Ist_WrTmp
+                && st->Ist.WrTmp.tmp == look_for
+                && st->Ist.WrTmp.data->tag == Iex_Binop
+                && st->Ist.WrTmp.data->Iex.Binop.op == Iop_Or32
+                && isU32(st->Ist.WrTmp.data->Iex.Binop.arg2, (ARMCondAL << 4)))
+               return mkU32(1);
+         }
+         /* Didn't find any useful binding to the first arg
+            in the previous 16 stmts. */
+      }
    }
 
 #  undef unop
@@ -442,12 +519,13 @@ void LibVEX_GuestARM_initialise ( /*OUT*/VexGuestARMState* vex_state )
    vex_state->guest_R12 = 0;
    vex_state->guest_R13 = 0;
    vex_state->guest_R14 = 0;
-   vex_state->guest_R15 = 0;
+   vex_state->guest_R15T = 0;  /* NB: implies ARM mode */
 
    vex_state->guest_CC_OP   = ARMG_CC_OP_COPY;
    vex_state->guest_CC_DEP1 = 0;
    vex_state->guest_CC_DEP2 = 0;
    vex_state->guest_CC_NDEP = 0;
+   vex_state->guest_QFLAG32 = 0;
 
    vex_state->guest_EMWARN  = 0;
    vex_state->guest_TISTART = 0;
@@ -471,6 +549,22 @@ void LibVEX_GuestARM_initialise ( /*OUT*/VexGuestARMState* vex_state )
    vex_state->guest_D13 = 0;
    vex_state->guest_D14 = 0;
    vex_state->guest_D15 = 0;
+   vex_state->guest_D16 = 0;
+   vex_state->guest_D17 = 0;
+   vex_state->guest_D18 = 0;
+   vex_state->guest_D19 = 0;
+   vex_state->guest_D20 = 0;
+   vex_state->guest_D21 = 0;
+   vex_state->guest_D22 = 0;
+   vex_state->guest_D23 = 0;
+   vex_state->guest_D24 = 0;
+   vex_state->guest_D25 = 0;
+   vex_state->guest_D26 = 0;
+   vex_state->guest_D27 = 0;
+   vex_state->guest_D28 = 0;
+   vex_state->guest_D29 = 0;
+   vex_state->guest_D30 = 0;
+   vex_state->guest_D31 = 0;
 
    /* ARM encoded; zero is the default as it happens (result flags
       (NZCV) cleared, FZ disabled, round to nearest, non-vector mode,
@@ -479,8 +573,12 @@ void LibVEX_GuestARM_initialise ( /*OUT*/VexGuestARMState* vex_state )
 
    vex_state->guest_TPIDRURO = 0;
 
-   /* vex_state->padding1 = 0; */
-   /* vex_state->padding2 = 0; */
+   /* Not in a Thumb IT block. */
+   vex_state->guest_ITSTATE = 0;
+
+   vex_state->padding1 = 0;
+   vex_state->padding2 = 0;
+   vex_state->padding3 = 0;
 }
 
 
@@ -493,14 +591,14 @@ void LibVEX_GuestARM_initialise ( /*OUT*/VexGuestARMState* vex_state )
    .. maxoff requires precise memory exceptions.  If in doubt return
    True (but this is generates significantly slower code).  
 
-   We enforce precise exns for guest R13(sp), R15(pc).
+   We enforce precise exns for guest R13(sp), R15T(pc).
 */
 Bool guest_arm_state_requires_precise_mem_exns ( Int minoff, 
                                                  Int maxoff)
 {
    Int sp_min = offsetof(VexGuestARMState, guest_R13);
    Int sp_max = sp_min + 4 - 1;
-   Int pc_min = offsetof(VexGuestARMState, guest_R15);
+   Int pc_min = offsetof(VexGuestARMState, guest_R15T);
    Int pc_max = pc_min + 4 - 1;
 
    if (maxoff < sp_min || minoff > sp_max) {
@@ -546,18 +644,18 @@ VexGuestLayout
           .sizeof_SP = 4,
 
           /* Describe the instruction pointer. */
-          .offset_IP = offsetof(VexGuestARMState,guest_R15),
+          .offset_IP = offsetof(VexGuestARMState,guest_R15T),
           .sizeof_IP = 4,
 
           /* Describe any sections to be regarded by Memcheck as
              'always-defined'. */
-          .n_alwaysDefd = 9,
+          .n_alwaysDefd = 10,
 
           /* flags thunk: OP is always defd, whereas DEP1 and DEP2
              have to be tracked.  See detailed comment in gdefs.h on
              meaning of thunk fields. */
           .alwaysDefd
-             = { /* 0 */ ALWAYSDEFD(guest_R15),
+             = { /* 0 */ ALWAYSDEFD(guest_R15T),
                  /* 1 */ ALWAYSDEFD(guest_CC_OP),
                  /* 2 */ ALWAYSDEFD(guest_CC_NDEP),
                  /* 3 */ ALWAYSDEFD(guest_EMWARN),
@@ -565,7 +663,8 @@ VexGuestLayout
                  /* 5 */ ALWAYSDEFD(guest_TILEN),
                  /* 6 */ ALWAYSDEFD(guest_NRADDR),
                  /* 7 */ ALWAYSDEFD(guest_IP_AT_SYSCALL),
-                 /* 8 */ ALWAYSDEFD(guest_TPIDRURO)
+                 /* 8 */ ALWAYSDEFD(guest_TPIDRURO),
+                 /* 9 */ ALWAYSDEFD(guest_ITSTATE)
                }
         };
 

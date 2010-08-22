@@ -1009,7 +1009,7 @@ void VG_(redir_initialise) ( void )
       add_hardwired_spec(
          "ld-linux.so.3", "strlen",
          (Addr)&VG_(arm_linux_REDIR_FOR_strlen),
-         NULL 
+         complain_about_stripped_glibc_ldso
       );
       //add_hardwired_spec(
       //   "ld-linux.so.3", "index",
@@ -1019,7 +1019,7 @@ void VG_(redir_initialise) ( void )
       add_hardwired_spec(
          "ld-linux.so.3", "memcpy",
          (Addr)&VG_(arm_linux_REDIR_FOR_memcpy),
-         NULL 
+         complain_about_stripped_glibc_ldso
       );
    }
    /* nothing so far */

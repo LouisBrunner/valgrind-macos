@@ -228,3 +228,11 @@
    obj:/lib/libpthread-0.10.so
    fun:pthread_create
 }
+
+##----------------------------------------------------------------------##
+# Ubuntu 10.04 on ARM (Thumb).  Not sure why this is necessary.
+{
+   U1004-ARM-_dl_relocate_object
+   Memcheck:Cond
+   fun:_dl_relocate_object
+}

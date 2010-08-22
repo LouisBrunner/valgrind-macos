@@ -96,7 +96,7 @@
 #  define VG_STACK_PTR        guest_GPR1
 #  define VG_FRAME_PTR        guest_GPR1   // No frame ptr for PPC
 #elif defined(VGA_arm)
-#  define VG_INSTR_PTR        guest_R15
+#  define VG_INSTR_PTR        guest_R15T
 #  define VG_STACK_PTR        guest_R13
 #  define VG_FRAME_PTR        guest_R11
 #else
@@ -107,6 +107,18 @@
 // Offsets for the Vex state
 #define VG_O_STACK_PTR        (offsetof(VexGuestArchState, VG_STACK_PTR))
 #define VG_O_INSTR_PTR        (offsetof(VexGuestArchState, VG_INSTR_PTR))
+
+
+//-------------------------------------------------------------
+// Guest state accessors that are not visible to tools.  The only
+// ones that are visible are get_IP and get_SP.
+
+//Addr VG_(get_IP) ( ThreadId tid );  // in pub_tool_machine.h
+//Addr VG_(get_SP) ( ThreadId tid );  // in pub_tool_machine.h
+Addr VG_(get_FP) ( ThreadId tid );
+
+void VG_(set_IP) ( ThreadId tid, Addr encip );
+void VG_(set_SP) ( ThreadId tid, Addr sp );
 
 
 //-------------------------------------------------------------
@@ -196,6 +208,10 @@ extern UInt VG_(machine_ppc32_has_VMX);
    change from a 64-bit int. */
 #if defined(VGA_ppc64)
 extern ULong VG_(machine_ppc64_has_VMX);
+#endif
+
+#if defined(VGA_arm)
+extern Int VG_(machine_arm_archlevel);
 #endif
 
 #endif   // __PUB_CORE_MACHINE_H

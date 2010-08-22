@@ -59,7 +59,7 @@
                                        // Supplement 1.7
 
 #elif defined(VGP_arm_linux)
-#  define VG_MIN_INSTR_SZB          4
+#  define VG_MIN_INSTR_SZB          2
 #  define VG_MAX_INSTR_SZB          4 
 #  define VG_CLREQ_SZB             28
 #  define VG_STACK_REDZONE_SZB      0
@@ -99,13 +99,11 @@
 #endif
 
 // Guest state accessors
-extern Addr VG_(get_SP) ( ThreadId tid );
-extern Addr VG_(get_IP) ( ThreadId tid );
-extern Addr VG_(get_FP) ( ThreadId tid );
-extern Addr VG_(get_LR) ( ThreadId tid );
+// Are mostly in the core_ header.
+//  Only these two are available to tools.
+Addr VG_(get_IP) ( ThreadId tid );
+Addr VG_(get_SP) ( ThreadId tid );
 
-extern void VG_(set_SP) ( ThreadId tid, Addr sp );
-extern void VG_(set_IP) ( ThreadId tid, Addr ip );
 
 // For get/set, 'area' is where the asked-for guest state will be copied
 // into/from.  If shadowNo == 0, the real (non-shadow) guest state is

@@ -2611,6 +2611,12 @@ void __aeabi_unwind_cpp_pr0(void){
    VG_(printf)("Something called __aeabi_unwind_cpp_pr0()\n");
    vg_assert(0);
 }
+
+void __aeabi_unwind_cpp_pr1(void);
+void __aeabi_unwind_cpp_pr1(void){
+   VG_(printf)("Something called __aeabi_unwind_cpp_pr1()\n");
+   vg_assert(0);
+}
 #endif
 
 /* ---------------- Requirement 2 ---------------- */

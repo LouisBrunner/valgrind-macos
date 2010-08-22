@@ -182,36 +182,11 @@ static IRExpr* binop ( IROp op, IRExpr* a1, IRExpr* a2 )
    return IRExpr_Binop(op, a1, a2);
 }
 
-static IRExpr* triop ( IROp op, IRExpr* a1, IRExpr* a2, IRExpr* a3 )
-{
-   return IRExpr_Triop(op, a1, a2, a3);
-}
-
 static IRExpr* bind ( Int binder )
 {
    return IRExpr_Binder(binder);
 }
 
-static IRExpr* mkU64 ( ULong i )
-{
-   return IRExpr_Const(IRConst_U64(i));
-}
-
-static IRExpr* mkU32 ( UInt i )
-{
-   return IRExpr_Const(IRConst_U32(i));
-}
-
-static IRExpr* mkU8 ( UInt i )
-{
-   vassert(i < 256);
-   return IRExpr_Const(IRConst_U8( (UChar)i ));
-}
-
-static IRExpr* mkU128 ( ULong i )
-{
-   return binop(Iop_64HLtoV128, mkU64(i), mkU64(i));
-}
 
 /*---------------------------------------------------------*/
 /*--- ISEL: Forward declarations                        ---*/

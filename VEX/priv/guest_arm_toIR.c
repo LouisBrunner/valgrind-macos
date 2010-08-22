@@ -1186,6 +1186,8 @@ static IRExpr* mk_armg_calculate_flag_qc ( IRExpr* resL, IRExpr* resR, Bool Q )
    return res;
 }
 
+// FIXME: this is named wrongly .. looks like a sticky set of
+// QC, not a write to it.
 static void setFlag_QC ( IRExpr* resL, IRExpr* resR, Bool Q,
                          IRTemp condT )
 {
@@ -2570,6 +2572,8 @@ Bool dis_neon_vdup ( UInt theInstr, IRTemp condT )
       op2 = Iop_GetElem32x2;
       index = imm4 >> 3;
       size = 32;
+   } else {
+      return False; // can this ever happen?
    }
    assign(res, unop(op, binop(op2, mkexpr(arg_m), mkU8(index))));
    if (Q) {

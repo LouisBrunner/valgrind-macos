@@ -205,8 +205,9 @@ UInt armg_calculate_flag_v ( UInt cc_op, UInt cc_dep1,
 }
 
 /* CALLED FROM GENERATED CODE: CLEAN HELPER */
-/* Calculate the QC flag from the thunk components, in the lowest bit
-   of the word (bit 0). */
+/* Calculate the QC flag from the arguments, in the lowest bit
+   of the word (bit 0).  Urr, having this out of line is bizarre.
+   Push back inline. */
 UInt armg_calculate_flag_qc ( UInt resL1, UInt resL2,
                               UInt resR1, UInt resR2 )
 {
@@ -215,20 +216,6 @@ UInt armg_calculate_flag_qc ( UInt resL1, UInt resL2,
    else
       return 0;
 }
-
-UInt armg_calculate_flag_idc ( UInt res1, UInt res2,
-                              UInt res3, UInt res4 )
-{
-   UInt exp1 = (res1 >> 23) & 0xff;
-   UInt exp2 = (res2 >> 23) & 0xff;
-   UInt exp3 = (res3 >> 23) & 0xff;
-   UInt exp4 = (res4 >> 23) & 0xff;
-   if ((exp1 == 0) || (exp2 == 0) || (exp3 == 0) || (exp3 == 0))
-      return 1;
-   else
-      return 0;
-}
-
 
 /* CALLED FROM GENERATED CODE: CLEAN HELPER */
 /* Calculate the specified condition from the thunk components, in the

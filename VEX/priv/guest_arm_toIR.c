@@ -11757,10 +11757,9 @@ DisResult disInstr_THUMB_WRK (
             dres.whatNext  = Dis_StopHere;
             goto decode_success;
          }
-#if 0
          else
          // 0x 0B 0B EA 4B
-         if (getUIntLittleEndianly(code+16) == 0xE18BB00B
+         if (getUIntLittleEndianly(code+16) == 0x0B0BEA4B
                                                /* orr r11,r11,r11 */) {
             /* R3 = guest_NRADDR */
             DIP("r3 = guest_NRADDR\n");
@@ -11770,17 +11769,16 @@ DisResult disInstr_THUMB_WRK (
          }
          else
          // 0x 0C 0C EA 4C
-         if (getUIntLittleEndianly(code+16) == 0xE18CC00C
+         if (getUIntLittleEndianly(code+16) == 0x0C0CEA4C
                                                /* orr r12,r12,r12 */) {
             /*  branch-and-link-to-noredir R4 */
             DIP("branch-and-link-to-noredir r4\n");
-            llPutIReg(14, mkU32( guest_R15_curr_instr_notENC + 20) );
+            llPutIReg(14, mkU32( (guest_R15_curr_instr_notENC + 20) | 1 ));
             irsb->next     = getIRegT(4);
             irsb->jumpkind = Ijk_NoRedir;
             dres.whatNext  = Dis_StopHere;
             goto decode_success;
          }
-#endif
          /* We don't know what it is.  Set insn0 so decode_failure
             can print the insn following the Special-insn preamble. */
          insn0 = getUShortLittleEndianly(code+16);
@@ -15180,7 +15178,7 @@ DisResult disInstr_THUMB_WRK (
    /* All decode successes end up here. */
    DIP("\n");
 
-   vassert(dres.len == 2 || dres.len == 4);
+   vassert(dres.len == 2 || dres.len == 4 || dres.len == 20);
 
 #if 0
    // XXX is this necessary on Thumb?

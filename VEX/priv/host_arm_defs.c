@@ -9,6 +9,8 @@
 
    Copyright (C) 2004-2010 OpenWorks LLP
       info@open-works.net
+   Copyright (C) 2010-2010 Dmitry Zhurikhin
+      zhur@ispras.ru
 
    This program is free software; you can redistribute it and/or
    modify it under the terms of the GNU General Public License as
@@ -36,6 +38,7 @@
 #include "host_generic_regs.h"
 #include "host_arm_defs.h"
 
+UInt arm_hwcaps = 0;
 
 
 /* --------- Registers. --------- */
@@ -60,13 +63,18 @@ void ppHRegARM ( HReg reg )  {
          return;
       case HRcFlt64:
          r = hregNumber(reg);
-         vassert(r >= 0 && r < 16);
+         vassert(r >= 0 && r < 32);
          vex_printf("d%d", r);
          return;
       case HRcFlt32:
          r = hregNumber(reg);
          vassert(r >= 0 && r < 32);
          vex_printf("s%d", r);
+         return;
+      case HRcVec128:
+         r = hregNumber(reg);
+         vassert(r >= 0 && r < 16);
+         vex_printf("q%d", r);
          return;
       default:
          vpanic("ppHRegARM");
@@ -99,11 +107,19 @@ HReg hregARM_S27 ( void ) { return mkHReg(27, HRcFlt32, False); }
 HReg hregARM_S28 ( void ) { return mkHReg(28, HRcFlt32, False); }
 HReg hregARM_S29 ( void ) { return mkHReg(29, HRcFlt32, False); }
 HReg hregARM_S30 ( void ) { return mkHReg(30, HRcFlt32, False); }
+HReg hregARM_Q8  ( void ) { return mkHReg(8,  HRcVec128, False); }
+HReg hregARM_Q9  ( void ) { return mkHReg(9,  HRcVec128, False); }
+HReg hregARM_Q10 ( void ) { return mkHReg(10, HRcVec128, False); }
+HReg hregARM_Q11 ( void ) { return mkHReg(11, HRcVec128, False); }
+HReg hregARM_Q12 ( void ) { return mkHReg(12, HRcVec128, False); }
+HReg hregARM_Q13 ( void ) { return mkHReg(13, HRcVec128, False); }
+HReg hregARM_Q14 ( void ) { return mkHReg(14, HRcVec128, False); }
+HReg hregARM_Q15 ( void ) { return mkHReg(15, HRcVec128, False); }
 
 void getAllocableRegs_ARM ( Int* nregs, HReg** arr )
 {
    Int i = 0;
-   *nregs = 21;
+   *nregs = 29;
    *arr = LibVEX_Alloc(*nregs * sizeof(HReg));
    // callee saves ones are listed first, since we prefer them
    // if they're available
@@ -132,6 +148,16 @@ void getAllocableRegs_ARM ( Int* nregs, HReg** arr )
    (*arr)[i++] = hregARM_S28();
    (*arr)[i++] = hregARM_S29();
    (*arr)[i++] = hregARM_S30();
+
+   (*arr)[i++] = hregARM_Q8();
+   (*arr)[i++] = hregARM_Q9();
+   (*arr)[i++] = hregARM_Q10();
+   (*arr)[i++] = hregARM_Q11();
+   (*arr)[i++] = hregARM_Q12();
+   (*arr)[i++] = hregARM_Q13();
+   (*arr)[i++] = hregARM_Q14();
+   (*arr)[i++] = hregARM_Q15();
+
    // unavail: r8 as GSP
    // r12 'cos we're not sure what it's for
    // r13 as SP
@@ -343,6 +369,56 @@ static void mapRegs_ARMAModeV ( HRegRemap* m, ARMAModeV* am ) {
 }
 
 
+/* --------- Mem AModes: Addressing Mode Neon ------- */
+
+ARMAModeN *mkARMAModeN_RR ( HReg rN, HReg rM ) {
+   ARMAModeN* am = LibVEX_Alloc(sizeof(ARMAModeN));
+   am->tag = ARMamN_RR;
+   am->ARMamN.RR.rN = rN;
+   am->ARMamN.RR.rM = rM;
+   return am;
+}
+
+ARMAModeN *mkARMAModeN_R ( HReg rN ) {
+   ARMAModeN* am = LibVEX_Alloc(sizeof(ARMAModeN));
+   am->tag = ARMamN_R;
+   am->ARMamN.R.rN = rN;
+   return am;
+}
+
+static void addRegUsage_ARMAModeN ( HRegUsage* u, ARMAModeN* am ) {
+   if (am->tag == ARMamN_R) {
+      addHRegUse(u, HRmRead, am->ARMamN.R.rN);
+   } else {
+      addHRegUse(u, HRmRead, am->ARMamN.RR.rN);
+      addHRegUse(u, HRmRead, am->ARMamN.RR.rM);
+   }
+}
+
+static void mapRegs_ARMAModeN ( HRegRemap* m, ARMAModeN* am ) {
+   if (am->tag == ARMamN_R) {
+      am->ARMamN.R.rN = lookupHRegRemap(m, am->ARMamN.R.rN);
+   } else {
+      am->ARMamN.RR.rN = lookupHRegRemap(m, am->ARMamN.RR.rN);
+      am->ARMamN.RR.rM = lookupHRegRemap(m, am->ARMamN.RR.rM);
+   }
+}
+
+void ppARMAModeN ( ARMAModeN* am ) {
+   vex_printf("[");
+   if (am->tag == ARMamN_R) {
+      ppHRegARM(am->ARMamN.R.rN);
+   } else {
+      ppHRegARM(am->ARMamN.RR.rN);
+   }
+   vex_printf("]");
+   if (am->tag == ARMamN_RR) {
+      vex_printf(", ");
+      ppHRegARM(am->ARMamN.RR.rM);
+   }
+}
+
+
 /* --------- Reg or imm-8x4 operands --------- */
 
 static UInt ROR32 ( UInt x, UInt sh ) {
@@ -461,6 +537,135 @@ static void mapRegs_ARMRI5 ( HRegRemap* m, ARMRI5* ri5 ) {
    }
 }
 
+/* -------- Neon Immediate operatnd --------- */
+
+ARMNImm* ARMNImm_TI ( UInt type, UInt imm8 ) {
+   ARMNImm* i = LibVEX_Alloc(sizeof(ARMNImm));
+   i->type = type;
+   i->imm8 = imm8;
+   return i;
+}
+
+ULong ARMNImm_to_Imm64 ( ARMNImm* imm ) {
+   int i, j;
+   ULong y, x = imm->imm8;
+   switch (imm->type) {
+      case 3:
+         x = x << 8;
+      case 2:
+         x = x << 8;
+      case 1:
+         x = x << 8;
+      case 0:
+         return (x << 32) | x;
+      case 5:
+      case 6:
+         if (imm->type == 5)
+            x = x << 8;
+         else
+            x = (x << 8) | x;
+      case 4:
+         x = (x << 16) | x;
+         return (x << 32) | x;
+      case 8:
+         x = (x << 8) | 0xFF;
+      case 7:
+         x = (x << 8) | 0xFF;
+         return (x << 32) | x;
+      case 9:
+         x = 0;
+         for (i = 7; i >= 0; i--) {
+            y = ((ULong)imm->imm8 >> i) & 1;
+            for (j = 0; j < 8; j++) {
+               x = (x << 1) | y;
+            }
+         }
+         return x;
+      case 10:
+         x |= (x & 0x80) << 5;
+         x |= ~(x & 0x40) << 5;
+         x &= 0x187F; /* 0001 1000 0111 1111 */
+         x |= (x & 0x40) << 4;
+         x |= (x & 0x40) << 3;
+         x |= (x & 0x40) << 2;
+         x |= (x & 0x40) << 1;
+         x = x << 19;
+         x = (x << 32) | x;
+         return x;
+      default:
+         vpanic("ARMNImm_to_Imm64");
+   }
+}
+
+ARMNImm* Imm64_to_ARMNImm ( ULong x ) {
+   ARMNImm tmp;
+   if ((x & 0xFFFFFFFF) == (x >> 32)) {
+      if ((x & 0xFFFFFF00) == 0)
+         return ARMNImm_TI(0, x & 0xFF);
+      if ((x & 0xFFFF00FF) == 0)
+         return ARMNImm_TI(1, (x >> 8) & 0xFF);
+      if ((x & 0xFF00FFFF) == 0)
+         return ARMNImm_TI(2, (x >> 16) & 0xFF);
+      if ((x & 0x00FFFFFF) == 0)
+         return ARMNImm_TI(3, (x >> 24) & 0xFF);
+      if ((x & 0xFFFF00FF) == 0xFF)
+         return ARMNImm_TI(7, (x >> 8) & 0xFF);
+      if ((x & 0xFF00FFFF) == 0xFFFF)
+         return ARMNImm_TI(8, (x >> 16) & 0xFF);
+      if ((x & 0xFFFF) == ((x >> 16) & 0xFFFF)) {
+         if ((x & 0xFF00) == 0)
+            return ARMNImm_TI(4, x & 0xFF);
+         if ((x & 0x00FF) == 0)
+            return ARMNImm_TI(5, (x >> 8) & 0xFF);
+         if ((x & 0xFF) == ((x >> 8) & 0xFF))
+            return ARMNImm_TI(6, x & 0xFF);
+      }
+      if ((x & 0x7FFFF) == 0) {
+         tmp.type = 10;
+         tmp.imm8 = ((x >> 19) & 0x7F) | ((x >> 24) & 0x80);
+         if (ARMNImm_to_Imm64(&tmp) == x)
+            return ARMNImm_TI(tmp.type, tmp.imm8);
+      }
+   } else {
+      /* This can only be type 9. */
+      tmp.imm8 = (((x >> 56) & 1) << 7)
+               | (((x >> 48) & 1) << 6)
+               | (((x >> 40) & 1) << 5)
+               | (((x >> 32) & 1) << 4)
+               | (((x >> 24) & 1) << 3)
+               | (((x >> 16) & 1) << 2)
+               | (((x >>  8) & 1) << 1)
+               | (((x >>  0) & 1) << 0);
+      tmp.type = 9;
+      if (ARMNImm_to_Imm64 (&tmp) == x)
+         return ARMNImm_TI(tmp.type, tmp.imm8);
+   }
+   return NULL;
+}
+
+void ppARMNImm (ARMNImm* i) {
+   ULong x = ARMNImm_to_Imm64(i);
+   vex_printf("0x%llX%llX", x, x);
+}
+
+/* -- Register or scalar operand --- */
+
+ARMNRS* mkARMNRS(ARMNRS_tag tag, HReg reg, UInt index)
+{
+   ARMNRS *p = LibVEX_Alloc(sizeof(ARMNRS));
+   p->tag = tag;
+   p->reg = reg;
+   p->index = index;
+   return p;
+}
+
+void ppARMNRS(ARMNRS *p)
+{
+   ppHRegARM(p->reg);
+   if (p->tag == ARMNRS_Scalar) {
+      vex_printf("[%d]", p->index);
+   }
+}
 
 /* --------- Instructions. --------- */
 
@@ -524,6 +729,365 @@ HChar* showARMVfpUnaryOp ( ARMVfpUnaryOp op ) {
       case ARMvfpu_ABS:  return "abs";
       case ARMvfpu_SQRT: return "sqrt";
       default: vpanic("showARMVfpUnaryOp");
+   }
+}
+
+HChar* showARMNeonBinOp ( ARMNeonBinOp op ) {
+   switch (op) {
+      case ARMneon_VAND: return "vand";
+      case ARMneon_VORR: return "vorr";
+      case ARMneon_VXOR: return "veor";
+      case ARMneon_VADD: return "vadd";
+      case ARMneon_VRHADDS: return "vrhadd";
+      case ARMneon_VRHADDU: return "vrhadd";
+      case ARMneon_VADDFP: return "vadd";
+      case ARMneon_VPADDFP: return "vpadd";
+      case ARMneon_VABDFP: return "vabd";
+      case ARMneon_VSUB: return "vsub";
+      case ARMneon_VSUBFP: return "vsub";
+      case ARMneon_VMINU: return "vmin";
+      case ARMneon_VMINS: return "vmin";
+      case ARMneon_VMINF: return "vmin";
+      case ARMneon_VMAXU: return "vmax";
+      case ARMneon_VMAXS: return "vmax";
+      case ARMneon_VMAXF: return "vmax";
+      case ARMneon_VQADDU: return "vqadd";
+      case ARMneon_VQADDS: return "vqadd";
+      case ARMneon_VQSUBU: return "vqsub";
+      case ARMneon_VQSUBS: return "vqsub";
+      case ARMneon_VCGTU:  return "vcgt";
+      case ARMneon_VCGTS:  return "vcgt";
+      case ARMneon_VCGTF:  return "vcgt";
+      case ARMneon_VCGEF:  return "vcgt";
+      case ARMneon_VCGEU:  return "vcge";
+      case ARMneon_VCGES:  return "vcge";
+      case ARMneon_VCEQ:  return "vceq";
+      case ARMneon_VCEQF:  return "vceq";
+      case ARMneon_VPADD:   return "vpadd";
+      case ARMneon_VPMINU:   return "vpmin";
+      case ARMneon_VPMINS:   return "vpmin";
+      case ARMneon_VPMINF:   return "vpmin";
+      case ARMneon_VPMAXU:   return "vpmax";
+      case ARMneon_VPMAXS:   return "vpmax";
+      case ARMneon_VPMAXF:   return "vpmax";
+      case ARMneon_VEXT:   return "vext";
+      case ARMneon_VMUL:   return "vmuli";
+      case ARMneon_VMULLU:   return "vmull";
+      case ARMneon_VMULLS:   return "vmull";
+      case ARMneon_VMULP:  return "vmul";
+      case ARMneon_VMULFP:  return "vmul";
+      case ARMneon_VMULLP:  return "vmul";
+      case ARMneon_VQDMULH: return "vqdmulh";
+      case ARMneon_VQRDMULH: return "vqrdmulh";
+      case ARMneon_VQDMULL: return "vqdmull";
+      case ARMneon_VTBL: return "vtbl";
+      case ARMneon_SETELEM: return "vmov";
+      case ARMneon_VABSFP: return "vabsfp";
+      case ARMneon_VRSQRTEFP: return "vrsqrtefp";
+      case ARMneon_VRSQRTE: return "vrsqrte";
+      /* ... */
+      default: vpanic("showARMNeonBinOp");
+   }
+}
+
+HChar* showARMNeonBinOpDataType ( ARMNeonBinOp op ) {
+   switch (op) {
+      case ARMneon_VAND:
+      case ARMneon_VORR:
+      case ARMneon_VXOR:
+         return "";
+      case ARMneon_VADD:
+      case ARMneon_VSUB:
+      case ARMneon_VEXT:
+      case ARMneon_VMUL:
+      case ARMneon_SETELEM:
+      case ARMneon_VPADD:
+      case ARMneon_VTBL:
+      case ARMneon_VCEQ:
+         return ".i";
+      case ARMneon_VRHADDU:
+      case ARMneon_VMINU:
+      case ARMneon_VMAXU:
+      case ARMneon_VQADDU:
+      case ARMneon_VQSUBU:
+      case ARMneon_VCGTU:
+      case ARMneon_VCGEU:
+      case ARMneon_VMULLU:
+      case ARMneon_VPMINU:
+      case ARMneon_VPMAXU:
+      case ARMneon_VRSQRTE:
+         return ".u";
+      case ARMneon_VRHADDS:
+      case ARMneon_VMINS:
+      case ARMneon_VMAXS:
+      case ARMneon_VQADDS:
+      case ARMneon_VQSUBS:
+      case ARMneon_VCGTS:
+      case ARMneon_VCGES:
+      case ARMneon_VQDMULL:
+      case ARMneon_VMULLS:
+      case ARMneon_VPMINS:
+      case ARMneon_VPMAXS:
+      case ARMneon_VQDMULH:
+      case ARMneon_VQRDMULH:
+         return ".s";
+      case ARMneon_VMULP:
+      case ARMneon_VMULLP:
+         return ".p";
+      case ARMneon_VADDFP:
+      case ARMneon_VABDFP:
+      case ARMneon_VPADDFP:
+      case ARMneon_VSUBFP:
+      case ARMneon_VMULFP:
+      case ARMneon_VMINF:
+      case ARMneon_VMAXF:
+      case ARMneon_VABSFP:
+      case ARMneon_VRSQRTEFP:
+      case ARMneon_VPMINF:
+      case ARMneon_VPMAXF:
+      case ARMneon_VCGTF:
+      case ARMneon_VCGEF:
+      case ARMneon_VCEQF:
+         return ".f";
+      /* ... */
+      default: vpanic("showARMNeonBinOpDataType");
+   }
+}
+
+HChar* showARMNeonUnOp ( ARMNeonUnOp op ) {
+   switch (op) {
+      case ARMneon_COPY: return "vmov";
+      case ARMneon_COPYLS: return "vmov";
+      case ARMneon_COPYLU: return "vmov";
+      case ARMneon_COPYN: return "vmov";
+      case ARMneon_COPYQNSS: return "vqmovn";
+      case ARMneon_COPYQNUS: return "vqmovun";
+      case ARMneon_COPYQNUU: return "vqmovn";
+      case ARMneon_NOT: return "vmvn";
+      case ARMneon_EQZ: return "vceq";
+      case ARMneon_CNT: return "vcnt";
+      case ARMneon_CLS: return "vcls";
+      case ARMneon_CLZ: return "vclz";
+      case ARMneon_DUP: return "vdup";
+      case ARMneon_PADDLS: return "vpaddl";
+      case ARMneon_PADDLU: return "vpaddl";
+      case ARMneon_VQSHLNSS: return "vqshl";
+      case ARMneon_VQSHLNUU: return "vqshl";
+      case ARMneon_VQSHLNUS: return "vqshlu";
+      case ARMneon_REV16: return "vrev16";
+      case ARMneon_REV32: return "vrev32";
+      case ARMneon_REV64: return "vrev64";
+      case ARMneon_VCVTFtoU: return "vcvt";
+      case ARMneon_VCVTFtoS: return "vcvt";
+      case ARMneon_VCVTUtoF: return "vcvt";
+      case ARMneon_VCVTStoF: return "vcvt";
+      case ARMneon_VCVTFtoFixedU: return "vcvt";
+      case ARMneon_VCVTFtoFixedS: return "vcvt";
+      case ARMneon_VCVTFixedUtoF: return "vcvt";
+      case ARMneon_VCVTFixedStoF: return "vcvt";
+      case ARMneon_VCVTF32toF16: return "vcvt";
+      case ARMneon_VCVTF16toF32: return "vcvt";
+      case ARMneon_VRECIP: return "vrecip";
+      case ARMneon_VRECIPF: return "vrecipf";
+      case ARMneon_VRECPS: return "vrecps";
+      case ARMneon_VNEGF: return "vneg";
+      case ARMneon_VRSQRTS: return "vrecps";
+      case ARMneon_ABS: return "vabs";
+      /* ... */
+      default: vpanic("showARMNeonUnOp");
+   }
+}
+
+HChar* showARMNeonUnOpDataType ( ARMNeonUnOp op ) {
+   switch (op) {
+      case ARMneon_COPY:
+      case ARMneon_NOT:
+         return "";
+      case ARMneon_COPYN:
+      case ARMneon_EQZ:
+      case ARMneon_CNT:
+      case ARMneon_DUP:
+      case ARMneon_REV16:
+      case ARMneon_REV32:
+      case ARMneon_REV64:
+         return ".i";
+      case ARMneon_COPYLU:
+      case ARMneon_PADDLU:
+      case ARMneon_COPYQNUU:
+      case ARMneon_VQSHLNUU:
+      case ARMneon_VRECIP:
+         return ".u";
+      case ARMneon_CLS:
+      case ARMneon_CLZ:
+      case ARMneon_COPYLS:
+      case ARMneon_PADDLS:
+      case ARMneon_COPYQNSS:
+      case ARMneon_COPYQNUS:
+      case ARMneon_VQSHLNSS:
+      case ARMneon_VQSHLNUS:
+      case ARMneon_ABS:
+         return ".s";
+      case ARMneon_VRECIPF:
+      case ARMneon_VRECPS:
+      case ARMneon_VNEGF:
+      case ARMneon_VRSQRTS:
+         return ".f";
+      case ARMneon_VCVTFtoU: return ".u32.f32";
+      case ARMneon_VCVTFtoS: return ".s32.f32";
+      case ARMneon_VCVTUtoF: return ".f32.u32";
+      case ARMneon_VCVTStoF: return ".f32.s32";
+      case ARMneon_VCVTF16toF32: return ".f32.f16";
+      case ARMneon_VCVTF32toF16: return ".f16.f32";
+      case ARMneon_VCVTFtoFixedU: return ".u32.f32";
+      case ARMneon_VCVTFtoFixedS: return ".s32.f32";
+      case ARMneon_VCVTFixedUtoF: return ".f32.u32";
+      case ARMneon_VCVTFixedStoF: return ".f32.s32";
+      /* ... */
+      default: vpanic("showARMNeonUnOpDataType");
+   }
+}
+
+HChar* showARMNeonUnOpS ( ARMNeonUnOpS op ) {
+   switch (op) {
+      case ARMneon_SETELEM: return "vmov";
+      case ARMneon_GETELEMU: return "vmov";
+      case ARMneon_GETELEMS: return "vmov";
+      case ARMneon_VDUP: return "vdup";
+      /* ... */
+      default: vpanic("showARMNeonUnarySOp");
+   }
+}
+
+HChar* showARMNeonUnOpSDataType ( ARMNeonUnOpS op ) {
+   switch (op) {
+      case ARMneon_SETELEM:
+      case ARMneon_VDUP:
+         return ".i";
+      case ARMneon_GETELEMS:
+         return ".s";
+      case ARMneon_GETELEMU:
+         return ".u";
+      /* ... */
+      default: vpanic("showARMNeonUnarySOp");
+   }
+}
+
+HChar* showARMNeonShiftOp ( ARMNeonShiftOp op ) {
+   switch (op) {
+      case ARMneon_VSHL: return "vshl";
+      case ARMneon_VSAL: return "vshl";
+      case ARMneon_VQSHL: return "vqshl";
+      case ARMneon_VQSAL: return "vqshl";
+      /* ... */
+      default: vpanic("showARMNeonShiftOp");
+   }
+}
+
+HChar* showARMNeonShiftOpDataType ( ARMNeonShiftOp op ) {
+   switch (op) {
+      case ARMneon_VSHL:
+      case ARMneon_VQSHL:
+         return ".u";
+      case ARMneon_VSAL:
+      case ARMneon_VQSAL:
+         return ".s";
+      /* ... */
+      default: vpanic("showARMNeonShiftOpDataType");
+   }
+}
+
+HChar* showARMNeonDualOp ( ARMNeonDualOp op ) {
+   switch (op) {
+      case ARMneon_TRN: return "vtrn";
+      case ARMneon_ZIP: return "vzip";
+      case ARMneon_UZP: return "vuzp";
+      /* ... */
+      default: vpanic("showARMNeonDualOp");
+   }
+}
+
+HChar* showARMNeonDualOpDataType ( ARMNeonDualOp op ) {
+   switch (op) {
+      case ARMneon_TRN:
+      case ARMneon_ZIP:
+      case ARMneon_UZP:
+         return "i";
+      /* ... */
+      default: vpanic("showARMNeonDualOp");
+   }
+}
+
+static HChar* showARMNeonDataSize_wrk ( UInt size )
+{
+   switch (size) {
+      case 0: return "8";
+      case 1: return "16";
+      case 2: return "32";
+      case 3: return "64";
+      default: vpanic("showARMNeonDataSize");
+   }
+}
+
+static HChar* showARMNeonDataSize ( ARMInstr* i )
+{
+   switch (i->tag) {
+      case ARMin_NBinary:
+         if (i->ARMin.NBinary.op == ARMneon_VEXT)
+            return "8";
+         if (i->ARMin.NBinary.op == ARMneon_VAND ||
+             i->ARMin.NBinary.op == ARMneon_VORR ||
+             i->ARMin.NBinary.op == ARMneon_VXOR)
+            return "";
+         return showARMNeonDataSize_wrk(i->ARMin.NBinary.size);
+      case ARMin_NUnary:
+         if (i->ARMin.NUnary.op == ARMneon_COPY ||
+             i->ARMin.NUnary.op == ARMneon_NOT ||
+             i->ARMin.NUnary.op == ARMneon_VCVTF32toF16||
+             i->ARMin.NUnary.op == ARMneon_VCVTF16toF32||
+             i->ARMin.NUnary.op == ARMneon_VCVTFtoFixedS ||
+             i->ARMin.NUnary.op == ARMneon_VCVTFtoFixedU ||
+             i->ARMin.NUnary.op == ARMneon_VCVTFixedStoF ||
+             i->ARMin.NUnary.op == ARMneon_VCVTFixedUtoF ||
+             i->ARMin.NUnary.op == ARMneon_VCVTFtoS ||
+             i->ARMin.NUnary.op == ARMneon_VCVTFtoU ||
+             i->ARMin.NUnary.op == ARMneon_VCVTStoF ||
+             i->ARMin.NUnary.op == ARMneon_VCVTUtoF)
+            return "";
+         if (i->ARMin.NUnary.op == ARMneon_VQSHLNSS ||
+             i->ARMin.NUnary.op == ARMneon_VQSHLNUU ||
+             i->ARMin.NUnary.op == ARMneon_VQSHLNUS) {
+            UInt size;
+            size = i->ARMin.NUnary.size;
+            if (size & 0x40)
+               return "64";
+            if (size & 0x20)
+               return "32";
+            if (size & 0x10)
+               return "16";
+            if (size & 0x08)
+               return "8";
+            vpanic("showARMNeonDataSize");
+         }
+         return showARMNeonDataSize_wrk(i->ARMin.NUnary.size);
+      case ARMin_NUnaryS:
+         if (i->ARMin.NUnaryS.op == ARMneon_VDUP) {
+            int size;
+            size = i->ARMin.NUnaryS.size;
+            if ((size & 1) == 1)
+               return "8";
+            if ((size & 3) == 2)
+               return "16";
+            if ((size & 7) == 4)
+               return "32";
+            vpanic("showARMNeonDataSize");
+         }
+         return showARMNeonDataSize_wrk(i->ARMin.NUnaryS.size);
+      case ARMin_NShift:
+         return showARMNeonDataSize_wrk(i->ARMin.NShift.size);
+      case ARMin_NDual:
+         return showARMNeonDataSize_wrk(i->ARMin.NDual.size);
+      default:
+         vpanic("showARMNeonDataSize");
    }
 }
 
@@ -771,6 +1335,143 @@ ARMInstr* ARMInstr_MFence ( void ) {
    i->tag      = ARMin_MFence;
    return i;
 }
+
+ARMInstr* ARMInstr_NLdStQ ( Bool isLoad, HReg dQ, ARMAModeN *amode ) {
+   ARMInstr* i = LibVEX_Alloc(sizeof(ARMInstr));
+   i->tag                  = ARMin_NLdStQ;
+   i->ARMin.NLdStQ.isLoad  = isLoad;
+   i->ARMin.NLdStQ.dQ      = dQ;
+   i->ARMin.NLdStQ.amode   = amode;
+   return i;
+}
+
+ARMInstr* ARMInstr_NLdStD ( Bool isLoad, HReg dD, ARMAModeN *amode ) {
+   ARMInstr* i = LibVEX_Alloc(sizeof(ARMInstr));
+   i->tag                  = ARMin_NLdStD;
+   i->ARMin.NLdStD.isLoad  = isLoad;
+   i->ARMin.NLdStD.dD      = dD;
+   i->ARMin.NLdStD.amode   = amode;
+   return i;
+}
+
+ARMInstr* ARMInstr_NUnary ( ARMNeonUnOp op, HReg dQ, HReg nQ,
+                            UInt size, Bool Q ) {
+   ARMInstr* i = LibVEX_Alloc(sizeof(ARMInstr));
+   i->tag                = ARMin_NUnary;
+   i->ARMin.NUnary.op   = op;
+   i->ARMin.NUnary.src  = nQ;
+   i->ARMin.NUnary.dst  = dQ;
+   i->ARMin.NUnary.size = size;
+   i->ARMin.NUnary.Q    = Q;
+   return i;
+}
+
+ARMInstr* ARMInstr_NUnaryS ( ARMNeonUnOp op, ARMNRS* dst, ARMNRS* src,
+                             UInt size, Bool Q ) {
+   ARMInstr* i = LibVEX_Alloc(sizeof(ARMInstr));
+   i->tag                = ARMin_NUnaryS;
+   i->ARMin.NUnaryS.op   = op;
+   i->ARMin.NUnaryS.src  = src;
+   i->ARMin.NUnaryS.dst  = dst;
+   i->ARMin.NUnaryS.size = size;
+   i->ARMin.NUnaryS.Q    = Q;
+   return i;
+}
+
+ARMInstr* ARMInstr_NDual ( ARMNeonDualOp op, HReg nQ, HReg mQ,
+                           UInt size, Bool Q ) {
+   ARMInstr* i = LibVEX_Alloc(sizeof(ARMInstr));
+   i->tag                = ARMin_NDual;
+   i->ARMin.NDual.op   = op;
+   i->ARMin.NDual.arg1 = nQ;
+   i->ARMin.NDual.arg2 = mQ;
+   i->ARMin.NDual.size = size;
+   i->ARMin.NDual.Q    = Q;
+   return i;
+}
+
+ARMInstr* ARMInstr_NBinary ( ARMNeonBinOp op,
+                             HReg dst, HReg argL, HReg argR,
+                             UInt size, Bool Q ) {
+   ARMInstr* i = LibVEX_Alloc(sizeof(ARMInstr));
+   i->tag                = ARMin_NBinary;
+   i->ARMin.NBinary.op   = op;
+   i->ARMin.NBinary.argL = argL;
+   i->ARMin.NBinary.argR = argR;
+   i->ARMin.NBinary.dst  = dst;
+   i->ARMin.NBinary.size = size;
+   i->ARMin.NBinary.Q    = Q;
+   return i;
+}
+
+ARMInstr* ARMInstr_NeonImm (HReg dst, ARMNImm* imm ) {
+   ARMInstr *i = LibVEX_Alloc(sizeof(ARMInstr));
+   i->tag         = ARMin_NeonImm;
+   i->ARMin.NeonImm.dst = dst;
+   i->ARMin.NeonImm.imm = imm;
+   return i;
+}
+
+ARMInstr* ARMInstr_NCMovQ ( ARMCondCode cond, HReg dst, HReg src ) {
+   ARMInstr* i = LibVEX_Alloc(sizeof(ARMInstr));
+   i->tag               = ARMin_NCMovQ;
+   i->ARMin.NCMovQ.cond = cond;
+   i->ARMin.NCMovQ.dst  = dst;
+   i->ARMin.NCMovQ.src  = src;
+   vassert(cond != ARMcc_AL);
+   return i;
+}
+
+ARMInstr* ARMInstr_NShift ( ARMNeonShiftOp op,
+                            HReg dst, HReg argL, HReg argR,
+                            UInt size, Bool Q ) {
+   ARMInstr* i = LibVEX_Alloc(sizeof(ARMInstr));
+   i->tag                = ARMin_NShift;
+   i->ARMin.NShift.op   = op;
+   i->ARMin.NShift.argL = argL;
+   i->ARMin.NShift.argR = argR;
+   i->ARMin.NShift.dst  = dst;
+   i->ARMin.NShift.size = size;
+   i->ARMin.NShift.Q    = Q;
+   return i;
+}
+
+/* Helper copy-pasted from isel.c */
+static Bool fitsIn8x4 ( UInt* u8, UInt* u4, UInt u )
+{
+   UInt i;
+   for (i = 0; i < 16; i++) {
+      if (0 == (u & 0xFFFFFF00)) {
+         *u8 = u;
+         *u4 = i;
+         return True;
+      }
+      u = ROR32(u, 30);
+   }
+   vassert(i == 16);
+   return False;
+}
+
+ARMInstr* ARMInstr_Add32 ( HReg rD, HReg rN, UInt imm32 ) {
+   UInt u8, u4;
+   ARMInstr *i = LibVEX_Alloc(sizeof(ARMInstr));
+   /* Try to generate single ADD if possible */
+   if (fitsIn8x4(&u8, &u4, imm32)) {
+      i->tag            = ARMin_Alu;
+      i->ARMin.Alu.op   = ARMalu_ADD;
+      i->ARMin.Alu.dst  = rD;
+      i->ARMin.Alu.argL = rN;
+      i->ARMin.Alu.argR = ARMRI84_I84(u8, u4);
+   } else {
+      i->tag               = ARMin_Add32;
+      i->ARMin.Add32.rD    = rD;
+      i->ARMin.Add32.rN    = rN;
+      i->ARMin.Add32.imm32 = imm32;
+   }
+   return i;
+}
+
+/* ... */
 
 void ppARMInstr ( ARMInstr* i ) {
    switch (i->tag) {
@@ -1043,13 +1744,122 @@ void ppARMInstr ( ARMInstr* i ) {
          vex_printf("mfence (mcr 15,0,r0,c7,c10,4; 15,0,r0,c7,c10,5; "
                     "15,0,r0,c7,c5,4)");
          return;
-
+      case ARMin_NLdStQ:
+         if (i->ARMin.NLdStQ.isLoad)
+            vex_printf("vld1.32 {");
+         else
+            vex_printf("vst1.32 {");
+         ppHRegARM(i->ARMin.NLdStQ.dQ);
+         vex_printf("} ");
+         ppARMAModeN(i->ARMin.NLdStQ.amode);
+         return;
+      case ARMin_NLdStD:
+         if (i->ARMin.NLdStD.isLoad)
+            vex_printf("vld1.32 {");
+         else
+            vex_printf("vst1.32 {");
+         ppHRegARM(i->ARMin.NLdStD.dD);
+         vex_printf("} ");
+         ppARMAModeN(i->ARMin.NLdStD.amode);
+         return;
+      case ARMin_NUnary:
+         vex_printf("%s%s%s  ",
+                    showARMNeonUnOp(i->ARMin.NUnary.op),
+                    showARMNeonUnOpDataType(i->ARMin.NUnary.op),
+                    showARMNeonDataSize(i));
+         ppHRegARM(i->ARMin.NUnary.dst);
+         vex_printf(", ");
+         ppHRegARM(i->ARMin.NUnary.src);
+         if (i->ARMin.NUnary.op == ARMneon_EQZ)
+            vex_printf(", #0");
+         if (i->ARMin.NUnary.op == ARMneon_VCVTFtoFixedS ||
+             i->ARMin.NUnary.op == ARMneon_VCVTFtoFixedU ||
+             i->ARMin.NUnary.op == ARMneon_VCVTFixedStoF ||
+             i->ARMin.NUnary.op == ARMneon_VCVTFixedUtoF) {
+            vex_printf(", #%d", i->ARMin.NUnary.size);
+         }
+         if (i->ARMin.NUnary.op == ARMneon_VQSHLNSS ||
+             i->ARMin.NUnary.op == ARMneon_VQSHLNUU ||
+             i->ARMin.NUnary.op == ARMneon_VQSHLNUS) {
+            UInt size;
+            size = i->ARMin.NUnary.size;
+            if (size & 0x40) {
+               vex_printf(", #%d", size - 64);
+            } else if (size & 0x20) {
+               vex_printf(", #%d", size - 32);
+            } else if (size & 0x10) {
+               vex_printf(", #%d", size - 16);
+            } else if (size & 0x08) {
+               vex_printf(", #%d", size - 8);
+            }
+         }
+         return;
+      case ARMin_NUnaryS:
+         vex_printf("%s%s%s  ",
+                    showARMNeonUnOpS(i->ARMin.NUnary.op),
+                    showARMNeonUnOpSDataType(i->ARMin.NUnary.op),
+                    showARMNeonDataSize(i));
+         ppARMNRS(i->ARMin.NUnaryS.dst);
+         vex_printf(", ");
+         ppARMNRS(i->ARMin.NUnaryS.src);
+         return;
+      case ARMin_NShift:
+         vex_printf("%s%s%s  ",
+                    showARMNeonShiftOp(i->ARMin.NShift.op),
+                    showARMNeonShiftOpDataType(i->ARMin.NShift.op),
+                    showARMNeonDataSize(i));
+         ppHRegARM(i->ARMin.NShift.dst);
+         vex_printf(", ");
+         ppHRegARM(i->ARMin.NShift.argL);
+         vex_printf(", ");
+         ppHRegARM(i->ARMin.NShift.argR);
+         return;
+      case ARMin_NDual:
+         vex_printf("%s%s%s  ",
+                    showARMNeonDualOp(i->ARMin.NDual.op),
+                    showARMNeonDualOpDataType(i->ARMin.NDual.op),
+                    showARMNeonDataSize(i));
+         ppHRegARM(i->ARMin.NDual.arg1);
+         vex_printf(", ");
+         ppHRegARM(i->ARMin.NDual.arg2);
+         return;
+      case ARMin_NBinary:
+         vex_printf("%s%s%s",
+                    showARMNeonBinOp(i->ARMin.NBinary.op),
+                    showARMNeonBinOpDataType(i->ARMin.NBinary.op),
+                    showARMNeonDataSize(i));
+         vex_printf("  ");
+         ppHRegARM(i->ARMin.NBinary.dst);
+         vex_printf(", ");
+         ppHRegARM(i->ARMin.NBinary.argL);
+         vex_printf(", ");
+         ppHRegARM(i->ARMin.NBinary.argR);
+         return;
+      case ARMin_NeonImm:
+         vex_printf("vmov  ");
+         ppHRegARM(i->ARMin.NeonImm.dst);
+         vex_printf(", ");
+         ppARMNImm(i->ARMin.NeonImm.imm);
+         return;
+      case ARMin_NCMovQ:
+         vex_printf("vmov%s ", showARMCondCode(i->ARMin.NCMovQ.cond));
+         ppHRegARM(i->ARMin.NCMovQ.dst);
+         vex_printf(", ");
+         ppHRegARM(i->ARMin.NCMovQ.src);
+         return;
+      case ARMin_Add32:
+         vex_printf("add32 ");
+         ppHRegARM(i->ARMin.Add32.rD);
+         vex_printf(", ");
+         ppHRegARM(i->ARMin.Add32.rN);
+         vex_printf(", ");
+         vex_printf("%d", i->ARMin.Add32.imm32);
+         return;
+      default:
       unhandled:
          vex_printf("ppARMInstr: unhandled case (tag %d)", (Int)i->tag);
          vpanic("ppARMInstr(1)");
          return;
-      default:
-         vpanic("ppARMInstr(2)");
    }
 }
 
@@ -1268,6 +2078,58 @@ void getRegUsage_ARMInstr ( HRegUsage* u, ARMInstr* i, Bool mode64 )
          return;
       case ARMin_MFence:
          return;
+      case ARMin_NLdStQ:
+         if (i->ARMin.NLdStQ.isLoad)
+            addHRegUse(u, HRmWrite, i->ARMin.NLdStQ.dQ);
+         else
+            addHRegUse(u, HRmRead, i->ARMin.NLdStQ.dQ);
+         addRegUsage_ARMAModeN(u, i->ARMin.NLdStQ.amode);
+         return;
+      case ARMin_NLdStD:
+         if (i->ARMin.NLdStD.isLoad)
+            addHRegUse(u, HRmWrite, i->ARMin.NLdStD.dD);
+         else
+            addHRegUse(u, HRmRead, i->ARMin.NLdStD.dD);
+         addRegUsage_ARMAModeN(u, i->ARMin.NLdStD.amode);
+         return;
+      case ARMin_NUnary:
+         addHRegUse(u, HRmWrite, i->ARMin.NUnary.dst);
+         addHRegUse(u, HRmRead, i->ARMin.NUnary.src);
+         return;
+      case ARMin_NUnaryS:
+         addHRegUse(u, HRmWrite, i->ARMin.NUnaryS.dst->reg);
+         addHRegUse(u, HRmRead, i->ARMin.NUnaryS.src->reg);
+         return;
+      case ARMin_NShift:
+         addHRegUse(u, HRmWrite, i->ARMin.NShift.dst);
+         addHRegUse(u, HRmRead, i->ARMin.NShift.argL);
+         addHRegUse(u, HRmRead, i->ARMin.NShift.argR);
+         return;
+      case ARMin_NDual:
+         addHRegUse(u, HRmWrite, i->ARMin.NDual.arg1);
+         addHRegUse(u, HRmWrite, i->ARMin.NDual.arg2);
+         addHRegUse(u, HRmRead, i->ARMin.NDual.arg1);
+         addHRegUse(u, HRmRead, i->ARMin.NDual.arg2);
+         return;
+      case ARMin_NBinary:
+         addHRegUse(u, HRmWrite, i->ARMin.NBinary.dst);
+         /* TODO: sometimes dst is also being read! */
+         // XXX fix this
+         addHRegUse(u, HRmRead, i->ARMin.NBinary.argL);
+         addHRegUse(u, HRmRead, i->ARMin.NBinary.argR);
+         return;
+      case ARMin_NeonImm:
+         addHRegUse(u, HRmWrite, i->ARMin.NeonImm.dst);
+         return;
+      case ARMin_NCMovQ:
+         addHRegUse(u, HRmWrite, i->ARMin.NCMovQ.dst);
+         addHRegUse(u, HRmRead,  i->ARMin.NCMovQ.dst);
+         addHRegUse(u, HRmRead,  i->ARMin.NCMovQ.src);
+         return;
+      case ARMin_Add32:
+         addHRegUse(u, HRmWrite, i->ARMin.Add32.rD);
+         addHRegUse(u, HRmRead, i->ARMin.Add32.rN);
+         return;
       unhandled:
       default:
          ppARMInstr(i);
@@ -1394,6 +2256,48 @@ void mapRegs_ARMInstr ( HRegRemap* m, ARMInstr* i, Bool mode64 )
          return;
       case ARMin_MFence:
          return;
+      case ARMin_NLdStQ:
+         i->ARMin.NLdStQ.dQ = lookupHRegRemap(m, i->ARMin.NLdStQ.dQ);
+         mapRegs_ARMAModeN(m, i->ARMin.NLdStQ.amode);
+         return;
+      case ARMin_NLdStD:
+         i->ARMin.NLdStD.dD = lookupHRegRemap(m, i->ARMin.NLdStD.dD);
+         mapRegs_ARMAModeN(m, i->ARMin.NLdStD.amode);
+         return;
+      case ARMin_NUnary:
+         i->ARMin.NUnary.src = lookupHRegRemap(m, i->ARMin.NUnary.src);
+         i->ARMin.NUnary.dst = lookupHRegRemap(m, i->ARMin.NUnary.dst);
+         return;
+      case ARMin_NUnaryS:
+         i->ARMin.NUnaryS.src->reg
+            = lookupHRegRemap(m, i->ARMin.NUnaryS.src->reg);
+         i->ARMin.NUnaryS.dst->reg
+            = lookupHRegRemap(m, i->ARMin.NUnaryS.dst->reg);
+         return;
+      case ARMin_NShift:
+         i->ARMin.NShift.dst = lookupHRegRemap(m, i->ARMin.NShift.dst);
+         i->ARMin.NShift.argL = lookupHRegRemap(m, i->ARMin.NShift.argL);
+         i->ARMin.NShift.argR = lookupHRegRemap(m, i->ARMin.NShift.argR);
+         return;
+      case ARMin_NDual:
+         i->ARMin.NDual.arg1 = lookupHRegRemap(m, i->ARMin.NDual.arg1);
+         i->ARMin.NDual.arg2 = lookupHRegRemap(m, i->ARMin.NDual.arg2);
+         return;
+      case ARMin_NBinary:
+         i->ARMin.NBinary.argL = lookupHRegRemap(m, i->ARMin.NBinary.argL);
+         i->ARMin.NBinary.argR = lookupHRegRemap(m, i->ARMin.NBinary.argR);
+         i->ARMin.NBinary.dst  = lookupHRegRemap(m, i->ARMin.NBinary.dst);
+         return;
+      case ARMin_NeonImm:
+         i->ARMin.NeonImm.dst = lookupHRegRemap(m, i->ARMin.NeonImm.dst);
+         return;
+      case ARMin_NCMovQ:
+         i->ARMin.NCMovQ.dst = lookupHRegRemap(m, i->ARMin.NCMovQ.dst);
+         i->ARMin.NCMovQ.src = lookupHRegRemap(m, i->ARMin.NCMovQ.src);
+         return;
+      case ARMin_Add32:
+         i->ARMin.Add32.rD = lookupHRegRemap(m, i->ARMin.Add32.rD);
+         i->ARMin.Add32.rN = lookupHRegRemap(m, i->ARMin.Add32.rN);
       unhandled:
       default:
          ppARMInstr(i);
@@ -1483,7 +2387,14 @@ void genSpill_ARM ( /*OUT*/HInstr** i1, /*OUT*/HInstr** i2,
          }
          return;
       }
-      default: 
+      case HRcVec128: {
+         HReg r8  = hregARM_R8();
+         HReg r12 = hregARM_R12();
+         *i1 = ARMInstr_Add32(r12, r8, offsetB);
+         *i2 = ARMInstr_NLdStQ(False, rreg, mkARMAModeN_R(r12));
+         return;
+      }
+      default:
          ppHRegClass(rclass);
          vpanic("genSpill_ARM: unimplemented regclass");
    }
@@ -1529,7 +2440,14 @@ void genReload_ARM ( /*OUT*/HInstr** i1, /*OUT*/HInstr** i2,
          }
          return;
       }
-      default: 
+      case HRcVec128: {
+         HReg r8  = hregARM_R8();
+         HReg r12 = hregARM_R12();
+         *i1 = ARMInstr_Add32(r12, r8, offsetB);
+         *i2 = ARMInstr_NLdStQ(True, rreg, mkARMAModeN_R(r12));
+         return;
+      }
+      default:
          ppHRegClass(rclass);
          vpanic("genReload_ARM: unimplemented regclass");
    }
@@ -1553,10 +2471,12 @@ static inline UChar iregNo ( HReg r )
 static inline UChar dregNo ( HReg r )
 {
    UInt n;
+   if (hregClass(r) != HRcFlt64)
+      ppHRegClass(hregClass(r));
    vassert(hregClass(r) == HRcFlt64);
    vassert(!hregIsVirtual(r));
    n = hregNumber(r);
-   vassert(n <= 15);
+   vassert(n <= 31);
    return toUChar(n);
 }
 
@@ -1567,6 +2487,16 @@ static inline UChar fregNo ( HReg r )
    vassert(!hregIsVirtual(r));
    n = hregNumber(r);
    vassert(n <= 31);
+   return toUChar(n);
+}
+
+static inline UChar qregNo ( HReg r )
+{
+   UInt n;
+   vassert(hregClass(r) == HRcVec128);
+   vassert(!hregIsVirtual(r));
+   n = hregNumber(r);
+   vassert(n <= 15);
    return toUChar(n);
 }
 
@@ -1677,19 +2607,57 @@ static UInt* imm32_to_iregNo ( UInt* p, Int rD, UInt imm32 )
       *p++ = imm32;
    }
 #else
-   /* Generate movw rD, #low16.  Then, if the high 16 are
-      nonzero, generate movt rD, #high16. */
-   UInt lo16 = imm32 & 0xFFFF;
-   UInt hi16 = (imm32 >> 16) & 0xFFFF;
-   instr = XXXXXXXX(0xE, 0x3, 0x0, (lo16 >> 12) & 0xF, rD,
-                    (lo16 >> 8) & 0xF, (lo16 >> 4) & 0xF,
-                    lo16 & 0xF);
-   *p++ = instr;
-   if (hi16 != 0) {
-      instr = XXXXXXXX(0xE, 0x3, 0x4, (hi16 >> 12) & 0xF, rD,
-                       (hi16 >> 8) & 0xF, (hi16 >> 4) & 0xF,
-                       hi16 & 0xF);
+   if (VEX_ARM_ARCHLEVEL(arm_hwcaps) > 6) {
+      /* Generate movw rD, #low16.  Then, if the high 16 are
+         nonzero, generate movt rD, #high16. */
+      UInt lo16 = imm32 & 0xFFFF;
+      UInt hi16 = (imm32 >> 16) & 0xFFFF;
+      instr = XXXXXXXX(0xE, 0x3, 0x0, (lo16 >> 12) & 0xF, rD,
+                       (lo16 >> 8) & 0xF, (lo16 >> 4) & 0xF,
+                       lo16 & 0xF);
       *p++ = instr;
+      if (hi16 != 0) {
+         instr = XXXXXXXX(0xE, 0x3, 0x4, (hi16 >> 12) & 0xF, rD,
+                          (hi16 >> 8) & 0xF, (hi16 >> 4) & 0xF,
+                          hi16 & 0xF);
+         *p++ = instr;
+      }
+   } else {
+      UInt imm, rot;
+      UInt op = X1010;
+      UInt rN = 0;
+      if ((imm32 & 0xFF) || (imm32 == 0)) {
+         imm = imm32 & 0xFF;
+         rot = 0;
+         instr = XXXXXXXX(0xE, 0x3, op, rN, rD, rot, imm >> 4, imm & 0xF);
+         *p++ = instr;
+         op = X1000;
+         rN = rD;
+      }
+      if (imm32 & 0xFF000000) {
+         imm = (imm32 >> 24) & 0xFF;
+         rot = 4;
+         instr = XXXXXXXX(0xE, 0x3, op, rN, rD, rot, imm >> 4, imm & 0xF);
+         *p++ = instr;
+         op = X1000;
+         rN = rD;
+      }
+      if (imm32 & 0xFF0000) {
+         imm = (imm32 >> 16) & 0xFF;
+         rot = 8;
+         instr = XXXXXXXX(0xE, 0x3, op, rN, rD, rot, imm >> 4, imm & 0xF);
+         *p++ = instr;
+         op = X1000;
+         rN = rD;
+      }
+      if (imm32 & 0xFF00) {
+         imm = (imm32 >> 8) & 0xFF;
+         rot = 12;
+         instr = XXXXXXXX(0xE, 0x3, op, rN, rD, rot, imm >> 4, imm & 0xF);
+         *p++ = instr;
+         op = X1000;
+         rN = rD;
+      }
    }
 #endif
    return p;
@@ -1728,7 +2696,8 @@ Int emit_ARMInstr ( UChar* buf, Int nbuf, ARMInstr* i,
          instr = skeletal_RI84(argR);
          instr |= XXXXX___(X1110, (1 & (subopc >> 3)),
                            (subopc << 1) & 0xF, rN, rD);
-         if (i->ARMin.Alu.op == ARMalu_ADDS || i->ARMin.Alu.op == ARMalu_SUBS) {
+         if (i->ARMin.Alu.op == ARMalu_ADDS
+             || i->ARMin.Alu.op == ARMalu_SUBS) {
             instr |= 1<<20;  /* set the S bit */
          }
          *p++ = instr;
@@ -2282,6 +3251,802 @@ Int emit_ARMInstr ( UChar* buf, Int nbuf, ARMInstr* i,
          *p++ = 0xEE070F95; /* mcr 15,0,r0,c7,c5,4  (ISB) */
          goto done;
       }
+      case ARMin_NLdStQ: {
+         UInt regD = qregNo(i->ARMin.NLdStQ.dQ) << 1;
+         UInt regN, regM;
+         UInt D = regD >> 4;
+         UInt bL = i->ARMin.NLdStQ.isLoad ? 1 : 0;
+         UInt insn;
+         vassert(hregClass(i->ARMin.NLdStQ.dQ) == HRcVec128);
+         regD &= 0xF;
+         if (i->ARMin.NLdStQ.amode->tag == ARMamN_RR) {
+            regN = iregNo(i->ARMin.NLdStQ.amode->ARMamN.RR.rN);
+            regM = iregNo(i->ARMin.NLdStQ.amode->ARMamN.RR.rM);
+         } else {
+            regN = iregNo(i->ARMin.NLdStQ.amode->ARMamN.R.rN);
+            regM = 15;
+         }
+         insn = XXXXXXXX(0xF, X0100, BITS4(0, D, bL, 0),
+                              regN, regD, X1010, X1000, regM);
+         *p++ = insn;
+         goto done;
+      }
+      case ARMin_NLdStD: {
+         UInt regD = dregNo(i->ARMin.NLdStD.dD);
+         UInt regN, regM;
+         UInt D = regD >> 4;
+         UInt bL = i->ARMin.NLdStD.isLoad ? 1 : 0;
+         UInt insn;
+         vassert(hregClass(i->ARMin.NLdStD.dD) == HRcFlt64);
+         regD &= 0xF;
+         if (i->ARMin.NLdStD.amode->tag == ARMamN_RR) {
+            regN = iregNo(i->ARMin.NLdStD.amode->ARMamN.RR.rN);
+            regM = iregNo(i->ARMin.NLdStD.amode->ARMamN.RR.rM);
+         } else {
+            regN = iregNo(i->ARMin.NLdStD.amode->ARMamN.R.rN);
+            regM = 15;
+         }
+         insn = XXXXXXXX(0xF, X0100, BITS4(0, D, bL, 0),
+                              regN, regD, X0111, X1000, regM);
+         *p++ = insn;
+         goto done;
+      }
+      case ARMin_NUnaryS: {
+         UInt Q = i->ARMin.NUnaryS.Q ? 1 : 0;
+         UInt regD, D;
+         UInt regM, M;
+         UInt size = i->ARMin.NUnaryS.size;
+         UInt insn;
+         UInt opc, opc1, opc2;
+         switch (i->ARMin.NUnaryS.op) {
+            case ARMneon_VDUP:
+               if (i->ARMin.NUnaryS.size >= 16)
+                  goto bad;
+               if (i->ARMin.NUnaryS.dst->tag != ARMNRS_Reg)
+                  goto bad;
+               if (i->ARMin.NUnaryS.src->tag != ARMNRS_Scalar)
+                  goto bad;
+               regD = (hregClass(i->ARMin.NUnaryS.dst->reg) == HRcVec128)
+                        ? (qregNo(i->ARMin.NUnaryS.dst->reg) << 1)
+                        : dregNo(i->ARMin.NUnaryS.dst->reg);
+               regM = (hregClass(i->ARMin.NUnaryS.src->reg) == HRcVec128)
+                        ? (qregNo(i->ARMin.NUnaryS.src->reg) << 1)
+                        : dregNo(i->ARMin.NUnaryS.src->reg);
+               D = regD >> 4;
+               M = regM >> 4;
+               regD &= 0xf;
+               regM &= 0xf;
+               insn = XXXXXXXX(0xF, X0011, BITS4(1,D,1,1),
+                               (i->ARMin.NUnaryS.size & 0xf), regD,
+                               X1100, BITS4(0,Q,M,0), regM);
+               *p++ = insn;
+               goto done;
+            case ARMneon_SETELEM:
+               regD = Q ? (qregNo(i->ARMin.NUnaryS.dst->reg) << 1) :
+                                dregNo(i->ARMin.NUnaryS.dst->reg);
+               regM = iregNo(i->ARMin.NUnaryS.src->reg);
+               M = regM >> 4;
+               D = regD >> 4;
+               regM &= 0xF;
+               regD &= 0xF;
+               if (i->ARMin.NUnaryS.dst->tag != ARMNRS_Scalar)
+                  goto bad;
+               switch (size) {
+                  case 0:
+                     if (i->ARMin.NUnaryS.dst->index > 7)
+                        goto bad;
+                     opc = X1000 | i->ARMin.NUnaryS.dst->index;
+                     break;
+                  case 1:
+                     if (i->ARMin.NUnaryS.dst->index > 3)
+                        goto bad;
+                     opc = X0001 | (i->ARMin.NUnaryS.dst->index << 1);
+                     break;
+                  case 2:
+                     if (i->ARMin.NUnaryS.dst->index > 1)
+                        goto bad;
+                     opc = X0000 | (i->ARMin.NUnaryS.dst->index << 2);
+                     break;
+                  default:
+                     goto bad;
+               }
+               opc1 = (opc >> 2) & 3;
+               opc2 = opc & 3;
+               insn = XXXXXXXX(0xE, X1110, BITS4(0,(opc1 >> 1),(opc1 & 1),0),
+                               regD, regM, X1011,
+                               BITS4(D,(opc2 >> 1),(opc2 & 1),1), X0000);
+               *p++ = insn;
+               goto done;
+            case ARMneon_GETELEMU:
+               regM = Q ? (qregNo(i->ARMin.NUnaryS.src->reg) << 1) :
+                                dregNo(i->ARMin.NUnaryS.src->reg);
+               regD = iregNo(i->ARMin.NUnaryS.dst->reg);
+               M = regM >> 4;
+               D = regD >> 4;
+               regM &= 0xF;
+               regD &= 0xF;
+               if (i->ARMin.NUnaryS.src->tag != ARMNRS_Scalar)
+                  goto bad;
+               switch (size) {
+                  case 0:
+                     if (Q && i->ARMin.NUnaryS.src->index > 7) {
+                        regM++;
+                        i->ARMin.NUnaryS.src->index -= 8;
+                     }
+                     if (i->ARMin.NUnaryS.src->index > 7)
+                        goto bad;
+                     opc = X1000 | i->ARMin.NUnaryS.src->index;
+                     break;
+                  case 1:
+                     if (Q && i->ARMin.NUnaryS.src->index > 3) {
+                        regM++;
+                        i->ARMin.NUnaryS.src->index -= 4;
+                     }
+                     if (i->ARMin.NUnaryS.src->index > 3)
+                        goto bad;
+                     opc = X0001 | (i->ARMin.NUnaryS.src->index << 1);
+                     break;
+                  case 2:
+                     goto bad;
+                  default:
+                     goto bad;
+               }
+               opc1 = (opc >> 2) & 3;
+               opc2 = opc & 3;
+               insn = XXXXXXXX(0xE, X1110, BITS4(1,(opc1 >> 1),(opc1 & 1),1),
+                               regM, regD, X1011,
+                               BITS4(M,(opc2 >> 1),(opc2 & 1),1), X0000);
+               *p++ = insn;
+               goto done;
+            case ARMneon_GETELEMS:
+               regM = Q ? (qregNo(i->ARMin.NUnaryS.src->reg) << 1) :
+                                dregNo(i->ARMin.NUnaryS.src->reg);
+               regD = iregNo(i->ARMin.NUnaryS.dst->reg);
+               M = regM >> 4;
+               D = regD >> 4;
+               regM &= 0xF;
+               regD &= 0xF;
+               if (i->ARMin.NUnaryS.src->tag != ARMNRS_Scalar)
+                  goto bad;
+               switch (size) {
+                  case 0:
+                     if (Q && i->ARMin.NUnaryS.src->index > 7) {
+                        regM++;
+                        i->ARMin.NUnaryS.src->index -= 8;
+                     }
+                     if (i->ARMin.NUnaryS.src->index > 7)
+                        goto bad;
+                     opc = X1000 | i->ARMin.NUnaryS.src->index;
+                     break;
+                  case 1:
+                     if (Q && i->ARMin.NUnaryS.src->index > 3) {
+                        regM++;
+                        i->ARMin.NUnaryS.src->index -= 4;
+                     }
+                     if (i->ARMin.NUnaryS.src->index > 3)
+                        goto bad;
+                     opc = X0001 | (i->ARMin.NUnaryS.src->index << 1);
+                     break;
+                  case 2:
+                     if (Q && i->ARMin.NUnaryS.src->index > 1) {
+                        regM++;
+                        i->ARMin.NUnaryS.src->index -= 2;
+                     }
+                     if (i->ARMin.NUnaryS.src->index > 1)
+                        goto bad;
+                     opc = X0000 | (i->ARMin.NUnaryS.src->index << 2);
+                     break;
+                  default:
+                     goto bad;
+               }
+               opc1 = (opc >> 2) & 3;
+               opc2 = opc & 3;
+               insn = XXXXXXXX(0xE, X1110, BITS4(0,(opc1 >> 1),(opc1 & 1),1),
+                               regM, regD, X1011,
+                               BITS4(M,(opc2 >> 1),(opc2 & 1),1), X0000);
+               *p++ = insn;
+               goto done;
+            default:
+               goto bad;
+         }
+      }
+      case ARMin_NUnary: {
+         UInt Q = i->ARMin.NUnary.Q ? 1 : 0;
+         UInt regD = (hregClass(i->ARMin.NUnary.dst) == HRcVec128)
+                       ? (qregNo(i->ARMin.NUnary.dst) << 1)
+                       : dregNo(i->ARMin.NUnary.dst);
+         UInt regM, M;
+         UInt D = regD >> 4;
+         UInt sz1 = i->ARMin.NUnary.size >> 1;
+         UInt sz2 = i->ARMin.NUnary.size & 1;
+         UInt sz = i->ARMin.NUnary.size;
+         UInt insn;
+         UInt F = 0; /* TODO: floating point EQZ ??? */
+         if (i->ARMin.NUnary.op != ARMneon_DUP) {
+            regM = (hregClass(i->ARMin.NUnary.src) == HRcVec128) 
+                     ? (qregNo(i->ARMin.NUnary.src) << 1)
+                     : dregNo(i->ARMin.NUnary.src);
+            M = regM >> 4;
+         } else {
+            regM = iregNo(i->ARMin.NUnary.src);
+            M = regM >> 4;
+         }
+         regD &= 0xF;
+         regM &= 0xF;
+         switch (i->ARMin.NUnary.op) {
+            case ARMneon_COPY: /* VMOV reg, reg */
+               insn = XXXXXXXX(0xF, X0010, BITS4(0,D,1,0), regM, regD, X0001,
+                               BITS4(M,Q,M,1), regM);
+               break;
+            case ARMneon_COPYN: /* VMOVN regD, regQ */
+               insn = XXXXXXXX(0xF, X0011, BITS4(1,D,1,1), BITS4(sz1,sz2,1,0),
+                               regD, X0010, BITS4(0,0,M,0), regM);
+               break;
+            case ARMneon_COPYQNSS: /* VQMOVN regD, regQ */
+               insn = XXXXXXXX(0xF, X0011, BITS4(1,D,1,1), BITS4(sz1,sz2,1,0),
+                               regD, X0010, BITS4(1,0,M,0), regM);
+               break;
+            case ARMneon_COPYQNUS: /* VQMOVUN regD, regQ */
+               insn = XXXXXXXX(0xF, X0011, BITS4(1,D,1,1), BITS4(sz1,sz2,1,0),
+                               regD, X0010, BITS4(0,1,M,0), regM);
+               break;
+            case ARMneon_COPYQNUU: /* VQMOVN regD, regQ */
+               insn = XXXXXXXX(0xF, X0011, BITS4(1,D,1,1), BITS4(sz1,sz2,1,0),
+                               regD, X0010, BITS4(1,1,M,0), regM);
+               break;
+            case ARMneon_COPYLS: /* VMOVL regQ, regD */
+               if (sz >= 3)
+                  goto bad;
+               insn = XXXXXXXX(0xF, X0010,
+                               BITS4(1,D,(sz == 2) ? 1 : 0,(sz == 1) ? 1 : 0),
+                               BITS4((sz == 0) ? 1 : 0,0,0,0),
+                               regD, X1010, BITS4(0,0,M,1), regM);
+               break;
+            case ARMneon_COPYLU: /* VMOVL regQ, regD */
+               if (sz >= 3)
+                  goto bad;
+               insn = XXXXXXXX(0xF, X0011,
+                               BITS4(1,D,(sz == 2) ? 1 : 0,(sz == 1) ? 1 : 0),
+                               BITS4((sz == 0) ? 1 : 0,0,0,0),
+                               regD, X1010, BITS4(0,0,M,1), regM);
+               break;
+            case ARMneon_NOT: /* VMVN reg, reg*/
+               insn = XXXXXXXX(0xF, X0011, BITS4(1,D,1,1), X0000, regD, X0101,
+                               BITS4(1,Q,M,0), regM);
+               break;
+            case ARMneon_EQZ:
+               insn = XXXXXXXX(0xF, X0011, BITS4(1,D,1,1), BITS4(sz1,sz2,0,1),
+                               regD, BITS4(0,F,0,1), BITS4(0,Q,M,0), regM);
+               break;
+            case ARMneon_CNT:
+               insn = XXXXXXXX(0xF, X0011, BITS4(1,D,1,1), X0000, regD, X0101,
+                               BITS4(0,Q,M,0), regM);
+               break;
+            case ARMneon_CLZ:
+               insn = XXXXXXXX(0xF, X0011, BITS4(1,D,1,1), BITS4(sz1,sz2,0,0),
+                               regD, X0100, BITS4(1,Q,M,0), regM);
+               break;
+            case ARMneon_CLS:
+               insn = XXXXXXXX(0xF, X0011, BITS4(1,D,1,1), BITS4(sz1,sz2,0,0),
+                               regD, X0100, BITS4(0,Q,M,0), regM);
+               break;
+            case ARMneon_ABS:
+               insn = XXXXXXXX(0xF, X0011, BITS4(1,D,1,1), BITS4(sz1,sz2,0,1),
+                               regD, X0011, BITS4(0,Q,M,0), regM);
+               break;
+            case ARMneon_DUP:
+               sz1 = i->ARMin.NUnary.size == 0 ? 1 : 0;
+               sz2 = i->ARMin.NUnary.size == 1 ? 1 : 0;
+               vassert(sz1 + sz2 < 2);
+               insn = XXXXXXXX(0xE, X1110, BITS4(1, sz1, Q, 0), regD, regM,
+                               X1011, BITS4(D,0,sz2,1), X0000);
+               break;
+            case ARMneon_REV16:
+               insn = XXXXXXXX(0xF, X0011, BITS4(1,D,1,1), BITS4(sz1,sz2,0,0),
+                               regD, BITS4(0,0,0,1), BITS4(0,Q,M,0), regM);
+               break;
+            case ARMneon_REV32:
+               insn = XXXXXXXX(0xF, X0011, BITS4(1,D,1,1), BITS4(sz1,sz2,0,0),
+                               regD, BITS4(0,0,0,0), BITS4(1,Q,M,0), regM);
+               break;
+            case ARMneon_REV64:
+               insn = XXXXXXXX(0xF, X0011, BITS4(1,D,1,1), BITS4(sz1,sz2,0,0),
+                               regD, BITS4(0,0,0,0), BITS4(0,Q,M,0), regM);
+               break;
+            case ARMneon_PADDLU:
+               insn = XXXXXXXX(0xF, X0011, BITS4(1,D,1,1), BITS4(sz1,sz2,0,0),
+                               regD, X0010, BITS4(1,Q,M,0), regM);
+               break;
+            case ARMneon_PADDLS:
+               insn = XXXXXXXX(0xF, X0011, BITS4(1,D,1,1), BITS4(sz1,sz2,0,0),
+                               regD, X0010, BITS4(0,Q,M,0), regM);
+               break;
+            case ARMneon_VQSHLNUU:
+               insn = XXXXXXXX(0xF, X0011,
+                               (1 << 3) | (D << 2) | ((sz >> 4) & 3),
+                               sz & 0xf, regD, X0111,
+                               BITS4(sz >> 6,Q,M,1), regM);
+               break;
+            case ARMneon_VQSHLNSS:
+               insn = XXXXXXXX(0xF, X0010,
+                               (1 << 3) | (D << 2) | ((sz >> 4) & 3),
+                               sz & 0xf, regD, X0111,
+                               BITS4(sz >> 6,Q,M,1), regM);
+               break;
+            case ARMneon_VQSHLNUS:
+               insn = XXXXXXXX(0xF, X0011,
+                               (1 << 3) | (D << 2) | ((sz >> 4) & 3),
+                               sz & 0xf, regD, X0110,
+                               BITS4(sz >> 6,Q,M,1), regM);
+               break;
+            case ARMneon_VCVTFtoS:
+               insn = XXXXXXXX(0xF, X0011, BITS4(1,D,1,1), X1011, regD, X0111,
+                               BITS4(0,Q,M,0), regM);
+               break;
+            case ARMneon_VCVTFtoU:
+               insn = XXXXXXXX(0xF, X0011, BITS4(1,D,1,1), X1011, regD, X0111,
+                               BITS4(1,Q,M,0), regM);
+               break;
+            case ARMneon_VCVTStoF:
+               insn = XXXXXXXX(0xF, X0011, BITS4(1,D,1,1), X1011, regD, X0110,
+                               BITS4(0,Q,M,0), regM);
+               break;
+            case ARMneon_VCVTUtoF:
+               insn = XXXXXXXX(0xF, X0011, BITS4(1,D,1,1), X1011, regD, X0110,
+                               BITS4(1,Q,M,0), regM);
+               break;
+            case ARMneon_VCVTFtoFixedU:
+               sz1 = (sz >> 5) & 1;
+               sz2 = (sz >> 4) & 1;
+               sz &= 0xf;
+               insn = XXXXXXXX(0xF, X0011,
+                               BITS4(1,D,sz1,sz2), sz, regD, X1111,
+                               BITS4(0,Q,M,1), regM);
+               break;
+            case ARMneon_VCVTFtoFixedS:
+               sz1 = (sz >> 5) & 1;
+               sz2 = (sz >> 4) & 1;
+               sz &= 0xf;
+               insn = XXXXXXXX(0xF, X0010,
+                               BITS4(1,D,sz1,sz2), sz, regD, X1111,
+                               BITS4(0,Q,M,1), regM);
+               break;
+            case ARMneon_VCVTFixedUtoF:
+               sz1 = (sz >> 5) & 1;
+               sz2 = (sz >> 4) & 1;
+               sz &= 0xf;
+               insn = XXXXXXXX(0xF, X0011,
+                               BITS4(1,D,sz1,sz2), sz, regD, X1110,
+                               BITS4(0,Q,M,1), regM);
+               break;
+            case ARMneon_VCVTFixedStoF:
+               sz1 = (sz >> 5) & 1;
+               sz2 = (sz >> 4) & 1;
+               sz &= 0xf;
+               insn = XXXXXXXX(0xF, X0010,
+                               BITS4(1,D,sz1,sz2), sz, regD, X1110,
+                               BITS4(0,Q,M,1), regM);
+               break;
+            case ARMneon_VCVTF32toF16:
+               insn = XXXXXXXX(0xF, X0011, BITS4(1,D,1,1), X0110, regD, X0110,
+                               BITS4(0,0,M,0), regM);
+               break;
+            case ARMneon_VCVTF16toF32:
+               insn = XXXXXXXX(0xF, X0011, BITS4(1,D,1,1), X0110, regD, X0111,
+                               BITS4(0,0,M,0), regM);
+               break;
+            case ARMneon_VRECIP:
+               insn = XXXXXXXX(0xF, X0011, BITS4(1,D,1,1), X1011, regD, X0100,
+                               BITS4(0,Q,M,0), regM);
+               break;
+            case ARMneon_VRECIPF:
+               insn = XXXXXXXX(0xF, X0011, BITS4(1,D,1,1), X1011, regD, X0101,
+                               BITS4(0,Q,M,0), regM);
+               break;
+            case ARMneon_VABSFP:
+               insn = XXXXXXXX(0xF, X0011, BITS4(1,D,1,1), X1001, regD, X0111,
+                               BITS4(0,Q,M,0), regM);
+               break;
+            case ARMneon_VRSQRTEFP:
+               insn = XXXXXXXX(0xF, X0011, BITS4(1,D,1,1), X1011, regD, X0101,
+                               BITS4(1,Q,M,0), regM);
+               break;
+            case ARMneon_VRSQRTE:
+               insn = XXXXXXXX(0xF, X0011, BITS4(1,D,1,1), X1011, regD, X0100,
+                               BITS4(1,Q,M,0), regM);
+               break;
+            case ARMneon_VNEGF:
+               insn = XXXXXXXX(0xF, X0011, BITS4(1,D,1,1), X1001, regD, X0111,
+                               BITS4(1,Q,M,0), regM);
+               break;
+            default:
+               goto bad;
+         }
+         *p++ = insn;
+         goto done;
+      }
+      case ARMin_NDual: {
+         UInt Q = i->ARMin.NDual.Q ? 1 : 0;
+         UInt regD = (hregClass(i->ARMin.NDual.arg1) == HRcVec128)
+                       ? (qregNo(i->ARMin.NDual.arg1) << 1)
+                       : dregNo(i->ARMin.NDual.arg1);
+         UInt regM = (hregClass(i->ARMin.NDual.arg2) == HRcVec128)
+                       ? (qregNo(i->ARMin.NDual.arg2) << 1)
+                       : dregNo(i->ARMin.NDual.arg2);
+         UInt D = regD >> 4;
+         UInt M = regM >> 4;
+         UInt sz1 = i->ARMin.NDual.size >> 1;
+         UInt sz2 = i->ARMin.NDual.size & 1;
+         UInt insn;
+         regD &= 0xF;
+         regM &= 0xF;
+         switch (i->ARMin.NDual.op) {
+            case ARMneon_TRN: /* VTRN reg, reg */
+               insn = XXXXXXXX(0xF, X0011, BITS4(1,D,1,1), BITS4(sz1,sz2,1,0),
+                               regD, X0000, BITS4(1,Q,M,0), regM);
+               break;
+            case ARMneon_ZIP: /* VZIP reg, reg */
+               insn = XXXXXXXX(0xF, X0011, BITS4(1,D,1,1), BITS4(sz1,sz2,1,0),
+                               regD, X0001, BITS4(1,Q,M,0), regM);
+               break;
+            case ARMneon_UZP: /* VUZP reg, reg */
+               insn = XXXXXXXX(0xF, X0011, BITS4(1,D,1,1), BITS4(sz1,sz2,1,0),
+                               regD, X0001, BITS4(0,Q,M,0), regM);
+               break;
+            default:
+               goto bad;
+         }
+         *p++ = insn;
+         goto done;
+      }
+      case ARMin_NBinary: {
+         UInt Q = i->ARMin.NBinary.Q ? 1 : 0;
+         UInt regD = (hregClass(i->ARMin.NBinary.dst) == HRcVec128)
+                       ? (qregNo(i->ARMin.NBinary.dst) << 1)
+                       : dregNo(i->ARMin.NBinary.dst);
+         UInt regN = (hregClass(i->ARMin.NBinary.argL) == HRcVec128)
+                       ? (qregNo(i->ARMin.NBinary.argL) << 1)
+                       : dregNo(i->ARMin.NBinary.argL);
+         UInt regM = (hregClass(i->ARMin.NBinary.argR) == HRcVec128)
+                       ? (qregNo(i->ARMin.NBinary.argR) << 1)
+                       : dregNo(i->ARMin.NBinary.argR);
+         UInt sz1 = i->ARMin.NBinary.size >> 1;
+         UInt sz2 = i->ARMin.NBinary.size & 1;
+         UInt D = regD >> 4;
+         UInt N = regN >> 4;
+         UInt M = regM >> 4;
+         UInt insn;
+         regD &= 0xF;
+         regM &= 0xF;
+         regN &= 0xF;
+         switch (i->ARMin.NBinary.op) {
+            case ARMneon_VAND: /* VAND reg, reg, reg */
+               insn = XXXXXXXX(0xF, X0010, BITS4(0,D,0,0), regN, regD, X0001,
+                               BITS4(N,Q,M,1), regM);
+               break;
+            case ARMneon_VORR: /* VORR reg, reg, reg*/
+               insn = XXXXXXXX(0xF, X0010, BITS4(0,D,1,0), regN, regD, X0001,
+                               BITS4(N,Q,M,1), regM);
+               break;
+            case ARMneon_VXOR: /* VEOR reg, reg, reg */
+               insn = XXXXXXXX(0xF, X0011, BITS4(0,D,0,0), regN, regD, X0001,
+                               BITS4(N,Q,M,1), regM);
+               break;
+            case ARMneon_VADD: /* VADD reg, reg, reg */
+               insn = XXXXXXXX(0xF, X0010, BITS4(0,D,sz1,sz2), regN, regD,
+                               X1000, BITS4(N,Q,M,0), regM);
+               break;
+            case ARMneon_VSUB: /* VSUB reg, reg, reg */
+               insn = XXXXXXXX(0xF, X0011, BITS4(0,D,sz1,sz2), regN, regD,
+                               X1000, BITS4(N,Q,M,0), regM);
+               break;
+            case ARMneon_VMINU: /* VMIN.Uxx reg, reg, reg */
+               insn = XXXXXXXX(0xF, X0011, BITS4(0,D,sz1,sz2), regN, regD,
+                               X0110, BITS4(N,Q,M,1), regM);
+               break;
+            case ARMneon_VMINS: /* VMIN.Sxx reg, reg, reg */
+               insn = XXXXXXXX(0xF, X0010, BITS4(0,D,sz1,sz2), regN, regD,
+                               X0110, BITS4(N,Q,M,1), regM);
+               break;
+            case ARMneon_VMAXU: /* VMAX.Uxx reg, reg, reg */
+               insn = XXXXXXXX(0xF, X0011, BITS4(0,D,sz1,sz2), regN, regD,
+                               X0110, BITS4(N,Q,M,0), regM);
+               break;
+            case ARMneon_VMAXS: /* VMAX.Sxx reg, reg, reg */
+               insn = XXXXXXXX(0xF, X0010, BITS4(0,D,sz1,sz2), regN, regD,
+                               X0110, BITS4(N,Q,M,0), regM);
+               break;
+            case ARMneon_VRHADDS: /* VRHADD.Sxx reg, reg, reg */
+               insn = XXXXXXXX(0xF, X0010, BITS4(0,D,sz1,sz2), regN, regD,
+                               X0001, BITS4(N,Q,M,0), regM);
+               break;
+            case ARMneon_VRHADDU: /* VRHADD.Uxx reg, reg, reg */
+               insn = XXXXXXXX(0xF, X0011, BITS4(0,D,sz1,sz2), regN, regD,
+                               X0001, BITS4(N,Q,M,0), regM);
+               break;
+            case ARMneon_VQADDU: /* VQADD unsigned reg, reg, reg */
+               insn = XXXXXXXX(0xF, X0011, BITS4(0,D,sz1,sz2), regN, regD,
+                               X0000, BITS4(N,Q,M,1), regM);
+               break;
+            case ARMneon_VQADDS: /* VQADD signed reg, reg, reg */
+               insn = XXXXXXXX(0xF, X0010, BITS4(0,D,sz1,sz2), regN, regD,
+                               X0000, BITS4(N,Q,M,1), regM);
+               break;
+            case ARMneon_VQSUBU: /* VQSUB unsigned reg, reg, reg */
+               insn = XXXXXXXX(0xF, X0011, BITS4(0,D,sz1,sz2), regN, regD,
+                               X0010, BITS4(N,Q,M,1), regM);
+               break;
+            case ARMneon_VQSUBS: /* VQSUB signed reg, reg, reg */
+               insn = XXXXXXXX(0xF, X0010, BITS4(0,D,sz1,sz2), regN, regD,
+                               X0010, BITS4(N,Q,M,1), regM);
+               break;
+            case ARMneon_VCGTU: /* VCGT unsigned reg, reg, reg */
+               insn = XXXXXXXX(0xF, X0011, BITS4(0,D,sz1,sz2), regN, regD,
+                               X0011, BITS4(N,Q,M,0), regM);
+               break;
+            case ARMneon_VCGTS: /* VCGT signed reg, reg, reg */
+               insn = XXXXXXXX(0xF, X0010, BITS4(0,D,sz1,sz2), regN, regD,
+                               X0011, BITS4(N,Q,M,0), regM);
+               break;
+            case ARMneon_VCGEU: /* VCGE unsigned reg, reg, reg */
+               insn = XXXXXXXX(0xF, X0011, BITS4(0,D,sz1,sz2), regN, regD,
+                               X0011, BITS4(N,Q,M,1), regM);
+               break;
+            case ARMneon_VCGES: /* VCGE signed reg, reg, reg */
+               insn = XXXXXXXX(0xF, X0010, BITS4(0,D,sz1,sz2), regN, regD,
+                               X0011, BITS4(N,Q,M,1), regM);
+               break;
+            case ARMneon_VCEQ: /* VCEQ reg, reg, reg */
+               insn = XXXXXXXX(0xF, X0011, BITS4(0,D,sz1,sz2), regN, regD,
+                               X1000, BITS4(N,Q,M,1), regM);
+               break;
+            case ARMneon_VEXT: /* VEXT.8 reg, reg, #imm4*/
+               if (i->ARMin.NBinary.size >= 16)
+                  goto bad;
+               insn = XXXXXXXX(0xF, X0010, BITS4(1,D,1,1), regN, regD,
+                               i->ARMin.NBinary.size & 0xf, BITS4(N,Q,M,0),
+                               regM);
+               break;
+            case ARMneon_VMUL:
+               insn = XXXXXXXX(0xF, X0010, BITS4(0,D,sz1,sz2), regN, regD,
+                               X1001, BITS4(N,Q,M,1), regM);
+               break;
+            case ARMneon_VMULLU:
+               insn = XXXXXXXX(0xF, X0011, BITS4(1,D,sz1,sz2), regN, regD,
+                               X1100, BITS4(N,0,M,0), regM);
+               break;
+            case ARMneon_VMULLS:
+               insn = XXXXXXXX(0xF, X0010, BITS4(1,D,sz1,sz2), regN, regD,
+                               X1100, BITS4(N,0,M,0), regM);
+               break;
+            case ARMneon_VMULP:
+               insn = XXXXXXXX(0xF, X0011, BITS4(0,D,sz1,sz2), regN, regD,
+                               X1001, BITS4(N,Q,M,1), regM);
+               break;
+            case ARMneon_VMULFP:
+               insn = XXXXXXXX(0xF, X0011, BITS4(0,D,0,0), regN, regD,
+                               X1101, BITS4(N,Q,M,1), regM);
+               break;
+            case ARMneon_VMULLP:
+               insn = XXXXXXXX(0xF, X0010, BITS4(1,D,sz1,sz2), regN, regD,
+                               X1110, BITS4(N,0,M,0), regM);
+               break;
+            case ARMneon_VQDMULH:
+               insn = XXXXXXXX(0xF, X0010, BITS4(0,D,sz1,sz2), regN, regD,
+                               X1011, BITS4(N,Q,M,0), regM);
+               break;
+            case ARMneon_VQRDMULH:
+               insn = XXXXXXXX(0xF, X0011, BITS4(0,D,sz1,sz2), regN, regD,
+                               X1011, BITS4(N,Q,M,0), regM);
+               break;
+            case ARMneon_VQDMULL:
+               insn = XXXXXXXX(0xF, X0010, BITS4(1,D,sz1,sz2), regN, regD,
+                               X1101, BITS4(N,0,M,0), regM);
+               break;
+            case ARMneon_VTBL:
+               insn = XXXXXXXX(0xF, X0011, BITS4(1,D,1,1), regN, regD,
+                               X1000, BITS4(N,0,M,0), regM);
+               break;
+            case ARMneon_VPADD:
+               insn = XXXXXXXX(0xF, X0010, BITS4(0,D,sz1,sz2), regN, regD,
+                               X1011, BITS4(N,Q,M,1), regM);
+               break;
+            case ARMneon_VPADDFP:
+               insn = XXXXXXXX(0xF, X0011, BITS4(0,D,0,0), regN, regD,
+                               X1101, BITS4(N,Q,M,0), regM);
+               break;
+            case ARMneon_VPMINU:
+               insn = XXXXXXXX(0xF, X0011, BITS4(0,D,sz1,sz2), regN, regD,
+                               X1010, BITS4(N,Q,M,1), regM);
+               break;
+            case ARMneon_VPMINS:
+               insn = XXXXXXXX(0xF, X0010, BITS4(0,D,sz1,sz2), regN, regD,
+                               X1010, BITS4(N,Q,M,1), regM);
+               break;
+            case ARMneon_VPMAXU:
+               insn = XXXXXXXX(0xF, X0011, BITS4(0,D,sz1,sz2), regN, regD,
+                               X1010, BITS4(N,Q,M,0), regM);
+               break;
+            case ARMneon_VPMAXS:
+               insn = XXXXXXXX(0xF, X0010, BITS4(0,D,sz1,sz2), regN, regD,
+                               X1010, BITS4(N,Q,M,0), regM);
+               break;
+            case ARMneon_VADDFP: /* VADD reg, reg, reg */
+               insn = XXXXXXXX(0xF, X0010, BITS4(0,D,0,0), regN, regD,
+                               X1101, BITS4(N,Q,M,0), regM);
+               break;
+            case ARMneon_VSUBFP: /* VADD reg, reg, reg */
+               insn = XXXXXXXX(0xF, X0010, BITS4(0,D,1,0), regN, regD,
+                               X1101, BITS4(N,Q,M,0), regM);
+               break;
+            case ARMneon_VABDFP: /* VABD reg, reg, reg */
+               insn = XXXXXXXX(0xF, X0011, BITS4(0,D,1,0), regN, regD,
+                               X1101, BITS4(N,Q,M,0), regM);
+               break;
+            case ARMneon_VMINF:
+               insn = XXXXXXXX(0xF, X0010, BITS4(0,D,1,0), regN, regD,
+                               X1111, BITS4(N,Q,M,0), regM);
+               break;
+            case ARMneon_VMAXF:
+               insn = XXXXXXXX(0xF, X0010, BITS4(0,D,0,0), regN, regD,
+                               X1111, BITS4(N,Q,M,0), regM);
+               break;
+            case ARMneon_VPMINF:
+               insn = XXXXXXXX(0xF, X0011, BITS4(0,D,1,0), regN, regD,
+                               X1111, BITS4(N,Q,M,0), regM);
+               break;
+            case ARMneon_VPMAXF:
+               insn = XXXXXXXX(0xF, X0011, BITS4(0,D,0,0), regN, regD,
+                               X1111, BITS4(N,Q,M,0), regM);
+               break;
+            case ARMneon_VRECPS:
+               insn = XXXXXXXX(0xF, X0010, BITS4(0,D,0,0), regN, regD, X1111,
+                               BITS4(N,Q,M,1), regM);
+               break;
+            case ARMneon_VCGTF:
+               insn = XXXXXXXX(0xF, X0011, BITS4(0,D,1,0), regN, regD, X1110,
+                               BITS4(N,Q,M,0), regM);
+               break;
+            case ARMneon_VCGEF:
+               insn = XXXXXXXX(0xF, X0011, BITS4(0,D,0,0), regN, regD, X1110,
+                               BITS4(N,Q,M,0), regM);
+               break;
+            case ARMneon_VCEQF:
+               insn = XXXXXXXX(0xF, X0010, BITS4(0,D,0,0), regN, regD, X1110,
+                               BITS4(N,Q,M,0), regM);
+               break;
+            case ARMneon_VRSQRTS:
+               insn = XXXXXXXX(0xF, X0010, BITS4(0,D,1,0), regN, regD, X1111,
+                               BITS4(N,Q,M,1), regM);
+               break;
+            default:
+               goto bad;
+         }
+         *p++ = insn;
+         goto done;
+      }
+      case ARMin_NShift: {
+         UInt Q = i->ARMin.NShift.Q ? 1 : 0;
+         UInt regD = (hregClass(i->ARMin.NShift.dst) == HRcVec128)
+                       ? (qregNo(i->ARMin.NShift.dst) << 1)
+                       : dregNo(i->ARMin.NShift.dst);
+         UInt regM = (hregClass(i->ARMin.NShift.argL) == HRcVec128)
+                       ? (qregNo(i->ARMin.NShift.argL) << 1)
+                       : dregNo(i->ARMin.NShift.argL);
+         UInt regN = (hregClass(i->ARMin.NShift.argR) == HRcVec128)
+                       ? (qregNo(i->ARMin.NShift.argR) << 1)
+                       : dregNo(i->ARMin.NShift.argR);
+         UInt sz1 = i->ARMin.NShift.size >> 1;
+         UInt sz2 = i->ARMin.NShift.size & 1;
+         UInt D = regD >> 4;
+         UInt N = regN >> 4;
+         UInt M = regM >> 4;
+         UInt insn;
+         regD &= 0xF;
+         regM &= 0xF;
+         regN &= 0xF;
+         switch (i->ARMin.NShift.op) {
+            case ARMneon_VSHL:
+               insn = XXXXXXXX(0xF, X0011, BITS4(0,D,sz1,sz2), regN, regD,
+                               X0100, BITS4(N,Q,M,0), regM);
+               break;
+            case ARMneon_VSAL:
+               insn = XXXXXXXX(0xF, X0010, BITS4(0,D,sz1,sz2), regN, regD,
+                               X0100, BITS4(N,Q,M,0), regM);
+               break;
+            case ARMneon_VQSHL:
+               insn = XXXXXXXX(0xF, X0011, BITS4(0,D,sz1,sz2), regN, regD,
+                               X0100, BITS4(N,Q,M,1), regM);
+               break;
+            case ARMneon_VQSAL:
+               insn = XXXXXXXX(0xF, X0010, BITS4(0,D,sz1,sz2), regN, regD,
+                               X0100, BITS4(N,Q,M,1), regM);
+               break;
+            default:
+               goto bad;
+         }
+         *p++ = insn;
+         goto done;
+      }
+      case ARMin_NeonImm: {
+         UInt Q = (hregClass(i->ARMin.NeonImm.dst) == HRcVec128) ? 1 : 0;
+         UInt regD = Q ? (qregNo(i->ARMin.NeonImm.dst) << 1) :
+                          dregNo(i->ARMin.NeonImm.dst);
+         UInt D = regD >> 4;
+         UInt imm = i->ARMin.NeonImm.imm->imm8;
+         UInt tp = i->ARMin.NeonImm.imm->type;
+         UInt j = imm >> 7;
+         UInt imm3 = (imm >> 4) & 0x7;
+         UInt imm4 = imm & 0xF;
+         UInt cmode, op;
+         UInt insn;
+         regD &= 0xF;
+         if (tp == 9)
+            op = 1;
+         else
+            op = 0;
+         switch (tp) {
+            case 0:
+            case 1:
+            case 2:
+            case 3:
+            case 4:
+            case 5:
+               cmode = tp << 1;
+               break;
+            case 9:
+            case 6:
+               cmode = 14;
+               break;
+            case 7:
+               cmode = 12;
+               break;
+            case 8:
+               cmode = 13;
+               break;
+            case 10:
+               cmode = 15;
+               break;
+            default:
+               vpanic("ARMin_NeonImm");
+
+         }
+         insn = XXXXXXXX(0xF, BITS4(0,0,1,j), BITS4(1,D,0,0), imm3, regD,
+                         cmode, BITS4(0,Q,op,1), imm4);
+         *p++ = insn;
+         goto done;
+      }
+      case ARMin_NCMovQ: {
+         UInt cc = (UInt)i->ARMin.NCMovQ.cond;
+         UInt qM = qregNo(i->ARMin.NCMovQ.src) << 1;
+         UInt qD = qregNo(i->ARMin.NCMovQ.dst) << 1;
+         UInt vM = qM & 0xF;
+         UInt vD = qD & 0xF;
+         UInt M  = (qM >> 4) & 1;
+         UInt D  = (qD >> 4) & 1;
+         vassert(cc < 16 && cc != ARMcc_AL && cc != ARMcc_NV);
+         /* b!cc here+8: !cc A00 0000 */
+         UInt insn = XXXXXXXX(cc ^ 1, 0xA, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0);
+         *p++ = insn;
+         /* vmov qD, qM */
+         insn = XXXXXXXX(0xF, 0x2, BITS4(0,D,1,0),
+                         vM, vD, BITS4(0,0,0,1), BITS4(M,1,M,1), vM);
+         *p++ = insn;
+         goto done;
+      }
+      case ARMin_Add32: {
+         UInt regD = iregNo(i->ARMin.Add32.rD);
+         UInt regN = iregNo(i->ARMin.Add32.rN);
+         UInt imm32 = i->ARMin.Add32.imm32;
+         vassert(regD != regN);
+         /* MOV regD, imm32 */
+         p = imm32_to_iregNo((UInt *)p, regD, imm32);
+         /* ADD regD, regN, regD */
+         UInt insn = XXXXXXXX(0xE, 0, X1000, regN, regD, 0, 0, regD);
+         *p++ = insn;
+         goto done;
+      }
+      /* ... */
       default: 
          goto bad;
     }
@@ -2290,7 +4055,7 @@ Int emit_ARMInstr ( UChar* buf, Int nbuf, ARMInstr* i,
    ppARMInstr(i);
    vpanic("emit_ARMInstr");
    /*NOTREACHED*/
-    
+
   done:
    vassert(((UChar*)p) - &buf[0] <= 32);
    return ((UChar*)p) - &buf[0];

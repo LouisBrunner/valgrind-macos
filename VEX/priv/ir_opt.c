@@ -931,6 +931,7 @@ static IRExpr* mkZeroForXor ( IROp op )
    switch (op) {
       case Iop_Xor8:  return IRExpr_Const(IRConst_U8(0));
       case Iop_Xor16: return IRExpr_Const(IRConst_U16(0));
+      case Iop_Sub32:
       case Iop_Xor32: return IRExpr_Const(IRConst_U32(0));
       case Iop_Xor64: return IRExpr_Const(IRConst_U64(0));
       case Iop_XorV128: return IRExpr_Const(IRConst_V128(0));
@@ -1584,11 +1585,13 @@ static IRExpr* fold_Expr ( IRExpr* e )
          }
 
          /* Xor8/16/32/64/V128(t,t) ==> 0, for some IRTemp t */
+         /* Sub32(t,t) ==> 0, for some IRTemp t */
          if (   (e->Iex.Binop.op == Iop_Xor64
               || e->Iex.Binop.op == Iop_Xor32
               || e->Iex.Binop.op == Iop_Xor16
               || e->Iex.Binop.op == Iop_Xor8
-              || e->Iex.Binop.op == Iop_XorV128)
+              || e->Iex.Binop.op == Iop_XorV128
+              || e->Iex.Binop.op == Iop_Sub32)
              && sameIRTemps(e->Iex.Binop.arg1, e->Iex.Binop.arg2)) {
             e2 = mkZeroForXor(e->Iex.Binop.op);
          }
@@ -2199,8 +2202,10 @@ static Bool isOneU1 ( IRExpr* e )
 /*---------------------------------------------------------------*/
 
 static 
-IRSB* spec_helpers_BB ( IRSB* bb,
-                        IRExpr* (*specHelper) ( HChar*, IRExpr**) )   
+IRSB* spec_helpers_BB(
+         IRSB* bb,
+         IRExpr* (*specHelper) (HChar*, IRExpr**, IRStmt**, Int)
+      )
 {
    Int     i;
    IRStmt* st;
@@ -2215,7 +2220,8 @@ IRSB* spec_helpers_BB ( IRSB* bb,
          continue;
 
       ex = (*specHelper)( st->Ist.WrTmp.data->Iex.CCall.cee->name,
-                          st->Ist.WrTmp.data->Iex.CCall.args );
+                          st->Ist.WrTmp.data->Iex.CCall.args,
+                          &bb->stmts[0], i );
       if (!ex)
         /* the front end can't think of a suitable replacement */
         continue;
@@ -4361,7 +4367,7 @@ static Bool iropt_verbose = False; /* True; */
 static 
 IRSB* cheap_transformations ( 
          IRSB* bb,
-         IRExpr* (*specHelper) (HChar*, IRExpr**),
+         IRExpr* (*specHelper) (HChar*, IRExpr**, IRStmt**, Int),
          Bool (*preciseMemExnsFn)(Int,Int)
       )
 {
@@ -4512,10 +4518,13 @@ static void considerExpensives ( /*OUT*/Bool* hasGetIorPutI,
 */
 
 
-IRSB* do_iropt_BB ( IRSB* bb0,
-                    IRExpr* (*specHelper) (HChar*, IRExpr**),
-                    Bool (*preciseMemExnsFn)(Int,Int),
-                    Addr64 guest_addr )
+IRSB* do_iropt_BB(
+         IRSB* bb0,
+         IRExpr* (*specHelper) (HChar*, IRExpr**, IRStmt**, Int),
+         Bool (*preciseMemExnsFn)(Int,Int),
+         Addr64 guest_addr,
+         VexArch guest_arch
+      )
 {
    static Int n_total     = 0;
    static Int n_expensive = 0;
@@ -4545,6 +4554,15 @@ IRSB* do_iropt_BB ( IRSB* bb0,
       cleanup pass. */
 
    bb = cheap_transformations( bb, specHelper, preciseMemExnsFn );
+
+   if (guest_arch == VexArchARM) {
+      /* Translating Thumb2 code produces a lot of chaff.  We have to
+         work extra hard to get rid of it. */
+      bb = cprop_BB(bb);
+      bb = spec_helpers_BB ( bb, specHelper );
+      redundant_put_removal_BB ( bb, preciseMemExnsFn );
+      do_deadcode_BB( bb );
+   }
 
    if (vex_control.iropt_level > 1) {
 

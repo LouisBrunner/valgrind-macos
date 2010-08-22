@@ -182,13 +182,17 @@ void ppc64g_dirtyhelper_LVS ( VexGuestPPC64State* gst,
 /* Helper-function specialiser. */
 
 IRExpr* guest_ppc32_spechelper ( HChar* function_name,
-                                 IRExpr** args )
+                                 IRExpr** args,
+                                 IRStmt** precedingStmts,
+                                 Int      n_precedingStmts )
 {
    return NULL;
 }
 
 IRExpr* guest_ppc64_spechelper ( HChar* function_name,
-                                 IRExpr** args )
+                                 IRExpr** args,
+                                 IRStmt** precedingStmts,
+                                 Int      n_precedingStmts )
 {
    return NULL;
 }

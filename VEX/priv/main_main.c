@@ -183,7 +183,7 @@ VexTranslateResult LibVEX_Translate ( VexTranslateArgs* vta )
    HInstrArray* (*iselSB)       ( IRSB*, VexArch, VexArchInfo*, 
                                                   VexAbiInfo* );
    Int          (*emit)         ( UChar*, Int, HInstr*, Bool, void* );
-   IRExpr*      (*specHelper)   ( HChar*, IRExpr** );
+   IRExpr*      (*specHelper)   ( HChar*, IRExpr**, IRStmt**, Int );
    Bool         (*preciseMemExnsFn) ( Int, Int );
 
    DisOneInstrFn disInstrFn;
@@ -501,7 +501,8 @@ VexTranslateResult LibVEX_Translate ( VexTranslateArgs* vta )
 
    /* Clean it up, hopefully a lot. */
    irsb = do_iropt_BB ( irsb, specHelper, preciseMemExnsFn, 
-                              vta->guest_bytes_addr );
+                              vta->guest_bytes_addr,
+                              vta->arch_guest );
    sanityCheckIRSB( irsb, "after initial iropt", 
                     True/*must be flat*/, guest_word_type );
 
@@ -845,7 +846,41 @@ static HChar* show_hwcaps_ppc64 ( UInt hwcaps )
 
 static HChar* show_hwcaps_arm ( UInt hwcaps )
 {
-   if (hwcaps == 0) return "arm-baseline";
+   Bool N = ((hwcaps & VEX_HWCAPS_ARM_NEON) != 0);
+   Bool vfp = ((hwcaps & (VEX_HWCAPS_ARM_VFP |
+               VEX_HWCAPS_ARM_VFP2 | VEX_HWCAPS_ARM_VFP3)) != 0);
+   switch (VEX_ARM_ARCHLEVEL(hwcaps)) {
+      case 5:
+         if (N)
+            return NULL;
+         if (vfp)
+            return "ARMv5-vfp";
+         else
+            return "ARMv5";
+         return NULL;
+      case 6:
+         if (N)
+            return NULL;
+         if (vfp)
+            return "ARMv6-vfp";
+         else
+            return "ARMv6";
+         return NULL;
+      case 7:
+         if (vfp) {
+            if (N)
+               return "ARMv7-vfp-neon";
+            else
+               return "ARMv7-vfp";
+         } else {
+            if (N)
+               return "ARMv7-neon";
+            else
+               return "ARMv7";
+         }
+      default:
+         return NULL;
+   }
    return NULL;
 }
 

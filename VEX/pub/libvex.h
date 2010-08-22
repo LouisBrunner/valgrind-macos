@@ -94,8 +94,15 @@ typedef
                                           (fres,frsqrte,fsel,stfiwx) */
 
 /* arm: baseline capability is ARMv4 */
-/* No extra capabilities */
+/* Bits 5:0 - architecture level (e.g. 5 for v5, 6 for v6 etc) */
+#define VEX_HWCAPS_ARM_VFP    (1<<6)  /* VFP extension */
+#define VEX_HWCAPS_ARM_VFP2   (1<<7)  /* VFPv2 */
+#define VEX_HWCAPS_ARM_VFP3   (1<<8)  /* VFPv3 */
+/* Bits 15:10 reserved for (possible) future VFP revisions */
+#define VEX_HWCAPS_ARM_NEON   (1<<16) /* Advanced SIMD also known as NEON */
 
+/* Get an ARM architecure level from HWCAPS */
+#define VEX_ARM_ARCHLEVEL(x) ((x) & 0x3f)
 
 /* These return statically allocated strings. */
 

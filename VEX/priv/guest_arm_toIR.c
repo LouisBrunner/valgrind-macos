@@ -11847,7 +11847,7 @@ DisResult disInstr_THUMB_WRK (
             insn.  So, have a look at them. */
          forceZ = True; /* assume no 'it' insn found, till we do */
 
-         UShort* hwp = (UShort*)pc;
+         UShort* hwp = (UShort*)(HWord)pc;
          Int i;
          for (i = -1; i >= -9; i--) {
             /* We're in the same page.  (True, but commented out due
@@ -12863,7 +12863,7 @@ DisResult disInstr_THUMB_WRK (
       UInt rD   = INSN0(10,8);
       UInt imm8 = INSN0(7,0);
       putIRegT(rD, binop(Iop_Add32, 
-                         binop(Iop_And32, getIRegT(15), mkU32(~3UL)),
+                         binop(Iop_And32, getIRegT(15), mkU32(~3U)),
                          mkU32(imm8 * 4)),
                    condT);
       DIP("add r%u, pc, #%u\n", rD, imm8 * 4);
@@ -12923,7 +12923,7 @@ DisResult disInstr_THUMB_WRK (
       // now uncond
 
       assign(ea, binop(Iop_Add32, 
-                       binop(Iop_And32, getIRegT(15), mkU32(~3UL)),
+                       binop(Iop_And32, getIRegT(15), mkU32(~3U)),
                        mkU32(imm8 * 4)));
       put_ITSTATE(old_itstate); // backout
       putIRegT(rD, loadLE(Ity_I32, mkexpr(ea)),
@@ -13058,7 +13058,7 @@ DisResult disInstr_THUMB_WRK (
          IRTemp oldRn = newTemp(Ity_I32);
          IRTemp base  = newTemp(Ity_I32);
          assign(oldRn, getIRegT(rN));
-         assign(base, binop(Iop_And32, mkexpr(oldRn), mkU32(~3UL)));
+         assign(base, binop(Iop_And32, mkexpr(oldRn), mkU32(~3U)));
          for (i = 0; i < 8; i++) {
             if (0 == (list & (1 << i)))
                continue;
@@ -13112,7 +13112,7 @@ DisResult disInstr_THUMB_WRK (
          IRTemp oldRn = newTemp(Ity_I32);
          IRTemp base = newTemp(Ity_I32);
          assign(oldRn, getIRegT(rN));
-         assign(base, binop(Iop_And32, mkexpr(oldRn), mkU32(~3UL)));
+         assign(base, binop(Iop_And32, mkexpr(oldRn), mkU32(~3U)));
          for (i = 0; i < 8; i++) {
             if (0 == (list & (1 << i)))
                continue;
@@ -14865,7 +14865,7 @@ DisResult disInstr_THUMB_WRK (
          UInt imm32 = (INSN0(10,10) << 11)
                       | (INSN1(14,12) << 8) | INSN1(7,0);
          putIRegT(rD, binop(Iop_Add32, 
-                            binop(Iop_And32, getIRegT(15), mkU32(~3UL)),
+                            binop(Iop_And32, getIRegT(15), mkU32(~3U)),
                             mkU32(imm32)),
                       condT);
          DIP("add r%u, pc, #%u\n", rD, imm32);
@@ -14917,7 +14917,7 @@ DisResult disInstr_THUMB_WRK (
          UInt imm32 = (INSN0(10,10) << 11)
                       | (INSN1(14,12) << 8) | INSN1(7,0);
          putIRegT(rD, binop(Iop_Sub32, 
-                            binop(Iop_And32, getIRegT(15), mkU32(~3UL)),
+                            binop(Iop_And32, getIRegT(15), mkU32(~3U)),
                             mkU32(imm32)),
                       condT);
          DIP("sub r%u, pc, #%u\n", rD, imm32);

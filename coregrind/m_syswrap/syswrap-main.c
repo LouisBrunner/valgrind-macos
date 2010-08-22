@@ -1864,18 +1864,42 @@ void ML_(fixup_guest_state_to_restart_syscall) ( ThreadArchState* arch )
    }
 
 #elif defined(VGP_arm_linux)
-   // INTERWORKING FIXME.  This is certainly wrong.  Need to look at
-   // R15T to determine current mode, then back up accordingly.
-   arch->vex.guest_R15T -= 4;   // sizeof(arm instr)
-   {
-      UChar *p = (UChar*)arch->vex.guest_R15T;
-
-      if ((p[3] & 0xF) != 0xF)
+   if (arch->vex.guest_R15T & 1) {
+      // Thumb mode.  SVC is a encoded as
+      //   1101 1111 imm8
+      // where imm8 is the SVC number, and we only accept 0.
+      arch->vex.guest_R15T -= 2;   // sizeof(thumb 16 bit insn)
+      UChar* p     = (UChar*)(arch->vex.guest_R15T - 1);
+      Bool   valid = p[0] == 0 && p[1] == 0xDF;
+      if (!valid) {
          VG_(message)(Vg_DebugMsg,
-                      "?! restarting over syscall that is not syscall at %#llx %02x %02x %02x %02x\n",
+                      "?! restarting over (Thumb) syscall that is not syscall "
+                      "at %#llx %02x %02x\n",
+                      arch->vex.guest_R15T - 1ULL, p[0], p[1]);
+      }
+      vg_assert(valid);
+      // FIXME: NOTE, this really isn't right.  We need to back up
+      // ITSTATE to what it was before the SVC instruction, but we
+      // don't know what it was.  At least assert that it is now
+      // zero, because if it is nonzero then it must also have
+      // been nonzero for the SVC itself, which means it was
+      // conditional.  Urk.
+      vg_assert(arch->vex.guest_ITSTATE == 0);
+   } else {
+      // ARM mode.  SVC is encoded as 
+      //   cond 1111 imm24
+      // where imm24 is the SVC number, and we only accept 0.
+      arch->vex.guest_R15T -= 4;   // sizeof(arm instr)
+      UChar* p     = (UChar*)arch->vex.guest_R15T;
+      Bool   valid = p[0] == 0 && p[1] == 0 && p[2] == 0
+                     && (p[3] & 0xF) == 0xF;
+      if (!valid) {
+         VG_(message)(Vg_DebugMsg,
+                      "?! restarting over (ARM) syscall that is not syscall "
+                      "at %#llx %02x %02x %02x %02x\n",
                       arch->vex.guest_R15T + 0ULL, p[0], p[1], p[2], p[3]);
-
-      vg_assert((p[3] & 0xF) == 0xF);
+      }
+      vg_assert(valid);
    }
 
 #elif defined(VGP_ppc32_aix5) || defined(VGP_ppc64_aix5)

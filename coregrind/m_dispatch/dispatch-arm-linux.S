@@ -1,4 +1,3 @@
-
 /*--------------------------------------------------------------------*/
 /*--- The core dispatch loop, for jumping to a code address.       ---*/
 /*---                                         dispatch-arm-linux.S ---*/
@@ -30,6 +29,7 @@
 */
 
 #if defined(VGP_arm_linux)
+	.fpu vfp
 
 #include "pub_core_basics_asm.h"
 #include "pub_core_dispatch_asm.h"
@@ -63,7 +63,7 @@ VG_(run_innerloop):
         /* r0 (hence also [sp,#0]) holds guest_state */
         /* r1 holds do_profiling */
 	mov r8, r0
-	ldr r0, [r8, #OFFSET_arm_R15]
+	ldr r0, [r8, #OFFSET_arm_R15T]
         
        	/* fall into main loop (the right one) */
 	cmp r1, #0      /* do_profiling */
@@ -87,7 +87,7 @@ VG_(run_innerloop__dispatch_unprofiled):
 	bne  gsp_changed
 
 	/* save the jump address in the guest state */
-        str  r0, [r8, #OFFSET_arm_R15]
+        str  r0, [r8, #OFFSET_arm_R15T]
 
         /* Are we out of timeslice?  If yes, defer to scheduler. */
         ldr  r1, =VG_(dispatch_ctr)
@@ -132,7 +132,7 @@ VG_(run_innerloop__dispatch_profiled):
 	bne  gsp_changed
 
 	/* save the jump address in the guest state */
-        str  r0, [r8, #OFFSET_arm_R15]
+        str  r0, [r8, #OFFSET_arm_R15T]
 
         /* Are we out of timeslice?  If yes, defer to scheduler. */
         ldr  r1, =VG_(dispatch_ctr)
@@ -172,22 +172,22 @@ VG_(run_innerloop__dispatch_profiled):
 /*----------------------------------------------------*/
 
 gsp_changed:
-        // r0 = next guest addr (R15), r8 = modified gsp
+        // r0 = next guest addr (R15T), r8 = modified gsp
         /* Someone messed with the gsp.  Have to
            defer to scheduler to resolve this.  dispatch ctr
            is not yet decremented, so no need to increment. */
-        /* R15 is NOT up to date here.  First, need to write
-           r0 back to R15, but without trashing r8 since
+        /* R15T is NOT up to date here.  First, need to write
+           r0 back to R15T, but without trashing r8 since
            that holds the value we want to return to the scheduler.
            Hence use r1 transiently for the guest state pointer. */
 	ldr r1, [sp, #0]
-	str r0, [r1, #OFFSET_arm_R15]
+	str r0, [r1, #OFFSET_arm_R15T]
 	mov r0, r8      // "return modified gsp"
 	b run_innerloop_exit
         /*NOTREACHED*/
 
 counter_is_zero:
-        /* R15 is up to date here */
+        /* R15T is up to date here */
         /* Back out increment of the dispatch ctr */
         ldr  r1, =VG_(dispatch_ctr)
         ldr  r2, [r1]
@@ -198,7 +198,7 @@ counter_is_zero:
         /*NOTREACHED*/
         
 fast_lookup_failed:
-        /* R15 is up to date here */
+        /* R15T is up to date here */
         /* Back out increment of the dispatch ctr */
         ldr  r1, =VG_(dispatch_ctr)
         ldr  r2, [r1]
@@ -215,8 +215,8 @@ run_innerloop_exit:
         /* We're leaving.  Check that nobody messed with
            FPSCR in ways we don't expect. */
         fmrx r4, fpscr
-        bic  r4, #0xF0000000 /* mask out NZCV */
-        bic  r4, #0x0000001F /* mask out IXC,UFC,OFC,DZC,IOC */
+        bic  r4, #0xF8000000 /* mask out NZCV and QC */
+        bic  r4, #0x0000009F /* mask out IDC,IXC,UFC,OFC,DZC,IOC */
         cmp  r4, #0
         bne  invariant_violation
         b    run_innerloop_exit_REALLY

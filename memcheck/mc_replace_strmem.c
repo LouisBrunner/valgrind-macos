@@ -455,42 +455,68 @@ MEMCHR(VG_Z_DYLD,        memchr)
    void* VG_REPLACE_FUNCTION_ZU(soname,fnname) \
             ( void *dst, const void *src, SizeT len ) \
    { \
-      register char *d; \
-      register char *s; \
-      \
-      if (len == 0) \
-         return dst; \
-      \
       if (is_overlap(dst, src, len, len)) \
          RECORD_OVERLAP_ERROR("memcpy", dst, src, len); \
       \
-      if ( dst > src ) { \
-         d = (char *)dst + len - 1; \
-         s = (char *)src + len - 1; \
-         while ( len >= 4 ) { \
-            *d-- = *s--; \
-            *d-- = *s--; \
-            *d-- = *s--; \
-            *d-- = *s--; \
-            len -= 4; \
+      const Addr WS = sizeof(UWord); /* 8 or 4 */ \
+      const Addr WM = WS - 1;        /* 7 or 3 */ \
+      \
+      if (dst < src) { \
+      \
+         /* Copying backwards. */ \
+         SizeT n = len; \
+         Addr  d = (Addr)dst; \
+         Addr  s = (Addr)src; \
+         \
+         if (((s^d) & WM) == 0) { \
+            /* s and d have same UWord alignment. */ \
+            /* Pull up to a UWord boundary. */ \
+            while ((s & WM) != 0 && n >= 1) \
+               { *(UChar*)d = *(UChar*)s; s += 1; d += 1; n -= 1; } \
+            /* Copy UWords. */ \
+            while (n >= WS) \
+               { *(UWord*)d = *(UWord*)s; s += WS; d += WS; n -= WS; } \
+            if (n == 0) \
+               return dst; \
          } \
-         while ( len-- ) { \
-            *d-- = *s--; \
+         if (((s|d) & 1) == 0) { \
+            /* Both are 16-aligned; copy what we can thusly. */ \
+            while (n >= 2) \
+               { *(UShort*)d = *(UShort*)s; s += 2; d += 2; n -= 2; } \
          } \
-      } else if ( dst < src ) { \
-         d = (char *)dst; \
-         s = (char *)src; \
-         while ( len >= 4 ) { \
-            *d++ = *s++; \
-            *d++ = *s++; \
-            *d++ = *s++; \
-            *d++ = *s++; \
-            len -= 4; \
+         /* Copy leftovers, or everything if misaligned. */ \
+         while (n >= 1) \
+            { *(UChar*)d = *(UChar*)s; s += 1; d += 1; n -= 1; } \
+      \
+      } else if (dst > src) { \
+      \
+         SizeT n = len; \
+         Addr  d = ((Addr)dst) + n; \
+         Addr  s = ((Addr)src) + n; \
+         \
+         /* Copying forwards. */ \
+         if (((s^d) & WM) == 0) { \
+            /* s and d have same UWord alignment. */ \
+            /* Back down to a UWord boundary. */ \
+            while ((s & WM) != 0 && n >= 1) \
+               { s -= 1; d -= 1; *(UChar*)d = *(UChar*)s; n -= 1; } \
+            /* Copy UWords. */ \
+            while (n >= WS) \
+               { s -= WS; d -= WS; *(UWord*)d = *(UWord*)s; n -= WS; } \
+            if (n == 0) \
+               return dst; \
          } \
-         while ( len-- ) { \
-            *d++ = *s++; \
+         if (((s|d) & 1) == 0) { \
+            /* Both are 16-aligned; copy what we can thusly. */ \
+            while (n >= 2) \
+               { s -= 2; d -= 2; *(UShort*)d = *(UShort*)s; n -= 2; } \
          } \
+         /* Copy leftovers, or everything if misaligned. */ \
+         while (n >= 1) \
+            { s -= 1; d -= 1; *(UChar*)d = *(UChar*)s; n -= 1; } \
+         \
       } \
+      \
       return dst; \
    }
 
@@ -584,18 +610,16 @@ STPCPY(VG_Z_DYLD,                 stpcpy)
    void* VG_REPLACE_FUNCTION_ZU(soname,fnname)(void *s, Int c, SizeT n); \
    void* VG_REPLACE_FUNCTION_ZU(soname,fnname)(void *s, Int c, SizeT n) \
    { \
-      unsigned char *cp = s; \
-      while (n >= 4) { \
-         cp[0] = c; \
-         cp[1] = c; \
-         cp[2] = c; \
-         cp[3] = c; \
-         cp += 4; \
-         n -= 4; \
-      } \
-      while (n--) { \
-         *cp++ = c; \
-      } \
+      Addr a  = (Addr)s;   \
+      UInt c4 = (c & 0xFF); \
+      c4 = (c4 << 8) | c4; \
+      c4 = (c4 << 16) | c4; \
+      while ((a & 3) != 0 && n >= 1) \
+         { *(UChar*)a = (UChar)c; a += 1; n -= 1; } \
+      while (n >= 4) \
+         { *(UInt*)a = c4; a += 4; n -= 4; } \
+      while (n >= 1) \
+         { *(UChar*)a = (UChar)c; a += 1; n -= 1; } \
       return s; \
    }
 

@@ -4281,7 +4281,7 @@ PRE(sys_ioctl)
       PRE_MEM_WRITE( "ioctl(FIGETBSZ)", ARG3, sizeof(unsigned long));
       break;
    case VKI_FIBMAP:
-      PRE_MEM_READ( "ioctl(FIBMAP)", ARG3, sizeof(unsigned long));
+      PRE_MEM_READ( "ioctl(FIBMAP)", ARG3, sizeof(int));
       break;
 
    case VKI_FBIOGET_VSCREENINFO: /* 0x4600 */
@@ -5244,7 +5244,7 @@ POST(sys_ioctl)
       POST_MEM_WRITE(ARG3, sizeof(unsigned long));
       break;
    case VKI_FIBMAP:
-      POST_MEM_WRITE(ARG3, sizeof(unsigned long));
+      POST_MEM_WRITE(ARG3, sizeof(int));
       break;
 
    case VKI_FBIOGET_VSCREENINFO: //0x4600

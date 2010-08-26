@@ -240,9 +240,9 @@ static UInt local_sys_write_stderr ( HChar* buf, Int n )
    block[0] = (Int)buf;
    block[1] = n;
    __asm__ volatile (
-      "mov  r0, #1\n\t"
-      "ldr  r1, [%0]\n\t"
-      "ldr  r2, [%0, #4]\n\t"
+      "mov  r0, #2\n\t"        /* stderr */
+      "ldr  r1, [%0]\n\t"      /* buf */
+      "ldr  r2, [%0, #4]\n\t"  /* n */
       "mov  r7, #"VG_STRINGIFY(__NR_write)"\n\t"
       "svc  0x0\n"          /* write() */
       "str  r0, [%0]\n\t"

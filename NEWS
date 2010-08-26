@@ -29,6 +29,8 @@ Improvements:
   Both can be used for a better approximation of a "Cycle Estimation" as
   derived event (you need to update the event formula in KCachegrind yourself).
 
+- Added new memcheck command-line option --show-possibly-lost.
+
 
 Release 3.5.0 (19 August 2009)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

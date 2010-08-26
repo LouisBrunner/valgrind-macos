@@ -845,7 +845,8 @@ static void print_results(ThreadId tid, Bool is_full_check)
       print_record = is_full_check &&
                      ( MC_(clo_show_reachable) ||
                        Unreached == lr->key.state || 
-                       Possible  == lr->key.state );
+                       ( MC_(clo_show_possibly_lost) && 
+                         Possible  == lr->key.state ) );
       // We don't count a leaks as errors with --leak-check=summary.
       // Otherwise you can get high error counts with few or no error
       // messages, which can be confusing.  Also, you could argue that

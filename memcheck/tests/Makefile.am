@@ -74,6 +74,7 @@ EXTRA_DIST = \
 	inline.stderr.exp inline.stdout.exp inline.vgtest \
 	leak-0.vgtest leak-0.stderr.exp \
 	leak-cases-full.vgtest leak-cases-full.stderr.exp \
+	leak-cases-possible.vgtest leak-cases-possible.stderr.exp \
 	leak-cases-summary.vgtest leak-cases-summary.stderr.exp \
 	leak-cycle.vgtest leak-cycle.stderr.exp \
 	leak-pool-0.vgtest leak-pool-0.stderr.exp \

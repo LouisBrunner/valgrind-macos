@@ -620,6 +620,16 @@ criteria:</para>
     </listitem>
   </varlistentry>
 
+  <varlistentry id="opt.show-possibly-lost" xreflabel="--show-possibly-lost">
+    <term>
+      <option><![CDATA[--show-possibly-lost=<yes|no> [default: yes] ]]></option>
+    </term>
+    <listitem>
+      <para>When disabled, the memory leak detector will not show "possibly lost" blocks.  
+      </para>
+    </listitem>
+  </varlistentry>
+
   <varlistentry id="opt.leak-resolution" xreflabel="--leak-resolution">
     <term>
       <option><![CDATA[--leak-resolution=<low|med|high> [default: high] ]]></option>

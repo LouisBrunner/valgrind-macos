@@ -395,6 +395,9 @@ extern VgRes MC_(clo_leak_resolution);
 /* In leak check, show reachable-but-not-freed blocks?  default: NO */
 extern Bool MC_(clo_show_reachable);
 
+/* In leak check, show possibly-lost blocks?  default: YES */
+extern Bool MC_(clo_show_possibly_lost);
+
 /* Assume accesses immediately below %esp are due to gcc-2.96 bugs.
  * default: NO */
 extern Bool MC_(clo_workaround_gcc296_bugs);

@@ -4744,6 +4744,7 @@ Long          MC_(clo_freelist_vol)           = 10*1000*1000LL;
 LeakCheckMode MC_(clo_leak_check)             = LC_Summary;
 VgRes         MC_(clo_leak_resolution)        = Vg_HighRes;
 Bool          MC_(clo_show_reachable)         = False;
+Bool          MC_(clo_show_possibly_lost)     = True;
 Bool          MC_(clo_workaround_gcc296_bugs) = False;
 Int           MC_(clo_malloc_fill)            = -1;
 Int           MC_(clo_free_fill)              = -1;
@@ -4793,6 +4794,8 @@ static Bool mc_process_cmd_line_options(Char* arg)
 
 	if VG_BOOL_CLO(arg, "--partial-loads-ok", MC_(clo_partial_loads_ok)) {}
    else if VG_BOOL_CLO(arg, "--show-reachable",   MC_(clo_show_reachable))   {}
+   else if VG_BOOL_CLO(arg, "--show-possibly-lost",
+                                            MC_(clo_show_possibly_lost))     {}
    else if VG_BOOL_CLO(arg, "--workaround-gcc296-bugs",
                                             MC_(clo_workaround_gcc296_bugs)) {}
 
@@ -4863,6 +4866,8 @@ static void mc_print_usage(void)
 "    --leak-check=no|summary|full     search for memory leaks at exit?  [summary]\n"
 "    --leak-resolution=low|med|high   differentiation of leak stack traces [high]\n"
 "    --show-reachable=no|yes          show reachable blocks in leak check? [no]\n"
+"    --show-possibly-lost=no|yes      show possibly lost blocks in leak check?\n"
+"                                     [yes]\n"
 "    --undef-value-errors=no|yes      check for undefined value errors [yes]\n"
 "    --track-origins=no|yes           show origins of undefined values? [no]\n"
 "    --partial-loads-ok=no|yes        too hard to explain here; see manual [no]\n"

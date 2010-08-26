@@ -528,7 +528,10 @@ int main(void)
       </listitem>
       <listitem>
         <para>"possibly lost" means your program is leaking
-        memory, unless you're doing funny things with pointers.</para>
+        memory, unless you're doing funny things with pointers.
+        This is sometimes reasonable.  Use
+        <option>--show-possibly-lost=no</option> if you don't want to see
+        these reports.</para>
       </listitem>
       <listitem>
         <para>"still reachable" means your program is probably ok -- it

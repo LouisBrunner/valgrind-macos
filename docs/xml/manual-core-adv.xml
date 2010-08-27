@@ -196,7 +196,7 @@ tool-specific macros).</para>
     message is prefixed with the PID between a pair of
     <computeroutput>**</computeroutput> markers.  (Like all client requests,
     nothing is output if the client program is not running under Valgrind.)
-    Output is not produced until a newline is encountered, or subequent
+    Output is not produced until a newline is encountered, or subsequent
     Valgrind output is printed; this allows you to build up a single line of
     output over multiple calls.  Returns the number of characters output,
     excluding the PID prefix.</para>

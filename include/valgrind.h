@@ -112,6 +112,7 @@
 #undef PLAT_ppc32_aix5
 #undef PLAT_x86_darwin
 #undef PLAT_amd64_darwin
+#undef PLAT_x86_win32
 #undef PLAT_x86_linux
 #undef PLAT_amd64_linux
 #undef PLAT_ppc32_linux
@@ -126,6 +127,8 @@
 #  define PLAT_x86_darwin 1
 #elif defined(__APPLE__) && defined(__x86_64__)
 #  define PLAT_amd64_darwin 1
+#elif defined(__MINGW32__) || defined(__CYGWIN32__) || defined(_WIN32) && defined(_M_IX86)
+#  define PLAT_x86_win32 1
 #elif defined(__linux__) && defined(__i386__)
 #  define PLAT_x86_linux 1
 #elif defined(__linux__) && defined(__x86_64__)
@@ -201,7 +204,7 @@
 
 /* ------------------------- x86-{linux,darwin} ---------------- */
 
-#if defined(PLAT_x86_linux)  ||  defined(PLAT_x86_darwin)
+#if defined(PLAT_x86_linux)  ||  defined(PLAT_x86_darwin)  ||  defined(PLAT_x86_win32) && defined(__GNUC__)
 
 typedef
    struct { 
@@ -251,7 +254,62 @@ typedef
                      __SPECIAL_INSTRUCTION_PREAMBLE               \
                      /* call-noredir *%EAX */                     \
                      "xchgl %%edx,%%edx\n\t"
-#endif /* PLAT_x86_linux || PLAT_x86_darwin */
+#endif /* PLAT_x86_linux || PLAT_x86_darwin || PLAT_x86_win32 && __GNUC__ */
+
+/* ------------------------- x86-Win32 ------------------------- */
+
+#if defined(PLAT_x86_win32) && !defined(__GNUC__)
+
+typedef
+   struct { 
+      unsigned int nraddr; /* where's the code? */
+   }
+   OrigFn;
+
+#if defined(_MSC_VER)
+
+#define __SPECIAL_INSTRUCTION_PREAMBLE                            \
+                     __asm rol edi, 3  __asm rol edi, 13          \
+                     __asm rol edi, 29 __asm rol edi, 19
+
+#define VALGRIND_DO_CLIENT_REQUEST(                               \
+        _zzq_rlval, _zzq_default, _zzq_request,                   \
+        _zzq_arg1, _zzq_arg2, _zzq_arg3, _zzq_arg4, _zzq_arg5)    \
+  { volatile unsigned int _zzq_args[6];                           \
+    volatile unsigned int _zzq_result;                            \
+    _zzq_args[0] = (unsigned int)(ptrdiff_t)(_zzq_request);       \
+    _zzq_args[1] = (unsigned int)(ptrdiff_t)(_zzq_arg1);          \
+    _zzq_args[2] = (unsigned int)(ptrdiff_t)(_zzq_arg2);          \
+    _zzq_args[3] = (unsigned int)(ptrdiff_t)(_zzq_arg3);          \
+    _zzq_args[4] = (unsigned int)(ptrdiff_t)(_zzq_arg4);          \
+    _zzq_args[5] = (unsigned int)(ptrdiff_t)(_zzq_arg5);          \
+    __asm { __asm lea eax, _zzq_args __asm mov edx, _zzq_default  \
+            __SPECIAL_INSTRUCTION_PREAMBLE                        \
+            /* %EDX = client_request ( %EAX ) */                  \
+            __asm xchg ebx,ebx                                    \
+            __asm mov _zzq_result, edx                            \
+    }                                                             \
+    _zzq_rlval = _zzq_result;                                     \
+  }
+
+#define VALGRIND_GET_NR_CONTEXT(_zzq_rlval)                       \
+  { volatile OrigFn* _zzq_orig = &(_zzq_rlval);                   \
+    volatile unsigned int __addr;                                 \
+    __asm { __SPECIAL_INSTRUCTION_PREAMBLE                        \
+            /* %EAX = guest_NRADDR */                             \
+            __asm xchg ecx,ecx                                    \
+            __asm mov __addr, eax                                 \
+    }                                                             \
+    _zzq_orig->nraddr = __addr;                                   \
+  }
+
+#define VALGRIND_CALL_NOREDIR_EAX ERROR
+
+#else
+#error Unsupported compiler.
+#endif
+
+#endif /* PLAT_x86_win32 */
 
 /* ------------------------ amd64-{linux,darwin} --------------- */
 
@@ -4173,6 +4231,7 @@ typedef
    is, 0 if running natively, 1 if running under Valgrind, 2 if
    running under Valgrind which is running under another Valgrind,
    etc. */
+#if !defined(_MSC_VER)
 #define RUNNING_ON_VALGRIND  __extension__                        \
    ({unsigned int _qzz_res;                                       \
     VALGRIND_DO_CLIENT_REQUEST(_qzz_res, 0 /* if not */,          \
@@ -4180,6 +4239,17 @@ typedef
                                0, 0, 0, 0, 0);                    \
     _qzz_res;                                                     \
    })
+#else /* defined(_MSC_VER) */
+#define RUNNING_ON_VALGRIND vg_RunningOnValgrind()
+static __inline unsigned int vg_RunningOnValgrind(void)
+{
+    unsigned int _qzz_res;
+    VALGRIND_DO_CLIENT_REQUEST(_qzz_res, 0 /* if not */,
+                               VG_USERREQ__RUNNING_ON_VALGRIND,
+                               0, 0, 0, 0, 0);
+    return _qzz_res;
+}
+#endif
 
 
 /* Discard translation of code in the range [_qzz_addr .. _qzz_addr +
@@ -4206,10 +4276,12 @@ typedef
 
 #else /* NVALGRIND */
 
+#if !defined(_MSC_VER)
 /* Modern GCC will optimize the static routine out if unused,
    and unused attribute will shut down warnings about it.  */
 static int VALGRIND_PRINTF(const char *format, ...)
    __attribute__((format(__printf__, 1, 2), __unused__));
+#endif
 static int
 VALGRIND_PRINTF(const char *format, ...)
 {
@@ -4225,8 +4297,10 @@ VALGRIND_PRINTF(const char *format, ...)
    return (int)_qzz_res;
 }
 
+#if !defined(_MSC_VER)
 static int VALGRIND_PRINTF_BACKTRACE(const char *format, ...)
    __attribute__((format(__printf__, 1, 2), __unused__));
+#endif
 static int
 VALGRIND_PRINTF_BACKTRACE(const char *format, ...)
 {

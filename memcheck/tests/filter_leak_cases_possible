@@ -1,0 +1,4 @@
+#! /bin/sh
+
+./filter_stderr |
+sed -e 's/^leaked.*$//' -e 's/^dubious.*$//' -e 's/^reachable.*$//' -e 's/^suppressed:.*$//'

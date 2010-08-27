@@ -32,6 +32,7 @@ DIST_SUBDIRS = x86 amd64 linux darwin x86-linux amd64-linux .
 dist_noinst_SCRIPTS = \
 	filter_addressable \
 	filter_allocs \
+	filter_leak_cases_possible \
 	filter_stderr filter_xml \
 	filter_varinfo3
 

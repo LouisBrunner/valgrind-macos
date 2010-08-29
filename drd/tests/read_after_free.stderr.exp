@@ -1,0 +1,8 @@
+
+Conflicting load by thread 1 at 0x........ size 1
+   at 0x........: main (read_after_free.c:?)
+Allocation context: unknown.
+
+Done.
+
+ERROR SUMMARY: 1 errors from 1 contexts (suppressed: 0 from 0)

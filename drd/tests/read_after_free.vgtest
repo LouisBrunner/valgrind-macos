@@ -1,0 +1,4 @@
+prereq: test -e read_after_free && ./supported_libpthread
+vgopts: --read-var-info=yes --check-stack-var=yes --free-is-write=yes --show-confl-seg=no
+prog: read_after_free
+args: -q

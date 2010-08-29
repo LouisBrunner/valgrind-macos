@@ -114,12 +114,12 @@ void DRD_(trace_mem_access)(const Addr addr, const SizeT size,
    }
 }
 
-static VG_REGPARM(2) void drd_trace_mem_load(const Addr addr, const SizeT size)
+VG_REGPARM(2) void DRD_(trace_mem_load)(const Addr addr, const SizeT size)
 {
    return DRD_(trace_mem_access)(addr, size, eLoad);
 }
 
-static VG_REGPARM(2) void drd_trace_mem_store(const Addr addr,const SizeT size)
+VG_REGPARM(2) void DRD_(trace_mem_store)(const Addr addr,const SizeT size)
 {
    return DRD_(trace_mem_access)(addr, size, eStore);
 }
@@ -324,7 +324,7 @@ static void instrument_load(IRSB* const bb,
             unsafeIRDirty_0_N(/*regparms*/2,
                               "drd_trace_load",
                               VG_(fnptr_to_fnentry)
-                              (drd_trace_mem_load),
+                              (DRD_(trace_mem_load)),
                               mkIRExprVec_2(addr_expr,
                                             mkIRExpr_HWord(size)))));
    }
@@ -389,7 +389,7 @@ static void instrument_store(IRSB* const bb,
                                  unsafeIRDirty_0_N(/*regparms*/2,
                                                    "drd_trace_store",
                                                    VG_(fnptr_to_fnentry)
-                                                   (drd_trace_mem_store),
+                                                   (DRD_(trace_mem_store)),
                                                    mkIRExprVec_2(addr_expr,
                                                                  mkIRExpr_HWord(size)))));
    }

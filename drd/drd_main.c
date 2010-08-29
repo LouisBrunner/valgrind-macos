@@ -59,6 +59,7 @@ static Bool s_free_is_write    = False;
 static Bool s_print_stats      = False;
 static Bool s_var_info         = False;
 static Bool s_show_stack_usage = False;
+static Bool s_trace_alloc      = False;
 
 
 /**
@@ -99,6 +100,7 @@ static Bool DRD_(process_cmd_line_option)(Char* arg)
    {}
    else if VG_BOOL_CLO(arg, "--show-confl-seg",      show_confl_seg) {}
    else if VG_BOOL_CLO(arg, "--show-stack-usage",    s_show_stack_usage) {}
+   else if VG_BOOL_CLO(arg, "--trace-alloc",         s_trace_alloc) {}
    else if VG_BOOL_CLO(arg, "--trace-barrier",       trace_barrier) {}
    else if VG_BOOL_CLO(arg, "--trace-clientobj",     trace_clientobj) {}
    else if VG_BOOL_CLO(arg, "--trace-cond",          trace_cond) {}
@@ -186,7 +188,7 @@ static void DRD_(print_usage)(void)
 "    --first-race-only=yes|no  Only report the first data race that occurs on\n"
 "                              a memory location instead of all races [no].\n"
 "    --free-is-write=yes|no    Whether to report races between freeing memory\n"
-"                              and subsequent accesses of that memory[yes].\n"
+"                              and subsequent accesses of that memory[no].\n"
 "    --report-signal-unlocked=yes|no Whether to report calls to\n"
 "                              pthread_cond_signal() where the mutex associated\n"
 "                              with the signal via pthread_cond_wait() is not\n"
@@ -206,6 +208,7 @@ static void DRD_(print_usage)(void)
 "  drd options for monitoring process behavior:\n"
 "    --trace-addr=<address>    Trace all load and store activity for the.\n"
 "                              specified address [off].\n"
+"    --trace-alloc=yes|no      Trace all memory allocations and deallocations\n""                              [no].\n"
 "    --trace-barrier=yes|no    Trace all barrier activity [no].\n"
 "    --trace-cond=yes|no       Trace all condition variable activity [no].\n"
 "    --trace-fork-join=yes|no  Trace all thread fork/join activity [no].\n"
@@ -282,9 +285,15 @@ static void drd_post_mem_write(const CorePart part,
 }
 
 static __inline__
-void drd_start_using_mem(const Addr a1, const SizeT len)
+void drd_start_using_mem(const Addr a1, const SizeT len,
+                         const Bool is_stack_mem)
 {
    tl_assert(a1 < a1 + len);
+
+   if (!is_stack_mem && s_trace_alloc)
+      VG_(message)(Vg_UserMsg, "Started using memory range 0x%lx + %ld%s\n",
+                   a1, len, DRD_(running_thread_inside_pthread_create)()
+                   ? " (inside pthread_create())" : "");
 
    if (UNLIKELY(DRD_(any_address_is_traced)()))
    {
@@ -301,14 +310,14 @@ static void drd_start_using_mem_w_ecu(const Addr a1,
                                       const SizeT len,
                                       UInt ec_uniq)
 {
-   drd_start_using_mem(a1, len);
+   drd_start_using_mem(a1, len, False);
 }
 
 static void drd_start_using_mem_w_tid(const Addr a1,
                                       const SizeT len,
                                       ThreadId tid)
 {
-   drd_start_using_mem(a1, len);
+   drd_start_using_mem(a1, len, False);
 }
 
 static __inline__
@@ -323,15 +332,20 @@ void drd_stop_using_mem(const Addr a1, const SizeT len,
    {
       DRD_(trace_mem_access)(a1, len, eEnd);
    }
+
+   if (!is_stack_mem && s_trace_alloc)
+      VG_(message)(Vg_UserMsg, "Stopped using memory range 0x%lx + %ld\n",
+                   a1, len);
+
    if (! is_stack_mem || DRD_(get_check_stack_accesses)())
    {
-      DRD_(thread_stop_using_mem)(a1, a2);
+      DRD_(thread_stop_using_mem)(a1, a2, !is_stack_mem && s_free_is_write);
       DRD_(clientobj_stop_using_mem)(a1, a2);
       DRD_(suppression_stop_using_mem)(a1, a2);
    }
    if (! is_stack_mem && s_free_is_write)
    {
-      DRD_(trace_store)(a1, len);
+      DRD_(trace_mem_store)(a1, len);
    }
 }
 
@@ -349,7 +363,7 @@ void DRD_(clean_memory)(const Addr a1, const SizeT len)
 {
    const Bool is_stack_memory = DRD_(thread_address_on_any_stack)(a1);
    drd_stop_using_mem(a1, len, is_stack_memory);
-   drd_start_using_mem(a1, len);
+   drd_start_using_mem(a1, len, is_stack_memory);
 }
 
 /**
@@ -408,7 +422,7 @@ void drd_start_using_mem_w_perms(const Addr a, const SizeT len,
 {
    DRD_(thread_set_vg_running_tid)(VG_(get_running_tid)());
 
-   drd_start_using_mem(a, len);
+   drd_start_using_mem(a, len, False);
 
    DRD_(suppress_relocation_conflicts)(a, len);
 }
@@ -422,7 +436,8 @@ void drd_start_using_mem_stack(const Addr a, const SizeT len)
    DRD_(thread_set_stack_min)(DRD_(thread_get_running_tid)(),
                               a - VG_STACK_REDZONE_SZB);
    drd_start_using_mem(a - VG_STACK_REDZONE_SZB,
-                       len + VG_STACK_REDZONE_SZB);
+                       len + VG_STACK_REDZONE_SZB,
+                       True);
 }
 
 /* Called by the core when the stack of a thread shrinks, to indicate that */
@@ -450,7 +465,7 @@ static void drd_start_using_mem_stack_signal(const Addr a, const SizeT len,
                                              ThreadId tid)
 {
    DRD_(thread_set_vg_running_tid)(VG_(get_running_tid)());
-   drd_start_using_mem(a, len);
+   drd_start_using_mem(a, len, True);
 }
 
 static void drd_stop_using_mem_stack_signal(Addr a, SizeT len)

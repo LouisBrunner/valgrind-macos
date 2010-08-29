@@ -364,12 +364,12 @@ behavior of the DRD tool itself:</para>
   <varlistentry>
     <term>
       <option>
-        <![CDATA[--free-is-write=<yes|no> [default: yes]]]>
+        <![CDATA[--free-is-write=<yes|no> [default: no]]]>
       </option>
     </term>
     <listitem>
       <para>
-        Whether to report reading freed memory as a race. Helps to detect
+        Whether to report accessing freed memory as a race. Helps to detect
         memory accesses that occur after memory has been freed but might cause
         DRD to run slightly slower.
       </para>
@@ -488,6 +488,17 @@ client program:
       <para>
         Trace all load and store activity for the specified
         address. This option may be specified more than once.
+      </para>
+    </listitem>
+  </varlistentry>
+  <varlistentry>
+    <term>
+      <option><![CDATA[--trace-alloc=<yes|no> [default: no]]]></option>
+    </term>
+    <listitem>
+      <para>
+        Trace all memory allocations and deallocations. May produce a huge
+        amount of output.
       </para>
     </listitem>
   </varlistentry>

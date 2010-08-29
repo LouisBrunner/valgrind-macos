@@ -364,6 +364,20 @@ behavior of the DRD tool itself:</para>
   <varlistentry>
     <term>
       <option>
+        <![CDATA[--free-is-write=<yes|no> [default: yes]]]>
+      </option>
+    </term>
+    <listitem>
+      <para>
+        Whether to report reading freed memory as a race. Helps to detect
+        memory accesses that occur after memory has been freed but might cause
+        DRD to run slightly slower.
+      </para>
+    </listitem>
+  </varlistentry>
+  <varlistentry>
+    <term>
+      <option>
         <![CDATA[--report-signal-unlocked=<yes|no> [default: yes]]]>
       </option>
     </term>

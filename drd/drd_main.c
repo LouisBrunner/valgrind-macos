@@ -55,9 +55,10 @@
 
 /* Local variables. */
 
-static Bool DRD_(s_print_stats)      = False;
-static Bool DRD_(s_var_info)         = False;
-static Bool DRD_(s_show_stack_usage) = False;
+static Bool s_free_is_write    = False;
+static Bool s_print_stats      = False;
+static Bool s_var_info         = False;
+static Bool s_show_stack_usage = False;
 
 
 /**
@@ -88,16 +89,16 @@ static Bool DRD_(process_cmd_line_option)(Char* arg)
    Char* trace_address        = 0;
 
    if      VG_BOOL_CLO(arg, "--check-stack-var",     check_stack_accesses) {}
-   else if VG_BOOL_CLO(arg, "--drd-stats",           DRD_(s_print_stats)) {}
+   else if VG_BOOL_CLO(arg, "--drd-stats",           s_print_stats) {}
    else if VG_BOOL_CLO(arg, "--first-race-only",     first_race_only) {}
+   else if VG_BOOL_CLO(arg, "--free-is-write",       s_free_is_write) {}
    else if VG_BOOL_CLO(arg,"--report-signal-unlocked",report_signal_unlocked)
    {}
    else if VG_BOOL_CLO(arg, "--segment-merging",     segment_merging) {}
    else if VG_INT_CLO (arg, "--segment-merging-interval", segment_merge_interval)
    {}
    else if VG_BOOL_CLO(arg, "--show-confl-seg",      show_confl_seg) {}
-   else if VG_BOOL_CLO(arg, "--show-stack-usage",
-                       DRD_(s_show_stack_usage)) {}
+   else if VG_BOOL_CLO(arg, "--show-stack-usage",    s_show_stack_usage) {}
    else if VG_BOOL_CLO(arg, "--trace-barrier",       trace_barrier) {}
    else if VG_BOOL_CLO(arg, "--trace-clientobj",     trace_clientobj) {}
    else if VG_BOOL_CLO(arg, "--trace-cond",          trace_cond) {}
@@ -110,7 +111,7 @@ static Bool DRD_(process_cmd_line_option)(Char* arg)
    else if VG_BOOL_CLO(arg, "--trace-segment",       trace_segment) {}
    else if VG_BOOL_CLO(arg, "--trace-semaphore",     trace_semaphore) {}
    else if VG_BOOL_CLO(arg, "--trace-suppr",         trace_suppression) {}
-   else if VG_BOOL_CLO(arg, "--var-info",            DRD_(s_var_info)) {}
+   else if VG_BOOL_CLO(arg, "--var-info",            s_var_info) {}
    else if VG_INT_CLO (arg, "--exclusive-threshold", exclusive_threshold_ms) {}
    else if VG_INT_CLO (arg, "--shared-threshold",    shared_threshold_ms)    {}
    else if VG_STR_CLO (arg, "--trace-addr",          trace_address) {}
@@ -184,6 +185,8 @@ static void DRD_(print_usage)(void)
 "        writer lock is held longer than the specified time (in milliseconds).\n"
 "    --first-race-only=yes|no  Only report the first data race that occurs on\n"
 "                              a memory location instead of all races [no].\n"
+"    --free-is-write=yes|no    Whether to report races between freeing memory\n"
+"                              and subsequent accesses of that memory[yes].\n"
 "    --report-signal-unlocked=yes|no Whether to report calls to\n"
 "                              pthread_cond_signal() where the mutex associated\n"
 "                              with the signal via pthread_cond_wait() is not\n"
@@ -325,6 +328,10 @@ void drd_stop_using_mem(const Addr a1, const SizeT len,
       DRD_(thread_stop_using_mem)(a1, a2);
       DRD_(clientobj_stop_using_mem)(a1, a2);
       DRD_(suppression_stop_using_mem)(a1, a2);
+   }
+   if (! is_stack_mem && s_free_is_write)
+   {
+      DRD_(trace_store)(a1, len);
    }
 }
 
@@ -512,7 +519,7 @@ static void drd_thread_finished(ThreadId vg_tid)
                    ? ""
                    : " (which is a detached thread)");
    }
-   if (DRD_(s_show_stack_usage))
+   if (s_show_stack_usage)
    {
       const SizeT stack_size = DRD_(thread_get_stack_size)(drd_tid);
       const SizeT used_stack
@@ -551,7 +558,7 @@ static void DRD_(post_clo_init)(void)
    VG_(printf)("\nWARNING: DRD has not yet been tested on this operating system.\n\n");
 #  endif
 
-   if (DRD_(s_var_info))
+   if (s_var_info)
    {
       VG_(needs_var_info)();
    }
@@ -572,7 +579,7 @@ static void DRD_(fini)(Int exitcode)
                    "rerun with: -v\n");
    }
 
-   if (VG_(clo_stats) || DRD_(s_print_stats))
+   if (VG_(clo_stats) || s_print_stats)
    {
       ULong pu = DRD_(thread_get_update_conflict_set_count)();
       ULong pu_seg_cr = DRD_(thread_get_update_conflict_set_new_sg_count)();

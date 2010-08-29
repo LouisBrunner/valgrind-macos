@@ -95,7 +95,6 @@ struct hb_info
    void        (*delete_thread)(union drd_clientobj*, DrdThreadId);
    ExeContext* first_observed_at;
    OSet*       oset;  // Per-thread order annotation information.
-   Bool        done;  // Whether happens-done has already been invoked.
 };
 
 struct semaphore_info

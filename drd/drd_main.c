@@ -329,24 +329,20 @@ void drd_stop_using_mem(const Addr a1, const SizeT len,
    tl_assert(a1 < a2);
 
    if (UNLIKELY(DRD_(any_address_is_traced)()))
-   {
       DRD_(trace_mem_access)(a1, len, eEnd);
-   }
 
    if (!is_stack_mem && s_trace_alloc)
       VG_(message)(Vg_UserMsg, "Stopped using memory range 0x%lx + %ld\n",
                    a1, len);
 
-   if (! is_stack_mem || DRD_(get_check_stack_accesses)())
+   if (!is_stack_mem || DRD_(get_check_stack_accesses)())
    {
       DRD_(thread_stop_using_mem)(a1, a2, !is_stack_mem && s_free_is_write);
       DRD_(clientobj_stop_using_mem)(a1, a2);
       DRD_(suppression_stop_using_mem)(a1, a2);
    }
-   if (! is_stack_mem && s_free_is_write)
-   {
-      DRD_(trace_mem_store)(a1, len);
-   }
+   if (!is_stack_mem && s_free_is_write)
+      DRD_(trace_store)(a1, len);
 }
 
 static __inline__

@@ -8,6 +8,15 @@
    drd:ConflictingAccess
    obj:/lib*/ld-*.so
 }
+{
+   drd-ld
+   drd:ConflictingAccess
+   ...
+   obj:/lib*/ld-*.so
+   obj:/lib*/ld-*.so
+   obj:/lib*/ld-*.so
+   obj:/lib*/ld-*.so
+}
 
 #
 # Suppression patterns for libc.
@@ -94,6 +103,11 @@
    fun:pthread_detach
 }
 {
+   drd-libpthread-pthread_cancel_init
+   drd:ConflictingAccess
+   fun:pthread_cancel_init
+}
+{
    drd-libpthread-_Unwind_ForcedUnwind
    drd:ConflictingAccess
    ...
@@ -114,7 +128,6 @@
    drd-libpthread-?
    drd:ConflictingAccess
    obj:/lib/libgcc_s.so.1
-   obj:/lib/libpthread-2.11.2.so
 }
 {
    drd-libpthread-nanosleep

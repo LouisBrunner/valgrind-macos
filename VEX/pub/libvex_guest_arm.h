@@ -81,6 +81,13 @@ typedef
          APSR.Q is currently one. */
       UInt guest_QFLAG32;
 
+      /* 32-bit values to represent APSR.GE0 .. GE3.  Same
+         zero-vs-nonzero scheme as for QFLAG32. */
+      UInt guest_GEFLAG0;
+      UInt guest_GEFLAG1;
+      UInt guest_GEFLAG2;
+      UInt guest_GEFLAG3;
+
       /* Various pseudo-regs mandated by Vex or Valgrind. */
       /* Emulation warnings */
       UInt guest_EMWARN;

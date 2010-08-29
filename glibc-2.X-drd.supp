@@ -8,15 +8,6 @@
    drd:ConflictingAccess
    obj:/lib*/ld-*.so
 }
-{
-   drd-ld
-   drd:ConflictingAccess
-   ...
-   obj:/lib*/ld-*.so
-   obj:/lib*/ld-*.so
-   obj:/lib*/ld-*.so
-   obj:/lib*/ld-*.so
-}
 
 #
 # Suppression patterns for libc.

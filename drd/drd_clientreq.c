@@ -108,10 +108,14 @@ static Bool handle_client_request(ThreadId vg_tid, UWord* arg, UWord* ret)
       break;
 
    case VG_USERREQ__DRD_START_SUPPRESSION:
+      /*_VG_USERREQ__HG_ARANGE_MAKE_UNTRACKED*/
+   case VG_USERREQ_TOOL_BASE('H','G') + 256 + 39:
       DRD_(start_suppression)(arg[1], arg[1] + arg[2], "client");
       break;
 
    case VG_USERREQ__DRD_FINISH_SUPPRESSION:
+      /*_VG_USERREQ__HG_ARANGE_MAKE_TRACKED*/
+   case VG_USERREQ_TOOL_BASE('H','G') + 256 + 40:
       DRD_(finish_suppression)(arg[1], arg[1] + arg[2]);
       break;
 

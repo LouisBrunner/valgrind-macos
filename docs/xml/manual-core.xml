@@ -997,6 +997,20 @@ that can report errors, e.g. Memcheck, but not Cachegrind.</para>
     </listitem>
   </varlistentry>
 
+  <varlistentry id="opt.prefix-to-strip" xreflabel="--prefix-to-strip">
+    <term>
+      <option><![CDATA[--prefix-to-strip=<prefix> [default: off] ]]></option>
+    </term>
+    <listitem>
+      <para>By default Valgrind only shows the filename in stack traces and
+      not the full path of the source file. When using
+      <option>--prefix-to-strip</option>, Valgrind will include the full
+      path of source files in stack traces. If a path starts with the
+      specified prefix, the prefix will be left out from the printed path.
+      </para>
+    </listitem>
+  </varlistentry>
+
   <varlistentry id="opt.suppressions" xreflabel="--suppressions">
     <term>
       <option><![CDATA[--suppressions=<filename> [default: $PREFIX/lib/valgrind/default.supp] ]]></option>

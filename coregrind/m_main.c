@@ -163,6 +163,9 @@ static void usage_NORETURN ( Bool debug_help )
 "                              and use it to print better error messages in\n"
 "                              tools that make use of it (Memcheck, Helgrind,\n"
 "                              DRD) [no]\n"
+"    --prefix-to-strip=<pfx>   If not empty, specifies that full source file\n"
+"                              paths must be printed in call stacks and also\n" "                              that <pfx> must be stripped from these paths.\n"
+"                              [""].\n"
 "    --run-libc-freeres=no|yes free up glibc memory at exit on Linux? [yes]\n"
 "    --sim-hints=hint1,hint2,...  known hints:\n"
 "                                 lax-ioctls, enable-outer [none]\n"
@@ -479,6 +482,13 @@ void main_process_cmd_line_options ( /*OUT*/Bool* logging_to_fd,
       else if VG_STR_CLO (arg, "--sim-hints",        VG_(clo_sim_hints)) {}
       else if VG_BOOL_CLO(arg, "--sym-offsets",      VG_(clo_sym_offsets)) {}
       else if VG_BOOL_CLO(arg, "--read-var-info",    VG_(clo_read_var_info)) {}
+      else if VG_STR_CLO (arg, "--prefix-to-strip",  VG_(clo_prefix_to_strip)) {
+         Char *const pfx = VG_(clo_prefix_to_strip);
+         Char *const pfx_end = pfx + VG_(strlen)(pfx);
+         Char *const last_slash = VG_(strrchr)(pfx, '/');
+         if (last_slash == pfx_end - 1)
+            *last_slash = '\0';
+      }
 
       else if VG_INT_CLO (arg, "--dump-error",       VG_(clo_dump_error))   {}
       else if VG_INT_CLO (arg, "--input-fd",         VG_(clo_input_fd))     {}

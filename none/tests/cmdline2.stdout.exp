@@ -51,6 +51,10 @@ usage: valgrind [options] prog-and-args
                               and use it to print better error messages in
                               tools that make use of it (Memcheck, Helgrind,
                               DRD) [no]
+    --prefix-to-strip=<pfx>   If not empty, specifies that full source file
+                              paths must be printed in call stacks and also
+                              that <pfx> must be stripped from these paths.
+                              [].
     --run-libc-freeres=no|yes free up glibc memory at exit on Linux? [yes]
     --sim-hints=hint1,hint2,...  known hints:
                                  lax-ioctls, enable-outer [none]

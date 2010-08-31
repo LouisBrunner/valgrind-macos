@@ -1854,7 +1854,21 @@ Char* VG_(describe_IP)(Addr eip, Char* buf, Int n_buf)
          APPEND("???");
       }
       if (know_srcloc) {
+         const Char* const pfx = VG_(clo_prefix_to_strip);
          APPEND(" (");
+         if (pfx) {
+            const int pfxlen = VG_(strlen)(pfx);
+            const int matchlen = VG_(strncmp)(pfx, buf_dirname, pfxlen) == 0
+	       ? pfxlen : 0;
+	    if (matchlen && buf_dirname[matchlen] == '/'
+		&& buf_dirname[matchlen + 1]) {
+	       APPEND(buf_dirname + matchlen + 1);
+	       APPEND("/");
+	    } else if (buf_dirname[matchlen]) {
+	       APPEND(buf_dirname + matchlen);
+	       APPEND("/");
+	    }
+         }
          APPEND(buf_srcloc);
          APPEND(":");
          VG_(sprintf)(ibuf,"%d",lineno);

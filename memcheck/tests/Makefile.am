@@ -46,6 +46,7 @@ EXTRA_DIST = \
 	badaddrvalue.stdout.exp badaddrvalue.vgtest \
 	badfree-2trace.stderr.exp badfree-2trace.vgtest \
 	badfree.stderr.exp badfree.vgtest \
+	badfree3.stderr.exp badfree3.vgtest \
 	badjump.stderr.exp badjump.vgtest \
 	badjump2.stderr.exp badjump2.vgtest \
 	badloop.stderr.exp badloop.vgtest \

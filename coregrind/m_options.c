@@ -83,6 +83,7 @@ Int    VG_(clo_backtrace_size) = 12;
 Char*  VG_(clo_sim_hints)      = NULL;
 Bool   VG_(clo_sym_offsets)    = False;
 Bool   VG_(clo_read_var_info)  = False;
+Char*  VG_(clo_prefix_to_strip) = NULL;
 Int    VG_(clo_n_req_tsyms)    = 0;
 HChar* VG_(clo_req_tsyms)[VG_CLO_MAX_REQ_TSYMS];
 HChar* VG_(clo_require_text_symbol) = NULL;

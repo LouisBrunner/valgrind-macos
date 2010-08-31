@@ -128,6 +128,8 @@ extern Char* VG_(clo_sim_hints);
 extern Bool VG_(clo_sym_offsets);
 /* Read DWARF3 variable info even if tool doesn't ask for it? */
 extern Bool VG_(clo_read_var_info);
+/* Which prefix to strip from full source file paths, if any. */
+extern Char* VG_(clo_prefix_to_strip);
 
 /* An array of strings harvested from --require-text-symbol= 
    flags.

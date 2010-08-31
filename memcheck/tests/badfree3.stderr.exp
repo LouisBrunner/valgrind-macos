@@ -1,0 +1,10 @@
+Invalid free() / delete / delete[]
+   at 0x........: free (coregrind/vg_replace_malloc.c:...)
+   by 0x........: main (memcheck/tests/badfree.c:12)
+ Address 0x........ is not stack'd, malloc'd or (recently) free'd
+
+Invalid free() / delete / delete[]
+   at 0x........: free (coregrind/vg_replace_malloc.c:...)
+   by 0x........: main (memcheck/tests/badfree.c:15)
+ Address 0x........ is on thread 1's stack
+

@@ -119,7 +119,7 @@ HReg hregARM_Q15 ( void ) { return mkHReg(15, HRcVec128, False); }
 void getAllocableRegs_ARM ( Int* nregs, HReg** arr )
 {
    Int i = 0;
-   *nregs = 29;
+   *nregs = 26;
    *arr = LibVEX_Alloc(*nregs * sizeof(HReg));
    // callee saves ones are listed first, since we prefer them
    // if they're available
@@ -154,9 +154,10 @@ void getAllocableRegs_ARM ( Int* nregs, HReg** arr )
    (*arr)[i++] = hregARM_Q10();
    (*arr)[i++] = hregARM_Q11();
    (*arr)[i++] = hregARM_Q12();
-   (*arr)[i++] = hregARM_Q13();
-   (*arr)[i++] = hregARM_Q14();
-   (*arr)[i++] = hregARM_Q15();
+
+   //(*arr)[i++] = hregARM_Q13();
+   //(*arr)[i++] = hregARM_Q14();
+   //(*arr)[i++] = hregARM_Q15();
 
    // unavail: r8 as GSP
    // r12 'cos we're not sure what it's for

@@ -7817,7 +7817,12 @@ Bool dis_neon_elem_or_struct_load ( UInt theInstr,
                DIP(", ");
             DIP("d%u[%u]", rD + j * inc, i);
          }
-         DIP("}, [r%u]%s\n", rN, (rM != 15) ? "!" : "");
+         DIP("}, [r%u]", rN);
+         if (rM != 13 && rM != 15) {
+            DIP(", r%u\n", rM);
+         } else {
+            DIP("%s\n", (rM != 15) ? "!" : "");
+         }
       } else {
          /* VLDn (single element to all lanes) */
          UInt r;
@@ -7908,7 +7913,12 @@ Bool dis_neon_elem_or_struct_load ( UInt theInstr,
                DIP("d%u[]", rD + r + i * inc);
             }
          }
-         DIP("}, [r%u]%s\n", rN, (rM != 15) ? "!" : "");
+         DIP("}, [r%u]", rN);
+         if (rM != 13 && rM != 15) {
+            DIP(", r%u\n", rM);
+         } else {
+            DIP("%s\n", (rM != 15) ? "!" : "");
+         }
       }
       /* Writeback.  We're uncond here, so no condT-ing. */
       if (rM != 15) {
@@ -8022,7 +8032,12 @@ Bool dis_neon_elem_or_struct_load ( UInt theInstr,
             }
          }
       }
-      DIP("}, [r%u]%s\n", rN, (rM != 15) ? "!" : "");
+      DIP("}, [r%u]", rN);
+      if (rM != 13 && rM != 15) {
+         DIP(", r%u\n", rM);
+      } else {
+         DIP("%s\n", (rM != 15) ? "!" : "");
+      }
       return True;
    }
 #  undef INSN

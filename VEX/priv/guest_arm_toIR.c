@@ -11758,6 +11758,16 @@ static Bool decode_NV_instruction ( /*MOD*/DisResult* dres, UInt insn )
       /* fall through */
    }
 
+   /* ------------------------ pli ------------------------ */
+   if (BITS8(0,1,0,0, 0, 1,0,1) == (INSN(27,20) & BITS8(1,1,1,1,0,1,1,1))
+       && BITS4(1,1,1,1) == INSN(15,12)) {
+      UInt rN    = INSN(19,16);
+      UInt imm12 = INSN(11,0);
+      UInt bU    = INSN(23,23);
+      DIP("pli [r%u, #%c%u]\n", rN, bU ? '+' : '-', imm12);
+      return True;
+   }
+
    /* --------------------- Interworking branches --------------------- */
 
    // BLX (1), viz, unconditional branch and link to R15+simm24

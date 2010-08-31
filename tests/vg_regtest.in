@@ -217,7 +217,9 @@ sub read_vgtest_file($)
         if      ($line =~ /^\s*#/ || $line =~ /^\s*$/) {
 	    next;
 	} elsif ($line =~ /^\s*vgopts:\s*(.*)$/) {
-            $vgopts = $vgopts . " " . $1;   # Nb: Make sure there's a space!
+            my $addvgopts = $1;
+            $addvgopts =~ s/\${PWD}/$ENV{PWD}/g;
+            $vgopts = $vgopts . " " . $addvgopts;   # Nb: Make sure there's a space!
         } elsif ($line =~ /^\s*prog:\s*(.*)$/) {
             $prog = validate_program(".", $1, 0, 0);
         } elsif ($line =~ /^\s*args:\s*(.*)$/) {

@@ -7766,7 +7766,6 @@ Bool dis_neon_elem_or_struct_load ( UInt theInstr,
    UInt N, size, i, j;
    UInt inc;
    UInt regs = 1;
-   IRTemp addr;
 
    if (isT) {
       vassert(condT != IRTemp_INVALID);
@@ -7778,6 +7777,12 @@ Bool dis_neon_elem_or_struct_load ( UInt theInstr,
 
    if (INSN(20,20) != 0)
       return False;
+
+   IRTemp initialRn = newTemp(Ity_I32);
+   assign(initialRn, isT ? getIRegT(rN) : getIRegA(rN));
+
+   IRTemp initialRm = newTemp(Ity_I32);
+   assign(initialRm, isT ? getIRegT(rM) : getIRegA(rM));
 
    if (A) {
       N = B & 3;
@@ -7794,8 +7799,8 @@ Bool dis_neon_elem_or_struct_load ( UInt theInstr,
             default: vassert(0);
          }
 
-         addr = newTemp(Ity_I32);
-         assign(addr, isT ? getIRegT(rN) : getIRegA(rN));
+         IRTemp addr = newTemp(Ity_I32);
+         assign(addr, mkexpr(initialRn));
 
          // go uncond
          if (condT != IRTemp_INVALID)
@@ -7812,7 +7817,7 @@ Bool dis_neon_elem_or_struct_load ( UInt theInstr,
                DIP(", ");
             DIP("d%u[%u]", rD + j * inc, i);
          }
-            DIP("}, [r%u]%s\n", rN, (rM != 15) ? "!" : "");
+         DIP("}, [r%u]%s\n", rN, (rM != 15) ? "!" : "");
       } else {
          /* VLDn (single element to all lanes) */
          UInt r;
@@ -7838,8 +7843,8 @@ Bool dis_neon_elem_or_struct_load ( UInt theInstr,
             mk_skip_over_T32_if_cond_is_false(condT);
          // now uncond
 
-         addr = newTemp(Ity_I32);
-         assign(addr, isT ? getIRegT(rN) : getIRegA(rN));
+         IRTemp addr = newTemp(Ity_I32);
+         assign(addr, mkexpr(initialRn));
 
          if (N == 0 && INSN(5,5))
             regs = 2;
@@ -7909,15 +7914,16 @@ Bool dis_neon_elem_or_struct_load ( UInt theInstr,
       if (rM != 15) {
          if (rM == 13) {
             IRExpr* e = binop(Iop_Add32,
-                              mkexpr(addr),
+                              mkexpr(initialRn),
                               mkU32((1 << size) * (N + 1)));
             if (isT)
                putIRegT(rN, e, IRTemp_INVALID);
             else
                putIRegA(rN, e, IRTemp_INVALID, Ijk_Boring);
          } else {
-            IRExpr* e = binop(Iop_Add32, mkexpr(addr),
-                              isT ? getIRegT(rM) : getIRegA(rM));
+            IRExpr* e = binop(Iop_Add32,
+                              mkexpr(initialRn),
+                              mkexpr(initialRm));
             if (isT)
                putIRegT(rN, e, IRTemp_INVALID);
             else
@@ -7968,8 +7974,8 @@ Bool dis_neon_elem_or_struct_load ( UInt theInstr,
          mk_skip_over_T32_if_cond_is_false(condT);
       // now uncond
 
-      addr = newTemp(Ity_I32);
-      assign(addr, isT ? getIRegT(rN) : getIRegA(rN));
+      IRTemp addr = newTemp(Ity_I32);
+      assign(addr, mkexpr(initialRn));
 
       for (r = 0; r < regs; r++) {
          for (i = 0; i < elems; i++) {
@@ -7987,15 +7993,16 @@ Bool dis_neon_elem_or_struct_load ( UInt theInstr,
       if (rM != 15) {
          if (rM == 13) {
             IRExpr* e = binop(Iop_Add32,
-                              mkexpr(addr),
+                              mkexpr(initialRn),
                               mkU32(8 * (N + 1) * regs));
             if (isT)
                putIRegT(rN, e, IRTemp_INVALID);
             else
                putIRegA(rN, e, IRTemp_INVALID, Ijk_Boring);
          } else {
-            IRExpr* e = binop(Iop_Add32, mkexpr(addr),
-                              isT ? getIRegT(rM) : getIRegA(rM));
+            IRExpr* e = binop(Iop_Add32,
+                              mkexpr(initialRn),
+                              mkexpr(initialRm));
             if (isT)
                putIRegT(rN, e, IRTemp_INVALID);
             else

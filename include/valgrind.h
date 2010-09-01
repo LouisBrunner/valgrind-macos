@@ -4283,16 +4283,27 @@ static int VALGRIND_PRINTF(const char *format, ...)
    __attribute__((format(__printf__, 1, 2), __unused__));
 #endif
 static int
+#if defined(_MSC_VER)
+__inline
+#endif
 VALGRIND_PRINTF(const char *format, ...)
 {
    unsigned long _qzz_res;
    va_list vargs;
    va_start(vargs, format);
+#if defined(_MSC_VER)
+   VALGRIND_DO_CLIENT_REQUEST(_qzz_res, 0,
+                              VG_USERREQ__PRINTF_VALIST_BY_REF,
+                              (ptrdiff_t)format,
+                              (ptrdiff_t)&vargs,
+                              0, 0, 0);
+#else
    VALGRIND_DO_CLIENT_REQUEST(_qzz_res, 0,
                               VG_USERREQ__PRINTF_VALIST_BY_REF,
                               (unsigned long)format,
                               (unsigned long)&vargs, 
                               0, 0, 0);
+#endif
    va_end(vargs);
    return (int)_qzz_res;
 }
@@ -4302,16 +4313,27 @@ static int VALGRIND_PRINTF_BACKTRACE(const char *format, ...)
    __attribute__((format(__printf__, 1, 2), __unused__));
 #endif
 static int
+#if defined(_MSC_VER)
+__inline
+#endif
 VALGRIND_PRINTF_BACKTRACE(const char *format, ...)
 {
    unsigned long _qzz_res;
    va_list vargs;
    va_start(vargs, format);
+#if defined(_MSC_VER)
+   VALGRIND_DO_CLIENT_REQUEST(_qzz_res, 0,
+                              VG_USERREQ__PRINTF_BACKTRACE_VALIST_BY_REF,
+                              (ptrdiff_t)format,
+                              (ptrdiff_t)&vargs,
+                              0, 0, 0);
+#else
    VALGRIND_DO_CLIENT_REQUEST(_qzz_res, 0,
                               VG_USERREQ__PRINTF_BACKTRACE_VALIST_BY_REF,
                               (unsigned long)format,
                               (unsigned long)&vargs, 
                               0, 0, 0);
+#endif
    va_end(vargs);
    return (int)_qzz_res;
 }

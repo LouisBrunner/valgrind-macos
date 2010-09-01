@@ -404,7 +404,12 @@ enum {
  * another.
  */
 
-static __inline__
+static
+#ifdef _MSC_VER
+__inline
+#else
+__inline__
+#endif
 void DRDCL_(clean_memory)(const void* const addr, const int size)
 {
    int res;
@@ -412,7 +417,12 @@ void DRDCL_(clean_memory)(const void* const addr, const int size)
                               addr, size, 0, 0, 0);
 }
 
-static __inline__
+static
+#ifdef _MSC_VER
+__inline
+#else
+__inline__
+#endif
 int DRDCL_(get_valgrind_threadid)(void)
 {
    int res;
@@ -421,7 +431,12 @@ int DRDCL_(get_valgrind_threadid)(void)
    return res;
 }
 
-static __inline__
+static
+#ifdef _MSC_VER
+__inline
+#else
+__inline__
+#endif
 int DRDCL_(get_drd_threadid)(void)
 {
    int res;
@@ -430,7 +445,12 @@ int DRDCL_(get_drd_threadid)(void)
    return res;
 }
 
-static __inline__
+static
+#ifdef _MSC_VER
+__inline
+#else
+__inline__
+#endif
 void DRDCL_(ignore_range)(const void* const addr, const int size)
 {
    int res;
@@ -438,7 +458,12 @@ void DRDCL_(ignore_range)(const void* const addr, const int size)
                               addr, size, 0, 0, 0);
 }
 
-static __inline__
+static
+#ifdef _MSC_VER
+__inline
+#else
+__inline__
+#endif
 void DRDCL_(stop_ignoring_range)(const void* const addr, const int size)
 {
    int res;
@@ -446,7 +471,12 @@ void DRDCL_(stop_ignoring_range)(const void* const addr, const int size)
                               addr, size, 0, 0, 0);
 }
 
-static __inline__
+static
+#ifdef _MSC_VER
+__inline
+#else
+__inline__
+#endif
 void DRDCL_(trace_range)(const void* const addr, const int size)
 {
    int res;
@@ -454,7 +484,12 @@ void DRDCL_(trace_range)(const void* const addr, const int size)
                               addr, size, 0, 0, 0);
 }
 
-static __inline__
+static
+#ifdef _MSC_VER
+__inline
+#else
+__inline__
+#endif
 void DRDCL_(set_record_loads)(const int enabled)
 {
    int res;
@@ -462,7 +497,12 @@ void DRDCL_(set_record_loads)(const int enabled)
                               enabled, 0, 0, 0, 0);
 }
 
-static __inline__
+static
+#ifdef _MSC_VER
+__inline
+#else
+__inline__
+#endif
 void DRDCL_(set_record_stores)(const int enabled)
 {
    int res;
@@ -470,7 +510,12 @@ void DRDCL_(set_record_stores)(const int enabled)
                               enabled, 0, 0, 0, 0);
 }
 
-static __inline__
+static
+#ifdef _MSC_VER
+__inline
+#else
+__inline__
+#endif
 void DRDCL_(set_thread_name)(const char* const name)
 {
    int res;
@@ -478,7 +523,12 @@ void DRDCL_(set_thread_name)(const char* const name)
                               name, 0, 0, 0, 0);
 }
 
-static __inline__
+static
+#ifdef _MSC_VER
+__inline
+#else
+__inline__
+#endif
 void DRDCL_(annotate_happens_before)(const void* const addr)
 {
    int res;
@@ -486,7 +536,12 @@ void DRDCL_(annotate_happens_before)(const void* const addr)
                               addr, 0, 0, 0, 0);
 }
 
-static __inline__
+static
+#ifdef _MSC_VER
+__inline
+#else
+__inline__
+#endif
 void DRDCL_(annotate_happens_after)(const void* const addr)
 {
    int res;
@@ -494,7 +549,12 @@ void DRDCL_(annotate_happens_after)(const void* const addr)
                               addr, 0, 0, 0, 0);
 }
 
-static __inline__
+static
+#ifdef _MSC_VER
+__inline
+#else
+__inline__
+#endif
 void DRDCL_(annotate_rwlock_create)(const void* const rwlock)
 {
    int res;
@@ -503,7 +563,12 @@ void DRDCL_(annotate_rwlock_create)(const void* const rwlock)
                               rwlock, 0, 0, 0, 0);
 }
 
-static __inline__
+static
+#ifdef _MSC_VER
+__inline
+#else
+__inline__
+#endif
 void DRDCL_(annotate_rwlock_destroy)(const void* const rwlock)
 {
    int res;
@@ -512,7 +577,12 @@ void DRDCL_(annotate_rwlock_destroy)(const void* const rwlock)
                               rwlock, 0, 0, 0, 0);
 }
 
-static __inline__
+static
+#ifdef _MSC_VER
+__inline
+#else
+__inline__
+#endif
 void DRDCL_(annotate_rwlock_acquired)(const void* const rwlock, const int is_w)
 {
    int res;
@@ -521,7 +591,12 @@ void DRDCL_(annotate_rwlock_acquired)(const void* const rwlock, const int is_w)
                               rwlock, is_w, 0, 0, 0);
 }
 
-static __inline__
+static
+#ifdef _MSC_VER
+__inline
+#else
+__inline__
+#endif
 void DRDCL_(annotate_rwlock_released)(const void* const rwlock, const int is_w)
 {
    int res;
@@ -530,41 +605,62 @@ void DRDCL_(annotate_rwlock_released)(const void* const rwlock, const int is_w)
                               rwlock, is_w, 0, 0, 0);
 }
 
-static __inline__
+static
+#ifdef _MSC_VER
+__inline
+#else
+__inline__
+#endif
 void DRDCL_(annotate_barrier_init)(const void* barrier, const unsigned count,
-				   const int reinitialization_allowed)
+                                   const int reinitialization_allowed)
 {
    int res;
    VALGRIND_DO_CLIENT_REQUEST(res, 0,
                               VG_USERREQ__DRD_ANNOTATION_UNIMP,
-                              "ANNOTATE_BARRIER_INIT", 0, 0, 0, 0);
+                              "ANNOTATE_BARRIER_INIT", barrier, count,
+                              reinitialization_allowed, 0);
 }
 
-static __inline__
+static
+#ifdef _MSC_VER
+__inline
+#else
+__inline__
+#endif
 void DRDCL_(annotate_barrier_destroy)(const void* barrier)
 {
    int res;
    VALGRIND_DO_CLIENT_REQUEST(res, 0,
                               VG_USERREQ__DRD_ANNOTATION_UNIMP,
-                              "ANNOTATE_BARRIER_DESTROY", 0, 0, 0, 0);
+                              "ANNOTATE_BARRIER_DESTROY", barrier, 0, 0, 0);
 }
 
-static __inline__
+static
+#ifdef _MSC_VER
+__inline
+#else
+__inline__
+#endif
 void DRDCL_(annotate_barrier_wait_before)(const void* barrier)
 {
    int res;
    VALGRIND_DO_CLIENT_REQUEST(res, 0,
                               VG_USERREQ__DRD_ANNOTATION_UNIMP,
-                              "ANNOTATE_BARRIER_WAIT_BEFORE", 0, 0, 0, 0);
+                              "ANNOTATE_BARRIER_WAIT_BEFORE", barrier, 0, 0, 0);
 }
 
-static __inline__
+static
+#ifdef _MSC_VER
+__inline
+#else
+__inline__
+#endif
 void DRDCL_(annotate_barrier_wait_after)(const void* barrier)
 {
    int res;
    VALGRIND_DO_CLIENT_REQUEST(res, 0,
                               VG_USERREQ__DRD_ANNOTATION_UNIMP,
-                              "ANNOTATE_BARRIER_WAIT_AFTER", 0, 0, 0, 0);
+                              "ANNOTATE_BARRIER_WAIT_AFTER", barrier, 0, 0, 0);
 }
 
 

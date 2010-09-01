@@ -160,14 +160,15 @@ void getAllocableRegs_ARM ( Int* nregs, HReg** arr )
    //(*arr)[i++] = hregARM_Q15();
 
    // unavail: r8 as GSP
-   // r12 'cos we're not sure what it's for
+   // r12 is used as a spill/reload temporary
    // r13 as SP
    // r14 as LR
    // r15 as PC
    //
    // All in all, we have 11 allocatable integer registers:
-   // 0 1 2 3 4 5 6 7 9 10 11 plus r8 dedicated as GSP.
-   // 12 13 14 and 15 are not under the allocator's control.
+   // 0 1 2 3 4 5 6 7 9 10 11, with r8 dedicated as GSP
+   // and r12 dedicated as a spill temporary.
+   // 13 14 and 15 are not under the allocator's control.
    //
    // Hence for the allocatable registers we have:
    //
@@ -2371,9 +2372,11 @@ void genSpill_ARM ( /*OUT*/HInstr** i1, /*OUT*/HInstr** i2,
          HReg base = r8;
          vassert(0 == (offsetB & 3));
          if (offsetB >= 1024) {
+            Int offsetKB = offsetB / 1024;
+            /* r12 = r8 + (1024 * offsetKB) */
             *i1 = ARMInstr_Alu(ARMalu_ADD, r12, r8,
-                               ARMRI84_I84(1,11)); /* 1024 */
-            offsetB -= 1024;
+                               ARMRI84_I84(offsetKB, 11));
+            offsetB -= (1024 * offsetKB);
             base = r12;
          }
          vassert(offsetB <= 1020);
@@ -2424,9 +2427,11 @@ void genReload_ARM ( /*OUT*/HInstr** i1, /*OUT*/HInstr** i2,
          HReg base = r8;
          vassert(0 == (offsetB & 3));
          if (offsetB >= 1024) {
+            Int offsetKB = offsetB / 1024;
+            /* r12 = r8 + (1024 * offsetKB) */
             *i1 = ARMInstr_Alu(ARMalu_ADD, r12, r8,
-                               ARMRI84_I84(1,11)); /* 1024 */
-            offsetB -= 1024;
+                               ARMRI84_I84(offsetKB, 11));
+            offsetB -= (1024 * offsetKB);
             base = r12;
          }
          vassert(offsetB <= 1020);

@@ -31,6 +31,9 @@
 #include "pub_tool_basics.h"
 #include "pub_tool_oset.h"
 #include "pub_tool_libcbase.h"
+#ifdef ENABLE_DRD_CONSISTENCY_CHECKS
+#include "pub_tool_libcassert.h"
+#endif
 
 
 /* Bitmap representation. A bitmap is a data structure in which two bits are

@@ -149,8 +149,8 @@ VG_REGPARM(2) void DRD_(trace_load)(Addr addr, SizeT size)
 {
 #ifdef ENABLE_DRD_CONSISTENCY_CHECKS
    /* The assert below has been commented out because of performance reasons.*/
-   tl_assert(thread_get_running_tid()
-             == VgThreadIdToDrdThreadId(VG_(get_running_tid())));
+   tl_assert(DRD_(thread_get_running_tid)()
+             == DRD_(VgThreadIdToDrdThreadId)(VG_(get_running_tid())));
 #endif
 
    if (DRD_(running_thread_is_recording_loads)()
@@ -215,8 +215,8 @@ VG_REGPARM(2) void DRD_(trace_store)(Addr addr, SizeT size)
 {
 #ifdef ENABLE_DRD_CONSISTENCY_CHECKS
    /* The assert below has been commented out because of performance reasons.*/
-   tl_assert(thread_get_running_tid()
-             == VgThreadIdToDrdThreadId(VG_(get_running_tid())));
+   tl_assert(DRD_(thread_get_running_tid)()
+             == DRD_(VgThreadIdToDrdThreadId)(VG_(get_running_tid())));
 #endif
 
    if (DRD_(running_thread_is_recording_stores)()

@@ -1296,10 +1296,17 @@ struct vki_dirent {
 // From linux-2.6.8.1/include/linux/fcntl.h
 //----------------------------------------------------------------------
 
-#define VKI_F_SETLEASE	(VKI_F_LINUX_SPECIFIC_BASE+0)
-#define VKI_F_GETLEASE	(VKI_F_LINUX_SPECIFIC_BASE+1)
+#define VKI_F_SETLEASE      (VKI_F_LINUX_SPECIFIC_BASE + 0)
+#define VKI_F_GETLEASE      (VKI_F_LINUX_SPECIFIC_BASE + 1)
 
-#define VKI_F_NOTIFY	(VKI_F_LINUX_SPECIFIC_BASE+2)
+#define VKI_F_CANCELLK      (VKI_F_LINUX_SPECIFIC_BASE + 5)
+
+#define VKI_F_DUPFD_CLOEXEC (VKI_F_LINUX_SPECIFIC_BASE + 6)
+
+#define VKI_F_NOTIFY        (VKI_F_LINUX_SPECIFIC_BASE + 2)
+
+#define VKI_F_SETPIPE_SZ    (VKI_F_LINUX_SPECIFIC_BASE + 7)
+#define VKI_F_GETPIPE_SZ    (VKI_F_LINUX_SPECIFIC_BASE + 8)
 
 //----------------------------------------------------------------------
 // From linux-2.6.8.1/include/linux/sysctl.h

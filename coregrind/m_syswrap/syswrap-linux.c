@@ -3582,6 +3582,7 @@ PRE(sys_fcntl)
 
    // These ones use ARG3 as "arg".
    case VKI_F_DUPFD:
+   case VKI_F_DUPFD_CLOEXEC:
    case VKI_F_SETFD:
    case VKI_F_SETFL:
    case VKI_F_SETLEASE:
@@ -3634,6 +3635,15 @@ POST(sys_fcntl)
             ML_(record_fd_open_named)(tid, RES);
       }
    }
+   else if (ARG2 == VKI_F_DUPFD_CLOEXEC) {
+      if (!ML_(fd_allowed)(RES, "fcntl(DUPFD_CLOEXEC)", tid, True)) {
+         VG_(close)(RES);
+         SET_STATUS_Failure( VKI_EMFILE );
+      } else {
+         if (VG_(clo_track_fds))
+            ML_(record_fd_open_named)(tid, RES);
+      }
+   }
 }
 
 // XXX: wrapper only suitable for 32-bit systems
@@ -3654,6 +3664,7 @@ PRE(sys_fcntl64)
 
    // These ones use ARG3 as "arg".
    case VKI_F_DUPFD:
+   case VKI_F_DUPFD_CLOEXEC:
    case VKI_F_SETFD:
    case VKI_F_SETFL:
    case VKI_F_SETLEASE:
@@ -3692,6 +3703,15 @@ POST(sys_fcntl64)
    vg_assert(SUCCESS);
    if (ARG2 == VKI_F_DUPFD) {
       if (!ML_(fd_allowed)(RES, "fcntl64(DUPFD)", tid, True)) {
+         VG_(close)(RES);
+         SET_STATUS_Failure( VKI_EMFILE );
+      } else {
+         if (VG_(clo_track_fds))
+            ML_(record_fd_open_named)(tid, RES);
+      }
+   }
+   else if (ARG2 == VKI_F_DUPFD_CLOEXEC) {
+      if (!ML_(fd_allowed)(RES, "fcntl64(DUPFD_CLOEXEC)", tid, True)) {
          VG_(close)(RES);
          SET_STATUS_Failure( VKI_EMFILE );
       } else {

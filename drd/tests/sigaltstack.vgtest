@@ -1,0 +1,2 @@
+prog: ../../memcheck/tests/sigaltstack
+vgopts: -q

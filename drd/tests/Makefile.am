@@ -198,6 +198,8 @@ EXTRA_DIST =                                        \
 	sem_open_traced.vgtest                      \
 	sigalrm.stderr.exp                          \
 	sigalrm.vgtest                              \
+	sigaltstack.stderr.exp                      \
+	sigaltstack.vgtest                          \
 	tc01_simple_race.stderr.exp                 \
 	tc01_simple_race.vgtest                     \
 	tc02_simple_tls.stderr.exp                  \

@@ -1,0 +1,6 @@
+calling sigaltstack, stack base is 0x........
+setting sigaction
+res = 0
+raising the signal
+caught signal, local var is on 0x........
+done

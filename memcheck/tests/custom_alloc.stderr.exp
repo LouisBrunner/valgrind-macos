@@ -18,5 +18,7 @@ Mismatched free() / delete / delete []
 
 Invalid read of size 4
    at 0x........: main (custom_alloc.c:89)
- Address 0x........ is not stack'd, malloc'd or (recently) free'd
+ Address 0x........ is 0 bytes inside a block of size 40 free'd
+   at 0x........: custom_free (custom_alloc.c:54)
+   by 0x........: main (custom_alloc.c:81)
 

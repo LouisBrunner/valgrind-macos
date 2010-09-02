@@ -275,14 +275,14 @@ typedef
 #define VALGRIND_DO_CLIENT_REQUEST(                               \
         _zzq_rlval, _zzq_default, _zzq_request,                   \
         _zzq_arg1, _zzq_arg2, _zzq_arg3, _zzq_arg4, _zzq_arg5)    \
-  { volatile unsigned int _zzq_args[6];                           \
+  { volatile uintptr_t _zzq_args[6];                              \
     volatile unsigned int _zzq_result;                            \
-    _zzq_args[0] = (unsigned int)(ptrdiff_t)(_zzq_request);       \
-    _zzq_args[1] = (unsigned int)(ptrdiff_t)(_zzq_arg1);          \
-    _zzq_args[2] = (unsigned int)(ptrdiff_t)(_zzq_arg2);          \
-    _zzq_args[3] = (unsigned int)(ptrdiff_t)(_zzq_arg3);          \
-    _zzq_args[4] = (unsigned int)(ptrdiff_t)(_zzq_arg4);          \
-    _zzq_args[5] = (unsigned int)(ptrdiff_t)(_zzq_arg5);          \
+    _zzq_args[0] = (uintptr_t)(_zzq_request);                     \
+    _zzq_args[1] = (uintptr_t)(_zzq_arg1);                        \
+    _zzq_args[2] = (uintptr_t)(_zzq_arg2);                        \
+    _zzq_args[3] = (uintptr_t)(_zzq_arg3);                        \
+    _zzq_args[4] = (uintptr_t)(_zzq_arg4);                        \
+    _zzq_args[5] = (uintptr_t)(_zzq_arg5);                        \
     __asm { __asm lea eax, _zzq_args __asm mov edx, _zzq_default  \
             __SPECIAL_INSTRUCTION_PREAMBLE                        \
             /* %EDX = client_request ( %EAX ) */                  \
@@ -4227,29 +4227,67 @@ typedef
 #  define __extension__ /* */
 #endif
 
+
+/*
+ * VALGRIND_DO_CLIENT_REQUEST_EXPR(): a C expression that invokes a Valgrind
+ * client request and whose value equals the client request result.
+ */
+
+#if defined(NVALGRIND)
+
+#define VALGRIND_DO_CLIENT_REQUEST_EXPR(                               \
+        _zzq_default, _zzq_request,                                    \
+        _zzq_arg1, _zzq_arg2, _zzq_arg3, _zzq_arg4, _zzq_arg5)         \
+   (_zzq_default)
+
+#else /*defined(NVALGRIND)*/
+
+#if defined(_MSC_VER)
+
+#define VALGRIND_DO_CLIENT_REQUEST_EXPR(                                \
+        _zzq_default, _zzq_request,                                     \
+        _zzq_arg1, _zzq_arg2, _zzq_arg3, _zzq_arg4, _zzq_arg5)          \
+   (vg_VALGRIND_DO_CLIENT_REQUEST_EXPR((uintptr_t)(_zzq_default),       \
+        (_zzq_request), (uintptr_t)(_zzq_arg1), (uintptr_t)(_zzq_arg2), \
+        (uintptr_t)(_zzq_arg3), (uintptr_t)(_zzq_arg4),                 \
+        (uintptr_t)(_zzq_arg5)))
+
+static __inline unsigned
+vg_VALGRIND_DO_CLIENT_REQUEST_EXPR(uintptr_t _zzq_default,
+                                   unsigned _zzq_request, uintptr_t _zzq_arg1,
+                                   uintptr_t _zzq_arg2, uintptr_t _zzq_arg3,
+                                   uintptr_t _zzq_arg4, uintptr_t _zzq_arg5)
+{
+    unsigned _zzq_rlval;
+    VALGRIND_DO_CLIENT_REQUEST(_zzq_rlval, _zzq_default, _zzq_request,
+                      _zzq_arg1, _zzq_arg2, _zzq_arg3, _zzq_arg4, _zzq_arg5);
+    return _zzq_rlval;
+}
+
+#else /*defined(_MSC_VER)*/
+
+#define VALGRIND_DO_CLIENT_REQUEST_EXPR(                               \
+        _zzq_default, _zzq_request,                                    \
+        _zzq_arg1, _zzq_arg2, _zzq_arg3, _zzq_arg4, _zzq_arg5)         \
+   (__extension__({unsigned int _zzq_rlval;                            \
+    VALGRIND_DO_CLIENT_REQUEST(_zzq_rlval, _zzq_default, _zzq_request, \
+                _zzq_arg1, _zzq_arg2, _zzq_arg3, _zzq_arg4, _zzq_arg5) \
+    _zzq_rlval;                                                        \
+   }))
+
+#endif /*defined(_MSC_VER)*/
+
+#endif /*defined(NVALGRIND)*/
+
+
 /* Returns the number of Valgrinds this code is running under.  That
    is, 0 if running natively, 1 if running under Valgrind, 2 if
    running under Valgrind which is running under another Valgrind,
    etc. */
-#if !defined(_MSC_VER)
-#define RUNNING_ON_VALGRIND  __extension__                        \
-   ({unsigned int _qzz_res;                                       \
-    VALGRIND_DO_CLIENT_REQUEST(_qzz_res, 0 /* if not */,          \
-                               VG_USERREQ__RUNNING_ON_VALGRIND,   \
-                               0, 0, 0, 0, 0);                    \
-    _qzz_res;                                                     \
-   })
-#else /* defined(_MSC_VER) */
-#define RUNNING_ON_VALGRIND vg_RunningOnValgrind()
-static __inline unsigned int vg_RunningOnValgrind(void)
-{
-    unsigned int _qzz_res;
-    VALGRIND_DO_CLIENT_REQUEST(_qzz_res, 0 /* if not */,
-                               VG_USERREQ__RUNNING_ON_VALGRIND,
-                               0, 0, 0, 0, 0);
-    return _qzz_res;
-}
-#endif
+#define RUNNING_ON_VALGRIND                                           \
+    VALGRIND_DO_CLIENT_REQUEST_EXPR(0 /* if not */,                   \
+                                    VG_USERREQ__RUNNING_ON_VALGRIND,  \
+                                    0, 0, 0, 0, 0)                    \
 
 
 /* Discard translation of code in the range [_qzz_addr .. _qzz_addr +
@@ -4294,8 +4332,8 @@ VALGRIND_PRINTF(const char *format, ...)
 #if defined(_MSC_VER)
    VALGRIND_DO_CLIENT_REQUEST(_qzz_res, 0,
                               VG_USERREQ__PRINTF_VALIST_BY_REF,
-                              (ptrdiff_t)format,
-                              (ptrdiff_t)&vargs,
+                              (uintptr_t)format,
+                              (uintptr_t)&vargs,
                               0, 0, 0);
 #else
    VALGRIND_DO_CLIENT_REQUEST(_qzz_res, 0,
@@ -4324,8 +4362,8 @@ VALGRIND_PRINTF_BACKTRACE(const char *format, ...)
 #if defined(_MSC_VER)
    VALGRIND_DO_CLIENT_REQUEST(_qzz_res, 0,
                               VG_USERREQ__PRINTF_BACKTRACE_VALIST_BY_REF,
-                              (ptrdiff_t)format,
-                              (ptrdiff_t)&vargs,
+                              (uintptr_t)format,
+                              (uintptr_t)&vargs,
                               0, 0, 0);
 #else
    VALGRIND_DO_CLIENT_REQUEST(_qzz_res, 0,

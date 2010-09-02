@@ -2610,6 +2610,70 @@ static Bool compute_ITSTATE ( /*OUT*/UInt*  itstate,
    return False;
 }
 
+
+/* Generate IR to do 32-bit bit reversal, a la Hacker's Delight
+   Chapter 7 Section 1. */
+static IRTemp gen_BITREV ( IRTemp x0 )
+{
+   IRTemp x1 = newTemp(Ity_I32);
+   IRTemp x2 = newTemp(Ity_I32);
+   IRTemp x3 = newTemp(Ity_I32);
+   IRTemp x4 = newTemp(Ity_I32);
+   IRTemp x5 = newTemp(Ity_I32);
+   UInt   c1 = 0x55555555;
+   UInt   c2 = 0x33333333;
+   UInt   c3 = 0x0F0F0F0F;
+   UInt   c4 = 0x00FF00FF;
+   UInt   c5 = 0x0000FFFF;
+   assign(x1,
+          binop(Iop_Or32,
+                binop(Iop_Shl32,
+                      binop(Iop_And32, mkexpr(x0), mkU32(c1)),
+                      mkU8(1)),
+                binop(Iop_Shr32,
+                      binop(Iop_And32, mkexpr(x0), mkU32(~c1)),
+                      mkU8(1))
+   ));
+   assign(x2,
+          binop(Iop_Or32,
+                binop(Iop_Shl32,
+                      binop(Iop_And32, mkexpr(x1), mkU32(c2)),
+                      mkU8(2)),
+                binop(Iop_Shr32,
+                      binop(Iop_And32, mkexpr(x1), mkU32(~c2)),
+                      mkU8(2))
+   ));
+   assign(x3,
+          binop(Iop_Or32,
+                binop(Iop_Shl32,
+                      binop(Iop_And32, mkexpr(x2), mkU32(c3)),
+                      mkU8(4)),
+                binop(Iop_Shr32,
+                      binop(Iop_And32, mkexpr(x2), mkU32(~c3)),
+                      mkU8(4))
+   ));
+   assign(x4,
+          binop(Iop_Or32,
+                binop(Iop_Shl32,
+                      binop(Iop_And32, mkexpr(x3), mkU32(c4)),
+                      mkU8(8)),
+                binop(Iop_Shr32,
+                      binop(Iop_And32, mkexpr(x3), mkU32(~c4)),
+                      mkU8(8))
+   ));
+   assign(x5,
+          binop(Iop_Or32,
+                binop(Iop_Shl32,
+                      binop(Iop_And32, mkexpr(x4), mkU32(c5)),
+                      mkU8(16)),
+                binop(Iop_Shr32,
+                      binop(Iop_And32, mkexpr(x4), mkU32(~c5)),
+                      mkU8(16))
+   ));
+   return x5;
+}
+
+
 /*------------------------------------------------------------*/
 /*--- Advanced SIMD (NEON) instructions                    ---*/
 /*------------------------------------------------------------*/
@@ -17262,7 +17326,7 @@ DisResult disInstr_THUMB_WRK (
        && INSN1(15,12) == BITS4(1,1,1,1)
        && INSN1(7,4) == BITS4(1,0,0,0)) {
       UInt rM1 = INSN0(3,0);
-      UInt rD = INSN1(11,8);
+      UInt rD  = INSN1(11,8);
       UInt rM2 = INSN1(3,0);
       if (!isBadRegT(rD) && !isBadRegT(rM1) && rM1 == rM2) {
          IRTemp arg = newTemp(Ity_I32);
@@ -17277,6 +17341,23 @@ DisResult disInstr_THUMB_WRK (
          ));
          putIRegT(rD, mkexpr(res), condT);
          DIP("clz r%u, r%u\n", rD, rM1);
+         goto decode_success;
+      }
+   }
+
+   /* ------------------- (T1) RBIT ------------------- */
+   if (INSN0(15,4) == 0xFA9
+       && INSN1(15,12) == BITS4(1,1,1,1)
+       && INSN1(7,4) == BITS4(1,0,1,0)) {
+      UInt rM1 = INSN0(3,0);
+      UInt rD  = INSN1(11,8);
+      UInt rM2 = INSN1(3,0);
+      if (!isBadRegT(rD) && !isBadRegT(rM1) && rM1 == rM2) {
+         IRTemp arg = newTemp(Ity_I32);
+         assign(arg, getIRegT(rM1));
+         IRTemp res = gen_BITREV(arg);
+         putIRegT(rD, mkexpr(res), condT);
+         DIP("rbit r%u, r%u\n", rD, rM1);
          goto decode_success;
       }
    }

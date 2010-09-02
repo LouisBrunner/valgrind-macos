@@ -41,6 +41,8 @@ DRD_CFLAGS =				\
   -Wno-inline				\
   -Wno-unused-parameter
 
+#DRD_CFLAGS += -DENABLE_DRD_CONSISTENCY_CHECKS
+
 #----------------------------------------------------------------------------
 # drd-<platform>
 #----------------------------------------------------------------------------

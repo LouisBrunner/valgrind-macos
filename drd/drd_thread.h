@@ -77,6 +77,7 @@ typedef struct
    Addr      stack_max;     /**< Top of stack. */
    SizeT     stack_size;    /**< Maximum size of stack. */
    char      name[64];      /**< User-assigned thread name. */
+   Bool      on_alt_stack;
    /** Indicates whether the Valgrind core knows about this thread. */
    Bool      vg_thread_exists;
    /** Indicates whether there is an associated POSIX thread ID. */
@@ -142,6 +143,10 @@ Addr DRD_(thread_get_stack_min)(const DrdThreadId tid);
 Addr DRD_(thread_get_stack_min_min)(const DrdThreadId tid);
 Addr DRD_(thread_get_stack_max)(const DrdThreadId tid);
 SizeT DRD_(thread_get_stack_size)(const DrdThreadId tid);
+Bool DRD_(thread_get_on_alt_stack)(const DrdThreadId tid);
+void DRD_(thread_set_on_alt_stack)(const DrdThreadId tid,
+                                   const Bool on_alt_stack);
+Int DRD_(thread_get_threads_on_alt_stack)(void);
 void DRD_(thread_set_pthreadid)(const DrdThreadId tid, const PThreadId ptid);
 Bool DRD_(thread_get_joinable)(const DrdThreadId tid);
 void DRD_(thread_set_joinable)(const DrdThreadId tid, const Bool joinable);

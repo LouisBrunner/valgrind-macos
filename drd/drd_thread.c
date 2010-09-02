@@ -181,6 +181,7 @@ static DrdThreadId DRD_(VgThreadIdToNewDrdThreadId)(const ThreadId tid)
          DRD_(g_threadinfo)[i].stack_startup = 0;
          DRD_(g_threadinfo)[i].stack_max     = 0;
          DRD_(thread_set_name)(i, "");
+         DRD_(g_threadinfo)[i].on_alt_stack        = False;
          DRD_(g_threadinfo)[i].is_recording_loads  = True;
          DRD_(g_threadinfo)[i].is_recording_stores = True;
          DRD_(g_threadinfo)[i].pthread_create_nesting_level = 0;
@@ -418,6 +419,31 @@ SizeT DRD_(thread_get_stack_size)(const DrdThreadId tid)
    tl_assert(0 <= (int)tid && tid < DRD_N_THREADS
              && tid != DRD_INVALID_THREADID);
    return DRD_(g_threadinfo)[tid].stack_size;
+}
+
+Bool DRD_(thread_get_on_alt_stack)(const DrdThreadId tid)
+{
+   tl_assert(0 <= (int)tid && tid < DRD_N_THREADS
+             && tid != DRD_INVALID_THREADID);
+   return DRD_(g_threadinfo)[tid].on_alt_stack;
+}
+
+void DRD_(thread_set_on_alt_stack)(const DrdThreadId tid,
+                                   const Bool on_alt_stack)
+{
+   tl_assert(0 <= (int)tid && tid < DRD_N_THREADS
+             && tid != DRD_INVALID_THREADID);
+   tl_assert(on_alt_stack == !!on_alt_stack);
+   DRD_(g_threadinfo)[tid].on_alt_stack = on_alt_stack;
+}
+
+Int DRD_(thread_get_threads_on_alt_stack)(void)
+{
+   int i, n = 0;
+
+   for (i = 1; i < DRD_N_THREADS; i++)
+      n += DRD_(g_threadinfo)[i].on_alt_stack;
+   return n;
 }
 
 /**

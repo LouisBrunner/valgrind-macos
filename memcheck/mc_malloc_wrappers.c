@@ -120,7 +120,8 @@ static void add_to_freed_queue ( MC_Chunk* mc )
       mc1->next = NULL; /* just paranoia */
 
       /* free MC_Chunk */
-      VG_(cli_free) ( (void*)(mc1->data) );
+      if (MC_AllocCustom != mc1->allockind)
+         VG_(cli_free) ( (void*)(mc1->data) );
       VG_(free) ( mc1 );
    }
 }
@@ -290,14 +291,10 @@ void die_and_free_mem ( ThreadId tid, MC_Chunk* mc, SizeT rzB )
       accessible with a client request... */
    MC_(make_mem_noaccess)( mc->data-rzB, mc->szB + 2*rzB );
 
-   /* Put it out of harm's way for a while, if not from a client request */
-   if (MC_AllocCustom != mc->allockind) {
-      /* Record where freed */
-      mc->where = VG_(record_ExeContext) ( tid, 0/*first_ip_delta*/ );
-      add_to_freed_queue ( mc );
-   } else {
-      VG_(free) ( mc );
-   }
+   /* Record where freed */
+   mc->where = VG_(record_ExeContext) ( tid, 0/*first_ip_delta*/ );
+   /* Put it out of harm's way for a while */
+   add_to_freed_queue ( mc );
 }
 
 void MC_(handle_free) ( ThreadId tid, Addr p, UInt rzB, MC_AllocKind kind )

@@ -6,26 +6,24 @@
 
 
 /*
- * Redefine the happens before/after/done annotation macros such that these
- * can be intercepted by DRD, Helgrind and ThreadSanitizer. See also
+ * Define annotation macros such that these can be intercepted by DRD, Helgrind
+ * and ThreadSanitizer. See also
  * http://code.google.com/p/data-race-test/source/browse/trunk/dynamic_annotations/dynamic_annotations.h
  */
-#undef ANNOTATE_HAPPENS_BEFORE
-#define ANNOTATE_HAPPENS_BEFORE(addr)			\
+#define U_ANNOTATE_NEW_MEMORY(addr, size) ANNOTATE_NEW_MEMORY(addr, size)
+#define U_ANNOTATE_HAPPENS_BEFORE(addr)			\
   do {							\
-    DRDCL_(annotate_happens_before)(addr);		\
+    ANNOTATE_HAPPENS_BEFORE(addr);			\
     AnnotateCondVarSignal(__FILE__, __LINE__, addr);	\
   } while(0)
-#undef ANNOTATE_HAPPENS_AFTER
-#define ANNOTATE_HAPPENS_AFTER(addr)				\
+#define U_ANNOTATE_HAPPENS_AFTER(addr)				\
   do {								\
-    DRDCL_(annotate_happens_after)(addr);			\
+    ANNOTATE_HAPPENS_AFTER(addr);				\
     AnnotateCondVarWait(__FILE__, __LINE__, addr, NULL);	\
   } while(0)
-#undef ANNOTATE_HAPPENS_DONE
-#define ANNOTATE_HAPPENS_DONE(addr)		\
+#define U_ANNOTATE_HAPPENS_DONE(addr)		\
   do {						\
-    DRDCL_(annotate_happens_done)(addr);	\
+    ANNOTATE_HAPPENS_DONE(addr);		\
   } while(0)
 
 

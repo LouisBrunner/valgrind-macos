@@ -18,9 +18,9 @@ static void* thread_func(void* arg)
 {
   int i;
 
-  ANNOTATE_HAPPENS_AFTER(&s_i);
+  U_ANNOTATE_HAPPENS_AFTER(&s_i);
   i = s_i;
-  ANNOTATE_HAPPENS_AFTER(&s_i);
+  U_ANNOTATE_HAPPENS_AFTER(&s_i);
   *(int*)arg = i;
   return NULL;
 }
@@ -30,7 +30,7 @@ int main(int argc, char** argv)
   pthread_t tid[2];
   int result[2];
 
-  ANNOTATE_HAPPENS_BEFORE(&s_i);
+  U_ANNOTATE_HAPPENS_BEFORE(&s_i);
   pthread_create(&tid[0], 0, thread_func, &result[0]);
   pthread_create(&tid[1], 0, thread_func, &result[1]);
   s_i = 1;

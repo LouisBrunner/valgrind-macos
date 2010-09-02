@@ -17,30 +17,30 @@ int main(int argc, char** argv)
   pthread_cond_init(&cv, NULL);
 
   /* happens-after without preceding happens-before. */
-  ANNOTATE_HAPPENS_AFTER(&i);
+  U_ANNOTATE_HAPPENS_AFTER(&i);
 
   /* happens-after on a mutex. */
-  ANNOTATE_HAPPENS_BEFORE(&m);
+  U_ANNOTATE_HAPPENS_BEFORE(&m);
 
   /* happens-after on a condition variable. */
-  ANNOTATE_HAPPENS_BEFORE(&cv);
+  U_ANNOTATE_HAPPENS_BEFORE(&cv);
 
   /* condition variable operation on a h.b. annotated object. */
-  ANNOTATE_HAPPENS_BEFORE(&i);
+  U_ANNOTATE_HAPPENS_BEFORE(&i);
   pthread_cond_init((pthread_cond_t*)&i, NULL);
 
   /* The sequence below is fine. */
-  ANNOTATE_NEW_MEMORY(&i, sizeof(i));
-  ANNOTATE_HAPPENS_BEFORE(&i);
-  ANNOTATE_HAPPENS_AFTER(&i);
-  ANNOTATE_NEW_MEMORY(&i, sizeof(i));
-  ANNOTATE_HAPPENS_BEFORE(&i);
-  ANNOTATE_NEW_MEMORY(&i, sizeof(i));
+  U_ANNOTATE_NEW_MEMORY(&i, sizeof(i));
+  U_ANNOTATE_HAPPENS_BEFORE(&i);
+  U_ANNOTATE_HAPPENS_AFTER(&i);
+  U_ANNOTATE_NEW_MEMORY(&i, sizeof(i));
+  U_ANNOTATE_HAPPENS_BEFORE(&i);
+  U_ANNOTATE_NEW_MEMORY(&i, sizeof(i));
 
   /* happens-before after happens-after. */
-  ANNOTATE_HAPPENS_BEFORE(&i);
-  ANNOTATE_HAPPENS_AFTER(&i);
-  ANNOTATE_HAPPENS_BEFORE(&i);
+  U_ANNOTATE_HAPPENS_BEFORE(&i);
+  U_ANNOTATE_HAPPENS_AFTER(&i);
+  U_ANNOTATE_HAPPENS_BEFORE(&i);
 
   fprintf(stderr, "Done.\n");
   return 0;

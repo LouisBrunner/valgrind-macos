@@ -14560,7 +14560,7 @@ DisResult disInstr_THUMB_WRK (
          suitably encoded address therefore (w CPSR.T at the bottom).
          Have to special-case r15, as usual. */
       UInt rM = (INSN0(6,6) << 3) | INSN0(5,3);
-      if (BITS3(0,0,0) == INSN0(2,0) &&/*atc*/rM != 15) {
+      if (BITS3(0,0,0) == INSN0(2,0)) {
          IRTemp dst = newTemp(Ity_I32);
          gen_SIGILL_T_if_in_but_NLI_ITBlock(old_itstate, new_itstate);
          mk_skip_over_T16_if_cond_is_false(condT);
@@ -14569,7 +14569,6 @@ DisResult disInstr_THUMB_WRK (
          if (rM <= 14) {
             assign( dst, getIRegT(rM) );
          } else {
-            break; // ATC
             vassert(rM == 15);
             assign( dst, mkU32(guest_R15_curr_instr_notENC + 4) );
          }

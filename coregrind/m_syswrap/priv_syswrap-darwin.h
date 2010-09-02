@@ -295,8 +295,8 @@ DECL_TEMPLATE(darwin, getxattr);                // 234
 DECL_TEMPLATE(darwin, fgetxattr);               // 235
 DECL_TEMPLATE(darwin, setxattr);                // 236
 DECL_TEMPLATE(darwin, fsetxattr);               // 237
-// NYI removexattr 238
-// NYI fremovexattr 239
+DECL_TEMPLATE(darwin, removexattr);             // 238
+DECL_TEMPLATE(darwin, fremovexattr);            // 239
 DECL_TEMPLATE(darwin, listxattr);               // 240
 DECL_TEMPLATE(darwin, flistxattr);              // 241
 DECL_TEMPLATE(darwin, fsctl);                   // 242
@@ -334,7 +334,7 @@ DECL_TEMPLATE(darwin, sem_post);                // 273
 // NYI sem_getvalue 274
 DECL_TEMPLATE(darwin, sem_init);                // 275
 DECL_TEMPLATE(darwin, sem_destroy);             // 276
-// NYI open_extended 277
+DECL_TEMPLATE(darwin, open_extended)            // 277
 // NYI umask_extended 278
 DECL_TEMPLATE(darwin, stat_extended);           // 279
 DECL_TEMPLATE(darwin, lstat_extended);          // 280

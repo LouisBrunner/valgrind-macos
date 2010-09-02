@@ -1773,6 +1773,27 @@ PRE(fsetxattr)
 }
 
 
+PRE(removexattr)
+{
+   PRINT( "removexattr ( %#lx(%s), %#lx(%s), %ld )",
+          ARG1, (HChar*)ARG1, ARG2, (HChar*)ARG2, ARG3 );
+   PRE_REG_READ3(int, "removexattr",
+                 const char*, "path", char*, "attrname", int, "options");
+   PRE_MEM_RASCIIZ( "removexattr(path)", ARG1 );
+   PRE_MEM_RASCIIZ( "removexattr(attrname)", ARG2 );
+}
+
+
+PRE(fremovexattr)
+{
+   PRINT( "fremovexattr ( %ld, %#lx(%s), %ld )",
+          ARG1, ARG2, (HChar*)ARG2, ARG3 );
+   PRE_REG_READ3(int, "fremovexattr",
+                 int, "fd", char*, "attrname", int, "options");
+   PRE_MEM_RASCIIZ( "removexattr(attrname)", ARG2 );
+}
+
+
 PRE(listxattr)
 {
    PRINT( "listxattr ( %#lx(%s), %#lx, %lu, %ld )", 
@@ -2011,7 +2032,7 @@ PRE(fchmod_extended)
       chmod_extended is broken in the same way. */
    PRINT("fchmod_extended ( %ld, %ld, %ld, %ld, %#lx )",
          ARG1, ARG2, ARG3, ARG4, ARG5);
-   PRE_REG_READ5(long, "fchmod", 
+   PRE_REG_READ5(long, "fchmod_extended", 
                  unsigned int, fildes, 
                  uid_t, uid,
                  gid_t, gid,
@@ -2030,7 +2051,7 @@ PRE(chmod_extended)
       fchmod_extended is broken in the same way. */
    PRINT("chmod_extended ( %#lx(%s), %ld, %ld, %ld, %#lx )",
          ARG1, ARG1 ? (HChar*)ARG1 : "(null)", ARG2, ARG3, ARG4, ARG5);
-   PRE_REG_READ5(long, "chmod", 
+   PRE_REG_READ5(long, "chmod_extended", 
                  unsigned int, fildes, 
                  uid_t, uid,
                  gid_t, gid,
@@ -2044,6 +2065,28 @@ PRE(chmod_extended)
                  sizeof(struct vki_kauth_filesec) );
 }
 
+PRE(open_extended)
+{
+   /* DDD: Note: this is not really correct.  Handling of
+      {,f}chmod_extended is broken in the same way. */
+   PRINT("open_extended ( %#lx(%s), 0x%lx, %ld, %ld, %ld, %#lx )",
+         ARG1, ARG1 ? (HChar*)ARG1 : "(null)",
+	 ARG2, ARG3, ARG4, ARG5, ARG6);
+   PRE_REG_READ6(long, "open_extended", 
+                 char*, path,
+                 int,   flags,
+                 uid_t, uid,
+                 gid_t, gid,
+                 vki_mode_t, mode,
+                 void* /*really,user_addr_t*/, xsecurity);
+   PRE_MEM_RASCIIZ("open_extended(path)", ARG1);
+   /* DDD: relative to the xnu sources (kauth_copyinfilesec), this
+      is just way wrong.  [The trouble is with the size, which depends on a
+      non-trival kernel computation] */
+   if (ARG6)
+      PRE_MEM_READ( "open_extended(xsecurity)", ARG6, 
+                    sizeof(struct vki_kauth_filesec) );
+}
 
 // This is a ridiculous syscall.  Specifically, the 'entries' argument points
 // to a buffer that contains one or more 'accessx_descriptor' structs followed
@@ -7802,8 +7845,8 @@ const SyscallTableEntry ML_(syscall_table)[] = {
    MACXY(__NR_fgetxattr,   fgetxattr), 
    MACX_(__NR_setxattr,    setxattr), 
    MACX_(__NR_fsetxattr,   fsetxattr), 
-// _____(__NR_removexattr), 
-// _____(__NR_fremovexattr), 
+   MACX_(__NR_removexattr, removexattr), 
+   MACX_(__NR_fremovexattr, fremovexattr), 
    MACXY(__NR_listxattr,   listxattr),    // 240
    MACXY(__NR_flistxattr,  flistxattr), 
    MACXY(__NR_fsctl,       fsctl), 
@@ -7845,7 +7888,7 @@ const SyscallTableEntry ML_(syscall_table)[] = {
 // _____(__NR_sem_getvalue), 
    MACXY(__NR_sem_init,    sem_init), 
    MACX_(__NR_sem_destroy, sem_destroy), 
-// _____(__NR_open_extended), 
+   MACX_(__NR_open_extended,  open_extended),    // 277
 // _____(__NR_umask_extended), 
    MACXY(__NR_stat_extended,  stat_extended), 
    MACXY(__NR_lstat_extended, lstat_extended),   // 280

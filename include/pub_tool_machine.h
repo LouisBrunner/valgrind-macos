@@ -146,7 +146,7 @@ extern Bool VG_(thread_stack_next)       ( /*MOD*/ThreadId* tid,
 extern Addr VG_(thread_get_stack_max) ( ThreadId tid );
 
 // Returns how many bytes have been allocated for the stack of the given thread
-extern Addr VG_(thread_get_stack_size) ( ThreadId tid );
+extern SizeT VG_(thread_get_stack_size) ( ThreadId tid );
 
 // Returns the bottommost address of the alternate signal stack.
 // See also the man page of sigaltstack().

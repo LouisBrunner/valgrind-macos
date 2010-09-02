@@ -1070,59 +1070,65 @@ IRSB* cg_instrument ( VgCallbackClosure* closure,
          }
 
          case Ist_Exit: {
-            /* Stuff to widen the guard expression to a host word, so
-               we can pass it to the branch predictor simulation
-               functions easily. */
-            Bool     inverted;
-            Addr64   nia, sea;
-            IRConst* dst;
-            IRType   tyW    = hWordTy;
-            IROp     widen  = tyW==Ity_I32  ? Iop_1Uto32  : Iop_1Uto64;
-            IROp     opXOR  = tyW==Ity_I32  ? Iop_Xor32   : Iop_Xor64;
-            IRTemp   guard1 = newIRTemp(cgs.sbOut->tyenv, Ity_I1);
-            IRTemp   guardW = newIRTemp(cgs.sbOut->tyenv, tyW);
-            IRTemp   guard  = newIRTemp(cgs.sbOut->tyenv, tyW);
-            IRExpr*  one    = tyW==Ity_I32 ? IRExpr_Const(IRConst_U32(1))
-                                           : IRExpr_Const(IRConst_U64(1));
+            // call branch predictor only if this is a branch in guest code
+            if ( (st->Ist.Exit.jk == Ijk_Boring) ||
+                 (st->Ist.Exit.jk == Ijk_Call) ||
+                 (st->Ist.Exit.jk == Ijk_Ret) )
+            {
+               /* Stuff to widen the guard expression to a host word, so
+                  we can pass it to the branch predictor simulation
+                  functions easily. */
+               Bool     inverted;
+               Addr64   nia, sea;
+               IRConst* dst;
+               IRType   tyW    = hWordTy;
+               IROp     widen  = tyW==Ity_I32  ? Iop_1Uto32  : Iop_1Uto64;
+               IROp     opXOR  = tyW==Ity_I32  ? Iop_Xor32   : Iop_Xor64;
+               IRTemp   guard1 = newIRTemp(cgs.sbOut->tyenv, Ity_I1);
+               IRTemp   guardW = newIRTemp(cgs.sbOut->tyenv, tyW);
+               IRTemp   guard  = newIRTemp(cgs.sbOut->tyenv, tyW);
+               IRExpr*  one    = tyW==Ity_I32 ? IRExpr_Const(IRConst_U32(1))
+                                              : IRExpr_Const(IRConst_U64(1));
 
-            /* First we need to figure out whether the side exit got
-               inverted by the ir optimiser.  To do that, figure out
-               the next (fallthrough) instruction's address and the
-               side exit address and see if they are the same. */
-            nia = cia + (Addr64)isize;
-            if (tyW == Ity_I32) 
-               nia &= 0xFFFFFFFFULL;
+               /* First we need to figure out whether the side exit got
+                  inverted by the ir optimiser.  To do that, figure out
+                  the next (fallthrough) instruction's address and the
+                  side exit address and see if they are the same. */
+               nia = cia + (Addr64)isize;
+               if (tyW == Ity_I32)
+                  nia &= 0xFFFFFFFFULL;
 
-            /* Side exit address */
-            dst = st->Ist.Exit.dst;
-            if (tyW == Ity_I32) {
-               tl_assert(dst->tag == Ico_U32);
-               sea = (Addr64)(UInt)dst->Ico.U32;
-            } else {
-               tl_assert(tyW == Ity_I64);
-               tl_assert(dst->tag == Ico_U64);
-               sea = dst->Ico.U64;
+               /* Side exit address */
+               dst = st->Ist.Exit.dst;
+               if (tyW == Ity_I32) {
+                  tl_assert(dst->tag == Ico_U32);
+                  sea = (Addr64)(UInt)dst->Ico.U32;
+               } else {
+                  tl_assert(tyW == Ity_I64);
+                  tl_assert(dst->tag == Ico_U64);
+                  sea = dst->Ico.U64;
+               }
+
+               inverted = nia == sea;
+
+               /* Widen the guard expression. */
+               addStmtToIRSB( cgs.sbOut,
+                              IRStmt_WrTmp( guard1, st->Ist.Exit.guard ));
+               addStmtToIRSB( cgs.sbOut,
+                              IRStmt_WrTmp( guardW,
+                                            IRExpr_Unop(widen,
+                                                        IRExpr_RdTmp(guard1))) );
+               /* If the exit is inverted, invert the sense of the guard. */
+               addStmtToIRSB(
+                     cgs.sbOut,
+                     IRStmt_WrTmp(
+                           guard,
+                           inverted ? IRExpr_Binop(opXOR, IRExpr_RdTmp(guardW), one)
+                                    : IRExpr_RdTmp(guardW)
+                              ));
+               /* And post the event. */
+               addEvent_Bc( &cgs, curr_inode, IRExpr_RdTmp(guard) );
             }
-
-            inverted = nia == sea;
-
-            /* Widen the guard expression. */
-            addStmtToIRSB( cgs.sbOut, 
-                           IRStmt_WrTmp( guard1, st->Ist.Exit.guard ));
-            addStmtToIRSB( cgs.sbOut,
-                           IRStmt_WrTmp( guardW,
-                                         IRExpr_Unop(widen, 
-                                                     IRExpr_RdTmp(guard1))) );
-            /* If the exit is inverted, invert the sense of the guard. */
-            addStmtToIRSB( 
-               cgs.sbOut,
-               IRStmt_WrTmp( 
-                  guard,
-                  inverted ? IRExpr_Binop(opXOR, IRExpr_RdTmp(guardW), one)
-                           : IRExpr_RdTmp(guardW) 
-               ));
-            /* And post the event. */
-            addEvent_Bc( &cgs, curr_inode, IRExpr_RdTmp(guard) );
 
             /* We may never reach the next statement, so need to flush
                all outstanding transactions now. */
@@ -1147,7 +1153,7 @@ IRSB* cg_instrument ( VgCallbackClosure* closure,
    /* Deal with branches to unknown destinations.  Except ignore ones
       which are function returns as we assume the return stack
       predictor never mispredicts. */
-   if (sbIn->jumpkind == Ijk_Boring) {
+   if ((sbIn->jumpkind == Ijk_Boring) || (sbIn->jumpkind == Ijk_Call)) {
       if (0) { ppIRExpr( sbIn->next ); VG_(printf)("\n"); }
       switch (sbIn->next->tag) {
          case Iex_Const: 

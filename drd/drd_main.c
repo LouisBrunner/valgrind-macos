@@ -326,9 +326,6 @@ void drd_stop_using_mem(const Addr a1, const SizeT len,
 {
    const Addr a2 = a1 + len;
 
-   if (len == 0)
-      return;
-
    tl_assert(a1 < a2);
 
    if (UNLIKELY(DRD_(any_address_is_traced)()))
@@ -449,6 +446,74 @@ void drd_stop_using_mem_stack(const Addr a, const SizeT len)
                               a + len - VG_STACK_REDZONE_SZB);
    drd_stop_using_mem(a - VG_STACK_REDZONE_SZB, len + VG_STACK_REDZONE_SZB,
                       True);
+}
+
+static
+Bool on_alt_stack(const Addr a)
+{
+   ThreadId vg_tid;
+   Addr alt_min;
+   SizeT alt_size;
+
+   vg_tid = VG_(get_running_tid)();
+   alt_min = VG_(thread_get_altstack_min)(vg_tid);
+   alt_size = VG_(thread_get_altstack_size)(vg_tid);
+   return (SizeT)(a - alt_min) < alt_size;
+}
+
+static
+void drd_start_using_mem_alt_stack(const Addr a, const SizeT len)
+{
+   if (!on_alt_stack(a))
+      drd_start_using_mem_stack(a, len);
+}
+
+static
+void drd_stop_using_mem_alt_stack(const Addr a, const SizeT len)
+{
+   if (!on_alt_stack(a))
+      drd_stop_using_mem_stack(a, len);
+}
+
+/**
+ * Callback function invoked by the Valgrind core before a signal is delivered.
+ */
+static
+void drd_pre_deliver_signal(const ThreadId vg_tid, const Int sigNo,
+                            const Bool alt_stack)
+{
+   DrdThreadId drd_tid;
+
+   drd_tid = DRD_(VgThreadIdToDrdThreadId)(vg_tid);
+   DRD_(thread_set_on_alt_stack)(drd_tid, alt_stack);
+   if (alt_stack)
+   {
+      /*
+       * As soon a signal handler has been invoked on the alternate stack,
+       * switch to stack memory handling functions that can handle the
+       * alternate stack.
+       */
+      VG_(track_new_mem_stack)(drd_start_using_mem_alt_stack);
+      VG_(track_die_mem_stack)(drd_stop_using_mem_alt_stack);
+   }
+}
+
+/**
+ * Callback function invoked by the Valgrind core after a signal is delivered,
+ * at least if the signal handler did not longjmp().
+ */
+static
+void drd_post_deliver_signal(const ThreadId vg_tid, const Int sigNo)
+{
+   DrdThreadId drd_tid;
+
+   drd_tid = DRD_(VgThreadIdToDrdThreadId)(vg_tid);
+   DRD_(thread_set_on_alt_stack)(drd_tid, False);
+   if (DRD_(thread_get_threads_on_alt_stack)() == 0)
+   {
+      VG_(track_new_mem_stack)(drd_start_using_mem_stack);
+      VG_(track_die_mem_stack)(drd_stop_using_mem_stack);
+   }
 }
 
 /**
@@ -683,6 +748,8 @@ void drd_pre_clo_init(void)
    VG_(track_die_mem_munmap)       (drd_stop_using_nonstack_mem);
    VG_(track_die_mem_stack)        (drd_stop_using_mem_stack);
    VG_(track_die_mem_stack_signal) (drd_stop_using_mem_stack_signal);
+   VG_(track_pre_deliver_signal)   (drd_pre_deliver_signal);
+   VG_(track_post_deliver_signal)  (drd_post_deliver_signal);
    VG_(track_start_client_code)    (drd_start_client_code);
    VG_(track_pre_thread_ll_create) (drd_pre_thread_create);
    VG_(track_pre_thread_first_insn)(drd_post_thread_create);

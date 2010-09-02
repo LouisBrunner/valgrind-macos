@@ -310,6 +310,20 @@ SizeT VG_(thread_get_stack_size)(ThreadId tid)
    return VG_(threads)[tid].client_stack_szB;
 }
 
+Addr VG_(thread_get_altstack_min)(ThreadId tid)
+{
+   vg_assert(0 <= tid && tid < VG_N_THREADS && tid != VG_INVALID_THREADID);
+   vg_assert(VG_(threads)[tid].status != VgTs_Empty);
+   return (Addr)VG_(threads)[tid].altstack.ss_sp;
+}
+
+SizeT VG_(thread_get_altstack_size)(ThreadId tid)
+{
+   vg_assert(0 <= tid && tid < VG_N_THREADS && tid != VG_INVALID_THREADID);
+   vg_assert(VG_(threads)[tid].status != VgTs_Empty);
+   return VG_(threads)[tid].altstack.ss_size;
+}
+
 //-------------------------------------------------------------
 /* Details about the capabilities of the underlying (host) CPU.  These
    details are acquired by (1) enquiring with the CPU at startup, or

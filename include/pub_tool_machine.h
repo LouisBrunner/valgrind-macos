@@ -148,6 +148,14 @@ extern Addr VG_(thread_get_stack_max) ( ThreadId tid );
 // Returns how many bytes have been allocated for the stack of the given thread
 extern Addr VG_(thread_get_stack_size) ( ThreadId tid );
 
+// Returns the bottommost address of the alternate signal stack.
+// See also the man page of sigaltstack().
+extern Addr VG_(thread_get_altstack_min) ( ThreadId tid );
+
+// Returns how many bytes have been allocated for the alternate signal stack.
+// See also the man page of sigaltstack().
+extern SizeT VG_(thread_get_altstack_size) ( ThreadId tid );
+
 // Given a pointer to a function as obtained by "& functionname" in C,
 // produce a pointer to the actual entry point for the function.  For
 // most platforms it's the identity function.  Unfortunately, on

@@ -390,6 +390,67 @@ Int VG_(machine_arm_archlevel) = 4;
 #include <setjmp.h> // For jmp_buf
 static jmp_buf env_unsup_insn;
 static void handler_unsup_insn ( Int x ) { __builtin_longjmp(env_unsup_insn,1); }
+
+/* Helper function for VG_(machine_get_hwcaps), assumes the SIGILL/etc
+ * handlers are installed.  Determines the the sizes affected by dcbz
+ * and dcbzl instructions and updates the given VexArchInfo structure
+ * accordingly.
+ *
+ * Not very defensive: assumes that as long as the dcbz/dcbzl
+ * instructions don't raise a SIGILL, that they will zero an aligned,
+ * contiguous block of memory of a sensible size. */
+static void find_ppc_dcbz_sz(VexArchInfo *arch_info)
+{
+   Int dcbz_szB;
+   Int dcbzl_szB;
+#define MAX_DCBZL_SZB (128) /* largest known effect of dcbzl */
+   char test_block[4*MAX_DCBZL_SZB];
+   char *aligned = test_block;
+   Int i;
+
+   /* round up to next max block size, assumes MAX_DCBZL_SZB is pof2 */
+   aligned = (char *)(((HWord)aligned + MAX_DCBZL_SZB) & ~(MAX_DCBZL_SZB - 1));
+   vg_assert((aligned + MAX_DCBZL_SZB) <= &test_block[sizeof(test_block)]);
+
+   /* dcbz often clears 32B, although sometimes whatever the native cache
+    * block size is */
+   VG_(memset)(test_block, 0xff, sizeof(test_block));
+   __asm__ __volatile__("dcbz 0,%0"
+                        : /*out*/
+                        : "r" (aligned) /*in*/
+                        : "memory" /*clobber*/);
+   for (dcbz_szB = 0, i = 0; i < sizeof(test_block); ++i) {
+      if (!test_block[i])
+         ++dcbz_szB;
+   }
+   vg_assert(dcbz_szB == 32 || dcbz_szB == 64 || dcbz_szB == 128);
+
+   /* dcbzl clears 128B on G5/PPC970, and usually 32B on other platforms */
+   if (__builtin_setjmp(env_unsup_insn)) {
+      dcbzl_szB = 0; /* indicates unsupported */
+   }
+   else {
+      VG_(memset)(test_block, 0xff, sizeof(test_block));
+      /* some older assemblers won't understand the dcbzl instruction
+       * variant, so we directly emit the instruction ourselves */
+      __asm__ __volatile__("mr 9, %0 ; .long 0x7C204FEC" /*dcbzl 0,9*/
+                           : /*out*/
+                           : "r" (aligned) /*in*/
+                           : "memory", "r9" /*clobber*/);
+      for (dcbzl_szB = 0, i = 0; i < sizeof(test_block); ++i) {
+         if (!test_block[i])
+            ++dcbzl_szB;
+      }
+      vg_assert(dcbzl_szB == 32 || dcbzl_szB == 64 || dcbzl_szB == 128);
+   }
+
+   arch_info->ppc_dcbz_szB  = dcbz_szB;
+   arch_info->ppc_dcbzl_szB = dcbzl_szB;
+
+   VG_(debugLog)(1, "machine", "dcbz_szB=%d dcbzl_szB=%d\n",
+                 dcbz_szB, dcbzl_szB);
+}
+#undef MAX_DCBZL_SZB
 #endif
 
 Bool VG_(machine_get_hwcaps)( void )
@@ -624,6 +685,10 @@ Bool VG_(machine_get_hwcaps)( void )
         __asm__ __volatile__(".long 0xFC000034"); /* frsqrte 0,0 */
      }
 
+     /* determine dcbz/dcbzl sizes while we still have the signal
+      * handlers registered */
+     find_ppc_dcbz_sz(&vai);
+
      r = VG_(sigaction)(VKI_SIGILL, &saved_sigill_act, NULL);
      vg_assert(r == 0);
      r = VG_(sigaction)(VKI_SIGFPE, &saved_sigfpe_act, NULL);
@@ -733,6 +798,10 @@ Bool VG_(machine_get_hwcaps)( void )
      } else {
         __asm__ __volatile__(".long 0xFC000034"); /*frsqrte 0,0*/
      }
+
+     /* determine dcbz/dcbzl sizes while we still have the signal
+      * handlers registered */
+     find_ppc_dcbz_sz(&vai);
 
      VG_(sigaction)(VKI_SIGILL, &saved_sigill_act, NULL);
      VG_(sigaction)(VKI_SIGFPE, &saved_sigfpe_act, NULL);

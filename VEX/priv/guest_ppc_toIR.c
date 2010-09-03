@@ -320,6 +320,7 @@ typedef enum {
 } PPC_GST;
 
 #define MASK_FPSCR_RN   0x3
+#define MASK_FPSCR_FPRF 0x1F000
 #define MASK_VSCR_VALID 0x00010001
 
 
@@ -2143,7 +2144,7 @@ static IRExpr* /* ::Ity_I32 */ getGST_masked ( PPC_GST reg, UInt mask )
 
       /* We're only keeping track of the rounding mode,
          so if the mask isn't asking for this, just return 0x0 */
-      if (mask & 0x3) {
+      if (mask & (MASK_FPSCR_RN|MASK_FPSCR_FPRF)) {
          assign( val, IRExpr_Get( OFFB_FPROUND, Ity_I32 ) );
       } else {
          assign( val, mkU32(0x0) );
@@ -2267,7 +2268,7 @@ static void putGST_masked ( PPC_GST reg, IRExpr* src, UInt mask )
    switch (reg) {
    case PPC_GST_FPSCR: {
       /* Allow writes to Rounding Mode */
-      if (mask & 0x3) {
+      if (mask & (MASK_FPSCR_RN|MASK_FPSCR_FPRF)) {
          /* construct new fpround from new and old values as per mask:
             new fpround = (src & (3 & mask)) | (fpround & (3 & ~mask)) */
          stmt( 
@@ -2275,11 +2276,11 @@ static void putGST_masked ( PPC_GST reg, IRExpr* src, UInt mask )
                OFFB_FPROUND,
                binop(
                   Iop_Or32, 
-                  binop(Iop_And32, src, mkU32(3 & mask)),
+                  binop(Iop_And32, src, mkU32((MASK_FPSCR_RN|MASK_FPSCR_FPRF) & mask)),
                   binop(
                      Iop_And32, 
                      IRExpr_Get(OFFB_FPROUND,Ity_I32),
-                     mkU32(3 & ~mask)
+                     mkU32((MASK_FPSCR_RN|MASK_FPSCR_FPRF) & ~mask)
                   )
                )
             )
@@ -3220,6 +3221,50 @@ static Bool dis_int_logic ( UInt theInstr )
          // TODO: alternatively: assign(rA, verbose_Clz64(rS));
          break;
 
+      case 0x1FC: // cmpb (Power6: compare bytes)
+         DIP("cmpb r%u,r%u,r%u\n", rA_addr, rS_addr, rB_addr);
+
+         if (mode64)
+            assign( rA, unop( Iop_V128to64,
+                              binop( Iop_CmpEQ8x16,
+                                     binop( Iop_64HLtoV128, mkU64(0), mkexpr(rS) ),
+                                     binop( Iop_64HLtoV128, mkU64(0), mkexpr(rB) )
+                                     )) );
+         else
+            assign( rA, unop( Iop_V128to32,
+                              binop( Iop_CmpEQ8x16,
+                                     unop( Iop_32UtoV128, mkexpr(rS) ),
+                                     unop( Iop_32UtoV128, mkexpr(rB) )
+                                     )) );
+         break;
+
+      case 0x2DF: { // mftgpr (move floating-point to general purpose register)
+         IRTemp frB = newTemp(Ity_F64);
+         DIP("mftgpr r%u,fr%u\n", rS_addr, rB_addr);
+
+         assign( frB, getFReg(rB_addr));  // always F64
+         if (mode64)
+            assign( rA, unop( Iop_ReinterpF64asI64, mkexpr(frB)) );
+         else
+            assign( rA, unop( Iop_64to32, unop( Iop_ReinterpF64asI64, mkexpr(frB))) );
+
+         putIReg( rS_addr, mkexpr(rA));
+         return True;
+      }
+
+      case 0x25F: { // mffgpr (move floating-point from general purpose register)
+         IRTemp frA = newTemp(Ity_F64);
+         DIP("mffgpr fr%u,r%u\n", rS_addr, rB_addr);
+
+         if (mode64)
+            assign( frA, unop( Iop_ReinterpI64asF64, mkexpr(rB)) );
+         else
+            assign( frA, unop( Iop_ReinterpI64asF64, unop( Iop_32Uto64, mkexpr(rB))) );
+
+         putFReg( rS_addr, mkexpr(frA));
+         return True;
+      }
+
       default:
          vex_printf("dis_int_logic(ppc)(opc2)\n");
          return False;
@@ -3239,6 +3284,133 @@ static Bool dis_int_logic ( UInt theInstr )
    return True;
 }
 
+/*
+  Integer Parity Instructions
+*/
+static Bool dis_int_parity ( UInt theInstr )
+{
+   /* X-Form */
+   UChar opc1    = ifieldOPC(theInstr);
+   UChar rS_addr = ifieldRegDS(theInstr);
+   UChar rA_addr = ifieldRegA(theInstr);
+   UChar rB_addr = ifieldRegB(theInstr);
+   UInt  opc2    = ifieldOPClo10(theInstr);
+   UChar b0      = ifieldBIT0(theInstr);
+   IRType ty     = mode64 ? Ity_I64 : Ity_I32;
+
+   IRTemp rS     = newTemp(ty);
+   IRTemp rA     = newTemp(ty);
+   IRTemp iTot1  = newTemp(Ity_I32);
+   IRTemp iTot2  = newTemp(Ity_I32);
+   IRTemp iTot3  = newTemp(Ity_I32);
+   IRTemp iTot4  = newTemp(Ity_I32);
+   IRTemp iTot5  = newTemp(Ity_I32);
+   IRTemp iTot6  = newTemp(Ity_I32);
+   IRTemp iTot7  = newTemp(Ity_I32);
+   IRTemp iTot8  = newTemp(Ity_I32);
+   IRTemp rS1    = newTemp(ty);
+   IRTemp rS2    = newTemp(ty);
+   IRTemp rS3    = newTemp(ty);
+   IRTemp rS4    = newTemp(ty);
+   IRTemp rS5    = newTemp(ty);
+   IRTemp rS6    = newTemp(ty);
+   IRTemp rS7    = newTemp(ty);
+   IRTemp iHi    = newTemp(Ity_I32);
+   IRTemp iLo    = newTemp(Ity_I32);
+   IROp to_bit   = (mode64 ? Iop_64to1 : Iop_32to1);
+   IROp shr_op   = (mode64 ? Iop_Shr64 : Iop_Shr32);
+
+   if (opc1 != 0x1f || rB_addr || b0) {
+      vex_printf("dis_int_parity(ppc)(0x1F,opc1:rB|b0)\n");
+      return False;
+   }
+
+   assign( rS, getIReg(rS_addr) );
+
+   switch (opc2) {
+   case 0xba:  // prtyd (Parity Doubleword, ISA 2.05 p320)
+      DIP("prtyd r%u,r%u\n", rA_addr, rS_addr);
+      assign( iTot1, unop(Iop_1Uto32, unop(to_bit, mkexpr(rS))) );
+      assign( rS1, binop(shr_op, mkexpr(rS), mkU8(8)) );
+      assign( iTot2, binop(Iop_Add32,
+                           unop(Iop_1Uto32, unop(to_bit, mkexpr(rS1))),
+                           mkexpr(iTot1)) );
+      assign( rS2, binop(shr_op, mkexpr(rS1), mkU8(8)) );
+      assign( iTot3, binop(Iop_Add32,
+                           unop(Iop_1Uto32, unop(to_bit, mkexpr(rS2))),
+                           mkexpr(iTot2)) );
+      assign( rS3, binop(shr_op, mkexpr(rS2), mkU8(8)) );
+      assign( iTot4, binop(Iop_Add32,
+                           unop(Iop_1Uto32, unop(to_bit, mkexpr(rS3))),
+                           mkexpr(iTot3)) );
+      if (mode64) {
+         assign( rS4, binop(shr_op, mkexpr(rS3), mkU8(8)) );
+         assign( iTot5, binop(Iop_Add32,
+                              unop(Iop_1Uto32, unop(to_bit, mkexpr(rS4))),
+                              mkexpr(iTot4)) );
+         assign( rS5, binop(shr_op, mkexpr(rS4), mkU8(8)) );
+         assign( iTot6, binop(Iop_Add32,
+                              unop(Iop_1Uto32, unop(to_bit, mkexpr(rS5))),
+                              mkexpr(iTot5)) );
+         assign( rS6, binop(shr_op, mkexpr(rS5), mkU8(8)) );
+         assign( iTot7, binop(Iop_Add32,
+                              unop(Iop_1Uto32, unop(to_bit, mkexpr(rS6))),
+                              mkexpr(iTot6)) );
+         assign( rS7, binop(shr_op, mkexpr(rS6), mkU8(8)) );
+         assign( iTot8, binop(Iop_Add32,
+                              unop(Iop_1Uto32, unop(to_bit, mkexpr(rS7))),
+                              mkexpr(iTot7)) );
+         assign( rA, unop(Iop_32Uto64,
+                          binop(Iop_And32, mkexpr(iTot8), mkU32(1))) );
+      } else
+         assign( rA, mkexpr(iTot4) );
+
+      break;
+   case 0x9a:  // prtyw (Parity Word, ISA 2.05 p320)
+      assign( iTot1, unop(Iop_1Uto32, unop(to_bit, mkexpr(rS))) );
+      assign( rS1, binop(shr_op, mkexpr(rS), mkU8(8)) );
+      assign( iTot2, binop(Iop_Add32,
+                           unop(Iop_1Uto32, unop(to_bit, mkexpr(rS1))),
+                           mkexpr(iTot1)) );
+      assign( rS2, binop(shr_op, mkexpr(rS1), mkU8(8)) );
+      assign( iTot3, binop(Iop_Add32,
+                           unop(Iop_1Uto32, unop(to_bit, mkexpr(rS2))),
+                           mkexpr(iTot2)) );
+      assign( rS3, binop(shr_op, mkexpr(rS2), mkU8(8)) );
+      assign( iTot4, binop(Iop_Add32,
+                           unop(Iop_1Uto32, unop(to_bit, mkexpr(rS3))),
+                           mkexpr(iTot3)) );
+      assign( iLo, unop(Iop_1Uto32, unop(Iop_32to1, mkexpr(iTot4) )) );
+
+      if (mode64) {
+         assign( rS4, binop(shr_op, mkexpr(rS3), mkU8(8)) );
+         assign( iTot5, unop(Iop_1Uto32, unop(to_bit, mkexpr(rS4))) );
+         assign( rS5, binop(shr_op, mkexpr(rS4), mkU8(8)) );
+         assign( iTot6, binop(Iop_Add32,
+                              unop(Iop_1Uto32, unop(to_bit, mkexpr(rS5))),
+                              mkexpr(iTot5)) );
+         assign( rS6, binop(shr_op, mkexpr(rS5), mkU8(8)) );
+         assign( iTot7, binop(Iop_Add32,
+                              unop(Iop_1Uto32, unop(to_bit, mkexpr(rS6))),
+                              mkexpr(iTot6)) );
+         assign( rS7, binop(shr_op, mkexpr(rS6), mkU8(8)));
+         assign( iTot8, binop(Iop_Add32,
+                              unop(Iop_1Uto32, unop(to_bit, mkexpr(rS7))),
+                              mkexpr(iTot7)) );
+         assign( iHi, binop(Iop_And32, mkU32(1), mkexpr(iTot8)) ),
+            assign( rA, binop(Iop_32HLto64, mkexpr(iHi), mkexpr(iLo)) );
+      } else
+         assign( rA, binop(Iop_Or32, mkU32(0), mkexpr(iLo)) );
+      break;
+   default:
+      vex_printf("dis_int_parity(ppc)(opc2)\n");
+      return False;
+   }
+
+   putIReg( rA_addr, mkexpr(rA) );
+
+   return True;
+}
 
 
 /*
@@ -5794,6 +5966,8 @@ static Bool dis_fp_load ( UInt theInstr )
    IRTemp EA     = newTemp(ty);
    IRTemp rA     = newTemp(ty);
    IRTemp rB     = newTemp(ty);
+   IRTemp iHi    = newTemp(Ity_I32);
+   IRTemp iLo    = newTemp(Ity_I32);
 
    assign( rA, getIReg(rA_addr) );
    assign( rB, getIReg(rB_addr) );
@@ -5874,6 +6048,17 @@ static Bool dis_fp_load ( UInt theInstr )
          putIReg( rA_addr, mkexpr(EA) );
          break;
          
+      case 0x357: // lfiwax (Load Float As Integer, Indxd, ISA 2.05 p120)
+         DIP("lfiwax fr%u,r%u,r%u\n", frD_addr, rA_addr, rB_addr);
+         assign( EA, ea_rAor0_idxd( rA_addr, rB_addr ) );
+         assign( iLo, loadBE(Ity_I32, mkexpr(EA)) );
+         assign( iHi, binop(Iop_Sub32,
+                            mkU32(0),
+                            binop(Iop_Shr32, mkexpr(iLo), mkU8(31)))  );
+         putFReg( frD_addr, unop(Iop_ReinterpI64asF64,
+                                 binop(Iop_32HLto64, mkexpr(iHi), mkexpr(iLo))) );
+         break;
+
       default:
          vex_printf("dis_fp_load(ppc)(opc2)\n");
          return False;
@@ -6514,8 +6699,8 @@ static Bool dis_fp_round ( UInt theInstr )
 {
    /* X-Form */
    UChar opc1     = ifieldOPC(theInstr);
-   UChar frD_addr = ifieldRegDS(theInstr);
    UChar b16to20  = ifieldRegA(theInstr);
+   UChar frD_addr = ifieldRegDS(theInstr);
    UChar frB_addr = ifieldRegB(theInstr);
    UInt  opc2     = ifieldOPClo10(theInstr);
    UChar flag_rC  = ifieldBIT0(theInstr);
@@ -6595,6 +6780,52 @@ static Bool dis_fp_round ( UInt theInstr )
               binop(Iop_I64StoF64, rm, mkexpr(r_tmp64)) );
       break;
 
+   case 0x188: case 0x1A8: case 0x1C8: case 0x1E8: // frin, friz, frip, frim
+      switch(opc2) {
+      case 0x188: // frin (Floating Round to Integer Nearest)
+         DIP("frin%s fr%u,fr%u\n", flag_rC ? ".":"", frD_addr, frB_addr);
+         assign( r_tmp64,
+                 binop(Iop_F64toI64S, mkU32(Irrm_NEAREST), mkexpr(frB)) );
+         break;
+      case 0x1A8: // friz (Floating Round to Integer Toward Zero)
+         DIP("friz%s fr%u,fr%u\n", flag_rC ? ".":"", frD_addr, frB_addr);
+         assign( r_tmp64,
+                 binop(Iop_F64toI64S, mkU32(Irrm_ZERO), mkexpr(frB)) );
+         break;
+      case 0x1C8: // frip (Floating Round to Integer Plus)
+         DIP("frip%s fr%u,fr%u\n", flag_rC ? ".":"", frD_addr, frB_addr);
+         assign( r_tmp64,
+                 binop(Iop_F64toI64S, mkU32(Irrm_PosINF), mkexpr(frB)) );
+         break;
+      case 0x1E8: // frim (Floating Round to Integer Minus)
+         DIP("frim%s fr%u,fr%u\n", flag_rC ? ".":"", frD_addr, frB_addr);
+         assign( r_tmp64,
+                 binop(Iop_F64toI64S, mkU32(Irrm_NegINF), mkexpr(frB)) );
+         break;
+      }
+
+      /* don't use the rounded integer if frB is outside -9e18..9e18 */
+      /* F64 has only log10(2**52) significant digits anyway */
+      /* need to preserve sign of zero */
+      /*   frD = (fabs(frB) > 9e18) ? frB :
+               (sign(frB)) ? -fabs((double)r_tmp64) : (double)r_tmp64  */
+      assign(frD, IRExpr_Mux0X( unop(Iop_32to8,
+                                     binop(Iop_CmpF64,
+                                           IRExpr_Const(IRConst_F64(9e18)),
+                                           unop(Iop_AbsF64, mkexpr(frB)))),
+                                IRExpr_Mux0X(unop(Iop_32to8,
+                                                  binop(Iop_Shr32,
+                                                        unop(Iop_64HIto32,
+                                                             unop(Iop_ReinterpF64asI64,
+                                                                  mkexpr(frB))), mkU8(31))),
+                                             binop(Iop_I64StoF64, mkU32(0), mkexpr(r_tmp64) ),
+                                             unop(Iop_NegF64,
+                                                  unop( Iop_AbsF64,
+                                                        binop(Iop_I64StoF64, mkU32(0),
+                                                              mkexpr(r_tmp64)) )) ),
+                                mkexpr(frB)));
+      break;
+
    default:
       vex_printf("dis_fp_round(ppc)(opc2)\n");
       return False;
@@ -6615,6 +6846,86 @@ static Bool dis_fp_round ( UInt theInstr )
    return True;
 }
 
+/*
+  Floating Point Pair Instructions
+*/
+static Bool dis_fp_pair ( UInt theInstr )
+{
+   /* X-Form/DS-Form */
+   UChar  opc1         = ifieldOPC(theInstr);
+   UChar  frT_hi_addr  = ifieldRegDS(theInstr);
+   UChar  frT_lo_addr  = frT_hi_addr + 1;
+   UChar  rA_addr      = ifieldRegA(theInstr);
+   UChar  rB_addr      = ifieldRegB(theInstr);
+   UInt  uimm16        = ifieldUIMM16(theInstr);
+   Int    simm16       = extend_s_16to32(uimm16);
+   UInt   opc2         = ifieldOPClo10(theInstr);
+   IRType ty           = mode64 ? Ity_I64 : Ity_I32;
+   IRTemp EA_hi        = newTemp(ty);
+   IRTemp EA_lo        = newTemp(ty);
+   IRTemp frT_hi       = newTemp(Ity_F64);
+   IRTemp frT_lo       = newTemp(Ity_F64);
+   UChar b0            = ifieldBIT0(theInstr);
+   Bool is_load        = 0;
+
+   if ((frT_hi_addr %2) != 0) {
+      vex_printf("dis_fp_pair(ppc) : odd frT register\n");
+      return False;
+   }
+
+   switch (opc1) {
+   case 0x1F: // register offset
+      switch(opc2) {
+      case 0x317:     // lfdpx (FP Load Double Pair X-form, ISA 2.05  p125)
+         DIP("ldpx fr%u,r%u,r%u\n", frT_hi_addr, rA_addr, rB_addr);
+         is_load = 1;
+         break;
+      case 0x397:     // stfdpx (FP STORE Double Pair X-form, ISA 2.05  p125)
+         DIP("stdpx fr%u,r%u,r%u\n", frT_hi_addr, rA_addr, rB_addr);
+         break;
+      default:
+         vex_printf("dis_fp_pair(ppc) : X-form wrong opc2\n");
+         return False;
+      }
+
+      if (b0 != 0) {
+         vex_printf("dis_fp_pair(ppc)(0x1F,b0)\n");
+         return False;
+      }
+      assign( EA_hi, ea_rAor0_idxd( rA_addr, rB_addr ) );
+      break;
+   case 0x39: // lfdp (FP Load Double Pair DS-form, ISA 2.05  p125)
+      DIP("lfdp fr%u,%d(r%u)\n", frT_hi_addr, simm16, rA_addr);
+      assign( EA_hi, ea_rAor0_simm( rA_addr, simm16  ) );
+      is_load = 1;
+      break;
+   case 0x3d: // stfdp (FP Store Double Pair DS-form, ISA 2.05  p125)
+      DIP("stfdp fr%u,%d(r%u)\n", frT_hi_addr, simm16, rA_addr);
+      assign( EA_hi, ea_rAor0_simm( rA_addr, simm16  ) );
+      break;
+   default:   // immediate offset
+      vex_printf("dis_fp_pair(ppc)(instr)\n");
+      return False;
+   }
+
+   if (mode64)
+      assign( EA_lo, binop(Iop_Add64, mkexpr(EA_hi), mkU64(8)) );
+   else
+      assign( EA_lo, binop(Iop_Add32, mkexpr(EA_hi), mkU32(8)) );
+
+   assign( frT_hi, getFReg(frT_hi_addr) );
+   assign( frT_lo, getFReg(frT_lo_addr) );
+
+   if (is_load) {
+      putFReg( frT_hi_addr, loadBE(Ity_F64, mkexpr(EA_hi)) );
+      putFReg( frT_lo_addr, loadBE(Ity_F64, mkexpr(EA_lo)) );
+   } else {
+      storeBE( mkexpr(EA_hi), mkexpr(frT_hi) );
+      storeBE( mkexpr(EA_lo), mkexpr(frT_lo) );
+   }
+
+   return True;
+}
 
 
 /*
@@ -6625,15 +6936,19 @@ static Bool dis_fp_move ( UInt theInstr )
    /* X-Form */
    UChar opc1     = ifieldOPC(theInstr);
    UChar frD_addr = ifieldRegDS(theInstr);
-   UChar b16to20  = ifieldRegA(theInstr);
+   UChar frA_addr = ifieldRegA(theInstr);
    UChar frB_addr = ifieldRegB(theInstr);
    UInt  opc2     = ifieldOPClo10(theInstr);
    UChar flag_rC  = ifieldBIT0(theInstr);
 
    IRTemp frD = newTemp(Ity_F64);
    IRTemp frB = newTemp(Ity_F64);
+   IRTemp itmpB = newTemp(Ity_F64);
+   IRTemp frA;
+   IRTemp signA;
+   IRTemp hiD;
 
-   if (opc1 != 0x3F || b16to20 != 0) {
+   if (opc1 != 0x3F || (frA_addr != 0 && opc2 != 0x008)) {
       vex_printf("dis_fp_move(ppc)(instr)\n");
       return False;
    }
@@ -6641,6 +6956,39 @@ static Bool dis_fp_move ( UInt theInstr )
    assign( frB, getFReg(frB_addr));
 
    switch (opc2) {
+   case 0x008: // fcpsgn (Floating Copy Sign, ISA_V2.05 p126)
+      DIP("fcpsgn%s fr%u,fr%u,fr%u\n", flag_rC ? ".":"", frD_addr, frA_addr,
+          frB_addr);
+      signA = newTemp(Ity_I32);
+      hiD = newTemp(Ity_I32);
+      itmpB = newTemp(Ity_I64);
+      frA = newTemp(Ity_F64);
+      assign( frA, getFReg(frA_addr) );
+
+      /* get A's sign bit */
+      assign(signA, binop(Iop_And32,
+                          unop(Iop_64HIto32, unop(Iop_ReinterpF64asI64,
+                                                  mkexpr(frA))),
+                          mkU32(0x80000000)) );
+
+      assign( itmpB, unop(Iop_ReinterpF64asI64, mkexpr(frB)) );
+
+      /* mask off B's sign bit and or in A's sign bit */
+      assign(hiD, binop(Iop_Or32,
+                        binop(Iop_And32,
+                              unop(Iop_64HIto32,
+                                   mkexpr(itmpB)),  /* frB's high 32 bits */
+                              mkU32(0x7fffffff)),
+                        mkexpr(signA)) );
+
+      /* combine hiD/loB into frD */
+      assign( frD, unop(Iop_ReinterpI64asF64,
+                        binop(Iop_32HLto64,
+                              mkexpr(hiD),
+                              unop(Iop_64to32,
+                                   mkexpr(itmpB)))) );   /* frB's low 32 bits */
+      break;
+
    case 0x028: // fneg (Floating Negate, PPC32 p416)
       DIP("fneg%s fr%u,fr%u\n", flag_rC ? ".":"", frD_addr, frB_addr);
       assign( frD, unop( Iop_NegF64, mkexpr(frB) ));
@@ -6781,27 +7129,34 @@ static Bool dis_fp_scr ( UInt theInstr )
    case 0x2C7: { // mtfsf (Move to FPSCR Fields, PPC32 p480)
       UChar b25      = toUChar( IFIELD(theInstr, 25, 1) );
       UChar FM       = toUChar( IFIELD(theInstr, 17, 8) );
-      UChar b16      = toUChar( IFIELD(theInstr, 16, 1) );
       UChar frB_addr = ifieldRegB(theInstr);
       IRTemp frB   = newTemp(Ity_F64);
       IRTemp rB_32 = newTemp(Ity_I32);
       Int i, mask;
 
-      if (b25 != 0 || b16 != 0) {
-         vex_printf("dis_fp_scr(ppc)(instr,mtfsf)\n");
-         return False;
-      }      
-      DIP("mtfsf%s %d,fr%u\n", flag_rC ? ".":"", FM, frB_addr);
+      if (b25 == 1) {
+         /* new 64 bit move variant for power 6.  If L field (bit 25) is
+          * a one do a full 64 bit move.  Note, the FPSCR is not really
+          * properly modeled.  This instruciton only changes the value of
+          * the rounding mode.  The HW exception bits do not get set in
+          * the simulator.  1/12/09
+          */
+         DIP("mtfsf%s %d,fr%u (L=1)\n", flag_rC ? ".":"", FM, frB_addr);
+         mask = 0xFF;
+
+      } else {
+         DIP("mtfsf%s %d,fr%u\n", flag_rC ? ".":"", FM, frB_addr);
+         // Build 32bit mask from FM:
+         mask = 0;
+         for (i=0; i<8; i++) {
+            if ((FM & (1<<(7-i))) == 1) {
+               mask |= 0xF << (7-i);
+            }
+         }
+      }
       assign( frB, getFReg(frB_addr));
       assign( rB_32, unop( Iop_64to32,
                            unop( Iop_ReinterpF64asI64, mkexpr(frB) )));
-      // Build 32bit mask from FM:
-      mask = 0;
-      for (i=0; i<8; i++) {
-         if ((FM & (1<<(7-i))) == 1) {
-            mask |= 0xF << (7-i);
-         }
-      }
       putGST_masked( PPC_GST_FPSCR, mkexpr(rB_32), mask );
       break;
    }
@@ -8884,69 +9239,6 @@ static Bool dis_av_fp_convert ( UInt theInstr )
 
 
 
-/*------------------------------------------------------------*/
-/*--- POWER6 Instruction Translation                       ---*/
-/*------------------------------------------------------------*/
-
-static
-Bool dis_P6 ( UInt theInstr,
-              Bool allow_F, Bool allow_V, Bool allow_FX, Bool allow_GX)
-{
-   UInt opc, rd, ra, rb, opc2, dot;
-
-   /* This is a hack.  We should do P6 capability checking properly.
-      But anyway, make a guess at whether we should even try to handle
-      this instruction.  All P6 capable CPUs should be able to handle
-      F, V, FX and GX, so that seems like a good check. */
-   if (! (allow_F && allow_V && allow_FX && allow_GX) )
-      return False;
-   if (!mode64)
-      return False; /* only support P6 in 64-bit mode for now */
-
-   opc  = ifieldOPC(theInstr);     /* primary opcode */
-   rd   = ifieldRegDS(theInstr);   /* dst reg */
-   ra   = ifieldRegA(theInstr);    /* first source reg */
-   rb   = ifieldRegB(theInstr);    /* second source reg */
-   opc2 = ifieldOPClo10(theInstr); /* secondary opc, 10:1 */
-   dot  = ifieldBIT0(theInstr);    /* Rc field, bit 0 */
-
-   if (opc == 63 && ra == 0/*presumably*/ && opc2 == 488) {
-      /* frim (Floating Round to Integer Minus, PPC ISA 2.05 p137) */
-      if (dot) return False;
-      putFReg( rd, unop(Iop_RoundF64toF64_NegINF, getFReg( rb )) );
-      DIP("frim%s fr%u,fr%u\n", dot ? "." : "", rd, rb);
-      return True;
-   }
-
-   if (opc == 63 && ra == 0/*presumably*/ && opc2 == 456) {
-      /* frip (Floating Round to Integer Plus, PPC ISA 2.05 p137) */
-      if (dot) return False;
-      putFReg( rd, unop(Iop_RoundF64toF64_PosINF, getFReg( rb )) );
-      DIP("frip%s fr%u,fr%u\n", dot ? "." : "", rd, rb);
-      return True;
-   }
-
-   if (opc == 63 && ra == 0/*presumably*/ && opc2 == 392) {
-      /* frin (Floating Round to Integer Nearest, PPC ISA 2.05 p137) */
-      if (dot) return False;
-      putFReg( rd, unop(Iop_RoundF64toF64_NEAREST, getFReg( rb )) );
-      DIP("frin%s fr%u,fr%u\n", dot ? "." : "", rd, rb);
-      return True;
-   }
-
-   if (opc == 63 && ra == 0/*presumably*/ && opc2 == 424) {
-      /* frin (Floating Round to Integer Zero, PPC ISA 2.05 p137) */
-      if (dot) return False;
-      putFReg( rd, unop(Iop_RoundF64toF64_ZERO, getFReg( rb )) );
-      DIP("friz%s fr%u,fr%u\n", dot ? "." : "", rd, rb);
-      return True;
-   }
-
-   if (0)
-      vex_printf("dis_P6: %u %u %u %u %u %u\n", opc, rd, ra, rb, opc2, dot);
-   return False;
-}
-
 
 
 /*------------------------------------------------------------*/
@@ -9167,6 +9459,12 @@ DisResult disInstr_PPC_WRK (
       if (dis_fp_store( theInstr )) goto decode_success;
       goto decode_failure;
 
+      /* Floating Point Load Double Pair Instructions */
+   case 0x39: case 0x3D:
+      if (!allow_F) goto decode_noF;
+      if (dis_fp_pair( theInstr )) goto decode_success;
+      goto decode_failure;
+
    /* 64bit Integer Loads */
    case 0x3A:  // ld, ldu, lwa
       if (!mode64) goto decode_failure;
@@ -9272,11 +9570,14 @@ DisResult disInstr_PPC_WRK (
       case 0x1C8: // frip
       case 0x188: // frin
       case 0x1A8: // friz
-         if (dis_P6(theInstr, allow_F, allow_V, allow_FX, allow_GX))
+         /* A hack to check for P6 capability . . . */
+         if ((allow_F && allow_V && allow_FX && allow_GX) &&
+             (dis_fp_round(theInstr)))
             goto decode_success;
          goto decode_failure;
          
       /* Floating Point Move Instructions */         
+      case 0x008: // fcpsgn
       case 0x028: // fneg
       case 0x048: // fmr
       case 0x088: // fnabs
@@ -9350,6 +9651,10 @@ DisResult disInstr_PPC_WRK (
          if (dis_int_arith( theInstr )) goto decode_success;
          goto decode_failure;
 
+      case 0x1FC:                         // cmpb
+         if (dis_int_logic( theInstr )) goto decode_success;
+         goto decode_failure;
+
       default:
          break;  // Fall through...
       }
@@ -9368,6 +9673,7 @@ DisResult disInstr_PPC_WRK (
       case 0x11C: case 0x3BA: case 0x39A: // eqv,  extsb, extsh
       case 0x1DC: case 0x07C: case 0x1BC: // nand, nor,   or
       case 0x19C: case 0x13C:             // orc,  xor
+      case 0x2DF: case 0x25F:            // mftgpr, mffgpr
          if (dis_int_logic( theInstr )) goto decode_success;
          goto decode_failure;
 
@@ -9375,6 +9681,11 @@ DisResult disInstr_PPC_WRK (
       case 0x3DA: case 0x03A: // extsw, cntlzd
          if (!mode64) goto decode_failure;
          if (dis_int_logic( theInstr )) goto decode_success;
+         goto decode_failure;
+
+         /* 64bit Integer Parity Instructions */
+      case 0xba: case 0x9a: // prtyd, prtyw
+         if (dis_int_parity( theInstr )) goto decode_success;
          goto decode_failure;
 
       /* Integer Shift Instructions */
@@ -9490,6 +9801,18 @@ DisResult disInstr_PPC_WRK (
          if (!allow_F) goto decode_noF;
          if (!allow_GX) goto decode_noGX;
          if (dis_fp_store( theInstr )) goto decode_success;
+         goto decode_failure;
+
+         /* Floating Point Double Pair Indexed Instructions */
+      case 0x317: // lfdpx (Power6)
+      case 0x397: // stfdpx (Power6)
+         if (!allow_F) goto decode_noF;
+         if (dis_fp_pair(theInstr)) goto decode_success;
+         goto decode_failure;
+
+      case 0x357:                         // lfiwax
+         if (!allow_F) goto decode_noF;
+         if (dis_fp_load( theInstr )) goto decode_success;
          goto decode_failure;
 
       /* AltiVec instructions */

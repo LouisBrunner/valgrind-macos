@@ -21,18 +21,28 @@ EXTRA_DIST = \
 	testVMX.stderr.exp  testVMX.stdout.exp  testVMX.vgtest \
 	twi.stderr.exp twi.stdout.exp twi.vgtest \
 	tw.stderr.exp tw.stdout.exp tw.vgtest \
-	xlc_dbl_u32.stderr.exp xlc_dbl_u32.stdout.exp xlc_dbl_u32.vgtest
+	xlc_dbl_u32.stderr.exp xlc_dbl_u32.stdout.exp xlc_dbl_u32.vgtest \
+	power5+_round.stderr.exp power5+_round.stdout.exp power5+_round.vgtest \
+	power6_bcmp.stderr.exp power6_bcmp.stdout.exp power6_bcmp.vgtest
 
 check_PROGRAMS = \
 	bug129390-ppc32 \
 	bug139050-ppc32 \
 	ldstrev lsw jm-insns mftocrf mcrfs round test_fx test_gx \
-	testVMX twi tw xlc_dbl_u32
+	testVMX twi tw xlc_dbl_u32 power5+_round power6_bcmp
 
 AM_CFLAGS    += @FLAG_M32@
 AM_CXXFLAGS  += @FLAG_M32@
 AM_CCASFLAGS += @FLAG_M32@
 
-jm_insns_CFLAGS = $(AM_CFLAGS) -Winline -Wall -O -g -mregnames -maltivec @FLAG_M32@
+if HAS_ALTIVEC
+ALTIVEC_FLAG = -DHAS_ALTIVEC
+else
+ALTIVEC_FLAG =
+endif
+
+jm_insns_CFLAGS = $(AM_CFLAGS) -Winline -Wall -O -g -mregnames -maltivec \
+			@FLAG_M32@ $(ALTIVEC_FLAG)
+
 testVMX_CFLAGS  = $(AM_CFLAGS) -O -g -Wall -maltivec -mabi=altivec -DALTIVEC \
 			-DGCC_COMPILER @FLAG_M32@

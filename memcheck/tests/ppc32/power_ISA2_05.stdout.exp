@@ -1,0 +1,122 @@
+lwarx => bad0beef
+fcpsgn sign=10.101010, base=11.111111 => 11.111111
+fcpsgn sign=10.101010, base=-0.000000 => 0.000000
+fcpsgn sign=10.101010, base=0.000000 => 0.000000
+fcpsgn sign=10.101010, base=-11.111111 => 11.111111
+fcpsgn sign=-0.000000, base=11.111111 => -11.111111
+fcpsgn sign=-0.000000, base=-0.000000 => -0.000000
+fcpsgn sign=-0.000000, base=0.000000 => -0.000000
+fcpsgn sign=-0.000000, base=-11.111111 => -11.111111
+fcpsgn sign=0.000000, base=11.111111 => 11.111111
+fcpsgn sign=0.000000, base=-0.000000 => 0.000000
+fcpsgn sign=0.000000, base=0.000000 => 0.000000
+fcpsgn sign=0.000000, base=-11.111111 => 11.111111
+fcpsgn sign=-10.101010, base=11.111111 => -11.111111
+fcpsgn sign=-10.101010, base=-0.000000 => -0.000000
+fcpsgn sign=-10.101010, base=0.000000 => -0.000000
+fcpsgn sign=-10.101010, base=-11.111111 => -11.111111
+lfdp (-1024.000000, 1025.000000) => F_hi=-1024.000000, F_lo=1025.000000
+stfdp (2.204800, -4.102400) => F_hi=2.204800, F_lo=-4.102400
+lfdpx (2.204800, -4.102400) => F_hi=2.204800, F_lo=-4.102400
+stfdpx (2.204800, 2.204800) => F_hi=2.204800, F_lo=2.204800
+lfiwax (-1024.000000) => FRT=(ffffffff, c0900000)
+prtyd (0) => parity=0
+prtyw (0) => parity=0
+prtyd (1) => parity=1
+prtyw (1) => parity=1
+prtyd (2) => parity=0
+prtyw (2) => parity=0
+prtyd (3) => parity=1
+prtyw (3) => parity=1
+prtyd (4) => parity=0
+prtyw (4) => parity=0
+prtyd (5) => parity=1
+prtyw (5) => parity=1
+prtyd (6) => parity=0
+prtyw (6) => parity=0
+prtyd (7) => parity=1
+prtyw (7) => parity=1
+prtyd (8) => parity=0
+prtyw (8) => parity=0
+prtyd (9) => parity=1
+prtyw (9) => parity=1
+prtyd (a) => parity=0
+prtyw (a) => parity=0
+prtyd (b) => parity=1
+prtyw (b) => parity=1
+prtyd (c) => parity=0
+prtyw (c) => parity=0
+prtyd (d) => parity=1
+prtyw (d) => parity=1
+prtyd (e) => parity=0
+prtyw (e) => parity=0
+prtyd (f) => parity=1
+prtyw (f) => parity=1
+prtyd (10) => parity=0
+prtyw (10) => parity=0
+prtyd (11) => parity=1
+prtyw (11) => parity=1
+prtyd (12) => parity=0
+prtyw (12) => parity=0
+prtyd (13) => parity=1
+prtyw (13) => parity=1
+prtyd (14) => parity=0
+prtyw (14) => parity=0
+prtyd (15) => parity=1
+prtyw (15) => parity=1
+prtyd (16) => parity=0
+prtyw (16) => parity=0
+prtyd (17) => parity=1
+prtyw (17) => parity=1
+prtyd (18) => parity=0
+prtyw (18) => parity=0
+prtyd (19) => parity=1
+prtyw (19) => parity=1
+prtyd (1a) => parity=0
+prtyw (1a) => parity=0
+prtyd (1b) => parity=1
+prtyw (1b) => parity=1
+prtyd (1c) => parity=0
+prtyw (1c) => parity=0
+prtyd (1d) => parity=1
+prtyw (1d) => parity=1
+prtyd (1e) => parity=0
+prtyw (1e) => parity=0
+prtyd (1f) => parity=1
+prtyw (1f) => parity=1
+prtyd (20) => parity=0
+prtyw (20) => parity=0
+prtyd (21) => parity=1
+prtyw (21) => parity=1
+prtyd (22) => parity=0
+prtyw (22) => parity=0
+prtyd (23) => parity=1
+prtyw (23) => parity=1
+prtyd (24) => parity=0
+prtyw (24) => parity=0
+prtyd (25) => parity=1
+prtyw (25) => parity=1
+prtyd (26) => parity=0
+prtyw (26) => parity=0
+prtyd (27) => parity=1
+prtyw (27) => parity=1
+prtyd (28) => parity=0
+prtyw (28) => parity=0
+prtyd (29) => parity=1
+prtyw (29) => parity=1
+prtyd (2a) => parity=0
+prtyw (2a) => parity=0
+prtyd (2b) => parity=1
+prtyw (2b) => parity=1
+prtyd (2c) => parity=0
+prtyw (2c) => parity=0
+prtyd (2d) => parity=1
+prtyw (2d) => parity=1
+prtyd (2e) => parity=0
+prtyw (2e) => parity=0
+prtyd (2f) => parity=1
+prtyw (2f) => parity=1
+prtyd (30) => parity=0
+prtyw (30) => parity=0
+prtyd (31) => parity=1
+prtyw (31) => parity=1

@@ -1,0 +1,11 @@
+#!/bin/sh
+
+# We use this script to check whether or not the processor supports VMX (aka "Altivec").
+
+LD_SHOW_AUXV=1 /bin/true | grep altivec > /dev/null 2>&1
+if [ "$?" -ne "0" ]; then
+	exit 1
+else
+	exit 0
+fi
+

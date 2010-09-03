@@ -211,10 +211,10 @@ typedef uint64_t  HWord_t;
 
 
 /* XXXX these must all be callee-save regs! */
-register double f14 __asm__ ("f14");
-register double f15 __asm__ ("f15");
-register double f16 __asm__ ("f16");
-register double f17 __asm__ ("f17");
+register double f14 __asm__ ("fr14");
+register double f15 __asm__ ("fr15");
+register double f16 __asm__ ("fr16");
+register double f17 __asm__ ("fr17");
 register HWord_t r14 __asm__ ("r14");
 register HWord_t r15 __asm__ ("r15");
 register HWord_t r16 __asm__ ("r16");

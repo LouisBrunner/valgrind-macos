@@ -5604,6 +5604,7 @@ static Bool dis_cache_manage ( UInt         theInstr,
    UInt  opc2    = ifieldOPClo10(theInstr);
    UChar b0      = ifieldBIT0(theInstr);
    UInt  lineszB = guest_archinfo->ppc_cache_line_szB;
+   Bool  is_dcbzl = False;
 
    IRType ty     = mode64 ? Ity_I64 : Ity_I32;
 
@@ -5614,6 +5615,16 @@ static Bool dis_cache_manage ( UInt         theInstr,
    if (opc1 == 0x1F && opc2 == 0x116) {
      /* b21to25 &= ~3; */ /* if the docs were true */
      b21to25 = 0; /* blunt instrument */
+   }
+   if (opc1 == 0x1F && opc2 == 0x3F6) { // dcbz
+      if (b21to25 == 1) {
+         is_dcbzl = True;
+         b21to25 = 0;
+         if (!(guest_archinfo->ppc_dcbzl_szB)) {
+            vex_printf("dis_cache_manage(ppc)(dcbzl not supported by host)\n");
+            return False;
+         }
+      }
    }
 
    if (opc1 != 0x1F || b21to25 != 0 || b0 != 0) {
@@ -5654,12 +5665,21 @@ static Bool dis_cache_manage ( UInt         theInstr,
       break;
       
    case 0x3F6: { // dcbz (Data Cache Block Clear to Zero, PPC32 p387)
+                 // dcbzl (Data Cache Block Clear to Zero Long, bug#135264)
       /* Clear all bytes in cache block at (rA|0) + rB. */
       IRTemp  EA   = newTemp(ty);
       IRTemp  addr = newTemp(ty);
       IRExpr* irx_addr;
       UInt    i;
-      DIP("dcbz r%u,r%u\n", rA_addr, rB_addr);
+      UInt clearszB;
+      if (is_dcbzl) {
+          clearszB = guest_archinfo->ppc_dcbzl_szB;
+          DIP("dcbzl r%u,r%u\n", rA_addr, rB_addr);
+      }
+      else {
+          clearszB = guest_archinfo->ppc_dcbz_szB;
+          DIP("dcbz r%u,r%u\n", rA_addr, rB_addr);
+      }
 
       assign( EA, ea_rAor0_idxd(rA_addr, rB_addr) );
 
@@ -5667,9 +5687,9 @@ static Bool dis_cache_manage ( UInt         theInstr,
          /* Round EA down to the start of the containing block. */
          assign( addr, binop( Iop_And64,
                               mkexpr(EA),
-                              mkU64( ~((ULong)lineszB-1) )) );
+                              mkU64( ~((ULong)clearszB-1) )) );
          
-         for (i = 0; i < lineszB / 8; i++) {
+         for (i = 0; i < clearszB / 8; i++) {
             irx_addr = binop( Iop_Add64, mkexpr(addr), mkU64(i*8) );
             storeBE( irx_addr, mkU64(0) );
          }
@@ -5677,9 +5697,9 @@ static Bool dis_cache_manage ( UInt         theInstr,
          /* Round EA down to the start of the containing block. */
          assign( addr, binop( Iop_And32,
                               mkexpr(EA),
-                              mkU32( ~(lineszB-1) )) );
+                              mkU32( ~(clearszB-1) )) );
          
-         for (i = 0; i < lineszB / 4; i++) {
+         for (i = 0; i < clearszB / 4; i++) {
             irx_addr = binop( Iop_Add32, mkexpr(addr), mkU32(i*4) );
             storeBE( irx_addr, mkU32(0) );
          }

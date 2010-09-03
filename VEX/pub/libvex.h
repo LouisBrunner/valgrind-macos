@@ -120,6 +120,10 @@ typedef
       UInt hwcaps;
       /* PPC32/PPC64 only: size of cache line */
       Int ppc_cache_line_szB;
+      /* PPC32/PPC64 only: sizes zeroed by the dcbz/dcbzl instructions
+       * (bug#135264) */
+      UInt ppc_dcbz_szB;
+      UInt ppc_dcbzl_szB; /* 0 means unsupported (SIGILL) */
    }
    VexArchInfo;
 

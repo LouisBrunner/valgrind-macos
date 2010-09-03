@@ -68,6 +68,8 @@ int main()
 
 	c1 = c2 = 0;
 
+	CLEAR_CALLER_SAVED_REGS;
+
 	GET_FINAL_LEAK_COUNTS;
 
 	PRINT_LEAK_COUNTS(stderr);

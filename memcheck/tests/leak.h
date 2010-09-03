@@ -41,3 +41,27 @@
                      S_bytes,S_blocks); \
    } while (0)
 
+/* Upon a call to a function, some architectures store pointers into
+ * into registers.  Valgrind may consider these registers when determining
+ * whether an address is reachable, so we need to zero-out these registers
+ * as needed.
+ */
+#if defined __powerpc__
+#define CLEAR_CALLER_SAVED_REGS \
+  do { \
+   __asm__ __volatile__( "li 3, 0" : : :/*trash*/"r3" ); \
+   __asm__ __volatile__( "li 4, 0" : : :/*trash*/"r4" ); \
+   __asm__ __volatile__( "li 5, 0" : : :/*trash*/"r5" ); \
+   __asm__ __volatile__( "li 6, 0" : : :/*trash*/"r6" ); \
+   __asm__ __volatile__( "li 7, 0" : : :/*trash*/"r7" ); \
+   __asm__ __volatile__( "li 8, 0" : : :/*trash*/"r8" ); \
+   __asm__ __volatile__( "li 9, 0" : : :/*trash*/"r9" ); \
+   __asm__ __volatile__( "li 10, 0" : : :/*trash*/"r10" ); \
+   __asm__ __volatile__( "li 11, 0" : : :/*trash*/"r11" ); \
+   __asm__ __volatile__( "li 12, 0" : : :/*trash*/"r12" ); \
+  } while (0)
+#else
+#define CLEAR_CALLER_SAVED_REGS  /*nothing*/
+#endif
+
+

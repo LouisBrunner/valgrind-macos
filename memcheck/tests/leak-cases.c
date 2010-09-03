@@ -106,6 +106,7 @@ int main(void)
    // counting in main() avoids the problem.
    f();
 
+   CLEAR_CALLER_SAVED_REGS;
    GET_FINAL_LEAK_COUNTS;
 
    PRINT_LEAK_COUNTS(stderr);

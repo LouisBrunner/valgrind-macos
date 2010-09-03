@@ -160,7 +160,7 @@ case I chased).
 
 /* These should be set at build time */
 //#define NO_FLOAT
-//#define HAVE_ALTIVEC  // CFLAGS += -maltivec
+//#define HAS_ALTIVEC  // CFLAGS += -maltivec
 //#define IS_PPC405
 /**********************************************************************/
 
@@ -220,8 +220,8 @@ register HWord_t r15 __asm__ ("r15");
 register HWord_t r16 __asm__ ("r16");
 register HWord_t r17 __asm__ ("r17");
 
-#include "config.h"         // HAVE_ALTIVEC
-#if defined (HAVE_ALTIVEC)
+#include "config.h"         // HAS_ALTIVEC
+#if defined (HAS_ALTIVEC)
 #   include <altivec.h>
 #endif
 #include <assert.h>
@@ -401,7 +401,7 @@ static float bits_to_float ( uint32_t i )
 #endif
 
 
-#if defined (HAVE_ALTIVEC)
+#if defined (HAS_ALTIVEC)
 static void AB_DPRINTF_VEC32x4 ( vector unsigned int v )
 {
 #if defined (DEBUG_ARGS_BUILD)
@@ -2210,7 +2210,7 @@ static test_t tests_fst_ops_three[] = {
 #endif /* !defined (NO_FLOAT) */
 
 
-#if defined (HAVE_ALTIVEC)
+#if defined (HAS_ALTIVEC)
 static void test_vmhaddshs (void)
 {
     __asm__ __volatile__ ("vmhaddshs    17, 14, 15, 16");
@@ -2268,9 +2268,9 @@ static test_t tests_aa_ops_three[] = {
     { &test_vmsumshm        , "    vmsumshm", },
     { NULL,                   NULL,           },
 };
-#endif /* defined (HAVE_ALTIVEC) */
+#endif /* defined (HAS_ALTIVEC) */
 
-#if defined (HAVE_ALTIVEC)
+#if defined (HAS_ALTIVEC)
 static void test_vperm (void)
 {
     __asm__ __volatile__ ("vperm        17, 14, 15, 16");
@@ -2286,9 +2286,9 @@ static test_t tests_al_ops_three[] = {
     { &test_vsel            , "        vsel", },
     { NULL,                   NULL,           },
 };
-#endif /* defined (HAVE_ALTIVEC) */
+#endif /* defined (HAS_ALTIVEC) */
 
-#if defined (HAVE_ALTIVEC)
+#if defined (HAS_ALTIVEC)
 static void test_vaddubm (void)
 {
     __asm__ __volatile__ ("vaddubm      17, 14, 15");
@@ -2598,9 +2598,9 @@ static test_t tests_aa_ops_two[] = {
     { &test_vminsw          , "      vminsw", },
     { NULL,                   NULL,           },
 };
-#endif /* defined (HAVE_ALTIVEC) */
+#endif /* defined (HAS_ALTIVEC) */
 
-#if defined (HAVE_ALTIVEC)
+#if defined (HAS_ALTIVEC)
 static void test_vand (void)
 {
     __asm__ __volatile__ ("vand         17, 14, 15");
@@ -2808,9 +2808,9 @@ static test_t tests_al_ops_two[] = {
     { &test_vsro            , "        vsro", },
     { NULL,                   NULL,           },
 };
-#endif /* defined (HAVE_ALTIVEC) */
+#endif /* defined (HAS_ALTIVEC) */
 
-#if defined (HAVE_ALTIVEC)
+#if defined (HAS_ALTIVEC)
 static void test_vupkhsb (void)
 {
     __asm__ __volatile__ ("vupkhsb      17, 14");
@@ -2850,9 +2850,9 @@ static test_t tests_al_ops_one[] = {
     { &test_vupklpx         , "     vupklpx", },
     { NULL,                   NULL,           },
 };
-#endif /* defined (HAVE_ALTIVEC) */
+#endif /* defined (HAS_ALTIVEC) */
 
-#if defined (HAVE_ALTIVEC)
+#if defined (HAS_ALTIVEC)
 static void test_vcmpgtub (void)
 {
     __asm__ __volatile__ ("vcmpgtub     17, 14, 15");
@@ -2910,9 +2910,9 @@ static test_t tests_ac_ops_two[] = {
     { &test_vcmpequw        , "    vcmpequw", },
     { NULL,                   NULL,           },
 };
-#endif /* defined (HAVE_ALTIVEC) */
+#endif /* defined (HAS_ALTIVEC) */
 
-#if defined (HAVE_ALTIVEC)
+#if defined (HAS_ALTIVEC)
 static void test_vcmpgtub_ (void)
 {
     __asm__ __volatile__ ("vcmpgtub.    17, 14, 15");
@@ -2970,9 +2970,9 @@ static test_t tests_acr_ops_two[] = {
     { &test_vcmpequw_       , "   vcmpequw.", },
     { NULL,                   NULL,           },
 };
-#endif /* defined (HAVE_ALTIVEC) */
+#endif /* defined (HAS_ALTIVEC) */
 
-#if defined (HAVE_ALTIVEC)
+#if defined (HAS_ALTIVEC)
 static void test_vsl (void)
 {
     __asm__ __volatile__ ("vsl          17, 14, 15");
@@ -3028,9 +3028,9 @@ static test_t tests_av_int_ops_spe[] = {
     { &test_lvsr            , "        lvsr", },
     { NULL,                   NULL,           },
 };
-#endif /* defined (HAVE_ALTIVEC) */
+#endif /* defined (HAS_ALTIVEC) */
 
-#if defined (HAVE_ALTIVEC)
+#if defined (HAS_ALTIVEC)
 static void test_lvebx (void)
 {
     __asm__ __volatile__ ("lvebx        17,14,15");
@@ -3064,9 +3064,9 @@ static test_t tests_ald_ops_two[] = {
     { &test_lvxl            , "        lvxl", },
     { NULL,                   NULL,           },
 };
-#endif /* defined (HAVE_ALTIVEC) */
+#endif /* defined (HAS_ALTIVEC) */
 
-#if defined (HAVE_ALTIVEC)
+#if defined (HAS_ALTIVEC)
 static void test_stvebx (void)
 {
     __asm__ __volatile__ ("stvebx       14,15,16");
@@ -3100,9 +3100,9 @@ static test_t tests_ast_ops_three[] = {
     { &test_stvxl           , "       stvxl", },
     { NULL,                   NULL,           },
 };
-#endif /* defined (HAVE_ALTIVEC) */
+#endif /* defined (HAS_ALTIVEC) */
 
-#if defined (HAVE_ALTIVEC)
+#if defined (HAS_ALTIVEC)
 #if 0
 static void test_vmaddfp (void)
 {
@@ -3120,9 +3120,9 @@ static test_t tests_afa_ops_three[] = {
 //    { &test_vnmsubfp        , "    vnmsubfp", },   // TODO: Not yet supported
     { NULL,                   NULL,           },
 };
-#endif /* defined (HAVE_ALTIVEC) */
+#endif /* defined (HAS_ALTIVEC) */
 
-#if defined (HAVE_ALTIVEC)
+#if defined (HAS_ALTIVEC)
 static void test_vaddfp (void)
 {
     __asm__ __volatile__ ("vaddfp       17, 14, 15");
@@ -3150,9 +3150,9 @@ static test_t tests_afa_ops_two[] = {
     { &test_vminfp          , "      vminfp", },
     { NULL,                   NULL,           },
 };
-#endif /* defined (HAVE_ALTIVEC) */
+#endif /* defined (HAS_ALTIVEC) */
 
-#if defined (HAVE_ALTIVEC)
+#if defined (HAS_ALTIVEC)
 static void test_vrfin (void)
 {
     __asm__ __volatile__ ("vrfin        17, 14");
@@ -3206,9 +3206,9 @@ static test_t tests_afa_ops_one[] = {
     //    { &test_vexptefp        , "    vexptefp", },   // TODO: Not yet supported
     { NULL,                   NULL,           },
 };
-#endif /* defined (HAVE_ALTIVEC) */
+#endif /* defined (HAS_ALTIVEC) */
 
-#if defined (HAVE_ALTIVEC)
+#if defined (HAS_ALTIVEC)
 static void test_vcmpgtfp (void)
 {
     __asm__ __volatile__ ("vcmpgtfp     17, 14, 15");
@@ -3236,9 +3236,9 @@ static test_t tests_afc_ops_two[] = {
     { &test_vcmpbfp         , "     vcmpbfp", },
     { NULL,                   NULL,           },
 };
-#endif /* defined (HAVE_ALTIVEC) */
+#endif /* defined (HAS_ALTIVEC) */
 
-#if defined (HAVE_ALTIVEC)
+#if defined (HAS_ALTIVEC)
 static void test_vcmpgtfp_ (void)
 {
     __asm__ __volatile__ ("vcmpgtfp.    17, 14, 15");
@@ -3266,9 +3266,9 @@ static test_t tests_afcr_ops_two[] = {
     { &test_vcmpbfp_        , "    vcmpbfp.", },
     { NULL,                   NULL,           },
 };
-#endif /* defined (HAVE_ALTIVEC) */
+#endif /* defined (HAS_ALTIVEC) */
 
-#if defined (HAVE_ALTIVEC)
+#if defined (HAS_ALTIVEC)
 extern void test_vcfux (void);
 ASSEMBLY_FUNC("test_vcfux", "vcfux        17, 14, 0");
 
@@ -3288,7 +3288,7 @@ static test_t tests_av_float_ops_spe[] = {
     { &test_vctsxs          , "      vctsxs", },
     { NULL,                   NULL,           },
 };
-#endif /* defined (HAVE_ALTIVEC) */
+#endif /* defined (HAS_ALTIVEC) */
 
 #if defined (IS_PPC405)
 static void test_macchw (void)
@@ -4013,118 +4013,118 @@ static test_table_t all_tests[] = {
         0x0002050b,
     },
 #endif /* !defined (NO_FLOAT) */
-#if defined (HAVE_ALTIVEC)
+#if defined (HAS_ALTIVEC)
     {
         tests_aa_ops_three    ,
         "PPC altivec integer arith insns with three args",
         0x00040103,
     },
-#endif /* defined (HAVE_ALTIVEC) */
-#if defined (HAVE_ALTIVEC)
+#endif /* defined (HAS_ALTIVEC) */
+#if defined (HAS_ALTIVEC)
     {
         tests_al_ops_three    ,
         "PPC altivec integer logical insns with three args",
         0x00040203,
     },
-#endif /* defined (HAVE_ALTIVEC) */
-#if defined (HAVE_ALTIVEC)
+#endif /* defined (HAS_ALTIVEC) */
+#if defined (HAS_ALTIVEC)
     {
         tests_aa_ops_two      ,
         "PPC altivec integer arith insns with two args",
         0x00040102,
     },
-#endif /* defined (HAVE_ALTIVEC) */
-#if defined (HAVE_ALTIVEC)
+#endif /* defined (HAS_ALTIVEC) */
+#if defined (HAS_ALTIVEC)
     {
         tests_al_ops_two      ,
         "PPC altivec integer logical insns with two args",
         0x00040202,
     },
-#endif /* defined (HAVE_ALTIVEC) */
-#if defined (HAVE_ALTIVEC)
+#endif /* defined (HAS_ALTIVEC) */
+#if defined (HAS_ALTIVEC)
     {
         tests_al_ops_one      ,
         "PPC altivec integer logical insns with one arg",
         0x00040201,
     },
-#endif /* defined (HAVE_ALTIVEC) */
-#if defined (HAVE_ALTIVEC)
+#endif /* defined (HAS_ALTIVEC) */
+#if defined (HAS_ALTIVEC)
     {
         tests_ac_ops_two      ,
         "Altivec integer compare insns",
         0x00040302,
     },
-#endif /* defined (HAVE_ALTIVEC) */
-#if defined (HAVE_ALTIVEC)
+#endif /* defined (HAS_ALTIVEC) */
+#if defined (HAS_ALTIVEC)
     {
         tests_acr_ops_two     ,
         "Altivec integer compare insns with flags update",
         0x01040302,
     },
-#endif /* defined (HAVE_ALTIVEC) */
-#if defined (HAVE_ALTIVEC)
+#endif /* defined (HAS_ALTIVEC) */
+#if defined (HAS_ALTIVEC)
     {
         tests_av_int_ops_spe  ,
         "Altivec integer special insns",
         0x00040207,
     },
-#endif /* defined (HAVE_ALTIVEC) */
-#if defined (HAVE_ALTIVEC)
+#endif /* defined (HAS_ALTIVEC) */
+#if defined (HAS_ALTIVEC)
     {
         tests_ald_ops_two     ,
         "Altivec load insns with two register args",
         0x00040509,
     },
-#endif /* defined (HAVE_ALTIVEC) */
-#if defined (HAVE_ALTIVEC)
+#endif /* defined (HAS_ALTIVEC) */
+#if defined (HAS_ALTIVEC)
     {
         tests_ast_ops_three   ,
         "Altivec store insns with three register args",
         0x0004050b,
     },
-#endif /* defined (HAVE_ALTIVEC) */
-#if defined (HAVE_ALTIVEC)
+#endif /* defined (HAS_ALTIVEC) */
+#if defined (HAS_ALTIVEC)
     {
         tests_afa_ops_three   ,
         "Altivec floating point arith insns with three args",
         0x00050103,
     },
-#endif /* defined (HAVE_ALTIVEC) */
-#if defined (HAVE_ALTIVEC)
+#endif /* defined (HAS_ALTIVEC) */
+#if defined (HAS_ALTIVEC)
     {
         tests_afa_ops_two     ,
         "Altivec floating point arith insns with two args",
         0x00050102,
     },
-#endif /* defined (HAVE_ALTIVEC) */
-#if defined (HAVE_ALTIVEC)
+#endif /* defined (HAS_ALTIVEC) */
+#if defined (HAS_ALTIVEC)
     {
         tests_afa_ops_one     ,
         "Altivec floating point arith insns with one arg",
         0x00050101,
     },
-#endif /* defined (HAVE_ALTIVEC) */
-#if defined (HAVE_ALTIVEC)
+#endif /* defined (HAS_ALTIVEC) */
+#if defined (HAS_ALTIVEC)
     {
         tests_afc_ops_two     ,
         "Altivec floating point compare insns",
         0x00050302,
     },
-#endif /* defined (HAVE_ALTIVEC) */
-#if defined (HAVE_ALTIVEC)
+#endif /* defined (HAS_ALTIVEC) */
+#if defined (HAS_ALTIVEC)
     {
         tests_afcr_ops_two    ,
         "Altivec floating point compare insns with flags update",
         0x01050302,
     },
-#endif /* defined (HAVE_ALTIVEC) */
-#if defined (HAVE_ALTIVEC)
+#endif /* defined (HAS_ALTIVEC) */
+#if defined (HAS_ALTIVEC)
     {
         tests_av_float_ops_spe,
         "Altivec float special insns",
         0x00050207,
     },
-#endif /* defined (HAVE_ALTIVEC) */
+#endif /* defined (HAS_ALTIVEC) */
 #if defined (IS_PPC405)
     {
         tests_p4m_ops_two     ,
@@ -4155,7 +4155,7 @@ static int nb_iargs = 0;
 static uint16_t *ii16 = NULL;
 static int nb_ii16 = 0;
 
-#if defined (HAVE_ALTIVEC)
+#if defined (HAS_ALTIVEC)
 static vector unsigned int* viargs = NULL;
 static int nb_viargs = 0;
 static vector float* vfargs = NULL;
@@ -4397,7 +4397,7 @@ static void build_ii16_table (void)
    nb_ii16 = i;
 }
 
-#if defined (HAVE_ALTIVEC)
+#if defined (HAS_ALTIVEC)
 static void build_viargs_table (void)
 {
 #if !defined (ALTIVEC_ARGS_LARGE)
@@ -6067,7 +6067,7 @@ static test_loop_t float_loops[] = {
 #endif /* !defined (NO_FLOAT) */
 
 
-#if defined (HAVE_ALTIVEC)
+#if defined (HAS_ALTIVEC)
 
 /* Ref: vector insns to test setting CR, VSCR:
          volatile vector unsigned int v1 =
@@ -7157,7 +7157,7 @@ static test_loop_t altivec_float_loops[] = {
    NULL,
 };
 
-#endif /* defined (HAVE_ALTIVEC) */
+#endif /* defined (HAS_ALTIVEC) */
 
 
 #if defined (IS_PPC405)
@@ -7328,7 +7328,7 @@ static void do_tests ( insn_sel_flags_t seln_flags,
          continue;
 #endif /* defined (IS_PPC405) */
       case PPC_ALTIVEC:
-#if defined (HAVE_ALTIVEC)
+#if defined (HAS_ALTIVEC)
          loop = &altivec_int_loops[nb_args - 1];
          break;
 #else
@@ -7337,7 +7337,7 @@ static void do_tests ( insn_sel_flags_t seln_flags,
          continue;
 #endif
       case PPC_FALTIVEC:
-#if defined (HAVE_ALTIVEC)
+#if defined (HAS_ALTIVEC)
          loop = &altivec_float_loops[nb_args - 1];
          break;
 #else
@@ -7615,7 +7615,7 @@ int main (int argc, char **argv)
    build_iargs_table();
    build_fargs_table();
    build_ii16_table();
-#if defined (HAVE_ALTIVEC)
+#if defined (HAS_ALTIVEC)
    if (flags.altivec || flags.faltivec) {
       build_viargs_table();
       build_vfargs_table();
@@ -7648,7 +7648,7 @@ int main (int argc, char **argv)
       printf("  num args: \n");
       printf("    iargs      - %d\n", nb_iargs);
       printf("    fargs      - %d\n", nb_fargs);
-#if defined (HAVE_ALTIVEC)
+#if defined (HAS_ALTIVEC)
       printf("    viargs     - %d\n", nb_viargs);
       printf("    vfargs     - %d\n", nb_vfargs);
 #endif

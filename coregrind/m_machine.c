@@ -401,7 +401,7 @@ static void handler_unsup_insn ( Int x ) { __builtin_longjmp(env_unsup_insn,1); 
  * contiguous block of memory of a sensible size. */
 static void find_ppc_dcbz_sz(VexArchInfo *arch_info)
 {
-   Int dcbz_szB;
+   Int dcbz_szB = 0;
    Int dcbzl_szB;
 #define MAX_DCBZL_SZB (128) /* largest known effect of dcbzl */
    char test_block[4*MAX_DCBZL_SZB];

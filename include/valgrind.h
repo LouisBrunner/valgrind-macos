@@ -1366,8 +1366,8 @@ typedef
          "movq 16(%%rax), %%rsi\n\t"                              \
          "movq 8(%%rax), %%rdi\n\t"                               \
          "movq (%%rax), %%rax\n\t"  /* target->%rax */            \
-         "addq $128,%%rsp\n\t"                                    \
          VALGRIND_CALL_NOREDIR_RAX                                \
+         "addq $128,%%rsp\n\t"                                    \
          : /*out*/   "=a" (_res)                                  \
          : /*in*/    "a" (&_argvec[0])                            \
          : /*trash*/ "cc", "memory", __CALLER_SAVED_REGS          \

@@ -2165,7 +2165,9 @@ Int valgrind_main ( Int argc, HChar **argv, HChar **envp )
      VG_(deleteXA)( addr2dihandle );
 
      /* Also do the initial stack permissions. */
-     { NSegment const* seg 
+     {
+       SSizeT inaccessible_len;
+       NSegment const* seg 
           = VG_(am_find_nsegment)( the_iifii.initial_client_SP );
        vg_assert(seg);
        vg_assert(seg->kind == SkAnonC);
@@ -2181,12 +2183,13 @@ Int valgrind_main ( Int argc, HChar **argv, HChar **envp )
 	  is required (VG_STACK_REDZONE_SZB).  setup_client_stack()
 	  will have allocated an extra page if a red zone is required,
 	  to be on the safe side. */
-       vg_assert(the_iifii.initial_client_SP - VG_STACK_REDZONE_SZB 
-                 >= seg->start);
-       VG_TRACK( die_mem_stack, 
-                 seg->start, 
-                 the_iifii.initial_client_SP - VG_STACK_REDZONE_SZB 
-                                             - seg->start );
+       inaccessible_len = the_iifii.initial_client_SP - VG_STACK_REDZONE_SZB 
+                          - seg->start;
+       vg_assert(inaccessible_len >= 0);
+       if (inaccessible_len > 0)
+          VG_TRACK( die_mem_stack, 
+                    seg->start, 
+                    inaccessible_len );
        VG_(debugLog)(2, "main", "mark stack inaccessible %010lx-%010lx\n",
                         seg->start, 
                         the_iifii.initial_client_SP-1 - VG_STACK_REDZONE_SZB);

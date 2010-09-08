@@ -107,7 +107,7 @@ Bool DRD_(clientobj_present)(const Addr a1, const Addr a2)
 {
    DrdClientobj *p;
 
-   tl_assert(a1 < a2);
+   tl_assert(a1 <= a2);
    VG_(OSetGen_ResetIter)(s_clientobj_set);
    for ( ; (p = VG_(OSetGen_Next)(s_clientobj_set)) != 0; )
    {

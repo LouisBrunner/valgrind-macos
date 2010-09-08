@@ -129,7 +129,7 @@ void DRD_(bm_access_range_load)(struct bitmap* const bm, Addr a1, Addr a2)
    Addr b, b_next;
 
    tl_assert(bm);
-   tl_assert(a1 < a2);
+   tl_assert(a1 <= a2);
    tl_assert(a2 < first_address_with_higher_msb(a2));
    tl_assert(a1 == first_address_with_same_lsb(a1));
    tl_assert(a2 == first_address_with_same_lsb(a2));
@@ -226,7 +226,7 @@ void DRD_(bm_access_range_store)(struct bitmap* const bm,
    Addr b, b_next;
 
    tl_assert(bm);
-   tl_assert(a1 < a2);
+   tl_assert(a1 <= a2);
    tl_assert(a2 < first_address_with_higher_msb(a2));
    tl_assert(a1 == first_address_with_same_lsb(a1));
    tl_assert(a2 == first_address_with_same_lsb(a2));

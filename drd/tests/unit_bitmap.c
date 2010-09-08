@@ -63,6 +63,7 @@ static int s_verbose = 1;
 static
 struct { Addr address; SizeT size; BmAccessTypeT access_type; }
   s_test1_args[] = {
+    {                           0, 0, eLoad  },
     {                           0, 1, eLoad  },
     {                         666, 4, eLoad  },
     {                         667, 2, eStore },

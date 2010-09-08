@@ -382,14 +382,14 @@ Int VG_(machine_arm_archlevel) = 4;
 #endif
 
 
-/* Determine what insn set and insn set variant the host has, and
-   record it.  To be called once at system startup.  Returns False if
-   this a CPU incapable of running Valgrind. */
-
+/* For hwcaps detection on ppc32/64 and arm we'll need to do SIGILL
+   testing, so we need a jmp_buf. */
 #if defined(VGA_ppc32) || defined(VGA_ppc64) || defined(VGA_arm)
 #include <setjmp.h> // For jmp_buf
 static jmp_buf env_unsup_insn;
 static void handler_unsup_insn ( Int x ) { __builtin_longjmp(env_unsup_insn,1); }
+#endif
+
 
 /* Helper function for VG_(machine_get_hwcaps), assumes the SIGILL/etc
  * handlers are installed.  Determines the the sizes affected by dcbz
@@ -399,11 +399,12 @@ static void handler_unsup_insn ( Int x ) { __builtin_longjmp(env_unsup_insn,1); 
  * Not very defensive: assumes that as long as the dcbz/dcbzl
  * instructions don't raise a SIGILL, that they will zero an aligned,
  * contiguous block of memory of a sensible size. */
+#if defined(VGA_ppc32) || defined(VGA_ppc64)
 static void find_ppc_dcbz_sz(VexArchInfo *arch_info)
 {
    Int dcbz_szB = 0;
    Int dcbzl_szB;
-#define MAX_DCBZL_SZB (128) /* largest known effect of dcbzl */
+#  define MAX_DCBZL_SZB (128) /* largest known effect of dcbzl */
    char test_block[4*MAX_DCBZL_SZB];
    char *aligned = test_block;
    Int i;
@@ -449,9 +450,15 @@ static void find_ppc_dcbz_sz(VexArchInfo *arch_info)
 
    VG_(debugLog)(1, "machine", "dcbz_szB=%d dcbzl_szB=%d\n",
                  dcbz_szB, dcbzl_szB);
+#  undef MAX_DCBZL_SZB
 }
-#undef MAX_DCBZL_SZB
-#endif
+#endif /* defined(VGA_ppc32) || defined(VGA_ppc64) */
+
+
+
+/* Determine what insn set and insn set variant the host has, and
+   record it.  To be called once at system startup.  Returns False if
+   this a CPU incapable of running Valgrind. */
 
 Bool VG_(machine_get_hwcaps)( void )
 {

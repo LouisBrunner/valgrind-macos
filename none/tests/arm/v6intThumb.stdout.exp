@@ -15189,6 +15189,25 @@ mvn.w   r9, 0x00000930 :: rd 0xfffff6cf, c:v-in 3, cpsr 0xf0000000 NZCV
 mvn.w   r9, 0x00000430 :: rd 0xfffffbcf, c:v-in 3, cpsr 0xf0000000 NZCV
 mvn.w   r9, 0x00000093 :: rd 0xffffff6c, c:v-in 3, cpsr 0xf0000000 NZCV
 mvn.w   r9, 0x00000043 :: rd 0xffffffbc, c:v-in 3, cpsr 0xf0000000 NZCV
+(T1) RBIT Rd, Rm
+rbit r0, r1 :: rd 0x00000000 rm 0x00000000, c:v-in 0, cpsr 0xc0000000 NZ  
+rbit r0, r1 :: rd 0xffffffff rm 0xffffffff, c:v-in 0, cpsr 0xc0000000 NZ  
+rbit r0, r1 :: rd 0x00000001 rm 0x80000000, c:v-in 0, cpsr 0xc0000000 NZ  
+rbit r0, r1 :: rd 0x80000000 rm 0x00000001, c:v-in 0, cpsr 0xc0000000 NZ  
+rbit r0, r1 :: rd 0xe49a828c rm 0x31415927, c:v-in 0, cpsr 0xc0000000 NZ  
+rbit r0, r1 :: rd 0x46a82828 rm 0x14141562, c:v-in 0, cpsr 0xc0000000 NZ  
+rbit r0, r1 :: rd 0xf89c17d5 rm 0xabe8391f, c:v-in 0, cpsr 0xc0000000 NZ  
+rbit r0, r1 :: rd 0x01551409 rm 0x9028aa80, c:v-in 0, cpsr 0xc0000000 NZ  
+rbit r0, r1 :: rd 0xb63f8b57 rm 0xead1fc6d, c:v-in 0, cpsr 0xc0000000 NZ  
+rbit r0, r1 :: rd 0xaa3193ac rm 0x35c98c55, c:v-in 0, cpsr 0xc0000000 NZ  
+rbit r0, r1 :: rd 0xd78f52ca rm 0x534af1eb, c:v-in 0, cpsr 0xc0000000 NZ  
+rbit r0, r1 :: rd 0x10d88aa2 rm 0x45511b08, c:v-in 0, cpsr 0xc0000000 NZ  
+rbit r0, r1 :: rd 0x8efee009 rm 0x90077f71, c:v-in 0, cpsr 0xc0000000 NZ  
+rbit r0, r1 :: rd 0xd215317b rm 0xde8ca84b, c:v-in 0, cpsr 0xc0000000 NZ  
+rbit r0, r1 :: rd 0x5bb05ec7 rm 0xe37a0dda, c:v-in 0, cpsr 0xc0000000 NZ  
+rbit r0, r1 :: rd 0xd2bc1da7 rm 0xe5b83d4b, c:v-in 0, cpsr 0xc0000000 NZ  
+rbit r0, r1 :: rd 0x3728b6dd rm 0xbb6d14ec, c:v-in 0, cpsr 0xc0000000 NZ  
+rbit r0, r1 :: rd 0x933c1916 rm 0x68983cc9, c:v-in 0, cpsr 0xc0000000 NZ  
 MOV
 mov  r0, r1 :: rd 0x00000001 rm 0x00000001, c:v-in 0, cpsr 0xc0000000 NZ  
 cpy  r0, r1 :: rd 0x00000001 rm 0x00000001, c:v-in 0, cpsr 0xc0000000 NZ  

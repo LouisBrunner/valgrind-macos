@@ -1753,9 +1753,11 @@ void VG_(sanity_check_general) ( Bool force_expensive )
          stack 
             = (VgStack*)
               VG_(get_ThreadState)(tid)->os_state.valgrind_stack_base;
+         SizeT limit
+            = 4096; // Let's say.  Checking more causes lots of L2 misses.
 	 remains 
-            = VG_(am_get_VgStack_unused_szB)(stack);
-	 if (remains < VKI_PAGE_SIZE)
+            = VG_(am_get_VgStack_unused_szB)(stack, limit);
+	 if (remains < limit)
 	    VG_(message)(Vg_DebugMsg, 
                          "WARNING: Thread %d is within %ld bytes "
                          "of running out of stack!\n",

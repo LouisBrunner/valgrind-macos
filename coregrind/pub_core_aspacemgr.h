@@ -396,10 +396,10 @@ typedef
 
 extern VgStack* VG_(am_alloc_VgStack)( /*OUT*/Addr* initial_sp );
 
-/* Figure out how many bytes of the stack's active area have not
-   been used.  Used for estimating if we are close to overflowing it. */
-
-extern Int VG_(am_get_VgStack_unused_szB)( VgStack* stack ); 
+/* Figure out how many bytes of the stack's active area have not been
+   used.  Used for estimating if we are close to overflowing it.  If
+   the free area is larger than 'limit', just return 'limit'. */
+extern SizeT VG_(am_get_VgStack_unused_szB)( VgStack* stack, SizeT limit ); 
 
 // DDD: this is ugly
 #if defined(VGO_darwin)

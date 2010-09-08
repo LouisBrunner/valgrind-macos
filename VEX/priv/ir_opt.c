@@ -3975,6 +3975,18 @@ static IRExpr* fold_IRExpr_Unop ( IROp op, IRExpr* aa )
       /* 64to32( 32Uto64 ( x )) --> x */
       if (is_Unop(aa, Iop_32Uto64))
          return aa->Iex.Unop.arg;
+      /* 64to32( 8Uto64 ( x )) --> 8Uto32(x) */
+      if (is_Unop(aa, Iop_8Uto64))
+         return IRExpr_Unop(Iop_8Uto32, aa->Iex.Unop.arg);
+      break;
+
+   case Iop_32Uto64:
+      /* 32Uto64( 8Uto32( x )) --> 8Uto64(x) */
+      if (is_Unop(aa, Iop_8Uto32))
+         return IRExpr_Unop(Iop_8Uto64, aa->Iex.Unop.arg);
+      /* 32Uto64( 16Uto32( x )) --> 16Uto64(x) */
+      if (is_Unop(aa, Iop_16Uto32))
+         return IRExpr_Unop(Iop_16Uto64, aa->Iex.Unop.arg);
       break;
 
    case Iop_1Sto32:

@@ -366,7 +366,7 @@ typedef
       Ain_Call,        /* call to address in register */
       Ain_Goto,        /* conditional/unconditional jmp to dst */
       Ain_CMov64,      /* conditional move */
-      Ain_MovZLQ,      /* reg-reg move, zeroing out top half */
+      Ain_MovxLQ,      /* reg-reg move, zx-ing/sx-ing top half */
       Ain_LoadEX,      /* mov{s,z}{b,w,l}q from mem to reg */
       Ain_Store,       /* store 32/16/8 bit value in memory */
       Ain_Set64,       /* convert condition code to 64-bit value */
@@ -493,11 +493,12 @@ typedef
             AMD64RM*      src;
             HReg          dst;
          } CMov64;
-         /* reg-reg move, zeroing out top half */
+         /* reg-reg move, sx-ing/zx-ing top half */
          struct {
+            Bool syned;
             HReg src;
             HReg dst;
-         } MovZLQ;
+         } MovxLQ;
          /* Sign/Zero extending loads.  Dst size is always 64 bits. */
          struct {
             UChar       szSmall; /* only 1, 2 or 4 */
@@ -684,7 +685,7 @@ extern AMD64Instr* AMD64Instr_Push       ( AMD64RMI* );
 extern AMD64Instr* AMD64Instr_Call       ( AMD64CondCode, Addr64, Int );
 extern AMD64Instr* AMD64Instr_Goto       ( IRJumpKind, AMD64CondCode cond, AMD64RI* dst );
 extern AMD64Instr* AMD64Instr_CMov64     ( AMD64CondCode, AMD64RM* src, HReg dst );
-extern AMD64Instr* AMD64Instr_MovZLQ     ( HReg src, HReg dst );
+extern AMD64Instr* AMD64Instr_MovxLQ     ( Bool syned, HReg src, HReg dst );
 extern AMD64Instr* AMD64Instr_LoadEX     ( UChar szSmall, Bool syned,
                                            AMD64AMode* src, HReg dst );
 extern AMD64Instr* AMD64Instr_Store      ( UChar sz, HReg src, AMD64AMode* dst );

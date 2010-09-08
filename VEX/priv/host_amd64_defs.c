@@ -737,11 +737,12 @@ AMD64Instr* AMD64Instr_CMov64 ( AMD64CondCode cond, AMD64RM* src, HReg dst ) {
    vassert(cond != Acc_ALWAYS);
    return i;
 }
-AMD64Instr* AMD64Instr_MovZLQ ( HReg src, HReg dst ) {
-   AMD64Instr* i     = LibVEX_Alloc(sizeof(AMD64Instr));
-   i->tag            = Ain_MovZLQ;
-   i->Ain.MovZLQ.src = src;
-   i->Ain.MovZLQ.dst = dst;
+AMD64Instr* AMD64Instr_MovxLQ ( Bool syned, HReg src, HReg dst ) {
+   AMD64Instr* i       = LibVEX_Alloc(sizeof(AMD64Instr));
+   i->tag              = Ain_MovxLQ;
+   i->Ain.MovxLQ.syned = syned;
+   i->Ain.MovxLQ.src   = src;
+   i->Ain.MovxLQ.dst   = dst;
    return i;
 }
 AMD64Instr* AMD64Instr_LoadEX ( UChar szSmall, Bool syned,
@@ -1138,11 +1139,11 @@ void ppAMD64Instr ( AMD64Instr* i, Bool mode64 )
          vex_printf(",");
          ppHRegAMD64(i->Ain.CMov64.dst);
          return;
-      case Ain_MovZLQ:
-         vex_printf("movzlq ");
-         ppHRegAMD64_lo32(i->Ain.MovZLQ.src);
+      case Ain_MovxLQ:
+         vex_printf("mov%clq ", i->Ain.MovxLQ.syned ? 's' : 'z');
+         ppHRegAMD64_lo32(i->Ain.MovxLQ.src);
          vex_printf(",");
-         ppHRegAMD64(i->Ain.MovZLQ.dst);
+         ppHRegAMD64(i->Ain.MovxLQ.dst);
          return;
       case Ain_LoadEX:
          if (i->Ain.LoadEX.szSmall==4 && !i->Ain.LoadEX.syned) {
@@ -1510,9 +1511,9 @@ void getRegUsage_AMD64Instr ( HRegUsage* u, AMD64Instr* i, Bool mode64 )
          addRegUsage_AMD64RM(u, i->Ain.CMov64.src, HRmRead);
          addHRegUse(u, HRmModify, i->Ain.CMov64.dst);
          return;
-      case Ain_MovZLQ:
-         addHRegUse(u, HRmRead,  i->Ain.MovZLQ.src);
-         addHRegUse(u, HRmWrite, i->Ain.MovZLQ.dst);
+      case Ain_MovxLQ:
+         addHRegUse(u, HRmRead,  i->Ain.MovxLQ.src);
+         addHRegUse(u, HRmWrite, i->Ain.MovxLQ.dst);
          return;
       case Ain_LoadEX:
          addRegUsage_AMD64AMode(u, i->Ain.LoadEX.src);
@@ -1740,9 +1741,9 @@ void mapRegs_AMD64Instr ( HRegRemap* m, AMD64Instr* i, Bool mode64 )
          mapRegs_AMD64RM(m, i->Ain.CMov64.src);
          mapReg(m, &i->Ain.CMov64.dst);
          return;
-      case Ain_MovZLQ:
-         mapReg(m, &i->Ain.MovZLQ.src);
-         mapReg(m, &i->Ain.MovZLQ.dst);
+      case Ain_MovxLQ:
+         mapReg(m, &i->Ain.MovxLQ.src);
+         mapReg(m, &i->Ain.MovxLQ.dst);
          return;
       case Ain_LoadEX:
          mapRegs_AMD64AMode(m, i->Ain.LoadEX.src);
@@ -2830,13 +2831,22 @@ Int emit_AMD64Instr ( UChar* buf, Int nbuf, AMD64Instr* i,
       }
       break;
 
-   case Ain_MovZLQ:
-      /* Produce a 32-bit reg-reg move, since the implicit zero-extend
-         does what we want. */
-      *p++ = clearWBit (
-                rexAMode_R(i->Ain.MovZLQ.src, i->Ain.MovZLQ.dst));
-      *p++ = 0x89;
-      p = doAMode_R(p, i->Ain.MovZLQ.src, i->Ain.MovZLQ.dst);
+   case Ain_MovxLQ:
+      /* No, _don't_ ask me why the sense of the args has to be
+         different in the S vs Z case.  I don't know. */
+      if (i->Ain.MovxLQ.syned) {
+         /* Need REX.W = 1 here, but rexAMode_R does that for us. */
+         *p++ = rexAMode_R(i->Ain.MovxLQ.dst, i->Ain.MovxLQ.src);
+         *p++ = 0x63;
+         p = doAMode_R(p, i->Ain.MovxLQ.dst, i->Ain.MovxLQ.src);
+      } else {
+         /* Produce a 32-bit reg-reg move, since the implicit
+            zero-extend does what we want. */
+         *p++ = clearWBit (
+                   rexAMode_R(i->Ain.MovxLQ.src, i->Ain.MovxLQ.dst));
+         *p++ = 0x89;
+         p = doAMode_R(p, i->Ain.MovxLQ.src, i->Ain.MovxLQ.dst);
+      }
       goto done;
 
    case Ain_LoadEX:

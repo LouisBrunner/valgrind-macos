@@ -236,11 +236,11 @@ private:
       if (m_count_ptr)
       {
 	if (s_enable_annotations)
-	  ANNOTATE_HAPPENS_BEFORE(m_count_ptr);
+	  U_ANNOTATE_HAPPENS_BEFORE(m_count_ptr);
 	if (--(*m_count_ptr) == 0)
 	{
 	  if (s_enable_annotations)
-	    ANNOTATE_HAPPENS_AFTER(m_count_ptr);
+	    U_ANNOTATE_HAPPENS_AFTER(m_count_ptr);
 	  delete m_ptr;
 	  m_ptr = NULL;
 	  delete m_count_ptr;

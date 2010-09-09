@@ -672,6 +672,14 @@ Addr setup_client_stack( void*  init_sp,
             break;
 
          case AT_HWCAP:
+#           if defined(VGP_arm_linux)
+            { Bool has_neon = (auxv->u.a_val & VKI_HWCAP_NEON) > 0;
+              VG_(debugLog)(2, "initimg",
+                               "ARM has-neon from-auxv: %s\n",
+                               has_neon ? "YES" : "NO");
+              VG_(machine_arm_set_has_NEON)( has_neon );
+            }
+#           endif
             break;
 
          case AT_DCACHEBSIZE:

@@ -983,6 +983,22 @@ void VG_(machine_ppc64_set_clszB)( Int szB )
 #endif
 
 
+/* Notify host's ability to handle NEON instructions. */
+#if defined(VGA_arm)
+void VG_(machine_arm_set_has_NEON)( Bool has_neon )
+{
+   vg_assert(hwcaps_done);
+   /* There's nothing else we can sanity check. */
+
+   if (has_neon) {
+      vai.hwcaps |= VEX_HWCAPS_ARM_NEON;
+   } else {
+      vai.hwcaps &= ~VEX_HWCAPS_ARM_NEON;
+   }
+}
+#endif
+
+
 /* Fetch host cpu info, once established. */
 void VG_(machine_get_VexArchInfo)( /*OUT*/VexArch* pVa,
                                    /*OUT*/VexArchInfo* pVai )

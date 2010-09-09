@@ -158,6 +158,11 @@ void VG_(get_UnwindStartRegs) ( /*OUT*/UnwindStartRegs* regs,
 
           then safe to use VG_(machine_get_VexArchInfo) 
                        and VG_(machine_ppc64_has_VMX)
+   -------------
+   arm:   initially:  call VG_(machine_get_hwcaps)
+                      call VG_(machine_arm_set_has_NEON)
+
+          then safe to use VG_(machine_get_VexArchInfo) 
 
    VG_(machine_get_hwcaps) may use signals (although it attempts to
    leave signal state unchanged) and therefore should only be
@@ -180,6 +185,10 @@ extern void VG_(machine_ppc32_set_clszB)( Int );
 
 #if defined(VGA_ppc64)
 extern void VG_(machine_ppc64_set_clszB)( Int );
+#endif
+
+#if defined(VGA_arm)
+extern void VG_(machine_arm_set_has_NEON)( Bool );
 #endif
 
 /* X86: set to 1 if the host is able to do {ld,st}mxcsr (load/store

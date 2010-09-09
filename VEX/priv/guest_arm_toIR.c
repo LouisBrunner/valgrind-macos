@@ -11779,7 +11779,9 @@ static Bool decode_CP10_CP11_instruction (
    Note that all NEON instructions (in ARM mode) are handled through
    here, since they are all in NV space.
 */
-static Bool decode_NV_instruction ( /*MOD*/DisResult* dres, UInt insn )
+static Bool decode_NV_instruction ( /*MOD*/DisResult* dres,
+                                    VexArchInfo* archinfo,
+                                    UInt insn )
 {
 #  define INSN(_bMax,_bMin)  SLICE_UInt(insn, (_bMax), (_bMin))
 #  define INSN_COND          SLICE_UInt(insn, 31, 28)
@@ -11876,12 +11878,13 @@ static Bool decode_NV_instruction ( /*MOD*/DisResult* dres, UInt insn )
    }
 
    /* ------------------- NEON ------------------- */
-   { Bool ok_neon = decode_NEON_instruction(
-                       dres, insn, IRTemp_INVALID/*unconditional*/, 
-                       False/*!isT*/
-                    );
-     if (ok_neon)
-        return True;
+   if (archinfo->hwcaps & VEX_HWCAPS_ARM_NEON) {
+      Bool ok_neon = decode_NEON_instruction(
+                        dres, insn, IRTemp_INVALID/*unconditional*/, 
+                        False/*!isT*/
+                     );
+      if (ok_neon)
+         return True;
    }
 
    // unrecognised
@@ -12028,7 +12031,7 @@ DisResult disInstr_ARM_WRK (
       case ARMCondNV: {
          // Illegal instruction prior to v5 (see ARM ARM A3-5), but
          // some cases are acceptable
-         Bool ok = decode_NV_instruction(&dres, insn);
+         Bool ok = decode_NV_instruction(&dres, archinfo, insn);
          if (ok)
             goto decode_success;
          else
@@ -17407,12 +17410,13 @@ DisResult disInstr_THUMB_WRK (
    /* -- NEON instructions (in Thumb mode)                     -- */
    /* ----------------------------------------------------------- */
 
-   { UInt insn32 = (INSN0(15,0) << 16) | INSN1(15,0);
-     Bool ok_neon = decode_NEON_instruction(
-                       &dres, insn32, condT, True/*isT*/
-                    );
-     if (ok_neon)
-        goto decode_success;
+   if (archinfo->hwcaps & VEX_HWCAPS_ARM_NEON) {
+      UInt insn32 = (INSN0(15,0) << 16) | INSN1(15,0);
+      Bool ok_neon = decode_NEON_instruction(
+                        &dres, insn32, condT, True/*isT*/
+                     );
+      if (ok_neon)
+         goto decode_success;
    }
 
    /* ----------------------------------------------------------- */

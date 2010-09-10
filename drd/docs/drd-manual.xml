@@ -1603,7 +1603,7 @@ concept.
 </sect2>
 
 <sect2 id="drd-manual.pctw" xreflabel="pthread_cond_timedwait">
-<title><function>pthread_cond_timedwait</function> and timeouts</title>
+<title>pthread_cond_timedwait and timeouts</title>
 
 <para>
 Historically the function

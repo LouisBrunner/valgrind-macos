@@ -1301,7 +1301,7 @@ that can report errors, e.g. Memcheck, but not Cachegrind.</para>
 
 
 <sect2 id="manual-core.mallocopts" xreflabel="malloc-related Options">
-<title><computeroutput>malloc</computeroutput>-related Options</title>
+<title>malloc-related Options</title>
 
 <!-- start of xi:include in the manpage -->
 <para id="malloc-related.opts.para">For tools that use their own version of

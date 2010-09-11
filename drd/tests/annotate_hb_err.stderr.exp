@@ -1,12 +1,14 @@
 
 wrong type of synchronization object
-   at 0x........: main (annotate_hb_err.c:?)
+   at 0x........: U_AnnotateHappensBefore (unified_annotations.h:?)
+   by 0x........: main (annotate_hb_err.c:?)
 mutex 0x........ was first observed at:
    at 0x........: pthread_mutex_init (drd_pthread_intercepts.c:?)
    by 0x........: main (annotate_hb_err.c:?)
 
 wrong type of synchronization object
-   at 0x........: main (annotate_hb_err.c:?)
+   at 0x........: U_AnnotateHappensBefore (unified_annotations.h:?)
+   by 0x........: main (annotate_hb_err.c:?)
 cond 0x........ was first observed at:
    at 0x........: pthread_cond_init (drd_pthread_intercepts.c:?)
    by 0x........: main (annotate_hb_err.c:?)
@@ -15,7 +17,8 @@ wrong type of synchronization object
    at 0x........: pthread_cond_init (drd_pthread_intercepts.c:?)
    by 0x........: main (annotate_hb_err.c:?)
 order annotation 0x........ was first observed at:
-   at 0x........: main (annotate_hb_err.c:?)
+   at 0x........: U_AnnotateHappensAfter (unified_annotations.h:?)
+   by 0x........: main (annotate_hb_err.c:?)
 
 Done.
 

@@ -16,9 +16,15 @@ ANNOTATE_BENIGN_RACE_STATIC(s_i, "Benign because duplicate assignment.");
 
 /* Local functions. */
 
+static inline void AnnotateIgnoreReadsBegin() { ANNOTATE_IGNORE_READS_BEGIN(); }
+static inline void AnnotateIgnoreReadsEnd() { ANNOTATE_IGNORE_READS_END(); }
+
 static void* thread_func(void*)
 {
-  s_i = ANNOTATE_UNPROTECTED_READ(s_j);
+  AnnotateIgnoreReadsBegin();
+  int i = s_j;
+  AnnotateIgnoreReadsEnd();
+  s_i = i;
   return 0;
 }
 

@@ -9,6 +9,5 @@ EXTRA_DIST = $(noinst_SCRIPTS) \
 check_PROGRAMS = \
 	power_ISA2_05
 
-AM_CFLAGS   = $(WERROR) -Winline -Wall -Wshadow -g -I$(top_srcdir)/include \
-		@FLAG_M64@
-AM_CXXFLAGS = $(AM_CFLAGS) @FLAG_M64@
+power_ISA2_05_CFLAGS = $(AM_CFLAGS) $(WERROR) -Winline -Wall -Wshadow -g \
+		-I$(top_srcdir)/include @FLAG_M64@

@@ -21,10 +21,15 @@ static inline void AnnotateIgnoreReadsEnd() { ANNOTATE_IGNORE_READS_END(); }
 
 static void* thread_func(void*)
 {
+#if defined(__powerpc__) && __GNUC__ -0 == 4 && __GNUC_MINOR__ -0 == 3 \
+    && __GNUC_PATCHLEVEL__ -0 == 0
   AnnotateIgnoreReadsBegin();
   int i = s_j;
   AnnotateIgnoreReadsEnd();
   s_i = i;
+#else
+  s_i = ANNOTATE_UNPROTECTED_READ(s_j);
+#endif
   return 0;
 }
 

@@ -170,10 +170,19 @@ case I chased).
 #include "tests/malloc.h"       // memalign16
 
 /* Something of the same size as void*, so can be safely be coerced
-   to/from a pointer type. Also same size as the host's gp registers. */
+ * to/from a pointer type. Also same size as the host's gp registers.
+ * According to the AltiVec section of the GCC manual, the syntax does
+ * not allow the use of a typedef name as a type specifier in conjunction
+ * with the vector keyword, so typedefs uint[32|64]_t are #undef'ed here
+ * and redefined using #define.
+ */
 #ifndef __powerpc64__
+#undef uint32_t
+#define uint32_t unsigned int
 typedef uint32_t  HWord_t;
 #else
+#undef uint64_t
+#define uint64_t unsigned long
 typedef uint64_t  HWord_t;
 #endif // #ifndef __powerpc64__
 

@@ -1410,6 +1410,24 @@ AC_MSG_RESULT([no])
 AM_CONDITIONAL(BUILD_SSSE3_TESTS, test x$ac_have_as_ssse3 = xyes)
 
 
+AC_MSG_CHECKING([if x86/amd64 assembler supports 'lzcnt'])
+
+AC_TRY_COMPILE([], [
+  do { 		 
+      __asm__ __volatile__("lzcnt %rax,%rax");
+  } while (0)
+],
+[
+  ac_have_as_lzcnt=yes
+  AC_MSG_RESULT([yes])
+], [
+  ac_have_as_lzcnt=no
+  AC_MSG_RESULT([no])
+])
+
+AM_CONDITIONAL([BUILD_LZCNT_TESTS], [test x$ac_have_as_lzcnt = xyes])
+
+
 # Check for TLS support in the compiler and linker
 if test "x${cross_compiling}" = "xno"; then
 # Native compilation: check whether running a program using TLS succeeds.

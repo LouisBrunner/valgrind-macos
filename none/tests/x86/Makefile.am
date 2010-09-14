@@ -84,7 +84,6 @@ check_PROGRAMS = \
 	jcxz \
 	lahf \
 	looper \
-	lzcnt32 \
 	movx \
 	pushpopseg \
 	sbbmisc \
@@ -94,6 +93,9 @@ check_PROGRAMS = \
 	xadd
 if BUILD_SSSE3_TESTS
    check_PROGRAMS += ssse3_misaligned
+endif
+if BUILD_LZCNT_TESTS
+ check_PROGRAMS += lzcnt32
 endif
 
 

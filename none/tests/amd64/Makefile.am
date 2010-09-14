@@ -60,7 +60,6 @@ check_PROGRAMS = \
 	bug127521-64 bug132813-amd64 bug132918 \
 	clc \
 	$(INSN_TESTS) \
-	lzcnt64 \
 	rcl-amd64 \
 	redundantRexW \
 	smc1 \
@@ -68,6 +67,9 @@ check_PROGRAMS = \
 	xadd
 if BUILD_SSSE3_TESTS
  check_PROGRAMS += ssse3_misaligned
+endif
+if BUILD_LZCNT_TESTS
+ check_PROGRAMS += lzcnt64
 endif
 
 # DDD: these need to be made to work on Darwin like the x86/ ones were.

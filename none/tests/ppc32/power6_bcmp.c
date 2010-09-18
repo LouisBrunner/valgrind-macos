@@ -53,12 +53,13 @@ int main(int argc, char *argv[])
                a = (mask & (j * 0x1010101)) + ((~mask) & (k * 0x1010101));
                b = j * 0x1010101;
                CMPB(result, a, b);
-               if (result != mask)
+               if (result != mask) {
                   printf("%llx %llx %llx %llx\n",
                          (unsigned long long) mask, (unsigned long long) a,
                          (unsigned long long) b,
                          (unsigned long long) result);
-               exit(1);
+                  exit(1);
+		}
             }
 
    }

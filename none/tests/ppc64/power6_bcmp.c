@@ -61,9 +61,10 @@ int main(int argc, char *argv[])
                    ((~mask) & (k * 0x101010101010101));
                b = j * 0x101010101010101;
                CMPB(result, a, b);
-               if (result != mask)
+               if (result != mask) {
                   printf("%8lx %8lx %8lx %8lx\n", mask, a, b, result);
-               exit(1);
+                  exit(1);
+               }
             }
 
    }

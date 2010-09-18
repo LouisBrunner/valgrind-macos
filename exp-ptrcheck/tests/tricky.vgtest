@@ -1,1 +1,2 @@
+prereq: ./is_arch_supported
 prog: tricky

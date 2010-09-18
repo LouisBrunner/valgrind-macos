@@ -1,0 +1,15 @@
+#!/bin/sh
+#
+# Not all architectures are supported by exp-ptr. Currently, PowerPC and ARM
+# are not supported and will fail these tests as follows:
+# WARNING: exp-ptrcheck on <blah> platforms: stack and global array
+# WARNING: checking is not currently supported.  Only heap checking is
+# WARNING: supported.
+#
+# So we use this script to prevent these tests from running on unsupported
+# architectures.
+
+case `uname -i` in
+  ppc*|arm*) exit 1;;
+  *)         exit 0;;
+esac

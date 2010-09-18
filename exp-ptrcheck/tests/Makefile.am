@@ -5,6 +5,7 @@ dist_noinst_SCRIPTS = filter_stderr filter_add filter_suppgen \
 	sh_script
 
 EXTRA_DIST = \
+	is_arch_supported \
 	add.vgtest-disabled add.stderr.exp \
 	and.vgtest-disabled and.stderr.exp \
 	arith.vgtest-disabled arith.stderr.exp \

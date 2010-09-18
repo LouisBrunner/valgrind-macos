@@ -1,0 +1,21 @@
+Uninitialised byte(s) found during client check request
+   at 0x........: croak (varinfo4.c:29)
+   by 0x........: blah (varinfo4.c:47)
+   by 0x........: main (varinfo4.c:56)
+ Location 0x........ is 1 byte inside a[3].xyzzy[21].c1,
+ declared at varinfo4.c:45, in frame #1 of thread 1
+
+Uninitialised byte(s) found during client check request
+   at 0x........: croak (varinfo4.c:29)
+   by 0x........: blah (varinfo4.c:48)
+   by 0x........: main (varinfo4.c:56)
+ Location 0x........ is 0 bytes inside a[5].bong,
+ declared at varinfo4.c:45, in frame #1 of thread 1
+
+Uninitialised byte(s) found during client check request
+   at 0x........: croak (varinfo4.c:29)
+   by 0x........: blah (varinfo4.c:49)
+   by 0x........: main (varinfo4.c:56)
+ Location 0x........ is 1 byte inside a[3].xyzzy[21].c2[2],
+ declared at varinfo4.c:45, in frame #1 of thread 1
+

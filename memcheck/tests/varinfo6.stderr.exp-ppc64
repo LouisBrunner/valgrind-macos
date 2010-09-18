@@ -1,0 +1,20 @@
+Uninitialised byte(s) found during client check request
+   at 0x........: croak (varinfo6.c:35)
+   by 0x........: mainSort (varinfo6.c:2999)
+   by 0x........: BZ2_blockSort (varinfo6.c:3143)
+   by 0x........: BZ2_compressBlock (varinfo6.c:4072)
+   by 0x........: handle_compress (varinfo6.c:4790)
+   by 0x........: BZ2_bzCompress (varinfo6.c:4860)
+   by 0x........: BZ2_bzBuffToBuffCompress (varinfo6.c:5667)
+   by 0x........: main (varinfo6.c:6517)
+ Address 0x........ is on thread 1's stack
+
+Uninitialised byte(s) found during client check request
+   at 0x........: croak (varinfo6.c:35)
+   by 0x........: BZ2_decompress (varinfo6.c:1699)
+   by 0x........: BZ2_bzDecompress (varinfo6.c:5230)
+   by 0x........: BZ2_bzBuffToBuffDecompress (varinfo6.c:5715)
+   by 0x........: main (varinfo6.c:6532)
+ Location 0x........ is 2 bytes inside local var "i"
+ declared at varinfo6.c:1517, in frame #1 of thread 1
+

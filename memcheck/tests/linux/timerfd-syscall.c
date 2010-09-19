@@ -202,7 +202,7 @@ int main(int ac, char **av)
       return 1;
     }
 
-    fprintf(stderr, "wating timer ...\n");
+    fprintf(stderr, "waiting timer ...\n");
     ticks = waittmr(tfd, -1);
     ttmr = getustime(clks[i].id);
     if (ticks <= 0)
@@ -222,7 +222,7 @@ int main(int ac, char **av)
       return 1;
     }
 
-    fprintf(stderr, "wating timer ...\n");
+    fprintf(stderr, "waiting timer ...\n");
     ticks = waittmr(tfd, -1);
     ttmr = getustime(clks[i].id);
     if (ticks <= 0)
@@ -255,7 +255,7 @@ int main(int ac, char **av)
     fprintf(stderr, "sleeping 1 second ...\n");
     sleep(1);
 
-    fprintf(stderr, "wating timer ...\n");
+    fprintf(stderr, "waiting timer ...\n");
     ticks = waittmr(tfd, -1);
     ttmr = getustime(clks[i].id);
     if (ticks <= 0)
@@ -278,7 +278,7 @@ int main(int ac, char **av)
     fprintf(stderr, "timerfd = %d\n", tfd);
 #endif
 
-    fprintf(stderr, "wating timer (flush the single tick) ...\n");
+    fprintf(stderr, "waiting timer (flush the single tick) ...\n");
     ticks = waittmr(tfd, -1);
     ttmr = getustime(clks[i].id);
     if (ticks <= 0)

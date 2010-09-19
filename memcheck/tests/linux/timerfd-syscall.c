@@ -261,8 +261,13 @@ int main(int ac, char **av)
     if (ticks <= 0)
       fprintf(stderr, "whooops! no timer showed up!\n");
     else
-      fprintf(stderr, "got timer ticks (%ld) after %.1f s\n",
-              ticks, (ttmr - tnow) * 1e-6);
+    {
+      const double delta = (ttmr - tnow) * 1e-6;
+      if (1.9 < delta && delta < 2.1)
+        fprintf(stderr, "got timer ticks (%ld) after about 2s\n", ticks);
+      else
+        fprintf(stderr, "got timer ticks (%ld) after %.1f s\n", ticks, delta);
+    }
 
 
     fprintf(stderr, "O_NONBLOCK test ...\n");

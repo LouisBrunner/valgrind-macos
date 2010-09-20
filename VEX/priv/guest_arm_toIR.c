@@ -10397,6 +10397,105 @@ static Bool decode_V6MEDIA_instruction (
      /* fall through */
    }
 
+   /* ------------------- ssub8<c> <Rd>,<Rn>,<Rm> ------------------ */
+   // merge with sadd8
+   {
+     UInt regD = 99, regN = 99, regM = 99;
+     Bool gate = False;
+
+     if (isT) {
+        if (INSNT0(15,4) == 0xFAC && (INSNT1(15,0) & 0xF0F0) == 0xF000) {
+           regN = INSNT0(3,0);
+           regD = INSNT1(11,8);
+           regM = INSNT1(3,0);
+           if (!isBadRegT(regD) && !isBadRegT(regN) && !isBadRegT(regM))
+              gate = True;
+        }
+     } else {
+        if (INSNA(27,20) == BITS8(0,1,1,0,0,0,0,1) &&
+            INSNA(11,8)  == BITS4(1,1,1,1)         &&
+            INSNA(7,4)   == BITS4(1,1,1,1)) {
+           regD = INSNA(15,12);
+           regN = INSNA(19,16);
+           regM = INSNA(3,0);
+           if (regD != 15 && regN != 15 && regM != 15)
+              gate = True;
+        }
+     }
+
+     if (gate) {
+        IRTemp irt_regN = newTemp(Ity_I32);
+        IRTemp irt_regM = newTemp(Ity_I32);
+
+        IRTemp irt_sum_l0 = newTemp(Ity_I32);
+        IRTemp irt_sum_l1 = newTemp(Ity_I32);
+        IRTemp irt_sum_l2 = newTemp(Ity_I32);
+        IRTemp irt_sum_l3 = newTemp(Ity_I32);
+
+        assign( irt_regN, isT ? getIRegT(regN) : getIRegA(regN) );
+        assign( irt_regM, isT ? getIRegT(regM) : getIRegA(regM) );
+
+        assign( irt_sum_l0, 
+                binop(Iop_Sub32, 
+                      binop(Iop_Sar32, 
+                            binop(Iop_Shl32, mkexpr(irt_regN), mkU8(24)), 
+                            mkU8(24)),
+                      binop(Iop_Sar32, 
+                            binop(Iop_Shl32, mkexpr(irt_regM), mkU8(24)), 
+                            mkU8(24))) );
+        assign( irt_sum_l1, 
+                binop(Iop_Sub32, 
+                      binop(Iop_Sar32, 
+                            binop(Iop_Shl32, mkexpr(irt_regN), mkU8(16)), 
+                            mkU8(24)), 
+                      binop(Iop_Sar32,
+                            binop(Iop_Shl32, mkexpr(irt_regM), mkU8(16)), 
+                            mkU8(24))) );
+        assign( irt_sum_l2, 
+                binop(Iop_Sub32, 
+                      binop(Iop_Sar32, 
+                            binop(Iop_Shl32, mkexpr(irt_regN), mkU8(8)), 
+                            mkU8(24)), 
+                      binop(Iop_Sar32, 
+                            binop(Iop_Shl32, mkexpr(irt_regM), mkU8(8)), 
+                            mkU8(24))) );
+        assign( irt_sum_l3, 
+                binop(Iop_Sub32, 
+                      binop(Iop_Sar32, mkexpr(irt_regN), mkU8(24)), 
+                      binop(Iop_Sar32, mkexpr(irt_regM), mkU8(24))) );
+
+        put_GEFLAG32( 0, 31, unop(Iop_Not32, mkexpr(irt_sum_l0)), condT );
+        put_GEFLAG32( 1, 31, unop(Iop_Not32, mkexpr(irt_sum_l1)), condT );
+        put_GEFLAG32( 2, 31, unop(Iop_Not32, mkexpr(irt_sum_l2)), condT );
+        put_GEFLAG32( 3, 31, unop(Iop_Not32, mkexpr(irt_sum_l3)), condT );
+
+        IRExpr* ire_result 
+          = binop( Iop_Or32,
+                   binop(Iop_Shl32, 
+                         binop(Iop_And32, mkexpr(irt_sum_l3), mkU32(0xff)),
+                         mkU8(24)), 
+                   binop(Iop_Or32, 
+                         binop(Iop_Shl32, 
+                               binop(Iop_And32, mkexpr(irt_sum_l2), mkU32(0xff)),
+                               mkU8(16)),  
+                         binop(Iop_Or32, 
+                               binop(Iop_And32, mkexpr(irt_sum_l0), mkU32(0xff)), 
+                               binop(Iop_Shl32, 
+                                     binop(Iop_And32, 
+                                           mkexpr(irt_sum_l1), mkU32(0xff)),  
+                                     mkU8(8)))) );
+
+        if (isT)
+           putIRegT( regD, ire_result, condT );
+        else
+           putIRegA( regD, ire_result, condT, Ijk_Boring );
+
+        DIP("ssub8%s r%u, r%u, r%u\n", nCC(conq), regD, regN, regM);
+        return True;
+     }
+     /* fall through */
+   }
+
    /* ----------------- uxtab16<c> Rd,Rn,Rm{,rot} ------------------ */
    {
      UInt regD = 99, regN = 99, regM = 99, rotate = 99;

@@ -13858,7 +13858,6 @@ DisResult disInstr_ARM_WRK (
    }
    else if (INSN(27,24) == BITS4(0,0,0,0) && INSN(22,20) == BITS3(0,0,0)) {
       summary = 3 | 32;
-      goto decode_failure; //ATC
    }
    else goto after_load_store_doubleword;
 

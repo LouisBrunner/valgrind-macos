@@ -10299,6 +10299,96 @@ static Bool decode_V6MEDIA_instruction (
      /* fall through */
    }
 
+   /* ----------------- uhadd8<c> <Rd>,<Rn>,<Rm> ------------------- */
+   // merge with shadd8
+   {
+     UInt regD = 99, regN = 99, regM = 99;
+     Bool gate = False;
+
+     if (isT) {
+        if (INSNT0(15,4) == 0xFA8 && (INSNT1(15,0) & 0xF0F0) == 0xF060) {
+           regN = INSNT0(3,0);
+           regD = INSNT1(11,8);
+           regM = INSNT1(3,0);
+           if (!isBadRegT(regD) && !isBadRegT(regN) && !isBadRegT(regM))
+              gate = True;
+        }
+     } else {
+        if (INSNA(27,20) == BITS8(0,1,1,0,0,1,1,1) &&
+            INSNA(11,8)  == BITS4(1,1,1,1)         &&
+            INSNA(7,4)   == BITS4(1,0,0,1)) {
+           regD = INSNA(15,12);
+           regN = INSNA(19,16);
+           regM = INSNA(3,0);
+           if (regD != 15 && regN != 15 && regM != 15)
+              gate = True;
+        }
+     }
+
+     if (gate) {
+        IRTemp irt_regN = newTemp(Ity_I32);
+        IRTemp irt_regM = newTemp(Ity_I32);
+
+        assign( irt_regN, isT ? getIRegT(regN) : getIRegA(regN) );
+        assign( irt_regM, isT ? getIRegT(regM) : getIRegA(regM) );
+
+        IRExpr* ire_sum1 
+                   = binop( Iop_Add32, 
+                            binop(Iop_Shr32, 
+                                  binop(Iop_Shl32, mkexpr(irt_regN), mkU8(24)), 
+                                  mkU8(24)), 
+                            binop(Iop_Shr32, 
+                                  binop(Iop_Shl32, mkexpr(irt_regM), mkU8(24)), 
+                                  mkU8(24)) );
+        IRExpr* ire_sum2 
+                   = binop(Iop_Add32, 
+                           binop(Iop_Shr32, 
+                                 binop(Iop_Shl32, mkexpr(irt_regN), mkU8(16)), 
+                                 mkU8(24)), 
+                           binop(Iop_Shr32, 
+                                 binop(Iop_Shl32, mkexpr(irt_regM), mkU8(16)), 
+                                 mkU8(24)));
+        IRExpr* ire_sum3 
+                   = binop(Iop_Add32, 
+                           binop(Iop_Shr32, 
+                                 binop(Iop_Shl32, mkexpr(irt_regN), mkU8(8)), 
+                                 mkU8(24)), 
+                           binop(Iop_Shr32, 
+                                 binop(Iop_Shl32, mkexpr(irt_regM), mkU8(8)), 
+                                 mkU8(24)));
+        IRExpr* ire_sum4 
+                   = binop( Iop_Add32, 
+                            binop(Iop_Shr32, mkexpr(irt_regN), mkU8(24)), 
+                            binop(Iop_Shr32, mkexpr(irt_regM), mkU8(24)) );
+
+        IRExpr* ire_result 
+                   = binop( Iop_Or32,
+                            binop(Iop_Or32, 
+                                  binop(Iop_And32, 
+                                        binop(Iop_Sar32, ire_sum1, mkU8(1)),
+                                        mkU32(0x000000ff)), 
+                                  binop(Iop_And32, 
+                                        binop(Iop_Shl32, ire_sum2, mkU8(7)), 
+                                        mkU32(0x0000ff00))), 
+                            binop(Iop_Or32, 
+                                  binop(Iop_And32, 
+                                        binop(Iop_Shl32, ire_sum3, mkU8(15)), 
+                                        mkU32(0x00ff0000)), 
+                                  binop(Iop_And32, 
+                                        binop(Iop_Shl32, ire_sum4, mkU8(23)), 
+                                        mkU32(0xff000000))) );
+
+        if (isT)
+           putIRegT( regD, ire_result, condT );
+        else
+           putIRegA( regD, ire_result, condT, Ijk_Boring );
+
+        DIP( "uhadd8%s r%u, r%u, r%u\n", nCC(conq), regD, regN, regM );
+        return True;
+     }
+     /* fall through */
+   }
+
    /* ------------------- sadd8<c> <Rd>,<Rn>,<Rm> ------------------ */
    {
      UInt regD = 99, regN = 99, regM = 99;

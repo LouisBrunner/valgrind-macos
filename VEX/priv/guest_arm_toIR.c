@@ -7153,8 +7153,8 @@ Bool dis_neon_data_2reg_misc ( UInt theInstr, IRTemp condT )
                      op_hi = Iop_InterleaveEvenLanes16x4;
                      break;
                   case 2:
-                     op_lo = Iop_InterleaveHI32x2;
-                     op_hi = Iop_InterleaveLO32x2;
+                     op_lo = Iop_InterleaveLO32x2;
+                     op_hi = Iop_InterleaveHI32x2;
                      break;
                   case 3:
                      return False;

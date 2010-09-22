@@ -721,6 +721,11 @@ static Int get_otrack_shadow_offset_wrk ( Int offset, Int szB )
 
    if (o == GOF(QFLAG32) && sz == 4) return o;
 
+   if (o == GOF(GEFLAG0) && sz == 4) return o;
+   if (o == GOF(GEFLAG1) && sz == 4) return o;
+   if (o == GOF(GEFLAG2) && sz == 4) return o;
+   if (o == GOF(GEFLAG3) && sz == 4) return o;
+
    //if (o == GOF(SYSCALLNO)     && sz == 4) return -1; /* slot unused */
    //if (o == GOF(CC)     && sz == 4) return -1; /* slot unused */
    //if (o == GOF(EMWARN)     && sz == 4) return -1; /* slot unused */

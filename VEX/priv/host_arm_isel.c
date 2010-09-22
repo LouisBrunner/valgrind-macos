@@ -38,6 +38,7 @@
 #include "main_util.h"
 #include "main_globals.h"
 #include "host_generic_regs.h"
+#include "host_generic_simd64.h"  // for 32-bit SIMD helpers
 #include "host_arm_defs.h"
 
 
@@ -1304,6 +1305,60 @@ static HReg iselIntExpr_R_wrk ( ISelEnv* env, IRExpr* e )
          return res;
       }
 
+      /* All cases involving host-side helper calls. */
+      void* fn = NULL;
+      switch (e->Iex.Binop.op) {
+         case Iop_Add16x2:
+            fn = &h_generic_calc_Add16x2; break;
+         case Iop_Sub16x2:
+            fn = &h_generic_calc_Sub16x2; break;
+         case Iop_HAdd16Ux2:
+            fn = &h_generic_calc_HAdd16Ux2; break;
+         case Iop_HAdd16Sx2:
+            fn = &h_generic_calc_HAdd16Sx2; break;
+         case Iop_HSub16Ux2:
+            fn = &h_generic_calc_HSub16Ux2; break;
+         case Iop_HSub16Sx2:
+            fn = &h_generic_calc_HSub16Sx2; break;
+         case Iop_QAdd16Sx2:
+            fn = &h_generic_calc_QAdd16Sx2; break;
+         case Iop_QSub16Sx2:
+            fn = &h_generic_calc_QSub16Sx2; break;
+         case Iop_Add8x4:
+            fn = &h_generic_calc_Add8x4; break;
+         case Iop_Sub8x4:
+            fn = &h_generic_calc_Sub8x4; break;
+         case Iop_HAdd8Ux4:
+            fn = &h_generic_calc_HAdd8Ux4; break;
+         case Iop_HAdd8Sx4:
+            fn = &h_generic_calc_HAdd8Sx4; break;
+         case Iop_HSub8Ux4:
+            fn = &h_generic_calc_HSub8Ux4; break;
+         case Iop_HSub8Sx4:
+            fn = &h_generic_calc_HSub8Sx4; break;
+         case Iop_QAdd8Sx4:
+            fn = &h_generic_calc_QAdd8Sx4; break;
+         case Iop_QAdd8Ux4:
+            fn = &h_generic_calc_QAdd8Ux4; break;
+         case Iop_QSub8Sx4:
+            fn = &h_generic_calc_QSub8Sx4; break;
+         case Iop_QSub8Ux4:
+            fn = &h_generic_calc_QSub8Ux4; break;
+         default:
+            break;
+      }
+
+      if (fn) {
+         HReg regL = iselIntExpr_R(env, e->Iex.Binop.arg1);
+         HReg regR = iselIntExpr_R(env, e->Iex.Binop.arg2);
+         HReg res  = newVRegI(env);
+         addInstr(env, mk_iMOVds_RR(hregARM_R0(), regL));
+         addInstr(env, mk_iMOVds_RR(hregARM_R1(), regR));
+         addInstr(env, ARMInstr_Call( ARMcc_AL, (HWord)Ptr_to_ULong(fn), 2 ));
+         addInstr(env, mk_iMOVds_RR(res, hregARM_R0()));
+         return res;
+      }
+
       break;
    }
 
@@ -1570,6 +1625,27 @@ static HReg iselIntExpr_R_wrk ( ISelEnv* env, IRExpr* e )
          default:
             break;
       }
+
+      /* All Unop cases involving host-side helper calls. */
+      void* fn = NULL;
+      switch (e->Iex.Unop.op) {
+         case Iop_CmpNEZ16x2:
+            fn = &h_generic_calc_CmpNEZ16x2; break;
+         case Iop_CmpNEZ8x4:
+            fn = &h_generic_calc_CmpNEZ8x4; break;
+         default:
+            break;
+      }
+
+      if (fn) {
+         HReg arg = iselIntExpr_R(env, e->Iex.Unop.arg);
+         HReg res = newVRegI(env);
+         addInstr(env, mk_iMOVds_RR(hregARM_R0(), arg));
+         addInstr(env, ARMInstr_Call( ARMcc_AL, (HWord)Ptr_to_ULong(fn), 1 ));
+         addInstr(env, mk_iMOVds_RR(res, hregARM_R0()));
+         return res;
+      }
+
       break;
    }
 

@@ -675,6 +675,33 @@ typedef
       Iop_CalcFPRF, /* Calc 5 fpscr[FPRF] bits (Class, <, =, >, Unord)
                        from FP result */
 
+      /* ------------------ 32-bit SIMD Integer ------------------ */
+
+      /* 16x2 add/sub, also signed/unsigned saturating variants */
+      Iop_Add16x2, Iop_Sub16x2,
+      Iop_QAdd16Sx2, Iop_QAdd16Ux2,
+      Iop_QSub16Sx2, Iop_QSub16Ux2,
+
+      /* 16x2 signed/unsigned halving add/sub.  For each lane, these
+         compute bits 16:1 of (eg) sx(argL) + sx(argR),
+         or zx(argL) - zx(argR) etc. */
+      Iop_HAdd16Ux2, Iop_HAdd16Sx2,
+      Iop_HSub16Ux2, Iop_HSub16Sx2,
+
+      /* 8x4 add/sub, also signed/unsigned saturating variants */
+      Iop_Add8x4, Iop_Sub8x4,
+      Iop_QAdd8Sx4, Iop_QAdd8Ux4,
+      Iop_QSub8Sx4, Iop_QSub8Ux4,
+
+      /* 8x4 signed/unsigned halving add/sub.  For each lane, these
+         compute bits 8:1 of (eg) sx(argL) + sx(argR),
+         or zx(argL) - zx(argR) etc. */
+      Iop_HAdd8Ux4, Iop_HAdd8Sx4,
+      Iop_HSub8Ux4, Iop_HSub8Sx4,
+
+      /* MISC (vector integer cmp != 0) */
+      Iop_CmpNEZ16x2, Iop_CmpNEZ8x4,
+
       /* ------------------ 64-bit SIMD FP ------------------------ */
 
       /* Convertion to/from int */
@@ -716,7 +743,6 @@ typedef
 
       /* Unary */
       Iop_Neg32Fx2, Iop_Abs32Fx2,
-
 
       /* ------------------ 64-bit SIMD Integer. ------------------ */
 

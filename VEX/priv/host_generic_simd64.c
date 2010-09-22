@@ -90,7 +90,7 @@ static inline UShort sel16x4_0 ( ULong w64 ) {
 static inline ULong mk8x8 ( UChar w7, UChar w6,
                             UChar w5, UChar w4,
                             UChar w3, UChar w2,
-			    UChar w1, UChar w0 ) {
+                            UChar w1, UChar w0 ) {
    UInt hi32 =   (((UInt)w7) << 24) | (((UInt)w6) << 16)
                | (((UInt)w5) << 8)  | (((UInt)w4) << 0);
    UInt lo32 =   (((UInt)w3) << 24) | (((UInt)w2) << 16)
@@ -374,6 +374,71 @@ static inline UChar min8U ( UChar xx, UChar yy )
 {
    return toUChar((xx < yy) ? xx : yy);
 }
+
+static inline UShort hadd16U ( UShort xx, UShort yy )
+{
+   UInt xxi = (UInt)xx;
+   UInt yyi = (UInt)yy;
+   UInt r   = (xxi + yyi) >> 1;
+   return (UShort)r;
+}
+
+static inline Short hadd16S ( Short xx, Short yy )
+{
+   Int xxi = (Int)xx;
+   Int yyi = (Int)yy;
+   Int r   = (xxi + yyi) >> 1;
+   return (Short)r;
+}
+
+static inline UShort hsub16U ( UShort xx, UShort yy )
+{
+   UInt xxi = (UInt)xx;
+   UInt yyi = (UInt)yy;
+   UInt r   = (xxi - yyi) >> 1;
+   return (UShort)r;
+}
+
+static inline Short hsub16S ( Short xx, Short yy )
+{
+   Int xxi = (Int)xx;
+   Int yyi = (Int)yy;
+   Int r   = (xxi - yyi) >> 1;
+   return (Short)r;
+}
+
+static inline UChar hadd8U ( UChar xx, UChar yy )
+{
+   UInt xxi = (UInt)xx;
+   UInt yyi = (UInt)yy;
+   UInt r   = (xxi + yyi) >> 1;
+   return (UChar)r;
+}
+
+static inline Char hadd8S ( Char xx, Char yy )
+{
+   Int xxi = (Int)xx;
+   Int yyi = (Int)yy;
+   Int r   = (xxi + yyi) >> 1;
+   return (Char)r;
+}
+
+static inline UChar hsub8U ( UChar xx, UChar yy )
+{
+   UInt xxi = (UInt)xx;
+   UInt yyi = (UInt)yy;
+   UInt r   = (xxi - yyi) >> 1;
+   return (UChar)r;
+}
+
+static inline Char hsub8S ( Char xx, Char yy )
+{
+   Int xxi = (Int)xx;
+   Int yyi = (Int)yy;
+   Int r   = (xxi - yyi) >> 1;
+   return (Char)r;
+}
+
 
 /* ----------------------------------------------------- */
 /* Start of the externally visible functions.  These simply
@@ -1030,6 +1095,227 @@ ULong h_generic_calc_Min8Ux8 ( ULong xx, ULong yy )
           );
 }
 
+/* ------------ SOME 32-bit SIMD HELPERS TOO ------------ */
+
+/* Tuple/select functions for 16x2 vectors. */
+static inline UInt mk16x2 ( UShort w1, UShort w2 ) {
+   return (((UInt)w1) << 16) | ((UInt)w2);
+}
+
+static inline UShort sel16x2_1 ( UInt w32 ) {
+   return 0xFFFF & (UShort)(w32 >> 16);
+}
+static inline UShort sel16x2_0 ( UInt w32 ) {
+   return 0xFFFF & (UShort)(w32);
+}
+
+static inline UInt mk8x4 ( UChar w3, UChar w2,
+                           UChar w1, UChar w0 ) {
+   UInt w32 =   (((UInt)w3) << 24) | (((UInt)w2) << 16)
+              | (((UInt)w1) << 8)  | (((UInt)w0) << 0);
+   return w32;
+}
+
+static inline UChar sel8x4_3 ( UInt w32 ) {
+   return toUChar(0xFF & (w32 >> 24));
+}
+static inline UChar sel8x4_2 ( UInt w32 ) {
+   return toUChar(0xFF & (w32 >> 16));
+}
+static inline UChar sel8x4_1 ( UInt w32 ) {
+   return toUChar(0xFF & (w32 >> 8));
+}
+static inline UChar sel8x4_0 ( UInt w32 ) {
+   return toUChar(0xFF & (w32 >> 0));
+}
+
+
+/* ----------------------------------------------------- */
+/* More externally visible functions.  These simply
+   implement the corresponding IR primops. */
+/* ----------------------------------------------------- */
+
+/* ------ 16x2 ------ */
+
+UInt h_generic_calc_Add16x2 ( UInt xx, UInt yy )
+{
+   return mk16x2( sel16x2_1(xx) + sel16x2_1(yy),
+                  sel16x2_0(xx) + sel16x2_0(yy) );
+}
+
+UInt h_generic_calc_Sub16x2 ( UInt xx, UInt yy )
+{
+   return mk16x2( sel16x2_1(xx) - sel16x2_1(yy),
+                  sel16x2_0(xx) - sel16x2_0(yy) );
+}
+
+UInt h_generic_calc_HAdd16Ux2 ( UInt xx, UInt yy )
+{
+   return mk16x2( hadd16U( sel16x2_1(xx), sel16x2_1(yy) ),
+                  hadd16U( sel16x2_0(xx), sel16x2_0(yy) ) );
+}
+
+UInt h_generic_calc_HAdd16Sx2 ( UInt xx, UInt yy )
+{
+   return mk16x2( hadd16S( sel16x2_1(xx), sel16x2_1(yy) ),
+                  hadd16S( sel16x2_0(xx), sel16x2_0(yy) ) );
+}
+
+UInt h_generic_calc_HSub16Ux2 ( UInt xx, UInt yy )
+{
+   return mk16x2( hsub16U( sel16x2_1(xx), sel16x2_1(yy) ),
+                  hsub16U( sel16x2_0(xx), sel16x2_0(yy) ) );
+}
+
+UInt h_generic_calc_HSub16Sx2 ( UInt xx, UInt yy )
+{
+   return mk16x2( hsub16S( sel16x2_1(xx), sel16x2_1(yy) ),
+                  hsub16S( sel16x2_0(xx), sel16x2_0(yy) ) );
+}
+
+UInt h_generic_calc_QAdd16Ux2 ( UInt xx, UInt yy )
+{
+   return mk16x2( qadd16U( sel16x2_1(xx), sel16x2_1(yy) ),
+                  qadd16U( sel16x2_0(xx), sel16x2_0(yy) ) );
+}
+
+UInt h_generic_calc_QAdd16Sx2 ( UInt xx, UInt yy )
+{
+   return mk16x2( qadd16S( sel16x2_1(xx), sel16x2_1(yy) ),
+                  qadd16S( sel16x2_0(xx), sel16x2_0(yy) ) );
+}
+
+UInt h_generic_calc_QSub16Ux2 ( UInt xx, UInt yy )
+{
+   return mk16x2( qsub16U( sel16x2_1(xx), sel16x2_1(yy) ),
+                  qsub16U( sel16x2_0(xx), sel16x2_0(yy) ) );
+}
+
+UInt h_generic_calc_QSub16Sx2 ( UInt xx, UInt yy )
+{
+   return mk16x2( qsub16S( sel16x2_1(xx), sel16x2_1(yy) ),
+                  qsub16S( sel16x2_0(xx), sel16x2_0(yy) ) );
+}
+
+/* ------ 8x4 ------ */
+
+UInt h_generic_calc_Add8x4 ( UInt xx, UInt yy )
+{
+   return mk8x4(
+             sel8x4_3(xx) + sel8x4_3(yy),
+             sel8x4_2(xx) + sel8x4_2(yy),
+             sel8x4_1(xx) + sel8x4_1(yy),
+             sel8x4_0(xx) + sel8x4_0(yy)
+          );
+}
+
+UInt h_generic_calc_Sub8x4 ( UInt xx, UInt yy )
+{
+   return mk8x4(
+             sel8x4_3(xx) - sel8x4_3(yy),
+             sel8x4_2(xx) - sel8x4_2(yy),
+             sel8x4_1(xx) - sel8x4_1(yy),
+             sel8x4_0(xx) - sel8x4_0(yy)
+          );
+}
+
+UInt h_generic_calc_HAdd8Ux4 ( UInt xx, UInt yy )
+{
+   return mk8x4(
+             hadd8U( sel8x4_3(xx), sel8x4_3(yy) ),
+             hadd8U( sel8x4_2(xx), sel8x4_2(yy) ),
+             hadd8U( sel8x4_1(xx), sel8x4_1(yy) ),
+             hadd8U( sel8x4_0(xx), sel8x4_0(yy) )
+          );
+}
+
+UInt h_generic_calc_HAdd8Sx4 ( UInt xx, UInt yy )
+{
+   return mk8x4(
+             hadd8S( sel8x4_3(xx), sel8x4_3(yy) ),
+             hadd8S( sel8x4_2(xx), sel8x4_2(yy) ),
+             hadd8S( sel8x4_1(xx), sel8x4_1(yy) ),
+             hadd8S( sel8x4_0(xx), sel8x4_0(yy) )
+          );
+}
+
+UInt h_generic_calc_HSub8Ux4 ( UInt xx, UInt yy )
+{
+   return mk8x4(
+             hsub8U( sel8x4_3(xx), sel8x4_3(yy) ),
+             hsub8U( sel8x4_2(xx), sel8x4_2(yy) ),
+             hsub8U( sel8x4_1(xx), sel8x4_1(yy) ),
+             hsub8U( sel8x4_0(xx), sel8x4_0(yy) )
+          );
+}
+
+UInt h_generic_calc_HSub8Sx4 ( UInt xx, UInt yy )
+{
+   return mk8x4(
+             hsub8S( sel8x4_3(xx), sel8x4_3(yy) ),
+             hsub8S( sel8x4_2(xx), sel8x4_2(yy) ),
+             hsub8S( sel8x4_1(xx), sel8x4_1(yy) ),
+             hsub8S( sel8x4_0(xx), sel8x4_0(yy) )
+          );
+}
+
+UInt h_generic_calc_QAdd8Ux4 ( UInt xx, UInt yy )
+{
+   return mk8x4(
+             qadd8U( sel8x4_3(xx), sel8x4_3(yy) ),
+             qadd8U( sel8x4_2(xx), sel8x4_2(yy) ),
+             qadd8U( sel8x4_1(xx), sel8x4_1(yy) ),
+             qadd8U( sel8x4_0(xx), sel8x4_0(yy) )
+          );
+}
+
+UInt h_generic_calc_QAdd8Sx4 ( UInt xx, UInt yy )
+{
+   return mk8x4(
+             qadd8S( sel8x4_3(xx), sel8x4_3(yy) ),
+             qadd8S( sel8x4_2(xx), sel8x4_2(yy) ),
+             qadd8S( sel8x4_1(xx), sel8x4_1(yy) ),
+             qadd8S( sel8x4_0(xx), sel8x4_0(yy) )
+          );
+}
+
+UInt h_generic_calc_QSub8Ux4 ( UInt xx, UInt yy )
+{
+   return mk8x4(
+             qsub8U( sel8x4_3(xx), sel8x4_3(yy) ),
+             qsub8U( sel8x4_2(xx), sel8x4_2(yy) ),
+             qsub8U( sel8x4_1(xx), sel8x4_1(yy) ),
+             qsub8U( sel8x4_0(xx), sel8x4_0(yy) )
+          );
+}
+
+UInt h_generic_calc_QSub8Sx4 ( UInt xx, UInt yy )
+{
+   return mk8x4(
+             qsub8S( sel8x4_3(xx), sel8x4_3(yy) ),
+             qsub8S( sel8x4_2(xx), sel8x4_2(yy) ),
+             qsub8S( sel8x4_1(xx), sel8x4_1(yy) ),
+             qsub8S( sel8x4_0(xx), sel8x4_0(yy) )
+          );
+}
+
+UInt h_generic_calc_CmpNEZ16x2 ( UInt xx )
+{
+   return mk16x2(
+             cmpnez16( sel16x2_1(xx) ),
+             cmpnez16( sel16x2_0(xx) )
+          );
+}
+
+UInt h_generic_calc_CmpNEZ8x4 ( UInt xx )
+{
+   return mk8x4(
+             cmpnez8( sel8x4_3(xx) ),
+             cmpnez8( sel8x4_2(xx) ),
+             cmpnez8( sel8x4_1(xx) ),
+             cmpnez8( sel8x4_0(xx) )
+          );
+}
 
 /*---------------------------------------------------------------*/
 /*--- end                               host_generic_simd64.c ---*/

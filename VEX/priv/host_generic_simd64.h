@@ -121,6 +121,36 @@ extern ULong h_generic_calc_Max8Ux8  ( ULong, ULong );
 extern ULong h_generic_calc_Min16Sx4 ( ULong, ULong );
 extern ULong h_generic_calc_Min8Ux8  ( ULong, ULong );
 
+/* 32-bit SIMD HELPERS */
+
+extern UInt h_generic_calc_Add16x2   ( UInt, UInt );
+extern UInt h_generic_calc_Sub16x2   ( UInt, UInt );
+
+extern UInt h_generic_calc_HAdd16Ux2 ( UInt, UInt );
+extern UInt h_generic_calc_HAdd16Sx2 ( UInt, UInt );
+extern UInt h_generic_calc_HSub16Ux2 ( UInt, UInt );
+extern UInt h_generic_calc_HSub16Sx2 ( UInt, UInt );
+
+extern UInt h_generic_calc_QAdd16Ux2 ( UInt, UInt );
+extern UInt h_generic_calc_QAdd16Sx2 ( UInt, UInt );
+extern UInt h_generic_calc_QSub16Ux2 ( UInt, UInt );
+extern UInt h_generic_calc_QSub16Sx2 ( UInt, UInt );
+
+extern UInt h_generic_calc_Add8x4   ( UInt, UInt );
+extern UInt h_generic_calc_Sub8x4   ( UInt, UInt );
+
+extern UInt h_generic_calc_HAdd8Ux4 ( UInt, UInt );
+extern UInt h_generic_calc_HAdd8Sx4 ( UInt, UInt );
+extern UInt h_generic_calc_HSub8Ux4 ( UInt, UInt );
+extern UInt h_generic_calc_HSub8Sx4 ( UInt, UInt );
+
+extern UInt h_generic_calc_QAdd8Ux4 ( UInt, UInt );
+extern UInt h_generic_calc_QAdd8Sx4 ( UInt, UInt );
+extern UInt h_generic_calc_QSub8Ux4 ( UInt, UInt );
+extern UInt h_generic_calc_QSub8Sx4 ( UInt, UInt );
+
+extern UInt h_generic_calc_CmpNEZ16x2 ( UInt );
+extern UInt h_generic_calc_CmpNEZ8x4  ( UInt );
 
 #endif /* ndef __VEX_HOST_GENERIC_SIMD64_H */
 

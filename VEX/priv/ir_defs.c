@@ -284,6 +284,31 @@ void ppIROp ( IROp op )
       case Iop_TruncF64asF32: vex_printf("TruncF64asF32"); return;
       case Iop_CalcFPRF:      vex_printf("CalcFPRF"); return;
 
+      case Iop_Add16x2:   vex_printf("Add16x2"); return;
+      case Iop_Sub16x2:   vex_printf("Sub16x2"); return;
+      case Iop_QAdd16Sx2: vex_printf("QAdd16Sx2"); return;
+      case Iop_QAdd16Ux2: vex_printf("QAdd16Ux2"); return;
+      case Iop_QSub16Sx2: vex_printf("QSub16Sx2"); return;
+      case Iop_QSub16Ux2: vex_printf("QSub16Ux2"); return;
+      case Iop_HAdd16Ux2: vex_printf("HAdd16Ux2"); return;
+      case Iop_HAdd16Sx2: vex_printf("HAdd16Sx2"); return;
+      case Iop_HSub16Ux2: vex_printf("HSub16Ux2"); return;
+      case Iop_HSub16Sx2: vex_printf("HSub16Sx2"); return;
+
+      case Iop_Add8x4:   vex_printf("Add8x4"); return;
+      case Iop_Sub8x4:   vex_printf("Sub8x4"); return;
+      case Iop_QAdd8Sx4: vex_printf("QAdd8Sx4"); return;
+      case Iop_QAdd8Ux4: vex_printf("QAdd8Ux4"); return;
+      case Iop_QSub8Sx4: vex_printf("QSub8Sx4"); return;
+      case Iop_QSub8Ux4: vex_printf("QSub8Ux4"); return;
+      case Iop_HAdd8Ux4: vex_printf("HAdd8Ux4"); return;
+      case Iop_HAdd8Sx4: vex_printf("HAdd8Sx4"); return;
+      case Iop_HSub8Ux4: vex_printf("HSub8Ux4"); return;
+      case Iop_HSub8Sx4: vex_printf("HSub8Sx4"); return;
+
+      case Iop_CmpNEZ16x2: vex_printf("CmpNEZ16x2"); return;
+      case Iop_CmpNEZ8x4:  vex_printf("CmpNEZ8x4"); return;
+
       case Iop_CmpF64:    vex_printf("CmpF64"); return;
 
       case Iop_F64toI16S: vex_printf("F64toI16S"); return;
@@ -1909,6 +1934,16 @@ void typeOfPrimop ( IROp op,
       case Iop_Add32: case Iop_Sub32: case Iop_Mul32:
       case Iop_Or32:  case Iop_And32: case Iop_Xor32:
       case Iop_Max32U:
+      case Iop_Add16x2: case Iop_Sub16x2:
+      case Iop_QAdd16Sx2: case Iop_QAdd16Ux2:
+      case Iop_QSub16Sx2: case Iop_QSub16Ux2:
+      case Iop_HAdd16Ux2: case Iop_HAdd16Sx2:
+      case Iop_HSub16Ux2: case Iop_HSub16Sx2:
+      case Iop_Add8x4: case Iop_Sub8x4:
+      case Iop_QAdd8Sx4: case Iop_QAdd8Ux4:
+      case Iop_QSub8Sx4: case Iop_QSub8Ux4:
+      case Iop_HAdd8Ux4: case Iop_HAdd8Sx4:
+      case Iop_HSub8Ux4: case Iop_HSub8Sx4:
          BINARY(Ity_I32,Ity_I32, Ity_I32);
 
       case Iop_Add64: case Iop_Sub64: case Iop_Mul64:
@@ -1994,6 +2029,7 @@ void typeOfPrimop ( IROp op,
       case Iop_Not16:
          UNARY(Ity_I16, Ity_I16);
       case Iop_Not32:
+      case Iop_CmpNEZ16x2: case Iop_CmpNEZ8x4:
          UNARY(Ity_I32, Ity_I32);
 
       case Iop_Not64:

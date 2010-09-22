@@ -13719,6 +13719,67 @@ DisResult disInstr_ARM_WRK (
       /* fall through */
    }
 
+   /* ------------------- rev16, rev ------------------ */
+   if (INSN(27,16) == 0x6BF
+       && (INSN(11,4) == 0xFB/*rev16*/ || INSN(11,4) == 0xF3/*rev*/)) {
+      Bool isREV = INSN(11,4) == 0xF3;
+      UInt rM    = INSN(3,0);
+      UInt rD    = INSN(15,12);
+      if (rM != 15 && rD != 15) {
+         IRTemp rMt = newTemp(Ity_I32);
+         assign(rMt, getIRegA(rM));
+         IRExpr* res;
+         if (isREV) {
+            res
+            = binop(Iop_Or32,
+                 binop(Iop_Shl32, mkexpr(rMt), mkU8(24)),
+              binop(Iop_Or32,
+                 binop(Iop_And32, binop(Iop_Shl32, mkexpr(rMt), mkU8(8)), 
+                                  mkU32(0x00FF0000)),
+              binop(Iop_Or32,
+                 binop(Iop_And32, binop(Iop_Shr32, mkexpr(rMt), mkU8(8)),
+                                  mkU32(0x0000FF00)),
+                 binop(Iop_And32, binop(Iop_Shr32, mkexpr(rMt), mkU8(24)),
+                                  mkU32(0x000000FF) )
+              )));
+         } else {
+            res 
+            = binop(Iop_Or32,
+                        binop(Iop_And32,
+                              binop(Iop_Shl32, mkexpr(rMt), mkU8(8)),
+                              mkU32(0xFF00FF00)),
+                        binop(Iop_And32,
+                              binop(Iop_Shr32, mkexpr(rMt), mkU8(8)),
+                              mkU32(0x00FF00FF)));
+         }
+         putIRegA(rD, res, condT, Ijk_Boring);
+         DIP("rev%s%s r%u, r%u\n", isREV ? "" : "16",
+             nCC(INSN_COND), rD, rM);
+         goto decode_success;
+      }
+   }
+
+   /* ------------------- smmul ------------------ */
+   if (INSN(27,20) == BITS8(0,1,1,1,0,1,0,1)
+       && INSN(15,12) == BITS4(1,1,1,1)
+       && (INSN(7,4) & BITS4(1,1,0,1)) == BITS4(0,0,0,1)) {
+      UInt bitR = INSN(5,5);
+      UInt rD = INSN(19,16);
+      UInt rM = INSN(11,8);
+      UInt rN = INSN(3,0);
+      if (rD != 15 && rM != 15 && rN != 15) {
+         IRExpr* res
+         = unop(Iop_64HIto32,
+                binop(Iop_Add64,
+                      binop(Iop_MullS32, getIRegA(rN), getIRegA(rM)),
+                      mkU64(bitR ? 0x80000000ULL : 0ULL)));
+         putIRegA(rD, res, condT, Ijk_Boring);
+         DIP("smmul%s%s r%u, r%u, r%u\n",
+             nCC(INSN_COND), bitR ? "r" : "", rD, rN, rM);
+         goto decode_success;
+      }
+   }
+
    /* ----------------------------------------------------------- */
    /* -- ARMv7 instructions                                    -- */
    /* ----------------------------------------------------------- */

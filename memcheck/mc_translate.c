@@ -1724,6 +1724,16 @@ static IRAtom* mkPCast8x8 ( MCEnv* mce, IRAtom* at )
    return assignNew('V', mce, Ity_I64, unop(Iop_CmpNEZ8x8, at));
 }
 
+static IRAtom* mkPCast16x2 ( MCEnv* mce, IRAtom* at )
+{
+   return assignNew('V', mce, Ity_I32, unop(Iop_CmpNEZ16x2, at));
+}
+
+static IRAtom* mkPCast8x4 ( MCEnv* mce, IRAtom* at )
+{
+   return assignNew('V', mce, Ity_I32, unop(Iop_CmpNEZ8x4, at));
+}
+
 
 /* Here's a simple scheme capable of handling ops derived from SSE1
    code and while only generating ops that can be efficiently
@@ -2071,6 +2081,26 @@ IRAtom* binary64Ix1 ( MCEnv* mce, IRAtom* vatom1, IRAtom* vatom2 )
    return at;
 }
 
+/* --- 32-bit versions --- */
+
+static
+IRAtom* binary8Ix4 ( MCEnv* mce, IRAtom* vatom1, IRAtom* vatom2 )
+{
+   IRAtom* at;
+   at = mkUifU32(mce, vatom1, vatom2);
+   at = mkPCast8x4(mce, at);
+   return at;   
+}
+
+static
+IRAtom* binary16Ix2 ( MCEnv* mce, IRAtom* vatom1, IRAtom* vatom2 )
+{
+   IRAtom* at;
+   at = mkUifU32(mce, vatom1, vatom2);
+   at = mkPCast16x2(mce, at);
+   return at;   
+}
+
 
 /*------------------------------------------------------------*/
 /*--- Generate shadow values from all kinds of IRExprs.    ---*/
@@ -2196,6 +2226,30 @@ IRAtom* expr2vbits_Binop ( MCEnv* mce,
    tl_assert(sameKindedAtoms(atom1,vatom1));
    tl_assert(sameKindedAtoms(atom2,vatom2));
    switch (op) {
+
+      /* 32-bit SIMD */
+
+      case Iop_Add16x2:
+      case Iop_HAdd16Ux2:
+      case Iop_HAdd16Sx2:
+      case Iop_Sub16x2:
+      case Iop_HSub16Ux2:
+      case Iop_HSub16Sx2:
+      case Iop_QAdd16Sx2:
+      case Iop_QSub16Sx2:
+         return binary16Ix2(mce, vatom1, vatom2);
+
+      case Iop_Add8x4:
+      case Iop_HAdd8Ux4:
+      case Iop_HAdd8Sx4:
+      case Iop_Sub8x4:
+      case Iop_HSub8Ux4:
+      case Iop_HSub8Sx4:
+      case Iop_QSub8Ux4:
+      case Iop_QAdd8Ux4:
+      case Iop_QSub8Sx4:
+      case Iop_QAdd8Sx4:
+         return binary8Ix4(mce, vatom1, vatom2);
 
       /* 64-bit SIMD */
 

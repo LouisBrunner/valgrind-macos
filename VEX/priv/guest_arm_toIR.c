@@ -10645,7 +10645,7 @@ static Bool decode_CP10_CP11_instruction (
       UInt dM = INSN(3,0) | (INSN(5,5) << 4);
       UInt rD = INSN(15,12); /* lo32 */
       UInt rN = INSN(19,16); /* hi32 */
-      if (rD == 15 || rN == 15) {
+      if (rD == 15 || rN == 15 || (isT && (rD == 13 || rN == 13))) {
          /* fall through */
       } else {
          putDReg(dM,
@@ -10665,7 +10665,8 @@ static Bool decode_CP10_CP11_instruction (
       UInt dM = INSN(3,0) | (INSN(5,5) << 4);
       UInt rD = INSN(15,12); /* lo32 */
       UInt rN = INSN(19,16); /* hi32 */
-      if (rD == 15 || rN == 15 || rD == rN) {
+      if (rD == 15 || rN == 15 || (isT && (rD == 13 || rN == 13))
+          || rD == rN) {
          /* fall through */
       } else {
          IRTemp i64 = newTemp(Ity_I64);
@@ -10685,13 +10686,58 @@ static Bool decode_CP10_CP11_instruction (
       /* fall through */
    }
 
-   // VMOV rD[x], rT
+   // VMOV sD, sD+1, rN, rM
+   if (0x0C400A10 == (insn28 & 0x0FF00FD0)) {
+      UInt sD = (INSN(3,0) << 1) | INSN(5,5);
+      UInt rN = INSN(15,12);
+      UInt rM = INSN(19,16);
+      if (rM == 15 || rN == 15 || (isT && (rM == 13 || rN == 13))
+          || sD == 31) {
+         /* fall through */
+      } else {
+         putFReg(sD,
+                 unop(Iop_ReinterpI32asF32, isT ? getIRegT(rN) : getIRegA(rN)),
+                 condT);
+         putFReg(sD+1,
+                 unop(Iop_ReinterpI32asF32, isT ? getIRegT(rM) : getIRegA(rM)),
+                 condT);
+         DIP("vmov%s, s%u, s%u, r%u, r%u\n",
+              nCC(conq), sD, sD + 1, rN, rM);
+         goto decode_success_vfp;
+      }
+   }
+
+   // VMOV rN, rM, sD, sD+1
+   if (0x0C500A10 == (insn28 & 0x0FF00FD0)) {
+      UInt sD = (INSN(3,0) << 1) | INSN(5,5);
+      UInt rN = INSN(15,12);
+      UInt rM = INSN(19,16);
+      if (rM == 15 || rN == 15 || (isT && (rM == 13 || rN == 13))
+          || sD == 31 || rN == rM) {
+         /* fall through */
+      } else {
+         IRExpr* res0 = unop(Iop_ReinterpF32asI32, getFReg(sD));
+         IRExpr* res1 = unop(Iop_ReinterpF32asI32, getFReg(sD+1));
+         if (isT) {
+            putIRegT(rN, res0, condT);
+            putIRegT(rM, res1, condT);
+         } else {
+            putIRegA(rN, res0, condT, Ijk_Boring);
+            putIRegA(rM, res1, condT, Ijk_Boring);
+         }
+         DIP("vmov%s, r%u, r%u, s%u, s%u\n",
+             nCC(conq), rN, rM, sD, sD + 1);
+         goto decode_success_vfp;
+      }
+   }
+
+   // VMOV rD[x], rT  (ARM core register to scalar)
    if (0x0E000B10 == (insn28 & 0x0F900F1F)) {
       UInt rD  = (INSN(7,7) << 4) | INSN(19,16);
       UInt rT  = INSN(15,12);
       UInt opc = (INSN(22,21) << 2) | INSN(6,5);
       UInt index;
-      if (rT == 15) {
+      if (rT == 15 || (isT && rT == 13)) {
          /* fall through */
       } else {
          if ((opc & BITS4(1,0,0,0)) == BITS4(1,0,0,0)) {
@@ -10731,6 +10777,7 @@ static Bool decode_CP10_CP11_instruction (
       }
    }
 
+   // VMOV (scalar to ARM core register)
    // VMOV rT, rD[x]
    if (0x0E100B10 == (insn28 & 0x0F100F1F)) {
       UInt rN  = (INSN(7,7) << 4) | INSN(19,16);
@@ -10738,7 +10785,7 @@ static Bool decode_CP10_CP11_instruction (
       UInt U   = INSN(23,23);
       UInt opc = (INSN(22,21) << 2) | INSN(6,5);
       UInt index;
-      if (rT == 15) {
+      if (rT == 15 || (isT && rT == 13)) {
          /* fall through */
       } else {
          if ((opc & BITS4(1,0,0,0)) == BITS4(1,0,0,0)) {
@@ -10825,7 +10872,7 @@ static Bool decode_CP10_CP11_instruction (
       UInt rT   = INSN(15,12);
       UInt Q    = INSN(21,21);
       UInt size = (INSN(22,22) << 1) | INSN(5,5);
-      if (rT == 15 || size == 3i || (Q && (rD & 1))) {
+      if (rT == 15 || (isT && rT == 13) || size == 3i || (Q && (rD & 1))) {
          /* fall through */
       } else {
          IRExpr* e = isT ? getIRegT(rT) : getIRegA(rT);
@@ -10871,9 +10918,9 @@ static Bool decode_CP10_CP11_instruction (
 
    /* --------------------- f{ld,st}d --------------------- */
    // FLDD, FSTD
-   if (BITS8(1,1,0,1,0,0,0,0) == (INSN(27,20) & BITS8(1,1,1,1,0,1,1,0))
+   if (BITS8(1,1,0,1,0,0,0,0) == (INSN(27,20) & BITS8(1,1,1,1,0,0,1,0))
        && BITS4(1,0,1,1) == INSN(11,8)) {
-      UInt dD     = INSN(15,12);
+      UInt dD     = INSN(15,12) | (INSN(22,22) << 4);
       UInt rN     = INSN(19,16);
       UInt offset = (insn28 & 0xFF) << 2;
       UInt bU     = (insn28 >> 23) & 1; /* 1: +offset  0: -offset */
@@ -10903,12 +10950,12 @@ static Bool decode_CP10_CP11_instruction (
    }
 
    /* --------------------- dp insns (D) --------------------- */
-   if (BITS8(1,1,1,0,0,0,0,0) == (INSN(27,20) & BITS8(1,1,1,1,0,1,0,0))
+   if (BITS8(1,1,1,0,0,0,0,0) == (INSN(27,20) & BITS8(1,1,1,1,0,0,0,0))
        && BITS4(1,0,1,1) == INSN(11,8)
-       && BITS4(0,0,0,0) == (INSN(7,4) & BITS4(1,0,1,1))) {
-      UInt    dM  = INSN(3,0);   /* argR */
-      UInt    dD  = INSN(15,12); /* dst/acc */
-      UInt    dN  = INSN(19,16); /* argL */
+       && BITS4(0,0,0,0) == (INSN(7,4) & BITS4(0,0,0,1))) {
+      UInt    dM  = INSN(3,0)   | (INSN(5,5) << 4);       /* argR */
+      UInt    dD  = INSN(15,12) | (INSN(22,22) << 4);   /* dst/acc */
+      UInt    dN  = INSN(19,16) | (INSN(7,7) << 4);     /* argL */
       UInt    bP  = (insn28 >> 23) & 1;
       UInt    bQ  = (insn28 >> 21) & 1;
       UInt    bR  = (insn28 >> 20) & 1;
@@ -10924,11 +10971,12 @@ static Bool decode_CP10_CP11_instruction (
                         condT);
             DIP("fmacd%s d%u, d%u, d%u\n", nCC(conq), dD, dN, dM);
             goto decode_success_vfp;
-         case BITS4(0,0,0,1): /* NMAC: d - n * m */
-            putDReg(dD, triop(Iop_SubF64, rm,
+         case BITS4(0,0,0,1): /* NMAC: d + -(n * m) */
+            putDReg(dD, triop(Iop_AddF64, rm,
                               getDReg(dD),
-                              triop(Iop_MulF64, rm, getDReg(dN),
-                                                    getDReg(dM))),
+                              unop(Iop_NegF64,
+                                   triop(Iop_MulF64, rm, getDReg(dN),
+                                                         getDReg(dM)))),
                         condT);
             DIP("fnmacd%s d%u, d%u, d%u\n", nCC(conq), dD, dN, dM);
             goto decode_success_vfp;
@@ -10940,11 +10988,12 @@ static Bool decode_CP10_CP11_instruction (
                         condT);
             DIP("fmscd%s d%u, d%u, d%u\n", nCC(conq), dD, dN, dM);
             goto decode_success_vfp;
-         case BITS4(0,0,1,1): /* NMSC: - d - n * m */
-            putDReg(dD, triop(Iop_SubF64, rm,
+         case BITS4(0,0,1,1): /* NMSC: - d + -(n * m) */
+            putDReg(dD, triop(Iop_AddF64, rm,
                               unop(Iop_NegF64, getDReg(dD)),
-                              triop(Iop_MulF64, rm, getDReg(dN),
-                                                    getDReg(dM))),
+                              unop(Iop_NegF64,
+                                   triop(Iop_MulF64, rm, getDReg(dN),
+                                                         getDReg(dM)))),
                         condT);
             DIP("fnmscd%s d%u, d%u, d%u\n", nCC(conq), dD, dN, dM);
             goto decode_success_vfp;
@@ -10983,10 +11032,10 @@ static Bool decode_CP10_CP11_instruction (
    /* --------------------- compares (D) --------------------- */
    /*          31   27   23   19   15 11   7    3
                  28   24   20   16 12    8    4    0 
-      FCMPD    cond 1110 1011 0100 Dd 1011 0100 Dm
-      FCMPED   cond 1110 1011 0100 Dd 1011 1100 Dm
-      FCMPZD   cond 1110 1011 0101 Dd 1011 0100 0000
-      FCMPZED  cond 1110 1011 0101 Dd 1011 1100 0000
+      FCMPD    cond 1110 1D11 0100 Dd 1011 0100 Dm
+      FCMPED   cond 1110 1D11 0100 Dd 1011 1100 Dm
+      FCMPZD   cond 1110 1D11 0101 Dd 1011 0100 0000
+      FCMPZED  cond 1110 1D11 0101 Dd 1011 1100 0000
                                  Z         N
 
       Z=0 Compare Dd vs Dm     and set FPSCR 31:28 accordingly
@@ -10996,14 +11045,14 @@ static Bool decode_CP10_CP11_instruction (
       N=0 generates Invalid Operation exn if either arg is a signalling NaN
       (Not that we pay any attention to N here)
    */
-   if (BITS8(1,1,1,0,1,0,1,1) == INSN(27,20)
+   if (BITS8(1,1,1,0,1,0,1,1) == (INSN(27,20) & BITS8(1,1,1,1,1,0,1,1))
        && BITS4(0,1,0,0) == (INSN(19,16) & BITS4(1,1,1,0))
        && BITS4(1,0,1,1) == INSN(11,8)
-       && BITS4(0,1,0,0) == (INSN(7,4) & BITS4(0,1,1,1))) {
+       && BITS4(0,1,0,0) == (INSN(7,4) & BITS4(0,1,0,1))) {
       UInt bZ = (insn28 >> 16) & 1;
       UInt bN = (insn28 >> 7) & 1;
-      UInt dD = INSN(15,12);
-      UInt dM = INSN(3,0);
+      UInt dD = INSN(15,12) | (INSN(22,22) << 4);
+      UInt dM = INSN(3,0) | (INSN(5,5) << 4);
       if (bZ && INSN(3,0) != 0) {
          /* does not decode; fall through */
       } else {
@@ -11053,12 +11102,12 @@ static Bool decode_CP10_CP11_instruction (
    }  
 
    /* --------------------- unary (D) --------------------- */
-   if (BITS8(1,1,1,0,1,0,1,1) == INSN(27,20)
+   if (BITS8(1,1,1,0,1,0,1,1) == (INSN(27,20) & BITS8(1,1,1,1,1,0,1,1))
        && BITS4(0,0,0,0) == (INSN(19,16) & BITS4(1,1,1,0))
        && BITS4(1,0,1,1) == INSN(11,8)
-       && BITS4(0,1,0,0) == (INSN(7,4) & BITS4(0,1,1,1))) {
-      UInt dD  = INSN(15,12);
-      UInt dM  = INSN(3,0);
+       && BITS4(0,1,0,0) == (INSN(7,4) & BITS4(0,1,0,1))) {
+      UInt dD  = INSN(15,12) | (INSN(22,22) << 4);
+      UInt dM  = INSN(3,0) | (INSN(5,5) << 4);
       UInt b16 = (insn28 >> 16) & 1;
       UInt b7  = (insn28 >> 7) & 1;
       /**/ if (b16 == 0 && b7 == 0) {
@@ -11095,13 +11144,13 @@ static Bool decode_CP10_CP11_instruction (
    /* ----------------- I <-> D conversions ----------------- */
 
    // F{S,U}ITOD dD, fM
-   if (BITS8(1,1,1,0,1,0,1,1) == (INSN(27,20) & BITS8(1,1,1,1,1,1,1,1))
+   if (BITS8(1,1,1,0,1,0,1,1) == (INSN(27,20) & BITS8(1,1,1,1,1,0,1,1))
        && BITS4(1,0,0,0) == (INSN(19,16) & BITS4(1,1,1,1))
        && BITS4(1,0,1,1) == INSN(11,8)
        && BITS4(0,1,0,0) == (INSN(7,4) & BITS4(0,1,0,1))) {
       UInt bM    = (insn28 >> 5) & 1;
       UInt fM    = (INSN(3,0) << 1) | bM;
-      UInt dD    = INSN(15,12);
+      UInt dD    = INSN(15,12) | (INSN(22,22) << 4);
       UInt syned = (insn28 >> 7) & 1;
       if (syned) {
          // FSITOD
@@ -11123,10 +11172,10 @@ static Bool decode_CP10_CP11_instruction (
    if (BITS8(1,1,1,0,1,0,1,1) == (INSN(27,20) & BITS8(1,1,1,1,1,0,1,1))
        && BITS4(1,1,0,0) == (INSN(19,16) & BITS4(1,1,1,0))
        && BITS4(1,0,1,1) == INSN(11,8)
-       && BITS4(0,1,0,0) == (INSN(7,4) & BITS4(0,1,1,1))) {
+       && BITS4(0,1,0,0) == (INSN(7,4) & BITS4(0,1,0,1))) {
       UInt   bD    = (insn28 >> 22) & 1;
       UInt   fD    = (INSN(15,12) << 1) | bD;
-      UInt   dM    = INSN(3,0);
+      UInt   dM    = INSN(3,0) | (INSN(5,5) << 4);
       UInt   bZ    = (insn28 >> 7) & 1;
       UInt   syned = (insn28 >> 16) & 1;
       IRTemp rmode = newTemp(Ity_I32);
@@ -11364,7 +11413,7 @@ static Bool decode_CP10_CP11_instruction (
 
    /* --------------------- dp insns (F) --------------------- */
    if (BITS8(1,1,1,0,0,0,0,0) == (INSN(27,20) & BITS8(1,1,1,1,0,0,0,0))
-       && BITS4(1,0,1,0) == INSN(11,8)
+       && BITS4(1,0,1,0) == (INSN(11,8) & BITS4(1,1,1,0))
        && BITS4(0,0,0,0) == (INSN(7,4) & BITS4(0,0,0,1))) {
       UInt    bM  = (insn28 >> 5) & 1;
       UInt    bD  = (insn28 >> 22) & 1;
@@ -11386,10 +11435,12 @@ static Bool decode_CP10_CP11_instruction (
                         condT);
             DIP("fmacs%s s%u, s%u, s%u\n", nCC(conq), fD, fN, fM);
             goto decode_success_vfp;
-         case BITS4(0,0,0,1): /* NMAC: d - n * m */
-            putFReg(fD, triop(Iop_SubF32, rm,
+         case BITS4(0,0,0,1): /* NMAC: d + -(n * m) */
+            putFReg(fD, triop(Iop_AddF32, rm,
                               getFReg(fD),
-                              triop(Iop_MulF32, rm, getFReg(fN), getFReg(fM))),
+                              unop(Iop_NegF32,
+                                   triop(Iop_MulF32, rm, getFReg(fN),
+                                                         getFReg(fM)))),
                         condT);
             DIP("fnmacs%s s%u, s%u, s%u\n", nCC(conq), fD, fN, fM);
             goto decode_success_vfp;
@@ -11400,8 +11451,16 @@ static Bool decode_CP10_CP11_instruction (
                         condT);
             DIP("fmscs%s s%u, s%u, s%u\n", nCC(conq), fD, fN, fM);
             goto decode_success_vfp;
-         case BITS4(0,0,1,1): /* NMSC: - d - n * m */
-            break; //ATC
+         case BITS4(0,0,1,1): /* NMSC: - d + -(n * m) */
+            putFReg(fD, triop(Iop_AddF32, rm,
+                              unop(Iop_NegF32, getFReg(fD)),
+                              unop(Iop_NegF32,
+                                   triop(Iop_MulF32, rm,
+                                                     getFReg(fN),
+                                                    getFReg(fM)))),
+                        condT);
+            DIP("fnmscs%s s%u, s%u, s%u\n", nCC(conq), fD, fN, fM);
+            goto decode_success_vfp;
          case BITS4(0,1,0,0): /* MUL: n * m */
             putFReg(fD, triop(Iop_MulF32, rm, getFReg(fN), getFReg(fM)),
                         condT);
@@ -11562,8 +11621,8 @@ static Bool decode_CP10_CP11_instruction (
       the case here.  Hence this case possibly requires rounding, and
       so it drags in the current rounding mode. */
    if (BITS8(1,1,1,0,1,0,1,1) == (INSN(27,20) & BITS8(1,1,1,1,1,0,1,1))
-       && BITS4(1,0,0,0) == (INSN(19,16) & BITS4(1,1,1,1))
-       && BITS4(1,0,1,0) == INSN(11,8)
+       && BITS4(1,0,0,0) == INSN(19,16)
+       && BITS4(1,0,1,0) == (INSN(11,8) & BITS4(1,1,1,0))
        && BITS4(0,1,0,0) == (INSN(7,4) & BITS4(0,1,0,1))) {
       UInt bM    = (insn28 >> 5) & 1;
       UInt bD    = (insn28 >> 22) & 1;
@@ -11630,11 +11689,11 @@ static Bool decode_CP10_CP11_instruction (
    /* ----------------- S <-> D conversions ----------------- */
 
    // FCVTDS
-   if (BITS8(1,1,1,0,1,0,1,1) == INSN(27,20)
+   if (BITS8(1,1,1,0,1,0,1,1) == (INSN(27,20) & BITS8(1,1,1,1,1,0,1,1))
        && BITS4(0,1,1,1) == INSN(19,16)
        && BITS4(1,0,1,0) == INSN(11,8)
        && BITS4(1,1,0,0) == (INSN(7,4) & BITS4(1,1,0,1))) {
-      UInt dD = INSN(15,12);
+      UInt dD = INSN(15,12) | (INSN(22,22) << 4);
       UInt bM = (insn28 >> 5) & 1;
       UInt fM = (INSN(3,0) << 1) | bM;
       putDReg(dD, unop(Iop_F32toF64, getFReg(fM)), condT);
@@ -11646,10 +11705,10 @@ static Bool decode_CP10_CP11_instruction (
    if (BITS8(1,1,1,0,1,0,1,1) == (INSN(27,20) & BITS8(1,1,1,1,1,0,1,1))
        && BITS4(0,1,1,1) == INSN(19,16)
        && BITS4(1,0,1,1) == INSN(11,8)
-       && BITS4(1,1,0,0) == INSN(7,4)) {
+       && BITS4(1,1,0,0) == (INSN(7,4) & BITS4(1,1,0,1))) {
       UInt   bD    = (insn28 >> 22) & 1;
       UInt   fD    = (INSN(15,12) << 1) | bD;
-      UInt   dM    = INSN(3,0);
+      UInt   dM    = INSN(3,0) | (INSN(5,5) << 4);
       IRTemp rmode = newTemp(Ity_I32);
       assign(rmode, mkexpr(mk_get_IR_rounding_mode()));
       putFReg(fD, binop(Iop_F64toF32, mkexpr(rmode), getDReg(dM)),

@@ -1,0 +1,1220 @@
+do_vldm_vstm_check:
+	0x00000010
+	0x3a3b3c3d
+	0x4a4b4c4d
+	0x1a1b1c1d
+	0x00000018
+	0x7a7b7c7d
+	0x8a8b8c8d
+	0x00000004
+	0x4a4b4c4d
+	0x5a5b5c5d
+	0x2a2b2c2d
+	0x00000040
+	0xdadbdcdd
+	0xeaebeced
+	0xfafbfcfd
+	0x0a0b0c0d
+	0x0000002c
+	0xcacbcccd
+	0xdadbdcdd
+	0xeaebeced
+	0xfafbfcfd
+	0x00000018
+	0x7a7b7c7d
+	0x8a8b8c8d
+	0x9a9b9c9d
+	0xaaabacad
+	0x00000010
+	0x00000010
+	0x00000018
+	0x00000030
+	0x00000030
+	0x00000038
+data:
+	0x00000055
+	0x00000056
+	0x00000057
+	0x00000058
+	0x00000065
+	0x00000066
+	0x00000075
+	0x00000076
+	0x00000042
+	0x00000043
+	0x00000040
+	0x00000041
+	0x00000032
+	0x00000033
+	0x00000022
+	0x00000023
+---- VMOV (ARM core register to scalar) ----
+vmov.32 d0[0],  r5 :: Dd 0x55555555 0x41500000  Dm 0x41500000
+vmov.32 d1[1],  r6 :: Dd 0x00000012 0x55555555  Dm 0x00000012
+vmov.32 d20[0], r5 :: Dd 0x55555555 0x7fc00000  Dm 0x7fc00000
+vmov.32 d29[1], r6 :: Dd 0x432c0000 0x55555555  Dm 0x432c0000
+vmov.32 d30[0], r5 :: Dd 0x55555555 0x7f800000  Dm 0x7f800000
+vmov.32 d11[1], r6 :: Dd 0xff800000 0x55555555  Dm 0xff800000
+vmov.32 d18[0], r5 :: Dd 0x55555555 0x55555555  Dm 0x44234000
+vmov.32 d9[1],  r6 :: Dd 0x0000000c 0x55555555  Dm 0x0000000c
+vmov.16 d0[0],  r5 :: Dd 0x55555555 0x5555000d  Dm 0x0000000d
+vmov.16 d14[1], r5 :: Dd 0x55555555 0x00005555  Dm 0x7fc00000
+vmov.16 d28[2], r6 :: Dd 0x5555000e 0x55555555  Dm 0x0000000e
+vmov.16 d30[3], r1 :: Dd 0x00115555 0x55555555  Dm 0x00000011
+vmov.16 d0[0],  r5 :: Dd 0x55555555 0x55550000  Dm 0x7f800000
+vmov.16 d7[1],  r5 :: Dd 0x55555555 0x00005555  Dm 0xff800000
+vmov.16 d21[2], r6 :: Dd 0x5555000e 0x55555555  Dm 0x0000000e
+vmov.16 d17[3], r1 :: Dd 0x00115555 0x55555555  Dm 0x00000011
+vmov.8  d0[0],  r5 :: Dd 0x55555555 0x5555550d  Dm 0x0000000d
+vmov.8  d10[1], r5 :: Dd 0x55555555 0x55550055  Dm 0x7fc00000
+vmov.8  d20[2], r5 :: Dd 0x55555555 0x55005555  Dm 0x7f800000
+vmov.8  d30[3], r5 :: Dd 0x55555555 0x00555555  Dm 0xff800000
+vmov.8  d13[4], r5 :: Dd 0x555555d5 0x55555555  Dm 0x000000d5
+vmov.8  d17[5], r5 :: Dd 0x55553f55 0x55555555  Dm 0x0000053f
+vmov.8  d24[6], r5 :: Dd 0x556f5555 0x55555555  Dm 0x0000006f
+vmov.8  d29[7], r5 :: Dd 0xad555555 0x55555555  Dm 0x000000ad
+---- VMOV (scalar to ARM core register) ----
+vmov.32   r5,  d0[0] :: Rd 0x7fc00000  Qm (i32)0x7fc00000
+vmov.32   r6,  d5[1] :: Rd 0x7f800000  Qm (i32)0x7f800000
+vmov.32   r4,  d10[0] :: Rd 0xff800000  Qm (i32)0xff800000
+vmov.32   r5,  d15[1] :: Rd 0x11223344  Qm (i32)0x11223344
+vmov.32   r9, d20[0] :: Rd 0x11223344  Qm (i32)0x11223344
+vmov.32   r8,  d25[1] :: Rd 0x11223344  Qm (i32)0x11223344
+vmov.32   r0,  d30[0] :: Rd 0x11223344  Qm (i32)0x11223344
+vmov.32   r2,  d19[1] :: Rd 0x11223344  Qm (i32)0x11223344
+vmov.u16  r5,  d31[0] :: Rd 0x00000000  Qm (i32)0x7fc00000
+vmov.u16  r3,  d30[1] :: Rd 0x00007f80  Qm (i32)0x7f800000
+vmov.u16  r6,  d21[2] :: Rd 0x00000000  Qm (i32)0xff800000
+vmov.u16  r9, d26[3] :: Rd 0x00001122  Qm (i32)0x11223344
+vmov.u16  r12, d11[0] :: Rd 0x00003344  Qm (i32)0x11223344
+vmov.u16  r0,  d10[1] :: Rd 0x00001122  Qm (i32)0x11223344
+vmov.u16  r6,  d1[2] :: Rd 0x00003344  Qm (i32)0x11223344
+vmov.u16  r8,  d5[3] :: Rd 0x00001122  Qm (i32)0x11223344
+vmov.u8   r2,  d4[0] :: Rd 0x00000000  Qm (i32)0x7fc00000
+vmov.u8   r6,  d14[1] :: Rd 0x00000000  Qm (i32)0x7f800000
+vmov.u8   r9, d24[2] :: Rd 0x00000080  Qm (i32)0xff800000
+vmov.u8   r8,  d31[3] :: Rd 0x00000011  Qm (i32)0x11223344
+vmov.u8   r10, d29[4] :: Rd 0x00000044  Qm (i32)0x11223344
+vmov.u8   r3,  d19[5] :: Rd 0x00000033  Qm (i32)0x11223344
+vmov.u8   r12, d12[6] :: Rd 0x00000022  Qm (i32)0x11223344
+vmov.u8   r10, d18[4] :: Rd 0x00000044  Qm (i32)0x11223344
+vmov.s16  r5,  d31[0] :: Rd 0x00000000  Qm (i32)0x7fc00000
+vmov.s16  r3,  d30[1] :: Rd 0x00007f80  Qm (i32)0x7f800000
+vmov.s16  r6,  d21[2] :: Rd 0x00000000  Qm (i32)0xff800000
+vmov.s16  r9, d26[3] :: Rd 0x00001122  Qm (i32)0x11223344
+vmov.s16  r4,  d11[0] :: Rd 0x00003344  Qm (i32)0x11223344
+vmov.s16  r0,  d10[1] :: Rd 0x00001122  Qm (i32)0x11223344
+vmov.s16  r6,  d1[2] :: Rd 0x00003344  Qm (i32)0x11223344
+vmov.s16  r8,  d5[3] :: Rd 0x00001122  Qm (i32)0x11223344
+vmov.s8   r2,  d4[0] :: Rd 0x00000000  Qm (i32)0x7fc00000
+vmov.s8   r6,  d14[1] :: Rd 0x00000000  Qm (i32)0x7f800000
+vmov.s8   r9, d24[2] :: Rd 0xffffff80  Qm (i32)0xff800000
+vmov.s8   r8,  d31[3] :: Rd 0x00000011  Qm (i32)0x11223344
+vmov.s8   r6,  d29[4] :: Rd 0x00000044  Qm (i32)0x11223344
+vmov.s8   r3,  d19[5] :: Rd 0x00000033  Qm (i32)0x11223344
+vmov.s8   r12, d12[6] :: Rd 0x00000022  Qm (i32)0x11223344
+vmov.s8   r10, d18[7] :: Rd 0x00000011  Qm (i32)0x11223344
+---- VMLA (fp) ----
+vmla.f64 d0,  d11, d12 :: Qd 0x7ff80000 0x00000000  Qm 0xfff00000 00000000  Qn 0x7ff80000 00000000
+vmla.f64 d7,  d1,  d6 :: Qd 0x7ff80000 0x00000000  Qm 0x7ff00000 00000000  Qn 0x7ff80000 00000000
+vmla.f64 d0,  d5,  d2 :: Qd 0x7ff80000 0x00000000  Qm 0x7ff80000 00000000  Qn 0xbff00000 00000000
+vmla.f64 d10, d13, d15 :: Qd 0x7ff80000 0x00000000  Qm 0x7ff80000 00000000  Qn 0x00000000 00000000
+vmla.f64 d10, d13, d15 :: Qd 0x7ff80000 0x00000000  Qm 0x7ff80000 00000000  Qn 0x7ff80000 00000000
+vmla.f64 d20, d25, d22 :: Qd 0xc0906794 0x842f8549  Qm 0x40370a3d 70a3d70a  Qn 0xc046c8cb 295e9e1b
+vmla.f64 d23, d24, d25 :: Qd 0xc1bbe864 0x1f579999  Qm 0xc1153b41 e6666666  Qn 0x40950800 00000000
+vmla.f64 d20, d31, d12 :: Qd 0xc1e0a1cf 0xd2abe8f6  Qm 0x40e7ce60 00000000  Qn 0xc0e65b4f 3b645a1d
+vmla.f64 d19, d25, d27 :: Qd 0x41d860c7 0xf71a1999  Qm 0x40f767bc 28f5c28f  Qn 0x40d0aa40 00000000
+vmla.f64 d30, d15, d2 :: Qd 0x420524a9 0x817febf4  Qm 0xc0e64c67 ae147ae1  Qn 0xc10e5796 147ae148
+vmla.f64 d23, d24, d5 :: Qd 0x40df8c00 0x800001fc  Qm 0x40380000 00000000  Qn 0x40950800 00000000
+vmla.f64 d10, d11, d2 :: Qd 0x41895139 0x98100000  Qm 0x40e7ce60 00000000  Qn 0x40910400 00000000
+vmla.f64 d29, d15, d7 :: Qd 0x41b65928 0xd6020000  Qm 0x406ac000 00000000  Qn 0x413abc01 00000000
+vmla.f64 d30, d11, d12 :: Qd 0x41df20a6 0xd7bd2cb0  Qm 0x4115bb3e 3d70a3d7  Qn 0x40b6eb02 4dd2f1aa
+vmla.f64 d27, d21, d6 :: Qd 0x3fb763ef 0x4799be48  Qm 0x4041000f 12c27a63  Qn 0x3f6421c0 44284dfd
+vmla.f64 d30, d31, d2 :: Qd 0x4111fc58 0x08000020  Qm 0x40a58400 00000000  Qn 0x405ac000 00000000
+vmla.f64 d13, d24, d5 :: Qd 0x4132771c 0x6866666e  Qm 0x408b5000 00000000  Qn 0x4095a266 66666666
+vmla.f64 d10, d11, d2 :: Qd 0x40e9f35f 0xb4bc6b7d  Qm 0x407e7964 5a1cac08  Qn 0x405b4000 00000000
+vmla.f64 d29, d25, d7 :: Qd 0xfff00000 0x00000000  Qm 0xfff00000 00000000  Qn 0x409b6000 00000000
+vmla.f64 d0,  d11, d12 :: Qd 0xfff00000 0x00000000  Qm 0x7ff00000 00000000  Qn 0xc0b69a78 51eb851f
+vmla.f64 d27, d21, d16 :: Qd 0xc0aa0043 0x17cbec9d  Qm 0x407c83fb b97f122f  Qn 0xc01d2da3 2101d847
+vmla.f64 d0,  d5,  d2 :: Qd 0xfff00000 0x00000000  Qm 0x7ff00000 00000000  Qn 0xfff00000 00000000
+vmla.f64 d20, d13, d15 :: Qd 0x7ff80000 0x00000000  Qm 0xfff00000 00000000  Qn 0x00000000 00000000
+vmla.f64 d10, d23, d15 :: Qd 0x7ff80000 0x00000000  Qm 0x7ff00000 00000000  Qn 0x00000000 00000000
+vmla.f32 s0,  s11, s12 :: Sd 0x7fc00000 Sm (i32)0xff800000  Sn (i32)0x7fc00000
+vmla.f32 s7,  s1,  s6 :: Sd 0x7fc00000 Sm (i32)0x7f800000  Sn (i32)0x7fc00000
+vmla.f32 s0,  s5,  s2 :: Sd 0x7fc00000 Sm (i32)0x7fc00000  Sn (i32)0xbf800000
+vmla.f32 s10, s13, s15 :: Sd 0x7fc00000 Sm (i32)0x7fc00000  Sn (i32)0x00000000
+vmla.f32 s10, s13, s15 :: Sd 0x7fc00000 Sm (i32)0x7fc00000  Sn (i32)0x7fc00000
+vmla.f32 s20, s25, s22 :: Sd 0xc4833ce4 Sm (i32)0x41b851ec  Sn (i32)0xc2364659
+vmla.f32 s23, s24, s25 :: Sd 0xcddf4321 Sm (i32)0xc8a9da0f  Sn (i32)0x44a84000
+vmla.f32 s20, s31, s12 :: Sd 0xcf050e7f Sm (i32)0x473e7300  Sn (i32)0xc732da7a
+vmla.f32 s19, s25, s27 :: Sd 0x4ec3063f Sm (i32)0x47bb3de1  Sn (i32)0x46855200
+vmla.f32 s30, s15, s2 :: Sd 0x5029254c Sm (i32)0xc732633d  Sn (i32)0xc872bcb1
+vmla.f32 s23, s24, s5 :: Sd 0x46fc6000 Sm (i32)0x41c00000  Sn (i32)0x44a84000
+vmla.f32 s10, s11, s2 :: Sd 0x4c4a89cd Sm (i32)0x473e7300  Sn (i32)0x44882000
+vmla.f32 s29, s15, s7 :: Sd 0x4db2c947 Sm (i32)0x43560000  Sn (i32)0x49d5e008
+vmla.f32 s30, s11, s12 :: Sd 0x4ef90536 Sm (i32)0x48add9f2  Sn (i32)0x45b75812
+vmla.f32 s27, s21, s6 :: Sd 0x3dab1f7a Sm (i32)0x42080079  Sn (i32)0x3b210e02
+vmla.f32 s30, s31, s2 :: Sd 0x488fe2c0 Sm (i32)0x452c2000  Sn (i32)0x42d60000
+vmla.f32 s13, s24, s5 :: Sd 0x4993b8e3 Sm (i32)0x445a8000  Sn (i32)0x44ad1333
+vmla.f32 s10, s11, s2 :: Sd 0x474f9afc Sm (i32)0x43f3cb23  Sn (i32)0x42da0000
+vmla.f32 s29, s25, s7 :: Sd 0xff800000 Sm (i32)0xff800000  Sn (i32)0x44db0000
+vmla.f32 s0,  s11, s12 :: Sd 0xff800000 Sm (i32)0x7f800000  Sn (i32)0xc5b4d3c3
+vmla.f32 s27, s21, s16 :: Sd 0xc5500239 Sm (i32)0x43e41fde  Sn (i32)0xc0e96d19
+vmla.f32 s0,  s5,  s2 :: Sd 0xff800000 Sm (i32)0x7f800000  Sn (i32)0xff800000
+vmla.f32 s20, s13, s15 :: Sd 0x7fc00000 Sm (i32)0xff800000  Sn (i32)0x00000000
+vmla.f32 s10, s23, s15 :: Sd 0x7fc00000 Sm (i32)0x7f800000  Sn (i32)0x00000000
+---- VNMLA (fp) ----
+vnmla.f64 d0,  d11, d12 :: Qd 0xfff80000 0x00000000  Qm 0xfff00000 00000000  Qn 0x7ff80000 00000000
+vnmla.f64 d7,  d1,  d6 :: Qd 0xfff80000 0x00000000  Qm 0x7ff00000 00000000  Qn 0x7ff80000 00000000
+vnmla.f64 d0,  d5,  d2 :: Qd 0xfff80000 0x00000000  Qm 0x7ff80000 00000000  Qn 0xbff00000 00000000
+vnmla.f64 d10, d13, d15 :: Qd 0xfff80000 0x00000000  Qm 0x7ff80000 00000000  Qn 0x00000000 00000000
+vnmla.f64 d10, d13, d15 :: Qd 0xfff80000 0x00000000  Qm 0x7ff80000 00000000  Qn 0x7ff80000 00000000
+vnmla.f64 d20, d25, d22 :: Qd 0x409067a4 0x842fc4c9  Qm 0x40370a3d 70a3d70a  Qn 0xc046c8cb 295e9e1b
+vnmla.f64 d23, d24, d25 :: Qd 0x41bbe864 0x1f5b9999  Qm 0xc1153b41 e6666666  Qn 0x40950800 00000000
+vnmla.f64 d20, d31, d12 :: Qd 0x41e0a1cf 0xd2ac68f6  Qm 0x40e7ce60 00000000  Qn 0xc0e65b4f 3b645a1d
+vnmla.f64 d19, d25, d27 :: Qd 0xc1d860c7 0xf7191999  Qm 0x40f767bc 28f5c28f  Qn 0x40d0aa40 00000000
+vnmla.f64 d30, d15, d2 :: Qd 0xc20524a9 0x817fcbf4  Qm 0xc0e64c67 ae147ae1  Qn 0xc10e5796 147ae148
+vnmla.f64 d23, d24, d5 :: Qd 0xc0df8bff 0x7ffffe04  Qm 0x40380000 00000000  Qn 0x40950800 00000000
+vnmla.f64 d10, d11, d2 :: Qd 0xc1895139 0x97f00000  Qm 0x40e7ce60 00000000  Qn 0x40910400 00000000
+vnmla.f64 d29, d15, d7 :: Qd 0xc1b65928 0xd5fe0000  Qm 0x406ac000 00000000  Qn 0x413abc01 00000000
+vnmla.f64 d30, d11, d12 :: Qd 0xc1df20a6 0xd7bc2cb0  Qm 0x4115bb3e 3d70a3d7  Qn 0x40b6eb02 4dd2f1aa
+vnmla.f64 d27, d21, d6 :: Qd 0xbfb363ef 0x37b9be48  Qm 0x4041000f 12c27a63  Qn 0x3f6421c0 44284dfd
+vnmla.f64 d30, d31, d2 :: Qd 0xc111fc57 0xf7ffffe0  Qm 0x40a58400 00000000  Qn 0x405ac000 00000000
+vnmla.f64 d13, d24, d5 :: Qd 0xc132771c 0x6466665e  Qm 0x408b5000 00000000  Qn 0x4095a266 66666666
+vnmla.f64 d10, d11, d2 :: Qd 0xc0e9f35f 0x34bc6981  Qm 0x407e7964 5a1cac08  Qn 0x405b4000 00000000
+vnmla.f64 d29, d25, d7 :: Qd 0x7ff00000 0x00000000  Qm 0xfff00000 00000000  Qn 0x409b6000 00000000
+vnmla.f64 d0,  d11, d12 :: Qd 0x7ff00000 0x00000000  Qm 0x7ff00000 00000000  Qn 0xc0b69a78 51eb851f
+vnmla.f64 d27, d21, d16 :: Qd 0x40aa004b 0x17cc0c5d  Qm 0x407c83fb b97f122f  Qn 0xc01d2da3 2101d847
+vnmla.f64 d0,  d5,  d2 :: Qd 0x7ff00000 0x00000000  Qm 0x7ff00000 00000000  Qn 0xfff00000 00000000
+vnmla.f64 d20, d13, d15 :: Qd 0xfff80000 0x00000000  Qm 0xfff00000 00000000  Qn 0x00000000 00000000
+vnmla.f64 d10, d23, d15 :: Qd 0xfff80000 0x00000000  Qm 0x7ff00000 00000000  Qn 0x00000000 00000000
+vnmla.f32 s0,  s11, s12 :: Sd 0xffc00000 Sm (i32)0xff800000  Sn (i32)0x7fc00000
+vnmla.f32 s7,  s1,  s6 :: Sd 0xffc00000 Sm (i32)0x7f800000  Sn (i32)0x7fc00000
+vnmla.f32 s0,  s5,  s2 :: Sd 0xffc00000 Sm (i32)0x7fc00000  Sn (i32)0xbf800000
+vnmla.f32 s10, s13, s15 :: Sd 0xffc00000 Sm (i32)0x7fc00000  Sn (i32)0x00000000
+vnmla.f32 s10, s13, s15 :: Sd 0xffc00000 Sm (i32)0x7fc00000  Sn (i32)0x7fc00000
+vnmla.f32 s20, s25, s22 :: Sd 0x44833ce4 Sm (i32)0x41b851ec  Sn (i32)0xc2364659
+vnmla.f32 s23, s24, s25 :: Sd 0x4ddf4321 Sm (i32)0xc8a9da0f  Sn (i32)0x44a84000
+vnmla.f32 s20, s31, s12 :: Sd 0x4f050e7f Sm (i32)0x473e7300  Sn (i32)0xc732da7a
+vnmla.f32 s19, s25, s27 :: Sd 0xcec3063f Sm (i32)0x47bb3de1  Sn (i32)0x46855200
+vnmla.f32 s30, s15, s2 :: Sd 0xd029254c Sm (i32)0xc732633d  Sn (i32)0xc872bcb1
+vnmla.f32 s23, s24, s5 :: Sd 0xc6fc6000 Sm (i32)0x41c00000  Sn (i32)0x44a84000
+vnmla.f32 s10, s11, s2 :: Sd 0xcc4a89cd Sm (i32)0x473e7300  Sn (i32)0x44882000
+vnmla.f32 s29, s15, s7 :: Sd 0xcdb2c947 Sm (i32)0x43560000  Sn (i32)0x49d5e008
+vnmla.f32 s30, s11, s12 :: Sd 0xcef90536 Sm (i32)0x48add9f2  Sn (i32)0x45b75812
+vnmla.f32 s27, s21, s6 :: Sd 0xbdab1f7a Sm (i32)0x42080079  Sn (i32)0x3b210e02
+vnmla.f32 s30, s31, s2 :: Sd 0xc88fe2c0 Sm (i32)0x452c2000  Sn (i32)0x42d60000
+vnmla.f32 s13, s24, s5 :: Sd 0xc993b8e3 Sm (i32)0x445a8000  Sn (i32)0x44ad1333
+vnmla.f32 s10, s11, s2 :: Sd 0xc74f9afc Sm (i32)0x43f3cb23  Sn (i32)0x42da0000
+vnmla.f32 s29, s25, s7 :: Sd 0x7f800000 Sm (i32)0xff800000  Sn (i32)0x44db0000
+vnmla.f32 s0,  s11, s12 :: Sd 0x7f800000 Sm (i32)0x7f800000  Sn (i32)0xc5b4d3c3
+vnmla.f32 s27, s21, s16 :: Sd 0x45500239 Sm (i32)0x43e41fde  Sn (i32)0xc0e96d19
+vnmla.f32 s0,  s5,  s2 :: Sd 0x7f800000 Sm (i32)0x7f800000  Sn (i32)0xff800000
+vnmla.f32 s20, s13, s15 :: Sd 0xffc00000 Sm (i32)0xff800000  Sn (i32)0x00000000
+vnmla.f32 s10, s23, s15 :: Sd 0xffc00000 Sm (i32)0x7f800000  Sn (i32)0x00000000
+---- VMLS (fp) ----
+vmls.f64 d0,  d11, d12 :: Qd 0x7ff80000 0x00000000  Qm 0xfff00000 00000000  Qn 0x7ff80000 00000000
+vmls.f64 d7,  d1,  d6 :: Qd 0x7ff80000 0x00000000  Qm 0x7ff00000 00000000  Qn 0x7ff80000 00000000
+vmls.f64 d0,  d5,  d2 :: Qd 0x7ff80000 0x00000000  Qm 0x7ff80000 00000000  Qn 0xbff00000 00000000
+vmls.f64 d10, d13, d15 :: Qd 0x7ff80000 0x00000000  Qm 0x7ff80000 00000000  Qn 0x00000000 00000000
+vmls.f64 d10, d13, d15 :: Qd 0x7ff80000 0x00000000  Qm 0x7ff80000 00000000  Qn 0x7ff80000 00000000
+vmls.f64 d20, d25, d22 :: Qd 0xc09067a4 0x842fc4c9  Qm 0x40370a3d 70a3d70a  Qn 0xc046c8cb 295e9e1b
+vmls.f64 d23, d24, d25 :: Qd 0xc1bbe864 0x1f5b9999  Qm 0xc1153b41 e6666666  Qn 0x40950800 00000000
+vmls.f64 d20, d31, d12 :: Qd 0xc1e0a1cf 0xd2ac68f6  Qm 0x40e7ce60 00000000  Qn 0xc0e65b4f 3b645a1d
+vmls.f64 d19, d25, d27 :: Qd 0x41d860c7 0xf7191999  Qm 0x40f767bc 28f5c28f  Qn 0x40d0aa40 00000000
+vmls.f64 d30, d15, d2 :: Qd 0x420524a9 0x817fcbf4  Qm 0xc0e64c67 ae147ae1  Qn 0xc10e5796 147ae148
+vmls.f64 d23, d24, d5 :: Qd 0x40df8bff 0x7ffffe04  Qm 0x40380000 00000000  Qn 0x40950800 00000000
+vmls.f64 d10, d11, d2 :: Qd 0x41895139 0x97f00000  Qm 0x40e7ce60 00000000  Qn 0x40910400 00000000
+vmls.f64 d29, d15, d7 :: Qd 0x41b65928 0xd5fe0000  Qm 0x406ac000 00000000  Qn 0x413abc01 00000000
+vmls.f64 d30, d11, d12 :: Qd 0x41df20a6 0xd7bc2cb0  Qm 0x4115bb3e 3d70a3d7  Qn 0x40b6eb02 4dd2f1aa
+vmls.f64 d27, d21, d6 :: Qd 0x3fb363ef 0x37b9be48  Qm 0x4041000f 12c27a63  Qn 0x3f6421c0 44284dfd
+vmls.f64 d30, d31, d2 :: Qd 0x4111fc57 0xf7ffffe0  Qm 0x40a58400 00000000  Qn 0x405ac000 00000000
+vmls.f64 d13, d24, d5 :: Qd 0x4132771c 0x6466665e  Qm 0x408b5000 00000000  Qn 0x4095a266 66666666
+vmls.f64 d10, d11, d2 :: Qd 0x40e9f35f 0x34bc6981  Qm 0x407e7964 5a1cac08  Qn 0x405b4000 00000000
+vmls.f64 d29, d25, d7 :: Qd 0xfff00000 0x00000000  Qm 0xfff00000 00000000  Qn 0x409b6000 00000000
+vmls.f64 d0,  d11, d12 :: Qd 0xfff00000 0x00000000  Qm 0x7ff00000 00000000  Qn 0xc0b69a78 51eb851f
+vmls.f64 d27, d21, d16 :: Qd 0xc0aa004b 0x17cc0c5d  Qm 0x407c83fb b97f122f  Qn 0xc01d2da3 2101d847
+vmls.f64 d0,  d5,  d2 :: Qd 0xfff00000 0x00000000  Qm 0x7ff00000 00000000  Qn 0xfff00000 00000000
+vmls.f64 d20, d13, d15 :: Qd 0x7ff80000 0x00000000  Qm 0xfff00000 00000000  Qn 0x00000000 00000000
+vmls.f64 d10, d23, d15 :: Qd 0x7ff80000 0x00000000  Qm 0x7ff00000 00000000  Qn 0x00000000 00000000
+vmls.f32 s0,  s11, s12 :: Sd 0x7fc00000 Sm (i32)0xff800000  Sn (i32)0x7fc00000
+vmls.f32 s7,  s1,  s6 :: Sd 0x7fc00000 Sm (i32)0x7f800000  Sn (i32)0x7fc00000
+vmls.f32 s0,  s5,  s2 :: Sd 0x7fc00000 Sm (i32)0x7fc00000  Sn (i32)0xbf800000
+vmls.f32 s10, s13, s15 :: Sd 0x7fc00000 Sm (i32)0x7fc00000  Sn (i32)0x00000000
+vmls.f32 s10, s13, s15 :: Sd 0x7fc00000 Sm (i32)0x7fc00000  Sn (i32)0x7fc00000
+vmls.f32 s20, s25, s22 :: Sd 0xc4833ce4 Sm (i32)0x41b851ec  Sn (i32)0xc2364659
+vmls.f32 s23, s24, s25 :: Sd 0xcddf4321 Sm (i32)0xc8a9da0f  Sn (i32)0x44a84000
+vmls.f32 s20, s31, s12 :: Sd 0xcf050e7f Sm (i32)0x473e7300  Sn (i32)0xc732da7a
+vmls.f32 s19, s25, s27 :: Sd 0x4ec3063f Sm (i32)0x47bb3de1  Sn (i32)0x46855200
+vmls.f32 s30, s15, s2 :: Sd 0x5029254c Sm (i32)0xc732633d  Sn (i32)0xc872bcb1
+vmls.f32 s23, s24, s5 :: Sd 0x46fc6000 Sm (i32)0x41c00000  Sn (i32)0x44a84000
+vmls.f32 s10, s11, s2 :: Sd 0x4c4a89cd Sm (i32)0x473e7300  Sn (i32)0x44882000
+vmls.f32 s29, s15, s7 :: Sd 0x4db2c947 Sm (i32)0x43560000  Sn (i32)0x49d5e008
+vmls.f32 s30, s11, s12 :: Sd 0x4ef90536 Sm (i32)0x48add9f2  Sn (i32)0x45b75812
+vmls.f32 s27, s21, s6 :: Sd 0x3dab1f7a Sm (i32)0x42080079  Sn (i32)0x3b210e02
+vmls.f32 s30, s31, s2 :: Sd 0x488fe2c0 Sm (i32)0x452c2000  Sn (i32)0x42d60000
+vmls.f32 s13, s24, s5 :: Sd 0x4993b8e3 Sm (i32)0x445a8000  Sn (i32)0x44ad1333
+vmls.f32 s10, s11, s2 :: Sd 0x474f9afc Sm (i32)0x43f3cb23  Sn (i32)0x42da0000
+vmls.f32 s29, s25, s7 :: Sd 0xff800000 Sm (i32)0xff800000  Sn (i32)0x44db0000
+vmls.f32 s0,  s11, s12 :: Sd 0xff800000 Sm (i32)0x7f800000  Sn (i32)0xc5b4d3c3
+vmls.f32 s27, s21, s16 :: Sd 0xc5500239 Sm (i32)0x43e41fde  Sn (i32)0xc0e96d19
+vmls.f32 s0,  s5,  s2 :: Sd 0xff800000 Sm (i32)0x7f800000  Sn (i32)0xff800000
+vmls.f32 s20, s13, s15 :: Sd 0x7fc00000 Sm (i32)0xff800000  Sn (i32)0x00000000
+vmls.f32 s10, s23, s15 :: Sd 0x7fc00000 Sm (i32)0x7f800000  Sn (i32)0x00000000
+---- VNMLS (fp) ----
+vnmls.f64 d0,  d11, d12 :: Qd 0xfff80000 0x00000000  Qm 0xfff00000 00000000  Qn 0x7ff80000 00000000
+vnmls.f64 d7,  d1,  d6 :: Qd 0xfff80000 0x00000000  Qm 0x7ff00000 00000000  Qn 0x7ff80000 00000000
+vnmls.f64 d0,  d5,  d2 :: Qd 0xfff80000 0x00000000  Qm 0x7ff80000 00000000  Qn 0xbff00000 00000000
+vnmls.f64 d10, d13, d15 :: Qd 0xfff80000 0x00000000  Qm 0x7ff80000 00000000  Qn 0x00000000 00000000
+vnmls.f64 d10, d13, d15 :: Qd 0xfff80000 0x00000000  Qm 0x7ff80000 00000000  Qn 0x7ff80000 00000000
+vnmls.f64 d20, d25, d22 :: Qd 0x40906794 0x842f8549  Qm 0x40370a3d 70a3d70a  Qn 0xc046c8cb 295e9e1b
+vnmls.f64 d23, d24, d25 :: Qd 0x41bbe864 0x1f579999  Qm 0xc1153b41 e6666666  Qn 0x40950800 00000000
+vnmls.f64 d20, d31, d12 :: Qd 0x41e0a1cf 0xd2abe8f6  Qm 0x40e7ce60 00000000  Qn 0xc0e65b4f 3b645a1d
+vnmls.f64 d19, d25, d27 :: Qd 0xc1d860c7 0xf71a1999  Qm 0x40f767bc 28f5c28f  Qn 0x40d0aa40 00000000
+vnmls.f64 d30, d15, d2 :: Qd 0xc20524a9 0x817febf4  Qm 0xc0e64c67 ae147ae1  Qn 0xc10e5796 147ae148
+vnmls.f64 d23, d24, d5 :: Qd 0xc0df8c00 0x800001fc  Qm 0x40380000 00000000  Qn 0x40950800 00000000
+vnmls.f64 d10, d11, d2 :: Qd 0xc1895139 0x98100000  Qm 0x40e7ce60 00000000  Qn 0x40910400 00000000
+vnmls.f64 d29, d15, d7 :: Qd 0xc1b65928 0xd6020000  Qm 0x406ac000 00000000  Qn 0x413abc01 00000000
+vnmls.f64 d30, d11, d12 :: Qd 0xc1df20a6 0xd7bd2cb0  Qm 0x4115bb3e 3d70a3d7  Qn 0x40b6eb02 4dd2f1aa
+vnmls.f64 d27, d21, d6 :: Qd 0xbfb763ef 0x4799be48  Qm 0x4041000f 12c27a63  Qn 0x3f6421c0 44284dfd
+vnmls.f64 d30, d31, d2 :: Qd 0xc111fc58 0x08000020  Qm 0x40a58400 00000000  Qn 0x405ac000 00000000
+vnmls.f64 d13, d24, d5 :: Qd 0xc132771c 0x6866666e  Qm 0x408b5000 00000000  Qn 0x4095a266 66666666
+vnmls.f64 d10, d11, d2 :: Qd 0xc0e9f35f 0xb4bc6b7d  Qm 0x407e7964 5a1cac08  Qn 0x405b4000 00000000
+vnmls.f64 d29, d25, d7 :: Qd 0x7ff00000 0x00000000  Qm 0xfff00000 00000000  Qn 0x409b6000 00000000
+vnmls.f64 d0,  d11, d12 :: Qd 0x7ff00000 0x00000000  Qm 0x7ff00000 00000000  Qn 0xc0b69a78 51eb851f
+vnmls.f64 d27, d21, d16 :: Qd 0x40aa0043 0x17cbec9d  Qm 0x407c83fb b97f122f  Qn 0xc01d2da3 2101d847
+vnmls.f64 d0,  d5,  d2 :: Qd 0x7ff00000 0x00000000  Qm 0x7ff00000 00000000  Qn 0xfff00000 00000000
+vnmls.f64 d20, d13, d15 :: Qd 0xfff80000 0x00000000  Qm 0xfff00000 00000000  Qn 0x00000000 00000000
+vnmls.f64 d10, d23, d15 :: Qd 0xfff80000 0x00000000  Qm 0x7ff00000 00000000  Qn 0x00000000 00000000
+vnmls.f32 s0,  s11, s12 :: Sd 0xffc00000 Sm (i32)0xff800000  Sn (i32)0x7fc00000
+vnmls.f32 s7,  s1,  s6 :: Sd 0xffc00000 Sm (i32)0x7f800000  Sn (i32)0x7fc00000
+vnmls.f32 s0,  s5,  s2 :: Sd 0xffc00000 Sm (i32)0x7fc00000  Sn (i32)0xbf800000
+vnmls.f32 s10, s13, s15 :: Sd 0xffc00000 Sm (i32)0x7fc00000  Sn (i32)0x00000000
+vnmls.f32 s10, s13, s15 :: Sd 0xffc00000 Sm (i32)0x7fc00000  Sn (i32)0x7fc00000
+vnmls.f32 s20, s25, s22 :: Sd 0x44833ce4 Sm (i32)0x41b851ec  Sn (i32)0xc2364659
+vnmls.f32 s23, s24, s25 :: Sd 0x4ddf4321 Sm (i32)0xc8a9da0f  Sn (i32)0x44a84000
+vnmls.f32 s20, s31, s12 :: Sd 0x4f050e7f Sm (i32)0x473e7300  Sn (i32)0xc732da7a
+vnmls.f32 s19, s25, s27 :: Sd 0xcec3063f Sm (i32)0x47bb3de1  Sn (i32)0x46855200
+vnmls.f32 s30, s15, s2 :: Sd 0xd029254c Sm (i32)0xc732633d  Sn (i32)0xc872bcb1
+vnmls.f32 s23, s24, s5 :: Sd 0xc6fc6000 Sm (i32)0x41c00000  Sn (i32)0x44a84000
+vnmls.f32 s10, s11, s2 :: Sd 0xcc4a89cd Sm (i32)0x473e7300  Sn (i32)0x44882000
+vnmls.f32 s29, s15, s7 :: Sd 0xcdb2c947 Sm (i32)0x43560000  Sn (i32)0x49d5e008
+vnmls.f32 s30, s11, s12 :: Sd 0xcef90536 Sm (i32)0x48add9f2  Sn (i32)0x45b75812
+vnmls.f32 s27, s21, s6 :: Sd 0xbdab1f7a Sm (i32)0x42080079  Sn (i32)0x3b210e02
+vnmls.f32 s30, s31, s2 :: Sd 0xc88fe2c0 Sm (i32)0x452c2000  Sn (i32)0x42d60000
+vnmls.f32 s13, s24, s5 :: Sd 0xc993b8e3 Sm (i32)0x445a8000  Sn (i32)0x44ad1333
+vnmls.f32 s10, s11, s2 :: Sd 0xc74f9afc Sm (i32)0x43f3cb23  Sn (i32)0x42da0000
+vnmls.f32 s29, s25, s7 :: Sd 0x7f800000 Sm (i32)0xff800000  Sn (i32)0x44db0000
+vnmls.f32 s0,  s11, s12 :: Sd 0x7f800000 Sm (i32)0x7f800000  Sn (i32)0xc5b4d3c3
+vnmls.f32 s27, s21, s16 :: Sd 0x45500239 Sm (i32)0x43e41fde  Sn (i32)0xc0e96d19
+vnmls.f32 s0,  s5,  s2 :: Sd 0x7f800000 Sm (i32)0x7f800000  Sn (i32)0xff800000
+vnmls.f32 s20, s13, s15 :: Sd 0xffc00000 Sm (i32)0xff800000  Sn (i32)0x00000000
+vnmls.f32 s10, s23, s15 :: Sd 0xffc00000 Sm (i32)0x7f800000  Sn (i32)0x00000000
+---- VMUL (fp) ----
+vmul.f64 d0,  d11, d12 :: Qd 0x7ff80000 0x00000000  Qm 0xfff00000 00000000  Qn 0x7ff80000 00000000
+vmul.f64 d7,  d1,  d6 :: Qd 0x7ff80000 0x00000000  Qm 0x7ff00000 00000000  Qn 0x7ff80000 00000000
+vmul.f64 d0,  d5,  d2 :: Qd 0x7ff80000 0x00000000  Qm 0x7ff80000 00000000  Qn 0xbff00000 00000000
+vmul.f64 d10, d13, d15 :: Qd 0x7ff80000 0x00000000  Qm 0x7ff80000 00000000  Qn 0x00000000 00000000
+vmul.f64 d10, d13, d15 :: Qd 0x7ff80000 0x00000000  Qm 0x7ff80000 00000000  Qn 0x7ff80000 00000000
+vmul.f64 d20, d25, d22 :: Qd 0xc090679c 0x842fa509  Qm 0x40370a3d 70a3d70a  Qn 0xc046c8cb 295e9e1b
+vmul.f64 d23, d24, d25 :: Qd 0xc1bbe864 0x1f599999  Qm 0xc1153b41 e6666666  Qn 0x40950800 00000000
+vmul.f64 d20, d31, d12 :: Qd 0xc1e0a1cf 0xd2ac28f6  Qm 0x40e7ce60 00000000  Qn 0xc0e65b4f 3b645a1d
+vmul.f64 d19, d25, d27 :: Qd 0x41d860c7 0xf7199999  Qm 0x40f767bc 28f5c28f  Qn 0x40d0aa40 00000000
+vmul.f64 d30, d15, d2 :: Qd 0x420524a9 0x817fdbf4  Qm 0xc0e64c67 ae147ae1  Qn 0xc10e5796 147ae148
+vmul.f64 d23, d24, d5 :: Qd 0x40df8c00 0x00000000  Qm 0x40380000 00000000  Qn 0x40950800 00000000
+vmul.f64 d10, d11, d2 :: Qd 0x41895139 0x98000000  Qm 0x40e7ce60 00000000  Qn 0x40910400 00000000
+vmul.f64 d29, d15, d7 :: Qd 0x41b65928 0xd6000000  Qm 0x406ac000 00000000  Qn 0x413abc01 00000000
+vmul.f64 d30, d11, d12 :: Qd 0x41df20a6 0xd7bcacb0  Qm 0x4115bb3e 3d70a3d7  Qn 0x40b6eb02 4dd2f1aa
+vmul.f64 d27, d21, d6 :: Qd 0x3fb563ef 0x3fa9be48  Qm 0x4041000f 12c27a63  Qn 0x3f6421c0 44284dfd
+vmul.f64 d30, d31, d2 :: Qd 0x4111fc58 0x00000000  Qm 0x40a58400 00000000  Qn 0x405ac000 00000000
+vmul.f64 d13, d24, d5 :: Qd 0x4132771c 0x66666666  Qm 0x408b5000 00000000  Qn 0x4095a266 66666666
+vmul.f64 d10, d11, d2 :: Qd 0x40e9f35f 0x74bc6a7f  Qm 0x407e7964 5a1cac08  Qn 0x405b4000 00000000
+vmul.f64 d29, d25, d7 :: Qd 0xfff00000 0x00000000  Qm 0xfff00000 00000000  Qn 0x409b6000 00000000
+vmul.f64 d0,  d11, d12 :: Qd 0xfff00000 0x00000000  Qm 0x7ff00000 00000000  Qn 0xc0b69a78 51eb851f
+vmul.f64 d27, d21, d16 :: Qd 0xc0aa0047 0x17cbfc7d  Qm 0x407c83fb b97f122f  Qn 0xc01d2da3 2101d847
+vmul.f64 d0,  d5,  d2 :: Qd 0xfff00000 0x00000000  Qm 0x7ff00000 00000000  Qn 0xfff00000 00000000
+vmul.f64 d20, d13, d15 :: Qd 0x7ff80000 0x00000000  Qm 0xfff00000 00000000  Qn 0x00000000 00000000
+vmul.f64 d10, d23, d15 :: Qd 0x7ff80000 0x00000000  Qm 0x7ff00000 00000000  Qn 0x00000000 00000000
+vmul.f32 s0,  s11, s12 :: Sd 0x7fc00000 Sm (i32)0xff800000  Sn (i32)0x7fc00000
+vmul.f32 s7,  s1,  s6 :: Sd 0x7fc00000 Sm (i32)0x7f800000  Sn (i32)0x7fc00000
+vmul.f32 s0,  s5,  s2 :: Sd 0x7fc00000 Sm (i32)0x7fc00000  Sn (i32)0xbf800000
+vmul.f32 s10, s13, s15 :: Sd 0x7fc00000 Sm (i32)0x7fc00000  Sn (i32)0x00000000
+vmul.f32 s10, s13, s15 :: Sd 0x7fc00000 Sm (i32)0x7fc00000  Sn (i32)0x7fc00000
+vmul.f32 s20, s25, s22 :: Sd 0xc4833ce4 Sm (i32)0x41b851ec  Sn (i32)0xc2364659
+vmul.f32 s23, s24, s25 :: Sd 0xcddf4321 Sm (i32)0xc8a9da0f  Sn (i32)0x44a84000
+vmul.f32 s20, s31, s12 :: Sd 0xcf050e7f Sm (i32)0x473e7300  Sn (i32)0xc732da7a
+vmul.f32 s19, s25, s27 :: Sd 0x4ec3063f Sm (i32)0x47bb3de1  Sn (i32)0x46855200
+vmul.f32 s30, s15, s2 :: Sd 0x5029254c Sm (i32)0xc732633d  Sn (i32)0xc872bcb1
+vmul.f32 s23, s24, s5 :: Sd 0x46fc6000 Sm (i32)0x41c00000  Sn (i32)0x44a84000
+vmul.f32 s10, s11, s2 :: Sd 0x4c4a89cd Sm (i32)0x473e7300  Sn (i32)0x44882000
+vmul.f32 s29, s15, s7 :: Sd 0x4db2c947 Sm (i32)0x43560000  Sn (i32)0x49d5e008
+vmul.f32 s30, s11, s12 :: Sd 0x4ef90536 Sm (i32)0x48add9f2  Sn (i32)0x45b75812
+vmul.f32 s27, s21, s6 :: Sd 0x3dab1f7a Sm (i32)0x42080079  Sn (i32)0x3b210e02
+vmul.f32 s30, s31, s2 :: Sd 0x488fe2c0 Sm (i32)0x452c2000  Sn (i32)0x42d60000
+vmul.f32 s13, s24, s5 :: Sd 0x4993b8e3 Sm (i32)0x445a8000  Sn (i32)0x44ad1333
+vmul.f32 s10, s11, s2 :: Sd 0x474f9afc Sm (i32)0x43f3cb23  Sn (i32)0x42da0000
+vmul.f32 s29, s25, s7 :: Sd 0xff800000 Sm (i32)0xff800000  Sn (i32)0x44db0000
+vmul.f32 s0,  s11, s12 :: Sd 0xff800000 Sm (i32)0x7f800000  Sn (i32)0xc5b4d3c3
+vmul.f32 s27, s21, s16 :: Sd 0xc5500239 Sm (i32)0x43e41fde  Sn (i32)0xc0e96d19
+vmul.f32 s0,  s5,  s2 :: Sd 0xff800000 Sm (i32)0x7f800000  Sn (i32)0xff800000
+vmul.f32 s20, s13, s15 :: Sd 0x7fc00000 Sm (i32)0xff800000  Sn (i32)0x00000000
+vmul.f32 s10, s23, s15 :: Sd 0x7fc00000 Sm (i32)0x7f800000  Sn (i32)0x00000000
+---- VNMUL (fp) ----
+vnmul.f64 d0,  d11, d12 :: Qd 0xfff80000 0x00000000  Qm 0xfff00000 00000000  Qn 0x7ff80000 00000000
+vnmul.f64 d7,  d1,  d6 :: Qd 0xfff80000 0x00000000  Qm 0x7ff00000 00000000  Qn 0x7ff80000 00000000
+vnmul.f64 d0,  d5,  d2 :: Qd 0xfff80000 0x00000000  Qm 0x7ff80000 00000000  Qn 0xbff00000 00000000
+vnmul.f64 d10, d13, d15 :: Qd 0xfff80000 0x00000000  Qm 0x7ff80000 00000000  Qn 0x00000000 00000000
+vnmul.f64 d10, d13, d15 :: Qd 0xfff80000 0x00000000  Qm 0x7ff80000 00000000  Qn 0x7ff80000 00000000
+vnmul.f64 d20, d25, d22 :: Qd 0x4090679c 0x842fa509  Qm 0x40370a3d 70a3d70a  Qn 0xc046c8cb 295e9e1b
+vnmul.f64 d23, d24, d25 :: Qd 0x41bbe864 0x1f599999  Qm 0xc1153b41 e6666666  Qn 0x40950800 00000000
+vnmul.f64 d20, d31, d12 :: Qd 0x41e0a1cf 0xd2ac28f6  Qm 0x40e7ce60 00000000  Qn 0xc0e65b4f 3b645a1d
+vnmul.f64 d19, d25, d27 :: Qd 0xc1d860c7 0xf7199999  Qm 0x40f767bc 28f5c28f  Qn 0x40d0aa40 00000000
+vnmul.f64 d30, d15, d2 :: Qd 0xc20524a9 0x817fdbf4  Qm 0xc0e64c67 ae147ae1  Qn 0xc10e5796 147ae148
+vnmul.f64 d23, d24, d5 :: Qd 0xc0df8c00 0x00000000  Qm 0x40380000 00000000  Qn 0x40950800 00000000
+vnmul.f64 d10, d11, d2 :: Qd 0xc1895139 0x98000000  Qm 0x40e7ce60 00000000  Qn 0x40910400 00000000
+vnmul.f64 d29, d15, d7 :: Qd 0xc1b65928 0xd6000000  Qm 0x406ac000 00000000  Qn 0x413abc01 00000000
+vnmul.f64 d30, d11, d12 :: Qd 0xc1df20a6 0xd7bcacb0  Qm 0x4115bb3e 3d70a3d7  Qn 0x40b6eb02 4dd2f1aa
+vnmul.f64 d27, d21, d6 :: Qd 0xbfb563ef 0x3fa9be48  Qm 0x4041000f 12c27a63  Qn 0x3f6421c0 44284dfd
+vnmul.f64 d30, d31, d2 :: Qd 0xc111fc58 0x00000000  Qm 0x40a58400 00000000  Qn 0x405ac000 00000000
+vnmul.f64 d13, d24, d5 :: Qd 0xc132771c 0x66666666  Qm 0x408b5000 00000000  Qn 0x4095a266 66666666
+vnmul.f64 d10, d11, d2 :: Qd 0xc0e9f35f 0x74bc6a7f  Qm 0x407e7964 5a1cac08  Qn 0x405b4000 00000000
+vnmul.f64 d29, d25, d7 :: Qd 0x7ff00000 0x00000000  Qm 0xfff00000 00000000  Qn 0x409b6000 00000000
+vnmul.f64 d0,  d11, d12 :: Qd 0x7ff00000 0x00000000  Qm 0x7ff00000 00000000  Qn 0xc0b69a78 51eb851f
+vnmul.f64 d27, d21, d16 :: Qd 0x40aa0047 0x17cbfc7d  Qm 0x407c83fb b97f122f  Qn 0xc01d2da3 2101d847
+vnmul.f64 d0,  d5,  d2 :: Qd 0x7ff00000 0x00000000  Qm 0x7ff00000 00000000  Qn 0xfff00000 00000000
+vnmul.f64 d20, d13, d15 :: Qd 0xfff80000 0x00000000  Qm 0xfff00000 00000000  Qn 0x00000000 00000000
+vnmul.f64 d10, d23, d15 :: Qd 0xfff80000 0x00000000  Qm 0x7ff00000 00000000  Qn 0x00000000 00000000
+vnmul.f32 s0,  s11, s12 :: Sd 0xffc00000 Sm (i32)0xff800000  Sn (i32)0x7fc00000
+vnmul.f32 s7,  s1,  s6 :: Sd 0xffc00000 Sm (i32)0x7f800000  Sn (i32)0x7fc00000
+vnmul.f32 s0,  s5,  s2 :: Sd 0xffc00000 Sm (i32)0x7fc00000  Sn (i32)0xbf800000
+vnmul.f32 s10, s13, s15 :: Sd 0xffc00000 Sm (i32)0x7fc00000  Sn (i32)0x00000000
+vnmul.f32 s10, s13, s15 :: Sd 0xffc00000 Sm (i32)0x7fc00000  Sn (i32)0x7fc00000
+vnmul.f32 s20, s25, s22 :: Sd 0x44833ce4 Sm (i32)0x41b851ec  Sn (i32)0xc2364659
+vnmul.f32 s23, s24, s25 :: Sd 0x4ddf4321 Sm (i32)0xc8a9da0f  Sn (i32)0x44a84000
+vnmul.f32 s20, s31, s12 :: Sd 0x4f050e7f Sm (i32)0x473e7300  Sn (i32)0xc732da7a
+vnmul.f32 s19, s25, s27 :: Sd 0xcec3063f Sm (i32)0x47bb3de1  Sn (i32)0x46855200
+vnmul.f32 s30, s15, s2 :: Sd 0xd029254c Sm (i32)0xc732633d  Sn (i32)0xc872bcb1
+vnmul.f32 s23, s24, s5 :: Sd 0xc6fc6000 Sm (i32)0x41c00000  Sn (i32)0x44a84000
+vnmul.f32 s10, s11, s2 :: Sd 0xcc4a89cd Sm (i32)0x473e7300  Sn (i32)0x44882000
+vnmul.f32 s29, s15, s7 :: Sd 0xcdb2c947 Sm (i32)0x43560000  Sn (i32)0x49d5e008
+vnmul.f32 s30, s11, s12 :: Sd 0xcef90536 Sm (i32)0x48add9f2  Sn (i32)0x45b75812
+vnmul.f32 s27, s21, s6 :: Sd 0xbdab1f7a Sm (i32)0x42080079  Sn (i32)0x3b210e02
+vnmul.f32 s30, s31, s2 :: Sd 0xc88fe2c0 Sm (i32)0x452c2000  Sn (i32)0x42d60000
+vnmul.f32 s13, s24, s5 :: Sd 0xc993b8e3 Sm (i32)0x445a8000  Sn (i32)0x44ad1333
+vnmul.f32 s10, s11, s2 :: Sd 0xc74f9afc Sm (i32)0x43f3cb23  Sn (i32)0x42da0000
+vnmul.f32 s29, s25, s7 :: Sd 0x7f800000 Sm (i32)0xff800000  Sn (i32)0x44db0000
+vnmul.f32 s0,  s11, s12 :: Sd 0x7f800000 Sm (i32)0x7f800000  Sn (i32)0xc5b4d3c3
+vnmul.f32 s27, s21, s16 :: Sd 0x45500239 Sm (i32)0x43e41fde  Sn (i32)0xc0e96d19
+vnmul.f32 s0,  s5,  s2 :: Sd 0x7f800000 Sm (i32)0x7f800000  Sn (i32)0xff800000
+vnmul.f32 s20, s13, s15 :: Sd 0xffc00000 Sm (i32)0xff800000  Sn (i32)0x00000000
+vnmul.f32 s10, s23, s15 :: Sd 0xffc00000 Sm (i32)0x7f800000  Sn (i32)0x00000000
+---- VADD (fp) ----
+vadd.f64 d0,  d11, d12 :: Qd 0x7ff80000 0x00000000  Qm 0xfff00000 00000000  Qn 0x7ff80000 00000000
+vadd.f64 d7,  d1,  d6 :: Qd 0x7ff80000 0x00000000  Qm 0x7ff00000 00000000  Qn 0x7ff80000 00000000
+vadd.f64 d0,  d5,  d2 :: Qd 0x7ff80000 0x00000000  Qm 0x7ff80000 00000000  Qn 0xbff00000 00000000
+vadd.f64 d10, d13, d15 :: Qd 0x7ff80000 0x00000000  Qm 0x7ff80000 00000000  Qn 0x00000000 00000000
+vadd.f64 d10, d13, d15 :: Qd 0x7ff80000 0x00000000  Qm 0x7ff80000 00000000  Qn 0x7ff80000 00000000
+vadd.f64 d20, d25, d22 :: Qd 0xc0368758 0xe219652c  Qm 0x40370a3d 70a3d70a  Qn 0xc046c8cb 295e9e1b
+vadd.f64 d23, d24, d25 :: Qd 0xc1152639 0xe6666666  Qm 0xc1153b41 e6666666  Qn 0x40950800 00000000
+vadd.f64 d20, d31, d12 :: Qd 0x40a7310c 0x49ba5e30  Qm 0x40e7ce60 00000000  Qn 0xc0e65b4f 3b645a1d
+vadd.f64 d19, d25, d27 :: Qd 0x40fb924c 0x28f5c28f  Qm 0x40f767bc 28f5c28f  Qn 0x40d0aa40 00000000
+vadd.f64 d30, d15, d2 :: Qd 0xc111f558 0x00000000  Qm 0xc0e64c67 ae147ae1  Qn 0xc10e5796 147ae148
+vadd.f64 d23, d24, d5 :: Qd 0x40956800 0x00000000  Qm 0x40380000 00000000  Qn 0x40950800 00000000
+vadd.f64 d10, d11, d2 :: Qd 0x40e85680 0x00000000  Qm 0x40e7ce60 00000000  Qn 0x40910400 00000000
+vadd.f64 d29, d15, d7 :: Qd 0x413abcd7 0x00000000  Qm 0x406ac000 00000000  Qn 0x413abc01 00000000
+vadd.f64 d30, d11, d12 :: Qd 0x411616ea 0x46a7ef9e  Qm 0x4115bb3e 3d70a3d7  Qn 0x40b6eb02 4dd2f1aa
+vadd.f64 d27, d21, d6 :: Qd 0x4041005f 0x99c38b04  Qm 0x4041000f 12c27a63  Qn 0x3f6421c0 44284dfd
+vadd.f64 d30, d31, d2 :: Qd 0x40a65a00 0x00000000  Qm 0x40a58400 00000000  Qn 0x405ac000 00000000
+vadd.f64 d13, d24, d5 :: Qd 0x40a1a533 0x33333333  Qm 0x408b5000 00000000  Qn 0x4095a266 66666666
+vadd.f64 d10, d11, d2 :: Qd 0x4082a4b2 0x2d0e5604  Qm 0x407e7964 5a1cac08  Qn 0x405b4000 00000000
+vadd.f64 d29, d25, d7 :: Qd 0xfff00000 0x00000000  Qm 0xfff00000 00000000  Qn 0x409b6000 00000000
+vadd.f64 d0,  d11, d12 :: Qd 0x7ff00000 0x00000000  Qm 0x7ff00000 00000000  Qn 0xc0b69a78 51eb851f
+vadd.f64 d27, d21, d16 :: Qd 0x407c0f45 0x2cfb0ace  Qm 0x407c83fb b97f122f  Qn 0xc01d2da3 2101d847
+vadd.f64 d0,  d5,  d2 :: Qd 0x7ff80000 0x00000000  Qm 0x7ff00000 00000000  Qn 0xfff00000 00000000
+vadd.f64 d20, d13, d15 :: Qd 0xfff00000 0x00000000  Qm 0xfff00000 00000000  Qn 0x00000000 00000000
+vadd.f64 d10, d23, d15 :: Qd 0x7ff00000 0x00000000  Qm 0x7ff00000 00000000  Qn 0x00000000 00000000
+vadd.f32 s0,  s11, s12 :: Sd 0x7fc00000 Sm (i32)0xff800000  Sn (i32)0x7fc00000
+vadd.f32 s7,  s1,  s6 :: Sd 0x7fc00000 Sm (i32)0x7f800000  Sn (i32)0x7fc00000
+vadd.f32 s0,  s5,  s2 :: Sd 0x7fc00000 Sm (i32)0x7fc00000  Sn (i32)0xbf800000
+vadd.f32 s10, s13, s15 :: Sd 0x7fc00000 Sm (i32)0x7fc00000  Sn (i32)0x00000000
+vadd.f32 s10, s13, s15 :: Sd 0x7fc00000 Sm (i32)0x7fc00000  Sn (i32)0x7fc00000
+vadd.f32 s20, s25, s22 :: Sd 0xc1b43ac6 Sm (i32)0x41b851ec  Sn (i32)0xc2364659
+vadd.f32 s23, s24, s25 :: Sd 0xc8a931cf Sm (i32)0xc8a9da0f  Sn (i32)0x44a84000
+vadd.f32 s20, s31, s12 :: Sd 0x45398860 Sm (i32)0x473e7300  Sn (i32)0xc732da7a
+vadd.f32 s19, s25, s27 :: Sd 0x47dc9261 Sm (i32)0x47bb3de1  Sn (i32)0x46855200
+vadd.f32 s30, s15, s2 :: Sd 0xc88faac0 Sm (i32)0xc732633d  Sn (i32)0xc872bcb1
+vadd.f32 s23, s24, s5 :: Sd 0x44ab4000 Sm (i32)0x41c00000  Sn (i32)0x44a84000
+vadd.f32 s10, s11, s2 :: Sd 0x4742b400 Sm (i32)0x473e7300  Sn (i32)0x44882000
+vadd.f32 s29, s15, s7 :: Sd 0x49d5e6b8 Sm (i32)0x43560000  Sn (i32)0x49d5e008
+vadd.f32 s30, s11, s12 :: Sd 0x48b0b752 Sm (i32)0x48add9f2  Sn (i32)0x45b75812
+vadd.f32 s27, s21, s6 :: Sd 0x420802fd Sm (i32)0x42080079  Sn (i32)0x3b210e02
+vadd.f32 s30, s31, s2 :: Sd 0x4532d000 Sm (i32)0x452c2000  Sn (i32)0x42d60000
+vadd.f32 s13, s24, s5 :: Sd 0x450d299a Sm (i32)0x445a8000  Sn (i32)0x44ad1333
+vadd.f32 s10, s11, s2 :: Sd 0x44152592 Sm (i32)0x43f3cb23  Sn (i32)0x42da0000
+vadd.f32 s29, s25, s7 :: Sd 0xff800000 Sm (i32)0xff800000  Sn (i32)0x44db0000
+vadd.f32 s0,  s11, s12 :: Sd 0x7f800000 Sm (i32)0x7f800000  Sn (i32)0xc5b4d3c3
+vadd.f32 s27, s21, s16 :: Sd 0x43e07a2a Sm (i32)0x43e41fde  Sn (i32)0xc0e96d19
+vadd.f32 s0,  s5,  s2 :: Sd 0x7fc00000 Sm (i32)0x7f800000  Sn (i32)0xff800000
+vadd.f32 s20, s13, s15 :: Sd 0xff800000 Sm (i32)0xff800000  Sn (i32)0x00000000
+vadd.f32 s10, s23, s15 :: Sd 0x7f800000 Sm (i32)0x7f800000  Sn (i32)0x00000000
+---- VSUB (fp) ----
+vsub.f64 d0,  d11, d12 :: Qd 0x7ff80000 0x00000000  Qm 0xfff00000 00000000  Qn 0x7ff80000 00000000
+vsub.f64 d7,  d1,  d6 :: Qd 0x7ff80000 0x00000000  Qm 0x7ff00000 00000000  Qn 0x7ff80000 00000000
+vsub.f64 d0,  d5,  d2 :: Qd 0x7ff80000 0x00000000  Qm 0x7ff80000 00000000  Qn 0xbff00000 00000000
+vsub.f64 d10, d13, d15 :: Qd 0x7ff80000 0x00000000  Qm 0x7ff80000 00000000  Qn 0x00000000 00000000
+vsub.f64 d10, d13, d15 :: Qd 0x7ff80000 0x00000000  Qm 0x7ff80000 00000000  Qn 0x7ff80000 00000000
+vsub.f64 d20, d25, d22 :: Qd 0x405126f4 0xf0d844d0  Qm 0x40370a3d 70a3d70a  Qn 0xc046c8cb 295e9e1b
+vsub.f64 d23, d24, d25 :: Qd 0xc1155049 0xe6666666  Qm 0xc1153b41 e6666666  Qn 0x40950800 00000000
+vsub.f64 d20, d31, d12 :: Qd 0x40f714d7 0x9db22d0e  Qm 0x40e7ce60 00000000  Qn 0xc0e65b4f 3b645a1d
+vsub.f64 d19, d25, d27 :: Qd 0x40f33d2c 0x28f5c28f  Qm 0x40f767bc 28f5c28f  Qn 0x40d0aa40 00000000
+vsub.f64 d30, d15, d2 :: Qd 0x4108c47c 0x28f5c290  Qm 0xc0e64c67 ae147ae1  Qn 0xc10e5796 147ae148
+vsub.f64 d23, d24, d5 :: Qd 0xc094a800 0x00000000  Qm 0x40380000 00000000  Qn 0x40950800 00000000
+vsub.f64 d10, d11, d2 :: Qd 0x40e74640 0x00000000  Qm 0x40e7ce60 00000000  Qn 0x40910400 00000000
+vsub.f64 d29, d15, d7 :: Qd 0xc13abb2b 0x00000000  Qm 0x406ac000 00000000  Qn 0x413abc01 00000000
+vsub.f64 d30, d11, d12 :: Qd 0x41155f92 0x34395810  Qm 0x4115bb3e 3d70a3d7  Qn 0x40b6eb02 4dd2f1aa
+vsub.f64 d27, d21, d6 :: Qd 0x4040ffbe 0x8bc169c2  Qm 0x4041000f 12c27a63  Qn 0x3f6421c0 44284dfd
+vsub.f64 d30, d31, d2 :: Qd 0x40a4ae00 0x00000000  Qm 0x40a58400 00000000  Qn 0x405ac000 00000000
+vsub.f64 d13, d24, d5 :: Qd 0xc07fe999 0x99999998  Qm 0x408b5000 00000000  Qn 0x4095a266 66666666
+vsub.f64 d10, d11, d2 :: Qd 0x4077a964 0x5a1cac08  Qm 0x407e7964 5a1cac08  Qn 0x405b4000 00000000
+vsub.f64 d29, d25, d7 :: Qd 0xfff00000 0x00000000  Qm 0xfff00000 00000000  Qn 0x409b6000 00000000
+vsub.f64 d0,  d11, d12 :: Qd 0x7ff00000 0x00000000  Qm 0x7ff00000 00000000  Qn 0xc0b69a78 51eb851f
+vsub.f64 d27, d21, d16 :: Qd 0x407cf8b2 0x46031990  Qm 0x407c83fb b97f122f  Qn 0xc01d2da3 2101d847
+vsub.f64 d0,  d5,  d2 :: Qd 0x7ff00000 0x00000000  Qm 0x7ff00000 00000000  Qn 0xfff00000 00000000
+vsub.f64 d20, d13, d15 :: Qd 0xfff00000 0x00000000  Qm 0xfff00000 00000000  Qn 0x00000000 00000000
+vsub.f64 d10, d23, d15 :: Qd 0x7ff00000 0x00000000  Qm 0x7ff00000 00000000  Qn 0x00000000 00000000
+vsub.f32 s0,  s11, s12 :: Sd 0x7fc00000 Sm (i32)0xff800000  Sn (i32)0x7fc00000
+vsub.f32 s7,  s1,  s6 :: Sd 0x7fc00000 Sm (i32)0x7f800000  Sn (i32)0x7fc00000
+vsub.f32 s0,  s5,  s2 :: Sd 0x7fc00000 Sm (i32)0x7fc00000  Sn (i32)0xbf800000
+vsub.f32 s10, s13, s15 :: Sd 0x7fc00000 Sm (i32)0x7fc00000  Sn (i32)0x00000000
+vsub.f32 s10, s13, s15 :: Sd 0x7fc00000 Sm (i32)0x7fc00000  Sn (i32)0x7fc00000
+vsub.f32 s20, s25, s22 :: Sd 0x428937a8 Sm (i32)0x41b851ec  Sn (i32)0xc2364659
+vsub.f32 s23, s24, s25 :: Sd 0xc8aa824f Sm (i32)0xc8a9da0f  Sn (i32)0x44a84000
+vsub.f32 s20, s31, s12 :: Sd 0x47b8a6bd Sm (i32)0x473e7300  Sn (i32)0xc732da7a
+vsub.f32 s19, s25, s27 :: Sd 0x4799e961 Sm (i32)0x47bb3de1  Sn (i32)0x46855200
+vsub.f32 s30, s15, s2 :: Sd 0x484623e2 Sm (i32)0xc732633d  Sn (i32)0xc872bcb1
+vsub.f32 s23, s24, s5 :: Sd 0xc4a54000 Sm (i32)0x41c00000  Sn (i32)0x44a84000
+vsub.f32 s10, s11, s2 :: Sd 0x473a3200 Sm (i32)0x473e7300  Sn (i32)0x44882000
+vsub.f32 s29, s15, s7 :: Sd 0xc9d5d958 Sm (i32)0x43560000  Sn (i32)0x49d5e008
+vsub.f32 s30, s11, s12 :: Sd 0x48aafc92 Sm (i32)0x48add9f2  Sn (i32)0x45b75812
+vsub.f32 s27, s21, s6 :: Sd 0x4207fdf5 Sm (i32)0x42080079  Sn (i32)0x3b210e02
+vsub.f32 s30, s31, s2 :: Sd 0x45257000 Sm (i32)0x452c2000  Sn (i32)0x42d60000
+vsub.f32 s13, s24, s5 :: Sd 0xc3ff4ccc Sm (i32)0x445a8000  Sn (i32)0x44ad1333
+vsub.f32 s10, s11, s2 :: Sd 0x43bd4b23 Sm (i32)0x43f3cb23  Sn (i32)0x42da0000
+vsub.f32 s29, s25, s7 :: Sd 0xff800000 Sm (i32)0xff800000  Sn (i32)0x44db0000
+vsub.f32 s0,  s11, s12 :: Sd 0x7f800000 Sm (i32)0x7f800000  Sn (i32)0xc5b4d3c3
+vsub.f32 s27, s21, s16 :: Sd 0x43e7c592 Sm (i32)0x43e41fde  Sn (i32)0xc0e96d19
+vsub.f32 s0,  s5,  s2 :: Sd 0x7f800000 Sm (i32)0x7f800000  Sn (i32)0xff800000
+vsub.f32 s20, s13, s15 :: Sd 0xff800000 Sm (i32)0xff800000  Sn (i32)0x00000000
+vsub.f32 s10, s23, s15 :: Sd 0x7f800000 Sm (i32)0x7f800000  Sn (i32)0x00000000
+---- VDIV (fp) ----
+vdiv.f64 d20, d25, d22 :: Qd 0xbfe02df5 0x76d6419a  Qm 0x40370a3d 70a3d70a  Qn 0xc046c8cb 295e9e1b
+vdiv.f64 d23, d24, d25 :: Qd 0xc07026fe 0xc863346b  Qm 0xc1153b41 e6666666  Qn 0x40950800 00000000
+vdiv.f64 d20, d31, d12 :: Qd 0xbff1098f 0x758c5d80  Qm 0x40e7ce60 00000000  Qn 0xc0e65b4f 3b645a1d
+vdiv.f64 d19, d25, d27 :: Qd 0x401678a0 0x9bfa11ab  Qm 0x40f767bc 28f5c28f  Qn 0x40d0aa40 00000000
+vdiv.f64 d30, d15, d2 :: Qd 0x3fc7844e 0x96972113  Qm 0xc0e64c67 ae147ae1  Qn 0xc10e5796 147ae148
+vdiv.f64 d23, d24, d5 :: Qd 0x3f92422f 0xedbdd012  Qm 0x40380000 00000000  Qn 0x40950800 00000000
+vdiv.f64 d10, d11, d2 :: Qd 0x4046629d 0x80967330  Qm 0x40e7ce60 00000000  Qn 0x40910400 00000000
+vdiv.f64 d29, d15, d7 :: Qd 0x3f200264 0x3ec040af  Qm 0x406ac000 00000000  Qn 0x413abc01 00000000
+vdiv.f64 d30, d11, d12 :: Qd 0x404e57db 0x6cbb9f42  Qm 0x4115bb3e 3d70a3d7  Qn 0x40b6eb02 4dd2f1aa
+vdiv.f64 d27, d21, d6 :: Qd 0x40cb05b1 0x59d8ef97  Qm 0x4041000f 12c27a63  Qn 0x3f6421c0 44284dfd
+vdiv.f64 d30, d31, d2 :: Qd 0x4039bd02 0x647c6945  Qm 0x40a58400 00000000  Qn 0x405ac000 00000000
+vdiv.f64 d13, d24, d5 :: Qd 0x3fe43307 0xa78c550d  Qm 0x408b5000 00000000  Qn 0x4095a266 66666666
+vdiv.f64 d10, d11, d2 :: Qd 0x4011e4a2 0x43006502  Qm 0x407e7964 5a1cac08  Qn 0x405b4000 00000000
+vdiv.f64 d29, d25, d7 :: Qd 0xfff00000 0x00000000  Qm 0xfff00000 00000000  Qn 0x409b6000 00000000
+vdiv.f64 d0,  d11, d12 :: Qd 0xfff00000 0x00000000  Qm 0x7ff00000 00000000  Qn 0xc0b69a78 51eb851f
+vdiv.f64 d27, d21, d16 :: Qd 0xc04f45f0 0x7ea9eeda  Qm 0x407c83fb b97f122f  Qn 0xc01d2da3 2101d847
+vdiv.f64 d0,  d5,  d2 :: Qd 0x7ff80000 0x00000000  Qm 0x7ff00000 00000000  Qn 0xfff00000 00000000
+vdiv.f64 d20, d13, d15 :: Qd 0xfff00000 0x00000000  Qm 0xfff00000 00000000  Qn 0x00000000 00000000
+vdiv.f64 d10, d23, d15 :: Qd 0x7ff00000 0x00000000  Qm 0x7ff00000 00000000  Qn 0x00000000 00000000
+vdiv.f32 s20, s25, s22 :: Sd 0xbf016fac Sm (i32)0x41b851ec  Sn (i32)0xc2364659
+vdiv.f32 s23, s24, s25 :: Sd 0xc38137f6 Sm (i32)0xc8a9da0f  Sn (i32)0x44a84000
+vdiv.f32 s20, s31, s12 :: Sd 0xbf884c7c Sm (i32)0x473e7300  Sn (i32)0xc732da7a
+vdiv.f32 s19, s25, s27 :: Sd 0x40b3c505 Sm (i32)0x47bb3de1  Sn (i32)0x46855200
+vdiv.f32 s30, s15, s2 :: Sd 0x3e3c2274 Sm (i32)0xc732633d  Sn (i32)0xc872bcb1
+vdiv.f32 s23, s24, s5 :: Sd 0x3c92117f Sm (i32)0x41c00000  Sn (i32)0x44a84000
+vdiv.f32 s10, s11, s2 :: Sd 0x423314ec Sm (i32)0x473e7300  Sn (i32)0x44882000
+vdiv.f32 s29, s15, s7 :: Sd 0x39001322 Sm (i32)0x43560000  Sn (i32)0x49d5e008
+vdiv.f32 s30, s11, s12 :: Sd 0x4272bedc Sm (i32)0x48add9f2  Sn (i32)0x45b75812
+vdiv.f32 s27, s21, s6 :: Sd 0x46582d8c Sm (i32)0x42080079  Sn (i32)0x3b210e02
+vdiv.f32 s30, s31, s2 :: Sd 0x41cde813 Sm (i32)0x452c2000  Sn (i32)0x42d60000
+vdiv.f32 s13, s24, s5 :: Sd 0x3f21983d Sm (i32)0x445a8000  Sn (i32)0x44ad1333
+vdiv.f32 s10, s11, s2 :: Sd 0x408f2512 Sm (i32)0x43f3cb23  Sn (i32)0x42da0000
+vdiv.f32 s29, s25, s7 :: Sd 0xff800000 Sm (i32)0xff800000  Sn (i32)0x44db0000
+vdiv.f32 s0,  s11, s12 :: Sd 0xff800000 Sm (i32)0x7f800000  Sn (i32)0xc5b4d3c3
+vdiv.f32 s27, s21, s16 :: Sd 0xc27a2f84 Sm (i32)0x43e41fde  Sn (i32)0xc0e96d19
+vdiv.f32 s0,  s5,  s2 :: Sd 0x7fc00000 Sm (i32)0x7f800000  Sn (i32)0xff800000
+vdiv.f32 s20, s13, s15 :: Sd 0xff800000 Sm (i32)0xff800000  Sn (i32)0x00000000
+vdiv.f32 s10, s23, s15 :: Sd 0x7f800000 Sm (i32)0x7f800000  Sn (i32)0x00000000
+---- VABS ----
+vabs.f64 d15, d4 :: Dd 0x7ff80000 0x00000000  Dm (i32)0x7ff80000 00000000
+vabs.f64 d31, d4 :: Dd 0x7ff80000 0x00000000  Dm (i32)0x7ff80000 00000000
+vabs.f64 d25, d25 :: Dd 0x55555555 0x55555555  Dm (i32)0x7ff00000 00000000
+vabs.f64 d18, d17 :: Dd 0x7ff00000 0x00000000  Dm (i32)0x7ff00000 00000000
+vabs.f64 d30, d1 :: Dd 0x7ff00000 0x00000000  Dm (i32)0xfff00000 00000000
+vabs.f64 d8,  d27 :: Dd 0x7ff00000 0x00000000  Dm (i32)0xfff00000 00000000
+vabs.f64 d20, d1 :: Dd 0x40f2aff0 0x041aac54  Dm (i32)0x40f2aff0 041aac54
+vabs.f64 d28, d7 :: Dd 0x40b2f83b 0xe76c8b44  Dm (i32)0xc0b2f83b e76c8b44
+vabs.f64 d2,  d19 :: Dd 0x4055c649 0x2ff4ba52  Dm (i32)0x4055c649 2ff4ba52
+vabs.f64 d8,  d7 :: Dd 0x40fdd2c3 0x33333333  Dm (i32)0xc0fdd2c3 33333333
+vabs.f32 s15, s4 :: Sd 0x7fc00000 Sm (i32)0x7fc00000
+vabs.f32 s31, s4 :: Sd 0x7fc00000 Sm (i32)0x7fc00000
+vabs.f32 s25, s25 :: Sd 0x7fffaaaa Sm (i32)0x7f800000
+vabs.f32 s18, s17 :: Sd 0x7f800000 Sm (i32)0x7f800000
+vabs.f32 s30, s1 :: Sd 0x7f800000 Sm (i32)0xff800000
+vabs.f32 s8,  s27 :: Sd 0x7f800000 Sm (i32)0xff800000
+vabs.f32 s20, s1 :: Sd 0x47957f80 Sm (i32)0x47957f80
+vabs.f32 s28, s7 :: Sd 0x4597c1df Sm (i32)0xc597c1df
+vabs.f32 s2,  s19 :: Sd 0x42ae3249 Sm (i32)0x42ae3249
+vabs.f32 s8,  s7 :: Sd 0x47ee961a Sm (i32)0xc7ee961a
+---- VNEG ----
+vneg.f64 d15, d4 :: Dd 0xfff80000 0x00000000  Dm (i32)0x7ff80000 00000000
+vneg.f64 d31, d4 :: Dd 0xfff80000 0x00000000  Dm (i32)0x7ff80000 00000000
+vneg.f64 d25, d25 :: Dd 0xd5555555 0x55555555  Dm (i32)0x7ff00000 00000000
+vneg.f64 d18, d17 :: Dd 0xfff00000 0x00000000  Dm (i32)0x7ff00000 00000000
+vneg.f64 d30, d1 :: Dd 0x7ff00000 0x00000000  Dm (i32)0xfff00000 00000000
+vneg.f64 d8,  d27 :: Dd 0x7ff00000 0x00000000  Dm (i32)0xfff00000 00000000
+vneg.f64 d20, d1 :: Dd 0xc0f2aff0 0x041aac54  Dm (i32)0x40f2aff0 041aac54
+vneg.f64 d28, d7 :: Dd 0x40b2f83b 0xe76c8b44  Dm (i32)0xc0b2f83b e76c8b44
+vneg.f64 d2,  d19 :: Dd 0xc055c649 0x2ff4ba52  Dm (i32)0x4055c649 2ff4ba52
+vneg.f64 d8,  d7 :: Dd 0x40fdd2c3 0x33333333  Dm (i32)0xc0fdd2c3 33333333
+vneg.f32 s15, s4 :: Sd 0xffc00000 Sm (i32)0x7fc00000
+vneg.f32 s31, s4 :: Sd 0xffc00000 Sm (i32)0x7fc00000
+vneg.f32 s25, s25 :: Sd 0x7fffaaaa Sm (i32)0x7f800000
+vneg.f32 s18, s17 :: Sd 0xff800000 Sm (i32)0x7f800000
+vneg.f32 s30, s1 :: Sd 0x7f800000 Sm (i32)0xff800000
+vneg.f32 s8,  s27 :: Sd 0x7f800000 Sm (i32)0xff800000
+vneg.f32 s20, s1 :: Sd 0xc7957f80 Sm (i32)0x47957f80
+vneg.f32 s28, s7 :: Sd 0x4597c1df Sm (i32)0xc597c1df
+vneg.f32 s2,  s19 :: Sd 0xc2ae3249 Sm (i32)0x42ae3249
+vneg.f32 s8,  s7 :: Sd 0x47ee961a Sm (i32)0xc7ee961a
+---- VMOV (register) ----
+vmov.f64 d15, d4 :: Dd 0x7ff80000 0x00000000  Dm (i32)0x7ff80000 00000000
+vmov.f64 d31, d4 :: Dd 0x7ff80000 0x00000000  Dm (i32)0x7ff80000 00000000
+vmov.f64 d25, d25 :: Dd 0x55555555 0x55555555  Dm (i32)0x7ff00000 00000000
+vmov.f64 d18, d17 :: Dd 0x7ff00000 0x00000000  Dm (i32)0x7ff00000 00000000
+vmov.f64 d30, d1 :: Dd 0xfff00000 0x00000000  Dm (i32)0xfff00000 00000000
+vmov.f64 d8,  d27 :: Dd 0xfff00000 0x00000000  Dm (i32)0xfff00000 00000000
+vmov.f64 d20, d1 :: Dd 0x40f2aff0 0x041aac54  Dm (i32)0x40f2aff0 041aac54
+vmov.f64 d28, d7 :: Dd 0xc0b2f83b 0xe76c8b44  Dm (i32)0xc0b2f83b e76c8b44
+vmov.f64 d2,  d19 :: Dd 0x4055c649 0x2ff4ba52  Dm (i32)0x4055c649 2ff4ba52
+vmov.f64 d8,  d7 :: Dd 0xc0fdd2c3 0x33333333  Dm (i32)0xc0fdd2c3 33333333
+vmov.f32 s15, s4 :: Sd 0x7fc00000 Sm (i32)0x7fc00000
+vmov.f32 s31, s4 :: Sd 0x7fc00000 Sm (i32)0x7fc00000
+vmov.f32 s25, s25 :: Sd 0xffffaaaa Sm (i32)0x7f800000
+vmov.f32 s18, s17 :: Sd 0x7f800000 Sm (i32)0x7f800000
+vmov.f32 s30, s1 :: Sd 0xff800000 Sm (i32)0xff800000
+vmov.f32 s8,  s27 :: Sd 0xff800000 Sm (i32)0xff800000
+vmov.f32 s20, s1 :: Sd 0x47957f80 Sm (i32)0x47957f80
+vmov.f32 s28, s7 :: Sd 0xc597c1df Sm (i32)0xc597c1df
+vmov.f32 s2,  s19 :: Sd 0x42ae3249 Sm (i32)0x42ae3249
+vmov.f32 s8,  s7 :: Sd 0xc7ee961a Sm (i32)0xc7ee961a
+---- VSQRT ----
+vsqrt.f64 d15, d4 :: Dd 0x7ff80000 0x00000000  Dm (i32)0x7ff80000 00000000
+vsqrt.f64 d31, d4 :: Dd 0x7ff80000 0x00000000  Dm (i32)0x7ff80000 00000000
+vsqrt.f64 d25, d25 :: Dd 0x4aa279a7 0x4590331c  Dm (i32)0x7ff00000 00000000
+vsqrt.f64 d18, d17 :: Dd 0x7ff00000 0x00000000  Dm (i32)0x7ff00000 00000000
+vsqrt.f64 d30, d1 :: Dd 0x7ff80000 0x00000000  Dm (i32)0xfff00000 00000000
+vsqrt.f64 d8,  d27 :: Dd 0x7ff80000 0x00000000  Dm (i32)0xfff00000 00000000
+vsqrt.f64 d20, d1 :: Dd 0x40714a9f 0xfb4e5577  Dm (i32)0x40f2aff0 041aac54
+vsqrt.f64 d28, d7 :: Dd 0x7ff80000 0x00000000  Dm (i32)0xc0b2f83b e76c8b44
+vsqrt.f64 d2,  d19 :: Dd 0x4022aa50 0x1fe2a179  Dm (i32)0x4055c649 2ff4ba52
+vsqrt.f64 d8,  d7 :: Dd 0x7ff80000 0x00000000  Dm (i32)0xc0fdd2c3 33333333
+vsqrt.f32 s15, s4 :: Sd 0x7fc00000 Sm (i32)0x7fc00000
+vsqrt.f32 s31, s4 :: Sd 0x7fc00000 Sm (i32)0x7fc00000
+vsqrt.f32 s25, s25 :: Sd 0xffffaaaa Sm (i32)0x7f800000
+vsqrt.f32 s18, s17 :: Sd 0x7f800000 Sm (i32)0x7f800000
+vsqrt.f32 s30, s1 :: Sd 0x7fc00000 Sm (i32)0xff800000
+vsqrt.f32 s8,  s27 :: Sd 0x7fc00000 Sm (i32)0xff800000
+vsqrt.f32 s20, s1 :: Sd 0x438a5500 Sm (i32)0x47957f80
+vsqrt.f32 s28, s7 :: Sd 0x7fc00000 Sm (i32)0xc597c1df
+vsqrt.f32 s2,  s19 :: Sd 0x41155281 Sm (i32)0x42ae3249
+vsqrt.f32 s8,  s7 :: Sd 0x7fc00000 Sm (i32)0xc7ee961a
+---- VCVT (integer <-> fp) ----
+vcvt.u32.f32 s0,  s1 :: Sd 0x00000003 Sm (i32)0x404ccccd
+vcvt.u32.f32 s10, s11 :: Sd 0xffffffff Sm (i32)0x64cb49b4
+vcvt.u32.f32 s15, s4 :: Sd 0xb2d05e00 Sm (i32)0x4f32d05e
+vcvt.u32.f32 s25, s24 :: Sd 0x00000000 Sm (i32)0xbf000000
+vcvt.u32.f32 s19, s21 :: Sd 0x00000000 Sm (i32)0xc0e33333
+vcvt.u32.f32 s12, s8 :: Sd 0x00000008 Sm (i32)0x40fff800
+vcvt.u32.f32 s12, s18 :: Sd 0x00000000 Sm (i32)0xc0fff800
+vcvt.u32.f32 s30, s1 :: Sd 0x00000000 Sm (i32)0x00000000
+vcvt.u32.f32 s11, s1 :: Sd 0xffffffff Sm (i32)0x7f800000
+vcvt.u32.f32 s21, s12 :: Sd 0x00000000 Sm (i32)0xff800000
+vcvt.u32.f32 s20, s11 :: Sd 0x00000000 Sm (i32)0x7fc00000
+vcvt.s32.f32 s29, s13 :: Sd 0x00000000 Sm (i32)0x7fc00000
+vcvt.s32.f32 s9,  s19 :: Sd 0x00000000 Sm (i32)0x00000000
+vcvt.s32.f32 s0,  s17 :: Sd 0x7fffffff Sm (i32)0x7f800000
+vcvt.s32.f32 s0,  s1 :: Sd 0x80000000 Sm (i32)0xff800000
+vcvt.s32.f32 s30, s11 :: Sd 0x00000003 Sm (i32)0x404ccccd
+vcvt.s32.f32 s20, s21 :: Sd 0x7fffffff Sm (i32)0x64cb49b4
+vcvt.s32.f32 s15, s14 :: Sd 0x7fffffff Sm (i32)0x4f32d05e
+vcvt.s32.f32 s15, s24 :: Sd 0x00000000 Sm (i32)0xbf000000
+vcvt.s32.f32 s15, s29 :: Sd 0xfffffff9 Sm (i32)0xc0e33333
+vcvt.s32.f32 s12, s31 :: Sd 0x00000008 Sm (i32)0x40fff800
+vcvt.s32.f32 s1,  s8 :: Sd 0xfffffff8 Sm (i32)0xc0fff800
+vcvt.f32.u32 s30, s1 :: Sd 0x4e81c000 Sm (i32)0x40e00000
+vcvt.f32.u32 s10, s17 :: Sd 0x4f4f0000 Sm (i32)0xcf000000
+vcvt.f32.u32 s20, s1 :: Sd 0x4e9e0000 Sm (i32)0x4f000000
+vcvt.f32.u32 s24, s26 :: Sd 0x4e9e0000 Sm (i32)0x4f000000
+vcvt.f32.u32 s0,  s14 :: Sd 0x4e9c8506 Sm (i32)0x4e4282f4
+vcvt.f32.u32 s11, s1 :: Sd 0x4eff0000 Sm (i32)0x7f800000
+vcvt.f32.u32 s21, s12 :: Sd 0x4f7f8000 Sm (i32)0xff800000
+vcvt.f32.u32 s29, s13 :: Sd 0x4eff8000 Sm (i32)0x7fc00000
+vcvt.f32.s32 s0,  s1 :: Sd 0x4e81c000 Sm (i32)0x40e00000
+vcvt.f32.s32 s30, s31 :: Sd 0xce440000 Sm (i32)0xcf000000
+vcvt.f32.s32 s0,  s12 :: Sd 0x4e9e0000 Sm (i32)0x4f000000
+vcvt.f32.s32 s10, s16 :: Sd 0x4e9e0000 Sm (i32)0x4f000000
+vcvt.f32.s32 s1,  s8 :: Sd 0xce7c0020 Sm (i32)0xc0fff800
+vcvt.f32.s32 s29, s13 :: Sd 0x4eff8000 Sm (i32)0x7fc00000
+vcvt.f32.s32 s9,  s19 :: Sd 0x00000000 Sm (i32)0x00000000
+vcvt.f32.s32 s0,  s17 :: Sd 0x4eff0000 Sm (i32)0x7f800000
+vcvt.f32.s32 s0,  s1 :: Sd 0xcb000000 Sm (i32)0xff800000
+vcvt.u32.f64 s0,  d1 :: Sd 0x00000003 Dm 0x40099999 9999999a
+vcvt.u32.f64 s13, d26 :: Sd 0x000000eb Dm 0x406d5147 ae147ae1
+vcvt.u32.f64 s29, d30 :: Sd 0x0000b4a5 Dm 0x40e694ab 0a3d70a4
+vcvt.u32.f64 s30, d21 :: Sd 0x00000000 Dm 0xc01fff00 00000000
+vcvt.u32.f64 s11, d8 :: Sd 0xffffffff Dm 0x7ff00000 00000000
+vcvt.u32.f64 s8,  d12 :: Sd 0x00000000 Dm 0xfff00000 00000000
+vcvt.u32.f64 s19, d7 :: Sd 0x00000000 Dm 0x7ff80000 00000000
+vcvt.u32.f64 s16, d16 :: Sd 0x0000004d Dm 0x40532ae1 47ae147b
+vcvt.s32.f64 s0,  d1 :: Sd 0x00000003 Dm 0x40099999 9999999a
+vcvt.s32.f64 s13, d26 :: Sd 0x000000eb Dm 0x406d5147 ae147ae1
+vcvt.s32.f64 s29, d30 :: Sd 0x0000b4a5 Dm 0x40e694ab 0a3d70a4
+vcvt.s32.f64 s30, d21 :: Sd 0xfffffff8 Dm 0xc01fff00 00000000
+vcvt.s32.f64 s11, d8 :: Sd 0x7fffffff Dm 0x7ff00000 00000000
+vcvt.s32.f64 s8,  d12 :: Sd 0x80000000 Dm 0xfff00000 00000000
+vcvt.s32.f64 s19, d7 :: Sd 0x00000000 Dm 0x7ff80000 00000000
+vcvt.s32.f64 s16, d16 :: Sd 0x0000004d Dm 0x40532ae1 47ae147b
+vcvt.f64.u32 d0,  s1 :: Dd 0xfe000000 41efffff Sm 0x404ccccd
+vcvt.f64.u32 d30, s21 :: Dd 0x5c200000 41e88483 Sm 0xc4241ae1
+vcvt.f64.u32 d16, s12 :: Dd 0x62400000 41d11660 Sm 0x44598189
+vcvt.f64.u32 d29, s7 :: Dd 0xe6c00000 41e8a3de Sm 0xc51ef736
+vcvt.f64.u32 d12, s28 :: Dd 0x11000000 41d02800 Sm 0x40a00044
+vcvt.f64.u32 d7,  s5 :: Dd 0x00000000 41eff000 Sm 0xff800000
+vcvt.f64.u32 d21, s20 :: Dd 0x00000000 41dfe000 Sm 0x7f800000
+vcvt.f64.u32 d11, s11 :: Dd 0x00000000 41dff000 Sm 0x7fc00000
+vcvt.f64.s32 d0,  s1 :: Dd 0x00000000 c0300000 Sm 0x404ccccd
+vcvt.f64.s32 d30, s21 :: Dd 0x8f800000 c1cdedf2 Sm 0xc4241ae1
+vcvt.f64.s32 d16, s12 :: Dd 0x62400000 41d11660 Sm 0x44598189
+vcvt.f64.s32 d29, s7 :: Dd 0x65000000 c1cd7084 Sm 0xc51ef736
+vcvt.f64.s32 d12, s28 :: Dd 0x11000000 41d02800 Sm 0x40a00044
+vcvt.f64.s32 d7,  s5 :: Dd 0x00000000 c1600000 Sm 0xff800000
+vcvt.f64.s32 d21, s20 :: Dd 0x00000000 41dfe000 Sm 0x7f800000
+vcvt.f64.s32 d11, s11 :: Dd 0x00000000 41dff000 Sm 0x7fc00000
+---- VCVT (single <-> double) ----
+vcvt.f64.f32 d0,  s1 :: Dd 0xfffff555 0x40000000  Sm 0x404ccccd
+vcvt.f64.f32 d29, s21 :: Dd 0x406d54cc 0xc0000000  Sm 0x436aa666
+vcvt.f64.f32 d16, s30 :: Dd 0xc085e50a 0x40000000  Sm 0xc42f2852
+vcvt.f64.f32 d11, s7 :: Dd 0x401fff00 0x00000000  Sm 0x40fff800
+vcvt.f64.f32 d30, s3 :: Dd 0xc01fff00 0x00000000  Sm 0xc0fff800
+vcvt.f64.f32 d7,  s19 :: Dd 0x4028ddb6 0x20000000  Sm 0x4146edb1
+vcvt.f64.f32 d2,  s11 :: Dd 0x40505b1a 0xa0000000  Sm 0x4282d8d5
+vcvt.f64.f32 d9,  s21 :: Dd 0x7ff80000 0x00000000  Sm 0x7fc00000
+vcvt.f64.f32 d17, s29 :: Dd 0xfff00000 0x00000000  Sm 0xff800000
+vcvt.f64.f32 d19, s0 :: Dd 0x7ff00000 0x00000000  Sm 0x7f800000
+vcvt.f32.f64 s0,  d1 :: Sd 0x404ccccd  Dm 0x40099999 9999999a
+vcvt.f32.f64 s29, d21 :: Sd 0x436aa666  Dm 0x406d54cc cccccccd
+vcvt.f32.f64 s16, d30 :: Sd 0xc42f2852  Dm 0xc085e50a 3d70a3d7
+vcvt.f32.f64 s11, d7 :: Sd 0x40fff800  Dm 0x401fff00 00000000
+vcvt.f32.f64 s30, d3 :: Sd 0xc0fff800  Dm 0xc01fff00 00000000
+vcvt.f32.f64 s7,  d19 :: Sd 0x4146edb1  Dm 0x4028ddb6 1bb05faf
+vcvt.f32.f64 s2,  d11 :: Sd 0x4282d8d5  Dm 0x40505b1a 9fbe76c9
+vcvt.f32.f64 s9,  d21 :: Sd 0x7fc00000  Dm 0x7ff80000 00000000
+vcvt.f32.f64 s17, d29 :: Sd 0xff800000  Dm 0xfff00000 00000000
+vcvt.f32.f64 s19, d0 :: Sd 0x7f800000  Dm 0x7ff00000 00000000
+---- VCMP ----
+vcmp.f64  d0,  d19 :: FPSCR 0x80000000  Dd 0xc00ba752 5460aa65  Dm 0xc004fef9 db22d0e5
+vcmp.f64  d11, d16 :: FPSCR 0x20000000  Dd 0x40d6ecdc cccccccd  Dm 0x40aac300 00000000
+vcmp.f64  d21, d30 :: FPSCR 0x20000000  Dd 0xc0b1ac80 00000000  Dm 0xc11b9be6 00000000
+vcmp.f64  d7,  d28 :: FPSCR 0x20000000  Dd 0x407a9800 00000000  Dm 0xc07c84cc cccccccd
+vcmp.f64  d29, d3 :: FPSCR 0x20000000  Dd 0x7ff00000 00000000  Dm 0x40e0e04e 66666666
+vcmp.f64  d3,  d22 :: FPSCR 0x60000000  Dd 0x40000000 00000000  Dm 0x40000000 00000000
+vcmp.f64  d3,  d22 :: FPSCR 0x60000000  Dd 0x40280bc6 a7ef9db2  Dm 0x40280bc6 a7ef9db2
+vcmp.f64  d3,  d22 :: FPSCR 0x60000000  Dd 0x00000000 00000000  Dm 0x00000000 00000000
+vcmp.f64  d9,  d2 :: FPSCR 0x60000000  Dd 0x7ff00000 00000000  Dm 0x7ff00000 00000000
+vcmp.f64  d30, d15 :: FPSCR 0x60000000  Dd 0xfff00000 00000000  Dm 0xfff00000 00000000
+vcmp.f64  d0,  d19 :: FPSCR 0x80000000  Dd 0xc00ba752 5460aa65  Dm 0xc004fef9 db22d0e5
+vcmp.f64  d11, d16 :: FPSCR 0x20000000  Dd 0xc0b557b3 33333333  Dm 0xfff00000 00000000
+vcmp.f64  d21, d30 :: FPSCR 0x80000000  Dd 0xfff00000 00000000  Dm 0x4055accc cccccccd
+vcmp.f64  d7,  d28 :: FPSCR 0x20000000  Dd 0x7ff00000 00000000  Dm 0xc0c0bbba 5e353f7d
+vcmp.f64  d29, d3 :: FPSCR 0x80000000  Dd 0xc0806333 33333333  Dm 0x40847400 00000000
+vcmp.f64  d3,  d22 :: FPSCR 0x30000000  Dd 0x7ff80000 00000000  Dm 0xc019dc67 dfe32a06
+vcmp.f64  d9,  d2 :: FPSCR 0x20000000  Dd 0x404c4810 624dd2f2  Dm 0x404c47ae 147ae148
+vcmp.f64  d30, d15 :: FPSCR 0x80000000  Dd 0x40b4f599 9a415f46  Dm 0x40ebb770 00000000
+vcmpe.f64 d0,  d19 :: FPSCR 0x80000000  Dd 0xc00ba752 5460aa65  Dm 0xc004fef9 db22d0e5
+vcmpe.f64 d11, d16 :: FPSCR 0x20000000  Dd 0x40d6ecdc cccccccd  Dm 0x40aac300 00000000
+vcmpe.f64 d11, d16 :: FPSCR 0x30000000  Dd 0x40d6ecdc cccccccd  Dm 0x7ff80000 00000000
+vcmpe.f64 d21, d30 :: FPSCR 0x20000000  Dd 0xc0b1ac80 00000000  Dm 0xc11b9be6 00000000
+vcmpe.f64 d7,  d28 :: FPSCR 0x20000000  Dd 0x407a9800 00000000  Dm 0xc07c84cc cccccccd
+vcmpe.f64 d29, d3 :: FPSCR 0x20000000  Dd 0x7ff00000 00000000  Dm 0x40e0e04e 66666666
+vcmpe.f64 d3,  d22 :: FPSCR 0x60000000  Dd 0x40000000 00000000  Dm 0x40000000 00000000
+vcmpe.f64 d9,  d2 :: FPSCR 0x60000000  Dd 0x7ff00000 00000000  Dm 0x7ff00000 00000000
+vcmpe.f64 d30, d15 :: FPSCR 0x60000000  Dd 0xfff00000 00000000  Dm 0xfff00000 00000000
+vcmpe.f64 d0,  d19 :: FPSCR 0x80000000  Dd 0xc00ba752 5460aa65  Dm 0xc004fef9 db22d0e5
+vcmpe.f64 d11, d16 :: FPSCR 0x20000000  Dd 0xc0b557b3 33333333  Dm 0xfff00000 00000000
+vcmpe.f64 d21, d30 :: FPSCR 0x80000000  Dd 0xfff00000 00000000  Dm 0x4055accc cccccccd
+vcmpe.f64 d7,  d28 :: FPSCR 0x20000000  Dd 0x7ff00000 00000000  Dm 0xc0c0bbba 5e353f7d
+vcmpe.f64 d29, d3 :: FPSCR 0x80000000  Dd 0xc0806333 33333333  Dm 0x40847400 00000000
+vcmpe.f64 d3,  d22 :: FPSCR 0x20000000  Dd 0x40b21080 00000000  Dm 0xc019dc67 dfe32a06
+vcmpe.f64 d9,  d2 :: FPSCR 0x20000000  Dd 0x404c4810 624dd2f2  Dm 0x404c47ae 147ae148
+vcmpe.f64 d30, d15 :: FPSCR 0x80000000  Dd 0x40b4f599 9a415f46  Dm 0x40ebb770 00000000
+vcmp.f32  s0,  s19 :: FPSCR 0x8  Sd 0xc05d3a93  Sm 0xc027f7cf
+vcmp.f32  s11, s16 :: FPSCR 0x2  Sd 0x46b766e6  Sm 0x45561800
+vcmp.f32  s3,  s22 :: FPSCR 0x6  Sd 0x40000000  Sm 0x40000000
+vcmp.f32  s0,  s19 :: FPSCR 0x8  Sd 0xc05d3a93  Sm 0xc027f7cf
+vcmp.f32  s11, s16 :: FPSCR 0x2  Sd 0x46b766e6  Sm 0x45561800
+vcmp.f32  s21, s30 :: FPSCR 0x2  Sd 0xc58d6400  Sm 0xc8dcdf30
+vcmp.f32  s7,  s28 :: FPSCR 0x2  Sd 0x43d4c000  Sm 0xc3e42666
+vcmp.f32  s29, s3 :: FPSCR 0x2  Sd 0x7f800000  Sm 0x47070273
+vcmp.f32  s3,  s22 :: FPSCR 0x6  Sd 0x41405e35  Sm 0x41405e35
+vcmp.f32  s3,  s22 :: FPSCR 0x6  Sd 0x00000000  Sm 0x00000000
+vcmp.f32  s9,  s2 :: FPSCR 0x6  Sd 0x7f800000  Sm 0x7f800000
+vcmp.f32  s30, s15 :: FPSCR 0x6  Sd 0xff800000  Sm 0xff800000
+vcmp.f32  s0,  s19 :: FPSCR 0x8  Sd 0xc05d3a93  Sm 0xc027f7cf
+vcmp.f32  s11, s16 :: FPSCR 0x2  Sd 0xc5aabd9a  Sm 0xff800000
+vcmp.f32  s21, s30 :: FPSCR 0x8  Sd 0xff800000  Sm 0x42ad6666
+vcmp.f32  s7,  s28 :: FPSCR 0x2  Sd 0x7f800000  Sm 0xc605ddd3
+vcmp.f32  s29, s3 :: FPSCR 0x8  Sd 0xc403199a  Sm 0x4423a000
+vcmp.f32  s3,  s22 :: FPSCR 0x3  Sd 0x7fc00000  Sm 0xc0cee33f
+vcmp.f32  s9,  s2 :: FPSCR 0x2  Sd 0x42624083  Sm 0x42623d71
+vcmp.f32  s30, s15 :: FPSCR 0x8  Sd 0x45a7accd  Sm 0x475dbb80
+vcmpe.f32 s0,  s19 :: FPSCR 0x8  Sd 0xc05d3a93  Sm 0xc027f7cf
+vcmpe.f32 s11, s16 :: FPSCR 0x2  Sd 0x46b766e6  Sm 0x45561800
+vcmpe.f32 s11, s16 :: FPSCR 0x3  Sd 0x46b766e6  Sm 0x7fc00000
+vcmpe.f32 s21, s30 :: FPSCR 0x2  Sd 0xc58d6400  Sm 0xc8dcdf30
+vcmpe.f32 s7,  s28 :: FPSCR 0x2  Sd 0x43d4c000  Sm 0xc3e42666
+vcmpe.f32 s29, s3 :: FPSCR 0x2  Sd 0x7f800000  Sm 0x47070273
+vcmpe.f32 s3,  s22 :: FPSCR 0x6  Sd 0x40000000  Sm 0x40000000
+vcmpe.f32 s9,  s2 :: FPSCR 0x6  Sd 0x7f800000  Sm 0x7f800000
+vcmpe.f32 s30, s15 :: FPSCR 0x6  Sd 0xff800000  Sm 0xff800000
+vcmpe.f32 s0,  s19 :: FPSCR 0x8  Sd 0xc05d3a93  Sm 0xc027f7cf
+vcmpe.f32 s11, s16 :: FPSCR 0x2  Sd 0xc5aabd9a  Sm 0xff800000
+vcmpe.f32 s21, s30 :: FPSCR 0x8  Sd 0xff800000  Sm 0x42ad6666
+vcmpe.f32 s7,  s28 :: FPSCR 0x2  Sd 0x7f800000  Sm 0xc605ddd3
+vcmpe.f32 s29, s3 :: FPSCR 0x8  Sd 0xc403199a  Sm 0x4423a000
+vcmpe.f32 s3,  s22 :: FPSCR 0x2  Sd 0x45908400  Sm 0xc0cee33f
+vcmpe.f32 s9,  s2 :: FPSCR 0x2  Sd 0x42624083  Sm 0x42623d71
+vcmpe.f32 s9,  s2 :: FPSCR 0x8  Sd 0x00000000  Sm 0x42623d71
+vcmpe.f32 s9,  s2 :: FPSCR 0x2  Sd 0x41200000  Sm 0x00000000
+vcmpe.f32 s9,  s2 :: FPSCR 0x6  Sd 0x00000000  Sm 0x00000000
+vcmpe.f32 s9,  s2 :: FPSCR 0x6  Sd 0x00000000  Sm 0x00000000
+---- VCMP (zero) ----
+vcmp.f64 d0 :: FPSCR 0x80000000  Dd 0xc00ba752 5460aa65
+vcmp.f64 d11 :: FPSCR 0x20000000  Dd 0x40d6ecdc cccccccd
+vcmp.f64 d21 :: FPSCR 0x80000000  Dd 0xc0b1ac80 00000000
+vcmp.f64 d7 :: FPSCR 0x20000000  Dd 0x407a9800 00000000
+vcmp.f64 d29 :: FPSCR 0x20000000  Dd 0x7ff00000 00000000
+vcmp.f64 d3 :: FPSCR 0x20000000  Dd 0x40000000 00000000
+vcmp.f64 d3 :: FPSCR 0x60000000  Dd 0x00000000 00000000
+vcmp.f64 d9 :: FPSCR 0x20000000  Dd 0x7ff00000 00000000
+vcmp.f64 d30 :: FPSCR 0x80000000  Dd 0xfff00000 00000000
+vcmp.f64 d0 :: FPSCR 0x80000000  Dd 0xc00ba752 5460aa65
+vcmp.f64 d11 :: FPSCR 0x80000000  Dd 0xc0b557b3 33333333
+vcmp.f64 d21 :: FPSCR 0x80000000  Dd 0xfff00000 00000000
+vcmp.f64 d7 :: FPSCR 0x20000000  Dd 0x7ff00000 00000000
+vcmp.f64 d29 :: FPSCR 0x80000000  Dd 0xc0806333 33333333
+vcmp.f64 d3 :: FPSCR 0x20000000  Dd 0x40b21080 00000000
+vcmp.f64 d9 :: FPSCR 0x30000000  Dd 0x7ff80000 00000000
+vcmp.f64 d30 :: FPSCR 0x20000000  Dd 0x40b4f599 9a415f46
+vcmpe.f64 d0 :: FPSCR 0x80000000  Dd 0xc00ba752 5460aa65
+vcmpe.f64 d11 :: FPSCR 0x20000000  Dd 0x40d6ecdc cccccccd
+vcmpe.f64 d21 :: FPSCR 0x80000000  Dd 0xc0b1ac80 00000000
+vcmpe.f64 d7 :: FPSCR 0x20000000  Dd 0x407a9800 00000000
+vcmpe.f64 d29 :: FPSCR 0x20000000  Dd 0x7ff00000 00000000
+vcmpe.f64 d3 :: FPSCR 0x20000000  Dd 0x40000000 00000000
+vcmpe.f64 d3 :: FPSCR 0x60000000  Dd 0x00000000 00000000
+vcmpe.f64 d9 :: FPSCR 0x20000000  Dd 0x7ff00000 00000000
+vcmpe.f64 d30 :: FPSCR 0x80000000  Dd 0xfff00000 00000000
+vcmpe.f64 d0 :: FPSCR 0x80000000  Dd 0xc00ba752 5460aa65
+vcmpe.f64 d11 :: FPSCR 0x80000000  Dd 0xc0b557b3 33333333
+vcmpe.f64 d21 :: FPSCR 0x80000000  Dd 0xfff00000 00000000
+vcmpe.f64 d7 :: FPSCR 0x20000000  Dd 0x7ff00000 00000000
+vcmpe.f64 d29 :: FPSCR 0x80000000  Dd 0xc0806333 33333333
+vcmpe.f64 d3 :: FPSCR 0x20000000  Dd 0x40b21080 00000000
+vcmpe.f64 d9 :: FPSCR 0x30000000  Dd 0x7ff80000 00000000
+vcmpe.f64 d30 :: FPSCR 0x20000000  Dd 0x40b4f599 9a415f46
+vcmp.f32 s0 :: FPSCR 0x80000000  Sd 0xc05d3a93
+vcmp.f32 s11 :: FPSCR 0x20000000  Sd 0x46b766e6
+vcmp.f32 s21 :: FPSCR 0x80000000  Sd 0xc58d6400
+vcmp.f32 s7 :: FPSCR 0x20000000  Sd 0x43d4c000
+vcmp.f32 s29 :: FPSCR 0x20000000  Sd 0x7f800000
+vcmp.f32 s3 :: FPSCR 0x20000000  Sd 0x40000000
+vcmp.f32 s3 :: FPSCR 0x60000000  Sd 0x00000000
+vcmp.f32 s9 :: FPSCR 0x20000000  Sd 0x7f800000
+vcmp.f32 s30 :: FPSCR 0x80000000  Sd 0xff800000
+vcmp.f32 s0 :: FPSCR 0x80000000  Sd 0xc05d3a93
+vcmp.f32 s11 :: FPSCR 0x80000000  Sd 0xc5aabd9a
+vcmp.f32 s21 :: FPSCR 0x80000000  Sd 0xff800000
+vcmp.f32 s7 :: FPSCR 0x20000000  Sd 0x7f800000
+vcmp.f32 s29 :: FPSCR 0x80000000  Sd 0xc403199a
+vcmp.f32 s3 :: FPSCR 0x20000000  Sd 0x45908400
+vcmp.f32 s9 :: FPSCR 0x30000000  Sd 0x7fc00000
+vcmp.f32 s30 :: FPSCR 0x20000000  Sd 0x45a7accd
+vcmpe.f32 s0 :: FPSCR 0x80000000  Sd 0xc05d3a93
+vcmpe.f32 s11 :: FPSCR 0x20000000  Sd 0x46b766e6
+vcmpe.f32 s21 :: FPSCR 0x80000000  Sd 0xc58d6400
+vcmpe.f32 s7 :: FPSCR 0x20000000  Sd 0x43d4c000
+vcmpe.f32 s29 :: FPSCR 0x20000000  Sd 0x7f800000
+vcmpe.f32 s3 :: FPSCR 0x20000000  Sd 0x40000000
+vcmpe.f32 s3 :: FPSCR 0x60000000  Sd 0x00000000
+vcmpe.f32 s9 :: FPSCR 0x20000000  Sd 0x7f800000
+vcmpe.f32 s30 :: FPSCR 0x80000000  Sd 0xff800000
+vcmpe.f32 s0 :: FPSCR 0x80000000  Sd 0xc05d3a93
+vcmpe.f32 s11 :: FPSCR 0x80000000  Sd 0xc5aabd9a
+vcmpe.f32 s21 :: FPSCR 0x80000000  Sd 0xff800000
+vcmpe.f32 s7 :: FPSCR 0x20000000  Sd 0x7f800000
+vcmpe.f32 s29 :: FPSCR 0x80000000  Sd 0xc403199a
+vcmpe.f32 s3 :: FPSCR 0x20000000  Sd 0x45908400
+vcmpe.f32 s9 :: FPSCR 0x30000000  Sd 0x7fc00000
+vcmpe.f32 s30 :: FPSCR 0x20000000  Sd 0x45a7accd
+---- VLDR ----
+vldr d9,  [r6, #+4] :: Dd 0x0000011a 0x00000dd3  *(int*) (Rn + shift) 0x0dd3
+vldr d16, [r9, #-4] :: Dd 0x00000cc2 0x00000bb1  *(int*) (Rn + shift) 0x0bb1
+vldr d30, [r12] :: Dd 0x00000dd3 0x00000cc2  *(int*) (Rn + shift) 0x0cc2
+vldr d22, [r9, #+8] :: Dd 0x0000022b 0x0000011a  *(int*) (Rn + shift) 0x011a
+vldr d29, [r2, #-8] :: Dd 0x00000bb1 0x00000aa0  *(int*) (Rn + shift) 0x0aa0
+vldr d8,  [r8, #+8] :: Dd 0x0000022b 0x0000011a  *(int*) (Rn + shift) 0x011a
+vldr d11, [r12, #-4] :: Dd 0x00000cc2 0x00000bb1  *(int*) (Rn + shift) 0x0bb1
+vldr d18, [r3] :: Dd 0x00000dd3 0x00000cc2  *(int*) (Rn + shift) 0x0cc2
+vldr d5,  [r10, #+8] :: Dd 0x0000022b 0x0000011a  *(int*) (Rn + shift) 0x011a
+vldr d17, [r10] :: Dd 0x00000dd3 0x00000cc2  *(int*) (Rn + shift) 0x0cc2
+vldr d9,  [r9, #-4] :: Dd 0x00000cc2 0x00000bb1  *(int*) (Rn + shift) 0x0bb1
+vldr d29, [r4, #-8] :: Dd 0x00000bb1 0x00000aa0  *(int*) (Rn + shift) 0x0aa0
+vldr d21, [r6, #+4] :: Dd 0x0000011a 0x00000dd3  *(int*) (Rn + shift) 0x0dd3
+vldr d8,  [r4] :: Dd 0x00000dd3 0x00000cc2  *(int*) (Rn + shift) 0x0cc2
+vldr d19, [r0, #-8] :: Dd 0x00000bb1 0x00000aa0  *(int*) (Rn + shift) 0x0aa0
+vldr d10, [r3, #+4] :: Dd 0x0000011a 0x00000dd3  *(int*) (Rn + shift) 0x0dd3
+vldr s10, [r3, #+4] :: Sd 0x00000dd3  *(int*) (Rn + shift) 0x0dd3
+vldr s9,  [r6, #+4] :: Sd 0x00000dd3  *(int*) (Rn + shift) 0x0dd3
+vldr s16, [r9, #-4] :: Sd 0x00000bb1  *(int*) (Rn + shift) 0x0bb1
+vldr s30, [r12] :: Sd 0x00000cc2  *(int*) (Rn + shift) 0x0cc2
+vldr s22, [r9, #+8] :: Sd 0x0000011a  *(int*) (Rn + shift) 0x011a
+vldr s29, [r2, #-8] :: Sd 0x00000aa0  *(int*) (Rn + shift) 0x0aa0
+vldr s8,  [r8, #+8] :: Sd 0x0000011a  *(int*) (Rn + shift) 0x011a
+vldr s11, [r12, #-4] :: Sd 0x00000bb1  *(int*) (Rn + shift) 0x0bb1
+vldr s18, [r3] :: Sd 0x00000cc2  *(int*) (Rn + shift) 0x0cc2
+vldr s5,  [r10, #+8] :: Sd 0x0000011a  *(int*) (Rn + shift) 0x011a
+vldr s17, [r10] :: Sd 0x00000cc2  *(int*) (Rn + shift) 0x0cc2
+vldr s9,  [r9, #-4] :: Sd 0x00000bb1  *(int*) (Rn + shift) 0x0bb1
+vldr s29, [r4, #-8] :: Sd 0x00000aa0  *(int*) (Rn + shift) 0x0aa0
+vldr s21, [r6, #+4] :: Sd 0x00000dd3  *(int*) (Rn + shift) 0x0dd3
+vldr s8,  [r4] :: Sd 0x00000cc2  *(int*) (Rn + shift) 0x0cc2
+vldr s19, [r0, #-8] :: Sd 0x00000aa0  *(int*) (Rn + shift) 0x0aa0
+vldr s10, [r3, #+4] :: Sd 0x00000dd3  *(int*) (Rn + shift) 0x0dd3
+---- VLDM (Increment After, writeback) ----
+vldmia rN!, qD1; vldmia rN!, qD2 :: Result 0x00000aa0 0x00000bb1 0x00000cc2 0x00000dd3
+vldmia rN!, qD1; vldmia rN!, qD2 :: Result 0x00000aa0 0x00000bb1 0x00000cc2 0x00000dd3
+vldmia rN!, qD1; vldmia rN!, qD2 :: Result 0x00000aa0 0x00000bb1 0x00000cc2 0x00000dd3
+vldmia rN!, qD1; vldmia rN!, qD2 :: Result 0x00000aa0 0x00000bb1 0x00000cc2 0x00000dd3
+vldmia rN!, qD1; vldmia rN!, qD2 :: Result 0x00000aa0 0x00000bb1 0x00000cc2 0x00000dd3
+vldmia rN!, qD1; vldmia rN!, qD2 :: Result 0x00000aa0 0x00000bb1 0x00000cc2 0x00000dd3
+vldmia rN!, qD1; vldmia rN!, qD2 :: Result 0x00000aa0 0x00000bb1 0x00000cc2 0x00000dd3
+vldmia rN!, qD1; vldmia rN!, qD2 :: Result 0x00000aa0 0x00000bb1 0x00000cc2 0x00000dd3
+vldmia rN!, qD1; vldmia rN!, qD2 :: Result 0x00000aa0 0x00000bb1 0x00000cc2 0x00000dd3
+vldmia rN!, qD1; vldmia rN!, qD2 :: Result 0x00000aa0 0x00000bb1 0x00000cc2 0x00000dd3
+vldmia rN!, qD1; vldmia rN!, qD2 :: Result 0x00000aa0 0x00000bb1 0x00000cc2 0x00000dd3
+vldmia rN!, qD1; vldmia rN!, qD2 :: Result 0x00000aa0 0x00000bb1 0x00000cc2 0x00000dd3
+vldmia rN!, qD1; vldmia rN!, qD2 :: Result 0x00000aa0 0x00000bb1 0x00000cc2 0x00000dd3
+vldmia rN!, qD1; vldmia rN!, qD2 :: Result 0x00000aa0 0x00000bb1 0x00000cc2 0x00000dd3
+vldmia rN!, qD1; vldmia rN!, qD2 :: Result 0x00000aa0 0x00000bb1 0x00000cc2 0x00000dd3
+vldmia rN!, qD1; vldmia rN!, qD2 :: Result 0x00000aa0 0x00000bb1 0x00000cc2 0x00000dd3
+---- VSTR ----
+vstr d9,  [r6, #+4] :: Dd 0xa0a0a0a0 0xa0a0a0a0  *(int*) (Rm + shift) 0xa0a0a0a0
+vstr d16, [r9, #-4] :: Dd 0xb1b1b1b1 0xb1b1b1b1  *(int*) (Rm + shift) 0xb1b1b1b1
+vstr d30, [r12] :: Dd 0xc2c2c2c2 0xc2c2c2c2  *(int*) (Rm + shift) 0xc2c2c2c2
+vstr d22, [r9, #+8] :: Dd 0xd4d4d4d4 0xd4d4d4d4  *(int*) (Rm + shift) 0xd4d4d4d4
+vstr d29, [r2, #-8] :: Dd 0x00000000 0x00000000  *(int*) (Rm + shift) 0x0000
+vstr d8,  [r8, #+8] :: Dd 0x11111111 0x11111111  *(int*) (Rm + shift) 0x11111111
+vstr d11, [r12, #-4] :: Dd 0x22222222 0x22222222  *(int*) (Rm + shift) 0x22222222
+vstr d18, [r3] :: Dd 0x33333333 0x33333333  *(int*) (Rm + shift) 0x33333333
+vstr d5,  [r10, #+8] :: Dd 0x99999999 0x99999999  *(int*) (Rm + shift) 0x99999999
+vstr d17, [r10] :: Dd 0x77777777 0x77777777  *(int*) (Rm + shift) 0x77777777
+vstr d9,  [r9, #-4] :: Dd 0xeeeeeeee 0xeeeeeeee  *(int*) (Rm + shift) 0xeeeeeeee
+vstr d29, [r4, #-8] :: Dd 0xffffffff 0xffffffff  *(int*) (Rm + shift) 0xffffffff
+vstr d10, [r3, #+4] :: Dd 0xbcbcbcbc 0xbcbcbcbc  *(int*) (Rm + shift) 0xbcbcbcbc
+vstr d21, [r6, #+4] :: Dd 0x48484848 0x48484848  *(int*) (Rm + shift) 0x48484848
+vstr d8,  [r4] :: Dd 0x1f1f1f1f 0x1f1f1f1f  *(int*) (Rm + shift) 0x1f1f1f1f
+vstr d19, [r0, #-8] :: Dd 0xf9f9f9f9 0xf9f9f9f9  *(int*) (Rm + shift) 0xf9f9f9f9
+vstr s9,  [r6,  #+4] :: Sd 0xbe280000,  *(int*) (Rm + shift) 0xbe280000
+vstr s21, [r9, #-4] :: Sd 0xbe280000,  *(int*) (Rm + shift) 0xbe280000
+vstr s4,  [r3,  #+8] :: Sd 0xbe280000,  *(int*) (Rm + shift) 0xbe280000
+vstr s19, [r4,  #-8] :: Sd 0xbe280000,  *(int*) (Rm + shift) 0xbe280000
+vstr s29, [r8] :: Sd 0xbe280000,  *(int*) (Rm + shift) 0xbe280000
+vstr s8,  [r12] :: Sd 0xbe280000,  *(int*) (Rm + shift) 0xbe280000
+vstr s16, [r0,  #+4] :: Sd 0xbe280000,  *(int*) (Rm + shift) 0xbe280000
+vstr s0,  [r8,  #-4] :: Sd 0xbe280000,  *(int*) (Rm + shift) 0xbe280000
+vstr s3,  [r9,  #+8] :: Sd 0xbe280000,  *(int*) (Rm + shift) 0xbe280000
+vstr s9,  [r10, #-8] :: Sd 0xbe280000,  *(int*) (Rm + shift) 0xbe280000
+vstr s11, [r2] :: Sd 0xbe280000,  *(int*) (Rm + shift) 0xbe280000
+vstr s30, [r0] :: Sd 0xbe280000,  *(int*) (Rm + shift) 0xbe280000
+---- VSTM (Increment After, no writeback) ----
+vstmia r6,  {d21} :: Result 0xabababab 0xabababab
+vstmia r1,  {d1} :: Result 0x13131313 0x13131313
+vstmia r9,  {d2} :: Result 0x78787878 0x78787878
+vstmia r4,  {d30} :: Result 0x00000000 0x00000000
+vstmia r12, {d23} :: Result 0xb9b9b9b9 0xb9b9b9b9
+vstmia r6,  {d16} :: Result 0xa6a6a6a6 0xa6a6a6a6
+vstmia r6,  {d8} :: Result 0x7f7f7f7f 0x7f7f7f7f
+vstmia r6,  {d27} :: Result 0xffffffff 0xffffffff
+vstmia r5,  {d11} :: Result 0x32323232 0x32323232
+vstmia r6,  {d4} :: Result 0x10101010 0x10101010
+vstmia r10, {d9} :: Result 0x4f4f4f4f 0x4f4f4f4f
+vstmia r9, {d29} :: Result 0x97979797 0x97979797
+vstmia r10, {d17} :: Result 0xaaaaaaaa 0xaaaaaaaa
+vstmia r5,  {d5} :: Result 0x2b2b2b2b 0x2b2b2b2b
+vstmia r9,  {d7} :: Result 0x7b7b7b7b 0x7b7b7b7b
+vstmia r3,  {d16} :: Result 0x11111111 0x11111111
+vstmia r6,  {s21} :: Result 0x000000ab
+vstmia r1,  {s1} :: Result 0x00000013
+vstmia r9,  {s2} :: Result 0x00000078
+vstmia r4,  {s30} :: Result 0x00000000
+vstmia r12, {s23} :: Result 0x000000b9
+vstmia r6,  {s16} :: Result 0xa613451d
+vstmia r6,  {s8} :: Result 0x0000007f
+vstmia r6,  {s27} :: Result 0xff800000
+vstmia r5,  {s11} :: Result 0x7fc00000
+vstmia r6,  {s4} :: Result 0x00010ccb
+vstmia r10, {s9} :: Result 0x0004f543
+vstmia r9, {s29} :: Result 0x0097001a
+vstmia r10, {s17} :: Result 0x000aa45f
+vstmia r5,  {s5} :: Result 0x7fc00000
+vstmia r9,  {s7} :: Result 0xff800000
+vstmia r3,  {s16} :: Result 0x7f800000
+---- VSTM (Increment After, writeback) ----
+vstmia r6!, d21; vstmia r6!, d2 :: Result 0xa0a0a0a0 0xa0a0a0a0 0xb1b1b1b1 0xb1b1b1b1
+vstmia r1!, d1; vstmia r1!, d5 :: Result 0xa0a0a0a0 0xa0a0a0a0 0xb1b1b1b1 0xb1b1b1b1
+vstmia r9!, d2; vstmia r9!, d17 :: Result 0xa0a0a0a0 0xa0a0a0a0 0xb1b1b1b1 0xb1b1b1b1
+vstmia r4!, d30; vstmia r4!, d21 :: Result 0xa0a0a0a0 0xa0a0a0a0 0xb1b1b1b1 0xb1b1b1b1
+vstmia r12!, d23; vstmia r12!, d29 :: Result 0xa0a0a0a0 0xa0a0a0a0 0xb1b1b1b1 0xb1b1b1b1
+vstmia r6!, d16; vstmia r6!, d30 :: Result 0xa0a0a0a0 0xa0a0a0a0 0xb1b1b1b1 0xb1b1b1b1
+vstmia r6!, d8; vstmia r6!, d12 :: Result 0xa0a0a0a0 0xa0a0a0a0 0xb1b1b1b1 0xb1b1b1b1
+vstmia r6!, d27; vstmia r6!, d24 :: Result 0xa0a0a0a0 0xa0a0a0a0 0xb1b1b1b1 0xb1b1b1b1
+vstmia r5!, d11; vstmia r5!, d13 :: Result 0xa0a0a0a0 0xa0a0a0a0 0xb1b1b1b1 0xb1b1b1b1
+vstmia r6!, d4; vstmia r6!, d31 :: Result 0xa0a0a0a0 0xa0a0a0a0 0xb1b1b1b1 0xb1b1b1b1
+vstmia r10!, d9; vstmia r10!, d27 :: Result 0xa0a0a0a0 0xa0a0a0a0 0xb1b1b1b1 0xb1b1b1b1
+vstmia r9!, d29; vstmia r9!, d17 :: Result 0xa0a0a0a0 0xa0a0a0a0 0xb1b1b1b1 0xb1b1b1b1
+vstmia r10!, d17; vstmia r10!, d7 :: Result 0xa0a0a0a0 0xa0a0a0a0 0xb1b1b1b1 0xb1b1b1b1
+vstmia r5!, d5; vstmia r5!, d8 :: Result 0xa0a0a0a0 0xa0a0a0a0 0xb1b1b1b1 0xb1b1b1b1
+vstmia r9!, d7; vstmia r9!, d16 :: Result 0xa0a0a0a0 0xa0a0a0a0 0xb1b1b1b1 0xb1b1b1b1
+vstmia r3!, d16; vstmia r3!, d21 :: Result 0xa0a0a0a0 0xa0a0a0a0 0xb1b1b1b1 0xb1b1b1b1
+vstmia r6!, s21; vstmia r6!, s2 :: Result 0xbff80000 0x3fa80000
+vstmia r12!, s23; vstmia r12!, s21 :: Result 0xbff80000 0x3fa80000
+vstmia r3!, s3; vstmia r3!, s3 :: Result 0x3fa80000 0x3fa80000
+vstmia r10!, s19; vstmia r10!, s5 :: Result 0xbff80000 0x3fa80000
+vstmia r2!, s3; vstmia r2!, s12 :: Result 0xbff80000 0x3fa80000
+vstmia r8!, s7; vstmia r8!, s10 :: Result 0xbff80000 0x3fa80000
+vstmia r4!, s30; vstmia r4!, s13 :: Result 0xbff80000 0x3fa80000
+vstmia r6!, s17; vstmia r6!, s17 :: Result 0x3fa80000 0x3fa80000
+vstmia r9!, s11; vstmia r9!, s21 :: Result 0xbff80000 0x3fa80000
+vstmia r9!, s8; vstmia r9!, s30 :: Result 0xbff80000 0x3fa80000
+vstmia r3!, s12; vstmia r3!, s9 :: Result 0xbff80000 0x3fa80000
+vstmia r6!, s6; vstmia r6!, s11 :: Result 0xbff80000 0x3fa80000
+vstmia r8!, s17; vstmia r8!, s12 :: Result 0xbff80000 0x3fa80000
+vstmia r9!, s12; vstmia r9!, s12 :: Result 0x3fa80000 0x3fa80000
+vstmia r4!, s11; vstmia r4!, s11 :: Result 0x3fa80000 0x3fa80000
+---- VLDM (Decrement Before) ----
+vldmdb rN!, qD1; vldmia rN!, qD2 :: Result 0x00000cc2 0x00000dd3 0x00000aa0 0x00000bb1
+vldmdb rN!, qD1; vldmia rN!, qD2 :: Result 0x00000cc2 0x00000dd3 0x00000aa0 0x00000bb1
+vldmdb rN!, qD1; vldmia rN!, qD2 :: Result 0x00000cc2 0x00000dd3 0x00000aa0 0x00000bb1
+vldmdb rN!, qD1; vldmia rN!, qD2 :: Result 0x00000cc2 0x00000dd3 0x00000aa0 0x00000bb1
+vldmdb rN!, qD1; vldmia rN!, qD2 :: Result 0x00000cc2 0x00000dd3 0x00000aa0 0x00000bb1
+vldmdb rN!, qD1; vldmia rN!, qD2 :: Result 0x00000cc2 0x00000dd3 0x00000aa0 0x00000bb1
+vldmdb rN!, qD1; vldmia rN!, qD2 :: Result 0x00000cc2 0x00000dd3 0x00000aa0 0x00000bb1
+vldmdb rN!, qD1; vldmia rN!, qD2 :: Result 0x00000cc2 0x00000dd3 0x00000aa0 0x00000bb1
+vldmdb rN!, qD1; vldmia rN!, qD2 :: Result 0x00000cc2 0x00000dd3 0x00000aa0 0x00000bb1
+vldmdb rN!, qD1; vldmia rN!, qD2 :: Result 0x00000cc2 0x00000dd3 0x00000aa0 0x00000bb1
+vldmdb rN!, qD1; vldmia rN!, qD2 :: Result 0x00000cc2 0x00000dd3 0x00000aa0 0x00000bb1
+vldmdb rN!, qD1; vldmia rN!, qD2 :: Result 0x00000cc2 0x00000dd3 0x00000aa0 0x00000bb1
+vldmdb rN!, qD1; vldmia rN!, qD2 :: Result 0x00000cc2 0x00000dd3 0x00000aa0 0x00000bb1
+vldmdb rN!, qD1; vldmia rN!, qD2 :: Result 0x00000cc2 0x00000dd3 0x00000aa0 0x00000bb1
+vldmdb rN!, qD1; vldmia rN!, qD2 :: Result 0x00000cc2 0x00000dd3 0x00000aa0 0x00000bb1
+vldmdb rN!, qD1; vldmia rN!, qD2 :: Result 0x00000cc2 0x00000dd3 0x00000aa0 0x00000bb1
+----- VMOV (immediate) -----
+vmov s0, #0xbe880000 :: Sd 0xbe880000
+vmov s1, #0x3fa80000 :: Sd 0x3fa80000
+vmov s2, #0xbf080000 :: Sd 0xbf080000
+vmov s5, #0x3eb80000 :: Sd 0x3eb80000
+vmov s7, #0xbff80000 :: Sd 0xbff80000
+vmov s10, #0xbe280000 :: Sd 0xbe280000
+vmov s12, #0x40000000 :: Sd 0x40000000
+vmov s13, #0x3e880000 :: Sd 0x3e880000
+vmov s14, #0xbee80000 :: Sd 0xbee80000
+vmov s15, #0xc0b80000 :: Sd 0xc0b80000
+----- VMOV (ARM core register and single register) -----
+s12 0x04000aad	vmov r12, s12 :: r12 0x04000aad
+s5 0x00ab45e7	vmov r2,  s5 :: r2 0x00ab45e7
+s15 0x000add12	vmov r5,  s15 :: r5 0x000add12
+s11 0x876450ff	vmov r8,  s11 :: r8 0x876450ff
+s5 0x0000ffff	vmov r9, s5 :: r9 0x0000ffff
+s9 0x0087d34f	vmov r10, s9 :: r10 0x0087d34f
+s10 0x0000ffff	vmov r9,  s10 :: r9 0x0000ffff
+s8 0x000ad4f8	vmov r6,  s8 :: r6 0x000ad4f8
+s14 0x0920b8cf	vmov r4,  s14 :: r4 0x0920b8cf
+s7 0x7fc00000	vmov r3,  s7 :: r3 0x7fc00000
+s0 0xff800000	vmov r2,  s0 :: r2 0xff800000
+s1 0x7f800000	vmov r0,  s1 :: r0 0x7f800000
+r9 0x0009465a	vmov s2,  r9 :: s2 0x0009465a
+r0 0x00d0b87a	vmov s14, r0 :: s14 0x00d0b87a
+r2 0x0452bbc8	vmov s4,  r2 :: s4 0x0452bbc8
+r8 0x00a7cb3d	vmov s7,  r8 :: s7 0x00a7cb3d
+r4 0x000dd8ec	vmov s9,  r4 :: s9 0x000dd8ec
+r12 0x008a7b6e	vmov s10, r12 :: s10 0x008a7b6e
+r9 0x0004b00a	vmov s13, r9 :: s13 0x0004b00a
+r3 0x00023455	vmov s3,  r3 :: s3 0x00023455
+r5 0x7f800000	vmov s5,  r5 :: s5 0x7f800000
+r6 0xff800000	vmov s8,  r6 :: s8 0xff800000
+r0 0x000acb45	vmov s4,  r0 :: s4 0x000acb45
+r6 0x7fc00000	vmov s0,  r6 :: s0 0x7fc00000
+----- VMOV (ARM two core registers and two single registers) -----
+			 r6 0x43252acc r9 0x000abcc4
+vmov  s0,  s1,  r6,  r9 :: s0 0x43252acc s1 0x000abcc4
+			 r9 0x43252acc r9 0x000abcc4
+vmov  s0,  s1,  r9,  r9 :: s0 0x000abcc4 s1 0x000abcc4
+			 r9 0xaa2e2acc r1 0x00000337
+vmov s30, s31,  r9,  r1 :: s30 0xaa2e2acc s31 0x00000337
+			 r10 0x7fc00000 r9 0x7fc00000
+vmov s20, s21, r10, r9 :: s20 0x7fc00000 s21 0x7fc00000
+			 r10 0x7fc00000 r9 0x7f800000
+vmov s20, s21, r10, r9 :: s20 0x7fc00000 s21 0x7f800000
+			 r10 0x7fc00000 r9 0xff800000
+vmov s20, s21, r10, r9 :: s20 0x7fc00000 s21 0xff800000
+			 r10 0x7fc00000 r9 0x00000000
+vmov s20, s21, r10, r9 :: s20 0x7fc00000 s21 0x00000000
+			 r10 0x7f800000 r9 0x7fc00000
+vmov s20, s21, r10, r9 :: s20 0x7f800000 s21 0x7fc00000
+			 r10 0x7f800000 r9 0x7f800000
+vmov s20, s21, r10, r9 :: s20 0x7f800000 s21 0x7f800000
+			 r10 0x7f800000 r9 0xff800000
+vmov s20, s21, r10, r9 :: s20 0x7f800000 s21 0xff800000
+			 r10 0x7f800000 r9 0x00000000
+vmov s20, s21, r10, r9 :: s20 0x7f800000 s21 0x00000000
+			 r10 0xff800000 r9 0x7fc00000
+vmov s20, s21, r10, r9 :: s20 0xff800000 s21 0x7fc00000
+			 r10 0xff800000 r9 0x7f800000
+vmov s20, s21, r10, r9 :: s20 0xff800000 s21 0x7f800000
+			 r10 0xff800000 r9 0xff800000
+vmov s20, s21, r10, r9 :: s20 0xff800000 s21 0xff800000
+			 r10 0xff800000 r9 0x00000000
+vmov s20, s21, r10, r9 :: s20 0xff800000 s21 0x00000000
+			 r10 0x00000000 r9 0x7fc00000
+vmov s20, s21, r10, r9 :: s20 0x00000000 s21 0x7fc00000
+			 r10 0x00000000 r9 0x7f800000
+vmov s20, s21, r10, r9 :: s20 0x00000000 s21 0x7f800000
+			 r10 0x00000000 r9 0xff800000
+vmov s20, s21, r10, r9 :: s20 0x00000000 s21 0xff800000
+			 r10 0x00000000 r9 0x00000000
+vmov s20, s21, r10, r9 :: s20 0x00000000 s21 0x00000000
+			 r10 0x7fc00001 r9 0x7fc00000
+vmov s20, s21, r10, r9 :: s20 0x7fc00001 s21 0x7fc00000
+			 r10 0x7fc00001 r9 0x00000000
+vmov s20, s21, r10, r9 :: s20 0x7fc00001 s21 0x00000000
+			 r10 0x7fc00000 r9 0x7fbfffff
+vmov s20, s21, r10, r9 :: s20 0x7fc00000 s21 0x7fbfffff
+			 r10 0x00000000 r9 0x7fbfffff
+vmov s20, s21, r10, r9 :: s20 0x00000000 s21 0x7fbfffff
+			 s12 0x04000aad s13 0x000affff
+vmov r12,  r9, s12, s13 :: r12 0x04000aad r9 0x000affff
+			 s12 0x040ee56d s13 0x000123ff
+vmov  r0,  r9, s12, s13 :: r0 0x040ee56d r9 0x000123ff
+			 s12 0x04000aad s13 0x000affff
+vmov r12, r9, s12, s13 :: r12 0x04000aad r9 0x000affff
+			 s20 0x7fc00000 s21 0x7fc00000
+vmov r10, r9, s20, s21 :: r10 0x7fc00000 r9 0x7fc00000
+			 s20 0x7fc00000 s21 0x7f800000
+vmov r10, r9, s20, s21 :: r10 0x7fc00000 r9 0x7f800000
+			 s20 0x7fc00000 s21 0xff800000
+vmov r10, r9, s20, s21 :: r10 0x7fc00000 r9 0xff800000
+			 s20 0x7fc00000 s21 0x00000000
+vmov r10, r9, s20, s21 :: r10 0x7fc00000 r9 0x00000000
+			 s20 0x7f800000 s21 0x7fc00000
+vmov r10, r9, s20, s21 :: r10 0x7f800000 r9 0x7fc00000
+			 s20 0x7f800000 s21 0x7f800000
+vmov r10, r9, s20, s21 :: r10 0x7f800000 r9 0x7f800000
+			 s20 0x7f800000 s21 0xff800000
+vmov r10, r9, s20, s21 :: r10 0x7f800000 r9 0xff800000
+			 s20 0x7f800000 s21 0x00000000
+vmov r10, r9, s20, s21 :: r10 0x7f800000 r9 0x00000000
+			 s20 0xff800000 s21 0x7fc00000
+vmov r10, r9, s20, s21 :: r10 0xff800000 r9 0x7fc00000
+			 s20 0xff800000 s21 0x7f800000
+vmov r10, r9, s20, s21 :: r10 0xff800000 r9 0x7f800000
+			 s20 0xff800000 s21 0xff800000
+vmov r10, r9, s20, s21 :: r10 0xff800000 r9 0xff800000
+			 s20 0xff800000 s21 0x00000000
+vmov r10, r9, s20, s21 :: r10 0xff800000 r9 0x00000000
+			 s20 0x00000000 s21 0x7fc00000
+vmov r10, r9, s20, s21 :: r10 0x00000000 r9 0x7fc00000
+			 s20 0x00000000 s21 0x7f800000
+vmov r10, r9, s20, s21 :: r10 0x00000000 r9 0x7f800000
+			 s20 0x00000000 s21 0xff800000
+vmov r10, r9, s20, s21 :: r10 0x00000000 r9 0xff800000
+			 s20 0x00000000 s21 0x00000000
+vmov r10, r9, s20, s21 :: r10 0x00000000 r9 0x00000000
+			 s20 0x7fc00001 s21 0x7fc00000
+vmov r10, r9, s20, s21 :: r10 0x7fc00001 r9 0x7fc00000
+			 s20 0x7fc00001 s21 0x00000000
+vmov r10, r9, s20, s21 :: r10 0x7fc00001 r9 0x00000000
+			 s20 0x7fc00000 s21 0x7fbfffff
+vmov r10, r9, s20, s21 :: r10 0x7fc00000 r9 0x7fbfffff
+			 s20 0x00000000 s21 0x7fbfffff
+vmov r10, r9, s20, s21 :: r10 0x00000000 r9 0x7fbfffff
+----- VMOV (ARM two core registers and double register) -----
+r6 0x43252acc r9 0x00045bbd	vmov d3,  r6,  r9 :: d3 0x43252acc 0x00045bbd
+r10 0x001243b4 r2 0x00237ffb	vmov d4,  r10, r2 :: d4 0x001243b4 0x00237ffb
+r1 0x00030cc4 r6 0x0314c043	vmov d21, r1,  r6 :: d21 0x00030cc4 0x0314c043
+r9 0x00008ddf r9 0x0087bbca	vmov d30, r9, r9 :: d30 0x0087bbca 0x0087bbca
+r3 0x0000aaa0 r5 0x0000bbb1	vmov d29, r3,  r5 :: d29 0x0000aaa0 0x0000bbb1
+r8 0x0aa455bb r8 0x00013434	vmov d16, r8,  r8 :: d16 0x00013434 0x00013434
+r12 0x00004003 r9 0x0452bbc1	vmov d17, r12, r9 :: d17 0x00004003 0x0452bbc1
+r9 0x0000134c r0 0x0041ffb6	vmov d9,  r9,  r0 :: d9 0x0000134c 0x0041ffb6
+r0 0x35425dcc r6 0x00876c43	vmov d7,  r0,  r6 :: d7 0x35425dcc 0x00876c43
+r3 0x00000000 r9 0x7ff80000	vmov d13, r3,  r9 :: d13 0x00000000 0x7ff80000
+r6 0x00000000 r5 0x7ff00000	vmov d19, r6,  r5 :: d19 0x00000000 0x7ff00000
+r2 0x00000000 r6 0xfff00000	vmov d0,  r2,  r6 :: d0 0x00000000 0xfff00000
+d9 0x43252acc 0x00045bbd	vmov r3,  r6,  d9 :: r3 0x43252acc r6 0x00045bbd
+d2 0x001243b4 0x00237ffb	vmov r4,  r10, d2 :: r4 0x001243b4 r10 0x00237ffb
+d6 0x00030cc4 0x0314c043	vmov r2,  r1,  d6 :: r2 0x00030cc4 r1 0x0314c043
+d11 0x00008ddf 0x0087bbca	vmov r0,  r9, d11 :: r0 0x00008ddf r9 0x0087bbca
+d5 0x0000aaa0 0x0000bbb1	vmov r9,  r3,  d5 :: r9 0x0000aaa0 r3 0x0000bbb1
+d8 0x0aa455bb 0x00013434	vmov r10, r8,  d8 :: r10 0x0aa455bb r8 0x00013434
+d11 0x00004003 0x0452bbc1	vmov r9, r12, d11 :: r9 0x00004003 r12 0x0452bbc1
+d7 0x35425dcc 0x00876c43	vmov r6,  r0,  d7 :: r6 0x35425dcc r0 0x00876c43
+d11 0x00000000 0x7ff80000	vmov r12, r3,  d11 :: r12 0x00000000 r3 0x7ff80000
+d5 0x00000000 0x7ff00000	vmov r1,  r6,  d5 :: r1 0x00000000 r6 0x7ff00000
+d7 0x00000000 0xfff00000	vmov r0,  r2,  d7 :: r0 0x00000000 r2 0xfff00000
+d0 0x00000000 0x7ff00000	vmov r2,  r9,  d0 :: r2 0x00000000 r9 0x7ff00000
+d10 0x0014534c 0x0041ffb6	vmov r6,  r9, d10 :: r6 0x0014534c r9 0x0041ffb6
+d20 0x00000000 0x7ff80000	vmov r0,  r9, d20 :: r0 0x00000000 r9 0x7ff80000
+----- VPUSH, VPOP -----
+s3 0x00aaaaaa s4 0x00bbbbbb s5 0x00cccccc s0 0x00cccccc s1 0x00aaaaaa s2 0x00bbbbbb
+s1 0x000134f4 s2 0x0870ccb3 s3 0x00aba0f1 s9 0x00aba0f1 s10 0x000134f4 s11 0x0870ccb3
+s3 0x00dddddd s4 0x00eeeeee s5 0x00ffffff s0 0x00ffffff s1 0x00dddddd s2 0x00eeeeee
+s11 0x0013454c s12 0x00000341 s13 0x00aac45f s6 0x00aac45f s7 0x0013454c s8 0x00000341
+s21 0x00000000 s22 0x7fc00000 s23 0x7f800000 s23 0x7f800000 s24 0x00000000 s25 0x7fc00000
+s12 0x00ffffff s13 0x0f542dd4 s14 0xff800000 s11 0xff800000 s12 0x00ffffff s13 0x0f542dd4
+s25 0x000045cd s26 0x00a3ccb5 s27 0x000bbcaf s0 0x000bbcaf s1 0x000045cd s2 0x00a3ccb5
+s1 0x7fc00000 s2 0x000aaca3 s3 0x00876008 s6 0x00876008 s7 0x7fc00000 s8 0x000aaca3
+s9 0x003cc66a s10 0x00002f43 s11 0x7f800000 s9 0x003cc66a s10 0x00002f43 s11 0x7f800000
+s10 0x7f800000 s11 0x00134cc5 s12 0x7fc00000 s2 0x7fc00000 s3 0x7f800000 s4 0x00134cc5
+s7 0x00cc006d s8 0x0001308c s9 0x00abbc45 s21 0x00abbc45 s22 0x00cc006d s23 0x0001308c
+s19 0xff800000 s20 0x00452146 s21 0x00388bbc s4 0x00388bbc s5 0xff800000 s6 0x00452146
+s16 0x000542aa s17 0x00addcd5 s18 0x00087acc s18 0x00087acc s19 0x000542aa s20 0x00addcd5
+s22 0x05ccb708 s23 0x0052345c s24 0x0098745c s12 0x0098745c s13 0x05ccb708 s14 0x0052345c
+s24 0x0099234f s25 0x00001aac s26 0x0003746c s28 0x0003746c s29 0x0099234f s30 0x00001aac
+s13 0x00134ccc s14 0x0006bb43 s15 0x000834aa s0 0x000834aa s1 0x00134ccc s2 0x0006bb43
+d3 0x00aaaaaa 0000aac3 d4 0x00bbbbbb 00034ccb d0 0x00aaaaaa 0000aac3 d1 0x00bbbbbb 00034ccb
+d1 0x000134f4 00341531 d2 0x0870ccb3 04576bbc d9 0x000134f4 00341531 d10 0x0870ccb3 04576bbc
+d3 0x00dddddd 013451cc d4 0x00eeeeee 0123ddc8 d0 0x00dddddd 013451cc d1 0x00eeeeee 0123ddc8
+d11 0x0013454c 0541bbc3 d12 0x00000341 0000ccb5 d6 0x0013454c 0541bbc3 d7 0x00000341 0000ccb5
+d21 0x00000000 00123c33 d22 0x00000000 7ff80000 d23 0x00000000 00123c33 d24 0x00000000 7ff80000
+d12 0x0f542dd4 00788ffc d13 0x0f542dd4 00788ffc d11 0x00ffffff 0001940c d12 0x0f542dd4 00788ffc
+d25 0x000045cd 0001309c d26 0x00a3ccb5 0004588b d0 0x000045cd 0001309c d1 0x00a3ccb5 0004588b
+d1 0x00000000 7ff80000 d2 0x000aaca3 0001120a d6 0x00000000 7ff80000 d7 0x000aaca3 0001120a
+d9 0x00002f43 00019ff9 d10 0x00000000 7ff00000 d9 0x00002f43 00019ff9 d10 0x00000000 7ff00000
+d10 0x00000000 7ff00000 d11 0x00134cc5 0078cbbd d2 0x00000000 7ff00000 d3 0x00134cc5 0078cbbd
+d7 0x00cc006d 00028354 d8 0x0001308c 001993bc d21 0x00cc006d 00028354 d22 0x0001308c 001993bc
+d19 0x00000000 fff00000 d20 0x00452146 0138476c d4 0x00000000 fff00000 d5 0x00452146 0138476c
+d16 0x000542aa 00012dd4 d17 0x00addcd5 000399cb d18 0x000542aa 00012dd4 d19 0x00addcd5 000399cb
+d22 0x05ccb708 0008009c d23 0x0052345c 0029902c d12 0x05ccb708 0008009c d13 0x0052345c 0029902c
+d24 0x0099234f 003457ff d25 0x00001aac 01002cba d28 0x0099234f 003457ff d29 0x00001aac 01002cba
+d13 0x00134ccc 00faa309 d14 0x0006bb43 000199cb d0 0x00134ccc 00faa309 d1 0x0006bb43 000199cb

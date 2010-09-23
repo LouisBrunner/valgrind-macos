@@ -2852,6 +2852,7 @@ static Int run_CF_instruction ( /*MOD*/UnwindContext* ctx,
    ctxs = &ctx->state[ctx->state_sp];
    if (hi2 == DW_CFA_advance_loc) {
       delta = (UInt)lo6;
+      delta *= ctx->code_a_f;
       ctx->loc += delta;
       if (di->ddump_frames)
          VG_(printf)("  DW_CFA_advance_loc: %d to %08lx\n", 
@@ -2909,6 +2910,7 @@ static Int run_CF_instruction ( /*MOD*/UnwindContext* ctx,
          break;
       case DW_CFA_advance_loc1:
          delta = (UInt)read_UChar(&instr[i]); i+= sizeof(UChar);
+         delta *= ctx->code_a_f;
          ctx->loc += delta;
          if (di->ddump_frames)
             VG_(printf)("  DW_CFA_advance_loc1: %d to %08lx\n", 
@@ -2916,6 +2918,7 @@ static Int run_CF_instruction ( /*MOD*/UnwindContext* ctx,
          break;
       case DW_CFA_advance_loc2:
          delta = (UInt)read_UShort(&instr[i]); i+= sizeof(UShort);
+         delta *= ctx->code_a_f;
          ctx->loc += delta;
          if (di->ddump_frames)
             VG_(printf)("  DW_CFA_advance_loc2: %d to %08lx\n", 
@@ -2923,6 +2926,7 @@ static Int run_CF_instruction ( /*MOD*/UnwindContext* ctx,
          break;
       case DW_CFA_advance_loc4:
          delta = (UInt)read_UInt(&instr[i]); i+= sizeof(UInt);
+         delta *= ctx->code_a_f;
          ctx->loc += delta;
          if (di->ddump_frames)
             VG_(printf)("  DW_CFA_advance_loc4: %d to %08lx\n", 
@@ -3065,7 +3069,7 @@ static Int run_CF_instruction ( /*MOD*/UnwindContext* ctx,
          ctxs->cfa_reg       = reg;
          /* ->cfa_off unchanged */
          if (di->ddump_frames)
-            VG_(printf)("  DW_CFA_def_cfa_reg: r%d\n", (Int)reg );
+            VG_(printf)("  DW_CFA_def_cfa_register: r%d\n", (Int)reg );
          break;
 
       case DW_CFA_def_cfa_offset:

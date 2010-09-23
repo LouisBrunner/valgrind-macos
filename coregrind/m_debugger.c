@@ -223,7 +223,10 @@ static Int ptrace_setregs(Int pid, VexGuestArchState* vex)
    uregs.ARM_ip   = vex->guest_R12; 
    uregs.ARM_sp   = vex->guest_R13; 
    uregs.ARM_lr   = vex->guest_R14; 
-   uregs.ARM_pc   = vex->guest_R15T;
+   // Remove the T bit from the bottom of R15T.  It will get shipped
+   // over in CPSR.T instead, since LibVEX_GuestARM_get_cpsr copies
+   // it from R15T[0].
+   uregs.ARM_pc   = vex->guest_R15T & 0xFFFFFFFE;
    uregs.ARM_cpsr = LibVEX_GuestARM_get_cpsr(vex);
    return VG_(ptrace)(VKI_PTRACE_SETREGS, pid, NULL, &uregs);
 

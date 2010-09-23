@@ -1944,10 +1944,10 @@ UWord evalCfiExpr ( XArray* exprs, Int ix,
             case Creg_IA_SP: return eec->uregs->xsp;
             case Creg_IA_BP: return eec->uregs->xbp;
 #           elif defined(VGA_arm)
-            case Creg_ARM_R13: return eec->uregs->r13;
-            case Creg_ARM_R12: return eec->uregs->r12;
             case Creg_ARM_R15: return eec->uregs->r15;
             case Creg_ARM_R14: return eec->uregs->r14;
+            case Creg_ARM_R13: return eec->uregs->r13;
+            case Creg_ARM_R12: return eec->uregs->r12;
 #           elif defined(VGA_ppc32) || defined(VGA_ppc64)
 #           else
 #             error "Unsupported arch"
@@ -2155,6 +2155,9 @@ static Addr compute_cfa ( D3UnwindRegs* uregs,
       case CFIC_ARM_R11REL: 
          cfa = cfsi->cfa_off + uregs->r11;
          break;
+      case CFIC_ARM_R7REL: 
+         cfa = cfsi->cfa_off + uregs->r7;
+         break;
 #     elif defined(VGA_ppc32) || defined(VGA_ppc64)
 #     else
 #       error "Unsupported arch"
@@ -2221,7 +2224,7 @@ Addr ML_(get_CFA) ( Addr ip, Addr sp, Addr fp,
    For x86 and amd64, the unwound registers are: {E,R}IP,
    {E,R}SP, {E,R}BP.
 
-   For arm, the unwound registers are: R11 R12 R13 R14 R15.
+   For arm, the unwound registers are: R7 R11 R12 R13 R14 R15.
 */
 Bool VG_(use_CF_info) ( /*MOD*/D3UnwindRegs* uregsHere,
                         Addr min_accessible,
@@ -2310,6 +2313,7 @@ Bool VG_(use_CF_info) ( /*MOD*/D3UnwindRegs* uregsHere,
    COMPUTE(uregsPrev.r13, uregsHere->r13, cfsi->r13_how, cfsi->r13_off);
    COMPUTE(uregsPrev.r12, uregsHere->r12, cfsi->r12_how, cfsi->r12_off);
    COMPUTE(uregsPrev.r11, uregsHere->r11, cfsi->r11_how, cfsi->r11_off);
+   COMPUTE(uregsPrev.r7,  uregsHere->r7,  cfsi->r7_how,  cfsi->r7_off);
 #  elif defined(VGA_ppc32) || defined(VGA_ppc64)
 #  else
 #    error "Unknown arch"

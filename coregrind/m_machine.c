@@ -92,6 +92,8 @@ void VG_(get_UnwindStartRegs) ( /*OUT*/UnwindStartRegs* regs,
       = VG_(threads)[tid].arch.vex.guest_R12;
    regs->misc.ARM.r11
       = VG_(threads)[tid].arch.vex.guest_R11;
+   regs->misc.ARM.r7
+      = VG_(threads)[tid].arch.vex.guest_R7;
 #  else
 #    error "Unknown arch"
 #  endif

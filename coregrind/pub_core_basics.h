@@ -103,6 +103,7 @@ typedef
             UInt r14;
             UInt r12;
             UInt r11;
+            UInt r7;
          } ARM;
       } misc;
    }

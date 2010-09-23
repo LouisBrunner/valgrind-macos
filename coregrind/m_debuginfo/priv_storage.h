@@ -130,15 +130,16 @@ typedef
               CFIC_R13REL -> r13 + cfa_off
               CFIC_R12REL -> r12 + cfa_off
               CFIC_R11REL -> r11 + cfa_off
+              CFIC_R7REL  -> r7  + cfa_off
               CFIR_EXPR   -> expr whose index is in cfa_off
 
-     old_r14/r13/r12/r11/ra
-         = case r14/r13/r12/r11/ra_how of
+     old_r14/r13/r12/r11/r7/ra
+         = case r14/r13/r12/r11/r7/ra_how of
               CFIR_UNKNOWN   -> we don't know, sorry
-              CFIR_SAME      -> same as it was before (r14/r13/r12/r11 only)
-              CFIR_CFAREL    -> cfa + r14/r13/r12/r11/ra_off
-              CFIR_MEMCFAREL -> *( cfa + r14/r13/r12/r11/ra_off )
-              CFIR_EXPR      -> expr whose index is in r14/r13/r12/r11/ra_off
+              CFIR_SAME      -> same as it was before (r14/r13/r12/r11/r7 only)
+              CFIR_CFAREL    -> cfa + r14/r13/r12/r11/r7/ra_off
+              CFIR_MEMCFAREL -> *( cfa + r14/r13/r12/r11/r7/ra_off )
+              CFIR_EXPR      -> expr whose index is in r14/r13/r12/r11/r7/ra_off
 */
 
 #define CFIC_IA_SPREL     ((UChar)1)
@@ -147,7 +148,8 @@ typedef
 #define CFIC_ARM_R13REL   ((UChar)4)
 #define CFIC_ARM_R12REL   ((UChar)5)
 #define CFIC_ARM_R11REL   ((UChar)6)
-#define CFIC_EXPR         ((UChar)7)  /* all targets */
+#define CFIC_ARM_R7REL    ((UChar)7)
+#define CFIC_EXPR         ((UChar)8)  /* all targets */
 
 #define CFIR_UNKNOWN      ((UChar)64)
 #define CFIR_SAME         ((UChar)65)
@@ -181,12 +183,14 @@ typedef
       UChar r13_how; /* a CFIR_ value */
       UChar r12_how; /* a CFIR_ value */
       UChar r11_how; /* a CFIR_ value */
+      UChar r7_how;  /* a CFIR_ value */
       Int   cfa_off;
       Int   ra_off;
       Int   r14_off;
       Int   r13_off;
       Int   r12_off;
       Int   r11_off;
+      Int   r7_off;
    }
    DiCfSI;
 #elif defined(VGA_ppc32) || defined(VGA_ppc64)

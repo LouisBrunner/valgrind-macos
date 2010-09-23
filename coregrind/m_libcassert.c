@@ -116,13 +116,14 @@
       }
 #elif defined(VGP_arm_linux)
 #  define GET_STARTREGS(srP)                              \
-      { UInt block[5];                                    \
+      { UInt block[6];                                    \
         __asm__ __volatile__(                             \
            "str r15, [%0, #+0];"                          \
            "str r14, [%0, #+4];"                          \
            "str r13, [%0, #+8];"                          \
            "str r12, [%0, #+12];"                         \
            "str r11, [%0, #+16];"                         \
+           "str r7,  [%0, #+20];"                         \
            : /* out */                                    \
            : /* in */ "r"(&block[0])                      \
            : /* trash */ "memory"                         \
@@ -132,6 +133,7 @@
         (srP)->misc.ARM.r14 = block[2];                   \
         (srP)->misc.ARM.r12 = block[3];                   \
         (srP)->misc.ARM.r11 = block[4];                   \
+        (srP)->misc.ARM.r7  = block[5];                   \
       }
 #else
 #  error Unknown platform

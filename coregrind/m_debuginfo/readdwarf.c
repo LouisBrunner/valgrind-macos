@@ -2059,6 +2059,7 @@ static void initUnwindContext ( /*OUT*/UnwindContext* ctx )
       /* ctx->state[j].reg[13].tag = RR_Same; */
       ctx->state[j].reg[14].tag = RR_Same;
       ctx->state[j].reg[12].tag = RR_Same;
+      ctx->state[j].reg[7].tag  = RR_Same;
       /* this can't be right though: R12 (IP) isn't callee saved. */
 #     endif
    }
@@ -2163,6 +2164,11 @@ static Bool summarise_context( /*OUT*/DiCfSI* si,
       si->cfa_how = CFIC_ARM_R11REL;
       si->cfa_off = ctxs->cfa_off;
    }
+   else
+   if (ctxs->cfa_is_regoff && ctxs->cfa_reg == 7/*??_REG*/) {
+      si->cfa_how = CFIC_ARM_R7REL;
+      si->cfa_off = ctxs->cfa_off;
+   }
 #  endif
    else {
       why = 1;
@@ -2256,6 +2262,9 @@ static Bool summarise_context( /*OUT*/DiCfSI* si,
 
    SUMMARISE_HOW(si->r11_how, si->r11_off,
                               ctxs->reg[11/*FP_REG*/] );
+
+   SUMMARISE_HOW(si->r7_how, si->r7_off,
+                             ctxs->reg[7] );
 
    if (ctxs->reg[14/*LR*/].tag == RR_Same
        && ctx->ra_reg == 14/*as we expect it always to be*/) {

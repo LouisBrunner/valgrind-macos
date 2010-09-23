@@ -378,6 +378,7 @@ typedef struct SigQueue {
         (srP)->misc.ARM.r14 = (uc)->uc_mcontext.arm_lr; \
         (srP)->misc.ARM.r12 = (uc)->uc_mcontext.arm_ip; \
         (srP)->misc.ARM.r11 = (uc)->uc_mcontext.arm_fp; \
+        (srP)->misc.ARM.r7  = (uc)->uc_mcontext.arm_r7; \
       }
 
 #elif defined(VGP_ppc32_aix5)

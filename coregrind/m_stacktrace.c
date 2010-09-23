@@ -593,11 +593,12 @@ UInt VG_(get_StackTrace_wrk) ( ThreadId tid_if_known,
    vg_assert(sizeof(Addr) == sizeof(void*));
 
    D3UnwindRegs uregs;
-   uregs.r15 = startRegs->r_pc;
+   uregs.r15 = startRegs->r_pc & 0xFFFFFFFE;
    uregs.r14 = startRegs->misc.ARM.r14;
    uregs.r13 = startRegs->r_sp;
    uregs.r12 = startRegs->misc.ARM.r12;
    uregs.r11 = startRegs->misc.ARM.r11;
+   uregs.r7  = startRegs->misc.ARM.r7;
    Addr fp_min = uregs.r13;
 
    /* Snaffle IPs from the client's stack into ips[0 .. max_n_ips-1],
@@ -612,7 +613,7 @@ UInt VG_(get_StackTrace_wrk) ( ThreadId tid_if_known,
       fp_max -= sizeof(Addr);
 
    if (debug)
-      VG_(printf)("max_n_ips=%d fp_min=0x%lx fp_max_orig=0x%lx, "
+      VG_(printf)("\nmax_n_ips=%d fp_min=0x%lx fp_max_orig=0x%lx, "
                   "fp_max=0x%lx r15=0x%lx r13=0x%lx\n",
                   max_n_ips, fp_min, fp_max_orig, fp_max,
                   uregs.r15, uregs.r13);
@@ -652,11 +653,11 @@ UInt VG_(get_StackTrace_wrk) ( ThreadId tid_if_known,
       if (VG_(use_CF_info)( &uregs, fp_min, fp_max )) {
          if (sps) sps[i] = uregs.r13;
          if (fps) fps[i] = 0;
-         ips[i++] = uregs.r15 -1;
+         ips[i++] = (uregs.r15 & 0xFFFFFFFE) - 1;
          if (debug)
             VG_(printf)("USING CFI: r15: 0x%lx, r13: 0x%lx\n",
                         uregs.r15, uregs.r13);
-         uregs.r15 = uregs.r15 - 1;
+         uregs.r15 = (uregs.r15 & 0xFFFFFFFE) - 1;
          continue;
       }
       /* No luck.  We have to give up. */

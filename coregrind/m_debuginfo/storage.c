@@ -141,6 +141,9 @@ void ML_(ppDiCfSI) ( XArray* /* of CfiExpr */ exprs, DiCfSI* si )
       case CFIC_ARM_R11REL: 
          VG_(printf)("let cfa=oldR11+%d", si->cfa_off); 
          break;
+      case CFIC_ARM_R7REL: 
+         VG_(printf)("let cfa=oldR7+%d", si->cfa_off); 
+         break;
       case CFIC_EXPR: 
          VG_(printf)("let cfa={"); 
          ML_(ppCfiExpr)(exprs, si->cfa_off);
@@ -166,6 +169,8 @@ void ML_(ppDiCfSI) ( XArray* /* of CfiExpr */ exprs, DiCfSI* si )
    SHOW_HOW(si->r12_how, si->r12_off);
    VG_(printf)(" R11=");
    SHOW_HOW(si->r11_how, si->r11_off);
+   VG_(printf)(" R7=");
+   SHOW_HOW(si->r7_how, si->r7_off);
 #  elif defined(VGA_ppc32) || defined(VGA_ppc64)
 #  else
 #    error "Unknown arch"

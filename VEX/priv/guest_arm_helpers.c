@@ -478,14 +478,39 @@ void LibVEX_GuestARM_put_flags ( UInt flags_native,
 /* VISIBLE TO LIBVEX CLIENT */
 UInt LibVEX_GuestARM_get_cpsr ( /*IN*/VexGuestARMState* vex_state )
 {
-   UInt nzcv;
-   nzcv = armg_calculate_flags_nzcv(
-              vex_state->guest_CC_OP,
-              vex_state->guest_CC_DEP1,
-              vex_state->guest_CC_DEP2,
-              vex_state->guest_CC_NDEP
-           );
-   return nzcv;
+   UInt cpsr = 0;
+   // NZCV
+   cpsr |= armg_calculate_flags_nzcv(
+               vex_state->guest_CC_OP,
+               vex_state->guest_CC_DEP1,
+               vex_state->guest_CC_DEP2,
+               vex_state->guest_CC_NDEP
+            );
+   vassert(0 == (cpsr & 0x0FFFFFFF));
+   // Q
+   if (vex_state->guest_QFLAG32 > 0)
+      cpsr |= (1 << 27);
+   // GE
+   if (vex_state->guest_GEFLAG0 > 0)
+      cpsr |= (1 << 16);
+   if (vex_state->guest_GEFLAG1 > 0)
+      cpsr |= (1 << 17);
+   if (vex_state->guest_GEFLAG2 > 0)
+      cpsr |= (1 << 18);
+   if (vex_state->guest_GEFLAG3 > 0)
+      cpsr |= (1 << 19);
+   // M
+   cpsr |= (1 << 4); // 0b10000 means user-mode
+   // J,T   J (bit 24) is zero by initialisation above
+   // T  we copy from R15T[0]
+   if (vex_state->guest_R15T & 1)
+      cpsr |= (1 << 5);
+   // ITSTATE we punt on for the time being.  Could compute it
+   // if needed though.
+   // E, endianness, 0 (littleendian) from initialisation above
+   // A,I,F disable some async exceptions.  Not sure about these.
+   // Leave as zero for the time being.
+   return cpsr;
 }
 
 /* VISIBLE TO LIBVEX CLIENT */

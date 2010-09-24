@@ -17484,6 +17484,26 @@ DisResult disInstr_THUMB_WRK (
       }
    }
 
+   /* -------------- v7 barrier insns -------------- */
+   if (INSN0(15,0) == 0xF3BF && (INSN1(15,0) & 0xFF0F) == 0x8F0F) {
+      switch (INSN1(7,4)) {
+         case 0x4: /* DSB */
+            stmt( IRStmt_MBE(Imbe_Fence) );
+            DIP("DSB\n");
+            goto decode_success;
+         case 0x5: /* DMB */
+            stmt( IRStmt_MBE(Imbe_Fence) );
+            DIP("DMB\n");
+            goto decode_success;
+         case 0x6: /* ISB */
+            stmt( IRStmt_MBE(Imbe_Fence) );
+            DIP("ISB\n");
+            goto decode_success;
+         default:
+            break;
+      }
+   }
+
    /* ----------------------------------------------------------- */
    /* -- VFP (CP 10, CP 11) instructions (in Thumb mode)       -- */
    /* ----------------------------------------------------------- */

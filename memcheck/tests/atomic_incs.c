@@ -200,7 +200,22 @@ __attribute__((noinline)) void atomic_add_32bit ( int* p, int n )
       );
    } while (success != 1);
 #elif defined(VGA_arm)
-   *p += n;
+   unsigned int block[3]
+      = { (unsigned int)p, (unsigned int)n, 0xFFFFFFFF };
+   do {
+      __asm__ __volatile__(
+         "mov   r5, %0"         "\n\t"
+         "ldr   r9, [r5, #0]"   "\n\t" // p
+         "ldr   r10, [r5, #4]"  "\n\t" // n
+         "ldrex r8, [r9]"       "\n\t"
+         "add   r8, r8, r10"    "\n\t"
+         "strex r11, r8, [r9]"  "\n\t"
+         "str   r11, [r5, #8]"  "\n\t"
+         : /*out*/
+         : /*in*/ "r"(&block[0])
+         : /*trash*/ "memory", "cc", "r5", "r8", "r9", "r10"
+      );
+   } while (block[2] != 0);
 #else
 # error "Unsupported arch"
 #endif

@@ -737,3 +737,22 @@ uxtah r0, r1, r2, ROR #0  :: rd 0x3141f140 rm 0x31415927, rn 0x27189819, carryin
 pld  reg +/- imm12  cases
 pld  reg +/- shifted reg  cases
 ------------ PLD/PLDW (done) ------------
+------------ RBIT ------------
+rbit r0, r1 :: rd 0x00000000 rm 0x00000000, carryin 0, cpsr 0x00000000     
+rbit r0, r1 :: rd 0xffffffff rm 0xffffffff, carryin 0, cpsr 0x00000000     
+rbit r0, r1 :: rd 0x00000001 rm 0x80000000, carryin 0, cpsr 0x00000000     
+rbit r0, r1 :: rd 0x80000000 rm 0x00000001, carryin 0, cpsr 0x00000000     
+rbit r0, r1 :: rd 0xe49a828c rm 0x31415927, carryin 0, cpsr 0x00000000     
+rbit r0, r1 :: rd 0x46a82828 rm 0x14141562, carryin 0, cpsr 0x00000000     
+rbit r0, r1 :: rd 0xf89c17d5 rm 0xabe8391f, carryin 0, cpsr 0x00000000     
+rbit r0, r1 :: rd 0x01551409 rm 0x9028aa80, carryin 0, cpsr 0x00000000     
+rbit r0, r1 :: rd 0xb63f8b57 rm 0xead1fc6d, carryin 0, cpsr 0x00000000     
+rbit r0, r1 :: rd 0xaa3193ac rm 0x35c98c55, carryin 0, cpsr 0x00000000     
+rbit r0, r1 :: rd 0xd78f52ca rm 0x534af1eb, carryin 0, cpsr 0x00000000     
+rbit r0, r1 :: rd 0x10d88aa2 rm 0x45511b08, carryin 0, cpsr 0x00000000     
+rbit r0, r1 :: rd 0x8efee009 rm 0x90077f71, carryin 0, cpsr 0x00000000     
+rbit r0, r1 :: rd 0xd215317b rm 0xde8ca84b, carryin 0, cpsr 0x00000000     
+rbit r0, r1 :: rd 0x5bb05ec7 rm 0xe37a0dda, carryin 0, cpsr 0x00000000     
+rbit r0, r1 :: rd 0xd2bc1da7 rm 0xe5b83d4b, carryin 0, cpsr 0x00000000     
+rbit r0, r1 :: rd 0x3728b6dd rm 0xbb6d14ec, carryin 0, cpsr 0x00000000     
+rbit r0, r1 :: rd 0x933c1916 rm 0x68983cc9, carryin 0, cpsr 0x00000000     

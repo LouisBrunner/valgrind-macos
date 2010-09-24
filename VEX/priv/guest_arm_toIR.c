@@ -17430,6 +17430,60 @@ DisResult disInstr_THUMB_WRK (
       }
    }
 
+   /* ----------------- (T1) LDREX ----------------- */
+   if (INSN0(15,4) == 0xE85 && INSN1(11,8) == BITS4(1,1,1,1)) {
+      UInt rN   = INSN0(3,0);
+      UInt rT   = INSN1(15,12);
+      UInt imm8 = INSN1(7,0);
+      if (!isBadRegT(rT) && rN != 15) {
+         IRTemp res;
+         // go uncond
+         mk_skip_over_T32_if_cond_is_false( condT );
+         // now uncond
+         res = newTemp(Ity_I32);
+         stmt( IRStmt_LLSC(Iend_LE,
+                           res,
+                           binop(Iop_Add32, getIRegT(rN), mkU32(imm8 * 4)),
+                           NULL/*this is a load*/ ));
+         putIRegT(rT, mkexpr(res), IRTemp_INVALID);
+         DIP("ldrex r%u, [r%u, #+%u]\n", rT, rN, imm8 * 4);
+         goto decode_success;
+      }
+   }
+
+   /* ----------------- (T1) STREX ----------------- */
+   if (INSN0(15,4) == 0xE84) {
+      UInt rN   = INSN0(3,0);
+      UInt rT   = INSN1(15,12);
+      UInt rD   = INSN1(11,8);
+      UInt imm8 = INSN1(7,0);
+      if (!isBadRegT(rD) && !isBadRegT(rT) && rN != 15 
+          && rD != rN && rD != rT) {
+         IRTemp resSC1, resSC32;
+
+         // go uncond
+         mk_skip_over_T32_if_cond_is_false( condT );
+         // now uncond
+
+         /* Ok, now we're unconditional.  Do the store. */
+         resSC1 = newTemp(Ity_I1);
+         stmt( IRStmt_LLSC(Iend_LE,
+                           resSC1,
+                           binop(Iop_Add32, getIRegT(rN), mkU32(imm8 * 4)),
+                           getIRegT(rT)) );
+
+         /* Set rD to 1 on failure, 0 on success.  Currently we have
+            resSC1 == 0 on failure, 1 on success. */
+         resSC32 = newTemp(Ity_I32);
+         assign(resSC32,
+                unop(Iop_1Uto32, unop(Iop_Not1, mkexpr(resSC1))));
+
+         putIRegT(rD, mkexpr(resSC32), IRTemp_INVALID);
+         DIP("strex r%u, r%u, [r%u, #+%u]\n", rD, rT, rN, imm8 * 4);
+         goto decode_success;
+      }
+   }
+
    /* ----------------------------------------------------------- */
    /* -- VFP (CP 10, CP 11) instructions (in Thumb mode)       -- */
    /* ----------------------------------------------------------- */

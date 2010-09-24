@@ -13759,6 +13759,20 @@ DisResult disInstr_ARM_WRK (
       }
    }
 
+   /* ------------------- rbit ------------------ */
+   if (INSN(27,16) == 0x6FF && INSN(11,4) == 0xF3) {
+      UInt rD = INSN(15,12);
+      UInt rM = INSN(3,0);
+      if (rD != 15 && rM != 15) {
+         IRTemp arg = newTemp(Ity_I32);
+         assign(arg, getIRegA(rM));
+         IRTemp res = gen_BITREV(arg);
+         putIRegA(rD, mkexpr(res), condT, Ijk_Boring);
+         DIP("rbit r%u, r%u\n", rD, rM);
+         goto decode_success;
+      }
+   }
+
    /* ------------------- smmul ------------------ */
    if (INSN(27,20) == BITS8(0,1,1,1,0,1,0,1)
        && INSN(15,12) == BITS4(1,1,1,1)

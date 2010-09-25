@@ -1986,6 +1986,111 @@ bic.w  r1, r2, #0x80000000 :: rd 0x00000000 rm 0x80000000, c:v-in 3, cpsr 0xf000
 bic.w  r1, r2, #0x80000000 :: rd 0x7fffffff rm 0x7fffffff, c:v-in 3, cpsr 0xf0000000 NZCV
 bic.w  r1, r2, #0xff000000 :: rd 0x00000000 rm 0x80000000, c:v-in 3, cpsr 0xf0000000 NZCV
 bic.w  r1, r2, #0x0dd00000 :: rd 0x722fffff rm 0x7fffffff, c:v-in 3, cpsr 0xf0000000 NZCV
+(T3) ORN{S}.W Rd, Rn, #constT [allegedly]
+orns.w r1, r2, #0xffffffff :: rd 0x31415927 rm 0x31415927, c:v-in 0, cpsr 0x00000000     
+orns.w r1, r2, #0xee00ee00 :: rd 0x31ff59ff rm 0x31415927, c:v-in 0, cpsr 0x00000000     
+orns.w r1, r2, #255        :: rd 0xffffff00 rm 0x00000000, c:v-in 0, cpsr 0x80000000 N   
+orns.w r1, r2, #0          :: rd 0xffffffff rm 0x00000001, c:v-in 0, cpsr 0x80000000 N   
+orns.w r1, r2, #1          :: rd 0xfffffffe rm 0x00000000, c:v-in 0, cpsr 0x80000000 N   
+orns.w r1, r2, #0          :: rd 0xffffffff rm 0xffffffff, c:v-in 0, cpsr 0x80000000 N   
+orns.w r1, r2, #-1         :: rd 0x00000000 rm 0x00000000, c:v-in 0, cpsr 0x40000000  Z  
+orns.w r1, r2, #0x80000000 :: rd 0x7fffffff rm 0x00000000, c:v-in 0, cpsr 0x20000000   C 
+orns.w r1, r2, #0          :: rd 0xffffffff rm 0x80000000, c:v-in 0, cpsr 0x80000000 N   
+orns.w r1, r2, #0x80000000 :: rd 0xffffffff rm 0x80000000, c:v-in 0, cpsr 0xa0000000 N C 
+orns.w r1, r2, #0x80000000 :: rd 0x7fffffff rm 0x7fffffff, c:v-in 0, cpsr 0x20000000   C 
+orns.w r1, r2, #0xff000000 :: rd 0x80ffffff rm 0x80000000, c:v-in 0, cpsr 0xa0000000 N C 
+orns.w r1, r2, #0x0dd00000 :: rd 0xffffffff rm 0x7fffffff, c:v-in 0, cpsr 0x80000000 N   
+orn.w  r1, r2, #0xffffffff :: rd 0x31415927 rm 0x31415927, c:v-in 0, cpsr 0xc0000000 NZ  
+orn.w  r1, r2, #0xee00ee00 :: rd 0x31ff59ff rm 0x31415927, c:v-in 0, cpsr 0xc0000000 NZ  
+orn.w  r1, r2, #255        :: rd 0xffffff00 rm 0x00000000, c:v-in 0, cpsr 0xc0000000 NZ  
+orn.w  r1, r2, #0          :: rd 0xffffffff rm 0x00000001, c:v-in 0, cpsr 0xc0000000 NZ  
+orn.w  r1, r2, #1          :: rd 0xfffffffe rm 0x00000000, c:v-in 0, cpsr 0xc0000000 NZ  
+orn.w  r1, r2, #0          :: rd 0xffffffff rm 0xffffffff, c:v-in 0, cpsr 0xc0000000 NZ  
+orn.w  r1, r2, #-1         :: rd 0x00000000 rm 0x00000000, c:v-in 0, cpsr 0xc0000000 NZ  
+orn.w  r1, r2, #0x80000000 :: rd 0x7fffffff rm 0x00000000, c:v-in 0, cpsr 0xc0000000 NZ  
+orn.w  r1, r2, #0          :: rd 0xffffffff rm 0x80000000, c:v-in 0, cpsr 0xc0000000 NZ  
+orn.w  r1, r2, #0x80000000 :: rd 0xffffffff rm 0x80000000, c:v-in 0, cpsr 0xc0000000 NZ  
+orn.w  r1, r2, #0x80000000 :: rd 0x7fffffff rm 0x7fffffff, c:v-in 0, cpsr 0xc0000000 NZ  
+orn.w  r1, r2, #0xff000000 :: rd 0x80ffffff rm 0x80000000, c:v-in 0, cpsr 0xc0000000 NZ  
+orn.w  r1, r2, #0x0dd00000 :: rd 0xffffffff rm 0x7fffffff, c:v-in 0, cpsr 0xc0000000 NZ  
+orns.w r1, r2, #0xffffffff :: rd 0x31415927 rm 0x31415927, c:v-in 1, cpsr 0x10000000    V
+orns.w r1, r2, #0xee00ee00 :: rd 0x31ff59ff rm 0x31415927, c:v-in 1, cpsr 0x10000000    V
+orns.w r1, r2, #255        :: rd 0xffffff00 rm 0x00000000, c:v-in 1, cpsr 0x90000000 N  V
+orns.w r1, r2, #0          :: rd 0xffffffff rm 0x00000001, c:v-in 1, cpsr 0x90000000 N  V
+orns.w r1, r2, #1          :: rd 0xfffffffe rm 0x00000000, c:v-in 1, cpsr 0x90000000 N  V
+orns.w r1, r2, #0          :: rd 0xffffffff rm 0xffffffff, c:v-in 1, cpsr 0x90000000 N  V
+orns.w r1, r2, #-1         :: rd 0x00000000 rm 0x00000000, c:v-in 1, cpsr 0x50000000  Z V
+orns.w r1, r2, #0x80000000 :: rd 0x7fffffff rm 0x00000000, c:v-in 1, cpsr 0x30000000   CV
+orns.w r1, r2, #0          :: rd 0xffffffff rm 0x80000000, c:v-in 1, cpsr 0x90000000 N  V
+orns.w r1, r2, #0x80000000 :: rd 0xffffffff rm 0x80000000, c:v-in 1, cpsr 0xb0000000 N CV
+orns.w r1, r2, #0x80000000 :: rd 0x7fffffff rm 0x7fffffff, c:v-in 1, cpsr 0x30000000   CV
+orns.w r1, r2, #0xff000000 :: rd 0x80ffffff rm 0x80000000, c:v-in 1, cpsr 0xb0000000 N CV
+orns.w r1, r2, #0x0dd00000 :: rd 0xffffffff rm 0x7fffffff, c:v-in 1, cpsr 0x90000000 N  V
+orn.w  r1, r2, #0xffffffff :: rd 0x31415927 rm 0x31415927, c:v-in 1, cpsr 0xd0000000 NZ V
+orn.w  r1, r2, #0xee00ee00 :: rd 0x31ff59ff rm 0x31415927, c:v-in 1, cpsr 0xd0000000 NZ V
+orn.w  r1, r2, #255        :: rd 0xffffff00 rm 0x00000000, c:v-in 1, cpsr 0xd0000000 NZ V
+orn.w  r1, r2, #0          :: rd 0xffffffff rm 0x00000001, c:v-in 1, cpsr 0xd0000000 NZ V
+orn.w  r1, r2, #1          :: rd 0xfffffffe rm 0x00000000, c:v-in 1, cpsr 0xd0000000 NZ V
+orn.w  r1, r2, #0          :: rd 0xffffffff rm 0xffffffff, c:v-in 1, cpsr 0xd0000000 NZ V
+orn.w  r1, r2, #-1         :: rd 0x00000000 rm 0x00000000, c:v-in 1, cpsr 0xd0000000 NZ V
+orn.w  r1, r2, #0x80000000 :: rd 0x7fffffff rm 0x00000000, c:v-in 1, cpsr 0xd0000000 NZ V
+orn.w  r1, r2, #0          :: rd 0xffffffff rm 0x80000000, c:v-in 1, cpsr 0xd0000000 NZ V
+orn.w  r1, r2, #0x80000000 :: rd 0xffffffff rm 0x80000000, c:v-in 1, cpsr 0xd0000000 NZ V
+orn.w  r1, r2, #0x80000000 :: rd 0x7fffffff rm 0x7fffffff, c:v-in 1, cpsr 0xd0000000 NZ V
+orn.w  r1, r2, #0xff000000 :: rd 0x80ffffff rm 0x80000000, c:v-in 1, cpsr 0xd0000000 NZ V
+orn.w  r1, r2, #0x0dd00000 :: rd 0xffffffff rm 0x7fffffff, c:v-in 1, cpsr 0xd0000000 NZ V
+orns.w r1, r2, #0xffffffff :: rd 0x31415927 rm 0x31415927, c:v-in 2, cpsr 0x20000000   C 
+orns.w r1, r2, #0xee00ee00 :: rd 0x31ff59ff rm 0x31415927, c:v-in 2, cpsr 0x20000000   C 
+orns.w r1, r2, #255        :: rd 0xffffff00 rm 0x00000000, c:v-in 2, cpsr 0xa0000000 N C 
+orns.w r1, r2, #0          :: rd 0xffffffff rm 0x00000001, c:v-in 2, cpsr 0xa0000000 N C 
+orns.w r1, r2, #1          :: rd 0xfffffffe rm 0x00000000, c:v-in 2, cpsr 0xa0000000 N C 
+orns.w r1, r2, #0          :: rd 0xffffffff rm 0xffffffff, c:v-in 2, cpsr 0xa0000000 N C 
+orns.w r1, r2, #-1         :: rd 0x00000000 rm 0x00000000, c:v-in 2, cpsr 0x60000000  ZC 
+orns.w r1, r2, #0x80000000 :: rd 0x7fffffff rm 0x00000000, c:v-in 2, cpsr 0x20000000   C 
+orns.w r1, r2, #0          :: rd 0xffffffff rm 0x80000000, c:v-in 2, cpsr 0xa0000000 N C 
+orns.w r1, r2, #0x80000000 :: rd 0xffffffff rm 0x80000000, c:v-in 2, cpsr 0xa0000000 N C 
+orns.w r1, r2, #0x80000000 :: rd 0x7fffffff rm 0x7fffffff, c:v-in 2, cpsr 0x20000000   C 
+orns.w r1, r2, #0xff000000 :: rd 0x80ffffff rm 0x80000000, c:v-in 2, cpsr 0xa0000000 N C 
+orns.w r1, r2, #0x0dd00000 :: rd 0xffffffff rm 0x7fffffff, c:v-in 2, cpsr 0x80000000 N   
+orn.w  r1, r2, #0xffffffff :: rd 0x31415927 rm 0x31415927, c:v-in 2, cpsr 0xe0000000 NZC 
+orn.w  r1, r2, #0xee00ee00 :: rd 0x31ff59ff rm 0x31415927, c:v-in 2, cpsr 0xe0000000 NZC 
+orn.w  r1, r2, #255        :: rd 0xffffff00 rm 0x00000000, c:v-in 2, cpsr 0xe0000000 NZC 
+orn.w  r1, r2, #0          :: rd 0xffffffff rm 0x00000001, c:v-in 2, cpsr 0xe0000000 NZC 
+orn.w  r1, r2, #1          :: rd 0xfffffffe rm 0x00000000, c:v-in 2, cpsr 0xe0000000 NZC 
+orn.w  r1, r2, #0          :: rd 0xffffffff rm 0xffffffff, c:v-in 2, cpsr 0xe0000000 NZC 
+orn.w  r1, r2, #-1         :: rd 0x00000000 rm 0x00000000, c:v-in 2, cpsr 0xe0000000 NZC 
+orn.w  r1, r2, #0x80000000 :: rd 0x7fffffff rm 0x00000000, c:v-in 2, cpsr 0xe0000000 NZC 
+orn.w  r1, r2, #0          :: rd 0xffffffff rm 0x80000000, c:v-in 2, cpsr 0xe0000000 NZC 
+orn.w  r1, r2, #0x80000000 :: rd 0xffffffff rm 0x80000000, c:v-in 2, cpsr 0xe0000000 NZC 
+orn.w  r1, r2, #0x80000000 :: rd 0x7fffffff rm 0x7fffffff, c:v-in 2, cpsr 0xe0000000 NZC 
+orn.w  r1, r2, #0xff000000 :: rd 0x80ffffff rm 0x80000000, c:v-in 2, cpsr 0xe0000000 NZC 
+orn.w  r1, r2, #0x0dd00000 :: rd 0xffffffff rm 0x7fffffff, c:v-in 2, cpsr 0xe0000000 NZC 
+orns.w r1, r2, #0xffffffff :: rd 0x31415927 rm 0x31415927, c:v-in 3, cpsr 0x30000000   CV
+orns.w r1, r2, #0xee00ee00 :: rd 0x31ff59ff rm 0x31415927, c:v-in 3, cpsr 0x30000000   CV
+orns.w r1, r2, #255        :: rd 0xffffff00 rm 0x00000000, c:v-in 3, cpsr 0xb0000000 N CV
+orns.w r1, r2, #0          :: rd 0xffffffff rm 0x00000001, c:v-in 3, cpsr 0xb0000000 N CV
+orns.w r1, r2, #1          :: rd 0xfffffffe rm 0x00000000, c:v-in 3, cpsr 0xb0000000 N CV
+orns.w r1, r2, #0          :: rd 0xffffffff rm 0xffffffff, c:v-in 3, cpsr 0xb0000000 N CV
+orns.w r1, r2, #-1         :: rd 0x00000000 rm 0x00000000, c:v-in 3, cpsr 0x70000000  ZCV
+orns.w r1, r2, #0x80000000 :: rd 0x7fffffff rm 0x00000000, c:v-in 3, cpsr 0x30000000   CV
+orns.w r1, r2, #0          :: rd 0xffffffff rm 0x80000000, c:v-in 3, cpsr 0xb0000000 N CV
+orns.w r1, r2, #0x80000000 :: rd 0xffffffff rm 0x80000000, c:v-in 3, cpsr 0xb0000000 N CV
+orns.w r1, r2, #0x80000000 :: rd 0x7fffffff rm 0x7fffffff, c:v-in 3, cpsr 0x30000000   CV
+orns.w r1, r2, #0xff000000 :: rd 0x80ffffff rm 0x80000000, c:v-in 3, cpsr 0xb0000000 N CV
+orns.w r1, r2, #0x0dd00000 :: rd 0xffffffff rm 0x7fffffff, c:v-in 3, cpsr 0x90000000 N  V
+orn.w  r1, r2, #0xffffffff :: rd 0x31415927 rm 0x31415927, c:v-in 3, cpsr 0xf0000000 NZCV
+orn.w  r1, r2, #0xee00ee00 :: rd 0x31ff59ff rm 0x31415927, c:v-in 3, cpsr 0xf0000000 NZCV
+orn.w  r1, r2, #255        :: rd 0xffffff00 rm 0x00000000, c:v-in 3, cpsr 0xf0000000 NZCV
+orn.w  r1, r2, #0          :: rd 0xffffffff rm 0x00000001, c:v-in 3, cpsr 0xf0000000 NZCV
+orn.w  r1, r2, #1          :: rd 0xfffffffe rm 0x00000000, c:v-in 3, cpsr 0xf0000000 NZCV
+orn.w  r1, r2, #0          :: rd 0xffffffff rm 0xffffffff, c:v-in 3, cpsr 0xf0000000 NZCV
+orn.w  r1, r2, #-1         :: rd 0x00000000 rm 0x00000000, c:v-in 3, cpsr 0xf0000000 NZCV
+orn.w  r1, r2, #0x80000000 :: rd 0x7fffffff rm 0x00000000, c:v-in 3, cpsr 0xf0000000 NZCV
+orn.w  r1, r2, #0          :: rd 0xffffffff rm 0x80000000, c:v-in 3, cpsr 0xf0000000 NZCV
+orn.w  r1, r2, #0x80000000 :: rd 0xffffffff rm 0x80000000, c:v-in 3, cpsr 0xf0000000 NZCV
+orn.w  r1, r2, #0x80000000 :: rd 0x7fffffff rm 0x7fffffff, c:v-in 3, cpsr 0xf0000000 NZCV
+orn.w  r1, r2, #0xff000000 :: rd 0x80ffffff rm 0x80000000, c:v-in 3, cpsr 0xf0000000 NZCV
+orn.w  r1, r2, #0x0dd00000 :: rd 0xffffffff rm 0x7fffffff, c:v-in 3, cpsr 0xf0000000 NZCV
 ADD{S}.W Rd, Rn, Rm, {shift}
 adds.w r1, r2, r3, lsl #0  :: rd 0x5859704f rm 0x31415927, rn 0x27181728, c:v-in 0, cpsr 0x00000000     
 adds.w r1, r2, r3, lsl #1  :: rd 0x7f718777 rm 0x31415927, rn 0x27181728, c:v-in 0, cpsr 0x00000000     
@@ -13227,6 +13332,1255 @@ bic.w  r1, r2, r3, asr #0  :: rd 0x00000000 rm 0x7fffffff, rn 0x7fffffff, c:v-in
 bic.w  r1, r2, r3, asr #1  :: rd 0x40000000 rm 0x7fffffff, rn 0x7fffffff, c:v-in 3, cpsr 0xf0000000 NZCV
 bic.w  r1, r2, r3, asr #15 :: rd 0x7fff0000 rm 0x7fffffff, rn 0x7fffffff, c:v-in 3, cpsr 0xf0000000 NZCV
 bic.w  r1, r2, r3, asr #31 :: rd 0x7fffffff rm 0x7fffffff, rn 0x7fffffff, c:v-in 3, cpsr 0xf0000000 NZCV
+ORN{S}.W Rd, Rn, Rm, {shift}
+orns.w r1, r2, r3, lsl #0  :: rd 0xf9e7f9f7 rm 0x31415927, rn 0x27181728, c:v-in 0, cpsr 0x80000000 N   
+orns.w r1, r2, r3, lsl #1  :: rd 0xb1cfd9af rm 0x31415927, rn 0x27181728, c:v-in 0, cpsr 0x80000000 N   
+orns.w r1, r2, r3, lsl #15 :: rd 0xf56bffff rm 0x31415927, rn 0x27181728, c:v-in 0, cpsr 0x80000000 N   
+orns.w r1, r2, r3, lsl #31 :: rd 0xffffffff rm 0x31415927, rn 0x27181728, c:v-in 0, cpsr 0x80000000 N   
+orns.w r1, r2, r3, lsr #0  :: rd 0xf9e7f9f7 rm 0x31415927, rn 0x27181728, c:v-in 0, cpsr 0x80000000 N   
+orns.w r1, r2, r3, lsr #1  :: rd 0xfd73fd6f rm 0x31415927, rn 0x27181728, c:v-in 0, cpsr 0x80000000 N   
+orns.w r1, r2, r3, lsr #15 :: rd 0xfffff9ef rm 0x31415927, rn 0x27181728, c:v-in 0, cpsr 0x80000000 N   
+orns.w r1, r2, r3, lsr #31 :: rd 0xffffffff rm 0x31415927, rn 0x27181728, c:v-in 0, cpsr 0x80000000 N   
+orns.w r1, r2, r3, asr #0  :: rd 0xf9e7f9f7 rm 0x31415927, rn 0x27181728, c:v-in 0, cpsr 0x80000000 N   
+orns.w r1, r2, r3, asr #1  :: rd 0xfd73fd6f rm 0x31415927, rn 0x27181728, c:v-in 0, cpsr 0x80000000 N   
+orns.w r1, r2, r3, asr #15 :: rd 0xfffff9ef rm 0x31415927, rn 0x27181728, c:v-in 0, cpsr 0x80000000 N   
+orns.w r1, r2, r3, asr #31 :: rd 0xffffffff rm 0x31415927, rn 0x27181728, c:v-in 0, cpsr 0x80000000 N   
+orn.w  r1, r2, r3, lsl #0  :: rd 0xf9e7f9f7 rm 0x31415927, rn 0x27181728, c:v-in 0, cpsr 0xc0000000 NZ  
+orn.w  r1, r2, r3, lsl #1  :: rd 0xb1cfd9af rm 0x31415927, rn 0x27181728, c:v-in 0, cpsr 0xc0000000 NZ  
+orn.w  r1, r2, r3, lsl #15 :: rd 0xf56bffff rm 0x31415927, rn 0x27181728, c:v-in 0, cpsr 0xc0000000 NZ  
+orn.w  r1, r2, r3, lsl #31 :: rd 0xffffffff rm 0x31415927, rn 0x27181728, c:v-in 0, cpsr 0xc0000000 NZ  
+orn.w  r1, r2, r3, lsr #0  :: rd 0xf9e7f9f7 rm 0x31415927, rn 0x27181728, c:v-in 0, cpsr 0xc0000000 NZ  
+orn.w  r1, r2, r3, lsr #1  :: rd 0xfd73fd6f rm 0x31415927, rn 0x27181728, c:v-in 0, cpsr 0xc0000000 NZ  
+orn.w  r1, r2, r3, lsr #15 :: rd 0xfffff9ef rm 0x31415927, rn 0x27181728, c:v-in 0, cpsr 0xc0000000 NZ  
+orn.w  r1, r2, r3, lsr #31 :: rd 0xffffffff rm 0x31415927, rn 0x27181728, c:v-in 0, cpsr 0xc0000000 NZ  
+orn.w  r1, r2, r3, asr #0  :: rd 0xf9e7f9f7 rm 0x31415927, rn 0x27181728, c:v-in 0, cpsr 0xc0000000 NZ  
+orn.w  r1, r2, r3, asr #1  :: rd 0xfd73fd6f rm 0x31415927, rn 0x27181728, c:v-in 0, cpsr 0xc0000000 NZ  
+orn.w  r1, r2, r3, asr #15 :: rd 0xfffff9ef rm 0x31415927, rn 0x27181728, c:v-in 0, cpsr 0xc0000000 NZ  
+orn.w  r1, r2, r3, asr #31 :: rd 0xffffffff rm 0x31415927, rn 0x27181728, c:v-in 0, cpsr 0xc0000000 NZ  
+orns.w r1, r2, r3, lsl #0  :: rd 0x79e7f9f7 rm 0x31415927, rn 0x97181728, c:v-in 0, cpsr 0x00000000     
+orns.w r1, r2, r3, lsl #1  :: rd 0xf1cfd9af rm 0x31415927, rn 0x97181728, c:v-in 0, cpsr 0xa0000000 N C 
+orns.w r1, r2, r3, lsl #15 :: rd 0xf56bffff rm 0x31415927, rn 0x97181728, c:v-in 0, cpsr 0x80000000 N   
+orns.w r1, r2, r3, lsl #31 :: rd 0xffffffff rm 0x31415927, rn 0x97181728, c:v-in 0, cpsr 0x80000000 N   
+orns.w r1, r2, r3, lsr #0  :: rd 0x79e7f9f7 rm 0x31415927, rn 0x97181728, c:v-in 0, cpsr 0x00000000     
+orns.w r1, r2, r3, lsr #1  :: rd 0xb573fd6f rm 0x31415927, rn 0x97181728, c:v-in 0, cpsr 0x80000000 N   
+orns.w r1, r2, r3, lsr #15 :: rd 0xffffd9ef rm 0x31415927, rn 0x97181728, c:v-in 0, cpsr 0x80000000 N   
+orns.w r1, r2, r3, lsr #31 :: rd 0xffffffff rm 0x31415927, rn 0x97181728, c:v-in 0, cpsr 0x80000000 N   
+orns.w r1, r2, r3, asr #0  :: rd 0x79e7f9f7 rm 0x31415927, rn 0x97181728, c:v-in 0, cpsr 0x00000000     
+orns.w r1, r2, r3, asr #1  :: rd 0x3573fd6f rm 0x31415927, rn 0x97181728, c:v-in 0, cpsr 0x00000000     
+orns.w r1, r2, r3, asr #15 :: rd 0x3141d9ef rm 0x31415927, rn 0x97181728, c:v-in 0, cpsr 0x00000000     
+orns.w r1, r2, r3, asr #31 :: rd 0x31415927 rm 0x31415927, rn 0x97181728, c:v-in 0, cpsr 0x00000000     
+orn.w  r1, r2, r3, lsl #0  :: rd 0x79e7f9f7 rm 0x31415927, rn 0x97181728, c:v-in 0, cpsr 0xc0000000 NZ  
+orn.w  r1, r2, r3, lsl #1  :: rd 0xf1cfd9af rm 0x31415927, rn 0x97181728, c:v-in 0, cpsr 0xc0000000 NZ  
+orn.w  r1, r2, r3, lsl #15 :: rd 0xf56bffff rm 0x31415927, rn 0x97181728, c:v-in 0, cpsr 0xc0000000 NZ  
+orn.w  r1, r2, r3, lsl #31 :: rd 0xffffffff rm 0x31415927, rn 0x97181728, c:v-in 0, cpsr 0xc0000000 NZ  
+orn.w  r1, r2, r3, lsr #0  :: rd 0x79e7f9f7 rm 0x31415927, rn 0x97181728, c:v-in 0, cpsr 0xc0000000 NZ  
+orn.w  r1, r2, r3, lsr #1  :: rd 0xb573fd6f rm 0x31415927, rn 0x97181728, c:v-in 0, cpsr 0xc0000000 NZ  
+orn.w  r1, r2, r3, lsr #15 :: rd 0xffffd9ef rm 0x31415927, rn 0x97181728, c:v-in 0, cpsr 0xc0000000 NZ  
+orn.w  r1, r2, r3, lsr #31 :: rd 0xffffffff rm 0x31415927, rn 0x97181728, c:v-in 0, cpsr 0xc0000000 NZ  
+orn.w  r1, r2, r3, asr #0  :: rd 0x79e7f9f7 rm 0x31415927, rn 0x97181728, c:v-in 0, cpsr 0xc0000000 NZ  
+orn.w  r1, r2, r3, asr #1  :: rd 0x3573fd6f rm 0x31415927, rn 0x97181728, c:v-in 0, cpsr 0xc0000000 NZ  
+orn.w  r1, r2, r3, asr #15 :: rd 0x3141d9ef rm 0x31415927, rn 0x97181728, c:v-in 0, cpsr 0xc0000000 NZ  
+orn.w  r1, r2, r3, asr #31 :: rd 0x31415927 rm 0x31415927, rn 0x97181728, c:v-in 0, cpsr 0xc0000000 NZ  
+orns.w r1, r2, r3, lsl #0  :: rd 0xffffffff rm 0x00000000, rn 0x00000000, c:v-in 0, cpsr 0x80000000 N   
+orns.w r1, r2, r3, lsl #1  :: rd 0xffffffff rm 0x00000000, rn 0x00000000, c:v-in 0, cpsr 0x80000000 N   
+orns.w r1, r2, r3, lsl #15 :: rd 0xffffffff rm 0x00000000, rn 0x00000000, c:v-in 0, cpsr 0x80000000 N   
+orns.w r1, r2, r3, lsl #31 :: rd 0xffffffff rm 0x00000000, rn 0x00000000, c:v-in 0, cpsr 0x80000000 N   
+orns.w r1, r2, r3, lsr #0  :: rd 0xffffffff rm 0x00000000, rn 0x00000000, c:v-in 0, cpsr 0x80000000 N   
+orns.w r1, r2, r3, lsr #1  :: rd 0xffffffff rm 0x00000000, rn 0x00000000, c:v-in 0, cpsr 0x80000000 N   
+orns.w r1, r2, r3, lsr #15 :: rd 0xffffffff rm 0x00000000, rn 0x00000000, c:v-in 0, cpsr 0x80000000 N   
+orns.w r1, r2, r3, lsr #31 :: rd 0xffffffff rm 0x00000000, rn 0x00000000, c:v-in 0, cpsr 0x80000000 N   
+orns.w r1, r2, r3, asr #0  :: rd 0xffffffff rm 0x00000000, rn 0x00000000, c:v-in 0, cpsr 0x80000000 N   
+orns.w r1, r2, r3, asr #1  :: rd 0xffffffff rm 0x00000000, rn 0x00000000, c:v-in 0, cpsr 0x80000000 N   
+orns.w r1, r2, r3, asr #15 :: rd 0xffffffff rm 0x00000000, rn 0x00000000, c:v-in 0, cpsr 0x80000000 N   
+orns.w r1, r2, r3, asr #31 :: rd 0xffffffff rm 0x00000000, rn 0x00000000, c:v-in 0, cpsr 0x80000000 N   
+orn.w  r1, r2, r3, lsl #0  :: rd 0xffffffff rm 0x00000000, rn 0x00000000, c:v-in 0, cpsr 0xc0000000 NZ  
+orn.w  r1, r2, r3, lsl #1  :: rd 0xffffffff rm 0x00000000, rn 0x00000000, c:v-in 0, cpsr 0xc0000000 NZ  
+orn.w  r1, r2, r3, lsl #15 :: rd 0xffffffff rm 0x00000000, rn 0x00000000, c:v-in 0, cpsr 0xc0000000 NZ  
+orn.w  r1, r2, r3, lsl #31 :: rd 0xffffffff rm 0x00000000, rn 0x00000000, c:v-in 0, cpsr 0xc0000000 NZ  
+orn.w  r1, r2, r3, lsr #0  :: rd 0xffffffff rm 0x00000000, rn 0x00000000, c:v-in 0, cpsr 0xc0000000 NZ  
+orn.w  r1, r2, r3, lsr #1  :: rd 0xffffffff rm 0x00000000, rn 0x00000000, c:v-in 0, cpsr 0xc0000000 NZ  
+orn.w  r1, r2, r3, lsr #15 :: rd 0xffffffff rm 0x00000000, rn 0x00000000, c:v-in 0, cpsr 0xc0000000 NZ  
+orn.w  r1, r2, r3, lsr #31 :: rd 0xffffffff rm 0x00000000, rn 0x00000000, c:v-in 0, cpsr 0xc0000000 NZ  
+orn.w  r1, r2, r3, asr #0  :: rd 0xffffffff rm 0x00000000, rn 0x00000000, c:v-in 0, cpsr 0xc0000000 NZ  
+orn.w  r1, r2, r3, asr #1  :: rd 0xffffffff rm 0x00000000, rn 0x00000000, c:v-in 0, cpsr 0xc0000000 NZ  
+orn.w  r1, r2, r3, asr #15 :: rd 0xffffffff rm 0x00000000, rn 0x00000000, c:v-in 0, cpsr 0xc0000000 NZ  
+orn.w  r1, r2, r3, asr #31 :: rd 0xffffffff rm 0x00000000, rn 0x00000000, c:v-in 0, cpsr 0xc0000000 NZ  
+orns.w r1, r2, r3, lsl #0  :: rd 0xffffffff rm 0x00000001, rn 0x00000000, c:v-in 0, cpsr 0x80000000 N   
+orns.w r1, r2, r3, lsl #1  :: rd 0xffffffff rm 0x00000001, rn 0x00000000, c:v-in 0, cpsr 0x80000000 N   
+orns.w r1, r2, r3, lsl #15 :: rd 0xffffffff rm 0x00000001, rn 0x00000000, c:v-in 0, cpsr 0x80000000 N   
+orns.w r1, r2, r3, lsl #31 :: rd 0xffffffff rm 0x00000001, rn 0x00000000, c:v-in 0, cpsr 0x80000000 N   
+orns.w r1, r2, r3, lsr #0  :: rd 0xffffffff rm 0x00000001, rn 0x00000000, c:v-in 0, cpsr 0x80000000 N   
+orns.w r1, r2, r3, lsr #1  :: rd 0xffffffff rm 0x00000001, rn 0x00000000, c:v-in 0, cpsr 0x80000000 N   
+orns.w r1, r2, r3, lsr #15 :: rd 0xffffffff rm 0x00000001, rn 0x00000000, c:v-in 0, cpsr 0x80000000 N   
+orns.w r1, r2, r3, lsr #31 :: rd 0xffffffff rm 0x00000001, rn 0x00000000, c:v-in 0, cpsr 0x80000000 N   
+orns.w r1, r2, r3, asr #0  :: rd 0xffffffff rm 0x00000001, rn 0x00000000, c:v-in 0, cpsr 0x80000000 N   
+orns.w r1, r2, r3, asr #1  :: rd 0xffffffff rm 0x00000001, rn 0x00000000, c:v-in 0, cpsr 0x80000000 N   
+orns.w r1, r2, r3, asr #15 :: rd 0xffffffff rm 0x00000001, rn 0x00000000, c:v-in 0, cpsr 0x80000000 N   
+orns.w r1, r2, r3, asr #31 :: rd 0xffffffff rm 0x00000001, rn 0x00000000, c:v-in 0, cpsr 0x80000000 N   
+orn.w  r1, r2, r3, lsl #0  :: rd 0xffffffff rm 0x00000001, rn 0x00000000, c:v-in 0, cpsr 0xc0000000 NZ  
+orn.w  r1, r2, r3, lsl #1  :: rd 0xffffffff rm 0x00000001, rn 0x00000000, c:v-in 0, cpsr 0xc0000000 NZ  
+orn.w  r1, r2, r3, lsl #15 :: rd 0xffffffff rm 0x00000001, rn 0x00000000, c:v-in 0, cpsr 0xc0000000 NZ  
+orn.w  r1, r2, r3, lsl #31 :: rd 0xffffffff rm 0x00000001, rn 0x00000000, c:v-in 0, cpsr 0xc0000000 NZ  
+orn.w  r1, r2, r3, lsr #0  :: rd 0xffffffff rm 0x00000001, rn 0x00000000, c:v-in 0, cpsr 0xc0000000 NZ  
+orn.w  r1, r2, r3, lsr #1  :: rd 0xffffffff rm 0x00000001, rn 0x00000000, c:v-in 0, cpsr 0xc0000000 NZ  
+orn.w  r1, r2, r3, lsr #15 :: rd 0xffffffff rm 0x00000001, rn 0x00000000, c:v-in 0, cpsr 0xc0000000 NZ  
+orn.w  r1, r2, r3, lsr #31 :: rd 0xffffffff rm 0x00000001, rn 0x00000000, c:v-in 0, cpsr 0xc0000000 NZ  
+orn.w  r1, r2, r3, asr #0  :: rd 0xffffffff rm 0x00000001, rn 0x00000000, c:v-in 0, cpsr 0xc0000000 NZ  
+orn.w  r1, r2, r3, asr #1  :: rd 0xffffffff rm 0x00000001, rn 0x00000000, c:v-in 0, cpsr 0xc0000000 NZ  
+orn.w  r1, r2, r3, asr #15 :: rd 0xffffffff rm 0x00000001, rn 0x00000000, c:v-in 0, cpsr 0xc0000000 NZ  
+orn.w  r1, r2, r3, asr #31 :: rd 0xffffffff rm 0x00000001, rn 0x00000000, c:v-in 0, cpsr 0xc0000000 NZ  
+orns.w r1, r2, r3, lsl #0  :: rd 0xfffffffe rm 0x00000000, rn 0x00000001, c:v-in 0, cpsr 0x80000000 N   
+orns.w r1, r2, r3, lsl #1  :: rd 0xfffffffd rm 0x00000000, rn 0x00000001, c:v-in 0, cpsr 0x80000000 N   
+orns.w r1, r2, r3, lsl #15 :: rd 0xffff7fff rm 0x00000000, rn 0x00000001, c:v-in 0, cpsr 0x80000000 N   
+orns.w r1, r2, r3, lsl #31 :: rd 0x7fffffff rm 0x00000000, rn 0x00000001, c:v-in 0, cpsr 0x00000000     
+orns.w r1, r2, r3, lsr #0  :: rd 0xfffffffe rm 0x00000000, rn 0x00000001, c:v-in 0, cpsr 0x80000000 N   
+orns.w r1, r2, r3, lsr #1  :: rd 0xffffffff rm 0x00000000, rn 0x00000001, c:v-in 0, cpsr 0xa0000000 N C 
+orns.w r1, r2, r3, lsr #15 :: rd 0xffffffff rm 0x00000000, rn 0x00000001, c:v-in 0, cpsr 0x80000000 N   
+orns.w r1, r2, r3, lsr #31 :: rd 0xffffffff rm 0x00000000, rn 0x00000001, c:v-in 0, cpsr 0x80000000 N   
+orns.w r1, r2, r3, asr #0  :: rd 0xfffffffe rm 0x00000000, rn 0x00000001, c:v-in 0, cpsr 0x80000000 N   
+orns.w r1, r2, r3, asr #1  :: rd 0xffffffff rm 0x00000000, rn 0x00000001, c:v-in 0, cpsr 0xa0000000 N C 
+orns.w r1, r2, r3, asr #15 :: rd 0xffffffff rm 0x00000000, rn 0x00000001, c:v-in 0, cpsr 0x80000000 N   
+orns.w r1, r2, r3, asr #31 :: rd 0xffffffff rm 0x00000000, rn 0x00000001, c:v-in 0, cpsr 0x80000000 N   
+orn.w  r1, r2, r3, lsl #0  :: rd 0xfffffffe rm 0x00000000, rn 0x00000001, c:v-in 0, cpsr 0xc0000000 NZ  
+orn.w  r1, r2, r3, lsl #1  :: rd 0xfffffffd rm 0x00000000, rn 0x00000001, c:v-in 0, cpsr 0xc0000000 NZ  
+orn.w  r1, r2, r3, lsl #15 :: rd 0xffff7fff rm 0x00000000, rn 0x00000001, c:v-in 0, cpsr 0xc0000000 NZ  
+orn.w  r1, r2, r3, lsl #31 :: rd 0x7fffffff rm 0x00000000, rn 0x00000001, c:v-in 0, cpsr 0xc0000000 NZ  
+orn.w  r1, r2, r3, lsr #0  :: rd 0xfffffffe rm 0x00000000, rn 0x00000001, c:v-in 0, cpsr 0xc0000000 NZ  
+orn.w  r1, r2, r3, lsr #1  :: rd 0xffffffff rm 0x00000000, rn 0x00000001, c:v-in 0, cpsr 0xc0000000 NZ  
+orn.w  r1, r2, r3, lsr #15 :: rd 0xffffffff rm 0x00000000, rn 0x00000001, c:v-in 0, cpsr 0xc0000000 NZ  
+orn.w  r1, r2, r3, lsr #31 :: rd 0xffffffff rm 0x00000000, rn 0x00000001, c:v-in 0, cpsr 0xc0000000 NZ  
+orn.w  r1, r2, r3, asr #0  :: rd 0xfffffffe rm 0x00000000, rn 0x00000001, c:v-in 0, cpsr 0xc0000000 NZ  
+orn.w  r1, r2, r3, asr #1  :: rd 0xffffffff rm 0x00000000, rn 0x00000001, c:v-in 0, cpsr 0xc0000000 NZ  
+orn.w  r1, r2, r3, asr #15 :: rd 0xffffffff rm 0x00000000, rn 0x00000001, c:v-in 0, cpsr 0xc0000000 NZ  
+orn.w  r1, r2, r3, asr #31 :: rd 0xffffffff rm 0x00000000, rn 0x00000001, c:v-in 0, cpsr 0xc0000000 NZ  
+orns.w r1, r2, r3, lsl #0  :: rd 0xffffffff rm 0xffffffff, rn 0x00000000, c:v-in 0, cpsr 0x80000000 N   
+orns.w r1, r2, r3, lsl #1  :: rd 0xffffffff rm 0xffffffff, rn 0x00000000, c:v-in 0, cpsr 0x80000000 N   
+orns.w r1, r2, r3, lsl #15 :: rd 0xffffffff rm 0xffffffff, rn 0x00000000, c:v-in 0, cpsr 0x80000000 N   
+orns.w r1, r2, r3, lsl #31 :: rd 0xffffffff rm 0xffffffff, rn 0x00000000, c:v-in 0, cpsr 0x80000000 N   
+orns.w r1, r2, r3, lsr #0  :: rd 0xffffffff rm 0xffffffff, rn 0x00000000, c:v-in 0, cpsr 0x80000000 N   
+orns.w r1, r2, r3, lsr #1  :: rd 0xffffffff rm 0xffffffff, rn 0x00000000, c:v-in 0, cpsr 0x80000000 N   
+orns.w r1, r2, r3, lsr #15 :: rd 0xffffffff rm 0xffffffff, rn 0x00000000, c:v-in 0, cpsr 0x80000000 N   
+orns.w r1, r2, r3, lsr #31 :: rd 0xffffffff rm 0xffffffff, rn 0x00000000, c:v-in 0, cpsr 0x80000000 N   
+orns.w r1, r2, r3, asr #0  :: rd 0xffffffff rm 0xffffffff, rn 0x00000000, c:v-in 0, cpsr 0x80000000 N   
+orns.w r1, r2, r3, asr #1  :: rd 0xffffffff rm 0xffffffff, rn 0x00000000, c:v-in 0, cpsr 0x80000000 N   
+orns.w r1, r2, r3, asr #15 :: rd 0xffffffff rm 0xffffffff, rn 0x00000000, c:v-in 0, cpsr 0x80000000 N   
+orns.w r1, r2, r3, asr #31 :: rd 0xffffffff rm 0xffffffff, rn 0x00000000, c:v-in 0, cpsr 0x80000000 N   
+orn.w  r1, r2, r3, lsl #0  :: rd 0xffffffff rm 0xffffffff, rn 0x00000000, c:v-in 0, cpsr 0xc0000000 NZ  
+orn.w  r1, r2, r3, lsl #1  :: rd 0xffffffff rm 0xffffffff, rn 0x00000000, c:v-in 0, cpsr 0xc0000000 NZ  
+orn.w  r1, r2, r3, lsl #15 :: rd 0xffffffff rm 0xffffffff, rn 0x00000000, c:v-in 0, cpsr 0xc0000000 NZ  
+orn.w  r1, r2, r3, lsl #31 :: rd 0xffffffff rm 0xffffffff, rn 0x00000000, c:v-in 0, cpsr 0xc0000000 NZ  
+orn.w  r1, r2, r3, lsr #0  :: rd 0xffffffff rm 0xffffffff, rn 0x00000000, c:v-in 0, cpsr 0xc0000000 NZ  
+orn.w  r1, r2, r3, lsr #1  :: rd 0xffffffff rm 0xffffffff, rn 0x00000000, c:v-in 0, cpsr 0xc0000000 NZ  
+orn.w  r1, r2, r3, lsr #15 :: rd 0xffffffff rm 0xffffffff, rn 0x00000000, c:v-in 0, cpsr 0xc0000000 NZ  
+orn.w  r1, r2, r3, lsr #31 :: rd 0xffffffff rm 0xffffffff, rn 0x00000000, c:v-in 0, cpsr 0xc0000000 NZ  
+orn.w  r1, r2, r3, asr #0  :: rd 0xffffffff rm 0xffffffff, rn 0x00000000, c:v-in 0, cpsr 0xc0000000 NZ  
+orn.w  r1, r2, r3, asr #1  :: rd 0xffffffff rm 0xffffffff, rn 0x00000000, c:v-in 0, cpsr 0xc0000000 NZ  
+orn.w  r1, r2, r3, asr #15 :: rd 0xffffffff rm 0xffffffff, rn 0x00000000, c:v-in 0, cpsr 0xc0000000 NZ  
+orn.w  r1, r2, r3, asr #31 :: rd 0xffffffff rm 0xffffffff, rn 0x00000000, c:v-in 0, cpsr 0xc0000000 NZ  
+orns.w r1, r2, r3, lsl #0  :: rd 0x00000000 rm 0x00000000, rn 0xffffffff, c:v-in 0, cpsr 0x40000000  Z  
+orns.w r1, r2, r3, lsl #1  :: rd 0x00000001 rm 0x00000000, rn 0xffffffff, c:v-in 0, cpsr 0x20000000   C 
+orns.w r1, r2, r3, lsl #15 :: rd 0x00007fff rm 0x00000000, rn 0xffffffff, c:v-in 0, cpsr 0x20000000   C 
+orns.w r1, r2, r3, lsl #31 :: rd 0x7fffffff rm 0x00000000, rn 0xffffffff, c:v-in 0, cpsr 0x20000000   C 
+orns.w r1, r2, r3, lsr #0  :: rd 0x00000000 rm 0x00000000, rn 0xffffffff, c:v-in 0, cpsr 0x40000000  Z  
+orns.w r1, r2, r3, lsr #1  :: rd 0x80000000 rm 0x00000000, rn 0xffffffff, c:v-in 0, cpsr 0xa0000000 N C 
+orns.w r1, r2, r3, lsr #15 :: rd 0xfffe0000 rm 0x00000000, rn 0xffffffff, c:v-in 0, cpsr 0xa0000000 N C 
+orns.w r1, r2, r3, lsr #31 :: rd 0xfffffffe rm 0x00000000, rn 0xffffffff, c:v-in 0, cpsr 0xa0000000 N C 
+orns.w r1, r2, r3, asr #0  :: rd 0x00000000 rm 0x00000000, rn 0xffffffff, c:v-in 0, cpsr 0x40000000  Z  
+orns.w r1, r2, r3, asr #1  :: rd 0x00000000 rm 0x00000000, rn 0xffffffff, c:v-in 0, cpsr 0x60000000  ZC 
+orns.w r1, r2, r3, asr #15 :: rd 0x00000000 rm 0x00000000, rn 0xffffffff, c:v-in 0, cpsr 0x60000000  ZC 
+orns.w r1, r2, r3, asr #31 :: rd 0x00000000 rm 0x00000000, rn 0xffffffff, c:v-in 0, cpsr 0x60000000  ZC 
+orn.w  r1, r2, r3, lsl #0  :: rd 0x00000000 rm 0x00000000, rn 0xffffffff, c:v-in 0, cpsr 0xc0000000 NZ  
+orn.w  r1, r2, r3, lsl #1  :: rd 0x00000001 rm 0x00000000, rn 0xffffffff, c:v-in 0, cpsr 0xc0000000 NZ  
+orn.w  r1, r2, r3, lsl #15 :: rd 0x00007fff rm 0x00000000, rn 0xffffffff, c:v-in 0, cpsr 0xc0000000 NZ  
+orn.w  r1, r2, r3, lsl #31 :: rd 0x7fffffff rm 0x00000000, rn 0xffffffff, c:v-in 0, cpsr 0xc0000000 NZ  
+orn.w  r1, r2, r3, lsr #0  :: rd 0x00000000 rm 0x00000000, rn 0xffffffff, c:v-in 0, cpsr 0xc0000000 NZ  
+orn.w  r1, r2, r3, lsr #1  :: rd 0x80000000 rm 0x00000000, rn 0xffffffff, c:v-in 0, cpsr 0xc0000000 NZ  
+orn.w  r1, r2, r3, lsr #15 :: rd 0xfffe0000 rm 0x00000000, rn 0xffffffff, c:v-in 0, cpsr 0xc0000000 NZ  
+orn.w  r1, r2, r3, lsr #31 :: rd 0xfffffffe rm 0x00000000, rn 0xffffffff, c:v-in 0, cpsr 0xc0000000 NZ  
+orn.w  r1, r2, r3, asr #0  :: rd 0x00000000 rm 0x00000000, rn 0xffffffff, c:v-in 0, cpsr 0xc0000000 NZ  
+orn.w  r1, r2, r3, asr #1  :: rd 0x00000000 rm 0x00000000, rn 0xffffffff, c:v-in 0, cpsr 0xc0000000 NZ  
+orn.w  r1, r2, r3, asr #15 :: rd 0x00000000 rm 0x00000000, rn 0xffffffff, c:v-in 0, cpsr 0xc0000000 NZ  
+orn.w  r1, r2, r3, asr #31 :: rd 0x00000000 rm 0x00000000, rn 0xffffffff, c:v-in 0, cpsr 0xc0000000 NZ  
+orns.w r1, r2, r3, lsl #0  :: rd 0x7fffffff rm 0x00000000, rn 0x80000000, c:v-in 0, cpsr 0x00000000     
+orns.w r1, r2, r3, lsl #1  :: rd 0xffffffff rm 0x00000000, rn 0x80000000, c:v-in 0, cpsr 0xa0000000 N C 
+orns.w r1, r2, r3, lsl #15 :: rd 0xffffffff rm 0x00000000, rn 0x80000000, c:v-in 0, cpsr 0x80000000 N   
+orns.w r1, r2, r3, lsl #31 :: rd 0xffffffff rm 0x00000000, rn 0x80000000, c:v-in 0, cpsr 0x80000000 N   
+orns.w r1, r2, r3, lsr #0  :: rd 0x7fffffff rm 0x00000000, rn 0x80000000, c:v-in 0, cpsr 0x00000000     
+orns.w r1, r2, r3, lsr #1  :: rd 0xbfffffff rm 0x00000000, rn 0x80000000, c:v-in 0, cpsr 0x80000000 N   
+orns.w r1, r2, r3, lsr #15 :: rd 0xfffeffff rm 0x00000000, rn 0x80000000, c:v-in 0, cpsr 0x80000000 N   
+orns.w r1, r2, r3, lsr #31 :: rd 0xfffffffe rm 0x00000000, rn 0x80000000, c:v-in 0, cpsr 0x80000000 N   
+orns.w r1, r2, r3, asr #0  :: rd 0x7fffffff rm 0x00000000, rn 0x80000000, c:v-in 0, cpsr 0x00000000     
+orns.w r1, r2, r3, asr #1  :: rd 0x3fffffff rm 0x00000000, rn 0x80000000, c:v-in 0, cpsr 0x00000000     
+orns.w r1, r2, r3, asr #15 :: rd 0x0000ffff rm 0x00000000, rn 0x80000000, c:v-in 0, cpsr 0x00000000     
+orns.w r1, r2, r3, asr #31 :: rd 0x00000000 rm 0x00000000, rn 0x80000000, c:v-in 0, cpsr 0x40000000  Z  
+orn.w  r1, r2, r3, lsl #0  :: rd 0x7fffffff rm 0x00000000, rn 0x80000000, c:v-in 0, cpsr 0xc0000000 NZ  
+orn.w  r1, r2, r3, lsl #1  :: rd 0xffffffff rm 0x00000000, rn 0x80000000, c:v-in 0, cpsr 0xc0000000 NZ  
+orn.w  r1, r2, r3, lsl #15 :: rd 0xffffffff rm 0x00000000, rn 0x80000000, c:v-in 0, cpsr 0xc0000000 NZ  
+orn.w  r1, r2, r3, lsl #31 :: rd 0xffffffff rm 0x00000000, rn 0x80000000, c:v-in 0, cpsr 0xc0000000 NZ  
+orn.w  r1, r2, r3, lsr #0  :: rd 0x7fffffff rm 0x00000000, rn 0x80000000, c:v-in 0, cpsr 0xc0000000 NZ  
+orn.w  r1, r2, r3, lsr #1  :: rd 0xbfffffff rm 0x00000000, rn 0x80000000, c:v-in 0, cpsr 0xc0000000 NZ  
+orn.w  r1, r2, r3, lsr #15 :: rd 0xfffeffff rm 0x00000000, rn 0x80000000, c:v-in 0, cpsr 0xc0000000 NZ  
+orn.w  r1, r2, r3, lsr #31 :: rd 0xfffffffe rm 0x00000000, rn 0x80000000, c:v-in 0, cpsr 0xc0000000 NZ  
+orn.w  r1, r2, r3, asr #0  :: rd 0x7fffffff rm 0x00000000, rn 0x80000000, c:v-in 0, cpsr 0xc0000000 NZ  
+orn.w  r1, r2, r3, asr #1  :: rd 0x3fffffff rm 0x00000000, rn 0x80000000, c:v-in 0, cpsr 0xc0000000 NZ  
+orn.w  r1, r2, r3, asr #15 :: rd 0x0000ffff rm 0x00000000, rn 0x80000000, c:v-in 0, cpsr 0xc0000000 NZ  
+orn.w  r1, r2, r3, asr #31 :: rd 0x00000000 rm 0x00000000, rn 0x80000000, c:v-in 0, cpsr 0xc0000000 NZ  
+orns.w r1, r2, r3, lsl #0  :: rd 0xffffffff rm 0x80000000, rn 0x00000000, c:v-in 0, cpsr 0x80000000 N   
+orns.w r1, r2, r3, lsl #1  :: rd 0xffffffff rm 0x80000000, rn 0x00000000, c:v-in 0, cpsr 0x80000000 N   
+orns.w r1, r2, r3, lsl #15 :: rd 0xffffffff rm 0x80000000, rn 0x00000000, c:v-in 0, cpsr 0x80000000 N   
+orns.w r1, r2, r3, lsl #31 :: rd 0xffffffff rm 0x80000000, rn 0x00000000, c:v-in 0, cpsr 0x80000000 N   
+orns.w r1, r2, r3, lsr #0  :: rd 0xffffffff rm 0x80000000, rn 0x00000000, c:v-in 0, cpsr 0x80000000 N   
+orns.w r1, r2, r3, lsr #1  :: rd 0xffffffff rm 0x80000000, rn 0x00000000, c:v-in 0, cpsr 0x80000000 N   
+orns.w r1, r2, r3, lsr #15 :: rd 0xffffffff rm 0x80000000, rn 0x00000000, c:v-in 0, cpsr 0x80000000 N   
+orns.w r1, r2, r3, lsr #31 :: rd 0xffffffff rm 0x80000000, rn 0x00000000, c:v-in 0, cpsr 0x80000000 N   
+orns.w r1, r2, r3, asr #0  :: rd 0xffffffff rm 0x80000000, rn 0x00000000, c:v-in 0, cpsr 0x80000000 N   
+orns.w r1, r2, r3, asr #1  :: rd 0xffffffff rm 0x80000000, rn 0x00000000, c:v-in 0, cpsr 0x80000000 N   
+orns.w r1, r2, r3, asr #15 :: rd 0xffffffff rm 0x80000000, rn 0x00000000, c:v-in 0, cpsr 0x80000000 N   
+orns.w r1, r2, r3, asr #31 :: rd 0xffffffff rm 0x80000000, rn 0x00000000, c:v-in 0, cpsr 0x80000000 N   
+orn.w  r1, r2, r3, lsl #0  :: rd 0xffffffff rm 0x80000000, rn 0x00000000, c:v-in 0, cpsr 0xc0000000 NZ  
+orn.w  r1, r2, r3, lsl #1  :: rd 0xffffffff rm 0x80000000, rn 0x00000000, c:v-in 0, cpsr 0xc0000000 NZ  
+orn.w  r1, r2, r3, lsl #15 :: rd 0xffffffff rm 0x80000000, rn 0x00000000, c:v-in 0, cpsr 0xc0000000 NZ  
+orn.w  r1, r2, r3, lsl #31 :: rd 0xffffffff rm 0x80000000, rn 0x00000000, c:v-in 0, cpsr 0xc0000000 NZ  
+orn.w  r1, r2, r3, lsr #0  :: rd 0xffffffff rm 0x80000000, rn 0x00000000, c:v-in 0, cpsr 0xc0000000 NZ  
+orn.w  r1, r2, r3, lsr #1  :: rd 0xffffffff rm 0x80000000, rn 0x00000000, c:v-in 0, cpsr 0xc0000000 NZ  
+orn.w  r1, r2, r3, lsr #15 :: rd 0xffffffff rm 0x80000000, rn 0x00000000, c:v-in 0, cpsr 0xc0000000 NZ  
+orn.w  r1, r2, r3, lsr #31 :: rd 0xffffffff rm 0x80000000, rn 0x00000000, c:v-in 0, cpsr 0xc0000000 NZ  
+orn.w  r1, r2, r3, asr #0  :: rd 0xffffffff rm 0x80000000, rn 0x00000000, c:v-in 0, cpsr 0xc0000000 NZ  
+orn.w  r1, r2, r3, asr #1  :: rd 0xffffffff rm 0x80000000, rn 0x00000000, c:v-in 0, cpsr 0xc0000000 NZ  
+orn.w  r1, r2, r3, asr #15 :: rd 0xffffffff rm 0x80000000, rn 0x00000000, c:v-in 0, cpsr 0xc0000000 NZ  
+orn.w  r1, r2, r3, asr #31 :: rd 0xffffffff rm 0x80000000, rn 0x00000000, c:v-in 0, cpsr 0xc0000000 NZ  
+orns.w r1, r2, r3, lsl #0  :: rd 0xffffffff rm 0x80000000, rn 0x80000000, c:v-in 0, cpsr 0x80000000 N   
+orns.w r1, r2, r3, lsl #1  :: rd 0xffffffff rm 0x80000000, rn 0x80000000, c:v-in 0, cpsr 0xa0000000 N C 
+orns.w r1, r2, r3, lsl #15 :: rd 0xffffffff rm 0x80000000, rn 0x80000000, c:v-in 0, cpsr 0x80000000 N   
+orns.w r1, r2, r3, lsl #31 :: rd 0xffffffff rm 0x80000000, rn 0x80000000, c:v-in 0, cpsr 0x80000000 N   
+orns.w r1, r2, r3, lsr #0  :: rd 0xffffffff rm 0x80000000, rn 0x80000000, c:v-in 0, cpsr 0x80000000 N   
+orns.w r1, r2, r3, lsr #1  :: rd 0xbfffffff rm 0x80000000, rn 0x80000000, c:v-in 0, cpsr 0x80000000 N   
+orns.w r1, r2, r3, lsr #15 :: rd 0xfffeffff rm 0x80000000, rn 0x80000000, c:v-in 0, cpsr 0x80000000 N   
+orns.w r1, r2, r3, lsr #31 :: rd 0xfffffffe rm 0x80000000, rn 0x80000000, c:v-in 0, cpsr 0x80000000 N   
+orns.w r1, r2, r3, asr #0  :: rd 0xffffffff rm 0x80000000, rn 0x80000000, c:v-in 0, cpsr 0x80000000 N   
+orns.w r1, r2, r3, asr #1  :: rd 0xbfffffff rm 0x80000000, rn 0x80000000, c:v-in 0, cpsr 0x80000000 N   
+orns.w r1, r2, r3, asr #15 :: rd 0x8000ffff rm 0x80000000, rn 0x80000000, c:v-in 0, cpsr 0x80000000 N   
+orns.w r1, r2, r3, asr #31 :: rd 0x80000000 rm 0x80000000, rn 0x80000000, c:v-in 0, cpsr 0x80000000 N   
+orn.w  r1, r2, r3, lsl #0  :: rd 0xffffffff rm 0x80000000, rn 0x80000000, c:v-in 0, cpsr 0xc0000000 NZ  
+orn.w  r1, r2, r3, lsl #1  :: rd 0xffffffff rm 0x80000000, rn 0x80000000, c:v-in 0, cpsr 0xc0000000 NZ  
+orn.w  r1, r2, r3, lsl #15 :: rd 0xffffffff rm 0x80000000, rn 0x80000000, c:v-in 0, cpsr 0xc0000000 NZ  
+orn.w  r1, r2, r3, lsl #31 :: rd 0xffffffff rm 0x80000000, rn 0x80000000, c:v-in 0, cpsr 0xc0000000 NZ  
+orn.w  r1, r2, r3, lsr #0  :: rd 0xffffffff rm 0x80000000, rn 0x80000000, c:v-in 0, cpsr 0xc0000000 NZ  
+orn.w  r1, r2, r3, lsr #1  :: rd 0xbfffffff rm 0x80000000, rn 0x80000000, c:v-in 0, cpsr 0xc0000000 NZ  
+orn.w  r1, r2, r3, lsr #15 :: rd 0xfffeffff rm 0x80000000, rn 0x80000000, c:v-in 0, cpsr 0xc0000000 NZ  
+orn.w  r1, r2, r3, lsr #31 :: rd 0xfffffffe rm 0x80000000, rn 0x80000000, c:v-in 0, cpsr 0xc0000000 NZ  
+orn.w  r1, r2, r3, asr #0  :: rd 0xffffffff rm 0x80000000, rn 0x80000000, c:v-in 0, cpsr 0xc0000000 NZ  
+orn.w  r1, r2, r3, asr #1  :: rd 0xbfffffff rm 0x80000000, rn 0x80000000, c:v-in 0, cpsr 0xc0000000 NZ  
+orn.w  r1, r2, r3, asr #15 :: rd 0x8000ffff rm 0x80000000, rn 0x80000000, c:v-in 0, cpsr 0xc0000000 NZ  
+orn.w  r1, r2, r3, asr #31 :: rd 0x80000000 rm 0x80000000, rn 0x80000000, c:v-in 0, cpsr 0xc0000000 NZ  
+orns.w r1, r2, r3, lsl #0  :: rd 0x7fffffff rm 0x7fffffff, rn 0x80000000, c:v-in 0, cpsr 0x00000000     
+orns.w r1, r2, r3, lsl #1  :: rd 0xffffffff rm 0x7fffffff, rn 0x80000000, c:v-in 0, cpsr 0xa0000000 N C 
+orns.w r1, r2, r3, lsl #15 :: rd 0xffffffff rm 0x7fffffff, rn 0x80000000, c:v-in 0, cpsr 0x80000000 N   
+orns.w r1, r2, r3, lsl #31 :: rd 0xffffffff rm 0x7fffffff, rn 0x80000000, c:v-in 0, cpsr 0x80000000 N   
+orns.w r1, r2, r3, lsr #0  :: rd 0x7fffffff rm 0x7fffffff, rn 0x80000000, c:v-in 0, cpsr 0x00000000     
+orns.w r1, r2, r3, lsr #1  :: rd 0xffffffff rm 0x7fffffff, rn 0x80000000, c:v-in 0, cpsr 0x80000000 N   
+orns.w r1, r2, r3, lsr #15 :: rd 0xffffffff rm 0x7fffffff, rn 0x80000000, c:v-in 0, cpsr 0x80000000 N   
+orns.w r1, r2, r3, lsr #31 :: rd 0xffffffff rm 0x7fffffff, rn 0x80000000, c:v-in 0, cpsr 0x80000000 N   
+orns.w r1, r2, r3, asr #0  :: rd 0x7fffffff rm 0x7fffffff, rn 0x80000000, c:v-in 0, cpsr 0x00000000     
+orns.w r1, r2, r3, asr #1  :: rd 0x7fffffff rm 0x7fffffff, rn 0x80000000, c:v-in 0, cpsr 0x00000000     
+orns.w r1, r2, r3, asr #15 :: rd 0x7fffffff rm 0x7fffffff, rn 0x80000000, c:v-in 0, cpsr 0x00000000     
+orns.w r1, r2, r3, asr #31 :: rd 0x7fffffff rm 0x7fffffff, rn 0x80000000, c:v-in 0, cpsr 0x00000000     
+orn.w  r1, r2, r3, lsl #0  :: rd 0x7fffffff rm 0x7fffffff, rn 0x80000000, c:v-in 0, cpsr 0xc0000000 NZ  
+orn.w  r1, r2, r3, lsl #1  :: rd 0xffffffff rm 0x7fffffff, rn 0x80000000, c:v-in 0, cpsr 0xc0000000 NZ  
+orn.w  r1, r2, r3, lsl #15 :: rd 0xffffffff rm 0x7fffffff, rn 0x80000000, c:v-in 0, cpsr 0xc0000000 NZ  
+orn.w  r1, r2, r3, lsl #31 :: rd 0xffffffff rm 0x7fffffff, rn 0x80000000, c:v-in 0, cpsr 0xc0000000 NZ  
+orn.w  r1, r2, r3, lsr #0  :: rd 0x7fffffff rm 0x7fffffff, rn 0x80000000, c:v-in 0, cpsr 0xc0000000 NZ  
+orn.w  r1, r2, r3, lsr #1  :: rd 0xffffffff rm 0x7fffffff, rn 0x80000000, c:v-in 0, cpsr 0xc0000000 NZ  
+orn.w  r1, r2, r3, lsr #15 :: rd 0xffffffff rm 0x7fffffff, rn 0x80000000, c:v-in 0, cpsr 0xc0000000 NZ  
+orn.w  r1, r2, r3, lsr #31 :: rd 0xffffffff rm 0x7fffffff, rn 0x80000000, c:v-in 0, cpsr 0xc0000000 NZ  
+orn.w  r1, r2, r3, asr #0  :: rd 0x7fffffff rm 0x7fffffff, rn 0x80000000, c:v-in 0, cpsr 0xc0000000 NZ  
+orn.w  r1, r2, r3, asr #1  :: rd 0x7fffffff rm 0x7fffffff, rn 0x80000000, c:v-in 0, cpsr 0xc0000000 NZ  
+orn.w  r1, r2, r3, asr #15 :: rd 0x7fffffff rm 0x7fffffff, rn 0x80000000, c:v-in 0, cpsr 0xc0000000 NZ  
+orn.w  r1, r2, r3, asr #31 :: rd 0x7fffffff rm 0x7fffffff, rn 0x80000000, c:v-in 0, cpsr 0xc0000000 NZ  
+orns.w r1, r2, r3, lsl #0  :: rd 0x80000000 rm 0x80000000, rn 0x7fffffff, c:v-in 0, cpsr 0x80000000 N   
+orns.w r1, r2, r3, lsl #1  :: rd 0x80000001 rm 0x80000000, rn 0x7fffffff, c:v-in 0, cpsr 0x80000000 N   
+orns.w r1, r2, r3, lsl #15 :: rd 0x80007fff rm 0x80000000, rn 0x7fffffff, c:v-in 0, cpsr 0xa0000000 N C 
+orns.w r1, r2, r3, lsl #31 :: rd 0xffffffff rm 0x80000000, rn 0x7fffffff, c:v-in 0, cpsr 0xa0000000 N C 
+orns.w r1, r2, r3, lsr #0  :: rd 0x80000000 rm 0x80000000, rn 0x7fffffff, c:v-in 0, cpsr 0x80000000 N   
+orns.w r1, r2, r3, lsr #1  :: rd 0xc0000000 rm 0x80000000, rn 0x7fffffff, c:v-in 0, cpsr 0xa0000000 N C 
+orns.w r1, r2, r3, lsr #15 :: rd 0xffff0000 rm 0x80000000, rn 0x7fffffff, c:v-in 0, cpsr 0xa0000000 N C 
+orns.w r1, r2, r3, lsr #31 :: rd 0xffffffff rm 0x80000000, rn 0x7fffffff, c:v-in 0, cpsr 0xa0000000 N C 
+orns.w r1, r2, r3, asr #0  :: rd 0x80000000 rm 0x80000000, rn 0x7fffffff, c:v-in 0, cpsr 0x80000000 N   
+orns.w r1, r2, r3, asr #1  :: rd 0xc0000000 rm 0x80000000, rn 0x7fffffff, c:v-in 0, cpsr 0xa0000000 N C 
+orns.w r1, r2, r3, asr #15 :: rd 0xffff0000 rm 0x80000000, rn 0x7fffffff, c:v-in 0, cpsr 0xa0000000 N C 
+orns.w r1, r2, r3, asr #31 :: rd 0xffffffff rm 0x80000000, rn 0x7fffffff, c:v-in 0, cpsr 0xa0000000 N C 
+orn.w  r1, r2, r3, lsl #0  :: rd 0x80000000 rm 0x80000000, rn 0x7fffffff, c:v-in 0, cpsr 0xc0000000 NZ  
+orn.w  r1, r2, r3, lsl #1  :: rd 0x80000001 rm 0x80000000, rn 0x7fffffff, c:v-in 0, cpsr 0xc0000000 NZ  
+orn.w  r1, r2, r3, lsl #15 :: rd 0x80007fff rm 0x80000000, rn 0x7fffffff, c:v-in 0, cpsr 0xc0000000 NZ  
+orn.w  r1, r2, r3, lsl #31 :: rd 0xffffffff rm 0x80000000, rn 0x7fffffff, c:v-in 0, cpsr 0xc0000000 NZ  
+orn.w  r1, r2, r3, lsr #0  :: rd 0x80000000 rm 0x80000000, rn 0x7fffffff, c:v-in 0, cpsr 0xc0000000 NZ  
+orn.w  r1, r2, r3, lsr #1  :: rd 0xc0000000 rm 0x80000000, rn 0x7fffffff, c:v-in 0, cpsr 0xc0000000 NZ  
+orn.w  r1, r2, r3, lsr #15 :: rd 0xffff0000 rm 0x80000000, rn 0x7fffffff, c:v-in 0, cpsr 0xc0000000 NZ  
+orn.w  r1, r2, r3, lsr #31 :: rd 0xffffffff rm 0x80000000, rn 0x7fffffff, c:v-in 0, cpsr 0xc0000000 NZ  
+orn.w  r1, r2, r3, asr #0  :: rd 0x80000000 rm 0x80000000, rn 0x7fffffff, c:v-in 0, cpsr 0xc0000000 NZ  
+orn.w  r1, r2, r3, asr #1  :: rd 0xc0000000 rm 0x80000000, rn 0x7fffffff, c:v-in 0, cpsr 0xc0000000 NZ  
+orn.w  r1, r2, r3, asr #15 :: rd 0xffff0000 rm 0x80000000, rn 0x7fffffff, c:v-in 0, cpsr 0xc0000000 NZ  
+orn.w  r1, r2, r3, asr #31 :: rd 0xffffffff rm 0x80000000, rn 0x7fffffff, c:v-in 0, cpsr 0xc0000000 NZ  
+orns.w r1, r2, r3, lsl #0  :: rd 0xffffffff rm 0x7fffffff, rn 0x7fffffff, c:v-in 0, cpsr 0x80000000 N   
+orns.w r1, r2, r3, lsl #1  :: rd 0x7fffffff rm 0x7fffffff, rn 0x7fffffff, c:v-in 0, cpsr 0x00000000     
+orns.w r1, r2, r3, lsl #15 :: rd 0x7fffffff rm 0x7fffffff, rn 0x7fffffff, c:v-in 0, cpsr 0x20000000   C 
+orns.w r1, r2, r3, lsl #31 :: rd 0x7fffffff rm 0x7fffffff, rn 0x7fffffff, c:v-in 0, cpsr 0x20000000   C 
+orns.w r1, r2, r3, lsr #0  :: rd 0xffffffff rm 0x7fffffff, rn 0x7fffffff, c:v-in 0, cpsr 0x80000000 N   
+orns.w r1, r2, r3, lsr #1  :: rd 0xffffffff rm 0x7fffffff, rn 0x7fffffff, c:v-in 0, cpsr 0xa0000000 N C 
+orns.w r1, r2, r3, lsr #15 :: rd 0xffffffff rm 0x7fffffff, rn 0x7fffffff, c:v-in 0, cpsr 0xa0000000 N C 
+orns.w r1, r2, r3, lsr #31 :: rd 0xffffffff rm 0x7fffffff, rn 0x7fffffff, c:v-in 0, cpsr 0xa0000000 N C 
+orns.w r1, r2, r3, asr #0  :: rd 0xffffffff rm 0x7fffffff, rn 0x7fffffff, c:v-in 0, cpsr 0x80000000 N   
+orns.w r1, r2, r3, asr #1  :: rd 0xffffffff rm 0x7fffffff, rn 0x7fffffff, c:v-in 0, cpsr 0xa0000000 N C 
+orns.w r1, r2, r3, asr #15 :: rd 0xffffffff rm 0x7fffffff, rn 0x7fffffff, c:v-in 0, cpsr 0xa0000000 N C 
+orns.w r1, r2, r3, asr #31 :: rd 0xffffffff rm 0x7fffffff, rn 0x7fffffff, c:v-in 0, cpsr 0xa0000000 N C 
+orn.w  r1, r2, r3, lsl #0  :: rd 0xffffffff rm 0x7fffffff, rn 0x7fffffff, c:v-in 0, cpsr 0xc0000000 NZ  
+orn.w  r1, r2, r3, lsl #1  :: rd 0x7fffffff rm 0x7fffffff, rn 0x7fffffff, c:v-in 0, cpsr 0xc0000000 NZ  
+orn.w  r1, r2, r3, lsl #15 :: rd 0x7fffffff rm 0x7fffffff, rn 0x7fffffff, c:v-in 0, cpsr 0xc0000000 NZ  
+orn.w  r1, r2, r3, lsl #31 :: rd 0x7fffffff rm 0x7fffffff, rn 0x7fffffff, c:v-in 0, cpsr 0xc0000000 NZ  
+orn.w  r1, r2, r3, lsr #0  :: rd 0xffffffff rm 0x7fffffff, rn 0x7fffffff, c:v-in 0, cpsr 0xc0000000 NZ  
+orn.w  r1, r2, r3, lsr #1  :: rd 0xffffffff rm 0x7fffffff, rn 0x7fffffff, c:v-in 0, cpsr 0xc0000000 NZ  
+orn.w  r1, r2, r3, lsr #15 :: rd 0xffffffff rm 0x7fffffff, rn 0x7fffffff, c:v-in 0, cpsr 0xc0000000 NZ  
+orn.w  r1, r2, r3, lsr #31 :: rd 0xffffffff rm 0x7fffffff, rn 0x7fffffff, c:v-in 0, cpsr 0xc0000000 NZ  
+orn.w  r1, r2, r3, asr #0  :: rd 0xffffffff rm 0x7fffffff, rn 0x7fffffff, c:v-in 0, cpsr 0xc0000000 NZ  
+orn.w  r1, r2, r3, asr #1  :: rd 0xffffffff rm 0x7fffffff, rn 0x7fffffff, c:v-in 0, cpsr 0xc0000000 NZ  
+orn.w  r1, r2, r3, asr #15 :: rd 0xffffffff rm 0x7fffffff, rn 0x7fffffff, c:v-in 0, cpsr 0xc0000000 NZ  
+orn.w  r1, r2, r3, asr #31 :: rd 0xffffffff rm 0x7fffffff, rn 0x7fffffff, c:v-in 0, cpsr 0xc0000000 NZ  
+orns.w r1, r2, r3, lsl #0  :: rd 0xf9e7f9f7 rm 0x31415927, rn 0x27181728, c:v-in 1, cpsr 0x90000000 N  V
+orns.w r1, r2, r3, lsl #1  :: rd 0xb1cfd9af rm 0x31415927, rn 0x27181728, c:v-in 1, cpsr 0x90000000 N  V
+orns.w r1, r2, r3, lsl #15 :: rd 0xf56bffff rm 0x31415927, rn 0x27181728, c:v-in 1, cpsr 0x90000000 N  V
+orns.w r1, r2, r3, lsl #31 :: rd 0xffffffff rm 0x31415927, rn 0x27181728, c:v-in 1, cpsr 0x90000000 N  V
+orns.w r1, r2, r3, lsr #0  :: rd 0xf9e7f9f7 rm 0x31415927, rn 0x27181728, c:v-in 1, cpsr 0x90000000 N  V
+orns.w r1, r2, r3, lsr #1  :: rd 0xfd73fd6f rm 0x31415927, rn 0x27181728, c:v-in 1, cpsr 0x90000000 N  V
+orns.w r1, r2, r3, lsr #15 :: rd 0xfffff9ef rm 0x31415927, rn 0x27181728, c:v-in 1, cpsr 0x90000000 N  V
+orns.w r1, r2, r3, lsr #31 :: rd 0xffffffff rm 0x31415927, rn 0x27181728, c:v-in 1, cpsr 0x90000000 N  V
+orns.w r1, r2, r3, asr #0  :: rd 0xf9e7f9f7 rm 0x31415927, rn 0x27181728, c:v-in 1, cpsr 0x90000000 N  V
+orns.w r1, r2, r3, asr #1  :: rd 0xfd73fd6f rm 0x31415927, rn 0x27181728, c:v-in 1, cpsr 0x90000000 N  V
+orns.w r1, r2, r3, asr #15 :: rd 0xfffff9ef rm 0x31415927, rn 0x27181728, c:v-in 1, cpsr 0x90000000 N  V
+orns.w r1, r2, r3, asr #31 :: rd 0xffffffff rm 0x31415927, rn 0x27181728, c:v-in 1, cpsr 0x90000000 N  V
+orn.w  r1, r2, r3, lsl #0  :: rd 0xf9e7f9f7 rm 0x31415927, rn 0x27181728, c:v-in 1, cpsr 0xd0000000 NZ V
+orn.w  r1, r2, r3, lsl #1  :: rd 0xb1cfd9af rm 0x31415927, rn 0x27181728, c:v-in 1, cpsr 0xd0000000 NZ V
+orn.w  r1, r2, r3, lsl #15 :: rd 0xf56bffff rm 0x31415927, rn 0x27181728, c:v-in 1, cpsr 0xd0000000 NZ V
+orn.w  r1, r2, r3, lsl #31 :: rd 0xffffffff rm 0x31415927, rn 0x27181728, c:v-in 1, cpsr 0xd0000000 NZ V
+orn.w  r1, r2, r3, lsr #0  :: rd 0xf9e7f9f7 rm 0x31415927, rn 0x27181728, c:v-in 1, cpsr 0xd0000000 NZ V
+orn.w  r1, r2, r3, lsr #1  :: rd 0xfd73fd6f rm 0x31415927, rn 0x27181728, c:v-in 1, cpsr 0xd0000000 NZ V
+orn.w  r1, r2, r3, lsr #15 :: rd 0xfffff9ef rm 0x31415927, rn 0x27181728, c:v-in 1, cpsr 0xd0000000 NZ V
+orn.w  r1, r2, r3, lsr #31 :: rd 0xffffffff rm 0x31415927, rn 0x27181728, c:v-in 1, cpsr 0xd0000000 NZ V
+orn.w  r1, r2, r3, asr #0  :: rd 0xf9e7f9f7 rm 0x31415927, rn 0x27181728, c:v-in 1, cpsr 0xd0000000 NZ V
+orn.w  r1, r2, r3, asr #1  :: rd 0xfd73fd6f rm 0x31415927, rn 0x27181728, c:v-in 1, cpsr 0xd0000000 NZ V
+orn.w  r1, r2, r3, asr #15 :: rd 0xfffff9ef rm 0x31415927, rn 0x27181728, c:v-in 1, cpsr 0xd0000000 NZ V
+orn.w  r1, r2, r3, asr #31 :: rd 0xffffffff rm 0x31415927, rn 0x27181728, c:v-in 1, cpsr 0xd0000000 NZ V
+orns.w r1, r2, r3, lsl #0  :: rd 0x79e7f9f7 rm 0x31415927, rn 0x97181728, c:v-in 1, cpsr 0x10000000    V
+orns.w r1, r2, r3, lsl #1  :: rd 0xf1cfd9af rm 0x31415927, rn 0x97181728, c:v-in 1, cpsr 0xb0000000 N CV
+orns.w r1, r2, r3, lsl #15 :: rd 0xf56bffff rm 0x31415927, rn 0x97181728, c:v-in 1, cpsr 0x90000000 N  V
+orns.w r1, r2, r3, lsl #31 :: rd 0xffffffff rm 0x31415927, rn 0x97181728, c:v-in 1, cpsr 0x90000000 N  V
+orns.w r1, r2, r3, lsr #0  :: rd 0x79e7f9f7 rm 0x31415927, rn 0x97181728, c:v-in 1, cpsr 0x10000000    V
+orns.w r1, r2, r3, lsr #1  :: rd 0xb573fd6f rm 0x31415927, rn 0x97181728, c:v-in 1, cpsr 0x90000000 N  V
+orns.w r1, r2, r3, lsr #15 :: rd 0xffffd9ef rm 0x31415927, rn 0x97181728, c:v-in 1, cpsr 0x90000000 N  V
+orns.w r1, r2, r3, lsr #31 :: rd 0xffffffff rm 0x31415927, rn 0x97181728, c:v-in 1, cpsr 0x90000000 N  V
+orns.w r1, r2, r3, asr #0  :: rd 0x79e7f9f7 rm 0x31415927, rn 0x97181728, c:v-in 1, cpsr 0x10000000    V
+orns.w r1, r2, r3, asr #1  :: rd 0x3573fd6f rm 0x31415927, rn 0x97181728, c:v-in 1, cpsr 0x10000000    V
+orns.w r1, r2, r3, asr #15 :: rd 0x3141d9ef rm 0x31415927, rn 0x97181728, c:v-in 1, cpsr 0x10000000    V
+orns.w r1, r2, r3, asr #31 :: rd 0x31415927 rm 0x31415927, rn 0x97181728, c:v-in 1, cpsr 0x10000000    V
+orn.w  r1, r2, r3, lsl #0  :: rd 0x79e7f9f7 rm 0x31415927, rn 0x97181728, c:v-in 1, cpsr 0xd0000000 NZ V
+orn.w  r1, r2, r3, lsl #1  :: rd 0xf1cfd9af rm 0x31415927, rn 0x97181728, c:v-in 1, cpsr 0xd0000000 NZ V
+orn.w  r1, r2, r3, lsl #15 :: rd 0xf56bffff rm 0x31415927, rn 0x97181728, c:v-in 1, cpsr 0xd0000000 NZ V
+orn.w  r1, r2, r3, lsl #31 :: rd 0xffffffff rm 0x31415927, rn 0x97181728, c:v-in 1, cpsr 0xd0000000 NZ V
+orn.w  r1, r2, r3, lsr #0  :: rd 0x79e7f9f7 rm 0x31415927, rn 0x97181728, c:v-in 1, cpsr 0xd0000000 NZ V
+orn.w  r1, r2, r3, lsr #1  :: rd 0xb573fd6f rm 0x31415927, rn 0x97181728, c:v-in 1, cpsr 0xd0000000 NZ V
+orn.w  r1, r2, r3, lsr #15 :: rd 0xffffd9ef rm 0x31415927, rn 0x97181728, c:v-in 1, cpsr 0xd0000000 NZ V
+orn.w  r1, r2, r3, lsr #31 :: rd 0xffffffff rm 0x31415927, rn 0x97181728, c:v-in 1, cpsr 0xd0000000 NZ V
+orn.w  r1, r2, r3, asr #0  :: rd 0x79e7f9f7 rm 0x31415927, rn 0x97181728, c:v-in 1, cpsr 0xd0000000 NZ V
+orn.w  r1, r2, r3, asr #1  :: rd 0x3573fd6f rm 0x31415927, rn 0x97181728, c:v-in 1, cpsr 0xd0000000 NZ V
+orn.w  r1, r2, r3, asr #15 :: rd 0x3141d9ef rm 0x31415927, rn 0x97181728, c:v-in 1, cpsr 0xd0000000 NZ V
+orn.w  r1, r2, r3, asr #31 :: rd 0x31415927 rm 0x31415927, rn 0x97181728, c:v-in 1, cpsr 0xd0000000 NZ V
+orns.w r1, r2, r3, lsl #0  :: rd 0xffffffff rm 0x00000000, rn 0x00000000, c:v-in 1, cpsr 0x90000000 N  V
+orns.w r1, r2, r3, lsl #1  :: rd 0xffffffff rm 0x00000000, rn 0x00000000, c:v-in 1, cpsr 0x90000000 N  V
+orns.w r1, r2, r3, lsl #15 :: rd 0xffffffff rm 0x00000000, rn 0x00000000, c:v-in 1, cpsr 0x90000000 N  V
+orns.w r1, r2, r3, lsl #31 :: rd 0xffffffff rm 0x00000000, rn 0x00000000, c:v-in 1, cpsr 0x90000000 N  V
+orns.w r1, r2, r3, lsr #0  :: rd 0xffffffff rm 0x00000000, rn 0x00000000, c:v-in 1, cpsr 0x90000000 N  V
+orns.w r1, r2, r3, lsr #1  :: rd 0xffffffff rm 0x00000000, rn 0x00000000, c:v-in 1, cpsr 0x90000000 N  V
+orns.w r1, r2, r3, lsr #15 :: rd 0xffffffff rm 0x00000000, rn 0x00000000, c:v-in 1, cpsr 0x90000000 N  V
+orns.w r1, r2, r3, lsr #31 :: rd 0xffffffff rm 0x00000000, rn 0x00000000, c:v-in 1, cpsr 0x90000000 N  V
+orns.w r1, r2, r3, asr #0  :: rd 0xffffffff rm 0x00000000, rn 0x00000000, c:v-in 1, cpsr 0x90000000 N  V
+orns.w r1, r2, r3, asr #1  :: rd 0xffffffff rm 0x00000000, rn 0x00000000, c:v-in 1, cpsr 0x90000000 N  V
+orns.w r1, r2, r3, asr #15 :: rd 0xffffffff rm 0x00000000, rn 0x00000000, c:v-in 1, cpsr 0x90000000 N  V
+orns.w r1, r2, r3, asr #31 :: rd 0xffffffff rm 0x00000000, rn 0x00000000, c:v-in 1, cpsr 0x90000000 N  V
+orn.w  r1, r2, r3, lsl #0  :: rd 0xffffffff rm 0x00000000, rn 0x00000000, c:v-in 1, cpsr 0xd0000000 NZ V
+orn.w  r1, r2, r3, lsl #1  :: rd 0xffffffff rm 0x00000000, rn 0x00000000, c:v-in 1, cpsr 0xd0000000 NZ V
+orn.w  r1, r2, r3, lsl #15 :: rd 0xffffffff rm 0x00000000, rn 0x00000000, c:v-in 1, cpsr 0xd0000000 NZ V
+orn.w  r1, r2, r3, lsl #31 :: rd 0xffffffff rm 0x00000000, rn 0x00000000, c:v-in 1, cpsr 0xd0000000 NZ V
+orn.w  r1, r2, r3, lsr #0  :: rd 0xffffffff rm 0x00000000, rn 0x00000000, c:v-in 1, cpsr 0xd0000000 NZ V
+orn.w  r1, r2, r3, lsr #1  :: rd 0xffffffff rm 0x00000000, rn 0x00000000, c:v-in 1, cpsr 0xd0000000 NZ V
+orn.w  r1, r2, r3, lsr #15 :: rd 0xffffffff rm 0x00000000, rn 0x00000000, c:v-in 1, cpsr 0xd0000000 NZ V
+orn.w  r1, r2, r3, lsr #31 :: rd 0xffffffff rm 0x00000000, rn 0x00000000, c:v-in 1, cpsr 0xd0000000 NZ V
+orn.w  r1, r2, r3, asr #0  :: rd 0xffffffff rm 0x00000000, rn 0x00000000, c:v-in 1, cpsr 0xd0000000 NZ V
+orn.w  r1, r2, r3, asr #1  :: rd 0xffffffff rm 0x00000000, rn 0x00000000, c:v-in 1, cpsr 0xd0000000 NZ V
+orn.w  r1, r2, r3, asr #15 :: rd 0xffffffff rm 0x00000000, rn 0x00000000, c:v-in 1, cpsr 0xd0000000 NZ V
+orn.w  r1, r2, r3, asr #31 :: rd 0xffffffff rm 0x00000000, rn 0x00000000, c:v-in 1, cpsr 0xd0000000 NZ V
+orns.w r1, r2, r3, lsl #0  :: rd 0xffffffff rm 0x00000001, rn 0x00000000, c:v-in 1, cpsr 0x90000000 N  V
+orns.w r1, r2, r3, lsl #1  :: rd 0xffffffff rm 0x00000001, rn 0x00000000, c:v-in 1, cpsr 0x90000000 N  V
+orns.w r1, r2, r3, lsl #15 :: rd 0xffffffff rm 0x00000001, rn 0x00000000, c:v-in 1, cpsr 0x90000000 N  V
+orns.w r1, r2, r3, lsl #31 :: rd 0xffffffff rm 0x00000001, rn 0x00000000, c:v-in 1, cpsr 0x90000000 N  V
+orns.w r1, r2, r3, lsr #0  :: rd 0xffffffff rm 0x00000001, rn 0x00000000, c:v-in 1, cpsr 0x90000000 N  V
+orns.w r1, r2, r3, lsr #1  :: rd 0xffffffff rm 0x00000001, rn 0x00000000, c:v-in 1, cpsr 0x90000000 N  V
+orns.w r1, r2, r3, lsr #15 :: rd 0xffffffff rm 0x00000001, rn 0x00000000, c:v-in 1, cpsr 0x90000000 N  V
+orns.w r1, r2, r3, lsr #31 :: rd 0xffffffff rm 0x00000001, rn 0x00000000, c:v-in 1, cpsr 0x90000000 N  V
+orns.w r1, r2, r3, asr #0  :: rd 0xffffffff rm 0x00000001, rn 0x00000000, c:v-in 1, cpsr 0x90000000 N  V
+orns.w r1, r2, r3, asr #1  :: rd 0xffffffff rm 0x00000001, rn 0x00000000, c:v-in 1, cpsr 0x90000000 N  V
+orns.w r1, r2, r3, asr #15 :: rd 0xffffffff rm 0x00000001, rn 0x00000000, c:v-in 1, cpsr 0x90000000 N  V
+orns.w r1, r2, r3, asr #31 :: rd 0xffffffff rm 0x00000001, rn 0x00000000, c:v-in 1, cpsr 0x90000000 N  V
+orn.w  r1, r2, r3, lsl #0  :: rd 0xffffffff rm 0x00000001, rn 0x00000000, c:v-in 1, cpsr 0xd0000000 NZ V
+orn.w  r1, r2, r3, lsl #1  :: rd 0xffffffff rm 0x00000001, rn 0x00000000, c:v-in 1, cpsr 0xd0000000 NZ V
+orn.w  r1, r2, r3, lsl #15 :: rd 0xffffffff rm 0x00000001, rn 0x00000000, c:v-in 1, cpsr 0xd0000000 NZ V
+orn.w  r1, r2, r3, lsl #31 :: rd 0xffffffff rm 0x00000001, rn 0x00000000, c:v-in 1, cpsr 0xd0000000 NZ V
+orn.w  r1, r2, r3, lsr #0  :: rd 0xffffffff rm 0x00000001, rn 0x00000000, c:v-in 1, cpsr 0xd0000000 NZ V
+orn.w  r1, r2, r3, lsr #1  :: rd 0xffffffff rm 0x00000001, rn 0x00000000, c:v-in 1, cpsr 0xd0000000 NZ V
+orn.w  r1, r2, r3, lsr #15 :: rd 0xffffffff rm 0x00000001, rn 0x00000000, c:v-in 1, cpsr 0xd0000000 NZ V
+orn.w  r1, r2, r3, lsr #31 :: rd 0xffffffff rm 0x00000001, rn 0x00000000, c:v-in 1, cpsr 0xd0000000 NZ V
+orn.w  r1, r2, r3, asr #0  :: rd 0xffffffff rm 0x00000001, rn 0x00000000, c:v-in 1, cpsr 0xd0000000 NZ V
+orn.w  r1, r2, r3, asr #1  :: rd 0xffffffff rm 0x00000001, rn 0x00000000, c:v-in 1, cpsr 0xd0000000 NZ V
+orn.w  r1, r2, r3, asr #15 :: rd 0xffffffff rm 0x00000001, rn 0x00000000, c:v-in 1, cpsr 0xd0000000 NZ V
+orn.w  r1, r2, r3, asr #31 :: rd 0xffffffff rm 0x00000001, rn 0x00000000, c:v-in 1, cpsr 0xd0000000 NZ V
+orns.w r1, r2, r3, lsl #0  :: rd 0xfffffffe rm 0x00000000, rn 0x00000001, c:v-in 1, cpsr 0x90000000 N  V
+orns.w r1, r2, r3, lsl #1  :: rd 0xfffffffd rm 0x00000000, rn 0x00000001, c:v-in 1, cpsr 0x90000000 N  V
+orns.w r1, r2, r3, lsl #15 :: rd 0xffff7fff rm 0x00000000, rn 0x00000001, c:v-in 1, cpsr 0x90000000 N  V
+orns.w r1, r2, r3, lsl #31 :: rd 0x7fffffff rm 0x00000000, rn 0x00000001, c:v-in 1, cpsr 0x10000000    V
+orns.w r1, r2, r3, lsr #0  :: rd 0xfffffffe rm 0x00000000, rn 0x00000001, c:v-in 1, cpsr 0x90000000 N  V
+orns.w r1, r2, r3, lsr #1  :: rd 0xffffffff rm 0x00000000, rn 0x00000001, c:v-in 1, cpsr 0xb0000000 N CV
+orns.w r1, r2, r3, lsr #15 :: rd 0xffffffff rm 0x00000000, rn 0x00000001, c:v-in 1, cpsr 0x90000000 N  V
+orns.w r1, r2, r3, lsr #31 :: rd 0xffffffff rm 0x00000000, rn 0x00000001, c:v-in 1, cpsr 0x90000000 N  V
+orns.w r1, r2, r3, asr #0  :: rd 0xfffffffe rm 0x00000000, rn 0x00000001, c:v-in 1, cpsr 0x90000000 N  V
+orns.w r1, r2, r3, asr #1  :: rd 0xffffffff rm 0x00000000, rn 0x00000001, c:v-in 1, cpsr 0xb0000000 N CV
+orns.w r1, r2, r3, asr #15 :: rd 0xffffffff rm 0x00000000, rn 0x00000001, c:v-in 1, cpsr 0x90000000 N  V
+orns.w r1, r2, r3, asr #31 :: rd 0xffffffff rm 0x00000000, rn 0x00000001, c:v-in 1, cpsr 0x90000000 N  V
+orn.w  r1, r2, r3, lsl #0  :: rd 0xfffffffe rm 0x00000000, rn 0x00000001, c:v-in 1, cpsr 0xd0000000 NZ V
+orn.w  r1, r2, r3, lsl #1  :: rd 0xfffffffd rm 0x00000000, rn 0x00000001, c:v-in 1, cpsr 0xd0000000 NZ V
+orn.w  r1, r2, r3, lsl #15 :: rd 0xffff7fff rm 0x00000000, rn 0x00000001, c:v-in 1, cpsr 0xd0000000 NZ V
+orn.w  r1, r2, r3, lsl #31 :: rd 0x7fffffff rm 0x00000000, rn 0x00000001, c:v-in 1, cpsr 0xd0000000 NZ V
+orn.w  r1, r2, r3, lsr #0  :: rd 0xfffffffe rm 0x00000000, rn 0x00000001, c:v-in 1, cpsr 0xd0000000 NZ V
+orn.w  r1, r2, r3, lsr #1  :: rd 0xffffffff rm 0x00000000, rn 0x00000001, c:v-in 1, cpsr 0xd0000000 NZ V
+orn.w  r1, r2, r3, lsr #15 :: rd 0xffffffff rm 0x00000000, rn 0x00000001, c:v-in 1, cpsr 0xd0000000 NZ V
+orn.w  r1, r2, r3, lsr #31 :: rd 0xffffffff rm 0x00000000, rn 0x00000001, c:v-in 1, cpsr 0xd0000000 NZ V
+orn.w  r1, r2, r3, asr #0  :: rd 0xfffffffe rm 0x00000000, rn 0x00000001, c:v-in 1, cpsr 0xd0000000 NZ V
+orn.w  r1, r2, r3, asr #1  :: rd 0xffffffff rm 0x00000000, rn 0x00000001, c:v-in 1, cpsr 0xd0000000 NZ V
+orn.w  r1, r2, r3, asr #15 :: rd 0xffffffff rm 0x00000000, rn 0x00000001, c:v-in 1, cpsr 0xd0000000 NZ V
+orn.w  r1, r2, r3, asr #31 :: rd 0xffffffff rm 0x00000000, rn 0x00000001, c:v-in 1, cpsr 0xd0000000 NZ V
+orns.w r1, r2, r3, lsl #0  :: rd 0xffffffff rm 0xffffffff, rn 0x00000000, c:v-in 1, cpsr 0x90000000 N  V
+orns.w r1, r2, r3, lsl #1  :: rd 0xffffffff rm 0xffffffff, rn 0x00000000, c:v-in 1, cpsr 0x90000000 N  V
+orns.w r1, r2, r3, lsl #15 :: rd 0xffffffff rm 0xffffffff, rn 0x00000000, c:v-in 1, cpsr 0x90000000 N  V
+orns.w r1, r2, r3, lsl #31 :: rd 0xffffffff rm 0xffffffff, rn 0x00000000, c:v-in 1, cpsr 0x90000000 N  V
+orns.w r1, r2, r3, lsr #0  :: rd 0xffffffff rm 0xffffffff, rn 0x00000000, c:v-in 1, cpsr 0x90000000 N  V
+orns.w r1, r2, r3, lsr #1  :: rd 0xffffffff rm 0xffffffff, rn 0x00000000, c:v-in 1, cpsr 0x90000000 N  V
+orns.w r1, r2, r3, lsr #15 :: rd 0xffffffff rm 0xffffffff, rn 0x00000000, c:v-in 1, cpsr 0x90000000 N  V
+orns.w r1, r2, r3, lsr #31 :: rd 0xffffffff rm 0xffffffff, rn 0x00000000, c:v-in 1, cpsr 0x90000000 N  V
+orns.w r1, r2, r3, asr #0  :: rd 0xffffffff rm 0xffffffff, rn 0x00000000, c:v-in 1, cpsr 0x90000000 N  V
+orns.w r1, r2, r3, asr #1  :: rd 0xffffffff rm 0xffffffff, rn 0x00000000, c:v-in 1, cpsr 0x90000000 N  V
+orns.w r1, r2, r3, asr #15 :: rd 0xffffffff rm 0xffffffff, rn 0x00000000, c:v-in 1, cpsr 0x90000000 N  V
+orns.w r1, r2, r3, asr #31 :: rd 0xffffffff rm 0xffffffff, rn 0x00000000, c:v-in 1, cpsr 0x90000000 N  V
+orn.w  r1, r2, r3, lsl #0  :: rd 0xffffffff rm 0xffffffff, rn 0x00000000, c:v-in 1, cpsr 0xd0000000 NZ V
+orn.w  r1, r2, r3, lsl #1  :: rd 0xffffffff rm 0xffffffff, rn 0x00000000, c:v-in 1, cpsr 0xd0000000 NZ V
+orn.w  r1, r2, r3, lsl #15 :: rd 0xffffffff rm 0xffffffff, rn 0x00000000, c:v-in 1, cpsr 0xd0000000 NZ V
+orn.w  r1, r2, r3, lsl #31 :: rd 0xffffffff rm 0xffffffff, rn 0x00000000, c:v-in 1, cpsr 0xd0000000 NZ V
+orn.w  r1, r2, r3, lsr #0  :: rd 0xffffffff rm 0xffffffff, rn 0x00000000, c:v-in 1, cpsr 0xd0000000 NZ V
+orn.w  r1, r2, r3, lsr #1  :: rd 0xffffffff rm 0xffffffff, rn 0x00000000, c:v-in 1, cpsr 0xd0000000 NZ V
+orn.w  r1, r2, r3, lsr #15 :: rd 0xffffffff rm 0xffffffff, rn 0x00000000, c:v-in 1, cpsr 0xd0000000 NZ V
+orn.w  r1, r2, r3, lsr #31 :: rd 0xffffffff rm 0xffffffff, rn 0x00000000, c:v-in 1, cpsr 0xd0000000 NZ V
+orn.w  r1, r2, r3, asr #0  :: rd 0xffffffff rm 0xffffffff, rn 0x00000000, c:v-in 1, cpsr 0xd0000000 NZ V
+orn.w  r1, r2, r3, asr #1  :: rd 0xffffffff rm 0xffffffff, rn 0x00000000, c:v-in 1, cpsr 0xd0000000 NZ V
+orn.w  r1, r2, r3, asr #15 :: rd 0xffffffff rm 0xffffffff, rn 0x00000000, c:v-in 1, cpsr 0xd0000000 NZ V
+orn.w  r1, r2, r3, asr #31 :: rd 0xffffffff rm 0xffffffff, rn 0x00000000, c:v-in 1, cpsr 0xd0000000 NZ V
+orns.w r1, r2, r3, lsl #0  :: rd 0x00000000 rm 0x00000000, rn 0xffffffff, c:v-in 1, cpsr 0x50000000  Z V
+orns.w r1, r2, r3, lsl #1  :: rd 0x00000001 rm 0x00000000, rn 0xffffffff, c:v-in 1, cpsr 0x30000000   CV
+orns.w r1, r2, r3, lsl #15 :: rd 0x00007fff rm 0x00000000, rn 0xffffffff, c:v-in 1, cpsr 0x30000000   CV
+orns.w r1, r2, r3, lsl #31 :: rd 0x7fffffff rm 0x00000000, rn 0xffffffff, c:v-in 1, cpsr 0x30000000   CV
+orns.w r1, r2, r3, lsr #0  :: rd 0x00000000 rm 0x00000000, rn 0xffffffff, c:v-in 1, cpsr 0x50000000  Z V
+orns.w r1, r2, r3, lsr #1  :: rd 0x80000000 rm 0x00000000, rn 0xffffffff, c:v-in 1, cpsr 0xb0000000 N CV
+orns.w r1, r2, r3, lsr #15 :: rd 0xfffe0000 rm 0x00000000, rn 0xffffffff, c:v-in 1, cpsr 0xb0000000 N CV
+orns.w r1, r2, r3, lsr #31 :: rd 0xfffffffe rm 0x00000000, rn 0xffffffff, c:v-in 1, cpsr 0xb0000000 N CV
+orns.w r1, r2, r3, asr #0  :: rd 0x00000000 rm 0x00000000, rn 0xffffffff, c:v-in 1, cpsr 0x50000000  Z V
+orns.w r1, r2, r3, asr #1  :: rd 0x00000000 rm 0x00000000, rn 0xffffffff, c:v-in 1, cpsr 0x70000000  ZCV
+orns.w r1, r2, r3, asr #15 :: rd 0x00000000 rm 0x00000000, rn 0xffffffff, c:v-in 1, cpsr 0x70000000  ZCV
+orns.w r1, r2, r3, asr #31 :: rd 0x00000000 rm 0x00000000, rn 0xffffffff, c:v-in 1, cpsr 0x70000000  ZCV
+orn.w  r1, r2, r3, lsl #0  :: rd 0x00000000 rm 0x00000000, rn 0xffffffff, c:v-in 1, cpsr 0xd0000000 NZ V
+orn.w  r1, r2, r3, lsl #1  :: rd 0x00000001 rm 0x00000000, rn 0xffffffff, c:v-in 1, cpsr 0xd0000000 NZ V
+orn.w  r1, r2, r3, lsl #15 :: rd 0x00007fff rm 0x00000000, rn 0xffffffff, c:v-in 1, cpsr 0xd0000000 NZ V
+orn.w  r1, r2, r3, lsl #31 :: rd 0x7fffffff rm 0x00000000, rn 0xffffffff, c:v-in 1, cpsr 0xd0000000 NZ V
+orn.w  r1, r2, r3, lsr #0  :: rd 0x00000000 rm 0x00000000, rn 0xffffffff, c:v-in 1, cpsr 0xd0000000 NZ V
+orn.w  r1, r2, r3, lsr #1  :: rd 0x80000000 rm 0x00000000, rn 0xffffffff, c:v-in 1, cpsr 0xd0000000 NZ V
+orn.w  r1, r2, r3, lsr #15 :: rd 0xfffe0000 rm 0x00000000, rn 0xffffffff, c:v-in 1, cpsr 0xd0000000 NZ V
+orn.w  r1, r2, r3, lsr #31 :: rd 0xfffffffe rm 0x00000000, rn 0xffffffff, c:v-in 1, cpsr 0xd0000000 NZ V
+orn.w  r1, r2, r3, asr #0  :: rd 0x00000000 rm 0x00000000, rn 0xffffffff, c:v-in 1, cpsr 0xd0000000 NZ V
+orn.w  r1, r2, r3, asr #1  :: rd 0x00000000 rm 0x00000000, rn 0xffffffff, c:v-in 1, cpsr 0xd0000000 NZ V
+orn.w  r1, r2, r3, asr #15 :: rd 0x00000000 rm 0x00000000, rn 0xffffffff, c:v-in 1, cpsr 0xd0000000 NZ V
+orn.w  r1, r2, r3, asr #31 :: rd 0x00000000 rm 0x00000000, rn 0xffffffff, c:v-in 1, cpsr 0xd0000000 NZ V
+orns.w r1, r2, r3, lsl #0  :: rd 0x7fffffff rm 0x00000000, rn 0x80000000, c:v-in 1, cpsr 0x10000000    V
+orns.w r1, r2, r3, lsl #1  :: rd 0xffffffff rm 0x00000000, rn 0x80000000, c:v-in 1, cpsr 0xb0000000 N CV
+orns.w r1, r2, r3, lsl #15 :: rd 0xffffffff rm 0x00000000, rn 0x80000000, c:v-in 1, cpsr 0x90000000 N  V
+orns.w r1, r2, r3, lsl #31 :: rd 0xffffffff rm 0x00000000, rn 0x80000000, c:v-in 1, cpsr 0x90000000 N  V
+orns.w r1, r2, r3, lsr #0  :: rd 0x7fffffff rm 0x00000000, rn 0x80000000, c:v-in 1, cpsr 0x10000000    V
+orns.w r1, r2, r3, lsr #1  :: rd 0xbfffffff rm 0x00000000, rn 0x80000000, c:v-in 1, cpsr 0x90000000 N  V
+orns.w r1, r2, r3, lsr #15 :: rd 0xfffeffff rm 0x00000000, rn 0x80000000, c:v-in 1, cpsr 0x90000000 N  V
+orns.w r1, r2, r3, lsr #31 :: rd 0xfffffffe rm 0x00000000, rn 0x80000000, c:v-in 1, cpsr 0x90000000 N  V
+orns.w r1, r2, r3, asr #0  :: rd 0x7fffffff rm 0x00000000, rn 0x80000000, c:v-in 1, cpsr 0x10000000    V
+orns.w r1, r2, r3, asr #1  :: rd 0x3fffffff rm 0x00000000, rn 0x80000000, c:v-in 1, cpsr 0x10000000    V
+orns.w r1, r2, r3, asr #15 :: rd 0x0000ffff rm 0x00000000, rn 0x80000000, c:v-in 1, cpsr 0x10000000    V
+orns.w r1, r2, r3, asr #31 :: rd 0x00000000 rm 0x00000000, rn 0x80000000, c:v-in 1, cpsr 0x50000000  Z V
+orn.w  r1, r2, r3, lsl #0  :: rd 0x7fffffff rm 0x00000000, rn 0x80000000, c:v-in 1, cpsr 0xd0000000 NZ V
+orn.w  r1, r2, r3, lsl #1  :: rd 0xffffffff rm 0x00000000, rn 0x80000000, c:v-in 1, cpsr 0xd0000000 NZ V
+orn.w  r1, r2, r3, lsl #15 :: rd 0xffffffff rm 0x00000000, rn 0x80000000, c:v-in 1, cpsr 0xd0000000 NZ V
+orn.w  r1, r2, r3, lsl #31 :: rd 0xffffffff rm 0x00000000, rn 0x80000000, c:v-in 1, cpsr 0xd0000000 NZ V
+orn.w  r1, r2, r3, lsr #0  :: rd 0x7fffffff rm 0x00000000, rn 0x80000000, c:v-in 1, cpsr 0xd0000000 NZ V
+orn.w  r1, r2, r3, lsr #1  :: rd 0xbfffffff rm 0x00000000, rn 0x80000000, c:v-in 1, cpsr 0xd0000000 NZ V
+orn.w  r1, r2, r3, lsr #15 :: rd 0xfffeffff rm 0x00000000, rn 0x80000000, c:v-in 1, cpsr 0xd0000000 NZ V
+orn.w  r1, r2, r3, lsr #31 :: rd 0xfffffffe rm 0x00000000, rn 0x80000000, c:v-in 1, cpsr 0xd0000000 NZ V
+orn.w  r1, r2, r3, asr #0  :: rd 0x7fffffff rm 0x00000000, rn 0x80000000, c:v-in 1, cpsr 0xd0000000 NZ V
+orn.w  r1, r2, r3, asr #1  :: rd 0x3fffffff rm 0x00000000, rn 0x80000000, c:v-in 1, cpsr 0xd0000000 NZ V
+orn.w  r1, r2, r3, asr #15 :: rd 0x0000ffff rm 0x00000000, rn 0x80000000, c:v-in 1, cpsr 0xd0000000 NZ V
+orn.w  r1, r2, r3, asr #31 :: rd 0x00000000 rm 0x00000000, rn 0x80000000, c:v-in 1, cpsr 0xd0000000 NZ V
+orns.w r1, r2, r3, lsl #0  :: rd 0xffffffff rm 0x80000000, rn 0x00000000, c:v-in 1, cpsr 0x90000000 N  V
+orns.w r1, r2, r3, lsl #1  :: rd 0xffffffff rm 0x80000000, rn 0x00000000, c:v-in 1, cpsr 0x90000000 N  V
+orns.w r1, r2, r3, lsl #15 :: rd 0xffffffff rm 0x80000000, rn 0x00000000, c:v-in 1, cpsr 0x90000000 N  V
+orns.w r1, r2, r3, lsl #31 :: rd 0xffffffff rm 0x80000000, rn 0x00000000, c:v-in 1, cpsr 0x90000000 N  V
+orns.w r1, r2, r3, lsr #0  :: rd 0xffffffff rm 0x80000000, rn 0x00000000, c:v-in 1, cpsr 0x90000000 N  V
+orns.w r1, r2, r3, lsr #1  :: rd 0xffffffff rm 0x80000000, rn 0x00000000, c:v-in 1, cpsr 0x90000000 N  V
+orns.w r1, r2, r3, lsr #15 :: rd 0xffffffff rm 0x80000000, rn 0x00000000, c:v-in 1, cpsr 0x90000000 N  V
+orns.w r1, r2, r3, lsr #31 :: rd 0xffffffff rm 0x80000000, rn 0x00000000, c:v-in 1, cpsr 0x90000000 N  V
+orns.w r1, r2, r3, asr #0  :: rd 0xffffffff rm 0x80000000, rn 0x00000000, c:v-in 1, cpsr 0x90000000 N  V
+orns.w r1, r2, r3, asr #1  :: rd 0xffffffff rm 0x80000000, rn 0x00000000, c:v-in 1, cpsr 0x90000000 N  V
+orns.w r1, r2, r3, asr #15 :: rd 0xffffffff rm 0x80000000, rn 0x00000000, c:v-in 1, cpsr 0x90000000 N  V
+orns.w r1, r2, r3, asr #31 :: rd 0xffffffff rm 0x80000000, rn 0x00000000, c:v-in 1, cpsr 0x90000000 N  V
+orn.w  r1, r2, r3, lsl #0  :: rd 0xffffffff rm 0x80000000, rn 0x00000000, c:v-in 1, cpsr 0xd0000000 NZ V
+orn.w  r1, r2, r3, lsl #1  :: rd 0xffffffff rm 0x80000000, rn 0x00000000, c:v-in 1, cpsr 0xd0000000 NZ V
+orn.w  r1, r2, r3, lsl #15 :: rd 0xffffffff rm 0x80000000, rn 0x00000000, c:v-in 1, cpsr 0xd0000000 NZ V
+orn.w  r1, r2, r3, lsl #31 :: rd 0xffffffff rm 0x80000000, rn 0x00000000, c:v-in 1, cpsr 0xd0000000 NZ V
+orn.w  r1, r2, r3, lsr #0  :: rd 0xffffffff rm 0x80000000, rn 0x00000000, c:v-in 1, cpsr 0xd0000000 NZ V
+orn.w  r1, r2, r3, lsr #1  :: rd 0xffffffff rm 0x80000000, rn 0x00000000, c:v-in 1, cpsr 0xd0000000 NZ V
+orn.w  r1, r2, r3, lsr #15 :: rd 0xffffffff rm 0x80000000, rn 0x00000000, c:v-in 1, cpsr 0xd0000000 NZ V
+orn.w  r1, r2, r3, lsr #31 :: rd 0xffffffff rm 0x80000000, rn 0x00000000, c:v-in 1, cpsr 0xd0000000 NZ V
+orn.w  r1, r2, r3, asr #0  :: rd 0xffffffff rm 0x80000000, rn 0x00000000, c:v-in 1, cpsr 0xd0000000 NZ V
+orn.w  r1, r2, r3, asr #1  :: rd 0xffffffff rm 0x80000000, rn 0x00000000, c:v-in 1, cpsr 0xd0000000 NZ V
+orn.w  r1, r2, r3, asr #15 :: rd 0xffffffff rm 0x80000000, rn 0x00000000, c:v-in 1, cpsr 0xd0000000 NZ V
+orn.w  r1, r2, r3, asr #31 :: rd 0xffffffff rm 0x80000000, rn 0x00000000, c:v-in 1, cpsr 0xd0000000 NZ V
+orns.w r1, r2, r3, lsl #0  :: rd 0xffffffff rm 0x80000000, rn 0x80000000, c:v-in 1, cpsr 0x90000000 N  V
+orns.w r1, r2, r3, lsl #1  :: rd 0xffffffff rm 0x80000000, rn 0x80000000, c:v-in 1, cpsr 0xb0000000 N CV
+orns.w r1, r2, r3, lsl #15 :: rd 0xffffffff rm 0x80000000, rn 0x80000000, c:v-in 1, cpsr 0x90000000 N  V
+orns.w r1, r2, r3, lsl #31 :: rd 0xffffffff rm 0x80000000, rn 0x80000000, c:v-in 1, cpsr 0x90000000 N  V
+orns.w r1, r2, r3, lsr #0  :: rd 0xffffffff rm 0x80000000, rn 0x80000000, c:v-in 1, cpsr 0x90000000 N  V
+orns.w r1, r2, r3, lsr #1  :: rd 0xbfffffff rm 0x80000000, rn 0x80000000, c:v-in 1, cpsr 0x90000000 N  V
+orns.w r1, r2, r3, lsr #15 :: rd 0xfffeffff rm 0x80000000, rn 0x80000000, c:v-in 1, cpsr 0x90000000 N  V
+orns.w r1, r2, r3, lsr #31 :: rd 0xfffffffe rm 0x80000000, rn 0x80000000, c:v-in 1, cpsr 0x90000000 N  V
+orns.w r1, r2, r3, asr #0  :: rd 0xffffffff rm 0x80000000, rn 0x80000000, c:v-in 1, cpsr 0x90000000 N  V
+orns.w r1, r2, r3, asr #1  :: rd 0xbfffffff rm 0x80000000, rn 0x80000000, c:v-in 1, cpsr 0x90000000 N  V
+orns.w r1, r2, r3, asr #15 :: rd 0x8000ffff rm 0x80000000, rn 0x80000000, c:v-in 1, cpsr 0x90000000 N  V
+orns.w r1, r2, r3, asr #31 :: rd 0x80000000 rm 0x80000000, rn 0x80000000, c:v-in 1, cpsr 0x90000000 N  V
+orn.w  r1, r2, r3, lsl #0  :: rd 0xffffffff rm 0x80000000, rn 0x80000000, c:v-in 1, cpsr 0xd0000000 NZ V
+orn.w  r1, r2, r3, lsl #1  :: rd 0xffffffff rm 0x80000000, rn 0x80000000, c:v-in 1, cpsr 0xd0000000 NZ V
+orn.w  r1, r2, r3, lsl #15 :: rd 0xffffffff rm 0x80000000, rn 0x80000000, c:v-in 1, cpsr 0xd0000000 NZ V
+orn.w  r1, r2, r3, lsl #31 :: rd 0xffffffff rm 0x80000000, rn 0x80000000, c:v-in 1, cpsr 0xd0000000 NZ V
+orn.w  r1, r2, r3, lsr #0  :: rd 0xffffffff rm 0x80000000, rn 0x80000000, c:v-in 1, cpsr 0xd0000000 NZ V
+orn.w  r1, r2, r3, lsr #1  :: rd 0xbfffffff rm 0x80000000, rn 0x80000000, c:v-in 1, cpsr 0xd0000000 NZ V
+orn.w  r1, r2, r3, lsr #15 :: rd 0xfffeffff rm 0x80000000, rn 0x80000000, c:v-in 1, cpsr 0xd0000000 NZ V
+orn.w  r1, r2, r3, lsr #31 :: rd 0xfffffffe rm 0x80000000, rn 0x80000000, c:v-in 1, cpsr 0xd0000000 NZ V
+orn.w  r1, r2, r3, asr #0  :: rd 0xffffffff rm 0x80000000, rn 0x80000000, c:v-in 1, cpsr 0xd0000000 NZ V
+orn.w  r1, r2, r3, asr #1  :: rd 0xbfffffff rm 0x80000000, rn 0x80000000, c:v-in 1, cpsr 0xd0000000 NZ V
+orn.w  r1, r2, r3, asr #15 :: rd 0x8000ffff rm 0x80000000, rn 0x80000000, c:v-in 1, cpsr 0xd0000000 NZ V
+orn.w  r1, r2, r3, asr #31 :: rd 0x80000000 rm 0x80000000, rn 0x80000000, c:v-in 1, cpsr 0xd0000000 NZ V
+orns.w r1, r2, r3, lsl #0  :: rd 0x7fffffff rm 0x7fffffff, rn 0x80000000, c:v-in 1, cpsr 0x10000000    V
+orns.w r1, r2, r3, lsl #1  :: rd 0xffffffff rm 0x7fffffff, rn 0x80000000, c:v-in 1, cpsr 0xb0000000 N CV
+orns.w r1, r2, r3, lsl #15 :: rd 0xffffffff rm 0x7fffffff, rn 0x80000000, c:v-in 1, cpsr 0x90000000 N  V
+orns.w r1, r2, r3, lsl #31 :: rd 0xffffffff rm 0x7fffffff, rn 0x80000000, c:v-in 1, cpsr 0x90000000 N  V
+orns.w r1, r2, r3, lsr #0  :: rd 0x7fffffff rm 0x7fffffff, rn 0x80000000, c:v-in 1, cpsr 0x10000000    V
+orns.w r1, r2, r3, lsr #1  :: rd 0xffffffff rm 0x7fffffff, rn 0x80000000, c:v-in 1, cpsr 0x90000000 N  V
+orns.w r1, r2, r3, lsr #15 :: rd 0xffffffff rm 0x7fffffff, rn 0x80000000, c:v-in 1, cpsr 0x90000000 N  V
+orns.w r1, r2, r3, lsr #31 :: rd 0xffffffff rm 0x7fffffff, rn 0x80000000, c:v-in 1, cpsr 0x90000000 N  V
+orns.w r1, r2, r3, asr #0  :: rd 0x7fffffff rm 0x7fffffff, rn 0x80000000, c:v-in 1, cpsr 0x10000000    V
+orns.w r1, r2, r3, asr #1  :: rd 0x7fffffff rm 0x7fffffff, rn 0x80000000, c:v-in 1, cpsr 0x10000000    V
+orns.w r1, r2, r3, asr #15 :: rd 0x7fffffff rm 0x7fffffff, rn 0x80000000, c:v-in 1, cpsr 0x10000000    V
+orns.w r1, r2, r3, asr #31 :: rd 0x7fffffff rm 0x7fffffff, rn 0x80000000, c:v-in 1, cpsr 0x10000000    V
+orn.w  r1, r2, r3, lsl #0  :: rd 0x7fffffff rm 0x7fffffff, rn 0x80000000, c:v-in 1, cpsr 0xd0000000 NZ V
+orn.w  r1, r2, r3, lsl #1  :: rd 0xffffffff rm 0x7fffffff, rn 0x80000000, c:v-in 1, cpsr 0xd0000000 NZ V
+orn.w  r1, r2, r3, lsl #15 :: rd 0xffffffff rm 0x7fffffff, rn 0x80000000, c:v-in 1, cpsr 0xd0000000 NZ V
+orn.w  r1, r2, r3, lsl #31 :: rd 0xffffffff rm 0x7fffffff, rn 0x80000000, c:v-in 1, cpsr 0xd0000000 NZ V
+orn.w  r1, r2, r3, lsr #0  :: rd 0x7fffffff rm 0x7fffffff, rn 0x80000000, c:v-in 1, cpsr 0xd0000000 NZ V
+orn.w  r1, r2, r3, lsr #1  :: rd 0xffffffff rm 0x7fffffff, rn 0x80000000, c:v-in 1, cpsr 0xd0000000 NZ V
+orn.w  r1, r2, r3, lsr #15 :: rd 0xffffffff rm 0x7fffffff, rn 0x80000000, c:v-in 1, cpsr 0xd0000000 NZ V
+orn.w  r1, r2, r3, lsr #31 :: rd 0xffffffff rm 0x7fffffff, rn 0x80000000, c:v-in 1, cpsr 0xd0000000 NZ V
+orn.w  r1, r2, r3, asr #0  :: rd 0x7fffffff rm 0x7fffffff, rn 0x80000000, c:v-in 1, cpsr 0xd0000000 NZ V
+orn.w  r1, r2, r3, asr #1  :: rd 0x7fffffff rm 0x7fffffff, rn 0x80000000, c:v-in 1, cpsr 0xd0000000 NZ V
+orn.w  r1, r2, r3, asr #15 :: rd 0x7fffffff rm 0x7fffffff, rn 0x80000000, c:v-in 1, cpsr 0xd0000000 NZ V
+orn.w  r1, r2, r3, asr #31 :: rd 0x7fffffff rm 0x7fffffff, rn 0x80000000, c:v-in 1, cpsr 0xd0000000 NZ V
+orns.w r1, r2, r3, lsl #0  :: rd 0x80000000 rm 0x80000000, rn 0x7fffffff, c:v-in 1, cpsr 0x90000000 N  V
+orns.w r1, r2, r3, lsl #1  :: rd 0x80000001 rm 0x80000000, rn 0x7fffffff, c:v-in 1, cpsr 0x90000000 N  V
+orns.w r1, r2, r3, lsl #15 :: rd 0x80007fff rm 0x80000000, rn 0x7fffffff, c:v-in 1, cpsr 0xb0000000 N CV
+orns.w r1, r2, r3, lsl #31 :: rd 0xffffffff rm 0x80000000, rn 0x7fffffff, c:v-in 1, cpsr 0xb0000000 N CV
+orns.w r1, r2, r3, lsr #0  :: rd 0x80000000 rm 0x80000000, rn 0x7fffffff, c:v-in 1, cpsr 0x90000000 N  V
+orns.w r1, r2, r3, lsr #1  :: rd 0xc0000000 rm 0x80000000, rn 0x7fffffff, c:v-in 1, cpsr 0xb0000000 N CV
+orns.w r1, r2, r3, lsr #15 :: rd 0xffff0000 rm 0x80000000, rn 0x7fffffff, c:v-in 1, cpsr 0xb0000000 N CV
+orns.w r1, r2, r3, lsr #31 :: rd 0xffffffff rm 0x80000000, rn 0x7fffffff, c:v-in 1, cpsr 0xb0000000 N CV
+orns.w r1, r2, r3, asr #0  :: rd 0x80000000 rm 0x80000000, rn 0x7fffffff, c:v-in 1, cpsr 0x90000000 N  V
+orns.w r1, r2, r3, asr #1  :: rd 0xc0000000 rm 0x80000000, rn 0x7fffffff, c:v-in 1, cpsr 0xb0000000 N CV
+orns.w r1, r2, r3, asr #15 :: rd 0xffff0000 rm 0x80000000, rn 0x7fffffff, c:v-in 1, cpsr 0xb0000000 N CV
+orns.w r1, r2, r3, asr #31 :: rd 0xffffffff rm 0x80000000, rn 0x7fffffff, c:v-in 1, cpsr 0xb0000000 N CV
+orn.w  r1, r2, r3, lsl #0  :: rd 0x80000000 rm 0x80000000, rn 0x7fffffff, c:v-in 1, cpsr 0xd0000000 NZ V
+orn.w  r1, r2, r3, lsl #1  :: rd 0x80000001 rm 0x80000000, rn 0x7fffffff, c:v-in 1, cpsr 0xd0000000 NZ V
+orn.w  r1, r2, r3, lsl #15 :: rd 0x80007fff rm 0x80000000, rn 0x7fffffff, c:v-in 1, cpsr 0xd0000000 NZ V
+orn.w  r1, r2, r3, lsl #31 :: rd 0xffffffff rm 0x80000000, rn 0x7fffffff, c:v-in 1, cpsr 0xd0000000 NZ V
+orn.w  r1, r2, r3, lsr #0  :: rd 0x80000000 rm 0x80000000, rn 0x7fffffff, c:v-in 1, cpsr 0xd0000000 NZ V
+orn.w  r1, r2, r3, lsr #1  :: rd 0xc0000000 rm 0x80000000, rn 0x7fffffff, c:v-in 1, cpsr 0xd0000000 NZ V
+orn.w  r1, r2, r3, lsr #15 :: rd 0xffff0000 rm 0x80000000, rn 0x7fffffff, c:v-in 1, cpsr 0xd0000000 NZ V
+orn.w  r1, r2, r3, lsr #31 :: rd 0xffffffff rm 0x80000000, rn 0x7fffffff, c:v-in 1, cpsr 0xd0000000 NZ V
+orn.w  r1, r2, r3, asr #0  :: rd 0x80000000 rm 0x80000000, rn 0x7fffffff, c:v-in 1, cpsr 0xd0000000 NZ V
+orn.w  r1, r2, r3, asr #1  :: rd 0xc0000000 rm 0x80000000, rn 0x7fffffff, c:v-in 1, cpsr 0xd0000000 NZ V
+orn.w  r1, r2, r3, asr #15 :: rd 0xffff0000 rm 0x80000000, rn 0x7fffffff, c:v-in 1, cpsr 0xd0000000 NZ V
+orn.w  r1, r2, r3, asr #31 :: rd 0xffffffff rm 0x80000000, rn 0x7fffffff, c:v-in 1, cpsr 0xd0000000 NZ V
+orns.w r1, r2, r3, lsl #0  :: rd 0xffffffff rm 0x7fffffff, rn 0x7fffffff, c:v-in 1, cpsr 0x90000000 N  V
+orns.w r1, r2, r3, lsl #1  :: rd 0x7fffffff rm 0x7fffffff, rn 0x7fffffff, c:v-in 1, cpsr 0x10000000    V
+orns.w r1, r2, r3, lsl #15 :: rd 0x7fffffff rm 0x7fffffff, rn 0x7fffffff, c:v-in 1, cpsr 0x30000000   CV
+orns.w r1, r2, r3, lsl #31 :: rd 0x7fffffff rm 0x7fffffff, rn 0x7fffffff, c:v-in 1, cpsr 0x30000000   CV
+orns.w r1, r2, r3, lsr #0  :: rd 0xffffffff rm 0x7fffffff, rn 0x7fffffff, c:v-in 1, cpsr 0x90000000 N  V
+orns.w r1, r2, r3, lsr #1  :: rd 0xffffffff rm 0x7fffffff, rn 0x7fffffff, c:v-in 1, cpsr 0xb0000000 N CV
+orns.w r1, r2, r3, lsr #15 :: rd 0xffffffff rm 0x7fffffff, rn 0x7fffffff, c:v-in 1, cpsr 0xb0000000 N CV
+orns.w r1, r2, r3, lsr #31 :: rd 0xffffffff rm 0x7fffffff, rn 0x7fffffff, c:v-in 1, cpsr 0xb0000000 N CV
+orns.w r1, r2, r3, asr #0  :: rd 0xffffffff rm 0x7fffffff, rn 0x7fffffff, c:v-in 1, cpsr 0x90000000 N  V
+orns.w r1, r2, r3, asr #1  :: rd 0xffffffff rm 0x7fffffff, rn 0x7fffffff, c:v-in 1, cpsr 0xb0000000 N CV
+orns.w r1, r2, r3, asr #15 :: rd 0xffffffff rm 0x7fffffff, rn 0x7fffffff, c:v-in 1, cpsr 0xb0000000 N CV
+orns.w r1, r2, r3, asr #31 :: rd 0xffffffff rm 0x7fffffff, rn 0x7fffffff, c:v-in 1, cpsr 0xb0000000 N CV
+orn.w  r1, r2, r3, lsl #0  :: rd 0xffffffff rm 0x7fffffff, rn 0x7fffffff, c:v-in 1, cpsr 0xd0000000 NZ V
+orn.w  r1, r2, r3, lsl #1  :: rd 0x7fffffff rm 0x7fffffff, rn 0x7fffffff, c:v-in 1, cpsr 0xd0000000 NZ V
+orn.w  r1, r2, r3, lsl #15 :: rd 0x7fffffff rm 0x7fffffff, rn 0x7fffffff, c:v-in 1, cpsr 0xd0000000 NZ V
+orn.w  r1, r2, r3, lsl #31 :: rd 0x7fffffff rm 0x7fffffff, rn 0x7fffffff, c:v-in 1, cpsr 0xd0000000 NZ V
+orn.w  r1, r2, r3, lsr #0  :: rd 0xffffffff rm 0x7fffffff, rn 0x7fffffff, c:v-in 1, cpsr 0xd0000000 NZ V
+orn.w  r1, r2, r3, lsr #1  :: rd 0xffffffff rm 0x7fffffff, rn 0x7fffffff, c:v-in 1, cpsr 0xd0000000 NZ V
+orn.w  r1, r2, r3, lsr #15 :: rd 0xffffffff rm 0x7fffffff, rn 0x7fffffff, c:v-in 1, cpsr 0xd0000000 NZ V
+orn.w  r1, r2, r3, lsr #31 :: rd 0xffffffff rm 0x7fffffff, rn 0x7fffffff, c:v-in 1, cpsr 0xd0000000 NZ V
+orn.w  r1, r2, r3, asr #0  :: rd 0xffffffff rm 0x7fffffff, rn 0x7fffffff, c:v-in 1, cpsr 0xd0000000 NZ V
+orn.w  r1, r2, r3, asr #1  :: rd 0xffffffff rm 0x7fffffff, rn 0x7fffffff, c:v-in 1, cpsr 0xd0000000 NZ V
+orn.w  r1, r2, r3, asr #15 :: rd 0xffffffff rm 0x7fffffff, rn 0x7fffffff, c:v-in 1, cpsr 0xd0000000 NZ V
+orn.w  r1, r2, r3, asr #31 :: rd 0xffffffff rm 0x7fffffff, rn 0x7fffffff, c:v-in 1, cpsr 0xd0000000 NZ V
+orns.w r1, r2, r3, lsl #0  :: rd 0xf9e7f9f7 rm 0x31415927, rn 0x27181728, c:v-in 2, cpsr 0xa0000000 N C 
+orns.w r1, r2, r3, lsl #1  :: rd 0xb1cfd9af rm 0x31415927, rn 0x27181728, c:v-in 2, cpsr 0x80000000 N   
+orns.w r1, r2, r3, lsl #15 :: rd 0xf56bffff rm 0x31415927, rn 0x27181728, c:v-in 2, cpsr 0x80000000 N   
+orns.w r1, r2, r3, lsl #31 :: rd 0xffffffff rm 0x31415927, rn 0x27181728, c:v-in 2, cpsr 0x80000000 N   
+orns.w r1, r2, r3, lsr #0  :: rd 0xf9e7f9f7 rm 0x31415927, rn 0x27181728, c:v-in 2, cpsr 0xa0000000 N C 
+orns.w r1, r2, r3, lsr #1  :: rd 0xfd73fd6f rm 0x31415927, rn 0x27181728, c:v-in 2, cpsr 0x80000000 N   
+orns.w r1, r2, r3, lsr #15 :: rd 0xfffff9ef rm 0x31415927, rn 0x27181728, c:v-in 2, cpsr 0x80000000 N   
+orns.w r1, r2, r3, lsr #31 :: rd 0xffffffff rm 0x31415927, rn 0x27181728, c:v-in 2, cpsr 0x80000000 N   
+orns.w r1, r2, r3, asr #0  :: rd 0xf9e7f9f7 rm 0x31415927, rn 0x27181728, c:v-in 2, cpsr 0xa0000000 N C 
+orns.w r1, r2, r3, asr #1  :: rd 0xfd73fd6f rm 0x31415927, rn 0x27181728, c:v-in 2, cpsr 0x80000000 N   
+orns.w r1, r2, r3, asr #15 :: rd 0xfffff9ef rm 0x31415927, rn 0x27181728, c:v-in 2, cpsr 0x80000000 N   
+orns.w r1, r2, r3, asr #31 :: rd 0xffffffff rm 0x31415927, rn 0x27181728, c:v-in 2, cpsr 0x80000000 N   
+orn.w  r1, r2, r3, lsl #0  :: rd 0xf9e7f9f7 rm 0x31415927, rn 0x27181728, c:v-in 2, cpsr 0xe0000000 NZC 
+orn.w  r1, r2, r3, lsl #1  :: rd 0xb1cfd9af rm 0x31415927, rn 0x27181728, c:v-in 2, cpsr 0xe0000000 NZC 
+orn.w  r1, r2, r3, lsl #15 :: rd 0xf56bffff rm 0x31415927, rn 0x27181728, c:v-in 2, cpsr 0xe0000000 NZC 
+orn.w  r1, r2, r3, lsl #31 :: rd 0xffffffff rm 0x31415927, rn 0x27181728, c:v-in 2, cpsr 0xe0000000 NZC 
+orn.w  r1, r2, r3, lsr #0  :: rd 0xf9e7f9f7 rm 0x31415927, rn 0x27181728, c:v-in 2, cpsr 0xe0000000 NZC 
+orn.w  r1, r2, r3, lsr #1  :: rd 0xfd73fd6f rm 0x31415927, rn 0x27181728, c:v-in 2, cpsr 0xe0000000 NZC 
+orn.w  r1, r2, r3, lsr #15 :: rd 0xfffff9ef rm 0x31415927, rn 0x27181728, c:v-in 2, cpsr 0xe0000000 NZC 
+orn.w  r1, r2, r3, lsr #31 :: rd 0xffffffff rm 0x31415927, rn 0x27181728, c:v-in 2, cpsr 0xe0000000 NZC 
+orn.w  r1, r2, r3, asr #0  :: rd 0xf9e7f9f7 rm 0x31415927, rn 0x27181728, c:v-in 2, cpsr 0xe0000000 NZC 
+orn.w  r1, r2, r3, asr #1  :: rd 0xfd73fd6f rm 0x31415927, rn 0x27181728, c:v-in 2, cpsr 0xe0000000 NZC 
+orn.w  r1, r2, r3, asr #15 :: rd 0xfffff9ef rm 0x31415927, rn 0x27181728, c:v-in 2, cpsr 0xe0000000 NZC 
+orn.w  r1, r2, r3, asr #31 :: rd 0xffffffff rm 0x31415927, rn 0x27181728, c:v-in 2, cpsr 0xe0000000 NZC 
+orns.w r1, r2, r3, lsl #0  :: rd 0x79e7f9f7 rm 0x31415927, rn 0x97181728, c:v-in 2, cpsr 0x20000000   C 
+orns.w r1, r2, r3, lsl #1  :: rd 0xf1cfd9af rm 0x31415927, rn 0x97181728, c:v-in 2, cpsr 0xa0000000 N C 
+orns.w r1, r2, r3, lsl #15 :: rd 0xf56bffff rm 0x31415927, rn 0x97181728, c:v-in 2, cpsr 0x80000000 N   
+orns.w r1, r2, r3, lsl #31 :: rd 0xffffffff rm 0x31415927, rn 0x97181728, c:v-in 2, cpsr 0x80000000 N   
+orns.w r1, r2, r3, lsr #0  :: rd 0x79e7f9f7 rm 0x31415927, rn 0x97181728, c:v-in 2, cpsr 0x20000000   C 
+orns.w r1, r2, r3, lsr #1  :: rd 0xb573fd6f rm 0x31415927, rn 0x97181728, c:v-in 2, cpsr 0x80000000 N   
+orns.w r1, r2, r3, lsr #15 :: rd 0xffffd9ef rm 0x31415927, rn 0x97181728, c:v-in 2, cpsr 0x80000000 N   
+orns.w r1, r2, r3, lsr #31 :: rd 0xffffffff rm 0x31415927, rn 0x97181728, c:v-in 2, cpsr 0x80000000 N   
+orns.w r1, r2, r3, asr #0  :: rd 0x79e7f9f7 rm 0x31415927, rn 0x97181728, c:v-in 2, cpsr 0x20000000   C 
+orns.w r1, r2, r3, asr #1  :: rd 0x3573fd6f rm 0x31415927, rn 0x97181728, c:v-in 2, cpsr 0x00000000     
+orns.w r1, r2, r3, asr #15 :: rd 0x3141d9ef rm 0x31415927, rn 0x97181728, c:v-in 2, cpsr 0x00000000     
+orns.w r1, r2, r3, asr #31 :: rd 0x31415927 rm 0x31415927, rn 0x97181728, c:v-in 2, cpsr 0x00000000     
+orn.w  r1, r2, r3, lsl #0  :: rd 0x79e7f9f7 rm 0x31415927, rn 0x97181728, c:v-in 2, cpsr 0xe0000000 NZC 
+orn.w  r1, r2, r3, lsl #1  :: rd 0xf1cfd9af rm 0x31415927, rn 0x97181728, c:v-in 2, cpsr 0xe0000000 NZC 
+orn.w  r1, r2, r3, lsl #15 :: rd 0xf56bffff rm 0x31415927, rn 0x97181728, c:v-in 2, cpsr 0xe0000000 NZC 
+orn.w  r1, r2, r3, lsl #31 :: rd 0xffffffff rm 0x31415927, rn 0x97181728, c:v-in 2, cpsr 0xe0000000 NZC 
+orn.w  r1, r2, r3, lsr #0  :: rd 0x79e7f9f7 rm 0x31415927, rn 0x97181728, c:v-in 2, cpsr 0xe0000000 NZC 
+orn.w  r1, r2, r3, lsr #1  :: rd 0xb573fd6f rm 0x31415927, rn 0x97181728, c:v-in 2, cpsr 0xe0000000 NZC 
+orn.w  r1, r2, r3, lsr #15 :: rd 0xffffd9ef rm 0x31415927, rn 0x97181728, c:v-in 2, cpsr 0xe0000000 NZC 
+orn.w  r1, r2, r3, lsr #31 :: rd 0xffffffff rm 0x31415927, rn 0x97181728, c:v-in 2, cpsr 0xe0000000 NZC 
+orn.w  r1, r2, r3, asr #0  :: rd 0x79e7f9f7 rm 0x31415927, rn 0x97181728, c:v-in 2, cpsr 0xe0000000 NZC 
+orn.w  r1, r2, r3, asr #1  :: rd 0x3573fd6f rm 0x31415927, rn 0x97181728, c:v-in 2, cpsr 0xe0000000 NZC 
+orn.w  r1, r2, r3, asr #15 :: rd 0x3141d9ef rm 0x31415927, rn 0x97181728, c:v-in 2, cpsr 0xe0000000 NZC 
+orn.w  r1, r2, r3, asr #31 :: rd 0x31415927 rm 0x31415927, rn 0x97181728, c:v-in 2, cpsr 0xe0000000 NZC 
+orns.w r1, r2, r3, lsl #0  :: rd 0xffffffff rm 0x00000000, rn 0x00000000, c:v-in 2, cpsr 0xa0000000 N C 
+orns.w r1, r2, r3, lsl #1  :: rd 0xffffffff rm 0x00000000, rn 0x00000000, c:v-in 2, cpsr 0x80000000 N   
+orns.w r1, r2, r3, lsl #15 :: rd 0xffffffff rm 0x00000000, rn 0x00000000, c:v-in 2, cpsr 0x80000000 N   
+orns.w r1, r2, r3, lsl #31 :: rd 0xffffffff rm 0x00000000, rn 0x00000000, c:v-in 2, cpsr 0x80000000 N   
+orns.w r1, r2, r3, lsr #0  :: rd 0xffffffff rm 0x00000000, rn 0x00000000, c:v-in 2, cpsr 0xa0000000 N C 
+orns.w r1, r2, r3, lsr #1  :: rd 0xffffffff rm 0x00000000, rn 0x00000000, c:v-in 2, cpsr 0x80000000 N   
+orns.w r1, r2, r3, lsr #15 :: rd 0xffffffff rm 0x00000000, rn 0x00000000, c:v-in 2, cpsr 0x80000000 N   
+orns.w r1, r2, r3, lsr #31 :: rd 0xffffffff rm 0x00000000, rn 0x00000000, c:v-in 2, cpsr 0x80000000 N   
+orns.w r1, r2, r3, asr #0  :: rd 0xffffffff rm 0x00000000, rn 0x00000000, c:v-in 2, cpsr 0xa0000000 N C 
+orns.w r1, r2, r3, asr #1  :: rd 0xffffffff rm 0x00000000, rn 0x00000000, c:v-in 2, cpsr 0x80000000 N   
+orns.w r1, r2, r3, asr #15 :: rd 0xffffffff rm 0x00000000, rn 0x00000000, c:v-in 2, cpsr 0x80000000 N   
+orns.w r1, r2, r3, asr #31 :: rd 0xffffffff rm 0x00000000, rn 0x00000000, c:v-in 2, cpsr 0x80000000 N   
+orn.w  r1, r2, r3, lsl #0  :: rd 0xffffffff rm 0x00000000, rn 0x00000000, c:v-in 2, cpsr 0xe0000000 NZC 
+orn.w  r1, r2, r3, lsl #1  :: rd 0xffffffff rm 0x00000000, rn 0x00000000, c:v-in 2, cpsr 0xe0000000 NZC 
+orn.w  r1, r2, r3, lsl #15 :: rd 0xffffffff rm 0x00000000, rn 0x00000000, c:v-in 2, cpsr 0xe0000000 NZC 
+orn.w  r1, r2, r3, lsl #31 :: rd 0xffffffff rm 0x00000000, rn 0x00000000, c:v-in 2, cpsr 0xe0000000 NZC 
+orn.w  r1, r2, r3, lsr #0  :: rd 0xffffffff rm 0x00000000, rn 0x00000000, c:v-in 2, cpsr 0xe0000000 NZC 
+orn.w  r1, r2, r3, lsr #1  :: rd 0xffffffff rm 0x00000000, rn 0x00000000, c:v-in 2, cpsr 0xe0000000 NZC 
+orn.w  r1, r2, r3, lsr #15 :: rd 0xffffffff rm 0x00000000, rn 0x00000000, c:v-in 2, cpsr 0xe0000000 NZC 
+orn.w  r1, r2, r3, lsr #31 :: rd 0xffffffff rm 0x00000000, rn 0x00000000, c:v-in 2, cpsr 0xe0000000 NZC 
+orn.w  r1, r2, r3, asr #0  :: rd 0xffffffff rm 0x00000000, rn 0x00000000, c:v-in 2, cpsr 0xe0000000 NZC 
+orn.w  r1, r2, r3, asr #1  :: rd 0xffffffff rm 0x00000000, rn 0x00000000, c:v-in 2, cpsr 0xe0000000 NZC 
+orn.w  r1, r2, r3, asr #15 :: rd 0xffffffff rm 0x00000000, rn 0x00000000, c:v-in 2, cpsr 0xe0000000 NZC 
+orn.w  r1, r2, r3, asr #31 :: rd 0xffffffff rm 0x00000000, rn 0x00000000, c:v-in 2, cpsr 0xe0000000 NZC 
+orns.w r1, r2, r3, lsl #0  :: rd 0xffffffff rm 0x00000001, rn 0x00000000, c:v-in 2, cpsr 0xa0000000 N C 
+orns.w r1, r2, r3, lsl #1  :: rd 0xffffffff rm 0x00000001, rn 0x00000000, c:v-in 2, cpsr 0x80000000 N   
+orns.w r1, r2, r3, lsl #15 :: rd 0xffffffff rm 0x00000001, rn 0x00000000, c:v-in 2, cpsr 0x80000000 N   
+orns.w r1, r2, r3, lsl #31 :: rd 0xffffffff rm 0x00000001, rn 0x00000000, c:v-in 2, cpsr 0x80000000 N   
+orns.w r1, r2, r3, lsr #0  :: rd 0xffffffff rm 0x00000001, rn 0x00000000, c:v-in 2, cpsr 0xa0000000 N C 
+orns.w r1, r2, r3, lsr #1  :: rd 0xffffffff rm 0x00000001, rn 0x00000000, c:v-in 2, cpsr 0x80000000 N   
+orns.w r1, r2, r3, lsr #15 :: rd 0xffffffff rm 0x00000001, rn 0x00000000, c:v-in 2, cpsr 0x80000000 N   
+orns.w r1, r2, r3, lsr #31 :: rd 0xffffffff rm 0x00000001, rn 0x00000000, c:v-in 2, cpsr 0x80000000 N   
+orns.w r1, r2, r3, asr #0  :: rd 0xffffffff rm 0x00000001, rn 0x00000000, c:v-in 2, cpsr 0xa0000000 N C 
+orns.w r1, r2, r3, asr #1  :: rd 0xffffffff rm 0x00000001, rn 0x00000000, c:v-in 2, cpsr 0x80000000 N   
+orns.w r1, r2, r3, asr #15 :: rd 0xffffffff rm 0x00000001, rn 0x00000000, c:v-in 2, cpsr 0x80000000 N   
+orns.w r1, r2, r3, asr #31 :: rd 0xffffffff rm 0x00000001, rn 0x00000000, c:v-in 2, cpsr 0x80000000 N   
+orn.w  r1, r2, r3, lsl #0  :: rd 0xffffffff rm 0x00000001, rn 0x00000000, c:v-in 2, cpsr 0xe0000000 NZC 
+orn.w  r1, r2, r3, lsl #1  :: rd 0xffffffff rm 0x00000001, rn 0x00000000, c:v-in 2, cpsr 0xe0000000 NZC 
+orn.w  r1, r2, r3, lsl #15 :: rd 0xffffffff rm 0x00000001, rn 0x00000000, c:v-in 2, cpsr 0xe0000000 NZC 
+orn.w  r1, r2, r3, lsl #31 :: rd 0xffffffff rm 0x00000001, rn 0x00000000, c:v-in 2, cpsr 0xe0000000 NZC 
+orn.w  r1, r2, r3, lsr #0  :: rd 0xffffffff rm 0x00000001, rn 0x00000000, c:v-in 2, cpsr 0xe0000000 NZC 
+orn.w  r1, r2, r3, lsr #1  :: rd 0xffffffff rm 0x00000001, rn 0x00000000, c:v-in 2, cpsr 0xe0000000 NZC 
+orn.w  r1, r2, r3, lsr #15 :: rd 0xffffffff rm 0x00000001, rn 0x00000000, c:v-in 2, cpsr 0xe0000000 NZC 
+orn.w  r1, r2, r3, lsr #31 :: rd 0xffffffff rm 0x00000001, rn 0x00000000, c:v-in 2, cpsr 0xe0000000 NZC 
+orn.w  r1, r2, r3, asr #0  :: rd 0xffffffff rm 0x00000001, rn 0x00000000, c:v-in 2, cpsr 0xe0000000 NZC 
+orn.w  r1, r2, r3, asr #1  :: rd 0xffffffff rm 0x00000001, rn 0x00000000, c:v-in 2, cpsr 0xe0000000 NZC 
+orn.w  r1, r2, r3, asr #15 :: rd 0xffffffff rm 0x00000001, rn 0x00000000, c:v-in 2, cpsr 0xe0000000 NZC 
+orn.w  r1, r2, r3, asr #31 :: rd 0xffffffff rm 0x00000001, rn 0x00000000, c:v-in 2, cpsr 0xe0000000 NZC 
+orns.w r1, r2, r3, lsl #0  :: rd 0xfffffffe rm 0x00000000, rn 0x00000001, c:v-in 2, cpsr 0xa0000000 N C 
+orns.w r1, r2, r3, lsl #1  :: rd 0xfffffffd rm 0x00000000, rn 0x00000001, c:v-in 2, cpsr 0x80000000 N   
+orns.w r1, r2, r3, lsl #15 :: rd 0xffff7fff rm 0x00000000, rn 0x00000001, c:v-in 2, cpsr 0x80000000 N   
+orns.w r1, r2, r3, lsl #31 :: rd 0x7fffffff rm 0x00000000, rn 0x00000001, c:v-in 2, cpsr 0x00000000     
+orns.w r1, r2, r3, lsr #0  :: rd 0xfffffffe rm 0x00000000, rn 0x00000001, c:v-in 2, cpsr 0xa0000000 N C 
+orns.w r1, r2, r3, lsr #1  :: rd 0xffffffff rm 0x00000000, rn 0x00000001, c:v-in 2, cpsr 0xa0000000 N C 
+orns.w r1, r2, r3, lsr #15 :: rd 0xffffffff rm 0x00000000, rn 0x00000001, c:v-in 2, cpsr 0x80000000 N   
+orns.w r1, r2, r3, lsr #31 :: rd 0xffffffff rm 0x00000000, rn 0x00000001, c:v-in 2, cpsr 0x80000000 N   
+orns.w r1, r2, r3, asr #0  :: rd 0xfffffffe rm 0x00000000, rn 0x00000001, c:v-in 2, cpsr 0xa0000000 N C 
+orns.w r1, r2, r3, asr #1  :: rd 0xffffffff rm 0x00000000, rn 0x00000001, c:v-in 2, cpsr 0xa0000000 N C 
+orns.w r1, r2, r3, asr #15 :: rd 0xffffffff rm 0x00000000, rn 0x00000001, c:v-in 2, cpsr 0x80000000 N   
+orns.w r1, r2, r3, asr #31 :: rd 0xffffffff rm 0x00000000, rn 0x00000001, c:v-in 2, cpsr 0x80000000 N   
+orn.w  r1, r2, r3, lsl #0  :: rd 0xfffffffe rm 0x00000000, rn 0x00000001, c:v-in 2, cpsr 0xe0000000 NZC 
+orn.w  r1, r2, r3, lsl #1  :: rd 0xfffffffd rm 0x00000000, rn 0x00000001, c:v-in 2, cpsr 0xe0000000 NZC 
+orn.w  r1, r2, r3, lsl #15 :: rd 0xffff7fff rm 0x00000000, rn 0x00000001, c:v-in 2, cpsr 0xe0000000 NZC 
+orn.w  r1, r2, r3, lsl #31 :: rd 0x7fffffff rm 0x00000000, rn 0x00000001, c:v-in 2, cpsr 0xe0000000 NZC 
+orn.w  r1, r2, r3, lsr #0  :: rd 0xfffffffe rm 0x00000000, rn 0x00000001, c:v-in 2, cpsr 0xe0000000 NZC 
+orn.w  r1, r2, r3, lsr #1  :: rd 0xffffffff rm 0x00000000, rn 0x00000001, c:v-in 2, cpsr 0xe0000000 NZC 
+orn.w  r1, r2, r3, lsr #15 :: rd 0xffffffff rm 0x00000000, rn 0x00000001, c:v-in 2, cpsr 0xe0000000 NZC 
+orn.w  r1, r2, r3, lsr #31 :: rd 0xffffffff rm 0x00000000, rn 0x00000001, c:v-in 2, cpsr 0xe0000000 NZC 
+orn.w  r1, r2, r3, asr #0  :: rd 0xfffffffe rm 0x00000000, rn 0x00000001, c:v-in 2, cpsr 0xe0000000 NZC 
+orn.w  r1, r2, r3, asr #1  :: rd 0xffffffff rm 0x00000000, rn 0x00000001, c:v-in 2, cpsr 0xe0000000 NZC 
+orn.w  r1, r2, r3, asr #15 :: rd 0xffffffff rm 0x00000000, rn 0x00000001, c:v-in 2, cpsr 0xe0000000 NZC 
+orn.w  r1, r2, r3, asr #31 :: rd 0xffffffff rm 0x00000000, rn 0x00000001, c:v-in 2, cpsr 0xe0000000 NZC 
+orns.w r1, r2, r3, lsl #0  :: rd 0xffffffff rm 0xffffffff, rn 0x00000000, c:v-in 2, cpsr 0xa0000000 N C 
+orns.w r1, r2, r3, lsl #1  :: rd 0xffffffff rm 0xffffffff, rn 0x00000000, c:v-in 2, cpsr 0x80000000 N   
+orns.w r1, r2, r3, lsl #15 :: rd 0xffffffff rm 0xffffffff, rn 0x00000000, c:v-in 2, cpsr 0x80000000 N   
+orns.w r1, r2, r3, lsl #31 :: rd 0xffffffff rm 0xffffffff, rn 0x00000000, c:v-in 2, cpsr 0x80000000 N   
+orns.w r1, r2, r3, lsr #0  :: rd 0xffffffff rm 0xffffffff, rn 0x00000000, c:v-in 2, cpsr 0xa0000000 N C 
+orns.w r1, r2, r3, lsr #1  :: rd 0xffffffff rm 0xffffffff, rn 0x00000000, c:v-in 2, cpsr 0x80000000 N   
+orns.w r1, r2, r3, lsr #15 :: rd 0xffffffff rm 0xffffffff, rn 0x00000000, c:v-in 2, cpsr 0x80000000 N   
+orns.w r1, r2, r3, lsr #31 :: rd 0xffffffff rm 0xffffffff, rn 0x00000000, c:v-in 2, cpsr 0x80000000 N   
+orns.w r1, r2, r3, asr #0  :: rd 0xffffffff rm 0xffffffff, rn 0x00000000, c:v-in 2, cpsr 0xa0000000 N C 
+orns.w r1, r2, r3, asr #1  :: rd 0xffffffff rm 0xffffffff, rn 0x00000000, c:v-in 2, cpsr 0x80000000 N   
+orns.w r1, r2, r3, asr #15 :: rd 0xffffffff rm 0xffffffff, rn 0x00000000, c:v-in 2, cpsr 0x80000000 N   
+orns.w r1, r2, r3, asr #31 :: rd 0xffffffff rm 0xffffffff, rn 0x00000000, c:v-in 2, cpsr 0x80000000 N   
+orn.w  r1, r2, r3, lsl #0  :: rd 0xffffffff rm 0xffffffff, rn 0x00000000, c:v-in 2, cpsr 0xe0000000 NZC 
+orn.w  r1, r2, r3, lsl #1  :: rd 0xffffffff rm 0xffffffff, rn 0x00000000, c:v-in 2, cpsr 0xe0000000 NZC 
+orn.w  r1, r2, r3, lsl #15 :: rd 0xffffffff rm 0xffffffff, rn 0x00000000, c:v-in 2, cpsr 0xe0000000 NZC 
+orn.w  r1, r2, r3, lsl #31 :: rd 0xffffffff rm 0xffffffff, rn 0x00000000, c:v-in 2, cpsr 0xe0000000 NZC 
+orn.w  r1, r2, r3, lsr #0  :: rd 0xffffffff rm 0xffffffff, rn 0x00000000, c:v-in 2, cpsr 0xe0000000 NZC 
+orn.w  r1, r2, r3, lsr #1  :: rd 0xffffffff rm 0xffffffff, rn 0x00000000, c:v-in 2, cpsr 0xe0000000 NZC 
+orn.w  r1, r2, r3, lsr #15 :: rd 0xffffffff rm 0xffffffff, rn 0x00000000, c:v-in 2, cpsr 0xe0000000 NZC 
+orn.w  r1, r2, r3, lsr #31 :: rd 0xffffffff rm 0xffffffff, rn 0x00000000, c:v-in 2, cpsr 0xe0000000 NZC 
+orn.w  r1, r2, r3, asr #0  :: rd 0xffffffff rm 0xffffffff, rn 0x00000000, c:v-in 2, cpsr 0xe0000000 NZC 
+orn.w  r1, r2, r3, asr #1  :: rd 0xffffffff rm 0xffffffff, rn 0x00000000, c:v-in 2, cpsr 0xe0000000 NZC 
+orn.w  r1, r2, r3, asr #15 :: rd 0xffffffff rm 0xffffffff, rn 0x00000000, c:v-in 2, cpsr 0xe0000000 NZC 
+orn.w  r1, r2, r3, asr #31 :: rd 0xffffffff rm 0xffffffff, rn 0x00000000, c:v-in 2, cpsr 0xe0000000 NZC 
+orns.w r1, r2, r3, lsl #0  :: rd 0x00000000 rm 0x00000000, rn 0xffffffff, c:v-in 2, cpsr 0x60000000  ZC 
+orns.w r1, r2, r3, lsl #1  :: rd 0x00000001 rm 0x00000000, rn 0xffffffff, c:v-in 2, cpsr 0x20000000   C 
+orns.w r1, r2, r3, lsl #15 :: rd 0x00007fff rm 0x00000000, rn 0xffffffff, c:v-in 2, cpsr 0x20000000   C 
+orns.w r1, r2, r3, lsl #31 :: rd 0x7fffffff rm 0x00000000, rn 0xffffffff, c:v-in 2, cpsr 0x20000000   C 
+orns.w r1, r2, r3, lsr #0  :: rd 0x00000000 rm 0x00000000, rn 0xffffffff, c:v-in 2, cpsr 0x60000000  ZC 
+orns.w r1, r2, r3, lsr #1  :: rd 0x80000000 rm 0x00000000, rn 0xffffffff, c:v-in 2, cpsr 0xa0000000 N C 
+orns.w r1, r2, r3, lsr #15 :: rd 0xfffe0000 rm 0x00000000, rn 0xffffffff, c:v-in 2, cpsr 0xa0000000 N C 
+orns.w r1, r2, r3, lsr #31 :: rd 0xfffffffe rm 0x00000000, rn 0xffffffff, c:v-in 2, cpsr 0xa0000000 N C 
+orns.w r1, r2, r3, asr #0  :: rd 0x00000000 rm 0x00000000, rn 0xffffffff, c:v-in 2, cpsr 0x60000000  ZC 
+orns.w r1, r2, r3, asr #1  :: rd 0x00000000 rm 0x00000000, rn 0xffffffff, c:v-in 2, cpsr 0x60000000  ZC 
+orns.w r1, r2, r3, asr #15 :: rd 0x00000000 rm 0x00000000, rn 0xffffffff, c:v-in 2, cpsr 0x60000000  ZC 
+orns.w r1, r2, r3, asr #31 :: rd 0x00000000 rm 0x00000000, rn 0xffffffff, c:v-in 2, cpsr 0x60000000  ZC 
+orn.w  r1, r2, r3, lsl #0  :: rd 0x00000000 rm 0x00000000, rn 0xffffffff, c:v-in 2, cpsr 0xe0000000 NZC 
+orn.w  r1, r2, r3, lsl #1  :: rd 0x00000001 rm 0x00000000, rn 0xffffffff, c:v-in 2, cpsr 0xe0000000 NZC 
+orn.w  r1, r2, r3, lsl #15 :: rd 0x00007fff rm 0x00000000, rn 0xffffffff, c:v-in 2, cpsr 0xe0000000 NZC 
+orn.w  r1, r2, r3, lsl #31 :: rd 0x7fffffff rm 0x00000000, rn 0xffffffff, c:v-in 2, cpsr 0xe0000000 NZC 
+orn.w  r1, r2, r3, lsr #0  :: rd 0x00000000 rm 0x00000000, rn 0xffffffff, c:v-in 2, cpsr 0xe0000000 NZC 
+orn.w  r1, r2, r3, lsr #1  :: rd 0x80000000 rm 0x00000000, rn 0xffffffff, c:v-in 2, cpsr 0xe0000000 NZC 
+orn.w  r1, r2, r3, lsr #15 :: rd 0xfffe0000 rm 0x00000000, rn 0xffffffff, c:v-in 2, cpsr 0xe0000000 NZC 
+orn.w  r1, r2, r3, lsr #31 :: rd 0xfffffffe rm 0x00000000, rn 0xffffffff, c:v-in 2, cpsr 0xe0000000 NZC 
+orn.w  r1, r2, r3, asr #0  :: rd 0x00000000 rm 0x00000000, rn 0xffffffff, c:v-in 2, cpsr 0xe0000000 NZC 
+orn.w  r1, r2, r3, asr #1  :: rd 0x00000000 rm 0x00000000, rn 0xffffffff, c:v-in 2, cpsr 0xe0000000 NZC 
+orn.w  r1, r2, r3, asr #15 :: rd 0x00000000 rm 0x00000000, rn 0xffffffff, c:v-in 2, cpsr 0xe0000000 NZC 
+orn.w  r1, r2, r3, asr #31 :: rd 0x00000000 rm 0x00000000, rn 0xffffffff, c:v-in 2, cpsr 0xe0000000 NZC 
+orns.w r1, r2, r3, lsl #0  :: rd 0x7fffffff rm 0x00000000, rn 0x80000000, c:v-in 2, cpsr 0x20000000   C 
+orns.w r1, r2, r3, lsl #1  :: rd 0xffffffff rm 0x00000000, rn 0x80000000, c:v-in 2, cpsr 0xa0000000 N C 
+orns.w r1, r2, r3, lsl #15 :: rd 0xffffffff rm 0x00000000, rn 0x80000000, c:v-in 2, cpsr 0x80000000 N   
+orns.w r1, r2, r3, lsl #31 :: rd 0xffffffff rm 0x00000000, rn 0x80000000, c:v-in 2, cpsr 0x80000000 N   
+orns.w r1, r2, r3, lsr #0  :: rd 0x7fffffff rm 0x00000000, rn 0x80000000, c:v-in 2, cpsr 0x20000000   C 
+orns.w r1, r2, r3, lsr #1  :: rd 0xbfffffff rm 0x00000000, rn 0x80000000, c:v-in 2, cpsr 0x80000000 N   
+orns.w r1, r2, r3, lsr #15 :: rd 0xfffeffff rm 0x00000000, rn 0x80000000, c:v-in 2, cpsr 0x80000000 N   
+orns.w r1, r2, r3, lsr #31 :: rd 0xfffffffe rm 0x00000000, rn 0x80000000, c:v-in 2, cpsr 0x80000000 N   
+orns.w r1, r2, r3, asr #0  :: rd 0x7fffffff rm 0x00000000, rn 0x80000000, c:v-in 2, cpsr 0x20000000   C 
+orns.w r1, r2, r3, asr #1  :: rd 0x3fffffff rm 0x00000000, rn 0x80000000, c:v-in 2, cpsr 0x00000000     
+orns.w r1, r2, r3, asr #15 :: rd 0x0000ffff rm 0x00000000, rn 0x80000000, c:v-in 2, cpsr 0x00000000     
+orns.w r1, r2, r3, asr #31 :: rd 0x00000000 rm 0x00000000, rn 0x80000000, c:v-in 2, cpsr 0x40000000  Z  
+orn.w  r1, r2, r3, lsl #0  :: rd 0x7fffffff rm 0x00000000, rn 0x80000000, c:v-in 2, cpsr 0xe0000000 NZC 
+orn.w  r1, r2, r3, lsl #1  :: rd 0xffffffff rm 0x00000000, rn 0x80000000, c:v-in 2, cpsr 0xe0000000 NZC 
+orn.w  r1, r2, r3, lsl #15 :: rd 0xffffffff rm 0x00000000, rn 0x80000000, c:v-in 2, cpsr 0xe0000000 NZC 
+orn.w  r1, r2, r3, lsl #31 :: rd 0xffffffff rm 0x00000000, rn 0x80000000, c:v-in 2, cpsr 0xe0000000 NZC 
+orn.w  r1, r2, r3, lsr #0  :: rd 0x7fffffff rm 0x00000000, rn 0x80000000, c:v-in 2, cpsr 0xe0000000 NZC 
+orn.w  r1, r2, r3, lsr #1  :: rd 0xbfffffff rm 0x00000000, rn 0x80000000, c:v-in 2, cpsr 0xe0000000 NZC 
+orn.w  r1, r2, r3, lsr #15 :: rd 0xfffeffff rm 0x00000000, rn 0x80000000, c:v-in 2, cpsr 0xe0000000 NZC 
+orn.w  r1, r2, r3, lsr #31 :: rd 0xfffffffe rm 0x00000000, rn 0x80000000, c:v-in 2, cpsr 0xe0000000 NZC 
+orn.w  r1, r2, r3, asr #0  :: rd 0x7fffffff rm 0x00000000, rn 0x80000000, c:v-in 2, cpsr 0xe0000000 NZC 
+orn.w  r1, r2, r3, asr #1  :: rd 0x3fffffff rm 0x00000000, rn 0x80000000, c:v-in 2, cpsr 0xe0000000 NZC 
+orn.w  r1, r2, r3, asr #15 :: rd 0x0000ffff rm 0x00000000, rn 0x80000000, c:v-in 2, cpsr 0xe0000000 NZC 
+orn.w  r1, r2, r3, asr #31 :: rd 0x00000000 rm 0x00000000, rn 0x80000000, c:v-in 2, cpsr 0xe0000000 NZC 
+orns.w r1, r2, r3, lsl #0  :: rd 0xffffffff rm 0x80000000, rn 0x00000000, c:v-in 2, cpsr 0xa0000000 N C 
+orns.w r1, r2, r3, lsl #1  :: rd 0xffffffff rm 0x80000000, rn 0x00000000, c:v-in 2, cpsr 0x80000000 N   
+orns.w r1, r2, r3, lsl #15 :: rd 0xffffffff rm 0x80000000, rn 0x00000000, c:v-in 2, cpsr 0x80000000 N   
+orns.w r1, r2, r3, lsl #31 :: rd 0xffffffff rm 0x80000000, rn 0x00000000, c:v-in 2, cpsr 0x80000000 N   
+orns.w r1, r2, r3, lsr #0  :: rd 0xffffffff rm 0x80000000, rn 0x00000000, c:v-in 2, cpsr 0xa0000000 N C 
+orns.w r1, r2, r3, lsr #1  :: rd 0xffffffff rm 0x80000000, rn 0x00000000, c:v-in 2, cpsr 0x80000000 N   
+orns.w r1, r2, r3, lsr #15 :: rd 0xffffffff rm 0x80000000, rn 0x00000000, c:v-in 2, cpsr 0x80000000 N   
+orns.w r1, r2, r3, lsr #31 :: rd 0xffffffff rm 0x80000000, rn 0x00000000, c:v-in 2, cpsr 0x80000000 N   
+orns.w r1, r2, r3, asr #0  :: rd 0xffffffff rm 0x80000000, rn 0x00000000, c:v-in 2, cpsr 0xa0000000 N C 
+orns.w r1, r2, r3, asr #1  :: rd 0xffffffff rm 0x80000000, rn 0x00000000, c:v-in 2, cpsr 0x80000000 N   
+orns.w r1, r2, r3, asr #15 :: rd 0xffffffff rm 0x80000000, rn 0x00000000, c:v-in 2, cpsr 0x80000000 N   
+orns.w r1, r2, r3, asr #31 :: rd 0xffffffff rm 0x80000000, rn 0x00000000, c:v-in 2, cpsr 0x80000000 N   
+orn.w  r1, r2, r3, lsl #0  :: rd 0xffffffff rm 0x80000000, rn 0x00000000, c:v-in 2, cpsr 0xe0000000 NZC 
+orn.w  r1, r2, r3, lsl #1  :: rd 0xffffffff rm 0x80000000, rn 0x00000000, c:v-in 2, cpsr 0xe0000000 NZC 
+orn.w  r1, r2, r3, lsl #15 :: rd 0xffffffff rm 0x80000000, rn 0x00000000, c:v-in 2, cpsr 0xe0000000 NZC 
+orn.w  r1, r2, r3, lsl #31 :: rd 0xffffffff rm 0x80000000, rn 0x00000000, c:v-in 2, cpsr 0xe0000000 NZC 
+orn.w  r1, r2, r3, lsr #0  :: rd 0xffffffff rm 0x80000000, rn 0x00000000, c:v-in 2, cpsr 0xe0000000 NZC 
+orn.w  r1, r2, r3, lsr #1  :: rd 0xffffffff rm 0x80000000, rn 0x00000000, c:v-in 2, cpsr 0xe0000000 NZC 
+orn.w  r1, r2, r3, lsr #15 :: rd 0xffffffff rm 0x80000000, rn 0x00000000, c:v-in 2, cpsr 0xe0000000 NZC 
+orn.w  r1, r2, r3, lsr #31 :: rd 0xffffffff rm 0x80000000, rn 0x00000000, c:v-in 2, cpsr 0xe0000000 NZC 
+orn.w  r1, r2, r3, asr #0  :: rd 0xffffffff rm 0x80000000, rn 0x00000000, c:v-in 2, cpsr 0xe0000000 NZC 
+orn.w  r1, r2, r3, asr #1  :: rd 0xffffffff rm 0x80000000, rn 0x00000000, c:v-in 2, cpsr 0xe0000000 NZC 
+orn.w  r1, r2, r3, asr #15 :: rd 0xffffffff rm 0x80000000, rn 0x00000000, c:v-in 2, cpsr 0xe0000000 NZC 
+orn.w  r1, r2, r3, asr #31 :: rd 0xffffffff rm 0x80000000, rn 0x00000000, c:v-in 2, cpsr 0xe0000000 NZC 
+orns.w r1, r2, r3, lsl #0  :: rd 0xffffffff rm 0x80000000, rn 0x80000000, c:v-in 2, cpsr 0xa0000000 N C 
+orns.w r1, r2, r3, lsl #1  :: rd 0xffffffff rm 0x80000000, rn 0x80000000, c:v-in 2, cpsr 0xa0000000 N C 
+orns.w r1, r2, r3, lsl #15 :: rd 0xffffffff rm 0x80000000, rn 0x80000000, c:v-in 2, cpsr 0x80000000 N   
+orns.w r1, r2, r3, lsl #31 :: rd 0xffffffff rm 0x80000000, rn 0x80000000, c:v-in 2, cpsr 0x80000000 N   
+orns.w r1, r2, r3, lsr #0  :: rd 0xffffffff rm 0x80000000, rn 0x80000000, c:v-in 2, cpsr 0xa0000000 N C 
+orns.w r1, r2, r3, lsr #1  :: rd 0xbfffffff rm 0x80000000, rn 0x80000000, c:v-in 2, cpsr 0x80000000 N   
+orns.w r1, r2, r3, lsr #15 :: rd 0xfffeffff rm 0x80000000, rn 0x80000000, c:v-in 2, cpsr 0x80000000 N   
+orns.w r1, r2, r3, lsr #31 :: rd 0xfffffffe rm 0x80000000, rn 0x80000000, c:v-in 2, cpsr 0x80000000 N   
+orns.w r1, r2, r3, asr #0  :: rd 0xffffffff rm 0x80000000, rn 0x80000000, c:v-in 2, cpsr 0xa0000000 N C 
+orns.w r1, r2, r3, asr #1  :: rd 0xbfffffff rm 0x80000000, rn 0x80000000, c:v-in 2, cpsr 0x80000000 N   
+orns.w r1, r2, r3, asr #15 :: rd 0x8000ffff rm 0x80000000, rn 0x80000000, c:v-in 2, cpsr 0x80000000 N   
+orns.w r1, r2, r3, asr #31 :: rd 0x80000000 rm 0x80000000, rn 0x80000000, c:v-in 2, cpsr 0x80000000 N   
+orn.w  r1, r2, r3, lsl #0  :: rd 0xffffffff rm 0x80000000, rn 0x80000000, c:v-in 2, cpsr 0xe0000000 NZC 
+orn.w  r1, r2, r3, lsl #1  :: rd 0xffffffff rm 0x80000000, rn 0x80000000, c:v-in 2, cpsr 0xe0000000 NZC 
+orn.w  r1, r2, r3, lsl #15 :: rd 0xffffffff rm 0x80000000, rn 0x80000000, c:v-in 2, cpsr 0xe0000000 NZC 
+orn.w  r1, r2, r3, lsl #31 :: rd 0xffffffff rm 0x80000000, rn 0x80000000, c:v-in 2, cpsr 0xe0000000 NZC 
+orn.w  r1, r2, r3, lsr #0  :: rd 0xffffffff rm 0x80000000, rn 0x80000000, c:v-in 2, cpsr 0xe0000000 NZC 
+orn.w  r1, r2, r3, lsr #1  :: rd 0xbfffffff rm 0x80000000, rn 0x80000000, c:v-in 2, cpsr 0xe0000000 NZC 
+orn.w  r1, r2, r3, lsr #15 :: rd 0xfffeffff rm 0x80000000, rn 0x80000000, c:v-in 2, cpsr 0xe0000000 NZC 
+orn.w  r1, r2, r3, lsr #31 :: rd 0xfffffffe rm 0x80000000, rn 0x80000000, c:v-in 2, cpsr 0xe0000000 NZC 
+orn.w  r1, r2, r3, asr #0  :: rd 0xffffffff rm 0x80000000, rn 0x80000000, c:v-in 2, cpsr 0xe0000000 NZC 
+orn.w  r1, r2, r3, asr #1  :: rd 0xbfffffff rm 0x80000000, rn 0x80000000, c:v-in 2, cpsr 0xe0000000 NZC 
+orn.w  r1, r2, r3, asr #15 :: rd 0x8000ffff rm 0x80000000, rn 0x80000000, c:v-in 2, cpsr 0xe0000000 NZC 
+orn.w  r1, r2, r3, asr #31 :: rd 0x80000000 rm 0x80000000, rn 0x80000000, c:v-in 2, cpsr 0xe0000000 NZC 
+orns.w r1, r2, r3, lsl #0  :: rd 0x7fffffff rm 0x7fffffff, rn 0x80000000, c:v-in 2, cpsr 0x20000000   C 
+orns.w r1, r2, r3, lsl #1  :: rd 0xffffffff rm 0x7fffffff, rn 0x80000000, c:v-in 2, cpsr 0xa0000000 N C 
+orns.w r1, r2, r3, lsl #15 :: rd 0xffffffff rm 0x7fffffff, rn 0x80000000, c:v-in 2, cpsr 0x80000000 N   
+orns.w r1, r2, r3, lsl #31 :: rd 0xffffffff rm 0x7fffffff, rn 0x80000000, c:v-in 2, cpsr 0x80000000 N   
+orns.w r1, r2, r3, lsr #0  :: rd 0x7fffffff rm 0x7fffffff, rn 0x80000000, c:v-in 2, cpsr 0x20000000   C 
+orns.w r1, r2, r3, lsr #1  :: rd 0xffffffff rm 0x7fffffff, rn 0x80000000, c:v-in 2, cpsr 0x80000000 N   
+orns.w r1, r2, r3, lsr #15 :: rd 0xffffffff rm 0x7fffffff, rn 0x80000000, c:v-in 2, cpsr 0x80000000 N   
+orns.w r1, r2, r3, lsr #31 :: rd 0xffffffff rm 0x7fffffff, rn 0x80000000, c:v-in 2, cpsr 0x80000000 N   
+orns.w r1, r2, r3, asr #0  :: rd 0x7fffffff rm 0x7fffffff, rn 0x80000000, c:v-in 2, cpsr 0x20000000   C 
+orns.w r1, r2, r3, asr #1  :: rd 0x7fffffff rm 0x7fffffff, rn 0x80000000, c:v-in 2, cpsr 0x00000000     
+orns.w r1, r2, r3, asr #15 :: rd 0x7fffffff rm 0x7fffffff, rn 0x80000000, c:v-in 2, cpsr 0x00000000     
+orns.w r1, r2, r3, asr #31 :: rd 0x7fffffff rm 0x7fffffff, rn 0x80000000, c:v-in 2, cpsr 0x00000000     
+orn.w  r1, r2, r3, lsl #0  :: rd 0x7fffffff rm 0x7fffffff, rn 0x80000000, c:v-in 2, cpsr 0xe0000000 NZC 
+orn.w  r1, r2, r3, lsl #1  :: rd 0xffffffff rm 0x7fffffff, rn 0x80000000, c:v-in 2, cpsr 0xe0000000 NZC 
+orn.w  r1, r2, r3, lsl #15 :: rd 0xffffffff rm 0x7fffffff, rn 0x80000000, c:v-in 2, cpsr 0xe0000000 NZC 
+orn.w  r1, r2, r3, lsl #31 :: rd 0xffffffff rm 0x7fffffff, rn 0x80000000, c:v-in 2, cpsr 0xe0000000 NZC 
+orn.w  r1, r2, r3, lsr #0  :: rd 0x7fffffff rm 0x7fffffff, rn 0x80000000, c:v-in 2, cpsr 0xe0000000 NZC 
+orn.w  r1, r2, r3, lsr #1  :: rd 0xffffffff rm 0x7fffffff, rn 0x80000000, c:v-in 2, cpsr 0xe0000000 NZC 
+orn.w  r1, r2, r3, lsr #15 :: rd 0xffffffff rm 0x7fffffff, rn 0x80000000, c:v-in 2, cpsr 0xe0000000 NZC 
+orn.w  r1, r2, r3, lsr #31 :: rd 0xffffffff rm 0x7fffffff, rn 0x80000000, c:v-in 2, cpsr 0xe0000000 NZC 
+orn.w  r1, r2, r3, asr #0  :: rd 0x7fffffff rm 0x7fffffff, rn 0x80000000, c:v-in 2, cpsr 0xe0000000 NZC 
+orn.w  r1, r2, r3, asr #1  :: rd 0x7fffffff rm 0x7fffffff, rn 0x80000000, c:v-in 2, cpsr 0xe0000000 NZC 
+orn.w  r1, r2, r3, asr #15 :: rd 0x7fffffff rm 0x7fffffff, rn 0x80000000, c:v-in 2, cpsr 0xe0000000 NZC 
+orn.w  r1, r2, r3, asr #31 :: rd 0x7fffffff rm 0x7fffffff, rn 0x80000000, c:v-in 2, cpsr 0xe0000000 NZC 
+orns.w r1, r2, r3, lsl #0  :: rd 0x80000000 rm 0x80000000, rn 0x7fffffff, c:v-in 2, cpsr 0xa0000000 N C 
+orns.w r1, r2, r3, lsl #1  :: rd 0x80000001 rm 0x80000000, rn 0x7fffffff, c:v-in 2, cpsr 0x80000000 N   
+orns.w r1, r2, r3, lsl #15 :: rd 0x80007fff rm 0x80000000, rn 0x7fffffff, c:v-in 2, cpsr 0xa0000000 N C 
+orns.w r1, r2, r3, lsl #31 :: rd 0xffffffff rm 0x80000000, rn 0x7fffffff, c:v-in 2, cpsr 0xa0000000 N C 
+orns.w r1, r2, r3, lsr #0  :: rd 0x80000000 rm 0x80000000, rn 0x7fffffff, c:v-in 2, cpsr 0xa0000000 N C 
+orns.w r1, r2, r3, lsr #1  :: rd 0xc0000000 rm 0x80000000, rn 0x7fffffff, c:v-in 2, cpsr 0xa0000000 N C 
+orns.w r1, r2, r3, lsr #15 :: rd 0xffff0000 rm 0x80000000, rn 0x7fffffff, c:v-in 2, cpsr 0xa0000000 N C 
+orns.w r1, r2, r3, lsr #31 :: rd 0xffffffff rm 0x80000000, rn 0x7fffffff, c:v-in 2, cpsr 0xa0000000 N C 
+orns.w r1, r2, r3, asr #0  :: rd 0x80000000 rm 0x80000000, rn 0x7fffffff, c:v-in 2, cpsr 0xa0000000 N C 
+orns.w r1, r2, r3, asr #1  :: rd 0xc0000000 rm 0x80000000, rn 0x7fffffff, c:v-in 2, cpsr 0xa0000000 N C 
+orns.w r1, r2, r3, asr #15 :: rd 0xffff0000 rm 0x80000000, rn 0x7fffffff, c:v-in 2, cpsr 0xa0000000 N C 
+orns.w r1, r2, r3, asr #31 :: rd 0xffffffff rm 0x80000000, rn 0x7fffffff, c:v-in 2, cpsr 0xa0000000 N C 
+orn.w  r1, r2, r3, lsl #0  :: rd 0x80000000 rm 0x80000000, rn 0x7fffffff, c:v-in 2, cpsr 0xe0000000 NZC 
+orn.w  r1, r2, r3, lsl #1  :: rd 0x80000001 rm 0x80000000, rn 0x7fffffff, c:v-in 2, cpsr 0xe0000000 NZC 
+orn.w  r1, r2, r3, lsl #15 :: rd 0x80007fff rm 0x80000000, rn 0x7fffffff, c:v-in 2, cpsr 0xe0000000 NZC 
+orn.w  r1, r2, r3, lsl #31 :: rd 0xffffffff rm 0x80000000, rn 0x7fffffff, c:v-in 2, cpsr 0xe0000000 NZC 
+orn.w  r1, r2, r3, lsr #0  :: rd 0x80000000 rm 0x80000000, rn 0x7fffffff, c:v-in 2, cpsr 0xe0000000 NZC 
+orn.w  r1, r2, r3, lsr #1  :: rd 0xc0000000 rm 0x80000000, rn 0x7fffffff, c:v-in 2, cpsr 0xe0000000 NZC 
+orn.w  r1, r2, r3, lsr #15 :: rd 0xffff0000 rm 0x80000000, rn 0x7fffffff, c:v-in 2, cpsr 0xe0000000 NZC 
+orn.w  r1, r2, r3, lsr #31 :: rd 0xffffffff rm 0x80000000, rn 0x7fffffff, c:v-in 2, cpsr 0xe0000000 NZC 
+orn.w  r1, r2, r3, asr #0  :: rd 0x80000000 rm 0x80000000, rn 0x7fffffff, c:v-in 2, cpsr 0xe0000000 NZC 
+orn.w  r1, r2, r3, asr #1  :: rd 0xc0000000 rm 0x80000000, rn 0x7fffffff, c:v-in 2, cpsr 0xe0000000 NZC 
+orn.w  r1, r2, r3, asr #15 :: rd 0xffff0000 rm 0x80000000, rn 0x7fffffff, c:v-in 2, cpsr 0xe0000000 NZC 
+orn.w  r1, r2, r3, asr #31 :: rd 0xffffffff rm 0x80000000, rn 0x7fffffff, c:v-in 2, cpsr 0xe0000000 NZC 
+orns.w r1, r2, r3, lsl #0  :: rd 0xffffffff rm 0x7fffffff, rn 0x7fffffff, c:v-in 2, cpsr 0xa0000000 N C 
+orns.w r1, r2, r3, lsl #1  :: rd 0x7fffffff rm 0x7fffffff, rn 0x7fffffff, c:v-in 2, cpsr 0x00000000     
+orns.w r1, r2, r3, lsl #15 :: rd 0x7fffffff rm 0x7fffffff, rn 0x7fffffff, c:v-in 2, cpsr 0x20000000   C 
+orns.w r1, r2, r3, lsl #31 :: rd 0x7fffffff rm 0x7fffffff, rn 0x7fffffff, c:v-in 2, cpsr 0x20000000   C 
+orns.w r1, r2, r3, lsr #0  :: rd 0xffffffff rm 0x7fffffff, rn 0x7fffffff, c:v-in 2, cpsr 0xa0000000 N C 
+orns.w r1, r2, r3, lsr #1  :: rd 0xffffffff rm 0x7fffffff, rn 0x7fffffff, c:v-in 2, cpsr 0xa0000000 N C 
+orns.w r1, r2, r3, lsr #15 :: rd 0xffffffff rm 0x7fffffff, rn 0x7fffffff, c:v-in 2, cpsr 0xa0000000 N C 
+orns.w r1, r2, r3, lsr #31 :: rd 0xffffffff rm 0x7fffffff, rn 0x7fffffff, c:v-in 2, cpsr 0xa0000000 N C 
+orns.w r1, r2, r3, asr #0  :: rd 0xffffffff rm 0x7fffffff, rn 0x7fffffff, c:v-in 2, cpsr 0xa0000000 N C 
+orns.w r1, r2, r3, asr #1  :: rd 0xffffffff rm 0x7fffffff, rn 0x7fffffff, c:v-in 2, cpsr 0xa0000000 N C 
+orns.w r1, r2, r3, asr #15 :: rd 0xffffffff rm 0x7fffffff, rn 0x7fffffff, c:v-in 2, cpsr 0xa0000000 N C 
+orns.w r1, r2, r3, asr #31 :: rd 0xffffffff rm 0x7fffffff, rn 0x7fffffff, c:v-in 2, cpsr 0xa0000000 N C 
+orn.w  r1, r2, r3, lsl #0  :: rd 0xffffffff rm 0x7fffffff, rn 0x7fffffff, c:v-in 2, cpsr 0xe0000000 NZC 
+orn.w  r1, r2, r3, lsl #1  :: rd 0x7fffffff rm 0x7fffffff, rn 0x7fffffff, c:v-in 2, cpsr 0xe0000000 NZC 
+orn.w  r1, r2, r3, lsl #15 :: rd 0x7fffffff rm 0x7fffffff, rn 0x7fffffff, c:v-in 2, cpsr 0xe0000000 NZC 
+orn.w  r1, r2, r3, lsl #31 :: rd 0x7fffffff rm 0x7fffffff, rn 0x7fffffff, c:v-in 2, cpsr 0xe0000000 NZC 
+orn.w  r1, r2, r3, lsr #0  :: rd 0xffffffff rm 0x7fffffff, rn 0x7fffffff, c:v-in 2, cpsr 0xe0000000 NZC 
+orn.w  r1, r2, r3, lsr #1  :: rd 0xffffffff rm 0x7fffffff, rn 0x7fffffff, c:v-in 2, cpsr 0xe0000000 NZC 
+orn.w  r1, r2, r3, lsr #15 :: rd 0xffffffff rm 0x7fffffff, rn 0x7fffffff, c:v-in 2, cpsr 0xe0000000 NZC 
+orn.w  r1, r2, r3, lsr #31 :: rd 0xffffffff rm 0x7fffffff, rn 0x7fffffff, c:v-in 2, cpsr 0xe0000000 NZC 
+orn.w  r1, r2, r3, asr #0  :: rd 0xffffffff rm 0x7fffffff, rn 0x7fffffff, c:v-in 2, cpsr 0xe0000000 NZC 
+orn.w  r1, r2, r3, asr #1  :: rd 0xffffffff rm 0x7fffffff, rn 0x7fffffff, c:v-in 2, cpsr 0xe0000000 NZC 
+orn.w  r1, r2, r3, asr #15 :: rd 0xffffffff rm 0x7fffffff, rn 0x7fffffff, c:v-in 2, cpsr 0xe0000000 NZC 
+orn.w  r1, r2, r3, asr #31 :: rd 0xffffffff rm 0x7fffffff, rn 0x7fffffff, c:v-in 2, cpsr 0xe0000000 NZC 
+orns.w r1, r2, r3, lsl #0  :: rd 0xf9e7f9f7 rm 0x31415927, rn 0x27181728, c:v-in 3, cpsr 0xb0000000 N CV
+orns.w r1, r2, r3, lsl #1  :: rd 0xb1cfd9af rm 0x31415927, rn 0x27181728, c:v-in 3, cpsr 0x90000000 N  V
+orns.w r1, r2, r3, lsl #15 :: rd 0xf56bffff rm 0x31415927, rn 0x27181728, c:v-in 3, cpsr 0x90000000 N  V
+orns.w r1, r2, r3, lsl #31 :: rd 0xffffffff rm 0x31415927, rn 0x27181728, c:v-in 3, cpsr 0x90000000 N  V
+orns.w r1, r2, r3, lsr #0  :: rd 0xf9e7f9f7 rm 0x31415927, rn 0x27181728, c:v-in 3, cpsr 0xb0000000 N CV
+orns.w r1, r2, r3, lsr #1  :: rd 0xfd73fd6f rm 0x31415927, rn 0x27181728, c:v-in 3, cpsr 0x90000000 N  V
+orns.w r1, r2, r3, lsr #15 :: rd 0xfffff9ef rm 0x31415927, rn 0x27181728, c:v-in 3, cpsr 0x90000000 N  V
+orns.w r1, r2, r3, lsr #31 :: rd 0xffffffff rm 0x31415927, rn 0x27181728, c:v-in 3, cpsr 0x90000000 N  V
+orns.w r1, r2, r3, asr #0  :: rd 0xf9e7f9f7 rm 0x31415927, rn 0x27181728, c:v-in 3, cpsr 0xb0000000 N CV
+orns.w r1, r2, r3, asr #1  :: rd 0xfd73fd6f rm 0x31415927, rn 0x27181728, c:v-in 3, cpsr 0x90000000 N  V
+orns.w r1, r2, r3, asr #15 :: rd 0xfffff9ef rm 0x31415927, rn 0x27181728, c:v-in 3, cpsr 0x90000000 N  V
+orns.w r1, r2, r3, asr #31 :: rd 0xffffffff rm 0x31415927, rn 0x27181728, c:v-in 3, cpsr 0x90000000 N  V
+orn.w  r1, r2, r3, lsl #0  :: rd 0xf9e7f9f7 rm 0x31415927, rn 0x27181728, c:v-in 3, cpsr 0xf0000000 NZCV
+orn.w  r1, r2, r3, lsl #1  :: rd 0xb1cfd9af rm 0x31415927, rn 0x27181728, c:v-in 3, cpsr 0xf0000000 NZCV
+orn.w  r1, r2, r3, lsl #15 :: rd 0xf56bffff rm 0x31415927, rn 0x27181728, c:v-in 3, cpsr 0xf0000000 NZCV
+orn.w  r1, r2, r3, lsl #31 :: rd 0xffffffff rm 0x31415927, rn 0x27181728, c:v-in 3, cpsr 0xf0000000 NZCV
+orn.w  r1, r2, r3, lsr #0  :: rd 0xf9e7f9f7 rm 0x31415927, rn 0x27181728, c:v-in 3, cpsr 0xf0000000 NZCV
+orn.w  r1, r2, r3, lsr #1  :: rd 0xfd73fd6f rm 0x31415927, rn 0x27181728, c:v-in 3, cpsr 0xf0000000 NZCV
+orn.w  r1, r2, r3, lsr #15 :: rd 0xfffff9ef rm 0x31415927, rn 0x27181728, c:v-in 3, cpsr 0xf0000000 NZCV
+orn.w  r1, r2, r3, lsr #31 :: rd 0xffffffff rm 0x31415927, rn 0x27181728, c:v-in 3, cpsr 0xf0000000 NZCV
+orn.w  r1, r2, r3, asr #0  :: rd 0xf9e7f9f7 rm 0x31415927, rn 0x27181728, c:v-in 3, cpsr 0xf0000000 NZCV
+orn.w  r1, r2, r3, asr #1  :: rd 0xfd73fd6f rm 0x31415927, rn 0x27181728, c:v-in 3, cpsr 0xf0000000 NZCV
+orn.w  r1, r2, r3, asr #15 :: rd 0xfffff9ef rm 0x31415927, rn 0x27181728, c:v-in 3, cpsr 0xf0000000 NZCV
+orn.w  r1, r2, r3, asr #31 :: rd 0xffffffff rm 0x31415927, rn 0x27181728, c:v-in 3, cpsr 0xf0000000 NZCV
+orns.w r1, r2, r3, lsl #0  :: rd 0x79e7f9f7 rm 0x31415927, rn 0x97181728, c:v-in 3, cpsr 0x30000000   CV
+orns.w r1, r2, r3, lsl #1  :: rd 0xf1cfd9af rm 0x31415927, rn 0x97181728, c:v-in 3, cpsr 0xb0000000 N CV
+orns.w r1, r2, r3, lsl #15 :: rd 0xf56bffff rm 0x31415927, rn 0x97181728, c:v-in 3, cpsr 0x90000000 N  V
+orns.w r1, r2, r3, lsl #31 :: rd 0xffffffff rm 0x31415927, rn 0x97181728, c:v-in 3, cpsr 0x90000000 N  V
+orns.w r1, r2, r3, lsr #0  :: rd 0x79e7f9f7 rm 0x31415927, rn 0x97181728, c:v-in 3, cpsr 0x30000000   CV
+orns.w r1, r2, r3, lsr #1  :: rd 0xb573fd6f rm 0x31415927, rn 0x97181728, c:v-in 3, cpsr 0x90000000 N  V
+orns.w r1, r2, r3, lsr #15 :: rd 0xffffd9ef rm 0x31415927, rn 0x97181728, c:v-in 3, cpsr 0x90000000 N  V
+orns.w r1, r2, r3, lsr #31 :: rd 0xffffffff rm 0x31415927, rn 0x97181728, c:v-in 3, cpsr 0x90000000 N  V
+orns.w r1, r2, r3, asr #0  :: rd 0x79e7f9f7 rm 0x31415927, rn 0x97181728, c:v-in 3, cpsr 0x30000000   CV
+orns.w r1, r2, r3, asr #1  :: rd 0x3573fd6f rm 0x31415927, rn 0x97181728, c:v-in 3, cpsr 0x10000000    V
+orns.w r1, r2, r3, asr #15 :: rd 0x3141d9ef rm 0x31415927, rn 0x97181728, c:v-in 3, cpsr 0x10000000    V
+orns.w r1, r2, r3, asr #31 :: rd 0x31415927 rm 0x31415927, rn 0x97181728, c:v-in 3, cpsr 0x10000000    V
+orn.w  r1, r2, r3, lsl #0  :: rd 0x79e7f9f7 rm 0x31415927, rn 0x97181728, c:v-in 3, cpsr 0xf0000000 NZCV
+orn.w  r1, r2, r3, lsl #1  :: rd 0xf1cfd9af rm 0x31415927, rn 0x97181728, c:v-in 3, cpsr 0xf0000000 NZCV
+orn.w  r1, r2, r3, lsl #15 :: rd 0xf56bffff rm 0x31415927, rn 0x97181728, c:v-in 3, cpsr 0xf0000000 NZCV
+orn.w  r1, r2, r3, lsl #31 :: rd 0xffffffff rm 0x31415927, rn 0x97181728, c:v-in 3, cpsr 0xf0000000 NZCV
+orn.w  r1, r2, r3, lsr #0  :: rd 0x79e7f9f7 rm 0x31415927, rn 0x97181728, c:v-in 3, cpsr 0xf0000000 NZCV
+orn.w  r1, r2, r3, lsr #1  :: rd 0xb573fd6f rm 0x31415927, rn 0x97181728, c:v-in 3, cpsr 0xf0000000 NZCV
+orn.w  r1, r2, r3, lsr #15 :: rd 0xffffd9ef rm 0x31415927, rn 0x97181728, c:v-in 3, cpsr 0xf0000000 NZCV
+orn.w  r1, r2, r3, lsr #31 :: rd 0xffffffff rm 0x31415927, rn 0x97181728, c:v-in 3, cpsr 0xf0000000 NZCV
+orn.w  r1, r2, r3, asr #0  :: rd 0x79e7f9f7 rm 0x31415927, rn 0x97181728, c:v-in 3, cpsr 0xf0000000 NZCV
+orn.w  r1, r2, r3, asr #1  :: rd 0x3573fd6f rm 0x31415927, rn 0x97181728, c:v-in 3, cpsr 0xf0000000 NZCV
+orn.w  r1, r2, r3, asr #15 :: rd 0x3141d9ef rm 0x31415927, rn 0x97181728, c:v-in 3, cpsr 0xf0000000 NZCV
+orn.w  r1, r2, r3, asr #31 :: rd 0x31415927 rm 0x31415927, rn 0x97181728, c:v-in 3, cpsr 0xf0000000 NZCV
+orns.w r1, r2, r3, lsl #0  :: rd 0xffffffff rm 0x00000000, rn 0x00000000, c:v-in 3, cpsr 0xb0000000 N CV
+orns.w r1, r2, r3, lsl #1  :: rd 0xffffffff rm 0x00000000, rn 0x00000000, c:v-in 3, cpsr 0x90000000 N  V
+orns.w r1, r2, r3, lsl #15 :: rd 0xffffffff rm 0x00000000, rn 0x00000000, c:v-in 3, cpsr 0x90000000 N  V
+orns.w r1, r2, r3, lsl #31 :: rd 0xffffffff rm 0x00000000, rn 0x00000000, c:v-in 3, cpsr 0x90000000 N  V
+orns.w r1, r2, r3, lsr #0  :: rd 0xffffffff rm 0x00000000, rn 0x00000000, c:v-in 3, cpsr 0xb0000000 N CV
+orns.w r1, r2, r3, lsr #1  :: rd 0xffffffff rm 0x00000000, rn 0x00000000, c:v-in 3, cpsr 0x90000000 N  V
+orns.w r1, r2, r3, lsr #15 :: rd 0xffffffff rm 0x00000000, rn 0x00000000, c:v-in 3, cpsr 0x90000000 N  V
+orns.w r1, r2, r3, lsr #31 :: rd 0xffffffff rm 0x00000000, rn 0x00000000, c:v-in 3, cpsr 0x90000000 N  V
+orns.w r1, r2, r3, asr #0  :: rd 0xffffffff rm 0x00000000, rn 0x00000000, c:v-in 3, cpsr 0xb0000000 N CV
+orns.w r1, r2, r3, asr #1  :: rd 0xffffffff rm 0x00000000, rn 0x00000000, c:v-in 3, cpsr 0x90000000 N  V
+orns.w r1, r2, r3, asr #15 :: rd 0xffffffff rm 0x00000000, rn 0x00000000, c:v-in 3, cpsr 0x90000000 N  V
+orns.w r1, r2, r3, asr #31 :: rd 0xffffffff rm 0x00000000, rn 0x00000000, c:v-in 3, cpsr 0x90000000 N  V
+orn.w  r1, r2, r3, lsl #0  :: rd 0xffffffff rm 0x00000000, rn 0x00000000, c:v-in 3, cpsr 0xf0000000 NZCV
+orn.w  r1, r2, r3, lsl #1  :: rd 0xffffffff rm 0x00000000, rn 0x00000000, c:v-in 3, cpsr 0xf0000000 NZCV
+orn.w  r1, r2, r3, lsl #15 :: rd 0xffffffff rm 0x00000000, rn 0x00000000, c:v-in 3, cpsr 0xf0000000 NZCV
+orn.w  r1, r2, r3, lsl #31 :: rd 0xffffffff rm 0x00000000, rn 0x00000000, c:v-in 3, cpsr 0xf0000000 NZCV
+orn.w  r1, r2, r3, lsr #0  :: rd 0xffffffff rm 0x00000000, rn 0x00000000, c:v-in 3, cpsr 0xf0000000 NZCV
+orn.w  r1, r2, r3, lsr #1  :: rd 0xffffffff rm 0x00000000, rn 0x00000000, c:v-in 3, cpsr 0xf0000000 NZCV
+orn.w  r1, r2, r3, lsr #15 :: rd 0xffffffff rm 0x00000000, rn 0x00000000, c:v-in 3, cpsr 0xf0000000 NZCV
+orn.w  r1, r2, r3, lsr #31 :: rd 0xffffffff rm 0x00000000, rn 0x00000000, c:v-in 3, cpsr 0xf0000000 NZCV
+orn.w  r1, r2, r3, asr #0  :: rd 0xffffffff rm 0x00000000, rn 0x00000000, c:v-in 3, cpsr 0xf0000000 NZCV
+orn.w  r1, r2, r3, asr #1  :: rd 0xffffffff rm 0x00000000, rn 0x00000000, c:v-in 3, cpsr 0xf0000000 NZCV
+orn.w  r1, r2, r3, asr #15 :: rd 0xffffffff rm 0x00000000, rn 0x00000000, c:v-in 3, cpsr 0xf0000000 NZCV
+orn.w  r1, r2, r3, asr #31 :: rd 0xffffffff rm 0x00000000, rn 0x00000000, c:v-in 3, cpsr 0xf0000000 NZCV
+orns.w r1, r2, r3, lsl #0  :: rd 0xffffffff rm 0x00000001, rn 0x00000000, c:v-in 3, cpsr 0xb0000000 N CV
+orns.w r1, r2, r3, lsl #1  :: rd 0xffffffff rm 0x00000001, rn 0x00000000, c:v-in 3, cpsr 0x90000000 N  V
+orns.w r1, r2, r3, lsl #15 :: rd 0xffffffff rm 0x00000001, rn 0x00000000, c:v-in 3, cpsr 0x90000000 N  V
+orns.w r1, r2, r3, lsl #31 :: rd 0xffffffff rm 0x00000001, rn 0x00000000, c:v-in 3, cpsr 0x90000000 N  V
+orns.w r1, r2, r3, lsr #0  :: rd 0xffffffff rm 0x00000001, rn 0x00000000, c:v-in 3, cpsr 0xb0000000 N CV
+orns.w r1, r2, r3, lsr #1  :: rd 0xffffffff rm 0x00000001, rn 0x00000000, c:v-in 3, cpsr 0x90000000 N  V
+orns.w r1, r2, r3, lsr #15 :: rd 0xffffffff rm 0x00000001, rn 0x00000000, c:v-in 3, cpsr 0x90000000 N  V
+orns.w r1, r2, r3, lsr #31 :: rd 0xffffffff rm 0x00000001, rn 0x00000000, c:v-in 3, cpsr 0x90000000 N  V
+orns.w r1, r2, r3, asr #0  :: rd 0xffffffff rm 0x00000001, rn 0x00000000, c:v-in 3, cpsr 0xb0000000 N CV
+orns.w r1, r2, r3, asr #1  :: rd 0xffffffff rm 0x00000001, rn 0x00000000, c:v-in 3, cpsr 0x90000000 N  V
+orns.w r1, r2, r3, asr #15 :: rd 0xffffffff rm 0x00000001, rn 0x00000000, c:v-in 3, cpsr 0x90000000 N  V
+orns.w r1, r2, r3, asr #31 :: rd 0xffffffff rm 0x00000001, rn 0x00000000, c:v-in 3, cpsr 0x90000000 N  V
+orn.w  r1, r2, r3, lsl #0  :: rd 0xffffffff rm 0x00000001, rn 0x00000000, c:v-in 3, cpsr 0xf0000000 NZCV
+orn.w  r1, r2, r3, lsl #1  :: rd 0xffffffff rm 0x00000001, rn 0x00000000, c:v-in 3, cpsr 0xf0000000 NZCV
+orn.w  r1, r2, r3, lsl #15 :: rd 0xffffffff rm 0x00000001, rn 0x00000000, c:v-in 3, cpsr 0xf0000000 NZCV
+orn.w  r1, r2, r3, lsl #31 :: rd 0xffffffff rm 0x00000001, rn 0x00000000, c:v-in 3, cpsr 0xf0000000 NZCV
+orn.w  r1, r2, r3, lsr #0  :: rd 0xffffffff rm 0x00000001, rn 0x00000000, c:v-in 3, cpsr 0xf0000000 NZCV
+orn.w  r1, r2, r3, lsr #1  :: rd 0xffffffff rm 0x00000001, rn 0x00000000, c:v-in 3, cpsr 0xf0000000 NZCV
+orn.w  r1, r2, r3, lsr #15 :: rd 0xffffffff rm 0x00000001, rn 0x00000000, c:v-in 3, cpsr 0xf0000000 NZCV
+orn.w  r1, r2, r3, lsr #31 :: rd 0xffffffff rm 0x00000001, rn 0x00000000, c:v-in 3, cpsr 0xf0000000 NZCV
+orn.w  r1, r2, r3, asr #0  :: rd 0xffffffff rm 0x00000001, rn 0x00000000, c:v-in 3, cpsr 0xf0000000 NZCV
+orn.w  r1, r2, r3, asr #1  :: rd 0xffffffff rm 0x00000001, rn 0x00000000, c:v-in 3, cpsr 0xf0000000 NZCV
+orn.w  r1, r2, r3, asr #15 :: rd 0xffffffff rm 0x00000001, rn 0x00000000, c:v-in 3, cpsr 0xf0000000 NZCV
+orn.w  r1, r2, r3, asr #31 :: rd 0xffffffff rm 0x00000001, rn 0x00000000, c:v-in 3, cpsr 0xf0000000 NZCV
+orns.w r1, r2, r3, lsl #0  :: rd 0xfffffffe rm 0x00000000, rn 0x00000001, c:v-in 3, cpsr 0xb0000000 N CV
+orns.w r1, r2, r3, lsl #1  :: rd 0xfffffffd rm 0x00000000, rn 0x00000001, c:v-in 3, cpsr 0x90000000 N  V
+orns.w r1, r2, r3, lsl #15 :: rd 0xffff7fff rm 0x00000000, rn 0x00000001, c:v-in 3, cpsr 0x90000000 N  V
+orns.w r1, r2, r3, lsl #31 :: rd 0x7fffffff rm 0x00000000, rn 0x00000001, c:v-in 3, cpsr 0x10000000    V
+orns.w r1, r2, r3, lsr #0  :: rd 0xfffffffe rm 0x00000000, rn 0x00000001, c:v-in 3, cpsr 0xb0000000 N CV
+orns.w r1, r2, r3, lsr #1  :: rd 0xffffffff rm 0x00000000, rn 0x00000001, c:v-in 3, cpsr 0xb0000000 N CV
+orns.w r1, r2, r3, lsr #15 :: rd 0xffffffff rm 0x00000000, rn 0x00000001, c:v-in 3, cpsr 0x90000000 N  V
+orns.w r1, r2, r3, lsr #31 :: rd 0xffffffff rm 0x00000000, rn 0x00000001, c:v-in 3, cpsr 0x90000000 N  V
+orns.w r1, r2, r3, asr #0  :: rd 0xfffffffe rm 0x00000000, rn 0x00000001, c:v-in 3, cpsr 0xb0000000 N CV
+orns.w r1, r2, r3, asr #1  :: rd 0xffffffff rm 0x00000000, rn 0x00000001, c:v-in 3, cpsr 0xb0000000 N CV
+orns.w r1, r2, r3, asr #15 :: rd 0xffffffff rm 0x00000000, rn 0x00000001, c:v-in 3, cpsr 0x90000000 N  V
+orns.w r1, r2, r3, asr #31 :: rd 0xffffffff rm 0x00000000, rn 0x00000001, c:v-in 3, cpsr 0x90000000 N  V
+orn.w  r1, r2, r3, lsl #0  :: rd 0xfffffffe rm 0x00000000, rn 0x00000001, c:v-in 3, cpsr 0xf0000000 NZCV
+orn.w  r1, r2, r3, lsl #1  :: rd 0xfffffffd rm 0x00000000, rn 0x00000001, c:v-in 3, cpsr 0xf0000000 NZCV
+orn.w  r1, r2, r3, lsl #15 :: rd 0xffff7fff rm 0x00000000, rn 0x00000001, c:v-in 3, cpsr 0xf0000000 NZCV
+orn.w  r1, r2, r3, lsl #31 :: rd 0x7fffffff rm 0x00000000, rn 0x00000001, c:v-in 3, cpsr 0xf0000000 NZCV
+orn.w  r1, r2, r3, lsr #0  :: rd 0xfffffffe rm 0x00000000, rn 0x00000001, c:v-in 3, cpsr 0xf0000000 NZCV
+orn.w  r1, r2, r3, lsr #1  :: rd 0xffffffff rm 0x00000000, rn 0x00000001, c:v-in 3, cpsr 0xf0000000 NZCV
+orn.w  r1, r2, r3, lsr #15 :: rd 0xffffffff rm 0x00000000, rn 0x00000001, c:v-in 3, cpsr 0xf0000000 NZCV
+orn.w  r1, r2, r3, lsr #31 :: rd 0xffffffff rm 0x00000000, rn 0x00000001, c:v-in 3, cpsr 0xf0000000 NZCV
+orn.w  r1, r2, r3, asr #0  :: rd 0xfffffffe rm 0x00000000, rn 0x00000001, c:v-in 3, cpsr 0xf0000000 NZCV
+orn.w  r1, r2, r3, asr #1  :: rd 0xffffffff rm 0x00000000, rn 0x00000001, c:v-in 3, cpsr 0xf0000000 NZCV
+orn.w  r1, r2, r3, asr #15 :: rd 0xffffffff rm 0x00000000, rn 0x00000001, c:v-in 3, cpsr 0xf0000000 NZCV
+orn.w  r1, r2, r3, asr #31 :: rd 0xffffffff rm 0x00000000, rn 0x00000001, c:v-in 3, cpsr 0xf0000000 NZCV
+orns.w r1, r2, r3, lsl #0  :: rd 0xffffffff rm 0xffffffff, rn 0x00000000, c:v-in 3, cpsr 0xb0000000 N CV
+orns.w r1, r2, r3, lsl #1  :: rd 0xffffffff rm 0xffffffff, rn 0x00000000, c:v-in 3, cpsr 0x90000000 N  V
+orns.w r1, r2, r3, lsl #15 :: rd 0xffffffff rm 0xffffffff, rn 0x00000000, c:v-in 3, cpsr 0x90000000 N  V
+orns.w r1, r2, r3, lsl #31 :: rd 0xffffffff rm 0xffffffff, rn 0x00000000, c:v-in 3, cpsr 0x90000000 N  V
+orns.w r1, r2, r3, lsr #0  :: rd 0xffffffff rm 0xffffffff, rn 0x00000000, c:v-in 3, cpsr 0xb0000000 N CV
+orns.w r1, r2, r3, lsr #1  :: rd 0xffffffff rm 0xffffffff, rn 0x00000000, c:v-in 3, cpsr 0x90000000 N  V
+orns.w r1, r2, r3, lsr #15 :: rd 0xffffffff rm 0xffffffff, rn 0x00000000, c:v-in 3, cpsr 0x90000000 N  V
+orns.w r1, r2, r3, lsr #31 :: rd 0xffffffff rm 0xffffffff, rn 0x00000000, c:v-in 3, cpsr 0x90000000 N  V
+orns.w r1, r2, r3, asr #0  :: rd 0xffffffff rm 0xffffffff, rn 0x00000000, c:v-in 3, cpsr 0xb0000000 N CV
+orns.w r1, r2, r3, asr #1  :: rd 0xffffffff rm 0xffffffff, rn 0x00000000, c:v-in 3, cpsr 0x90000000 N  V
+orns.w r1, r2, r3, asr #15 :: rd 0xffffffff rm 0xffffffff, rn 0x00000000, c:v-in 3, cpsr 0x90000000 N  V
+orns.w r1, r2, r3, asr #31 :: rd 0xffffffff rm 0xffffffff, rn 0x00000000, c:v-in 3, cpsr 0x90000000 N  V
+orn.w  r1, r2, r3, lsl #0  :: rd 0xffffffff rm 0xffffffff, rn 0x00000000, c:v-in 3, cpsr 0xf0000000 NZCV
+orn.w  r1, r2, r3, lsl #1  :: rd 0xffffffff rm 0xffffffff, rn 0x00000000, c:v-in 3, cpsr 0xf0000000 NZCV
+orn.w  r1, r2, r3, lsl #15 :: rd 0xffffffff rm 0xffffffff, rn 0x00000000, c:v-in 3, cpsr 0xf0000000 NZCV
+orn.w  r1, r2, r3, lsl #31 :: rd 0xffffffff rm 0xffffffff, rn 0x00000000, c:v-in 3, cpsr 0xf0000000 NZCV
+orn.w  r1, r2, r3, lsr #0  :: rd 0xffffffff rm 0xffffffff, rn 0x00000000, c:v-in 3, cpsr 0xf0000000 NZCV
+orn.w  r1, r2, r3, lsr #1  :: rd 0xffffffff rm 0xffffffff, rn 0x00000000, c:v-in 3, cpsr 0xf0000000 NZCV
+orn.w  r1, r2, r3, lsr #15 :: rd 0xffffffff rm 0xffffffff, rn 0x00000000, c:v-in 3, cpsr 0xf0000000 NZCV
+orn.w  r1, r2, r3, lsr #31 :: rd 0xffffffff rm 0xffffffff, rn 0x00000000, c:v-in 3, cpsr 0xf0000000 NZCV
+orn.w  r1, r2, r3, asr #0  :: rd 0xffffffff rm 0xffffffff, rn 0x00000000, c:v-in 3, cpsr 0xf0000000 NZCV
+orn.w  r1, r2, r3, asr #1  :: rd 0xffffffff rm 0xffffffff, rn 0x00000000, c:v-in 3, cpsr 0xf0000000 NZCV
+orn.w  r1, r2, r3, asr #15 :: rd 0xffffffff rm 0xffffffff, rn 0x00000000, c:v-in 3, cpsr 0xf0000000 NZCV
+orn.w  r1, r2, r3, asr #31 :: rd 0xffffffff rm 0xffffffff, rn 0x00000000, c:v-in 3, cpsr 0xf0000000 NZCV
+orns.w r1, r2, r3, lsl #0  :: rd 0x00000000 rm 0x00000000, rn 0xffffffff, c:v-in 3, cpsr 0x70000000  ZCV
+orns.w r1, r2, r3, lsl #1  :: rd 0x00000001 rm 0x00000000, rn 0xffffffff, c:v-in 3, cpsr 0x30000000   CV
+orns.w r1, r2, r3, lsl #15 :: rd 0x00007fff rm 0x00000000, rn 0xffffffff, c:v-in 3, cpsr 0x30000000   CV
+orns.w r1, r2, r3, lsl #31 :: rd 0x7fffffff rm 0x00000000, rn 0xffffffff, c:v-in 3, cpsr 0x30000000   CV
+orns.w r1, r2, r3, lsr #0  :: rd 0x00000000 rm 0x00000000, rn 0xffffffff, c:v-in 3, cpsr 0x70000000  ZCV
+orns.w r1, r2, r3, lsr #1  :: rd 0x80000000 rm 0x00000000, rn 0xffffffff, c:v-in 3, cpsr 0xb0000000 N CV
+orns.w r1, r2, r3, lsr #15 :: rd 0xfffe0000 rm 0x00000000, rn 0xffffffff, c:v-in 3, cpsr 0xb0000000 N CV
+orns.w r1, r2, r3, lsr #31 :: rd 0xfffffffe rm 0x00000000, rn 0xffffffff, c:v-in 3, cpsr 0xb0000000 N CV
+orns.w r1, r2, r3, asr #0  :: rd 0x00000000 rm 0x00000000, rn 0xffffffff, c:v-in 3, cpsr 0x70000000  ZCV
+orns.w r1, r2, r3, asr #1  :: rd 0x00000000 rm 0x00000000, rn 0xffffffff, c:v-in 3, cpsr 0x70000000  ZCV
+orns.w r1, r2, r3, asr #15 :: rd 0x00000000 rm 0x00000000, rn 0xffffffff, c:v-in 3, cpsr 0x70000000  ZCV
+orns.w r1, r2, r3, asr #31 :: rd 0x00000000 rm 0x00000000, rn 0xffffffff, c:v-in 3, cpsr 0x70000000  ZCV
+orn.w  r1, r2, r3, lsl #0  :: rd 0x00000000 rm 0x00000000, rn 0xffffffff, c:v-in 3, cpsr 0xf0000000 NZCV
+orn.w  r1, r2, r3, lsl #1  :: rd 0x00000001 rm 0x00000000, rn 0xffffffff, c:v-in 3, cpsr 0xf0000000 NZCV
+orn.w  r1, r2, r3, lsl #15 :: rd 0x00007fff rm 0x00000000, rn 0xffffffff, c:v-in 3, cpsr 0xf0000000 NZCV
+orn.w  r1, r2, r3, lsl #31 :: rd 0x7fffffff rm 0x00000000, rn 0xffffffff, c:v-in 3, cpsr 0xf0000000 NZCV
+orn.w  r1, r2, r3, lsr #0  :: rd 0x00000000 rm 0x00000000, rn 0xffffffff, c:v-in 3, cpsr 0xf0000000 NZCV
+orn.w  r1, r2, r3, lsr #1  :: rd 0x80000000 rm 0x00000000, rn 0xffffffff, c:v-in 3, cpsr 0xf0000000 NZCV
+orn.w  r1, r2, r3, lsr #15 :: rd 0xfffe0000 rm 0x00000000, rn 0xffffffff, c:v-in 3, cpsr 0xf0000000 NZCV
+orn.w  r1, r2, r3, lsr #31 :: rd 0xfffffffe rm 0x00000000, rn 0xffffffff, c:v-in 3, cpsr 0xf0000000 NZCV
+orn.w  r1, r2, r3, asr #0  :: rd 0x00000000 rm 0x00000000, rn 0xffffffff, c:v-in 3, cpsr 0xf0000000 NZCV
+orn.w  r1, r2, r3, asr #1  :: rd 0x00000000 rm 0x00000000, rn 0xffffffff, c:v-in 3, cpsr 0xf0000000 NZCV
+orn.w  r1, r2, r3, asr #15 :: rd 0x00000000 rm 0x00000000, rn 0xffffffff, c:v-in 3, cpsr 0xf0000000 NZCV
+orn.w  r1, r2, r3, asr #31 :: rd 0x00000000 rm 0x00000000, rn 0xffffffff, c:v-in 3, cpsr 0xf0000000 NZCV
+orns.w r1, r2, r3, lsl #0  :: rd 0x7fffffff rm 0x00000000, rn 0x80000000, c:v-in 3, cpsr 0x30000000   CV
+orns.w r1, r2, r3, lsl #1  :: rd 0xffffffff rm 0x00000000, rn 0x80000000, c:v-in 3, cpsr 0xb0000000 N CV
+orns.w r1, r2, r3, lsl #15 :: rd 0xffffffff rm 0x00000000, rn 0x80000000, c:v-in 3, cpsr 0x90000000 N  V
+orns.w r1, r2, r3, lsl #31 :: rd 0xffffffff rm 0x00000000, rn 0x80000000, c:v-in 3, cpsr 0x90000000 N  V
+orns.w r1, r2, r3, lsr #0  :: rd 0x7fffffff rm 0x00000000, rn 0x80000000, c:v-in 3, cpsr 0x30000000   CV
+orns.w r1, r2, r3, lsr #1  :: rd 0xbfffffff rm 0x00000000, rn 0x80000000, c:v-in 3, cpsr 0x90000000 N  V
+orns.w r1, r2, r3, lsr #15 :: rd 0xfffeffff rm 0x00000000, rn 0x80000000, c:v-in 3, cpsr 0x90000000 N  V
+orns.w r1, r2, r3, lsr #31 :: rd 0xfffffffe rm 0x00000000, rn 0x80000000, c:v-in 3, cpsr 0x90000000 N  V
+orns.w r1, r2, r3, asr #0  :: rd 0x7fffffff rm 0x00000000, rn 0x80000000, c:v-in 3, cpsr 0x30000000   CV
+orns.w r1, r2, r3, asr #1  :: rd 0x3fffffff rm 0x00000000, rn 0x80000000, c:v-in 3, cpsr 0x10000000    V
+orns.w r1, r2, r3, asr #15 :: rd 0x0000ffff rm 0x00000000, rn 0x80000000, c:v-in 3, cpsr 0x10000000    V
+orns.w r1, r2, r3, asr #31 :: rd 0x00000000 rm 0x00000000, rn 0x80000000, c:v-in 3, cpsr 0x50000000  Z V
+orn.w  r1, r2, r3, lsl #0  :: rd 0x7fffffff rm 0x00000000, rn 0x80000000, c:v-in 3, cpsr 0xf0000000 NZCV
+orn.w  r1, r2, r3, lsl #1  :: rd 0xffffffff rm 0x00000000, rn 0x80000000, c:v-in 3, cpsr 0xf0000000 NZCV
+orn.w  r1, r2, r3, lsl #15 :: rd 0xffffffff rm 0x00000000, rn 0x80000000, c:v-in 3, cpsr 0xf0000000 NZCV
+orn.w  r1, r2, r3, lsl #31 :: rd 0xffffffff rm 0x00000000, rn 0x80000000, c:v-in 3, cpsr 0xf0000000 NZCV
+orn.w  r1, r2, r3, lsr #0  :: rd 0x7fffffff rm 0x00000000, rn 0x80000000, c:v-in 3, cpsr 0xf0000000 NZCV
+orn.w  r1, r2, r3, lsr #1  :: rd 0xbfffffff rm 0x00000000, rn 0x80000000, c:v-in 3, cpsr 0xf0000000 NZCV
+orn.w  r1, r2, r3, lsr #15 :: rd 0xfffeffff rm 0x00000000, rn 0x80000000, c:v-in 3, cpsr 0xf0000000 NZCV
+orn.w  r1, r2, r3, lsr #31 :: rd 0xfffffffe rm 0x00000000, rn 0x80000000, c:v-in 3, cpsr 0xf0000000 NZCV
+orn.w  r1, r2, r3, asr #0  :: rd 0x7fffffff rm 0x00000000, rn 0x80000000, c:v-in 3, cpsr 0xf0000000 NZCV
+orn.w  r1, r2, r3, asr #1  :: rd 0x3fffffff rm 0x00000000, rn 0x80000000, c:v-in 3, cpsr 0xf0000000 NZCV
+orn.w  r1, r2, r3, asr #15 :: rd 0x0000ffff rm 0x00000000, rn 0x80000000, c:v-in 3, cpsr 0xf0000000 NZCV
+orn.w  r1, r2, r3, asr #31 :: rd 0x00000000 rm 0x00000000, rn 0x80000000, c:v-in 3, cpsr 0xf0000000 NZCV
+orns.w r1, r2, r3, lsl #0  :: rd 0xffffffff rm 0x80000000, rn 0x00000000, c:v-in 3, cpsr 0xb0000000 N CV
+orns.w r1, r2, r3, lsl #1  :: rd 0xffffffff rm 0x80000000, rn 0x00000000, c:v-in 3, cpsr 0x90000000 N  V
+orns.w r1, r2, r3, lsl #15 :: rd 0xffffffff rm 0x80000000, rn 0x00000000, c:v-in 3, cpsr 0x90000000 N  V
+orns.w r1, r2, r3, lsl #31 :: rd 0xffffffff rm 0x80000000, rn 0x00000000, c:v-in 3, cpsr 0x90000000 N  V
+orns.w r1, r2, r3, lsr #0  :: rd 0xffffffff rm 0x80000000, rn 0x00000000, c:v-in 3, cpsr 0xb0000000 N CV
+orns.w r1, r2, r3, lsr #1  :: rd 0xffffffff rm 0x80000000, rn 0x00000000, c:v-in 3, cpsr 0x90000000 N  V
+orns.w r1, r2, r3, lsr #15 :: rd 0xffffffff rm 0x80000000, rn 0x00000000, c:v-in 3, cpsr 0x90000000 N  V
+orns.w r1, r2, r3, lsr #31 :: rd 0xffffffff rm 0x80000000, rn 0x00000000, c:v-in 3, cpsr 0x90000000 N  V
+orns.w r1, r2, r3, asr #0  :: rd 0xffffffff rm 0x80000000, rn 0x00000000, c:v-in 3, cpsr 0xb0000000 N CV
+orns.w r1, r2, r3, asr #1  :: rd 0xffffffff rm 0x80000000, rn 0x00000000, c:v-in 3, cpsr 0x90000000 N  V
+orns.w r1, r2, r3, asr #15 :: rd 0xffffffff rm 0x80000000, rn 0x00000000, c:v-in 3, cpsr 0x90000000 N  V
+orns.w r1, r2, r3, asr #31 :: rd 0xffffffff rm 0x80000000, rn 0x00000000, c:v-in 3, cpsr 0x90000000 N  V
+orn.w  r1, r2, r3, lsl #0  :: rd 0xffffffff rm 0x80000000, rn 0x00000000, c:v-in 3, cpsr 0xf0000000 NZCV
+orn.w  r1, r2, r3, lsl #1  :: rd 0xffffffff rm 0x80000000, rn 0x00000000, c:v-in 3, cpsr 0xf0000000 NZCV
+orn.w  r1, r2, r3, lsl #15 :: rd 0xffffffff rm 0x80000000, rn 0x00000000, c:v-in 3, cpsr 0xf0000000 NZCV
+orn.w  r1, r2, r3, lsl #31 :: rd 0xffffffff rm 0x80000000, rn 0x00000000, c:v-in 3, cpsr 0xf0000000 NZCV
+orn.w  r1, r2, r3, lsr #0  :: rd 0xffffffff rm 0x80000000, rn 0x00000000, c:v-in 3, cpsr 0xf0000000 NZCV
+orn.w  r1, r2, r3, lsr #1  :: rd 0xffffffff rm 0x80000000, rn 0x00000000, c:v-in 3, cpsr 0xf0000000 NZCV
+orn.w  r1, r2, r3, lsr #15 :: rd 0xffffffff rm 0x80000000, rn 0x00000000, c:v-in 3, cpsr 0xf0000000 NZCV
+orn.w  r1, r2, r3, lsr #31 :: rd 0xffffffff rm 0x80000000, rn 0x00000000, c:v-in 3, cpsr 0xf0000000 NZCV
+orn.w  r1, r2, r3, asr #0  :: rd 0xffffffff rm 0x80000000, rn 0x00000000, c:v-in 3, cpsr 0xf0000000 NZCV
+orn.w  r1, r2, r3, asr #1  :: rd 0xffffffff rm 0x80000000, rn 0x00000000, c:v-in 3, cpsr 0xf0000000 NZCV
+orn.w  r1, r2, r3, asr #15 :: rd 0xffffffff rm 0x80000000, rn 0x00000000, c:v-in 3, cpsr 0xf0000000 NZCV
+orn.w  r1, r2, r3, asr #31 :: rd 0xffffffff rm 0x80000000, rn 0x00000000, c:v-in 3, cpsr 0xf0000000 NZCV
+orns.w r1, r2, r3, lsl #0  :: rd 0xffffffff rm 0x80000000, rn 0x80000000, c:v-in 3, cpsr 0xb0000000 N CV
+orns.w r1, r2, r3, lsl #1  :: rd 0xffffffff rm 0x80000000, rn 0x80000000, c:v-in 3, cpsr 0xb0000000 N CV
+orns.w r1, r2, r3, lsl #15 :: rd 0xffffffff rm 0x80000000, rn 0x80000000, c:v-in 3, cpsr 0x90000000 N  V
+orns.w r1, r2, r3, lsl #31 :: rd 0xffffffff rm 0x80000000, rn 0x80000000, c:v-in 3, cpsr 0x90000000 N  V
+orns.w r1, r2, r3, lsr #0  :: rd 0xffffffff rm 0x80000000, rn 0x80000000, c:v-in 3, cpsr 0xb0000000 N CV
+orns.w r1, r2, r3, lsr #1  :: rd 0xbfffffff rm 0x80000000, rn 0x80000000, c:v-in 3, cpsr 0x90000000 N  V
+orns.w r1, r2, r3, lsr #15 :: rd 0xfffeffff rm 0x80000000, rn 0x80000000, c:v-in 3, cpsr 0x90000000 N  V
+orns.w r1, r2, r3, lsr #31 :: rd 0xfffffffe rm 0x80000000, rn 0x80000000, c:v-in 3, cpsr 0x90000000 N  V
+orns.w r1, r2, r3, asr #0  :: rd 0xffffffff rm 0x80000000, rn 0x80000000, c:v-in 3, cpsr 0xb0000000 N CV
+orns.w r1, r2, r3, asr #1  :: rd 0xbfffffff rm 0x80000000, rn 0x80000000, c:v-in 3, cpsr 0x90000000 N  V
+orns.w r1, r2, r3, asr #15 :: rd 0x8000ffff rm 0x80000000, rn 0x80000000, c:v-in 3, cpsr 0x90000000 N  V
+orns.w r1, r2, r3, asr #31 :: rd 0x80000000 rm 0x80000000, rn 0x80000000, c:v-in 3, cpsr 0x90000000 N  V
+orn.w  r1, r2, r3, lsl #0  :: rd 0xffffffff rm 0x80000000, rn 0x80000000, c:v-in 3, cpsr 0xf0000000 NZCV
+orn.w  r1, r2, r3, lsl #1  :: rd 0xffffffff rm 0x80000000, rn 0x80000000, c:v-in 3, cpsr 0xf0000000 NZCV
+orn.w  r1, r2, r3, lsl #15 :: rd 0xffffffff rm 0x80000000, rn 0x80000000, c:v-in 3, cpsr 0xf0000000 NZCV
+orn.w  r1, r2, r3, lsl #31 :: rd 0xffffffff rm 0x80000000, rn 0x80000000, c:v-in 3, cpsr 0xf0000000 NZCV
+orn.w  r1, r2, r3, lsr #0  :: rd 0xffffffff rm 0x80000000, rn 0x80000000, c:v-in 3, cpsr 0xf0000000 NZCV
+orn.w  r1, r2, r3, lsr #1  :: rd 0xbfffffff rm 0x80000000, rn 0x80000000, c:v-in 3, cpsr 0xf0000000 NZCV
+orn.w  r1, r2, r3, lsr #15 :: rd 0xfffeffff rm 0x80000000, rn 0x80000000, c:v-in 3, cpsr 0xf0000000 NZCV
+orn.w  r1, r2, r3, lsr #31 :: rd 0xfffffffe rm 0x80000000, rn 0x80000000, c:v-in 3, cpsr 0xf0000000 NZCV
+orn.w  r1, r2, r3, asr #0  :: rd 0xffffffff rm 0x80000000, rn 0x80000000, c:v-in 3, cpsr 0xf0000000 NZCV
+orn.w  r1, r2, r3, asr #1  :: rd 0xbfffffff rm 0x80000000, rn 0x80000000, c:v-in 3, cpsr 0xf0000000 NZCV
+orn.w  r1, r2, r3, asr #15 :: rd 0x8000ffff rm 0x80000000, rn 0x80000000, c:v-in 3, cpsr 0xf0000000 NZCV
+orn.w  r1, r2, r3, asr #31 :: rd 0x80000000 rm 0x80000000, rn 0x80000000, c:v-in 3, cpsr 0xf0000000 NZCV
+orns.w r1, r2, r3, lsl #0  :: rd 0x7fffffff rm 0x7fffffff, rn 0x80000000, c:v-in 3, cpsr 0x30000000   CV
+orns.w r1, r2, r3, lsl #1  :: rd 0xffffffff rm 0x7fffffff, rn 0x80000000, c:v-in 3, cpsr 0xb0000000 N CV
+orns.w r1, r2, r3, lsl #15 :: rd 0xffffffff rm 0x7fffffff, rn 0x80000000, c:v-in 3, cpsr 0x90000000 N  V
+orns.w r1, r2, r3, lsl #31 :: rd 0xffffffff rm 0x7fffffff, rn 0x80000000, c:v-in 3, cpsr 0x90000000 N  V
+orns.w r1, r2, r3, lsr #0  :: rd 0x7fffffff rm 0x7fffffff, rn 0x80000000, c:v-in 3, cpsr 0x30000000   CV
+orns.w r1, r2, r3, lsr #1  :: rd 0xffffffff rm 0x7fffffff, rn 0x80000000, c:v-in 3, cpsr 0x90000000 N  V
+orns.w r1, r2, r3, lsr #15 :: rd 0xffffffff rm 0x7fffffff, rn 0x80000000, c:v-in 3, cpsr 0x90000000 N  V
+orns.w r1, r2, r3, lsr #31 :: rd 0xffffffff rm 0x7fffffff, rn 0x80000000, c:v-in 3, cpsr 0x90000000 N  V
+orns.w r1, r2, r3, asr #0  :: rd 0x7fffffff rm 0x7fffffff, rn 0x80000000, c:v-in 3, cpsr 0x30000000   CV
+orns.w r1, r2, r3, asr #1  :: rd 0x7fffffff rm 0x7fffffff, rn 0x80000000, c:v-in 3, cpsr 0x10000000    V
+orns.w r1, r2, r3, asr #15 :: rd 0x7fffffff rm 0x7fffffff, rn 0x80000000, c:v-in 3, cpsr 0x10000000    V
+orns.w r1, r2, r3, asr #31 :: rd 0x7fffffff rm 0x7fffffff, rn 0x80000000, c:v-in 3, cpsr 0x10000000    V
+orn.w  r1, r2, r3, lsl #0  :: rd 0x7fffffff rm 0x7fffffff, rn 0x80000000, c:v-in 3, cpsr 0xf0000000 NZCV
+orn.w  r1, r2, r3, lsl #1  :: rd 0xffffffff rm 0x7fffffff, rn 0x80000000, c:v-in 3, cpsr 0xf0000000 NZCV
+orn.w  r1, r2, r3, lsl #15 :: rd 0xffffffff rm 0x7fffffff, rn 0x80000000, c:v-in 3, cpsr 0xf0000000 NZCV
+orn.w  r1, r2, r3, lsl #31 :: rd 0xffffffff rm 0x7fffffff, rn 0x80000000, c:v-in 3, cpsr 0xf0000000 NZCV
+orn.w  r1, r2, r3, lsr #0  :: rd 0x7fffffff rm 0x7fffffff, rn 0x80000000, c:v-in 3, cpsr 0xf0000000 NZCV
+orn.w  r1, r2, r3, lsr #1  :: rd 0xffffffff rm 0x7fffffff, rn 0x80000000, c:v-in 3, cpsr 0xf0000000 NZCV
+orn.w  r1, r2, r3, lsr #15 :: rd 0xffffffff rm 0x7fffffff, rn 0x80000000, c:v-in 3, cpsr 0xf0000000 NZCV
+orn.w  r1, r2, r3, lsr #31 :: rd 0xffffffff rm 0x7fffffff, rn 0x80000000, c:v-in 3, cpsr 0xf0000000 NZCV
+orn.w  r1, r2, r3, asr #0  :: rd 0x7fffffff rm 0x7fffffff, rn 0x80000000, c:v-in 3, cpsr 0xf0000000 NZCV
+orn.w  r1, r2, r3, asr #1  :: rd 0x7fffffff rm 0x7fffffff, rn 0x80000000, c:v-in 3, cpsr 0xf0000000 NZCV
+orn.w  r1, r2, r3, asr #15 :: rd 0x7fffffff rm 0x7fffffff, rn 0x80000000, c:v-in 3, cpsr 0xf0000000 NZCV
+orn.w  r1, r2, r3, asr #31 :: rd 0x7fffffff rm 0x7fffffff, rn 0x80000000, c:v-in 3, cpsr 0xf0000000 NZCV
+orns.w r1, r2, r3, lsl #0  :: rd 0x80000000 rm 0x80000000, rn 0x7fffffff, c:v-in 3, cpsr 0xb0000000 N CV
+orns.w r1, r2, r3, lsl #1  :: rd 0x80000001 rm 0x80000000, rn 0x7fffffff, c:v-in 3, cpsr 0x90000000 N  V
+orns.w r1, r2, r3, lsl #15 :: rd 0x80007fff rm 0x80000000, rn 0x7fffffff, c:v-in 3, cpsr 0xb0000000 N CV
+orns.w r1, r2, r3, lsl #31 :: rd 0xffffffff rm 0x80000000, rn 0x7fffffff, c:v-in 3, cpsr 0xb0000000 N CV
+orns.w r1, r2, r3, lsr #0  :: rd 0x80000000 rm 0x80000000, rn 0x7fffffff, c:v-in 3, cpsr 0xb0000000 N CV
+orns.w r1, r2, r3, lsr #1  :: rd 0xc0000000 rm 0x80000000, rn 0x7fffffff, c:v-in 3, cpsr 0xb0000000 N CV
+orns.w r1, r2, r3, lsr #15 :: rd 0xffff0000 rm 0x80000000, rn 0x7fffffff, c:v-in 3, cpsr 0xb0000000 N CV
+orns.w r1, r2, r3, lsr #31 :: rd 0xffffffff rm 0x80000000, rn 0x7fffffff, c:v-in 3, cpsr 0xb0000000 N CV
+orns.w r1, r2, r3, asr #0  :: rd 0x80000000 rm 0x80000000, rn 0x7fffffff, c:v-in 3, cpsr 0xb0000000 N CV
+orns.w r1, r2, r3, asr #1  :: rd 0xc0000000 rm 0x80000000, rn 0x7fffffff, c:v-in 3, cpsr 0xb0000000 N CV
+orns.w r1, r2, r3, asr #15 :: rd 0xffff0000 rm 0x80000000, rn 0x7fffffff, c:v-in 3, cpsr 0xb0000000 N CV
+orns.w r1, r2, r3, asr #31 :: rd 0xffffffff rm 0x80000000, rn 0x7fffffff, c:v-in 3, cpsr 0xb0000000 N CV
+orn.w  r1, r2, r3, lsl #0  :: rd 0x80000000 rm 0x80000000, rn 0x7fffffff, c:v-in 3, cpsr 0xf0000000 NZCV
+orn.w  r1, r2, r3, lsl #1  :: rd 0x80000001 rm 0x80000000, rn 0x7fffffff, c:v-in 3, cpsr 0xf0000000 NZCV
+orn.w  r1, r2, r3, lsl #15 :: rd 0x80007fff rm 0x80000000, rn 0x7fffffff, c:v-in 3, cpsr 0xf0000000 NZCV
+orn.w  r1, r2, r3, lsl #31 :: rd 0xffffffff rm 0x80000000, rn 0x7fffffff, c:v-in 3, cpsr 0xf0000000 NZCV
+orn.w  r1, r2, r3, lsr #0  :: rd 0x80000000 rm 0x80000000, rn 0x7fffffff, c:v-in 3, cpsr 0xf0000000 NZCV
+orn.w  r1, r2, r3, lsr #1  :: rd 0xc0000000 rm 0x80000000, rn 0x7fffffff, c:v-in 3, cpsr 0xf0000000 NZCV
+orn.w  r1, r2, r3, lsr #15 :: rd 0xffff0000 rm 0x80000000, rn 0x7fffffff, c:v-in 3, cpsr 0xf0000000 NZCV
+orn.w  r1, r2, r3, lsr #31 :: rd 0xffffffff rm 0x80000000, rn 0x7fffffff, c:v-in 3, cpsr 0xf0000000 NZCV
+orn.w  r1, r2, r3, asr #0  :: rd 0x80000000 rm 0x80000000, rn 0x7fffffff, c:v-in 3, cpsr 0xf0000000 NZCV
+orn.w  r1, r2, r3, asr #1  :: rd 0xc0000000 rm 0x80000000, rn 0x7fffffff, c:v-in 3, cpsr 0xf0000000 NZCV
+orn.w  r1, r2, r3, asr #15 :: rd 0xffff0000 rm 0x80000000, rn 0x7fffffff, c:v-in 3, cpsr 0xf0000000 NZCV
+orn.w  r1, r2, r3, asr #31 :: rd 0xffffffff rm 0x80000000, rn 0x7fffffff, c:v-in 3, cpsr 0xf0000000 NZCV
+orns.w r1, r2, r3, lsl #0  :: rd 0xffffffff rm 0x7fffffff, rn 0x7fffffff, c:v-in 3, cpsr 0xb0000000 N CV
+orns.w r1, r2, r3, lsl #1  :: rd 0x7fffffff rm 0x7fffffff, rn 0x7fffffff, c:v-in 3, cpsr 0x10000000    V
+orns.w r1, r2, r3, lsl #15 :: rd 0x7fffffff rm 0x7fffffff, rn 0x7fffffff, c:v-in 3, cpsr 0x30000000   CV
+orns.w r1, r2, r3, lsl #31 :: rd 0x7fffffff rm 0x7fffffff, rn 0x7fffffff, c:v-in 3, cpsr 0x30000000   CV
+orns.w r1, r2, r3, lsr #0  :: rd 0xffffffff rm 0x7fffffff, rn 0x7fffffff, c:v-in 3, cpsr 0xb0000000 N CV
+orns.w r1, r2, r3, lsr #1  :: rd 0xffffffff rm 0x7fffffff, rn 0x7fffffff, c:v-in 3, cpsr 0xb0000000 N CV
+orns.w r1, r2, r3, lsr #15 :: rd 0xffffffff rm 0x7fffffff, rn 0x7fffffff, c:v-in 3, cpsr 0xb0000000 N CV
+orns.w r1, r2, r3, lsr #31 :: rd 0xffffffff rm 0x7fffffff, rn 0x7fffffff, c:v-in 3, cpsr 0xb0000000 N CV
+orns.w r1, r2, r3, asr #0  :: rd 0xffffffff rm 0x7fffffff, rn 0x7fffffff, c:v-in 3, cpsr 0xb0000000 N CV
+orns.w r1, r2, r3, asr #1  :: rd 0xffffffff rm 0x7fffffff, rn 0x7fffffff, c:v-in 3, cpsr 0xb0000000 N CV
+orns.w r1, r2, r3, asr #15 :: rd 0xffffffff rm 0x7fffffff, rn 0x7fffffff, c:v-in 3, cpsr 0xb0000000 N CV
+orns.w r1, r2, r3, asr #31 :: rd 0xffffffff rm 0x7fffffff, rn 0x7fffffff, c:v-in 3, cpsr 0xb0000000 N CV
+orn.w  r1, r2, r3, lsl #0  :: rd 0xffffffff rm 0x7fffffff, rn 0x7fffffff, c:v-in 3, cpsr 0xf0000000 NZCV
+orn.w  r1, r2, r3, lsl #1  :: rd 0x7fffffff rm 0x7fffffff, rn 0x7fffffff, c:v-in 3, cpsr 0xf0000000 NZCV
+orn.w  r1, r2, r3, lsl #15 :: rd 0x7fffffff rm 0x7fffffff, rn 0x7fffffff, c:v-in 3, cpsr 0xf0000000 NZCV
+orn.w  r1, r2, r3, lsl #31 :: rd 0x7fffffff rm 0x7fffffff, rn 0x7fffffff, c:v-in 3, cpsr 0xf0000000 NZCV
+orn.w  r1, r2, r3, lsr #0  :: rd 0xffffffff rm 0x7fffffff, rn 0x7fffffff, c:v-in 3, cpsr 0xf0000000 NZCV
+orn.w  r1, r2, r3, lsr #1  :: rd 0xffffffff rm 0x7fffffff, rn 0x7fffffff, c:v-in 3, cpsr 0xf0000000 NZCV
+orn.w  r1, r2, r3, lsr #15 :: rd 0xffffffff rm 0x7fffffff, rn 0x7fffffff, c:v-in 3, cpsr 0xf0000000 NZCV
+orn.w  r1, r2, r3, lsr #31 :: rd 0xffffffff rm 0x7fffffff, rn 0x7fffffff, c:v-in 3, cpsr 0xf0000000 NZCV
+orn.w  r1, r2, r3, asr #0  :: rd 0xffffffff rm 0x7fffffff, rn 0x7fffffff, c:v-in 3, cpsr 0xf0000000 NZCV
+orn.w  r1, r2, r3, asr #1  :: rd 0xffffffff rm 0x7fffffff, rn 0x7fffffff, c:v-in 3, cpsr 0xf0000000 NZCV
+orn.w  r1, r2, r3, asr #15 :: rd 0xffffffff rm 0x7fffffff, rn 0x7fffffff, c:v-in 3, cpsr 0xf0000000 NZCV
+orn.w  r1, r2, r3, asr #31 :: rd 0xffffffff rm 0x7fffffff, rn 0x7fffffff, c:v-in 3, cpsr 0xf0000000 NZCV
 (T?) LSL{S}.W Rd, Rn, Rm
 lsls.w r1, r2, r3 :: rd 0x31415927 rm 0x31415927, rn 0x00000000, c:v-in 0, cpsr 0x00000000     
 lsls.w r1, r2, r3 :: rd 0x6282b24e rm 0x31415927, rn 0x00000001, c:v-in 0, cpsr 0x00000000     

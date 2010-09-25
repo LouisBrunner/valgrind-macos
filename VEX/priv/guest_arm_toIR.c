@@ -15886,21 +15886,24 @@ DisResult disInstr_THUMB_WRK (
        && (   INSN0(9,5) == BITS5(0,0,0,1,0)  // ORR
            || INSN0(9,5) == BITS5(0,0,0,0,0)  // AND
            || INSN0(9,5) == BITS5(0,0,0,0,1)  // BIC
-           || INSN0(9,5) == BITS5(0,0,1,0,0)) // EOR
+           || INSN0(9,5) == BITS5(0,0,1,0,0)  // EOR
+           || INSN0(9,5) == BITS5(0,0,0,1,1)) // ORN
        && INSN1(15,15) == 0) {
       UInt bS = INSN0(4,4);
       UInt rN = INSN0(3,0);
       UInt rD = INSN1(11,8);
       if (!isBadRegT(rN) && !isBadRegT(rD)) {
-         Bool   isBIC = False;
-         IROp   op    = Iop_INVALID;
-         HChar* nm    = "???";
+         Bool   notArgR = False;
+         IROp   op      = Iop_INVALID;
+         HChar* nm      = "???";
          switch (INSN0(9,5)) {
             case BITS5(0,0,0,1,0): op = Iop_Or32;  nm = "orr"; break;
             case BITS5(0,0,0,0,0): op = Iop_And32; nm = "and"; break;
             case BITS5(0,0,0,0,1): op = Iop_And32; nm = "bic";
-                                   isBIC = True; break;
-            case BITS5(0,0,1,0,0): op = Iop_Xor32;  nm = "eor"; break;
+                                   notArgR = True; break;
+            case BITS5(0,0,1,0,0): op = Iop_Xor32; nm = "eor"; break;
+            case BITS5(0,0,0,1,1): op = Iop_Or32;  nm = "orn";
+                                   notArgR = True; break;
             default: vassert(0);
          }
          IRTemp argL  = newTemp(Ity_I32);
@@ -15909,7 +15912,7 @@ DisResult disInstr_THUMB_WRK (
          Bool   updC  = False;
          UInt   imm32 = thumbExpandImm_from_I0_I1(&updC, insn0, insn1);
          assign(argL, getIRegT(rN));
-         assign(argR, mkU32(isBIC ? ~imm32 : imm32));
+         assign(argR, mkU32(notArgR ? ~imm32 : imm32));
          assign(res,  binop(op, mkexpr(argL), mkexpr(argR)));
          putIRegT(rD, mkexpr(res), condT);
          if (bS) {
@@ -16074,25 +16077,29 @@ DisResult disInstr_THUMB_WRK (
    /* ---------- (T3) ORR{S}.W Rd, Rn, Rm, {shift} ---------- */
    /* ---------- (T3) EOR{S}.W Rd, Rn, Rm, {shift} ---------- */
    /* ---------- (T3) BIC{S}.W Rd, Rn, Rm, {shift} ---------- */
+   /* ---------- (T1) ORN{S}.W Rd, Rn, Rm, {shift} ---------- */
    if (INSN0(15,9) == BITS7(1,1,1,0,1,0,1)
        && (   INSN0(8,5) == BITS4(0,0,0,0)  // and subopc
            || INSN0(8,5) == BITS4(0,0,1,0)  // orr subopc
            || INSN0(8,5) == BITS4(0,1,0,0)  // eor subopc
-           || INSN0(8,5) == BITS4(0,0,0,1)) // bic subopc
+           || INSN0(8,5) == BITS4(0,0,0,1)  // bic subopc
+           || INSN0(8,5) == BITS4(0,0,1,1)) // orn subopc
        && INSN1(15,15) == 0) {
       UInt rN = INSN0(3,0);
       UInt rD = INSN1(11,8);
       UInt rM = INSN1(3,0);
       if (!isBadRegT(rD) && !isBadRegT(rN) && !isBadRegT(rM)) {
-         Bool isBIC = False;
-         IROp op    = Iop_INVALID;
+         Bool notArgR = False;
+         IROp op      = Iop_INVALID;
          HChar* nm  = "???";
          switch (INSN0(8,5)) {
             case BITS4(0,0,0,0): op = Iop_And32; nm = "and"; break;
             case BITS4(0,0,1,0): op = Iop_Or32;  nm = "orr"; break;
             case BITS4(0,1,0,0): op = Iop_Xor32; nm = "eor"; break;
             case BITS4(0,0,0,1): op = Iop_And32; nm = "bic";
-                                 isBIC = True; break;
+                                 notArgR = True; break;
+            case BITS4(0,0,1,1): op = Iop_Or32; nm = "orn";
+                                 notArgR = True; break;
             default: vassert(0);
          }
          UInt bS   = INSN0(4,4);
@@ -16113,8 +16120,8 @@ DisResult disInstr_THUMB_WRK (
          );
 
          IRTemp res = newTemp(Ity_I32);
-         if (isBIC) {
-            vassert(op == Iop_And32);
+         if (notArgR) {
+            vassert(op == Iop_And32 || op == Iop_Or32);
             assign(res, binop(op, mkexpr(rNt),
                                   unop(Iop_Not32, mkexpr(argR))));
          } else {

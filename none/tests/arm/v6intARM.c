@@ -865,5 +865,45 @@ int main(int argc, char **argv)
    TESTINST2("rbit r0, r1", 0xbb6d14ec, r0, r1, 0);
    TESTINST2("rbit r0, r1", 0x68983cc9, r0, r1, 0);
 
+	printf("------------ REV ------------\n");
+	TESTINST2("rev r0, r1", 0x00000000, r0, r1, 0);
+	TESTINST2("rev r0, r1", 0xFFFFFFFF, r0, r1, 0);
+	TESTINST2("rev r0, r1", 0x80000000, r0, r1, 0);
+	TESTINST2("rev r0, r1", 0x00000001, r0, r1, 0);
+	TESTINST2("rev r0, r1", 0x31415927, r0, r1, 0);
+	TESTINST2("rev r0, r1", 0x14141562, r0, r1, 0);
+   TESTINST2("rev r0, r1", 0xabe8391f, r0, r1, 0);
+   TESTINST2("rev r0, r1", 0x9028aa80, r0, r1, 0);
+   TESTINST2("rev r0, r1", 0xead1fc6d, r0, r1, 0);
+   TESTINST2("rev r0, r1", 0x35c98c55, r0, r1, 0);
+   TESTINST2("rev r0, r1", 0x534af1eb, r0, r1, 0);
+   TESTINST2("rev r0, r1", 0x45511b08, r0, r1, 0);
+   TESTINST2("rev r0, r1", 0x90077f71, r0, r1, 0);
+   TESTINST2("rev r0, r1", 0xde8ca84b, r0, r1, 0);
+   TESTINST2("rev r0, r1", 0xe37a0dda, r0, r1, 0);
+   TESTINST2("rev r0, r1", 0xe5b83d4b, r0, r1, 0);
+   TESTINST2("rev r0, r1", 0xbb6d14ec, r0, r1, 0);
+   TESTINST2("rev r0, r1", 0x68983cc9, r0, r1, 0);
+
+	printf("------------ REV16 ------------\n");
+	TESTINST2("rev16 r0, r1", 0x00000000, r0, r1, 0);
+	TESTINST2("rev16 r0, r1", 0xFFFFFFFF, r0, r1, 0);
+	TESTINST2("rev16 r0, r1", 0x80000000, r0, r1, 0);
+	TESTINST2("rev16 r0, r1", 0x00000001, r0, r1, 0);
+	TESTINST2("rev16 r0, r1", 0x31415927, r0, r1, 0);
+	TESTINST2("rev16 r0, r1", 0x14141562, r0, r1, 0);
+   TESTINST2("rev16 r0, r1", 0xabe8391f, r0, r1, 0);
+   TESTINST2("rev16 r0, r1", 0x9028aa80, r0, r1, 0);
+   TESTINST2("rev16 r0, r1", 0xead1fc6d, r0, r1, 0);
+   TESTINST2("rev16 r0, r1", 0x35c98c55, r0, r1, 0);
+   TESTINST2("rev16 r0, r1", 0x534af1eb, r0, r1, 0);
+   TESTINST2("rev16 r0, r1", 0x45511b08, r0, r1, 0);
+   TESTINST2("rev16 r0, r1", 0x90077f71, r0, r1, 0);
+   TESTINST2("rev16 r0, r1", 0xde8ca84b, r0, r1, 0);
+   TESTINST2("rev16 r0, r1", 0xe37a0dda, r0, r1, 0);
+   TESTINST2("rev16 r0, r1", 0xe5b83d4b, r0, r1, 0);
+   TESTINST2("rev16 r0, r1", 0xbb6d14ec, r0, r1, 0);
+   TESTINST2("rev16 r0, r1", 0x68983cc9, r0, r1, 0);
+
 	return 0;
 }

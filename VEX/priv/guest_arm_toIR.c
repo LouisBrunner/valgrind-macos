@@ -2709,6 +2709,44 @@ static IRTemp gen_BITREV ( IRTemp x0 )
 }
 
 
+/* Generate IR to do rearrange bytes 3:2:1:0 in a word in to the order
+   0:1:2:3 (aka byte-swap). */
+static IRTemp gen_REV ( IRTemp arg )
+{
+   IRTemp res = newTemp(Ity_I32);
+   assign(res, 
+          binop(Iop_Or32,
+                binop(Iop_Shl32, mkexpr(arg), mkU8(24)),
+          binop(Iop_Or32,
+                binop(Iop_And32, binop(Iop_Shl32, mkexpr(arg), mkU8(8)), 
+                                 mkU32(0x00FF0000)),
+          binop(Iop_Or32,
+                binop(Iop_And32, binop(Iop_Shr32, mkexpr(arg), mkU8(8)),
+                                       mkU32(0x0000FF00)),
+                binop(Iop_And32, binop(Iop_Shr32, mkexpr(arg), mkU8(24)),
+                                       mkU32(0x000000FF) )
+   ))));
+   return res;
+}
+
+
+/* Generate IR to do rearrange bytes 3:2:1:0 in a word in to the order
+   2:3:0:1 (swap within lo and hi halves). */
+static IRTemp gen_REV16 ( IRTemp arg )
+{
+   IRTemp res = newTemp(Ity_I32);
+   assign(res,
+          binop(Iop_Or32,
+                binop(Iop_And32,
+                      binop(Iop_Shl32, mkexpr(arg), mkU8(8)),
+                      mkU32(0xFF00FF00)),
+                binop(Iop_And32,
+                      binop(Iop_Shr32, mkexpr(arg), mkU8(8)),
+                      mkU32(0x00FF00FF))));
+   return res;
+}
+
+
 /*------------------------------------------------------------*/
 /*--- Advanced SIMD (NEON) instructions                    ---*/
 /*------------------------------------------------------------*/
@@ -13728,31 +13766,8 @@ DisResult disInstr_ARM_WRK (
       if (rM != 15 && rD != 15) {
          IRTemp rMt = newTemp(Ity_I32);
          assign(rMt, getIRegA(rM));
-         IRExpr* res;
-         if (isREV) {
-            res
-            = binop(Iop_Or32,
-                 binop(Iop_Shl32, mkexpr(rMt), mkU8(24)),
-              binop(Iop_Or32,
-                 binop(Iop_And32, binop(Iop_Shl32, mkexpr(rMt), mkU8(8)), 
-                                  mkU32(0x00FF0000)),
-              binop(Iop_Or32,
-                 binop(Iop_And32, binop(Iop_Shr32, mkexpr(rMt), mkU8(8)),
-                                  mkU32(0x0000FF00)),
-                 binop(Iop_And32, binop(Iop_Shr32, mkexpr(rMt), mkU8(24)),
-                                  mkU32(0x000000FF) )
-              )));
-         } else {
-            res 
-            = binop(Iop_Or32,
-                        binop(Iop_And32,
-                              binop(Iop_Shl32, mkexpr(rMt), mkU8(8)),
-                              mkU32(0xFF00FF00)),
-                        binop(Iop_And32,
-                              binop(Iop_Shr32, mkexpr(rMt), mkU8(8)),
-                              mkU32(0x00FF00FF)));
-         }
-         putIRegA(rD, res, condT, Ijk_Boring);
+         IRTemp res = isREV ? gen_REV(rMt) : gen_REV16(rMt);
+         putIRegA(rD, mkexpr(res), condT, Ijk_Boring);
          DIP("rev%s%s r%u, r%u\n", isREV ? "" : "16",
              nCC(INSN_COND), rD, rM);
          goto decode_success;
@@ -14564,6 +14579,21 @@ DisResult disInstr_THUMB_WRK (
       setFlags_D1_D2_ND( ARMG_CC_OP_LOGIC, res, resC, oldV,
                          cond_AND_notInIT_T );
       DIP("%ss r%u, r%u\n", wot, rS, rD);
+      goto decode_success;
+   }
+
+   case 0x2E8:   // REV
+   case 0x2E9: { // REV16
+      /* ---------------- REV   Rd, Rm ---------------- */
+      /* ---------------- REV16 Rd, Rm ---------------- */
+      UInt rM = INSN0(5,3);
+      UInt rD = INSN0(2,0);
+      Bool isREV = INSN0(15,6) == 0x2E8;
+      IRTemp arg = newTemp(Ity_I32);
+      assign(arg, getIRegT(rM));
+      IRTemp res = isREV ? gen_REV(arg) : gen_REV16(arg);
+      putIRegT(rD, mkexpr(res), condT);
+      DIP("rev%s r%u, r%u\n", isREV ? "" : "16", rD, rM);
       goto decode_success;
    }
 
@@ -17405,6 +17435,26 @@ DisResult disInstr_THUMB_WRK (
          IRTemp res = gen_BITREV(arg);
          putIRegT(rD, mkexpr(res), condT);
          DIP("rbit r%u, r%u\n", rD, rM1);
+         goto decode_success;
+      }
+   }
+
+   /* ------------------- (T2) REV   ------------------- */
+   /* ------------------- (T2) REV16 ------------------- */
+   if (INSN0(15,4) == 0xFA9
+       && INSN1(15,12) == BITS4(1,1,1,1)
+       && (   INSN1(7,4) == BITS4(1,0,0,0)     // REV
+           || INSN1(7,4) == BITS4(1,0,0,1))) { // REV16
+      UInt rM1   = INSN0(3,0);
+      UInt rD    = INSN1(11,8);
+      UInt rM2   = INSN1(3,0);
+      Bool isREV = INSN1(7,4) == BITS4(1,0,0,0);
+      if (!isBadRegT(rD) && !isBadRegT(rM1) && rM1 == rM2) {
+         IRTemp arg = newTemp(Ity_I32);
+         assign(arg, getIRegT(rM1));
+         IRTemp res = isREV ? gen_REV(arg) : gen_REV16(arg);
+         putIRegT(rD, mkexpr(res), condT);
+         DIP("rev%s r%u, r%u\n", isREV ? "" : "16", rD, rM1);
          goto decode_success;
       }
    }

@@ -289,6 +289,30 @@ static LineCC* get_lineCC(Addr origAddr)
 /*--- Cache simulation functions                           ---*/
 /*------------------------------------------------------------*/
 
+// Only used with --cache-sim=no.
+static VG_REGPARM(1)
+void log_1I(InstrInfo* n)
+{
+   n->parent->Ir.a++;
+}
+
+// Only used with --cache-sim=no.
+static VG_REGPARM(2)
+void log_2I(InstrInfo* n, InstrInfo* n2)
+{
+   n->parent->Ir.a++;
+   n2->parent->Ir.a++;
+}
+
+// Only used with --cache-sim=no.
+static VG_REGPARM(3)
+void log_3I(InstrInfo* n, InstrInfo* n2, InstrInfo* n3)
+{
+   n->parent->Ir.a++;
+   n2->parent->Ir.a++;
+   n3->parent->Ir.a++;
+}
+
 static VG_REGPARM(1)
 void log_1I_0D_cache_access(InstrInfo* n)
 {
@@ -708,8 +732,13 @@ static void flushEvents ( CgState* cgs )
             else
             if (ev2 && ev3 && ev2->tag == Ev_Ir && ev3->tag == Ev_Ir)
             {
-               helperName = "log_3I_0D_cache_access";
-               helperAddr = &log_3I_0D_cache_access;
+               if (clo_cache_sim) {
+                  helperName = "log_3I_0D_cache_access";
+                  helperAddr = &log_3I_0D_cache_access;
+               } else {
+                  helperName = "log_3I";
+                  helperAddr = &log_3I;
+               }
                argv = mkIRExprVec_3( i_node_expr, 
                                      mkIRExpr_HWord( (HWord)ev2->inode ), 
                                      mkIRExpr_HWord( (HWord)ev3->inode ) );
@@ -719,8 +748,13 @@ static void flushEvents ( CgState* cgs )
             /* Merge an Ir with one following Ir. */
             else
             if (ev2 && ev2->tag == Ev_Ir) {
-               helperName = "log_2I_0D_cache_access";
-               helperAddr = &log_2I_0D_cache_access;
+               if (clo_cache_sim) {
+                  helperName = "log_2I_0D_cache_access";
+                  helperAddr = &log_2I_0D_cache_access;
+               } else {
+                  helperName = "log_2I";
+                  helperAddr = &log_2I;
+               }
                argv = mkIRExprVec_2( i_node_expr,
                                      mkIRExpr_HWord( (HWord)ev2->inode ) );
                regparms = 2;
@@ -728,8 +762,13 @@ static void flushEvents ( CgState* cgs )
             }
             /* No merging possible; emit as-is. */
             else {
-               helperName = "log_1I_0D_cache_access";
-               helperAddr = &log_1I_0D_cache_access;
+               if (clo_cache_sim) {
+                  helperName = "log_1I_0D_cache_access";
+                  helperAddr = &log_1I_0D_cache_access;
+               } else {
+                  helperName = "log_1I";
+                  helperAddr = &log_1I;
+               }
                argv = mkIRExprVec_1( i_node_expr );
                regparms = 1;
                i++;

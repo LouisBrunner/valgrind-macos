@@ -427,6 +427,9 @@ SysRes do_mremap( Addr old_addr, SizeT old_len,
    /* that failed.  Look elsewhere. */
    advised = VG_(am_get_advisory_client_simple)( 0, new_len, &ok );
    if (ok) {
+      Bool oldR = old_seg->hasR;
+      Bool oldW = old_seg->hasW;
+      Bool oldX = old_seg->hasX;
       /* assert new area does not overlap old */
       vg_assert(advised+new_len-1 < old_addr 
                 || advised > old_addr+old_len-1);
@@ -437,8 +440,7 @@ SysRes do_mremap( Addr old_addr, SizeT old_len,
                                    MIN_SIZET(old_len,new_len) );
          if (new_len > old_len)
             VG_TRACK( new_mem_mmap, advised+old_len, new_len-old_len,
-                      old_seg->hasR, old_seg->hasW, old_seg->hasX,
-                      0/*di_handle*/ );
+                      oldR, oldW, oldX, 0/*di_handle*/ );
          VG_TRACK(die_mem_munmap, old_addr, old_len);
          if (d) {
             VG_(discard_translations)( old_addr, old_len, "do_remap(4)" );

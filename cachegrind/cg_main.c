@@ -1351,8 +1351,9 @@ static void fprint_CC_table_and_calc_totals(void)
       VG_(sprintf)(buf, "\nevents: Ir "
                                   "Bc Bcm Bi Bim\n");
    }
-   else
-      tl_assert(0); /* can't happen */
+   else {
+      VG_(sprintf)(buf, "\nevents: Ir\n");
+   }
 
    VG_(write)(fd, (void*)buf, VG_(strlen)(buf));
 
@@ -1413,8 +1414,11 @@ static void fprint_CC_table_and_calc_totals(void)
                             lineCC->Bc.b, lineCC->Bc.mp, 
                             lineCC->Bi.b, lineCC->Bi.mp);
       }
-      else
-         tl_assert(0);
+      else {
+         VG_(sprintf)(buf, "%u %llu\n",
+                            lineCC->loc.line,
+                            lineCC->Ir.a);
+      }
 
       VG_(write)(fd, (void*)buf, VG_(strlen)(buf));
 
@@ -1467,8 +1471,11 @@ static void fprint_CC_table_and_calc_totals(void)
                         Bc_total.b, Bc_total.mp, 
                         Bi_total.b, Bi_total.mp);
    }
-   else
-      tl_assert(0);
+   else {
+      VG_(sprintf)(buf, "summary:"
+                        " %llu\n", 
+                        Ir_total.a);
+   }
 
    VG_(write)(fd, (void*)buf, VG_(strlen)(buf));
    VG_(close)(fd);
@@ -1494,10 +1501,6 @@ static void cg_fini(Int exitcode)
    ULong L2_total_m, L2_total_mr, L2_total_mw,
          L2_total, L2_total_r, L2_total_w;
    Int l1, l2, l3;
-
-   /* Running with both cache and branch simulation disabled is not
-      allowed (checked during command line option processing). */
-   tl_assert(clo_cache_sim || clo_branch_sim);
 
    fprint_CC_table_and_calc_totals();
 
@@ -1778,14 +1781,6 @@ static void cg_pre_clo_init(void)
 static void cg_post_clo_init(void)
 {
    cache_t I1c, D1c, L2c; 
-
-   /* Can't disable both cache and branch profiling */
-   if ((!clo_cache_sim) && (!clo_branch_sim)) {
-      VG_(umsg)("ERROR: --cache-sim=no --branch-sim=no is not allowed.\n");
-      VG_(umsg)("You must select cache profiling, "
-                "or branch profiling, or both.\n");
-      VG_(exit)(2);
-   }
 
    CC_table =
       VG_(OSetGen_Create)(offsetof(LineCC, loc),

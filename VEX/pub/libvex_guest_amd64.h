@@ -76,15 +76,15 @@ typedef
       /* The D flag is stored here, encoded as either -1 or +1 */
       /* 160 */ ULong  guest_DFLAG;
       /* 168 */ ULong  guest_RIP;
+      /* Bit 18 (AC) of eflags stored here, as either 0 or 1. */
+      /* ... */ ULong  guest_ACFLAG;
+      /* Bit 21 (ID) of eflags stored here, as either 0 or 1. */
+      /* 176 */ ULong guest_IDFLAG;
       /* Probably a lot more stuff too. 
          D,ID flags
          16  128-bit SSE registers
          all the old x87 FPU gunk
-         segment registers
-      */
-
-      /* Bit 21 (ID) of eflags stored here, as either 0 or 1. */
-      /* 176 */ ULong guest_IDFLAG;
+         segment registers */
 
       /* HACK to make tls on amd64-linux work.  %fs only ever seems to
          hold zero, and so guest_FS_ZERO holds the 64-bit offset
@@ -161,7 +161,7 @@ typedef
       ULong guest_IP_AT_SYSCALL;
 
       /* Padding to make it have an 16-aligned size */
-      /* ULong padding; */
+      ULong padding;
    }
    VexGuestAMD64State;
 

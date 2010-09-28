@@ -824,6 +824,9 @@ ULong LibVEX_GuestAMD64_get_rflags ( /*IN*/VexGuestAMD64State* vex_state )
       rflags |= (1<<10);
    if (vex_state->guest_IDFLAG == 1)
       rflags |= (1<<21);
+   if (vex_state->guest_ACFLAG == 1)
+      rflags |= (1<<18);
+
    return rflags;
 }
 

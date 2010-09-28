@@ -411,6 +411,7 @@ static void unimplemented ( HChar* str )
 #define OFFB_FPREGS    offsetof(VexGuestAMD64State,guest_FPREG[0])
 #define OFFB_FPTAGS    offsetof(VexGuestAMD64State,guest_FPTAG[0])
 #define OFFB_DFLAG     offsetof(VexGuestAMD64State,guest_DFLAG)
+#define OFFB_ACFLAG    offsetof(VexGuestAMD64State,guest_ACFLAG)
 #define OFFB_IDFLAG    offsetof(VexGuestAMD64State,guest_IDFLAG)
 #define OFFB_FTOP      offsetof(VexGuestAMD64State,guest_FTOP)
 #define OFFB_FC3210    offsetof(VexGuestAMD64State,guest_FC3210)
@@ -16427,6 +16428,19 @@ DisResult disInstr_AMD64_WRK (
                   mkU64(1))) 
           );
 
+      /* And set the AC flag too */
+      stmt( IRStmt_Put( 
+               OFFB_ACFLAG,
+               IRExpr_Mux0X( 
+                  unop(Iop_32to8,
+                  unop(Iop_64to32,
+                       binop(Iop_And64, 
+                             binop(Iop_Shr64, mkexpr(t1), mkU8(18)), 
+                             mkU64(1)))),
+                  mkU64(0), 
+                  mkU64(1))) 
+          );
+
       DIP("popf%c\n", nameISize(sz));
       break;
 
@@ -16591,12 +16605,22 @@ DisResult disInstr_AMD64_WRK (
                               mkU64(1<<21)))
             );
 
+      /* And patch in the AC flag too. */
+      t5 = newTemp(Ity_I64);
+      assign( t5, binop(Iop_Or64,
+                        mkexpr(t4),
+                        binop(Iop_And64,
+                              binop(Iop_Shl64, IRExpr_Get(OFFB_ACFLAG,Ity_I64), 
+                                               mkU8(18)),
+                              mkU64(1<<18)))
+            );
+
       /* if sz==2, the stored value needs to be narrowed. */
       if (sz == 2)
         storeLE( mkexpr(t1), unop(Iop_32to16,
-                             unop(Iop_64to32,mkexpr(t4))) );
+                             unop(Iop_64to32,mkexpr(t5))) );
       else 
-        storeLE( mkexpr(t1), mkexpr(t4) );
+        storeLE( mkexpr(t1), mkexpr(t5) );
 
       DIP("pushf%c\n", nameISize(sz));
       break;

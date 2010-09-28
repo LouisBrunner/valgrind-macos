@@ -108,6 +108,8 @@ extern ULong amd64g_calculate_RCL  (
                 ULong arg, ULong rot_amt, ULong rflags_in, Long sz 
              );
 
+extern ULong amd64g_calculate_pclmul(ULong s1, ULong s2, ULong which);
+
 extern ULong amd64g_check_fldcw ( ULong fpucw );
 
 extern ULong amd64g_create_fpucw ( ULong fpround );

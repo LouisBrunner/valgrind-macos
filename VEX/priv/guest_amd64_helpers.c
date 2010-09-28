@@ -2300,6 +2300,51 @@ ULong amd64g_calculate_RCL ( ULong arg,
    return wantRflags ? rflags_in : arg;
 }
 
+/* Taken from gf2x-0.9.5, released under GPLv2+ (later versions LGPLv2+)
+ * svn://scm.gforge.inria.fr/svn/gf2x/trunk/hardware/opteron/gf2x_mul1.h@25
+ */
+ULong amd64g_calculate_pclmul(ULong a, ULong b, ULong which)
+{
+    ULong hi, lo, tmp, A[16];
+
+   A[0] = 0;            A[1] = a;
+   A[2] = A[1] << 1;    A[3] = A[2] ^ a;
+   A[4] = A[2] << 1;    A[5] = A[4] ^ a;
+   A[6] = A[3] << 1;    A[7] = A[6] ^ a;
+   A[8] = A[4] << 1;    A[9] = A[8] ^ a;
+   A[10] = A[5] << 1;   A[11] = A[10] ^ a;
+   A[12] = A[6] << 1;   A[13] = A[12] ^ a;
+   A[14] = A[7] << 1;   A[15] = A[14] ^ a;
+
+   lo = (A[b >> 60] << 4) ^ A[(b >> 56) & 15];
+   hi = lo >> 56;
+   lo = (lo << 8) ^ (A[(b >> 52) & 15] << 4) ^ A[(b >> 48) & 15];
+   hi = (hi << 8) | (lo >> 56);
+   lo = (lo << 8) ^ (A[(b >> 44) & 15] << 4) ^ A[(b >> 40) & 15];
+   hi = (hi << 8) | (lo >> 56);
+   lo = (lo << 8) ^ (A[(b >> 36) & 15] << 4) ^ A[(b >> 32) & 15];
+   hi = (hi << 8) | (lo >> 56);
+   lo = (lo << 8) ^ (A[(b >> 28) & 15] << 4) ^ A[(b >> 24) & 15];
+   hi = (hi << 8) | (lo >> 56);
+   lo = (lo << 8) ^ (A[(b >> 20) & 15] << 4) ^ A[(b >> 16) & 15];
+   hi = (hi << 8) | (lo >> 56);
+   lo = (lo << 8) ^ (A[(b >> 12) & 15] << 4) ^ A[(b >> 8) & 15];
+   hi = (hi << 8) | (lo >> 56);
+   lo = (lo << 8) ^ (A[(b >> 4) & 15] << 4) ^ A[b & 15];
+
+   ULong m0 = -1;
+   m0 /= 255;
+   tmp = -((a >> 63) & 1); tmp &= ((b & (m0 * 0xfe)) >> 1); hi = hi ^ tmp;
+   tmp = -((a >> 62) & 1); tmp &= ((b & (m0 * 0xfc)) >> 2); hi = hi ^ tmp;
+   tmp = -((a >> 61) & 1); tmp &= ((b & (m0 * 0xf8)) >> 3); hi = hi ^ tmp;
+   tmp = -((a >> 60) & 1); tmp &= ((b & (m0 * 0xf0)) >> 4); hi = hi ^ tmp;
+   tmp = -((a >> 59) & 1); tmp &= ((b & (m0 * 0xe0)) >> 5); hi = hi ^ tmp;
+   tmp = -((a >> 58) & 1); tmp &= ((b & (m0 * 0xc0)) >> 6); hi = hi ^ tmp;
+   tmp = -((a >> 57) & 1); tmp &= ((b & (m0 * 0x80)) >> 7); hi = hi ^ tmp;
+
+   return which ? hi : lo;
+}
+
 
 /* CALLED FROM GENERATED CODE */
 /* DIRTY HELPER (non-referentially-transparent) */

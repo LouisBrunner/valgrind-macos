@@ -13953,6 +13953,63 @@ DisResult disInstr_AMD64_WRK (
    }
 
 
+   /* 66 0F 3A 44 /r ib = PCLMULQDQ xmm1, xmm2/m128, imm8
+    * Carry-less multiplication of selected XMM quadwords into XMM
+    * registers (a.k.a multiplication of polynomials over GF(2))
+    */
+   if ( have66noF2noF3( pfx ) 
+        && sz == 2
+        && insn[0] == 0x0F && insn[1] == 0x3A && insn[2] == 0x44 ) {
+  
+      Int imm8;
+      IRTemp svec = newTemp(Ity_V128);
+      IRTemp dvec = newTemp(Ity_V128);
+
+      modrm = insn[3];
+
+      assign( dvec, getXMMReg( gregOfRexRM(pfx, modrm) ) );
+  
+      if ( epartIsReg( modrm ) ) {
+         imm8 = (Int)insn[4];
+         assign( svec, getXMMReg( eregOfRexRM(pfx, modrm) ) );
+         delta += 3+1+1;
+         DIP( "pclmulqdq $%d, %s,%s\n", imm8,
+              nameXMMReg( eregOfRexRM(pfx, modrm) ),
+              nameXMMReg( gregOfRexRM(pfx, modrm) ) );    
+      } else {
+         addr = disAMode( &alen, vbi, pfx, delta+3, dis_buf, 
+                          1/* imm8 is 1 byte after the amode */ );
+         assign( svec, loadLE( Ity_V128, mkexpr(addr) ) );
+         imm8 = (Int)insn[2+alen+1];
+         delta += 3+alen+1;
+         DIP( "pclmulqdq $%d, %s,%s\n", 
+              imm8, dis_buf, nameXMMReg( gregOfRexRM(pfx, modrm) ) );
+      }
+
+      t0 = newTemp(Ity_I64);
+      t1 = newTemp(Ity_I64);
+      assign(t0, unop((imm8&1)? Iop_V128HIto64 : Iop_V128to64, mkexpr(dvec)));
+      assign(t1, unop((imm8&16) ? Iop_V128HIto64 : Iop_V128to64, mkexpr(svec)));
+
+      t2 = newTemp(Ity_I64);
+      t3 = newTemp(Ity_I64);
+
+      IRExpr** args;
+      
+      args = mkIRExprVec_3(mkexpr(t0), mkexpr(t1), mkU64(0));
+      assign(t2,
+              mkIRExprCCall(Ity_I64,0, "amd64g_calculate_pclmul", &amd64g_calculate_pclmul, args));
+      args = mkIRExprVec_3(mkexpr(t0), mkexpr(t1), mkU64(1));
+      assign(t3,
+              mkIRExprCCall(Ity_I64,0, "amd64g_calculate_pclmul", &amd64g_calculate_pclmul, args));
+
+      IRTemp res     = newTemp(Ity_V128);
+      assign(res, binop(Iop_64HLtoV128, mkexpr(t3), mkexpr(t2)));
+      putXMMReg( gregOfRexRM(pfx,modrm), mkexpr(res) );
+
+      goto decode_success;
+   }
+
    /* 66 0F 3A 41 /r ib = DPPD xmm1, xmm2/m128, imm8
       Dot Product of Packed Double Precision Floating-Point Values (XMM) */
    if ( have66noF2noF3( pfx ) 

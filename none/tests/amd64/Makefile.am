@@ -30,6 +30,7 @@ EXTRA_DIST = \
 	bug156404-amd64.vgtest bug156404-amd64.stdout.exp \
 	bug156404-amd64.stderr.exp \
 	clc.vgtest clc.stdout.exp clc.stderr.exp \
+	cmpxchg.vgtest cmpxchg.stdout.exp cmpxchg.stderr.exp \
 	faultstatus.disabled faultstatus.stderr.exp \
 	fcmovnu.vgtest fcmovnu.stderr.exp fcmovnu.stdout.exp \
 	fxtract.vgtest fxtract.stderr.exp fxtract.stdout.exp \
@@ -60,6 +61,7 @@ check_PROGRAMS = \
 	amd64locked \
 	bug127521-64 bug132813-amd64 bug132918 \
 	clc \
+	cmpxchg \
 	$(INSN_TESTS) \
 	rcl-amd64 \
 	redundantRexW \

@@ -16139,18 +16139,20 @@ DisResult disInstr_AMD64_WRK (
       if (haveF2orF3(pfx)) goto decode_failure;
       delta = dis_op_imm_A( 1, True, Iop_Add8, True, delta, "adc" );
       break;
-//.. //--    case 0x15: /* ADC Iv, eAX */
-//.. //--       delta = dis_op_imm_A( sz, ADC, True, delta, "adc" );
-//.. //--       break;
+   case 0x15: /* ADC Iv, eAX */
+      if (haveF2orF3(pfx)) goto decode_failure;
+      delta = dis_op_imm_A( sz, True, Iop_Add8, True, delta, "adc" );
+      break;
 
    case 0x1C: /* SBB Ib, AL */
       if (haveF2orF3(pfx)) goto decode_failure;
       delta = dis_op_imm_A( 1, True, Iop_Sub8, True, delta, "sbb" );
       break;
-//.. //--    case 0x1D: /* SBB Iv, eAX */
-//.. //--       delta = dis_op_imm_A( sz, SBB, True, delta, "sbb" );
-//.. //--       break;
-//.. //-- 
+   case 0x1D: /* SBB Iv, eAX */
+      if (haveF2orF3(pfx)) goto decode_failure;
+      delta = dis_op_imm_A( sz, True, Iop_Sub8, True, delta, "sbb" );
+      break;
+
    case 0x24: /* AND Ib, AL */
       if (haveF2orF3(pfx)) goto decode_failure;
       delta = dis_op_imm_A( 1, False, Iop_And8, True, delta, "and" );

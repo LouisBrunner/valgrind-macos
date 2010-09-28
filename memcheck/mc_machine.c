@@ -493,6 +493,7 @@ static Int get_otrack_shadow_offset_wrk ( Int offset, Int szB )
    if (o == GOF(RIP)     && sz == 8) return -1; /* slot unused */
    if (o == GOF(IP_AT_SYSCALL) && sz == 8) return -1; /* slot unused */
    if (o == GOF(IDFLAG)  && sz == 8) return -1; /* slot used for %DH */
+   if (o == GOF(ACFLAG)  && sz == 8) return -1; /* slot unused */
    if (o == GOF(FS_ZERO) && sz == 8) return -1; /* slot unused */
    if (o == GOF(GS_0x60) && sz == 8) return -1; /* slot unused */
    if (o == GOF(TISTART) && sz == 8) return -1; /* slot unused */

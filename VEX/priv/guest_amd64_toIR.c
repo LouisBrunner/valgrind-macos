@@ -7725,9 +7725,6 @@ ULong dis_cmpxchg_G_E ( /*OUT*/Bool* ok,
 
    if (epartIsReg(rm)) {
       /* case 1 */
-      *ok = False;
-      return delta0;
-      /* awaiting test case */
       assign( dest, getIRegE(size, pfx, rm) );
       delta0++;
       assign( src, getIRegG(size, pfx, rm) );

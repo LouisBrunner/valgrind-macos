@@ -79,6 +79,9 @@ static Bool go(char* cpu)
    } else if ( strcmp( cpu, "amd64-sse3" ) == 0 ) {
      level = 1;
      cmask = 1 << 0;
+   } else if ( strcmp( cpu, "amd64-pclmulqdq" ) == 0 ) {
+     level = 1;
+     cmask = 1 << 1;
    } else if ( strcmp( cpu, "amd64-ssse3" ) == 0 ) {
      level = 1;
      cmask = 1 << 9;

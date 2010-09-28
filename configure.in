@@ -1410,6 +1410,28 @@ AC_MSG_RESULT([no])
 AM_CONDITIONAL(BUILD_SSSE3_TESTS, test x$ac_have_as_ssse3 = xyes)
 
 
+# Note: we're really checking the assembler-level support, not gcc's ;
+# C-level code might require the flag -mpclmul be passed to gcc (e.g. to
+# compile code which uses wmmintrin.h). Doesn't matter since tests also
+# use inline assembly directly
+AC_MSG_CHECKING([if x86/amd64 assembler supports 'pclmulqdq'])
+AC_TRY_COMPILE(, [
+  do {
+   __asm__ __volatile__(
+      "pclmulqdq \$17,%%xmm6,%%xmm7" : : : "xmm6", "xmm7" ); }
+  while (0)
+],
+[
+ac_have_as_pclmulqdq=yes
+AC_MSG_RESULT([yes])
+], [
+ac_have_as_pclmulqdq=no
+AC_MSG_RESULT([no])
+])
+
+AM_CONDITIONAL(BUILD_PCLMULQDQ_TESTS, test x$ac_have_as_pclmulqdq = xyes)
+
+
 AC_MSG_CHECKING([if x86/amd64 assembler supports 'lzcnt'])
 
 AC_TRY_COMPILE([], [

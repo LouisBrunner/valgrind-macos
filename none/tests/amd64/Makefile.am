@@ -12,6 +12,9 @@ endif
 if BUILD_SSSE3_TESTS
  INSN_TESTS += insn_ssse3
 endif
+if BUILD_PCLMULQDQ_TESTS
+INSN_TESTS += insn_pclmulqdq
+endif
 
 # Explicitly include insn_sse3 even if ! BUILD_SSE3_TESTS, 
 # to avoid packaging screwups if 'make dist' is run on a machine

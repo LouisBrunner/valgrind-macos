@@ -52,7 +52,13 @@ CLEANFILES    = pub/libvex_guest_offsets.h
 # This is very uggerly.  Need to sed out both "xyzzyN" and
 # "xyzzy$N" since gcc on different targets emits the constants
 # differently -- with a leading $ on x86/amd64 but none on ppc32/64.
-pub/libvex_guest_offsets.h:
+pub/libvex_guest_offsets.h: auxprogs/genoffsets.c \
+			    pub/libvex_basictypes.h \
+			    pub/libvex_guest_x86.h \
+			    pub/libvex_guest_amd64.h \
+			    pub/libvex_guest_ppc32.h \
+			    pub/libvex_guest_ppc64.h \
+			    pub/libvex_guest_arm.h
 	rm -f auxprogs/genoffsets.s
 	$(CC) $(LIBVEX_CFLAGS) \
 	      $(AM_CFLAGS_@VGCONF_PLATFORM_PRI_CAPS@) \

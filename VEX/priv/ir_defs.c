@@ -3434,6 +3434,7 @@ Int sizeofIRType ( IRType ty )
       case Ity_I16:  return 2;
       case Ity_I32:  return 4;
       case Ity_I64:  return 8;
+      case Ity_I128: return 16;
       case Ity_F32:  return 4;
       case Ity_F64:  return 8;
       case Ity_V128: return 16;

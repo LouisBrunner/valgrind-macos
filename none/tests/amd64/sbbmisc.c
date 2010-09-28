@@ -21,7 +21,7 @@ VG_SYM(sbb_ib_al) ":\n"
 "\tsbbb $5, %al\n"
 "\tmovb %al, " VG_SYM(out_b2) "\n"
 
-"\tret\n"
+"\tretq\n"
 );
 
 
@@ -39,7 +39,7 @@ VG_SYM(sbb_iw_ax) ":\n"
 "\tsbbw $555, %ax\n"
 "\tmovw %ax, " VG_SYM(out_w2) "\n"
 
-"\tret\n"
+"\tretq\n"
 );
 
 
@@ -57,7 +57,7 @@ VG_SYM(sbb_il_eax) ":\n"
 "\tsbbl $555666, %eax\n"
 "\tmovl %eax, " VG_SYM(out_l2) "\n"
 
-"\tret\n"
+"\tretq\n"
 );
 
 
@@ -75,14 +75,14 @@ VG_SYM(sbb_eb_gb) ":\n"
 "\tsbbb " VG_SYM(in_b2) ", %al\n"
 "\tmovb %al, " VG_SYM(out_b2) "\n"
 
-"\tret\n"
+"\tretq\n"
 );
 
 
 extern void sbb_eb_gb_2 ( void );
 asm("\n"
 VG_SYM(sbb_eb_gb_2) ":\n"
-"\tpushl %ecx\n"
+"\tpushq %rcx\n"
 
 "\tmovb " VG_SYM(in_b) ", %cl\n"
 "\tmovb " VG_SYM(in_b2) ", %dh\n"
@@ -96,8 +96,8 @@ VG_SYM(sbb_eb_gb_2) ":\n"
 "\tsbbb %dh,%cl\n"
 "\tmovb %cl, " VG_SYM(out_b2) "\n"
 
-"\tpopl %ecx\n"
-"\tret\n"
+"\tpopq %rcx\n"
+"\tretq\n"
 );
 
 
@@ -115,14 +115,14 @@ VG_SYM(adc_eb_gb) ":\n"
 "\tadcb " VG_SYM(in_b2) ", %al\n"
 "\tmovb %al, " VG_SYM(out_b2) "\n"
 
-"\tret\n"
+"\tretq\n"
 );
 
 
 extern void adc_eb_gb_2 ( void );
 asm("\n"
 VG_SYM(adc_eb_gb_2) ":\n"
-"\tpushl %ecx\n"
+"\tpushq %rcx\n"
 
 "\tmovb " VG_SYM(in_b) ", %cl\n"
 "\tmovb " VG_SYM(in_b2) ", %dh\n"
@@ -136,8 +136,8 @@ VG_SYM(adc_eb_gb_2) ":\n"
 "\tadcb %dh,%cl\n"
 "\tmovb %cl, " VG_SYM(out_b2) "\n"
 
-"\tpopl %ecx\n"
-"\tret\n"
+"\tpopq %rcx\n"
+"\tretq\n"
 );
 
 extern void adc_ib_al ( void );
@@ -154,7 +154,7 @@ VG_SYM(adc_ib_al) ":\n"
 "\tadcb $5, %al\n"
 "\tmovb %al, " VG_SYM(out_b2) "\n"
 
-"\tret\n"
+"\tretq\n"
 );
 
 
@@ -172,7 +172,7 @@ VG_SYM(adc_iw_ax) ":\n"
 "\tadcw $555, %ax\n"
 "\tmovw %ax, " VG_SYM(out_w2) "\n"
 
-"\tret\n"
+"\tretq\n"
 );
 
 
@@ -190,7 +190,7 @@ VG_SYM(adc_il_eax) ":\n"
 "\tadcl $555666, %eax\n"
 "\tmovl %eax, " VG_SYM(out_l2) "\n"
 
-"\tret\n"
+"\tretq\n"
 );
 
 

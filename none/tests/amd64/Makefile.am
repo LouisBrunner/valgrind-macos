@@ -47,6 +47,7 @@ EXTRA_DIST = \
 	redundantRexW.vgtest redundantRexW.stdout.exp \
 	redundantRexW.stderr.exp \
 	smc1.stderr.exp smc1.stdout.exp smc1.vgtest \
+	sbbmisc.stderr.exp sbbmisc.stdout.exp sbbmisc.vgtest \
 	shrld.stderr.exp shrld.stdout.exp shrld.vgtest \
 	ssse3_misaligned.stderr.exp ssse3_misaligned.stdout.exp \
 	ssse3_misaligned.vgtest \
@@ -63,6 +64,7 @@ check_PROGRAMS = \
 	rcl-amd64 \
 	redundantRexW \
 	smc1 \
+	sbbmisc \
 	nibz_bennee_mmap \
 	xadd
 if BUILD_SSSE3_TESTS

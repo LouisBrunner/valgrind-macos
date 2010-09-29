@@ -635,7 +635,18 @@ Bool guest_arm_state_requires_precise_mem_exns ( Int minoff,
    Int r11_max = r11_min + 4 - 1;
 
    if (maxoff < r11_min || minoff > r11_max) {
-      /* no overlap with pc */
+      /* no overlap with r11 */
+   } else {
+      return True;
+   }
+
+   /* Ditto R7, particularly needed for proper stacktraces in Thumb
+      code. */
+   Int r7_min = offsetof(VexGuestARMState, guest_R7);
+   Int r7_max = r7_min + 4 - 1;
+
+   if (maxoff < r7_min || minoff > r7_max) {
+      /* no overlap with r7 */
    } else {
       return True;
    }

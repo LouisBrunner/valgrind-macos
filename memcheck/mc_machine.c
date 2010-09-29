@@ -737,22 +737,61 @@ static Int get_otrack_shadow_offset_wrk ( Int offset, Int szB )
    if (o == GOF(TPIDRURO) && sz == 4) return -1;
    if (o == GOF(ITSTATE)  && sz == 4) return -1;
 
-   if (o >= GOF(D0)  && o+sz <= GOF(D0) +SZB(D0))  return GOF(D0);
-   if (o >= GOF(D1)  && o+sz <= GOF(D1) +SZB(D1))  return GOF(D1);
-   if (o >= GOF(D2)  && o+sz <= GOF(D2) +SZB(D2))  return GOF(D2);
-   if (o >= GOF(D3)  && o+sz <= GOF(D3) +SZB(D3))  return GOF(D3);
-   if (o >= GOF(D4)  && o+sz <= GOF(D4) +SZB(D4))  return GOF(D4);
-   if (o >= GOF(D5)  && o+sz <= GOF(D5) +SZB(D5))  return GOF(D5);
-   if (o >= GOF(D6)  && o+sz <= GOF(D6) +SZB(D6))  return GOF(D6);
-   if (o >= GOF(D7)  && o+sz <= GOF(D7) +SZB(D7))  return GOF(D7);
-   if (o >= GOF(D8)  && o+sz <= GOF(D8) +SZB(D8))  return GOF(D8);
-   if (o >= GOF(D9)  && o+sz <= GOF(D9) +SZB(D9))  return GOF(D9);
-   if (o >= GOF(D10) && o+sz <= GOF(D10)+SZB(D10)) return GOF(D10);
-   if (o >= GOF(D11) && o+sz <= GOF(D11)+SZB(D11)) return GOF(D11);
-   if (o >= GOF(D12) && o+sz <= GOF(D12)+SZB(D12)) return GOF(D12);
-   if (o >= GOF(D13) && o+sz <= GOF(D13)+SZB(D13)) return GOF(D13);
-   if (o >= GOF(D14) && o+sz <= GOF(D14)+SZB(D14)) return GOF(D14);
-   if (o >= GOF(D15) && o+sz <= GOF(D15)+SZB(D15)) return GOF(D15);
+   /* Accesses to F or D registers */
+   if (sz == 4 || sz == 8) {
+      if (o >= GOF(D0)  && o+sz <= GOF(D0) +SZB(D0))  return GOF(D0);
+      if (o >= GOF(D1)  && o+sz <= GOF(D1) +SZB(D1))  return GOF(D1);
+      if (o >= GOF(D2)  && o+sz <= GOF(D2) +SZB(D2))  return GOF(D2);
+      if (o >= GOF(D3)  && o+sz <= GOF(D3) +SZB(D3))  return GOF(D3);
+      if (o >= GOF(D4)  && o+sz <= GOF(D4) +SZB(D4))  return GOF(D4);
+      if (o >= GOF(D5)  && o+sz <= GOF(D5) +SZB(D5))  return GOF(D5);
+      if (o >= GOF(D6)  && o+sz <= GOF(D6) +SZB(D6))  return GOF(D6);
+      if (o >= GOF(D7)  && o+sz <= GOF(D7) +SZB(D7))  return GOF(D7);
+      if (o >= GOF(D8)  && o+sz <= GOF(D8) +SZB(D8))  return GOF(D8);
+      if (o >= GOF(D9)  && o+sz <= GOF(D9) +SZB(D9))  return GOF(D9);
+      if (o >= GOF(D10) && o+sz <= GOF(D10)+SZB(D10)) return GOF(D10);
+      if (o >= GOF(D11) && o+sz <= GOF(D11)+SZB(D11)) return GOF(D11);
+      if (o >= GOF(D12) && o+sz <= GOF(D12)+SZB(D12)) return GOF(D12);
+      if (o >= GOF(D13) && o+sz <= GOF(D13)+SZB(D13)) return GOF(D13);
+      if (o >= GOF(D14) && o+sz <= GOF(D14)+SZB(D14)) return GOF(D14);
+      if (o >= GOF(D15) && o+sz <= GOF(D15)+SZB(D15)) return GOF(D15);
+      if (o >= GOF(D16) && o+sz <= GOF(D16)+SZB(D16)) return GOF(D16);
+      if (o >= GOF(D17) && o+sz <= GOF(D17)+SZB(D17)) return GOF(D17);
+      if (o >= GOF(D18) && o+sz <= GOF(D18)+SZB(D18)) return GOF(D18);
+      if (o >= GOF(D19) && o+sz <= GOF(D19)+SZB(D19)) return GOF(D19);
+      if (o >= GOF(D20) && o+sz <= GOF(D20)+SZB(D20)) return GOF(D20);
+      if (o >= GOF(D21) && o+sz <= GOF(D21)+SZB(D21)) return GOF(D21);
+      if (o >= GOF(D22) && o+sz <= GOF(D22)+SZB(D22)) return GOF(D22);
+      if (o >= GOF(D23) && o+sz <= GOF(D23)+SZB(D23)) return GOF(D23);
+      if (o >= GOF(D24) && o+sz <= GOF(D24)+SZB(D24)) return GOF(D24);
+      if (o >= GOF(D25) && o+sz <= GOF(D25)+SZB(D25)) return GOF(D25);
+      if (o >= GOF(D26) && o+sz <= GOF(D26)+SZB(D26)) return GOF(D26);
+      if (o >= GOF(D27) && o+sz <= GOF(D27)+SZB(D27)) return GOF(D27);
+      if (o >= GOF(D28) && o+sz <= GOF(D28)+SZB(D28)) return GOF(D28);
+      if (o >= GOF(D29) && o+sz <= GOF(D29)+SZB(D29)) return GOF(D29);
+      if (o >= GOF(D30) && o+sz <= GOF(D30)+SZB(D30)) return GOF(D30);
+      if (o >= GOF(D31) && o+sz <= GOF(D31)+SZB(D31)) return GOF(D31);
+   }
+
+   /* Accesses to Q registers */
+   if (sz == 16) {
+      if (o >= GOF(D0)  && o+sz <= GOF(D0) +2*SZB(D0))  return GOF(D0);  // Q0
+      if (o >= GOF(D2)  && o+sz <= GOF(D2) +2*SZB(D2))  return GOF(D2);  // Q1
+      if (o >= GOF(D4)  && o+sz <= GOF(D4) +2*SZB(D4))  return GOF(D4);  // Q2
+      if (o >= GOF(D6)  && o+sz <= GOF(D6) +2*SZB(D6))  return GOF(D6);  // Q3
+      if (o >= GOF(D8)  && o+sz <= GOF(D8) +2*SZB(D8))  return GOF(D8);  // Q4
+      if (o >= GOF(D10) && o+sz <= GOF(D10)+2*SZB(D10)) return GOF(D10); // Q5
+      if (o >= GOF(D12) && o+sz <= GOF(D12)+2*SZB(D12)) return GOF(D12); // Q6
+      if (o >= GOF(D14) && o+sz <= GOF(D14)+2*SZB(D14)) return GOF(D14); // Q7
+      if (o >= GOF(D16) && o+sz <= GOF(D16)+2*SZB(D16)) return GOF(D16); // Q8
+      if (o >= GOF(D18) && o+sz <= GOF(D18)+2*SZB(D18)) return GOF(D18); // Q9
+      if (o >= GOF(D20) && o+sz <= GOF(D20)+2*SZB(D20)) return GOF(D20); // Q10
+      if (o >= GOF(D22) && o+sz <= GOF(D22)+2*SZB(D22)) return GOF(D22); // Q11
+      if (o >= GOF(D24) && o+sz <= GOF(D24)+2*SZB(D24)) return GOF(D24); // Q12
+      if (o >= GOF(D26) && o+sz <= GOF(D26)+2*SZB(D26)) return GOF(D26); // Q13
+      if (o >= GOF(D28) && o+sz <= GOF(D28)+2*SZB(D28)) return GOF(D28); // Q14
+      if (o >= GOF(D30) && o+sz <= GOF(D30)+2*SZB(D30)) return GOF(D30); // Q15
+   }
 
    VG_(printf)("MC_(get_otrack_shadow_offset)(arm)(off=%d,sz=%d)\n",
                offset,szB);

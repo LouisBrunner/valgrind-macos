@@ -2424,70 +2424,110 @@ static inline Bool host_is_little_endian ( void )
 static Short read_Short ( UChar* data )
 {
    Short r = 0;
-   vg_assert(host_is_little_endian());
-   r = data[0] 
-       | ( ((UInt)data[1]) << 8 );
+   if (host_is_little_endian()) {
+      r = data[0]
+          | ( ((UInt)data[1]) << 8 );
+   } else {
+      r = data[1]
+          | ( ((UInt)data[0]) << 8 );
+   }
    return r;
 }
 
 static Int read_Int ( UChar* data )
 {
    Int r = 0;
-   vg_assert(host_is_little_endian());
-   r = data[0] 
-       | ( ((UInt)data[1]) << 8 ) 
-       | ( ((UInt)data[2]) << 16 ) 
-       | ( ((UInt)data[3]) << 24 );
+   if (host_is_little_endian()) {
+      r = data[0]
+          | ( ((UInt)data[1]) << 8 )
+          | ( ((UInt)data[2]) << 16 )
+          | ( ((UInt)data[3]) << 24 );
+   } else {
+      r = data[3]
+          | ( ((UInt)data[2]) << 8 )
+          | ( ((UInt)data[1]) << 16 )
+          | ( ((UInt)data[0]) << 24 );
+   }
    return r;
 }
 
 static Long read_Long ( UChar* data )
 {
    Long r = 0;
-   vg_assert(host_is_little_endian());
-   r = data[0] 
-       | ( ((ULong)data[1]) << 8 ) 
-       | ( ((ULong)data[2]) << 16 ) 
-       | ( ((ULong)data[3]) << 24 )
-       | ( ((ULong)data[4]) << 32 ) 
-       | ( ((ULong)data[5]) << 40 ) 
-       | ( ((ULong)data[6]) << 48 ) 
-       | ( ((ULong)data[7]) << 56 );
+   if (host_is_little_endian()) {
+      r = data[0]
+          | ( ((ULong)data[1]) << 8 )
+          | ( ((ULong)data[2]) << 16 )
+          | ( ((ULong)data[3]) << 24 )
+          | ( ((ULong)data[4]) << 32 )
+          | ( ((ULong)data[5]) << 40 )
+          | ( ((ULong)data[6]) << 48 )
+          | ( ((ULong)data[7]) << 56 );
+   } else {
+      r = data[7]
+          | ( ((ULong)data[6]) << 8 )
+          | ( ((ULong)data[5]) << 16 )
+          | ( ((ULong)data[4]) << 24 )
+          | ( ((ULong)data[3]) << 32 )
+          | ( ((ULong)data[2]) << 40 )
+          | ( ((ULong)data[1]) << 48 )
+          | ( ((ULong)data[0]) << 56 );
+   }
    return r;
 }
 
 static UShort read_UShort ( UChar* data )
 {
    UInt r = 0;
-   vg_assert(host_is_little_endian());
-   r = data[0] 
-       | ( ((UInt)data[1]) << 8 );
+   if (host_is_little_endian()) {
+      r = data[0]
+          | ( ((UInt)data[1]) << 8 );
+   } else {
+      r = data[1]
+          | ( ((UInt)data[0]) << 8 );
+   }
    return r;
 }
 
 static UInt read_UInt ( UChar* data )
 {
    UInt r = 0;
-   vg_assert(host_is_little_endian());
-   r = data[0] 
-       | ( ((UInt)data[1]) << 8 ) 
-       | ( ((UInt)data[2]) << 16 ) 
-       | ( ((UInt)data[3]) << 24 );
+   if (host_is_little_endian()) {
+      r = data[0]
+          | ( ((UInt)data[1]) << 8 )
+          | ( ((UInt)data[2]) << 16 )
+          | ( ((UInt)data[3]) << 24 );
+   } else {
+      r = data[3]
+          | ( ((UInt)data[2]) << 8 )
+          | ( ((UInt)data[1]) << 16 )
+          | ( ((UInt)data[0]) << 24 );
+   }
    return r;
 }
 
 static ULong read_ULong ( UChar* data )
 {
    ULong r = 0;
-   vg_assert(host_is_little_endian());
-   r = data[0] 
-       | ( ((ULong)data[1]) << 8 ) 
-       | ( ((ULong)data[2]) << 16 ) 
+   if (host_is_little_endian()) {
+      r = data[0]
+       | ( ((ULong)data[1]) << 8 )
+       | ( ((ULong)data[2]) << 16 )
        | ( ((ULong)data[3]) << 24 )
-       | ( ((ULong)data[4]) << 32 ) 
-       | ( ((ULong)data[5]) << 40 ) 
-       | ( ((ULong)data[6]) << 48 ) 
+       | ( ((ULong)data[4]) << 32 )
+       | ( ((ULong)data[5]) << 40 )
+       | ( ((ULong)data[6]) << 48 )
        | ( ((ULong)data[7]) << 56 );
+   } else {
+      r = data[7]
+       | ( ((ULong)data[6]) << 8 )
+       | ( ((ULong)data[5]) << 16 )
+       | ( ((ULong)data[4]) << 24 )
+       | ( ((ULong)data[3]) << 32 )
+       | ( ((ULong)data[2]) << 40 )
+       | ( ((ULong)data[1]) << 48 )
+       | ( ((ULong)data[0]) << 56 );
+   }
    return r;
 }
 

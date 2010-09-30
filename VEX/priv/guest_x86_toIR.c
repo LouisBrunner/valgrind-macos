@@ -2166,9 +2166,16 @@ UInt dis_movx_E_G ( UChar      sorb,
 {
    UChar rm = getIByte(delta);
    if (epartIsReg(rm)) {
-      putIReg(szd, gregOfRM(rm),
-                   unop(mkWidenOp(szs,szd,sign_extend), 
-                        getIReg(szs,eregOfRM(rm))));
+      if (szd == szs) {
+         // mutant case.  See #250799
+         putIReg(szd, gregOfRM(rm),
+                           getIReg(szs,eregOfRM(rm)));
+      } else {
+         // normal case
+         putIReg(szd, gregOfRM(rm),
+                      unop(mkWidenOp(szs,szd,sign_extend), 
+                           getIReg(szs,eregOfRM(rm))));
+      }
       DIP("mov%c%c%c %s,%s\n", sign_extend ? 's' : 'z',
                                nameISize(szs), nameISize(szd),
                                nameIReg(szs,eregOfRM(rm)),
@@ -2181,10 +2188,16 @@ UInt dis_movx_E_G ( UChar      sorb,
       Int    len;
       HChar  dis_buf[50];
       IRTemp addr = disAMode ( &len, sorb, delta, dis_buf );
-
-      putIReg(szd, gregOfRM(rm),
-                   unop(mkWidenOp(szs,szd,sign_extend), 
-                        loadLE(szToITy(szs),mkexpr(addr))));
+      if (szd == szs) {
+         // mutant case.  See #250799
+         putIReg(szd, gregOfRM(rm),
+                           loadLE(szToITy(szs),mkexpr(addr)));
+      } else {
+         // normal case
+         putIReg(szd, gregOfRM(rm),
+                      unop(mkWidenOp(szs,szd,sign_extend), 
+                           loadLE(szToITy(szs),mkexpr(addr))));
+      }
       DIP("mov%c%c%c %s,%s\n", sign_extend ? 's' : 'z',
                                nameISize(szs), nameISize(szd),
                                dis_buf, nameIReg(szd,gregOfRM(rm)));
@@ -14608,9 +14621,9 @@ DisResult disInstr_X86_WRK (
          break;
 
       case 0xBF: /* MOVSXw Ew,Gv */
-         if (sz != 4)
+         if (sz != 4 && /* accept movsww, sigh, see #250799 */sz != 2)
             goto decode_failure;
-         delta = dis_movx_E_G ( sorb, delta, 2, 4, True );
+         delta = dis_movx_E_G ( sorb, delta, 2, sz, True );
          break;
 
 //--       /* =-=-=-=-=-=-=-=-=-=-= MOVNTI -=-=-=-=-=-=-=-=-= */

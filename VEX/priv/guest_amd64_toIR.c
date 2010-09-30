@@ -9669,6 +9669,8 @@ DisResult disInstr_AMD64_WRK (
          delta += 2+1;
       } else {
          addr = disAMode ( &alen, vbi, pfx, delta+2, dis_buf, 0 );
+         if (insn[1] == 0x28/*movaps*/)
+            gen_SEGV_if_not_16_aligned( addr );
          putXMMReg( gregOfRexRM(pfx,modrm), 
                     loadLE(Ity_V128, mkexpr(addr)) );
          DIP("mov[ua]ps %s,%s\n", dis_buf,
@@ -9688,6 +9690,8 @@ DisResult disInstr_AMD64_WRK (
          /* fall through; awaiting test case */
       } else {
          addr = disAMode ( &alen, vbi, pfx, delta+2, dis_buf, 0 );
+         if (insn[1] == 0x29/*movaps*/)
+            gen_SEGV_if_not_16_aligned( addr );
          storeLE( mkexpr(addr), getXMMReg(gregOfRexRM(pfx,modrm)) );
          DIP("mov[ua]ps %s,%s\n", nameXMMReg(gregOfRexRM(pfx,modrm)),
                                   dis_buf );
@@ -9844,6 +9848,7 @@ DisResult disInstr_AMD64_WRK (
       modrm = getUChar(delta+2);
       if (!epartIsReg(modrm)) {
          addr = disAMode ( &alen, vbi, pfx, delta+2, dis_buf, 0 );
+         gen_SEGV_if_not_16_aligned( addr );
          storeLE( mkexpr(addr), getXMMReg(gregOfRexRM(pfx,modrm)) );
          DIP("movntp%s %s,%s\n", sz==2 ? "d" : "s",
                                  dis_buf,
@@ -11072,6 +11077,8 @@ DisResult disInstr_AMD64_WRK (
          delta += 2+1;
       } else {
          addr = disAMode ( &alen, vbi, pfx, delta+2, dis_buf, 0 );
+         if (insn[1] == 0x28/*movapd*/ || insn[1] == 0x6F/*movdqa*/)
+            gen_SEGV_if_not_16_aligned( addr );
          putXMMReg( gregOfRexRM(pfx,modrm), 
                     loadLE(Ity_V128, mkexpr(addr)) );
          DIP("mov%s %s,%s\n", wot, dis_buf,
@@ -11095,6 +11102,8 @@ DisResult disInstr_AMD64_WRK (
          delta += 2+1;
       } else {
          addr = disAMode ( &alen, vbi, pfx, delta+2, dis_buf, 0 );
+         if (insn[1] == 0x29/*movapd*/)
+            gen_SEGV_if_not_16_aligned( addr );
          storeLE( mkexpr(addr), getXMMReg(gregOfRexRM(pfx,modrm)) );
          DIP("mov%s %s,%s\n", wot, nameXMMReg(gregOfRexRM(pfx,modrm)),
                               dis_buf );
@@ -11185,6 +11194,7 @@ DisResult disInstr_AMD64_WRK (
                                 nameXMMReg(eregOfRexRM(pfx,modrm)));
       } else {
          addr = disAMode( &alen, vbi, pfx, delta+2, dis_buf, 0 );
+         gen_SEGV_if_not_16_aligned( addr );
          delta += 2+alen;
          storeLE( mkexpr(addr), getXMMReg(gregOfRexRM(pfx,modrm)) );
          DIP("movdqa %s, %s\n", nameXMMReg(gregOfRexRM(pfx,modrm)), dis_buf);
@@ -11405,6 +11415,7 @@ DisResult disInstr_AMD64_WRK (
       modrm = getUChar(delta+2);
       if (!epartIsReg(modrm)) {
          addr = disAMode ( &alen, vbi, pfx, delta+2, dis_buf, 0 );
+         gen_SEGV_if_not_16_aligned( addr );
          storeLE( mkexpr(addr), getXMMReg(gregOfRexRM(pfx,modrm)) );
          DIP("movntdq %s,%s\n", dis_buf,
                                 nameXMMReg(gregOfRexRM(pfx,modrm)));
@@ -12804,6 +12815,7 @@ DisResult disInstr_AMD64_WRK (
          delta += 2+1;
       } else {
          addr = disAMode ( &alen, vbi, pfx, delta+2, dis_buf, 0 );
+         gen_SEGV_if_not_16_aligned( addr );
          assign( sV, loadLE(Ity_V128, mkexpr(addr)) );
          DIP("movs%cdup %s,%s\n", isH ? 'h' : 'l',
 	     dis_buf,
@@ -13880,6 +13892,7 @@ DisResult disInstr_AMD64_WRK (
       } else {
          addr = disAMode( &alen, vbi, pfx, delta+3, dis_buf, 
                           1/* imm8 is 1 byte after the amode */ );
+         gen_SEGV_if_not_16_aligned( addr );
          assign( src_vec, loadLE( Ity_V128, mkexpr(addr) ) );
          imm8 = (Int)insn[2+alen+1];
          delta += 3+alen+1;
@@ -13930,6 +13943,7 @@ DisResult disInstr_AMD64_WRK (
       } else {
          addr = disAMode( &alen, vbi, pfx, delta+3, dis_buf, 
                           1/* imm8 is 1 byte after the amode */ );
+         gen_SEGV_if_not_16_aligned( addr );
          assign( src_vec, loadLE( Ity_V128, mkexpr(addr) ) );
          imm8 = (Int)insn[3+alen];
          delta += 3+alen+1;
@@ -13979,6 +13993,7 @@ DisResult disInstr_AMD64_WRK (
       } else {
          addr = disAMode( &alen, vbi, pfx, delta+3, dis_buf, 
                           1/* imm8 is 1 byte after the amode */ );
+         gen_SEGV_if_not_16_aligned( addr );
          assign( svec, loadLE( Ity_V128, mkexpr(addr) ) );
          imm8 = (Int)insn[2+alen+1];
          delta += 3+alen+1;
@@ -13998,10 +14013,12 @@ DisResult disInstr_AMD64_WRK (
       
       args = mkIRExprVec_3(mkexpr(t0), mkexpr(t1), mkU64(0));
       assign(t2,
-              mkIRExprCCall(Ity_I64,0, "amd64g_calculate_pclmul", &amd64g_calculate_pclmul, args));
+              mkIRExprCCall(Ity_I64,0, "amd64g_calculate_pclmul",
+                                       &amd64g_calculate_pclmul, args));
       args = mkIRExprVec_3(mkexpr(t0), mkexpr(t1), mkU64(1));
       assign(t3,
-              mkIRExprCCall(Ity_I64,0, "amd64g_calculate_pclmul", &amd64g_calculate_pclmul, args));
+              mkIRExprCCall(Ity_I64,0, "amd64g_calculate_pclmul",
+                                       &amd64g_calculate_pclmul, args));
 
       IRTemp res     = newTemp(Ity_V128);
       assign(res, binop(Iop_64HLtoV128, mkexpr(t3), mkexpr(t2)));
@@ -14036,6 +14053,7 @@ DisResult disInstr_AMD64_WRK (
       } else {
          addr = disAMode( &alen, vbi, pfx, delta+3, dis_buf, 
                           1/* imm8 is 1 byte after the amode */ );
+         gen_SEGV_if_not_16_aligned( addr );
          assign( src_vec, loadLE( Ity_V128, mkexpr(addr) ) );
          imm8 = (Int)insn[2+alen+1];
          delta += 3+alen+1;
@@ -14097,6 +14115,7 @@ DisResult disInstr_AMD64_WRK (
       } else {
          addr = disAMode( &alen, vbi, pfx, delta+3, dis_buf, 
                           1/* imm8 is 1 byte after the amode */ );
+         gen_SEGV_if_not_16_aligned( addr );
          assign( xmm2_vec, loadLE( Ity_V128, mkexpr(addr) ) );
          imm8 = (Int)insn[2+alen+1];
          delta += 3+alen+1;
@@ -14576,6 +14595,7 @@ DisResult disInstr_AMD64_WRK (
    */
    if ( have66noF2noF3( pfx ) && sz == 2 
         && insn[0] == 0x0F && insn[1] == 0x38 && insn[2] == 0x37) {
+      /* FIXME: this needs an alignment check */
       delta = dis_SSEint_E_to_G( vbi, pfx, delta+3, 
                                  "pcmpgtq", Iop_CmpGT64Sx2, False );
       goto decode_success;
@@ -14588,6 +14608,7 @@ DisResult disInstr_AMD64_WRK (
    if ( have66noF2noF3( pfx ) && sz == 2 
         && insn[0] == 0x0F && insn[1] == 0x38
         && (insn[2] == 0x3D || insn[2] == 0x39)) {
+      /* FIXME: this needs an alignment check */
       Bool isMAX = insn[2] == 0x3D;
       delta = dis_SSEint_E_to_G(
                  vbi, pfx, delta+3, 
@@ -14605,6 +14626,7 @@ DisResult disInstr_AMD64_WRK (
    if ( have66noF2noF3( pfx ) && sz == 2 
         && insn[0] == 0x0F && insn[1] == 0x38
         && (insn[2] == 0x3F || insn[2] == 0x3B)) {
+      /* FIXME: this needs an alignment check */
       Bool isMAX = insn[2] == 0x3F;
       delta = dis_SSEint_E_to_G(
                  vbi, pfx, delta+3, 
@@ -14623,6 +14645,7 @@ DisResult disInstr_AMD64_WRK (
    if ( have66noF2noF3( pfx ) && sz == 2 
         && insn[0] == 0x0F && insn[1] == 0x38
         && (insn[2] == 0x3E || insn[2] == 0x3A)) {
+      /* FIXME: this needs an alignment check */
       Bool isMAX = insn[2] == 0x3E;
       delta = dis_SSEint_E_to_G(
                  vbi, pfx, delta+3, 
@@ -14641,6 +14664,7 @@ DisResult disInstr_AMD64_WRK (
    if ( have66noF2noF3( pfx ) && sz == 2 
         && insn[0] == 0x0F && insn[1] == 0x38
         && (insn[2] == 0x3C || insn[2] == 0x38)) {
+      /* FIXME: this needs an alignment check */
       Bool isMAX = insn[2] == 0x3C;
       delta = dis_SSEint_E_to_G(
                  vbi, pfx, delta+3, 
@@ -15112,6 +15136,7 @@ DisResult disInstr_AMD64_WRK (
               nameXMMReg( gregOfRexRM(pfx, modrm) ) );
       } else {
          addr = disAMode( &alen, vbi, pfx, delta+3, dis_buf, 0 );
+         gen_SEGV_if_not_16_aligned( addr );
          assign( argL, loadLE( Ity_V128, mkexpr(addr) ));
          delta += 3+alen;
          DIP( "pmulld %s,%s\n",
@@ -15317,6 +15342,8 @@ DisResult disInstr_AMD64_WRK (
          regNoL = 16; /* use XMM16 as an intermediary */
          regNoR = gregOfRexRM(pfx, modrm);
          addr = disAMode( &alen, vbi, pfx, delta+3, dis_buf, 0 );
+         /* No alignment check; I guess that makes sense, given that
+            these insns are for dealing with C style strings. */
          stmt( IRStmt_Put( OFFB_XMM16, loadLE(Ity_V128, mkexpr(addr)) ));
          imm = insn[3+alen];
          delta += 3+alen+1;
@@ -15423,6 +15450,7 @@ DisResult disInstr_AMD64_WRK (
               nameXMMReg( gregOfRexRM(pfx, modrm) ) );
       } else {
          addr = disAMode( &alen, vbi, pfx, delta+3, dis_buf, 0 );
+         gen_SEGV_if_not_16_aligned( addr );
          assign(vecE, loadLE( Ity_V128, mkexpr(addr) ));
          delta += 3+alen;
          DIP( "ptest %s,%s\n",

@@ -8587,6 +8587,8 @@ DisResult disInstr_X86_WRK (
          delta += 2+1;
       } else {
          addr = disAMode ( &alen, sorb, delta+2, dis_buf );
+         if (insn[1] == 0x28/*movaps*/)
+            gen_SEGV_if_not_16_aligned( addr );
          putXMMReg( gregOfRM(modrm), 
                     loadLE(Ity_V128, mkexpr(addr)) );
          DIP("mov[ua]ps %s,%s\n", dis_buf,
@@ -8605,6 +8607,8 @@ DisResult disInstr_X86_WRK (
          /* fall through; awaiting test case */
       } else {
          addr = disAMode ( &alen, sorb, delta+2, dis_buf );
+         if (insn[1] == 0x29/*movaps*/)
+            gen_SEGV_if_not_16_aligned( addr );
          storeLE( mkexpr(addr), getXMMReg(gregOfRM(modrm)) );
          DIP("mov[ua]ps %s,%s\n", nameXMMReg(gregOfRM(modrm)),
                                   dis_buf );
@@ -8731,6 +8735,7 @@ DisResult disInstr_X86_WRK (
       modrm = getIByte(delta+2);
       if (!epartIsReg(modrm)) {
          addr = disAMode ( &alen, sorb, delta+2, dis_buf );
+         gen_SEGV_if_not_16_aligned( addr );
          storeLE( mkexpr(addr), getXMMReg(gregOfRM(modrm)) );
          DIP("movntp%s %s,%s\n", sz==2 ? "d" : "s",
                                  dis_buf,
@@ -9956,6 +9961,8 @@ DisResult disInstr_X86_WRK (
          delta += 2+1;
       } else {
          addr = disAMode ( &alen, sorb, delta+2, dis_buf );
+         if (insn[1] == 0x28/*movapd*/ || insn[1] == 0x6F/*movdqa*/)
+            gen_SEGV_if_not_16_aligned( addr );
          putXMMReg( gregOfRM(modrm), 
                     loadLE(Ity_V128, mkexpr(addr)) );
          DIP("mov%s %s,%s\n", wot, dis_buf,
@@ -9975,6 +9982,8 @@ DisResult disInstr_X86_WRK (
          /* fall through; awaiting test case */
       } else {
          addr = disAMode ( &alen, sorb, delta+2, dis_buf );
+         if (insn[1] == 0x29/*movapd*/)
+            gen_SEGV_if_not_16_aligned( addr );
          storeLE( mkexpr(addr), getXMMReg(gregOfRM(modrm)) );
          DIP("mov%s %s,%s\n", wot, nameXMMReg(gregOfRM(modrm)),
                                    dis_buf );
@@ -10037,6 +10046,7 @@ DisResult disInstr_X86_WRK (
       } else {
          addr = disAMode( &alen, sorb, delta+2, dis_buf );
          delta += 2+alen;
+         gen_SEGV_if_not_16_aligned( addr );
          storeLE( mkexpr(addr), getXMMReg(gregOfRM(modrm)) );
          DIP("movdqa %s, %s\n", nameXMMReg(gregOfRM(modrm)), dis_buf);
       }
@@ -10248,6 +10258,7 @@ DisResult disInstr_X86_WRK (
       modrm = getIByte(delta+2);
       if (sz == 2 && !epartIsReg(modrm)) {
          addr = disAMode ( &alen, sorb, delta+2, dis_buf );
+         gen_SEGV_if_not_16_aligned( addr );
          storeLE( mkexpr(addr), getXMMReg(gregOfRM(modrm)) );
          DIP("movntdq %s,%s\n", dis_buf,
                                 nameXMMReg(gregOfRM(modrm)));
@@ -11550,6 +11561,7 @@ DisResult disInstr_X86_WRK (
          delta += 3+1;
       } else {
          addr = disAMode ( &alen, sorb, delta+3, dis_buf );
+         gen_SEGV_if_not_16_aligned( addr );
          assign( sV, loadLE(Ity_V128, mkexpr(addr)) );
          DIP("movs%cdup %s,%s\n", isH ? 'h' : 'l',
 	     dis_buf,

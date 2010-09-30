@@ -2042,6 +2042,7 @@ void amd64g_dirtyhelper_CPUID_sse3_and_cx16 ( VexGuestAMD64State* st )
                      dtes64 monitor ds_cpl vmx smx est tm2 ssse3 cx16
                      xtpr pdcm sse4_1 sse4_2 popcnt aes lahf_lm ida
                      arat tpr_shadow vnmi flexpriority ept vpid
+                     MINUS aes (see below)
    bogomips        : 6957.57
    clflush size    : 64
    cache_alignment : 64
@@ -2065,7 +2066,10 @@ void amd64g_dirtyhelper_CPUID_sse42_and_cx16 ( VexGuestAMD64State* st )
          SET_ABCD(0x0000000b, 0x756e6547, 0x6c65746e, 0x49656e69);
          break;
       case 0x00000001:
-         SET_ABCD(0x00020652, 0x00100800, 0x0298e3ff, 0xbfebfbff);
+         // & ~(1<<25): don't claim to support AES insns.  See
+         // bug 249991.
+         SET_ABCD(0x00020652, 0x00100800, 0x0298e3ff & ~(1<<25),
+                                          0xbfebfbff);
          break;
       case 0x00000002:
          SET_ABCD(0x55035a01, 0x00f0b2e3, 0x00000000, 0x09ca212c);

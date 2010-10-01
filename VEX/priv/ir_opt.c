@@ -926,16 +926,33 @@ static Bool notBool ( Bool b )
 
 /* Make a zero which has the same type as the result of the given
    primop. */
-static IRExpr* mkZeroForXor ( IROp op )
+static IRExpr* mkZeroOfPrimopResultType ( IROp op )
 {
    switch (op) {
       case Iop_Xor8:  return IRExpr_Const(IRConst_U8(0));
       case Iop_Xor16: return IRExpr_Const(IRConst_U16(0));
       case Iop_Sub32:
       case Iop_Xor32: return IRExpr_Const(IRConst_U32(0));
+      case Iop_Sub64:
       case Iop_Xor64: return IRExpr_Const(IRConst_U64(0));
       case Iop_XorV128: return IRExpr_Const(IRConst_V128(0));
-      default: vpanic("mkZeroForXor: bad primop");
+      default: vpanic("mkZeroOfPrimopResultType: bad primop");
+   }
+}
+
+/* Make a value containing all 1-bits, which has the same type as the
+   result of the given primop. */
+static IRExpr* mkOnesOfPrimopResultType ( IROp op )
+{
+   switch (op) {
+      case Iop_CmpEQ64:
+         return IRExpr_Const(IRConst_U1(toBool(1)));
+      case Iop_CmpEQ8x8:
+         return IRExpr_Const(IRConst_U64(0xFFFFFFFFFFFFFFFFULL));
+      case Iop_CmpEQ8x16:
+         return IRExpr_Const(IRConst_V128(0xFFFF));
+      default:
+         vpanic("mkOnesOfPrimopResultType: bad primop");
    }
 }
 
@@ -1568,32 +1585,45 @@ static IRExpr* fold_Expr ( IRExpr* e )
             e2 = e->Iex.Binop.arg2;
          } else
 
-         /* Or8/16/32/64(t,t) ==> t, for some IRTemp t */
+         /* Or8/16/32/64/V128(t,t) ==> t, for some IRTemp t */
          /* And8/16/32/64(t,t) ==> t, for some IRTemp t */
          /* Max32U(t,t) ==> t, for some IRTemp t */
-         if (   (e->Iex.Binop.op == Iop_And64
-              || e->Iex.Binop.op == Iop_And32
-              || e->Iex.Binop.op == Iop_And16
-              || e->Iex.Binop.op == Iop_And8
-              || e->Iex.Binop.op == Iop_Or64
-              || e->Iex.Binop.op == Iop_Or32
-              || e->Iex.Binop.op == Iop_Or16
-              || e->Iex.Binop.op == Iop_Or8
-              || e->Iex.Binop.op == Iop_Max32U)
-             && sameIRTemps(e->Iex.Binop.arg1, e->Iex.Binop.arg2)) {
-            e2 = e->Iex.Binop.arg1;
+         switch (e->Iex.Binop.op) {
+            case Iop_And64: case Iop_And32:
+            case Iop_And16: case Iop_And8:
+            case Iop_Or64: case Iop_Or32:
+            case Iop_Or16: case Iop_Or8: case Iop_OrV128:
+            case Iop_Max32U:
+               if (sameIRTemps(e->Iex.Binop.arg1, e->Iex.Binop.arg2))
+                  e2 = e->Iex.Binop.arg1;
+               break;
+            default:
+               break;
          }
 
          /* Xor8/16/32/64/V128(t,t) ==> 0, for some IRTemp t */
-         /* Sub32(t,t) ==> 0, for some IRTemp t */
-         if (   (e->Iex.Binop.op == Iop_Xor64
-              || e->Iex.Binop.op == Iop_Xor32
-              || e->Iex.Binop.op == Iop_Xor16
-              || e->Iex.Binop.op == Iop_Xor8
-              || e->Iex.Binop.op == Iop_XorV128
-              || e->Iex.Binop.op == Iop_Sub32)
-             && sameIRTemps(e->Iex.Binop.arg1, e->Iex.Binop.arg2)) {
-            e2 = mkZeroForXor(e->Iex.Binop.op);
+         /* Sub32/64(t,t) ==> 0, for some IRTemp t */
+         switch (e->Iex.Binop.op) {
+            case Iop_Xor64: case Iop_Xor32:
+            case Iop_Xor16: case Iop_Xor8:
+            case Iop_XorV128:
+            case Iop_Sub64: case Iop_Sub32:
+               if (sameIRTemps(e->Iex.Binop.arg1, e->Iex.Binop.arg2))
+                  e2 = mkZeroOfPrimopResultType(e->Iex.Binop.op);
+               break;
+            default:
+               break;
+         }
+
+         switch (e->Iex.Binop.op) {
+            case Iop_CmpEQ64:
+            case Iop_CmpEQ8x8:
+            case Iop_CmpEQ8x16:
+               if (sameIRTemps(e->Iex.Binop.arg1, e->Iex.Binop.arg2))
+                  e2 = mkOnesOfPrimopResultType(e->Iex.Binop.op);
+               break;
+            default:
+               break;
          }
 
       }
@@ -1618,6 +1648,14 @@ static IRExpr* fold_Expr ( IRExpr* e )
       }
    }
 
+   /* Show cases where we've found but not folded 'op(t,t)'. */
+   if (0 && e == e2 && e->tag == Iex_Binop 
+       && sameIRTemps(e->Iex.Binop.arg1, e->Iex.Binop.arg2)) {
+      vex_printf("IDENT: ");
+      ppIRExpr(e); vex_printf("\n");
+   }
+
+   /* Show the overall results of folding. */
    if (DEBUG_IROPT && e2 != e) {
       vex_printf("FOLD: "); 
       ppIRExpr(e); vex_printf("  ->  ");

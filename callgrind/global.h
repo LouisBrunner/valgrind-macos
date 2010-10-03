@@ -120,7 +120,7 @@ struct _CommandLineOptions {
 #define OBJ_NAME_LEN                    256
 #define BUF_LEN                         512
 #define COMMIFY_BUF_LEN                 128
-#define RESULTS_BUF_LEN                 128
+#define RESULTS_BUF_LEN                 256
 #define LINE_BUF_LEN                     64
 
 

@@ -425,7 +425,8 @@ find_active_chunks(UInt* pn_chunks)
 typedef 
    struct {
       UInt  state:2;    // Reachedness.
-      SizeT indirect_szB : (sizeof(SizeT)*8)-2; // If Unreached, how many bytes
+      UInt  pending:1;  // Scan pending.  
+      SizeT indirect_szB : (sizeof(SizeT)*8)-3; // If Unreached, how many bytes
                                                 //   are unreachable from here.
    } 
    LC_Extra;
@@ -510,12 +511,16 @@ lc_is_a_chunk_ptr(Addr ptr, Int* pch_no, MC_Chunk** pch, LC_Extra** pex)
 // Push a chunk (well, just its index) onto the mark stack.
 static void lc_push(Int ch_no, MC_Chunk* ch)
 {
-   if (0) {
-      VG_(printf)("pushing %#lx-%#lx\n", ch->data, ch->data + ch->szB);
+   if (!lc_extras[ch_no].pending) {
+      if (0) {
+         VG_(printf)("pushing %#lx-%#lx\n", ch->data, ch->data + ch->szB);
+      }
+      lc_markstack_top++;
+      tl_assert(lc_markstack_top < lc_n_chunks);
+      lc_markstack[lc_markstack_top] = ch_no;
+      tl_assert(!lc_extras[ch_no].pending);
+      lc_extras[ch_no].pending = True;
    }
-   lc_markstack_top++;
-   tl_assert(lc_markstack_top < lc_n_chunks);
-   lc_markstack[lc_markstack_top] = ch_no;
 }
 
 // Return the index of the chunk on the top of the mark stack, or -1 if
@@ -528,6 +533,8 @@ static Bool lc_pop(Int* ret)
       tl_assert(0 <= lc_markstack_top && lc_markstack_top < lc_n_chunks);
       *ret = lc_markstack[lc_markstack_top];
       lc_markstack_top--;
+      tl_assert(lc_extras[*ret].pending);
+      lc_extras[*ret].pending = False;
       return True;
    }
 }
@@ -544,25 +551,28 @@ lc_push_without_clique_if_a_chunk_ptr(Addr ptr, Bool is_prior_definite)
 
    if ( ! lc_is_a_chunk_ptr(ptr, &ch_no, &ch, &ex) )
       return;
-
-   // Only push it if it hasn't been seen previously.
-   if (ex->state == Unreached) {
-      lc_push(ch_no, ch);
-   }
-
+   
    // Possibly upgrade the state, ie. one of:
    // - Unreached --> Possible
    // - Unreached --> Reachable 
    // - Possible  --> Reachable
-   if (ptr == ch->data && is_prior_definite) {
+   if (ptr == ch->data && is_prior_definite && ex->state != Reachable) {
       // 'ptr' points to the start of the block, and the prior node is
       // definite, which means that this block is definitely reachable.
       ex->state = Reachable;
+
+      // State has changed to Reachable so (re)scan the block to make
+      // sure any blocks it points to are correctly marked.
+      lc_push(ch_no, ch);
 
    } else if (ex->state == Unreached) {
       // Either 'ptr' is a interior-pointer, or the prior node isn't definite,
       // which means that we can only mark this block as possibly reachable.
       ex->state = Possible;
+
+      // State has changed to Possible so (re)scan the block to make
+      // sure any blocks it points to are correctly marked.
+      lc_push(ch_no, ch);
    }
 }
 
@@ -708,7 +718,7 @@ static void lc_process_markstack(Int clique)
    Bool is_prior_definite;
 
    while (lc_pop(&top)) {
-      tl_assert(top >= 0 && top < lc_n_chunks);      
+      tl_assert(top >= 0 && top < lc_n_chunks);
 
       // See comment about 'is_prior_definite' at the top to understand this.
       is_prior_definite = ( Possible != lc_extras[top].state );
@@ -1007,6 +1017,7 @@ void MC_(detect_memory_leaks) ( ThreadId tid, LeakCheckMode mode )
    lc_extras = VG_(malloc)( "mc.dml.2", lc_n_chunks * sizeof(LC_Extra) );
    for (i = 0; i < lc_n_chunks; i++) {
       lc_extras[i].state        = Unreached;
+      lc_extras[i].pending      = False;
       lc_extras[i].indirect_szB = 0;
    }
 

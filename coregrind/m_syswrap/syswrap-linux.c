@@ -2638,6 +2638,29 @@ PRE(sys_lseek)
 }
 
 /* ---------------------------------------------------------------------
+   readahead wrapper
+   ------------------------------------------------------------------ */
+
+PRE(sys_readahead)
+{
+   *flags |= SfMayBlock;
+#if VG_WORDSIZE == 4
+   PRINT("sys_readahead ( %ld, %lld, %ld )", ARG1, MERGE64(ARG2,ARG3), ARG4);
+   PRE_REG_READ4(vki_off_t, "readahead",
+                 int, fd, unsigned, MERGE64_FIRST(offset),
+                 unsigned, MERGE64_SECOND(offset), vki_size_t, count);
+#elif VG_WORDSIZE == 8
+   PRINT("sys_readahead ( %ld, %lld, %ld )", ARG1, (Long)ARG2, ARG3);
+   PRE_REG_READ3(vki_off_t, "readahead",
+                 int, fd, vki_loff_t, offset, vki_size_t, count);
+#else
+#  error Unexpected word size
+#endif
+   if (!ML_(fd_allowed)(ARG1, "readahead", tid, False))
+      SET_STATUS_Failure( VKI_EBADF );
+}
+
+/* ---------------------------------------------------------------------
    sig* wrappers
    ------------------------------------------------------------------ */
 

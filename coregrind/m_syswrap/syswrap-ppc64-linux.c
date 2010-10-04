@@ -1392,7 +1392,7 @@ static SyscallTableEntry syscall_table[] = {
    GENX_(__NR_vfork,             sys_fork),               // 189 treat as fork
 
    GENXY(__NR_ugetrlimit,        sys_getrlimit),          // 190
-// _____(__NR_readahead,         sys_readahead),          // 191
+   LINX_(__NR_readahead,         sys_readahead),          // 191
 // /* #define __NR_mmap2           192     32bit only */
 // /* #define __NR_truncate64      193     32bit only */
 // /* #define __NR_ftruncate64     194     32bit only */

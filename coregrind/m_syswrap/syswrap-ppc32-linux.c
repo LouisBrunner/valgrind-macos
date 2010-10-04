@@ -1746,7 +1746,7 @@ static SyscallTableEntry syscall_table[] = {
    // Nb: we treat vfork as fork
    GENX_(__NR_vfork,             sys_fork),              // 189
    GENXY(__NR_ugetrlimit,        sys_getrlimit),         // 190
-//__NR_readahead      // 191 ppc/Linux only?
+   LINX_(__NR_readahead,         sys_readahead),         // 191 */Linux
    PLAX_(__NR_mmap2,             sys_mmap2),             // 192
    GENX_(__NR_truncate64,        sys_truncate64),        // 193
    GENX_(__NR_ftruncate64,       sys_ftruncate64),       // 194

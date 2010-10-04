@@ -1498,7 +1498,7 @@ static SyscallTableEntry syscall_main_table[] = {
 //   PLAXY(223,                    sys_syscall223),     // 223 // sys_bproc?
    LINX_(__NR_gettid,            sys_gettid),         // 224
 
-//zz    //   (__NR_readahead,         sys_readahead),      // 225 */(Linux?)
+   LINX_(__NR_readahead,         sys_readahead),      // 225 */Linux
    LINX_(__NR_setxattr,          sys_setxattr),       // 226
    LINX_(__NR_lsetxattr,         sys_lsetxattr),      // 227
    LINX_(__NR_fsetxattr,         sys_fsetxattr),      // 228

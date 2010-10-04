@@ -53,6 +53,7 @@ DECL_TEMPLATE(linux, sys_pwritev);
 DECL_TEMPLATE(linux, sys_dup3);
 DECL_TEMPLATE(linux, sys_getcpu);
 DECL_TEMPLATE(linux, sys_splice);
+DECL_TEMPLATE(linux, sys_readahead);
 
 // POSIX, but various sub-cases differ between Linux and Darwin.
 DECL_TEMPLATE(linux, sys_fcntl);

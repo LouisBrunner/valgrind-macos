@@ -118,6 +118,7 @@ struct _CommandLineOptions {
 #define FILENAME_LEN                    256
 #define FN_NAME_LEN                    4096 /* for C++ code :-) */
 #define OBJ_NAME_LEN                    256
+#define COSTS_LEN                       512 /* at least 17x 64bit values */
 #define BUF_LEN                         512
 #define COMMIFY_BUF_LEN                 128
 #define RESULTS_BUF_LEN                 256

@@ -55,7 +55,7 @@ EventMapping* CLG_(dumpmap) = 0;
  *  print_fn_pos, fprint_apos, fprint_fcost, fprint_jcc,
  *  fprint_fcc_ln, dump_run_info, dump_state_info
  */
-static Char outbuf[FILENAME_LEN + FN_NAME_LEN + OBJ_NAME_LEN];
+static Char outbuf[FILENAME_LEN + FN_NAME_LEN + OBJ_NAME_LEN + COSTS_LEN];
 
 Int CLG_(get_dump_counter)(void)
 {

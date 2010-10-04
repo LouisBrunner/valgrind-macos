@@ -1519,7 +1519,7 @@ void branchsim_printstat(int l1, int l2, int l3)
 static
 void finish(void)
 {
-  Char buf[RESULTS_BUF_LEN], fmt[128];
+  Char buf[32+COSTS_LEN], fmt[128];
   Int l1, l2, l3;
   FullCost total;
 

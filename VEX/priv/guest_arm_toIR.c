@@ -14017,6 +14017,10 @@ DisResult disInstr_THUMB_WRK (
    //UInt      hwcaps = archinfo->hwcaps;
    HChar     dis_buf[128];  // big enough to hold LDMIA etc text
 
+   /* Summary result of the ITxxx backwards analysis: False == safe
+      but suboptimal. */
+   Bool guaranteedUnconditional = False;
+
    /* What insn variants are we supporting today? */
    //allow_VFP  = (0 != (hwcaps & VEX_HWCAPS_ARM_VFP));
    // etc etc
@@ -14117,7 +14121,7 @@ DisResult disInstr_THUMB_WRK (
       the instruction word, first for 16-bit insns, then for 32-bit
       insns. */
 
-   /* --- BEGIN optimisation --- */
+   /* --- BEGIN ITxxx optimisation analysis --- */
    /* This is a crucial optimisation for the ITState boilerplate that
       follows.  Examine the 9 halfwords preceding this instruction,
       and if we are absolutely sure that none of them constitute an
@@ -14156,7 +14160,7 @@ DisResult disInstr_THUMB_WRK (
    {
       /* Summary result of this analysis: False == safe but
          suboptimal. */
-      Bool forceZ = False;
+      vassert(guaranteedUnconditional == False);
 
       UInt pc = guest_R15_curr_instr_notENC;
       vassert(0 == (pc & 1));
@@ -14165,7 +14169,7 @@ DisResult disInstr_THUMB_WRK (
       if (pageoff >= 18) {
          /* It's safe to poke about in the 9 halfwords preceding this
             insn.  So, have a look at them. */
-         forceZ = True; /* assume no 'it' insn found, till we do */
+         guaranteedUnconditional = True; /* assume no 'it' insn found, till we do */
 
          UShort* hwp = (UShort*)(HWord)pc;
          Int i;
@@ -14180,19 +14184,13 @@ DisResult disInstr_THUMB_WRK (
                where x can be anything, but y must be nonzero. */
             if ((hwp[i] & 0xFF00) == 0xBF00 && (hwp[i] & 0xF) != 0) {
                /* might be an 'it' insn.  Play safe. */
-               forceZ = False;
+               guaranteedUnconditional = False;
                break;
             }
          }
       }
-      /* So, did we get lucky? */
-      if (forceZ) {
-         IRTemp t = newTemp(Ity_I32);
-         assign(t, mkU32(0));
-         put_ITSTATE(t);
-      }
    }
-   /* --- END optimisation --- */
+   /* --- END ITxxx optimisation analysis --- */
 
    /* Generate the guarding condition for this insn, by examining
       ITSTATE.  Assign it to condT.  Also, generate new
@@ -14203,74 +14201,177 @@ DisResult disInstr_THUMB_WRK (
       decode_success handle this, but in cases where the insn contains
       a side exit, we have to update them before the exit. */
 
-   IRTemp old_itstate = get_ITSTATE();
+   /* If the ITxxx optimisation analysis above could not prove that
+      this instruction is guaranteed unconditional, we insert a
+      lengthy IR preamble to compute the guarding condition at
+      runtime.  If it can prove it (which obviously we hope is the
+      normal case) then we insert a minimal preamble, which is
+      equivalent to setting guest_ITSTATE to zero and then folding
+      that through the full preamble (which completely disappears). */
 
-   IRTemp new_itstate = newTemp(Ity_I32);
-   assign(new_itstate, binop(Iop_Shr32, mkexpr(old_itstate), mkU8(8)));
+   IRTemp condT              = IRTemp_INVALID;
+   IRTemp old_itstate        = IRTemp_INVALID;
+   IRTemp new_itstate        = IRTemp_INVALID;
+   IRTemp cond_AND_notInIT_T = IRTemp_INVALID;
 
-   put_ITSTATE(new_itstate);
+   if (guaranteedUnconditional) {
+      /* BEGIN "partial eval { ITSTATE = 0; STANDARD_PREAMBLE; }" */
 
-   /* Same strategy as for ARM insns: generate a condition temporary
-      at this point  (or IRTemp_INVALID, meaning
-      unconditional).  We leave it to lower-level instruction decoders
-      to decide whether they can generate straight-line code, or
-      whether they must generate a side exit before the instruction.
-      condT :: Ity_I32 and is always either zero or one. */
-   IRTemp condT1 = newTemp(Ity_I32);
-   assign(condT1,
-          mk_armg_calculate_condition_dyn(
+      // ITSTATE = 0 :: I32
+      IRTemp z32 = newTemp(Ity_I32);
+      assign(z32, mkU32(0));
+      put_ITSTATE(z32);
+
+      // old_itstate = 0 :: I32
+      //
+      // old_itstate = get_ITSTATE();
+      old_itstate = z32; /* 0 :: I32 */
+
+      // new_itstate = old_itstate >> 8
+      //             = 0 >> 8
+      //             = 0 :: I32
+      //
+      // new_itstate = newTemp(Ity_I32);
+      // assign(new_itstate,
+      //        binop(Iop_Shr32, mkexpr(old_itstate), mkU8(8)));
+      new_itstate = z32;
+
+      // ITSTATE = 0 :: I32(again)
+      //
+      // put_ITSTATE(new_itstate);
+
+      // condT1 = calc_cond_dyn( xor(and(old_istate,0xF0), 0xE0) )
+      //        = calc_cond_dyn( xor(0,0xE0) )
+      //        = calc_cond_dyn ( 0xE0 )
+      //        = 1 :: I32
+      // Not that this matters, since the computed value is not used:
+      // see condT folding below
+      //
+      // IRTemp condT1 = newTemp(Ity_I32);
+      // assign(condT1,
+      //        mk_armg_calculate_condition_dyn(
+      //           binop(Iop_Xor32,
+      //                 binop(Iop_And32, mkexpr(old_itstate), mkU32(0xF0)),
+      //                 mkU32(0xE0))
+      //       )
+      // );
+
+      // condT = 32to8(and32(old_itstate,0xF0)) == 0  ? 1  : condT1
+      //       = 32to8(and32(0,0xF0)) == 0  ? 1  : condT1
+      //       = 32to8(0) == 0  ? 1  : condT1
+      //       = 0 == 0  ? 1  : condT1
+      //       = 1
+      //
+      // condT = newTemp(Ity_I32);
+      // assign(condT, IRExpr_Mux0X(
+      //                  unop(Iop_32to8, binop(Iop_And32,
+      //                                        mkexpr(old_itstate),
+      //                                        mkU32(0xF0))),
+      //                  mkU32(1),
+      //                  mkexpr(condT1)
+      //       ));
+      condT = newTemp(Ity_I32);
+      assign(condT, mkU32(1));
+
+      // notInITt = xor32(and32(old_itstate, 1), 1)
+      //          = xor32(and32(0, 1), 1)
+      //          = xor32(0, 1)
+      //          = 1 :: I32
+      //
+      // IRTemp notInITt = newTemp(Ity_I32);
+      // assign(notInITt,
+      //        binop(Iop_Xor32,
+      //              binop(Iop_And32, mkexpr(old_itstate), mkU32(1)),
+      //              mkU32(1)));
+
+      // cond_AND_notInIT_T = and32(notInITt, condT)
+      //                    = and32(1, 1)
+      //                    = 1
+      //
+      // cond_AND_notInIT_T = newTemp(Ity_I32);
+      // assign(cond_AND_notInIT_T,
+      //        binop(Iop_And32, mkexpr(notInITt), mkexpr(condT)));
+      cond_AND_notInIT_T = condT; /* 1 :: I32 */
+
+      /* END "partial eval { ITSTATE = 0; STANDARD_PREAMBLE; }" */
+   } else {
+      /* BEGIN { STANDARD PREAMBLE; } */
+
+      old_itstate = get_ITSTATE();
+
+      new_itstate = newTemp(Ity_I32);
+      assign(new_itstate,
+             binop(Iop_Shr32, mkexpr(old_itstate), mkU8(8)));
+
+      put_ITSTATE(new_itstate);
+
+      /* Same strategy as for ARM insns: generate a condition
+         temporary at this point (or IRTemp_INVALID, meaning
+         unconditional).  We leave it to lower-level instruction
+         decoders to decide whether they can generate straight-line
+         code, or whether they must generate a side exit before the
+         instruction.  condT :: Ity_I32 and is always either zero or
+         one. */
+      IRTemp condT1 = newTemp(Ity_I32);
+      assign(condT1,
+             mk_armg_calculate_condition_dyn(
+                binop(Iop_Xor32,
+                      binop(Iop_And32, mkexpr(old_itstate), mkU32(0xF0)),
+                      mkU32(0xE0))
+            )
+      );
+
+      /* This is a bit complex, but needed to make Memcheck understand
+         that, if the condition in old_itstate[7:4] denotes AL (that
+         is, if this instruction is to be executed unconditionally),
+         then condT does not depend on the results of calling the
+         helper.
+
+         We test explicitly for old_itstate[7:4] == AL ^ 0xE, and in
+         that case set condT directly to 1.  Else we use the results
+         of the helper.  Since old_itstate is always defined and
+         because Memcheck does lazy V-bit propagation through Mux0X,
+         this will cause condT to always be a defined 1 if the
+         condition is 'AL'.  From an execution semantics point of view
+         this is irrelevant since we're merely duplicating part of the
+         behaviour of the helper.  But it makes it clear to Memcheck,
+         in this case, that condT does not in fact depend on the
+         contents of the condition code thunk.  Without it, we get
+         quite a lot of false errors.
+
+         So, just to clarify: from a straight semantics point of view,
+         we can simply do "assign(condT, mkexpr(condT1))", and the
+         simulator still runs fine.  It's just that we get loads of
+         false errors from Memcheck. */
+      condT = newTemp(Ity_I32);
+      assign(condT, IRExpr_Mux0X(
+                       unop(Iop_32to8, binop(Iop_And32,
+                                             mkexpr(old_itstate),
+                                             mkU32(0xF0))),
+                       mkU32(1),
+                       mkexpr(condT1)
+            ));
+
+      /* Something we don't have in ARM: generate a 0 or 1 value
+         indicating whether or not we are in an IT block (NB: 0 = in
+         IT block, 1 = not in IT block).  This is used to gate
+         condition code updates in 16-bit Thumb instructions. */
+      IRTemp notInITt = newTemp(Ity_I32);
+      assign(notInITt,
              binop(Iop_Xor32,
-                   binop(Iop_And32, mkexpr(old_itstate), mkU32(0xF0)),
-                   mkU32(0xE0))
-          )
-   );
+                   binop(Iop_And32, mkexpr(old_itstate), mkU32(1)),
+                   mkU32(1)));
 
-   /* This is a bit complex, but needed to make Memcheck understand
-      that, if the condition in old_itstate[7:4] denotes AL (that is,
-      if this instruction is to be executed unconditionally), then
-      condT does not depend on the results of calling the helper.
+      /* Compute 'condT && notInITt' -- that is, the instruction is
+         going to execute, and we're not in an IT block.  This is the
+         gating condition for updating condition codes in 16-bit Thumb
+         instructions, except for CMP, CMN and TST. */
+      cond_AND_notInIT_T = newTemp(Ity_I32);
+      assign(cond_AND_notInIT_T,
+             binop(Iop_And32, mkexpr(notInITt), mkexpr(condT)));
+      /* END { STANDARD PREAMBLE; } */
+   }
 
-      We test explicitly for old_itstate[7:4] == AL ^ 0xE, and in that
-      case set condT directly to 1.  Else we use the results of the
-      helper.  Since old_itstate is always defined and because
-      Memcheck does lazy V-bit propagation through Mux0X, this will
-      cause condT to always be a defined 1 if the condition is 'AL'.
-      From an execution semantics point of view this is irrelevant
-      since we're merely duplicating part of the behaviour of the
-      helper.  But it makes it clear to Memcheck, in this case, that
-      condT does not in fact depend on the contents of the condition
-      code thunk.  Without it, we get quite a lot of false errors.
-
-      So, just to clarify: from a straight semantics point of view, we
-      can simply do "assign(condT, mkexpr(condT1))", and the simulator
-      still runs fine.  It's just that we get loads of false errors
-      from Memcheck. */
-   IRTemp condT = newTemp(Ity_I32);
-   assign(condT, IRExpr_Mux0X(
-                    unop(Iop_32to8, binop(Iop_And32,
-                                          mkexpr(old_itstate),
-                                          mkU32(0xF0))),
-                    mkU32(1),
-                    mkexpr(condT1)
-         ));
-
-   /* Something we don't have in ARM: generate a 0 or 1 value
-      indicating whether or not we are in an IT block (NB: 0 = in IT
-      block, 1 = not in IT block).  This is used to gate condition
-      code updates in 16-bit Thumb instructions. */
-   IRTemp notInITt = newTemp(Ity_I32);
-   assign(notInITt,
-          binop(Iop_Xor32,
-                binop(Iop_And32, mkexpr(old_itstate), mkU32(1)),
-                mkU32(1)));
-
-   /* Compute 'condT && notInITt' -- that is, the instruction is going
-      to execute, and we're not in an IT block.  This is the gating
-      condition for updating condition codes in 16-bit Thumb
-      instructions, except for CMP, CMN and TST. */
-   IRTemp cond_AND_notInIT_T = newTemp(Ity_I32);
-   assign(cond_AND_notInIT_T,
-          binop(Iop_And32, mkexpr(notInITt), mkexpr(condT)));
 
    /* At this point:
       * ITSTATE has been updated

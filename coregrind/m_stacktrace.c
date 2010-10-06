@@ -264,7 +264,7 @@ UInt VG_(get_StackTrace_wrk) ( ThreadId tid_if_known,
    // On Darwin, this kicks in for pthread-related stack traces, so they're
    // only 1 entry long which is wrong.
 #  if !defined(VGO_darwin)
-   if (fp_min + 512 >= fp_max) {
+   if (fp_min + 256 >= fp_max) {
       /* If the stack limits look bogus, don't poke around ... but
          don't bomb out either. */
       if (sps) sps[0] = uregs.xsp;

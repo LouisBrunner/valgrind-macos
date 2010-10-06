@@ -2483,6 +2483,14 @@ static void setup_post_syscall_table ( void )
       ADD(0, __NR_wait4);
       ADD(0, __NR_write);
       ADD(0, __NR_writev);
+#     if defined(__NR_mq_open)
+      ADD(0, __NR_mq_open);
+      ADD(0, __NR_mq_unlink);
+      ADD(0, __NR_mq_timedsend);
+      ADD(0, __NR_mq_timedreceive);
+      ADD(0, __NR_mq_notify);
+      ADD(0, __NR_mq_getsetattr);
+#     endif
 
       /* Whereas the following need special treatment */
 #     if defined(__NR_arch_prctl)

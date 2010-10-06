@@ -783,10 +783,8 @@ HChar* showARMNeonBinOp ( ARMNeonBinOp op ) {
       case ARMneon_VQRDMULH: return "vqrdmulh";
       case ARMneon_VQDMULL: return "vqdmull";
       case ARMneon_VTBL: return "vtbl";
-      case ARMneon_SETELEM: return "vmov";
-      case ARMneon_VABSFP: return "vabsfp";
-      case ARMneon_VRSQRTEFP: return "vrsqrtefp";
-      case ARMneon_VRSQRTE: return "vrsqrte";
+      case ARMneon_VRECPS: return "vrecps";
+      case ARMneon_VRSQRTS: return "vrecps";
       /* ... */
       default: vpanic("showARMNeonBinOp");
    }
@@ -802,7 +800,6 @@ HChar* showARMNeonBinOpDataType ( ARMNeonBinOp op ) {
       case ARMneon_VSUB:
       case ARMneon_VEXT:
       case ARMneon_VMUL:
-      case ARMneon_SETELEM:
       case ARMneon_VPADD:
       case ARMneon_VTBL:
       case ARMneon_VCEQ:
@@ -817,7 +814,6 @@ HChar* showARMNeonBinOpDataType ( ARMNeonBinOp op ) {
       case ARMneon_VMULLU:
       case ARMneon_VPMINU:
       case ARMneon_VPMAXU:
-      case ARMneon_VRSQRTE:
          return ".u";
       case ARMneon_VRHADDS:
       case ARMneon_VMINS:
@@ -843,13 +839,13 @@ HChar* showARMNeonBinOpDataType ( ARMNeonBinOp op ) {
       case ARMneon_VMULFP:
       case ARMneon_VMINF:
       case ARMneon_VMAXF:
-      case ARMneon_VABSFP:
-      case ARMneon_VRSQRTEFP:
       case ARMneon_VPMINF:
       case ARMneon_VPMAXF:
       case ARMneon_VCGTF:
       case ARMneon_VCGEF:
       case ARMneon_VCEQF:
+      case ARMneon_VRECPS:
+      case ARMneon_VRSQRTS:
          return ".f";
       /* ... */
       default: vpanic("showARMNeonBinOpDataType");
@@ -891,10 +887,11 @@ HChar* showARMNeonUnOp ( ARMNeonUnOp op ) {
       case ARMneon_VCVTF16toF32: return "vcvt";
       case ARMneon_VRECIP: return "vrecip";
       case ARMneon_VRECIPF: return "vrecipf";
-      case ARMneon_VRECPS: return "vrecps";
       case ARMneon_VNEGF: return "vneg";
-      case ARMneon_VRSQRTS: return "vrecps";
       case ARMneon_ABS: return "vabs";
+      case ARMneon_VABSFP: return "vabsfp";
+      case ARMneon_VRSQRTEFP: return "vrsqrtefp";
+      case ARMneon_VRSQRTE: return "vrsqrte";
       /* ... */
       default: vpanic("showARMNeonUnOp");
    }
@@ -918,6 +915,7 @@ HChar* showARMNeonUnOpDataType ( ARMNeonUnOp op ) {
       case ARMneon_COPYQNUU:
       case ARMneon_VQSHLNUU:
       case ARMneon_VRECIP:
+      case ARMneon_VRSQRTE:
          return ".u";
       case ARMneon_CLS:
       case ARMneon_CLZ:
@@ -930,9 +928,9 @@ HChar* showARMNeonUnOpDataType ( ARMNeonUnOp op ) {
       case ARMneon_ABS:
          return ".s";
       case ARMneon_VRECIPF:
-      case ARMneon_VRECPS:
       case ARMneon_VNEGF:
-      case ARMneon_VRSQRTS:
+      case ARMneon_VABSFP:
+      case ARMneon_VRSQRTEFP:
          return ".f";
       case ARMneon_VCVTFtoU: return ".u32.f32";
       case ARMneon_VCVTFtoS: return ".s32.f32";
@@ -3305,7 +3303,7 @@ Int emit_ARMInstr ( UChar* buf, Int nbuf, ARMInstr* i,
          UInt insn;
          UInt opc, opc1, opc2;
          switch (i->ARMin.NUnaryS.op) {
-            case ARMneon_VDUP:
+	    case ARMneon_VDUP:
                if (i->ARMin.NUnaryS.size >= 16)
                   goto bad;
                if (i->ARMin.NUnaryS.dst->tag != ARMNRS_Reg)
@@ -3326,7 +3324,7 @@ Int emit_ARMInstr ( UChar* buf, Int nbuf, ARMInstr* i,
                                (i->ARMin.NUnaryS.size & 0xf), regD,
                                X1100, BITS4(0,Q,M,0), regM);
                *p++ = insn;
-               goto done;
+               goto done; 
             case ARMneon_SETELEM:
                regD = Q ? (qregNo(i->ARMin.NUnaryS.dst->reg) << 1) :
                                 dregNo(i->ARMin.NUnaryS.dst->reg);
@@ -3665,6 +3663,7 @@ Int emit_ARMInstr ( UChar* buf, Int nbuf, ARMInstr* i,
                insn = XXXXXXXX(0xF, X0011, BITS4(1,D,1,1), X1001, regD, X0111,
                                BITS4(1,Q,M,0), regM);
                break;
+
             default:
                goto bad;
          }

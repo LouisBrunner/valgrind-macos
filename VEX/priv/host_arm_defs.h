@@ -463,14 +463,8 @@ typedef
       ARMneon_VPMAXF,
       ARMneon_VTBL,
       ARMneon_VQDMULL,
-      ARMneon_VDUP,
-      ARMneon_VRECIP,
       ARMneon_VRECPS,
-      ARMneon_VRECIPF,
       ARMneon_VRSQRTS,
-      ARMneon_VABSFP,
-      ARMneon_VRSQRTEFP,
-      ARMneon_VRSQRTE
       /* ... */
    }
    ARMNeonBinOp;
@@ -520,6 +514,11 @@ typedef
       ARMneon_REV64,
       ARMneon_ABS,
       ARMneon_VNEGF,
+      ARMneon_VRECIP,
+      ARMneon_VRECIPF,
+      ARMneon_VABSFP,
+      ARMneon_VRSQRTEFP,
+      ARMneon_VRSQRTE
       /* ... */
    }
    ARMNeonUnOp;
@@ -528,7 +527,8 @@ typedef
    enum {
       ARMneon_SETELEM=200,
       ARMneon_GETELEMU,
-      ARMneon_GETELEMS
+      ARMneon_GETELEMS,
+      ARMneon_VDUP,
    }
    ARMNeonUnOpS;
 
@@ -861,7 +861,7 @@ typedef
             ARMAModeN *amode;
          } NLdStD;
          struct {
-            ARMNeonUnOp op;
+            ARMNeonUnOpS op;
             ARMNRS*  dst;
             ARMNRS*  src;
             UInt size;

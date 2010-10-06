@@ -731,6 +731,8 @@ struct vki_ipc_kludge {
 #define VKI_SHMGET		23
 #define VKI_SHMCTL		24
 
+#define VKI_SHMLBA  (4 * VKI_PAGE_SIZE)
+
 
 //----------------------------------------------------------------------
 // From linux-2.6.8.1/include/asm-i386/shmbuf.h

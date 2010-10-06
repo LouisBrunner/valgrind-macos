@@ -1451,6 +1451,7 @@ struct vki_shmid_ds {
 };
 
 #define VKI_SHM_RDONLY  010000  /* read-only access */
+#define VKI_SHM_RND     020000  /* round attach address to SHMLBA boundary */
 
 #define VKI_SHM_STAT 	13
 #define VKI_SHM_INFO 	14

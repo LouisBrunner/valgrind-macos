@@ -1741,9 +1741,26 @@ ML_(generic_PRE_sys_shmat) ( ThreadId tid,
    UWord tmp;
    Bool  ok;
    if (arg1 == 0) {
+      /* arm-linux only: work around the fact that
+         VG_(am_get_advisory_client_simple) produces something that is
+         VKI_PAGE_SIZE aligned, whereas what we want is something
+         VKI_SHMLBA aligned, and VKI_SHMLBA >= VKI_PAGE_SIZE.  Hence
+         increase the request size by VKI_SHMLBA - VKI_PAGE_SIZE and
+         then round the result up to the next VKI_SHMLBA boundary.
+         See bug 222545 comment 15.  So far, arm-linux is the only
+         platform where this is known to be necessary. */
+      vg_assert(VKI_SHMLBA >= VKI_PAGE_SIZE);
+      if (VKI_SHMLBA > VKI_PAGE_SIZE) {
+         segmentSize += VKI_SHMLBA - VKI_PAGE_SIZE;
+      }
       tmp = VG_(am_get_advisory_client_simple)(0, segmentSize, &ok);
-      if (ok)
-         arg1 = tmp;
+      if (ok) {
+         if (VKI_SHMLBA > VKI_PAGE_SIZE) {
+            arg1 = VG_ROUNDUP(tmp, VKI_SHMLBA);
+         } else {
+            arg1 = tmp;
+         }
+      }
    }
    else if (!ML_(valid_client_addr)(arg1, segmentSize, tid, "shmat"))
       arg1 = 0;

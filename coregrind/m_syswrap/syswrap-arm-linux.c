@@ -831,6 +831,12 @@ PRE(wrap_sys_shmat)
    PRINT("wrap_sys_shmat ( %ld, %#lx, %ld )",ARG1,ARG2,ARG3);
    PRE_REG_READ3(long, "shmat",
                  int, shmid, const void *, shmaddr, int, shmflg);
+   /* Round the attach address down to an VKI_SHMLBA boundary if the
+      client requested rounding.  See #222545.  This is necessary only
+      on arm-linux because VKI_SHMLBA is 4 * VKI_PAGE size; on all
+      other linux targets it is the same as the page size. */
+   if (ARG3 & VKI_SHM_RND)
+      ARG2 = VG_ROUNDDN(ARG2, VKI_SHMLBA);
    arg2tmp = ML_(generic_PRE_sys_shmat)(tid, ARG1,ARG2,ARG3);
    if (arg2tmp == 0)
       SET_STATUS_Failure( VKI_EINVAL );

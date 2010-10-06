@@ -169,6 +169,8 @@ case I chased).
 #include "tests/sys_mman.h"
 #include "tests/malloc.h"       // memalign16
 
+#define STATIC_ASSERT(e) sizeof(struct { int:-!(e); })
+
 /* Something of the same size as void*, so can be safely be coerced
  * to/from a pointer type. Also same size as the host's gp registers.
  * According to the AltiVec section of the GCC manual, the syntax does
@@ -176,16 +178,25 @@ case I chased).
  * with the vector keyword, so typedefs uint[32|64]_t are #undef'ed here
  * and redefined using #define.
  */
-#ifndef __powerpc64__
 #undef uint32_t
+#undef uint64_t
 #define uint32_t unsigned int
+#ifndef __powerpc64__
+#define uint64_t unsigned long long
+#else
+#define uint64_t unsigned long
+#endif /* __powerpc64__ */
+
+#ifndef __powerpc64__
 typedef uint32_t  HWord_t;
 #else
-#undef uint64_t
-#define uint64_t unsigned long
 typedef uint64_t  HWord_t;
-#endif // #ifndef __powerpc64__
+#endif /* __powerpc64__ */
 
+enum {
+    compile_time_test1 = STATIC_ASSERT(sizeof(uint32_t) == 4),
+    compile_time_test2 = STATIC_ASSERT(sizeof(uint64_t) == 8),
+};
 
 #define ALLCR "cr0","cr1","cr2","cr3","cr4","cr5","cr6","cr7"
 

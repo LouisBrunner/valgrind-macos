@@ -3883,7 +3883,7 @@ Bool dis_neon_data_3same ( UInt theInstr, IRTemp condT )
                                    binop(op,
                                          mkexpr(arg_m),
                                          unop(Iop_64to8,
-                                              binop(op_sub,
+                                              binop(op_add,
                                                     mkexpr(arg_n),
                                                     mkexpr(imm_val)))),
                                    binop(Q ? Iop_AndV128 : Iop_And64,
@@ -4125,9 +4125,9 @@ Bool dis_neon_data_3same ( UInt theInstr, IRTemp condT )
                }
             } else {
                switch (size) {
-                  case 0: op = Q ? Iop_Min8Sx16 : Iop_Min8Sx8; break;
-                  case 1: op = Q ? Iop_Min16Sx8 : Iop_Min16Sx4; break;
-                  case 2: op = Q ? Iop_Min32Sx4 : Iop_Min32Sx2; break;
+                  case 0: op = Q ? Iop_Min8Ux16 : Iop_Min8Ux8; break;
+                  case 1: op = Q ? Iop_Min16Ux8 : Iop_Min16Ux4; break;
+                  case 2: op = Q ? Iop_Min32Ux4 : Iop_Min32Ux2; break;
                   case 3: return False;
                   default: vassert(0);
                }
@@ -7286,7 +7286,7 @@ Bool dis_neon_data_2reg_misc ( UInt theInstr, IRTemp condT )
             }
             switch (size) {
                case 0:
-                  op_lo = Q ? Iop_InterleaveLO8x16 : Iop_InterleaveHI8x8;
+                  op_lo = Q ? Iop_InterleaveHI8x16 : Iop_InterleaveHI8x8;
                   op_hi = Q ? Iop_InterleaveLO8x16 : Iop_InterleaveLO8x8;
                   break;
                case 1:

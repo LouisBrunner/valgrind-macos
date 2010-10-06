@@ -1709,11 +1709,18 @@ UInt get_shm_size ( Int shmid )
 #ifdef __NR_shmctl
 #  ifdef VKI_IPC_64
    struct vki_shmid64_ds buf;
-   SysRes __res = VG_(do_syscall3)(__NR_shmctl, shmid, VKI_IPC_STAT, (UWord)&buf);
-#  else
+#    ifdef VGP_amd64_linux
+     /* See bug 222545 comment 7 */
+     SysRes __res = VG_(do_syscall3)(__NR_shmctl, shmid, 
+                                     VKI_IPC_STAT, (UWord)&buf);
+#    else
+     SysRes __res = VG_(do_syscall3)(__NR_shmctl, shmid,
+                                     VKI_IPC_STAT|VKI_IPC_64, (UWord)&buf);
+#    endif
+#  else /* !def VKI_IPC_64 */
    struct vki_shmid_ds buf;
    SysRes __res = VG_(do_syscall3)(__NR_shmctl, shmid, VKI_IPC_STAT, (UWord)&buf);
-#  endif
+#  endif /* def VKI_IPC_64 */
 #else
    struct vki_shmid_ds buf;
    SysRes __res = VG_(do_syscall5)(__NR_ipc, 24 /* IPCOP_shmctl */, shmid,

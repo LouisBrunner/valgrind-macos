@@ -1183,6 +1183,63 @@ typedef
 #define __CALLER_SAVED_REGS /*"rax",*/ "rcx", "rdx", "rsi",       \
                             "rdi", "r8", "r9", "r10", "r11"
 
+/* This is all pretty complex.  It's so as to make stack unwinding
+   work reliably.  See bug 243270.  The basic problem is the sub and
+   add of 128 of %rsp in all of the following macros.  If gcc believes
+   the CFA is in %rsp, then unwinding may fail, because what's at the
+   CFA is not what gcc "expected" when it constructs the CFIs for the
+   places where the macros are instantiated.
+
+   But we can't just add a CFI annotation to increase the CFA offset
+   by 128, to match the sub of 128 from %rsp, because we don't know
+   whether gcc has chosen %rsp as the CFA at that point, or whether it
+   has chosen some other register (eg, %rbp).  In the latter case,
+   adding a CFI annotation to change the CFA offset is simply wrong.
+
+   So the solution is to get hold of the CFA using
+   __builtin_frame_address(0), put it in a known register, and add a
+   CFI annotation to say what the register is.  We choose %rbp for
+   this (perhaps perversely), because:
+
+   (1) %rbp is already subject to unwinding.  If a new register was
+       chosen then the unwinder would have to unwind it in all stack
+       traces, which is expensive, and
+
+   (2) %rbp is already subject to precise exception updates in the
+       JIT.  If a new register was chosen, we'd have to have precise
+       exceptions for it too, which reduces performance of the
+       generated code.
+
+   However .. one extra complication.  We can't just whack the result
+   of __builtin_frame_address(0) into %rbp and then add %rbp to the
+   list of trashed registers at the end of the inline assembly
+   fragments; gcc won't allow %rbp to appear in that list.  Hence
+   instead we need to stash %rbp in %r15 for the duration of the asm,
+   and say that %r15 is trashed instead.  gcc seems happy to go with
+   that.
+
+   Oh .. and this all needs to be conditionalised so that it is
+   unchanged from before this commit, when compiled with older gccs
+   that don't support __builtin_frame_address.
+*/
+#if HAVE_BUILTIN_FRAME_ADDRESS
+#  define __FRAME_POINTER                                         \
+      ,"r"(__builtin_frame_address(0))
+#  define VALGRIND_CFI_PROLOGUE                                   \
+      ".cfi_remember_state\n\t"                                   \
+      "movq %%rbp, %%r15\n\t"                                     \
+      "movq %0, %%rbp\n\t"                                        \
+      ".cfi_def_cfa rbp, 0\n\t"
+#  define VALGRIND_CFI_EPILOGUE                                   \
+      "movq %%r15, %%rbp\n\t"                                     \
+      ".cfi_restore_state\n\t"
+#else
+#  define __FRAME_POINTER
+#  define VALGRIND_CFI_PROLOGUE
+#  define VALGRIND_CFI_EPILOGUE
+#endif
+
+
 /* These CALL_FN_ macros assume that on amd64-linux, sizeof(unsigned
    long) == 8. */
 
@@ -1214,13 +1271,15 @@ typedef
       volatile unsigned long _res;                                \
       _argvec[0] = (unsigned long)_orig.nraddr;                   \
       __asm__ volatile(                                           \
+         VALGRIND_CFI_PROLOGUE                                    \
          "subq $128,%%rsp\n\t"                                    \
          "movq (%%rax), %%rax\n\t"  /* target->%rax */            \
          VALGRIND_CALL_NOREDIR_RAX                                \
          "addq $128,%%rsp\n\t"                                    \
+         VALGRIND_CFI_EPILOGUE                                    \
          : /*out*/   "=a" (_res)                                  \
-         : /*in*/    "a" (&_argvec[0])                            \
-         : /*trash*/ "cc", "memory", __CALLER_SAVED_REGS          \
+         : /*in*/    "a" (&_argvec[0]) __FRAME_POINTER            \
+         : /*trash*/ "cc", "memory", __CALLER_SAVED_REGS, "r15"   \
       );                                                          \
       lval = (__typeof__(lval)) _res;                             \
    } while (0)
@@ -1233,14 +1292,16 @@ typedef
       _argvec[0] = (unsigned long)_orig.nraddr;                   \
       _argvec[1] = (unsigned long)(arg1);                         \
       __asm__ volatile(                                           \
+         VALGRIND_CFI_PROLOGUE                                    \
          "subq $128,%%rsp\n\t"                                    \
          "movq 8(%%rax), %%rdi\n\t"                               \
          "movq (%%rax), %%rax\n\t"  /* target->%rax */            \
          VALGRIND_CALL_NOREDIR_RAX                                \
          "addq $128,%%rsp\n\t"                                    \
+         VALGRIND_CFI_EPILOGUE                                    \
          : /*out*/   "=a" (_res)                                  \
-         : /*in*/    "a" (&_argvec[0])                            \
-         : /*trash*/ "cc", "memory", __CALLER_SAVED_REGS          \
+         : /*in*/    "a" (&_argvec[0]) __FRAME_POINTER            \
+         : /*trash*/ "cc", "memory", __CALLER_SAVED_REGS, "r15"   \
       );                                                          \
       lval = (__typeof__(lval)) _res;                             \
    } while (0)
@@ -1254,15 +1315,17 @@ typedef
       _argvec[1] = (unsigned long)(arg1);                         \
       _argvec[2] = (unsigned long)(arg2);                         \
       __asm__ volatile(                                           \
+         VALGRIND_CFI_PROLOGUE                                    \
          "subq $128,%%rsp\n\t"                                    \
          "movq 16(%%rax), %%rsi\n\t"                              \
          "movq 8(%%rax), %%rdi\n\t"                               \
          "movq (%%rax), %%rax\n\t"  /* target->%rax */            \
          VALGRIND_CALL_NOREDIR_RAX                                \
          "addq $128,%%rsp\n\t"                                    \
+         VALGRIND_CFI_EPILOGUE                                    \
          : /*out*/   "=a" (_res)                                  \
-         : /*in*/    "a" (&_argvec[0])                            \
-         : /*trash*/ "cc", "memory", __CALLER_SAVED_REGS          \
+         : /*in*/    "a" (&_argvec[0]) __FRAME_POINTER            \
+         : /*trash*/ "cc", "memory", __CALLER_SAVED_REGS, "r15"   \
       );                                                          \
       lval = (__typeof__(lval)) _res;                             \
    } while (0)
@@ -1277,6 +1340,7 @@ typedef
       _argvec[2] = (unsigned long)(arg2);                         \
       _argvec[3] = (unsigned long)(arg3);                         \
       __asm__ volatile(                                           \
+         VALGRIND_CFI_PROLOGUE                                    \
          "subq $128,%%rsp\n\t"                                    \
          "movq 24(%%rax), %%rdx\n\t"                              \
          "movq 16(%%rax), %%rsi\n\t"                              \
@@ -1284,9 +1348,10 @@ typedef
          "movq (%%rax), %%rax\n\t"  /* target->%rax */            \
          VALGRIND_CALL_NOREDIR_RAX                                \
          "addq $128,%%rsp\n\t"                                    \
+         VALGRIND_CFI_EPILOGUE                                    \
          : /*out*/   "=a" (_res)                                  \
-         : /*in*/    "a" (&_argvec[0])                            \
-         : /*trash*/ "cc", "memory", __CALLER_SAVED_REGS          \
+         : /*in*/    "a" (&_argvec[0]) __FRAME_POINTER            \
+         : /*trash*/ "cc", "memory", __CALLER_SAVED_REGS, "r15"   \
       );                                                          \
       lval = (__typeof__(lval)) _res;                             \
    } while (0)
@@ -1302,6 +1367,7 @@ typedef
       _argvec[3] = (unsigned long)(arg3);                         \
       _argvec[4] = (unsigned long)(arg4);                         \
       __asm__ volatile(                                           \
+         VALGRIND_CFI_PROLOGUE                                    \
          "subq $128,%%rsp\n\t"                                    \
          "movq 32(%%rax), %%rcx\n\t"                              \
          "movq 24(%%rax), %%rdx\n\t"                              \
@@ -1310,9 +1376,10 @@ typedef
          "movq (%%rax), %%rax\n\t"  /* target->%rax */            \
          VALGRIND_CALL_NOREDIR_RAX                                \
          "addq $128,%%rsp\n\t"                                    \
+         VALGRIND_CFI_EPILOGUE                                    \
          : /*out*/   "=a" (_res)                                  \
-         : /*in*/    "a" (&_argvec[0])                            \
-         : /*trash*/ "cc", "memory", __CALLER_SAVED_REGS          \
+         : /*in*/    "a" (&_argvec[0]) __FRAME_POINTER            \
+         : /*trash*/ "cc", "memory", __CALLER_SAVED_REGS, "r15"   \
       );                                                          \
       lval = (__typeof__(lval)) _res;                             \
    } while (0)
@@ -1329,6 +1396,7 @@ typedef
       _argvec[4] = (unsigned long)(arg4);                         \
       _argvec[5] = (unsigned long)(arg5);                         \
       __asm__ volatile(                                           \
+         VALGRIND_CFI_PROLOGUE                                    \
          "subq $128,%%rsp\n\t"                                    \
          "movq 40(%%rax), %%r8\n\t"                               \
          "movq 32(%%rax), %%rcx\n\t"                              \
@@ -1338,9 +1406,10 @@ typedef
          "movq (%%rax), %%rax\n\t"  /* target->%rax */            \
          VALGRIND_CALL_NOREDIR_RAX                                \
          "addq $128,%%rsp\n\t"                                    \
+         VALGRIND_CFI_EPILOGUE                                    \
          : /*out*/   "=a" (_res)                                  \
-         : /*in*/    "a" (&_argvec[0])                            \
-         : /*trash*/ "cc", "memory", __CALLER_SAVED_REGS          \
+         : /*in*/    "a" (&_argvec[0]) __FRAME_POINTER            \
+         : /*trash*/ "cc", "memory", __CALLER_SAVED_REGS, "r15"   \
       );                                                          \
       lval = (__typeof__(lval)) _res;                             \
    } while (0)
@@ -1358,6 +1427,7 @@ typedef
       _argvec[5] = (unsigned long)(arg5);                         \
       _argvec[6] = (unsigned long)(arg6);                         \
       __asm__ volatile(                                           \
+         VALGRIND_CFI_PROLOGUE                                    \
          "subq $128,%%rsp\n\t"                                    \
          "movq 48(%%rax), %%r9\n\t"                               \
          "movq 40(%%rax), %%r8\n\t"                               \
@@ -1368,9 +1438,10 @@ typedef
          "movq (%%rax), %%rax\n\t"  /* target->%rax */            \
          VALGRIND_CALL_NOREDIR_RAX                                \
          "addq $128,%%rsp\n\t"                                    \
+         VALGRIND_CFI_EPILOGUE                                    \
          : /*out*/   "=a" (_res)                                  \
-         : /*in*/    "a" (&_argvec[0])                            \
-         : /*trash*/ "cc", "memory", __CALLER_SAVED_REGS          \
+         : /*in*/    "a" (&_argvec[0]) __FRAME_POINTER            \
+         : /*trash*/ "cc", "memory", __CALLER_SAVED_REGS, "r15"   \
       );                                                          \
       lval = (__typeof__(lval)) _res;                             \
    } while (0)
@@ -1390,6 +1461,7 @@ typedef
       _argvec[6] = (unsigned long)(arg6);                         \
       _argvec[7] = (unsigned long)(arg7);                         \
       __asm__ volatile(                                           \
+         VALGRIND_CFI_PROLOGUE                                    \
          "subq $128,%%rsp\n\t"                                    \
          "pushq 56(%%rax)\n\t"                                    \
          "movq 48(%%rax), %%r9\n\t"                               \
@@ -1402,9 +1474,10 @@ typedef
          VALGRIND_CALL_NOREDIR_RAX                                \
          "addq $8, %%rsp\n"                                       \
          "addq $128,%%rsp\n\t"                                    \
+         VALGRIND_CFI_EPILOGUE                                    \
          : /*out*/   "=a" (_res)                                  \
-         : /*in*/    "a" (&_argvec[0])                            \
-         : /*trash*/ "cc", "memory", __CALLER_SAVED_REGS          \
+         : /*in*/    "a" (&_argvec[0]) __FRAME_POINTER            \
+         : /*trash*/ "cc", "memory", __CALLER_SAVED_REGS, "r15"   \
       );                                                          \
       lval = (__typeof__(lval)) _res;                             \
    } while (0)
@@ -1425,6 +1498,7 @@ typedef
       _argvec[7] = (unsigned long)(arg7);                         \
       _argvec[8] = (unsigned long)(arg8);                         \
       __asm__ volatile(                                           \
+         VALGRIND_CFI_PROLOGUE                                    \
          "subq $128,%%rsp\n\t"                                    \
          "pushq 64(%%rax)\n\t"                                    \
          "pushq 56(%%rax)\n\t"                                    \
@@ -1438,9 +1512,10 @@ typedef
          VALGRIND_CALL_NOREDIR_RAX                                \
          "addq $16, %%rsp\n"                                      \
          "addq $128,%%rsp\n\t"                                    \
+         VALGRIND_CFI_EPILOGUE                                    \
          : /*out*/   "=a" (_res)                                  \
-         : /*in*/    "a" (&_argvec[0])                            \
-         : /*trash*/ "cc", "memory", __CALLER_SAVED_REGS          \
+         : /*in*/    "a" (&_argvec[0]) __FRAME_POINTER            \
+         : /*trash*/ "cc", "memory", __CALLER_SAVED_REGS, "r15"   \
       );                                                          \
       lval = (__typeof__(lval)) _res;                             \
    } while (0)
@@ -1462,6 +1537,7 @@ typedef
       _argvec[8] = (unsigned long)(arg8);                         \
       _argvec[9] = (unsigned long)(arg9);                         \
       __asm__ volatile(                                           \
+         VALGRIND_CFI_PROLOGUE                                    \
          "subq $128,%%rsp\n\t"                                    \
          "pushq 72(%%rax)\n\t"                                    \
          "pushq 64(%%rax)\n\t"                                    \
@@ -1476,9 +1552,10 @@ typedef
          VALGRIND_CALL_NOREDIR_RAX                                \
          "addq $24, %%rsp\n"                                      \
          "addq $128,%%rsp\n\t"                                    \
+         VALGRIND_CFI_EPILOGUE                                    \
          : /*out*/   "=a" (_res)                                  \
-         : /*in*/    "a" (&_argvec[0])                            \
-         : /*trash*/ "cc", "memory", __CALLER_SAVED_REGS          \
+         : /*in*/    "a" (&_argvec[0]) __FRAME_POINTER            \
+         : /*trash*/ "cc", "memory", __CALLER_SAVED_REGS, "r15"   \
       );                                                          \
       lval = (__typeof__(lval)) _res;                             \
    } while (0)
@@ -1501,6 +1578,7 @@ typedef
       _argvec[9] = (unsigned long)(arg9);                         \
       _argvec[10] = (unsigned long)(arg10);                       \
       __asm__ volatile(                                           \
+         VALGRIND_CFI_PROLOGUE                                    \
          "subq $128,%%rsp\n\t"                                    \
          "pushq 80(%%rax)\n\t"                                    \
          "pushq 72(%%rax)\n\t"                                    \
@@ -1516,9 +1594,10 @@ typedef
          VALGRIND_CALL_NOREDIR_RAX                                \
          "addq $32, %%rsp\n"                                      \
          "addq $128,%%rsp\n\t"                                    \
+         VALGRIND_CFI_EPILOGUE                                    \
          : /*out*/   "=a" (_res)                                  \
-         : /*in*/    "a" (&_argvec[0])                            \
-         : /*trash*/ "cc", "memory", __CALLER_SAVED_REGS          \
+         : /*in*/    "a" (&_argvec[0]) __FRAME_POINTER            \
+         : /*trash*/ "cc", "memory", __CALLER_SAVED_REGS, "r15"   \
       );                                                          \
       lval = (__typeof__(lval)) _res;                             \
    } while (0)
@@ -1542,6 +1621,7 @@ typedef
       _argvec[10] = (unsigned long)(arg10);                       \
       _argvec[11] = (unsigned long)(arg11);                       \
       __asm__ volatile(                                           \
+         VALGRIND_CFI_PROLOGUE                                    \
          "subq $128,%%rsp\n\t"                                    \
          "pushq 88(%%rax)\n\t"                                    \
          "pushq 80(%%rax)\n\t"                                    \
@@ -1558,9 +1638,10 @@ typedef
          VALGRIND_CALL_NOREDIR_RAX                                \
          "addq $40, %%rsp\n"                                      \
          "addq $128,%%rsp\n\t"                                    \
+         VALGRIND_CFI_EPILOGUE                                    \
          : /*out*/   "=a" (_res)                                  \
-         : /*in*/    "a" (&_argvec[0])                            \
-         : /*trash*/ "cc", "memory", __CALLER_SAVED_REGS          \
+         : /*in*/    "a" (&_argvec[0]) __FRAME_POINTER            \
+         : /*trash*/ "cc", "memory", __CALLER_SAVED_REGS, "r15"   \
       );                                                          \
       lval = (__typeof__(lval)) _res;                             \
    } while (0)
@@ -1585,6 +1666,7 @@ typedef
       _argvec[11] = (unsigned long)(arg11);                       \
       _argvec[12] = (unsigned long)(arg12);                       \
       __asm__ volatile(                                           \
+         VALGRIND_CFI_PROLOGUE                                    \
          "subq $128,%%rsp\n\t"                                    \
          "pushq 96(%%rax)\n\t"                                    \
          "pushq 88(%%rax)\n\t"                                    \
@@ -1602,9 +1684,10 @@ typedef
          VALGRIND_CALL_NOREDIR_RAX                                \
          "addq $48, %%rsp\n"                                      \
          "addq $128,%%rsp\n\t"                                    \
+         VALGRIND_CFI_EPILOGUE                                    \
          : /*out*/   "=a" (_res)                                  \
-         : /*in*/    "a" (&_argvec[0])                            \
-         : /*trash*/ "cc", "memory", __CALLER_SAVED_REGS          \
+         : /*in*/    "a" (&_argvec[0]) __FRAME_POINTER            \
+         : /*trash*/ "cc", "memory", __CALLER_SAVED_REGS, "r15"   \
       );                                                          \
       lval = (__typeof__(lval)) _res;                             \
    } while (0)

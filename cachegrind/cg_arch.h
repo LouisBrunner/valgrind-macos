@@ -33,14 +33,14 @@
 
 // For cache simulation
 typedef struct {
-   int size;       // bytes
-   int assoc;
-   int line_size;  // bytes
+   Int size;       // bytes
+   Int assoc;
+   Int line_size;  // bytes
 } cache_t;
 
-// Gives the configuration of I1, D1 and L2 caches.  They get overridden
+// Gives the configuration of I1, D1 and LL caches.  They get overridden
 // by any cache configurations specified on the command line.
-void VG_(configure_caches)(cache_t* I1c, cache_t* D1c, cache_t* L2c,
+void VG_(configure_caches)(cache_t* I1c, cache_t* D1c, cache_t* LLc,
                            Bool all_caches_clo_defined);
 
 #endif   // __CG_ARCH_H

@@ -16,6 +16,20 @@ Improvements:
   --threshold option has changed; this is unlikely to affect many people, if
   you do use it please see the user manual for details.
 
+- Callgrind now can do branch prediction simulation, similar to Cachegrind.
+  In addition, it optionally can count the number of executed global bus events.
+  Both can be used for a better approximation of a "Cycle Estimation" as
+  derived event (you need to update the event formula in KCachegrind yourself).
+
+- Cachegrind and Callgrind now refer to the LL (last-level) cache rather
+  than the L2 cache.  This is to accommodate machines with three levels of
+  caches -- if Cachegrind/Callgrind auto-detects the cache configuration of
+  such a machine it will run the simulation as if the L2 cache isn't
+  present.  This means the results are less likely to match the true result
+  for the machine, but Cachegrind/Callgrind's results are already only
+  approximate, and should not be considered authoritative.  The results are
+  still useful for giving a general idea about a program's locality.
+
 - Massif has a new option, --pages-as-heap, which is disabled by default.
   When enabled, instead of tracking allocations at the level of heap blocks
   (as allocated with malloc/new/new[]), it instead tracks memory allocations
@@ -23,11 +37,6 @@ Improvements:
   page is treated as its own block.  Interpreting the page-level output is
   harder than the heap-level output, but this option is useful if you want
   to account for every byte of memory used by a program.
-
-- Callgrind now can do branch prediction simulation, similar to Cachegrind.
-  In addition, it optionally can count the number of executed global bus events.
-  Both can be used for a better approximation of a "Cycle Estimation" as
-  derived event (you need to update the event formula in KCachegrind yourself).
 
 - Added new memcheck command-line option --show-possibly-lost.
 

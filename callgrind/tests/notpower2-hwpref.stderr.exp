@@ -1,20 +1,20 @@
 
 
-Events    : Ir Dr Dw I1mr D1mr D1mw I2mr D2mr D2mw
+Events    : Ir Dr Dw I1mr D1mr D1mw ILmr DLmr DLmw
 Collected :
 
 I   refs:
 I1  misses:
-L2i misses:
+LLi misses:
 I1  miss rate:
-L2i miss rate:
+LLi miss rate:
 
 D   refs:
 D1  misses:
-L2d misses:
+LLd misses:
 D1  miss rate:
-L2d miss rate:
+LLd miss rate:
 
-L2 refs:
-L2 misses:
-L2 miss rate:
+LL refs:
+LL misses:
+LL miss rate:

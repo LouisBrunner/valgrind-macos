@@ -37,13 +37,13 @@
 
 #include "cg_arch.h"
 
-void VG_(configure_caches)(cache_t* I1c, cache_t* D1c, cache_t* L2c,
+void VG_(configure_caches)(cache_t* I1c, cache_t* D1c, cache_t* LLc,
                            Bool all_caches_clo_defined)
 {
    // Set caches to default (for Cortex-A8 ?)
    *I1c = (cache_t) {  16384, 4, 64 };
    *D1c = (cache_t) {  16384, 4, 64 };
-   *L2c = (cache_t) { 262144, 8, 64 };
+   *LLc = (cache_t) { 262144, 8, 64 };
 
    if (!all_caches_clo_defined) {
       VG_(message)(Vg_DebugMsg, 

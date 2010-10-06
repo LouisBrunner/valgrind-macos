@@ -13,11 +13,11 @@ sed "/^For interactive control,.*$/d" |
 # Remove numbers from "Collected" line
 sed "s/^\(Collected *:\)[ 0-9]*$/\1/" |
 
-# Remove numbers from I/D/L2 "refs:" lines
-perl -p -e 's/((I|D|L2) *refs:)[ 0-9,()+rdw]*$/\1/'  |
+# Remove numbers from I/D/LL "refs:" lines
+perl -p -e 's/((I|D|LL) *refs:)[ 0-9,()+rdw]*$/\1/'  |
 
-# Remove numbers from I1/D1/L2/L2i/L2d "misses:" and "miss rates:" lines
-perl -p -e 's/((I1|D1|L2|L2i|L2d) *(misses|miss rate):)[ 0-9,()+rdw%\.]*$/\1/' |
+# Remove numbers from I1/D1/LL/LLi/LLd "misses:" and "miss rates:" lines
+perl -p -e 's/((I1|D1|LL|LLi|LLd) *(misses|miss rate):)[ 0-9,()+rdw%\.]*$/\1/' |
 
 # Remove numbers from "Branches:", "Mispredicts:, and "Mispred rate:" lines
 perl -p -e 's/((Branches|Mispredicts|Mispred rate):)[ 0-9,()+condi%\.]*$/\1/' |

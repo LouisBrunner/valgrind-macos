@@ -414,7 +414,7 @@ for "Ir and "Dr".</para>
     <para>This specifies various information for this dump.  For some 
     types, the semantic is defined, but any description type is allowed. 
     Unknown types should be ignored.</para>
-    <para>There are the types "I1 cache", "D1 cache", "L2 cache", which 
+    <para>There are the types "I1 cache", "D1 cache", "LL cache", which 
     specify parameters used for the cache simulator.  These are the only
     types originally used by Cachegrind.  Additionally, Callgrind uses 
     the following types:  "Timerange" gives a rough range of the basic
@@ -457,7 +457,7 @@ for "Ir and "Dr".</para>
           <para><command>I1mr</command>: Instruction Level 1 read cache miss</para>
         </listitem>
         <listitem>
-          <para><command>I2mr</command>: Instruction Level 2 read cache miss</para>
+          <para><command>ILmr</command>: Instruction last-level read cache miss</para>
         </listitem>
         <listitem>
           <para>...</para>

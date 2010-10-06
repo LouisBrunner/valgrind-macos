@@ -16,33 +16,45 @@ Valgrind command line.</para>
 
 <para>Cachegrind simulates how your program interacts with a machine's cache
 hierarchy and (optionally) branch predictor.  It simulates a machine with
-independent first level instruction and data caches (I1 and D1), backed by a
-unified second level cache (L2).  This configuration is used by almost all
-modern machines.</para>
+independent first-level instruction and data caches (I1 and D1), backed by a
+unified second-level cache (L2).  This exactly matches the configuration of
+many modern machines.</para>
+
+<para>However, some modern machines have three levels of cache.  For these
+machines (in the cases where Cachegrind can auto-detect the cache
+configuration) Cachegrind simulates the first-level and third-level caches.
+The reason for this choice is that the L3 cache has the most influence on
+runtime, as it masks accesses to main memory.  Furthermore, the L1 caches
+often have low associativity, so simulating them can detect cases where the
+code interacts badly with this cache (eg. traversing a matrix column-wise
+with the row length being a power of 2).</para>
+
+<para>Therefore, Cachegrind always refers to the I1, D1 and LL (last-level)
+caches.</para>
 
 <para>
-It gathers the following statistics (abbreviations used for each statistic
+Cachegrind gathers the following statistics (abbreviations used for each statistic
 is given in parentheses):</para>
 <itemizedlist>
   <listitem>
     <para>I cache reads (<computeroutput>Ir</computeroutput>,
     which equals the number of instructions executed),
     I1 cache read misses (<computeroutput>I1mr</computeroutput>) and
-    L2 cache instruction read misses (<computeroutput>I1mr</computeroutput>).
+    LL cache instruction read misses (<computeroutput>ILmr</computeroutput>).
     </para>
   </listitem>
   <listitem>
     <para>D cache reads (<computeroutput>Dr</computeroutput>, which
     equals the number of memory reads),
     D1 cache read misses (<computeroutput>D1mr</computeroutput>), and
-    L2 cache data read misses (<computeroutput>D2mr</computeroutput>).
+    LL cache data read misses (<computeroutput>DLmr</computeroutput>).
     </para>
   </listitem>
   <listitem>
     <para>D cache writes (<computeroutput>Dw</computeroutput>, which equals
     the number of memory writes),
     D1 cache write misses (<computeroutput>D1mw</computeroutput>), and
-    L2 cache data write misses (<computeroutput>D2mw</computeroutput>).
+    LL cache data write misses (<computeroutput>DLmw</computeroutput>).
     </para>
   </listitem>
   <listitem>
@@ -59,10 +71,10 @@ is given in parentheses):</para>
 
 <para>Note that D1 total accesses is given by
 <computeroutput>D1mr</computeroutput> +
-<computeroutput>D1mw</computeroutput>, and that L2 total
-accesses is given by <computeroutput>I2mr</computeroutput> +
-<computeroutput>D2mr</computeroutput> +
-<computeroutput>D2mw</computeroutput>.
+<computeroutput>D1mw</computeroutput>, and that LL total
+accesses is given by <computeroutput>ILmr</computeroutput> +
+<computeroutput>DLmr</computeroutput> +
+<computeroutput>DLmw</computeroutput>.
 </para>
 
 <para>These statistics are presented for the entire program and for each
@@ -70,7 +82,7 @@ function in the program.  You can also annotate each line of source code in
 the program with the counts that were caused directly by it.</para>
 
 <para>On a modern machine, an L1 miss will typically cost
-around 10 cycles, an L2 miss can cost as much as 200
+around 10 cycles, an LL miss can cost as much as 200
 cycles, and a mispredicted branch costs in the region of 10
 to 30 cycles.  Detailed cache and branch profiling can be very useful
 for understanding how your program interacts with the machine and thus how
@@ -118,24 +130,24 @@ summary statistics that look like this will be printed:</para>
 <programlisting><![CDATA[
 ==31751== I   refs:      27,742,716
 ==31751== I1  misses:           276
-==31751== L2i misses:           275
+==31751== LLi misses:           275
 ==31751== I1  miss rate:        0.0%
-==31751== L2i miss rate:        0.0%
+==31751== LLi miss rate:        0.0%
 ==31751== 
 ==31751== D   refs:      15,430,290  (10,955,517 rd + 4,474,773 wr)
 ==31751== D1  misses:        41,185  (    21,905 rd +    19,280 wr)
-==31751== L2d misses:        23,085  (     3,987 rd +    19,098 wr)
+==31751== LLd misses:        23,085  (     3,987 rd +    19,098 wr)
 ==31751== D1  miss rate:        0.2% (       0.1%   +       0.4%)
-==31751== L2d miss rate:        0.1% (       0.0%   +       0.4%)
+==31751== LLd miss rate:        0.1% (       0.0%   +       0.4%)
 ==31751== 
-==31751== L2 misses:         23,360  (     4,262 rd +    19,098 wr)
-==31751== L2 miss rate:         0.0% (       0.0%   +       0.4%)]]></programlisting>
+==31751== LL misses:         23,360  (     4,262 rd +    19,098 wr)
+==31751== LL miss rate:         0.0% (       0.0%   +       0.4%)]]></programlisting>
 
 <para>Cache accesses for instruction fetches are summarised
 first, giving the number of fetches made (this is the number of
 instructions executed, which can be useful to know in its own
-right), the number of I1 misses, and the number of L2 instruction
-(<computeroutput>L2i</computeroutput>) misses.</para>
+right), the number of I1 misses, and the number of LL instruction
+(<computeroutput>LLi</computeroutput>) misses.</para>
 
 <para>Cache accesses for data follow. The information is similar
 to that of the instruction fetches, except that the values are
@@ -144,12 +156,12 @@ also shown split between reads and writes (note each row's
 <computeroutput>wr</computeroutput> values add up to the row's
 total).</para>
 
-<para>Combined instruction and data figures for the L2 cache
-follow that.  Note that the L2 miss rate is computed relative to the total
+<para>Combined instruction and data figures for the LL cache
+follow that.  Note that the LL miss rate is computed relative to the total
 number of memory accesses, not the number of L1 misses.  I.e.  it is
-<computeroutput>(I2mr + D2mr + D2mw) / (Ir + Dr + Dw)</computeroutput>
+<computeroutput>(ILmr + DLmr + DLmw) / (Ir + Dr + Dw)</computeroutput>
 not
-<computeroutput>(I2mr + D2mr + D2mw) / (I1mr + D1mr + D1mw)</computeroutput>
+<computeroutput>(ILmr + DLmr + DLmw) / (I1mr + D1mr + D1mw)</computeroutput>
 </para>
 
 <para>Branch prediction statistics are not collected by default.
@@ -208,11 +220,11 @@ wide if possible, as the output lines can be quite long.</para>
 --------------------------------------------------------------------------------
 I1 cache:              65536 B, 64 B, 2-way associative
 D1 cache:              65536 B, 64 B, 2-way associative
-L2 cache:              262144 B, 64 B, 8-way associative
+LL cache:              262144 B, 64 B, 8-way associative
 Command:               concord vg_to_ucode.c
-Events recorded:       Ir I1mr I2mr Dr D1mr D2mr Dw D1mw D2mw
-Events shown:          Ir I1mr I2mr Dr D1mr D2mr Dw D1mw D2mw
-Event sort order:      Ir I1mr I2mr Dr D1mr D2mr Dw D1mw D2mw
+Events recorded:       Ir I1mr ILmr Dr D1mr DLmr Dw D1mw DLmw
+Events shown:          Ir I1mr ILmr Dr D1mr DLmr Dw D1mw DLmw
+Event sort order:      Ir I1mr ILmr Dr D1mr DLmr Dw D1mw DLmw
 Threshold:             99%
 Chosen for annotation:
 Auto-annotation:       off
@@ -224,7 +236,7 @@ Auto-annotation:       off
 <itemizedlist>
 
   <listitem>
-    <para>I1 cache, D1 cache, L2 cache: cache configuration.  So
+    <para>I1 cache, D1 cache, LL cache: cache configuration.  So
     you know the configuration with which these results were
     obtained.</para>
   </listitem>
@@ -300,7 +312,7 @@ program:</para>
   
 <programlisting><![CDATA[
 --------------------------------------------------------------------------------
-Ir         I1mr I2mr Dr         D1mr   D2mr  Dw        D1mw   D2mw
+Ir         I1mr ILmr Dr         D1mr   DLmr  Dw        D1mw   DLmw
 --------------------------------------------------------------------------------
 27,742,716  276  275 10,955,517 21,905 3,987 4,474,773 19,280 19,098  PROGRAM TOTALS]]></programlisting>
 
@@ -312,7 +324,7 @@ These are similar to the summary provided when Cachegrind finishes running.
 
 <programlisting><![CDATA[
 --------------------------------------------------------------------------------
-Ir        I1mr I2mr Dr        D1mr  D2mr  Dw        D1mw   D2mw    file:function
+Ir        I1mr ILmr Dr        D1mr  DLmr  Dw        D1mw   DLmw    file:function
 --------------------------------------------------------------------------------
 8,821,482    5    5 2,242,702 1,621    73 1,794,230      0      0  getc.c:_IO_getc
 5,222,023    4    4 2,276,334    16    12   875,959      1      1  concord.c:get_word
@@ -367,7 +379,7 @@ produces the same output as above followed by an annotated version of
 --------------------------------------------------------------------------------
 -- User-annotated source: concord.c
 --------------------------------------------------------------------------------
-Ir        I1mr I2mr Dr      D1mr  D2mr  Dw      D1mw   D2mw
+Ir        I1mr ILmr Dr      D1mr  DLmr  Dw      D1mw   DLmw
 
         .    .    .       .     .     .       .      .      .  void init_hash_table(char *file_name, Word_Node *table[])
         3    1    1       .     .     .       1      0      0  {
@@ -687,7 +699,7 @@ programs.  It does however check that the
 <computeroutput>Events:</computeroutput> lines of all the inputs are
 identical, so as to ensure that the addition of costs makes sense.
 For example, it would be nonsensical for it to add a number indicating
-D1 read references to a number from a different file indicating L2
+D1 read references to a number from a different file indicating LL
 write misses.</para>
 
 <para>
@@ -746,7 +758,7 @@ programs.  It does however check that the
 <computeroutput>Events:</computeroutput> lines of all the inputs are
 identical, so as to ensure that the addition of costs makes sense.
 For example, it would be nonsensical for it to add a number indicating
-D1 read references to a number from a different file indicating L2
+D1 read references to a number from a different file indicating LL
 write misses.</para>
 
 <para>
@@ -810,12 +822,12 @@ this case.</para>
     </listitem>
   </varlistentry>
 
-  <varlistentry id="opt.L2" xreflabel="--L2">
+  <varlistentry id="opt.LL" xreflabel="--LL">
     <term>
-      <option><![CDATA[--L2=<size>,<associativity>,<line size> ]]></option>
+      <option><![CDATA[--LL=<size>,<associativity>,<line size> ]]></option>
     </term>
     <listitem>
-      <para>Specify the size, associativity and line size of the level 2
+      <para>Specify the size, associativity and line size of the last-level
       cache.</para>
     </listitem>
   </varlistentry>
@@ -903,9 +915,9 @@ this case.</para>
       order). Default is to use all present in the
       <filename>cachegrind.out.&lt;pid&gt;</filename> file (and
       use the order in the file).  Useful if you want to concentrate on, for
-      example, I cache misses (<option>--show=I1mr,I2mr</option>), or data
-      read misses (<option>--show=D1mr,D2mr</option>), or L2 data misses
-      (<option>--show=D2mr,D2mw</option>).  Best used in conjunction with
+      example, I cache misses (<option>--show=I1mr,ILmr</option>), or data
+      read misses (<option>--show=D1mr,DLmr</option>), or LL data misses
+      (<option>--show=DLmr,DLmw</option>).  Best used in conjunction with
       <option>--sort</option>.</para>
     </listitem>
   </varlistentry>
@@ -935,9 +947,9 @@ this case.</para>
       events by appending any events for the
       <option>--sort</option> option with a colon
       and a number (no spaces, though).  E.g. if you want to see
-      each function that covers more than 1% of L2 read misses or 1% of L2
+      each function that covers more than 1% of LL read misses or 1% of LL
       write misses, use this option:</para>
-      <para><option>--sort=D2mr:1,D2mw:1</option></para>
+      <para><option>--sort=DLmr:1,DLmw:1</option></para>
     </listitem>
   </varlistentry>
 
@@ -1059,13 +1071,13 @@ information, but they can still be very useful for identifying
 bottlenecks.</para>
 
 <para>
-After that, we have found that L2 misses are typically a much bigger source
+After that, we have found that LL misses are typically a much bigger source
 of slow-downs than L1 misses.  So it's worth looking for any snippets of
-code with high <computeroutput>D2mr</computeroutput> or
-<computeroutput>D2mw</computeroutput> counts.  (You can use
-<option>--show=D2mr
---sort=D2mr</option> with cg_annotate to focus just on
-<literal>D2mr</literal> counts, for example.) If you find any, it's still
+code with high <computeroutput>DLmr</computeroutput> or
+<computeroutput>DLmw</computeroutput> counts.  (You can use
+<option>--show=DLmr
+--sort=DLmr</option> with cg_annotate to focus just on
+<literal>DLmr</literal> counts, for example.) If you find any, it's still
 not always easy to work out how to improve things.  You need to have a
 reasonable understanding of how caches work, the principles of locality, and
 your program's data access patterns.  Improving things may require
@@ -1153,12 +1165,12 @@ follows:</para>
   </listitem>
 
   <listitem>
-    <para>Inclusive L2 cache: the L2 cache typically replicates all
+    <para>Inclusive LL cache: the LL cache typically replicates all
     the entries of the L1 caches, because fetching into L1 involves
-    fetching into L2 first (this does not guarantee strict inclusiveness,
-    as lines evicted from L2 still could reside in L1).  This is
+    fetching into LL first (this does not guarantee strict inclusiveness,
+    as lines evicted from LL still could reside in L1).  This is
     standard on Pentium chips, but AMD Opterons, Athlons and Durons
-    use an exclusive L2 cache that only holds
+    use an exclusive LL cache that only holds
     blocks evicted from L1.  Ditto most modern VIA CPUs.</para>
   </listitem>
 
@@ -1172,10 +1184,10 @@ early incarnation that doesn't give any cache information, then
 Cachegrind will fall back to using a default configuration (that
 of a model 3/4 Athlon).  Cachegrind will tell you if this
 happens.  You can manually specify one, two or all three levels
-(I1/D1/L2) of the cache from the command line using the
+(I1/D1/LL) of the cache from the command line using the
 <option>--I1</option>,
 <option>--D1</option> and
-<option>--L2</option> options.
+<option>--LL</option> options.
 For cache parameters to be valid for simulation, the number
 of sets (with associativity being the number of cache lines in
 each set) has to be a power of two.</para>
@@ -1186,7 +1198,7 @@ determine the cache configuration, so you will
 need to specify it with the
 <option>--I1</option>,
 <option>--D1</option> and
-<option>--L2</option> options.</para>
+<option>--LL</option> options.</para>
 
 
 <para>Other noteworthy behaviour:</para>

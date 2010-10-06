@@ -1,3 +1,3 @@
 prog: ../../tests/true
-vgopts: --I1=32768,8,64 --D1=24576,6,64 --L2=3145728,12,64
+vgopts: --I1=32768,8,64 --D1=24576,6,64 --LL=3145728,12,64
 cleanup: rm cachegrind.out.*

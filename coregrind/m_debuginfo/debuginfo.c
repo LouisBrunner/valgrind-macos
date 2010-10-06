@@ -727,7 +727,7 @@ ULong VG_(di_notify_mmap)( Addr a, Bool allow_SkFileV )
    /* Peer at the first few bytes of the file, to see if it is an ELF */
    /* object file. Ignore the file if we do not have read permission. */
    VG_(memset)(buf1k, 0, sizeof(buf1k));
-   fd = VG_(open)( filename, VKI_O_RDONLY, 0 );
+   fd = VG_(open)( filename, VKI_O_RDONLY|VKI_O_LARGEFILE, 0 );
    if (sr_isError(fd)) {
       if (sr_Err(fd) != VKI_EACCES) {
          DebugInfo fake_di;

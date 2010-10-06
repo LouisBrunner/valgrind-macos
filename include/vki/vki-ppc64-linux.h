@@ -70,6 +70,12 @@ extern unsigned long VKI_PAGE_SIZE;
 #define VKI_MAX_PAGE_SIZE	(1UL << VKI_MAX_PAGE_SHIFT)
 
 //----------------------------------------------------------------------
+// From linux-2.6.35.4/arch/powerpc/include/asm/shmparam.h
+//----------------------------------------------------------------------
+
+#define VKI_SHMLBA  VKI_PAGE_SIZE
+
+//----------------------------------------------------------------------
 // From linux-2.6.13/include/asm-ppc64/signal.h
 //----------------------------------------------------------------------
 

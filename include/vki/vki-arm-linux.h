@@ -64,6 +64,12 @@ typedef unsigned int vki_u32;
 #define VKI_MAX_PAGE_SIZE	VKI_PAGE_SIZE
 
 //----------------------------------------------------------------------
+// From linux-2.6.35.4/arch/arm/include/asm/shmparam.h
+//----------------------------------------------------------------------
+
+#define VKI_SHMLBA  (4 * VKI_PAGE_SIZE)
+
+//----------------------------------------------------------------------
 // From linux-2.6.8.1/include/asm-i386/signal.h
 //----------------------------------------------------------------------
 
@@ -730,9 +736,6 @@ struct vki_ipc_kludge {
 #define VKI_SHMDT		22
 #define VKI_SHMGET		23
 #define VKI_SHMCTL		24
-
-#define VKI_SHMLBA  (4 * VKI_PAGE_SIZE)
-
 
 //----------------------------------------------------------------------
 // From linux-2.6.8.1/include/asm-i386/shmbuf.h

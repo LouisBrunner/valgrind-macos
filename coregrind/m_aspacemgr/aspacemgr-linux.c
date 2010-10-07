@@ -3413,10 +3413,11 @@ static void parse_procselfmaps (
       (*record_gap)(last, (Addr)-1 - last);
 }
 
-Bool        css_overflowed;
-ChangedSeg* css_local;
-Int         css_size_local;
-Int         css_used_local;
+// Urr.  So much for thread safety.
+static Bool        css_overflowed;
+static ChangedSeg* css_local;
+static Int         css_size_local;
+static Int         css_used_local;
 
 static void add_mapping_callback(Addr addr, SizeT len, UInt prot, 
                                  ULong dev, ULong ino, Off64T offset, 

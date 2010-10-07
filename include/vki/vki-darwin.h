@@ -706,6 +706,7 @@ typedef
 
 #define VKI_SHM_RDONLY	SHM_RDONLY
 #define VKI_SHM_RND	SHM_RND
+#define VKI_SHMLBA	SHMLBA
 
 #define vki_shmid_ds shmid_ds
 

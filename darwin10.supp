@@ -5,6 +5,14 @@
 # Memcheck
 ##----------------------------------------------------------------------##
 
+# afaict this is legit.  Might be caused by setenv("VAR=")
+# where the value string is empty (not sure)
+{
+   macos-Cond-7
+   Memcheck:Cond
+   fun:__setenv
+}
+
 # From Jesse Ruderman.
 {
    Mac OS X 10.6.4. rdar://8145289. "new[]" paired with "delete" in the DesktopServicesPriv framework.
@@ -19,4 +27,11 @@
    Memcheck:Cond
    fun:_ZN13HIMenuBarView31SetAdjustTextTitleBoundsAtIndexEih
    fun:_ZN13HIMenuBarView15MeasureAppMenusEv
- }
+}
+
+{
+   TFontFeatures::TFontFeatures(CGFont*) (in CoreText.framework)
+   Memcheck:Cond
+   fun:_ZN13TFontFeaturesC2EP6CGFont
+   fun:_ZNK9TBaseFont12CopyFeaturesEv
+}

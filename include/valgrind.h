@@ -204,7 +204,7 @@
 
 /* ------------------------- x86-{linux,darwin} ---------------- */
 
-#if defined(PLAT_x86_linux)  ||  defined(PLAT_x86_darwin)  
+#if defined(PLAT_x86_linux)  ||  defined(PLAT_x86_darwin)  \
     ||  (defined(PLAT_x86_win32) && defined(__GNUC__))
 
 typedef

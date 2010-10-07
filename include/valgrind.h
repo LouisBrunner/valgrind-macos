@@ -204,7 +204,8 @@
 
 /* ------------------------- x86-{linux,darwin} ---------------- */
 
-#if defined(PLAT_x86_linux)  ||  defined(PLAT_x86_darwin)  ||  defined(PLAT_x86_win32) && defined(__GNUC__)
+#if defined(PLAT_x86_linux)  ||  defined(PLAT_x86_darwin)  
+    ||  (defined(PLAT_x86_win32) && defined(__GNUC__))
 
 typedef
    struct { 
@@ -254,7 +255,7 @@ typedef
                      __SPECIAL_INSTRUCTION_PREAMBLE               \
                      /* call-noredir *%EAX */                     \
                      "xchgl %%edx,%%edx\n\t"
-#endif /* PLAT_x86_linux || PLAT_x86_darwin || PLAT_x86_win32 && __GNUC__ */
+#endif /* PLAT_x86_linux || PLAT_x86_darwin || (PLAT_x86_win32 && __GNUC__) */
 
 /* ------------------------- x86-Win32 ------------------------- */
 

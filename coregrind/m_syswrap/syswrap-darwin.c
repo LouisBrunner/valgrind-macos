@@ -2041,8 +2041,10 @@ PRE(fchmod_extended)
    /* DDD: relative to the xnu sources (kauth_copyinfilesec), this
       is just way wrong.  [The trouble is with the size, which depends on a
       non-trival kernel computation] */
-   PRE_MEM_READ( "fchmod_extended(xsecurity)", ARG5, 
-                 sizeof(struct vki_kauth_filesec) );
+   if (ARG5) {
+      PRE_MEM_READ( "fchmod_extended(xsecurity)", ARG5, 
+                    sizeof(struct vki_kauth_filesec) );
+   }
 }
 
 PRE(chmod_extended)
@@ -2061,8 +2063,10 @@ PRE(chmod_extended)
    /* DDD: relative to the xnu sources (kauth_copyinfilesec), this
       is just way wrong.  [The trouble is with the size, which depends on a
       non-trival kernel computation] */
-   PRE_MEM_READ( "chmod_extended(xsecurity)", ARG5, 
-                 sizeof(struct vki_kauth_filesec) );
+   if (ARG5) {
+      PRE_MEM_READ( "chmod_extended(xsecurity)", ARG5, 
+                    sizeof(struct vki_kauth_filesec) );
+   }
 }
 
 PRE(open_extended)

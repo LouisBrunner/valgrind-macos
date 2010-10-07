@@ -16,5 +16,5 @@ perl -p -e 's/((I1|D1|LL|LLi|LLd) *(misses|miss rate):)[ 0-9,()+rdw%\.]*$/\1/' |
 # Remove CPUID warnings lines for P4s and other machines
 sed "/warning: Pentium 4 with 12 KB micro-op instruction trace cache/d" |
 sed "/Simulating a 16 KB I-cache with 32 B lines/d"   |
-sed "/warning: L3 cache detected but ignored/d" |
+sed "/warning: L3 cache found, using its data for the LL simulation./d" |
 sed "/Warning: Cannot auto-detect cache config on PPC.., using one or more defaults/d"

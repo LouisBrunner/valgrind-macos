@@ -1198,7 +1198,7 @@ typedef
    adding a CFI annotation to change the CFA offset is simply wrong.
 
    So the solution is to get hold of the CFA using
-   __builtin_frame_address(0), put it in a known register, and add a
+   __builtin_dwarf_cfa(), put it in a known register, and add a
    CFI annotation to say what the register is.  We choose %rbp for
    this (perhaps perversely), because:
 
@@ -1212,7 +1212,7 @@ typedef
        generated code.
 
    However .. one extra complication.  We can't just whack the result
-   of __builtin_frame_address(0) into %rbp and then add %rbp to the
+   of __builtin_dwarf_cfa() into %rbp and then add %rbp to the
    list of trashed registers at the end of the inline assembly
    fragments; gcc won't allow %rbp to appear in that list.  Hence
    instead we need to stash %rbp in %r15 for the duration of the asm,
@@ -1221,15 +1221,30 @@ typedef
 
    Oh .. and this all needs to be conditionalised so that it is
    unchanged from before this commit, when compiled with older gccs
-   that don't support __builtin_frame_address.
+   that don't support __builtin_dwarf_cfa.  Furthermore, since
+   this header file is freestanding, it has to be independent of
+   config.h, and so the following conditionalisation cannot depend on
+   configure time checks.
+
+   Although it's not clear from
+   'defined(__GNUC__) && defined(__GCC_HAVE_DWARF2_CFI_ASM)',
+   this expression excludes Darwin.
+   .cfi directives in Darwin assembly appear to be completely
+   different and I haven't investigated how they work.
+
+   For even more entertainment value, note we have to use the
+   completely undocumented __builtin_dwarf_cfa(), which appears to
+   really compute the CFA, whereas __builtin_frame_address(0) claims
+   to but actually doesn't.  See
+   https://bugs.kde.org/show_bug.cgi?id=243270#c47
 */
-#if defined(__GCC_HAVE_DWARF2_CFI_ASM)
+#if defined(__GNUC__) && defined(__GCC_HAVE_DWARF2_CFI_ASM)
 #  define __FRAME_POINTER                                         \
-      ,"r"(__builtin_frame_address(0))
+      ,"r"(__builtin_dwarf_cfa())
 #  define VALGRIND_CFI_PROLOGUE                                   \
-      ".cfi_remember_state\n\t"                                   \
       "movq %%rbp, %%r15\n\t"                                     \
-      "movq %0, %%rbp\n\t"                                        \
+      "movq %2, %%rbp\n\t"                                        \
+      ".cfi_remember_state\n\t"                                   \
       ".cfi_def_cfa rbp, 0\n\t"
 #  define VALGRIND_CFI_EPILOGUE                                   \
       "movq %%r15, %%rbp\n\t"                                     \

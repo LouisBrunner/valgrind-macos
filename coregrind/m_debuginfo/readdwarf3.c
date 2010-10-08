@@ -3759,8 +3759,11 @@ void new_dwarf3_reader_wrk (
          key.dioff = varp->absOri; /* this is what we want to find */
          found = VG_(lookupXA)( dioff_lookup_tab, &keyp,
                                 &ixFirst, &ixLast );
-         if (!found)
-            barf("DW_AT_abstract_origin can't be resolved");
+         if (!found) {
+            /* barf("DW_AT_abstract_origin can't be resolved"); */
+            TRACE_D3("  SKIP (DW_AT_abstract_origin can't be resolved)\n\n");
+            continue;
+         }
          /* If the following fails, there is more than one entry with
             the same dioff.  Which can't happen. */
          vg_assert(ixFirst == ixLast);

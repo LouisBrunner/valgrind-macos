@@ -692,6 +692,8 @@ MaybeULong ML_(sizeOfType)( XArray* /* of TyEnt */ tyents,
                                                   - bo->Te.Bound.boundL + 1) ));
          }
          return eszB;
+      case Te_TyVoid:
+         return mk_MaybeULong_Nothing(); /*UNKNOWN*/
       default:
          VG_(printf)("ML_(sizeOfType): unhandled: ");
          ML_(pp_TyEnt)(ent);

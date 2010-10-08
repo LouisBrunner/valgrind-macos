@@ -1225,7 +1225,7 @@ typedef
    it on Darwin (at least for the moment) since I can't figure out
    how to do the .cfi directives there.
 */
-#if HAVE_BUILTIN_FRAME_ADDRESS && !defined(PLAT_amd64_darwin)
+#if defined(__GNUC__) && !defined(PLAT_amd64_darwin)
 #  define __FRAME_POINTER                                         \
       ,"r"(__builtin_frame_address(0))
 #  define VALGRIND_CFI_PROLOGUE                                   \

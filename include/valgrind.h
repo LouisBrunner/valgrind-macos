@@ -1221,11 +1221,9 @@ typedef
 
    Oh .. and this all needs to be conditionalised so that it is
    unchanged from before this commit, when compiled with older gccs
-   that don't support __builtin_frame_address.  And also, skip
-   it on Darwin (at least for the moment) since I can't figure out
-   how to do the .cfi directives there.
+   that don't support __builtin_frame_address.
 */
-#if defined(__GNUC__) && !defined(PLAT_amd64_darwin)
+#if defined(__GCC_HAVE_DWARF2_CFI_ASM)
 #  define __FRAME_POINTER                                         \
       ,"r"(__builtin_frame_address(0))
 #  define VALGRIND_CFI_PROLOGUE                                   \

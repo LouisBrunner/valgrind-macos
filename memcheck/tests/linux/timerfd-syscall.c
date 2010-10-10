@@ -5,7 +5,7 @@
  *  timerfd-test2 by Davide Libenzi (test app for timerfd)
  *  Copyright (C) 2007  Davide Libenzi <davidel@xmailserver.org>
  *  Modified for inclusion in Valgrind.
- *  Copyright (C) 2008  Bart Van Assche <bart.vanassche@gmail.com>
+ *  Copyright (C) 2008  Bart Van Assche <bvanassche@acm.org>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by

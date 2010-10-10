@@ -2,7 +2,7 @@
 /*
   This file is part of DRD, a thread error detector.
 
-  Copyright (C) 2009 Bart Van Assche <bart.vanassche@gmail.com>.
+  Copyright (C) 2009 Bart Van Assche <bvanassche@acm.org>.
 
   This program is free software; you can redistribute it and/or
   modify it under the terms of the GNU General Public License as

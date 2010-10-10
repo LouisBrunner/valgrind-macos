@@ -40,6 +40,24 @@ Improvements:
 
 - Added new memcheck command-line option --show-possibly-lost.
 
+- Support for analyzing programs running under Wine with has been improved.
+  The header files <valgrind/valgrind.h>, <valgrind/memcheck.h> and
+  <valgrind/drd.h> can now be used in Windows-programs compiled with MinGW
+  or one of the Microsoft Visual Studio compilers.
+  
+- DRD does now have two new command-line options: --free-is-write and
+  --trace-alloc. The former allows to detect reading from already freed
+  memory, and the latter allows to trace all memory allocations and
+  deallocations.
+
+- Several new annotations have been added in DRD: custom barrier
+  implementations can now be annotated and benign races on static variables
+  too.
+
+- The happens before / happens after annotations in DRD have been made more
+  powerful such that these can now also be used to annotate e.g. a smart
+  pointer implementation.
+
 
 Release 3.5.0 (19 August 2009)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

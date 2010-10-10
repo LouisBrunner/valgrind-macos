@@ -990,9 +990,11 @@ available macros and client requests are:
       the next access to the variable at the specified address should be
       considered to have happened after the access just before the latest
       <literal>ANNOTATE_HAPPENS_BEFORE(addr)</literal> annotation that
-      references the same variable. The purpose of these two macros is to
-      tell DRD about the order of inter-thread memory accesses implemented via
-      atomic memory operations.
+      references the same variable. The purpose of these two macros is to tell
+      DRD about the order of inter-thread memory accesses implemented via
+      atomic memory operations. See
+      also <literal>drd/tests/annotate_smart_pointer.cpp</literal> for an
+      example.
     </para>
   </listitem>
   <listitem>
@@ -1000,7 +1002,8 @@ available macros and client requests are:
       The macro <literal>ANNOTATE_RWLOCK_CREATE(rwlock)</literal> tells DRD
       that the object at address <literal>rwlock</literal> is a
       reader-writer synchronization object that is not a
-      <literal>pthread_rwlock_t</literal> synchronization object.
+      <literal>pthread_rwlock_t</literal> synchronization object.  See
+      also <literal>drd/tests/annotate_rwlock.c</literal> for an example.
     </para>
   </listitem>
   <listitem>
@@ -1058,11 +1061,50 @@ available macros and client requests are:
   </listitem>
   <listitem>
     <para>
-      The macro <literal>ANNOTATE_BENIGN_RACE(addr, descr)</literal> tells
-      DRD that any races detected on the specified address are benign and
-      hence should not be reported. The <literal>descr</literal> argument is
-      ignored but can be used to document why data races
-      on <literal>addr</literal> are benign.
+      The macro <literal>ANNOTATE_BARRIER_INIT(barrier, count,
+      reinitialization_allowed)</literal> tells DRD that a new barrier object
+      at the address <literal>barrier</literal> has been initialized,
+      that <literal>count</literal> threads participate in each barrier and
+      also whether or not barrier reinitialization without intervening
+      destruction should be reported as an error. See
+      also <literal>drd/tests/annotate_barrier.c</literal> for an example.
+    </para>
+  </listitem>
+  <listitem>
+    <para>
+      The macro <literal>ANNOTATE_BARRIER_DESTROY(barrier)</literal>
+      tells DRD that a barrier object is about to be destroyed.
+    </para>
+  </listitem>
+  <listitem>
+    <para>
+      The macro <literal>ANNOTATE_BARRIER_WAIT_BEFORE(barrier)</literal>
+      tells DRD that waiting for a barrier will start.
+    </para>
+  </listitem>
+  <listitem>
+    <para>
+      The macro <literal>ANNOTATE_BARRIER_WAIT_AFTER(barrier)</literal>
+      tells DRD that waiting for a barrier has finished.
+    </para>
+  </listitem>
+  <listitem>
+    <para>
+      The macro <literal>ANNOTATE_BENIGN_RACE_SIZED(addr, size,
+      descr)</literal> tells DRD that any races detected on the specified
+      address are benign and hence should not be
+      reported. The <literal>descr</literal> argument is ignored but can be
+      used to document why data races on <literal>addr</literal> are benign.
+    </para>
+  </listitem>
+  <listitem>
+    <para>
+      The macro <literal>ANNOTATE_BENIGN_RACE_STATIC(var, descr)</literal>
+      tells DRD that any races detected on the specified static variable are
+      benign and hence should not be reported. The <literal>descr</literal>
+      argument is ignored but can be used to document why data races
+      on <literal>var</literal> are benign. Note: this macro can only be
+      used in C++ programs and not in C programs.
     </para>
   </listitem>
   <listitem>
@@ -1125,17 +1167,6 @@ available macros and client requests are:
     </para>
   </listitem>
 </itemizedlist>
-</para>
-
-<para>
-For an example of how to use the annotations for user-defined reader-writer
-synchronization objects, see
-also the source file <literal>drd/tests/annotate_rwlock.c</literal> in the
-Valgrind source archive. And an example of how to
-use the <literal>ANNOTATE_HAPPENS_BEFORE</literal> and
-the <literal>ANNOTATE_HAPPENS_AFTER</literal> annotations can be found
-in the source code of the <ulink url="http://code.google.com/chromium/">Chromium</ulink>
-web browser.
 </para>
 
 <para>
@@ -1644,46 +1675,6 @@ example.
 
 </sect2>
 
-<sect2 id="drd-manual.naming-threads" xreflabel="naming threads">
-<title>Assigning names to threads</title>
-
-<para>
-Many applications log information about changes in internal or
-external state to a file. When analyzing log files of a multithreaded
-application it can be very convenient to know which thread logged
-which information. One possible approach is to identify threads in
-logging output by including the result of
-<function>pthread_self</function> in every log line. However, this approach
-has two disadvantages: there is no direct relationship between these
-values and the source code and these values can be different in each
-run. A better approach is to assign a brief name to each thread and to
-include the assigned thread name in each log line. One possible
-approach for managing thread names is as follows:
-<itemizedlist>
-  <listitem>
-    <para>
-      Allocate a key for the pointer to the thread name through
-      <function>pthread_key_create</function>.
-    </para>
-  </listitem>
-  <listitem>
-    <para>
-      Just after thread creation, set the thread name through
-      <function>pthread_setspecific</function>.
-    </para>
-  </listitem>
-  <listitem>
-    <para>
-      In the code that generates the logging information, query the thread
-      name by calling <function>pthread_getspecific</function>.
-    </para>
-  </listitem>
-</itemizedlist>
-
-</para>
-
-</sect2>
-
 </sect1>
 
 
@@ -1693,18 +1684,6 @@ approach for managing thread names is as follows:
 <para>DRD currently has the following limitations:</para>
 
 <itemizedlist>
-  <listitem>
-    <para>
-      DRD has only been tested on Linux and Mac OS X.
-    </para>
-  </listitem>
-  <listitem>
-    <para>
-      Of the two POSIX threads implementations for Linux, only the
-      NPTL (Native POSIX Thread Library) is supported. The older
-      LinuxThreads library is not supported.
-    </para>
-  </listitem>
   <listitem>
     <para>
       DRD, just like Memcheck, will refuse to start on Linux
@@ -1719,16 +1698,30 @@ approach for managing thread names is as follows:
   </listitem>
   <listitem>
     <para>
+      With gcc 4.4.3 and before, DRD may report data races on the C++
+      class <literal>std::string</literal> in a multithreaded program. This is
+      a know <literal>libstdc++</literal> issue -- see also GCC bug
+      <ulink url="http://gcc.gnu.org/bugzilla/show_bug.cgi?id=40518">40518</ulink>
+      for more information.
+    </para>
+  </listitem>
+  <listitem>
+    <para>
       When address tracing is enabled, no information on atomic stores
-      will be displayed. This functionality is easy to add
-      however. Please contact the Valgrind authors if you would like
-      to see this functionality enabled.
+      will be displayed.
     </para>
   </listitem>
   <listitem>
     <para>
       If you compile the DRD source code yourself, you need GCC 3.0 or
       later. GCC 2.95 is not supported.
+    </para>
+  </listitem>
+  <listitem>
+    <para>
+      Of the two POSIX threads implementations for Linux, only the
+      NPTL (Native POSIX Thread Library) is supported. The older
+      LinuxThreads library is not supported.
     </para>
   </listitem>
 </itemizedlist>

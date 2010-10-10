@@ -468,7 +468,8 @@ inline T ANNOTATE_UNPROTECTED_READ(const volatile T& x) {
       public:								\
 	 static_var##_annotator()					\
 	 {								\
-	    ANNOTATE_BENIGN_RACE(&static_var, #static_var ": " description); \
+	    ANNOTATE_BENIGN_RACE_SIZED(&static_var, sizeof(static_var),	\
+				       #static_var ": " description);	\
 	 }								\
       } the_##static_var##_annotator;					\
    }

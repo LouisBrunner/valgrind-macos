@@ -63,6 +63,22 @@ const unsigned int mem[] = {
       ); \
   printf("%s, #" #imm " :: Qd 0x%08x 0x%08x\n", \
       instruction, out[1], out[0]); \
+} \
+{ \
+   unsigned int out[2];   \
+   unsigned int addr = 0; \
+   \
+   __asm__ volatile( \
+	 "mov %1, %2\n\t" \
+	 "vldmia %1!, {" #QD "}\n\t" \
+	 instruction ", #" #imm "\n\t" \
+	 "vstmia %0, {" #QD "}\n\t" \
+	 : \
+	 : "r" (out), "r" (addr), "r" (mem) \
+	 : #QD, "%2", "memory" \
+	 ); \
+   printf("%s, #" #imm " :: Qd 0x%08x 0x%08x\n", \
+	 instruction, out[1], out[0]); \
 }
 
 #define TESTINSN_un(instruction, QD, QM, QMtype, QMval) \
@@ -80,6 +96,24 @@ const unsigned int mem[] = {
       ); \
   printf("%s :: Qd 0x%08x 0x%08x  Qm (" #QMtype ")0x%08x\n", \
       instruction, out[1], out[0], QMval); \
+} \
+{ \
+   unsigned int out[2]; \
+   unsigned int addr = 0; \
+   \
+   __asm__ volatile( \
+	 "mov %2, %3\n\t" \
+	 "vldmia %2!, {" #QD "}\n\t" \
+	 "vldmia %2!, {" #QM "}\n\t" \
+	 instruction "\n\t" \
+	 "vstmia %0, {" #QD "}\n\t" \
+	 "vstmia %0, {" #QD "}\n\t" \
+	 : \
+	 : "r" (out), "r" (QMval), "r" (addr), "r" (mem) \
+	 : #QD, #QM, "%2", "memory" \
+	 ); \
+   printf("%s :: Qd 0x%08x 0x%08x  Qm (" #QMtype ")0x%08x\n", \
+	 instruction, out[1], out[0], QMval ); \
 }
 
 #define TESTINSN_un_q(instruction, QD, QM, QMtype, QMval) \
@@ -102,6 +136,28 @@ const unsigned int mem[] = {
       ); \
   printf("%s :: Qd 0x%08x 0x%08x  Qm (" #QMtype ")0x%08x  fpscr %08x\n", \
       instruction, out[1], out[0], QMval, fpscr); \
+} \
+{ \
+   unsigned int out[2]; \
+   unsigned int fpscr; \
+   unsigned int addr = 0; \
+   \
+   __asm__ volatile( \
+	 "vmov.i8 " #QD ", #0x55" "\n\t" \
+	 "mov r4, #0\n\t" \
+	 MOVE_to_FPSCR_from_R4 \
+	 "mov %3, %4\n\t" \
+	 "vldmia %3!, {" #QM "}\n\t" \
+	 instruction "\n\t" \
+	 "vstmia %1, {" #QD "}\n\t" \
+	 MOVE_to_R4_from_FPSCR \
+	 "mov %0, r4" \
+	 : "=r" (fpscr) \
+	 : "r" (out), "r" (QMval), "r" (addr), "r" (mem) \
+	 : #QD, #QM, "memory", "r4" \
+	 ); \
+   printf("%s :: Qd 0x%08x 0x%08x  Qm (" #QMtype ")0x%08x  fpscr %08x\n", \
+	 instruction, out[1], out[0], QMval, fpscr); \
 }
 
 #define TESTINSN_core_to_scalar(instruction, QD, QM, QMval) \
@@ -191,106 +247,113 @@ const unsigned int mem[] = {
 
 #define TESTINSN_VLDn_WB(instruction, QD1, QD2, QD3, QD4) \
 { \
-  unsigned int out[9]; \
-\
-  __asm__ volatile( \
-      "vmov.i8 " #QD1 ", #0x55" "\n\t" \
-      "vmov.i8 " #QD2 ", #0x55" "\n\t" \
-      "vmov.i8 " #QD3 ", #0x55" "\n\t" \
-      "vmov.i8 " #QD4 ", #0x55" "\n\t" \
-      instruction ", [%1]!\n\t" \
-      "mov r4, %0\n\t" \
-      "vstmia %0!, {" #QD1 "}\n\t" \
-      "vstmia %0!, {" #QD2 "}\n\t" \
-      "vstmia %0!, {" #QD3 "}\n\t" \
-      "vstmia %0!, {" #QD4 "}\n\t" \
-      "str %1, [%2]\n\t" \
-      "mov %0, r4\n\t" \
-      : \
-      : "r" (out), "r" (mem), "r"(&out[8]) \
-      : #QD1, #QD2, #QD3, #QD4, "memory", "r4" \
-      ); \
-  printf("%s :: Result 0x%08x 0x%08x 0x%08x 0x%08x "\
-          "0x%08x 0x%08x 0x%08x 0x%08x  delta %d\n", \
-      instruction, out[0], out[1], out[2], out[3], out[4],\
-          out[5], out[6], out[7], (int)out[8]-(int)mem); \
+   unsigned int out[9]; \
+   unsigned int addr = 0; \
+   \
+   __asm__ volatile( \
+	 "mov %0, %2\n\t" \
+	 "vmov.i8 " #QD1 ", #0x55" "\n\t" \
+	 "vmov.i8 " #QD2 ", #0x55" "\n\t" \
+	 "vmov.i8 " #QD3 ", #0x55" "\n\t" \
+	 "vmov.i8 " #QD4 ", #0x55" "\n\t" \
+	 instruction ", [%0]!\n\t" \
+	 "mov r4, %1\n\t" \
+	 "vstmia %1!, {" #QD1 "}\n\t" \
+	 "vstmia %1!, {" #QD2 "}\n\t" \
+	 "vstmia %1!, {" #QD3 "}\n\t" \
+	 "vstmia %1!, {" #QD4 "}\n\t" \
+	 "str %0, [%3]\n\t" \
+	 "mov %1, r4\n\t" \
+	 : "+r" (addr) \
+	 : "r" (out), "r" (mem), "r"(&out[8]) \
+	 : #QD1, #QD2, #QD3, #QD4, "memory", "r4" \
+	 ); \
+   printf("%s :: Result 0x%08x 0x%08x 0x%08x 0x%08x "\
+	 "0x%08x 0x%08x 0x%08x 0x%08x  delta %d\n", \
+	 instruction, out[0], out[1], out[2], out[3], out[4],\
+	 out[5], out[6], out[7], (int)out[8]-(int)mem); \
 }
 
 #define TESTINSN_VSTn_WB(instruction, QD1, QD2, QD3, QD4) \
 { \
-  unsigned int out[9]; \
-\
-  memset(out, 0x55, 8 * (sizeof(unsigned int)));\
-  __asm__ volatile( \
-      "mov r4, %1\n\t" \
-      "vldmia %1!, {" #QD1 "}\n\t" \
-      "vldmia %1!, {" #QD2 "}\n\t" \
-      "vldmia %1!, {" #QD3 "}\n\t" \
-      "vldmia %1!, {" #QD4 "}\n\t" \
-      "mov %1, r4\n\t" \
-      instruction ", [%0]!\n\t" \
-      "str %0, [%2]\n\t" \
-      : \
-      : "r" (out), "r" (mem), "r"(&out[8]) \
-      : #QD1, #QD2, #QD3, #QD4, "memory", "r4" \
-      ); \
-  printf("%s :: Result 0x%08x 0x%08x 0x%08x 0x%08x "\
-          "0x%08x 0x%08x 0x%08x 0x%08x  delta %d\n", \
-      instruction, out[0], out[1], out[2], out[3], out[4],\
-          out[5], out[6], out[7], (int)out[8]-(int)out); \
+   unsigned int out[9]; \
+   unsigned int addr = 0;    \
+   \
+   memset(out, 0x55, 8 * (sizeof(unsigned int)));\
+   __asm__ volatile( \
+	 "mov %0, %1\n\t" \
+	 "mov r4, %2\n\t" \
+	 "vldmia r4!, {" #QD1 "}\n\t" \
+	 "vldmia r4!, {" #QD2 "}\n\t" \
+	 "vldmia r4!, {" #QD3 "}\n\t" \
+	 "vldmia r4!, {" #QD4 "}\n\t" \
+	 instruction ", [%0]!\n\t" \
+	 "str %0, [%3]\n\t" \
+	 : "+r" (addr) \
+	 : "r" (out), "r" (mem), "r"(&out[8]) \
+	 : #QD1, #QD2, #QD3, #QD4, "memory", "r4", "0" \
+	 ); \
+   printf("%s :: Result 0x%08x 0x%08x 0x%08x 0x%08x "\
+	 "0x%08x 0x%08x 0x%08x 0x%08x  delta %d\n", \
+	 instruction, out[0], out[1], out[2], out[3], out[4],\
+	 out[5], out[6], out[7], (int)out[8]-(int)out); \
 }
 
 #define TESTINSN_VLDn_RI(instruction, QD1, QD2, QD3, QD4, RM, RMval) \
 { \
-  unsigned int out[9]; \
-\
-  __asm__ volatile( \
-      "vmov.i8 " #QD1 ", #0x55" "\n\t" \
-      "vmov.i8 " #QD2 ", #0x55" "\n\t" \
-      "vmov.i8 " #QD3 ", #0x55" "\n\t" \
-      "vmov.i8 " #QD4 ", #0x55" "\n\t" \
-      "mov " #RM ", %3\n\t" \
-      instruction ", [%1], " #RM "\n\t" \
-      "mov r4, %0\n\t" \
-      "vstmia %0!, {" #QD1 "}\n\t" \
-      "vstmia %0!, {" #QD2 "}\n\t" \
-      "vstmia %0!, {" #QD3 "}\n\t" \
-      "vstmia %0!, {" #QD4 "}\n\t" \
-      "str %1, [%2]\n\t" \
-      "mov %0, r4\n\t" \
-      : \
-      : "r" (out), "r" (mem), "r"(&out[8]), "r"(RMval) \
-      : #QD1, #QD2, #QD3, #QD4, "memory", "r4", #RM \
-      ); \
-  printf("%s :: Result 0x%08x 0x%08x 0x%08x 0x%08x "\
-          "0x%08x 0x%08x 0x%08x 0x%08x  delta %d\n", \
-      instruction, out[0], out[1], out[2], out[3], out[4],\
-          out[5], out[6], out[7], (int)out[8]-(int)mem); \
+   unsigned int out[9];  \
+   unsigned int addr = 0;    \
+   \
+   __asm__ volatile( \
+	 "mov %0, %2\n\t" \
+	 "vmov.i8 " #QD1 ", #0x55" "\n\t" \
+	 "vmov.i8 " #QD2 ", #0x55" "\n\t" \
+	 "vmov.i8 " #QD3 ", #0x55" "\n\t" \
+	 "vmov.i8 " #QD4 ", #0x55" "\n\t" \
+	 "mov " #RM ", %4\n\t" \
+	 instruction ", [%0], " #RM "\n\t" \
+	 "mov r4, %1\n\t" \
+	 "vstmia %1!, {" #QD1 "}\n\t" \
+	 "vstmia %1!, {" #QD2 "}\n\t" \
+	 "vstmia %1!, {" #QD3 "}\n\t" \
+	 "vstmia %1!, {" #QD4 "}\n\t" \
+	 "str %0, [%3]\n\t" \
+	 "mov %1, r4\n\t" \
+	 : "+r" (addr) \
+	 : "r" (out), "r" (mem), "r"(&out[8]), "r"(RMval) \
+	 : #QD1, #QD2, #QD3, #QD4, "memory", "r4", #RM \
+	 ); \
+   printf("%s :: Result 0x%08x 0x%08x 0x%08x 0x%08x "\
+	 "0x%08x 0x%08x 0x%08x 0x%08x  delta %d\n", \
+	 instruction, out[0], out[1], out[2], out[3], out[4],\
+	 out[5], out[6], out[7], (int)out[8]-(int)addr); \
 }
+
 
 #define TESTINSN_VSTn_RI(instruction, QD1, QD2, QD3, QD4, RM, RMval) \
 { \
-  unsigned int out[9]; \
-\
-  memset(out, 0x55, 8 * (sizeof(unsigned int)));\
-  __asm__ volatile( \
-      "mov r4, %1\n\t" \
-      "vldmia %1!, {" #QD1 "}\n\t" \
-      "vldmia %1!, {" #QD2 "}\n\t" \
-      "vldmia %1!, {" #QD3 "}\n\t" \
-      "vldmia %1!, {" #QD4 "}\n\t" \
-      "mov %1, r4\n\t" \
-      "mov " #RM ", %3\n\t" \
-      instruction ", [%0], " #RM "\n\t" \
-      "str %0, [%2]\n\t" \
-      : \
-      : "r" (out), "r" (mem), "r"(&out[8]), "r"(RMval) \
-      : #QD1, #QD2, #QD3, #QD4, "memory", "r4", #RM \
-      ); \
-  printf("%s :: Result 0x%08x 0x%08x 0x%08x 0x%08x "\
-          "0x%08x 0x%08x 0x%08x 0x%08x  delta %d\n", \
-      instruction, out[0], out[1], out[2], out[3], out[4],\
-          out[5], out[6], out[7], (int)out[8]-(int)out); \
+   unsigned int out[9]; \
+   unsigned int addr = 0;    \
+   \
+   memset(out, 0x55, 8 * (sizeof(unsigned int)));\
+   __asm__ volatile( \
+	 "mov %0, %1\n\t" \
+	 "mov r4, %2\n\t" \
+	 "vldmia r4!, {" #QD1 "}\n\t" \
+	 "vldmia r4!, {" #QD2 "}\n\t" \
+	 "vldmia r4!, {" #QD3 "}\n\t" \
+	 "vldmia r4!, {" #QD4 "}\n\t" \
+	 "mov " #RM ", %4\n\t" \
+	 instruction ", [%0], " #RM "\n\t" \
+	 "str %0, [%3]\n\t" \
+	 : "+r" (addr) \
+	 : "r" (out), "r" (mem), "r"(&out[8]), "r"(#RMval) \
+	 : #QD1, #QD2, #QD3, #QD4, "memory", "r4", #RM \
+	 ); \
+   printf("%s :: Result 0x%08x 0x%08x 0x%08x 0x%08x "\
+	 "0x%08x 0x%08x 0x%08x 0x%08x  delta %d\n", \
+	 instruction, out[0], out[1], out[2], out[3], out[4],\
+	 out[5], out[6], out[7], (int)out[8]-(int)out); \
 }
 
 #define TESTINSN_bin(instruction, QD, QM, QMtype, QMval, QN, QNtype, QNval) \
@@ -310,6 +373,25 @@ const unsigned int mem[] = {
   printf("%s :: Qd 0x%08x 0x%08x  Qm (" #QMtype ")0x%08x" \
       "  Qn (" #QNtype ")0x%08x\n", \
       instruction, out[1], out[0], QMval, QNval); \
+} \
+{ \
+   unsigned int out[2]; \
+   unsigned int addr = 0; \
+   \
+   __asm__ volatile( \
+	 "mov %0, %4\n\t" \
+	 "vldmia %0!, {" #QM "}\n\t" \
+	 "vmov.i8 " #QD ", #0x55" "\n\t" \
+	 "vdup." #QNtype " " #QN ", %3\n\t" \
+	 instruction "\n\t" \
+	 "vstmia %1, {" #QD "}\n\t" \
+	 : "+r" (addr) \
+	 : "r" (out), "r" (QMval), "r" (QNval), "r" (mem) \
+	 : #QD, #QM, #QN, "memory" \
+	 ); \
+   printf("%s :: Qd 0x%08x 0x%08x  Qm (" #QMtype ")0x%08x" \
+	 "  Qn (" #QNtype ")0x%08x\n", \
+	 instruction, out[1], out[0], QMval, QNval); \
 }
 
 #define TESTINSN_bin_f(instruction, QD, QM, QMtype, QMval, QN, QNtype, QNval) \
@@ -329,6 +411,25 @@ const unsigned int mem[] = {
   printf("%s :: Qd 0x%08x 0x%08x  Qm (" #QMtype ")0x%08x" \
       "  Qn (" #QNtype ")0x%08x\n", \
       instruction, out[1], out[0], QMval, QNval); \
+} \
+{ \
+     unsigned int out[2]; \
+     unsigned int addr = 0; \
+   \
+     __asm__ volatile( \
+	         "vdup.i32 " #QD ", %3\n\t" \
+	         "mov %4, %5\n\t" \
+	         "vldmia %4!, {" #QM "}\n\t" \
+	         "vdup." #QNtype " " #QN ", %2\n\t" \
+	         instruction "\n\t" \
+	         "vstmia %0, {" #QD "}\n\t" \
+	         : \
+	         : "r" (out), "r" (QMval), "r" (QNval), "r"(0x3f800000), "r" (addr), "r" (mem) \
+	         : #QD, #QM, #QN, "memory" \
+	         ); \
+     printf("%s :: Qd 0x%08x 0x%08x  Qm (" #QMtype ")0x%08x" \
+	         "  Qn (" #QNtype ")0x%08x\n", \
+	         instruction, out[1], out[0], QMval, QNval); \
 }
 
 #define TESTINSN_tbl(instruction, QD, QM, QMtype, QMval, QN1, QN1type, QN1val, \
@@ -356,7 +457,34 @@ const unsigned int mem[] = {
       "  Qn3 (" #QN3type ")0x%08x" \
       "  Qn4 (" #QN4type ")0x%08x\n", \
       instruction, out[1], out[0], QMval, QN1val, QN2val, QN3val, QN4val); \
+} \
+{ \
+   unsigned int out[2]; \
+   unsigned int addr = 0; \
+   \
+   __asm__ volatile( \
+	 "mov %6, %7\n\t" \
+	 "vmov.i8 " #QD ", #0x55" "\n\t" \
+	 "vdup." #QMtype " " #QM ", %1\n\t" \
+	 "vldmia %6!, {" #QN1 "}\n\t" \
+	 "vdup." #QN2type " " #QN2 ", %3\n\t" \
+	 "vldmia %6!, {" #QN3 "}\n\t" \
+	 "vdup." #QN4type " " #QN4 ", %5\n\t" \
+	 instruction "\n\t" \
+	 "vstmia %0, {" #QD "}\n\t" \
+	 : \
+	 : "r" (out), "r" (QMval), "r" (QN1val), "r" (QN2val), "r" (QN3val), \
+	 "r" (QN4val), "r" (addr), "r" (mem) \
+	 : #QD, #QM, #QN1, #QN2, #QN3, #QN4, "memory" \
+	 ); \
+   printf("%s :: Qd 0x%08x 0x%08x  Qm (" #QMtype ")0x%08x" \
+	 "  Qn1 (" #QN1type ")0x%08x" \
+	 "  Qn2 (" #QN2type ")0x%08x" \
+	 "  Qn3 (" #QN3type ")0x%08x" \
+	 "  Qn4 (" #QN4type ")0x%08x\n", \
+	 instruction, out[1], out[0], QMval, QN1val, QN2val, QN3val, QN4val); \
 }
+
 #define TESTINSN_tbl_1(instruction, QD, QM, QMtype, QMval, QN1, QN1type, QN1val) \
     TESTINSN_tbl(instruction, QD, QM, QMtype, QMval, QN1, QN1type, QN1val, \
             QN1, QN1type, QN1val, QN1, QN1type, QN1val, QN1, QN1type, QN1val)
@@ -395,46 +523,72 @@ const unsigned int mem[] = {
   printf("%s :: Qd 0x%08x 0x%08x  Qm (" #QMtype ")0x%08x" \
       "  Qn (" #QNtype ")0x%08x  fpscr: %08x\n", \
       instruction, out[1], out[0], QMval, QNval, fpscr); \
+} \
+{ \
+     unsigned int out[2]; \
+     unsigned int fpscr; \
+     unsigned int addr = 0; \
+   \
+     __asm__ volatile( \
+	         "vmov.i8 " #QD ", #0x55" "\n\t" \
+	         "mov r4, #0\n\t" \
+	         MOVE_to_FPSCR_from_R4 \
+	         "mov %4, %5\n\t" \
+	         "vldmia %4!, {" #QM "}\n\t" \
+	         "vdup." #QNtype " " #QN ", %3\n\t" \
+	         instruction "\n\t" \
+	         "vstmia %1, {" #QD "}\n\t" \
+	         MOVE_to_R4_from_FPSCR \
+	         "mov %0, r4" \
+	         : "=r" (fpscr) \
+	         : "r" (out), "r" (QMval), "r" (QNval), "r" (addr), "r" (mem)  \
+	         : #QD, #QM, #QN, "memory", "r4" \
+	         ); \
+     printf("%s :: Qd 0x%08x 0x%08x  Qm (" #QMtype ")0x%08x" \
+	         "  Qn (" #QNtype ")0x%08x  fpscr: %08x\n", \
+	         instruction, out[1], out[0], QMval, QNval, fpscr); \
 }
 
 #define TESTINSN_dual(instruction, QM, QMtype, QMval, QN, QNtype, QNval) \
 { \
-  unsigned int out1[2]; \
-  unsigned int out2[2]; \
-\
-  __asm__ volatile( \
-      "vdup." #QMtype " " #QM ", %2\n\t" \
-      "vdup." #QNtype " " #QN ", %3\n\t" \
-      instruction "\n\t" \
-      "vstmia %0, {" #QM "}\n\t" \
-      "vstmia %1, {" #QN "}\n\t" \
-      : \
-      : "r" (out1), "r" (out2), "r" (QMval), "r" (QNval) \
-      : #QM, #QN, "memory" \
-      ); \
-  printf("%s :: Qm 0x%08x 0x%08x  Qn 0x%08x 0x%08x  Qm (" #QMtype ")0x%08x" \
-      "  Qn (" #QNtype ")0x%08x\n", \
-      instruction, out1[1], out1[0], out2[1], out2[0], QMval, QNval); \
-}
-
-// Ditto TESTING_bin(), but in QD all zeros
-#define TESTINSN_bin_0s(instruction, QD, QM, QMtype, QMval, QN, QNtype, QNval) \
+   unsigned int out1[2]; \
+   unsigned int out2[2]; \
+   unsigned int addr = 0;    \
+   \
+   __asm__ volatile( \
+	 "mov %4, %5\n\t" \
+	 "vldmia %4!, {" #QM "}\n\t" \
+	 "vdup." #QNtype " " #QN ", %3\n\t" \
+	 instruction "\n\t" \
+	 "vstmia %0, {" #QM "}\n\t" \
+	 "vstmia %1, {" #QN "}\n\t" \
+	 : \
+	 : "r" (out1), "r" (out2), "r" (QMval), "r" (QNval), "r" (addr), "r" (mem) \
+	 : #QM, #QN, "memory" \
+	 ); \
+   printf("%s :: Qm 0x%08x 0x%08x  Qn 0x%08x 0x%08x  Qm (" #QMtype ")0x%08x" \
+	 "  Qn (" #QNtype ")0x%08x\n", \
+	 instruction, out1[1], out1[0], out2[1], out2[0], QMval, QNval); \
+} \
 { \
-  unsigned int out[2]; \
-\
-  __asm__ volatile( \
-      "vmov.i8 " #QD ", #0x00" "\n\t" \
-      "vdup." #QMtype " " #QM ", %1\n\t" \
-      "vdup." #QNtype " " #QN ", %2\n\t" \
-      instruction "\n\t" \
-      "vstmia %0, {" #QD "}\n\t" \
-      : \
-      : "r" (out), "r" (QMval), "r" (QNval) \
-      : #QD, #QM, #QN, "memory" \
-      ); \
-  printf("%s :: Qd 0x%08x 0x%08x  Qm (" #QMtype ")0x%08x" \
-      "  Qn (" #QNtype ")0x%08x\n", \
-      instruction, out[1], out[0], QMval, QNval); \
+     unsigned int out1[2]; \
+     unsigned int out2[2]; \
+     unsigned int addr = 0;    \
+   \
+     __asm__ volatile( \
+	         "mov %4, %5\n\t" \
+	         "vldmia %4!, {" #QM "}\n\t" \
+	         "vdup." #QNtype " " #QN ", %3\n\t" \
+	         instruction "\n\t" \
+	         "vstmia %0, {" #QM "}\n\t" \
+	         "vstmia %1, {" #QN "}\n\t" \
+	         : \
+	         : "r" (out1), "r" (out2), "r" (QMval), "r" (QNval), "r" (addr), "r" (mem) \
+	         : #QM, #QN, "%4", "memory" \
+	         ); \
+     printf("%s :: Qm 0x%08x 0x%08x  Qn 0x%08x 0x%08x  Qm (" #QMtype ")0x%08x" \
+	         "  Qn (" #QNtype ")0x%08x\n", \
+	         instruction, out1[1], out1[0], out2[1], out2[0], QMval, QNval); \
 }
 
 #if 0

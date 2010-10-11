@@ -905,5 +905,14 @@ int main(int argc, char **argv)
    TESTINST2("rev16 r0, r1", 0xbb6d14ec, r0, r1, 0);
    TESTINST2("rev16 r0, r1", 0x68983cc9, r0, r1, 0);
 
+	printf("------------ NOP (begin) ------------\n");
+        printf("nop\n");
+        __asm__ __volatile__("nop" ::: "memory","cc");
+        printf("nopeq\n");
+        __asm__ __volatile__("nopeq" ::: "memory","cc");
+        printf("nopne\n");
+        __asm__ __volatile__("nopne" ::: "memory","cc");
+	printf("------------ NOP (end) ------------\n");
+
 	return 0;
 }

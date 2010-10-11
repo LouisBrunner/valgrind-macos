@@ -16638,6 +16638,10 @@ rev16 r8, r9 :: rd 0x7ae3da0d rm 0xe37a0dda, c:v-in 0, cpsr 0xc0000000 NZ
 rev16 r8, r9 :: rd 0xb8e54b3d rm 0xe5b83d4b, c:v-in 0, cpsr 0xc0000000 NZ  
 rev16 r8, r9 :: rd 0x6dbbec14 rm 0xbb6d14ec, c:v-in 0, cpsr 0xc0000000 NZ  
 rev16 r8, r9 :: rd 0x9868c93c rm 0x68983cc9, c:v-in 0, cpsr 0xc0000000 NZ  
+------------ NOP (begin) ------------
+nop
+nop.w
+------------ NOP (end) ------------
 MOV
 mov  r0, r1 :: rd 0x00000001 rm 0x00000001, c:v-in 0, cpsr 0xc0000000 NZ  
 cpy  r0, r1 :: rd 0x00000001 rm 0x00000001, c:v-in 0, cpsr 0xc0000000 NZ  

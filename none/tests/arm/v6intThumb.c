@@ -5842,6 +5842,13 @@ int main ( void )
    TESTINST2("rev16 r8, r9", 0xbb6d14ec, r8, r9, 0);
    TESTINST2("rev16 r8, r9", 0x68983cc9, r8, r9, 0);
 
+	printf("------------ NOP (begin) ------------\n");
+        printf("nop\n");
+        __asm__ __volatile__("nop" ::: "memory","cc");
+        printf("nop.w\n");
+        __asm__ __volatile__("nop.w" ::: "memory","cc");
+	printf("------------ NOP (end) ------------\n");
+
    // plus whatever stuff we can throw in from the old ARM test program
    old_main();
 

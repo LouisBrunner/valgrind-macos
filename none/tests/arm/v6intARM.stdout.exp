@@ -794,3 +794,8 @@ rev16 r0, r1 :: rd 0x7ae3da0d rm 0xe37a0dda, carryin 0, cpsr 0x00000000
 rev16 r0, r1 :: rd 0xb8e54b3d rm 0xe5b83d4b, carryin 0, cpsr 0x00000000     
 rev16 r0, r1 :: rd 0x6dbbec14 rm 0xbb6d14ec, carryin 0, cpsr 0x00000000     
 rev16 r0, r1 :: rd 0x9868c93c rm 0x68983cc9, carryin 0, cpsr 0x00000000     
+------------ NOP (begin) ------------
+nop
+nopeq
+nopne
+------------ NOP (end) ------------

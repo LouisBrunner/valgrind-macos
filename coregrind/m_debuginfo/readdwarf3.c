@@ -220,15 +220,6 @@ static UChar* get_address_of_Cursor ( Cursor* c ) {
    return &c->region_start_img[ c->region_next ];
 }
 
-__attribute__((noreturn)) 
-static void failWith ( Cursor* c, HChar* str ) {
-   vg_assert(c);
-   vg_assert(c->barf);
-   c->barf(str);
-   /*NOTREACHED*/
-   vg_assert(0);
-}
-
 /* FIXME: document assumptions on endianness for
    get_UShort/UInt/ULong. */
 static inline UChar get_UChar ( Cursor* c ) {

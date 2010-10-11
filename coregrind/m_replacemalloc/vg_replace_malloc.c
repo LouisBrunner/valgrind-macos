@@ -747,7 +747,7 @@ static void panic(const char *str)
 {
    VALGRIND_PRINTF_BACKTRACE("Program aborting because of call to %s\n", str);
    _exit(99);
-   *(int *)0 = 'x';
+   *(volatile int *)0 = 'x';
 }
 
 #define PANIC(soname, fnname) \

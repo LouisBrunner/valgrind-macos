@@ -65,7 +65,7 @@ void VG_NOTIFY_ON_LOAD(freeres)( void )
                               VG_USERREQ__LIBC_FREERES_DONE, 
                               0, 0, 0, 0, 0);
    /*NOTREACHED*/
-   *(int *)0 = 'x';
+   *(volatile int *)0 = 'x';
 }
 
 /* ---------------------------------------------------------------------

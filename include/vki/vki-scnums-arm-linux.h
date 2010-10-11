@@ -371,7 +371,7 @@
 #define __NR_fchmodat			333
 #define __NR_faccessat			334
 #define __NR_pselect6			335 /* JRS 20100812: is this correct? */
-					/* 336 for ppoll */
+#define __NR_ppoll	       		336
 #define __NR_unshare			337
 #define __NR_set_robust_list		338
 #define __NR_get_robust_list		339

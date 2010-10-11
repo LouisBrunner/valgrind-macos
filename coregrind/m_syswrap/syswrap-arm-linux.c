@@ -1632,7 +1632,6 @@ static SyscallTableEntry syscall_main_table[] = {
    PLAX_(__NR_shmget,            sys_shmget),         //307 
    PLAXY(__NR_shmctl,            sys_shmctl),         // 308 
 //   LINX_(__NR_pselect6,       sys_pselect6),         //
-//   LINXY(__NR_ppoll,       sys_ppoll),            // 309
 
 //   LINX_(__NR_unshare,       sys_unshare),          // 310
    LINX_(__NR_set_robust_list,    sys_set_robust_list),  // 311
@@ -1663,7 +1662,8 @@ static SyscallTableEntry syscall_main_table[] = {
    // correspond to what's in include/vki/vki-scnums-arm-linux.h.
    // From here onwards, please ensure the numbers are correct.
 
-   LINX_(__NR_pselect6,		 sys_pselect6),         // 335
+   LINX_(__NR_pselect6,          sys_pselect6),         // 335
+   LINXY(__NR_ppoll,             sys_ppoll),            // 336
 
    LINXY(__NR_signalfd4,         sys_signalfd4),        // 355
    LINX_(__NR_eventfd2,          sys_eventfd2),         // 356

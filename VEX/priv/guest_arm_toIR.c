@@ -13287,7 +13287,7 @@ DisResult disInstr_ARM_WRK (
    if (0x01900F9F == (insn & 0x0FF00FFF)) {
       UInt rT = INSN(15,12);
       UInt rN = INSN(19,16);
-      if (rT == 15 || rN == 15 || rT == 14 /* || (rT & 1)*/) {
+      if (rT == 15 || rN == 15) {
          /* undecodable; fall through */
       } else {
          IRTemp res;
@@ -13313,8 +13313,7 @@ DisResult disInstr_ARM_WRK (
       UInt rN = INSN(19,16);
       UInt rD = INSN(15,12);
       if (rT == 15 || rN == 15 || rD == 15
-          || rT == 14 /* || (rT & 1)*/
-          || rD == rT || rN == rT) {
+          || rD == rT || rD == rN) {
          /* undecodable; fall through */
       } else {
          IRTemp resSC1, resSC32;

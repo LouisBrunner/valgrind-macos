@@ -181,11 +181,7 @@ case I chased).
 #undef uint32_t
 #undef uint64_t
 #define uint32_t unsigned int
-#ifndef __powerpc64__
 #define uint64_t unsigned long long
-#else
-#define uint64_t unsigned long
-#endif /* __powerpc64__ */
 
 #ifndef __powerpc64__
 typedef uint32_t  HWord_t;

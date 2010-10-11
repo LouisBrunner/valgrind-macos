@@ -13808,6 +13808,12 @@ DisResult disInstr_ARM_WRK (
       }
    }
 
+   /* ------------------- NOP ------------------ */
+   if (0x0320F000 == (insn & 0x0FFFFFFF)) {
+      DIP("nop%s\n", nCC(INSN_COND));
+      goto decode_success;
+   }
+
    /* ----------------------------------------------------------- */
    /* -- ARMv7 instructions                                    -- */
    /* ----------------------------------------------------------- */
@@ -17643,6 +17649,10 @@ DisResult disInstr_THUMB_WRK (
 
    /* -------------- v7 barrier insns -------------- */
    if (INSN0(15,0) == 0xF3BF && (INSN1(15,0) & 0xFF0F) == 0x8F0F) {
+      /* XXX this isn't really right, is it?  The generated IR does
+         them unconditionally.  I guess it doesn't matter since it
+         doesn't do any harm to do them even when the guarding
+         condition is false -- it's just a performance loss. */
       switch (INSN1(7,4)) {
          case 0x4: /* DSB */
             stmt( IRStmt_MBE(Imbe_Fence) );
@@ -17659,6 +17669,12 @@ DisResult disInstr_THUMB_WRK (
          default:
             break;
       }
+   }
+
+   /* ------------------- NOP ------------------ */
+   if (INSN0(15,0) == 0xF3AF && INSN1(15,0) == 0x8000) {
+      DIP("nop\n");
+      goto decode_success;
    }
 
    /* ----------------------------------------------------------- */

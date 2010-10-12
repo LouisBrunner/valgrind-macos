@@ -9,8 +9,11 @@
 
    Copyright (C) 2004-2010 OpenWorks LLP
       info@open-works.net
-   Copyright (C) 2010-2010 Dmitry Zhurikhin
-      zhur@ispras.ru
+
+   NEON support is
+   Copyright (C) 2010-2010 Samsung Electronics
+   contributed by Dmitry Zhurikhin <zhur@ispras.ru>
+              and Kirill Batuzov <batuzovk@ispras.ru>
 
    This program is free software; you can redistribute it and/or
    modify it under the terms of the GNU General Public License as

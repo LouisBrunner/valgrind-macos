@@ -2342,6 +2342,7 @@ static void setup_post_syscall_table ( void )
       ADD(0, __NR_ioctl); // ioctl -- assuming no pointers returned
       ADD(0, __NR_ioprio_get);
       ADD(0, __NR_kill);
+      ADD(0, __NR_lgetxattr);
       ADD(0, __NR_link);
 #     if defined(__NR_listen)
       ADD(0, __NR_listen);
@@ -2356,6 +2357,14 @@ static void setup_post_syscall_table ( void )
       ADD(0, __NR_mlock);
       ADD(0, __NR_mlockall);
       ADD(0, __NR_mprotect);
+#     if defined(__NR_mq_open)
+      ADD(0, __NR_mq_open);
+      ADD(0, __NR_mq_unlink);
+      ADD(0, __NR_mq_timedsend);
+      ADD(0, __NR_mq_timedreceive);
+      ADD(0, __NR_mq_notify);
+      ADD(0, __NR_mq_getsetattr);
+#     endif
       ADD(0, __NR_munmap); // die_mem_munmap already called, segment remove);
       ADD(0, __NR_nanosleep);
       ADD(0, __NR_open);
@@ -2483,14 +2492,6 @@ static void setup_post_syscall_table ( void )
       ADD(0, __NR_wait4);
       ADD(0, __NR_write);
       ADD(0, __NR_writev);
-#     if defined(__NR_mq_open)
-      ADD(0, __NR_mq_open);
-      ADD(0, __NR_mq_unlink);
-      ADD(0, __NR_mq_timedsend);
-      ADD(0, __NR_mq_timedreceive);
-      ADD(0, __NR_mq_notify);
-      ADD(0, __NR_mq_getsetattr);
-#     endif
 
       /* Whereas the following need special treatment */
 #     if defined(__NR_arch_prctl)
@@ -2740,7 +2741,7 @@ static inline Bool looks_like_a_pointer(Addr a)
 {
 #  if defined(VGA_x86) || defined(VGA_ppc32)
    tl_assert(sizeof(UWord) == 4);
-   return (a > 0x01000000UL && a < 0xFF000000UL);
+   return (a > 0x800000UL && a < 0xFF000000UL);
 
 #  elif defined(VGA_amd64) || defined(VGA_ppc64)
    tl_assert(sizeof(UWord) == 8);

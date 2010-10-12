@@ -48,7 +48,7 @@ void VG_(configure_caches)(cache_t* I1c, cache_t* D1c, cache_t* LLc,
    if (!all_caches_clo_defined) {
       VG_(message)(Vg_DebugMsg, 
                    "Warning: Cannot auto-detect cache config on ARM, using one "
-                   "or more defaults ");
+                   "or more defaults\n");
    }
 }
 

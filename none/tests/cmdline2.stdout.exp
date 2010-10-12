@@ -45,16 +45,18 @@ usage: valgrind [options] prog-and-args
     --alignment=<number>      set minimum alignment of heap allocations [...]
 
   uncommon user options for all Valgrind tools:
+    --fullpath-after=         (with nothing after the '=')
+                              show full source paths in call stacks
+    --fullpath-after=string   like --fullpath-after=, but only show the
+                              part of the path after 'string'.  Allows removal
+                              of path prefixes.  Use this flag multiple times
+                              to specify a set of prefixes to remove.
     --smc-check=none|stack|all  checks for self-modifying code: none,
                               only for code found in stacks, or all [stack]
     --read-var-info=yes|no    read debug info on stack and global variables
                               and use it to print better error messages in
                               tools that make use of it (Memcheck, Helgrind,
                               DRD) [no]
-    --prefix-to-strip=<pfx>   If not empty, specifies that full source file
-                              paths must be printed in call stacks and also
-                              that <pfx> must be stripped from these paths.
-                              [].
     --run-libc-freeres=no|yes free up glibc memory at exit on Linux? [yes]
     --sim-hints=hint1,hint2,...  known hints:
                                  lax-ioctls, enable-outer [none]

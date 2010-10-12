@@ -157,15 +157,18 @@ static void usage_NORETURN ( Bool debug_help )
 "    --alignment=<number>      set minimum alignment of heap allocations [%ld]\n"
 "\n"
 "  uncommon user options for all Valgrind tools:\n"
+"    --fullpath-after=         (with nothing after the '=')\n"
+"                              show full source paths in call stacks\n"
+"    --fullpath-after=string   like --fullpath-after=, but only show the\n"
+"                              part of the path after 'string'.  Allows removal\n"
+"                              of path prefixes.  Use this flag multiple times\n"
+"                              to specify a set of prefixes to remove.\n"
 "    --smc-check=none|stack|all  checks for self-modifying code: none,\n"
 "                              only for code found in stacks, or all [stack]\n"
 "    --read-var-info=yes|no    read debug info on stack and global variables\n"
 "                              and use it to print better error messages in\n"
 "                              tools that make use of it (Memcheck, Helgrind,\n"
 "                              DRD) [no]\n"
-"    --prefix-to-strip=<pfx>   If not empty, specifies that full source file\n"
-"                              paths must be printed in call stacks and also\n" "                              that <pfx> must be stripped from these paths.\n"
-"                              [""].\n"
 "    --run-libc-freeres=no|yes free up glibc memory at exit on Linux? [yes]\n"
 "    --sim-hints=hint1,hint2,...  known hints:\n"
 "                                 lax-ioctls, enable-outer [none]\n"
@@ -482,13 +485,6 @@ void main_process_cmd_line_options ( /*OUT*/Bool* logging_to_fd,
       else if VG_STR_CLO (arg, "--sim-hints",        VG_(clo_sim_hints)) {}
       else if VG_BOOL_CLO(arg, "--sym-offsets",      VG_(clo_sym_offsets)) {}
       else if VG_BOOL_CLO(arg, "--read-var-info",    VG_(clo_read_var_info)) {}
-      else if VG_STR_CLO (arg, "--prefix-to-strip",  VG_(clo_prefix_to_strip)) {
-         Char *const pfx = VG_(clo_prefix_to_strip);
-         Char *const pfx_end = pfx + VG_(strlen)(pfx);
-         Char *const last_slash = VG_(strrchr)(pfx, '/');
-         if (last_slash == pfx_end - 1)
-            *last_slash = '\0';
-      }
 
       else if VG_INT_CLO (arg, "--dump-error",       VG_(clo_dump_error))   {}
       else if VG_INT_CLO (arg, "--input-fd",         VG_(clo_input_fd))     {}
@@ -558,6 +554,16 @@ void main_process_cmd_line_options ( /*OUT*/Bool* logging_to_fd,
          }
          VG_(clo_suppressions)[VG_(clo_n_suppressions)] = tmp_str;
          VG_(clo_n_suppressions)++;
+      }
+
+      else if VG_STR_CLO (arg, "--fullpath-after", tmp_str) {
+         if (VG_(clo_n_fullpath_after) >= VG_CLO_MAX_FULLPATH_AFTER) {
+            VG_(fmsg_bad_option)(arg,
+               "Too many --fullpath-after= specifications.\n"
+               "Increase VG_CLO_MAX_FULLPATH_AFTER and recompile.\n");
+         }
+         VG_(clo_fullpath_after)[VG_(clo_n_fullpath_after)] = tmp_str;
+         VG_(clo_n_fullpath_after)++;
       }
 
       else if VG_STR_CLO(arg, "--require-text-symbol", tmp_str) {

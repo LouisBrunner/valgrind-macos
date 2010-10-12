@@ -45,6 +45,9 @@
 /* The max number of --require-text-symbol= specification strings. */
 #define VG_CLO_MAX_REQ_TSYMS 100
 
+/* The max number of --fullpath-after= parameters. */
+#define VG_CLO_MAX_FULLPATH_AFTER 100
+
 /* Should we stop collecting errors if too many appear?  default: YES */
 extern Bool  VG_(clo_error_limit);
 /* Alternative exit code to hand to parent if errors were found.
@@ -90,6 +93,10 @@ extern Int   VG_(clo_input_fd);
 extern Int   VG_(clo_n_suppressions);
 /* The names of the suppression files. */
 extern Char* VG_(clo_suppressions)[VG_CLO_MAX_SFILES];
+
+/* An array of strings harvested from --fullpath-after= flags. */
+extern Int   VG_(clo_n_fullpath_after);
+extern Char* VG_(clo_fullpath_after)[VG_CLO_MAX_FULLPATH_AFTER];
 
 /* DEBUG: print generated code?  default: 00000000 ( == NO ) */
 extern UChar VG_(clo_trace_flags);

@@ -997,16 +997,53 @@ that can report errors, e.g. Memcheck, but not Cachegrind.</para>
     </listitem>
   </varlistentry>
 
-  <varlistentry id="opt.prefix-to-strip" xreflabel="--prefix-to-strip">
+  <varlistentry id="opt.fullpath-after" xreflabel="--fullpath-after">
     <term>
-      <option><![CDATA[--prefix-to-strip=<prefix> [default: off] ]]></option>
+      <option><![CDATA[--fullpath-after=<string>
+              [default: don't show source paths] ]]></option>
     </term>
     <listitem>
-      <para>By default Valgrind only shows the filename in stack traces and
-      not the full path of the source file. When using
-      <option>--prefix-to-strip</option>, Valgrind will include the full
-      path of source files in stack traces. If a path starts with the
-      specified prefix, the prefix will be left out from the printed path.
+      <para>By default Valgrind only shows the filenames in stack
+      traces, but not full paths to source files.  When using Valgrind
+      in large projects where the sources reside in multiple different
+      directories, this can be inconvenient.
+      <option>--fullpath-after</option> provides a flexible solution
+      to this problem.  When this option is present, the path to each
+      source file is shown, with the following all-important caveat:
+      if <option>string</option> is found in the path, then the path
+      up to and including <option>string</option> is omitted, else the
+      path is shown unmodified.  Note that <option>string</option> is
+      not required to be a prefix of the path.</para>
+
+      <para>For example, consider a file named
+      <computeroutput>/home/janedoe/blah/src/foo/bar/xyzzy.c</computeroutput>.
+      Specifying <option>--fullpath-after=/home/janedoe/blah/src/</option>
+      will cause Valgrind to show the name
+      as <computeroutput>foo/bar/xyzzy.c</computeroutput>.</para>
+
+      <para>Because the string is not required to be a prefix,
+      <option>--fullpath-after=src/</option> will produce the same
+      output.  This is useful when the path contains arbitrary
+      machine-generated characters.  For example, the
+      path
+      <computeroutput>/my/build/dir/C32A1B47/blah/src/foo/xyzzy</computeroutput>
+      can be pruned to <computeroutput>foo/xyzzy</computeroutput>
+      using
+      <option>--fullpath-after=/blah/src/</option>.</para>
+
+      <para>If you simply want to see the full path, just specify an
+      empty string: <option>--fullpath-after=</option>.  This isn't a
+      special case, merely a logical consequence of the above rules.</para>
+
+      <para>Finally, you can use <option>--fullpath-after</option>
+      multiple times.  Any appearance of it causes Valgrind to switch
+      to producing full paths and applying the above filtering rule.
+      Each produced path is compared against all
+      the <option>--fullpath-after</option>-specified strings, in the
+      order specified.  The first string to match causes the path to
+      be truncated as described above.  If none match, the full path
+      is shown.  This facilitates chopping off prefixes when the
+      sources are drawn from a number of unrelated directories.
       </para>
     </listitem>
   </varlistentry>

@@ -64,6 +64,8 @@ Bool   VG_(clo_time_stamp)     = False;
 Int    VG_(clo_input_fd)       = 0; /* stdin */
 Int    VG_(clo_n_suppressions) = 0;
 Char*  VG_(clo_suppressions)[VG_CLO_MAX_SFILES];
+Int    VG_(clo_n_fullpath_after) = 0;
+Char*  VG_(clo_fullpath_after)[VG_CLO_MAX_FULLPATH_AFTER];
 UChar  VG_(clo_trace_flags)    = 0; // 00000000b
 UChar  VG_(clo_profile_flags)  = 0; // 00000000b
 Int    VG_(clo_trace_notbelow) = 999999999;
@@ -83,7 +85,6 @@ Int    VG_(clo_backtrace_size) = 12;
 Char*  VG_(clo_sim_hints)      = NULL;
 Bool   VG_(clo_sym_offsets)    = False;
 Bool   VG_(clo_read_var_info)  = False;
-Char*  VG_(clo_prefix_to_strip) = NULL;
 Int    VG_(clo_n_req_tsyms)    = 0;
 HChar* VG_(clo_req_tsyms)[VG_CLO_MAX_REQ_TSYMS];
 HChar* VG_(clo_require_text_symbol) = NULL;

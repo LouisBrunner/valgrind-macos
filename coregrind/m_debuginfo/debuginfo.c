@@ -1774,10 +1774,13 @@ Char* VG_(describe_IP)(Addr eip, Char* buf, Int n_buf)
    UInt  lineno; 
    UChar ibuf[50];
    Int   n = 0;
+
    static UChar buf_fn[BUF_LEN];
    static UChar buf_obj[BUF_LEN];
    static UChar buf_srcloc[BUF_LEN];
    static UChar buf_dirname[BUF_LEN];
+   buf_fn[0] = buf_obj[0] = buf_srcloc[0] = buf_dirname[0] = 0;
+
    Bool  know_dirinfo = False;
    Bool  know_fnname  = VG_(clo_sym_offsets)
                         ? VG_(get_fnname_w_offset) (eip, buf_fn, BUF_LEN)
@@ -1789,6 +1792,11 @@ Char* VG_(describe_IP)(Addr eip, Char* buf, Int n_buf)
                            buf_dirname, BUF_LEN, &know_dirinfo,
                            &lineno 
                         );
+   buf_fn     [ sizeof(buf_fn)-1      ]  = 0;
+   buf_obj    [ sizeof(buf_obj)-1     ]  = 0;
+   buf_srcloc [ sizeof(buf_srcloc)-1  ]  = 0;
+   buf_dirname[ sizeof(buf_dirname)-1 ]  = 0;
+
    if (VG_(clo_xml)) {
 
       Bool   human_readable = True;
@@ -1858,20 +1866,32 @@ Char* VG_(describe_IP)(Addr eip, Char* buf, Int n_buf)
          APPEND("???");
       }
       if (know_srcloc) {
-         const Char* const pfx = VG_(clo_prefix_to_strip);
          APPEND(" (");
-         if (pfx) {
-            const int pfxlen = VG_(strlen)(pfx);
-            const int matchlen = VG_(strncmp)(pfx, buf_dirname, pfxlen) == 0
-	       ? pfxlen : 0;
-	    if (matchlen && buf_dirname[matchlen] == '/'
-		&& buf_dirname[matchlen + 1]) {
-	       APPEND(buf_dirname + matchlen + 1);
-	       APPEND("/");
-	    } else if (buf_dirname[matchlen]) {
-	       APPEND(buf_dirname + matchlen);
-	       APPEND("/");
-	    }
+         // Get the directory name, if any, possibly pruned, into dirname.
+         UChar* dirname = NULL;
+         if (VG_(clo_n_fullpath_after) > 0) {
+            Int i;
+            dirname = buf_dirname;
+            // Remove leading prefixes from the dirname.
+            // If user supplied --fullpath-after=foo, this will remove 
+            // a leading string which matches '.*foo' (not greedy).
+            for (i = 0; i < VG_(clo_n_fullpath_after); i++) {
+               UChar* prefix = VG_(clo_fullpath_after)[i];
+               UChar* str    = VG_(strstr)(dirname, prefix);
+               if (str) {
+                  dirname = str + VG_(strlen)(prefix);
+                  break;
+               }
+            }
+            /* remove leading "./" */
+            if (dirname[0] == '.' && dirname[1] == '/')
+               dirname += 2;
+         }
+         // do we have any interesting directory name to show?  If so
+         // add it in.
+         if (dirname && dirname[0] != 0) {
+            APPEND(dirname);
+            APPEND("/");
          }
          APPEND(buf_srcloc);
          APPEND(":");

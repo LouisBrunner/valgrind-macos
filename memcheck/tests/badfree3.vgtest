@@ -1,2 +1,2 @@
 prog: badfree
-vgopts: -q --prefix-to-strip=${PWD}
+vgopts: -q --fullpath-after=${PWD}/

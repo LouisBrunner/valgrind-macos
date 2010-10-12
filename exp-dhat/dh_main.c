@@ -36,6 +36,7 @@
 #include "pub_tool_libcprint.h"
 #include "pub_tool_machine.h"      // VG_(fnptr_to_fnentry)
 #include "pub_tool_mallocfree.h"
+#include "pub_tool_options.h"
 #include "pub_tool_replacemalloc.h"
 #include "pub_tool_tooliface.h"
 #include "pub_tool_wordfm.h"
@@ -76,9 +77,9 @@ typedef
       ULong       n_reads;
       ULong       n_writes;
       /* Approx histogram, one byte per payload byte.  Counts latch up
-         therefore at 255.  Can be NULL if the block is resized or if
+         therefore at 0xFFFF.  Can be NULL if the block is resized or if
          the block is larger than HISTOGRAM_SIZE_LIMIT. */
-      UChar*      histoB; /* [0 .. req_szB-1] */
+      UShort*     histoW; /* [0 .. req_szB-1] */
    }
    Block;
 
@@ -211,7 +212,7 @@ static void intro_Block ( Block* bk )
       tl_assert(api->deaths == 0);
       api->xsize_tag = Unknown;
       api->xsize = 0;
-      VG_(printf)("api %p   -->  Unknown\n", api);
+      if (0) VG_(printf)("api %p   -->  Unknown\n", api);
    }
 
    tl_assert(api->ap == bk->ap);
@@ -296,9 +297,9 @@ static void retire_Block ( Block* bk )
          tl_assert(!api->histo);
          api->xsize_tag = Exactly;
          api->xsize = bk->req_szB;
-         VG_(printf)("api %p   -->  Exactly(%lu)\n", api, api->xsize);
+         if (0) VG_(printf)("api %p   -->  Exactly(%lu)\n", api, api->xsize);
          // and allocate the histo
-         if (bk->histoB) {
+         if (bk->histoW) {
             api->histo = VG_(malloc)("dh.main.retire_Block.1", api->xsize * sizeof(UInt));
             VG_(memset)(api->histo, 0, api->xsize * sizeof(UInt));
          }
@@ -307,8 +308,8 @@ static void retire_Block ( Block* bk )
       case Exactly:
          tl_assert(api->deaths > 1);
          if (bk->req_szB != api->xsize) {
-            VG_(printf)("api %p   -->  Mixed(%lu -> %lu)\n",
-                        api, api->xsize, bk->req_szB);
+            if (0) VG_(printf)("api %p   -->  Mixed(%lu -> %lu)\n",
+                               api, api->xsize, bk->req_szB);
             api->xsize_tag = Mixed;
             api->xsize = 0;
             // deallocate the histo, if any
@@ -329,14 +330,16 @@ static void retire_Block ( Block* bk )
 
    // See if we can fold the histo data from this block into
    // the data for the AP
-   if (api->xsize_tag == Exactly && api->histo && bk->histoB) {
+   if (api->xsize_tag == Exactly && api->histo && bk->histoW) {
       tl_assert(api->xsize == bk->req_szB);
       UWord i;
       for (i = 0; i < api->xsize; i++) {
-         // FIXME: do something sane in case of overflow of api->histo[..]
-         api->histo[i] += (UInt)bk->histoB[i];
+         // FIXME: do something better in case of overflow of api->histo[..]
+         // Right now, at least don't let it overflow/wrap around
+         if (api->histo[i] <= 0xFFFE0000)
+            api->histo[i] += (UInt)bk->histoW[i];
       }
-      VG_(printf)("fold in, AP = %p\n", api);
+      if (0) VG_(printf)("fold in, AP = %p\n", api);
    }
 
 
@@ -433,10 +436,10 @@ void* new_block ( ThreadId tid, void* p, SizeT req_szB, SizeT req_alignB,
    bk->n_reads   = 0;
    bk->n_writes  = 0;
    // set up histogram array, if the block isn't too large
-   bk->histoB = NULL;
+   bk->histoW = NULL;
    if (req_szB <= HISTOGRAM_SIZE_LIMIT) {
-      bk->histoB = VG_(malloc)("dh.new_block.2", req_szB);
-      VG_(memset)(bk->histoB, 0, req_szB);
+      bk->histoW = VG_(malloc)("dh.new_block.2", req_szB * sizeof(UShort));
+      VG_(memset)(bk->histoW, 0, req_szB * sizeof(UShort));
    }
 
    Bool present = VG_(addToFM)( interval_tree, (UWord)bk, (UWord)0/*no val*/);
@@ -476,9 +479,9 @@ void die_block ( void* p, Bool custom_free )
 
    VG_(cli_free)( (void*)bk->payload );
    delete_Block_starting_at( bk->payload );
-   if (bk->histoB) {
-      VG_(free)( bk->histoB );
-      bk->histoB = NULL;
+   if (bk->histoW) {
+      VG_(free)( bk->histoW );
+      bk->histoW = NULL;
    }
    VG_(free)( bk );
 }
@@ -507,12 +510,12 @@ void* renew_block ( ThreadId tid, void* p_old, SizeT new_req_szB )
       return NULL; // bogus realloc
    }
 
-// Keeping the histogram alive in any meaningful way across
-// block resizing is too darn complicated.  Just throw it away.
-if (bk->histoB) {
-  VG_(free)(bk->histoB);
-  bk->histoB = NULL;
-}
+   // Keeping the histogram alive in any meaningful way across
+   // block resizing is too darn complicated.  Just throw it away.
+   if (bk->histoW) {
+      VG_(free)(bk->histoW);
+      bk->histoW = NULL;
+   }
 
    // Actually do the allocation, if necessary.
    if (new_req_szB <= bk->req_szB) {
@@ -641,9 +644,9 @@ void inc_histo_for_block ( Block* bk, Addr addr, UWord szB )
       offMax1 = bk->req_szB;
    //VG_(printf)("%lu %lu   (size of block %lu)\n", offMin, offMax1, bk->req_szB);
    for (i = offMin; i < offMax1; i++) {
-      UChar n = bk->histoB[i];
-      if (n < 255) n++;
-      bk->histoB[i] = n;
+      UShort n = bk->histoW[i];
+      if (n < 0xFFFF) n++;
+      bk->histoW[i] = n;
    }
 }
 
@@ -653,7 +656,7 @@ void dh_handle_write ( Addr addr, UWord szB )
    Block* bk = find_Block_containing(addr);
    if (bk) {
       bk->n_writes += szB;
-      if (bk->histoB)
+      if (bk->histoW)
          inc_histo_for_block(bk, addr, szB);
    }
 }
@@ -664,7 +667,7 @@ void dh_handle_read ( Addr addr, UWord szB )
    Block* bk = find_Block_containing(addr);
    if (bk) {
       bk->n_reads += szB;
-      if (bk->histoB)
+      if (bk->histoW)
          inc_histo_for_block(bk, addr, szB);
    }
 }
@@ -916,6 +919,61 @@ IRSB* dh_instrument ( VgCallbackClosure* closure,
 
 
 //------------------------------------------------------------//
+//--- Command line args                                    ---//
+//------------------------------------------------------------//
+
+// FORWARDS
+static Bool identify_metric ( /*OUT*/ULong(**get_metricP)(APInfo*),
+                              /*OUT*/Bool* increasingP,
+                              Char* metric_name );
+
+static Int    clo_show_top_n = 10;
+static HChar* clo_sort_by    = "max-bytes-live";
+
+static Bool dh_process_cmd_line_option(Char* arg)
+{
+   if VG_BINT_CLO(arg, "--show-top-n", clo_show_top_n, 1, 100000) {}
+
+   else if VG_STR_CLO(arg, "--sort-by", clo_sort_by) {
+       ULong (*dummyFn)(APInfo*);
+       Bool dummyB;
+       Bool ok = identify_metric( &dummyFn, &dummyB, clo_sort_by);
+       if (!ok)
+          return False;
+       // otherwise it's OK, in which case leave it alone.
+       // show_top_n_apinfos will later convert the string by a
+       // second call to identify_metric.
+   }
+
+   else
+      return VG_(replacement_malloc_process_cmd_line_option)(arg);
+
+   return True;
+}
+
+
+static void dh_print_usage(void)
+{
+   VG_(printf)(
+"    --show-top-n=number       show the top <number> alloc points [10]\n"
+"    --sort-by=string\n"
+"            sort the allocation points by the metric\n"
+"            defined by <string>, thusly:\n"
+"                max-bytes-live    maximum live bytes\n"
+"                tot-bytes-allocd  total allocation (turnover)\n"
+"                max-blocks-live   maximum live blocks\n"
+   );
+}
+
+static void dh_print_debug_usage(void)
+{
+   VG_(printf)(
+"    (none)\n"
+   );
+}
+
+
+//------------------------------------------------------------//
 //--- Finalisation                                         ---//
 //------------------------------------------------------------//
 
@@ -930,10 +988,19 @@ static void show_N_div_100( /*OUT*/HChar* buf, ULong n )
 
 static void show_APInfo ( APInfo* api )
 {
+   HChar bufA[80];
+   VG_(memset)(bufA, 0, sizeof(bufA));
+   if (api->tot_blocks > 0) {
+      show_N_div_100( bufA, ((ULong)api->tot_bytes * 100ULL)
+                              / (ULong)api->tot_blocks );
+   } else {
+      bufA[0] = 'N'; bufA[1] = 'a'; bufA[2] = 'N';
+   }
+
    VG_(umsg)("max_live:    %'llu in %'llu blocks\n",
              api->max_bytes_live, api->max_blocks_live);
-   VG_(umsg)("tot_alloc:   %'llu in %'llu blocks\n",
-             api->tot_bytes, api->tot_blocks);
+   VG_(umsg)("tot_alloc:   %'llu in %'llu blocks (avg size %s)\n",
+             api->tot_bytes, api->tot_blocks, bufA);
 
    tl_assert(api->tot_blocks >= api->max_blocks_live);
    tl_assert(api->tot_bytes >= api->max_bytes_live);
@@ -966,7 +1033,7 @@ static void show_APInfo ( APInfo* api )
    VG_(pp_ExeContext)(api->ap);
 
    if (api->histo && api->xsize_tag == Exactly) {
-      VG_(umsg)("\nAggregated access counts by offset:\n");
+      VG_(umsg)("\nAggregated access counts by offset\n");
       VG_(umsg)("\n");
       UWord i;
       if (api->xsize > 0)
@@ -978,11 +1045,12 @@ static void show_APInfo ( APInfo* api )
          }
          VG_(umsg)("%u ", api->histo[i]);
       }
-      VG_(umsg)("\n\n");
+      VG_(umsg)("\n");
    }
 }
 
 
+/* Metric-access functions for APInfos. */
 static ULong get_metric__max_bytes_live ( APInfo* api ) {
    return api->max_bytes_live;
 }
@@ -993,20 +1061,52 @@ static ULong get_metric__max_blocks_live ( APInfo* api ) {
    return api->max_blocks_live;
 }
 
-static void show_topN_apinfos ( ULong(*get_metric)(APInfo*),
-                                HChar* metric_name,
-                                Bool   increasing )
+/* Given a string, return the metric-access function and also a Bool
+   indicating whether we want increasing or decreasing values of the
+   metric.  This is used twice, once in command line processing, and
+   then again in show_top_n_apinfos.  Returns False if the given
+   string could not be identified.*/
+static Bool identify_metric ( /*OUT*/ULong(**get_metricP)(APInfo*),
+                              /*OUT*/Bool* increasingP,
+                              Char* metric_name )
 {
-   Int i;
-   const Int N = 50000; //200 -150;
+   if (0 == VG_(strcmp)(metric_name, "max-bytes-live")) {
+      *get_metricP = get_metric__max_bytes_live;
+      *increasingP = False;
+      return True;
+   }
+   if (0 == VG_(strcmp)(metric_name, "tot-bytes-allocd")) {
+      *get_metricP = get_metric__tot_bytes;
+      *increasingP = False;
+      return True;
+   }
+   if (0 == VG_(strcmp)(metric_name, "max-blocks-live")) {
+      *get_metricP = get_metric__max_blocks_live;
+      *increasingP = False;
+      return True;
+   }
+   return False;
+}
 
+
+static void show_top_n_apinfos ( void )
+{
+   Int   i;
    UWord keyW, valW;
+   ULong (*get_metric)(APInfo*);
+   Bool  increasing;
+
+   HChar* metric_name = clo_sort_by;
+   tl_assert(metric_name); // ensured by clo processing
+
+   Bool ok = identify_metric( &get_metric, &increasing, metric_name );
+   tl_assert(ok); // ensured by clo processing
 
    VG_(umsg)("\n");
    VG_(umsg)("======== ORDERED BY %s \"%s\": "
              "top %d allocators ========\n", 
              increasing ? "increasing" : "decreasing",
-             metric_name, N );
+             metric_name, clo_show_top_n );
 
    // Clear all .shown bits
    VG_(initIterFM)( apinfo );
@@ -1019,7 +1119,7 @@ static void show_topN_apinfos ( ULong(*get_metric)(APInfo*),
 
    // Now print the top N entries.  Each one requires a 
    // complete scan of the set.  Duh.
-   for (i = 0; i < N; i++) {
+   for (i = 0; i < clo_show_top_n; i++) {
       ULong   best_metric = increasing ? ~0ULL : 0ULL;
       APInfo* best_api    = NULL;
 
@@ -1040,7 +1140,8 @@ static void show_topN_apinfos ( ULong(*get_metric)(APInfo*),
          break; // all APIs have been shown.  Stop.
 
       VG_(umsg)("\n");
-      VG_(umsg)("------ %d of %d ------\n", i+1, N );
+      VG_(umsg)("-------------------- %d of %d --------------------\n",
+                i+1, clo_show_top_n );
       show_APInfo(best_api);
       best_api->shown = True;
    }
@@ -1067,16 +1168,28 @@ static void dh_fini(Int exit_status)
       VG_(umsg)("\n");
    }
 
-   if (0)
-   show_topN_apinfos( get_metric__max_bytes_live,
-                      "max_bytes_live", False/*highest first*/ );
-   if (1)
-   show_topN_apinfos( get_metric__max_blocks_live,
-                      "max_blocks_live", False/*highest first*/ );
+   show_top_n_apinfos();
 
-   if (0)
-   show_topN_apinfos( get_metric__tot_bytes,
-                      "tot_bytes", False/*highest first*/ );
+   VG_(umsg)("\n");
+   VG_(umsg)("\n");
+   VG_(umsg)("==============================================================\n");
+   VG_(umsg)("\n");
+   VG_(umsg)("Some hints: (see --help for command line option details):\n");
+   VG_(umsg)("\n");
+   VG_(umsg)("* summary stats for whole program are at the top of this output\n");
+   VG_(umsg)("\n");
+   VG_(umsg)("* --show-top-n=  controls how many alloc points are shown.\n");
+   VG_(umsg)("                 You probably want to set it much higher than\n");
+   VG_(umsg)("                 the default value (10)\n");
+   VG_(umsg)("\n");
+   VG_(umsg)("* --sort-by=     specifies the sort key for output.\n");
+   VG_(umsg)("                 See --help for details.\n");
+   VG_(umsg)("\n");
+   VG_(umsg)("* Each allocation stack, by default 12 frames, counts as\n");
+   VG_(umsg)("  a separate alloc point.  This causes the data to be spread out\n");
+   VG_(umsg)("  over far too many alloc points.  I strongly suggest using\n");
+   VG_(umsg)("  --num-callers=4 or some such, to reduce the spreading.\n");
+   VG_(umsg)("\n");
 }
 
 
@@ -1102,11 +1215,11 @@ static void dh_pre_clo_init(void)
                                    dh_instrument,
                                    dh_fini);
 //zz
-//zz   // Needs.
-//zz   VG_(needs_libc_freeres)();
-//zz   VG_(needs_command_line_options)(dh_process_cmd_line_option,
-//zz                                   dh_print_usage,
-//zz                                   dh_print_debug_usage);
+   // Needs.
+   VG_(needs_libc_freeres)();
+   VG_(needs_command_line_options)(dh_process_cmd_line_option,
+                                   dh_print_usage,
+                                   dh_print_debug_usage);
 //zz   VG_(needs_client_requests)     (dh_handle_client_request);
 //zz   VG_(needs_sanity_checks)       (dh_cheap_sanity_check,
 //zz                                   dh_expensive_sanity_check);
@@ -1126,19 +1239,6 @@ static void dh_pre_clo_init(void)
    //VG_(track_pre_mem_read_asciiz) ( check_mem_is_defined_asciiz );
    VG_(track_post_mem_write)      ( dh_handle_noninsn_write );
 
-//zz   // HP_Chunks.
-//zz   malloc_list = VG_(HT_construct)( "Massif's malloc list" );
-//zz
-//zz   // Dummy node at top of the context structure.
-//zz   alloc_xpt = new_XPt(/*ip*/0, /*parent*/NULL);
-//zz
-//zz   // Initialise alloc_fns and ignore_fns.
-//zz   init_alloc_fns();
-//zz   init_ignore_fns();
-//zz
-//zz   // Initialise args_for_massif.
-//zz   args_for_massif = VG_(newXA)(VG_(malloc), "ms.main.mprci.1", 
-//zz                                VG_(free), sizeof(HChar*));
    tl_assert(!interval_tree);
 
    interval_tree = VG_(newFM)( VG_(malloc),
